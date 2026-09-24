@@ -1,0 +1,34 @@
+# Raw decompiler output and IDA database snapshots never enter the repo
+reference/
+docs/idb/
+
+# Build output
+build/
+build*/
+out/
+.vs/
+.cache/
+
+# vcpkg checkout (bootstrapped locally)
+external/vcpkg/
+
+# Game binaries, symbols, content and IDA databases
+*.exe
+*.dll
+*.pdb
+*.i64
+*.idb
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+*.upk
+*.pck
+*.tfc
+*.bin
+*.dmp
+
+# Python
+__pycache__/
+*.pyc
