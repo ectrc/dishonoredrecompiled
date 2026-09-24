@@ -79,7 +79,7 @@ def main() -> int:
     if exists("P1.5 globals/imports", SYM / "globals.csv", SYM / "imports.csv"):
         g = {r["name"] for r in read_csv(SYM / "globals.csv")}
         wanted = ["GObjObjects", "GEngine", "GWorld", "GNatives", "GMalloc"]
-        missing = [w for w in wanted if not any(x.startswith(f"?{w}@@") or x == w for x in g)]
+        missing = [w for w in wanted if not any(x.startswith(f"?{w}@") or x == w for x in g)]
         check("P1.5 core globals", not missing, f"missing={missing}" if missing else "GObjObjects GEngine GWorld GNatives GMalloc present")
         dlls = {r["dll"].lower().removesuffix(".dll") for r in read_csv(SYM / "imports.csv")}
         check("P1.5 import dlls", {"steam_api", "d3d9", "binkw32", "dinput8"} <= dlls, f"{len(dlls)} DLLs: {sorted(dlls)}")
