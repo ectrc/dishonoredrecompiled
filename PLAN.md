@@ -70,9 +70,9 @@ their PDBs. No true `DishonoredGame-Debug.exe` exists (only its `.exe.config`).
 PDB module inventory (from `DishonoredGame.pdb`, 3733 unique source files, saved to
 `docs/pdb_srcfiles.txt`):
 
-| Runtime modules (in Shipping) | Editor-only modules (out of scope) |
+| Runtime modules (linked into Shipping, verified in Phase 1) | Not in Shipping (editor-only or other configurations) |
 |---|---|
-| Core, Engine, GameFramework, IpDrv, Launch, WinDrv, D3D9Drv, XAudio2, AkAudio, GFxUI, OnlineSubsystemPC, OnlineSubsystemSteamworks, DishonoredGame, DisJobs, Edge (PS3 leftovers, likely dead) | UnrealEd, UnrealEdCLR, DishonoredEditor, GFxUIEditor, UnrealSwarm, EdgeTool |
+| Core, Engine, GameFramework, IpDrv, Launch, WinDrv, D3D9Drv, AkAudio, GFxUI, OnlineSubsystemSteamworks, DishonoredGame, DisJobs, Edge (18 functions, PS3 leftovers) | UnrealEd, UnrealEdCLR, DishonoredEditor, GFxUIEditor, UnrealSwarm, EdgeTool, XAudio2, OnlineSubsystemPC |
 
 External libs referenced by the PDB: FaceFX, FCollada 3.05b, PhysX (2.8.x + APEX), FBX,
 wxWidgets, Wwise, Scaleform GFx, Steamworks, Tootle 2.2, LZOPro, libpng, zlib, TinyXML,
@@ -164,25 +164,25 @@ links.
 - [ ] Install ninja and vcpkg. Bootstrap an empty CMake project that builds a Win32 `hello`
       with the flags we intend to use (`/std:c++17 /fp:precise /W4 /permissive-`).
 
-### Phase 1 — Symbol and type database (1–2 weeks)
+### Phase 1 — Symbol and type database — DONE 2026-09-25
 
-- [ ] Open `DishonoredGame-Shipping.exe` + PDB in IDA 9.1 (the existing `.i64` for it is
-      520 MB — verify it already has PDB applied; if not, re-import).
-- [ ] Export via IDA MCP / IDAPython:
-  - `docs/functions.csv`: address, size, demangled name, source file, first line.
-  - `docs/globals.csv`: address, name, type.
-  - `docs/types/`: struct/class/enum definitions as C headers (`.til` → text).
-  - `docs/vtables.csv`: class → vtable → slot names (defines virtual method order per class).
-- [ ] Line info: `llvm-pdbutil dump --lines DishonoredGame-Shipping.pdb` for an independent
-      function → file:line mapping. Cross-check with `functions.csv`.
-- [ ] `docs/module_map.md`: file count, function count and total code bytes per module. This
-      is the work-breakdown structure and the basis for the Phase 4 middleware decisions.
-- [ ] Native function table: dump every `exec<Class><Func>` and `StaticClass` registration so
-      UnrealScript bytecode → native binding is fully known. Cross-check against the DFSDK
-      `.uc` files (`native` declarations).
-- [ ] Hardcoded names: extract the `FName` index table (`UnNames.h` equivalent) from the exe's
-      `GNames` initialization. Indices must be preserved.
-- [ ] Save IDA database snapshots to `docs/idb/` (gitignored, versioned locally).
+Tracker: `docs/PHASE1.md`. Regeneration commands and caveats: `docs/symbols/README.md`.
+Exit check: `python tools/symbols/verify_phase1.py`.
+
+- [x] IDA database verified (`docs/idb/shipping2012_v1.i64`, PDB names on 99.6 % of 66,394
+      functions, 63,011 local types) — `docs/symbols/db_verify.txt`.
+- [x] `docs/symbols/functions.csv` (address, size, names, file, line, module, origin, compiland),
+      `globals.csv`, `imports.csv`, `segments.csv`.
+- [x] `docs/types/sizes.csv` (+ regenerable `types.json`, `all_types.h`), `vtables.csv` (regenerable).
+- [x] Line info and module attribution via the DIA SDK (`tools/pdb/dia_dump.py`; llvm-pdbutil
+      cannot read these PDBs). 100 % of functions attributed through section contributions.
+- [x] `docs/module_map.md`: per-module and per-library sizes (Scaleform 10.4 %, Wwise ~4 %).
+- [x] `docs/symbols/natives.csv`: 2,165 `exec*` natives, 1,992 with their GNatives index
+      (numbered ones recovered from `GRegisterNative` call sites and the inlined Core stores);
+      `classes.csv` (1,036 `StaticClass`); cross-check against DFSDK `.uc` in `natives_xcheck.md`.
+- [x] `docs/symbols/hardcoded_names.csv`: 499 hardcoded FNames (index 0 = `None`, sparse up to 1300).
+- [x] Golden logs in `docs/golden/` (2012 ArkProfile build reaches the main menu; Shipping
+      configs write no log at all).
 
 ### Phase 2 — Source skeleton and type headers (1–2 weeks)
 
@@ -206,14 +206,18 @@ links.
 
 Module order (dependency order; Shipping-only, editor modules out of scope):
 
-1. Core
-2. Engine
-3. GameFramework
-4. IpDrv, OnlineSubsystemPC, OnlineSubsystemSteamworks
-5. WinDrv, D3D9Drv, XAudio2 (+ AkAudio only if actually linked into Shipping)
-6. GFxUI (Scaleform runtime — likely the single biggest proprietary block)
-7. DishonoredGame, DisJobs
-8. Launch
+Sizes from `docs/module_map.md` (Phase 1). The Shipping exe is the `Win32-OSSSteamworks`
+configuration: there is no OnlineSubsystemPC and no XAudio2 module in it; audio is Wwise via AkAudio.
+
+1. Core — 6,577 functions, 1.19 MB
+2. Engine — 22,892 functions, 4.72 MB
+3. GameFramework — 517 functions
+4. IpDrv, OnlineSubsystemSteamworks — 375 functions
+5. WinDrv, D3D9Drv — 355 functions
+6. AkAudio — 216 functions (+ the Wwise static libraries behind it)
+7. GFxUI — 1,041 functions (+ the 5,635-function Scaleform runtime behind it)
+8. DishonoredGame, DisJobs — 21,799 functions, 2.8 MB
+9. Launch — 67 functions
 
 Per module:
 
@@ -244,11 +248,13 @@ Decision per library, recorded in `docs/deps.md` once Phase 1 gives sizes:
 | Steamworks | `steam_api.dll` shipped | Steamworks SDK of the matching interface version (check `SteamClient0xx` strings). Offline path is the default. |
 | libcurl | `libcurl.dll` shipped (2013 only) | Remove entirely (Phase 8). |
 | zlib, libpng, libogg, libvorbis, TinyXML, LZO (replaces LZOPro), EasyHook | static | vcpkg. LZO must decompress the same streams as LZOPro (it does; LZO1X format). |
-| Scaleform GFx 3.x | static | Decide after sizing: (a) rewrite from decompile; (b) hybrid-link the original code during bring-up and replace later; (c) reimplement a subset sufficient for Dishonored's `.gfx` UI. No open alternative loads the shipped assets as-is. |
-| FaceFX | static | Runtime part only (editor plugins irrelevant). Rewrite from decompile; the data format is fixed by cooked animsets. |
-| PathEngine | static | Rewrite from decompile; navmesh data in cooked maps depends on its query semantics, not on its code. |
-| SpeedTree | static | Stub unless maps contain SpeedTree actors; check cooked packages first with FModel. |
-| Wwise / AkAudio | verify | If not linked into Shipping (XAudio2 module suggests not), drop. |
+| Scaleform GFx 3.x (`libgfx`, `libgfx_ime`) | static, **10.4 % of code** (5,635 functions, 1.18 MB) | Largest proprietary block, sized in Phase 1. Decide: (a) rewrite from decompile; (b) hybrid-link the original code during bring-up and replace later; (c) reimplement a subset sufficient for Dishonored's `.gfx` UI. No open alternative loads the shipped assets as-is. |
+| FaceFX (`facefx`, `fxsdk_unreal`) | static, 1.3 % (1,478 functions) | Runtime part only (editor plugins irrelevant). Rewrite from decompile; the data format is fixed by cooked animsets. |
+| Wwise (`aksoundengine`, `akmusicengine`, `akstreammgr`, `ak*fx`, `akvorbisdecoder`) | static, **~4 % (≈3,300 functions)** — it *is* linked into Shipping; `AkAudio` is the engine-side module | Wwise SDK is licensed; the shipped banks (`.bnk`/`.pck`) need the matching runtime. Options: rewrite from decompile, or hybrid-link during bring-up. XAudio2 is still used for movies/voice. |
+| PhysX double-buffered scene (`libnxdoublebuffered_release`) | static, 0.9 % | Part of the PhysX 2.8 SDK (statically linked helper); comes with the SDK headers. |
+| PathEngine | **not present in Shipping** (only referenced by the Release/editor PDB) | Nothing to do at runtime; navmesh queries are engine code. |
+| SpeedTree | not present as a library in Shipping | Stub unless maps contain SpeedTree actors; check cooked packages first with FModel. |
+| LZOPro (`lzopro`), zlib, libpng | static | Replace with open LZO / zlib / libpng (data compatible). |
 | DirectX 9 / XAudio2 / XInput | system | Windows SDK headers where available; June 2010 DirectX SDK for D3DX9. Later option: D3D11 RHI. |
 
 ### Phase 5 — Build system
@@ -312,9 +318,10 @@ Decision per library, recorded in `docs/deps.md` once Phase 1 gives sizes:
   PhysX, FaceFX, PathEngine are licensed middleware. Keep the repo private; decide the
   distribution model (patch against owned retail files, `dismod`-style DLL, or source that
   requires the user's own content) before publishing anything.
-* **Scale**: 3733 source files; function count measured in Phase 1 (expect 40k–60k in
-  Shipping). Rewriting rather than transcribing makes each function slower but the result
-  smaller and maintainable. Module ordering ensures each finished module is useful on its own.
+* **Scale**: 66,394 functions / 11.4 MB of code in Shipping, 2,383 source files with line info
+  (Phase 1 measurement). Engine 41 %, DishonoredGame 25 %, Core 10 %. Rewriting rather than
+  transcribing makes each function slower but the result smaller and maintainable. Module
+  ordering ensures each finished module is useful on its own.
 * **Silent layout drift**: without byte matching, the only guard against a wrong struct layout
   is the generated `static_assert` set plus the load-all package test. Both must exist before
   Engine work starts, not after.
@@ -323,8 +330,9 @@ Decision per library, recorded in `docs/deps.md` once Phase 1 gives sizes:
   `/fp:precise`, deterministic containers where script or save data depends on order (`TMap`
   iteration order is observable to UnrealScript), and the Phase 6 benchmark flythrough as
   regression test.
-* **Scaleform GFx** is the biggest unknown block of proprietary code; size it in Phase 1 and
-  pick the Phase 4 option before touching GFxUI.
+* **Scaleform GFx** is the biggest block of proprietary code: 10.4 % of all code (Phase 1
+  measurement, see `docs/module_map.md`). Wwise is another 4 %. Pick the Phase 4 option for both
+  before touching GFxUI / AkAudio.
 * **Win64**: the leaked Win64 exes have no PDBs; they are only evidence that 64-bit works, not a source.
 * **"Server"** definition — see Section 1 assumption.
 

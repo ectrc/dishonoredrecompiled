@@ -15,8 +15,11 @@ REPO = Path(__file__).resolve().parents[2]
 SYMBOLS = REPO / "docs" / "symbols"
 SRC_RE = re.compile(r"development\\src\\([a-z0-9_]+)\\")
 EXT_RE = re.compile(r"development\\external\\([a-z0-9_.\-]+)\\")
-CRT_MARKERS = ("f:\\dd\\vctools", "\\crt\\src\\", "\\vc\\include\\", "\\atlmfc\\")
+OBJ_RE = re.compile(r"\\intermediate\\[^\\]+\\[^\\]+\\(?:dishonored|shared)\\([a-z0-9_]+)\\")
+LIB_RE = re.compile(r"\\([a-z0-9_.\-]+)\.lib$")
+CRT_MARKERS = ("f:\\dd\\vctools", "\\crt\\src\\", "\\vc\\include\\", "\\atlmfc\\", "\\msvcrt", "libcmt", "libcpmt", "oldnames")
 NAMESPACE_RE = re.compile(r"^((?:[A-Za-z_]\w*::)+)")
+QUALIFIERS = ("public: ", "private: ", "protected: ", "virtual ", "static ", "[thunk]:")
 
 
 def classify(file: str) -> tuple[str, str]:
@@ -31,14 +34,38 @@ def classify(file: str) -> tuple[str, str]:
     return "", "unknown"
 
 
-def bucket(demangled: str) -> str:
-    m = NAMESPACE_RE.match(demangled)
+def classify_compiland(obj: str, lib: str) -> tuple[str, str]:
+    """Fallback attribution from the object file / library a symbol was linked from."""
+    obj, lib = obj.lower(), lib.lower()
+    m = OBJ_RE.search(obj)
     if m:
-        return m.group(1).rstrip(":").split("::")[0]
-    for prefix in ("GFx", "GRenderer", "GFile", "Fx", "OC3", "Nx", "Ak", "SpeedTree", "CSpeedTree", "PathEngine", "tinyxml", "png_", "inflate", "deflate", "lzo", "ogg_", "vorbis_"):
-        if demangled.startswith(prefix):
+        return m.group(1), "game"
+    if any(marker in obj or marker in lib for marker in CRT_MARKERS):
+        return "crt", "crt"
+    m = LIB_RE.search(lib) or LIB_RE.search(obj)
+    if m:
+        return m.group(1), f"lib:{m.group(1)}"
+    return "", "unknown"
+
+
+QUALIFIED_RE = re.compile(r"([A-Za-z_~][\w<>,]*(?:::[A-Za-z_~`'][\w<>,`' ]*)+)\(")
+PREFIXES = ("GFx", "GRenderer", "GFile", "GMemory", "Fx", "OC3", "Nx", "Ak", "SpeedTree", "CSpeedTree", "PathEngine", "tinyxml", "png_", "inflate", "deflate", "lzo", "ogg_", "vorbis_", "_dynamic", "__unwind", "j_")
+
+
+def bucket(demangled: str) -> str:
+    """Top-level namespace / class of a demangled name, or a known library prefix."""
+    m = QUALIFIED_RE.search(demangled)
+    if m:
+        return m.group(1).split("::")[0]
+    bare = demangled.split("(")[0].strip()
+    for q in QUALIFIERS:
+        while bare.startswith(q):
+            bare = bare[len(q):]
+    bare = bare.split(" ")[-1]
+    for prefix in PREFIXES:
+        if bare.startswith(prefix):
             return prefix
-    return demangled.split("(")[0].split("::")[0][:12]
+    return bare[:24]
 
 
 def main(argv: list[str]) -> int:
@@ -50,23 +77,35 @@ def main(argv: list[str]) -> int:
             if key not in first_line:
                 first_line[key] = (row["file"], row["line"])
 
+    compiland: dict[str, tuple[str, str]] = {}
+    comp_path = SYMBOLS / f"compiland_of{suffix}.csv"
+    if comp_path.exists():
+        with comp_path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                compiland[row["function_rva"]] = (row["compiland"], row["library"])
+
     path = SYMBOLS / f"functions{suffix}.csv"
     with path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
-        base_fields = [c for c in reader.fieldnames if c not in ("file", "line", "module", "origin")]
+        base_fields = [c for c in reader.fieldnames if c not in ("file", "line", "module", "origin", "compiland")]
 
     nofile = []
     stats = collections.Counter()
     for row in rows:
-        file, line = first_line.get(row["rva"].lower(), ("", ""))
+        rva = row["rva"].lower()
+        file, line = first_line.get(rva, ("", ""))
         module, origin = classify(file) if file else ("", "unknown")
+        obj, lib = compiland.get(rva, ("", ""))
+        if not module and (obj or lib):
+            module, origin = classify_compiland(obj, lib)
         row["file"], row["line"], row["module"], row["origin"] = file, line, module, origin
+        row["compiland"] = Path(obj).name if obj else Path(lib).name if lib else ""
         stats[origin] += 1
         if not file:
             nofile.append(row)
 
-    fields = base_fields + ["file", "line", "module", "origin"]
+    fields = base_fields + ["file", "line", "module", "origin", "compiland"]
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()

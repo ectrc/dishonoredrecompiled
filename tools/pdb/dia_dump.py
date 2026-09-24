@@ -69,6 +69,39 @@ def compiland_of_symbol(sym):
     return None
 
 
+def section_contributions(session) -> list[tuple[int, int, str, str]]:
+    """Sorted (rva, length, compiland, library) ranges: every code byte belongs to exactly one
+    section contribution, which is the linker's own record of which object file it came from."""
+    from comtypes.gen import Dia2Lib
+
+    contribs = []
+    tables = session.getEnumTables()
+    for i in range(tables.Count):
+        table = tables.Item(i)
+        if table.name != "Sections":
+            continue
+        for j in range(table.Count):
+            sc = table.Item(j).QueryInterface(Dia2Lib.IDiaSectionContrib)
+            try:
+                comp = sc.compiland
+                contribs.append((sc.relativeVirtualAddress, sc.length, comp.name or "", comp.libraryName or ""))
+            except (comtypes.COMError, ValueError):
+                continue
+    contribs.sort()
+    return contribs
+
+
+def contrib_for(contribs: list[tuple[int, int, str, str]], starts: list[int], rva: int):
+    import bisect
+
+    i = bisect.bisect_right(starts, rva) - 1
+    if i >= 0:
+        start, length, comp, lib = contribs[i]
+        if start <= rva < start + length:
+            return comp, lib
+    return None
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("pdb")
@@ -112,6 +145,10 @@ def main(argv: list[str]) -> int:
     else:
         targets = dia_functions
 
+    contribs = section_contributions(session)
+    starts = [c[0] for c in contribs]
+    print(f"section contributions={len(contribs)}", file=sys.stderr)
+
     files = set()
     n_lines = 0
     n_comp = 0
@@ -131,17 +168,17 @@ def main(argv: list[str]) -> int:
                         n_lines += 1
                 except comtypes.COMError:
                     pass
-            try:
-                sym = session.findSymbolByRVA(frva, SYM_TAG_NULL)
-            except (comtypes.COMError, ValueError):
-                sym = None
-            comp = compiland_of_symbol(sym) if sym else None
-            if comp:
+            hit = contrib_for(contribs, starts, frva)
+            if hit is None:
                 try:
-                    wc.writerow([f"0x{frva:x}", comp.name or "", comp.libraryName or ""])
-                    n_comp += 1
+                    sym = session.findSymbolByRVA(frva, SYM_TAG_NULL)
+                    comp = compiland_of_symbol(sym) if sym else None
+                    hit = (comp.name or "", comp.libraryName or "") if comp else None
                 except (comtypes.COMError, ValueError):
-                    pass
+                    hit = None
+            if hit is not None:
+                wc.writerow([f"0x{frva:x}", hit[0], hit[1]])
+                n_comp += 1
             if i % 10000 == 0:
                 print(f"  functions={i} lines={n_lines} compilands={n_comp}", file=sys.stderr)
     (out / f"sourcefiles{args.suffix}.txt").write_text("\n".join(sorted(files)) + "\n", encoding="utf-8")

@@ -1,10 +1,14 @@
 # Native function cross-check: exe `exec*` vs DFSDK `.uc` `native` declarations
 
+Only the DFSDK `DishonoredGame` classes are decompiled from the shipped game; its `Engine`/`Core` are stock UDK 2010 (engine 7026), so the all-classes numbers include an engine-version mismatch.
+
 | Set | Count |
 |---|---:|
 | matched | 1263 |
 | exe-only | 902 (41.7% of exe natives) |
 | uc-only | 1214 |
+| DishonoredGame classes: matched | 115 |
+| DishonoredGame classes: exe-only | 8 (6.5% of exe natives in those classes) |
 
 ## Exe-only (902)
 

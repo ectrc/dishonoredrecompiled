@@ -17,6 +17,25 @@ from _common import SYMBOLS_DIR, demangle, iter_functions, function_name, log, o
 
 ALLOC_RE = re.compile(r"AllocateNameEntry\(\s*(?:\(const void \*\))?\s*L?\"((?:[^\"\\]|\\.)*)\"\s*,\s*(0x[0-9A-Fa-f]+|\d+)")
 FALLBACK_RE = re.compile(r"L?\"((?:[^\"\\]|\\.)*)\"\s*,\s*(0x[0-9A-Fa-f]+|\d+)\s*,\s*0")
+# The first entries are constructed inline: the FNameEntry Index field (+8, i.e. dword +2) is
+# written as index<<1, then the string is copied at +16.
+INLINE_INDEX_RE = re.compile(r"\+ 2\) = (0x[0-9A-Fa-f]+|\d+);")
+INLINE_STR_RE = re.compile(r"(?:_strcpy_s|wcscpy_s|_wcscpy_s|strcpy_s)\([^;]*?,\s*L?\"((?:[^\"\\]|\\.)*)\"\)")
+
+
+def inline_entries(text: str) -> list[tuple[str, str]]:
+    pairs = []
+    index = None
+    for line in text.splitlines():
+        m = INLINE_INDEX_RE.search(line)
+        if m:
+            index = int(m.group(1), 0) >> 1
+            continue
+        m = INLINE_STR_RE.search(line)
+        if m and index is not None:
+            pairs.append((m.group(1), str(index)))
+            index = None
+    return pairs
 
 
 def find_function(short_name: str) -> int:
@@ -38,6 +57,9 @@ def main() -> None:
     if len(pairs) < 100:
         pairs = FALLBACK_RE.findall(text)
         source = "fallback"
+    inlined = inline_entries(text)
+    pairs = inlined + pairs
+    source += f"+{len(inlined)} inline"
     names = {}
     for name, index in pairs:
         names.setdefault(int(index, 0), name.encode("latin-1", "backslashreplace").decode("unicode_escape"))

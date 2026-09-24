@@ -11,8 +11,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 SYMBOLS = REPO / "docs" / "symbols"
 PHASE3_ORDER = [
-    "core", "engine", "gameframework", "ipdrv", "onlinesubsystempc", "onlinesubsystemsteamworks",
-    "windrv", "d3d9drv", "xaudio2", "akaudio", "gfxui", "dishonoredgame", "disjobs", "launch",
+    "core", "engine", "gameframework", "ipdrv", "onlinesubsystemsteamworks",
+    "windrv", "d3d9drv", "akaudio", "gfxui", "dishonoredgame", "disjobs", "launch",
 ]
 EDITOR_MODULES = {"unrealed", "unrealedclr", "dishonorededitor", "gfxuieditor", "unrealswarm", "edgetool"}
 
@@ -54,9 +54,9 @@ def main(argv: list[str]) -> int:
             scope = "editor (out of scope)" if k in EDITOR_MODULES else "runtime"
             f.write(f"| {k} | {len(files[k])} | {funcs[k]:,} | {b:,} | {100.0 * b / total_bytes:.1f} | {scope} |\n")
 
-        f.write("\n## External libraries with line info (`Development\\External\\<Lib>`)\n\n| Library | Source files | Functions | Code bytes | % of code |\n|---|---:|---:|---:|---:|\n")
+        f.write("\n## External libraries\n\nRows with source files come from `Development\\External\\<Lib>` line records; rows without come from the static library the linker pulled the code from (section contributions).\n\n| Library | Source files | Functions | Code bytes | % of code |\n|---|---:|---:|---:|---:|\n")
         for k, b in size.most_common():
-            if origin_of[k].startswith("external:"):
+            if origin_of[k].startswith(("external:", "lib:")):
                 f.write(f"| {k} | {len(files[k])} | {funcs[k]:,} | {b:,} | {100.0 * b / total_bytes:.1f} |\n")
 
         f.write("\n## Other\n\n| Origin | Functions | Code bytes | % of code |\n|---|---:|---:|---:|\n")

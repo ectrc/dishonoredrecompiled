@@ -6,10 +6,11 @@ Usage: python tools/ida/run.py tools/ida/export_natives.py <db.i64> [suffix]
 import re
 import sys
 
+import ida_bytes
 import ida_funcs
-import ida_hexrays
 import ida_idaapi
 import ida_name
+import ida_ua
 import idautils
 
 from _common import SYMBOLS_DIR, demangle, demangle_full, function_name, iter_functions, log, open_csv, ptr_size, read_ptr, rva
@@ -37,47 +38,81 @@ def static_gnatives_entries(gnatives: int) -> dict[int, int]:
     return out
 
 
-CALL_RE = re.compile(r"GRegisterNative\((0x[0-9A-Fa-f]+|\d+)")
-EXEC_REF_RE = re.compile(r"\b((?:\w+::)+exec\w+)\b")
-
-
 def register_native_calls(register_fn: int) -> dict[int, int]:
-    """GRegisterNative(INT Index, const Native& Func) is called from one dynamic initializer per
-    IMPLEMENT_FUNCTION. The member-function pointer is passed by reference, so the index and the
-    exec function are recovered from the decompiled initializer rather than from push immediates."""
+    """Every IMPLEMENT_FUNCTION expands to a dynamic initializer of the form
+        push offset _int<Class>exec<Func>   ; static Native member-pointer variable (in .data)
+        push <iNative>                       ; -1 for name-bound natives, else the GNatives index
+        call GRegisterNative
+    so both operands are immediates two instructions back from each call site. The variable holds
+    the exec function pointer, which is read to key the result by function address."""
     out = {}
-    if register_fn == ida_idaapi.BADADDR or not ida_hexrays.init_hexrays_plugin():
+    if register_fn == ida_idaapi.BADADDR:
         return out
-    callers = set()
     for xref in idautils.XrefsTo(register_fn, 0):
-        if xref.iscode:
-            func = ida_funcs.get_func(xref.frm)
-            if func is not None:
-                callers.add(func.start_ea)
-    for ea in sorted(callers):
-        try:
-            text = str(ida_hexrays.decompile(ea))
-        except ida_hexrays.DecompilationFailure:
+        if not xref.iscode:
             continue
-        indices = [int(v, 0) for v in CALL_RE.findall(text)]
-        refs = exec_functions_referenced(ea)
-        if len(indices) == 1 and len(refs) == 1:
-            out.setdefault(refs[0], indices[0])
-        elif len(indices) == len(refs) > 1:
-            for index, ref in zip(indices, refs):
-                out.setdefault(ref, index)
+        imms = []
+        ea = xref.frm
+        for _ in range(4):
+            ea = ida_bytes.prev_head(ea, 0)
+            insn = ida_ua.insn_t()
+            if ida_ua.decode_insn(insn, ea) == 0 or insn.get_canon_mnem() != "push" or insn.ops[0].type != ida_ua.o_imm:
+                break
+            imms.append(insn.ops[0].value)
+            if len(imms) == 2:
+                break
+        if len(imms) != 2:
+            continue
+        index, var = imms
+        index &= 0xFFFFFFFF
+        var &= 0xFFFFFFFF
+        index = index - 0x100000000 if index >= 0x80000000 else index
+        target = read_ptr(var)
+        if ida_funcs.get_func(target) is not None:
+            out.setdefault(target, index)
     return out
 
 
-def exec_functions_referenced(caller_ea: int) -> list[int]:
-    """exec* functions referenced (code or data xref) from the body of a dynamic initializer, in address order."""
-    found = []
-    for item in idautils.FuncItems(caller_ea):
-        for ref in idautils.XrefsFrom(item, 0):
-            target = ida_funcs.get_func(ref.to)
-            if target is not None and target.start_ea == ref.to and "::exec" in demangle(function_name(target)) and target.start_ea not in found:
-                found.append(target.start_ea)
-    return found
+def inlined_gnatives_stores(gnatives: int) -> dict[int, int]:
+    """Inside Core, GRegisterNative is inlined into the dynamic initializers:
+        mov eax, _int<Class>exec<Func>      ; static Native variable holding the function pointer
+        mov GNatives[index*4], eax
+    Scan every 'dynamic initializer for ...exec...' symbol for a memory operand inside the GNatives
+    array (gives the index) and an operand naming an _int* variable (gives the function)."""
+    out = {}
+    if gnatives == ida_idaapi.BADADDR:
+        return out
+    lo, hi = gnatives, gnatives + GNATIVES_COUNT * ptr_size()
+    for ea, name in idautils.Names():
+        dem = demangle_full(name)
+        if ("dynamic initializer for" not in dem and "_dynamic_initializer_for_" not in dem) or "exec" not in dem:
+            continue
+        index = None
+        target = None
+        cur = ea
+        for _ in range(24):
+            insn = ida_ua.insn_t()
+            if ida_ua.decode_insn(insn, cur) == 0:
+                break
+            mnem = insn.get_canon_mnem()
+            for n, op in enumerate(insn.ops):
+                if op.type == ida_ua.o_void:
+                    break
+                if op.type == ida_ua.o_mem:
+                    # the array base also appears as the rep-stosd target of the one-time clear;
+                    # only a store to it (mov [GNatives], reg) means index 0 (EX_LocalVariable)
+                    if lo <= op.addr < hi and (op.addr != lo or (mnem == "mov" and n == 0)):
+                        index = (op.addr - lo) // ptr_size()
+                    elif ida_name.get_name(op.addr).startswith("_int"):
+                        candidate = read_ptr(op.addr)
+                        if ida_funcs.get_func(candidate) is not None:
+                            target = candidate
+            if insn.get_canon_mnem() in ("retn", "ret"):
+                break
+            cur += insn.size
+        if index is not None and target is not None:
+            out.setdefault(target, index)
+    return out
 
 
 def main() -> None:
@@ -86,9 +121,12 @@ def main() -> None:
     index_by_target = static_gnatives_entries(gnatives)
     register_fn = find_named("GRegisterNative")
     registered = register_native_calls(register_fn)
-    for func, index in registered.items():
+    inlined = inlined_gnatives_stores(gnatives)
+    for func, index in list(inlined.items()) + list(registered.items()):
         index_by_target.setdefault(func, index)
-    log(f"GNatives at 0x{gnatives:08x}: {len(index_by_target) - len(registered)} static entries; GRegisterNative at 0x{register_fn:08x}: {len(registered)} call sites")
+    log(f"inlined GNatives stores: {len(inlined)}")
+    numbered = sum(1 for v in registered.values() if v >= 0)
+    log(f"GNatives at 0x{gnatives:08x}: {len(index_by_target) - len(registered)} static entries; GRegisterNative at 0x{register_fn:08x}: {len(registered)} call sites, {numbered} numbered")
 
     fn, wn = open_csv(SYMBOLS_DIR / f"natives{suffix}.csv", ["class", "func", "va", "rva", "size", "native_index", "mangled"])
     fc, wc = open_csv(SYMBOLS_DIR / f"classes{suffix}.csv", ["class", "staticclass_va", "staticclass_rva"])

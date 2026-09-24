@@ -1,7 +1,10 @@
 # Symbol exports (2012 Shipping build)
 
-Source database: `docs/idb/shipping2012_v1.i64` (snapshot of
+Source database: `docs/idb/shipping2012_v1.i64` (pristine snapshot of
 `../Dishonored_Debug2012/Binaries/Win32/DishonoredGame-Shipping.exe.i64`, PDB applied).
+IDA locks a database while it is open, so keep separate copies per consumer:
+`shipping2012_work.i64` for the headless scripts and `shipping2012_v1.i64` (or another copy)
+for the IDA MCP session / GUI. Never open the same file from two processes.
 The database is rebased to image base 0, so `va == rva` in every export; the real image base of
 the exe is 0x400000. DIA output is RVA-based and joins on `rva`.
 
