@@ -32,3 +32,11 @@ external/vcpkg/
 # Python
 __pycache__/
 *.pyc
+
+# Large regenerable symbol dumps (seconds to rebuild; see docs/symbols/README.md)
+docs/symbols/lines.csv
+docs/symbols/vtables.csv
+docs/symbols/pdb_functions.csv
+docs/symbols/compiland_of.csv
+docs/types/types.json
+docs/types/all_types.h

@@ -1,0 +1,786 @@
+[0000.50] Log: Log file open, 09/24/26 23:42:57
+[0000.50] Init: WinSock: version 1.1 (2.2), MaxSocks=32767, MaxUdp=65467
+[0000.50] Log: Deleting old log file Launch-backup-2026.03.05-09.54.36.log
+[0000.50] Init: Computer: DESKTOP-46V9CBT
+[0000.50] Init: User: Frederik
+[0000.50] Init: CPU Page size=4096, Processors=16
+[0000.50] Init: High frequency timer resolution =10.000000 MHz
+[0000.50] Init: Memory total: Physical=189.5GB Pagefile=216.5GB Virtual=4.0GB
+[0000.50] Log: Steam Client API Disabled!
+[0000.50] Init: Presizing for 58555 objects not considered by GC, pre-allocating 0 bytes.
+[0000.50] Init: Object subsystem initialized
+[0000.62] DevDataBase: Connection to "provider=sqloledb;Data Source=SQL01.ARKANE-STUDIOS.LAN;Initial Catalog=PerfMem;Integrated Security=SSPI" or "192.168.0.61" failed
+[0000.79] Log: 	TEXTUREGROUP_World: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_WorldNormalMap: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_WorldSpecular: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Character: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_CharacterNormalMap: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_CharacterSpecular: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Weapon: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_WeaponNormalMap: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_WeaponSpecular: (MinLODSize=256,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Vehicle: (MinLODSize=512,MaxLODSize=1024,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_VehicleNormalMap: (MinLODSize=512,MaxLODSize=1024,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_VehicleSpecular: (MinLODSize=512,MaxLODSize=1024,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Cinematic: (MinLODSize=256,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Effects: (MinLODSize=128,MaxLODSize=512,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_EffectsNotFiltered: (MinLODSize=1,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Linear,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Skybox: (MinLODSize=512,MaxLODSize=2048,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_UI: (MinLODSize=512,MaxLODSize=1024,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Lightmap: (MinLODSize=512,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_RenderTarget: (MinLODSize=1,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_MobileFlattened: (MinLODSize=8,MaxLODSize=256,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_ProcBuilding_Face: (MinLODSize=1,MaxLODSize=1024,LODBias=0,MinMagFilter=Aniso,MipFilter=Linear,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_ProcBuilding_LightMap: (MinLODSize=1,MaxLODSize=256,LODBias=0,MinMagFilter=Aniso,MipFilter=Linear,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Shadowmap: (MinLODSize=512,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,NumStreamedMips=3,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_ColorLookupTable: (MinLODSize=1,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Point,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Terrain_Heightmap: (MinLODSize=1,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Linear,MipGenSettings=TMGS_SimpleAverage)
+[0000.79] Log: 	TEXTUREGROUP_Terrain_Weightmap: (MinLODSize=1,MaxLODSize=4096,LODBias=0,MinMagFilter=Aniso,MipFilter=Linear,MipGenSettings=TMGS_SimpleAverage)
+[0000.84] Log: Shader platform (RHI): PC-D3D-SM3
+[0001.58] Log: Ply_Player.Skm_Player has invalid UserBounds, performance warning.
+[0001.58] Log: Ply_Player.Skm_Player has no LOD, performance warning.
+[0001.75] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC05_MainMenu_P,m_LoadingMovieName=LoadingDLC05,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.75] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_Dishonored_MainMenu,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.75] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_DishonoredGameFull_P,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.75] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_MainMenu,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.75] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_GameFull_P,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=-1,Maps=("L_Tower_P"),Movies=("LOADINGEMPRESSTOWER"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=0,Maps=("L_Prison_P","L_PrsnSewer_P"),Movies=("LOADINGPRISON", "LOADINGSEWERS"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=0,Maps=("L_Pub_Day_P","L_Pub_FromPrison_Script","L_OutsiderDream_P"),Movies=("LOADINGHUB", "LOADINGVOID"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=1,Maps=("L_Pub_Dusk_P","L_Pub_FromPrison_Script_Sleep","L_Streets1_P","L_Distillery_P","L_Galvani1_P","L_Ovrsr_P","L_Ovrsr_Kennel_P","L_Ovrsr_Back_P","L_Pub_Morning_P","L_Pub_FromOvrsr_Script"),Movies=("LOADINGHUB","LOADINGSTREETS","LOADINGDISTILLERY","LOADINGOVERSEER"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=2,Maps=("L_Pub_Day_P ","L_Pub_FromOvrsr_Script_Sleep","L_Streets2_P","L_Distillery2_P","L_Galvani2_P","L_ArtDealer_P","L_Brothel_P"),Movies=("LOADINGHUB","LOADINGSTREETS","LOADINGDISTILLERY","LOADINGBROTHEL"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=3,Maps=("L_Pub_Dusk_P","L_Pub_FromBrothel_Script","L_Bridge_Part1a_P","L_Bridge_Part1b_P","L_Bridge_Part1c_P","L_Bridge_Part2_P","L_Pub_Night_P","L_Pub_FromBridge_Script"),Movies=("LOADINGHUB","LOADINGBRIDGE","LOADINGBRIDGE2"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=4,Maps=("L_Pub_Day_P","L_Pub_FromBridge_Script_Sleep","L_Boyle_Ext_P","L_Boyle_Int_P"),Movies=("LOADINGHUB","LOADINGBOYLE"))
+[0001.76] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=5,Maps=("L_Pub_Morning_P","L_Pub_FromBoyle_Script","L_TowerRtrn_Yard_P","L_TowerRtrn_Int_P","L_Pub_Dusk_P","L_Pub_FromTwrReturn_Script"),Movies=("LOADINGHUB","LOADINGTOWERRETURN","LOADINGTOWERRETURN2"))
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=6,Maps=("L_Flooded_FIntro_P","L_Flooded_FStreets_P","L_Flooded_FAssassins_P","L_Flooded_FGate_P","L_Flooded_FRefinery_P","L_Streetsewer_P"),Movies=("LOADINGFLOODED","LOADINGASSASSINSHQ","LOADINGSTREETSSEWERS"))
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=7,Maps=("L_Pub_Assault_P"),Movies=("LOADINGHUB"))
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=8,Maps=("L_Isl_LowChaos_P","L_Isl_HighChaos_P","L_LightH_LowChaos_P","L_LightH_HighChaos_P"),Movies=("LOADINGLIGHTHOUSE"))
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=-2,Maps=("L_Out_HighChaos_emilyDead_P","L_Out_HighChaos_EmilyAlive_P","L_Out_P"),Movies=("LOADINGVOID","LOADINGOUTRO"))
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=11,Maps=("DLC06_Tower_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=12,Maps=("DLC06_Slaughter_Ext_P","DLC06_Slaughter_Int_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=13,Maps=("DLC06_Timsh_Streets_P","DLC06_Timsh_Estate_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=14,Maps=("DLC06_DaudBase_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=16,Maps=("L_DLC07_BaseIntro_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=17,Maps=("L_DLC07_Coldridge_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=18,Maps=("L_DLC07_DraperStreets_P","L_DLC07_DraperShip_P","L_DLC07_DraperMill_P","L_DLC07_DraperSewers_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=19,Maps=("L_DLC07_Brig_Ext_P","L_DLC07_Brigmore_Int_P","L_DLC07_Brigmore_Void_P"),Movies=())
+[0001.77] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=20,Maps=("L_DLC07_Endgame_P"),Movies=())
+[0001.92] Log: 51634 objects as part of root set at end of initial load.
+[0001.92] Log: 0 out of 0 bytes used by permanent object pool.
+[0001.92] Log: Initializing Engine...
+[0001.92] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC05_MainMenu_P,m_LoadingMovieName=LoadingDLC05,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.92] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_Dishonored_MainMenu,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.92] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_DishonoredGameFull_P,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.92] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_MainMenu,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.92] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_GameFull_P,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0001.93] Log: Wwise(R) SDK Version 2012.1.4 Build 4260. Copyright (c) 2006-2009 Audiokinetic Inc. / All Rights Reserved.
+[0001.98] Log: [Wwise] NumSpeakers: 2
+[0003.44] Log: bad key name GAMEPAD_Left in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Right in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Up in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Down in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Left in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Right in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Up in GFxUI keymap
+[0003.44] Log: bad key name GAMEPAD_Down in GFxUI keymap
+[0003.44] LocalizationWarning: No localization: GFxUI.Translation.Enable (INT)
+[0003.44] Log: LoadMap: DishonoredGameFull_P?Name=Corvo?Team=255
+[0003.53] Log: Heart.Heart has invalid UserBounds, performance warning.
+[0003.53] Log: Heart.Heart has no LOD, performance warning.
+[0003.76] Log: Game class is 'DishonoredGameInfo'
+[0003.87] Log: Primary PhysX scene will be in software.
+[0003.87] Log: Creating Primary PhysX Scene.
+[0003.87] Log: Bringing World DishonoredGameFull_P.TheWorld up for play (0) at 2026.09.24-23.43.00
+[0003.89] Warning: Warning, Failed to load 'SwfMovie DisFonts.fonts_efigs': Failed to find object 'SwfMovie DisFonts.fonts_efigs'
+[0003.90] LocalizationWarning: No localization: GFxUI.IME.MoviePath (INT)
+[0003.94] DevDataBase: Connection to "provider=sqloledb;Data Source=SQL01;Initial Catalog=BarkProfiling;Integrated Security=SSPI" or "192.168.0.167" failed
+[0003.94] Log: Bringing up level for play took: 0.170118
+[0003.95] Log: KEY TRANSLATED: Divide --> Slash
+[0003.95] Log: KEY TRANSLATED: Quote --> Tilde
+[0003.96] Log: bad key name GAMEPAD_Left in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Right in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Up in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Down in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Left in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Right in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Up in GFxUI keymap
+[0003.96] Log: bad key name GAMEPAD_Down in GFxUI keymap
+[0003.97] Warning: GetBoneMatrix : BoneIndex(0) out of range of SpaceBases for pMesh (SkeletalMesh Ply_Player.Skm_Player) owned by DishonoredPlayerPawn
+[0003.97] Warning: GetBoneMatrix : BoneIndex(8) out of range of SpaceBases for pMesh (SkeletalMesh Ply_Player.Skm_Player) owned by DishonoredPlayerPawn
+[0003.98] DevItemContext: 0.000000 : Couldn't bind melee attack item context to a melee extent!
+[0003.98] DevItemContext: 0.000000 :     Melee attack context: DisItemContext_NPCPush    Item Tweaks: Twk_EmptyHands
+[0003.98] DevItemContext: 0.000000 :     Owned By Pawn Tweaks: Twk_Pawn_PossessionProxy
+[0003.98] DevItemContext: 0.000000 : Couldn't bind melee attack item context to a melee extent!
+[0003.98] DevItemContext: 0.000000 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands
+[0003.98] DevItemContext: 0.000000 :     Owned By Pawn Tweaks: Twk_Pawn_PossessionProxy
+[0003.98] DevItemContext: 0.000000 : Couldn't bind melee attack item context to a melee extent!
+[0003.98] DevItemContext: 0.000000 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands
+[0003.98] DevItemContext: 0.000000 :     Owned By Pawn Tweaks: Twk_Pawn_PossessionProxy
+[0003.98] DevItemContext: 0.000000 : Couldn't bind melee attack item context to a melee extent!
+[0003.98] DevItemContext: 0.000000 :     Melee attack context: DisItemContext_NPCPush    Item Tweaks: Twk_EmptyHands
+[0003.98] DevItemContext: 0.000000 :     Owned By Pawn Tweaks: Twk_Pawn_PossessionProxy
+[0003.98] DevItemContext: 0.000000 : Couldn't bind melee attack item context to a melee extent!
+[0003.98] DevItemContext: 0.000000 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands
+[0003.98] DevItemContext: 0.000000 :     Owned By Pawn Tweaks: Twk_Pawn_PossessionProxy
+[0003.98] DevItemContext: 0.000000 : Couldn't bind melee attack item context to a melee extent!
+[0003.98] DevItemContext: 0.000000 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands
+[0003.98] DevItemContext: 0.000000 :     Owned By Pawn Tweaks: Twk_Pawn_PossessionProxy
+[0003.98] Warning: USkeletalMeshComponent::InitArticulated : No PhysicsAsset defined for DishonoredGameFull_P.TheWorld:PersistentLevel.DishonoredPlayerPawn.pMesh with skeletalmesh Ply_Player.Skm_Player
+[0003.98] Log: ########### Finished loading level: 0.541933 seconds
+[0004.02] DevDlc: Looking for DLC...
+[0004.09] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC05_MainMenu_P,m_LoadingMovieName=LoadingDLC05,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.09] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_Dishonored_MainMenu,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.09] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_DishonoredGameFull_P,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.09] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_MainMenu,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.09] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_GameFull_P,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.09] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=-1,Maps=("L_Tower_P"),Movies=("LOADINGEMPRESSTOWER"))
+[0004.10] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=0,Maps=("L_Prison_P","L_PrsnSewer_P"),Movies=("LOADINGPRISON", "LOADINGSEWERS"))
+[0004.10] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=0,Maps=("L_Pub_Day_P","L_Pub_FromPrison_Script","L_OutsiderDream_P"),Movies=("LOADINGHUB", "LOADINGVOID"))
+[0004.10] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=1,Maps=("L_Pub_Dusk_P","L_Pub_FromPrison_Script_Sleep","L_Streets1_P","L_Distillery_P","L_Galvani1_P","L_Ovrsr_P","L_Ovrsr_Kennel_P","L_Ovrsr_Back_P","L_Pub_Morning_P","L_Pub_FromOvrsr_Script"),Movies=("LOADINGHUB","LOADINGSTREETS","LOADINGDISTILLERY","LOADINGOVERSEER"))
+[0004.10] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=2,Maps=("L_Pub_Day_P ","L_Pub_FromOvrsr_Script_Sleep","L_Streets2_P","L_Distillery2_P","L_Galvani2_P","L_ArtDealer_P","L_Brothel_P"),Movies=("LOADINGHUB","LOADINGSTREETS","LOADINGDISTILLERY","LOADINGBROTHEL"))
+[0004.10] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=3,Maps=("L_Pub_Dusk_P","L_Pub_FromBrothel_Script","L_Bridge_Part1a_P","L_Bridge_Part1b_P","L_Bridge_Part1c_P","L_Bridge_Part2_P","L_Pub_Night_P","L_Pub_FromBridge_Script"),Movies=("LOADINGHUB","LOADINGBRIDGE","LOADINGBRIDGE2"))
+[0004.10] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=4,Maps=("L_Pub_Day_P","L_Pub_FromBridge_Script_Sleep","L_Boyle_Ext_P","L_Boyle_Int_P"),Movies=("LOADINGHUB","LOADINGBOYLE"))
+[0004.11] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=5,Maps=("L_Pub_Morning_P","L_Pub_FromBoyle_Script","L_TowerRtrn_Yard_P","L_TowerRtrn_Int_P","L_Pub_Dusk_P","L_Pub_FromTwrReturn_Script"),Movies=("LOADINGHUB","LOADINGTOWERRETURN","LOADINGTOWERRETURN2"))
+[0004.11] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=6,Maps=("L_Flooded_FIntro_P","L_Flooded_FStreets_P","L_Flooded_FAssassins_P","L_Flooded_FGate_P","L_Flooded_FRefinery_P","L_Streetsewer_P"),Movies=("LOADINGFLOODED","LOADINGASSASSINSHQ","LOADINGSTREETSSEWERS"))
+[0004.11] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=7,Maps=("L_Pub_Assault_P"),Movies=("LOADINGHUB"))
+[0004.11] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=8,Maps=("L_Isl_LowChaos_P","L_Isl_HighChaos_P","L_LightH_LowChaos_P","L_LightH_HighChaos_P"),Movies=("LOADINGLIGHTHOUSE"))
+[0004.11] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=-2,Maps=("L_Out_HighChaos_emilyDead_P","L_Out_HighChaos_EmilyAlive_P","L_Out_P"),Movies=("LOADINGVOID","LOADINGOUTRO"))
+[0004.11] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=11,Maps=("DLC06_Tower_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=12,Maps=("DLC06_Slaughter_Ext_P","DLC06_Slaughter_Int_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=13,Maps=("DLC06_Timsh_Streets_P","DLC06_Timsh_Estate_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=14,Maps=("DLC06_DaudBase_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=16,Maps=("L_DLC07_BaseIntro_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=17,Maps=("L_DLC07_Coldridge_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=18,Maps=("L_DLC07_DraperStreets_P","L_DLC07_DraperShip_P","L_DLC07_DraperMill_P","L_DLC07_DraperSewers_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=19,Maps=("L_DLC07_Brig_Ext_P","L_DLC07_Brigmore_Int_P","L_DLC07_Brigmore_Void_P"),Movies=())
+[0004.12] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=20,Maps=("L_DLC07_Endgame_P"),Movies=())
+[0004.14] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC05_MainMenu_P,m_LoadingMovieName=LoadingDLC05,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.14] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_Dishonored_MainMenu,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.14] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=DLC06_DishonoredGameFull_P,m_LoadingMovieName=LoadingDLC06,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.14] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_MainMenu,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.15] Error: Error, ImportText (m_MapConfig): Unknown member m_bShowMapNameOnlyOnXboxNoHDD in: (m_Name=L_DLC07_GameFull_P,m_LoadingMovieName=LoadingDLC07,m_bShowLoadingTexts=true,m_bShowMapNameOnlyOnXboxNoHDD=true,m_nRichPresenceChapter=0)
+[0004.17] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=-1,Maps=("L_Tower_P"),Movies=("LOADINGEMPRESSTOWER"))
+[0004.18] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=0,Maps=("L_Prison_P","L_PrsnSewer_P"),Movies=("LOADINGPRISON", "LOADINGSEWERS"))
+[0004.18] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=0,Maps=("L_Pub_Day_P","L_Pub_FromPrison_Script","L_OutsiderDream_P"),Movies=("LOADINGHUB", "LOADINGVOID"))
+[0004.18] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=1,Maps=("L_Pub_Dusk_P","L_Pub_FromPrison_Script_Sleep","L_Streets1_P","L_Distillery_P","L_Galvani1_P","L_Ovrsr_P","L_Ovrsr_Kennel_P","L_Ovrsr_Back_P","L_Pub_Morning_P","L_Pub_FromOvrsr_Script"),Movies=("LOADINGHUB","LOADINGSTREETS","LOADINGDISTILLERY","LOADINGOVERSEER"))
+[0004.18] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=2,Maps=("L_Pub_Day_P ","L_Pub_FromOvrsr_Script_Sleep","L_Streets2_P","L_Distillery2_P","L_Galvani2_P","L_ArtDealer_P","L_Brothel_P"),Movies=("LOADINGHUB","LOADINGSTREETS","LOADINGDISTILLERY","LOADINGBROTHEL"))
+[0004.18] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=3,Maps=("L_Pub_Dusk_P","L_Pub_FromBrothel_Script","L_Bridge_Part1a_P","L_Bridge_Part1b_P","L_Bridge_Part1c_P","L_Bridge_Part2_P","L_Pub_Night_P","L_Pub_FromBridge_Script"),Movies=("LOADINGHUB","LOADINGBRIDGE","LOADINGBRIDGE2"))
+[0004.18] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=4,Maps=("L_Pub_Day_P","L_Pub_FromBridge_Script_Sleep","L_Boyle_Ext_P","L_Boyle_Int_P"),Movies=("LOADINGHUB","LOADINGBOYLE"))
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=5,Maps=("L_Pub_Morning_P","L_Pub_FromBoyle_Script","L_TowerRtrn_Yard_P","L_TowerRtrn_Int_P","L_Pub_Dusk_P","L_Pub_FromTwrReturn_Script"),Movies=("LOADINGHUB","LOADINGTOWERRETURN","LOADINGTOWERRETURN2"))
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=6,Maps=("L_Flooded_FIntro_P","L_Flooded_FStreets_P","L_Flooded_FAssassins_P","L_Flooded_FGate_P","L_Flooded_FRefinery_P","L_Streetsewer_P"),Movies=("LOADINGFLOODED","LOADINGASSASSINSHQ","LOADINGSTREETSSEWERS"))
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=7,Maps=("L_Pub_Assault_P"),Movies=("LOADINGHUB"))
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=8,Maps=("L_Isl_LowChaos_P","L_Isl_HighChaos_P","L_LightH_LowChaos_P","L_LightH_HighChaos_P"),Movies=("LOADINGLIGHTHOUSE"))
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=-2,Maps=("L_Out_HighChaos_emilyDead_P","L_Out_HighChaos_EmilyAlive_P","L_Out_P"),Movies=("LOADINGVOID","LOADINGOUTRO"))
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=11,Maps=("DLC06_Tower_P"),Movies=())
+[0004.19] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=12,Maps=("DLC06_Slaughter_Ext_P","DLC06_Slaughter_Int_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=13,Maps=("DLC06_Timsh_Streets_P","DLC06_Timsh_Estate_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=14,Maps=("DLC06_DaudBase_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=16,Maps=("L_DLC07_BaseIntro_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=17,Maps=("L_DLC07_Coldridge_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=18,Maps=("L_DLC07_DraperStreets_P","L_DLC07_DraperShip_P","L_DLC07_DraperMill_P","L_DLC07_DraperSewers_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=19,Maps=("L_DLC07_Brig_Ext_P","L_DLC07_Brigmore_Int_P","L_DLC07_Brigmore_Void_P"),Movies=())
+[0004.20] Error: Error, ImportText (m_MissionsGame): Unknown member MissionNumber in: (MissionNumber=20,Maps=("L_DLC07_Endgame_P"),Movies=())
+[0004.21] Log: SaveGameList done in 0.000041 seconds
+[0004.21] Warning: FAILED to add stat 'Executable And Misc memory' to stat collection 'System memory'.
+[0004.21] Warning: FAILED to add stat 'Package memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Script memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Default class memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Global array memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'FName memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'GUID Cache memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Permanent pool memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Ini memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Main stack memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'File manager memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Stat manager memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Malloc memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Malloc wasted memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Ballast memory' to stat collection 'Engine memory'.
+[0004.21] Warning: FAILED to add stat 'Texture pool used memory' to stat collection 'Video memory'.
+[0004.21] Warning: FAILED to add stat 'Texture pool free memory' to stat collection 'Video memory'.
+[0004.21] Warning: FAILED to add stat 'Unreal UI memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Material memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Decal memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Particle memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Texture memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Scaleform memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'SwfMovie memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Vertex Shader memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Pixel Shader memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'UShaderCache memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'StaticMesh Vertex memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'SkeletalMesh Vertex memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Decal Vertex memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Rendering Stack memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Octree memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Scene Rendering memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Primitive Scene Info memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Light Rendering memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Precomputed Light Volume memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Misc render memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat 'Misc Rendering Pools memory' to stat collection 'Rendering memory'.
+[0004.21] Warning: FAILED to add stat '----NPCs Skeletal Mesh memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Players Skeletal Mesh memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Weapons Skeletal Mesh memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Doors Skeletal Mesh memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'World Skeletal Mesh memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Other Skeletal Mesh memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'GPU Skin Pool memory' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat '----NPCs Skeletal Mesh count' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Players Skeletal Mesh count' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Weapons Skeletal Mesh count' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Doors Skeletal Mesh count' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'World Skeletal Mesh count' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Other Skeletal Mesh count' to stat collection 'Skeletal Mesh memory'.
+[0004.21] Warning: FAILED to add stat '----Level Static Mesh memory' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Pawn Static Mesh memory' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Pickup And Item Static Mesh memory' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Other Static Mesh memory' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Texture 1D And 2D (used by Static Mesh) memory' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat '----Level Static Mesh count' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Pawn Static Mesh count' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Pickup And Item Static Mesh count' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Other Static Mesh count' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'Texture 1D And 2D (used by Static Mesh) count' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'MeshLists Pool memory' to stat collection 'Static Mesh memory'.
+[0004.21] Warning: FAILED to add stat 'NPC AI memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Other AI memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Dialog memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Kismet-Matine memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Tweak memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'ArkComponentContainer memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Pickup-Inventory-Distraction... memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'WorldInfo-GameInfo memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Misc object memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat 'Misc Pools memory' to stat collection 'Game memory'.
+[0004.21] Warning: FAILED to add stat '----Physic asset memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'Rigid Body memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'RB Constraint memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'PERSISTENT memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'BoxShape memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'CapsuleShape memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'ConvexShape memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'NpActor memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'NpBoxShape memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'NpConvexShape memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'D6Joint memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'LowLevel memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'RemoteDebugger memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'StaticActor memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'MESH memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'OTHER memory' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat '----Physic asset count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'Rigid Body count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'RB Constraint count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'PERSISTENT count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'BoxShape count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'CapsuleShape count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'ConvexShape count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'NpActor count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'NpBoxShape count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'NpConvexShape count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'D6Joint count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'LowLevel count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'RemoteDebugger count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'StaticActor count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'MESH count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat 'OTHER count' to stat collection 'Physic memory'.
+[0004.21] Warning: FAILED to add stat '----BSP memory' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Light memory' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Volume memory' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Navmesh memory' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Marker memory' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Other memory' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat '----BSP count' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Light count' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Volume count' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Navmesh count' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Marker count' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat 'Other count' to stat collection 'Level memory'.
+[0004.21] Warning: FAILED to add stat '----Npcs anim memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Players anim memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Weapons anim memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Other anim memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'AnimTree-Node-Notify memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'FaceFX AnimSet memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'FaceFx internal memory' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat '----Npcs anim count' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Players anim count' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Weapons anim count' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Other anim count' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'AnimTree-Node-Notify count' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'FaceFX AnimSet count' to stat collection 'Anim memory'.
+[0004.21] Warning: FAILED to add stat 'Unreal Sound' to stat collection 'Audio memory'.
+[0004.21] Warning: FAILED to add stat 'Audio Propagation' to stat collection 'Audio memory'.
+[0004.21] Warning: FAILED to add stat 'WWise Internal' to stat collection 'Audio memory'.
+[0004.21] Warning: FAILED to add stat 'WWise Component' to stat collection 'Audio memory'.
+[0004.21] Warning: FAILED to add stat 'WWise Bank' to stat collection 'Audio memory'.
+[0004.21] Warning: FAILED to add stat 'WWise Sound' to stat collection 'Audio memory'.
+[0004.21] Warning: FAILED to add stat 'Unaccounted memory' to stat collection 'Memory stat collection'.
+[0004.21] Warning: FAILED to add stat 'DisCpnt AIKnowledge' to stat collection 'NPC stat collection'.
+[0004.21] Warning: FAILED to add stat 'DisCpnt TuneCombat' to stat collection 'NPC stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'NPC stat collection'.
+[0004.21] Warning: FAILED to add stat 'Player Camera' to stat collection 'Player stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Player stat collection'.
+[0004.21] Warning: FAILED to add stat 'RatSwarm Tick' to stat collection 'Rat stat collection'.
+[0004.21] Warning: FAILED to add stat 'Spawner Update' to stat collection 'Rat stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Rat stat collection'.
+[0004.21] Warning: FAILED to add stat 'Edge Manager Begin Time' to stat collection 'Edge stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Level stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Display stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Soiree stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Navigation stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Other stat collection'.
+[0004.21] Warning: FAILED to add stat 'Phys Events Time' to stat collection 'Physic stat collection'.
+[0004.21] Warning: FAILED to add stat 'Game Thread Update Time' to stat collection 'Engine stat collection'.
+[0004.21] Warning: FAILED to add stat 'DynamicLightEnvComp Tick' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat '----Lighting drawing' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Dynamic shadow setup' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Modulated Shadows' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Dominant light shadows' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat '----Lights' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'PreShadows' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Per Object shadows' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Whole Scene shadows' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Shadowing dominant lights on screen' to stat collection 'Lighting stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Update Components Time' to stat collection 'Component stat collection'.
+[0004.21] Warning: FAILED to add stat 'Edge Manager Begin Time' to stat collection 'FullAnimation stat collection'.
+[0004.21] Log: Initializing Engine Completed
+[0004.21] Log: >>>>>>>>>>>>>> Initial startup: 4.21s <<<<<<<<<<<<<<<
+[0004.31] Log: Flushing async loaders.
+[0004.38] Log: Flushing async loaders.
+[0004.48] ScriptWarning: Accessed None 'mDisplay'
+	DisFog Dishonored_MainMenu_Env.TheWorld:PersistentLevel.DisFog_6
+	Function Engine.DisFog:PostBeginPlay:004C
+[0004.48] ScriptWarning: Accessed None 'mDisplay'
+	DisFog Dishonored_MainMenu_Env.TheWorld:PersistentLevel.DisFog_1
+	Function Engine.DisFog:PostBeginPlay:004C
+[0004.51] Log: Committed map change via DishonoredEngine Transient.DishonoredEngine_0
+[0007.35] Warning: Warning, Failed to load 'SwfMovie ?INT?GFxUI.IME.MoviePath?': Failed to find object 'SwfMovie ?INT?GFxUI.IME.MoviePath?'
+[0007.35] Log: GFx attempted to load missing object [?INT?GFxUI.IME.MoviePath?]
+[0084.00] Warning: Warning, Failed to load 'Font None.Emerge BF': Failed to find object 'Font None.Emerge BF'
+[0085.58] Warning: Warning, Failed to load 'SwfMovie ?INT?GFxUI.IME.MoviePath?': Failed to find object 'SwfMovie ?INT?GFxUI.IME.MoviePath?'
+[0085.58] Log: GFx attempted to load missing object [?INT?GFxUI.IME.MoviePath?]
+[0086.81] Log: Flushing async loaders.
+[0086.88] ScriptWarning: Accessed None 'mDisplay'
+	DisFog l_tower_p.TheWorld:PersistentLevel.DisFog_4
+	Function Engine.DisFog:PostBeginPlay:004C
+[0086.88] ScriptWarning: Accessed None 'mDisplay'
+	DisFog l_tower_p.TheWorld:PersistentLevel.DisFog_5
+	Function Engine.DisFog:PostBeginPlay:004C
+[0086.88] ScriptWarning: Accessed None 'mDisplay'
+	DisFog l_tower_p.TheWorld:PersistentLevel.DisFog_0
+	Function Engine.DisFog:PostBeginPlay:004C
+[0086.88] Log: Flushing async loaders.
+[0087.13] DevTweaks: 78.010529 : Warning, some Tweak data was changed at run time for TweaksBehavior_Idle_Aggressive
+[0087.13] DevTweaks: 78.010529 :     Resave the Tweak object to get rid of this message and improve performance.
+[0087.16] Log: AkPackage Bk_4DAD24A848B1CF757756DDA0FA9A9D90.INT : LoadFilePackage failed.
+[0087.16] Log: AkPackage Bk_509A38D24F4887AC3D6D6886A2183CF8.INT : LoadFilePackage failed.
+[0087.18] Log: NPC_Body_Eaten.Mesh.skm_head_eaten has no LOD, performance warning.
+[0087.18] Log: NPC_Body_Eaten.Mesh.Skm_Body_Eaten has no LOD, performance warning.
+[0087.24] Log: DownUp
+[0087.26] Log: Committed map change via DishonoredEngine Transient.DishonoredEngine_0
+[0087.27] Log: PlayerArms_Tatoo_inst  GetOutermost(): Twk_Pawn_Corvo  bInMap: 0  bInTransient: 0
+[0087.27] Log: MIC::SetScalarParameterValue : Modifying 'PlayerArms_Tatoo_inst' during gameplay.
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Twk_Pawn_AntonSokolov
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Twk_Pawn_AntonSokolov
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Twk_Pawn_AntonSokolov
+[0087.31] DevItemContext: 78.449860 : Couldn't bind melee attack item context to a melee extent!
+[0087.31] DevItemContext: 78.449860 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.31] DevItemContext: 78.449860 :     Owned By Pawn Tweaks: Twk_Pawn_AntonSokolov
+[0087.67] Error: The Matinee Simple Soirée: Sokolov Painting have a node Guid specified but no Conversation node are found.
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MSmall_1
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MSmall_1
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MSmall_1
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MSmall_1
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MTall_1_NoAnxious
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MTall_1_NoAnxious
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MTall_1_NoAnxious
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Pwn_IntroMiddleClass_MTall_1_NoAnxious
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Twk_Pawn_Empress
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Twk_Pawn_Empress
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Twk_Pawn_Empress
+[0087.67] DevItemContext: 78.812210 : Couldn't bind melee attack item context to a melee extent!
+[0087.67] DevItemContext: 78.812210 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.67] DevItemContext: 78.812210 :     Owned By Pawn Tweaks: Twk_Pawn_Empress
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Pwn_OverseerCampbell_MTall_1_NoGrenade
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Pwn_OverseerCampbell_MTall_1_NoGrenade
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Pwn_OverseerCampbell_MTall_1_NoGrenade
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Pwn_OverseerCampbell_MTall_1_NoGrenade
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCAttackUnder    Item Tweaks: Twk_Inv_SwordOverseer
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Pwn_OverseerCampbell_MTall_1_NoGrenade
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_LordRegentPrison
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_LordRegentPrison
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_LordRegentPrison
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_LordRegentPrison
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.69] DevItemContext: 78.830772 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.830772 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.69] DevItemContext: 78.830772 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.69] DevAnimState: 78.838066 : ClearAnimState: No valid anim state at index 0!
+[0087.69] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.69] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.69] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.69] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.69] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.69] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.69] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.69] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] DevItemContext: 78.838066 : Couldn't bind melee attack item context to a melee extent!
+[0087.70] DevItemContext: 78.838066 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.70] DevItemContext: 78.838066 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0087.70] Warning: Warning, Too many Scaleform textures pending destroy
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.73] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.73] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.73] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.74] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.74] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.74] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.74] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.74] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.74] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.74] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.74] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.74] DevItemContext: 78.873161 : Couldn't bind melee attack item context to a melee extent!
+[0087.74] DevItemContext: 78.873161 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.74] DevItemContext: 78.873161 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3_Helm1
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptain
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3
+[0087.77] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.77] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.77] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3
+[0087.78] DevItemContext: 78.915390 : Couldn't bind melee attack item context to a melee extent!
+[0087.78] DevItemContext: 78.915390 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.78] DevItemContext: 78.915390 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_3
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MSmall_1_Hat1
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MSmall_1_Hat1
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MSmall_1_Hat1
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MSmall_1_Hat1
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_1_NoAnxious
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_1_NoAnxious
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_1_NoAnxious
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_1_NoAnxious
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_2
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_2
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_2
+[0087.79] DevItemContext: 78.933022 : Couldn't bind melee attack item context to a melee extent!
+[0087.79] DevItemContext: 78.933022 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.79] DevItemContext: 78.933022 :     Owned By Pawn Tweaks: Pwn_MiddleClass_MTall_2
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_LadyEmily_TowerEmpress
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_LadyEmily_TowerEmpress
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_LadyEmily_TowerEmpress
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_LadyEmily_TowerEmpress
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_5_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.81] DevItemContext: 78.954407 : Couldn't bind melee attack item context to a melee extent!
+[0087.81] DevItemContext: 78.954407 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.81] DevItemContext: 78.954407 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_4_Helm1
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_2_Helm1
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_2_Helm1
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_2_Helm1
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_2_Helm1
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_2_Helm1
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.85] DevItemContext: 78.992783 : Couldn't bind melee attack item context to a melee extent!
+[0087.85] DevItemContext: 78.992783 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0087.85] DevItemContext: 78.992783 :     Owned By Pawn Tweaks: Pwn_Servant_F_1_NoAnxious
+[0087.87] Log: Kismet: === BUG ===
+[0087.87] Log: Kismet: Name of the buggy pawn :
+[0087.87] Log: Kismet:  DishonoredNPCPawn_24
+[0087.87] Log: Kismet: === BUG ===
+[0090.77] Log: UDisSeqAct_GotoPlayerTravelDestination - Successfully teleported player to navigation point with tag [PlayerStart_NewGameEmpress]
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptainIntro
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptainIntro
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptainIntro
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptainIntro
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Twk_Pawn_GuardCaptainIntro
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_NPCRatCrushAttempt    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_WeeperGrab    Item Tweaks: Twk_EmptyHands_NPC
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall_1_Helm1
+[0090.77] DevItemContext: 81.914276 : Couldn't bind melee attack item context to a melee extent!
+[0090.77] DevItemContext: 81.914276 :     Melee attack context: DisItemContext_NPCJumpAttack    Item Tweaks: Twk_Inv_SwordEliteGuard
+[0090.77] DevItemContext: 81.914276 :     Owned By Pawn Tweaks: Pwn_EliteGuard_MTall

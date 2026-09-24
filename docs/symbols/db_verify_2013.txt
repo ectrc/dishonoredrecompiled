@@ -1,0 +1,16 @@
+image_base=0x00400000
+functions=34059
+functions_unnamed=31698 (93.07%)
+local_types=18
+tarray_instantiations=0
+uobject_vtable=no
+type:UObject=no
+type:UClass=no
+type:UProperty=no
+type:UStruct=no
+type:UFunction=no
+type:FName=no
+type:FString=no
+type:FArchive=no
+type:TArray<int>=no
+type:FEngineLoop=no

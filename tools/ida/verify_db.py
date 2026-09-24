@@ -5,6 +5,7 @@ Usage: python tools/ida/run.py tools/ida/verify_db.py <db.i64> [output.txt]
 import sys
 
 import ida_funcs
+import ida_idaapi
 import ida_name
 import ida_typeinf
 import idautils
@@ -36,7 +37,7 @@ def main() -> int:
         f"functions_unnamed={unnamed} ({100.0 * unnamed / max(total, 1):.2f}%)",
         f"local_types={ntypes}",
         f"tarray_instantiations={tarray_like}",
-        f"uobject_vtable={'yes' if ida_name.get_name_ea(0, '??_7UObject@@6B@') != ida_funcs.BADADDR else 'no'}",
+        f"uobject_vtable={'yes' if ida_name.get_name_ea(0, '??_7UObject@@6B@') != ida_idaapi.BADADDR else 'no'}",
     ]
     lines += [f"type:{name}={'yes' if ok else 'no'}" for name, ok in found.items()]
     text = "\n".join(lines) + "\n"
