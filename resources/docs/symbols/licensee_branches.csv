@@ -1,0 +1,232 @@
+rva,module,file,function,family,expr,op,value
+0x4a80,core,unpropertytag.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FPropertyTag &)",engine,ArVer,>=,633
+0x4a80,core,unpropertytag.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FPropertyTag &)",engine,ArVer,>=,673
+0x6a420,core,unlinker.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FObjectExport &)",engine,ArVer,<,543
+0x879b0,core,unclass.cpp,"public: void __thiscall UStruct::SerializeTaggedProperties(class FArchive &, unsigned char *, class UStruct *, unsigned char *, int)const",engine,ArVer,<,591
+0x879b0,core,unclass.cpp,"public: void __thiscall UStruct::SerializeTaggedProperties(class FArchive &, unsigned char *, class UStruct *, unsigned char *, int)const",engine,ArVer,<,550
+0x879b0,core,unclass.cpp,"public: void __thiscall UStruct::SerializeTaggedProperties(class FArchive &, unsigned char *, class UStruct *, unsigned char *, int)const",engine,ArVer,<,633
+0x8ad70,core,unprop.cpp,"public: virtual void __thiscall UStructProperty::SerializeItem(class FArchive &, void *, int, void *)const",engine,ArVer,>=,511
+0x949c0,core,unobj.cpp,public: virtual void __thiscall UObject::Serialize(class FArchive &),engine,ArVer,>=,691
+0x949c0,core,unobj.cpp,public: virtual void __thiscall UObject::Serialize(class FArchive &),engine,ArVer,>=,566
+0x96240,core,unclass.cpp,public: virtual void __thiscall UField::Serialize(class FArchive &),engine,ArVer,<,756
+0x962b0,core,unclass.cpp,public: virtual void __thiscall UStruct::Serialize(class FArchive &),engine,ArVer,>=,756
+0x962b0,core,unclass.cpp,public: virtual void __thiscall UStruct::Serialize(class FArchive &),engine,ArVer,>=,639
+0x96b70,core,unclass.cpp,public: virtual void __thiscall UClass::Serialize(class FArchive &),engine,ArVer,>=,603
+0x96b70,core,unclass.cpp,public: virtual void __thiscall UClass::Serialize(class FArchive &),engine,ArVer,<,749
+0x96b70,core,unclass.cpp,public: virtual void __thiscall UClass::Serialize(class FArchive &),licensee,ArLicenseeVer,>=,10
+0x96b70,core,unclass.cpp,public: virtual void __thiscall UClass::Serialize(class FArchive &),engine,ArVer,>=,655
+0x96b70,core,unclass.cpp,public: virtual void __thiscall UClass::Serialize(class FArchive &),engine,ArVer,<,796
+0xd7c20,engine,decalrenderdata.cpp,public: virtual void __thiscall UDecalMaterial::Serialize(class FArchive &),engine,ArVer,<,542
+0xd7c20,engine,decalrenderdata.cpp,public: virtual void __thiscall UDecalMaterial::Serialize(class FArchive &),licensee,ArLicenseeVer,<,0
+0xd9b00,engine,gameplayeventsutilities.h,public: virtual void __thiscall FPlayerLoginEvent::Serialize(class FArchive &),engine,ArVer,<,5
+0xd9bb0,engine,gameplayeventsutilities.h,public: virtual void __thiscall FPlayerKillDeathEvent::Serialize(class FArchive &),engine,ArVer,<,3
+0xd9c80,engine,gameplayeventsutilities.h,public: virtual void __thiscall FPlayerPlayerEvent::Serialize(class FArchive &),engine,ArVer,<,3
+0xda0a0,engine,gameplayevents.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FPlayerInformationNew &)",engine,ArVer,<,6
+0xe27d0,engine,decalrenderdata.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FDecalVertex &)",engine,ArVer,>=,552
+0xe27d0,engine,decalrenderdata.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FDecalVertex &)",engine,ArVer,>=,554
+0xe27d0,engine,decalrenderdata.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FDecalVertex &)",engine,ArVer,<,551
+0xe5f80,engine,gameplayevents.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FGameplayEventMetaData &)",engine,ArVer,<,7
+0xef4c0,engine,decalrenderdata.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FStaticReceiverData &)",engine,ArVer,>=,666
+0xef4c0,engine,decalrenderdata.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FStaticReceiverData &)",engine,ArVer,>=,621
+0xef4c0,engine,decalrenderdata.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FStaticReceiverData &)",engine,ArVer,>=,665
+0xefbc0,engine,directionallightcomponent.cpp,public: virtual void __thiscall UDominantDirectionalLightComponent::Serialize(class FArchive &),engine,ArVer,>=,617
+0x11a5d0,engine,lightcomponent.cpp,public: virtual void __thiscall ULightComponent::PostLoad(void),engine,ArVer,<,564
+0x11a930,engine,material.cpp,public: virtual void __thiscall UMaterial::Serialize(class FArchive &),engine,ArVer,<,656
+0x11a930,engine,material.cpp,public: virtual void __thiscall UMaterial::Serialize(class FArchive &),engine,ArVer,<,711
+0x11bce0,engine,materialshared.h,public: void __thiscall FStaticParameterSet::Serialize(class FArchive &),engine,ArVer,>=,631
+0x11bce0,engine,materialshared.h,public: void __thiscall FStaticParameterSet::Serialize(class FArchive &),engine,ArVer,>=,714
+0x11cb20,engine,instancedstaticmesh.cpp,public: virtual void __thiscall UInstancedStaticMeshComponent::Serialize(class FArchive &),engine,ArVer,>=,688
+0x11dcc0,engine,materialinstance.cpp,public: virtual void __thiscall UMaterialInstance::Serialize(class FArchive &),engine,ArVer,<,656
+0x11dcc0,engine,materialinstance.cpp,public: virtual void __thiscall UMaterialInstance::Serialize(class FArchive &),engine,ArVer,<,711
+0x11dcc0,engine,materialinstance.cpp,public: virtual void __thiscall UMaterialInstance::Serialize(class FArchive &),engine,ArVer,<,656
+0x11dcc0,engine,materialinstance.cpp,public: virtual void __thiscall UMaterialInstance::Serialize(class FArchive &),engine,ArVer,<,600
+0x12bb90,engine,materialshared.cpp,public: virtual void __thiscall UMaterialInterface::Serialize(class FArchive &),engine,ArVer,<,600
+0x12c3c0,engine,materialshared.cpp,public: void __thiscall FMaterial::FTextureLookup::Serialize(class FArchive &),engine,ArVer,>=,506
+0x131fa0,engine,materialshared.cpp,public: virtual void __thiscall FMaterialUniformExpressionTexture::Serialize(class FArchive &),engine,ArVer,<,656
+0x134d10,engine,primitivecomponent.cpp,public: virtual void __thiscall UPrimitiveComponent::Serialize(class FArchive &),engine,ArVer,<,560
+0x134d10,engine,primitivecomponent.cpp,public: virtual void __thiscall UPrimitiveComponent::Serialize(class FArchive &),engine,ArVer,<,569
+0x134d10,engine,primitivecomponent.cpp,public: virtual void __thiscall UPrimitiveComponent::Serialize(class FArchive &),engine,ArVer,<,769
+0x1366d0,engine,materialinstancetimevarying.cpp,public: virtual void __thiscall UMaterialInstanceTimeVarying::PostLoad(void),engine,ArVer,<,735
+0x139ee0,engine,precomputedlightvolume.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FVolumeLightingSample &)",engine,ArVer,>=,748
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),engine,ArVer,>=,656
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),engine,ArVer,>=,647
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),engine,ArVer,>=,558
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),engine,ArVer,>=,645
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),engine,ArVer,>=,647
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),engine,ArVer,>=,529
+0x14eb00,engine,materialshared.cpp,public: void __thiscall FMaterial::Serialize(class FArchive &),licensee,ArLicenseeVer,>=,0
+0x159820,engine,spline.cpp,public: virtual void __thiscall ASplineActor::PostLoad(void),engine,ArVer,<,594
+0x15c0a0,engine,spotlightcomponent.cpp,public: virtual void __thiscall UDominantSpotLightComponent::Serialize(class FArchive &),engine,ArVer,>=,682
+0x16e110,engine,shadercache.cpp,public: void __thiscall FShaderCache::Load(class FArchive &),engine,ArVer,>=,538
+0x16e110,engine,shadercache.cpp,public: void __thiscall FShaderCache::Load(class FArchive &),engine,ArVer,<,711
+0x16e110,engine,shadercache.cpp,public: void __thiscall FShaderCache::Load(class FArchive &),engine,ArVer,<,786
+0x16e110,engine,shadercache.cpp,public: void __thiscall FShaderCache::Load(class FArchive &),engine,ArVer,>=,672
+0x16e3a0,engine,shadercache.cpp,private: void __thiscall UShaderCache::Load(class FArchive &),engine,ArVer,<,538
+0x16e3a0,engine,shadercache.cpp,private: void __thiscall UShaderCache::Load(class FArchive &),engine,ArVer,>=,538
+0x16e3a0,engine,shadercache.cpp,private: void __thiscall UShaderCache::Load(class FArchive &),engine,ArVer,<,786
+0x16e3a0,engine,shadercache.cpp,private: void __thiscall UShaderCache::Load(class FArchive &),engine,ArVer,<,660
+0x16e3a0,engine,shadercache.cpp,private: void __thiscall UShaderCache::Load(class FArchive &),engine,ArVer,<,538
+0x16fa80,engine,texturemovie.cpp,public: virtual void __thiscall UTextureMovie::Serialize(class FArchive &),engine,ArVer,<,600
+0x16fd00,engine,texture.cpp,public: virtual void __thiscall UTextureRenderTarget2D::Serialize(class FArchive &),engine,ArVer,<,600
+0x171920,engine,unactor.cpp,public: virtual void __thiscall AActor::Serialize(class FArchive &),engine,ArVer,<,782
+0x171920,engine,unactor.cpp,public: virtual void __thiscall AActor::Serialize(class FArchive &),engine,ArVer,<,783
+0x171920,engine,unactor.cpp,public: virtual void __thiscall AActor::Serialize(class FArchive &),licensee,ArLicenseeVer,<,26
+0x187fa0,engine,texture2d.cpp,public: virtual void __thiscall UTexture2D::Serialize(class FArchive &),engine,ArVer,<,600
+0x187fa0,engine,texture2d.cpp,public: virtual void __thiscall UTexture2D::Serialize(class FArchive &),engine,ArVer,<,567
+0x187fa0,engine,texture2d.cpp,public: virtual void __thiscall UTexture2D::Serialize(class FArchive &),engine,ArVer,<,627
+0x187fa0,engine,texture2d.cpp,public: virtual void __thiscall UTexture2D::Serialize(class FArchive &),engine,ArVer,<,634
+0x187fa0,engine,texture2d.cpp,public: virtual void __thiscall UTexture2D::Serialize(class FArchive &),engine,ArVer,>=,674
+0x18af50,engine,texture2dcomposite.cpp,private: virtual void __thiscall UTexture2DComposite::Serialize(class FArchive &),engine,ArVer,<,600
+0x18af50,engine,texture2dcomposite.cpp,private: virtual void __thiscall UTexture2DComposite::Serialize(class FArchive &),engine,ArVer,<,510
+0x1943b0,engine,unactor.cpp,public: virtual void __thiscall ALevelStreamingVolume::PostLoad(void),engine,ArVer,<,679
+0x1e20a0,engine,undistributions.cpp,public: virtual void __thiscall UDistributionFloatUniform::PostLoad(void),engine,ArVer,<,535
+0x1e2d20,engine,undistributions.cpp,public: virtual void __thiscall UDistributionVectorUniform::PostLoad(void),engine,ArVer,<,535
+0x1e2d20,engine,undistributions.cpp,public: virtual void __thiscall UDistributionVectorUniform::PostLoad(void),engine,ArVer,<,544
+0x1e3b70,engine,undistributions.cpp,public: virtual void __thiscall UDistributionVectorUniformCurve::PostLoad(void),engine,ArVer,<,535
+0x1e3b70,engine,undistributions.cpp,public: virtual void __thiscall UDistributionVectorUniformCurve::PostLoad(void),engine,ArVer,<,544
+0x229400,engine,unfpoly.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FLightmassPrimitiveSettings &)",engine,ArVer,<,652
+0x229400,engine,unfpoly.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FLightmassPrimitiveSettings &)",engine,ArVer,<,600
+0x229400,engine,unfpoly.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FLightmassPrimitiveSettings &)",engine,ArVer,<,600
+0x229400,engine,unfpoly.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FLightmassPrimitiveSettings &)",engine,ArVer,<,636
+0x2296d0,engine,engineclasses.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FFontCharacter &)",engine,ArVer,>=,506
+0x22ded0,engine,uninterpolation.cpp,public: virtual void __thiscall UInterpTrackFloatMaterialParam::PostLoad(void),engine,ArVer,<,693
+0x22f240,engine,uninterpcurveedsetup.cpp,public: virtual void __thiscall UInterpCurveEdSetup::Serialize(class FArchive &),engine,ArVer,<,203
+0x23f580,engine,engineclasses.h,public: virtual void __thiscall UForceFeedbackWaveform::Serialize(class FArchive &),engine,ArVer,<,677
+0x24cdc0,engine,unfont.cpp,public: virtual void __thiscall UFont::Serialize(class FArchive &),engine,ArVer,<,511
+0x24cdc0,engine,unfont.cpp,public: virtual void __thiscall UFont::Serialize(class FArchive &),engine,ArVer,<,511
+0x24ce40,engine,unfont.cpp,public: virtual void __thiscall UMultiFont::Serialize(class FArchive &),engine,ArVer,<,511
+0x25d6a0,engine,unlightmap.cpp,public: virtual void __thiscall ULightMapTexture2D::Serialize(class FArchive &),engine,ArVer,<,654
+0x25d6a0,engine,unlightmap.cpp,public: virtual void __thiscall ULightMapTexture2D::Serialize(class FArchive &),engine,ArVer,<,616
+0x26ab00,engine,unlightmap.cpp,public: virtual void __thiscall FLightMap2D::Serialize(class FArchive &),engine,ArVer,<,624
+0x26ae10,engine,unlightmap.cpp,public: virtual void __thiscall FLightMap1D::Serialize(class FArchive &),engine,ArVer,<,624
+0x26b2a0,engine,unlightmap.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FLightMap * &)",engine,ArVer,<,624
+0x2729f0,engine,unlevact.cpp,public: virtual void __thiscall AWorldInfo::Serialize(class FArchive &),engine,ArVer,<,600
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,>=,771
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,>=,681
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,>=,690
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),licensee,ArLicenseeVer,<,27
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,>=,585
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,<,780
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,>=,607
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,<,799
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,<,757
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,<,739
+0x2737b0,engine,unlevel.cpp,public: virtual void __thiscall ULevel::Serialize(class FArchive &),engine,ArVer,>=,734
+0x27a7a0,engine,unmodel.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FBspSurf &)",engine,ArVer,<,600
+0x2928c0,engine,unpath.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FNavMeshPolyBase &)",engine,ArVer,>=,586
+0x2928c0,engine,unpath.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FNavMeshPolyBase &)",licensee,ArLicenseeVer,<,27
+0x2928c0,engine,unpath.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FNavMeshPolyBase &)",engine,ArVer,<,588
+0x294980,engine,unnavigationmesh.cpp,public: virtual class FArchive & __thiscall FNavMeshCrossPylonEdge::Serialize(class FArchive &),engine,ArVer,<,620
+0x294980,engine,unnavigationmesh.cpp,public: virtual class FArchive & __thiscall FNavMeshCrossPylonEdge::Serialize(class FArchive &),engine,ArVer,<,620
+0x29b9c0,engine,unmodel.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FPoly &)",engine,ArVer,<,600
+0x29b9c0,engine,unmodel.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FPoly &)",engine,ArVer,<,670
+0x2a0a30,engine,unmodel.cpp,public: virtual void __thiscall UModel::Serialize(class FArchive &),engine,ArVer,<,686
+0x2a0a30,engine,unmodel.cpp,public: virtual void __thiscall UModel::Serialize(class FArchive &),engine,ArVer,<,600
+0x2a0a30,engine,unmodel.cpp,public: virtual void __thiscall UModel::Serialize(class FArchive &),engine,ArVer,<,600
+0x2ea610,engine,unsequence.cpp,private: virtual void __thiscall USeqEvent_Touch::Serialize(class FArchive &),licensee,ArLicenseeVer,<,30
+0x32ed40,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FMeshBone &)",engine,ArVer,<,515
+0x32edd0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FSkelMeshSection &)",engine,ArVer,<,599
+0x32fdd0,engine,unskelcontrol.cpp,public: virtual void __thiscall USkelControlBase::Serialize(class FArchive &),engine,ArVer,<,576
+0x331100,engine,unskeletalmesh.cpp,public: void __thiscall FGPUSkinVertexBase::Serialize(class FArchive &),engine,ArVer,>=,494
+0x3312b0,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FSoftSkinVertex &)",engine,ArVer,<,709
+0x3312b0,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FSoftSkinVertex &)",engine,ArVer,<,710
+0x3313d0,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FRigidSkinVertex &)",engine,ArVer,<,709
+0x3313d0,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, struct FRigidSkinVertex &)",engine,ArVer,<,710
+0x331740,engine,unskeletalmesh.cpp,public: virtual void __thiscall ASkeletalMeshActor::PostLoad(void),engine,ArVer,<,591
+0x336400,engine,unskeletalmesh.cpp,"public: void __thiscall FGPUSkinVertexBase::Serialize(class FArchive &, class FVector &)",engine,ArVer,<,592
+0x336f30,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMeshComponent::Serialize(class FArchive &),licensee,ArLicenseeVer,<,28
+0x34b080,core,array.h,"class FArchive & __cdecl operator<<(class FArchive &, class TArray<struct TGPUSkinVertexFloat16Uvs32Xyz<1>, class TAlignedHeapAllocator<8>> &)",engine,ArVer,>=,592
+0x34b080,core,array.h,"class FArchive & __cdecl operator<<(class FArchive &, class TArray<struct TGPUSkinVertexFloat16Uvs32Xyz<1>, class TAlignedHeapAllocator<8>> &)",engine,ArVer,>=,592
+0x34b2d0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs32Xyz<2> &)",engine,ArVer,>=,592
+0x34b5b0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs32Xyz<3> &)",engine,ArVer,>=,592
+0x34b870,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs32Xyz<4> &)",engine,ArVer,>=,592
+0x34bab0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs<1> &)",engine,ArVer,>=,592
+0x34bd30,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs<2> &)",engine,ArVer,>=,592
+0x34bfb0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs<3> &)",engine,ArVer,>=,592
+0x34c240,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat16Uvs<4> &)",engine,ArVer,>=,592
+0x34c520,core,array.h,"class FArchive & __cdecl operator<<(class FArchive &, class TArray<struct TGPUSkinVertexFloat32Uvs32Xyz<1>, class TAlignedHeapAllocator<8>> &)",engine,ArVer,>=,592
+0x34c520,core,array.h,"class FArchive & __cdecl operator<<(class FArchive &, class TArray<struct TGPUSkinVertexFloat32Uvs32Xyz<1>, class TAlignedHeapAllocator<8>> &)",engine,ArVer,>=,592
+0x34c7f0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs32Xyz<2> &)",engine,ArVer,>=,592
+0x34ca10,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs32Xyz<3> &)",engine,ArVer,>=,592
+0x34cc60,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs32Xyz<4> &)",engine,ArVer,>=,592
+0x34d000,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs<1> &)",engine,ArVer,>=,592
+0x34d240,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs<2> &)",engine,ArVer,>=,592
+0x34d4c0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs<3> &)",engine,ArVer,>=,592
+0x34d770,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct TGPUSkinVertexFloat32Uvs<4> &)",engine,ArVer,>=,592
+0x34daf0,core,array.h,"class FArchive & __cdecl operator<<(class FArchive &, class TArray<struct FGPUSkinVertexColor, class TAlignedHeapAllocator<8>> &)",engine,ArVer,>=,710
+0x34daf0,core,array.h,"class FArchive & __cdecl operator<<(class FArchive &, class TArray<struct FGPUSkinVertexColor, class TAlignedHeapAllocator<8>> &)",engine,ArVer,>=,710
+0x34e270,engine,unmiscdeclarations.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FRawAnimSequenceTrack &)",engine,ArVer,<,604
+0x358140,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexColorBuffer &)",engine,ArVer,<,710
+0x368be0,engine,unskeletalanim.cpp,public: virtual void __thiscall UAnimSequence::Serialize(class FArchive &),engine,ArVer,>=,577
+0x36a230,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexBuffer &)",engine,ArVer,<,709
+0x36a230,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexBuffer &)",engine,ArVer,>=,493
+0x36a230,engine,unskeletalmesh.cpp,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexBuffer &)",engine,ArVer,>=,592
+0x36b3d0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexInfluences &)",engine,ArVer,>=,609
+0x36b3d0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexInfluences &)",engine,ArVer,>=,700
+0x36b3d0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexInfluences &)",engine,ArVer,>=,708
+0x36b3d0,engine,unskeletalmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, class FSkeletalMeshVertexInfluences &)",engine,ArVer,<,715
+0x372640,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::PostLoad(void),engine,ArVer,<,767
+0x373d70,engine,unskeletalmesh.cpp,"public: void __thiscall FStaticLODModel::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,686
+0x373d70,engine,unskeletalmesh.cpp,"public: void __thiscall FStaticLODModel::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,686
+0x373d70,engine,unskeletalmesh.cpp,"public: void __thiscall FStaticLODModel::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,686
+0x373d70,engine,unskeletalmesh.cpp,"public: void __thiscall FStaticLODModel::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,709
+0x373d70,engine,unskeletalmesh.cpp,"public: void __thiscall FStaticLODModel::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,>=,710
+0x373d70,engine,unskeletalmesh.cpp,"public: void __thiscall FStaticLODModel::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,>=,534
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,>=,759
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,>=,761
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,>=,775
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,>=,601
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,<,609
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,<,694
+0x375220,engine,unskeletalmesh.cpp,public: virtual void __thiscall USkeletalMesh::Serialize(class FArchive &),engine,ArVer,>=,771
+0x37b480,engine,unstaticmesh.cpp,"public: virtual void __thiscall FStaticMeshTriangleBulkData::SerializeElement(class FArchive &, void *, int)",engine,ArVer,<,514
+0x37b480,engine,unstaticmesh.cpp,"public: virtual void __thiscall FStaticMeshTriangleBulkData::SerializeElement(class FArchive &, void *, int)",engine,ArVer,<,707
+0x37b480,engine,unstaticmesh.cpp,"public: virtual void __thiscall FStaticMeshTriangleBulkData::SerializeElement(class FArchive &, void *, int)",engine,ArVer,>=,563
+0x37b480,engine,unstaticmesh.cpp,"public: virtual void __thiscall FStaticMeshTriangleBulkData::SerializeElement(class FArchive &, void *, int)",engine,ArVer,>=,541
+0x38c660,engine,unstaticmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, class FStaticMeshElement &)",engine,ArVer,>=,514
+0x38c660,engine,unstaticmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, class FStaticMeshElement &)",engine,ArVer,<,618
+0x3977c0,engine,unstaticmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FStaticMeshComponentLODInfo &)",engine,ArVer,<,615
+0x3977c0,engine,unstaticmesh.h,"class FArchive & __cdecl operator<<(class FArchive &, struct FStaticMeshComponentLODInfo &)",engine,ArVer,>=,678
+0x3979e0,engine,unstaticmesh.cpp,"public: void __thiscall FStaticMeshRenderData::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,615
+0x3979e0,engine,unstaticmesh.cpp,"public: void __thiscall FStaticMeshRenderData::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,686
+0x3979e0,engine,unstaticmesh.cpp,"public: void __thiscall FStaticMeshRenderData::Serialize(class FArchive &, class UObject *, int)",engine,ArVer,<,686
+0x398bf0,engine,unstaticmesh.cpp,public: virtual void __thiscall UStaticMesh::Serialize(class FArchive &),engine,ArVer,<,593
+0x398bf0,engine,unstaticmesh.cpp,public: virtual void __thiscall UStaticMesh::Serialize(class FArchive &),engine,ArVer,>=,532
+0x398bf0,engine,unstaticmesh.cpp,public: virtual void __thiscall UStaticMesh::Serialize(class FArchive &),engine,ArVer,>=,600
+0x398bf0,engine,unstaticmesh.cpp,public: virtual void __thiscall UStaticMesh::Serialize(class FArchive &),engine,ArVer,>=,771
+0x398dd0,engine,unstaticmesh.cpp,public: virtual void __thiscall UStaticMeshComponent::Serialize(class FArchive &),engine,ArVer,<,600
+0x3bba70,engine,unworld.cpp,public: virtual void __thiscall UWorld::Serialize(class FArchive &),engine,ArVer,>=,575
+0x3bba70,engine,unworld.cpp,public: virtual void __thiscall UWorld::Serialize(class FArchive &),licensee,ArLicenseeVer,<,27
+0x3bba70,engine,unworld.cpp,public: virtual void __thiscall UWorld::Serialize(class FArchive &),engine,ArVer,<,496
+0x432680,engine,materialshader.cpp,public: void __thiscall FMaterialShaderMap::Serialize(class FArchive &),engine,ArVer,>=,656
+0x433770,engine,unuidatastores.cpp,public: virtual void __thiscall UUIDynamicFieldProvider::Serialize(class FArchive &),engine,ArVer,<,503
+0x4970e0,engine,particlemodules_event.cpp,public: virtual void __thiscall UParticleModuleEventReceiverSpawn::PostLoad(void),engine,ArVer,<,635
+0x49bf00,engine,particleinstancedmeshvertexfactory.cpp,public: virtual void __thiscall FParticleInstancedMeshVertexFactoryShaderParameters::Serialize(class FArchive &),engine,ArVer,<,671
+0x4a9e10,engine,particleemitterinstances.cpp,public: virtual void __thiscall FDynamicSpriteEmitterReplayDataBase::Serialize(class FArchive &),engine,ArVer,>=,716
+0x4a9e10,engine,particleemitterinstances.cpp,public: virtual void __thiscall FDynamicSpriteEmitterReplayDataBase::Serialize(class FArchive &),engine,ArVer,<,628
+0x4e56e0,engine,unparticlemodules.cpp,public: virtual void __thiscall UParticleModuleRequired::PostLoad(void),engine,ArVer,<,583
+0x4e5bb0,engine,unparticlemodules.cpp,public: virtual void __thiscall UParticleModuleTypeDataMesh::PostLoad(void),engine,ArVer,<,653
+0x4eb590,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleLODLevel::PostLoad(void),engine,ArVer,<,523
+0x4eb590,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleLODLevel::PostLoad(void),engine,ArVer,<,527
+0x4eb590,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleLODLevel::PostLoad(void),engine,ArVer,<,530
+0x4eb590,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleLODLevel::PostLoad(void),engine,ArVer,<,669
+0x4ec560,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleSystem::PostLoad(void),engine,ArVer,<,204
+0x4ec560,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleSystem::PostLoad(void),engine,ArVer,<,632
+0x4ec560,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleSystem::PostLoad(void),engine,ArVer,<,570
+0x4ec560,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleSystem::PostLoad(void),engine,ArVer,<,573
+0x4ec560,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleSystem::PostLoad(void),engine,ArVer,<,630
+0x4f10f0,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleEmitter::PostLoad(void),engine,ArVer,<,524
+0x4f10f0,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleEmitter::PostLoad(void),engine,ArVer,<,525
+0x4f10f0,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleEmitter::PostLoad(void),engine,ArVer,<,547
+0x4f10f0,engine,unparticlecomponents.cpp,public: virtual void __thiscall UParticleEmitter::PostLoad(void),engine,ArVer,<,626
+0x4fd0b0,engine,lensflare.cpp,public: virtual void __thiscall ULensFlare::PostLoad(void),engine,ArVer,<,571
+0x50fd30,engine,foliagefactory.cpp,public: virtual void __thiscall AFoliageFactory::PostLoad(void),engine,ArVer,<,548
+0x50fd30,engine,foliagefactory.cpp,public: virtual void __thiscall AFoliageFactory::PostLoad(void),engine,ArVer,<,600
+0x527230,engine,fluidsurfacecomponent.cpp,public: virtual void __thiscall UFluidSurfaceComponent::Serialize(class FArchive &),engine,ArVer,>=,546
+0x53ac00,engine,speedtree.cpp,public: virtual void __thiscall USpeedTree::Serialize(class FArchive &),engine,ArVer,<,600
+0x53dab0,engine,speedtreecomponent.cpp,public: virtual void __thiscall USpeedTreeComponent::Serialize(class FArchive &),engine,ArVer,<,643
+0x646c00,dishonoredgame,dishonoredbreakable.cpp,public: virtual void __thiscall UDisTweaks_StaticBreakable::Serialize(class FArchive &),licensee,ArLicenseeVer,<,24
+0x669cd0,dishonoredgame,disskeletalbreakable.cpp,public: virtual void __thiscall UDisTweaks_SkeletalBreakable::Serialize(class FArchive &),licensee,ArLicenseeVer,<,24
+0x671590,dishonoredgame,dishonoredusableobject.cpp,public: virtual void __thiscall UDisTweaks_UsableObject::Serialize(class FArchive &),licensee,ArLicenseeVer,<,24
+0x671590,dishonoredgame,dishonoredusableobject.cpp,public: virtual void __thiscall UDisTweaks_UsableObject::Serialize(class FArchive &),licensee,ArLicenseeVer,<,29
+0x8f0d30,dishonoredgame,distweaks_attributes.cpp,public: virtual void __thiscall UDisTweaks_Attributes::Serialize(class FArchive &),licensee,ArLicenseeVer,<,25

@@ -22,10 +22,16 @@
       "name": "x86-release",
       "inherits": "x86-base",
       "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "x86-shipping",
+      "inherits": "x86-base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "DISHONORED_SHIPPING": "ON" }
     }
   ],
   "buildPresets": [
     { "name": "x86-debug", "configurePreset": "x86-debug" },
-    { "name": "x86-release", "configurePreset": "x86-release" }
+    { "name": "x86-release", "configurePreset": "x86-release" },
+    { "name": "x86-shipping", "configurePreset": "x86-shipping" }
   ]
 }

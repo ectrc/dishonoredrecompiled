@@ -1,0 +1,13 @@
+// DishonoredGame/src/dishonorednote.cpp
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (9):
+//   0x691730  public: static void __cdecl ADishonoredNote::InitializePrivateStaticClassADishonoredNote(void)
+//   0x691750  public: void __thiscall ADishonoredNote::ShowNoteForCheat(unsigned int)
+//   0x694260  public: virtual void __thiscall ADishonoredNote::NativePostRenderFor(class APlayerController *, class UCanvas *, class FVector, class FVector)
+//   0x697970  public: void __thiscall ADishonoredNote::AddForPostRender(unsigned int, class AActor const *, class FSceneView *)
+//   0x697a40  public: void __thiscall ADishonoredNote::RemoveForPostRender(void)
+//   0x697ae0  public: virtual void __thiscall ADishonoredNote::BeginDestroy(void)
+//   0x697b00  public: virtual void __thiscall ADishonoredNote::ClearComponents(void)
+//   0x6a4d50  public: static class UClass * __cdecl ADishonoredNote::GetPrivateStaticClassADishonoredNote(wchar_t const *)
+//   0x6a6d30  public: static class UClass * __cdecl ADishonoredNote::StaticClassNoInline(void)

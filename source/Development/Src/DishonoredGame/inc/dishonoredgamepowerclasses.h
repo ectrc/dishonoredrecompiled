@@ -1,0 +1,33 @@
+#pragma once
+// DishonoredGame/inc/dishonoredgamepowerclasses.h
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (28):
+//   0x6b4030  protected: virtual __thiscall UStatePlayerMasterPossess_Base::~UStatePlayerMasterPossess_Base(void)
+//   0x6b88f0  protected: virtual __thiscall UStatePlayerMasterPossess::~UStatePlayerMasterPossess(void)
+//   0x6b8990  protected: virtual __thiscall UStatePlayerMasterPrePossess::~UStatePlayerMasterPrePossess(void)
+//   0x6bec00  public: static void __cdecl UStatePlayerMasterPossess_Base::InternalConstructor(void *)
+//   0x6bec30  public: static void __cdecl UStatePlayerMasterPossess::InternalConstructor(void *)
+//   0x6bec60  public: static void __cdecl UStatePlayerMasterPrePossess::InternalConstructor(void *)
+//   0x825290  protected: virtual __thiscall UDishonoredActivePowerComponent::~UDishonoredActivePowerComponent(void)
+//   0x8290e0  protected: virtual __thiscall UDishonoredActivePowerComponent_BendTime::~UDishonoredActivePowerComponent_BendTime(void)
+//   0x830780  public: static void __cdecl UDishonoredActivePowerComponent::InternalConstructor(void *)
+//   0x8307b0  public: static void __cdecl UDishonoredActivePowerComponent_BendTime::InternalConstructor(void *)
+//   0x835f90  protected: virtual __thiscall UDisActivePowerComponent_DarkVision::~UDisActivePowerComponent_DarkVision(void)
+//   0x839630  public: static void __cdecl UDisActivePowerComponent_DarkVision::InternalConstructor(void *)
+//   0x839670  protected: virtual __thiscall UDishonoredActivePowerComponent_Blink::~UDishonoredActivePowerComponent_Blink(void)
+//   0x83cbd0  public: static void __cdecl UDishonoredActivePowerComponent_Blink::InternalConstructor(void *)
+//   0x83f950  protected: virtual __thiscall UDisTweaks_DarkVision::~UDisTweaks_DarkVision(void)
+//   0x840430  public: static void __cdecl UDisTweaks_DarkVision::InternalConstructor(void *)
+//   0x848f00  protected: virtual __thiscall UDisDarkVisionMeshRenderPpController::~UDisDarkVisionMeshRenderPpController(void)
+//   0x84a500  public: static void __cdecl UDisDarkVisionMeshRenderPpController::InternalConstructor(void *)
+//   0x84ef40  protected: virtual __thiscall UDisDarkVisionPpController::~UDisDarkVisionPpController(void)
+//   0x84efe0  protected: virtual __thiscall UDishonoredActivePowerComponent_DevouringSwarm::~UDishonoredActivePowerComponent_DevouringSwarm(void)
+//   0x84f080  protected: virtual __thiscall UDishonoredActivePowerComponent_Possess::~UDishonoredActivePowerComponent_Possess(void)
+//   0x855160  public: static void __cdecl UDisDarkVisionPpController::InternalConstructor(void *)
+//   0x855180  public: static void __cdecl UDishonoredActivePowerComponent_DevouringSwarm::InternalConstructor(void *)
+//   0x8551b0  public: static void __cdecl UDishonoredActivePowerComponent_Possess::InternalConstructor(void *)
+//   0x856e20  protected: virtual __thiscall UDishonoredActivePowerComponent_WindBlast::~UDishonoredActivePowerComponent_WindBlast(void)
+//   0x8588a0  public: static void __cdecl UDishonoredActivePowerComponent_WindBlast::InternalConstructor(void *)
+//   0x8e6c60  protected: virtual __thiscall ADisPossessionVolume::~ADisPossessionVolume(void)
+//   0x8e9180  public: static void __cdecl ADisPossessionVolume::InternalConstructor(void *)

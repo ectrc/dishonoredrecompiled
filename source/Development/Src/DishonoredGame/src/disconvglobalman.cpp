@@ -1,0 +1,36 @@
+// DishonoredGame/src/disconvglobalman.cpp
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (32):
+//   0x8d9a00  public: static void __cdecl UDisConvGlobalMan::InitializePrivateStaticClassUDisConvGlobalMan(void)
+//   0x8d9a20  private: virtual class UDisTweaksBase * __thiscall UDisConvGlobalMan::GetTweaks_Derived(void)
+//   0x8d9a30  private: void __thiscall FDisSubtitlesInfo::OnSecondarySubtitleChanged(struct FDisSubtitle *)
+//   0x8dacb0  private: virtual void __thiscall UDisConvGlobalMan::SetTweaks_Derived(class UDisTweaksBase *)
+//   0x8df3c0  private: int __thiscall FDisSubtitlesInfo::findMainSubtitleIndex(class UDisConversationComponent const *)const
+//   0x8df430  private: int __thiscall FDisSubtitlesInfo::findSecondarySubtitleIndex(class UDisConversationComponent const *)const
+//   0x8e5a00  public: static float __cdecl UDisConvGlobalMan::GetShortestAudibleDistForSpeaker(class IDisConvSpeakerInterface const *, float)
+//   0x8ec930  public: void __thiscall UDisConvGlobalMan::OnSpeakerDestroyed(class IDisConvSpeakerInterface *)
+//   0x8ecaa0  public: void __thiscall FDisSubtitlesInfo::AddSubtitle(class UDisConversationComponent *, struct TMemStackArray<struct FDisAkCompAndPlayingID> const &, wchar_t const *, float, unsigned int)
+//   0x8ecd00  public: void __thiscall FDisSubtitlesInfo::KillSubtitle(class UDisConversationComponent const *)
+//   0x8ecd80  public: void __thiscall FDisSubtitlesInfo::Tick(float, class UDisConversation_InGameData const *, enum eDisDialogHook)
+//   0x8ee950  public: static class UClass * __cdecl UDisTweaks_ConvSettings::GetPrivateStaticClassUDisTweaks_ConvSettings(wchar_t const *)
+//   0x8ee9e0  public: void __thiscall UDisConvGlobalMan::OnActorTerminated_ConvGlobalMan(class AActor const &)
+//   0x8eebe0  public: void __thiscall UDisConvGlobalMan::OnSpeakerStartedTalking(class UDisConversationComponent *, struct TMemStackArray<struct FDisAkCompAndPlayingID> const &, wchar_t const *, float, unsigned int)
+//   0x8ef900  public: static void __cdecl UDisTweaks_ConvSettings::InitializePrivateStaticClassUDisTweaks_ConvSettings(void)
+//   0x8ef920  public: void __thiscall UDisConvGlobalMan::Term_GlobalConv(void)
+//   0x8ef980  public: virtual void __thiscall UDisConvGlobalMan::GameSave(class FArchive &, enum ESaveLoadLocation)
+//   0x8efa90  public: virtual void __thiscall UDisConvGlobalMan::GameLoad(class FArchive &, enum ESaveLoadLocation)
+//   0x8efc60  struct FDisRandomBranchEntry * __cdecl GetGlobalConvNodeInfo<struct FDisConvRandomBranchInfo, struct FDisRandomBranchEntry>(class UDisDialogTree const *, class UDisConversation const *, int, class TArrayNoInit<struct FDisConvRandomBranchInfo> &)
+//   0x8f0880  public: static class UClass * __cdecl UDisTweaks_ConvSettings::StaticClassNoInline(void)
+//   0x8f08b0  public: struct FDisRandomBranchEntry * __thiscall UDisConvGlobalMan::GetConvRandomBranchInfo(class UDisDialogTree const *, class UDisConversation const *, int)
+//   0x8f08d0  public: struct FDisSeqBranchEntry * __thiscall UDisConvGlobalMan::GetCurSeqBranchInfo(class UDisDialogTree const *, class UDisConversation const *, int)
+//   0x8f1da0  struct FDisRandomSeqBranchEntry * __cdecl GetGlobalConvNodeInfo<struct FDisConvRandomSeqBranchInfo, struct FDisRandomSeqBranchEntry>(class UDisDialogTree const *, class UDisConversation const *, int, class TArrayNoInit<struct FDisConvRandomSeqBranchInfo> &)
+//   0x8f2610  public: void __thiscall UDisConvGlobalMan::InitGlobalConvMan(void)
+//   0x8f2810  public: struct FDisRandomSeqBranchEntry * __thiscall UDisConvGlobalMan::GetCurRandomSeqBranchInfo(class UDisDialogTree const *, class UDisConversation const *, int)
+//   0x8f2830  public: void __thiscall UDisConvGlobalMan::QueueFireDialogHook(enum eDisDialogHook, int, class UDisConversationComponent *, class IDisConvSpeakerInterface *)
+//   0x8f2a00  void __cdecl CalcPendingWeights(class UDisConvGlobalMan *, struct FDisQueuedFireDialogHookGroup &, enum eDisQueuedFiringGroupType, class TArrayNoInit<struct FDisQueuedFireDialogHook> &, class TArray<struct FDisHookWeight, class FDefaultAllocator> &)
+//   0x8f2d60  private: void __thiscall UDisConvGlobalMan::ManageGlobalDialogHooks(float)
+//   0x8f38c0  private: void __thiscall UDisConvGlobalMan::DuckNonDominantAudio(float)
+//   0x8f5610  public: void __thiscall UDisConvGlobalMan::TickGlobalConvMan(float)
+//   0x8f8320  public: static class UClass * __cdecl UDisConvGlobalMan::GetPrivateStaticClassUDisConvGlobalMan(wchar_t const *)
+//   0x8f8430  public: static class UClass * __cdecl UDisConvGlobalMan::StaticClassNoInline(void)

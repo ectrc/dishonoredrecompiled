@@ -1,0 +1,17 @@
+// DishonoredGame/src/disgfxmovieplayermissionstats.cpp
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (13):
+//   0x7f4b80  protected: static wchar_t const * __cdecl UDisGFxMoviePlayerMissionStats::GetPickupImageName(struct FDisMissionStat const &)
+//   0x801350  public: virtual void __thiscall UDisGFxMoviePlayerMissionStats::OnReplayMissionClicked(void)
+//   0x801390  public: virtual void __thiscall UDisGFxMoviePlayerMissionStats::OnClosed(void)
+//   0x818300  public: static class UClass * __cdecl UDisTweaks_GFxMoviePlayerMissionStats::GetPrivateStaticClassUDisTweaks_GFxMoviePlayerMissionStats(wchar_t const *)
+//   0x81adf0  public: static void __cdecl UDisTweaks_GFxMoviePlayerMissionStats::InitializePrivateStaticClassUDisTweaks_GFxMoviePlayerMissionStats(void)
+//   0x81c380  public: static class UClass * __cdecl UDisTweaks_GFxMoviePlayerMissionStats::StaticClassNoInline(void)
+//   0x81dd10  public: unsigned int __thiscall UDisGFxMoviePlayerMissionStats::ShowMissionStatsAsync(class UDisTweaks_MissionStats const *, unsigned int)
+//   0x820540  public: static class UClass * __cdecl UDisGFxMoviePlayerMissionStats::GetPrivateStaticClassUDisGFxMoviePlayerMissionStats(wchar_t const *)
+//   0x8205d0  protected: void __thiscall UDisGFxMoviePlayerMissionStats::CreateGFxStat(struct FDisMissionSummaryItem const *, class GFxValue *)
+//   0x820870  protected: void __thiscall UDisGFxMoviePlayerMissionStats::CreateGFxStat(struct FDisMissionStat const &, int, int, class GFxValue *)
+//   0x821090  public: static void __cdecl UDisGFxMoviePlayerMissionStats::InitializePrivateStaticClassUDisGFxMoviePlayerMissionStats(void)
+//   0x8210b0  protected: virtual void __thiscall UDisGFxMoviePlayerMissionStats::PostFirstAdvance(void)
+//   0x8227f0  public: static class UClass * __cdecl UDisGFxMoviePlayerMissionStats::StaticClassNoInline(void)

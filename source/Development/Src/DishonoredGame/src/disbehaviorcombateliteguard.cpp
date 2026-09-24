@@ -1,0 +1,29 @@
+// DishonoredGame/src/disbehaviorcombateliteguard.cpp
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (25):
+//   0x745a80  private: virtual unsigned int __thiscall UDisBehaviorCombatEliteGuard::FilterReachabilityChange(struct FAIStimStruct_ReachabilityChange const &)
+//   0x745aa0  public: virtual unsigned int __thiscall UDisBehaviorCombatEliteGuard::IsWillingToStartRangedAction(void)const
+//   0x745ab0  public: virtual unsigned int __thiscall UDisBehaviorCombatEliteGuard::IsWillingToContinueRangedAction(void)const
+//   0x745ac0  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::OnEnterCallback_FirePistol(class UDishonoredNativeState *, class UDishonoredNativeState *)
+//   0x7492b0  private: virtual unsigned int __thiscall UDisBehaviorCombatEliteGuard::FilterEvadedMelee_Incoming(struct FAIStimStruct_EvadedMelee_Incoming const &)
+//   0x74cf20  private: virtual unsigned char const * __thiscall UDisBehaviorCombatEliteGuard::BuildBehaviorFilterStimMasks(unsigned char const * &, unsigned char const * &)const
+//   0x74cf90  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::TickBehavior(float)
+//   0x74d220  public: virtual unsigned int __thiscall UDisBehaviorCombatEliteGuard::ConfirmAllyAndNeutralSafety(void)const
+//   0x751d30  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::InitBehavior(class UDishonoredAIBrain * const)
+//   0x757270  public: static class UClass * __cdecl UDisBehaviorCombatEliteGuard::GetPrivateStaticClassUDisBehaviorCombatEliteGuard(wchar_t const *)
+//   0x75b0c0  public: static void __cdecl UDisBehaviorCombatEliteGuard::InitializePrivateStaticClassUDisBehaviorCombatEliteGuard(void)
+//   0x75b0e0  public: static class UClass * __cdecl UDisTweaks_AIBehavior_CombatEliteGuard::GetPrivateStaticClassUDisTweaks_AIBehavior_CombatEliteGuard(wchar_t const *)
+//   0x75bd20  public: static class UClass * __cdecl UDisBehaviorCombatEliteGuard::StaticClassNoInline(void)
+//   0x75d820  public: static void __cdecl UDisTweaks_AIBehavior_CombatEliteGuard::InitializePrivateStaticClassUDisTweaks_AIBehavior_CombatEliteGuard(void)
+//   0x75d840  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::OnBehaviorResume(void)
+//   0x75fc00  public: static class UClass * __cdecl UDisTweaks_AIBehavior_CombatEliteGuard::StaticClassNoInline(void)
+//   0x7629a0  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::OnBehaviorStart(void)
+//   0x762ac0  private: virtual unsigned int __thiscall UDisBehaviorCombatEliteGuard::FilterCombatEngageRejected(struct FAIStimStruct_CombatEngageRejected const &)
+//   0x762b70  private: unsigned int __thiscall UDisBehaviorCombatEliteGuard::AbleToUseGun(void)const
+//   0x762c80  protected: void __thiscall UDisBehaviorCombatEliteGuard::EnsureFirePistolSubState(void)
+//   0x762cc0  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::RequestStateExitCallback_FirePistol(class UDishonoredNativeState *)
+//   0x762d60  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::RefreshCallback_Stand(class UDisAISubState *, float)
+//   0x762dc0  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::RefreshCallback_FindShootingPosition(class UDisAISubState *, float)
+//   0x762e10  public: virtual void __thiscall UDisBehaviorCombatEliteGuard::RequestStateExitCallback_FindShootingPosition(class UDishonoredNativeState *)
+//   0x763b00  protected: virtual void __thiscall UDisBehaviorCombatEliteGuard::EnsureProperSubState(class UDisAISubState *)

@@ -17,8 +17,16 @@ add_compile_options(/W4 /permissive- /Zc:__cplusplus /fp:precise /EHsc /utf-8 /M
 add_compile_definitions(WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
 
 include(cmake/Dependencies.cmake)
+include(cmake/DishonoredDefines.cmake)
+include(cmake/DishonoredModule.cmake)
 
 set(DISHONORED_BINARIES_DIR "${CMAKE_BINARY_DIR}/Binaries/Win32")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${DISHONORED_BINARIES_DIR}")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(DISHONORED_MODULE_LIST "" CACHE INTERNAL "modules declared so far, in order" FORCE)
+
+# Engine modules in dependency order (PLAN.md Phase 3). Each one is added when it compiles.
+dishonored_module(Core)
+target_link_libraries(Core PUBLIC Dishonored::zlib)
 
 add_subdirectory(source/Development/Src/Launch)

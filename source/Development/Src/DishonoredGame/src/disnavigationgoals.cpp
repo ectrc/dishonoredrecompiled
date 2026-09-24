@@ -1,0 +1,28 @@
+// DishonoredGame/src/disnavigationgoals.cpp
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (24):
+//   0x915090  public: static void __cdecl UDisNavMeshGoal_SafeFromThreat::InitializePrivateStaticClassUDisNavMeshGoal_SafeFromThreat(void)
+//   0x9150b0  public: virtual void __thiscall UDisNavMeshGoal_SafeFromThreat::SaveResultingPath(struct FNavMeshPolyBase *, struct FNavMeshPolyBase *, class UNavigationHandle *, struct FPathStore *)
+//   0x9150f0  public: static void __cdecl UDisNavMeshGoal_WithinDistanceEnvelopeFrom::InitializePrivateStaticClassUDisNavMeshGoal_WithinDistanceEnvelopeFrom(void)
+//   0x915110  public: virtual unsigned int __thiscall UDisNavMeshGoal_SafeFromThreat::DetermineFinalGoal(struct FNavMeshPolyBase * &, class AActor * *, int *)
+//   0x915120  public: static void __cdecl UDisNavMeshGoal_BestFleePoint::InitializePrivateStaticClassUDisNavMeshGoal_BestFleePoint(void)
+//   0x915140  public: virtual void __thiscall UDisNavMeshGoal_BestFleePoint::RecycleInternal(void)
+//   0x915170  public: static void __cdecl UDisNavMeshGoal_MinDistanceFromLocation::InitializePrivateStaticClassUDisNavMeshGoal_MinDistanceFromLocation(void)
+//   0x915190  public: virtual unsigned int __thiscall UDisNavMeshGoal_MinDistanceFromLocation::InitializeSearch(class UNavigationHandle *, struct FNavMeshPathParams const &)
+//   0x915210  public: virtual void __thiscall UDisNavMeshGoal_SafeFromThreat::NotifyExceededMaxPathVisits(struct FNavMeshPolyBase *, struct FNavMeshPolyBase * &)
+//   0x915240  public: static class UClass * __cdecl UDisNavMeshGoal_MinDistanceFromLocation::GetPrivateStaticClassUDisNavMeshGoal_MinDistanceFromLocation(wchar_t const *)
+//   0x9152d0  public: unsigned int __thiscall UDisNavMeshGoal_SafeFromThreat::CheckLos(class FVector, class FVector, class AActor *, unsigned int)
+//   0x9154a0  public: virtual unsigned int __thiscall UDisNavMeshGoal_WithinDistanceEnvelopeFrom::EvaluateGoal(struct FNavMeshPolyBase *, struct FNavMeshPathParams const &, struct FNavMeshPolyBase * &)
+//   0x915560  public: static class UClass * __cdecl UDisNavMeshGoal_MinDistanceFromLocation::StaticClassNoInline(void)
+//   0x915590  public: virtual unsigned int __thiscall UDisNavMeshGoal_MinDistanceFromLocation::EvaluateGoal(struct FNavMeshPolyBase *, struct FNavMeshPathParams const &, struct FNavMeshPolyBase * &)
+//   0x915a10  public: virtual unsigned int __thiscall UDisNavMeshGoal_SafeFromThreat::EvaluateGoal(struct FNavMeshPolyBase *, struct FNavMeshPathParams const &, struct FNavMeshPolyBase * &)
+//   0x915d30  public: virtual unsigned int __thiscall UDisNavMeshGoal_WithinDistanceEnvelopeFrom::InitializeSearch(class UNavigationHandle *, struct FNavMeshPathParams const &)
+//   0x916440  public: static class UClass * __cdecl UDisNavMeshGoal_SafeFromThreat::GetPrivateStaticClassUDisNavMeshGoal_SafeFromThreat(wchar_t const *)
+//   0x9164d0  public: static class UClass * __cdecl UDisNavMeshGoal_WithinDistanceEnvelopeFrom::GetPrivateStaticClassUDisNavMeshGoal_WithinDistanceEnvelopeFrom(wchar_t const *)
+//   0x9165f0  public: static class UClass * __cdecl UDisNavMeshGoal_SafeFromThreat::StaticClassNoInline(void)
+//   0x916620  public: static class UClass * __cdecl UDisNavMeshGoal_WithinDistanceEnvelopeFrom::StaticClassNoInline(void)
+//   0x916680  public: virtual unsigned int __thiscall UDisNavMeshGoal_SafeFromThreat::InitializeSearch(class UNavigationHandle *, struct FNavMeshPathParams const &)
+//   0x916980  public: virtual unsigned int __thiscall UDisNavMeshGoal_BestFleePoint::SeedWorkingSet(struct FNavMeshPolyBase * &, struct FNavMeshPolyBase *, unsigned long, class UNavigationHandle *, struct FNavMeshPathParams const &)
+//   0x916c80  public: static class UClass * __cdecl UDisNavMeshGoal_BestFleePoint::GetPrivateStaticClassUDisNavMeshGoal_BestFleePoint(wchar_t const *)
+//   0x916d10  public: static class UClass * __cdecl UDisNavMeshGoal_BestFleePoint::StaticClassNoInline(void)

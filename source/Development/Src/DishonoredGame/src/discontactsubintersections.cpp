@@ -1,0 +1,28 @@
+// DishonoredGame/src/discontactsubintersections.cpp
+// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
+// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// PDB functions attributed to this file (24):
+//   0x823270  public: static void __cdecl UDisContactSubIntersection::InitializePrivateStaticClassUDisContactSubIntersection(void)
+//   0x82b7f0  public: virtual void __thiscall UDisContactSub_SoundCue::ApplyContact(class AActor *, class UClass *, class UClass *, struct FImpactInfo &, class FVector const *, class UDisItemContext *)
+//   0x82b8a0  protected: void __thiscall UDisContactSub_Rumble::DoRumble(class AActor *, class AActor *, struct FDisRumbleSetting &)
+//   0x82b900  public: virtual void __thiscall UDisContactSub_CameraShake::ApplyContact(class AActor *, class UClass *, class UClass *, struct FImpactInfo &, class FVector const *, class UDisItemContext *)
+//   0x831a80  public: virtual void __thiscall UDisContactSub_Rumble::ApplyContact(class AActor *, class UClass *, class UClass *, struct FImpactInfo &, class FVector const *, class UDisItemContext *)
+//   0x831b20  public: virtual void __thiscall UDisContactSub_Decal::ApplyContact(class AActor *, class UClass *, class UClass *, struct FImpactInfo &, class FVector const *, class UDisItemContext *)
+//   0x8376f0  public: static class UClass * __cdecl UDisContactSubIntersection::GetPrivateStaticClassUDisContactSubIntersection(wchar_t const *)
+//   0x837780  public: static class UClass * __cdecl UDisContactSub_SoundCue::GetPrivateStaticClassUDisContactSub_SoundCue(wchar_t const *)
+//   0x837810  public: static class UClass * __cdecl UDisContactSub_AINoise::GetPrivateStaticClassUDisContactSub_AINoise(wchar_t const *)
+//   0x8378a0  public: static class UClass * __cdecl UDisContactSub_Rumble::GetPrivateStaticClassUDisContactSub_Rumble(wchar_t const *)
+//   0x837930  public: static class UClass * __cdecl UDisContactSub_CameraShake::GetPrivateStaticClassUDisContactSub_CameraShake(wchar_t const *)
+//   0x8379c0  public: virtual void __thiscall UDisContactSub_AINoise::ApplyContact(class AActor *, class UClass *, class UClass *, struct FImpactInfo &, class FVector const *, class UDisItemContext *)
+//   0x839ba0  public: static class UClass * __cdecl UDisContactSubIntersection::StaticClassNoInline(void)
+//   0x839bd0  public: static void __cdecl UDisContactSub_SoundCue::InitializePrivateStaticClassUDisContactSub_SoundCue(void)
+//   0x839bf0  public: static void __cdecl UDisContactSub_AINoise::InitializePrivateStaticClassUDisContactSub_AINoise(void)
+//   0x839c10  public: static void __cdecl UDisContactSub_Rumble::InitializePrivateStaticClassUDisContactSub_Rumble(void)
+//   0x839c30  public: static void __cdecl UDisContactSub_Decal::InitializePrivateStaticClassUDisContactSub_Decal(void)
+//   0x839c50  public: static void __cdecl UDisContactSub_CameraShake::InitializePrivateStaticClassUDisContactSub_CameraShake(void)
+//   0x83cef0  public: static class UClass * __cdecl UDisContactSub_SoundCue::StaticClassNoInline(void)
+//   0x83cf20  public: static class UClass * __cdecl UDisContactSub_AINoise::StaticClassNoInline(void)
+//   0x83cf50  public: static class UClass * __cdecl UDisContactSub_Rumble::StaticClassNoInline(void)
+//   0x83cf80  public: static class UClass * __cdecl UDisContactSub_CameraShake::StaticClassNoInline(void)
+//   0x83ea60  public: static class UClass * __cdecl UDisContactSub_Decal::GetPrivateStaticClassUDisContactSub_Decal(wchar_t const *)
+//   0x83fd20  public: static class UClass * __cdecl UDisContactSub_Decal::StaticClassNoInline(void)
