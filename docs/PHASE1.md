@@ -52,6 +52,10 @@ Acceptance rules are re-checked by `python tools/symbols/verify_phase1.py` (exit
 
 ## Follow-ups handed to later phases
 
-- Phase 2: generate the `static_assert` layout header from `docs/types/sizes.csv` / `types.json`.
+- Phase 2: import the reference engine source (`../UnrealEngine3`, build 10897, see
+  `docs/engine_reference.md`) module by module; `tools/symbols/xref_reference.py` for per-function
+  reference status.
+- Phase 2: generate the `static_assert` layout header from `docs/types/sizes.csv` / `types.json`
+  and diff it against the reference headers.
 - Phase 4: decide Scaleform (10.4 %) and Wwise (~4 %) strategy before GFxUI / AkAudio work.
 - Phase 7: name propagation into the 2013 database; `docs/types/xcheck_sdk.md` lists the first known layout deltas.
