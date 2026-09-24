@@ -16,7 +16,9 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 add_compile_options(/W4 /permissive- /Zc:__cplusplus /fp:precise /EHsc /utf-8 /MP)
 add_compile_definitions(WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
 
+include(cmake/Dependencies.cmake)
+
 set(DISHONORED_BINARIES_DIR "${CMAKE_BINARY_DIR}/Binaries/Win32")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${DISHONORED_BINARIES_DIR}")
 
-add_subdirectory(Development/Src/Launch)
+add_subdirectory(source/Development/Src/Launch)

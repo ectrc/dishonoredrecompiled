@@ -50,9 +50,9 @@ Release / Shipping / Shipping-DC / ArkProfile configs with GUID-matching PDBs (n
 config). Build 9014, changelist 254295, 2012-06-20, branch `//dishonored/UnrealEngine3QATest`,
 original source root `V:\dishonored\UnrealEngine3QATest\Development\Src\`. Win64 exes without
 PDBs. `CookedPCConsole` 9.6 GB, seven languages, no DLC. Only the ArkProfile exe writes a
-`Launch.log`; it reaches the main menu with `-seekfreeloadingpcconsole` (`docs/golden/`).
+`Launch.log`; it reaches the main menu with `-seekfreeloadingpcconsole` (`resources/docs/golden/`).
 
-Shipping exe measured in Phase 1 (`docs/module_map.md`): 66,394 functions, 11.4 MB of code.
+Shipping exe measured in Phase 1 (`resources/docs/module_map.md`): 66,394 functions, 11.4 MB of code.
 
 | Runtime modules (linked into Shipping) | Not in Shipping |
 |---|---|
@@ -63,7 +63,7 @@ Static libraries inside the exe: Scaleform `libgfx` (10.4 %), Wwise `ak*` (~4 %)
 
 ### 2.3 `D:\RecompileDishonored\UnrealEngine3\` — reference engine source (build 10897)
 
-See `docs/engine_reference.md` for the full comparison. Key numbers: 651 of the 1,884 Shipping
+See `resources/docs/engine_reference.md` for the full comparison. Key numbers: 651 of the 1,884 Shipping
 PDB source files exist in the reference (Core 112/118, Engine 467/577, D3D9Drv/IpDrv/WinDrv/Launch
 complete); 66 % of Core and 41 % of Engine functions have a same-named definition. It ships
 PhysX 2.8 (Novodex) headers, DirectX9, libpng, libogg, nvtt, zlib. It does **not** ship
@@ -77,8 +77,8 @@ Scaleform, Wwise, FaceFX, Bink or Steamworks SDKs, nor anything of Arkane's.
 
 ### 2.5 Toolchain
 
-VS 2022 (MSVC 19.44), CMake 4.4, ninja, vcpkg, Python 3.13 + comtypes (DIA SDK), IDA 9.1 with
-idalib (`idapro` module) and the IDA MCP, git. `docs/toolchain.md`.
+VS 2022 (MSVC 19.44), CMake 4.4, ninja, FetchContent, Python 3.13 + comtypes (DIA SDK), IDA 9.1 with
+idalib (`idapro` module) and the IDA MCP, git. `resources/docs/toolchain.md`.
 
 ## 3. Strategy
 
@@ -87,15 +87,15 @@ idalib (`idapro` module) and the IDA MCP, git. `docs/toolchain.md`.
 1. **Reference first.** Every engine module starts as a copy of the 10897 source, trimmed to
    what Shipping links. The first milestone is that this code *compiles and links* under MSVC
    2022 with our CMake build. That is compile-fixing, not writing.
-2. **Converge by PDB.** For every function in `docs/symbols/functions.csv`:
+2. **Converge by PDB.** For every function in `resources/docs/symbols/functions.csv`:
    * same-named definition in the reference → diff its Hex-Rays decompile against the
      reference source; port the difference (Arkane change or Epic drift between 9014 and 10897)
      only when it affects behavior, data layout or serialization.
    * no definition → write it from the decompile into the module.
    The per-function status (`reference`, `ported`, `written`, `stubbed`, `verified`) lives in
-   `docs/progress.md`.
+   `resources/docs/progress.md`.
 3. **Layout and serialization are the contract, and the reference makes them checkable.**
-   `docs/types/sizes.csv` (PDB) vs the reference headers gives the exact list of classes whose
+   `resources/docs/types/sizes.csv` (PDB) vs the reference headers gives the exact list of classes whose
    layout Arkane changed. `static_assert`s generated from the PDB guard every native class.
    Package version constants (`UnObjVer.cpp`) are pinned to Dishonored's cooked packages, not
    10897's; `Serialize()` overrides are diffed function-by-function because that is where
@@ -105,7 +105,7 @@ idalib (`idapro` module) and the IDA MCP, git. `docs/toolchain.md`.
    `.uc` (readable); the native side is decompile-guided rewriting, in dependency order inside
    the module.
 5. **Prefer existing code over decompiling** for middleware: PhysX 2.8 headers (reference
-   tree), DirectX SDK, libpng/zlib/libogg/libvorbis/LZO (vcpkg), Steamworks SDK. Scaleform,
+   tree), DirectX SDK, libpng/zlib/libogg/libvorbis/LZO (FetchContent), Steamworks SDK. Scaleform,
    Wwise and FaceFX have no source; Phase 4 decides per library between rewrite-from-decompile,
    hybrid-link during bring-up, or subset reimplementation.
 6. **Modern toolchain from day one.** MSVC 2022, `/std:c++17`, `/fp:precise`, Win32 x86 for
@@ -119,43 +119,43 @@ every stage; a compiling Core+Engine from the reference is immediately a typed S
 
 ### Phase 0 — Project setup — DONE 2026-09-24
 
-Repo, `.gitignore`, `docs/binaries.md`, toolchain, CMake x86 preset (`run-vcvars.cmd`), golden
-logs. Tracker: `docs/PHASE1.md`.
+Repo, `.gitignore`, `resources/docs/binaries.md`, toolchain, CMake x86 preset (`resources/run-vcvars.cmd`), golden
+logs. Tracker: `resources/docs/PHASE1.md`.
 
 ### Phase 1 — Symbol and type database — DONE 2026-09-25
 
-`docs/symbols/` (functions with file/line/module, globals, imports, natives with GNatives
-indices, hardcoded FNames, vtables), `docs/types/` (sizes, layouts, header), `docs/module_map.md`.
-Regeneration: `docs/symbols/README.md`. Exit check: `tools/symbols/verify_phase1.py`.
+`resources/docs/symbols/` (functions with file/line/module, globals, imports, natives with GNatives
+indices, hardcoded FNames, vtables), `resources/docs/types/` (sizes, layouts, header), `resources/docs/module_map.md`.
+Regeneration: `resources/docs/symbols/README.md`. Exit check: `resources/tools/symbols/verify_phase1.py`.
 
 ### Phase 2 — Reference import and layout convergence (2–4 weeks)
 
-- [ ] `tools/symbols/xref_reference.py`: for each PDB function, look up a same-named definition
+- [ ] `resources/tools/symbols/xref_reference.py`: for each PDB function, look up a same-named definition
       in the reference; for each PDB source file, whether it exists there. Writes
-      `docs/reference_xref.csv` and refreshes the tables in `docs/engine_reference.md`.
-- [ ] Copy the Shipping runtime modules from the reference into `Development/Src/`: Core,
+      `resources/docs/reference_xref.csv` and refreshes the tables in `resources/docs/engine_reference.md`.
+- [ ] Copy the Shipping runtime modules from the reference into `source/Development/Src/`: Core,
       Engine, GameFramework, IpDrv, WinDrv, D3D9Drv, GFxUI, OnlineSubsystemSteamworks, Launch,
       zlib. Keep Epic's `Inc/Src/Classes` layout. Drop editor-only, console, mobile and
       D3D11/OpenGL code paths behind CMake options rather than deleting them.
 - [ ] Add empty `DishonoredGame`, `AkAudio`, `DisJobs` modules with the file list from
-      `docs/symbols/sourcefiles.txt`.
-- [ ] Generate `Development/Src/Core/Inc/DishonoredLayouts.h` from `docs/types/sizes.csv`:
+      `resources/docs/symbols/sourcefiles.txt`.
+- [ ] Generate `source/Development/Src/Core/Inc/DishonoredLayouts.h` from `resources/docs/types/sizes.csv`:
       `static_assert(sizeof(X) == N)` for every native class the cooked script side references.
-- [ ] `tools/symbols/xcheck_reference_types.py`: PDB member offsets vs the reference headers
+- [ ] `resources/tools/symbols/xcheck_reference_types.py`: PDB member offsets vs the reference headers
       (parse `types.json`; compile-time probe of the reference via a generated `offsetof`
-      program). Output `docs/types/reference_layout_delta.md`: the exact list of Arkane layout
+      program). Output `resources/docs/types/reference_layout_delta.md`: the exact list of Arkane layout
       changes per class. Fix headers first; nothing else compiles correctly until they match.
 - [ ] Pin `UnObjVer.cpp` / `UnNames.h` to Dishonored: package file version and licensee version
       read from `Core.upk`; `hardcoded_names.csv` replaces the reference name list (indices
       must match, names 0–1300 sparse).
 - [ ] Native registration: regenerate the `IMPLEMENT_FUNCTION` / `AutoInitializeRegistrants`
-      lists from `docs/symbols/natives.csv` and `classes.csv`.
+      lists from `resources/docs/symbols/natives.csv` and `classes.csv`.
 - **Exit:** Core compiles as a static lib under the CMake build; `DishonoredLayouts.h` passes
       for Core types; `reference_layout_delta.md` exists for Engine and DishonoredGame types.
 
 ### Phase 3 — Module convergence and DishonoredGame rewrite (months)
 
-Order (sizes from `docs/module_map.md`; Shipping has no OnlineSubsystemPC/XAudio2):
+Order (sizes from `resources/docs/module_map.md`; Shipping has no OnlineSubsystemPC/XAudio2):
 
 1. Core — 6,577 functions, 66 % in reference
 2. Engine — 22,892 functions, 41 % in reference
@@ -171,17 +171,17 @@ Per module:
 
 - [ ] Make the reference copy compile and link with MSVC 2022 (`/permissive-`, C++17). Fix
       compile errors mechanically; do not change behavior in this step.
-- [ ] `tools/decomp_module.py <Module>`: batch Hex-Rays decompile of every PDB function in the
-      module into `reference/<Module>/<File>.cpp` (gitignored, regenerated on demand).
+- [ ] `resources/tools/decomp_module.py <Module>`: batch Hex-Rays decompile of every PDB function in the
+      module into `resources/reference/<Module>/<File>.cpp` (gitignored, regenerated on demand).
 - [ ] Convergence pass in priority order: `Serialize`, constructors / `StaticConstructor`,
       `exec*` natives, virtuals in vtable order, then the rest. For `reference` functions diff
       decompile vs source and port behavior differences; for `missing` functions write them.
-      Record status per function in `docs/progress.md`.
+      Record status per function in `resources/docs/progress.md`.
 - [ ] Third-party code inside the exe: identify with FLIRT/Lumina first; anything matched is
       replaced by the library, never rewritten.
 
 DishonoredGame specifics: generate the class declarations (`DishonoredGameClasses.h` equivalent)
-from `docs/types/types.json` (exact layouts) cross-referenced with the DFSDK `.uc` for names and
+from `resources/docs/types/types.json` (exact layouts) cross-referenced with the DFSDK `.uc` for names and
 comments; then rewrite natives and native classes in dependency order (`DisGlobalEnums`, items,
 pawns, AI brain processes, powers, UI last).
 
@@ -191,7 +191,7 @@ pawns, AI brain processes, powers, UI last).
 |---|---|---|
 | PhysX 2.8.x / APEX | DLLs shipped; SDK headers in the reference tree (`Development/External/Novodex`) | Link to shipped DLLs via import libs. |
 | DirectX 9 | headers in the reference tree | June 2010 DirectX SDK for D3DX9 at build time. |
-| zlib, libpng, libogg, libvorbis, TinyXML, LZO (replaces LZOPro) | reference tree has zlib/libpng/libogg; rest via vcpkg | Data compatible; no decompile. |
+| zlib, libpng, libogg, libvorbis, TinyXML, LZO (replaces LZOPro) | reference tree has zlib/libpng/libogg; rest via FetchContent | Data compatible; no decompile. |
 | Steamworks | `steam_api.dll` shipped; reference `OnlineSubsystemSteamworks` source | Steamworks SDK of the matching interface version; offline path default. |
 | Bink | `binkw32.dll` shipped | Import lib from DLL exports; small reconstructed header. |
 | libcurl | 2013 exe only | Removed (Phase 8). |
@@ -203,12 +203,12 @@ pawns, AI brain processes, powers, UI last).
 ### Phase 5 — Build system
 
 - [ ] CMake + ninja, MSVC 2022, Win32 x86 preset (exists). One `add_library` per module
-      mirroring `Development/Src/<Module>`; options for editor/console code paths (off).
+      mirroring `source/Development/Src/<Module>`; options for editor/console code paths (off).
 - [ ] Configs: Debug (checks, logging, ASan optional), Release (checks on), Shipping.
 - [ ] Output into a staging copy of `Dishonored_Latest2026\` (content junctioned; the pristine
       tree is never built into).
-- [ ] `tools/build_and_smoke.py`: build, launch with `-log`, wait for a milestone string, diff the
-      normalized `Launch.log` against `docs/golden/2012_arkprofile_launch.norm.log`.
+- [ ] `resources/tools/build_and_smoke.py`: build, launch with `-log`, wait for a milestone string, diff the
+      normalized `Launch.log` against `resources/docs/golden/2012_arkprofile_launch.norm.log`.
 
 ### Phase 6 — Bring-up milestones (behavioral)
 
@@ -229,7 +229,7 @@ pawns, AI brain processes, powers, UI last).
 - [ ] Diaphora/BinDiff `DishonoredGame-Shipping.exe` (2012, named) vs `Dishonored.exe` (2013);
       propagate names into `Dishonored.exe.i64`.
 - [ ] Classify identical / changed / new; expect DLC natives (`Req_DLC05_*`), engine fixes, curl.
-- [ ] Decompile changed/new functions into `reference/2013/` and fold the behavior into the
+- [ ] Decompile changed/new functions into `resources/reference/2013/` and fold the behavior into the
       single source tree.
 
 ### Phase 8 — Online / "server" removal
@@ -242,9 +242,9 @@ pawns, AI brain processes, powers, UI last).
 
 ### Phase 9 — Automation
 
-- [ ] `tools/ida/`: export scripts exist; add batch decompile (`decomp_module.py`) runnable
+- [ ] `resources/tools/ida/`: export scripts exist; add batch decompile (`decomp_module.py`) runnable
       headless via idalib.
-- [ ] `docs/tasks/<Module>.md`: per-function status lists so work parallelizes across sessions.
+- [ ] `resources/docs/tasks/<Module>.md`: per-function status lists so work parallelizes across sessions.
 
 ## 5. Risks and open questions
 
@@ -267,7 +267,7 @@ pawns, AI brain processes, powers, UI last).
 
 ## 6. Next concrete steps
 
-1. `tools/symbols/xref_reference.py` → `docs/reference_xref.csv` (function and file status).
+1. `resources/tools/symbols/xref_reference.py` → `resources/docs/reference_xref.csv` (function and file status).
 2. Copy Core from the reference; CMake `add_library(Core)`; make it compile with MSVC 2022.
 3. `DishonoredLayouts.h` from `sizes.csv`; run it against the reference Core headers; fix.
 4. Pin `UnObjVer.cpp` and `UnNames.h` to Dishonored's values.

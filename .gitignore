@@ -9,8 +9,9 @@ out/
 .vs/
 .cache/
 
-# vcpkg checkout (bootstrapped locally)
-external/vcpkg/
+# FetchContent checkouts and build trees (populated by CMake)
+external/*
+!external/README.md
 
 # Game binaries, symbols, content and IDA databases
 *.exe
@@ -33,10 +34,10 @@ external/vcpkg/
 __pycache__/
 *.pyc
 
-# Large regenerable symbol dumps (seconds to rebuild; see docs/symbols/README.md)
-docs/symbols/lines.csv
-docs/symbols/vtables.csv
-docs/symbols/pdb_functions.csv
-docs/symbols/compiland_of.csv
-docs/types/types.json
-docs/types/all_types.h
+# Large regenerable symbol dumps (seconds to rebuild; see resources/docs/symbols/README.md)
+resources/docs/symbols/lines.csv
+resources/docs/symbols/vtables.csv
+resources/docs/symbols/pdb_functions.csv
+resources/docs/symbols/compiland_of.csv
+resources/docs/types/types.json
+resources/docs/types/all_types.h
