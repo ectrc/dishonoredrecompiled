@@ -124,7 +124,7 @@ public:
 	 * 
 	 * @return	filename using relative path
 	 */
-	FString FFileManagerWindows::ConvertToRelativePath( const TCHAR* Filename );
+	FString ConvertToRelativePath( const TCHAR* Filename ); // DISHONORED: no class qualifiers on in-class declarations (MSVC 2022 /permissive-)
 
 	/**
 	 * Converts passed in filename to use an absolute path.
@@ -152,7 +152,7 @@ public:
 	 *	@param FreeBytes			Receives the total number of free bytes on a disk.
 	 *	@return						False if the operation failed to retrieve valid size info, true otherwise. 
 	 **/
-	UBOOL FFileManagerWindows::GetDiskFreeSpace(const TCHAR* Drive, QWORD& FreeBytesToCaller, QWORD& TotalBytes, QWORD& FreeBytes );
+	UBOOL GetDiskFreeSpace(const TCHAR* Drive, QWORD& FreeBytesToCaller, QWORD& TotalBytes, QWORD& FreeBytes );
 
 protected:
 	FArchive* InternalCreateFileReader( const TCHAR* InFilename, DWORD Flags, FOutputDevice* Error );
@@ -219,7 +219,7 @@ protected:
 	 *	@param FreeBytes			Receives the total number of free bytes on a disk.
 	 *	@return						False if the operation failed to retrieve valid size info, true otherwise. 
 	 **/
-	UBOOL FFileManagerWindows::InternalGetDiskFreeSpace(const TCHAR* Drive, QWORD& FreeBytesToCaller, QWORD& TotalBytes, QWORD& FreeBytes );
+	UBOOL InternalGetDiskFreeSpace(const TCHAR* Drive, QWORD& FreeBytesToCaller, QWORD& TotalBytes, QWORD& FreeBytes );
 
 	/** Directory where a Standard User can write to (to save settings, etc) */
 	FString WindowsUserDir;

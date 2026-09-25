@@ -18,6 +18,15 @@ edit to a file copied from the reference carries a `// DISHONORED: <why>` commen
 | Excluded units | `Core/Src/UnitTest.cpp` | test harness |
 | Launch | reference `Launch.cpp`/`LaunchEngineLoop.cpp` imported but not compiled; `DishonoredLaunchStub.cpp` builds the exe until milestone 1 | |
 
+| DirectX 9 SDK | reference `Development/External/DirectX9`, mirrored into the build tree **without `rpcsal.h`** (`cmake/ReferenceExternals.cmake`) | its 2010-era `rpcsal.h` shadowed the Windows Kit's and broke `objidl.h` (101 × C2061) |
+| FaceFX | `WITH_FACEFX=0` for now | SDK not available; Engine headers include `../../../External/FaceFX/FxSDK/Inc/FxSDK.h` |
+| APEX | headers need `foundation/PxSimpleTypes.h` (PhysX 3 foundation, not in the reference Novodex 2.8 SDK) | pending: `WITH_APEX=0` or an APEX SDK, decided when Engine compiles |
+| Steamworks / Scaleform | `WITH_STEAMWORKS=0`, `WITH_GFx=0` for now | `Engine.h` includes `OnlineSubsystemSteamworks.h` → `steam/steam_api.h` and `ScaleformEngine.h` → `Kernel/SF_Types.h` (GFx 4 SDK); neither SDK is available yet (Phase 4) |
+| libpng | reference `Development/External/libPNG`, mirrored with `"../../zlib/zlib.h"` rewritten to `<zlib.h>` | |
+| Precompiled headers | off (`DISHONORED_USE_PCH=OFF`) | CMake's `/FI` force-include double-includes guard-less UE3 private headers |
+| Stale `Src/<Module>Private.h` | `Core/Src/CorePrivate.h` deleted (1999 copy; the project uses `Inc/CorePrivate.h`, but same-directory lookup found the stale one first) | Engine, WinDrv, D3D9Drv have the same pair; check each before compiling that module |
+| Two-phase lookup | `UnStats.h`: use the deferred (`gcc`) constructor definitions instead of the in-class ones | `TAccumulator`/`TCounter` referenced `FStatGroup`/`GStatManager` before their declaration |
+
 ## Compile error categories (Core)
 
 Filled in during P2.4 from `core_build*.log`. One row per category: count at first sight, fix
@@ -25,4 +34,18 @@ applied, files touched.
 
 | Category | Count | Fix | Notes |
 |---|---:|---|---|
-| (pending first full compile) | | | |
+| C1083 missing include (`PreWindowsApi.h`, `d3dx9.h`, `../../Engine/Inc/...`, `zlib.h`, FaceFX, `OnlineSubsystemSteamworks.h`) | 6 distinct | flat include model; DirectX mirror; zlib FetchContent; import the sibling modules' headers; `WITH_FACEFX=0` | see decisions above |
+| C2061 SAL macros in Windows Kit headers | 101 | exclude `rpcsal.h` from the DirectX mirror | |
+| C2065/C3861 two-phase lookup in `UnStats.h` | 20 | gcc path | |
+| C2011 type redefinition (`UnLinker.h`) | 704 | delete stale `Src/CorePrivate.h` | |
+| C3240/C2838/C4596 qualified names in in-class declarations (`FFileManagerWindows.h`) | 8 | drop the `FFileManagerWindows::` qualifier on 3 declarations | reference code relied on VS2010 leniency |
+| C1083 `..\..\..\External\libpng\png.h` via `Engine.h` → `UnPNG.h` | 1 | libPNG headers/libs from the reference tree (`Dishonored::libPNG`), `UnPNG.h` includes `<png.h>`/`<zlib.h>` | Core's `UnMisc.cpp`, `UnVcWin32.cpp`, `UnStatsNotifyProviders.cpp` include `Engine.h` (Epic's own layering violation) |
+
+## Bytecode opcodes
+
+`resources/docs/symbols/opcodes.md` (`xcheck_opcodes.py`): Dishonored's `EX_*` numbering (UObject
+natives with GNatives index < 0x80, all indices per folded function) **matches the reference**
+`UnStack.h` / `UnCorSc.cpp`. The 6 nominal differences are identical-COMDAT-folding artifacts
+(`execFalse`/`execIntZero`/`execNoObject`, `EqualEqual_DelegateFunction`/`_DelegateDelegate`,
+`EqualEqual_IntInt`/`_ObjectObject` share one body). No opcode regeneration needed; the numbered
+natives ≥ 0x80 are compared per class in P2.7.

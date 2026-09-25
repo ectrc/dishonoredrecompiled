@@ -1,0 +1,128 @@
+"""P2.5b: textual member-name delta between the PDB types (types.json) and the reference headers.
+
+For every class/struct declared in the reference module headers, compares its data member names
+with the PDB layout. Members only in the PDB are Arkane additions; members only in the reference
+are Epic additions after 9014 (or removals). Writes resources/docs/types/reference_member_delta.md.
+
+Usage: python resources/tools/symbols/member_delta.py [--modules Core Engine GameFramework IpDrv WinDrv]
+"""
+import argparse
+import collections
+import json
+import re
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[3]
+TYPES = REPO / "resources" / "docs" / "types"
+REFERENCE = REPO.parent / "UnrealEngine3" / "Development" / "Src"
+COMMENT_RE = re.compile(r"//[^\n]*|/\*.*?\*/|\"(?:[^\"\\\n]|\\.)*\"", re.S)
+TEMPLATE_ARGS_RE = re.compile(r"<[^<>;{}()\n]*>")
+HEADER_CLASS_RE = re.compile(r"(?:class|struct)\s+(?:[A-Z_]+\s+)?([A-Za-z_]\w*)\s*(?:final\s*)?(?::[^{;]*)?$")
+# a data member declaration statement: "<type tokens> name [array] [: bits]" with no '(' before name
+MEMBER_RE = re.compile(r"^(?!\s*(?:typedef|using|friend|enum|class|struct|union|template|static|public|private|protected|return|extern|virtual|inline|FORCEINLINE|DECLARE_|IMPLEMENT_|DEFINE_|#)\b)[\w:<>,*&\s]+?[\s*&]([A-Za-z_]\w*)\s*(?:\[[^\]]*\])*\s*(?::\s*\d+)?$")
+SKIP_TYPES = {"UStruct", "UClass"} - {"UStruct", "UClass"}
+
+
+def strip_templates(s: str) -> str:
+    prev = None
+    while prev != s:
+        prev = s
+        s = TEMPLATE_ARGS_RE.sub("", s)
+    return s
+
+
+def scan_members(text: str, out: dict[str, list[str]]) -> None:
+    clean = strip_templates(COMMENT_RE.sub(" ", text))
+    stack: list[tuple[str, int]] = []
+    depth = 0
+    start = 0
+    for i, c in enumerate(clean):
+        if c == "{":
+            head = clean[start:i].strip()
+            head = head.split(";")[-1].strip() if ";" in head else head
+            head = head.split("}")[-1].strip() if "}" in head else head
+            m = HEADER_CLASS_RE.search(head)
+            if m:
+                stack.append((m.group(1), depth))
+                out.setdefault(m.group(1), [])
+            depth += 1
+            start = i + 1
+        elif c == "}":
+            depth -= 1
+            while stack and depth <= stack[-1][1]:
+                stack.pop()
+            start = i + 1
+        elif c == ";":
+            if stack and depth == stack[-1][1] + 1:
+                stmt = clean[start:i].strip()
+                stmt = stmt.split("}")[-1].strip() if "}" in stmt else stmt
+                stmt = re.sub(r"^\s*(?:public|private|protected)\s*:\s*", "", stmt)
+                stmt = re.sub(r"=\s*[^,;]+$", "", stmt).strip()
+                if "(" not in stmt and stmt:
+                    for part in stmt.split(","):
+                        mm = MEMBER_RE.match(part.strip() if part is stmt.split(",")[0] else "int " + part.strip())
+                        if mm:
+                            out[stack[-1][0]].append(mm.group(1))
+            start = i + 1
+
+
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--modules", nargs="+", default=["Core", "Engine", "GameFramework", "IpDrv", "WinDrv", "D3D9Drv", "GFxUI", "OnlineSubsystemSteamworks", "Launch"])
+    args = ap.parse_args(argv[1:])
+
+    ref: dict[str, list[str]] = {}
+    origin: dict[str, str] = {}
+    for module in args.modules:
+        for p in sorted((REFERENCE / module).rglob("*.h")):
+            before = set(ref)
+            scan_members(p.read_text(encoding="utf-8", errors="replace"), ref)
+            for cls in set(ref) - before:
+                origin[cls] = f"{module}/{p.relative_to(REFERENCE / module).as_posix()}"
+
+    with (TYPES / "types.json").open(encoding="utf-8") as f:
+        pdb = {t["name"]: t for t in json.load(f)["types"]}
+
+    stats = collections.Counter()
+    sections = []
+    for cls in sorted(set(ref) & set(pdb)):
+        ref_members = [m for m in ref[cls]]
+        pdb_members = [m["name"] for m in pdb[cls]["members"] if not m["is_base"] and not m["is_vftable"] and m["name"]]
+        only_pdb = [m for m in pdb_members if m not in ref_members]
+        only_ref = [m for m in ref_members if m not in pdb_members]
+        common = [m for m in pdb_members if m in ref_members]
+        reordered = common != [m for m in ref_members if m in pdb_members]
+        stats["compared"] += 1
+        if not only_pdb and not only_ref and not reordered:
+            stats["identical"] += 1
+            continue
+        stats["different"] += 1
+        sections.append((cls, origin.get(cls, ""), pdb[cls]["size"], only_pdb, only_ref, reordered, len(pdb_members), len(ref_members)))
+
+    pdb_only_classes = sorted(c for c in pdb if c not in ref and re.match(r"^[UAF][A-Z]", c) and "<" not in c)
+    out = TYPES / "reference_member_delta.md"
+    with out.open("w", encoding="utf-8") as f:
+        f.write("# Member delta: 2012 Shipping PDB vs reference UE3 10897 headers\n\n")
+        f.write(f"Generated by `resources/tools/symbols/member_delta.py` over modules {', '.join(args.modules)}. ")
+        f.write(f"{stats['compared']} classes compared: {stats['identical']} identical member lists, {stats['different']} differ. ")
+        f.write(f"{len(pdb_only_classes)} PDB classes have no reference declaration (Arkane / DishonoredGame).\n\n")
+        f.write("Textual comparison only (names, not offsets); the compiled offset delta is `reference_layout_delta.md`.\n\n")
+        f.write("## Classes with differences\n\n")
+        for cls, where, size, only_pdb, only_ref, reordered, npdb, nref in sections:
+            f.write(f"### {cls} — PDB size {size}, {npdb} PDB members vs {nref} reference ({where})\n\n")
+            if only_pdb:
+                f.write("- only in PDB (Arkane): " + ", ".join(f"`{m}`" for m in only_pdb) + "\n")
+            if only_ref:
+                f.write("- only in reference (Epic after 9014 / removed): " + ", ".join(f"`{m}`" for m in only_ref) + "\n")
+            if reordered:
+                f.write("- common members reordered\n")
+            f.write("\n")
+        f.write("## PDB classes without a reference declaration\n\n")
+        f.write(", ".join(f"`{c}`" for c in pdb_only_classes) + "\n")
+    print(f"compared={stats['compared']} identical={stats['identical']} different={stats['different']} pdb_only_classes={len(pdb_only_classes)} -> {out}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

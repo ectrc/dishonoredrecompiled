@@ -496,7 +496,7 @@ private:
 	// So that the factory is the only thing that can create stats
 	friend struct FStatFactory;
 
-#if !__GNUC__ && !NGP
+#if 0 // DISHONORED: MSVC 2022 two-phase lookup; use the deferred definitions further down (the gcc path)
 	/**
 	 * Zeros the accumulator value and sets the next item in the list
 	 */
@@ -602,7 +602,7 @@ private:
 	// So that the factory is the only thing that can create stats
 	friend struct FStatFactory;
 
-#if !__GNUC__ && !NGP
+#if 0 // DISHONORED: MSVC 2022 two-phase lookup; use the deferred definitions further down (the gcc path)
 	/**
 	 * Zeros the counter value and sets the next item in the list
 	 */

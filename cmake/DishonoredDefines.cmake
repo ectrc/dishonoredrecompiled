@@ -22,14 +22,22 @@ set(DISHONORED_DEFINES
   WITH_MANAGED_CODE=0
   # UnBuild.h switches, set to what Shipping links (Steamworks OSS, Scaleform, PhysX+APEX, FaceFX, LZO)
   WITH_UE3_NETWORKING=1
-  WITH_STEAMWORKS=1
+  # Shipping uses the Steamworks OSS and Scaleform GFx 4 (10.4 % of code), but neither SDK is in
+  # the reference tree (steam/steam_api.h, Kernel/SF_Types.h). Both are off until Phase 4 provides
+  # them; Engine.h pulls their headers into every module otherwise.
+  WITH_STEAMWORKS=0
   WITH_STEAMWORKS_SOCKETS=0
-  WITH_GFx=1
-  WITH_GFx_IME=1
+  WITH_GFx=0
+  WITH_GFx_IME=0
   WITH_NOVODEX=1
-  WITH_APEX=1
+  # APEX headers in the reference need the PhysX 3 foundation (foundation/PxSimpleTypes.h), which
+  # the Novodex 2.8 SDK in the reference tree lacks; off until Phase 4 (Dishonored ships APEX DLLs).
+  WITH_APEX=0
   WITH_PHYSX_COOKING=1
-  WITH_FACEFX=1
+  # FaceFX is linked into Shipping (1.3 %), but its SDK is not in the reference tree; off until
+  # Phase 4 provides a runtime. Engine class layouts that embed FaceFX members are checked by the
+  # layout probe regardless.
+  WITH_FACEFX=0
   # The Shipping exe links LZOPro (0.4 % of code) but every cooked package uses zlib
   # (package_summary.md); LZO stays off until Phase 4 decides on a replacement library.
   WITH_LZO=0

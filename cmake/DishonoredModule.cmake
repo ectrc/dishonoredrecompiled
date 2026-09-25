@@ -31,6 +31,7 @@ set(DISHONORED_MSVC_WARNINGS
 )
 
 set(DISHONORED_MODULE_LIST "" CACHE INTERNAL "modules declared so far, in order")
+option(DISHONORED_USE_PCH "Use <Module>Private.h as a CMake precompiled header (see note in dishonored_module)" OFF)
 
 function(dishonored_module name)
   set(module_dir "${CMAKE_SOURCE_DIR}/source/Development/Src/${name}")
@@ -71,10 +72,15 @@ function(dishonored_module name)
     target_link_libraries(${name} PUBLIC ${dep})
   endforeach()
 
-  if(EXISTS "${module_dir}/Inc/${name}Private.h")
-    target_precompile_headers(${name} PRIVATE "${module_dir}/Inc/${name}Private.h")
-  elseif(EXISTS "${module_dir}/Src/${name}Private.h")
-    target_precompile_headers(${name} PRIVATE "${module_dir}/Src/${name}Private.h")
+  # CMake's target_precompile_headers force-includes the header (/FI) on top of the TU's own
+  # #include "<Name>Private.h"; UE3's private headers have no include guards (they relied on the
+  # classic /Yu model), so this double-includes UnLinker.h & co. Off until a guard-safe scheme exists.
+  if(DISHONORED_USE_PCH)
+    if(EXISTS "${module_dir}/Inc/${name}Private.h")
+      target_precompile_headers(${name} PRIVATE "${module_dir}/Inc/${name}Private.h")
+    elseif(EXISTS "${module_dir}/Src/${name}Private.h")
+      target_precompile_headers(${name} PRIVATE "${module_dir}/Src/${name}Private.h")
+    endif()
   endif()
 
   dishonored_apply_defines(${name})

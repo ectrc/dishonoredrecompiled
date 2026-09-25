@@ -34,7 +34,7 @@ def static_gnatives_entries(gnatives: int) -> dict[int, int]:
     for i in range(GNATIVES_COUNT):
         target = read_ptr(gnatives + i * ptr_size())
         if ida_funcs.get_func(target) is not None:
-            out.setdefault(target, i)
+            out.setdefault(target, set()).add(i)
     return out
 
 
@@ -69,7 +69,7 @@ def register_native_calls(register_fn: int) -> dict[int, int]:
         index = index - 0x100000000 if index >= 0x80000000 else index
         target = read_ptr(var)
         if ida_funcs.get_func(target) is not None:
-            out.setdefault(target, index)
+            out.setdefault(target, set()).add(index)
     return out
 
 
@@ -111,7 +111,7 @@ def inlined_gnatives_stores(gnatives: int) -> dict[int, int]:
                 break
             cur += insn.size
         if index is not None and target is not None:
-            out.setdefault(target, index)
+            out.setdefault(target, set()).add(index)
     return out
 
 
@@ -122,10 +122,14 @@ def main() -> None:
     register_fn = find_named("GRegisterNative")
     registered = register_native_calls(register_fn)
     inlined = inlined_gnatives_stores(gnatives)
-    for func, index in list(inlined.items()) + list(registered.items()):
-        index_by_target.setdefault(func, index)
+    # Identical COMDAT folding merges byte-identical exec functions (execFalse/execIntZero, ...),
+    # so one address can own several indices; keep all of them, ';'-joined, lowest first.
+    all_indices = {}
+    for func, indices in list(index_by_target.items()) + list(inlined.items()) + list(registered.items()):
+        all_indices.setdefault(func, set()).update(indices)
+    index_by_target = {func: ";".join(str(i) for i in sorted(idx)) for func, idx in all_indices.items()}
     log(f"inlined GNatives stores: {len(inlined)}")
-    numbered = sum(1 for v in registered.values() if v >= 0)
+    numbered = sum(1 for v in registered.values() if max(v) >= 0)
     log(f"GNatives at 0x{gnatives:08x}: {len(index_by_target) - len(registered)} static entries; GRegisterNative at 0x{register_fn:08x}: {len(registered)} call sites, {numbered} numbered")
 
     fn, wn = open_csv(SYMBOLS_DIR / f"natives{suffix}.csv", ["class", "func", "va", "rva", "size", "native_index", "mangled"])

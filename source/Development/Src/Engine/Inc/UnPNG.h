@@ -11,8 +11,8 @@
 #if !CONSOLE && defined(_MSC_VER)
 
 #pragma pack (push,8)
-#include "..\..\..\External\libpng\png.h"
-#include "..\..\..\External\zlib\inc\zlib.h"
+#include <png.h>  // DISHONORED: libpng/zlib come from cmake (ReferenceExternals / Dependencies), not Development/External
+#include <zlib.h>
 #pragma pack (pop)
 
 /**

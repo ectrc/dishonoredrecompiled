@@ -390,3 +390,120 @@ Not in the reference tree. 6 stub files created from the PDB file list (6 entrie
 ## DisJobs — 2026-09-25 (skeleton)
 
 Not in the reference tree. 6 stub files created from the PDB file list (6 entries).
+
+## OnlineSubsystemSteamworks — 2026-09-25 (reference commit `601d6a1`)
+
+Copied 25 files from `../UnrealEngine3/Development/Src/OnlineSubsystemSteamworks` (Inc, Src, Classes).
+
+PDB lists 6 source files for this module; 2 are not in the reference and were created as stubs:
+
+- `inc/onlinesubsystemsteamworksbridge.h`
+- `src/onlinesubsystemsteamworksbridge.cpp`
+
+Reference compile units excluded from the target (0):
+
+- none
+
+Reference compile units with no PDB function attribution, compiled anyway (7):
+
+- `Src/OnlineAsyncTaskManagerSteam.cpp`
+- `Src/UOnlineAuthInterfaceSteamworks.cpp`
+- `Src/UOnlineGameInterfaceSteamworks.cpp`
+- `Src/UOnlineLobbyInterfaceSteamworks.cpp`
+- `Src/UnNetSteamworks.cpp`
+- `Src/UnSocketSteamworks.cpp`
+- `Src/VoiceInterfaceSteamworks.cpp`
+
+## GameFramework — 2026-09-25 (reference commit `601d6a1`)
+
+Copied 133 files from `../UnrealEngine3/Development/Src/GameFramework` (Inc, Src, Classes).
+
+PDB lists 26 source files for this module; 9 are not in the reference and were created as stubs:
+
+- `inc/gameframeworkdecalclasses.h`
+- `src/gamecrowdagent.cpp`
+- `src/gamecrowdagentskeletal.cpp`
+- `src/gamecrowddestination.cpp`
+- `src/gamecrowdkismet.cpp`
+- `src/gamecrowdpopulationmanager.cpp`
+- `src/gamecrowdspawner.cpp`
+- `src/gamedecal.cpp`
+- `src/gamekactorspawnableeffect.cpp`
+
+Reference compile units excluded from the target (0):
+
+- none
+
+Reference compile units with no PDB function attribution, compiled anyway (5):
+
+- `Src/DebugCameraController.cpp`
+- `Src/GameMobile.cpp`
+- `Src/GameMobileKismet.cpp`
+- `Src/GameSpecialMoves.cpp`
+- `Src/SecondaryViewportClient.cpp`
+
+## D3D9Drv — 2026-09-25 (reference commit `601d6a1`)
+
+Copied 35 files from `../UnrealEngine3/Development/Src/D3D9Drv` (Inc, Src).
+
+PDB lists 21 source files for this module; 0 are not in the reference and were created as stubs:
+
+- none
+
+Reference compile units excluded from the target (0):
+
+- none
+
+Reference compile units with no PDB function attribution, compiled anyway (3):
+
+- `Src/D3D9Drv.cpp`
+- `Src/D3D9MeshUtils.cpp`
+- `Src/D3D9ShaderCompiler.cpp`
+
+## GFxUI — 2026-09-25 (reference commit `601d6a1`)
+
+Copied 55 files from `../UnrealEngine3/Development/Src/GFxUI` (Inc, Src, Classes).
+
+PDB lists 21 source files for this module; 16 are not in the reference and were created as stubs:
+
+- `inc/gfxuiallocator.h`
+- `inc/gfxuiengine.h`
+- `inc/gfxuifile.h`
+- `inc/gfxuiimageinfo.h`
+- `inc/gfxuirenderer.h`
+- `inc/gfxuirendererimpl.h`
+- `src/gfxuidatastore.cpp`
+- `src/gfxuiengine.cpp`
+- `src/gfxuifile.cpp`
+- `src/gfxuifont.cpp`
+- `src/gfxuiimageinfo.cpp`
+- `src/gfxuiinteraction.cpp`
+- `src/gfxuilocalization.cpp`
+- `src/gfxuimovie.cpp`
+- `src/gfxuirenderer.cpp`
+- `src/gfxuishaders.cpp`
+
+Reference compile units excluded from the target (0):
+
+- none
+
+Reference compile units with no PDB function attribution, compiled anyway (18):
+
+- `Src/Render/RHI_ConsoleMeshCache.cpp`
+- `Src/Render/RHI_HAL.cpp`
+- `Src/Render/RHI_HALSetup.cpp`
+- `Src/Render/RHI_MeshCache.cpp`
+- `Src/Render/RHI_Shader.cpp`
+- `Src/Render/RHI_Texture.cpp`
+- `Src/Render/RHI_XeBufferMemory.cpp`
+- `Src/Render/RHI_XeRenderTarget.cpp`
+- `Src/ScaleformDataStore.cpp`
+- `Src/ScaleformEngine.cpp`
+- `Src/ScaleformFile.cpp`
+- `Src/ScaleformFont.cpp`
+- `Src/ScaleformFullscreenMovie.cpp`
+- `Src/ScaleformInteraction.cpp`
+- `Src/ScaleformLocalization.cpp`
+- `Src/ScaleformMovie.cpp`
+- `Src/ScaleformSound.cpp`
+- `Src/ScaleformStats.cpp`
