@@ -679,7 +679,28 @@ public:
 //	UClient - Interface to platform-specific code.
 //
 
-class UClient : public UObject, FExec
+// DISHONORED(layout): IArkSettingsListenerInterface (2012 PDB: base of UEngine @60 and UClient @60) is declared here because Engine.h
+// includes UnClient.h before the class section of EngineClasses.h, where its UInterface class UArkSettingsListenerInterface is declared.
+class ArkSettingsParameters;
+class UArkSettingsListenerInterface;
+
+class IArkSettingsListenerInterface
+{
+public:
+	enum EChangeReason
+	{
+		ASLI_ApplyCurrentValues = 0,
+		ASLI_ReadProfileFromStorage = 1,
+		ASLI_ModifiedByUser = 2,
+		ASLI_ValidatedByUser = 3,
+	};
+	typedef UArkSettingsListenerInterface UClassType;
+	virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface()=0;
+	virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason)=0;
+};
+
+// DISHONORED(layout): 2012 PDB UClient bases UObject @0 (56), FExec @56 (4), IArkSettingsListenerInterface @60 (4); MinDesiredFrameRate @64 (retail SDK @64), sizeof 80 (retail 80)
+class UClient : public UObject, FExec, public IArkSettingsListenerInterface
 {
 	DECLARE_ABSTRACT_CLASS_INTRINSIC(UClient,UObject,CLASS_Config|0,Engine);
 public:
@@ -706,6 +727,10 @@ public:
 	 */
 	void InitializeIntrinsicPropertyValues();
 	// UClient interface.
+
+	// DISHONORED(port): IArkSettingsListenerInterface (2012 PDB base @60); the 2012 exe folds UClient's implementation, port with the settings system
+	virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }
+	virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) {}
 
 	virtual void Init(UEngine* InEngine) PURE_VIRTUAL(UClient::Init,);
 	virtual void Tick(FLOAT DeltaTime) PURE_VIRTUAL(UClient::Tick,);

@@ -29,6 +29,8 @@ IMPLEMENT_CLASS(UUIDataProvider);
 
 IMPLEMENT_CLASS(UUIDataStore_Registry);
 IMPLEMENT_CLASS(UUIDataStoreSubscriber);
+IMPLEMENT_CLASS(UUIListElementProvider);  // DISHONORED(layout): interface vtables of the UI data providers (EngineUIPrivateClasses.h)
+IMPLEMENT_CLASS(UUIListElementCellProvider);
 IMPLEMENT_CLASS(UUIDataStorePublisher);
 
 #define ARRAY_DELIMITER TEXT(";")
@@ -1179,6 +1181,7 @@ UBOOL UUIDataStore_DynamicResource::GetNativePropertyValues( TMap<FString,FStrin
 /* ==========================================================================================================
 	UUIDynamicDataProvider
 ========================================================================================================== */
+IMPLEMENT_CLASS(UUIDynamicDataProvider);  // DISHONORED(layout): retail base of UUIDataProvider_Settings (EngineUIPrivateClasses.h)
 
 IMPLEMENT_COMPARE_POINTER(UProperty,UnUIDataStores_DynamicPropertyBinding,{ return appStricmp(*A->GetName(),*B->GetName()); });
 

@@ -823,8 +823,8 @@ public:
 	BITFIELD	CollideActors:1;
 	BITFIELD	AlwaysCheckCollision:1;
 	BITFIELD	BlockActors:1;
-	BITFIELD	BlockZeroExtent_DEPRECATED:1;
-	BITFIELD	BlockNonZeroExtent_DEPRECATED:1;
+	BITFIELD	BlockZeroExtent:1;  // DISHONORED(layout): retail SDK @280 mask 0x80 (the 2012 PDB spells it BlockZeroExtent_DEPRECATED)
+	BITFIELD	BlockNonZeroExtent:1;  // DISHONORED(layout): retail SDK @280 mask 0x100 (2012 PDB: BlockNonZeroExtent_DEPRECATED)
 	BITFIELD	CanBlockCamera:1;
 	BITFIELD	BlockRigidBody:1;
 
@@ -922,8 +922,6 @@ public:
 	DISHONORED_SHIM_STATIC BITFIELD bUsePerInstanceHitProxies;
 	DISHONORED_SHIM_STATIC BITFIELD bCastStaticShadow;
 	DISHONORED_SHIM_STATIC BITFIELD bNoModSelfShadow;
-	DISHONORED_SHIM_STATIC BITFIELD BlockZeroExtent;
-	DISHONORED_SHIM_STATIC BITFIELD BlockNonZeroExtent;
 	DISHONORED_SHIM_STATIC BITFIELD bBlockFootPlacement;
 	DISHONORED_SHIM_STATIC BITFIELD bSupportedOnMobile;
 	DISHONORED_SHIM_STATIC FLOAT ScriptRigidBodyCollisionThreshold;

@@ -692,6 +692,7 @@ class USystem : public USubsystem
 	FString SavePath;
 	FString CachePath;
 	FString CacheExt;
+	FString ScreenShotPath;  // DISHONORED(layout): retail SDK @116, 2012 PDB @116
 	TArray<FString> Paths;
 	/** Paths if -seekfreeloading is used on PC. */
 	TArray<FString> SeekFreePCPaths;
@@ -699,6 +700,7 @@ class USystem : public USubsystem
 	TArray<FString> ScriptPaths;
 	/** List of directories containing script packages compiled with the -FINAL_RELEASE switch */
 	TArray<FString> FRScriptPaths;
+	TArray<FString> MobileScriptPaths;  // DISHONORED(layout): retail SDK @176, 2012 PDB @176
 	TArray<FString> CutdownPaths;
 	TArray<FName> Suppress;
 	TArray<FString> Extensions;

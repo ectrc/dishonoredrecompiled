@@ -1129,9 +1129,9 @@ struct FDebugTextInfo
     FLOAT TimeRemaining;
     FLOAT Duration;
     FColor TextColor;
-    BITFIELD bAbsoluteLocation:1;
-    BITFIELD bKeepAttachedToActor:1;
+    BITFIELD bAbsoluteLocation:1;  // DISHONORED(layout): retail SDK @52 mask 0x1, the only bit (bKeepAttachedToActor is reference-only)
     SCRIPT_ALIGN;
+    DISHONORED_SHIM_STATIC BITFIELD bKeepAttachedToActor;
     FVector OrigActorLocation;
     class UFont* Font;
 

@@ -178,6 +178,7 @@ class ULineBatchComponent : public UPrimitiveComponent, public FPrimitiveDrawInt
 		{}
 	};
 
+	BITFIELD		m_bSoulRendering:1;  // DISHONORED(layout): retail SDK @460 mask 0x1 (FPrimitiveDrawInterface vtable @452, View @456); BatchedLines @464 (2012 PDB @464)
 	TArray<FLine>	BatchedLines;
 	TArray<FPoint>	BatchedPoints;
 	FLOAT			DefaultLifeTime;
