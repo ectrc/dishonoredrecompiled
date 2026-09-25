@@ -24,109 +24,102 @@ class UPostProcessChain;
 //	EShowFlags
 //
 
-#if CONSOLE && FINAL_RELEASE
+// DISHONORED(layout): Dishonored's EShowFlags is a QWORD (ShowFlags.h). Every bit below is the one the 2012
+// Shipping exe tests (function rvas in resources/docs/agents/agentV.md, "2012"), re-checked on the 2013
+// retail exe (same masks in every checked function, "2013"); the bit is the position in the 64-bit word.
+// Flags the reference engine (10897) added after Dishonored's branch, and flags the 2012/2013 exes never
+// test, are 0 (no-op, tagged DISHONORED(port)): testing them reads FALSE, setting or clearing them does
+// nothing, so the reference code that uses them still compiles. SHOW_DefaultGame in the retail
+// UGameViewportClient constructor (2013 rva 0x2c53c0, 2012 rva 0x2deee0) is 0x04062BD2_17403362
+// (2012: 0x04063BD2_17403362, + SHOW_Foliage).
 
-#define MAKE_SHOW_FLAG(BitNum)                           (1<<(BitNum-1))
-#define MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(BitNum)  SHOW_RESERVED_FLAG
-#define MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(BitNum) 0
+// Reserved bit of the reference's shipping wrapper: no such bit in Dishonored.
+#define	SHOW_RESERVED_FLAG			0ULL	// DISHONORED(port): no-op; used by UnPlayer.cpp SetShowFlags only
 
-#else
+// -- low dword ----------------------------------------------------------------------------------------
+#define	SHOW_Brushes				0ULL					// DISHONORED(port): never tested by the 2012/2013 exe (bit not recoverable); uses: UnBrushComponent.cpp, Scene.cpp (SHOW_ViewMode_BrushWireframe)
+#define	SHOW_Decals					0x0000000000000002ULL	// bit 1: 2012 FPrimitiveSceneProxy::HasLitDecals/HasRelevantStaticDecals (& 2), FDecalSceneProxy::GetViewRelevance; 2013 same
+#define	SHOW_DecalInfo				0x0000000000000004ULL	// bit 2: 2012 FDecalSceneProxy::RequiresOcclusion (& 4), GetViewRelevance (& 4 with GIsGame || bSelected); 2013 same
+#define	SHOW_LightRadius			0x0000000000000008ULL	// bit 3: 2012 FDrawConeSceneProxy::GetViewRelevance (& 8); 2013 same
+#define	SHOW_AudioRadius			0ULL					// DISHONORED(port): never tested by the 2012/2013 exe (no sound-radius proxy); uses: UnAudio.cpp:4197, Scene.cpp
+#define	SHOW_DynamicShadows			0x0000000000000020ULL	// bit 5: 2012 FSceneRenderer::RenderDominantLightShadowsForBasePass (& 0x20 && bAllowDynamicShadows), RenderLights, RenderDPGEnd (modulated shadows), GetSceneShowFlags LitNoShadows; 2013 same
+#define	SHOW_PostProcess			0x0000000000000040ULL	// bit 6: 2012 USceneCaptureComponent::GetSceneShowFlags (& ~0x40 when !bEnablePostProcess), FViewInfo ctor, RenderDPGBegin (!PostProcess for lightmap density); 2013 same
+#define	SHOW_BSPSplit				0x0000000000000080ULL	// bit 7: 2012 DrawRichMesh (& 0x80 && PrimitiveInfo->Component), IsRichView; 2013 same
+#define	SHOW_SceneCaptureUpdates	0x0000000000000100ULL	// bit 8: the only bit between the 2012 UGameViewportClient ctor constant (0x17403362) and GetSceneShowFlags' SHOW_DefaultGame & ~SHOW_SceneCaptureUpdates (0x17403262); 2013 same
+#define	SHOW_Sprites				0x0000000000000200ULL	// bit 9: 2012 FSpriteSceneProxy::GetViewRelevance (& 0x200), FArrowSceneProxy::GetViewRelevance (bTreatAsASprite); 2013 same
+#define	SHOW_LevelColoration		0x0000000000000400ULL	// bit 10: 2012 FStaticMeshSceneProxy::DrawDynamicElements, FSpriteSceneProxy::DrawDynamicElements, DrawRichMesh (& 0x400); 2013 same
+#define	SHOW_Wireframe				0x0000000000000800ULL	// bit 11: 2012 FSceneRenderer::Render (bIsWireframe = & 0x800), FinishRenderViewTarget, DrawRichMesh, particle renderers; 2013 same
+#define	SHOW_Lighting				0x0000000000001000ULL	// bit 12: 2012 FSceneRenderer::RenderDPGEnd (& 0x1000 -> RenderDPGLights), RenderLightShafts, base-pass shaders, IsRichView; 2013 same
+#define	SHOW_Materials				0x0000000000002000ULL	// bit 13: 2012 FStaticMeshSceneProxy::GetViewRelevance (& 0x2000 == 0 -> bOpaqueRelevance), FParticleSystemSceneProxy::GetViewRelevance, IsRichView, DrawRichMesh; 2013 same
+#define	SHOW_LightComplexity		0x0000000000004000ULL	// bit 14: 2012 DrawRichMesh (& 0x4000, the SHOW_LightComplexity branch), IsRichView; 2013 same
+#define	SHOW_StreamingBounds		0ULL					// DISHONORED(port): never tested by the 2012/2013 exe; uses: Scene.cpp, UnPlayer.cpp
+#define	SHOW_CollisionNonZeroExtent	0x0000000000010000ULL	// bit 16: 2012 FStaticMeshSceneProxy::ShouldDrawCollision/ShouldDrawSimpleCollision, FBrushSceneProxy::ShouldDrawCollision (& 0x10000); IsCollisionView (& 0x70000); 2013 same
+#define	SHOW_CollisionZeroExtent	0x0000000000020000ULL	// bit 17: same functions (& 0x20000); 2013 same
+#define	SHOW_CollisionRigidBody		0x0000000000040000ULL	// bit 18: same functions (& 0x40000); 2013 same
+#define	SHOW_PropertyColoration		0x0000000000080000ULL	// bit 19: 2012 FStaticMeshSceneProxy::DrawDynamicElements, FSpriteSceneProxy::DrawDynamicElements, FBrushSceneProxy::DrawDynamicElements, DrawRichMesh (& 0x80000); 2013 same
+#define	SHOW_SpeedTrees				0ULL					// DISHONORED(port): never tested by the 2012/2013 exe (no FSpeedTreeSceneProxy; not in the retail SHOW_DefaultGame); uses: SpeedTreeComponent.cpp, Scene.cpp
+#define	SHOW_TextureDensity			0x0000000000200000ULL	// bit 21: 2012 FSceneRenderer::RenderDPGBegin (& 0x200000 && AllowDebugViewmodes -> RenderTextureDensities), IsRichView; 2013 same
+#define	SHOW_InstancedStaticMeshes	0x0000000000400000ULL	// bit 22: 2012 FInstancedStaticMeshSceneProxy::GetViewRelevance (& 0x400000); SHOW_ViewMode_Lit mask 0x2000_00403040 in FBrushSceneProxy::DrawDynamicElements/DrawRichMesh; 2013 same
+#define	SHOW_ShaderComplexity		0x0000000000800000ULL	// bit 23: 2012 FSceneRenderer::RenderDistortion, FDistortionPrimSet::DrawScreenDistort, RenderLightShafts, FinishRenderViewTarget (& 0x800000); 2013 same
+#define	SHOW_MotionBlur				0x0000000001000000ULL	// bit 24: DISHONORED(layout) inferred: set in the retail SHOW_DefaultGame (ctor constant bit 24), never tested by the exe; the pre-2011 UE3 header order puts MotionBlur here
+#define	SHOW_LensFlares				0x0000000002000000ULL	// bit 25: 2012 FLensFlareSceneProxy::GetViewRelevance/DrawDynamicElements (& 0x2000000); 2013 same
+#define	SHOW_LOD					0x0000000004000000ULL	// bit 26: 2012 DrawRichMesh (& 0x4000000 == 0 && bSelected && ReplacementPrimitiveMapKey), IsRichView (NonRichShowFlags 0x4003000 = Materials|Lighting|LOD); 2013 same
+#define	SHOW_LightMapDensity		0x0000000008000000ULL	// bit 27: 2012 FSceneRenderer::RenderDPGBegin (& 0x8000000 -> RenderLightMapDensities), DrawRichMesh, IsRichView; 2013 same
+#define	SHOW_DepthOfField			0x0000000010000000ULL	// bit 28: DISHONORED(layout) inferred: set in the retail SHOW_DefaultGame (ctor constant bit 28), never tested by the exe; the pre-2011 UE3 header order puts DepthOfField here
+#define	SHOW_ImageGrain				0ULL					// DISHONORED(port): never tested by the 2012/2013 exe and not in the retail SHOW_DefaultGame; uses: UberPostProcessEffect.cpp:1566, Scene.cpp
+#define	SHOW_SentinelStats			0ULL					// DISHONORED(port): never tested by the 2012/2013 exe; uses: Scene.cpp only
+#define	SHOW_Splines				0x0000000040000000ULL	// bit 30: 2012 FSplineSceneProxy::GetViewRelevance (& 0x40000000); 2013 same
+#define	SHOW_VertexColors			0x0000000080000000ULL	// bit 31: 2012 FStaticMeshSceneProxy::DrawDynamicElements (SLODWORD(ShowFlags) >= 0 || !AllowDebugViewmodes), IsRichView; 2013 same
 
-#define MAKE_SHOW_FLAG(BitNum)                           EShowFlags(E_ForceInit, BitNum)
-#define MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(BitNum)  EShowFlags(E_ForceInit, BitNum)
-#define MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(BitNum) EShowFlags(E_ForceInit, BitNum)
+// -- high dword (the pre-2011 EShowFlags enum, see the fossil UnScene.h, shifted by 32) -----------------
+#define	SHOW_Editor					0x0000000100000000ULL	// bit 32: 2012 FPrimitiveSceneProxy::IsShown/IsShadowCast (HIDWORD & 1), FViewInfo ctor; 2013 same
+#define	SHOW_Game					0x0000000200000000ULL	// bit 33: 2012 FPrimitiveSceneProxy::SetRelevanceForShowBounds/RenderBounds (SDPG_World when set), FLensFlareSceneProxy::GetOcclusionPercentage, occlusion tracker; 2013 same
+#define	SHOW_Collision				0x0000000400000000ULL	// bit 34: 2012 FStaticMeshSceneProxy::GetViewRelevance (Bounds|Collision = 0x24_00000000), FSkeletalMeshSceneProxy::DebugDrawPhysicsAsset, FBrushSceneProxy::GetViewRelevance; 2013 same
+#define	SHOW_Grid					0x0000000800000000ULL	// bit 35: DISHONORED(layout) inferred from the enum order (editor only, never tested by the exe)
+#define	SHOW_Selection				0x0000001000000000ULL	// bit 36: 2012 FModelSceneProxy::DrawDynamicElements, particle/lens-flare renderers (GIsEditor && HIDWORD & 0x10); in the retail SHOW_DefaultGame; 2013 same
+#define	SHOW_Bounds					0x0000002000000000ULL	// bit 37: 2012 FPrimitiveSceneProxy::SetRelevanceForShowBounds/RenderBounds (& 0x20_00000000), FDecalSceneProxy, draw-shape proxies; 2013 same
+#define	SHOW_StaticMeshes			0x0000004000000000ULL	// bit 38: 2012 FStaticMeshSceneProxy::GetViewRelevance/DrawDynamicElements (HIDWORD & 0x40); 2013 same
+#define	SHOW_Terrain				0x0000008000000000ULL	// bit 39: in the retail SHOW_DefaultGame (ctor constant bit 39); enum order; no terrain proxy tests it in the exe
+#define	SHOW_BSP					0x0000010000000000ULL	// bit 40: 2012 FModelSceneProxy::GetViewRelevance/DrawDynamicElements (HIDWORD & 0x2000 && HIDWORD & 0x100 = BSPTriangles && BSP); 2013 same
+#define	SHOW_SkeletalMeshes			0x0000020000000000ULL	// bit 41: 2012 FSkeletalMeshSceneProxy::GetViewRelevance/DrawDynamicElements (HIDWORD & 0x200); 2013 same
+#define	SHOW_Constraints			0x0000040000000000ULL	// bit 42: 2012 FConstraintDrawSceneProxy::GetViewRelevance, FSkeletalMeshSceneProxy::DebugDrawPhysicsAsset (HIDWORD & 0x400); 2013 same
+#define	SHOW_Fog					0x0000080000000000ULL	// bit 43: 2012 FSceneRenderer::RenderDPGEnd (-> RenderFog), GetSceneShowFlags (& ~bit when !bEnableFog), translucency pre-fog; 2013 same
+#define	SHOW_Foliage				0x0000100000000000ULL	// bit 44: DISHONORED(retail): not in the reference; 2012 FFoliageSceneProxy::GetViewRelevance/DrawDynamicElements (HIDWORD & 0x1000); in the 2012 SHOW_DefaultGame, dropped from it in 2013
+#define	SHOW_BSPTriangles			0x0000200000000000ULL	// bit 45: 2012 FModelSceneProxy::GetViewRelevance (HIDWORD & 0x2000, first operand of BSPTriangles && BSP), SHOW_ViewMode_Lit mask; 2013 same
+#define	SHOW_Paths					0x0000400000000000ULL	// bit 46: 2012 FPathRenderingSceneProxy/FNavMeshRenderingSceneProxy/FRouteRenderingSceneProxy::GetViewRelevance (HIDWORD & 0x4000), UWorld::FixupCrossLevelRefs; 2013 same
+#define	SHOW_MeshEdges				0x0000800000000000ULL	// bit 47: 2012 DrawRichMesh (HIDWORD & 0x8000), IsRichView (RichShowFlags HIDWORD 0x8008000); 2013 same
+#define	SHOW_LargeVertices			0x0001000000000000ULL	// bit 48: DISHONORED(layout) inferred from the enum order (editor only, never tested by the exe)
+#define	SHOW_UnlitTranslucency		0x0002000000000000ULL	// bit 49: 2012 FSceneRenderer::RenderDPGEnd (HIDWORD & 0x20000 gates RenderDistortion and RenderTranslucency); 2013 same
+#define	SHOW_Portals				0x0004000000000000ULL	// bit 50: in the retail SHOW_DefaultGame (ctor constant bit 50); enum order; never tested by the exe
+#define	SHOW_HitProxies				0x0008000000000000ULL	// bit 51: 2012 FSceneRenderer::InitViews (no occlusion queries), FFluidSurfaceSceneProxy::DrawDynamicElements, every TDynamicPrimitiveDrawer factory (HIDWORD & 0x80000); 2013 same
+#define	SHOW_ShadowFrustums			0x0010000000000000ULL	// bit 52: 2012 FSceneRenderer::InitProjectedShadowVisibility (HIDWORD & 0x100000 -> RenderFrustumWireframe); 2013 same
+#define	SHOW_ModeWidgets			0x0020000000000000ULL	// bit 53: DISHONORED(layout) inferred from the enum order (editor only, never tested by the exe)
+#define	SHOW_KismetRefs				0x0040000000000000ULL	// bit 54: DISHONORED(layout) inferred from the enum order (editor only, never tested by the exe)
+#define	SHOW_Volumes				0x0080000000000000ULL	// bit 55: 2012 FLevelGridVolumeRenderingSceneProxy::GetViewRelevance, FBrushSceneProxy::GetViewRelevance (Volumes|Game = 0x80_00020000_0000); 2013 same
+#define	SHOW_CamFrustums			0x0100000000000000ULL	// bit 56: 2013 FDrawFrustumSceneProxy::GetViewRelevance (HIDWORD & 0x1000000); 2012 same (IDA shows the immediate as a symbol offset)
+#define	SHOW_NavigationNodes		0x0200000000000000ULL	// bit 57: 2012 FPrimitiveSceneProxy::IsShown/IsShadowCast (HIDWORD & 0x2000000 with bIsNavigationPoint); 2013 same
+#define	SHOW_Particles				0x0400000000000000ULL	// bit 58: 2012 FParticleSystemSceneProxy::GetViewRelevance/DrawDynamicElements (HIDWORD & 0x4000000); 2013 same
+#define	SHOW_LightInfluences		0x0800000000000000ULL	// bit 59: 2012 IsRichView (RichShowFlags HIDWORD 0x8008000); 2013 same
+#define	SHOW_BuilderBrush			0x1000000000000000ULL	// bit 60: 2012 FBrushSceneProxy::GetViewRelevance (bBuilder && HIDWORD & 0x10000000); 2013 same
+#define	SHOW_TerrainPatches			0x2000000000000000ULL	// bit 61: DISHONORED(layout) inferred from the enum order (editor only, never tested by the exe)
+#define	SHOW_Cover					0x4000000000000000ULL	// bit 62: DISHONORED(layout) inferred from the enum order (no cover proxy in the exe)
+#define	SHOW_ActorTags				0x8000000000000000ULL	// bit 63: DISHONORED(layout) inferred from the enum order (editor only, never tested by the exe)
 
-#endif
-
-//Reserved for "fall through" logic in shipping
-#define	SHOW_RESERVED_FLAG			MAKE_SHOW_FLAG(1)	// Defines to 0x01 which let's the compiler opt out of always true compares (See EShowFlags)
-
-//flags that should always be tested for shipping (scene captures)
-#define	SHOW_Lighting				MAKE_SHOW_FLAG(2)
-#define	SHOW_SceneCaptureUpdates	MAKE_SHOW_FLAG(3)	// Update scene capture probes
-#define	SHOW_DynamicShadows			MAKE_SHOW_FLAG(4)	// Draw dynamic shadows.
-#define	SHOW_Fog					MAKE_SHOW_FLAG(5)
-#define	SHOW_PostProcess			MAKE_SHOW_FLAG(6)	// Draw post process effects
-#define	SHOW_Sprites				MAKE_SHOW_FLAG(7)	// Draw sprite components
-#define	SHOW_LightShafts			MAKE_SHOW_FLAG(8)	// Post processing: Light shafts
-
-//flags that should always set for shipping
-#define	SHOW_Decals					MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(32)	// Draw decals.
-#define	SHOW_InstancedStaticMeshes	MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(33)	// Show instanced static meshes
-#define	SHOW_StaticMeshes			MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(34)
-#define	SHOW_Terrain				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(35)
-#define	SHOW_BSPTriangles			MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(36)	// Draws BSP triangles
-#define	SHOW_SkeletalMeshes 		MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(37)
-#define	SHOW_SpeedTrees				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(38)	// Renders SpeedTrees
-#define	SHOW_LensFlares				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(39)	// Renders LensFlares
-#define	SHOW_LOD					MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(40)	// Use LOD parenting, MinDrawDistance, etc. If disabled, will show LOD parenting lines
-#define	SHOW_Game					MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(41)
-#define	SHOW_CameraInterpolation	MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(42)	// to disable motion blur and AO history smoothing for the editor camera, is set for the game
-#define	SHOW_Particles				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(43)	// Draws particles
-#define	SHOW_BSP					MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(44)
-#define	SHOW_Materials				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(45)
-#define	SHOW_MotionBlur				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(46)	// Post processing: MotionBlur (also disabled velocity rendering)
-#define	SHOW_ImageGrain				MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(47)	// Post processing: ImageGrain
-#define	SHOW_DepthOfField			MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(48)	// Post processing: Depth of Field
-#define	SHOW_ImageReflections		MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(49)	// Post processing: Image Reflections
-#define	SHOW_SubsurfaceScattering	MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(50)	// Post processing: Subsurface Scattering
-#define	SHOW_LightFunctions			MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(51)	// Post processing: Light Functions
-#define	SHOW_Tessellation			MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(52)	// Post processing: Tessellation
-#define	SHOW_UnlitTranslucency		MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(53)	// Render unlit translucency
-#define	SHOW_TranslucencyDoF		MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(54)  // Render translucency blur factor to translucency DoF blur buffer
-#define	SHOW_SSAO					MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(55)	// Post processing: Screen Space Ambient Occlusion
-
-//flags that should never be set for shipping
-#define	SHOW_DecalInfo				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(64)	// Draw decal dev info (frustums, tangent axes, etc).
-#define	SHOW_LightRadius			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(65)	// Draw point light radii.
-#define	SHOW_AudioRadius			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(66)	// Draw sound actor radii.
-#define	SHOW_Wireframe				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(67)
-#define	SHOW_LightComplexity		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(68)
-#define	SHOW_Brushes				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(69)
-// unused							MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(70)
-#define	SHOW_LevelColoration		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(71)	// Render objects with colors based on what the level they belong to.
-#define	SHOW_BSPSplit				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(72)	// Colors BSP based on model component association.
-#define	SHOW_CollisionNonZeroExtent	MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(73)	
-#define	SHOW_CollisionZeroExtent	MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(74)	
-#define	SHOW_CollisionRigidBody		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(75)	
-#define	SHOW_PropertyColoration		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(76)	// Render objects with colors based on the property values.
-#define	SHOW_StreamingBounds		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(77)	// Render streaming bounding volumes for the currently selected texture
-#define	SHOW_TextureDensity			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(78)	// Colored according to world-space texture density.
-#define	SHOW_ShaderComplexity		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(79)	// Renders world colored by shader complexity
-#define	SHOW_LightMapDensity		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(80)	// Render checkerboard material with UVs scaled by lightmap resolution w. color tint for world-space lightmap density
-#define	SHOW_SentinelStats			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(81)	// Render stats from Sentinel stats viewer in editor
-#define	SHOW_Splines				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(82)	
-#define	SHOW_VertexColors			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(83)	// Vertex colors
-#define	SHOW_Editor					MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(84)	
-#define	SHOW_Collision				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(85)	
-#define	SHOW_Grid					MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(86)	
-#define	SHOW_Selection				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(87)	
-#define	SHOW_Bounds					MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(88)	
-#define	SHOW_Constraints			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(89)	
-#define	SHOW_Paths					MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(90)	// Draws BSP brushes.
-#define	SHOW_MeshEdges				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(91)	// In the filled view modes, render mesh edges as well as the filled surfaces.
-#define	SHOW_LargeVertices			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(92)	// Displays large clickable icons on static mesh vertices
-#define	SHOW_HitProxies				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(93)	// Draws each hit proxy in the scene with a different color.
-#define	SHOW_ShadowFrustums			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(94)	// Draws un-occluded shadow frustums as 
-#define	SHOW_ModeWidgets			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(95)	// Draws mode specific widgets and controls in the viewports (should only be set on viewport clients that are editing the level itself)
-#define	SHOW_KismetRefs				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(96)	// Draws green boxes around actors in level which are referenced by Kismet. Only works in editor.
-#define	SHOW_Volumes				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(97)	// Draws Volumes
-#define	SHOW_CamFrustums			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(98)	// Draws camera frustums
-#define	SHOW_NavigationNodes		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(99)	// Draws actors associated with path noding
-#define	SHOW_LightInfluences		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(100)	// Visualize light influences
-#define	SHOW_BuilderBrush			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(101)	// Draws the builder brush wireframe
-#define	SHOW_TerrainPatches			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(102)	// Draws an outline around each terrain patch
-#define	SHOW_Cover					MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(103)	// Complex cover rendering
-#define	SHOW_ActorTags				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(104)	// Draw an Actors Tag next to it in the viewport. Only works in the editor.
-#define	SHOW_VisualizeDOFLayers		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(105)	// Post processing: Visualize Depth of Field Layers
-#define	SHOW_PreShadowFrustums		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(106)	// Draws un-occluded preshadow frustums as wireframe
-#define	SHOW_TemporalAA				MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(107)	// Post processing: Temporal AA
-#define	SHOW_PreShadowCasters		MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(108)	// Draws the meshes that are used to cast preshadows
-#define	SHOW_VisualizeSSAO			MAKE_SHOW_FLAG_ALWAYS_FALSE_FOR_SHIPPING(109)	// Post processing: Visualize Screen Space Ambient Occlusion
-
-#define	SHOW_PostProcessAA			MAKE_SHOW_FLAG_ALWAYS_TRUE_FOR_SHIPPING(110)	// Post processing: PostProcessAA
-
-// more flags can be added to the end, the number can go up to 127 (see MAKE_SHOW_FLAG)
+// -- reference-only flags (added to UE3 after Dishonored's branch): no-ops ------------------------------
+#define	SHOW_LightShafts			0ULL	// DISHONORED(port): 2012 RenderLightShafts gates on Lighting && DynamicShadows instead; uses: LightShaftRendering.cpp:995, Scene.cpp, UnPlayer.cpp
+#define	SHOW_CameraInterpolation	0ULL	// DISHONORED(port): uses: SceneRendering.cpp:1436, Scene.cpp
+#define	SHOW_ImageReflections		0ULL	// DISHONORED(port): uses: ImageReflectionRendering.cpp:1419, Scene.cpp, UnPlayer.cpp
+#define	SHOW_SubsurfaceScattering	0ULL	// DISHONORED(port): uses: SubsurfaceScatteringRendering.cpp:282, Scene.cpp, UnPlayer.cpp
+#define	SHOW_LightFunctions			0ULL	// DISHONORED(port): uses: LightFunctionRendering.cpp:250/277, Scene.cpp, UnPlayer.cpp
+#define	SHOW_Tessellation			0ULL	// DISHONORED(port): uses: Scene.cpp, UnPlayer.cpp
+#define	SHOW_TranslucencyDoF		0ULL	// DISHONORED(port): uses: TranslucentRendering.cpp:683/1409, UberPostProcessEffect.cpp:1415, Scene.cpp, UnPlayer.cpp
+#define	SHOW_SSAO					0ULL	// DISHONORED(port): uses: AmbientOcclusionRendering.cpp:1277/1439, Scene.cpp, UnPlayer.cpp
+#define	SHOW_VisualizeDOFLayers		0ULL	// DISHONORED(port): uses: UberPostProcessEffect.cpp:1464, UnPlayer.cpp
+#define	SHOW_PreShadowFrustums		0ULL	// DISHONORED(port): 2012 InitProjectedShadowVisibility has the SHOW_ShadowFrustums branch only; uses: ShadowSetup.cpp:1501, UnPlayer.cpp
+#define	SHOW_TemporalAA				0ULL	// DISHONORED(port): uses: SceneRendering.cpp:280, UberPostProcessEffect.cpp:1575, UnPlayer.cpp:3909, Scene.cpp
+#define	SHOW_PreShadowCasters		0ULL	// DISHONORED(port): uses: UnPlayer.cpp
+#define	SHOW_VisualizeSSAO			0ULL	// DISHONORED(port): uses: AmbientOcclusionRendering.cpp:278/1278, SceneRendering.cpp:2211, LightShaftRendering.cpp:997, UnPlayer.cpp
+#define	SHOW_PostProcessAA			0ULL	// DISHONORED(port): uses: PostProcessAA.cpp:643, Scene.cpp, UnPlayer.cpp
 
 
 /*

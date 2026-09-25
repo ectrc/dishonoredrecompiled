@@ -20339,8 +20339,7 @@ public:
 
 struct FShowFlags_Mirror
 {
-    QWORD flags0;
-    QWORD flags1;
+    QWORD flags0; // DISHONORED(layout): one QWORD, EShowFlags is 64-bit (retail SDK: UGameViewportClient::ShowFlags is FQWord @96; 2012 PDB unsigned __int64); the reference mirror had two
 
     /** Constructors */
     FShowFlags_Mirror() {}

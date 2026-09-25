@@ -7,86 +7,16 @@
 #define _INC_SHOW_FLAGS
 
 /*-----------------------------------------------------------------------------
-	Size of EShowFlags
+	EShowFlags
 -----------------------------------------------------------------------------*/
-#if CONSOLE && FINAL_RELEASE
-struct FShippingShowFlags
-{
-	//default constructor
-	FShippingShowFlags()
-	{
-		InternalFlags = 0;
-	}
-	//default value specified
-	FShippingShowFlags(DWORD DefaultFlags)
-	{
-		InternalFlags = DefaultFlags;
-	}
 
-	//binary bitwise AND
-	FORCEINLINE DWORD operator&(const DWORD MaskFlags) const
-	{
-		//force the required bit (see SHOW_RESERVED_FLAG)
-		return (InternalFlags | (DWORD)0x01) & (MaskFlags);
-	}
-	FORCEINLINE DWORD operator&(const FShippingShowFlags Mask) const
-	{
-		//force the required bit (see SHOW_RESERVED_FLAG)
-		return (InternalFlags | (DWORD)0x01) & (Mask.InternalFlags);
-	}
-	//unary bitwise AND
-	FORCEINLINE DWORD operator&=(const FShippingShowFlags Mask)
-	{
-		InternalFlags &= Mask.InternalFlags;
-		return InternalFlags;
-	}
-	//binary bitwise OR
-	FORCEINLINE FShippingShowFlags operator|(const FShippingShowFlags Mask) const
-	{
-		//force the required bit (see SHOW_RESERVED_FLAG)
-		return FShippingShowFlags(InternalFlags | Mask.InternalFlags);
-	}
-	//unary bitwise OR
-	FORCEINLINE void operator|=(const FShippingShowFlags Mask)
-	{
-		InternalFlags |= Mask.InternalFlags;
-	}
-	//bitwise negate
-	FORCEINLINE DWORD operator~() const
-	{
-		return ~InternalFlags;
-	}
-	//binary xor
-	FORCEINLINE DWORD operator^(const FShippingShowFlags Mask)
-	{
-		return InternalFlags ^ Mask.InternalFlags;
-	}
-	//unary xor
-	FORCEINLINE void operator^=(const FShippingShowFlags Mask)
-	{
-		InternalFlags ^= Mask.InternalFlags;
-	}
-
-	//Comparison operators
-	FORCEINLINE bool operator==(const FShippingShowFlags Mask) const
-	{
-		return (InternalFlags == Mask.InternalFlags);
-	}
-	FORCEINLINE bool operator!=(const FShippingShowFlags Mask) const
-	{
-		return (InternalFlags != Mask.InternalFlags);
-	}
-
-private:
-	DWORD InternalFlags;
-	//sizes much match between pc and xbox.
-	DWORD UnusedDWORDPadding;
-	QWORD UnusedQWORDPadding;
-};
-typedef FShippingShowFlags EShowFlags;
-#else
-typedef TStaticBitArray<128> EShowFlags;
-#endif
+// DISHONORED(layout): Dishonored's engine keeps the pre-2011 UE3 64-bit show flags, not the reference
+// TStaticBitArray<128>: the 2012 Shipping PDB types UGameViewportClient::ShowFlags and
+// FSceneViewFamily::ShowFlags as unsigned __int64 (@96 / @24) and USceneCaptureComponent::GetSceneShowFlags
+// returns unsigned __int64 (rva 0x2e65d0); the retail 2013 SDK dump has UGameViewportClient::ShowFlags as
+// FQWord @96 (sizeof 284). The bit assignments are in Scene.h (SHOW_*), each cited to the 2012/2013
+// decompiles (resources/docs/agents/agentV.md). The CONSOLE && FINAL_RELEASE FShippingShowFlags wrapper of
+// the reference is gone: this is a Win32 build.
+typedef QWORD EShowFlags;
 
 #endif // _INC_SHOW_FLAGS
-
