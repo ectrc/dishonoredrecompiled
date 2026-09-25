@@ -59,3 +59,6 @@ Caveats:
   are resolved by RVA range instead (`--functions` mode of `dia_dump.py`).
 * The 2013 database (`Dishonored.exe.i64`) is a plain auto-analysis: 34,059 functions, 93 %
   unnamed, 18 local types. Phase 7 populates it from the 2012 names.
+
+| `../types/script_classes_{2012,2013}.json` | `resources/tools/pdb/read_package_classes.py` (needs `lzo1x.py`) | **no** (regenerate: `python resources/tools/pdb/read_package_classes.py` per agentI.md) |
+| `../types/native_class_sizes.csv` | `resources/tools/ida/export_class_sizes.py` | yes |

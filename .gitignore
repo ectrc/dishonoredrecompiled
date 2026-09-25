@@ -41,3 +41,8 @@ resources/docs/symbols/pdb_functions.csv
 resources/docs/symbols/compiland_of.csv
 resources/docs/types/types.json
 resources/docs/types/all_types.h
+
+# Diaphora checkout (agent J, name propagation)
+resources/tools/diaphora/
+resources/docs/types/script_classes_2012.json
+resources/docs/types/script_classes_2013.json
