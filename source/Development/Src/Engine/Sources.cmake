@@ -2,6 +2,34 @@
 # Engine_EXCLUDE: reference compile units left out of the module target (tests, tools).
 # Engine_NOT_IN_PDB: compiled, but the Shipping PDB attributes no function to them; verify in P2.7.
 set(Engine_EXCLUDE
+  # Stale units in the reference Src/ that its Engine.vcxproj does not compile (UE3 2004-era
+  # leftovers: FRenderInterface, UShadowMap, ...); none has a function in the Shipping PDB.
+  Src/AGameStats.cpp
+  Src/DecalVertexFactory.cpp
+  Src/UnEdCoordSystem.cpp
+  Src/UnEdLayer.cpp
+  Src/UnGameUtilities.cpp
+  Src/UnLevelVisibility.cpp
+  Src/UnMaterial.cpp
+  Src/UnRebuildTools.cpp
+  Src/UnResource.cpp
+  Src/UnSHM.cpp
+  Src/UnScene.cpp
+  Src/UnSequenceDraw.cpp
+  Src/UnStats.cpp
+  Src/UnTex.cpp
+  # DirectShow base classes (streams.h, Development/External/DirectShow in Epic's tree) are not in
+  # the reference tree; no FAVIWriter/FCapturePin function exists in the Shipping PDB. Debug links
+  # of UnEngine.cpp/UnGame.cpp still reference FAVIWriter::GetInstance (Phase 4).
+  Src/AVIWriter.cpp
+  Src/CapturePin.cpp
+  Src/CaptureSource.cpp
+)
+# Units outside Src/ that the reference Engine.vcxproj compiles (UDebuggerCore is in the PDB).
+set(Engine_EXTRA
+  Debugger/UnDebuggerCore.cpp
+  Debugger/UnDelphiInterface.cpp
+  Debugger/UnWTInterface.cpp
 )
 set(Engine_NOT_IN_PDB
   Src/AGameStats.cpp

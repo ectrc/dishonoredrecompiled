@@ -1,7 +1,7 @@
 # dishonored_module(<Name>): one static library per UE3 module under source/Development/Src/<Name>.
 #
-# * compiles Src/**/*.cpp minus the <Name>_EXCLUDE list from <Name>/Sources.cmake (written by
-#   resources/tools/import_reference.py)
+# * compiles Src/**/*.cpp minus the <Name>_EXCLUDE list plus the <Name>_EXTRA list from
+#   <Name>/Sources.cmake (written by resources/tools/import_reference.py)
 # * exposes Inc/, Inc/Licensee, Inc/Epic (when present) and depends on every module declared
 #   before it, because UE3 modules include each other's headers freely
 # * uses <Name>Private.h as the precompiled header when it exists
@@ -51,6 +51,10 @@ function(dishonored_module name)
   file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${module_dir}/Src/*.cpp")
   foreach(excluded IN LISTS ${name}_EXCLUDE)
     list(REMOVE_ITEM sources "${module_dir}/${excluded}")
+  endforeach()
+  # <Name>_EXTRA: compile units outside Src/ that the reference .vcxproj builds (Engine/Debugger)
+  foreach(extra IN LISTS ${name}_EXTRA)
+    list(APPEND sources "${module_dir}/${extra}")
   endforeach()
   file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${module_dir}/Inc/*.h" "${module_dir}/Src/*.h")
 

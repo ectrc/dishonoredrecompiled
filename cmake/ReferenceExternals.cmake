@@ -61,10 +61,17 @@ dishonored_reference_sdk(DirectX9 d3dx9.h
   LIBS d3d9 d3dx9 dxguid dinput8 xinput
   EXCLUDE_HEADERS rpcsal.h)
 
-# libpng (Engine/Inc/UnPNG.h, pulled into Core through Engine.h). Headers and prebuilt libs from
-# the reference tree until Phase 4 replaces it with a FetchContent build.
-dishonored_reference_sdk(libPNG png.h
-  INCLUDE_DIRS libPNG libPNG/include
-  LIB_DIRS libPNG/lib
-  LIBS $<IF:$<CONFIG:Debug>,libpngd,libpng>
-  REWRITE_INCLUDES "\"../../zlib/zlib.h\"=<zlib.h>" "\"../zlib/zlib.h\"=<zlib.h>")
+# libpng: the reference Development/External/libPNG is 1.2.5 (header and lib) but Engine's
+# UnPNG.cpp targets libpng 1.5.13 (png_set_add_alpha, its own png_check_sig shim), so the
+# reference copy cannot link Engine. Dishonored::libPNG now comes from cmake/Dependencies.cmake.
+
+# nvtt (Engine/Src/UnTexCompress.cpp: DXT compression in the game build under
+# !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER)
+dishonored_reference_sdk(nvtt nvtt/nvtt.h
+  INCLUDE_DIRS nvtt/include
+  LIB_DIRS nvtt/lib
+  LIBS nvtt)
+
+# nvTriStrip: not wired. The reference Development/External/nvTriStrip (and the Engine/Src copy of
+# its header) is the stock 16-bit-index library, but Engine/Src/RawIndexBuffer.cpp calls Epic's
+# 32-bit fork (GenerateStrips(const unsigned int*, ...)); WITH_NVTRISTRIP=0 in DishonoredDefines.

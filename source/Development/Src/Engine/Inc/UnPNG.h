@@ -11,7 +11,7 @@
 #if !CONSOLE && defined(_MSC_VER)
 
 #pragma pack (push,8)
-#include <png.h>  // DISHONORED: libpng/zlib come from cmake (ReferenceExternals / Dependencies), not Development/External
+#include <png.h>  // DISHONORED: libpng/zlib come from cmake (Dependencies.cmake), not Development/External
 #include <zlib.h>
 #pragma pack (pop)
 

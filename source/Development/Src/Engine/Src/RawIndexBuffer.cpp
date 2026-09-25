@@ -5,7 +5,7 @@
 
 #include "EnginePrivate.h"
 
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 #if _WIN64
 #pragma pack (push,16)
 #endif
@@ -103,7 +103,7 @@ FRawIndexBuffer
 */
 INT FRawIndexBuffer::Stripify()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	return StripifyIndexBuffer(Indices);
 #else
 	return 0;
@@ -115,7 +115,7 @@ INT FRawIndexBuffer::Stripify()
 */
 void FRawIndexBuffer::CacheOptimize()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	CacheOptimizeIndexBuffer(Indices);
 #endif
 }
@@ -153,7 +153,7 @@ FRawIndexBuffer16or32
 */
 INT FRawIndexBuffer16or32::Stripify()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	return StripifyIndexBuffer(Indices);
 #else
 	return 0;
@@ -165,7 +165,7 @@ INT FRawIndexBuffer16or32::Stripify()
 */
 void FRawIndexBuffer16or32::CacheOptimize()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	CacheOptimizeIndexBuffer(Indices);
 #endif
 }
@@ -328,7 +328,7 @@ void FRawStaticIndexBuffer::Serialize( FArchive& Ar, UBOOL bNeedsCPUAccess )
 */
 INT FRawStaticIndexBuffer::Stripify()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	return StripifyIndexBuffer(Indices);
 #else
 	return 0;
@@ -340,7 +340,7 @@ INT FRawStaticIndexBuffer::Stripify()
 */
 void FRawStaticIndexBuffer::CacheOptimize()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	CacheOptimizeIndexBuffer(Indices);
 #endif
 }
@@ -357,7 +357,7 @@ FRawStaticIndexBuffer16or32
 template <typename INDEX_TYPE>
 INT FRawStaticIndexBuffer16or32<INDEX_TYPE>::Stripify()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	return StripifyIndexBuffer(Indices);
 #else
 	return 0;
@@ -370,7 +370,7 @@ INT FRawStaticIndexBuffer16or32<INDEX_TYPE>::Stripify()
 template <typename INDEX_TYPE>
 void FRawStaticIndexBuffer16or32<INDEX_TYPE>::CacheOptimize()
 {
-#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if !CONSOLE && !PLATFORM_UNIX && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER && WITH_NVTRISTRIP  // DISHONORED: the reference nvTriStrip is the stock 16-bit-index API, not Epic's 32-bit fork; switch in DishonoredDefines.cmake
 	CacheOptimizeIndexBuffer(Indices);
 #endif
 }
