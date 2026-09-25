@@ -1,4 +1,4 @@
-# Project status — 2026-09-25 (evening: Phase 2 complete)
+# Project status — 2026-09-26 (Phase 3 wave 1 landed; milestone 1 reached)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `resources/docs/PHASE1.md`
 (done), `resources/docs/PHASE2.md` (in progress). Decisions and fixes: `resources/docs/porting_notes.md`.
@@ -13,7 +13,13 @@ checked against the retail exe / retail packages (PLAN.md Phase 2b).
 
 ## Where we are
 
-Phase 2 (reference import and layout convergence) is **complete** (`verify_phase2.py` 18/18, `CoreSmoke` 67/67). Engine compile (Phase 3 start) is in progress.
+Phase 2 is complete and **Phase 3 wave 1 has landed** (`resources/docs/PHASE3.md`): **milestone 1 is
+reached** — our own `DishonoredGame.exe` (real `Launch` + Core + Engine + GameFramework + IpDrv +
+WinDrv, null RHI, `-DDISHONORED_REAL_LAUNCH=ON`) runs against the staged retail content and logs
+`Init: Object subsystem initialized` (`python resources/tools/build_and_smoke.py`). CoreSmoke is
+99/99 (incl. LZO-decompressing a retail package chunk). Retail truth is in hand: native class
+sizes for 2,857 retail classes, member lists for 3,043 retail script classes, retail UClass layout.
+Next blocker on the way to milestone 2: `SystemSettings.cpp:532` assert on the retail ini.
 
 | Area | State |
 |---|---|

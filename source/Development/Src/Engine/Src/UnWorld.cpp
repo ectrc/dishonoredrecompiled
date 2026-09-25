@@ -4226,7 +4226,7 @@ UBOOL UWorld::VerifyPackageInfo(FPackageInfo& Info)
 				// delay until async loading is complete
 				return FALSE;
 			}
-			else if (Info.LoadingPhase == 1 && GSeamlessTravelHandler.IsInTransition() && !GSeamlessTravelHandler.HasSwitchedToDefaultMap())
+			else if (/* DISHONORED(layout): no FPackageInfo::LoadingPhase */ FALSE && GSeamlessTravelHandler.IsInTransition() && !GSeamlessTravelHandler.HasSwitchedToDefaultMap())
 			{
 				// delay until seamless level transition has cleared old level
 				return FALSE;
@@ -5699,7 +5699,7 @@ void FSeamlessTravelHandler::Tick()
 	// Once the destination map is loaded, wait until all packages are verified before finishing transition
 	if ( LoadedPackage != NULL && GWorld->GetWorldInfo()->NextURL == TEXT("") &&
 		( GWorld->GetNetDriver() == NULL || GWorld->GetNetDriver()->ServerConnection == NULL || GWorld->GetNetDriver()->ServerConnection->PendingPackageInfos.Num() == 0 ||
-				(!bSwitchedToDefaultMap && GWorld->GetNetDriver()->ServerConnection->PendingPackageInfos(0).LoadingPhase == 1) ) )
+				(!bSwitchedToDefaultMap && /* DISHONORED(layout): no FPackageInfo::LoadingPhase */ FALSE) ) )
 	{
 		// find the new world 
 		UWorld* NewWorld = LoadedWorld;

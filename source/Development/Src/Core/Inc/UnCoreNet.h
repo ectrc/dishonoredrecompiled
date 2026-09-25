@@ -85,7 +85,7 @@ public:
 	INT				RemoteGeneration;	// Remote machine's generation of the package.
 	DWORD			PackageFlags;		// Package flags.
 	FName			ForcedExportBasePackageName; // for packages that were a forced export in another package (seekfree loading), the name of that base package, otherwise NAME_None
-	BYTE			LoadingPhase;		// indicates if package was loaded during a seamless loading operation (e.g. seamless level change) to aid client in determining when to process it
+	// DISHONORED(layout): 2012 PDB FPackageInfo is 68 bytes with no LoadingPhase (retail size identical, native_class_sizes.csv); seamless-travel phase tracking removed
 	FString			Extension;			// Extension of the package file, used so HTTP downloading can get the package
 	// DISHONORED(layout): reference FileName removed; PDB FPackageInfo (68 bytes) has ForcedExportBasePackageName @48 directly followed by Extension @56
 

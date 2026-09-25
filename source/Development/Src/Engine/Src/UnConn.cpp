@@ -634,7 +634,7 @@ void UNetConnection::AddNetPackage(UPackage* Package)
 
 		INT Index = PackageMap->AddPackage(Package);
 		checkSlow(PackageMap->List.IsValidIndex(Index));
-		PackageMap->List(Index).LoadingPhase = GSeamlessTravelHandler.HasSwitchedToDefaultMap() ? 1 : 0;
+		// DISHONORED(layout): FPackageInfo has no LoadingPhase in Dishonored; nothing to record
 		SendPackageInfo(PackageMap->List(Index));
 	}
 }

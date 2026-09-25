@@ -69,3 +69,4 @@ Every other Engine contract type is retail-identical; the remaining 524 non-cont
 - Confirm `FPackagePrecacheInfo` (+3 Arkane members, 24 bytes) and `FAsyncIORequest` (`Event` @44,
   `LoadDataWithEvent`) in retail once names are propagated.
 - Rerun `LayoutProbe`/`CoreSmoke` after the UClass header change.
+- Done 2026-09-26: `FPackageInfo` (68 in both builds) had the reference-only `LoadingPhase` byte removed; the three seamless-travel uses in Engine collapse to the non-phased path.

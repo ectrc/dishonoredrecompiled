@@ -1046,6 +1046,15 @@ def run_report(csv_path: Path, path_a: Path, path_b: Path, out_md: Path, apply_l
         lines.append(f"| {mod} | {tot} | {m} | {100.0 * m / tot:.1f} | {h} | {tot - m} |")
     lines.append("")
 
+    lines.append("## Validation and caveats")
+    lines.append("")
+    lines.append("* Self-test: matching the 2012 dump against itself maps 66,384 of 66,394 functions to their own address; the 10 exceptions are two FaceFX classes with byte-identical bodies and identical call structure (`FxNullLinkFn` / `FxConstantLinkFn`).")
+    lines.append("* 2013 native table: the retail exe registers name-bound natives from a static table of `{\"<Class>exec<Func>\", &Class::execFunc}` records (2012 used one dynamic initializer per native, which is why ~1,000 `_dynamic_initializer_for_*exec*` functions of 2012 have no 2013 counterpart). The `apply` step names every exec function from that table and reports how many propagated names agreed with it (see the apply line above): that is an independent accuracy measurement on the hardest population (exec thunks differ from their siblings only by a vtable offset).")
+    lines.append("* Layout shifts: 2013 inserted virtuals and members, so functions that differ from a sibling only by a displacement swap identities under pure byte hashing (2012 `execSetRotation` was byte-identical to 2013 `execSetTranslation`). Hence the shape rule for `bytes`/`tokens` and the `order-sibling` cap; ratio < 0.9 pairs are candidates, not names.")
+    lines.append("* `GetPrivateStaticClass<Class>` (2,538 per-class functions in 2012, 52 instructions each) has no per-class counterpart in 2013: the retail build keeps a static registration struct per class (size, name, package, within, flags, constructor) and calls one generic function; the 2013 `StaticClassNoInline` references that struct, which is how those clusters are anchored (strings through referenced data structs).")
+    lines.append("* Diaphora (cloned into `resources/tools/diaphora`, gitignored) runs headless (`idat -A -S diaphora.py` with `DIAPHORA_AUTO`/`DIAPHORA_EXPORT_FILE`), but its export of the 2012 db progressed ~22 % of `.text` in 28 minutes without the decompiler; with two exports and the diff that is several hours per iteration, so the own matcher (export 1 min per db, match 1.5 min) was used instead.")
+    lines.append("* Types are not propagated: `retail2013_named.i64` has names and function comments (`2012 rva ... ratio ... method`) but the 2012 PDB types are not applied.")
+    lines.append("")
     lines.append("## Landmark functions")
     lines.append("")
     landmarks = ["FEngineLoop::Init", "ULinkerLoad::CreateLoader", "UClass::Serialize", "FName::StaticInit", "UObject::StaticInit", "UStruct::Link",
