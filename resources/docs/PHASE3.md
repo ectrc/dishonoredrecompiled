@@ -204,7 +204,7 @@ if package loading is reached, which milestone 1 does not require.
 | K | done | LZO in the engine | done | 2026-09-26 | lzokay (MIT) via FetchContent, `WITH_LZO=1`; `appUncompressMemoryLZO` bounds-checked; CoreSmoke 99/99 incl. decompressing the retail Core.upk name-table chunk (first name "!", last "~=", 720 entries, sorted) |
 | L | done | Core serialization port (24 functions) | done | 2026-09-26 | 26 ported from the 2012 decompile (UClass::Serialize, UScriptStruct::SerializeBin, CreateLoader+ArkBsPatch, AsyncPreloadPackage .bs patches, FIOSystem request types, version enums); `function_status.csv` created. Engine call sites fixed by coordinator (FlushAsyncLoading(), AIORT_MipMap) |
 | M | | Engine layout probe | todo | | |
-| N | | Milestone 1: real Launch | todo | | |
+| N | done | Milestone 1: real Launch | done | 2026-09-26 | **Milestone 1 reached**: `DISHONORED_REAL_LAUNCH=ON` builds Launch.cpp/LaunchEngineLoop.cpp with GAMENAME=DISHONOREDGAME branches + stubs; GameFramework/IpDrv/WinDrv targets on; null RHI; `build_and_smoke.py` exits 0 (`Init: Object subsystem initialized`, log prefix matches golden). Next blocker: `SystemSettings.cpp:532` assert on retail `DishonoredSystemSettings.ini` (milestone 2) |
 | C1 | coordinator | Retail reconciliation of Core | in-progress | | `types/retail_reconciliation.md`: only UClass differs (456→436: m_DropdownCategory + one of ClassReps/NetFields removed, serialization format unchanged); header change waits for J's UClass::Link |
 | C2 | coordinator | Retail reconciliation of Engine | todo | | after M, H, I |
 
