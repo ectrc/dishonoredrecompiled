@@ -478,6 +478,7 @@ public:
     FRotator DesiredRotation;
     class UPrimitiveComponent* PreRagdollCollisionComponent;
     class URB_BodyInstance* PhysicsPushBody;
+    struct FRBCollisionChannelContainer PushBoxCollisionChannel;  // DISHONORED(layout): retail 2013 only, SDK dump @1048 (script_delta_2012_2013.md: Pawn members_added)
     INT FailedLandingCount;
     TArrayNoInit<class UAnimNodeSlot*> SlotNodes;
     TArrayNoInit<class UInterpGroup*> InterpGroupList;
@@ -488,10 +489,11 @@ public:
     FLOAT RootMotionInterpRate;
     FLOAT RootMotionInterpCurrentTime;
     FVector RootMotionInterpCurveLastValue;
-    TArrayNoInit<INT> m_BackedUpPhysicsBoneIndexes;  // DISHONORED(layout): 2012 PDB @1144
-    TArrayNoInit<FBoneAtom> m_BackedUpPhysicsBoneAtoms;  // DISHONORED(layout): 2012 PDB @1156
-    INT m_BackedUpPhysicsPreviousSlot;  // DISHONORED(layout): 2012 PDB @1168
-    FLOAT m_fBackedUpPhysicsDeltaTime;  // DISHONORED(layout): 2012 PDB @1172
+    TArrayNoInit<INT> m_BackedUpPhysicsBoneIndexes;  // DISHONORED(layout): 2012 PDB @1144, retail SDK @1148
+    TArrayNoInit<FBoneAtom> m_BackedUpPhysicsBoneAtoms;  // DISHONORED(layout): 2012 PDB @1156, retail SDK @1160
+    INT m_BackedUpPhysicsPreviousSlot;  // DISHONORED(layout): 2012 PDB @1168, retail SDK @1172
+    FLOAT m_fBackedUpPhysicsDeltaTime;  // DISHONORED(layout): 2012 PDB @1172, retail SDK @1176
+    INT m_iPreventRBVelFromAnimFrameCount;  // DISHONORED(layout): retail 2013 only, SDK dump @1180 (fills the 2012 tail padding; APawn stays 1184)
     //## END PROPS Pawn
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout

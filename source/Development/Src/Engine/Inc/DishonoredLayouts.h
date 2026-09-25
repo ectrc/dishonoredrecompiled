@@ -51,7 +51,7 @@ static_assert(sizeof(ALightmassCharacterIndirectDetailVolume) == 640, "ALightmas
 static_assert(sizeof(ALightmassImportanceVolume) == 640, "ALightmassImportanceVolume: retail 2013 size is 640");
 static_assert(sizeof(AMaterialInstanceActor) == 592, "AMaterialInstanceActor: retail 2013 size is 592");
 static_assert(sizeof(AMatineeActor) == 768, "AMatineeActor: retail 2013 size is 768");
-// pending: sizeof(AMatineePawn) == 1200 (ours 1184)
+static_assert(sizeof(AMatineePawn) == 1200, "AMatineePawn: retail 2013 size is 1200 (2012 PDB: 1184)");
 static_assert(sizeof(AMutator) == 608, "AMutator: retail 2013 size is 608");
 // pending: sizeof(ANavigationPoint) == 784 (ours 800)
 static_assert(sizeof(ANote) == 608, "ANote: retail 2013 size is 608");

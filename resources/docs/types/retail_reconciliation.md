@@ -74,7 +74,7 @@ mismatches against retail**. Regenerating `DishonoredLayouts.h` (Core 278 assert
 
 | Class | 2012 | 2013 | Ours | Retail script delta (`script_delta_2012_2013.md`) |
 |---|---:|---:|---:|---|
-| AMatineePawn | 1184 | 1200 | 1184 | script members identical; `APawn` gained `PushBoxCollisionChannel` + `m_iPreventRBVelFromAnimFrameCount` yet stays 1184 in the descriptor. Descriptor at rva 0xe9f438 confirms 1200 (`decomp/retail_matineepawn/descriptor_0xe9f438.txt`); resolve with the `APawn` retail pass (pending assert) |
+| AMatineePawn | 1184 | 1200 | 1200 | Resolved 2026-09-27 with the SDK dump (`sdk_dump.md`): `APawn` gained `FRBCollisionChannelContainer PushBoxCollisionChannel` @1048 and `INT m_iPreventRBVelFromAnimFrameCount` @1180, which fill the 2012 tail padding (APawn stays 1184); `PreviewMesh` then lands at 1184 and the 16-aligned class is 1200. Both members added to `EnginePawnClasses.h`; asserted |
 | UArkComponentLocomotionConfig | 332 | 336 | — | `+ FLOAT m_fReturnToNavMeshSpeed` |
 | UArkDLCManagementBridge | 96 | 112 | — | `+ TArray<UBOOL> m_aDLC_LicenseOnly` (12) `+ BITFIELD m_bIsInitialized` (4) |
 | UDownloadableContentManager | 180 | 192 | 192 | four DLC functions added (no data members in the package); ours already matches retail, now asserted |

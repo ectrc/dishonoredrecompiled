@@ -85,6 +85,11 @@ Scaleform, Wwise, FaceFX, Bink or Steamworks SDKs, nor anything of Arkane's.
 * `D:\DishonoredMapMaking\` — DFSDK: UDK 2010 editor plus UE Explorer-decompiled UnrealScript
   for `DishonoredGame` (228 `.uc`). Its Engine/Core `.uc` are stock UDK 2010, not Dishonored's.
 * `D:\Christmas\github\dismod\` — own dinput8 proxy (CMake, imgui, Steam hook, spawn/world mods).
+* `D:\RecompileDishonored\Dishonored_DumpedSDK_Retail\` — CodeRed-Generator dump taken inside the
+  running **retail** exe: 3,038 classes / 943 structs / 4,548 functions with the runtime
+  `UProperty::Offset`, sizes, flags and exec-parameter layouts of the 2013 build. The only
+  offset-level retail source; parsed by `resources/tools/sdk/parse_codered_sdk.py`, used by
+  `xcheck_sdk_layout.py`. What it can and cannot tell: `resources/docs/sdk_dump.md`.
 
 ### 2.5 Toolchain
 
@@ -110,8 +115,9 @@ idalib (`idapro` module) and the IDA MCP, git. `resources/docs/toolchain.md`.
    the authoritative sizes and member sets are the retail ones, recovered from (a) the 2013
    cooked packages (every script property carries its exact offset, every class its
    PropertiesSize), (b) the 2013 exe (class sizes in constructors/`StaticClass` registration,
-   member accesses in decompiled functions after Phase 7 name propagation), (c) runtime dumps
-   of the retail exe (dismod's CodeRed SDK). `static_assert`s guard every native class against
+   member accesses in decompiled functions after Phase 7 name propagation), (c) the runtime
+   dump of the retail exe (`Dishonored_DumpedSDK_Retail`, `resources/docs/sdk_dump.md`): the
+   offset of every reflected member as retail's `UStruct::Link` computed it. `static_assert`s guard every native class against
    the **2013** numbers once known; the 2012 numbers are a stepping stone.
    Package version constants (`UnObjVer.cpp`) are pinned to Dishonored's cooked packages, not
    10897's; `Serialize()` overrides are diffed function-by-function because that is where
@@ -184,12 +190,18 @@ Detailed plan and tracker: `resources/docs/PHASE3.md` (work packages H–N).
 - [ ] 2013 native class sizes: every `InitializePrivateStaticClass<X>` calls
       `UClass::UClass(ENativeConstructor, sizeof(X), …, L"<Name>", L"<Package>", …)`; the size is an
       immediate next to the class-name string xref, readable in the unnamed retail exe →
-      `native_class_sizes.csv` (2012 vs 2013). Cross-check with dismod's CodeRed dump (`xcheck_sdk.md`).
+      `native_class_sizes.csv` (2012 vs 2013). DONE 2026-09-26 (package H).
+- [x] Retail member **offsets**: `resources/tools/sdk/parse_codered_sdk.py` parses the CodeRed dump of
+      the running retail exe (`Dishonored_DumpedSDK_Retail`) into `retail_sdk_layout.json`;
+      `resources/tools/sdk/xcheck_sdk_layout.py build/<dir>/layout_probe.txt` checks every probed
+      member offset and class span against it → `retail_sdk_delta.md` (2026-09-27: 1,132 types,
+      666 exact, 234 to converge). This replaces the 2012-offset check wherever retail differs.
 - [ ] Regenerate `DishonoredLayouts.h` and the layout probe against the **2013** sizes; fix the
       headers where 2012 and 2013 differ, citing the retail evidence in the
       `// DISHONORED(layout)` comment (`retail:` prefix).
 - [ ] Exit: every Core contract type and every Engine/DishonoredGame script class matches the
-      2013 numbers; `verify_phase2.py` gains a `retail` section.
+      2013 numbers (`gen_layout_probe.py compare` sizes **and** `xcheck_sdk_layout.py` offsets with
+      0 contract mismatches); `verify_phase2.py` gains a `retail` section.
 
 ### Phase 3 — Module convergence and DishonoredGame rewrite (months)
 
@@ -219,8 +231,11 @@ Per module:
       replaced by the library, never rewritten.
 
 DishonoredGame specifics: generate the class declarations (`DishonoredGameClasses.h` equivalent)
-from `resources/docs/types/types.json` (exact layouts) cross-referenced with the DFSDK `.uc` for names and
-comments; then rewrite natives and native classes in dependency order (`DisGlobalEnums`, items,
+from the retail SDK dump (`retail_sdk_layout.json`: 1,870 classes / 665 structs with retail offsets,
+sizes, flags and `UnknownData` gaps for the native-only members) with `resources/docs/types/types.json`
+(2012 PDB) supplying the names and types of what sits in those gaps, cross-referenced with the
+DFSDK `.uc` for comments; exec-parameter structs and `FunctionFlags` for the `event`/`exec`
+wrappers come from the dump's `*_parameters.hpp`; then rewrite natives and native classes in dependency order (`DisGlobalEnums`, items,
 pawns, AI brain processes, powers, UI last).
 
 ### Phase 4 — Third-party dependencies

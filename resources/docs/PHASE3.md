@@ -188,10 +188,18 @@ if package loading is reached, which milestone 1 does not require.
 
 - Module compiles: `GameFramework`, `IpDrv`, `WinDrv`, `D3D9Drv` as targets (N may have done
   some); layout probe for each.
+- **Retail offsets from the SDK dump** (`resources/docs/sdk_dump.md`): every Engine convergence
+  agent works from `resources/docs/types/retail_sdk_delta.md` (regenerate with
+  `python resources/tools/sdk/xcheck_sdk_layout.py build/<dir>/layout_probe.txt`) and closes the
+  rows of its module's classes; a class is done when its size matches `native_class_sizes.csv`
+  and every reflected member sits at the dump's offset. Bitfields are compared by eye (DWORD
+  offset + mask in the dump). Start with the 97 "too small" classes/structs.
 - Milestone 2: load `Core.upk` … `Startup.upk` (needs K + L + the 2013-verified layouts).
-- DishonoredGame: generate `DishonoredGameClasses.h` from I's 2013 JSON + H's sizes with
-  `gen_classes_header.py` (switch its inputs from the 2012 PDB to the retail JSON), start the
-  native side from J's named 2013 decompiles.
+- DishonoredGame: generate `DishonoredGameClasses.h` from the SDK dump (`retail_sdk_layout.json`:
+  retail offsets, sizes, flags, `UnknownData` gaps) + I's 2013 JSON (enum values, member kinds) +
+  H's sizes with `gen_classes_header.py` (add a `--sdk` input next to the 2012 PDB one, which then
+  only names what sits in the gaps); generate the `event*`/`exec*` wrappers from the dump's
+  `*_parameters.hpp`; start the native side from J's named 2013 decompiles.
 - Phase 4 decisions with sizes in hand: Scaleform, Wwise, PhysX 2.8.4, FaceFX.
 
 ## Tracker
@@ -207,6 +215,7 @@ if package loading is reached, which milestone 1 does not require.
 | N | done | Milestone 1: real Launch | done | 2026-09-26 | **Milestone 1 reached**: `DISHONORED_REAL_LAUNCH=ON` builds Launch.cpp/LaunchEngineLoop.cpp with GAMENAME=DISHONOREDGAME branches + stubs; GameFramework/IpDrv/WinDrv targets on; null RHI; `build_and_smoke.py` exits 0 (`Init: Object subsystem initialized`, log prefix matches golden). Next blocker: `SystemSettings.cpp:532` assert on retail `DishonoredSystemSettings.ini` (milestone 2) |
 | C1 | coordinator | Retail reconciliation of Core | done | 2026-09-27 | `types/retail_reconciliation.md`: only UClass differs (456→436). Retail `UClass::Link` decompile shows `NetFields` removed and `ClassReps` kept; `m_DropdownCategory` removed (still deserialized into a discarded local). Headers/ctors/Link/`GetClassNetCache` adapted, assert 436, CoreSmoke 99/99 |
 | C2 | coordinator | Retail reconciliation of Engine | done | 2026-09-27 | UTexture2D +`MinResidentMipCount` (372; subclasses 376/376/436), USkeletalMeshComponent +`RawExtractedRootMotionDelta`, −2 `bRootMotion*Notify` bits (1088). `gen_layout_probe.py compare` / `gen_layout_asserts.py` now take retail sizes from `native_class_sizes.csv`: 0 contract mismatches vs retail; 9 non-contract Engine classes still differ (table in `retail_reconciliation.md`) |
+| C3 | coordinator | Retail SDK dump integration | done | 2026-09-27 | `Dishonored_DumpedSDK_Retail` (CodeRed dump of the running retail exe) parsed by `resources/tools/sdk/parse_codered_sdk.py`; `xcheck_sdk_layout.py` checks probed member offsets/spans against it: 1,132 Core+Engine types in the dump, 666 exact, 234 to converge (`retail_sdk_delta.md`). Found and fixed `APawn` (+`PushBoxCollisionChannel` @1048, +`m_iPreventRBVelFromAnimFrameCount` @1180). Uses per phase: `resources/docs/sdk_dump.md` |
 
 ## Rules for agents (unchanged from Phase 2)
 

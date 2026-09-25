@@ -1,5 +1,9 @@
 # Layout cross-check: 2012 PDB types vs 2013 CodeRed runtime dump (dismod defs.hpp)
 
+> Superseded 2026-09-27 by the full retail dump (`D:\RecompileDishonored\Dishonored_DumpedSDK_Retail`,
+> `resources/docs/sdk_dump.md`): `retail_sdk_delta.md` checks every probed member of 1,132 types
+> instead of the six hand-written Core types below.
+
 Mismatches are expected where the 2013 build added or moved fields; they seed the Phase 7 delta list.
 
 ## FName
