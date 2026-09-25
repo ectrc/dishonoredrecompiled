@@ -31,11 +31,13 @@ set(DISHONORED_MODULE_LIST "" CACHE INTERNAL "modules declared so far, in order"
 # Engine modules in dependency order (PLAN.md Phase 3). Each one is added when it compiles;
 # modules still being brought up sit behind an option so the default configure stays green.
 dishonored_module(Core)
-target_link_libraries(Core PUBLIC Dishonored::zlib Dishonored::DirectX9 Dishonored::libPNG)
+# dbghelp: stack walker (UnVcWin32.cpp); winmm: timeBeginPeriod. Core.lib needs them in every exe.
+target_link_libraries(Core PUBLIC Dishonored::zlib Dishonored::DirectX9 Dishonored::libPNG dbghelp winmm)
 
 option(DISHONORED_ENABLE_ENGINE "Build the Engine module (work in progress)" OFF)
 if(DISHONORED_ENABLE_ENGINE)
   dishonored_module(Engine)
+  target_link_libraries(Engine PUBLIC Dishonored::nvtt Dishonored::nvapi)
 endif()
 
 add_subdirectory(source/Development/Src/Launch)
