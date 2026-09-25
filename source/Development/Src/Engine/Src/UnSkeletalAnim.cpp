@@ -226,9 +226,15 @@ void UAnimSequence::Serialize(FArchive& Ar)
 		// we must know the proper codecs to use
 		AnimationFormat_SetInterfaceLinks(*this);
 
-		// and then use the codecs to byte swap
-		check( RotationCodec != NULL );
-		((AnimationEncodingFormat*)RotationCodec)->ByteSwapIn(*this, MemoryReader, Ar.Ver());
+		// DISHONORED(port): retail UAnimSequence::Serialize 2013 rva 0x34c0d0 (2012 0x368be0): no codec (ACF_EdgeAnim) -> the blob is copied raw
+		if( RotationCodec != NULL )
+		{
+			((AnimationEncodingFormat*)RotationCodec)->ByteSwapIn(*this, MemoryReader, Ar.Ver());
+		}
+		else
+		{
+			CompressedByteStream = SerializedData;
+		}
 	}
 	else if( Ar.IsSaving() || Ar.IsCountingMemory() )
 	{
@@ -238,9 +244,15 @@ void UAnimSequence::Serialize(FArchive& Ar)
 		// we must know the proper codecs to use
 		AnimationFormat_SetInterfaceLinks(*this);
 
-		// and then use the codecs to byte swap
-		check( RotationCodec != NULL );
-		((AnimationEncodingFormat*)RotationCodec)->ByteSwapOut(*this, SerializedData, Ar.ForceByteSwapping());
+		// DISHONORED(port): retail UAnimSequence::Serialize 2013 rva 0x34c0d0 (2012 0x368be0): no codec (ACF_EdgeAnim) -> the blob is written raw
+		if( RotationCodec != NULL )
+		{
+			((AnimationEncodingFormat*)RotationCodec)->ByteSwapOut(*this, SerializedData, Ar.ForceByteSwapping());
+		}
+		else
+		{
+			SerializedData = CompressedByteStream;
+		}
 
 		// Make sure the entire byte stream was serialized.
 		check( CompressedByteStream.Num() == SerializedData.Num() );
@@ -472,37 +484,19 @@ void UAnimSequence::PostLoad()
 		}
 #endif
 	}
-	// Raw data exists, but missing compress animation data
-	else if( CompressedTrackOffsets.Num() == 0 )
+	// DISHONORED(port): retail UAnimSequence::PostLoad 2013 rva 0x34c4a0 (2012 0x370150): an Edge sequence has no track offsets but a byte stream;
+	// only both empty is an error, and the game never recompresses
+	else if( CompressedTrackOffsets.Num() == 0 && CompressedByteStream.Num() == 0 )
 	{
-#if CONSOLE
-		// Never compress on consoles.
 		appErrorf( TEXT("No animation compression exists for sequence %s (%s)"), *SequenceName.ToString(), (GetOuter() ? *GetOuter()->GetFullName() : *GetFullName()) );
-#else
-		warnf( TEXT("No animation compression exists for sequence %s (%s)"), *SequenceName.ToString(), (GetOuter() ? *GetOuter()->GetFullName() : *GetFullName()) );
-		// No animation compression, recompress using default settings.
-		FAnimationUtils::CompressAnimSequence(this, NULL, FALSE, FALSE);
-#endif // CONSOLE
 	}
 
-	static UBOOL ForcedRecompressionSetting = FAnimationUtils::GetForcedRecompressionSetting();
-
-	// Recompress the animation if it was encoded with an old package set
-	// or we are being forced to do so
-	if (EncodingPkgVersion != CURRENT_ANIMATION_ENCODING_PACKAGE_VERSION ||
-		ForcedRecompressionSetting)
+	// DISHONORED(port): retail UAnimSequence::PostLoad 2013 rva 0x34c4a0 (2012 0x370150): no ForcedRecompressionSetting, no CompressAnimSequence
+	if( EncodingPkgVersion != CURRENT_ANIMATION_ENCODING_PACKAGE_VERSION )
 	{
-#if CONSOLE
-		if (EncodingPkgVersion != CURRENT_ANIMATION_ENCODING_PACKAGE_VERSION)
-		{
-			// Never compress on consoles.
-			appErrorf( TEXT("Animation compression method out of date for sequence %s"), *SequenceName.ToString() );
-			CompressedTrackOffsets.Empty(0);
-			CompressedByteStream.Empty(0);
-		}
-#else
-		FAnimationUtils::CompressAnimSequence(this, NULL, TRUE, FALSE);
-#endif // CONSOLE
+		appErrorf( TEXT("Animation compression method out of date for sequence %s"), *SequenceName.ToString() );
+		CompressedTrackOffsets.Empty(0);
+		CompressedByteStream.Empty(0);
 	}
 
 	// If we're in the game and compressed animation data exists, whack the raw data.

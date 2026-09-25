@@ -6,6 +6,7 @@
 #include "EnginePrivate.h"
 #include "EngineAnimClasses.h"
 #include "AnimationEncodingFormat.h"
+#include "AnimationEncodingFormat_EdgeAnim.h"
 
 IMPLEMENT_CLASS(UAnimNodeSequence);
 IMPLEMENT_CLASS(UAnimNodeSequenceBlendBase);
@@ -576,6 +577,29 @@ void UAnimNodeSequence::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYTE>& 
 	SaveCachedResults(Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num());
 }
 
+/** DISHONORED(bringup): -edgerefpose poses ACF_EdgeAnim sequences with the reference pose (the parity bring-up gate). */
+static UBOOL EdgeRefPoseRequested()
+{
+	static const UBOOL bEdgeRefPose = ParseParam(appCmdLine(), TEXT("edgerefpose"));
+	return bEdgeRefPose;
+}
+
+/**
+ * DISHONORED(port): root motion reads the root at other times through UAnimSequence::GetBoneAtom, which is identity for an
+ * Edge sequence (no track offsets; retail takes root motion from the Edge locomotion joint instead), so the root of an Edge
+ * sequence comes from its Edge pose on the component's mesh.
+ */
+static void GetRootMotionBoneAtom(const USkeletalMeshComponent* SkelComponent, UAnimSequence* InAnimSeq, INT TrackIndex, FLOAT Time, FBoneAtom& OutAtom)
+{
+	if( InAnimSeq->RotationCompressionFormat == ACF_EdgeAnim && !EdgeRefPoseRequested()
+		&& FEdgeAnimSequencePose::CanEvaluate(InAnimSeq, SkelComponent->SkeletalMesh)
+		&& FEdgeAnimSequencePose::GetBoneAtom(InAnimSeq, SkelComponent->SkeletalMesh, 0, Time, OutAtom) )
+	{
+		return;
+	}
+	InAnimSeq->GetBoneAtom(OutAtom, TrackIndex, Time, FALSE, SkelComponent->bUseRawData);
+}
+
 void UAnimNodeSequence::GetAnimationPose(UAnimSequence* InAnimSeq, INT& InAnimLinkupIndex, FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones, FBoneAtom& RootMotionDelta, INT& bHasRootMotion, FCurveKeyArray& CurveKeys)
 {
 	SCOPE_CYCLE_COUNTER(STAT_GetAnimationPose);
@@ -634,6 +658,49 @@ void UAnimNodeSequence::GetAnimationPose(UAnimSequence* InAnimSeq, INT& InAnimLi
 
 	// Never process bone indices higher than our static array size to avoid crashes for malformed assets
 	const INT DesiredBoneCount = Min( MAX_BONES, DesiredBones.Num() );
+
+	// DISHONORED(port): an ACF_EdgeAnim sequence is a raw Sony Edge blob without track offsets (retail
+	// AnimationFormat_SetInterfaceLinks 2013 rva 0xc8250 leaves both codecs NULL and poses it through the
+	// FEdgeAnimJobDesc jobs). Plan B evaluates it per sequence on the component's mesh (AnimationEncodingFormat_EdgeAnim.cpp:
+	// retail AnimLeafCallback mapping + UpdateSkelPoseEnd copy, no W flip), then the reference root handling.
+	// DISHONORED(bringup): -edgerefpose (or a mesh without an Edge skeleton) keeps the reference pose, identity when
+	// additive (identity local atoms would collapse every bone onto the root), root motion identity.
+	if( InAnimSeq->RotationCompressionFormat == ACF_EdgeAnim && InAnimSeq->CompressedTrackOffsets.Num() == 0 )
+	{
+		if( !EdgeRefPoseRequested() && FEdgeAnimSequencePose::CanEvaluate(InAnimSeq, SkelComponent->SkeletalMesh)
+			&& FEdgeAnimSequencePose::GetAnimationPose(InAnimSeq, SkelComponent->SkeletalMesh, CurrentTime, Atoms, DesiredBones) )
+		{
+			const INT RootTrackIndex = AnimLinkup->BoneToTrackTable(0);
+			if( DesiredBoneCount > 0 && DesiredBones(0) == 0 && RootTrackIndex != INDEX_NONE )
+			{
+				if( bDoingRootMotion )
+				{
+					ExtractRootMotion(InAnimSeq, RootTrackIndex, Atoms(0), RootMotionDelta, bHasRootMotion);
+				}
+				if( bZeroRootRotation )
+				{
+					Atoms(0).SetRotation(FQuat::Identity);
+				}
+				if( bZeroRootTranslation )
+				{
+					Atoms(0).SetTranslation(FVector::ZeroVector);
+				}
+			}
+		}
+		else if( InAnimSeq->bIsAdditive )
+		{
+			for( INT i=0; i < DesiredBones.Num(); i++ )
+			{
+				Atoms(DesiredBones(i)).SetIdentity();
+			}
+		}
+		else
+		{
+			FillWithRefPose(Atoms, DesiredBones, RefSkel);
+		}
+		InAnimSeq->GetCurveData(CurrentTime, bLooping, CurveKeys);
+		return;
+	}
 
 #if (USE_ANIMATION_CODEC_BATCH_SOLVER)
 	if (!bUseRawData && DesiredBones.Num()>0 && InAnimSeq->CompressedTrackOffsets.Num() > 0)
@@ -896,7 +963,7 @@ void UAnimNodeSequence::ExtractRootMotionUsingSpecifiedTimespan (UAnimSequence* 
 	// Get the exact translation of the root bone on the first frame of the animation
 	FBoneAtom FirstFrameAtom;
 	// technically you don't need to get curve keys here, so giving dummy variable 
-	InAnimSeq->GetBoneAtom(FirstFrameAtom, TrackIndex, 0.f, FALSE, SkelComponent->bUseRawData);
+	GetRootMotionBoneAtom(SkelComponent, InAnimSeq, TrackIndex, 0.f, FirstFrameAtom);
 
 	// Do we need to extract root motion?
 	const UBOOL bExtractRootTranslation	= (RootBoneOption[0] == RBA_Translate) || (RootBoneOption[1] == RBA_Translate) || (RootBoneOption[2] == RBA_Translate);
@@ -956,7 +1023,7 @@ void UAnimNodeSequence::ExtractRootMotionUsingSpecifiedTimespan (UAnimSequence* 
 			FBoneAtom StartAtom;
 			if( StartTime != CurrentTime )
 			{
-				InAnimSeq->GetBoneAtom(StartAtom, TrackIndex, StartTime, FALSE, SkelComponent->bUseRawData);
+				GetRootMotionBoneAtom(SkelComponent, InAnimSeq, TrackIndex, StartTime, StartAtom);
 			}
 			else
 			{
@@ -967,7 +1034,7 @@ void UAnimNodeSequence::ExtractRootMotionUsingSpecifiedTimespan (UAnimSequence* 
 			FBoneAtom EndAtom;
 			if( EndTime != CurrentTime )
 			{
-				InAnimSeq->GetBoneAtom(EndAtom, TrackIndex, EndTime, FALSE, SkelComponent->bUseRawData);
+				GetRootMotionBoneAtom(SkelComponent, InAnimSeq, TrackIndex, EndTime, EndAtom);
 			}
 			else
 			{
@@ -980,7 +1047,7 @@ void UAnimNodeSequence::ExtractRootMotionUsingSpecifiedTimespan (UAnimSequence* 
 			if( bLooping && (bExtractRootTranslation || bExtractRootRotation) )
 			{
 				// Get the exact root position of the root bone on the last frame of the animation
-				InAnimSeq->GetBoneAtom(LastFrameAtom, TrackIndex, InAnimSeq->SequenceLength, FALSE, SkelComponent->bUseRawData);
+				GetRootMotionBoneAtom(SkelComponent, InAnimSeq, TrackIndex, InAnimSeq->SequenceLength, LastFrameAtom);
 			}
 
 			// We don't support scale

@@ -38,7 +38,9 @@ enum AnimationCompressionFormat
     ACF_Fixed32NoW          =4,
     ACF_Float32NoW          =5,
     ACF_Identity            =6,
-    ACF_MAX                 =7,
+    // DISHONORED(retail): retail SDK Engine.AnimSequence.AnimationCompressionFormat ACF_EdgeAnim = 7, ACF_END = 8
+    ACF_EdgeAnim            =7,
+    ACF_MAX                 =8,
 };
 #define FOREACH_ENUM_ANIMATIONCOMPRESSIONFORMAT(op) \
     op(ACF_None) \
@@ -47,7 +49,8 @@ enum AnimationCompressionFormat
     op(ACF_IntervalFixed32NoW) \
     op(ACF_Fixed32NoW) \
     op(ACF_Float32NoW) \
-    op(ACF_Identity) 
+    op(ACF_Identity) \
+    op(ACF_EdgeAnim)
 enum ESliderType
 {
     ST_1D                   =0,

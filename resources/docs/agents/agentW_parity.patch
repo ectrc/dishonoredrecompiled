@@ -1,0 +1,531 @@
+diff --git a/source/Development/Src/Engine/Classes/AnimSequence.uc b/source/Development/Src/Engine/Classes/AnimSequence.uc
+index 930ef45..b74bb80 100644
+--- a/source/Development/Src/Engine/Classes/AnimSequence.uc
++++ b/source/Development/Src/Engine/Classes/AnimSequence.uc
+@@ -172,7 +172,9 @@ enum AnimationCompressionFormat
+ 	ACF_IntervalFixed32NoW,
+ 	ACF_Fixed32NoW,
+ 	ACF_Float32NoW,
+-	ACF_Identity
++	ACF_Identity,
++	// DISHONORED(retail): retail SDK Engine.AnimSequence.AnimationCompressionFormat ACF_EdgeAnim = 7, ACF_END = 8; Sony Edge animation blob, evaluated by the Edge jobs, no UE codec
++	ACF_EdgeAnim
+ };
+ 
+ /** The compression format that was used to compress translation tracks. */
+diff --git a/source/Development/Src/Engine/Inc/EngineAnimClasses.h b/source/Development/Src/Engine/Inc/EngineAnimClasses.h
+index fb84168..bab7afb 100644
+--- a/source/Development/Src/Engine/Inc/EngineAnimClasses.h
++++ b/source/Development/Src/Engine/Inc/EngineAnimClasses.h
+@@ -38,7 +38,9 @@ enum AnimationCompressionFormat
+     ACF_Fixed32NoW          =4,
+     ACF_Float32NoW          =5,
+     ACF_Identity            =6,
+-    ACF_MAX                 =7,
++    // DISHONORED(retail): retail SDK Engine.AnimSequence.AnimationCompressionFormat ACF_EdgeAnim = 7, ACF_END = 8
++    ACF_EdgeAnim            =7,
++    ACF_MAX                 =8,
+ };
+ #define FOREACH_ENUM_ANIMATIONCOMPRESSIONFORMAT(op) \
+     op(ACF_None) \
+@@ -47,7 +49,8 @@ enum AnimationCompressionFormat
+     op(ACF_IntervalFixed32NoW) \
+     op(ACF_Fixed32NoW) \
+     op(ACF_Float32NoW) \
+-    op(ACF_Identity) 
++    op(ACF_Identity) \
++    op(ACF_EdgeAnim)
+ enum ESliderType
+ {
+     ST_1D                   =0,
+diff --git a/source/Development/Src/Engine/Src/AnimationEncodingFormat.cpp b/source/Development/Src/Engine/Src/AnimationEncodingFormat.cpp
+index ed53919..32286ce 100644
+--- a/source/Development/Src/Engine/Src/AnimationEncodingFormat.cpp
++++ b/source/Development/Src/Engine/Src/AnimationEncodingFormat.cpp
+@@ -9,6 +9,7 @@
+ #include "AnimationCompression.h"
+ #include "AnimationEncodingFormat.h"
+ #include "AnimationUtils.h"
++#include "EdgeAnim.h"
+ 
+ // known codecs
+ #include "AnimationEncodingFormat_ConstantKeyLerp.h"
+@@ -24,7 +25,8 @@ const INT CompressedTranslationStrides[ACF_MAX] =
+ 	sizeof(FVectorIntervalFixed32NoW),	// ACF_IntervalFixed32NoW	(compressed to 11-11-10 per-component interval fixed point)
+ 	sizeof(FLOAT),						// ACF_Fixed32NoW			(Illegal value for translation)
+ 	sizeof(FLOAT),						// ACF_Float32NoW			(Illegal value for translation)
+-	0									// ACF_Identity
++	0,									// ACF_Identity
++	0									// ACF_EdgeAnim				DISHONORED(retail): Edge blob, never byte swapped by a UE codec
+ };
+ 
+ /** Number of swapped chunks per element. */
+@@ -36,7 +38,8 @@ const INT CompressedTranslationNum[ACF_MAX] =
+ 	1,	// ACF_IntervalFixed32NoW	(compressed to 11-11-10 per-component interval fixed point)
+ 	3,	// ACF_Fixed32NoW			(Illegal value for translation)
+ 	3,	// ACF_Float32NoW			(Illegal value for translation)
+-	0	// ACF_Identity
++	0,	// ACF_Identity
++	0	// ACF_EdgeAnim				DISHONORED(retail): Edge blob
+ };
+ 
+ /** Each CompresedRotationData track's ByteStream will be byte swapped in chunks of this size. */
+@@ -48,7 +51,8 @@ const INT CompressedRotationStrides[ACF_MAX] =
+ 	sizeof(FQuatIntervalFixed32NoW),	// ACF_IntervalFixed32NoW	(FQuats with one component dropped and the remaining three compressed to 11-11-10 per-component interval fixed point.
+ 	sizeof(FQuatFixed32NoW),			// ACF_Fixed32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 fixed point.
+ 	sizeof(FQuatFloat32NoW),			// ACF_Float32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 floating point.
+-	0	// ACF_Identity
++	0,	// ACF_Identity
++	0	// ACF_EdgeAnim				DISHONORED(retail): Edge blob
+ };
+ 
+ /** Number of swapped chunks per element. */
+@@ -60,7 +64,8 @@ const INT CompressedRotationNum[ACF_MAX] =
+ 	1,	// ACF_IntervalFixed32NoW	(FQuats with one component dropped and the remaining three compressed to 11-11-10 per-component interval fixed point.
+ 	1,	// ACF_Fixed32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 fixed point.
+ 	1,  // ACF_Float32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 floating point.
+-	0	// ACF_Identity
++	0,	// ACF_Identity
++	0	// ACF_EdgeAnim				DISHONORED(retail): Edge blob
+ };
+ 
+ /** Number of swapped chunks per element, split out per component (high 3 bits) and flags (low 3 bits)
+@@ -75,7 +80,8 @@ const BYTE PerTrackNumComponentTable[ACF_MAX * 8] =
+ 	6,2,2,4,2,4,4,6,	// ACF_IntervalFixed32NoW (special, indicates number of interval pairs stored in the fixed track)
+ 	1,1,1,1,1,1,1,1,	// ACF_Fixed32NoW
+ 	1,1,1,1,1,1,1,1,	// ACF_Float32NoW
+-	0,0,0,0,0,0,0,0		// ACF_Identity
++	0,0,0,0,0,0,0,0,	// ACF_Identity
++	0,0,0,0,0,0,0,0		// ACF_EdgeAnim (DISHONORED(retail): Edge blob)
+ };
+ 
+ /**
+@@ -608,6 +614,9 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
+ 			case ACF_Identity:
+ 				Seq.TranslationCodec = &AEFConstantKeyLerp_Identity;
+ 				break;
++			// DISHONORED(port): retail AnimationFormat_SetInterfaceLinks 2013 rva 0xc8250 (2012 0xc4420): `case 7: break;`, the codecs stay NULL
++			case ACF_EdgeAnim:
++				break;
+ 
+ 			default:
+ 				appErrorf( TEXT("%i: unknown or unsupported translation compression"), (INT)Seq.TranslationCompressionFormat );
+@@ -637,6 +646,9 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
+ 			case ACF_Identity:
+ 				Seq.RotationCodec = &AEFConstantKeyLerp_Identity;
+ 				break;
++			// DISHONORED(port): retail AnimationFormat_SetInterfaceLinks 2013 rva 0xc8250 (2012 0xc4420): `case 7: return;`, the codecs stay NULL
++			case ACF_EdgeAnim:
++				break;
+ 
+ 			default:
+ 				appErrorf( TEXT("%i: unknown or unsupported rotation compression"), (INT)Seq.RotationCompressionFormat );
+diff --git a/source/Development/Src/Engine/Src/UnSkeletalAnim.cpp b/source/Development/Src/Engine/Src/UnSkeletalAnim.cpp
+index c8a067e..c7e3f96 100644
+--- a/source/Development/Src/Engine/Src/UnSkeletalAnim.cpp
++++ b/source/Development/Src/Engine/Src/UnSkeletalAnim.cpp
+@@ -226,9 +226,15 @@ void UAnimSequence::Serialize(FArchive& Ar)
+ 		// we must know the proper codecs to use
+ 		AnimationFormat_SetInterfaceLinks(*this);
+ 
+-		// and then use the codecs to byte swap
+-		check( RotationCodec != NULL );
+-		((AnimationEncodingFormat*)RotationCodec)->ByteSwapIn(*this, MemoryReader, Ar.Ver());
++		// DISHONORED(port): retail UAnimSequence::Serialize 2013 rva 0x34c0d0 (2012 0x368be0): no codec (ACF_EdgeAnim) -> the blob is copied raw
++		if( RotationCodec != NULL )
++		{
++			((AnimationEncodingFormat*)RotationCodec)->ByteSwapIn(*this, MemoryReader, Ar.Ver());
++		}
++		else
++		{
++			CompressedByteStream = SerializedData;
++		}
+ 	}
+ 	else if( Ar.IsSaving() || Ar.IsCountingMemory() )
+ 	{
+@@ -238,9 +244,15 @@ void UAnimSequence::Serialize(FArchive& Ar)
+ 		// we must know the proper codecs to use
+ 		AnimationFormat_SetInterfaceLinks(*this);
+ 
+-		// and then use the codecs to byte swap
+-		check( RotationCodec != NULL );
+-		((AnimationEncodingFormat*)RotationCodec)->ByteSwapOut(*this, SerializedData, Ar.ForceByteSwapping());
++		// DISHONORED(port): retail UAnimSequence::Serialize 2013 rva 0x34c0d0 (2012 0x368be0): no codec (ACF_EdgeAnim) -> the blob is written raw
++		if( RotationCodec != NULL )
++		{
++			((AnimationEncodingFormat*)RotationCodec)->ByteSwapOut(*this, SerializedData, Ar.ForceByteSwapping());
++		}
++		else
++		{
++			SerializedData = CompressedByteStream;
++		}
+ 
+ 		// Make sure the entire byte stream was serialized.
+ 		check( CompressedByteStream.Num() == SerializedData.Num() );
+@@ -472,37 +484,19 @@ void UAnimSequence::PostLoad()
+ 		}
+ #endif
+ 	}
+-	// Raw data exists, but missing compress animation data
+-	else if( CompressedTrackOffsets.Num() == 0 )
++	// DISHONORED(port): retail UAnimSequence::PostLoad 2013 rva 0x34c4a0 (2012 0x370150): an Edge sequence has no track offsets but a byte stream;
++	// only both empty is an error, and the game never recompresses
++	else if( CompressedTrackOffsets.Num() == 0 && CompressedByteStream.Num() == 0 )
+ 	{
+-#if CONSOLE
+-		// Never compress on consoles.
+ 		appErrorf( TEXT("No animation compression exists for sequence %s (%s)"), *SequenceName.ToString(), (GetOuter() ? *GetOuter()->GetFullName() : *GetFullName()) );
+-#else
+-		warnf( TEXT("No animation compression exists for sequence %s (%s)"), *SequenceName.ToString(), (GetOuter() ? *GetOuter()->GetFullName() : *GetFullName()) );
+-		// No animation compression, recompress using default settings.
+-		FAnimationUtils::CompressAnimSequence(this, NULL, FALSE, FALSE);
+-#endif // CONSOLE
+ 	}
+ 
+-	static UBOOL ForcedRecompressionSetting = FAnimationUtils::GetForcedRecompressionSetting();
+-
+-	// Recompress the animation if it was encoded with an old package set
+-	// or we are being forced to do so
+-	if (EncodingPkgVersion != CURRENT_ANIMATION_ENCODING_PACKAGE_VERSION ||
+-		ForcedRecompressionSetting)
++	// DISHONORED(port): retail UAnimSequence::PostLoad 2013 rva 0x34c4a0 (2012 0x370150): no ForcedRecompressionSetting, no CompressAnimSequence
++	if( EncodingPkgVersion != CURRENT_ANIMATION_ENCODING_PACKAGE_VERSION )
+ 	{
+-#if CONSOLE
+-		if (EncodingPkgVersion != CURRENT_ANIMATION_ENCODING_PACKAGE_VERSION)
+-		{
+-			// Never compress on consoles.
+-			appErrorf( TEXT("Animation compression method out of date for sequence %s"), *SequenceName.ToString() );
+-			CompressedTrackOffsets.Empty(0);
+-			CompressedByteStream.Empty(0);
+-		}
+-#else
+-		FAnimationUtils::CompressAnimSequence(this, NULL, TRUE, FALSE);
+-#endif // CONSOLE
++		appErrorf( TEXT("Animation compression method out of date for sequence %s"), *SequenceName.ToString() );
++		CompressedTrackOffsets.Empty(0);
++		CompressedByteStream.Empty(0);
+ 	}
+ 
+ 	// If we're in the game and compressed animation data exists, whack the raw data.
+diff --git a/source/Development/Src/Engine/Src/UnAnimPlay.cpp b/source/Development/Src/Engine/Src/UnAnimPlay.cpp
+index 4d61a81..ad4bc9c 100644
+--- a/source/Development/Src/Engine/Src/UnAnimPlay.cpp
++++ b/source/Development/Src/Engine/Src/UnAnimPlay.cpp
+@@ -613,6 +613,27 @@ void UAnimNodeSequence::GetAnimationPose(UAnimSequence* InAnimSeq, INT& InAnimLi
+ 	}
+ 	check(AnimLinkup->BoneToTrackTable.Num() == NumBones);
+ 
++	// DISHONORED(bringup): an ACF_EdgeAnim sequence is a raw Sony Edge blob without track offsets (retail
++	// AnimationFormat_SetInterfaceLinks 2013 rva 0xc8250 leaves both codecs NULL; retail poses it through the
++	// FEdgeAnimJobDesc jobs). Until the Edge evaluator is ported it yields the reference pose, identity when
++	// additive (identity local atoms would collapse every bone onto the root); root motion stays identity.
++	if( InAnimSeq->RotationCompressionFormat == ACF_EdgeAnim && InAnimSeq->CompressedTrackOffsets.Num() == 0 )
++	{
++		if( InAnimSeq->bIsAdditive )
++		{
++			for( INT i=0; i < DesiredBones.Num(); i++ )
++			{
++				Atoms(DesiredBones(i)).SetIdentity();
++			}
++		}
++		else
++		{
++			FillWithRefPose(Atoms, DesiredBones, RefSkel);
++		}
++		InAnimSeq->GetCurveData(CurrentTime, bLooping, CurveKeys);
++		return;
++	}
++
+ 	// bAnimRotationOnly settings.
+ 	const UBOOL bAnimRotationOnly = (SkelComponent->AnimRotationOnly == EARO_AnimSet) ? AnimSet->bAnimRotationOnly : (SkelComponent->AnimRotationOnly == EARO_ForceEnabled ? TRUE : FALSE); 
+ 	
+diff --git a/source/Development/Src/Engine/Inc/EdgeAnim.h b/source/Development/Src/Engine/Inc/EdgeAnim.h
+new file mode 100644
+index 0000000..490cb14
+--- /dev/null
++++ b/source/Development/Src/Engine/Inc/EdgeAnim.h
+@@ -0,0 +1,283 @@
++/*=============================================================================
++	EdgeAnim.h: Sony Edge animation runtime data as Dishonored cooks and uses it.
++	DISHONORED(layout): every struct below is the 2012 Shipping PDB layout (resources/docs/types/types.json);
++	the retail 2013 exe links the same Edge build (Sony's x86 SSE port, 2012 PDB modules edge/ps3/disjobs).
++	Declarations only: the on-disk format and the evaluator are described in resources/docs/edgeanim.md.
++=============================================================================*/
++
++#ifndef __EDGEANIM_H__
++#define __EDGEANIM_H__
++
++/** Vectormath::Aos::Quat / Point3 / Vector4: four floats (2012 PDB 16 bytes, align 4). */
++struct FEdgeAnimVec4
++{
++	FLOAT X;
++	FLOAT Y;
++	FLOAT Z;
++	FLOAT W;
++};
++
++/** EdgeAnimAnimation: header of one cooked Edge animation (UAnimSequence::CompressedByteStream), tag '50AE'. */
++struct EdgeAnimAnimation
++{
++	DWORD tag;
++	FLOAT duration;
++	FLOAT sampleFrequency;
++	WORD sizeHeader;
++	WORD numJoints;
++	WORD numFrames;
++	WORD numFrameSets;
++	WORD evalBufferSizeRequired;
++	WORD numConstRChannels;
++	WORD numConstTChannels;
++	WORD numConstSChannels;
++	WORD numConstUserChannels;
++	WORD numAnimRChannels;
++	WORD numAnimTChannels;
++	WORD numAnimSChannels;
++	WORD numAnimUserChannels;
++	WORD flags;
++	DWORD sizeJointsWeightArray;
++	DWORD eaUserJointWeightArray;
++	DWORD pad1;
++	DWORD offsetJointsWeightArray;
++	DWORD offsetFrameSetDmaArray;
++	DWORD offsetFrameSetInfoArray;
++	DWORD offsetConstRData;
++	DWORD offsetConstTData;
++	DWORD offsetConstSData;
++	DWORD offsetConstUserData;
++	DWORD offsetPackingSpecs;
++	DWORD offsetCustomData;
++	DWORD sizeCustomData;
++	DWORD offsetLocomotionDelta;
++	// followed by WORD channelTables[]
++};
++
++/** EdgeAnimSkeleton: USkeletalMesh::m_EdgeSkeleton. */
++struct EdgeAnimSkeleton
++{
++	DWORD tag;
++	DWORD sizeTotal;
++	DWORD sizeCustomData;
++	DWORD sizeNameHashes;
++	WORD numJoints;
++	WORD numUserChannels;
++	WORD numSimdHierarchyQuads;
++	WORD locomotionJointIndex;
++	DWORD offsetBasePose;
++	DWORD offsetParentIndicesArray;
++	DWORD offsetJointNameHashArray;
++	DWORD offsetUserChannelNameHashArray;
++	DWORD offsetUserChannelNodeNameHashArray;
++	DWORD offsetUserChannelFlagsArray;
++	DWORD offsetCustomData;
++	DWORD pad0[3];
++	// followed by WORD simdHierarchy[]
++};
++
++struct EdgeAnimFrameSetInfo
++{
++	WORD baseFrame;
++	WORD numIntraFrames;
++};
++
++struct EdgeAnimJointTransform
++{
++	FEdgeAnimVec4 rotation;
++	FEdgeAnimVec4 translation;
++	FEdgeAnimVec4 scale;
++};
++
++struct EdgeAnimBlendLeaf
++{
++	union
++	{
++		DWORD animationHeaderEa;
++		DWORD poseAddr;
++	};
++	WORD animationHeaderSize;
++	BYTE flags;
++	BYTE cacheIndex;
++	FLOAT evalTime;
++	DWORD userVal;
++};
++
++struct EdgeAnimBlendBranch
++{
++	WORD operation;
++	WORD left;
++	WORD right;
++	BYTE flags;
++	BYTE cacheIndex;
++	FLOAT alpha;
++	union
++	{
++		DWORD userVal;
++		FLOAT userFloat;
++	};
++};
++
++struct EdgeAnimPoseInfo
++{
++	EdgeAnimJointTransform* jointArray;
++	BYTE* weightArray;
++	FLOAT* userChannelArray;
++	BYTE* userChannelWeightArray;
++	DWORD* flags;
++	BYTE pad[12];
++};
++
++struct EdgeAnimCustomDataTable
++{
++	DWORD numEntries;
++	DWORD offsetHashArray;
++	DWORD offsetEntrySizes;
++	DWORD offsetEntries;
++};
++
++/** Per mesh bone: which animation joint drives it and whether the reference pose overrides it. */
++struct FEdgeSkelToAnimMapping
++{
++	WORD m_AnimJointIndex;
++	BYTE m_bUseRefPoseRotation;
++	BYTE m_bUseRefPoseTranslation;
++};
++
++struct FEdgeAnimToSkelMapping
++{
++	WORD m_SkelJointIndex;
++};
++
++struct FLocomotionStateBase
++{
++	FEdgeAnimVec4 m_LastRootRotation;
++	FEdgeAnimVec4 m_LastRootTranslation;
++	FLOAT m_fLastRootTime;
++	INT m_LoopCount;
++	BYTE Pad[8];
++};
++
++struct FLocomotionState : public FLocomotionStateBase
++{
++};
++
++/** UAnimNode::FEdgeAnimTreeContext in retail (nested there; standalone here until the node side is ported). */
++struct FEdgeAnimTreeContext
++{
++	TArray<EdgeAnimBlendBranch> m_BlendBranches;
++	TArray<EdgeAnimBlendLeaf> m_BlendLeaves;
++	class USkeletalMeshComponent* m_pSkelComponent;
++	TMap<class UAnimNode*, WORD> m_NodeCacheMap;
++	INT m_NodeCacheCount;
++	INT m_AnimJointMaxCount;
++};
++
++/** USkeletalMeshComponent::m_pEdgeAnimData (stays NULL until the whole-tree job path is ported). */
++MS_ALIGN(16) struct FEdgeAnimData
++{
++	FEdgeAnimTreeContext m_Context;
++	TArray<EdgeAnimJointTransform> m_OutputJoints;
++	DWORD m_JobId;
++	INT m_TickTag;
++	class USkeletalMesh* m_pSkelMesh;
++	FBoneAtom ExtractedRootMotionDelta;
++	UBOOL bHasRootMotion;
++	UBOOL bOldIgnoreControllers;
++	UBOOL bJustEnabledKinematicUpdate;
++} GCC_ALIGN(16);
++
++template<typename T>
++struct FJobBuffer
++{
++	DWORD m_Size;
++	T* m_pData;
++};
++
++struct FDisJobRunner
++{
++	void* m_pImpl;
++};
++
++struct FEdgeAnimManager
++{
++	FDisJobRunner m_JobRunner;
++	TArray<class USkeletalMeshComponent*> m_PendingComponents;
++};
++
++struct FDisJobDesc
++{
++	void (*m_ProcessFunc)(FDisJobDesc*);
++	DWORD m_ScratchBufferSize;
++	DWORD m_OutputBufferSize;
++	DWORD m_SizeOfJobDesc;
++	DWORD m_JobId;
++	void* m_pScratchBuffer;
++	void* m_pOutputBuffer;
++};
++
++struct FEdgeAnimJobDesc : public FDisJobDesc
++{
++	FJobBuffer<EdgeAnimSkeleton> m_Skeleton;
++	FJobBuffer<EdgeAnimBlendBranch> m_BlendBranches;
++	FJobBuffer<EdgeAnimBlendLeaf> m_BlendLeaves;
++	FEdgeAnimVec4 m_RotOrigin;
++	DWORD m_OutputJointsEA;
++	WORD m_NumBlendBranches;
++	WORD m_NumBlendLeaves;
++	WORD m_TreeRootNode;
++	WORD m_AnchorBoneIndex;
++	WORD m_MaxAnimJointCount;
++	BYTE m_NodeCacheCount;
++};
++
++/** One evaluation point: a frame set and the position inside it (retail _edgeAnimProcessCommandList, 2012 rva 0x6238c0). */
++struct FEdgeAnimFrameSample
++{
++	const BYTE* FrameSetData;
++	DWORD FrameSetSize;
++	DWORD IntraFrameCount;
++	DWORD FrameInteger;
++	FLOAT FrameFraction;
++};
++
++/** DISHONORED(port): Engine/Src/EdgeAnimEvaluate.cpp, plain C++ ports of the retail Edge evaluator (resources/docs/edgeanim.md). */
++UBOOL EdgeAnimLocateFrame(const EdgeAnimAnimation* Anim, FLOAT EvalTime, FEdgeAnimFrameSample& OutSample);
++void EdgeAnimEvaluate(EdgeAnimJointTransform* OutJoints, const EdgeAnimAnimation* Anim, const FEdgeAnimFrameSample& Sample);
++INT EdgeAnimSkeletonGetJointIndexByHash(const EdgeAnimSkeleton* Skel, DWORD JointHash, INT& IndexHint);
++/**
++ * The skeleton-order pose of retail AnimLeafCallback (2013 rva 0x54ee60): Anim evaluated at Time, its joints mapped onto Skel by
++ * name hash, the skeleton base pose (identity/zero when bAdditive) for every joint without a rotation or translation channel.
++ * Game thread only (shared scratch). OutJoints gets Skel->numJoints entries.
++ */
++UBOOL EdgeAnimEvaluateSkeletonPose(const EdgeAnimAnimation* Anim, const EdgeAnimSkeleton* Skel, FLOAT Time, UBOOL bAdditive, TArray<EdgeAnimJointTransform>& OutJoints);
++
++static_assert(sizeof(EdgeAnimAnimation) == 96, "EdgeAnimAnimation: 2012 PDB 96");
++static_assert(STRUCT_OFFSET(EdgeAnimAnimation, flags) == 38, "EdgeAnimAnimation::flags: 2012 PDB @38");
++static_assert(STRUCT_OFFSET(EdgeAnimAnimation, offsetLocomotionDelta) == 92, "EdgeAnimAnimation::offsetLocomotionDelta: 2012 PDB @92");
++static_assert(sizeof(EdgeAnimSkeleton) == 64, "EdgeAnimSkeleton: 2012 PDB 64");
++static_assert(STRUCT_OFFSET(EdgeAnimSkeleton, offsetBasePose) == 24, "EdgeAnimSkeleton::offsetBasePose: 2012 PDB @24");
++static_assert(STRUCT_OFFSET(EdgeAnimSkeleton, offsetCustomData) == 48, "EdgeAnimSkeleton::offsetCustomData: 2012 PDB @48");
++static_assert(sizeof(EdgeAnimFrameSetInfo) == 4, "EdgeAnimFrameSetInfo: 2012 PDB 4");
++static_assert(sizeof(EdgeAnimJointTransform) == 48, "EdgeAnimJointTransform: 2012 PDB 48");
++static_assert(sizeof(EdgeAnimBlendLeaf) == 16, "EdgeAnimBlendLeaf: 2012 PDB 16");
++static_assert(sizeof(EdgeAnimBlendBranch) == 16, "EdgeAnimBlendBranch: 2012 PDB 16");
++static_assert(sizeof(EdgeAnimPoseInfo) == 32, "EdgeAnimPoseInfo: 2012 PDB 32");
++static_assert(sizeof(EdgeAnimCustomDataTable) == 16, "EdgeAnimCustomDataTable: 2012 PDB 16");
++static_assert(sizeof(FEdgeSkelToAnimMapping) == 4, "FEdgeSkelToAnimMapping: 2012 PDB 4");
++static_assert(sizeof(FEdgeAnimToSkelMapping) == 2, "FEdgeAnimToSkelMapping: 2012 PDB 2");
++static_assert(sizeof(FLocomotionStateBase) == 48, "FLocomotionStateBase: 2012 PDB 48");
++static_assert(sizeof(FLocomotionState) == 48, "FLocomotionState: 2012 PDB 48");
++static_assert(sizeof(FEdgeAnimTreeContext) == 96, "UAnimNode::FEdgeAnimTreeContext: 2012 PDB 96");
++static_assert(STRUCT_OFFSET(FEdgeAnimTreeContext, m_NodeCacheCount) == 88, "FEdgeAnimTreeContext::m_NodeCacheCount: 2012 PDB @88");
++static_assert(sizeof(FEdgeAnimData) == 176, "FEdgeAnimData: 2012 PDB 176");
++static_assert(STRUCT_OFFSET(FEdgeAnimData, m_pSkelMesh) == 116, "FEdgeAnimData::m_pSkelMesh: 2012 PDB @116");
++static_assert(STRUCT_OFFSET(FEdgeAnimData, ExtractedRootMotionDelta) == 128, "FEdgeAnimData::ExtractedRootMotionDelta: 2012 PDB @128");
++static_assert(STRUCT_OFFSET(FEdgeAnimData, bJustEnabledKinematicUpdate) == 168, "FEdgeAnimData::bJustEnabledKinematicUpdate: 2012 PDB @168");
++static_assert(sizeof(FEdgeAnimManager) == 16, "FEdgeAnimManager: 2012 PDB 16");
++static_assert(sizeof(FDisJobDesc) == 28, "FDisJobDesc: 2012 PDB 28");
++static_assert(sizeof(FEdgeAnimJobDesc) == 84, "FEdgeAnimJobDesc: 2012 PDB 84");
++static_assert(STRUCT_OFFSET(FEdgeAnimJobDesc, m_RotOrigin) == 52, "FEdgeAnimJobDesc::m_RotOrigin: 2012 PDB @52");
++static_assert(STRUCT_OFFSET(FEdgeAnimJobDesc, m_NodeCacheCount) == 82, "FEdgeAnimJobDesc::m_NodeCacheCount: 2012 PDB @82");
++
++#endif // __EDGEANIM_H__

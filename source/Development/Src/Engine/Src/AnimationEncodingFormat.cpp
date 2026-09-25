@@ -9,6 +9,7 @@
 #include "AnimationCompression.h"
 #include "AnimationEncodingFormat.h"
 #include "AnimationUtils.h"
+#include "EdgeAnim.h"
 
 // known codecs
 #include "AnimationEncodingFormat_ConstantKeyLerp.h"
@@ -24,7 +25,8 @@ const INT CompressedTranslationStrides[ACF_MAX] =
 	sizeof(FVectorIntervalFixed32NoW),	// ACF_IntervalFixed32NoW	(compressed to 11-11-10 per-component interval fixed point)
 	sizeof(FLOAT),						// ACF_Fixed32NoW			(Illegal value for translation)
 	sizeof(FLOAT),						// ACF_Float32NoW			(Illegal value for translation)
-	0									// ACF_Identity
+	0,									// ACF_Identity
+	0									// ACF_EdgeAnim				DISHONORED(retail): Edge blob, never byte swapped by a UE codec
 };
 
 /** Number of swapped chunks per element. */
@@ -36,7 +38,8 @@ const INT CompressedTranslationNum[ACF_MAX] =
 	1,	// ACF_IntervalFixed32NoW	(compressed to 11-11-10 per-component interval fixed point)
 	3,	// ACF_Fixed32NoW			(Illegal value for translation)
 	3,	// ACF_Float32NoW			(Illegal value for translation)
-	0	// ACF_Identity
+	0,	// ACF_Identity
+	0	// ACF_EdgeAnim				DISHONORED(retail): Edge blob
 };
 
 /** Each CompresedRotationData track's ByteStream will be byte swapped in chunks of this size. */
@@ -48,7 +51,8 @@ const INT CompressedRotationStrides[ACF_MAX] =
 	sizeof(FQuatIntervalFixed32NoW),	// ACF_IntervalFixed32NoW	(FQuats with one component dropped and the remaining three compressed to 11-11-10 per-component interval fixed point.
 	sizeof(FQuatFixed32NoW),			// ACF_Fixed32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 fixed point.
 	sizeof(FQuatFloat32NoW),			// ACF_Float32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 floating point.
-	0	// ACF_Identity
+	0,	// ACF_Identity
+	0	// ACF_EdgeAnim				DISHONORED(retail): Edge blob
 };
 
 /** Number of swapped chunks per element. */
@@ -60,7 +64,8 @@ const INT CompressedRotationNum[ACF_MAX] =
 	1,	// ACF_IntervalFixed32NoW	(FQuats with one component dropped and the remaining three compressed to 11-11-10 per-component interval fixed point.
 	1,	// ACF_Fixed32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 fixed point.
 	1,  // ACF_Float32NoW			(FQuats with one component dropped and the remaining three compressed to 11-11-10 floating point.
-	0	// ACF_Identity
+	0,	// ACF_Identity
+	0	// ACF_EdgeAnim				DISHONORED(retail): Edge blob
 };
 
 /** Number of swapped chunks per element, split out per component (high 3 bits) and flags (low 3 bits)
@@ -75,7 +80,8 @@ const BYTE PerTrackNumComponentTable[ACF_MAX * 8] =
 	6,2,2,4,2,4,4,6,	// ACF_IntervalFixed32NoW (special, indicates number of interval pairs stored in the fixed track)
 	1,1,1,1,1,1,1,1,	// ACF_Fixed32NoW
 	1,1,1,1,1,1,1,1,	// ACF_Float32NoW
-	0,0,0,0,0,0,0,0		// ACF_Identity
+	0,0,0,0,0,0,0,0,	// ACF_Identity
+	0,0,0,0,0,0,0,0		// ACF_EdgeAnim (DISHONORED(retail): Edge blob)
 };
 
 /**
@@ -608,6 +614,9 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
 			case ACF_Identity:
 				Seq.TranslationCodec = &AEFConstantKeyLerp_Identity;
 				break;
+			// DISHONORED(port): retail AnimationFormat_SetInterfaceLinks 2013 rva 0xc8250 (2012 0xc4420): `case 7: break;`, the codecs stay NULL
+			case ACF_EdgeAnim:
+				break;
 
 			default:
 				appErrorf( TEXT("%i: unknown or unsupported translation compression"), (INT)Seq.TranslationCompressionFormat );
@@ -636,6 +645,9 @@ void AnimationFormat_SetInterfaceLinks(UAnimSequence& Seq)
 				break;
 			case ACF_Identity:
 				Seq.RotationCodec = &AEFConstantKeyLerp_Identity;
+				break;
+			// DISHONORED(port): retail AnimationFormat_SetInterfaceLinks 2013 rva 0xc8250 (2012 0xc4420): `case 7: return;`, the codecs stay NULL
+			case ACF_EdgeAnim:
 				break;
 
 			default:

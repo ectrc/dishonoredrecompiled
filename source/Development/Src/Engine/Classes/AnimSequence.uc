@@ -172,7 +172,9 @@ enum AnimationCompressionFormat
 	ACF_IntervalFixed32NoW,
 	ACF_Fixed32NoW,
 	ACF_Float32NoW,
-	ACF_Identity
+	ACF_Identity,
+	// DISHONORED(retail): retail SDK Engine.AnimSequence.AnimationCompressionFormat ACF_EdgeAnim = 7, ACF_END = 8; Sony Edge animation blob, evaluated by the Edge jobs, no UE codec
+	ACF_EdgeAnim
 };
 
 /** The compression format that was used to compress translation tracks. */
