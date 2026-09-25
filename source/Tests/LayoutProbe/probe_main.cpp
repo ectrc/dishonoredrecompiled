@@ -5,9 +5,51 @@
 // probe only evaluates sizeof/offsetof and these are the only module symbols its objects reference.
 void* __cdecl appMalloc(unsigned long Count, unsigned long) { return std::malloc(Count); }
 void __cdecl appFree(void* Ptr) { std::free(Ptr); }
-void probe_Core();
+// Engine.h inline code (checks in TArray accessors, RHI wrappers) references these three as well.
+void __cdecl appFailAssertFunc(const char*, const char*, int, const wchar_t*, ...) { std::abort(); }
+void __cdecl appFailAssertFuncDebug(const char*, const char*, int, const wchar_t*, ...) { std::abort(); }
+class FDynamicRHI* GDynamicRHI = nullptr;
+void probe_Core_0();
+void probe_Core_1();
+void probe_Core_2();
+void probe_Core_3();
+void probe_Engine_0();
+void probe_Engine_1();
+void probe_Engine_2();
+void probe_Engine_3();
+void probe_Engine_4();
+void probe_Engine_5();
+void probe_Engine_6();
+void probe_Engine_7();
+void probe_Engine_8();
+void probe_Engine_9();
+void probe_Engine_10();
+void probe_Engine_11();
+void probe_Engine_12();
+void probe_Engine_13();
+void probe_Engine_14();
+void probe_Engine_15();
 int main()
 {
-    probe_Core();
+    probe_Core_0();
+    probe_Core_1();
+    probe_Core_2();
+    probe_Core_3();
+    probe_Engine_0();
+    probe_Engine_1();
+    probe_Engine_2();
+    probe_Engine_3();
+    probe_Engine_4();
+    probe_Engine_5();
+    probe_Engine_6();
+    probe_Engine_7();
+    probe_Engine_8();
+    probe_Engine_9();
+    probe_Engine_10();
+    probe_Engine_11();
+    probe_Engine_12();
+    probe_Engine_13();
+    probe_Engine_14();
+    probe_Engine_15();
     return 0;
 }

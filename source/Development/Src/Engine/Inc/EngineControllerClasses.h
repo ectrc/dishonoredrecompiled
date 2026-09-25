@@ -344,51 +344,36 @@ struct Controller_eventNotifyPathChanged_Parms
     {
     }
 };
-class AController : public AActor, public IInterface_NavigationHandle
+// DISHONORED(layout): 2012 PDB AController (896 bytes) has the single base AActor; IInterface_NavigationHandle moved to APawn (@584)
+class AController : public AActor
 {
 public:
     //## BEGIN PROPS Controller
+    // DISHONORED(layout): 2012 PDB size 896; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: PlayerReplicationInfo, bOverrideSearchStart, bAdvancedTactics, bCanDoSpecial, bAdjusting, bPreparingMove, bForceStrafe, bEarlyOutOfSighTestsForSameType, bPreciseDestination, bUsingPathLanes, NavigationHandleClass, NavigationHandle, OverrideSearchStart, MoveTimer, MoveTarget, DestinationPosition, CurrentPath, NextRoutePath, LaneOffset, NavMeshPath_SearchExtent_Modifier)
     class APawn* Pawn;
-    class APlayerReplicationInfo* PlayerReplicationInfo;
     INT PlayerNum;
     class AController* NextController;
     BITFIELD bIsPlayer:1;
     BITFIELD bGodMode:1;
+    BITFIELD bAffectedByHitEffects:1;  // DISHONORED(layout): 2012 PDB @596
     BITFIELD bSoaking:1;
     BITFIELD bSlowerZAcquire:1;
     BITFIELD bNotifyPostLanded:1;
     BITFIELD bNotifyApex:1;
-    BITFIELD bOverrideSearchStart:1;
-    BITFIELD bAdvancedTactics:1;
-    BITFIELD bCanDoSpecial:1;
-    BITFIELD bAdjusting:1;
-    BITFIELD bPreparingMove:1;
-    BITFIELD bForceStrafe:1;
     BITFIELD bLOSflag:1;
     BITFIELD bSkipExtraLOSChecks:1;
     BITFIELD bNotifyFallingHitWall:1;
-    BITFIELD bEarlyOutOfSighTestsForSameType:1;
-    BITFIELD bPreciseDestination:1;
     BITFIELD bSeeFriendly:1;
-    BITFIELD bUsingPathLanes:1;
-    SCRIPT_ALIGN;
     BYTE bFire;
     BYTE bAltFire;
+    SCRIPT_ALIGN;
     FLOAT MinHitWall;
-    class UClass* NavigationHandleClass;
-    class UNavigationHandle* NavigationHandle;
-    FVector OverrideSearchStart;
-    FLOAT MoveTimer;
-    class AActor* MoveTarget;
-    struct FBasedPosition DestinationPosition;
     struct FBasedPosition FocalPosition;
     class AActor* Focus;
     class AActor* GoalList[4];
     struct FBasedPosition AdjustPosition;
     class ANavigationPoint* StartSpot;
     TArrayNoInit<class ANavigationPoint*> RouteCache;
-    class UReachSpec* CurrentPath;
-    class UReachSpec* NextRoutePath;
     FVector CurrentPathDir;
     class AActor* RouteGoal;
     FLOAT RouteDist;
@@ -397,6 +382,9 @@ public:
     class AActor* FailedMoveTarget;
     INT MoveFailureCount;
     FLOAT GroundPitchTime;
+    FVector ViewX;  // DISHONORED(layout): 2012 PDB @788
+    FVector ViewY;  // DISHONORED(layout): 2012 PDB @800
+    FVector ViewZ;  // DISHONORED(layout): 2012 PDB @812
     class APawn* ShotTarget;
     class AActor* LastFailedReach;
     FLOAT FailedReachTime;
@@ -408,10 +396,31 @@ public:
     FLOAT MaxMoveTowardPawnTargetTime;
     class APawn* Enemy;
     TArrayNoInit<struct FVisiblePortalInfo> VisiblePortals;
-    FLOAT LaneOffset;
     FRotator OldBasedRotation;
-    FVector NavMeshPath_SearchExtent_Modifier;
     //## END PROPS Controller
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC class APlayerReplicationInfo* PlayerReplicationInfo;
+    DISHONORED_SHIM_STATIC BITFIELD bOverrideSearchStart;
+    DISHONORED_SHIM_STATIC BITFIELD bAdvancedTactics;
+    DISHONORED_SHIM_STATIC BITFIELD bCanDoSpecial;
+    DISHONORED_SHIM_STATIC BITFIELD bAdjusting;
+    DISHONORED_SHIM_STATIC BITFIELD bPreparingMove;
+    DISHONORED_SHIM_STATIC BITFIELD bForceStrafe;
+    DISHONORED_SHIM_STATIC BITFIELD bEarlyOutOfSighTestsForSameType;
+    DISHONORED_SHIM_STATIC BITFIELD bPreciseDestination;
+    DISHONORED_SHIM_STATIC BITFIELD bUsingPathLanes;
+    DISHONORED_SHIM_STATIC class UClass* NavigationHandleClass;
+    DISHONORED_SHIM_STATIC class UNavigationHandle* NavigationHandle;
+    DISHONORED_SHIM_STATIC FVector OverrideSearchStart;
+    DISHONORED_SHIM_STATIC FLOAT MoveTimer;
+    DISHONORED_SHIM_STATIC class AActor* MoveTarget;
+    DISHONORED_SHIM_STATIC struct FBasedPosition DestinationPosition;
+    DISHONORED_SHIM_STATIC class UReachSpec* CurrentPath;
+    DISHONORED_SHIM_STATIC class UReachSpec* NextRoutePath;
+    DISHONORED_SHIM_STATIC FLOAT LaneOffset;
+    DISHONORED_SHIM_STATIC FVector NavMeshPath_SearchExtent_Modifier;
 
     virtual UBOOL IsLocalPlayerController();
     virtual UBOOL IsLocalController();
@@ -1741,6 +1750,7 @@ class APlayerController : public AController
 {
 public:
     //## BEGIN PROPS PlayerController
+    // DISHONORED(layout): 2012 PDB size 1328; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bCameraCut, bInteractiveMode, bShowKismetDrawText, bDebugCameraAnims, bBlockCameraAnimsFromOverridingPostProcess, bLogHearSoundOverflow, RealViewTarget, mySecondaryHUD, VoiceMuteList, GameplayVoiceMuteList, VoicePacketFilter, ConnectedPeers, BestNextHostPeers, MigratedSearchToJoin, VoiceInterface, InputRequests, MyCoverReplicator, PendingSwapConnection, MaxConcurrentHearSounds, HearSoundActiveComponents, HearSoundPoolComponents, __OnMissingPeersUnregistered__Delegate)
     class UPlayer* Player;
     class ACamera* PlayerCamera;
     class UClass* CameraClass;
@@ -1757,23 +1767,17 @@ public:
     BITFIELD bWasSpeedHack:1;
     BITFIELD bWasSaturated:1;
     BITFIELD bAimingHelp:1;
-    BITFIELD bCameraCut:1;
     BITFIELD bClientSimulatingViewTarget:1;
     BITFIELD bHasVoiceHandshakeCompleted:1;
     BITFIELD bCinematicMode:1;
-    BITFIELD bInteractiveMode:1;
     BITFIELD bCinemaDisableInputMove:1;
     BITFIELD bCinemaDisableInputLook:1;
     BITFIELD bIgnoreNetworkMessages:1;
-    BITFIELD bShowKismetDrawText:1;
     BITFIELD bReplicateAllPawns:1;
     BITFIELD bIsUsingStreamingVolumes:1;
     BITFIELD bIsExternalUIOpen:1;
     BITFIELD bIsControllerConnected:1;
     BITFIELD bCheckSoundOcclusion:1;
-    BITFIELD bDebugCameraAnims:1;
-    BITFIELD bBlockCameraAnimsFromOverridingPostProcess:1;
-    BITFIELD bLogHearSoundOverflow:1;
     BITFIELD bCheckRelevancyThroughPortals:1;
     BITFIELD bDebugClientAdjustPosition:1;
     FLOAT MaxResponseTime;
@@ -1785,8 +1789,8 @@ public:
     BYTE bRun;
     BYTE bDuck;
     BYTE NetPlayerIndex;
+    SCRIPT_ALIGN;
     class AActor* ViewTarget;
-    class APlayerReplicationInfo* RealViewTarget;
     class UInterpTrackInstDirector* ControllingDirTrackInst;
     FLOAT FOVAngle;
     FLOAT DesiredFOV;
@@ -1796,7 +1800,6 @@ public:
     FLOAT TargetEyeHeight;
     FRotator BlendedTargetViewRotation;
     class AHUD* myHUD;
-    class AHUD* mySecondaryHUD;
     class UClass* SavedMoveClass;
     class USavedMove* SavedMoves;
     class USavedMove* FreeMoves;
@@ -1824,35 +1827,46 @@ public:
     FStringNoInit ForceFeedbackManagerClassName;
     class UForceFeedbackManager* ForceFeedbackManager;
     TArrayNoInit<class UInteraction*> Interactions;
-    TArrayNoInit<struct FUniqueNetId> VoiceMuteList;
-    TArrayNoInit<struct FUniqueNetId> GameplayVoiceMuteList;
-    TArrayNoInit<struct FUniqueNetId> VoicePacketFilter;
-    TArrayNoInit<struct FConnectedPeerInfo> ConnectedPeers;
-    TArrayNoInit<struct FUniqueNetId> BestNextHostPeers;
-    class UOnlineGameSearch* MigratedSearchToJoin;
     class UOnlineSubsystem* OnlineSub;
-    TScriptInterface<class IInterface> VoiceInterface;
     class UUIDataStore_OnlinePlayerData* OnlinePlayerData;
     FLOAT InteractDistance;
     FName DelayedJoinSessionName;
-    TArrayNoInit<struct FInputMatchRequest> InputRequests;
     FLOAT LastBroadcastTime;
     FStringNoInit LastBroadcastString[4];
     TArrayNoInit<FName> PendingMapChangeLevelNames;
-    class ACoverReplicator* MyCoverReplicator;
     TArrayNoInit<struct FDebugTextInfo> DebugTextList;
     FLOAT SpectatorCameraSpeed;
-    class UNetConnection* PendingSwapConnection;
     FLOAT MinRespawnDelay;
-    INT MaxConcurrentHearSounds;
-    TArrayNoInit<class UAudioComponent*> HearSoundActiveComponents;
-    TArrayNoInit<class UAudioComponent*> HearSoundPoolComponents;
     TArrayNoInit<class AActor*> HiddenActors;
     FLOAT LastSpectatorStateSynchTime;
-    FScriptDelegate __OnMissingPeersUnregistered__Delegate;
     FScriptDelegate __CanUnpause__Delegate;
     FScriptDelegate __InputMatchDelegate__Delegate;
     //## END PROPS PlayerController
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bCameraCut;
+    DISHONORED_SHIM_STATIC BITFIELD bInteractiveMode;
+    DISHONORED_SHIM_STATIC BITFIELD bShowKismetDrawText;
+    DISHONORED_SHIM_STATIC BITFIELD bDebugCameraAnims;
+    DISHONORED_SHIM_STATIC BITFIELD bBlockCameraAnimsFromOverridingPostProcess;
+    DISHONORED_SHIM_STATIC BITFIELD bLogHearSoundOverflow;
+    DISHONORED_SHIM_STATIC class APlayerReplicationInfo* RealViewTarget;
+    DISHONORED_SHIM_STATIC class AHUD* mySecondaryHUD;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> VoiceMuteList;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> GameplayVoiceMuteList;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> VoicePacketFilter;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FConnectedPeerInfo> ConnectedPeers;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> BestNextHostPeers;
+    DISHONORED_SHIM_STATIC class UOnlineGameSearch* MigratedSearchToJoin;
+    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> VoiceInterface;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FInputMatchRequest> InputRequests;
+    DISHONORED_SHIM_STATIC class ACoverReplicator* MyCoverReplicator;
+    DISHONORED_SHIM_STATIC class UNetConnection* PendingSwapConnection;
+    DISHONORED_SHIM_STATIC INT MaxConcurrentHearSounds;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class UAudioComponent*> HearSoundActiveComponents;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class UAudioComponent*> HearSoundPoolComponents;
+    DISHONORED_SHIM_STATIC FScriptDelegate __OnMissingPeersUnregistered__Delegate;
 
     void SetNetSpeed(INT NewSpeed);
     FString GetPlayerNetworkAddress();

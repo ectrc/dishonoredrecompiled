@@ -595,6 +595,7 @@ public:
 //
 // The level object.  Contains the level's actor list, Bsp information, and brush list.
 //
+// DISHONORED(layout): 2012 PDB ULevel is 796 bytes; member list follows types.json (see agents/agentM.md)
 class ULevel : public ULevelBase
 {
 	DECLARE_CLASS_INTRINSIC(ULevel,ULevelBase,0,Engine)
@@ -626,7 +627,7 @@ class ULevel : public ULevelBase
 	/** Total number of KB used for shadowmap textures in the level. */
 	FLOAT										ShadowmapTotalSize;
 
-#if WITH_NOVODEX
+	// DISHONORED(layout): 2012 PDB keeps SceneIndex @364 .. LevelConvexBSPActor @376 (Shipping links PhysX; the WITH_NOVODEX guard is dropped)
 	/** Physics scene index. */
 	INT											SceneIndex;
 
@@ -638,8 +639,7 @@ class ULevel : public ULevelBase
 
 	/** Novodex representation of the level BSP geometry (convex hulls). */
 	class NxActor*								LevelConvexBSPActor;
-#endif
-	
+
 	/** Cached BSP triangle-mesh data for use with the physics engine. */
 	TArray<BYTE>								CachedPhysBSPData;
 
@@ -699,12 +699,6 @@ class ULevel : public ULevelBase
 	class ACoverLink							*CoverListStart, *CoverListEnd;
 	class APylon								*PylonListStart, *PylonListEnd;
 
-	/** Stores guids and refid into CoverLinkRefs array for all unresolved crosslevel cover links */
-	TArray<FGuidPair>			CrossLevelCoverGuidRefs;
-	/** Stores a ptr to all coverlinks referenced by some other object (ie a firelink struct) */
-	TArray<class ACoverLink*>	CoverLinkRefs;
-	/** Stores slotindex and reference into CoverLinkRefs array for a coverlink */
-	TArray<FCoverIndexPair>		CoverIndexPairs;
 
 	/** array of Actors in this level that currently can be and want to be ticked */
 	TArray<AActor*> TickableActors;
@@ -715,6 +709,7 @@ class ULevel : public ULevelBase
 	 * streaming a level in/out.
 	 */
 	TArray<class AActor*>						CrossLevelActors;
+	TArray<class AActor*>						m_CrossLevelReferencedActors;  // DISHONORED(layout): 2012 PDB @676
 
 	/** 
 	* The precomputed light information for this level.  
@@ -725,14 +720,10 @@ class ULevel : public ULevelBase
 	/** Contains precomputed visibility data for this level. */
 	FPrecomputedVisibilityHandler				PrecomputedVisibilityHandler;
 
-	/** Precomputed volume distance field for this level. */
-	FPrecomputedVolumeDistanceField				PrecomputedVolumeDistanceField;
 
 	/** Fence used to track when the rendering thread has finished referencing this ULevel's resources. */
 	FRenderCommandFence							RemoveFromSceneFence;
 
-	/** transform to level contents applied by the level streaming system (@see UWorld::AddToWorld()) */
-	FMatrix AppliedLevelTransform;
 
 	/** Whether components are currently attached or not. */
 	UBOOL										bAreComponentsCurrentlyAttached;
@@ -768,6 +759,15 @@ class ULevel : public ULevelBase
 	UBOOL										bAlreadyInitializedAllActorRBPhys;
 	/** Current index into actors array for initializing Actor rigid-body physics.			*/
 	INT											CurrentActorIndexForInitActorsRBPhys;
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC TArray<FGuidPair> CrossLevelCoverGuidRefs;
+	DISHONORED_SHIM_STATIC TArray<class ACoverLink*> CoverLinkRefs;
+	DISHONORED_SHIM_STATIC TArray<FCoverIndexPair> CoverIndexPairs;
+	DISHONORED_SHIM_STATIC FPrecomputedVolumeDistanceField PrecomputedVolumeDistanceField;
+	DISHONORED_SHIM_STATIC FMatrix AppliedLevelTransform;
 	
 #if PERF_TRACK_DETAILED_ASYNC_STATS
 	/** Mapping of how long each actor class takes to have UpdateComponents called on it */

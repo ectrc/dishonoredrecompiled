@@ -207,12 +207,13 @@ struct FPhysXSceneProperties
 
 struct FApexModuleDestructibleSettings
 {
+    // DISHONORED(layout): 2012 PDB size 12: MaxChunkIslandCount @0, MaxRrbActorCount @4, MaxChunkSeparationLOD @8
+    // (no MaxShapeCount / bOverrideMaxChunkSeparationLOD)
     INT MaxChunkIslandCount;
-    INT MaxShapeCount;
     INT MaxRrbActorCount;
     FLOAT MaxChunkSeparationLOD;
-    BITFIELD bOverrideMaxChunkSeparationLOD:1;
-    SCRIPT_ALIGN;
+    DISHONORED_SHIM_STATIC INT MaxShapeCount;
+    DISHONORED_SHIM_STATIC BITFIELD bOverrideMaxChunkSeparationLOD;
 
     /** Constructors */
     FApexModuleDestructibleSettings() {}
@@ -291,30 +292,37 @@ struct FScreenMessageString
 
 struct FLightmassWorldInfoSettings
 {
-    FLOAT StaticLightingLevelScale;
-    INT NumIndirectLightingBounces;
-    FColor EnvironmentColor;
-    FLOAT EnvironmentIntensity;
-    BITFIELD bEnableAdvancedEnvironmentColor:1;
+	// DISHONORED(layout): 2012 PDB FLightmassWorldInfoSettings is 60 bytes; data members regenerated in types.json order
+	// (reference declarations reused by name, Arkane members synthesized; see agents/agentM.md)
+	FLOAT StaticLightingLevelScale;
+	INT NumIndirectLightingBounces;
+	FColor EnvironmentColor;
+	FLOAT EnvironmentIntensity;
+	FLOAT EmissiveBoost;
+	FLOAT DiffuseBoost;
+	FLOAT SpecularBoost;
+	FLOAT IndirectNormalInfluenceBoost;
+	BITFIELD bUseNormalMapsForSimpleLightMaps:1;  // DISHONORED(layout): 2012 PDB @32
+	BITFIELD bUseAmbientOcclusion:1;
+	FLOAT DirectIlluminationOcclusionFraction;
+	FLOAT IndirectIlluminationOcclusionFraction;
+	FLOAT OcclusionExponent;
+	FLOAT FullyOccludedSamplesFraction;
+	FLOAT MaxOcclusionDistance;
+	BITFIELD bVisualizeMaterialDiffuse:1;
+	BITFIELD bVisualizeAmbientOcclusion:1;
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC BITFIELD bEnableAdvancedEnvironmentColor;
+	DISHONORED_SHIM_STATIC FColor EnvironmentSunColor;
+	DISHONORED_SHIM_STATIC FLOAT EnvironmentSunIntensity;
+	DISHONORED_SHIM_STATIC FLOAT EnvironmentLightTerminatorAngle;
+	DISHONORED_SHIM_STATIC FVector EnvironmentLightDirection;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableImageReflectionShadowing;
+	DISHONORED_SHIM_STATIC BITFIELD bCompressShadowmap;
     SCRIPT_ALIGN;
-    FColor EnvironmentSunColor;
-    FLOAT EnvironmentSunIntensity;
-    FLOAT EnvironmentLightTerminatorAngle;
-    FVector EnvironmentLightDirection;
-    FLOAT EmissiveBoost;
-    FLOAT DiffuseBoost;
-    FLOAT SpecularBoost;
-    FLOAT IndirectNormalInfluenceBoost;
-    BITFIELD bUseAmbientOcclusion:1;
-    BITFIELD bEnableImageReflectionShadowing:1;
-    FLOAT DirectIlluminationOcclusionFraction;
-    FLOAT IndirectIlluminationOcclusionFraction;
-    FLOAT OcclusionExponent;
-    FLOAT FullyOccludedSamplesFraction;
-    FLOAT MaxOcclusionDistance;
-    BITFIELD bVisualizeMaterialDiffuse:1;
-    BITFIELD bVisualizeAmbientOcclusion:1;
-    BITFIELD bCompressShadowmap:1;
     SCRIPT_ALIGN;
 
     /** Constructors */
@@ -392,24 +400,115 @@ struct WorldInfo_eventServerTravel_Parms
     {
     }
 };
+// DISHONORED(layout): 2012 PDB, Arkane script structs used by AWorldInfo (sizes from types.json: FArkSunGlareMeshParams 36,
+// FWorldInfoNavMeshGenProcessParams 4, FWorldInfoNavMeshGenBaseParams 44, FWorldInfoNavMeshGenScoutParams 108).
+struct FArkSunGlareMeshParams
+{
+    class ATargetPoint* m_SunTargetPoint;
+    class AStaticMeshActor* m_SkyStaticMesh;
+    class UMaterialInstanceConstant* m_SunMIC;
+    FLOAT m_fMinAngle;
+    FLOAT m_fMinDot;
+    FLOAT m_fBloomScale;
+    FLOAT m_fBloomExponent;
+    class UMaterialInstanceConstant* m_SunDynamicMIC;
+    FLOAT m_SunMICInitialBloomValue;
+};
+
+struct FWorldInfoNavMeshGenProcessParams
+{
+    BITFIELD bExpansionDoSimplification:1;
+    BITFIELD bExpansionDoBorderBackFill:1;
+    BITFIELD bExpansionDoThreeToTwoMerge:1;
+    BITFIELD bExpansionDoPolyMerge:1;
+    BITFIELD bExpansionDoPolyConcaveMerge:1;
+    BITFIELD bExpansionDoSquareMerge:1;
+    BITFIELD bExpansionDoSaveFixup:1;
+    BITFIELD bExpansionCullPolys:1;
+    BITFIELD bExpansionBuildObstacleMesh:1;
+    BITFIELD bExpansionCreateEdgeConnections:1;
+    BITFIELD bExpansionDoSubdivisionMerging:1;
+    BITFIELD bExpansionDoEdgeSmoothing:1;
+    BITFIELD bExpansionDoRawGridOnly:1;
+    BITFIELD bExpansionDoConcaveSlabsOnly:1;
+    BITFIELD bExpansionDoEdgeSimplificationEvenInConcaveSlabMode:1;
+    BITFIELD bExpansionDrawDropDownPolys:1;
+    BITFIELD bExpansionDrawPolyParents:1;
+    BITFIELD bExpansionDisableSubdivisionHeightSnapping:1;
+    BITFIELD bExpansionDisableVertMaxHeightSlopeMax:1;
+    BITFIELD bExpansionDoAdjacentPolyVertAlignment:1;
+};
+
+struct FWorldInfoNavMeshGenBaseParams
+{
+    INT ExpansionMaxSubdivisions;
+    FLOAT fExpansionConvexTolerance;
+    FLOAT fExpansionEdgeSmoothingConvexTolerance;
+    FLOAT fExpansionSubdivisionDistPctThresh;
+    FLOAT fExpansionObstacleMeshGapEpsilon;
+    FLOAT fExpansionPolyBoundsDownOffset;
+    FLOAT fExpansionMaxPolyEdgeDot;
+    INT ExpansionMaxConcaveSlabVertCount;
+    FLOAT fExpansionMaxSquareMergeControlPtThresh;
+    FLOAT fExpansionMinConcaveMergeDot;
+    FLOAT fExpansionEdgeVertTolerance;
+};
+
+struct FWorldInfoNavMeshGenScoutParams
+{
+    FLOAT fStepSize;
+    FLOAT fEntityHalfHeight;
+    FLOAT fMaxDropHeight;
+    FLOAT fMaxStepHeight;
+    FLOAT fMinPolyArea;
+    FLOAT fBorderBackfill_CheckDist;
+    FLOAT fMinMergeDotLargeArea;
+    FLOAT fMaxPolyHeight;
+    FLOAT fHeightMergeThreshold;
+    FLOAT fEdgeMaxDelta;
+    FLOAT fWalkableFloorZ;
+    FLOAT fMaxGroundCheckSize;
+    FLOAT fMinEdgeLength;
+    BITFIELD bExpansionDoObstacleMeshSimplification:1;
+    BITFIELD bPathEngineUseVoxels:1;
+    BITFIELD bPathEngineUseVoxelSubdivisionAreas:1;
+    BITFIELD bPathEngineStripTerrainHeightDetail:1;
+    BITFIELD bPathEngineExcludeDownwardFacingFromGroundResult:1;
+    BITFIELD bPathEngineUseConvexSolids:1;
+    BITFIELD bPathEngineBuildUnobstructedGroundMesh:1;
+    BITFIELD bPathEngineBuildConnectedGroundMesh:1;
+    BITFIELD bPathEngineSaveMesh:1;
+    FStringNoInit PathEngineSaveMeshBaseFilename;
+    INT PathEngineVoxelSize;
+    INT PathEngineSubDivisionSize;
+    INT PathEngineOptimizeWithThreshold;
+    INT PathEngineOptimizeWithThresholdVertical;
+    INT PathEngineVoxelMinimumFragmentSize;
+    INT PathEngineAgentCollisionExtent2D;
+    FLOAT PathEngineConnectedGroundMeshRootPositionOffsetZ;
+    TArrayNoInit<INT> PathEngineClearanceRegionsHeight;
+};
+
 class AWorldInfo : public AZoneInfo
 {
 public:
     //## BEGIN PROPS WorldInfo
-    struct FPostProcessSettings DefaultPostProcessSettings;
+    // DISHONORED(layout): 2012 PDB size 1904; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: DefaultPostProcessSettings, bUseGammaCorrection, bSuspendAI, bMinimizeBSPSections, bNoMobileMapWarnings, bUseProcBuildingRulesetOverride, bInteractiveMode, bPhysicsIgnoreDeltaTime, bAllowTemporalAA, bHaveActiveCrowd, bAllowHostMigration, bGameplayFramePause, HighestPriorityPostProcessVolume, DefaultReverbSettings, DefaultAmbientZoneSettings, HighestPriorityReverbVolume, MassiveLODOverrideVolumes, EnvironmentVolumes, Pauser, VisibleGroups_DEPRECATED, VisibleLayers, PreferredLightmapType, LevelLightingQuality, CoverList, ReplicationViewers, DefaultGameType, MusicComp, CurrentMusicTrack, ReplicatedMusicTrack, FractureManagerClassPath, MyFractureManager, ProcBuildingRulesetOverride, SkelMeshCompTickTagCount, ApexDestructionLODResourceValue, ApexClothingLODResourceValue, WorldAttractors, ImageReflectionEnvironmentTexture, ImageReflectionEnvironmentColor, ImageReflectionEnvironmentRotation, LMLevelSettings_DEPRECATED, LandscapeInfoMap, PopulationManager, PeerHostMigration, HostMigrationTimeout, FirstPhysicsVolume)
+    TArrayNoInit<FArkSunGlareMeshParams> m_SunMeshesAndMaterials;  // DISHONORED(layout): 2012 PDB @600
+    FArkPpConfig m_ArkDefaultPpSettings;  // DISHONORED(layout): 2012 PDB @612
     class UPostProcessChain* WorldPostProcessChain;
     BITFIELD bPersistPostProcessToNextLevel:1;
     BITFIELD bFogEnabled:1;
     BITFIELD bBumpOffsetEnabled:1;
-    BITFIELD bUseGammaCorrection:1;
     BITFIELD bMapNeedsLightingFullyRebuilt:1;
+    BITFIELD bMapHasDLEsOutsideOfImportanceVolume:1;  // DISHONORED(layout): 2012 PDB @748
     BITFIELD bMapHasMultipleDominantLightsAffectingOnePrimitive:1;
     BITFIELD bMapHasPathingErrors:1;
     BITFIELD bRequestedBlockOnAsyncLoading:1;
+    BITFIELD Paused:1;  // DISHONORED(layout): 2012 PDB @749
     BITFIELD bBegunPlay:1;
     BITFIELD bPlayersOnly:1;
     BITFIELD bPlayersOnlyPending:1;
-    BITFIELD bSuspendAI:1;
     BITFIELD bDropDetail:1;
     BITFIELD bAggressiveLOD:1;
     BITFIELD bStartup:1;
@@ -419,16 +518,12 @@ public:
     BITFIELD bDebugPauseExecution:1;
     BITFIELD bDebugStepExecution:1;
     BITFIELD bUseConsoleInput:1;
-    BITFIELD bMinimizeBSPSections:1;
     BITFIELD bNoDefaultInventoryForPlayer:1;
     BITFIELD bNoPathWarnings:1;
-    BITFIELD bNoMobileMapWarnings:1;
     BITFIELD bHighPriorityLoading:1;
     BITFIELD bHighPriorityLoadingLocal:1;
-    BITFIELD bUseProcBuildingRulesetOverride:1;
-    BITFIELD bInteractiveMode:1;
+    BITFIELD bUseProcBuildingRulesetOverride_DEPRECATED:1;  // DISHONORED(layout): 2012 PDB @751
     BITFIELD bSupportDoubleBufferedPhysics:1;
-    BITFIELD bPhysicsIgnoreDeltaTime:1;
 private:
     BITFIELD bEnableChanceOfPhysicsChunkOverride:1;
     BITFIELD bLimitExplosionChunkSize:1;
@@ -436,44 +531,41 @@ private:
 public:
     BITFIELD bPrecomputeVisibility:1;
     BITFIELD bPlaceCellsOnSurfaces:1;
-    BITFIELD bAllowTemporalAA:1;
+    BITFIELD bAllowLightEnvSphericalHarmonicLights:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD bAllowModulateBetterShadows:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD bIncreaseFogNearPrecision:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD m_bTranslucencyVelocityBlur:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD m_bSingleStep:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD m_bSingleStepPaused:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD m_bSimulateFPS:1;  // DISHONORED(layout): 2012 PDB @752
     BITFIELD bUseGlobalIllumination:1;
     BITFIELD bForceNoPrecomputedLighting:1;
-    BITFIELD bHaveActiveCrowd:1;
-    BITFIELD bAllowHostMigration:1;
-    BITFIELD bGameplayFramePause:1;
+    BITFIELD bSimpleLightmapsStoredInLinearSpace:1;  // DISHONORED(layout): 2012 PDB @753
+    BITFIELD m_bNeverDisplayHUD:1;  // DISHONORED(layout): 2012 PDB @753
+    BITFIELD m_bNeverPause:1;  // DISHONORED(layout): 2012 PDB @753
     FLOAT SquintModeKernelSize;
-    class APostProcessVolume* HighestPriorityPostProcessVolume;
-    struct FReverbSettings DefaultReverbSettings;
-    FInteriorSettings DefaultAmbientZoneSettings;
     FLOAT FogStart;
     FLOAT FogEnd;
     FColor FogColor;
     FLOAT BumpEnd;
-    class AReverbVolume* HighestPriorityReverbVolume;
-    TArrayNoInit<class AMassiveLODOverrideVolume*> MassiveLODOverrideVolumes;
     TArrayNoInit<class APortalVolume*> PortalVolumes;
-    TArrayNoInit<class AEnvironmentVolume*> EnvironmentVolumes;
     TArrayNoInit<class ULevelStreaming*> StreamingLevels;
     DOUBLE LastTimeUnbuiltLightingWasEncountered;
-#if WITH_EDITORONLY_DATA
     class UBookMark* BookMarks[10];
     class UKismetBookMark* KismetBookMarks[10];
     TArrayNoInit<class UClipPadEntry*> ClipPadEntries;
-#endif // WITH_EDITORONLY_DATA
     FLOAT TimeDilation;
     FLOAT DemoPlayTimeDilation;
     FLOAT TimeSeconds;
     FLOAT RealTimeSeconds;
     FLOAT AudioTimeSeconds;
+    FLOAT BendTimeSeconds;  // DISHONORED(layout): 2012 PDB @920
     FLOAT DeltaSeconds;
+    FLOAT RealtimeDeltaSeconds;  // DISHONORED(layout): 2012 PDB @928
     FLOAT PauseDelay;
     FLOAT RealTimeToUnPause;
-    class APlayerReplicationInfo* Pauser;
-#if WITH_EDITORONLY_DATA
-    FStringNoInit VisibleGroups_DEPRECATED;
-    FStringNoInit VisibleLayers;
-#endif // WITH_EDITORONLY_DATA
+    FStringNoInit VisibleGroups;  // DISHONORED(layout): 2012 PDB @940
+    FStringNoInit SelectedGroups;  // DISHONORED(layout): 2012 PDB @952
     class UTexture2D* DefaultTexture;
     class UTexture2D* WireframeTexture;
     class UTexture2D* WhiteSquareTexture;
@@ -484,8 +576,8 @@ public:
     BYTE NetMode;
     BYTE NextTravelType;
     BYTE VisibilityAggressiveness;
-    BYTE PreferredLightmapType;
-    BYTE LevelLightingQuality;
+    BYTE FixedLightmapScale;  // DISHONORED(layout): 2012 PDB @1003
+    SCRIPT_ALIGN;
     FStringNoInit ComputerName;
     FStringNoInit EngineVersion;
     FStringNoInit MinNetVersion;
@@ -498,26 +590,18 @@ public:
     class ANavigationPoint* NavigationPointList;
     class AController* ControllerList;
     class APawn* PawnList;
-    class ACoverLink* CoverList;
     class APylon* PylonList;
     FLOAT MoveRepSize;
-    TArrayNoInit<struct FNetViewer> ReplicationViewers;
     FStringNoInit NextURL;
     FLOAT NextSwitchCountdown;
     INT PackedLightAndShadowMapTextureSize;
     FVector DefaultColorScale;
-    class UClass* DefaultGameType;
     TArrayNoInit<class UClass*> GameTypesSupportedOnThisMap;
-#if WITH_EDITORONLY_DATA
     class UClass* GameTypeForPIE;
-#endif // WITH_EDITORONLY_DATA
     TArrayNoInit<class UObject*> ClientDestroyedActorContent;
     TArrayNoInit<FName> PreparingLevelNames;
     FName CommittedPersistentLevelName;
     class UObjectReferencer* PersistentMapForcedObjects;
-    class UAudioComponent* MusicComp;
-    struct FMusicTrackStruct CurrentMusicTrack;
-    struct FMusicTrackStruct ReplicatedMusicTrack;
     FStringNoInit Title;
     FStringNoInit Author;
 protected:
@@ -527,24 +611,19 @@ public:
     class AEmitterPool* MyEmitterPool;
     FStringNoInit DecalManagerClassPath;
     class ADecalManager* MyDecalManager;
-    FStringNoInit FractureManagerClassPath;
-    class AFractureManager* MyFractureManager;
     FStringNoInit ParticleEventManagerClassPath;
     class AParticleEventManager* MyParticleEventManager;
-    class UProcBuildingRuleset* ProcBuildingRulesetOverride;
-    INT SkelMeshCompTickTagCount;
+    class UDEPRECATED_ProcBuildingRuleset* ProcBuildingRulesetOverride_DEPRECATED;  // DISHONORED(layout): 2012 PDB @1244
     FLOAT MaxPhysicsDeltaTime;
     INT MaxPhysicsSubsteps;
     struct FPhysXSceneProperties PhysicsProperties;
     TArrayNoInit<struct FCompartmentRunList> CompartmentRunFrames;
     FLOAT DefaultSkinWidth;
     FLOAT ApexLODResourceBudget;
-    FLOAT ApexDestructionLODResourceValue;
-    FLOAT ApexClothingLODResourceValue;
     struct FApexModuleDestructibleSettings DestructibleSettings;
     class UPhysicsLODVerticalEmitter* EmitterVertical;
+    class UDEPRECATED_PhysicsLODVerticalDestructible* DestructibleVertical_DEPRECATED;  // DISHONORED(layout): 2012 PDB @1352
     struct FPhysXVerticalProperties VerticalProperties;
-    TArrayNoInit<class AWorldAttractor*> WorldAttractors;
 private:
     FLOAT ChanceOfPhysicsChunkOverride;
     FLOAT MaxExplosionChunkSize;
@@ -560,24 +639,77 @@ public:
     FLOAT CharacterShadowedIndirectBrightness;
     FLOAT CharacterShadowedIndirectContrastFactor;
     FLOAT CharacterLightingContrastFactor;
-    class UTexture2D* ImageReflectionEnvironmentTexture;
-    FLinearColor ImageReflectionEnvironmentColor;
-    FLOAT ImageReflectionEnvironmentRotation;
+    INT m_TranslucencyBlurKernel;  // DISHONORED(layout): 2012 PDB @1432
+    FRenderingChannelContainer m_ActiveReflectionChannels;  // DISHONORED(layout): 2012 PDB @1436
+    class UTextureCube* mSceneReflection;  // DISHONORED(layout): 2012 PDB @1440
     TMap<INT, FScreenMessageString> ScreenMessages;
     TArrayNoInit<struct FScreenMessageString> PriorityScreenMessages;
-#if WITH_EDITORONLY_DATA
+    INT m_SingleStepFramerate;  // DISHONORED(layout): 2012 PDB @1516
+    INT m_SimFPS_Low;  // DISHONORED(layout): 2012 PDB @1520
+    INT m_SimFPS_High;  // DISHONORED(layout): 2012 PDB @1524
+    FLOAT m_fLoadingTimeLimitPerFrame;  // DISHONORED(layout): 2012 PDB @1528
+    FLOAT m_fAddWorldTimeLimitPerFrame;  // DISHONORED(layout): 2012 PDB @1532
+    INT m_NumComponentsToUpdatePerFrame;  // DISHONORED(layout): 2012 PDB @1536
+    INT m_NumActorsToInitPerFrame;  // DISHONORED(layout): 2012 PDB @1540
     INT MaxTrianglesPerLeaf;
-    class UDEPRECATED_LightmassLevelSettings* LMLevelSettings_DEPRECATED;
-    TMap< FGuid, class ULandscapeInfo* > LandscapeInfoMap;
-#endif // WITH_EDITORONLY_DATA
     struct FLightmassWorldInfoSettings LightmassSettings;
     TMap< UClass*, FNavMeshPathConstraintCacheDatum > NavMeshPathConstraintCache;
     TMap< UClass*, FNavMeshPathGoalEvaluatorCacheDatum > NavMeshPathGoalEvaluatorCache;
-    class ACrowdPopulationManagerBase* PopulationManager;
-    struct FHostMigrationState PeerHostMigration;
-    FLOAT HostMigrationTimeout;
-    class APhysicsVolume* FirstPhysicsVolume;
+    FName m_LevelName;  // DISHONORED(layout): 2012 PDB @1728
+    FWorldInfoNavMeshGenProcessParams NavMeshGenProcessParams;  // DISHONORED(layout): 2012 PDB @1736
+    FWorldInfoNavMeshGenBaseParams NavMeshGenBaseParams;  // DISHONORED(layout): 2012 PDB @1740
+    FWorldInfoNavMeshGenScoutParams NavMeshGenScoutParams;  // DISHONORED(layout): 2012 PDB @1784
+    class UAudioPropagationInfo* m_pAudioPropagationInfo;  // DISHONORED(layout): 2012 PDB @1892
+    INT m_RatPoolSize;  // DISHONORED(layout): 2012 PDB @1896
     //## END PROPS WorldInfo
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC struct FPostProcessSettings DefaultPostProcessSettings;
+    DISHONORED_SHIM_STATIC BITFIELD bUseGammaCorrection;
+    DISHONORED_SHIM_STATIC BITFIELD bSuspendAI;
+    DISHONORED_SHIM_STATIC BITFIELD bMinimizeBSPSections;
+    DISHONORED_SHIM_STATIC BITFIELD bNoMobileMapWarnings;
+    DISHONORED_SHIM_STATIC BITFIELD bUseProcBuildingRulesetOverride;
+    DISHONORED_SHIM_STATIC BITFIELD bInteractiveMode;
+    DISHONORED_SHIM_STATIC BITFIELD bPhysicsIgnoreDeltaTime;
+    DISHONORED_SHIM_STATIC BITFIELD bAllowTemporalAA;
+    DISHONORED_SHIM_STATIC BITFIELD bHaveActiveCrowd;
+    DISHONORED_SHIM_STATIC BITFIELD bAllowHostMigration;
+    DISHONORED_SHIM_STATIC BITFIELD bGameplayFramePause;
+    DISHONORED_SHIM_STATIC class APostProcessVolume* HighestPriorityPostProcessVolume;
+    DISHONORED_SHIM_STATIC struct FReverbSettings DefaultReverbSettings;
+    DISHONORED_SHIM_STATIC FInteriorSettings DefaultAmbientZoneSettings;
+    DISHONORED_SHIM_STATIC class AReverbVolume* HighestPriorityReverbVolume;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class AMassiveLODOverrideVolume*> MassiveLODOverrideVolumes;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class AEnvironmentVolume*> EnvironmentVolumes;
+    DISHONORED_SHIM_STATIC class APlayerReplicationInfo* Pauser;
+    DISHONORED_SHIM_STATIC FStringNoInit VisibleGroups_DEPRECATED;
+    DISHONORED_SHIM_STATIC FStringNoInit VisibleLayers;
+    DISHONORED_SHIM_STATIC BYTE PreferredLightmapType;
+    DISHONORED_SHIM_STATIC BYTE LevelLightingQuality;
+    DISHONORED_SHIM_STATIC class ACoverLink* CoverList;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FNetViewer> ReplicationViewers;
+    DISHONORED_SHIM_STATIC class UClass* DefaultGameType;
+    DISHONORED_SHIM_STATIC class UAudioComponent* MusicComp;
+    DISHONORED_SHIM_STATIC struct FMusicTrackStruct CurrentMusicTrack;
+    DISHONORED_SHIM_STATIC struct FMusicTrackStruct ReplicatedMusicTrack;
+    DISHONORED_SHIM_STATIC FStringNoInit FractureManagerClassPath;
+    DISHONORED_SHIM_STATIC class AFractureManager* MyFractureManager;
+    DISHONORED_SHIM_STATIC class UProcBuildingRuleset* ProcBuildingRulesetOverride;
+    DISHONORED_SHIM_STATIC INT SkelMeshCompTickTagCount;
+    DISHONORED_SHIM_STATIC FLOAT ApexDestructionLODResourceValue;
+    DISHONORED_SHIM_STATIC FLOAT ApexClothingLODResourceValue;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class AWorldAttractor*> WorldAttractors;
+    DISHONORED_SHIM_STATIC class UTexture2D* ImageReflectionEnvironmentTexture;
+    DISHONORED_SHIM_STATIC FLinearColor ImageReflectionEnvironmentColor;
+    DISHONORED_SHIM_STATIC FLOAT ImageReflectionEnvironmentRotation;
+    DISHONORED_SHIM_STATIC class UDEPRECATED_LightmassLevelSettings* LMLevelSettings_DEPRECATED;
+    DISHONORED_SHIM_STATIC TMap< FGuid, class ULandscapeInfo* > LandscapeInfoMap;
+    DISHONORED_SHIM_STATIC class ACrowdPopulationManagerBase* PopulationManager;
+    DISHONORED_SHIM_STATIC struct FHostMigrationState PeerHostMigration;
+    DISHONORED_SHIM_STATIC FLOAT HostMigrationTimeout;
+    DISHONORED_SHIM_STATIC class APhysicsVolume* FirstPhysicsVolume;
 
     virtual void ReleaseCachedConstraintsAndEvaluators();
     virtual class UNavMeshPathConstraint* GetNavMeshPathConstraintFromCache(class UClass* ConstraintClass,class UNavigationHandle* Requestor);
@@ -1277,10 +1409,42 @@ struct FDropNoteInfo
     }
 };
 
-class UEngine : public USubsystem
+// DISHONORED(layout): 2012 PDB, Arkane settings-listener interface implemented by UEngine (base @60, vtbl:
+// GetUObjectInterfaceArkSettingsListenerInterface, ApplyGameSettings); UArkSettingsListenerInterface is registered in
+// Engine (classes.csv rva 0x1cf0c0). UEngine::ApplyGameSettings exists in the 2012 exe and is to be ported.
+class ArkSettingsParameters;
+
+class UArkSettingsListenerInterface : public UInterface
 {
 public:
+    DECLARE_ABSTRACT_CLASS(UArkSettingsListenerInterface,UInterface,0|CLASS_Interface,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UArkSettingsListenerInterface)
+};
+
+class IArkSettingsListenerInterface
+{
+public:
+	enum EChangeReason
+	{
+		ASLI_ApplyCurrentValues = 0,
+		ASLI_ReadProfileFromStorage = 1,
+		ASLI_ModifiedByUser = 2,
+		ASLI_ValidatedByUser = 3,
+	};
+	typedef UArkSettingsListenerInterface UClassType;
+	virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface()=0;
+	virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason)=0;
+};
+
+// DISHONORED(layout): 2012 PDB UEngine bases: USubsystem @0 (60), IArkSettingsListenerInterface @60 (4); TinyFont @64
+class UEngine : public USubsystem, public IArkSettingsListenerInterface
+{
+public:
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface(){return this;}
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) {}  // DISHONORED: stub, port UEngine::ApplyGameSettings
+public:
     //## BEGIN PROPS Engine
+    // DISHONORED(layout): 2012 PDB size 1480; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: MobileEmulationMasterMaterial, MobileEmulationMasterMaterialName, bScreenshotRequested, bCheckForMultiplePawnsSpawnedInAFrame, bUseRecastNavMesh, bUseNormalMapsForSimpleLightMaps, bStartWithMatineeCapture, bCompressMatineeCapture, bLockReadOnlyLevels, ImageReflectionTextureSize, LandscapeHolePhysMaterial, LandscapeHolePhysMaterialName, ApexDamageParams, ApexDamageParamsName, ScreenDoorNoiseTexture, ScreenDoorNoiseTextureName, ImageGrainNoiseTexture, ImageGrainNoiseTextureName, DefaultSound, DefaultSoundName, NumPawnsAllowedToBeSpawnedInAFrame, DefaultHoveredMaterialColor, GlobalTranslationContext, LoadingMovieStartTime, MatineeCaptureName, MatineePackageCaptureName, VisibleLevelsForMatineeCapture, MatineeCaptureFPS, MatineeCaptureType)
     class UFont* TinyFont;
     FStringNoInit TinyFontName;
     class UFont* SmallFont;
@@ -1307,6 +1471,8 @@ public:
     FStringNoInit DefaultDecalMaterialName;
     class UTexture* DefaultTexture;
     FStringNoInit DefaultTextureName;
+    class UTextureCube* DefaultBlackCubemapTexture;  // DISHONORED(layout): 2012 PDB @280
+    FStringNoInit DefaultBlackCubemapTextureName;  // DISHONORED(layout): 2012 PDB @284
     class UMaterial* WireframeMaterial;
     FStringNoInit WireframeMaterialName;
     class UMaterial* EmissiveTexturedMaterial;
@@ -1329,6 +1495,8 @@ public:
     FStringNoInit ShadedLevelColorationLitMaterialName;
     class UMaterial* ShadedLevelColorationUnlitMaterial;
     FStringNoInit ShadedLevelColorationUnlitMaterialName;
+    class UMaterial* ShadedLevelColorationTranslucentUnlitMaterial;  // DISHONORED(layout): 2012 PDB @472
+    FStringNoInit ShadedLevelColorationTranslucentUnlitMaterialName;  // DISHONORED(layout): 2012 PDB @476
     class UMaterial* RemoveSurfaceMaterial;
     FStringNoInit RemoveSurfaceMaterialName;
     class UMaterial* VertexColorMaterial;
@@ -1349,8 +1517,6 @@ public:
     FStringNoInit BoneWeightMaterialName;
     class UMaterial* TangentColorMaterial;
     FStringNoInit TangentColorMaterialName;
-    class UMaterial* MobileEmulationMasterMaterial;
-    FStringNoInit MobileEmulationMasterMaterialName;
     class UMaterial* ProcBuildingSimpleMaterial;
     FStringNoInit ProcBuildingSimpleMaterialName;
     class UStaticMesh* BuildingQuadStaticMesh;
@@ -1363,13 +1529,13 @@ public:
     BITFIELD ForcePowerOfTwoProcBuildingLODTextures:1;
     BITFIELD bCombineSimilarMappings:1;
     BITFIELD bRenderLightMapDensityGrayscale:1;
-    BITFIELD bScreenshotRequested:1;
     BITFIELD bUseSound:1;
     BITFIELD bUseBackgroundLevelStreaming:1;
     BITFIELD bSubtitlesEnabled:1;
+    BITFIELD bHideSecondarySubtitles:1;  // DISHONORED(layout): 2012 PDB @696
     BITFIELD bSubtitlesForcedOff:1;
     BITFIELD bSmoothFrameRate:1;
-    BITFIELD bCheckForMultiplePawnsSpawnedInAFrame:1;
+    BITFIELD HACK_UseTickFrequency:1;  // DISHONORED(layout): 2012 PDB @697
     BITFIELD bShouldGenerateSimpleLightmaps:1;
     BITFIELD bForceStaticTerrain:1;
     BITFIELD bForceCPUSkinning:1;
@@ -1377,6 +1543,7 @@ public:
     BITFIELD bOnScreenKismetWarnings:1;
     BITFIELD bEnableKismetLogging:1;
     BITFIELD bAllowMatureLanguage:1;
+    BITFIELD bRenderTerrainCollisionAsOverlay:1;  // DISHONORED(layout): 2012 PDB @698
     BITFIELD bDisablePhysXHardwareSupport:1;
     BITFIELD bPauseOnLossOfFocus:1;
     BITFIELD bCheckParticleRenderSize:1;
@@ -1387,14 +1554,15 @@ public:
     BITFIELD bEnableOnScreenDebugMessagesDisplay:1;
     BITFIELD bSuppressMapWarnings:1;
     BITFIELD bCookSeparateSharedMPGameContent:1;
-    BITFIELD bUseRecastNavMesh:1;
     BITFIELD bDisableAILogging:1;
-    BITFIELD bUseNormalMapsForSimpleLightMaps:1;
-    BITFIELD bStartWithMatineeCapture:1;
-    BITFIELD bCompressMatineeCapture:1;
-    BITFIELD bLockReadOnlyLevels:1;
+    BITFIELD m_bShowDebugMatineeInfos:1;  // DISHONORED(layout): 2012 PDB @699
+    BITFIELD m_bShowDebugPoolInfos:1;  // DISHONORED(layout): 2012 PDB @699
+    BITFIELD m_bRequestOpenPauseMenu:1;  // DISHONORED(layout): 2012 PDB @700
+    BITFIELD m_bPauseForDisconnectedController:1;  // DISHONORED(layout): 2012 PDB @700
+    BITFIELD m_bWaitingControllerSelection:1;  // DISHONORED(layout): 2012 PDB @700
+    BITFIELD m_bAcceptControllerDisconnectionEvents:1;  // DISHONORED(layout): 2012 PDB @700
+    BITFIELD m_bInitControllerToZero:1;  // DISHONORED(layout): 2012 PDB @700
     FLOAT MaxRMSDForCombiningMappings;
-    INT ImageReflectionTextureSize;
     FLinearColor LightingOnlyBrightness;
     TArrayNoInit<FColor> LightComplexityColors;
     TArrayNoInit<FLinearColor> ShaderComplexityColors;
@@ -1414,10 +1582,6 @@ public:
     FStringNoInit EditorBrushMaterialName;
     class UPhysicalMaterial* DefaultPhysMaterial;
     FStringNoInit DefaultPhysMaterialName;
-    class UPhysicalMaterial* LandscapeHolePhysMaterial;
-    FStringNoInit LandscapeHolePhysMaterialName;
-    class UApexDestructibleDamageParameters* ApexDamageParams;
-    FStringNoInit ApexDamageParamsName;
     class UMaterial* TerrainErrorMaterial;
     FStringNoInit TerrainErrorMaterialName;
     INT TerrainMaterialMaxTextureCount;
@@ -1443,10 +1607,6 @@ public:
     FStringNoInit SceneCaptureReflectActorMaterialName;
     class UMaterial* SceneCaptureCubeActorMaterial;
     FStringNoInit SceneCaptureCubeActorMaterialName;
-    class UTexture2D* ScreenDoorNoiseTexture;
-    FStringNoInit ScreenDoorNoiseTextureName;
-    class UTexture2D* ImageGrainNoiseTexture;
-    FStringNoInit ImageGrainNoiseTextureName;
     class UTexture2D* RandomAngleTexture;
     FStringNoInit RandomAngleTextureName;
     class UTexture2D* RandomNormalTexture;
@@ -1459,9 +1619,11 @@ public:
     FStringNoInit LightMapDensityTextureName;
     class UTexture2D* LightMapDensityNormal;
     FStringNoInit LightMapDensityNormalName;
-    class USoundNodeWave* DefaultSound;
-    FStringNoInit DefaultSoundName;
     FLOAT TimeBetweenPurgingPendingKillObjects;
+    INT NumberOfAllocsBetweenGC;  // DISHONORED(layout): 2012 PDB @1132
+    INT TotalAllocSizeBetweenGC;  // DISHONORED(layout): 2012 PDB @1136
+    FLOAT MinFadeDurationForGarbageCollectInS;  // DISHONORED(layout): 2012 PDB @1140
+    FLOAT AllowGarbageCollectOnScreenFadeAfterInS;  // DISHONORED(layout): 2012 PDB @1144
     class UClient* Client;
     TArray<class ULocalPlayer*> GamePlayers;
     class UGameViewportClient* GameViewport;
@@ -1471,7 +1633,7 @@ public:
     INT ClientCycles;
     FLOAT MaxSmoothedFrameRate;
     FLOAT MinSmoothedFrameRate;
-    INT NumPawnsAllowedToBeSpawnedInAFrame;
+    class UDebugManager* DebugManager;  // DISHONORED(layout): 2012 PDB @1200
     class FRemoteControlExec* RemoteControlExec;
     class FMobileMaterialEmulator* MobileMaterialEmulator;
     FColor C_WorldBox;
@@ -1490,6 +1652,7 @@ public:
     FLOAT StreamingDistanceFactor;
     FStringNoInit ScoutClassName;
     BYTE TransitionType;
+    SCRIPT_ALIGN;
     FStringNoInit TransitionDescription;
     FStringNoInit TransitionGameType;
     FLOAT MeshLODRange;
@@ -1512,7 +1675,6 @@ public:
     FLOAT MaxTrackedOcclusionIncrement;
     FLOAT TrackedOcclusionStepSize;
     FLinearColor DefaultSelectedMaterialColor;
-    FLinearColor DefaultHoveredMaterialColor;
     FLinearColor SelectedMaterialColor;
     FLinearColor UnselectedMaterialColor;
     TArrayNoInit<FName> IgnoreSimulatedFuncWarnings;
@@ -1520,14 +1682,42 @@ private:
     INT ScreenSaverInhibitorSemaphore;
     FRunnableThread* ScreenSaverInhibitor;
 public:
-    class UTranslationContext* GlobalTranslationContext;
-    DOUBLE LoadingMovieStartTime;
-    FStringNoInit MatineeCaptureName;
-    FStringNoInit MatineePackageCaptureName;
-    FStringNoInit VisibleLevelsForMatineeCapture;
-    INT MatineeCaptureFPS;
-    INT MatineeCaptureType;
+    class UMatineeDebugSystem* m_pMatDebugSystem;  // DISHONORED(layout): 2012 PDB @1468
+    class UPoolDebugSystem* m_pPoolDebugSystem;  // DISHONORED(layout): 2012 PDB @1472
+    INT m_nDisconnectedControllerId;  // DISHONORED(layout): 2012 PDB @1476
     //## END PROPS Engine
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC class UMaterial* MobileEmulationMasterMaterial;
+    DISHONORED_SHIM_STATIC FStringNoInit MobileEmulationMasterMaterialName;
+    DISHONORED_SHIM_STATIC BITFIELD bScreenshotRequested;
+    DISHONORED_SHIM_STATIC BITFIELD bCheckForMultiplePawnsSpawnedInAFrame;
+    DISHONORED_SHIM_STATIC BITFIELD bUseRecastNavMesh;
+    DISHONORED_SHIM_STATIC BITFIELD bUseNormalMapsForSimpleLightMaps;
+    DISHONORED_SHIM_STATIC BITFIELD bStartWithMatineeCapture;
+    DISHONORED_SHIM_STATIC BITFIELD bCompressMatineeCapture;
+    DISHONORED_SHIM_STATIC BITFIELD bLockReadOnlyLevels;
+    DISHONORED_SHIM_STATIC INT ImageReflectionTextureSize;
+    DISHONORED_SHIM_STATIC class UPhysicalMaterial* LandscapeHolePhysMaterial;
+    DISHONORED_SHIM_STATIC FStringNoInit LandscapeHolePhysMaterialName;
+    DISHONORED_SHIM_STATIC class UApexDestructibleDamageParameters* ApexDamageParams;
+    DISHONORED_SHIM_STATIC FStringNoInit ApexDamageParamsName;
+    DISHONORED_SHIM_STATIC class UTexture2D* ScreenDoorNoiseTexture;
+    DISHONORED_SHIM_STATIC FStringNoInit ScreenDoorNoiseTextureName;
+    DISHONORED_SHIM_STATIC class UTexture2D* ImageGrainNoiseTexture;
+    DISHONORED_SHIM_STATIC FStringNoInit ImageGrainNoiseTextureName;
+    DISHONORED_SHIM_STATIC class USoundNodeWave* DefaultSound;
+    DISHONORED_SHIM_STATIC FStringNoInit DefaultSoundName;
+    DISHONORED_SHIM_STATIC INT NumPawnsAllowedToBeSpawnedInAFrame;
+    DISHONORED_SHIM_STATIC FLinearColor DefaultHoveredMaterialColor;
+    DISHONORED_SHIM_STATIC class UTranslationContext* GlobalTranslationContext;
+    DISHONORED_SHIM_STATIC DOUBLE LoadingMovieStartTime;
+    DISHONORED_SHIM_STATIC FStringNoInit MatineeCaptureName;
+    DISHONORED_SHIM_STATIC FStringNoInit MatineePackageCaptureName;
+    DISHONORED_SHIM_STATIC FStringNoInit VisibleLevelsForMatineeCapture;
+    DISHONORED_SHIM_STATIC INT MatineeCaptureFPS;
+    DISHONORED_SHIM_STATIC INT MatineeCaptureType;
 
     UBOOL IsEditor();
     UBOOL IsGame();
@@ -2173,6 +2363,7 @@ class UGameEngine : public UEngine
 {
 public:
     //## BEGIN PROPS GameEngine
+    // DISHONORED(layout): 2012 PDB size 1804; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bCheckForMovieCapture, bTriggerPostLoadMap, bStartedLoadMapMovie, bEnableSecondaryDisplay, bEnableSecondaryViewport, SecondaryViewportClientClassName, SecondaryViewportClients, SecondaryViewportFrames, AnimTags)
     class UPendingLevel* GPendingLevel;
     FStringNoInit PendingLevelPlayerControllerClassName;
     struct FURL LastURL;
@@ -2182,31 +2373,36 @@ public:
     BYTE TravelType;
     SCRIPT_ALIGN;
     BITFIELD bWorldWasLoadedThisTick:1;
-    BITFIELD bCheckForMovieCapture:1;
-    BITFIELD bTriggerPostLoadMap:1;
-    BITFIELD bStartedLoadMapMovie:1;
     BITFIELD bShouldCommitPendingMapChange:1;
     BITFIELD bClearAnimSetLinkupCachesOnLoadMap:1;
-    BITFIELD bEnableSecondaryDisplay:1;
-    BITFIELD bEnableSecondaryViewport:1;
     class UOnlineSubsystem* OnlineSubsystem;
     class UDownloadableContentEnumerator* DLCEnumerator;
     FStringNoInit DownloadableContentEnumeratorClassName;
     class UDownloadableContentManager* DLCManager;
+    class UArkDLCManagementBridge* DLCManagementBridge;  // DISHONORED(layout): 2012 PDB @1688
     FStringNoInit DownloadableContentManagerClassName;
+    FStringNoInit DLCManagementBridgeClassName;  // DISHONORED(layout): 2012 PDB @1704
     TArrayNoInit<FName> LevelsToLoadForPendingMapChange;
     TArrayNoInit<class ULevel*> LoadedLevelsForPendingMapChange;
     FStringNoInit PendingMapChangeFailureDescription;
     FLOAT MaxDeltaTime;
-    FStringNoInit SecondaryViewportClientClassName;
-    TArray<class UScriptViewportClient*> SecondaryViewportClients;
-    TArray<FViewportFrame*> SecondaryViewportFrames;
     TArrayNoInit<struct FLevelStreamingStatus> PendingLevelStreamingStatusUpdates;
     TArrayNoInit<class UObjectReferencer*> ObjectReferencers;
     TArrayNoInit<struct FFullyLoadedPackagesInfo> PackagesToFullyLoad;
     TArrayNoInit<struct FNamedNetDriver> NamedNetDrivers;
-    TArrayNoInit<struct FAnimTag> AnimTags;
     //## END PROPS GameEngine
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bCheckForMovieCapture;
+    DISHONORED_SHIM_STATIC BITFIELD bTriggerPostLoadMap;
+    DISHONORED_SHIM_STATIC BITFIELD bStartedLoadMapMovie;
+    DISHONORED_SHIM_STATIC BITFIELD bEnableSecondaryDisplay;
+    DISHONORED_SHIM_STATIC BITFIELD bEnableSecondaryViewport;
+    DISHONORED_SHIM_STATIC FStringNoInit SecondaryViewportClientClassName;
+    DISHONORED_SHIM_STATIC TArray<class UScriptViewportClient*> SecondaryViewportClients;
+    DISHONORED_SHIM_STATIC TArray<FViewportFrame*> SecondaryViewportFrames;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FAnimTag> AnimTags;
 
     UBOOL CreateNamedNetDriver(FName NetDriverName);
     void DestroyNamedNetDriver(FName NetDriverName);

@@ -606,9 +606,10 @@ public:
 
 	static INT CurrentTag;
 
-	INT Tag;
-	FBoxSphereBounds Bounds;
-
+	// DISHONORED(layout): 2012 PDB UPrimitiveComponent is 464 bytes; member order follows types.json (SceneInfo @84 ... Tag @188,
+	// ShadowParent @192, ReplacementPrimitive_DEPRECATED @196, ReplacementMassiveLOD @200, Bounds @204, MotionBlurScale @272,
+	// bitfields @276-283, DisTranslucencySortPriority @300, ReflectionChannels @308, m_CollisionTraceTypes @320, LastRenderTime @448).
+	// Reference-only members are shims at the end of the data section.
 	/** The primitive's scene info. */
 	class FPrimitiveSceneInfo* SceneInfo;
 
@@ -626,16 +627,15 @@ public:
 	/** Decals that are detached from the primitive and need to be reattached */
 	TArray<UDecalComponent*> DecalsToReattach;
 
+	INT Tag;
+
 	UPrimitiveComponent* ShadowParent;
 
 	/** Replacement primitive to draw instead of this one (multiple UPrim's will point to the same Replacement) */
-	UPrimitiveComponent* ReplacementPrimitive;
+	UPrimitiveComponent* ReplacementPrimitive_DEPRECATED;
+	UPrimitiveComponent* ReplacementMassiveLOD;
 
-	/** Keeps track of which fog component this primitive is using. */
-	class UFogVolumeDensityComponent* FogVolumeComponent;
-
-	/** If specified, only OverrideLightComponent can affect the primitive. */
-	ULightComponent* OverrideLightComponent;
+	FBoxSphereBounds Bounds;
 
 	/** The lighting environment to take the primitive's lighting from. */
 	class ULightEnvironmentComponent* LightEnvironment;
@@ -670,12 +670,6 @@ public:
 	 */
 	FLOAT CachedMaxDrawDistance;
 
-	/**
-	 * Scalar controlling the amount of motion blur to be applied when object moves.
-	 * 0=object motion blur off, 1=full motion blur(default), value should be 0 or bigger
-	 */
-	FLOAT MotionBlurInstanceScale;
-
 	/** Legacy, renamed to LDMaxDrawDistance */
 	FLOAT LDCullDistance;
 	/** Legacy, renamed to CachedMaxDrawDistance */
@@ -703,6 +697,12 @@ public:
 	BYTE		PreviewEnvironmentShadowing;
 
 	SCRIPT_ALIGN;
+
+	/**
+	 * Scalar controlling the amount of motion blur to be applied when object moves.
+	 * 0=object motion blur off, 1=full motion blur(default), value should be 0 or bigger
+	 */
+	FLOAT MotionBlurScale;
 
 	/** True if the primitive should be rendered using ViewOwnerDepthPriorityGroup if viewed by its owner. */
 	BITFIELD	bUseViewOwnerDepthPriorityGroup:1;
@@ -756,8 +756,7 @@ public:
 
 	BITFIELD	bAllowDecalAutomaticReAttach:1;
 
-	/** If true a hit-proxy will be generated for each instance of instanced static meshes */
-	BITFIELD	bUsePerInstanceHitProxies:1;
+	BITFIELD	bAcceptsFoliage:1;
 
 	// Lighting flags
 
@@ -769,19 +768,10 @@ public:
 	/** If true, primitive casts dynamic shadows. */
 	BITFIELD	bCastDynamicShadow : 1;
 
-	/** Whether the primitive casts static shadows. */
-	BITFIELD	bCastStaticShadow : 1;
-
 	/** If true, primitive only self shadows and does not cast shadows on other primitives. */
 	BITFIELD	bSelfShadowOnly : 1;
 
-	/** 
-	 * For mobile platforms only! If true, the primitive will not receive projected mod shadows, not from itself nor any other mod shadow caster. 
-	 * This can be used to avoid self-shadowing artifacts.
-	 */
-	BITFIELD	bNoModSelfShadow : 1;
-
-	/** 
+	/**
 	 * Optimization for objects which don't need to receive dynamic dominant light shadows. 
 	 * This is useful for objects which eat up a lot of GPU time and are heavily texture bound yet never receive noticeable shadows from dominant lights like trees.
 	 */
@@ -808,6 +798,8 @@ public:
 	/** Whether the primitive supports/ allows static shadowing */
 	BITFIELD	bUsePrecomputedShadows:1;
 
+	BITFIELD	m_bVLSOccluder:1;
+
 private:
 	/** 
 	 * TRUE if ShadowParent was set through SetShadowParent, 
@@ -816,6 +808,9 @@ private:
 	BITFIELD	bHasExplicitShadowParent:1;
 
 public:
+
+	BITFIELD	bCullModulatedShadowOnBackfaces:1;
+	BITFIELD	bCullModulatedShadowOnEmissive:1;
 
 	/**
 	* Controls whether ambient occlusion should be allowed on or from this primitive, only has an effect on movable primitives.
@@ -828,12 +823,10 @@ public:
 	BITFIELD	CollideActors:1;
 	BITFIELD	AlwaysCheckCollision:1;
 	BITFIELD	BlockActors:1;
-	BITFIELD	BlockZeroExtent:1;
-	BITFIELD	BlockNonZeroExtent:1;
+	BITFIELD	BlockZeroExtent_DEPRECATED:1;
+	BITFIELD	BlockNonZeroExtent_DEPRECATED:1;
 	BITFIELD	CanBlockCamera:1;
 	BITFIELD	BlockRigidBody:1;
-	/** If TRUE will block foot placement line checks (default). FALSE will skip right through. */
-	BITFIELD	bBlockFootPlacement:1;
 
 	/** Never create any physics engine representation for this body. */
 	BITFIELD	bDisableAllRigidBody:1;
@@ -843,6 +836,9 @@ public:
 
 	/** Flag that indicates if OnRigidBodyCollision function should be called for physics collisions involving this PrimitiveComponent. */
 	BITFIELD	bNotifyRigidBodyCollision:1;
+
+	BITFIELD	m_bIsRigidBodyAwake:1;
+	BITFIELD	m_bRigidBodyStatusChanged:1;
 
 	// Novodex fluids
 	BITFIELD	bFluidDrain:1;
@@ -871,9 +867,6 @@ public:
 	/** Determines whether or not we allow shadowing fading.  Some objects (especially in cinematics) having the shadow fade/pop out looks really bad. **/
 	BITFIELD	bAllowShadowFade:1;
 
-	/** Whether or not this primitive type is supported on mobile. For the emulate mobile rendering editor feature. */
-	BITFIELD	bSupportedOnMobile:1;
-
 	BITFIELD							bWasSNFiltered:1;
 	TArrayNoInit<class FOctreeNode*>	OctreeNodes;
 	
@@ -887,8 +880,12 @@ public:
 	**/
 	INT TranslucencySortPriority;
 
+	EDisTranslucencySortPriority DisTranslucencySortPriority;
+
 	/** Used for precomputed visibility */
 	INT VisibilityId;
+
+	FRenderingChannelContainer ReflectionChannels;
 
 	/** Lighting channels controlling light/ primitive interaction. Only allows interaction if at least one channel is shared */
 	FLightingChannelContainer	LightingChannels;
@@ -896,8 +893,7 @@ public:
 	/** Types of objects that this physics objects will collide with. */
 	FRBCollisionChannelContainer RBCollideWithChannels;
 
-
-
+	FDisPrimTraceMask m_CollisionTraceTypes;
 
 
 	class UPhysicalMaterial*	PhysMaterialOverride;
@@ -916,10 +912,21 @@ public:
 	/** Last render time in seconds since level started play. Updated to WorldInfo->TimeSeconds so float is sufficient. */
 	FLOAT		LastRenderTime;
 
-	/** if > 0, the script RigidBodyCollision() event will be called on our Owner when a physics collision involving
-	 * this PrimitiveComponent occurs and the relative velocity is greater than or equal to this
-	 */
-	FLOAT ScriptRigidBodyCollisionThreshold;
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC UPrimitiveComponent* ReplacementPrimitive;
+	DISHONORED_SHIM_STATIC class UFogVolumeDensityComponent* FogVolumeComponent;
+	DISHONORED_SHIM_STATIC ULightComponent* OverrideLightComponent;
+	DISHONORED_SHIM_STATIC FLOAT MotionBlurInstanceScale;
+	DISHONORED_SHIM_STATIC BITFIELD bUsePerInstanceHitProxies;
+	DISHONORED_SHIM_STATIC BITFIELD bCastStaticShadow;
+	DISHONORED_SHIM_STATIC BITFIELD bNoModSelfShadow;
+	DISHONORED_SHIM_STATIC BITFIELD BlockZeroExtent;
+	DISHONORED_SHIM_STATIC BITFIELD BlockNonZeroExtent;
+	DISHONORED_SHIM_STATIC BITFIELD bBlockFootPlacement;
+	DISHONORED_SHIM_STATIC BITFIELD bSupportedOnMobile;
+	DISHONORED_SHIM_STATIC FLOAT ScriptRigidBodyCollisionThreshold;
 
 	// Should this Component be in the Octree for collision
 	UBOOL ShouldCollide() const;
@@ -1541,6 +1548,7 @@ class UMeshComponent : public UPrimitiveComponent
 public:
 
 	TArrayNoInit<UMaterialInterface*>	Materials;
+	UMaterialInterface* m_pSoulMaterial;  // DISHONORED(layout): 2012 PDB UMeshComponent @464 (Materials sits at 452, inside UPrimitiveComponent's tail padding)
 
 	/**
 	 * Called before destroying the object.  This is called immediately upon deciding to destroy the object, to allow the object to begin an

@@ -2320,16 +2320,21 @@ class AActor : public UObject
 {
 public:
     //## BEGIN PROPS Actor
+    // DISHONORED(layout): 2012 PDB size 592; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bSkipAttachedMoves, bProjectileMoveSingleBlocking, bForceOctreeMNFilter, bHiddenEdGroup_DEPRECATED, bHiddenEdLayer, bHiddenEdScene, bDebugEffectIsRelevant, SkelMeshCompTickTag, Layer, Group_DEPRECATED)
     TArrayNoInit<class UActorComponent*> Components;
     TArrayNoInit<class UActorComponent*> AllComponents;
+    FMatrix CachedLocalToWorld;  // DISHONORED(layout): 2012 PDB @80
+    FVector CachedLocation;  // DISHONORED(layout): 2012 PDB @144
+    FRotator CachedRotation;  // DISHONORED(layout): 2012 PDB @156
+    FLOAT CachedDrawScale;  // DISHONORED(layout): 2012 PDB @168
+    FVector CachedDrawScale3D;  // DISHONORED(layout): 2012 PDB @172
+    FVector CachedPrePivot;  // DISHONORED(layout): 2012 PDB @184
     FVector Location;
     FRotator Rotation;
     FLOAT DrawScale;
     FVector DrawScale3D;
     FVector PrePivot;
-#if WITH_EDITORONLY_DATA
     FColor EditorIconColor;
-#endif // WITH_EDITORONLY_DATA
     FRenderCommandFence DetachFence;
     FLOAT CustomTimeDilation;
     BYTE Physics;
@@ -2338,6 +2343,8 @@ public:
     BYTE CollisionType;
     BYTE ReplicatedCollisionType;
     BYTE TickGroup;
+    BYTE m_ActorTypeFlags;  // DISHONORED(layout): 2012 PDB @266
+    SCRIPT_ALIGN;
     class AActor* Owner;
     class AActor* Base;
     TArrayNoInit<struct FTimerData> Timers;
@@ -2363,6 +2370,7 @@ public:
     BITFIELD bAlwaysEncroachCheck:1;
     BITFIELD bHasAlternateTargetLocation:1;
     BITFIELD bCanStepUpOn:1;
+    BITFIELD bPathCannotStepUpOn:1;  // DISHONORED(layout): 2012 PDB @290
     BITFIELD bNetTemporary:1;
     BITFIELD bOnlyRelevantToOwner:1;
     BITFIELD bNetDirty:1;
@@ -2389,12 +2397,12 @@ public:
     BITFIELD bHardAttach:1;
     BITFIELD bIgnoreBaseRotation:1;
     BITFIELD bShadowParented:1;
-    BITFIELD bSkipAttachedMoves:1;
     BITFIELD bCanBeAdheredTo:1;
     BITFIELD bCanBeFrictionedTo:1;
     BITFIELD bHurtEntry:1;
     BITFIELD bGameRelevant:1;
     BITFIELD bMovable:1;
+    BITFIELD bAllowPVSUntilTouched:1;  // DISHONORED(layout): 2012 PDB @294
     BITFIELD bDestroyInPainVolume:1;
     BITFIELD bCanBeDamaged:1;
     BITFIELD bShouldBaseAtStartup:1;
@@ -2405,19 +2413,18 @@ public:
     BITFIELD BlockRigidBody:1;
     BITFIELD bCollideWhenPlacing:1;
     BITFIELD bCollideActors:1;
+    BITFIELD bNoMoveCollisionTestWhenAttached:1;  // DISHONORED(layout): 2012 PDB @295
     BITFIELD bCollideWorld:1;
     BITFIELD bCollideComplex:1;
     BITFIELD bBlockActors:1;
     BITFIELD bProjTarget:1;
     BITFIELD bBlocksTeleport:1;
     BITFIELD bMoveIgnoresDestruction:1;
-    BITFIELD bProjectileMoveSingleBlocking:1;
     BITFIELD bNoEncroachCheck:1;
     BITFIELD bCollideAsEncroacher:1;
     BITFIELD bPhysRigidBodyOutOfWorldCheck:1;
     BITFIELD bComponentOutsideWorld:1;
     BITFIELD bForceOctreeSNFilter:1;
-    BITFIELD bForceOctreeMNFilter:1;
     BITFIELD bRigidBodyWasAwake:1;
     BITFIELD bCallRigidBodyWakeEvents:1;
     BITFIELD bBounce:1;
@@ -2427,27 +2434,39 @@ public:
     BITFIELD bNetOwner:1;
     BITFIELD bHiddenEd:1;
     BITFIELD bEditable:1;
-    BITFIELD bHiddenEdGroup_DEPRECATED:1;
-    BITFIELD bHiddenEdLayer:1;
+    BITFIELD bHiddenEdGroup:1;  // DISHONORED(layout): 2012 PDB @298
     BITFIELD bHiddenEdCustom:1;
     BITFIELD bHiddenEdTemporary:1;
     BITFIELD bHiddenEdLevel:1;
-    BITFIELD bHiddenEdScene:1;
     BITFIELD bEdShouldSnap:1;
     BITFIELD bTempEditor:1;
     BITFIELD bPathColliding:1;
+    BITFIELD bDynamicPylonPathColliding:1;  // DISHONORED(layout): 2012 PDB @299
     BITFIELD bPathTemp:1;
     BITFIELD bScriptInitialized:1;
     BITFIELD bLockLocation:1;
     BITFIELD bForceAllowKismetModification:1;
-    BITFIELD bDebugEffectIsRelevant:1;
-    INT SkelMeshCompTickTag;
+    BITFIELD m_bAlwaysOutOfBendTime:1;  // DISHONORED(layout): 2012 PDB @299
+    BITFIELD m_bOutOfBendTime:1;  // DISHONORED(layout): 2012 PDB @299
+    BITFIELD m_bSpawned:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bPersistsAcrossLevelTransition:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bBypassAudioPropagation:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bHasTerminated:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bLegalToTerminate:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bTransparentForVisionChecks:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bOverrideDefaultVisionTransparency:1;  // DISHONORED(layout): 2012 PDB @300
+    BITFIELD m_bShutDown:1;  // DISHONORED(layout): 2012 PDB @300
     INT NetTag;
     FLOAT NetUpdateTime;
     FLOAT NetUpdateFrequency;
     FLOAT NetPriority;
     FLOAT LastNetUpdateTime;
     FLOAT TimeSinceLastTick;
+    FLOAT TickFrequency;  // DISHONORED(layout): 2012 PDB @328
+    FLOAT TickFrequencyAtEndDistance;  // DISHONORED(layout): 2012 PDB @332
+    FLOAT TickFrequencyDecreaseDistanceStart;  // DISHONORED(layout): 2012 PDB @336
+    FLOAT TickFrequencyDecreaseDistanceEnd;  // DISHONORED(layout): 2012 PDB @340
+    FLOAT TickFrequencyLastSeenTimeBeforeForcingMaxTickFrequency;  // DISHONORED(layout): 2012 PDB @344
     class APawn* Instigator;
     class AWorldInfo* WorldInfo;
     FLOAT LifeSpan;
@@ -2455,8 +2474,7 @@ public:
     FLOAT LastRenderTime;
     FName Tag;
     FName InitialState;
-    FName Layer;
-    FName Group_DEPRECATED;
+    FName Group;  // DISHONORED(layout): 2012 PDB @384
     QWORD HiddenEditorViews;
     TArrayNoInit<class AActor*> Touching;
     TArrayNoInit<class AActor*> Children;
@@ -2480,6 +2498,19 @@ public:
     TArrayNoInit<class USequenceEvent*> GeneratedEvents;
     TArrayNoInit<class USeqAct_Latent*> LatentActions;
     //## END PROPS Actor
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bSkipAttachedMoves;
+    DISHONORED_SHIM_STATIC BITFIELD bProjectileMoveSingleBlocking;
+    DISHONORED_SHIM_STATIC BITFIELD bForceOctreeMNFilter;
+    DISHONORED_SHIM_STATIC BITFIELD bHiddenEdGroup_DEPRECATED;
+    DISHONORED_SHIM_STATIC BITFIELD bHiddenEdLayer;
+    DISHONORED_SHIM_STATIC BITFIELD bHiddenEdScene;
+    DISHONORED_SHIM_STATIC BITFIELD bDebugEffectIsRelevant;
+    DISHONORED_SHIM_STATIC INT SkelMeshCompTickTag;
+    DISHONORED_SHIM_STATIC FName Layer;
+    DISHONORED_SHIM_STATIC FName Group_DEPRECATED;
 
     virtual void ForceUpdateComponents(UBOOL bCollisionUpdate=FALSE,UBOOL bTransformOnly=TRUE);
     virtual FString ConsoleCommand(const FString& Command,UBOOL bWriteToLog=TRUE);
@@ -19234,10 +19265,90 @@ struct LocalPlayer_eventGetUniqueNetId_Parms
     {
     }
 };
-class ULocalPlayer : public UPlayer, public FObserverInterface
+// DISHONORED(layout): 2012 PDB, Arkane post-process script structs used by ULocalPlayer (m_LevelArkPpSettings,
+// m_CurrentArkPpSettings, m_ArkPpSettingsOverride) and AWorldInfo::m_ArkDefaultPpSettings; sizes from types.json
+// (FArkPpConfig 132, FArkUberPpParameters 96, FArkPpColorBalanceParameters 52, FArkPpBloomParameters 28,
+// FArkPpHdrParameters 24, FArkPpDofParameters 16).
+struct FArkPpDofParameters
+{
+    BITFIELD m_bOverrideFocusDistance:1;
+    BITFIELD m_bOverrideInFocusRadius:1;
+    BITFIELD m_bOverrideFarBlurAmount:1;
+    FLOAT m_FocusDistance;
+    FLOAT m_InFocusRadius;
+    FLOAT m_FarBlurAmount;
+};
+
+struct FArkPpColorBalanceParameters
+{
+    BITFIELD m_bOverrideCrMgYbShadTones:1;
+    BITFIELD m_bOverrideCrMgYbMidTones:1;
+    BITFIELD m_bOverrideCrMgYbHighTones:1;
+    BITFIELD m_bOverrideOpacity:1;
+    BITFIELD m_bOverridePreDesaturation:1;
+    BITFIELD m_bOverridePostDesaturation:1;
+    FVector m_CrMgYbShadTones;
+    FVector m_CrMgYbMidTones;
+    FVector m_CrMgYbHighTones;
+    FLOAT m_Opacity;
+    FLOAT m_PreDesaturation;
+    FLOAT m_PostDesaturation;
+};
+
+struct FArkPpHdrParameters
+{
+    BITFIELD m_bOverrideExposure:1;
+    BITFIELD m_bOverrideGammaAdjustment:1;
+    BITFIELD m_bOverrideFilmGrainNoise:1;
+    BITFIELD m_bOverrideGimpBrightness:1;
+    BITFIELD m_bOverrideGimpContrast:1;
+    FLOAT m_Exposure;
+    FLOAT m_GammaAdjustment;
+    FLOAT m_FilmGrainNoise;
+    FLOAT m_GimpBrightness;
+    FLOAT m_GimpContrast;
+};
+
+struct FArkUberPpParameters
+{
+    BITFIELD m_bOverrideDOFParameters:1;
+    BITFIELD m_bOverrideCBParameters:1;
+    BITFIELD m_bOverrideHDRParameters:1;
+    struct FArkPpDofParameters m_DOFParameters;
+    struct FArkPpColorBalanceParameters m_CBParameters;
+    struct FArkPpHdrParameters m_HDRParameters;
+};
+
+struct FArkPpBloomParameters
+{
+    BITFIELD m_bOverrideEnable:1;
+    BITFIELD m_bOverrideColor:1;
+    BITFIELD m_bOverrideThreshold:1;
+    BITFIELD m_bOverrideScale:1;
+    BITFIELD m_bEnable:1;
+    FLinearColor m_Tint;
+    FLOAT m_Threshold;
+    FLOAT m_Scale;
+};
+
+struct FArkPpConfig
+{
+    BITFIELD m_bOverrideUberPpParameters:1;
+    struct FArkUberPpParameters m_UberPpParameters;
+    BITFIELD m_bOverrideBloomPpParameters:1;
+    struct FArkPpBloomParameters m_PpBloomParameters;
+};
+
+// DISHONORED(layout): 2012 PDB ULocalPlayer (612 bytes) has the single base UPlayer (ControllerId @92): no FObserverInterface
+// vptr (UWorld::Observers is gone too). AddObserver/RemoveObserver are kept as no-ops for UnPlayer.cpp.
+class ULocalPlayer : public UPlayer
 {
 public:
+    void AddObserver() {}
+    void RemoveObserver() {}
+public:
     //## BEGIN PROPS LocalPlayer
+    // DISHONORED(layout): 2012 PDB size 612; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: ViewState2, CurrentPPInfo, LevelPPInfo, ActivePPOverrides, AspectRatioAxisConstraint, CachedAuthInt)
     INT ControllerId;
     class UGameViewportClient* ViewportClient;
     FVector2D Origin;
@@ -19245,27 +19356,38 @@ public:
     class UPostProcessChain* PlayerPostProcess;
     TArrayNoInit<class UPostProcessChain*> PlayerPostProcessChains;
     BITFIELD bForceDefaultPostProcessChain:1;
+    BITFIELD bOverridePostProcessSettings:1;  // DISHONORED(layout): 2012 PDB @132
+    BITFIELD bRecoveryFromPostProcessOverride:1;  // DISHONORED(layout): 2012 PDB @132
     BITFIELD bWantToResetToMapDefaultPP:1;
     BITFIELD bSentSplitJoin:1;
     BITFIELD bPendingServerAuth:1;
-    SCRIPT_ALIGN;
     FSceneViewStateInterface* ViewState;
-    FSceneViewStateInterface* ViewState2;
     FSynchronizedActorVisibilityHistory ActorVisibilityHistory;
     FVector LastViewLocation;
-    struct FCurrentPostProcessVolumeInfo CurrentPPInfo;
-    struct FCurrentPostProcessVolumeInfo LevelPPInfo;
-    TArrayNoInit<struct FPostProcessSettingsOverride> ActivePPOverrides;
-    BYTE AspectRatioAxisConstraint;
+    FArkPpConfig m_LevelArkPpSettings;  // DISHONORED(layout): 2012 PDB @160
+    FArkPpConfig m_CurrentArkPpSettings;  // DISHONORED(layout): 2012 PDB @292
+    FLOAT OverridePPRecoveryTime;  // DISHONORED(layout): 2012 PDB @424
+    FLOAT OverridePPStartTime;  // DISHONORED(layout): 2012 PDB @428
+    FLOAT OverridePPEndTime;  // DISHONORED(layout): 2012 PDB @432
+    FLOAT OverridePPOpacity;  // DISHONORED(layout): 2012 PDB @436
+    FArkPpConfig m_ArkPpSettingsOverride;  // DISHONORED(layout): 2012 PDB @440
     FStringNoInit LastMap;
     class UTranslationContext* TagContext;
-    TScriptInterface<class IOnlineAuthInterface> CachedAuthInt;
     FLOAT ServerAuthTimestamp;
     INT ServerAuthTimeout;
     INT ServerAuthRetryCount;
     INT MaxServerAuthRetryCount;
     struct FUniqueNetId ServerAuthUID;
     //## END PROPS LocalPlayer
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC FSceneViewStateInterface* ViewState2;
+    DISHONORED_SHIM_STATIC struct FCurrentPostProcessVolumeInfo CurrentPPInfo;
+    DISHONORED_SHIM_STATIC struct FCurrentPostProcessVolumeInfo LevelPPInfo;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FPostProcessSettingsOverride> ActivePPOverrides;
+    DISHONORED_SHIM_STATIC BYTE AspectRatioAxisConstraint;
+    DISHONORED_SHIM_STATIC TScriptInterface<class IOnlineAuthInterface> CachedAuthInt;
 
     UBOOL SpawnPlayActor(const FString& URL,FString& OutError);
     void SendSplitJoin();

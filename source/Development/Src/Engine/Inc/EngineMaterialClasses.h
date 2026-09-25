@@ -3123,18 +3123,24 @@ public:
 
 struct FLightmassMaterialInterfaceSettings
 {
-    BITFIELD bCastShadowAsMasked:1;
-    FLOAT EmissiveBoost;
-    FLOAT DiffuseBoost;
-    FLOAT SpecularBoost;
-    FLOAT ExportResolutionScale;
-    FLOAT DistanceFieldPenumbraScale;
-    BITFIELD bOverrideCastShadowAsMasked:1;
-    BITFIELD bOverrideEmissiveBoost:1;
-    BITFIELD bOverrideDiffuseBoost:1;
-    BITFIELD bOverrideSpecularBoost:1;
-    BITFIELD bOverrideExportResolutionScale:1;
-    BITFIELD bOverrideDistanceFieldPenumbraScale:1;
+	// DISHONORED(layout): 2012 PDB FLightmassMaterialInterfaceSettings is 24 bytes; data members regenerated in types.json order
+	// (reference declarations reused by name, Arkane members synthesized; see agents/agentM.md)
+	FLOAT EmissiveBoost;
+	FLOAT DiffuseBoost;
+	FLOAT SpecularBoost;
+	FLOAT ExportResolutionScale;
+	FLOAT DistanceFieldPenumbraScale;
+	BITFIELD bOverrideEmissiveBoost:1;
+	BITFIELD bOverrideDiffuseBoost:1;
+	BITFIELD bOverrideSpecularBoost:1;
+	BITFIELD bOverrideExportResolutionScale:1;
+	BITFIELD bOverrideDistanceFieldPenumbraScale:1;
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC BITFIELD bCastShadowAsMasked;
+	DISHONORED_SHIM_STATIC BITFIELD bOverrideCastShadowAsMasked;
     SCRIPT_ALIGN;
 
     /** Constructors */
@@ -3149,117 +3155,120 @@ class UMaterialInterface : public USurface
 {
 public:
     //## BEGIN PROPS MaterialInterface
+    // DISHONORED(layout): 2012 PDB size 116; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bHasQualitySwitch, bAutoFlattenMobile, bAutoFlattenMobileNormalTexture, bMobileAllowFog, bGenerateSubUV, bUseMobileSpecular, bUseMobileVertexSpecular_DEPRECATED, bUseMobilePixelSpecular, bUseMobileBumpOffset, bLockColorBlending, bUseMobileUniformColorMultiply, bUseMobileVertexColorMultiply, bUseMobileDetailNormal, bBaseTextureTransformed, bEmissiveTextureTransformed, bNormalTextureTransformed, bMaskTextureTransformed, bDetailTextureTransformed, bUseMobileWaveVertexMovement, bMobileEnableBounceLight, bUseMobileLandscapeMonochromeLayerBlending, FlattenBackgroundColor, MobileBaseTexture, FlattenedTexture_DEPRECATED, MobileBaseTextureTexCoordsSource, MobileAmbientOcclusionSource, MobileSpecularMask, MobileEmissiveColorSource, MobileEmissiveMaskSource, MobileEnvironmentMaskSource, MobileEnvironmentBlendMode, MobileRimLightingMaskSource, MobileMaskTextureTexCoordsSource, MobileAlphaValueSource, MobileDetailTextureTexCoordsSource, MobileTextureBlendFactorSource, MobileColorMultiplySource, MobileNormalTexture, SubUVFrameRate, SubUVFrameCountAlongAxes, SubUVFrameSize, MobileSpecularColor, MobileSpecularPower, MobileEmissiveTexture, MobileEmissiveColor, MobileEnvironmentTexture, MobileEnvironmentAmount, MobileEnvironmentColor, MobileEnvironmentFresnelAmount, MobileEnvironmentFresnelExponent, MobileRimLightingStrength, MobileRimLightingExponent, MobileRimLightingColor, MobileBumpOffsetReferencePlane, MobileBumpOffsetHeightRatio, MobileMaskTexture, MobileOpacityMultiplier, MobileDetailTexture, MobileDetailTexture2, MobileDetailTexture3, DefaultUniformColor_DEPRECATED, MobileDefaultUniformColor, TransformCenterX_DEPRECATED, MobileTransformCenterX, TransformCenterY_DEPRECATED, MobileTransformCenterY, PannerSpeedX_DEPRECATED, MobilePannerSpeedX, PannerSpeedY_DEPRECATED, MobilePannerSpeedY, RotateSpeed_DEPRECATED, MobileRotateSpeed, FixedScaleX_DEPRECATED, MobileFixedScaleX, FixedScaleY_DEPRECATED, MobileFixedScaleY, SineScaleX_DEPRECATED, MobileSineScaleX, SineScaleY_DEPRECATED, MobileSineScaleY, SineScaleFrequencyMultipler_DEPRECATED, MobileSineScaleFrequencyMultipler, FixedOffsetX_DEPRECATED, MobileFixedOffsetX, FixedOffsetY_DEPRECATED, MobileFixedOffsetY, MobileTangentVertexFrequencyMultiplier, MobileVerticalFrequencyMultiplier, MobileMaxVertexMovementAmplitude, MobileSwayFrequencyMultiplier, MobileSwayMaxAngle, MobileDirectionalLightDirection, MobileDirectionalLightBrightness, MobileDirectionalLightColor, MobileBounceLightDirection, MobileBounceLightBrightness, MobileBounceLightColor, MobileSkyLightBrightness, MobileSkyLightColor, MobileLandscapeLayerNames, MobileLandscapeMonochomeLayerColors)
     FRenderCommandFence ParentRefFence;
 protected:
     struct FLightmassMaterialInterfaceSettings LightmassSettings;
 public:
-#if WITH_EDITORONLY_DATA
+    BITFIELD bHasBloomPart:1;  // DISHONORED(layout): 2012 PDB @84
+    BITFIELD bHasDistortion:1;  // DISHONORED(layout): 2012 PDB @84
     FStringNoInit PreviewMesh;
     FGuid LightingGuid;
-#endif // WITH_EDITORONLY_DATA
-    BITFIELD bHasQualitySwitch:1;
-    BITFIELD bAutoFlattenMobile:1;
-    BITFIELD bAutoFlattenMobileNormalTexture:1;
-    BITFIELD bMobileAllowFog:1;
-    BITFIELD bGenerateSubUV:1;
-    BITFIELD bUseMobileSpecular:1;
-    BITFIELD bUseMobileVertexSpecular_DEPRECATED:1;
-    BITFIELD bUseMobilePixelSpecular:1;
-    BITFIELD bUseMobileBumpOffset:1;
-    BITFIELD bLockColorBlending:1;
-    BITFIELD bUseMobileUniformColorMultiply:1;
-    BITFIELD bUseMobileVertexColorMultiply:1;
-    BITFIELD bUseMobileDetailNormal:1;
-    BITFIELD bBaseTextureTransformed:1;
-    BITFIELD bEmissiveTextureTransformed:1;
-    BITFIELD bNormalTextureTransformed:1;
-    BITFIELD bMaskTextureTransformed:1;
-    BITFIELD bDetailTextureTransformed:1;
-    BITFIELD bUseMobileWaveVertexMovement:1;
-    BITFIELD bMobileEnableBounceLight:1;
-    BITFIELD bUseMobileLandscapeMonochromeLayerBlending:1;
-    SCRIPT_ALIGN;
-    FColor FlattenBackgroundColor;
-    class UTexture* MobileBaseTexture;
-    class UTexture* FlattenedTexture_DEPRECATED;
-    BYTE MobileBaseTextureTexCoordsSource;
-    BYTE MobileAmbientOcclusionSource;
-    BYTE MobileSpecularMask;
-    BYTE MobileEmissiveColorSource;
-    BYTE MobileEmissiveMaskSource;
-    BYTE MobileEnvironmentMaskSource;
-    BYTE MobileEnvironmentBlendMode;
-    BYTE MobileRimLightingMaskSource;
-    BYTE MobileMaskTextureTexCoordsSource;
-    BYTE MobileAlphaValueSource;
-    BYTE MobileDetailTextureTexCoordsSource;
-    BYTE MobileTextureBlendFactorSource;
-    BYTE MobileColorMultiplySource;
-    class UTexture* MobileNormalTexture;
-    FLOAT SubUVFrameRate;
-    INT SubUVFrameCountAlongAxes;
-    FLOAT SubUVFrameSize;
-    FLinearColor MobileSpecularColor;
-    FLOAT MobileSpecularPower;
-    class UTexture* MobileEmissiveTexture;
-    FLinearColor MobileEmissiveColor;
-    class UTexture* MobileEnvironmentTexture;
-    FLOAT MobileEnvironmentAmount;
-    FLinearColor MobileEnvironmentColor;
-    FLOAT MobileEnvironmentFresnelAmount;
-    FLOAT MobileEnvironmentFresnelExponent;
-    FLOAT MobileRimLightingStrength;
-    FLOAT MobileRimLightingExponent;
-    FLinearColor MobileRimLightingColor;
-    FLOAT MobileBumpOffsetReferencePlane;
-    FLOAT MobileBumpOffsetHeightRatio;
-    class UTexture* MobileMaskTexture;
-    FLOAT MobileOpacityMultiplier;
-    class UTexture* MobileDetailTexture;
-    class UTexture* MobileDetailTexture2;
-    class UTexture* MobileDetailTexture3;
-    FLinearColor DefaultUniformColor_DEPRECATED;
-    FLinearColor MobileDefaultUniformColor;
-    FLOAT TransformCenterX_DEPRECATED;
-    FLOAT MobileTransformCenterX;
-    FLOAT TransformCenterY_DEPRECATED;
-    FLOAT MobileTransformCenterY;
-    FLOAT PannerSpeedX_DEPRECATED;
-    FLOAT MobilePannerSpeedX;
-    FLOAT PannerSpeedY_DEPRECATED;
-    FLOAT MobilePannerSpeedY;
-    FLOAT RotateSpeed_DEPRECATED;
-    FLOAT MobileRotateSpeed;
-    FLOAT FixedScaleX_DEPRECATED;
-    FLOAT MobileFixedScaleX;
-    FLOAT FixedScaleY_DEPRECATED;
-    FLOAT MobileFixedScaleY;
-    FLOAT SineScaleX_DEPRECATED;
-    FLOAT MobileSineScaleX;
-    FLOAT SineScaleY_DEPRECATED;
-    FLOAT MobileSineScaleY;
-    FLOAT SineScaleFrequencyMultipler_DEPRECATED;
-    FLOAT MobileSineScaleFrequencyMultipler;
-    FLOAT FixedOffsetX_DEPRECATED;
-    FLOAT MobileFixedOffsetX;
-    FLOAT FixedOffsetY_DEPRECATED;
-    FLOAT MobileFixedOffsetY;
-    FLOAT MobileTangentVertexFrequencyMultiplier;
-    FLOAT MobileVerticalFrequencyMultiplier;
-    FLOAT MobileMaxVertexMovementAmplitude;
-    FLOAT MobileSwayFrequencyMultiplier;
-    FLOAT MobileSwayMaxAngle;
-    FVector MobileDirectionalLightDirection;
-    FLOAT MobileDirectionalLightBrightness;
-    FColor MobileDirectionalLightColor;
-    FVector MobileBounceLightDirection;
-    FLOAT MobileBounceLightBrightness;
-    FColor MobileBounceLightColor;
-    FLOAT MobileSkyLightBrightness;
-    FColor MobileSkyLightColor;
-    FName MobileLandscapeLayerNames[4];
-    FColor MobileLandscapeMonochomeLayerColors[4];
     //## END PROPS MaterialInterface
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bHasQualitySwitch;
+    DISHONORED_SHIM_STATIC BITFIELD bAutoFlattenMobile;
+    DISHONORED_SHIM_STATIC BITFIELD bAutoFlattenMobileNormalTexture;
+    DISHONORED_SHIM_STATIC BITFIELD bMobileAllowFog;
+    DISHONORED_SHIM_STATIC BITFIELD bGenerateSubUV;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileSpecular;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileVertexSpecular_DEPRECATED;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobilePixelSpecular;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileBumpOffset;
+    DISHONORED_SHIM_STATIC BITFIELD bLockColorBlending;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileUniformColorMultiply;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileVertexColorMultiply;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileDetailNormal;
+    DISHONORED_SHIM_STATIC BITFIELD bBaseTextureTransformed;
+    DISHONORED_SHIM_STATIC BITFIELD bEmissiveTextureTransformed;
+    DISHONORED_SHIM_STATIC BITFIELD bNormalTextureTransformed;
+    DISHONORED_SHIM_STATIC BITFIELD bMaskTextureTransformed;
+    DISHONORED_SHIM_STATIC BITFIELD bDetailTextureTransformed;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileWaveVertexMovement;
+    DISHONORED_SHIM_STATIC BITFIELD bMobileEnableBounceLight;
+    DISHONORED_SHIM_STATIC BITFIELD bUseMobileLandscapeMonochromeLayerBlending;
+    DISHONORED_SHIM_STATIC FColor FlattenBackgroundColor;
+    DISHONORED_SHIM_STATIC class UTexture* MobileBaseTexture;
+    DISHONORED_SHIM_STATIC class UTexture* FlattenedTexture_DEPRECATED;
+    DISHONORED_SHIM_STATIC BYTE MobileBaseTextureTexCoordsSource;
+    DISHONORED_SHIM_STATIC BYTE MobileAmbientOcclusionSource;
+    DISHONORED_SHIM_STATIC BYTE MobileSpecularMask;
+    DISHONORED_SHIM_STATIC BYTE MobileEmissiveColorSource;
+    DISHONORED_SHIM_STATIC BYTE MobileEmissiveMaskSource;
+    DISHONORED_SHIM_STATIC BYTE MobileEnvironmentMaskSource;
+    DISHONORED_SHIM_STATIC BYTE MobileEnvironmentBlendMode;
+    DISHONORED_SHIM_STATIC BYTE MobileRimLightingMaskSource;
+    DISHONORED_SHIM_STATIC BYTE MobileMaskTextureTexCoordsSource;
+    DISHONORED_SHIM_STATIC BYTE MobileAlphaValueSource;
+    DISHONORED_SHIM_STATIC BYTE MobileDetailTextureTexCoordsSource;
+    DISHONORED_SHIM_STATIC BYTE MobileTextureBlendFactorSource;
+    DISHONORED_SHIM_STATIC BYTE MobileColorMultiplySource;
+    DISHONORED_SHIM_STATIC class UTexture* MobileNormalTexture;
+    DISHONORED_SHIM_STATIC FLOAT SubUVFrameRate;
+    DISHONORED_SHIM_STATIC INT SubUVFrameCountAlongAxes;
+    DISHONORED_SHIM_STATIC FLOAT SubUVFrameSize;
+    DISHONORED_SHIM_STATIC FLinearColor MobileSpecularColor;
+    DISHONORED_SHIM_STATIC FLOAT MobileSpecularPower;
+    DISHONORED_SHIM_STATIC class UTexture* MobileEmissiveTexture;
+    DISHONORED_SHIM_STATIC FLinearColor MobileEmissiveColor;
+    DISHONORED_SHIM_STATIC class UTexture* MobileEnvironmentTexture;
+    DISHONORED_SHIM_STATIC FLOAT MobileEnvironmentAmount;
+    DISHONORED_SHIM_STATIC FLinearColor MobileEnvironmentColor;
+    DISHONORED_SHIM_STATIC FLOAT MobileEnvironmentFresnelAmount;
+    DISHONORED_SHIM_STATIC FLOAT MobileEnvironmentFresnelExponent;
+    DISHONORED_SHIM_STATIC FLOAT MobileRimLightingStrength;
+    DISHONORED_SHIM_STATIC FLOAT MobileRimLightingExponent;
+    DISHONORED_SHIM_STATIC FLinearColor MobileRimLightingColor;
+    DISHONORED_SHIM_STATIC FLOAT MobileBumpOffsetReferencePlane;
+    DISHONORED_SHIM_STATIC FLOAT MobileBumpOffsetHeightRatio;
+    DISHONORED_SHIM_STATIC class UTexture* MobileMaskTexture;
+    DISHONORED_SHIM_STATIC FLOAT MobileOpacityMultiplier;
+    DISHONORED_SHIM_STATIC class UTexture* MobileDetailTexture;
+    DISHONORED_SHIM_STATIC class UTexture* MobileDetailTexture2;
+    DISHONORED_SHIM_STATIC class UTexture* MobileDetailTexture3;
+    DISHONORED_SHIM_STATIC FLinearColor DefaultUniformColor_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLinearColor MobileDefaultUniformColor;
+    DISHONORED_SHIM_STATIC FLOAT TransformCenterX_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileTransformCenterX;
+    DISHONORED_SHIM_STATIC FLOAT TransformCenterY_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileTransformCenterY;
+    DISHONORED_SHIM_STATIC FLOAT PannerSpeedX_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobilePannerSpeedX;
+    DISHONORED_SHIM_STATIC FLOAT PannerSpeedY_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobilePannerSpeedY;
+    DISHONORED_SHIM_STATIC FLOAT RotateSpeed_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileRotateSpeed;
+    DISHONORED_SHIM_STATIC FLOAT FixedScaleX_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileFixedScaleX;
+    DISHONORED_SHIM_STATIC FLOAT FixedScaleY_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileFixedScaleY;
+    DISHONORED_SHIM_STATIC FLOAT SineScaleX_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileSineScaleX;
+    DISHONORED_SHIM_STATIC FLOAT SineScaleY_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileSineScaleY;
+    DISHONORED_SHIM_STATIC FLOAT SineScaleFrequencyMultipler_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileSineScaleFrequencyMultipler;
+    DISHONORED_SHIM_STATIC FLOAT FixedOffsetX_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileFixedOffsetX;
+    DISHONORED_SHIM_STATIC FLOAT FixedOffsetY_DEPRECATED;
+    DISHONORED_SHIM_STATIC FLOAT MobileFixedOffsetY;
+    DISHONORED_SHIM_STATIC FLOAT MobileTangentVertexFrequencyMultiplier;
+    DISHONORED_SHIM_STATIC FLOAT MobileVerticalFrequencyMultiplier;
+    DISHONORED_SHIM_STATIC FLOAT MobileMaxVertexMovementAmplitude;
+    DISHONORED_SHIM_STATIC FLOAT MobileSwayFrequencyMultiplier;
+    DISHONORED_SHIM_STATIC FLOAT MobileSwayMaxAngle;
+    DISHONORED_SHIM_STATIC FVector MobileDirectionalLightDirection;
+    DISHONORED_SHIM_STATIC FLOAT MobileDirectionalLightBrightness;
+    DISHONORED_SHIM_STATIC FColor MobileDirectionalLightColor;
+    DISHONORED_SHIM_STATIC FVector MobileBounceLightDirection;
+    DISHONORED_SHIM_STATIC FLOAT MobileBounceLightBrightness;
+    DISHONORED_SHIM_STATIC FColor MobileBounceLightColor;
+    DISHONORED_SHIM_STATIC FLOAT MobileSkyLightBrightness;
+    DISHONORED_SHIM_STATIC FColor MobileSkyLightColor;
+    DISHONORED_SHIM_STATIC FName MobileLandscapeLayerNames[4];
+    DISHONORED_SHIM_STATIC FColor MobileLandscapeMonochomeLayerColors[4];
 
     virtual UBOOL GetParameterDesc(FName ParameterName,FString& OutDesc);
     virtual UBOOL GetFontParameterValue(FName ParameterName,class UFont*& OutFontValue,INT& OutFontPage);
@@ -3831,6 +3840,7 @@ class UMaterial : public UMaterialInterface
 {
 public:
     //## BEGIN PROPS Material
+    // DISHONORED(layout): 2012 PDB size 912; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: ShadowDepthBias, D3D11TessellationMode, WorldDisplacement, TessellationMultiplier, SubsurfaceInscatteringColor, SubsurfaceAbsorptionColor, SubsurfaceScatteringRadius, EnableSubsurfaceScattering, EnableSeparateTranslucency, bEnableMaskedAntialiasing, bSceneTextureRenderBehindTranslucency, bAllowFog, bTranslucencyInheritDominantShadowsFromOpaque, bUsedWithFogVolumes, bUsedWithLandscape, bUsedWithMobileLandscape, bUsedWithFracturedMeshes, bUsedWithScreenDoorFade, bEnableCrackFreeDisplacement, bUseImageBasedReflections, ImageReflectionNormalDampening, MaterialFunctionInfos)
     class UPhysicalMaterial* PhysMaterial;
     class UClass* PhysicalMaterial;
     class UTexture2D* PhysMaterialMask;
@@ -3843,14 +3853,13 @@ public:
     FScalarMaterialInput SpecularPower;
     FVectorMaterialInput Normal;
     FColorMaterialInput EmissiveColor;
+    FColorMaterialInput BloomColor;  // DISHONORED(layout): 2012 PDB @364
     FScalarMaterialInput Opacity;
     FScalarMaterialInput OpacityMask;
     FLOAT OpacityMaskClipValue;
-    FLOAT ShadowDepthBias;
     FVector2MaterialInput Distortion;
     BYTE BlendMode;
     BYTE LightingModel;
-    BYTE D3D11TessellationMode;
     SCRIPT_ALIGN;
     FColorMaterialInput CustomLighting;
     FColorMaterialInput CustomSkylightDiffuse;
@@ -3858,38 +3867,28 @@ public:
     FScalarMaterialInput TwoSidedLightingMask;
     FColorMaterialInput TwoSidedLightingColor;
     FVectorMaterialInput WorldPositionOffset;
-    FVectorMaterialInput WorldDisplacement;
-    FScalarMaterialInput TessellationMultiplier;
-    FColorMaterialInput SubsurfaceInscatteringColor;
-    FColorMaterialInput SubsurfaceAbsorptionColor;
-    FScalarMaterialInput SubsurfaceScatteringRadius;
-    BITFIELD EnableSubsurfaceScattering:1;
-    BITFIELD EnableSeparateTranslucency:1;
-    BITFIELD bEnableMaskedAntialiasing:1;
     BITFIELD TwoSided:1;
     BITFIELD TwoSidedSeparatePass:1;
     BITFIELD bDisableDepthTest:1;
-    BITFIELD bSceneTextureRenderBehindTranslucency:1;
-    BITFIELD bAllowFog:1;
+    BITFIELD bAllowFog_DEPRECATED:1;  // DISHONORED(layout): 2012 PDB @752
+    BITFIELD bAllowDisFog:1;  // DISHONORED(layout): 2012 PDB @752
     BITFIELD bTranslucencyReceiveDominantShadowsFromStatic:1;
-    BITFIELD bTranslucencyInheritDominantShadowsFromOpaque:1;
     BITFIELD bAllowTranslucencyDoF:1;
     BITFIELD bUseOneLayerDistortion:1;
     BITFIELD bUseLitTranslucencyDepthPass:1;
     BITFIELD bUseLitTranslucencyPostRenderDepthPass:1;
     BITFIELD bCastLitTranslucencyShadowAsMasked:1;
     BITFIELD bUsedAsLightFunction:1;
-    BITFIELD bUsedWithFogVolumes:1;
+    BITFIELD bUsedWithFogVolumes_DEPRECATED:1;  // DISHONORED(layout): 2012 PDB @753
     BITFIELD bUsedAsSpecialEngineMaterial:1;
     BITFIELD bUsedWithSkeletalMesh:1;
     BITFIELD bUsedWithTerrain:1;
-    BITFIELD bUsedWithLandscape:1;
-    BITFIELD bUsedWithMobileLandscape:1;
-    BITFIELD bUsedWithFracturedMeshes:1;
+    BITFIELD bUsedWithFracturedMeshes_DEPRECATED:1;  // DISHONORED(layout): 2012 PDB @754
     BITFIELD bUsedWithParticleSystem:1;
     BITFIELD bUsedWithParticleSprites:1;
     BITFIELD bUsedWithBeamTrails:1;
     BITFIELD bUsedWithParticleSubUV:1;
+    BITFIELD bUsedWithFoliage:1;  // DISHONORED(layout): 2012 PDB @754
     BITFIELD bUsedWithSpeedTree:1;
     BITFIELD bUsedWithStaticLighting:1;
     BITFIELD bUsedWithLensFlare:1;
@@ -3898,14 +3897,12 @@ public:
     BITFIELD bUsedWithFluidSurfaces:1;
     BITFIELD bUsedWithDecals:1;
     BITFIELD bUsedWithMaterialEffect:1;
+    BITFIELD bUsedWithArkPostProcess:1;  // DISHONORED(layout): 2012 PDB @755
     BITFIELD bUsedWithMorphTargets:1;
     BITFIELD bUsedWithRadialBlur:1;
     BITFIELD bUsedWithInstancedMeshes:1;
     BITFIELD bUsedWithSplineMeshes:1;
     BITFIELD bUsedWithAPEXMeshes:1;
-    BITFIELD bUsedWithScreenDoorFade:1;
-    BITFIELD bEnableCrackFreeDisplacement:1;
-    BITFIELD bUseImageBasedReflections:1;
     BITFIELD Wireframe:1;
     BITFIELD bPerPixelCameraVector:1;
     BITFIELD bAllowLightmapSpecular:1;
@@ -3913,24 +3910,44 @@ public:
     BITFIELD bUsesDistortion:1;
     BITFIELD bIsMasked:1;
     BITFIELD bIsPreviewMaterial:1;
-    FLOAT ImageReflectionNormalDampening;
     FMaterialResource* MaterialResources[2];
-    class FDefaultMaterialInstance* DefaultMaterialInstances[3];
+    class FDefaultMaterialInstance* DefaultMaterialInstances[2];  // DISHONORED(layout): 2012 PDB FDefaultMaterialInstance*[2] @768 (two quality levels)
     INT EditorX;
     INT EditorY;
     INT EditorPitch;
     INT EditorYaw;
     TArrayNoInit<class UMaterialExpression*> Expressions;
-#if WITH_EDITORONLY_DATA
     TArrayNoInit<class UMaterialExpressionComment*> EditorComments;
-#endif // WITH_EDITORONLY_DATA
-    TArrayNoInit<struct FMaterialFunctionInfo> MaterialFunctionInfos;
+    TArrayNoInit<class UMaterialExpressionCompound*> EditorCompounds;  // DISHONORED(layout): 2012 PDB @816
     TMap< FName, TArray<UMaterialExpression*> > EditorParameters;
     TArrayNoInit<class UTexture*> ReferencedTextures_DEPRECATED;
-#if WITH_EDITORONLY_DATA
     TArrayNoInit<FGuid> ReferencedTextureGuids;
-#endif // WITH_EDITORONLY_DATA
     //## END PROPS Material
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC FLOAT ShadowDepthBias;
+    DISHONORED_SHIM_STATIC BYTE D3D11TessellationMode;
+    DISHONORED_SHIM_STATIC FVectorMaterialInput WorldDisplacement;
+    DISHONORED_SHIM_STATIC FScalarMaterialInput TessellationMultiplier;
+    DISHONORED_SHIM_STATIC FColorMaterialInput SubsurfaceInscatteringColor;
+    DISHONORED_SHIM_STATIC FColorMaterialInput SubsurfaceAbsorptionColor;
+    DISHONORED_SHIM_STATIC FScalarMaterialInput SubsurfaceScatteringRadius;
+    DISHONORED_SHIM_STATIC BITFIELD EnableSubsurfaceScattering;
+    DISHONORED_SHIM_STATIC BITFIELD EnableSeparateTranslucency;
+    DISHONORED_SHIM_STATIC BITFIELD bEnableMaskedAntialiasing;
+    DISHONORED_SHIM_STATIC BITFIELD bSceneTextureRenderBehindTranslucency;
+    DISHONORED_SHIM_STATIC BITFIELD bAllowFog;
+    DISHONORED_SHIM_STATIC BITFIELD bTranslucencyInheritDominantShadowsFromOpaque;
+    DISHONORED_SHIM_STATIC BITFIELD bUsedWithFogVolumes;
+    DISHONORED_SHIM_STATIC BITFIELD bUsedWithLandscape;
+    DISHONORED_SHIM_STATIC BITFIELD bUsedWithMobileLandscape;
+    DISHONORED_SHIM_STATIC BITFIELD bUsedWithFracturedMeshes;
+    DISHONORED_SHIM_STATIC BITFIELD bUsedWithScreenDoorFade;
+    DISHONORED_SHIM_STATIC BITFIELD bEnableCrackFreeDisplacement;
+    DISHONORED_SHIM_STATIC BITFIELD bUseImageBasedReflections;
+    DISHONORED_SHIM_STATIC FLOAT ImageReflectionNormalDampening;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FMaterialFunctionInfo> MaterialFunctionInfos;
 
     DECLARE_CLASS(UMaterial,UMaterialInterface,0,Engine)
 	// Constructor.
@@ -4462,7 +4479,7 @@ public:
     SCRIPT_ALIGN;
     FStaticParameterSet* StaticParameters[2];
     FMaterialResource* StaticPermutationResources[2];
-    class FMaterialInstanceResource* Resources[3];
+    class FMaterialInstanceResource* Resources[2];  // DISHONORED(layout): 2012 PDB FMaterialInstanceResource*[2] @160 (two quality levels)
     TArrayNoInit<class UTexture*> ReferencedTextures_DEPRECATED;
 #if WITH_EDITORONLY_DATA
     TArrayNoInit<FGuid> ReferencedTextureGuids;

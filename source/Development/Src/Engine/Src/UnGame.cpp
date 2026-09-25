@@ -2460,7 +2460,7 @@ UBOOL UGameEngine::LoadMap( const FURL& URL, UPendingLevel* Pending, FString& Er
 		GWorld->SetNetDriver(Pending->NetDriver);
 		if( GWorld->GetNetDriver() )
 		{
-			GWorld->GetNetDriver()->Notify = GWorld;
+			GWorld->GetNetDriver()->Notify = *GWorld;  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 			UPackage::NetObjectNotifies.AddItem(GWorld->GetNetDriver());
 		}
 
@@ -2468,14 +2468,14 @@ UBOOL UGameEngine::LoadMap( const FURL& URL, UPendingLevel* Pending, FString& Er
 		GWorld->PeerNetDriver = Pending->PeerNetDriver;
 		if (GWorld->PeerNetDriver)
 		{
-			GWorld->PeerNetDriver->Notify = GWorld;
+			GWorld->PeerNetDriver->Notify = *GWorld;  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 		}
 
 		// Hook up the DemoRecDriver from the pending level
 		GWorld->DemoRecDriver = Pending->DemoRecDriver;
 		if (GWorld->DemoRecDriver)
 		{
-			GWorld->DemoRecDriver->Notify = GWorld;
+			GWorld->DemoRecDriver->Notify = *GWorld;  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 		}
 
 		// Setup level.

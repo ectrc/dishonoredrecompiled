@@ -18,7 +18,9 @@ set(DISHONORED_DEFINES
   IS_DISHONOREDGAME=1
   # UE3BuildTarget.cs: game (non-editor) configuration
   WITH_EDITOR=0
-  WITH_EDITORONLY_DATA=0
+  # The 2012 PDB keeps the editor-only members (EditorIconColor, SourceFilePath, LightingGuid, ...)
+  # in the shipping layouts; UE3BuildTarget.cs only sets 0 for script-patch exes (agent M).
+  WITH_EDITORONLY_DATA=1
   WITH_MANAGED_CODE=0
   # UnBuild.h switches, set to what Shipping links (Steamworks OSS, Scaleform, PhysX+APEX, FaceFX, LZO)
   WITH_UE3_NETWORKING=1

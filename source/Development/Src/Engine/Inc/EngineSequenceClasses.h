@@ -615,6 +615,7 @@ class USequenceOp : public USequenceObject
 {
 public:
     //## BEGIN PROPS SequenceOp
+    // DISHONORED(layout): 2012 PDB size 224; member list and order regenerated from types.json (gen_layout_probe.py props)
     BITFIELD bIsActivated:1;
     BITFIELD bIsCurrentDebuggerOp:1;
     BITFIELD bActive:1;
@@ -625,21 +626,21 @@ public:
     BITFIELD bHaveMovingOutputConnector:1;
     BITFIELD bPendingVarConnectorRecalc:1;
     BITFIELD bPendingInputConnectorRecalc:1;
+    BITFIELD m_bAlwaysOutOfBendTime:1;  // DISHONORED(layout): 2012 PDB @141
     BITFIELD bPendingOutputConnectorRecalc:1;
     BITFIELD bIsBreakpointSet:1;
     BITFIELD bIsHiddenBreakpointSet:1;
-#if WITH_EDITORONLY_DATA
     FLOAT PIEActivationTime;
     class USequenceOp* ActivatorSeqOp;
     INT LastActivatedInputLink;
     INT LastActivatedOutputLink;
-#endif // WITH_EDITORONLY_DATA
     TArrayNoInit<struct FSeqOpInputLink> InputLinks;
     TArrayNoInit<struct FSeqOpOutputLink> OutputLinks;
     TArrayNoInit<struct FSeqVarLink> VariableLinks;
     TArrayNoInit<struct FSeqEventLink> EventLinks;
     INT PlayerIndex;
     BYTE GamepadID;
+    SCRIPT_ALIGN;
     INT ActivateCount;
 protected:
     INT SearchTag;
@@ -907,13 +908,14 @@ class USequence : public USequenceOp
 {
 public:
     //## BEGIN PROPS Sequence
+    // DISHONORED(layout): 2012 PDB size 328; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: DelayedLatentOps)
     FPointer LogFile;
     TArrayNoInit<class USequenceObject*> SequenceObjects;
     TArrayNoInit<class USequenceOp*> ActiveSequenceOps;
     TArrayNoInit<class USequence*> NestedSequences;
     TArrayNoInit<class USequenceEvent*> UnregisteredEvents;
+    TArrayNoInit<class USequenceEvent*> m_AllEvents;  // DISHONORED(layout): 2012 PDB @276
     TArrayNoInit<struct FActivateOp> DelayedActivatedOps;
-    TArrayNoInit<class USequenceOp*> DelayedLatentOps;
 private:
     BITFIELD bEnabled:1;
 public:
@@ -922,6 +924,10 @@ public:
     INT DefaultViewY;
     FLOAT DefaultViewZoom;
     //## END PROPS Sequence
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC TArrayNoInit<class USequenceOp*> DelayedLatentOps;
 
     void SetEnabled(UBOOL bInEnabled);
     DECLARE_FUNCTION(execFindSeqObjectsByClass);
@@ -4610,21 +4616,25 @@ class UInterpData : public USequenceVariable
 {
 public:
     //## BEGIN PROPS InterpData
-    FLOAT InterpLength;
-    FLOAT PathBuildTime;
-    TArrayNoInit<class UInterpGroup*> InterpGroups;
-    class UInterpCurveEdSetup* CurveEdSetup;
-#if WITH_EDITORONLY_DATA
-    TArrayNoInit<class UInterpFilter*> InterpFilters;
-    class UInterpFilter* SelectedFilter;
-    TArrayNoInit<class UInterpFilter*> DefaultFilters;
-#endif // WITH_EDITORONLY_DATA
-    FLOAT EdSectionStart;
-    FLOAT EdSectionEnd;
-    BITFIELD bShouldBakeAndPrune:1;
-    TArrayNoInit<struct FAnimSetBakeAndPruneStatus> BakeAndPruneStatus;
-    class UInterpGroupDirector* CachedDirectorGroup;
+    // DISHONORED(layout): 2012 PDB size 156; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: InterpLength, PathBuildTime, InterpGroups, CurveEdSetup, InterpFilters, SelectedFilter, DefaultFilters, EdSectionStart, EdSectionEnd, bShouldBakeAndPrune, BakeAndPruneStatus, CachedDirectorGroup)
+    class UMatineeData* m_Data;  // DISHONORED(layout): 2012 PDB @148
+    INT m_iMatineeDataVersion;  // DISHONORED(layout): 2012 PDB @152
     //## END PROPS InterpData
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC FLOAT InterpLength;
+    DISHONORED_SHIM_STATIC FLOAT PathBuildTime;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class UInterpGroup*> InterpGroups;
+    DISHONORED_SHIM_STATIC class UInterpCurveEdSetup* CurveEdSetup;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class UInterpFilter*> InterpFilters;
+    DISHONORED_SHIM_STATIC class UInterpFilter* SelectedFilter;
+    DISHONORED_SHIM_STATIC TArrayNoInit<class UInterpFilter*> DefaultFilters;
+    DISHONORED_SHIM_STATIC FLOAT EdSectionStart;
+    DISHONORED_SHIM_STATIC FLOAT EdSectionEnd;
+    DISHONORED_SHIM_STATIC BITFIELD bShouldBakeAndPrune;
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FAnimSetBakeAndPruneStatus> BakeAndPruneStatus;
+    DISHONORED_SHIM_STATIC class UInterpGroupDirector* CachedDirectorGroup;
 
     DECLARE_CLASS(UInterpData,USequenceVariable,0,Engine)
 	// UObject interface

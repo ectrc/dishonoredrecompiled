@@ -68,6 +68,7 @@ public:
 	BITFIELD			bTickInEditor:1;
 	BITFIELD			bNeedsReattach:1;
 	BITFIELD			bNeedsUpdateTransform:1;
+	BITFIELD			bIsPrimitiveComponent:1;  // DISHONORED(layout): 2012 PDB @76 bit 4
 	SCRIPT_ALIGN;
 
 public:
@@ -415,6 +416,60 @@ struct FLightingChannelContainer
 			| Cinematic_2 << 2
 			| Cinematic_3 << 3;
 	}
+};
+
+// DISHONORED(layout): 2012 PDB, Arkane types embedded in UPrimitiveComponent (464 bytes): FRenderingChannelContainer
+// ReflectionChannels @308 (4 bytes, union of 18 channel bits + Bitfield, same shape as FLightingChannelContainer),
+// FDisPrimTraceMask m_CollisionTraceTypes @320 (4 bytes, 7 bits), EDisTranslucencySortPriority
+// DisTranslucencySortPriority @300 (4-byte enum, values DTSP_BelowWater..DTSP_AboveWater = 0..4).
+struct FRenderingChannelContainer
+{
+	union
+	{
+		struct
+		{
+			BITFIELD BSP:1;
+			BITFIELD Static:1;
+			BITFIELD Dynamic:1;
+			BITFIELD Skeletal:1;
+			BITFIELD Foliage:1;
+			BITFIELD Particles:1;
+			BITFIELD Sprites:1;
+			BITFIELD Decals:1;
+			BITFIELD Group_1:1;
+			BITFIELD Group_2:1;
+			BITFIELD Group_3:1;
+			BITFIELD Group_4:1;
+			BITFIELD Group_5:1;
+			BITFIELD Group_6:1;
+			BITFIELD Group_7:1;
+			BITFIELD Group_8:1;
+			BITFIELD Group_9:1;
+			BITFIELD Group_10:1;
+		};
+		DWORD Bitfield;
+	};
+};
+
+struct FDisPrimTraceMask
+{
+	BITFIELD m_bTraceForMove_NonPawn:1;
+	BITFIELD m_bTraceForMove_NonPlayerPawn:1;
+	BITFIELD m_bTraceForMove_Player:1;
+	BITFIELD m_bTraceForGameplay_Crosshair:1;
+	BITFIELD m_bTraceForGameplay_Projectile:1;
+	BITFIELD m_bTraceForGameplay_Melee:1;
+	BITFIELD m_bTraceForGameplay_VisionLOS:1;
+};
+
+enum EDisTranslucencySortPriority
+{
+	DTSP_BelowWater = 0,
+	DTSP_JustBelowWater = 1,
+	DTSP_Water = 2,
+	DTSP_JustAboveWater = 3,
+	DTSP_AboveWater = 4,
+	DTSP_MAX = 5,
 };
 
 /** different light component types */

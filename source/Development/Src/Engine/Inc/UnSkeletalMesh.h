@@ -275,671 +275,442 @@ struct FSkelMeshComponentLODInfo
 //	USkeletalMeshComponent
 //
 class USkeletalMesh;
+struct FEdgeAnimData;
+// DISHONORED(layout): 2012 PDB USkeletalMeshComponent is 1056 bytes (see the member block); FTickData m_TickData @976 (80 bytes, 16-aligned)
 class USkeletalMeshComponent : public UMeshComponent
 {
 	DECLARE_CLASS_NOEXPORT(USkeletalMeshComponent,UMeshComponent,0,Engine)
 
+	struct FTickData
+	{
+		FMatrix ParentTransform;
+		BYTE bLODHasChanged;
+		BYTE bUpdateKinematics;
+		BYTE m_bUpdateSkelPoseCalled;
+		BYTE m_bNeedUpdateTransform;
+	};
+
+	// DISHONORED(layout): 2012 PDB USkeletalMeshComponent is 1056 bytes; data members regenerated in types.json order
+	// (reference declarations reused by name, Arkane members synthesized; see agents/agentM.md)
 	USkeletalMesh*						SkeletalMesh;
-
-	/** If this component is attached to another SkeletalMeshComponent, this is the one it's attached to. */
 	USkeletalMeshComponent*				AttachedToSkelComponent;
-
 	class UAnimTree*					AnimTreeTemplate;
 	class UAnimNode*					Animations;
-
-	/** Array of all AnimNodes in entire tree, in the order they should be ticked - that is, all parents appear before a child. */
-	TArray<UAnimNode*>					AnimTickArray;
-	/** Special Array of nodes that should always be ticked, even when not relevant. */
-	TArray<UAnimNode*>					AnimAlwaysTickArray;
-	/** Anim nodes relevancy status. Matching AnimTickArray size and indices. */
-	TArray<INT>							AnimTickRelevancyArray;
-	/** Anim nodes weights. Matching AnimTickArray size and indices. */
-	TArray<FLOAT>						AnimTickWeightsArray;
-	/** Linear Array for ticking SkelControls faster */
 	TArray<class USkelControlBase*>		SkelControlTickArray;
 	class UPhysicsAsset*				PhysicsAsset;
 	class UPhysicsAssetInstance*		PhysicsAssetInstance;
-	/*** Defines the FIApexClothing interface.  Must exactly match the layout of the corresponding .UC file; so if APEX is unavailable it declares a void pointer. */
-	FIApexClothing*						ApexClothing;
-
 	FLOAT								PhysicsWeight;
-
-	/** Used to scale speed of all animations on this skeletal mesh. */
 	FLOAT								GlobalAnimRateScale;
-
-	/**
-	 * Allows adjusting the desired streaming distance of streaming textures that uses UV 0.
-	 * 1.0 is the default, whereas a higher value makes the textures stream in sooner from far away.
-	 * A lower value (0.0-1.0) makes the textures stream in later (you have to be closer).
-	 */
-	FLOAT								StreamingDistanceMultiplier;
-
 	class FSkeletalMeshObject*			MeshObject;
 	FColor								WireframeColor;
-
-
-	// State of bone bases - set up in local mesh space.
-	TArray <FBoneAtom>				SpaceBases; 
-	/** Temporary array of local-space (ie relative to parent bone) rotation/translation for each bone. */
+	TArray <FBoneAtom>				SpaceBases;
 	TArray <FBoneAtom>					LocalAtoms;
 	TArray <FBoneAtom>					CachedLocalAtoms;
 	TArray <FBoneAtom>				CachedSpaceBases;
 	INT									LowUpdateFrameRate;
-
-	/** Temporary array of bone indices required this frame. Filled in by UpdateSkelPose. */
 	TArray<BYTE>						RequiredBones;
-	/** Required Bones array for 3 pass skeleton composing */
 	TArray<BYTE>						ComposeOrderedRequiredBones;
 	USkeletalMeshComponent*				ParentAnimComponent;
 	TArrayNoInit<INT>					ParentBoneMap;
-
-
-	// Array of AnimSets used to find sequences by name.
 	TArrayNoInit<class UAnimSet*>			AnimSets;
-
-	/**
-	 *  Temporary array of AnimSets that are used as a backup target when the engine needs to temporarily modify the
-	 *	actor's animation set list. (e.g. Matinee playback)
-	 */
 	TArrayNoInit<class UAnimSet*> TemporarySavedAnimSets;
-
-
-	/** 
-	 *	Array of MorphTargetSets that will be looked in to find a particular MorphTarget, specified by name.
-	 *	It is searched in the same way as the AnimSets array above.
-	 */
-	TArrayNoInit<class UMorphTargetSet*>	MorphSets;
-
-	/** Array indicating all active MorphTargets. This array is updated inside UpdateSkelPose based on the AnimTree's st of MorphNodes. */
-	TArrayNoInit<FActiveMorph>				ActiveMorphs;
-
-	/** Array indicating all active MorphTargets. This array is updated inside UpdateSkelPose based on the AnimTree's st of MorphNodes. */
-	TArrayNoInit<FActiveMorph>				ActiveCurveMorphs;
-	/** TMap of MorphTarget Name to MorphTarget **/
-	TMap<FName, UMorphTarget*>				MorphTargetIndexMap;
-
-	// Attachments.
 	TArrayNoInit<FAttachment>				Attachments;
-
-	/** 
-	 *	Array of indices into the Animations->SkelControls array. The size of this array must be equal to the number
-	 *	of bones in the skeleton. After the transform for bone index 'i' is calculated, if SkelControlIndex(i) is not 255,
-	 *	it will be looked up in Animations->SkelControls and executed.
-	 */
 	TArrayNoInit<BYTE>						SkelControlIndex;
-
-	/** As SkelControlIndex, but only for controllers flagged with bPostPhysicsController. */
 	TArrayNoInit<BYTE>						PostPhysSkelControlIndex;
-
-	// Editor/debugging rendering mode flags.
-
-	/** Force drawing of a specific lodmodel -1 if > 0. */
 	INT									ForcedLodModel;
-	/** 
-	 * This is the min LOD that this component will use.  (e.g. if set to 2 then only 2+ LOD Models will be used.) This is useful to set on
-	 * meshes which are known to be a certain distance away and still want to have better LODs when zoomed in on them.
-	 **/
 	INT									MinLodModel;
-	/** 
-	 *	Best LOD that was 'predicted' by UpdateSkelPose. 
-	 *	This is what bones were updated based on, so we do not allow rendering at a better LOD than this. 
-	 */
 	INT									PredictedLODLevel;
-
-	/** LOD level from previous frame, so we can detect changes in LOD to recalc required bones. */
 	INT									OldPredictedLODLevel;
-
-	/** If MaxDistanceFactor goes below this value (and it is non 0), start playing animations at a lower frame rate */
-	FLOAT								AnimationLODDistanceFactor;
-
-	/** Rate of update for skeletal meshes that are below AnimationLODDistanceFactor. For example if set to 3, animations will be updated once every three frames. */
-	INT									AnimationLODFrameRate;
-
-	/**	High (best) DistanceFactor that was desired for rendering this SkeletalMesh last frame. Represents how big this mesh was in screen space   */
 	FLOAT								MaxDistanceFactor;
-
-#if WITH_EDITORONLY_DATA
-	/** Index of the chunk to preview... If set to -1, all chunks will be rendered */
-	INT									ChunkIndexPreview;
-	/** Index of the section to preview... If set to -1, all section will be rendered */
-	INT									SectionIndexPreview;
-#endif
-
-	/** Forces the mesh to draw in wireframe mode. */
 	UBOOL								bForceWireframe;
-
-	/** If true, force the mesh into the reference pose - is an optimisation. */
 	UBOOL								bForceRefpose;
-
-	/** If bForceRefPose was set last tick. */
 	UBOOL								bOldForceRefPose;
-
-	/** Skip UpdateSkelPose. */
 	UBOOL								bNoSkeletonUpdate;
-
-	/** Draw the skeleton hierarchy for this skel mesh. */
 	UBOOL								bDisplayBones;
-
-	/** Bool that enables debug drawing of the skeleton before it is passed to the physics. Useful for debugging animation-driven physics. */
 	UBOOL								bShowPrePhysBones;
-
-	/** Don't bother rendering the skin. */
 	UBOOL								bHideSkin;
-
-	/** Forces ignoring of the mesh's offset. */
 	UBOOL								bForceRawOffset;
-
-	/** Ignore and bone rotation controllers */
 	UBOOL								bIgnoreControllers;
-
-
-	/** 
-	 *	Set the LocalToWorld of this component to be the same as the ParentAnimComponent (if there is one). 
-	 *	Note that this results in using RotOrigin/Origin from the ParentAnimComponent SkeletalMesh as well, as that is included in the LocalToWorld.
-	 */
 	UBOOL								bTransformFromAnimParent;
-
-	/** Used to avoid ticking nodes in the tree multiple times. Node will only be ticked if TickTag != NodeTickTag. */
+	UINT m_bReallyInheritTransformFromAnimParent;  // DISHONORED(layout): 2012 PDB @732
 	INT									TickTag;
-	/** Used to trigger DeferredInitAnim call on relevant nodes */
 	INT									InitTag;
-	/** 
-	 *	Used to avoid duplicating work when calling GetBoneAtom. 
-	 *	If this is equal to a nodes NodeCachedAtomsTag, cache is up-to-date and can be used. 
-	 */
 	INT									CachedAtomsTag;
-
-	/** 
-	 *	If true, create single rigid body physics for this component (like a static mesh) using root bone of PhysicsAsset. 
-	 */
-	UBOOL								bUseSingleBodyPhysics;
-
-	/** If false, indicates that on the next call to UpdateSkelPose the RequiredBones array should be recalculated. */
 	UBOOL								bRequiredBonesUpToDate;
-
-	/** 
-	 *	If non-zero, skeletal mesh component will not update kinematic bones and bone springs when distance factor is greater than this (or has not been rendered for a while).
-	 *	This also turns off BlockRigidBody, so you do not get collisions with 'left behind' ragdoll setups.
-	 */
 	FLOAT								MinDistFactorForKinematicUpdate;
-
-	/** Used to keep track of how many frames physics has been asleep for (when using PHYS_RigidBody). */
 	INT									FramesPhysicsAsleep;
-
-	/** <2 means no skip, 2 means every other frame, 3 means 1 out of three frames, etc  */
-	INT									SkipRateForTickAnimNodesAndGetBoneAtoms;
-
-	/** If TRUE, we will not tick the anim nodes */
-	BITFIELD bSkipTickAnimNodes:1;
-
-	/** If TRUE, we will not call GetBonesAtoms, and instead use cached data */
-	BITFIELD bSkipGetBoneAtoms:1;
-
-	/** If TRUE, then bSkipGetBoneAtoms is also true; we will interpolate cached data */
-	BITFIELD bInterpolateBoneAtoms:1;
-
-	/** If TRUE, there is at least one body in the current PhysicsAsset with a valid bone in the current SkeletalMesh */
-	BITFIELD bHasValidBodies:1;
-
-	/** When true, if owned by a PHYS_RigidBody Actor, skip all update (bones and bounds) when physics are asleep. */
 	BITFIELD bSkipAllUpdateWhenPhysicsAsleep:1;
-
-	/** When true, skip using the physics asset and always use the fixed bounds defined in the SkeletalMesh. */
-	BITFIELD bComponentUseFixedSkelBounds:1;
-
-	/** 
-	 * When true, we will just using the bounds from our ParentAnimComponent.  This is useful for when we have a Mesh Parented
-	 * to the main SkelMesh (e.g. outline mesh or a full body overdraw effect that is toggled) that is always going to be the same
-	 * bounds as parent.  We want to do no calculations in that case.
-	 */
-	BITFIELD bUseBoundsFromParentAnimComponent:1;
-
-	/** When true, if owned by a PHYS_RigidBody Actor, skip all update (bones and bounds) when physics are asleep. */
 	BITFIELD bConsiderAllBodiesForBounds:1;
-
-	/** if true, update skeleton/attachments even when our Owner has not been rendered recently */
 	BITFIELD bUpdateSkelWhenNotRendered:1;
-
-	/** If true, do not apply any SkelControls when owner has not been rendered recently. */
 	BITFIELD bIgnoreControllersWhenNotRendered:1;
-
-	/** If true, tick anim nodes even when our Owner has not been rendered recently  */
 	BITFIELD bTickAnimNodesWhenNotRendered:1;
-
-	/** If this is true, we are not updating kinematic bones and motors based on animation beacause the skeletal mesh is too far from any viewer. */
 	BITFIELD bNotUpdatingKinematicDueToDistance:1;
-
-	/** force root motion to be discarded, no matter what the AnimNodeSequence(s) are set to do */
 	BITFIELD bForceDiscardRootMotion:1;
-	/** Call RootMotionProcessed notification on Owner */
-	BITFIELD bNotifyRootMotionProcessed:1;
-
-	/** 
-	 * if TRUE, notify owning actor of root motion mode changes.
-	 * This calls the Actor.RootMotionModeChanged() event.
-	 * This is useful for synchronizing movements. 
-	 * For intance, when using RMM_Translate, and the event is called, we know that root motion will kick in on next frame.
-	 * It is possible to kill in-game physics, and then use root motion seemlessly.
-	 */
 	BITFIELD bRootMotionModeChangeNotify:1;
-	
-	/**
-	 * if TRUE, the event RootMotionExtracted() will be called on this owning actor,
-	 * after root motion has been extracted, and before it's been used.
-	 * This notification can be used to alter extracted root motion before it is forwarded to physics.
-	 */
 	BITFIELD bRootMotionExtractedNotify:1;
-	/** Flag set when processing root motion. */
-	BITFIELD bProcessingRootMotion:1;
-
-	/** If true, FaceFX will not automatically create material instances. */
 	BITFIELD bDisableFaceFXMaterialInstanceCreation:1;
-
-	/** If true, disable FaceFX entirely for this component */
-	BITFIELD bDisableFaceFX:1;
-
-	/** If true, AnimTree has been initialised. */
 	BITFIELD bAnimTreeInitialised:1;
-
-	/** If TRUE, UpdateTransform will always result in a call to MeshObject->Update. */
 	BITFIELD bForceMeshObjectUpdate:1;
-
-	/** 
-	 *	Indicates whether this SkeletalMeshComponent should have a physics engine representation of its state. 
-	 *	@see SetHasPhysicsAssetInstance
-	 */
 	BITFIELD bHasPhysicsAssetInstance:1;
-
-	/** If we are running physics, should we update bFixed bones based on the animation bone positions. */
 	BITFIELD bUpdateKinematicBonesFromAnimation:1;
-
-	/** 
-	 *	If we should pass joint position to joints each frame, so that they can be used by motorised joints to drive the
-	 *	ragdoll based on the animation.
-	 */
 	BITFIELD bUpdateJointsFromAnimation:1;
-
-	/** Indicates whether this SkeletalMeshComponent is currently considered 'fixed' (ie kinematic) */
 	BITFIELD bSkelCompFixed:1;
-
-	/** Used for consistancy checking. Indicates that the results of physics have been blended into SpaceBases this frame. */
 	BITFIELD bHasHadPhysicsBlendedIn:1;
-
-	/** 
-	 *	If true, attachments will be updated twice a frame - once in Tick and again when UpdateTransform is called. 
-	 *	This can resolve some 'frame behind' issues if an attachment need to be in the correct location for it's Tick, but at a cost.
-	 */
 	BITFIELD bForceUpdateAttachmentsInTick:1;
-
-	/** Enables blending in of physics bodies with the bAlwaysFullAnimWeight flag set. */
 	BITFIELD bEnableFullAnimWeightBodies:1;
-
-	/** 
-	 *	If true, when this skeletal mesh overlaps a physics volume, each body of it will be tested against the volume, so only limbs 
-	 *	actually in the volume will be affected. Useful when gibbing bodies.
-	 */
 	BITFIELD bPerBoneVolumeEffects:1;
-
-	/** 
-	 *	If true, use per-bone motion blur on this skeletal mesh.
-	 */
-	BITFIELD bPerBoneMotionBlur:1;
-
-	/** If true, will move the Actors Location to match the root rigid body location when in PHYS_RigidBody. */
 	BITFIELD bSyncActorLocationToRootRigidBody:1;
-
-	/** If TRUE, force usage of raw animation data when animating this skeltal mesh; if FALSE, use compressed data. */
 	BITFIELD bUseRawData:1;
-
-	/** Disable warning when an AnimSequence is not found. FALSE by default. */
 	BITFIELD bDisableWarningWhenAnimNotFound:1;
-
-	/** if set, components that are attached to us have their bOwnerNoSee and bOnlyOwnerSee properties overridden by ours */
 	BITFIELD bOverrideAttachmentOwnerVisibility:1;
-
-	/** if TRUE, when detach, send message to renderthread to delete this component from hit mask list **/
 	BITFIELD bNeedsToDeleteHitMask:1;
-
-	/** pauses animations (doesn't tick them) */
 	BITFIELD bPauseAnims:1;
-
-	/** If true, DistanceFactor for this SkeletalMeshComponent will be added to global chart. */
-	BITFIELD bChartDistanceFactor:1;
-
-	/** If TRUE, line checks will test against the bounding box of this skeletal mesh component and return a hit if there is a collision. */
+	BITFIELD m_bDisableFaceFx:1;  // DISHONORED(layout): 2012 PDB @763
+	BITFIELD m_bSkipUpdate:1;  // DISHONORED(layout): 2012 PDB @763
 	BITFIELD bEnableLineCheckWithBounds:1;
-
-	/** Whether or not we can highlight selected sections - this should really only be done in the editor */
-	BITFIELD bCanHighlightSelectedSections:1;
-
-	/** Whether or not we can highlight selected sections - this should really only be done in the editor */
-	BITFIELD bUpdateMorphWhenParentAnimComponentExists:1;
-
-	/** If bEnableLineCheckWithBounds is TRUE, scale the bounds by this value before doing line check. */
 	FVector LineCheckBoundsScale;
-
-	// CLOTH
-
-	/** 
-	 *	Whether cloth simulation should currently be used on this SkeletalMeshComponent.
-	 *	@see SetEnableClothSimulation
-	 */
-	BITFIELD bEnableClothSimulation:1;
-
-	/** Turns off all cloth collision so not checks are done (improves performance). */
-	BITFIELD bDisableClothCollision:1;
-
-	/** If true, cloth is 'frozen' and no simulation is taking place for it, though it will keep its shape. */
-	BITFIELD bClothFrozen:1;
-
-	/** If true, cloth will automatically have bClothFrozen set when it is not rendered, and have it turned off when it is seen. */
-	BITFIELD bAutoFreezeClothWhenNotRendered:1;
-
-	/** If true, cloth will be awake when a level is started, otherwise it will be instantly put to sleep. */
-	BITFIELD bClothAwakeOnStartup:1;
-
-	/** It true, clamp velocity of cloth particles to be within ClothOwnerVelClampRange of Base velocity. */
-	BITFIELD bClothBaseVelClamp:1;
-
-	/** It true, interp velocity of cloth particles towards Base velocity, using ClothBaseVelClampRange as the interp rate (0..1). */
-	BITFIELD bClothBaseVelInterp:1;
-
-	/** If true, fixed verts of the cloth are attached in the physics to the physics body that this components actor is attached to. */
-	BITFIELD bAttachClothVertsToBaseBody:1;
-
-	/** Whether this cloth is on a non-animating static object. */
-	BITFIELD bIsClothOnStaticObject:1;
-	/** Whether we've updated fixed cloth verts since last attachment. */
-	BITFIELD bUpdatedFixedClothVerts:1;
-
-	/** Whether should do positional box dampening */
-	BITFIELD bClothPositionalDampening:1;
-	/** Whether wind direction is relative to owner rotation or not */
-	BITFIELD bClothWindRelativeToOwner:1;
-
-	/** TRUE if mesh has been recently rendered, FALSE otherwise */
+	BITFIELD m_bDontUpdateKinematic:1;  // DISHONORED(layout): 2012 PDB @776
 	BITFIELD bRecentlyRendered:1;
-
 	BITFIELD bCacheAnimSequenceNodes:1;
-
-	/** TRUE if it needs to rebuild the required bones array for multi pass compose */
 	BITFIELD bUpdateComposeSkeletonPasses:1;
-	/** Flag to remember if cache saved is valid or not to make sure Save/Restore always happens with a pair **/
 	BITFIELD bValidTemporarySavedAnimSets:1;
-
-	/** 
-	 * Set of bones which will be used to find vertices to switch to using instanced influence weights
-	 * instead of the default skeletal mesh weighting.
-	 */
-	TArrayNoInit<FBonePair> InstanceVertexWeightBones;	
-
-	/** LOD specific setup for the skeletal mesh component */
+	TArrayNoInit<FBonePair> InstanceVertexWeightBones;
 	TArrayNoInit<FSkelMeshComponentLODInfo> LODInfo;
-	
-	/** The state of the LocalToWorld pos at the point the cloth was frozen. */
-	FVector FrozenLocalToWorldPos;
-
-	/** The state of the LocalToWorld rotation at the point the cloth was frozen. */
-	FRotator FrozenLocalToWorldRot;
-
-	/** Constant force applied to all vertices in the cloth. */
-	FVector ClothExternalForce;
-
-	/** 'Wind' force applied to cloth. Force on each vertex is based on the dot product between the wind vector and the surface normal. */
-	FVector	ClothWind;
-
-	/** Amount of variance from base's velocity the cloth is allowed. */
-	FVector	ClothBaseVelClampRange;
-
-	/** How much to blend in results from cloth simulation with results from regular skinning. */
-	FLOAT	ClothBlendWeight;
-
-	/** Cloth blend weight, controlled by distance from camera. */
-	FLOAT	ClothDynamicBlendWeight;
-
-	/** Distance factor below which cloth should be fully animated. -1.0 indicates always physics. */
-	FLOAT	ClothBlendMinDistanceFactor;
-
-	/** Distance factor above which cloth should be fully simulated. */
-	FLOAT	ClothBlendMaxDistanceFactor;
-
-	/** Distance from the owner in relative frame (max == pos XYZ, min == neg XYZ) */
-	FVector	MinPosDampRange;
-	FVector	MaxPosDampRange;
-	/** Dampening scale applied to cloth particle velocity when approaching boundaries of *PosDampRange */
-	FVector MinPosDampScale;
-	FVector	MaxPosDampScale;
-
-	/** Pointer to internal simulation object for cloth on this skeletal mesh. */
-	FPointer ClothSim;
-
-	/** Index of physics scene that this components cloth simulation is taking place in. */
-	INT SceneIndex;
-
-	/** Output vertex position data. Filled in by simulation engine when fetching results */
-	TArray<FVector> ClothMeshPosData;
-
-	/** Output vertex normal data. Filled in by simulation engine when fetching results */
-	TArray<FVector> ClothMeshNormalData;
-
-	/** Output index buffer. Filled in by simulation engine when fetching results */
-	TArray<INT> 	ClothMeshIndexData;
-
-	/** Output number of verts in cloth mesh. Filled in by simulation engine when fetching results */
-	INT	NumClothMeshVerts;
-
-	/** Output number of indices in buffer. Filled in by simulation engine when fetching results */
-	INT	NumClothMeshIndices;
-
-
-	/** Cloth parent indices contain the index of the original vertex when a vertex is created during tearing.
-	If it is an original vertex then the parent index is the same as the vertex index. 
-	*/
-	TArray<INT>		ClothMeshParentData;
-
-	/** Number of cloth parent indices provided by the physics SDK */
-	INT				NumClothMeshParentIndices;
-
-
-	/** Replacement Output vertex position data if welding needs to be used. Data is filled into ClothMeshPosData during rendering */
-	TArray<FVector> ClothMeshWeldedPosData;
-
-	/** Replacement Output vertex normal data if welding needs to be used. Data is filled into ClothMeshPosData during rendering */
-	TArray<FVector> ClothMeshWeldedNormalData;
-
-	/** Replacement  Output index buffer. Since tearing is not supported these do not change anyways*/
-	TArray<INT> 	ClothMeshWeldedIndexData;
-
-	INT ClothDirtyBufferFlag;
-
-	/** Enum indicating what type of object this cloth should be considered for rigid body collision. */
-	BYTE ClothRBChannel;
-
-	/** Types of objects that this cloth will collide with. */
-	FRBCollisionChannelContainer ClothRBCollideWithChannels;
-
-	/** How much force to apply to cloth, in relation to the force applied to rigid bodies(zero applies no force to cloth, 1 applies the same) */
-	FLOAT			ClothForceScale;
-
-	/** Amount to scale impulses applied to cloth simulation. */ 
-	FLOAT			ClothImpulseScale;
-
-	/** 
-     * The cloth tear factor for this SkeletalMeshComponent, negative values take the tear factor from the SkeletalMesh.
-     * Note: UpdateClothParams() should be called after modification so that the changes are reflected in the simulation.
-	 */
-	FLOAT			ClothAttachmentTearFactor;
-
-	/** If TRUE, cloth uses compartment in physics scene (usually with fixed timstep for better behaviour) */
-	BITFIELD		bClothUseCompartment:1;
-
-	/** If the distance traveled between frames exceeds this value the vertices will be reset to avoid stretching. */
-	FLOAT MinDistanceForClothReset;
-	FVector LastClothLocation;
-
-	/** Enum indicating what type of object this apex clothing should be considered for rigid body collision. */
-	BYTE		ApexClothingRBChannel;
-
-	/** Types of objects that this clothing will collide with. */
-	FRBCollisionChannelContainer	ApexClothingRBCollideWithChannels;
-
-	/** Align the following byte */
-	SCRIPT_ALIGN;
-
-	/** Enum indicating what channel the apex clothing collision shapes should be placed in */
-	BYTE		ApexClothingCollisionRBChannel;
-
-	/** Align the following bitfields */
-	SCRIPT_ALIGN;
-
-	/** If true, the clothing actor will stop simulating when it is not rendered */
-	BITFIELD						bAutoFreezeApexClothingWhenNotRendered:1;
-
-	/** If TRUE, WindVelocity is applied in the local space of the component, rather than world space. */
-	BITFIELD						bLocalSpaceWind:1;
-
-	/** The Wind Velocity applied to Apex Clothing */
-	FVector							WindVelocity;
-
-	/** Time taken for ApexClothing to reach WindVelocity */
-	FLOAT							WindVelocityBlendTime;
-
-    /** Don't attempt to initialize clothing when component is attached */
-	BITFIELD						bSkipInitClothing:1;
-
-	/** Pointer to the simulated NxSoftBody object. */
-	FPointer						SoftBodySim;
-
-    /** Index of the Novodex scene the soft-body resides in. */
-	INT								SoftBodySceneIndex;
-
-    /** Whether soft-body simulation should currently be used on this SkeletalMeshComponent. */
-	BITFIELD						bEnableSoftBodySimulation:1;
-
-    /** Buffer of the updated tetrahedron-vertex positions. */
-	TArray<FVector>					SoftBodyTetraPosData;
-
-    /** Buffer of the updated tetrahedron-indices. */
-	TArray<INT>						SoftBodyTetraIndexData;
-
-    /** Number of tetrahedron vertices of the soft-body mesh. */
-	INT								NumSoftBodyTetraVerts;
-
-    /** Number of tetrahedron indices of the soft-body mesh (equal to four times the number of tetrahedra). */
-	INT								NumSoftBodyTetraIndices;
-
-	/** Number of tetrahedron indices of the soft-body mesh (equal to four times the number of tetrahedra). */
-	FLOAT							SoftBodyImpulseScale;
-
-	/** If true, the soft-body is 'frozen' and no simulation is taking place for it, though it will keep its shape. */
-	BITFIELD						bSoftBodyFrozen:1;
-
-	/** If true, the soft-body will automatically have bSoftBodyFrozen set when it is not rendered, and have it turned off when it is seen. */
-	BITFIELD						bAutoFreezeSoftBodyWhenNotRendered:1;
-
-	/** If true, the soft-body will be awake when a level is started, otherwise it will be instantly put to sleep. */
-	BITFIELD						bSoftBodyAwakeOnStartup:1;
-
-	/** If TRUE, soft body uses compartment in physics scene (usually with fixed timstep for better behaviour) */
-	BITFIELD						bSoftBodyUseCompartment:1;
-
-	/** Align the following byte */
-	SCRIPT_ALIGN;
-
-    /** Enum indicating what type of object this soft-body should be considered for rigid body collision. */
-	ERBCollisionChannel				SoftBodyRBChannel;
-
-    /** Types of objects that this soft-body will collide with. */
-	FRBCollisionChannelContainer	SoftBodyRBCollideWithChannels;
-
-    /** Pointer to the Novodex plane-actor used when previewing the soft-body in the AnimSet Editor. */
-	FPointer						SoftBodyASVPlane;
-
-
-	/** For rendering physics limits. TODO remove! */
 	UMaterialInterface*					LimitMaterial;
-		
-	/** Root Motion extracted from animation. */
 	FBoneAtom	RootMotionDelta;
-	/** Root Motion velocity */
 	FVector		RootMotionVelocity;
-
-	/** Root Bone offset */
 	FVector		RootBoneTranslation;
-
-	/** Scale applied in physics when RootMotionMode == RMM_Accel */
 	FVector		RootMotionAccelScale;
-
-	/** Determines whether motion should be applied immediately or... (uses ERootMotionMode) */
+	FLOAT RootRotationScale;  // DISHONORED(layout): 2012 PDB @884
+	FRotator AdditionalRootRotation;  // DISHONORED(layout): 2012 PDB @888
 	BYTE	RootMotionMode;
-	/** Previous Root Motion Mode, to catch changes */
 	BYTE	PreviousRMM;
 	BYTE	PendingRMM;
 	BYTE	OldPendingRMM;
+	SCRIPT_ALIGN;
 	INT		bRMMOneFrameDelay;
-	/** Root Motion Rotation mode (uses ERootMotionRotationMode) */
 	BYTE	RootMotionRotationMode;
-	/** SkeletalMeshComponent settings for AnimRotationOnly (EAnimRotationOnly) */
-	BYTE AnimRotationOnly;
-
-	/** How should be blend FaceFX animations? */
 	BYTE	FaceFXBlendMode;
-
+	SCRIPT_ALIGN;
 #if WITH_FACEFX
-	// The FaceFX actor instance associated with the skeletal mesh component.
 	OC3Ent::Face::FxActorInstance* FaceFXActorInstance;
 #else
 	void* FaceFXActorInstance;
 #endif
-
-	/** 
-	 *	The audio component that we are using to play audio for a facial animation. 
-	 *	Assigned in PlayFaceFXAnim and cleared in StopFaceFXAnim.
-	 */
-	UAudioComponent* CachedFaceFXAudioComp;
-
-	/** Array of bone visibilities (containing one of the values in EBoneVisibilityStatus for each bone).  A bone is only visible if it is *exactly* 1 (BVS_Visible) */
-	TArrayNoInit <BYTE>	BoneVisibilityStates;
-
-	/* To cache it rather than re-calculating all the time : have guard for stale data*/
+	class UFaceFXAsset* m_pFaceFXAsset;  // DISHONORED(layout): 2012 PDB @916
+	FLOAT m_fFaceFxTickTime;  // DISHONORED(layout): 2012 PDB @920
+	class UActorComponent* m_pFaceFxAudioHandler;  // DISHONORED(layout): 2012 PDB @924
 	FBoneAtom LocalToWorldBoneAtom;
-
-	/** Editor only. Used for visualizing drawing order in Animset Viewer. If < 1.0,
-	* only the specified fraction of triangles will be rendered
-	*/
 	float ProgressiveDrawingFraction;
-
-	/** Editor only. Used for manually selecting the alternate indices for
-	  * TRISORT_CustomLeftRight sections.
-	  */
 	BYTE CustomSortAlternateIndexMode;
+	FEdgeAnimData* m_pEdgeAnimData;  // DISHONORED(layout): 2012 PDB @968
+	USkeletalMeshComponent::FTickData m_TickData;  // DISHONORED(layout): 2012 PDB @976
 
-	/** Editor only. Used to keep track of the morph targets we've reported 
-	  * the user as having bad LODs (to prevent LOD spam)
-	  */
-	TArrayNoInit <FName>	MorphTargetsQueried;
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC TArray<UAnimNode*> AnimTickArray;
+	DISHONORED_SHIM_STATIC TArray<UAnimNode*> AnimAlwaysTickArray;
+	DISHONORED_SHIM_STATIC TArray<INT> AnimTickRelevancyArray;
+	DISHONORED_SHIM_STATIC TArray<FLOAT> AnimTickWeightsArray;
+	DISHONORED_SHIM_STATIC FIApexClothing* ApexClothing;
+	DISHONORED_SHIM_STATIC FLOAT StreamingDistanceMultiplier;
+	DISHONORED_SHIM_STATIC TArrayNoInit<class UMorphTargetSet*> MorphSets;
+	DISHONORED_SHIM_STATIC TArrayNoInit<FActiveMorph> ActiveMorphs;
+	DISHONORED_SHIM_STATIC TArrayNoInit<FActiveMorph> ActiveCurveMorphs;
+	DISHONORED_SHIM_STATIC TMap<FName, UMorphTarget*> MorphTargetIndexMap;
+	DISHONORED_SHIM_STATIC FLOAT AnimationLODDistanceFactor;
+	DISHONORED_SHIM_STATIC INT AnimationLODFrameRate;
+	DISHONORED_SHIM_STATIC INT ChunkIndexPreview;
+	DISHONORED_SHIM_STATIC INT SectionIndexPreview;
+	DISHONORED_SHIM_STATIC BITFIELD bUseSingleBodyPhysics;
+	DISHONORED_SHIM_STATIC INT SkipRateForTickAnimNodesAndGetBoneAtoms;
+	DISHONORED_SHIM_STATIC BITFIELD bSkipTickAnimNodes;
+	DISHONORED_SHIM_STATIC BITFIELD bSkipGetBoneAtoms;
+	DISHONORED_SHIM_STATIC BITFIELD bInterpolateBoneAtoms;
+	DISHONORED_SHIM_STATIC BITFIELD bHasValidBodies;
+	DISHONORED_SHIM_STATIC BITFIELD bComponentUseFixedSkelBounds;
+	DISHONORED_SHIM_STATIC BITFIELD bUseBoundsFromParentAnimComponent;
+	DISHONORED_SHIM_STATIC BITFIELD bNotifyRootMotionProcessed;
+	DISHONORED_SHIM_STATIC BITFIELD bProcessingRootMotion;
+	DISHONORED_SHIM_STATIC BITFIELD bDisableFaceFX;
+	DISHONORED_SHIM_STATIC BITFIELD bPerBoneMotionBlur;
+	DISHONORED_SHIM_STATIC BITFIELD bChartDistanceFactor;
+	DISHONORED_SHIM_STATIC BITFIELD bCanHighlightSelectedSections;
+	DISHONORED_SHIM_STATIC BITFIELD bUpdateMorphWhenParentAnimComponentExists;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothSimulation;
+	DISHONORED_SHIM_STATIC BITFIELD bDisableClothCollision;
+	DISHONORED_SHIM_STATIC BITFIELD bClothFrozen;
+	DISHONORED_SHIM_STATIC BITFIELD bAutoFreezeClothWhenNotRendered;
+	DISHONORED_SHIM_STATIC BITFIELD bClothAwakeOnStartup;
+	DISHONORED_SHIM_STATIC BITFIELD bClothBaseVelClamp;
+	DISHONORED_SHIM_STATIC BITFIELD bClothBaseVelInterp;
+	DISHONORED_SHIM_STATIC BITFIELD bAttachClothVertsToBaseBody;
+	DISHONORED_SHIM_STATIC BITFIELD bIsClothOnStaticObject;
+	DISHONORED_SHIM_STATIC BITFIELD bUpdatedFixedClothVerts;
+	DISHONORED_SHIM_STATIC BITFIELD bClothPositionalDampening;
+	DISHONORED_SHIM_STATIC BITFIELD bClothWindRelativeToOwner;
+	DISHONORED_SHIM_STATIC FVector FrozenLocalToWorldPos;
+	DISHONORED_SHIM_STATIC FRotator FrozenLocalToWorldRot;
+	DISHONORED_SHIM_STATIC FVector ClothExternalForce;
+	DISHONORED_SHIM_STATIC FVector ClothWind;
+	DISHONORED_SHIM_STATIC FVector ClothBaseVelClampRange;
+	DISHONORED_SHIM_STATIC FLOAT ClothBlendWeight;
+	DISHONORED_SHIM_STATIC FLOAT ClothDynamicBlendWeight;
+	DISHONORED_SHIM_STATIC FLOAT ClothBlendMinDistanceFactor;
+	DISHONORED_SHIM_STATIC FLOAT ClothBlendMaxDistanceFactor;
+	DISHONORED_SHIM_STATIC FVector MinPosDampRange;
+	DISHONORED_SHIM_STATIC FVector MaxPosDampRange;
+	DISHONORED_SHIM_STATIC FVector MinPosDampScale;
+	DISHONORED_SHIM_STATIC FVector MaxPosDampScale;
+	DISHONORED_SHIM_STATIC FPointer ClothSim;
+	DISHONORED_SHIM_STATIC INT SceneIndex;
+	DISHONORED_SHIM_STATIC TArray<FVector> ClothMeshPosData;
+	DISHONORED_SHIM_STATIC TArray<FVector> ClothMeshNormalData;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothMeshIndexData;
+	DISHONORED_SHIM_STATIC INT NumClothMeshVerts;
+	DISHONORED_SHIM_STATIC INT NumClothMeshIndices;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothMeshParentData;
+	DISHONORED_SHIM_STATIC INT NumClothMeshParentIndices;
+	DISHONORED_SHIM_STATIC TArray<FVector> ClothMeshWeldedPosData;
+	DISHONORED_SHIM_STATIC TArray<FVector> ClothMeshWeldedNormalData;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothMeshWeldedIndexData;
+	DISHONORED_SHIM_STATIC INT ClothDirtyBufferFlag;
+	DISHONORED_SHIM_STATIC BYTE ClothRBChannel;
+	DISHONORED_SHIM_STATIC FRBCollisionChannelContainer ClothRBCollideWithChannels;
+	DISHONORED_SHIM_STATIC FLOAT ClothForceScale;
+	DISHONORED_SHIM_STATIC FLOAT ClothImpulseScale;
+	DISHONORED_SHIM_STATIC FLOAT ClothAttachmentTearFactor;
+	DISHONORED_SHIM_STATIC BITFIELD bClothUseCompartment;
+	DISHONORED_SHIM_STATIC FLOAT MinDistanceForClothReset;
+	DISHONORED_SHIM_STATIC FVector LastClothLocation;
+	DISHONORED_SHIM_STATIC BYTE ApexClothingRBChannel;
+	DISHONORED_SHIM_STATIC FRBCollisionChannelContainer ApexClothingRBCollideWithChannels;
+	DISHONORED_SHIM_STATIC BYTE ApexClothingCollisionRBChannel;
+	DISHONORED_SHIM_STATIC BITFIELD bAutoFreezeApexClothingWhenNotRendered;
+	DISHONORED_SHIM_STATIC BITFIELD bLocalSpaceWind;
+	DISHONORED_SHIM_STATIC FVector WindVelocity;
+	DISHONORED_SHIM_STATIC FLOAT WindVelocityBlendTime;
+	DISHONORED_SHIM_STATIC BITFIELD bSkipInitClothing;
+	DISHONORED_SHIM_STATIC FPointer SoftBodySim;
+	DISHONORED_SHIM_STATIC INT SoftBodySceneIndex;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodySimulation;
+	DISHONORED_SHIM_STATIC TArray<FVector> SoftBodyTetraPosData;
+	DISHONORED_SHIM_STATIC TArray<INT> SoftBodyTetraIndexData;
+	DISHONORED_SHIM_STATIC INT NumSoftBodyTetraVerts;
+	DISHONORED_SHIM_STATIC INT NumSoftBodyTetraIndices;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyImpulseScale;
+	DISHONORED_SHIM_STATIC BITFIELD bSoftBodyFrozen;
+	DISHONORED_SHIM_STATIC BITFIELD bAutoFreezeSoftBodyWhenNotRendered;
+	DISHONORED_SHIM_STATIC BITFIELD bSoftBodyAwakeOnStartup;
+	DISHONORED_SHIM_STATIC BITFIELD bSoftBodyUseCompartment;
+	DISHONORED_SHIM_STATIC ERBCollisionChannel SoftBodyRBChannel;
+	DISHONORED_SHIM_STATIC FRBCollisionChannelContainer SoftBodyRBCollideWithChannels;
+	DISHONORED_SHIM_STATIC FPointer SoftBodyASVPlane;
+	DISHONORED_SHIM_STATIC BYTE AnimRotationOnly;
+	DISHONORED_SHIM_STATIC UAudioComponent* CachedFaceFXAudioComp;
+	DISHONORED_SHIM_STATIC TArrayNoInit <BYTE> BoneVisibilityStates;
+	DISHONORED_SHIM_STATIC TArrayNoInit <FName> MorphTargetsQueried;
+	DISHONORED_SHIM_STATIC BITFIELD bUseTickOptimization;
+	DISHONORED_SHIM_STATIC INT TickCount;
+	DISHONORED_SHIM_STATIC INT LastDropRate;
+	DISHONORED_SHIM_STATIC FLOAT LastDropRateChange;
+	DISHONORED_SHIM_STATIC FLOAT AccumulatedDroppedDeltaTime;
+	DISHONORED_SHIM_STATIC FLOAT ComponentDroppedDeltaTime;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// Editor/debugging rendering mode flags.
+
+
+
+
+
+
+#if WITH_EDITORONLY_DATA
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// CLOTH
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/** Align the following byte */
+	SCRIPT_ALIGN;
+
+
+	/** Align the following bitfields */
+	SCRIPT_ALIGN;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/** Align the following byte */
+	SCRIPT_ALIGN;
+
+
+
+
+
+		
+
+
+
+
+
+#if WITH_FACEFX
+#else
+#endif
+
+
+
+
+
+
 
 	/*-----------------------------------------------------------------------------
 		Tick time optimization.
 	  -----------------------------------------------------------------------------*/
 
-	/** Whether to use tick optimization. */
-	BITFIELD	bUseTickOptimization:1;
 
-	/** How many times this component was ticked. */
-	INT			TickCount;
 
-	/** Last drop rate [0-2]. */
-	INT			LastDropRate;
 
-	/** Time when LastDropRate changes, used to avoid 'flickering' when drop rates changes very frequently. */
-	FLOAT		LastDropRateChange;
 
-	/** Accumulated delta time when frames were dropped. */
-	FLOAT		AccumulatedDroppedDeltaTime;
 
-	/** Dropped Delta Time when component skipped ticking for optimizations */
-	FLOAT		ComponentDroppedDeltaTime;
 
 	// USkeletalMeshComponent interface
 	void DeleteAnimTree();
@@ -3784,388 +3555,268 @@ struct FApexClothingAssetInfo
 /**
 * Skeletal mesh.
 */
+// DISHONORED(layout): 2012 PDB, Arkane script structs embedded in USkeletalMesh (528 bytes): FUserBounds m_UserBounds @56 (24),
+// FBodyPart m_MaterialsToBodyParts elements (20), FSkeletalMesh_EditorOnly EditorOnlyInfo @444 (28).
+struct FUserBounds
+{
+	FName m_BoneName;
+	FVector m_Offset;
+	FLOAT m_fRadius;
+};
+
+struct FBodyPart
+{
+	FName m_OwnerBone;
+	FName m_CutBone;
+	BITFIELD m_bShowIfCut:1;
+};
+
+struct FSkeletalMesh_EditorOnly
+{
+	class UPhysicsAsset* BoundsPreviewAsset;
+	FStringNoInit SourceFilePath;
+	FStringNoInit SourceFileTimestamp;
+};
+
+// DISHONORED(layout): 2012 PDB USkeletalMesh is 528 bytes; the data members below follow types.json order (see agents/agentM.md)
 class USkeletalMesh : public UObject
 {
 	DECLARE_CLASS_NOEXPORT(USkeletalMesh, UObject, CLASS_SafeReplace | 0, Engine)
 
+	// DISHONORED(layout): 2012 PDB USkeletalMesh is 528 bytes; data members regenerated in types.json order
+	// (reference declarations reused by name, Arkane members synthesized; see agents/agentM.md)
+	FUserBounds m_UserBounds;  // DISHONORED(layout): 2012 PDB @56
 	FBoxSphereBounds				Bounds;
-	/** List of materials applied to this mesh. */
 	TArray<UMaterialInterface*>		Materials;
-	/** List of clothing assets associated with each corresponding material */	
-	TArray<class UApexClothingAsset *>	ClothingAssets;
-	/** List of Clothing LOD and the mapping of clothing to skeletal mesh section */
-	TArray<FApexClothingAssetInfo>		ClothingLodMap;
-	/** Origin in original coordinate system */
-	FVector 						Origin;				
-	/** Amount to rotate when importing (mostly for yawing) */
-	FRotator						RotOrigin;			
-	/** Reference skeleton */
+	TArray<FBodyPart> m_MaterialsToBodyParts;  // DISHONORED(layout): 2012 PDB @120
+	FVector 						Origin;
+	FRotator						RotOrigin;
+	FMatrix m_OriginTransform;  // DISHONORED(layout): 2012 PDB @160
+	TArray<BYTE> m_EdgeSkeleton;  // DISHONORED(layout): 2012 PDB @224
 	TArray<FMeshBone>				RefSkeleton;
-	/** The max hierarchy depth. */
 	INT								SkeletalDepth;
-
-	/** Map from bone name to bone index. Used to accelerate MatchRefBone. */
 	TMap<FName,INT>					NameIndexMap;
-
-	/** Static LOD models */
 	TIndirectArray<FStaticLODModel>	LODModels;
-	/** Source data. */
-	FSkeletalMeshSourceData			SourceData;
-	/** Reference skeleton precomputed bases. */
-	TArray<FBoneAtom>					RefBasesInvMatrix;	// @todo: wasteful ?! 
-	/** List of bones that should be mirrored. */
+	TArray<FBoneAtom>					RefBasesInvMatrix;	// @todo: wasteful ?!
 	TArray<FBoneMirrorInfo>			SkelMirrorTable;
 	BYTE							SkelMirrorAxis;
 	BYTE							SkelMirrorFlipAxis;
-	
-	/** 
-	 *	Array of named socket locations, set up in editor and used as a shortcut instead of specifying 
-	 *	everything explicitly to AttachComponent in the SkeletalMeshComponent. 
-	 */
+	SCRIPT_ALIGN;
 	TArray<USkeletalMeshSocket*>	Sockets;
-
-	/**
-	 *   Array of bone names that are breakable, used to auto create bone break vertex weight tracks on mesh import
-	 */
 	TArray<FString>					BoneBreakNames;
+	TArray<BYTE>					BoneBreakOptions;
+	TArray<FSkeletalMeshLODInfo>	LODInfo;
+	TArray<FName>					PerPolyCollisionBones;
+	TArray<FName>					AddToParentPerPolyCollisionBone;
+	TArray<struct FPerPolyBoneCollisionData> PerPolyBoneKDOPs;
+	BITFIELD						bPerPolyUseSoftWeighting:1;
+	BITFIELD						bUseSimpleLineCollision:1;
+	BITFIELD						bUseSimpleBoxCollision:1;
+	BITFIELD						bForceCPUSkinning:1;
+	BITFIELD						bUseFullPrecisionUVs:1;
+	BITFIELD bUsePackedPosition:1;  // DISHONORED(layout): 2012 PDB @436
+	UFaceFXAsset*					FaceFXAsset;
+	FSkeletalMesh_EditorOnly EditorOnlyInfo;  // DISHONORED(layout): 2012 PDB @444
+	INT								LODBiasPC;
+	INT								LODBiasPS3;
+	INT								LODBiasXbox360;
+	BITFIELD						bHasVertexColors : 1;
+	TArray<FLOAT>					CachedStreamingTextureFactors;
+	FLOAT							StreamingDistanceMultiplier;
+	FRenderCommandFence				ReleaseResourcesFence;
+	QWORD							SkelMeshRUID;
+	FName m_CachedPathName;  // DISHONORED(layout): 2012 PDB @516
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC TArray<class UApexClothingAsset *> ClothingAssets;
+	DISHONORED_SHIM_STATIC TArray<FApexClothingAssetInfo> ClothingLodMap;
+	DISHONORED_SHIM_STATIC FSkeletalMeshSourceData SourceData;
+	DISHONORED_SHIM_STATIC TArray<FSkeletalMeshOptimizationSettings> OptimizationSettings;
+	DISHONORED_SHIM_STATIC BITFIELD bHasBeenSimplified;
+	DISHONORED_SHIM_STATIC UPhysicsAsset* BoundsPreviewAsset;
+	DISHONORED_SHIM_STATIC TArray<UMorphTargetSet*> PreviewMorphSets;
+	DISHONORED_SHIM_STATIC FStringNoInit SourceFilePath;
+	DISHONORED_SHIM_STATIC FStringNoInit SourceFileTimestamp;
+	DISHONORED_SHIM_STATIC TArray<FPointer> ClothMesh;
+	DISHONORED_SHIM_STATIC TArray<FLOAT> ClothMeshScale;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothToGraphicsVertMap;
+	DISHONORED_SHIM_STATIC TArray<FLOAT> ClothMovementScale;
+	DISHONORED_SHIM_STATIC BYTE ClothMovementScaleGenMode;
+	DISHONORED_SHIM_STATIC FLOAT ClothToAnimMeshMaxDist;
+	DISHONORED_SHIM_STATIC BITFIELD bLimitClothToAnimMesh;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothWeldingMap;
+	DISHONORED_SHIM_STATIC INT ClothWeldingDomain;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothWeldedIndices;
+	DISHONORED_SHIM_STATIC BITFIELD bForceNoWelding;
+	DISHONORED_SHIM_STATIC INT NumFreeClothVerts;
+	DISHONORED_SHIM_STATIC TArray<INT> ClothIndexBuffer;
+	DISHONORED_SHIM_STATIC TArray<FName> ClothBones;
+	DISHONORED_SHIM_STATIC INT ClothHierarchyLevels;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothBendConstraints;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothDamping;
+	DISHONORED_SHIM_STATIC BITFIELD bUseClothCOMDamping;
+	DISHONORED_SHIM_STATIC FLOAT ClothStretchStiffness;
+	DISHONORED_SHIM_STATIC FLOAT ClothBendStiffness;
+	DISHONORED_SHIM_STATIC FLOAT ClothDensity;
+	DISHONORED_SHIM_STATIC FLOAT ClothThickness;
+	DISHONORED_SHIM_STATIC FLOAT ClothDamping;
+	DISHONORED_SHIM_STATIC INT ClothIterations;
+	DISHONORED_SHIM_STATIC INT ClothHierarchicalIterations;
+	DISHONORED_SHIM_STATIC FLOAT ClothFriction;
+	DISHONORED_SHIM_STATIC FLOAT ClothRelativeGridSpacing;
+	DISHONORED_SHIM_STATIC FLOAT ClothPressure;
+	DISHONORED_SHIM_STATIC FLOAT ClothCollisionResponseCoefficient;
+	DISHONORED_SHIM_STATIC FLOAT ClothAttachmentResponseCoefficient;
+	DISHONORED_SHIM_STATIC FLOAT ClothAttachmentTearFactor;
+	DISHONORED_SHIM_STATIC FLOAT ClothSleepLinearVelocity;
+	DISHONORED_SHIM_STATIC FLOAT HardStretchLimitFactor;
+	DISHONORED_SHIM_STATIC BITFIELD bHardStretchLimit;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothOrthoBendConstraints;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothSelfCollision;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothPressure;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothTwoWayCollision;
+	DISHONORED_SHIM_STATIC TArray<FClothSpecialBoneInfo> ClothSpecialBones;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothLineChecks;
+	DISHONORED_SHIM_STATIC BITFIELD bClothMetal;
+	DISHONORED_SHIM_STATIC FLOAT ClothMetalImpulseThreshold;
+	DISHONORED_SHIM_STATIC FLOAT ClothMetalPenetrationDepth;
+	DISHONORED_SHIM_STATIC FLOAT ClothMetalMaxDeformationDistance;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableClothTearing;
+	DISHONORED_SHIM_STATIC FLOAT ClothTearFactor;
+	DISHONORED_SHIM_STATIC INT ClothTearReserve;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableValidBounds;
+	DISHONORED_SHIM_STATIC FVector ValidBoundsMin;
+	DISHONORED_SHIM_STATIC FVector ValidBoundsMax;
+	DISHONORED_SHIM_STATIC TMap<QWORD,INT> ClothTornTriMap;
+	DISHONORED_SHIM_STATIC TArray<INT> SoftBodySurfaceToGraphicsVertMap;
+	DISHONORED_SHIM_STATIC TArray<INT> SoftBodySurfaceIndices;
+	DISHONORED_SHIM_STATIC TArray<FVector> SoftBodyTetraVertsUnscaled;
+	DISHONORED_SHIM_STATIC TArray<INT> SoftBodyTetraIndices;
+	DISHONORED_SHIM_STATIC TArray<FSoftBodyTetraLink> SoftBodyTetraLinks;
+	DISHONORED_SHIM_STATIC TArray<FPointer> CachedSoftBodyMeshes;
+	DISHONORED_SHIM_STATIC TArray<FLOAT> CachedSoftBodyMeshScales;
+	DISHONORED_SHIM_STATIC TArray<FName> SoftBodyBones;
+	DISHONORED_SHIM_STATIC TArray<FSoftBodySpecialBoneInfo> SoftBodySpecialBones;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyVolumeStiffness;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyStretchingStiffness;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyDensity;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyParticleRadius;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyDamping;
+	DISHONORED_SHIM_STATIC INT SoftBodySolverIterations;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyFriction;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyRelativeGridSpacing;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodySleepLinearVelocity;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodySelfCollision;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyAttachmentResponse;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyCollisionResponse;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyDetailLevel;
+	DISHONORED_SHIM_STATIC INT SoftBodySubdivisionLevel;
+	DISHONORED_SHIM_STATIC BITFIELD bSoftBodyIsoSurface;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodyDamping;
+	DISHONORED_SHIM_STATIC BITFIELD bUseSoftBodyCOMDamping;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyAttachmentThreshold;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodyTwoWayCollision;
+	DISHONORED_SHIM_STATIC FLOAT SoftBodyAttachmentTearFactor;
+	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodyLineChecks;
+	DISHONORED_SHIM_STATIC TArray<UBOOL> GraphicsIndexIsCloth;
+	DISHONORED_SHIM_STATIC BITFIELD bUseClothingAssetMaterial;
+
+
+	
+
 
 	/** Array of options that break bones for use in game/editor */
-	/** Match with BoneBreakNames array **/
-	TArray<BYTE>					BoneBreakOptions;
 
-	/** Array of information for each LOD level. */	
-	TArray<FSkeletalMeshLODInfo>	LODInfo;
 
-	/** Optimization settings used to simplify LODs of this mesh. */
-	TArray<FSkeletalMeshOptimizationSettings> OptimizationSettings;
 
-	/** For each bone specified here, all triangles rigidly weighted to that bone are entered into a kDOP, allowing per-poly collision checks. */
-	TArray<FName>					PerPolyCollisionBones;
 	
-	/** For each of these bones, find the parent that is in PerPolyCollisionBones and add its polys to that bone. */
-	TArray<FName>					AddToParentPerPolyCollisionBone;
 
-	/** KDOP tree's used for storing rigid triangle information for a subset of bones. */
-	TArray<struct FPerPolyBoneCollisionData> PerPolyBoneKDOPs;
 
-	/** If true, include triangles that are soft weighted to bones. */
-	BITFIELD						bPerPolyUseSoftWeighting:1;
 
-	/** If true, use PhysicsAsset for line collision checks. If false, use per-poly bone collision (if present). */
-	BITFIELD						bUseSimpleLineCollision:1;
 
-	/** If true, use PhysicsAsset for extent (swept box) collision checks. If false, use per-poly bone collision (if present). */
-	BITFIELD						bUseSimpleBoxCollision:1;
 
-	/** All meshes default to GPU skinning. Set to True to enable CPU skinning */
-	BITFIELD						bForceCPUSkinning:1;
 
-	/** If true, use 32 bit UVs. If false, use 16 bit UVs to save memory */
-	BITFIELD						bUseFullPrecisionUVs:1;
 
-	/** TRUE if this mesh has ever been simplified with Simplygon. */
-	BITFIELD						bHasBeenSimplified:1;
 
-	/** FaceFX animation asset */
-	UFaceFXAsset*					FaceFXAsset;
 
 #if WITH_EDITORONLY_DATA
-	/** Asset used for previewing bounds in AnimSetViewer. Makes setting up LOD distance factors more reliable. */
-	UPhysicsAsset*					BoundsPreviewAsset;
 
-	/** Asset used for previewing morph target animations in AnimSetViewer. Only for editor. */
-	TArray<UMorphTargetSet*>		PreviewMorphSets;
 #endif // WITH_EDITORONLY_DATA
 
-	/** LOD bias to use for PC.						*/
-	INT								LODBiasPC;
-	/** LOD bias to use for PS3.					*/
-	INT								LODBiasPS3;
-	/** LOD bias to use for Xbox 360.				*/
-	INT								LODBiasXbox360;
 
 #if WITH_EDITORONLY_DATA
-	/** Path to the resource used to construct this skeletal mesh */
-	FStringNoInit					SourceFilePath;
 
-	/** Date/Time-stamp of the file from the last import */
-	FStringNoInit					SourceFileTimestamp;
 #endif // WITH_EDITORONLY_DATA
 
 	// CLOTH
 	// Under Development! Not a fully supported feature at the moment.
 
-	/** Cache of ClothMesh objects at different scales. */
-	TArray<FPointer>				ClothMesh;
 
-	/** Scale of each of the ClothMesh objects in cache. This array is same size as ClothMesh. */
-	TArray<FLOAT>					ClothMeshScale;
-
-	/** 
-	 *	Mapping between each vertex in the simulation mesh and the graphics mesh. 
-	 *	This is ordered so that 'free' vertices are first, and then after NumFreeClothVerts they are 'fixed' to the skinned mesh.
-	 */
-	TArray<INT>						ClothToGraphicsVertMap;
 
-	/** Scaling (per vertex) for how far cloth vert can move from its animated position  */
-	TArray<FLOAT>					ClothMovementScale;
 
-	/** Method to use to generate the ClothMovementScale table */
-	BYTE							ClothMovementScaleGenMode;
 
-	/** How far a simulated vertex can move from its animated location */
-	FLOAT							ClothToAnimMeshMaxDist;
 
-	/** If TRUE, simulated verts are limited to a certain distance from */
-	BITFIELD						bLimitClothToAnimMesh:1;
 
-	/**
-	 * Mapping from index of rendered mesh to index of simulated mesh.
-	 * This mapping applies before ClothToGraphicsVertMap which can then operate normally
-	 * The reason for this mapping is to weld several vertices with the same position but different texture coordinates into one
-	 * simulated vertex which makes it possible to run closed meshes for cloth.
-	 */
-	TArray<INT>						ClothWeldingMap;
 
-	/**
-	 * This is the highest value stored in ClothWeldingMap
-	 */
-	INT								ClothWeldingDomain;
 
-	/**
-	 * This will hold the indices to the reduced number of cloth vertices used for cooking the NxClothMesh.
-	 */
-	TArray<INT>						ClothWeldedIndices;
-
-	/**
-	 * This will hold the indices to the reduced number of cloth vertices used for cooking the NxClothMesh.
-	 */
-	BITFIELD						bForceNoWelding:1;
 
-	/** Point in the simulation cloth vertex array where the free verts finish and we start having 'fixed' verts. */
-	INT								NumFreeClothVerts;
 
-	/** Index buffer for simulation cloth. */
-	TArray<INT>						ClothIndexBuffer;
 
-	/** Vertices with any weight to these bones are considered 'cloth'. */
-	TArray<FName>					ClothBones;
 
-	/** If greater than 1, will generate smaller meshes internally, used to improve simulation time and reduce stretching. */
-	INT								ClothHierarchyLevels;
-
-	/** Enable constraints that attempt to minimize curvature or folding of the cloth. */
-	BITFIELD 						bEnableClothBendConstraints:1;
-
-	/** Enable damping forces on the cloth. */
-	BITFIELD 						bEnableClothDamping:1;
-
-	/** Enable center of mass damping of cloth internal velocities.  */
-	BITFIELD						bUseClothCOMDamping:1;
-
-	/** Controls strength of springs that attempts to keep particles in the cloth together. */
-	FLOAT 							ClothStretchStiffness;
-
-	/** 
-	 *	Controls strength of springs that stop the cloth from bending. 
-	 *	bEnableClothBendConstraints must be true to take affect. 
-	 */
-	FLOAT 							ClothBendStiffness;
-
-	/** 
-	 *	This is multiplied by the size of triangles sharing a point to calculate the points mass.
-	 *	This cannot be modified after the cloth has been created.
-	 */
-	FLOAT 							ClothDensity;
-
-	/** How thick the cloth is considered when doing collision detection. */
-	FLOAT 							ClothThickness;
-
-	/** 
-	 *	Controls how much damping force is applied to cloth particles.
-	 *	bEnableClothDamping must be true to take affect.
-	 */
-	FLOAT 							ClothDamping;
-
-	/** Increasing the number of solver iterations improves how accurately the cloth is simulated, but will also slow down simulation. */
-	INT 							ClothIterations;
-
-	/** If ClothHierarchyLevels is more than 0, this number controls the number of iterations of the hierarchical solver. */
-	INT								ClothHierarchicalIterations;
-
-	/** Controls movement of cloth when in contact with other bodies. */
-	FLOAT 							ClothFriction;
-
-	/** 
-	 * Controls the size of the grid cells a cloth is divided into when performing broadphase collision. 
-	 * The cell size is relative to the AABB of the cloth.
-	 */
-	FLOAT							ClothRelativeGridSpacing;
-
-	/** Adjusts the internal "air" pressure of the cloth. Only has affect when bEnableClothPressure. */
-	FLOAT							ClothPressure;
-
-	/** Response coefficient for cloth/rb collision */
-	FLOAT							ClothCollisionResponseCoefficient;
 
-	/** How much an attachment to a rigid body influences the cloth */
-	FLOAT							ClothAttachmentResponseCoefficient;
 
-	/** How much extension an attachment can undergo before it tears/breaks */
-	FLOAT							ClothAttachmentTearFactor;
 
-	/**
-	 * Maximum linear velocity at which cloth can go to sleep.
-	 * If negative, the global default will be used.
-	 */
-	FLOAT							ClothSleepLinearVelocity;
 
-	/** If bHardStretchLimit is TRUE, how much stretch is allowed in the cloth. 1.0 is no stretch (but will cause jitter) */
-	FLOAT							HardStretchLimitFactor;
 
-	/** 
-	 *	If TRUE, limit the total amount of stretch that is allowed in the cloth, based on HardStretchLimitFactor. 
-	 *	Note that bLimitClothToAnimMesh must be TRUE on the SkeletalMeshComponent for this to work.
-	 */
-	BITFIELD						bHardStretchLimit:1;
-
-	/** Enable orthogonal bending resistance to minimize curvature or folding of the cloth. 
-	 *  This technique uses angular springs instead of distance springs as used in 
-	 *  'bEnableClothBendConstraints'. This mode is slower but independent of stretching resistance.
-	 */
-	BITFIELD						bEnableClothOrthoBendConstraints : 1;
-
-	/** Enables cloth self collision. */
-	BITFIELD						bEnableClothSelfCollision : 1;
-
-	/** Enables pressure support. Simulates inflated objects like balloons. */
-	BITFIELD						bEnableClothPressure : 1;
-
-	/** Enables two way collision with rigid-bodies. */
-	BITFIELD						bEnableClothTwoWayCollision : 1;
-
-	/** 
-	 * Vertices with any weight to these bones are considered cloth with special behavoir, currently
-	 * they are attached to the physics asset with fixed or breakable attachments or tearlines.
-	 */
-	TArray<FClothSpecialBoneInfo>	ClothSpecialBones; //ClothBones could probably be eliminated, but that requires and interface change
-
-/** 
- * Enable cloth line/extent/point checks. 
- * Note: line checks are performed with a raycast against the cloth, but point and swept extent checks are performed against the cloth AABB 
- */
-	BITFIELD						bEnableClothLineChecks : 1;
-
-	/**
-	 *  Whether cloth simulation should be wrapped inside a Rigid Body and only be used upon impact
-	 */
-	BITFIELD						bClothMetal : 1;
-
-	/** Threshold for when deformation is allowed */
-	FLOAT							ClothMetalImpulseThreshold;
-	/** Amount by which colliding objects are brought closer to the cloth */
-	FLOAT							ClothMetalPenetrationDepth;
-	/** Maximum deviation of cloth particles from initial position */
-	FLOAT							ClothMetalMaxDeformationDistance;
-
-/** Used to enable cloth tearing. Note, extra vertices/indices must be reserved using ClothTearReserve */
-	BITFIELD						bEnableClothTearing : 1;
-
-/** Stretch factor beyond which a cloth edge/vertex will tear. Should be greater than 1. */
-	FLOAT							ClothTearFactor;
-
-/** Number of vertices/indices to set aside to accomodate new triangles created as a result of tearing */
-	INT								ClothTearReserve;
-
-	/** Any cloth vertex that exceeds its valid bounds will be deleted if bEnableValidBounds is set. */
-	BITFIELD						bEnableValidBounds	:	1;
-	/** The minimum coordinates triplet of the cloth valid bound */
-	FVector							ValidBoundsMin;
-
-	/** The maximum coordinates triplet of the cloth valid bound */
-	FVector							ValidBoundsMax;
-
-/** Map which maps from a set of 3 triangle indices packet in a 64bit to the location in the index buffer,
- *  Used to update indices for torn triangles. Generated in InitClothSim().
- */
-	TMap<QWORD,INT>					ClothTornTriMap;
-
-	/** Mapping between each vertex of the simulated soft-body's surface-mesh and the graphics mesh. */ 	
-	TArray<INT>								SoftBodySurfaceToGraphicsVertMap;
-
-	/** Index buffer of the triangles of the soft-body's surface mesh. */
-	TArray<INT>								SoftBodySurfaceIndices;
-
-	/** Base array of tetrahedron vertex positions, used to generate the scaled versions from. */
-	TArray<FVector>							SoftBodyTetraVertsUnscaled;
-
-	/** Index buffer of the tetrahedra of the soft-body's tetra-mesh. */	
-	TArray<INT>								SoftBodyTetraIndices;
-
-	/** Mapping between each vertex of the surface-mesh and its tetrahedron, with local positions given in barycentric coordinates. */
-	TArray<FSoftBodyTetraLink>				SoftBodyTetraLinks;
-
-	/** Cache of pointers to NxSoftBodyMesh objects at different scales. */
-	TArray<FPointer>						CachedSoftBodyMeshes;
-
-	/** Scale of each of the NxSoftBodyMesh objects in cache. This array is same size as CachedSoftBodyMeshes. */
-	TArray<FLOAT>							CachedSoftBodyMeshScales;
-
-	/** Vertices with any weight to these bones are considered 'soft-body'. */
-	TArray<FName>							SoftBodyBones;
-
-	/** 
-	 * Vertices with any weight to these bones are considered softbody with special behavoir, currently
-	 * they are attached to the physics asset with fixed attachments.
-	 */
-	TArray<FSoftBodySpecialBoneInfo>		SoftBodySpecialBones; //SoftBodyBones could probably be eliminated, but that requires and interface change
-
-	FLOAT							SoftBodyVolumeStiffness;
-	FLOAT							SoftBodyStretchingStiffness;
-	FLOAT							SoftBodyDensity;
-	FLOAT							SoftBodyParticleRadius;
-	FLOAT							SoftBodyDamping;
-	INT								SoftBodySolverIterations;
-	FLOAT							SoftBodyFriction;
-	FLOAT							SoftBodyRelativeGridSpacing;
-	FLOAT							SoftBodySleepLinearVelocity;
-	BITFIELD						bEnableSoftBodySelfCollision : 1;
-	FLOAT							SoftBodyAttachmentResponse;
-	FLOAT							SoftBodyCollisionResponse;
-	FLOAT							SoftBodyDetailLevel;
-	INT								SoftBodySubdivisionLevel;
-	BITFIELD						bSoftBodyIsoSurface : 1;
-	BITFIELD						bEnableSoftBodyDamping : 1;
-	BITFIELD						bUseSoftBodyCOMDamping : 1;
-	FLOAT							SoftBodyAttachmentThreshold;
-	BITFIELD						bEnableSoftBodyTwoWayCollision : 1;
-	FLOAT							SoftBodyAttachmentTearFactor;
-
-	/** Enable soft body line checks. */
-	BITFIELD						bEnableSoftBodyLineChecks : 1;
-	/** If TRUE, this skeletal mesh has vertex colors and we should set up the vertex buffer accordingly. */
-	BITFIELD						bHasVertexColors : 1;
-
-	/** Array to mark a graphics vertex is cloth */
-	TArray<UBOOL>					GraphicsIndexIsCloth;
-
-	/** The cached streaming texture factors.  If the array doesn't have MAX_TEXCOORDS entries in it, the cache is outdated. */
-	TArray<FLOAT>					CachedStreamingTextureFactors;
-
-	/**
-	 * Allows artists to adjust the distance where textures using UV 0 are streamed in/out.
-	 * 1.0 is the default, whereas a higher value increases the streamed-in resolution.
-	 */
-	FLOAT							StreamingDistanceMultiplier;
-
-	/** A fence which is used to keep track of the rendering thread releasing the static mesh resources. */
-	FRenderCommandFence				ReleaseResourcesFence;
-
-	/** Runtime UID for this SkeletalMeshm, used when linking meshes to AnimSets. */
-	QWORD							SkelMeshRUID;
-
-	/** When enabled the material in the APEX clothing asset will override the skeletal mesh material. */
-	BITFIELD						bUseClothingAssetMaterial : 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/**
 	* Initialize the mesh's render resources.

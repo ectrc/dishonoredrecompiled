@@ -291,10 +291,35 @@ struct Pawn_eventCacheAnimNodes_Parms
     {
     }
 };
-class APawn : public AActor, public IInterface_Speaker
+// DISHONORED(layout): 2012 PDB, Arkane interface implemented by APawn (IArkHealthInterface @588, vtbl: dtor,
+// GetUObjectInterfaceArkHealthInterface, ArkGetCurHealth, ArkIsIncapacitated, ArkIsDeadOrDestroyed);
+// UArkHealthInterface is registered in Engine (classes.csv rva 0x1db4c0).
+class UArkHealthInterface : public UInterface
+{
+public:
+    DECLARE_ABSTRACT_CLASS(UArkHealthInterface,UInterface,0|CLASS_Interface,Engine)
+    NO_DEFAULT_CONSTRUCTOR(UArkHealthInterface)
+};
+
+class IArkHealthInterface
+{
+protected:
+	virtual ~IArkHealthInterface() {}
+public:
+	typedef UArkHealthInterface UClassType;
+	virtual UObject* GetUObjectInterfaceArkHealthInterface()=0;
+	virtual INT ArkGetCurHealth() const=0;
+	virtual UBOOL ArkIsIncapacitated() const=0;
+	virtual UBOOL ArkIsDeadOrDestroyed() const=0;
+};
+
+// DISHONORED(layout): 2012 PDB APawn bases: AActor @0 (592), IInterface_NavigationHandle @584, IArkHealthInterface @588
+// (both interface vptrs sit in AActor's tail padding); the reference's IInterface_Speaker base is gone.
+class APawn : public AActor, public IInterface_NavigationHandle, public IArkHealthInterface
 {
 public:
     //## BEGIN PROPS Pawn
+    // DISHONORED(layout): 2012 PDB size 1184; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bScriptTickSpecial, bNoWeaponFiring, bPathfindsAsVehicle, bPrevBypassSimulatedClientPhysics, bUsedByMatinee, bFastAttachedMove, FlashCount, FiringMode, NonPreferredVehiclePathMultiplier, PathConstraintList, PathGoalList, SerpentineDir, SerpentineDist, SerpentineTime, KismetDeathDelayTime, ControllerClass, PlayerReplicationInfo, OnLadder, DrivenVehicle, VehicleCheckRadius, InventoryManagerClass, InvManager, Weapon, FlashLocation, LastFiringFlashLocation, ShotCount, FacialAudioComp)
     FLOAT MaxStepHeight;
     FLOAT MaxJumpHeight;
     FLOAT WalkableFloorZ;
@@ -305,7 +330,6 @@ public:
     FLOAT NetRelevancyTime;
     class APlayerController* LastRealViewer;
     class AActor* LastViewer;
-    BITFIELD bScriptTickSpecial:1;
     BITFIELD bUpAndOut:1;
     BITFIELD bIsWalking:1;
     BITFIELD bWantsToCrouch:1;
@@ -328,6 +352,7 @@ public:
     BITFIELD bSimulateGravity:1;
     BITFIELD bIgnoreForces:1;
     BITFIELD bCanWalkOffLedges:1;
+    BITFIELD m_bCanRunOffLedges:1;  // DISHONORED(layout): 2012 PDB @642
     BITFIELD bCanBeBaseForPawns:1;
     BITFIELD bSimGravityDisabled:1;
     BITFIELD bDirectHitWall:1;
@@ -349,11 +374,8 @@ public:
     BITFIELD bRollToDesired:1;
     BITFIELD bStationary:1;
     BITFIELD bCachedRelevant:1;
-    BITFIELD bNoWeaponFiring:1;
     BITFIELD bModifyReachSpecCost:1;
     BITFIELD bModifyNavPointDest:1;
-    BITFIELD bPathfindsAsVehicle:1;
-    BITFIELD bPrevBypassSimulatedClientPhysics:1;
     BITFIELD bRunPhysicsWithNoController:1;
     BITFIELD bForceMaxAccel:1;
     BITFIELD bLimitFallAccel:1;
@@ -367,23 +389,20 @@ private:
     BITFIELD bUnlockWhenReached:1;
 public:
     BITFIELD bNeedsBaseTickedFirst:1;
-    BITFIELD bUsedByMatinee:1;
     BITFIELD bRootMotionFromInterpCurve:1;
     BITFIELD bDebugShowCameraLocation:1;
-    BITFIELD bFastAttachedMove:1;
-    SCRIPT_ALIGN;
+    BITFIELD m_bFellOutOfWorld:1;  // DISHONORED(layout): 2012 PDB @647
+    BITFIELD m_bThrownWhileBlink:1;  // DISHONORED(layout): 2012 PDB @647
     BYTE WalkingPhysics;
     BYTE PathSearchType;
     BYTE RemoteViewPitch;
-    BYTE FlashCount;
-    BYTE FiringMode;
+    SCRIPT_ALIGN;
     FLOAT UncrouchTime;
     FLOAT CrouchHeight;
     FLOAT CrouchRadius;
     INT FullHeight;
-    FLOAT NonPreferredVehiclePathMultiplier;
-    class UPathConstraint* PathConstraintList;
-    class UPathGoalEvaluator* PathGoalList;
+    class UClass* m_NavigationHandleClass;  // DISHONORED(layout): 2012 PDB @668
+    class UNavigationHandle* m_NavigationHandle;  // DISHONORED(layout): 2012 PDB @672
     FLOAT DesiredSpeed;
     FLOAT MaxDesiredSpeed;
     FLOAT HearingThreshold;
@@ -401,9 +420,6 @@ public:
     FLOAT LastValidAnchorTime;
     FLOAT DestinationOffset;
     FLOAT NextPathRadius;
-    FVector SerpentineDir;
-    FLOAT SerpentineDist;
-    FLOAT SerpentineTime;
     FLOAT SpawnTime;
     INT MaxPitchLimit;
     FLOAT GroundSpeed;
@@ -430,7 +446,6 @@ public:
     FLOAT BreathTime;
     FLOAT UnderWaterTime;
     FLOAT LastPainTime;
-    FLOAT KismetDeathDelayTime;
     FVector RMVelocity;
     FVector noise1spot;
     FLOAT noise1time;
@@ -443,9 +458,6 @@ public:
     FLOAT SoundDampening;
     FLOAT DamageScaling;
     FStringNoInit MenuName;
-    class UClass* ControllerClass;
-    class APlayerReplicationInfo* PlayerReplicationInfo;
-    class ALadderVolume* OnLadder;
     FName LandMovementState;
     FName WaterMovementState;
     class APlayerStart* LastStartSpot;
@@ -455,28 +467,20 @@ public:
     FVector TearOffMomentum;
     class USkeletalMeshComponent* Mesh;
     class UCylinderComponent* CylinderComponent;
+    class UArkComponentContainer* m_ComponentContainer;  // DISHONORED(layout): 2012 PDB @996
     FLOAT RBPushRadius;
     FLOAT RBPushStrength;
-    class AVehicle* DrivenVehicle;
     FLOAT AlwaysRelevantDistanceSquared;
-    FLOAT VehicleCheckRadius;
     class AController* LastHitBy;
     FLOAT ViewPitchMin;
     FLOAT ViewPitchMax;
     INT AllowedYawError;
     FRotator DesiredRotation;
-    class UClass* InventoryManagerClass;
-    class AInventoryManager* InvManager;
-    class AWeapon* Weapon;
-    FVector FlashLocation;
-    FVector LastFiringFlashLocation;
-    INT ShotCount;
     class UPrimitiveComponent* PreRagdollCollisionComponent;
     class URB_BodyInstance* PhysicsPushBody;
     INT FailedLandingCount;
     TArrayNoInit<class UAnimNodeSlot*> SlotNodes;
     TArrayNoInit<class UInterpGroup*> InterpGroupList;
-    class UAudioComponent* FacialAudioComp;
     class UMaterialInstanceConstant* MIC_PawnMat;
     class UMaterialInstanceConstant* MIC_PawnHair;
     TArrayNoInit<struct FScalarParameterInterpStruct> ScalarParameterInterpArray;
@@ -484,7 +488,41 @@ public:
     FLOAT RootMotionInterpRate;
     FLOAT RootMotionInterpCurrentTime;
     FVector RootMotionInterpCurveLastValue;
+    TArrayNoInit<INT> m_BackedUpPhysicsBoneIndexes;  // DISHONORED(layout): 2012 PDB @1144
+    TArrayNoInit<FBoneAtom> m_BackedUpPhysicsBoneAtoms;  // DISHONORED(layout): 2012 PDB @1156
+    INT m_BackedUpPhysicsPreviousSlot;  // DISHONORED(layout): 2012 PDB @1168
+    FLOAT m_fBackedUpPhysicsDeltaTime;  // DISHONORED(layout): 2012 PDB @1172
     //## END PROPS Pawn
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bScriptTickSpecial;
+    DISHONORED_SHIM_STATIC BITFIELD bNoWeaponFiring;
+    DISHONORED_SHIM_STATIC BITFIELD bPathfindsAsVehicle;
+    DISHONORED_SHIM_STATIC BITFIELD bPrevBypassSimulatedClientPhysics;
+    DISHONORED_SHIM_STATIC BITFIELD bUsedByMatinee;
+    DISHONORED_SHIM_STATIC BITFIELD bFastAttachedMove;
+    DISHONORED_SHIM_STATIC BYTE FlashCount;
+    DISHONORED_SHIM_STATIC BYTE FiringMode;
+    DISHONORED_SHIM_STATIC FLOAT NonPreferredVehiclePathMultiplier;
+    DISHONORED_SHIM_STATIC class UPathConstraint* PathConstraintList;
+    DISHONORED_SHIM_STATIC class UPathGoalEvaluator* PathGoalList;
+    DISHONORED_SHIM_STATIC FVector SerpentineDir;
+    DISHONORED_SHIM_STATIC FLOAT SerpentineDist;
+    DISHONORED_SHIM_STATIC FLOAT SerpentineTime;
+    DISHONORED_SHIM_STATIC FLOAT KismetDeathDelayTime;
+    DISHONORED_SHIM_STATIC class UClass* ControllerClass;
+    DISHONORED_SHIM_STATIC class APlayerReplicationInfo* PlayerReplicationInfo;
+    DISHONORED_SHIM_STATIC class ALadderVolume* OnLadder;
+    DISHONORED_SHIM_STATIC class AVehicle* DrivenVehicle;
+    DISHONORED_SHIM_STATIC FLOAT VehicleCheckRadius;
+    DISHONORED_SHIM_STATIC class UClass* InventoryManagerClass;
+    DISHONORED_SHIM_STATIC class AInventoryManager* InvManager;
+    DISHONORED_SHIM_STATIC class AWeapon* Weapon;
+    DISHONORED_SHIM_STATIC FVector FlashLocation;
+    DISHONORED_SHIM_STATIC FVector LastFiringFlashLocation;
+    DISHONORED_SHIM_STATIC INT ShotCount;
+    DISHONORED_SHIM_STATIC class UAudioComponent* FacialAudioComp;
 
     UBOOL PickWallAdjust(FVector WallHitNormal,class AActor* HitActor);
     UBOOL SetDesiredRotation(FRotator TargetDesiredRotation,UBOOL InLockDesiredRotation=FALSE,UBOOL InUnlockWhenReached=FALSE,FLOAT InterpolationTime=-1.000000,UBOOL bResetRotationRate=TRUE);
@@ -1043,6 +1081,21 @@ public:
     static const TCHAR* StaticConfigName() {return TEXT("Game");}
 
     virtual UObject* GetUObjectInterfaceInterface_Speaker(){return this;}
+    // DISHONORED(layout): interface bases of the 2012 APawn (see the class declaration). APawn::GetEdgeZAdjust (rva 0x1e0580),
+    // SetupPathfindingParams (rva 0x1e05d0) and ArkGetCurHealth (rva 0x18db60) exist in the 2012 exe and are to be ported;
+    // the other two IArkHealthInterface functions have no APawn symbol (COMDAT-folded), so they return FALSE here.
+    virtual UObject* GetUObjectInterfaceInterface_NavigationHandle(){return this;}
+    void eventNotifyPathChanged()
+    {
+        ProcessEvent(FindFunctionChecked(ENGINE_NotifyPathChanged),NULL);
+    }
+    virtual FVector GetEdgeZAdjust(FNavMeshEdgeBase* Edge) { return FVector(0.f,0.f,0.f); }  // DISHONORED: stub, port rva 0x1e0580
+    virtual void SetupPathfindingParams( FNavMeshPathParams& out_ParamCache ) {}  // DISHONORED: stub, port rva 0x1e05d0
+    virtual void InitForPathfinding() {}
+    virtual UObject* GetUObjectInterfaceArkHealthInterface(){return this;}
+    virtual INT ArkGetCurHealth() const { return 0; }  // DISHONORED: stub, port rva 0x18db60
+    virtual UBOOL ArkIsIncapacitated() const { return FALSE; }
+    virtual UBOOL ArkIsDeadOrDestroyed() const { return FALSE; }
 	// declare type for node evaluation functions
 	typedef FLOAT ( *NodeEvaluator ) (ANavigationPoint*, APawn*, FLOAT);
 

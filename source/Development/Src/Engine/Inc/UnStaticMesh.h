@@ -1291,6 +1291,7 @@ inline FArchive& operator<<( FArchive& Ar, FStaticMeshOptimizationSettings& Sett
 //	UStaticMesh
 //
 
+// DISHONORED(layout): 2012 PDB UStaticMesh is 312 bytes; member list follows types.json (see agents/agentM.md)
 class UStaticMesh : public UObject
 {
 	DECLARE_CLASS_INTRINSIC(UStaticMesh,UObject,CLASS_SafeReplace|CLASS_CollapseCategories|0,Engine);
@@ -1309,21 +1310,16 @@ public:
 	INT										LightMapResolution;
 	INT										LightMapCoordinateIndex;
 
-	/** TRUE if this mesh been simplified. */
-	UBOOL									bHasBeenSimplified;
-	/** TRUE if the mesh is a proxy. */
-	UBOOL									bIsMeshProxy;
 
-	/** Incremented any time a change in the static mesh causes vertices to change position, such as a reimport */
-	INT										VertexPositionVersionNumber;
 
 	// Collision data.
 
-//	typedef TkDOPTree<class FStaticMeshCollisionDataProvider,WORD>	kDOPTreeType;
-	typedef TkDOPTreeCompact<class FStaticMeshCollisionDataProvider,WORD>	kDOPTreeType;
+	// DISHONORED(layout): 2012 PDB UStaticMesh::kDOPTree @112 is TkDOPTree<FStaticMeshCollisionDataProvider,WORD> (24 bytes), not the reference's TkDOPTreeCompact (68)
+	typedef TkDOPTree<class FStaticMeshCollisionDataProvider,WORD>	kDOPTreeType;
 	typedef TkDOPTree<class FStaticMeshCollisionDataProvider,WORD>			LegacykDOPTreeType;
 	kDOPTreeType							kDOPTree;
-	LegacykDOPTreeType*						LegacykDOPTree;  // this is only used temporarily during the loading process, usually NULL
+	// DISHONORED(layout): 2012 PDB has no LegacykDOPTree (BodySetup follows kDOPTree @136); shim so UnStaticMesh.cpp's legacy path compiles
+	DISHONORED_SHIM_STATIC LegacykDOPTreeType*	LegacykDOPTree;
 
 	URB_BodySetup*							BodySetup;
 	FBoxSphereBounds						Bounds;
@@ -1342,8 +1338,6 @@ public:
 											UseFullPrecisionUVs;
 	UBOOL									bUsedForInstancing;
 	
-	/** Hint of the expected instance count for consoles to preallocate the duplicated index buffer */
-	INT										ConsolePreallocateInstanceCount;
 
 	/** True if mesh should use a less-conservative method of mip LOD texture factor computation.
 	    requires mesh to be resaved to take effect as algorithm is applied on save. */
@@ -1369,15 +1363,8 @@ public:
 	 **/
 	UBOOL									bCanBecomeDynamic;
 
-	/** If true during a rebuild, we will remove degenerate triangles.  Otherwise they will be kept */
-	UBOOL									bRemoveDegenerates;
 
-	/** If true, strips unwanted complex collision data aka kDOP tree when cooking for consoles. 
-		On the Playstation 3 data of this mesh will be stored in video memory. */
-	UBOOL									bStripkDOPForConsole;
 	
-	/** If true, InstancedStaticMeshComponents will build static lighting for each LOD rather than all LODs sharing the top level LOD's lightmaps */
-	UBOOL									bPerLODStaticLightingForInstancing;
 
 
 	/**
@@ -1401,22 +1388,33 @@ public:
 	 */
 	FString HighResSourceMeshName;
 
-#if WITH_EDITORONLY_DATA
-	/** Default settings when using this mesh for instanced foliage */
-	class UInstancedFoliageSettings* FoliageDefaultSettings;
-
+	// DISHONORED(layout): 2012 PDB keeps SourceFilePath @260 / SourceFileTimestamp @272 (WITH_EDITORONLY_DATA is 1 in the shipping build)
 	/** Path to the resource used to construct this static mesh */
 	FString SourceFilePath;
 
 	/** Date/Time-stamp of the file from the last import */
 	FString SourceFileTimestamp;
-#endif // WITH_EDITORONLY_DATA
 
 	/** For simplified meshes, this is the CRC of the high res mesh we were originally duplicated from. */
 	DWORD HighResSourceMeshCRC;
 
 	/** Unique ID for tracking/caching this mesh during distributed lighting */
 	FGuid LightingGuid;
+	UBOOL m_bTransparentForVisionChecks;  // DISHONORED(layout): 2012 PDB @304
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC BITFIELD bHasBeenSimplified;
+	DISHONORED_SHIM_STATIC BITFIELD bIsMeshProxy;
+	DISHONORED_SHIM_STATIC INT VertexPositionVersionNumber;
+	DISHONORED_SHIM_STATIC INT ConsolePreallocateInstanceCount;
+	DISHONORED_SHIM_STATIC BITFIELD bRemoveDegenerates;
+	DISHONORED_SHIM_STATIC BITFIELD bStripkDOPForConsole;
+	DISHONORED_SHIM_STATIC BITFIELD bPerLODStaticLightingForInstancing;
+	DISHONORED_SHIM_STATIC class UInstancedFoliageSettings* FoliageDefaultSettings;
+	DISHONORED_SHIM_STATIC FStaticMeshSourceData SourceData;
+	DISHONORED_SHIM_STATIC TArray<FStaticMeshOptimizationSettings> OptimizationSettings;
 
 	// UObject interface.
 
@@ -1692,11 +1690,7 @@ protected:
 
 private:
 
-	/** The original raw triangles and generated render data. */
-	FStaticMeshSourceData SourceData;
 
-	/** Optimization settings used to simplify mesh LODs. */
-	TArray<FStaticMeshOptimizationSettings> OptimizationSettings;
 };
 
 /** Cached vertex information at the time the mesh was painted. */
@@ -1835,6 +1829,7 @@ private:
 //	UStaticMeshComponent
 //
 
+// DISHONORED(layout): 2012 PDB UStaticMeshComponent is 576 bytes; member list follows types.json (see agents/agentM.md)
 class UStaticMeshComponent : public UMeshComponent
 {
 	DECLARE_CLASS_NOEXPORT(UStaticMeshComponent,UMeshComponent,0,Engine);
@@ -1855,6 +1850,7 @@ public:
 	 *	to avoid them using distance-based streaming.
 	 */
 	BITFIELD bIgnoreInstanceForTextureStreaming:1;
+	BITFIELD bDrawAfterFog:1;  // DISHONORED(layout): 2012 PDB @484 bit 1
 
 	/** Deprecated. Replaced by 'bOverrideLightMapRes'. */
 	BITFIELD bOverrideLightMapResolution_DEPRECATED:1;
@@ -1869,12 +1865,6 @@ public:
 
 	FLOAT OverriddenLODMaxRange;
 
-	/**
-	 * Allows adjusting the desired streaming distance of streaming textures that uses UV 0.
-	 * 1.0 is the default, whereas a higher value makes the textures stream in sooner from far away.
-	 * A lower value (0.0-1.0) makes the textures stream in later (you have to be closer).
-	 */
-	FLOAT StreamingDistanceMultiplier;
 
 	/** Subdivision step size for static vertex lighting.				*/
 	INT	SubDivisionStepSize;
@@ -1882,16 +1872,12 @@ public:
 	BITFIELD bUseSubDivisions:1;
 	/** if True then decals will always use the fast path and will be treated as static wrt this mesh */
 	BITFIELD bForceStaticDecals:1;
-	/** Whether or not we can highlight selected sections - this should really only be done in the editor */
-	BITFIELD bCanHighlightSelectedSections:1;
 
 	/** Whether or not to use the optional simple lightmap modification texture */
 	BITFIELD bUseSimpleLightmapModifications:1;
 
-#if WITH_EDITORONLY_DATA
 	/** The texture to use when modifying the simple lightmap texture */
 	UTexture* SimpleLightmapModificationTexture;
-#endif // WITH_EDITORONLY_DATA
 
 	enum ELightmapModificationFunction
 	{
@@ -1911,11 +1897,16 @@ public:
 	/** Per-LOD instance information */
 	TArray<FStaticMeshComponentLODInfo> LODData;
 
-	/** Incremented any time the position of vertices from the source mesh change, used to determine if an update from the source static mesh is required */
-	INT VertexPositionVersionNumber;
 
 	/** The Lightmass settings for this object. */
 	FLightmassPrimitiveSettings	LightmassSettings;
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC FLOAT StreamingDistanceMultiplier;
+	DISHONORED_SHIM_STATIC BITFIELD bCanHighlightSelectedSections;
+	DISHONORED_SHIM_STATIC INT VertexPositionVersionNumber;
 
 	// UStaticMeshComponent interface
 

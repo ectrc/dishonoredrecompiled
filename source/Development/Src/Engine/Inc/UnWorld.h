@@ -15,7 +15,26 @@ typedef TOctree<class ACrowdAttractor*, struct FCrowdAttractorOctreeSemantics> F
 /**
  * UWorld is the global world abstraction containing several levels.
  */
-class UWorld : public UObject, public FNetworkNotify
+// DISHONORED(layout): 2012 PDB UWorld is 716 bytes; member list follows types.json (see agents/agentM.md)
+// DISHONORED(layout): 2012 PDB UWorld (716 bytes) has the single base UObject (Scene @56): no FNetworkNotify vptr, and no
+// UWorld::Notify* function exists in the PDB (UNetDriver itself is not in the shipping exe). The Notify* members below
+// stay as plain functions and the reference's `NetDriver->Notify = this` / `InitListen(this, ...)` sites go through the
+// storage-less adapter FDisWorldNetworkNotify (conversion operator at the end of the class) until the networking code is ported.
+class UWorld;
+struct FDisWorldNetworkNotify : public FNetworkNotify
+{
+	UWorld* World;
+	virtual EAcceptConnection NotifyAcceptingConnection();
+	virtual void NotifyAcceptedConnection( class UNetConnection* Connection );
+	virtual UBOOL NotifyAcceptingChannel( class UChannel* Channel );
+	virtual class UWorld* NotifyGetWorld() { return World; }
+	virtual void NotifyControlMessage(UNetConnection* Connection, BYTE MessageType, class FInBunch& Bunch);
+	virtual UBOOL NotifySendingFile( UNetConnection* Connection, FGuid GUID );
+	virtual void NotifyReceivedFile( UNetConnection* Connection, INT PackageIndex, const TCHAR* Error, UBOOL Skipped );
+	virtual void NotifyProgress( EProgressMessageType MessageType, const FString& Title, const FString& Message );
+};
+
+class UWorld : public UObject
 {
 	DECLARE_CLASS_INTRINSIC(UWorld,UObject,0,Engine)
 	NO_DEFAULT_CONSTRUCTOR(UWorld)
@@ -40,8 +59,6 @@ class UWorld : public UObject, public FNetworkNotify
 	/** Saved editor viewport states - one for each view type. Indexed using ELevelViewportType above.							*/
 	FLevelViewportInfo							EditorViews[4];
 
-	/** Reference to last save game info used for serialization. The only time this is non NULL is during UEngine::SaveGame(..) */
-	class UDEPRECATED_SaveGameSummary*			SaveGameSummary_DEPRECATED;
 
 private:
 	/** The unnamed game connection(s) for client/server communication */
@@ -50,13 +67,7 @@ private:
 public:
 	FURL										URL;
 
-	/** Fake NetDriver for capturing network traffic to record demos															*/
-	class UDemoRecDriver*						DemoRecDriver;
-	/** Holds client connections to client peers. Used for peer-peer voice traffic and host migration */
-	class UNetDriver*							PeerNetDriver;
 #if WITH_STEAMWORKS_SOCKETS
-	/** When the server is using steam sockets, this net driver redirects IP connections to the steam sockets URL */
-	class UNetDriver*							RedirectNetDriver;
 #endif
 
 	/** Octree used for collision.																								*/
@@ -102,20 +113,17 @@ public:
 	/** Main physics scene, containing static world geometry. */
 	FRBPhysScene*								RBPhysScene;
 
-#if WITH_NOVODEX
 	/** Renderer object used by Novodex to draw debug information in the world.													*/
 	class FNxDebugRenderer*						DebugRenderer;
-#endif // WITH_NOVODEX
 
 	/** Pool of URB_BodyInstance objects to use at runtime. */
 	TArray<URB_BodyInstance*>					BodyInstancePool;
 	/** Pool of URB_ConstraintInstance objects to use at runtime. */
 	TArray<URB_ConstraintInstance*>				ConstraintInstancePool;
-	/** Pool of UAnimTree objects to use at runtime. */
-	TArray<class UAnimTree*>					AnimTreePool;
 
 	/** Time in seconds (game time so we respect time dilation) since the last time we purged references to pending kill objects */
 	FLOAT										TimeSinceLastPendingKillPurge;
+	UBOOL										PurgeTriggered;  // DISHONORED(layout): 2012 PDB @388
 
 	/** Whether a full purge has been triggered, so that the next GarbageCollect will do a full purge no matter what.			*/
 	UBOOL										FullPurgeTriggered;
@@ -157,19 +165,29 @@ public:
 	/** Are crowds currently disabled.																							*/
 	UBOOL										bDisableCrowds;
 
-#if USE_MASSIVE_LOD
 	/** True if any massive LOD has been used in the world																		*/
 	UBOOL										bEditorHasMassiveLOD;
-#endif
 
 	/** Toggles allowing decal components to be attached to the world/levels */
 	UBOOL bAllowDecalAttach;
+	class UAudioSystem*							m_pAudioSystem;  // DISHONORED(layout): 2012 PDB @688
+	TArray<AActor*>								m_ActorsThatCareAboutOtherActors;  // DISHONORED(layout): 2012 PDB @692
+	AWorldInfo*									m_pWorldInfo;  // DISHONORED(layout): 2012 PDB @704
+	AWorldInfo*									m_pWorldInfoCheckStreamingPersistent;  // DISHONORED(layout): 2012 PDB @708
+	class FArkComponentManager*					m_pComponentManager;  // DISHONORED(layout): 2012 PDB @712
 
-	/** True we want to execute a call to UpdateCulledTriggerVolumes during Tick */
-	UBOOL										bDoDelayedUpdateCullDistanceVolumes;
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC class UDEPRECATED_SaveGameSummary* SaveGameSummary_DEPRECATED;
+	DISHONORED_SHIM_STATIC class UDemoRecDriver* DemoRecDriver;
+	DISHONORED_SHIM_STATIC class UNetDriver* PeerNetDriver;
+	DISHONORED_SHIM_STATIC class UNetDriver* RedirectNetDriver;
+	DISHONORED_SHIM_STATIC TArray<class UAnimTree*> AnimTreePool;
+	DISHONORED_SHIM_STATIC BITFIELD bDoDelayedUpdateCullDistanceVolumes;
+	DISHONORED_SHIM_STATIC TArray<FObserverInterface*> Observers;
 
-	/** Array of observers within this world */
-	TArray<FObserverInterface*>					Observers;
+
 
 	/**
 	 * UWorld constructor called at game startup and when creating a new world in the Editor.
@@ -773,6 +791,9 @@ public:
 	void NotifyReceivedFile( UNetConnection* Connection, INT PackageIndex, const TCHAR* Error, UBOOL Skipped );
 	UBOOL NotifySendingFile( UNetConnection* Connection, FGuid GUID );
 	void NotifyProgress( EProgressMessageType MessageType, const FString& Title, const FString& Message );
+	// DISHONORED(layout): see FDisWorldNetworkNotify above; storage-less, one adapter per process (there is one GWorld)
+	DISHONORED_SHIM_STATIC FDisWorldNetworkNotify NetworkNotifyShim;
+	operator FNetworkNotify*() { NetworkNotifyShim.World = this; return &NetworkNotifyShim; }
 	/**
 	 * Determine if peer connections are currently being accepted
 	 *
@@ -891,6 +912,15 @@ public:
 	 */
 	void MountPersistentFaceFXAnimSetOnActor(AActor* InActor);
 };
+
+// DISHONORED(layout): FDisWorldNetworkNotify forwards to the world's plain Notify* members (UWorld is not an FNetworkNotify in the 2012 PDB)
+inline EAcceptConnection FDisWorldNetworkNotify::NotifyAcceptingConnection() { return World->NotifyAcceptingConnection(); }
+inline void FDisWorldNetworkNotify::NotifyAcceptedConnection( class UNetConnection* Connection ) { World->NotifyAcceptedConnection(Connection); }
+inline UBOOL FDisWorldNetworkNotify::NotifyAcceptingChannel( class UChannel* Channel ) { return World->NotifyAcceptingChannel(Channel); }
+inline void FDisWorldNetworkNotify::NotifyControlMessage(UNetConnection* Connection, BYTE MessageType, class FInBunch& Bunch) { World->NotifyControlMessage(Connection, MessageType, Bunch); }
+inline UBOOL FDisWorldNetworkNotify::NotifySendingFile( UNetConnection* Connection, FGuid GUID ) { return World->NotifySendingFile(Connection, GUID); }
+inline void FDisWorldNetworkNotify::NotifyReceivedFile( UNetConnection* Connection, INT PackageIndex, const TCHAR* Error, UBOOL Skipped ) { World->NotifyReceivedFile(Connection, PackageIndex, Error, Skipped); }
+inline void FDisWorldNetworkNotify::NotifyProgress( EProgressMessageType MessageType, const FString& Title, const FString& Message ) { World->NotifyProgress(MessageType, Title, Message); }
 
 /** Global UWorld pointer */
 extern UWorld* GWorld;

@@ -1371,21 +1371,20 @@ struct FExpressionInput
 	/** Material expression that this input is connected to, or NULL if not connected. */
 	class UMaterialExpression*	Expression;
 
-	/** Index into Expression's outputs array that this input is connected to. */
-	INT							OutputIndex;
-
-	/** 
-	 * Optional name of the input.  
-	 * Note that this is the only member which is not derived from the output currently connected. 
-	 */
-	FString						InputName;
-
+	// DISHONORED(layout): 2012 PDB FExpressionInput is 28 bytes: Expression @0, Mask @4 .. MaskA @20, GCC64Padding @24;
+	// the reference's OutputIndex / InputName do not exist (they are shims below).
 	UBOOL						Mask,
 								MaskR,
 								MaskG,
 								MaskB,
 								MaskA;
 	DWORD						GCC64Padding; // @todo 64: if the C++ didn't mismirror this structure, we might not need this
+
+	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+	DISHONORED_SHIM_STATIC INT OutputIndex;
+	DISHONORED_SHIM_STATIC FString InputName;
 
 	INT Compile(FMaterialCompiler* Compiler);
 

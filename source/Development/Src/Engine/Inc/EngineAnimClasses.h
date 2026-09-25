@@ -664,8 +664,11 @@ class UAnimSequence : public UObject
 {
 public:
     //## BEGIN PROPS AnimSequence
+    // DISHONORED(layout): 2012 PDB size 332; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bWasCompressedWithoutTranslations)
     FName SequenceName;
     TArrayNoInit<struct FAnimNotifyEvent> Notifies;
+    TArrayNoInit<FAnimNotifyEvent> m_NotifiesAtAnimStart;  // DISHONORED(layout): 2012 PDB @76
+    TArrayNoInit<FAnimNotifyEvent> m_NotifiesAtAnimEnd;  // DISHONORED(layout): 2012 PDB @88
     TArrayNoInit<class UAnimMetaData*> MetaData;
     TArrayNoInit<struct FSkelControlModifier> BoneControlModifiers_DEPRECATED;
     FLOAT SequenceLength;
@@ -676,36 +679,35 @@ public:
     BITFIELD bAdditiveBuiltLooping:1;
     BITFIELD bDoNotOverrideCompression:1;
     BITFIELD bHasBeenUsed:1;
-    BITFIELD bWasCompressedWithoutTranslations:1;
     TArrayNoInit<FRawAnimSequenceTrack> RawAnimData_DEPRECATED;
     TArrayNoInit<FRawAnimSequenceTrack> RawAnimationData;
     TArrayNoInit<struct FTranslationTrack> TranslationData;
     TArrayNoInit<struct FRotationTrack> RotationData;
     TArrayNoInit<struct FCurveTrack> CurveData;
-#if WITH_EDITORONLY_DATA
     class UAnimationCompressionAlgorithm* CompressionScheme;
-#endif // WITH_EDITORONLY_DATA
     BYTE TranslationCompressionFormat;
     BYTE RotationCompressionFormat;
     BYTE KeyEncodingFormat;
+    SCRIPT_ALIGN;
     TArrayNoInit<INT> CompressedTrackOffsets;
     TArrayNoInit<BYTE> CompressedByteStream;
     FPointer TranslationCodec;
     FPointer RotationCodec;
     TArrayNoInit<FBoneAtom> AdditiveRefPose_DEPRECATED;
     TArrayNoInit<FRawAnimSequenceTrack> AdditiveBasePose;
-#if WITH_EDITORONLY_DATA
     FName AdditiveRefName;
     TArrayNoInit<class UAnimSequence*> AdditiveBasePoseAnimSeq;
     TArrayNoInit<class UAnimSequence*> AdditiveTargetPoseAnimSeq;
     TArrayNoInit<class UAnimSequence*> RelatedAdditiveAnimSeqs;
-#endif // WITH_EDITORONLY_DATA
     INT EncodingPkgVersion;
-#if WITH_EDITORONLY_DATA
     INT CompressCommandletVersion;
-#endif // WITH_EDITORONLY_DATA
     FLOAT UseScore;
+    TArrayNoInit<FAnimTag> AnimTags;  // DISHONORED(layout): 2012 PDB @320
     //## END PROPS AnimSequence
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bWasCompressedWithoutTranslations;
 
     virtual FLOAT GetNotifyTimeByClass(class UClass* NotifyClass,FLOAT PlayRate=1.000000,FLOAT StartPosition=-1.000000,class UAnimNotify** out_Notify=NULL,FLOAT* out_Duration=NULL);
     DECLARE_FUNCTION(execGetNotifyTimeByClass)
@@ -4714,11 +4716,17 @@ struct FAnimSetMeshLinkup
 	
 };
 
+// DISHONORED(layout): 2012 PDB, Arkane script struct used by UAnimSet::EditorOnlyInfo (8 bytes)
+struct FAnimSet_EditorOnly
+{
+    FName PreviewSkelMeshName;
+};
+
 class UAnimSet : public UObject
 {
 public:
     //## BEGIN PROPS AnimSet
-    BITFIELD bAnimRotationOnly:1;
+    // DISHONORED(layout): 2012 PDB size 268; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: bAnimRotationOnly, PreviewSkelMeshName, BestRatioSkelMeshName)
     TArrayNoInit<FName> TrackBoneNames;
     TArrayNoInit<class UAnimSequence*> Sequences;
     TMap< FName,INT > SequenceCache;
@@ -4728,9 +4736,14 @@ public:
     TArrayNoInit<BYTE> ForceUseMeshTranslation;
     TArrayNoInit<FName> UseTranslationBoneNames;
     TArrayNoInit<FName> ForceMeshTranslationBoneNames;
-    FName PreviewSkelMeshName;
-    FName BestRatioSkelMeshName;
+    FAnimSet_EditorOnly EditorOnlyInfo;  // DISHONORED(layout): 2012 PDB @260
     //## END PROPS AnimSet
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BITFIELD bAnimRotationOnly;
+    DISHONORED_SHIM_STATIC FName PreviewSkelMeshName;
+    DISHONORED_SHIM_STATIC FName BestRatioSkelMeshName;
 
     DECLARE_CLASS(UAnimSet,UObject,0,Engine)
 	// UObject interface

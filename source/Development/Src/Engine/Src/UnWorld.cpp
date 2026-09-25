@@ -2622,7 +2622,7 @@ UBOOL UWorld::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
 		DemoRecDriver           = ConstructObject<UDemoRecDriver>(DemoDriverClass);
 		check(DemoRecDriver);
 		FString Error;
-		if (!DemoRecDriver->InitListen(this, URL, Error))
+		if (!DemoRecDriver->InitListen(*this, URL, Error))  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 		{
 			Ar.Logf( TEXT("Demo recording failed: %s"), *Error );//!!localize!!
 			DemoRecDriver = NULL;
@@ -4624,7 +4624,7 @@ void UWorld::NotifyControlMessage(UNetConnection* Connection, BYTE MessageType, 
 						}
 						// Create a new client connection to the remote peer
 						FString PeerConnectionError;
-						if (!PeerNetDriver->InitPeer(this,PeerConnectURL,ClientPeerInfo.PlayerId,PrimaryPlayerId,PeerConnectionError))
+						if (!PeerNetDriver->InitPeer(*this,PeerConnectURL,ClientPeerInfo.PlayerId,PrimaryPlayerId,PeerConnectionError))  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 						{
 							debugf(NAME_DevNet,TEXT("UWorld: NMT_PeerConnect failed. Connection error =%s"),*PeerConnectionError);
 						}
@@ -5200,7 +5200,7 @@ UBOOL UWorld::Listen( FURL InURL, FString& Error)
 		debugf(TEXT("Failed to create Net Driver"));
 		return FALSE;
 	}
-	if( !NetDriver->InitListen( this, InURL, Error ) )
+	if( !NetDriver->InitListen( *this, InURL, Error ) )  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 	{
 		debugf( TEXT("Failed to listen: %s"), *Error );
 		NetDriver = NULL;
@@ -5897,13 +5897,13 @@ void FSeamlessTravelHandler::Tick()
 			NewWorld->SetNetDriver(GWorld->GetNetDriver());
 			if (NewWorld->GetNetDriver() != NULL)
 			{
-				NewWorld->GetNetDriver()->Notify = NewWorld;
+				NewWorld->GetNetDriver()->Notify = *NewWorld;  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 			}
 			// copy peer net driver to new world as well
 			NewWorld->PeerNetDriver = GWorld->PeerNetDriver;
 			if (NewWorld->PeerNetDriver)
 			{
-				NewWorld->PeerNetDriver->Notify = NewWorld;
+				NewWorld->PeerNetDriver->Notify = *NewWorld;  // DISHONORED(layout): UWorld is not an FNetworkNotify (2012 PDB); operator FNetworkNotify*() on the object
 			}
 
 #if WITH_STEAMWORKS_SOCKETS

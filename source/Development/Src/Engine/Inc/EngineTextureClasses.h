@@ -344,6 +344,7 @@ class UTexture : public USurface
 {
 public:
     //## BEGIN PROPS Texture
+    // DISHONORED(layout): 2012 PDB size 236; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: CachedLODGroup)
     BITFIELD SRGB:1;
     BITFIELD RGBE:1;
     BITFIELD bIsSourceArtUncompressed:1;
@@ -361,26 +362,25 @@ public:
     BITFIELD bNoTiling:1;
     BITFIELD bForcePVRTC4:1;
     BITFIELD bAsyncResourceReleaseHasBeenStarted:1;
+    BITFIELD bForceNoQuality:1;  // DISHONORED(layout): 2012 PDB @58
     BITFIELD bUseCinematicMipLevels:1;
+    BITFIELD BlendNormalToNeutral:1;  // DISHONORED(layout): 2012 PDB @58
     FLOAT UnpackMin[4];
     FLOAT UnpackMax[4];
     FByteBulkData SourceArt;
     BYTE CompressionSettings;
     BYTE Filter;
     BYTE LODGroup;
-    BYTE CachedLODGroup;
+    BYTE KuwaharaFilterSettings;  // DISHONORED(layout): 2012 PDB @147
     BYTE MipGenSettings;
+    SCRIPT_ALIGN;
     INT LODBias;
     INT CachedCombinedLODBias;
     INT NumCinematicMipLevels;
-#if WITH_EDITORONLY_DATA
     FStringNoInit SourceFilePath;
     FStringNoInit SourceFileTimestamp;
-#endif // WITH_EDITORONLY_DATA
     FTextureResource* Resource;
-#if WITH_EDITORONLY_DATA
     FGuid LightingGuid;
-#endif // WITH_EDITORONLY_DATA
     FLOAT AdjustBrightness;
     FLOAT AdjustBrightnessCurve;
     FLOAT AdjustVibrance;
@@ -389,6 +389,10 @@ public:
     FLOAT AdjustHue;
     INT InternalFormatLODBias;
     //## END PROPS Texture
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC BYTE CachedLODGroup;
 
     DECLARE_ABSTRACT_CLASS(UTexture,USurface,0,Engine)
 	/**
@@ -585,12 +589,9 @@ class UTexture2D : public UTexture
 {
 public:
     //## BEGIN PROPS Texture2D
+    // DISHONORED(layout): 2012 PDB size 368; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: CachedATITCMips, CachedETCMips, CachedFlashMipsMaxResolution, CachedFlashMips, bIsEditorOnly, bIsCompositingSource, bHasBeenPaintedInEditor, MipsToRemoveOnCompress)
     TIndirectArray<FTexture2DMipMap> Mips;
     TIndirectArray<FTexture2DMipMap> CachedPVRTCMips;
-    TIndirectArray<FTexture2DMipMap> CachedATITCMips;
-    TIndirectArray<FTexture2DMipMap> CachedETCMips;
-    INT CachedFlashMipsMaxResolution;
-    FTextureMipBulkData CachedFlashMips;
     INT SizeX;
     INT SizeY;
     INT OriginalSizeX;
@@ -599,20 +600,16 @@ public:
     BYTE AddressX;
     BYTE AddressY;
     SCRIPT_ALIGN;
-    BITFIELD bIsEditorOnly:1;
     BITFIELD bIsStreamable:1;
     BITFIELD bHasCancelationPending:1;
     BITFIELD bHasBeenLoadedFromPersistentArchive:1;
     BITFIELD bForceMiplevelsToBeResident:1;
     BITFIELD bGlobalForceMipLevelsToBeResident:1;
-    BITFIELD bIsCompositingSource:1;
-    BITFIELD bHasBeenPaintedInEditor:1;
     FLOAT ForceMipLevelsToBeResidentTimestamp;
     FName TextureFileCacheName;
     FGuid TextureFileCacheGuid;
     INT RequestedMips;
     INT ResidentMips;
-    INT MipsToRemoveOnCompress;
     mutable FThreadSafeCounter PendingMipChangeRequestStatus;
 private:
     TArrayNoInit<BYTE> SystemMemoryData;
@@ -624,6 +621,17 @@ public:
     INT FirstResourceMemMip;
     FLOAT Timer;
     //## END PROPS Texture2D
+    // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
+    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
+    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
+    DISHONORED_SHIM_STATIC TIndirectArray<FTexture2DMipMap> CachedATITCMips;
+    DISHONORED_SHIM_STATIC TIndirectArray<FTexture2DMipMap> CachedETCMips;
+    DISHONORED_SHIM_STATIC INT CachedFlashMipsMaxResolution;
+    DISHONORED_SHIM_STATIC FTextureMipBulkData CachedFlashMips;
+    DISHONORED_SHIM_STATIC BITFIELD bIsEditorOnly;
+    DISHONORED_SHIM_STATIC BITFIELD bIsCompositingSource;
+    DISHONORED_SHIM_STATIC BITFIELD bHasBeenPaintedInEditor;
+    DISHONORED_SHIM_STATIC INT MipsToRemoveOnCompress;
 
     void SetForceMipLevelsToBeResident(FLOAT Seconds,INT CinematicTextureGroups=0);
     DECLARE_FUNCTION(execSetForceMipLevelsToBeResident)
