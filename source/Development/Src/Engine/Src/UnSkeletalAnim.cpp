@@ -3028,17 +3028,17 @@ void UAnimNotify_Trails::PostLoad()
 	Super::PostLoad();
 	if (GetLinkerVersion() < VER_ANIMNOTIFY_TRAIL_SAMPLEFRAMERATE)
 	{
-		SamplesPerSecond = 1.0f / SampleTimeStep_DEPRECATED;
+		SamplesPerSecond = 1.0f / SampleTimeStep;  // DISHONORED(layout): retail SDK names the member without _DEPRECATED (@100)
 	}
 
 	if ((GetLinkerVersion() < VER_ANIMNOTIFY_TRAILS_REMOVED_VELOCITY) && (IsTemplate() == FALSE))
 	{
 		// Copy the results from the old to the new
-		TrailSampledData.Empty(TrailSampleData_DEPRECATED.Num());
-		TrailSampledData.AddZeroed(TrailSampleData_DEPRECATED.Num());
-		for (INT CopyIdx = 0; CopyIdx < TrailSampleData_DEPRECATED.Num(); CopyIdx++)
+		TrailSampledData.Empty(TrailSampleData.Num());  // DISHONORED(layout): retail SDK names the member without _DEPRECATED (@104)
+		TrailSampledData.AddZeroed(TrailSampleData.Num());
+		for (INT CopyIdx = 0; CopyIdx < TrailSampleData.Num(); CopyIdx++)
 		{
-			FTrailSamplePoint& SrcSample = TrailSampleData_DEPRECATED(CopyIdx);
+			FTrailSamplePoint& SrcSample = TrailSampleData(CopyIdx);
 			FTrailSample& DestSample = TrailSampledData(CopyIdx);
 
 			DestSample.RelativeTime = SrcSample.RelativeTime;
@@ -3046,7 +3046,7 @@ void UAnimNotify_Trails::PostLoad()
 			DestSample.SecondEdgeSample = SrcSample.SecondEdgeSample.Position;
 			DestSample.ControlPointSample = SrcSample.ControlPointSample.Position;
 		}
-		TrailSampleData_DEPRECATED.Empty();
+		TrailSampleData.Empty();
 	}
 }
 

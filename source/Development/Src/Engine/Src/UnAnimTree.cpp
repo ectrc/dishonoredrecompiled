@@ -3545,8 +3545,8 @@ void UAnimTree::PostLoad()
 	// 3 Pass Skeletal Mesh Compose
 	if( GetLinkerVersion() < VER_THREE_PASS_SKELMESH_COMPOSE )
 	{
-		ComposePrePassBoneNames = PrioritizedSkelBranches_DEPRECATED;
-		PrioritizedSkelBranches_DEPRECATED.Empty();
+		ComposePrePassBoneNames = PrioritizedSkelBranches;  // DISHONORED(layout): retail SDK names the member without _DEPRECATED (@236)
+		PrioritizedSkelBranches.Empty();
 	}
 
 	if( bMarkDirty && (GIsRunning || GIsUCC) )

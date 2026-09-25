@@ -349,12 +349,12 @@ void USkelControlBase::HandleControlSliderMove(FLOAT NewSliderValue)
 void USkelControlBase::PostLoad()
 {
 	// If desired, use cubic interpolation for skeletal control, to allow them to blend in more smoothly.
-	if( bEnableEaseInOut_DEPRECATED )
+	if( bEnableEaseInOut )  // DISHONORED(layout): retail SDK @116 mask 0x80; the 2012 name was bEnableEaseInOut_DEPRECATED
 	{
 		// set the new blend type
 		BlendType = ABT_Cubic;
 		// clear original flag
-		bEnableEaseInOut_DEPRECATED = FALSE;
+		bEnableEaseInOut = FALSE;  // DISHONORED(layout): retail SDK @116 mask 0x80; the 2012 name was bEnableEaseInOut_DEPRECATED
 	}
 
 	Super::PostLoad();
@@ -366,12 +366,12 @@ void USkelControlBase::Serialize(FArchive& Ar)
 #if WITH_EDITORONLY_DATA
 	if (Ar.Ver() < VER_DEPRECATED_EDITOR_POSITION)
 	{
-		if (ControlPosX_DEPRECATED!=-9999999 && ControlPosY_DEPRECATED!=-9999999)
+		if (ControlPosX!=-9999999 && ControlPosY!=-9999999)  // DISHONORED(layout): retail SDK names the members without _DEPRECATED (@176/@180)
 		{
 			// update editor variable
-			NodePosX = ControlPosX_DEPRECATED; 
-			NodePosY = ControlPosY_DEPRECATED; 
-			ControlPosX_DEPRECATED = ControlPosX_DEPRECATED = -9999999;
+			NodePosX = ControlPosX; 
+			NodePosY = ControlPosY; 
+			ControlPosX = ControlPosX = -9999999;
 		}
 	}
 #endif // WITH_EDITORONLY_DATA

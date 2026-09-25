@@ -3010,7 +3010,7 @@ void UParticleSystem::PostLoad()
 	{
 		for (INT i = 0; i < LODSettings.Num(); i++)
 		{
-			LODSettings(i).bLit = bLit_DEPRECATED;
+			LODSettings(i).bLit = bLit;  // DISHONORED(layout): retail SDK @108; the 2012 name was bLit_DEPRECATED
 		}
 	}
 

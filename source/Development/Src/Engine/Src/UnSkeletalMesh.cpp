@@ -2850,7 +2850,7 @@ void ASkeletalMeshActor::PostLoad()
 {
 	if (GetLinker() && GetLinker()->Ver() < VER_REMOVED_DEFAULT_SKELETALMESHACTOR_COLLISION)
 	{
-		bCollideActors = bCollideActors_OldValue_DEPRECATED;
+		bCollideActors = bCollideActors_OldValue;  // DISHONORED(layout): retail SDK @584 mask 0x1; the 2012 name was bCollideActors_OldValue_DEPRECATED
 	}
 
 	Super::PostLoad();

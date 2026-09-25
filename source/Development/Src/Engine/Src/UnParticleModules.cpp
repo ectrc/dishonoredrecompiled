@@ -990,7 +990,7 @@ void UParticleModuleRequired::PostLoad()
 
 	if (GetLinker() && (GetLinker()->Ver() < VER_NEW_PARTICLE_SORT_MODES))
 	{
-		if (bRequiresSorting_DEPRECATED == TRUE)
+		if (bRequiresSorting == TRUE)  // DISHONORED(layout): retail SDK @80 mask 0x8; the 2012 name was bRequiresSorting_DEPRECATED
 		{
 			SortMode = PSORTMODE_ViewProjDepth;
 		}
@@ -2566,7 +2566,7 @@ void UParticleModuleTypeDataMesh::PostLoad()
 	Super::PostLoad();
 	if (GetLinker() && (GetLinker()->Ver() < VER_MESH_EMITTER_CAMERA_FACING_OPTIONS))
 	{
-		switch (CameraFacingUpAxisOption_DEPRECATED)
+		switch (CameraFacingUpAxisOption)  // DISHONORED(layout): retail SDK names the member without _DEPRECATED (@78)
 		{
 		case CameraFacing_ZUp:
 			CameraFacingOption = XAxisFacing_ZUp;

@@ -3119,6 +3119,26 @@ void UMaterialExpressionStaticSwitchParameter::ClearInputExpressions()
 #endif
 
 
+// DISHONORED(layout): UMaterialExpressionStaticSwitchParameter derives from UMaterialExpressionParameter (retail SDK / 2012 PDB);
+// the override hooks it inherited from the reference-only UMaterialExpressionStaticBoolParameter now live on the class itself.
+void UMaterialExpressionStaticSwitchParameter::SetStaticParameterOverrides(const FStaticParameterSet* Permutation)
+{
+	for(INT SwitchIndex = 0;SwitchIndex < Permutation->StaticSwitchParameters.Num();SwitchIndex++)
+	{
+		const FStaticSwitchParameter * InstanceSwitchParameter = &Permutation->StaticSwitchParameters(SwitchIndex);
+		if(ParameterName == InstanceSwitchParameter->ParameterName)
+		{
+			InstanceOverride = InstanceSwitchParameter;
+			break;
+		}
+	}
+}
+
+void UMaterialExpressionStaticSwitchParameter::ClearStaticParameterOverrides()
+{
+	InstanceOverride = NULL;
+}
+
 //
 //	UMaterialExpressionStaticBoolParameter::Compile
 //
