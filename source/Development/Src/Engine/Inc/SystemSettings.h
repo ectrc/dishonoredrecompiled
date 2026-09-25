@@ -197,7 +197,6 @@ public:
 	UBOOL bFound;
  };
 
-
 /** Augments TextureLODSettings with access to TextureLODGroups. */
 struct FExposedTextureLODSettings : public FTextureLODSettings
 {
@@ -219,227 +218,222 @@ public:
 /**
  * Struct that holds the actual data for the system settings.
  */
-class FSystemSettings : public FExec
+/**
+ * DISHONORED(layout): the retail settings are FSystemSettingsData (2012 PDB 1048 bytes; 2013 1052: FSystemSettingsData::LoadFromIni
+ * 2013 rva 0x1806c0 stores bAllowRatsShadow @76, iType_AntiAlias @128 ... SpeakerConfiguration @1048, and FSystemSettings::Initialize
+ * 2013 rva 0x1844e0 copies 0x41C bytes) made of ten bases; FSystemSettings = FExec @0, FSystemSettingsData @4, RenderThreadSettings @1056,
+ * bIsEditor @1100, CurrentSplitScreenLevel @1104, Defaults[5][2] @1108 (2104-byte stride) = 11628 bytes (2012 PDB 11584).
+ * Offsets below are 2013 FSystemSettingsData offsets; the 2012 PDB order is the same except for the two 2013-only members.
+ */
+struct FSystemSettingsDataWorldDetail  // DISHONORED(layout): 2013 @0, 144 bytes
+{
+	INT DetailMode;
+	UBOOL bUseMaxQualityMode;
+	UBOOL bAllowSpeedTreeLeaves;
+	UBOOL bAllowSpeedTreeFronds;
+	UBOOL bAllowStaticDecals;
+	UBOOL bAllowDynamicDecals;
+	UBOOL bAllowUnbatchedDecals;
+	FLOAT DecalCullDistanceScale;
+	UBOOL bAllowDynamicLights;
+	UBOOL bUseCompositeDynamicLights;
+	UBOOL bAllowSHSecondaryLighting;
+	UBOOL bAllowDirectionalLightMaps;
+	UBOOL bAllowMotionBlur;
+	UBOOL bAllowMotionBlurPause;
+	UBOOL bAllowDepthOfField;
+	UBOOL bAllowAmbientOcclusion;
+	UBOOL bAllowBloom;
+	UBOOL bUseHighQualityBloom;
+	UBOOL bAllowLightShafts;
+	UBOOL bAllowRatsShadow;  // DISHONORED(layout): 2013-only (key bAllowRatsShadow @76); every later WorldDetail member is 4 bytes after its 2012 PDB offset
+	UBOOL bAllowDistortion;
+	UBOOL bAllowFilteredDistortion;
+	UBOOL bAllowParticleDistortionDropping;
+	UBOOL bAllowDownsampledTranslucency;
+	UBOOL bAllowLensFlares;
+	UBOOL bAllowFogVolumes;
+	UBOOL bAllowFloatingPointRenderTargets;
+	UBOOL bAllowOneFrameThreadLag;
+	INT SkeletalMeshLODBias;
+	INT SkeletalLODDistanceFactorMultiplier;
+	INT StaticLODDistanceFactorMultiplier;
+	INT TextureForcedLODBias;
+	INT iType_AntiAlias;  // DISHONORED(layout): 2013-only (key iType_AntiAlias @128); replaces the 2012 bAllowMLAA @136
+	INT ParticleLODBias;
+	UBOOL bAllowD3D10;
+	UBOOL bAllowRadialBlur;
+};
+
+struct FSystemSettingsDataTextureDetail  // DISHONORED(layout): 2013 @144, 744 bytes
+{
+	FExposedTextureLODSettings TextureLODSettings;
+	UBOOL bOnlyStreamInTextures;
+	INT MaxAnisotropy;
+	FLOAT SceneCaptureStreamingMultiplier;
+	FLOAT FoliageDrawRadiusMultiplier;
+};
+
+struct FSystemSettingsDataVSync  // DISHONORED(layout): 2013 @888, 4 bytes
+{
+	UBOOL bUseVSync;
+};
+
+struct FSystemSettingsDataScreenPercentage  // DISHONORED(layout): 2013 @892, 8 bytes
+{
+	FLOAT ScreenPercentage;
+	UBOOL bUpscaleScreenPercentage;
+};
+
+struct FSystemSettingsDataResolution  // DISHONORED(layout): 2013 @900, 12 bytes
+{
+	INT ResX;
+	INT ResY;
+	UBOOL bFullscreen;
+};
+
+struct FSystemSettingsDataMSAA  // DISHONORED(layout): 2013 @912, 4 bytes
+{
+	INT MaxMultiSamples;
+};
+
+struct FSystemSettingsDataShadowDetail  // DISHONORED(layout): 2013 @916, 104 bytes
+{
+	UBOOL bAllowDynamicShadows;
+	UBOOL bAllowLightEnvironmentShadows;
+	INT ShadowFilterQualityBias;
+	INT MinShadowResolution;
+	INT MinPreShadowResolution;
+	INT MaxShadowResolution;
+	INT MaxWholeSceneDominantShadowResolution;
+	FLOAT ShadowTexelsPerPixel;
+	FLOAT PreShadowResolutionFactor;
+	UBOOL bEnableBranchingPCFShadows;
+	UBOOL bAllowHardwareShadowFiltering;
+	UBOOL bAllowBetterModulatedShadows;
+	UBOOL bEnableForegroundShadowsOnWorld;
+	UBOOL bEnableForegroundSelfShadowing;
+	UBOOL bAllowWholeSceneDominantShadows;
+	FLOAT ShadowFilterRadius;
+	FLOAT ShadowDepthBias;
+	FLOAT CSMSplitPenumbraScale;
+	FLOAT CSMSplitSoftTransitionDistanceScale;
+	FLOAT CSMSplitDepthBiasScale;
+	FLOAT UnbuiltWholeSceneDynamicShadowRadius;
+	INT UnbuiltNumWholeSceneDynamicShadowCascades;
+	INT WholeSceneShadowUnbuiltInteractionThreshold;
+	INT ShadowFadeResolution;
+	INT PreShadowFadeResolution;
+	FLOAT ShadowFadeExponent;
+};
+
+struct FSystemSettingsDataFracturedDetail  // DISHONORED(layout): 2013 @1020, 20 bytes
+{
+	UBOOL bAllowFracturedDamage;
+	FLOAT NumFracturedPartsScale;
+	FLOAT FractureDirectSpawnChanceScale;
+	FLOAT FractureRadialSpawnChanceScale;
+	FLOAT FractureCullDistanceScale;
+};
+
+struct FSystemSettingsDataMesh  // DISHONORED(layout): 2013 @1040, 8 bytes
+{
+	UBOOL bForceCPUAccessToGPUSkinVerts;
+	UBOOL bDisableSkeletalInstanceWeights;
+};
+
+struct FSystemSettingsDataAudio  // DISHONORED(layout): 2013 @1048, 4 bytes
+{
+	INT SpeakerConfiguration;  // DISHONORED(layout): 2012 PDB spelling m_SpeakerConfiguration; the 2013 key is SpeakerConfiguration
+};
+
+struct FSystemSettingsData : public FSystemSettingsDataWorldDetail, public FSystemSettingsDataTextureDetail, public FSystemSettingsDataVSync, public FSystemSettingsDataScreenPercentage, public FSystemSettingsDataResolution, public FSystemSettingsDataMSAA, public FSystemSettingsDataShadowDetail, public FSystemSettingsDataFracturedDetail, public FSystemSettingsDataMesh, public FSystemSettingsDataAudio
+{
+};
+
+class FSystemSettings : public FExec, public FSystemSettingsData
 {
 public:
-	/** Current detail mode; determines whether components of actors should be updated/ ticked.	*/
-	INT		DetailMode;
-	/** DISHONORED(retail): FSystemSettingsDataWorldDetail::bUseMaxQualityMode @4 (2012 PDB; 2013 LoadFromIni table rva 0x1806c0, key bUseMaxQualityMode) */
-	UBOOL	bUseMaxQualityMode;
+	// DISHONORED(layout): 2012 PDB FSystemSettings::FRenderThreadSettings (44 bytes, @1052 in 2012, @1056 in 2013); storage only,
+	// ApplySystemSettingsToRenderThread still hands the reference render thread GSystemSettings itself
+	struct FRenderThreadSettings
+	{
+		UBOOL bAllowMotionBlur;
+		UBOOL bAllowAmbientOcclusion;
+		UBOOL bAllowDynamicShadows;
+		UBOOL bAllowHardwareShadowFiltering;
+		UBOOL bAllowFogVolumes;
+		UBOOL bAllowMLAA;
+		INT MaxMultiSamples;
+		INT MinShadowResolution;
+		INT MaxShadowResolution;
+		INT MaxWholeSceneDominantShadowResolution;
+		INT bAllowUnbatchedDecals;
+	};
+	FRenderThreadSettings RenderThreadSettings;
+
+	/** Since System Settings is called into before GIsEditor is set, we must cache this value. */
+	UBOOL bIsEditor;
+
+	INT CurrentSplitScreenLevel;  // DISHONORED(layout): 2012 PDB ESplitScreenLevel
+
+	// DISHONORED(layout): [i][0] = [AppCompatBucket<i+1>] of GCompatIni, [i][1] = [SystemSettingsSplitScreen2] (2013 rva 0x1844e0); not filled yet
+	FSystemSettingsData Defaults[5][2];
+
+	// DISHONORED(layout): reference-only members below are storage-less shims (DISHONORED_SHIM_STATIC): not in the retail
+	// FSystemSettingsData, not read from the ini by the retail table (SystemSettings.cpp); every use is a porting TODO
 	/** Scale applied to primitive's MaxDrawDistance. */
-	FLOAT	MaxDrawDistanceScale;
-	/** Whether to allow rendering of SpeedTree leaves.					*/
-	UBOOL	bAllowSpeedTreeLeaves;
-	/** Whether to allow rendering of SpeedTree fronds.					*/
-	UBOOL	bAllowSpeedTreeFronds;
-	/** Whether to allow static decals.									*/
-	UBOOL	bAllowStaticDecals;
-	/** Whether to allow dynamic decals.								*/
-	UBOOL	bAllowDynamicDecals;
-	/** Whether to allow decals that have not been placed in static draw lists and have dynamic view relevance */
-	UBOOL	bAllowUnbatchedDecals;
-	/** Scale factor for distance culling decals						*/
-	FLOAT	DecalCullDistanceScale;
-	/** Whether to allow dynamic lights.								*/
-	UBOOL	bAllowDynamicLights;
-	/** Whether to composte dynamic lights into light environments.		*/
-	UBOOL	bUseCompositeDynamicLights;
-	/** Whether to allow light environments to use SH lights for secondary lighting	*/
-	UBOOL	bAllowSHSecondaryLighting;
-	/**  Whether to allow directional lightmaps, which use the material's normal and specular. */
-	UBOOL	bAllowDirectionalLightMaps;
-	/** Whether to allow motion blur.									*/
-	UBOOL	bAllowMotionBlur;
-	/** Whether to allow motion blur to be paused.						*/
-	UBOOL	bAllowMotionBlurPause;
-	/** Whether to allow depth of field.								*/
-	UBOOL	bAllowDepthOfField;
-	/** Whether to allow ambient occlusion.								*/
-	UBOOL	bAllowAmbientOcclusion;
-	/** Whether to allow bloom.											*/
-	UBOOL	bAllowBloom;
-	/** DISHONORED(retail): FSystemSettingsDataWorldDetail::bUseHighQualityBloom @68 (2012 PDB; 2013 key UseHighQualityBloom) */
-	UBOOL	bUseHighQualityBloom;
-	/** Whether to allow light shafts.									*/
-	UBOOL   bAllowLightShafts;
-	/** DISHONORED(retail): 2013-only FSystemSettingsDataWorldDetail member @76 (2013 LoadFromIni table rva 0x1806c0, key bAllowRatsShadow; absent from the 2012 PDB) */
-	UBOOL	bAllowRatsShadow;
-	/** Whether to allow distortion.									*/
-	UBOOL	bAllowDistortion;
-	/** Whether to allow distortion to use bilinear filtering when sampling the scene color during its apply pass	*/
-	UBOOL	bAllowFilteredDistortion;
-	/** Whether to allow dropping distortion on particles based on WorldInfo::bDropDetail. */
-	UBOOL	bAllowParticleDistortionDropping;
-	/** Whether to allow downsampled transluency.						*/
-	UBOOL	bAllowDownsampledTranslucency;
-	/** Whether to allow rendering of LensFlares.						*/
-	UBOOL	bAllowLensFlares;
-	/** Whether to allow fog volumes.									*/
-	UBOOL	bAllowFogVolumes;
-	/** Whether to allow floating point render targets to be used.		*/
-	UBOOL	bAllowFloatingPointRenderTargets;
-	/** Whether to allow the rendering thread to lag one frame behind the game thread.	*/
-	UBOOL	bAllowOneFrameThreadLag;
-	/** LOD bias for skeletal meshes.									*/
-	INT		SkeletalMeshLODBias;
-	/** DISHONORED(retail): FSystemSettingsDataWorldDetail @116/@120/@124 (2012 PDB; 2013 keys SkeletalLODDistanceFactorMultiplier, StaticLODDistanceFactorMultiplier, TextureForcedLODBias) */
-	INT		SkeletalLODDistanceFactorMultiplier;
-	INT		StaticLODDistanceFactorMultiplier;
-	INT		TextureForcedLODBias;
-	/** DISHONORED(retail): 2013-only FSystemSettingsDataWorldDetail member @128 (2013 key iType_AntiAlias: EPpAa_None=0, EPpAa_Mlaa=1, EPpAa_Fxaa=2; replaces the 2012 bAllowMLAA @136) */
-	INT		iType_AntiAlias;
-	/** LOD bias for particle systems.									*/
-	INT		ParticleLODBias;
+	DISHONORED_SHIM_STATIC FLOAT	MaxDrawDistanceScale;
 	/** Whether to use D3D11 when it's available.						*/
-	UBOOL	bAllowD3D11;
-	/** DISHONORED(retail): FSystemSettingsDataWorldDetail::bAllowD3D10 @136 in 2013 (@128 in the 2012 PDB; key AllowD3D10) */
-	UBOOL	bAllowD3D10;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowD3D11;
 	/** Whether to use OpenGL when it's available.						*/
-	UBOOL	bAllowOpenGL;
-	/** Whether to allow radial blur effects to render.					*/
-	UBOOL	bAllowRadialBlur;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowOpenGL;
 	/** Whether to allow sub-surface scattering to render.				*/
-	UBOOL	bAllowSubsurfaceScattering;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowSubsurfaceScattering;
 	/** Whether to allow image reflections to render.					*/
-	UBOOL	bAllowImageReflections;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowImageReflections;
 	/** Whether to allow image reflections to be shadowed.				*/
-	UBOOL	bAllowImageReflectionShadowing;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowImageReflectionShadowing;
 	/** State of the console variable MotionBlurSkinning.				*/
-	INT		MotionBlurSkinning;
+	DISHONORED_SHIM_STATIC INT		MotionBlurSkinning;
 	/** Global tessellation factor multiplier */
-	FLOAT	TessellationAdaptivePixelsPerTriangle;
+	DISHONORED_SHIM_STATIC FLOAT	TessellationAdaptivePixelsPerTriangle;
 	/** Whether to use high-precision GBuffers. */
-	UBOOL	bHighPrecisionGBuffers;
+	DISHONORED_SHIM_STATIC UBOOL	bHighPrecisionGBuffers;
 	/** Whether to keep separate translucency (for better Depth of Field), experimental */
-	UBOOL	bAllowSeparateTranslucency;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowSeparateTranslucency;
 	/** Whether to allow post process MLAA to render. requires extra memory	*/
-	UBOOL	bAllowPostprocessMLAA;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowPostprocessMLAA;
 	/** Whether to use high quality materials when low quality exist	*/
-	UBOOL	bAllowHighQualityMaterials;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowHighQualityMaterials;
 	/** Max filter sample count (clamp can cause boxy appearance but allows for better performance, only numbers below 16 have effect)	*/
-	INT		MaxFilterBlurSampleCount;
-	/** Whether to allow fractured meshes to take damage.				*/
-	UBOOL	bAllowFracturedDamage;
-	/** Scales the game-specific number of fractured physics objects allowed.	*/
-	FLOAT	NumFracturedPartsScale;
-	/** Percent chance of a rigid body spawning after a fractured static mesh is damaged directly.  [0-1] */
-	FLOAT	FractureDirectSpawnChanceScale;
-	/** Percent chance of a rigid body spawning after a fractured static mesh is damaged by radial blast.  [0-1] */
-	FLOAT	FractureRadialSpawnChanceScale;
-	/** Distance scale for whether a fractured static mesh should actually fracture when damaged */
-	FLOAT	FractureCullDistanceScale;
-
-	/** Whether to allow dynamic shadows.								*/
-	UBOOL	bAllowDynamicShadows;
-	/** Whether to allow dynamic light environments to cast shadows.	*/
-	UBOOL	bAllowLightEnvironmentShadows;
-	/** Quality bias for projected shadow buffer filtering.	 Higher values use better quality filtering.		*/
-	INT		ShadowFilterQualityBias;
-	/** min dimensions (in texels) allowed for rendering shadow subject depths */
-	INT		MinShadowResolution;
-	/** min dimensions (in texels) allowed for rendering preshadow depths */
-	INT		MinPreShadowResolution;
-	/** max square dimensions (in texels) allowed for rendering shadow subject depths */
-	INT		MaxShadowResolution;
-	/** max square dimensions (in texels) allowed for rendering whole scene shadow depths */
-	INT		MaxWholeSceneDominantShadowResolution;
-	/** The ratio of subject pixels to shadow texels.					*/
-	FLOAT	ShadowTexelsPerPixel;
-	FLOAT	PreShadowResolutionFactor;
-	/** Toggle Branching PCF implementation for projected shadows */
-	UBOOL	bEnableBranchingPCFShadows;
-	/** Whether to allow hardware filtering optimizations like hardware PCF and Fetch4. */
-	UBOOL	bAllowHardwareShadowFiltering;
-	/** DISHONORED(retail): FSystemSettingsDataShadowDetail::bAllowBetterModulatedShadows @44 (2012 PDB; 2013 absolute @960, key bAllowBetterModulatedShadows) */
-	UBOOL	bAllowBetterModulatedShadows;
-	/** hack to allow for foreground DPG objects to cast shadows on the world DPG */
-	UBOOL	bEnableForegroundShadowsOnWorld;
-	/** Whether to allow foreground DPG self-shadowing */
-	UBOOL	bEnableForegroundSelfShadowing;
-	/** Whether to allow whole scene dominant shadows. */
-	UBOOL	bAllowWholeSceneDominantShadows;
+	DISHONORED_SHIM_STATIC INT		MaxFilterBlurSampleCount;
 	/** Whether to use safe and conservative shadow frustum creation that wastes some shadowmap space. */
-	UBOOL	bUseConservativeShadowBounds;
-	/** Radius, in shadowmap texels, of the filter disk */
-	FLOAT	ShadowFilterRadius;
-	/** Depth bias that is applied in the depth pass for all types of projected shadows except VSM */
-	FLOAT	ShadowDepthBias;
+	DISHONORED_SHIM_STATIC UBOOL	bUseConservativeShadowBounds;
 	/** Higher values make the per object soft shadow comparison sharper, lower values make the transition softer. */
-	FLOAT	PerObjectShadowTransition;
+	DISHONORED_SHIM_STATIC FLOAT	PerObjectShadowTransition;
 	/** Higher values make the per scene soft shadow comparison sharper, lower values make the transition softer. */
-	FLOAT	PerSceneShadowTransition;
-	/** Scale applied to the penumbra size of Cascaded Shadow Map splits, useful for minimizing the transition between splits. */
-	FLOAT	CSMSplitPenumbraScale;
-	/** Scale applied to the soft comparison transition distance of Cascaded Shadow Map splits, useful for minimizing the transition between splits. */
-	FLOAT	CSMSplitSoftTransitionDistanceScale;
-	/** Scale applied to the depth bias of Cascaded Shadow Map splits, useful for minimizing the transition between splits. */
-	FLOAT	CSMSplitDepthBiasScale;
+	DISHONORED_SHIM_STATIC FLOAT	PerSceneShadowTransition;
 	/** Minimum camera FOV for CSM, this is used to prevent shadow shimmering when animating the FOV lower than the min, for example when zooming */
-	FLOAT	CSMMinimumFOV;
+	DISHONORED_SHIM_STATIC FLOAT	CSMMinimumFOV;
 	/** The FOV will be rounded by this factor for the purposes of CSM, which turns shadow shimmering into discrete jumps */
-	FLOAT	CSMFOVRoundFactor;
-	/** WholeSceneDynamicShadowRadius to use when using CSM to preview unbuilt lighting from a directional light. */
-	FLOAT	UnbuiltWholeSceneDynamicShadowRadius;
-	/** NumWholeSceneDynamicShadowCascades to use when using CSM to preview unbuilt lighting from a directional light. */
-	INT		UnbuiltNumWholeSceneDynamicShadowCascades;
-	/** How many unbuilt light-primitive interactions there can be for a light before the light switches to whole scene shadows. */
-	INT		WholeSceneShadowUnbuiltInteractionThreshold;
-	/** Resolution in texel below which shadows are faded out. */
-	INT		ShadowFadeResolution;
-	/** Resolution in texel below which preshadows are faded out. */
-	INT		PreShadowFadeResolution;
-	/** Controls the rate at which shadows are faded out. */
-	FLOAT	ShadowFadeExponent;
+	DISHONORED_SHIM_STATIC FLOAT	CSMFOVRoundFactor;
 
-	/** Global texture LOD settings.									*/
-	FExposedTextureLODSettings TextureLODSettings;
-
-	/** If enabled, texture will only be streamed in, not out.			*/
-	UBOOL	bOnlyStreamInTextures;
-	/** Maximum level of anisotropy used.								*/
-	INT		MaxAnisotropy;
-	/** Scene capture streaming texture update distance scalar.			*/
-	FLOAT	SceneCaptureStreamingMultiplier;
-	/** DISHONORED(retail): FSystemSettingsDataTextureDetail::FoliageDrawRadiusMultiplier @740 (2012 PDB; 2013 absolute @884, key FoliageDrawRadiusMultiplier) */
-	FLOAT	FoliageDrawRadiusMultiplier;
-
-	/** Whether to use VSync or not.									*/
-	UBOOL	bUseVSync;
-
-	/** Percentage of screen main view should take up.					*/
-	FLOAT	ScreenPercentage;
-	/** Whether to upscale the screen to take up the full front buffer.	*/
-	UBOOL	bUpscaleScreenPercentage;
-
-	/** Screen X resolution */
-	INT ResX;
-	/** Screen Y resolution */
-	INT ResY;
-	/** Fullscreen */
-	UBOOL bFullscreen;
-
-	/** The maximum number of MSAA samples to use.						*/
-	INT		MaxMultiSamples;
-	UBOOL	bAllowD3D9MSAA;
-	UBOOL	bAllowTemporalAA;
-	FLOAT	TemporalAA_MinDepth;
-	FLOAT	TemporalAA_StartDepthVelocityScale;
-
-	/** Whether to force CPU access to GPU skinned vertex data. */
-	UBOOL bForceCPUAccessToGPUSkinVerts;
-	/** Whether to disable instanced skeletal weights. */
-	UBOOL bDisableSkeletalInstanceWeights;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowD3D9MSAA;
+	DISHONORED_SHIM_STATIC UBOOL	bAllowTemporalAA;
+	DISHONORED_SHIM_STATIC FLOAT	TemporalAA_MinDepth;
+	DISHONORED_SHIM_STATIC FLOAT	TemporalAA_StartDepthVelocityScale;
 
 	/** Whether to allow independent, external displays */
-	UBOOL bAllowSecondaryDisplays;
+	DISHONORED_SHIM_STATIC UBOOL bAllowSecondaryDisplays;
 	/** The maximum width and height of any potentially allowed secondary displays (requires bAllowSecondaryDisplays == TRUE) */
-	INT SecondaryDisplayMaximumWidth;
-	INT SecondaryDisplayMaximumHeight;
+	DISHONORED_SHIM_STATIC INT SecondaryDisplayMaximumWidth;
+	DISHONORED_SHIM_STATIC INT SecondaryDisplayMaximumHeight;
 
 	/** Enables sleeping once a frame to smooth out CPU usage */
-	UBOOL bAllowPerFrameSleep;
+	DISHONORED_SHIM_STATIC UBOOL bAllowPerFrameSleep;
 	/** Enables yielding once a frame to give other processes time to run. Note that bAllowPerFrameSleep takes precedence */
-	UBOOL bAllowPerFrameYield;
+	DISHONORED_SHIM_STATIC UBOOL bAllowPerFrameYield;
 
 #if WITH_MOBILE_RHI
 	/** The baseline feature level of the device */
@@ -761,20 +755,14 @@ public:
 	 */
 	static void UpdateSceneRenderTargetsRHI();
 		
-	/** DISHONORED(retail): FSystemSettingsDataAudio::m_SpeakerConfiguration @1044 (2012 PDB; 2013 absolute @1048, key SpeakerConfiguration) */
-	INT SpeakerConfiguration;
-
 	/** Set to TRUE after this has been populated from the ini files */
-	UBOOL bInit;
-
-	/** Since System Settings is called into before GIsEditor is set, we must cache this value. */
-	UBOOL bIsEditor;
+	DISHONORED_SHIM_STATIC UBOOL bInit;
 
 	/** Name of ini section used to set data */
-	FString SystemSettingName;
+	DISHONORED_SHIM_STATIC FString SystemSettingName;
 
 	/** The number of system settings that can be modified */
-	INT NumberOfSystemSettings;
+	DISHONORED_SHIM_STATIC INT NumberOfSystemSettings;
 
 	/** The master list of all configurable system settings */
 	static FSystemSetting SystemSettings[];

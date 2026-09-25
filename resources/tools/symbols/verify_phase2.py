@@ -2,6 +2,9 @@
 table and the skeleton counts.
 
 Usage: python resources/tools/symbols/verify_phase2.py [--no-build]   (exit 0 = PASS)
+       python resources/tools/symbols/verify_phase2.py retail build/<dir>/layout_probe.txt
+           retail section only: `gen_layout_probe.py compare` and `xcheck_sdk_layout.py` on the probe; fails on any
+           contract-type mismatch of either (the other rows are reported, not failed)
 """
 import csv
 import re
@@ -40,7 +43,25 @@ def build(preset: str, target: str) -> tuple[bool, str]:
     return r.returncode == 0, errors[0][:200] if errors else f"exit {r.returncode}"
 
 
+def retail(probe: Path) -> None:
+    if not probe.exists():
+        check("retail probe", False, f"missing: {probe}")
+        return
+    for task, script in (("retail compare (2012 PDB / retail sizes)", REPO / "resources/tools/symbols/gen_layout_probe.py"),
+                         ("retail xcheck (SDK dump offsets)", REPO / "resources/tools/sdk/xcheck_sdk_layout.py")):
+        args = ["compare"] if script.name == "gen_layout_probe.py" else []
+        r = subprocess.run([sys.executable, str(script), *args, str(probe)], capture_output=True, text=True, errors="replace")
+        summary = next((l for l in reversed(r.stdout.splitlines()) if "contract_mismatches=" in l), (r.stdout + r.stderr).strip()[-200:])
+        check(task, r.returncode == 0 and "contract_mismatches=0" in summary, summary)
+
+
 def main(argv: list[str]) -> int:
+    if len(argv) > 1 and argv[1] == "retail":
+        if len(argv) < 3:
+            print(__doc__)
+            return 2
+        retail(Path(argv[2]) if Path(argv[2]).is_absolute() else REPO / argv[2])
+        return report()
     no_build = "--no-build" in argv
 
     # P2.1
@@ -101,7 +122,10 @@ def main(argv: list[str]) -> int:
 
     # P2.10
     exists("P2.10 tracking", DOCS / "PHASE2.md", DOCS / "progress.md")
+    return report()
 
+
+def report() -> int:
     width = max(len(t) for t, _, _ in RESULTS)
     failed = 0
     for task, ok, detail in RESULTS:

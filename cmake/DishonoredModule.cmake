@@ -1,4 +1,5 @@
-# dishonored_module(<Name>): one static library per UE3 module under source/Development/Src/<Name>.
+# dishonored_module(<Name> [TARGET <target>]): one static library per UE3 module under source/Development/Src/<Name>.
+# The target is named <Name> unless TARGET gives another name (DishonoredGame: the exe owns "DishonoredGame").
 #
 # * compiles Src/**/*.cpp minus the <Name>_EXCLUDE list plus the <Name>_EXTRA list from
 #   <Name>/Sources.cmake (written by resources/tools/import_reference.py)
@@ -37,6 +38,11 @@ set(DISHONORED_MODULE_LIST "" CACHE INTERNAL "modules declared so far, in order"
 option(DISHONORED_USE_PCH "Use <Module>Private.h as a CMake precompiled header (see note in dishonored_module)" OFF)
 
 function(dishonored_module name)
+  cmake_parse_arguments(PARSE_ARGV 1 arg "" "TARGET" "")
+  set(target "${name}")
+  if(arg_TARGET)
+    set(target "${arg_TARGET}")
+  endif()
   set(module_dir "${CMAKE_SOURCE_DIR}/source/Development/Src/${name}")
   if(NOT EXISTS "${module_dir}/Src")
     message(FATAL_ERROR "dishonored_module(${name}): ${module_dir}/Src does not exist")
@@ -58,25 +64,25 @@ function(dishonored_module name)
   endforeach()
   file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${module_dir}/Inc/*.h" "${module_dir}/Src/*.h")
 
-  add_library(${name} STATIC ${sources} ${headers})
-  target_include_directories(${name} PUBLIC "${module_dir}/Inc")
+  add_library(${target} STATIC ${sources} ${headers})
+  target_include_directories(${target} PUBLIC "${module_dir}/Inc")
   foreach(extra IN ITEMS Licensee Epic)
     if(EXISTS "${module_dir}/Inc/${extra}")
-      target_include_directories(${name} PUBLIC "${module_dir}/Inc/${extra}")
+      target_include_directories(${target} PUBLIC "${module_dir}/Inc/${extra}")
     endif()
   endforeach()
-  target_include_directories(${name} PRIVATE "${module_dir}/Src")
+  target_include_directories(${target} PRIVATE "${module_dir}/Src")
   # UE3 uses a flat include model (UnrealBuildTool adds every module's Inc to every compile):
   # Core's UnVcWin32.h includes WinDrv's PreWindowsApi.h, Engine headers include GameFramework's, ...
   file(GLOB module_inc_dirs LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/source/Development/Src/*/Inc")
   foreach(inc IN LISTS module_inc_dirs)
     if(IS_DIRECTORY "${inc}")
-      target_include_directories(${name} PUBLIC "${inc}")
+      target_include_directories(${target} PUBLIC "${inc}")
     endif()
   endforeach()
 
   foreach(dep IN LISTS DISHONORED_MODULE_LIST)
-    target_link_libraries(${name} PUBLIC ${dep})
+    target_link_libraries(${target} PUBLIC ${dep})
   endforeach()
 
   # CMake's target_precompile_headers force-includes the header (/FI) on top of the TU's own
@@ -84,17 +90,21 @@ function(dishonored_module name)
   # classic /Yu model), so this double-includes UnLinker.h & co. Off until a guard-safe scheme exists.
   if(DISHONORED_USE_PCH)
     if(EXISTS "${module_dir}/Inc/${name}Private.h")
-      target_precompile_headers(${name} PRIVATE "${module_dir}/Inc/${name}Private.h")
+      target_precompile_headers(${target} PRIVATE "${module_dir}/Inc/${name}Private.h")
     elseif(EXISTS "${module_dir}/Src/${name}Private.h")
-      target_precompile_headers(${name} PRIVATE "${module_dir}/Src/${name}Private.h")
+      target_precompile_headers(${target} PRIVATE "${module_dir}/Src/${name}Private.h")
     endif()
   endif()
 
-  dishonored_apply_defines(${name})
-  target_compile_options(${name} PRIVATE ${DISHONORED_MSVC_WARNINGS})
-  set_target_properties(${name} PROPERTIES FOLDER "Engine")
+  dishonored_apply_defines(${target})
+  target_compile_options(${target} PRIVATE ${DISHONORED_MSVC_WARNINGS})
+  set_target_properties(${target} PROPERTIES FOLDER "Engine")
 
-  set(DISHONORED_MODULE_LIST "${DISHONORED_MODULE_LIST};${name}" CACHE INTERNAL "modules declared so far, in order")
+  set(DISHONORED_MODULE_LIST "${DISHONORED_MODULE_LIST};${target}" CACHE INTERNAL "modules declared so far, in order")
   list(LENGTH sources n)
-  message(STATUS "module ${name}: ${n} compile units")
+  if(target STREQUAL name)
+    message(STATUS "module ${name}: ${n} compile units")
+  else()
+    message(STATUS "module ${name} (target ${target}): ${n} compile units")
+  endif()
 endfunction()

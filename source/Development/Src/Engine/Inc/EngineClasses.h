@@ -3846,6 +3846,7 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);
 	virtual void PreSave();
 	virtual void PostLoad();
+	virtual void Serialize(FArchive& Ar);  // DISHONORED(port): 2013 rva 0x1679b0
 	void NetDirty(UProperty* property);
 
 	// AActor interface.
@@ -6633,7 +6634,8 @@ struct FConsoleMessage
     FStringNoInit Text;
     FColor TextColor;
     FLOAT MessageLife;
-    class APlayerReplicationInfo* PRI;
+    // DISHONORED(layout): retail SDK span 0..20 (2012 PDB 20): PRI is reference-only (storage-less shim)
+    DISHONORED_SHIM_STATIC class APlayerReplicationInfo* PRI;
 
     /** Constructors */
     FConsoleMessage() {}
@@ -9671,12 +9673,13 @@ public:
 	virtual void DebugLogInternal(const TCHAR* LogText) {}
 };
 
+// DISHONORED(layout): retail SDK span 0..24 (OwningPylon @0, PolyId @20), 2012 PDB sizeof 24: no CachedPoly (the reference's
+// poly cache); GetPoly resolves the id every call (2012 rva 0x28cc60, 2013 rva 0x2723f0)
 struct FPolyReference
 {
     struct FActorReference OwningPylon;
 private:
     INT PolyId;
-    struct FNavMeshPolyBase* CachedPoly;
 public:
 
 		FPolyReference()
@@ -9740,7 +9743,6 @@ public:
 
 		FORCEINLINE void ClearCachedPoly()
 		{
-			CachedPoly = NULL;
 		}
 
 		class APylon* Pylon();
@@ -9752,7 +9754,6 @@ public:
 		FORCEINLINE void SetPolyId(WORD NewTopLevelPolyId, WORD NewSubPolyId) 
 		{
 			PolyId = NewTopLevelPolyId | (NewSubPolyId<<16); 
-			CachedPoly=NULL;
 		}
 
 		friend DWORD GetTypeHash(const FPolyReference& Ref)
@@ -11635,6 +11636,7 @@ public:
         P_FINISH;
         this->ResumeLogin(InPlayer);
     }
+    DECLARE_FUNCTION(execSpawnPlayerController);  // DISHONORED(port): a native in the 2013 scripts (exec 0x1c60c0, body 0x2d13a0); script in the reference
     DECLARE_FUNCTION(execRejectLogin)
     {
         P_GET_OBJECT(UPlayer,InPlayer);
@@ -15928,7 +15930,9 @@ struct FMaterialReferenceList
 {
     class UMaterialInterface* TargetMaterial;
     TArrayNoInit<struct FPrimitiveMaterialRef> AffectedMaterialRefs;
-    TArrayNoInit<struct FPostProcessMaterialRef> AffectedPPChainMaterialRefs;
+    // DISHONORED(layout): retail SDK span 0..16 (2012 PDB 16): no post-process chain refs in Dishonored (storage-less shim;
+    // porting TODO UnInterpolation.cpp UInterpTrackInstFloatMaterialParam/VectorMaterialParam)
+    DISHONORED_SHIM_STATIC TArrayNoInit<struct FPostProcessMaterialRef> AffectedPPChainMaterialRefs;
 
     /** Constructors */
     FMaterialReferenceList() {}
@@ -22518,6 +22522,7 @@ FNativeFunctionLookup GEngineAFileWriterNatives[] =
 
 FNativeFunctionLookup GEngineAGameInfoNatives[] = 
 { 
+	MAP_NATIVE(AGameInfo, execSpawnPlayerController)
 	MAP_NATIVE(AGameInfo, execEnableStandbyCheatDetection)
 	MAP_NATIVE(AGameInfo, execSetBandwidthLimit)
 	MAP_NATIVE(AGameInfo, execSwapPlayerControllers)

@@ -19,3 +19,16 @@
 //   0x5b0100  public: virtual void __thiscall UGameCrowdPopulationManager::Initialize(void)
 //   0x5b0240  public: class AGameCrowdAgent * __thiscall UGameCrowdPopulationManager::CreateNewAgent(class UGameCrowdSpawner *, class AActor *, class FVector const *, class AGameCrowdAgent *, class AGameCrowdAgent *)
 //   0x5b1890  public: virtual void __thiscall UGameCrowdPopulationManager::Tick(float)
+
+#include "GameFramework.h"
+
+// DISHONORED(retail): GameFramework.GameCrowdPopulationManager, the retail native UObject (GameFrameworkClasses.h); 2013 StaticClassNoInline
+// rva 0x55e7c0, InternalConstructor rva 0x56bb60.
+IMPLEMENT_CLASS(UGameCrowdPopulationManager);
+static_assert(sizeof(UGameCrowdPopulationManager) == 144, "UGameCrowdPopulationManager: retail 2013 size is 144");
+
+// DISHONORED(bringup): not ported yet (2013 rva 0x5620b0, 238 bytes; 2012 rva 0x5a2f40): applies the crowd shadow/quality settings.
+// Listed as needed in function_status.csv; nothing reaches it before a crowd exists.
+void UGameCrowdPopulationManager::ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason)
+{
+}

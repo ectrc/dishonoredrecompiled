@@ -290,3 +290,13 @@ FGameStringEvent
 FGenericParamListEvent
 UPendingLevel
 FCachedTerrainMaterialArray
+ADebugCameraController
+FDisJobDesc
+FDisJobRunner
+FEdgeAnimJobDesc
+FEdgeAnimManager
+FEdgeAnimToSkelMapping
+FEdgeSkelToAnimMapping
+FLocomotionState
+FLocomotionStateBase
+FEdgeAnimData

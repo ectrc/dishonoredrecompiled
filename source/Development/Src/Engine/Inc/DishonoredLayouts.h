@@ -33,7 +33,7 @@ static_assert(sizeof(AEmitterPool) == 672, "AEmitterPool: retail 2013 size is 67
 static_assert(sizeof(AFileLog) == 608, "AFileLog: retail 2013 size is 608");
 static_assert(sizeof(AFileWriter) == 608, "AFileWriter: retail 2013 size is 608");
 static_assert(sizeof(AGameInfo) == 976, "AGameInfo: retail 2013 size is 976");
-// pending: sizeof(AGameReplicationInfo) == 640 (ours 672)
+static_assert(sizeof(AGameReplicationInfo) == 640, "AGameReplicationInfo: retail 2013 size is 640");
 static_assert(sizeof(AGeneratedMeshAreaLight) == 592, "AGeneratedMeshAreaLight: retail 2013 size is 592");
 static_assert(sizeof(AHUD) == 1232, "AHUD: retail 2013 size is 1232");
 static_assert(sizeof(AInfo) == 592, "AInfo: retail 2013 size is 592");
@@ -103,6 +103,7 @@ static_assert(sizeof(AVolumePathNode) == 800, "AVolumePathNode: retail 2013 size
 static_assert(sizeof(AWindPointSource) == 592, "AWindPointSource: retail 2013 size is 592");
 static_assert(sizeof(AWorldInfo) == 1904, "AWorldInfo: retail 2013 size is 1904");
 static_assert(sizeof(AZoneInfo) == 608, "AZoneInfo: retail 2013 size is 608");
+static_assert(sizeof(FASwitch) == 16, "FASwitch: retail 2013 size is 16");
 static_assert(sizeof(FAchievementDetails) == 56, "FAchievementDetails: retail 2013 size is 56");
 static_assert(sizeof(FActorIterator) == 28, "FActorIterator: Dishonored PDB size is 28");
 static_assert(sizeof(FActorIteratorBase) == 20, "FActorIteratorBase: Dishonored PDB size is 20");
@@ -140,8 +141,8 @@ static_assert(sizeof(FBeamTargetData) == 12, "FBeamTargetData: retail 2013 size 
 // pending: sizeof(FBlendStateInitializerRHI) == 32 (ours 48)
 static_assert(sizeof(FBodyPart) == 20, "FBodyPart: retail 2013 size is 20");
 static_assert(sizeof(FBoneIndexPair) == 8, "FBoneIndexPair: Dishonored PDB size is 8");
-// pending: sizeof(FBoneMirrorExport) == 17 (ours 20)
-// pending: sizeof(FBoneMirrorInfo) == 5 (ours 8)
+static_assert(sizeof(FBoneMirrorExport) == 20, "FBoneMirrorExport: retail 2013 size is 20");
+static_assert(sizeof(FBoneMirrorInfo) == 8, "FBoneMirrorInfo: retail 2013 size is 8");
 static_assert(sizeof(FBonePair) == 16, "FBonePair: retail 2013 size is 16");
 static_assert(sizeof(FBoneRotationControl) == 28, "FBoneRotationControl: Dishonored PDB size is 28");
 static_assert(sizeof(FBoneTranslationControl) == 24, "FBoneTranslationControl: Dishonored PDB size is 24");
@@ -155,10 +156,10 @@ static_assert(sizeof(FCameraOffsetParticlePayload) == 8, "FCameraOffsetParticleP
 static_assert(sizeof(FCanvasIcon) == 20, "FCanvasIcon: retail 2013 size is 20");
 static_assert(sizeof(FCanvasUVTri) == 48, "FCanvasUVTri: retail 2013 size is 48");
 static_assert(sizeof(FCheckResult) == 76, "FCheckResult: Dishonored PDB size is 76");
-// pending: sizeof(FClientAdjustment) == 49 (ours 52)
+static_assert(sizeof(FClientAdjustment) == 52, "FClientAdjustment: retail 2013 size is 52");
 static_assert(sizeof(FCollisionImpactData) == 36, "FCollisionImpactData: retail 2013 size is 36");
 static_assert(sizeof(FCollisionNotifyInfo) == 68, "FCollisionNotifyInfo: Dishonored PDB size is 68");
-static_assert(sizeof(FColorMaterialInput) == 36, "FColorMaterialInput: Dishonored PDB size is 36");
+static_assert(sizeof(FColorMaterialInput) == 36, "FColorMaterialInput: retail 2013 size is 36");
 static_assert(sizeof(FColorVertexBuffer) == 40, "FColorVertexBuffer: Dishonored PDB size is 40");
 // pending: sizeof(FColoredMaterialRenderProxy) == 108 (ours 188)
 static_assert(sizeof(FColumnMetaData) == 24, "FColumnMetaData: retail 2013 size is 24");
@@ -169,7 +170,7 @@ static_assert(sizeof(FComponentReattachContext) == 12, "FComponentReattachContex
 // pending: sizeof(FCompressedShaderCodeCache) == 84 (ours 92)
 static_assert(sizeof(FCompressedShaderCodeChunk) == 16, "FCompressedShaderCodeChunk: Dishonored PDB size is 16");
 static_assert(sizeof(FCompressedVisibilityChunk) == 20, "FCompressedVisibilityChunk: Dishonored PDB size is 20");
-// pending: sizeof(FConsoleMessage) == 20 (ours 24)
+static_assert(sizeof(FConsoleMessage) == 20, "FConsoleMessage: retail 2013 size is 20");
 static_assert(sizeof(FConsoleOutputDevice) == 32, "FConsoleOutputDevice: Dishonored PDB size is 32");
 static_assert(sizeof(FContentComparisonAssetInfo) == 16, "FContentComparisonAssetInfo: Dishonored PDB size is 16");
 static_assert(sizeof(FContentComparisonHelper) == 64, "FContentComparisonHelper: Dishonored PDB size is 64");
@@ -186,7 +187,7 @@ static_assert(sizeof(FCustomInput) == 40, "FCustomInput: Dishonored PDB size is 
 static_assert(sizeof(FDebugDisplayProperty) == 16, "FDebugDisplayProperty: retail 2013 size is 16");
 static_assert(sizeof(FDebugNavCost) == 16, "FDebugNavCost: retail 2013 size is 16");
 static_assert(sizeof(FDebugShadowRay) == 28, "FDebugShadowRay: Dishonored PDB size is 28");
-// pending: sizeof(FDebugTextInfo) == 56 (ours 72)
+static_assert(sizeof(FDebugTextInfo) == 56, "FDebugTextInfo: retail 2013 size is 56");
 static_assert(sizeof(FDecalVertexFactoryBase) == 144, "FDecalVertexFactoryBase: Dishonored PDB size is 144");
 static_assert(sizeof(FDeferredCleanupInterface) == 4, "FDeferredCleanupInterface: Dishonored PDB size is 4");
 static_assert(sizeof(FDeferredUpdateResource) == 20, "FDeferredUpdateResource: Dishonored PDB size is 20");
@@ -194,7 +195,7 @@ static_assert(sizeof(FDepthFieldGlowInfo) == 36, "FDepthFieldGlowInfo: retail 20
 static_assert(sizeof(FDepthStateInitializerRHI) == 8, "FDepthStateInitializerRHI: Dishonored PDB size is 8");
 // pending: sizeof(FDetailedTickStats) == 156 (ours 180)
 static_assert(sizeof(FDisPrimTraceMask) == 4, "FDisPrimTraceMask: retail 2013 size is 4");
-// pending: sizeof(FDominantShadowInfo) == 164 (ours 176)
+static_assert(sizeof(FDominantShadowInfo) == 176, "FDominantShadowInfo: retail 2013 size is 176");
 static_assert(sizeof(FDrawEvent) == 4, "FDrawEvent: Dishonored PDB size is 4");
 static_assert(sizeof(FDropNoteInfo) == 36, "FDropNoteInfo: retail 2013 size is 36");
 static_assert(sizeof(FDynamicActorIterator) == 28, "FDynamicActorIterator: Dishonored PDB size is 28");
@@ -226,14 +227,14 @@ static_assert(sizeof(FDynamicRHI) == 4, "FDynamicRHI: Dishonored PDB size is 4")
 static_assert(sizeof(FEdgeStorageDatum) == 16, "FEdgeStorageDatum: Dishonored PDB size is 16");
 static_assert(sizeof(FEmitterBaseInfo) == 36, "FEmitterBaseInfo: retail 2013 size is 36");
 static_assert(sizeof(FEmitterDynamicParameterPayload) == 16, "FEmitterDynamicParameterPayload: Dishonored PDB size is 16");
-// pending: sizeof(FExposedTextureLODSettings) == 728 (ours 672)
+static_assert(sizeof(FExposedTextureLODSettings) == 728, "FExposedTextureLODSettings: Dishonored PDB size is 728");
 static_assert(sizeof(FExpressionInput) == 28, "FExpressionInput: retail 2013 size is 28");
 static_assert(sizeof(FExpressionOutput) == 32, "FExpressionOutput: Dishonored PDB size is 32");
 static_assert(sizeof(FFontCharacter) == 24, "FFontCharacter: retail 2013 size is 24");
 static_assert(sizeof(FFontImportOptionsData) == 148, "FFontImportOptionsData: retail 2013 size is 148");
 // pending: sizeof(FFontMaterialRenderProxy) == 104 (ours 184)
 static_assert(sizeof(FFontParameterValue) == 32, "FFontParameterValue: retail 2013 size is 32");
-static_assert(sizeof(FFontParameterValueOverTime) == 56, "FFontParameterValueOverTime: Dishonored PDB size is 56");
+static_assert(sizeof(FFontParameterValueOverTime) == 56, "FFontParameterValueOverTime: retail 2013 size is 56");
 static_assert(sizeof(FFontRenderInfo) == 40, "FFontRenderInfo: retail 2013 size is 40");
 static_assert(sizeof(FForceApplicator) == 4, "FForceApplicator: Dishonored PDB size is 4");
 static_assert(sizeof(FFragmentRange) == 8, "FFragmentRange: Dishonored PDB size is 8");
@@ -270,8 +271,8 @@ static_assert(sizeof(FIndexBuffer) == 24, "FIndexBuffer: Dishonored PDB size is 
 static_assert(sizeof(FIndividualCompressedShaderInfo) == 8, "FIndividualCompressedShaderInfo: Dishonored PDB size is 8");
 static_assert(sizeof(FInfluenceBones) == 4, "FInfluenceBones: Dishonored PDB size is 4");
 static_assert(sizeof(FInfluenceWeights) == 4, "FInfluenceWeights: Dishonored PDB size is 4");
-// pending: sizeof(FIniLocFileEntry) == 13 (ours 16)
-// pending: sizeof(FInputEntry) == 13 (ours 16)
+static_assert(sizeof(FIniLocFileEntry) == 16, "FIniLocFileEntry: retail 2013 size is 16");
+static_assert(sizeof(FInputEntry) == 16, "FInputEntry: retail 2013 size is 16");
 static_assert(sizeof(FInputLatencyTimer) == 28, "FInputLatencyTimer: Dishonored PDB size is 28");
 static_assert(sizeof(FInstancedLightMap2D) == 128, "FInstancedLightMap2D: Dishonored PDB size is 128");
 static_assert(sizeof(FIntPair) == 8, "FIntPair: Dishonored PDB size is 8");
@@ -287,8 +288,8 @@ static_assert(sizeof(FKCachedConvexDataElement) == 12, "FKCachedConvexDataElemen
 static_assert(sizeof(FKCachedPerTriData) == 12, "FKCachedPerTriData: Dishonored PDB size is 12");
 static_assert(sizeof(FKConvexElem) == 100, "FKConvexElem: retail 2013 size is 100");
 static_assert(sizeof(FKConvexGeomRenderInfo) == 12, "FKConvexGeomRenderInfo: Dishonored PDB size is 12");
-// pending: sizeof(FKSphereElem) == 72 (ours 80)
-// pending: sizeof(FKSphylElem) == 76 (ours 80)
+static_assert(sizeof(FKSphereElem) == 80, "FKSphereElem: retail 2013 size is 80");
+static_assert(sizeof(FKSphylElem) == 80, "FKSphylElem: retail 2013 size is 80");
 static_assert(sizeof(FKeyValuePair) == 24, "FKeyValuePair: retail 2013 size is 24");
 static_assert(sizeof(FKismetDrawTextInfo) == 40, "FKismetDrawTextInfo: retail 2013 size is 40");
 static_assert(sizeof(FLODBurstFired) == 12, "FLODBurstFired: Dishonored PDB size is 12");
@@ -327,24 +328,24 @@ static_assert(sizeof(FLightSample) == 40, "FLightSample: Dishonored PDB size is 
 static_assert(sizeof(FLightingChannelContainer) == 4, "FLightingChannelContainer: retail 2013 size is 4");
 // pending: sizeof(FLightingDensityMaterialRenderProxy) == 116 (ours 196)
 static_assert(sizeof(FLightmassDebugOptions) == 20, "FLightmassDebugOptions: retail 2013 size is 20");
-static_assert(sizeof(FLightmassDirectionalLightSettings) == 16, "FLightmassDirectionalLightSettings: Dishonored PDB size is 16");
+static_assert(sizeof(FLightmassDirectionalLightSettings) == 16, "FLightmassDirectionalLightSettings: retail 2013 size is 16");
 static_assert(sizeof(FLightmassLightSettings) == 12, "FLightmassLightSettings: retail 2013 size is 12");
 static_assert(sizeof(FLightmassMaterialInterfaceSettings) == 24, "FLightmassMaterialInterfaceSettings: retail 2013 size is 24");
-static_assert(sizeof(FLightmassPointLightSettings) == 16, "FLightmassPointLightSettings: Dishonored PDB size is 16");
+static_assert(sizeof(FLightmassPointLightSettings) == 16, "FLightmassPointLightSettings: retail 2013 size is 16");
 static_assert(sizeof(FLightmassPrimitiveSettings) == 28, "FLightmassPrimitiveSettings: retail 2013 size is 28");
 static_assert(sizeof(FLightmassWorldInfoSettings) == 60, "FLightmassWorldInfoSettings: retail 2013 size is 60");
 static_assert(sizeof(FLinearDOFSetup) == 8, "FLinearDOFSetup: retail 2013 size is 8");
 static_assert(sizeof(FLocalPlayerIterator) == 8, "FLocalPlayerIterator: Dishonored PDB size is 8");
 static_assert(sizeof(FLocalTalker) == 4, "FLocalTalker: retail 2013 size is 4");
 static_assert(sizeof(FLocalVertexFactory) == 580, "FLocalVertexFactory: Dishonored PDB size is 580");
-// pending: sizeof(FLocalizedStringSetting) == 9 (ours 12)
+static_assert(sizeof(FLocalizedStringSetting) == 12, "FLocalizedStringSetting: retail 2013 size is 12");
 static_assert(sizeof(FLocalizedStringSettingMetaData) == 36, "FLocalizedStringSettingMetaData: retail 2013 size is 36");
 static_assert(sizeof(FLocalizedSubtitle) == 16, "FLocalizedSubtitle: retail 2013 size is 16");
 static_assert(sizeof(FLocationEmitterInstancePayload) == 4, "FLocationEmitterInstancePayload: Dishonored PDB size is 4");
 // pending: sizeof(FMaterial) == 140 (ours 152)
 static_assert(sizeof(FMaterialCompiler) == 4, "FMaterialCompiler: Dishonored PDB size is 4");
 // pending: sizeof(FMaterialPixelShaderParameters) == 192 (ours 456)
-// pending: sizeof(FMaterialReferenceList) == 16 (ours 28)
+static_assert(sizeof(FMaterialReferenceList) == 16, "FMaterialReferenceList: retail 2013 size is 16");
 // pending: sizeof(FMaterialRenderContext) == 16 (ours 28)
 // pending: sizeof(FMaterialRenderProxy) == 88 (ours 168)
 // pending: sizeof(FMaterialResource) == 148 (ours 172)
@@ -383,20 +384,20 @@ static_assert(sizeof(FNamedInterfaceDef) == 20, "FNamedInterfaceDef: retail 2013
 static_assert(sizeof(FNamedNetDriver) == 12, "FNamedNetDriver: retail 2013 size is 12");
 // pending: sizeof(FNavMeshBasicOneWayEdge) == 52 (ours 112)
 // pending: sizeof(FNavMeshCollisionDataProvider) == 8 (ours 12)
-// pending: sizeof(FNavMeshCrossPylonEdge) == 104 (ours 176)
-// pending: sizeof(FNavMeshDropDownEdge) == 108 (ours 180)
+// pending: sizeof(FNavMeshCrossPylonEdge) == 104 (ours 168)
+// pending: sizeof(FNavMeshDropDownEdge) == 108 (ours 172)
 // pending: sizeof(FNavMeshEdgeBase) == 52 (ours 112)
 static_assert(sizeof(FNavMeshObject) == 4, "FNavMeshObject: Dishonored PDB size is 4");
-// pending: sizeof(FNavMeshOneWayBackRefEdge) == 104 (ours 176)
+// pending: sizeof(FNavMeshOneWayBackRefEdge) == 104 (ours 168)
 static_assert(sizeof(FNavMeshPathConstraintCacheDatum) == 24, "FNavMeshPathConstraintCacheDatum: retail 2013 size is 24");
 static_assert(sizeof(FNavMeshPathGoalEvaluatorCacheDatum) == 24, "FNavMeshPathGoalEvaluatorCacheDatum: retail 2013 size is 24");
-// pending: sizeof(FNavMeshPathObjectEdge) == 128 (ours 200)
+// pending: sizeof(FNavMeshPathObjectEdge) == 128 (ours 192)
 // pending: sizeof(FNavMeshPolyBase) == 156 (ours 136)
 // pending: sizeof(FNavMeshWorld) == 76 (ours 200)
 static_assert(sizeof(FNavReference) == 20, "FNavReference: retail 2013 size is 20");
 static_assert(sizeof(FNavigationOctree) == 4, "FNavigationOctree: Dishonored PDB size is 4");
 static_assert(sizeof(FNavigationOctreeNode) == 16, "FNavigationOctreeNode: Dishonored PDB size is 16");
-// pending: sizeof(FNavigationOctreeObject) == 49 (ours 52)
+static_assert(sizeof(FNavigationOctreeObject) == 52, "FNavigationOctreeObject: retail 2013 size is 52");
 static_assert(sizeof(FNetRelevantActorIterator) == 28, "FNetRelevantActorIterator: Dishonored PDB size is 28");
 static_assert(sizeof(FNodeGroup) == 272, "FNodeGroup: Dishonored PDB size is 272");
 static_assert(sizeof(FNormalParameter) == 32, "FNormalParameter: Dishonored PDB size is 32");
@@ -410,9 +411,9 @@ static_assert(sizeof(FOctreeNodeBounds) == 16, "FOctreeNodeBounds: Dishonored PD
 static_assert(sizeof(FOctreeNodeContext) == 48, "FOctreeNodeContext: Dishonored PDB size is 48");
 // pending: sizeof(FOneColorPixelShader) == 116 (ours 148)
 // pending: sizeof(FOneColorVertexShader) == 108 (ours 136)
-static_assert(sizeof(FOnlineArbitrationRegistrant) == 20, "FOnlineArbitrationRegistrant: Dishonored PDB size is 20");
+static_assert(sizeof(FOnlineArbitrationRegistrant) == 20, "FOnlineArbitrationRegistrant: retail 2013 size is 20");
 static_assert(sizeof(FOnlineContent) == 88, "FOnlineContent: retail 2013 size is 88");
-static_assert(sizeof(FOnlineCrossTitleContent) == 92, "FOnlineCrossTitleContent: Dishonored PDB size is 92");
+static_assert(sizeof(FOnlineCrossTitleContent) == 92, "FOnlineCrossTitleContent: retail 2013 size is 92");
 static_assert(sizeof(FOnlineFriend) == 48, "FOnlineFriend: retail 2013 size is 48");
 static_assert(sizeof(FOnlineFriendMessage) == 36, "FOnlineFriendMessage: retail 2013 size is 36");
 static_assert(sizeof(FOnlinePartyMember) == 56, "FOnlinePartyMember: retail 2013 size is 56");
@@ -430,8 +431,8 @@ static_assert(sizeof(FPackedNormal) == 4, "FPackedNormal: Dishonored PDB size is
 static_assert(sizeof(FPackedPosition) == 4, "FPackedPosition: Dishonored PDB size is 4");
 static_assert(sizeof(FParameterValueOverTime) == 48, "FParameterValueOverTime: retail 2013 size is 48");
 static_assert(sizeof(FParticleAnimTrailEmitterInstance) == 736, "FParticleAnimTrailEmitterInstance: Dishonored PDB size is 736");
-// pending: sizeof(FParticleBeam2EmitterInstance) == 636 (ours 632)
-// pending: sizeof(FParticleBeamEmitterInstance) == 340 (ours 336)
+static_assert(sizeof(FParticleBeam2EmitterInstance) == 636, "FParticleBeam2EmitterInstance: Dishonored PDB size is 636");
+static_assert(sizeof(FParticleBeamEmitterInstance) == 340, "FParticleBeamEmitterInstance: Dishonored PDB size is 340");
 // pending: sizeof(FParticleBeamTrailDynamicParameterVertexFactory) == 504 (ours 508)
 // pending: sizeof(FParticleBeamTrailVertex) == 72 (ours 76)
 // pending: sizeof(FParticleBeamTrailVertexDynamicParameter) == 88 (ours 92)
@@ -441,19 +442,19 @@ static_assert(sizeof(FParticleCollisionPayload) == 32, "FParticleCollisionPayloa
 static_assert(sizeof(FParticleDataManager) == 64, "FParticleDataManager: Dishonored PDB size is 64");
 // pending: sizeof(FParticleDynamicData) == 40 (ours 44)
 // pending: sizeof(FParticleDynamicParameterVertexFactory) == 504 (ours 508)
-// pending: sizeof(FParticleEmitterInstance) == 340 (ours 336)
+static_assert(sizeof(FParticleEmitterInstance) == 340, "FParticleEmitterInstance: Dishonored PDB size is 340");
 static_assert(sizeof(FParticleEmitterInstanceType) == 8, "FParticleEmitterInstanceType: Dishonored PDB size is 8");
 // pending: sizeof(FParticleEventInstancePayload) == 24 (ours 32)
-// pending: sizeof(FParticleMeshEmitterInstance) == 372 (ours 368)
+static_assert(sizeof(FParticleMeshEmitterInstance) == 372, "FParticleMeshEmitterInstance: Dishonored PDB size is 372");
 static_assert(sizeof(FParticleOrder) == 8, "FParticleOrder: Dishonored PDB size is 8");
 static_assert(sizeof(FParticleOrderPool) == 12, "FParticleOrderPool: Dishonored PDB size is 12");
 static_assert(sizeof(FParticlePointSpriteVertex) == 20, "FParticlePointSpriteVertex: Dishonored PDB size is 20");
-// pending: sizeof(FParticleRibbonEmitterInstance) == 628 (ours 640)
+// pending: sizeof(FParticleRibbonEmitterInstance) == 628 (ours 644)
 static_assert(sizeof(FParticleSpawnInstanceInfo) == 80, "FParticleSpawnInstanceInfo: Dishonored PDB size is 80");
 static_assert(sizeof(FParticleSpawnPerUnitInstancePayload) == 4, "FParticleSpawnPerUnitInstancePayload: Dishonored PDB size is 4");
 static_assert(sizeof(FParticleSpriteData) == 56, "FParticleSpriteData: Dishonored PDB size is 56");
-// pending: sizeof(FParticleSpriteEmitterInstance) == 340 (ours 336)
-// pending: sizeof(FParticleSpriteSubUVEmitterInstance) == 340 (ours 336)
+static_assert(sizeof(FParticleSpriteEmitterInstance) == 340, "FParticleSpriteEmitterInstance: Dishonored PDB size is 340");
+static_assert(sizeof(FParticleSpriteSubUVEmitterInstance) == 340, "FParticleSpriteSubUVEmitterInstance: Dishonored PDB size is 340");
 // pending: sizeof(FParticleSpriteSubUVVertex) == 88 (ours 92)
 // pending: sizeof(FParticleSpriteSubUVVertexDynamicParameter) == 104 (ours 108)
 // pending: sizeof(FParticleSpriteVertex) == 64 (ours 68)
@@ -462,17 +463,17 @@ static_assert(sizeof(FParticleSpriteData) == 56, "FParticleSpriteData: Dishonore
 // pending: sizeof(FParticleSubUVVertexFactory) == 504 (ours 508)
 // pending: sizeof(FParticleSystemOcclusionSceneProxy) == 560 (ours 736)
 // pending: sizeof(FParticleSystemSceneProxy) == 464 (ours 640)
-// pending: sizeof(FParticleTrail2EmitterInstance) == 528 (ours 524)
-// pending: sizeof(FParticleTrailEmitterInstance) == 340 (ours 336)
-// pending: sizeof(FParticleTrailsEmitterInstance_Base) == 420 (ours 416)
+static_assert(sizeof(FParticleTrail2EmitterInstance) == 528, "FParticleTrail2EmitterInstance: Dishonored PDB size is 528");
+static_assert(sizeof(FParticleTrailEmitterInstance) == 340, "FParticleTrailEmitterInstance: Dishonored PDB size is 340");
+static_assert(sizeof(FParticleTrailsEmitterInstance_Base) == 420, "FParticleTrailsEmitterInstance_Base: Dishonored PDB size is 420");
 // pending: sizeof(FParticleVertexFactory) == 504 (ours 508)
 // pending: sizeof(FParticleVertexFactoryPool) == 132 (ours 96)
 // pending: sizeof(FParticleVertexFactoryShaderParameters) == 72 (ours 148)
-// pending: sizeof(FPathSizeInfo) == 21 (ours 24)
+static_assert(sizeof(FPathSizeInfo) == 24, "FPathSizeInfo: retail 2013 size is 24");
 // pending: sizeof(FPawnClassEventData) == 12 (ours 8)
 static_assert(sizeof(FPendingCleanupObjects) == 12, "FPendingCleanupObjects: Dishonored PDB size is 12");
 static_assert(sizeof(FPerPlayerSplitscreenData) == 16, "FPerPlayerSplitscreenData: retail 2013 size is 16");
-// pending: sizeof(FPerPolyBoneCollisionData) == 36 (ours 80)
+static_assert(sizeof(FPerPolyBoneCollisionData) == 36, "FPerPolyBoneCollisionData: Dishonored PDB size is 36");
 static_assert(sizeof(FPhysAssetCreateParams) == 28, "FPhysAssetCreateParams: Dishonored PDB size is 28");
 static_assert(sizeof(FPhysEffectInfo) == 12, "FPhysEffectInfo: retail 2013 size is 12");
 static_assert(sizeof(FPhysXEmitterVerticalProperties) == 24, "FPhysXEmitterVerticalProperties: retail 2013 size is 24");
@@ -484,14 +485,14 @@ static_assert(sizeof(FPlatformStaticMeshData) == 4, "FPlatformStaticMeshData: Di
 // pending: sizeof(FPlayerInformation) == 40 (ours 32)
 static_assert(sizeof(FPlayerResponseLine) == 44, "FPlayerResponseLine: retail 2013 size is 44");
 static_assert(sizeof(FPoly) == 328, "FPoly: Dishonored PDB size is 328");
-// pending: sizeof(FPolyReference) == 24 (ours 28)
+static_assert(sizeof(FPolyReference) == 24, "FPolyReference: retail 2013 size is 24");
 static_assert(sizeof(FPositionVertex) == 12, "FPositionVertex: Dishonored PDB size is 12");
 static_assert(sizeof(FPositionVertexBuffer) == 40, "FPositionVertexBuffer: Dishonored PDB size is 40");
 static_assert(sizeof(FPrecomputedVisibilityBucket) == 28, "FPrecomputedVisibilityBucket: Dishonored PDB size is 28");
 static_assert(sizeof(FPrecomputedVisibilityCell) == 16, "FPrecomputedVisibilityCell: Dishonored PDB size is 16");
 static_assert(sizeof(FPrecomputedVisibilityHandler) == 40, "FPrecomputedVisibilityHandler: Dishonored PDB size is 40");
 static_assert(sizeof(FPrefabUpdateArc) == 812, "FPrefabUpdateArc: Dishonored PDB size is 812");
-// pending: sizeof(FPresetGeneratedPoint) == 21 (ours 24)
+static_assert(sizeof(FPresetGeneratedPoint) == 24, "FPresetGeneratedPoint: retail 2013 size is 24");
 // pending: sizeof(FPreviewScene) == 36 (ours 40)
 // pending: sizeof(FPrimitiveDrawInterface) == 12 (ours 8)
 static_assert(sizeof(FPrimitiveHashBase) == 4, "FPrimitiveHashBase: Dishonored PDB size is 4");
@@ -543,30 +544,30 @@ static_assert(sizeof(FResolveParams) == 24, "FResolveParams: Dishonored PDB size
 static_assert(sizeof(FRigidBodyCollisionInfo) == 12, "FRigidBodyCollisionInfo: Dishonored PDB size is 12");
 static_assert(sizeof(FRigidBodyContactInfo) == 60, "FRigidBodyContactInfo: retail 2013 size is 60");
 static_assert(sizeof(FRigidBodyIndexPair) == 8, "FRigidBodyIndexPair: Dishonored PDB size is 8");
-// pending: sizeof(FRigidBodyState) == 57 (ours 64)
+static_assert(sizeof(FRigidBodyState) == 64, "FRigidBodyState: retail 2013 size is 64");
 static_assert(sizeof(FRigidSkinVertex) == 64, "FRigidSkinVertex: Dishonored PDB size is 64");
 static_assert(sizeof(FRootMotionCurve) == 28, "FRootMotionCurve: retail 2013 size is 28");
 static_assert(sizeof(FSMMaterialSetterDatum) == 8, "FSMMaterialSetterDatum: retail 2013 size is 8");
 // pending: sizeof(FSamplerStateInitializerRHI) == 20 (ours 32)
 static_assert(sizeof(FSavedPosition) == 32, "FSavedPosition: Dishonored PDB size is 32");
-static_assert(sizeof(FScalarMaterialInput) == 36, "FScalarMaterialInput: Dishonored PDB size is 36");
+static_assert(sizeof(FScalarMaterialInput) == 36, "FScalarMaterialInput: retail 2013 size is 36");
 static_assert(sizeof(FScalarParameterInterpStruct) == 20, "FScalarParameterInterpStruct: retail 2013 size is 20");
 static_assert(sizeof(FScalarParameterValue) == 28, "FScalarParameterValue: retail 2013 size is 28");
-static_assert(sizeof(FScalarParameterValueOverTime) == 68, "FScalarParameterValueOverTime: Dishonored PDB size is 68");
+static_assert(sizeof(FScalarParameterValueOverTime) == 68, "FScalarParameterValueOverTime: retail 2013 size is 68");
 // pending: sizeof(FScalarReplacementMaterialRenderProxy) == 104 (ours 184)
 static_assert(sizeof(FScaleSizeByLifePayload) == 4, "FScaleSizeByLifePayload: Dishonored PDB size is 4");
-// pending: sizeof(FSceneCaptureProbe) == 100 (ours 108)
+static_assert(sizeof(FSceneCaptureProbe) == 100, "FSceneCaptureProbe: Dishonored PDB size is 100");
 static_assert(sizeof(FSceneCaptureProbe2D) == 240, "FSceneCaptureProbe2D: Dishonored PDB size is 240");
-// pending: sizeof(FSceneCaptureProbe2DHitMask) == 148 (ours 156)
-// pending: sizeof(FSceneCaptureProbeCube) == 120 (ours 128)
+static_assert(sizeof(FSceneCaptureProbe2DHitMask) == 148, "FSceneCaptureProbe2DHitMask: Dishonored PDB size is 148");
+static_assert(sizeof(FSceneCaptureProbeCube) == 120, "FSceneCaptureProbeCube: Dishonored PDB size is 120");
 static_assert(sizeof(FSceneCaptureProbePortal) == 208, "FSceneCaptureProbePortal: Dishonored PDB size is 208");
 // pending: sizeof(FSceneCaptureProbeReflect) == 144 (ours 128)
 static_assert(sizeof(FSceneCaptureProxy) == 8, "FSceneCaptureProxy: Dishonored PDB size is 8");
 static_assert(sizeof(FSceneInterface) == 4, "FSceneInterface: Dishonored PDB size is 4");
 // pending: sizeof(FSceneTextureShaderParameters) == 30 (ours 76)
 // pending: sizeof(FSceneView) == 1280 (ours 1392)
-// pending: sizeof(FSceneViewFamily) == 80 (ours 84)
-// pending: sizeof(FSceneViewFamilyContext) == 80 (ours 84)
+static_assert(sizeof(FSceneViewFamily) == 80, "FSceneViewFamily: Dishonored PDB size is 80");
+static_assert(sizeof(FSceneViewFamilyContext) == 80, "FSceneViewFamilyContext: Dishonored PDB size is 80");
 // pending: sizeof(FSceneViewStateInterface) == 4 (ours 12)
 // pending: sizeof(FScopedDetailTickStats) == 16 (ours 20)
 static_assert(sizeof(FScreenMessageString) == 32, "FScreenMessageString: retail 2013 size is 32");
@@ -578,7 +579,7 @@ static_assert(sizeof(FSelectionIterator) == 8, "FSelectionIterator: Dishonored P
 static_assert(sizeof(FSeparatingAxisPointCheck) == 48, "FSeparatingAxisPointCheck: Dishonored PDB size is 48");
 static_assert(sizeof(FServerResponseLine) == 96, "FServerResponseLine: retail 2013 size is 96");
 static_assert(sizeof(FSettingsData) == 12, "FSettingsData: retail 2013 size is 12");
-// pending: sizeof(FSettingsProperty) == 17 (ours 20)
+static_assert(sizeof(FSettingsProperty) == 20, "FSettingsProperty: retail 2013 size is 20");
 static_assert(sizeof(FSettingsPropertyPropertyMetaData) == 64, "FSettingsPropertyPropertyMetaData: retail 2013 size is 64");
 // pending: sizeof(FShader) == 108 (ours 136)
 static_assert(sizeof(FShaderCache) == 8, "FShaderCache: Dishonored PDB size is 8");
@@ -608,6 +609,7 @@ static_assert(sizeof(FSkelMeshExtraInfluenceImportData) == 68, "FSkelMeshExtraIn
 // pending: sizeof(FSkelMeshSection) == 12 (ours 16)
 // pending: sizeof(FSkeletalMeshLODInfo) == 56 (ours 60)
 static_assert(sizeof(FSkeletalMeshSceneProxy) == 224, "FSkeletalMeshSceneProxy: Dishonored PDB size is 224");
+static_assert(sizeof(FSkeletalMeshSocket_EditorOnly) == 12, "FSkeletalMeshSocket_EditorOnly: retail 2013 size is 12");
 // pending: sizeof(FSkeletalMeshVertexBuffer) == 84 (ours 88)
 static_assert(sizeof(FSkeletalMeshVertexColorBuffer) == 40, "FSkeletalMeshVertexColorBuffer: Dishonored PDB size is 40");
 static_assert(sizeof(FSkeletalMeshVertexDataInterface) == 4, "FSkeletalMeshVertexDataInterface: Dishonored PDB size is 4");
@@ -661,7 +663,7 @@ static_assert(sizeof(FStreamingHandlerTextureLevelForced) == 4, "FStreamingHandl
 static_assert(sizeof(FStreamingHandlerTextureStatic) == 4, "FStreamingHandlerTextureStatic: Dishonored PDB size is 4");
 // pending: sizeof(FStreamingManagerBase) == 4 (ours 12)
 // pending: sizeof(FStreamingManagerCollection) == 24 (ours 36)
-// pending: sizeof(FStreamingManagerTexture) == 560 (ours 2676)
+// pending: sizeof(FStreamingManagerTexture) == 560 (ours 2668)
 static_assert(sizeof(FStreamingTexturePrimitiveInfo) == 24, "FStreamingTexturePrimitiveInfo: Dishonored PDB size is 24");
 // pending: sizeof(FStreamingViewInfo) == 20 (ours 32)
 static_assert(sizeof(FStringIdToStringMapping) == 16, "FStringIdToStringMapping: retail 2013 size is 16");
@@ -671,7 +673,8 @@ static_assert(sizeof(FSupportedSubTrackInfo) == 20, "FSupportedSubTrackInfo: ret
 static_assert(sizeof(FSuspendRenderingThread) == 12, "FSuspendRenderingThread: Dishonored PDB size is 12");
 static_assert(sizeof(FSwarmDebugOptions) == 4, "FSwarmDebugOptions: retail 2013 size is 4");
 static_assert(sizeof(FSynchronizedActorVisibilityHistory) == 8, "FSynchronizedActorVisibilityHistory: retail 2013 size is 8");
-// pending: sizeof(FSystemSettings) == 11584 (ours 1088)
+static_assert(sizeof(FSystemSettings) == 11628, "FSystemSettings: retail 2013 size is 11628 (2012 PDB: 11584)");
+static_assert(sizeof(FSystemSettingsData) == 1052, "FSystemSettingsData: retail 2013 size is 1052 (2012 PDB: 1048)");
 static_assert(sizeof(FTCameraCache) == 32, "FTCameraCache: retail 2013 size is 32");
 static_assert(sizeof(FTViewTarget) == 40, "FTViewTarget: retail 2013 size is 40");
 static_assert(sizeof(FTeamInformation) == 24, "FTeamInformation: Dishonored PDB size is 24");
@@ -681,10 +684,10 @@ static_assert(sizeof(FTexture2DDynamicResource) == 76, "FTexture2DDynamicResourc
 static_assert(sizeof(FTexture2DMipMap) == 60, "FTexture2DMipMap: retail 2013 size is 60");
 // pending: sizeof(FTexture2DResource) == 268 (ours 296)
 static_assert(sizeof(FTextureGroupContainer) == 4, "FTextureGroupContainer: retail 2013 size is 4");
-// pending: sizeof(FTextureLODSettings) == 728 (ours 672)
+static_assert(sizeof(FTextureLODSettings) == 728, "FTextureLODSettings: Dishonored PDB size is 728");
 static_assert(sizeof(FTextureMovieResource) == 104, "FTextureMovieResource: Dishonored PDB size is 104");
 static_assert(sizeof(FTextureParameterValue) == 28, "FTextureParameterValue: retail 2013 size is 28");
-static_assert(sizeof(FTextureParameterValueOverTime) == 52, "FTextureParameterValueOverTime: Dishonored PDB size is 52");
+static_assert(sizeof(FTextureParameterValueOverTime) == 52, "FTextureParameterValueOverTime: retail 2013 size is 52");
 static_assert(sizeof(FTextureRenderTarget2DResource) == 128, "FTextureRenderTarget2DResource: Dishonored PDB size is 128");
 static_assert(sizeof(FTextureRenderTargetCubeResource) == 132, "FTextureRenderTargetCubeResource: Dishonored PDB size is 132");
 static_assert(sizeof(FTextureRenderTargetResource) == 96, "FTextureRenderTargetResource: Dishonored PDB size is 96");
@@ -708,10 +711,10 @@ static_assert(sizeof(FURL) == 68, "FURL: retail 2013 size is 68");
 static_assert(sizeof(FUniqueNetId) == 8, "FUniqueNetId: retail 2013 size is 8");
 static_assert(sizeof(FUpdateTextureRegion2D) == 24, "FUpdateTextureRegion2D: Dishonored PDB size is 24");
 static_assert(sizeof(FUserBounds) == 24, "FUserBounds: retail 2013 size is 24");
-static_assert(sizeof(FVector2MaterialInput) == 40, "FVector2MaterialInput: Dishonored PDB size is 40");
-static_assert(sizeof(FVectorMaterialInput) == 44, "FVectorMaterialInput: Dishonored PDB size is 44");
+static_assert(sizeof(FVector2MaterialInput) == 40, "FVector2MaterialInput: retail 2013 size is 40");
+static_assert(sizeof(FVectorMaterialInput) == 44, "FVectorMaterialInput: retail 2013 size is 44");
 static_assert(sizeof(FVectorParameterValue) == 40, "FVectorParameterValue: retail 2013 size is 40");
-static_assert(sizeof(FVectorParameterValueOverTime) == 80, "FVectorParameterValueOverTime: Dishonored PDB size is 80");
+static_assert(sizeof(FVectorParameterValueOverTime) == 80, "FVectorParameterValueOverTime: retail 2013 size is 80");
 static_assert(sizeof(FVert) == 24, "FVert: Dishonored PDB size is 24");
 // pending: sizeof(FVertInfluence) == 8 (ours 12)
 static_assert(sizeof(FVertexBuffer) == 24, "FVertexBuffer: Dishonored PDB size is 24");
@@ -762,7 +765,7 @@ static_assert(sizeof(UActorFactoryStaticMesh) == 104, "UActorFactoryStaticMesh: 
 static_assert(sizeof(UActorFactoryTrigger) == 88, "UActorFactoryTrigger: retail 2013 size is 88");
 static_assert(sizeof(UArkHealthInterface) == 56, "UArkHealthInterface: retail 2013 size is 56");
 static_assert(sizeof(UArkSettingsListenerInterface) == 56, "UArkSettingsListenerInterface: retail 2013 size is 56");
-// pending: sizeof(UArrowComponent) == 464 (ours 480)
+static_assert(sizeof(UArrowComponent) == 464, "UArrowComponent: retail 2013 size is 464");
 static_assert(sizeof(UBookMark) == 80, "UBookMark: retail 2013 size is 80");
 static_assert(sizeof(UBookMark2D) == 68, "UBookMark2D: retail 2013 size is 68");
 static_assert(sizeof(UBrushComponent) == 544, "UBrushComponent: retail 2013 size is 544");
@@ -816,7 +819,7 @@ static_assert(sizeof(UFontImportOptions) == 204, "UFontImportOptions: retail 201
 static_assert(sizeof(UForceFeedbackManager) == 80, "UForceFeedbackManager: retail 2013 size is 80");
 static_assert(sizeof(UForceFeedbackWaveform) == 80, "UForceFeedbackWaveform: retail 2013 size is 80");
 static_assert(sizeof(UGameEngine) == 1804, "UGameEngine: retail 2013 size is 1804");
-// pending: sizeof(UGameViewportClient) == 284 (ours 292)
+static_assert(sizeof(UGameViewportClient) == 284, "UGameViewportClient: retail 2013 size is 284");
 // pending: sizeof(UGameplayEvents) == 316 (ours 336)
 static_assert(sizeof(UGameplayEventsHandler) == 84, "UGameplayEventsHandler: Dishonored PDB size is 84");
 // pending: sizeof(UGameplayEventsReader) == 328 (ours 348)
@@ -935,7 +938,7 @@ static_assert(sizeof(UShadowMap2D) == 104, "UShadowMap2D: retail 2013 size is 10
 static_assert(sizeof(UShadowMapTexture2D) == 376, "UShadowMapTexture2D: retail 2013 size is 376 (2012 PDB: 372)");
 static_assert(sizeof(USkeletalMesh) == 528, "USkeletalMesh: retail 2013 size is 528");
 static_assert(sizeof(USkeletalMeshComponent) == 1088, "USkeletalMeshComponent: retail 2013 size is 1088 (2012 PDB: 1056)");
-// pending: sizeof(USkeletalMeshSocket) == 120 (ours 124)
+static_assert(sizeof(USkeletalMeshSocket) == 120, "USkeletalMeshSocket: retail 2013 size is 120");
 static_assert(sizeof(USkyLightComponent) == 432, "USkyLightComponent: retail 2013 size is 432");
 static_assert(sizeof(USpeechRecognition) == 192, "USpeechRecognition: retail 2013 size is 192");
 static_assert(sizeof(USphericalHarmonicLightComponent) == 592, "USphericalHarmonicLightComponent: retail 2013 size is 592");

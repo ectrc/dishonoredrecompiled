@@ -1,0 +1,3 @@
+# Types the GameFramework module's main header does not declare (collected from probe build logs)
+FDelayedPauserAndUnpauser
+FDelayedUnpauser

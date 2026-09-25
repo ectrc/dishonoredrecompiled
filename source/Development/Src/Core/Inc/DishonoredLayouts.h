@@ -40,7 +40,7 @@ static_assert(sizeof(FBitReference) == 8, "FBitReference: Dishonored PDB size is
 static_assert(sizeof(FBitWriter) == 156, "FBitWriter: Dishonored PDB size is 156");
 static_assert(sizeof(FBitWriterMark) == 8, "FBitWriterMark: Dishonored PDB size is 8");
 static_assert(sizeof(FBoneAtom) == 32, "FBoneAtom: retail 2013 size is 32");
-// pending: sizeof(FBox) == 25 (ours 28)
+static_assert(sizeof(FBox) == 28, "FBox: retail 2013 size is 28");
 static_assert(sizeof(FBoxSphereBounds) == 28, "FBoxSphereBounds: retail 2013 size is 28");
 static_assert(sizeof(FBufferArchive) == 156, "FBufferArchive: Dishonored PDB size is 156");
 static_assert(sizeof(FBufferReader) == 152, "FBufferReader: Dishonored PDB size is 152");
@@ -165,7 +165,7 @@ static_assert(sizeof(FPackageFileSummary) == 164, "FPackageFileSummary: Dishonor
 static_assert(sizeof(FPackageInfo) == 68, "FPackageInfo: Dishonored PDB size is 68");
 static_assert(sizeof(FPerformanceData) == 28, "FPerformanceData: Dishonored PDB size is 28");
 static_assert(sizeof(FPerspectiveMatrix) == 64, "FPerspectiveMatrix: Dishonored PDB size is 64");
-static_assert(sizeof(FPlane) == 16, "FPlane: Dishonored PDB size is 16");
+static_assert(sizeof(FPlane) == 16, "FPlane: retail 2013 size is 16");
 static_assert(sizeof(FProfilerBase) == 20, "FProfilerBase: Dishonored PDB size is 20");
 static_assert(sizeof(FProgramCounterSymbolInfo) == 3080, "FProgramCounterSymbolInfo: Dishonored PDB size is 3080");
 static_assert(sizeof(FPropertyChangedChainEvent) == 24, "FPropertyChangedChainEvent: Dishonored PDB size is 24");
@@ -183,8 +183,8 @@ static_assert(sizeof(FQueuedThreadPoolWin) == 36, "FQueuedThreadPoolWin: Dishono
 // pending: sizeof(FQueuedThreadWin) == 28 (ours 32)
 static_assert(sizeof(FQueuedWork) == 4, "FQueuedWork: Dishonored PDB size is 4");
 static_assert(sizeof(FRawDistribution) == 24, "FRawDistribution: retail 2013 size is 24");
-static_assert(sizeof(FRawDistributionFloat) == 28, "FRawDistributionFloat: Dishonored PDB size is 28");
-static_assert(sizeof(FRawDistributionVector) == 28, "FRawDistributionVector: Dishonored PDB size is 28");
+static_assert(sizeof(FRawDistributionFloat) == 28, "FRawDistributionFloat: retail 2013 size is 28");
+static_assert(sizeof(FRawDistributionVector) == 28, "FRawDistributionVector: retail 2013 size is 28");
 static_assert(sizeof(FRefCountedObject) == 8, "FRefCountedObject: Dishonored PDB size is 8");
 static_assert(sizeof(FReferencerInformation) == 20, "FReferencerInformation: Dishonored PDB size is 20");
 static_assert(sizeof(FReferencerInformationList) == 24, "FReferencerInformationList: Dishonored PDB size is 24");
@@ -233,7 +233,7 @@ static_assert(sizeof(FStructPerformanceData) == 16, "FStructPerformanceData: Dis
 static_assert(sizeof(FSynchronize) == 4, "FSynchronize: Dishonored PDB size is 4");
 static_assert(sizeof(FSynchronizeFactory) == 4, "FSynchronizeFactory: Dishonored PDB size is 4");
 static_assert(sizeof(FSynchronizeFactoryWin) == 4, "FSynchronizeFactoryWin: Dishonored PDB size is 4");
-// pending: sizeof(FTAlphaBlend) == 21 (ours 24)
+static_assert(sizeof(FTAlphaBlend) == 24, "FTAlphaBlend: retail 2013 size is 24");
 static_assert(sizeof(FTCHARToANSI_Convert) == 4, "FTCHARToANSI_Convert: Dishonored PDB size is 4");
 static_assert(sizeof(FTCHARToOEM_Convert) == 4, "FTCHARToOEM_Convert: Dishonored PDB size is 4");
 static_assert(sizeof(FTPOV) == 28, "FTPOV: retail 2013 size is 28");
