@@ -1,4 +1,4 @@
-"""P1.6: export local types as a C header, a JSON layout dump and a size table.
+"""P1.6: export local types as a C header, a JSON layout dump (UDTs and enums with values) and a size table.
 
 Outputs docs/types/all_types.h, docs/types/types.json, docs/types/sizes.csv.
 Usage: python resources/tools/ida/run.py resources/tools/ida/export_types.py <db.i64> [suffix]
@@ -47,6 +47,25 @@ def udt_record(name: str, t: ida_typeinf.tinfo_t) -> dict:
     }
 
 
+def enum_record(name: str, t: ida_typeinf.tinfo_t) -> dict:
+    etd = ida_typeinf.enum_type_data_t()
+    t.get_enum_details(etd)
+    size = t.get_size()
+    wrap = 1 << (8 * size) if 0 < size <= 8 else 0
+    members = []
+    for m in etd:
+        value = m.value
+        if wrap and value >= wrap // 2:
+            value -= wrap
+        members.append({"name": m.name, "value": value})
+    return {
+        "name": name,
+        "size": size,
+        "is_bitmask": etd.is_bf(),
+        "members": members,
+    }
+
+
 def main() -> None:
     suffix = sys.argv[1] if len(sys.argv) > 1 else ""
     TYPES_DIR.mkdir(parents=True, exist_ok=True)
@@ -54,7 +73,7 @@ def main() -> None:
     limit = ida_typeinf.get_ordinal_limit(til)
 
     records = []
-    enums = 0
+    enums = []
     for ordinal in range(1, limit):
         t = ida_typeinf.tinfo_t()
         if not t.get_numbered_type(til, ordinal):
@@ -63,10 +82,10 @@ def main() -> None:
         if t.is_udt():
             records.append(udt_record(name, t))
         elif t.is_enum():
-            enums += 1
+            enums.append(enum_record(name, t))
 
     with (TYPES_DIR / f"types{suffix}.json").open("w", encoding="utf-8") as f:
-        json.dump({"udt_count": len(records), "enum_count": enums, "types": records}, f, indent=1)
+        json.dump({"udt_count": len(records), "enum_count": len(enums), "types": records, "enums": enums}, f, indent=1)
 
     f, w = open_csv(TYPES_DIR / f"sizes{suffix}.csv", ["name", "size", "align", "kind"])
     for r in records:
@@ -74,11 +93,11 @@ def main() -> None:
     f.close()
 
     sink = FileSink(TYPES_DIR / f"all_types{suffix}.h")
-    sink.f.write(f"// Exported from IDA local types: {len(records)} UDTs, {enums} enums, {limit - 1} ordinals total\n")
+    sink.f.write(f"// Exported from IDA local types: {len(records)} UDTs, {len(enums)} enums, {limit - 1} ordinals total\n")
     flags = ida_typeinf.PDF_INCL_DEPS | ida_typeinf.PDF_DEF_FWD | ida_typeinf.PDF_DEF_BASE | ida_typeinf.PDF_HEADER_CMT
     printed = ida_typeinf.print_decls(sink, til, [], flags)
     sink.f.close()
-    log(f"udts={len(records)} enums={enums} printed_decls={printed}")
+    log(f"udts={len(records)} enums={len(enums)} printed_decls={printed}")
 
 
 if __name__ == "__main__":
