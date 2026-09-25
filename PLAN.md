@@ -173,15 +173,18 @@ Tracker `resources/docs/PHASE2.md`; exit check `resources/tools/symbols/verify_p
 
 ### Phase 2b — Retail (2013) layout truth (before Engine convergence)
 
-- [ ] `resources/tools/pdb/read_package_classes.py`: parse the 2013 cooked packages (`Core.upk`,
-      `Engine.upk`, `DishonoredGame.upk`, DLC packages) — name/import/export tables, `UClass`
-      exports with `PropertiesSize`, every `UProperty` export with `Offset`/`ArrayDim`/flags —
-      into `resources/docs/types/retail_script_layouts.json`. This is exact 2013 truth for every
-      script-declared member and for the total size of every script class. Do the same for the
-      2012 packages and diff: the list of classes whose layout changed between the builds.
-- [ ] 2013 native class sizes: from the 2013 exe, the `StaticClass`/constructor registration
-      passes `sizeof(Class)`; after Phase 7 name propagation, export them to
-      `retail_native_sizes.csv`. Cross-check with dismod's CodeRed dump (`xcheck_sdk.md`).
+Detailed plan and tracker: `resources/docs/PHASE3.md` (work packages H–N).
+
+- [ ] `resources/tools/pdb/read_package_classes.py`: parse the 2013 cooked packages (LZO chunks,
+      name/import/export tables, `UClass`/`UStruct`/`UProperty`/`UEnum`/`UFunction` exports).
+      UE3 does not serialize property offsets or `PropertiesSize` (`UStruct::Link` recomputes
+      them), so this yields the exact 2013 **member list, order and types** of every script
+      class, its enums and native function indices — from which offsets follow deterministically.
+      Do the same for the 2012 packages and diff.
+- [ ] 2013 native class sizes: every `InitializePrivateStaticClass<X>` calls
+      `UClass::UClass(ENativeConstructor, sizeof(X), …, L"<Name>", L"<Package>", …)`; the size is an
+      immediate next to the class-name string xref, readable in the unnamed retail exe →
+      `native_class_sizes.csv` (2012 vs 2013). Cross-check with dismod's CodeRed dump (`xcheck_sdk.md`).
 - [ ] Regenerate `DishonoredLayouts.h` and the layout probe against the **2013** sizes; fix the
       headers where 2012 and 2013 differ, citing the retail evidence in the
       `// DISHONORED(layout)` comment (`retail:` prefix).

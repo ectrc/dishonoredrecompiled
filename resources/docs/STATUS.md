@@ -30,6 +30,8 @@ Phase 2 (reference import and layout convergence) is **complete** (`verify_phase
 
 ## Next (Phase 3)
 
+Detailed plan with parallel work packages H–N: `resources/docs/PHASE3.md`.
+
 - Phase 2b first: recover the 2013 retail layouts (script property offsets and class sizes from
   the 2013 cooked packages; native sizes from the 2013 exe) and re-verify the Core contract types
   against them before Engine convergence.
