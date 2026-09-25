@@ -44,6 +44,25 @@ From `script_delta_2012_2013.md`: Core package classes unchanged in member lists
 children identical (no `NetIndex`, same natives, `GotoState` 113). Engine/DishonoredGame deltas
 are handled in C2 / Phase 3.
 
+## Engine contract types (C2)
+
+Agent M converged 29 Engine contract types on the 2012 PDB. Retail sizes (`native_class_sizes.csv`)
+equal 2012 for all of them except two, and agent I's package member lists explain both exactly:
+
+| Class | 2012 | 2013 | Retail member change (script order from `script_classes_2013.json`) |
+|---|---:|---:|---|
+| UTexture2D | 368 | 372 | `INT MinResidentMipCount` added after `Timer` (last script property before the `Texture2DMipMap` struct) |
+| USkeletalMeshComponent | 1056 | 1088 | `m_FaceFxAudioHandler` renamed `m_pFaceFxAudioHandler` (same slot, after `m_fFaceFxTickTime`); `bRootMotionModeChangeNotify` / `bRootMotionExtractedNotify` bitfields removed (also their `RootMotion*` delegate functions); `FBoneAtom RawExtractedRootMotionDelta` (32 bytes) appended after `m_TickData`; `TickData` flags become `BoolProperty` (4 × BYTE → BITFIELD, no size change per H) |
+
+Action: apply both to `Engine/Inc/EngineTextureClasses.h` / `EngineMeshClasses.h` (or wherever M
+placed the regenerated PROPS blocks) with `// DISHONORED(layout): retail 2013 …`, update the two
+asserts in `Engine/Inc/DishonoredLayouts.h` to 372 / 1088, rebuild `LayoutProbe`.
+
+Every other Engine contract type is retail-identical; the remaining 524 non-contract Engine rows
+(`reference_layout_delta.md`) are Phase 3 per-module work and must be cross-checked against
+`native_class_sizes.csv` (14 Engine classes changed size in retail, listed in
+`native_class_sizes.md`).
+
 ## Open
 
 - `UClass::Link` (retail) → which of `ClassReps`/`NetFields` survives.
