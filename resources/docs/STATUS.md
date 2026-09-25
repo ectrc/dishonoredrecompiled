@@ -1,4 +1,4 @@
-# Project status — 2026-09-27 (Phase 3 wave 2 started: `resources/docs/PHASE4.md`)
+# Project status — 2026-09-25 (Phase 3 wave 2 landed: milestone 2 for the native packages; see the incident note)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `resources/docs/PHASE1.md`
 (done), `resources/docs/PHASE2.md` (done), `resources/docs/PHASE3.md` (wave 1 done, wave 2 next). Decisions and fixes: `resources/docs/porting_notes.md`.
@@ -42,6 +42,26 @@ Next blocker on the way to milestone 2: `SystemSettings.cpp:532` assert on the r
 | Serialization | `serialization_delta_core.md`: 98 Core functions vs reference, 24 to port (UClass::Serialize, UScriptStruct::SerializeBin, CreateLoader+ArkBsPatch, LZO package chunks, ...). `function_status_seed.csv` seeds Phase 3 status. |
 | Arkane Core code | bzip2 decompressor + bspatch + TPool implemented from decompile and verified (`agents/agentC.md`). |
 | Class headers | `gen_classes_header.py` emits UE3-style `*Classes.h` from the PDB; `dishonoredgame_class_inventory.md`: 1,485 DishonoredGame classes, 220 with DFSDK `.uc`. |
+
+## Incident 2026-09-25 (read before running anything)
+
+The retail install `D:\RecompileDishonored\Dishonored_Latest2026` lost `Engine/`, `DishonoredGame/CookedPCConsole`,
+`DLC`, `Localization`, `Movies` during the wave-2 merge: `git worktree remove --force` on an agent worktree whose
+`build/stage` junctioned those folders followed the junctions. `Binaries/Win32` and `DishonoredGame/Config`
+survived. **Restore with Steam "Verify integrity of game files"** (the folder is a Steam install). All junctions
+under `build/` have been removed; `stage_retail.py` no longer creates any (it copies our exe into the retail
+`Binaries\Win32`); never recursively delete a directory that may contain a junction.
+
+## Wave 2 result (2026-09-25)
+
+All packages O–V of `resources/docs/PHASE4.md` are merged (HEAD `0c9bd4d`): D3D9Drv is a module; every Engine
+header is on the retail runtime layout (SDK delta: 2,314 dump types, 1,677 exact, 4 rows, all in
+GameFramework/IpDrv bases); `EShowFlags` is a QWORD; DishonoredGame (1,822 native classes), GFxUI, AkAudio and
+OnlineSubsystemSteamworks have generated registrants/headers behind `DISHONORED_ENABLE_*`; our exe loads
+Core/Engine/GameFramework/IpDrv end to end (`24107 objects as part of root set`, agent O); middleware versions
+are pinned in `middleware.md`. Next: load the game packages with T's registrants (drop the skip list), then
+`Startup.upk`, `GEngine->Init()`, milestone 3; converge the remaining GameFramework/IpDrv bases; Phase 4
+SDK decisions per `middleware.md`.
 
 ## Next (Phase 3 wave 2)
 

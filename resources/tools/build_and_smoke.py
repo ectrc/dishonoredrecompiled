@@ -3,10 +3,11 @@ Launch.log against the golden log's prefix (milestone 1: `Init: Object subsystem
 
 Steps
   1. cmake --build <build-dir> --target DishonoredGame (inside VsDevCmd x86), unless --no-build
-  2. resources/tools/stage_retail.py  -> build\\stage\\
-  3. run build\\stage\\Binaries\\Win32\\DishonoredGame.exe -log -nosteam -seekfreeloadingpcconsole
+  2. resources/tools/stage_retail.py -> copies our DishonoredGame.exe into the retail Binaries\\Win32 (no junctions,
+     nothing else touched; see the incident note in that script)
+  3. run <retail>\\Binaries\\Win32\\DishonoredGame.exe -log -nosteam -seekfreeloadingpcconsole
      from that directory with a timeout (the process is killed when it expires)
-  4. normalize build\\stage\\DishonoredGame\\Logs\\Launch.log (normalize_log.py rules) and the
+  4. normalize <retail>\\DishonoredGame\\Logs\\Launch.log (normalize_log.py rules) and the
      golden log, cut the golden one at --milestone, print a unified diff of the two prefixes
 
 Exit code: 0 when Launch.log contains the milestone line and every --expect substring, 1 otherwise,
@@ -121,7 +122,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--build-dir", type=Path, default=REPO / "build" / "agentN")
     parser.add_argument("--retail", type=Path, default=DEFAULT_RETAIL)
-    parser.add_argument("--stage", type=Path, default=REPO / "build" / "stage")
+    parser.add_argument("--stage", type=Path, default=None, help="ignored: the exe is staged into the retail Binaries\\Win32 (stage_retail.py)")
     parser.add_argument("--golden", type=Path, default=REPO / "resources" / "docs" / "golden" / "2012_arkprofile_launch.log")
     parser.add_argument("--milestone", default=MILESTONE)
     parser.add_argument("--timeout", type=float, default=120.0)
@@ -139,7 +140,7 @@ def main(argv: list[str]) -> int:
     if not args.no_build and not build(build_dir, out_dir / f"build_{stamp}.log"):
         return 2
     try:
-        exe = stage(build_dir, args.retail.resolve(), args.stage.resolve())
+        exe = stage(build_dir, args.retail.resolve())
     except SystemExit as e:
         print(e)
         return 2
@@ -149,7 +150,7 @@ def main(argv: list[str]) -> int:
     if args.skip_native:
         game_args.append(f"-skipnativepkgs={args.skip_native}")
     run_game(exe, game_args, args.timeout, out_dir / f"run_{stamp}.log")
-    launch_log = args.stage.resolve() / GAME / "Logs" / "Launch.log"
+    launch_log = exe.parent.parent.parent / GAME / "Logs" / "Launch.log"
     ok = compare(launch_log, args.golden.resolve(), args.milestone, out_dir)
     if args.expect:
         text = launch_log.read_text(encoding="utf-8", errors="replace") if launch_log.is_file() else ""
