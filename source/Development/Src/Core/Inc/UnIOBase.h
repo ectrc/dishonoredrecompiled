@@ -66,6 +66,19 @@ enum EAsyncIOPriority
 	AIOP_MAX
 };
 
+/**
+ * DISHONORED(port): Arkane classification carried by every async IO request: the trailing argument of
+ * FIOSystem::LoadData / LoadCompressedData and PDB FAsyncIOSystemBase::FAsyncIORequest::RequestType @56
+ * (values from the 2012 decompile; package loading uses AIORT_Other).
+ */
+enum EAsyncIORequestType
+{
+	AIORT_Bink		= 0,
+	AIORT_MipMap	= 1,
+	AIORT_Wwise		= 2,
+	AIORT_Other		= 3,
+};
+
 /*-----------------------------------------------------------------------------
 	FIOSystem.
 -----------------------------------------------------------------------------*/
@@ -109,16 +122,19 @@ struct FIOSystem
 	 * @param	Dest		Pointer to load data into
 	 * @param	Counter		Thread safe counter to decrement when loading has finished, can be NULL
 	 * @param	Priority	Priority of request
+	 * @param	RequestType	DISHONORED(port): Arkane request classification (PDB signature of FAsyncIOSystemBase::LoadData, rva 0x504e0;
+	 *						from 2012 decompile). The default only keeps Engine's callers compiling until they pass their own type.
 	 *
 	 * @return Returns an index to the request that can be used for canceling or 0 if the request failed.
 	 */
-	virtual QWORD LoadData( 
-		const FString& Filename, 
-		INT Offset, 
-		INT Size, 
-		void* Dest, 
+	virtual QWORD LoadData(
+		const FString& Filename,
+		INT Offset,
+		INT Size,
+		void* Dest,
 		FThreadSafeCounter* Counter,
-		EAsyncIOPriority Priority ) = 0;
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType = AIORT_Other ) = 0;
 
 	/**
 	 * Requests compressed data to be loaded async. Returns immediately.
@@ -131,18 +147,21 @@ struct FIOSystem
 	 * @param	CompressionFlags	Flags controlling data decompression
 	 * @param	Counter				Thread safe counter to decrement when loading has finished, can be NULL
 	 * @param	Priority			Priority of request
+	 * @param	RequestType			DISHONORED(port): Arkane request classification (PDB signature of FAsyncIOSystemBase::LoadCompressedData,
+	 *								rva 0x505b0; from 2012 decompile). The default only keeps Engine's callers compiling until they pass their own type.
 	 *
 	 * @return Returns an index to the request that can be used for canceling or 0 if the request failed.
 	 */
-	virtual QWORD LoadCompressedData( 
-		const FString& Filename, 
-		INT Offset, 
-		INT Size, 
-		INT UncompressedSize, 
-		void* Dest, 
-		ECompressionFlags CompressionFlags, 
+	virtual QWORD LoadCompressedData(
+		const FString& Filename,
+		INT Offset,
+		INT Size,
+		INT UncompressedSize,
+		void* Dest,
+		ECompressionFlags CompressionFlags,
 		FThreadSafeCounter* Counter,
-		EAsyncIOPriority Priority ) = 0;
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType = AIORT_Other ) = 0;
 
 	/**
 	 * Removes N outstanding requests from the queue and returns how many were canceled. We can't cancel
@@ -241,13 +260,14 @@ struct FAsyncIOSystemBase : public FIOSystem, FRunnable
 	 *
 	 * @return Returns an index to the request that can be used for canceling or 0 if the request failed.
 	 */
-	virtual QWORD LoadData( 
-		const FString& FileName, 
-		INT Offset, 
-		INT Size, 
-		void* Dest, 
+	virtual QWORD LoadData(
+		const FString& FileName,
+		INT Offset,
+		INT Size,
+		void* Dest,
 		FThreadSafeCounter* Counter,
-		EAsyncIOPriority Priority );
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType );	// DISHONORED(port): rva 0x504e0 (from 2012 decompile)
 
 	/**
 	 * Requests compressed data to be loaded async. Returns immediately.
@@ -263,15 +283,16 @@ struct FAsyncIOSystemBase : public FIOSystem, FRunnable
 	 *
 	 * @return Returns an index to the request that can be used for canceling or 0 if the request failed.
 	 */
-	virtual QWORD LoadCompressedData( 
-		const FString& FileName, 
-		INT Offset, 
-		INT Size, 
-		INT UncompressedSize, 
-		void* Dest, 
-		ECompressionFlags CompressionFlags, 
+	virtual QWORD LoadCompressedData(
+		const FString& FileName,
+		INT Offset,
+		INT Size,
+		INT UncompressedSize,
+		void* Dest,
+		ECompressionFlags CompressionFlags,
 		FThreadSafeCounter* Counter,
-		EAsyncIOPriority Priority );
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType );	// DISHONORED(port): rva 0x505b0 (from 2012 decompile)
 
 	/**
 	 * Removes N outstanding requests from the queue and returns how many were canceled. We can't cancel
@@ -376,6 +397,8 @@ protected:
 		FThreadSafeCounter* Counter;
 		/** Priority of request.																	*/
 		EAsyncIOPriority	Priority;
+		/** DISHONORED(port): Arkane request classification, PDB FAsyncIORequest::RequestType @56 (from 2012 decompile). */
+		EAsyncIORequestType	RequestType;
 		/** Is this a request to destroy the handle?												*/
 		BITFIELD			bIsDestroyHandleRequest : 1;
 		/** Whether we already requested the handle to be cached.									*/
@@ -392,6 +415,7 @@ protected:
 		,	CompressionFlags(COMPRESS_None)
 		,	Counter(NULL)
 		,	Priority(AIOP_MIN)
+		,	RequestType(AIORT_Other)
 		,	bIsDestroyHandleRequest(FALSE)
 		{}
 
@@ -566,15 +590,16 @@ protected:
 	 * 
 	 * @return	unique ID for request
 	 */
-	QWORD QueueIORequest( 
-		const FString& FileName, 
-		INT Offset, 
-		INT Size, 
-		INT UncompressedSize, 
-		void* Dest, 
-		ECompressionFlags CompressionFlags, 
+	QWORD QueueIORequest(
+		const FString& FileName,
+		INT Offset,
+		INT Size,
+		INT UncompressedSize,
+		void* Dest,
+		ECompressionFlags CompressionFlags,
 		FThreadSafeCounter* Counter,
-		EAsyncIOPriority Priority );
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType );	// DISHONORED(port): rva 0x50240 stores the request type (the exe also takes an FEvent* before Priority, not ported) (from 2012 decompile)
 	
 #if FLASH	
 	/**

@@ -1059,6 +1059,8 @@ void UObject::SetNetIndex(INT InNetIndex)
 {
 	// DISHONORED(layout): UObject::SetNetIndex (rva 0x14d30) only toggles RF_DisNetIndexed; there is no NetIndex
 	// member and UPackage::AddNetObject/RemoveNetObject do not exist in the shipping PDB.
+	// DISHONORED(port): rva 0x14d30 verified against the decompile: INDEX_NONE clears ObjectFlags bit 63, any other value sets
+	// it, nothing else happens (from 2012 decompile)
 	if (InNetIndex == INDEX_NONE)
 	{
 		ClearFlags(RF_DisNetIndexed);
@@ -1560,24 +1562,25 @@ void UObject::SerializeNetIndex(FArchive& Ar)
 	if (!(Ar.GetPortFlags() & PPF_Duplicate))
 	{
 		// DISHONORED(layout): UObject::SerializeNetIndex (rva 0x20180) writes 0 when RF_DisNetIndexed is set, INDEX_NONE otherwise
+		// DISHONORED(port): rva 0x20180 verified against the decompile: no NetIndex member, the written value comes from ObjectFlags
+		// bit 63; on load an object from a non-cooked package takes its linker index (when it has one), every other object takes
+		// the serialized value. Same result as agent A's ordering, written in the exe's order (from 2012 decompile)
 		INT InNetIndex = HasAnyFlags(RF_DisNetIndexed) ? 0 : INDEX_NONE;
 		Ar << InNetIndex;
 		if (Ar.IsLoading())
 		{
-#if SUPPORTS_SCRIPTPATCH_CREATION
-			//@script patcher
-			if (GIsScriptPatcherActive || _Linker == NULL || _Linker->LinkerRoot == NULL || (_Linker->LinkerRoot->PackageFlags & PKG_Cooked))
-#else
-			if (_Linker == NULL || _Linker->LinkerRoot == NULL || (_Linker->LinkerRoot->PackageFlags & PKG_Cooked))
-#endif
+			if (_Linker != NULL && _Linker->LinkerRoot != NULL && !(_Linker->LinkerRoot->PackageFlags & PKG_Cooked))
+			{
+				// set net index from linker
+				if (_LinkerIndex != INDEX_NONE)
+				{
+					SetNetIndex(_LinkerIndex);
+				}
+			}
+			else
 			{
 				// use serialized net index for cooked packages
 				SetNetIndex(InNetIndex);
-			}
-			// set net index from linker
-			else if (_Linker != NULL && _LinkerIndex != INDEX_NONE)
-			{
-				SetNetIndex(_LinkerIndex);
 			}
 		}
 	}
@@ -1821,10 +1824,8 @@ void UObject::SerializeScriptProperties( FArchive& Ar, UObject* DiffObject/*=NUL
 		GetClass()->SerializeBin( Ar, (BYTE*)this, 0 );
 	}
 
-	if (HasAnyFlags(RF_HasStack) && StateFrame->Locals != NULL)
-	{
-		SerializeStateLocals(Ar);
-	}
+	// DISHONORED(port): rva 0x8a8f0 no state-local serialization (the reference SerializeStateLocals does not exist in the exe)
+	// (from 2012 decompile)
 
 	if( HasAnyFlags(RF_ClassDefaultObject) )
 	{
@@ -1834,21 +1835,18 @@ void UObject::SerializeScriptProperties( FArchive& Ar, UObject* DiffObject/*=NUL
 }
 
 /**
- * Serializes the unrealscript property data in state local variables.
+ * DISHONORED(port): rva 0x6de00 Arkane addition (DisSaveLoad): binary-serializes this object's properties in PropertyLink
+ * order and stops at the first property owned by ExcludingBaseClass. The exe walks the chain with no NULL check; the check
+ * here only avoids a crash when the base class is never reached (from 2012 decompile).
  *
- * @param	Ar				the archive to use for serialization
+ * @param	Ar						the archive to use for serialization
+ * @param	ExcludingBaseClass		properties owned by this class (and its bases) are not serialized
  */
-void UObject::SerializeStateLocals(FArchive& Ar) const
+void UObject::SerializeScriptPropertiesBin( FArchive& Ar, UClass* ExcludingBaseClass )
 {
-	if (Ar.IsObjectReferenceCollector())
+	for( UProperty* Property = GetClass()->PropertyLink; Property != NULL && Property->GetOwnerClass() != ExcludingBaseClass; Property = Property->PropertyLinkNext )
 	{
-		for (TFieldIterator<UState> State(GetClass()); State; ++State)
-		{
-			if (State->StateFlags & STATE_HasLocals)
-			{
-				State->SerializeBin(Ar, StateFrame->Locals, 0);
-			}
-		}
+		GetClass()->SerializeBinProperty( Property, Ar, (BYTE*)this );
 	}
 }
 
@@ -6509,13 +6507,9 @@ ULinkerLoad* UObject::GetPackageLinker
 #endif
 			}
 
-			// We don't have a filename, so we should first look up to see if the package name has a filename mapping
-			const FName InOutersFName = InOuter->GetFName();
-
-			FName *MappedName = PackageNameToFileMapping.Find(InOutersFName);
-			const FName *FileToLookup = MappedName != NULL ? MappedName : &InOutersFName;
-
-			if( !GPackageFileCache->FindPackageFile( *FileToLookup->ToString(), CompatibleGuid, NewFilename ) )
+			// DISHONORED(port): rva 0x9bff0 no PackageNameToFileMapping lookup, the package name is used as the file name
+			// (from 2012 decompile)
+			if( !GPackageFileCache->FindPackageFile( *InOuter->GetName(), CompatibleGuid, NewFilename ) )
 			{
 				// See about looking in the dll.
 				if( (LoadFlags & LOAD_AllowDll) && InOuter->IsA(UPackage::StaticClass()) && ((UPackage*)InOuter)->IsBound() )
@@ -7029,7 +7023,7 @@ UObject* UObject::StaticLoadObject(UClass* ObjectClass, UObject* InOuter, const 
 					}
 
 					bNeedsEndLoadCalled = FALSE;
-					EndLoad( *StrName );
+					EndLoad();	// DISHONORED(port): rva 0x728f0 EndLoad() has no LoadContext (from 2012 decompile)
 				}
 			}
 		}
@@ -7105,9 +7099,10 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD 
 		// Keep track of start time.
 		DOUBLE StartTime = appSeconds();
 
-		FFilename FileToLoad = Filename ? Filename : *InOuter->GetName();
+		// DISHONORED(port): rva 0xa7300 no FFilename fallback to InOuter's name (Filename was already dereferenced above)
+		// (from 2012 decompile)
 		// Create a new linker object which goes off and tries load the file.
-		ULinkerLoad* Linker = GetPackageLinker( InOuter, *FileToLoad, LoadFlags | LOAD_Throw, NULL, NULL );
+		ULinkerLoad* Linker = GetPackageLinker( InOuter, Filename, LoadFlags | LOAD_Throw, NULL, NULL );
         if( !Linker )
 		{
 			EndLoad();
@@ -7132,12 +7127,8 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD 
 		}
 
 
-#if WITH_EDITOR
-		// Add a LoadContext string to the endload function in the form of: "<FileToLoad> Package"
-		EndLoad( GIsEditor ? *FileToLoad.GetBaseFilename() : NULL );
-#else
+		// DISHONORED(port): rva 0xa7300 EndLoad() has no LoadContext (from 2012 decompile)
 		EndLoad();
-#endif
 		// Cancel all texture allocations that haven't been claimed yet.
 		Linker->Summary.TextureAllocations.CancelRemainingAllocations( TRUE );
 
@@ -7151,6 +7142,8 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD 
 			// compare SHA hash keys
 			if (appMemcmp(SavedScriptSHA, LoadedScriptSHA, 20) != 0)
 			{
+				// DISHONORED(port): rva 0xa7300 the Shipping exe only evaluates *Linker->Filename here (appOnFailSHAVerification
+				// compiled to nothing); the reference hook is kept (from 2012 decompile)
 				appOnFailSHAVerification(*Linker->Filename, FALSE);
 			}
 		}
@@ -7192,7 +7185,8 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD 
 		Result = NULL;
 	}
 #endif
-	if( GUseSeekFreeLoading && Result && !(LoadFlags & LOAD_NoSeekFreeLinkerDetatch) )
+	// DISHONORED(port): rva 0xa7300 no LOAD_NoSeekFreeLinkerDetatch test (from 2012 decompile)
+	if( GUseSeekFreeLoading && Result )
 	{
 		// We no longer need the linker. Passing in NULL would reset all loaders so we need to check for that.
 		UObject::ResetLoaders( Result );
@@ -7265,7 +7259,7 @@ void UObject::BeginLoad()
 	if( ++GObjBeginLoadCount == 1 )
 	{
 		// Make sure we're finishing up all pending async loads, and trigger texture streaming next tick if necessary.
-		FlushAsyncLoading( NAME_None );
+		FlushAsyncLoading();	// DISHONORED(port): rva 0xa29d0 FlushAsyncLoading() has no ExcludeType (from 2012 decompile)
 
 		// Validate clean load state.
 		//@script patcher fixme: asserts when patching
@@ -7312,12 +7306,11 @@ IMPLEMENT_COMPARE_POINTER( UObject, UnObj,
 //
 // End loading packages.
 //
-void UObject::EndLoad( const TCHAR* LoadContext )
+// DISHONORED(port): rva 0x728f0 EndLoad() has no LoadContext parameter; the WITH_EDITOR progress animation that used it is
+// not in the exe, the body is otherwise the reference one (from 2012 decompile)
+void UObject::EndLoad()
 {
 	check(GObjBeginLoadCount>0);
-
-	// Used to control animation of the load progress status updates.
-	INT ProgressIterator = 2;
 
 	while( --GObjBeginLoadCount == 0 && (GObjLoaded.Num() || GImportCount || GForcedExportCount) )
 	{
@@ -7335,21 +7328,6 @@ void UObject::EndLoad( const TCHAR* LoadContext )
 			TSet<ULinkerLoad*> LoadedLinkers; 
 
 
-#if WITH_EDITOR
-			// Stores the progress symbols that we will animate through during long operations
-			FString ProgressSymbols[3] = {".","..","..."};
-			DOUBLE StartTime = appSeconds();
-			DOUBLE UpdateDelta = 0.75;
-			BOOL bIsLoadContextValid = LoadContext != NULL && *LoadContext != '\0';
-			// We currently only allow status updates during the editor load splash screen.
-			BOOL bAllowStatusUpdate = GIsEditor && !GIsUCC && !GIsSlowTask && bIsLoadContextValid;
-
-			if ( bAllowStatusUpdate && GObjLoaded.Num() > 0 )
-			{
-				GWarn->StatusUpdatef( -1, -1, LocalizeSecure(LocalizeProgress(TEXT("LoadingRefObjects"),TEXT("Core")), LoadContext, *ProgressSymbols[ProgressIterator]));
-				ProgressIterator = (ProgressIterator + 1) % 3;
-			}
-#endif
 
 			while( GObjLoaded.Num() )
 			{
@@ -7364,18 +7342,6 @@ void UObject::EndLoad( const TCHAR* LoadContext )
 				debugfSlow( NAME_DevLoad, TEXT("Loading objects...") );
 				for( INT i=0; i<ObjLoaded.Num(); i++ )
 				{
-#if WITH_EDITOR
-					// This can be a long operation so we will output some progress feedback to the 
-					//  user in the form of 3 dots that animate between "." ".." "..."
-					DOUBLE CurrTime = appSeconds();
-					if ( bAllowStatusUpdate && CurrTime - StartTime > UpdateDelta )
-					{
-						StartTime = CurrTime;
-						GWarn->StatusUpdatef( -1, -1, LocalizeSecure(LocalizeProgress(TEXT("LoadingRefObjects"),TEXT("Core")), LoadContext, *ProgressSymbols[ProgressIterator]));
-						ProgressIterator = (ProgressIterator + 1) % 3;
-
-					}		
-#endif
 					// Preload.
 					UObject* Obj = ObjLoaded(i);
 					if( Obj->HasAnyFlags(RF_NeedLoad) )
@@ -7391,9 +7357,6 @@ void UObject::EndLoad( const TCHAR* LoadContext )
 				{
 					continue;
 				}
-
-				// Return the progress iterator to the default value for future operations.
-				ProgressIterator = 2;
 
 				if ( GIsEditor )
 				{
@@ -7414,17 +7377,6 @@ void UObject::EndLoad( const TCHAR* LoadContext )
 				// Postload objects.
 				for( INT i=0; i<ObjLoaded.Num(); i++ )
 				{
-#if WITH_EDITOR
-					// This can be a long operation so we will output some progress feedback to the 
-					//  user in the form of 3 dots that animate between "." ".." "..."
-					DOUBLE CurrTime = appSeconds();
-					if ( bAllowStatusUpdate && CurrTime - StartTime > UpdateDelta )
-					{
-						StartTime = CurrTime;
-						GWarn->StatusUpdatef( -1, -1, LocalizeSecure(LocalizeProgress(TEXT("ProcessingRefObjects"),TEXT("Core")), LoadContext, *ProgressSymbols[ProgressIterator]));
-						ProgressIterator = (ProgressIterator + 1) % 3;
-					}
-#endif
 
 					UObject* Obj = ObjLoaded(i);
 					check(Obj);

@@ -1399,11 +1399,11 @@ public:
 	void SerializeScriptProperties(FArchive& Ar, UObject* DiffObject = NULL, INT DiffCount = 0) const;
 
 	/**
-	 * Serializes the unrealscript property data in state local variables.
-	 *
-	 * @param	Ar				the archive to use for serialization
+	 * DISHONORED(port): rva 0x6de00 Arkane addition (DisSaveLoad): binary-serializes this object's properties in PropertyLink
+	 * order and stops at the first property owned by ExcludingBaseClass (from 2012 decompile). The reference
+	 * SerializeStateLocals does not exist in the exe (UObject::SerializeScriptProperties, rva 0x8a8f0, never calls it).
 	 */
-	void SerializeStateLocals(FArchive& Ar) const;
+	void SerializeScriptPropertiesBin( FArchive& Ar, UClass* ExcludingBaseClass );
 
 	/**
 	 * Checks the RF_PendingKill flag to see if it is dead but memory still valid
@@ -1859,7 +1859,7 @@ public:
 	 *
 	 * @param	ExcludeType					Do not flush packages associated with this specific type name
 	 */
-	static void FlushAsyncLoading( FName ExcludeType = NAME_None );
+	static void FlushAsyncLoading();	// DISHONORED(port): rva 0xa29d0 no ExcludeType parameter (from 2012 decompile)
 	/**
 	 * Returns whether we are currently async loading a package.
 	 * 
@@ -1874,14 +1874,14 @@ public:
 	 * @param	TimeLimit		Soft limit of time this function is allowed to consume
 	 * @param	ExcludeType		Do not process packages associated with this specific type name
 	 */
-	static void ProcessAsyncLoading( UBOOL bUseTimeLimit, FLOAT TimeLimit, FName ExcludeType = NAME_None);
+	static void ProcessAsyncLoading( UBOOL bUseTimeLimit, FLOAT TimeLimit );	// DISHONORED(port): rva 0xa28e0 no ExcludeType parameter (from 2012 decompile)
 	/**
 	 * Dissociates all linker import and forced export object references. This currently needs to 
 	 * happen as the referred objects might be destroyed at any time.
 	 */
 	static void DissociateImportsAndForcedExports();
 	static void BeginLoad();
-	static void EndLoad( const TCHAR* LoadContext = NULL );
+	static void EndLoad();	// DISHONORED(port): rva 0x728f0 no LoadContext parameter (from 2012 decompile)
 
 	/**
 	 * Wrapper for InitProperties which calls ExitProperties first if this object has already had InitProperties called on it at least once.

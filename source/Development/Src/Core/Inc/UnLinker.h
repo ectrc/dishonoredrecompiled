@@ -1013,6 +1013,18 @@ private:
 		/** Size of the buffer pointed to by PackageData */
 		INT PackageDataSize;
 
+		// DISHONORED(port): PDB ULinkerLoad::FPackagePrecacheInfo is 24 bytes. AsyncPreloadPackage (rva 0x68810) reads
+		// ..\..\DishonoredGame\Patches\<PackageFile>.bs into these three and CreateLoader (rva 0x898a0) applies it to
+		// PackageData with ArkBsPatch (from 2012 decompile)
+		/** Synchronization object of the async read of the bsdiff patch */
+		FThreadSafeCounter* PatchSynchronizationObject;
+
+		/** Memory that contains the .bs patch read off disk */
+		void* PatchPackageData;
+
+		/** Size of the buffer pointed to by PatchPackageData, 0 when the package has no patch */
+		INT PatchPackageDataSize;
+
 		/**
 		 * Basic constructor
 		 */
@@ -1020,6 +1032,9 @@ private:
 		: SynchronizationObject(NULL)
 		, PackageData(NULL)
 		, PackageDataSize(0)
+		, PatchSynchronizationObject(NULL)
+		, PatchPackageData(NULL)
+		, PatchPackageDataSize(0)
 		{
 		}
 		/**
@@ -1027,6 +1042,7 @@ private:
 		 */
 		~FPackagePrecacheInfo()
 		{
+			// DISHONORED(port): rva 0x19c00 the exe frees only SynchronizationObject; PatchSynchronizationObject is leaked (from 2012 decompile)
 			delete SynchronizationObject;
 		}
 	};

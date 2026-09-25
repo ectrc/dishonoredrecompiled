@@ -600,6 +600,8 @@ UBOOL					GHandleDirtyDiscError			= FALSE;
 INT						GForceEnableScopedCycleStats	= 0;
 /** Size to break up data into when saving compressed data													*/
 INT						GSavingCompressionChunkSize		= SAVING_COMPRESSION_CHUNK_SIZE;
+/** DISHONORED(port): Arkane chunk size for save-game archives, .data of the 2012 exe = 65536 (from 2012 decompile)		*/
+INT						GSaveDataSavingCompressionChunkSize = 65536;
 /** Total amount of calls to appSeconds and appCycles.														*/
 QWORD					GNumTimingCodeCalls				= 0;
 /** Whether we are using the seekfree/ cooked loading codepath.												*/

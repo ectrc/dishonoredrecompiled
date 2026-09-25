@@ -272,6 +272,7 @@ public:
 	FORCEINLINE UBOOL IsLoading()							const	{return ArIsLoading;}
 	FORCEINLINE UBOOL IsSaving()							const	{return ArIsSaving;}
 	FORCEINLINE UBOOL IsSaveGame()							const	{return ArIsSaveGame;}
+	FORCEINLINE UBOOL IsDisSaveLoad()						const	{return ArIsDisSaveLoad;}	// DISHONORED(port): read by UScriptStruct::SerializeBin (rva 0x4d70) (from 2012 decompile)
 #if !CONSOLE
 	FORCEINLINE UBOOL IsTransacting()						const	{return ArIsTransacting;}
 #else
@@ -348,6 +349,7 @@ public:
 	  * @param  IsSaveGame		new flag
 	  */
 	void SetIsSaveGame( UBOOL IsSaveGame ) { ArIsSaveGame = IsSaveGame; }
+	void SetIsDisSaveLoad( UBOOL IsDisSaveLoad ) { ArIsDisSaveLoad = IsDisSaveLoad; }	// DISHONORED(port): for the DishonoredGame DisSaveLoad archives (from 2012 decompile)
 
 	/**
 	 * Returns if an async close operation has finished or not, as well as if there was an error

@@ -84,7 +84,9 @@ FArchive& operator<<( FArchive& Ar, FCompressedChunkInfo& Chunk )
 DOUBLE GArchiveSerializedCompressedSavingTime = 0;
 
 // MT compression disabled on console due to memory impact and lack of beneficial usage case.
-#define WITH_MULTI_THREADED_COMPRESSION (!CONSOLE)
+// DISHONORED(port): rva 0x22f60 FArchive::SerializeCompressed compresses single-threaded (one appCompressMemory loop, no
+// FAsyncCompressionChunk pool) (from 2012 decompile)
+#define WITH_MULTI_THREADED_COMPRESSION 0
 #if WITH_MULTI_THREADED_COMPRESSION
 // Helper structure to keep information about async chunks that are in-flight.
 class FAsyncCompressionChunk : public FNonAbandonableTask
@@ -226,14 +228,18 @@ void FArchive::SerializeCompressed( void* V, INT Length, ECompressionFlags Flags
 		SCOPE_SECONDS_COUNTER(GArchiveSerializedCompressedSavingTime);
 		check( Length > 0 );
 
+		// DISHONORED(port): rva 0x22f60 save-game archives (ArIsSaveGame) are chunked with GSaveDataSavingCompressionChunkSize
+		// (65536), everything else with GSavingCompressionChunkSize (from 2012 decompile)
+		const INT SavingChunkSize = IsSaveGame() ? GSaveDataSavingCompressionChunkSize : GSavingCompressionChunkSize;
+
 		// Serialize package file tag used to determine endianess in LoadCompressedData.
 		FCompressedChunkInfo PackageFileTag;
 		PackageFileTag.CompressedSize	= PACKAGE_FILE_TAG;
-		PackageFileTag.UncompressedSize	= GSavingCompressionChunkSize;
+		PackageFileTag.UncompressedSize	= SavingChunkSize;
 		*this << PackageFileTag;
 
 		// Figure out how many chunks there are going to be based on uncompressed size and compression chunk size.
-		INT	TotalChunkCount	= (Length + GSavingCompressionChunkSize - 1) / GSavingCompressionChunkSize + 1;
+		INT	TotalChunkCount	= (Length + SavingChunkSize - 1) / SavingChunkSize + 1;
 		
 		// Keep track of current position so we can later seek back and overwrite stub compression chunk infos.
 		INT StartPosition = Tell();
@@ -433,7 +439,7 @@ void FArchive::SerializeCompressed( void* V, INT Length, ECompressionFlags Flags
 		// allocate memory to read into
 		if (bTreatBufferAsFileReader)
 		{
-			Src = (BYTE*)appMalloc(GSavingCompressionChunkSize);
+			Src = (BYTE*)appMalloc(SavingChunkSize);
 			check(((FArchive*)V)->IsLoading());
 		}
 		else
@@ -444,12 +450,12 @@ void FArchive::SerializeCompressed( void* V, INT Length, ECompressionFlags Flags
 		// Start at index 1 as first chunk info is summary.
 		INT		CurrentChunkIndex		= 1;
 		// 2 times the uncompressed size should be more than enough; the compressed data shouldn't be that much larger
-		INT		CompressedBufferSize	= 2 * GSavingCompressionChunkSize;
+		INT		CompressedBufferSize	= 2 * SavingChunkSize;
 		void*	CompressedBuffer		= appMalloc( CompressedBufferSize );
 
 		while( BytesRemaining > 0 )
 		{
-			INT BytesToCompress = Min( BytesRemaining, GSavingCompressionChunkSize );
+			INT BytesToCompress = Min( BytesRemaining, SavingChunkSize );
 			INT CompressedSize	= CompressedBufferSize;
 
 			// read in the next chunk from the reader
@@ -473,8 +479,8 @@ void FArchive::SerializeCompressed( void* V, INT Length, ECompressionFlags Flags
 			CompressionChunks[CurrentChunkIndex].CompressedSize		= CompressedSize;
 			CompressionChunks[CurrentChunkIndex].UncompressedSize	= BytesToCompress;
 			CurrentChunkIndex++;
-			
-			BytesRemaining -= GSavingCompressionChunkSize;
+
+			BytesRemaining -= SavingChunkSize;
 		}
 
 		// free the buffer we read into

@@ -558,6 +558,25 @@ void UStruct::SerializeBin( FArchive& Ar, BYTE* Data, INT MaxReadBytes ) const
 		}
 	}
 }
+
+// DISHONORED(port): no-op stand-in for DishonoredGame's DisStructDevLoad (rva 0x793c70) so Core links on its own; the linker
+// prefers the real definition whenever DishonoredGame provides it (from 2012 decompile)
+void DisStructDevLoadFallback( const UScriptStruct* Struct, BYTE* Data )
+{
+}
+#pragma comment(linker, "/alternatename:?DisStructDevLoad@@YAXPBVUScriptStruct@@PAE@Z=?DisStructDevLoadFallback@@YAXPBVUScriptStruct@@PAE@Z")
+
+// DISHONORED(port): rva 0x4d70 Arkane override: after the binary load of a STRUCT_DevLoad struct through a DisSaveLoad archive
+// (FArchive::ArIsDisSaveLoad) DishonoredGame's DisStructDevLoad fixes the data up (from 2012 decompile)
+void UScriptStruct::SerializeBin( FArchive& Ar, BYTE* Data, INT MaxReadBytes ) const
+{
+	UStruct::SerializeBin( Ar, Data, MaxReadBytes );
+	if( (StructFlags & STRUCT_DevLoad) && Ar.IsDisSaveLoad() && Ar.IsLoading() )
+	{
+		DisStructDevLoad( this, Data );
+	}
+}
+
 /**
  * Serializes the class properties that reside in Data if they differ from the corresponding values in DefaultData
  *
@@ -2248,9 +2267,11 @@ void UClass::Serialize( FArchive& Ar )
 			Ar << UnusedBool;
 		}
 
-		if( Ar.Ver() >= VER_ADDED_CLASS_GROUPS )
+		// DISHONORED(port): rva 0x96b70 no ClassGroupNames; m_DropdownCategory at LicenseeVer >= 10 (from 2012 decompile)
+		if( Ar.LicenseeVer() >= VER_DIS_LICENSEE_DROPDOWN_CATEGORY )
 		{
-			Ar << UnusedArray;
+			FName UnusedName;
+			Ar << UnusedName;
 		}
 
 		Ar << UnusedString;
@@ -2280,8 +2301,13 @@ void UClass::Serialize( FArchive& Ar )
 			bForceScriptOrder = 0;
 		}
 
-		// DISHONORED(layout): no ClassGroupNames in the PDB UClass; UClass::Serialize (rva 0x96b70) goes from bForceScriptOrder
-		// to m_DropdownCategory (ArLicenseeVer >= 10) and ClassHeaderFilename
+		// DISHONORED(port): rva 0x96b70 no ClassGroupNames (reference VER_ADDED_CLASS_GROUPS = 789 read removed); the Arkane
+		// m_DropdownCategory follows bForceScriptOrder at LicenseeVer >= 10 (from 2012 decompile)
+		if( Ar.LicenseeVer() >= VER_DIS_LICENSEE_DROPDOWN_CATEGORY )
+		{
+			Ar << m_DropdownCategory;
+		}
+
 		Ar << ClassHeaderFilename;
 	}
 #endif //DEDICATED_SERVER
@@ -2295,6 +2321,17 @@ void UClass::Serialize( FArchive& Ar )
 		FName Dummy = NAME_None;
 		Ar << Dummy;
 #endif
+	}
+
+	// DISHONORED(port): rva 0x96b70 Arkane m_OtherClassFlags at Ver >= 796, zeroed when loading an older package; sits between
+	// the DLLBindName dummy and the class default object (from 2012 decompile)
+	if( Ar.Ver() >= VER_DIS_OTHER_CLASS_FLAGS )
+	{
+		Ar << m_OtherClassFlags;
+	}
+	else if( Ar.IsLoading() )
+	{
+		m_OtherClassFlags = 0;
 	}
 
 	// Defaults.

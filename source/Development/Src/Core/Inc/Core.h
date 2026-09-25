@@ -1809,6 +1809,8 @@ extern UBOOL					GHandleDirtyDiscError;
 extern INT						GForceEnableScopedCycleStats;
 /** Size to break up data into when saving compressed data							*/
 extern INT						GSavingCompressionChunkSize;
+/** DISHONORED(port): Arkane chunk size used by FArchive::SerializeCompressed (rva 0x22f60) for save-game archives (ArIsSaveGame); 65536 in the 2012 exe (from 2012 decompile) */
+extern INT						GSaveDataSavingCompressionChunkSize;
 /** Total amount of calls to appSeconds and appCycles.								*/
 extern QWORD					GNumTimingCodeCalls;
 /** Whether we are using the seekfree/ cooked loading codepath.						*/

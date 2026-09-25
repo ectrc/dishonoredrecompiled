@@ -146,6 +146,10 @@ enum EStructFlags
 	/** Indicates that this struct should always be serialized as a single unit on platforms using cooked data. */
 	STRUCT_AtomicWhenCooked		= 0x00000100,
 
+	/** DISHONORED(port): Arkane flag tested by UScriptStruct::SerializeBin (rva 0x4d70): a struct loaded in binary form through a
+	    DisSaveLoad archive is fixed up by DisStructDevLoad afterwards (from 2012 decompile) */
+	STRUCT_DevLoad				= 0x00000200,
+
 	/** Struct flags that are automatically inherited */
 	STRUCT_Inherit				= STRUCT_HasComponents|STRUCT_Atomic|STRUCT_AtomicWhenCooked|STRUCT_StrictConfig,
 };
@@ -314,6 +318,12 @@ class UStruct : public UField
 	UBOOL StructCompare( const void* A, const void* B, DWORD PortFlags=0 );
 };
 
+// DISHONORED(port): DishonoredGame hook called from UScriptStruct::SerializeBin (rva 0x4d70). The real definition is
+// DishonoredGame's DisStructDevLoad (rva 0x793c70, disattentionproxy.cpp); UnClass.cpp binds a no-op fallback through
+// /alternatename so Core links without DishonoredGame (from 2012 decompile).
+class UScriptStruct;
+void DisStructDevLoad( const UScriptStruct* Struct, BYTE* Data );
+
 /**
  * An UnrealScript structure definition.
  */
@@ -336,6 +346,10 @@ class UScriptStruct : public UStruct
 
 	// UStruct Interface
 	void PropagateStructDefaults();
+
+	// DISHONORED(port): rva 0x4d70 Arkane override: UStruct::SerializeBin, then DisStructDevLoad for STRUCT_DevLoad structs loaded
+	// through an archive with ArIsDisSaveLoad (from 2012 decompile)
+	virtual void SerializeBin( FArchive& Ar, BYTE* Data, INT MaxReadBytes ) const;
 
 	// UScriptStruct Interface
 	BYTE* GetDefaults() { return &StructDefaults(0); }

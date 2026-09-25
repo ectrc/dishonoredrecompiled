@@ -9,6 +9,7 @@
 
 //@script patcher
 #include "UnScriptPatcher.h"
+#include "bspatch.h"	// DISHONORED(port): ArkBsPatch for CreateLoader (rva 0x898a0)
 
 /** Map that keeps track of any precached full package reads															*/
 TMap<FString, ULinkerLoad::FPackagePrecacheInfo> ULinkerLoad::PackagePrecacheMap;
@@ -458,7 +459,9 @@ FArchive& operator<<( FArchive& Ar, FPackageFileSummary& Sum )
 			Ar << Sum.AdditionalPackagesToCook;
 		}
 
-		if (Sum.GetFileVersion() >= VER_TEXTURE_PREALLOCATION )
+		// DISHONORED(port): rva 0x5a1a0 Dishonored's threshold is 770, the reference's VER_TEXTURE_PREALLOCATION is 767 (both true
+		// for the 801 packages) (from 2012 decompile)
+		if (Sum.GetFileVersion() >= VER_DIS_TEXTURE_PREALLOCATION )
 		{
 			Ar << Sum.TextureAllocations;
 		}
@@ -810,6 +813,8 @@ namespace ULinkerDefs
  */
 FScriptPatcher* ULinkerLoad::GetScriptPatcher()
 {
+	// DISHONORED(port): rva 0x48db0 identical to the reference; FScriptPatcher is the 12-byte {TArray<FLinkerPatchData*> PackageUpdates}
+	// of the PDB (UnScriptPatcher.h already matches) and no patch ever loads (from 2012 decompile)
 	if ( ScriptPatcher == NULL )
 	{
 		ScriptPatcher = new FScriptPatcher();
@@ -1032,11 +1037,9 @@ UBOOL ULinkerLoad::Tick( FLOAT InTimeLimit, UBOOL bInUseTimeLimit )
 				RemapLinkerPackageNames();
 			}
 #endif
-			// Fix up export map for object class conversion 
-			if( bExecuteNextStep )
-			{	
-				bExecuteNextStep = FixupExportMap();
-			}
+			// DISHONORED(port): rva 0xa25d0 no FixupExportMap step: ULinkerLoad::FixupExportMap (10897 ActiveClassRedirects) is not
+			// in the shipping PDB, RemapClasses is followed directly by RemapLinkerPackageNamesForMultilanguageCooks
+			// (from 2012 decompile)
 
 			if ( bExecuteNextStep )
 			{
@@ -1200,6 +1203,35 @@ UBOOL ULinkerLoad::CreateLoader()
 				}
 				FLOAT WaitTime = appSeconds() - StartTime;
 				debugf(NAME_Init,TEXT("Waited %.3f sec for async package '%s' to complete caching."), WaitTime, *Filename);
+			}
+
+			// DISHONORED(port): rva 0x898a0 Arkane package patching: when AsyncPreloadPackage queued a .bs patch for this file, wait
+			// for its read, bspatch the package image with it, free both inputs and continue with the patched buffer. ArkBsPatch
+			// returns the allocation size (new size + 1, Core/Src/bspatch/bspatch.cpp) and the exe stores that as PackageDataSize
+			// (from 2012 decompile)
+			if( PrecacheInfo->PatchPackageDataSize > 0 )
+			{
+				if( PrecacheInfo->PatchSynchronizationObject->GetValue() != 0 )
+				{
+					DOUBLE StartTime = appSeconds();
+					while (PrecacheInfo->PatchSynchronizationObject->GetValue() != 0)
+					{
+						SHUTDOWN_IF_EXIT_REQUESTED;
+						appSleep(0);
+					}
+					FLOAT WaitTime = appSeconds() - StartTime;
+					debugf(NAME_Init,TEXT("Waited %.3f sec for async patch of package '%s' to complete caching."), WaitTime, *Filename);
+				}
+
+				BYTE* PatchedData = NULL;
+				UINT PatchedDataSize = 0;
+				ArkBsPatch( (const BYTE*)PrecacheInfo->PackageData, PrecacheInfo->PackageDataSize, (const BYTE*)PrecacheInfo->PatchPackageData, PrecacheInfo->PatchPackageDataSize, PatchedData, PatchedDataSize );
+				appFree( PrecacheInfo->PackageData );
+				appFree( PrecacheInfo->PatchPackageData );
+				PrecacheInfo->PatchPackageData = NULL;
+				PrecacheInfo->PatchPackageDataSize = 0;
+				PrecacheInfo->PackageData = PatchedData;
+				PrecacheInfo->PackageDataSize = PatchedDataSize;
 			}
 
 			// create a buffer reader using the read in data
@@ -1839,38 +1871,10 @@ UBOOL ULinkerLoad::SerializeExportMap()
 UBOOL ULinkerLoad::RemapClasses()
 {
 	const INT FileVersion = Summary.GetFileVersion();
-	if( FileVersion < VER_RENAME_MOBILEGAME_TO_SIMPLEGAME )
-	{
-		// Change all references from MobileGame and CastleGame to UDKBase.  For the MobileGame/UDKGame merge, the mobile classes where moved to UDKBase
-		static FName MobileGameName( TEXT("MobileGame") );
-		static FName CastleGameName( TEXT("CastleGame") );
-		static FName SimpleGameName( TEXT("SimpleGame") );
-		static FName UDKBaseName( TEXT("UDKBase") );
 
-		for ( INT ImportIndex = 0; ImportIndex < ImportMap.Num(); ImportIndex++ )
-		{
-			FObjectImport& Import = ImportMap(ImportIndex);
-
-			if( FileVersion < VER_FIXUP_MOBILEGAME_REFS )
-			{
-				if ( Import.ClassName == NAME_Package && ( Import.ObjectName == MobileGameName || Import.ObjectName == CastleGameName ) )
-				{
-					Import.ObjectName = UDKBaseName;
-				}
-
-				if ( Import.ClassPackage == MobileGameName || Import.ClassPackage == CastleGameName )
-				{
-					Import.ClassPackage = UDKBaseName;
-				}
-			}
-
-			if( Import.ObjectName == MobileGameName )
-			{
-				Import.ObjectName = SimpleGameName;
-			}
-		}
-	}
-
+	// DISHONORED(port): rva 0x7b200 only the VER_FIXED_PREFAB_SEQUENCES (536) prefab-sequence fixup exists; the reference's
+	// MobileGame/CastleGame -> SimpleGame/UDKBase remap (VER_RENAME_MOBILEGAME_TO_SIMPLEGAME 827 / VER_FIXUP_MOBILEGAME_REFS 822,
+	// numbers above Dishonored's 801 anyway) is not in the exe (from 2012 decompile)
 	if ( FileVersion < VER_FIXED_PREFAB_SEQUENCES )
 	{
 		UBOOL bRequiresSequenceFixup = FALSE;
@@ -4311,8 +4315,14 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 
 	if( Import.XObject == NULL )
 	{
+		// DISHONORED(port): rva 0x9b690 the in-memory lookup also runs in the editor/UCC for class imports whose outer is the
+		// package 'GearGameContentWeapons', and such a class that is not found is retried in package 'GearGame' (Epic
+		// Gears-of-War hack that 10897 removed; dead for Dishonored content, present in the exe) (from 2012 decompile)
+		static FName NAME_GearGameContentWeapons( TEXT("GearGameContentWeapons") );
+
 		// Look in memory first.
 		if ((!GIsEditor && !GIsUCC)
+		||	(Import.ClassName == NAME_Class && IS_IMPORT_INDEX(Import.OuterIndex) && ImportMap(-Import.OuterIndex-1).ObjectName == NAME_GearGameContentWeapons)
 #if SUPPORTS_SCRIPTPATCH_CREATION
 		//@script patcher
 		||	GIsScriptPatcherActive
@@ -4386,6 +4396,17 @@ UObject* ULinkerLoad::CreateImport( INT Index )
 	
 						// Find object now that we know it's class, outer and name.
 						FindObject = StaticFindObjectFast( FindClass, FindOuter, Import.ObjectName, FALSE, FALSE );
+
+						// DISHONORED(port): rva 0x9b690 GearGameContentWeapons classes fall back to package GearGame (from 2012 decompile)
+						if( FindObject == NULL && FindClass == UClass::StaticClass() && FindOuter->GetFName() == NAME_GearGameContentWeapons )
+						{
+							static FName NAME_GearGame( TEXT("GearGame") );
+							UObject* GearGamePackage = StaticFindObjectFast( UPackage::StaticClass(), NULL, NAME_GearGame, FALSE, FALSE );
+							if( GearGamePackage )
+							{
+								FindObject = StaticFindObjectFast( FindClass, GearGamePackage, Import.ObjectName, FALSE, FALSE );
+							}
+						}
 					}
 
 					if( FindObject )
@@ -5042,31 +5063,54 @@ void ULinkerLoad::AsyncPreloadPackage(const TCHAR* PackageName)
 	// allocate enough space
 	PrecacheInfo.PackageData = appMalloc(PrecacheInfo.PackageDataSize);
 
+	// DISHONORED(port): rva 0x68810 Arkane package patching: a bsdiff of the cooked package at
+	// ..\..\DishonoredGame\Patches\<CleanFilename>.bs is read alongside it (own sync counter, queued before the package read)
+	// and applied by CreateLoader; all requests carry AIORT_Other (from 2012 decompile)
+	FString PatchPath = FString::Printf( TEXT("..\\..\\DishonoredGame\\Patches\\%s.bs"), *FFilename(PackageFilename).GetCleanFilename() );
+	const INT PatchFileSize = GFileManager->FileSize( *PatchPath );
+	if( PatchFileSize >= 0 )
+	{
+		PrecacheInfo.PatchPackageData = appMalloc( PatchFileSize );
+		PrecacheInfo.PatchPackageDataSize = PatchFileSize;
+		PrecacheInfo.PatchSynchronizationObject = new FThreadSafeCounter;
+		PrecacheInfo.PatchSynchronizationObject->Increment();
+		IO->LoadData(
+			PatchPath,
+			0,
+			PrecacheInfo.PatchPackageDataSize,
+			PrecacheInfo.PatchPackageData,
+			PrecacheInfo.PatchSynchronizationObject,
+			AIOP_Normal,
+			AIORT_Other);
+	}
+
 	QWORD RequestId;
 	// kick off the async read (uncompressing if needed) of the whole file and make sure it worked
 	if (UncompressedSize != -1)
 	{
 		PrecacheInfo.PackageDataSize = UncompressedSize;
 		RequestId = IO->LoadCompressedData(
-						PackageFilename, 
-						0, 
-						FileSize, 
-						UncompressedSize, 
-						PrecacheInfo.PackageData, 
-						GBaseCompressionMethod, 
+						PackageFilename,
+						0,
+						FileSize,
+						UncompressedSize,
+						PrecacheInfo.PackageData,
+						GBaseCompressionMethod,
 						PrecacheInfo.SynchronizationObject,
-						AIOP_Normal);
+						AIOP_Normal,
+						AIORT_Other);
 	}
 	else
 	{
 		PrecacheInfo.PackageDataSize = FileSize;
 		RequestId = IO->LoadData(
-						PackageFilename, 
-						0, 
-						PrecacheInfo.PackageDataSize, 
-						PrecacheInfo.PackageData, 
-						PrecacheInfo.SynchronizationObject, 
-						AIOP_Normal);
+						PackageFilename,
+						0,
+						PrecacheInfo.PackageDataSize,
+						PrecacheInfo.PackageData,
+						PrecacheInfo.SynchronizationObject,
+						AIOP_Normal,
+						AIORT_Other);
 	}
 
 	// give a hint to the IO system that we are done with this file for now

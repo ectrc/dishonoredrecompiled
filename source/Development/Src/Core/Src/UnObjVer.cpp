@@ -29,8 +29,8 @@ INT	GBuiltFromChangeList		= BUILT_FROM_CHANGELIST;
 INT	GEngineNegotiationVersion	= 3077;
 
 // @see UnObjVer.h for the list of changes/defines
-INT	GPackageFileVersion			= 801;	// DISHONORED: cooked packages are file version 801 (VER_PRESERVE_SMC_VERT_COLORS), not VER_LATEST_ENGINE
+INT	GPackageFileVersion			= VER_DIS_LATEST_ENGINE;	// DISHONORED: cooked packages are file version 801, not VER_LATEST_ENGINE (DISHONORED(port): named in UnObjVer.h)
 INT	GPackageFileMinVersion		= 491;
-INT	GPackageFileLicenseeVersion = 30;	// DISHONORED: Arkane licensee version 30; ULinkerLoad rejects packages newer than this
+INT	GPackageFileLicenseeVersion = VER_LATEST_ENGINE_LICENSEE;	// DISHONORED: Arkane licensee version 30; ULinkerLoad rejects packages newer than this
 INT GPackageFileCookedContentVersion = 133 | (0 << 16);	// DISHONORED: cooked content version of the 2013 packages (2012: 132)
 

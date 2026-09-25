@@ -619,7 +619,47 @@ enum EUnrealEngineObjectVersion
 // !!
 #define VER_LATEST_ENGINE									(PREPROCESSOR_ENUM_PROTECT(VER_AUTOMATIC_VERSION_PLUS_ONE) - 1)
 
-#define VER_LATEST_ENGINE_LICENSEE							0
+// DISHONORED(port): version numbers of the Arkane branch (from the 2012 decompile; re-check against the 2013 exe).
+// The QA-branch numbering above 766 diverges from the 10897 enum: Dishonored's FPackageFileSummary reads TextureAllocations
+// at 770 (operator<<(FArchive&,FPackageFileSummary&), rva 0x5a1a0; the reference has VER_TEXTURE_PREALLOCATION = 767) and
+// UClass::Serialize (rva 0x96b70) reads m_OtherClassFlags at 796, a number the reference gives to the unrelated
+// VER_FIXED_AUTO_SHADER_VERSIONING. Cooked packages are file version 801 / licensee version 30 (symbols/package_summary.md).
+// Use these names for every threshold Dishonored's own code introduced; the reference names stay valid below 767.
+enum EDishonoredObjectVersion
+{
+	// - FPackageFileSummary::TextureAllocations (reference 767)
+	VER_DIS_TEXTURE_PREALLOCATION						= 770,
+	// - UClass::m_OtherClassFlags
+	VER_DIS_OTHER_CLASS_FLAGS							= 796,
+	// - version of the cooked packages (GPackageFileVersion)
+	VER_DIS_LATEST_ENGINE								= 801,
+};
+
+// Licensee version thresholds (FArchive::LicenseeVer()) found in the 2012 exe (symbols/licensee_branches.md); the names
+// describe the serializer that tests them, the Arkane names are unknown.
+enum EDishonoredLicenseeVersion
+{
+	// - UClass::m_DropdownCategory (UClass::Serialize, rva 0x96b70)
+	VER_DIS_LICENSEE_DROPDOWN_CATEGORY					= 10,
+	// - UDisTweaks_StaticBreakable / UDisTweaks_SkeletalBreakable / UDisTweaks_UsableObject::Serialize
+	VER_DIS_LICENSEE_TWEAKS_BREAKABLE					= 24,
+	// - UDisTweaks_Attributes::Serialize
+	VER_DIS_LICENSEE_TWEAKS_ATTRIBUTES					= 25,
+	// - AActor::Serialize
+	VER_DIS_LICENSEE_ACTOR								= 26,
+	// - ULevel::Serialize, UWorld::Serialize, operator<<(FArchive&, FNavMeshPolyBase&)
+	VER_DIS_LICENSEE_LEVEL								= 27,
+	// - USkeletalMeshComponent::Serialize
+	VER_DIS_LICENSEE_SKELETALMESHCOMPONENT				= 28,
+	// - UDisTweaks_UsableObject::Serialize
+	VER_DIS_LICENSEE_TWEAKS_USABLE						= 29,
+	// - USeqEvent_Touch::Serialize
+	VER_DIS_LICENSEE_SEQEVENT_TOUCH						= 30,
+	// - licensee version of the cooked packages (GPackageFileLicenseeVersion)
+	VER_DIS_LATEST_ENGINE_LICENSEE						= 30,
+};
+
+#define VER_LATEST_ENGINE_LICENSEE							30	// DISHONORED(port): VER_DIS_LATEST_ENGINE_LICENSEE (kept a #define for preprocessor use)
 
 // Cooked packages loaded with an older package version are recooked
 #define VER_LATEST_COOKED_PACKAGE							136

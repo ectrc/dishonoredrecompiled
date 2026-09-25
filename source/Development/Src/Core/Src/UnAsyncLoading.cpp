@@ -268,34 +268,19 @@ UBOOL FAsyncPackage::CreateLinker()
 
 		// Try to find existing package or create it if not already present.
 		UPackage* Package = UObject::CreatePackage( NULL, *PackageName );
-		
-		// if the linker already exists, we don't need to lookup the file (it may have been pre-created with
-		// a different filename)
-		Linker = ULinkerLoad::FindExistingLinkerForPackage(Package);
 
-		if (!Linker)
+		// DISHONORED(port): rva 0x9b450 no FindExistingLinkerForPackage short cut and no PackageNameToFileMapping lookup: the
+		// file is always resolved from PackageName and a new async linker created (from 2012 decompile)
+
+		// Retrieve filename on disk for package name. Errors are fatal here.
+		FString PackageFileName;
+		if( !GPackageFileCache->FindPackageFile( *PackageName, PackageGuid.IsValid() ? &PackageGuid : NULL, PackageFileName ) )
 		{
-			// Retrieve filename on disk for package name. Errors are fatal here.
-			FString PackageFileName;
-
-			//If the linker does not exist for the basepackagename, we also need to check the packagename map to see if the packagename should be remapped
-			
-			FString PackageNameToLoad = PackageName;
-
-			const FName *TempPackageName = UObject::GetPackageNameToFileMapping()->Find(FName::FName(*PackageName));
-			if (TempPackageName != NULL)
-			{
-				PackageNameToLoad = TempPackageName->ToString();
-			}
-
-			if( !GPackageFileCache->FindPackageFile( *PackageNameToLoad, PackageGuid.IsValid() ? &PackageGuid : NULL, PackageFileName ) )
-			{
-				appErrorf(TEXT("Couldn't find file for package %s requested by async loading code."),*PackageName);
-			}
-		
-			// Create raw async linker, requiring to be ticked till finished creating.
-			Linker = ULinkerLoad::CreateLinkerAsync( Package, *PackageFileName, (GIsGame && !GIsEditor) ? (LOAD_SeekFree | LOAD_NoVerify) : LOAD_None  );
+			appErrorf(TEXT("Couldn't find file for package %s requested by async loading code."),*PackageName);
 		}
+
+		// Create raw async linker, requiring to be ticked till finished creating.
+		Linker = ULinkerLoad::CreateLinkerAsync( Package, *PackageFileName, (GIsGame && !GIsEditor) ? (LOAD_SeekFree | LOAD_NoVerify) : LOAD_None  );
 	}
 	return TRUE;
 }
@@ -665,7 +650,9 @@ FLOAT UObject::GetAsyncLoadPercentage( const FString& PackageName )
  *
  * @param	ExcludeType					Do not flush packages associated with this specific type name
  */
-void UObject::FlushAsyncLoading(FName ExcludeType/*=NAME_None*/)
+// DISHONORED(port): rva 0xa29d0 no ExcludeType: SetMinPriority(AIOP_Normal), ProcessAsyncLoading(FALSE, 0), SetMinPriority(AIOP_MIN)
+// (from 2012 decompile)
+void UObject::FlushAsyncLoading()
 {
 	if( GObjAsyncPackages.Num() )
 	{
@@ -682,17 +669,13 @@ void UObject::FlushAsyncLoading(FName ExcludeType/*=NAME_None*/)
 		XeControlHDDCaching( FALSE );
 #endif
 		debugf( NAME_Log, TEXT("Flushing async loaders.") );
-		ProcessAsyncLoading( FALSE, 0, ExcludeType );
+		ProcessAsyncLoading( FALSE, 0 );
 		debugf( NAME_Log, TEXT("Flushed async loaders.") );
 #if XBOX
 		XeControlHDDCaching( TRUE );
 #endif
 
-		if (ExcludeType == NAME_None)
-		{
-			// It's fine to have pending loads if we excluded some from the check
-			check( !IsAsyncLoading() );
-		}
+		check( !IsAsyncLoading() );
 
 		// Reset min priority again.
 		AsyncIO->SetMinPriority( AIOP_MIN );
@@ -758,28 +741,25 @@ DOUBLE PrintSortedListFromMap(TMap<const UClass*,FMapTimeEntry>& Map)
  * @param	TimeLimit		Soft limit of time this function is allowed to consume
  * @param	ExcludeType		Do not process packages associated with this specific type name
  */
-void UObject::ProcessAsyncLoading( UBOOL bUseTimeLimit, FLOAT TimeLimit, FName ExcludeType )
+void UObject::ProcessAsyncLoading( UBOOL bUseTimeLimit, FLOAT TimeLimit )
 {
 	SCOPE_CYCLE_COUNTER(STAT_AsyncLoadingTime);
-	// Whether to continue execution.
-	UBOOL bExecuteNextStep = TRUE;
 
+	// DISHONORED(port): rva 0xa28e0 no ExcludeType; only the head package is ticked and the loop stops at the first package that
+	// does not complete, finished packages are removed from the front (from 2012 decompile)
 	// We need to loop as the function has to handle finish loading everything given no time limit
 	// like e.g. when called from FlushAsyncLoading.
-	for (INT i = 0; bExecuteNextStep && i < GObjAsyncPackages.Num(); i++)
+	while( GObjAsyncPackages.Num() )
 	{
 		// Package to be loaded.
-		FAsyncPackage& Package = GObjAsyncPackages(i);
-
-		if (ExcludeType != NAME_None && ExcludeType == Package.GetPackageType())
-		{
-			// We should skip packages of this type
-			continue;
-		}
+		FAsyncPackage& Package = GObjAsyncPackages(0);
 
 		// Package tick returns TRUE on completion.
-		bExecuteNextStep = Package.Tick( bUseTimeLimit, TimeLimit );
-		if( bExecuteNextStep )
+		if( !Package.Tick( bUseTimeLimit, TimeLimit ) )
+		{
+			break;
+		}
+		else
 		{
 #if PERF_TRACK_DETAILED_ASYNC_STATS
 			DOUBLE LoadTime = appSeconds() - Package.GetLoadStartTime();
@@ -809,10 +789,7 @@ void UObject::ProcessAsyncLoading( UBOOL bUseTimeLimit, FLOAT TimeLimit, FName E
 			}
 
 			// We're done so we can remove the package now. @warning invalidates local Package variable!.
-			GObjAsyncPackages.Remove( i );
-
-			// Need to process this index again as we just removed an item
-			i--;
+			GObjAsyncPackages.Remove( 0 );
 		}
 
 		// We cannot access Package anymore!
@@ -854,8 +831,11 @@ QWORD FAsyncIOSystemBase::QueueIORequest(
 	void* Dest, 
 	ECompressionFlags CompressionFlags, 
 	FThreadSafeCounter* Counter,
-	EAsyncIOPriority Priority )
+	EAsyncIOPriority Priority,
+	EAsyncIORequestType RequestType )
 {
+	// DISHONORED(port): rva 0x50240 stores the Arkane request type on the request (the exe also takes an FEvent* that
+	// LoadDataWithEvent passes; not ported) (from 2012 decompile)
 	FScopeLock ScopeLock( CriticalSection );
 	check( Offset != INDEX_NONE );
 
@@ -871,6 +851,7 @@ QWORD FAsyncIOSystemBase::QueueIORequest(
 	IORequest.CompressionFlags			= CompressionFlags;
 	IORequest.Counter					= Counter;
 	IORequest.Priority					= Priority;
+	IORequest.RequestType				= RequestType;
 
 	if (GbLogAsyncLoading == TRUE)
 	{
@@ -1274,13 +1255,14 @@ QWORD FAsyncIOSystemBase::LoadData(
 	const FString& FileName, 
 	INT Offset, 
 	INT Size, 
-	void* Dest, 
+	void* Dest,
 	FThreadSafeCounter* Counter,
-	EAsyncIOPriority Priority )
+	EAsyncIOPriority Priority,
+	EAsyncIORequestType RequestType )	// DISHONORED(port): rva 0x504e0 (from 2012 decompile)
 {
 	QWORD TheRequestIndex;
 	{
-		TheRequestIndex = QueueIORequest( FileName, Offset, Size, 0, Dest, COMPRESS_None, Counter, Priority );
+		TheRequestIndex = QueueIORequest( FileName, Offset, Size, 0, Dest, COMPRESS_None, Counter, Priority, RequestType );
 	}
 #if BLOCK_ON_ASYNCIO
 	BlockTillAllRequestsFinished(); 
@@ -1308,13 +1290,14 @@ QWORD FAsyncIOSystemBase::LoadCompressedData(
 	INT Size, 
 	INT UncompressedSize, 
 	void* Dest, 
-	ECompressionFlags CompressionFlags, 
+	ECompressionFlags CompressionFlags,
 	FThreadSafeCounter* Counter,
-	EAsyncIOPriority Priority )
+	EAsyncIOPriority Priority,
+	EAsyncIORequestType RequestType )	// DISHONORED(port): rva 0x505b0 (from 2012 decompile)
 {
 	QWORD TheRequestIndex;
 	{
-		TheRequestIndex = QueueIORequest( FileName, Offset, Size, UncompressedSize, Dest, CompressionFlags, Counter, Priority );
+		TheRequestIndex = QueueIORequest( FileName, Offset, Size, UncompressedSize, Dest, CompressionFlags, Counter, Priority, RequestType );
 	}
 #if BLOCK_ON_ASYNCIO
 	BlockTillAllRequestsFinished(); 
@@ -2021,10 +2004,11 @@ void FArchiveAsync::PrecacheCompressedChunk( INT ChunkIndex, INT BufferIndex )
 							ChunkToRead.CompressedOffset, 
 							ChunkToRead.CompressedSize, 
 							ChunkToRead.UncompressedSize, 
-							PrecacheBuffer[BufferIndex], 
-							CompressionFlags, 
+							PrecacheBuffer[BufferIndex],
+							CompressionFlags,
 							&PrecacheReadStatus[BufferIndex],
-							AIOP_Normal);
+							AIOP_Normal,
+							AIORT_Other);	// DISHONORED(port): rva 0x2ce70 request type AIORT_Other (from 2012 decompile)
 	check(RequestId);
 }
 
@@ -2121,9 +2105,10 @@ UBOOL FArchiveAsync::Precache( INT RequestOffset, INT RequestSize )
 									FileName, 
 									PrecacheStartPos[CURRENT], 
 									PrecacheEndPos[CURRENT] - PrecacheStartPos[CURRENT], 
-									PrecacheBuffer[CURRENT], 
+									PrecacheBuffer[CURRENT],
 									&PrecacheReadStatus[CURRENT],
-									AIOP_Normal );
+									AIOP_Normal,
+									AIORT_Other );	// DISHONORED(port): rva 0x2cfb0 request type AIORT_Other (disassembly pushes 3, 3) (from 2012 decompile)
 			check(RequestId);
 		}
 
