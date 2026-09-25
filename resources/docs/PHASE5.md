@@ -148,13 +148,40 @@ Files: `DishonoredGame/Src/<Class>.cpp` (new real implementations replacing the 
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
 | C6 | coordinator | Native-stub macro, per-agent run isolation, stub-exe guard, this plan | done | 2026-09-25 | `DISHONORED_NATIVE_STUB` (Core/Inc/DishonoredNativeStub.h: Step per CPF_Parm, P_FINISH, iterator skip, zeroed result, warn once, `-strictnatives`); 975 + 133 + 56 stubs regenerated; `build_and_smoke.py --exe-name/--log-name/--ini-dir`; `stage_retail.py` refuses stub exes; `agents/README.md`. Verified: full build 0 errors, isolated smoke reaches the wave-2 point |
-| W | | Edge animation: retail parity, then the evaluator port (Plan B) | todo | | |
-| X | | Milestone 3 driver: Startup packages → `GEngine->Init()` → tick | todo | | |
-| Y | | First frame: window, D3D9 device, cooked shaders, present, Bink movies | todo | | |
-| Z | | Map load `DishonoredGameFull_P` up for play (no PhysX) | todo | | |
-| AA | | Engine per-function convergence wave 1 (startup assets) | todo | | |
-| AB | | GameFramework/IpDrv/OSS bases, pending asserts, hygiene | todo | | |
-| AC | | DishonoredGame natives on the startup path | todo | | |
+| W | W | Edge animation: retail parity, then the evaluator port (Plan B) | done | 2026-09-25 | commit 43343f6: parity edits (no codec class in retail, raw blob kept), per-sequence evaluator `EdgeAnimEvaluate.cpp` bit-exact on 2,743 sequences vs the retail evaluator, `EdgeAnimSmoke` test, `-edgerefpose` gate, `edgeanim.md`; whole-tree Edge path deferred (+8-12 days, W's estimate) |
+| X | X | Milestone 3 driver: Startup packages → `GEngine->Init()` → tick | done | 2026-09-25 | commit a7bb936: `GIsSeekFreePCConsole` as retail (0x5e1910), 4 bridged classes, `Startup.upk` 63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P`; OSS no-Steam natives (`OnlineSubsystemSteamworksOffline.cpp`) |
+| Y | Y | First frame: window, D3D9 device, cooked shaders, present, Bink movies | done (partial) | 2026-09-25 | commit 35da28e: D3D9 device/viewport, 62 cooked global shaders load (VER_MIN_SHADER 786, SF_Pixel = 1), `presented frame` in Y's snapshot, all 8 Bink startup movies; `renderer.md`. Merged d3d9 run dies at `Failed to find shader map for default material LevelColorationLitMaterial` (material shader caches not loaded: wave 4) |
+| Z | Z | Map load `DishonoredGameFull_P` up for play (no PhysX) | done | 2026-09-25 | commit a7bb936: golden milestones to `Initial startup`; 147 script natives without a C++ body listed and bound to `execDishonoredUnboundNative`; reference-only events guarded; nav mesh serializer noted (2013 0x2909e0, class 688 vs retail 464) |
+| AA | AA | Engine per-function convergence wave 1 (startup assets) | done | 2026-09-25 | commit f0d9724: 143 functions checked against 2013 (87 identical, 49 ported, 5 written), loader fixes, `serialization_delta_engine.md` |
+| AB | AB | GameFramework/IpDrv/OSS bases, pending asserts, hygiene | done | 2026-09-25 | commit 63758d5: xcheck 0 rows, DishonoredGame 12,502 asserts / 0 pending, FSystemSettings/FSceneViewFamily/SHOW_DefaultGame/UArrowComponent, GameCrowdPopulationManager as retail UObject, DisJobs/AkAudio/DishonoredGame index case fixed, `verify_phase2.py retail` |
+| AC | AC | DishonoredGame natives on the startup path | done | 2026-09-25 | commit 63758d5: 289 natives ported (UDishonoredEngine::Init, viewport client, player controller, HUD, cheat manager, tweaks ...), `CppText/<Class>.h` hook, `.ported.txt` skip list; 685 stubs left; telemetry 0x601210 omitted |
+
+## Wave result (coordinator, 2026-09-25)
+
+Merge order as planned; five commits (43343f6 W, 35da28e Y, a7bb936 X+Z, f0d9724 AA + coordinator natives, 63758d5 AB+AC)
+plus the docs commit. Coordinator bridges applied during the merge (all tagged `DISHONORED(bringup|port|retail)`):
+`FSkeletalMeshLODInfo` back to 56 bytes, special-material shader-map `appErrorf` -> warning under the null RHI,
+`UFunction::Bind` -> `UObject::execDishonoredUnboundNative` for the 147 body-less natives, guarded reference-only
+events (`OnEngineHasLoaded`, `OnEngineInitialTick`, `Pre/PostCommitMapChange`, `ServerUpdateLevelVisibility`,
+`PlayerTick`, `PreRender`, `AdjustHUDRenderSize`), the null-RHI scene-render skip in `RenderViewFamily_RenderThread`,
+and the login-path natives from the 2013 decompiles: `GameInfo.SpawnPlayerController` (0x1c60c0/0x2d13a0),
+`Controller.Possess/UnPossess/GetPlayerViewPoint` (0x1da630/0x1d4d20/0x1d1430 -> 0x1cb120/0x1cb1f0/0x1cb0d0),
+`Pawn.UnPossessed` + `APawn::PossessedBy` (0x1daac0/0x2a14e0, 0x2ab1f0), `PlayerController.GetPlayerViewPoint/GetFOVAngle`
+(0x1e17a0, 0x1d3670/0x242fd0), `Camera.GetCameraViewPoint/GetFOVAngle` (0x1cfec0, 0x1cfe60), and the
+`UOnlineSubsystemSteamworks::Tick` offline override (CppText hook).
+
+Merged null-RHI smoke (`build_and_smoke.py --build-dir build/game --no-build --exe-name DishonoredGame_C.exe --log-name coord.log
+--ini-dir build/coord_config --rhi null --milestone "Initializing Engine..." --expect "Finished loading level" --expect "Initial startup"
+--skip-native OnlineSubsystemPC`): `Bringing World DishonoredGameFull_P.TheWorld up for play`, `Finished loading level`,
+`Initial startup: 5.2s`, the game loop ticks, then `Bad export index 1065353215/6389` after `Flushing async loaders.`
+(a float 1.0 read as an object index: a Serialize delta in an async-loaded package with 6,389 exports; wave 4 package).
+Natives still on the warn-once stub along that path: `Camera.UpdateCamera`, `HUD.DisplayConsoleMessages`,
+`DownloadableContentManager.BackupDLCList/RemoveUnavailableDLC/UninstallDLCs`, `Pawn.Died`, `Camera.ClearCameraLensEffects`,
+`InterpActor.SetShadowParentOnAllAttachedComponents`, OSS `ReadFriendsList/ReadProfileSettings/ReadAchievements`.
+Merged d3d9 run (`--rhi d3d9 --extra-args "-windowed -ResX=1280 -ResY=720 -nomovie"`): dies at
+`Failed to find shader map for default material LevelColorationLitMaterial` (material shader caches; renderer package of wave 4).
+Checks on the merged tree: CoreSmoke 99/99, `xcheck_sdk_layout.py build/game/layout_probe.txt` 0 rows (2,314 types),
+`gen_layout_probe.py compare` 0 contract mismatches, `verify_phase2.py retail` 2/2. Wave 4: `PHASE6.md`.
 
 ## Rules for agents (wave 2 rules plus)
 

@@ -292,12 +292,17 @@ Versions and evidence: `resources/docs/middleware.md` (wave 2 U). Status 2026-09
 1. Reference Core + Engine + Launch compile and link with MSVC 2022. **DONE 2026-09-26.**
 2. Runs to `Init: Object subsystem initialized` with Dishonored's names/versions. **DONE 2026-09-26** (null RHI).
 3. Loads `Core.upk`, `Engine.upk`, `DishonoredGame.upk`, `Startup.upk`; script VM runs
-   `defaultproperties` without asserts. **PARTIAL 2026-09-25**: Core/Engine/GameFramework/IpDrv load end
-   to end (`24107 objects as part of root set`, wave 2 O); the game packages need the generated
-   registrants (T, merged, options `DISHONORED_ENABLE_*`) — run pending the content restore. Test: load-all
-   over all 471 `.upk` and every `.pck`, object counts compared with the reference build.
-4. D3D9 device up; Bink startup movie and Scaleform main menu render.
-5. `open` a mission map; player spawns; input works.
+   `defaultproperties` without asserts. **DONE 2026-09-25 (wave 3 X/Z)**: retail seek-free path, `Startup.upk`
+   63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P` up for play, `Initial startup: 5.2s`
+   on the null RHI (`PHASE5.md`, wave result). Still to do: the load-all test over all 471 `.upk` and every
+   `.pck` with object counts compared with the reference build.
+4. D3D9 device up; Bink startup movie and Scaleform main menu render. **PARTIAL 2026-09-25 (wave 3 Y)**: D3D9
+   device and viewport, cooked global shaders load, a frame is presented in Y's snapshot, the 8 Bink startup
+   movies play; the merged d3d9 run stops at the missing material shader maps (wave 4 renderer package);
+   Scaleform menu pending the `middleware.md` decision.
+5. `open` a mission map; player spawns; input works. **STARTED 2026-09-25**: `DishonoredGameFull_P` is up
+   for play and the player controller possesses its pawn (null RHI); the tick loop dies on a streaming-package
+   serializer delta (`Bad export index`, wave 4).
 6. Retail savegames load; save/load round-trip.
 7. Full campaign; then DLC05/06/07 (needs Phase 7).
 8. Test suite: golden-log diffs (milestones 2–5), package load-all, save load-all, scripted
@@ -357,12 +362,11 @@ The 2013 exe is the target, so this is not a final polish step: every function p
 * **Scaleform (10.4 %) and Wwise (4 %)** have no source anywhere; their Phase 4 decision gates
   GFxUI and AkAudio.
 
-## 6. Next concrete steps (2026-09-25)
+## 6. Next concrete steps (2026-09-25, wave 3 landed)
 
-1. Wave 3 per `resources/docs/PHASE5.md`: coordinator pre-wave (native-stub macro, per-agent run
-   isolation, stub-exe guard), then agents W–AC: Edge bypass, `Startup.upk` + `GEngine->Init()` + tick
-   loop, first frame, map load, Engine convergence, base hygiene, startup-path natives.
-2. Converge the GameFramework/IpDrv bases behind the last 4 SDK rows and the pending asserts.
-3. Per-function Engine convergence from the shim tables (`agents/agentQ/R/S.md`) and `progress.md`;
-   DishonoredGame natives from the named 2013 decompiles, in dependency order.
-4. Phase 4: obtain PhysX 2.8.4 / Wwise 2012.1 / Steamworks 1.18 SDKs; decide Scaleform (`middleware.md`).
+1. Wave 4 per `resources/docs/PHASE6.md`: the `Bad export index` streaming serializer blocker, the
+   Engine/GameFramework natives without a C++ body (Z's list), the scene renderer on the retail cooked
+   shader caches (d3d9 world frame), DishonoredGame infrastructure natives (685 stubs), Engine
+   convergence wave 2, the input/tick path, build hygiene (per-build FetchContent dirs).
+2. Load-all test over all 471 `.upk` / every `.pck` (milestone 3 exit check); whole-tree Edge path (W's memo).
+3. Phase 4: obtain PhysX 2.8.4 / Wwise 2012.1 / Steamworks 1.18 SDKs; decide Scaleform (`middleware.md`).
