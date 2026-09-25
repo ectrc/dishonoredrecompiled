@@ -81,8 +81,8 @@ mismatches against retail**. Regenerating `DishonoredLayouts.h` (Core 278 assert
 | UInterpTrackAIControlBodyIntentionKeyProperties | 64 | 68 | — | `+ BITFIELD m_bHackForbidEquipState` |
 | UInterpTrackInstStretchAnimControl | 92 | 100 | — | `+ FLOAT m_fCurrentAnimPosition, m_fBackupAnimPosition` |
 | UInterpTrackStretchAnimControl | 164 | 168 | — | `+ BITFIELD m_bSpecialRootMotionExtract` |
-| UOnlineSubsystem | 168 | 180 | 252 | `+ TArray<FNamedSession> Sessions` (12); ours is still the unconverged reference layout (pending) |
-| USeqAct_SetMatInstScalarParam | 264 | 272 | 264 | `+ AActor* m_pMaterialOwnerPawn, INT m_iMaterialIndex` |
+| UOnlineSubsystem | 168 | 180 | 180 | `+ TArray<FNamedSession> Sessions` (12); converged by agent S (wave 2) |
+| USeqAct_SetMatInstScalarParam | 264 | 272 | 272 | `+ AActor* m_pMaterialOwnerPawn, INT m_iMaterialIndex`; converged by agent Q (wave 2) |
 
 `—` = not reachable from `Engine.h` (not probed). The retail class registration descriptor
 (`GetPrivateStaticClass(desc)`, rva 0x79370) starts with the sizeof at +0 (AMatineePawn: 1200 at
@@ -90,11 +90,19 @@ rva 0xe9f438, then 4, 0, 0, three pointers, 0x4000, 0x04084084, rva 0x56d810, tw
 other fields are not decoded yet. H's `ctor_rva_2012` column can point at a COMDAT-folded function of
 another class (AMatineePawn's is `AGamePawn::InternalConstructor`), so verify before relying on it.
 
+## State after wave 2 (2026-09-25)
+
+Every Engine `*Classes.h` is regenerated from the retail SDK offsets (`sdk_props.py`, agents Q/R/S) and
+`EShowFlags` is a QWORD (V): `xcheck_sdk_layout.py` shows 4 rows of 2,314 dump types (all shifts from
+GameFramework/IpDrv bases: `AGameCrowdAgentSkeletal`, `UOnlineSubsystemCommonImpl`, and two DishonoredGame
+classes), `compare` 0 contract mismatches. The "—" rows above are classes not reachable from `Engine.h`.
+
 ## Open
 
-- Confirm `FPackagePrecacheInfo` (+3 Arkane members, 24 bytes) and `FAsyncIORequest` (`Event` @44,
-  `LoadDataWithEvent`) in retail (names are propagated now: `retail2013_named.i64`).
-- `AMatineePawn` / `APawn` retail pass (table above); the other seven non-contract Engine classes when
-  their module code is ported.
+- `FAsyncIORequest`: `Event` + `LoadDataWithEvent` ported (wave 2 O, 2013 rva 0x51e00/0x519b0); the 2013
+  struct is 76 bytes (an extra FString @24) — layout follow-up. `FPackagePrecacheInfo` checked by O.
+- GameFramework/IpDrv bases behind the last 4 SDK rows; `FSceneViewFamily::CurrentBendTime` @0;
+  `FSystemSettings` 1088-byte struct; `UArrowComponent` 480 vs 464.
+- Done 2026-09-27: `AMatineePawn`/`APawn` (SDK dump), UOnlineSubsystem, USeqAct_SetMatInstScalarParam.
 - Done 2026-09-27: NetFields resolved (removed), UClass/UTexture2D/USkeletalMeshComponent applied, tooling targets retail sizes.
 - Done 2026-09-26: `FPackageInfo` (68 in both builds) had the reference-only `LoadingPhase` byte removed; the three seamless-travel uses in Engine collapse to the non-phased path.

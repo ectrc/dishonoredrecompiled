@@ -39,6 +39,10 @@ the layout convergence from "sizes only" (`native_class_sizes.csv`) into offset-
 - `UnknownDataNN` gaps (115 of them) mark where retail has native-only members between reflected
   ones; together with the 2012 PDB member list they pin down the retail position of the C++-only
   members.
+- **State after wave 2 (2026-09-25)**: `sdk_props.py` regenerated 216 Engine PROPS blocks and
+  `gen_classes_header.py --sdk` generated the DishonoredGame/GFxUI/AkAudio/OSS headers from the dump;
+  the cross-check now covers 2,314 dump types (derived structs included): 1,677 exact, 4 rows left,
+  0 contract mismatches.
 
 ## Where it is used in the plan
 

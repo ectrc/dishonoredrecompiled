@@ -1,6 +1,7 @@
 # Dishonored (UE3) Recompilation Project Plan
 
-Written 2026-09-24, revised 2026-09-25 (Phase 0/1 complete; reference engine source added).
+Written 2026-09-24, last revised 2026-09-25 after Phase 3 wave 2 (`resources/docs/PHASE4.md`). Progress
+summary: `resources/docs/STATUS.md`.
 Working root: `D:\RecompileDishonored\Recompile\`.
 
 ## 1. Goal
@@ -52,8 +53,9 @@ driver-download URLs. Its online-facing pieces are Steam, Steam leaderboards for
 | Imports | libcurl, steam_api, dinput8, xinput1_3, d3d9, wsock32, binkw32, MSVCR90/MSVCP90 |
 | Content | `CookedPCConsole` 1463 files / 5.4 GB, INT only; `DLC\PCConsole\DLC05,06,07` |
 | Config | `DefaultEngine.ini` already edited: `bEnableSteam=false` |
-| RE state | `Dishonored.exe.i64` exists but is a plain auto-analysis (34,059 functions, 93 % unnamed) |
+| RE state | `resources/docs/idb/retail2013_named.i64`: 65,841 functions, 82.8 % of the 2012 names propagated (agent J, own matcher); the original `Dishonored.exe.i64` was a bare auto-analysis |
 | Mod hook | `_dinput8.dll` = `dismod` build (imgui overlay, Steam bypass, spawn panel) |
+| Content state | **2026-09-25: `Engine/`, `CookedPCConsole`, `DLC`, `Localization`, `Movies` were deleted by a recursive delete through staging junctions (STATUS.md incident); restore via Steam "Verify integrity"** |
 
 ### 2.2 `Dishonored_Debug2012\` — leaked QA build, full symbols
 
@@ -113,8 +115,8 @@ idalib (`idapro` module) and the IDA MCP, git. `resources/docs/toolchain.md`.
 3. **Layout and serialization are the contract — the RETAIL 2013 layout.**
    The 2012 PDB (`resources/docs/types/sizes.csv`) gives named layouts and is the first approximation;
    the authoritative sizes and member sets are the retail ones, recovered from (a) the 2013
-   cooked packages (every script property carries its exact offset, every class its
-   PropertiesSize), (b) the 2013 exe (class sizes in constructors/`StaticClass` registration,
+   cooked packages (member list, order and types of every script class; offsets are not
+   serialized, `UStruct::Link` recomputes them), (b) the 2013 exe (class sizes in constructors/`StaticClass` registration,
    member accesses in decompiled functions after Phase 7 name propagation), (c) the runtime
    dump of the retail exe (`Dishonored_DumpedSDK_Retail`, `resources/docs/sdk_dump.md`): the
    offset of every reflected member as retail's `UStruct::Link` computed it. `static_assert`s guard every native class against
@@ -152,64 +154,67 @@ Regeneration: `resources/docs/symbols/README.md`. Exit check: `resources/tools/s
 
 ### Phase 2 — Reference import and layout convergence — DONE 2026-09-25
 
-Tracker `resources/docs/PHASE2.md`; exit check `resources/tools/symbols/verify_phase2.py` (18/18); status `resources/docs/STATUS.md`. Original task list kept below for reference.
+Tracker `resources/docs/PHASE2.md`; exit check `resources/tools/symbols/verify_phase2.py` (18/18). Original task list, all done:
 
-- [ ] `resources/tools/symbols/xref_reference.py`: for each PDB function, look up a same-named definition
+- [x] `resources/tools/symbols/xref_reference.py`: for each PDB function, look up a same-named definition
       in the reference; for each PDB source file, whether it exists there. Writes
       `resources/docs/reference_xref.csv` and refreshes the tables in `resources/docs/engine_reference.md`.
-- [ ] Copy the Shipping runtime modules from the reference into `source/Development/Src/`: Core,
+- [x] Copy the Shipping runtime modules from the reference into `source/Development/Src/`: Core,
       Engine, GameFramework, IpDrv, WinDrv, D3D9Drv, GFxUI, OnlineSubsystemSteamworks, Launch,
       zlib. Keep Epic's `Inc/Src/Classes` layout. Drop editor-only, console, mobile and
       D3D11/OpenGL code paths behind CMake options rather than deleting them.
-- [ ] Add empty `DishonoredGame`, `AkAudio`, `DisJobs` modules with the file list from
+- [x] Add empty `DishonoredGame`, `AkAudio`, `DisJobs` modules with the file list from
       `resources/docs/symbols/sourcefiles.txt`.
-- [ ] Generate `source/Development/Src/Core/Inc/DishonoredLayouts.h` from `resources/docs/types/sizes.csv`:
+- [x] Generate `source/Development/Src/Core/Inc/DishonoredLayouts.h` from `resources/docs/types/sizes.csv`:
       `static_assert(sizeof(X) == N)` for every native class the cooked script side references.
-- [ ] `resources/tools/symbols/xcheck_reference_types.py`: PDB member offsets vs the reference headers
+- [x] (`gen_layout_probe.py generate/compare`) PDB member offsets vs the reference headers
       (parse `types.json`; compile-time probe of the reference via a generated `offsetof`
       program). Output `resources/docs/types/reference_layout_delta.md`: the exact list of Arkane layout
       changes per class. Fix headers first; nothing else compiles correctly until they match.
-- [ ] Pin `UnObjVer.cpp` / `UnNames.h` to Dishonored: package file version and licensee version
+- [x] Pin `UnObjVer.cpp` / `UnNames.h` to Dishonored: package file version and licensee version
       read from `Core.upk`; `hardcoded_names.csv` replaces the reference name list (indices
       must match, names 0–1300 sparse).
-- [ ] Native registration: regenerate the `IMPLEMENT_FUNCTION` / `AutoInitializeRegistrants`
+- [x] Native registration: regenerate the `IMPLEMENT_FUNCTION` / `AutoInitializeRegistrants`
       lists from `resources/docs/symbols/natives.csv` and `classes.csv`.
 - **Exit:** Core compiles as a static lib under the CMake build; `DishonoredLayouts.h` passes
       for Core types; `reference_layout_delta.md` exists for Engine and DishonoredGame types.
 
-### Phase 2b — Retail (2013) layout truth (before Engine convergence)
+### Phase 2b — Retail (2013) layout truth — DONE for Core/Engine 2026-09-25
 
-Detailed plan and tracker: `resources/docs/PHASE3.md` (work packages H–N).
+Trackers: `resources/docs/PHASE3.md` (H, I, J, C1–C3) and `PHASE4.md` (Q, R, S, T, V). Reconciliation
+notes: `resources/docs/types/retail_reconciliation.md`; the SDK dump: `resources/docs/sdk_dump.md`.
 
-- [ ] `resources/tools/pdb/read_package_classes.py`: parse the 2013 cooked packages (LZO chunks,
+- [x] (package I, 2026-09-26) `resources/tools/pdb/read_package_classes.py`: parse the 2013 cooked packages (LZO chunks,
       name/import/export tables, `UClass`/`UStruct`/`UProperty`/`UEnum`/`UFunction` exports).
       UE3 does not serialize property offsets or `PropertiesSize` (`UStruct::Link` recomputes
       them), so this yields the exact 2013 **member list, order and types** of every script
       class, its enums and native function indices — from which offsets follow deterministically.
       Do the same for the 2012 packages and diff.
-- [ ] 2013 native class sizes: every `InitializePrivateStaticClass<X>` calls
+- [x] 2013 native class sizes: every `InitializePrivateStaticClass<X>` calls
       `UClass::UClass(ENativeConstructor, sizeof(X), …, L"<Name>", L"<Package>", …)`; the size is an
       immediate next to the class-name string xref, readable in the unnamed retail exe →
       `native_class_sizes.csv` (2012 vs 2013). DONE 2026-09-26 (package H).
 - [x] Retail member **offsets**: `resources/tools/sdk/parse_codered_sdk.py` parses the CodeRed dump of
       the running retail exe (`Dishonored_DumpedSDK_Retail`) into `retail_sdk_layout.json`;
       `resources/tools/sdk/xcheck_sdk_layout.py build/<dir>/layout_probe.txt` checks every probed
-      member offset and class span against it → `retail_sdk_delta.md` (2026-09-27: 1,132 types,
-      666 exact, 234 to converge). This replaces the 2012-offset check wherever retail differs.
-- [ ] Regenerate `DishonoredLayouts.h` and the layout probe against the **2013** sizes; fix the
-      headers where 2012 and 2013 differ, citing the retail evidence in the
-      `// DISHONORED(layout)` comment (`retail:` prefix).
-- [ ] Exit: every Core contract type and every Engine/DishonoredGame script class matches the
-      2013 numbers (`gen_layout_probe.py compare` sizes **and** `xcheck_sdk_layout.py` offsets with
-      0 contract mismatches); `verify_phase2.py` gains a `retail` section.
+      member offset and class span against it → `retail_sdk_delta.md` (first run 1,132 types / 666 exact / 234 to converge; after wave 2:
+      2,314 types / 1,677 exact / 4 rows). This replaces the 2012-offset check wherever retail differs.
+- [x] Regenerate `DishonoredLayouts.h` and the layout probe against the **2013** sizes (retail sizes
+      from `native_class_sizes.csv`, script-struct sizes and member offsets from the SDK dump); every
+      Engine `*Classes.h` regenerated with `sdk_props.py` (wave 2 Q/R/S), `EShowFlags` QWORD (V).
+- [x] Exit (Core/Engine): 0 contract mismatches in `gen_layout_probe.py compare` and
+      `xcheck_sdk_layout.py`; DishonoredGame: 12,137 generated SDK asserts pass, 4 SDK rows and 354
+      pending asserts wait on GameFramework/IpDrv bases. `verify_phase2.py` `retail` section: not written
+      (the two cross-check tools are the exit check).
 
 ### Phase 3 — Module convergence and DishonoredGame rewrite (months)
 
-Wave 1 (`resources/docs/PHASE3.md`, done 2026-09-27): retail truth, Core/Engine contract types
-reconciled with retail, milestone 1. Wave 2 (`resources/docs/PHASE4.md`, started 2026-09-27):
-milestone 2 (startup packages), D3D9Drv target, Engine headers converged on the retail SDK
-offsets (agents Q/R/S), DishonoredGame/GFxUI/AkAudio/OSS registrants + headers from the SDK dump
-(T), middleware versions + Phase 4 memo (U).
+Wave 1 (`resources/docs/PHASE3.md`, done 2026-09-26): retail truth, Core/Engine contract types
+reconciled with retail, milestone 1. Wave 2 (`resources/docs/PHASE4.md`, done 2026-09-25 machine
+date): milestone 2 for the four native packages (O), D3D9Drv target (P), every Engine header on
+the retail SDK offsets (Q/R/S/V), DishonoredGame/GFxUI/AkAudio/OSS registrants + headers generated
+from the SDK dump (T), middleware versions + Phase 4 memo (U). Next wave: game packages +
+`Startup.upk` + `GEngine->Init()`, then per-function convergence (`progress.md`).
 
 Order (sizes from `resources/docs/module_map.md`; Shipping has no OnlineSubsystemPC/XAudio2):
 
@@ -225,18 +230,25 @@ Order (sizes from `resources/docs/module_map.md`; Shipping has no OnlineSubsyste
 
 Per module:
 
-- [ ] Make the reference copy compile and link with MSVC 2022 (`/permissive-`, C++17). Fix
-      compile errors mechanically; do not change behavior in this step.
-- [ ] `resources/tools/decomp_module.py <Module>`: batch Hex-Rays decompile of every PDB function in the
-      module into `resources/reference/<Module>/<File>.cpp` (gitignored, regenerated on demand).
+- [x] Make the reference copy compile and link with MSVC 2022 (`/permissive-`, C++17): Core, Engine,
+      GameFramework, IpDrv, WinDrv, D3D9Drv, Launch; GFxUI/AkAudio/OSS/DishonoredGame as generated
+      registrant units (their glue/natives are stubs until Phase 4 / the rewrite).
+- [x] Batch Hex-Rays decompile: `resources/tools/ida/decompile_funcs.py <db> <out> <name|re:|rva:> …`
+      (headless, per pattern or list file; per-module sweeps go to `resources/reference/decomp/`, gitignored).
 - [ ] Convergence pass in priority order: `Serialize`, constructors / `StaticConstructor`,
-      `exec*` natives, virtuals in vtable order, then the rest. For `reference` functions diff
+      `exec*` natives, virtuals in vtable order, then the rest. **Started**: Core 26 ported (L),
+      Engine bring-up ports by O (SystemSettings, RHIInit, shader system, loader `Serialize` deltas,
+      GC token streams), all re-checked in the 2013 db; the `DISHONORED_SHIM_STATIC` tables in
+      `agents/agentQ/R/S.md` are the Engine work list. For `reference` functions diff
       decompile vs source and port behavior differences; for `missing` functions write them.
       Record status per function in `resources/docs/progress.md`.
 - [ ] Third-party code inside the exe: identify with FLIRT/Lumina first; anything matched is
       replaced by the library, never rewritten.
 
-DishonoredGame specifics: generate the class declarations (`DishonoredGameClasses.h` equivalent)
+DishonoredGame specifics — headers, registrants, names and native stubs are **generated** (wave 2 T,
+`gen_classes_header.py --sdk`, 1,822/1,823 native classes, 73 group headers, a `UStruct::Link`
+emulator that reproduces all 9,342 SDK offsets); what remains is the native code. Original plan:
+generate the class declarations (`DishonoredGameClasses.h` equivalent)
 from the retail SDK dump (`retail_sdk_layout.json`: 1,870 classes / 665 structs with retail offsets,
 sizes, flags and `UnknownData` gaps for the native-only members) with `resources/docs/types/types.json`
 (2012 PDB) supplying the names and types of what sits in those gaps, cross-referenced with the
@@ -246,38 +258,41 @@ pawns, AI brain processes, powers, UI last).
 
 ### Phase 4 — Third-party dependencies
 
+Versions and evidence: `resources/docs/middleware.md` (wave 2 U). Status 2026-09-25:
+
 | Library | Status | Plan |
 |---|---|---|
-| PhysX 2.8.x / APEX | DLLs shipped; the reference tree only has **NovodeX 2.1.2** (`Development/External/Novodex`, no `NxCooking.h`), which cannot compile `UnNovodexSupport.h` | PhysX 2.8.4 SDK headers must come from elsewhere (wave-2 agent U decides); link to the shipped DLLs via import libs. |
-| DirectX 9 | headers in the reference tree | June 2010 DirectX SDK for D3DX9 at build time. |
-| LZO1X decompressor (replaces LZOPro) | **required for milestone 3**: every cooked package is `COMPRESS_LZO`; Dishonored calls `lzopro_lzo1x_decompress_safe` (LZO1X-compatible) | lzokay (MIT) or LZO 2.10 (GPL) via FetchContent; `WITH_LZO=1` |
+| PhysX **2.8.4** (DLLs 2.8.4.6) / APEX | `WITH_NOVODEX=0`; the reference tree only has NovodeX 2.1.2. **APEX is shipped but never linked by retail** → `WITH_APEX=0` is final | PhysX 2.8.4 SDK headers + `NxdDoubleBuffered` must be obtained (user); link the shipped DLLs via import libs; needed at milestone 5 |
+| DirectX 9 | done: reference SDK mirrored without `rpcsal.h`; D3D9Drv is a module, `--rhi d3d9` creates the RHI | D3DX is editor-time in retail; guard like nvtt later |
+| LZO1X (replaces LZOPro) | **done** (wave 1 K): lzokay via FetchContent, `WITH_LZO=1`, retail chunks decompress | — |
 | zlib, libpng, libogg, libvorbis, TinyXML | zlib/libpng already via FetchContent; libogg/libvorbis not linked in Shipping (audio is Wwise) | Data compatible; no decompile. |
-| Steamworks | `steam_api.dll` shipped; reference `OnlineSubsystemSteamworks` source | Steamworks SDK of the matching interface version; offline path default. |
-| Bink | `binkw32.dll` shipped | Import lib from DLL exports; small reconstructed header. |
+| Steamworks | `steam_api.dll` 1.30.50.46, interfaces of the **SDK 1.18/1.19** generation; `WITH_STEAMWORKS=0`; OSS registrants generated (T) | SDK from the partner archive (user); `-nosteam` offline path with a delay-loaded DLL (Phase 8) |
+| Bink **1.9p** | **done** (wave 2 U): `Engine/Bink/Src/bink.h` reconstructed from the 2012 PDB, import lib built from a stub DLL (`cmake/Bink.cmake`), link check passed behind `DISHONORED_WITH_BINK` | play the startup movie at milestone 4 (`FDisFullScreenMovieBink`, `UArkBinkOverlayManager`) |
 | libcurl | 2013 exe only | Removed (Phase 8). |
-| Scaleform GFx 3.x (`libgfx`, `libgfx_ime`) | static, **10.4 %** (5,635 fns); reference has only GFx-4 GFxUI glue (our GFxUI folder mixes it with the Arkane GFx-3 PDB stubs) | Decide (wave-2 agent U, `resources/docs/middleware.md`): rewrite from decompile / hybrid-link during bring-up / subset reimplementation. Biggest single decision. |
-| Wwise (`ak*`) | static, **~4 %** (≈3,300 fns); reference has no Wwise | Same three options; shipped `.bnk`/`.pck` banks need the matching runtime. |
-| FaceFX (`facefx`, `fxsdk_unreal`) | static, 1.3 %; reference has `Engine/FaceFX` glue only | Rewrite runtime from decompile; data format fixed by cooked animsets. |
+| Scaleform GFx **3.3.89** (`libgfx`, `libgfx_ime`) | static, 10.4 % of the exe; no SDK anywhere; GFxUI registrants generated (T) | matching 3.3.x licensee SDK if sourceable, else a GFx-3 API subset behind a GFxUI adapter (e.g. on Ruffle); never a rewrite of the 1.1 MB lib. Gates the main-menu half of milestone 4 |
+| Wwise **2012.1** (bank format 65) | static, ~4 %; AkAudio registrants generated (T), audio silent | link the free 2012.1 SDK when installed (user) |
+| FaceFX **SDK 1.7.3.1** | static, 1.3 %; the SDK source was compiled inside Arkane's tree; `WITH_FACEFX=0` (assets round-trip as byte blobs) | decompile-driven rewrite (1,317 named functions) at milestone 6 |
 | PathEngine, SpeedTree | not in Shipping | Nothing to do. |
 
 ### Phase 5 — Build system
 
-- [ ] CMake + ninja, MSVC 2022, Win32 x86 preset (exists). One `add_library` per module
-      mirroring `source/Development/Src/<Module>`; options for editor/console code paths (off).
-- [ ] Configs: Debug (checks, logging, ASan optional), Release (checks on), Shipping.
-- [ ] Output into a staging copy of `Dishonored_Latest2026\` (content junctioned; the pristine
-      tree is never built into).
-- [ ] `resources/tools/build_and_smoke.py`: build, launch with `-log`, wait for a milestone string, diff the
-      normalized `Launch.log` against `resources/docs/golden/2012_arkprofile_launch.norm.log`.
+- [x] CMake + ninja, MSVC 2022, Win32 x86 presets. `dishonored_module(<Name>)` per module, options
+      `DISHONORED_ENABLE_*`, `DISHONORED_REAL_LAUNCH`, `DISHONORED_LAYOUT_CHECKS`, `DISHONORED_SDK_LAYOUT_CHECKS`, `DISHONORED_WITH_BINK`.
+- [x] Configs: presets `x86-debug`, `x86-release`, `x86-shipping` (`DISHONORED_SHIPPING`).
+- [x] Staging: `stage_retail.py` copies our `DishonoredGame.exe` into the retail `Binaries\Win32` next to
+      `Dishonored.exe` (no junctions; the earlier junctioned stage caused the 2026-09-25 content loss).
+- [x] `resources/tools/build_and_smoke.py`: build, stage, run with `-log -nosteam -seekfreeloadingpcconsole -unattended`
+      (+ `--rhi null|d3d9`, `--expect`, `--skip-native`), golden-log diff cut at `--milestone`.
 
 ### Phase 6 — Bring-up milestones (behavioral)
 
-1. Reference Core + Engine + Launch compile and link with MSVC 2022 (UDK-style empty game).
+1. Reference Core + Engine + Launch compile and link with MSVC 2022. **DONE 2026-09-26.**
 2. Runs to `Init: Object subsystem initialized` with Dishonored's names/versions. **DONE 2026-09-26** (null RHI).
 3. Loads `Core.upk`, `Engine.upk`, `DishonoredGame.upk`, `Startup.upk`; script VM runs
-   `defaultproperties` without asserts. (Wave 2, `PHASE4.md` package O; needs T's registrants:
-   `UClass::Bind` aborts on any native class without a registrant.) Test: load-all over all 471 `.upk` and every `.pck`,
-   object counts compared with the reference build.
+   `defaultproperties` without asserts. **PARTIAL 2026-09-25**: Core/Engine/GameFramework/IpDrv load end
+   to end (`24107 objects as part of root set`, wave 2 O); the game packages need the generated
+   registrants (T, merged, options `DISHONORED_ENABLE_*`) — run pending the content restore. Test: load-all
+   over all 471 `.upk` and every `.pck`, object counts compared with the reference build.
 4. D3D9 device up; Bink startup movie and Scaleform main menu render.
 5. `open` a mission map; player spawns; input works.
 6. Retail savegames load; save/load round-trip.
@@ -290,11 +305,13 @@ pawns, AI brain processes, powers, UI last).
 The 2013 exe is the target, so this is not a final polish step: every function ported from the
 2012 decompile is diffed against its 2013 counterpart before it is marked `verified`.
 
-- [ ] Diaphora/BinDiff `DishonoredGame-Shipping.exe` (2012, named) vs `Dishonored.exe` (2013);
-      propagate names into `Dishonored.exe.i64`.
-- [ ] Classify identical / changed / new; expect DLC natives (`Req_DLC05_*`), engine fixes, curl.
-- [ ] Decompile changed/new functions into `resources/reference/2013/` and fold the behavior into the
-      single source tree.
+- [x] Name propagation (wave 1 J, own matcher `resources/tools/ida/match_functions.py`; Diaphora too slow):
+      82.8 % matched → `resources/docs/idb/retail2013_named.i64`, `symbols/match_2012_2013.csv`, `functions_2013.csv`.
+- [~] Classify identical / changed / new: `symbols/match_2012_2013.md` (matched / unmatched), package delta
+      `types/script_delta_2012_2013.md` (401 classes added, 98 removed, 258 changed), `native_class_sizes.md`
+      (274 size changes, 345 2013-only classes); per-function identical/changed classification still to do.
+- [~] Decompile changed/new functions and fold the behavior in: done for everything ported so far
+      (every wave-1/2 port cites a 2013 rva); the systematic pass is Phase 3's per-function work.
 
 ### Phase 8 — Online / "server" removal
 
@@ -306,18 +323,19 @@ The 2013 exe is the target, so this is not a final polish step: every function p
 
 ### Phase 9 — Automation
 
-- [ ] `resources/tools/ida/`: export scripts exist; add batch decompile (`decomp_module.py`) runnable
-      headless via idalib.
-- [ ] `resources/docs/tasks/<Module>.md`: per-function status lists so work parallelizes across sessions.
+- [x] `resources/tools/ida/`: export scripts + headless batch decompile (`decompile_funcs.py`) + matcher.
+- [x] Per-function status: `resources/docs/function_status.csv` + `progress.md`; per-agent packages and
+      reports in `PHASE<n>.md` / `agents/agent<X>.md` (the parallel-session workflow used since Phase 2).
 
 ## 5. Risks and open questions
 
-* **2012 ≠ 2013 layouts.** Phase 2 converged Core on the 2012 PDB because that is the only
-  build with symbols. Many structs differ in size and members between the two builds (DLC05–07
-  natives, enum growth, `m_bShowMapNameOnlyOnXboxNoHDD`-style additions, the `xcheck_sdk.md`
-  offset mismatches). Every layout must be re-verified against the retail exe / retail packages
-  (Phase 2b) before Engine and DishonoredGame convergence relies on it; the 2012-derived
-  headers are provisional until then.
+* **2012 ≠ 2013 layouts** — largely retired: Core/Engine headers are on the retail sizes and offsets
+  (0 contract mismatches, 4 SDK rows left in GameFramework/IpDrv bases). Still provisional: native-only
+  members whose position is inferred from the 2012 PDB inside retail gaps, and every 2012 decompile
+  not yet diffed against its 2013 counterpart.
+* **Shared working tree + junctions.** Agents edit one tree; merges are verified on a clean worktree.
+  A recursive delete through staging junctions destroyed the retail content once (2026-09-25); staging
+  no longer uses links and nothing may recursively delete a directory that could contain one.
 
 * **Legal**: the 2012 build, its PDBs and the reference engine source are all leaked material;
   UE3 is Epic-licensed and Scaleform/Bink/PhysX/FaceFX/Wwise are licensed middleware. Keep the
@@ -336,10 +354,11 @@ The 2013 exe is the target, so this is not a final polish step: every function p
 * **Scaleform (10.4 %) and Wwise (4 %)** have no source anywhere; their Phase 4 decision gates
   GFxUI and AkAudio.
 
-## 6. Next concrete steps
+## 6. Next concrete steps (2026-09-25)
 
-1. `resources/tools/symbols/xref_reference.py` → `resources/docs/reference_xref.csv` (function and file status).
-2. Copy Core from the reference; CMake `add_library(Core)`; make it compile with MSVC 2022.
-3. `DishonoredLayouts.h` from `sizes.csv`; run it against the reference Core headers; fix.
-4. Pin `UnObjVer.cpp` and `UnNames.h` to Dishonored's values.
-5. Repeat 2–3 for Engine; then start milestone 1.
+1. Restore the retail content (Steam verify), then run the combined exe with the four module options on:
+   game packages with the generated registrants, `Startup.upk`, `GEngine->Init()` → milestone 3.
+2. Converge the GameFramework/IpDrv bases behind the last 4 SDK rows and the pending asserts.
+3. Per-function Engine convergence from the shim tables (`agents/agentQ/R/S.md`) and `progress.md`;
+   DishonoredGame natives from the named 2013 decompiles, in dependency order.
+4. Phase 4: obtain PhysX 2.8.4 / Wwise 2012.1 / Steamworks 1.18 SDKs; decide Scaleform (`middleware.md`).

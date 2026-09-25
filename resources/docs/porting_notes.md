@@ -14,19 +14,26 @@ edit to a file copied from the reference carries a `// DISHONORED: <why>` commen
 | Include model | every `source/Development/Src/*/Inc` is on every module's include path | UnrealBuildTool adds all module Inc dirs globally; Core's `UnVcWin32.h` includes WinDrv's `PreWindowsApi.h`, `UnFile.h` includes `../../Engine/Inc/UnConsoleTools.h` |
 | Relative includes | kept as in the reference (`../../Engine/Inc/...`, `../../Launch/Resources/...`) | they resolve because the tree mirrors `Development/Src/<Module>` |
 | zlib | FetchContent v1.3.1 (`cmake/Dependencies.cmake`), `UnMisc.cpp` includes `<zlib.h>` | reference used `Development/External/zlib` which the clone lacks |
-| LZO | `WITH_LZO=0` for now — **milestone-3 blocker** | cooked packages are `PKG_StoreCompressed` with `CompressionFlags=2` = `COMPRESS_LZO` (earlier note wrongly read that as zlib); Dishonored links LZO Pro's `lzopro_lzo1x_decompress_safe`, LZO1X-compatible. Plan: lzokay (MIT) or LZO 2.10 via FetchContent, then `WITH_LZO=1` |
-| Excluded units | `Core/Src/UnitTest.cpp` | test harness |
-| Launch | reference `Launch.cpp`/`LaunchEngineLoop.cpp` imported but not compiled; `DishonoredLaunchStub.cpp` builds the exe until milestone 1 | |
+| LZO | `WITH_LZO=1` via lzokay (MIT, FetchContent), `COMPRESS_DefaultPC = COMPRESS_LZO` | cooked packages are `PKG_StoreCompressed` with `CompressionFlags=2` = `COMPRESS_LZO`; Dishonored links LZO Pro's `lzopro_lzo1x_decompress_safe`, LZO1X-compatible (wave 1 K) |
+| Excluded units | `Core/Src/UnitTest.cpp`; `USE_UNIT_TESTS=0` | neither exe has an `FUnitTestFramework` function (wave 2 P) |
+| Launch | real `Launch.cpp`/`LaunchEngineLoop.cpp` behind `DISHONORED_REAL_LAUNCH=ON` (`GAMENAME=DISHONOREDGAME` branches, `DISHONORED_HAVE_<MODULE>` registrant hooks, remaining stubs in `DishonoredStubs.cpp`); `DishonoredLaunchStub.cpp` only when OFF | wave 1 N, wave 2 O/P/T |
 
 | DirectX 9 SDK | reference `Development/External/DirectX9`, mirrored into the build tree **without `rpcsal.h`** (`cmake/ReferenceExternals.cmake`) | its 2010-era `rpcsal.h` shadowed the Windows Kit's and broke `objidl.h` (101 × C2061) |
 | FaceFX | `WITH_FACEFX=0` for now | SDK not available; Engine headers include `../../../External/FaceFX/FxSDK/Inc/FxSDK.h` |
-| APEX | headers need `foundation/PxSimpleTypes.h` (PhysX 3 foundation, not in the reference Novodex 2.8 SDK) | pending: `WITH_APEX=0` or an APEX SDK, decided when Engine compiles |
-| Steamworks / Scaleform | `WITH_STEAMWORKS=0`, `WITH_GFx=0` for now | `Engine.h` includes `OnlineSubsystemSteamworks.h` → `steam/steam_api.h` and `ScaleformEngine.h` → `Kernel/SF_Types.h` (GFx 4 SDK); neither SDK is available yet (Phase 4) |
+| APEX | `WITH_APEX=0` — final: retail ships the APEX DLLs but imports nothing from them and has no `NxApex` symbol (`middleware.md`) | wave 2 U |
+| Steamworks / Scaleform / Wwise | `WITH_STEAMWORKS=0`, `WITH_GFx=0`; the OSS/GFxUI/AkAudio script classes are registered from generated units (`DISHONORED_ENABLE_*`) with `appErrorf` natives | SDKs per `middleware.md` (Steam 1.18/1.19, GFx 3.3.89 has none, Wwise 2012.1) |
 | libpng | reference `Development/External/libPNG`, mirrored with `"../../zlib/zlib.h"` rewritten to `<zlib.h>` | |
 | Struct packing | `/Zp4` on every engine/test target (`dishonored_apply_defines`), **not** global | UnrealBuildTool `VCToolChain.cs:30`; PDB proves it (`UProperty::PropertyFlags` at 68, `UField` 60). Global `/Zp4` breaks libpng and the Windows SDK `C_ASSERT`s; Windows headers are wrapped by `PreWindowsApi.h` (pack 8) |
 | libpng | FetchContent 1.6.43 (reference copy is 1.2.5, too old for `UnPNG.cpp`); zlib exported as `ZLIB::ZLIB` via `OVERRIDE_FIND_PACKAGE` | agent B |
-| nvapi | NVIDIA public repo (MIT) via FetchContent; nvtt from the reference tree | `ue3stereo.h`, `UnTexCompress.cpp` |
-| PhysX | `WITH_NOVODEX=0`: the reference `External/Novodex` is NovodeX 2.1.2 (2004), not PhysX 2.8.4 | Phase 4 must supply PhysX 2.8.4 SDK |
+| nvapi / nvtt | nvapi via FetchContent (D3D9Drv `ue3stereo.h`); **nvtt users are `WITH_EDITOR` only** (retail imports no nvtt.dll; 2012 decompiles of `UTexture2D::Compress` etc. are post-nvtt tails), no delay-load | wave 2 P |
+| PhysX | `WITH_NOVODEX=0`: the reference `External/Novodex` is NovodeX 2.1.2 (2004); retail uses PhysX SDK 2.8.4 (DLLs 2.8.4.6) | Phase 4 must supply the 2.8.4 SDK (`middleware.md`) |
+| Editor-only data | `WITH_EDITORONLY_DATA=1` | retail keeps the editor-only members (SDK dump: `AMatineePawn::PreviewMesh` @1184, `CPF_EditorOnly` flags) |
+| Show flags | `typedef QWORD EShowFlags` with Dishonored's bit assignments (`Engine/Inc/ShowFlags.h`, `Scene.h`) | 2012 PDB `unsigned __int64` @96/@24, retail SDK `FQWord`; 62 bits witnessed in decompiles, 22 reference flags → 0 (wave 2 V) |
+| System settings | `FSystemSettings` reads `[SystemSettings]` from `GEngineIni` with retail's 107 keys; no `checkf` on missing keys; HKCU `Software\Arkane\Dishonored` override | retail has no `SystemSettings.ini` string; 2013 rva 0x1806c0 (wave 2 O) |
+| Shaders | no shader compiler, no `.usf` source hashing; `VerifyGlobalShaders` = retail body; cooked global shader cache only | neither exe has `FShaderCompilingThreadManager` or `.usf` strings (wave 2 O) |
+| Native package list | hardcoded from the 2013 exe (0x5def10 / 0x5dfb50); bring-up switches `-skipnativepkgs=` and `-allowunboundnatives` | retail inis have no `[Engine.ScriptPackages]` (wave 2 O) |
+| Reference-only members | `DISHONORED_SHIM_STATIC` (inline static, no storage) after the PROPS block; the layout probe reports them MISSING; every use in `Engine/Src` is a porting TODO | agents M, Q, R, S |
+| Staging | our exe is copied into the retail `Binaries\Win32`; **no junctions/symlinks into the retail or reference trees, ever** | 2026-09-25 content-loss incident (STATUS.md) |
 | Engine stale units | 14 units the reference `Engine.vcxproj` itself does not compile + DirectShow AVI writer excluded (`Engine/Sources.cmake`); `Engine_EXTRA` adds `Debugger/*.cpp` | agent B |
 | Stale `Core/Inc/FOutputDeviceAnsiError.h`, `FOutputDeviceStdout.h` | deleted (1999 inline copies conflicting with `UnOutputDevices.cpp`) | agent D |
 | Precompiled headers | off (`DISHONORED_USE_PCH=OFF`) | CMake's `/FI` force-include double-includes guard-less UE3 private headers |

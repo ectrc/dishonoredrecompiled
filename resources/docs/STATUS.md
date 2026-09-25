@@ -1,99 +1,74 @@
-# Project status — 2026-09-25 (Phase 3 wave 2 landed: milestone 2 for the native packages; see the incident note)
+# Project status — 2026-09-25 (Phase 3 wave 2 landed; milestone 2 reached for the native packages)
 
-Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `resources/docs/PHASE1.md`
-(done), `resources/docs/PHASE2.md` (done), `resources/docs/PHASE3.md` (wave 1 done, wave 2 next). Decisions and fixes: `resources/docs/porting_notes.md`.
-
-## Target
-
-**Retail 2013 build** (`Dishonored_Latest2026`, engine 9411, DLC05–07) is what we rebuild. The
-2012 symbolized build is a helping hand only: names, types, decompiles. Many structs differ in
-size and member set between 2012 and 2013; everything derived from the 2012 PDB (the current
-Core layouts, `sizes.csv`, `types.json`, the contract-type asserts) is **provisional** until
-checked against the retail exe / retail packages (PLAN.md Phase 2b).
-
-## Where we are
-
-Phase 2 is complete and **Phase 3 wave 1 has landed** (`resources/docs/PHASE3.md`): **milestone 1 is
-reached** — our own `DishonoredGame.exe` (real `Launch` + Core + Engine + GameFramework + IpDrv +
-WinDrv, null RHI, `-DDISHONORED_REAL_LAUNCH=ON`) runs against the staged retail content and logs
-`Init: Object subsystem initialized` (`python resources/tools/build_and_smoke.py`). CoreSmoke is
-99/99 (incl. LZO-decompressing a retail package chunk). Retail truth is in hand: native class
-sizes for 2,857 retail classes, member lists for 3,043 retail script classes, and a named retail
-database (`resources/docs/idb/retail2013_named.i64`, 82.8% of 2012 names propagated). **The Core and
-Engine contract types now match retail** (`types/retail_reconciliation.md`: UClass 436 without
-`NetFields`/`m_DropdownCategory`, UTexture2D 372, USkeletalMeshComponent 1088); the layout tools
-(`gen_layout_probe.py compare`, `gen_layout_asserts.py`) take retail sizes from
-`native_class_sizes.csv` and fall back to the 2012 PDB only where a class has no retail descriptor.
-A CodeRed dump of the **running retail exe** (`D:\RecompileDishonored\Dishonored_DumpedSDK_Retail`,
-`resources/docs/sdk_dump.md`) supplies the runtime offset of every reflected member;
-`resources/tools/sdk/xcheck_sdk_layout.py` checks our probe against it (`types/retail_sdk_delta.md`:
-1,132 Core+Engine types, 666 exact, 234 to converge, 0 contract mismatches after the APawn fix).
-Next blocker on the way to milestone 2: `SystemSettings.cpp:532` assert on the retail ini.
-
-| Area | State |
-|---|---|
-| Reference tree | `../UnrealEngine3` (UE3 build 10897). Modules imported into `source/Development/Src/`: Core, Engine, GameFramework, IpDrv, WinDrv, D3D9Drv, GFxUI, OnlineSubsystemSteamworks, Launch. Skeletons for DishonoredGame (1,043 files), AkAudio, DisJobs. |
-| Build | `resources\run-vcvars.cmd x86-debug` / `x86-release`. Core, Engine, GameFramework, IpDrv, WinDrv build by default; `Launch` is the real `LaunchEngineLoop` behind `-DDISHONORED_REAL_LAUNCH=ON` (null RHI via stubs until D3D9Drv is a target, wave 2 P). `LayoutProbe`, `CoreSmoke` (99/99) and `build_and_smoke.py` (milestone 1) green. `/Zp4` per target. |
-| Switched off for now | `WITH_FACEFX=0`, `WITH_APEX=0`, `WITH_STEAMWORKS=0`, `WITH_GFx=0`, `WITH_LZO=0` (missing SDKs, Phase 4; **LZO is needed for package loading**: all packages are COMPRESS_LZO). PCH off. DirectX 9 + libpng come from the reference tree (`cmake/ReferenceExternals.cmake`), zlib via FetchContent. |
-| Versions pinned | `Core/Src/UnObjVer.cpp`: engine 9411, package 801, licensee 30, cooked content 133. `Core/Inc/UnNames.h` regenerated from the 499 hardcoded names (+69 reference-only names ≥ 1301). |
-| Symbol data | `resources/docs/symbols/*` (functions, natives with all folded indices, hardcoded names, licensee branches, opcodes, package summaries), `resources/docs/types/*` (sizes, member delta, retail sizes `native_class_sizes.csv`, retail offsets `retail_sdk_layout.json` from the SDK dump), `resources/docs/reference_xref.csv` (Core 89 % / Engine 52 % of functions have a reference definition). |
-| Layout probe | `reference_layout_delta.md`: 1,899 Core+Engine types probed, 1,374 exact, 0 contract mismatches **against retail sizes**. `DishonoredLayouts.h`: Core 278 asserts + 12 pending, Engine 669 + 284 pending. Nine non-contract Engine classes still differ from retail (`retail_reconciliation.md`). |
-| Opcodes / natives | Dishonored's bytecode opcodes match the reference (differences are COMDAT folding artifacts). Core numbered natives: no real mismatches. |
-| Serialization | `serialization_delta_core.md`: 98 Core functions vs reference, 24 to port (UClass::Serialize, UScriptStruct::SerializeBin, CreateLoader+ArkBsPatch, LZO package chunks, ...). `function_status_seed.csv` seeds Phase 3 status. |
-| Arkane Core code | bzip2 decompressor + bspatch + TPool implemented from decompile and verified (`agents/agentC.md`). |
-| Class headers | `gen_classes_header.py` emits UE3-style `*Classes.h` from the PDB; `dishonoredgame_class_inventory.md`: 1,485 DishonoredGame classes, 220 with DFSDK `.uc`. |
+Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md` (done), `PHASE2.md`
+(done), `PHASE3.md` (wave 1, done), `PHASE4.md` (wave 2, done). Decisions and fixes: `porting_notes.md`.
+Per-function status: `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..V>.md`.
 
 ## Incident 2026-09-25 (read before running anything)
 
 The retail install `D:\RecompileDishonored\Dishonored_Latest2026` lost `Engine/`, `DishonoredGame/CookedPCConsole`,
 `DLC`, `Localization`, `Movies` during the wave-2 merge: `git worktree remove --force` on an agent worktree whose
 `build/stage` junctioned those folders followed the junctions. `Binaries/Win32` and `DishonoredGame/Config`
-survived. **Restore with Steam "Verify integrity of game files"** (the folder is a Steam install). All junctions
-under `build/` have been removed; `stage_retail.py` no longer creates any (it copies our exe into the retail
-`Binaries\Win32`); never recursively delete a directory that may contain a junction.
+survived; the 2012 tree is intact. **Restore with Steam "Verify integrity of game files"** (the folder is a
+Steam install). All junctions under `build/` were removed (link-only, `resources/tools/unlink_junctions.py`);
+`stage_retail.py` no longer creates any (it copies our exe into the retail `Binaries\Win32`); never
+recursively delete a directory that may contain a junction. Until the content is restored, package tests in
+CoreSmoke skip (45 pass + 2 skip instead of 99) and no smoke run past milestone 1 is possible.
 
-## Wave 2 result (2026-09-25)
+## Target
 
-All packages O–V of `resources/docs/PHASE4.md` are merged (HEAD `0c9bd4d`): D3D9Drv is a module; every Engine
-header is on the retail runtime layout (SDK delta: 2,314 dump types, 1,677 exact, 4 rows, all in
-GameFramework/IpDrv bases); `EShowFlags` is a QWORD; DishonoredGame (1,822 native classes), GFxUI, AkAudio and
-OnlineSubsystemSteamworks have generated registrants/headers behind `DISHONORED_ENABLE_*`; our exe loads
-Core/Engine/GameFramework/IpDrv end to end (`24107 objects as part of root set`, agent O); middleware versions
-are pinned in `middleware.md`. Next: load the game packages with T's registrants (drop the skip list), then
-`Startup.upk`, `GEngine->Init()`, milestone 3; converge the remaining GameFramework/IpDrv bases; Phase 4
-SDK decisions per `middleware.md`.
+**Retail 2013 build** (`Dishonored_Latest2026`, engine 9411, DLC05–07) is what we rebuild. The 2012
+symbolized build is a helping hand only: names, types, decompiles. Retail truth now in hand:
+native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package member lists
+(`types/script_classes_2013.json`, 3,043 classes), runtime member offsets of every reflected member
+(`types/retail_sdk_layout.json` from the CodeRed dump `Dishonored_DumpedSDK_Retail`, `sdk_dump.md`),
+and a named retail IDA database (`idb/retail2013_named.i64`, 82.8 % of the 2012 names propagated).
+Every layout assert and cross-check uses the retail numbers first and the 2012 PDB only where retail
+has no data.
 
-## Next (Phase 3 wave 2)
+## Where we are (HEAD `38141fb`)
 
-Detailed plan with parallel work packages O–U: `resources/docs/PHASE4.md` (wave 1, H–N, is done:
-`resources/docs/PHASE3.md`). Tooling for the wave is in place: `resources/tools/sdk/sdk_props.py`
-(PROPS blocks from retail offsets), `sdk_show.py`, `xcheck_sdk_layout.py --header`,
-`build_and_smoke.py --rhi/--expect/--skip-native`. First base-class fix with it (`UInterpTrackInst`
-56 → 64) took the SDK delta from 232 to 209 rows.
+| Milestone (PLAN.md Phase 6) | State |
+|---|---|
+| 1. Core+Engine+Launch compile and link | done (wave 1) |
+| 2. `Init: Object subsystem initialized` | done 2026-09-26, null RHI; `--rhi d3d9` also creates the D3D9 RHI (wave 2 P) |
+| 3. Load `Core.upk` … `Startup.upk` | **partial**: Core, Engine, GameFramework, IpDrv load end to end through our `ULinkerLoad` (LZO chunks, `Link`, `CreateExport`, `Preload`, `PostLoad`): `24107 objects as part of root set` (agent O, with `--skip-native GFxUI,AkAudio,OnlineSubsystemPC,OnlineSubsystemSteamworks,DishonoredGame -NoLoadStartupPackages -allowunboundnatives`). The game packages need the generated registrants (agent T, options `DISHONORED_ENABLE_*`) — the combined exe builds and links but its milestone-2 run is pending the content restore |
+| 4. D3D9 device, Bink movie, Scaleform menu | not started (Bink import lib + header exist behind `DISHONORED_WITH_BINK`; Scaleform decision in `middleware.md`) |
 
-- O: milestone 2 — `FSystemSettings` from `GEngineIni` with retail's 107 keys, `-nullrhi`, port
-  `FAsyncIORequest::Event`/`LoadDataWithEvent`, retail's hardcoded native package list, load
-  Core/Engine/GameFramework/IpDrv, then Startup once T's registrants exist.
-- P: D3D9Drv module target + build follow-ups. Q/R/S: Engine headers converged on
-  `retail_sdk_delta.md` by base-class family. T: DishonoredGame/GFxUI/AkAudio/OSS registrants and
-  headers generated from the SDK dump. U: middleware versions + `middleware.md`.
+| Area | State |
+|---|---|
+| Modules building | Core, Engine, GameFramework, IpDrv, WinDrv, D3D9Drv (on by default); GFxUI, AkAudio, OnlineSubsystemSteamworks, DishonoredGameModule behind `DISHONORED_ENABLE_{GFXUI,AKAUDIO,OSS,DISHONOREDGAME}` (generated registrants/headers, natives are `appErrorf` stubs); real `Launch` behind `DISHONORED_REAL_LAUNCH=ON`. Clean HEAD worktree with everything on and `DISHONORED_LAYOUT_CHECKS=ON`: 677 units, 0 errors, 64 MB exe |
+| Layouts vs retail | `xcheck_sdk_layout.py`: 2,314 dump types probed, 1,677 exact, **4 rows** left (`ADisDoor`, `ADisGameCrowdAgentSkeletalRat`, `ADishonoredPlayerController`, `UOnlineSubsystemSteamworks`: shifts from GameFramework/IpDrv bases still to converge). `gen_layout_probe.py compare`: 2,341 types, 2,259 exact, 0 contract mismatches. Asserts: Core 277 + 13 pending, Engine 763 + 190 pending, D3D9Drv 8 + 5, DishonoredGame 12,137 SDK asserts (354 pending on the same bases) |
+| Engine headers | all `*Classes.h` regenerated on the retail SDK offsets (agents Q/R/S: 216 PROPS blocks), `EShowFlags` is a QWORD with Dishonored's bits (V), interface bases per retail. Reference-only members live on as `DISHONORED_SHIM_STATIC` shims (storage-less); every shim use in `Engine/Src` is a porting TODO (tables in agentQ/R/S.md) |
+| Core | UClass 436 (no `NetFields`/`m_DropdownCategory`), UObject without `NetIndex`, FPackageInfo 68, FAsyncIORequest with `Event` + `LoadDataWithEvent`; 26 serialization functions ported from the 2012 decompile and re-checked in the 2013 db (`function_status.csv`) |
+| Engine bring-up ports (agent O) | `FSystemSettings` on retail's design (GEngineIni, 107 keys, no checkf, HKCU override), retail `RHIInit`, no shader compiler / no `.usf` hashing (retail has none), retail native package lists (2013 rva 0x5def10/0x5dfb50), GC token streams of ULevel/UWorld/UStaticMesh, five loader `Serialize` deltas |
+| Switched off | `WITH_FACEFX=0`, `WITH_APEX=0` (retail never linked APEX), `WITH_STEAMWORKS=0`, `WITH_GFx=0`, `USE_UNIT_TESTS=0`, `WITH_REFERENCE_LIBPNG=0`; `WITH_LZO=1` (lzokay), `WITH_EDITORONLY_DATA=1` (retail keeps the editor-only members). PCH off. `/Zp4` per target |
+| Middleware (`middleware.md`) | GFx 3.3.89, Wwise 2012.1 (bank v65), FaceFX SDK 1.7.3.1, PhysX SDK 2.8.4 (DLLs 2.8.4.6), Bink 1.9p, steam_api 1.30.50.46 (SDK 1.18/1.19 interfaces), libcurl 7.77.0; per-library plan and the SDKs the user must obtain |
+| Versions pinned | `UnObjVer.cpp`: engine 9411, package 801, licensee 30, cooked content 133. `UnNames.h`: 499 hardcoded names + 69 reference-only |
+| Tools | `resources/tools/sdk/` (`parse_codered_sdk.py`, `sdk_props.py`, `sdk_show.py`, `xcheck_sdk_layout.py`), `symbols/gen_layout_probe.py` (generate/compare/props [--sdk]/show/pdb-fix/structs), `gen_layout_asserts.py`, `gen_classes_header.py --sdk`, `ida/decompile_funcs.py` (headless batch decompile by name/rva), `ida/match_functions.py`, `pdb/read_package_classes.py`, `binaries/scan_versions.py`, `build_and_smoke.py --rhi/--expect/--skip-native/--milestone`, `stage_retail.py` (in place, no junctions), `unlink_junctions.py` |
+| Bytecode / natives | opcodes match the reference; Core numbered natives match; `natives_2013.csv` for the retail table |
 
-### Wave 1 items (done)
+## Next
 
-- Phase 2b first: recover the 2013 retail layouts (script property offsets and class sizes from
-  the 2013 cooked packages; native sizes from the 2013 exe) and re-verify the Core contract types
-  against them before Engine convergence.
-- Then the Engine layout probe (`gen_layout_probe.py generate Core Engine`) against 2013 numbers
-  and Engine contract types (AActor, UWorld, ULevel, USkeletalMesh..., see `reference_member_delta.md`).
-- Port the 24 Core serialization functions from `serialization_delta_core.md` (UClass::Serialize
-  first). Bring in an LZO1X decompressor (lzokay/LZO) and set `WITH_LZO=1`.
-- Milestone 1: real `Launch` linking Core+Engine (+ stubs for missing modules) to reach
-  `Init: Object subsystem initialized`.
+1. Restore the retail content (Steam verify). Then, from a build with the four module options on:
+   `python resources/tools/build_and_smoke.py --build-dir <dir> --no-build --milestone "objects as part of root set" --skip-native OnlineSubsystemPC --extra-args "-allowunboundnatives"`
+   — load DishonoredGame/GFxUI/AkAudio/OSS with T's registrants, then drop `-NoLoadStartupPackages`
+   (`Startup.upk`), then `StaticLoadClass(GameEngine)` + `GEngine->Init()` (milestone 3 proper).
+2. Converge the GameFramework/IpDrv bases behind the 4 remaining SDK rows (`AGameCrowdAgentSkeletal`,
+   `UOnlineSubsystemCommonImpl`, …) and the pending assert rows; `FSceneViewFamily::CurrentBendTime`,
+   `SHOW_DefaultGame |= Selection|Portals`, `FAsyncIORequest` 2013 76-byte layout, `FSystemSettings`
+   1088-byte struct convergence.
+3. Start the per-function convergence of Engine (`progress.md`: Core 26 ported, Engine 0) with the
+   shim tables as the work list; DishonoredGame natives from the named 2013 decompiles.
+4. Phase 4: obtain PhysX 2.8.4 SDK, Wwise 2012.1 SDK, Steamworks 1.18/1.19 (user); decide Scaleform
+   per `middleware.md` (main menu gates milestone 4).
 
 ## Known pitfalls
 
-- Never open one IDA database from two processes (`resources/docs/idb/README` rule): headless scripts use
-  `shipping2012_work.i64`; the MCP session uses `shipping2012_v1.i64`. Agents get their own copies.
-- The Bash tool collapses `\\` in heredocs: write Python patch scripts to files, or use the Edit tool.
-- CMake's `file(GLOB)` for module sources is `CONFIGURE_DEPENDS`; new files need a reconfigure.
-- Build logs: `%TEMP%\claude\...\scratchpad\core_build*.log`, `probe_build*.log`.
+- Never open one IDA database from two processes; agents copy `shipping2012_v1.i64` / `retail2013_named.i64`.
+- The Bash tool collapses `\\` and `\n` in heredocs: write patch scripts with the Write tool.
+- CMake `file(GLOB)` is `CONFIGURE_DEPENDS`; new files need a reconfigure. `cmd` splits `-DX=Y` script
+  arguments at `=`: put cmake flags inside the `.cmd` or in an environment variable.
+- Junctions: see the incident above. `git worktree remove`, `rm -rf` and `Remove-Item -Recurse` may follow them.
+- The shared working tree is edited by every agent at once; verify merges on a clean `git worktree add
+  --detach build/head_wt HEAD` build (`build/head_wt_build.cmd`), never on the working tree.

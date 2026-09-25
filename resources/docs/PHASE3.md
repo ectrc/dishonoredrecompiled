@@ -184,7 +184,7 @@ if package loading is reached, which milestone 1 does not require.
 - [ ] `verify_phase2.py` gains a `retail` section; `STATUS.md`, `PLAN.md` updated; commit per
       agent as in Phase 2.
 
-## Wave 2 (after wave 1)
+## Wave 2 (after wave 1) — planned here, executed as `PHASE4.md` (packages O–V, all done 2026-09-25)
 
 - Module compiles: `GameFramework`, `IpDrv`, `WinDrv`, `D3D9Drv` as targets (N may have done
   some); layout probe for each.

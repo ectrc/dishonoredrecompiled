@@ -57,8 +57,12 @@ Caveats:
 * `functions.csv` has 66,394 entries; 8,451 of them have no DIA function symbol (compiler
   generated thunks, inline constructors emitted as COMDATs, CRT). Lines and compilands for those
   are resolved by RVA range instead (`--functions` mode of `dia_dump.py`).
-* The 2013 database (`Dishonored.exe.i64`) is a plain auto-analysis: 34,059 functions, 93 %
-  unnamed, 18 local types. Phase 7 populates it from the 2012 names.
+* The 2013 database: `resources/docs/idb/retail2013_named.i64` (agent J, `resources/tools/ida/match_functions.py`):
+  65,841 functions, 82.8 % of the 2012 names propagated. Its exports live next to the 2012 ones:
+  `functions_2013.csv`, `natives_2013.csv`, `classes_2013.csv`, `globals_2013.csv`, `imports_2013.csv`,
+  `match_2012_2013.csv/.md`. Agents copy it (`retail2013_agent<X>.i64`) before opening it.
+* Retail runtime layout: `../types/retail_sdk_layout.json` (git-ignored) from
+  `python resources/tools/sdk/parse_codered_sdk.py` over the CodeRed dump; see `resources/docs/sdk_dump.md`.
 
 | `../types/script_classes_{2012,2013}.json` | `resources/tools/pdb/read_package_classes.py` (needs `lzo1x.py`) | **no** (regenerate: `python resources/tools/pdb/read_package_classes.py` per agentI.md) |
 | `../types/native_class_sizes.csv` | `resources/tools/ida/export_class_sizes.py` | yes |
