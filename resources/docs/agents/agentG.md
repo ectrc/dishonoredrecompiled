@@ -8,7 +8,13 @@ options: `/Zp4` global, `DISHONORED_LAYOUT_CHECKS` at its default). Driver: `bui
 
 ## Result
 
-BUILD_STATUS_PLACEHOLDER
+**`cmake --build build\agentG --target Core Engine -- -k 0` exits 0** — `Core.lib` and `Engine.lib`
+both archive, 0 errors, 0 failed units (`build1.log`: full 618-step build; `build2.log`: 461-step
+re-run that recompiled `UnConn.cpp`, `UnPenLev.cpp` and `UnWorld.cpp` with the edits below, plus
+~415 units invalidated by headers other agents touched in the shared tree meanwhile). Warnings are
+the same set agent B reported (C5205 `UnDebuggerCore.cpp:156`, C4838, C4244 in libpng/zlib, ...).
+No `DishonoredLayouts.h` static_assert fired, so Core's `/Zp4` layouts hold for every Engine unit
+too.
 
 ## What actually broke in Engine
 

@@ -4554,7 +4554,8 @@ void UWorld::NotifyControlMessage(UNetConnection* Connection, BYTE MessageType, 
 				FPackageInfo Info(NULL);
 				Connection->ParsePackageInfo(Bunch, Info);
 #if !SHIPPING_PC_GAME
-				debugf(NAME_DevNet, TEXT(" ---> PackageName: %s, GUID: %s, FileName: %s, Generation: %i, BasePkg: %s"), *Info.PackageName.ToString(), *Info.Guid.String(), *Info.FileName.ToString(), Info.RemoteGeneration, *Info.ForcedExportBasePackageName.ToString());
+				// DISHONORED(layout): FPackageInfo has no FileName (PDB: ForcedExportBasePackageName @48 is followed by Extension @56)
+				debugf(NAME_DevNet, TEXT(" ---> PackageName: %s, GUID: %s, Generation: %i, BasePkg: %s"), *Info.PackageName.ToString(), *Info.Guid.String(), Info.RemoteGeneration, *Info.ForcedExportBasePackageName.ToString());
 #endif
 				// add to the packagemap immediately even if we can't verify it to guarantee its place in the list as it needs to match the server
 				Connection->PackageMap->AddPackageInfo(Info);

@@ -306,25 +306,19 @@ void UNetPendingLevel::NotifyControlMessage(UNetConnection* Connection, BYTE Mes
 			Connection->ParsePackageInfo(Bunch, Info);
 
 #if !SHIPPING_PC_GAME
-			debugf(NAME_DevNet, TEXT(" ---> PackageName: %s, GUID: %s, FileName: %s, Generation: %i, BasePkg: %s"), *Info.PackageName.ToString(), *Info.Guid.String(), *Info.FileName.ToString(), Info.RemoteGeneration, *Info.ForcedExportBasePackageName.ToString());
+			// DISHONORED(layout): FPackageInfo has no FileName; the log line and the branches below follow the reference's FileName == NAME_None path
+			debugf(NAME_DevNet, TEXT(" ---> PackageName: %s, GUID: %s, Generation: %i, BasePkg: %s"), *Info.PackageName.ToString(), *Info.Guid.String(), Info.RemoteGeneration, *Info.ForcedExportBasePackageName.ToString());
 #endif
 
-			// verify that we have this package (and Guid matches) 
+			// verify that we have this package (and Guid matches)
 			FString Filename;
 			UBOOL bWasPackageFound = FALSE;
 
-			// We have filename and a packagename so we need to add a mapping
-			if (Info.FileName != NAME_None && Info.PackageName != NAME_None)
-			{
-				UObject::GetPackageNameToFileMapping()->Set(Info.PackageName, Info.FileName);
-			}
-
-			//If the FileName is not none, then we will be looking for that file, otherwise we will be looking for the PackageName file
-			FName PackageFileToLoad = (Info.FileName != NAME_None ? Info.FileName : Info.PackageName);
+			// DISHONORED(layout): no FileName -> no PackageName-to-file mapping to add; the PackageName file is always the one looked for
+			FName PackageFileToLoad = Info.PackageName;
 
 			// use guid caches for seekfree loading, since we may not have the original package on disk
-			// If the packagename is not the same as the filename, then we skip this case regardless of seekfreeloading status
-			if (GUseSeekFreeLoading && Info.FileName == NAME_None)
+			if (GUseSeekFreeLoading)
 			{
 				UBOOL bFoundCache = FALSE;
 				// go over all guid caches
@@ -365,19 +359,14 @@ void UNetPendingLevel::NotifyControlMessage(UNetConnection* Connection, BYTE Mes
 				{
 					// if we are not doing seekfree loading, then open the package and tell the server we have it
 					// (seekfree loading case will open the packages in UGameEngine::LoadMap)
-					// If the packagename is not the same as the filename, then we default into this case regardless of seekfreeloading status
-					if ( !(GUseSeekFreeLoading && Info.FileName == NAME_None) )
+					// DISHONORED(layout): FPackageInfo has no FileName, so the reference's "FileName differs from PackageName" cases (forced load, Parent->Guid override) do not exist
+					if ( !GUseSeekFreeLoading )
 					{
 						Info.Parent = CreatePackage(NULL, *Info.PackageName.ToString());
 
 						BeginLoad();
 						ULinkerLoad* Linker = GetPackageLinker(Info.Parent, *PackageFileToLoad.ToString() , LOAD_NoWarn | LOAD_NoVerify | LOAD_Quiet, NULL, &Info.Guid);
 						EndLoad();
-
-						if (Info.FileName != NAME_None)
-						{
-							Info.Parent->Guid = Info.Guid;
-						}
 
 						if (Linker)
 						{

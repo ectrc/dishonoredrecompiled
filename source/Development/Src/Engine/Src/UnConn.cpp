@@ -603,7 +603,7 @@ void UNetConnection::ParsePackageInfo(FInBunch& Bunch, FPackageInfo& Info)
 	FString PackageName, FileName, ForcedExportName;
 	FNetControlMessage<NMT_Uses>::Receive(Bunch, Info.Guid, PackageName, FileName, Info.Extension, Info.PackageFlags, Info.RemoteGeneration, ForcedExportName, Info.LoadingPhase);
 	Info.PackageName = FName(*PackageName);
-	Info.FileName = FName(*FileName);
+	// DISHONORED(layout): FPackageInfo has no FileName (PDB: ForcedExportBasePackageName @48 is followed by Extension @56); the wire field is read and dropped
 	Info.ForcedExportBasePackageName = FName(*ForcedExportName);
 }
 
@@ -611,7 +611,7 @@ void UNetConnection::ParsePackageInfo(FInBunch& Bunch, FPackageInfo& Info)
 void UNetConnection::SendPackageInfo(FPackageInfo& Info)
 {
 	FString PackageName(Info.PackageName.ToString());
-	FString FileName(Info.FileName.ToString());
+	FString FileName(FName(NAME_None).ToString());	// DISHONORED(layout): FPackageInfo has no FileName; send what the reference sends for FileName == NAME_None so the NMT_Uses format is unchanged
 	FString ForcedExportName((Info.Parent != NULL && Info.Parent->GetForcedExportBasePackageName() != NAME_None) ? *Info.Parent->GetForcedExportBasePackageName().ToString() : TEXT(""));
 	FNetControlMessage<NMT_Uses>::Send(this, Info.Guid, PackageName, FileName, Info.Extension, Info.PackageFlags, Info.LocalGeneration, ForcedExportName, Info.LoadingPhase);
 }
