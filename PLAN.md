@@ -128,7 +128,9 @@ logs. Tracker: `resources/docs/PHASE1.md`.
 indices, hardcoded FNames, vtables), `resources/docs/types/` (sizes, layouts, header), `resources/docs/module_map.md`.
 Regeneration: `resources/docs/symbols/README.md`. Exit check: `resources/tools/symbols/verify_phase1.py`.
 
-### Phase 2 — Reference import and layout convergence (2–4 weeks)
+### Phase 2 — Reference import and layout convergence — DONE 2026-09-25
+
+Tracker `resources/docs/PHASE2.md`; exit check `resources/tools/symbols/verify_phase2.py` (18/18); status `resources/docs/STATUS.md`. Original task list kept below for reference.
 
 - [ ] `resources/tools/symbols/xref_reference.py`: for each PDB function, look up a same-named definition
       in the reference; for each PDB source file, whether it exists there. Writes

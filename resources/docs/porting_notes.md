@@ -23,9 +23,15 @@ edit to a file copied from the reference carries a `// DISHONORED: <why>` commen
 | APEX | headers need `foundation/PxSimpleTypes.h` (PhysX 3 foundation, not in the reference Novodex 2.8 SDK) | pending: `WITH_APEX=0` or an APEX SDK, decided when Engine compiles |
 | Steamworks / Scaleform | `WITH_STEAMWORKS=0`, `WITH_GFx=0` for now | `Engine.h` includes `OnlineSubsystemSteamworks.h` → `steam/steam_api.h` and `ScaleformEngine.h` → `Kernel/SF_Types.h` (GFx 4 SDK); neither SDK is available yet (Phase 4) |
 | libpng | reference `Development/External/libPNG`, mirrored with `"../../zlib/zlib.h"` rewritten to `<zlib.h>` | |
+| Struct packing | `/Zp4` on every engine/test target (`dishonored_apply_defines`), **not** global | UnrealBuildTool `VCToolChain.cs:30`; PDB proves it (`UProperty::PropertyFlags` at 68, `UField` 60). Global `/Zp4` breaks libpng and the Windows SDK `C_ASSERT`s; Windows headers are wrapped by `PreWindowsApi.h` (pack 8) |
+| libpng | FetchContent 1.6.43 (reference copy is 1.2.5, too old for `UnPNG.cpp`); zlib exported as `ZLIB::ZLIB` via `OVERRIDE_FIND_PACKAGE` | agent B |
+| nvapi | NVIDIA public repo (MIT) via FetchContent; nvtt from the reference tree | `ue3stereo.h`, `UnTexCompress.cpp` |
+| PhysX | `WITH_NOVODEX=0`: the reference `External/Novodex` is NovodeX 2.1.2 (2004), not PhysX 2.8.4 | Phase 4 must supply PhysX 2.8.4 SDK |
+| Engine stale units | 14 units the reference `Engine.vcxproj` itself does not compile + DirectShow AVI writer excluded (`Engine/Sources.cmake`); `Engine_EXTRA` adds `Debugger/*.cpp` | agent B |
+| Stale `Core/Inc/FOutputDeviceAnsiError.h`, `FOutputDeviceStdout.h` | deleted (1999 inline copies conflicting with `UnOutputDevices.cpp`) | agent D |
 | Precompiled headers | off (`DISHONORED_USE_PCH=OFF`) | CMake's `/FI` force-include double-includes guard-less UE3 private headers |
 | Stale `Src/<Module>Private.h` | `Core/Src/CorePrivate.h` deleted (1999 copy; the project uses `Inc/CorePrivate.h`, but same-directory lookup found the stale one first) | Engine, WinDrv, D3D9Drv have the same pair; check each before compiling that module |
-| Two-phase lookup | `UnStats.h`: use the deferred (`gcc`) constructor definitions instead of the in-class ones | `TAccumulator`/`TCounter` referenced `FStatGroup`/`GStatManager` before their declaration |
+| Two-phase lookup | `UnStats.h`: use the deferred (`gcc`) constructor definitions instead of the in-class ones, and enable their `#if __GNUC__` definitions for MSVC too (otherwise unresolved `TAccumulator<T>::TAccumulator` at link) | `TAccumulator`/`TCounter` referenced `FStatGroup`/`GStatManager` before their declaration |
 
 ## Compile error categories (Core)
 
