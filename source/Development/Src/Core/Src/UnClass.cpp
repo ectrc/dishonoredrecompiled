@@ -2787,6 +2787,12 @@ void UFunction::Bind()
 
 		// look up the native function by string name
 		Func = FindNative(OwnerClass->GetFName(), Proc);
+		if( Func == NULL )
+		{
+			// DISHONORED(bringup): 147 Core/Engine/GameFramework natives of the retail scripts have no C++ body yet (agent Z);
+			// a NULL Func would jump to address 0 on the first call. The stub consumes the parameters and warns once.
+			Func = &UObject::execDishonoredUnboundNative;
+		}
 	}
 }
 void UFunction::Link( FArchive& Ar, UBOOL Props )

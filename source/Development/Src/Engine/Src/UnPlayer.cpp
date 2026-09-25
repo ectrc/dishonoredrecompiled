@@ -908,8 +908,17 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 
     GSystemSettings.UpdateSplitScreenSettings();
 
+	// DISHONORED(bringup): -firstframe=<file.bmp>: the bring-up frame is clear + canvas text only (see below); the scene
+	// renderer is not converged yet (renderer.md), so the post-LoadMap precache view is not rendered either. Not in retail.
+	static INT DishonoredFirstFrameText = -1;
+	if (DishonoredFirstFrameText < 0)
+	{
+		FString DumpPath;
+		DishonoredFirstFrameText = Parse(appCmdLine(), TEXT("firstframe="), DumpPath) ? 1 : 0;
+	}
+
 #if !CONSOLE
-	if(GPrecacheNextFrame)
+	if(GPrecacheNextFrame && !DishonoredFirstFrameText)
 	{
 		GIsCurrentlyPrecaching = TRUE;
 		FSceneViewFamilyContext PrecacheViewFamily(Viewport,GWorld->Scene,ShowFlags,GWorld->GetTimeSeconds(),GWorld->GetDeltaSeconds(),GWorld->GetRealTimeSeconds());
@@ -1132,7 +1141,7 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 					}
 
 					// PreRender the player's view.
-					Player->Actor->eventPreRender(CanvasObject);
+					if( Player->Actor->FindFunction( FName(TEXT("PreRender"), FNAME_Find) ) ) { Player->Actor->eventPreRender(CanvasObject); } // DISHONORED(retail): PreRender is not a 2013 event
 
 					Canvas->PopTransform();
 
@@ -1143,7 +1152,7 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 						RealD::RealDStereo::PushRightViewCanvas(Canvas, CanvasObject, View2);
 
 						//PreRender the player's view.
-						Player->Actor->eventPreRender(CanvasObject);
+						if( Player->Actor->FindFunction( FName(TEXT("PreRender"), FNAME_Find) ) ) { Player->Actor->eventPreRender(CanvasObject); } // DISHONORED(retail): PreRender is not a 2013 event
 
 						Canvas->PopTransform();
 					}
@@ -1405,7 +1414,10 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 								INT ScaledViewSizeY = View->SizeY;
 
 								// Allow the PlayerController to adjust the canvas size before rendering the HUD (e.g. useful for games that want to draw outside the splitscreen viewports)
-								Player->Actor->eventAdjustHUDRenderSize(ScaledViewX, ScaledViewY, ScaledViewSizeX, ScaledViewSizeY, Viewport->GetSizeX(), Viewport->GetSizeY());
+								if( Player->Actor->FindFunction( FName(TEXT("AdjustHUDRenderSize"), FNAME_Find) ) ) // DISHONORED(retail): not a 2013 event
+								{
+									Player->Actor->eventAdjustHUDRenderSize(ScaledViewX, ScaledViewY, ScaledViewSizeX, ScaledViewSizeY, Viewport->GetSizeX(), Viewport->GetSizeY());
+								}
 
 								// Unscale the view coordinates if needed
 								GSystemSettings.UnScaleScreenCoords(
@@ -1724,6 +1736,28 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 		GGFxEngine->GameHasRendered++;
 	}
 #endif // WITH_GFx
+
+	// DISHONORED(bringup): -firstframe=<file.bmp> (D3D9Viewport.cpp dumps the first presented back buffer): with no player view
+	// yet (map and pawn bring-up) the frame is the black tile above; after it, clear the viewport and draw two lines of canvas
+	// text so the first frame exercises RHIClear, the cooked FSimpleElement shaders and a cooked font. Not in retail.
+	if (DishonoredFirstFrameText && PlayerViewMap.Num() == 0)
+	{
+		Canvas->Flush();
+		Clear(Canvas, FLinearColor(0.02f, 0.03f, 0.08f));
+		DrawTile(Canvas, 40, 100, 600, 8, 0.f, 0.f, 1.f, 1.f, FLinearColor(1.f, 0.55f, 0.1f), NULL, FALSE);
+		UFont* Font = GEngine->SmallFont ? GEngine->SmallFont : GEngine->MediumFont ? GEngine->MediumFont : GEngine->TinyFont;
+		static UBOOL bLoggedFont = FALSE;
+		if (!bLoggedFont)
+		{
+			bLoggedFont = TRUE;
+			debugf(TEXT("DISHONORED(bringup): -firstframe: canvas text font %s"), Font ? *Font->GetPathName() : TEXT("none (Small/Medium/TinyFont not loaded)"));
+		}
+		if (Font)
+		{
+			DrawShadowedString(Canvas, 48, 48, TEXT("Dishonored recompilation: first frame (D3D9 device, cooked global shaders, canvas text)"), Font, FLinearColor::White);
+			DrawShadowedString(Canvas, 48, 72, *FString::Printf(TEXT("%ux%u  %s"), Viewport->GetSizeX(), Viewport->GetSizeY(), GWorld ? *GWorld->GetMapName() : TEXT("no world")), Font, FLinearColor(1.f, 0.8f, 0.4f));
+		}
+	}
 }
 
 void UGameViewportClient::Precache()

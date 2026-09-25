@@ -3259,6 +3259,7 @@ public:
 	DECLARE_FUNCTION(execTransformVectorByRotation);
 
 	DECLARE_FUNCTION(execGetEngineVersion);
+	DECLARE_FUNCTION(execDishonoredUnboundNative);  // DISHONORED(bringup): body for natives without a C++ implementation (UFunction::Bind)
 	DECLARE_FUNCTION(execGetBuildChangelistNumber);
 	DECLARE_FUNCTION(execJumpIfNotEditorOnly);
 

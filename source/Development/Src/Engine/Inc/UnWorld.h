@@ -341,6 +341,8 @@ public:
 	 */
 	AWorldInfo* GetWorldInfo( UBOOL bCheckStreamingPesistent = FALSE ) const;
 
+	void UpdateWorldInfoCache();
+
 	/**
 	 * Returns the current levels BSP model.
 	 *

@@ -316,12 +316,8 @@ void UGameEngine::Init()
 		// play a looping movie from RAM while booting up (console will already have started the movie much earlier)
 		GFullScreenMovie->GameThreadInitiateStartupSequence();
 #endif
-		// Start global analytics tracking
-		UAnalyticEventsBase* Analytics = UPlatformInterfaceBase::GetAnalyticEventsInterfaceSingleton();
-		if (Analytics->bAutoStartSession)
-		{
-			Analytics->StartSession();
-		}
+		// DISHONORED(port): 2013 rva 0x2357c0 (UGameEngine::Init, 2012 rva 0x253bc0): no analytics singleton / StartSession after
+		// the startup movie; the DLC enumerator/manager/ArkDLCManagementBridge setup follows directly
 	}
 	else
 	{
@@ -350,7 +346,11 @@ void UGameEngine::Init()
 	appXenonPatchPackages();
 #endif
 
-	// Create the objects that will handle DLC, ads, etc
+	// DISHONORED(port): 2013 rva 0x2357c0 (UGameEngine::Init): the DLC class names are forced to the Engine base classes before
+	// UGameEngine::InitDLCObjects (2013 rva 0x214250) creates the objects
+	DownloadableContentEnumeratorClassName = TEXT("Engine.DownloadableContentEnumerator");
+	DownloadableContentManagerClassName = TEXT("Engine.DownloadableContentManager");
+	DLCManagementBridgeClassName = TEXT("Engine.ArkDLCManagementBridge");
 	InitGameSingletonObjects();
 
 	// Create default URL.
@@ -2872,7 +2872,11 @@ UBOOL UGameEngine::CommitMapChange()
 					break;
 				}
 			}
-            GWorld->GetGameInfo()->eventPreCommitMapChange(PreviousMapName, NextMapName); 
+            // DISHONORED(retail): no PreCommitMapChange event in 2013; guard the reference call
+            if( GWorld->GetGameInfo()->FindFunction( FName(TEXT("PreCommitMapChange"), FNAME_Find) ) )
+            {
+                GWorld->GetGameInfo()->eventPreCommitMapChange(PreviousMapName, NextMapName);
+            }
 		}
 
 		// on the client, check if we already loaded pending levels to be made visible due to e.g. the PackageMap
@@ -3130,7 +3134,11 @@ UBOOL UGameEngine::CommitMapChange()
 		// tell the game we are done switching levels
         if (GWorld->GetGameInfo())
 		{
-            GWorld->GetGameInfo()->eventPostCommitMapChange(); 
+            // DISHONORED(retail): no PostCommitMapChange event in 2013; guard the reference call
+            if( GWorld->GetGameInfo()->FindFunction( FName(TEXT("PostCommitMapChange"), FNAME_Find) ) )
+            {
+                GWorld->GetGameInfo()->eventPostCommitMapChange();
+            }
 		}
 
 #if WITH_FACEFX
@@ -4211,29 +4219,21 @@ UNetDriver* UGameEngine::FindNamedNetDriver(FName NetDriverName)
 /**
  * Creates the specified objects for dealing with DLC.
  */
+// DISHONORED(port): UGameEngine::InitDLCObjects, 2013 rva 0x214250 (2012 rva 0x22bdc0): enumerator, manager (+ eventInit) and the
+// Arkane DLC management bridge, created in the transient package without warnings; no platform interface singletons
 void UGameEngine::InitGameSingletonObjects(void)
 {
 	if (DownloadableContentEnumeratorClassName.Len())
 	{
-		// Load and create the DLC enumerator object
-		UClass* DLCEnumeratorClass = LoadClass<UDownloadableContentEnumerator>(NULL, *DownloadableContentEnumeratorClassName, NULL, LOAD_None, NULL);
+		UClass* DLCEnumeratorClass = StaticLoadClass(UDownloadableContentEnumerator::StaticClass(), NULL, *DownloadableContentEnumeratorClassName, NULL, LOAD_None, NULL);
 		if (DLCEnumeratorClass != NULL)
 		{
 			DLCEnumerator = ConstructObject<UDownloadableContentEnumerator>(DLCEnumeratorClass);
-			if (DLCEnumerator == NULL)
-			{
-				warnf(TEXT("Failed to create DLCEnumerator class (%s)"),*DownloadableContentEnumeratorClassName);
-			}
-		}
-		else
-		{
-			warnf(TEXT("Failed to load DLCEnumerator class (%s)"),*DownloadableContentEnumeratorClassName);
 		}
 	}
 	if (DownloadableContentManagerClassName.Len())
 	{
-		// Load and create the DLC manager object
-		UClass* DLCManagerClass = LoadClass<UDownloadableContentManager>(NULL, *DownloadableContentManagerClassName, NULL, LOAD_None, NULL);
+		UClass* DLCManagerClass = StaticLoadClass(UDownloadableContentManager::StaticClass(), NULL, *DownloadableContentManagerClassName, NULL, LOAD_None, NULL);
 		if (DLCManagerClass != NULL)
 		{
 			DLCManager = ConstructObject<UDownloadableContentManager>(DLCManagerClass);
@@ -4241,19 +4241,17 @@ void UGameEngine::InitGameSingletonObjects(void)
 			{
 				DLCManager->eventInit();
 			}
-			else
-			{
-				warnf(TEXT("Failed to create DLCManager class (%s)"),*DownloadableContentManagerClassName);
-			}
-		}
-		else
-		{
-			warnf(TEXT("Failed to load DLCManager class (%s)"),*DownloadableContentManagerClassName);
 		}
 	}
-
-	// @todo ib2merge - initialize the various platform interfaces now (iCloud needs to start synchronizing early)
-	UCloudStorageBase* Cloud = UPlatformInterfaceBase::GetCloudStorageInterfaceSingleton();
+	if (DLCManagementBridgeClassName.Len())
+	{
+		// UArkDLCManagementBridge is registered by the DishonoredGame module (Engine package shim), so Engine loads it through UObject
+		UClass* BridgeClass = StaticLoadClass(UObject::StaticClass(), NULL, *DLCManagementBridgeClassName, NULL, LOAD_None, NULL);
+		if (BridgeClass != NULL)
+		{
+			DLCManagementBridge = (UArkDLCManagementBridge*)StaticConstructObject(BridgeClass, UObject::GetTransientPackage());
+		}
+	}
 }
 
 /**
@@ -4315,4 +4313,15 @@ void UGameEngine::CloseSecondaryViewports()
 		SecondaryViewportClients(ClientIndex)->RemoveFromRoot();
 	}
 	SecondaryViewportClients.Empty();
+}
+
+// DISHONORED(port): GameInfo.SpawnPlayerController is native in the 2013 scripts (exec 2013 rva 0x1c60c0, body 0x2d13a0, agent Z):
+// Spawn(PlayerControllerClass,,, SpawnLocation, SpawnRotation) with the class name as the actor name.
+void AGameInfo::execSpawnPlayerController( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(SpawnLocation);
+	P_GET_ROTATOR(SpawnRotation);
+	P_FINISH;
+	AActor* Spawned = PlayerControllerClass ? GWorld->SpawnActor( PlayerControllerClass, PlayerControllerClass->GetFName(), SpawnLocation, SpawnRotation ) : NULL;
+	*(APlayerController**)Result = Cast<APlayerController>( Spawned );
 }

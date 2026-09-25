@@ -4,6 +4,7 @@
 
 #include "EnginePrivate.h"
 #include "EngineMaterialClasses.h"
+#include "DebugCameraController.h"
 #include "UnTerrain.h"
 #include "EngineAIClasses.h"
 #include "EnginePhysicsClasses.h" 
@@ -286,6 +287,12 @@ void AutoInitializeRegistrantsEngine( INT& Lookup )
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_REPLICATIONINFO
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_CAMERA
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_PLATFORMINTERFACE
+	// DISHONORED(retail): Engine natives the reference registrant macros lack (native_class_sizes.csv package_2013 Engine;
+	// 2013 StaticClassNoInline rvas 0x575e40, 0x576b30, 0xdce70)
+	UArkHealthInterface::StaticClass();
+	UArkSettingsListenerInterface::StaticClass();
+	ADebugCameraController::StaticClass();
+	GNativeLookupFuncs.Set(FName("DebugCameraController"), GEngineADebugCameraControllerNatives);
 }
 
 /**
@@ -824,6 +831,8 @@ void UEngine::InitializeObjectReferences()
 		LoadSpecialMaterial(LightingTexelDensityName, LightingTexelDensityMaterial, FALSE);
 		LoadSpecialMaterial(ShadedLevelColorationLitMaterialName, ShadedLevelColorationLitMaterial, TRUE);
 		LoadSpecialMaterial(ShadedLevelColorationUnlitMaterialName, ShadedLevelColorationUnlitMaterial, TRUE);
+		// DISHONORED(port): 2013 rva 0x1f62a0 (UEngine::InitializeObjectReferences, 2012 rva 0x20c740) also loads the translucent variant
+		LoadSpecialMaterial(ShadedLevelColorationTranslucentUnlitMaterialName, ShadedLevelColorationTranslucentUnlitMaterial, TRUE);
 		LoadSpecialMaterial(VertexColorMaterialName, VertexColorMaterial, FALSE);
 		LoadSpecialMaterial(TerrainErrorMaterialName, TerrainErrorMaterial, TRUE);
 	}
@@ -871,14 +880,12 @@ void UEngine::InitializeObjectReferences()
 		DefaultTexture = LoadObject<UTexture2D>(NULL, *DefaultTextureName, NULL, LOAD_None, NULL);	
 	}
 
-	if( ScreenDoorNoiseTexture == NULL )
+	// DISHONORED(port): 2013 rva 0x1f62a0: the retail texture set is DefaultTexture, DefaultBlackCubemapTexture, RandomAngle, RandomNormal,
+	// RandomMirrorDisc, WeightMapPlaceholder, LightMapDensity(Normal) and DefaultPhysMaterial; the reference-only screen door / image grain
+	// noise textures, LandscapeHolePhysMaterial and ApexDamageParams (storage-less shims) are not loaded
+	if( DefaultBlackCubemapTexture == NULL )
 	{
-		ScreenDoorNoiseTexture = LoadObject<UTexture2D>(NULL, *ScreenDoorNoiseTextureName, NULL, LOAD_None, NULL);	
-	}
-	
-	if( ImageGrainNoiseTexture == NULL )
-	{
-		ImageGrainNoiseTexture = LoadObject<UTexture2D>(NULL, *ImageGrainNoiseTextureName, NULL, LOAD_None, NULL);	
+		DefaultBlackCubemapTexture = LoadObject<UTextureCube>(NULL, *DefaultBlackCubemapTextureName, NULL, LOAD_None, NULL);
 	}
 
 	if( RandomAngleTexture == NULL )
@@ -916,18 +923,6 @@ void UEngine::InitializeObjectReferences()
 		DefaultPhysMaterial = LoadObject<UPhysicalMaterial>(NULL, *DefaultPhysMaterialName, NULL, LOAD_None, NULL);	
 	}
 
-	if ( LandscapeHolePhysMaterial == NULL )
-	{
-		LandscapeHolePhysMaterial = LoadObject<UPhysicalMaterial>(NULL, *LandscapeHolePhysMaterialName, NULL, LOAD_None, NULL);	
-	}
-
-	if(ApexDamageParams == NULL)
-	{
-		if(ApexDamageParamsName.Len() > 0)
-		{
-			ApexDamageParams = LoadObject<UApexDestructibleDamageParameters>(NULL, *ApexDamageParamsName, NULL, LOAD_None, NULL);	
-		}
-	}
 
 	// loading objects here will cause them to be cooked into some seekfree package, but if the target we're cooking for has different
 	// settings in their .ini's, then they won't want these objects.

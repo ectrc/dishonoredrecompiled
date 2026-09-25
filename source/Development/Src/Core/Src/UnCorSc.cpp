@@ -5930,8 +5930,11 @@ void UObject::SkipFunction(FFrame& Stack, RESULT_DECL, UFunction* Function)
 //
 // Call a function.
 //
+UFunction* GDishonoredCallingFunction = NULL;  // DISHONORED(bringup): the UFunction a script call dispatches (read by execDishonoredUnboundNative)
+
 void UObject::CallFunction( FFrame& Stack, RESULT_DECL, UFunction* Function )
 {
+	GDishonoredCallingFunction = Function;
 	GAMEPLAY_PROFILER_TRACK_FUNCTION( Function );
 
 #if ENABLE_SCRIPT_TRACING

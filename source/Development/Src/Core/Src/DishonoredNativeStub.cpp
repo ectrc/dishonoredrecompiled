@@ -4,6 +4,8 @@
 #include "CorePrivate.h"
 #include "DishonoredNativeStub.h"
 
+extern UFunction* GDishonoredCallingFunction;  // UnCorSc.cpp: the UFunction UObject::CallFunction is dispatching
+
 static UBOOL GDishonoredStrictNatives = FALSE;
 static UBOOL GDishonoredStrictNativesParsed = FALSE;
 static TSet<FString> GDishonoredWarnedNatives;
@@ -26,25 +28,8 @@ static UFunction* FindStubFunction( UObject* Self, FFrame& Stack, const TCHAR* E
 	return Self ? Self->FindFunction( Name ) : NULL;
 }
 
-void DishonoredNativeStub( UObject* Self, FFrame& Stack, void* Result, const TCHAR* Module, const TCHAR* ClassName, const TCHAR* ExecName )
+static void ConsumeAndZero( FFrame& Stack, void* Result, UFunction* Function )
 {
-	if( !GDishonoredStrictNativesParsed )
-	{
-		GDishonoredStrictNativesParsed = TRUE;
-		GDishonoredStrictNatives = ParseParam( appCmdLine(), TEXT("strictnatives") );
-	}
-	const FString Key = FString::Printf( TEXT("%s::%s"), ClassName, ExecName );
-	if( GDishonoredStrictNatives )
-	{
-		appErrorf( TEXT("%s native not ported: %s"), Module, *Key );
-	}
-	if( !GDishonoredWarnedNatives.Contains( Key ) )
-	{
-		GDishonoredWarnedNatives.Add( Key );
-		warnf( TEXT("DISHONORED(bringup): %s native not ported: %s (parameters consumed, result zeroed)"), Module, *Key );
-	}
-
-	UFunction* Function = FindStubFunction( Self, Stack, ExecName );
 	UProperty* ReturnProperty = NULL;
 	if( Function && Stack.Code )
 	{
@@ -89,4 +74,46 @@ void DishonoredNativeStub( UObject* Self, FFrame& Stack, void* Result, const TCH
 	{
 		appMemzero( Result, ReturnProperty->ArrayDim * ReturnProperty->ElementSize );
 	}
+}
+
+static void WarnOrAbort( const TCHAR* Module, const FString& Key )
+{
+	if( !GDishonoredStrictNativesParsed )
+	{
+		GDishonoredStrictNativesParsed = TRUE;
+		GDishonoredStrictNatives = ParseParam( appCmdLine(), TEXT("strictnatives") );
+	}
+	if( GDishonoredStrictNatives )
+	{
+		appErrorf( TEXT("%s native not ported: %s"), Module, *Key );
+	}
+	if( !GDishonoredWarnedNatives.Contains( Key ) )
+	{
+		GDishonoredWarnedNatives.Add( Key );
+		warnf( TEXT("DISHONORED(bringup): %s native not ported: %s (parameters consumed, result zeroed)"), Module, *Key );
+	}
+}
+
+void DishonoredNativeStub( UObject* Self, FFrame& Stack, void* Result, const TCHAR* Module, const TCHAR* ClassName, const TCHAR* ExecName )
+{
+	WarnOrAbort( Module, FString::Printf( TEXT("%s::%s"), ClassName, ExecName ) );
+	ConsumeAndZero( Stack, Result, FindStubFunction( Self, Stack, ExecName ) );
+}
+
+/**
+ * DISHONORED(bringup): body bound by UFunction::Bind to every native the retail scripts declare but our
+ * Core/Engine/GameFramework code does not implement yet (147 as of wave 3, agent Z's list). Script calls reach
+ * it through UObject::CallFunction (which records the UFunction in GDishonoredCallingFunction); ProcessEvent
+ * calls carry the function in Stack.Node.
+ */
+void UObject::execDishonoredUnboundNative( FFrame& Stack, RESULT_DECL )
+{
+	UFunction* Function = Cast<UFunction>( Stack.Node );
+	if( !Function || Function->Func != &UObject::execDishonoredUnboundNative )
+	{
+		Function = GDishonoredCallingFunction;
+	}
+	const FString Key = Function ? Function->GetPathName() : FString(TEXT("<unknown>"));
+	WarnOrAbort( TEXT("Engine (no C++ body)"), Key );
+	ConsumeAndZero( Stack, Result, Function );
 }

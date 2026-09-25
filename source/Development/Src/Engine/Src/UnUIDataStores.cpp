@@ -846,6 +846,7 @@ void UUIDataStore_GameResource::AddReferencedObjects( TArray<UObject*>& ObjectAr
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x3f9b90 (2012 rva 0x41a590), identical
 void UUIDataStore_GameResource::Serialize( FArchive& Ar )
 {
 	Super::Serialize(Ar);
@@ -1092,6 +1093,7 @@ void UUIDataStore_DynamicResource::AddReferencedObjects( TArray<UObject*>& Objec
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x3fa760 (2012 rva 0x41b130), identical
 void UUIDataStore_DynamicResource::Serialize( FArchive& Ar )
 {
 	Super::Serialize(Ar);
@@ -1547,36 +1549,26 @@ void UUIDataStore_OnlinePlayerData::LoadDependentClasses(void)
 /**
  * Creates the data providers exposed by this data store
  */
+// DISHONORED(port): 2013 rva 0x3efce0 (2012 0x42e400): friends, profile, storage and achievements providers in the transient
+// package; retail has no friend-messages or party-chat provider (reference-only members, storage-less shims here).
 void UUIDataStore_OnlinePlayerData::InitializeDataStore(void)
 {
-#if WIIU
-	LoadDependentClasses();
-#endif
 	if (FriendsProvider == NULL)
 	{
 		FriendsProvider = ConstructObject<UUIDataProvider_OnlineFriends>(FriendsProviderClass);
 	}
 	if (ProfileProvider == NULL)
 	{
-		ProfileProvider = ConstructObject<UUIDataProvider_OnlineProfileSettings>(ProfileProviderClass);
+		ProfileProvider = ConstructObject<UUIDataProvider_OnlineProfileSettings>(UUIDataProvider_OnlineProfileSettings::StaticClass());
 	}
 	if (StorageProvider == NULL)
 	{
-		StorageProvider = ConstructObject<UUIDataProvider_OnlinePlayerStorage>(StorageProviderClass);
-	}
-	if (FriendMessagesProvider == NULL)
-	{
-		FriendMessagesProvider = ConstructObject<UUIDataProvider_OnlineFriendMessages>(FriendMessagesProviderClass);
+		StorageProvider = ConstructObject<UUIDataProvider_OnlinePlayerStorage>(UUIDataProvider_OnlinePlayerStorage::StaticClass());
 	}
 	if (AchievementsProvider == NULL)
 	{
 		AchievementsProvider = ConstructObject<UUIDataProvider_PlayerAchievements>(AchievementsProviderClass);
 	}
-	if (PartyChatProvider == NULL)
-	{
-		PartyChatProvider = ConstructObject<UUIDataProvider_OnlinePartyChatList>(PartyChatProviderClass);
-	}
-	check(FriendsProvider && FriendMessagesProvider && AchievementsProvider && PartyChatProvider);
 }
 
 /**
@@ -1586,56 +1578,36 @@ void UUIDataStore_OnlinePlayerData::InitializeDataStore(void)
  */
 void UUIDataStore_OnlinePlayerData::OnRegister(ULocalPlayer* Player)
 {
+	// DISHONORED(port): 2013 rva 0x3d45c0 (2012 0x3f6d90): the cached profile/storage returned by script is bound when there is
+	// one; no friend-messages or party-chat provider
 	if (FriendsProvider)
 	{
 		FriendsProvider->eventOnRegister(Player);
 	}
-	if (FriendMessagesProvider)
-	{
-		FriendMessagesProvider->eventOnRegister(Player);
-	}
-	if (PartyChatProvider)
-	{
-		PartyChatProvider->eventOnRegister(Player);
-	}
 	if (ProfileProvider && ProfileSettingsClass)
 	{
-		UOnlineProfileSettings* Profile = NULL;
-		if (Player != NULL)
-		{
-			// If a cached profile exists, bind to that profile instead
-			eventGetCachedPlayerProfile(Player->ControllerId);
-		}
-		// Create one if we don't have a profile
+		UOnlineProfileSettings* Profile = eventGetCachedPlayerProfile(Player ? Player->ControllerId : 0);
 		if (Profile == NULL)
 		{
 			Profile = ConstructObject<UOnlineProfileSettings>(ProfileSettingsClass);
 		}
 		ProfileProvider->Profile = Profile;
-		// Now kick off the read for it
 		ProfileProvider->eventOnRegister(Player);
 	}
 	if (StorageProvider && PlayerStorageClass)
 	{
-		UOnlinePlayerStorage* Storage = NULL;
-		if (Player != NULL)
-		{
-			// If a cached storage exists, bind to that storage instead
-			eventGetCachedPlayerStorage(Player->ControllerId);
-		}
+		UOnlinePlayerStorage* Storage = eventGetCachedPlayerStorage(Player ? Player->ControllerId : 0);
 		if (Storage == NULL)
 		{
 			Storage = ConstructObject<UOnlinePlayerStorage>(PlayerStorageClass);
 		}
 		StorageProvider->Profile = Storage;
-		// Now kick off the read for it
 		StorageProvider->eventOnRegister(Player);
 	}
 	if (AchievementsProvider != NULL)
 	{
 		AchievementsProvider->eventOnRegister(Player);
 	}
-	// Our local events
 	eventOnRegister(Player);
 }
 
@@ -1646,13 +1618,10 @@ void UUIDataStore_OnlinePlayerData::OnRegister(ULocalPlayer* Player)
  */
 void UUIDataStore_OnlinePlayerData::OnUnregister(ULocalPlayer*)
 {
+	// DISHONORED(port): 2013 rva 0x3cf210 (2012 0x3f1a20): friends, profile, storage, achievements, then this store
 	if (FriendsProvider)
 	{
 		FriendsProvider->eventOnUnregister();
-	}
-	if (FriendMessagesProvider)
-	{
-		FriendMessagesProvider->eventOnUnregister();
 	}
 	if (ProfileProvider)
 	{
@@ -1662,15 +1631,10 @@ void UUIDataStore_OnlinePlayerData::OnUnregister(ULocalPlayer*)
 	{
 		StorageProvider->eventOnUnregister();
 	}
-	if ( AchievementsProvider != NULL )
+	if (AchievementsProvider != NULL)
 	{
 		AchievementsProvider->eventOnUnregister();
 	}
-	if (PartyChatProvider)
-	{
-		PartyChatProvider->eventOnUnregister();
-	}
-	// Our local events
 	eventOnUnregister();
 }
 

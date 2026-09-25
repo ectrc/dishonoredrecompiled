@@ -1281,7 +1281,10 @@ UBOOL APlayerController::Tick( FLOAT DeltaSeconds, ELevelTick TickType )
 				Interactions(InteractionIndex)->Tick(DeltaSeconds);
 
 		if(PlayerInput)
-			eventPlayerTick(DeltaSeconds);
+			if( FindFunction( FName(TEXT("PlayerTick"), FNAME_Find) ) ) // DISHONORED(retail): PlayerTick is not a 2013 event
+			{
+				eventPlayerTick(DeltaSeconds);
+			}
 
 		for(INT InteractionIndex = 0;InteractionIndex < Interactions.Num();InteractionIndex++)
 			if(Interactions(InteractionIndex))

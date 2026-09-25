@@ -55,88 +55,88 @@ static_assert(sizeof(FSteamPlayerClanData) == 24, "FSteamPlayerClanData: retail 
 static_assert(offsetof(FSteamPlayerClanData, ClanName) == 0, "FSteamPlayerClanData::ClanName: retail offset 0");
 static_assert(offsetof(FSteamPlayerClanData, ClanTag) == 12, "FSteamPlayerClanData::ClanTag: retail offset 12");
 static_assert(sizeof(UOnlineLobbyInterfaceSteamworks) == 56, "UOnlineLobbyInterfaceSteamworks: retail sizeof 56");
-// pending: sizeof(UOnlineSubsystemSteamworks) == 1132 (every reflected member is shifted by +4 in our tree: base UOnlineSubsystemCommonImpl is not converged yet (probe))
-// pending: offsetof(UOnlineSubsystemSteamworks, CallbackBridge) == 200
-// pending: offsetof(UOnlineSubsystemSteamworks, TotalGSStatsStoresPending) == 208
-// pending: offsetof(UOnlineSubsystemSteamworks, UserStatsReceivedState) == 212
-// pending: offsetof(UOnlineSubsystemSteamworks, LoggedInStatus) == 213
-// pending: offsetof(UOnlineSubsystemSteamworks, bWasKeyboardInputCanceled) == 214
-// pending: offsetof(UOnlineSubsystemSteamworks, CurrentNotificationPosition) == 215
-// pending: offsetof(UOnlineSubsystemSteamworks, LocalProfileName) == 216
-// pending: offsetof(UOnlineSubsystemSteamworks, LoggedInPlayerName) == 228
-// pending: offsetof(UOnlineSubsystemSteamworks, LoggedInPlayerId) == 240
-// pending: offsetof(UOnlineSubsystemSteamworks, LoggedInPlayerNum) == 248
-// pending: offsetof(UOnlineSubsystemSteamworks, ProfileDataDirectory) == 252
-// pending: offsetof(UOnlineSubsystemSteamworks, ProfileDataExtension) == 264
-// pending: offsetof(UOnlineSubsystemSteamworks, WriteProfileSettingsDelegates) == 276
-// pending: offsetof(UOnlineSubsystemSteamworks, CachedProfile) == 288
-// pending: offsetof(UOnlineSubsystemSteamworks, LocalPlayerStorageReadDelegates) == 292
-// pending: offsetof(UOnlineSubsystemSteamworks, LocalPlayerStorageWriteDelegates) == 304
-// pending: offsetof(UOnlineSubsystemSteamworks, RemotePlayerStorageReadDelegates) == 316
-// pending: offsetof(UOnlineSubsystemSteamworks, ReadFriendsDelegates) == 328
-// pending: offsetof(UOnlineSubsystemSteamworks, FriendsChangeDelegates) == 340
-// pending: offsetof(UOnlineSubsystemSteamworks, MutingChangeDelegates) == 352
-// pending: offsetof(UOnlineSubsystemSteamworks, LoginChangeDelegates) == 364
-// pending: offsetof(UOnlineSubsystemSteamworks, LoginFailedDelegates) == 376
-// pending: offsetof(UOnlineSubsystemSteamworks, LogoutCompletedDelegates) == 388
-// pending: offsetof(UOnlineSubsystemSteamworks, AccountCreateDelegates) == 400
-// pending: offsetof(UOnlineSubsystemSteamworks, ConnectionStatusChangeDelegates) == 412
-// pending: offsetof(UOnlineSubsystemSteamworks, ControllerChangeDelegates) == 424
-// pending: offsetof(UOnlineSubsystemSteamworks, LinkStatusDelegates) == 436
-// pending: offsetof(UOnlineSubsystemSteamworks, ReadTitleFileCompleteDelegates) == 448
-// pending: offsetof(UOnlineSubsystemSteamworks, AchievementDelegates) == 460
-// pending: offsetof(UOnlineSubsystemSteamworks, AchievementReadDelegates) == 472
-// pending: offsetof(UOnlineSubsystemSteamworks, CurrentLocalTalker) == 484
-// pending: offsetof(UOnlineSubsystemSteamworks, RemoteTalkers) == 492
-// pending: offsetof(UOnlineSubsystemSteamworks, GameID) == 504
-// pending: offsetof(UOnlineSubsystemSteamworks, CurrentStatsRead) == 508
-// pending: offsetof(UOnlineSubsystemSteamworks, PendingStats) == 512
-// pending: offsetof(UOnlineSubsystemSteamworks, KeyboardResultsString) == 524
-// pending: offsetof(UOnlineSubsystemSteamworks, KeyboardInputDelegates) == 536
-// pending: offsetof(UOnlineSubsystemSteamworks, ProfileCache) == 548
-// pending: offsetof(UOnlineSubsystemSteamworks, PlayerStorageCache) == 588
-// pending: offsetof(UOnlineSubsystemSteamworks, CachedFriendMessage) == 592
-// pending: offsetof(UOnlineSubsystemSteamworks, DeviceCache) == 604
-// pending: offsetof(UOnlineSubsystemSteamworks, LocationUrlsForInvites) == 632
-// pending: offsetof(UOnlineSubsystemSteamworks, LocationUrl) == 644
-// pending: offsetof(UOnlineSubsystemSteamworks, CachedFriendMessages) == 656
-// pending: offsetof(UOnlineSubsystemSteamworks, StatusMappings) == 668
-// pending: offsetof(UOnlineSubsystemSteamworks, DefaultStatus) == 680
-// pending: offsetof(UOnlineSubsystemSteamworks, GameInviteMessage) == 692
-// pending: offsetof(UOnlineSubsystemSteamworks, ControllerStates) == 704
-// pending: offsetof(UOnlineSubsystemSteamworks, ConnectionPresenceTimeInterval) == 736
-// pending: offsetof(UOnlineSubsystemSteamworks, ConnectionPresenceElapsedTime) == 740
-// pending: offsetof(UOnlineSubsystemSteamworks, EncryptedProductKey) == 744
-// pending: offsetof(UOnlineSubsystemSteamworks, MuteList) == 756
-// pending: offsetof(UOnlineSubsystemSteamworks, QueuedAvatarRequests) == 768
-// pending: offsetof(UOnlineSubsystemSteamworks, AchievementMappings) == 780
-// pending: offsetof(UOnlineSubsystemSteamworks, PendingAchievementProgress) == 792
-// pending: offsetof(UOnlineSubsystemSteamworks, m_paEnumeratedDLCs) == 804
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnLoginChange__Delegate) == 808
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnLoginCancelled__Delegate) == 820
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnMutingChange__Delegate) == 832
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnFriendsChange__Delegate) == 844
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnLoginFailed__Delegate) == 856
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnLogoutCompleted__Delegate) == 868
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnLoginStatusChange__Delegate) == 880
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadProfileSettingsComplete__Delegate) == 892
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnWriteProfileSettingsComplete__Delegate) == 904
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadPlayerStorageComplete__Delegate) == 916
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadPlayerStorageForNetIdComplete__Delegate) == 928
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnWritePlayerStorageComplete__Delegate) == 940
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadFriendsComplete__Delegate) == 952
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnLinkStatusChange__Delegate) == 964
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnExternalUIChange__Delegate) == 976
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnControllerChange__Delegate) == 988
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnConnectionStatusChange__Delegate) == 1000
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnStorageDeviceChange__Delegate) == 1012
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadTitleFileComplete__Delegate) == 1024
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnCreateOnlineAccountCompleted__Delegate) == 1036
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnKeyboardInputComplete__Delegate) == 1048
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnDeviceSelectionComplete__Delegate) == 1060
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnUnlockAchievementComplete__Delegate) == 1072
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnProfileDataChanged__Delegate) == 1084
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadAchievementsComplete__Delegate) == 1096
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadOnlineAvatarComplete__Delegate) == 1108
-// pending: offsetof(UOnlineSubsystemSteamworks, __OnReadCrossTitleProfileSettingsComplete__Delegate) == 1120
+static_assert(sizeof(UOnlineSubsystemSteamworks) == 1132, "UOnlineSubsystemSteamworks: retail sizeof 1132");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CallbackBridge) == 200, "UOnlineSubsystemSteamworks::CallbackBridge: retail offset 200");
+static_assert(offsetof(UOnlineSubsystemSteamworks, TotalGSStatsStoresPending) == 208, "UOnlineSubsystemSteamworks::TotalGSStatsStoresPending: retail offset 208");
+static_assert(offsetof(UOnlineSubsystemSteamworks, UserStatsReceivedState) == 212, "UOnlineSubsystemSteamworks::UserStatsReceivedState: retail offset 212");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LoggedInStatus) == 213, "UOnlineSubsystemSteamworks::LoggedInStatus: retail offset 213");
+static_assert(offsetof(UOnlineSubsystemSteamworks, bWasKeyboardInputCanceled) == 214, "UOnlineSubsystemSteamworks::bWasKeyboardInputCanceled: retail offset 214");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CurrentNotificationPosition) == 215, "UOnlineSubsystemSteamworks::CurrentNotificationPosition: retail offset 215");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LocalProfileName) == 216, "UOnlineSubsystemSteamworks::LocalProfileName: retail offset 216");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LoggedInPlayerName) == 228, "UOnlineSubsystemSteamworks::LoggedInPlayerName: retail offset 228");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LoggedInPlayerId) == 240, "UOnlineSubsystemSteamworks::LoggedInPlayerId: retail offset 240");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LoggedInPlayerNum) == 248, "UOnlineSubsystemSteamworks::LoggedInPlayerNum: retail offset 248");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ProfileDataDirectory) == 252, "UOnlineSubsystemSteamworks::ProfileDataDirectory: retail offset 252");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ProfileDataExtension) == 264, "UOnlineSubsystemSteamworks::ProfileDataExtension: retail offset 264");
+static_assert(offsetof(UOnlineSubsystemSteamworks, WriteProfileSettingsDelegates) == 276, "UOnlineSubsystemSteamworks::WriteProfileSettingsDelegates: retail offset 276");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CachedProfile) == 288, "UOnlineSubsystemSteamworks::CachedProfile: retail offset 288");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LocalPlayerStorageReadDelegates) == 292, "UOnlineSubsystemSteamworks::LocalPlayerStorageReadDelegates: retail offset 292");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LocalPlayerStorageWriteDelegates) == 304, "UOnlineSubsystemSteamworks::LocalPlayerStorageWriteDelegates: retail offset 304");
+static_assert(offsetof(UOnlineSubsystemSteamworks, RemotePlayerStorageReadDelegates) == 316, "UOnlineSubsystemSteamworks::RemotePlayerStorageReadDelegates: retail offset 316");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ReadFriendsDelegates) == 328, "UOnlineSubsystemSteamworks::ReadFriendsDelegates: retail offset 328");
+static_assert(offsetof(UOnlineSubsystemSteamworks, FriendsChangeDelegates) == 340, "UOnlineSubsystemSteamworks::FriendsChangeDelegates: retail offset 340");
+static_assert(offsetof(UOnlineSubsystemSteamworks, MutingChangeDelegates) == 352, "UOnlineSubsystemSteamworks::MutingChangeDelegates: retail offset 352");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LoginChangeDelegates) == 364, "UOnlineSubsystemSteamworks::LoginChangeDelegates: retail offset 364");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LoginFailedDelegates) == 376, "UOnlineSubsystemSteamworks::LoginFailedDelegates: retail offset 376");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LogoutCompletedDelegates) == 388, "UOnlineSubsystemSteamworks::LogoutCompletedDelegates: retail offset 388");
+static_assert(offsetof(UOnlineSubsystemSteamworks, AccountCreateDelegates) == 400, "UOnlineSubsystemSteamworks::AccountCreateDelegates: retail offset 400");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ConnectionStatusChangeDelegates) == 412, "UOnlineSubsystemSteamworks::ConnectionStatusChangeDelegates: retail offset 412");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ControllerChangeDelegates) == 424, "UOnlineSubsystemSteamworks::ControllerChangeDelegates: retail offset 424");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LinkStatusDelegates) == 436, "UOnlineSubsystemSteamworks::LinkStatusDelegates: retail offset 436");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ReadTitleFileCompleteDelegates) == 448, "UOnlineSubsystemSteamworks::ReadTitleFileCompleteDelegates: retail offset 448");
+static_assert(offsetof(UOnlineSubsystemSteamworks, AchievementDelegates) == 460, "UOnlineSubsystemSteamworks::AchievementDelegates: retail offset 460");
+static_assert(offsetof(UOnlineSubsystemSteamworks, AchievementReadDelegates) == 472, "UOnlineSubsystemSteamworks::AchievementReadDelegates: retail offset 472");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CurrentLocalTalker) == 484, "UOnlineSubsystemSteamworks::CurrentLocalTalker: retail offset 484");
+static_assert(offsetof(UOnlineSubsystemSteamworks, RemoteTalkers) == 492, "UOnlineSubsystemSteamworks::RemoteTalkers: retail offset 492");
+static_assert(offsetof(UOnlineSubsystemSteamworks, GameID) == 504, "UOnlineSubsystemSteamworks::GameID: retail offset 504");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CurrentStatsRead) == 508, "UOnlineSubsystemSteamworks::CurrentStatsRead: retail offset 508");
+static_assert(offsetof(UOnlineSubsystemSteamworks, PendingStats) == 512, "UOnlineSubsystemSteamworks::PendingStats: retail offset 512");
+static_assert(offsetof(UOnlineSubsystemSteamworks, KeyboardResultsString) == 524, "UOnlineSubsystemSteamworks::KeyboardResultsString: retail offset 524");
+static_assert(offsetof(UOnlineSubsystemSteamworks, KeyboardInputDelegates) == 536, "UOnlineSubsystemSteamworks::KeyboardInputDelegates: retail offset 536");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ProfileCache) == 548, "UOnlineSubsystemSteamworks::ProfileCache: retail offset 548");
+static_assert(offsetof(UOnlineSubsystemSteamworks, PlayerStorageCache) == 588, "UOnlineSubsystemSteamworks::PlayerStorageCache: retail offset 588");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CachedFriendMessage) == 592, "UOnlineSubsystemSteamworks::CachedFriendMessage: retail offset 592");
+static_assert(offsetof(UOnlineSubsystemSteamworks, DeviceCache) == 604, "UOnlineSubsystemSteamworks::DeviceCache: retail offset 604");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LocationUrlsForInvites) == 632, "UOnlineSubsystemSteamworks::LocationUrlsForInvites: retail offset 632");
+static_assert(offsetof(UOnlineSubsystemSteamworks, LocationUrl) == 644, "UOnlineSubsystemSteamworks::LocationUrl: retail offset 644");
+static_assert(offsetof(UOnlineSubsystemSteamworks, CachedFriendMessages) == 656, "UOnlineSubsystemSteamworks::CachedFriendMessages: retail offset 656");
+static_assert(offsetof(UOnlineSubsystemSteamworks, StatusMappings) == 668, "UOnlineSubsystemSteamworks::StatusMappings: retail offset 668");
+static_assert(offsetof(UOnlineSubsystemSteamworks, DefaultStatus) == 680, "UOnlineSubsystemSteamworks::DefaultStatus: retail offset 680");
+static_assert(offsetof(UOnlineSubsystemSteamworks, GameInviteMessage) == 692, "UOnlineSubsystemSteamworks::GameInviteMessage: retail offset 692");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ControllerStates) == 704, "UOnlineSubsystemSteamworks::ControllerStates: retail offset 704");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ConnectionPresenceTimeInterval) == 736, "UOnlineSubsystemSteamworks::ConnectionPresenceTimeInterval: retail offset 736");
+static_assert(offsetof(UOnlineSubsystemSteamworks, ConnectionPresenceElapsedTime) == 740, "UOnlineSubsystemSteamworks::ConnectionPresenceElapsedTime: retail offset 740");
+static_assert(offsetof(UOnlineSubsystemSteamworks, EncryptedProductKey) == 744, "UOnlineSubsystemSteamworks::EncryptedProductKey: retail offset 744");
+static_assert(offsetof(UOnlineSubsystemSteamworks, MuteList) == 756, "UOnlineSubsystemSteamworks::MuteList: retail offset 756");
+static_assert(offsetof(UOnlineSubsystemSteamworks, QueuedAvatarRequests) == 768, "UOnlineSubsystemSteamworks::QueuedAvatarRequests: retail offset 768");
+static_assert(offsetof(UOnlineSubsystemSteamworks, AchievementMappings) == 780, "UOnlineSubsystemSteamworks::AchievementMappings: retail offset 780");
+static_assert(offsetof(UOnlineSubsystemSteamworks, PendingAchievementProgress) == 792, "UOnlineSubsystemSteamworks::PendingAchievementProgress: retail offset 792");
+static_assert(offsetof(UOnlineSubsystemSteamworks, m_paEnumeratedDLCs) == 804, "UOnlineSubsystemSteamworks::m_paEnumeratedDLCs: retail offset 804");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnLoginChange__Delegate) == 808, "UOnlineSubsystemSteamworks::__OnLoginChange__Delegate: retail offset 808");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnLoginCancelled__Delegate) == 820, "UOnlineSubsystemSteamworks::__OnLoginCancelled__Delegate: retail offset 820");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnMutingChange__Delegate) == 832, "UOnlineSubsystemSteamworks::__OnMutingChange__Delegate: retail offset 832");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnFriendsChange__Delegate) == 844, "UOnlineSubsystemSteamworks::__OnFriendsChange__Delegate: retail offset 844");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnLoginFailed__Delegate) == 856, "UOnlineSubsystemSteamworks::__OnLoginFailed__Delegate: retail offset 856");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnLogoutCompleted__Delegate) == 868, "UOnlineSubsystemSteamworks::__OnLogoutCompleted__Delegate: retail offset 868");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnLoginStatusChange__Delegate) == 880, "UOnlineSubsystemSteamworks::__OnLoginStatusChange__Delegate: retail offset 880");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadProfileSettingsComplete__Delegate) == 892, "UOnlineSubsystemSteamworks::__OnReadProfileSettingsComplete__Delegate: retail offset 892");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnWriteProfileSettingsComplete__Delegate) == 904, "UOnlineSubsystemSteamworks::__OnWriteProfileSettingsComplete__Delegate: retail offset 904");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadPlayerStorageComplete__Delegate) == 916, "UOnlineSubsystemSteamworks::__OnReadPlayerStorageComplete__Delegate: retail offset 916");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadPlayerStorageForNetIdComplete__Delegate) == 928, "UOnlineSubsystemSteamworks::__OnReadPlayerStorageForNetIdComplete__Delegate: retail offset 928");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnWritePlayerStorageComplete__Delegate) == 940, "UOnlineSubsystemSteamworks::__OnWritePlayerStorageComplete__Delegate: retail offset 940");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadFriendsComplete__Delegate) == 952, "UOnlineSubsystemSteamworks::__OnReadFriendsComplete__Delegate: retail offset 952");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnLinkStatusChange__Delegate) == 964, "UOnlineSubsystemSteamworks::__OnLinkStatusChange__Delegate: retail offset 964");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnExternalUIChange__Delegate) == 976, "UOnlineSubsystemSteamworks::__OnExternalUIChange__Delegate: retail offset 976");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnControllerChange__Delegate) == 988, "UOnlineSubsystemSteamworks::__OnControllerChange__Delegate: retail offset 988");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnConnectionStatusChange__Delegate) == 1000, "UOnlineSubsystemSteamworks::__OnConnectionStatusChange__Delegate: retail offset 1000");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnStorageDeviceChange__Delegate) == 1012, "UOnlineSubsystemSteamworks::__OnStorageDeviceChange__Delegate: retail offset 1012");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadTitleFileComplete__Delegate) == 1024, "UOnlineSubsystemSteamworks::__OnReadTitleFileComplete__Delegate: retail offset 1024");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnCreateOnlineAccountCompleted__Delegate) == 1036, "UOnlineSubsystemSteamworks::__OnCreateOnlineAccountCompleted__Delegate: retail offset 1036");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnKeyboardInputComplete__Delegate) == 1048, "UOnlineSubsystemSteamworks::__OnKeyboardInputComplete__Delegate: retail offset 1048");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnDeviceSelectionComplete__Delegate) == 1060, "UOnlineSubsystemSteamworks::__OnDeviceSelectionComplete__Delegate: retail offset 1060");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnUnlockAchievementComplete__Delegate) == 1072, "UOnlineSubsystemSteamworks::__OnUnlockAchievementComplete__Delegate: retail offset 1072");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnProfileDataChanged__Delegate) == 1084, "UOnlineSubsystemSteamworks::__OnProfileDataChanged__Delegate: retail offset 1084");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadAchievementsComplete__Delegate) == 1096, "UOnlineSubsystemSteamworks::__OnReadAchievementsComplete__Delegate: retail offset 1096");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadOnlineAvatarComplete__Delegate) == 1108, "UOnlineSubsystemSteamworks::__OnReadOnlineAvatarComplete__Delegate: retail offset 1108");
+static_assert(offsetof(UOnlineSubsystemSteamworks, __OnReadCrossTitleProfileSettingsComplete__Delegate) == 1120, "UOnlineSubsystemSteamworks::__OnReadCrossTitleProfileSettingsComplete__Delegate: retail offset 1120");
 #endif // DISHONORED_LAYOUT_CHECKS || DISHONORED_SDK_LAYOUT_CHECKS

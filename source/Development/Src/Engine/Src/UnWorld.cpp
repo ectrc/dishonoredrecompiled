@@ -82,12 +82,24 @@ void UWorld::StaticConstructor()
  *
  * @param Ar	Archive to use for serialization
  */
+// DISHONORED(port): 2013 rva 0x390b90 (2012 0x3bba70, identical bytes): the world-info cache is refreshed after the
+// persistent level, the SaveGameSummary reference exists below licensee 27 only, and reference collection sees
+// m_pAudioSystem instead of the reference net drivers and anim tree pool.
 void UWorld::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
 
 	Ar << PersistentLevel;
-	if (Ar.Ver() >= VER_WORLD_PERSISTENT_FACEFXANIMSET)
+	if( PersistentLevel && PersistentLevel->Actors.Num() )
+	{
+		UpdateWorldInfoCache();
+	}
+	else
+	{
+		m_pWorldInfo = NULL;
+		m_pWorldInfoCheckStreamingPersistent = NULL;
+	}
+	if( Ar.Ver() >= VER_WORLD_PERSISTENT_FACEFXANIMSET )
 	{
 		Ar << PersistentFaceFXAnimSet;
 	}
@@ -96,11 +108,14 @@ void UWorld::Serialize( FArchive& Ar )
 	Ar << EditorViews[1];
 	Ar << EditorViews[2];
 	Ar << EditorViews[3];
-	Ar << SaveGameSummary_DEPRECATED;
-
-	if (Ar.Ver() < VER_REMOVED_DECAL_MANAGER_FROM_UWORLD)
+	if( Ar.LicenseeVer() < VER_DIS_LICENSEE_LEVEL )
 	{
-		UObject* DecalManager;
+		UObject* LegacySaveGameSummary = NULL;
+		Ar << LegacySaveGameSummary;
+	}
+	if( Ar.Ver() < VER_REMOVED_DECAL_MANAGER_FROM_UWORLD )
+	{
+		UObject* DecalManager = NULL;
 		Ar << DecalManager;
 	}
 
@@ -110,30 +125,37 @@ void UWorld::Serialize( FArchive& Ar )
 		Ar << CurrentLevel;
 		Ar << CurrentLevelGridVolume;
 		Ar << URL;
-
-		Ar << NetDriver;
-		Ar << DemoRecDriver;
-		Ar << PeerNetDriver;
-#if WITH_STEAMWORKS_SOCKETS
-		Ar << RedirectNetDriver;
-#endif
-
 		Ar << LineBatcher;
 		Ar << PersistentLineBatcher;
-
 		Ar << BodyInstancePool;
 		Ar << ConstraintInstancePool;
-		Ar << AnimTreePool;
+		Ar << *(UObject**)&m_pAudioSystem;
 	}
 
 	Ar << ExtraReferencedObjects;
 
-	// Mark archive and package as containing a map if we're serializing to disk.
 	if( !HasAnyFlags( RF_ClassDefaultObject ) && Ar.IsPersistent() )
 	{
 		Ar.ThisContainsMap();
 		GetOutermost()->ThisContainsMap();
 	}
+}
+
+// DISHONORED(port): 2013 rva 0x38cac0 (2012 0x3baba0): caches the persistent level's world info and, when the first
+// streaming level is a loaded ULevelStreamingPersistent, that level's world info.
+void UWorld::UpdateWorldInfoCache()
+{
+	AWorldInfo* WorldInfo = (AWorldInfo*)PersistentLevel->Actors(0);
+	AWorldInfo* WorldInfoCheckStreamingPersistent = WorldInfo;
+	if( WorldInfo->StreamingLevels.Num() > 0 &&
+		WorldInfo->StreamingLevels(0) &&
+		WorldInfo->StreamingLevels(0)->LoadedLevel &&
+		WorldInfo->StreamingLevels(0)->IsA( ULevelStreamingPersistent::StaticClass() ) )
+	{
+		WorldInfoCheckStreamingPersistent = WorldInfo->StreamingLevels(0)->LoadedLevel->GetWorldInfo();
+	}
+	m_pWorldInfo = WorldInfo;
+	m_pWorldInfoCheckStreamingPersistent = WorldInfoCheckStreamingPersistent;
 }
 
 /**
@@ -1738,7 +1760,10 @@ void UWorld::AddToWorld( ULevelStreaming* StreamingLevel )
 		{
 			if (It->Actor != NULL)
 			{
-				It->Actor->eventServerUpdateLevelVisibility(Level->GetOutermost()->GetFName(), TRUE);
+				if( It->Actor->FindFunction( FName(TEXT("ServerUpdateLevelVisibility"), FNAME_Find) ) ) // DISHONORED(retail): not a 2013 event
+				{
+					It->Actor->eventServerUpdateLevelVisibility(Level->GetOutermost()->GetFName(), TRUE);
+				}
 			}
 		}
 
@@ -1862,7 +1887,10 @@ void UWorld::RemoveFromWorld( ULevelStreaming* StreamingLevel )
 		{
 			if (It->Actor != NULL)
 			{
-				It->Actor->eventServerUpdateLevelVisibility(Level->GetOutermost()->GetFName(), FALSE);
+				if( It->Actor->FindFunction( FName(TEXT("ServerUpdateLevelVisibility"), FNAME_Find) ) ) // DISHONORED(retail): not a 2013 event
+				{
+					It->Actor->eventServerUpdateLevelVisibility(Level->GetOutermost()->GetFName(), FALSE);
+				}
 			}
 		}
 
@@ -2725,76 +2753,78 @@ UBOOL UWorld::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x38bfa0 (2012 0x3acf90): no IsServer() gate and no WorldInfo.DefaultGameType start; after the
+// GAME= option, the first AGameInfo.DefaultMapPrefixes entry whose Prefix occurs in the map name (case-insensitive) picks the game
+// type (DefaultGame.ini: DLC05/DLC06/DLC07 -> DisDLC0xGameInfo).
 void UWorld::SetGameInfo(const FURL& InURL)
 {
 	AWorldInfo* Info = GetWorldInfo();
-
-	if( IsServer() && !Info->Game )
+	if( Info->Game )
 	{
-		// Init the game info.
-		FString Options(TEXT(""));
-		TCHAR GameParam[256]=TEXT("");
-		FString	Error=TEXT("");
-		for( INT i=0; i<InURL.Op.Num(); i++ )
-		{
-			Options += TEXT("?");
-			Options += InURL.Op(i);
-			Parse( *InURL.Op(i), TEXT("GAME="), GameParam, ARRAY_COUNT(GameParam) );
-		}
-
-		UGameEngine* GameEngine = Cast<UGameEngine>(GEngine);
-
-		// Get the GameInfo class. Start by using the default game type.  It may be overridden by settings below
-		UClass* GameClass=Info->DefaultGameType;
-
-		// If there is a GameType parameter allow it to override the default game type
-		if ( GameParam[0] )
-		{
-			FString const GameClassName = AGameInfo::StaticGetRemappedGameClassName(FString(GameParam));
-
-			// if the gamename was specified, we can use it to fully load the pergame PreLoadClass packages
-			if (GameEngine)
-			{
-				GameEngine->LoadPackagesFully(FULLYLOAD_Game_PreLoadClass, *GameClassName);
-			}
-
-			GameClass = StaticLoadClass( AGameInfo::StaticClass(), NULL, *GameClassName, NULL, LOAD_None, NULL);
-		}
-
-		if ( !GameClass )
-		{
-			GameClass = StaticLoadClass( AGameInfo::StaticClass(), NULL, (GEngine->Client != NULL && !InURL.HasOption(TEXT("Listen"))) ? TEXT("game-ini:Engine.GameInfo.DefaultGame") : TEXT("game-ini:Engine.GameInfo.DefaultServerGame"), NULL, LOAD_None, NULL);
-		}
-
-		if ( !GameClass )
-		{
-			GameClass = AGameInfo::StaticClass();
-		}
-#if WITH_EDITORONLY_DATA
-		else if ( Info->IsPlayInEditor() && Info->GameTypeForPIE )
-		{
-			GameClass = Info->GameTypeForPIE;
-		}
-#endif // WITH_EDITORONLY_DATA
-		else
-		{
-			// Remove any directory path from the map for the purpose of setting the game type
-			FFilename MapName = InURL.Map;
-			GameClass = Cast<AGameInfo>(GameClass->GetDefaultActor())->eventSetGameType(MapName.GetBaseFilename(), Options, *InURL.Portal);
-		}
-
-		// no matter how the game was specified, we can use it to load the PostLoadClass packages
-		if (GameEngine)
-		{
-			GameEngine->LoadPackagesFully(FULLYLOAD_Game_PostLoadClass, GameClass->GetPathName());
-			GameEngine->LoadPackagesFully(FULLYLOAD_Game_PostLoadClass, TEXT("LoadForAllGameTypes"));
-		}
-
-		// Spawn the GameInfo.
-		debugf( NAME_Log, TEXT("Game class is '%s'"), *GameClass->GetName() );
-		Info->Game = (AGameInfo*)SpawnActor( GameClass );
-		check(Info->Game!=NULL);
+		return;
 	}
+
+	FString Options(TEXT(""));
+	TCHAR GameParam[256]=TEXT("");
+	for( INT i=0; i<InURL.Op.Num(); i++ )
+	{
+		Options += TEXT("?");
+		Options += InURL.Op(i);
+		Parse( *InURL.Op(i), TEXT("GAME="), GameParam, ARRAY_COUNT(GameParam) );
+	}
+
+	UGameEngine* GameEngine = Cast<UGameEngine>(GEngine);
+
+	const AGameInfo* DefaultGameInfo = AGameInfo::StaticClass()->GetDefaultObject<AGameInfo>();
+	for( INT PrefixIndex = 0; PrefixIndex < DefaultGameInfo->DefaultMapPrefixes.Num(); PrefixIndex++ )
+	{
+		const FGameTypePrefix& MapPrefix = DefaultGameInfo->DefaultMapPrefixes(PrefixIndex);
+		if( InURL.Map.InStr( MapPrefix.Prefix, FALSE, TRUE ) != INDEX_NONE )
+		{
+			appStrncpy( GameParam, *MapPrefix.GameType, ARRAY_COUNT(GameParam) );
+			break;
+		}
+	}
+
+	UClass* GameClass = NULL;
+	if( GameParam[0] )
+	{
+		const FString GameClassName = AGameInfo::StaticGetRemappedGameClassName(FString(GameParam));
+		if( GameEngine )
+		{
+			GameEngine->LoadPackagesFully(FULLYLOAD_Game_PreLoadClass, *GameClassName);
+		}
+		GameClass = StaticLoadClass( AGameInfo::StaticClass(), NULL, *GameClassName, NULL, LOAD_None, NULL );
+	}
+	if( !GameClass )
+	{
+		GameClass = StaticLoadClass( AGameInfo::StaticClass(), NULL, (GEngine->Client != NULL && !InURL.HasOption(TEXT("Listen"))) ? TEXT("game-ini:Engine.GameInfo.DefaultGame") : TEXT("game-ini:Engine.GameInfo.DefaultServerGame"), NULL, LOAD_None, NULL );
+	}
+
+	if( !GameClass )
+	{
+		GameClass = AGameInfo::StaticClass();
+	}
+#if WITH_EDITORONLY_DATA
+	else if( Info->IsPlayInEditor() && Info->GameTypeForPIE )
+	{
+		GameClass = Info->GameTypeForPIE;
+	}
+#endif
+	else
+	{
+		GameClass = Cast<AGameInfo>(GameClass->GetDefaultActor())->eventSetGameType(InURL.Map, Options, *InURL.Portal);
+	}
+
+	if( GameEngine )
+	{
+		GameEngine->LoadPackagesFully(FULLYLOAD_Game_PostLoadClass, GameClass->GetPathName());
+		GameEngine->LoadPackagesFully(FULLYLOAD_Game_PostLoadClass, TEXT("LoadForAllGameTypes"));
+	}
+
+	debugf( NAME_Log, TEXT("Game class is '%s'"), *GameClass->GetName() );
+	Info->Game = (AGameInfo*)SpawnActor( GameClass );
+	check(Info->Game!=NULL);
 }
 
 //#define PERF_DEBUG_CHECKCOLLISIONCOMPONENTS 1

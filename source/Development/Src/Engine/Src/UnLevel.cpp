@@ -319,151 +319,89 @@ void ULevel::AddReferencedObjects( TArray<UObject*>& ObjectArray )
  	}
 }
 
+// DISHONORED(port): 2013 rva 0x259f30 (2012 0x2737b0, identical bytes): no APEX cache (the 681 blob is skipped like the
+// reference non-APEX build), no cover lists (licensee < 27 only), no cover GUID refs, Arkane m_CrossLevelReferencedActors
+// (780), no precomputed volume distance field.
 void ULevel::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
 
 	Ar << Model;
-
 	Ar << ModelComponents;
-
 	Ar << GameSequences;
 
 	if( !Ar.IsTransacting() )
 	{
 		Ar << TextureToInstancesMap;
-
-		if ( Ar.Ver() >= VER_DYNAMICTEXTUREINSTANCES )
+		if( Ar.Ver() >= 771 )
 		{
 			Ar << DynamicTextureInstances;
 		}
-
-		if(Ar.Ver() >= VER_APEX_DESTRUCTION)
+		if( Ar.Ver() >= VER_APEX_DESTRUCTION )
 		{
-#if WITH_APEX
-			if(Ar.IsLoading())
+			DWORD ApexCacheSize = 0;
+			Ar << ApexCacheSize;
+			if( Ar.IsLoading() )
 			{
-				DWORD Size;
-				Ar << Size;
-				if( Size > 16 )
-				{
-					InitializeApex();
-					TArray<BYTE> Buffer;
-					Buffer.Add( Size );
-					Ar.Serialize( Buffer.GetData(), Size );
-					physx::apex::NxApexSDKCachedData& nCachedData = GApexManager->GetApexSDK()->getCachedData();
-					physx::PxFileBuf* nStream = GApexManager->GetApexSDK()->createMemoryReadStream( Buffer.GetData(), Size );
-					if( nStream != NULL )
-					{
-						nCachedData.deserialize( *nStream );
-						GApexManager->GetApexSDK()->releaseMemoryReadStream( *nStream );
-					}
-				}
-				else
-				{
-					for (DWORD i=0; i<Size; i++)
-					{
-						char c;
-						Ar << c;
-					}
-				}
+				Ar.Seek( Ar.Tell() + ApexCacheSize );
 			}
-			else if ( Ar.IsSaving() )
-			{
-				physx::PxU32 Len = 0;
-				void* Data = NULL;
-				physx::PxFileBuf* nStream = NULL;
-				if( GApexManager )
-				{
-					physx::apex::NxApexSDKCachedData& nCachedData = GApexManager->GetApexSDK()->getCachedData();
-					nStream = GApexManager->GetApexSDK()->createMemoryWriteStream();
-					if( nStream != NULL )
-					{
-						nCachedData.serialize( *nStream );
-						Data = (void*)GApexManager->GetApexSDK()->getMemoryWriteBuffer( *nStream, Len );
-					}
-				}
-				Ar << Len;
-				if( Len != 0 )
-				{
-					Ar.Serialize( Data, Len );
-				}
-				if( nStream != NULL )
-				{
-					GApexManager->GetApexSDK()->releaseMemoryWriteStream( *nStream );
-				}
-			}
-#else
-			if (Ar.IsLoading())
-			{
-				DWORD Size;
-				Ar << Size;
-				Ar.Seek(Ar.Tell() + Size);
-			}
-			else if (Ar.IsSaving())
-			{
-				DWORD Len = 0;
-				Ar << Len;
-			}
-#endif // if WITH_APEX
 		}
-
-		CachedPhysBSPData.BulkSerialize(Ar);
-    
-	    Ar << CachedPhysSMDataMap;
-	    Ar << CachedPhysSMDataStore;
-	    Ar << CachedPhysPerTriSMDataMap;
-	    Ar << CachedPhysPerTriSMDataStore;
-        Ar << CachedPhysBSPDataVersion;
-	    Ar << CachedPhysSMDataVersion;
+		CachedPhysBSPData.BulkSerialize( Ar );
+		Ar << CachedPhysSMDataMap;
+		Ar << CachedPhysSMDataStore;
+		Ar << CachedPhysPerTriSMDataMap;
+		Ar << CachedPhysPerTriSMDataStore;
+		Ar << CachedPhysBSPDataVersion;
+		Ar << CachedPhysSMDataVersion;
 		Ar << ForceStreamTextures;
-
-		if(Ar.Ver() >= VER_CONVEX_BSP)
+		if( Ar.Ver() >= VER_CONVEX_BSP )
 		{
 			Ar << CachedPhysConvexBSPData;
 			Ar << CachedPhysConvexBSPVersion;
 		}
 	}
 
-	// Mark archive and package as containing a map if we're serializing to disk.
 	if( !HasAnyFlags( RF_ClassDefaultObject ) && Ar.IsPersistent() )
 	{
 		Ar.ThisContainsMap();
 		GetOutermost()->ThisContainsMap();
 	}
 
-	// serialize the nav list
 	Ar << NavListStart;
 	Ar << NavListEnd;
-	// and cover
-	Ar << CoverListStart;
-	Ar << CoverListEnd;
-	// and pylons
-	if(Ar.Ver() >= VER_PYLONLIST_IN_ULEVEL)
+	if( Ar.LicenseeVer() < VER_DIS_LICENSEE_LEVEL )
+	{
+		UObject* LegacyCoverListStart = NULL;
+		UObject* LegacyCoverListEnd = NULL;
+		Ar << LegacyCoverListStart;
+		Ar << LegacyCoverListEnd;
+	}
+	if( Ar.Ver() >= VER_PYLONLIST_IN_ULEVEL )
 	{
 		Ar << PylonListStart;
 		Ar << PylonListEnd;
 	}
 
-	if( Ar.Ver() >= VER_COVERGUIDREFS_IN_ULEVEL )
+	Ar << CrossLevelActors;
+	if( Ar.Ver() >= 780 )
 	{
-		Ar << CrossLevelCoverGuidRefs;
-		Ar << CoverLinkRefs;
-		Ar << CoverIndexPairs;
+		Ar << m_CrossLevelReferencedActors;
+	}
+	else if( Ar.IsLoading() && GIsEditor && !GIsGame )
+	{
+		MarkPackageDirty();
 	}
 
-	// serialize the list of cross level actors
-	Ar << CrossLevelActors;
-	if (Ar.Ver() >= VER_GI_CHARACTER_LIGHTING)
+	if( Ar.Ver() >= VER_GI_CHARACTER_LIGHTING )
 	{
-		if (HasAnyFlags(RF_ClassDefaultObject))
+		if( HasAnyFlags( RF_ClassDefaultObject ) )
 		{
 			FPrecomputedLightVolume DummyVolume;
 			Ar << DummyVolume;
 		}
 		else
 		{
-			if (!PrecomputedLightVolume)
+			if( !PrecomputedLightVolume )
 			{
 				PrecomputedLightVolume = new FPrecomputedLightVolume();
 			}
@@ -471,11 +409,16 @@ void ULevel::Serialize( FArchive& Ar )
 		}
 	}
 
-	if (Ar.Ver() >= VER_NONUNIFORM_PRECOMPUTED_VISIBILITY)
+	if( Ar.Ver() >= 799 )
 	{
 		Ar << PrecomputedVisibilityHandler;
 	}
-	else if (Ar.Ver() >= VER_PRECOMPUTED_VISIBILITY)
+	else if( Ar.IsLoading() && Ar.Ver() >= VER_NONUNIFORM_PRECOMPUTED_VISIBILITY && Ar.Ver() < 757 )
+	{
+		FPrecomputedVisibilityHandler LegacyVisibilityHandler;
+		Ar << LegacyVisibilityHandler;
+	}
+	else if( Ar.IsLoading() && Ar.Ver() >= VER_PRECOMPUTED_VISIBILITY && Ar.Ver() < VER_NONUNIFORM_PRECOMPUTED_VISIBILITY )
 	{
 		FBox LegacyPrecomputedVisibilityVolume(0);
 		FLOAT LegacyPrecomputedVisibilityCellSize = 0;
@@ -483,11 +426,6 @@ void ULevel::Serialize( FArchive& Ar )
 		Ar << LegacyPrecomputedVisibilityVolume;
 		Ar << LegacyPrecomputedVisibilityCellSize;
 		Ar << LegacyPrecomputedVisibilityData;
-	}
-
-	if (Ar.Ver() >= VER_IMAGE_REFLECTION_SHADOWING)
-	{
-		Ar << PrecomputedVolumeDistanceField;
 	}
 }
 
