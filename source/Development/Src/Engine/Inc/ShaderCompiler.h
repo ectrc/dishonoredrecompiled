@@ -6,12 +6,16 @@
 #ifndef __SHADERCOMPILER_H__
 #define __SHADERCOMPILER_H__
 
+// DISHONORED(retail): the cooked shader caches store the frequency as a byte with Dishonored's values: 2012 PDB
+// EShaderFrequency { SF_Vertex = 0, SF_Pixel = 1, SF_NumBits = 1, SF_NumFrequencies = 2 } (no D3D11 stages). With the
+// reference numbering (SF_Pixel = 3) every cooked pixel shader was created as a hull shader. The reference-only D3D11
+// stages keep their names after the retail pair.
 enum EShaderFrequency
 {
 	SF_Vertex			= 0,
-	SF_Hull				= 1,
-	SF_Domain			= 2,
-	SF_Pixel			= 3,
+	SF_Pixel			= 1,
+	SF_Hull				= 2,
+	SF_Domain			= 3,
 	SF_Geometry			= 4,
 	SF_Compute			= 5,
 

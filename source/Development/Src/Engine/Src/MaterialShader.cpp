@@ -1891,6 +1891,7 @@ void FMaterialShaderMap::FlushShadersByVertexFactoryType(const FVertexFactoryTyp
 	InitOrderedMeshShaderMaps();
 }
 
+// DISHONORED(port): 2013 rva 0x40ef30 (2012 rva 0x432680), identical (2013 rebuilds the shader map hash after loading)
 void FMaterialShaderMap::Serialize(FArchive& Ar)
 {
 	check(Ar.Ver() >= VER_MIN_MATERIALSHADERMAP);

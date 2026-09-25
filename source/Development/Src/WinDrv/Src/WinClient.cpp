@@ -410,9 +410,17 @@ void UWindowsClient::Init( UEngine* InEngine )
 	KeyboardHookThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)LowLevelKeyboardThreadFunc, (LPVOID)NULL, 0, &KeyboardHookThreadId);
 
 	// Initialize shared DirectInput mouse interface.
-	verify( SUCCEEDED( DirectInput8Create( hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (VOID**)&DirectInput8, NULL ) ) );
-	verify( SUCCEEDED( DirectInput8->CreateDevice( GUID_SysMouse, &DirectInput8Mouse, NULL ) ) );
-	verify( SUCCEEDED( DirectInput8Mouse->SetDataFormat(&c_dfDIMouse) ) );
+	// DISHONORED(bringup): 2013 rva 0x5c9d50 makes these calls without checking the HRESULTs (verify compiles out in Shipping);
+	// a failure is logged here instead of asserting in a non-Shipping build, and the mouse setup stops at the failed call
+	HRESULT DirectInputResult = DirectInput8Create( hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (VOID**)&DirectInput8, NULL );
+	if ( SUCCEEDED( DirectInputResult ) )
+	{
+		DirectInputResult = DirectInput8->CreateDevice( GUID_SysMouse, &DirectInput8Mouse, NULL );
+	}
+	if ( SUCCEEDED( DirectInputResult ) )
+	{
+		DirectInputResult = DirectInput8Mouse->SetDataFormat(&c_dfDIMouse);
+	}
 
 	DIPROPDWORD Property;
 	Property.diph.dwSize		= sizeof(DIPROPDWORD);
@@ -420,9 +428,19 @@ void UWindowsClient::Init( UEngine* InEngine )
 	Property.diph.dwObj			= 0;
 	Property.diph.dwHow			= DIPH_DEVICE;
 	Property.dwData				= 1023;	// buffer size
-	verify( SUCCEEDED( DirectInput8Mouse->SetProperty(DIPROP_BUFFERSIZE,&Property.diph) ) );
+	if ( SUCCEEDED( DirectInputResult ) )
+	{
+		DirectInputResult = DirectInput8Mouse->SetProperty(DIPROP_BUFFERSIZE,&Property.diph);
+	}
  	Property.dwData				= DIPROPAXISMODE_REL;
-	verify( SUCCEEDED( DirectInput8Mouse->SetProperty(DIPROP_AXISMODE,&Property.diph) ) );
+	if ( SUCCEEDED( DirectInputResult ) )
+	{
+		DirectInputResult = DirectInput8Mouse->SetProperty(DIPROP_AXISMODE,&Property.diph);
+	}
+	if ( FAILED( DirectInputResult ) )
+	{
+		warnf( NAME_Warning, TEXT("DISHONORED(bringup): DirectInput mouse initialization failed (0x%08X)"), (DWORD)DirectInputResult );
+	}
 
 	// Pre-create 4 joysticks for XInput controllers.
 	for ( INT JoystickIndex=0; JoystickIndex < 4; ++JoystickIndex )
@@ -434,7 +452,10 @@ void UWindowsClient::Init( UEngine* InEngine )
 		JoystickInfo->bIsConnected = TRUE;
 	}
 
-	DirectInput8->EnumDevices( DI8DEVCLASS_GAMECTRL, EnumJoystickChangesCallback, NULL, DIEDFL_ATTACHEDONLY );
+	if ( DirectInput8 )
+	{
+		DirectInput8->EnumDevices( DI8DEVCLASS_GAMECTRL, EnumJoystickChangesCallback, NULL, DIEDFL_ATTACHEDONLY );
+	}
 
 	// Check if we launched from inside a Remote Desktop session.
 	bRemoteDesktopSessionActive = GetSystemMetrics(SM_REMOTESESSION) != 0;

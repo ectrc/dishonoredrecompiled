@@ -9,11 +9,17 @@
 // Forward declarations.
 class FShaderType;
 
-/** The minimum package version which stores valid compiled shaders.  This can be used to force a recompile of all shaders. */
-#define VER_MIN_SHADER	VER_INVALIDATE_SHADERCACHE5
+/**
+ * The minimum package version which stores valid compiled shaders.  This can be used to force a recompile of all shaders.
+ * DISHONORED(retail): every retail FShaderType is constructed with MinPackageVersion 786 and MinLicenseePackageVersion 1
+ * (2013 rva 0xb6fac0 FOneColorVertexShader, 0xb722a0 FBinkVertexShader, 0xb7f2c0 FSimpleElementPixelShader: push 312h /
+ * push 1; the per-type versions of the retail types are all older). The reference's VER_INVALIDATE_SHADERCACHE5 (836) is
+ * newer than the cooked caches (package version 801) and rejected every cached shader.
+ */
+#define VER_MIN_SHADER	786
 
 /** Same as VER_MIN_SHADER, but for the licensee package version. */
-#define LICENSEE_VER_MIN_SHADER	0
+#define LICENSEE_VER_MIN_SHADER	1
 
 /** 
 	On Playstation 3 we have two different options how to compress shaders.

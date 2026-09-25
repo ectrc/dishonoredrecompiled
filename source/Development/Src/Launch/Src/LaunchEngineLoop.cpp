@@ -479,7 +479,7 @@ INT			GEditorIcon	= IDICON_DemoEditor;
 #endif
 
 #if USE_BINK_CODEC
-#include "../Bink/Src/FullScreenMovieBink.h"
+#include "../Bink/Src/DisFullScreenMovieBink.h"
 #endif
 
 /** global for full screen movie player */
@@ -505,7 +505,8 @@ void appInitFullScreenMoviePlayer()
 		GConfig->GetBool(TEXT("FullScreenMovie"), TEXT("bForceNoMovies"), bForceNoMovies, GEngineIni);
 	}
 	// handle disabling of movies
-	if( appStrfind(GCmdLine, TEXT("nomovie")) != NULL || GIsEditor || !GIsGame || bForceNoMovies || ParseParam( appCmdLine(), TEXT("es2") )|| ParseParam( appCmdLine(), TEXT("simmobile") ) )
+	// DISHONORED(retail): 2013 rva 0x5dd370 (2012 rva 0x625020): nomovie / editor / !game / [FullScreenMovie] bForceNoMovies only
+	if( appStrfind(GCmdLine, TEXT("nomovie")) != NULL || GIsEditor || !GIsGame || bForceNoMovies )
 	{
 		GFullScreenMovie = FFullScreenMovieFallback::StaticInitialize(bUseSound);
 	}
@@ -513,7 +514,8 @@ void appInitFullScreenMoviePlayer()
 #endif
 	{
 #if USE_BINK_CODEC
-		GFullScreenMovie = FFullScreenMovieBink::StaticInitialize(bUseSound);
+		// DISHONORED(retail): 2013 rva 0x5dd370: Arkane's player (FDisFullScreenMovieBink::StaticInitialize, 2013 rva 0x53d470)
+		GFullScreenMovie = FDisFullScreenMovieBink::StaticInitialize(bUseSound);
 	#if XBOX
 		GFullScreenMovieViewport = new FXenonViewport(NULL,NULL,TEXT("Movie"),GScreenWidth,GScreenHeight,TRUE);	
 	#elif PS3
@@ -2119,30 +2121,12 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 
 	bHasEditorToken = Token == TEXT("EDITOR");
 
-	// set the seek free loading flag if it's given if we are running a commandlet or not
-#if SHIPPING_PC_GAME && !UDK
-	// shipping PC game implies seekfreeloading for non-commandlets/editor
+	// DISHONORED(port): 2013 rva 0x5e1910 (FEngineLoop::PreInit, 2012 rva 0x629460): every build seek-free unless the EDITOR
+	// token is given (no NOSEEKFREELOADING, no Content folder probe); PC-console mode (CookedPCConsole paths,
+	// PLATFORM_WindowsConsole) is on unless -SEEKFREELOADING alone asks for plain PC seek-free; -SEEKFREELOADINGPCCONSOLE stays accepted
 	GUseSeekFreeLoading = !bHasEditorToken;
-
-	if (ParseParam(CmdLine, TEXT("NOSEEKFREELOADING")))
-	{
-		GUseSeekFreeLoading = FALSE;
-	}
-
-#else
-	GUseSeekFreeLoading = ParseParam(CmdLine, TEXT("SEEKFREELOADING")) && !bHasEditorToken;
-	// If there is no game content folder, presume we're running cooked
-	FString ContentFolder = appGameDir() + TEXT( "Content" );
-	if( !appDirectoryExists( *ContentFolder ) )
-	{
-		GUseSeekFreeLoading = TRUE;
-	}
-#endif
-
-	// PC Server mode is "lean and mean", does not support editor, and only runs with cooked data
 	GIsSeekFreePCServer = ParseParam(CmdLine, TEXT("SEEKFREELOADINGSERVER")) && !bHasEditorToken;
-	// PC console mode does not support editor and only runs with cooked data
-	GIsSeekFreePCConsole = ParseParam(CmdLine, TEXT("SEEKFREELOADINGPCCONSOLE")) && !bHasEditorToken;
+	GIsSeekFreePCConsole = !bHasEditorToken && (ParseParam(CmdLine, TEXT("SEEKFREELOADINGPCCONSOLE")) || !ParseParam(CmdLine, TEXT("SEEKFREELOADING")));
 	GUseSeekFreeLoading |= (GIsSeekFreePCServer | GIsSeekFreePCConsole);
 
 	if( Token == TEXT("MAKE") || Token == TEXT("MAKECOMMANDLET") )
@@ -3755,7 +3739,11 @@ INT FEngineLoop::Init()
 	// let the game script code run any special code for initial bootup (this is a one time call ever)
 	if (GWorld != NULL && GWorld->GetGameInfo())
 	{
-		GWorld->GetGameInfo()->eventOnEngineHasLoaded();
+		// DISHONORED(retail): 2013 has no OnEngineHasLoaded event (agents X/Z); the reference call stays for game classes that define it
+		if( GWorld->GetGameInfo()->FindFunction( FName(TEXT("OnEngineHasLoaded"), FNAME_Find) ) )
+		{
+			GWorld->GetGameInfo()->eventOnEngineHasLoaded();
+		}
 	}
 
 #if (IPHONE || ANDROID) && WITH_MOBILE_RHI
@@ -4105,7 +4093,11 @@ void FEngineLoop::Tick()
 	{
 		for (INT PlayerIndex = 0; PlayerIndex < GEngine->GamePlayers.Num(); PlayerIndex++)
 		{
-			GEngine->GamePlayers(PlayerIndex)->Actor->eventOnEngineInitialTick();
+			// DISHONORED(retail): no OnEngineInitialTick event in 2013; guard the reference call
+			if( GEngine->GamePlayers(PlayerIndex)->Actor && GEngine->GamePlayers(PlayerIndex)->Actor->FindFunction( FName(TEXT("OnEngineInitialTick"), FNAME_Find) ) )
+			{
+				GEngine->GamePlayers(PlayerIndex)->Actor->eventOnEngineInitialTick();
+			}
 		}
 	}
 

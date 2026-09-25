@@ -247,9 +247,8 @@ FFullScreenMovieBink::FFullScreenMovieBink(UBOOL bUseSound)
 	// by default, we are "done" playing a movie
 	MovieFinishEvent->Trigger();
 
-// jmarshall
-	StartupMovieNames.AddUniqueItem(TEXT("DukeIntro"));
-// jmarshall end
+// DISHONORED(retail): the reference tree forced a "DukeIntro" first startup movie here (a "jmarshall" leftover); the retail
+	// constructor (2012 rva 0x1009b0 / 2013 rva 0x100ad0) takes the startup movies from [FullScreenMovie] StartupMovies only
 
 	// read movie entries from config file
 	FConfigSection* MovieIni = GConfig->GetSectionPrivate( TEXT("FullScreenMovie"), FALSE, TRUE, GEngineIni );
@@ -380,6 +379,17 @@ void FFullScreenMovieBink::Tick(FLOAT DeltaTime)
 	{
 		debugf(NAME_DevMovie, TEXT("!!! BinkTick took too long: %.3f. Skipped %d frames."), FLOAT(TotalBinkTime), GBinkFrameSkipCount);
 	}
+
+	// DISHONORED(port): 2012 rva 0xfd0a0 / 2013 rva 0xfde70 end with the Arkane hook (vtable slot 22)
+	OnBinkTick(DeltaTime);
+}
+
+/**
+ * DISHONORED(port): 2012 rva 0xe0160 / 2013 rva 0xe1fa0: BinkSetSoundSystem(BinkOpenDirectSound, 0)
+ */
+void FFullScreenMovieBink::InitAudio()
+{
+	BinkSetSoundSystem(BinkOpenDirectSound, 0);
 }
 
 /**
@@ -2426,7 +2436,7 @@ FBinkMovieRenderClient::FInternalBinkShaders FBinkMovieRenderClient::BinkShaders
 /** 
  * Constructor
  */
-FBinkMovieRenderClient::FBinkMovieRenderClient(FViewportClient* InViewportClient)
+FBinkMovieRenderClient::FBinkMovieRenderClient(FFullScreenMovieBink* InViewportClient)
 :	bInitializedMovieRendering(FALSE)
 ,	Viewport(NULL)
 ,	ViewportClient(InViewportClient)
@@ -2814,6 +2824,9 @@ void FBinkMovieRenderClient::RenderFrame(BINK* Bink, const TCHAR* Subtitle, cons
 				DrawStringOutlinedCenteredZ( &Canvas, SafeZone.Min.X + ( SafeZone.Width() / 2 ), SafeZone.Min.Y + ( SafeZone.Height() / 2 ) - 24, 
 					SUBTITLE_SCREEN_DEPTH_FOR_3D, InPauseText, GEngine->SubtitleFont, FLinearColor::White, GEngine->IsStereoscopic3D(), BackgroundBoxOffset );
 			}
+
+			// DISHONORED(port): 2012 rva 0xf82a0 / 2013 rva 0xfa030: the movie player's overlay hook draws before the flush
+			ViewportClient->OnBinkRenderFrame(Viewport, &Canvas);
 
 			// A forced flush is now required
 			Canvas.Flush();

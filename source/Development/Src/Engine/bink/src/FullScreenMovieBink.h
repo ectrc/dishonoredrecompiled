@@ -231,6 +231,17 @@ public:
 	 */
 	virtual void GameThreadAddOverlay(UFont* Font, const FString& Text, FLOAT X, FLOAT Y, FLOAT ScaleX, FLOAT ScaleY, UBOOL bIsCentered, UBOOL bIsWrapped, FLOAT WrapWidth );
 
+	// DISHONORED(port): 2012 rva 0xe0160 / 2013 rva 0xe1fa0 (fullscreenmoviebink.inl:323), the slot-6 override
+	virtual void InitAudio();
+
+	// DISHONORED(port): Arkane hooks, retail FFullScreenMovieBink vtable slots 22/23 (empty bodies; FDisFullScreenMovieBink
+	// forwards them to its overlay manager). Tick calls OnBinkTick last (2012 rva 0xfd0a0 / 2013 rva 0xfde70), RenderFrame
+	// calls OnBinkRenderFrame before the canvas flush (2012 rva 0xf82a0 / 2013 rva 0xfa030).
+	virtual void OnBinkTick(FLOAT DeltaTime)
+	{}
+	virtual void OnBinkRenderFrame(FViewport* Viewport, FCanvas* Canvas)
+	{}
+
 protected:
 
 	/** 
@@ -238,7 +249,9 @@ protected:
 	 */
 	FFullScreenMovieBink(UBOOL bUseSound=TRUE);
 
-private:
+	// DISHONORED(port): protected, not private: FDisFullScreenMovieBink (disfullscreenmoviebink.cpp) reads MovieFinishEvent,
+	// GameIOSuspended and bIsMovieSkippable (2012 rvas 0x577170, 0x575130, 0x574510)
+protected:
 
 	/**
 	 * If necessary endian swaps the memory representing the Bink movie
@@ -575,7 +588,8 @@ public:
 	/** 
 	 * Constructor
 	 */
-	FBinkMovieRenderClient(FViewportClient* InViewportClient);
+	// DISHONORED(port): retail takes the movie player (2012 rva 0xe0460 FBinkMovieRenderClient(class FFullScreenMovieBink *))
+	FBinkMovieRenderClient(FFullScreenMovieBink* InViewportClient);
 
 	/** 
 	 * Destructor
@@ -706,7 +720,7 @@ private:
 	/** TRUE if we have a widescreen display */
 	UBOOL bIsWideScreen;
 	/** Viewport client for input/event handling */
-	FViewportClient* ViewportClient;
+	FFullScreenMovieBink* ViewportClient;
 
 	/** 
 	 * Creates the internal bink frame buffer textures

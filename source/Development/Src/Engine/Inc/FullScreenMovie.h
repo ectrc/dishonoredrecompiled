@@ -86,6 +86,16 @@ public:
 
 	// FFullScreenMovieSupport interface
 
+	// DISHONORED(port): retail FFullScreenMovieSupport vtable (2012 vtables.csv, FFullScreenMovieSupport{for FTickableObject}):
+	// slot 6 an empty virtual (FFullScreenMovieBink::InitAudio overrides it, 2012 rva 0xe0160 / 2013 rva 0xe1fa0), slot 7 an empty
+	// GameThreadPlayLoadingMovieAndIntro (FDisFullScreenMovieBink overrides it, 2012 rva 0x5752c0 / 2013 rva 0x533790), then the
+	// reference slots from GameThreadPlayMovie (8) to GameThreadAddOverlay (21).
+	virtual void InitAudio()
+	{}
+
+	virtual void GameThreadPlayLoadingMovieAndIntro(EMovieMode InMovieMode, const TCHAR* MovieFilename, const TCHAR* IntroFilename, INT StartFrame=0, INT InStartOfRenderingMovieFrame=-1, INT InEndOfRenderingMovieFrame=-1)
+	{}
+
 	/**
 	 * Kick off a movie play from the game thread
 	 *

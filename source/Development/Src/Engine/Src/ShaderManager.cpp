@@ -785,6 +785,7 @@ void FShader::AddAlias(const FShader* Other)
 }
 
 
+// DISHONORED(port): 2013 rva 0x1603b0 (2012 rva 0x1695c0), identical field order (Target, Code, ParameterMapCRC, Id, Type, Hash, NumInstructions)
 UBOOL FShader::Serialize(FArchive& Ar)
 {
 	BYTE TargetPlatform = Target.Platform;
@@ -860,6 +861,10 @@ UBOOL FShader::Serialize(FArchive& Ar)
 	return FALSE;
 }
 
+/** DISHONORED(bringup): shader objects created / rejected by the RHI, reported after the device's InitRHI pass */
+INT GDishonoredShadersCreated = 0;
+INT GDishonoredShadersFailed = 0;
+
 void FShader::InitRHI()
 {
 	// we can't have this called on the wrong platform's shaders
@@ -919,6 +924,19 @@ void FShader::InitRHI()
 	else if(Target.Frequency == SF_Pixel)
 	{
 		PixelShader = RHICreatePixelShader(Key.Code);
+	}
+	if( Target.Frequency == SF_Vertex || Target.Frequency == SF_Pixel )
+	{
+		const UBOOL bCreated = Target.Frequency == SF_Vertex ? IsValidRef(VertexShader) : IsValidRef(PixelShader);
+		if( bCreated )
+		{
+			GDishonoredShadersCreated++;
+		}
+		else
+		{
+			GDishonoredShadersFailed++;
+			warnf(TEXT("DISHONORED(bringup): shader %s (%s, %i bytes) has no RHI object"), Type->GetName(), Target.Frequency == SF_Vertex ? TEXT("vs") : TEXT("ps"), Key.Code.Num());
+		}
 	}
 #if WITH_D3D11_TESSELLATION
 	else if(Target.Frequency == SF_Hull)

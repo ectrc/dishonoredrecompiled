@@ -624,6 +624,11 @@ void FD3D9DynamicRHI::UpdateD3DDeviceFromViewports()
 
 				DWORD CreationFlags = 
 					D3DCREATE_FPU_PRESERVE 
+					// DISHONORED(retail): 2013 rva 0x5bc1e0 (2012 rva 0x603760) creates the device with
+					// (DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT ? 0x40 : 0x20) | 0x112 = FPU_PRESERVE | PUREDEVICE |
+					// DISABLE_DRIVER_MANAGEMENT | HARDWARE/SOFTWARE_VERTEXPROCESSING. The Get* calls D3D9Drv makes (GetBackBuffer,
+					// GetRenderTargetData, GetCreationParameters, GetAvailableTextureMem) all work on a pure device.
+					| D3DCREATE_PUREDEVICE
 					// use software vertex shader if no HW T&L support
 					| (bSupportsHardwareTnL ? D3DCREATE_HARDWARE_VERTEXPROCESSING : D3DCREATE_SOFTWARE_VERTEXPROCESSING)
 					// Games for Windows Live requires the multithreaded flag or it will BSOD
@@ -794,6 +799,12 @@ void FD3D9DynamicRHI::UpdateD3DDeviceFromViewports()
 				for(TLinkedList<FRenderResource*>::TIterator ResourceIt(FRenderResource::GetResourceList());ResourceIt;ResourceIt.Next())
 				{
 					ResourceIt->InitRHI();
+				}
+				{
+					// DISHONORED(bringup): the first real test of the cooked global shader bytecode (FShader::InitRHI counts)
+					extern INT GDishonoredShadersCreated;
+					extern INT GDishonoredShadersFailed;
+					debugf(TEXT("DISHONORED(bringup): device InitRHI pass: %i shader objects created, %i rejected"), GDishonoredShadersCreated, GDishonoredShadersFailed);
 				}
 
 				// Store the device/vendor ID

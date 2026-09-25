@@ -121,6 +121,67 @@ void FD3D9DynamicRHI::UnsetVSTextures()
 	}
 }
 
+/**
+ * DISHONORED(bringup): first-frame evidence for the wave-3 bring-up (not in retail). -firstframe=<file.bmp> writes the back
+ * buffer as a 32-bit BMP just before the first Present, -dumpframes=<prefix> a few later ones; the first successful Present
+ * logs "presented frame".
+ */
+static void DishonoredDumpBackBuffer(IDirect3DDevice9* Device, IDirect3DSurface9* Surface, UINT SizeX, UINT SizeY, const FString& Path)
+{
+	IDirect3DSurface9* CurrentTarget = NULL;
+	Device->GetRenderTarget(0, &CurrentTarget);
+	debugf(TEXT("DISHONORED(bringup): -firstframe: back buffer %p, render target 0 %p"), Surface, CurrentTarget);
+	if( CurrentTarget )
+	{
+		CurrentTarget->Release();
+	}
+	D3DSURFACE_DESC Desc;
+	if( FAILED(Surface->GetDesc(&Desc)) )
+	{
+		return;
+	}
+	TRefCountPtr<IDirect3DSurface9> SysMem;
+	HRESULT Result = Device->CreateOffscreenPlainSurface(Desc.Width, Desc.Height, Desc.Format, D3DPOOL_SYSTEMMEM, SysMem.GetInitReference(), NULL);
+	if( SUCCEEDED(Result) )
+	{
+		Result = Device->GetRenderTargetData(Surface, SysMem);
+	}
+	D3DLOCKED_RECT Locked;
+	if( SUCCEEDED(Result) )
+	{
+		Result = SysMem->LockRect(&Locked, NULL, D3DLOCK_READONLY);
+	}
+	if( FAILED(Result) )
+	{
+		warnf(TEXT("DISHONORED(bringup): -firstframe: reading the back buffer failed (0x%08x)"), (DWORD)Result);
+		return;
+	}
+	const UINT Width = Min<UINT>(SizeX, Desc.Width);
+	const UINT Height = Min<UINT>(SizeY, Desc.Height);
+	TArray<BYTE> File;
+	const DWORD PixelBytes = Width * Height * 4;
+	const DWORD HeaderBytes = 14 + 40;
+	File.AddZeroed(HeaderBytes + PixelBytes);
+	BYTE* Out = File.GetTypedData();
+	Out[0] = 'B';
+	Out[1] = 'M';
+	*(DWORD*)(Out + 2) = HeaderBytes + PixelBytes;
+	*(DWORD*)(Out + 10) = HeaderBytes;
+	*(DWORD*)(Out + 14) = 40;
+	*(INT*)(Out + 18) = Width;
+	*(INT*)(Out + 22) = -(INT)Height;
+	*(WORD*)(Out + 26) = 1;
+	*(WORD*)(Out + 28) = 32;
+	*(DWORD*)(Out + 34) = PixelBytes;
+	for( UINT Y = 0; Y < Height; Y++ )
+	{
+		appMemcpy(Out + HeaderBytes + Y * Width * 4, (BYTE*)Locked.pBits + Y * Locked.Pitch, Width * 4);
+	}
+	SysMem->UnlockRect();
+	const UBOOL bSaved = appSaveArrayToFile(File, *Path);
+	warnf(TEXT("DISHONORED(bringup): back buffer dump %ux%u (format %u) %s %s"), Width, Height, (UINT)Desc.Format, bSaved ? TEXT("written to") : TEXT("could not be written to"), *Path);
+}
+
 void FD3D9DynamicRHI::EndDrawingViewport(FViewportRHIParamRef ViewportRHI,UBOOL bPresent,UBOOL bLockToVsync)
 {
 	DYNAMIC_CAST_D3D9RESOURCE(Viewport,Viewport);
@@ -203,11 +264,29 @@ void FD3D9DynamicRHI::EndDrawingViewport(FViewportRHIParamRef ViewportRHI,UBOOL 
 
 	if(bPresent)
 	{
+		static UBOOL bDishonoredFirstPresent = TRUE;
+		static INT DishonoredPresentIndex = 0;
+		DishonoredPresentIndex++;
+		FString DishonoredDumpPath;
+		if( bDishonoredFirstPresent && Parse(appCmdLine(), TEXT("firstframe="), DishonoredDumpPath) )
+		{
+			DishonoredDumpBackBuffer(Direct3DDevice, *BackBuffer, Viewport->GetSizeX(), Viewport->GetSizeY(), DishonoredDumpPath);
+		}
+		// -dumpframes=<prefix>: the back buffer of presents 1, 10, 30, 60, 120, 240, 480, 960 as <prefix>_<n>.bmp (movie evidence)
+		if( (DishonoredPresentIndex == 1 || DishonoredPresentIndex == 10 || DishonoredPresentIndex == 30 || DishonoredPresentIndex == 60 ||
+			DishonoredPresentIndex == 120 || DishonoredPresentIndex == 240 || DishonoredPresentIndex == 480 || DishonoredPresentIndex == 960) &&
+			Parse(appCmdLine(), TEXT("dumpframes="), DishonoredDumpPath) )
+		{
+			DishonoredDumpBackBuffer(Direct3DDevice, *BackBuffer, Viewport->GetSizeX(), Viewport->GetSizeY(), FString::Printf(TEXT("%s_%03i.bmp"), *DishonoredDumpPath, DishonoredPresentIndex));
+		}
+
 		// Present the back buffer to the viewport window.
 		HRESULT Result = S_OK;
+		UBOOL bDishonoredPresented = FALSE;
 		if(Viewport->IsFullscreen())
 		{
 			Result = Direct3DDevice->Present(NULL,NULL,NULL,NULL);
+			bDishonoredPresented = TRUE;
 		}
 		else
 		{
@@ -223,6 +302,7 @@ void FD3D9DynamicRHI::EndDrawingViewport(FViewportRHIParamRef ViewportRHI,UBOOL 
 				if(DestRect.right > 0 && DestRect.bottom > 0)
 				{
 					Result = Direct3DDevice->Present(&SourceRect,NULL,(HWND)Viewport->GetWindowHandle(),NULL);
+					bDishonoredPresented = TRUE;
 				}
 			}
 		}
@@ -239,6 +319,11 @@ void FD3D9DynamicRHI::EndDrawingViewport(FViewportRHIParamRef ViewportRHI,UBOOL 
 			GApexRender->SetRequireRewriteBuffers(FALSE);
 #endif
 			VERIFYD3D9RESULT(Result);
+			if( bDishonoredFirstPresent && bDishonoredPresented && SUCCEEDED(Result) )
+			{
+				bDishonoredFirstPresent = FALSE;
+				debugf(TEXT("DISHONORED(bringup): presented frame (%ux%u, %s)"), Viewport->GetSizeX(), Viewport->GetSizeY(), Viewport->IsFullscreen() ? TEXT("fullscreen") : TEXT("windowed"));
+			}
 		}
 	}
 

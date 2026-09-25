@@ -82,10 +82,12 @@ public:
 	}
 
 	// FShader INTerface.
+	// DISHONORED(retail): 2012 rva 0x1d43b0 / 2013 rva 0x1be510: tex3 then FShader::Serialize, not the parent's Serialize (the
+	// cooked FBinkYCrCbAToRGBAPixelShader record carries tex3 and the FShader data only)
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		Ar << tex3Parameter;
-		return FBinkYCrCbToRGBNoPixelAlphaPixelShader::Serialize(Ar);
+		return FShader::Serialize(Ar);
 	}
 	static UBOOL ShouldCache(EShaderPlatform Platform)
 	{

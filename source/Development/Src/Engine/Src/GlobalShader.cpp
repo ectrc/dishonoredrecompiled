@@ -142,11 +142,32 @@ void SerializeGlobalShaders(EShaderPlatform Platform,FArchive& Ar)
 		}
 		else
 		{
+			// DISHONORED(bringup): name what the cooked cache has and this build cannot load (ShaderCache.cpp)
+			extern UBOOL GDishonoredReportShaderLoad;
+			GDishonoredReportShaderLoad = TRUE;
 			GlobalShaderCache->Load(GlobalShaderArchive);
+			GDishonoredReportShaderLoad = FALSE;
 		}
 
 		// Serialize the global shader map.
 		GlobalShaderMap.Serialize(GlobalShaderArchive);
+
+		if(Ar.IsLoading())
+		{
+			// DISHONORED(bringup): the other half of the inventory: global shader types this build declares (reference-only
+			// types retail lacks, or Arkane types whose cooked record did not load) that the cooked map has no shader for
+			INT NumMissing = 0;
+			for(TLinkedList<FShaderType*>::TIterator ShaderTypeIt(FShaderType::GetTypeList());ShaderTypeIt;ShaderTypeIt.Next())
+			{
+				FGlobalShaderType* GlobalShaderType = ShaderTypeIt->GetGlobalShaderType();
+				if(GlobalShaderType && GlobalShaderType->ShouldCache(Platform) && !GlobalShaderMap.HasShader(GlobalShaderType))
+				{
+					NumMissing++;
+					warnf(TEXT("DISHONORED(bringup): global shader type %s has no cooked shader"), GlobalShaderType->GetName());
+				}
+			}
+			debugf(TEXT("DISHONORED(bringup): global shader map: %i types without a cooked shader"), NumMissing);
+		}
 	}
 }
 

@@ -4604,6 +4604,15 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 {
     FMemMark MemStackMark(GRenderingThreadMemStack);
 
+    if( GUsingNullRHI )
+    {
+        // DISHONORED(bringup): the headless smoke runs with -nullrhi and the cooked global shader cache lacks the
+        // shader types the scene renderer asserts on (FDownsampleSceneDepthPixelShader ...); rendering is the
+        // renderer wave's job (agent Y, d3d9). Skip the scene render, keep the game thread going.
+        delete SceneRenderer;
+        return;
+    }
+
     {
 		SCOPE_CYCLE_COUNTER(STAT_TotalSceneRenderingTime);
 

@@ -9,7 +9,13 @@ FVertexShaderRHIRef FD3D9DynamicRHI::CreateVertexShader(const TArray<BYTE>& Code
 {
 	check(Code.Num());
 	TRefCountPtr<FD3D9VertexShader> VertexShader;
-	VERIFYD3D9RESULT(Direct3DDevice->CreateVertexShader((DWORD*)&Code(0),(IDirect3DVertexShader9**)VertexShader.GetInitReference()));
+	// DISHONORED(bringup): report a cooked vertex shader the device rejects (FShader::InitRHI names the type) instead of aborting
+	const HRESULT Result = Direct3DDevice->CreateVertexShader((DWORD*)&Code(0),(IDirect3DVertexShader9**)VertexShader.GetInitReference());
+	if( FAILED(Result) )
+	{
+		warnf(TEXT("DISHONORED(bringup): CreateVertexShader failed 0x%08x (%i bytes)"), (DWORD)Result, Code.Num());
+		return NULL;
+	}
 	return VertexShader.GetReference();
 }
 
@@ -17,7 +23,13 @@ FPixelShaderRHIRef FD3D9DynamicRHI::CreatePixelShader(const TArray<BYTE>& Code)
 {
 	check(Code.Num());
 	TRefCountPtr<FD3D9PixelShader> PixelShader = NULL;
-	VERIFYD3D9RESULT(Direct3DDevice->CreatePixelShader((DWORD*)&Code(0),(IDirect3DPixelShader9**)PixelShader.GetInitReference()));
+	// DISHONORED(bringup): see CreateVertexShader
+	const HRESULT Result = Direct3DDevice->CreatePixelShader((DWORD*)&Code(0),(IDirect3DPixelShader9**)PixelShader.GetInitReference());
+	if( FAILED(Result) )
+	{
+		warnf(TEXT("DISHONORED(bringup): CreatePixelShader failed 0x%08x (%i bytes)"), (DWORD)Result, Code.Num());
+		return NULL;
+	}
 	return PixelShader.GetReference();
 }
 

@@ -78,7 +78,9 @@ void appInitShowFlags()
 
 	// The following ones have been split up into multiple parts (Scene.cpp compile time speedup on some compiler ~1h -> 17sec), make sure that the lines don't get longer than this
 
-	EShowFlags SHOW_DefaultGame_Part1 = SHOW_Game | SHOW_StaticMeshes | SHOW_InstancedStaticMeshes | SHOW_SkeletalMeshes | SHOW_Terrain | SHOW_SpeedTrees | SHOW_BSPTriangles | SHOW_BSP | SHOW_Fog;
+	// DISHONORED(retail): + SHOW_Selection | SHOW_Portals, so SHOW_ViewMode_Lit | (SHOW_DefaultGame & ~SHOW_ViewMode_Mask) is the retail
+	// UGameViewportClient ctor constant 0x04062BD2_17403362 (2013 rva 0x2c53c0; agentV.md)
+	EShowFlags SHOW_DefaultGame_Part1 = SHOW_Game | SHOW_StaticMeshes | SHOW_InstancedStaticMeshes | SHOW_SkeletalMeshes | SHOW_Terrain | SHOW_SpeedTrees | SHOW_BSPTriangles | SHOW_BSP | SHOW_Fog | SHOW_Selection | SHOW_Portals;
 	EShowFlags SHOW_DefaultGame_Part2 = SHOW_Particles | SHOW_Decals | SHOW_DynamicShadows | SHOW_SceneCaptureUpdates | SHOW_Sprites | SHOW_PostProcess | SHOW_ImageGrain;
 	EShowFlags SHOW_DefaultGame_Part3 = SHOW_ViewMode_Lit | SHOW_UnlitTranslucency | SHOW_LensFlares | SHOW_LOD | SHOW_TranslucencyDoF | SHOW_MotionBlur | SHOW_CameraInterpolation;
 	EShowFlags SHOW_DefaultGame_Part4 = SHOW_DepthOfField | SHOW_ImageReflections | SHOW_SubsurfaceScattering | SHOW_LightFunctions | SHOW_Tessellation | SHOW_SSAO | SHOW_TemporalAA;
@@ -757,6 +759,7 @@ FSceneViewFamily::FSceneViewFamily(
 	UBOOL InbWriteOpacityToAlpha,
 	UBOOL InbScreenCaptureRenderTarget)
 	:
+	CurrentBendTime(0.0f),  // DISHONORED(layout): retail passes it as the first ctor argument (2012 rva 0x2126d0); the reference call sites do not
 	RenderTarget(InRenderTarget),
 	Scene(InScene),
 	ShowFlags(InShowFlags),
@@ -769,9 +772,11 @@ FSceneViewFamily::FSceneViewFamily(
 	bClearScene(InbClearScene),
 	bResolveScene(InbResolveScene),
 	bWriteOpacityToAlpha(InbWriteOpacityToAlpha),
-	bScreenCaptureRenderTarget(InbScreenCaptureRenderTarget),
+	bSkipForegroundRendering(FALSE),
+	bIsRenderingReflectionScene(FALSE),
 	GammaCorrection(InGammaCorrection)
 {
+	bScreenCaptureRenderTarget = InbScreenCaptureRenderTarget;
 #if !FINAL_RELEASE
 	static IConsoleVariable* CVar = GConsoleManager->FindConsoleVariable(TEXT("RenderTimeFrozen")); 
 	INT Value = CVar->GetInt();

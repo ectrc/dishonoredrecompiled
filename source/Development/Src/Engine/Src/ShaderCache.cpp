@@ -1225,6 +1225,55 @@ public:
 		}
 	}
 
+	/**
+	 * DISHONORED(bringup): names and object references do not go through Serialize (FArchiveProxy forwards them to the inner
+	 * archive, and the cooked history has no entry for them). After a mismatch the stream position is wrong, so reading one
+	 * from the linker would fetch a garbage index ("Bad name index"); leave them empty instead, the record is skipped anyway.
+	 */
+	virtual FArchive& operator<<( class FName& N )
+	{
+		if (bEnableAutomaticVersioning && (bMismatch || !PeekIndexIsValid(TRUE)))
+		{
+			bMismatch = TRUE;
+			N = NAME_None;
+			return *this;
+		}
+		return FArchiveProxy::operator<<(N);
+	}
+	virtual FArchive& operator<<( class UObject*& Res )
+	{
+		if (bEnableAutomaticVersioning && (bMismatch || !PeekIndexIsValid(FALSE)))
+		{
+			bMismatch = TRUE;
+			Res = NULL;
+			return *this;
+		}
+		return FArchiveProxy::operator<<(Res);
+	}
+
+	/**
+	 * A layout that differs before its first sized serialization shows up only here: the linker stores a name as a name-map
+	 * index and an object as an import/export index, so an index outside the linker's tables means the record's layout is
+	 * not ours (the record is then skipped like any other mismatch).
+	 */
+	UBOOL PeekIndexIsValid(UBOOL bName)
+	{
+		ULinker* Linker = InnerArchive.GetLinker();
+		if (!Linker || !InnerArchive.IsLoading())
+		{
+			return TRUE;
+		}
+		const INT Pos = InnerArchive.Tell();
+		INT Index = 0;
+		InnerArchive.Serialize(&Index, sizeof(Index));
+		InnerArchive.Seek(Pos);
+		if (bName)
+		{
+			return Linker->NameMap.IsValidIndex(Index);
+		}
+		return Index == 0 || (Index > 0 && Linker->ExportMap.IsValidIndex(Index - 1)) || (Index < 0 && Linker->ImportMap.IsValidIndex(-Index - 1));
+	}
+
 	UBOOL HadSerializationMismatch() const
 	{
 		// Report a mismatch if one was detected during serialization,
@@ -1247,6 +1296,25 @@ private:
  *	@param	InShaders				The shaders to serialize.
  *	@param	Ar						The archive to serialize them to.
  */
+/**
+ * DISHONORED(bringup): TRUE while SerializeGlobalShaders loads GlobalShaderCache-PC-D3D-SM3.bin: every cached global shader
+ * that does not load (type not declared here, or a parameter layout that differs from the cooked one) is named in the log.
+ * Retail (no shader compiler, cooked caches only) has no such report; this is the renderer.md inventory at runtime.
+ */
+UBOOL GDishonoredReportShaderLoad = FALSE;
+
+/** DISHONORED(bringup): material shader caches report each undeclared / mismatching type once (GDishonoredReportShaderLoad) */
+static UBOOL DishonoredFirstReport(const FString& Key)
+{
+	static TSet<FString> Reported;
+	if (Reported.Contains(Key))
+	{
+		return FALSE;
+	}
+	Reported.Add(Key);
+	return TRUE;
+}
+
 void SerializeShaders(const TMap<FGuid,FShader*>& InShaders, FArchive& Ar)
 {
 	// Whether to generate or use automatic shader versioning data
@@ -1325,9 +1393,14 @@ void SerializeShaders(const TMap<FGuid,FShader*>& InShaders, FArchive& Ar)
 
 		Ar << NumShaders;
 
+		INT NumReportedMissingTypes = 0;
+		INT NumReportedMismatches = 0;
+
 		// Load the shaders in the cache.
 		for (INT ShaderIndex = 0; ShaderIndex < NumShaders; ShaderIndex++)
 		{
+			const INT RecordStart = Ar.Tell();
+
 			// Deserialize the shader type and shader ID.
 			FShaderType* ShaderType = NULL;
 			FGuid ShaderId;
@@ -1350,6 +1423,22 @@ void SerializeShaders(const TMap<FGuid,FShader*>& InShaders, FArchive& Ar)
 
 			if (!ShaderType)
 			{
+				{
+					const INT AfterHeader = Ar.Tell();
+					FName MissingTypeName;
+					Ar.Seek(RecordStart);
+					Ar << MissingTypeName;
+					Ar.Seek(AfterHeader);
+					NumReportedMissingTypes++;
+					if (GDishonoredReportShaderLoad)
+					{
+						warnf(TEXT("DISHONORED(bringup): global shader cache: type %s not declared (%i bytes skipped)"), *MissingTypeName.ToString(), SkipOffset - AfterHeader);
+					}
+					else if (DishonoredFirstReport(FString(TEXT("T")) + MissingTypeName.ToString()))
+					{
+						warnf(TEXT("DISHONORED(bringup): material shader cache: type %s not declared"), *MissingTypeName.ToString());
+					}
+				}
 				// If the shader type doesn't exist anymore, skip the shader.
 				Ar.Seek(SkipOffset);
 				NumLegacyShaders++;
@@ -1399,8 +1488,22 @@ void SerializeShaders(const TMap<FGuid,FShader*>& InShaders, FArchive& Ar)
 
 					if (LoadArchive.HadSerializationMismatch() || bShaderHasOutdatedParameters)
 					{
+						NumReportedMismatches++;
+						if (GDishonoredReportShaderLoad)
+						{
+							warnf(TEXT("DISHONORED(bringup): global shader cache: %s parameter layout differs from the cooked one (%i serializations cooked)"), ShaderType->GetName(), Serializations.Num());
+						}
+						else if (DishonoredFirstReport(FString(TEXT("M")) + ShaderType->GetName()))
+						{
+							warnf(TEXT("DISHONORED(bringup): material shader cache: %s parameter layout differs from the cooked one (%i serializations cooked)"), ShaderType->GetName(), Serializations.Num());
+						}
 						// Remove all references to the shader and delete it since it has outdated parameters.
-						ShaderType->DeregisterShader(Shader);
+						// DISHONORED(bringup): a cooked layout that serializes its parameters before FShader::Serialize (the Bink
+						// pixel shaders) mismatches before FShader::Serialize registers the shader; deregister only a registered one
+						if (ShaderType->FindShaderById(Shader->GetId()) == Shader)
+						{
+							ShaderType->DeregisterShader(Shader);
+						}
 						delete Shader;
 						Ar.Seek(SkipOffset);
 						NumLegacyShaders++;
@@ -1439,6 +1542,11 @@ void SerializeShaders(const TMap<FGuid,FShader*>& InShaders, FArchive& Ar)
 		if( NumShaders )
 		{
 			debugf(NAME_DevShaders,TEXT("... Loaded %u shaders (%u legacy, %u redundant)"),NumShaders,NumLegacyShaders,NumRedundantShaders);
+		}
+		if( GDishonoredReportShaderLoad )
+		{
+			debugf(TEXT("DISHONORED(bringup): global shader cache: %i shaders, %i loaded, %i undeclared types, %i parameter mismatches, %i other skips"),
+				NumShaders, NumShaders - NumLegacyShaders - NumRedundantShaders, NumReportedMissingTypes, NumReportedMismatches, NumLegacyShaders - NumReportedMissingTypes - NumReportedMismatches);
 		}
 	}
 }

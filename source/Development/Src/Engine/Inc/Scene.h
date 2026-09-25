@@ -2011,9 +2011,15 @@ private:
 /**
  * A set of views into a scene which only have different view transforms and owner actors.
  */
+// DISHONORED(layout): 2012 PDB sizeof 80: CurrentBendTime @0, Views @4, RenderTarget @16, Scene @20, ShowFlags @24 (QWORD),
+// the three times @32..40, six UBOOLs @44..64, bSkipForegroundRendering @68, bIsRenderingReflectionScene @72, GammaCorrection @76
+// (copy ctor 2012 rva 0x47fae0 copies exactly these; FSceneViewFamilyContext ctor 2012 rva 0x2126d0 / 2013 rva 0x1fc2f0 takes
+// InCurrentBendTime first). bScreenCaptureRenderTarget and bDrawBaseInfo are reference-only.
 class FSceneViewFamily
 {
 public:
+
+	FLOAT CurrentBendTime;
 
 	/** The views which make up the family. */
 	TArray<const FSceneView*> Views;
@@ -2054,15 +2060,17 @@ public:
 	/** If TRUE, then the opacity channel will be written out to the destination alpha */
 	UBOOL bWriteOpacityToAlpha;
 
-	/** If TRUE, then the renderer will be forced to write its results to the RenderTarget */
-	UBOOL bScreenCaptureRenderTarget;
+	UBOOL bSkipForegroundRendering;
+	UBOOL bIsRenderingReflectionScene;
 
 	/** Gamma correction used when rendering this family. Default is 1.0 */
 	FLOAT GammaCorrection;
 
+	// DISHONORED(layout): reference-only, storage-less shims (not in the 2012 PDB layout); porting TODO for
+	// UnPlayer.cpp:1197, SceneRendering.cpp:2862, ScenePostProcessing.cpp:59
+	DISHONORED_SHIM_STATIC UBOOL bScreenCaptureRenderTarget;
 #if !CONSOLE
-	/** Indicates whether, of not, the base attachment volume should be drawn. */
-	UBOOL bDrawBaseInfo;
+	DISHONORED_SHIM_STATIC UBOOL bDrawBaseInfo;
 #endif
 
 	/** Initialization constructor. */
