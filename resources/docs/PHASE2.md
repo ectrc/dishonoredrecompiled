@@ -21,6 +21,13 @@ Plan of record: `PLAN.md` §4 Phase 2.
 | P2.10 | Tracking and exit check | this file, `progress.md` per-function scheme, `verify_phase2.py` | done | 2026-09-25 | `verify_phase2.py --no-build` 18/18 |
 | P2.12 | (stretch) Core smoke exe | `source/Tests/CoreSmoke` | done | 2026-09-25 | 67/67: sizes, app*, FName table (hardcoded indices), TArray/FString/TMap, Core.upk FPackageFileSummary deserialized by Core code (801/30/9411, 720 names, LZO chunks) |
 
+## Caveat: 2012 vs 2013
+
+All layout work in this phase used the 2012 Shipping PDB because it is the only symbolized
+build. The project target is the **2013 retail** exe, whose structs differ in size and members
+in many places. P2.5's "0 mismatches" means "matches 2012"; PLAN.md Phase 2b re-verifies against
+the retail exe and retail cooked packages, and that is the number that counts.
+
 ## Acceptance rules
 
 - P2.1: 66,394 rows; Core `reference` share ≥ 60 %; runs in < 1 min with a warm index.

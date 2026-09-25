@@ -3,6 +3,14 @@
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `resources/docs/PHASE1.md`
 (done), `resources/docs/PHASE2.md` (in progress). Decisions and fixes: `resources/docs/porting_notes.md`.
 
+## Target
+
+**Retail 2013 build** (`Dishonored_Latest2026`, engine 9411, DLC05–07) is what we rebuild. The
+2012 symbolized build is a helping hand only: names, types, decompiles. Many structs differ in
+size and member set between 2012 and 2013; everything derived from the 2012 PDB (the current
+Core layouts, `sizes.csv`, `types.json`, the contract-type asserts) is **provisional** until
+checked against the retail exe / retail packages (PLAN.md Phase 2b).
+
 ## Where we are
 
 Phase 2 (reference import and layout convergence) is **complete** (`verify_phase2.py` 18/18, `CoreSmoke` 67/67). Engine compile (Phase 3 start) is in progress.
@@ -22,9 +30,11 @@ Phase 2 (reference import and layout convergence) is **complete** (`verify_phase
 
 ## Next (Phase 3)
 
-- Finish Engine compile against the converged Core headers (agent G), then run the Engine layout
-  probe (`gen_layout_probe.py generate Core Engine`) and converge Engine contract types (AActor,
-  UWorld, ULevel, USkeletalMesh..., see `reference_member_delta.md`).
+- Phase 2b first: recover the 2013 retail layouts (script property offsets and class sizes from
+  the 2013 cooked packages; native sizes from the 2013 exe) and re-verify the Core contract types
+  against them before Engine convergence.
+- Then the Engine layout probe (`gen_layout_probe.py generate Core Engine`) against 2013 numbers
+  and Engine contract types (AActor, UWorld, ULevel, USkeletalMesh..., see `reference_member_delta.md`).
 - Port the 24 Core serialization functions from `serialization_delta_core.md` (UClass::Serialize
   first). Bring in an LZO1X decompressor (lzokay/LZO) and set `WITH_LZO=1`.
 - Milestone 1: real `Launch` linking Core+Engine (+ stubs for missing modules) to reach

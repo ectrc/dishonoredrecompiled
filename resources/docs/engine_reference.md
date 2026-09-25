@@ -9,7 +9,8 @@ wholesale). Commit `601d6a1` (2026-03-05).
 | Changelist | 1532151 (Epic), 2013-02-13 | 254295 (Arkane), 2012-06-20 | 334700 (Arkane), 2013-08-20 |
 | Content | full `source/Development/Src` C++ (2,339 files), 2,014 `.uc`, UBT, VC80/VC90 solutions, UDK/UTGame sample game | binaries + PDB only | binaries only |
 
-Same engine generation (UE3, 2012–2013). The reference is ~8 months of Epic changes newer than
+The **target** is the 2013 retail build; the 2012 build is the symbol donor (its layouts and
+member sets differ from 2013 in many structs and are never final). Same engine generation (UE3, 2012–2013). The reference is ~8 months of Epic changes newer than
 Dishonored's engine branch and contains none of Arkane's modifications. It is the starting point
 for every engine module; Dishonored's deltas are recovered from the PDB-named decompile.
 

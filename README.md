@@ -1,7 +1,9 @@
 # Dishonored Recompilation
 
-Functional (non-matching) rebuild of Dishonored's Win32 native executable, targeting the retail
-2013 cooked content. The base is the UE3 build 10897 source tree at `../UnrealEngine3`
+Functional (non-matching) rebuild of Dishonored's Win32 native executable, targeting the **retail
+2013 build** (`Dishonored.exe`, engine 9411, DLC05–07): its layouts, serialization and behavior are
+the contract. The symbolized 2012 QA build only supplies names and decompiles; its structs differ
+from 2013 in many places and are never the final word. The base is the UE3 build 10897 source tree at `../UnrealEngine3`
 (CodeRedModding/UnrealEngine3), a very close engine build to Dishonored's 9014/9411; see
 `resources/docs/engine_reference.md`. The symbolized 2012 QA build (`../Dishonored_Debug2012`) is the
 source of truth for names, types and Arkane's changes; the retail 2013 build

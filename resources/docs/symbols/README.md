@@ -1,5 +1,10 @@
 # Symbol exports (2012 Shipping build)
 
+These exports describe the **2012** QA build, which has a PDB. They are the helping hand, not
+the target: the rebuilt exe must match the **2013 retail** `Dishonored.exe`, whose structs
+differ in size and members in many places. Treat every size/offset here as provisional until
+the retail check (PLAN.md Phase 2b) confirms or corrects it.
+
 Source database: `resources/docs/idb/shipping2012_v1.i64` (pristine snapshot of
 `../Dishonored_Debug2012/Binaries/Win32/DishonoredGame-Shipping.exe.i64`, PDB applied).
 IDA locks a database while it is open, so keep separate copies per consumer:

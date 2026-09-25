@@ -10,6 +10,16 @@ Rebuild Dishonored's native executable from C++ source so that a self-compiled
 and can be modified freely (offline play, multiplayer via `dismod`, no dependence on any dead
 online service).
 
+**The target is the RETAIL 2013 build** (`Dishonored_Latest2026\Binaries\Win32\Dishonored.exe`,
+engine 9411, changelist 334700, with DLC05–07). Everything the rebuilt exe does must match that
+binary: class and struct layouts, member sets, serialization, native tables, behavior. The
+symbolized 2012 QA build is only a **helping hand**: it donates names, types and readable
+decompiles because it has a PDB, but a large number of its structs have different sizes and
+different members than the 2013 retail build (see `resources/docs/types/xcheck_sdk.md`,
+`dishonoredgame_class_inventory.md` enum/member deltas). Whenever 2012 and 2013 disagree, 2013
+wins; nothing derived from the 2012 PDB is final until it has been checked against the retail exe
+or the retail cooked packages.
+
 This is a **functional** rebuild on top of a **real Unreal Engine 3 source tree**, not a
 matching one:
 
@@ -20,7 +30,8 @@ matching one:
   reference behave like Dishonored's branch), not reconstruction.
 * Only what the reference lacks is written from the decompile: the DishonoredGame module
   (21.8k functions), Arkane's engine modifications, AkAudio, Edge/DisJobs, and Arkane's GFxUI
-  extensions.
+  extensions. Decompiles come from the 2012 build (named) and are then re-checked against the
+  2013 retail exe (unnamed, diffed function by function, Phase 7) before they count as done.
 * Modern toolchain (MSVC 2022, C++17, CMake). No VS2008, no UnrealBuildTool, no byte matching.
   Decompiler output is a reference, never the deliverable.
 * Only the cooked content format and the UnrealScript bytecode contract are sacred. Behavior,
@@ -94,9 +105,14 @@ idalib (`idapro` module) and the IDA MCP, git. `resources/docs/toolchain.md`.
    * no definition → write it from the decompile into the module.
    The per-function status (`reference`, `ported`, `written`, `stubbed`, `verified`) lives in
    `resources/docs/progress.md`.
-3. **Layout and serialization are the contract, and the reference makes them checkable.**
-   `resources/docs/types/sizes.csv` (PDB) vs the reference headers gives the exact list of classes whose
-   layout Arkane changed. `static_assert`s generated from the PDB guard every native class.
+3. **Layout and serialization are the contract — the RETAIL 2013 layout.**
+   The 2012 PDB (`resources/docs/types/sizes.csv`) gives named layouts and is the first approximation;
+   the authoritative sizes and member sets are the retail ones, recovered from (a) the 2013
+   cooked packages (every script property carries its exact offset, every class its
+   PropertiesSize), (b) the 2013 exe (class sizes in constructors/`StaticClass` registration,
+   member accesses in decompiled functions after Phase 7 name propagation), (c) runtime dumps
+   of the retail exe (dismod's CodeRed SDK). `static_assert`s guard every native class against
+   the **2013** numbers once known; the 2012 numbers are a stepping stone.
    Package version constants (`UnObjVer.cpp`) are pinned to Dishonored's cooked packages, not
    10897's; `Serialize()` overrides are diffed function-by-function because that is where
    Arkane's licensee changes hide.
@@ -154,6 +170,23 @@ Tracker `resources/docs/PHASE2.md`; exit check `resources/tools/symbols/verify_p
       lists from `resources/docs/symbols/natives.csv` and `classes.csv`.
 - **Exit:** Core compiles as a static lib under the CMake build; `DishonoredLayouts.h` passes
       for Core types; `reference_layout_delta.md` exists for Engine and DishonoredGame types.
+
+### Phase 2b — Retail (2013) layout truth (before Engine convergence)
+
+- [ ] `resources/tools/pdb/read_package_classes.py`: parse the 2013 cooked packages (`Core.upk`,
+      `Engine.upk`, `DishonoredGame.upk`, DLC packages) — name/import/export tables, `UClass`
+      exports with `PropertiesSize`, every `UProperty` export with `Offset`/`ArrayDim`/flags —
+      into `resources/docs/types/retail_script_layouts.json`. This is exact 2013 truth for every
+      script-declared member and for the total size of every script class. Do the same for the
+      2012 packages and diff: the list of classes whose layout changed between the builds.
+- [ ] 2013 native class sizes: from the 2013 exe, the `StaticClass`/constructor registration
+      passes `sizeof(Class)`; after Phase 7 name propagation, export them to
+      `retail_native_sizes.csv`. Cross-check with dismod's CodeRed dump (`xcheck_sdk.md`).
+- [ ] Regenerate `DishonoredLayouts.h` and the layout probe against the **2013** sizes; fix the
+      headers where 2012 and 2013 differ, citing the retail evidence in the
+      `// DISHONORED(layout)` comment (`retail:` prefix).
+- [ ] Exit: every Core contract type and every Engine/DishonoredGame script class matches the
+      2013 numbers; `verify_phase2.py` gains a `retail` section.
 
 ### Phase 3 — Module convergence and DishonoredGame rewrite (months)
 
@@ -227,7 +260,10 @@ pawns, AI brain processes, powers, UI last).
 8. Test suite: golden-log diffs (milestones 2–5), package load-all, save load-all, scripted
    flythrough on two maps to catch physics/animation drift.
 
-### Phase 7 — Port 2012 → 2013 delta
+### Phase 7 — Port 2012 → 2013 delta (runs alongside Phase 3, not after it)
+
+The 2013 exe is the target, so this is not a final polish step: every function ported from the
+2012 decompile is diffed against its 2013 counterpart before it is marked `verified`.
 
 - [ ] Diaphora/BinDiff `DishonoredGame-Shipping.exe` (2012, named) vs `Dishonored.exe` (2013);
       propagate names into `Dishonored.exe.i64`.
@@ -250,6 +286,13 @@ pawns, AI brain processes, powers, UI last).
 - [ ] `resources/docs/tasks/<Module>.md`: per-function status lists so work parallelizes across sessions.
 
 ## 5. Risks and open questions
+
+* **2012 ≠ 2013 layouts.** Phase 2 converged Core on the 2012 PDB because that is the only
+  build with symbols. Many structs differ in size and members between the two builds (DLC05–07
+  natives, enum growth, `m_bShowMapNameOnlyOnXboxNoHDD`-style additions, the `xcheck_sdk.md`
+  offset mismatches). Every layout must be re-verified against the retail exe / retail packages
+  (Phase 2b) before Engine and DishonoredGame convergence relies on it; the 2012-derived
+  headers are provisional until then.
 
 * **Legal**: the 2012 build, its PDBs and the reference engine source are all leaked material;
   UE3 is Epic-licensed and Scaleform/Bink/PhysX/FaceFX/Wwise are licensed middleware. Keep the
