@@ -17,7 +17,10 @@ set(DISHONORED_MSVC_WARNINGS
   /wd4244  # int/float narrowing: UE3 relies on implicit conversions everywhere
   /wd4245  # signed/unsigned mismatch in initialization
   /wd4267  # size_t narrowing
+  /wd4305  # double -> float truncation of literals (UE3 writes 0.5 for FLOAT everywhere)
   /wd4324  # structure padded due to alignment specifier (MS_ALIGN)
+  /wd4471  # forward declaration of an unscoped enum without underlying type (EPixelFormat in UnAsyncWork.h)
+  /wd4595  # inline non-member operator new/delete in UnFile.h; revisit when the exe links (milestone 1)
   /wd4389  # signed/unsigned == comparison
   /wd4456  # declaration hides previous local declaration
   /wd4457  # declaration hides function parameter
@@ -64,7 +67,7 @@ function(dishonored_module name)
   file(GLOB module_inc_dirs LIST_DIRECTORIES true "${CMAKE_SOURCE_DIR}/source/Development/Src/*/Inc")
   foreach(inc IN LISTS module_inc_dirs)
     if(IS_DIRECTORY "${inc}")
-      target_include_directories(${name} PRIVATE "${inc}")
+      target_include_directories(${name} PUBLIC "${inc}")
     endif()
   endforeach()
 

@@ -1,0 +1,4 @@
+# Types the Core module's main header does not declare (collected from probe build logs)
+FArchiveFileReaderWindows
+FArchiveFileWriterWindows
+FAsyncReallocationRequest

@@ -11,9 +11,9 @@
 #define PRIVATE_VERSION			131
 
 // Defined separately so the build script can get to it easily (DO NOT CHANGE THIS MANUALLY)
-#define	ENGINE_VERSION	10897
+#define	ENGINE_VERSION	9411	// DISHONORED: retail 2013 build (resources/docs/symbols/package_summary.md)
 
-#define	BUILT_FROM_CHANGELIST	1532151
+#define	BUILT_FROM_CHANGELIST	334700	// DISHONORED: Arkane changelist of the retail 2013 build
 
 
 INT	GEngineVersion				= ENGINE_VERSION;
@@ -29,8 +29,8 @@ INT	GBuiltFromChangeList		= BUILT_FROM_CHANGELIST;
 INT	GEngineNegotiationVersion	= 3077;
 
 // @see UnObjVer.h for the list of changes/defines
-INT	GPackageFileVersion			= VER_LATEST_ENGINE;
+INT	GPackageFileVersion			= 801;	// DISHONORED: cooked packages are file version 801 (VER_PRESERVE_SMC_VERT_COLORS), not VER_LATEST_ENGINE
 INT	GPackageFileMinVersion		= 491;
-INT	GPackageFileLicenseeVersion = VER_LATEST_ENGINE_LICENSEE;
-INT GPackageFileCookedContentVersion = VER_LATEST_COOKED_PACKAGE | (VER_LATEST_COOKED_PACKAGE_LICENSEE << 16);
+INT	GPackageFileLicenseeVersion = 30;	// DISHONORED: Arkane licensee version 30; ULinkerLoad rejects packages newer than this
+INT GPackageFileCookedContentVersion = 133 | (0 << 16);	// DISHONORED: cooked content version of the 2013 packages (2012: 132)
 

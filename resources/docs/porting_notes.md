@@ -41,6 +41,16 @@ applied, files touched.
 | C3240/C2838/C4596 qualified names in in-class declarations (`FFileManagerWindows.h`) | 8 | drop the `FFileManagerWindows::` qualifier on 3 declarations | reference code relied on VS2010 leniency |
 | C1083 `..\..\..\External\libpng\png.h` via `Engine.h` → `UnPNG.h` | 1 | libPNG headers/libs from the reference tree (`Dishonored::libPNG`), `UnPNG.h` includes `<png.h>`/`<zlib.h>` | Core's `UnMisc.cpp`, `UnVcWin32.cpp`, `UnStatsNotifyProviders.cpp` include `Engine.h` (Epic's own layering violation) |
 
+## Warnings (Core, first clean build: 987)
+
+| Warning | Count | Action |
+|---|---:|---|
+| C4305 double→float literal truncation | 462 | silenced (`/wd4305`), pervasive UE3 style |
+| C4595 inline non-member `operator new/delete` (`UnFile.h` 2147–2170) | 260 | silenced for now; the definitions must move into one compile unit before the exe links (ODR) |
+| C4005 macro redefinition (`NOMINMAX`, `WIN32_LEAN_AND_MEAN`, `WITH_SPEEDTREE_MANGLE`) | 195 | removed the duplicate definitions from CMake |
+| C4471 forward-declared unscoped enum (`EPixelFormat`) | 65 | silenced (`/wd4471`) |
+| C4838 narrowing in aggregate init (`UnVcWin32.cpp`) | 4 | left visible |
+
 ## Bytecode opcodes
 
 `resources/docs/symbols/opcodes.md` (`xcheck_opcodes.py`): Dishonored's `EX_*` numbering (UObject
