@@ -26,11 +26,14 @@ GAME = "DishonoredGame"
 OUR_EXE = f"{GAME}.exe"  # never the retail exe name: Dishonored.exe stays untouched
 
 
-def stage(build_dir: Path, retail: Path, stage_dir: Path | None = None) -> Path:
+def stage(build_dir: Path, retail: Path, stage_dir: Path | None = None, exe_name: str | None = None) -> Path:
+    """Copies build_dir\\Binaries\\Win32\\DishonoredGame.exe (+ .pdb/.map) into the retail Binaries\\Win32 as exe_name
+    (default DishonoredGame.exe; agents stage DishonoredGame_<X>.exe so runs never overwrite each other)."""
+    target_name = exe_name or OUR_EXE
     if not retail.is_dir():
         raise SystemExit(f"retail tree not found: {retail}")
-    if (retail / "Binaries" / "Win32" / OUR_EXE).name.lower() == "dishonored.exe":
-        raise SystemExit("refusing to overwrite the retail exe")
+    if target_name.lower() == "dishonored.exe" or not target_name.lower().endswith(".exe"):
+        raise SystemExit("refusing to overwrite the retail exe / bad exe name")
     exe = build_dir / "Binaries" / "Win32" / OUR_EXE
     if not exe.is_file():
         raise SystemExit(f"exe not built: {exe}")
@@ -40,12 +43,16 @@ def stage(build_dir: Path, retail: Path, stage_dir: Path | None = None) -> Path:
     for required in ("Engine/Config/BaseEngine.ini", f"{GAME}/Config/DefaultEngine.ini", f"{GAME}/CookedPCConsole"):
         if not (retail / required).exists():
             raise SystemExit(f"retail content missing: {retail / required} (restore the install, e.g. Steam 'Verify integrity of game files')")
+    if exe.stat().st_size < 1_000_000:
+        raise SystemExit(f"{exe} is {exe.stat().st_size} bytes: the DishonoredLaunchStub build, not the real Launch (configure with -DDISHONORED_REAL_LAUNCH=ON)")
+    stem = Path(target_name).stem
     for suffix in (".exe", ".pdb", ".map"):
         src = exe.with_suffix(suffix)
         if src.is_file():
-            shutil.copy2(src, retail_binaries / src.name)
+            shutil.copy2(src, retail_binaries / (stem + suffix))
     (retail / GAME / "Logs").mkdir(exist_ok=True)
-    return retail_binaries / OUR_EXE
+    print(f"staged {retail_binaries / target_name} ({exe.stat().st_size:,} bytes)")
+    return retail_binaries / target_name
 
 
 def main(argv: list[str]) -> int:
@@ -53,8 +60,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--build-dir", type=Path, default=REPO / "build" / "agentN")
     parser.add_argument("--retail", type=Path, default=DEFAULT_RETAIL)
     parser.add_argument("--stage", type=Path, default=None, help="ignored (kept for older command lines)")
+    parser.add_argument("--exe-name", default=None, help="staged exe name (default DishonoredGame.exe)")
     args = parser.parse_args(argv[1:])
-    exe = stage(args.build_dir.resolve(), args.retail.resolve())
+    exe = stage(args.build_dir.resolve(), args.retail.resolve(), exe_name=args.exe_name)
     print(f"staged {exe}")
     return 0
 

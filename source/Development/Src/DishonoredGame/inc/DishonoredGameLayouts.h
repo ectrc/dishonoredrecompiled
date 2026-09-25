@@ -44,9 +44,9 @@ static_assert(sizeof(AGameCrowdForcePoint) == 608, "AGameCrowdForcePoint: retail
 static_assert(offsetof(AGameCrowdForcePoint, m_fAttractionStrenght) == 592, "AGameCrowdForcePoint::m_fAttractionStrenght: retail offset 592");
 static_assert(offsetof(AGameCrowdForcePoint, m_fRadius) == 596, "AGameCrowdForcePoint::m_fRadius: retail offset 596");
 static_assert(offsetof(AGameCrowdForcePoint, m_AttractorID) == 604, "AGameCrowdForcePoint::m_AttractorID: retail offset 604");
-// pending: sizeof(AGameDecalManager) == 656 (every reflected member is shifted by -12 in our tree: base ADecalManager is not converged yet (probe))
-// pending: offsetof(AGameDecalManager, MinDecalDistanceSq) == 644
-// pending: sizeof(AGameKActorSpawnableEffect) == 816 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
+static_assert(sizeof(AGameDecalManager) == 656, "AGameDecalManager: retail sizeof 656");
+static_assert(offsetof(AGameDecalManager, MinDecalDistanceSq) == 644, "AGameDecalManager::MinDecalDistanceSq: retail offset 644");
+static_assert(sizeof(AGameKActorSpawnableEffect) == 816, "AGameKActorSpawnableEffect: retail sizeof 816");
 static_assert(sizeof(ALightVolume) == 640, "ALightVolume: retail sizeof 640");
 static_assert(sizeof(AMatineePreviewPlayerPawn) == 1200, "AMatineePreviewPlayerPawn: retail sizeof 1200");
 static_assert(offsetof(AMatineePreviewPlayerPawn, CameraBoneName) == 1184, "AMatineePreviewPlayerPawn::CameraBoneName: retail offset 1184");
@@ -656,18 +656,18 @@ static_assert(offsetof(UGameDamageType, DistFromHitLocToGib) == 96, "UGameDamage
 static_assert(offsetof(UGameDamageType, KilledByIcon) == 100, "UGameDamageType::KilledByIcon: retail offset 100");
 static_assert(offsetof(UGameDamageType, HeadshotIcon) == 120, "UGameDamageType::HeadshotIcon: retail offset 120");
 static_assert(offsetof(UGameDamageType, IconScale) == 140, "UGameDamageType::IconScale: retail offset 140");
-// pending: sizeof(UGameDecal) == 768 (every reflected member is shifted by +52 in our tree: base UDecalComponent is not converged yet (probe))
-// pending: offsetof(UGameDecal, MITV_Decal) == 748
-// pending: offsetof(UGameDecal, Instigator) == 752
-// pending: sizeof(UInterpGroupInstPlayer) == 152 (every reflected member is shifted by -32 in our tree: base UInterpGroupInst is not converged yet (probe))
-// pending: offsetof(UInterpGroupInstPlayer, m_pPlayerGroup) == 112
-// pending: offsetof(UInterpGroupInstPlayer, m_StageMarkActor) == 116
-// pending: offsetof(UInterpGroupInstPlayer, m_PreviewPawn) == 120
-// pending: offsetof(UInterpGroupInstPlayer, m_StartPos) == 124
-// pending: offsetof(UInterpGroupInstPlayer, m_StartRot) == 136
-// pending: sizeof(UInterpGroupPlayer) == 128 (every reflected member is shifted by -12 in our tree: base UInterpGroup is not converged yet (probe))
-// pending: offsetof(UInterpGroupPlayer, m_StageMarkGroup) == 112
-// pending: offsetof(UInterpGroupPlayer, m_fTimeToBlendToStageMark) == 120
+static_assert(sizeof(UGameDecal) == 768, "UGameDecal: retail sizeof 768");
+static_assert(offsetof(UGameDecal, MITV_Decal) == 748, "UGameDecal::MITV_Decal: retail offset 748");
+static_assert(offsetof(UGameDecal, Instigator) == 752, "UGameDecal::Instigator: retail offset 752");
+static_assert(sizeof(UInterpGroupInstPlayer) == 152, "UInterpGroupInstPlayer: retail sizeof 152");
+static_assert(offsetof(UInterpGroupInstPlayer, m_pPlayerGroup) == 112, "UInterpGroupInstPlayer::m_pPlayerGroup: retail offset 112");
+static_assert(offsetof(UInterpGroupInstPlayer, m_StageMarkActor) == 116, "UInterpGroupInstPlayer::m_StageMarkActor: retail offset 116");
+static_assert(offsetof(UInterpGroupInstPlayer, m_PreviewPawn) == 120, "UInterpGroupInstPlayer::m_PreviewPawn: retail offset 120");
+static_assert(offsetof(UInterpGroupInstPlayer, m_StartPos) == 124, "UInterpGroupInstPlayer::m_StartPos: retail offset 124");
+static_assert(offsetof(UInterpGroupInstPlayer, m_StartRot) == 136, "UInterpGroupInstPlayer::m_StartRot: retail offset 136");
+static_assert(sizeof(UInterpGroupPlayer) == 128, "UInterpGroupPlayer: retail sizeof 128");
+static_assert(offsetof(UInterpGroupPlayer, m_StageMarkGroup) == 112, "UInterpGroupPlayer::m_StageMarkGroup: retail offset 112");
+static_assert(offsetof(UInterpGroupPlayer, m_fTimeToBlendToStageMark) == 120, "UInterpGroupPlayer::m_fTimeToBlendToStageMark: retail offset 120");
 static_assert(sizeof(UInterpTrackAIControl) == 136, "UInterpTrackAIControl: retail sizeof 136");
 static_assert(offsetof(UInterpTrackAIControl, m_AIControlKeys) == 124, "UInterpTrackAIControl::m_AIControlKeys: retail offset 124");
 static_assert(sizeof(UInterpTrackAIControlKeyProperties) == 56, "UInterpTrackAIControlKeyProperties: retail sizeof 56");
@@ -1023,9 +1023,9 @@ static_assert(sizeof(UDisContactTypeInterface) == 56, "UDisContactTypeInterface:
 static_assert(sizeof(UDisHitReboundInterface) == 56, "UDisHitReboundInterface: retail sizeof 56");
 static_assert(sizeof(UDisNoiseMakerInterface) == 56, "UDisNoiseMakerInterface: retail sizeof 56");
 static_assert(sizeof(UDisTweaksInterface) == 56, "UDisTweaksInterface: retail sizeof 56");
-// pending: sizeof(ADishonoredKActor) == 880 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADishonoredKActor, m_ContactPhysicsInfo) == 824
-// pending: offsetof(ADishonoredKActor, m_AudioCellCache) == 856
+static_assert(sizeof(ADishonoredKActor) == 880, "ADishonoredKActor: retail sizeof 880");
+static_assert(offsetof(ADishonoredKActor, m_ContactPhysicsInfo) == 824, "ADishonoredKActor::m_ContactPhysicsInfo: retail offset 824");
+static_assert(offsetof(ADishonoredKActor, m_AudioCellCache) == 856, "ADishonoredKActor::m_AudioCellCache: retail offset 856");
 static_assert(sizeof(UDisInteractableInterface) == 56, "UDisInteractableInterface: retail sizeof 56");
 static_assert(sizeof(UDisSoulRenderInterface) == 56, "UDisSoulRenderInterface: retail sizeof 56");
 static_assert(sizeof(ADisSkeletalBreakable) == 672, "ADisSkeletalBreakable: retail sizeof 672");
@@ -1851,10 +1851,10 @@ static_assert(sizeof(ADisPylon) == 960, "ADisPylon: retail sizeof 960");
 static_assert(offsetof(ADisPylon, m_fTallBoyMaxPolyHeight) == 928, "ADisPylon::m_fTallBoyMaxPolyHeight: retail offset 928");
 static_assert(offsetof(ADisPylon, m_pImportedNavMesh) == 932, "ADisPylon::m_pImportedNavMesh: retail offset 932");
 static_assert(offsetof(ADisPylon, m_pImportedPathEngineMesh) == 936, "ADisPylon::m_pImportedPathEngineMesh: retail offset 936");
-// pending: sizeof(ADisRiverKrustBodyPart) == 912 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisRiverKrustBodyPart, m_fDrawScale) == 876
-// pending: offsetof(ADisRiverKrustBodyPart, m_DrawScale3D) == 880
-// pending: offsetof(ADisRiverKrustBodyPart, m_pRiverKrustBodyPartTweaks) == 896
+static_assert(sizeof(ADisRiverKrustBodyPart) == 912, "ADisRiverKrustBodyPart: retail sizeof 912");
+static_assert(offsetof(ADisRiverKrustBodyPart, m_fDrawScale) == 876, "ADisRiverKrustBodyPart::m_fDrawScale: retail offset 876");
+static_assert(offsetof(ADisRiverKrustBodyPart, m_DrawScale3D) == 880, "ADisRiverKrustBodyPart::m_DrawScale3D: retail offset 880");
+static_assert(offsetof(ADisRiverKrustBodyPart, m_pRiverKrustBodyPartTweaks) == 896, "ADisRiverKrustBodyPart::m_pRiverKrustBodyPartTweaks: retail offset 896");
 static_assert(sizeof(ADisSoundCaptureBox) == 592, "ADisSoundCaptureBox: retail sizeof 592");
 static_assert(offsetof(ADisSoundCaptureBox, m_pSoundRedirectedActor) == 584, "ADisSoundCaptureBox::m_pSoundRedirectedActor: retail offset 584");
 static_assert(sizeof(ADisSoundSource) == 608, "ADisSoundSource: retail sizeof 608");
@@ -1865,14 +1865,14 @@ static_assert(sizeof(ADisSpotLightMovable) == 608, "ADisSpotLightMovable: retail
 static_assert(offsetof(ADisSpotLightMovable, m_pRatLightComponent) == 592, "ADisSpotLightMovable::m_pRatLightComponent: retail offset 592");
 static_assert(sizeof(UDisMantleableInterface) == 56, "UDisMantleableInterface: retail sizeof 56");
 static_assert(sizeof(ADisStaticCollisionActor) == 608, "ADisStaticCollisionActor: retail sizeof 608");
-// pending: sizeof(ADisTallboyNPCPawn) == 3632 (every reflected member is shifted by +12 in our tree: base AGamePawn is not converged yet (probe))
-// pending: offsetof(ADisTallboyNPCPawn, m_pStiltsMesh) == 3572
-// pending: offsetof(ADisTallboyNPCPawn, m_pLightParticleSystem) == 3576
-// pending: offsetof(ADisTallboyNPCPawn, m_pDisWindblastClass) == 3580
-// pending: offsetof(ADisTallboyNPCPawn, m_fAttachedLightRotationSpeed) == 3584
-// pending: offsetof(ADisTallboyNPCPawn, m_pAttachedLight) == 3592
-// pending: offsetof(ADisTallboyNPCPawn, m_SpotlightManager) == 3596
-// pending: offsetof(ADisTallboyNPCPawn, m_LastDamageMomentum) == 3620
+static_assert(sizeof(ADisTallboyNPCPawn) == 3632, "ADisTallboyNPCPawn: retail sizeof 3632");
+static_assert(offsetof(ADisTallboyNPCPawn, m_pStiltsMesh) == 3572, "ADisTallboyNPCPawn::m_pStiltsMesh: retail offset 3572");
+static_assert(offsetof(ADisTallboyNPCPawn, m_pLightParticleSystem) == 3576, "ADisTallboyNPCPawn::m_pLightParticleSystem: retail offset 3576");
+static_assert(offsetof(ADisTallboyNPCPawn, m_pDisWindblastClass) == 3580, "ADisTallboyNPCPawn::m_pDisWindblastClass: retail offset 3580");
+static_assert(offsetof(ADisTallboyNPCPawn, m_fAttachedLightRotationSpeed) == 3584, "ADisTallboyNPCPawn::m_fAttachedLightRotationSpeed: retail offset 3584");
+static_assert(offsetof(ADisTallboyNPCPawn, m_pAttachedLight) == 3592, "ADisTallboyNPCPawn::m_pAttachedLight: retail offset 3592");
+static_assert(offsetof(ADisTallboyNPCPawn, m_SpotlightManager) == 3596, "ADisTallboyNPCPawn::m_SpotlightManager: retail offset 3596");
+static_assert(offsetof(ADisTallboyNPCPawn, m_LastDamageMomentum) == 3620, "ADisTallboyNPCPawn::m_LastDamageMomentum: retail offset 3620");
 static_assert(sizeof(ADisTravelSpawner) == 1200, "ADisTravelSpawner: retail sizeof 1200");
 static_assert(offsetof(ADisTravelSpawner, m_PlayerTravelLocationTags) == 1176, "ADisTravelSpawner::m_PlayerTravelLocationTags: retail offset 1176");
 static_assert(sizeof(ADisTriggerAbstractItem) == 640, "ADisTriggerAbstractItem: retail sizeof 640");
@@ -5948,13 +5948,13 @@ static_assert(sizeof(UDishonoredDebugMenu) == 80, "UDishonoredDebugMenu: retail 
 static_assert(offsetof(UDishonoredDebugMenu, m_Items) == 56, "UDishonoredDebugMenu::m_Items: retail offset 56");
 static_assert(offsetof(UDishonoredDebugMenu, m_CurrentItem) == 68, "UDishonoredDebugMenu::m_CurrentItem: retail offset 68");
 static_assert(offsetof(UDishonoredDebugMenu, m_CurrentCommand) == 76, "UDishonoredDebugMenu::m_CurrentCommand: retail offset 76");
-// pending: sizeof(UDishonoredDecalComponent) == 848 (every reflected member is shifted by +52 in our tree: base UDecalComponent is not converged yet (probe))
-// pending: offsetof(UDishonoredDecalComponent, m_DecalInfo) == 748
-// pending: offsetof(UDishonoredDecalComponent, m_fLastTime) == 820
-// pending: offsetof(UDishonoredDecalComponent, m_OriginalZ) == 828
-// pending: offsetof(UDishonoredDecalComponent, m_RuntimeMaterial) == 832
-// pending: offsetof(UDishonoredDecalComponent, m_RuntimeWidth) == 836
-// pending: offsetof(UDishonoredDecalComponent, m_RuntimeHeight) == 840
+static_assert(sizeof(UDishonoredDecalComponent) == 848, "UDishonoredDecalComponent: retail sizeof 848");
+static_assert(offsetof(UDishonoredDecalComponent, m_DecalInfo) == 748, "UDishonoredDecalComponent::m_DecalInfo: retail offset 748");
+static_assert(offsetof(UDishonoredDecalComponent, m_fLastTime) == 820, "UDishonoredDecalComponent::m_fLastTime: retail offset 820");
+static_assert(offsetof(UDishonoredDecalComponent, m_OriginalZ) == 828, "UDishonoredDecalComponent::m_OriginalZ: retail offset 828");
+static_assert(offsetof(UDishonoredDecalComponent, m_RuntimeMaterial) == 832, "UDishonoredDecalComponent::m_RuntimeMaterial: retail offset 832");
+static_assert(offsetof(UDishonoredDecalComponent, m_RuntimeWidth) == 836, "UDishonoredDecalComponent::m_RuntimeWidth: retail offset 836");
+static_assert(offsetof(UDishonoredDecalComponent, m_RuntimeHeight) == 840, "UDishonoredDecalComponent::m_RuntimeHeight: retail offset 840");
 static_assert(sizeof(UDishonoredEngine) == 2052, "UDishonoredEngine: retail sizeof 2052");
 static_assert(offsetof(UDishonoredEngine, m_nCurrentRichPresenceChapter) == 1804, "UDishonoredEngine::m_nCurrentRichPresenceChapter: retail offset 1804");
 static_assert(offsetof(UDishonoredEngine, m_nCurrentRichPresenceChaos) == 1808, "UDishonoredEngine::m_nCurrentRichPresenceChaos: retail offset 1808");
@@ -6077,13 +6077,13 @@ static_assert(offsetof(UDishonoredSearchCrumbsComponent, m_fChanceOfPsychicSearc
 static_assert(offsetof(UDishonoredSearchCrumbsComponent, m_fMinWanderStep) == 200, "UDishonoredSearchCrumbsComponent::m_fMinWanderStep: retail offset 200");
 static_assert(offsetof(UDishonoredSearchCrumbsComponent, m_fMaxWanderStep) == 204, "UDishonoredSearchCrumbsComponent::m_fMaxWanderStep: retail offset 204");
 static_assert(offsetof(UDishonoredSearchCrumbsComponent, m_fStickyProxyDuration) == 208, "UDishonoredSearchCrumbsComponent::m_fStickyProxyDuration: retail offset 208");
-// pending: sizeof(UDishonoredViewportClient) == 340 (every reflected member is shifted by +8 in our tree: base UGameViewportClient is not converged yet (probe))
-// pending: offsetof(UDishonoredViewportClient, m_fLowFPSDisplayDuration) == 284
-// pending: offsetof(UDishonoredViewportClient, m_fLowFPSNeededFrameCount) == 288
-// pending: offsetof(UDishonoredViewportClient, m_LowFPSData) == 296
-// pending: offsetof(UDishonoredViewportClient, m_vListenerLocationOverride) == 320
-// pending: offsetof(UDishonoredViewportClient, m_TitleSafeFrame) == 332
-// pending: offsetof(UDishonoredViewportClient, m_ActionSafeFrame) == 336
+static_assert(sizeof(UDishonoredViewportClient) == 340, "UDishonoredViewportClient: retail sizeof 340");
+static_assert(offsetof(UDishonoredViewportClient, m_fLowFPSDisplayDuration) == 284, "UDishonoredViewportClient::m_fLowFPSDisplayDuration: retail offset 284");
+static_assert(offsetof(UDishonoredViewportClient, m_fLowFPSNeededFrameCount) == 288, "UDishonoredViewportClient::m_fLowFPSNeededFrameCount: retail offset 288");
+static_assert(offsetof(UDishonoredViewportClient, m_LowFPSData) == 296, "UDishonoredViewportClient::m_LowFPSData: retail offset 296");
+static_assert(offsetof(UDishonoredViewportClient, m_vListenerLocationOverride) == 320, "UDishonoredViewportClient::m_vListenerLocationOverride: retail offset 320");
+static_assert(offsetof(UDishonoredViewportClient, m_TitleSafeFrame) == 332, "UDishonoredViewportClient::m_TitleSafeFrame: retail offset 332");
+static_assert(offsetof(UDishonoredViewportClient, m_ActionSafeFrame) == 336, "UDishonoredViewportClient::m_ActionSafeFrame: retail offset 336");
 static_assert(sizeof(UDishonoredWaterVolumeInfo) == 400, "UDishonoredWaterVolumeInfo: retail sizeof 400");
 static_assert(offsetof(UDishonoredWaterVolumeInfo, m_PostProcessNameEntry) == 56, "UDishonoredWaterVolumeInfo::m_PostProcessNameEntry: retail offset 56");
 static_assert(offsetof(UDishonoredWaterVolumeInfo, m_PostProcessNameExit) == 68, "UDishonoredWaterVolumeInfo::m_PostProcessNameExit: retail offset 68");
@@ -6820,23 +6820,23 @@ static_assert(offsetof(UDisDLC07Tweaks_Pull, m_AcquiredFadeParameter) == 544, "U
 static_assert(offsetof(UDisDLC07Tweaks_Pull, m_fAcquiredFadeInDuration) == 552, "UDisDLC07Tweaks_Pull::m_fAcquiredFadeInDuration: retail offset 552");
 static_assert(offsetof(UDisDLC07Tweaks_Pull, m_fAcquiredFadeOutDuration) == 556, "UDisDLC07Tweaks_Pull::m_fAcquiredFadeOutDuration: retail offset 556");
 static_assert(sizeof(UDisMovableInterface) == 56, "UDisMovableInterface: retail sizeof 56");
-// pending: sizeof(ADisPickup_Base) == 960 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisPickup_Base, m_pMovableComponent) == 892
-// pending: offsetof(ADisPickup_Base, m_pHighlightStaticMeshComponent) == 896
-// pending: offsetof(ADisPickup_Base, m_pParticleSystem) == 900
-// pending: offsetof(ADisPickup_Base, m_pTravellingTowardPC) == 908
-// pending: offsetof(ADisPickup_Base, m_fPickupTravelTime) == 912
-// pending: offsetof(ADisPickup_Base, m_fMaxTravelTime) == 916
-// pending: offsetof(ADisPickup_Base, m_PickupStartPos) == 920
-// pending: offsetof(ADisPickup_Base, m_OffsetToBoundsCenter) == 932
-// pending: offsetof(ADisPickup_Base, m_HighlightFlags) == 944
-// pending: offsetof(ADisPickup_Base, m_BoxBoundsForPVS) == 948
-// pending: sizeof(ADisAbstractItemPickup) == 960 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisAbstractItemPickup, m_pTweaks) == 952
-// pending: sizeof(ADisAbstractItemPickupAudioLog) == 960 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisAbstractItemPickupAudioLog, m_pAudioLog) == 956
-// pending: sizeof(ADisAbstractItemPickupNote) == 976 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisAbstractItemPickupNote, m_pAbstractItem) == 956
+static_assert(sizeof(ADisPickup_Base) == 960, "ADisPickup_Base: retail sizeof 960");
+static_assert(offsetof(ADisPickup_Base, m_pMovableComponent) == 892, "ADisPickup_Base::m_pMovableComponent: retail offset 892");
+static_assert(offsetof(ADisPickup_Base, m_pHighlightStaticMeshComponent) == 896, "ADisPickup_Base::m_pHighlightStaticMeshComponent: retail offset 896");
+static_assert(offsetof(ADisPickup_Base, m_pParticleSystem) == 900, "ADisPickup_Base::m_pParticleSystem: retail offset 900");
+static_assert(offsetof(ADisPickup_Base, m_pTravellingTowardPC) == 908, "ADisPickup_Base::m_pTravellingTowardPC: retail offset 908");
+static_assert(offsetof(ADisPickup_Base, m_fPickupTravelTime) == 912, "ADisPickup_Base::m_fPickupTravelTime: retail offset 912");
+static_assert(offsetof(ADisPickup_Base, m_fMaxTravelTime) == 916, "ADisPickup_Base::m_fMaxTravelTime: retail offset 916");
+static_assert(offsetof(ADisPickup_Base, m_PickupStartPos) == 920, "ADisPickup_Base::m_PickupStartPos: retail offset 920");
+static_assert(offsetof(ADisPickup_Base, m_OffsetToBoundsCenter) == 932, "ADisPickup_Base::m_OffsetToBoundsCenter: retail offset 932");
+static_assert(offsetof(ADisPickup_Base, m_HighlightFlags) == 944, "ADisPickup_Base::m_HighlightFlags: retail offset 944");
+static_assert(offsetof(ADisPickup_Base, m_BoxBoundsForPVS) == 948, "ADisPickup_Base::m_BoxBoundsForPVS: retail offset 948");
+static_assert(sizeof(ADisAbstractItemPickup) == 960, "ADisAbstractItemPickup: retail sizeof 960");
+static_assert(offsetof(ADisAbstractItemPickup, m_pTweaks) == 952, "ADisAbstractItemPickup::m_pTweaks: retail offset 952");
+static_assert(sizeof(ADisAbstractItemPickupAudioLog) == 960, "ADisAbstractItemPickupAudioLog: retail sizeof 960");
+static_assert(offsetof(ADisAbstractItemPickupAudioLog, m_pAudioLog) == 956, "ADisAbstractItemPickupAudioLog::m_pAudioLog: retail offset 956");
+static_assert(sizeof(ADisAbstractItemPickupNote) == 976, "ADisAbstractItemPickupNote: retail sizeof 976");
+static_assert(offsetof(ADisAbstractItemPickupNote, m_pAbstractItem) == 956, "ADisAbstractItemPickupNote::m_pAbstractItem: retail offset 956");
 static_assert(sizeof(FDisLootSettings) == 16, "FDisLootSettings: retail sizeof 16");
 static_assert(offsetof(FDisLootSettings, m_pLootPayload) == 0, "FDisLootSettings::m_pLootPayload: retail offset 0");
 static_assert(offsetof(FDisLootSettings, m_NumToDropOverride) == 4, "FDisLootSettings::m_NumToDropOverride: retail offset 4");
@@ -6844,62 +6844,62 @@ static_assert(offsetof(FDisLootSettings, m_fImpulseForce) == 8, "FDisLootSetting
 static_assert(sizeof(FDisPendingBreakage) == 16, "FDisPendingBreakage: retail sizeof 16");
 static_assert(offsetof(FDisPendingBreakage, m_iWantedStep) == 0, "FDisPendingBreakage::m_iWantedStep: retail offset 0");
 static_assert(offsetof(FDisPendingBreakage, m_BreakVelocity) == 4, "FDisPendingBreakage::m_BreakVelocity: retail offset 4");
-// pending: sizeof(ADishonoredBreakable) == 1008 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADishonoredBreakable, m_pBreakableTweaks) == 880
-// pending: offsetof(ADishonoredBreakable, m_LootSettings) == 884
-// pending: offsetof(ADishonoredBreakable, m_CurHealth) == 904
-// pending: offsetof(ADishonoredBreakable, m_NextStep) == 908
-// pending: offsetof(ADishonoredBreakable, m_fStepTimer) == 912
-// pending: offsetof(ADishonoredBreakable, m_PendingBreakage) == 916
-// pending: offsetof(ADishonoredBreakable, m_fImpendingExplosionBroadcastTimer) == 932
-// pending: offsetof(ADishonoredBreakable, m_eImpendingExplosionLoudness) == 936
-// pending: offsetof(ADishonoredBreakable, m_ParticleEffect) == 1000
-// pending: offsetof(ADishonoredBreakable, m_BoxBoundsForPVS) == 1004
-// pending: sizeof(ADishonoredMovable) == 1072 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADishonoredMovable, m_pMovableComponent) == 1024
-// pending: offsetof(ADishonoredMovable, m_Damage) == 1028
-// pending: offsetof(ADishonoredMovable, m_HighlightFlags) == 1032
-// pending: offsetof(ADishonoredMovable, m_PreviousPhysxLocation) == 1036
-// pending: offsetof(ADishonoredMovable, m_pMovableTweaks) == 1048
-// pending: offsetof(ADishonoredMovable, m_pHighlightStaticMeshComponent) == 1052
-// pending: sizeof(ADisWhaleOilBattery) == 1120 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisWhaleOilBattery, m_pWhaleOilTweaks) == 1060
-// pending: offsetof(ADisWhaleOilBattery, m_CurrentCharges) == 1064
-// pending: offsetof(ADisWhaleOilBattery, m_pPlug) == 1068
-// pending: offsetof(ADisWhaleOilBattery, m_pLastDamageCulprit) == 1072
-// pending: offsetof(ADisWhaleOilBattery, m_vEjectDir) == 1080
-// pending: offsetof(ADisWhaleOilBattery, m_fExplosionChainTimer) == 1092
-// pending: offsetof(ADisWhaleOilBattery, m_pExplosionChainInstigator) == 1096
-// pending: offsetof(ADisWhaleOilBattery, m_pExplosionChainDamageCauser) == 1100
-// pending: offsetof(ADisWhaleOilBattery, m_ResetThrownFrameCount) == 1104
-// pending: offsetof(ADisWhaleOilBattery, m_fReadyToPlugTime) == 1108
-// pending: offsetof(ADisWhaleOilBattery, m_PostLoadGodFrameCount) == 1112
-// pending: sizeof(ADisNPCAttachment) == 1072 (derives from ADishonoredMovable: every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
+static_assert(sizeof(ADishonoredBreakable) == 1008, "ADishonoredBreakable: retail sizeof 1008");
+static_assert(offsetof(ADishonoredBreakable, m_pBreakableTweaks) == 880, "ADishonoredBreakable::m_pBreakableTweaks: retail offset 880");
+static_assert(offsetof(ADishonoredBreakable, m_LootSettings) == 884, "ADishonoredBreakable::m_LootSettings: retail offset 884");
+static_assert(offsetof(ADishonoredBreakable, m_CurHealth) == 904, "ADishonoredBreakable::m_CurHealth: retail offset 904");
+static_assert(offsetof(ADishonoredBreakable, m_NextStep) == 908, "ADishonoredBreakable::m_NextStep: retail offset 908");
+static_assert(offsetof(ADishonoredBreakable, m_fStepTimer) == 912, "ADishonoredBreakable::m_fStepTimer: retail offset 912");
+static_assert(offsetof(ADishonoredBreakable, m_PendingBreakage) == 916, "ADishonoredBreakable::m_PendingBreakage: retail offset 916");
+static_assert(offsetof(ADishonoredBreakable, m_fImpendingExplosionBroadcastTimer) == 932, "ADishonoredBreakable::m_fImpendingExplosionBroadcastTimer: retail offset 932");
+static_assert(offsetof(ADishonoredBreakable, m_eImpendingExplosionLoudness) == 936, "ADishonoredBreakable::m_eImpendingExplosionLoudness: retail offset 936");
+static_assert(offsetof(ADishonoredBreakable, m_ParticleEffect) == 1000, "ADishonoredBreakable::m_ParticleEffect: retail offset 1000");
+static_assert(offsetof(ADishonoredBreakable, m_BoxBoundsForPVS) == 1004, "ADishonoredBreakable::m_BoxBoundsForPVS: retail offset 1004");
+static_assert(sizeof(ADishonoredMovable) == 1072, "ADishonoredMovable: retail sizeof 1072");
+static_assert(offsetof(ADishonoredMovable, m_pMovableComponent) == 1024, "ADishonoredMovable::m_pMovableComponent: retail offset 1024");
+static_assert(offsetof(ADishonoredMovable, m_Damage) == 1028, "ADishonoredMovable::m_Damage: retail offset 1028");
+static_assert(offsetof(ADishonoredMovable, m_HighlightFlags) == 1032, "ADishonoredMovable::m_HighlightFlags: retail offset 1032");
+static_assert(offsetof(ADishonoredMovable, m_PreviousPhysxLocation) == 1036, "ADishonoredMovable::m_PreviousPhysxLocation: retail offset 1036");
+static_assert(offsetof(ADishonoredMovable, m_pMovableTweaks) == 1048, "ADishonoredMovable::m_pMovableTweaks: retail offset 1048");
+static_assert(offsetof(ADishonoredMovable, m_pHighlightStaticMeshComponent) == 1052, "ADishonoredMovable::m_pHighlightStaticMeshComponent: retail offset 1052");
+static_assert(sizeof(ADisWhaleOilBattery) == 1120, "ADisWhaleOilBattery: retail sizeof 1120");
+static_assert(offsetof(ADisWhaleOilBattery, m_pWhaleOilTweaks) == 1060, "ADisWhaleOilBattery::m_pWhaleOilTweaks: retail offset 1060");
+static_assert(offsetof(ADisWhaleOilBattery, m_CurrentCharges) == 1064, "ADisWhaleOilBattery::m_CurrentCharges: retail offset 1064");
+static_assert(offsetof(ADisWhaleOilBattery, m_pPlug) == 1068, "ADisWhaleOilBattery::m_pPlug: retail offset 1068");
+static_assert(offsetof(ADisWhaleOilBattery, m_pLastDamageCulprit) == 1072, "ADisWhaleOilBattery::m_pLastDamageCulprit: retail offset 1072");
+static_assert(offsetof(ADisWhaleOilBattery, m_vEjectDir) == 1080, "ADisWhaleOilBattery::m_vEjectDir: retail offset 1080");
+static_assert(offsetof(ADisWhaleOilBattery, m_fExplosionChainTimer) == 1092, "ADisWhaleOilBattery::m_fExplosionChainTimer: retail offset 1092");
+static_assert(offsetof(ADisWhaleOilBattery, m_pExplosionChainInstigator) == 1096, "ADisWhaleOilBattery::m_pExplosionChainInstigator: retail offset 1096");
+static_assert(offsetof(ADisWhaleOilBattery, m_pExplosionChainDamageCauser) == 1100, "ADisWhaleOilBattery::m_pExplosionChainDamageCauser: retail offset 1100");
+static_assert(offsetof(ADisWhaleOilBattery, m_ResetThrownFrameCount) == 1104, "ADisWhaleOilBattery::m_ResetThrownFrameCount: retail offset 1104");
+static_assert(offsetof(ADisWhaleOilBattery, m_fReadyToPlugTime) == 1108, "ADisWhaleOilBattery::m_fReadyToPlugTime: retail offset 1108");
+static_assert(offsetof(ADisWhaleOilBattery, m_PostLoadGodFrameCount) == 1112, "ADisWhaleOilBattery::m_PostLoadGodFrameCount: retail offset 1112");
+static_assert(sizeof(ADisNPCAttachment) == 1072, "ADisNPCAttachment: retail sizeof 1072");
 static_assert(sizeof(ADisDetectionEye) == 672, "ADisDetectionEye: retail sizeof 672");
 static_assert(offsetof(ADisDetectionEye, m_pEyeTweaks) == 640, "ADisDetectionEye::m_pEyeTweaks: retail offset 640");
 static_assert(offsetof(ADisDetectionEye, m_pDetectionCylinder) == 648, "ADisDetectionEye::m_pDetectionCylinder: retail offset 648");
 static_assert(offsetof(ADisDetectionEye, m_pWall) == 652, "ADisDetectionEye::m_pWall: retail offset 652");
 static_assert(offsetof(ADisDetectionEye, m_EyeState) == 656, "ADisDetectionEye::m_EyeState: retail offset 656");
 static_assert(offsetof(ADisDetectionEye, m_BoxBoundsForPVS) == 660, "ADisDetectionEye::m_BoxBoundsForPVS: retail offset 660");
-// pending: sizeof(ADisElixirHealth) == 960 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisElixirHealth, m_pPickupTweaks) == 952
-// pending: sizeof(ADisElixirMana) == 960 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisElixirMana, m_pPickupTweaks) == 952
-// pending: sizeof(ADisGenericPickup) == 960 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisGenericPickup, m_pGenericPickupTweaks) == 952
-// pending: sizeof(ADisKey_Base) == 976 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisKey_Base, m_Name) == 952
-// pending: offsetof(ADisKey_Base, m_pKeyTweaks) == 964
-// pending: sizeof(ADisSpeaker_PA) == 1072 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisSpeaker_PA, m_SpeakerLocationType) == 1012
-// pending: offsetof(ADisSpeaker_PA, m_OwningSpeakerGroups) == 1016
-// pending: offsetof(ADisSpeaker_PA, m_HighlightFlags) == 1028
-// pending: sizeof(ADisStatPickup) == 1024 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisStatPickup, m_CurAmmo) == 952
-// pending: offsetof(ADisStatPickup, m_LastConsumedAmmoCount) == 1000
-// pending: offsetof(ADisStatPickup, m_fExplosionChainTimer) == 1004
-// pending: offsetof(ADisStatPickup, m_pStatPickupTweaks) == 1008
-// pending: sizeof(ADisTallboyAttachment) == 1072 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
+static_assert(sizeof(ADisElixirHealth) == 960, "ADisElixirHealth: retail sizeof 960");
+static_assert(offsetof(ADisElixirHealth, m_pPickupTweaks) == 952, "ADisElixirHealth::m_pPickupTweaks: retail offset 952");
+static_assert(sizeof(ADisElixirMana) == 960, "ADisElixirMana: retail sizeof 960");
+static_assert(offsetof(ADisElixirMana, m_pPickupTweaks) == 952, "ADisElixirMana::m_pPickupTweaks: retail offset 952");
+static_assert(sizeof(ADisGenericPickup) == 960, "ADisGenericPickup: retail sizeof 960");
+static_assert(offsetof(ADisGenericPickup, m_pGenericPickupTweaks) == 952, "ADisGenericPickup::m_pGenericPickupTweaks: retail offset 952");
+static_assert(sizeof(ADisKey_Base) == 976, "ADisKey_Base: retail sizeof 976");
+static_assert(offsetof(ADisKey_Base, m_Name) == 952, "ADisKey_Base::m_Name: retail offset 952");
+static_assert(offsetof(ADisKey_Base, m_pKeyTweaks) == 964, "ADisKey_Base::m_pKeyTweaks: retail offset 964");
+static_assert(sizeof(ADisSpeaker_PA) == 1072, "ADisSpeaker_PA: retail sizeof 1072");
+static_assert(offsetof(ADisSpeaker_PA, m_SpeakerLocationType) == 1012, "ADisSpeaker_PA::m_SpeakerLocationType: retail offset 1012");
+static_assert(offsetof(ADisSpeaker_PA, m_OwningSpeakerGroups) == 1016, "ADisSpeaker_PA::m_OwningSpeakerGroups: retail offset 1016");
+static_assert(offsetof(ADisSpeaker_PA, m_HighlightFlags) == 1028, "ADisSpeaker_PA::m_HighlightFlags: retail offset 1028");
+static_assert(sizeof(ADisStatPickup) == 1024, "ADisStatPickup: retail sizeof 1024");
+static_assert(offsetof(ADisStatPickup, m_CurAmmo) == 952, "ADisStatPickup::m_CurAmmo: retail offset 952");
+static_assert(offsetof(ADisStatPickup, m_LastConsumedAmmoCount) == 1000, "ADisStatPickup::m_LastConsumedAmmoCount: retail offset 1000");
+static_assert(offsetof(ADisStatPickup, m_fExplosionChainTimer) == 1004, "ADisStatPickup::m_fExplosionChainTimer: retail offset 1004");
+static_assert(offsetof(ADisStatPickup, m_pStatPickupTweaks) == 1008, "ADisStatPickup::m_pStatPickupTweaks: retail offset 1008");
+static_assert(sizeof(ADisTallboyAttachment) == 1072, "ADisTallboyAttachment: retail sizeof 1072");
 static_assert(sizeof(ADisWallOfLight) == 768, "ADisWallOfLight: retail sizeof 768");
 static_assert(offsetof(ADisWallOfLight, m_pAttachedReceptacle) == 660, "ADisWallOfLight::m_pAttachedReceptacle: retail offset 660");
 static_assert(offsetof(ADisWallOfLight, m_pWallOfLightTweaks) == 664, "ADisWallOfLight::m_pWallOfLightTweaks: retail offset 664");
@@ -6916,10 +6916,10 @@ static_assert(offsetof(ADisWallOfLight, m_ComponentContainer) == 732, "ADisWallO
 static_assert(offsetof(ADisWallOfLight, m_ComponentObservableConfig) == 736, "ADisWallOfLight::m_ComponentObservableConfig: retail offset 736");
 static_assert(offsetof(ADisWallOfLight, m_InitialState) == 744, "ADisWallOfLight::m_InitialState: retail offset 744");
 static_assert(offsetof(ADisWallOfLight, NavGuid) == 748, "ADisWallOfLight::NavGuid: retail offset 748");
-// pending: sizeof(ADisWhaleBoneCharm) == 976 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisWhaleBoneCharm, m_pTweaks) == 952
-// pending: offsetof(ADisWhaleBoneCharm, m_pActivatedWhaleBoneCharmLevel) == 956
-// pending: offsetof(ADisWhaleBoneCharm, m_Effect) == 960
+static_assert(sizeof(ADisWhaleBoneCharm) == 976, "ADisWhaleBoneCharm: retail sizeof 976");
+static_assert(offsetof(ADisWhaleBoneCharm, m_pTweaks) == 952, "ADisWhaleBoneCharm::m_pTweaks: retail offset 952");
+static_assert(offsetof(ADisWhaleBoneCharm, m_pActivatedWhaleBoneCharmLevel) == 956, "ADisWhaleBoneCharm::m_pActivatedWhaleBoneCharmLevel: retail offset 956");
+static_assert(offsetof(ADisWhaleBoneCharm, m_Effect) == 960, "ADisWhaleBoneCharm::m_Effect: retail offset 960");
 static_assert(sizeof(ADisWhaleOilReceptacle) == 688, "ADisWhaleOilReceptacle: retail sizeof 688");
 static_assert(offsetof(ADisWhaleOilReceptacle, m_pWhaleOilTweaks) == 644, "ADisWhaleOilReceptacle::m_pWhaleOilTweaks: retail offset 644");
 static_assert(offsetof(ADisWhaleOilReceptacle, m_pBattery) == 648, "ADisWhaleOilReceptacle::m_pBattery: retail offset 648");
@@ -6928,14 +6928,14 @@ static_assert(offsetof(ADisWhaleOilReceptacle, m_pPreviousBattery) == 660, "ADis
 static_assert(offsetof(ADisWhaleOilReceptacle, m_pTouchingBattery) == 664, "ADisWhaleOilReceptacle::m_pTouchingBattery: retail offset 664");
 static_assert(offsetof(ADisWhaleOilReceptacle, m_pDetectionCylinder) == 668, "ADisWhaleOilReceptacle::m_pDetectionCylinder: retail offset 668");
 static_assert(offsetof(ADisWhaleOilReceptacle, m_aAttachedActors) == 672, "ADisWhaleOilReceptacle::m_aAttachedActors: retail offset 672");
-// pending: sizeof(ADishonoredBreakableNavBlock) == 1072 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADishonoredBreakableNavBlock, m_pLinkedBreakableNavBlock) == 1020
-// pending: offsetof(ADishonoredBreakableNavBlock, m_NavGuid) == 1024
-// pending: offsetof(ADishonoredBreakableNavBlock, m_NavPolyRef) == 1040
-// pending: offsetof(ADishonoredBreakableNavBlock, m_NPCsMovingThru) == 1052
-// pending: sizeof(ADishonoredInventoryPickup) == 1024 (every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADishonoredInventoryPickup, m_pItem) == 1012
-// pending: offsetof(ADishonoredInventoryPickup, m_pInvPickupTweaks) == 1016
+static_assert(sizeof(ADishonoredBreakableNavBlock) == 1072, "ADishonoredBreakableNavBlock: retail sizeof 1072");
+static_assert(offsetof(ADishonoredBreakableNavBlock, m_pLinkedBreakableNavBlock) == 1020, "ADishonoredBreakableNavBlock::m_pLinkedBreakableNavBlock: retail offset 1020");
+static_assert(offsetof(ADishonoredBreakableNavBlock, m_NavGuid) == 1024, "ADishonoredBreakableNavBlock::m_NavGuid: retail offset 1024");
+static_assert(offsetof(ADishonoredBreakableNavBlock, m_NavPolyRef) == 1040, "ADishonoredBreakableNavBlock::m_NavPolyRef: retail offset 1040");
+static_assert(offsetof(ADishonoredBreakableNavBlock, m_NPCsMovingThru) == 1052, "ADishonoredBreakableNavBlock::m_NPCsMovingThru: retail offset 1052");
+static_assert(sizeof(ADishonoredInventoryPickup) == 1024, "ADishonoredInventoryPickup: retail sizeof 1024");
+static_assert(offsetof(ADishonoredInventoryPickup, m_pItem) == 1012, "ADishonoredInventoryPickup::m_pItem: retail offset 1012");
+static_assert(offsetof(ADishonoredInventoryPickup, m_pInvPickupTweaks) == 1016, "ADishonoredInventoryPickup::m_pInvPickupTweaks: retail offset 1016");
 static_assert(sizeof(FDisAimAssistDistReduce) == 8, "FDisAimAssistDistReduce: retail sizeof 8");
 static_assert(offsetof(FDisAimAssistDistReduce, m_fDistanceToReduce) == 0, "FDisAimAssistDistReduce::m_fDistanceToReduce: retail offset 0");
 static_assert(offsetof(FDisAimAssistDistReduce, m_fAimAssistWindowScale) == 4, "FDisAimAssistDistReduce::m_fAimAssistWindowScale: retail offset 4");
@@ -7984,7 +7984,7 @@ static_assert(offsetof(UDishonoredSeqBlendByAim, m_fMaxUpDegrees) == 432, "UDish
 static_assert(offsetof(UDishonoredSeqBlendByAim, m_fMaxDownDegrees) == 436, "UDishonoredSeqBlendByAim::m_fMaxDownDegrees: retail offset 436");
 static_assert(offsetof(UDishonoredSeqBlendByAim, m_LastKnownItemPrefixName) == 440, "UDishonoredSeqBlendByAim::m_LastKnownItemPrefixName: retail offset 440");
 static_assert(sizeof(UDishonoredSeqVersus) == 336, "UDishonoredSeqVersus: retail sizeof 336");
-// pending: sizeof(ADisDebugNPCCamera) == 1040 (every reflected member is shifted by +288 in our tree: base ACamera is not converged yet (probe))
+static_assert(sizeof(ADisDebugNPCCamera) == 1040, "ADisDebugNPCCamera: retail sizeof 1040");
 static_assert(sizeof(FDisCamFOVTarget) == 12, "FDisCamFOVTarget: retail sizeof 12");
 static_assert(offsetof(FDisCamFOVTarget, m_fTarget) == 0, "FDisCamFOVTarget::m_fTarget: retail offset 0");
 static_assert(offsetof(FDisCamFOVTarget, m_fBlendSpeed) == 8, "FDisCamFOVTarget::m_fBlendSpeed: retail offset 8");
@@ -8010,58 +8010,58 @@ static_assert(offsetof(FDishonoredVTSettings, m_MeshSpecificFOVWeight) == 44, "F
 static_assert(offsetof(FDishonoredVTSettings, m_ControllerOffset_Rot) == 48, "FDishonoredVTSettings::m_ControllerOffset_Rot: retail offset 48");
 static_assert(offsetof(FDishonoredVTSettings, m_NonAdditive_Rot) == 60, "FDishonoredVTSettings::m_NonAdditive_Rot: retail offset 60");
 static_assert(offsetof(FDishonoredVTSettings, m_NonAdditive_Pos) == 72, "FDishonoredVTSettings::m_NonAdditive_Pos: retail offset 72");
-// pending: sizeof(ADishonoredPlayerCamera) == 1392 (every reflected member is shifted by +276 in our tree: base ACamera is not converged yet (probe))
-// pending: offsetof(ADishonoredPlayerCamera, m_DishonoredVTSettings) == 1044
-// pending: offsetof(ADishonoredPlayerCamera, m_pPhysicalReact_Influence) == 1140
-// pending: offsetof(ADishonoredPlayerCamera, m_pHitReact_Influence) == 1144
-// pending: offsetof(ADishonoredPlayerCamera, m_pDisableArmFollow_Primary_Influence) == 1148
-// pending: offsetof(ADishonoredPlayerCamera, m_pDisableArmOffset_Primary_Influence) == 1152
-// pending: offsetof(ADishonoredPlayerCamera, m_pDisableArmFollow_Secondary_Influence) == 1156
-// pending: offsetof(ADishonoredPlayerCamera, m_pDisableArmOffset_Secondary_Influence) == 1160
-// pending: offsetof(ADishonoredPlayerCamera, m_pBumpSmoother_Influence) == 1164
-// pending: offsetof(ADishonoredPlayerCamera, m_pLean_Influence) == 1168
-// pending: offsetof(ADishonoredPlayerCamera, m_pLook_Influence) == 1172
-// pending: offsetof(ADishonoredPlayerCamera, m_pAim_Influence) == 1176
-// pending: offsetof(ADishonoredPlayerCamera, m_pPlayerControl_Influence) == 1180
-// pending: offsetof(ADishonoredPlayerCamera, m_pAnimDrive_Influence) == 1184
-// pending: offsetof(ADishonoredPlayerCamera, m_pUnpossessDeath_Influence) == 1188
-// pending: offsetof(ADishonoredPlayerCamera, m_pShake_Influence) == 1192
-// pending: offsetof(ADishonoredPlayerCamera, m_pRumble_Influence) == 1196
-// pending: offsetof(ADishonoredPlayerCamera, m_pRecoil_Influence) == 1200
-// pending: offsetof(ADishonoredPlayerCamera, m_pCrouchMantleOffset_Influence) == 1204
-// pending: offsetof(ADishonoredPlayerCamera, m_pStepUpMantleOffset_Influence) == 1208
-// pending: offsetof(ADishonoredPlayerCamera, m_pPossess_Influence) == 1212
-// pending: offsetof(ADishonoredPlayerCamera, m_TickTag) == 1220
-// pending: offsetof(ADishonoredPlayerCamera, m_PassCount) == 1224
-// pending: offsetof(ADishonoredPlayerCamera, m_fCurCollisionRadius) == 1228
-// pending: offsetof(ADishonoredPlayerCamera, m_fCurCollisionHeight) == 1232
-// pending: offsetof(ADishonoredPlayerCamera, m_CurCollisionStatus) == 1236
-// pending: offsetof(ADishonoredPlayerCamera, m_fLastCollisionDifFromNonAdditive) == 1240
-// pending: offsetof(ADishonoredPlayerCamera, m_pRainBoxEmitter) == 1244
-// pending: offsetof(ADishonoredPlayerCamera, m_RainBoxExtent) == 1248
-// pending: offsetof(ADishonoredPlayerCamera, m_RainImpacts) == 1260
-// pending: offsetof(ADishonoredPlayerCamera, m_CurrentRainImpactIndex) == 1272
-// pending: offsetof(ADishonoredPlayerCamera, m_LastNumRequestedRainImpacts) == 1276
-// pending: offsetof(ADishonoredPlayerCamera, m_NumRequestedRainImpacts) == 1280
-// pending: offsetof(ADishonoredPlayerCamera, m_NumAvailableRainImpacts) == 1284
-// pending: offsetof(ADishonoredPlayerCamera, m_NumRainDrops) == 1288
-// pending: offsetof(ADishonoredPlayerCamera, m_fRainImpactsMinDist) == 1292
-// pending: offsetof(ADishonoredPlayerCamera, m_fRainImpactsMaxDist) == 1296
-// pending: offsetof(ADishonoredPlayerCamera, m_RainDirection) == 1300
-// pending: offsetof(ADishonoredPlayerCamera, m_fRainSpawnKillRate) == 1312
-// pending: offsetof(ADishonoredPlayerCamera, m_FOVTargets) == 1316
-// pending: offsetof(ADishonoredPlayerCamera, m_PostProcessTargets) == 1328
-// pending: offsetof(ADishonoredPlayerCamera, m_fCurFOV) == 1340
-// pending: offsetof(ADishonoredPlayerCamera, m_fCurFOV_Arms) == 1344
-// pending: offsetof(ADishonoredPlayerCamera, m_BobAmount) == 1348
-// pending: offsetof(ADishonoredPlayerCamera, m_RollAmount) == 1352
-// pending: offsetof(ADishonoredPlayerCamera, m_fReactionWeight) == 1356
-// pending: offsetof(ADishonoredPlayerCamera, m_fDefaultFOVBlendSpeed) == 1360
-// pending: offsetof(ADishonoredPlayerCamera, m_fTopCameraHeight) == 1364
-// pending: offsetof(ADishonoredPlayerCamera, m_fCamCollisionSmoothSpeed) == 1368
-// pending: offsetof(ADishonoredPlayerCamera, m_fCamCollisionSmoothMinDifSize) == 1372
-// pending: offsetof(ADishonoredPlayerCamera, m_fCamCollisionLargestUnsmoothedPop) == 1376
-// pending: offsetof(ADishonoredPlayerCamera, m_fDefaultFOVSettings) == 1380
+static_assert(sizeof(ADishonoredPlayerCamera) == 1392, "ADishonoredPlayerCamera: retail sizeof 1392");
+static_assert(offsetof(ADishonoredPlayerCamera, m_DishonoredVTSettings) == 1044, "ADishonoredPlayerCamera::m_DishonoredVTSettings: retail offset 1044");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pPhysicalReact_Influence) == 1140, "ADishonoredPlayerCamera::m_pPhysicalReact_Influence: retail offset 1140");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pHitReact_Influence) == 1144, "ADishonoredPlayerCamera::m_pHitReact_Influence: retail offset 1144");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pDisableArmFollow_Primary_Influence) == 1148, "ADishonoredPlayerCamera::m_pDisableArmFollow_Primary_Influence: retail offset 1148");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pDisableArmOffset_Primary_Influence) == 1152, "ADishonoredPlayerCamera::m_pDisableArmOffset_Primary_Influence: retail offset 1152");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pDisableArmFollow_Secondary_Influence) == 1156, "ADishonoredPlayerCamera::m_pDisableArmFollow_Secondary_Influence: retail offset 1156");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pDisableArmOffset_Secondary_Influence) == 1160, "ADishonoredPlayerCamera::m_pDisableArmOffset_Secondary_Influence: retail offset 1160");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pBumpSmoother_Influence) == 1164, "ADishonoredPlayerCamera::m_pBumpSmoother_Influence: retail offset 1164");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pLean_Influence) == 1168, "ADishonoredPlayerCamera::m_pLean_Influence: retail offset 1168");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pLook_Influence) == 1172, "ADishonoredPlayerCamera::m_pLook_Influence: retail offset 1172");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pAim_Influence) == 1176, "ADishonoredPlayerCamera::m_pAim_Influence: retail offset 1176");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pPlayerControl_Influence) == 1180, "ADishonoredPlayerCamera::m_pPlayerControl_Influence: retail offset 1180");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pAnimDrive_Influence) == 1184, "ADishonoredPlayerCamera::m_pAnimDrive_Influence: retail offset 1184");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pUnpossessDeath_Influence) == 1188, "ADishonoredPlayerCamera::m_pUnpossessDeath_Influence: retail offset 1188");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pShake_Influence) == 1192, "ADishonoredPlayerCamera::m_pShake_Influence: retail offset 1192");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pRumble_Influence) == 1196, "ADishonoredPlayerCamera::m_pRumble_Influence: retail offset 1196");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pRecoil_Influence) == 1200, "ADishonoredPlayerCamera::m_pRecoil_Influence: retail offset 1200");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pCrouchMantleOffset_Influence) == 1204, "ADishonoredPlayerCamera::m_pCrouchMantleOffset_Influence: retail offset 1204");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pStepUpMantleOffset_Influence) == 1208, "ADishonoredPlayerCamera::m_pStepUpMantleOffset_Influence: retail offset 1208");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pPossess_Influence) == 1212, "ADishonoredPlayerCamera::m_pPossess_Influence: retail offset 1212");
+static_assert(offsetof(ADishonoredPlayerCamera, m_TickTag) == 1220, "ADishonoredPlayerCamera::m_TickTag: retail offset 1220");
+static_assert(offsetof(ADishonoredPlayerCamera, m_PassCount) == 1224, "ADishonoredPlayerCamera::m_PassCount: retail offset 1224");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCurCollisionRadius) == 1228, "ADishonoredPlayerCamera::m_fCurCollisionRadius: retail offset 1228");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCurCollisionHeight) == 1232, "ADishonoredPlayerCamera::m_fCurCollisionHeight: retail offset 1232");
+static_assert(offsetof(ADishonoredPlayerCamera, m_CurCollisionStatus) == 1236, "ADishonoredPlayerCamera::m_CurCollisionStatus: retail offset 1236");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fLastCollisionDifFromNonAdditive) == 1240, "ADishonoredPlayerCamera::m_fLastCollisionDifFromNonAdditive: retail offset 1240");
+static_assert(offsetof(ADishonoredPlayerCamera, m_pRainBoxEmitter) == 1244, "ADishonoredPlayerCamera::m_pRainBoxEmitter: retail offset 1244");
+static_assert(offsetof(ADishonoredPlayerCamera, m_RainBoxExtent) == 1248, "ADishonoredPlayerCamera::m_RainBoxExtent: retail offset 1248");
+static_assert(offsetof(ADishonoredPlayerCamera, m_RainImpacts) == 1260, "ADishonoredPlayerCamera::m_RainImpacts: retail offset 1260");
+static_assert(offsetof(ADishonoredPlayerCamera, m_CurrentRainImpactIndex) == 1272, "ADishonoredPlayerCamera::m_CurrentRainImpactIndex: retail offset 1272");
+static_assert(offsetof(ADishonoredPlayerCamera, m_LastNumRequestedRainImpacts) == 1276, "ADishonoredPlayerCamera::m_LastNumRequestedRainImpacts: retail offset 1276");
+static_assert(offsetof(ADishonoredPlayerCamera, m_NumRequestedRainImpacts) == 1280, "ADishonoredPlayerCamera::m_NumRequestedRainImpacts: retail offset 1280");
+static_assert(offsetof(ADishonoredPlayerCamera, m_NumAvailableRainImpacts) == 1284, "ADishonoredPlayerCamera::m_NumAvailableRainImpacts: retail offset 1284");
+static_assert(offsetof(ADishonoredPlayerCamera, m_NumRainDrops) == 1288, "ADishonoredPlayerCamera::m_NumRainDrops: retail offset 1288");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fRainImpactsMinDist) == 1292, "ADishonoredPlayerCamera::m_fRainImpactsMinDist: retail offset 1292");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fRainImpactsMaxDist) == 1296, "ADishonoredPlayerCamera::m_fRainImpactsMaxDist: retail offset 1296");
+static_assert(offsetof(ADishonoredPlayerCamera, m_RainDirection) == 1300, "ADishonoredPlayerCamera::m_RainDirection: retail offset 1300");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fRainSpawnKillRate) == 1312, "ADishonoredPlayerCamera::m_fRainSpawnKillRate: retail offset 1312");
+static_assert(offsetof(ADishonoredPlayerCamera, m_FOVTargets) == 1316, "ADishonoredPlayerCamera::m_FOVTargets: retail offset 1316");
+static_assert(offsetof(ADishonoredPlayerCamera, m_PostProcessTargets) == 1328, "ADishonoredPlayerCamera::m_PostProcessTargets: retail offset 1328");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCurFOV) == 1340, "ADishonoredPlayerCamera::m_fCurFOV: retail offset 1340");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCurFOV_Arms) == 1344, "ADishonoredPlayerCamera::m_fCurFOV_Arms: retail offset 1344");
+static_assert(offsetof(ADishonoredPlayerCamera, m_BobAmount) == 1348, "ADishonoredPlayerCamera::m_BobAmount: retail offset 1348");
+static_assert(offsetof(ADishonoredPlayerCamera, m_RollAmount) == 1352, "ADishonoredPlayerCamera::m_RollAmount: retail offset 1352");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fReactionWeight) == 1356, "ADishonoredPlayerCamera::m_fReactionWeight: retail offset 1356");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fDefaultFOVBlendSpeed) == 1360, "ADishonoredPlayerCamera::m_fDefaultFOVBlendSpeed: retail offset 1360");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fTopCameraHeight) == 1364, "ADishonoredPlayerCamera::m_fTopCameraHeight: retail offset 1364");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCamCollisionSmoothSpeed) == 1368, "ADishonoredPlayerCamera::m_fCamCollisionSmoothSpeed: retail offset 1368");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCamCollisionSmoothMinDifSize) == 1372, "ADishonoredPlayerCamera::m_fCamCollisionSmoothMinDifSize: retail offset 1372");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fCamCollisionLargestUnsmoothedPop) == 1376, "ADishonoredPlayerCamera::m_fCamCollisionLargestUnsmoothedPop: retail offset 1376");
+static_assert(offsetof(ADishonoredPlayerCamera, m_fDefaultFOVSettings) == 1380, "ADishonoredPlayerCamera::m_fDefaultFOVSettings: retail offset 1380");
 static_assert(sizeof(FDisBumpDetectInfo) == 20, "FDisBumpDetectInfo: retail sizeof 20");
 static_assert(offsetof(FDisBumpDetectInfo, m_fLastSampleHeight) == 0, "FDisBumpDetectInfo::m_fLastSampleHeight: retail offset 0");
 static_assert(offsetof(FDisBumpDetectInfo, m_LastSample_Full) == 4, "FDisBumpDetectInfo::m_LastSample_Full: retail offset 4");
@@ -8221,8 +8221,8 @@ static_assert(offsetof(UDisTweaks_ChapterInfoList, m_ChapterList) == 140, "UDisT
 static_assert(sizeof(UDisTweaks_ChapterTarget) == 164, "UDisTweaks_ChapterTarget: retail sizeof 164");
 static_assert(offsetof(UDisTweaks_ChapterTarget, m_TargetName) == 140, "UDisTweaks_ChapterTarget::m_TargetName: retail offset 140");
 static_assert(offsetof(UDisTweaks_ChapterTarget, m_TargetPortraitPath) == 152, "UDisTweaks_ChapterTarget::m_TargetPortraitPath: retail offset 152");
-// pending: sizeof(ADisDecalManager) == 656 (every reflected member is shifted by -12 in our tree: base ADecalManager is not converged yet (probe))
-// pending: offsetof(ADisDecalManager, m_DecalActorPool) == 644
+static_assert(sizeof(ADisDecalManager) == 656, "ADisDecalManager: retail sizeof 656");
+static_assert(offsetof(ADisDecalManager, m_DecalActorPool) == 644, "ADisDecalManager::m_DecalActorPool: retail offset 644");
 static_assert(sizeof(FDisContactDebugItem) == 24, "FDisContactDebugItem: retail sizeof 24");
 static_assert(offsetof(FDisContactDebugItem, m_pStriker) == 0, "FDisContactDebugItem::m_pStriker: retail offset 0");
 static_assert(offsetof(FDisContactDebugItem, m_pStruck) == 4, "FDisContactDebugItem::m_pStruck: retail offset 4");
@@ -9114,7 +9114,7 @@ static_assert(sizeof(FDisRestoreOldEquipForPawn) == 16, "FDisRestoreOldEquipForP
 static_assert(offsetof(FDisRestoreOldEquipForPawn, m_pPawn) == 0, "FDisRestoreOldEquipForPawn::m_pPawn: retail offset 0");
 static_assert(offsetof(FDisRestoreOldEquipForPawn, m_OldEquipment) == 4, "FDisRestoreOldEquipForPawn::m_OldEquipment: retail offset 4");
 static_assert(sizeof(UDisSeqAct_PlayerAction) == 248, "UDisSeqAct_PlayerAction: retail sizeof 248");
-// pending: sizeof(UDisSeqAct_Latent) == 264 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
+static_assert(sizeof(UDisSeqAct_Latent) == 264, "UDisSeqAct_Latent: retail sizeof 264");
 static_assert(sizeof(UDisSeqEvent_PlayerEvent) == 272, "UDisSeqEvent_PlayerEvent: retail sizeof 272");
 static_assert(sizeof(UDisSeqAct_AIAmbush) == 256, "UDisSeqAct_AIAmbush: retail sizeof 256");
 static_assert(offsetof(UDisSeqAct_AIAmbush, m_pAmbushPoint) == 248, "UDisSeqAct_AIAmbush::m_pAmbushPoint: retail offset 248");
@@ -9131,9 +9131,9 @@ static_assert(sizeof(UDisSeqAct_AIDoSimpleBehaviors) == 272, "UDisSeqAct_AIDoSim
 static_assert(offsetof(UDisSeqAct_AIDoSimpleBehaviors, m_eSimpleBehaviorToRun) == 268, "UDisSeqAct_AIDoSimpleBehaviors::m_eSimpleBehaviorToRun: retail offset 268");
 static_assert(sizeof(UDisSeqAct_AIGetBrainFlagValue) == 256, "UDisSeqAct_AIGetBrainFlagValue: retail sizeof 256");
 static_assert(offsetof(UDisSeqAct_AIGetBrainFlagValue, m_FlagToFetch) == 248, "UDisSeqAct_AIGetBrainFlagValue::m_FlagToFetch: retail offset 248");
-// pending: sizeof(UDisSeqAct_AIGoToActor) == 276 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_AIGoToActor, m_pDestinationActor) == 268
-// pending: offsetof(UDisSeqAct_AIGoToActor, m_DesiredMovementSpeed) == 272
+static_assert(sizeof(UDisSeqAct_AIGoToActor) == 276, "UDisSeqAct_AIGoToActor: retail sizeof 276");
+static_assert(offsetof(UDisSeqAct_AIGoToActor, m_pDestinationActor) == 268, "UDisSeqAct_AIGoToActor::m_pDestinationActor: retail offset 268");
+static_assert(offsetof(UDisSeqAct_AIGoToActor, m_DesiredMovementSpeed) == 272, "UDisSeqAct_AIGoToActor::m_DesiredMovementSpeed: retail offset 272");
 static_assert(sizeof(UDisSeqAct_AIGuard) == 256, "UDisSeqAct_AIGuard: retail sizeof 256");
 static_assert(offsetof(UDisSeqAct_AIGuard, m_pHomeActor) == 248, "UDisSeqAct_AIGuard::m_pHomeActor: retail offset 248");
 static_assert(offsetof(UDisSeqAct_AIGuard, m_fGuardAwarenessRadius) == 252, "UDisSeqAct_AIGuard::m_fGuardAwarenessRadius: retail offset 252");
@@ -9154,19 +9154,19 @@ static_assert(offsetof(UDisSeqAct_AISetPatrol, m_pStartActor) == 248, "UDisSeqAc
 static_assert(sizeof(UDisSeqAct_AISetSenses) == 252, "UDisSeqAct_AISetSenses: retail sizeof 252");
 static_assert(sizeof(UDisSeqAct_AISetSuspicionLevel) == 252, "UDisSeqAct_AISetSuspicionLevel: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_AISetSuspicionLevel, m_SuspicionLevel) == 248, "UDisSeqAct_AISetSuspicionLevel::m_SuspicionLevel: retail offset 248");
-// pending: sizeof(UDisSeqAct_AIShoot) == 280 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_AIShoot, m_pShotTarget) == 268
-// pending: offsetof(UDisSeqAct_AIShoot, m_iMaxNumShots) == 272
-// pending: offsetof(UDisSeqAct_AIShoot, m_fOverrideAccuracyPercentage) == 276
+static_assert(sizeof(UDisSeqAct_AIShoot) == 280, "UDisSeqAct_AIShoot: retail sizeof 280");
+static_assert(offsetof(UDisSeqAct_AIShoot, m_pShotTarget) == 268, "UDisSeqAct_AIShoot::m_pShotTarget: retail offset 268");
+static_assert(offsetof(UDisSeqAct_AIShoot, m_iMaxNumShots) == 272, "UDisSeqAct_AIShoot::m_iMaxNumShots: retail offset 272");
+static_assert(offsetof(UDisSeqAct_AIShoot, m_fOverrideAccuracyPercentage) == 276, "UDisSeqAct_AIShoot::m_fOverrideAccuracyPercentage: retail offset 276");
 static_assert(sizeof(UDisSeqAct_AIStartDistraction) == 252, "UDisSeqAct_AIStartDistraction: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_AIStartDistraction, m_pDistractor) == 248, "UDisSeqAct_AIStartDistraction::m_pDistractor: retail offset 248");
-// pending: sizeof(UDisSeqAct_ActivateProjectileLauncher) == 268 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_ActivateProjectileLauncher, m_pProjInstigator) == 264
+static_assert(sizeof(UDisSeqAct_ActivateProjectileLauncher) == 268, "UDisSeqAct_ActivateProjectileLauncher: retail sizeof 268");
+static_assert(offsetof(UDisSeqAct_ActivateProjectileLauncher, m_pProjInstigator) == 264, "UDisSeqAct_ActivateProjectileLauncher::m_pProjInstigator: retail offset 264");
 static_assert(sizeof(UDisSeqAct_ActivateRatSpawner) == 248, "UDisSeqAct_ActivateRatSpawner: retail sizeof 248");
-// pending: sizeof(UDisSeqAct_ActivateUsable) == 280 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_ActivateUsable, m_TargetStageIndex) == 264
-// pending: offsetof(UDisSeqAct_ActivateUsable, m_pUsingPawn) == 272
-// pending: offsetof(UDisSeqAct_ActivateUsable, m_iGoalStage) == 276
+static_assert(sizeof(UDisSeqAct_ActivateUsable) == 280, "UDisSeqAct_ActivateUsable: retail sizeof 280");
+static_assert(offsetof(UDisSeqAct_ActivateUsable, m_TargetStageIndex) == 264, "UDisSeqAct_ActivateUsable::m_TargetStageIndex: retail offset 264");
+static_assert(offsetof(UDisSeqAct_ActivateUsable, m_pUsingPawn) == 272, "UDisSeqAct_ActivateUsable::m_pUsingPawn: retail offset 272");
+static_assert(offsetof(UDisSeqAct_ActivateUsable, m_iGoalStage) == 276, "UDisSeqAct_ActivateUsable::m_iGoalStage: retail offset 276");
 static_assert(sizeof(UDisSeqAct_AddAbstractItem) == 256, "UDisSeqAct_AddAbstractItem: retail sizeof 256");
 static_assert(offsetof(UDisSeqAct_AddAbstractItem, m_pItemToAdd) == 248, "UDisSeqAct_AddAbstractItem::m_pItemToAdd: retail offset 248");
 static_assert(offsetof(UDisSeqAct_AddAbstractItem, m_Quantity) == 252, "UDisSeqAct_AddAbstractItem::m_Quantity: retail offset 252");
@@ -9194,14 +9194,14 @@ static_assert(sizeof(UDisSeqAct_AttachAnimSet) == 252, "UDisSeqAct_AttachAnimSet
 static_assert(offsetof(UDisSeqAct_AttachAnimSet, m_pAnimSet) == 248, "UDisSeqAct_AttachAnimSet::m_pAnimSet: retail offset 248");
 static_assert(sizeof(UDisSeqAct_AttachPickup) == 252, "UDisSeqAct_AttachPickup: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_AttachPickup, m_pPickup) == 248, "UDisSeqAct_AttachPickup::m_pPickup: retail offset 248");
-// pending: sizeof(UDisSeqAct_AutoSave) == 276 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_AutoSave, m_MissionNumber) == 268
-// pending: offsetof(UDisSeqAct_AutoSave, m_AutoSaveStatus) == 272
-// pending: sizeof(UDisSeqAct_BackupAndClearInventory) == 316 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_BackupAndClearInventory, m_ForceRemoveItems) == 268
-// pending: offsetof(UDisSeqAct_BackupAndClearInventory, m_SkipTheseItems) == 280
-// pending: offsetof(UDisSeqAct_BackupAndClearInventory, m_SkipTheseAbstractItem) == 292
-// pending: offsetof(UDisSeqAct_BackupAndClearInventory, m_SkipTheseUpgrades) == 304
+static_assert(sizeof(UDisSeqAct_AutoSave) == 276, "UDisSeqAct_AutoSave: retail sizeof 276");
+static_assert(offsetof(UDisSeqAct_AutoSave, m_MissionNumber) == 268, "UDisSeqAct_AutoSave::m_MissionNumber: retail offset 268");
+static_assert(offsetof(UDisSeqAct_AutoSave, m_AutoSaveStatus) == 272, "UDisSeqAct_AutoSave::m_AutoSaveStatus: retail offset 272");
+static_assert(sizeof(UDisSeqAct_BackupAndClearInventory) == 316, "UDisSeqAct_BackupAndClearInventory: retail sizeof 316");
+static_assert(offsetof(UDisSeqAct_BackupAndClearInventory, m_ForceRemoveItems) == 268, "UDisSeqAct_BackupAndClearInventory::m_ForceRemoveItems: retail offset 268");
+static_assert(offsetof(UDisSeqAct_BackupAndClearInventory, m_SkipTheseItems) == 280, "UDisSeqAct_BackupAndClearInventory::m_SkipTheseItems: retail offset 280");
+static_assert(offsetof(UDisSeqAct_BackupAndClearInventory, m_SkipTheseAbstractItem) == 292, "UDisSeqAct_BackupAndClearInventory::m_SkipTheseAbstractItem: retail offset 292");
+static_assert(offsetof(UDisSeqAct_BackupAndClearInventory, m_SkipTheseUpgrades) == 304, "UDisSeqAct_BackupAndClearInventory::m_SkipTheseUpgrades: retail offset 304");
 static_assert(sizeof(UDisSeqAct_BendTime) == 272, "UDisSeqAct_BendTime: retail sizeof 272");
 static_assert(offsetof(UDisSeqAct_BendTime, m_fWorldTimeDilation) == 248, "UDisSeqAct_BendTime::m_fWorldTimeDilation: retail offset 248");
 static_assert(offsetof(UDisSeqAct_BendTime, m_fPlayerTimeDilation) == 252, "UDisSeqAct_BendTime::m_fPlayerTimeDilation: retail offset 252");
@@ -9213,10 +9213,10 @@ static_assert(sizeof(UDisSeqAct_CancelPlayerActivePower) == 252, "UDisSeqAct_Can
 static_assert(offsetof(UDisSeqAct_CancelPlayerActivePower, m_pPowerClass) == 248, "UDisSeqAct_CancelPlayerActivePower::m_pPowerClass: retail offset 248");
 static_assert(sizeof(UDisSeqAct_CleanupBodies) == 248, "UDisSeqAct_CleanupBodies: retail sizeof 248");
 static_assert(sizeof(UDisSeqAct_ClearPlayerVisSettings) == 248, "UDisSeqAct_ClearPlayerVisSettings: retail sizeof 248");
-// pending: sizeof(UDisSeqAct_DialogScriptedChoice) == 296 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_DialogScriptedChoice, m_Title) == 268
-// pending: offsetof(UDisSeqAct_DialogScriptedChoice, m_Choices) == 280
-// pending: offsetof(UDisSeqAct_DialogScriptedChoice, m_iSelectedChoice) == 292
+static_assert(sizeof(UDisSeqAct_DialogScriptedChoice) == 296, "UDisSeqAct_DialogScriptedChoice: retail sizeof 296");
+static_assert(offsetof(UDisSeqAct_DialogScriptedChoice, m_Title) == 268, "UDisSeqAct_DialogScriptedChoice::m_Title: retail offset 268");
+static_assert(offsetof(UDisSeqAct_DialogScriptedChoice, m_Choices) == 280, "UDisSeqAct_DialogScriptedChoice::m_Choices: retail offset 280");
+static_assert(offsetof(UDisSeqAct_DialogScriptedChoice, m_iSelectedChoice) == 292, "UDisSeqAct_DialogScriptedChoice::m_iSelectedChoice: retail offset 292");
 static_assert(sizeof(UDisSeqAct_DefenceTower) == 248, "UDisSeqAct_DefenceTower: retail sizeof 248");
 static_assert(sizeof(UDisSeqAct_DialogInputs) == 256, "UDisSeqAct_DialogInputs: retail sizeof 256");
 static_assert(offsetof(UDisSeqAct_DialogInputs, m_pDialogTree) == 248, "UDisSeqAct_DialogInputs::m_pDialogTree: retail offset 248");
@@ -9275,14 +9275,14 @@ static_assert(offsetof(UDisSeqAct_ModifyElixirCount, m_ElixirOp) == 249, "UDisSe
 static_assert(offsetof(UDisSeqAct_ModifyElixirCount, m_Value) == 252, "UDisSeqAct_ModifyElixirCount::m_Value: retail offset 252");
 static_assert(sizeof(UDisSeqAct_NPCDisableTeleportOnNavmesh) == 252, "UDisSeqAct_NPCDisableTeleportOnNavmesh: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_NPCDisableTeleportOnNavmesh, m_pNPC) == 248, "UDisSeqAct_NPCDisableTeleportOnNavmesh::m_pNPC: retail offset 248");
-// pending: sizeof(UDisSeqAct_NPCDoTeleportSpell) == 276 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_NPCDoTeleportSpell, m_pDestinationActor) == 268
-// pending: offsetof(UDisSeqAct_NPCDoTeleportSpell, m_fReappearanceDelay) == 272
+static_assert(sizeof(UDisSeqAct_NPCDoTeleportSpell) == 276, "UDisSeqAct_NPCDoTeleportSpell: retail sizeof 276");
+static_assert(offsetof(UDisSeqAct_NPCDoTeleportSpell, m_pDestinationActor) == 268, "UDisSeqAct_NPCDoTeleportSpell::m_pDestinationActor: retail offset 268");
+static_assert(offsetof(UDisSeqAct_NPCDoTeleportSpell, m_fReappearanceDelay) == 272, "UDisSeqAct_NPCDoTeleportSpell::m_fReappearanceDelay: retail offset 272");
 static_assert(sizeof(UDisSeqAct_NPCIgnoreRBDamages) == 248, "UDisSeqAct_NPCIgnoreRBDamages: retail sizeof 248");
-// pending: sizeof(UDisSeqAct_NPCMarkForVanish) == 280 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_NPCMarkForVanish, m_VanishInput) == 264
-// pending: offsetof(UDisSeqAct_NPCMarkForVanish, m_fRequiredDistance) == 272
-// pending: offsetof(UDisSeqAct_NPCMarkForVanish, m_fOffscreenTimeRequired) == 276
+static_assert(sizeof(UDisSeqAct_NPCMarkForVanish) == 280, "UDisSeqAct_NPCMarkForVanish: retail sizeof 280");
+static_assert(offsetof(UDisSeqAct_NPCMarkForVanish, m_VanishInput) == 264, "UDisSeqAct_NPCMarkForVanish::m_VanishInput: retail offset 264");
+static_assert(offsetof(UDisSeqAct_NPCMarkForVanish, m_fRequiredDistance) == 272, "UDisSeqAct_NPCMarkForVanish::m_fRequiredDistance: retail offset 272");
+static_assert(offsetof(UDisSeqAct_NPCMarkForVanish, m_fOffscreenTimeRequired) == 276, "UDisSeqAct_NPCMarkForVanish::m_fOffscreenTimeRequired: retail offset 276");
 static_assert(sizeof(UDisSeqAct_NPCSetMaterials) == 272, "UDisSeqAct_NPCSetMaterials: retail sizeof 272");
 static_assert(offsetof(UDisSeqAct_NPCSetMaterials, m_NewBodyMaterials) == 248, "UDisSeqAct_NPCSetMaterials::m_NewBodyMaterials: retail offset 248");
 static_assert(offsetof(UDisSeqAct_NPCSetMaterials, m_NewHeadMaterials) == 260, "UDisSeqAct_NPCSetMaterials::m_NewHeadMaterials: retail offset 260");
@@ -9322,14 +9322,14 @@ static_assert(offsetof(UDisSeqAct_RemoveAbstractItem, m_Quantity) == 252, "UDisS
 static_assert(sizeof(UDisSeqAct_RemoveAttributeModifier) == 264, "UDisSeqAct_RemoveAttributeModifier: retail sizeof 264");
 static_assert(offsetof(UDisSeqAct_RemoveAttributeModifier, m_AttributeName) == 248, "UDisSeqAct_RemoveAttributeModifier::m_AttributeName: retail offset 248");
 static_assert(offsetof(UDisSeqAct_RemoveAttributeModifier, m_ModifierName) == 256, "UDisSeqAct_RemoveAttributeModifier::m_ModifierName: retail offset 256");
-// pending: sizeof(UDisSeqAct_RemoveInventoryItem) == 272 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_RemoveInventoryItem, m_pRemoveAllOfType) == 264
+static_assert(sizeof(UDisSeqAct_RemoveInventoryItem) == 272, "UDisSeqAct_RemoveInventoryItem: retail sizeof 272");
+static_assert(offsetof(UDisSeqAct_RemoveInventoryItem, m_pRemoveAllOfType) == 264, "UDisSeqAct_RemoveInventoryItem::m_pRemoveAllOfType: retail offset 264");
 static_assert(sizeof(UDisSeqAct_RemoveKey) == 260, "UDisSeqAct_RemoveKey: retail sizeof 260");
 static_assert(offsetof(UDisSeqAct_RemoveKey, m_Name) == 248, "UDisSeqAct_RemoveKey::m_Name: retail offset 248");
 static_assert(sizeof(UDisSeqAct_RemovePower) == 260, "UDisSeqAct_RemovePower: retail sizeof 260");
 static_assert(offsetof(UDisSeqAct_RemovePower, m_PowerName) == 248, "UDisSeqAct_RemovePower::m_PowerName: retail offset 248");
-// pending: sizeof(UDisSeqAct_RestoreInventoryFromBackup) == 280 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_RestoreInventoryFromBackup, m_OldEquipForPawns) == 268
+static_assert(sizeof(UDisSeqAct_RestoreInventoryFromBackup) == 280, "UDisSeqAct_RestoreInventoryFromBackup: retail sizeof 280");
+static_assert(offsetof(UDisSeqAct_RestoreInventoryFromBackup, m_OldEquipForPawns) == 268, "UDisSeqAct_RestoreInventoryFromBackup::m_OldEquipForPawns: retail offset 268");
 static_assert(sizeof(UDisSeqAct_RiverKrustDisable) == 252, "UDisSeqAct_RiverKrustDisable: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_RiverKrustDisable, m_Disabled) == 248, "UDisSeqAct_RiverKrustDisable::m_Disabled: retail offset 248");
 static_assert(sizeof(UDisSeqAct_RiverKrustSpitAtTarget) == 252, "UDisSeqAct_RiverKrustSpitAtTarget: retail sizeof 252");
@@ -9354,14 +9354,14 @@ static_assert(sizeof(UDisSeqAct_SetPlayerTravelDestination) == 256, "UDisSeqAct_
 static_assert(offsetof(UDisSeqAct_SetPlayerTravelDestination, m_Tag) == 248, "UDisSeqAct_SetPlayerTravelDestination::m_Tag: retail offset 248");
 static_assert(sizeof(UDisSeqAct_SetPlayerVisSettings) == 252, "UDisSeqAct_SetPlayerVisSettings: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_SetPlayerVisSettings, m_pSettings) == 248, "UDisSeqAct_SetPlayerVisSettings::m_pSettings: retail offset 248");
-// pending: sizeof(UDisSeqAct_SetRainEmitter) == 292 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_NumRainDrops) == 264
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_fRainImpactsMinDist) == 268
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_fRainImpactsMaxDist) == 272
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_pRainRotationActor) == 276
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_fRainStartDelay) == 280
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_pCachedCamera) == 284
-// pending: offsetof(UDisSeqAct_SetRainEmitter, m_fStartTimer) == 288
+static_assert(sizeof(UDisSeqAct_SetRainEmitter) == 292, "UDisSeqAct_SetRainEmitter: retail sizeof 292");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_NumRainDrops) == 264, "UDisSeqAct_SetRainEmitter::m_NumRainDrops: retail offset 264");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_fRainImpactsMinDist) == 268, "UDisSeqAct_SetRainEmitter::m_fRainImpactsMinDist: retail offset 268");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_fRainImpactsMaxDist) == 272, "UDisSeqAct_SetRainEmitter::m_fRainImpactsMaxDist: retail offset 272");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_pRainRotationActor) == 276, "UDisSeqAct_SetRainEmitter::m_pRainRotationActor: retail offset 276");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_fRainStartDelay) == 280, "UDisSeqAct_SetRainEmitter::m_fRainStartDelay: retail offset 280");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_pCachedCamera) == 284, "UDisSeqAct_SetRainEmitter::m_pCachedCamera: retail offset 284");
+static_assert(offsetof(UDisSeqAct_SetRainEmitter, m_fStartTimer) == 288, "UDisSeqAct_SetRainEmitter::m_fStartTimer: retail offset 288");
 static_assert(sizeof(UDisSeqAct_SetStoryFlag) == 268, "UDisSeqAct_SetStoryFlag: retail sizeof 268");
 static_assert(offsetof(UDisSeqAct_SetStoryFlag, m_pStoryFlagSet) == 248, "UDisSeqAct_SetStoryFlag::m_pStoryFlagSet: retail offset 248");
 static_assert(offsetof(UDisSeqAct_SetStoryFlag, m_StoryFlag) == 252, "UDisSeqAct_SetStoryFlag::m_StoryFlag: retail offset 252");
@@ -9370,19 +9370,19 @@ static_assert(offsetof(UDisSeqAct_SeverLimb, m_JointName) == 248, "UDisSeqAct_Se
 static_assert(offsetof(UDisSeqAct_SeverLimb, m_ImpulseMode) == 260, "UDisSeqAct_SeverLimb::m_ImpulseMode: retail offset 260");
 static_assert(offsetof(UDisSeqAct_SeverLimb, m_fImpulseStrength) == 264, "UDisSeqAct_SeverLimb::m_fImpulseStrength: retail offset 264");
 static_assert(sizeof(UDisSeqAct_ShowPowerMenu) == 248, "UDisSeqAct_ShowPowerMenu: retail sizeof 248");
-// pending: sizeof(UDisSeqAct_SpawnCameraLensEffect) == 280 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_SpawnCameraLensEffect, m_pEffectClass) == 264
-// pending: offsetof(UDisSeqAct_SpawnCameraLensEffect, m_pDisEffectTweaks) == 268
-// pending: offsetof(UDisSeqAct_SpawnCameraLensEffect, m_fLoopingBlendInTime) == 272
-// pending: offsetof(UDisSeqAct_SpawnCameraLensEffect, m_fLoopingBlendOutTime) == 276
+static_assert(sizeof(UDisSeqAct_SpawnCameraLensEffect) == 280, "UDisSeqAct_SpawnCameraLensEffect: retail sizeof 280");
+static_assert(offsetof(UDisSeqAct_SpawnCameraLensEffect, m_pEffectClass) == 264, "UDisSeqAct_SpawnCameraLensEffect::m_pEffectClass: retail offset 264");
+static_assert(offsetof(UDisSeqAct_SpawnCameraLensEffect, m_pDisEffectTweaks) == 268, "UDisSeqAct_SpawnCameraLensEffect::m_pDisEffectTweaks: retail offset 268");
+static_assert(offsetof(UDisSeqAct_SpawnCameraLensEffect, m_fLoopingBlendInTime) == 272, "UDisSeqAct_SpawnCameraLensEffect::m_fLoopingBlendInTime: retail offset 272");
+static_assert(offsetof(UDisSeqAct_SpawnCameraLensEffect, m_fLoopingBlendOutTime) == 276, "UDisSeqAct_SpawnCameraLensEffect::m_fLoopingBlendOutTime: retail offset 276");
 static_assert(sizeof(UDisSeqAct_SpawnStealable) == 268, "UDisSeqAct_SpawnStealable: retail sizeof 268");
 static_assert(offsetof(UDisSeqAct_SpawnStealable, m_pStealableTweaks) == 248, "UDisSeqAct_SpawnStealable::m_pStealableTweaks: retail offset 248");
 static_assert(offsetof(UDisSeqAct_SpawnStealable, m_KeyName) == 252, "UDisSeqAct_SpawnStealable::m_KeyName: retail offset 252");
 static_assert(offsetof(UDisSeqAct_SpawnStealable, m_pSpawnedPickup) == 264, "UDisSeqAct_SpawnStealable::m_pSpawnedPickup: retail offset 264");
-// pending: sizeof(UDisSeqAct_StartSpawn) == 284 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_StartSpawn, m_PendingSpawnCount) == 272
-// pending: offsetof(UDisSeqAct_StartSpawn, m_SpawnedCount) == 276
-// pending: offsetof(UDisSeqAct_StartSpawn, m_FailedCount) == 280
+static_assert(sizeof(UDisSeqAct_StartSpawn) == 284, "UDisSeqAct_StartSpawn: retail sizeof 284");
+static_assert(offsetof(UDisSeqAct_StartSpawn, m_PendingSpawnCount) == 272, "UDisSeqAct_StartSpawn::m_PendingSpawnCount: retail offset 272");
+static_assert(offsetof(UDisSeqAct_StartSpawn, m_SpawnedCount) == 276, "UDisSeqAct_StartSpawn::m_SpawnedCount: retail offset 276");
+static_assert(offsetof(UDisSeqAct_StartSpawn, m_FailedCount) == 280, "UDisSeqAct_StartSpawn::m_FailedCount: retail offset 280");
 static_assert(sizeof(UDisSeqAct_ToggleAchievementEval) == 252, "UDisSeqAct_ToggleAchievementEval: retail sizeof 252");
 static_assert(offsetof(UDisSeqAct_ToggleAchievementEval, m_Achievement) == 248, "UDisSeqAct_ToggleAchievementEval::m_Achievement: retail offset 248");
 static_assert(sizeof(UDisSeqAct_ToggleChoke) == 248, "UDisSeqAct_ToggleChoke: retail sizeof 248");
@@ -10375,8 +10375,8 @@ static_assert(offsetof(ADisDLC05GameInfo, m_pScoreManager) == 5716, "ADisDLC05Ga
 static_assert(offsetof(ADisDLC05GameInfo, m_ForceKillCamNpcs) == 5724, "ADisDLC05GameInfo::m_ForceKillCamNpcs: retail offset 5724");
 static_assert(offsetof(ADisDLC05GameInfo, m_OverrideDifficulty) == 5736, "ADisDLC05GameInfo::m_OverrideDifficulty: retail offset 5736");
 static_assert(sizeof(ADisDLC05SkeletalBreakable) == 672, "ADisDLC05SkeletalBreakable: retail sizeof 672");
-// pending: sizeof(ADisDLC05WhaleOilBattery) == 1120 (derives from ADisWhaleOilBattery: every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: sizeof(ADisDLC05_Movable) == 1072 (derives from ADishonoredMovable: every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
+static_assert(sizeof(ADisDLC05WhaleOilBattery) == 1120, "ADisDLC05WhaleOilBattery: retail sizeof 1120");
+static_assert(sizeof(ADisDLC05_Movable) == 1072, "ADisDLC05_Movable: retail sizeof 1072");
 static_assert(sizeof(FDLC05NPCAttention) == 12, "FDLC05NPCAttention: retail sizeof 12");
 static_assert(offsetof(FDLC05NPCAttention, m_ID) == 0, "FDLC05NPCAttention::m_ID: retail offset 0");
 static_assert(offsetof(FDLC05NPCAttention, m_WorstAttentionStatus) == 4, "FDLC05NPCAttention::m_WorstAttentionStatus: retail offset 4");
@@ -10887,13 +10887,13 @@ static_assert(offsetof(UDisDLC05Tweaks_WhaleOilBattery, m_pDarkVisionMaterialOve
 static_assert(sizeof(UDisItemContext_DLC05_DropAssassinate) == 208, "UDisItemContext_DLC05_DropAssassinate: retail sizeof 208");
 static_assert(sizeof(UDisItemContext_DLC05_NPCTeleportSpell) == 240, "UDisItemContext_DLC05_NPCTeleportSpell: retail sizeof 240");
 static_assert(offsetof(UDisItemContext_DLC05_NPCTeleportSpell, m_fInitialDelayEnd) == 236, "UDisItemContext_DLC05_NPCTeleportSpell::m_fInitialDelayEnd: retail offset 236");
-// pending: sizeof(UDisSeqAct_DLC05_AIGoToActor) == 284 (derives from UDisSeqAct_AIGoToActor: every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisSeqAct_DLC05_AIGoToActor, m_OutputToActivate) == 280
+static_assert(sizeof(UDisSeqAct_DLC05_AIGoToActor) == 284, "UDisSeqAct_DLC05_AIGoToActor: retail sizeof 284");
+static_assert(offsetof(UDisSeqAct_DLC05_AIGoToActor, m_OutputToActivate) == 280, "UDisSeqAct_DLC05_AIGoToActor::m_OutputToActivate: retail offset 280");
 static_assert(sizeof(UDisSeqAct_DLC05_DarkVision) == 260, "UDisSeqAct_DLC05_DarkVision: retail sizeof 260");
 static_assert(offsetof(UDisSeqAct_DLC05_DarkVision, m_fDuration) == 248, "UDisSeqAct_DLC05_DarkVision::m_fDuration: retail offset 248");
 static_assert(offsetof(UDisSeqAct_DLC05_DarkVision, m_fDistance) == 252, "UDisSeqAct_DLC05_DarkVision::m_fDistance: retail offset 252");
 static_assert(offsetof(UDisSeqAct_DLC05_DarkVision, m_fFadeDistance) == 256, "UDisSeqAct_DLC05_DarkVision::m_fFadeDistance: retail offset 256");
-// pending: sizeof(UDisSeqAct_DLC05_DialogScriptedChoice) == 300 (derives from UDisSeqAct_DialogScriptedChoice: every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
+static_assert(sizeof(UDisSeqAct_DLC05_DialogScriptedChoice) == 300, "UDisSeqAct_DLC05_DialogScriptedChoice: retail sizeof 300");
 static_assert(sizeof(UDisSeqAct_DLC05_DollCollected) == 248, "UDisSeqAct_DLC05_DollCollected: retail sizeof 248");
 static_assert(sizeof(UDisSeqAct_DLC05_FallSpeedFX) == 316, "UDisSeqAct_DLC05_FallSpeedFX: retail sizeof 316");
 static_assert(offsetof(UDisSeqAct_DLC05_FallSpeedFX, m_pCameraFX) == 248, "UDisSeqAct_DLC05_FallSpeedFX::m_pCameraFX: retail offset 248");
@@ -11108,7 +11108,7 @@ static_assert(offsetof(ADisDLC06GameInfo, m_PlayerItem_SF_Package_Override) == 5
 static_assert(offsetof(ADisDLC06GameInfo, m_PlayerItem_SF_ListName_Override) == 5692, "ADisDLC06GameInfo::m_PlayerItem_SF_ListName_Override: retail offset 5692");
 static_assert(offsetof(ADisDLC06GameInfo, m_EquipmentIconsPackageName) == 5704, "ADisDLC06GameInfo::m_EquipmentIconsPackageName: retail offset 5704");
 static_assert(offsetof(ADisDLC06GameInfo, m_DLC06MainMenuCommand) == 5716, "ADisDLC06GameInfo::m_DLC06MainMenuCommand: retail offset 5716");
-// pending: sizeof(ADisDLC06NPCAttachment) == 1072 (derives from ADisNPCAttachment: derives from ADishonoredMovable: every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
+static_assert(sizeof(ADisDLC06NPCAttachment) == 1072, "ADisDLC06NPCAttachment: retail sizeof 1072");
 static_assert(sizeof(ADisDLC06Spawner) == 1184, "ADisDLC06Spawner: retail sizeof 1184");
 static_assert(sizeof(FDisExplosionActorFilterType) == 8, "FDisExplosionActorFilterType: retail sizeof 8");
 static_assert(offsetof(FDisExplosionActorFilterType, m_pType) == 0, "FDisExplosionActorFilterType::m_pType: retail offset 0");
@@ -11219,9 +11219,9 @@ static_assert(sizeof(UDisDLC06Gadget_ArcMineStun) == 284, "UDisDLC06Gadget_ArcMi
 static_assert(offsetof(UDisDLC06Gadget_ArcMineStun, m_pArcMineTweaks) == 280, "UDisDLC06Gadget_ArcMineStun::m_pArcMineTweaks: retail offset 280");
 static_assert(sizeof(UDEPRECATED_DisDLC06SeqAct_EndGame) == 248, "UDEPRECATED_DisDLC06SeqAct_EndGame: retail sizeof 248");
 static_assert(sizeof(UDisDLC06SeqAct_DestroyArcMines) == 248, "UDisDLC06SeqAct_DestroyArcMines: retail sizeof 248");
-// pending: sizeof(UDisDLC06SeqAct_EndDLC06) == 268 (derives from UDisSeqAct_Latent: every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(UDisDLC06SeqAct_EndDLC06, m_Status) == 264
-// pending: offsetof(UDisDLC06SeqAct_EndDLC06, m_SaveTransitionResult) == 265
+static_assert(sizeof(UDisDLC06SeqAct_EndDLC06) == 268, "UDisDLC06SeqAct_EndDLC06: retail sizeof 268");
+static_assert(offsetof(UDisDLC06SeqAct_EndDLC06, m_Status) == 264, "UDisDLC06SeqAct_EndDLC06::m_Status: retail offset 264");
+static_assert(offsetof(UDisDLC06SeqAct_EndDLC06, m_SaveTransitionResult) == 265, "UDisDLC06SeqAct_EndDLC06::m_SaveTransitionResult: retail offset 265");
 static_assert(sizeof(UDisDLC06SeqAct_NPCAddPutPocketInteraction) == 252, "UDisDLC06SeqAct_NPCAddPutPocketInteraction: retail sizeof 252");
 static_assert(offsetof(UDisDLC06SeqAct_NPCAddPutPocketInteraction, m_pHighLightItem) == 248, "UDisDLC06SeqAct_NPCAddPutPocketInteraction::m_pHighLightItem: retail offset 248");
 static_assert(sizeof(UDisDLC06SeqAct_NPCSetHeadMesh) == 252, "UDisDLC06SeqAct_NPCSetHeadMesh: retail sizeof 252");
@@ -11828,7 +11828,7 @@ static_assert(sizeof(ADisDLC07GravehoundNPCPawn) == 3616, "ADisDLC07GravehoundNP
 static_assert(offsetof(ADisDLC07GravehoundNPCPawn, m_PersistentPSCs) == 3592, "ADisDLC07GravehoundNPCPawn::m_PersistentPSCs: retail offset 3592");
 static_assert(offsetof(ADisDLC07GravehoundNPCPawn, m_MaterialFadeState) == 3604, "ADisDLC07GravehoundNPCPawn::m_MaterialFadeState: retail offset 3604");
 static_assert(offsetof(ADisDLC07GravehoundNPCPawn, m_fMaterialFadeTimer) == 3608, "ADisDLC07GravehoundNPCPawn::m_fMaterialFadeTimer: retail offset 3608");
-// pending: sizeof(ADisDLC07GravehoundSkull) == 1072 (derives from ADishonoredMovable: every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
+static_assert(sizeof(ADisDLC07GravehoundSkull) == 1072, "ADisDLC07GravehoundSkull: retail sizeof 1072");
 static_assert(sizeof(ADisDLC07GravehoundSpawner) == 1360, "ADisDLC07GravehoundSpawner: retail sizeof 1360");
 static_assert(offsetof(ADisDLC07GravehoundSpawner, m_GravehoundResurrectState) == 1188, "ADisDLC07GravehoundSpawner::m_GravehoundResurrectState: retail offset 1188");
 static_assert(offsetof(ADisDLC07GravehoundSpawner, m_pSkull) == 1192, "ADisDLC07GravehoundSpawner::m_pSkull: retail offset 1192");
@@ -11893,10 +11893,10 @@ static_assert(offsetof(UDisDLC07Tweaks_Gravehound, m_fFadeInDuration) == 1144, "
 static_assert(offsetof(UDisDLC07Tweaks_Gravehound, m_fFadeInEaseExponent) == 1148, "UDisDLC07Tweaks_Gravehound::m_fFadeInEaseExponent: retail offset 1148");
 static_assert(offsetof(UDisDLC07Tweaks_Gravehound, m_SkullSpawnEffects) == 1152, "UDisDLC07Tweaks_Gravehound::m_SkullSpawnEffects: retail offset 1152");
 static_assert(sizeof(UDisDLC07Tweaks_GravehoundSkull) == 284, "UDisDLC07Tweaks_GravehoundSkull: retail sizeof 284");
-// pending: sizeof(ADisDLC07WhaleBoneCharmCracked) == 976 (derives from ADisPickup_Base: every reflected member is shifted by +16 in our tree: base AKActor is not converged yet (probe))
-// pending: offsetof(ADisDLC07WhaleBoneCharmCracked, m_pTweaks) == 952
-// pending: offsetof(ADisDLC07WhaleBoneCharmCracked, m_pActivatedWhaleBoneCharmCrackedLevel) == 956
-// pending: offsetof(ADisDLC07WhaleBoneCharmCracked, m_Effect) == 960
+static_assert(sizeof(ADisDLC07WhaleBoneCharmCracked) == 976, "ADisDLC07WhaleBoneCharmCracked: retail sizeof 976");
+static_assert(offsetof(ADisDLC07WhaleBoneCharmCracked, m_pTweaks) == 952, "ADisDLC07WhaleBoneCharmCracked::m_pTweaks: retail offset 952");
+static_assert(offsetof(ADisDLC07WhaleBoneCharmCracked, m_pActivatedWhaleBoneCharmCrackedLevel) == 956, "ADisDLC07WhaleBoneCharmCracked::m_pActivatedWhaleBoneCharmCrackedLevel: retail offset 956");
+static_assert(offsetof(ADisDLC07WhaleBoneCharmCracked, m_Effect) == 960, "ADisDLC07WhaleBoneCharmCracked::m_Effect: retail offset 960");
 static_assert(sizeof(ADisDLC07MagicSuppressionVolume) == 640, "ADisDLC07MagicSuppressionVolume: retail sizeof 640");
 static_assert(sizeof(UDisDLC07SeqAct_CheckPlayerInventoryItem) == 252, "UDisDLC07SeqAct_CheckPlayerInventoryItem: retail sizeof 252");
 static_assert(offsetof(UDisDLC07SeqAct_CheckPlayerInventoryItem, m_pInventoryItem) == 248, "UDisDLC07SeqAct_CheckPlayerInventoryItem::m_pInventoryItem: retail offset 248");

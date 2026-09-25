@@ -55,14 +55,20 @@ def build(build_dir: Path, log: Path) -> bool:
     return rc == 0
 
 
-def run_game(exe: Path, extra_args: list[str], timeout: float, run_log: Path) -> int | None:
+def run_game(exe: Path, extra_args: list[str], timeout: float, run_log: Path, log_name: str, ini_dir: Path | None) -> int | None:
     game_dir = exe.parent.parent.parent / GAME
-    launch_log = game_dir / "Logs" / "Launch.log"
+    launch_log = game_dir / "Logs" / log_name
     if launch_log.exists():
         launch_log.unlink()
-    for stale in (game_dir / "Config").glob("Dishonored*.ini"):
+    # generated inis: the shared retail Config when no --ini-dir, else the agent's private directory
+    ini_home = ini_dir if ini_dir else game_dir / "Config"
+    for stale in ini_home.glob("Dishonored*.ini"):
         stale.unlink()
-    cmd = [str(exe), *GAME_ARGS, *extra_args]
+    isolation = [f"-LOG={log_name}"]
+    if ini_dir:
+        ini_dir.mkdir(parents=True, exist_ok=True)
+        isolation += [f"-{kind}INI={ini_dir / ('Dishonored' + name + '.ini')}" for kind, name in (("ENGINE", "Engine"), ("GAME", "Game"), ("INPUT", "Input"), ("UI", "UI"))]
+    cmd = [str(exe), *GAME_ARGS, *isolation, *extra_args]
     print("run:", " ".join(cmd), f"(cwd {exe.parent}, timeout {timeout:.0f}s)")
     with run_log.open("w", encoding="utf-8") as out:
         proc = subprocess.Popen(cmd, cwd=exe.parent, stdout=out, stderr=subprocess.STDOUT)
@@ -131,6 +137,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--rhi", choices=["null", "d3d9"], default="null", help="null adds -nullrhi (default)")
     parser.add_argument("--expect", action="append", default=[], help="substring that must appear in Launch.log; repeatable")
     parser.add_argument("--skip-native", default="", help="comma list of native script packages to skip (-skipnativepkgs=)")
+    parser.add_argument("--log-name", default="Launch.log", help="-LOG= name under DishonoredGame\\Logs (per-agent isolation)")
+    parser.add_argument("--ini-dir", type=Path, default=None, help="directory for the generated Dishonored*.ini (-ENGINEINI= etc.); default: the retail Config")
+    parser.add_argument("--exe-name", default=None, help="name of the staged exe next to Dishonored.exe (default DishonoredGame.exe); agents use DishonoredGame_<X>.exe")
     args = parser.parse_args(argv[1:])
 
     build_dir = args.build_dir.resolve()
@@ -140,7 +149,7 @@ def main(argv: list[str]) -> int:
     if not args.no_build and not build(build_dir, out_dir / f"build_{stamp}.log"):
         return 2
     try:
-        exe = stage(build_dir, args.retail.resolve())
+        exe = stage(build_dir, args.retail.resolve(), exe_name=args.exe_name)
     except SystemExit as e:
         print(e)
         return 2
@@ -149,8 +158,9 @@ def main(argv: list[str]) -> int:
         game_args.insert(0, "-nullrhi")
     if args.skip_native:
         game_args.append(f"-skipnativepkgs={args.skip_native}")
-    run_game(exe, game_args, args.timeout, out_dir / f"run_{stamp}.log")
-    launch_log = exe.parent.parent.parent / GAME / "Logs" / "Launch.log"
+    ini_dir = args.ini_dir.resolve() if args.ini_dir else None
+    run_game(exe, game_args, args.timeout, out_dir / f"run_{stamp}.log", args.log_name, ini_dir)
+    launch_log = exe.parent.parent.parent / GAME / "Logs" / args.log_name
     ok = compare(launch_log, args.golden.resolve(), args.milestone, out_dir)
     if args.expect:
         text = launch_log.read_text(encoding="utf-8", errors="replace") if launch_log.is_file() else ""

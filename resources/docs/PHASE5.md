@@ -48,7 +48,7 @@ and uses the 2012 decompile only as the readable version of the same function.
 
 ## Work packages (all parallel; dependencies noted)
 
-### W — Edge animation: retail parity now, evaluator next wave
+### W — Edge animation: retail parity first, then the evaluator port (Plan B) in this wave
 Owner: agent W. Build dir `build\agentW`. IDA copies `shipping2012_agentW.i64`, `retail2013_agentW.i64`.
 Files: `Engine/Inc/EngineAnimClasses.h` (enum), `Engine/Classes/AnimSequence.uc` (enum, comment only),
 `Engine/Src/AnimationEncodingFormat.cpp`, `Engine/Src/UnSkeletalAnim.cpp` (`Serialize`, `PostLoad`),
@@ -68,7 +68,20 @@ gated by `CompressedTrackOffsets.Num()>0`, so **no codec class is needed**.
 - [ ] 4. Pose gate (`DISHONORED(bringup)`): `UnAnimPlay.cpp:579` `UAnimNodeSequence::GetAnimationPose`, after the linkup checks (:614): for `RotationCompressionFormat == ACF_EdgeAnim` fill `Atoms` for `DesiredBones` from `SkelComponent->SkeletalMesh->RefSkeleton` (identity only for `bIsAdditive`) and return. **Reference pose, not identity**: identity local atoms collapse every bone onto the root. Result: characters stand in their reference pose, root motion zero (`ExtractRootMotion` :887 reads identity deltas), notifies still fire, Matinee/FaceFX unaffected. Guard the editor-only `GetAdditiveBasePoseBoneAtom` path (:848).
 - [ ] 5. `Engine/Inc/EdgeAnim.h`: declarations with 2012 PDB layouts and `static_assert`s, no behaviour: `EdgeAnimAnimation` (96 B + `channelTables`), `EdgeAnimSkeleton` (64 B + `simdHierarchy`), `EdgeAnimFrameSetInfo`, `EdgeAnimJointTransform` (48 B, 16-aligned), `EdgeAnimBlendLeaf`/`Branch` (16), `EdgeAnimPoseInfo`, `FEdgeSkelToAnimMapping`/`FEdgeAnimToSkelMapping`, `FLocomotionStateBase` (48), `FEdgeAnimData` (176, align 16), `FEdgeAnimTreeContext` (96), `FEdgeAnimManager` (16), `FDisJobDesc` (28) / `FEdgeAnimJobDesc` (84); `USkeletalMeshComponent::m_pEdgeAnimData` stays NULL; check that `USkeletalMesh::Serialize` (agent O) really reads `m_EdgeSkeleton` for every mesh in `Startup.upk`.
 - [ ] 6. `resources/docs/edgeanim.md` (wave-4 hand-over): on-disk format as observed (header `flags` bit0..3 = R/T/S/User bit-packed; `Const` + animated decoders per class; frame data via `offsetFrameSetDmaArray`/`offsetFrameSetInfoArray`), the minimal function set in dependency order — read `AnimLeafCallback` 0x58fb00 first (time→frameset, joint mapping via `AnimSkeletonGetJointIndexByHash` 0x58e9f0 over `offsetJointNameHashArray`, ref-pose fill through `FEdgeSkelToAnimMapping`, locomotion delta, W-sign convention), then `__edgeAnimEvaluate` 0x622a50 → `__edgeAnimEvaluateRConst/R`, `BitPackedConst/BitPacked` (0x616030, the 18 KB core), `STConst/ST`; defer the `*User*` decoders, blends, mirror, local↔world — what drops out on PC (`edgeAnimSpuInitialize` LS budget, `_edgeAnimCopyQuadwords`, EA fields, `FJobBuffer` rounding, SPU/PPU pose caches), the recommended integration (**per-sequence `AEFEdgeAnimCodec` on top of `__edgeAnimEvaluate*` + `m_EdgeSkeleton` with a cached `TArray<FEdgeSkelToAnimMapping>` per `FAnimSetMeshLinkup`, keeping the reference CPU blend tree: 6–9 agent-days; the retail whole-tree `FEdgeAnimJobDesc` path via `BuildEdgeAnimTree` on ~14 node classes is +8–12 days and the only route to retail-identical blending**), and the verification list (skeleton `offsetBasePose`/joint hashes vs `RefSkeleton`; idle frame 0 vs `RefSkeleton`; walk-cycle locomotion delta along +X and periodic; the 10 `ACF_None` sequences pin the `BoneTrackPair`/W-flip conventions; a smoke that decodes N sequences and asserts normalized quats and bounded translations).
-- **Accept:** the wave-2 smoke command passes the animation load (`--expect "objects as part of root set"` with the four module options and `-allowunboundnatives`); every cooked `AnimSequence` of `Startup.upk` and `DishonoredGame.upk` loads with `CompressedByteStream.Num() == NumBytes`; a skeletal mesh component ticking an Edge sequence yields the reference pose (checked in a `-nullrhi` run once X's map load exists, else by a CoreSmoke-style unit that loads `Npc_SmallRat_as`); `edgeanim.md` written. Effort: ~1 day for 1–5, 1 day for 6.
+- [ ] 7. **Plan B in this wave** (user, 2026-09-25: "Do plan B"): after 1–6 are in and verified, port the per-sequence
+      evaluator (Option 1, 6–9 agent-days): decompile in this order `AnimLeafCallback` 0x58fb00, `__edgeAnimEvaluateBitPackedConst`
+      0x615050, `__edgeAnimEvaluateBitPacked` 0x616030, `__edgeAnimEvaluateRConst` 0x61ca40, `__edgeAnimEvaluateR` 0x61d040,
+      `__edgeAnimEvaluateSTConst` 0x61e950, `__edgeAnimEvaluateST` 0x61ea30 (`__edgeAnimEvaluate` 0x622a50 dispatches on header
+      `flags` bits 0-3 = R/T/S/User bit-packed); implement `AEFEdgeAnimCodec : AnimationEncodingFormat` in
+      `Engine/Inc/AnimationEncodingFormat_EdgeAnim.h` / `Engine/Src/AnimationEncodingFormat_EdgeAnim.cpp` whose
+      `GetPoseRotations/Translations` evaluate the animation into a scratch `EdgeAnimJointTransform[numJoints]` at `Time` and
+      scatter through a cached per-`FAnimSetMeshLinkup` `TArray<FEdgeSkelToAnimMapping>` (joint hashes via
+      `AnimSkeletonGetJointIndexByHash`), matching the Edge quaternion convention to UE's `FlipSignOfRotationW`; select it in
+      `SetInterfaceLinks` for format 7 (replacing step 4's ref-pose gate, which stays behind `-edgerefpose`); decoders as plain C++
+      (the retail lib is Sony's x86 SSE build); verify with the checks in `edgeanim.md` (skeleton hashes/base pose vs `RefSkeleton`,
+      idle frame 0, walk-cycle locomotion delta, the 10 `ACF_None` sequences for conventions, a decode-N-sequences smoke).
+      Report progress per decoder; the parity edits (1–6) are merged first so the other packages are never blocked.
+- **Accept:** the wave-2 smoke command passes the animation load (`--expect "objects as part of root set"` with the four module options and `-allowunboundnatives`); every cooked `AnimSequence` of `Startup.upk` and `DishonoredGame.upk` loads with `CompressedByteStream.Num() == NumBytes`; a skeletal mesh component ticking an Edge sequence yields the reference pose (checked in a `-nullrhi` run once X's map load exists, else by a CoreSmoke-style unit that loads `Npc_SmallRat_as`); `edgeanim.md` written. Effort: ~1 day for 1–5, 1 day for 6, 6–9 agent-days for 7 (report when the first sequence decodes).
 
 ### X — Milestone 3 driver: Startup packages → `GEngine->Init()` → tick loop
 Owner: agent X. Build dir `build\agentX`. IDA copies as above. Runs with `--log-name agentX.log --ini-dir build\agentX\config --exe-name DishonoredGame_X.exe`.
@@ -134,8 +147,8 @@ Files: `DishonoredGame/Src/<Class>.cpp` (new real implementations replacing the 
 
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
-| C6 | coordinator | Native-stub macro, per-agent run isolation, stub-exe guard, this plan | todo | | |
-| W | | Edge animation bypass codec + evaluator design | todo | | |
+| C6 | coordinator | Native-stub macro, per-agent run isolation, stub-exe guard, this plan | done | 2026-09-25 | `DISHONORED_NATIVE_STUB` (Core/Inc/DishonoredNativeStub.h: Step per CPF_Parm, P_FINISH, iterator skip, zeroed result, warn once, `-strictnatives`); 975 + 133 + 56 stubs regenerated; `build_and_smoke.py --exe-name/--log-name/--ini-dir`; `stage_retail.py` refuses stub exes; `agents/README.md`. Verified: full build 0 errors, isolated smoke reaches the wave-2 point |
+| W | | Edge animation: retail parity, then the evaluator port (Plan B) | todo | | |
 | X | | Milestone 3 driver: Startup packages → `GEngine->Init()` → tick | todo | | |
 | Y | | First frame: window, D3D9 device, cooked shaders, present, Bink movies | todo | | |
 | Z | | Map load `DishonoredGameFull_P` up for play (no PhysX) | todo | | |

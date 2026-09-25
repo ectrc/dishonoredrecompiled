@@ -33,18 +33,18 @@ static_assert(offsetof(UInterpTrackInstAkEvent, m_lStartedAkEvent) == 64, "UInte
 static_assert(offsetof(UInterpTrackInstAkEvent, LastUpdatePosition) == 76, "UInterpTrackInstAkEvent::LastUpdatePosition: retail offset 76");
 static_assert(sizeof(UInterpTrackInstAkRTPC) == 64, "UInterpTrackInstAkRTPC: retail sizeof 64");
 static_assert(sizeof(USeqAct_AkClearBanks) == 248, "USeqAct_AkClearBanks: retail sizeof 248");
-// pending: sizeof(USeqAct_AkLoadBank) == 276 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(USeqAct_AkLoadBank, Bank) == 268
-// pending: offsetof(USeqAct_AkLoadBank, Signal) == 272
-// pending: sizeof(USeqAct_AkPostEvent) == 280 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(USeqAct_AkPostEvent, Signal) == 264
-// pending: offsetof(USeqAct_AkPostEvent, m_pAudioSystem) == 268
-// pending: offsetof(USeqAct_AkPostEvent, Event) == 276
+static_assert(sizeof(USeqAct_AkLoadBank) == 276, "USeqAct_AkLoadBank: retail sizeof 276");
+static_assert(offsetof(USeqAct_AkLoadBank, Bank) == 268, "USeqAct_AkLoadBank::Bank: retail offset 268");
+static_assert(offsetof(USeqAct_AkLoadBank, Signal) == 272, "USeqAct_AkLoadBank::Signal: retail offset 272");
+static_assert(sizeof(USeqAct_AkPostEvent) == 280, "USeqAct_AkPostEvent: retail sizeof 280");
+static_assert(offsetof(USeqAct_AkPostEvent, Signal) == 264, "USeqAct_AkPostEvent::Signal: retail offset 264");
+static_assert(offsetof(USeqAct_AkPostEvent, m_pAudioSystem) == 268, "USeqAct_AkPostEvent::m_pAudioSystem: retail offset 268");
+static_assert(offsetof(USeqAct_AkPostEvent, Event) == 276, "USeqAct_AkPostEvent::Event: retail offset 276");
 static_assert(sizeof(USeqAct_AkPostTrigger) == 260, "USeqAct_AkPostTrigger: retail sizeof 260");
 static_assert(offsetof(USeqAct_AkPostTrigger, Trigger) == 248, "USeqAct_AkPostTrigger::Trigger: retail offset 248");
-// pending: sizeof(USeqAct_AkSetRTPCValue) == 284 (every reflected member is shifted by +4 in our tree: base USeqAct_Latent is not converged yet (probe))
-// pending: offsetof(USeqAct_AkSetRTPCValue, Param) == 264
-// pending: offsetof(USeqAct_AkSetRTPCValue, Value) == 276
+static_assert(sizeof(USeqAct_AkSetRTPCValue) == 284, "USeqAct_AkSetRTPCValue: retail sizeof 284");
+static_assert(offsetof(USeqAct_AkSetRTPCValue, Param) == 264, "USeqAct_AkSetRTPCValue::Param: retail offset 264");
+static_assert(offsetof(USeqAct_AkSetRTPCValue, Value) == 276, "USeqAct_AkSetRTPCValue::Value: retail offset 276");
 static_assert(sizeof(USeqAct_AkSetState) == 272, "USeqAct_AkSetState: retail sizeof 272");
 static_assert(offsetof(USeqAct_AkSetState, StateGroup) == 248, "USeqAct_AkSetState::StateGroup: retail offset 248");
 static_assert(offsetof(USeqAct_AkSetState, State) == 260, "USeqAct_AkSetState::State: retail offset 260");
