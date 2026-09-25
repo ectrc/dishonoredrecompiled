@@ -53,3 +53,8 @@ to `Dishonored.exe`; logs land in `DishonoredGame\Logs\agent<X>.log`.
   what is left, follow-ups outside your files; say which build every number comes from.
 - Tool hygiene: the Bash tool mangles backslashes in heredocs — write scripts with the Write tool;
   sources are CRLF; `git add -A` is banned.
+
+## Tools that are off limits
+
+- The FModel MCP tools (`mcp__fmodel__*`): UE4-only, they do not read Dishonored's UE3 packages, and the user has forbidden them (2026-09-26).
+- The IDA MCP tools (agents use headless copies; see the rules above).

@@ -304,3 +304,6 @@ Owner: agent AK. Build dir `build\agentAK`. Files: `cmake/*` (after the coordina
 - Every edit is tagged `// DISHONORED(port|written|layout|retail|bringup): <evidence>`. The retail 2013 exe is the target: cite the 2013 rva, and use the 2012
   decompile for readability only.
 - Bash heredocs mangle backslashes, so write patch scripts with the Write tool. Sources are CRLF.
+- **Never use the FModel MCP tools (`mcp__fmodel__*`).** FModel is UE4-only and does not read Dishonored's UE3 packages; the user
+  stopped an agent for trying (2026-09-26). Package questions go through our tools (`resources/tools/**`, `read_package_classes.py`),
+  the CodeRed SDK dump and the retail IDA db.

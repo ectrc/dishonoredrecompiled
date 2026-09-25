@@ -61,6 +61,7 @@ Scaleform decision per `middleware.md`).
 
 ## Known pitfalls
 
+- Never use the FModel MCP tools (`mcp__fmodel__*`): UE4-only, useless on these UE3 packages, and the user has forbidden them.
 - Never open one IDA database from two processes; agents copy `retail2013_named.i64` (`retail2013_<agent>.i64`).
   The coordinator's copy is `retail2013_coord.i64` (idalib MCP session); names are MSVC-mangled, look them up as
   `?Name@Class@@...`; `lookup_funcs` on a VA (rva + 0x400000).

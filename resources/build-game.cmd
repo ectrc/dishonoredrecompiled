@@ -12,5 +12,5 @@ set VSDEVCMD="C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\To
 if not exist %VSDEVCMD% set VSDEVCMD="C:\Program Files\Microsoft Visual Studio\18\Community\Common7\Tools\VsDevCmd.bat"
 call %VSDEVCMD% -arch=x86 -host_arch=x64 -no_logo || exit /b 1
 cd /d "%~dp0.."
-cmake -S . -B %BUILD_DIR% -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-x86.cmake -DDISHONORED_REAL_LAUNCH=ON -DDISHONORED_ENABLE_GFXUI=ON -DDISHONORED_ENABLE_AKAUDIO=ON -DDISHONORED_ENABLE_OSS=ON -DDISHONORED_ENABLE_DISHONOREDGAME=ON || exit /b 1
+cmake -S . -B %BUILD_DIR% -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-x86.cmake -DDISHONORED_REFERENCE_DIR=D:/RecompileDishonored/UnrealEngine3 -DDISHONORED_REAL_LAUNCH=ON -DDISHONORED_ENABLE_GFXUI=ON -DDISHONORED_ENABLE_AKAUDIO=ON -DDISHONORED_ENABLE_OSS=ON -DDISHONORED_ENABLE_DISHONOREDGAME=ON || exit /b 1
 cmake --build %BUILD_DIR% --target %TARGET% -- -k 0
