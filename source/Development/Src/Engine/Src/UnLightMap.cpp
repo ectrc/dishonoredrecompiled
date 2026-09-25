@@ -239,7 +239,7 @@ FStaticLightingTextureMapping::FStaticLightingTextureMapping(FStaticLightingMesh
 	bBilinearFilter(bInBilinearFilter)
 {}
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only (Lightmass encoding through nvtt); 2012 FLightMap2D::AllocateLightMap is an empty 18-byte body, no FLightMapPendingTexture function in the PDB (agentP.md)
 
 /**
  * An allocation of a region of light-map texture to a specific light-map.
@@ -1299,7 +1299,7 @@ FLightMap2D* FLightMap2D::AllocateLightMap(UObject* LightMapOuter,FLightMapData2
 		return NULL;
 	}
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 
 	// keep track of whether or not we need to quantize the RawData
 	UBOOL bNeedsToQuantize = FALSE;
@@ -1486,7 +1486,7 @@ FLightMap2D* FLightMap2D::AllocateLightMap(UObject* LightMapOuter,FLightMapData2
 #endif //_MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
 }
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 INT CompareLightmaps( FLightMapAllocation* A, FLightMapAllocation* B )
 {
 	PTRINT InstancedMeshA = A->Primitive->IsA(UInstancedStaticMeshComponent::StaticClass()) ? PTRINT(A->Primitive) : 0;
@@ -1521,7 +1521,7 @@ IMPLEMENT_COMPARE_POINTER(FLightMapAllocation,UnLightMap,{ return CompareLightma
  */
 void FLightMap2D::EncodeTextures( UBOOL bLightingSuccessful, UBOOL bForceCompletion )
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	if ( bLightingSuccessful )
 	{
 		GWarn->BeginSlowTask(TEXT("Encoding light-maps"),FALSE);
@@ -1671,7 +1671,7 @@ void FLightMap2D::EncodeTextures( UBOOL bLightingSuccessful, UBOOL bForceComplet
  */
 void FLightMap2D::RepackLightMapTextures( TArray<FLightMapPendingTexture*>& PendingTextures, const INT InPackedLightAndShadowMapTextureSize )
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	TArray<FLightMapAllocation*> NewPendingLightMaps;
 	TArray<FLightMapPendingTexture*> NewPendingTextures;
 
@@ -1993,7 +1993,7 @@ FInstancedLightMap2D* FInstancedLightMap2D::AllocateLightMap(UInstancedStaticMes
 		return NULL;
 	}
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 
 	// keep track of whether or not we need to quantize the RawData
 	UBOOL bNeedsToQuantize = FALSE;

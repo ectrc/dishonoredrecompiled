@@ -8,7 +8,11 @@
 #include "EngineParticleClasses.h"
 #include "ChartCreation.h"
 
-#include <xnamath.h>
+// DISHONORED(build): xnamath.h ships with the February 2010+ DirectX SDKs; the reference SDK mirror is the August 2008
+// SDK (D3DX_SDK_VERSION 39). DirectXMath (Windows 10 SDK) is XNA Math's successor with the same XMFLOAT4A /
+// XMLoadFloat4A / XMVectorGet*Ptr API in namespace DirectX; SetVertexShaderFloatArray below compiles unchanged.
+#include <DirectXMath.h>
+using namespace DirectX;
 // Globals
 
 /**

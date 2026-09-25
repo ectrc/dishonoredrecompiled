@@ -20,11 +20,16 @@
 
 #if PNG_LIBPNG_VER >= 10513
 
+// DISHONORED(build): the reference links its own libpng 1.5.13 import library by name; this tree links
+// Dishonored::libPNG (FetchContent libpng 1.6.43, cmake/Dependencies.cmake) so the pragma would only make the
+// linker look for a lib that does not exist (LNK1104, agentN.md). WITH_REFERENCE_LIBPNG=0 in DishonoredDefines.cmake.
+#if WITH_REFERENCE_LIBPNG
 #if _WIN64
 	#pragma comment(lib, "libpng15_64.lib")
 #else
 	#pragma comment(lib, "libpng15.lib")
 #endif
+#endif // WITH_REFERENCE_LIBPNG
 
 // Functions that are here to help the GFx libraries link until they are updated to be compiled with libPNG-1.5.13
 

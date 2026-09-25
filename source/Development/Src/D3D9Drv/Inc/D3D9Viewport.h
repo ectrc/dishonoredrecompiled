@@ -24,6 +24,7 @@ private:
 	UINT SizeX;
 	UINT SizeY;
 	UBOOL bIsFullscreen;
+	UBOOL bWantsVSync;	// DISHONORED(layout): 2012 PDB FD3D9Viewport @28 (size 32), Arkane vsync flag; unused until the 2013 vsync path is ported
 };
 
 

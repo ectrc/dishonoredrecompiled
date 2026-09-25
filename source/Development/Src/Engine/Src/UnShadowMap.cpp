@@ -72,7 +72,7 @@ FString UShadowMapTexture2D::GetDetailedDescription( INT InIndex )
 	return( Description );
 }
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only (shadow map encoding through NVTTCompress); 2012 UShadowMap2D::UShadowMap2D is 126 bytes of member init, no FShadowMapPendingTexture function in the PDB (agentP.md)
 
 /**
  * Checks if a shadowmap texel is mapped or not.
@@ -390,7 +390,7 @@ UShadowMap2D::UShadowMap2D( UObject* Primitive, const FShadowMapData2D& RawData,
 	Component(Cast<UInstancedStaticMeshComponent>(Primitive)),
 	InstanceIndex(InInstanceIndex)
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	// Add a pending allocation for this shadow-map.
 	FShadowMapAllocation* Allocation = new(PendingShadowMaps) FShadowMapAllocation;
 	Allocation->ShadowMap		= this;
@@ -454,7 +454,7 @@ UShadowMap2D::UShadowMap2D( UObject* Primitive, const FShadowMapData2D& RawData,
 #endif //_MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
 }
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 INT CompareShadowmaps( FShadowMapAllocation* A, FShadowMapAllocation* B )
 {
 	PTRINT InstancedMeshA = A->Primitive->IsA(UInstancedStaticMeshComponent::StaticClass()) ? PTRINT(A->Primitive) : 0;

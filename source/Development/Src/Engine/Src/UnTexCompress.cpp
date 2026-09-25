@@ -4,7 +4,7 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only; nvtt (DXT compression) is not imported by the retail exe and the 2012 UTexture2D::Compress is the post-block tail only (agentP.md)
 	#include "nvtt/nvtt.h"
 #endif
 
@@ -17,7 +17,7 @@ extern UBOOL ConditionalCachePVRTCTextures(UTexture2D* Texture, UBOOL bUseFastCo
 	DXT functions.
 -----------------------------------------------------------------------------*/
 
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 
 class FDXTTestTimer
 {
@@ -1148,7 +1148,7 @@ static void GenerateSharpenedScaledMipA8R8G8B8Templ(
 	UBOOL bSharpenWithoutColorShift,
 	const FVector2D& Scale)
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	check(SourceImageData.Buffer != DestImageData.Buffer);
 	//check(SourceImageData.SizeX == 2 * DestImageData.SizeX || DestImageData.SizeX == 1);
 	//check(SourceImageData.SizeY == 2 * DestImageData.SizeY || DestImageData.SizeY == 1);
@@ -1263,7 +1263,7 @@ static void GenerateSharpenedScaledMipA8R8G8B8(
 	UBOOL bSharpenWithoutColorShift,
 	FVector2D Scale = FVector2D(1.f,1.f))
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	switch(AddressMode)
 	{
 		case MGTAM_Wrap:
@@ -1544,7 +1544,7 @@ static void GenerateMipChain(UTexture2D &Texture, IntermediateMipChain &OutMipCh
 // @param OutMipChain			existing mip is the input, resize to scale
 static void GenerateScaledMip(UTexture2D &Texture, IntermediateMipChain &OutMipChain, const FVector2D& Scale)
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	check(OutMipChain.Mips.Num() == 1);
 
 	const UINT SrcWidth = OutMipChain.Mips(0).SizeX;
@@ -1624,7 +1624,7 @@ static void GenerateScaledMip(UTexture2D &Texture, IntermediateMipChain &OutMipC
 // compress mip-maps in InMipChain and add mips to Texture, might alter the source content
 static void CompressMipChainToTexture(UTexture2D &Texture, IntermediateMipChain &InMipChain)
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	UBOOL bIsNormalMap	= 
 		   (Texture.CompressionSettings == TC_Normalmap) 
 		|| (Texture.CompressionSettings == TC_NormalmapAlpha) 
@@ -1788,7 +1788,7 @@ static void CompressMipChainToTexture(UTexture2D &Texture, IntermediateMipChain 
 
 void UTexture2D::Compress()
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 	Super::Compress();
 
 	switch( Format )
@@ -1920,7 +1920,7 @@ void UTexture2D::Compress()
 
 void UTexture2D::ResizeTexture(const FVector2D& Scale)
 {
-#if _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER
+#if WITH_EDITOR && _MSC_VER && !CONSOLE && !UE3_LEAN_AND_MEAN && !DEDICATED_SERVER	// DISHONORED(build): editor-only, see above
 
 	// Check if the caller really wants to scale
 	if( Scale.X == 1.f && Scale.Y == 1.f )

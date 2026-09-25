@@ -25,7 +25,8 @@ void FD3D9DynamicRHI::CopyToResolveTarget(FSurfaceRHIParamRef SourceSurfaceRHI, 
 {
 	DYNAMIC_CAST_D3D9RESOURCE(Surface,SourceSurface);
 	FD3D9Texture2D* ResolveTargetParameter = (FD3D9Texture2D*)ResolveParams.ResolveTarget;
-	TRefCountPtr<FD3D9Texture2D> ResolveTarget2D = ResolveParams.ResolveTarget ? ResolveTargetParameter : SourceSurface->ResolveTargetTexture2D;
+	// DISHONORED(build): MSVC 2022 C2445, FD3D9Texture2D* vs TRefCountPtr<FD3D9Texture2D> in a conditional is ambiguous; the reference relied on VS2010 picking the raw pointer
+	TRefCountPtr<FD3D9Texture2D> ResolveTarget2D = ResolveParams.ResolveTarget ? ResolveTargetParameter : SourceSurface->ResolveTargetTexture2D.GetReference();
 
 	if( REQUIRE_D3D_RESOLVE || 
 		 SourceSurface->Texture2D != ResolveTarget2D ||

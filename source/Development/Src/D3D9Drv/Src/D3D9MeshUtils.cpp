@@ -698,7 +698,7 @@ namespace D3D9MeshUtilities
 			{
 				warnf(
 					TEXT("D3DXUVAtlasPack() returned %u."),
-					Result
+					(DWORD)Result	// DISHONORED(build): MSVC 2022 C2668, CheckVA has no HRESULT (long) overload; %u wants a DWORD
 					);
 				appDebugMessagef(TEXT("GenerateUVs failed, D3DXUVAtlasPack failed."));
 				return FALSE;
@@ -891,7 +891,7 @@ namespace D3D9MeshUtilities
 			{
 				warnf(
 					TEXT("D3DXUVAtlasPartition() returned %u with MaxDesiredStretch=%.2f, TexCoordIndex=%u."),
-					Result,
+					(DWORD)Result,	// DISHONORED(build): MSVC 2022 C2668, CheckVA has no HRESULT (long) overload; %u wants a DWORD
 					MaxDesiredStretch,
 					TexCoordIndex
 					);
@@ -1045,7 +1045,7 @@ namespace D3D9MeshUtilities
 			{
 				warnf(
 					TEXT("D3DXUVAtlasPack() returned %u."),
-					Result
+					(DWORD)Result	// DISHONORED(build): MSVC 2022 C2668, CheckVA has no HRESULT (long) overload; %u wants a DWORD
 					);
 				appDebugMessagef(TEXT("GenerateUVs failed, D3DXUVAtlasPack failed."));
 				return FALSE;
