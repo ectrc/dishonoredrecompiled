@@ -137,6 +137,21 @@ struct FIOSystem
 		EAsyncIORequestType RequestType ) = 0;
 
 	/**
+	 * DISHONORED(port): Arkane variant of LoadData that triggers an event instead of decrementing a counter
+	 * (FAsyncIOSystemBase::LoadDataWithEvent, 2013 rva 0x51e00 / 2012 rva 0x50510, unasyncloading.cpp:1356; public virtual).
+	 *
+	 * @param	Event		Event triggered when the request has been fulfilled, can be NULL
+	 */
+	virtual QWORD LoadDataWithEvent(
+		const FString& Filename,
+		INT Offset,
+		INT Size,
+		void* Dest,
+		FEvent* Event,
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType ) = 0;
+
+	/**
 	 * Requests compressed data to be loaded async. Returns immediately.
 	 *
 	 * @param	Filename			Filename to load
@@ -269,6 +284,16 @@ struct FAsyncIOSystemBase : public FIOSystem, FRunnable
 		EAsyncIOPriority Priority,
 		EAsyncIORequestType RequestType );	// DISHONORED(port): rva 0x504e0 (from 2012 decompile)
 
+	/** DISHONORED(port): 2013 rva 0x51e00 (2012 rva 0x50510): QueueIORequest with Counter NULL and the event (see FIOSystem) */
+	virtual QWORD LoadDataWithEvent(
+		const FString& FileName,
+		INT Offset,
+		INT Size,
+		void* Dest,
+		FEvent* Event,
+		EAsyncIOPriority Priority,
+		EAsyncIORequestType RequestType );
+
 	/**
 	 * Requests compressed data to be loaded async. Returns immediately.
 	 *
@@ -391,10 +416,17 @@ protected:
 		INT					UncompressedSize;														
 		/** Pointer to memory region used to read data into.										*/
 		void*				Dest;
-		/** Flags for controlling decompression														*/
-		ECompressionFlags	CompressionFlags;
 		/** Thread safe counter that is decremented once work is done.								*/
 		FThreadSafeCounter* Counter;
+		/**
+		 * DISHONORED(port): event triggered once the request is fulfilled (LoadDataWithEvent). Member order Counter, Event,
+		 * CompressionFlags, Priority, RequestType is the 2012 PDB layout (@40/@44/@48/@52/@56, 64 bytes) and the 2013 order
+		 * (QueueIORequest 2013 rva 0x519b0 stores @52/@56/@60/@64/@68 of a 76-byte request: 2013 adds an FString @24, the
+		 * normalized file name used as the handle-cache key, not ported). Triggered by Tick (2013 rva 0x74290) after Counter.
+		 */
+		FEvent*				Event;
+		/** Flags for controlling decompression														*/
+		ECompressionFlags	CompressionFlags;
 		/** Priority of request.																	*/
 		EAsyncIOPriority	Priority;
 		/** DISHONORED(port): Arkane request classification, PDB FAsyncIORequest::RequestType @56 (from 2012 decompile). */
@@ -412,8 +444,9 @@ protected:
 		,	Size(INDEX_NONE)
 		,	UncompressedSize(INDEX_NONE)
 		,	Dest(NULL)
-		,	CompressionFlags(COMPRESS_None)
 		,	Counter(NULL)
+		,	Event(NULL)
+		,	CompressionFlags(COMPRESS_None)
 		,	Priority(AIOP_MIN)
 		,	RequestType(AIORT_Other)
 		,	bIsDestroyHandleRequest(FALSE)
@@ -598,8 +631,9 @@ protected:
 		void* Dest,
 		ECompressionFlags CompressionFlags,
 		FThreadSafeCounter* Counter,
+		FEvent* Event,
 		EAsyncIOPriority Priority,
-		EAsyncIORequestType RequestType );	// DISHONORED(port): rva 0x50240 stores the request type (the exe also takes an FEvent* before Priority, not ported) (from 2012 decompile)
+		EAsyncIORequestType RequestType );	// DISHONORED(port): 2013 rva 0x519b0 / 2012 rva 0x50240 argument order (Counter, Event, Priority, RequestType)
 	
 #if FLASH	
 	/**

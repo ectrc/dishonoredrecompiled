@@ -829,13 +829,14 @@ QWORD FAsyncIOSystemBase::QueueIORequest(
 	INT Size, 
 	INT UncompressedSize, 
 	void* Dest, 
-	ECompressionFlags CompressionFlags, 
+	ECompressionFlags CompressionFlags,
 	FThreadSafeCounter* Counter,
+	FEvent* Event,
 	EAsyncIOPriority Priority,
 	EAsyncIORequestType RequestType )
 {
-	// DISHONORED(port): rva 0x50240 stores the Arkane request type on the request (the exe also takes an FEvent* that
-	// LoadDataWithEvent passes; not ported) (from 2012 decompile)
+	// DISHONORED(port): 2013 rva 0x519b0 (2012 rva 0x50240): stores the Arkane request type and the completion event
+	// (argument order Counter, Event, Priority, RequestType) on the request
 	FScopeLock ScopeLock( CriticalSection );
 	check( Offset != INDEX_NONE );
 
@@ -850,6 +851,7 @@ QWORD FAsyncIOSystemBase::QueueIORequest(
 	IORequest.Dest						= Dest;
 	IORequest.CompressionFlags			= CompressionFlags;
 	IORequest.Counter					= Counter;
+	IORequest.Event						= Event;
 	IORequest.Priority					= Priority;
 	IORequest.RequestType				= RequestType;
 
@@ -1262,10 +1264,33 @@ QWORD FAsyncIOSystemBase::LoadData(
 {
 	QWORD TheRequestIndex;
 	{
-		TheRequestIndex = QueueIORequest( FileName, Offset, Size, 0, Dest, COMPRESS_None, Counter, Priority, RequestType );
+		TheRequestIndex = QueueIORequest( FileName, Offset, Size, 0, Dest, COMPRESS_None, Counter, NULL, Priority, RequestType );
 	}
 #if BLOCK_ON_ASYNCIO
-	BlockTillAllRequestsFinished(); 
+	BlockTillAllRequestsFinished();
+#endif
+	return TheRequestIndex;
+}
+
+/**
+ * DISHONORED(port): FAsyncIOSystemBase::LoadDataWithEvent, 2013 rva 0x51e00 (2012 rva 0x50510, unasyncloading.cpp:1356):
+ * LoadData with an event instead of a counter (Counter NULL, Event stored on the request and triggered by Tick).
+ */
+QWORD FAsyncIOSystemBase::LoadDataWithEvent(
+	const FString& FileName,
+	INT Offset,
+	INT Size,
+	void* Dest,
+	FEvent* Event,
+	EAsyncIOPriority Priority,
+	EAsyncIORequestType RequestType )
+{
+	QWORD TheRequestIndex;
+	{
+		TheRequestIndex = QueueIORequest( FileName, Offset, Size, 0, Dest, COMPRESS_None, NULL, Event, Priority, RequestType );
+	}
+#if BLOCK_ON_ASYNCIO
+	BlockTillAllRequestsFinished();
 #endif
 	return TheRequestIndex;
 }
@@ -1297,7 +1322,7 @@ QWORD FAsyncIOSystemBase::LoadCompressedData(
 {
 	QWORD TheRequestIndex;
 	{
-		TheRequestIndex = QueueIORequest( FileName, Offset, Size, UncompressedSize, Dest, CompressionFlags, Counter, Priority, RequestType );
+		TheRequestIndex = QueueIORequest( FileName, Offset, Size, UncompressedSize, Dest, CompressionFlags, Counter, NULL, Priority, RequestType );
 	}
 #if BLOCK_ON_ASYNCIO
 	BlockTillAllRequestsFinished(); 
@@ -1585,10 +1610,15 @@ DWORD FAsyncIOSystemBase::Run()
 			// Request fulfilled.
 			if( IORequest.Counter )
 			{
-				IORequest.Counter->Decrement(); 
+				IORequest.Counter->Decrement();
+			}
+			// DISHONORED(port): FAsyncIOSystemBase::Tick, 2013 rva 0x74290: the LoadDataWithEvent event is triggered after the counter
+			if( IORequest.Event )
+			{
+				IORequest.Event->Trigger();
 			}
 			// We're done reading for now.
-			BusyWithRequest.Decrement();	
+			BusyWithRequest.Decrement();
 		}
 		else
 		{

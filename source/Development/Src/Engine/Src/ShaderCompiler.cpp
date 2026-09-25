@@ -449,7 +449,10 @@ FShaderCompilingThreadManager::FShaderCompilingThreadManager() :
 	// Read values from the engine ini
 	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowMultiThreadedShaderCompile"), bAllowMultiThreadedShaderCompile, GEngineIni ));
 	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowDistributedShaderCompile"), bAllowDistributedShaderCompile, GEngineIni ));
-	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowDistributedShaderCompileForBuildPCS"), bAllowDistributedShaderCompileForBuildPCS, GEngineIni ));
+	// DISHONORED(retail): neither exe has a shader compiler (no FShaderCompilingThreadManager function, no "DevOptions.Shaders"
+	// string); the retail BaseEngine.ini:502 section lacks this build-machine key and PrecompileShadersJobThreshold, so the
+	// reference-only manager reads them without verify (defaults FALSE / 0)
+	GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowDistributedShaderCompileForBuildPCS"), bAllowDistributedShaderCompileForBuildPCS, GEngineIni );
 	
 	if (GIsBuildMachine 
 		// Don't want to assume that others have XGE setup
@@ -478,7 +481,7 @@ FShaderCompilingThreadManager::FShaderCompilingThreadManager() :
 	verify(GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("ThreadedShaderCompileThreshold"), TempValue, GEngineIni ));
 	ThreadedShaderCompileThreshold = TempValue;
 	verify(GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("MaxShaderJobBatchSize"), MaxShaderJobBatchSize, GEngineIni ));
-	verify(GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("PrecompileShadersJobThreshold"), PrecompileShadersJobThreshold, GEngineIni ));
+	GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("PrecompileShadersJobThreshold"), PrecompileShadersJobThreshold, GEngineIni );	// DISHONORED(retail): see above
 	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bDumpShaderPDBs"), bDumpShaderPDBs, GEngineIni ));
 	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bPromptToRetryFailedShaderCompiles"), bPromptToRetryFailedShaderCompiles, GEngineIni ));
 

@@ -12,6 +12,12 @@
 #if IPHONE
 	#include "IPhoneObjCWrapper.h"
 #endif
+#if _WINDOWS
+// DISHONORED(retail): registry overrides in LoadFromIni (2013 rva 0x1806c0) need winreg; same include pattern as UnConsoleTools.cpp
+#include "PreWindowsApi.h"
+#include <windows.h>
+#include "PostWindowsApi.h"
+#endif
 #if WITH_OPEN_AUTOMATE
 #include "OpenAutomate.h"
 #endif
@@ -38,415 +44,128 @@ FVSSGenericFloat VSSShadowTexels( 0.5f, 2.5f );
 
 FSystemSetting FSystemSettings::SystemSettings[] =
 {
-	/** Whether to allow static decals.	*/
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "StaticDecals" ), &GSystemSettings.bAllowStaticDecals, &SimpleBool, TEXT( "Whether to allow static decals." ) },
-	/** Whether to allow dynamic decals. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DynamicDecals" ), &GSystemSettings.bAllowDynamicDecals, &SimpleBool, TEXT( "Whether to allow dynamic decals." ) },
-	/** Whether to allow decals that have not been placed in static draw lists and have dynamic view relevance */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "UnbatchedDecals" ), &GSystemSettings.bAllowUnbatchedDecals, &SimpleBool, TEXT( "Whether to allow decals that have not been placed in static draw lists and have dynamic view relevance." ) },
-	/** Scale factor for distance culling decals. */
-	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "DecalCullDistanceScale" ), &GSystemSettings.DecalCullDistanceScale, &VSSMaxDrawDistanceScale, TEXT( "Scale factor for distance culling decals." ) },
-	/** Whether to allow dynamic lights. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "DynamicLights" ), &GSystemSettings.bAllowDynamicLights, &SimpleBool, TEXT( "Whether to allow dynamic lights." ) },
-	/** Whether to allow dynamic shadows. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DynamicShadows" ), &GSystemSettings.bAllowDynamicShadows, &SimpleBool, TEXT( "Whether to allow dynamic shadows." ) },
-	/** Whether to allow dynamic light environments to cast shadows. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "LightEnvironmentShadows" ), &GSystemSettings.bAllowLightEnvironmentShadows, &SimpleBool, TEXT( "Whether to allow dynamic light environments to cast shadows." ) },
-	/** Whether to composte dynamic lights into light environments. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "CompositeDynamicLights" ), &GSystemSettings.bUseCompositeDynamicLights, &SimpleBool, TEXT( "Whether to composte dynamic lights into light environments." ) },
-	/** Whether to allow light environments to use SH lights for secondary lighting. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "SHSecondaryLighting" ), &GSystemSettings.bAllowSHSecondaryLighting, &SimpleBool, TEXT( "Whether to allow light environments to use SH lights for secondary lighting." ) },
-	/** Whether to allow directional lightmaps, which use the material's normal and specular. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "DirectionalLightmaps" ), &GSystemSettings.bAllowDirectionalLightMaps, &SimpleBool, TEXT( "Whether to allow directional lightmaps, which use the material's normal and specular." ) },
-	/** Whether to allow motion blur. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "MotionBlur" ), &GSystemSettings.bAllowMotionBlur, &SimpleBool, TEXT( "Whether to allow motion blur." ) },
-	/** Whether to allow motion blur to be paused. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "MotionBlurPause" ), &GSystemSettings.bAllowMotionBlurPause, &SimpleBool, TEXT( "Whether to allow motion blur to be paused." ) },
-	/** State of the console variable MotionBlurSkinning. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "MotionBlurSkinning" ), &GSystemSettings.MotionBlurSkinning, NULL, TEXT( "State of the console variable MotionBlurSkinning." ) },
-	/** Whether to allow depth of field. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DepthOfField" ), &GSystemSettings.bAllowDepthOfField, &SimpleBool, TEXT( "Whether to allow depth of field." ) },
-	/** Whether to allow ambient occlusion. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "AmbientOcclusion" ), &GSystemSettings.bAllowAmbientOcclusion, &SimpleBool, TEXT( "Whether to allow ambient occlusion." ) },
-	/** Whether to allow bloom. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "Bloom" ), &GSystemSettings.bAllowBloom, &SimpleBool, TEXT( "Whether to allow bloom." ) },
-	/** Whether to allow light shafts. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowLightShafts" ), &GSystemSettings.bAllowLightShafts, &SimpleBool, TEXT( "Whether to allow light shafts." ) },
-	/** Whether to allow distortion. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "Distortion" ), &GSystemSettings.bAllowDistortion, &SimpleBool, TEXT( "Whether to allow distortion." ) },
-	/** Whether to allow distortion to use bilinear filtering when sampling the scene color during its apply pass. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "FilteredDistortion" ), &GSystemSettings.bAllowFilteredDistortion, &SimpleBool, TEXT( "Whether to allow distortion to use bilinear filtering when sampling the scene color during its apply pass." ) },
-	/** Whether to allow dropping distortion on particles based on WorldInfo::bDropDetail. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DropParticleDistortion" ), &GSystemSettings.bAllowParticleDistortionDropping, &SimpleBool, TEXT( "Whether to allow dropping distortion on particles based on WorldInfo::bDropDetail." ) },
-	/** Whether to allow downsampled transluency. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bAllowDownsampledTranslucency" ), &GSystemSettings.bAllowDownsampledTranslucency, &SimpleBool, TEXT( "Whether to allow downsampled transluency." ) },
-	/** Whether to allow rendering of SpeedTree leaves. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "SpeedTreeLeaves" ), &GSystemSettings.bAllowSpeedTreeLeaves, &SimpleBool, TEXT( "Whether to allow rendering of SpeedTree leaves." ) },
-	/** Whether to allow rendering of SpeedTree fronds. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "SpeedTreeFronds" ), &GSystemSettings.bAllowSpeedTreeFronds, &SimpleBool, TEXT( "Whether to allow rendering of SpeedTree fronds." ) },
-	/** If enabled, texture will only be streamed in, not out. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "OnlyStreamInTextures" ), &GSystemSettings.bOnlyStreamInTextures, &SimpleBool, TEXT( "If enabled, texture will only be streamed in, not out." ) },
-	/** Whether to allow rendering of LensFlares. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "LensFlares" ), &GSystemSettings.bAllowLensFlares, &SimpleBool, TEXT( "Whether to allow rendering of LensFlares." ) },
-	/** Whether to allow fog volumes. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "FogVolumes" ), &GSystemSettings.bAllowFogVolumes, &SimpleBool, TEXT( "Whether to allow fog volumes." ) },
-	/** Whether to allow floating point render targets to be used. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "FloatingPointRenderTargets" ), &GSystemSettings.bAllowFloatingPointRenderTargets, &SimpleBool, TEXT( "Whether to allow floating point render targets to be used." ) },
-	/** Whether to allow the rendering thread to lag one frame behind the game thread. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "OneFrameThreadLag" ), &GSystemSettings.bAllowOneFrameThreadLag, &SimpleBool, TEXT( "Whether to allow the rendering thread to lag one frame behind the game thread." ) },
-	/** Whether to use VSync or not. */
-	{ SST_BOOL, SSI_PREFERENCE, TEXT( "UseVsync" ), &GSystemSettings.bUseVSync, &SimpleBool, TEXT( "Whether to use VSync or not." ) },
-	/** Whether to upscale the screen to take up the full front buffer.	*/
-	{ SST_BOOL, SSI_DEBUG, TEXT( "UpscaleScreenPercentage" ), &GSystemSettings.bUpscaleScreenPercentage, &SimpleBool, TEXT( "Whether to upscale the screen to take up the full front buffer." ) },
-	/** Fullscreen. */
-	{ SST_BOOL, SSI_PREFERENCE, TEXT( "Fullscreen" ), &GSystemSettings.bFullscreen, &SimpleBool, TEXT( "Fullscreen." ) },
-	/** Whether to use OpenGL when it's available. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "AllowOpenGL" ), &GSystemSettings.bAllowOpenGL, &SimpleBool, TEXT( "Whether to use OpenGL when it's available." ) },
-	/** Whether to allow radial blur effects to render. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "AllowRadialBlur" ), &GSystemSettings.bAllowRadialBlur, &SimpleBool, TEXT( "Whether to allow radial blur effects to render." ) },
-	/** Whether to allow sub-surface scattering to render. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "AllowSubsurfaceScattering" ), &GSystemSettings.bAllowSubsurfaceScattering, &SimpleBool, TEXT( "Whether to allow sub-surface scattering to render." ) },
-	/** Whether to allow image reflections to render. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "AllowImageReflections" ), &GSystemSettings.bAllowImageReflections, &SimpleBool, TEXT( "Whether to allow image reflections to render." ) },
-	/** Whether to allow image reflections to be shadowed. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "AllowImageReflectionShadowing" ),&GSystemSettings.bAllowImageReflectionShadowing, &SimpleBool, TEXT( "Whether to allow image reflections to be shadowed." ) },
-	/** Whether to keep separate translucency (for better Depth of Field), experimental. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowSeparateTranslucency" ), &GSystemSettings.bAllowSeparateTranslucency, &SimpleBool, TEXT( "Whether to keep separate translucency (for better Depth of Field), experimental." ) },
-	/** Whether to allow post process MLAA to render. requires extra memory	*/
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowPostprocessMLAA" ), &GSystemSettings.bAllowPostprocessMLAA, &SimpleBool, TEXT( "Whether to allow post process MLAA to render. requires extra memory." ) },
-	/** Whether to use high quality materials when low quality exist. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowHighQualityMaterials" ), &GSystemSettings.bAllowHighQualityMaterials, &SimpleBool, TEXT( "Whether to use high quality materials when low quality exist." ) },
-	/** Max filter sample count (clamp can cause boxy appearance but allows for better performance, only numbers below 16 have effect)	*/
-	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxFilterBlurSampleCount" ), &GSystemSettings.MaxFilterBlurSampleCount, &VSSMaxFilterBlurSampleCount, TEXT( "Max filter sample count." ) },
-	/** LOD bias for skeletal meshes. */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "SkeletalMeshLODBias" ), &GSystemSettings.SkeletalMeshLODBias, &VSSSkeletalMeshLODBias, TEXT( "LOD bias for skeletal meshes." ) },
-	/** LOD bias for particle systems. */
-	{ SST_INT, SSI_DEBUG, TEXT( "ParticleLODBias" ), &GSystemSettings.ParticleLODBias, NULL, TEXT( "LOD bias for particle systems." ) },
-	/** Current detail mode; determines whether components of actors should be updated/ ticked. */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "DetailMode" ), &GSystemSettings.DetailMode, &VSSDetailMode, TEXT( "Current detail mode; determines whether components of actors should be updated/ ticked." ) },
-	/** Scale applied to primitive's MaxDrawDistance. */
-	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "MaxDrawDistanceScale" ), &GSystemSettings.MaxDrawDistanceScale, &VSSMaxDrawDistanceScale, TEXT( "Scale applied to primitive's MaxDrawDistance." ) },
-	/** Quality bias for projected shadow buffer filtering. Higher values use better quality filtering. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ShadowFilterQualityBias" ), &GSystemSettings.ShadowFilterQualityBias, NULL, TEXT( "Quality bias for projected shadow buffer filtering. Higher values use better quality filtering." ) },
-	/** Maximum level of anisotropy used. */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxAnisotropy" ), &GSystemSettings.MaxAnisotropy, &VSSMaxAnisotropy, TEXT( "Maximum level of anisotropy used." ) },
-	/** The maximum number of MSAA samples to use. */
-	{ SST_INT, SSI_DEBUG, TEXT( "MaxMultiSamples" ), &GSystemSettings.MaxMultiSamples, &VSSMaxMultiSamples, TEXT( "The maximum number of MSAA samples to use." ) },
-	/** UKNOWN */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowD3D9MSAA" ), &GSystemSettings.bAllowD3D9MSAA, &SimpleBool, TEXT( "UKNOWN" ) },
-	/** UKNOWN */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "bAllowTemporalAA" ), &GSystemSettings.bAllowTemporalAA, &SimpleBool, TEXT( "UKNOWN" ) },
-	/** UKNOWN */
-	{ SST_FLOAT, SSI_DEBUG, TEXT( "TemporalAA_MinDepth" ), &GSystemSettings.TemporalAA_MinDepth, NULL, TEXT( "UKNOWN" ) },
-	/** UKNOWN */
-	{ SST_FLOAT, SSI_DEBUG, TEXT( "TemporalAA_StartDepthVelocityScale" ), &GSystemSettings.TemporalAA_StartDepthVelocityScale, NULL, TEXT( "UKNOWN" ) },
-	/** min dimensions (in texels) allowed for rendering shadow subject depths */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "MinShadowResolution" ), &GSystemSettings.MinShadowResolution, NULL, TEXT( "min dimensions (in texels) allowed for rendering shadow subject depths." ) },
-	/** min dimensions (in texels) allowed for rendering preshadow depths. */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "MinPreShadowResolution" ), &GSystemSettings.MinPreShadowResolution, NULL, TEXT( "min dimensions (in texels) allowed for rendering preshadow depths." ) },
-	/** max square dimensions (in texels) allowed for rendering shadow subject depths. */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxShadowResolution" ), &GSystemSettings.MaxShadowResolution, &VSSMaxShadowResolution, TEXT( "max square dimensions (in texels) allowed for rendering shadow subject depths." ) },
-	/** max square dimensions (in texels) allowed for rendering whole scene shadow depths. */
-	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxWholeSceneDominantShadowResolution" ), &GSystemSettings.MaxWholeSceneDominantShadowResolution, &VSSMaxShadowResolution, TEXT( "max square dimensions (in texels) allowed for rendering whole scene shadow depths." ) },
-	/** Resolution in texel below which shadows are faded out. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ShadowFadeResolution" ), &GSystemSettings.ShadowFadeResolution, NULL, TEXT( "Resolution in texel below which shadows are faded out." ) },
-	/** Resolution in texel below which preshadows are faded out. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "PreShadowFadeResolution" ), &GSystemSettings.PreShadowFadeResolution, NULL, TEXT( "Resolution in texel below which preshadows are faded out." ) },
-	/** Controls the rate at which shadows are faded out. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ShadowFadeExponent" ), &GSystemSettings.ShadowFadeExponent, NULL, TEXT( "Controls the rate at which shadows are faded out." ) },
-	/** Screen X resolution. */
-	{ SST_INT, SSI_PREFERENCE, TEXT( "ResX" ), &GSystemSettings.ResX, &VSSResX, TEXT( "Screen X resolution." ) },
-	/** Screen Y resolution. */
-	{ SST_INT, SSI_PREFERENCE, TEXT( "ResY" ), &GSystemSettings.ResY, &VSSResY, TEXT( "Screen Y resolution." ) },
-	/** Percentage of screen main view should take up. */
-	{ SST_FLOAT, SSI_DEBUG, TEXT( "ScreenPercentage" ), &GSystemSettings.ScreenPercentage, &VSSScreenPercentage, TEXT( "Percentage of screen main view should take up." ) },
-	/** Scene capture streaming texture update distance scalar. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "SceneCaptureStreamingMultiplier" ), &GSystemSettings.SceneCaptureStreamingMultiplier, NULL, TEXT( "Scene capture streaming texture update distance scalar." ) },
-	/** The ratio of subject pixels to shadow texels. */
-	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "ShadowTexelsPerPixel" ), &GSystemSettings.ShadowTexelsPerPixel, &VSSShadowTexels, TEXT( "The ratio of subject pixels to shadow texels." ) },
-	/** UKNOWN */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "PreShadowResolutionFactor" ), &GSystemSettings.PreShadowResolutionFactor, NULL, TEXT( "UKNOWN" ) },
-	/** Toggle Branching PCF implementation for projected shadows. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bEnableBranchingPCFShadows" ), &GSystemSettings.bEnableBranchingPCFShadows, &SimpleBool, TEXT( "Toggle Branching PCF implementation for projected shadows." ) },
-	/** Whether to allow hardware filtering optimizations like hardware PCF and Fetch4. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bAllowHardwareShadowFiltering" ), &GSystemSettings.bAllowHardwareShadowFiltering, &SimpleBool, TEXT( "Whether to allow hardware filtering optimizations like hardware PCF and Fetch4." ) },
-	/** Global tessellation factor multiplier. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "TessellationAdaptivePixelsPerTriangle" ), &GSystemSettings.TessellationAdaptivePixelsPerTriangle, NULL, TEXT( "Global tessellation factor multiplier." ) },
-	/** hack to allow for foreground DPG objects to cast shadows on the world DPG. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bEnableForegroundShadowsOnWorld" ), &GSystemSettings.bEnableForegroundShadowsOnWorld, &SimpleBool, TEXT( "hack to allow for foreground DPG objects to cast shadows on the world DPG." ) },
-	/** Whether to allow foreground DPG self-shadowing. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bEnableForegroundSelfShadowing" ), &GSystemSettings.bEnableForegroundSelfShadowing, &SimpleBool, TEXT( "Whether to allow foreground DPG self-shadowing." ) },
-	/** Whether to allow whole scene dominant shadows. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowWholeSceneDominantShadows" ), &GSystemSettings.bAllowWholeSceneDominantShadows, &SimpleBool, TEXT( "Whether to allow whole scene dominant shadows." ) },
-	/** Whether to use safe and conservative shadow frustum creation that wastes some shadowmap space. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bUseConservativeShadowBounds" ), &GSystemSettings.bUseConservativeShadowBounds, &SimpleBool, TEXT( "Whether to use safe and conservative shadow frustum creation that wastes some shadowmap space." ) },
-	/** Radius, in shadowmap texels, of the filter disk. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ShadowFilterRadius" ), &GSystemSettings.ShadowFilterRadius, NULL, TEXT( "Radius, in shadowmap texels, of the filter disk." ) },
-	/** Depth bias that is applied in the depth pass for all types of projected shadows except VSM. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ShadowDepthBias" ), &GSystemSettings.ShadowDepthBias, NULL, TEXT( "Depth bias that is applied in the depth pass for all types of projected shadows except VSM." ) },
-	/** Higher values make the per object soft shadow comparison sharper, lower values make the transition softer. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "PerObjectShadowTransition" ), &GSystemSettings.PerObjectShadowTransition, NULL, TEXT( "Higher values make the per object soft shadow comparison sharper, lower values make the transition softer." ) },
-	/** Higher values make the per scene soft shadow comparison sharper, lower values make the transition softer. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "PerSceneShadowTransition" ), &GSystemSettings.PerSceneShadowTransition, NULL, TEXT( "Higher values make the per scene soft shadow comparison sharper, lower values make the transition softer." ) },
-	/** Scale applied to the penumbra size of Cascaded Shadow Map splits, useful for minimizing the transition between splits. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMSplitPenumbraScale" ), &GSystemSettings.CSMSplitPenumbraScale, NULL, TEXT( "Scale applied to the penumbra size of Cascaded Shadow Map splits, useful for minimizing the transition between splits." ) },
-	/** Scale applied to the soft comparison transition distance of Cascaded Shadow Map splits, useful for minimizing the transition between splits. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMSplitSoftTransitionDistanceScale" ), &GSystemSettings.CSMSplitSoftTransitionDistanceScale, NULL, TEXT( "Scale applied to the soft comparison transition distance of Cascaded Shadow Map splits, useful for minimizing the transition between splits." ) },
-	/** Scale applied to the depth bias of Cascaded Shadow Map splits, useful for minimizing the transition between splits. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMSplitDepthBiasScale" ), &GSystemSettings.CSMSplitDepthBiasScale, NULL, TEXT( "Scale applied to the depth bias of Cascaded Shadow Map splits, useful for minimizing the transition between splits." ) },
-	/** Minimum camera FOV for CSM, this is used to prevent shadow shimmering when animating the FOV lower than the min, for example when zooming. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMMinimumFOV" ), &GSystemSettings.CSMMinimumFOV, NULL, TEXT( "Minimum camera FOV for CSM, this is used to prevent shadow shimmering when animating the FOV lower than the min, for example when zooming." ) },
-	/** The FOV will be rounded by this factor for the purposes of CSM, which turns shadow shimmering into discrete jumps. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMFOVRoundFactor" ), &GSystemSettings.CSMFOVRoundFactor, NULL, TEXT( "The FOV will be rounded by this factor for the purposes of CSM, which turns shadow shimmering into discrete jumps." ) },
-	/** WholeSceneDynamicShadowRadius to use when using CSM to preview unbuilt lighting from a directional light. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "UnbuiltWholeSceneDynamicShadowRadius" ), &GSystemSettings.UnbuiltWholeSceneDynamicShadowRadius, NULL, TEXT( "WholeSceneDynamicShadowRadius to use when using CSM to preview unbuilt lighting from a directional light." ) },
-	/** NumWholeSceneDynamicShadowCascades to use when using CSM to preview unbuilt lighting from a directional light. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "UnbuiltNumWholeSceneDynamicShadowCascades" )	, &GSystemSettings.UnbuiltNumWholeSceneDynamicShadowCascades, NULL, TEXT( "NumWholeSceneDynamicShadowCascades to use when using CSM to preview unbuilt lighting from a directional light." ) },
-	/** How many unbuilt light-primitive interactions there can be for a light before the light switches to whole scene shadows. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "WholeSceneShadowUnbuiltInteractionThreshold" ), &GSystemSettings.WholeSceneShadowUnbuiltInteractionThreshold, NULL, TEXT( "How many unbuilt light-primitive interactions there can be for a light before the light switches to whole scene shadows." ) },
-	/** Whether to allow fractured meshes to take damage. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowFracturedDamage" ), &GSystemSettings.bAllowFracturedDamage, &SimpleBool, TEXT( "Whether to allow fractured meshes to take damage." ) },
-	/** Scales the game-specific number of fractured physics objects allowed. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "NumFracturedPartsScale" ), &GSystemSettings.NumFracturedPartsScale, NULL, TEXT( "Scales the game-specific number of fractured physics objects allowed." ) },
-	/** Percent chance of a rigid body spawning after a fractured static mesh is damaged directly.  [0-1] */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "FractureDirectSpawnChanceScale" ), &GSystemSettings.FractureDirectSpawnChanceScale, NULL, TEXT( "Percent chance of a rigid body spawning after a fractured static mesh is damaged directly.  [0-1]" ) },
-	/** Percent chance of a rigid body spawning after a fractured static mesh is damaged by radial blast.  [0-1] */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "FractureRadialSpawnChanceScale" ), &GSystemSettings.FractureRadialSpawnChanceScale, NULL, TEXT( "Percent chance of a rigid body spawning after a fractured static mesh is damaged by radial blast.  [0-1]" ) },
-	/** Distance scale for whether a fractured static mesh should actually fracture when damaged. */
-	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "FractureCullDistanceScale" ), &GSystemSettings.FractureCullDistanceScale, &VSSMaxDrawDistanceScale, TEXT( "Distance scale for whether a fractured static mesh should actually fracture when damaged." ) },
-	/** Whether to force CPU access to GPU skinned vertex data. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bForceCPUAccessToGPUSkinVerts" ), &GSystemSettings.bForceCPUAccessToGPUSkinVerts, &SimpleBool, TEXT( "Whether to force CPU access to GPU skinned vertex data." ) },
-	/** Whether to disable instanced skeletal weights. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bDisableSkeletalInstanceWeights" ), &GSystemSettings.bDisableSkeletalInstanceWeights, &SimpleBool, TEXT( "Whether to disable instanced skeletal weights." ) },
-	/** Whether to use high-precision GBuffers. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "HighPrecisionGBuffers" ), &GSystemSettings.bHighPrecisionGBuffers, &SimpleBool, TEXT( "Whether to use high-precision GBuffers." ) },
-	/** Whether to allow independent, external displays. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "AllowSecondaryDisplays" )	, &GSystemSettings.bAllowSecondaryDisplays, &SimpleBool, TEXT( "Whether to allow independent, external displays." ) },
-	/** The maximum width of any potentially allowed secondary displays (requires bAllowSecondaryDisplays == TRUE) */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "SecondaryDisplayMaximumWidth" ), &GSystemSettings.SecondaryDisplayMaximumWidth, NULL, TEXT( "The maximum width of any potentially allowed secondary displays (requires bAllowSecondaryDisplays == TRUE)" ) },
-	/** The maximum height of any potentially allowed secondary displays (requires bAllowSecondaryDisplays == TRUE) */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "SecondaryDisplayMaximumHeight" ), &GSystemSettings.SecondaryDisplayMaximumHeight, NULL, TEXT( "The maximum height of any potentially allowed secondary displays (requires bAllowSecondaryDisplays == TRUE)" ) },
-	/** Enables sleeping once a frame to smooth out CPU usage */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "AllowPerFrameSleep" ), &GSystemSettings.bAllowPerFrameSleep, NULL, TEXT( "TRUE if the application is allowed to sleep once a frame to smooth out CPU usage" ) },
-	/** Enables yielding once a frame to give other processes time to run. Note that bAllowPerFrameSleep takes precedence */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "AllowPerFrameYield" ), &GSystemSettings.bAllowPerFrameYield, NULL, TEXT( "TRUE if the application is allowed to yield once a frame to give other processes time to run. Note that bAllowPerFrameSleep takes precedence" ) },
-
-// allow for mobile only platform settings, separated out so they don't need to be specified for non-mobile platforms
-#if WITH_MOBILE_RHI
-	/** The baseline feature level of the device. */
-	{ SST_INT, SSI_MOBILE_SCALABILITY, TEXT( "MobileFeatureLevel" ), &GSystemSettings.MobileFeatureLevel, NULL, TEXT( "The baseline feature level of the device" ) },
-	/** Whether to allow fog on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileFog" ), &GSystemSettings.bAllowMobileFog, &SimpleBool, TEXT( "Whether to allow fog on mobile." ) },
-	/** Whether to use height-fog on mobile, or simple gradient fog. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileHeightFog" ), &GSystemSettings.bAllowMobileHeightFog, &SimpleBool, TEXT( "Whether to use height-fog on mobile, or simple gradient fog." ) },
-	/** Whether to allow vertex specular on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileSpecular" ), &GSystemSettings.bAllowMobileSpecular, &SimpleBool, TEXT( "Whether to allow vertex specular on mobile." ) },
-	/** Whether to allow bump offset on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileBumpOffset" ), &GSystemSettings.bAllowMobileBumpOffset, &SimpleBool, TEXT( "Whether to allow bump offset on mobile" ) },
-	/** Whether to allow normal mapping on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileNormalMapping" ), &GSystemSettings.bAllowMobileNormalMapping, &SimpleBool, TEXT( "Whether to allow normal mapping on mobile." ) },
-	/** Whether to allow environment mapping on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileEnvMapping" ), &GSystemSettings.bAllowMobileEnvMapping, &SimpleBool, TEXT( "Whether to allow environment mapping on mobile." ) },
-	/** Whether to allow rim lighting on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileRimLighting" ), &GSystemSettings.bAllowMobileRimLighting, &SimpleBool, TEXT( "Whether to allow rim lighting on mobile." ) },
-	/** Whether to allow color blending on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileColorBlending" ), &GSystemSettings.bAllowMobileColorBlending, &SimpleBool, TEXT( "Whether to allow color blending on mobile." ) },
-	/** Whether to allow vertex movement on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileVertexMovement" ), &GSystemSettings.bAllowMobileVertexMovement, &SimpleBool, TEXT( "Whether to allow vertex movement on mobile." ) },
-	/** Whether to allow occlusion queries on mobile. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileOcclusionQueries" ), &GSystemSettings.bAllowMobileOcclusionQueries, &SimpleBool, TEXT( "Whether to allow occlusion queries on mobile." ) },
-	/** UKNOWN */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileGlobalGammaCorrection" ), &GSystemSettings.bMobileGlobalGammaCorrection, &SimpleBool, TEXT( "UNKNOWN." ) },
-	/** UKNOWN */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileAllowGammaCorrectionWorldOverride" ), &GSystemSettings.bMobileAllowGammaCorrectionLevelOverride, &SimpleBool, TEXT( "UNKNOWN." ) },
-	/** Whether to enable a rendering depth pre-pass on mobile. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileAllowDepthPrePass" ), &GSystemSettings.bMobileAllowDepthPrePass, &SimpleBool, TEXT( "Whether to enable a rendering depth pre-pass on mobile." ) },
-#if WITH_GFx
-	/** Whether to include  */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileGfxGammaCorrection" ), &GSystemSettings.bMobileGfxGammaCorrection, &SimpleBool, TEXT( "Whether to include gamma correction in the scaleform shaders." ) },
-#endif
-	/** UKNOWN */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileSceneDepthResolveForShadows" ), &GSystemSettings.bMobileSceneDepthResolveForShadows, &SimpleBool, TEXT( "UNKNOWN." ) },
-	/** Whether to use preprocessed shaders on mobile. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileUsePreprocessedShaders" ), &GSystemSettings.bUsePreprocessedShaders, &SimpleBool, TEXT( "Whether to use preprocessed shaders on mobile." ) },
-	/** Whether to flash the screen red (non-final release only) when a cached shader is not found at runtime. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileFlashRedForUncachedShaders" ), &GSystemSettings.bFlashRedForUncachedShaders, &SimpleBool, TEXT( "Whether to flash the screen red (non-final release only) when a cached shader is not found at runtime." ) },
-	/** Whether to issue a "warm-up" draw call for mobile shaders as they are compiled. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileWarmUpPreprocessedShaders" ), &GSystemSettings.bWarmUpPreprocessedShaders, &SimpleBool, TEXT( "Whether to issue a 'warm-up' draw call for mobile shaders as they are compiled." ) },
-	/** Whether to dump out preprocessed shaders for mobile as they are encountered/compiled. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileCachePreprocessedShaders" ), &GSystemSettings.bCachePreprocessedShaders, &SimpleBool, TEXT( "Whether to dump out preprocessed shaders for mobile as they are encountered/compiled." ) },
-	/** Whether to run dumped out preprocessed shaders through the shader profiler. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileProfilePreprocessedShaders" ), &GSystemSettings.bProfilePreprocessedShaders, &SimpleBool, TEXT( "Whether to run dumped out preprocessed shaders through the shader profiler." ) },
-	/** Whether to run the C preprocessor on shaders. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileUseCPreprocessorOnShaders" ), &GSystemSettings.bUseCPreprocessorOnShaders, &SimpleBool, TEXT( "Whether to run the C preprocessor on shaders." ) },
-	/** Whether to load the C preprocessed source. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileLoadCPreprocessedShaders" ), &GSystemSettings.bLoadCPreprocessedShaders, &SimpleBool, TEXT( " Whether to load the C preprocessed source." ) },
-	/** Whether to share pixel shaders across multiple unreal shaders. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileSharePixelShaders" ), &GSystemSettings.bSharePixelShaders, &SimpleBool, TEXT( "Whether to share pixel shaders across multiple unreal shaders." ) },
-	/** Whether to share vertex shaders across multiple unreal shaders. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileShareVertexShaders" ), &GSystemSettings.bShareVertexShaders, &SimpleBool, TEXT( "Whether to share vertex shaders across multiple unreal shaders." ) },
-	/** Whether to share shaders program across multiple unreal shaders. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileShareShaderPrograms" ), &GSystemSettings.bShareShaderPrograms, &SimpleBool, TEXT( "Whether to share shaders program across multiple unreal shaders." ) },
-	/** Whether to enable MSAA, if the OS supports it. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileEnableMSAA" ), &GSystemSettings.bEnableMSAA, &SimpleBool, TEXT( "Whether to enable MSAA, if the OS supports it." ) },
-	/** TRUE if we try to support mobile modulated shadow. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileModShadows" ), &GSystemSettings.bMobileModShadows, &SimpleBool, TEXT( "TRUE if we try to support mobile modulated shadow." ) },
-	/** TRUE to enable the mobile tilt shift effect. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileTiltShift" ), &GSystemSettings.bMobileTiltShift, &SimpleBool, TEXT( "TRUE to enable the mobile tilt shift effect." ) },
-	/** Value (in MB) to declare for maximum mobile memory on this device. */
-	{ SST_INT, SSI_DEBUG, TEXT( "MobileMaxMemory" ), &GSystemSettings.MobileMaxMemory, NULL, TEXT( "Value (in MB) to declare for maximum mobile memory on this device." ) },
-	/** Holds if we are using high resolution timing on this device. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "bMobileUsingHighResolutionTiming" ), &GSystemSettings.bMobileUsingHighResolutionTiming, NULL, TEXT( "TRUE if high resolution timing is enabled for this device" ) },
-	/** Whether to clear the depth buffer between DPGs. */
-	{ SST_BOOL, SSI_DEBUG, TEXT( "MobileClearDepthBetweenDPG" ), &GSystemSettings.bMobileClearDepthBetweenDPG, &SimpleBool, TEXT( "Whether to clear the depth buffer between DPGs." ) },
-	/** Whether to allow color grading on mobile. */
-	{ SST_BOOL, SSI_MOBILE_SCALABILITY, TEXT( "MobileColorGrading" ), &GSystemSettings.bAllowMobileColorGrading, &SimpleBool, TEXT( "Whether to allow color grading on mobile." ) },
-
-	/** The maximum number of bones supported for skinning. */
-	{ SST_INT, SSI_DEBUG, TEXT( "MobileBoneCount" ), &GSystemSettings.MobileBoneCount, NULL, TEXT( "The maximum number of bones supported for skinning." ) },
-	/** The maximum number of bones influences per vertex supported for skinning. */
-	{ SST_INT, SSI_DEBUG, TEXT( "MobileBoneWeightCount" ), &GSystemSettings.MobileBoneWeightCount, NULL, TEXT( "The maximum number of bones influences per vertex supported for skinning." ) },
-	/** The size of the scratch buffer for vertices (in kB). */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "MobileVertexScratchBufferSize" ), &GSystemSettings.MobileVertexScratchBufferSize, NULL, TEXT( "The size of the scratch buffer for vertices (in kB)." ) },
-	/** The size of the scratch buffer for indices (in kB). */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "MobileIndexScratchBufferSize" ), &GSystemSettings.MobileIndexScratchBufferSize, NULL, TEXT( "The size of the scratch buffer for indices (in kB)." ) },
-	/** UNKNOWN */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "MobileShadowTextureResolution" ), &GSystemSettings.MobileShadowTextureResolution, NULL, TEXT( "UNKNOWN." ) },
-
-	/** How much to bias all texture mip levels on mobile (usually 0 or negative). */
-	{ SST_FLOAT, SSI_MOBILE_SCALABILITY, TEXT( "MobileLODBias" ), &GSystemSettings.MobileLODBias, NULL, TEXT( "How much to bias all texture mip levels on mobile (usually 0 or negative)." ) },
-	/** The default global content scale factor to use on device (largely iOS specific). */
-	{ SST_FLOAT, SSI_MOBILE_SCALABILITY, TEXT( "MobileContentScaleFactor" ), &GSystemSettings.MobileContentScaleFactor, NULL, TEXT( "The default global content scale factor to use on device (largely iOS specific)." ) },
-	/** Position of the focused center of the tilt shift effect (in percent of the screen height). */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileTiltShiftPosition" ), &GSystemSettings.MobileTiltShiftPosition, NULL, TEXT( "Position of the focused center of the tilt shift effect (in percent of the screen height)." ) },
-	/** Width of focused area in the tilt shift effect (in percent of the screen height). */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileTiltShiftFocusWidth" ), &GSystemSettings.MobileTiltShiftFocusWidth, NULL, TEXT( "Width of focused area in the tilt shift effect (in percent of the screen height)." ) },
-	/** Width of transition area in the tilt shift effect, where it transitions from full focus to full blur (in percent of the screen height). */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileTiltShiftTransitionWidth" ), &GSystemSettings.MobileTiltShiftTransitionWidth, NULL, TEXT( "Width of transition area in the tilt shift effect, where it transitions from full focus to full blur (in percent of the screen height)." ) },
-
-	/** UNKNOWN */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileLightShaftScale" ), &GSystemSettings.MobileLightShaftRadialBlurPercentScale, NULL, TEXT( "UNKNOWN." ) },
-	/** UNKNOWN */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileLightShaftFirstPass" ), &GSystemSettings.MobileLightShaftRadialBlurFirstPassRatio, NULL, TEXT( "UNKNOWN." ) },
-	/** UNKNOWN */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileLightShaftSecondPass" ), &GSystemSettings.MobileLightShaftRadialBlurSecondPassRatio, NULL, TEXT( "UNKNOWN." ) },
-	/** UNKNOWN */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "MobileMaxShadowRange" ), &GSystemSettings.MobileMaxShadowRange, NULL, TEXT( "UNKNOWN." ) },
-	/** LOD bias for mobile landscape rendering on this device (in addition to any per-landscape bias set) */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "MobileLandscapeLodBias" ), &GSystemSettings.MobileLandscapeLodBias, NULL, TEXT( "LOD bias for mobile landscape rendering on this device (in addition to any per-landscape bias set)." ) },
-	/**  Whether to automatically put cooked startup objects in the StartupPackages shader group */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "MobileUseShaderGroupForStartupObjects" ), &GSystemSettings.bMobileUseShaderGroupForStartupObjects, &SimpleBool, TEXT( "Whether to automatically put cooked startup objects in the StartupPackages shader group" ) },
-	/**  Whether to disable generating both fog shader permutations on mobile.  When TRUE, it decreases load times but increases GPU cost for materials/levels with fog enabled */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "MobileMinimizeFogShaders" ), &GSystemSettings.bMobileMinimizeFogShaders, &SimpleBool, TEXT( "Whether to disable generating both fog shader permutations on mobile.  When TRUE, it decreases load times but increases GPU cost for materials/levels with fog enabled" ) },
-	/** Mobile FXAA quality level.  0 is off. */
-	{ SST_INT, SSI_MOBILE_SCALABILITY, TEXT( "MobileFXAAQuality" ), &GSystemSettings.MobileFXAAQuality, NULL, TEXT( "Mobile FXAA quality level.  0 is off. " ) },
-#endif
-
-// allow for APEX only settings
-#if WITH_APEX
-	/** Resource budget for APEX LOD. Higher values indicate the system can handle more APEX load. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ApexLODResourceBudget" ), &GSystemSettings.ApexLODResourceBudget, NULL, TEXT( "Resource budget for APEX LOD. Higher values indicate the system can handle more APEX load." ) },
-	/** The maximum number of active PhysX actors which represent dynamic groups of chunks (islands). */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexDestructionMaxChunkIslandCount" ), &GSystemSettings.ApexDestructionMaxChunkIslandCount, NULL, TEXT( "The maximum number of active PhysX actors which represent dynamic groups of chunks (islands)." ) },
-	/** The maximum number of PhysX shapes which represent destructible chunks. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexDestructionMaxShapeCount" ), &GSystemSettings.ApexDestructionMaxShapeCount, NULL, TEXT( "The maximum number of PhysX shapes which represent destructible chunks." ) },
-	/** Every destructible asset defines a min and max lifetime, and maximum separation distance for its chunks. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ApexDestructionMaxChunkSeparationLOD" ), &GSystemSettings.ApexDestructionMaxChunkSeparationLOD, NULL, TEXT( "Every destructible asset defines a min and max lifetime, and maximum separation distance for its chunks." ) },
-	/** Lets the user throttle the number of fractures processed per frame (per scene) due to destruction, as this can be quite costly. The default is 0xffffffff (unlimited). */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexDestructionMaxFracturesProcessedPerFrame" ), &GSystemSettings.ApexDestructionMaxFracturesProcessedPerFrame, NULL, TEXT( "Lets the user throttle the number of fractures processed per frame (per scene) due to destruction, as this can be quite costly. The default is 0xffffffff (unlimited)." ) },
-	/** Average Simulation Frequency is estimated with the last n frames. This is used in Clothing when bAllowAdaptiveTargetFrequency is enabled. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ApexClothingAvgSimFrequencyWindow" ), &GSystemSettings.ApexClothingAvgSimFrequencyWindow, NULL, TEXT( "Average Simulation Frequency is estimated with the last n frames. This is used in Clothing when bAllowAdaptiveTargetFrequency is enabled." ) },
-	/** If set to true, destructible chunks with the lowest benefit would get removed first instead of the oldest. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "ApexDestructionSortByBenefit" ), &GSystemSettings.bApexDestructionSortByBenefit, &SimpleBool, TEXT( "If set to true, destructible chunks with the lowest benefit would get removed first instead of the oldest." ) },
-	/** Whether or not to use GPU Rigid Bodies. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "ApexGRBEnable" ), &GSystemSettings.bEnableApexGRB, &SimpleBool, TEXT( "Whether or not to use GPU Rigid Bodies." ) },
-	/** Amount (in MB) of GPU memory to allocate for GRB scene data (shapes, actors etc). */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexGRBGPUMemSceneSize" ), &GSystemSettings.ApexGRBGpuMemSceneSize, NULL, TEXT( "Amount (in MB) of GPU memory to allocate for GRB scene data (shapes, actors etc)." ) },
-	/** Amount (in MB) of GPU memory to allocate for GRB temporary data (broadphase pairs, contacts etc). */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexGRBGPUMemTempDataSize" ), &GSystemSettings.ApexGRBGpuMemTempDataSize, NULL, TEXT( "Amount (in MB) of GPU memory to allocate for GRB temporary data (broadphase pairs, contacts etc)." ) },
-	/** The size of the cells to divide the world into for GPU collision detection. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ApexGRBMeshCellSize" ), &GSystemSettings.ApexGRBMeshCellSize, NULL, TEXT( "The size of the cells to divide the world into for GPU collision detection." ) },
-	/** Number of non-penetration solver iterations. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexGRBNonPenSolverPosIterCount" ), &GSystemSettings.ApexGRBNonPenSolverPosIterCount, NULL, TEXT( "Number of non-penetration solver iterations." ) },
-	/** Number of friction solver position iterations. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexGRBFrictionSolverPosIterCount" ), &GSystemSettings.ApexGRBFrictionSolverPosIterCount, NULL, TEXT( "Number of friction solver position iterations." ) },
-	/** Number of friction solver velocity iterations. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexGRBFrictionSolverVelIterCount" ), &GSystemSettings.ApexGRBFrictionSolverVelIterCount, NULL, TEXT( "Number of friction solver velocity iterations." ) },
-	/**	Collision skin width, as in PhysX. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ApexGRBSkinWidth" ), &GSystemSettings.ApexGRBSkinWidth, NULL, TEXT( "Collision skin width, as in PhysX." ) },
-	/** Maximum linear acceleration. */
-	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ApexGRBMaxLinearAcceleration" ), &GSystemSettings.ApexGRBMaxLinAcceleration, NULL, TEXT( "Maximum linear acceleration." ) },
-	/** If TRUE, allow APEX clothing fetch (skinning etc) to be done on multiple threads. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bEnableParallelApexClothingFetch" ), &GSystemSettings.bEnableParallelApexClothingFetch, &SimpleBool, TEXT( "If TRUE, allow APEX clothing fetch (skinning etc) to be done on multiple threads." ) },
-	/** If TRUE, allow APEX skinning to occur without blocking fetch results. bEnableParallelApexClothingFetch must be enabled for this to work. */
-	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bApexClothingAsyncFetchResults" ), &GSystemSettings.bApexClothingAsyncFetchResults, &SimpleBool, TEXT( "If TRUE, allow APEX skinning to occur without blocking fetch results. bEnableParallelApexClothingFetch must be enabled for this to work." ) },
-	/** Average Simulation Frequency is estimated with the last n frames. */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexClothingAvgSimFrequencyWindow" ), &GSystemSettings.ApexClothingAvgSimFrequencyWindow, NULL, TEXT( "Average Simulation Frequency is estimated with the last n frames." ) },
-	/** ClothingActors will cook in a background thread to speed up creation time. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "ApexClothingAllowAsyncCooking" ), &GSystemSettings.bApexClothingAllowAsyncCooking, &SimpleBool, TEXT( "ClothingActors will cook in a background thread to speed up creation time." ) },
-	/** Allow APEX SDK to interpolate clothing matrices between the substeps. */
-	{ SST_BOOL, SSI_UNKNOWN, TEXT( "ApexClothingAllowApexWorkBetweenSubsteps" ), &GSystemSettings.bApexClothingAllowApexWorkBetweenSubsteps, &SimpleBool, TEXT( "Allow APEX SDK to interpolate clothing matrices between the substeps." ) },
-	/** UNKNOWN */
-	{ SST_INT, SSI_UNKNOWN, TEXT( "ApexDestructionMaxActorCreatesPerFrame" ), &GSystemSettings.ApexDestructionMaxActorCreatesPerFrame, NULL, TEXT( "UNKNOWN." ) },
-#endif
+	// DISHONORED(retail): the 81 keys FSystemSettingsData::LoadFromIni reads (2013 rva 0x1806c0; 2012 rva 0x186830,
+	// systemsettings.cpp) in its order: 43 switches (GetBool), 21 ints (GetInt), 17 floats (GetFloat). With the 26
+	// TEXTUREGROUP_* entries of FTextureLODSettings::Initialize (2013 rva 0x17bb20) that is the 107-key retail section.
+	// Offsets are the FSystemSettingsData members the 2013 table stores (names from the 2012 PDB; iType_AntiAlias and
+	// bAllowRatsShadow exist in 2013 only). Intent/validator/help come from the reference row of the same key.
+	// ---- switches (43) ----
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "StaticDecals" ), &GSystemSettings.bAllowStaticDecals, &SimpleBool, TEXT( "Whether to allow static decals." ) },	// @16
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DynamicDecals" ), &GSystemSettings.bAllowDynamicDecals, &SimpleBool, TEXT( "Whether to allow dynamic decals." ) },	// @20
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "UnbatchedDecals" ), &GSystemSettings.bAllowUnbatchedDecals, &SimpleBool, TEXT( "Whether to allow decals that have not been placed in static draw lists and have dynamic view relevance." ) },	// @24
+	{ SST_BOOL, SSI_DEBUG, TEXT( "DynamicLights" ), &GSystemSettings.bAllowDynamicLights, &SimpleBool, TEXT( "Whether to allow dynamic lights." ) },	// @32
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DynamicShadows" ), &GSystemSettings.bAllowDynamicShadows, &SimpleBool, TEXT( "Whether to allow dynamic shadows." ) },	// @916
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "LightEnvironmentShadows" ), &GSystemSettings.bAllowLightEnvironmentShadows, &SimpleBool, TEXT( "Whether to allow dynamic light environments to cast shadows." ) },	// @920
+	{ SST_BOOL, SSI_DEBUG, TEXT( "CompositeDynamicLights" ), &GSystemSettings.bUseCompositeDynamicLights, &SimpleBool, TEXT( "Whether to composte dynamic lights into light environments." ) },	// @36
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "SHSecondaryLighting" ), &GSystemSettings.bAllowSHSecondaryLighting, &SimpleBool, TEXT( "Whether to allow light environments to use SH lights for secondary lighting." ) },	// @40
+	{ SST_BOOL, SSI_DEBUG, TEXT( "DirectionalLightmaps" ), &GSystemSettings.bAllowDirectionalLightMaps, &SimpleBool, TEXT( "Whether to allow directional lightmaps, which use the material's normal and specular." ) },	// @44
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "MotionBlur" ), &GSystemSettings.bAllowMotionBlur, &SimpleBool, TEXT( "Whether to allow motion blur." ) },	// @48
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "MotionBlurPause" ), &GSystemSettings.bAllowMotionBlurPause, &SimpleBool, TEXT( "Whether to allow motion blur to be paused." ) },	// @52
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DepthOfField" ), &GSystemSettings.bAllowDepthOfField, &SimpleBool, TEXT( "Whether to allow depth of field." ) },	// @56
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "AmbientOcclusion" ), &GSystemSettings.bAllowAmbientOcclusion, &SimpleBool, TEXT( "Whether to allow ambient occlusion." ) },	// @60
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "Bloom" ), &GSystemSettings.bAllowBloom, &SimpleBool, TEXT( "Whether to allow bloom." ) },	// @64
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "UseHighQualityBloom" ), &GSystemSettings.bUseHighQualityBloom, &SimpleBool, TEXT( "Whether to use the high quality bloom path." ) },	// @68, retail-only key
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowLightShafts" ), &GSystemSettings.bAllowLightShafts, &SimpleBool, TEXT( "Whether to allow light shafts." ) },	// @72
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bAllowRatsShadow" ), &GSystemSettings.bAllowRatsShadow, &SimpleBool, TEXT( "Whether rats cast shadows." ) },	// @76, retail-only key, 2013-only member
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "Distortion" ), &GSystemSettings.bAllowDistortion, &SimpleBool, TEXT( "Whether to allow distortion." ) },	// @80
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "FilteredDistortion" ), &GSystemSettings.bAllowFilteredDistortion, &SimpleBool, TEXT( "Whether to allow distortion to use bilinear filtering when sampling the scene color during its apply pass." ) },	// @84
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "DropParticleDistortion" ), &GSystemSettings.bAllowParticleDistortionDropping, &SimpleBool, TEXT( "Whether to allow dropping distortion on particles based on WorldInfo::bDropDetail." ) },	// @88
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bAllowDownsampledTranslucency" ), &GSystemSettings.bAllowDownsampledTranslucency, &SimpleBool, TEXT( "Whether to allow downsampled transluency." ) },	// @92
+	{ SST_BOOL, SSI_DEBUG, TEXT( "SpeedTreeLeaves" ), &GSystemSettings.bAllowSpeedTreeLeaves, &SimpleBool, TEXT( "Whether to allow rendering of SpeedTree leaves." ) },	// @8
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bUseMaxQualityMode" ), &GSystemSettings.bUseMaxQualityMode, &SimpleBool, TEXT( "Whether to force the max quality mode (-MAXQUALITYMODE)." ) },	// @4, retail-only key
+	{ SST_BOOL, SSI_DEBUG, TEXT( "SpeedTreeFronds" ), &GSystemSettings.bAllowSpeedTreeFronds, &SimpleBool, TEXT( "Whether to allow rendering of SpeedTree fronds." ) },	// @12
+	{ SST_BOOL, SSI_DEBUG, TEXT( "OnlyStreamInTextures" ), &GSystemSettings.bOnlyStreamInTextures, &SimpleBool, TEXT( "If enabled, texture will only be streamed in, not out." ) },	// @872
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "LensFlares" ), &GSystemSettings.bAllowLensFlares, &SimpleBool, TEXT( "Whether to allow rendering of LensFlares." ) },	// @96
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "FogVolumes" ), &GSystemSettings.bAllowFogVolumes, &SimpleBool, TEXT( "Whether to allow fog volumes." ) },	// @100
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "FloatingPointRenderTargets" ), &GSystemSettings.bAllowFloatingPointRenderTargets, &SimpleBool, TEXT( "Whether to allow floating point render targets to be used." ) },	// @104
+	{ SST_BOOL, SSI_DEBUG, TEXT( "OneFrameThreadLag" ), &GSystemSettings.bAllowOneFrameThreadLag, &SimpleBool, TEXT( "Whether to allow the rendering thread to lag one frame behind the game thread." ) },	// @108
+	{ SST_BOOL, SSI_PREFERENCE, TEXT( "UseVsync" ), &GSystemSettings.bUseVSync, &SimpleBool, TEXT( "Whether to use VSync or not." ) },	// @888
+	{ SST_BOOL, SSI_DEBUG, TEXT( "UpscaleScreenPercentage" ), &GSystemSettings.bUpscaleScreenPercentage, &SimpleBool, TEXT( "Whether to upscale the screen to take up the full front buffer." ) },	// @896
+	{ SST_BOOL, SSI_PREFERENCE, TEXT( "Fullscreen" ), &GSystemSettings.bFullscreen, &SimpleBool, TEXT( "Fullscreen." ) },	// @908
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "AllowD3D10" ), &GSystemSettings.bAllowD3D10, &SimpleBool, TEXT( "Whether to allow D3D10." ) },	// @136, retail-only key
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "AllowRadialBlur" ), &GSystemSettings.bAllowRadialBlur, &SimpleBool, TEXT( "Whether to allow radial blur effects to render." ) },	// @140
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bEnableBranchingPCFShadows" ), &GSystemSettings.bEnableBranchingPCFShadows, &SimpleBool, TEXT( "Toggle Branching PCF implementation for projected shadows." ) },	// @952
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bAllowHardwareShadowFiltering" ), &GSystemSettings.bAllowHardwareShadowFiltering, &SimpleBool, TEXT( "Whether to allow hardware filtering optimizations like hardware PCF and Fetch4." ) },	// @956
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bAllowBetterModulatedShadows" ), &GSystemSettings.bAllowBetterModulatedShadows, &SimpleBool, TEXT( "Whether to allow better modulated shadows." ) },	// @960, retail-only key
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bEnableForegroundShadowsOnWorld" ), &GSystemSettings.bEnableForegroundShadowsOnWorld, &SimpleBool, TEXT( "hack to allow for foreground DPG objects to cast shadows on the world DPG." ) },	// @964
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bEnableForegroundSelfShadowing" ), &GSystemSettings.bEnableForegroundSelfShadowing, &SimpleBool, TEXT( "Whether to allow foreground DPG self-shadowing." ) },	// @968
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowWholeSceneDominantShadows" ), &GSystemSettings.bAllowWholeSceneDominantShadows, &SimpleBool, TEXT( "Whether to allow whole scene dominant shadows." ) },	// @972
+	{ SST_BOOL, SSI_SCALABILITY, TEXT( "bAllowFracturedDamage" ), &GSystemSettings.bAllowFracturedDamage, &SimpleBool, TEXT( "Whether to allow fractured meshes to take damage." ) },	// @1020
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bForceCPUAccessToGPUSkinVerts" ), &GSystemSettings.bForceCPUAccessToGPUSkinVerts, &SimpleBool, TEXT( "Whether to force CPU access to GPU skinned vertex data." ) },	// @1040
+	{ SST_BOOL, SSI_UNKNOWN, TEXT( "bDisableSkeletalInstanceWeights" ), &GSystemSettings.bDisableSkeletalInstanceWeights, &SimpleBool, TEXT( "Whether to disable instanced skeletal weights." ) },	// @1044
+	// ---- ints (21) ----
+	{ SST_INT, SSI_SCALABILITY, TEXT( "SkeletalMeshLODBias" ), &GSystemSettings.SkeletalMeshLODBias, &VSSSkeletalMeshLODBias, TEXT( "LOD bias for skeletal meshes." ) },	// @112
+	{ SST_INT, SSI_UNKNOWN, TEXT( "SkeletalLODDistanceFactorMultiplier" ), &GSystemSettings.SkeletalLODDistanceFactorMultiplier, NULL, TEXT( "LOD distance factor multiplier for skeletal meshes." ) },	// @116, retail-only key
+	{ SST_INT, SSI_UNKNOWN, TEXT( "StaticLODDistanceFactorMultiplier" ), &GSystemSettings.StaticLODDistanceFactorMultiplier, NULL, TEXT( "LOD distance factor multiplier for static meshes." ) },	// @120, retail-only key
+	{ SST_INT, SSI_UNKNOWN, TEXT( "TextureForcedLODBias" ), &GSystemSettings.TextureForcedLODBias, NULL, TEXT( "Forced LOD bias for textures." ) },	// @124, retail-only key
+	{ SST_INT, SSI_UNKNOWN, TEXT( "iType_AntiAlias" ), &GSystemSettings.iType_AntiAlias, NULL, TEXT( "Anti-aliasing type (EPpAa_None=0, EPpAa_Mlaa=1, EPpAa_Fxaa=2)." ) },	// @128, retail-only key, 2013-only member (2012 had bAllowMLAA @136 instead)
+	{ SST_INT, SSI_DEBUG, TEXT( "ParticleLODBias" ), &GSystemSettings.ParticleLODBias, NULL, TEXT( "LOD bias for particle systems." ) },	// @132
+	{ SST_INT, SSI_SCALABILITY, TEXT( "DetailMode" ), &GSystemSettings.DetailMode, &VSSDetailMode, TEXT( "Current detail mode; determines whether components of actors should be updated/ ticked." ) },	// @0
+	{ SST_INT, SSI_UNKNOWN, TEXT( "ShadowFilterQualityBias" ), &GSystemSettings.ShadowFilterQualityBias, NULL, TEXT( "Quality bias for projected shadow buffer filtering. Higher values use better quality filtering." ) },	// @924
+	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxAnisotropy" ), &GSystemSettings.MaxAnisotropy, &VSSMaxAnisotropy, TEXT( "Maximum level of anisotropy used." ) },	// @876
+	{ SST_INT, SSI_DEBUG, TEXT( "MaxMultisamples" ), &GSystemSettings.MaxMultiSamples, &VSSMaxMultiSamples, TEXT( "The maximum number of MSAA samples to use." ) },	// @912, retail spelling
+	{ SST_INT, SSI_SCALABILITY, TEXT( "MinShadowResolution" ), &GSystemSettings.MinShadowResolution, NULL, TEXT( "min dimensions (in texels) allowed for rendering shadow subject depths." ) },	// @928
+	{ SST_INT, SSI_SCALABILITY, TEXT( "MinPreShadowResolution" ), &GSystemSettings.MinPreShadowResolution, NULL, TEXT( "min dimensions (in texels) allowed for rendering preshadow depths." ) },	// @932
+	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxShadowResolution" ), &GSystemSettings.MaxShadowResolution, &VSSMaxShadowResolution, TEXT( "max square dimensions (in texels) allowed for rendering shadow subject depths." ) },	// @936
+	{ SST_INT, SSI_SCALABILITY, TEXT( "MaxWholeSceneDominantShadowResolution" ), &GSystemSettings.MaxWholeSceneDominantShadowResolution, &VSSMaxShadowResolution, TEXT( "max square dimensions (in texels) allowed for rendering whole scene shadow depths." ) },	// @940
+	{ SST_INT, SSI_PREFERENCE, TEXT( "ResX" ), &GSystemSettings.ResX, &VSSResX, TEXT( "Screen X resolution." ) },	// @900
+	{ SST_INT, SSI_PREFERENCE, TEXT( "ResY" ), &GSystemSettings.ResY, &VSSResY, TEXT( "Screen Y resolution." ) },	// @904
+	{ SST_INT, SSI_UNKNOWN, TEXT( "UnbuiltNumWholeSceneDynamicShadowCascades" ), &GSystemSettings.UnbuiltNumWholeSceneDynamicShadowCascades, NULL, TEXT( "NumWholeSceneDynamicShadowCascades to use when using CSM to preview unbuilt lighting from a directional light." ) },	// @1000
+	{ SST_INT, SSI_UNKNOWN, TEXT( "WholeSceneShadowUnbuiltInteractionThreshold" ), &GSystemSettings.WholeSceneShadowUnbuiltInteractionThreshold, NULL, TEXT( "How many unbuilt light-primitive interactions there can be for a light before the light switches to whole scene shadows." ) },	// @1004
+	{ SST_INT, SSI_UNKNOWN, TEXT( "ShadowFadeResolution" ), &GSystemSettings.ShadowFadeResolution, NULL, TEXT( "Resolution in texel below which shadows are faded out." ) },	// @1008
+	{ SST_INT, SSI_UNKNOWN, TEXT( "PreShadowFadeResolution" ), &GSystemSettings.PreShadowFadeResolution, NULL, TEXT( "Resolution in texel below which preshadows are faded out." ) },	// @1012
+	{ SST_INT, SSI_UNKNOWN, TEXT( "SpeakerConfiguration" ), &GSystemSettings.SpeakerConfiguration, NULL, TEXT( "Speaker configuration." ) },	// @1048, retail-only key (2012 PDB m_SpeakerConfiguration)
+	// ---- floats (17) ----
+	{ SST_FLOAT, SSI_DEBUG, TEXT( "ScreenPercentage" ), &GSystemSettings.ScreenPercentage, &VSSScreenPercentage, TEXT( "Percentage of screen main view should take up." ) },	// @892
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "SceneCaptureStreamingMultiplier" ), &GSystemSettings.SceneCaptureStreamingMultiplier, NULL, TEXT( "Scene capture streaming texture update distance scalar." ) },	// @880
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "FoliageDrawRadiusMultiplier" ), &GSystemSettings.FoliageDrawRadiusMultiplier, NULL, TEXT( "Multiplier for the foliage draw radius." ) },	// @884, retail-only key
+	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "ShadowTexelsPerPixel" ), &GSystemSettings.ShadowTexelsPerPixel, &VSSShadowTexels, TEXT( "The ratio of subject pixels to shadow texels." ) },	// @944
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "PreShadowResolutionFactor" ), &GSystemSettings.PreShadowResolutionFactor, NULL, TEXT( "UKNOWN" ) },	// @948
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ShadowFilterRadius" ), &GSystemSettings.ShadowFilterRadius, NULL, TEXT( "Radius, in shadowmap texels, of the filter disk." ) },	// @976
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ShadowDepthBias" ), &GSystemSettings.ShadowDepthBias, NULL, TEXT( "Depth bias that is applied in the depth pass for all types of projected shadows except VSM." ) },	// @980
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMSplitPenumbraScale" ), &GSystemSettings.CSMSplitPenumbraScale, NULL, TEXT( "Scale applied to the penumbra size of Cascaded Shadow Map splits, useful for minimizing the transition between splits." ) },	// @984
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMSplitSoftTransitionDistanceScale" ), &GSystemSettings.CSMSplitSoftTransitionDistanceScale, NULL, TEXT( "Scale applied to the soft comparison transition distance of Cascaded Shadow Map splits, useful for minimizing the transition between splits." ) },	// @988
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "CSMSplitDepthBiasScale" ), &GSystemSettings.CSMSplitDepthBiasScale, NULL, TEXT( "Scale applied to the depth bias of Cascaded Shadow Map splits, useful for minimizing the transition between splits." ) },	// @992
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "UnbuiltWholeSceneDynamicShadowRadius" ), &GSystemSettings.UnbuiltWholeSceneDynamicShadowRadius, NULL, TEXT( "WholeSceneDynamicShadowRadius to use when using CSM to preview unbuilt lighting from a directional light." ) },	// @996
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "ShadowFadeExponent" ), &GSystemSettings.ShadowFadeExponent, NULL, TEXT( "Controls the rate at which shadows are faded out." ) },	// @1016
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "NumFracturedPartsScale" ), &GSystemSettings.NumFracturedPartsScale, NULL, TEXT( "Scales the game-specific number of fractured physics objects allowed." ) },	// @1024
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "FractureDirectSpawnChanceScale" ), &GSystemSettings.FractureDirectSpawnChanceScale, NULL, TEXT( "Percent chance of a rigid body spawning after a fractured static mesh is damaged directly.  [0-1]" ) },	// @1028
+	{ SST_FLOAT, SSI_UNKNOWN, TEXT( "FractureRadialSpawnChanceScale" ), &GSystemSettings.FractureRadialSpawnChanceScale, NULL, TEXT( "Percent chance of a rigid body spawning after a fractured static mesh is damaged by radial blast.  [0-1]" ) },	// @1032
+	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "FractureCullDistanceScale" ), &GSystemSettings.FractureCullDistanceScale, &VSSMaxDrawDistanceScale, TEXT( "Distance scale for whether a fractured static mesh should actually fracture when damaged." ) },	// @1036
+	{ SST_FLOAT, SSI_SCALABILITY, TEXT( "DecalCullDistanceScale" ), &GSystemSettings.DecalCullDistanceScale, &VSSMaxDrawDistanceScale, TEXT( "Scale factor for distance culling decals." ) },	// @28
 };
 
 /**
  * Helpers for reading and writing to specific ini sections
  */
+// DISHONORED(retail): GetSectionName, 2013 rva 0x16edb0 (2012 rva 0x178e20): "-SystemSettings=<Name>" wins for every caller
+// (the "SystemSettings" prefix is stripped from <Name> before it is appended), otherwise "SystemSettingsEditor" /
+// "SystemSettings". No "simmobile", no mobile sections, no compat bucket. The Override parameter is reference-only
+// (LoadFromIni(Override)/SaveToIni() pass NULL or "") and kept for those callers.
 static const FString GetSectionName( UBOOL bIsEditor, const TCHAR* Override )
 {
 	FString IniSectionName = TEXT( "SystemSettings" );
 
-	UBOOL bIsMobile = ParseParam( appCmdLine(), TEXT( "simmobile" ) );
-
-	// If we're running the editor with mobile settings, always return the mobile editor settings
-	if( bIsEditor && bIsMobile )
+	FString OverrideName;
+	if( Parse( appCmdLine(), TEXT( "-SystemSettings=" ), OverrideName ) )
 	{
-		return FString( TEXT( "SystemSettingsMobile" ) );
+		if( !appStrnicmp( *OverrideName, *IniSectionName, IniSectionName.Len() ) )
+		{
+			OverrideName = OverrideName.Mid( IniSectionName.Len() );
+		}
+		return IniSectionName + OverrideName;
 	}
 
-	// If we're running the editor, always return the editor settings
 	if( bIsEditor )
 	{
 		return FString( TEXT( "SystemSettingsEditor" ) );
 	}
 
-	// if we are cooking, look for an override on the commandline
-	FString OverrideName;
-	if( Parse( appCmdLine(), TEXT( "-SystemSettings=" ), OverrideName ) )
-	{
-		// look for a commandline override
-		return FString::Printf( TEXT( "%s%s" ), *IniSectionName, *OverrideName );
-	}
-	else if( bIsMobile )
-	{
-		// If there's no device specific override, but we are running mobile, return the default mobile settings
-		return FString( TEXT( "SystemSettingsMobile" ) );
-	}
-
-#if MOBILE
-	return appGetMobileSystemSettingsSectionName();
-#else
-	INT BucketLevel = 5;
-
 	if( Override != NULL )
 	{
-		// look for a programmatic override
-		IniSectionName = FString::Printf( TEXT( "%s%s" ), *IniSectionName, Override );
+		IniSectionName += Override;
 	}
-#if 0
-	// Handle any scalability settings
-	else if( ( GOpenAutomate == NULL ) && GConfig->GetInt( TEXT( "AppCompat" ), TEXT( "CompatLevelComposite" ), BucketLevel, GEngineIni ) )
-	{
-		// set selected bucket only when *NOT* profiling
-		IniSectionName = FString::Printf( TEXT( "%sBucket%d" ), *IniSectionName, BucketLevel );
-	}
-#endif
-
-	// return the proper section for using editor or not
 	return IniSectionName;
-#endif
 }
 
 /**
@@ -519,17 +238,89 @@ void FSystemSettings::LoadFromIni( const FString IniSection, const TCHAR* IniFil
 		}
 	}
 
+#if _WINDOWS
+	// DISHONORED(retail): FSystemSettingsData::LoadFromIni, 2013 rva 0x1806c0 (not in the 2012 build): when the seek-free PC
+	// console path reads the Engine ini itself, HKCU\Software\Arkane\Dishonored overrides the switches and ints (REG_DWORD
+	// values named like the ini keys). The key's "Timestamp" value (REG_BINARY FILETIME of the ini) invalidates every stored
+	// value once the ini changed. Floats and texture groups are never overridden; a missing key skips the block.
+	if( GIsSeekFreePCConsole && !appStricmp( GEngineIni, IniFilename ) )
+	{
+		HKEY Key = NULL;
+		if( RegOpenKeyExW( HKEY_CURRENT_USER, L"Software\\Arkane\\Dishonored", 0, KEY_ALL_ACCESS, &Key ) == ERROR_SUCCESS )
+		{
+			FILETIME IniWriteTime = { 0, 0 };
+			HANDLE IniFile = CreateFileW( GEngineIni, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL );
+			if( IniFile != INVALID_HANDLE_VALUE )
+			{
+				FILETIME WriteTime;
+				if( GetFileTime( IniFile, NULL, NULL, &WriteTime ) )
+				{
+					IniWriteTime = WriteTime;
+				}
+				CloseHandle( IniFile );
+
+				DWORD Type = 0;
+				BYTE Data[16] = { 0 };
+				DWORD DataSize = sizeof( Data );
+				const LONG Result = RegQueryValueExW( Key, L"Timestamp", NULL, &Type, Data, &DataSize );
+				UBOOL bResetValues;
+				if( Result == ERROR_SUCCESS )
+				{
+					bResetValues = Type != REG_BINARY || appMemcmp( Data, &IniWriteTime, sizeof( FILETIME ) ) != 0;
+				}
+				else
+				{
+					bResetValues = Result == ERROR_FILE_NOT_FOUND || Type != REG_BINARY;
+				}
+				if( bResetValues )
+				{
+					DWORD NumValues = 0;
+					RegQueryInfoKeyW( Key, NULL, NULL, NULL, NULL, NULL, NULL, &NumValues, NULL, NULL, NULL, NULL );
+					for( INT ValueIndex = ( INT )NumValues - 1; ValueIndex >= 0; ValueIndex-- )
+					{
+						WCHAR ValueName[16384];
+						ValueName[0] = 0;
+						DWORD ValueNameLength = 0x3FFF;
+						RegEnumValueW( Key, ValueIndex, ValueName, &ValueNameLength, NULL, NULL, NULL, NULL );
+						RegDeleteValueW( Key, ValueName );
+					}
+					RegSetValueExW( Key, L"Timestamp", 0, REG_BINARY, ( const BYTE* )&IniWriteTime, sizeof( FILETIME ) );
+				}
+			}
+			for( INT SettingIndex = 0; SettingIndex < ARRAY_COUNT( SystemSettings ); SettingIndex++ )
+			{
+				FSystemSetting* Setting = SystemSettings + SettingIndex;
+				if( Setting->SettingType == SST_FLOAT )
+				{
+					continue;
+				}
+				DWORD Type = 0;
+				DWORD Value = 0;
+				DWORD ValueSize = sizeof( Value );
+				if( RegQueryValueExW( Key, Setting->SettingName, NULL, &Type, ( BYTE* )&Value, &ValueSize ) == ERROR_SUCCESS && Type == REG_DWORD )
+				{
+					*( DWORD* )Setting->SettingAddress = Value;
+				}
+			}
+			RegCloseKey( Key );
+		}
+	}
+#endif
+
 	// Read the texture group LOD settings.
 	TextureLODSettings.Initialize( IniFilename, *IniSection );
 
-	// if this is the top of the recursion stack, and we care about missing values, report them
+	// DISHONORED(retail): the found flags are collected for the outermost call (2013 rva 0x1806c0 allocates the FoundValues
+	// array itself) but never checked: no "Couldn't find system setting" string in the 2012 or 2013 exe, the reference checkf
+	// is gone. The warning below is bring-up only (dropped from the golden diff by normalize_log.py).
 	if( bCheckFoundValuesAtEnd )
 	{
-		// Clear out the found status
 		for( INT SettingIndex = 0; SettingIndex < ARRAY_COUNT( SystemSettings ); SettingIndex++ )
 		{
-			checkf( SystemSettings[SettingIndex].bFound,
-				TEXT( "Couldn't find system setting %s in Ini section %s in Ini file %s!" ), SystemSettings[SettingIndex].SettingName, *IniSection, IniFilename );
+			if( !SystemSettings[SettingIndex].bFound )
+			{
+				warnf( NAME_Warning, TEXT( "DISHONORED(bringup): system setting %s not found in [%s] of %s" ), SystemSettings[SettingIndex].SettingName, *IniSection, IniFilename );
+			}
 		}
 	}
 }
@@ -593,7 +384,9 @@ FString FSystemSettings::GetLODGroupString( TextureGroup TextureGroupID, const T
 void FSystemSettings::WriteTextureLODGroupToIni( TextureGroup TextureGroupID, const TCHAR* GroupName, const TCHAR* IniSection )
 {
 	const FString Entry = GetLODGroupString( TextureGroupID, GroupName );
-	GConfig->SetString( IniSection, GroupName, *Entry, GSystemSettingsIni );
+	// DISHONORED(retail): [SystemSettings] lives in the Engine ini; neither the 2012 nor the 2013 exe has a "SystemSettings.ini"
+	// string or a GSystemSettingsIni global (FSystemSettingsData::WriteTextureLODGroupsToIni, 2013 rva 0x17b650)
+	GConfig->SetString( IniSection, GroupName, *Entry, GEngineIni );
 }
 
 /**
@@ -601,21 +394,22 @@ void FSystemSettings::WriteTextureLODGroupToIni( TextureGroup TextureGroupID, co
  */
 void FSystemSettings::SaveToIni( const FString IniSection )
 {
+	// DISHONORED(retail): FSystemSettingsData::SaveToIni, 2013 rva 0x181250, writes every key to GEngineIni and flushes it
 	for( INT SettingIndex = 0; SettingIndex < ARRAY_COUNT( SystemSettings ); SettingIndex++ )
 	{
 		FSystemSetting* Setting = SystemSettings + SettingIndex;
 		switch( Setting->SettingType )
 		{
 		case SST_BOOL:
-			GConfig->SetBool( *IniSection, Setting->SettingName, *( UBOOL* )Setting->SettingAddress, GSystemSettingsIni );
+			GConfig->SetBool( *IniSection, Setting->SettingName, *( UBOOL* )Setting->SettingAddress, GEngineIni );
 			break;
 
 		case SST_INT:
-			GConfig->SetInt( *IniSection, Setting->SettingName, *( INT* )Setting->SettingAddress, GSystemSettingsIni );
+			GConfig->SetInt( *IniSection, Setting->SettingName, *( INT* )Setting->SettingAddress, GEngineIni );
 			break;
 
 		case SST_FLOAT:
-			GConfig->SetFloat( *IniSection, Setting->SettingName, *( FLOAT* )Setting->SettingAddress, GSystemSettingsIni );
+			GConfig->SetFloat( *IniSection, Setting->SettingName, *( FLOAT* )Setting->SettingAddress, GEngineIni );
 			break;
 		}
 	}
@@ -625,7 +419,7 @@ void FSystemSettings::SaveToIni( const FString IniSection )
 	FOREACH_ENUM_TEXTUREGROUP( WRITETEXTURELODGROUPTOINI )
 #undef WRITETEXTURELODGROUPTOINI
 
-	GConfig->Flush( FALSE, GSystemSettingsIni );
+	GConfig->Flush( FALSE, GEngineIni );
 }
 
 /**
@@ -634,7 +428,9 @@ void FSystemSettings::SaveToIni( const FString IniSection )
 void FSystemSettings::DumpTextureLODGroup( FOutputDevice& Ar, TextureGroup TextureGroupID, const TCHAR* GroupName )
 {
 	const FString Entry = GetLODGroupString( TextureGroupID, GroupName );
-	Ar.Logf( TEXT( "    %s: %s" ), GroupName, *Entry );
+	// DISHONORED(retail): golden log :10-38 "Log: \tTEXTUREGROUP_World: (...)" (2012 ArkProfile build); the shipping exes keep the
+	// GetLODGroupString calls of FSystemSettingsData::DumpTextureLODGroups (2013 rva 0x17b7f0) with the debugf compiled out
+	Ar.Logf( TEXT( "\t%s: %s" ), GroupName, *Entry );
 }
 
 /**
@@ -693,27 +489,55 @@ FSystemSettings::FSystemSettings( void ) :
  */
 void FSystemSettings::Initialize( UBOOL bSetupForEditor )
 {
-	// Since System Settings is called into before GIsEditor is set, we must cache this value.
+	// DISHONORED(retail): FSystemSettings::Initialize, 2013 rva 0x1844e0 (2012 rva 0x18a660, systemsettings.cpp:942):
+	//   1. bIsEditor = bSetupForEditor
+	//   2. DefaultSettings <- [SystemSettings] of GEngineIni (never the editor section; missing keys are counted, never checked)
+	//   3. Defaults[i][0] <- DefaultSettings + [AppCompatBucket<i+1>] of GCompatIni (or the plain section again when the bucket
+	//      section is missing), Defaults[i][1] <- DefaultSettings + [SystemSettingsSplitScreen2] (i = 0..4): not ported, the
+	//      table-driven FSystemSettings has no FSystemSettingsData copies (deferred with the 1052/11628-byte layout convergence;
+	//      only SetCompatibilityLevelWindows, 2013 rva 0x5b5070, and Exec read them)
+	//   4. *this = DefaultSettings, then FSystemSettings::LoadFromIni() (editor-aware section, -vsync/-novsync)
+	//   5. -MAXQUALITYMODE, ApplySystemSettingsToRenderThread (no render-thread copy in this reference: rendering reads GSystemSettings)
+	// No command-line overrides (-SS:, -LODBIAS:, -MAXLOD:, -MSAA are reference-only: ApplyOverrides is not called) and no
+	// [TextureStreaming] MinTextureResidentMipCount read (the string does not exist in either exe).
 	bIsEditor = bSetupForEditor;
 
-	// Load the settings from the ini file
-	LoadFromIni( GetSectionName( bIsEditor, NULL ), GSystemSettingsIni, FALSE );
+	LoadFromIni( GetSectionName( FALSE, NULL ), GEngineIni, FALSE );
 
-	// fixup resolution scale on Android
-#if ANDROID
-	extern float GAndroidResolutionScale;
-	if( GAndroidResolutionScale < 0 )
+	LoadFromIni( NULL );
+
+	if( ParseParam( appCmdLine(), TEXT( "MAXQUALITYMODE" ) ) )
 	{
-		GAndroidResolutionScale = ScreenPercentage / 100.0;
+		bUseMaxQualityMode = TRUE;
 	}
-#endif
-	
-	ApplyOverrides();
+	if( bUseMaxQualityMode )
+	{
+		ShadowFilterQualityBias++;
+		MaxAnisotropy = 16;
+		MinShadowResolution = 16;
+		MinPreShadowResolution = 16;
+		ShadowTexelsPerPixel = 4.0f;
+		MaxShadowResolution = 4096;
+		MaxWholeSceneDominantShadowResolution = 4096;
+		ShadowFadeResolution = 1;
+		PreShadowFadeResolution = 1;
+		PreShadowResolutionFactor = 1.0f;
+		GSceneRenderTargets.SetSceneColorBufferFormat( PF_A32B32G32R32F );
+		for( INT GroupIndex = 0; GroupIndex < TEXTUREGROUP_MAX; GroupIndex++ )
+		{
+			FTextureLODSettings::FTextureLODGroup& Group = TextureLODSettings.GetTextureLODGroup( (TextureGroup)GroupIndex );
+			Group.MinLODMipCount = 12;
+			Group.MaxLODMipCount = 12;
+			Group.LODBias = -1000;
+			Group.Filter = SF_AnisotropicLinear;
+		}
+	}
 
 	bInit = TRUE;
 
-	// intialize a critical texture streaming value used by texture loading, etc
-	verify( GConfig->GetInt( TEXT( "TextureStreaming" ), TEXT( "MinTextureResidentMipCount" ), GMinTextureResidentMipCount, GEngineIni ) );
+	// DISHONORED(retail): no [TextureStreaming] MinTextureResidentMipCount read: the string exists in neither the 2012 nor the
+	// 2013 exe and the retail ini has no such key; GMinTextureResidentMipCount keeps its static initializer (RHI.cpp, 7 in
+	// the 2012 .data at rva 0xe2d470)
 }
 
 /**
@@ -1262,13 +1086,9 @@ UBOOL FSystemSettings::LoadFromIni( const TCHAR* Override )
 {
 	FString SectionName = GetSectionName( bIsEditor, Override );
 
-	// Ensure the section exists
-	if( GConfig->GetSectionPrivate( *SectionName, FALSE, FALSE, GSystemSettingsIni ) == NULL )
-	{
-		return FALSE;
-	}
-
-	LoadFromIni( SectionName, GSystemSettingsIni, FALSE );
+	// DISHONORED(retail): FSystemSettings::LoadFromIni(), 2013 rva 0x181af0 (2012 rva 0x187b70): reads GetSectionName(bIsEditor)
+	// from GEngineIni with missing values allowed (no section-exists check), then the vsync command-line switches
+	LoadFromIni( SectionName, GEngineIni, TRUE );
 
 #if CONSOLE
 	// Always default to using VSYNC on consoles.
@@ -1382,8 +1202,6 @@ void FSystemSettings::ApplyNewSettings( const FSystemSettings& NewSettings, UBOO
 		{
 			SaveToIni();
 		}
-
-		ApplyOverrides();
 	}
 	else
 	{
@@ -1392,13 +1210,19 @@ void FSystemSettings::ApplyNewSettings( const FSystemSettings& NewSettings, UBOO
 
 		// If requested, save the settings to ini.
 		if( bWriteToIni )
-{
+		{
 			SaveToIni();
-	}
-
-		ApplyOverrides();
 		}
 	}
+
+	// DISHONORED(retail): FSystemSettings::ApplyNewSettings, 2013 rva 0x184be0 (2012 rva 0x192c80): no command-line overrides
+	// (ApplyOverrides is reference-only) and, when writing to the ini outside the editor, the texture LOD groups are dumped
+	// (golden log :10-38, reached through appSetCompatibilityLevel -> SetCompatibilityLevelWindows, 2013 rva 0x5b5070)
+	if( bWriteToIni && !bIsEditor )
+	{
+		DumpTextures( *GLog );
+	}
+}
 
 /**
  * Ensures that the correct settings are being used based on split screen type.

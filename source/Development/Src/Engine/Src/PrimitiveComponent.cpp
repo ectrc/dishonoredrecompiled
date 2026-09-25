@@ -1041,6 +1041,14 @@ void UPrimitiveComponent::Serialize(FArchive& Ar)
 		LDMaxDrawDistance = LDCullDistance;
 		CachedMaxDrawDistance = CachedCullDistance_DEPRECATED;
 	}
+
+	// DISHONORED(retail): UPrimitiveComponent::Serialize, 2013 rva 0x130bc0 (2012 rva 0x134d10, primitivecomponent.cpp:1105, identical):
+	// packages older than 769 take ReflectionChannels (@308) from the class default object when loading; no bytes read (Arkane
+	// addition, absent from the reference 10897)
+	if (Ar.Ver() < 769 && Ar.IsLoading())
+	{
+		ReflectionChannels = CastChecked<UPrimitiveComponent>(GetClass()->GetDefaultObject())->ReflectionChannels;
+	}
 }
 
 //

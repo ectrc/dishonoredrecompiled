@@ -11,7 +11,7 @@
 
 UBOOL GIsRHIInitialized = FALSE;
 INT GMaxTextureMipCount = MAX_TEXTURE_MIP_COUNT;
-INT GMinTextureResidentMipCount = -1; // set via .ini now!
+INT GMinTextureResidentMipCount = 7; // DISHONORED(retail): static initializer, 2012 .data rva 0xe2d470 = 7; neither exe reads [TextureStreaming] MinTextureResidentMipCount (FSystemSettings::Initialize, 2013 rva 0x1844e0)
 UBOOL GSupportsDepthTextures = FALSE;
 UBOOL GSupportsHardwarePCF = FALSE;
 UBOOL GSupportsVertexTextureFetch = FALSE;

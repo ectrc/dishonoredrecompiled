@@ -354,7 +354,8 @@ UBOOL ShouldReloadChangedShaders()
 	{
 		bInitialized = TRUE;
 
-#if !CONSOLE && !UE3_LEAN_AND_MEAN && !PLATFORM_MACOSX
+#if 0 // DISHONORED(retail): ShouldReloadChangedShaders, 2013 rva 0x127d40 / 2012 rva 0x12bbc0 (25 bytes): the static stays FALSE, the
+	  // ini is never read (no "AutoReloadChangedShaders" string in either exe; BaseEngine.ini:503 says True, which would skip every cached shader)
 		// Don't allow automatically recompiling changed shaders when using seek-free loading.
 		// get the option to skip shaders whose source files have changed since they were compiled
 		GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("AutoReloadChangedShaders"), bReloadChangedShaders, GEngineIni );

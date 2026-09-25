@@ -60,24 +60,21 @@ void UWorld::StaticConstructor()
 	UClass* TheClass = GetClass();
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, PersistentLevel ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, PersistentFaceFXAnimSet ) );
-	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, SaveGameSummary_DEPRECATED ) );
+	// DISHONORED(retail): UWorld::StaticConstructor, 2013 rva 0x380e90 (2012 rva 0x3a23e0, unworld.cpp:81, identical) emits exactly
+	// @72,76,60,80,84,88,296,332,336,660,360,372 and @688 (m_pAudioSystem, 2012 PDB): no NetDriver (@204) token and none of the
+	// reference-only SaveGameSummary_DEPRECATED / DemoRecDriver / PeerNetDriver / RedirectNetDriver / AnimTreePool
+	// (DISHONORED_SHIM_STATIC members without an offset)
 	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UWorld, Levels ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, CurrentLevel ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, CurrentLevelPendingVisibility ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, CurrentLevelGridVolume ) );
-	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, NetDriver ) );
-	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, DemoRecDriver ) );
-	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, PeerNetDriver ) );
-#if WITH_STEAMWORKS_SOCKETS
-	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, RedirectNetDriver ) );
-#endif
 	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UWorld, NewlySpawned ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, LineBatcher ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, PersistentLineBatcher ) );
 	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UWorld, ExtraReferencedObjects ) );
 	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UWorld, BodyInstancePool ) );
 	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UWorld, ConstraintInstancePool ) );
-	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UWorld, AnimTreePool ) );
+	TheClass->EmitObjectReference( STRUCT_OFFSET( UWorld, m_pAudioSystem ) );
 }
 
 /**

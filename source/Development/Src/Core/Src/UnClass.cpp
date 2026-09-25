@@ -1821,7 +1821,20 @@ void UClass::Bind()
 	checkf(GIsEditor || GetSuperClass() || this==UObject::StaticClass(), TEXT("Unable to bind %s at this time"), *GetPathName());
 	if( !ClassConstructor && HasAnyFlags(RF_Native) && !GIsEditor )
 	{
-		appErrorf( TEXT("Can't bind to native class %s"), *GetPathName() );
+		// DISHONORED(bringup): -allowunboundnatives (PHASE4.md step 7c, measurement only, never in the golden run): a native class
+		// export whose registrant this build does not link yet (agent T's DishonoredGame/GFxUI/AkAudio/OSS modules) is demoted to a
+		// script class that inherits its super's constructor instead of aborting. The retail exe has no such switch.
+		static UBOOL bAllowUnboundNatives = ParseParam( appCmdLine(), TEXT("allowunboundnatives") );
+		if( bAllowUnboundNatives )
+		{
+			warnf( NAME_Warning, TEXT("DISHONORED(bringup): unbound native class %s, inheriting the constructor of %s"), *GetPathName(), GetSuperClass() ? *GetSuperClass()->GetName() : TEXT("(none)") );
+			ClearFlags( RF_Native );
+			ClassFlags &= ~CLASS_Native;
+		}
+		else
+		{
+			appErrorf( TEXT("Can't bind to native class %s"), *GetPathName() );
+		}
 	}
 	if( !ClassConstructor && GetSuperClass() )
 	{

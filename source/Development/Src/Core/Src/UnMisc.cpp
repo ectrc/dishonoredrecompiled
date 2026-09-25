@@ -5138,7 +5138,10 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 	appCreateIniNames( GEditorIni, GDefaultEditorIni, TEXT("DEFEDITORINI="), TEXT("EDITORINI="), TEXT("Editor.ini"), DEFAULT_INI_PREFIX, INI_PREFIX );
 	appCreateIniNames( GEditorUserSettingsIni, GDefaultEditorUserSettingsIni, TEXT("DEFEDITORUSERSETTINGSINI="), TEXT("EDITORUSERSETTINGSINI="), TEXT("EditorUserSettings.ini"), DEFAULT_INI_PREFIX, INI_PREFIX );
 #endif
-	appCreateIniNames( GSystemSettingsIni, GDefaultSystemSettingsIni, TEXT("DEFSYSTEMSETTINGSINI="), TEXT("SYSTEMSETTINGSINI="), TEXT("SystemSettings.ini"), DEFAULT_INI_PREFIX, INI_PREFIX );
+	// DISHONORED(retail): no <Game>SystemSettings.ini: neither the 2012 nor the 2013 exe has a "SystemSettings.ini" string
+	// (2012 appInit rva 0xa1000 creates Engine/Compat/Lightmass/... only) and the 2012 PDB has no GSystemSettingsIni global;
+	// [SystemSettings] is read from GEngineIni (Engine/Src/SystemSettings.cpp). GSystemSettingsIni stays declared (empty)
+	// for the reference-only D3D9HardwareSurvey.cpp / MaterialShared.cpp / NvApexManager.cpp readers.
 #if _WINDOWS
 	appCreateIniNames( GLightmassIni, GDefaultLightmassIni, TEXT("DEFLIGHTMASSINI="), TEXT("LIGHTMASSINI="), TEXT("Lightmass.ini"), DEFAULT_INI_PREFIX, PC_INI_PREFIX );
 #endif
@@ -5239,7 +5242,7 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 	appCheckIniForOutdatedness( GEditorIni, GDefaultEditorIni, FALSE, YesNoToAll );
 	appCheckIniForOutdatedness( GEditorUserSettingsIni, GDefaultEditorUserSettingsIni, TRUE, YesNoToAll );
 #endif
-	appCheckIniForOutdatedness( GSystemSettingsIni, GDefaultSystemSettingsIni, FALSE, YesNoToAll );
+	// DISHONORED(retail): no SystemSettings.ini (see appCreateIniNames above)
 #if _WINDOWS
 	appCheckIniForOutdatedness( GLightmassIni, GDefaultLightmassIni, FALSE, YesNoToAll );
 #endif

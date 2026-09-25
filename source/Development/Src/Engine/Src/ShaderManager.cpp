@@ -484,12 +484,11 @@ FShader* FShaderType::ConstructForDeserialization() const
 /** Calculates a Hash based on this shader type's source code and includes */
 const FSHAHash& FShaderType::GetSourceHash() const
 {
-#if CONSOLE
+	// DISHONORED(retail): no shader-source hashing in the shipping exes (no GetShaderFileHash / LoadShaderSourceFile function,
+	// no ".usf" string in the 2012 or 2013 exe): the reference CONSOLE variant; FShader::Serialize (2013 rva 0x1603b0) still
+	// reads the saved hash into FShader::Hash (2012 PDB @72)
 	static FSHAHash CurrentHash = {0};
 	return CurrentHash;
-#else
-	return GetShaderFileHash(GetShaderFilename());
-#endif
 }
 
 /**

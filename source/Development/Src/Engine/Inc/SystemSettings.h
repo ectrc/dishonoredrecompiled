@@ -224,6 +224,8 @@ class FSystemSettings : public FExec
 public:
 	/** Current detail mode; determines whether components of actors should be updated/ ticked.	*/
 	INT		DetailMode;
+	/** DISHONORED(retail): FSystemSettingsDataWorldDetail::bUseMaxQualityMode @4 (2012 PDB; 2013 LoadFromIni table rva 0x1806c0, key bUseMaxQualityMode) */
+	UBOOL	bUseMaxQualityMode;
 	/** Scale applied to primitive's MaxDrawDistance. */
 	FLOAT	MaxDrawDistanceScale;
 	/** Whether to allow rendering of SpeedTree leaves.					*/
@@ -256,8 +258,12 @@ public:
 	UBOOL	bAllowAmbientOcclusion;
 	/** Whether to allow bloom.											*/
 	UBOOL	bAllowBloom;
+	/** DISHONORED(retail): FSystemSettingsDataWorldDetail::bUseHighQualityBloom @68 (2012 PDB; 2013 key UseHighQualityBloom) */
+	UBOOL	bUseHighQualityBloom;
 	/** Whether to allow light shafts.									*/
 	UBOOL   bAllowLightShafts;
+	/** DISHONORED(retail): 2013-only FSystemSettingsDataWorldDetail member @76 (2013 LoadFromIni table rva 0x1806c0, key bAllowRatsShadow; absent from the 2012 PDB) */
+	UBOOL	bAllowRatsShadow;
 	/** Whether to allow distortion.									*/
 	UBOOL	bAllowDistortion;
 	/** Whether to allow distortion to use bilinear filtering when sampling the scene color during its apply pass	*/
@@ -276,10 +282,18 @@ public:
 	UBOOL	bAllowOneFrameThreadLag;
 	/** LOD bias for skeletal meshes.									*/
 	INT		SkeletalMeshLODBias;
+	/** DISHONORED(retail): FSystemSettingsDataWorldDetail @116/@120/@124 (2012 PDB; 2013 keys SkeletalLODDistanceFactorMultiplier, StaticLODDistanceFactorMultiplier, TextureForcedLODBias) */
+	INT		SkeletalLODDistanceFactorMultiplier;
+	INT		StaticLODDistanceFactorMultiplier;
+	INT		TextureForcedLODBias;
+	/** DISHONORED(retail): 2013-only FSystemSettingsDataWorldDetail member @128 (2013 key iType_AntiAlias: EPpAa_None=0, EPpAa_Mlaa=1, EPpAa_Fxaa=2; replaces the 2012 bAllowMLAA @136) */
+	INT		iType_AntiAlias;
 	/** LOD bias for particle systems.									*/
 	INT		ParticleLODBias;
 	/** Whether to use D3D11 when it's available.						*/
 	UBOOL	bAllowD3D11;
+	/** DISHONORED(retail): FSystemSettingsDataWorldDetail::bAllowD3D10 @136 in 2013 (@128 in the 2012 PDB; key AllowD3D10) */
+	UBOOL	bAllowD3D10;
 	/** Whether to use OpenGL when it's available.						*/
 	UBOOL	bAllowOpenGL;
 	/** Whether to allow radial blur effects to render.					*/
@@ -336,6 +350,8 @@ public:
 	UBOOL	bEnableBranchingPCFShadows;
 	/** Whether to allow hardware filtering optimizations like hardware PCF and Fetch4. */
 	UBOOL	bAllowHardwareShadowFiltering;
+	/** DISHONORED(retail): FSystemSettingsDataShadowDetail::bAllowBetterModulatedShadows @44 (2012 PDB; 2013 absolute @960, key bAllowBetterModulatedShadows) */
+	UBOOL	bAllowBetterModulatedShadows;
 	/** hack to allow for foreground DPG objects to cast shadows on the world DPG */
 	UBOOL	bEnableForegroundShadowsOnWorld;
 	/** Whether to allow foreground DPG self-shadowing */
@@ -384,6 +400,8 @@ public:
 	INT		MaxAnisotropy;
 	/** Scene capture streaming texture update distance scalar.			*/
 	FLOAT	SceneCaptureStreamingMultiplier;
+	/** DISHONORED(retail): FSystemSettingsDataTextureDetail::FoliageDrawRadiusMultiplier @740 (2012 PDB; 2013 absolute @884, key FoliageDrawRadiusMultiplier) */
+	FLOAT	FoliageDrawRadiusMultiplier;
 
 	/** Whether to use VSync or not.									*/
 	UBOOL	bUseVSync;
@@ -743,6 +761,9 @@ public:
 	 */
 	static void UpdateSceneRenderTargetsRHI();
 		
+	/** DISHONORED(retail): FSystemSettingsDataAudio::m_SpeakerConfiguration @1044 (2012 PDB; 2013 absolute @1048, key SpeakerConfiguration) */
+	INT SpeakerConfiguration;
+
 	/** Set to TRUE after this has been populated from the ini files */
 	UBOOL bInit;
 

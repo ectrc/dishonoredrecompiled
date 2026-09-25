@@ -72,12 +72,11 @@ FVertexFactoryType::FVertexFactoryType(
 /** Calculates a Hash based on this vertex factory type's source code and includes */
 const FSHAHash& FVertexFactoryType::GetSourceHash() const
 {
-#if CONSOLE
+	// DISHONORED(retail): the shipping exes never hash shader sources (no GetShaderFileHash / LoadShaderSourceFile function, no
+	// ".usf" / "Couldn't load shader file" string in the 2012 or 2013 exe); operator<<(FVertexFactoryParameterRef&), 2013 rva
+	// 0x388e30 / 2012 rva 0x3a9f90, compares the serialized VFHash against a static zero hash: the reference CONSOLE variant.
 	static FSHAHash CurrentHash = {0};
 	return CurrentHash;
-#else
-	return GetShaderFileHash(GetShaderFilename());
-#endif
 }
 
 FArchive& operator<<(FArchive& Ar,FVertexFactoryType*& TypeRef)
@@ -475,9 +474,8 @@ FVertexFactoryParameterRef::FVertexFactoryParameterRef(FVertexFactoryType* InVer
 	VertexFactoryType(InVertexFactoryType)
 {
 	Parameters = VertexFactoryType->CreateShaderParameters(InShaderFrequency);
-#if !CONSOLE
-	VFHash = GetShaderFileHash(VertexFactoryType->GetShaderFilename());
-#endif
+	// DISHONORED(retail): no source hashing (see FVertexFactoryType::GetSourceHash); VFHash is only ever read from the shader caches
+	VFHash = VertexFactoryType->GetSourceHash();
 	if(Parameters)
 	{
 		Parameters->Bind(ParameterMap);

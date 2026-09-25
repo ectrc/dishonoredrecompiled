@@ -85,7 +85,8 @@ void FMaterialInstanceResource::GameThread_SetParent(UMaterialInterface* InParen
 		GameThreadParent = InParent;
 
 		// Set the rendering thread's parent and instance pointers.
-		check(InParent != NULL);
+		// DISHONORED(retail): FMaterialInstanceResource::GameThread_SetParent, 2012 rva 0x116980 (materialinstance.cpp:51): no NULL check;
+		// the render command simply stores the (possibly NULL) parent
 		ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
 			InitMaterialInstanceResource,
 			FMaterialInstanceResource*,Resource,this,
@@ -216,7 +217,10 @@ void UMaterialInstance::InitResources()
 		}
 	}
 
-	checkf(SafeParent, TEXT("Invalid parent on %s"), *GetFullName());
+	// DISHONORED(retail): UMaterialInstance::InitResources, 2013 rva 0x113e10 (2012 rva 0x116a90, materialinstance.cpp:117): no
+	// checkf on the parent and no bHasQualitySwitch tail (reference-only member); when neither Parent, GEngine->DefaultMaterial nor
+	// the engine-ini lookup yields a material (Engine.upk's instances are created before Startup.upk, which holds EngineMaterials)
+	// the resources get a NULL parent for now.
 
 	// Set the material instance's parent on its resources.
 	for( INT CurResourceIndex = 0; CurResourceIndex < ARRAY_COUNT( Resources ); ++CurResourceIndex )
@@ -227,11 +231,6 @@ void UMaterialInstance::InitResources()
 		}
 	}
 
-	if (!IsTemplate())
-	{
-		// pull down the value
-		bHasQualitySwitch = GetMaterial() ? GetMaterial()->bHasQualitySwitch : FALSE;
-	}
 }
 
 /**
@@ -1079,88 +1078,26 @@ void UMaterialInstance::CacheResourceShaders(EShaderPlatform ShaderPlatform, UBO
 		}
 
 		//go through each material resource
-		for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
+		// DISHONORED(retail): UMaterialInstance::CacheResourceShaders, 2013 rva 0x11a510 (2012 rva 0x11b2f0, materialinstance.cpp:825): one static
+		// permutation (no quality levels: no [Engine.Engine] bKeepAllMaterialQualityLevelsLoaded read, absent from both exes), editor-only
+		// package dirtying, Parent->CompileStaticPermutation (InitShaderMap in retail) then AddReferencedTextures; a failure only calls
+		// GetMaterial() (no "Failed to compile Material Instance" warning); then bStaticPermutationDirty is cleared
+		if (GIsEditor && !StaticPermutationResources[MSQ_HIGH]->GetId().IsValid() || bFlushExistingShaderMaps)
 		{
-			UBOOL bKeepAllMaterialQualityLevelsLoaded = TRUE;
-			if (!GIsEditor)
-			{
-				verify(GConfig->GetBool(TEXT("Engine.Engine"), TEXT("bKeepAllMaterialQualityLevelsLoaded"), bKeepAllMaterialQualityLevelsLoaded, GEngineIni));
-			}
-			// don't need to compile a low quality material if there is no ability to make a low quality material (ie has a switch)
-			// and only compile all versions if we want all to be loaded
-			bKeepAllMaterialQualityLevelsLoaded = bKeepAllMaterialQualityLevelsLoaded && bHasQualitySwitch;
-
-			UBOOL bShouldCacheThisLevel = FALSE;
-			if (bKeepAllMaterialQualityLevelsLoaded || QualityIndex == GetDesiredQualityLevel())
-			{
-				bShouldCacheThisLevel = TRUE;
-			}
-
-			// if we don't need to make sure this is compiled, skip it
-			if (!bShouldCacheThisLevel)
-			{
-				continue;
-			}
-
-			// we can't compile a resource if the parent already tossed it for that quality level
-			if (Parent && GetMaterial()->GetMaterialResource((EMaterialShaderQuality)QualityIndex) == NULL)
-			{
-				continue;
-			}
-
-			//mark the package dirty if the material resource has never been compiled
-			if (GIsEditor && !StaticPermutationResources[QualityIndex]->GetId().IsValid()
-				|| bFlushExistingShaderMaps)
-			{
-				MarkPackageDirty();
-			}
-
-			const UBOOL bSuccess = Parent->CompileStaticPermutation(
-				StaticParameters[QualityIndex], 
-				StaticPermutationResources[QualityIndex], 
-				ShaderPlatform, 
-				(EMaterialShaderQuality)QualityIndex,
-				bFlushExistingShaderMaps,
-				bDebugDump);
-
-			if (bSuccess)
-			{
-				// After the compile, the material resource has references to all textures used by uniform expressions
-				// Add references to textures used for rendering that might be different from what the uniform expressions reference (FMaterialUniformExpressionTextureParameter)
-
-				TArray<UTexture*> Textures;
-					
-				GetUsedTextures(Textures, (EMaterialShaderQuality)QualityIndex, FALSE);
-				StaticPermutationResources[QualityIndex]->AddReferencedTextures(Textures);
-			}
-
-			if (!bSuccess)
-			{
-				const UMaterial* BaseMaterial = GetMaterial();
-				warnf(NAME_Warning, TEXT("Failed to compile Material Instance %s with Base %s for platform %s, Default Material will be used in game."), 
-					*GetPathName(), 
-					BaseMaterial ? *BaseMaterial->GetName() : TEXT("Null"), 
-					ShaderPlatformToText(ShaderPlatform));
-
-				const TArray<FString>& CompileErrors = StaticPermutationResources[QualityIndex]->GetCompileErrors();
-				for (INT ErrorIndex = 0; ErrorIndex < CompileErrors.Num(); ErrorIndex++)
-				{
-					warnf(NAME_DevShaders, TEXT("	%s"), *CompileErrors(ErrorIndex));
-				}
-			}
-#if PLATFORM_DESKTOP && !USE_NULL_RHI
-			else if (ShaderPlatform == SP_PCOGL)
-			{
-				extern void AddMaterialToOpenGLProgramCache(const FString &MaterialName, const FMaterialResource *MaterialResource);
-				AddMaterialToOpenGLProgramCache(GetPathName(), StaticPermutationResources[QualityIndex]);
-			}
-#endif
-
-#if WITH_EDITOR
-			bForceMobileEmulationUpdate = TRUE;
-#endif
-			bStaticPermutationDirty = FALSE;
+			MarkPackageDirty();
 		}
+		const UBOOL bSuccess = Parent->CompileStaticPermutation(StaticParameters[MSQ_HIGH], StaticPermutationResources[MSQ_HIGH], ShaderPlatform, MSQ_HIGH, bFlushExistingShaderMaps, bDebugDump);
+		if (bSuccess)
+		{
+			TArray<UTexture*> Textures;
+			GetUsedTextures(Textures, MSQ_HIGH, FALSE);
+			StaticPermutationResources[MSQ_HIGH]->AddReferencedTextures(Textures);
+		}
+		else
+		{
+			GetMaterial();
+		}
+		bStaticPermutationDirty = FALSE;
 	}
 	else
 	{
@@ -1675,37 +1612,8 @@ void UMaterialInstance::PostLoad()
 		}
 	}
 
-	UBOOL bTossUnusedLevels = FALSE;
-	if (GIsCooking)
-	{
-		// when cooking, always throw away levels we don't need
-		bTossUnusedLevels = TRUE;
-	}
-	else if (!GIsEditor)
-	{
-		// if we are not in the editor (where it makes sense to have all levels loaded), toss non-active
-		// quality levels if desired
-		UBOOL bKeepAllMaterialQualityLevelsLoaded;
-		verify(GConfig->GetBool(TEXT("Engine.Engine"), TEXT("bKeepAllMaterialQualityLevelsLoaded"), bKeepAllMaterialQualityLevelsLoaded, GEngineIni));
-		bTossUnusedLevels = !bKeepAllMaterialQualityLevelsLoaded;
-	}
-
-	if (bTossUnusedLevels)
-	{
-		// this is the quality we want to use
-		EMaterialShaderQuality DesiredQuality = GetQualityLevel();
-
-		// toss other levels
-		for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
-		{
-			if (StaticPermutationResources[QualityIndex] && QualityIndex != DesiredQuality)
-			{
-				// just toss the whole thing
-				delete StaticPermutationResources[QualityIndex];
-				StaticPermutationResources[QualityIndex] = NULL;
-			}
-		}
-	}
+	// DISHONORED(retail): no quality-level tossing in UMaterialInstance::PostLoad (single StaticPermutationResources[0]; no
+	// bKeepAllMaterialQualityLevelsLoaded string in the 2012 or 2013 exe)
 }
 
 void UMaterialInstance::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

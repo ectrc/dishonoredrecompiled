@@ -1016,16 +1016,9 @@ UBOOL UMaterial::CompileStaticPermutation(
 
 	SetStaticParameterOverrides(StaticParameters);
 
-	if ((appGetPlatformType() & UE3::PLATFORM_Stripped) || UE3_LEAN_AND_MEAN)
-	{
-		//uniform expressions are guaranteed to be updated since they are always generated during cooking
-		CompileSucceeded = StaticPermutation->InitShaderMap(StaticParameters, Platform, Quality);
-	}
-	else
-	{
-		//material instances with static permutations always need to regenerate uniform expressions, so InitShaderMap() is not used
-		CompileSucceeded = StaticPermutation->CacheShaders(StaticParameters, Platform, Quality, bFlushExistingShaderMaps, bDebugDump);
-	}
+	// DISHONORED(retail): UMaterial::CompileStaticPermutation, 2013 rva 0x122aa0 (2012 rva 0x12a970, material.cpp:832, 89 bytes): the shipping
+	// exe only initializes the static permutation from the shader cache (no CacheShaders compile path)
+	CompileSucceeded = StaticPermutation->InitShaderMap(StaticParameters, Platform, Quality);
 
 	ClearStaticParameterOverrides();
 	
@@ -1123,77 +1116,24 @@ void UMaterial::CacheResourceShaders(EShaderPlatform ShaderPlatform, UBOOL bFlus
 	RebuildMaterialFunctionInfo();
 #endif
 
-	//go through each material resource
-	for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
+	// DISHONORED(retail): UMaterial::CacheResourceShaders, 2013 rva 0x10ff70 (2012 rva 0x112cc0, material.cpp:1022, 127 bytes): one
+	// material resource (no quality levels: no [Engine.Engine] bKeepAllMaterialQualityLevelsLoaded read, the string is absent from both
+	// exes), skipped on a Windows server, editor-only package dirtying when the resource has no Id, then FMaterial::InitShaderMap
+	// only: the shipping exe never compiles (no CacheShaders path, no "Failed to compile Material" warning). The reference
+	// GetMaterialPlatform remap is SM3-only here (GRHIShaderPlatform is SP_PCD3D_SM3 under the null RHI and D3D9Drv).
+	if(!MaterialResources[0])
 	{
-		// don't need to compile a low quality material if there is no ability to make a low quality material (ie has a switch)
-		// and only compile all versions if we want all to be loaded
-		UBOOL bKeepAllMaterialQualityLevelsLoaded;
-		if (GIsEditor)
-		{
-			bKeepAllMaterialQualityLevelsLoaded = bHasQualitySwitch;
-		}
-		else
-		{
-			verify(GConfig->GetBool(TEXT("Engine.Engine"), TEXT("bKeepAllMaterialQualityLevelsLoaded"), bKeepAllMaterialQualityLevelsLoaded, GEngineIni));
-		}
-		
-		UBOOL bShouldCacheThisLevel = FALSE;
-		if (bKeepAllMaterialQualityLevelsLoaded || QualityIndex == GetDesiredQualityLevel())
-		{
-			bShouldCacheThisLevel = TRUE;
-		}
-		
-		// if we don't need to make sure this is compiled, skip it
-		if (!bShouldCacheThisLevel)
-		{
-			continue;
-		}
-
-		//don't need to allocate material resources/shaders in dedicated server mode
-		if (appGetPlatformType() & UE3::PLATFORM_WindowsServer)
-		{
-			continue;
-		}
-
-		//allocate it if it hasn't already been
-		if(!MaterialResources[QualityIndex])
-		{
-			MaterialResources[QualityIndex] = AllocateResource();
-		}
-
-		UBOOL bSuccess = FALSE;
-		// Force uniform expressions to be regenerated (but allow re-using existing shader maps) if the material resource has legacy uniform expressions
-		// This ensures that the uniform expressions will have the correct indices into MaterialResources[PlatformIndex]->UniformExpressionTextures
-		if ( bFlushExistingShaderMaps || GetLinkerVersion() < VER_UNIFORMEXPRESSION_POSTLOADFIXUP || MaterialResources[QualityIndex]->HasLegacyUniformExpressions())
-		{
-			bSuccess = MaterialResources[QualityIndex]->CacheShaders(ShaderPlatform, (EMaterialShaderQuality)QualityIndex, bFlushExistingShaderMaps);
-		}
-		else
-		{
-			bSuccess = MaterialResources[QualityIndex]->InitShaderMap(ShaderPlatform, (EMaterialShaderQuality)QualityIndex);
-		}
-
-		if (!bSuccess)
-		{
-			warnf(NAME_Warning, TEXT("Failed to compile Material %s for platform %s, Default Material will be used in game."), 
-				*GetPathName(), 
-				ShaderPlatformToText(ShaderPlatform));
-
-			const TArray<FString>& CompileErrors = MaterialResources[QualityIndex]->GetCompileErrors();
-			for (INT ErrorIndex = 0; ErrorIndex < CompileErrors.Num(); ErrorIndex++)
-			{
-				warnf(NAME_DevShaders, TEXT("	%s"), *CompileErrors(ErrorIndex));
-			}
-		}
-#if PLATFORM_DESKTOP && !USE_NULL_RHI
-		else if (ShaderPlatform == SP_PCOGL)
-		{
-			extern void AddMaterialToOpenGLProgramCache(const FString &MaterialName, const FMaterialResource *MaterialResource);
-			AddMaterialToOpenGLProgramCache(GetPathName(), MaterialResources[QualityIndex]);
-		}
-#endif
+		MaterialResources[0] = AllocateResource();
 	}
+	if (appGetPlatformType() & UE3::PLATFORM_WindowsServer)
+	{
+		return;
+	}
+	if (GIsEditor && !MaterialResources[0]->GetId().IsValid())
+	{
+		MarkPackageDirty();
+	}
+	MaterialResources[0]->InitShaderMap(ShaderPlatform, MSQ_HIGH);
 }
 
 /**
@@ -1509,40 +1449,8 @@ void UMaterial::PostLoad()
 		}
 	}
 
-	UBOOL bTossUnusedLevels = FALSE;
-	if (GIsCooking)
-	{
-		// when cooking, always throw away levels we don't need
-		bTossUnusedLevels = TRUE;
-	}
-	else if (!GIsEditor)
-	{
-		// if we are not in the editor (where it makes sense to have all levels loaded), toss non-active
-		// quality levels if desired
-		UBOOL bKeepAllMaterialQualityLevelsLoaded;
-		verify(GConfig->GetBool(TEXT("Engine.Engine"), TEXT("bKeepAllMaterialQualityLevelsLoaded"), bKeepAllMaterialQualityLevelsLoaded, GEngineIni));
-		bTossUnusedLevels = !bKeepAllMaterialQualityLevelsLoaded;
-	}
-
-	if (bTossUnusedLevels)
-	{
-		// this is the quality we want to use
-		EMaterialShaderQuality DesiredQuality = GetQualityLevel();
-
-		// toss other levels
-		for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
-		{
-			if (MaterialResources[QualityIndex] && QualityIndex != DesiredQuality)
-			{
-				MaterialResources[QualityIndex]->FlushShaderMap();
-				MaterialResources[QualityIndex]->SetId(FGuid(0,0,0,0));
-
-				// just toss the whole thing
-				delete MaterialResources[QualityIndex];
-				MaterialResources[QualityIndex] = NULL;
-			}
-		}
-	}
+	// DISHONORED(retail): UMaterial::PostLoad, 2013 rva 0x11f880 (2012 rva 0x128d80, material.cpp:1250): no quality-level tossing
+	// (single MaterialResources[0]; no [Engine.Engine] bKeepAllMaterialQualityLevelsLoaded string in either exe)
 }
 
 void UMaterial::PreEditChange(UProperty* PropertyThatChanged)

@@ -2117,9 +2117,27 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 {
 	Super::Serialize(Ar);
 
+	// DISHONORED(retail): USkeletalMesh::Serialize, 2013 rva 0x355260 (2012 rva 0x375220, 1969 bytes, same shape): Arkane m_UserBounds
+	// (FName @759, FVector offset @761, radius) before Bounds, m_EdgeSkeleton (@775) before RefSkeleton; no ClothingAssets (APEX) block,
+	// CachedStreamingTextureFactors gated at 771 (reference VER_DYNAMICTEXTUREINSTANCES 797), no SourceData (VER_SKELETAL_MESH_SIMPLIFICATION 834),
+	// StripData(PLATFORM_Console) on load for a client. Members from the 2012 PDB layout (UnSkeletalMesh.h). Ver 801 packages hit every gate.
+	if ( Ar.Ver() >= 759 )
+	{
+		Ar << m_UserBounds.m_BoneName;
+		if ( Ar.Ver() >= 761 )
+		{
+			Ar << m_UserBounds.m_Offset;
+		}
+		Ar << m_UserBounds.m_fRadius;
+	}
+
 	Ar << Bounds;
  	Ar << Materials;
 	Ar << Origin << RotOrigin;
+	if ( Ar.Ver() >= 775 )
+	{
+		Ar << m_EdgeSkeleton;
+	}
 	Ar << RefSkeleton;			// Reference skeleton.
 	Ar << SkeletalDepth;		// How many bones beep the heirarchy goes.
 	LODModels.Serialize( Ar, this );
@@ -2174,31 +2192,13 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 		BoneBreakOptions.Empty();
 	}
 
-	if ( Ar.Ver() < VER_APEX_CLOTHING )
-	{
-		ClothingAssets.Empty();
-		if ( Materials.Num() > 0 )
-		{
-			ClothingAssets.Add( Materials.Num());
-			for (INT i=0; i<Materials.Num(); i++)
-			{
-				ClothingAssets(i) = NULL;
-			}
-		}
-	}
-	else
-	{
-		Ar << ClothingAssets;
-	}
-	if ( Ar.Ver() >= VER_DYNAMICTEXTUREINSTANCES )
+	// DISHONORED(retail): no ClothingAssets serialization (see above)
+	if ( Ar.Ver() >= 771 )	// DISHONORED(retail): 2013 rva 0x355260 gate (reference VER_DYNAMICTEXTUREINSTANCES 797)
 	{
 		Ar << CachedStreamingTextureFactors;
 	}
 
-	if ( Ar.Ver() >= VER_SKELETAL_MESH_SIMPLIFICATION )
-	{
-		SourceData.Serialize( Ar, this );
-	}
+	// DISHONORED(retail): no SourceData serialization (see above)
 
 #if WITH_EDITOR && WITH_D3D11_TESSELLATION
 	if (!GUseSeekFreeLoading && !(GCookingTarget & UE3::PLATFORM_Console))
@@ -2236,7 +2236,7 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 	if( Ar.IsLoading() && GIsClient && !GIsEditor && !GIsUCC )
 	{
 		// Console platform is not a mistake, this ensures that as much as possible will be tossed.
-		StripData( (UE3::EPlatformType)(UE3::PLATFORM_Console | UE3::PLATFORM_WindowsConsole), FALSE );
+		StripData( UE3::PLATFORM_Console, FALSE );	// DISHONORED(retail): 2012 rva 0x375220 passes PLATFORM_Console only
 	}
 #endif
 }

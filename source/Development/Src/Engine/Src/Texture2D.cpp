@@ -393,23 +393,10 @@ UBOOL ULinkerLoad::StartTextureAllocation()
 			for ( INT ResourceIndex=TextureType.NumExportIndicesProcessed; ResourceIndex < TextureType.ExportIndices.Num() && bContinue; ++ResourceIndex )
 			{
 				INT ExportIndex = TextureType.ExportIndices( ResourceIndex );
-				if ( WillTextureBeLoaded( UTexture2D::StaticClass(), ExportIndex ) )
-				{
-					FTexture2DResourceMem* ResourceMem = UTexture2D::CreateResourceMem(
-						TextureType.SizeX,
-						TextureType.SizeY,
-						TextureType.NumMips,
-						(EPixelFormat)TextureType.Format,
-						TextureType.TexCreateFlags,
-						&Summary.TextureAllocations.PendingAllocationCount );
-					if ( ResourceMem )
-					{
-						TextureType.Allocations.AddItem( ResourceMem );
-						Summary.TextureAllocations.PendingAllocationSize += ResourceMem->GetResourceBulkDataSize();
-						Summary.TextureAllocations.PendingAllocationCount.Increment();
-						NumAllocationsStarted++;
-					}
-				}
+				// DISHONORED(port): ULinkerLoad::StartTextureAllocation, 2013 rva 0x17bd40 (2012 rva 0x193010, texture2d.cpp:307, both
+				// 419 bytes): WillTextureBeLoaded is evaluated but nothing is pre-allocated (no CreateResourceMem call, the
+				// PendingAllocation counters stay 0); the time-limit checks and the per-type bookkeeping are the reference
+				WillTextureBeLoaded( UTexture2D::StaticClass(), ExportIndex );
 
 				TextureType.NumExportIndicesProcessed++;
 				NumAllocationsConsidered++;

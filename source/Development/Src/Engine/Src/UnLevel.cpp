@@ -263,7 +263,9 @@ void ULevel::StaticConstructor()
 	TheClass->EmitObjectReference( STRUCT_OFFSET( ULevel, PylonListStart ) );
 	TheClass->EmitObjectReference( STRUCT_OFFSET( ULevel, PylonListEnd ) );
 	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( ULevel, CrossLevelActors ) );
-	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( ULevel, CoverLinkRefs ) );
+	// DISHONORED(retail): ULevel::StaticConstructor, 2013 rva 0x242c20 (2012 rva 0x25cdd0, unlevel.cpp:209, identical): the last array
+	// token is @676 = m_CrossLevelReferencedActors (2012 PDB); CoverLinkRefs is reference-only (DISHONORED_SHIM_STATIC, no offset)
+	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( ULevel, m_CrossLevelReferencedActors ) );
 
 	new(TheClass,TEXT("LightmapTotalSize"),RF_Public) UFloatProperty(CPP_PROPERTY(LightmapTotalSize),TEXT(""),CPF_EditConst|CPF_Const);
 	new(TheClass,TEXT("ShadowmapTotalSize"),RF_Public) UFloatProperty(CPP_PROPERTY(ShadowmapTotalSize),TEXT(""),CPF_EditConst|CPF_Const);

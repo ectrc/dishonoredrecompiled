@@ -1800,19 +1800,23 @@ void UStaticMesh::StaticConstructor()
 	UProperty* UseSimpleRigidBodyCollisionProp = new(GetClass(),TEXT("UseSimpleRigidBodyCollision"),RF_Public)	UBoolProperty(CPP_PROPERTY(UseSimpleRigidBodyCollision),TEXT(""),CPF_Edit);
 	UProperty* UseFullPrecisionUVsProp = new(GetClass(),TEXT("UseFullPrecisionUVs"),RF_Public)			UBoolProperty(CPP_PROPERTY(UseFullPrecisionUVs),TEXT(""),CPF_Edit);
 	UProperty* UsedForInstancingProp = new(GetClass(),TEXT("bUsedForInstancing"),RF_Public)			UBoolProperty(CPP_PROPERTY(bUsedForInstancing),TEXT(""),CPF_Edit);
-	UProperty* PerLODStaticLightingForInstancingProp = new(GetClass(),TEXT("bPerLODStaticLightingForInstancing"),RF_Public)		UBoolProperty(CPP_PROPERTY(bPerLODStaticLightingForInstancing),TEXT(""),CPF_Edit);
-	UProperty* ConsolePreallocateInstanceCountProp = new(GetClass(),TEXT("ConsolePreallocateInstanceCount"),RF_Public)		UIntProperty(CPP_PROPERTY(ConsolePreallocateInstanceCount),TEXT(""),CPF_Edit);
+	// DISHONORED(retail): UStaticMesh::StaticConstructor, 2013 rva 0x37a050 (2012 rva 0x39b5b0): the intrinsic properties are the 8 bools
+	// @192..220, LightMapResolution/LightMapCoordinateIndex @104/108, LODDistanceRatio/LODMaxRange @80/84, StreamingDistanceMultiplier
+	// @224, m_bTransparentForVisionChecks @304 (Arkane), the LOD structs, LODInfo @68, BodySetup @136, SourceFilePath/SourceFileTimestamp
+	// @260/272; no bPerLODStaticLightingForInstancing, ConsolePreallocateInstanceCount, bStripComplexCollisionForConsole or
+	// FoliageDefaultSettings (reference-only DISHONORED_SHIM_STATIC members without an offset)
 
 	UProperty* UseMaximumStreamingTexelRatioProp = new(GetClass(),TEXT("bUseMaximumStreamingTexelRatio"),RF_Public)UBoolProperty(CPP_PROPERTY(bUseMaximumStreamingTexelRatio),TEXT(""),CPF_Edit);
 	UProperty* PartitionForEdgeGeometryProp = new(GetClass(),TEXT("bPartitionForEdgeGeometry"),RF_Public)		UBoolProperty(CPP_PROPERTY(bPartitionForEdgeGeometry),TEXT(""),CPF_Edit);
 	UProperty* CanBecomeDynamicProp = new(GetClass(),TEXT("bCanBecomeDynamic"),RF_Public)		UBoolProperty(CPP_PROPERTY(bCanBecomeDynamic),TEXT(""),CPF_Edit);
-	UProperty* StripComplexCollisionForConsole = new(GetClass(),TEXT("bStripComplexCollisionForConsole"),RF_Public)	UBoolProperty(CPP_PROPERTY(bStripkDOPForConsole),TEXT(""),CPF_Edit);
 
 	UProperty* LightMapResolutionProp = new(GetClass(),TEXT("LightMapResolution"),RF_Public)			UIntProperty(CPP_PROPERTY(LightMapResolution),TEXT(""),CPF_Edit);
 	UProperty* LightMapCoordinateIndexProp = new(GetClass(),TEXT("LightMapCoordinateIndex"),RF_Public)		UIntProperty(CPP_PROPERTY(LightMapCoordinateIndex),TEXT(""),CPF_Edit);
 	UProperty* LODDistanceRatioProp = new(GetClass(),TEXT("LODDistanceRatio"),RF_Public)				UFloatProperty(CPP_PROPERTY(LODDistanceRatio),TEXT(""),CPF_Edit);
 	UProperty* LODMaxRangeRatioProp = new(GetClass(),TEXT("LODMaxRange"),RF_Public)				UFloatProperty(CPP_PROPERTY(LODMaxRange),TEXT(""),CPF_Edit);
 	UProperty* StreamingDistanceMultiplierProp = new(GetClass(),TEXT("StreamingDistanceMultiplier"),RF_Public)UFloatProperty(CPP_PROPERTY(StreamingDistanceMultiplier),TEXT(""),CPF_Edit);
+	// DISHONORED(retail): Arkane property @304 (2013 rva 0x37a050; tooltip StaticMeshToolTip_TransparentForVisionChecks)
+	UProperty* TransparentForVisionChecksProp = new(GetClass(),TEXT("m_bTransparentForVisionChecks"),RF_Public)UBoolProperty(CPP_PROPERTY(m_bTransparentForVisionChecks),TEXT(""),CPF_Edit);
 
 	/**
 	 * The following code creates a dynamic array of structs, where the struct contains a dynamic array of MaterialInstances...In unrealscript, this declaration
@@ -1876,7 +1880,7 @@ void UStaticMesh::StaticConstructor()
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UStaticMesh, BodySetup ) ); //@todo rtgc: is this needed seeing that BodySetup is exposed above?
 
 #if WITH_EDITORONLY_DATA
-	new(GetClass(),TEXT("FoliageDefaultSettings"),RF_Public)	UObjectProperty(CPP_PROPERTY(FoliageDefaultSettings),TEXT(""),CPF_Edit | CPF_EditInline, UInstancedFoliageSettings::StaticClass());
+	// DISHONORED(retail): no FoliageDefaultSettings property (see above)
 	new(GetClass(), TEXT("SourceFilePath"), RF_Public)	UStrProperty(CPP_PROPERTY(SourceFilePath),TEXT(""),CPF_Edit|CPF_EditorOnly|CPF_EditConst);
 	new(GetClass(), TEXT("SourceFileTimestamp"), RF_Public)	UStrProperty(CPP_PROPERTY(SourceFileTimestamp),TEXT(""),CPF_Edit|CPF_EditorOnly|CPF_EditConst);
 #endif // WITH_EDITORONLY_DATA
@@ -4883,20 +4887,10 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 		OverriddenLightMapRes = OverriddenLightMapResolution_DEPRECATED;
 	}
 
-	// Serialize out the vert. position version number
-	if( Ar.Ver() < VER_DEPRECATE_DOUBLY_SERIALISED_SMC )
-	{
-		if ( Ar.Ver() >= VER_PRESERVE_SMC_VERT_COLORS  )
-		{
-			INT Dummy = -1;
-			Ar << Dummy;
-			check( GIsCooking || !GIsEditor || Dummy == VertexPositionVersionNumber );
-		}
-		else
-		{
-			VertexPositionVersionNumber = 0;
-		}
-	}
+	// DISHONORED(retail): UStaticMeshComponent::Serialize, 2013 rva 0x377550 (2012 rva 0x398dd0, unstaticmesh.cpp:3581, 81 bytes,
+	// identical): Super::Serialize, LODData, the Ver<600 lightmap fixup and nothing else. The reference's VertexPositionVersionNumber
+	// dummy INT (read for VER_PRESERVE_SMC_VERT_COLORS 801 <= Ver < 820) does not exist in Dishonored's 801 packages: it over-read
+	// Engine.Default__DynamicSMActor:StaticMeshComponent0 by 4 bytes ("Serial size mismatch: Got 85, Expected 81").
 }
 
 

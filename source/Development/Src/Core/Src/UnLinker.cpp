@@ -3725,6 +3725,14 @@ void ULinkerLoad::Preload( UObject* Object )
 					// the parent class's CDO has serialized its data from disk and called LoadConfig/LoadLocalized. Since ULinkerLoad::Preload guarantees that
 					// Preload is always called on the archetype first, at this point we know that the CDO's archetype (the CDO of the parent class) has already
 					// loaded its config/localized data, so it's now safe to initialize the CDO
+					// DISHONORED(bringup): -logcdoinit traces every class default object re-initialized from a package (a native class whose
+					// C++ layout differs from the cooked property layout corrupts here: ExitProperties walks the linked properties over the C++ object)
+					static UBOOL bLogCDOInit = ParseParam( appCmdLine(), TEXT("logcdoinit") );
+					if ( bLogCDOInit )
+					{
+						debugf( TEXT("DISHONORED(bringup): InitClassDefaultObject %s (PropertiesSize %d, super %s %d)"), *Object->GetClass()->GetPathName(), Object->GetClass()->GetPropertiesSize(), Object->GetClass()->GetSuperClass() ? *Object->GetClass()->GetSuperClass()->GetName() : TEXT("none"), Object->GetClass()->GetSuperClass() ? Object->GetClass()->GetSuperClass()->GetPropertiesSize() : 0 );
+						GLog->Flush();
+					}
 					Object->InitClassDefaultObject(Object->GetClass());
 
 #if PERF_TRACK_SERIALIZATION_PERFORMANCE || LOOKING_FOR_PERF_ISSUES

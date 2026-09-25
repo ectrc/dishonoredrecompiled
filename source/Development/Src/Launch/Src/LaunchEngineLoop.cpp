@@ -874,55 +874,70 @@ void appGetScriptPackageNames(TArray<FString>& PackageNames, UINT ScriptTypes, c
 		EngineConfigFilename = GEngineIni;
 	}
 
-	// get the list of the base engine native packages
+	// DISHONORED(retail): the native script package list is hardcoded; no "Engine.ScriptPackages" string in the 2012/2013 exe
+	// and no such section in the retail inis. appGetEngineScriptPackageNames (2013 rva 0x5def10; 2012 rva 0x627810 area,
+	// LoadStartupPackages launchengineloop.cpp:1138) adds Core, Engine, GFxUI, AkAudio, GameFramework, IpDrv in that order.
 	if (ScriptTypes & SPT_EngineNative)
 	{
-		TArray<FString> EngineNativePackages;
-		GConfig->GetArray(TEXT("Engine.ScriptPackages"), TEXT("EngineNativePackages"), EngineNativePackages, EngineConfigFilename);
-		PackageNames.Append(EngineNativePackages);
+		PackageNames.AddItem(FString(TEXT("Core")));
+		PackageNames.AddItem(FString(TEXT("Engine")));
+		PackageNames.AddItem(FString(TEXT("GFxUI")));
+		PackageNames.AddItem(FString(TEXT("AkAudio")));
+		PackageNames.AddItem(FString(TEXT("GameFramework")));
+		PackageNames.AddItem(FString(TEXT("IpDrv")));
+	}
 
-#if WITH_UE3_NETWORKING
-		// only include this if we are not checking native class sizes.  Currently, the native classes which reside on specific console
-		// platforms will cause native class size checks to fail even tho class sizes are hopefully correct on the target platform as the PC 
-		// doesn't have access to that native class.
+	// DISHONORED(retail): appGetGameNativeScriptPackageNames (2013 rva 0x5dfb50): DishonoredGame, then (unless
+	// -CHECK_NATIVE_CLASS_SIZES) the OSS package: while cooking the target's OSS packages (Xbox360: OnlineSubsystemLive,
+	// PS3: OnlineSubsystemPSN, PC: OnlineSubsystemPC and OnlineSubsystemSteamworks, each only if its file exists), at
+	// runtime "OnlineSubsystem" + "Steamworks" (appGetOSSPackageName) if the package file exists.
+	if (ScriptTypes & SPT_GameNative)
+	{
+		PackageNames.AddItem(FString(TEXT("DishonoredGame")));
+
 		if( ParseParam(appCmdLine(),TEXT("CHECK_NATIVE_CLASS_SIZES")) == FALSE )
 		{
-			// figure out the desired package name
-			const TCHAR* OSSName = appGetOSSPackageName();
-
-			// OSSName is allowed to be NULL, which means to load no OSS class (or package)
-			if (OSSName)
+			TArray<FString> OSSPackages;
+			if (GIsCooking)
 			{
-				FString OSSPackage = FString(TEXT("OnlineSubsystem")) + OSSName;
-
-				// make sure the package exists on disk
-				FString PackagePath;
-				if (GPackageFileCache->FindPackageFile(*OSSPackage, NULL, PackagePath))
+				switch (GCookingTarget)
 				{
-					PackageNames.AddItem(OSSPackage);
+				case UE3::PLATFORM_Xbox360:
+					OSSPackages.AddItem(FString(TEXT("OnlineSubsystemLive")));
+					break;
+				case UE3::PLATFORM_PS3:
+					OSSPackages.AddItem(FString(TEXT("OnlineSubsystemPSN")));
+					break;
+				case UE3::PLATFORM_Windows:
+					OSSPackages.AddItem(FString(TEXT("OnlineSubsystemPC")));
+					OSSPackages.AddItem(FString(TEXT("OnlineSubsystemSteamworks")));
+					break;
+				default:
+					appErrorf(TEXT("unsupported platform %d"), (INT)GCookingTarget);
+					break;
+				}
+			}
+			else
+			{
+				const TCHAR* OSSName = appGetOSSPackageName();
+				if (OSSName)
+				{
+					OSSPackages.AddItem(FString(TEXT("OnlineSubsystem")) + OSSName);
+				}
+			}
+			for (INT OSSIndex = 0; OSSIndex < OSSPackages.Num(); OSSIndex++)
+			{
+				FString PackagePath;
+				if (GPackageFileCache->FindPackageFile(*OSSPackages(OSSIndex), NULL, PackagePath))
+				{
+					PackageNames.AddItem(OSSPackages(OSSIndex));
+				}
+				else if (GIsCooking)
+				{
+					appErrorf(TEXT("File not found %s"), *OSSPackages(OSSIndex));
 				}
 			}
 		}
-#else
-		// get the list of packages needed for networking (note, this does not include the OSS script package
-		// because that cannot be ini driven, it needs to come from appGetOSSPackageName(), below)
-		TArray<FString> NetworkingPackages;
-		GConfig->GetArray(TEXT("Engine.ScriptPackages"), TEXT("NetNativePackages"), NetworkingPackages, EngineConfigFilename);
-
-		for (INT PackageIndex = 0; PackageIndex < NetworkingPackages.Num(); PackageIndex++)
-		{
-			PackageNames.RemoveItem(NetworkingPackages(PackageIndex));
-		}
-#endif
-	}
-
-	// now add the game native packages, these need to come after IpDrv, etc above during cooking, so
-	// they are split up from the engine native packages
-	if (ScriptTypes & SPT_GameNative)
-	{
-		TArray<FString> GameNativePackages;
-		GConfig->GetArray(TEXT("Engine.ScriptPackages"), TEXT("NativePackages"), GameNativePackages, EngineConfigFilename);
-		PackageNames.Append(GameNativePackages);
 
 		// insert any localization for Seek free packages if requested
 		if (ScriptTypes & SPT_SeekfreeLoc)
@@ -978,6 +993,23 @@ void appGetScriptPackageNames(TArray<FString>& PackageNames, UINT ScriptTypes, c
 		}
 	}
 #endif
+
+	// DISHONORED(bringup): -skipnativepkgs=A,B drops native script packages whose registrants this build does not link yet
+	// (build_and_smoke.py --skip-native); never used by the retail exe, which has no such switch.
+	FString SkipList;
+	if (Parse(appCmdLine(), TEXT("-skipnativepkgs="), SkipList, FALSE))
+	{
+		TArray<FString> SkipNames;
+		SkipList.ParseIntoArray(&SkipNames, TEXT(","), TRUE);
+		for (INT PackageIndex = 0; PackageIndex < PackageNames.Num(); PackageIndex++)
+		{
+			if (SkipNames.ContainsItem(PackageNames(PackageIndex)))
+			{
+				debugf(TEXT("DISHONORED(bringup): skipping native script package %s (-skipnativepkgs)"), *PackageNames(PackageIndex));
+				PackageNames.Remove(PackageIndex--);
+			}
+		}
+	}
 }
 
 
@@ -3509,7 +3541,8 @@ INT FEngineLoop::Init()
 		warnf(NAME_Log, TEXT("*** Forcing Minimal Shader Compiling"));
 	}
 #endif
-#if !CONSOLE && !UE3_LEAN_AND_MEAN
+#if 0 // DISHONORED(retail): FEngineLoop::Init, 2013 rva 0x5e11b0, goes GetGlobalShaderMap -> LoadStartupPackages; no shader source
+	   // verification (no VerifyShaderSourceFiles / LoadShaderSourceFile function, no ".usf" string in the 2012 or 2013 exe; retail ships no Engine\Shaders)
 	// verify that all shader source files are intact
 	VerifyShaderSourceFiles();
 #endif

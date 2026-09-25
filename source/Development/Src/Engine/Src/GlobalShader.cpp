@@ -157,6 +157,13 @@ void SerializeGlobalShaders(EShaderPlatform Platform,FArchive& Ar)
  */
 void VerifyGlobalShaders(EShaderPlatform Platform)
 {
+	// DISHONORED(retail): 2013 rva 0x105690 (2012 rva 0x104be0, globalshader.cpp:153): the shipping exe only initializes the
+	// loaded map; no missing-type check, no compilation, no cache re-save (no shader compiler in either exe: no
+	// FShaderCompilingThreadManager function, no "Verifying Global Shaders for %s" / "Missing global shader" strings).
+	// The reference compile path is kept below for the editor/cooker work of a later phase.
+	GetGlobalShaderMap(Platform);
+	GGlobalShaderMap[Platform]->BeginInit();
+#if 0 // DISHONORED(retail): reference compile path (see above)
 	check(IsInGameThread());
 	check(!(appGetPlatformType() & UE3::PLATFORM_WindowsServer));
 
@@ -249,6 +256,7 @@ void VerifyGlobalShaders(EShaderPlatform Platform)
 		delete GlobalShaderFile;
 	}
 #endif
+#endif // DISHONORED(retail): reference compile path
 }
 
 TShaderMap<FGlobalShaderType>* GetGlobalShaderMap(EShaderPlatform Platform)
