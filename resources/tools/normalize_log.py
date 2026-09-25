@@ -19,9 +19,14 @@ RULES = [
 ]
 
 
+DROP_MARK = "DISHONORED(bringup)"  # our own bring-up diagnostics never take part in the golden diff
+
+
 def normalize(text: str) -> str:
     out = []
     for line in text.splitlines():
+        if DROP_MARK in line:
+            continue
         for pattern, repl in RULES:
             line = pattern.sub(repl, line)
         out.append(line.rstrip())

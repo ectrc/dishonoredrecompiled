@@ -10,7 +10,7 @@ are invisible to it and show up as `UnknownDataNN` gaps, which are recorded too 
 Known limits of the dump (see resources/docs/sdk_dump.md):
   * class spans end at the last reflected property; the C++ sizeof (native_class_sizes.csv) can be larger
   * `iNative[n]` values are garbage (generator read the wrong UFunction field); use natives_2013.csv
-  * static-array members carry their element count in `name[0xN]`; bitfields carry a `[0xMASK]`
+  * static-array members carry their element count in `name[N]` (decimal; `size` is the total); bitfields carry a `[0xMASK]`
 
 Usage: python resources/tools/sdk/parse_codered_sdk.py [--sdk <dir>]
 """
@@ -32,7 +32,7 @@ SIZE_RE = re.compile(r"^// 0x([0-9A-Fa-f]+)$")
 FLAGS_RE = re.compile(r"^// \[0x([0-9A-Fa-f]+)\]\s*(?:\((.*?)\))?\s*(?:\(iNative\[(\d+)\]\))?")
 DECL_RE = re.compile(r"^(class|struct) ([A-Za-z_]\w*)(?:\s*:\s*public\s+([A-Za-z_]\w*))?\s*$")
 MEMBER_RE = re.compile(
-    r"^\s+(?P<type>.+?)\s{2,}(?P<name>[A-Za-z_]\w*)(?:\[0x(?P<count>[0-9A-Fa-f]+)\])?(?P<bit>\s*:\s*1)?;\s*"
+    r"^\s+(?P<type>.+?)\s{2,}(?P<name>[A-Za-z_]\w*)(?:\[(?P<count>0x[0-9A-Fa-f]+|\d+)\])?(?P<bit>\s*:\s*1)?;\s*"
     r"//\s*0x(?P<off>[0-9A-Fa-f]+)\s*\(0x(?P<size>[0-9A-Fa-f]+)\)\s*(?P<rest>.*)$")
 FLAGWORD_RE = re.compile(r"\[0x([0-9A-Fa-f]+)\]")
 NAMES_RE = re.compile(r"\(([^()]*)\)\s*$")
@@ -42,7 +42,7 @@ def parse_member(m: re.Match) -> dict:
     rest = m.group("rest").strip()
     d = {"name": m.group("name"), "type": m.group("type").strip(), "offset": int(m.group("off"), 16), "size": int(m.group("size"), 16)}
     if m.group("count"):
-        d["count"] = int(m.group("count"), 16)
+        d["count"] = int(m.group("count"), 0)  # `size` stays the total (ElementSize * ArrayDim); UnknownDataNN/padding use hex counts
     if "MISSED OFFSET" in rest:
         d["gap"] = True
         return d

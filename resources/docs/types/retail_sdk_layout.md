@@ -2,7 +2,7 @@
 
 Source: `D:\RecompileDishonored\Dishonored_DumpedSDK_Retail` (Dishonered (DSDK) SDK 1.0.0.0 Generated with the CodeRedGenerator v1.1.3). Parsed by `resources/tools/sdk/parse_codered_sdk.py` into `retail_sdk_layout.json` (git-ignored, seconds to regenerate).
 
-3038 classes with 15234 reflected members, 943 script structs, 4548 functions with exec-parameter layouts, 115 native-only gaps (`UnknownDataNN`).
+3038 classes with 15470 reflected members, 943 script structs, 4548 functions with exec-parameter layouts, 115 native-only gaps (`UnknownDataNN`).
 
 | Package | Classes | Structs | Functions |
 |---|---:|---:|---:|

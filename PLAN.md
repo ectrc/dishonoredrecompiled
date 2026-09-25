@@ -205,6 +205,12 @@ Detailed plan and tracker: `resources/docs/PHASE3.md` (work packages H–N).
 
 ### Phase 3 — Module convergence and DishonoredGame rewrite (months)
 
+Wave 1 (`resources/docs/PHASE3.md`, done 2026-09-27): retail truth, Core/Engine contract types
+reconciled with retail, milestone 1. Wave 2 (`resources/docs/PHASE4.md`, started 2026-09-27):
+milestone 2 (startup packages), D3D9Drv target, Engine headers converged on the retail SDK
+offsets (agents Q/R/S), DishonoredGame/GFxUI/AkAudio/OSS registrants + headers from the SDK dump
+(T), middleware versions + Phase 4 memo (U).
+
 Order (sizes from `resources/docs/module_map.md`; Shipping has no OnlineSubsystemPC/XAudio2):
 
 1. Core — 6,577 functions, 66 % in reference
@@ -242,14 +248,14 @@ pawns, AI brain processes, powers, UI last).
 
 | Library | Status | Plan |
 |---|---|---|
-| PhysX 2.8.x / APEX | DLLs shipped; SDK headers in the reference tree (`Development/External/Novodex`) | Link to shipped DLLs via import libs. |
+| PhysX 2.8.x / APEX | DLLs shipped; the reference tree only has **NovodeX 2.1.2** (`Development/External/Novodex`, no `NxCooking.h`), which cannot compile `UnNovodexSupport.h` | PhysX 2.8.4 SDK headers must come from elsewhere (wave-2 agent U decides); link to the shipped DLLs via import libs. |
 | DirectX 9 | headers in the reference tree | June 2010 DirectX SDK for D3DX9 at build time. |
 | LZO1X decompressor (replaces LZOPro) | **required for milestone 3**: every cooked package is `COMPRESS_LZO`; Dishonored calls `lzopro_lzo1x_decompress_safe` (LZO1X-compatible) | lzokay (MIT) or LZO 2.10 (GPL) via FetchContent; `WITH_LZO=1` |
 | zlib, libpng, libogg, libvorbis, TinyXML | zlib/libpng already via FetchContent; libogg/libvorbis not linked in Shipping (audio is Wwise) | Data compatible; no decompile. |
 | Steamworks | `steam_api.dll` shipped; reference `OnlineSubsystemSteamworks` source | Steamworks SDK of the matching interface version; offline path default. |
 | Bink | `binkw32.dll` shipped | Import lib from DLL exports; small reconstructed header. |
 | libcurl | 2013 exe only | Removed (Phase 8). |
-| Scaleform GFx 3.x (`libgfx`, `libgfx_ime`) | static, **10.4 %** (5,635 fns); reference has only the GFxUI glue | Decide: rewrite from decompile / hybrid-link during bring-up / subset reimplementation. Biggest single decision. |
+| Scaleform GFx 3.x (`libgfx`, `libgfx_ime`) | static, **10.4 %** (5,635 fns); reference has only GFx-4 GFxUI glue (our GFxUI folder mixes it with the Arkane GFx-3 PDB stubs) | Decide (wave-2 agent U, `resources/docs/middleware.md`): rewrite from decompile / hybrid-link during bring-up / subset reimplementation. Biggest single decision. |
 | Wwise (`ak*`) | static, **~4 %** (≈3,300 fns); reference has no Wwise | Same three options; shipped `.bnk`/`.pck` banks need the matching runtime. |
 | FaceFX (`facefx`, `fxsdk_unreal`) | static, 1.3 %; reference has `Engine/FaceFX` glue only | Rewrite runtime from decompile; data format fixed by cooked animsets. |
 | PathEngine, SpeedTree | not in Shipping | Nothing to do. |
@@ -267,9 +273,10 @@ pawns, AI brain processes, powers, UI last).
 ### Phase 6 — Bring-up milestones (behavioral)
 
 1. Reference Core + Engine + Launch compile and link with MSVC 2022 (UDK-style empty game).
-2. Runs to `Init: Object subsystem initialized` with Dishonored's names/versions.
+2. Runs to `Init: Object subsystem initialized` with Dishonored's names/versions. **DONE 2026-09-26** (null RHI).
 3. Loads `Core.upk`, `Engine.upk`, `DishonoredGame.upk`, `Startup.upk`; script VM runs
-   `defaultproperties` without asserts. Test: load-all over all 471 `.upk` and every `.pck`,
+   `defaultproperties` without asserts. (Wave 2, `PHASE4.md` package O; needs T's registrants:
+   `UClass::Bind` aborts on any native class without a registrant.) Test: load-all over all 471 `.upk` and every `.pck`,
    object counts compared with the reference build.
 4. D3D9 device up; Bink startup movie and Scaleform main menu render.
 5. `open` a mission map; player spawns; input works.

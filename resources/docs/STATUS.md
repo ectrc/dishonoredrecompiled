@@ -1,4 +1,4 @@
-# Project status — 2026-09-27 (Phase 3 wave 1 landed; milestone 1 reached; Core/Engine contract types reconciled with retail)
+# Project status — 2026-09-27 (Phase 3 wave 2 started: `resources/docs/PHASE4.md`)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `resources/docs/PHASE1.md`
 (done), `resources/docs/PHASE2.md` (done), `resources/docs/PHASE3.md` (wave 1 done, wave 2 next). Decisions and fixes: `resources/docs/porting_notes.md`.
@@ -33,7 +33,7 @@ Next blocker on the way to milestone 2: `SystemSettings.cpp:532` assert on the r
 | Area | State |
 |---|---|
 | Reference tree | `../UnrealEngine3` (UE3 build 10897). Modules imported into `source/Development/Src/`: Core, Engine, GameFramework, IpDrv, WinDrv, D3D9Drv, GFxUI, OnlineSubsystemSteamworks, Launch. Skeletons for DishonoredGame (1,043 files), AkAudio, DisJobs. |
-| Build | `resources\run-vcvars.cmd x86-debug` / `x86-release`. **Core.lib compiles in both presets**, `LayoutProbe` and `CoreSmoke` run green. `Engine` builds behind `-DDISHONORED_ENABLE_ENGINE=ON` (499 units; NetIndex fallout being fixed). `/Zp4` per target. `Launch` is a stub exe. |
+| Build | `resources\run-vcvars.cmd x86-debug` / `x86-release`. Core, Engine, GameFramework, IpDrv, WinDrv build by default; `Launch` is the real `LaunchEngineLoop` behind `-DDISHONORED_REAL_LAUNCH=ON` (null RHI via stubs until D3D9Drv is a target, wave 2 P). `LayoutProbe`, `CoreSmoke` (99/99) and `build_and_smoke.py` (milestone 1) green. `/Zp4` per target. |
 | Switched off for now | `WITH_FACEFX=0`, `WITH_APEX=0`, `WITH_STEAMWORKS=0`, `WITH_GFx=0`, `WITH_LZO=0` (missing SDKs, Phase 4; **LZO is needed for package loading**: all packages are COMPRESS_LZO). PCH off. DirectX 9 + libpng come from the reference tree (`cmake/ReferenceExternals.cmake`), zlib via FetchContent. |
 | Versions pinned | `Core/Src/UnObjVer.cpp`: engine 9411, package 801, licensee 30, cooked content 133. `Core/Inc/UnNames.h` regenerated from the 499 hardcoded names (+69 reference-only names ≥ 1301). |
 | Symbol data | `resources/docs/symbols/*` (functions, natives with all folded indices, hardcoded names, licensee branches, opcodes, package summaries), `resources/docs/types/*` (sizes, member delta, retail sizes `native_class_sizes.csv`, retail offsets `retail_sdk_layout.json` from the SDK dump), `resources/docs/reference_xref.csv` (Core 89 % / Engine 52 % of functions have a reference definition). |
@@ -43,9 +43,22 @@ Next blocker on the way to milestone 2: `SystemSettings.cpp:532` assert on the r
 | Arkane Core code | bzip2 decompressor + bspatch + TPool implemented from decompile and verified (`agents/agentC.md`). |
 | Class headers | `gen_classes_header.py` emits UE3-style `*Classes.h` from the PDB; `dishonoredgame_class_inventory.md`: 1,485 DishonoredGame classes, 220 with DFSDK `.uc`. |
 
-## Next (Phase 3)
+## Next (Phase 3 wave 2)
 
-Detailed plan with parallel work packages H–N: `resources/docs/PHASE3.md`.
+Detailed plan with parallel work packages O–U: `resources/docs/PHASE4.md` (wave 1, H–N, is done:
+`resources/docs/PHASE3.md`). Tooling for the wave is in place: `resources/tools/sdk/sdk_props.py`
+(PROPS blocks from retail offsets), `sdk_show.py`, `xcheck_sdk_layout.py --header`,
+`build_and_smoke.py --rhi/--expect/--skip-native`. First base-class fix with it (`UInterpTrackInst`
+56 → 64) took the SDK delta from 232 to 209 rows.
+
+- O: milestone 2 — `FSystemSettings` from `GEngineIni` with retail's 107 keys, `-nullrhi`, port
+  `FAsyncIORequest::Event`/`LoadDataWithEvent`, retail's hardcoded native package list, load
+  Core/Engine/GameFramework/IpDrv, then Startup once T's registrants exist.
+- P: D3D9Drv module target + build follow-ups. Q/R/S: Engine headers converged on
+  `retail_sdk_delta.md` by base-class family. T: DishonoredGame/GFxUI/AkAudio/OSS registrants and
+  headers generated from the SDK dump. U: middleware versions + `middleware.md`.
+
+### Wave 1 items (done)
 
 - Phase 2b first: recover the 2013 retail layouts (script property offsets and class sizes from
   the 2013 cooked packages; native sizes from the 2013 exe) and re-verify the Core contract types

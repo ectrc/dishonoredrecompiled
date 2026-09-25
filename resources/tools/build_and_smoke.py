@@ -9,9 +9,19 @@ Steps
   4. normalize build\\stage\\DishonoredGame\\Logs\\Launch.log (normalize_log.py rules) and the
      golden log, cut the golden one at --milestone, print a unified diff of the two prefixes
 
-Exit code: 0 when Launch.log contains the milestone line, 1 otherwise, 2 for build/stage errors.
+Exit code: 0 when Launch.log contains the milestone line and every --expect substring, 1 otherwise,
+2 for build/stage errors.
 Usage: python resources/tools/build_and_smoke.py [--build-dir build\\agentN] [--timeout 120] [--no-build]
-       [--golden resources/docs/golden/2012_arkprofile_launch.log] [--extra-args "-nomovie"]
+       [--golden resources/docs/golden/2012_arkprofile_launch.log] [--milestone "<golden line>"]
+       [--rhi null|d3d9] [--expect "<our log line>" ...] [--skip-native GFxUI,AkAudio,...] [--extra-args "-nomovie"]
+  --milestone  golden-log line the diff is cut at (must exist in the golden log); milestone lines further
+               down: "Log: Shader platform (RHI): PC-D3D-SM3", "objects as part of root set at end of
+               initial load", "Log: Initializing Engine..."
+  --rhi        null (default) passes -nullrhi so RHIInit picks the null RHI (DynamicRHI.cpp); d3d9 does not
+  --expect     substring that must appear in Launch.log (our own lines that the golden log lacks, e.g.
+               "Finished loading startup packages"); repeatable; recorded in <build-dir>/smoke/expect.txt
+  --skip-native  comma list -> -skipnativepkgs=<list> (bring-up switch in appGetScriptPackageNames)
+  Lines containing DISHONORED(bringup) are dropped by normalize_log.py and never reach the diff.
 """
 import argparse
 import difflib
@@ -74,6 +84,15 @@ def golden_prefix(golden: Path, milestone: str) -> list[str]:
     raise SystemExit(f"milestone line not in golden log: {milestone}")
 
 
+def first_divergence(expected: list[str], ours: list[str]) -> str | None:
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, expected, ours, autojunk=False).get_opcodes():
+        if tag != "equal":
+            return (f"first divergence: golden line {i1 + 1} / ours line {j1 + 1} ({tag})\n"
+                    f"  golden: {expected[i1] if i1 < len(expected) else '<end>'}\n"
+                    f"  ours:   {ours[j1] if j1 < len(ours) else '<end>'}")
+    return None
+
+
 def compare(launch_log: Path, golden: Path, milestone: str, out_dir: Path) -> bool:
     if not launch_log.is_file():
         print(f"no Launch.log at {launch_log}")
@@ -88,6 +107,9 @@ def compare(launch_log: Path, golden: Path, milestone: str, out_dir: Path) -> bo
     diff = list(difflib.unified_diff(expected, ours[:cut], "golden(prefix)", "Launch.log", lineterm="", n=2))
     (out_dir / "smoke_diff.txt").write_text("\n".join(diff) + "\n", encoding="utf-8")
     print(f"Launch.log: {len(ours)} lines, milestone {'reached' if reached else 'NOT reached'}")
+    divergence = first_divergence(expected, ours[:cut])
+    if divergence:
+        print(divergence)
     print("\n".join(diff) if diff else "normalized prefix identical to the golden log")
     if not reached:
         print("--- last 15 lines of Launch.log ---")
@@ -105,6 +127,9 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument("--no-build", action="store_true")
     parser.add_argument("--extra-args", default="", help="appended to the game command line")
+    parser.add_argument("--rhi", choices=["null", "d3d9"], default="null", help="null adds -nullrhi (default)")
+    parser.add_argument("--expect", action="append", default=[], help="substring that must appear in Launch.log; repeatable")
+    parser.add_argument("--skip-native", default="", help="comma list of native script packages to skip (-skipnativepkgs=)")
     args = parser.parse_args(argv[1:])
 
     build_dir = args.build_dir.resolve()
@@ -118,9 +143,21 @@ def main(argv: list[str]) -> int:
     except SystemExit as e:
         print(e)
         return 2
-    run_game(exe, args.extra_args.split(), args.timeout, out_dir / f"run_{stamp}.log")
+    game_args = args.extra_args.split()
+    if args.rhi == "null":
+        game_args.insert(0, "-nullrhi")
+    if args.skip_native:
+        game_args.append(f"-skipnativepkgs={args.skip_native}")
+    run_game(exe, game_args, args.timeout, out_dir / f"run_{stamp}.log")
     launch_log = args.stage.resolve() / GAME / "Logs" / "Launch.log"
     ok = compare(launch_log, args.golden.resolve(), args.milestone, out_dir)
+    if args.expect:
+        text = launch_log.read_text(encoding="utf-8", errors="replace") if launch_log.is_file() else ""
+        missing = [e for e in args.expect if e not in text]
+        (out_dir / "expect.txt").write_text("".join(f"{'MISSING' if e in missing else 'ok'}: {e}\n" for e in args.expect), encoding="utf-8")
+        for e in args.expect:
+            print(f"expect {'MISSING' if e in missing else 'ok'}: {e}")
+        ok = ok and not missing
     return 0 if ok else 1
 
 

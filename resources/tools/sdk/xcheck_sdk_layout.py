@@ -6,11 +6,15 @@ This is the retail counterpart of `gen_layout_probe.py compare` (which can only 
 2012 PDB layout still applies): every script-visible member of every probed class/struct is checked
 against the offset the RETAIL exe computed at runtime.
 
-Usage: python resources/tools/sdk/xcheck_sdk_layout.py build/<dir>/layout_probe.txt
+Usage: python resources/tools/sdk/xcheck_sdk_layout.py build/<dir>/layout_probe.txt [--header EngineAnimClasses.h ...]
 Writes resources/docs/types/retail_sdk_delta.md; exit 1 when a contract type mismatches.
+With --header (repeatable, a file name under source/Development/Src/*/Inc) only the types declared in
+those headers are checked, the report is not written, and the exit code is 1 when any of them differs:
+the per-agent check of a convergence package.
 """
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -35,11 +39,31 @@ def load_probe(path: Path):
     return sizes, offsets
 
 
+DECL_RE = re.compile(r"\b(?:class|struct)\s+(?:[A-Z_]+\s+)?([UAF][A-Z]\w*)\s*(?::[^{;]*)?\{")
+
+
+def declared_in(header_name: str) -> set[str]:
+    hits = list((REPO / "source" / "Development" / "Src").glob(f"*/Inc/{header_name}")) + list((REPO / "source" / "Development" / "Src").glob(f"*/Src/{header_name}"))
+    if not hits:
+        raise SystemExit(f"no header named {header_name} under source/Development/Src/*/Inc")
+    found = set()
+    for p in hits:
+        text = "\n".join(l for l in p.read_text(encoding="utf-8", errors="replace").splitlines() if not l.lstrip().startswith("#"))
+        found |= {m.group(1) for m in DECL_RE.finditer(text)}
+    return found
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) < 2:
+    args = argv[1:]
+    only: set[str] | None = None
+    while "--header" in args:
+        i = args.index("--header")
+        only = (only or set()) | declared_in(args[i + 1])
+        del args[i:i + 2]
+    if not args:
         print(__doc__)
         return 2
-    probe = REPO / argv[1] if not Path(argv[1]).is_absolute() else Path(argv[1])
+    probe = REPO / args[0] if not Path(args[0]).is_absolute() else Path(args[0])
     sdk = json.loads((TYPES / "retail_sdk_layout.json").read_text(encoding="utf-8"))
     retail_sizes = {}
     with (TYPES / "native_class_sizes.csv").open(newline="", encoding="utf-8") as f:
@@ -66,6 +90,15 @@ def main(argv: list[str]) -> int:
     mismatching = [r for r in rows if r["bad"] or r["too_small"]]
     contract_bad = [r for r in mismatching if r["name"] in CONTRACT]
     exact = [r for r in rows if not r["bad"] and not r["too_small"] and r["checked"]]
+    if only is not None:
+        sel = [r for r in rows if r["name"] in only]
+        bad = [r for r in sel if r["bad"] or r["too_small"]]
+        for r in bad:
+            flag = " too small" if r["too_small"] else ""
+            print(f"  {r['name']}: ours {r['ours']}{flag}, span end {r['span_end']}, retail sizeof {r['retail']}; "
+                  + ", ".join(f"{m}: {a}->{b}" for m, a, b in r["bad"][:6]))
+        print(f"header filter: {len(sel)} types in the dump, {len(bad)} differ from retail")
+        return 1 if bad else 0
     out = TYPES / "retail_sdk_delta.md"
     with out.open("w", encoding="utf-8") as f:
         f.write("# Compiled layout vs retail SDK dump (runtime property offsets of the 2013 exe)\n\n")

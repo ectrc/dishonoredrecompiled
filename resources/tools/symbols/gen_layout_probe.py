@@ -563,6 +563,11 @@ def main(argv: list[str]) -> int:
         show(argv[2:])
         return 0
     if argv[1] == "props":
+        if "--sdk" in argv:
+            # retail layout from the CodeRed SDK dump (resources/tools/sdk/sdk_props.py) instead of the 2012 PDB
+            sys.path.insert(0, str(REPO / "resources" / "tools" / "sdk"))
+            from sdk_props import main as sdk_main
+            return sdk_main([argv[0]] + [a for a in argv[2:] if a != "--sdk"])
         return props(argv[2], argv[3:])
     if argv[1] == "pdb-fix":
         return pdb_fix(argv[2:])
