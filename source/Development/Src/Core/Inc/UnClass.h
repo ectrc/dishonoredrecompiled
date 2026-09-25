@@ -636,6 +636,7 @@ class UClass : public UState
 
 	// Variables.
 	DWORD				ClassFlags;
+	DWORD				m_OtherClassFlags;	// DISHONORED(layout): PDB UClass::m_OtherClassFlags @204 (Arkane)
 	DWORD				ClassCastFlags;
 	INT					ClassUnique;
 	UClass*				ClassWithin;
@@ -648,7 +649,7 @@ class UClass : public UState
 	TArray<FName>		AutoCollapseCategories;
 	TArray<FName>		DontSortCategories;
 	TArray<FName>       DependentOn;
-	TArray<FName>		ClassGroupNames;
+	// DISHONORED(layout): reference ClassGroupNames removed; PDB UClass has DependentOn @300 directly followed by bForceScriptOrder @312
 	UBOOL				bForceScriptOrder;
 	FString				ClassHeaderFilename;
 #endif
@@ -657,6 +658,7 @@ class UClass : public UState
 	void*				DLLBindHandle;
 #endif
 	UObject*			ClassDefaultObject;
+	FName				m_DropdownCategory;	// DISHONORED(layout): PDB UClass::m_DropdownCategory @332 (Arkane)
 
 	void(*ClassConstructor)(void*);
 	void(UObject::*ClassStaticConstructor)();
@@ -670,6 +672,7 @@ class UClass : public UState
 	 * If the interface class isn't native, the property will be NULL.
 	 **/
 	TArray<FImplementedInterface> Interfaces;
+	TMap<const UClass*,INT>* m_pInterfaceOffsets;	// DISHONORED(layout): PDB UClass::m_pInterfaceOffsets @424 (Arkane, TMap<UClass const*,int>*)
 
 	// In memory only.
 #if !CONSOLE

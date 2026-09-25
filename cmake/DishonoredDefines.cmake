@@ -88,6 +88,10 @@ option(DISHONORED_LAYOUT_CHECKS "Compile the PDB-derived static_assert layout ch
 
 function(dishonored_apply_defines target)
   target_compile_definitions(${target} PRIVATE ${DISHONORED_DEFINES})
+  # UE3 is built with 4-byte struct packing (UnrealBuildTool VCToolChain.cs); the PDB layouts and the
+  # cooked packages assume it (UProperty::PropertyFlags QWORD at 68, ULinkerLoad::TickStartTime at 1628).
+  # Windows API headers are wrapped by WinDrv's PreWindowsApi.h (pack 8) / PostWindowsApi.h.
+  target_compile_options(${target} PRIVATE /Zp4)
   if(DISHONORED_SHIPPING)
     target_compile_definitions(${target} PRIVATE ${DISHONORED_DEFINES_SHIPPING})
   else()

@@ -504,6 +504,8 @@ protected:
 	INT ArMaxSerializeSize;
 	/** Whether editor only properties are being filtered from the archive (or has been filtered).			*/
 	UBOOL ArIsFilterEditorOnly;
+	/** DISHONORED(layout): PDB FArchive::ArIsDisSaveLoad @132 (Arkane; FArchive is 136 bytes) */
+	UBOOL ArIsDisSaveLoad;
 
 	/**
 	 * Resets all of the base archive members
@@ -542,6 +544,7 @@ protected:
 		ArIsFinalPackageSave				= FALSE;
 		ArMaxSerializeSize					= 0;
 		ArIsFilterEditorOnly				= FALSE;
+		ArIsDisSaveLoad						= FALSE;	// DISHONORED(layout): Arkane member, reset with the others
 	}
 };
 
@@ -595,6 +598,7 @@ public:
 		ArIsFinalPackageSave				= InnerArchive.IsFinalPackageSave();
 		ArMaxSerializeSize					= InnerArchive.GetMaxSerializeSize();
 		ArIsFilterEditorOnly				= FALSE;
+		ArIsDisSaveLoad						= FALSE;	// DISHONORED(layout): Arkane member, reset with the others
 	}
 
 	// FArchive interface.

@@ -269,7 +269,6 @@ inline FStateFrame::FStateFrame(UObject* InObject)
 ,	StateNode	( InObject->GetClass() )
 ,	ProbeMask	( ~(DWORD)0 )
 ,	bContinuedState(FALSE)
-,	LocalVarsOwner(NULL)
 {}
 
 inline FString FStateFrame::Describe()
@@ -285,7 +284,6 @@ inline FString FStateFrame::Describe()
 inline void FStateFrame::InitLocalVars(UClass* InClass)
 {
 	checkSlow(InClass != NULL);
-	checkSlow(LocalVarsOwner == NULL || InClass == LocalVarsOwner);
 	if (Locals == NULL)
 	{
 		INT LocalVarSize = 0;
@@ -302,7 +300,6 @@ inline void FStateFrame::InitLocalVars(UClass* InClass)
 		{
 			Locals = (BYTE*)appMalloc(LocalVarSize);
 			appMemzero(Locals, LocalVarSize);
-			LocalVarsOwner = InClass;
 		}
 	}
 }
@@ -313,7 +310,7 @@ inline void FStateFrame::ClearLocalVars()
 	if (Locals != NULL && !GExitPurge)
 	{
 		INT LocalVarSize = 0;
-		for (TFieldIterator<UState> State(LocalVarsOwner); State; ++State)
+		for (TFieldIterator<UState> State(Object->GetClass()); State; ++State)	// DISHONORED(layout): no LocalVarsOwner in the PDB FStateFrame
 		{
 			if (State->StateFlags & STATE_HasLocals)
 			{

@@ -1057,23 +1057,15 @@ INT UObject::GetLinkerLicenseeVersion() const
 /** sets the NetIndex associated with this object for network replication */
 void UObject::SetNetIndex(INT InNetIndex)
 {
-	if (InNetIndex != NetIndex)
+	// DISHONORED(layout): UObject::SetNetIndex (rva 0x14d30) only toggles RF_DisNetIndexed; there is no NetIndex
+	// member and UPackage::AddNetObject/RemoveNetObject do not exist in the shipping PDB.
+	if (InNetIndex == INDEX_NONE)
 	{
-		UPackage* Package = GetOutermost();
-		// skip if package is not meant to be replicated
-		if (!(Package->PackageFlags & PKG_ServerSideOnly))
-		{
-			if (NetIndex != INDEX_NONE)
-			{
-				// remove from old
-				Package->RemoveNetObject(this);
-			}
-			NetIndex = InNetIndex;
-			if (NetIndex != INDEX_NONE)
-			{
-				Package->AddNetObject(this);
-			}
-		}
+		ClearFlags(RF_DisNetIndexed);
+	}
+	else
+	{
+		SetFlags(RF_DisNetIndexed);
 	}
 }
 
@@ -1567,7 +1559,8 @@ void UObject::SerializeNetIndex(FArchive& Ar)
 	// do not serialize NetIndex when duplicating objects via serialization
 	if (!(Ar.GetPortFlags() & PPF_Duplicate))
 	{
-		INT InNetIndex = NetIndex;
+		// DISHONORED(layout): UObject::SerializeNetIndex (rva 0x20180) writes 0 when RF_DisNetIndexed is set, INDEX_NONE otherwise
+		INT InNetIndex = HasAnyFlags(RF_DisNetIndexed) ? 0 : INDEX_NONE;
 		Ar << InNetIndex;
 		if (Ar.IsLoading())
 		{
@@ -4076,7 +4069,7 @@ void UObject::Register()
 	Outer        = CreatePackage(NULL,InOuter);
 	Name         = InName;
 	_LinkerIndex = (PTRINT)INDEX_NONE;
-	NetIndex = INDEX_NONE;
+	ClearFlags(RF_DisNetIndexed);	// DISHONORED(layout): no NetIndex member
 
 	// Validate the object.
 	if( Outer==NULL )
@@ -7122,11 +7115,7 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD 
 		}
 		Result = Linker->LinkerRoot;
 
-		//If the filename is passed in AND the packagename is not equal to none AND is not equal to the name of the package, save the filename
-		if (Filename && InOuter && appStricmp(TEXT("None"),*InOuter->GetName()) != 0 && appStricmp(Filename, *InOuter->GetName()) != 0)
-		{
-			Result->FileName = FName(*FileToLoad);
-		}
+		// DISHONORED(layout): UPackage has no FileName in the PDB (PackageFlags @216 is followed by ThumbnailMap @220)
 
 		// is there a script SHA hash for this package?
 		BYTE SavedScriptSHA[20];
@@ -8039,7 +8028,7 @@ UObject* UObject::StaticAllocateObject
 		LinkerIndex = Obj->_LinkerIndex;
 		InFlags		|= Obj->GetMaskedFlags(RF_Keep);
 		Index		= Obj->Index;
-		OldNetIndex = Obj->NetIndex;
+		OldNetIndex = Obj->GetNetIndex();	// DISHONORED(layout): no NetIndex member
 
 		// if this is the class default object, it means that InClass is native and the CDO was created during static registration.
 		// Propagate the load flags but don't replace it - the CDO will be initialized by InitClassDefaultObject
@@ -8207,7 +8196,7 @@ UObject* UObject::StaticAllocateObject
 	Obj->SafeInitProperties( (BYTE*)Obj, InClass->GetPropertiesSize(), BaseClass, (BYTE*)ObjectArchetype, DefaultsCount, Obj->HasAnyFlags(RF_NeedLoad) ? NULL : Obj, SubobjectRoot, InstanceGraph );
 
 	// reset NetIndex after InitProperties so that the value from the template is ignored
-	Obj->NetIndex = INDEX_NONE;
+	Obj->ClearFlags(RF_DisNetIndexed);	// DISHONORED(layout): no NetIndex member
 	Obj->SetNetIndex(OldNetIndex);
 
 	// Add to global table.

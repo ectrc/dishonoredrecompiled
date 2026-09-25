@@ -21,8 +21,7 @@ FPackageInfo::FPackageInfo(UPackage* Package)
 ,	LocalGeneration	(Package != NULL ? Package->GetGenerationNetObjectCount().Num() : 0)
 ,	RemoteGeneration( 0 )
 ,	PackageFlags	(Package != NULL ? Package->PackageFlags : 0)
-,	ForcedExportBasePackageName(NAME_None)
-,	FileName		(Package != NULL ? Package->FileName : NAME_None)
+,	ForcedExportBasePackageName(NAME_None)	// DISHONORED(layout): FPackageInfo/UPackage have no FileName in the PDB
 {
 	// if we have a pacakge, find it's source file so that we can send the extension of the file
 	if (Package != NULL)
@@ -444,15 +443,15 @@ void UPackageMap::AddPackageInfo(const FPackageInfo& Info)
 //
 INT UPackageMap::ObjectToIndex( UObject* Object )
 {
-	if (Object != NULL && Object->NetIndex != INDEX_NONE)
+	if (Object != NULL && Object->GetNetIndex() != INDEX_NONE)	// DISHONORED(layout): no NetIndex member
 	{
 		INT* Found = PackageListMap.Find(Object->GetOutermost()->GetFName());
 		if (Found != NULL)
 		{
 			FPackageInfo& Info = List(*Found);
-			if (Object->NetIndex < Info.ObjectCount)
+			if (Object->GetNetIndex() < Info.ObjectCount)
 			{
-				return Info.ObjectBase + Object->NetIndex;
+				return Info.ObjectBase + Object->GetNetIndex();
 			}
 		}
 	}

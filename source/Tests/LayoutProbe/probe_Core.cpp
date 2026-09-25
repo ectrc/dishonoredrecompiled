@@ -388,8 +388,6 @@ template<class U, class = void> struct Has_FClassNetCache_Fields : std::false_ty
 template<class U> struct Has_FClassNetCache_Fields<U, std::void_t<decltype(&U::Fields)>> : std::true_type {};
 template<class U, class = void> struct Has_FClassNetCache_FieldMap : std::false_type {};
 template<class U> struct Has_FClassNetCache_FieldMap<U, std::void_t<decltype(&U::FieldMap)>> : std::true_type {};
-template<class U, class = void> struct Has_FColor____u0 : std::false_type {};
-template<class U> struct Has_FColor____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FCompatibilityLevelInfo_CompositeLevel : std::false_type {};
 template<class U> struct Has_FCompatibilityLevelInfo_CompositeLevel<U, std::void_t<decltype(&U::CompositeLevel)>> : std::true_type {};
 template<class U, class = void> struct Has_FCompatibilityLevelInfo_CPULevel : std::false_type {};
@@ -454,16 +452,12 @@ template<class U, class = void> struct Has_FDLCInfo_Path : std::false_type {};
 template<class U> struct Has_FDLCInfo_Path<U, std::void_t<decltype(&U::Path)>> : std::true_type {};
 template<class U, class = void> struct Has_FDLCInfo_UserIndex : std::false_type {};
 template<class U> struct Has_FDLCInfo_UserIndex<U, std::void_t<decltype(&U::UserIndex)>> : std::true_type {};
-template<class U, class = void> struct Has_FDXT1____u0 : std::false_type {};
-template<class U> struct Has_FDXT1____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FDXT1_Indices : std::false_type {};
 template<class U> struct Has_FDXT1_Indices<U, std::void_t<decltype(&U::Indices)>> : std::true_type {};
 template<class U, class = void> struct Has_FDXT5_Alpha : std::false_type {};
 template<class U> struct Has_FDXT5_Alpha<U, std::void_t<decltype(&U::Alpha)>> : std::true_type {};
 template<class U, class = void> struct Has_FDXT5_DXT1 : std::false_type {};
 template<class U> struct Has_FDXT5_DXT1<U, std::void_t<decltype(&U::DXT1)>> : std::true_type {};
-template<class U, class = void> struct Has_FDXTColor16____u0 : std::false_type {};
-template<class U> struct Has_FDXTColor16____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FDependencyRef_Linker : std::false_type {};
 template<class U> struct Has_FDependencyRef_Linker<U, std::void_t<decltype(&U::Linker)>> : std::true_type {};
 template<class U, class = void> struct Has_FDependencyRef_ExportIndex : std::false_type {};
@@ -504,12 +498,6 @@ template<class U, class = void> struct Has_FEditPropertyChain_ActivePropertyNode
 template<class U> struct Has_FEditPropertyChain_ActivePropertyNode<U, std::void_t<decltype(&U::ActivePropertyNode)>> : std::true_type {};
 template<class U, class = void> struct Has_FEditPropertyChain_ActiveMemberPropertyNode : std::false_type {};
 template<class U> struct Has_FEditPropertyChain_ActiveMemberPropertyNode<U, std::void_t<decltype(&U::ActiveMemberPropertyNode)>> : std::true_type {};
-template<class U, class = void> struct Has_FEnumPatchData_EnumName : std::false_type {};
-template<class U> struct Has_FEnumPatchData_EnumName<U, std::void_t<decltype(&U::EnumName)>> : std::true_type {};
-template<class U, class = void> struct Has_FEnumPatchData_EnumPathName : std::false_type {};
-template<class U> struct Has_FEnumPatchData_EnumPathName<U, std::void_t<decltype(&U::EnumPathName)>> : std::true_type {};
-template<class U, class = void> struct Has_FEnumPatchData_EnumValues : std::false_type {};
-template<class U> struct Has_FEnumPatchData_EnumValues<U, std::void_t<decltype(&U::EnumValues)>> : std::true_type {};
 template<class U, class = void> struct Has_FEventWin_Event : std::false_type {};
 template<class U> struct Has_FEventWin_Event<U, std::void_t<decltype(&U::Event)>> : std::true_type {};
 template<class U, class = void> struct Has_FExportObjectInnerContext_ObjectToInnerMap : std::false_type {};
@@ -540,8 +528,6 @@ template<class U, class = void> struct Has_FFindReferencersArchive_TargetObjects
 template<class U> struct Has_FFindReferencersArchive_TargetObjects<U, std::void_t<decltype(&U::TargetObjects)>> : std::true_type {};
 template<class U, class = void> struct Has_FFindReferencersArchive_ReferenceMap : std::false_type {};
 template<class U> struct Has_FFindReferencersArchive_ReferenceMap<U, std::void_t<decltype(&U::ReferenceMap)>> : std::true_type {};
-template<class U, class = void> struct Has_FFloat16____u0 : std::false_type {};
-template<class U> struct Has_FFloat16____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FFloat16Color_R : std::false_type {};
 template<class U> struct Has_FFloat16Color_R<U, std::void_t<decltype(&U::R)>> : std::true_type {};
 template<class U, class = void> struct Has_FFloat16Color_G : std::false_type {};
@@ -550,8 +536,6 @@ template<class U, class = void> struct Has_FFloat16Color_B : std::false_type {};
 template<class U> struct Has_FFloat16Color_B<U, std::void_t<decltype(&U::B)>> : std::true_type {};
 template<class U, class = void> struct Has_FFloat16Color_A : std::false_type {};
 template<class U> struct Has_FFloat16Color_A<U, std::void_t<decltype(&U::A)>> : std::true_type {};
-template<class U, class = void> struct Has_FFloat32____u0 : std::false_type {};
-template<class U> struct Has_FFloat32____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FFrame_Node : std::false_type {};
 template<class U> struct Has_FFrame_Node<U, std::void_t<decltype(&U::Node)>> : std::true_type {};
 template<class U, class = void> struct Has_FFrame_Object : std::false_type {};
@@ -564,12 +548,8 @@ template<class U, class = void> struct Has_FFrame_PreviousFrame : std::false_typ
 template<class U> struct Has_FFrame_PreviousFrame<U, std::void_t<decltype(&U::PreviousFrame)>> : std::true_type {};
 template<class U, class = void> struct Has_FFrame_OutParms : std::false_type {};
 template<class U> struct Has_FFrame_OutParms<U, std::void_t<decltype(&U::OutParms)>> : std::true_type {};
-template<class U, class = void> struct Has_FGCReferenceInfo____u0 : std::false_type {};
-template<class U> struct Has_FGCReferenceInfo____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FGCReferenceTokenStream_Tokens : std::false_type {};
 template<class U> struct Has_FGCReferenceTokenStream_Tokens<U, std::void_t<decltype(&U::Tokens)>> : std::true_type {};
-template<class U, class = void> struct Has_FGCSkipInfo____u0 : std::false_type {};
-template<class U> struct Has_FGCSkipInfo____u0<U, std::void_t<decltype(&U::___u0)>> : std::true_type {};
 template<class U, class = void> struct Has_FGameplayProfiler_FileWriter : std::false_type {};
 template<class U> struct Has_FGameplayProfiler_FileWriter<U, std::void_t<decltype(&U::FileWriter)>> : std::true_type {};
 template<class U, class = void> struct Has_FGameplayProfiler_MemoryWriter : std::false_type {};
@@ -630,22 +610,6 @@ template<class U, class = void> struct Has_FLinearColor_B : std::false_type {};
 template<class U> struct Has_FLinearColor_B<U, std::void_t<decltype(&U::B)>> : std::true_type {};
 template<class U, class = void> struct Has_FLinearColor_A : std::false_type {};
 template<class U> struct Has_FLinearColor_A<U, std::void_t<decltype(&U::A)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_PackageName : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_PackageName<U, std::void_t<decltype(&U::PackageName)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_Names : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_Names<U, std::void_t<decltype(&U::Names)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_Exports : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_Exports<U, std::void_t<decltype(&U::Exports)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_Imports : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_Imports<U, std::void_t<decltype(&U::Imports)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_NewObjects : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_NewObjects<U, std::void_t<decltype(&U::NewObjects)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_ModifiedClassDefaultObjects : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_ModifiedClassDefaultObjects<U, std::void_t<decltype(&U::ModifiedClassDefaultObjects)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_ModifiedEnums : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_ModifiedEnums<U, std::void_t<decltype(&U::ModifiedEnums)>> : std::true_type {};
-template<class U, class = void> struct Has_FLinkerPatchData_ScriptPatches : std::false_type {};
-template<class U> struct Has_FLinkerPatchData_ScriptPatches<U, std::void_t<decltype(&U::ScriptPatches)>> : std::true_type {};
 template<class U, class = void> struct Has_FMD5Context_state : std::false_type {};
 template<class U> struct Has_FMD5Context_state<U, std::void_t<decltype(&U::state)>> : std::true_type {};
 template<class U, class = void> struct Has_FMD5Context_count : std::false_type {};
@@ -720,8 +684,6 @@ template<class U, class = void> struct Has_FNameEntry_Index : std::false_type {}
 template<class U> struct Has_FNameEntry_Index<U, std::void_t<decltype(&U::Index)>> : std::true_type {};
 template<class U, class = void> struct Has_FNameEntry_HashNext : std::false_type {};
 template<class U> struct Has_FNameEntry_HashNext<U, std::void_t<decltype(&U::HashNext)>> : std::true_type {};
-template<class U, class = void> struct Has_FNameEntry____u3 : std::false_type {};
-template<class U> struct Has_FNameEntry____u3<U, std::void_t<decltype(&U::___u3)>> : std::true_type {};
 template<class U, class = void> struct Has_FNativeFunctionLookup_Name : std::false_type {};
 template<class U> struct Has_FNativeFunctionLookup_Name<U, std::void_t<decltype(&U::Name)>> : std::true_type {};
 template<class U, class = void> struct Has_FNativeFunctionLookup_Pointer : std::false_type {};
@@ -978,16 +940,6 @@ template<class U, class = void> struct Has_FPackageInfo_ForcedExportBasePackageN
 template<class U> struct Has_FPackageInfo_ForcedExportBasePackageName<U, std::void_t<decltype(&U::ForcedExportBasePackageName)>> : std::true_type {};
 template<class U, class = void> struct Has_FPackageInfo_Extension : std::false_type {};
 template<class U> struct Has_FPackageInfo_Extension<U, std::void_t<decltype(&U::Extension)>> : std::true_type {};
-template<class U, class = void> struct Has_FPatchData_DataName : std::false_type {};
-template<class U> struct Has_FPatchData_DataName<U, std::void_t<decltype(&U::DataName)>> : std::true_type {};
-template<class U, class = void> struct Has_FPatchData_Data : std::false_type {};
-template<class U> struct Has_FPatchData_Data<U, std::void_t<decltype(&U::Data)>> : std::true_type {};
-template<class U, class = void> struct Has_FPatchReader_Bytes : std::false_type {};
-template<class U> struct Has_FPatchReader_Bytes<U, std::void_t<decltype(&U::Bytes)>> : std::true_type {};
-template<class U, class = void> struct Has_FPatchReader_Offset : std::false_type {};
-template<class U> struct Has_FPatchReader_Offset<U, std::void_t<decltype(&U::Offset)>> : std::true_type {};
-template<class U, class = void> struct Has_FPatchReader_Loader : std::false_type {};
-template<class U> struct Has_FPatchReader_Loader<U, std::void_t<decltype(&U::Loader)>> : std::true_type {};
 template<class U, class = void> struct Has_FPerformanceData_TotalTime : std::false_type {};
 template<class U> struct Has_FPerformanceData_TotalTime<U, std::void_t<decltype(&U::TotalTime)>> : std::true_type {};
 template<class U, class = void> struct Has_FPerformanceData_MinTime : std::false_type {};
@@ -1238,10 +1190,6 @@ template<class U, class = void> struct Has_FScriptInterface_ObjectPointer : std:
 template<class U> struct Has_FScriptInterface_ObjectPointer<U, std::void_t<decltype(&U::ObjectPointer)>> : std::true_type {};
 template<class U, class = void> struct Has_FScriptInterface_InterfacePointer : std::false_type {};
 template<class U> struct Has_FScriptInterface_InterfacePointer<U, std::void_t<decltype(&U::InterfacePointer)>> : std::true_type {};
-template<class U, class = void> struct Has_FScriptPatchData_StructName : std::false_type {};
-template<class U> struct Has_FScriptPatchData_StructName<U, std::void_t<decltype(&U::StructName)>> : std::true_type {};
-template<class U, class = void> struct Has_FScriptPatcher_PackageUpdates : std::false_type {};
-template<class U> struct Has_FScriptPatcher_PackageUpdates<U, std::void_t<decltype(&U::PackageUpdates)>> : std::true_type {};
 template<class U, class = void> struct Has_FSetElementId_Index : std::false_type {};
 template<class U> struct Has_FSetElementId_Index<U, std::void_t<decltype(&U::Index)>> : std::true_type {};
 template<class U, class = void> struct Has_FSparseArrayAllocationInfo_Index : std::false_type {};
@@ -1586,6 +1534,28 @@ template<class U, class = void> struct Has_UMapProperty_Value : std::false_type 
 template<class U> struct Has_UMapProperty_Value<U, std::void_t<decltype(&U::Value)>> : std::true_type {};
 template<class U, class = void> struct Has_UMetaData_ObjectMetaDataMap : std::false_type {};
 template<class U> struct Has_UMetaData_ObjectMetaDataMap<U, std::void_t<decltype(&U::ObjectMetaDataMap)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_Index : std::false_type {};
+template<class U> struct Has_UObject_Index<U, std::void_t<decltype(&U::Index)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_ObjectFlags : std::false_type {};
+template<class U> struct Has_UObject_ObjectFlags<U, std::void_t<decltype(&U::ObjectFlags)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_HashNext : std::false_type {};
+template<class U> struct Has_UObject_HashNext<U, std::void_t<decltype(&U::HashNext)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_HashOuterNext : std::false_type {};
+template<class U> struct Has_UObject_HashOuterNext<U, std::void_t<decltype(&U::HashOuterNext)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_StateFrame : std::false_type {};
+template<class U> struct Has_UObject_StateFrame<U, std::void_t<decltype(&U::StateFrame)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject__Linker : std::false_type {};
+template<class U> struct Has_UObject__Linker<U, std::void_t<decltype(&U::_Linker)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject__LinkerIndex : std::false_type {};
+template<class U> struct Has_UObject__LinkerIndex<U, std::void_t<decltype(&U::_LinkerIndex)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_Outer : std::false_type {};
+template<class U> struct Has_UObject_Outer<U, std::void_t<decltype(&U::Outer)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_Name : std::false_type {};
+template<class U> struct Has_UObject_Name<U, std::void_t<decltype(&U::Name)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_Class : std::false_type {};
+template<class U> struct Has_UObject_Class<U, std::void_t<decltype(&U::Class)>> : std::true_type {};
+template<class U, class = void> struct Has_UObject_ObjectArchetype : std::false_type {};
+template<class U> struct Has_UObject_ObjectArchetype<U, std::void_t<decltype(&U::ObjectArchetype)>> : std::true_type {};
 template<class U, class = void> struct Has_UObjectProperty_PropertyClass : std::false_type {};
 template<class U> struct Has_UObjectProperty_PropertyClass<U, std::void_t<decltype(&U::PropertyClass)>> : std::true_type {};
 template<class U, class = void> struct Has_UObjectRedirector_DestinationObject : std::false_type {};
@@ -2166,7 +2136,6 @@ template<class U> void probe_FClipProjectionMatrix()
 template<class U> void probe_FColor()
 {
     std::printf("FColor,%zu\n", sizeof(U));
-    if constexpr (Has_FColor____u0<U>::value) std::printf("FColor.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FColor.___u0,MISSING\n");
 }
 
 template<class U> void probe_FCompatibilityLevelInfo()
@@ -2284,7 +2253,6 @@ template<class U> void probe_FDLCInfo()
 template<class U> void probe_FDXT1()
 {
     std::printf("FDXT1,%zu\n", sizeof(U));
-    if constexpr (Has_FDXT1____u0<U>::value) std::printf("FDXT1.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FDXT1.___u0,MISSING\n");
     if constexpr (Has_FDXT1_Indices<U>::value) std::printf("FDXT1.Indices,%zu\n", OFF(U, Indices)); else std::printf("FDXT1.Indices,MISSING\n");
 }
 
@@ -2298,7 +2266,6 @@ template<class U> void probe_FDXT5()
 template<class U> void probe_FDXTColor16()
 {
     std::printf("FDXTColor16,%zu\n", sizeof(U));
-    if constexpr (Has_FDXTColor16____u0<U>::value) std::printf("FDXTColor16.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FDXTColor16.___u0,MISSING\n");
 }
 
 template<class U> void probe_FDXTColor565()
@@ -2381,14 +2348,6 @@ template<class U> void probe_FEditPropertyChain()
     if constexpr (Has_FEditPropertyChain_ActiveMemberPropertyNode<U>::value) std::printf("FEditPropertyChain.ActiveMemberPropertyNode,%zu\n", OFF(U, ActiveMemberPropertyNode)); else std::printf("FEditPropertyChain.ActiveMemberPropertyNode,MISSING\n");
 }
 
-template<class U> void probe_FEnumPatchData()
-{
-    std::printf("FEnumPatchData,%zu\n", sizeof(U));
-    if constexpr (Has_FEnumPatchData_EnumName<U>::value) std::printf("FEnumPatchData.EnumName,%zu\n", OFF(U, EnumName)); else std::printf("FEnumPatchData.EnumName,MISSING\n");
-    if constexpr (Has_FEnumPatchData_EnumPathName<U>::value) std::printf("FEnumPatchData.EnumPathName,%zu\n", OFF(U, EnumPathName)); else std::printf("FEnumPatchData.EnumPathName,MISSING\n");
-    if constexpr (Has_FEnumPatchData_EnumValues<U>::value) std::printf("FEnumPatchData.EnumValues,%zu\n", OFF(U, EnumValues)); else std::printf("FEnumPatchData.EnumValues,MISSING\n");
-}
-
 template<class U> void probe_FEvent()
 {
     std::printf("FEvent,%zu\n", sizeof(U));
@@ -2457,7 +2416,6 @@ template<class U> void probe_FFindReferencersArchive()
 template<class U> void probe_FFloat16()
 {
     std::printf("FFloat16,%zu\n", sizeof(U));
-    if constexpr (Has_FFloat16____u0<U>::value) std::printf("FFloat16.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FFloat16.___u0,MISSING\n");
 }
 
 template<class U> void probe_FFloat16Color()
@@ -2472,7 +2430,6 @@ template<class U> void probe_FFloat16Color()
 template<class U> void probe_FFloat32()
 {
     std::printf("FFloat32,%zu\n", sizeof(U));
-    if constexpr (Has_FFloat32____u0<U>::value) std::printf("FFloat32.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FFloat32.___u0,MISSING\n");
 }
 
 template<class U> void probe_FFloatBulkData()
@@ -2494,7 +2451,6 @@ template<class U> void probe_FFrame()
 template<class U> void probe_FGCReferenceInfo()
 {
     std::printf("FGCReferenceInfo,%zu\n", sizeof(U));
-    if constexpr (Has_FGCReferenceInfo____u0<U>::value) std::printf("FGCReferenceInfo.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FGCReferenceInfo.___u0,MISSING\n");
 }
 
 template<class U> void probe_FGCReferenceTokenStream()
@@ -2506,7 +2462,6 @@ template<class U> void probe_FGCReferenceTokenStream()
 template<class U> void probe_FGCSkipInfo()
 {
     std::printf("FGCSkipInfo,%zu\n", sizeof(U));
-    if constexpr (Has_FGCSkipInfo____u0<U>::value) std::printf("FGCSkipInfo.___u0,%zu\n", OFF(U, ___u0)); else std::printf("FGCSkipInfo.___u0,MISSING\n");
 }
 
 template<class U> void probe_FGameplayProfiler()
@@ -2624,19 +2579,6 @@ template<class U> void probe_FLinearColor()
     if constexpr (Has_FLinearColor_A<U>::value) std::printf("FLinearColor.A,%zu\n", OFF(U, A)); else std::printf("FLinearColor.A,MISSING\n");
 }
 
-template<class U> void probe_FLinkerPatchData()
-{
-    std::printf("FLinkerPatchData,%zu\n", sizeof(U));
-    if constexpr (Has_FLinkerPatchData_PackageName<U>::value) std::printf("FLinkerPatchData.PackageName,%zu\n", OFF(U, PackageName)); else std::printf("FLinkerPatchData.PackageName,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_Names<U>::value) std::printf("FLinkerPatchData.Names,%zu\n", OFF(U, Names)); else std::printf("FLinkerPatchData.Names,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_Exports<U>::value) std::printf("FLinkerPatchData.Exports,%zu\n", OFF(U, Exports)); else std::printf("FLinkerPatchData.Exports,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_Imports<U>::value) std::printf("FLinkerPatchData.Imports,%zu\n", OFF(U, Imports)); else std::printf("FLinkerPatchData.Imports,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_NewObjects<U>::value) std::printf("FLinkerPatchData.NewObjects,%zu\n", OFF(U, NewObjects)); else std::printf("FLinkerPatchData.NewObjects,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_ModifiedClassDefaultObjects<U>::value) std::printf("FLinkerPatchData.ModifiedClassDefaultObjects,%zu\n", OFF(U, ModifiedClassDefaultObjects)); else std::printf("FLinkerPatchData.ModifiedClassDefaultObjects,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_ModifiedEnums<U>::value) std::printf("FLinkerPatchData.ModifiedEnums,%zu\n", OFF(U, ModifiedEnums)); else std::printf("FLinkerPatchData.ModifiedEnums,MISSING\n");
-    if constexpr (Has_FLinkerPatchData_ScriptPatches<U>::value) std::printf("FLinkerPatchData.ScriptPatches,%zu\n", OFF(U, ScriptPatches)); else std::printf("FLinkerPatchData.ScriptPatches,MISSING\n");
-}
-
 template<class U> void probe_FMD5Context()
 {
     std::printf("FMD5Context,%zu\n", sizeof(U));
@@ -2742,7 +2684,6 @@ template<class U> void probe_FNameEntry()
     if constexpr (Has_FNameEntry_Flags<U>::value) std::printf("FNameEntry.Flags,%zu\n", OFF(U, Flags)); else std::printf("FNameEntry.Flags,MISSING\n");
     if constexpr (Has_FNameEntry_Index<U>::value) std::printf("FNameEntry.Index,%zu\n", OFF(U, Index)); else std::printf("FNameEntry.Index,MISSING\n");
     if constexpr (Has_FNameEntry_HashNext<U>::value) std::printf("FNameEntry.HashNext,%zu\n", OFF(U, HashNext)); else std::printf("FNameEntry.HashNext,MISSING\n");
-    if constexpr (Has_FNameEntry____u3<U>::value) std::printf("FNameEntry.___u3,%zu\n", OFF(U, ___u3)); else std::printf("FNameEntry.___u3,MISSING\n");
 }
 
 template<class U> void probe_FNativeFunctionLookup()
@@ -3051,21 +2992,6 @@ template<class U> void probe_FPackageInfo()
     if constexpr (Has_FPackageInfo_PackageFlags<U>::value) std::printf("FPackageInfo.PackageFlags,%zu\n", OFF(U, PackageFlags)); else std::printf("FPackageInfo.PackageFlags,MISSING\n");
     if constexpr (Has_FPackageInfo_ForcedExportBasePackageName<U>::value) std::printf("FPackageInfo.ForcedExportBasePackageName,%zu\n", OFF(U, ForcedExportBasePackageName)); else std::printf("FPackageInfo.ForcedExportBasePackageName,MISSING\n");
     if constexpr (Has_FPackageInfo_Extension<U>::value) std::printf("FPackageInfo.Extension,%zu\n", OFF(U, Extension)); else std::printf("FPackageInfo.Extension,MISSING\n");
-}
-
-template<class U> void probe_FPatchData()
-{
-    std::printf("FPatchData,%zu\n", sizeof(U));
-    if constexpr (Has_FPatchData_DataName<U>::value) std::printf("FPatchData.DataName,%zu\n", OFF(U, DataName)); else std::printf("FPatchData.DataName,MISSING\n");
-    if constexpr (Has_FPatchData_Data<U>::value) std::printf("FPatchData.Data,%zu\n", OFF(U, Data)); else std::printf("FPatchData.Data,MISSING\n");
-}
-
-template<class U> void probe_FPatchReader()
-{
-    std::printf("FPatchReader,%zu\n", sizeof(U));
-    if constexpr (Has_FPatchReader_Bytes<U>::value) std::printf("FPatchReader.Bytes,%zu\n", OFF(U, Bytes)); else std::printf("FPatchReader.Bytes,MISSING\n");
-    if constexpr (Has_FPatchReader_Offset<U>::value) std::printf("FPatchReader.Offset,%zu\n", OFF(U, Offset)); else std::printf("FPatchReader.Offset,MISSING\n");
-    if constexpr (Has_FPatchReader_Loader<U>::value) std::printf("FPatchReader.Loader,%zu\n", OFF(U, Loader)); else std::printf("FPatchReader.Loader,MISSING\n");
 }
 
 template<class U> void probe_FPerformanceData()
@@ -3481,18 +3407,6 @@ template<class U> void probe_FScriptInterface()
     std::printf("FScriptInterface,%zu\n", sizeof(U));
     if constexpr (Has_FScriptInterface_ObjectPointer<U>::value) std::printf("FScriptInterface.ObjectPointer,%zu\n", OFF(U, ObjectPointer)); else std::printf("FScriptInterface.ObjectPointer,MISSING\n");
     if constexpr (Has_FScriptInterface_InterfacePointer<U>::value) std::printf("FScriptInterface.InterfacePointer,%zu\n", OFF(U, InterfacePointer)); else std::printf("FScriptInterface.InterfacePointer,MISSING\n");
-}
-
-template<class U> void probe_FScriptPatchData()
-{
-    std::printf("FScriptPatchData,%zu\n", sizeof(U));
-    if constexpr (Has_FScriptPatchData_StructName<U>::value) std::printf("FScriptPatchData.StructName,%zu\n", OFF(U, StructName)); else std::printf("FScriptPatchData.StructName,MISSING\n");
-}
-
-template<class U> void probe_FScriptPatcher()
-{
-    std::printf("FScriptPatcher,%zu\n", sizeof(U));
-    if constexpr (Has_FScriptPatcher_PackageUpdates<U>::value) std::printf("FScriptPatcher.PackageUpdates,%zu\n", OFF(U, PackageUpdates)); else std::printf("FScriptPatcher.PackageUpdates,MISSING\n");
 }
 
 template<class U> void probe_FSelfRegisteringExec()
@@ -4007,6 +3921,22 @@ template<class U> void probe_UNameProperty()
     std::printf("UNameProperty,%zu\n", sizeof(U));
 }
 
+template<class U> void probe_UObject()
+{
+    std::printf("UObject,%zu\n", sizeof(U));
+    if constexpr (Has_UObject_Index<U>::value) std::printf("UObject.Index,%zu\n", OFF(U, Index)); else std::printf("UObject.Index,MISSING\n");
+    if constexpr (Has_UObject_ObjectFlags<U>::value) std::printf("UObject.ObjectFlags,%zu\n", OFF(U, ObjectFlags)); else std::printf("UObject.ObjectFlags,MISSING\n");
+    if constexpr (Has_UObject_HashNext<U>::value) std::printf("UObject.HashNext,%zu\n", OFF(U, HashNext)); else std::printf("UObject.HashNext,MISSING\n");
+    if constexpr (Has_UObject_HashOuterNext<U>::value) std::printf("UObject.HashOuterNext,%zu\n", OFF(U, HashOuterNext)); else std::printf("UObject.HashOuterNext,MISSING\n");
+    if constexpr (Has_UObject_StateFrame<U>::value) std::printf("UObject.StateFrame,%zu\n", OFF(U, StateFrame)); else std::printf("UObject.StateFrame,MISSING\n");
+    if constexpr (Has_UObject__Linker<U>::value) std::printf("UObject._Linker,%zu\n", OFF(U, _Linker)); else std::printf("UObject._Linker,MISSING\n");
+    if constexpr (Has_UObject__LinkerIndex<U>::value) std::printf("UObject._LinkerIndex,%zu\n", OFF(U, _LinkerIndex)); else std::printf("UObject._LinkerIndex,MISSING\n");
+    if constexpr (Has_UObject_Outer<U>::value) std::printf("UObject.Outer,%zu\n", OFF(U, Outer)); else std::printf("UObject.Outer,MISSING\n");
+    if constexpr (Has_UObject_Name<U>::value) std::printf("UObject.Name,%zu\n", OFF(U, Name)); else std::printf("UObject.Name,MISSING\n");
+    if constexpr (Has_UObject_Class<U>::value) std::printf("UObject.Class,%zu\n", OFF(U, Class)); else std::printf("UObject.Class,MISSING\n");
+    if constexpr (Has_UObject_ObjectArchetype<U>::value) std::printf("UObject.ObjectArchetype,%zu\n", OFF(U, ObjectArchetype)); else std::printf("UObject.ObjectArchetype,MISSING\n");
+}
+
 template<class U> void probe_UObjectProperty()
 {
     std::printf("UObjectProperty,%zu\n", sizeof(U));
@@ -4238,7 +4168,6 @@ void probe_Core()
     probe_FEdLoadError<FEdLoadError>();
     probe_FEdge<FEdge>();
     probe_FEditPropertyChain<FEditPropertyChain>();
-    probe_FEnumPatchData<FEnumPatchData>();
     probe_FEvent<FEvent>();
     probe_FEventWin<FEventWin>();
     probe_FExec<FExec>();
@@ -4274,7 +4203,6 @@ void probe_Core()
     probe_FLabelEntry<FLabelEntry>();
     probe_FLevelGuids<FLevelGuids>();
     probe_FLinearColor<FLinearColor>();
-    probe_FLinkerPatchData<FLinkerPatchData>();
     probe_FMD5Context<FMD5Context>();
     probe_FMalloc<FMalloc>();
     probe_FMapPackageFileCache<FMapPackageFileCache>();
@@ -4325,8 +4253,6 @@ void probe_Core()
     probe_FPackageFileCache<FPackageFileCache>();
     probe_FPackageFileSummary<FPackageFileSummary>();
     probe_FPackageInfo<FPackageInfo>();
-    probe_FPatchData<FPatchData>();
-    probe_FPatchReader<FPatchReader>();
     probe_FPerformanceData<FPerformanceData>();
     probe_FPerspectiveMatrix<FPerspectiveMatrix>();
     probe_FPlane<FPlane>();
@@ -4385,8 +4311,6 @@ void probe_Core()
     probe_FScriptContainerElement<FScriptContainerElement>();
     probe_FScriptDelegate<FScriptDelegate>();
     probe_FScriptInterface<FScriptInterface>();
-    probe_FScriptPatchData<FScriptPatchData>();
-    probe_FScriptPatcher<FScriptPatcher>();
     probe_FSelfRegisteringExec<FSelfRegisteringExec>();
     probe_FSerializableObject<FSerializableObject>();
     probe_FSetElementId<FSetElementId>();
@@ -4455,6 +4379,7 @@ void probe_Core()
     probe_UMapProperty<UMapProperty>();
     probe_UMetaData<UMetaData>();
     probe_UNameProperty<UNameProperty>();
+    probe_UObject<UObject>();
     probe_UObjectProperty<UObjectProperty>();
     probe_UObjectRedirector<UObjectRedirector>();
     probe_UObjectSerializer<UObjectSerializer>();

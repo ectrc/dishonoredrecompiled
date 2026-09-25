@@ -14,6 +14,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 add_compile_options(/W4 /permissive- /Zc:__cplusplus /fp:precise /EHsc /utf-8 /MP)
+# /Zp4 (4-byte struct packing, UnrealBuildTool VCToolChain.cs) is applied per engine target in
+# dishonored_apply_defines(); globally it breaks third-party code (libpng) and the Windows SDK asserts.
 # WIN32_LEAN_AND_MEAN / NOMINMAX are set by WinDrv/Inc/MinWindows.h; defining them here too
 # would only produce C4005 redefinition warnings in every unit.
 add_compile_definitions(UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)

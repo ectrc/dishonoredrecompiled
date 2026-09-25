@@ -2280,11 +2280,8 @@ void UClass::Serialize( FArchive& Ar )
 			bForceScriptOrder = 0;
 		}
 
-		if( Ar.Ver() >= VER_ADDED_CLASS_GROUPS )
-		{
-			Ar << ClassGroupNames;
-		}
-
+		// DISHONORED(layout): no ClassGroupNames in the PDB UClass; UClass::Serialize (rva 0x96b70) goes from bForceScriptOrder
+		// to m_DropdownCategory (ArLicenseeVer >= 10) and ClassHeaderFilename
 		Ar << ClassHeaderFilename;
 	}
 #endif //DEDICATED_SERVER

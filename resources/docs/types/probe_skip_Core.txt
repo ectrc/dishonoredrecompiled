@@ -38,3 +38,9 @@ FTaskDatabase
 FTaskPerfMemDatabase
 FTaskPerfTracker
 UTextBufferFactory
+FEnumPatchData
+FLinkerPatchData
+FPatchData
+FPatchReader
+FScriptPatchData
+FScriptPatcher

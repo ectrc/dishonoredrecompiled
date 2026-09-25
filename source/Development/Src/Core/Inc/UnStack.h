@@ -376,14 +376,14 @@ struct FStateFrame : public FFrame
 	/** List of the currently pushed states */
 	TArray<FPushedState> StateStack;
 
-	/** UClass from which LocalVars was created (needed for safe destruction) */
-	UClass* LocalVarsOwner;
+	// DISHONORED(layout): reference LocalVarsOwner removed; PDB FStateFrame is 64 bytes and ends with StateStack @52.
+	// ClearLocalVars() walks Object->GetClass() instead (UnScript.h).
 
 	// copy constructor needs to avoid copying state locals, since that would result in double freeing constructed variables
 	//@warning: assumes the StateFrame on UObject is never created via this constructor (currently only used in ProcessState() for state transition safety)
 	FStateFrame(const FStateFrame& Other)
 		: FFrame(Other), StateNode(Other.StateNode), ProbeMask(Other.ProbeMask), LatentAction(Other.LatentAction), bContinuedState(Other.bContinuedState),
-			StateStack(Other.StateStack), LocalVarsOwner(NULL)
+			StateStack(Other.StateStack)
 	{
 		Locals = NULL;
 	}
@@ -396,7 +396,6 @@ struct FStateFrame : public FFrame
 		bContinuedState = Other.bContinuedState;
 		StateStack = Other.StateStack;
 		Locals = NULL;
-		LocalVarsOwner = NULL;
 		return *this;
 	}
 
@@ -407,7 +406,6 @@ struct FStateFrame : public FFrame
 			ClearLocalVars();
 			appFree(Locals);
 			Locals = NULL;
-			LocalVarsOwner = NULL;
 		}
 	}
 

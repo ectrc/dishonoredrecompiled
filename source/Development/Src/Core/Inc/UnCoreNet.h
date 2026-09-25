@@ -87,7 +87,7 @@ public:
 	FName			ForcedExportBasePackageName; // for packages that were a forced export in another package (seekfree loading), the name of that base package, otherwise NAME_None
 	BYTE			LoadingPhase;		// indicates if package was loaded during a seamless loading operation (e.g. seamless level change) to aid client in determining when to process it
 	FString			Extension;			// Extension of the package file, used so HTTP downloading can get the package
-	FName			FileName;			// Name of the file this package was loaded from if it is not equal to the PackageName
+	// DISHONORED(layout): reference FileName removed; PDB FPackageInfo (68 bytes) has ForcedExportBasePackageName @48 directly followed by Extension @56
 
 	// Functions.
 	FPackageInfo(UPackage* Package = NULL);

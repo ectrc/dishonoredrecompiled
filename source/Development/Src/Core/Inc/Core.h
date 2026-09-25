@@ -2609,5 +2609,9 @@ enum ENetPeerStats
 #define STANDALONE_SEEKFREE_SUFFIX	TEXT("_SF")
 
 
+#if DISHONORED_LAYOUT_CHECKS
+#include "DishonoredLayouts.h"	// DISHONORED: PDB-derived static_assert size checks (gen_layout_asserts.py)
+#endif
+
 #endif
 

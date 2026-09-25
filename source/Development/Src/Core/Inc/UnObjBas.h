@@ -376,6 +376,7 @@ typedef QWORD EObjectFlags;													/** @warning: mirrored in UnName.h */
 #define RF_PendingKill				DECLARE_UINT64(0x2000000000000000)		// Objects that are pending destruction (invalid for gameplay but valid objects)
 #define RF_MarkedByCookerTemp		DECLARE_UINT64(0x4000000000000000)		// Temporarily marked by content cooker - should be cleared.
 #define RF_CookedStartupObject		DECLARE_UINT64(0x8000000000000000)		// This object was cooked into a startup package.
+#define RF_DisNetIndexed			DECLARE_UINT64(0x8000000000000000)		// DISHONORED(layout): bit 63 is set/cleared by UObject::SetNetIndex (rva 0x14d30) in place of the reference NetIndex member
 
 
 
@@ -1097,12 +1098,15 @@ class UObject
 private:
 	// Internal per-object variables.
 
-	/** Next object in this hash bin. */
-	UObject*						HashNext;
+	/** Index of object into GObjObjects array. */
+	INT								Index;			// DISHONORED(layout): PDB UObject::Index @4 (before ObjectFlags @8; reference had HashNext first)
 
 	/** Flags used to track and report various object states. This needs to be 8 byte aligned on 32-bit
 	    platforms to reduce memory waste */
-	EObjectFlags					ObjectFlags;
+	EObjectFlags					ObjectFlags;	// DISHONORED(layout): PDB UObject::ObjectFlags @8
+
+	/** Next object in this hash bin. */
+	UObject*						HashNext;		// DISHONORED(layout): PDB UObject::HashNext @16
 
 	/** Next object in the hash bin that includes outers */
 	UObject*						HashOuterNext;
@@ -1124,13 +1128,8 @@ private:
 	 */
 	PTRINT							_LinkerIndex;
 
-	/** Index of object into GObjObjects array. */
-	INT								Index;
-
-	/** index into Outermost's NetObjects array, used for replicating references to this object
-	 * INDEX_None means references to this object cannot be replicated
-	 */
-	INT								NetIndex;
+	// DISHONORED(layout): no NetIndex member; PDB UObject is 56 bytes (_LinkerIndex @32 is followed by Outer @36).
+	// UObject::SetNetIndex (rva 0x14d30) / SerializeNetIndex (rva 0x20180) toggle RF_DisNetIndexed instead.
 
 	/** Object this object resides in. */
 	UObject*						Outer;
@@ -1573,7 +1572,8 @@ public:
 	/** returns this object's NetIndex */
 	FORCEINLINE INT GetNetIndex()
 	{
-		return NetIndex;
+		// DISHONORED(layout): NetIndex member removed (see above); Dishonored keeps a flag and the linker index
+		return HasAnyFlags(RF_DisNetIndexed) ? (INT)_LinkerIndex : INDEX_NONE;
 	}
 
 	/**

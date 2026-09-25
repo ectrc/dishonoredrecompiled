@@ -192,25 +192,6 @@ UBOOL ULinkerLoad::StartTextureAllocation()
 	return TRUE;
 }
 
-// ---- Core defect: UnStats.h switched TAccumulator/TCounter to the deferred ("gcc") constructor
-// declarations but the definitions at the end of the header stay behind #if __GNUC__ || NGP, so
-// MSVC never sees them. Copied verbatim from UnStats.h until Core drops that guard.
-template<class TYPE> TAccumulator<TYPE>::TAccumulator(const TCHAR* InCounterName, DWORD InStatId, DWORD InGroupId)
-:	FStatCommonData(InCounterName, InStatId, InGroupId)
-,	Value(InitialStatValue<TYPE>())
-,	Next(NULL)
-{
-	FStatGroup* Group = GStatManager.GetGroup(InGroupId);
-	check(Group);
-	Group->AddToGroup(this);
-}
-template<class TYPE> TCounter<TYPE>::TCounter(const TCHAR* InCounterName, DWORD InStatId, DWORD GroupId)
-:	TAccumulator<TYPE>(InCounterName, InStatId)
-{
-	FStatGroup* Group = GStatManager.GetGroup(GroupId);
-	check(Group);
-	Group->AddToGroup(this);
-}
 template TAccumulator<FLOAT>::TAccumulator(const TCHAR*, DWORD, DWORD);
 template TAccumulator<DWORD>::TAccumulator(const TCHAR*, DWORD, DWORD);
 template TCounter<FLOAT>::TCounter(const TCHAR*, DWORD, DWORD);

@@ -965,8 +965,7 @@ private:
 	/** Time at begin of Tick function. Used for time limit determination.													*/
 	DOUBLE					TickStartTime;
 
-	/** Used for ActiveClassRedirects functionality */
-	UBOOL	bFixupExportMapDone;
+	// DISHONORED(layout): reference bFixupExportMapDone removed; PDB ULinkerLoad has TickStartTime @1628 directly followed by PatchDataAr @1636
 
 	//@{
 	//@script patcher

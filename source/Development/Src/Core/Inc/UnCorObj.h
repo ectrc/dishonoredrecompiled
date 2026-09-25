@@ -177,8 +177,7 @@ private:
 	/** Package flags, serialized.																																*/
 	DWORD	PackageFlags;
 
-	/** The name of the file that this package was loaded from */
-	FName	FileName;
+	// DISHONORED(layout): reference FileName removed; PDB UPackage has PackageFlags @216 directly followed by ThumbnailMap @220
 
 	/** Editor only: Thumbnails stored in this package */
 	TScopedPointer< FThumbnailMap > ThumbnailMap;

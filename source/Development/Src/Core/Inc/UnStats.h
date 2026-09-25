@@ -2230,7 +2230,7 @@ public:
 
 extern FStatManager GStatManager;
 
-#if __GNUC__ || NGP // Only gcc needs these changes because of it's strange template handling
+#if 1 // DISHONORED: MSVC 2022 uses the deferred definitions too (in-class ones disabled above for two-phase lookup); was: __GNUC__ || NGP
 /**
  * Zeros the accumulator value and sets the next item in the list
  */

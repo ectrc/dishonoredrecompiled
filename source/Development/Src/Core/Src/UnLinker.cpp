@@ -5412,7 +5412,8 @@ UBOOL ULinkerLoad::FixupExportMap()
 {
 #if !FINAL_RELEASE
 	// seekfree loading implies cooked packages which means they have already been through this logic
-	if (bFixupExportMapDone || (LinkerRoot->PackageFlags & PKG_Cooked) || (ObjectNameRedirectsInstanceOnly.Num() == 0 && ObjectNameRedirectsObjectOnly.Num() == 0))
+	// DISHONORED(layout): bFixupExportMapDone removed from ULinkerLoad (FixupExportMap is not in the shipping PDB)
+	if ((LinkerRoot->PackageFlags & PKG_Cooked) || (ObjectNameRedirectsInstanceOnly.Num() == 0 && ObjectNameRedirectsObjectOnly.Num() == 0))
 	{
 		return TRUE;
 	}
@@ -5514,7 +5515,6 @@ UBOOL ULinkerLoad::FixupExportMap()
 		}	
 	}
 
-	bFixupExportMapDone = TRUE;
 	return !IsTimeLimitExceeded( TEXT("fixing up export map") );
 #else
 	return TRUE;

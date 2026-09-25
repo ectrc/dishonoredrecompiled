@@ -1,0 +1,159 @@
+diff --git a/source/Development/Src/Core/Src/UnObj.cpp b/source/Development/Src/Core/Src/UnObj.cpp
+index b13dadc..b05e0fb 100644
+--- a/source/Development/Src/Core/Src/UnObj.cpp
++++ b/source/Development/Src/Core/Src/UnObj.cpp
+@@ -1057,23 +1057,15 @@ INT UObject::GetLinkerLicenseeVersion() const
+ /** sets the NetIndex associated with this object for network replication */
+ void UObject::SetNetIndex(INT InNetIndex)
+ {
+-	if (InNetIndex != NetIndex)
++	// DISHONORED(layout): UObject::SetNetIndex (rva 0x14d30) only toggles RF_DisNetIndexed; there is no NetIndex
++	// member and UPackage::AddNetObject/RemoveNetObject do not exist in the shipping PDB.
++	if (InNetIndex == INDEX_NONE)
+ 	{
+-		UPackage* Package = GetOutermost();
+-		// skip if package is not meant to be replicated
+-		if (!(Package->PackageFlags & PKG_ServerSideOnly))
+-		{
+-			if (NetIndex != INDEX_NONE)
+-			{
+-				// remove from old
+-				Package->RemoveNetObject(this);
+-			}
+-			NetIndex = InNetIndex;
+-			if (NetIndex != INDEX_NONE)
+-			{
+-				Package->AddNetObject(this);
+-			}
+-		}
++		ClearFlags(RF_DisNetIndexed);
++	}
++	else
++	{
++		SetFlags(RF_DisNetIndexed);
+ 	}
+ }
+ 
+@@ -1567,7 +1559,8 @@ void UObject::SerializeNetIndex(FArchive& Ar)
+ 	// do not serialize NetIndex when duplicating objects via serialization
+ 	if (!(Ar.GetPortFlags() & PPF_Duplicate))
+ 	{
+-		INT InNetIndex = NetIndex;
++		// DISHONORED(layout): UObject::SerializeNetIndex (rva 0x20180) writes 0 when RF_DisNetIndexed is set, INDEX_NONE otherwise
++		INT InNetIndex = HasAnyFlags(RF_DisNetIndexed) ? 0 : INDEX_NONE;
+ 		Ar << InNetIndex;
+ 		if (Ar.IsLoading())
+ 		{
+@@ -4076,7 +4069,7 @@ void UObject::Register()
+ 	Outer        = CreatePackage(NULL,InOuter);
+ 	Name         = InName;
+ 	_LinkerIndex = (PTRINT)INDEX_NONE;
+-	NetIndex = INDEX_NONE;
++	ClearFlags(RF_DisNetIndexed);	// DISHONORED(layout): no NetIndex member
+ 
+ 	// Validate the object.
+ 	if( Outer==NULL )
+@@ -7122,11 +7115,7 @@ UPackage* UObject::LoadPackage( UPackage* InOuter, const TCHAR* Filename, DWORD
+ 		}
+ 		Result = Linker->LinkerRoot;
+ 
+-		//If the filename is passed in AND the packagename is not equal to none AND is not equal to the name of the package, save the filename
+-		if (Filename && InOuter && appStricmp(TEXT("None"),*InOuter->GetName()) != 0 && appStricmp(Filename, *InOuter->GetName()) != 0)
+-		{
+-			Result->FileName = FName(*FileToLoad);
+-		}
++		// DISHONORED(layout): UPackage has no FileName in the PDB (PackageFlags @216 is followed by ThumbnailMap @220)
+ 
+ 		// is there a script SHA hash for this package?
+ 		BYTE SavedScriptSHA[20];
+@@ -8039,7 +8028,7 @@ UObject* UObject::StaticAllocateObject
+ 		LinkerIndex = Obj->_LinkerIndex;
+ 		InFlags		|= Obj->GetMaskedFlags(RF_Keep);
+ 		Index		= Obj->Index;
+-		OldNetIndex = Obj->NetIndex;
++		OldNetIndex = Obj->GetNetIndex();	// DISHONORED(layout): no NetIndex member
+ 
+ 		// if this is the class default object, it means that InClass is native and the CDO was created during static registration.
+ 		// Propagate the load flags but don't replace it - the CDO will be initialized by InitClassDefaultObject
+@@ -8207,7 +8196,7 @@ UObject* UObject::StaticAllocateObject
+ 	Obj->SafeInitProperties( (BYTE*)Obj, InClass->GetPropertiesSize(), BaseClass, (BYTE*)ObjectArchetype, DefaultsCount, Obj->HasAnyFlags(RF_NeedLoad) ? NULL : Obj, SubobjectRoot, InstanceGraph );
+ 
+ 	// reset NetIndex after InitProperties so that the value from the template is ignored
+-	Obj->NetIndex = INDEX_NONE;
++	Obj->ClearFlags(RF_DisNetIndexed);	// DISHONORED(layout): no NetIndex member
+ 	Obj->SetNetIndex(OldNetIndex);
+ 
+ 	// Add to global table.
+diff --git a/source/Development/Src/Core/Src/UnCoreNet.cpp b/source/Development/Src/Core/Src/UnCoreNet.cpp
+index be1c020..c2ce0bd 100644
+--- a/source/Development/Src/Core/Src/UnCoreNet.cpp
++++ b/source/Development/Src/Core/Src/UnCoreNet.cpp
+@@ -21,8 +21,7 @@ FPackageInfo::FPackageInfo(UPackage* Package)
+ ,	LocalGeneration	(Package != NULL ? Package->GetGenerationNetObjectCount().Num() : 0)
+ ,	RemoteGeneration( 0 )
+ ,	PackageFlags	(Package != NULL ? Package->PackageFlags : 0)
+-,	ForcedExportBasePackageName(NAME_None)
+-,	FileName		(Package != NULL ? Package->FileName : NAME_None)
++,	ForcedExportBasePackageName(NAME_None)	// DISHONORED(layout): FPackageInfo/UPackage have no FileName in the PDB
+ {
+ 	// if we have a pacakge, find it's source file so that we can send the extension of the file
+ 	if (Package != NULL)
+@@ -444,15 +443,15 @@ void UPackageMap::AddPackageInfo(const FPackageInfo& Info)
+ //
+ INT UPackageMap::ObjectToIndex( UObject* Object )
+ {
+-	if (Object != NULL && Object->NetIndex != INDEX_NONE)
++	if (Object != NULL && Object->GetNetIndex() != INDEX_NONE)	// DISHONORED(layout): no NetIndex member
+ 	{
+ 		INT* Found = PackageListMap.Find(Object->GetOutermost()->GetFName());
+ 		if (Found != NULL)
+ 		{
+ 			FPackageInfo& Info = List(*Found);
+-			if (Object->NetIndex < Info.ObjectCount)
++			if (Object->GetNetIndex() < Info.ObjectCount)
+ 			{
+-				return Info.ObjectBase + Object->NetIndex;
++				return Info.ObjectBase + Object->GetNetIndex();
+ 			}
+ 		}
+ 	}
+diff --git a/source/Development/Src/Core/Src/UnClass.cpp b/source/Development/Src/Core/Src/UnClass.cpp
+index fefbeb0..2d3b11e 100644
+--- a/source/Development/Src/Core/Src/UnClass.cpp
++++ b/source/Development/Src/Core/Src/UnClass.cpp
+@@ -2280,11 +2280,8 @@ void UClass::Serialize( FArchive& Ar )
+ 			bForceScriptOrder = 0;
+ 		}
+ 
+-		if( Ar.Ver() >= VER_ADDED_CLASS_GROUPS )
+-		{
+-			Ar << ClassGroupNames;
+-		}
+-
++		// DISHONORED(layout): no ClassGroupNames in the PDB UClass; UClass::Serialize (rva 0x96b70) goes from bForceScriptOrder
++		// to m_DropdownCategory (ArLicenseeVer >= 10) and ClassHeaderFilename
+ 		Ar << ClassHeaderFilename;
+ 	}
+ #endif //DEDICATED_SERVER
+diff --git a/source/Development/Src/Core/Src/UnLinker.cpp b/source/Development/Src/Core/Src/UnLinker.cpp
+index 0e8e58f..d883383 100644
+--- a/source/Development/Src/Core/Src/UnLinker.cpp
++++ b/source/Development/Src/Core/Src/UnLinker.cpp
+@@ -5412,7 +5412,8 @@ UBOOL ULinkerLoad::FixupExportMap()
+ {
+ #if !FINAL_RELEASE
+ 	// seekfree loading implies cooked packages which means they have already been through this logic
+-	if (bFixupExportMapDone || (LinkerRoot->PackageFlags & PKG_Cooked) || (ObjectNameRedirectsInstanceOnly.Num() == 0 && ObjectNameRedirectsObjectOnly.Num() == 0))
++	// DISHONORED(layout): bFixupExportMapDone removed from ULinkerLoad (FixupExportMap is not in the shipping PDB)
++	if ((LinkerRoot->PackageFlags & PKG_Cooked) || (ObjectNameRedirectsInstanceOnly.Num() == 0 && ObjectNameRedirectsObjectOnly.Num() == 0))
+ 	{
+ 		return TRUE;
+ 	}
+@@ -5514,7 +5515,6 @@ UBOOL ULinkerLoad::FixupExportMap()
+ 		}	
+ 	}
+ 
+-	bFixupExportMapDone = TRUE;
+ 	return !IsTimeLimitExceeded( TEXT("fixing up export map") );
+ #else
+ 	return TRUE;
