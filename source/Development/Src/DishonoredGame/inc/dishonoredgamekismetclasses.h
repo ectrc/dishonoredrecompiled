@@ -1,206 +1,2811 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgamekismetclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (242):
-//   0x63c720  public: static class UClass * __cdecl UDisSeqEvent_RatPossess::StaticClass(void)
-//   0x63c740  public: void __thiscall AGameCrowdDestination::execIncrementCustomerCount(struct FFrame &, void * const)
-//   0x63eef0  public: void __thiscall UDisSeqVar_PlayerCamera::execGetObjectValue(struct FFrame &, void * const)
-//   0x67ba10  protected: virtual __thiscall UDisSeqAct_WallofLightControl::~UDisSeqAct_WallofLightControl(void)
-//   0x67c1a0  public: static void __cdecl UDisSeqAct_WallofLightControl::InternalConstructor(void *)
-//   0x71a480  protected: virtual __thiscall UDisSeqAct_IncrementPlayerStat::~UDisSeqAct_IncrementPlayerStat(void)
-//   0x71a510  protected: virtual __thiscall UDisSeqAct_PlayerAction::~UDisSeqAct_PlayerAction(void)
-//   0x71a5a0  protected: virtual __thiscall UDisSeqAct_EvalAchievement::~UDisSeqAct_EvalAchievement(void)
-//   0x71a630  protected: virtual __thiscall UDisSeqAct_GetPlayerStat::~UDisSeqAct_GetPlayerStat(void)
-//   0x71c020  public: static void __cdecl UDisSeqAct_IncrementPlayerStat::InternalConstructor(void *)
-//   0x71c040  public: static void __cdecl UDisSeqAct_EvalAchievement::InternalConstructor(void *)
-//   0x71c060  public: static void __cdecl UDisSeqAct_GetPlayerStat::InternalConstructor(void *)
-//   0x7bf400  protected: virtual __thiscall UDisSeqAct_SpawnStealable::~UDisSeqAct_SpawnStealable(void)
-//   0x7c1b50  public: static void __cdecl UDisSeqAct_SpawnStealable::InternalConstructor(void *)
-//   0x7dddd0  public: virtual class FString __thiscall UDisSeqVar_PlayerCamera::GetValueStr(void)
-//   0x7dde00  protected: virtual __thiscall UDisSeqVar_PlayerCamera::~UDisSeqVar_PlayerCamera(void)
-//   0x7df050  public: static void __cdecl UDisSeqVar_PlayerCamera::InternalConstructor(void *)
-//   0x7e1010  protected: virtual __thiscall UDisSeqAct_ActivateProjectileLauncher::~UDisSeqAct_ActivateProjectileLauncher(void)
-//   0x7e10a0  protected: virtual __thiscall UDisSeqAct_ActivateUsable::~UDisSeqAct_ActivateUsable(void)
-//   0x7e1130  protected: virtual __thiscall UDisSeqAct_AddAttributeModifier::~UDisSeqAct_AddAttributeModifier(void)
-//   0x7e11c0  protected: virtual __thiscall UDisSeqAct_AddDarkness::~UDisSeqAct_AddDarkness(void)
-//   0x7e1260  protected: virtual __thiscall UDisSeqAct_AIClearAttention::~UDisSeqAct_AIClearAttention(void)
-//   0x7e1300  protected: virtual __thiscall UDisSeqAct_AIDoBehavior_Base::~UDisSeqAct_AIDoBehavior_Base(void)
-//   0x7e1370  public: virtual class FString __thiscall UDisSeqAct_AIDoBehavior_Base::GetHelpText(void)const
-//   0x7e13d0  public: virtual class UClass * __thiscall UDisSeqAct_AIDoFollow::GetCurrentBehaviorClass(void)const
-//   0x7e13f0  public: virtual class FString __thiscall UDisSeqAct_AIDoFollow::GetHelpText(void)const
-//   0x7e1420  protected: virtual __thiscall UDisSeqAct_AIDoFollow::~UDisSeqAct_AIDoFollow(void)
-//   0x7e14b0  protected: virtual __thiscall UDisSeqAct_AIDoSimpleBehaviors::~UDisSeqAct_AIDoSimpleBehaviors(void)
-//   0x7e1540  protected: virtual __thiscall UDisSeqAct_AIGetBrainFlagValue::~UDisSeqAct_AIGetBrainFlagValue(void)
-//   0x7e15d0  protected: virtual __thiscall UDisSeqAct_RemoveAbstractItem::~UDisSeqAct_RemoveAbstractItem(void)
-//   0x7e1660  public: virtual class UObject * __thiscall UDisSeqAct_AINoise::GetUObjectInterfaceDisNoiseMakerInterface(void)
-//   0x7e1680  protected: virtual __thiscall UDisSeqAct_AINoise::~UDisSeqAct_AINoise(void)
-//   0x7e1720  protected: virtual __thiscall UDisSeqAct_AISetBrainFlags::~UDisSeqAct_AISetBrainFlags(void)
-//   0x7e17c0  protected: virtual __thiscall UDisSeqAct_AttachAnimSet::~UDisSeqAct_AttachAnimSet(void)
-//   0x7e1850  protected: virtual __thiscall UDisSeqAct_AttachPickup::~UDisSeqAct_AttachPickup(void)
-//   0x7e18e0  protected: virtual __thiscall UDisSeqAct_BackupAndClearInventory::~UDisSeqAct_BackupAndClearInventory(void)
-//   0x7e19b0  protected: virtual __thiscall UDisSeqAct_BendTime::~UDisSeqAct_BendTime(void)
-//   0x7e1a40  protected: virtual __thiscall UDisSeqAct_BodyShadowKill::~UDisSeqAct_BodyShadowKill(void)
-//   0x7e1ad0  protected: virtual __thiscall UDisSeqAct_CleanupBodies::~UDisSeqAct_CleanupBodies(void)
-//   0x7e1b60  protected: virtual __thiscall UDisSeqAct_ClearPlayerVisSettings::~UDisSeqAct_ClearPlayerVisSettings(void)
-//   0x7e1bf0  protected: virtual __thiscall UDisSeqAct_DialogInputs::~UDisSeqAct_DialogInputs(void)
-//   0x7e1c80  protected: virtual __thiscall UDisSeqAct_DialogScriptedChoice::~UDisSeqAct_DialogScriptedChoice(void)
-//   0x7e1d30  protected: virtual __thiscall UDisSeqAct_DiscardAllLevelStates::~UDisSeqAct_DiscardAllLevelStates(void)
-//   0x7e1dc0  protected: virtual __thiscall UDisSeqAct_DiscardLevelState::~UDisSeqAct_DiscardLevelState(void)
-//   0x7e1e50  protected: virtual __thiscall UDisSeqAct_EquipItemType::~UDisSeqAct_EquipItemType(void)
-//   0x7e1ee0  protected: virtual __thiscall UDisSeqAct_PlayMusicBox::~UDisSeqAct_PlayMusicBox(void)
-//   0x7e1f70  protected: virtual __thiscall UDisSeqAct_FireProjectile::~UDisSeqAct_FireProjectile(void)
-//   0x7e2000  protected: virtual __thiscall UDisSeqAct_ForbiddenZoneOverride::~UDisSeqAct_ForbiddenZoneOverride(void)
-//   0x7e20b0  protected: virtual __thiscall UDisSeqAct_GotoPlayerTravelDestination::~UDisSeqAct_GotoPlayerTravelDestination(void)
-//   0x7e2140  protected: virtual __thiscall UDisSeqAct_Highlight::~UDisSeqAct_Highlight(void)
-//   0x7e21d0  protected: virtual __thiscall UDisSeqAct_Latent::~UDisSeqAct_Latent(void)
-//   0x7e2260  protected: virtual __thiscall UDisSeqAct_AIGoToActor::~UDisSeqAct_AIGoToActor(void)
-//   0x7e22f0  protected: virtual __thiscall UDisSeqAct_AIShoot::~UDisSeqAct_AIShoot(void)
-//   0x7e2380  protected: virtual __thiscall UDisSeqAct_AutoSave::~UDisSeqAct_AutoSave(void)
-//   0x7e2410  protected: virtual __thiscall UDisSeqAct_NPCDoTeleportSpell::~UDisSeqAct_NPCDoTeleportSpell(void)
-//   0x7e24a0  protected: virtual __thiscall UDisSeqAct_SpawnCameraLensEffect::~UDisSeqAct_SpawnCameraLensEffect(void)
-//   0x7e2530  public: virtual class UObject * __thiscall UDisSeqAct_StartSpawn::GetUObjectInterfaceDisSpawnRequesterInterface(void)
-//   0x7e2550  protected: virtual __thiscall UDisSeqAct_StartSpawn::~UDisSeqAct_StartSpawn(void)
-//   0x7e25f0  protected: virtual __thiscall UDisSeqAct_LimitPawnMinHealth::~UDisSeqAct_LimitPawnMinHealth(void)
-//   0x7e2680  protected: virtual __thiscall UDisSeqAct_Lock::~UDisSeqAct_Lock(void)
-//   0x7e2710  protected: virtual __thiscall UDisSeqAct_ModifyAmmo::~UDisSeqAct_ModifyAmmo(void)
-//   0x7e27b0  protected: virtual __thiscall UDisSeqAct_NotifyMissionEnd::~UDisSeqAct_NotifyMissionEnd(void)
-//   0x7e2840  protected: virtual __thiscall UDisSeqAct_NPCDisableTeleportOnNavmesh::~UDisSeqAct_NPCDisableTeleportOnNavmesh(void)
-//   0x7e28d0  protected: virtual __thiscall UDisSeqAct_NPCIgnoreRBDamages::~UDisSeqAct_NPCIgnoreRBDamages(void)
-//   0x7e2960  protected: virtual __thiscall UDisSeqAct_NPCMarkForVanish::~UDisSeqAct_NPCMarkForVanish(void)
-//   0x7e29f0  protected: virtual __thiscall UDisSeqAct_NPCSetMaterials::~UDisSeqAct_NPCSetMaterials(void)
-//   0x7e2aa0  protected: virtual __thiscall UDisSeqAct_NPCTrackTarget::~UDisSeqAct_NPCTrackTarget(void)
-//   0x7e2b30  protected: virtual __thiscall UDisSeqAct_OutsiderConfig::~UDisSeqAct_OutsiderConfig(void)
-//   0x7e2bc0  protected: virtual __thiscall UDisSeqAct_OverrideDisableHitReactSoiree::~UDisSeqAct_OverrideDisableHitReactSoiree(void)
-//   0x7e2c50  protected: virtual __thiscall UDisSeqAct_AddKey::~UDisSeqAct_AddKey(void)
-//   0x7e2cf0  protected: virtual __thiscall UDisSeqAct_GiveUpgrade::~UDisSeqAct_GiveUpgrade(void)
-//   0x7e2d80  protected: virtual __thiscall UDEPRECATED_DisSeqAct_AddHeartTarget::~UDEPRECATED_DisSeqAct_AddHeartTarget(void)
-//   0x7e2e10  protected: virtual __thiscall UDisSeqAct_RemovePower::~UDisSeqAct_RemovePower(void)
-//   0x7e2eb0  protected: virtual __thiscall UDisSeqAct_PlayerTrackTarget::~UDisSeqAct_PlayerTrackTarget(void)
-//   0x7e2f40  protected: virtual __thiscall UDisSeqAct_PostProcess::~UDisSeqAct_PostProcess(void)
-//   0x7e2fd0  protected: virtual __thiscall UDisSeqAct_RBConstraint::~UDisSeqAct_RBConstraint(void)
-//   0x7e3060  protected: virtual __thiscall UDisSeqAct_RemoveInventoryItem::~UDisSeqAct_RemoveInventoryItem(void)
-//   0x7e30f0  protected: virtual __thiscall UDisSeqAct_RestoreInventoryFromBackup::~UDisSeqAct_RestoreInventoryFromBackup(void)
-//   0x7e3190  protected: virtual __thiscall UDisSeqAct_SaveLevelState::~UDisSeqAct_SaveLevelState(void)
-//   0x7e3220  protected: virtual __thiscall UDisSeqAct_SetActiveSoundCaptureBox::~UDisSeqAct_SetActiveSoundCaptureBox(void)
-//   0x7e32b0  protected: virtual __thiscall UDisSeqAct_SetAudioOcclusion::~UDisSeqAct_SetAudioOcclusion(void)
-//   0x7e3340  protected: virtual __thiscall UDisSeqAct_SetDisposition::~UDisSeqAct_SetDisposition(void)
-//   0x7e33e0  protected: virtual __thiscall UDisSeqAct_SetPlayerTravelDestination::~UDisSeqAct_SetPlayerTravelDestination(void)
-//   0x7e3470  protected: virtual __thiscall UDisSeqAct_SetPlayerVisSettings::~UDisSeqAct_SetPlayerVisSettings(void)
-//   0x7e3500  protected: virtual __thiscall UDisSeqAct_SetRainEmitter::~UDisSeqAct_SetRainEmitter(void)
-//   0x7e3590  protected: virtual __thiscall UDisSeqAct_SetStoryFlag::~UDisSeqAct_SetStoryFlag(void)
-//   0x7e3620  protected: virtual __thiscall USeqAct_Teleport::~USeqAct_Teleport(void)
-//   0x7e36b0  protected: virtual __thiscall UDisSeqAct_TriggerExplosion::~UDisSeqAct_TriggerExplosion(void)
-//   0x7e3740  protected: virtual __thiscall UDisSeqAct_UberPostProcess::~UDisSeqAct_UberPostProcess(void)
-//   0x7e37d0  protected: virtual __thiscall UDisSeqAct_WatchTowerShootAtTarget::~UDisSeqAct_WatchTowerShootAtTarget(void)
-//   0x7e3860  protected: virtual __thiscall UDisSeqCond_CheckStoryFlag::~UDisSeqCond_CheckStoryFlag(void)
-//   0x7e38f0  protected: virtual __thiscall UDisSeqCond_CompareBoolExtended::~UDisSeqCond_CompareBoolExtended(void)
-//   0x7e3980  protected: virtual __thiscall UDisSeqCond_CompareTweaks::~UDisSeqCond_CompareTweaks(void)
-//   0x7e3a10  protected: virtual __thiscall UDisSeqCond_InStoryGroup::~UDisSeqCond_InStoryGroup(void)
-//   0x7e3ac0  protected: virtual __thiscall UDisSeqCond_IsDLCUnlocked::~UDisSeqCond_IsDLCUnlocked(void)
-//   0x7e3b50  protected: virtual __thiscall UDisSeqCond_IsDoorOpen::~UDisSeqCond_IsDoorOpen(void)
-//   0x7e3be0  protected: virtual __thiscall UDisSeqCond_IsSentinel::~UDisSeqCond_IsSentinel(void)
-//   0x7e3c70  protected: virtual __thiscall UDisSeqCond_PawnIsPossessed::~UDisSeqCond_PawnIsPossessed(void)
-//   0x7e3d00  protected: virtual __thiscall UDisSeqEvent_Attention::~UDisSeqEvent_Attention(void)
-//   0x7e3d90  protected: virtual __thiscall UDisSeqEvent_AttentionDecreasedTo::~UDisSeqEvent_AttentionDecreasedTo(void)
-//   0x7e3e20  protected: virtual __thiscall UDisSeqEvent_BehaviorStarted::~UDisSeqEvent_BehaviorStarted(void)
-//   0x7e3eb0  protected: virtual __thiscall UDisSeqEvent_BreakableBroken::~UDisSeqEvent_BreakableBroken(void)
-//   0x7e3f40  protected: virtual __thiscall UDisSeqEvent_Windblasted::~UDisSeqEvent_Windblasted(void)
-//   0x7e3fd0  protected: virtual __thiscall UDisSeqEvent_DialogOutputs::~UDisSeqEvent_DialogOutputs(void)
-//   0x7e4060  protected: virtual __thiscall UDisSeqEvent_Interact::~UDisSeqEvent_Interact(void)
-//   0x7e40f0  protected: virtual __thiscall UDisSeqEvent_PickupPickedUp::~UDisSeqEvent_PickupPickedUp(void)
-//   0x7e4180  protected: virtual __thiscall UDisSeqEvent_PlayerEvent::~UDisSeqEvent_PlayerEvent(void)
-//   0x7e4210  protected: virtual __thiscall UDisSeqEvent_PlayerManaThreshold::~UDisSeqEvent_PlayerManaThreshold(void)
-//   0x7e42a0  protected: virtual __thiscall UDisSeqEvent_PowerUsed::~UDisSeqEvent_PowerUsed(void)
-//   0x7e4330  protected: virtual __thiscall UDisSeqEvent_PowerEquipped::~UDisSeqEvent_PowerEquipped(void)
-//   0x7e43c0  protected: virtual __thiscall UDisSeqEvent_PlayerHolsterWeapon::~UDisSeqEvent_PlayerHolsterWeapon(void)
-//   0x7e4450  protected: virtual __thiscall UDisSeqEvent_Used::~UDisSeqEvent_Used(void)
-//   0x7e44e0  protected: virtual __thiscall UDisSeqEvent_WitnessedInteraction::~UDisSeqEvent_WitnessedInteraction(void)
-//   0x7e56b0  public: static void __cdecl UDisSeqAct_ActivateProjectileLauncher::InternalConstructor(void *)
-//   0x7e56d0  public: static void __cdecl UDisSeqAct_ActivateUsable::InternalConstructor(void *)
-//   0x7e56f0  public: static void __cdecl UDisSeqAct_AddAttributeModifier::InternalConstructor(void *)
-//   0x7e5710  public: static void __cdecl UDisSeqAct_AddDarkness::InternalConstructor(void *)
-//   0x7e5730  public: static void __cdecl UDisSeqAct_AIClearAttention::InternalConstructor(void *)
-//   0x7e5750  public: static void __cdecl UDisSeqAct_AIDoBehavior_Base::InternalConstructor(void *)
-//   0x7e5770  public: static void __cdecl UDisSeqAct_AIDoFollow::InternalConstructor(void *)
-//   0x7e5790  public: static void __cdecl UDisSeqAct_AIDoSimpleBehaviors::InternalConstructor(void *)
-//   0x7e57b0  public: static void __cdecl UDisSeqAct_AIGetBrainFlagValue::InternalConstructor(void *)
-//   0x7e57d0  public: static void __cdecl UDisSeqAct_RemoveAbstractItem::InternalConstructor(void *)
-//   0x7e57f0  public: static void __cdecl UDisSeqAct_AINoise::InternalConstructor(void *)
-//   0x7e5820  public: static void __cdecl UDisSeqAct_AISetBrainFlags::InternalConstructor(void *)
-//   0x7e5840  public: static void __cdecl UDisSeqAct_AttachAnimSet::InternalConstructor(void *)
-//   0x7e5860  public: static void __cdecl UDisSeqAct_AttachPickup::InternalConstructor(void *)
-//   0x7e5880  public: static void __cdecl UDisSeqAct_BackupAndClearInventory::InternalConstructor(void *)
-//   0x7e58a0  public: static void __cdecl UDisSeqAct_BendTime::InternalConstructor(void *)
-//   0x7e58c0  public: static void __cdecl UDisSeqAct_BodyShadowKill::InternalConstructor(void *)
-//   0x7e58e0  public: static void __cdecl UDisSeqAct_CleanupBodies::InternalConstructor(void *)
-//   0x7e5900  public: static void __cdecl UDisSeqAct_ClearPlayerVisSettings::InternalConstructor(void *)
-//   0x7e5920  public: static void __cdecl UDisSeqAct_DialogInputs::InternalConstructor(void *)
-//   0x7e5940  public: static void __cdecl UDisSeqAct_DialogScriptedChoice::InternalConstructor(void *)
-//   0x7e5960  public: static void __cdecl UDisSeqAct_DiscardAllLevelStates::InternalConstructor(void *)
-//   0x7e5980  public: static void __cdecl UDisSeqAct_DiscardLevelState::InternalConstructor(void *)
-//   0x7e59a0  public: static void __cdecl UDisSeqAct_EquipItemType::InternalConstructor(void *)
-//   0x7e59c0  public: static void __cdecl UDisSeqAct_PlayMusicBox::InternalConstructor(void *)
-//   0x7e59e0  public: static void __cdecl UDisSeqAct_FireProjectile::InternalConstructor(void *)
-//   0x7e5a00  public: static void __cdecl UDisSeqAct_ForbiddenZoneOverride::InternalConstructor(void *)
-//   0x7e5a20  public: static void __cdecl UDisSeqAct_GotoPlayerTravelDestination::InternalConstructor(void *)
-//   0x7e5a40  public: static void __cdecl UDisSeqAct_Highlight::InternalConstructor(void *)
-//   0x7e5a60  public: static void __cdecl UDisSeqAct_Latent::InternalConstructor(void *)
-//   0x7e5a80  public: static void __cdecl UDisSeqAct_AIGoToActor::InternalConstructor(void *)
-//   0x7e5aa0  public: static void __cdecl UDisSeqAct_AIShoot::InternalConstructor(void *)
-//   0x7e5ac0  public: static void __cdecl UDisSeqAct_AutoSave::InternalConstructor(void *)
-//   0x7e5ae0  public: static void __cdecl UDisSeqAct_NPCDoTeleportSpell::InternalConstructor(void *)
-//   0x7e5b00  public: static void __cdecl UDisSeqAct_SpawnCameraLensEffect::InternalConstructor(void *)
-//   0x7e5b20  public: static void __cdecl UDisSeqAct_StartSpawn::InternalConstructor(void *)
-//   0x7e5b50  public: static void __cdecl UDisSeqAct_LimitPawnMinHealth::InternalConstructor(void *)
-//   0x7e5b70  public: static void __cdecl UDisSeqAct_Lock::InternalConstructor(void *)
-//   0x7e5b90  public: static void __cdecl UDisSeqAct_ModifyAmmo::InternalConstructor(void *)
-//   0x7e5bb0  public: static void __cdecl UDisSeqAct_NotifyMissionEnd::InternalConstructor(void *)
-//   0x7e5bd0  public: static void __cdecl UDisSeqAct_NPCDisableTeleportOnNavmesh::InternalConstructor(void *)
-//   0x7e5bf0  public: static void __cdecl UDisSeqAct_NPCIgnoreRBDamages::InternalConstructor(void *)
-//   0x7e5c10  public: static void __cdecl UDisSeqAct_NPCMarkForVanish::InternalConstructor(void *)
-//   0x7e5c30  public: static void __cdecl UDisSeqAct_NPCSetMaterials::InternalConstructor(void *)
-//   0x7e5c50  public: static void __cdecl UDisSeqAct_NPCTrackTarget::InternalConstructor(void *)
-//   0x7e5c70  public: static void __cdecl UDisSeqAct_OutsiderConfig::InternalConstructor(void *)
-//   0x7e5c90  public: static void __cdecl UDisSeqAct_OverrideDisableHitReactSoiree::InternalConstructor(void *)
-//   0x7e5cb0  public: static void __cdecl UDisSeqAct_PlayerAction::InternalConstructor(void *)
-//   0x7e5cd0  public: static void __cdecl UDisSeqAct_AddKey::InternalConstructor(void *)
-//   0x7e5cf0  public: static void __cdecl UDisSeqAct_GiveUpgrade::InternalConstructor(void *)
-//   0x7e5d10  public: static void __cdecl UDEPRECATED_DisSeqAct_AddHeartTarget::InternalConstructor(void *)
-//   0x7e5d30  public: static void __cdecl UDisSeqAct_RemovePower::InternalConstructor(void *)
-//   0x7e5d50  public: static void __cdecl UDisSeqAct_PlayerTrackTarget::InternalConstructor(void *)
-//   0x7e5d70  public: static void __cdecl UDisSeqAct_PostProcess::InternalConstructor(void *)
-//   0x7e5d90  public: static void __cdecl UDisSeqAct_RBConstraint::InternalConstructor(void *)
-//   0x7e5db0  public: static void __cdecl UDisSeqAct_RemoveInventoryItem::InternalConstructor(void *)
-//   0x7e5dd0  public: static void __cdecl UDisSeqAct_RestoreInventoryFromBackup::InternalConstructor(void *)
-//   0x7e5df0  public: static void __cdecl UDisSeqAct_SaveLevelState::InternalConstructor(void *)
-//   0x7e5e10  public: static void __cdecl UDisSeqAct_SetActiveSoundCaptureBox::InternalConstructor(void *)
-//   0x7e5e30  public: static void __cdecl UDisSeqAct_SetAudioOcclusion::InternalConstructor(void *)
-//   0x7e5e50  public: static void __cdecl UDisSeqAct_SetDisposition::InternalConstructor(void *)
-//   0x7e5e70  public: static void __cdecl UDisSeqAct_SetPlayerTravelDestination::InternalConstructor(void *)
-//   0x7e5e90  public: static void __cdecl UDisSeqAct_SetPlayerVisSettings::InternalConstructor(void *)
-//   0x7e5eb0  public: static void __cdecl UDisSeqAct_SetRainEmitter::InternalConstructor(void *)
-//   0x7e5ed0  public: static void __cdecl UDisSeqAct_SetStoryFlag::InternalConstructor(void *)
-//   0x7e5ef0  public: static void __cdecl USeqAct_Teleport::InternalConstructor(void *)
-//   0x7e5f10  public: static void __cdecl UDisSeqAct_TriggerExplosion::InternalConstructor(void *)
-//   0x7e5f30  public: static void __cdecl UDisSeqAct_UberPostProcess::InternalConstructor(void *)
-//   0x7e5f50  public: static void __cdecl UDisSeqAct_WatchTowerShootAtTarget::InternalConstructor(void *)
-//   0x7e5f70  public: static void __cdecl UDisSeqCond_CheckStoryFlag::InternalConstructor(void *)
-//   0x7e5f90  public: static void __cdecl UDisSeqCond_CompareBoolExtended::InternalConstructor(void *)
-//   0x7e5fb0  public: static void __cdecl UDisSeqCond_CompareTweaks::InternalConstructor(void *)
-//   0x7e5fd0  public: static void __cdecl UDisSeqCond_InStoryGroup::InternalConstructor(void *)
-//   0x7e5ff0  public: static void __cdecl UDisSeqCond_IsDLCUnlocked::InternalConstructor(void *)
-//   0x7e6010  public: static void __cdecl UDisSeqCond_IsDoorOpen::InternalConstructor(void *)
-//   0x7e6030  public: static void __cdecl UDisSeqCond_IsSentinel::InternalConstructor(void *)
-//   0x7e6050  public: static void __cdecl UDisSeqCond_PawnIsPossessed::InternalConstructor(void *)
-//   0x7e6070  public: static void __cdecl UDisSeqEvent_Attention::InternalConstructor(void *)
-//   0x7e6090  public: static void __cdecl UDisSeqEvent_AttentionDecreasedTo::InternalConstructor(void *)
-//   0x7e60b0  public: static void __cdecl UDisSeqEvent_BehaviorStarted::InternalConstructor(void *)
-//   0x7e60d0  public: static void __cdecl UDisSeqEvent_BreakableBroken::InternalConstructor(void *)
-//   0x7e60f0  public: static void __cdecl UDisSeqEvent_NPCIncapacitated::InternalConstructor(void *)
-//   0x7e6110  public: static void __cdecl UDisSeqEvent_DialogOutputs::InternalConstructor(void *)
-//   0x7e6130  public: static void __cdecl UDisSeqEvent_Interact::InternalConstructor(void *)
-//   0x7e6150  public: static void __cdecl UDisSeqEvent_PickupPickedUp::InternalConstructor(void *)
-//   0x7e6170  public: static void __cdecl UDisSeqEvent_PlayerEvent::InternalConstructor(void *)
-//   0x7e6190  public: static void __cdecl UDisSeqEvent_PlayerManaThreshold::InternalConstructor(void *)
-//   ... 42 more, see resources/docs/symbols/functions.csv
+/*===========================================================================
+    DishonoredGameKismetClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalEnumsClasses.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#include "DishonoredGameClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_KISMET_ENUMS
+#define INCLUDED_DISHONOREDGAME_KISMET_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_KISMET_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_KISMET_CLASSES
+#define INCLUDED_DISHONOREDGAME_KISMET_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisToggleableVolume: retail sizeof 640, reflected span 628..632 (2012 PDB sizeof 640)
+class ADisToggleableVolume : public AVolume
+{
+public:
+    //## BEGIN PROPS DisToggleableVolume
+    BITFIELD m_bEnabled:1;
+    //## END PROPS DisToggleableVolume
+
+    DECLARE_FUNCTION(execOnToggle);
+    DECLARE_ABSTRACT_CLASS(ADisToggleableVolume,AVolume,0,DishonoredGame)
+};
+
+// DishonoredGame.DisForbiddenZone: retail sizeof 672, reflected span 632..668 (2012 PDB sizeof 672)
+class ADisForbiddenZone : public ADisToggleableVolume
+{
+public:
+    //## BEGIN PROPS DisForbiddenZone
+    TArrayNoInit<class UDisTweaks_Faction*> m_OwningFactions;
+    TArrayNoInit<class UDisTweaks_Faction*> m_ForbiddenFactions;
+    TArrayNoInit<class ADishonoredPawn*> m_TrespassingPawns;
+    //## END PROPS DisForbiddenZone
+
+    DECLARE_FUNCTION(execOnForbiddenZoneOverride);
+    DECLARE_CLASS(ADisForbiddenZone,ADisToggleableVolume,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTetherVolume: retail sizeof 640, reflected span 632..632 (2012 PDB sizeof 640)
+class ADisTetherVolume : public ADisToggleableVolume
+{
+public:
+    //## BEGIN PROPS DisTetherVolume
+    //## END PROPS DisTetherVolume
+
+    DECLARE_CLASS(ADisTetherVolume,ADisToggleableVolume,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_InStoryGroup.DisKismetStoryGroup: retail SDK size 8 (2012 PDB 8)
+struct FDisKismetStoryGroup
+{
+    BITFIELD m_bExactMatch:1;
+    class UDisTweaks_StoryGroup* m_pStoryGroup;
+
+    /** Constructors */
+    FDisKismetStoryGroup() {}
+    FDisKismetStoryGroup(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisKismetStoryGroup));
+    }
+};
+
+// DishonoredGame.DisSeqAct_RestoreInventoryFromBackup.DisRestoreOldEquipForPawn: retail SDK size 16 (2012 PDB 16)
+struct FDisRestoreOldEquipForPawn
+{
+    class ADishonoredPawn* m_pPawn;
+    class UClass* m_OldEquipment[3];
+
+    /** Constructors */
+    FDisRestoreOldEquipForPawn() {}
+    FDisRestoreOldEquipForPawn(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRestoreOldEquipForPawn));
+    }
+};
+
+// DishonoredGame.DisSeqAct_PlayerAction: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_PlayerAction : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_PlayerAction
+    //## END PROPS DisSeqAct_PlayerAction
+
+    DECLARE_ABSTRACT_CLASS(UDisSeqAct_PlayerAction,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_Latent: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
+class UDisSeqAct_Latent : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_Latent
+    //## END PROPS DisSeqAct_Latent
+
+    DECLARE_CLASS(UDisSeqAct_Latent,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerEvent: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PlayerEvent : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerEvent
+    //## END PROPS DisSeqEvent_PlayerEvent
+
+    DECLARE_ABSTRACT_CLASS(UDisSeqEvent_PlayerEvent,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIAmbush: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_AIAmbush : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIAmbush
+    class ADisAmbushPoint* m_pAmbushPoint;
+    class AActor* m_pAmbushTarget;
+    //## END PROPS DisSeqAct_AIAmbush
+
+    DECLARE_CLASS(UDisSeqAct_AIAmbush,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIClearAttention: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_AIClearAttention : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIClearAttention
+    TArrayNoInit<class UObject*> m_ClearAttentionForUs;
+    FLOAT m_fForHowLong;
+    //## END PROPS DisSeqAct_AIClearAttention
+
+    DECLARE_CLASS(UDisSeqAct_AIClearAttention,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIDoBehavior_Base: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
+class UDisSeqAct_AIDoBehavior_Base : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIDoBehavior_Base
+    class UObject* m_pBehaviorTarget;
+    BITFIELD m_bInterruptible:1;
+    FStringNoInit m_sHelpText;
+    //## END PROPS DisSeqAct_AIDoBehavior_Base
+
+    DECLARE_ABSTRACT_CLASS(UDisSeqAct_AIDoBehavior_Base,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIDoFollow: retail sizeof 280, reflected span 268..280 (2012 PDB sizeof 280)
+class UDisSeqAct_AIDoFollow : public UDisSeqAct_AIDoBehavior_Base
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIDoFollow
+    FFollowParameters m_FollowParameters;
+    //## END PROPS DisSeqAct_AIDoFollow
+
+    DECLARE_CLASS(UDisSeqAct_AIDoFollow,UDisSeqAct_AIDoBehavior_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIDoSimpleBehaviors: retail sizeof 272, reflected span 268..269 (2012 PDB sizeof 272)
+class UDisSeqAct_AIDoSimpleBehaviors : public UDisSeqAct_AIDoBehavior_Base
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIDoSimpleBehaviors
+    BYTE m_eSimpleBehaviorToRun;
+    //## END PROPS DisSeqAct_AIDoSimpleBehaviors
+
+    DECLARE_CLASS(UDisSeqAct_AIDoSimpleBehaviors,UDisSeqAct_AIDoBehavior_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIGetBrainFlagValue: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_AIGetBrainFlagValue : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIGetBrainFlagValue
+    BYTE m_FlagToFetch;
+    BITFIELD m_bCurrentFlagValue:1;
+    //## END PROPS DisSeqAct_AIGetBrainFlagValue
+
+    DECLARE_CLASS(UDisSeqAct_AIGetBrainFlagValue,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIGoToActor: retail sizeof 276, reflected span 264..273 (2012 PDB sizeof 276)
+class UDisSeqAct_AIGoToActor : public UDisSeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIGoToActor
+    BITFIELD m_bAbortRequested:1;
+    BITFIELD m_bInterruptable:1;
+    BITFIELD m_bTrackMovingTarget:1;
+    BITFIELD m_bSetNewHomeActor:1;
+    BITFIELD m_bAlignRotation:1;
+    class AActor* m_pDestinationActor;
+    BYTE m_DesiredMovementSpeed;
+    //## END PROPS DisSeqAct_AIGoToActor
+
+    DECLARE_CLASS(UDisSeqAct_AIGoToActor,UDisSeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIGuard: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_AIGuard : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIGuard
+    class AActor* m_pHomeActor;
+    FLOAT m_fGuardAwarenessRadius;
+    //## END PROPS DisSeqAct_AIGuard
+
+    DECLARE_CLASS(UDisSeqAct_AIGuard,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AINoise: retail sizeof 288, reflected span 248..288 (2012 PDB sizeof 288)
+class UDisSeqAct_AINoise : public USequenceAction, public IDisNoiseMakerInterface
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AINoise
+    BYTE m_eNoiseLoudness;
+    BYTE m_eNoiseContext;
+    FLOAT m_fCustomSoundRadius;
+    class AActor* m_pNoiseMaker;
+    class AActor* m_pNoiseLocation;
+    FDisAudioCellCache m_AudioCellCache;
+    //## END PROPS DisSeqAct_AINoise
+
+    DECLARE_CLASS(UDisSeqAct_AINoise,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIProtectNeutralsOverride: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_AIProtectNeutralsOverride : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIProtectNeutralsOverride
+    //## END PROPS DisSeqAct_AIProtectNeutralsOverride
+
+    DECLARE_CLASS(UDisSeqAct_AIProtectNeutralsOverride,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIPsychicAttention: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_AIPsychicAttention : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIPsychicAttention
+    class UObject* m_pPsychicAttentionOnMe;
+    //## END PROPS DisSeqAct_AIPsychicAttention
+
+    DECLARE_CLASS(UDisSeqAct_AIPsychicAttention,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AISetBrainFlags: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_AISetBrainFlags : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AISetBrainFlags
+    TArrayNoInit<BYTE> m_FlagsToModify;
+    //## END PROPS DisSeqAct_AISetBrainFlags
+
+    DECLARE_CLASS(UDisSeqAct_AISetBrainFlags,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AISetPatrol: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_AISetPatrol : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AISetPatrol
+    class AActor* m_pStartActor;
+    //## END PROPS DisSeqAct_AISetPatrol
+
+    DECLARE_CLASS(UDisSeqAct_AISetPatrol,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AISetSenses: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_AISetSenses : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AISetSenses
+    BITFIELD m_bDeaf:1;
+    BITFIELD m_bBlind:1;
+    BITFIELD m_bNumb:1;
+    //## END PROPS DisSeqAct_AISetSenses
+
+    DECLARE_CLASS(UDisSeqAct_AISetSenses,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AISetSuspicionLevel: retail sizeof 252, reflected span 248..249 (2012 PDB sizeof 252)
+class UDisSeqAct_AISetSuspicionLevel : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AISetSuspicionLevel
+    BYTE m_SuspicionLevel;
+    //## END PROPS DisSeqAct_AISetSuspicionLevel
+
+    DECLARE_CLASS(UDisSeqAct_AISetSuspicionLevel,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIShoot: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 280)
+class UDisSeqAct_AIShoot : public UDisSeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIShoot
+    BITFIELD m_bAbortRequested:1;
+    BITFIELD m_bOverrideAccuracy:1;
+    class AActor* m_pShotTarget;
+    INT m_iMaxNumShots;
+    FLOAT m_fOverrideAccuracyPercentage;
+    //## END PROPS DisSeqAct_AIShoot
+
+    DECLARE_CLASS(UDisSeqAct_AIShoot,UDisSeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AIStartDistraction: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_AIStartDistraction : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AIStartDistraction
+    class AActor* m_pDistractor;
+    //## END PROPS DisSeqAct_AIStartDistraction
+
+    DECLARE_CLASS(UDisSeqAct_AIStartDistraction,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ActivateProjectileLauncher: retail sizeof 268, reflected span 264..268 (2012 PDB sizeof 268)
+class UDisSeqAct_ActivateProjectileLauncher : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ActivateProjectileLauncher
+    class ADishonoredPawn* m_pProjInstigator;
+    //## END PROPS DisSeqAct_ActivateProjectileLauncher
+
+    DECLARE_CLASS(UDisSeqAct_ActivateProjectileLauncher,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ActivateRatSpawner: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_ActivateRatSpawner : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ActivateRatSpawner
+    //## END PROPS DisSeqAct_ActivateRatSpawner
+
+    DECLARE_CLASS(UDisSeqAct_ActivateRatSpawner,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ActivateUsable: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 280)
+class UDisSeqAct_ActivateUsable : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ActivateUsable
+    INT m_TargetStageIndex;
+    BITFIELD m_bForceAdvance:1;
+    BITFIELD m_bIgnoreMatch:1;
+    class ADishonoredPawn* m_pUsingPawn;
+    INT m_iGoalStage;
+    //## END PROPS DisSeqAct_ActivateUsable
+
+    DECLARE_CLASS(UDisSeqAct_ActivateUsable,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddAbstractItem: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_AddAbstractItem : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddAbstractItem
+    class UDisAbstractItem* m_pItemToAdd;
+    INT m_Quantity;
+    //## END PROPS DisSeqAct_AddAbstractItem
+
+    DECLARE_CLASS(UDisSeqAct_AddAbstractItem,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddAttributeModifier: retail sizeof 276, reflected span 248..276 (2012 PDB sizeof 276)
+class UDisSeqAct_AddAttributeModifier : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddAttributeModifier
+    FName m_AttributeName;
+    FName m_ModifierName;
+    BYTE m_ModifierType;
+    FLOAT m_fModifierValue;
+    FLOAT m_fModifierLifetime;
+    //## END PROPS DisSeqAct_AddAttributeModifier
+
+    DECLARE_CLASS(UDisSeqAct_AddAttributeModifier,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddDarkness: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_AddDarkness : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddDarkness
+    INT m_Value;
+    FStringNoInit m_Text;
+    //## END PROPS DisSeqAct_AddDarkness
+
+    DECLARE_CLASS(UDisSeqAct_AddDarkness,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddInventoryItem: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_AddInventoryItem : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddInventoryItem
+    class UDisTweaks_InventoryItem* m_pItemToAdd;
+    BITFIELD m_bEquipNewItem:1;
+    //## END PROPS DisSeqAct_AddInventoryItem
+
+    DECLARE_CLASS(UDisSeqAct_AddInventoryItem,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddKey: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_AddKey : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddKey
+    FStringNoInit m_Name;
+    class UDisTweaks_Key* m_KeyTweaks;
+    //## END PROPS DisSeqAct_AddKey
+
+    DECLARE_CLASS(UDisSeqAct_AddKey,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddPower: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_AddPower : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddPower
+    FStringNoInit m_PowerName;
+    INT m_PowerLevel;
+    //## END PROPS DisSeqAct_AddPower
+
+    DECLARE_CLASS(UDisSeqAct_AddPower,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AdrenalineToggle: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_AdrenalineToggle : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AdrenalineToggle
+    //## END PROPS DisSeqAct_AdrenalineToggle
+
+    DECLARE_CLASS(UDisSeqAct_AdrenalineToggle,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ApplyPlayerLoadout: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_ApplyPlayerLoadout : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ApplyPlayerLoadout
+    class UDisTweaks_PlayerLoadout* m_pPlayerLoadout;
+    //## END PROPS DisSeqAct_ApplyPlayerLoadout
+
+    DECLARE_CLASS(UDisSeqAct_ApplyPlayerLoadout,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AttachAnimSet: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_AttachAnimSet : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AttachAnimSet
+    class UAnimSet* m_pAnimSet;
+    //## END PROPS DisSeqAct_AttachAnimSet
+
+    DECLARE_CLASS(UDisSeqAct_AttachAnimSet,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AttachPickup: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_AttachPickup : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AttachPickup
+    class ADisPickup_Base* m_pPickup;
+    //## END PROPS DisSeqAct_AttachPickup
+
+    DECLARE_CLASS(UDisSeqAct_AttachPickup,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AutoSave: retail sizeof 276, reflected span 264..273 (2012 PDB sizeof 276)
+class UDisSeqAct_AutoSave : public UDisSeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AutoSave
+    BITFIELD m_bMissionStart:1;
+    BITFIELD m_bEvenInCombat:1;
+    BITFIELD m_bSkipAutosaveDelay:1;
+    INT m_MissionNumber;
+    BYTE m_AutoSaveStatus;
+    //## END PROPS DisSeqAct_AutoSave
+
+    DECLARE_CLASS(UDisSeqAct_AutoSave,UDisSeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_BackupAndClearInventory: retail sizeof 316, reflected span 264..316 (2012 PDB sizeof 316)
+class UDisSeqAct_BackupAndClearInventory : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_BackupAndClearInventory
+    BITFIELD m_bAlsoApplyToUpgrades:1;
+    BITFIELD m_bSkipAllChapterNotes:1;
+    BITFIELD m_bTryingToUnequip:1;
+    TArrayNoInit<class UDisTweaks_InventoryItem*> m_ForceRemoveItems;
+    TArrayNoInit<class UDisTweaks_InventoryItem*> m_SkipTheseItems;
+    TArrayNoInit<class UDisAbstractItem*> m_SkipTheseAbstractItem;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_SkipTheseUpgrades;
+    //## END PROPS DisSeqAct_BackupAndClearInventory
+
+    DECLARE_CLASS(UDisSeqAct_BackupAndClearInventory,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_BendTime: retail sizeof 272, reflected span 248..269 (2012 PDB sizeof 272)
+class UDisSeqAct_BendTime : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_BendTime
+    FLOAT m_fWorldTimeDilation;
+    FLOAT m_fPlayerTimeDilation;
+    BITFIELD m_bSetPlayerTimeDialation_Input:1;
+    BITFIELD m_bExclusive:1;
+    FLOAT m_fPlayerTimeDilation_Input;
+    FLOAT m_fTransitionDuration;
+    BYTE m_EffectToUse;
+    //## END PROPS DisSeqAct_BendTime
+
+    DECLARE_CLASS(UDisSeqAct_BendTime,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_BodyShadowKill: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_BodyShadowKill : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_BodyShadowKill
+    //## END PROPS DisSeqAct_BodyShadowKill
+
+    DECLARE_CLASS(UDisSeqAct_BodyShadowKill,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_CancelPlayerActivePower: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_CancelPlayerActivePower : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_CancelPlayerActivePower
+    class UClass* m_pPowerClass;
+    //## END PROPS DisSeqAct_CancelPlayerActivePower
+
+    DECLARE_CLASS(UDisSeqAct_CancelPlayerActivePower,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_CleanupBodies: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_CleanupBodies : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_CleanupBodies
+    //## END PROPS DisSeqAct_CleanupBodies
+
+    DECLARE_CLASS(UDisSeqAct_CleanupBodies,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ClearPlayerVisSettings: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_ClearPlayerVisSettings : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ClearPlayerVisSettings
+    //## END PROPS DisSeqAct_ClearPlayerVisSettings
+
+    DECLARE_CLASS(UDisSeqAct_ClearPlayerVisSettings,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_DialogScriptedChoice: retail sizeof 296, reflected span 264..296 (2012 PDB sizeof 296)
+class UDisSeqAct_DialogScriptedChoice : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_DialogScriptedChoice
+    BITFIELD m_bUseTitle:1;
+    BITFIELD m_bFailed:1;
+    FStringNoInit m_Title;
+    TArrayNoInit<FDisPlayerChoiceInfo> m_Choices;
+    INT m_iSelectedChoice;
+    //## END PROPS DisSeqAct_DialogScriptedChoice
+
+    DECLARE_CLASS(UDisSeqAct_DialogScriptedChoice,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_DefenceTower: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_DefenceTower : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_DefenceTower
+    //## END PROPS DisSeqAct_DefenceTower
+
+    DECLARE_CLASS(UDisSeqAct_DefenceTower,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_DialogInputs: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_DialogInputs : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_DialogInputs
+    class UDisDialogTree* m_pDialogTree;
+    class ADisDialogOneShot* m_pDialogOneShot;
+    //## END PROPS DisSeqAct_DialogInputs
+
+    DECLARE_CLASS(UDisSeqAct_DialogInputs,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_DiscardAllLevelStates: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_DiscardAllLevelStates : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_DiscardAllLevelStates
+    //## END PROPS DisSeqAct_DiscardAllLevelStates
+
+    DECLARE_CLASS(UDisSeqAct_DiscardAllLevelStates,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_DiscardLevelState: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_DiscardLevelState : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_DiscardLevelState
+    FName m_LevelName;
+    //## END PROPS DisSeqAct_DiscardLevelState
+
+    DECLARE_CLASS(UDisSeqAct_DiscardLevelState,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_Door: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_Door : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_Door
+    //## END PROPS DisSeqAct_Door
+
+    DECLARE_CLASS(UDisSeqAct_Door,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_EquipItemType: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_EquipItemType : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_EquipItemType
+    class UClass* m_pItemTypeToEquip;
+    BYTE m_PreferredUsage;
+    BITFIELD m_bDoInstantly:1;
+    BITFIELD m_bAffectsAIIntention:1;
+    //## END PROPS DisSeqAct_EquipItemType
+
+    DECLARE_CLASS(UDisSeqAct_EquipItemType,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_EvalAchievement: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_EvalAchievement : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_EvalAchievement
+    BYTE m_Achievement;
+    BITFIELD m_bResetStats:1;
+    //## END PROPS DisSeqAct_EvalAchievement
+
+    DECLARE_CLASS(UDisSeqAct_EvalAchievement,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_FireProjectile: retail sizeof 280, reflected span 248..280 (2012 PDB sizeof 280)
+class UDisSeqAct_FireProjectile : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_FireProjectile
+    class UDisTweaks_Projectile* m_pProjectileTweak;
+    FLOAT m_fProjectileSpeed;
+    INT m_fProjectileDamage;
+    FLOAT m_fProjectileHeadshotMult;
+    BITFIELD m_bHitTarget:1;
+    BITFIELD m_bLeadTarget:1;
+    BYTE m_eAccuracy;
+    BYTE m_eTargetRegion;
+    class AActor* m_pSource;
+    class AActor* m_pTarget;
+    //## END PROPS DisSeqAct_FireProjectile
+
+    DECLARE_CLASS(UDisSeqAct_FireProjectile,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ForbiddenZoneOverride: retail sizeof 276, reflected span 248..276 (2012 PDB sizeof 276)
+class UDisSeqAct_ForbiddenZoneOverride : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ForbiddenZoneOverride
+    BYTE m_ForbiddenZoneOverrideInput;
+    TArrayNoInit<class UDisTweaks_Faction*> m_OwningFactions;
+    TArrayNoInit<class UDisTweaks_Faction*> m_ForbiddenFactions;
+    //## END PROPS DisSeqAct_ForbiddenZoneOverride
+
+    DECLARE_CLASS(UDisSeqAct_ForbiddenZoneOverride,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_GetAbstractItemQuantity: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_GetAbstractItemQuantity : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_GetAbstractItemQuantity
+    class UDisAbstractItem* m_pItem;
+    INT m_Quantity;
+    //## END PROPS DisSeqAct_GetAbstractItemQuantity
+
+    DECLARE_CLASS(UDisSeqAct_GetAbstractItemQuantity,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_GetPlayerStat: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_GetPlayerStat : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_GetPlayerStat
+    INT m_Stat;
+    BITFIELD m_bResetStat:1;
+    FLOAT m_fResult;
+    //## END PROPS DisSeqAct_GetPlayerStat
+
+    DECLARE_CLASS(UDisSeqAct_GetPlayerStat,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_GivePickup: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_GivePickup : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_GivePickup
+    class UDisTweaks_PickupBase* m_pPickup;
+    //## END PROPS DisSeqAct_GivePickup
+
+    DECLARE_CLASS(UDisSeqAct_GivePickup,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_GiveUpgrade: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_GiveUpgrade : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_GiveUpgrade
+    class UDisTweaks_Upgrade* m_pUpgrade;
+    //## END PROPS DisSeqAct_GiveUpgrade
+
+    DECLARE_CLASS(UDisSeqAct_GiveUpgrade,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_GotoPlayerTravelDestination: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_GotoPlayerTravelDestination : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_GotoPlayerTravelDestination
+    BITFIELD m_bUseDestinationTargetRotation:1;
+    //## END PROPS DisSeqAct_GotoPlayerTravelDestination
+
+    DECLARE_CLASS(UDisSeqAct_GotoPlayerTravelDestination,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_Highlight: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_Highlight : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_Highlight
+    //## END PROPS DisSeqAct_Highlight
+
+    DECLARE_CLASS(UDisSeqAct_Highlight,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_IncrementPlayerStat: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
+class UDisSeqAct_IncrementPlayerStat : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_IncrementPlayerStat
+    BYTE m_StatToIncrement;
+    FLOAT m_fNumToIncrementBy;
+    class UDisTweaksBase* m_pTweaks;
+    class UDisAbstractItem* m_pAbstractItem;
+    class UClass* m_pDamageType;
+    //## END PROPS DisSeqAct_IncrementPlayerStat
+
+    DECLARE_CLASS(UDisSeqAct_IncrementPlayerStat,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_LimitPawnMinHealth: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_LimitPawnMinHealth : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_LimitPawnMinHealth
+    INT m_MinimumHealth;
+    //## END PROPS DisSeqAct_LimitPawnMinHealth
+
+    DECLARE_CLASS(UDisSeqAct_LimitPawnMinHealth,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_Lock: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_Lock : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_Lock
+    //## END PROPS DisSeqAct_Lock
+
+    DECLARE_CLASS(UDisSeqAct_Lock,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_MaxPowers: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_MaxPowers : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_MaxPowers
+    //## END PROPS DisSeqAct_MaxPowers
+
+    DECLARE_CLASS(UDisSeqAct_MaxPowers,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_MinPowers: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_MinPowers : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_MinPowers
+    //## END PROPS DisSeqAct_MinPowers
+
+    DECLARE_CLASS(UDisSeqAct_MinPowers,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ModifyAmmo: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_ModifyAmmo : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ModifyAmmo
+    BYTE m_AmmoOp;
+    TArrayNoInit<FDisInventoryAmmoEntry> m_Ammo;
+    //## END PROPS DisSeqAct_ModifyAmmo
+
+    DECLARE_CLASS(UDisSeqAct_ModifyAmmo,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ModifyElixirCount: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_ModifyElixirCount : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ModifyElixirCount
+    BYTE m_ElixirType;
+    BYTE m_ElixirOp;
+    INT m_Value;
+    //## END PROPS DisSeqAct_ModifyElixirCount
+
+    DECLARE_CLASS(UDisSeqAct_ModifyElixirCount,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NPCDisableTeleportOnNavmesh: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_NPCDisableTeleportOnNavmesh : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NPCDisableTeleportOnNavmesh
+    class AActor* m_pNPC;
+    //## END PROPS DisSeqAct_NPCDisableTeleportOnNavmesh
+
+    DECLARE_CLASS(UDisSeqAct_NPCDisableTeleportOnNavmesh,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NPCDoTeleportSpell: retail sizeof 276, reflected span 264..276 (2012 PDB sizeof 276)
+class UDisSeqAct_NPCDoTeleportSpell : public UDisSeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NPCDoTeleportSpell
+    BITFIELD m_bAbortRequested:1;
+    BITFIELD m_bSetNewHomeActor:1;
+    class AActor* m_pDestinationActor;
+    FLOAT m_fReappearanceDelay;
+    //## END PROPS DisSeqAct_NPCDoTeleportSpell
+
+    DECLARE_CLASS(UDisSeqAct_NPCDoTeleportSpell,UDisSeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NPCIgnoreRBDamages: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_NPCIgnoreRBDamages : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NPCIgnoreRBDamages
+    //## END PROPS DisSeqAct_NPCIgnoreRBDamages
+
+    DECLARE_CLASS(UDisSeqAct_NPCIgnoreRBDamages,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NPCMarkForVanish: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 280)
+class UDisSeqAct_NPCMarkForVanish : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NPCMarkForVanish
+    BYTE m_VanishInput;
+    BITFIELD m_bRespectSearchAndCombat:1;
+    FLOAT m_fRequiredDistance;
+    FLOAT m_fOffscreenTimeRequired;
+    //## END PROPS DisSeqAct_NPCMarkForVanish
+
+    DECLARE_CLASS(UDisSeqAct_NPCMarkForVanish,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NPCSetMaterials: retail sizeof 272, reflected span 248..272 (2012 PDB sizeof 272)
+class UDisSeqAct_NPCSetMaterials : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NPCSetMaterials
+    TArrayNoInit<FDisMaterialSetting> m_NewBodyMaterials;
+    TArrayNoInit<FDisMaterialSetting> m_NewHeadMaterials;
+    //## END PROPS DisSeqAct_NPCSetMaterials
+
+    DECLARE_CLASS(UDisSeqAct_NPCSetMaterials,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NPCTrackTarget: retail sizeof 276, reflected span 248..276 (2012 PDB sizeof 276)
+class UDisSeqAct_NPCTrackTarget : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NPCTrackTarget
+    class AActor* m_pNPC;
+    class AActor* m_pTrackedTarget;
+    FName m_TrackedBone;
+    BYTE m_LookAtInfluence;
+    BITFIELD m_UseFaceTo:1;
+    BITFIELD m_bActiveLookAt:1;
+    BITFIELD m_bActiveFaceTo:1;
+    FLOAT m_LookAtSpeedFactor;
+    //## END PROPS DisSeqAct_NPCTrackTarget
+
+    DECLARE_CLASS(UDisSeqAct_NPCTrackTarget,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_NotifyMissionEnd: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_NotifyMissionEnd : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_NotifyMissionEnd
+    //## END PROPS DisSeqAct_NotifyMissionEnd
+
+    DECLARE_CLASS(UDisSeqAct_NotifyMissionEnd,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_OutsiderConfig: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_OutsiderConfig : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_OutsiderConfig
+    BYTE m_DepthPriorityGroup;
+    FLightingChannelContainer m_LightingChannels;
+    //## END PROPS DisSeqAct_OutsiderConfig
+
+    DECLARE_CLASS(UDisSeqAct_OutsiderConfig,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_OverrideAwarenessDisplay: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_OverrideAwarenessDisplay : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_OverrideAwarenessDisplay
+    class AActor* m_pNPC;
+    //## END PROPS DisSeqAct_OverrideAwarenessDisplay
+
+    DECLARE_CLASS(UDisSeqAct_OverrideAwarenessDisplay,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_OverrideDisableHitReactSoiree: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_OverrideDisableHitReactSoiree : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_OverrideDisableHitReactSoiree
+    //## END PROPS DisSeqAct_OverrideDisableHitReactSoiree
+
+    DECLARE_CLASS(UDisSeqAct_OverrideDisableHitReactSoiree,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_PlayMusicBox: retail sizeof 260, reflected span 260..260 (2012 PDB sizeof 260)
+class UDisSeqAct_PlayMusicBox : public UDisSeqAct_EquipItemType
+{
+public:
+    //## BEGIN PROPS DisSeqAct_PlayMusicBox
+    //## END PROPS DisSeqAct_PlayMusicBox
+
+    DECLARE_CLASS(UDisSeqAct_PlayMusicBox,UDisSeqAct_EquipItemType,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_PlayerTrackTarget: retail sizeof 292, reflected span 248..292 (2012 PDB sizeof 292)
+class UDisSeqAct_PlayerTrackTarget : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_PlayerTrackTarget
+    class AActor* m_pTrackedTarget;
+    BITFIELD m_bHoldUntilStopped:1;
+    FLOAT m_fRotationFreedomYaw;
+    FLOAT m_fRotationFreedomPitch;
+    FLOAT m_fBlendTime;
+    FName m_TrackedBone;
+    FVector m_TrackedBoneOffset;
+    INT m_TrackingID;
+    //## END PROPS DisSeqAct_PlayerTrackTarget
+
+    DECLARE_CLASS(UDisSeqAct_PlayerTrackTarget,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_PlugWhaleOilBattery: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_PlugWhaleOilBattery : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_PlugWhaleOilBattery
+    //## END PROPS DisSeqAct_PlugWhaleOilBattery
+
+    DECLARE_CLASS(UDisSeqAct_PlugWhaleOilBattery,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_PostProcess: retail sizeof 252, reflected span 248..249 (2012 PDB sizeof 252)
+class UDisSeqAct_PostProcess : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_PostProcess
+    BYTE m_Effect;
+    //## END PROPS DisSeqAct_PostProcess
+
+    DECLARE_CLASS(UDisSeqAct_PostProcess,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RBConstraint: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_RBConstraint : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RBConstraint
+    class AActor* m_pConstraintActor1;
+    //## END PROPS DisSeqAct_RBConstraint
+
+    DECLARE_CLASS(UDisSeqAct_RBConstraint,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RefillWhaleOilBattery: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_RefillWhaleOilBattery : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RefillWhaleOilBattery
+    FLOAT m_PercentageCharge;
+    class UAkEvent* m_RefillSound;
+    //## END PROPS DisSeqAct_RefillWhaleOilBattery
+
+    DECLARE_CLASS(UDisSeqAct_RefillWhaleOilBattery,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RemoveAbstractItem: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_RemoveAbstractItem : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RemoveAbstractItem
+    class UDisAbstractItem* m_pItemToRemove;
+    INT m_Quantity;
+    //## END PROPS DisSeqAct_RemoveAbstractItem
+
+    DECLARE_CLASS(UDisSeqAct_RemoveAbstractItem,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RemoveAttributeModifier: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_RemoveAttributeModifier : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RemoveAttributeModifier
+    FName m_AttributeName;
+    FName m_ModifierName;
+    //## END PROPS DisSeqAct_RemoveAttributeModifier
+
+    DECLARE_CLASS(UDisSeqAct_RemoveAttributeModifier,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RemoveInventoryItem: retail sizeof 272, reflected span 264..272 (2012 PDB sizeof 272)
+class UDisSeqAct_RemoveInventoryItem : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RemoveInventoryItem
+    class UClass* m_pRemoveAllOfType;
+    BITFIELD m_bTryingToUnequip:1;
+    //## END PROPS DisSeqAct_RemoveInventoryItem
+
+    DECLARE_CLASS(UDisSeqAct_RemoveInventoryItem,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RemoveKey: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_RemoveKey : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RemoveKey
+    FStringNoInit m_Name;
+    //## END PROPS DisSeqAct_RemoveKey
+
+    DECLARE_CLASS(UDisSeqAct_RemoveKey,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RemovePower: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_RemovePower : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RemovePower
+    FStringNoInit m_PowerName;
+    //## END PROPS DisSeqAct_RemovePower
+
+    DECLARE_CLASS(UDisSeqAct_RemovePower,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RestoreInventoryFromBackup: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 280)
+class UDisSeqAct_RestoreInventoryFromBackup : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RestoreInventoryFromBackup
+    BITFIELD m_bTryingToUnequip:1;
+    TArrayNoInit<FDisRestoreOldEquipForPawn> m_OldEquipForPawns;
+    //## END PROPS DisSeqAct_RestoreInventoryFromBackup
+
+    DECLARE_CLASS(UDisSeqAct_RestoreInventoryFromBackup,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RiverKrustDisable: retail sizeof 252, reflected span 248..249 (2012 PDB sizeof 252)
+class UDisSeqAct_RiverKrustDisable : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RiverKrustDisable
+    BYTE m_Disabled;
+    //## END PROPS DisSeqAct_RiverKrustDisable
+
+    DECLARE_CLASS(UDisSeqAct_RiverKrustDisable,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RiverKrustSpitAtTarget: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_RiverKrustSpitAtTarget : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RiverKrustSpitAtTarget
+    class AActor* m_pTargetActor;
+    //## END PROPS DisSeqAct_RiverKrustSpitAtTarget
+
+    DECLARE_CLASS(UDisSeqAct_RiverKrustSpitAtTarget,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SaveLevelState: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_SaveLevelState : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SaveLevelState
+    BITFIELD m_bPartial:1;
+    //## END PROPS DisSeqAct_SaveLevelState
+
+    DECLARE_CLASS(UDisSeqAct_SaveLevelState,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetActiveSoundCaptureBox: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_SetActiveSoundCaptureBox : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetActiveSoundCaptureBox
+    //## END PROPS DisSeqAct_SetActiveSoundCaptureBox
+
+    DECLARE_CLASS(UDisSeqAct_SetActiveSoundCaptureBox,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetAudioOcclusion: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_SetAudioOcclusion : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetAudioOcclusion
+    FLOAT m_fOcclusion;
+    BITFIELD m_bSetHeardByAI:1;
+    BITFIELD m_bSetHeardByPlayer:1;
+    FLOAT m_fOcclusion_HeardByAI;
+    FLOAT m_fOcclusion_HeardByPlayer;
+    //## END PROPS DisSeqAct_SetAudioOcclusion
+
+    DECLARE_CLASS(UDisSeqAct_SetAudioOcclusion,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetBoneCharmEffect: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_SetBoneCharmEffect : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetBoneCharmEffect
+    INT m_Effect;
+    //## END PROPS DisSeqAct_SetBoneCharmEffect
+
+    DECLARE_CLASS(UDisSeqAct_SetBoneCharmEffect,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetDisposition: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
+class UDisSeqAct_SetDisposition : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetDisposition
+    BYTE m_SetDispositionKismetInput;
+    BYTE m_Disposition;
+    BITFIELD m_bReciprocate:1;
+    TArrayNoInit<class UObject*> m_Recipients;
+    //## END PROPS DisSeqAct_SetDisposition
+
+    DECLARE_CLASS(UDisSeqAct_SetDisposition,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetPlayerHealth: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_SetPlayerHealth : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetPlayerHealth
+    INT m_Health;
+    //## END PROPS DisSeqAct_SetPlayerHealth
+
+    DECLARE_CLASS(UDisSeqAct_SetPlayerHealth,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetPlayerMana: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_SetPlayerMana : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetPlayerMana
+    INT m_Mana;
+    //## END PROPS DisSeqAct_SetPlayerMana
+
+    DECLARE_CLASS(UDisSeqAct_SetPlayerMana,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetPlayerTravelDestination: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_SetPlayerTravelDestination : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetPlayerTravelDestination
+    FName m_Tag;
+    //## END PROPS DisSeqAct_SetPlayerTravelDestination
+
+    DECLARE_CLASS(UDisSeqAct_SetPlayerTravelDestination,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetPlayerVisSettings: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_SetPlayerVisSettings : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetPlayerVisSettings
+    class UDisTweaks_PlayerVisSettings* m_pSettings;
+    //## END PROPS DisSeqAct_SetPlayerVisSettings
+
+    DECLARE_CLASS(UDisSeqAct_SetPlayerVisSettings,USequenceAction,0,DishonoredGame)
+};
+
+struct DisSeqAct_SetRainEmitter_eventGetObjClassVersion_Parms
+{
+    INT ReturnValue;
+    DisSeqAct_SetRainEmitter_eventGetObjClassVersion_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisSeqAct_SetRainEmitter: retail sizeof 292, reflected span 264..292 (2012 PDB sizeof 292)
+class UDisSeqAct_SetRainEmitter : public USeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetRainEmitter
+    INT m_NumRainDrops;
+    FLOAT m_fRainImpactsMinDist;
+    FLOAT m_fRainImpactsMaxDist;
+    class AActor* m_pRainRotationActor;
+    FLOAT m_fRainStartDelay;
+    class ADishonoredPlayerCamera* m_pCachedCamera;
+    FLOAT m_fStartTimer;
+    //## END PROPS DisSeqAct_SetRainEmitter
+
+    INT eventGetObjClassVersion()
+    {
+        DisSeqAct_SetRainEmitter_eventGetObjClassVersion_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=0;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_GetObjClassVersion),&Parms);
+        return Parms.ReturnValue;
+    }
+    DECLARE_CLASS(UDisSeqAct_SetRainEmitter,USeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetStoryFlag: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
+class UDisSeqAct_SetStoryFlag : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetStoryFlag
+    class UDisStoryFlagSet* m_pStoryFlagSet;
+    FGuid m_StoryFlag;
+    //## END PROPS DisSeqAct_SetStoryFlag
+
+    DECLARE_CLASS(UDisSeqAct_SetStoryFlag,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SeverLimb: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
+class UDisSeqAct_SeverLimb : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SeverLimb
+    FName m_JointName;
+    BITFIELD m_bUseBlood:1;
+    BITFIELD m_bHideLimb:1;
+    BITFIELD m_bShowGore:1;
+    BITFIELD m_bShowEat:1;
+    BYTE m_ImpulseMode;
+    FLOAT m_fImpulseStrength;
+    //## END PROPS DisSeqAct_SeverLimb
+
+    DECLARE_CLASS(UDisSeqAct_SeverLimb,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ShowPowerMenu: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_ShowPowerMenu : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ShowPowerMenu
+    //## END PROPS DisSeqAct_ShowPowerMenu
+
+    DECLARE_CLASS(UDisSeqAct_ShowPowerMenu,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SpawnCameraLensEffect: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 280)
+class UDisSeqAct_SpawnCameraLensEffect : public UDisSeqAct_Latent
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SpawnCameraLensEffect
+    class UClass* m_pEffectClass;
+    class UDisTweaks_EmitterCameraLensEffect* m_pDisEffectTweaks;
+    FLOAT m_fLoopingBlendInTime;
+    FLOAT m_fLoopingBlendOutTime;
+    //## END PROPS DisSeqAct_SpawnCameraLensEffect
+
+    DECLARE_CLASS(UDisSeqAct_SpawnCameraLensEffect,UDisSeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SpawnStealable: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
+class UDisSeqAct_SpawnStealable : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SpawnStealable
+    class UDisTweaks_PickupBase* m_pStealableTweaks;
+    FStringNoInit m_KeyName;
+    class ADisPickup_Base* m_pSpawnedPickup;
+    //## END PROPS DisSeqAct_SpawnStealable
+
+    DECLARE_CLASS(UDisSeqAct_SpawnStealable,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_StartSpawn: retail sizeof 284, reflected span 264..284 (2012 PDB sizeof 284)
+class UDisSeqAct_StartSpawn : public UDisSeqAct_Latent, public IDisSpawnRequesterInterface
+{
+public:
+    //## BEGIN PROPS DisSeqAct_StartSpawn
+    BITFIELD m_bSpawnEvenIfVisible:1;
+    INT m_PendingSpawnCount;
+    INT m_SpawnedCount;
+    INT m_FailedCount;
+    //## END PROPS DisSeqAct_StartSpawn
+
+    DECLARE_CLASS(UDisSeqAct_StartSpawn,UDisSeqAct_Latent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ToggleAchievementEval: retail sizeof 252, reflected span 248..249 (2012 PDB sizeof 252)
+class UDisSeqAct_ToggleAchievementEval : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ToggleAchievementEval
+    BYTE m_Achievement;
+    //## END PROPS DisSeqAct_ToggleAchievementEval
+
+    DECLARE_CLASS(UDisSeqAct_ToggleAchievementEval,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ToggleChoke: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_ToggleChoke : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ToggleChoke
+    //## END PROPS DisSeqAct_ToggleChoke
+
+    DECLARE_CLASS(UDisSeqAct_ToggleChoke,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ToggleHUDElement: retail sizeof 252, reflected span 248..249 (2012 PDB sizeof 252)
+class UDisSeqAct_ToggleHUDElement : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ToggleHUDElement
+    BYTE m_HudElement;
+    //## END PROPS DisSeqAct_ToggleHUDElement
+
+    DECLARE_CLASS(UDisSeqAct_ToggleHUDElement,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ToggleJournal: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_ToggleJournal : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ToggleJournal
+    //## END PROPS DisSeqAct_ToggleJournal
+
+    DECLARE_CLASS(UDisSeqAct_ToggleJournal,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_TogglePlayerLeftHand: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_TogglePlayerLeftHand : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_TogglePlayerLeftHand
+    //## END PROPS DisSeqAct_TogglePlayerLeftHand
+
+    DECLARE_CLASS(UDisSeqAct_TogglePlayerLeftHand,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_TogglePowerWheel: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_TogglePowerWheel : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_TogglePowerWheel
+    //## END PROPS DisSeqAct_TogglePowerWheel
+
+    DECLARE_CLASS(UDisSeqAct_TogglePowerWheel,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_ToggleTutorial: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_ToggleTutorial : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ToggleTutorial
+    TArrayNoInit<BYTE> m_AffectedTutorials;
+    //## END PROPS DisSeqAct_ToggleTutorial
+
+    DECLARE_CLASS(UDisSeqAct_ToggleTutorial,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_TriggerExplosion: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
+class UDisSeqAct_TriggerExplosion : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_TriggerExplosion
+    class UDisTweaks_Explosion* m_pExplosionTweaks;
+    class APawn* m_pInstigator;
+    //## END PROPS DisSeqAct_TriggerExplosion
+
+    DECLARE_CLASS(UDisSeqAct_TriggerExplosion,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_UberPostProcess: retail sizeof 356, reflected span 248..356 (2012 PDB sizeof 356)
+class UDisSeqAct_UberPostProcess : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_UberPostProcess
+    FArkUberPpParameters m_Parameters;
+    FLOAT m_fWeight;
+    FLOAT m_fFadeInTime;
+    FLOAT m_fFadeOutTime;
+    //## END PROPS DisSeqAct_UberPostProcess
+
+    DECLARE_CLASS(UDisSeqAct_UberPostProcess,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_WallofLightControl: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
+class UDisSeqAct_WallofLightControl : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_WallofLightControl
+    //## END PROPS DisSeqAct_WallofLightControl
+
+    DECLARE_CLASS(UDisSeqAct_WallofLightControl,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_WatchTower: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
+class UDisSeqAct_WatchTower : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_WatchTower
+    TArrayNoInit<class AActor*> m_Track;
+    //## END PROPS DisSeqAct_WatchTower
+
+    DECLARE_CLASS(UDisSeqAct_WatchTower,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_WatchTowerShootAtTarget: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_WatchTowerShootAtTarget : public USequenceAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_WatchTowerShootAtTarget
+    class AActor* m_pTargetActor;
+    //## END PROPS DisSeqAct_WatchTowerShootAtTarget
+
+    DECLARE_CLASS(UDisSeqAct_WatchTowerShootAtTarget,USequenceAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_CheckStoryFlag: retail sizeof 244, reflected span 224..244 (2012 PDB sizeof 244)
+class UDisSeqCond_CheckStoryFlag : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_CheckStoryFlag
+    class UDisStoryFlagSet* m_pStoryFlagSet;
+    FGuid m_StoryFlag;
+    //## END PROPS DisSeqCond_CheckStoryFlag
+
+    DECLARE_CLASS(UDisSeqCond_CheckStoryFlag,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_CompareBoolExtended: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
+class UDisSeqCond_CompareBoolExtended : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_CompareBoolExtended
+    BITFIELD m_bResultAnd:1;
+    BITFIELD m_bResultOr:1;
+    //## END PROPS DisSeqCond_CompareBoolExtended
+
+    DECLARE_CLASS(UDisSeqCond_CompareBoolExtended,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_CompareTweaks: retail sizeof 232, reflected span 224..232 (2012 PDB sizeof 232)
+class UDisSeqCond_CompareTweaks : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_CompareTweaks
+    class UObject* m_pA;
+    class UObject* m_pB;
+    //## END PROPS DisSeqCond_CompareTweaks
+
+    DECLARE_CLASS(UDisSeqCond_CompareTweaks,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_InStoryGroup: retail sizeof 248, reflected span 224..248 (2012 PDB sizeof 248)
+class UDisSeqCond_InStoryGroup : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_InStoryGroup
+    TArrayNoInit<FDisKismetStoryGroup> m_StoryGroupsToCheck;
+    TArrayNoInit<class UObject*> m_Targets;
+    //## END PROPS DisSeqCond_InStoryGroup
+
+    DECLARE_CLASS(UDisSeqCond_InStoryGroup,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_IsDLCUnlocked: retail sizeof 228, reflected span 224..225 (2012 PDB sizeof 228)
+class UDisSeqCond_IsDLCUnlocked : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_IsDLCUnlocked
+    BYTE m_DLCType;
+    //## END PROPS DisSeqCond_IsDLCUnlocked
+
+    DECLARE_CLASS(UDisSeqCond_IsDLCUnlocked,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_IsDoorOpen: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
+class UDisSeqCond_IsDoorOpen : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_IsDoorOpen
+    class ADisDoor* m_pDoor;
+    //## END PROPS DisSeqCond_IsDoorOpen
+
+    DECLARE_CLASS(UDisSeqCond_IsDoorOpen,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_IsSentinel: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)
+class UDisSeqCond_IsSentinel : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_IsSentinel
+    //## END PROPS DisSeqCond_IsSentinel
+
+    DECLARE_CLASS(UDisSeqCond_IsSentinel,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_PawnIsPossessed: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)
+class UDisSeqCond_PawnIsPossessed : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_PawnIsPossessed
+    //## END PROPS DisSeqCond_PawnIsPossessed
+
+    DECLARE_CLASS(UDisSeqCond_PawnIsPossessed,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_ActorTouched: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_ActorTouched : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_ActorTouched
+    //## END PROPS DisSeqEvent_ActorTouched
+
+    DECLARE_CLASS(UDisSeqEvent_ActorTouched,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_AttackedByRats: retail sizeof 272, reflected span 272..272 (new in 2013)
+class UDisSeqEvent_AttackedByRats : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_AttackedByRats
+    //## END PROPS DisSeqEvent_AttackedByRats
+
+    DECLARE_CLASS(UDisSeqEvent_AttackedByRats,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Attention: retail sizeof 276, reflected span 272..274 (2012 PDB sizeof 276)
+class UDisSeqEvent_Attention : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Attention
+    BYTE m_eAttentionLevel;
+    BYTE m_eActivatedAttentionLevel;
+    //## END PROPS DisSeqEvent_Attention
+
+    DECLARE_CLASS(UDisSeqEvent_Attention,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_AttentionDecreasedTo: retail sizeof 276, reflected span 274..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_AttentionDecreasedTo : public UDisSeqEvent_Attention
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_AttentionDecreasedTo
+    //## END PROPS DisSeqEvent_AttentionDecreasedTo
+
+    DECLARE_CLASS(UDisSeqEvent_AttentionDecreasedTo,UDisSeqEvent_Attention,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_AttentionIncreasedTo: retail sizeof 276, reflected span 274..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_AttentionIncreasedTo : public UDisSeqEvent_Attention
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_AttentionIncreasedTo
+    //## END PROPS DisSeqEvent_AttentionIncreasedTo
+
+    DECLARE_CLASS(UDisSeqEvent_AttentionIncreasedTo,UDisSeqEvent_Attention,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_BehaviorStarted: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_BehaviorStarted : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_BehaviorStarted
+    class UClass* m_pBehavior;
+    //## END PROPS DisSeqEvent_BehaviorStarted
+
+    DECLARE_CLASS(UDisSeqEvent_BehaviorStarted,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_BreakableBroken: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_BreakableBroken : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_BreakableBroken
+    //## END PROPS DisSeqEvent_BreakableBroken
+
+    DECLARE_CLASS(UDisSeqEvent_BreakableBroken,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Climb: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Climb : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Climb
+    //## END PROPS DisSeqEvent_Climb
+
+    DECLARE_CLASS(UDisSeqEvent_Climb,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Combat: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Combat : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Combat
+    //## END PROPS DisSeqEvent_Combat
+
+    DECLARE_CLASS(UDisSeqEvent_Combat,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Corpse: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Corpse : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Corpse
+    //## END PROPS DisSeqEvent_Corpse
+
+    DECLARE_CLASS(UDisSeqEvent_Corpse,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_CorpseDetected: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_CorpseDetected : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_CorpseDetected
+    //## END PROPS DisSeqEvent_CorpseDetected
+
+    DECLARE_CLASS(UDisSeqEvent_CorpseDetected,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_DefenceTower: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_DefenceTower : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_DefenceTower
+    //## END PROPS DisSeqEvent_DefenceTower
+
+    DECLARE_CLASS(UDisSeqEvent_DefenceTower,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_DialogOutputs: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_DialogOutputs : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_DialogOutputs
+    class UDisDialogTree* m_pDialogTree;
+    //## END PROPS DisSeqEvent_DialogOutputs
+
+    DECLARE_CLASS(UDisSeqEvent_DialogOutputs,USequenceEvent,0,DishonoredGame)
+};
+
+struct DisSeqEvent_Distracted_eventGetObjClassVersion_Parms
+{
+    INT ReturnValue;
+    DisSeqEvent_Distracted_eventGetObjClassVersion_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisSeqEvent_Distracted: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Distracted : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Distracted
+    //## END PROPS DisSeqEvent_Distracted
+
+    INT eventGetObjClassVersion()
+    {
+        DisSeqEvent_Distracted_eventGetObjClassVersion_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=0;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_GetObjClassVersion),&Parms);
+        return Parms.ReturnValue;
+    }
+    DECLARE_CLASS(UDisSeqEvent_Distracted,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Door: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Door : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Door
+    //## END PROPS DisSeqEvent_Door
+
+    DECLARE_CLASS(UDisSeqEvent_Door,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_FishPossess: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_FishPossess : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_FishPossess
+    //## END PROPS DisSeqEvent_FishPossess
+
+    DECLARE_CLASS(UDisSeqEvent_FishPossess,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_FleepointReached: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_FleepointReached : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_FleepointReached
+    //## END PROPS DisSeqEvent_FleepointReached
+
+    DECLARE_CLASS(UDisSeqEvent_FleepointReached,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Interact: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_Interact : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Interact
+    class UDisTweaksBase* m_pAssociatedTweak;
+    //## END PROPS DisSeqEvent_Interact
+
+    DECLARE_CLASS(UDisSeqEvent_Interact,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Investigate: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Investigate : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Investigate
+    //## END PROPS DisSeqEvent_Investigate
+
+    DECLARE_CLASS(UDisSeqEvent_Investigate,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_JournalViewed: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_JournalViewed : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_JournalViewed
+    //## END PROPS DisSeqEvent_JournalViewed
+
+    DECLARE_CLASS(UDisSeqEvent_JournalViewed,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_KeyHoleUsed: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_KeyHoleUsed : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_KeyHoleUsed
+    //## END PROPS DisSeqEvent_KeyHoleUsed
+
+    DECLARE_CLASS(UDisSeqEvent_KeyHoleUsed,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_KnockedOut: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_KnockedOut : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_KnockedOut
+    //## END PROPS DisSeqEvent_KnockedOut
+
+    DECLARE_CLASS(UDisSeqEvent_KnockedOut,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Lock: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Lock : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Lock
+    //## END PROPS DisSeqEvent_Lock
+
+    DECLARE_CLASS(UDisSeqEvent_Lock,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_MovableDropped: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_MovableDropped : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_MovableDropped
+    //## END PROPS DisSeqEvent_MovableDropped
+
+    DECLARE_CLASS(UDisSeqEvent_MovableDropped,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_MovablePickedUp: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_MovablePickedUp : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_MovablePickedUp
+    //## END PROPS DisSeqEvent_MovablePickedUp
+
+    DECLARE_CLASS(UDisSeqEvent_MovablePickedUp,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_NPCIncapacitated: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_NPCIncapacitated : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_NPCIncapacitated
+    //## END PROPS DisSeqEvent_NPCIncapacitated
+
+    DECLARE_CLASS(UDisSeqEvent_NPCIncapacitated,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PatrolPointReached: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PatrolPointReached : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PatrolPointReached
+    //## END PROPS DisSeqEvent_PatrolPointReached
+
+    DECLARE_CLASS(UDisSeqEvent_PatrolPointReached,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PawnSighted: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PawnSighted : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PawnSighted
+    //## END PROPS DisSeqEvent_PawnSighted
+
+    DECLARE_CLASS(UDisSeqEvent_PawnSighted,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PickupPickedUp: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_PickupPickedUp : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PickupPickedUp
+    BITFIELD m_bDestroyPickup:1;
+    //## END PROPS DisSeqEvent_PickupPickedUp
+
+    DECLARE_CLASS(UDisSeqEvent_PickupPickedUp,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerCombat: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PlayerCombat : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerCombat
+    //## END PROPS DisSeqEvent_PlayerCombat
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerCombat,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerCrouch: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PlayerCrouch : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerCrouch
+    //## END PROPS DisSeqEvent_PlayerCrouch
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerCrouch,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerHeard: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PlayerHeard : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerHeard
+    //## END PROPS DisSeqEvent_PlayerHeard
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerHeard,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerHolsterWeapon: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PlayerHolsterWeapon : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerHolsterWeapon
+    //## END PROPS DisSeqEvent_PlayerHolsterWeapon
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerHolsterWeapon,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerInventoryChanged: retail sizeof 280, reflected span 272..280 (new in 2013)
+class UDisSeqEvent_PlayerInventoryChanged : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerInventoryChanged
+    class UClass* m_pItemType;
+    BITFIELD m_bExactMatch:1;
+    //## END PROPS DisSeqEvent_PlayerInventoryChanged
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerInventoryChanged,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerManaThreshold: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_PlayerManaThreshold : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerManaThreshold
+    INT m_ManaThreshold;
+    //## END PROPS DisSeqEvent_PlayerManaThreshold
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerManaThreshold,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PlayerTutorialEvent: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PlayerTutorialEvent : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PlayerTutorialEvent
+    //## END PROPS DisSeqEvent_PlayerTutorialEvent
+
+    DECLARE_CLASS(UDisSeqEvent_PlayerTutorialEvent,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Possessed: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Possessed : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Possessed
+    //## END PROPS DisSeqEvent_Possessed
+
+    DECLARE_CLASS(UDisSeqEvent_Possessed,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PowerUsed: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PowerUsed : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PowerUsed
+    //## END PROPS DisSeqEvent_PowerUsed
+
+    DECLARE_CLASS(UDisSeqEvent_PowerUsed,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PowerEquipped: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PowerEquipped : public UDisSeqEvent_PowerUsed
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PowerEquipped
+    //## END PROPS DisSeqEvent_PowerEquipped
+
+    DECLARE_CLASS(UDisSeqEvent_PowerEquipped,UDisSeqEvent_PowerUsed,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_PutToSleep: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_PutToSleep : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_PutToSleep
+    //## END PROPS DisSeqEvent_PutToSleep
+
+    DECLARE_CLASS(UDisSeqEvent_PutToSleep,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_RatPossess: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_RatPossess : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_RatPossess
+    //## END PROPS DisSeqEvent_RatPossess
+
+    DECLARE_CLASS(UDisSeqEvent_RatPossess,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_RiverKrustLooted: retail sizeof 272, reflected span 272..272 (new in 2013)
+class UDisSeqEvent_RiverKrustLooted : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_RiverKrustLooted
+    //## END PROPS DisSeqEvent_RiverKrustLooted
+
+    DECLARE_CLASS(UDisSeqEvent_RiverKrustLooted,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Spawned: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Spawned : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Spawned
+    //## END PROPS DisSeqEvent_Spawned
+
+    DECLARE_CLASS(UDisSeqEvent_Spawned,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_TeleportSpell: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_TeleportSpell : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_TeleportSpell
+    //## END PROPS DisSeqEvent_TeleportSpell
+
+    DECLARE_CLASS(UDisSeqEvent_TeleportSpell,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Tripwire: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Tripwire : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Tripwire
+    //## END PROPS DisSeqEvent_Tripwire
+
+    DECLARE_CLASS(UDisSeqEvent_Tripwire,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Used: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_Used : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Used
+    INT m_Stage;
+    //## END PROPS DisSeqEvent_Used
+
+    DECLARE_CLASS(UDisSeqEvent_Used,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_WallOfLight: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_WallOfLight : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_WallOfLight
+    //## END PROPS DisSeqEvent_WallOfLight
+
+    DECLARE_CLASS(UDisSeqEvent_WallOfLight,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_WatchTower: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_WatchTower : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_WatchTower
+    //## END PROPS DisSeqEvent_WatchTower
+
+    DECLARE_CLASS(UDisSeqEvent_WatchTower,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_WhaleOilBattery: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_WhaleOilBattery : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_WhaleOilBattery
+    //## END PROPS DisSeqEvent_WhaleOilBattery
+
+    DECLARE_CLASS(UDisSeqEvent_WhaleOilBattery,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_WhaleOilReceptacle: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_WhaleOilReceptacle : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_WhaleOilReceptacle
+    //## END PROPS DisSeqEvent_WhaleOilReceptacle
+
+    DECLARE_CLASS(UDisSeqEvent_WhaleOilReceptacle,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_Windblasted: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_Windblasted : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_Windblasted
+    //## END PROPS DisSeqEvent_Windblasted
+
+    DECLARE_CLASS(UDisSeqEvent_Windblasted,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_WitnessedInteraction: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
+class UDisSeqEvent_WitnessedInteraction : public USequenceEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_WitnessedInteraction
+    //## END PROPS DisSeqEvent_WitnessedInteraction
+
+    DECLARE_CLASS(UDisSeqEvent_WitnessedInteraction,USequenceEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_Darkness: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisSeqVar_Darkness : public USeqVar_Int
+{
+public:
+    //## BEGIN PROPS DisSeqVar_Darkness
+    //## END PROPS DisSeqVar_Darkness
+
+    DECLARE_CLASS(UDisSeqVar_Darkness,USeqVar_Int,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_DarknessLevel: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisSeqVar_DarknessLevel : public UDisSeqVar_Darkness
+{
+public:
+    //## BEGIN PROPS DisSeqVar_DarknessLevel
+    //## END PROPS DisSeqVar_DarknessLevel
+
+    DECLARE_CLASS(UDisSeqVar_DarknessLevel,UDisSeqVar_Darkness,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_PlayerCamera: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 176)
+class UDisSeqVar_PlayerCamera : public USeqVar_Object
+{
+public:
+    //## BEGIN PROPS DisSeqVar_PlayerCamera
+    //## END PROPS DisSeqVar_PlayerCamera
+
+    DECLARE_FUNCTION(execGetObjectValue);
+    DECLARE_CLASS(UDisSeqVar_PlayerCamera,USeqVar_Object,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_PlayerMana: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisSeqVar_PlayerMana : public USeqVar_Int
+{
+public:
+    //## BEGIN PROPS DisSeqVar_PlayerMana
+    //## END PROPS DisSeqVar_PlayerMana
+
+    DECLARE_CLASS(UDisSeqVar_PlayerMana,USeqVar_Int,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_PlayerPawn: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 176)
+class UDisSeqVar_PlayerPawn : public USeqVar_Object
+{
+public:
+    //## BEGIN PROPS DisSeqVar_PlayerPawn
+    //## END PROPS DisSeqVar_PlayerPawn
+
+    DECLARE_FUNCTION(execGetObjectValue);
+    DECLARE_CLASS(UDisSeqVar_PlayerPawn,USeqVar_Object,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_PlayerRawVisibility: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisSeqVar_PlayerRawVisibility : public USeqVar_Float
+{
+public:
+    //## BEGIN PROPS DisSeqVar_PlayerRawVisibility
+    //## END PROPS DisSeqVar_PlayerRawVisibility
+
+    DECLARE_CLASS(UDisSeqVar_PlayerRawVisibility,USeqVar_Float,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_PlayerSpeedFraction: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisSeqVar_PlayerSpeedFraction : public USeqVar_Float
+{
+public:
+    //## BEGIN PROPS DisSeqVar_PlayerSpeedFraction
+    //## END PROPS DisSeqVar_PlayerSpeedFraction
+
+    DECLARE_CLASS(UDisSeqVar_PlayerSpeedFraction,USeqVar_Float,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_SpawnerPawn: retail sizeof 188, reflected span 176..188 (2012 PDB sizeof 188)
+class UDisSeqVar_SpawnerPawn : public USeqVar_Object
+{
+public:
+    //## BEGIN PROPS DisSeqVar_SpawnerPawn
+    TArrayNoInit<class UObject*> m_pSpawnedPawns;
+    //## END PROPS DisSeqVar_SpawnerPawn
+
+    DECLARE_FUNCTION(execGetObjectValue);
+    DECLARE_CLASS(UDisSeqVar_SpawnerPawn,USeqVar_Object,0,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_KISMET_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(ADisToggleableVolume,-1,execOnToggle);
+AUTOGENERATE_FUNCTION(ADisForbiddenZone,-1,execOnForbiddenZoneOverride);
+AUTOGENERATE_FUNCTION(UDisSeqVar_PlayerCamera,-1,execGetObjectValue);
+AUTOGENERATE_FUNCTION(UDisSeqVar_PlayerPawn,-1,execGetObjectValue);
+AUTOGENERATE_FUNCTION(UDisSeqVar_SpawnerPawn,-1,execGetObjectValue);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_KISMET_NATIVE_DEFS
+#define DISHONOREDGAME_KISMET_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_KISMET \
+	ADisToggleableVolume::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisToggleableVolume"), GDishonoredGameADisToggleableVolumeNatives); \
+	ADisForbiddenZone::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisForbiddenZone"), GDishonoredGameADisForbiddenZoneNatives); \
+	ADisTetherVolume::StaticClass(); \
+	UDisSeqAct_PlayerAction::StaticClass(); \
+	UDisSeqAct_Latent::StaticClass(); \
+	UDisSeqEvent_PlayerEvent::StaticClass(); \
+	UDisSeqAct_AIAmbush::StaticClass(); \
+	UDisSeqAct_AIClearAttention::StaticClass(); \
+	UDisSeqAct_AIDoBehavior_Base::StaticClass(); \
+	UDisSeqAct_AIDoFollow::StaticClass(); \
+	UDisSeqAct_AIDoSimpleBehaviors::StaticClass(); \
+	UDisSeqAct_AIGetBrainFlagValue::StaticClass(); \
+	UDisSeqAct_AIGoToActor::StaticClass(); \
+	UDisSeqAct_AIGuard::StaticClass(); \
+	UDisSeqAct_AINoise::StaticClass(); \
+	UDisSeqAct_AIProtectNeutralsOverride::StaticClass(); \
+	UDisSeqAct_AIPsychicAttention::StaticClass(); \
+	UDisSeqAct_AISetBrainFlags::StaticClass(); \
+	UDisSeqAct_AISetPatrol::StaticClass(); \
+	UDisSeqAct_AISetSenses::StaticClass(); \
+	UDisSeqAct_AISetSuspicionLevel::StaticClass(); \
+	UDisSeqAct_AIShoot::StaticClass(); \
+	UDisSeqAct_AIStartDistraction::StaticClass(); \
+	UDisSeqAct_ActivateProjectileLauncher::StaticClass(); \
+	UDisSeqAct_ActivateRatSpawner::StaticClass(); \
+	UDisSeqAct_ActivateUsable::StaticClass(); \
+	UDisSeqAct_AddAbstractItem::StaticClass(); \
+	UDisSeqAct_AddAttributeModifier::StaticClass(); \
+	UDisSeqAct_AddDarkness::StaticClass(); \
+	UDisSeqAct_AddInventoryItem::StaticClass(); \
+	UDisSeqAct_AddKey::StaticClass(); \
+	UDisSeqAct_AddPower::StaticClass(); \
+	UDisSeqAct_AdrenalineToggle::StaticClass(); \
+	UDisSeqAct_ApplyPlayerLoadout::StaticClass(); \
+	UDisSeqAct_AttachAnimSet::StaticClass(); \
+	UDisSeqAct_AttachPickup::StaticClass(); \
+	UDisSeqAct_AutoSave::StaticClass(); \
+	UDisSeqAct_BackupAndClearInventory::StaticClass(); \
+	UDisSeqAct_BendTime::StaticClass(); \
+	UDisSeqAct_BodyShadowKill::StaticClass(); \
+	UDisSeqAct_CancelPlayerActivePower::StaticClass(); \
+	UDisSeqAct_CleanupBodies::StaticClass(); \
+	UDisSeqAct_ClearPlayerVisSettings::StaticClass(); \
+	UDisSeqAct_DialogScriptedChoice::StaticClass(); \
+	UDisSeqAct_DefenceTower::StaticClass(); \
+	UDisSeqAct_DialogInputs::StaticClass(); \
+	UDisSeqAct_DiscardAllLevelStates::StaticClass(); \
+	UDisSeqAct_DiscardLevelState::StaticClass(); \
+	UDisSeqAct_Door::StaticClass(); \
+	UDisSeqAct_EquipItemType::StaticClass(); \
+	UDisSeqAct_EvalAchievement::StaticClass(); \
+	UDisSeqAct_FireProjectile::StaticClass(); \
+	UDisSeqAct_ForbiddenZoneOverride::StaticClass(); \
+	UDisSeqAct_GetAbstractItemQuantity::StaticClass(); \
+	UDisSeqAct_GetPlayerStat::StaticClass(); \
+	UDisSeqAct_GivePickup::StaticClass(); \
+	UDisSeqAct_GiveUpgrade::StaticClass(); \
+	UDisSeqAct_GotoPlayerTravelDestination::StaticClass(); \
+	UDisSeqAct_Highlight::StaticClass(); \
+	UDisSeqAct_IncrementPlayerStat::StaticClass(); \
+	UDisSeqAct_LimitPawnMinHealth::StaticClass(); \
+	UDisSeqAct_Lock::StaticClass(); \
+	UDisSeqAct_MaxPowers::StaticClass(); \
+	UDisSeqAct_MinPowers::StaticClass(); \
+	UDisSeqAct_ModifyAmmo::StaticClass(); \
+	UDisSeqAct_ModifyElixirCount::StaticClass(); \
+	UDisSeqAct_NPCDisableTeleportOnNavmesh::StaticClass(); \
+	UDisSeqAct_NPCDoTeleportSpell::StaticClass(); \
+	UDisSeqAct_NPCIgnoreRBDamages::StaticClass(); \
+	UDisSeqAct_NPCMarkForVanish::StaticClass(); \
+	UDisSeqAct_NPCSetMaterials::StaticClass(); \
+	UDisSeqAct_NPCTrackTarget::StaticClass(); \
+	UDisSeqAct_NotifyMissionEnd::StaticClass(); \
+	UDisSeqAct_OutsiderConfig::StaticClass(); \
+	UDisSeqAct_OverrideAwarenessDisplay::StaticClass(); \
+	UDisSeqAct_OverrideDisableHitReactSoiree::StaticClass(); \
+	UDisSeqAct_PlayMusicBox::StaticClass(); \
+	UDisSeqAct_PlayerTrackTarget::StaticClass(); \
+	UDisSeqAct_PlugWhaleOilBattery::StaticClass(); \
+	UDisSeqAct_PostProcess::StaticClass(); \
+	UDisSeqAct_RBConstraint::StaticClass(); \
+	UDisSeqAct_RefillWhaleOilBattery::StaticClass(); \
+	UDisSeqAct_RemoveAbstractItem::StaticClass(); \
+	UDisSeqAct_RemoveAttributeModifier::StaticClass(); \
+	UDisSeqAct_RemoveInventoryItem::StaticClass(); \
+	UDisSeqAct_RemoveKey::StaticClass(); \
+	UDisSeqAct_RemovePower::StaticClass(); \
+	UDisSeqAct_RestoreInventoryFromBackup::StaticClass(); \
+	UDisSeqAct_RiverKrustDisable::StaticClass(); \
+	UDisSeqAct_RiverKrustSpitAtTarget::StaticClass(); \
+	UDisSeqAct_SaveLevelState::StaticClass(); \
+	UDisSeqAct_SetActiveSoundCaptureBox::StaticClass(); \
+	UDisSeqAct_SetAudioOcclusion::StaticClass(); \
+	UDisSeqAct_SetBoneCharmEffect::StaticClass(); \
+	UDisSeqAct_SetDisposition::StaticClass(); \
+	UDisSeqAct_SetPlayerHealth::StaticClass(); \
+	UDisSeqAct_SetPlayerMana::StaticClass(); \
+	UDisSeqAct_SetPlayerTravelDestination::StaticClass(); \
+	UDisSeqAct_SetPlayerVisSettings::StaticClass(); \
+	UDisSeqAct_SetRainEmitter::StaticClass(); \
+	UDisSeqAct_SetStoryFlag::StaticClass(); \
+	UDisSeqAct_SeverLimb::StaticClass(); \
+	UDisSeqAct_ShowPowerMenu::StaticClass(); \
+	UDisSeqAct_SpawnCameraLensEffect::StaticClass(); \
+	UDisSeqAct_SpawnStealable::StaticClass(); \
+	UDisSeqAct_StartSpawn::StaticClass(); \
+	UDisSeqAct_ToggleAchievementEval::StaticClass(); \
+	UDisSeqAct_ToggleChoke::StaticClass(); \
+	UDisSeqAct_ToggleHUDElement::StaticClass(); \
+	UDisSeqAct_ToggleJournal::StaticClass(); \
+	UDisSeqAct_TogglePlayerLeftHand::StaticClass(); \
+	UDisSeqAct_TogglePowerWheel::StaticClass(); \
+	UDisSeqAct_ToggleTutorial::StaticClass(); \
+	UDisSeqAct_TriggerExplosion::StaticClass(); \
+	UDisSeqAct_UberPostProcess::StaticClass(); \
+	UDisSeqAct_WallofLightControl::StaticClass(); \
+	UDisSeqAct_WatchTower::StaticClass(); \
+	UDisSeqAct_WatchTowerShootAtTarget::StaticClass(); \
+	UDisSeqCond_CheckStoryFlag::StaticClass(); \
+	UDisSeqCond_CompareBoolExtended::StaticClass(); \
+	UDisSeqCond_CompareTweaks::StaticClass(); \
+	UDisSeqCond_InStoryGroup::StaticClass(); \
+	UDisSeqCond_IsDLCUnlocked::StaticClass(); \
+	UDisSeqCond_IsDoorOpen::StaticClass(); \
+	UDisSeqCond_IsSentinel::StaticClass(); \
+	UDisSeqCond_PawnIsPossessed::StaticClass(); \
+	UDisSeqEvent_ActorTouched::StaticClass(); \
+	UDisSeqEvent_AttackedByRats::StaticClass(); \
+	UDisSeqEvent_Attention::StaticClass(); \
+	UDisSeqEvent_AttentionDecreasedTo::StaticClass(); \
+	UDisSeqEvent_AttentionIncreasedTo::StaticClass(); \
+	UDisSeqEvent_BehaviorStarted::StaticClass(); \
+	UDisSeqEvent_BreakableBroken::StaticClass(); \
+	UDisSeqEvent_Climb::StaticClass(); \
+	UDisSeqEvent_Combat::StaticClass(); \
+	UDisSeqEvent_Corpse::StaticClass(); \
+	UDisSeqEvent_CorpseDetected::StaticClass(); \
+	UDisSeqEvent_DefenceTower::StaticClass(); \
+	UDisSeqEvent_DialogOutputs::StaticClass(); \
+	UDisSeqEvent_Distracted::StaticClass(); \
+	UDisSeqEvent_Door::StaticClass(); \
+	UDisSeqEvent_FishPossess::StaticClass(); \
+	UDisSeqEvent_FleepointReached::StaticClass(); \
+	UDisSeqEvent_Interact::StaticClass(); \
+	UDisSeqEvent_Investigate::StaticClass(); \
+	UDisSeqEvent_JournalViewed::StaticClass(); \
+	UDisSeqEvent_KeyHoleUsed::StaticClass(); \
+	UDisSeqEvent_KnockedOut::StaticClass(); \
+	UDisSeqEvent_Lock::StaticClass(); \
+	UDisSeqEvent_MovableDropped::StaticClass(); \
+	UDisSeqEvent_MovablePickedUp::StaticClass(); \
+	UDisSeqEvent_NPCIncapacitated::StaticClass(); \
+	UDisSeqEvent_PatrolPointReached::StaticClass(); \
+	UDisSeqEvent_PawnSighted::StaticClass(); \
+	UDisSeqEvent_PickupPickedUp::StaticClass(); \
+	UDisSeqEvent_PlayerCombat::StaticClass(); \
+	UDisSeqEvent_PlayerCrouch::StaticClass(); \
+	UDisSeqEvent_PlayerHeard::StaticClass(); \
+	UDisSeqEvent_PlayerHolsterWeapon::StaticClass(); \
+	UDisSeqEvent_PlayerInventoryChanged::StaticClass(); \
+	UDisSeqEvent_PlayerManaThreshold::StaticClass(); \
+	UDisSeqEvent_PlayerTutorialEvent::StaticClass(); \
+	UDisSeqEvent_Possessed::StaticClass(); \
+	UDisSeqEvent_PowerUsed::StaticClass(); \
+	UDisSeqEvent_PowerEquipped::StaticClass(); \
+	UDisSeqEvent_PutToSleep::StaticClass(); \
+	UDisSeqEvent_RatPossess::StaticClass(); \
+	UDisSeqEvent_RiverKrustLooted::StaticClass(); \
+	UDisSeqEvent_Spawned::StaticClass(); \
+	UDisSeqEvent_TeleportSpell::StaticClass(); \
+	UDisSeqEvent_Tripwire::StaticClass(); \
+	UDisSeqEvent_Used::StaticClass(); \
+	UDisSeqEvent_WallOfLight::StaticClass(); \
+	UDisSeqEvent_WatchTower::StaticClass(); \
+	UDisSeqEvent_WhaleOilBattery::StaticClass(); \
+	UDisSeqEvent_WhaleOilReceptacle::StaticClass(); \
+	UDisSeqEvent_Windblasted::StaticClass(); \
+	UDisSeqEvent_WitnessedInteraction::StaticClass(); \
+	UDisSeqVar_Darkness::StaticClass(); \
+	UDisSeqVar_DarknessLevel::StaticClass(); \
+	UDisSeqVar_PlayerCamera::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisSeqVar_PlayerCamera"), GDishonoredGameUDisSeqVar_PlayerCameraNatives); \
+	UDisSeqVar_PlayerMana::StaticClass(); \
+	UDisSeqVar_PlayerPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisSeqVar_PlayerPawn"), GDishonoredGameUDisSeqVar_PlayerPawnNatives); \
+	UDisSeqVar_PlayerRawVisibility::StaticClass(); \
+	UDisSeqVar_PlayerSpeedFraction::StaticClass(); \
+	UDisSeqVar_SpawnerPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisSeqVar_SpawnerPawn"), GDishonoredGameUDisSeqVar_SpawnerPawnNatives); \
+
+#endif // DISHONOREDGAME_KISMET_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameADisToggleableVolumeNatives[] = 
+{ 
+	MAP_NATIVE(ADisToggleableVolume, execOnToggle)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisForbiddenZoneNatives[] = 
+{ 
+	MAP_NATIVE(ADisForbiddenZone, execOnForbiddenZoneOverride)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisSeqVar_PlayerCameraNatives[] = 
+{ 
+	MAP_NATIVE(UDisSeqVar_PlayerCamera, execGetObjectValue)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisSeqVar_PlayerPawnNatives[] = 
+{ 
+	MAP_NATIVE(UDisSeqVar_PlayerPawn, execGetObjectValue)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisSeqVar_SpawnerPawnNatives[] = 
+{ 
+	MAP_NATIVE(UDisSeqVar_SpawnerPawn, execGetObjectValue)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_SIZE_NODIE(ADisToggleableVolume)
+VERIFY_CLASS_OFFSET_NODIE(ADisForbiddenZone,DisForbiddenZone,m_OwningFactions)
+VERIFY_CLASS_OFFSET_NODIE(ADisForbiddenZone,DisForbiddenZone,m_TrespassingPawns)
+VERIFY_CLASS_SIZE_NODIE(ADisForbiddenZone)
+VERIFY_CLASS_SIZE_NODIE(ADisTetherVolume)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_PlayerAction)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_Latent)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerEvent)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIAmbush,DisSeqAct_AIAmbush,m_pAmbushPoint)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIAmbush,DisSeqAct_AIAmbush,m_pAmbushTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIAmbush)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIClearAttention,DisSeqAct_AIClearAttention,m_ClearAttentionForUs)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIClearAttention,DisSeqAct_AIClearAttention,m_fForHowLong)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIClearAttention)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIDoBehavior_Base,DisSeqAct_AIDoBehavior_Base,m_pBehaviorTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIDoBehavior_Base,DisSeqAct_AIDoBehavior_Base,m_sHelpText)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIDoBehavior_Base)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIDoFollow,DisSeqAct_AIDoFollow,m_FollowParameters)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIDoFollow)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIDoSimpleBehaviors,DisSeqAct_AIDoSimpleBehaviors,m_eSimpleBehaviorToRun)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIDoSimpleBehaviors)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIGetBrainFlagValue,DisSeqAct_AIGetBrainFlagValue,m_FlagToFetch)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIGetBrainFlagValue)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIGoToActor,DisSeqAct_AIGoToActor,m_pDestinationActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIGoToActor,DisSeqAct_AIGoToActor,m_DesiredMovementSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIGoToActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIGuard,DisSeqAct_AIGuard,m_pHomeActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIGuard,DisSeqAct_AIGuard,m_fGuardAwarenessRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AINoise,DisSeqAct_AINoise,m_eNoiseLoudness)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AINoise,DisSeqAct_AINoise,m_AudioCellCache)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AINoise)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIProtectNeutralsOverride)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIPsychicAttention,DisSeqAct_AIPsychicAttention,m_pPsychicAttentionOnMe)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIPsychicAttention)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AISetBrainFlags,DisSeqAct_AISetBrainFlags,m_FlagsToModify)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AISetBrainFlags)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AISetPatrol,DisSeqAct_AISetPatrol,m_pStartActor)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AISetPatrol)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AISetSenses)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AISetSuspicionLevel,DisSeqAct_AISetSuspicionLevel,m_SuspicionLevel)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AISetSuspicionLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIShoot,DisSeqAct_AIShoot,m_pShotTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIShoot,DisSeqAct_AIShoot,m_fOverrideAccuracyPercentage)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIShoot)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AIStartDistraction,DisSeqAct_AIStartDistraction,m_pDistractor)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AIStartDistraction)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ActivateProjectileLauncher,DisSeqAct_ActivateProjectileLauncher,m_pProjInstigator)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ActivateProjectileLauncher)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ActivateRatSpawner)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ActivateUsable,DisSeqAct_ActivateUsable,m_TargetStageIndex)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ActivateUsable,DisSeqAct_ActivateUsable,m_iGoalStage)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ActivateUsable)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddAbstractItem,DisSeqAct_AddAbstractItem,m_pItemToAdd)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddAbstractItem,DisSeqAct_AddAbstractItem,m_Quantity)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddAbstractItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddAttributeModifier,DisSeqAct_AddAttributeModifier,m_AttributeName)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddAttributeModifier,DisSeqAct_AddAttributeModifier,m_fModifierLifetime)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddAttributeModifier)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddDarkness,DisSeqAct_AddDarkness,m_Value)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddDarkness,DisSeqAct_AddDarkness,m_Text)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddDarkness)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddInventoryItem,DisSeqAct_AddInventoryItem,m_pItemToAdd)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddInventoryItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddKey,DisSeqAct_AddKey,m_Name)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddKey,DisSeqAct_AddKey,m_KeyTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddKey)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddPower,DisSeqAct_AddPower,m_PowerName)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AddPower,DisSeqAct_AddPower,m_PowerLevel)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddPower)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AdrenalineToggle)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ApplyPlayerLoadout,DisSeqAct_ApplyPlayerLoadout,m_pPlayerLoadout)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ApplyPlayerLoadout)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AttachAnimSet,DisSeqAct_AttachAnimSet,m_pAnimSet)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AttachAnimSet)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AttachPickup,DisSeqAct_AttachPickup,m_pPickup)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AttachPickup)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AutoSave,DisSeqAct_AutoSave,m_MissionNumber)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_AutoSave,DisSeqAct_AutoSave,m_AutoSaveStatus)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AutoSave)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_BackupAndClearInventory,DisSeqAct_BackupAndClearInventory,m_ForceRemoveItems)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_BackupAndClearInventory,DisSeqAct_BackupAndClearInventory,m_SkipTheseUpgrades)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_BackupAndClearInventory)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_BendTime,DisSeqAct_BendTime,m_fWorldTimeDilation)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_BendTime,DisSeqAct_BendTime,m_EffectToUse)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_BendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_BodyShadowKill)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_CancelPlayerActivePower,DisSeqAct_CancelPlayerActivePower,m_pPowerClass)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_CancelPlayerActivePower)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_CleanupBodies)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ClearPlayerVisSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_DialogScriptedChoice,DisSeqAct_DialogScriptedChoice,m_Title)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_DialogScriptedChoice,DisSeqAct_DialogScriptedChoice,m_iSelectedChoice)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_DialogScriptedChoice)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_DefenceTower)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_DialogInputs,DisSeqAct_DialogInputs,m_pDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_DialogInputs,DisSeqAct_DialogInputs,m_pDialogOneShot)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_DialogInputs)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_DiscardAllLevelStates)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_DiscardLevelState,DisSeqAct_DiscardLevelState,m_LevelName)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_DiscardLevelState)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_Door)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_EquipItemType,DisSeqAct_EquipItemType,m_pItemTypeToEquip)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_EquipItemType,DisSeqAct_EquipItemType,m_PreferredUsage)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_EquipItemType)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_EvalAchievement,DisSeqAct_EvalAchievement,m_Achievement)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_EvalAchievement)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_FireProjectile,DisSeqAct_FireProjectile,m_pProjectileTweak)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_FireProjectile,DisSeqAct_FireProjectile,m_pTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_FireProjectile)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ForbiddenZoneOverride,DisSeqAct_ForbiddenZoneOverride,m_ForbiddenZoneOverrideInput)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ForbiddenZoneOverride,DisSeqAct_ForbiddenZoneOverride,m_ForbiddenFactions)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ForbiddenZoneOverride)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_GetAbstractItemQuantity,DisSeqAct_GetAbstractItemQuantity,m_pItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_GetAbstractItemQuantity,DisSeqAct_GetAbstractItemQuantity,m_Quantity)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_GetAbstractItemQuantity)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_GetPlayerStat,DisSeqAct_GetPlayerStat,m_Stat)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_GetPlayerStat,DisSeqAct_GetPlayerStat,m_fResult)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_GetPlayerStat)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_GivePickup,DisSeqAct_GivePickup,m_pPickup)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_GivePickup)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_GiveUpgrade,DisSeqAct_GiveUpgrade,m_pUpgrade)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_GiveUpgrade)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_GotoPlayerTravelDestination)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_Highlight)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_IncrementPlayerStat,DisSeqAct_IncrementPlayerStat,m_StatToIncrement)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_IncrementPlayerStat,DisSeqAct_IncrementPlayerStat,m_pDamageType)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_IncrementPlayerStat)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_LimitPawnMinHealth,DisSeqAct_LimitPawnMinHealth,m_MinimumHealth)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_LimitPawnMinHealth)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_Lock)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_MaxPowers)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_MinPowers)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ModifyAmmo,DisSeqAct_ModifyAmmo,m_AmmoOp)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ModifyAmmo,DisSeqAct_ModifyAmmo,m_Ammo)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ModifyAmmo)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ModifyElixirCount,DisSeqAct_ModifyElixirCount,m_ElixirType)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ModifyElixirCount,DisSeqAct_ModifyElixirCount,m_Value)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ModifyElixirCount)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCDisableTeleportOnNavmesh,DisSeqAct_NPCDisableTeleportOnNavmesh,m_pNPC)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NPCDisableTeleportOnNavmesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCDoTeleportSpell,DisSeqAct_NPCDoTeleportSpell,m_pDestinationActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCDoTeleportSpell,DisSeqAct_NPCDoTeleportSpell,m_fReappearanceDelay)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NPCDoTeleportSpell)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NPCIgnoreRBDamages)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCMarkForVanish,DisSeqAct_NPCMarkForVanish,m_VanishInput)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCMarkForVanish,DisSeqAct_NPCMarkForVanish,m_fOffscreenTimeRequired)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NPCMarkForVanish)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCSetMaterials,DisSeqAct_NPCSetMaterials,m_NewBodyMaterials)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCSetMaterials,DisSeqAct_NPCSetMaterials,m_NewHeadMaterials)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NPCSetMaterials)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCTrackTarget,DisSeqAct_NPCTrackTarget,m_pNPC)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_NPCTrackTarget,DisSeqAct_NPCTrackTarget,m_LookAtSpeedFactor)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NPCTrackTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_NotifyMissionEnd)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_OutsiderConfig,DisSeqAct_OutsiderConfig,m_DepthPriorityGroup)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_OutsiderConfig,DisSeqAct_OutsiderConfig,m_LightingChannels)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_OutsiderConfig)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_OverrideAwarenessDisplay,DisSeqAct_OverrideAwarenessDisplay,m_pNPC)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_OverrideAwarenessDisplay)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_OverrideDisableHitReactSoiree)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_PlayMusicBox)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_PlayerTrackTarget,DisSeqAct_PlayerTrackTarget,m_pTrackedTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_PlayerTrackTarget,DisSeqAct_PlayerTrackTarget,m_TrackingID)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_PlayerTrackTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_PlugWhaleOilBattery)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_PostProcess,DisSeqAct_PostProcess,m_Effect)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_PostProcess)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RBConstraint,DisSeqAct_RBConstraint,m_pConstraintActor1)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RBConstraint)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RefillWhaleOilBattery,DisSeqAct_RefillWhaleOilBattery,m_PercentageCharge)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RefillWhaleOilBattery,DisSeqAct_RefillWhaleOilBattery,m_RefillSound)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RefillWhaleOilBattery)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemoveAbstractItem,DisSeqAct_RemoveAbstractItem,m_pItemToRemove)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemoveAbstractItem,DisSeqAct_RemoveAbstractItem,m_Quantity)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RemoveAbstractItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemoveAttributeModifier,DisSeqAct_RemoveAttributeModifier,m_AttributeName)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemoveAttributeModifier,DisSeqAct_RemoveAttributeModifier,m_ModifierName)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RemoveAttributeModifier)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemoveInventoryItem,DisSeqAct_RemoveInventoryItem,m_pRemoveAllOfType)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RemoveInventoryItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemoveKey,DisSeqAct_RemoveKey,m_Name)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RemoveKey)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RemovePower,DisSeqAct_RemovePower,m_PowerName)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RemovePower)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RestoreInventoryFromBackup,DisSeqAct_RestoreInventoryFromBackup,m_OldEquipForPawns)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RestoreInventoryFromBackup)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RiverKrustDisable,DisSeqAct_RiverKrustDisable,m_Disabled)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RiverKrustDisable)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_RiverKrustSpitAtTarget,DisSeqAct_RiverKrustSpitAtTarget,m_pTargetActor)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RiverKrustSpitAtTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SaveLevelState)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetActiveSoundCaptureBox)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetAudioOcclusion,DisSeqAct_SetAudioOcclusion,m_fOcclusion)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetAudioOcclusion,DisSeqAct_SetAudioOcclusion,m_fOcclusion_HeardByPlayer)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetAudioOcclusion)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetBoneCharmEffect,DisSeqAct_SetBoneCharmEffect,m_Effect)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetBoneCharmEffect)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetDisposition,DisSeqAct_SetDisposition,m_SetDispositionKismetInput)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetDisposition,DisSeqAct_SetDisposition,m_Recipients)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetDisposition)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetPlayerHealth,DisSeqAct_SetPlayerHealth,m_Health)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetPlayerHealth)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetPlayerMana,DisSeqAct_SetPlayerMana,m_Mana)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetPlayerMana)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetPlayerTravelDestination,DisSeqAct_SetPlayerTravelDestination,m_Tag)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetPlayerTravelDestination)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetPlayerVisSettings,DisSeqAct_SetPlayerVisSettings,m_pSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetPlayerVisSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetRainEmitter,DisSeqAct_SetRainEmitter,m_NumRainDrops)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetRainEmitter,DisSeqAct_SetRainEmitter,m_fStartTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetRainEmitter)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetStoryFlag,DisSeqAct_SetStoryFlag,m_pStoryFlagSet)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetStoryFlag,DisSeqAct_SetStoryFlag,m_StoryFlag)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetStoryFlag)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SeverLimb,DisSeqAct_SeverLimb,m_JointName)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SeverLimb,DisSeqAct_SeverLimb,m_fImpulseStrength)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SeverLimb)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ShowPowerMenu)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SpawnCameraLensEffect,DisSeqAct_SpawnCameraLensEffect,m_pEffectClass)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SpawnCameraLensEffect,DisSeqAct_SpawnCameraLensEffect,m_fLoopingBlendOutTime)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SpawnCameraLensEffect)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SpawnStealable,DisSeqAct_SpawnStealable,m_pStealableTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SpawnStealable,DisSeqAct_SpawnStealable,m_pSpawnedPickup)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SpawnStealable)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_StartSpawn,DisSeqAct_StartSpawn,m_PendingSpawnCount)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_StartSpawn,DisSeqAct_StartSpawn,m_FailedCount)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_StartSpawn)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ToggleAchievementEval,DisSeqAct_ToggleAchievementEval,m_Achievement)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ToggleAchievementEval)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ToggleChoke)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ToggleHUDElement,DisSeqAct_ToggleHUDElement,m_HudElement)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ToggleHUDElement)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ToggleJournal)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_TogglePlayerLeftHand)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_TogglePowerWheel)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ToggleTutorial,DisSeqAct_ToggleTutorial,m_AffectedTutorials)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ToggleTutorial)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_TriggerExplosion,DisSeqAct_TriggerExplosion,m_pExplosionTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_TriggerExplosion,DisSeqAct_TriggerExplosion,m_pInstigator)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_TriggerExplosion)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_UberPostProcess,DisSeqAct_UberPostProcess,m_Parameters)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_UberPostProcess,DisSeqAct_UberPostProcess,m_fFadeOutTime)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_UberPostProcess)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_WallofLightControl)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_WatchTower,DisSeqAct_WatchTower,m_Track)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_WatchTower)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_WatchTowerShootAtTarget,DisSeqAct_WatchTowerShootAtTarget,m_pTargetActor)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_WatchTowerShootAtTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_CheckStoryFlag,DisSeqCond_CheckStoryFlag,m_pStoryFlagSet)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_CheckStoryFlag,DisSeqCond_CheckStoryFlag,m_StoryFlag)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_CheckStoryFlag)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_CompareBoolExtended)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_CompareTweaks,DisSeqCond_CompareTweaks,m_pA)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_CompareTweaks,DisSeqCond_CompareTweaks,m_pB)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_CompareTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_InStoryGroup,DisSeqCond_InStoryGroup,m_StoryGroupsToCheck)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_InStoryGroup,DisSeqCond_InStoryGroup,m_Targets)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_InStoryGroup)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_IsDLCUnlocked,DisSeqCond_IsDLCUnlocked,m_DLCType)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_IsDLCUnlocked)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_IsDoorOpen,DisSeqCond_IsDoorOpen,m_pDoor)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_IsDoorOpen)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_IsSentinel)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_PawnIsPossessed)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_ActorTouched)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_AttackedByRats)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_Attention,DisSeqEvent_Attention,m_eAttentionLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_Attention,DisSeqEvent_Attention,m_eActivatedAttentionLevel)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Attention)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_AttentionDecreasedTo)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_AttentionIncreasedTo)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_BehaviorStarted,DisSeqEvent_BehaviorStarted,m_pBehavior)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_BehaviorStarted)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_BreakableBroken)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Climb)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Combat)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Corpse)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_CorpseDetected)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_DefenceTower)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_DialogOutputs,DisSeqEvent_DialogOutputs,m_pDialogTree)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_DialogOutputs)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Distracted)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Door)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_FishPossess)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_FleepointReached)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_Interact,DisSeqEvent_Interact,m_pAssociatedTweak)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Interact)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Investigate)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_JournalViewed)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_KeyHoleUsed)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_KnockedOut)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Lock)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_MovableDropped)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_MovablePickedUp)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_NPCIncapacitated)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PatrolPointReached)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PawnSighted)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PickupPickedUp)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerCrouch)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerHeard)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerHolsterWeapon)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_PlayerInventoryChanged,DisSeqEvent_PlayerInventoryChanged,m_pItemType)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerInventoryChanged)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_PlayerManaThreshold,DisSeqEvent_PlayerManaThreshold,m_ManaThreshold)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerManaThreshold)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PlayerTutorialEvent)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Possessed)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PowerUsed)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PowerEquipped)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_PutToSleep)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_RatPossess)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_RiverKrustLooted)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Spawned)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_TeleportSpell)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Tripwire)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_Used,DisSeqEvent_Used,m_Stage)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Used)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_WallOfLight)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_WatchTower)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_WhaleOilBattery)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_WhaleOilReceptacle)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_Windblasted)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_WitnessedInteraction)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_Darkness)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_DarknessLevel)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_PlayerCamera)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_PlayerMana)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_PlayerPawn)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_PlayerRawVisibility)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_PlayerSpeedFraction)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqVar_SpawnerPawn,DisSeqVar_SpawnerPawn,m_pSpawnedPawns)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_SpawnerPawn)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

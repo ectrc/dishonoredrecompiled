@@ -1,182 +1,2426 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameconversationclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (177):
-//   0x6a30a0  protected: virtual __thiscall ADisDialogInanimateDummy::~ADisDialogInanimateDummy(void)
-//   0x6a3240  protected: virtual __thiscall ADisSpeakerGroup_PA::~ADisSpeakerGroup_PA(void)
-//   0x6a3300  protected: virtual __thiscall ADisDialogOneShot::~ADisDialogOneShot(void)
-//   0x6a33a0  protected: virtual __thiscall ADisDialogOneShot_HeartGadget::~ADisDialogOneShot_HeartGadget(void)
-//   0x6a3430  protected: virtual __thiscall UDisDialogOneShotRenderingComponent::~UDisDialogOneShotRenderingComponent(void)
-//   0x6a34c0  protected: virtual __thiscall UDisSpeakerGroup_PA_RenderingComponent::~UDisSpeakerGroup_PA_RenderingComponent(void)
-//   0x6a48b0  public: static void __cdecl ADisDialogInanimateDummy::InternalConstructor(void *)
-//   0x6a48d0  public: static void __cdecl ADisSpeakerGroup_PA::InternalConstructor(void *)
-//   0x6a4910  public: static void __cdecl ADisDialogOneShot::InternalConstructor(void *)
-//   0x6a4940  public: static void __cdecl ADisDialogOneShot_HeartGadget::InternalConstructor(void *)
-//   0x6a4970  public: static void __cdecl UDisDialogOneShotRenderingComponent::InternalConstructor(void *)
-//   0x6a4990  public: static void __cdecl UDisSpeakerGroup_PA_RenderingComponent::InternalConstructor(void *)
-//   0x6b3870  protected: virtual __thiscall UStatePlayerMasterInDialog::~UStatePlayerMasterInDialog(void)
-//   0x6b6c50  public: static void __cdecl UStatePlayerMasterInDialog::InternalConstructor(void *)
-//   0x8d9b40  protected: virtual __thiscall UDisConv_Node_InGameData::~UDisConv_Node_InGameData(void)
-//   0x8db080  public: static void __cdecl UDisConv_Node_InGameData::InternalConstructor(void *)
-//   0x8e6890  protected: virtual __thiscall UDisConv_Blurb_InGameData::~UDisConv_Blurb_InGameData(void)
-//   0x8e69a0  protected: virtual __thiscall UDisConversation_InGameData_Base::~UDisConversation_InGameData_Base(void)
-//   0x8e6a40  protected: virtual __thiscall UDisConversation_InGameData::~UDisConversation_InGameData(void)
-//   0x8e9060  public: static void __cdecl UDisConv_Blurb_InGameData::InternalConstructor(void *)
-//   0x8e9080  public: __thiscall FDisQueuedFireDialogHookGroup_Outer::FDisQueuedFireDialogHookGroup_Outer(void)
-//   0x8e90a0  public: static void __cdecl UDisConversation_InGameData_Base::InternalConstructor(void *)
-//   0x8e90c0  public: static void __cdecl UDisConversation_InGameData::InternalConstructor(void *)
-//   0x8eb4a0  protected: virtual __thiscall UDisConv_Node::~UDisConv_Node(void)
-//   0x8eb550  protected: virtual __thiscall UDisConv_Blurb::~UDisConv_Blurb(void)
-//   0x8eb630  protected: virtual __thiscall UDisConv_NonWord::~UDisConv_NonWord(void)
-//   0x8eb6c0  protected: virtual __thiscall UDisConv_Branch::~UDisConv_Branch(void)
-//   0x8eb750  protected: virtual __thiscall UDisConv_SpeakerSupportsDialogTree::~UDisConv_SpeakerSupportsDialogTree(void)
-//   0x8eb7f0  protected: virtual __thiscall UDisConv_Comment::~UDisConv_Comment(void)
-//   0x8eb8a0  protected: virtual __thiscall UDisConv_Condition::~UDisConv_Condition(void)
-//   0x8eb940  protected: virtual __thiscall UDisConv_TimeLimit::~UDisConv_TimeLimit(void)
-//   0x8eb9d0  protected: virtual __thiscall UDisConv_ConversationRef::~UDisConv_ConversationRef(void)
-//   0x8eba60  protected: virtual __thiscall UDisConversation::~UDisConversation(void)
-//   0x8ebb30  protected: virtual __thiscall UDisTweaks_ConvSettings::~UDisTweaks_ConvSettings(void)
-//   0x8ed970  public: static void __cdecl UDisConv_Node::InternalConstructor(void *)
-//   0x8ed990  public: static void __cdecl UDisConv_Blurb::InternalConstructor(void *)
-//   0x8ed9b0  public: static void __cdecl UDisConv_NonWord::InternalConstructor(void *)
-//   0x8ed9d0  public: static void __cdecl UDisConv_Branch::InternalConstructor(void *)
-//   0x8ed9f0  public: static void __cdecl UDisConv_SpeakerSupportsDialogTree::InternalConstructor(void *)
-//   0x8eda10  public: static void __cdecl UDisConv_Comment::InternalConstructor(void *)
-//   0x8eda30  public: static void __cdecl UDisConv_TimeLimit::InternalConstructor(void *)
-//   0x8eda50  public: static void __cdecl UDisConv_ConversationRef::InternalConstructor(void *)
-//   0x8eda70  public: static void __cdecl UDisConversation::InternalConstructor(void *)
-//   0x8edaa0  public: static void __cdecl UDisTweaks_ConvSettings::InternalConstructor(void *)
-//   0x8f0a90  public: __thiscall TMultiMap<class USkeletalMesh *, class USkeletalMeshComponent *, class FDefaultSetAllocator>::TMultiMap<class USkeletalMesh *, class USkeletalMeshComponent *, class FDefaultSetAllocator>(void)
-//   0x8f1f50  protected: virtual __thiscall UDisConv_PlayerChoice::~UDisConv_PlayerChoice(void)
-//   0x8f3d10  public: static void __cdecl UDisConv_PlayerChoice::InternalConstructor(void *)
-//   0x8f5900  protected: virtual __thiscall UDisConversationComponent::~UDisConversationComponent(void)
-//   0x8f6870  public: static void __cdecl UDisConversationComponent::InternalConstructor(void *)
-//   0x8f75c0  protected: virtual __thiscall UDisConvGlobalMan::~UDisConvGlobalMan(void)
-//   0x8f8000  public: static void __cdecl UDisConvGlobalMan::InternalConstructor(void *)
-//   0x8f9160  protected: virtual __thiscall UDisConv_Hook_Distance_InGameData::~UDisConv_Hook_Distance_InGameData(void)
-//   0x8f91f0  protected: virtual __thiscall UDisConv_Hook_PlayerLookAt_InGameData::~UDisConv_Hook_PlayerLookAt_InGameData(void)
-//   0x8f9280  protected: virtual __thiscall UDisConv_TimeLimit_InGameData::~UDisConv_TimeLimit_InGameData(void)
-//   0x8f9310  protected: virtual __thiscall UDisConv_Soiree_InGameData::~UDisConv_Soiree_InGameData(void)
-//   0x8fa980  public: static void __cdecl UDisConv_Hook_PlayerLoiter_InGameData::InternalConstructor(void *)
-//   0x8fa9a0  public: static void __cdecl UDisConv_Hook_PlayerLookAt_InGameData::InternalConstructor(void *)
-//   0x8fa9c0  public: static void __cdecl UDisConv_TimeLimit_InGameData::InternalConstructor(void *)
-//   0x8fa9e0  public: static void __cdecl UDisConv_Soiree_InGameData::InternalConstructor(void *)
-//   0x8ffdd0  public: static void __cdecl UDisConv_Hook_Distance_InGameData::InternalConstructor(void *)
-//   0x905d60  protected: virtual __thiscall UDisConv_RandomSequentialBranch_InGameData::~UDisConv_RandomSequentialBranch_InGameData(void)
-//   0x908170  protected: virtual __thiscall UDisConv_Action::~UDisConv_Action(void)
-//   0x908200  protected: virtual __thiscall UDisConv_KismetActivateRemoteEvent::~UDisConv_KismetActivateRemoteEvent(void)
-//   0x908290  protected: virtual __thiscall UDisConv_PlayerLookAtSpeaker::~UDisConv_PlayerLookAtSpeaker(void)
-//   0x908320  protected: virtual __thiscall UDisConv_PlayerLookAtActor::~UDisConv_PlayerLookAtActor(void)
-//   0x9083b0  protected: virtual __thiscall UDisConv_PlayerStopLookAt::~UDisConv_PlayerStopLookAt(void)
-//   0x908440  protected: virtual __thiscall UDisConv_SetStoryFlag::~UDisConv_SetStoryFlag(void)
-//   0x9084d0  protected: virtual __thiscall UDisConv_TryFallbackTree::~UDisConv_TryFallbackTree(void)
-//   0x908560  protected: virtual __thiscall UDisConv_FactionBranch::~UDisConv_FactionBranch(void)
-//   0x908600  protected: virtual __thiscall UDisConv_RandomBranch::~UDisConv_RandomBranch(void)
-//   0x9086a0  protected: virtual __thiscall UDisConv_SequentialBranch::~UDisConv_SequentialBranch(void)
-//   0x908750  protected: virtual __thiscall UDisConv_RandomSequentialBranch::~UDisConv_RandomSequentialBranch(void)
-//   0x9087e0  protected: virtual __thiscall UDisConv_SpawnerBranch::~UDisConv_SpawnerBranch(void)
-//   0x908880  protected: virtual __thiscall UDisConv_SpeakerHasTweaks::~UDisConv_SpeakerHasTweaks(void)
-//   0x908920  protected: virtual __thiscall UDisConv_SpeakerInStoryGroup::~UDisConv_SpeakerInStoryGroup(void)
-//   0x9089c0  protected: virtual __thiscall UDisConv_CheckSpeakerRelationship::~UDisConv_CheckSpeakerRelationship(void)
-//   0x908a50  protected: virtual __thiscall UDisConv_CheckSpeakerSuspicionLevel::~UDisConv_CheckSpeakerSuspicionLevel(void)
-//   0x908ae0  protected: virtual __thiscall UDisConv_CheckStoryFlag::~UDisConv_CheckStoryFlag(void)
-//   0x908b70  protected: virtual __thiscall UDisConv_CheckTaskState::~UDisConv_CheckTaskState(void)
-//   0x908c00  protected: virtual __thiscall UDisConv_Comparison::~UDisConv_Comparison(void)
-//   0x908c90  protected: virtual __thiscall UDisConv_CompareDarknessLevel::~UDisConv_CompareDarknessLevel(void)
-//   0x908d20  protected: virtual __thiscall UDisConv_ConversationFired::~UDisConv_ConversationFired(void)
-//   0x908db0  protected: virtual __thiscall UDisConv_HadConversation::~UDisConv_HadConversation(void)
-//   0x908e40  protected: virtual __thiscall UDisConv_HasAbstractItem::~UDisConv_HasAbstractItem(void)
-//   0x908ed0  protected: virtual __thiscall UDisConv_HasInventoryItem::~UDisConv_HasInventoryItem(void)
-//   0x908f60  protected: virtual __thiscall UDisConv_HasInventoryItemEquipped::~UDisConv_HasInventoryItemEquipped(void)
-//   0x908ff0  protected: virtual __thiscall UDisConv_HasObjective::~UDisConv_HasObjective(void)
-//   0x909080  protected: virtual __thiscall UDisConv_IsObjectiveComplete::~UDisConv_IsObjectiveComplete(void)
-//   0x909110  protected: virtual __thiscall UDisConv_IsPossessed::~UDisConv_IsPossessed(void)
-//   0x9091a0  protected: virtual __thiscall UDisConv_IsSpeakerAvailable::~UDisConv_IsSpeakerAvailable(void)
-//   0x909230  protected: virtual __thiscall UDisConv_SeenDialogLabel::~UDisConv_SeenDialogLabel(void)
-//   0x9092c0  protected: virtual __thiscall UDisConv_SpeakerCombatStatus::~UDisConv_SpeakerCombatStatus(void)
-//   0x909350  protected: virtual __thiscall UDisConv_DialogHook::~UDisConv_DialogHook(void)
-//   0x9093f0  protected: virtual __thiscall UDisConv_Hook_Distance::~UDisConv_Hook_Distance(void)
-//   0x909480  protected: virtual __thiscall UDisConv_Hook_Distraction::~UDisConv_Hook_Distraction(void)
-//   0x909520  protected: virtual __thiscall UDisConv_Hook_Investigate::~UDisConv_Hook_Investigate(void)
-//   0x9095b0  protected: virtual __thiscall UDisConv_Hook_KismetActivated::~UDisConv_Hook_KismetActivated(void)
-//   0x909670  protected: virtual __thiscall UDisConv_Hook_Notice::~UDisConv_Hook_Notice(void)
-//   0x909700  protected: virtual __thiscall UDisConv_Hook_PlayAudioLog::~UDisConv_Hook_PlayAudioLog(void)
-//   0x9097c0  protected: virtual __thiscall UDisConv_Hook_PlayerLoiter::~UDisConv_Hook_PlayerLoiter(void)
-//   0x909850  protected: virtual __thiscall UDisConv_Hook_PlayerLookAt::~UDisConv_Hook_PlayerLookAt(void)
-//   0x9098f0  protected: virtual __thiscall UDisConv_Hook_SplitByTypeAndActor::~UDisConv_Hook_SplitByTypeAndActor(void)
-//   0x9099a0  protected: virtual __thiscall UDisConv_Hook_HeartTargeted::~UDisConv_Hook_HeartTargeted(void)
-//   0x909a30  protected: virtual __thiscall UDisConv_Hook_NoticeBroken::~UDisConv_Hook_NoticeBroken(void)
-//   0x909ac0  protected: virtual __thiscall UDisConv_Hook_WitnessedInteraction::~UDisConv_Hook_WitnessedInteraction(void)
-//   0x909b50  protected: virtual __thiscall UDisConv_Hook_SuspicionLevel::~UDisConv_Hook_SuspicionLevel(void)
-//   0x909be0  protected: virtual __thiscall UDisConv_Hook_SuspicionDist::~UDisConv_Hook_SuspicionDist(void)
-//   0x909c70  protected: virtual __thiscall UDisConv_Hook_WitnessedMagic::~UDisConv_Hook_WitnessedMagic(void)
-//   0x909d10  protected: virtual __thiscall UDisConv_Speaker::~UDisConv_Speaker(void)
-//   0x909db0  protected: virtual __thiscall UDisConv_InitiatorSpeaker::~UDisConv_InitiatorSpeaker(void)
-//   0x909e40  protected: virtual __thiscall UDisConv_MeSpeaker::~UDisConv_MeSpeaker(void)
-//   0x909ed0  protected: virtual __thiscall UDisConv_OneShotSpeaker::~UDisConv_OneShotSpeaker(void)
-//   0x909f60  public: static void __cdecl UDisConv_RandomSequentialBranch_InGameData::InternalConstructor(void *)
-//   0x90a860  protected: virtual __thiscall UDisConv_Soiree::~UDisConv_Soiree(void)
-//   0x90a980  public: static void __cdecl UDisConv_Action::InternalConstructor(void *)
-//   0x90a9a0  public: static void __cdecl UDisConv_KismetActivateRemoteEvent::InternalConstructor(void *)
-//   0x90a9c0  public: static void __cdecl UDisConv_PlayerLookAtSpeaker::InternalConstructor(void *)
-//   0x90a9e0  public: static void __cdecl UDisConv_PlayerLookAtActor::InternalConstructor(void *)
-//   0x90aa00  public: static void __cdecl UDisConv_PlayerStopLookAt::InternalConstructor(void *)
-//   0x90aa20  public: static void __cdecl UDisConv_SetStoryFlag::InternalConstructor(void *)
-//   0x90aa40  public: static void __cdecl UDisConv_Soiree::InternalConstructor(void *)
-//   0x90aa60  public: static void __cdecl UDisConv_TryFallbackTree::InternalConstructor(void *)
-//   0x90aa80  public: static void __cdecl UDisConv_FactionBranch::InternalConstructor(void *)
-//   0x90aaa0  public: static void __cdecl UDisConv_RandomBranch::InternalConstructor(void *)
-//   0x90aac0  public: static void __cdecl UDisConv_SequentialBranch::InternalConstructor(void *)
-//   0x90aae0  public: static void __cdecl UDisConv_RandomSequentialBranch::InternalConstructor(void *)
-//   0x90ab00  public: static void __cdecl UDisConv_SpawnerBranch::InternalConstructor(void *)
-//   0x90ab20  public: static void __cdecl UDisConv_SpeakerHasTweaks::InternalConstructor(void *)
-//   0x90ab40  public: static void __cdecl UDisConv_SpeakerInStoryGroup::InternalConstructor(void *)
-//   0x90ab60  public: static void __cdecl UDisConv_Condition::InternalConstructor(void *)
-//   0x90ab80  public: static void __cdecl UDisConv_CheckSpeakerRelationship::InternalConstructor(void *)
-//   0x90aba0  public: static void __cdecl UDisConv_CheckSpeakerSuspicionLevel::InternalConstructor(void *)
-//   0x90abc0  public: static void __cdecl UDisConv_CheckStoryFlag::InternalConstructor(void *)
-//   0x90abe0  public: static void __cdecl UDisConv_CheckTaskState::InternalConstructor(void *)
-//   0x90ac00  public: static void __cdecl UDisConv_Comparison::InternalConstructor(void *)
-//   0x90ac20  public: static void __cdecl UDisConv_CompareDarknessLevel::InternalConstructor(void *)
-//   0x90ac40  public: static void __cdecl UDisConv_ConversationFired::InternalConstructor(void *)
-//   0x90ac60  public: static void __cdecl UDisConv_HadConversation::InternalConstructor(void *)
-//   0x90ac80  public: static void __cdecl UDisConv_HasAbstractItem::InternalConstructor(void *)
-//   0x90aca0  public: static void __cdecl UDisConv_HasInventoryItem::InternalConstructor(void *)
-//   0x90acc0  public: static void __cdecl UDisConv_HasInventoryItemEquipped::InternalConstructor(void *)
-//   0x90ace0  public: static void __cdecl UDisConv_HasObjective::InternalConstructor(void *)
-//   0x90ad00  public: static void __cdecl UDisConv_IsObjectiveComplete::InternalConstructor(void *)
-//   0x90ad20  public: static void __cdecl UDisConv_IsPossessed::InternalConstructor(void *)
-//   0x90ad40  public: static void __cdecl UDisConv_IsSpeakerAvailable::InternalConstructor(void *)
-//   0x90ad60  public: static void __cdecl UDisConv_SeenDialogLabel::InternalConstructor(void *)
-//   0x90ad80  public: static void __cdecl UDisConv_SpeakerCombatStatus::InternalConstructor(void *)
-//   0x90ada0  public: static void __cdecl UDisConv_DialogHook::InternalConstructor(void *)
-//   0x90adc0  public: static void __cdecl UDisConv_Hook_Distance::InternalConstructor(void *)
-//   0x90ade0  public: static void __cdecl UDisConv_Hook_Distraction::InternalConstructor(void *)
-//   0x90ae00  public: static void __cdecl UDisConv_Hook_Investigate::InternalConstructor(void *)
-//   0x90ae20  public: static void __cdecl UDisConv_Hook_KismetActivated::InternalConstructor(void *)
-//   0x90ae40  public: static void __cdecl UDisConv_Hook_Notice::InternalConstructor(void *)
-//   0x90ae60  public: static void __cdecl UDisConv_Hook_PlayAudioLog::InternalConstructor(void *)
-//   0x90ae80  public: static void __cdecl UDisConv_Hook_PlayerLoiter::InternalConstructor(void *)
-//   0x90aea0  public: static void __cdecl UDisConv_Hook_PlayerLookAt::InternalConstructor(void *)
-//   0x90aec0  public: static void __cdecl UDisConv_Hook_SplitByTypeAndActor::InternalConstructor(void *)
-//   0x90aee0  public: static void __cdecl UDisConv_Hook_HeartTargeted::InternalConstructor(void *)
-//   0x90af00  public: static void __cdecl UDisConv_Hook_NoticeBroken::InternalConstructor(void *)
-//   0x90af20  public: static void __cdecl UDisConv_Hook_WitnessedInteraction::InternalConstructor(void *)
-//   0x90af40  public: static void __cdecl UDisConv_Hook_SuspicionLevel::InternalConstructor(void *)
-//   0x90af60  public: static void __cdecl UDisConv_Hook_SuspicionDist::InternalConstructor(void *)
-//   0x90af80  public: static void __cdecl UDisConv_Hook_WitnessedMagic::InternalConstructor(void *)
-//   0x90afa0  public: static void __cdecl UDisConv_Speaker::InternalConstructor(void *)
-//   0x90afc0  public: static void __cdecl UDisConv_InitiatorSpeaker::InternalConstructor(void *)
-//   0x90afe0  public: static void __cdecl UDisConv_MeSpeaker::InternalConstructor(void *)
-//   0x90b000  public: static void __cdecl UDisConv_OneShotSpeaker::InternalConstructor(void *)
-//   0x90eb00  protected: virtual __thiscall UDisDialogTree::~UDisDialogTree(void)
-//   0x90ec80  protected: virtual __thiscall UDisDialogTree_OneShot::~UDisDialogTree_OneShot(void)
-//   0x90eda0  protected: virtual __thiscall UDisDialogTree_InGameBind::~UDisDialogTree_InGameBind(void)
-//   0x90f040  public: static void __cdecl UDisDialogTree::InternalConstructor(void *)
-//   0x90f060  public: static void __cdecl UDisDialogTree_OneShot::InternalConstructor(void *)
-//   0x90f080  public: static void __cdecl UDisDialogTree_InGameBind::InternalConstructor(void *)
-//   0x914ce0  protected: virtual __thiscall UDisDialogVoiceData::~UDisDialogVoiceData(void)
-//   0x914d90  protected: virtual __thiscall UDisDialogVoiceData_OneShot::~UDisDialogVoiceData_OneShot(void)
-//   0x914e20  public: static void __cdecl UDisDialogVoiceData::InternalConstructor(void *)
-//   0x914e40  public: static void __cdecl UDisDialogVoiceData_OneShot::InternalConstructor(void *)
+/*===========================================================================
+    DishonoredGameConversationClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalEnumsClasses.h"
+#include "DishonoredGameClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_CONVERSATION_ENUMS
+#define INCLUDED_DISHONOREDGAME_CONVERSATION_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_CONVERSATION_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_CONVERSATION_CLASSES
+#define INCLUDED_DISHONOREDGAME_CONVERSATION_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisDialogOneShot.DisOneOffSpeaker: retail SDK size 24 (2012 PDB 24)
+struct FDisOneOffSpeaker
+{
+    FName m_SpeakerNickName;
+    class ADishonoredSpawner* m_pSpawner;
+    class AActor* m_pAttachedActor;
+    class UDisDialogVoiceData_OneShot* m_pVoiceData;
+    BITFIELD m_bRemovedOneShots:1;
+
+    /** Constructors */
+    FDisOneOffSpeaker() {}
+    FDisOneOffSpeaker(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisOneOffSpeaker));
+    }
+};
+
+// DishonoredGame.DisDialogOneShot: retail sizeof 640, reflected span 584..636 (2012 PDB sizeof 640)
+class ADisDialogOneShot : public AActor
+{
+public:
+    //## BEGIN PROPS DisDialogOneShot
+    FName m_OneShotNickName;
+    class UDisDialogTree_OneShot* m_pDialogTree;
+    FDisOneOffSpeaker m_MeSpeaker;
+    TArrayNoInit<FDisOneOffSpeaker> m_OtherSpeakers;
+    BITFIELD m_bNotifiedSpeakers:1;
+    //## END PROPS DisDialogOneShot
+
+    DECLARE_CLASS(ADisDialogOneShot,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDialogInanimateDummy: retail sizeof 656, reflected span 584..656 (2012 PDB sizeof 624)
+class ADisDialogInanimateDummy : public AActor, public IDisConvSpeakerInterface, public IDisConvOneShotOwnerInterface, public IDisInteractableInterface
+{
+public:
+    //## BEGIN PROPS DisDialogInanimateDummy
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    class UDisDialogVoiceData* m_pGenericDialogVoiceData;
+    class UDisConversationComponent* m_pConvComponent;
+    BITFIELD m_bInitializedComponent:1;
+    TArrayNoInit<FDisSpeakerOneShotInfo> m_DialogOneShots;
+    BYTE m_SpeakerPropagationCache[32];  // DISHONORED(layout): retail SDK gap @624: StructProperty m_SpeakerPropagationCache (script_classes_2013) the dump did not type
+    //## END PROPS DisDialogInanimateDummy
+
+    DECLARE_CLASS(ADisDialogInanimateDummy,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDialogOneShot_HeartGadget: retail sizeof 640, reflected span 636..636 (2012 PDB sizeof 640)
+class ADisDialogOneShot_HeartGadget : public ADisDialogOneShot
+{
+public:
+    //## BEGIN PROPS DisDialogOneShot_HeartGadget
+    //## END PROPS DisDialogOneShot_HeartGadget
+
+    DECLARE_CLASS(ADisDialogOneShot_HeartGadget,ADisDialogOneShot,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSpeakerGroup_PA: retail sizeof 672, reflected span 656..672 (2012 PDB sizeof 640)
+class ADisSpeakerGroup_PA : public ADisDialogInanimateDummy
+{
+public:
+    //## BEGIN PROPS DisSpeakerGroup_PA
+    TArrayNoInit<class ADisSpeaker_PA*> m_PA_Speakers;
+    FLOAT m_fDialogCountdown;
+    //## END PROPS DisSpeakerGroup_PA
+
+    DECLARE_CLASS(ADisSpeakerGroup_PA,ADisDialogInanimateDummy,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConvGlobalMan.DisAkCompAndPlayingID: retail SDK size 8 (2012 PDB 8)
+struct FDisAkCompAndPlayingID
+{
+    class UDisAkComponent* m_pAkComp;
+    INT m_PlayingID;
+
+    /** Constructors */
+    FDisAkCompAndPlayingID() {}
+    FDisAkCompAndPlayingID(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAkCompAndPlayingID));
+    }
+};
+
+// DishonoredGame.DisConv_Blurb.DisBlurbLangInfo: retail SDK size 44 (2012 PDB 44)
+struct FDisBlurbLangInfo
+{
+    FName m_Language;
+    FStringNoInit m_LocalizedText;
+    FStringNoInit m_LocalizedDirection;
+    FStringNoInit m_LocalizedDescription;
+
+    /** Constructors */
+    FDisBlurbLangInfo() {}
+    FDisBlurbLangInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBlurbLangInfo));
+    }
+};
+
+// DishonoredGame.DisConv_Blurb.DisBlurbListener: retail SDK size 12 (2012 PDB 12)
+struct FDisBlurbListener
+{
+    INT m_Listener;
+    BYTE m_LookType;
+    BITFIELD m_bTurnToFace:1;
+
+    /** Constructors */
+    FDisBlurbListener() {}
+    FDisBlurbListener(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBlurbListener));
+    }
+};
+
+// DishonoredGame.DisConv_Blurb_InGameData.DisBlurbListener_Instanced: retail SDK size 4 (2012 PDB 4)
+MS_ALIGN(4) struct FDisBlurbListener_Instanced
+{
+    BYTE m_ListenStage;
+    BYTE m_Dummy[3];
+
+    /** Constructors */
+    FDisBlurbListener_Instanced() {}
+    FDisBlurbListener_Instanced(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBlurbListener_Instanced));
+    }
+};
+
+// DishonoredGame.DisConv_Blurb_InGameData.DisBlurbPerSpeakerInstance: retail SDK size 28 (2012 PDB 28)
+struct FDisBlurbPerSpeakerInstance
+{
+    TScriptInterface<class IDisConvSpeakerInterface> m_pSpeaker;
+    BYTE m_BlurbStage;
+    TArrayNoInit<FDisBlurbListener_Instanced> m_BlurbListenerInfo;
+    FLOAT m_fSeekTime;
+
+    /** Constructors */
+    FDisBlurbPerSpeakerInstance() {}
+    FDisBlurbPerSpeakerInstance(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBlurbPerSpeakerInstance));
+    }
+};
+
+// DishonoredGame.DisConv_Node.DisConvClassVars: retail SDK size 16 (2012 PDB 16)
+struct FDisConvClassVars
+{
+    BITFIELD m_bIsStartOfDialog:1;
+    BITFIELD m_bPlayWhenExtractingText:1;
+    class UClass* m_InGameDataClasses[3];
+
+    /** Constructors */
+    FDisConvClassVars() {}
+    FDisConvClassVars(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvClassVars));
+    }
+};
+
+// DishonoredGame.DisConv_Node.DisConvEditorOnlyClassVars: retail SDK size 40 (2012 PDB 40)
+struct FDisConvEditorOnlyClassVars
+{
+    FIntPoint m_EditorMinSize;
+    FName m_Category;
+    BITFIELD m_bCanBeResized:1;
+    BITFIELD m_bCanCreateWithMenu:1;
+    BITFIELD m_bNotWithDialogTree:1;
+    BITFIELD m_bNotWithOneShot:1;
+    BITFIELD m_bOneShotOnly:1;
+    BITFIELD m_bRequiresSpeaker:1;
+    BITFIELD m_bDefaultSpeakerPlayer:1;
+    BITFIELD m_bIllegalForInterruptable:1;
+    FStringNoInit m_ClassDisplayName;
+    BITFIELD m_bNotImplemented:1;
+    BYTE m_OutputLinkColor;
+    BYTE m_BackgroundColor;
+    BYTE m_BackgroundColor_Selected;
+
+    /** Constructors */
+    FDisConvEditorOnlyClassVars() {}
+    FDisConvEditorOnlyClassVars(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvEditorOnlyClassVars));
+    }
+};
+
+// DishonoredGame.DisConv_PlayerLookAtSpeaker.DisConvLookAtConstraints: retail SDK size 28 (2012 PDB 28)
+struct FDisConvLookAtConstraints
+{
+    BITFIELD m_bUseDuration:1;
+    FLOAT m_fDuration;
+    BITFIELD m_bUseZoom:1;
+    FLOAT m_fZoomPercentOnScreen;
+    FLOAT m_fMaxPitchDelta;
+    FLOAT m_fMaxYawDelta;
+    BITFIELD m_bIgnoreNPCAnimation:1;
+
+    /** Constructors */
+    FDisConvLookAtConstraints() {}
+    FDisConvLookAtConstraints(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvLookAtConstraints));
+    }
+};
+
+// DishonoredGame.DisConv_Node.DisConvNodeDebugLog: retail SDK size 16 (2012 PDB 16)
+struct FDisConvNodeDebugLog
+{
+    FStringNoInit m_DebugLogText;
+    BITFIELD m_bDebugLogToScreen:1;
+
+    /** Constructors */
+    FDisConvNodeDebugLog() {}
+    FDisConvNodeDebugLog(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvNodeDebugLog));
+    }
+};
+
+// DishonoredGame.DisConv_Node.DisConvNodeLink: retail SDK size 28 (2012 PDB 28)
+struct FDisConvNodeLink
+{
+    FStringNoInit m_Description;
+    class UDisConv_Node* m_pLink;
+    FIntPoint m_LinkLoc;
+    BITFIELD m_bHidden:1;
+
+    /** Constructors */
+    FDisConvNodeLink() {}
+    FDisConvNodeLink(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvNodeLink));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisRandomBranchEntry: retail SDK size 8 (2012 PDB 8)
+struct FDisRandomBranchEntry
+{
+    INT m_iLastFiredIndex;
+    INT m_iLastFiredIndex_Pending;
+
+    /** Constructors */
+    FDisRandomBranchEntry() {}
+    FDisRandomBranchEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRandomBranchEntry));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisConvRandomBranchInfo: retail SDK size 76 (2012 PDB 76)
+struct FDisConvRandomBranchInfo
+{
+    FName m_DialogTree;
+    FName m_Conversation;
+    TMap<INT,FDisRandomBranchEntry> m_Lookup;  // DISHONORED(layout): retail SDK gap @16: MapProperty m_Lookup (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisConvRandomBranchInfo() {}
+    FDisConvRandomBranchInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvRandomBranchInfo));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisRandomBranchIndex: retail SDK size 8 (2012 PDB 8)
+struct FDisRandomBranchIndex
+{
+    INT m_iIndexVal;
+    INT m_RandomSortVal;
+
+    /** Constructors */
+    FDisRandomBranchIndex() {}
+    FDisRandomBranchIndex(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRandomBranchIndex));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisSeqBranchEntry: retail SDK size 8 (2012 PDB 8)
+struct FDisSeqBranchEntry
+{
+    INT m_iCurIndex;
+    INT m_iCurIndex_Pending;
+
+    /** Constructors */
+    FDisSeqBranchEntry() {}
+    FDisSeqBranchEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSeqBranchEntry));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisRandomSeqBranchEntry: retail SDK size 24 (2012 PDB 24)
+struct FDisRandomSeqBranchEntry : public FDisSeqBranchEntry
+{
+    TArrayNoInit<FDisRandomBranchIndex> m_RandomBranchIndices;
+    BITFIELD m_bBuiltRandomBranches:1;
+
+    /** Constructors */
+    FDisRandomSeqBranchEntry() {}
+    FDisRandomSeqBranchEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRandomSeqBranchEntry));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisConvRandomSeqBranchInfo: retail SDK size 76 (2012 PDB 76)
+struct FDisConvRandomSeqBranchInfo
+{
+    FName m_DialogTree;
+    FName m_Conversation;
+    TMap<INT,FDisRandomSeqBranchEntry> m_Lookup;  // DISHONORED(layout): retail SDK gap @16: MapProperty m_Lookup (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisConvRandomSeqBranchInfo() {}
+    FDisConvRandomSeqBranchInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvRandomSeqBranchInfo));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisConvSeqBranchInfo: retail SDK size 76 (2012 PDB 76)
+struct FDisConvSeqBranchInfo
+{
+    FName m_DialogTree;
+    FName m_Conversation;
+    TMap<INT,FDisSeqBranchEntry> m_Lookup;  // DISHONORED(layout): retail SDK gap @16: MapProperty m_Lookup (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisConvSeqBranchInfo() {}
+    FDisConvSeqBranchInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvSeqBranchInfo));
+    }
+};
+
+// DishonoredGame.DisConversation.DisConvSpeaker: retail SDK size 8 (2012 PDB 8)
+struct FDisConvSpeaker
+{
+    BYTE m_Type;
+    class UDisConv_Speaker* m_pLinkedNode;
+
+    /** Constructors */
+    FDisConvSpeaker() {}
+    FDisConvSpeaker(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvSpeaker));
+    }
+};
+
+// DishonoredGame.DisConversation_InGameData.DisConvSpeaker_InGame: retail SDK size 24 (2012 PDB 24)
+struct FDisConvSpeaker_InGame
+{
+    FPointer m_pSpeaker;
+    TScriptInterface<class IDisConvSpeakerInterface> m_pBoundSpeaker;
+    BITFIELD m_bSpeakerEngaged:1;
+    BYTE m_SpeakerAvailability;
+    FLOAT m_fMaxVoiceRadius;
+
+    /** Constructors */
+    FDisConvSpeaker_InGame() {}
+    FDisConvSpeaker_InGame(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvSpeaker_InGame));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisTimeLimitEntry: retail SDK size 8 (2012 PDB 8)
+struct FDisTimeLimitEntry
+{
+    FLOAT m_fTimeLastFired;
+    FLOAT m_fTimeLastFired_Pending;
+
+    /** Constructors */
+    FDisTimeLimitEntry() {}
+    FDisTimeLimitEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTimeLimitEntry));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisConvTimeLimitInfo: retail SDK size 76 (2012 PDB 76)
+struct FDisConvTimeLimitInfo
+{
+    FName m_DialogTree;
+    FName m_Conversation;
+    TMap<INT,FDisTimeLimitEntry> m_Lookup;  // DISHONORED(layout): retail SDK gap @16: MapProperty m_Lookup (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisConvTimeLimitInfo() {}
+    FDisConvTimeLimitInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvTimeLimitInfo));
+    }
+};
+
+// DishonoredGame.DisDialogTree.DisConversationFolder: retail SDK size 28 (2012 PDB 28)
+struct FDisConversationFolder
+{
+    FStringNoInit m_FolderName;
+    INT m_iParentFolder;
+    TArrayNoInit<INT> m_Conversations;
+
+    /** Constructors */
+    FDisConversationFolder() {}
+    FDisConversationFolder(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConversationFolder));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisCurDominantHook: retail SDK size 12 (2012 PDB 12)
+struct FDisCurDominantHook
+{
+    INT m_iGroupIndex;
+    BYTE m_GroupType;
+    INT m_iPlayingHookIndex;
+
+    /** Constructors */
+    FDisCurDominantHook() {}
+    FDisCurDominantHook(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCurDominantHook));
+    }
+};
+
+// DishonoredGame.DisDialogTree.DisDialogDebugHookStep: retail SDK size 24 (2012 PDB 24)
+struct FDisDialogDebugHookStep
+{
+    class UDisConv_Node* m_pNode;
+    INT m_iCameFromLinkIndex;
+    FStringNoInit m_LogMessage;
+    BITFIELD m_bDialogWasStarted:1;
+
+    /** Constructors */
+    FDisDialogDebugHookStep() {}
+    FDisDialogDebugHookStep(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogDebugHookStep));
+    }
+};
+
+// DishonoredGame.DisDialogTree.DisDialogDebugHook: retail SDK size 44 (2012 PDB 44)
+struct FDisDialogDebugHook
+{
+    BYTE m_HookType;
+    FLOAT m_fWorldTime;
+    FStringNoInit m_MeSpeakerName;
+    FStringNoInit m_InitiatorSpeakerName;
+    TArrayNoInit<FDisDialogDebugHookStep> m_DebugSteps;
+
+    /** Constructors */
+    FDisDialogDebugHook() {}
+    FDisDialogDebugHook(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogDebugHook));
+    }
+};
+
+// DishonoredGame.DisTweaks_ConvSettings.DisDialogHookConfigOverride: retail SDK size 20 (2012 PDB 20)
+struct FDisDialogHookConfigOverride
+{
+    BYTE m_DialogHookToOverride;
+    FLOAT m_fRefire_DelayMin;
+    FLOAT m_fRefire_DelayMax;
+    FLOAT m_fRefire_Delay_Global;
+    BYTE m_FireGroup;
+
+    /** Constructors */
+    FDisDialogHookConfigOverride() {}
+    FDisDialogHookConfigOverride(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogHookConfigOverride));
+    }
+};
+
+// DishonoredGame.DisDialogTree.DisDialogHookInfo: retail SDK size 80 (2012 PDB 80)
+struct FDisDialogHookInfo
+{
+    FStringNoInit m_DisplayName;
+    FStringNoInit m_ToolTip;
+    FStringNoInit m_InitiatorDescription;
+    FStringNoInit m_HookCategory;
+    class UClass* m_pHookClass;
+    BYTE m_FireGroup;
+    FLOAT m_fRefire_DelayMin;
+    FLOAT m_fRefire_DelayMax;
+    FLOAT m_fRefire_Delay_Global;
+    FLOAT m_fBustTimeWhenFired;
+    INT m_Flags;
+    BITFIELD m_bInitialized:1;
+
+    /** Constructors */
+    FDisDialogHookInfo() {}
+    FDisDialogHookInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogHookInfo));
+    }
+};
+
+// DishonoredGame.DisConversationComponent.DisDialogHookInfo_InGame: retail SDK size 4 (2012 PDB 4)
+struct FDisDialogHookInfo_InGame
+{
+    FLOAT m_fLastFireTime;
+
+    /** Constructors */
+    FDisDialogHookInfo_InGame() {}
+    FDisDialogHookInfo_InGame(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogHookInfo_InGame));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisDialogHookInfo_InGame_Global: retail SDK size 4 (2012 PDB 4)
+struct FDisDialogHookInfo_InGame_Global
+{
+    FLOAT m_fLastFireTime;
+
+    /** Constructors */
+    FDisDialogHookInfo_InGame_Global() {}
+    FDisDialogHookInfo_InGame_Global(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogHookInfo_InGame_Global));
+    }
+};
+
+// DishonoredGame.DisConversationComponent.DisDialogOneShotPair: retail SDK size 8 (2012 PDB 8)
+struct FDisDialogOneShotPair
+{
+    class UDisDialogTree_InGameBind* m_pOneShot_DialogTree;
+    class UDisDialogVoiceData* m_pOneShot_DialogData;
+
+    /** Constructors */
+    FDisDialogOneShotPair() {}
+    FDisDialogOneShotPair(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogOneShotPair));
+    }
+};
+
+// DishonoredGame.DisDialogTree_InGameBind.DisDialogRunningObjs: retail SDK size 16 (2012 PDB 16)
+struct FDisDialogRunningObjs
+{
+    class UDisConversation_InGameData_Base* m_pMainDialogTree;
+    BYTE m_Conversations[12];  // DISHONORED(layout): retail SDK gap @4: ArrayProperty m_Conversations (script_classes_2013) the dump did not type
+
+    /** Constructors */
+    FDisDialogRunningObjs() {}
+    FDisDialogRunningObjs(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogRunningObjs));
+    }
+};
+
+// DishonoredGame.DisDialogTree_InGameBind.DisDialogRunningInstance: retail SDK size 76 (2012 PDB 76)
+struct FDisDialogRunningInstance
+{
+    class UDisDialogTree_InGameBind* m_pTreeGameBinding;
+    TScriptInterface<class IDisConvSpeakerInterface> m_pBoundSpeaker_Initiator;
+    class UDisConversation_InGameData* m_pCurPlayingConversation;
+    class UDisConv_Node* m_pCurPlayingNode;
+    BYTE m_CurPriority;
+    BITFIELD m_bStopWhenDialogStarts:1;
+    BYTE m_CheckOnlyResult;
+    BYTE m_DialogHookThatFiredInst;
+    INT m_iDialogHookBranchIndex;
+    TArrayNoInit<class UDisConv_Node*> m_NodesToNotifyDialogStarted;
+    BITFIELD m_bTryFallbackTree:1;
+    INT m_iCurFallbackDepth;
+    TArrayNoInit<FDisDialogRunningObjs> m_FallbackChain;
+    INT m_iCurDebugCapture;
+    BYTE m_PendingEndReason;
+
+    /** Constructors */
+    FDisDialogRunningInstance() {}
+    FDisDialogRunningInstance(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDialogRunningInstance));
+    }
+};
+
+// DishonoredGame.DisConv_DialogHook.DisEditorOnlyDialogHookInfo: retail SDK size 72 (2012 PDB 72)
+struct FDisEditorOnlyDialogHookInfo
+{
+    FStringNoInit m_HookCategory;
+    FStringNoInit m_DisplayName;
+    FStringNoInit m_ToolTip;
+    FStringNoInit m_InitiatorDescription;
+    BYTE m_FireGroup;
+    FLOAT m_fRefire_DelayMin;
+    FLOAT m_fRefire_DelayMax;
+    FLOAT m_fRefire_Delay_Global;
+    BITFIELD m_bNotImplemented:1;
+    BITFIELD m_bInterrupts:1;
+    BITFIELD m_bNotInterruptable:1;
+    BITFIELD m_bBattleSound:1;
+    BITFIELD m_bOneShotOnly:1;
+    BITFIELD m_bSearchSound:1;
+    BITFIELD m_bBustsInitiator:1;
+    BITFIELD m_bDeprecated:1;
+    FLOAT m_fBustTimeWhenFired;
+
+    /** Constructors */
+    FDisEditorOnlyDialogHookInfo() {}
+    FDisEditorOnlyDialogHookInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisEditorOnlyDialogHookInfo));
+    }
+};
+
+// DishonoredGame.DisConv_Node.DisEditorOnlyNodeVars: retail SDK size 24 (2012 PDB 24)
+struct FDisEditorOnlyNodeVars
+{
+    FIntPoint m_EditorPos;
+    FIntPoint m_EditorSize;
+    FIntPoint m_InputLinkLoc;
+
+    /** Constructors */
+    FDisEditorOnlyNodeVars() {}
+    FDisEditorOnlyNodeVars(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisEditorOnlyNodeVars));
+    }
+};
+
+// DishonoredGame.DisConv_FactionBranch.DisFactionBranch: retail SDK size 8 (2012 PDB 8)
+struct FDisFactionBranch
+{
+    class UDisTweaks_Faction* m_pFaction;
+    BITFIELD m_bExactMatchOnly:1;
+
+    /** Constructors */
+    FDisFactionBranch() {}
+    FDisFactionBranch(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFactionBranch));
+    }
+};
+
+// DishonoredGame.DisConversationComponent.DisFailedDialogHookInfo: retail SDK size 12 (2012 PDB 12)
+struct FDisFailedDialogHookInfo
+{
+    INT m_Hook;
+    BYTE m_ReasonFailed;
+    FLOAT m_fTimeToDisplay;
+
+    /** Constructors */
+    FDisFailedDialogHookInfo() {}
+    FDisFailedDialogHookInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFailedDialogHookInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_ConvSettings.DisFireGroupConfig: retail SDK size 28 (2012 PDB 28)
+struct FDisFireGroupConfig
+{
+    BYTE m_FireGroup;
+    INT m_MaxPlaying_PerGroup;
+    INT m_MaxPlaying_PerInitiator;
+    INT m_MaxPlaying_PerGroup_Quiet;
+    INT m_MaxPlaying_PerInitiator_Quiet;
+    BITFIELD m_bIgnoreGlobalCap:1;
+    FLOAT m_fMinTimeBetweenFiring;
+
+    /** Constructors */
+    FDisFireGroupConfig() {}
+    FDisFireGroupConfig(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFireGroupConfig));
+    }
+};
+
+// DishonoredGame.DisConv_Hook_Distance_InGameData.DisHookDistHelper: retail SDK size 16 (2012 PDB 16)
+struct FDisHookDistHelper
+{
+    TScriptInterface<class IDisConvSpeakerInterface> m_pTrackedObject;
+    FLOAT m_fTrackTime;
+    FLOAT m_fLastDistance;
+
+    /** Constructors */
+    FDisHookDistHelper() {}
+    FDisHookDistHelper(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisHookDistHelper));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisInitiatorMap: retail SDK size 60 (2012 PDB 60)
+MS_ALIGN(4) struct FDisInitiatorMap
+{
+    TMap<class IDisConvSpeakerInterface*,INT> m_Map;  // DISHONORED(layout): retail SDK gap @0: MapProperty m_Map (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisInitiatorMap() {}
+    FDisInitiatorMap(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisInitiatorMap));
+    }
+};
+
+// DishonoredGame.DisConv_PlayerChoice.DisPlayerChoiceLocalized: retail SDK size 20 (2012 PDB 20)
+struct FDisPlayerChoiceLocalized
+{
+    FName m_Language;
+    FStringNoInit m_LocalizedChoiceText;
+
+    /** Constructors */
+    FDisPlayerChoiceLocalized() {}
+    FDisPlayerChoiceLocalized(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerChoiceLocalized));
+    }
+};
+
+// DishonoredGame.DisConv_PlayerChoice.DisPlayerChoice_Optional: retail SDK size 48 (2012 PDB 48)
+struct FDisPlayerChoice_Optional
+{
+    FStringNoInit m_ChoiceText;
+    class UDisStoryFlagSet* m_pStoryFlagSet;
+    FGuid m_StoryFlag;
+    BITFIELD m_bStoryFlagMustBeFalse:1;
+    TArrayNoInit<FDisPlayerChoiceLocalized> m_PerLanguageData;
+
+    /** Constructors */
+    FDisPlayerChoice_Optional() {}
+    FDisPlayerChoice_Optional(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerChoice_Optional));
+    }
+};
+
+// DishonoredGame.DisConv_PlayerChoice.DisPlayerChoice_Static: retail SDK size 24 (2012 PDB 24)
+struct FDisPlayerChoice_Static
+{
+    FStringNoInit m_ChoiceText;
+    TArrayNoInit<FDisPlayerChoiceLocalized> m_PerLanguageData;
+
+    /** Constructors */
+    FDisPlayerChoice_Static() {}
+    FDisPlayerChoice_Static(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerChoice_Static));
+    }
+};
+
+// DishonoredGame.DisConv_Hook_PlayerLookAt.DisPlayerLookAtTarget: retail SDK size 12 (2012 PDB 12)
+struct FDisPlayerLookAtTarget
+{
+    class AActor* m_pLookAtActor;
+    FLOAT m_fLookAngle;
+    FLOAT m_fLookAtTime;
+
+    /** Constructors */
+    FDisPlayerLookAtTarget() {}
+    FDisPlayerLookAtTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerLookAtTarget));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisQueuedFireDialogHook: retail SDK size 76 (2012 PDB 72)
+struct FDisQueuedFireDialogHook
+{
+    BYTE m_Hook;
+    INT m_iHookSubIndex;
+    INT m_FireHookTag;
+    class UDisConversationComponent* m_pConvComp;
+    TScriptInterface<class IDisConvSpeakerInterface> m_pTarget;
+    FDisHookParameters m_HookParams;
+    FLOAT m_fCurAudioDuckingWeight;
+    BITFIELD m_bOwnerAndTargetDiffer:1;
+
+    /** Constructors */
+    FDisQueuedFireDialogHook() {}
+    FDisQueuedFireDialogHook(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisQueuedFireDialogHook));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisQueuedFireDialogHookGroup: retail SDK size 48 (2012 PDB 48)
+struct FDisQueuedFireDialogHookGroup
+{
+    TArrayNoInit<FDisQueuedFireDialogHook> m_PendingHooks;
+    TArrayNoInit<FDisQueuedFireDialogHook> m_FiringHooks;
+    INT m_MaxPlaying_PerGroup;
+    INT m_MaxPlaying_PerInitiator;
+    BITFIELD m_bIgnoreGlobalCap:1;
+    FLOAT m_fMinTimeBetweenFiring;
+    BITFIELD m_bIsLocked:1;
+    FLOAT m_fGroupLockoutTimer;
+
+    /** Constructors */
+    FDisQueuedFireDialogHookGroup() {}
+    FDisQueuedFireDialogHookGroup(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisQueuedFireDialogHookGroup));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisQueuedFireDialogHookGroup_Outer: retail SDK size 96 (2012 PDB 96)
+struct FDisQueuedFireDialogHookGroup_Outer
+{
+    FDisQueuedFireDialogHookGroup m_Inner[2];
+
+    /** Constructors */
+    FDisQueuedFireDialogHookGroup_Outer() {}
+    FDisQueuedFireDialogHookGroup_Outer(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisQueuedFireDialogHookGroup_Outer));
+    }
+};
+
+// DishonoredGame.DisConv_SpeakerInStoryGroup.DisSpeakerStoryGroup: retail SDK size 8 (2012 PDB 8)
+struct FDisSpeakerStoryGroup
+{
+    BITFIELD m_bExactMatch:1;
+    class UDisTweaks_StoryGroup* m_pStoryGroup;
+
+    /** Constructors */
+    FDisSpeakerStoryGroup() {}
+    FDisSpeakerStoryGroup(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpeakerStoryGroup));
+    }
+};
+
+// DishonoredGame.DisConv_SpeakerHasTweaks.DisSpeakerTweaks: retail SDK size 8 (2012 PDB 8)
+struct FDisSpeakerTweaks
+{
+    BITFIELD m_bExactMatch:1;
+    class UDisTweaksBase* m_pTweaks;
+
+    /** Constructors */
+    FDisSpeakerTweaks() {}
+    FDisSpeakerTweaks(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpeakerTweaks));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisSubtitle: retail SDK size 44 (2012 PDB 44)
+struct FDisSubtitle
+{
+    class UDisConversationComponent* m_pConvComp;
+    TArrayNoInit<FDisAkCompAndPlayingID> m_Speakers;
+    FPointer m_pText;
+    FLOAT m_fVoiceRadius;
+    BITFIELD m_bShown:1;
+    TArrayNoInit<FLOAT> m_TextPartsRatio;
+    INT m_ShownTextPart;
+
+    /** Constructors */
+    FDisSubtitle() {}
+    FDisSubtitle(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSubtitle));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan.DisSubtitlesInfo: retail SDK size 44 (2012 PDB 32)
+struct FDisSubtitlesInfo
+{
+    TArrayNoInit<FDisSubtitle> m_MainSubtitles;
+    TArrayNoInit<FDisSubtitle> m_SecondarySubtitles;
+    TArrayNoInit<FDisSubtitle> m_PausedSubtitles;
+    class UDisConversationComponent* m_pMainSubtitleOwner;
+    class UDisConversationComponent* m_pSecondarySubtitleOwner;
+
+    /** Constructors */
+    FDisSubtitlesInfo() {}
+    FDisSubtitlesInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSubtitlesInfo));
+    }
+};
+
+// DishonoredGame.DisDialogVoiceData.DisVoiceTextBlurb: retail SDK size 60 (2012 PDB 48)
+struct FDisVoiceTextBlurb
+{
+    FGuid m_GUID;
+    FStringNoInit m_AkEventName;
+    BITFIELD m_bIsNonWord:1;
+    BITFIELD FaceFxGeneratedFromEnglish:1;
+    INT m_TextHash;
+    FStringNoInit m_MicrophoneRecordedAudio;
+    FStringNoInit m_Text;
+
+    /** Constructors */
+    FDisVoiceTextBlurb() {}
+    FDisVoiceTextBlurb(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisVoiceTextBlurb));
+    }
+};
+
+// DishonoredGame.DisDialogVoiceData.DisVoiceTextBlurbList: retail SDK size 76 (2012 PDB 76)
+struct FDisVoiceTextBlurbList
+{
+    class UDisDialogTree* m_pTree;
+    TArrayNoInit<FDisVoiceTextBlurb> m_Blurbs;
+    TMap<FGuid,INT> m_ID_Lookup;  // DISHONORED(layout): retail SDK gap @16: MapProperty m_ID_Lookup (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisVoiceTextBlurbList() {}
+    FDisVoiceTextBlurbList(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisVoiceTextBlurbList));
+    }
+};
+
+// DishonoredGame.DisConv_Hook_Distraction.DistractionLinkInfo: retail SDK size 12 (2012 PDB 12)
+struct FDistractionLinkInfo
+{
+    class AActor* m_pActor;
+    FName m_DistractionCategory;
+
+    /** Constructors */
+    FDistractionLinkInfo() {}
+    FDistractionLinkInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDistractionLinkInfo));
+    }
+};
+
+// DishonoredGame.DisConvGlobalMan: retail sizeof 2044, reflected span 56..2044 (2012 PDB sizeof 2016)
+class UDisConvGlobalMan : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisConvGlobalMan
+    FDisCurDominantHook m_CurDominantHook;
+    TArrayNoInit<FDisConvRandomBranchInfo> m_ConvRandomBranchInfo;
+    TArrayNoInit<FDisConvTimeLimitInfo> m_ConvTimeLimitInfo;
+    TArrayNoInit<FDisConvSeqBranchInfo> m_ConvSeqBranchInfo;
+    TArrayNoInit<FDisConvRandomSeqBranchInfo> m_ConvRandomSeqBranchInfo;
+    FDisQueuedFireDialogHookGroup_Outer m_QueuedHookGroups[13];
+    FDisDialogHookInfo_InGame_Global m_DialogHookInfo_InGame[127];
+    FDisInitiatorMap m_InitiatorCountMap[2];
+    FDisSubtitlesInfo m_SubtitlesInfo;
+    class UDisTweaks_ConvSettings* m_pConvSettingTweaks;
+    //## END PROPS DisConvGlobalMan
+
+    DECLARE_CLASS(UDisConvGlobalMan,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.DisConv_Node: retail sizeof 136, reflected span 56..136 (2012 PDB sizeof 128)
+class UDisConv_Node : public UObject
+{
+public:
+    //## BEGIN PROPS DisConv_Node
+    TArrayNoInit<FDisConvNodeLink> m_OutputLinks;
+    class UDisConversation* m_pOwner;
+    INT m_iSpeaker;
+    FDisEditorOnlyNodeVars m_EditorVars;
+    INT m_iConvNodeIndex;
+    FName m_Label;
+    FDisConvNodeDebugLog m_DebugLog;
+    FName m_Shortcut;
+    //## END PROPS DisConv_Node
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Node,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.DisConv_Action: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_Action : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_Action
+    //## END PROPS DisConv_Action
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Action,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Blurb: retail sizeof 236, reflected span 136..236 (2012 PDB sizeof 228)
+class UDisConv_Blurb : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_Blurb
+    FGuid m_iBlurbGUID;
+    BITFIELD m_bMovingForEditor:1;
+    BITFIELD m_bDirtiedWithoutExport:1;
+    BITFIELD m_bSubtitleTypeSet:1;
+    BITFIELD m_bHasProofreadEdit:1;
+    BITFIELD m_bLocalizedAudioNeedsLipSync:1;
+    BITFIELD m_bShowDebugBubble:1;
+    BITFIELD m_bUseOnlyHeardBy:1;
+    BITFIELD m_bMainSubtitle:1;
+    BITFIELD m_bTurnToFace:1;
+    TArrayNoInit<FDisBlurbLangInfo> m_PerLanguageData;
+    INT m_BlurbVersionNum;
+    FStringNoInit m_Text;
+    FStringNoInit m_Direction;
+    FStringNoInit m_Description;
+    INT m_SpokenTo;
+    BYTE m_LookType;
+    TArrayNoInit<FDisBlurbListener> m_OnlyHeardBy;
+    FLOAT m_fVoiceRadius;
+    FLOAT m_fBlurbEndDelay;
+    //## END PROPS DisConv_Blurb
+
+    DECLARE_CLASS(UDisConv_Blurb,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Node_InGameData: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60)
+class UDisConv_Node_InGameData : public UObject
+{
+public:
+    //## BEGIN PROPS DisConv_Node_InGameData
+    class UDisConv_Node* m_pOwnerConvNode;
+    //## END PROPS DisConv_Node_InGameData
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Node_InGameData,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.DisConv_Blurb_InGameData: retail sizeof 180, reflected span 60..180 (2012 PDB sizeof 180)
+class UDisConv_Blurb_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_Blurb_InGameData
+    FDisBlurbPerSpeakerInstance m_PerSpeakerInfo[4];
+    FLOAT m_fRemainingBlurbDelay;
+    BITFIELD m_bBlurbHasEnded:1;
+    //## END PROPS DisConv_Blurb_InGameData
+
+    DECLARE_CLASS(UDisConv_Blurb_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Branch: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_Branch : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_Branch
+    //## END PROPS DisConv_Branch
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Branch,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Condition: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_Condition : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_Condition
+    //## END PROPS DisConv_Condition
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Condition,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_CheckSpeakerRelationship: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
+class UDisConv_CheckSpeakerRelationship : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_CheckSpeakerRelationship
+    INT m_CompareSpeaker;
+    //## END PROPS DisConv_CheckSpeakerRelationship
+
+    DECLARE_CLASS(UDisConv_CheckSpeakerRelationship,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_CheckSpeakerSuspicionLevel: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_CheckSpeakerSuspicionLevel : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_CheckSpeakerSuspicionLevel
+    //## END PROPS DisConv_CheckSpeakerSuspicionLevel
+
+    DECLARE_CLASS(UDisConv_CheckSpeakerSuspicionLevel,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_CheckStoryFlag: retail sizeof 156, reflected span 136..156 (2012 PDB sizeof 148)
+class UDisConv_CheckStoryFlag : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_CheckStoryFlag
+    class UDisStoryFlagSet* m_pStoryFlagSet;
+    FGuid m_StoryFlag;
+    //## END PROPS DisConv_CheckStoryFlag
+
+    DECLARE_CLASS(UDisConv_CheckStoryFlag,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_CheckTaskState: retail sizeof 144, reflected span 136..144 (2012 PDB sizeof 136)
+class UDisConv_CheckTaskState : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_CheckTaskState
+    class UDishonoredObjective* m_pObjective;
+    class UDishonoredTask_Base* m_pTask;
+    //## END PROPS DisConv_CheckTaskState
+
+    DECLARE_CLASS(UDisConv_CheckTaskState,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Comment: retail sizeof 168, reflected span 136..168 (2012 PDB sizeof 160)
+class UDisConv_Comment : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_Comment
+    FStringNoInit m_CommentText;
+    FStringNoInit m_BodyText;
+    FColor m_BorderColor;
+    FColor m_BackgroundColor;
+    //## END PROPS DisConv_Comment
+
+    DECLARE_CLASS(UDisConv_Comment,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Comparison: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_Comparison : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_Comparison
+    //## END PROPS DisConv_Comparison
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Comparison,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_CompareDarknessLevel: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
+class UDisConv_CompareDarknessLevel : public UDisConv_Comparison
+{
+public:
+    //## BEGIN PROPS DisConv_CompareDarknessLevel
+    INT m_LevelToCompare;
+    //## END PROPS DisConv_CompareDarknessLevel
+
+    DECLARE_CLASS(UDisConv_CompareDarknessLevel,UDisConv_Comparison,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_ConversationFired: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_ConversationFired : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_ConversationFired
+    class UDisDialogTree* m_pDialogTree;
+    class ADisDialogOneShot* m_pDialogOneShot;
+    class UDisConversation* m_pConversation;
+    //## END PROPS DisConv_ConversationFired
+
+    DECLARE_CLASS(UDisConv_ConversationFired,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_ConversationRef: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_ConversationRef : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_ConversationRef
+    //## END PROPS DisConv_ConversationRef
+
+    DECLARE_CLASS(UDisConv_ConversationRef,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_DialogHook: retail sizeof 156, reflected span 136..156 (2012 PDB sizeof 148)
+class UDisConv_DialogHook : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_DialogHook
+    INT m_iHookIndex;
+    BYTE m_HookEnum;
+    BYTE m_Priority;
+    TArrayNoInit<FDisEditorOnlyDialogHookInfo> m_HookInfo;
+    //## END PROPS DisConv_DialogHook
+
+    DECLARE_CLASS(UDisConv_DialogHook,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_FactionBranch: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_FactionBranch : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_FactionBranch
+    TArrayNoInit<FDisFactionBranch> m_Branches;
+    //## END PROPS DisConv_FactionBranch
+
+    DECLARE_CLASS(UDisConv_FactionBranch,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_HadConversation: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_HadConversation : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_HadConversation
+    class UDisDialogTree* m_pDialogTree;
+    class ADisDialogOneShot* m_pDialogOneShot;
+    class UDisConversation* m_pConversation;
+    //## END PROPS DisConv_HadConversation
+
+    DECLARE_CLASS(UDisConv_HadConversation,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_HasAbstractItem: retail sizeof 144, reflected span 136..144 (2012 PDB sizeof 136)
+class UDisConv_HasAbstractItem : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_HasAbstractItem
+    class UDisAbstractItem* m_pItem;
+    INT m_Quantity;
+    //## END PROPS DisConv_HasAbstractItem
+
+    DECLARE_CLASS(UDisConv_HasAbstractItem,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_HasInventoryItem: retail sizeof 144, reflected span 136..144 (2012 PDB sizeof 136)
+class UDisConv_HasInventoryItem : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_HasInventoryItem
+    class UDisTweaks_InventoryItem* m_pItem;
+    class UClass* m_pItemClass;
+    //## END PROPS DisConv_HasInventoryItem
+
+    DECLARE_CLASS(UDisConv_HasInventoryItem,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_HasInventoryItemEquipped: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
+class UDisConv_HasInventoryItemEquipped : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_HasInventoryItemEquipped
+    class UClass* m_pItemClass;
+    //## END PROPS DisConv_HasInventoryItemEquipped
+
+    DECLARE_CLASS(UDisConv_HasInventoryItemEquipped,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_HasObjective: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
+class UDisConv_HasObjective : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_HasObjective
+    class UDishonoredObjective* m_pObjective;
+    //## END PROPS DisConv_HasObjective
+
+    DECLARE_CLASS(UDisConv_HasObjective,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_Distance: retail sizeof 168, reflected span 156..168 (2012 PDB sizeof 160)
+class UDisConv_Hook_Distance : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_Distance
+    FLOAT m_fCloseDistance;
+    FLOAT m_fMediumDistance;
+    FLOAT m_fFarDistance;
+    //## END PROPS DisConv_Hook_Distance
+
+    DECLARE_CLASS(UDisConv_Hook_Distance,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_Distance_InGameData: retail sizeof 76, reflected span 60..76 (2012 PDB sizeof 76)
+class UDisConv_Hook_Distance_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_Distance_InGameData
+    FDisHookDistHelper m_DistHelper;
+    //## END PROPS DisConv_Hook_Distance_InGameData
+
+    DECLARE_CLASS(UDisConv_Hook_Distance_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_Distraction: retail sizeof 168, reflected span 156..168 (2012 PDB sizeof 160)
+class UDisConv_Hook_Distraction : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_Distraction
+    TArrayNoInit<FDistractionLinkInfo> m_DistractionLinks;
+    //## END PROPS DisConv_Hook_Distraction
+
+    DECLARE_CLASS(UDisConv_Hook_Distraction,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_SplitByTypeAndActor: retail sizeof 180, reflected span 156..180 (2012 PDB sizeof 172)
+class UDisConv_Hook_SplitByTypeAndActor : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_SplitByTypeAndActor
+    TArrayNoInit<class UClass*> m_AssociatedTypes;
+    TArrayNoInit<class AActor*> m_AssociatedActors;
+    //## END PROPS DisConv_Hook_SplitByTypeAndActor
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Hook_SplitByTypeAndActor,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_HeartTargeted: retail sizeof 180, reflected span 180..180 (2012 PDB sizeof 172)
+class UDisConv_Hook_HeartTargeted : public UDisConv_Hook_SplitByTypeAndActor
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_HeartTargeted
+    //## END PROPS DisConv_Hook_HeartTargeted
+
+    DECLARE_CLASS(UDisConv_Hook_HeartTargeted,UDisConv_Hook_SplitByTypeAndActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_Investigate: retail sizeof 156, reflected span 156..156 (2012 PDB sizeof 148)
+class UDisConv_Hook_Investigate : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_Investigate
+    //## END PROPS DisConv_Hook_Investigate
+
+    DECLARE_CLASS(UDisConv_Hook_Investigate,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_KismetActivated: retail sizeof 192, reflected span 156..192 (2012 PDB sizeof 184)
+class UDisConv_Hook_KismetActivated : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_KismetActivated
+    TArrayNoInit<FName> m_KismetDialogHooks;
+    TArrayNoInit<FName> m_KismetDialogHooks_PreChange;
+    TArrayNoInit<class UDisConv_Node*> m_KismetDialogHooks_Links_PreChange;
+    //## END PROPS DisConv_Hook_KismetActivated
+
+    DECLARE_CLASS(UDisConv_Hook_KismetActivated,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_Notice: retail sizeof 156, reflected span 156..156 (2012 PDB sizeof 148)
+class UDisConv_Hook_Notice : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_Notice
+    //## END PROPS DisConv_Hook_Notice
+
+    DECLARE_CLASS(UDisConv_Hook_Notice,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_NoticeBroken: retail sizeof 180, reflected span 180..180 (2012 PDB sizeof 172)
+class UDisConv_Hook_NoticeBroken : public UDisConv_Hook_SplitByTypeAndActor
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_NoticeBroken
+    //## END PROPS DisConv_Hook_NoticeBroken
+
+    DECLARE_CLASS(UDisConv_Hook_NoticeBroken,UDisConv_Hook_SplitByTypeAndActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_PlayAudioLog: retail sizeof 192, reflected span 156..192 (2012 PDB sizeof 184)
+class UDisConv_Hook_PlayAudioLog : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_PlayAudioLog
+    TArrayNoInit<FName> m_AudioLogNames;
+    TArrayNoInit<FName> m_AudioLogNames_PreChange;
+    TArrayNoInit<class UDisConv_Node*> m_AudioLogNames_Links_PreChange;
+    //## END PROPS DisConv_Hook_PlayAudioLog
+
+    DECLARE_CLASS(UDisConv_Hook_PlayAudioLog,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_PlayerLoiter: retail sizeof 168, reflected span 156..168 (2012 PDB sizeof 160)
+class UDisConv_Hook_PlayerLoiter : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_PlayerLoiter
+    FLOAT m_fLoiterRadius;
+    FLOAT m_fLoiterTime_Min;
+    FLOAT m_fLoiterTime_Max;
+    //## END PROPS DisConv_Hook_PlayerLoiter
+
+    DECLARE_CLASS(UDisConv_Hook_PlayerLoiter,UDisConv_DialogHook,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_PlayerLoiter_InGameData: retail sizeof 76, reflected span 60..76 (2012 PDB sizeof 76)
+class UDisConv_Hook_PlayerLoiter_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_PlayerLoiter_InGameData
+    FLOAT m_fLastLoiterTime;
+    FLOAT m_fTargetLoiter;
+    FLOAT m_fCurLoiter;
+    BITFIELD m_bInLoiterRadius:1;
+    //## END PROPS DisConv_Hook_PlayerLoiter_InGameData
+
+    DECLARE_CLASS(UDisConv_Hook_PlayerLoiter_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_PlayerLookAt: retail sizeof 172, reflected span 156..172 (2012 PDB sizeof 164)
+class UDisConv_Hook_PlayerLookAt : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_PlayerLookAt
+    TArrayNoInit<FDisPlayerLookAtTarget> m_LookAtTargets;
+    FLOAT m_fLookAtRadius;
+    //## END PROPS DisConv_Hook_PlayerLookAt
+
+    DECLARE_CLASS(UDisConv_Hook_PlayerLookAt,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_PlayerLookAt_InGameData: retail sizeof 72, reflected span 60..72 (2012 PDB sizeof 72)
+class UDisConv_Hook_PlayerLookAt_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_PlayerLookAt_InGameData
+    INT m_iLastKnownLookTarget;
+    FLOAT m_fTimeOfLastKnownLook;
+    BITFIELD m_bFiredForTarget:1;
+    //## END PROPS DisConv_Hook_PlayerLookAt_InGameData
+
+    DECLARE_CLASS(UDisConv_Hook_PlayerLookAt_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_SuspicionLevel: retail sizeof 156, reflected span 156..156 (2012 PDB sizeof 148)
+class UDisConv_Hook_SuspicionLevel : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_SuspicionLevel
+    //## END PROPS DisConv_Hook_SuspicionLevel
+
+    DECLARE_CLASS(UDisConv_Hook_SuspicionLevel,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_SuspicionDist: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 152)
+class UDisConv_Hook_SuspicionDist : public UDisConv_Hook_SuspicionLevel
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_SuspicionDist
+    FLOAT m_fRadius;
+    //## END PROPS DisConv_Hook_SuspicionDist
+
+    DECLARE_CLASS(UDisConv_Hook_SuspicionDist,UDisConv_Hook_SuspicionLevel,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_WitnessedInteraction: retail sizeof 180, reflected span 180..180 (2012 PDB sizeof 172)
+class UDisConv_Hook_WitnessedInteraction : public UDisConv_Hook_SplitByTypeAndActor
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_WitnessedInteraction
+    //## END PROPS DisConv_Hook_WitnessedInteraction
+
+    DECLARE_CLASS(UDisConv_Hook_WitnessedInteraction,UDisConv_Hook_SplitByTypeAndActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Hook_WitnessedMagic: retail sizeof 168, reflected span 156..168 (2012 PDB sizeof 160)
+class UDisConv_Hook_WitnessedMagic : public UDisConv_DialogHook
+{
+public:
+    //## BEGIN PROPS DisConv_Hook_WitnessedMagic
+    TArrayNoInit<class UClass*> m_MagicTypes;
+    //## END PROPS DisConv_Hook_WitnessedMagic
+
+    DECLARE_CLASS(UDisConv_Hook_WitnessedMagic,UDisConv_DialogHook,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Speaker: retail sizeof 156, reflected span 136..156 (2012 PDB sizeof 148)
+class UDisConv_Speaker : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_Speaker
+    FStringNoInit m_NickName;
+    BITFIELD m_bNotWhileInCombat:1;
+    BITFIELD m_bNotWhileSuspicious:1;
+    BITFIELD m_bNotWhileFearful:1;
+    BITFIELD m_bOptional:1;
+    BITFIELD m_bRequireRadialCheck:1;
+    BITFIELD m_bMustHaveLOS:1;
+    FLOAT m_fMustBeWithinRadius;
+    //## END PROPS DisConv_Speaker
+
+    DECLARE_ABSTRACT_CLASS(UDisConv_Speaker,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_InitiatorSpeaker: retail sizeof 164, reflected span 156..164 (2012 PDB sizeof 156)
+class UDisConv_InitiatorSpeaker : public UDisConv_Speaker
+{
+public:
+    //## BEGIN PROPS DisConv_InitiatorSpeaker
+    BITFIELD m_bOrphaned:1;
+    class UDisDialogTree* m_pInitiatorDialogTree;
+    //## END PROPS DisConv_InitiatorSpeaker
+
+    DECLARE_CLASS(UDisConv_InitiatorSpeaker,UDisConv_Speaker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_IsObjectiveComplete: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
+class UDisConv_IsObjectiveComplete : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_IsObjectiveComplete
+    class UDishonoredObjective* m_pObjective;
+    //## END PROPS DisConv_IsObjectiveComplete
+
+    DECLARE_CLASS(UDisConv_IsObjectiveComplete,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_IsPossessed: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_IsPossessed : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_IsPossessed
+    //## END PROPS DisConv_IsPossessed
+
+    DECLARE_CLASS(UDisConv_IsPossessed,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_IsSpeakerAvailable: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_IsSpeakerAvailable : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_IsSpeakerAvailable
+    //## END PROPS DisConv_IsSpeakerAvailable
+
+    DECLARE_CLASS(UDisConv_IsSpeakerAvailable,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_KismetActivateRemoteEvent: retail sizeof 152, reflected span 136..152 (2012 PDB sizeof 144)
+class UDisConv_KismetActivateRemoteEvent : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_KismetActivateRemoteEvent
+    FName m_OldEventName;
+    FName m_EventName;
+    //## END PROPS DisConv_KismetActivateRemoteEvent
+
+    DECLARE_CLASS(UDisConv_KismetActivateRemoteEvent,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_MeSpeaker: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 152)
+class UDisConv_MeSpeaker : public UDisConv_Speaker
+{
+public:
+    //## BEGIN PROPS DisConv_MeSpeaker
+    BITFIELD m_bOrphaned:1;
+    //## END PROPS DisConv_MeSpeaker
+
+    DECLARE_CLASS(UDisConv_MeSpeaker,UDisConv_Speaker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_NonWord: retail sizeof 236, reflected span 236..236 (2012 PDB sizeof 228)
+class UDisConv_NonWord : public UDisConv_Blurb
+{
+public:
+    //## BEGIN PROPS DisConv_NonWord
+    //## END PROPS DisConv_NonWord
+
+    DECLARE_CLASS(UDisConv_NonWord,UDisConv_Blurb,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_OneShotSpeaker: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 152)
+class UDisConv_OneShotSpeaker : public UDisConv_Speaker
+{
+public:
+    //## BEGIN PROPS DisConv_OneShotSpeaker
+    INT m_iOneShotSpeaker;
+    //## END PROPS DisConv_OneShotSpeaker
+
+    DECLARE_CLASS(UDisConv_OneShotSpeaker,UDisConv_Speaker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_PlayerChoice: retail sizeof 176, reflected span 136..176 (2012 PDB sizeof 168)
+class UDisConv_PlayerChoice : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConv_PlayerChoice
+    TArrayNoInit<FDisPlayerChoice_Static> m_Choices_Static;
+    TArrayNoInit<FDisPlayerChoice_Optional> m_Choices_Optional;
+    TArrayNoInit<FString> m_Choices;
+    INT m_PlayerChoiceVersionNum;
+    //## END PROPS DisConv_PlayerChoice
+
+    DECLARE_CLASS(UDisConv_PlayerChoice,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_PlayerLookAtActor: retail sizeof 180, reflected span 136..177 (2012 PDB sizeof 172)
+class UDisConv_PlayerLookAtActor : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_PlayerLookAtActor
+    class AActor* m_pLookAtActor;
+    FLOAT m_fBlendTime;
+    BITFIELD m_bUseLookConstraints:1;
+    FDisConvLookAtConstraints m_LookConstraints;
+    BYTE m_HitRegionToLookAt;
+    //## END PROPS DisConv_PlayerLookAtActor
+
+    DECLARE_CLASS(UDisConv_PlayerLookAtActor,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_PlayerLookAtSpeaker: retail sizeof 180, reflected span 136..177 (2012 PDB sizeof 172)
+class UDisConv_PlayerLookAtSpeaker : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_PlayerLookAtSpeaker
+    FLOAT m_fBlendTime;
+    INT m_iSpeakerToLookAt;
+    BITFIELD m_bUseLookConstraints:1;
+    FDisConvLookAtConstraints m_LookConstraints;
+    BYTE m_HitRegionToLookAt;
+    //## END PROPS DisConv_PlayerLookAtSpeaker
+
+    DECLARE_CLASS(UDisConv_PlayerLookAtSpeaker,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_PlayerStopLookAt: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_PlayerStopLookAt : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_PlayerStopLookAt
+    //## END PROPS DisConv_PlayerStopLookAt
+
+    DECLARE_CLASS(UDisConv_PlayerStopLookAt,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_RandomBranch: retail sizeof 152, reflected span 136..152 (2012 PDB sizeof 144)
+class UDisConv_RandomBranch : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_RandomBranch
+    TArrayNoInit<FLOAT> m_Branches;
+    BITFIELD m_bTryKeepUnique:1;
+    //## END PROPS DisConv_RandomBranch
+
+    DECLARE_CLASS(UDisConv_RandomBranch,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SequentialBranch: retail sizeof 152, reflected span 136..152 (2012 PDB sizeof 144)
+class UDisConv_SequentialBranch : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_SequentialBranch
+    TArrayNoInit<FString> m_Branches;
+    BITFIELD m_bLooping:1;
+    BITFIELD m_bApplyGlobally:1;
+    //## END PROPS DisConv_SequentialBranch
+
+    DECLARE_CLASS(UDisConv_SequentialBranch,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_RandomSequentialBranch: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 144)
+class UDisConv_RandomSequentialBranch : public UDisConv_SequentialBranch
+{
+public:
+    //## BEGIN PROPS DisConv_RandomSequentialBranch
+    //## END PROPS DisConv_RandomSequentialBranch
+
+    DECLARE_CLASS(UDisConv_RandomSequentialBranch,UDisConv_SequentialBranch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SequentialBranch_InGameData: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
+class UDisConv_SequentialBranch_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_SequentialBranch_InGameData
+    FDisSeqBranchEntry m_SeqBranchInfo;
+    //## END PROPS DisConv_SequentialBranch_InGameData
+
+    DECLARE_CLASS(UDisConv_SequentialBranch_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_RandomSequentialBranch_InGameData: retail sizeof 92, reflected span 68..92 (2012 PDB sizeof 92)
+class UDisConv_RandomSequentialBranch_InGameData : public UDisConv_SequentialBranch_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_RandomSequentialBranch_InGameData
+    FDisRandomSeqBranchEntry m_RandomSeqBranchEntry;
+    //## END PROPS DisConv_RandomSequentialBranch_InGameData
+
+    DECLARE_CLASS(UDisConv_RandomSequentialBranch_InGameData,UDisConv_SequentialBranch_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SeenDialogLabel: retail sizeof 156, reflected span 136..156 (2012 PDB sizeof 148)
+class UDisConv_SeenDialogLabel : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_SeenDialogLabel
+    class UDisDialogTree* m_pDialogTree;
+    class ADisDialogOneShot* m_pDialogOneShot;
+    class UDisConversation* m_pConversation;
+    FName m_LabelToCheck;
+    //## END PROPS DisConv_SeenDialogLabel
+
+    DECLARE_CLASS(UDisConv_SeenDialogLabel,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SetStoryFlag: retail sizeof 160, reflected span 136..160 (2012 PDB sizeof 152)
+class UDisConv_SetStoryFlag : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_SetStoryFlag
+    class UDisStoryFlagSet* m_pStoryFlagSet;
+    FGuid m_StoryFlag;
+    BITFIELD m_bValue:1;
+    //## END PROPS DisConv_SetStoryFlag
+
+    DECLARE_CLASS(UDisConv_SetStoryFlag,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Soiree: retail sizeof 180, reflected span 136..180 (2012 PDB sizeof 172)
+class UDisConv_Soiree : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_Soiree
+    FGuid m_NodeGUID;
+    FGuid m_SoireeGUID;
+    BITFIELD m_UsePreviewBlurbsOnly:1;
+    FName m_SoireeName;
+    //## END PROPS DisConv_Soiree
+
+    DECLARE_CLASS(UDisConv_Soiree,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_Soiree_InGameData: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
+class UDisConv_Soiree_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_Soiree_InGameData
+    class USeqAct_Interp* m_PlayingMatinee;
+    class UDisConv_Node* m_PlayingNode;
+    //## END PROPS DisConv_Soiree_InGameData
+
+    DECLARE_CLASS(UDisConv_Soiree_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SpawnerBranch: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_SpawnerBranch : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_SpawnerBranch
+    TArrayNoInit<class ADishonoredSpawner*> m_Branches;
+    //## END PROPS DisConv_SpawnerBranch
+
+    DECLARE_CLASS(UDisConv_SpawnerBranch,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SpeakerCombatStatus: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_SpeakerCombatStatus : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_SpeakerCombatStatus
+    //## END PROPS DisConv_SpeakerCombatStatus
+
+    DECLARE_CLASS(UDisConv_SpeakerCombatStatus,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SpeakerHasTweaks: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_SpeakerHasTweaks : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_SpeakerHasTweaks
+    TArrayNoInit<FDisSpeakerTweaks> m_Branches;
+    //## END PROPS DisConv_SpeakerHasTweaks
+
+    DECLARE_CLASS(UDisConv_SpeakerHasTweaks,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SpeakerInStoryGroup: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_SpeakerInStoryGroup : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_SpeakerInStoryGroup
+    TArrayNoInit<FDisSpeakerStoryGroup> m_Branches;
+    //## END PROPS DisConv_SpeakerInStoryGroup
+
+    DECLARE_CLASS(UDisConv_SpeakerInStoryGroup,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_SpeakerSupportsDialogTree: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
+class UDisConv_SpeakerSupportsDialogTree : public UDisConv_Branch
+{
+public:
+    //## BEGIN PROPS DisConv_SpeakerSupportsDialogTree
+    TArrayNoInit<class UDisDialogTree*> m_Branches;
+    //## END PROPS DisConv_SpeakerSupportsDialogTree
+
+    DECLARE_CLASS(UDisConv_SpeakerSupportsDialogTree,UDisConv_Branch,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_TimeLimit: retail sizeof 144, reflected span 136..144 (2012 PDB sizeof 136)
+class UDisConv_TimeLimit : public UDisConv_Condition
+{
+public:
+    //## BEGIN PROPS DisConv_TimeLimit
+    FLOAT m_fTimeLimitInSeconds;
+    BITFIELD m_bApplyGlobally:1;
+    //## END PROPS DisConv_TimeLimit
+
+    DECLARE_CLASS(UDisConv_TimeLimit,UDisConv_Condition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_TimeLimit_InGameData: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
+class UDisConv_TimeLimit_InGameData : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConv_TimeLimit_InGameData
+    FLOAT m_fTimeLastFired;
+    FLOAT m_fTimeLastFired_Pending;
+    //## END PROPS DisConv_TimeLimit_InGameData
+
+    DECLARE_CLASS(UDisConv_TimeLimit_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConv_TryFallbackTree: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
+class UDisConv_TryFallbackTree : public UDisConv_Action
+{
+public:
+    //## BEGIN PROPS DisConv_TryFallbackTree
+    //## END PROPS DisConv_TryFallbackTree
+
+    DECLARE_CLASS(UDisConv_TryFallbackTree,UDisConv_Action,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConversation: retail sizeof 200, reflected span 136..200 (2012 PDB sizeof 192)
+class UDisConversation : public UDisConv_Node
+{
+public:
+    //## BEGIN PROPS DisConversation
+    TArrayNoInit<class UDisConv_Node*> m_Nodes;
+    TArrayNoInit<class UDisConv_Node*> m_EditorNodes_Background;
+    INT m_RefCount;
+    TArrayNoInit<FDisConvSpeaker> m_Speakers;
+    FStringNoInit m_Description;
+    BITFIELD m_bIsBlocking:1;
+    BITFIELD m_bIsBlocking_Player:1;
+    BITFIELD m_bSpeakersPsychicallySeeEachOther:1;
+    BITFIELD m_bMakeOtherDialogQuiet:1;
+    BITFIELD m_bHACK_NeverMakeOtherDialogQuiet:1;
+    BITFIELD m_bAllowPlayerToCarryBody:1;
+    BITFIELD m_bLowerAIAlertness:1;
+    BITFIELD m_bStopBlockingForAINotice:1;
+    BITFIELD m_bAlwaysInterruptForCombat:1;
+    BITFIELD m_bCanStartDuringEnemyAwareness:1;
+    BITFIELD m_bPlayerMustBeNear:1;
+    BITFIELD m_bFireConvOnlyOnce:1;
+    BITFIELD m_bNotWhenPlayerIsInCombat:1;
+    BYTE m_Priority;
+    FLOAT m_fPlayerNearRadius;
+    //## END PROPS DisConversation
+
+    DECLARE_CLASS(UDisConversation,UDisConv_Node,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConversationComponent: retail sizeof 412, reflected span 81..412 (2012 PDB sizeof 412)
+class UDisConversationComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DisConversationComponent
+    class UDisDialogTree_InGameBind* m_pGenericDialogTree;
+    TArrayNoInit<class UDisDialogTree_InGameBind*> m_AdditionalGenericDialogTrees;
+    TArrayNoInit<class UDisDialogVoiceData*> m_GenericDialogData;
+    TArrayNoInit<class UDisDialogVoiceData*> m_AdditionalGenericDialogDatas;
+    class UDisDialogVoiceData* m_pGenericDialogData_Cached;
+    TArrayNoInit<FDisDialogOneShotPair> m_OneShotInfo;
+    FPointer m_pDialogRunningInst;
+    INT m_iRunningInstID;
+    BITFIELD m_bIsBlocking:1;
+    BITFIELD m_bFaceFxPendingMainSubtitle:1;
+    BITFIELD m_bUseAttentionProxyForLook:1;
+    TArrayNoInit<FDisDialogHookInfo_InGame> m_DialogHookInfo_InGame;
+    FLOAT m_fBlurbElapsedTime;
+    FLOAT m_fBlurbCueDuration;
+    INT m_PendingAkEventID;
+    INT m_ReadyAkEventID;
+    FLOAT m_fCurVoiceRadius;
+    FPointer m_pFaceFxPendingBlurb;
+    FPointer m_pFaceFxPendingBlurbText;
+    FLOAT m_fPlayingAudioDuration;
+    class AActor* m_pLookTarget;
+    BYTE m_LookType;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisHookParameters m_HookParams;
+    FDisConvSaveData m_SaveData;
+    INT m_FireHookTag;
+    FStringNoInit m_DebugSpeechText;
+    TScriptInterface<class IDisConvSpeakerInterface> m_OwnerInterfaceSpeaker;
+    TScriptInterface<class IArkHealthInterface> m_OwnerInterfaceHealth;
+    INT m_IsDialogHookSupported_Cache[4];
+    TArrayNoInit<FDisFailedDialogHookInfo> m_FailedDialogHooks;
+    FLOAT m_fFailedDialogHookDisplayTime;
+    //## END PROPS DisConversationComponent
+
+    DECLARE_CLASS(UDisConversationComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.DisConversation_InGameData_Base: retail sizeof 76, reflected span 60..73 (2012 PDB sizeof 76)
+class UDisConversation_InGameData_Base : public UDisConv_Node_InGameData
+{
+public:
+    //## BEGIN PROPS DisConversation_InGameData_Base
+    TArrayNoInit<class UDisConv_Node_InGameData*> m_Nodes_InGame;
+    BYTE m_NodeDataType;
+    //## END PROPS DisConversation_InGameData_Base
+
+    DECLARE_CLASS(UDisConversation_InGameData_Base,UDisConv_Node_InGameData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConversation_InGameData: retail sizeof 92, reflected span 73..92 (2012 PDB sizeof 92)
+class UDisConversation_InGameData : public UDisConversation_InGameData_Base
+{
+public:
+    //## BEGIN PROPS DisConversation_InGameData
+    TArrayNoInit<FDisConvSpeaker_InGame> m_SpeakerBindings;
+    BITFIELD m_bDidPlayerWalkAwayCheck:1;
+    //## END PROPS DisConversation_InGameData
+
+    DECLARE_CLASS(UDisConversation_InGameData,UDisConversation_InGameData_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDialogOneShotRenderingComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisDialogOneShotRenderingComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisDialogOneShotRenderingComponent
+    //## END PROPS DisDialogOneShotRenderingComponent
+
+    DECLARE_CLASS(UDisDialogOneShotRenderingComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDialogTree: retail sizeof 372, reflected span 200..369 (2012 PDB sizeof 364)
+class UDisDialogTree : public UDisConversation
+{
+public:
+    //## BEGIN PROPS DisDialogTree
+    TArrayNoInit<class UDisConversation*> m_Conversations;
+    TArrayNoInit<class UDisConv_DialogHook*> m_DialogHooks;
+    class ADisDialogOneShot* m_pBoundToOneShot;
+    BITFIELD m_bHasUnExportedNodes:1;
+    BITFIELD m_bIsBeingEdited:1;
+    BITFIELD m_bNeedsResaving:1;
+    BITFIELD m_bNodeLookupMapUpToDate:1;
+    BITFIELD m_bCapturedAtLeastOneSpeaker:1;
+    BITFIELD m_bMapSpecific:1;
+    BITFIELD m_bOneShot:1;
+    TArrayNoInit<FDisConversationFolder> m_ConversationFolders;
+    TMap<FGuid,class UDisConv_Node*> m_NodeLookupMapByID;  // DISHONORED(layout): retail SDK gap @244: MapProperty m_NodeLookupMapByID (script_classes_2013), type from the 2012 PDB
+    TArrayNoInit<FDisDialogDebugHook> m_LastPlayDebugCapture;
+    FStringNoInit m_OwnerNickname;
+    class UDisDialogTree* m_pFallbackTree;
+    FStringNoInit m_TreeDescription;
+    FStringNoInit m_DialogPackagePath;
+    TArrayNoInit<FString> m_DialogPackagePath_Exclude;
+    BYTE m_DialogTreeUsage;
+    //## END PROPS DisDialogTree
+
+    DECLARE_CLASS(UDisDialogTree,UDisConversation,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDialogTree_InGameBind: retail sizeof 324, reflected span 56..324 (2012 PDB sizeof 324)
+class UDisDialogTree_InGameBind : public UObject
+{
+public:
+    //## BEGIN PROPS DisDialogTree_InGameBind
+    class UDisDialogTree* m_pDialogTree;
+    TScriptInterface<class IDisConvSpeakerInterface> m_pBoundSpeaker_Me;
+    INT m_iActiveRunningInstance;
+    FDisDialogRunningInstance m_RunningInstances[2];
+    TArrayNoInit<FDisDialogRunningObjs> m_FallbackChain_Persist;
+    TArrayNoInit<class UDisConv_Node_InGameData*> m_Nodes_Singleton_InGameData;
+    TMap<class UClass*,INT> m_Nodes_Singleton_InGameData_Lookup;  // DISHONORED(layout): retail SDK gap @248: MapProperty m_Nodes_Singleton_InGameData_Lookup (script_classes_2013), type from the 2012 PDB
+    FLOAT m_fRemainingInitatorBustedTimer;
+    TArrayNoInit<FDisDialogDebugHook> m_DebugCapture;
+    //## END PROPS DisDialogTree_InGameBind
+
+    DECLARE_CLASS(UDisDialogTree_InGameBind,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.DisDialogTree_OneShot: retail sizeof 372, reflected span 369..372 (2012 PDB sizeof 364)
+class UDisDialogTree_OneShot : public UDisDialogTree
+{
+public:
+    //## BEGIN PROPS DisDialogTree_OneShot
+    //## END PROPS DisDialogTree_OneShot
+
+    DECLARE_CLASS(UDisDialogTree_OneShot,UDisDialogTree,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDialogVoiceData: retail sizeof 152, reflected span 56..152 (2012 PDB sizeof 152)
+class UDisDialogVoiceData : public UObject
+{
+public:
+    //## BEGIN PROPS DisDialogVoiceData
+    class ADisDialogOneShot* m_pBoundToOneShot;
+    BITFIELD m_bIsBeingEdited:1;
+    BITFIELD m_bMapsBuilt:1;
+    BITFIELD m_bMapSpecific:1;
+    BITFIELD m_bOneShot:1;
+    INT m_iTreeBeingImported;
+    class UPackage* m_pImportGroup;
+    class UPackage* m_pDataPackage;
+    class UDisDialogTree* m_pDialogTree;
+    FStringNoInit m_VoiceActorName;
+    class UFaceFXAsset* m_pFaceFXAsset;
+    class UDisDialogVoiceData* m_pMatchedGenericVoice;
+    class UAkBank* m_pAkBank;
+    FName m_DataPackage;
+    TArrayNoInit<FDisVoiceTextBlurbList> m_VoiceData;
+    class UFaceFXAnimSet* m_pFaceFXAnimSet;
+    BYTE m_TextToSpeech_Speaker;
+    BYTE m_Category;
+    BYTE m_Gender;
+    INT m_Age;
+    FGuid m_GUID;
+    //## END PROPS DisDialogVoiceData
+
+    DECLARE_CLASS(UDisDialogVoiceData,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.DisDialogVoiceData_OneShot: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisDialogVoiceData_OneShot : public UDisDialogVoiceData
+{
+public:
+    //## BEGIN PROPS DisDialogVoiceData_OneShot
+    //## END PROPS DisDialogVoiceData_OneShot
+
+    DECLARE_CLASS(UDisDialogVoiceData_OneShot,UDisDialogVoiceData,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSpeakerGroup_PA_RenderingComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisSpeakerGroup_PA_RenderingComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisSpeakerGroup_PA_RenderingComponent
+    //## END PROPS DisSpeakerGroup_PA_RenderingComponent
+
+    DECLARE_CLASS(UDisSpeakerGroup_PA_RenderingComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ConvSettings: retail sizeof 284, reflected span 140..284 (2012 PDB sizeof 284)
+class UDisTweaks_ConvSettings : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ConvSettings
+    BYTE m_BattleLoudness;
+    BYTE m_SearchLoudness;
+    BYTE m_NoticeLoudness;
+    TArrayNoInit<FDisDialogHookConfigOverride> m_DialogHookOverrides;
+    INT m_MaxDialogHooksAtOnce;
+    INT m_MaxDialogHooksAtOnce_Quiet;
+    FLOAT m_fMaxDialogDistance;
+    FLOAT m_fDialogDistanceConsideredLoud;
+    FLOAT m_fHookWeightRandRange;
+    TArrayNoInit<FDisFireGroupConfig> m_FireGroupConfig;
+    FLOAT m_fNonDominantVolumeScale;
+    FLOAT m_fDominantMaxDistance_Percent;
+    FLOAT m_fAudioDuckBlendSpeed;
+    FLOAT m_fPASpeakerDialogDelay;
+    class UAkEvent* m_pPASpeakerIntroSound;
+    class UAkEvent* m_pPASpeakerOutroSound;
+    FColor m_EditorNodeColors[18];
+    //## END PROPS DisTweaks_ConvSettings
+
+    DECLARE_CLASS(UDisTweaks_ConvSettings,UDisTweaksBase,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+};
+
+// DishonoredGame.StatePlayerMasterInDialog: retail sizeof 180, reflected span 92..180 (2012 PDB sizeof 180)
+class UStatePlayerMasterInDialog : public UStatePlayerMasterChoice_Base
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterInDialog
+    FPointer m_pDialogRunningInst;
+    BITFIELD m_bAllowPlayerToCarryBody:1;
+    BITFIELD m_bUseConstraints:1;
+    class UDisConv_PlayerChoice* m_pActivePlayerChoice;
+    FDisSoireeControlState m_SoireeControlState;
+    FLOAT m_fSoireeBlendOutTime;
+    INT m_ViewTrackID;
+    FDisConvLookAtConstraints m_LookAtConstraints;
+    //## END PROPS StatePlayerMasterInDialog
+
+    DECLARE_CLASS(UStatePlayerMasterInDialog,UStatePlayerMasterChoice_Base,0|CLASS_Config,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_CONVERSATION_CLASSES
+#endif // !NAMES_ONLY
+
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_CONVERSATION_NATIVE_DEFS
+#define DISHONOREDGAME_CONVERSATION_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_CONVERSATION \
+	ADisDialogOneShot::StaticClass(); \
+	ADisDialogInanimateDummy::StaticClass(); \
+	ADisDialogOneShot_HeartGadget::StaticClass(); \
+	ADisSpeakerGroup_PA::StaticClass(); \
+	UDisConvGlobalMan::StaticClass(); \
+	UDisConv_Node::StaticClass(); \
+	UDisConv_Action::StaticClass(); \
+	UDisConv_Blurb::StaticClass(); \
+	UDisConv_Node_InGameData::StaticClass(); \
+	UDisConv_Blurb_InGameData::StaticClass(); \
+	UDisConv_Branch::StaticClass(); \
+	UDisConv_Condition::StaticClass(); \
+	UDisConv_CheckSpeakerRelationship::StaticClass(); \
+	UDisConv_CheckSpeakerSuspicionLevel::StaticClass(); \
+	UDisConv_CheckStoryFlag::StaticClass(); \
+	UDisConv_CheckTaskState::StaticClass(); \
+	UDisConv_Comment::StaticClass(); \
+	UDisConv_Comparison::StaticClass(); \
+	UDisConv_CompareDarknessLevel::StaticClass(); \
+	UDisConv_ConversationFired::StaticClass(); \
+	UDisConv_ConversationRef::StaticClass(); \
+	UDisConv_DialogHook::StaticClass(); \
+	UDisConv_FactionBranch::StaticClass(); \
+	UDisConv_HadConversation::StaticClass(); \
+	UDisConv_HasAbstractItem::StaticClass(); \
+	UDisConv_HasInventoryItem::StaticClass(); \
+	UDisConv_HasInventoryItemEquipped::StaticClass(); \
+	UDisConv_HasObjective::StaticClass(); \
+	UDisConv_Hook_Distance::StaticClass(); \
+	UDisConv_Hook_Distance_InGameData::StaticClass(); \
+	UDisConv_Hook_Distraction::StaticClass(); \
+	UDisConv_Hook_SplitByTypeAndActor::StaticClass(); \
+	UDisConv_Hook_HeartTargeted::StaticClass(); \
+	UDisConv_Hook_Investigate::StaticClass(); \
+	UDisConv_Hook_KismetActivated::StaticClass(); \
+	UDisConv_Hook_Notice::StaticClass(); \
+	UDisConv_Hook_NoticeBroken::StaticClass(); \
+	UDisConv_Hook_PlayAudioLog::StaticClass(); \
+	UDisConv_Hook_PlayerLoiter::StaticClass(); \
+	UDisConv_Hook_PlayerLoiter_InGameData::StaticClass(); \
+	UDisConv_Hook_PlayerLookAt::StaticClass(); \
+	UDisConv_Hook_PlayerLookAt_InGameData::StaticClass(); \
+	UDisConv_Hook_SuspicionLevel::StaticClass(); \
+	UDisConv_Hook_SuspicionDist::StaticClass(); \
+	UDisConv_Hook_WitnessedInteraction::StaticClass(); \
+	UDisConv_Hook_WitnessedMagic::StaticClass(); \
+	UDisConv_Speaker::StaticClass(); \
+	UDisConv_InitiatorSpeaker::StaticClass(); \
+	UDisConv_IsObjectiveComplete::StaticClass(); \
+	UDisConv_IsPossessed::StaticClass(); \
+	UDisConv_IsSpeakerAvailable::StaticClass(); \
+	UDisConv_KismetActivateRemoteEvent::StaticClass(); \
+	UDisConv_MeSpeaker::StaticClass(); \
+	UDisConv_NonWord::StaticClass(); \
+	UDisConv_OneShotSpeaker::StaticClass(); \
+	UDisConv_PlayerChoice::StaticClass(); \
+	UDisConv_PlayerLookAtActor::StaticClass(); \
+	UDisConv_PlayerLookAtSpeaker::StaticClass(); \
+	UDisConv_PlayerStopLookAt::StaticClass(); \
+	UDisConv_RandomBranch::StaticClass(); \
+	UDisConv_SequentialBranch::StaticClass(); \
+	UDisConv_RandomSequentialBranch::StaticClass(); \
+	UDisConv_SequentialBranch_InGameData::StaticClass(); \
+	UDisConv_RandomSequentialBranch_InGameData::StaticClass(); \
+	UDisConv_SeenDialogLabel::StaticClass(); \
+	UDisConv_SetStoryFlag::StaticClass(); \
+	UDisConv_Soiree::StaticClass(); \
+	UDisConv_Soiree_InGameData::StaticClass(); \
+	UDisConv_SpawnerBranch::StaticClass(); \
+	UDisConv_SpeakerCombatStatus::StaticClass(); \
+	UDisConv_SpeakerHasTweaks::StaticClass(); \
+	UDisConv_SpeakerInStoryGroup::StaticClass(); \
+	UDisConv_SpeakerSupportsDialogTree::StaticClass(); \
+	UDisConv_TimeLimit::StaticClass(); \
+	UDisConv_TimeLimit_InGameData::StaticClass(); \
+	UDisConv_TryFallbackTree::StaticClass(); \
+	UDisConversation::StaticClass(); \
+	UDisConversationComponent::StaticClass(); \
+	UDisConversation_InGameData_Base::StaticClass(); \
+	UDisConversation_InGameData::StaticClass(); \
+	UDisDialogOneShotRenderingComponent::StaticClass(); \
+	UDisDialogTree::StaticClass(); \
+	UDisDialogTree_InGameBind::StaticClass(); \
+	UDisDialogTree_OneShot::StaticClass(); \
+	UDisDialogVoiceData::StaticClass(); \
+	UDisDialogVoiceData_OneShot::StaticClass(); \
+	UDisSpeakerGroup_PA_RenderingComponent::StaticClass(); \
+	UDisTweaks_ConvSettings::StaticClass(); \
+	UStatePlayerMasterInDialog::StaticClass(); \
+
+#endif // DISHONOREDGAME_CONVERSATION_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_OFFSET_NODIE(ADisDialogOneShot,DisDialogOneShot,m_OneShotNickName)
+VERIFY_CLASS_OFFSET_NODIE(ADisDialogOneShot,DisDialogOneShot,m_OtherSpeakers)
+VERIFY_CLASS_SIZE_NODIE(ADisDialogOneShot)
+VERIFY_CLASS_OFFSET_NODIE(ADisDialogInanimateDummy,DisDialogInanimateDummy,m_pInteractableTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisDialogInanimateDummy,DisDialogInanimateDummy,m_DialogOneShots)
+VERIFY_CLASS_SIZE_NODIE(ADisDialogInanimateDummy)
+VERIFY_CLASS_SIZE_NODIE(ADisDialogOneShot_HeartGadget)
+VERIFY_CLASS_OFFSET_NODIE(ADisSpeakerGroup_PA,DisSpeakerGroup_PA,m_PA_Speakers)
+VERIFY_CLASS_OFFSET_NODIE(ADisSpeakerGroup_PA,DisSpeakerGroup_PA,m_fDialogCountdown)
+VERIFY_CLASS_SIZE_NODIE(ADisSpeakerGroup_PA)
+VERIFY_CLASS_OFFSET_NODIE(UDisConvGlobalMan,DisConvGlobalMan,m_CurDominantHook)
+VERIFY_CLASS_OFFSET_NODIE(UDisConvGlobalMan,DisConvGlobalMan,m_pConvSettingTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisConvGlobalMan)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Node,DisConv_Node,m_OutputLinks)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Node,DisConv_Node,m_Shortcut)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Node)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Action)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Blurb,DisConv_Blurb,m_iBlurbGUID)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Blurb,DisConv_Blurb,m_fBlurbEndDelay)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Blurb)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Node_InGameData,DisConv_Node_InGameData,m_pOwnerConvNode)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Node_InGameData)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Blurb_InGameData,DisConv_Blurb_InGameData,m_PerSpeakerInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Blurb_InGameData,DisConv_Blurb_InGameData,m_fRemainingBlurbDelay)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Blurb_InGameData)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Branch)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Condition)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_CheckSpeakerRelationship,DisConv_CheckSpeakerRelationship,m_CompareSpeaker)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_CheckSpeakerRelationship)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_CheckSpeakerSuspicionLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_CheckStoryFlag,DisConv_CheckStoryFlag,m_pStoryFlagSet)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_CheckStoryFlag,DisConv_CheckStoryFlag,m_StoryFlag)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_CheckStoryFlag)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_CheckTaskState,DisConv_CheckTaskState,m_pObjective)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_CheckTaskState,DisConv_CheckTaskState,m_pTask)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_CheckTaskState)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Comment,DisConv_Comment,m_CommentText)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Comment,DisConv_Comment,m_BackgroundColor)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Comment)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Comparison)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_CompareDarknessLevel,DisConv_CompareDarknessLevel,m_LevelToCompare)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_CompareDarknessLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_ConversationFired,DisConv_ConversationFired,m_pDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_ConversationFired,DisConv_ConversationFired,m_pConversation)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_ConversationFired)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_ConversationRef)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_DialogHook,DisConv_DialogHook,m_iHookIndex)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_DialogHook,DisConv_DialogHook,m_HookInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_DialogHook)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_FactionBranch,DisConv_FactionBranch,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_FactionBranch)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HadConversation,DisConv_HadConversation,m_pDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HadConversation,DisConv_HadConversation,m_pConversation)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_HadConversation)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HasAbstractItem,DisConv_HasAbstractItem,m_pItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HasAbstractItem,DisConv_HasAbstractItem,m_Quantity)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_HasAbstractItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HasInventoryItem,DisConv_HasInventoryItem,m_pItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HasInventoryItem,DisConv_HasInventoryItem,m_pItemClass)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_HasInventoryItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HasInventoryItemEquipped,DisConv_HasInventoryItemEquipped,m_pItemClass)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_HasInventoryItemEquipped)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_HasObjective,DisConv_HasObjective,m_pObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_HasObjective)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_Distance,DisConv_Hook_Distance,m_fCloseDistance)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_Distance,DisConv_Hook_Distance,m_fFarDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_Distance)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_Distance_InGameData,DisConv_Hook_Distance_InGameData,m_DistHelper)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_Distance_InGameData)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_Distraction,DisConv_Hook_Distraction,m_DistractionLinks)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_Distraction)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_SplitByTypeAndActor,DisConv_Hook_SplitByTypeAndActor,m_AssociatedTypes)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_SplitByTypeAndActor,DisConv_Hook_SplitByTypeAndActor,m_AssociatedActors)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_SplitByTypeAndActor)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_HeartTargeted)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_Investigate)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_KismetActivated,DisConv_Hook_KismetActivated,m_KismetDialogHooks)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_KismetActivated,DisConv_Hook_KismetActivated,m_KismetDialogHooks_Links_PreChange)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_KismetActivated)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_Notice)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_NoticeBroken)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayAudioLog,DisConv_Hook_PlayAudioLog,m_AudioLogNames)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayAudioLog,DisConv_Hook_PlayAudioLog,m_AudioLogNames_Links_PreChange)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_PlayAudioLog)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLoiter,DisConv_Hook_PlayerLoiter,m_fLoiterRadius)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLoiter,DisConv_Hook_PlayerLoiter,m_fLoiterTime_Max)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_PlayerLoiter)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLoiter_InGameData,DisConv_Hook_PlayerLoiter_InGameData,m_fLastLoiterTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLoiter_InGameData,DisConv_Hook_PlayerLoiter_InGameData,m_fCurLoiter)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_PlayerLoiter_InGameData)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLookAt,DisConv_Hook_PlayerLookAt,m_LookAtTargets)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLookAt,DisConv_Hook_PlayerLookAt,m_fLookAtRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_PlayerLookAt)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLookAt_InGameData,DisConv_Hook_PlayerLookAt_InGameData,m_iLastKnownLookTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_PlayerLookAt_InGameData,DisConv_Hook_PlayerLookAt_InGameData,m_fTimeOfLastKnownLook)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_PlayerLookAt_InGameData)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_SuspicionLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_SuspicionDist,DisConv_Hook_SuspicionDist,m_fRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_SuspicionDist)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_WitnessedInteraction)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Hook_WitnessedMagic,DisConv_Hook_WitnessedMagic,m_MagicTypes)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Hook_WitnessedMagic)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Speaker,DisConv_Speaker,m_NickName)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Speaker,DisConv_Speaker,m_fMustBeWithinRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Speaker)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_InitiatorSpeaker,DisConv_InitiatorSpeaker,m_pInitiatorDialogTree)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_InitiatorSpeaker)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_IsObjectiveComplete,DisConv_IsObjectiveComplete,m_pObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_IsObjectiveComplete)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_IsPossessed)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_IsSpeakerAvailable)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_KismetActivateRemoteEvent,DisConv_KismetActivateRemoteEvent,m_OldEventName)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_KismetActivateRemoteEvent,DisConv_KismetActivateRemoteEvent,m_EventName)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_KismetActivateRemoteEvent)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_MeSpeaker)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_NonWord)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_OneShotSpeaker,DisConv_OneShotSpeaker,m_iOneShotSpeaker)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_OneShotSpeaker)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_PlayerChoice,DisConv_PlayerChoice,m_Choices_Static)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_PlayerChoice,DisConv_PlayerChoice,m_PlayerChoiceVersionNum)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_PlayerChoice)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_PlayerLookAtActor,DisConv_PlayerLookAtActor,m_pLookAtActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_PlayerLookAtActor,DisConv_PlayerLookAtActor,m_HitRegionToLookAt)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_PlayerLookAtActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_PlayerLookAtSpeaker,DisConv_PlayerLookAtSpeaker,m_fBlendTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_PlayerLookAtSpeaker,DisConv_PlayerLookAtSpeaker,m_HitRegionToLookAt)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_PlayerLookAtSpeaker)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_PlayerStopLookAt)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_RandomBranch,DisConv_RandomBranch,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_RandomBranch)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SequentialBranch,DisConv_SequentialBranch,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SequentialBranch)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_RandomSequentialBranch)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SequentialBranch_InGameData,DisConv_SequentialBranch_InGameData,m_SeqBranchInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SequentialBranch_InGameData)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_RandomSequentialBranch_InGameData,DisConv_RandomSequentialBranch_InGameData,m_RandomSeqBranchEntry)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_RandomSequentialBranch_InGameData)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SeenDialogLabel,DisConv_SeenDialogLabel,m_pDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SeenDialogLabel,DisConv_SeenDialogLabel,m_LabelToCheck)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SeenDialogLabel)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SetStoryFlag,DisConv_SetStoryFlag,m_pStoryFlagSet)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SetStoryFlag,DisConv_SetStoryFlag,m_StoryFlag)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SetStoryFlag)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Soiree,DisConv_Soiree,m_NodeGUID)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Soiree,DisConv_Soiree,m_SoireeName)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Soiree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Soiree_InGameData,DisConv_Soiree_InGameData,m_PlayingMatinee)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_Soiree_InGameData,DisConv_Soiree_InGameData,m_PlayingNode)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_Soiree_InGameData)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SpawnerBranch,DisConv_SpawnerBranch,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SpawnerBranch)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SpeakerCombatStatus)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SpeakerHasTweaks,DisConv_SpeakerHasTweaks,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SpeakerHasTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SpeakerInStoryGroup,DisConv_SpeakerInStoryGroup,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SpeakerInStoryGroup)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_SpeakerSupportsDialogTree,DisConv_SpeakerSupportsDialogTree,m_Branches)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_SpeakerSupportsDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_TimeLimit,DisConv_TimeLimit,m_fTimeLimitInSeconds)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_TimeLimit)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_TimeLimit_InGameData,DisConv_TimeLimit_InGameData,m_fTimeLastFired)
+VERIFY_CLASS_OFFSET_NODIE(UDisConv_TimeLimit_InGameData,DisConv_TimeLimit_InGameData,m_fTimeLastFired_Pending)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_TimeLimit_InGameData)
+VERIFY_CLASS_SIZE_NODIE(UDisConv_TryFallbackTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversation,DisConversation,m_Nodes)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversation,DisConversation,m_fPlayerNearRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisConversation)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversationComponent,DisConversationComponent,m_pGenericDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversationComponent,DisConversationComponent,m_fFailedDialogHookDisplayTime)
+VERIFY_CLASS_SIZE_NODIE(UDisConversationComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversation_InGameData_Base,DisConversation_InGameData_Base,m_Nodes_InGame)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversation_InGameData_Base,DisConversation_InGameData_Base,m_NodeDataType)
+VERIFY_CLASS_SIZE_NODIE(UDisConversation_InGameData_Base)
+VERIFY_CLASS_OFFSET_NODIE(UDisConversation_InGameData,DisConversation_InGameData,m_SpeakerBindings)
+VERIFY_CLASS_SIZE_NODIE(UDisConversation_InGameData)
+VERIFY_CLASS_SIZE_NODIE(UDisDialogOneShotRenderingComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisDialogTree,DisDialogTree,m_Conversations)
+VERIFY_CLASS_OFFSET_NODIE(UDisDialogTree,DisDialogTree,m_DialogTreeUsage)
+VERIFY_CLASS_SIZE_NODIE(UDisDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisDialogTree_InGameBind,DisDialogTree_InGameBind,m_pDialogTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisDialogTree_InGameBind,DisDialogTree_InGameBind,m_DebugCapture)
+VERIFY_CLASS_SIZE_NODIE(UDisDialogTree_InGameBind)
+VERIFY_CLASS_SIZE_NODIE(UDisDialogTree_OneShot)
+VERIFY_CLASS_OFFSET_NODIE(UDisDialogVoiceData,DisDialogVoiceData,m_pBoundToOneShot)
+VERIFY_CLASS_OFFSET_NODIE(UDisDialogVoiceData,DisDialogVoiceData,m_GUID)
+VERIFY_CLASS_SIZE_NODIE(UDisDialogVoiceData)
+VERIFY_CLASS_SIZE_NODIE(UDisDialogVoiceData_OneShot)
+VERIFY_CLASS_SIZE_NODIE(UDisSpeakerGroup_PA_RenderingComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ConvSettings,DisTweaks_ConvSettings,m_BattleLoudness)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ConvSettings,DisTweaks_ConvSettings,m_EditorNodeColors)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ConvSettings)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterInDialog,StatePlayerMasterInDialog,m_pDialogRunningInst)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterInDialog,StatePlayerMasterInDialog,m_LookAtConstraints)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterInDialog)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

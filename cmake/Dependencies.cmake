@@ -77,6 +77,9 @@ add_library(Dishonored::lzokay INTERFACE IMPORTED)
 target_link_libraries(Dishonored::lzokay INTERFACE lzokay)
 target_include_directories(Dishonored::lzokay INTERFACE "${lzokay_SOURCE_DIR}")
 
+# Bink: import library from the retail binkw32.dll behind DISHONORED_WITH_BINK (default OFF)
+include(cmake/Bink.cmake)
+
 # Examples for Phase 4 (uncomment when the module that needs them exists):
 # dishonored_fetch(ogg    https://github.com/xiph/ogg.git           v1.3.5)
 # dishonored_fetch(vorbis https://github.com/xiph/vorbis.git        v1.3.7)

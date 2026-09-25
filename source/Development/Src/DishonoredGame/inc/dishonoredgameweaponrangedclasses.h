@@ -1,167 +1,1725 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameweaponrangedclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (162):
-//   0x63c960  public: static class UClass * __cdecl UDishonoredWeapon_Ranged::StaticClass(void)
-//   0x63c980  public: static class UClass * __cdecl UDisWepGrenade::StaticClass(void)
-//   0x63ca00  public: static class UClass * __cdecl UDisItemContext_NPC_OverseerJumpAway::StaticClass(void)
-//   0x63cbe0  public: static class UClass * __cdecl ADisProjectile::StaticClass(void)
-//   0x862b90  public: void __thiscall FDisCachedAimAssistPosResult::SetCache(int, class FVector const &, class FVector const &, struct FVector2D const &, unsigned int)
-//   0x862bf0  protected: virtual __thiscall UDisItemContext_ProjectileAttack::~UDisItemContext_ProjectileAttack(void)
-//   0x862c70  public: virtual class UObject * __thiscall UDisItemContext_ProjectileAttack::GetUObjectInterfaceDisFireProjectileInterface(void)
-//   0x862cb0  protected: virtual __thiscall UDisItemContext_NPCThrow::~UDisItemContext_NPCThrow(void)
-//   0x862d60  protected: virtual __thiscall UDisItemContext_NPCThrowGrenade::~UDisItemContext_NPCThrowGrenade(void)
-//   0x862e10  protected: virtual __thiscall UDisItemContext_NPCThrowGrenade_Aimed::~UDisItemContext_NPCThrowGrenade_Aimed(void)
-//   0x864c20  protected: virtual __thiscall UDisItemContext_FireCrossbow::~UDisItemContext_FireCrossbow(void)
-//   0x864cf0  protected: virtual __thiscall UDisItemContext_FirePistol::~UDisItemContext_FirePistol(void)
-//   0x864dc0  protected: virtual __thiscall UDisItemContext_NPCFireBow::~UDisItemContext_NPCFireBow(void)
-//   0x864fc0  protected: virtual __thiscall UDisItemContext_NPCFireGun::~UDisItemContext_NPCFireGun(void)
-//   0x865050  public: virtual class UObject * __thiscall UDisItemContext_NPCFireGun::GetUObjectInterfaceDisNoiseMakerInterface(void)
-//   0x865150  protected: virtual __thiscall UDisItemContext_NPC_OverseerJumpAway::~UDisItemContext_NPC_OverseerJumpAway(void)
-//   0x865220  protected: virtual __thiscall UDisItemContext_NPCLobGrenadeAtUnreachable::~UDisItemContext_NPCLobGrenadeAtUnreachable(void)
-//   0x8652f0  protected: virtual __thiscall UDisItemContext_NPCThrowObject::~UDisItemContext_NPCThrowObject(void)
-//   0x8653c0  protected: virtual __thiscall UDisItemContext_NPCThrowWhiskey::~UDisItemContext_NPCThrowWhiskey(void)
-//   0x865490  protected: virtual __thiscall UDisItemContext_ThrowGrenade::~UDisItemContext_ThrowGrenade(void)
-//   0x865560  protected: virtual __thiscall UDisItemContext_NPCReloadGun::~UDisItemContext_NPCReloadGun(void)
-//   0x865600  protected: virtual __thiscall UDisItemContext_ReloadGunPlayer::~UDisItemContext_ReloadGunPlayer(void)
-//   0x86d1c0  public: static void __cdecl UDisItemContext_ProjectileAttack::InternalConstructor(void *)
-//   0x86d210  public: static void __cdecl UDisItemContext_FireCrossbow::InternalConstructor(void *)
-//   0x86d260  public: static void __cdecl UDisItemContext_FirePistol::InternalConstructor(void *)
-//   0x86d2b0  public: static void __cdecl UDisItemContext_NPCFireBow::InternalConstructor(void *)
-//   0x86d300  public: static void __cdecl UDisItemContext_NPCFireGun::InternalConstructor(void *)
-//   0x86d320  public: static void __cdecl UDisItemContext_NPCThrow::InternalConstructor(void *)
-//   0x86d340  public: static void __cdecl UDisItemContext_NPCThrowGrenade::InternalConstructor(void *)
-//   0x86d380  public: static void __cdecl UDisItemContext_NPC_OverseerJumpAway::InternalConstructor(void *)
-//   0x86d3c0  public: static void __cdecl UDisItemContext_NPCThrowGrenade_Aimed::InternalConstructor(void *)
-//   0x86d400  public: static void __cdecl UDisItemContext_NPCLobGrenadeAtUnreachable::InternalConstructor(void *)
-//   0x86d440  public: static void __cdecl UDisItemContext_NPCThrowObject::InternalConstructor(void *)
-//   0x86d480  public: static void __cdecl UDisItemContext_NPCThrowWhiskey::InternalConstructor(void *)
-//   0x86d4c0  public: static void __cdecl UDisItemContext_ThrowGrenade::InternalConstructor(void *)
-//   0x86d510  public: static void __cdecl UDisItemContext_NPCReloadGun::InternalConstructor(void *)
-//   0x86d540  public: static void __cdecl UDisItemContext_ReloadGunPlayer::InternalConstructor(void *)
-//   0x87f560  protected: virtual __thiscall UDisTweaks_NPCReloadGun::~UDisTweaks_NPCReloadGun(void)
-//   0x87f5f0  protected: virtual __thiscall UDisTweaks_ProjectileAttack::~UDisTweaks_ProjectileAttack(void)
-//   0x87f6b0  protected: virtual __thiscall UDisTweaks_FireCrossbow::~UDisTweaks_FireCrossbow(void)
-//   0x87f7a0  protected: virtual __thiscall UDisTweaks_FirePistol::~UDisTweaks_FirePistol(void)
-//   0x87f8a0  protected: virtual __thiscall UDisTweaks_NPCFireGun::~UDisTweaks_NPCFireGun(void)
-//   0x87f930  protected: virtual __thiscall UDisTweaks_NPCThrow::~UDisTweaks_NPCThrow(void)
-//   0x87f9c0  protected: virtual __thiscall UDisTweaks_NPCThrowGrenade::~UDisTweaks_NPCThrowGrenade(void)
-//   0x87fa50  protected: virtual __thiscall UDisTweaks_NPCLobGrenadeAtUnreachable::~UDisTweaks_NPCLobGrenadeAtUnreachable(void)
-//   0x87fae0  protected: virtual __thiscall UDisTweaks_NPCThrowWhiskey::~UDisTweaks_NPCThrowWhiskey(void)
-//   0x87fb70  protected: virtual __thiscall UDisTweaks_ThrowGrenade::~UDisTweaks_ThrowGrenade(void)
-//   0x87fc10  protected: virtual __thiscall UDisTweaks_ReloadGunPlayer::~UDisTweaks_ReloadGunPlayer(void)
-//   0x8804a0  public: static void __cdecl UDisTweaks_NPCReloadGun::InternalConstructor(void *)
-//   0x8804c0  public: static void __cdecl UDisTweaks_ProjectileAttack::InternalConstructor(void *)
-//   0x8804e0  public: static void __cdecl UDisTweaks_FireCrossbow::InternalConstructor(void *)
-//   0x880500  public: static void __cdecl UDisTweaks_FirePistol::InternalConstructor(void *)
-//   0x880520  public: static void __cdecl UDisTweaks_NPCFireGun::InternalConstructor(void *)
-//   0x880540  public: static void __cdecl UDisTweaks_NPCThrow::InternalConstructor(void *)
-//   0x880560  public: static void __cdecl UDisTweaks_NPCThrowGrenade::InternalConstructor(void *)
-//   0x880580  public: static void __cdecl UDisTweaks_NPCLobGrenadeAtUnreachable::InternalConstructor(void *)
-//   0x8805a0  public: static void __cdecl UDisTweaks_NPCThrowWhiskey::InternalConstructor(void *)
-//   0x8805c0  public: static void __cdecl UDisTweaks_ThrowGrenade::InternalConstructor(void *)
-//   0x8805e0  public: static void __cdecl UDisTweaks_ReloadGunPlayer::InternalConstructor(void *)
-//   0x888b50  protected: virtual __thiscall UDisItemContext_UsePower::~UDisItemContext_UsePower(void)
-//   0x88bca0  protected: virtual __thiscall UDisGrenadeComponent::~UDisGrenadeComponent(void)
-//   0x88bd50  protected: virtual __thiscall UDisItemContext_NPCAttackUnder_Gun::~UDisItemContext_NPCAttackUnder_Gun(void)
-//   0x88be30  protected: virtual __thiscall UDisItemContext_NPCAttackUnder_Grenade::~UDisItemContext_NPCAttackUnder_Grenade(void)
-//   0x88bf00  public: static void __cdecl UDisItemContext_UsePower::InternalConstructor(void *)
-//   0x8916e0  public: static void __cdecl UDisGrenadeComponent::InternalConstructor(void *)
-//   0x891710  public: static void __cdecl UDisItemContext_NPCAttackUnder_Gun::InternalConstructor(void *)
-//   0x891750  public: static void __cdecl UDisItemContext_NPCAttackUnder_Grenade::InternalConstructor(void *)
-//   0x897190  protected: virtual __thiscall ADisGrenade::~ADisGrenade(void)
-//   0x897360  protected: virtual __thiscall ADisWhiskeyBottle::~ADisWhiskeyBottle(void)
-//   0x897440  protected: virtual __thiscall ADisProjectile::~ADisProjectile(void)
-//   0x8975e0  protected: virtual __thiscall ADisBullet::~ADisBullet(void)
-//   0x897720  protected: virtual __thiscall ADisBullet_Explosive::~ADisBullet_Explosive(void)
-//   0x8977e0  protected: virtual __thiscall ADisProjectile_Arrow::~ADisProjectile_Arrow(void)
-//   0x897880  public: virtual class UObject * __thiscall ADisProjectile_GrenadeBase::GetUObjectInterfaceDisSoulRenderInterface(void)
-//   0x897a00  protected: virtual __thiscall ADisProjectile_Arrow_Explosive::~ADisProjectile_Arrow_Explosive(void)
-//   0x897b60  protected: virtual __thiscall ADisProjectile_Arrow_Flare::~ADisProjectile_Arrow_Flare(void)
-//   0x897c20  protected: virtual __thiscall ADisProjectile_GrenadeBase::~ADisProjectile_GrenadeBase(void)
-//   0x897e30  protected: virtual __thiscall ADisProjectile_Grenade::~ADisProjectile_Grenade(void)
-//   0x897f90  protected: virtual __thiscall ADisProjectile_StickyGrenade::~ADisProjectile_StickyGrenade(void)
-//   0x898090  protected: virtual __thiscall ADisProjectile_ThrownObject::~ADisProjectile_ThrownObject(void)
-//   0x898190  protected: virtual __thiscall ADisProjectile_Whiskey::~ADisProjectile_Whiskey(void)
-//   0x898da0  public: static void __cdecl ADisGrenade::InternalConstructor(void *)
-//   0x898dc0  public: static void __cdecl ADisWhiskeyBottle::InternalConstructor(void *)
-//   0x898de0  public: static void __cdecl ADisProjectile::InternalConstructor(void *)
-//   0x898e00  public: static void __cdecl ADisBullet::InternalConstructor(void *)
-//   0x898e50  public: static void __cdecl ADisBullet_Explosive::InternalConstructor(void *)
-//   0x898ea0  public: static void __cdecl ADisProjectile_Arrow::InternalConstructor(void *)
-//   0x898ec0  public: static void __cdecl ADisProjectile_Arrow_Explosive::InternalConstructor(void *)
-//   0x898ee0  public: static void __cdecl ADisProjectile_Arrow_Flare::InternalConstructor(void *)
-//   0x898f00  public: static void __cdecl ADisProjectile_GrenadeBase::InternalConstructor(void *)
-//   0x898f20  public: static void __cdecl ADisProjectile_Grenade::InternalConstructor(void *)
-//   0x898f40  public: static void __cdecl ADisProjectile_StickyGrenade::InternalConstructor(void *)
-//   0x898f60  public: static void __cdecl ADisProjectile_ThrownObject::InternalConstructor(void *)
-//   0x898fb0  public: static void __cdecl ADisProjectile_Whiskey::InternalConstructor(void *)
-//   0x89b070  protected: virtual __thiscall UDisTweaks_GrenadeComponent::~UDisTweaks_GrenadeComponent(void)
-//   0x89b100  protected: virtual __thiscall UDisTweaks_NPCAssassinHand::~UDisTweaks_NPCAssassinHand(void)
-//   0x89b190  protected: virtual __thiscall UDisTweaks_WepBow::~UDisTweaks_WepBow(void)
-//   0x89b220  protected: virtual __thiscall UDisTweaks_WepTallboyBow::~UDisTweaks_WepTallboyBow(void)
-//   0x89b2b0  protected: virtual __thiscall UDisTweaks_WepCrossbow::~UDisTweaks_WepCrossbow(void)
-//   0x89b340  protected: virtual __thiscall UDisTweaks_WepPistol::~UDisTweaks_WepPistol(void)
-//   0x89b3e0  protected: virtual __thiscall UDisTweaks_WepMusicAmp::~UDisTweaks_WepMusicAmp(void)
-//   0x89b470  protected: virtual __thiscall UDisTweaks_WepWhiskeyBottle::~UDisTweaks_WepWhiskeyBottle(void)
-//   0x89b500  protected: virtual __thiscall UDisTweaks_Projectile::~UDisTweaks_Projectile(void)
-//   0x89b590  protected: virtual __thiscall UDisTweaks_NPCAttackUnder_Gun::~UDisTweaks_NPCAttackUnder_Gun(void)
-//   0x89b620  protected: virtual __thiscall UDisTweaks_NPCAttackUnder_Grenade::~UDisTweaks_NPCAttackUnder_Grenade(void)
-//   0x89b6b0  protected: virtual __thiscall UDisTweaks_UsePower::~UDisTweaks_UsePower(void)
-//   0x89b770  protected: virtual __thiscall UDisTweaks_Grenade::~UDisTweaks_Grenade(void)
-//   0x89b800  protected: virtual __thiscall UDisTweaks_Arrow::~UDisTweaks_Arrow(void)
-//   0x89b890  protected: virtual __thiscall UDisTweaks_Arrow_Explosive::~UDisTweaks_Arrow_Explosive(void)
-//   0x89b920  protected: virtual __thiscall UDisTweaks_Arrow_Flare::~UDisTweaks_Arrow_Flare(void)
-//   0x89b9b0  protected: virtual __thiscall UDisTweaks_Bullet::~UDisTweaks_Bullet(void)
-//   0x89ba40  protected: virtual __thiscall UDisTweaks_Bullet_Explosive::~UDisTweaks_Bullet_Explosive(void)
-//   0x89bad0  protected: virtual __thiscall UDisTweaks_Projectile_GrenadeBase::~UDisTweaks_Projectile_GrenadeBase(void)
-//   0x89bb60  protected: virtual __thiscall UDisTweaks_Projectile_Grenade::~UDisTweaks_Projectile_Grenade(void)
-//   0x89bbf0  protected: virtual __thiscall UDisTweaks_Projectile_StickyGrenade::~UDisTweaks_Projectile_StickyGrenade(void)
-//   0x89bc80  protected: virtual __thiscall UDisTweaks_Projectile_ThrownObject::~UDisTweaks_Projectile_ThrownObject(void)
-//   0x89bd10  protected: virtual __thiscall UDisTweaks_Projectile_Whiskey::~UDisTweaks_Projectile_Whiskey(void)
-//   0x89bda0  protected: virtual __thiscall UDisTweaks_WhiskeyBottle::~UDisTweaks_WhiskeyBottle(void)
-//   0x89c780  public: static void __cdecl UDisTweaks_GrenadeComponent::InternalConstructor(void *)
-//   0x89c7a0  public: static void __cdecl UDisTweaks_NPCAssassinHand::InternalConstructor(void *)
-//   0x89c7c0  public: static void __cdecl UDisTweaks_WepBow::InternalConstructor(void *)
-//   0x89c7e0  public: static void __cdecl UDisTweaks_WepTallboyBow::InternalConstructor(void *)
-//   0x89c800  public: static void __cdecl UDisTweaks_WepCrossbow::InternalConstructor(void *)
-//   0x89c820  public: static void __cdecl UDisTweaks_WepPistol::InternalConstructor(void *)
-//   0x89c840  public: static void __cdecl UDisTweaks_WepMusicAmp::InternalConstructor(void *)
-//   0x89c860  public: static void __cdecl UDisTweaks_WepWhiskeyBottle::InternalConstructor(void *)
-//   0x89c880  public: static void __cdecl UDisTweaks_Projectile::InternalConstructor(void *)
-//   0x89c8a0  public: static void __cdecl UDisTweaks_NPCAttackUnder_Gun::InternalConstructor(void *)
-//   0x89c8c0  public: static void __cdecl UDisTweaks_NPCAttackUnder_Grenade::InternalConstructor(void *)
-//   0x89c8e0  public: static void __cdecl UDisTweaks_UsePower::InternalConstructor(void *)
-//   0x89c900  public: static void __cdecl UDisTweaks_Grenade::InternalConstructor(void *)
-//   0x89c920  public: static void __cdecl UDisTweaks_Arrow::InternalConstructor(void *)
-//   0x89c940  public: static void __cdecl UDisTweaks_Arrow_Explosive::InternalConstructor(void *)
-//   0x89c960  public: static void __cdecl UDisTweaks_Arrow_Flare::InternalConstructor(void *)
-//   0x89c980  public: static void __cdecl UDisTweaks_Bullet::InternalConstructor(void *)
-//   0x89c9a0  public: static void __cdecl UDisTweaks_Bullet_Explosive::InternalConstructor(void *)
-//   0x89c9c0  public: static void __cdecl UDisTweaks_Projectile_GrenadeBase::InternalConstructor(void *)
-//   0x89c9e0  public: static void __cdecl UDisTweaks_Projectile_Grenade::InternalConstructor(void *)
-//   0x89ca00  public: static void __cdecl UDisTweaks_Projectile_StickyGrenade::InternalConstructor(void *)
-//   0x89ca20  public: static void __cdecl UDisTweaks_Projectile_ThrownObject::InternalConstructor(void *)
-//   0x89ca40  public: static void __cdecl UDisTweaks_Projectile_Whiskey::InternalConstructor(void *)
-//   0x89ca60  public: static void __cdecl UDisTweaks_WhiskeyBottle::InternalConstructor(void *)
-//   0x8ab5c0  protected: virtual __thiscall UDishonoredWeapon_Ranged::~UDishonoredWeapon_Ranged(void)
-//   0x8ab6c0  protected: virtual __thiscall UDishonoredWepPistol::~UDishonoredWepPistol(void)
-//   0x8ab790  protected: virtual __thiscall UDisWepBow::~UDisWepBow(void)
-//   0x8ab860  protected: virtual __thiscall UDisWepCrossbow::~UDisWepCrossbow(void)
-//   0x8ab930  protected: virtual __thiscall UDisWepGrenade::~UDisWepGrenade(void)
-//   0x8aba00  protected: virtual __thiscall UDisWepNPCAssassinHand::~UDisWepNPCAssassinHand(void)
-//   0x8ac770  public: static void __cdecl UDishonoredWeapon_Ranged::InternalConstructor(void *)
-//   0x8ac7c0  public: static void __cdecl UDishonoredWepPistol::InternalConstructor(void *)
-//   0x8ac810  public: static void __cdecl UDisWepBow::InternalConstructor(void *)
-//   0x8ac860  public: static void __cdecl UDisWepCrossbow::InternalConstructor(void *)
-//   0x8ac8b0  public: static void __cdecl UDisWepGrenade::InternalConstructor(void *)
-//   0x8ac900  public: static void __cdecl UDisWepNPCAssassinHand::InternalConstructor(void *)
-//   0xba8bb0  _dynamic_initializer_for__ADisGrenadeexecTakeDamage_NativeTemp__
-//   0xba8bd0  _dynamic_initializer_for__ADisWhiskeyBottleexecTakeDamage_NativeTemp__
-//   0xba8bf0  _dynamic_initializer_for__ADisProjectileexecTakeDamage_NativeTemp__
-//   0xba8c10  _dynamic_initializer_for__ADisProjectileexecTakeDamageTemp__
-//   0xba8c30  _dynamic_initializer_for__ADisProjectile_ArrowexecBaseChangeTemp__
-//   0xba8c50  _dynamic_initializer_for__ADisProjectile_GrenadeBaseexecTakeDamage_NativeTemp__
-//   0xba8c70  _dynamic_initializer_for__ADisProjectile_StickyGrenadeexecBaseChangeTemp__
-//   0xba8c90  _dynamic_initializer_for__ADisProjectile_WhiskeyexecTakeDamage_NativeTemp__
+/*===========================================================================
+    DishonoredGameWeaponRangedClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#include "DishonoredGameClasses.h"
+#include "DishonoredGameDLC07PullClasses.h"
+#include "DishonoredGameItemClasses.h"
+#include "DishonoredGameWeaponClasses.h"
+#include "DishonoredGameCameraClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_WEAPONRANGED_ENUMS
+#define INCLUDED_DISHONOREDGAME_WEAPONRANGED_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_WEAPONRANGED_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_WEAPONRANGED_CLASSES
+#define INCLUDED_DISHONOREDGAME_WEAPONRANGED_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisProjectile.DisProjectileHomingData: retail SDK size 48 (2012 PDB 48)
+struct FDisProjectileHomingData
+{
+    FVector m_PositionTarget;
+    class AActor* m_ActorTarget;
+    BYTE m_eType;
+    FLOAT m_fSpeed;
+    FLOAT m_fTimeLeft;
+    FLOAT m_fMaxCorrectionAngle_Deg;
+    FVector m_Offset;
+    BITFIELD m_bUseOffset:1;
+
+    /** Constructors */
+    FDisProjectileHomingData() {}
+    FDisProjectileHomingData(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisProjectileHomingData));
+    }
+};
+
+struct DisProjectile_eventTakeDamage_Parms
+{
+    INT _Damage;
+    class AController* _pInstigatedBy;
+    FVector _HitLocation;
+    FVector _Momentum;
+    class UClass* _pDamageType;
+    FTraceHitInfo _HitInfo;
+    class AActor* _pDamageCauser;
+    DisProjectile_eventTakeDamage_Parms(EEventParm)
+    : _HitLocation(EC_EventParm)
+    , _Momentum(EC_EventParm)
+    , _HitInfo(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DisProjectile: retail sizeof 736, reflected span 584..728 (2012 PDB sizeof 736)
+class ADisProjectile : public AActor, public IDisInteractableInterface, public IDisNoiseMakerInterface, public IDisTweaksInterface, public IDisDamageCauserInterface
+{
+public:
+    //## BEGIN PROPS DisProjectile
+    BITFIELD m_bInitialized:1;
+    BITFIELD m_bFollowVelocity:1;
+    BITFIELD m_bIgnoreCollisionsWithSource:1;
+    BITFIELD m_bDetachParticleComp:1;
+    BITFIELD m_bJustFired:1;
+    FVector m_InitialLocation;
+    FVector m_AngularVelocityAxis;
+    FLOAT m_AngularVelocitySpeed;
+    class AActor* m_pSourceActor;
+    INT m_Damage;
+    FLOAT m_fHeadshotMultiplier;
+    class UDisParticleSystemComponent* m_pParticleComp;
+    FDisAudioCellCache m_AudioCellCache;
+    class UDisTweaks_Projectile* m_pProjectileTweaks;
+    FDisProjectileHomingData m_HomingData;
+    class UClass* m_pContactType_OnHit_Override;
+    class ADisProjectile* m_pProjectileListNext;
+    //## END PROPS DisProjectile
+
+    void eventTakeDamage(INT _Damage,class AController* _pInstigatedBy,FVector _HitLocation,FVector _Momentum,class UClass* _pDamageType,FTraceHitInfo _HitInfo=FTraceHitInfo(EC_EventParm),class AActor* _pDamageCauser=NULL)
+    {
+        DisProjectile_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms._Damage=_Damage;
+        Parms._pInstigatedBy=_pInstigatedBy;
+        Parms._HitLocation=_HitLocation;
+        Parms._Momentum=_Momentum;
+        Parms._pDamageType=_pDamageType;
+        Parms._HitInfo=_HitInfo;
+        Parms._pDamageCauser=_pDamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_ABSTRACT_CLASS(ADisProjectile,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBullet: retail sizeof 800, reflected span 728..788 (2012 PDB sizeof 800)
+class ADisBullet : public ADisProjectile
+{
+public:
+    //## BEGIN PROPS DisBullet
+    class UDisTweaks_Bullet* m_pBulletTweaks;
+    class USkeletalMeshComponent* m_pMesh;
+    FVector m_SpawnLoc;
+    FLOAT m_fMaxRange;
+    BITFIELD m_bPostMaxRange:1;
+    BITFIELD m_bBlasted:1;
+    BITFIELD m_bDelayBlast:1;
+    class AActor* m_pPiercedActor;
+    FVector m_ShotsLocation;
+    FVector m_ShotsDirection;
+    class USkeletalMeshComponent* m_pHighlightMesh;
+    //## END PROPS DisBullet
+
+    DECLARE_CLASS(ADisBullet,ADisProjectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBullet_Explosive: retail sizeof 800, reflected span 788..788 (2012 PDB sizeof 800)
+class ADisBullet_Explosive : public ADisBullet
+{
+public:
+    //## BEGIN PROPS DisBullet_Explosive
+    //## END PROPS DisBullet_Explosive
+
+    DECLARE_CLASS(ADisBullet_Explosive,ADisBullet,0,DishonoredGame)
+};
+
+struct DisProjectile_Arrow_eventBaseChange_Parms
+{
+    DisProjectile_Arrow_eventBaseChange_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisProjectile_Arrow: retail sizeof 768, reflected span 728..768 (2012 PDB sizeof 768)
+class ADisProjectile_Arrow : public ADisProjectile, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisProjectile_Arrow
+    class USkeletalMeshComponent* m_pMesh;
+    class UStaticMeshComponent* m_pTrailMesh;
+    FLOAT m_fStuckInAlivePawnVanishTimer;
+    BITFIELD m_bStuck:1;
+    BITFIELD m_bHasPinned:1;
+    BITFIELD m_bOldCollideActors:1;
+    BITFIELD m_bOldBlockActors:1;
+    BITFIELD m_bOldIgnoreEncroachers:1;
+    class AActor* m_pSeveredActor;
+    class ADisMovableLimb* m_pPinnedLimb;
+    FRBCollisionChannelContainer m_OldRBCollideWithChannels;
+    BYTE m_OldRBChannel;
+    class USkeletalMeshComponent* m_pHighlightMesh;
+    //## END PROPS DisProjectile_Arrow
+
+    void eventBaseChange()
+    {
+        DisProjectile_Arrow_eventBaseChange_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BaseChange),&Parms);
+    }
+    DECLARE_FUNCTION(execBaseChange);
+    DECLARE_CLASS(ADisProjectile_Arrow,ADisProjectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProjectile_Arrow_Explosive: retail sizeof 784, reflected span 768..772 (2012 PDB sizeof 784)
+class ADisProjectile_Arrow_Explosive : public ADisProjectile_Arrow
+{
+public:
+    //## BEGIN PROPS DisProjectile_Arrow_Explosive
+    BITFIELD m_bExploded:1;
+    //## END PROPS DisProjectile_Arrow_Explosive
+
+    DECLARE_CLASS(ADisProjectile_Arrow_Explosive,ADisProjectile_Arrow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProjectile_GrenadeBase: retail sizeof 752, reflected span 728..748 (2012 PDB sizeof 752)
+class ADisProjectile_GrenadeBase : public ADisProjectile, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisProjectile_GrenadeBase
+    class USkeletalMeshComponent* m_pMesh;
+    class UDisGrenadeComponent* m_pGrenadeComponent;
+    FLOAT m_fInitialSpeed;
+    class USkeletalMeshComponent* m_pHighlightMesh;
+    //## END PROPS DisProjectile_GrenadeBase
+
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_ABSTRACT_CLASS(ADisProjectile_GrenadeBase,ADisProjectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProjectile_Grenade: retail sizeof 752, reflected span 748..752 (2012 PDB sizeof 752)
+class ADisProjectile_Grenade : public ADisProjectile_GrenadeBase, public IDisDLC07PullTargetInterface
+{
+public:
+    //## BEGIN PROPS DisProjectile_Grenade
+    //## END PROPS DisProjectile_Grenade
+
+    DECLARE_CLASS(ADisProjectile_Grenade,ADisProjectile_GrenadeBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGrenade: retail sizeof 720, reflected span 672..712 (2012 PDB sizeof 720)
+class ADisGrenade : public ADishonoredKAsset, public IDisInteractableInterface, public IDisMovableInterface, public IDisSoulRenderInterface, public IDisDLC07PullTargetInterface
+{
+public:
+    //## BEGIN PROPS DisGrenade
+    class UDisParticleSystemComponent* m_pParticleComp;
+    BITFIELD m_bThrownBack:1;
+    class UDisTweaks_Grenade* m_pGrenadeTweaks;
+    class UDisGrenadeComponent* m_pGrenadeComponent;
+    class UDisMovableComponent* m_pMovableComponent;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisGrenade
+
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisGrenade,ADishonoredKAsset,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProjectile_Arrow_Flare: retail sizeof 784, reflected span 768..776 (2012 PDB sizeof 784)
+class ADisProjectile_Arrow_Flare : public ADisProjectile_Arrow
+{
+public:
+    //## BEGIN PROPS DisProjectile_Arrow_Flare
+    class ADisSoundSource* m_pSoundSource;
+    FLOAT m_fStuckInNPCTimer;
+    //## END PROPS DisProjectile_Arrow_Flare
+
+    DECLARE_CLASS(ADisProjectile_Arrow_Flare,ADisProjectile_Arrow,0,DishonoredGame)
+};
+
+struct DisProjectile_StickyGrenade_eventBaseChange_Parms
+{
+    DisProjectile_StickyGrenade_eventBaseChange_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisProjectile_StickyGrenade: retail sizeof 752, reflected span 748..752 (2012 PDB sizeof 752)
+class ADisProjectile_StickyGrenade : public ADisProjectile_GrenadeBase
+{
+public:
+    //## BEGIN PROPS DisProjectile_StickyGrenade
+    BITFIELD m_bStuck:1;
+    //## END PROPS DisProjectile_StickyGrenade
+
+    void eventBaseChange()
+    {
+        DisProjectile_StickyGrenade_eventBaseChange_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BaseChange),&Parms);
+    }
+    DECLARE_FUNCTION(execBaseChange);
+    DECLARE_CLASS(ADisProjectile_StickyGrenade,ADisProjectile_GrenadeBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProjectile_ThrownObject: retail sizeof 736, reflected span 728..736 (2012 PDB sizeof 736)
+class ADisProjectile_ThrownObject : public ADisProjectile
+{
+public:
+    //## BEGIN PROPS DisProjectile_ThrownObject
+    class USkeletalMeshComponent* m_pMesh;
+    class USkeletalMeshComponent* m_pHighlightMesh;
+    //## END PROPS DisProjectile_ThrownObject
+
+    DECLARE_CLASS(ADisProjectile_ThrownObject,ADisProjectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProjectile_Whiskey: retail sizeof 752, reflected span 728..740 (2012 PDB sizeof 752)
+class ADisProjectile_Whiskey : public ADisProjectile
+{
+public:
+    //## BEGIN PROPS DisProjectile_Whiskey
+    class USkeletalMeshComponent* m_pMesh;
+    BITFIELD m_bExploded:1;
+    class USkeletalMeshComponent* m_pHighlightMesh;
+    //## END PROPS DisProjectile_Whiskey
+
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisProjectile_Whiskey,ADisProjectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWhiskeyBottle: retail sizeof 704, reflected span 672..692 (2012 PDB sizeof 704)
+class ADisWhiskeyBottle : public ADishonoredKAsset, public IDisInteractableInterface, public IDisMovableInterface
+{
+public:
+    //## BEGIN PROPS DisWhiskeyBottle
+    class UDisTweaks_WhiskeyBottle* m_pWhiskeyBottleTweaks;
+    class UDisMovableComponent* m_pMovableComponent;
+    BITFIELD m_bExploded:1;
+    //## END PROPS DisWhiskeyBottle
+
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisWhiskeyBottle,ADishonoredKAsset,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ProjectileAttack.DisAimAssistOther: retail SDK size 36 (2012 PDB 36)
+struct FDisAimAssistOther
+{
+    class UDisTweaksBase* m_pTweaksType;
+    class UClass* m_pActorType;
+    FDisAimAssistInfo m_AimAssistInfo;
+    BITFIELD m_bUseHomingProjectile:1;
+
+    /** Constructors */
+    FDisAimAssistOther() {}
+    FDisAimAssistOther(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistOther));
+    }
+};
+
+// DishonoredGame.DisTweaks_ProjectileAttack.DisAimAssistPawn: retail SDK size 172 (2012 PDB 172)
+struct FDisAimAssistPawn
+{
+    FDisAimAssistInfo m_HitRegions[7];
+    BITFIELD m_bDisableAssistForNeutralPawns:1;
+    BITFIELD m_bDisableAssistForFriendlyPawns:1;
+
+    /** Constructors */
+    FDisAimAssistPawn() {}
+    FDisAimAssistPawn(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistPawn));
+    }
+};
+
+// DishonoredGame.DisTweaks_ProjectileAttack.DisAimAssistGroup: retail SDK size 192 (2012 PDB 192)
+struct FDisAimAssistGroup
+{
+    BITFIELD m_bUseGroupMaxDistance:1;
+    FLOAT m_fMaxAimAssistDistance;
+    FDisAimAssistPawn m_Pawns;
+    TArrayNoInit<FDisAimAssistOther> m_ObjectsOfInterest;
+
+    /** Constructors */
+    FDisAimAssistGroup() {}
+    FDisAimAssistGroup(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistGroup));
+    }
+};
+
+// DishonoredGame.DisTweaks_ProjectileAttack.DisAimAssistPlatform: retail SDK size 384 (2012 PDB 384)
+struct FDisAimAssistPlatform
+{
+    FDisAimAssistGroup m_NormalAssist;
+    FDisAimAssistGroup m_ZoomedAssist;
+
+    /** Constructors */
+    FDisAimAssistPlatform() {}
+    FDisAimAssistPlatform(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistPlatform));
+    }
+};
+
+// DishonoredGame.DisTweaks_Arrow.DisArrowMeshInfo: retail SDK size 16 (2012 PDB 16)
+struct FDisArrowMeshInfo
+{
+    class USkeletalMesh* m_pArrowMesh;
+    class USkeletalMesh* m_pArrowMesh_HighRes;
+    class UPhysicsAsset* m_pArrowPhysicsAsset;
+    class UMaterialInterface* m_pArrowMesh_HighRes_StealthMaterial;
+
+    /** Constructors */
+    FDisArrowMeshInfo() {}
+    FDisArrowMeshInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisArrowMeshInfo));
+    }
+};
+
+// DishonoredGame.DisItemContext_ProjectileAttack.DisCachedAimAssistPosResult: retail SDK size 44 (2012 PDB 44)
+struct FDisCachedAimAssistPosResult
+{
+    INT m_TickTag;
+    BITFIELD m_bFound:1;
+    FVector m_AimPos;
+    FVector m_AimDir;
+    FVector2D m_ProjectedAimPos;
+    BITFIELD m_bWillTrack:1;
+
+    /** Constructors */
+    FDisCachedAimAssistPosResult() {}
+    FDisCachedAimAssistPosResult(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCachedAimAssistPosResult));
+    }
+};
+
+// DishonoredGame.DisGlobalProjectileManager: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60)
+class UDisGlobalProjectileManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisGlobalProjectileManager
+    class ADisProjectile* m_pProjListHead;
+    //## END PROPS DisGlobalProjectileManager
+
+    DECLARE_CLASS(UDisGlobalProjectileManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGrenadeComponent: retail sizeof 192, reflected span 81..184 (2012 PDB sizeof 192)
+class UDisGrenadeComponent : public UActorComponent, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisGrenadeComponent
+    class UDisTweaks_GrenadeComponent* m_pGrenadeComponentTweaks;
+    class UDisWepGrenade* m_pGrenadeWeapon;
+    class ADisSoundSource* m_pArmedSound;
+    BITFIELD m_bShowHUDMarker:1;
+    BITFIELD m_bArmed:1;
+    BITFIELD m_bExploded:1;
+    FPointer m_pHUDMarkerOwner;
+    FMatrix m_ParentToWorld;
+    FLOAT m_fTimeToDetonation;
+    FLOAT m_fMinTimeToDetonationAfterHit;
+    //## END PROPS DisGrenadeComponent
+
+    DECLARE_CLASS(UDisGrenadeComponent,UActorComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_ProjectileAttack: retail sizeof 252, reflected span 196..252 (2012 PDB sizeof 244)
+class UDisItemContext_ProjectileAttack : public UDisItemContext_AimAssistAttack, public IDisFireProjectileInterface
+{
+public:
+    //## BEGIN PROPS DisItemContext_ProjectileAttack
+    BYTE m_KillCamSettings;
+    INT m_FireOnNextCameraUpdate;
+    FDisCachedAimAssistPosResult m_CachedAimAssistPos;
+    //## END PROPS DisItemContext_ProjectileAttack
+
+    DECLARE_CLASS(UDisItemContext_ProjectileAttack,UDisItemContext_AimAssistAttack,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("WeaponRanged");}
+};
+
+// DishonoredGame.DisTweaks_Projectile: retail sizeof 228, reflected span 148..228 (2012 PDB sizeof 216)
+class UDisTweaks_Projectile : public UDisTweaks_KAsset
+{
+public:
+    //## BEGIN PROPS DisTweaks_Projectile
+    FLOAT m_fGravityMultiplier;
+    FLOAT m_fSpeedMultiplier;
+    class UClass* m_pContactType_OnHit;
+    BITFIELD m_bCanBeDestroyedByContact:1;
+    BITFIELD m_bStopTrailOnHit:1;
+    BITFIELD m_bCollideOnlyWithTip:1;
+    BITFIELD m_bIgnoreCollisionsWithSourceNPC:1;
+    BITFIELD m_bIgnoreCollisionsWithSourcePlayer:1;
+    BITFIELD m_bIgnoreCollisionsWithSourceOther:1;
+    BITFIELD m_bKillCamEnabled:1;
+    BITFIELD m_bKillOnHeadshot:1;
+    class UParticleSystem* m_pTrailEffect;
+    class UAkEvent* m_pSoundEvent_InAir;
+    class UAkEvent* m_pInstaKillSound;
+    FLOAT m_fMass;
+    FVector m_Extents_Override;
+    class UClass* m_pDamageType;
+    FLOAT m_fDamageMultiplier;
+    FLOAT m_fHitMomentumFactor;
+    FLOAT m_fWindblastHomingTime;
+    FLOAT m_fWindblastVelocityMultiplier;
+    BYTE m_WindblastBehavior;
+    class UAkEvent* m_pPickupSoundEvent;
+    class UAkEvent* m_pCannotPickupSoundEvent;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_Projectile
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_Projectile,UDisTweaks_KAsset,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Arrow: retail sizeof 316, reflected span 228..316 (2012 PDB sizeof 304)
+class UDisTweaks_Arrow : public UDisTweaks_Projectile
+{
+public:
+    //## BEGIN PROPS DisTweaks_Arrow
+    FDisArrowMeshInfo m_ArrowMeshInfo;
+    BITFIELD m_bInvisible:1;
+    BITFIELD m_bCanRecoverAmmoInEnvironment:1;
+    BITFIELD m_bCanRecoverAmmoInBodies:1;
+    BITFIELD m_bCanRecoverAmmoInAir:1;
+    FLOAT m_fArrowSinkStruckDistance;
+    FLOAT m_fArrowSinkStruckDistance_Pawn;
+    FVector m_ScaleWhenStuckInPawn;
+    class UDisTweaksBase* m_pDroppedTweaks;
+    class UStaticMesh* m_pTrailMesh;
+    FLOAT m_fChanceToBreak;
+    FLOAT m_fMaxHomingCorrectionAngle_Deg;
+    FLOAT m_fStuckInAlivePawnVanishTime;
+    FLOAT m_fSpeedModifierWhenPinning;
+    class UDisTweaks_StatPickup* m_pStatPickup_Single;
+    BYTE m_AmmoTypeOnRecover;
+    class UClass* m_pDamageType_Stealth;
+    class UClass* m_pDamageType_BloodThirsty2;
+    FLOAT m_fDamageMultiplier_Stealth;
+    FLOAT m_fLegsAndArmsDamageCap;
+    //## END PROPS DisTweaks_Arrow
+
+    DECLARE_CLASS(UDisTweaks_Arrow,UDisTweaks_Projectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Arrow_Explosive: retail sizeof 332, reflected span 316..332 (2012 PDB sizeof 320)
+class UDisTweaks_Arrow_Explosive : public UDisTweaks_Arrow
+{
+public:
+    //## BEGIN PROPS DisTweaks_Arrow_Explosive
+    class UDisTweaks_Explosion* m_pExplosionTweak;
+    FLOAT m_fDangerCapsuleRadius;
+    FLOAT m_fDangerCapsuleLifeTime;
+    FLOAT m_fDangerCapsuleProjectionTime;
+    //## END PROPS DisTweaks_Arrow_Explosive
+
+    DECLARE_CLASS(UDisTweaks_Arrow_Explosive,UDisTweaks_Arrow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Projectile_GrenadeBase: retail sizeof 240, reflected span 228..240 (2012 PDB sizeof 228)
+class UDisTweaks_Projectile_GrenadeBase : public UDisTweaks_Projectile
+{
+public:
+    //## BEGIN PROPS DisTweaks_Projectile_GrenadeBase
+    class UDisTweaks_Grenade* m_pGrenadeTweaks;
+    class UDisTweaks_GrenadeComponent* m_pGrenadeComponentTweaks;
+    class UDisTweaks_InteractableInterface* m_pArmedInteractableTweaks;
+    //## END PROPS DisTweaks_Projectile_GrenadeBase
+
+    DECLARE_CLASS(UDisTweaks_Projectile_GrenadeBase,UDisTweaks_Projectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GrenadeComponent: retail sizeof 172, reflected span 140..172 (2012 PDB sizeof 172)
+class UDisTweaks_GrenadeComponent : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GrenadeComponent
+    FLOAT m_fDetonationDelay;
+    FLOAT m_fMinDetonationDelayAfterHit;
+    FLOAT m_fAdditionalDangerTime;
+    FLOAT m_fExplosionDelayOnTakeDamage;
+    class UAkEvent* m_pGrabSound;
+    class UDisTweaks_SoundSource* m_pArmedSoundTweaks;
+    class UDisTweaks_Explosion* m_pExplosionTweaks;
+    class UDisTweaks_Explosion* m_pUnderwaterExplosionTweaks;
+    //## END PROPS DisTweaks_GrenadeComponent
+
+    DECLARE_CLASS(UDisTweaks_GrenadeComponent,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Projectile_GrenadeBase)
+};
+
+// DishonoredGame.DisTweaks_ProjectileAttack: retail sizeof 1056, reflected span 176..1056 (2012 PDB sizeof 1056)
+class UDisTweaks_ProjectileAttack : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_ProjectileAttack
+    BITFIELD m_bUseAimAssist:1;
+    BITFIELD m_bUseAimAssist_Mouse:1;
+    BITFIELD m_bUseAimAssist_Gamepad:1;
+    FDisAimAssistChoiceInfo m_AimAssistChoiceInfo;
+    FLOAT m_fAimAssistBlendTime;
+    FDisAimAssistPlatform m_AimAssistSettings_Mouse;
+    FDisAimAssistPlatform m_AimAssistSettings_Gamepad;
+    FLOAT m_fCamRecoilOnFire;
+    BYTE m_TargetRegion;
+    FLOAT m_fChanceToCameraFollow;
+    FLOAT m_fChanceToFrequentCameraFollow;
+    FLOAT m_fCameraFollowClearRadius;
+    FLOAT m_fCameraFollowMinDistance;
+    FDisKillCamSettings m_KillCamSettings;
+    //## END PROPS DisTweaks_ProjectileAttack
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_ProjectileAttack,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_Projectile_Grenade: retail sizeof 268, reflected span 240..268 (2012 PDB sizeof 256)
+class UDisTweaks_Projectile_Grenade : public UDisTweaks_Projectile_GrenadeBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Projectile_Grenade
+    FLOAT m_fBounciness;
+    FLOAT m_fBounceDamping;
+    FLOAT m_fFloorBounciness;
+    FLOAT m_fFloorBounceDamping;
+    FLOAT m_fBodyBounciness;
+    FLOAT m_fBodyBounceDamping;
+    FLOAT m_fRigidBodyZMagThreshold;
+    //## END PROPS DisTweaks_Projectile_Grenade
+
+    DECLARE_CLASS(UDisTweaks_Projectile_Grenade,UDisTweaks_Projectile_GrenadeBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepCrossbow: retail sizeof 312, reflected span 296..312 (2012 PDB sizeof 312)
+class UDisTweaks_WepCrossbow : public UDisTweaks_WeaponRanged
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepCrossbow
+    FName m_ArrowSocketName;
+    FName m_NoAmmoLoadedAnimState;
+    //## END PROPS DisTweaks_WepCrossbow
+
+    DECLARE_CLASS(UDisTweaks_WepCrossbow,UDisTweaks_WeaponRanged,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepGrenade: retail sizeof 296, reflected span 296..296 (2012 PDB sizeof 296)
+class UDisTweaks_WepGrenade : public UDisTweaks_WeaponRanged
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepGrenade
+    //## END PROPS DisTweaks_WepGrenade
+
+    DECLARE_CLASS(UDisTweaks_WepGrenade,UDisTweaks_WeaponRanged,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredWeapon_Ranged: retail sizeof 308, reflected span 280..308 (2012 PDB sizeof 308)
+class UDishonoredWeapon_Ranged : public UDishonoredWeapon
+{
+public:
+    //## BEGIN PROPS DishonoredWeapon_Ranged
+    BYTE m_CurAmmoType;
+    class UDisTweaksBase* m_pCurProjectileType;
+    INT m_iCurAmmoType;
+    FDisAmmoInfo m_LoadedAmmoInfo;
+    FLOAT m_fDispersion;
+    BITFIELD m_bEquipRequiresAmmo:1;
+    //## END PROPS DishonoredWeapon_Ranged
+
+    DECLARE_ABSTRACT_CLASS(UDishonoredWeapon_Ranged,UDishonoredWeapon,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisWepCrossbow: retail sizeof 316, reflected span 308..316 (2012 PDB sizeof 316)
+class UDisWepCrossbow : public UDishonoredWeapon_Ranged
+{
+public:
+    //## BEGIN PROPS DisWepCrossbow
+    class UDisTweaks_WepCrossbow* m_pCrossbowTweaks;
+    class UDishonoredItemSkeletalComponent* m_pArrowMesh_HighRes;
+    //## END PROPS DisWepCrossbow
+
+    DECLARE_CLASS(UDisWepCrossbow,UDishonoredWeapon_Ranged,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("WeaponRanged");}
+};
+
+// DishonoredGame.DisItemContext_FireCrossbow: retail sizeof 256, reflected span 252..256 (2012 PDB sizeof 248)
+class UDisItemContext_FireCrossbow : public UDisItemContext_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_FireCrossbow
+    BITFIELD m_bFiredArrow:1;
+    //## END PROPS DisItemContext_FireCrossbow
+
+    DECLARE_CLASS(UDisItemContext_FireCrossbow,UDisItemContext_ProjectileAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_FirePistol: retail sizeof 252, reflected span 252..252 (2012 PDB sizeof 244)
+class UDisItemContext_FirePistol : public UDisItemContext_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_FirePistol
+    //## END PROPS DisItemContext_FirePistol
+
+    DECLARE_CLASS(UDisItemContext_FirePistol,UDisItemContext_ProjectileAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCThrow: retail sizeof 276, reflected span 252..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPCThrow : public UDisItemContext_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCThrow
+    BITFIELD m_bProjectileThrown:1;
+    BITFIELD m_bIsThrowCancellable:1;
+    FDisAttentionProxy m_TargetProxy;
+    class AActor* m_pIntendedTarget;
+    //## END PROPS DisItemContext_NPCThrow
+
+    DECLARE_CLASS(UDisItemContext_NPCThrow,UDisItemContext_ProjectileAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCThrowGrenade: retail sizeof 276, reflected span 276..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPCThrowGrenade : public UDisItemContext_NPCThrow
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCThrowGrenade
+    //## END PROPS DisItemContext_NPCThrowGrenade
+
+    DECLARE_CLASS(UDisItemContext_NPCThrowGrenade,UDisItemContext_NPCThrow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackUnder_Grenade: retail sizeof 276, reflected span 276..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPCAttackUnder_Grenade : public UDisItemContext_NPCThrowGrenade
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackUnder_Grenade
+    //## END PROPS DisItemContext_NPCAttackUnder_Grenade
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackUnder_Grenade,UDisItemContext_NPCThrowGrenade,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCFireGun: retail sizeof 364, reflected span 252..364 (2012 PDB sizeof 356)
+class UDisItemContext_NPCFireGun : public UDisItemContext_ProjectileAttack, public IDisNoiseMakerInterface
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCFireGun
+    FLOAT m_DEBUGONLY_DamageInflicted;
+    FDisLineProbeResult m_DEBUGONLY_ProbeResult;
+    FDisAttentionProxy m_TargetProxy;
+    class AActor* m_pIntendedTarget;
+    //## END PROPS DisItemContext_NPCFireGun
+
+    DECLARE_CLASS(UDisItemContext_NPCFireGun,UDisItemContext_ProjectileAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackUnder_Gun: retail sizeof 364, reflected span 364..364 (2012 PDB sizeof 356)
+class UDisItemContext_NPCAttackUnder_Gun : public UDisItemContext_NPCFireGun
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackUnder_Gun
+    //## END PROPS DisItemContext_NPCAttackUnder_Gun
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackUnder_Gun,UDisItemContext_NPCFireGun,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCFireBow: retail sizeof 260, reflected span 252..257 (2012 PDB sizeof 252)
+class UDisItemContext_NPCFireBow : public UDisItemContext_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCFireBow
+    class AActor* m_pIntendedTarget;
+    BYTE m_CachedCanDoContext;
+    //## END PROPS DisItemContext_NPCFireBow
+
+    DECLARE_CLASS(UDisItemContext_NPCFireBow,UDisItemContext_ProjectileAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCThrowGrenade_Aimed: retail sizeof 276, reflected span 276..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPCThrowGrenade_Aimed : public UDisItemContext_NPCThrowGrenade
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCThrowGrenade_Aimed
+    //## END PROPS DisItemContext_NPCThrowGrenade_Aimed
+
+    DECLARE_CLASS(UDisItemContext_NPCThrowGrenade_Aimed,UDisItemContext_NPCThrowGrenade,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCLobGrenadeAtUnreachable: retail sizeof 276, reflected span 276..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPCLobGrenadeAtUnreachable : public UDisItemContext_NPCThrowGrenade_Aimed
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCLobGrenadeAtUnreachable
+    //## END PROPS DisItemContext_NPCLobGrenadeAtUnreachable
+
+    DECLARE_CLASS(UDisItemContext_NPCLobGrenadeAtUnreachable,UDisItemContext_NPCThrowGrenade_Aimed,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCReloadGun: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 168)
+class UDisItemContext_NPCReloadGun : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCReloadGun
+    //## END PROPS DisItemContext_NPCReloadGun
+
+    DECLARE_CLASS(UDisItemContext_NPCReloadGun,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCThrowObject: retail sizeof 288, reflected span 276..288 (2012 PDB sizeof 280)
+class UDisItemContext_NPCThrowObject : public UDisItemContext_NPCThrow
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCThrowObject
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UClass* m_pContactType;
+    //## END PROPS DisItemContext_NPCThrowObject
+
+    DECLARE_CLASS(UDisItemContext_NPCThrowObject,UDisItemContext_NPCThrow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCThrowWhiskey: retail sizeof 276, reflected span 276..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPCThrowWhiskey : public UDisItemContext_NPCThrow
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCThrowWhiskey
+    //## END PROPS DisItemContext_NPCThrowWhiskey
+
+    DECLARE_CLASS(UDisItemContext_NPCThrowWhiskey,UDisItemContext_NPCThrow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPC_OverseerJumpAway: retail sizeof 276, reflected span 276..276 (2012 PDB sizeof 268)
+class UDisItemContext_NPC_OverseerJumpAway : public UDisItemContext_NPCThrowGrenade
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPC_OverseerJumpAway
+    //## END PROPS DisItemContext_NPC_OverseerJumpAway
+
+    DECLARE_CLASS(UDisItemContext_NPC_OverseerJumpAway,UDisItemContext_NPCThrowGrenade,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_ReloadGunPlayer: retail sizeof 184, reflected span 176..184 (2012 PDB sizeof 176)
+class UDisItemContext_ReloadGunPlayer : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_ReloadGunPlayer
+    BYTE m_ReloadStage;
+    FLOAT m_fReloadTimeRemaining;
+    //## END PROPS DisItemContext_ReloadGunPlayer
+
+    DECLARE_CLASS(UDisItemContext_ReloadGunPlayer,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_ThrowGrenade: retail sizeof 264, reflected span 252..264 (2012 PDB sizeof 256)
+class UDisItemContext_ThrowGrenade : public UDisItemContext_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_ThrowGrenade
+    BYTE m_GrenadeAnimState;
+    FLOAT m_fTimeToCook;
+    BITFIELD m_bThrown:1;
+    //## END PROPS DisItemContext_ThrowGrenade
+
+    DECLARE_CLASS(UDisItemContext_ThrowGrenade,UDisItemContext_ProjectileAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_UsePower: retail sizeof 200, reflected span 196..200 (2012 PDB sizeof 192)
+class UDisItemContext_UsePower : public UDisItemContext_AimAssistAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_UsePower
+    BITFIELD m_bLoopIsOver:1;
+    //## END PROPS DisItemContext_UsePower
+
+    DECLARE_CLASS(UDisItemContext_UsePower,UDisItemContext_AimAssistAttack,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Arrow_Flare: retail sizeof 364, reflected span 316..364 (2012 PDB sizeof 352)
+class UDisTweaks_Arrow_Flare : public UDisTweaks_Arrow
+{
+public:
+    //## BEGIN PROPS DisTweaks_Arrow_Flare
+    FLOAT m_fNPCImmolationTime;
+    FImmolationParams m_ImmolationParams;
+    class UClass* m_pAlternateDamageType;
+    class UDisTweaks_SoundSource* m_pFlareSoundTweaks;
+    //## END PROPS DisTweaks_Arrow_Flare
+
+    DECLARE_CLASS(UDisTweaks_Arrow_Flare,UDisTweaks_Arrow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Bullet: retail sizeof 332, reflected span 228..329 (2012 PDB sizeof 320)
+class UDisTweaks_Bullet : public UDisTweaks_Projectile
+{
+public:
+    //## BEGIN PROPS DisTweaks_Bullet
+    FLOAT m_BulletRadius;
+    FLOAT m_fDamage;
+    FLOAT m_fDamageMultiplier_Headshot;
+    FLOAT m_fDamageMultiplier_Stealth;
+    FLOAT m_fDamageMultiplier_CloseRange;
+    FLOAT m_fDamageMultiplier_LongRange;
+    FLOAT m_fCloseRange;
+    FLOAT m_fLongRange;
+    FLOAT m_fSpeed;
+    FLOAT m_fPostMaxRangeAngle;
+    FLOAT m_fPiercingChance;
+    FLOAT m_fPostPiercingDamageRatio;
+    FLOAT m_fSpreadAngle;
+    FLOAT m_fSpreadDamage;
+    FLOAT m_fSpreadForce;
+    FLOAT m_fSpreadDistanceFromBullet;
+    FLOAT m_fSpreadShotsAngleReduction;
+    INT m_SpreadNumShots;
+    class UParticleSystem* m_pBulletTracerFX;
+    FLOAT m_fAllowedAngularDeviation;
+    class USkeletalMesh* m_pBulletMesh;
+    class UPhysicsAsset* m_pBulletPhysicsAsset;
+    class UAkEvent* m_pReboundSound;
+    class USkeletalMesh* m_pPlayerMesh;
+    class UParticleSystem* m_pCaseEjectionFX;
+    BYTE m_AmmoTypeOnPickup;
+    //## END PROPS DisTweaks_Bullet
+
+    DECLARE_CLASS(UDisTweaks_Bullet,UDisTweaks_Projectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Bullet_Explosive: retail sizeof 336, reflected span 329..336 (2012 PDB sizeof 324)
+class UDisTweaks_Bullet_Explosive : public UDisTweaks_Bullet
+{
+public:
+    //## BEGIN PROPS DisTweaks_Bullet_Explosive
+    class UDisTweaks_Explosion* m_pExplosionTweaks;
+    //## END PROPS DisTweaks_Bullet_Explosive
+
+    DECLARE_CLASS(UDisTweaks_Bullet_Explosive,UDisTweaks_Bullet,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_NPCAssassinHand: retail sizeof 296, reflected span 296..296 (2012 PDB sizeof 296)
+class UDisTweaks_NPCAssassinHand : public UDisTweaks_WeaponRanged
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAssassinHand
+    //## END PROPS DisTweaks_NPCAssassinHand
+
+    DECLARE_CLASS(UDisTweaks_NPCAssassinHand,UDisTweaks_WeaponRanged,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_FireCrossbow: retail sizeof 1352, reflected span 1056..1352 (2012 PDB sizeof 1352)
+class UDisTweaks_FireCrossbow : public UDisTweaks_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_FireCrossbow
+    FLOAT m_fArrowSpawnDistance;
+    FPawnAction m_FireCrossbowAction;
+    FPawnAction m_FireReloadFast;
+    FPawnAction m_FireCrossbowZoomAction;
+    FPawnAction m_FireReloadZoomFast;
+    FLOAT m_fArrowFireSpeed;
+    class UAkEvent* m_pNoAmmoSound;
+    class UParticleSystem* m_pTracerFX;
+    FName m_TracerSocketName;
+    FLOAT m_fRollVelocity;
+    BITFIELD m_bContinuousFire:1;
+    FPawnAction m_SwordhandReaction;
+    FPawnAction m_SwordhandReaction_Sneaking;
+    //## END PROPS DisTweaks_FireCrossbow
+
+    DECLARE_CLASS(UDisTweaks_FireCrossbow,UDisTweaks_ProjectileAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_FirePistol: retail sizeof 1412, reflected span 1056..1412 (2012 PDB sizeof 1412)
+class UDisTweaks_FirePistol : public UDisTweaks_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_FirePistol
+    FLOAT m_fBulletSpawnDistance;
+    BYTE m_AINoiseLoudnessWhenFiring;
+    FPawnAction m_FireAction;
+    FPawnAction m_FireAccuracy1Action;
+    FPawnAction m_FireAccurateAction;
+    FPawnAction m_FireZoomAction;
+    FPawnAction m_FireAccurateZoomAction;
+    class UDisTweaks_Upgrade* m_pFireAccurateUpgrade;
+    class UDisTweaks_Upgrade* m_pAccuracy1Upgrade;
+    FName m_FireAccurary2Anim;
+    BITFIELD m_bContinuousFire:1;
+    FPawnAction m_SwordhandReaction;
+    FPawnAction m_SwordhandReaction_Sneaking;
+    FName m_MuzzleSocketName;
+    class UParticleSystem* m_pMuzzleFlashFX;
+    class UAkEvent* m_pSoundEventShoot;
+    class UAkEvent* m_pNoAmmoSound;
+    //## END PROPS DisTweaks_FirePistol
+
+    DECLARE_CLASS(UDisTweaks_FirePistol,UDisTweaks_ProjectileAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_Grenade: retail sizeof 160, reflected span 148..160 (2012 PDB sizeof 160)
+class UDisTweaks_Grenade : public UDisTweaks_KAsset
+{
+public:
+    //## BEGIN PROPS DisTweaks_Grenade
+    class USkeletalMesh* m_pSkeletalMesh;
+    class USkeletalMesh* m_pEquippedMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    //## END PROPS DisTweaks_Grenade
+
+    DECLARE_CLASS(UDisTweaks_Grenade,UDisTweaks_KAsset,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Projectile_GrenadeBase)
+};
+
+// DishonoredGame.DisTweaks_NPCThrow: retail sizeof 1088, reflected span 1056..1088 (2012 PDB sizeof 1088)
+class UDisTweaks_NPCThrow : public UDisTweaks_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCThrow
+    FLOAT m_fMinContextRangeWhenUnreachable;
+    BYTE m_eThrowAnim;
+    FLOAT m_fThrowSpeed;
+    class UDisTweaks_Projectile* m_pProjectileType;
+    FLOAT m_fSpinSpeed;
+    FDisRangedFloat m_ContextCooldownWhenUnreachable;
+    BITFIELD m_bIgnoreGlobalCooldownWhenUnreachable:1;
+    //## END PROPS DisTweaks_NPCThrow
+
+    DECLARE_CLASS(UDisTweaks_NPCThrow,UDisTweaks_ProjectileAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCThrowGrenade: retail sizeof 1100, reflected span 1088..1100 (2012 PDB sizeof 1100)
+class UDisTweaks_NPCThrowGrenade : public UDisTweaks_NPCThrow
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCThrowGrenade
+    FLOAT m_fGrenadeDangerZone;
+    FLOAT m_fCookingTime;
+    BITFIELD m_bFollowWithCharge:1;
+    //## END PROPS DisTweaks_NPCThrowGrenade
+
+    DECLARE_CLASS(UDisTweaks_NPCThrowGrenade,UDisTweaks_NPCThrow,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackUnder_Grenade: retail sizeof 1100, reflected span 1100..1100 (2012 PDB sizeof 1100)
+class UDisTweaks_NPCAttackUnder_Grenade : public UDisTweaks_NPCThrowGrenade
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackUnder_Grenade
+    //## END PROPS DisTweaks_NPCAttackUnder_Grenade
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackUnder_Grenade,UDisTweaks_NPCThrowGrenade,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCFireGun: retail sizeof 1096, reflected span 1056..1096 (2012 PDB sizeof 1096)
+class UDisTweaks_NPCFireGun : public UDisTweaks_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCFireGun
+    FName m_IgnitorSocketName;
+    FName m_MuzzleSocketName;
+    BYTE m_AINoiseLoudnessWhenFiring;
+    class UParticleSystem* m_pIgnitorFX;
+    class UParticleSystem* m_pMuzzleFlashFX;
+    class UAkEvent* m_pSoundEventShoot;
+    FDisRangedFloat m_ContextCooldownWhenUnreachable;
+    //## END PROPS DisTweaks_NPCFireGun
+
+    DECLARE_CLASS(UDisTweaks_NPCFireGun,UDisTweaks_ProjectileAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackUnder_Gun: retail sizeof 1100, reflected span 1096..1097 (2012 PDB sizeof 1100)
+class UDisTweaks_NPCAttackUnder_Gun : public UDisTweaks_NPCFireGun
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackUnder_Gun
+    BYTE m_eFireAnim;
+    //## END PROPS DisTweaks_NPCAttackUnder_Gun
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackUnder_Gun,UDisTweaks_NPCFireGun,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCFireBow: retail sizeof 1088, reflected span 1056..1088 (2012 PDB sizeof 1088)
+class UDisTweaks_NPCFireBow : public UDisTweaks_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCFireBow
+    BITFIELD m_bRequiresAimState:1;
+    FLOAT m_fProjectileSpeed;
+    INT m_iProjectileDamage;
+    FLOAT m_fProjectileHeadshotMult;
+    FLOAT m_fCheatAngleDeviation;
+    FLOAT m_fAlliesHoldFireRadius;
+    FDisRangedFloat m_ContextCooldownWhenUnreachable;
+    //## END PROPS DisTweaks_NPCFireBow
+
+    DECLARE_CLASS(UDisTweaks_NPCFireBow,UDisTweaks_ProjectileAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCLobGrenadeAtUnreachable: retail sizeof 1104, reflected span 1100..1104 (2012 PDB sizeof 1104)
+class UDisTweaks_NPCLobGrenadeAtUnreachable : public UDisTweaks_NPCThrowGrenade
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCLobGrenadeAtUnreachable
+    FLOAT m_fMinRequiredHeightDifference;
+    //## END PROPS DisTweaks_NPCLobGrenadeAtUnreachable
+
+    DECLARE_CLASS(UDisTweaks_NPCLobGrenadeAtUnreachable,UDisTweaks_NPCThrowGrenade,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCReloadGun: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 176)
+class UDisTweaks_NPCReloadGun : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCReloadGun
+    //## END PROPS DisTweaks_NPCReloadGun
+
+    DECLARE_CLASS(UDisTweaks_NPCReloadGun,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCThrowWhiskey: retail sizeof 1092, reflected span 1088..1092 (2012 PDB sizeof 1092)
+class UDisTweaks_NPCThrowWhiskey : public UDisTweaks_NPCThrow
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCThrowWhiskey
+    BITFIELD m_bKeepBottle:1;
+    //## END PROPS DisTweaks_NPCThrowWhiskey
+
+    DECLARE_CLASS(UDisTweaks_NPCThrowWhiskey,UDisTweaks_NPCThrow,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPC_OverseerJumpAway: retail sizeof 1104, reflected span 1100..1104 (2012 PDB sizeof 1104)
+class UDisTweaks_NPC_OverseerJumpAway : public UDisTweaks_NPCThrowGrenade
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPC_OverseerJumpAway
+    FLOAT m_fJumpClearance;
+    //## END PROPS DisTweaks_NPC_OverseerJumpAway
+
+    DECLARE_CLASS(UDisTweaks_NPC_OverseerJumpAway,UDisTweaks_NPCThrowGrenade,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_Projectile_StickyGrenade: retail sizeof 264, reflected span 240..264 (2012 PDB sizeof 252)
+class UDisTweaks_Projectile_StickyGrenade : public UDisTweaks_Projectile_GrenadeBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Projectile_StickyGrenade
+    FLOAT m_fBounciness;
+    FLOAT m_fBounceDamping;
+    class UDisTweaks_StatPickup* m_pStatPickup_Single;
+    class UDisTweaks_StatPickup* m_pStatPickupAfterUseAttempt;
+    BYTE m_AmmoTypeOnRecover;
+    FLOAT m_fSinkDistance;
+    //## END PROPS DisTweaks_Projectile_StickyGrenade
+
+    DECLARE_CLASS(UDisTweaks_Projectile_StickyGrenade,UDisTweaks_Projectile_GrenadeBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Projectile_ThrownObject: retail sizeof 228, reflected span 228..228 (2012 PDB sizeof 216)
+class UDisTweaks_Projectile_ThrownObject : public UDisTweaks_Projectile
+{
+public:
+    //## BEGIN PROPS DisTweaks_Projectile_ThrownObject
+    //## END PROPS DisTweaks_Projectile_ThrownObject
+
+    DECLARE_CLASS(UDisTweaks_Projectile_ThrownObject,UDisTweaks_Projectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Projectile_Whiskey: retail sizeof 232, reflected span 228..232 (2012 PDB sizeof 220)
+class UDisTweaks_Projectile_Whiskey : public UDisTweaks_Projectile
+{
+public:
+    //## BEGIN PROPS DisTweaks_Projectile_Whiskey
+    class UDisTweaks_WhiskeyBottle* m_pWhiskeyBottleTweaks;
+    //## END PROPS DisTweaks_Projectile_Whiskey
+
+    DECLARE_CLASS(UDisTweaks_Projectile_Whiskey,UDisTweaks_Projectile,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ReloadGunPlayer: retail sizeof 316, reflected span 176..316 (2012 PDB sizeof 316)
+class UDisTweaks_ReloadGunPlayer : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_ReloadGunPlayer
+    FPawnAction m_ReloadGunAction_In;
+    FPawnAction m_ReloadGunAction_Out;
+    FPawnAction m_ReloadFast;
+    FLOAT m_fReloadTime;
+    BITFIELD m_bSwapAmmoInstantly:1;
+    BITFIELD m_bDoNormalReloadInstantly:1;
+    //## END PROPS DisTweaks_ReloadGunPlayer
+
+    DECLARE_CLASS(UDisTweaks_ReloadGunPlayer,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_ThrowGrenade: retail sizeof 1136, reflected span 1056..1136 (2012 PDB sizeof 1136)
+class UDisTweaks_ThrowGrenade : public UDisTweaks_ProjectileAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_ThrowGrenade
+    FPawnAction m_ThrowAction;
+    FLOAT m_fCookDelay;
+    FName m_AlignmentBoneName;
+    FLOAT m_fThrowAngle;
+    FLOAT m_fThrowSpeed;
+    FRotator m_ThrowAngularVelocity;
+    FLOAT m_fDropSpeed;
+    //## END PROPS DisTweaks_ThrowGrenade
+
+    DECLARE_CLASS(UDisTweaks_ThrowGrenade,UDisTweaks_ProjectileAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_UsePower: retail sizeof 444, reflected span 176..444 (2012 PDB sizeof 444)
+class UDisTweaks_UsePower : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_UsePower
+    FPawnAction m_OutOfManaAction;
+    class UAkEvent* m_pOutOfManaUseSound;
+    FDisAimAssistGroup m_AimAssistGroup;
+    FDisAimAssistChoiceInfo m_AimAssistChoiceInfo;
+    //## END PROPS DisTweaks_UsePower
+
+    DECLARE_CLASS(UDisTweaks_UsePower,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_WepBow: retail sizeof 304, reflected span 296..304 (2012 PDB sizeof 304)
+class UDisTweaks_WepBow : public UDisTweaks_WeaponRanged
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepBow
+    FName m_ArrowSocketName;
+    //## END PROPS DisTweaks_WepBow
+
+    DECLARE_CLASS(UDisTweaks_WepBow,UDisTweaks_WeaponRanged,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepMusicAmp: retail sizeof 288, reflected span 268..288 (2012 PDB sizeof 288)
+class UDisTweaks_WepMusicAmp : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepMusicAmp
+    class UDisTweaks_Attachments* m_pAttachmentsTweaks;
+    FLOAT m_fMaxDecayRatio_Range;
+    FLOAT m_fMaxDecayRatio_Force;
+    FLOAT m_fMaxDecayRatio_Damage;
+    BITFIELD m_bDisableWhenAllPartsBroken:1;
+    //## END PROPS DisTweaks_WepMusicAmp
+
+    DECLARE_CLASS(UDisTweaks_WepMusicAmp,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepMusicBox: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDisTweaks_WepMusicBox : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepMusicBox
+    //## END PROPS DisTweaks_WepMusicBox
+
+    DECLARE_CLASS(UDisTweaks_WepMusicBox,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepPistol: retail sizeof 388, reflected span 296..388 (2012 PDB sizeof 388)
+class UDisTweaks_WepPistol : public UDisTweaks_WeaponRanged
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepPistol
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_RevertedUpgradesForExplosive;
+    FName m_BulletSocketName;
+    class USkeletalMesh* m_pMagMesh;
+    class USkeletalMesh* m_pReloadMesh;
+    FName m_ReloadUpgradeAnimName;
+    FName m_MagReloadAnimNames[3];
+    FName m_MagFireAnimName[3];
+    FName m_MagEmptyAnimName;
+    //## END PROPS DisTweaks_WepPistol
+
+    DECLARE_CLASS(UDisTweaks_WepPistol,UDisTweaks_WeaponRanged,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepTallboyBow: retail sizeof 304, reflected span 304..304 (2012 PDB sizeof 304)
+class UDisTweaks_WepTallboyBow : public UDisTweaks_WepBow
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepTallboyBow
+    //## END PROPS DisTweaks_WepTallboyBow
+
+    DECLARE_CLASS(UDisTweaks_WepTallboyBow,UDisTweaks_WepBow,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepThrowingHand: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDisTweaks_WepThrowingHand : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepThrowingHand
+    //## END PROPS DisTweaks_WepThrowingHand
+
+    DECLARE_CLASS(UDisTweaks_WepThrowingHand,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WepWhiskeyBottle: retail sizeof 308, reflected span 268..308 (2012 PDB sizeof 308)
+class UDisTweaks_WepWhiskeyBottle : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepWhiskeyBottle
+    class UDisTweaks_Projectile_Whiskey* m_pProjectileType;
+    FImmolationParams m_ImmolationParams;
+    //## END PROPS DisTweaks_WepWhiskeyBottle
+
+    DECLARE_CLASS(UDisTweaks_WepWhiskeyBottle,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WhiskeyBottle: retail sizeof 172, reflected span 148..172 (2012 PDB sizeof 172)
+class UDisTweaks_WhiskeyBottle : public UDisTweaks_KAsset
+{
+public:
+    //## BEGIN PROPS DisTweaks_WhiskeyBottle
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    FLOAT m_fVelocityToExplode;
+    class UAkEvent* m_pGrabSound;
+    class UDisTweaks_Explosion* m_pExplosionTweaks;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_WhiskeyBottle
+
+    DECLARE_CLASS(UDisTweaks_WhiskeyBottle,UDisTweaks_KAsset,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWepBow: retail sizeof 316, reflected span 308..316 (2012 PDB sizeof 316)
+class UDisWepBow : public UDishonoredWeapon_Ranged
+{
+public:
+    //## BEGIN PROPS DisWepBow
+    class UDisTweaks_WepBow* m_pBowTweaks;
+    class UDishonoredItemSkeletalComponent* m_pArrowMesh;
+    //## END PROPS DisWepBow
+
+    DECLARE_CLASS(UDisWepBow,UDishonoredWeapon_Ranged,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("WeaponRanged");}
+};
+
+// DishonoredGame.DisWepGrenade: retail sizeof 316, reflected span 308..316 (2012 PDB sizeof 316)
+class UDisWepGrenade : public UDishonoredWeapon_Ranged
+{
+public:
+    //## BEGIN PROPS DisWepGrenade
+    class UDisTweaks_WepGrenade* m_pGrenadeTweaks;
+    class UDisGrenadeComponent* m_pGrenadeComponent;
+    //## END PROPS DisWepGrenade
+
+    DECLARE_CLASS(UDisWepGrenade,UDishonoredWeapon_Ranged,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisWepNPCAssassinHand: retail sizeof 344, reflected span 308..344 (2012 PDB sizeof 344)
+class UDisWepNPCAssassinHand : public UDishonoredWeapon_Ranged
+{
+public:
+    //## BEGIN PROPS DisWepNPCAssassinHand
+    class UDisTweaks_NPCAssassinHand* m_pAssassinHandTweaks;
+    class UParticleSystemComponent* m_pAttractCameraFX;
+    FName m_AttractCameraFXSocket;
+    FName m_AttractCameraFXFadeParameter;
+    FLOAT m_fAttractCameraFXFadeInDuration;
+    FLOAT m_fAttractCameraFXFadeOutDuration;
+    FLOAT m_fAttractCameraFXFadeTimer;
+    //## END PROPS DisWepNPCAssassinHand
+
+    DECLARE_CLASS(UDisWepNPCAssassinHand,UDishonoredWeapon_Ranged,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredWepPistol: retail sizeof 332, reflected span 308..332 (2012 PDB sizeof 320)
+class UDishonoredWepPistol : public UDishonoredWeapon_Ranged
+{
+public:
+    //## BEGIN PROPS DishonoredWepPistol
+    class UDisTweaks_WepPistol* m_pPistolTweaks;
+    class UDishonoredItemSkeletalComponent* m_pBulletMesh;
+    BITFIELD m_bResetUpgrades:1;
+    TArrayNoInit<class UDisParticleSystemComponent*> m_MuzzleFlashes;
+    //## END PROPS DishonoredWepPistol
+
+    DECLARE_CLASS(UDishonoredWepPistol,UDishonoredWeapon_Ranged,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("WeaponRanged");}
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_WEAPONRANGED_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(ADisProjectile,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisProjectile,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADisProjectile_Arrow,-1,execBaseChange);
+AUTOGENERATE_FUNCTION(ADisProjectile_GrenadeBase,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisGrenade,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisProjectile_StickyGrenade,-1,execBaseChange);
+AUTOGENERATE_FUNCTION(ADisProjectile_Whiskey,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisWhiskeyBottle,-1,execTakeDamage_Native);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_WEAPONRANGED_NATIVE_DEFS
+#define DISHONOREDGAME_WEAPONRANGED_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_WEAPONRANGED \
+	ADisProjectile::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProjectile"), GDishonoredGameADisProjectileNatives); \
+	ADisBullet::StaticClass(); \
+	ADisBullet_Explosive::StaticClass(); \
+	ADisProjectile_Arrow::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProjectile_Arrow"), GDishonoredGameADisProjectile_ArrowNatives); \
+	ADisProjectile_Arrow_Explosive::StaticClass(); \
+	ADisProjectile_GrenadeBase::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProjectile_GrenadeBase"), GDishonoredGameADisProjectile_GrenadeBaseNatives); \
+	ADisProjectile_Grenade::StaticClass(); \
+	ADisGrenade::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisGrenade"), GDishonoredGameADisGrenadeNatives); \
+	ADisProjectile_Arrow_Flare::StaticClass(); \
+	ADisProjectile_StickyGrenade::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProjectile_StickyGrenade"), GDishonoredGameADisProjectile_StickyGrenadeNatives); \
+	ADisProjectile_ThrownObject::StaticClass(); \
+	ADisProjectile_Whiskey::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProjectile_Whiskey"), GDishonoredGameADisProjectile_WhiskeyNatives); \
+	ADisWhiskeyBottle::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisWhiskeyBottle"), GDishonoredGameADisWhiskeyBottleNatives); \
+	UDisGlobalProjectileManager::StaticClass(); \
+	UDisGrenadeComponent::StaticClass(); \
+	UDisItemContext_ProjectileAttack::StaticClass(); \
+	UDisTweaks_Projectile::StaticClass(); \
+	UDisTweaks_Arrow::StaticClass(); \
+	UDisTweaks_Arrow_Explosive::StaticClass(); \
+	UDisTweaks_Projectile_GrenadeBase::StaticClass(); \
+	UDisTweaks_GrenadeComponent::StaticClass(); \
+	UDisTweaks_ProjectileAttack::StaticClass(); \
+	UDisTweaks_Projectile_Grenade::StaticClass(); \
+	UDisTweaks_WepCrossbow::StaticClass(); \
+	UDisTweaks_WepGrenade::StaticClass(); \
+	UDishonoredWeapon_Ranged::StaticClass(); \
+	UDisWepCrossbow::StaticClass(); \
+	UDisItemContext_FireCrossbow::StaticClass(); \
+	UDisItemContext_FirePistol::StaticClass(); \
+	UDisItemContext_NPCThrow::StaticClass(); \
+	UDisItemContext_NPCThrowGrenade::StaticClass(); \
+	UDisItemContext_NPCAttackUnder_Grenade::StaticClass(); \
+	UDisItemContext_NPCFireGun::StaticClass(); \
+	UDisItemContext_NPCAttackUnder_Gun::StaticClass(); \
+	UDisItemContext_NPCFireBow::StaticClass(); \
+	UDisItemContext_NPCThrowGrenade_Aimed::StaticClass(); \
+	UDisItemContext_NPCLobGrenadeAtUnreachable::StaticClass(); \
+	UDisItemContext_NPCReloadGun::StaticClass(); \
+	UDisItemContext_NPCThrowObject::StaticClass(); \
+	UDisItemContext_NPCThrowWhiskey::StaticClass(); \
+	UDisItemContext_NPC_OverseerJumpAway::StaticClass(); \
+	UDisItemContext_ReloadGunPlayer::StaticClass(); \
+	UDisItemContext_ThrowGrenade::StaticClass(); \
+	UDisItemContext_UsePower::StaticClass(); \
+	UDisTweaks_Arrow_Flare::StaticClass(); \
+	UDisTweaks_Bullet::StaticClass(); \
+	UDisTweaks_Bullet_Explosive::StaticClass(); \
+	UDisTweaks_NPCAssassinHand::StaticClass(); \
+	UDisTweaks_FireCrossbow::StaticClass(); \
+	UDisTweaks_FirePistol::StaticClass(); \
+	UDisTweaks_Grenade::StaticClass(); \
+	UDisTweaks_NPCThrow::StaticClass(); \
+	UDisTweaks_NPCThrowGrenade::StaticClass(); \
+	UDisTweaks_NPCAttackUnder_Grenade::StaticClass(); \
+	UDisTweaks_NPCFireGun::StaticClass(); \
+	UDisTweaks_NPCAttackUnder_Gun::StaticClass(); \
+	UDisTweaks_NPCFireBow::StaticClass(); \
+	UDisTweaks_NPCLobGrenadeAtUnreachable::StaticClass(); \
+	UDisTweaks_NPCReloadGun::StaticClass(); \
+	UDisTweaks_NPCThrowWhiskey::StaticClass(); \
+	UDisTweaks_NPC_OverseerJumpAway::StaticClass(); \
+	UDisTweaks_Projectile_StickyGrenade::StaticClass(); \
+	UDisTweaks_Projectile_ThrownObject::StaticClass(); \
+	UDisTweaks_Projectile_Whiskey::StaticClass(); \
+	UDisTweaks_ReloadGunPlayer::StaticClass(); \
+	UDisTweaks_ThrowGrenade::StaticClass(); \
+	UDisTweaks_UsePower::StaticClass(); \
+	UDisTweaks_WepBow::StaticClass(); \
+	UDisTweaks_WepMusicAmp::StaticClass(); \
+	UDisTweaks_WepMusicBox::StaticClass(); \
+	UDisTweaks_WepPistol::StaticClass(); \
+	UDisTweaks_WepTallboyBow::StaticClass(); \
+	UDisTweaks_WepThrowingHand::StaticClass(); \
+	UDisTweaks_WepWhiskeyBottle::StaticClass(); \
+	UDisTweaks_WhiskeyBottle::StaticClass(); \
+	UDisWepBow::StaticClass(); \
+	UDisWepGrenade::StaticClass(); \
+	UDisWepNPCAssassinHand::StaticClass(); \
+	UDishonoredWepPistol::StaticClass(); \
+
+#endif // DISHONOREDGAME_WEAPONRANGED_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameADisProjectileNatives[] = 
+{ 
+	MAP_NATIVE(ADisProjectile, execTakeDamage_Native)
+	MAP_NATIVE(ADisProjectile, execTakeDamage)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisProjectile_ArrowNatives[] = 
+{ 
+	MAP_NATIVE(ADisProjectile_Arrow, execBaseChange)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisProjectile_GrenadeBaseNatives[] = 
+{ 
+	MAP_NATIVE(ADisProjectile_GrenadeBase, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisGrenadeNatives[] = 
+{ 
+	MAP_NATIVE(ADisGrenade, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisProjectile_StickyGrenadeNatives[] = 
+{ 
+	MAP_NATIVE(ADisProjectile_StickyGrenade, execBaseChange)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisProjectile_WhiskeyNatives[] = 
+{ 
+	MAP_NATIVE(ADisProjectile_Whiskey, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisWhiskeyBottleNatives[] = 
+{ 
+	MAP_NATIVE(ADisWhiskeyBottle, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile,DisProjectile,m_InitialLocation)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile,DisProjectile,m_pProjectileListNext)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile)
+VERIFY_CLASS_OFFSET_NODIE(ADisBullet,DisBullet,m_pBulletTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisBullet,DisBullet,m_pHighlightMesh)
+VERIFY_CLASS_SIZE_NODIE(ADisBullet)
+VERIFY_CLASS_SIZE_NODIE(ADisBullet_Explosive)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_Arrow,DisProjectile_Arrow,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_Arrow,DisProjectile_Arrow,m_pHighlightMesh)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_Arrow)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_Arrow_Explosive)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_GrenadeBase,DisProjectile_GrenadeBase,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_GrenadeBase,DisProjectile_GrenadeBase,m_pHighlightMesh)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_GrenadeBase)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_Grenade)
+VERIFY_CLASS_OFFSET_NODIE(ADisGrenade,DisGrenade,m_pParticleComp)
+VERIFY_CLASS_OFFSET_NODIE(ADisGrenade,DisGrenade,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisGrenade)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_Arrow_Flare,DisProjectile_Arrow_Flare,m_pSoundSource)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_Arrow_Flare,DisProjectile_Arrow_Flare,m_fStuckInNPCTimer)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_Arrow_Flare)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_StickyGrenade)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_ThrownObject,DisProjectile_ThrownObject,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_ThrownObject,DisProjectile_ThrownObject,m_pHighlightMesh)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_ThrownObject)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_Whiskey,DisProjectile_Whiskey,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectile_Whiskey,DisProjectile_Whiskey,m_pHighlightMesh)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectile_Whiskey)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhiskeyBottle,DisWhiskeyBottle,m_pWhiskeyBottleTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhiskeyBottle,DisWhiskeyBottle,m_pMovableComponent)
+VERIFY_CLASS_SIZE_NODIE(ADisWhiskeyBottle)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalProjectileManager,DisGlobalProjectileManager,m_pProjListHead)
+VERIFY_CLASS_SIZE_NODIE(UDisGlobalProjectileManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisGrenadeComponent,DisGrenadeComponent,m_pGrenadeComponentTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisGrenadeComponent,DisGrenadeComponent,m_fMinTimeToDetonationAfterHit)
+VERIFY_CLASS_SIZE_NODIE(UDisGrenadeComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ProjectileAttack,DisItemContext_ProjectileAttack,m_KillCamSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ProjectileAttack,DisItemContext_ProjectileAttack,m_CachedAimAssistPos)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_ProjectileAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile,DisTweaks_Projectile,m_fGravityMultiplier)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile,DisTweaks_Projectile,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Projectile)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Arrow,DisTweaks_Arrow,m_ArrowMeshInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Arrow,DisTweaks_Arrow,m_fLegsAndArmsDamageCap)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Arrow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Arrow_Explosive,DisTweaks_Arrow_Explosive,m_pExplosionTweak)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Arrow_Explosive,DisTweaks_Arrow_Explosive,m_fDangerCapsuleProjectionTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Arrow_Explosive)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_GrenadeBase,DisTweaks_Projectile_GrenadeBase,m_pGrenadeTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_GrenadeBase,DisTweaks_Projectile_GrenadeBase,m_pArmedInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Projectile_GrenadeBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GrenadeComponent,DisTweaks_GrenadeComponent,m_fDetonationDelay)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GrenadeComponent,DisTweaks_GrenadeComponent,m_pUnderwaterExplosionTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GrenadeComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ProjectileAttack,DisTweaks_ProjectileAttack,m_AimAssistChoiceInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ProjectileAttack,DisTweaks_ProjectileAttack,m_KillCamSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ProjectileAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_Grenade,DisTweaks_Projectile_Grenade,m_fBounciness)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_Grenade,DisTweaks_Projectile_Grenade,m_fRigidBodyZMagThreshold)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Projectile_Grenade)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepCrossbow,DisTweaks_WepCrossbow,m_ArrowSocketName)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepCrossbow,DisTweaks_WepCrossbow,m_NoAmmoLoadedAnimState)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepCrossbow)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepGrenade)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWeapon_Ranged,DishonoredWeapon_Ranged,m_CurAmmoType)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWeapon_Ranged,DishonoredWeapon_Ranged,m_fDispersion)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredWeapon_Ranged)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepCrossbow,DisWepCrossbow,m_pCrossbowTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepCrossbow,DisWepCrossbow,m_pArrowMesh_HighRes)
+VERIFY_CLASS_SIZE_NODIE(UDisWepCrossbow)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_FireCrossbow)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_FirePistol)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCThrow,DisItemContext_NPCThrow,m_TargetProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCThrow,DisItemContext_NPCThrow,m_pIntendedTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCThrow)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCThrowGrenade)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackUnder_Grenade)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCFireGun,DisItemContext_NPCFireGun,m_DEBUGONLY_DamageInflicted)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCFireGun,DisItemContext_NPCFireGun,m_pIntendedTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCFireGun)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackUnder_Gun)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCFireBow,DisItemContext_NPCFireBow,m_pIntendedTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCFireBow,DisItemContext_NPCFireBow,m_CachedCanDoContext)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCFireBow)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCThrowGrenade_Aimed)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCLobGrenadeAtUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCReloadGun)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCThrowObject,DisItemContext_NPCThrowObject,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCThrowObject,DisItemContext_NPCThrowObject,m_pContactType)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCThrowObject)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCThrowWhiskey)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPC_OverseerJumpAway)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ReloadGunPlayer,DisItemContext_ReloadGunPlayer,m_ReloadStage)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ReloadGunPlayer,DisItemContext_ReloadGunPlayer,m_fReloadTimeRemaining)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_ReloadGunPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ThrowGrenade,DisItemContext_ThrowGrenade,m_GrenadeAnimState)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ThrowGrenade,DisItemContext_ThrowGrenade,m_fTimeToCook)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_ThrowGrenade)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_UsePower)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Arrow_Flare,DisTweaks_Arrow_Flare,m_fNPCImmolationTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Arrow_Flare,DisTweaks_Arrow_Flare,m_pFlareSoundTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Arrow_Flare)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Bullet,DisTweaks_Bullet,m_BulletRadius)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Bullet,DisTweaks_Bullet,m_AmmoTypeOnPickup)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Bullet)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Bullet_Explosive,DisTweaks_Bullet_Explosive,m_pExplosionTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Bullet_Explosive)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAssassinHand)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_FireCrossbow,DisTweaks_FireCrossbow,m_fArrowSpawnDistance)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_FireCrossbow,DisTweaks_FireCrossbow,m_SwordhandReaction_Sneaking)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_FireCrossbow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_FirePistol,DisTweaks_FirePistol,m_fBulletSpawnDistance)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_FirePistol,DisTweaks_FirePistol,m_pNoAmmoSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_FirePistol)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Grenade,DisTweaks_Grenade,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Grenade,DisTweaks_Grenade,m_pPhysicsAsset)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Grenade)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCThrow,DisTweaks_NPCThrow,m_fMinContextRangeWhenUnreachable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCThrow,DisTweaks_NPCThrow,m_ContextCooldownWhenUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCThrow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCThrowGrenade,DisTweaks_NPCThrowGrenade,m_fGrenadeDangerZone)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCThrowGrenade,DisTweaks_NPCThrowGrenade,m_fCookingTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCThrowGrenade)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackUnder_Grenade)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCFireGun,DisTweaks_NPCFireGun,m_IgnitorSocketName)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCFireGun,DisTweaks_NPCFireGun,m_ContextCooldownWhenUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCFireGun)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCAttackUnder_Gun,DisTweaks_NPCAttackUnder_Gun,m_eFireAnim)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackUnder_Gun)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCFireBow,DisTweaks_NPCFireBow,m_fProjectileSpeed)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCFireBow,DisTweaks_NPCFireBow,m_ContextCooldownWhenUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCFireBow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCLobGrenadeAtUnreachable,DisTweaks_NPCLobGrenadeAtUnreachable,m_fMinRequiredHeightDifference)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCLobGrenadeAtUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCReloadGun)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCThrowWhiskey)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPC_OverseerJumpAway,DisTweaks_NPC_OverseerJumpAway,m_fJumpClearance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPC_OverseerJumpAway)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_StickyGrenade,DisTweaks_Projectile_StickyGrenade,m_fBounciness)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_StickyGrenade,DisTweaks_Projectile_StickyGrenade,m_fSinkDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Projectile_StickyGrenade)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Projectile_ThrownObject)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Projectile_Whiskey,DisTweaks_Projectile_Whiskey,m_pWhiskeyBottleTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Projectile_Whiskey)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ReloadGunPlayer,DisTweaks_ReloadGunPlayer,m_ReloadGunAction_In)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ReloadGunPlayer,DisTweaks_ReloadGunPlayer,m_fReloadTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ReloadGunPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ThrowGrenade,DisTweaks_ThrowGrenade,m_ThrowAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ThrowGrenade,DisTweaks_ThrowGrenade,m_fDropSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ThrowGrenade)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_UsePower,DisTweaks_UsePower,m_OutOfManaAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_UsePower,DisTweaks_UsePower,m_AimAssistChoiceInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_UsePower)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepBow,DisTweaks_WepBow,m_ArrowSocketName)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepBow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepMusicAmp,DisTweaks_WepMusicAmp,m_pAttachmentsTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepMusicAmp,DisTweaks_WepMusicAmp,m_fMaxDecayRatio_Damage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepMusicAmp)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepMusicBox)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepPistol,DisTweaks_WepPistol,m_RevertedUpgradesForExplosive)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepPistol,DisTweaks_WepPistol,m_MagEmptyAnimName)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepPistol)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepTallboyBow)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepThrowingHand)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepWhiskeyBottle,DisTweaks_WepWhiskeyBottle,m_pProjectileType)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WepWhiskeyBottle,DisTweaks_WepWhiskeyBottle,m_ImmolationParams)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepWhiskeyBottle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhiskeyBottle,DisTweaks_WhiskeyBottle,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhiskeyBottle,DisTweaks_WhiskeyBottle,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WhiskeyBottle)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepBow,DisWepBow,m_pBowTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepBow,DisWepBow,m_pArrowMesh)
+VERIFY_CLASS_SIZE_NODIE(UDisWepBow)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepGrenade,DisWepGrenade,m_pGrenadeTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepGrenade,DisWepGrenade,m_pGrenadeComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisWepGrenade)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepNPCAssassinHand,DisWepNPCAssassinHand,m_pAssassinHandTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepNPCAssassinHand,DisWepNPCAssassinHand,m_fAttractCameraFXFadeTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisWepNPCAssassinHand)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWepPistol,DishonoredWepPistol,m_pPistolTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWepPistol,DishonoredWepPistol,m_MuzzleFlashes)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredWepPistol)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

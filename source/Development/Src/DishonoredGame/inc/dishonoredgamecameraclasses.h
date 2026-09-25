@@ -1,51 +1,748 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgamecameraclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (46):
-//   0x63aa40  public: static class UClass * __cdecl UDishonoredCamera_PlayerControl::StaticClass(void)
-//   0x63aa60  public: void __thiscall ADishonoredPlayerCamera::execApplyDebugCam_Native(struct FFrame &, void * const)
-//   0x6fcad0  protected: virtual __thiscall UDishonoredCameraInfluence::~UDishonoredCameraInfluence(void)
-//   0x6fcb60  protected: virtual __thiscall UDisCamera_StepUpMantleOffset::~UDisCamera_StepUpMantleOffset(void)
-//   0x6fcbf0  protected: virtual __thiscall UDishonoredCamera_CrouchMantleOffset::~UDishonoredCamera_CrouchMantleOffset(void)
-//   0x6fcc80  protected: virtual __thiscall UDishonoredCamera_DisableArmFollow::~UDishonoredCamera_DisableArmFollow(void)
-//   0x6fcd10  protected: virtual __thiscall UDisCamera_DisableArmFollow_Secondary::~UDisCamera_DisableArmFollow_Secondary(void)
-//   0x6fcda0  protected: virtual __thiscall UDishonoredCamera_DisableArmOffset::~UDishonoredCamera_DisableArmOffset(void)
-//   0x6fce30  protected: virtual __thiscall UDisCamera_DisableArmOffset_Secondary::~UDisCamera_DisableArmOffset_Secondary(void)
-//   0x6fcec0  protected: virtual __thiscall UDishonoredCamera_Lean::~UDishonoredCamera_Lean(void)
-//   0x701b60  public: static void __cdecl UDishonoredCameraInfluence::InternalConstructor(void *)
-//   0x701b80  public: static void __cdecl UDisCamera_StepUpMantleOffset::InternalConstructor(void *)
-//   0x701ba0  protected: virtual __thiscall UDishonoredCamera_BumpSmoother::~UDishonoredCamera_BumpSmoother(void)
-//   0x701c30  public: static void __cdecl UDishonoredCamera_CrouchMantleOffset::InternalConstructor(void *)
-//   0x701c50  public: static void __cdecl UDishonoredCamera_DisableArmFollow::InternalConstructor(void *)
-//   0x701c70  public: static void __cdecl UDisCamera_DisableArmFollow_Secondary::InternalConstructor(void *)
-//   0x701c90  public: static void __cdecl UDishonoredCamera_DisableArmOffset::InternalConstructor(void *)
-//   0x701cb0  public: static void __cdecl UDisCamera_DisableArmOffset_Secondary::InternalConstructor(void *)
-//   0x701cd0  public: static void __cdecl UDishonoredCamera_Lean::InternalConstructor(void *)
-//   0x70ad70  public: static void __cdecl UDishonoredCamera_BumpSmoother::InternalConstructor(void *)
-//   0x7155f0  protected: virtual __thiscall UDisCamera_Rumble::~UDisCamera_Rumble(void)
-//   0x715690  public: virtual class UObject * __thiscall ADishonoredPlayerCamera::GetUObjectInterfaceArkSettingsListenerInterface(void)
-//   0x7156a0  protected: virtual __thiscall ADishonoredPlayerCamera::~ADishonoredPlayerCamera(void)
-//   0x717c70  public: static void __cdecl UDisCamera_Rumble::InternalConstructor(void *)
-//   0x717c90  public: static void __cdecl ADishonoredPlayerCamera::InternalConstructor(void *)
-//   0x725850  protected: virtual __thiscall UDisCamera_Aim::~UDisCamera_Aim(void)
-//   0x7258e0  protected: virtual __thiscall UDisCamera_FollowProjectile::~UDisCamera_FollowProjectile(void)
-//   0x725970  protected: virtual __thiscall UDisCamera_Look::~UDisCamera_Look(void)
-//   0x725a00  protected: virtual __thiscall UDisCamera_UnpossessDeath::~UDisCamera_UnpossessDeath(void)
-//   0x725a90  protected: virtual __thiscall UDishonoredCamera_AnimDriven::~UDishonoredCamera_AnimDriven(void)
-//   0x725b20  protected: virtual __thiscall UDishonoredCamera_PhysicalReact::~UDishonoredCamera_PhysicalReact(void)
-//   0x725bb0  protected: virtual __thiscall UDishonoredCamera_PlayerControl::~UDishonoredCamera_PlayerControl(void)
-//   0x729420  public: static void __cdecl UDisCamera_Aim::InternalConstructor(void *)
-//   0x729440  public: static void __cdecl UDisCamera_FollowProjectile::InternalConstructor(void *)
-//   0x729460  public: static void __cdecl UDisCamera_Look::InternalConstructor(void *)
-//   0x729480  protected: virtual __thiscall UDisCamera_Possess::~UDisCamera_Possess(void)
-//   0x729510  public: static void __cdecl UDisCamera_UnpossessDeath::InternalConstructor(void *)
-//   0x729530  public: static void __cdecl UDishonoredCamera_AnimDriven::InternalConstructor(void *)
-//   0x729550  protected: virtual __thiscall UDishonoredCamera_HitReact::~UDishonoredCamera_HitReact(void)
-//   0x7295e0  public: static void __cdecl UDishonoredCamera_PlayerControl::InternalConstructor(void *)
-//   0x72c840  public: static void __cdecl UDisCamera_Possess::InternalConstructor(void *)
-//   0x72c870  public: static void __cdecl UDishonoredCamera_PhysicalReact::InternalConstructor(void *)
-//   0x72c890  public: static void __cdecl UDishonoredCamera_HitReact::InternalConstructor(void *)
-//   0x7be4a0  protected: virtual __thiscall ADisDebugNPCCamera::~ADisDebugNPCCamera(void)
-//   0x7be7a0  public: static void __cdecl ADisDebugNPCCamera::InternalConstructor(void *)
-//   0xba4d50  _dynamic_initializer_for__ADishonoredPlayerCameraexecApplyDebugCam_NativeTemp__
+/*===========================================================================
+    DishonoredGameCameraClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_CAMERA_ENUMS
+#define INCLUDED_DISHONOREDGAME_CAMERA_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_CAMERA_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_CAMERA_CLASSES
+#define INCLUDED_DISHONOREDGAME_CAMERA_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisDebugNPCCamera: retail sizeof 1040, reflected span 1040..1040 (2012 PDB sizeof 1040)
+class ADisDebugNPCCamera : public ACamera
+{
+public:
+    //## BEGIN PROPS DisDebugNPCCamera
+    //## END PROPS DisDebugNPCCamera
+
+    DECLARE_CLASS(ADisDebugNPCCamera,ACamera,0|CLASS_Transient,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredPlayerCamera.DisCamFOVTarget: retail SDK size 12 (2012 PDB 12)
+struct FDisCamFOVTarget
+{
+    FLOAT m_fTarget;
+    BITFIELD m_bLockArms:1;
+    FLOAT m_fBlendSpeed;
+
+    /** Constructors */
+    FDisCamFOVTarget() {}
+    FDisCamFOVTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCamFOVTarget));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerCamera.DisCamPostProcessEntry: retail SDK size 144 (2012 PDB 144)
+struct FDisCamPostProcessEntry
+{
+    FArkPpConfig m_PpSettings;
+    FLOAT m_fBlendSpeed;
+    FLOAT m_fTargetWeight;
+    FLOAT m_fCurWeight;
+
+    /** Constructors */
+    FDisCamPostProcessEntry() {}
+    FDisCamPostProcessEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCamPostProcessEntry));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerCamera.DisCamPostProcessTarget: retail SDK size 1152 (2012 PDB 1152)
+struct FDisCamPostProcessTarget
+{
+    FDisCamPostProcessEntry m_Entries[8];
+
+    /** Constructors */
+    FDisCamPostProcessTarget() {}
+    FDisCamPostProcessTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCamPostProcessTarget));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerCamera.DisRainImpact: retail SDK size 24 (2012 PDB 24)
+struct FDisRainImpact
+{
+    FVector m_Position;
+    FVector m_Direction;
+
+    /** Constructors */
+    FDisRainImpact() {}
+    FDisRainImpact(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRainImpact));
+    }
+};
+
+// DishonoredGame.DishonoredCameraInfluenceGroup.DishonoredVTSettings: retail SDK size 84 (2012 PDB 84)
+struct FDishonoredVTSettings
+{
+    FLOAT m_ArmFollowWeight;
+    FLOAT m_ArmFollowWeight_Rot_Primary;
+    FLOAT m_ArmFollowWeight_Rot_Secondary;
+    FRotator m_ArmFollowOffset_Rot_Primary;
+    FRotator m_ArmFollowOffset_Rot_Secondary;
+    FLOAT m_ArmFollowOffset_Weight_Primary;
+    FLOAT m_ArmFollowOffset_Weight_Secondary;
+    FLOAT m_MeshSpecificFOVWeight;
+    FRotator m_ControllerOffset_Rot;
+    FRotator m_NonAdditive_Rot;
+    FVector m_NonAdditive_Pos;
+
+    /** Constructors */
+    FDishonoredVTSettings() {}
+    FDishonoredVTSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredVTSettings));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerCamera: retail sizeof 1392, reflected span 1040..1384 (2012 PDB sizeof 1392)
+class ADishonoredPlayerCamera : public ACamera, public IArkSettingsListenerInterface
+{
+public:
+    //## BEGIN PROPS DishonoredPlayerCamera
+    FDishonoredVTSettings m_DishonoredVTSettings;
+    BYTE m_InfluenceGroups[12];  // DISHONORED(layout): retail SDK gap @1128: ArrayProperty m_InfluenceGroups (script_classes_2013) the dump did not type
+    class UDishonoredCamera_PhysicalReact* m_pPhysicalReact_Influence;
+    class UDishonoredCamera_HitReact* m_pHitReact_Influence;
+    class UDishonoredCamera_DisableArmFollow* m_pDisableArmFollow_Primary_Influence;
+    class UDishonoredCamera_DisableArmOffset* m_pDisableArmOffset_Primary_Influence;
+    class UDishonoredCamera_DisableArmFollow* m_pDisableArmFollow_Secondary_Influence;
+    class UDishonoredCamera_DisableArmOffset* m_pDisableArmOffset_Secondary_Influence;
+    class UDishonoredCamera_BumpSmoother* m_pBumpSmoother_Influence;
+    class UDishonoredCamera_Lean* m_pLean_Influence;
+    class UDisCamera_Look* m_pLook_Influence;
+    class UDisCamera_Aim* m_pAim_Influence;
+    class UDishonoredCamera_PlayerControl* m_pPlayerControl_Influence;
+    class UDishonoredCamera_AnimDriven* m_pAnimDrive_Influence;
+    class UDisCamera_UnpossessDeath* m_pUnpossessDeath_Influence;
+    class UDishonoredCamera_Shake* m_pShake_Influence;
+    class UDisCamera_Rumble* m_pRumble_Influence;
+    class UDishonoredCamera_Recoil* m_pRecoil_Influence;
+    class UDishonoredCamera_CrouchMantleOffset* m_pCrouchMantleOffset_Influence;
+    class UDisCamera_StepUpMantleOffset* m_pStepUpMantleOffset_Influence;
+    class UDisCamera_Possess* m_pPossess_Influence;
+    BITFIELD m_bTeleported:1;
+    BITFIELD m_bCollisionEnabled:1;
+    BITFIELD m_bSmoothingSuddenCollision:1;
+    BITFIELD m_bDebugDrawRainBox:1;
+    BITFIELD m_bWasUncovered:1;
+    BITFIELD m_bAllowCamSmoothingForCollisionPop:1;
+    INT m_TickTag;
+    INT m_PassCount;
+    FLOAT m_fCurCollisionRadius;
+    FLOAT m_fCurCollisionHeight;
+    BYTE m_CurCollisionStatus;
+    FLOAT m_fLastCollisionDifFromNonAdditive;
+    class AEmitter* m_pRainBoxEmitter;
+    FVector m_RainBoxExtent;
+    TArrayNoInit<FDisRainImpact> m_RainImpacts;
+    INT m_CurrentRainImpactIndex;
+    INT m_LastNumRequestedRainImpacts;
+    INT m_NumRequestedRainImpacts;
+    INT m_NumAvailableRainImpacts;
+    INT m_NumRainDrops;
+    FLOAT m_fRainImpactsMinDist;
+    FLOAT m_fRainImpactsMaxDist;
+    FVector m_RainDirection;
+    FLOAT m_fRainSpawnKillRate;
+    TArrayNoInit<FDisCamFOVTarget> m_FOVTargets;
+    TArrayNoInit<FDisCamPostProcessTarget> m_PostProcessTargets;
+    FLOAT m_fCurFOV;
+    FLOAT m_fCurFOV_Arms;
+    FLOAT m_BobAmount;
+    FLOAT m_RollAmount;
+    FLOAT m_fReactionWeight;
+    FLOAT m_fDefaultFOVBlendSpeed;
+    FLOAT m_fTopCameraHeight;
+    FLOAT m_fCamCollisionSmoothSpeed;
+    FLOAT m_fCamCollisionSmoothMinDifSize;
+    FLOAT m_fCamCollisionLargestUnsmoothedPop;
+    FLOAT m_fDefaultFOVSettings;
+    //## END PROPS DishonoredPlayerCamera
+
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredPlayerCamera::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_FUNCTION(execApplyDebugCam_Native);
+    DECLARE_CLASS(ADishonoredPlayerCamera,ACamera,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Camera");}
+};
+
+// DishonoredGame.DishonoredCamera_BumpSmoother.DisBumpDetectInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisBumpDetectInfo
+{
+    FLOAT m_fLastSampleHeight;
+    FVector m_LastSample_Full;
+    BITFIELD m_bFirstHeight:1;
+
+    /** Constructors */
+    FDisBumpDetectInfo() {}
+    FDisBumpDetectInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBumpDetectInfo));
+    }
+};
+
+// DishonoredGame.DisCamera_Rumble.DisCameraActiveRumble: retail SDK size 68 (2012 PDB 68)
+struct FDisCameraActiveRumble
+{
+    FDisCameraSustainedRumble m_Rumble;
+    FLOAT m_fElapsedTime;
+    FLOAT m_fRandomOffset;
+
+    /** Constructors */
+    FDisCameraActiveRumble() {}
+    FDisCameraActiveRumble(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCameraActiveRumble));
+    }
+};
+
+// DishonoredGame.DisCamera_FollowProjectile.DisKillCamSettings: retail SDK size 52 (2012 PDB 52)
+struct FDisKillCamSettings
+{
+    FLOAT m_fWitnessKillTime;
+    FVector m_Offset;
+    FRotator m_Rotation;
+    FLOAT m_fFollowFOV;
+    FLOAT m_fFollowTimeScale;
+    FLOAT m_fEndFollowTimeScale;
+    FLOAT m_fTimeOut;
+    FLOAT m_fSlowDownDistance;
+    FLOAT m_fCameraStopDistance;
+
+    /** Constructors */
+    FDisKillCamSettings() {}
+    FDisKillCamSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisKillCamSettings));
+    }
+};
+
+// DishonoredGame.DishonoredCamera_PhysicalReact.DisSpringConstant: retail SDK size 16 (2012 PDB 16)
+struct FDisSpringConstant
+{
+    FLOAT m_Springiness;
+    FLOAT m_Damping;
+    BITFIELD m_bCapVelocity:1;
+    FLOAT m_fMaxVelocity;
+
+    /** Constructors */
+    FDisSpringConstant() {}
+    FDisSpringConstant(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpringConstant));
+    }
+};
+
+// DishonoredGame.DishonoredCamera_PhysicalReact.DisSpringPoint: retail SDK size 60 (2012 PDB 60)
+struct FDisSpringPoint
+{
+    FVector m_Pos;
+    FVector m_Velocity;
+    FVector m_Pos_Previous;
+    FVector m_Velocity_Previous;
+    FVector m_BoundPos;
+
+    /** Constructors */
+    FDisSpringPoint() {}
+    FDisSpringPoint(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpringPoint));
+    }
+};
+
+// DishonoredGame.DishonoredCameraInfluenceGroup.DishonoredViewTarget: retail SDK size 124 (2012 PDB 124)
+struct FDishonoredViewTarget
+{
+    FTViewTarget m_VT;
+    FDishonoredVTSettings m_DishonoredSettings;
+
+    /** Constructors */
+    FDishonoredViewTarget() {}
+    FDishonoredViewTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredViewTarget));
+    }
+};
+
+// DishonoredGame.DishonoredCameraInfluence: retail sizeof 92, reflected span 56..92 (2012 PDB sizeof 92)
+class UDishonoredCameraInfluence : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredCameraInfluence
+    class ADishonoredPlayerCamera* m_pOwningCam;
+    FLOAT m_Weight;
+    FLOAT m_TargetWeight;
+    BITFIELD m_bActive:1;
+    BITFIELD m_bIsSleeping:1;
+    BITFIELD m_bWaitToBlendOneFrame:1;
+    BITFIELD m_bUseFixedTimeStep:1;
+    BITFIELD m_bHandleCameraCollision:1;
+    FLOAT m_fAccumulatedDelta;
+    FLOAT m_fCurFixedTimeStep;
+    FLOAT m_TransitionSpeed;
+    FLOAT m_fDefaultWeight;
+    FLOAT m_fFixedTimeStep;
+    //## END PROPS DishonoredCameraInfluence
+
+    DECLARE_CLASS(UDishonoredCameraInfluence,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Camera");}
+};
+
+// DishonoredGame.DisCamera_Aim: retail sizeof 96, reflected span 92..96 (2012 PDB sizeof 96)
+class UDisCamera_Aim : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_Aim
+    FLOAT m_fAmplitude;
+    //## END PROPS DisCamera_Aim
+
+    DECLARE_CLASS(UDisCamera_Aim,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_DisableArmFollow: retail sizeof 96, reflected span 92..96 (2012 PDB sizeof 96)
+class UDishonoredCamera_DisableArmFollow : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_DisableArmFollow
+    BITFIELD m_bIsSecondaryWeight:1;
+    //## END PROPS DishonoredCamera_DisableArmFollow
+
+    DECLARE_CLASS(UDishonoredCamera_DisableArmFollow,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_DisableArmFollow_Secondary: retail sizeof 96, reflected span 96..96 (2012 PDB sizeof 96)
+class UDisCamera_DisableArmFollow_Secondary : public UDishonoredCamera_DisableArmFollow
+{
+public:
+    //## BEGIN PROPS DisCamera_DisableArmFollow_Secondary
+    //## END PROPS DisCamera_DisableArmFollow_Secondary
+
+    DECLARE_CLASS(UDisCamera_DisableArmFollow_Secondary,UDishonoredCamera_DisableArmFollow,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_DisableArmOffset: retail sizeof 96, reflected span 92..96 (2012 PDB sizeof 96)
+class UDishonoredCamera_DisableArmOffset : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_DisableArmOffset
+    BITFIELD m_bIsSecondaryWeight:1;
+    //## END PROPS DishonoredCamera_DisableArmOffset
+
+    DECLARE_CLASS(UDishonoredCamera_DisableArmOffset,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_DisableArmOffset_Secondary: retail sizeof 96, reflected span 96..96 (2012 PDB sizeof 96)
+class UDisCamera_DisableArmOffset_Secondary : public UDishonoredCamera_DisableArmOffset
+{
+public:
+    //## BEGIN PROPS DisCamera_DisableArmOffset_Secondary
+    //## END PROPS DisCamera_DisableArmOffset_Secondary
+
+    DECLARE_CLASS(UDisCamera_DisableArmOffset_Secondary,UDishonoredCamera_DisableArmOffset,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_FollowProjectile: retail sizeof 200, reflected span 92..200 (2012 PDB sizeof 200)
+class UDisCamera_FollowProjectile : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_FollowProjectile
+    class ADisProjectile* m_pProjectile;
+    FLOAT m_fProjectileSpeed;
+    class ADishonoredNPCPawn* m_pTarget;
+    FName m_TargetBoneName;
+    BYTE m_eState;
+    FLOAT m_fStartTime;
+    FLOAT m_fElapsedTime;
+    FVector m_vVelocity;
+    FLOAT m_fSlowDownDistance;
+    FDisKillCamSettings m_KillCamSettings;
+    FLOAT m_fOldReactionWeight;
+    FLOAT m_OldBobAmount;
+    //## END PROPS DisCamera_FollowProjectile
+
+    DECLARE_CLASS(UDisCamera_FollowProjectile,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_Look: retail sizeof 124, reflected span 92..124 (2012 PDB sizeof 124)
+class UDisCamera_Look : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_Look
+    FVector m_Position;
+    FRotator m_Rotation;
+    INT m_HorizontalVisionAngle;
+    INT m_VerticalVisionAngle;
+    //## END PROPS DisCamera_Look
+
+    DECLARE_CLASS(UDisCamera_Look,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_Possess: retail sizeof 128, reflected span 92..128 (2012 PDB sizeof 128)
+class UDisCamera_Possess : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_Possess
+    BYTE m_PossessCameraState;
+    FLOAT m_fTargetFOV;
+    FLOAT m_fCurrentFOV;
+    FVector m_InitialCameraPos;
+    TScriptInterface<class IDisPossessableInterface> m_pPossessionTarget;
+    FPointer m_pTweaks;
+    //## END PROPS DisCamera_Possess
+
+    DECLARE_CLASS(UDisCamera_Possess,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_Rumble: retail sizeof 104, reflected span 92..104 (2012 PDB sizeof 104)
+class UDisCamera_Rumble : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_Rumble
+    TArrayNoInit<FDisCameraActiveRumble> m_ActiveRumbles;
+    //## END PROPS DisCamera_Rumble
+
+    DECLARE_CLASS(UDisCamera_Rumble,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_StepUpMantleOffset: retail sizeof 104, reflected span 92..104 (2012 PDB sizeof 104)
+class UDisCamera_StepUpMantleOffset : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_StepUpMantleOffset
+    FVector m_StepUpStartPos;
+    //## END PROPS DisCamera_StepUpMantleOffset
+
+    DECLARE_CLASS(UDisCamera_StepUpMantleOffset,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisCamera_UnpossessDeath: retail sizeof 104, reflected span 92..104 (2012 PDB sizeof 104)
+class UDisCamera_UnpossessDeath : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DisCamera_UnpossessDeath
+    FVector m_DeathCamLoc;
+    //## END PROPS DisCamera_UnpossessDeath
+
+    DECLARE_CLASS(UDisCamera_UnpossessDeath,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCameraInfluenceGroup: retail sizeof 80, reflected span 56..80 (2012 PDB sizeof 80)
+class UDishonoredCameraInfluenceGroup : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredCameraInfluenceGroup
+    TArrayNoInit<class UDishonoredCameraInfluence*> m_Influences;
+    BYTE m_GroupType;
+    FLOAT m_Weight;
+    INT m_iDominantInfluence;
+    //## END PROPS DishonoredCameraInfluenceGroup
+
+    DECLARE_CLASS(UDishonoredCameraInfluenceGroup,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Camera");}
+};
+
+// DishonoredGame.DishonoredCamera_AnimDriven: retail sizeof 180, reflected span 92..180 (2012 PDB sizeof 180)
+class UDishonoredCamera_AnimDriven : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_AnimDriven
+    FRotator m_Debug_POV_Rotator;
+    FVector m_Debug_POV_Location;
+    INT m_CurPlayerControlledYaw;
+    INT m_CurPlayerControlledPitch;
+    INT m_CurPlayerControlledYaw_Blended;
+    INT m_CurPlayerControlledPitch_Blended;
+    INT m_CurPlayerControlledYaw_SoftenThreshold;
+    INT m_CurPlayerControlledPitch_SoftenThreshold;
+    BYTE m_SoftenState_Pitch;
+    BYTE m_SoftenState_Yaw;
+    INT m_CurMaxPlayerControlledYaw_Neg;
+    INT m_CurMaxPlayerControlledPitch_Neg;
+    INT m_CurMaxPlayerControlledYaw_Pos;
+    INT m_CurMaxPlayerControlledPitch_Pos;
+    INT m_CurMaxPlayerControlledYaw_Neg_Target;
+    INT m_CurMaxPlayerControlledPitch_Neg_Target;
+    INT m_CurMaxPlayerControlledYaw_Pos_Target;
+    INT m_CurMaxPlayerControlledPitch_Pos_Target;
+    INT m_PlayerControlledLimitFlags;
+    //## END PROPS DishonoredCamera_AnimDriven
+
+    DECLARE_CLASS(UDishonoredCamera_AnimDriven,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_BumpSmoother: retail sizeof 132, reflected span 92..132 (2012 PDB sizeof 132)
+class UDishonoredCamera_BumpSmoother : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_BumpSmoother
+    FDisBumpDetectInfo m_BumpDetectInfo;
+    BITFIELD m_bIsCompensating:1;
+    FLOAT m_fLastInterpolatedHeight;
+    FLOAT m_fDebug_LastOffset;
+    FLOAT m_fSmoothDistance;
+    FLOAT m_fCompensationSpeed;
+    //## END PROPS DishonoredCamera_BumpSmoother
+
+    DECLARE_CLASS(UDishonoredCamera_BumpSmoother,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_CrouchMantleOffset: retail sizeof 104, reflected span 92..104 (2012 PDB sizeof 104)
+class UDishonoredCamera_CrouchMantleOffset : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_CrouchMantleOffset
+    FVector m_StartingOffset;
+    //## END PROPS DishonoredCamera_CrouchMantleOffset
+
+    DECLARE_CLASS(UDishonoredCamera_CrouchMantleOffset,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_PhysicalReact: retail sizeof 268, reflected span 92..268 (2012 PDB sizeof 268)
+class UDishonoredCamera_PhysicalReact : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_PhysicalReact
+    FDisSpringConstant m_StabilityConstants;
+    FDisSpringPoint m_StabilityPoint;
+    FDisSpringConstant m_StrengthConstants;
+    FDisSpringPoint m_StrengthPoint;
+    FLOAT m_ArmBounce_Start;
+    FLOAT m_ArmBounce_End;
+    FLOAT m_ArmBounce;
+    FVector m_CameraPivotOffset;
+    //## END PROPS DishonoredCamera_PhysicalReact
+
+    DECLARE_CLASS(UDishonoredCamera_PhysicalReact,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_HitReact: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDishonoredCamera_HitReact : public UDishonoredCamera_PhysicalReact
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_HitReact
+    //## END PROPS DishonoredCamera_HitReact
+
+    DECLARE_CLASS(UDishonoredCamera_HitReact,UDishonoredCamera_PhysicalReact,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_Lean: retail sizeof 244, reflected span 92..244 (2012 PDB sizeof 244)
+class UDishonoredCamera_Lean : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_Lean
+    FDisSpringPoint m_HeadPoint;
+    FLOAT m_fCurLeanHeight;
+    FLOAT m_fCurLeanAngle;
+    FLOAT m_fCurMaxLeanSoften;
+    BITFIELD m_bApplyLeanSoften:1;
+    BITFIELD m_bGotExternalForce:1;
+    BITFIELD m_bCameraCollided:1;
+    BITFIELD m_bApplyingMaxAngle:1;
+    FVector m_CameraCollideDir;
+    FVector m_CurLeanPivot;
+    FLOAT m_fCurStickAngle_Pitch;
+    FLOAT m_fCurStickAngle_Roll;
+    FDisSpringConstant m_LeanConstants;
+    FLOAT m_fLeanHeightPct;
+    FLOAT m_fMaxLeanAngle;
+    FLOAT m_fMaxLeanAngle_Crouched;
+    FLOAT m_fMaxLeanSoftenAngle;
+    FLOAT m_fMaxLeanSoftenSpeed;
+    FLOAT m_fCameraTiltPercent;
+    FLOAT m_fLeanCamCollisionHeightRatio;
+    //## END PROPS DishonoredCamera_Lean
+
+    DECLARE_CLASS(UDishonoredCamera_Lean,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_PlayerControl: retail sizeof 140, reflected span 92..140 (2012 PDB sizeof 140)
+class UDishonoredCamera_PlayerControl : public UDishonoredCameraInfluence
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_PlayerControl
+    BITFIELD m_bResetControllerRot:1;
+    BITFIELD m_bGoToTargetOnControllerReset:1;
+    BITFIELD m_bFirstRotation:1;
+    FRotator m_TargetOnControllerReset;
+    FRotator m_Debug_POV_Rotator;
+    FVector m_Debug_POV_Location;
+    FLOAT m_fReady_CamOffset;
+    FLOAT m_fOffset_TransitionSpeed;
+    //## END PROPS DishonoredCamera_PlayerControl
+
+    DECLARE_CLASS(UDishonoredCamera_PlayerControl,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_Recoil: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDishonoredCamera_Recoil : public UDishonoredCamera_PhysicalReact
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_Recoil
+    //## END PROPS DishonoredCamera_Recoil
+
+    DECLARE_CLASS(UDishonoredCamera_Recoil,UDishonoredCamera_PhysicalReact,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCamera_Shake: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDishonoredCamera_Shake : public UDishonoredCamera_PhysicalReact
+{
+public:
+    //## BEGIN PROPS DishonoredCamera_Shake
+    //## END PROPS DishonoredCamera_Shake
+
+    DECLARE_CLASS(UDishonoredCamera_Shake,UDishonoredCamera_PhysicalReact,0|CLASS_Config,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_CAMERA_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(ADishonoredPlayerCamera,-1,execApplyDebugCam_Native);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_CAMERA_NATIVE_DEFS
+#define DISHONOREDGAME_CAMERA_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_CAMERA \
+	ADisDebugNPCCamera::StaticClass(); \
+	ADishonoredPlayerCamera::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredPlayerCamera"), GDishonoredGameADishonoredPlayerCameraNatives); \
+	UDishonoredCameraInfluence::StaticClass(); \
+	UDisCamera_Aim::StaticClass(); \
+	UDishonoredCamera_DisableArmFollow::StaticClass(); \
+	UDisCamera_DisableArmFollow_Secondary::StaticClass(); \
+	UDishonoredCamera_DisableArmOffset::StaticClass(); \
+	UDisCamera_DisableArmOffset_Secondary::StaticClass(); \
+	UDisCamera_FollowProjectile::StaticClass(); \
+	UDisCamera_Look::StaticClass(); \
+	UDisCamera_Possess::StaticClass(); \
+	UDisCamera_Rumble::StaticClass(); \
+	UDisCamera_StepUpMantleOffset::StaticClass(); \
+	UDisCamera_UnpossessDeath::StaticClass(); \
+	UDishonoredCameraInfluenceGroup::StaticClass(); \
+	UDishonoredCamera_AnimDriven::StaticClass(); \
+	UDishonoredCamera_BumpSmoother::StaticClass(); \
+	UDishonoredCamera_CrouchMantleOffset::StaticClass(); \
+	UDishonoredCamera_PhysicalReact::StaticClass(); \
+	UDishonoredCamera_HitReact::StaticClass(); \
+	UDishonoredCamera_Lean::StaticClass(); \
+	UDishonoredCamera_PlayerControl::StaticClass(); \
+	UDishonoredCamera_Recoil::StaticClass(); \
+	UDishonoredCamera_Shake::StaticClass(); \
+
+#endif // DISHONOREDGAME_CAMERA_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameADishonoredPlayerCameraNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredPlayerCamera, execApplyDebugCam_Native)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_SIZE_NODIE(ADisDebugNPCCamera)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPlayerCamera,DishonoredPlayerCamera,m_DishonoredVTSettings)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPlayerCamera,DishonoredPlayerCamera,m_fDefaultFOVSettings)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredPlayerCamera)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCameraInfluence,DishonoredCameraInfluence,m_pOwningCam)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCameraInfluence,DishonoredCameraInfluence,m_fFixedTimeStep)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCameraInfluence)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_Aim,DisCamera_Aim,m_fAmplitude)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_Aim)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_DisableArmFollow)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_DisableArmFollow_Secondary)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_DisableArmOffset)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_DisableArmOffset_Secondary)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_FollowProjectile,DisCamera_FollowProjectile,m_pProjectile)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_FollowProjectile,DisCamera_FollowProjectile,m_OldBobAmount)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_FollowProjectile)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_Look,DisCamera_Look,m_Position)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_Look,DisCamera_Look,m_VerticalVisionAngle)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_Look)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_Possess,DisCamera_Possess,m_PossessCameraState)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_Possess,DisCamera_Possess,m_pTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_Possess)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_Rumble,DisCamera_Rumble,m_ActiveRumbles)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_Rumble)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_StepUpMantleOffset,DisCamera_StepUpMantleOffset,m_StepUpStartPos)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_StepUpMantleOffset)
+VERIFY_CLASS_OFFSET_NODIE(UDisCamera_UnpossessDeath,DisCamera_UnpossessDeath,m_DeathCamLoc)
+VERIFY_CLASS_SIZE_NODIE(UDisCamera_UnpossessDeath)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCameraInfluenceGroup,DishonoredCameraInfluenceGroup,m_Influences)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCameraInfluenceGroup,DishonoredCameraInfluenceGroup,m_iDominantInfluence)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCameraInfluenceGroup)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_AnimDriven,DishonoredCamera_AnimDriven,m_Debug_POV_Rotator)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_AnimDriven,DishonoredCamera_AnimDriven,m_PlayerControlledLimitFlags)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_AnimDriven)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_BumpSmoother,DishonoredCamera_BumpSmoother,m_BumpDetectInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_BumpSmoother,DishonoredCamera_BumpSmoother,m_fCompensationSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_BumpSmoother)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_CrouchMantleOffset,DishonoredCamera_CrouchMantleOffset,m_StartingOffset)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_CrouchMantleOffset)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_PhysicalReact,DishonoredCamera_PhysicalReact,m_StabilityConstants)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_PhysicalReact,DishonoredCamera_PhysicalReact,m_CameraPivotOffset)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_PhysicalReact)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_HitReact)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_Lean,DishonoredCamera_Lean,m_HeadPoint)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_Lean,DishonoredCamera_Lean,m_fLeanCamCollisionHeightRatio)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_Lean)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_PlayerControl,DishonoredCamera_PlayerControl,m_TargetOnControllerReset)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCamera_PlayerControl,DishonoredCamera_PlayerControl,m_fOffset_TransitionSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_PlayerControl)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_Recoil)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCamera_Shake)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

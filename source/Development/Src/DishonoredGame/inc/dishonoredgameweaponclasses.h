@@ -1,141 +1,1708 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameweaponclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (136):
-//   0x63c860  public: static class UClass * __cdecl UDishonoredWeapon::StaticClass(void)
-//   0x63c880  public: static class UClass * __cdecl UDishonoredWepSword::StaticClass(void)
-//   0x63c8a0  public: static class UClass * __cdecl UDisWepMusicBox::StaticClass(void)
-//   0x63c8c0  public: static class UClass * __cdecl UDisWepThrowingHand::StaticClass(void)
-//   0x63c8e0  public: static class UClass * __cdecl UDisItemContext_NPCAttractSpellCoupDeGrace::StaticClass(void)
-//   0x63c900  public: static class UClass * __cdecl UDisItemContext_NPCPush::StaticClass(void)
-//   0x63c920  public: static class UClass * __cdecl UDisItemContext_NPCAttractSpell::StaticClass(void)
-//   0x63c940  public: static class UClass * __cdecl UDisItemContext_NPCSideStep::StaticClass(void)
-//   0x862b00  protected: virtual __thiscall UDisItemContext_MeleeBlock::~UDisItemContext_MeleeBlock(void)
-//   0x8649a0  protected: virtual __thiscall UDisItemContext_DropAssassinate::~UDisItemContext_DropAssassinate(void)
-//   0x864a40  protected: virtual __thiscall UDisItemContext_MeleeBlockPlayer::~UDisItemContext_MeleeBlockPlayer(void)
-//   0x864ae0  protected: virtual __thiscall UDisItemContext_NPCAttractSpell::~UDisItemContext_NPCAttractSpell(void)
-//   0x864b80  protected: virtual __thiscall UDisItemContext_NPCWhiskeyFire::~UDisItemContext_NPCWhiskeyFire(void)
-//   0x86d0d0  public: static void __cdecl UDisItemContext_DropAssassinate::InternalConstructor(void *)
-//   0x86d100  public: static void __cdecl UDisItemContext_MeleeBlock::InternalConstructor(void *)
-//   0x86d130  public: static void __cdecl UDisItemContext_MeleeBlockPlayer::InternalConstructor(void *)
-//   0x86d160  public: static void __cdecl UDisItemContext_NPCAttractSpell::InternalConstructor(void *)
-//   0x86d190  public: static void __cdecl UDisItemContext_NPCWhiskeyFire::InternalConstructor(void *)
-//   0x87b230  protected: virtual __thiscall UDisItemContext_MeleeAttack::~UDisItemContext_MeleeAttack(void)
-//   0x87b2a0  public: static void __cdecl UDisItemContext_MeleeAttack::InternalConstructor(void *)
-//   0x87b300  protected: virtual __thiscall UDisItemContext_MeleeAttackNPCBase::~UDisItemContext_MeleeAttackNPCBase(void)
-//   0x87b3b0  protected: virtual __thiscall UDisItemContext_AttackNPCTallboyMelee::~UDisItemContext_AttackNPCTallboyMelee(void)
-//   0x87b450  protected: virtual __thiscall UDisItemContext_Minigame::~UDisItemContext_Minigame(void)
-//   0x87b4f0  protected: virtual __thiscall UDisItemContext_NPCAttackLeft180::~UDisItemContext_NPCAttackLeft180(void)
-//   0x87b590  protected: virtual __thiscall UDisItemContext_NPCAttackRight180::~UDisItemContext_NPCAttackRight180(void)
-//   0x87b630  protected: virtual __thiscall UDisItemContext_NPCFatality::~UDisItemContext_NPCFatality(void)
-//   0x87b6d0  protected: virtual __thiscall UDisItemContext_NPCAttackRight90::~UDisItemContext_NPCAttackRight90(void)
-//   0x87b770  protected: virtual __thiscall UDisItemContext_NPCPush::~UDisItemContext_NPCPush(void)
-//   0x87b810  protected: virtual __thiscall UDisItemContext_NPCRatCrushAttempt::~UDisItemContext_NPCRatCrushAttempt(void)
-//   0x87b8b0  protected: virtual __thiscall UDisItemContext_NPCRiposte::~UDisItemContext_NPCRiposte(void)
-//   0x87b950  protected: virtual __thiscall UDisItemContext_NPCStomp::~UDisItemContext_NPCStomp(void)
-//   0x87b9f0  protected: virtual __thiscall UDisItemContext_ParryNPC::~UDisItemContext_ParryNPC(void)
-//   0x87ba80  protected: virtual __thiscall UDisItemContext_MeleeAttackPlayer::~UDisItemContext_MeleeAttackPlayer(void)
-//   0x87bb20  protected: virtual __thiscall UDisItemContext_Finisher::~UDisItemContext_Finisher(void)
-//   0x87bbd0  protected: virtual __thiscall UDisItemContext_Assassinate::~UDisItemContext_Assassinate(void)
-//   0x87be10  protected: virtual __thiscall UDisItemContext_Fatality::~UDisItemContext_Fatality(void)
-//   0x87beb0  protected: virtual __thiscall UDisItemContext_MultiFatality::~UDisItemContext_MultiFatality(void)
-//   0x87d1c0  public: static void __cdecl UDisItemContext_MeleeAttackNPCBase::InternalConstructor(void *)
-//   0x87d1f0  public: static void __cdecl UDisItemContext_AttackNPCTallboyMelee::InternalConstructor(void *)
-//   0x87d220  public: static void __cdecl UDisItemContext_Minigame::InternalConstructor(void *)
-//   0x87d250  public: static void __cdecl UDisItemContext_NPCAttackLeft180::InternalConstructor(void *)
-//   0x87d280  public: static void __cdecl UDisItemContext_NPCAttackRight180::InternalConstructor(void *)
-//   0x87d2b0  public: static void __cdecl UDisItemContext_NPCFatality::InternalConstructor(void *)
-//   0x87d2e0  public: static void __cdecl UDisItemContext_NPCAttackLeft90::InternalConstructor(void *)
-//   0x87d310  public: static void __cdecl UDisItemContext_NPCPush::InternalConstructor(void *)
-//   0x87d340  public: static void __cdecl UDisItemContext_NPCRatCrushAttempt::InternalConstructor(void *)
-//   0x87d370  public: static void __cdecl UDisItemContext_NPCRiposte::InternalConstructor(void *)
-//   0x87d3a0  public: static void __cdecl UDisItemContext_NPCStomp::InternalConstructor(void *)
-//   0x87d3d0  public: static void __cdecl UDisItemContext_ParryNPC::InternalConstructor(void *)
-//   0x87d400  public: static void __cdecl UDisItemContext_MeleeAttackPlayer::InternalConstructor(void *)
-//   0x87d430  public: static void __cdecl UDisItemContext_Finisher::InternalConstructor(void *)
-//   0x87d460  public: static void __cdecl UDisItemContext_Assassinate::InternalConstructor(void *)
-//   0x87d490  public: static void __cdecl UDisItemContext_Fatality::InternalConstructor(void *)
-//   0x87d4c0  public: static void __cdecl UDisItemContext_MultiFatality::InternalConstructor(void *)
-//   0x87e8f0  protected: virtual __thiscall UDisTweaks_MeleeAttack::~UDisTweaks_MeleeAttack(void)
-//   0x87e990  protected: virtual __thiscall UDisTweaks_MeleeAttackPlayer::~UDisTweaks_MeleeAttackPlayer(void)
-//   0x87eaa0  protected: virtual __thiscall UDisTweaks_Finisher::~UDisTweaks_Finisher(void)
-//   0x87eba0  protected: virtual __thiscall UDisTweaks_Fatality::~UDisTweaks_Fatality(void)
-//   0x87ecc0  protected: virtual __thiscall UDisTweaks_Assassinate::~UDisTweaks_Assassinate(void)
-//   0x87ede0  protected: virtual __thiscall UDisTweaks_DropAssassinate::~UDisTweaks_DropAssassinate(void)
-//   0x87ee90  protected: virtual __thiscall UDisTweaks_MeleeAttackNPCBase::~UDisTweaks_MeleeAttackNPCBase(void)
-//   0x87ef50  protected: virtual __thiscall UDisTweaks_Minigame::~UDisTweaks_Minigame(void)
-//   0x87efe0  protected: virtual __thiscall UDisTweaks_NPCAttackRight90::~UDisTweaks_NPCAttackRight90(void)
-//   0x87f070  protected: virtual __thiscall UDisTweaks_NPCRatCrushAttempt::~UDisTweaks_NPCRatCrushAttempt(void)
-//   0x87f100  protected: virtual __thiscall UDisTweaks_NPCRiposte::~UDisTweaks_NPCRiposte(void)
-//   0x87f1c0  protected: virtual __thiscall UDisTweaks_ParryNPC::~UDisTweaks_ParryNPC(void)
-//   0x87f250  protected: virtual __thiscall UDisTweaks_MultiFatality::~UDisTweaks_MultiFatality(void)
-//   0x87f2f0  protected: virtual __thiscall UDisTweaks_MeleeBlockPlayer::~UDisTweaks_MeleeBlockPlayer(void)
-//   0x87f3a0  protected: virtual __thiscall UDisTweaks_NPCAttractSpell::~UDisTweaks_NPCAttractSpell(void)
-//   0x87f430  protected: virtual __thiscall UDisTweaks_NPCWhiskeyFire::~UDisTweaks_NPCWhiskeyFire(void)
-//   0x87f4c0  protected: virtual __thiscall UDisTweaks_UseSpringRazor::~UDisTweaks_UseSpringRazor(void)
-//   0x880280  public: static void __cdecl UDisTweaks_MeleeAttack::InternalConstructor(void *)
-//   0x8802a0  public: static void __cdecl UDisTweaks_MeleeAttackPlayer::InternalConstructor(void *)
-//   0x8802c0  public: static void __cdecl UDisTweaks_Finisher::InternalConstructor(void *)
-//   0x8802e0  public: static void __cdecl UDisTweaks_Fatality::InternalConstructor(void *)
-//   0x880300  public: static void __cdecl UDisTweaks_Assassinate::InternalConstructor(void *)
-//   0x880320  public: static void __cdecl UDisTweaks_DropAssassinate::InternalConstructor(void *)
-//   0x880340  public: static void __cdecl UDisTweaks_MeleeAttackNPCBase::InternalConstructor(void *)
-//   0x880360  public: static void __cdecl UDisTweaks_Minigame::InternalConstructor(void *)
-//   0x880380  public: static void __cdecl UDisTweaks_NPCAttractSpellCoupDeGrace::InternalConstructor(void *)
-//   0x8803a0  public: static void __cdecl UDisTweaks_NPCRatCrushAttempt::InternalConstructor(void *)
-//   0x8803c0  public: static void __cdecl UDisTweaks_NPCRiposte::InternalConstructor(void *)
-//   0x8803e0  public: static void __cdecl UDisTweaks_ParryNPC::InternalConstructor(void *)
-//   0x880400  public: static void __cdecl UDisTweaks_MultiFatality::InternalConstructor(void *)
-//   0x880420  public: static void __cdecl UDisTweaks_MeleeBlockPlayer::InternalConstructor(void *)
-//   0x880440  public: static void __cdecl UDisTweaks_NPCAttractSpell::InternalConstructor(void *)
-//   0x880460  public: static void __cdecl UDisTweaks_NPCWhiskeyFire::InternalConstructor(void *)
-//   0x880480  public: static void __cdecl UDisTweaks_UseSpringRazor::InternalConstructor(void *)
-//   0x888790  protected: virtual __thiscall UDisItemContext_NPCBackStep::~UDisItemContext_NPCBackStep(void)
-//   0x888820  protected: virtual __thiscall UDisItemContext_NPCSideStep::~UDisItemContext_NPCSideStep(void)
-//   0x8888b0  protected: virtual __thiscall UDisItemContext_NPCTaunt::~UDisItemContext_NPCTaunt(void)
-//   0x888940  protected: virtual __thiscall UDisItemContext_NPCTune::~UDisItemContext_NPCTune(void)
-//   0x888a30  protected: virtual __thiscall UDisItemContext_NPCTune_Combat::~UDisItemContext_NPCTune_Combat(void)
-//   0x888ac0  protected: virtual __thiscall UDisItemContext_NPCTune_Protection::~UDisItemContext_NPCTune_Protection(void)
-//   0x88bb90  public: static void __cdecl UDisItemContext_NPCBackStep::InternalConstructor(void *)
-//   0x88bbc0  public: static void __cdecl UDisItemContext_NPCSideStep::InternalConstructor(void *)
-//   0x88bbf0  public: static void __cdecl UDisItemContext_NPCTaunt::InternalConstructor(void *)
-//   0x88bc20  public: static void __cdecl UDisItemContext_NPCTune::InternalConstructor(void *)
-//   0x88bc50  public: static void __cdecl UDisItemContext_NPCTune_Combat::InternalConstructor(void *)
-//   0x88bc70  public: static void __cdecl UDisItemContext_NPCTune_Protection::InternalConstructor(void *)
-//   0x894c90  protected: virtual __thiscall UDisItemContext_NPCTeleportSpell::~UDisItemContext_NPCTeleportSpell(void)
-//   0x896ea0  protected: virtual __thiscall UDisItemContext_WeeperGrab::~UDisItemContext_WeeperGrab(void)
-//   0x896f40  protected: virtual __thiscall UDisItemContext_NPCAttackUnder::~UDisItemContext_NPCAttackUnder(void)
-//   0x896fe0  protected: virtual __thiscall UDisItemContext_NPCAttractSpellCoupDeGrace::~UDisItemContext_NPCAttractSpellCoupDeGrace(void)
-//   0x897070  public: static void __cdecl UDisItemContext_NPCTeleportSpell::InternalConstructor(void *)
-//   0x898d10  public: static void __cdecl UDisItemContext_WeeperGrab::InternalConstructor(void *)
-//   0x898d40  public: static void __cdecl UDisItemContext_NPCAttackUnder::InternalConstructor(void *)
-//   0x898d70  public: static void __cdecl UDisItemContext_NPCAttractSpellCoupDeGrace::InternalConstructor(void *)
-//   0x89acf0  protected: virtual __thiscall UDisTweaks_WepSwordOfAssassin::~UDisTweaks_WepSwordOfAssassin(void)
-//   0x89ad80  protected: virtual __thiscall UDisTweaks_WeeperGrab::~UDisTweaks_WeeperGrab(void)
-//   0x89ae10  protected: virtual __thiscall UDisTweaks_NPCBackStep::~UDisTweaks_NPCBackStep(void)
-//   0x89aea0  protected: virtual __thiscall UDisTweaks_NPCTaunt::~UDisTweaks_NPCTaunt(void)
-//   0x89af30  protected: virtual __thiscall UDisTweaks_NPCTeleportSpell::~UDisTweaks_NPCTeleportSpell(void)
-//   0x89afe0  protected: virtual __thiscall UDisTweaks_NPCTune_Combat::~UDisTweaks_NPCTune_Combat(void)
-//   0x89bf20  protected: virtual __thiscall UDisTweaks_WepMusicBox::~UDisTweaks_WepMusicBox(void)
-//   0x89c6c0  public: static void __cdecl UDisTweaks_WepSwordOfAssassin::InternalConstructor(void *)
-//   0x89c6e0  public: static void __cdecl UDisTweaks_WeeperGrab::InternalConstructor(void *)
-//   0x89c700  public: static void __cdecl UDisTweaks_NPCBackStep::InternalConstructor(void *)
-//   0x89c720  public: static void __cdecl UDisTweaks_NPCTaunt::InternalConstructor(void *)
-//   0x89c740  public: static void __cdecl UDisTweaks_NPCTeleportSpell::InternalConstructor(void *)
-//   0x89c760  public: static void __cdecl UDisTweaks_NPCTune_Combat::InternalConstructor(void *)
-//   0x89d120  public: static void __cdecl UDisTweaks_WepThrowingHand::InternalConstructor(void *)
-//   0x8ab000  protected: virtual __thiscall UDishonoredWeapon::~UDishonoredWeapon(void)
-//   0x8ab0d0  protected: virtual __thiscall UDisWepMelee::~UDisWepMelee(void)
-//   0x8ab1d0  protected: virtual __thiscall UDishonoredWepSword::~UDishonoredWepSword(void)
-//   0x8ab2a0  protected: virtual __thiscall UDisWepMusicAmp::~UDisWepMusicAmp(void)
-//   0x8ab380  protected: virtual __thiscall UDisWepMusicBox::~UDisWepMusicBox(void)
-//   0x8ab450  protected: virtual __thiscall UDisWepThrowingHand::~UDisWepThrowingHand(void)
-//   0x8ab520  protected: virtual __thiscall UDisWepWhiskeyBottle::~UDisWepWhiskeyBottle(void)
-//   0x8ac540  public: static void __cdecl UDishonoredWeapon::InternalConstructor(void *)
-//   0x8ac590  public: static void __cdecl UDisWepMelee::InternalConstructor(void *)
-//   0x8ac5e0  public: static void __cdecl UDishonoredWepSword::InternalConstructor(void *)
-//   0x8ac630  public: static void __cdecl UDisWepMusicAmp::InternalConstructor(void *)
-//   0x8ac680  public: static void __cdecl UDisWepMusicBox::InternalConstructor(void *)
-//   0x8ac6d0  public: static void __cdecl UDisWepThrowingHand::InternalConstructor(void *)
-//   0x8ac720  public: static void __cdecl UDisWepWhiskeyBottle::InternalConstructor(void *)
+/*===========================================================================
+    DishonoredGameWeaponClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalEnumsClasses.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#include "DishonoredGameClasses.h"
+#include "DishonoredGameItemClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_WEAPON_ENUMS
+#define INCLUDED_DISHONOREDGAME_WEAPON_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_WEAPON_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_WEAPON_CLASSES
+#define INCLUDED_DISHONOREDGAME_WEAPON_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisTweaks_Assassinate.DisAssassAware: retail SDK size 4 (2012 PDB 4)
+struct FDisAssassAware
+{
+    BITFIELD m_bAssassinate:1;
+
+    /** Constructors */
+    FDisAssassAware() {}
+    FDisAssassAware(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAssassAware));
+    }
+};
+
+// DishonoredGame.DisTweaks_Assassinate.DisAssassinateMoveSet: retail SDK size 3036 (2012 PDB 3036)
+struct FDisAssassinateMoveSet
+{
+    TArrayNoInit<FDisDirectionConstraint> m_DirectionConstraints;
+    TArrayNoInit<FDisDirectionConstraint> m_DirectionConstraints_Special;
+    FDisItemAction m_Generic;
+    FItemLinkedAction m_Front;
+    FItemLinkedAction m_Back;
+    FItemLinkedAction m_Left;
+    FItemLinkedAction m_Right;
+    FItemLinkedAction m_Front_Fast;
+    FItemLinkedAction m_Back_Fast;
+    FItemLinkedAction m_Left_Fast;
+    FItemLinkedAction m_Right_Fast;
+    FItemLinkedAction m_Front_BendTimeFrozen_Aware;
+    FItemLinkedAction m_Back_BendTimeFrozen_Aware;
+    FItemLinkedAction m_Left_BendTimeFrozen_Aware;
+    FItemLinkedAction m_Right_BendTimeFrozen_Aware;
+    FItemLinkedAction m_Back_Special;
+    FItemLinkedAction m_Front_Special[8];
+    BITFIELD m_bForceGenericActionWhenFalling:1;
+    BITFIELD m_bDisableAutoCorpseCarry:1;
+
+    /** Constructors */
+    FDisAssassinateMoveSet() {}
+    FDisAssassinateMoveSet(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAssassinateMoveSet));
+    }
+};
+
+// DishonoredGame.DisItemContext_MeleeAttack.DisDeferredVersusContact: retail SDK size 8 (2012 PDB 8)
+struct FDisDeferredVersusContact
+{
+    class UClass* m_pOtherContactType;
+    class AActor* m_pStruckActor;
+
+    /** Constructors */
+    FDisDeferredVersusContact() {}
+    FDisDeferredVersusContact(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDeferredVersusContact));
+    }
+};
+
+// DishonoredGame.DisTweaks_DropAssassinate.DisDropAssassinateMoveSet: retail SDK size 572 (2012 PDB 572)
+struct FDisDropAssassinateMoveSet
+{
+    TArrayNoInit<FDisDirectionConstraint> m_DirectionConstraints;
+    FItemLinkedAction m_Drop_Front;
+    FItemLinkedAction m_Drop_Back;
+    FItemLinkedAction m_Drop_Left;
+    FItemLinkedAction m_Drop_Right;
+
+    /** Constructors */
+    FDisDropAssassinateMoveSet() {}
+    FDisDropAssassinateMoveSet(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDropAssassinateMoveSet));
+    }
+};
+
+// DishonoredGame.DisTweaks_Fatality.DisFatalityMoveSet: retail SDK size 2924 (2012 PDB 2924)
+struct FDisFatalityMoveSet
+{
+    TArrayNoInit<FDisDirectionConstraint> m_DirectionConstraints;
+    TArrayNoInit<FDisDirectionConstraint> m_DirectionConstraints_Special;
+    FLOAT m_fBeheadRandomChance;
+    FLOAT m_fSlomoFinisherRandomChance;
+    FLOAT m_fMinTimeBetweenRandomSlomoFinisher;
+    FLOAT m_fChanceSlomoFinisherWillBeNormalSpeed;
+    FLOAT m_fGenericFatalityChance;
+    BITFIELD m_SyncInteractionRangeTest_UseHitRegions:1;
+    BYTE m_SyncInteractionRangeTest_SourceRegion;
+    BYTE m_SyncInteractionRangeTest_TargetRegion;
+    FLOAT m_fSyncInteractionRangeTest_MaxHeightDifference;
+    FItemLinkedAction m_Front;
+    FItemLinkedAction m_Left;
+    FItemLinkedAction m_Right;
+    FItemLinkedAction m_Back;
+    FItemLinkedAction m_Knockdown;
+    FItemLinkedAction m_HeadChop;
+    FItemLinkedAction m_Front_Fast;
+    FItemLinkedAction m_Left_Fast;
+    FItemLinkedAction m_Right_Fast;
+    FItemLinkedAction m_Back_Fast;
+    FItemLinkedAction m_Knockdown_Fast;
+    FItemLinkedAction m_Back_Special;
+    FItemLinkedAction m_Front_Special[8];
+    FDisItemAction m_Generic;
+
+    /** Constructors */
+    FDisFatalityMoveSet() {}
+    FDisFatalityMoveSet(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFatalityMoveSet));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCTeleportSpell.DisTeleportSpellFX: retail SDK size 12 (2012 PDB 12)
+struct FDisTeleportSpellFX
+{
+    FName m_BoneName;
+    class UParticleSystem* m_pParticles;
+
+    /** Constructors */
+    FDisTeleportSpellFX() {}
+    FDisTeleportSpellFX(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTeleportSpellFX));
+    }
+};
+
+// DishonoredGame.DisTweaks_Minigame.MinigameLoopSettings: retail SDK size 16 (2012 PDB 16)
+struct FMinigameLoopSettings
+{
+    INT m_NumAttackButtonPressToWin;
+    INT m_DamagePerTick;
+    FLOAT m_fDamageTickTime;
+    class UClass* m_DamageType;
+
+    /** Constructors */
+    FMinigameLoopSettings() {}
+    FMinigameLoopSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FMinigameLoopSettings));
+    }
+};
+
+// DishonoredGame.DisItemContext_MeleeAttack: retail sizeof 256, reflected span 176..256 (2012 PDB sizeof 248)
+class UDisItemContext_MeleeAttack : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_MeleeAttack
+    BITFIELD m_bIsVersusMaster:1;
+    BITFIELD m_bAllowSwordOnSwordClashing:1;
+    BITFIELD m_bDamageIsPosssible:1;
+    BITFIELD m_bAttackNowInterruptable:1;
+    class UDisItemContext_MeleeAttack* m_pVersusTargetContext;
+    FDisDeferredVersusContact m_DeferredVersusContact;
+    INT m_iMeleeExtent;
+    BYTE m_MeleeState;
+    BYTE m_SwingDirection;
+    BYTE m_ProjectedHitRegion;
+    BYTE m_TargetMeleeResponse;
+    FLOAT m_fApproxTimeToDamageZone;
+    FDisZoneTracker m_VersusZone;
+    FDisZoneTracker m_DamageZone;
+    FDisZoneTracker m_AttackZone;
+    FPointer m_pMeleeAction;
+    TArrayNoInit<FPointer> m_AlreadyHitActors;
+    //## END PROPS DisItemContext_MeleeAttack
+
+    DECLARE_ABSTRACT_CLASS(UDisItemContext_MeleeAttack,UDisItemContext,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Weapon");}
+};
+
+// DishonoredGame.DisItemContext_MeleeAttackNPCBase: retail sizeof 264, reflected span 256..264 (2012 PDB sizeof 252)
+class UDisItemContext_MeleeAttackNPCBase : public UDisItemContext_MeleeAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_MeleeAttackNPCBase
+    FPointer m_pVisionComponent;
+    BITFIELD m_bEffectivelyOffscreen:1;
+    //## END PROPS DisItemContext_MeleeAttackNPCBase
+
+    DECLARE_ABSTRACT_CLASS(UDisItemContext_MeleeAttackNPCBase,UDisItemContext_MeleeAttack,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_MeleeAttack: retail sizeof 296, reflected span 176..296 (2012 PDB sizeof 296)
+class UDisTweaks_MeleeAttack : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_MeleeAttack
+    FName m_MeleeExtentName;
+    BITFIELD m_bHACK_DiscardMeleeExtent:1;
+    BITFIELD m_bDisableRebound:1;
+    BITFIELD m_bDisableVersus:1;
+    FLOAT m_fCamShake_OnHitEnv;
+    FLOAT m_fCamShake_OnParry;
+    FLOAT m_fHealthRatio_NormalDamage;
+    FLOAT m_fHealthRatio_BigDamage;
+    FLOAT m_fAttackDamageMultiplier;
+    FLOAT m_fHitMass;
+    FDisItemAction m_BigVersus_Action;
+    FLOAT m_fVersusAngle;
+    class UClass* m_pContactType_SmallDamage;
+    class UClass* m_pContactType_NormalDamage;
+    class UClass* m_pContactType_BigDamage;
+    //## END PROPS DisTweaks_MeleeAttack
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_MeleeAttack,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_MeleeAttackNPCBase: retail sizeof 408, reflected span 296..408 (2012 PDB sizeof 408)
+class UDisTweaks_MeleeAttackNPCBase : public UDisTweaks_MeleeAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_MeleeAttackNPCBase
+    FDisItemAction m_MainAttack;
+    FLOAT m_fRandomBigHitChance;
+    TArrayNoInit<class UDisTweaksBase*> m_TargetFilters;
+    TArrayNoInit<class UDisTweaksBase*> m_TargetExcluders;
+    FLOAT m_fYawSpeedOverride;
+    FLOAT m_fYawAccelerationTimeOverride;
+    BYTE m_AttackBark;
+    FLOAT m_fPredictionTime;
+    //## END PROPS DisTweaks_MeleeAttackNPCBase
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_MeleeAttackNPCBase,UDisTweaks_MeleeAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DishonoredWeapon: retail sizeof 280, reflected span 276..280 (2012 PDB sizeof 280)
+class UDishonoredWeapon : public UDishonoredInventoryItem
+{
+public:
+    //## BEGIN PROPS DishonoredWeapon
+    BITFIELD m_bForceNPCFullBodyEquip:1;
+    //## END PROPS DishonoredWeapon
+
+    DECLARE_ABSTRACT_CLASS(UDishonoredWeapon,UDishonoredInventoryItem,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Weapon");}
+};
+
+// DishonoredGame.DisItemContext_Minigame: retail sizeof 288, reflected span 264..288 (2012 PDB sizeof 268)
+class UDisItemContext_Minigame : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_Minigame
+    BYTE m_MinigameState;
+    BYTE m_bOpenBranches[9];
+    class AActor* m_pTargetActor;
+    INT m_LookAtRequestID;
+    BITFIELD m_bKillTargetOnExit:1;
+    //## END PROPS DisItemContext_Minigame
+
+    DECLARE_CLASS(UDisItemContext_Minigame,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Minigame: retail sizeof 476, reflected span 408..476 (2012 PDB sizeof 476)
+class UDisTweaks_Minigame : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Minigame
+    BYTE m_NPCAnimation;
+    BYTE m_GroupIndex;
+    FMinigameLoopSettings m_LoopSettings[4];
+    //## END PROPS DisTweaks_Minigame
+
+    DECLARE_CLASS(UDisTweaks_Minigame,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisItemContext_MeleeAttackPlayer: retail sizeof 288, reflected span 256..288 (2012 PDB sizeof 280)
+class UDisItemContext_MeleeAttackPlayer : public UDisItemContext_MeleeAttack
+{
+public:
+    //## BEGIN PROPS DisItemContext_MeleeAttackPlayer
+    class ADishonoredPlayerPawn* m_pPlayerOwner;
+    BYTE m_LastChainHit;
+    FLOAT m_fTimeOfLastChainHit;
+    FDisZoneTracker m_ChainInputZone;
+    BITFIELD m_bQueuedChain:1;
+    BITFIELD m_bInChain:1;
+    BITFIELD m_bSkipInputFilter:1;
+    BITFIELD m_bGotChainChance:1;
+    BITFIELD m_bHitAtLeastOneActor:1;
+    FLOAT m_fCurHoldAttackTime;
+    //## END PROPS DisItemContext_MeleeAttackPlayer
+
+    DECLARE_CLASS(UDisItemContext_MeleeAttackPlayer,UDisItemContext_MeleeAttack,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_Finisher: retail sizeof 304, reflected span 288..304 (2012 PDB sizeof 296)
+class UDisItemContext_Finisher : public UDisItemContext_MeleeAttackPlayer
+{
+public:
+    //## BEGIN PROPS DisItemContext_Finisher
+    INT m_CurFastFinishers;
+    FLOAT m_fCurSlowTimer;
+    FLOAT m_fTimeOfLastSlow;
+    BITFIELD m_bSeenFastFinisher:1;
+    //## END PROPS DisItemContext_Finisher
+
+    DECLARE_ABSTRACT_CLASS(UDisItemContext_Finisher,UDisItemContext_MeleeAttackPlayer,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_Assassinate: retail sizeof 316, reflected span 304..316 (2012 PDB sizeof 308)
+class UDisItemContext_Assassinate : public UDisItemContext_Finisher
+{
+public:
+    //## BEGIN PROPS DisItemContext_Assassinate
+    FPointer m_pLinkedAction;
+    BITFIELD m_bDidExclusiveBendTime:1;
+    BITFIELD m_bCachedDoSlowFinisher:1;
+    BITFIELD m_bCachedNeedGeneric:1;
+    BITFIELD m_bCachedWasSneaking:1;
+    BITFIELD m_bCachedGenericProbeBlocked:1;
+    FPointer m_pCachedPotentialAssassinateAction;
+    //## END PROPS DisItemContext_Assassinate
+
+    DECLARE_CLASS(UDisItemContext_Assassinate,UDisItemContext_Finisher,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_AttackNPCTallboyMelee: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_AttackNPCTallboyMelee : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_AttackNPCTallboyMelee
+    //## END PROPS DisItemContext_AttackNPCTallboyMelee
+
+    DECLARE_CLASS(UDisItemContext_AttackNPCTallboyMelee,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_DropAssassinate: retail sizeof 208, reflected span 176..208 (2012 PDB sizeof 200)
+class UDisItemContext_DropAssassinate : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_DropAssassinate
+    class ADishonoredPlayerPawn* m_pPlayerOwner;
+    FPointer m_pLinkedAction;
+    class ADishonoredNPCPawn* m_pPawnToWaitFor;
+    BITFIELD m_bDidExclusiveBendTime:1;
+    BYTE m_CachedDropType;
+    class ADishonoredNPCPawn* m_pCachedTarget;
+    FPointer m_pCachedPotentialAssassinateAction;
+    INT m_TickTagAtWhichCacheIsValid;
+    //## END PROPS DisItemContext_DropAssassinate
+
+    DECLARE_CLASS(UDisItemContext_DropAssassinate,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCTeleportSpell: retail sizeof 236, reflected span 176..236 (2012 PDB sizeof 228)
+class UDisItemContext_NPCTeleportSpell : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCTeleportSpell
+    BYTE m_TeleportSpellState;
+    BYTE m_TeleportIntention;
+    FLOAT m_fFadeTimer;
+    FLOAT m_fReappearanceTimer;
+    class AActor* m_pTargetActor;
+    FVector m_TargetLocation;
+    FVector m_PerceivedLocation;
+    BITFIELD m_bCancelContextWhenBendTimeFrozen:1;
+    BITFIELD m_bOldCollideActors:1;
+    BITFIELD m_bOldBlockActors:1;
+    BITFIELD m_bOldIgnoreEncroachers:1;
+    BITFIELD m_bTeleportSuccess:1;
+    BITFIELD m_bSuppressed:1;
+    FLOAT m_fCustomDelayTime;
+    TArrayNoInit<class AActor*> m_NotedAttachedActors;
+    //## END PROPS DisItemContext_NPCTeleportSpell
+
+    DECLARE_CLASS(UDisItemContext_NPCTeleportSpell,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_Fatality: retail sizeof 328, reflected span 304..328 (2012 PDB sizeof 320)
+class UDisItemContext_Fatality : public UDisItemContext_Finisher
+{
+public:
+    //## BEGIN PROPS DisItemContext_Fatality
+    FPointer m_pLinkedAction;
+    BITFIELD m_bDidExclusiveBendTime:1;
+    BITFIELD m_bCachedNeedsGeneric:1;
+    BITFIELD m_bCachedDoSlowFinisher:1;
+    BITFIELD m_bCachedIsSlomoFinisher:1;
+    BITFIELD m_bCachedSlomoFinisherInRealtime:1;
+    FLOAT m_fTimeOfLastSlomoFatality;
+    BYTE m_CachedFatalityType;
+    BYTE m_CurForcedFatalityType;
+    FPointer m_pCachedPotentialFatalityAction;
+    INT m_iCurForcedFatalityVariation;
+    //## END PROPS DisItemContext_Fatality
+
+    DECLARE_CLASS(UDisItemContext_Fatality,UDisItemContext_Finisher,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_MeleeBlock: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 168)
+class UDisItemContext_MeleeBlock : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_MeleeBlock
+    //## END PROPS DisItemContext_MeleeBlock
+
+    DECLARE_ABSTRACT_CLASS(UDisItemContext_MeleeBlock,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_MeleeBlockPlayer: retail sizeof 216, reflected span 176..216 (2012 PDB sizeof 208)
+class UDisItemContext_MeleeBlockPlayer : public UDisItemContext_MeleeBlock
+{
+public:
+    //## BEGIN PROPS DisItemContext_MeleeBlockPlayer
+    BYTE m_BlockState;
+    FDisZoneTracker m_BlockParryZone;
+    class ADishonoredPlayerPawn* m_pPlayerOwner;
+    INT m_iMeleeExtent;
+    FLOAT m_fBlockBlendTime;
+    BITFIELD m_bSeenParryZone:1;
+    BITFIELD m_bTransitionedOffhandOut:1;
+    BITFIELD m_bTransitionedOffhandFinished:1;
+    FLOAT m_fTimeBlockStarted;
+    FLOAT m_fForceBlockTimeForPerfectParry;
+    //## END PROPS DisItemContext_MeleeBlockPlayer
+
+    DECLARE_CLASS(UDisItemContext_MeleeBlockPlayer,UDisItemContext_MeleeBlock,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_MultiFatality: retail sizeof 288, reflected span 288..288 (2012 PDB sizeof 280)
+class UDisItemContext_MultiFatality : public UDisItemContext_MeleeAttackPlayer
+{
+public:
+    //## BEGIN PROPS DisItemContext_MultiFatality
+    //## END PROPS DisItemContext_MultiFatality
+
+    DECLARE_CLASS(UDisItemContext_MultiFatality,UDisItemContext_MeleeAttackPlayer,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAmbush: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAmbush : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAmbush
+    //## END PROPS DisItemContext_NPCAmbush
+
+    DECLARE_CLASS(UDisItemContext_NPCAmbush,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackLeft180: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackLeft180 : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackLeft180
+    //## END PROPS DisItemContext_NPCAttackLeft180
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackLeft180,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackLeft90: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackLeft90 : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackLeft90
+    //## END PROPS DisItemContext_NPCAttackLeft90
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackLeft90,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackLong: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackLong : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackLong
+    //## END PROPS DisItemContext_NPCAttackLong
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackLong,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackMedium: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackMedium : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackMedium
+    //## END PROPS DisItemContext_NPCAttackMedium
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackMedium,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackRight180: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackRight180 : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackRight180
+    //## END PROPS DisItemContext_NPCAttackRight180
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackRight180,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackRight90: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackRight90 : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackRight90
+    //## END PROPS DisItemContext_NPCAttackRight90
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackRight90,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackShort: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackShort : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackShort
+    //## END PROPS DisItemContext_NPCAttackShort
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackShort,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackStepBack: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackStepBack : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackStepBack
+    //## END PROPS DisItemContext_NPCAttackStepBack
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackStepBack,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttackUnder: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttackUnder : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttackUnder
+    //## END PROPS DisItemContext_NPCAttackUnder
+
+    DECLARE_CLASS(UDisItemContext_NPCAttackUnder,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttractSpell: retail sizeof 184, reflected span 176..184 (2012 PDB sizeof 176)
+class UDisItemContext_NPCAttractSpell : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttractSpell
+    class UParticleSystemComponent* m_pAttractFX;
+    FLOAT m_fSpellTimer;
+    //## END PROPS DisItemContext_NPCAttractSpell
+
+    DECLARE_CLASS(UDisItemContext_NPCAttractSpell,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCAttractSpellCoupDeGrace: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCAttractSpellCoupDeGrace : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCAttractSpellCoupDeGrace
+    //## END PROPS DisItemContext_NPCAttractSpellCoupDeGrace
+
+    DECLARE_CLASS(UDisItemContext_NPCAttractSpellCoupDeGrace,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCBackStep: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 168)
+class UDisItemContext_NPCBackStep : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCBackStep
+    //## END PROPS DisItemContext_NPCBackStep
+
+    DECLARE_CLASS(UDisItemContext_NPCBackStep,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCBash: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCBash : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCBash
+    //## END PROPS DisItemContext_NPCBash
+
+    DECLARE_CLASS(UDisItemContext_NPCBash,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCFatality: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCFatality : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCFatality
+    //## END PROPS DisItemContext_NPCFatality
+
+    DECLARE_CLASS(UDisItemContext_NPCFatality,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCJumpAttack: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCJumpAttack : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCJumpAttack
+    //## END PROPS DisItemContext_NPCJumpAttack
+
+    DECLARE_CLASS(UDisItemContext_NPCJumpAttack,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCPush: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCPush : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCPush
+    //## END PROPS DisItemContext_NPCPush
+
+    DECLARE_CLASS(UDisItemContext_NPCPush,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCRatCrushAttempt: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 268)
+class UDisItemContext_NPCRatCrushAttempt : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCRatCrushAttempt
+    class ADisGameCrowdAgentSkeletalRat* m_pRatToCrush;
+    FVector m_CenterOfCrushing;
+    //## END PROPS DisItemContext_NPCRatCrushAttempt
+
+    DECLARE_CLASS(UDisItemContext_NPCRatCrushAttempt,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCRiposte: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCRiposte : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCRiposte
+    //## END PROPS DisItemContext_NPCRiposte
+
+    DECLARE_CLASS(UDisItemContext_NPCRiposte,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCSideStep: retail sizeof 180, reflected span 176..177 (2012 PDB sizeof 172)
+class UDisItemContext_NPCSideStep : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCSideStep
+    BYTE m_NextRandomSideStepDirection;
+    //## END PROPS DisItemContext_NPCSideStep
+
+    DECLARE_CLASS(UDisItemContext_NPCSideStep,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCStomp: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 252)
+class UDisItemContext_NPCStomp : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCStomp
+    //## END PROPS DisItemContext_NPCStomp
+
+    DECLARE_CLASS(UDisItemContext_NPCStomp,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCTaunt: retail sizeof 200, reflected span 176..200 (2012 PDB sizeof 192)
+class UDisItemContext_NPCTaunt : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCTaunt
+    FLOAT m_fTauntBeginTime;
+    class AActor* m_pTauntTargetActor;
+    FVector m_MostRecentTargetLocation;
+    BITFIELD m_bIsInterruptWindowOpen:1;
+    //## END PROPS DisItemContext_NPCTaunt
+
+    DECLARE_CLASS(UDisItemContext_NPCTaunt,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCTune: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 168)
+class UDisItemContext_NPCTune : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCTune
+    //## END PROPS DisItemContext_NPCTune
+
+    DECLARE_ABSTRACT_CLASS(UDisItemContext_NPCTune,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCTune_Combat: retail sizeof 204, reflected span 176..204 (2012 PDB sizeof 196)
+class UDisItemContext_NPCTune_Combat : public UDisItemContext_NPCTune
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCTune_Combat
+    class AActor* m_pIntendedTarget;
+    FDisAttentionProxy m_IntendedTargetProxy;
+    FLOAT m_fShutdownIn_OutOfSight;
+    FLOAT m_fShutdownIn_OutOfRange;
+    //## END PROPS DisItemContext_NPCTune_Combat
+
+    DECLARE_CLASS(UDisItemContext_NPCTune_Combat,UDisItemContext_NPCTune,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCTune_Protection: retail sizeof 176, reflected span 176..176 (2012 PDB sizeof 168)
+class UDisItemContext_NPCTune_Protection : public UDisItemContext_NPCTune
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCTune_Protection
+    //## END PROPS DisItemContext_NPCTune_Protection
+
+    DECLARE_CLASS(UDisItemContext_NPCTune_Protection,UDisItemContext_NPCTune,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_NPCWhiskeyFire: retail sizeof 196, reflected span 176..196 (2012 PDB sizeof 188)
+class UDisItemContext_NPCWhiskeyFire : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_NPCWhiskeyFire
+    class AActor* m_pTarget;
+    FLOAT m_fAimHeight;
+    FLOAT m_fLeadTime;
+    INT m_LookAtRequestID;
+    BITFIELD m_bPerformScramble:1;
+    //## END PROPS DisItemContext_NPCWhiskeyFire
+
+    DECLARE_CLASS(UDisItemContext_NPCWhiskeyFire,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_ParryNPC: retail sizeof 272, reflected span 264..272 (2012 PDB sizeof 260)
+class UDisItemContext_ParryNPC : public UDisItemContext_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisItemContext_ParryNPC
+    FPointer m_pInitatedByContext;
+    BITFIELD m_bIgnoreItemActionEndingsFromReset:1;
+    //## END PROPS DisItemContext_ParryNPC
+
+    DECLARE_CLASS(UDisItemContext_ParryNPC,UDisItemContext_MeleeAttackNPCBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_WeeperGrab: retail sizeof 288, reflected span 288..288 (2012 PDB sizeof 268)
+class UDisItemContext_WeeperGrab : public UDisItemContext_Minigame
+{
+public:
+    //## BEGIN PROPS DisItemContext_WeeperGrab
+    //## END PROPS DisItemContext_WeeperGrab
+
+    DECLARE_CLASS(UDisItemContext_WeeperGrab,UDisItemContext_Minigame,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_MeleeAttackPlayer: retail sizeof 1044, reflected span 296..1044 (2012 PDB sizeof 1044)
+class UDisTweaks_MeleeAttackPlayer : public UDisTweaks_MeleeAttack
+{
+public:
+    //## BEGIN PROPS DisTweaks_MeleeAttackPlayer
+    FDisItemAction m_ForehandAttacks;
+    FDisItemAction m_BackhandAttacks;
+    FDisItemAction m_ForehandAttacks_Impact;
+    FDisItemAction m_BackhandAttacks_Impact;
+    FDisItemAction m_SneakAttacks;
+    FPawnAction m_OffhandSwipeForehand;
+    FPawnAction m_OffhandSwipeBackhand;
+    FItemLinkedAction m_ForehandKill_Synced;
+    FItemLinkedAction m_BackhandKill_Synced;
+    FLOAT m_fChanceOfSyncedAttack;
+    FLOAT m_fMaxChainAttackTime;
+    FLOAT m_fSweepingAttackSize;
+    FLOAT m_fCrosshairAttackSize;
+    FLOAT m_fRayScalePercent;
+    BITFIELD m_bStopSneakingOnAttackStart:1;
+    BITFIELD m_bDisableAttackChaining:1;
+    BITFIELD m_bDoAutoLookUp:1;
+    BITFIELD m_bDoAutoLookDown:1;
+    BITFIELD m_bDoMeleeAssist:1;
+    BITFIELD m_bAttractOnBigHit:1;
+    BITFIELD m_bAttractOnParry:1;
+    FLOAT m_fChanceToMissRats;
+    FLOAT m_fParryAttractMinRadius;
+    FLOAT m_fParryAttractMaxRadius;
+    FLOAT m_fAdrenalineMultOnHit;
+    //## END PROPS DisTweaks_MeleeAttackPlayer
+
+    DECLARE_CLASS(UDisTweaks_MeleeAttackPlayer,UDisTweaks_MeleeAttack,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_Finisher: retail sizeof 1064, reflected span 1044..1064 (2012 PDB sizeof 1064)
+class UDisTweaks_Finisher : public UDisTweaks_MeleeAttackPlayer
+{
+public:
+    //## BEGIN PROPS DisTweaks_Finisher
+    INT m_NumFinishersBeforeSlow_Min;
+    INT m_NumFinishersBeforeSlow_Max;
+    FLOAT m_fTimeBeforeSlow_Min;
+    FLOAT m_fTimeBeforeSlow_Max;
+    BITFIELD m_bForceSlowFinisherWhenBendTimeFrozen:1;
+    //## END PROPS DisTweaks_Finisher
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_Finisher,UDisTweaks_MeleeAttackPlayer,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_Assassinate: retail sizeof 7184, reflected span 1064..7184 (2012 PDB sizeof 7184)
+class UDisTweaks_Assassinate : public UDisTweaks_Finisher
+{
+public:
+    //## BEGIN PROPS DisTweaks_Assassinate
+    FDisAssassinateMoveSet m_AssassinateMoveSets[2];
+    FDisAssassAware m_AssassinateOnAwareness[8];
+    BITFIELD m_bCanAssassinateRunners:1;
+    FVector m_Assassination_Generic_ProbeExtents;
+    //## END PROPS DisTweaks_Assassinate
+
+    DECLARE_CLASS(UDisTweaks_Assassinate,UDisTweaks_Finisher,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_AttackNPCTallboyMelee: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_AttackNPCTallboyMelee : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AttackNPCTallboyMelee
+    //## END PROPS DisTweaks_AttackNPCTallboyMelee
+
+    DECLARE_CLASS(UDisTweaks_AttackNPCTallboyMelee,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_DropAssassinate: retail sizeof 1348, reflected span 176..1348 (2012 PDB sizeof 1348)
+class UDisTweaks_DropAssassinate : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_DropAssassinate
+    FDisDropAssassinateMoveSet m_DropAssassinateMoveSets[2];
+    FLOAT m_fHitWindowInSeconds;
+    FLOAT m_fMinDropDistToTarget;
+    FLOAT m_fMaxDropDistToTarget;
+    FLOAT m_fMaxAllowedDropJumpVel;
+    FLOAT m_fMinDropDownVel;
+    FLOAT m_fRayScalePercent;
+    FLOAT m_fAdrenalineMultOnHit;
+    //## END PROPS DisTweaks_DropAssassinate
+
+    DECLARE_CLASS(UDisTweaks_DropAssassinate,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCTeleportSpell: retail sizeof 264, reflected span 176..264 (2012 PDB sizeof 260)
+class UDisTweaks_NPCTeleportSpell : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCTeleportSpell
+    FDisRangedFloat m_DistanceFromTarget;
+    FDisRangedFloat m_TeleportDelay;
+    BITFIELD m_bDetachPooPooUponTeleport:1;
+    BITFIELD m_bIgnoreGlobalCooldownWhenUnreachable:1;
+    class UParticleSystem* m_pDisappearanceFX;
+    TArrayNoInit<FDisTeleportSpellFX> m_BoneSpecificDisappearanceFXs;
+    class UParticleSystem* m_pReappearanceFX;
+    TArrayNoInit<FDisTeleportSpellFX> m_BoneSpecificReappearanceFXs;
+    class UAkEvent* m_pDisappearanceSoundEvent;
+    class UAkEvent* m_pReappearanceSoundEvent;
+    FName m_ScalarParameterName;
+    FLOAT m_fDisappearanceFadeOutTime;
+    FLOAT m_fReappearanceFadeInTime;
+    FDisRangedFloat m_ContextCooldownWhenUnreachable;
+    FLOAT m_fMinEscapeDistance;
+    //## END PROPS DisTweaks_NPCTeleportSpell
+
+    DECLARE_CLASS(UDisTweaks_NPCTeleportSpell,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_WepSword: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDisTweaks_WepSword : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepSword
+    //## END PROPS DisTweaks_WepSword
+
+    DECLARE_CLASS(UDisTweaks_WepSword,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Fatality: retail sizeof 6912, reflected span 1064..6912 (2012 PDB sizeof 6912)
+class UDisTweaks_Fatality : public UDisTweaks_Finisher
+{
+public:
+    //## BEGIN PROPS DisTweaks_Fatality
+    FDisFatalityMoveSet m_FatalityMoveSets[2];
+    //## END PROPS DisTweaks_Fatality
+
+    DECLARE_CLASS(UDisTweaks_Fatality,UDisTweaks_Finisher,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_MeleeBlock: retail sizeof 192, reflected span 176..192 (2012 PDB sizeof 192)
+class UDisTweaks_MeleeBlock : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_MeleeBlock
+    FLOAT m_fBlockAngle;
+    FLOAT m_fBlockAngle_Vertical_Up;
+    FLOAT m_fBlockAngle_Vertical_Down;
+    class UClass* m_pContactType;
+    //## END PROPS DisTweaks_MeleeBlock
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_MeleeBlock,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_MeleeBlockPlayer: retail sizeof 352, reflected span 192..352 (2012 PDB sizeof 340)
+class UDisTweaks_MeleeBlockPlayer : public UDisTweaks_MeleeBlock
+{
+public:
+    //## BEGIN PROPS DisTweaks_MeleeBlockPlayer
+    FDisItemAction m_BlockAction;
+    FPawnAction m_OffhandBlockIntro;
+    FLOAT m_fBlockCameraTrackTime;
+    TArrayNoInit<class UClass*> m_BlockCameraTrackExcludeContexts;
+    FLOAT m_fBlockCameraShakeScale;
+    FName m_MeleeExtentName;
+    FLOAT m_fKnockbackImpulse_Min;
+    FLOAT m_fKnockbackImpulse_Max;
+    FLOAT m_fAdrenalineAddedParryWin;
+    FLOAT m_fTapForPerfectParryWindow;
+    FLOAT m_fForceBlockTimeOnPerfectParryTap;
+    //## END PROPS DisTweaks_MeleeBlockPlayer
+
+    DECLARE_CLASS(UDisTweaks_MeleeBlockPlayer,UDisTweaks_MeleeBlock,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_MultiFatality: retail sizeof 1116, reflected span 1044..1116 (2012 PDB sizeof 1116)
+class UDisTweaks_MultiFatality : public UDisTweaks_MeleeAttackPlayer
+{
+public:
+    //## BEGIN PROPS DisTweaks_MultiFatality
+    FDisItemAction m_MultiFatalityAction;
+    BITFIELD m_bAllowWithoutTarget:1;
+    BITFIELD m_bTrackToFirstTarget:1;
+    //## END PROPS DisTweaks_MultiFatality
+
+    DECLARE_CLASS(UDisTweaks_MultiFatality,UDisTweaks_MeleeAttackPlayer,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAmbush: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAmbush : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAmbush
+    //## END PROPS DisTweaks_NPCAmbush
+
+    DECLARE_CLASS(UDisTweaks_NPCAmbush,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackLeft180: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackLeft180 : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackLeft180
+    //## END PROPS DisTweaks_NPCAttackLeft180
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackLeft180,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackLeft90: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackLeft90 : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackLeft90
+    //## END PROPS DisTweaks_NPCAttackLeft90
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackLeft90,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackLong: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackLong : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackLong
+    //## END PROPS DisTweaks_NPCAttackLong
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackLong,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackMedium: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackMedium : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackMedium
+    //## END PROPS DisTweaks_NPCAttackMedium
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackMedium,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackRight180: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackRight180 : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackRight180
+    //## END PROPS DisTweaks_NPCAttackRight180
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackRight180,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackRight90: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackRight90 : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackRight90
+    //## END PROPS DisTweaks_NPCAttackRight90
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackRight90,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackShort: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackShort : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackShort
+    //## END PROPS DisTweaks_NPCAttackShort
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackShort,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackStepBack: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackStepBack : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackStepBack
+    //## END PROPS DisTweaks_NPCAttackStepBack
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackStepBack,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttackUnder: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttackUnder : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttackUnder
+    //## END PROPS DisTweaks_NPCAttackUnder
+
+    DECLARE_CLASS(UDisTweaks_NPCAttackUnder,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttractSpell: retail sizeof 372, reflected span 176..372 (2012 PDB sizeof 372)
+class UDisTweaks_NPCAttractSpell : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttractSpell
+    FDisRangedFloat m_SuctionStrength;
+    class UParticleSystem* m_pAttractSpellFX;
+    class UParticleSystem* m_pAttractSpellCameraFX;
+    class UAkEvent* m_pAttractStartSoundEvent;
+    class UAkEvent* m_pAttractStopSoundEvent;
+    FDisRangedFloat m_MaxSpellDuration;
+    BITFIELD m_bRequiresLineOfSight:1;
+    BITFIELD m_bIgnoreGlobalCooldownWhenUnreachable:1;
+    FName m_fAttractSpellCameraFadeParameter;
+    FLOAT m_fAttractSpellFadeInDuration;
+    FLOAT m_fAttractSpellFadeOutDuration;
+    FArkPpConfig m_AttractPpOverride;
+    FLOAT m_fAttractPpOverrideBlendSpeed;
+    FDisRangedFloat m_ContextCooldownWhenUnreachable;
+    //## END PROPS DisTweaks_NPCAttractSpell
+
+    DECLARE_CLASS(UDisTweaks_NPCAttractSpell,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCAttractSpellCoupDeGrace: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCAttractSpellCoupDeGrace : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttractSpellCoupDeGrace
+    //## END PROPS DisTweaks_NPCAttractSpellCoupDeGrace
+
+    DECLARE_CLASS(UDisTweaks_NPCAttractSpellCoupDeGrace,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCBackStep: retail sizeof 180, reflected span 176..180 (2012 PDB sizeof 180)
+class UDisTweaks_NPCBackStep : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCBackStep
+    FLOAT m_fBackStepDistance;
+    //## END PROPS DisTweaks_NPCBackStep
+
+    DECLARE_CLASS(UDisTweaks_NPCBackStep,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCBash: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCBash : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCBash
+    //## END PROPS DisTweaks_NPCBash
+
+    DECLARE_CLASS(UDisTweaks_NPCBash,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCFatality: retail sizeof 412, reflected span 408..412 (2012 PDB sizeof 412)
+class UDisTweaks_NPCFatality : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCFatality
+    FLOAT m_fChanceOfFatality;
+    //## END PROPS DisTweaks_NPCFatality
+
+    DECLARE_CLASS(UDisTweaks_NPCFatality,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCJumpAttack: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCJumpAttack : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCJumpAttack
+    //## END PROPS DisTweaks_NPCJumpAttack
+
+    DECLARE_CLASS(UDisTweaks_NPCJumpAttack,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCPush: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCPush : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPush
+    //## END PROPS DisTweaks_NPCPush
+
+    DECLARE_CLASS(UDisTweaks_NPCPush,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCRatCrushAttempt: retail sizeof 424, reflected span 408..424 (2012 PDB sizeof 424)
+class UDisTweaks_NPCRatCrushAttempt : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCRatCrushAttempt
+    FName m_fCrushingBoneName;
+    FLOAT m_fCrushingBoneRadius;
+    FLOAT m_fRatAttractionStrength;
+    //## END PROPS DisTweaks_NPCRatCrushAttempt
+
+    DECLARE_CLASS(UDisTweaks_NPCRatCrushAttempt,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCRiposte: retail sizeof 612, reflected span 408..612 (2012 PDB sizeof 612)
+class UDisTweaks_NPCRiposte : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCRiposte
+    FDisItemAction m_RiposteRight;
+    FDisItemAction m_RiposteLeftSidestep;
+    FDisItemAction m_RiposteRightSidestep;
+    //## END PROPS DisTweaks_NPCRiposte
+
+    DECLARE_CLASS(UDisTweaks_NPCRiposte,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCSideStep: retail sizeof 180, reflected span 176..180 (2012 PDB sizeof 180)
+class UDisTweaks_NPCSideStep : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCSideStep
+    FLOAT m_fSideStepDistance;
+    //## END PROPS DisTweaks_NPCSideStep
+
+    DECLARE_CLASS(UDisTweaks_NPCSideStep,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCStomp: retail sizeof 408, reflected span 408..408 (2012 PDB sizeof 408)
+class UDisTweaks_NPCStomp : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCStomp
+    //## END PROPS DisTweaks_NPCStomp
+
+    DECLARE_CLASS(UDisTweaks_NPCStomp,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCTaunt: retail sizeof 208, reflected span 176..208 (2012 PDB sizeof 208)
+class UDisTweaks_NPCTaunt : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCTaunt
+    BITFIELD m_bCanInterruptLocomotion:1;
+    BITFIELD m_bAbortIfConditionsInvalidate:1;
+    BITFIELD m_bAbortOnlyDuringAnimNotifyWindow:1;
+    BITFIELD m_bAbortIfInfluencedByDangerSteering:1;
+    BITFIELD m_bIgnoreGlobalCooldownWhenUnreachable:1;
+    FLOAT m_fAbortMinCommitTime;
+    FDisRangedFloat m_AbortContextRange;
+    FLOAT m_fAbortMaxContextHeightDifference;
+    FLOAT m_fAbortAllowedAngle;
+    FDisRangedFloat m_ContextCooldownWhenUnreachable;
+    //## END PROPS DisTweaks_NPCTaunt
+
+    DECLARE_CLASS(UDisTweaks_NPCTaunt,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCTune_Combat: retail sizeof 224, reflected span 180..224 (2012 PDB sizeof 224)
+class UDisTweaks_NPCTune_Combat : public UDisTweaks_NPCTune
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCTune_Combat
+    FLOAT m_fMusicEffectRepulseForce;
+    INT m_iMusicEffectDamage;
+    FDisRangedFloat m_fRepulseForceRange;
+    FLOAT m_fStopWhenNotSeeingTimer;
+    FLOAT m_fStopWhenOutOfRangeTimer;
+    FLOAT m_fBreakAnItemEvery;
+    FLOAT fGlassDamage;
+    class UAkEvent* m_SFX_Damage_Start;
+    class UAkEvent* m_SFX_Damage_Stop;
+    class UForceFeedbackWaveform* m_ForceFeedbackWaveform;
+    //## END PROPS DisTweaks_NPCTune_Combat
+
+    DECLARE_CLASS(UDisTweaks_NPCTune_Combat,UDisTweaks_NPCTune,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCWhiskeyFire: retail sizeof 240, reflected span 176..240 (2012 PDB sizeof 240)
+class UDisTweaks_NPCWhiskeyFire : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCWhiskeyFire
+    FLOAT m_fLeadTime;
+    FName m_DamageSocket;
+    FLOAT m_fDamageRange;
+    FLOAT m_fDamageRadius;
+    FLOAT m_fDamage;
+    class UClass* m_pDamageType;
+    class UParticleSystem* m_pSmokeEffect;
+    FLOAT m_fSmokeDensity;
+    FLOAT m_fRatLightRadius;
+    FLOAT m_fRatLightStrength;
+    FLOAT m_fMaxScrambleAttackDistance;
+    FLOAT m_fMaxScrambleAttackAngle;
+    FDisRangedFloat m_AmbushPointRange;
+    FLOAT m_fBlindEffectTime;
+    //## END PROPS DisTweaks_NPCWhiskeyFire
+
+    DECLARE_CLASS(UDisTweaks_NPCWhiskeyFire,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_ParryNPC: retail sizeof 412, reflected span 408..412 (2012 PDB sizeof 412)
+class UDisTweaks_ParryNPC : public UDisTweaks_MeleeAttackNPCBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ParryNPC
+    BITFIELD m_bAllowWhenOffBalance:1;
+    BITFIELD m_bAllowWhenKillable:1;
+    //## END PROPS DisTweaks_ParryNPC
+
+    DECLARE_CLASS(UDisTweaks_ParryNPC,UDisTweaks_MeleeAttackNPCBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_UseSpringRazor: retail sizeof 268, reflected span 176..268 (2012 PDB sizeof 264)
+class UDisTweaks_UseSpringRazor : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_UseSpringRazor
+    FDisItemAction m_UseSpringRazor;
+    FLOAT m_fPlacementRangeForward;
+    FLOAT m_fPlacementRangeUp;
+    FLOAT m_fPlacementRangeDown;
+    FLOAT m_fPlacementExtents;
+    BYTE m_AmmoType;
+    class UClass* m_pContactType;
+    //## END PROPS DisTweaks_UseSpringRazor
+
+    DECLARE_CLASS(UDisTweaks_UseSpringRazor,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_WeeperGrab: retail sizeof 484, reflected span 476..484 (2012 PDB sizeof 484)
+class UDisTweaks_WeeperGrab : public UDisTweaks_Minigame
+{
+public:
+    //## BEGIN PROPS DisTweaks_WeeperGrab
+    FLOAT m_fEasyDodgeRadius;
+    FLOAT m_fAnimDuration;
+    //## END PROPS DisTweaks_WeeperGrab
+
+    DECLARE_CLASS(UDisTweaks_WeeperGrab,UDisTweaks_Minigame,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_WepSwordOfAssassin: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDisTweaks_WepSwordOfAssassin : public UDisTweaks_WepSword
+{
+public:
+    //## BEGIN PROPS DisTweaks_WepSwordOfAssassin
+    //## END PROPS DisTweaks_WepSwordOfAssassin
+
+    DECLARE_CLASS(UDisTweaks_WepSwordOfAssassin,UDisTweaks_WepSword,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWepMelee: retail sizeof 280, reflected span 280..280 (2012 PDB sizeof 280)
+class UDisWepMelee : public UDishonoredWeapon
+{
+public:
+    //## BEGIN PROPS DisWepMelee
+    //## END PROPS DisWepMelee
+
+    DECLARE_ABSTRACT_CLASS(UDisWepMelee,UDishonoredWeapon,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisWepMusicAmp: retail sizeof 300, reflected span 280..300 (2012 PDB sizeof 300)
+class UDisWepMusicAmp : public UDishonoredWeapon
+{
+public:
+    //## BEGIN PROPS DisWepMusicAmp
+    class UDisTweaks_WepMusicAmp* m_pTweaks;
+    TArrayNoInit<class AActor*> m_Attachments;
+    INT m_iNumBrokenAmpParts;
+    //## END PROPS DisWepMusicAmp
+
+    DECLARE_CLASS(UDisWepMusicAmp,UDishonoredWeapon,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisWepMusicBox: retail sizeof 284, reflected span 280..284 (2012 PDB sizeof 284)
+class UDisWepMusicBox : public UDishonoredWeapon
+{
+public:
+    //## BEGIN PROPS DisWepMusicBox
+    class UDisTweaks_WepMusicBox* m_pTweaks;
+    //## END PROPS DisWepMusicBox
+
+    DECLARE_CLASS(UDisWepMusicBox,UDishonoredWeapon,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisWepThrowingHand: retail sizeof 284, reflected span 280..284 (2012 PDB sizeof 284)
+class UDisWepThrowingHand : public UDishonoredWeapon
+{
+public:
+    //## BEGIN PROPS DisWepThrowingHand
+    class UDisTweaks_WepThrowingHand* m_pThrowingHandTweaks;
+    //## END PROPS DisWepThrowingHand
+
+    DECLARE_CLASS(UDisWepThrowingHand,UDishonoredWeapon,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisWepWhiskeyBottle: retail sizeof 288, reflected span 280..288 (2012 PDB sizeof 288)
+class UDisWepWhiskeyBottle : public UDishonoredWeapon
+{
+public:
+    //## BEGIN PROPS DisWepWhiskeyBottle
+    class UDisTweaks_WepWhiskeyBottle* m_pWhiskeyBottleTweaks;
+    BITFIELD m_bExploded:1;
+    //## END PROPS DisWepWhiskeyBottle
+
+    DECLARE_CLASS(UDisWepWhiskeyBottle,UDishonoredWeapon,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredWepSword: retail sizeof 284, reflected span 280..284 (2012 PDB sizeof 284)
+class UDishonoredWepSword : public UDisWepMelee
+{
+public:
+    //## BEGIN PROPS DishonoredWepSword
+    class UDisTweaks_WepSword* m_pSwordTweaks;
+    //## END PROPS DishonoredWepSword
+
+    DECLARE_CLASS(UDishonoredWepSword,UDisWepMelee,0|CLASS_Config,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_WEAPON_CLASSES
+#endif // !NAMES_ONLY
+
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_WEAPON_NATIVE_DEFS
+#define DISHONOREDGAME_WEAPON_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_WEAPON \
+	UDisItemContext_MeleeAttack::StaticClass(); \
+	UDisItemContext_MeleeAttackNPCBase::StaticClass(); \
+	UDisTweaks_MeleeAttack::StaticClass(); \
+	UDisTweaks_MeleeAttackNPCBase::StaticClass(); \
+	UDishonoredWeapon::StaticClass(); \
+	UDisItemContext_Minigame::StaticClass(); \
+	UDisTweaks_Minigame::StaticClass(); \
+	UDisItemContext_MeleeAttackPlayer::StaticClass(); \
+	UDisItemContext_Finisher::StaticClass(); \
+	UDisItemContext_Assassinate::StaticClass(); \
+	UDisItemContext_AttackNPCTallboyMelee::StaticClass(); \
+	UDisItemContext_DropAssassinate::StaticClass(); \
+	UDisItemContext_NPCTeleportSpell::StaticClass(); \
+	UDisItemContext_Fatality::StaticClass(); \
+	UDisItemContext_MeleeBlock::StaticClass(); \
+	UDisItemContext_MeleeBlockPlayer::StaticClass(); \
+	UDisItemContext_MultiFatality::StaticClass(); \
+	UDisItemContext_NPCAmbush::StaticClass(); \
+	UDisItemContext_NPCAttackLeft180::StaticClass(); \
+	UDisItemContext_NPCAttackLeft90::StaticClass(); \
+	UDisItemContext_NPCAttackLong::StaticClass(); \
+	UDisItemContext_NPCAttackMedium::StaticClass(); \
+	UDisItemContext_NPCAttackRight180::StaticClass(); \
+	UDisItemContext_NPCAttackRight90::StaticClass(); \
+	UDisItemContext_NPCAttackShort::StaticClass(); \
+	UDisItemContext_NPCAttackStepBack::StaticClass(); \
+	UDisItemContext_NPCAttackUnder::StaticClass(); \
+	UDisItemContext_NPCAttractSpell::StaticClass(); \
+	UDisItemContext_NPCAttractSpellCoupDeGrace::StaticClass(); \
+	UDisItemContext_NPCBackStep::StaticClass(); \
+	UDisItemContext_NPCBash::StaticClass(); \
+	UDisItemContext_NPCFatality::StaticClass(); \
+	UDisItemContext_NPCJumpAttack::StaticClass(); \
+	UDisItemContext_NPCPush::StaticClass(); \
+	UDisItemContext_NPCRatCrushAttempt::StaticClass(); \
+	UDisItemContext_NPCRiposte::StaticClass(); \
+	UDisItemContext_NPCSideStep::StaticClass(); \
+	UDisItemContext_NPCStomp::StaticClass(); \
+	UDisItemContext_NPCTaunt::StaticClass(); \
+	UDisItemContext_NPCTune::StaticClass(); \
+	UDisItemContext_NPCTune_Combat::StaticClass(); \
+	UDisItemContext_NPCTune_Protection::StaticClass(); \
+	UDisItemContext_NPCWhiskeyFire::StaticClass(); \
+	UDisItemContext_ParryNPC::StaticClass(); \
+	UDisItemContext_WeeperGrab::StaticClass(); \
+	UDisTweaks_MeleeAttackPlayer::StaticClass(); \
+	UDisTweaks_Finisher::StaticClass(); \
+	UDisTweaks_Assassinate::StaticClass(); \
+	UDisTweaks_AttackNPCTallboyMelee::StaticClass(); \
+	UDisTweaks_DropAssassinate::StaticClass(); \
+	UDisTweaks_NPCTeleportSpell::StaticClass(); \
+	UDisTweaks_WepSword::StaticClass(); \
+	UDisTweaks_Fatality::StaticClass(); \
+	UDisTweaks_MeleeBlock::StaticClass(); \
+	UDisTweaks_MeleeBlockPlayer::StaticClass(); \
+	UDisTweaks_MultiFatality::StaticClass(); \
+	UDisTweaks_NPCAmbush::StaticClass(); \
+	UDisTweaks_NPCAttackLeft180::StaticClass(); \
+	UDisTweaks_NPCAttackLeft90::StaticClass(); \
+	UDisTweaks_NPCAttackLong::StaticClass(); \
+	UDisTweaks_NPCAttackMedium::StaticClass(); \
+	UDisTweaks_NPCAttackRight180::StaticClass(); \
+	UDisTweaks_NPCAttackRight90::StaticClass(); \
+	UDisTweaks_NPCAttackShort::StaticClass(); \
+	UDisTweaks_NPCAttackStepBack::StaticClass(); \
+	UDisTweaks_NPCAttackUnder::StaticClass(); \
+	UDisTweaks_NPCAttractSpell::StaticClass(); \
+	UDisTweaks_NPCAttractSpellCoupDeGrace::StaticClass(); \
+	UDisTweaks_NPCBackStep::StaticClass(); \
+	UDisTweaks_NPCBash::StaticClass(); \
+	UDisTweaks_NPCFatality::StaticClass(); \
+	UDisTweaks_NPCJumpAttack::StaticClass(); \
+	UDisTweaks_NPCPush::StaticClass(); \
+	UDisTweaks_NPCRatCrushAttempt::StaticClass(); \
+	UDisTweaks_NPCRiposte::StaticClass(); \
+	UDisTweaks_NPCSideStep::StaticClass(); \
+	UDisTweaks_NPCStomp::StaticClass(); \
+	UDisTweaks_NPCTaunt::StaticClass(); \
+	UDisTweaks_NPCTune_Combat::StaticClass(); \
+	UDisTweaks_NPCWhiskeyFire::StaticClass(); \
+	UDisTweaks_ParryNPC::StaticClass(); \
+	UDisTweaks_UseSpringRazor::StaticClass(); \
+	UDisTweaks_WeeperGrab::StaticClass(); \
+	UDisTweaks_WepSwordOfAssassin::StaticClass(); \
+	UDisWepMelee::StaticClass(); \
+	UDisWepMusicAmp::StaticClass(); \
+	UDisWepMusicBox::StaticClass(); \
+	UDisWepThrowingHand::StaticClass(); \
+	UDisWepWhiskeyBottle::StaticClass(); \
+	UDishonoredWepSword::StaticClass(); \
+
+#endif // DISHONOREDGAME_WEAPON_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeAttack,DisItemContext_MeleeAttack,m_pVersusTargetContext)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeAttack,DisItemContext_MeleeAttack,m_AlreadyHitActors)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_MeleeAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeAttackNPCBase,DisItemContext_MeleeAttackNPCBase,m_pVisionComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_MeleeAttackNPCBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeAttack,DisTweaks_MeleeAttack,m_MeleeExtentName)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeAttack,DisTweaks_MeleeAttack,m_pContactType_BigDamage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MeleeAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeAttackNPCBase,DisTweaks_MeleeAttackNPCBase,m_MainAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeAttackNPCBase,DisTweaks_MeleeAttackNPCBase,m_fPredictionTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MeleeAttackNPCBase)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredWeapon)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Minigame,DisItemContext_Minigame,m_MinigameState)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Minigame,DisItemContext_Minigame,m_LookAtRequestID)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_Minigame)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Minigame,DisTweaks_Minigame,m_NPCAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Minigame,DisTweaks_Minigame,m_LoopSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Minigame)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeAttackPlayer,DisItemContext_MeleeAttackPlayer,m_pPlayerOwner)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeAttackPlayer,DisItemContext_MeleeAttackPlayer,m_fCurHoldAttackTime)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_MeleeAttackPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Finisher,DisItemContext_Finisher,m_CurFastFinishers)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Finisher,DisItemContext_Finisher,m_fTimeOfLastSlow)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_Finisher)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Assassinate,DisItemContext_Assassinate,m_pLinkedAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Assassinate,DisItemContext_Assassinate,m_pCachedPotentialAssassinateAction)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_Assassinate)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_AttackNPCTallboyMelee)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_DropAssassinate,DisItemContext_DropAssassinate,m_pPlayerOwner)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_DropAssassinate,DisItemContext_DropAssassinate,m_TickTagAtWhichCacheIsValid)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_DropAssassinate)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCTeleportSpell,DisItemContext_NPCTeleportSpell,m_TeleportSpellState)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCTeleportSpell,DisItemContext_NPCTeleportSpell,m_NotedAttachedActors)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCTeleportSpell)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Fatality,DisItemContext_Fatality,m_pLinkedAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Fatality,DisItemContext_Fatality,m_iCurForcedFatalityVariation)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_Fatality)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_MeleeBlock)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeBlockPlayer,DisItemContext_MeleeBlockPlayer,m_BlockState)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_MeleeBlockPlayer,DisItemContext_MeleeBlockPlayer,m_fForceBlockTimeForPerfectParry)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_MeleeBlockPlayer)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_MultiFatality)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAmbush)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackLeft180)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackLeft90)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackLong)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackMedium)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackRight180)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackRight90)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackShort)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackStepBack)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttackUnder)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCAttractSpell,DisItemContext_NPCAttractSpell,m_pAttractFX)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCAttractSpell,DisItemContext_NPCAttractSpell,m_fSpellTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttractSpell)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCAttractSpellCoupDeGrace)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCBackStep)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCBash)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCFatality)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCJumpAttack)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCPush)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCRatCrushAttempt,DisItemContext_NPCRatCrushAttempt,m_pRatToCrush)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCRatCrushAttempt,DisItemContext_NPCRatCrushAttempt,m_CenterOfCrushing)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCRatCrushAttempt)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCRiposte)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCSideStep,DisItemContext_NPCSideStep,m_NextRandomSideStepDirection)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCSideStep)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCStomp)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCTaunt,DisItemContext_NPCTaunt,m_fTauntBeginTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCTaunt,DisItemContext_NPCTaunt,m_MostRecentTargetLocation)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCTaunt)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCTune)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCTune_Combat,DisItemContext_NPCTune_Combat,m_pIntendedTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCTune_Combat,DisItemContext_NPCTune_Combat,m_fShutdownIn_OutOfRange)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCTune_Combat)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCTune_Protection)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCWhiskeyFire,DisItemContext_NPCWhiskeyFire,m_pTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_NPCWhiskeyFire,DisItemContext_NPCWhiskeyFire,m_LookAtRequestID)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_NPCWhiskeyFire)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_ParryNPC,DisItemContext_ParryNPC,m_pInitatedByContext)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_ParryNPC)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_WeeperGrab)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeAttackPlayer,DisTweaks_MeleeAttackPlayer,m_ForehandAttacks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeAttackPlayer,DisTweaks_MeleeAttackPlayer,m_fAdrenalineMultOnHit)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MeleeAttackPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Finisher,DisTweaks_Finisher,m_NumFinishersBeforeSlow_Min)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Finisher,DisTweaks_Finisher,m_fTimeBeforeSlow_Max)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Finisher)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Assassinate,DisTweaks_Assassinate,m_AssassinateMoveSets)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Assassinate,DisTweaks_Assassinate,m_Assassination_Generic_ProbeExtents)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Assassinate)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AttackNPCTallboyMelee)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DropAssassinate,DisTweaks_DropAssassinate,m_DropAssassinateMoveSets)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DropAssassinate,DisTweaks_DropAssassinate,m_fAdrenalineMultOnHit)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_DropAssassinate)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTeleportSpell,DisTweaks_NPCTeleportSpell,m_DistanceFromTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTeleportSpell,DisTweaks_NPCTeleportSpell,m_fMinEscapeDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCTeleportSpell)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepSword)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Fatality,DisTweaks_Fatality,m_FatalityMoveSets)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Fatality)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeBlock,DisTweaks_MeleeBlock,m_fBlockAngle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeBlock,DisTweaks_MeleeBlock,m_pContactType)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MeleeBlock)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeBlockPlayer,DisTweaks_MeleeBlockPlayer,m_BlockAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MeleeBlockPlayer,DisTweaks_MeleeBlockPlayer,m_fForceBlockTimeOnPerfectParryTap)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MeleeBlockPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MultiFatality,DisTweaks_MultiFatality,m_MultiFatalityAction)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MultiFatality)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAmbush)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackLeft180)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackLeft90)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackLong)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackMedium)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackRight180)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackRight90)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackShort)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackStepBack)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttackUnder)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCAttractSpell,DisTweaks_NPCAttractSpell,m_SuctionStrength)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCAttractSpell,DisTweaks_NPCAttractSpell,m_ContextCooldownWhenUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttractSpell)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttractSpellCoupDeGrace)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCBackStep,DisTweaks_NPCBackStep,m_fBackStepDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCBackStep)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCBash)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCFatality,DisTweaks_NPCFatality,m_fChanceOfFatality)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCFatality)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCJumpAttack)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPush)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCRatCrushAttempt,DisTweaks_NPCRatCrushAttempt,m_fCrushingBoneName)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCRatCrushAttempt,DisTweaks_NPCRatCrushAttempt,m_fRatAttractionStrength)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCRatCrushAttempt)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCRiposte,DisTweaks_NPCRiposte,m_RiposteRight)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCRiposte,DisTweaks_NPCRiposte,m_RiposteRightSidestep)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCRiposte)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCSideStep,DisTweaks_NPCSideStep,m_fSideStepDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCSideStep)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCStomp)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTaunt,DisTweaks_NPCTaunt,m_fAbortMinCommitTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTaunt,DisTweaks_NPCTaunt,m_ContextCooldownWhenUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCTaunt)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTune_Combat,DisTweaks_NPCTune_Combat,m_fMusicEffectRepulseForce)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTune_Combat,DisTweaks_NPCTune_Combat,m_ForceFeedbackWaveform)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCTune_Combat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCWhiskeyFire,DisTweaks_NPCWhiskeyFire,m_fLeadTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCWhiskeyFire,DisTweaks_NPCWhiskeyFire,m_fBlindEffectTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCWhiskeyFire)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ParryNPC)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_UseSpringRazor,DisTweaks_UseSpringRazor,m_UseSpringRazor)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_UseSpringRazor,DisTweaks_UseSpringRazor,m_pContactType)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_UseSpringRazor)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WeeperGrab,DisTweaks_WeeperGrab,m_fEasyDodgeRadius)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WeeperGrab,DisTweaks_WeeperGrab,m_fAnimDuration)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WeeperGrab)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WepSwordOfAssassin)
+VERIFY_CLASS_SIZE_NODIE(UDisWepMelee)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepMusicAmp,DisWepMusicAmp,m_pTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepMusicAmp,DisWepMusicAmp,m_iNumBrokenAmpParts)
+VERIFY_CLASS_SIZE_NODIE(UDisWepMusicAmp)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepMusicBox,DisWepMusicBox,m_pTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisWepMusicBox)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepThrowingHand,DisWepThrowingHand,m_pThrowingHandTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisWepThrowingHand)
+VERIFY_CLASS_OFFSET_NODIE(UDisWepWhiskeyBottle,DisWepWhiskeyBottle,m_pWhiskeyBottleTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisWepWhiskeyBottle)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWepSword,DishonoredWepSword,m_pSwordTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredWepSword)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

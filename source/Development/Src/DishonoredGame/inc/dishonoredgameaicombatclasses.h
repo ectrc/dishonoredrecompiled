@@ -1,141 +1,1281 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameaicombatclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (136):
-//   0x63c040  public: static class UClass * __cdecl UDisBehaviorCombat::StaticClass(void)
-//   0x63c060  public: void __thiscall UDisBehaviorCombatMelee::execOnEnterCallback_Stand(struct FFrame &, void * const)
-//   0x63c0f0  public: void __thiscall UDisBehaviorCombatMelee::execRefreshCallback_Stand(struct FFrame &, void * const)
-//   0x63c180  public: void __thiscall UDisBehaviorCombatMelee::execRequestStateExitCallback_FindShootingPosition(struct FFrame &, void * const)
-//   0x63c1e0  public: void __thiscall UDisBehaviorAssassinCombat::execRequestStateExitCallback_DoAttractSpell(struct FFrame &, void * const)
-//   0x63c240  public: void __thiscall UDisBehaviorCombatEliteGuard::execRefreshCallback_FindShootingPosition(struct FFrame &, void * const)
-//   0x63c2d0  public: void __thiscall UDisBehaviorCombatEliteGuard::execOnEnterCallback_FirePistol(struct FFrame &, void * const)
-//   0x63c360  public: void __thiscall UDisBehaviorCombatEliteGuard::execRequestStateExitCallback_FirePistol(struct FFrame &, void * const)
-//   0x63c3c0  public: void __thiscall UDisBehaviorOverseerCombat::execOnEnterCallback_GenericAction(struct FFrame &, void * const)
-//   0x63c450  public: void __thiscall UDisBehaviorOverseerCombat::execOnExitCallback_Stand(struct FFrame &, void * const)
-//   0x63c4e0  public: void __thiscall UDisBehaviorCombatWolfhound::execRefreshCallback_MeleeChase(struct FFrame &, void * const)
-//   0x63c5d0  public: void __thiscall UDisBehaviorTriggerAlarm::execRequestStateExitCallback_GenericAction(struct FFrame &, void * const)
-//   0x63df30  public: void __thiscall UDisGFxMoviePlayerMenuBase::execOnLoadGameConfirm(struct FFrame &, void * const)
-//   0x734690  protected: virtual __thiscall UDisBehaviorAmbush::~UDisBehaviorAmbush(void)
-//   0x7347d0  protected: virtual __thiscall UDisBehaviorEnemyUnreachable::~UDisBehaviorEnemyUnreachable(void)
-//   0x734930  public: virtual class UObject * __thiscall UDisBehaviorShoot::GetUObjectInterfaceDisAIRangedBehaviorInterface(void)
-//   0x734970  protected: virtual __thiscall UDisBehaviorShoot::~UDisBehaviorShoot(void)
-//   0x735d60  public: static void __cdecl UDisBehaviorAmbush::InternalConstructor(void *)
-//   0x735da0  public: static void __cdecl UDisBehaviorEnemyUnreachable::InternalConstructor(void *)
-//   0x735dc0  public: static void __cdecl UDisBehaviorShoot::InternalConstructor(void *)
-//   0x754af0  protected: virtual __thiscall UDisBehaviorCombat::~UDisBehaviorCombat(void)
-//   0x754c40  protected: virtual __thiscall UDisBehaviorCombatMelee::~UDisBehaviorCombatMelee(void)
-//   0x754cc0  public: virtual class UObject * __thiscall UDisBehaviorCombatMelee::GetUObjectInterfaceDisAIRangedBehaviorInterface(void)
-//   0x754d60  protected: virtual __thiscall UDisBehaviorAssassinCombat::~UDisBehaviorAssassinCombat(void)
-//   0x754e40  protected: virtual __thiscall UDisBehaviorCombatCityGuard::~UDisBehaviorCombatCityGuard(void)
-//   0x754ef0  protected: virtual __thiscall UDisBehaviorCombatEliteGuard::~UDisBehaviorCombatEliteGuard(void)
-//   0x755000  protected: virtual __thiscall UDisBehaviorOverseerHMasterCombat::~UDisBehaviorOverseerHMasterCombat(void)
-//   0x7550e0  protected: virtual __thiscall UDisBehaviorOverseerCombat::~UDisBehaviorOverseerCombat(void)
-//   0x7551c0  protected: virtual __thiscall UDisBehaviorThugCombat::~UDisBehaviorThugCombat(void)
-//   0x755310  protected: virtual __thiscall UDisBehaviorMusicalCombat::~UDisBehaviorMusicalCombat(void)
-//   0x755460  protected: virtual __thiscall UDisBehaviorTallBoyCombat::~UDisBehaviorTallBoyCombat(void)
-//   0x755510  protected: virtual __thiscall UDisBehaviorCombatRatSwarm::~UDisBehaviorCombatRatSwarm(void)
-//   0x7555f0  protected: virtual __thiscall UDisBehaviorCombatRatSwarmEliteGuard::~UDisBehaviorCombatRatSwarmEliteGuard(void)
-//   0x7556c0  protected: virtual __thiscall UDisBehaviorTallboyShoot::~UDisBehaviorTallboyShoot(void)
-//   0x756690  public: static void __cdecl UDisBehaviorCombat::InternalConstructor(void *)
-//   0x7566b0  public: static void __cdecl UDisBehaviorCombatMelee::InternalConstructor(void *)
-//   0x7566f0  public: static void __cdecl UDisBehaviorAssassinCombat::InternalConstructor(void *)
-//   0x756730  public: static void __cdecl UDisBehaviorCombatCityGuard::InternalConstructor(void *)
-//   0x756770  public: static void __cdecl UDisBehaviorCombatEliteGuard::InternalConstructor(void *)
-//   0x7567b0  public: static void __cdecl UDisBehaviorOverseerHMasterCombat::InternalConstructor(void *)
-//   0x7567f0  public: static void __cdecl UDisBehaviorOverseerCombat::InternalConstructor(void *)
-//   0x756830  public: static void __cdecl UDisBehaviorThugCombat::InternalConstructor(void *)
-//   0x756870  public: static void __cdecl UDisBehaviorMusicalCombat::InternalConstructor(void *)
-//   0x756890  public: static void __cdecl UDisBehaviorTallBoyCombat::InternalConstructor(void *)
-//   0x7568b0  public: static void __cdecl UDisBehaviorCombatRatSwarm::InternalConstructor(void *)
-//   0x7568f0  public: static void __cdecl UDisBehaviorCombatRatSwarmEliteGuard::InternalConstructor(void *)
-//   0x756930  public: static void __cdecl UDisBehaviorTallboyShoot::InternalConstructor(void *)
-//   0x7593d0  protected: virtual __thiscall UDisTweaks_AIBehavior_Combat::~UDisTweaks_AIBehavior_Combat(void)
-//   0x759490  protected: virtual __thiscall UDisTweaks_AIBehavior_CombatMelee::~UDisTweaks_AIBehavior_CombatMelee(void)
-//   0x759520  protected: virtual __thiscall UDisTweaks_AIBehavior_CombatCityGuard::~UDisTweaks_AIBehavior_CombatCityGuard(void)
-//   0x7595b0  protected: virtual __thiscall UDisTweaks_AIBehavior_CombatEliteGuard::~UDisTweaks_AIBehavior_CombatEliteGuard(void)
-//   0x759640  protected: virtual __thiscall UDisTweaks_AIBehavior_OverseerHMaster_Combat::~UDisTweaks_AIBehavior_OverseerHMaster_Combat(void)
-//   0x7596d0  protected: virtual __thiscall UDisTweaks_AIBehavior_OverseerCombat::~UDisTweaks_AIBehavior_OverseerCombat(void)
-//   0x759760  protected: virtual __thiscall UDisTweaks_AIBehavior_TallBoyCombat::~UDisTweaks_AIBehavior_TallBoyCombat(void)
-//   0x7597f0  protected: virtual __thiscall UDisTweaks_AIBehavior_CombatRatSwarm::~UDisTweaks_AIBehavior_CombatRatSwarm(void)
-//   0x759880  protected: virtual __thiscall UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard::~UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard(void)
-//   0x759910  protected: virtual __thiscall UDisTweaks_AIBehavior_TallboyShoot::~UDisTweaks_AIBehavior_TallboyShoot(void)
-//   0x75a780  public: static void __cdecl UDisTweaks_AIBehavior_Combat::InternalConstructor(void *)
-//   0x75a7a0  public: static void __cdecl UDisTweaks_AIBehavior_CombatMelee::InternalConstructor(void *)
-//   0x75a7c0  public: static void __cdecl UDisTweaks_AIBehavior_CombatCityGuard::InternalConstructor(void *)
-//   0x75a7e0  public: static void __cdecl UDisTweaks_AIBehavior_CombatEliteGuard::InternalConstructor(void *)
-//   0x75a800  public: static void __cdecl UDisTweaks_AIBehavior_OverseerHMaster_Combat::InternalConstructor(void *)
-//   0x75a820  public: static void __cdecl UDisTweaks_AIBehavior_OverseerCombat::InternalConstructor(void *)
-//   0x75a840  public: static void __cdecl UDisTweaks_AIBehavior_TallBoyCombat::InternalConstructor(void *)
-//   0x75a860  public: static void __cdecl UDisTweaks_AIBehavior_CombatRatSwarm::InternalConstructor(void *)
-//   0x75a880  public: static void __cdecl UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard::InternalConstructor(void *)
-//   0x75a8a0  public: static void __cdecl UDisTweaks_AIBehavior_TallboyShoot::InternalConstructor(void *)
-//   0x766e40  protected: virtual __thiscall UDisAISubStateCombatBase::~UDisAISubStateCombatBase(void)
-//   0x76ebf0  protected: virtual __thiscall UDisAISubProcessManageAttacks::~UDisAISubProcessManageAttacks(void)
-//   0x76edb0  protected: virtual __thiscall UDisAISubStateDoAttractSpell::~UDisAISubStateDoAttractSpell(void)
-//   0x76ee80  protected: virtual __thiscall UDisAISubStateDoWeaponManoeuver::~UDisAISubStateDoWeaponManoeuver(void)
-//   0x7727e0  public: static void __cdecl UDisAISubProcessManageAttacks::InternalConstructor(void *)
-//   0x772800  public: static void __cdecl UDisAISubStateCombatBase::InternalConstructor(void *)
-//   0x7728b0  protected: virtual __thiscall UDisAISubStateMeleeChase::~UDisAISubStateMeleeChase(void)
-//   0x772a30  protected: virtual __thiscall UDisAISubStateMeleeEngage::~UDisAISubStateMeleeEngage(void)
-//   0x772b20  public: static void __cdecl UDisAISubStateDoAttractSpell::InternalConstructor(void *)
-//   0x772b40  public: static void __cdecl UDisAISubStateDoWeaponManoeuver::InternalConstructor(void *)
-//   0x772c40  protected: virtual __thiscall UDisAISubStateFirePistol::~UDisAISubStateFirePistol(void)
-//   0x772dd0  protected: virtual __thiscall UDisAISubStateLieInWait::~UDisAISubStateLieInWait(void)
-//   0x774dc0  public: static void __cdecl UDisAISubStateMeleeChase::InternalConstructor(void *)
-//   0x774de0  public: static void __cdecl UDisAISubStateMeleeEngage::InternalConstructor(void *)
-//   0x774ed0  protected: virtual __thiscall UDisAISubStateFindShootingPosition::~UDisAISubStateFindShootingPosition(void)
-//   0x774fa0  public: static void __cdecl UDisAISubStateFirePistol::InternalConstructor(void *)
-//   0x774fc0  public: static void __cdecl UDisAISubStateLieInWait::InternalConstructor(void *)
-//   0x776890  public: static void __cdecl UDisAISubStateFindShootingPosition::InternalConstructor(void *)
-//   0x7818a0  protected: virtual __thiscall UDisTweaks_AISubProcess_ManageAttacks::~UDisTweaks_AISubProcess_ManageAttacks(void)
-//   0x781930  protected: virtual __thiscall UDisTweaks_AISubState_FindShootingPosition::~UDisTweaks_AISubState_FindShootingPosition(void)
-//   0x782c50  public: static void __cdecl UDisTweaks_AISubProcess_ManageAttacks::InternalConstructor(void *)
-//   0x782c70  public: static void __cdecl UDisTweaks_AISubState_FindShootingPosition::InternalConstructor(void *)
-//   0x792460  protected: virtual __thiscall UDisAIBrainProcessBattleSense::~UDisAIBrainProcessBattleSense(void)
-//   0x796fc0  public: static void __cdecl UDisAIBrainProcessBattleSense::InternalConstructor(void *)
-//   0x7a19d0  protected: virtual __thiscall UDisTweaks_AIAttackPattern::~UDisTweaks_AIAttackPattern(void)
-//   0x7a1a70  protected: virtual __thiscall UDisTweaks_AIBrainProcess_BattleSense::~UDisTweaks_AIBrainProcess_BattleSense(void)
-//   0x7a3310  public: static void __cdecl UDisTweaks_AIAttackPattern::InternalConstructor(void *)
-//   0x7a3330  public: static void __cdecl UDisTweaks_AIBrainProcess_BattleSense::InternalConstructor(void *)
-//   0x8d5ab0  protected: virtual __thiscall UDisGlobalCombatManager::~UDisGlobalCombatManager(void)
-//   0x8d5b30  public: static void __cdecl UDisGlobalCombatManager::InternalConstructor(void *)
-//   0xba8490  _dynamic_initializer_for__UDisBehaviorAmbushexecRequestStateExitCallback_LieInWaitTemp__
-//   0xba84b0  _dynamic_initializer_for__UDisBehaviorAmbushexecRequestStateExitCallback_TakeActorPositionTemp__
-//   0xba84d0  _dynamic_initializer_for__UDisBehaviorCombatMeleeexecRequestStateExitCallback_FindShootingPositionTemp__
-//   0xba84f0  _dynamic_initializer_for__UDisBehaviorCombatMeleeexecRefreshCallback_StandTemp__
-//   0xba8510  _dynamic_initializer_for__UDisBehaviorCombatMeleeexecOnEnterCallback_StandTemp__
-//   0xba8530  _dynamic_initializer_for__UDisBehaviorCombatMeleeexecRefreshCallback_MeleeChaseTemp__
-//   0xba8550  _dynamic_initializer_for__UDisBehaviorCombatMeleeexecRefreshCallback_MeleeEngageTemp__
-//   0xba8570  _dynamic_initializer_for__UDisBehaviorAssassinCombatexecRequestStateExitCallback_DoAttractSpellTemp__
-//   0xba8590  _dynamic_initializer_for__UDisBehaviorCombatEliteGuardexecRequestStateExitCallback_FirePistolTemp__
-//   0xba85b0  _dynamic_initializer_for__UDisBehaviorCombatEliteGuardexecOnEnterCallback_FirePistolTemp__
-//   0xba85d0  _dynamic_initializer_for__UDisBehaviorCombatEliteGuardexecRequestStateExitCallback_FindShootingPositionTemp__
-//   0xba85f0  _dynamic_initializer_for__UDisBehaviorCombatEliteGuardexecRefreshCallback_FindShootingPositionTemp__
-//   0xba8610  _dynamic_initializer_for__UDisBehaviorCombatEliteGuardexecRefreshCallback_StandTemp__
-//   0xba8630  _dynamic_initializer_for__UDisBehaviorOverseerCombatexecOnExitCallback_StandTemp__
-//   0xba8650  _dynamic_initializer_for__UDisBehaviorOverseerCombatexecOnEnterCallback_StandTemp__
-//   0xba8670  _dynamic_initializer_for__UDisBehaviorOverseerCombatexecRefreshCallback_MeleeChaseTemp__
-//   0xba8690  _dynamic_initializer_for__UDisBehaviorOverseerCombatexecRefreshCallback_MeleeEngageTemp__
-//   0xba86b0  _dynamic_initializer_for__UDisBehaviorOverseerCombatexecRequestStateExitCallback_GenericActionTemp__
-//   0xba86d0  _dynamic_initializer_for__UDisBehaviorOverseerCombatexecOnEnterCallback_GenericActionTemp__
-//   0xba86f0  _dynamic_initializer_for__UDisBehaviorMusicalCombatexecRequestStateExitCallback_DoWeaponManoeuverTemp__
-//   0xba8710  _dynamic_initializer_for__UDisBehaviorMusicalCombatexecRefreshCallback_MaintainDistanceTemp__
-//   0xba8730  _dynamic_initializer_for__UDisBehaviorMusicalCombatexecRefreshCallback_InitTemp__
-//   0xba8750  _dynamic_initializer_for__UDisBehaviorTallBoyCombatexecRequestStateExitCallback_FindShootingPositionTemp__
-//   0xba8770  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmexecRequestStateExitCallback_TakeActorPositionTemp__
-//   0xba8790  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmexecOnExitCallback_TakeActorPositionTemp__
-//   0xba87b0  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmexecRefreshCallback_TakeActorPositionTemp__
-//   0xba87d0  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmexecOnEnterCallback_TakeActorPositionTemp__
-//   0xba87f0  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmexecRefreshCallback_StandTemp__
-//   0xba8810  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmexecOnEnterCallback_StandTemp__
-//   0xba8830  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmEliteGuardexecRequestStateExitCallback_FirePistolTemp__
-//   0xba8850  _dynamic_initializer_for__UDisBehaviorCombatRatSwarmEliteGuardexecRefreshCallback_TakeActorPositionTemp__
-//   0xba8870  _dynamic_initializer_for__UDisBehaviorEnemyUnreachableexecRequestStateExitCallback_GenericActionTemp__
-//   0xba8890  _dynamic_initializer_for__UDisBehaviorEnemyUnreachableexecRequestStateExitCallback_TakePositionTemp__
-//   0xba88b0  _dynamic_initializer_for__UDisBehaviorEnemyUnreachableexecRequestStateExitCallback_DoWeaponManoeuverTemp__
-//   0xba88d0  _dynamic_initializer_for__UDisBehaviorEnemyUnreachableexecOnExitCallback_MenaceTemp__
-//   0xba88f0  _dynamic_initializer_for__UDisBehaviorEnemyUnreachableexecRefreshCallback_MenaceTemp__
-//   0xba8910  _dynamic_initializer_for__UDisBehaviorEnemyUnreachableexecOnEnterCallback_MenaceTemp__
-//   0xba8930  _dynamic_initializer_for__UDisBehaviorShootexecTickCallback_StandTemp__
-//   0xba8950  _dynamic_initializer_for__UDisBehaviorShootexecRequestStateExitCallback_FirePistolTemp__
+/*===========================================================================
+    DishonoredGameAICombatClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#include "DishonoredGameClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_AICOMBAT_ENUMS
+#define INCLUDED_DISHONOREDGAME_AICOMBAT_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_AICOMBAT_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_AICOMBAT_CLASSES
+#define INCLUDED_DISHONOREDGAME_AICOMBAT_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisGlobalAIDangerManager.DisDangerShape: retail SDK size 44 (2012 PDB 44)
+struct FDisDangerShape
+{
+    BYTE m_DangerShapeType;
+    class AActor* m_pRequestor;
+    FLOAT m_fRemainingLifetime;
+    FVector m_StartPoint;
+    FVector m_EndPoint;
+    FLOAT m_fRadius;
+    BITFIELD m_bIsWhaleOil:1;
+
+    /** Constructors */
+    FDisDangerShape() {}
+    FDisDangerShape(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDangerShape));
+    }
+};
+
+// DishonoredGame.DisGlobalAIDangerManager.DisDangerShape_WhaleOileDevice: retail SDK size 44 (2012 PDB 44)
+struct FDisDangerShape_WhaleOileDevice : public FDisDangerShape
+{
+
+    /** Constructors */
+    FDisDangerShape_WhaleOileDevice() {}
+    FDisDangerShape_WhaleOileDevice(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDangerShape_WhaleOileDevice));
+    }
+};
+
+// DishonoredGame.DisGlobalCombatManager.DisGroupAttackKnowledge: retail SDK size 8 (2012 PDB 8)
+struct FDisGroupAttackKnowledge
+{
+    FLOAT m_fWindowTimer;
+    FLOAT m_fWindowDuration;
+
+    /** Constructors */
+    FDisGroupAttackKnowledge() {}
+    FDisGroupAttackKnowledge(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisGroupAttackKnowledge));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIAttackPattern.DisItemContextOverride: retail SDK size 16 (2012 PDB 16)
+struct FDisItemContextOverride
+{
+    class UClass* m_pContextToOverride;
+    BITFIELD m_bContextEnabled:1;
+    FDisRangedFloat m_ContextCooldown;
+
+    /** Constructors */
+    FDisItemContextOverride() {}
+    FDisItemContextOverride(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisItemContextOverride));
+    }
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_ManageAttacks.DisManageAttacksUsageInfo: retail SDK size 28 (2012 PDB 28)
+struct FDisManageAttacksUsageInfo
+{
+    FLOAT m_fUsageWeight;
+    BYTE m_AttackOrigin;
+    BYTE m_AttackOriginFocus;
+    FVector2D m_GeoCheckDimensions;
+    FVector2D m_AllyCheckDimensions;
+    FLOAT m_fMaxGeoCheckDistance;
+
+    /** Constructors */
+    FDisManageAttacksUsageInfo() {}
+    FDisManageAttacksUsageInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisManageAttacksUsageInfo));
+    }
+};
+
+// DishonoredGame.DisGlobalCombatManager.DisSkirmish: retail SDK size 16 (2012 PDB 16)
+struct FDisSkirmish
+{
+    class ADishonoredPawn* m_pTargetPawn;
+    TArrayNoInit<class UDishonoredAIBrain*> m_Combatants;
+
+    /** Constructors */
+    FDisSkirmish() {}
+    FDisSkirmish(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSkirmish));
+    }
+};
+
+// DishonoredGame.DisAIBrainProcessBattleSense: retail sizeof 88, reflected span 76..88 (2012 PDB sizeof 84)
+class UDisAIBrainProcessBattleSense : public UDisAIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcessBattleSense
+    BITFIELD m_bFallenComradeNoted:1;
+    BITFIELD m_bUseLostAlliesBark:1;
+    FLOAT m_fVictoryBarkTimer;
+    FLOAT m_fInstinctiveTeleportTimer;
+    //## END PROPS DisAIBrainProcessBattleSense
+
+    DECLARE_CLASS(UDisAIBrainProcessBattleSense,UDisAIBrainProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessManageAttacks: retail sizeof 168, reflected span 104..168 (2012 PDB sizeof 168)
+class UDisAISubProcessManageAttacks : public UDisAISubProcess
+{
+public:
+    //## BEGIN PROPS DisAISubProcessManageAttacks
+    FLOAT m_fAggression;
+    FLOAT m_fBlockedAttackWeight;
+    FLOAT m_fBlockedAttackTimer;
+    FDisAttentionProxy m_EnemyProxy;
+    FLOAT m_fStaminaRecoveryTimer;
+    INT m_iFlurryAttacksRemaining;
+    FLOAT m_fSecondaryAttackDelay;
+    FLOAT m_fSideStepTimer;
+    INT m_iIncomingAttacksBeforeBackStep;
+    FLOAT m_fIncomingAttackForgivenessTimer;
+    FLOAT m_fStalemateTimer;
+    class UDisItemContext* m_pCurrentAction;
+    BITFIELD m_bWantsBlockBreaker:1;
+    BITFIELD m_bUseShortFormation:1;
+    BITFIELD m_bCapableOfBlockBreaker:1;
+    BITFIELD m_bCapableOfSideStep:1;
+    BITFIELD m_bCapableOfBackStep:1;
+    BITFIELD m_bHasPrimaryLineOfAttack:1;
+    BITFIELD m_bHasSecondaryLineOfAttack:1;
+    BITFIELD m_bIsObstructedByGeometry:1;
+    //## END PROPS DisAISubProcessManageAttacks
+
+    DECLARE_CLASS(UDisAISubProcessManageAttacks,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateCombatBase: retail sizeof 228, reflected span 208..225 (2012 PDB sizeof 228)
+class UDisAISubStateCombatBase : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateCombatBase
+    FDisAttentionProxy m_EnemyProxy;
+    BYTE m_eCombatBodyStance;
+    //## END PROPS DisAISubStateCombatBase
+
+    DECLARE_CLASS(UDisAISubStateCombatBase,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateDoAttractSpell: retail sizeof 332, reflected span 208..332 (2012 PDB sizeof 332)
+class UDisAISubStateDoAttractSpell : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateDoAttractSpell
+    FDisAttentionProxy m_TargetProxy;
+    BITFIELD m_bAttractBegun:1;
+    BITFIELD m_bLastResort:1;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateDoAttractSpell
+
+    DECLARE_CLASS(UDisAISubStateDoAttractSpell,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateDoWeaponManoeuver: retail sizeof 236, reflected span 208..236 (2012 PDB sizeof 236)
+class UDisAISubStateDoWeaponManoeuver : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateDoWeaponManoeuver
+    BITFIELD m_bPrecondition_CheckCooldown:1;
+    class UDisItemContext* m_pRunningContext;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateDoWeaponManoeuver
+
+    DECLARE_CLASS(UDisAISubStateDoWeaponManoeuver,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateFindShootingPosition: retail sizeof 476, reflected span 208..476 (2012 PDB sizeof 476)
+class UDisAISubStateFindShootingPosition : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateFindShootingPosition
+    BYTE m_ShootPositionStatus;
+    FDisAttentionProxy m_TargetProxy;
+    FVector m_LineCheckExtent;
+    FVector m_LastNotedPosition;
+    BITFIELD m_bUseShootingPositionGoal:1;
+    BITFIELD m_bForceMovement:1;
+    BITFIELD m_bManageRotation:1;
+    BITFIELD m_bIgnoreMinRangeWhenUnreachable:1;
+    class UDisNavMeshGoal_ShootingPosition* m_pLastGoalEvaluator;
+    FLOAT m_fGiveUpTimer;
+    FLOAT m_fMinShootDistance;
+    FLOAT m_fIdealShootDistance;
+    FLOAT m_fMaxShootDistance;
+    FLOAT m_fShootingHeight;
+    TArrayNoInit<FVector> m_ShootPositionCandidates;
+    INT m_iCandidateEvaluationIndex;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    //## END PROPS DisAISubStateFindShootingPosition
+
+    DECLARE_CLASS(UDisAISubStateFindShootingPosition,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateFirePistol: retail sizeof 536, reflected span 208..536 (2012 PDB sizeof 536)
+class UDisAISubStateFirePistol : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateFirePistol
+    FLOAT m_fGiveUpTimer;
+    BITFIELD m_bHasFired:1;
+    BITFIELD m_bDoneTrying:1;
+    BITFIELD m_bAllowExit:1;
+    BITFIELD m_bHasClearShot:1;
+    BITFIELD m_bShootForever:1;
+    BITFIELD m_bCanMove:1;
+    BITFIELD m_bControlledFiring:1;
+    BITFIELD m_bChainingShots:1;
+    BYTE m_AIPistolState;
+    BYTE m_eLastStatus;
+    FLOAT m_fFireTimer;
+    FDisAttentionProxy m_TargetProxy;
+    class AActor* m_pTarget;
+    INT m_iMaxNumShots;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateFirePistol
+
+    DECLARE_CLASS(UDisAISubStateFirePistol,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateLieInWait: retail sizeof 400, reflected span 208..400 (2012 PDB sizeof 400)
+class UDisAISubStateLieInWait : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateLieInWait
+    class ADisAmbushPoint* m_pAmbushPoint;
+    BITFIELD m_bTeleported:1;
+    BITFIELD m_bLieInWaitIndefinitely:1;
+    BYTE m_LieInWaitState;
+    FLOAT m_fWaitTimer;
+    FLOAT m_fAmbushAttackTimer;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubStateLieInWait
+
+    DECLARE_CLASS(UDisAISubStateLieInWait,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateMeleeChase: retail sizeof 432, reflected span 225..432 (2012 PDB sizeof 432)
+class UDisAISubStateMeleeChase : public UDisAISubStateCombatBase
+{
+public:
+    //## BEGIN PROPS DisAISubStateMeleeChase
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateMeleeChase
+
+    DECLARE_CLASS(UDisAISubStateMeleeChase,UDisAISubStateCombatBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateMeleeEngage: retail sizeof 520, reflected span 225..520 (2012 PDB sizeof 520)
+class UDisAISubStateMeleeEngage : public UDisAISubStateCombatBase
+{
+public:
+    //## BEGIN PROPS DisAISubStateMeleeEngage
+    FLOAT m_fRepositionTimer;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateMeleeEngage
+
+    DECLARE_CLASS(UDisAISubStateMeleeEngage,UDisAISubStateCombatBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorAmbush: retail sizeof 192, reflected span 160..192 (2012 PDB sizeof 192)
+class UDisBehaviorAmbush : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorAmbush
+    class ADisAmbushPoint* m_pAmbushPoint;
+    class ADishonoredPawn* m_pAmbushTarget;
+    BITFIELD m_bTeleport:1;
+    BITFIELD m_bDoBark:1;
+    BITFIELD m_bLieInWaitIndefinitely:1;
+    BITFIELD m_bFinished:1;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorAmbush
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_LieInWait);
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakeActorPosition);
+    DECLARE_CLASS(UDisBehaviorAmbush,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorCombat: retail sizeof 300, reflected span 176..300 (2012 PDB sizeof 300)
+class UDisBehaviorCombat : public UDisBehaviorAttentionBase
+{
+public:
+    //## BEGIN PROPS DisBehaviorCombat
+    BITFIELD m_bForceFinish:1;
+    BITFIELD m_bCanSeeEnemy:1;
+    BITFIELD m_bIsUsingOuterSkirmishAttackPattern:1;
+    BYTE m_eTransitSpeedToPursueTarget;
+    class UDisTweaks_AIAttackPattern* m_pCurrentAttackPattern;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    FLOAT m_fTimeInCombat;
+    //## END PROPS DisBehaviorCombat
+
+    DECLARE_ABSTRACT_CLASS(UDisBehaviorCombat,UDisBehaviorAttentionBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorCombatMelee: retail sizeof 304, reflected span 300..304 (2012 PDB sizeof 304)
+class UDisBehaviorCombatMelee : public UDisBehaviorCombat, public IDisAIRangedBehaviorInterface
+{
+public:
+    //## BEGIN PROPS DisBehaviorCombatMelee
+    //## END PROPS DisBehaviorCombatMelee
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_FindShootingPosition);
+    DECLARE_FUNCTION(execRefreshCallback_Stand);
+    DECLARE_FUNCTION(execOnEnterCallback_Stand);
+    DECLARE_FUNCTION(execRefreshCallback_MeleeChase);
+    DECLARE_FUNCTION(execRefreshCallback_MeleeEngage);
+    DECLARE_CLASS(UDisBehaviorCombatMelee,UDisBehaviorCombat,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorAssassinCombat: retail sizeof 304, reflected span 304..304 (2012 PDB sizeof 304)
+class UDisBehaviorAssassinCombat : public UDisBehaviorCombatMelee
+{
+public:
+    //## BEGIN PROPS DisBehaviorAssassinCombat
+    //## END PROPS DisBehaviorAssassinCombat
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_DoPullSpell);
+    DECLARE_FUNCTION(execRequestStateExitCallback_DoAttractSpell);
+    DECLARE_CLASS(UDisBehaviorAssassinCombat,UDisBehaviorCombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorCombatCityGuard: retail sizeof 304, reflected span 304..304 (2012 PDB sizeof 304)
+class UDisBehaviorCombatCityGuard : public UDisBehaviorCombatMelee
+{
+public:
+    //## BEGIN PROPS DisBehaviorCombatCityGuard
+    //## END PROPS DisBehaviorCombatCityGuard
+
+    DECLARE_CLASS(UDisBehaviorCombatCityGuard,UDisBehaviorCombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorCombatEliteGuard: retail sizeof 312, reflected span 304..312 (2012 PDB sizeof 312)
+class UDisBehaviorCombatEliteGuard : public UDisBehaviorCombatMelee
+{
+public:
+    //## BEGIN PROPS DisBehaviorCombatEliteGuard
+    FLOAT m_fGunTimer;
+    BITFIELD m_bWillingToStartShooting:1;
+    BITFIELD m_bWillingToContinueShooting:1;
+    //## END PROPS DisBehaviorCombatEliteGuard
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_FirePistol);
+    DECLARE_FUNCTION(execOnEnterCallback_FirePistol);
+    DECLARE_FUNCTION(execRequestStateExitCallback_FindShootingPosition);
+    DECLARE_FUNCTION(execRefreshCallback_FindShootingPosition);
+    DECLARE_FUNCTION(execRefreshCallback_Stand);
+    DECLARE_CLASS(UDisBehaviorCombatEliteGuard,UDisBehaviorCombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorCombatRatSwarm: retail sizeof 200, reflected span 160..200 (2012 PDB sizeof 200)
+class UDisBehaviorCombatRatSwarm : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorCombatRatSwarm
+    class ADisRatSwarm* m_pRatSwarm;
+    FLOAT m_fRemainingCombatGroupSetupTime;
+    class AActor* m_pTargetActor;
+    BITFIELD m_bIsFinished:1;
+    INT m_PanicCount;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorCombatRatSwarm
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakeActorPosition);
+    DECLARE_FUNCTION(execOnExitCallback_TakeActorPosition);
+    DECLARE_FUNCTION(execRefreshCallback_TakeActorPosition);
+    DECLARE_FUNCTION(execRefreshCallback_Stand);
+    DECLARE_FUNCTION(execOnEnterCallback_Stand);
+    DECLARE_CLASS(UDisBehaviorCombatRatSwarm,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorCombatRatSwarmEliteGuard: retail sizeof 204, reflected span 200..204 (2012 PDB sizeof 200)
+class UDisBehaviorCombatRatSwarmEliteGuard : public UDisBehaviorCombatRatSwarm, public IDisAIRangedBehaviorInterface
+{
+public:
+    //## BEGIN PROPS DisBehaviorCombatRatSwarmEliteGuard
+    //## END PROPS DisBehaviorCombatRatSwarmEliteGuard
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_FirePistol);
+    DECLARE_FUNCTION(execRefreshCallback_TakeActorPosition);
+    DECLARE_CLASS(UDisBehaviorCombatRatSwarmEliteGuard,UDisBehaviorCombatRatSwarm,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorEnemyUnreachable: retail sizeof 292, reflected span 160..292 (2012 PDB sizeof 292)
+class UDisBehaviorEnemyUnreachable : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorEnemyUnreachable
+    class ADishonoredPawn* m_pUnreachablePawn;
+    BITFIELD m_bFinished:1;
+    BITFIELD m_bAttackUnder_TryFlush:1;
+    BITFIELD m_bAttackUnder_TryGun:1;
+    FVector m_vOriginalPosition;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    FLOAT m_fBackoutTimer;
+    //## END PROPS DisBehaviorEnemyUnreachable
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
+    DECLARE_FUNCTION(execRequestStateExitCallback_DoWeaponManoeuver);
+    DECLARE_FUNCTION(execOnExitCallback_Menace);
+    DECLARE_FUNCTION(execRefreshCallback_Menace);
+    DECLARE_FUNCTION(execOnEnterCallback_Menace);
+    DECLARE_CLASS(UDisBehaviorEnemyUnreachable,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorMusicalCombat: retail sizeof 384, reflected span 300..384 (2012 PDB sizeof 384)
+class UDisBehaviorMusicalCombat : public UDisBehaviorCombat
+{
+public:
+    //## BEGIN PROPS DisBehaviorMusicalCombat
+    FDisFaceToRequest m_FaceToRequest;
+    //## END PROPS DisBehaviorMusicalCombat
+
+    DECLARE_FUNCTION(execRefreshCallback_DoWeaponManoeuver);
+    DECLARE_FUNCTION(execRequestStateExitCallback_DoWeaponManoeuver);
+    DECLARE_FUNCTION(execRefreshCallback_MaintainDistance);
+    DECLARE_FUNCTION(execRefreshCallback_Init);
+    DECLARE_CLASS(UDisBehaviorMusicalCombat,UDisBehaviorCombat,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorOverseerCombat: retail sizeof 320, reflected span 304..320 (2012 PDB sizeof 320)
+class UDisBehaviorOverseerCombat : public UDisBehaviorCombatMelee
+{
+public:
+    //## BEGIN PROPS DisBehaviorOverseerCombat
+    FLOAT m_fMeleeRushTimer;
+    BITFIELD m_bHasStartedRunning:1;
+    class ADishonoredNPCPawn* m_pCoordinatedChargeInstigator;
+    class UDisWepGrenade* m_pGrenadeWeapon;
+    //## END PROPS DisBehaviorOverseerCombat
+
+    DECLARE_FUNCTION(execOnExitCallback_Stand);
+    DECLARE_FUNCTION(execOnEnterCallback_Stand);
+    DECLARE_FUNCTION(execRefreshCallback_MeleeChase);
+    DECLARE_FUNCTION(execRefreshCallback_MeleeEngage);
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
+    DECLARE_CLASS(UDisBehaviorOverseerCombat,UDisBehaviorCombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorOverseerHMasterCombat: retail sizeof 312, reflected span 312..312 (2012 PDB sizeof 312)
+class UDisBehaviorOverseerHMasterCombat : public UDisBehaviorCombatEliteGuard
+{
+public:
+    //## BEGIN PROPS DisBehaviorOverseerHMasterCombat
+    //## END PROPS DisBehaviorOverseerHMasterCombat
+
+    DECLARE_CLASS(UDisBehaviorOverseerHMasterCombat,UDisBehaviorCombatEliteGuard,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorShoot: retail sizeof 372, reflected span 160..372 (2012 PDB sizeof 372)
+class UDisBehaviorShoot : public UDisAIBehaviorWithDesires, public IDisAIRangedBehaviorInterface
+{
+public:
+    //## BEGIN PROPS DisBehaviorShoot
+    BITFIELD m_bDone:1;
+    BITFIELD m_bRotationReached:1;
+    BITFIELD m_bShootForever:1;
+    BITFIELD m_bOverrideAccuracy:1;
+    class AActor* m_pTarget;
+    INT m_iMaxNumShots;
+    FLOAT m_fOverrideAccuracyPercentage;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorShoot
+
+    DECLARE_FUNCTION(execTickCallback_Stand);
+    DECLARE_FUNCTION(execRequestStateExitCallback_FirePistol);
+    DECLARE_CLASS(UDisBehaviorShoot,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorTallBoyCombat: retail sizeof 384, reflected span 300..384 (2012 PDB sizeof 384)
+class UDisBehaviorTallBoyCombat : public UDisBehaviorCombat
+{
+public:
+    //## BEGIN PROPS DisBehaviorTallBoyCombat
+    FDisFaceToRequest m_FaceToRequest;
+    //## END PROPS DisBehaviorTallBoyCombat
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_FindShootingPosition);
+    DECLARE_CLASS(UDisBehaviorTallBoyCombat,UDisBehaviorCombat,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorTallboyShoot: retail sizeof 376, reflected span 372..373 (2012 PDB sizeof 376)
+class UDisBehaviorTallboyShoot : public UDisBehaviorShoot
+{
+public:
+    //## BEGIN PROPS DisBehaviorTallboyShoot
+    BYTE m_eLastStatus;
+    //## END PROPS DisBehaviorTallboyShoot
+
+    DECLARE_CLASS(UDisBehaviorTallboyShoot,UDisBehaviorShoot,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorThugCombat: retail sizeof 304, reflected span 304..304 (2012 PDB sizeof 304)
+class UDisBehaviorThugCombat : public UDisBehaviorCombatMelee
+{
+public:
+    //## BEGIN PROPS DisBehaviorThugCombat
+    //## END PROPS DisBehaviorThugCombat
+
+    DECLARE_CLASS(UDisBehaviorThugCombat,UDisBehaviorCombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Combat: retail sizeof 208, reflected span 168..208 (2012 PDB sizeof 208)
+class UDisTweaks_AIBehavior_Combat : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Combat
+    TArrayNoInit<class UDisTweaks_AIAttackPattern*> m_AttackPatterns;
+    TArrayNoInit<class UDisTweaks_AIAttackPattern*> m_OuterSkirmishAttackPatterns;
+    FLOAT m_fMinTimeInCombatForCombatLostBark;
+    TArrayNoInit<BYTE> m_ConvFireGroupsToCancel;
+    //## END PROPS DisTweaks_AIBehavior_Combat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Combat,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_CombatMelee: retail sizeof 208, reflected span 208..208 (2012 PDB sizeof 208)
+class UDisTweaks_AIBehavior_CombatMelee : public UDisTweaks_AIBehavior_Combat
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_CombatMelee
+    //## END PROPS DisTweaks_AIBehavior_CombatMelee
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_CombatMelee,UDisTweaks_AIBehavior_Combat,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGlobalAIDangerManager: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisGlobalAIDangerManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisGlobalAIDangerManager
+    TArrayNoInit<FDisDangerShape> m_DangerShapes;
+    //## END PROPS DisGlobalAIDangerManager
+
+    DECLARE_CLASS(UDisGlobalAIDangerManager,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AI");}
+};
+
+// DishonoredGame.DisGlobalCombatManager: retail sizeof 340, reflected span 56..340 (2012 PDB sizeof 332)
+class UDisGlobalCombatManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisGlobalCombatManager
+    TMap<class ADishonoredPawn*,FDisSkirmish> m_TargetToSkirmishMap;  // DISHONORED(layout): retail SDK gap @56: MapProperty m_TargetToSkirmishMap (script_classes_2013), type from the 2012 PDB
+    TMap<class UClass*,FDisGroupAttackKnowledge> m_NPCAttackHistoryExactClasses;  // DISHONORED(layout): retail SDK gap @116: MapProperty m_NPCAttackHistoryExactClasses (script_classes_2013), type from the 2012 PDB
+    TMap<class UClass*,FDisGroupAttackKnowledge> m_NPCAttackHistoryDerivedClasses;  // DISHONORED(layout): retail SDK gap @176: MapProperty m_NPCAttackHistoryDerivedClasses (script_classes_2013), type from the 2012 PDB
+    FLOAT m_fInhibitionTimeJumpAttack;
+    FLOAT m_fInhibitionTimeLongAttack;
+    FLOAT m_fInhibitionTimeMediumAttack;
+    FLOAT m_fInhibitionTimeShortAttack;
+    FLOAT m_fInhibitionTimeStepBackAttack;
+    FLOAT m_fInhibitionTimeSideStep;
+    FLOAT m_fInhibitionTimeBackStep;
+    FLOAT m_fInhibitionTimeThrowRocks;
+    FLOAT m_fInhibitionTimeGrenadesWhenUnreachable;
+    FLOAT m_fInhibitionTimeGrenades;
+    FLOAT m_fInhibitionTimeTaunt;
+    FLOAT m_fInhibitionTimeWHArmAttack;
+    FLOAT m_fInhibitionTimeWHJumpAttack;
+    FLOAT m_fInhibitionTimeWeeperArmGrab;
+    FLOAT m_fInhibitionTimeTeleportSpell;
+    FLOAT m_fInhibitionTimeAttractSpell;
+    FLOAT m_fInhibitionTimePullSpell;
+    FLOAT m_fInhibitionTimeFireSaw;
+    INT m_InnerSkirmishCaps[4];
+    INT m_TotalSkirmishCaps[4];
+    //## END PROPS DisGlobalCombatManager
+
+    DECLARE_CLASS(UDisGlobalCombatManager,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AI");}
+};
+
+// DishonoredGame.DisTweaks_AIAttackPattern: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_AIAttackPattern : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIAttackPattern
+    class UClass* m_pIdealRangeSource;
+    FLOAT m_fFlankAngleDegrees;
+    BITFIELD m_bIsRunner:1;
+    TArrayNoInit<FDisItemContextOverride> m_ItemContextOverrides;
+    //## END PROPS DisTweaks_AIAttackPattern
+
+    DECLARE_CLASS(UDisTweaks_AIAttackPattern,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Ambush: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_Ambush : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Ambush
+    //## END PROPS DisTweaks_AIBehavior_Ambush
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Ambush,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_AssassinCombat: retail sizeof 208, reflected span 208..208 (2012 PDB sizeof 208)
+class UDisTweaks_AIBehavior_AssassinCombat : public UDisTweaks_AIBehavior_CombatMelee
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_AssassinCombat
+    //## END PROPS DisTweaks_AIBehavior_AssassinCombat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_AssassinCombat,UDisTweaks_AIBehavior_CombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_CombatCityGuard: retail sizeof 208, reflected span 208..208 (2012 PDB sizeof 208)
+class UDisTweaks_AIBehavior_CombatCityGuard : public UDisTweaks_AIBehavior_CombatMelee
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_CombatCityGuard
+    //## END PROPS DisTweaks_AIBehavior_CombatCityGuard
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_CombatCityGuard,UDisTweaks_AIBehavior_CombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_CombatEliteGuard: retail sizeof 224, reflected span 208..224 (2012 PDB sizeof 224)
+class UDisTweaks_AIBehavior_CombatEliteGuard : public UDisTweaks_AIBehavior_CombatMelee
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_CombatEliteGuard
+    FDisRangedFloat m_GunUsageStart;
+    FDisRangedFloat m_GunUsageCooldown;
+    //## END PROPS DisTweaks_AIBehavior_CombatEliteGuard
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_CombatEliteGuard,UDisTweaks_AIBehavior_CombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_CombatRatSwarm: retail sizeof 184, reflected span 168..184 (2012 PDB sizeof 184)
+class UDisTweaks_AIBehavior_CombatRatSwarm : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_CombatRatSwarm
+    INT m_MinCombatGroupSize;
+    BYTE m_AllyRequestLoudness;
+    FLOAT m_fMaxCombatGroupSetupTime;
+    INT m_MaxPanicCount;
+    //## END PROPS DisTweaks_AIBehavior_CombatRatSwarm
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_CombatRatSwarm,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_CombatRatSwarmEliteGuard: retail sizeof 184, reflected span 184..184 (2012 PDB sizeof 184)
+class UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard : public UDisTweaks_AIBehavior_CombatRatSwarm
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_CombatRatSwarmEliteGuard
+    //## END PROPS DisTweaks_AIBehavior_CombatRatSwarmEliteGuard
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard,UDisTweaks_AIBehavior_CombatRatSwarm,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_EnemyUnreachable: retail sizeof 192, reflected span 168..191 (2012 PDB sizeof 188)
+class UDisTweaks_AIBehavior_EnemyUnreachable : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_EnemyUnreachable
+    FLOAT m_fBarkTimer_Taunt_Max;
+    FLOAT m_fBarkTimer_Taunt_Min;
+    FDisRangedFloat m_fBackOutPeriodicity;
+    BITFIELD m_bFullyAccuratePosition:1;
+    BYTE m_MayInteractWithHideoutOfType[3];
+    //## END PROPS DisTweaks_AIBehavior_EnemyUnreachable
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_EnemyUnreachable,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_MusicalCombat: retail sizeof 208, reflected span 208..208 (2012 PDB sizeof 208)
+class UDisTweaks_AIBehavior_MusicalCombat : public UDisTweaks_AIBehavior_Combat
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_MusicalCombat
+    //## END PROPS DisTweaks_AIBehavior_MusicalCombat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_MusicalCombat,UDisTweaks_AIBehavior_Combat,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_OverseerCombat: retail sizeof 220, reflected span 208..220 (2012 PDB sizeof 220)
+class UDisTweaks_AIBehavior_OverseerCombat : public UDisTweaks_AIBehavior_CombatMelee
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_OverseerCombat
+    FLOAT m_fMeleeRushSafetyTimer;
+    FLOAT m_fMeleeRushThreatRadius;
+    BITFIELD m_bRestrictRushToInnerSkirmish:1;
+    BITFIELD m_bEnableRushSpecificStance:1;
+    //## END PROPS DisTweaks_AIBehavior_OverseerCombat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_OverseerCombat,UDisTweaks_AIBehavior_CombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_OverseerHMaster_Combat: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)
+class UDisTweaks_AIBehavior_OverseerHMaster_Combat : public UDisTweaks_AIBehavior_CombatEliteGuard
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_OverseerHMaster_Combat
+    //## END PROPS DisTweaks_AIBehavior_OverseerHMaster_Combat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_OverseerHMaster_Combat,UDisTweaks_AIBehavior_CombatEliteGuard,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Shoot: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_Shoot : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Shoot
+    //## END PROPS DisTweaks_AIBehavior_Shoot
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Shoot,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_TallBoyCombat: retail sizeof 212, reflected span 208..212 (2012 PDB sizeof 212)
+class UDisTweaks_AIBehavior_TallBoyCombat : public UDisTweaks_AIBehavior_Combat
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_TallBoyCombat
+    FLOAT m_fAimingDangerSphereRadius;
+    //## END PROPS DisTweaks_AIBehavior_TallBoyCombat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_TallBoyCombat,UDisTweaks_AIBehavior_Combat,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_TallboyShoot: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_TallboyShoot : public UDisTweaks_AIBehavior_Shoot
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_TallboyShoot
+    //## END PROPS DisTweaks_AIBehavior_TallboyShoot
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_TallboyShoot,UDisTweaks_AIBehavior_Shoot,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_ThugCombat: retail sizeof 208, reflected span 208..208 (2012 PDB sizeof 208)
+class UDisTweaks_AIBehavior_ThugCombat : public UDisTweaks_AIBehavior_CombatMelee
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_ThugCombat
+    //## END PROPS DisTweaks_AIBehavior_ThugCombat
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_ThugCombat,UDisTweaks_AIBehavior_CombatMelee,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_BattleSense: retail sizeof 160, reflected span 144..160 (2012 PDB sizeof 152)
+class UDisTweaks_AIBrainProcess_BattleSense : public UDisTweaks_AIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrainProcess_BattleSense
+    FDisRangedFloat m_VictoryBarkDelay;
+    FDisRangedFloat m_InstinctiveTeleportCooldown;
+    //## END PROPS DisTweaks_AIBrainProcess_BattleSense
+
+    DECLARE_CLASS(UDisTweaks_AIBrainProcess_BattleSense,UDisTweaks_AIBrainProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBrain)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_ManageAttacks: retail sizeof 296, reflected span 140..296 (2012 PDB sizeof 296)
+class UDisTweaks_AISubProcess_ManageAttacks : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_ManageAttacks
+    FDisManageAttacksUsageInfo m_PrimaryUsageInfo;
+    FDisManageAttacksUsageInfo m_SecondaryUsageInfo;
+    FDisRangedFloat m_TimeBeforeSecondaryAttacks;
+    BITFIELD m_bManageProjectileDanger:1;
+    FDisRangedInt m_AttacksPerFlurry;
+    FDisRangedFloat m_StaminaRecoveryDuration;
+    class UClass* m_pLongestFormationAttack;
+    class UClass* m_pLongestFormationAttackAgainstNPC;
+    class UClass* m_pShortestFormationAttack;
+    FLOAT m_fPaddingAgainstPlayer;
+    FLOAT m_fPaddingAgainstNPCs;
+    FLOAT m_fStalemateAllowanceTime;
+    FLOAT m_fAngleOfPerceivedMeleeThreat;
+    FLOAT m_fAngleOfPerceivedRangedThreat;
+    FDisRangedFloat m_TimeForThreatToCauseSideStep;
+    FDisRangedInt m_IncomingAttacksBeforeBackStep;
+    FLOAT m_fTimeToForgiveIncomingAttacks;
+    FLOAT m_fBlockedAttackSensitivity;
+    class UClass* m_pBlockBreakerAttack;
+    FLOAT m_fAggressionDeltaPerDamage;
+    FLOAT m_fAggressionRegenRate;
+    FLOAT m_fCooldownFactorAtMinAggression;
+    //## END PROPS DisTweaks_AISubProcess_ManageAttacks
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_ManageAttacks,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_DoAttractSpell: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState_DoAttractSpell : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_DoAttractSpell
+    //## END PROPS DisTweaks_AISubState_DoAttractSpell
+
+    DECLARE_CLASS(UDisTweaks_AISubState_DoAttractSpell,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_DoWeaponManoeuver: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_AISubState_DoWeaponManoeuver : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_DoWeaponManoeuver
+    BYTE m_eEquipSlotToUse;
+    BYTE m_eContextToTrigger;
+    class UClass* m_pContextClassToUse;
+    class UClass* m_pItemClassToUse;
+    //## END PROPS DisTweaks_AISubState_DoWeaponManoeuver
+
+    DECLARE_CLASS(UDisTweaks_AISubState_DoWeaponManoeuver,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_FindShootingPosition: retail sizeof 168, reflected span 140..168 (2012 PDB sizeof 168)
+class UDisTweaks_AISubState_FindShootingPosition : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_FindShootingPosition
+    class UClass* m_pWeaponType;
+    BYTE m_EquipUsage;
+    BYTE m_ContextSlot;
+    BYTE m_eDesiredSpeed;
+    class UClass* m_pProjectileItemContext;
+    INT m_iMaxLineChecksPerRefresh;
+    FLOAT m_fAvoidanceRadius;
+    FLOAT m_fAllowedPitchDegrees;
+    FLOAT m_fTimeBeforeGivingUp;
+    //## END PROPS DisTweaks_AISubState_FindShootingPosition
+
+    DECLARE_CLASS(UDisTweaks_AISubState_FindShootingPosition,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_FirePistol: retail sizeof 172, reflected span 140..172 (2012 PDB sizeof 164)
+class UDisTweaks_AISubState_FirePistol : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_FirePistol
+    FDisRangedFloat m_TimeBeforeGivingUp;
+    FLOAT m_fPointBlankDistance;
+    FLOAT m_fAngleAllowanceFromMuzzle;
+    FLOAT m_fAngleAllowanceFromMuzzleAtPointBlank;
+    FLOAT m_fChanceOfFiringAgain;
+    FDisRangedFloat m_TimeToFirstShot;
+    //## END PROPS DisTweaks_AISubState_FirePistol
+
+    DECLARE_CLASS(UDisTweaks_AISubState_FirePistol,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_LieInWait: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_AISubState_LieInWait : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_LieInWait
+    FLOAT m_fWaitTime;
+    FLOAT m_fAmbushAttackWait;
+    FLOAT m_fDangerRadius;
+    //## END PROPS DisTweaks_AISubState_LieInWait
+
+    DECLARE_CLASS(UDisTweaks_AISubState_LieInWait,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_AICOMBAT_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(UDisBehaviorAmbush,-1,execRequestStateExitCallback_LieInWait);
+AUTOGENERATE_FUNCTION(UDisBehaviorAmbush,-1,execRequestStateExitCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatMelee,-1,execRequestStateExitCallback_FindShootingPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatMelee,-1,execRefreshCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatMelee,-1,execOnEnterCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatMelee,-1,execRefreshCallback_MeleeChase);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatMelee,-1,execRefreshCallback_MeleeEngage);
+AUTOGENERATE_FUNCTION(UDisBehaviorAssassinCombat,-1,execRequestStateExitCallback_DoPullSpell);
+AUTOGENERATE_FUNCTION(UDisBehaviorAssassinCombat,-1,execRequestStateExitCallback_DoAttractSpell);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatEliteGuard,-1,execRequestStateExitCallback_FirePistol);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatEliteGuard,-1,execOnEnterCallback_FirePistol);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatEliteGuard,-1,execRequestStateExitCallback_FindShootingPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatEliteGuard,-1,execRefreshCallback_FindShootingPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatEliteGuard,-1,execRefreshCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarm,-1,execRequestStateExitCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarm,-1,execOnExitCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarm,-1,execRefreshCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarm,-1,execRefreshCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarm,-1,execOnEnterCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarmEliteGuard,-1,execRequestStateExitCallback_FirePistol);
+AUTOGENERATE_FUNCTION(UDisBehaviorCombatRatSwarmEliteGuard,-1,execRefreshCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorEnemyUnreachable,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorEnemyUnreachable,-1,execRequestStateExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorEnemyUnreachable,-1,execRequestStateExitCallback_DoWeaponManoeuver);
+AUTOGENERATE_FUNCTION(UDisBehaviorEnemyUnreachable,-1,execOnExitCallback_Menace);
+AUTOGENERATE_FUNCTION(UDisBehaviorEnemyUnreachable,-1,execRefreshCallback_Menace);
+AUTOGENERATE_FUNCTION(UDisBehaviorEnemyUnreachable,-1,execOnEnterCallback_Menace);
+AUTOGENERATE_FUNCTION(UDisBehaviorMusicalCombat,-1,execRefreshCallback_DoWeaponManoeuver);
+AUTOGENERATE_FUNCTION(UDisBehaviorMusicalCombat,-1,execRequestStateExitCallback_DoWeaponManoeuver);
+AUTOGENERATE_FUNCTION(UDisBehaviorMusicalCombat,-1,execRefreshCallback_MaintainDistance);
+AUTOGENERATE_FUNCTION(UDisBehaviorMusicalCombat,-1,execRefreshCallback_Init);
+AUTOGENERATE_FUNCTION(UDisBehaviorOverseerCombat,-1,execOnExitCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorOverseerCombat,-1,execOnEnterCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorOverseerCombat,-1,execRefreshCallback_MeleeChase);
+AUTOGENERATE_FUNCTION(UDisBehaviorOverseerCombat,-1,execRefreshCallback_MeleeEngage);
+AUTOGENERATE_FUNCTION(UDisBehaviorOverseerCombat,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorOverseerCombat,-1,execOnEnterCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorShoot,-1,execTickCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorShoot,-1,execRequestStateExitCallback_FirePistol);
+AUTOGENERATE_FUNCTION(UDisBehaviorTallBoyCombat,-1,execRequestStateExitCallback_FindShootingPosition);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_AICOMBAT_NATIVE_DEFS
+#define DISHONOREDGAME_AICOMBAT_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_AICOMBAT \
+	UDisAIBrainProcessBattleSense::StaticClass(); \
+	UDisAISubProcessManageAttacks::StaticClass(); \
+	UDisAISubStateCombatBase::StaticClass(); \
+	UDisAISubStateDoAttractSpell::StaticClass(); \
+	UDisAISubStateDoWeaponManoeuver::StaticClass(); \
+	UDisAISubStateFindShootingPosition::StaticClass(); \
+	UDisAISubStateFirePistol::StaticClass(); \
+	UDisAISubStateLieInWait::StaticClass(); \
+	UDisAISubStateMeleeChase::StaticClass(); \
+	UDisAISubStateMeleeEngage::StaticClass(); \
+	UDisBehaviorAmbush::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorAmbush"), GDishonoredGameUDisBehaviorAmbushNatives); \
+	UDisBehaviorCombat::StaticClass(); \
+	UDisBehaviorCombatMelee::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorCombatMelee"), GDishonoredGameUDisBehaviorCombatMeleeNatives); \
+	UDisBehaviorAssassinCombat::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorAssassinCombat"), GDishonoredGameUDisBehaviorAssassinCombatNatives); \
+	UDisBehaviorCombatCityGuard::StaticClass(); \
+	UDisBehaviorCombatEliteGuard::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorCombatEliteGuard"), GDishonoredGameUDisBehaviorCombatEliteGuardNatives); \
+	UDisBehaviorCombatRatSwarm::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorCombatRatSwarm"), GDishonoredGameUDisBehaviorCombatRatSwarmNatives); \
+	UDisBehaviorCombatRatSwarmEliteGuard::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorCombatRatSwarmEliteGuard"), GDishonoredGameUDisBehaviorCombatRatSwarmEliteGuardNatives); \
+	UDisBehaviorEnemyUnreachable::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorEnemyUnreachable"), GDishonoredGameUDisBehaviorEnemyUnreachableNatives); \
+	UDisBehaviorMusicalCombat::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorMusicalCombat"), GDishonoredGameUDisBehaviorMusicalCombatNatives); \
+	UDisBehaviorOverseerCombat::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorOverseerCombat"), GDishonoredGameUDisBehaviorOverseerCombatNatives); \
+	UDisBehaviorOverseerHMasterCombat::StaticClass(); \
+	UDisBehaviorShoot::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorShoot"), GDishonoredGameUDisBehaviorShootNatives); \
+	UDisBehaviorTallBoyCombat::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorTallBoyCombat"), GDishonoredGameUDisBehaviorTallBoyCombatNatives); \
+	UDisBehaviorTallboyShoot::StaticClass(); \
+	UDisBehaviorThugCombat::StaticClass(); \
+	UDisTweaks_AIBehavior_Combat::StaticClass(); \
+	UDisTweaks_AIBehavior_CombatMelee::StaticClass(); \
+	UDisGlobalAIDangerManager::StaticClass(); \
+	UDisGlobalCombatManager::StaticClass(); \
+	UDisTweaks_AIAttackPattern::StaticClass(); \
+	UDisTweaks_AIBehavior_Ambush::StaticClass(); \
+	UDisTweaks_AIBehavior_AssassinCombat::StaticClass(); \
+	UDisTweaks_AIBehavior_CombatCityGuard::StaticClass(); \
+	UDisTweaks_AIBehavior_CombatEliteGuard::StaticClass(); \
+	UDisTweaks_AIBehavior_CombatRatSwarm::StaticClass(); \
+	UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard::StaticClass(); \
+	UDisTweaks_AIBehavior_EnemyUnreachable::StaticClass(); \
+	UDisTweaks_AIBehavior_MusicalCombat::StaticClass(); \
+	UDisTweaks_AIBehavior_OverseerCombat::StaticClass(); \
+	UDisTweaks_AIBehavior_OverseerHMaster_Combat::StaticClass(); \
+	UDisTweaks_AIBehavior_Shoot::StaticClass(); \
+	UDisTweaks_AIBehavior_TallBoyCombat::StaticClass(); \
+	UDisTweaks_AIBehavior_TallboyShoot::StaticClass(); \
+	UDisTweaks_AIBehavior_ThugCombat::StaticClass(); \
+	UDisTweaks_AIBrainProcess_BattleSense::StaticClass(); \
+	UDisTweaks_AISubProcess_ManageAttacks::StaticClass(); \
+	UDisTweaks_AISubState_DoAttractSpell::StaticClass(); \
+	UDisTweaks_AISubState_DoWeaponManoeuver::StaticClass(); \
+	UDisTweaks_AISubState_FindShootingPosition::StaticClass(); \
+	UDisTweaks_AISubState_FirePistol::StaticClass(); \
+	UDisTweaks_AISubState_LieInWait::StaticClass(); \
+
+#endif // DISHONOREDGAME_AICOMBAT_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameUDisBehaviorAmbushNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorAmbush, execRequestStateExitCallback_LieInWait)
+	MAP_NATIVE(UDisBehaviorAmbush, execRequestStateExitCallback_TakeActorPosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorCombatMeleeNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorCombatMelee, execRequestStateExitCallback_FindShootingPosition)
+	MAP_NATIVE(UDisBehaviorCombatMelee, execRefreshCallback_Stand)
+	MAP_NATIVE(UDisBehaviorCombatMelee, execOnEnterCallback_Stand)
+	MAP_NATIVE(UDisBehaviorCombatMelee, execRefreshCallback_MeleeChase)
+	MAP_NATIVE(UDisBehaviorCombatMelee, execRefreshCallback_MeleeEngage)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorAssassinCombatNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorAssassinCombat, execRequestStateExitCallback_DoPullSpell)
+	MAP_NATIVE(UDisBehaviorAssassinCombat, execRequestStateExitCallback_DoAttractSpell)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorCombatEliteGuardNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorCombatEliteGuard, execRequestStateExitCallback_FirePistol)
+	MAP_NATIVE(UDisBehaviorCombatEliteGuard, execOnEnterCallback_FirePistol)
+	MAP_NATIVE(UDisBehaviorCombatEliteGuard, execRequestStateExitCallback_FindShootingPosition)
+	MAP_NATIVE(UDisBehaviorCombatEliteGuard, execRefreshCallback_FindShootingPosition)
+	MAP_NATIVE(UDisBehaviorCombatEliteGuard, execRefreshCallback_Stand)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorCombatRatSwarmNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorCombatRatSwarm, execRequestStateExitCallback_TakeActorPosition)
+	MAP_NATIVE(UDisBehaviorCombatRatSwarm, execOnExitCallback_TakeActorPosition)
+	MAP_NATIVE(UDisBehaviorCombatRatSwarm, execRefreshCallback_TakeActorPosition)
+	MAP_NATIVE(UDisBehaviorCombatRatSwarm, execRefreshCallback_Stand)
+	MAP_NATIVE(UDisBehaviorCombatRatSwarm, execOnEnterCallback_Stand)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorCombatRatSwarmEliteGuardNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorCombatRatSwarmEliteGuard, execRequestStateExitCallback_FirePistol)
+	MAP_NATIVE(UDisBehaviorCombatRatSwarmEliteGuard, execRefreshCallback_TakeActorPosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorEnemyUnreachableNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorEnemyUnreachable, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorEnemyUnreachable, execRequestStateExitCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorEnemyUnreachable, execRequestStateExitCallback_DoWeaponManoeuver)
+	MAP_NATIVE(UDisBehaviorEnemyUnreachable, execOnExitCallback_Menace)
+	MAP_NATIVE(UDisBehaviorEnemyUnreachable, execRefreshCallback_Menace)
+	MAP_NATIVE(UDisBehaviorEnemyUnreachable, execOnEnterCallback_Menace)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorMusicalCombatNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorMusicalCombat, execRefreshCallback_DoWeaponManoeuver)
+	MAP_NATIVE(UDisBehaviorMusicalCombat, execRequestStateExitCallback_DoWeaponManoeuver)
+	MAP_NATIVE(UDisBehaviorMusicalCombat, execRefreshCallback_MaintainDistance)
+	MAP_NATIVE(UDisBehaviorMusicalCombat, execRefreshCallback_Init)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorOverseerCombatNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorOverseerCombat, execOnExitCallback_Stand)
+	MAP_NATIVE(UDisBehaviorOverseerCombat, execOnEnterCallback_Stand)
+	MAP_NATIVE(UDisBehaviorOverseerCombat, execRefreshCallback_MeleeChase)
+	MAP_NATIVE(UDisBehaviorOverseerCombat, execRefreshCallback_MeleeEngage)
+	MAP_NATIVE(UDisBehaviorOverseerCombat, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorOverseerCombat, execOnEnterCallback_GenericAction)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorShootNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorShoot, execTickCallback_Stand)
+	MAP_NATIVE(UDisBehaviorShoot, execRequestStateExitCallback_FirePistol)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorTallBoyCombatNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorTallBoyCombat, execRequestStateExitCallback_FindShootingPosition)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessBattleSense,DisAIBrainProcessBattleSense,m_fVictoryBarkTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessBattleSense,DisAIBrainProcessBattleSense,m_fInstinctiveTeleportTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcessBattleSense)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessManageAttacks,DisAISubProcessManageAttacks,m_fAggression)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessManageAttacks,DisAISubProcessManageAttacks,m_pCurrentAction)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessManageAttacks)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateCombatBase,DisAISubStateCombatBase,m_EnemyProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateCombatBase,DisAISubStateCombatBase,m_eCombatBodyStance)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateCombatBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateDoAttractSpell,DisAISubStateDoAttractSpell,m_TargetProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateDoAttractSpell,DisAISubStateDoAttractSpell,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateDoAttractSpell)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateDoWeaponManoeuver,DisAISubStateDoWeaponManoeuver,m_pRunningContext)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateDoWeaponManoeuver,DisAISubStateDoWeaponManoeuver,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateDoWeaponManoeuver)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFindShootingPosition,DisAISubStateFindShootingPosition,m_ShootPositionStatus)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFindShootingPosition,DisAISubStateFindShootingPosition,m_LocoRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateFindShootingPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFirePistol,DisAISubStateFirePistol,m_fGiveUpTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFirePistol,DisAISubStateFirePistol,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateFirePistol)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateLieInWait,DisAISubStateLieInWait,m_pAmbushPoint)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateLieInWait,DisAISubStateLieInWait,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateLieInWait)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMeleeChase,DisAISubStateMeleeChase,m_LocoRequest)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMeleeChase,DisAISubStateMeleeChase,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateMeleeChase)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMeleeEngage,DisAISubStateMeleeEngage,m_fRepositionTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMeleeEngage,DisAISubStateMeleeEngage,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateMeleeEngage)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorAmbush,DisBehaviorAmbush,m_pAmbushPoint)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorAmbush,DisBehaviorAmbush,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorAmbush)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorCombat,DisBehaviorCombat,m_eTransitSpeedToPursueTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorCombat,DisBehaviorCombat,m_fTimeInCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorCombatMelee)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorAssassinCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorCombatCityGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorCombatEliteGuard,DisBehaviorCombatEliteGuard,m_fGunTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorCombatEliteGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorCombatRatSwarm,DisBehaviorCombatRatSwarm,m_pRatSwarm)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorCombatRatSwarm,DisBehaviorCombatRatSwarm,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorCombatRatSwarm)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorCombatRatSwarmEliteGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorEnemyUnreachable,DisBehaviorEnemyUnreachable,m_pUnreachablePawn)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorEnemyUnreachable,DisBehaviorEnemyUnreachable,m_fBackoutTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorEnemyUnreachable)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorMusicalCombat,DisBehaviorMusicalCombat,m_FaceToRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorMusicalCombat)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorOverseerCombat,DisBehaviorOverseerCombat,m_fMeleeRushTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorOverseerCombat,DisBehaviorOverseerCombat,m_pGrenadeWeapon)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorOverseerCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorOverseerHMasterCombat)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorShoot,DisBehaviorShoot,m_pTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorShoot,DisBehaviorShoot,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorShoot)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorTallBoyCombat,DisBehaviorTallBoyCombat,m_FaceToRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorTallBoyCombat)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorTallboyShoot,DisBehaviorTallboyShoot,m_eLastStatus)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorTallboyShoot)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorThugCombat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Combat,DisTweaks_AIBehavior_Combat,m_AttackPatterns)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Combat,DisTweaks_AIBehavior_Combat,m_ConvFireGroupsToCancel)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Combat)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_CombatMelee)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalAIDangerManager,DisGlobalAIDangerManager,m_DangerShapes)
+VERIFY_CLASS_SIZE_NODIE(UDisGlobalAIDangerManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalCombatManager,DisGlobalCombatManager,m_fInhibitionTimeJumpAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalCombatManager,DisGlobalCombatManager,m_TotalSkirmishCaps)
+VERIFY_CLASS_SIZE_NODIE(UDisGlobalCombatManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIAttackPattern,DisTweaks_AIAttackPattern,m_pIdealRangeSource)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIAttackPattern,DisTweaks_AIAttackPattern,m_ItemContextOverrides)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIAttackPattern)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Ambush)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_AssassinCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_CombatCityGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_CombatEliteGuard,DisTweaks_AIBehavior_CombatEliteGuard,m_GunUsageStart)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_CombatEliteGuard,DisTweaks_AIBehavior_CombatEliteGuard,m_GunUsageCooldown)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_CombatEliteGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_CombatRatSwarm,DisTweaks_AIBehavior_CombatRatSwarm,m_MinCombatGroupSize)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_CombatRatSwarm,DisTweaks_AIBehavior_CombatRatSwarm,m_MaxPanicCount)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_CombatRatSwarm)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_CombatRatSwarmEliteGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_EnemyUnreachable,DisTweaks_AIBehavior_EnemyUnreachable,m_fBarkTimer_Taunt_Max)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_EnemyUnreachable,DisTweaks_AIBehavior_EnemyUnreachable,m_MayInteractWithHideoutOfType)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_EnemyUnreachable)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_MusicalCombat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_OverseerCombat,DisTweaks_AIBehavior_OverseerCombat,m_fMeleeRushSafetyTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_OverseerCombat,DisTweaks_AIBehavior_OverseerCombat,m_fMeleeRushThreatRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_OverseerCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_OverseerHMaster_Combat)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Shoot)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_TallBoyCombat,DisTweaks_AIBehavior_TallBoyCombat,m_fAimingDangerSphereRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_TallBoyCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_TallboyShoot)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_ThugCombat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrainProcess_BattleSense,DisTweaks_AIBrainProcess_BattleSense,m_VictoryBarkDelay)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrainProcess_BattleSense,DisTweaks_AIBrainProcess_BattleSense,m_InstinctiveTeleportCooldown)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrainProcess_BattleSense)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_ManageAttacks,DisTweaks_AISubProcess_ManageAttacks,m_PrimaryUsageInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_ManageAttacks,DisTweaks_AISubProcess_ManageAttacks,m_fCooldownFactorAtMinAggression)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_ManageAttacks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_DoAttractSpell)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_DoWeaponManoeuver,DisTweaks_AISubState_DoWeaponManoeuver,m_eEquipSlotToUse)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_DoWeaponManoeuver,DisTweaks_AISubState_DoWeaponManoeuver,m_pItemClassToUse)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_DoWeaponManoeuver)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_FindShootingPosition,DisTweaks_AISubState_FindShootingPosition,m_pWeaponType)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_FindShootingPosition,DisTweaks_AISubState_FindShootingPosition,m_fTimeBeforeGivingUp)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_FindShootingPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_FirePistol,DisTweaks_AISubState_FirePistol,m_TimeBeforeGivingUp)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_FirePistol,DisTweaks_AISubState_FirePistol,m_TimeToFirstShot)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_FirePistol)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_LieInWait,DisTweaks_AISubState_LieInWait,m_fWaitTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_LieInWait,DisTweaks_AISubState_LieInWait,m_fDangerRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_LieInWait)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

@@ -76,6 +76,13 @@ set(DISHONORED_DEFINES
   WITH_ACTORX=0
   WITH_IME=1
   USE_NULL_RHI=0
+  # UnBuild.h defaults USE_UNIT_TESTS to !FINAL_RELEASE && !SHIPPING_PC_GAME, which makes UEngine::Exec("UNITTEST")
+  # reference Core/Src/UnitTest.cpp (excluded, Core/Sources.cmake). Neither the 2012 PDB nor the retail 2013 exe
+  # has an FUnitTestFramework function (functions.csv / functions_2013.csv), so the harness is off in every config.
+  USE_UNIT_TESTS=0
+  # Engine/Src/UnPNG.cpp: #pragma comment(lib, "libpng15.lib") is for the reference's own libpng 1.5.13 build;
+  # this tree links Dishonored::libPNG (FetchContent 1.6.43, cmake/Dependencies.cmake).
+  WITH_REFERENCE_LIBPNG=0
   SUPPORTS_SCRIPTPATCH_CREATION=0
   XDKINSTALLED=0
   EPIC_INTERNAL=0
@@ -106,5 +113,12 @@ function(dishonored_apply_defines target)
     target_compile_definitions(${target} PRIVATE DISHONORED_LAYOUT_CHECKS=1)
   else()
     target_compile_definitions(${target} PRIVATE DISHONORED_LAYOUT_CHECKS=0)
+  endif()
+  # USE_BINK_CODEC (UnBuild.h default EPIC_INTERNAL && !UE3_LEAN_AND_MEAN = 0): retail links Bink
+  # (binkw32.dll, 20 imports) and UnCodecs.h declares UCodecMovieBink differently per value, so the
+  # switch must be identical in every module. cmake/Bink.cmake provides Dishonored::bink.
+  if(DISHONORED_WITH_BINK)
+    target_compile_definitions(${target} PRIVATE USE_BINK_CODEC=1)
+    target_link_libraries(${target} PUBLIC Dishonored::bink)
   endif()
 endfunction()

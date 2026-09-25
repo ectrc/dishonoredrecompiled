@@ -1,0 +1,3 @@
+# Types the OnlineSubsystemSteamworks module's main header does not declare (collected from probe build logs)
+FQueuedSteamworksVoice
+FVoiceInterfaceSteamworks

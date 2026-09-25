@@ -1,206 +1,20741 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (396):
-//   0x6324c0  protected: virtual __thiscall IDisNoiseMakerInterface::~IDisNoiseMakerInterface(void)
-//   0x632500  protected: virtual __thiscall IDisPossessableInterface::~IDisPossessableInterface(void)
-//   0x632540  public: void __thiscall ADisFish::execTakeDamage_Native(struct FFrame &, void * const)
-//   0x632750  public: static class ADisFish * & __cdecl ADisFish::GetNextFishPtr(class ADisFish * const)
-//   0x632760  public: void __thiscall ADisSkeletalBreakable::execTakeDamage_Native(struct FFrame &, void * const)
-//   0x632920  public: void __thiscall ACamera::execRemoveCameraLensEffect(struct FFrame &, void * const)
-//   0x632980  public: static class UClass * __cdecl ADishonoredUsableObject::StaticClass(void)
-//   0x6329a0  protected: virtual __thiscall UDishonoredDamageType::~UDishonoredDamageType(void)
-//   0x632a30  public: static class UClass * __cdecl UDisDamageType_Impact::StaticClass(void)
-//   0x632a50  protected: virtual __thiscall UDisDamageType_UnpossessSquash::~UDisDamageType_UnpossessSquash(void)
-//   0x632ae0  protected: virtual __thiscall UDisDamageType_BlinkKnockdown::~UDisDamageType_BlinkKnockdown(void)
-//   0x632b70  protected: virtual __thiscall UDishonoredDamageType_FastHit::~UDishonoredDamageType_FastHit(void)
-//   0x632c00  protected: virtual __thiscall UDisDamageType_ImpactHit::~UDisDamageType_ImpactHit(void)
-//   0x632c90  protected: virtual __thiscall UDisDamageType_ImpactHit_Adrenaline_Up::~UDisDamageType_ImpactHit_Adrenaline_Up(void)
-//   0x632d20  protected: virtual __thiscall UDisDamageType_ImpactHit_Up_Left::~UDisDamageType_ImpactHit_Up_Left(void)
-//   0x632db0  protected: virtual __thiscall UDishonoredDamageType_BulletMedium::~UDishonoredDamageType_BulletMedium(void)
-//   0x632e40  public: void __thiscall ADishonoredPawn::execDisplayDebug_Native(struct FFrame &, void * const)
-//   0x632f60  public: void __thiscall ADishonoredPawn::execTakeDamage_Native(struct FFrame &, void * const)
-//   0x633170  public: void __thiscall ADishonoredPawn::execTakeFallingDamage_Native(struct FFrame &, void * const)
-//   0x633220  public: void __thiscall ADishonoredPawn::execPlayDying_Native(struct FFrame &, void * const)
-//   0x6332f0  public: void __thiscall ADishonoredPawn::execChooseAndTriggerDeathEvent_Native(struct FFrame &, void * const)
-//   0x633360  public: void __thiscall ADishonoredPawn::execLanded_Native(struct FFrame &, void * const)
-//   0x633400  public: void __thiscall ADishonoredPawn::execOnTeleport_Native(struct FFrame &, void * const)
-//   0x633470  public: void __thiscall ADishonoredPawn::execOnSetDisposition(struct FFrame &, void * const)
-//   0x6334d0  public: void __thiscall ADishonoredPawn::execOnAddInventoryItem(struct FFrame &, void * const)
-//   0x633530  public: void __thiscall ADishonoredPawn::execOnEquipItemType(struct FFrame &, void * const)
-//   0x633590  public: void __thiscall ADishonoredPawn::execOnModifyAmmo(struct FFrame &, void * const)
-//   0x6335f0  public: void __thiscall ADishonoredPawn::execOnAddAbstractItem(struct FFrame &, void * const)
-//   0x633650  public: void __thiscall ADishonoredPawn::execOnRemoveAbstractItem(struct FFrame &, void * const)
-//   0x6336b0  public: void __thiscall ADishonoredPawn::execOnGetAbstractItemQuantity(struct FFrame &, void * const)
-//   0x633710  public: void __thiscall ADishonoredPawn::execOnModifyElixirCount(struct FFrame &, void * const)
-//   0x633770  public: void __thiscall ADishonoredPawn::execCrushedBy_Native(struct FFrame &, void * const)
-//   0x6337d0  public: static class UClass * __cdecl ADishonoredPawn::StaticClass(void)
-//   0x6337f0  public: void __thiscall UDisGFxMoviePlayerMenuBase::execOnKeyListening(struct FFrame &, void * const)
-//   0x633850  public: void __thiscall UDishonoredEngine::execPushDisableSave(struct FFrame &, void * const)
-//   0x6338b0  public: void __thiscall UDishonoredEngine::execPopDisableSave(struct FFrame &, void * const)
-//   0x633940  public: void __thiscall UDishonoredEngine::execPushIgnoreAutosave(struct FFrame &, void * const)
-//   0x6339a0  public: void __thiscall UDishonoredEngine::execPopIgnoreAutosave(struct FFrame &, void * const)
-//   0x633a00  public: void __thiscall UDishonoredEngine::execPublishRichPresence(struct FFrame &, void * const)
-//   0x633a40  public: void __thiscall ADishonoredGameInfo::execGameEnding(struct FFrame &, void * const)
-//   0x633a80  public: void __thiscall ADishonoredGameInfo::execCanStartMatch(struct FFrame &, void * const)
-//   0x633ac0  public: void __thiscall ADishonoredGameInfo::execSpawnPlayer(struct FFrame &, void * const)
-//   0x633ba0  public: void __thiscall ADishonoredGameInfo::execPreventDeath_Native(struct FFrame &, void * const)
-//   0x633c90  public: static class UClass * __cdecl ADishonoredKAsset::StaticClass(void)
-//   0x633cb0  public: static class UClass * __cdecl ADisClimbable::StaticClass(void)
-//   0x633cd0  public: void __thiscall ADishonoredNote::execNativeNotePostRender(struct FFrame &, void * const)
-//   0x633de0  public: void __thiscall UDishonoredViewportClient::execPostRender_Native(struct FFrame &, void * const)
-//   0x633e40  public: void __thiscall UDishonoredCheatManager::execLocoDontRotate(struct FFrame &, void * const)
-//   0x633e80  public: void __thiscall ADisForbiddenZone::execOnForbiddenZoneOverride(struct FFrame &, void * const)
-//   0x633ee0  public: static class UClass * __cdecl ADisTripwire::StaticClass(void)
-//   0x633f00  public: void __thiscall ADisWatchTower::execTakeDamage_Native(struct FFrame &, void * const)
-//   0x638b40  public: void __thiscall ADishonoredHUD::execDrawHUD_Native(struct FFrame &, void * const)
-//   0x63ca20  public: void __thiscall ADisWallOfLight::execTakeDamage_Native(struct FFrame &, void * const)
-//   0x63e050  public: void __thiscall UDishonoredEngine::execDis_Load(struct FFrame &, void * const)
-//   0x63ef30  public: void __thiscall ADishonoredKActor::execTakeDamage_Native(struct FFrame &, void * const)
-//   0x641a10  public: static void __cdecl UDishonoredDamageType::InternalConstructor(void *)
-//   0x641a30  public: static void __cdecl UDisDamageType_UnpossessSquash::InternalConstructor(void *)
-//   0x641a50  public: static void __cdecl UDisDamageType_BlinkKnockdown::InternalConstructor(void *)
-//   0x641a70  public: static void __cdecl UDishonoredDamageType_FastHit::InternalConstructor(void *)
-//   0x641a90  public: static void __cdecl UDisDamageType_ImpactHit_Left::InternalConstructor(void *)
-//   0x641ab0  public: static void __cdecl UDisDamageType_ImpactHit_Adrenaline::InternalConstructor(void *)
-//   0x641ad0  public: static void __cdecl UDisDamageType_ImpactHit_Up_Left::InternalConstructor(void *)
-//   0x641af0  public: static void __cdecl UDishonoredDamageType_BulletBlast::InternalConstructor(void *)
-//   0x641b10  public: void __thiscall UDishonoredEngine::execUpdateRichPresenceChapter(struct FFrame &, void * const)
-//   0x641b80  public: void __thiscall UDishonoredEngine::execUpdateRichPresenceChaos(struct FFrame &, void * const)
-//   0x6471e0  public: void __thiscall UDishonoredDebugMenu::execLoadMenu(struct FFrame &, void * const)
-//   0x647290  public: void __thiscall UDownloadableContentEnumerator::execInstallDLC(struct FFrame &, void * const)
-//   0x64b460  public: static class UClass * __cdecl UDishonoredDamageType::StaticClass(void)
-//   0x64c890  public: static class UClass * __cdecl UDisDamageType_BlinkKnockdown::StaticClass(void)
-//   0x64c8b0  public: static class UClass * __cdecl UDisDamageType_BlinkPush::StaticClass(void)
-//   0x64c8d0  public: static class UClass * __cdecl UDisDamageType_CrushKnockdown::StaticClass(void)
-//   0x64c8f0  public: static class UClass * __cdecl UDisDamageType_Sleep_Deferred::StaticClass(void)
-//   0x64c910  public: static class UClass * __cdecl UDishonoredDamageType_Electricity::StaticClass(void)
-//   0x64c930  public: static class UClass * __cdecl UDishonoredDamageType_Explosion::StaticClass(void)
-//   0x64c950  public: static class UClass * __cdecl UDishonoredDamageType_FastHit::StaticClass(void)
-//   0x64e010  protected: virtual __thiscall ADisCrusher::~ADisCrusher(void)
-//   0x64e120  public: virtual class UObject * __thiscall ADisRiverKrust::GetUObjectInterfaceDisRelationshipInterface(void)
-//   0x64e170  protected: virtual __thiscall ADisDefenceTower::~ADisDefenceTower(void)
-//   0x64e260  protected: virtual __thiscall UDisDrawVisionComponent::~UDisDrawVisionComponent(void)
-//   0x64e2f0  protected: virtual __thiscall UDishonoredWaterVolumeInfo::~UDishonoredWaterVolumeInfo(void)
-//   0x64e3c0  protected: virtual __thiscall ADishonoredWaterVolume::~ADishonoredWaterVolume(void)
-//   0x64e4e0  public: virtual class UObject * __thiscall ADisFish::GetUObjectInterfaceDisSoulRenderInterface(void)
-//   0x64e530  protected: virtual __thiscall ADisExplosion::~ADisExplosion(void)
-//   0x64e6a0  protected: virtual __thiscall ADisFish::~ADisFish(void)
-//   0x64e780  public: static class UClass * __cdecl UDisDamageType_FishBite::StaticClass(void)
-//   0x64e7a0  public: static class UClass * __cdecl UDisDamageType_FastHit_Right::StaticClass(void)
-//   0x64e7c0  public: static class UClass * __cdecl UDisDamageType_FastHit_Up::StaticClass(void)
-//   0x64e7e0  public: static class UClass * __cdecl UDisDamageType_ImpactHit::StaticClass(void)
-//   0x64e800  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Adrenaline::StaticClass(void)
-//   0x64e820  protected: virtual __thiscall ADishonoredDecalActorBase::~ADishonoredDecalActorBase(void)
-//   0x64e8b0  protected: virtual __thiscall UDishonoredDecalComponent::~UDishonoredDecalComponent(void)
-//   0x64e950  protected: virtual __thiscall ADishonoredEmitterPool::~ADishonoredEmitterPool(void)
-//   0x64e9e0  protected: virtual __thiscall ADishonoredKActor::~ADishonoredKActor(void)
-//   0x64ea90  public: virtual class UObject * __thiscall ADishonoredKActor::GetUObjectInterfaceDisContactTypeInterface(void)
-//   0x64eaa0  public: virtual class UObject * __thiscall ADishonoredKActor::GetUObjectInterfaceDisNoiseMakerInterface(void)
-//   0x64eab0  public: virtual class UObject * __thiscall ADishonoredKActor::GetUObjectInterfaceDisHitReboundInterface(void)
-//   0x64eac0  public: virtual class UObject * __thiscall ADishonoredKActor::GetUObjectInterfaceDisEngineTweaksInterface(void)
-//   0x64ebc0  protected: virtual __thiscall UDishonoredMapInfo::~UDishonoredMapInfo(void)
-//   0x64ec70  protected: virtual __thiscall ADishonoredRiver::~ADishonoredRiver(void)
-//   0x64ed10  protected: virtual __thiscall UDishonoredCameraInfluenceGroup::~UDishonoredCameraInfluenceGroup(void)
-//   0x64edc0  protected: virtual __thiscall ADisProtectionTuneSource::~ADisProtectionTuneSource(void)
-//   0x64ee70  protected: virtual __thiscall ADisSoundSource::~ADisSoundSource(void)
-//   0x64ef20  protected: virtual __thiscall ADisStaticCollisionActor::~ADisStaticCollisionActor(void)
-//   0x650720  public: static void __cdecl ADisCrusher::InternalConstructor(void *)
-//   0x650750  public: static void __cdecl ADisDefenceTower::InternalConstructor(void *)
-//   0x650770  public: static void __cdecl UDisDrawVisionComponent::InternalConstructor(void *)
-//   0x650790  public: static void __cdecl UDishonoredWaterVolumeInfo::InternalConstructor(void *)
-//   0x6507b0  public: static void __cdecl ADishonoredWaterVolume::InternalConstructor(void *)
-//   0x6507f0  public: static void __cdecl ADisExplosion::InternalConstructor(void *)
-//   0x650810  public: static void __cdecl ADisFish::InternalConstructor(void *)
-//   0x650830  public: static class UClass * __cdecl UDisDamageType_FastHit_Up_Left::StaticClass(void)
-//   0x650850  public: static class UClass * __cdecl UDisDamageType_FastHit_Up_Right::StaticClass(void)
-//   0x650870  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Right::StaticClass(void)
-//   0x650890  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Up::StaticClass(void)
-//   0x6508b0  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Adrenaline_Right::StaticClass(void)
-//   0x6508d0  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Adrenaline_Up::StaticClass(void)
-//   0x6508f0  public: static void __cdecl ADishonoredDecalActorBase::InternalConstructor(void *)
-//   0x650920  protected: virtual __thiscall ADishonoredDecalActor::~ADishonoredDecalActor(void)
-//   0x6509b0  public: static void __cdecl UDishonoredDecalComponent::InternalConstructor(void *)
-//   0x6509d0  public: static void __cdecl ADishonoredEmitterPool::InternalConstructor(void *)
-//   0x650a10  public: static void __cdecl UDishonoredMapInfo::InternalConstructor(void *)
-//   0x650a30  public: static void __cdecl ADishonoredRiver::InternalConstructor(void *)
-//   0x650a60  public: static void __cdecl UDishonoredCameraInfluenceGroup::InternalConstructor(void *)
-//   0x650a80  public: static void __cdecl ADisProtectionTuneSource::InternalConstructor(void *)
-//   0x650ac0  public: static void __cdecl ADisSoundSource::InternalConstructor(void *)
-//   0x650b20  public: static void __cdecl ADisStaticCollisionActor::InternalConstructor(void *)
-//   0x652af0  protected: virtual __thiscall UDisGameplayEventsWriter::~UDisGameplayEventsWriter(void)
-//   0x652b80  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Up_Right::StaticClass(void)
-//   0x652ba0  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Adrenaline_Up_Left::StaticClass(void)
-//   0x652bc0  public: static class UClass * __cdecl UDisDamageType_ImpactHit_Adrenaline_Up_Right::StaticClass(void)
-//   0x652be0  public: static class UClass * __cdecl UDishonoredDamageType_BulletBlast::StaticClass(void)
-//   0x652c00  public: static void __cdecl ADishonoredDecalActor::InternalConstructor(void *)
-//   0x652c30  protected: virtual __thiscall UDisTweaks_Explosion::~UDisTweaks_Explosion(void)
-//   0x6542e0  public: static class UClass * __cdecl ADisDefenceTower::StaticClass(void)
-//   0x654300  public: static class UClass * __cdecl ADisFish::StaticClass(void)
-//   0x654320  public: static void __cdecl UDisGameplayEventsWriter::InternalConstructor(void *)
-//   0x654340  protected: virtual __thiscall UDishonoredCallbackSkeletalComponent::~UDishonoredCallbackSkeletalComponent(void)
-//   0x6543d0  public: static void __cdecl UDisTweaks_Explosion::InternalConstructor(void *)
-//   0x655770  public: static void __cdecl UDishonoredCallbackSkeletalComponent::InternalConstructor(void *)
-//   0x6557a0  protected: virtual __thiscall UDishonoredEngine::~UDishonoredEngine(void)
-//   0x655890  protected: virtual __thiscall UDishonoredViewportClient::~UDishonoredViewportClient(void)
-//   0x656ac0  protected: virtual __thiscall UDishonoredDebugMenu::~UDishonoredDebugMenu(void)
-//   0x656b60  public: static void __cdecl UDishonoredEngine::InternalConstructor(void *)
-//   0x656c90  public: virtual void __thiscall ADishonoredGameInfo::eventNotifyPathChanged(void)
-//   0x656cd0  public: virtual class UObject * __thiscall ADishonoredGameInfo::GetUObjectInterfaceInterface_NavigationHandle(void)
-//   0x656cf0  public: static void __cdecl UDishonoredViewportClient::InternalConstructor(void *)
-//   0x658220  public: static void __cdecl UDishonoredDebugMenu::InternalConstructor(void *)
-//   0x658240  protected: virtual __thiscall ADishonoredGameInfo::~ADishonoredGameInfo(void)
-//   0x6583c0  public: static void __cdecl ADishonoredGameInfo::InternalConstructor(void *)
-//   0x6631c0  protected: virtual __thiscall UDisParticleSystemComponent::~UDisParticleSystemComponent(void)
-//   0x663250  public: static void __cdecl UDisParticleSystemComponent::InternalConstructor(void *)
-//   0x66b950  protected: virtual __thiscall IDisConvSpeakerInterface::~IDisConvSpeakerInterface(void)
-//   0x66b990  protected: virtual __thiscall IDisInteractableInterface::~IDisInteractableInterface(void)
-//   0x66b9d0  protected: virtual __thiscall IDisNoiseListenerInterface::~IDisNoiseListenerInterface(void)
-//   0x66ba10  protected: virtual __thiscall IDisRelationshipInterface::~IDisRelationshipInterface(void)
-//   0x66ba50  protected: virtual __thiscall IDisSpawnRequesterInterface::~IDisSpawnRequesterInterface(void)
-//   0x674de0  protected: virtual __thiscall UDisAlarmBellComponent::~UDisAlarmBellComponent(void)
-//   0x674e70  protected: virtual __thiscall ADisSkeletalBreakable::~ADisSkeletalBreakable(void)
-//   0x675010  protected: virtual __thiscall ADishonoredUsableObject::~ADishonoredUsableObject(void)
-//   0x6752c0  protected: virtual __thiscall ADisDoor::~ADisDoor(void)
-//   0x6753d0  protected: virtual __thiscall ADishonoredKAsset::~ADishonoredKAsset(void)
-//   0x675480  public: virtual class UObject * __thiscall ADisWatchTower::GetUObjectInterfaceDisBlinderInterface(void)
-//   0x675490  public: virtual class UObject * __thiscall ADishonoredKAsset::GetUObjectInterfaceDisEngineTweaksInterface(void)
-//   0x675600  public: virtual class UObject * __thiscall ADisGrenade::GetUObjectInterfaceDisInteractableInterface(void)
-//   0x675670  protected: virtual __thiscall ADisClimbable::~ADisClimbable(void)
-//   0x6757c0  public: virtual class UObject * __thiscall ADisAlarmBell::GetUObjectInterfaceDisSpawnRequesterInterface(void)
-//   0x675840  protected: virtual __thiscall ADisAudioLogPlayer::~ADisAudioLogPlayer(void)
-//   0x6759d0  protected: virtual __thiscall ADishonoredDynamicUsableObject::~ADishonoredDynamicUsableObject(void)
-//   0x675b50  protected: virtual __thiscall ADisWaterSource::~ADisWaterSource(void)
-//   0x675c90  public: virtual class UObject * __thiscall ADishonoredUsableObject::GetUObjectInterfaceDisInteractableInterface(void)
-//   0x675ca0  public: virtual class UObject * __thiscall ADishonoredUsableObject::GetUObjectInterfaceDisSoulRenderInterface(void)
-//   0x675d10  protected: virtual __thiscall ADisProjectileLauncher::~ADisProjectileLauncher(void)
-//   0x675df0  protected: virtual __thiscall ADisTrigger::~ADisTrigger(void)
-//   0x675e80  public: virtual class UObject * __thiscall ADisRiverKrust::GetUObjectInterfaceDisFireProjectileInterface(void)
-//   0x675fa0  protected: virtual __thiscall ADisTriggerAbstractItem::~ADisTriggerAbstractItem(void)
-//   0x6760d0  protected: virtual __thiscall ADisTripwire::~ADisTripwire(void)
-//   0x676230  protected: virtual __thiscall ADisUpgrade::~ADisUpgrade(void)
-//   0x676310  protected: virtual __thiscall ADisWatchTowerPlatform::~ADisWatchTowerPlatform(void)
-//   0x677350  public: virtual class UObject * __thiscall ADisWallOfLight::GetUObjectInterfaceDisEngineTweaksInterface(void)
-//   0x677a10  public: static void __cdecl UDisAlarmBellComponent::InternalConstructor(void *)
-//   0x677a30  public: static void __cdecl ADisSkeletalBreakable::InternalConstructor(void *)
-//   0x677a50  public: static void __cdecl ADishonoredUsableObject::InternalConstructor(void *)
-//   0x677a70  public: static void __cdecl ADisDoor::InternalConstructor(void *)
-//   0x677a90  public: static void __cdecl ADishonoredKActor::InternalConstructor(void *)
-//   0x677ab0  public: static void __cdecl ADishonoredKAsset::InternalConstructor(void *)
-//   0x677ad0  public: static void __cdecl ADisClimbable::InternalConstructor(void *)
-//   0x677af0  public: static void __cdecl ADisAudioLogPlayer::InternalConstructor(void *)
-//   0x677b10  public: static void __cdecl ADishonoredDynamicUsableObject::InternalConstructor(void *)
-//   0x677b30  public: static void __cdecl ADisWaterSource::InternalConstructor(void *)
-//   0x677b50  public: static void __cdecl ADisProjectileLauncher::InternalConstructor(void *)
-//   0x677b70  public: static void __cdecl ADisTrigger::InternalConstructor(void *)
-//   0x677b90  public: static void __cdecl ADisTriggerAbstractItem::InternalConstructor(void *)
-//   0x677bb0  public: static void __cdecl ADisTripwire::InternalConstructor(void *)
-//   0x677bd0  public: static void __cdecl ADisUpgrade::InternalConstructor(void *)
-//   0x677bf0  public: static void __cdecl ADisWatchTowerPlatform::InternalConstructor(void *)
-//   0x679fb0  protected: virtual __thiscall UDisSkeletalBreakStepsInterface::~UDisSkeletalBreakStepsInterface(void)
-//   0x67a060  protected: virtual __thiscall UDisTweaks_Trigger::~UDisTweaks_Trigger(void)
-//   0x67a6d0  public: static void __cdecl UDisSkeletalBreakStepsInterface::InternalConstructor(void *)
-//   0x67a6f0  public: virtual struct FDisSkelBreakStep const * __thiscall UDisUsableObjectBreakSteps::GetStep(int)const
-//   0x67a740  protected: virtual __thiscall UDisUsableObjectBreakSteps::~UDisUsableObjectBreakSteps(void)
-//   ... 196 more, see resources/docs/symbols/functions.csv
+/*===========================================================================
+    DishonoredGameClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameAttributesClasses.h"
+#include "DishonoredGameGlobalEnumsClasses.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_ENUMS
+#define INCLUDED_DISHONOREDGAME_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_CLASSES
+#define INCLUDED_DISHONOREDGAME_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisNoiseMakerInterface.DisAudioCellCache: retail SDK size 20 (2012 PDB 20)
+struct FDisAudioCellCache
+{
+    FVector m_CachedPosition;
+    class ADishonoredAudioVolume* m_pCachedCell;
+    FLOAT m_fCacheTolerance;
+
+    /** Constructors */
+    FDisAudioCellCache() {}
+    FDisAudioCellCache(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAudioCellCache));
+    }
+};
+
+// DishonoredGame.DishonoredKActor.DisPhysicsContactInfo: retail SDK size 28 (2012 PDB 28)
+struct FDisPhysicsContactInfo
+{
+    FLOAT m_fLastImpactTime;
+    FLOAT m_fRefireDelay;
+    FLOAT m_fMinImpactSpeed;
+    FLOAT m_fLastSlideTime;
+    FLOAT m_fRefireDelay_Slide;
+    FLOAT m_fMinSlideSpeed;
+    BITFIELD m_bSlideActive:1;
+    BITFIELD m_bSlideActive_Cur:1;
+
+    /** Constructors */
+    FDisPhysicsContactInfo() {}
+    FDisPhysicsContactInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPhysicsContactInfo));
+    }
+};
+
+// DishonoredGame.DisContactTypeInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisContactTypeInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisContactTypeInterface
+    //## END PROPS DisContactTypeInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisContactTypeInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisContactTypeInterface
+{
+protected:
+    virtual ~IDisContactTypeInterface() {}
+public:
+    typedef UDisContactTypeInterface UClassType;
+};
+
+// DishonoredGame.DisHitReboundInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisHitReboundInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisHitReboundInterface
+    //## END PROPS DisHitReboundInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisHitReboundInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisHitReboundInterface
+{
+protected:
+    virtual ~IDisHitReboundInterface() {}
+public:
+    typedef UDisHitReboundInterface UClassType;
+};
+
+// DishonoredGame.DisNoiseMakerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisNoiseMakerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisNoiseMakerInterface
+    //## END PROPS DisNoiseMakerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisNoiseMakerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisNoiseMakerInterface
+{
+protected:
+    virtual ~IDisNoiseMakerInterface() {}
+public:
+    typedef UDisNoiseMakerInterface UClassType;
+};
+
+// DishonoredGame.DisTweaksInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisTweaksInterface : public UDisEngineTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisTweaksInterface
+    //## END PROPS DisTweaksInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaksInterface,UDisEngineTweaksInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisTweaksInterface : public IDisEngineTweaksInterface
+{
+protected:
+    virtual ~IDisTweaksInterface() {}
+public:
+    typedef UDisTweaksInterface UClassType;
+};
+
+struct DishonoredKActor_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DishonoredKActor_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+struct DishonoredKActor_eventDestroyIfPlayerCantSeeMe_Parms
+{
+    DishonoredKActor_eventDestroyIfPlayerCantSeeMe_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredKActor: retail sizeof 880, reflected span 808..876 (2012 PDB sizeof 880)
+class ADishonoredKActor : public AKActor, public IDisContactTypeInterface, public IDisNoiseMakerInterface, public IDisHitReboundInterface, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DishonoredKActor
+    FDisPhysicsContactInfo m_ContactPhysicsInfo;
+    BITFIELD m_bPlayerDeservesBlame:1;
+    FDisAudioCellCache m_AudioCellCache;
+    //## END PROPS DishonoredKActor
+
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DishonoredKActor_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    void eventDestroyIfPlayerCantSeeMe()
+    {
+        DishonoredKActor_eventDestroyIfPlayerCantSeeMe_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_DestroyIfPlayerCantSeeMe),&Parms);
+    }
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execDestroyIfPlayerCantSeeMe);
+    DECLARE_CLASS(ADishonoredKActor,AKActor,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Item");}
+};
+
+// DishonoredGame.DisInteractableInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisInteractableInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisInteractableInterface
+    //## END PROPS DisInteractableInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisInteractableInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisInteractableInterface
+{
+protected:
+    virtual ~IDisInteractableInterface() {}
+public:
+    typedef UDisInteractableInterface UClassType;
+};
+
+// DishonoredGame.DisSoulRenderInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisSoulRenderInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisSoulRenderInterface
+    //## END PROPS DisSoulRenderInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisSoulRenderInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisSoulRenderInterface
+{
+protected:
+    virtual ~IDisSoulRenderInterface() {}
+public:
+    typedef UDisSoulRenderInterface UClassType;
+};
+
+struct DisSkeletalBreakable_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DisSkeletalBreakable_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+struct DisSkeletalBreakable_eventBreakConstraint_Parms
+{
+    FVector _Impulse;
+    FVector _HitLocation;
+    FName _JointName;
+    DisSkeletalBreakable_eventBreakConstraint_Parms(EEventParm)
+    : _Impulse(EC_EventParm)
+    , _HitLocation(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DisSkeletalBreakable: retail sizeof 672, reflected span 632..664 (2012 PDB sizeof 672)
+class ADisSkeletalBreakable : public ASkeletalMeshActor, public IDisTweaksInterface, public IDisHitReboundInterface, public IArkHealthInterface, public IDisNoiseMakerInterface
+{
+public:
+    //## BEGIN PROPS DisSkeletalBreakable
+    class UDisTweaks_SkeletalBreakable* m_pBreakableTweaks;
+    INT m_CurHealth;
+    INT m_NextStep;
+    INT m_WantedStep;
+    //## END PROPS DisSkeletalBreakable
+
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DisSkeletalBreakable_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    void eventBreakConstraint(FVector _Impulse,FVector _HitLocation,FName _JointName)
+    {
+        DisSkeletalBreakable_eventBreakConstraint_Parms Parms(EC_EventParm);
+        Parms._Impulse=_Impulse;
+        Parms._HitLocation=_HitLocation;
+        Parms._JointName=_JointName;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BreakConstraint),&Parms);
+    }
+    virtual UObject* GetUObjectInterfaceArkHealthInterface() { return this; }  // DISHONORED(port): IArkHealthInterface interface glue
+    virtual INT ArkGetCurHealth() const { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADisSkeletalBreakable::ArkGetCurHealth")); return {}; }  // DISHONORED(port): IArkHealthInterface pure virtual
+    virtual UBOOL ArkIsIncapacitated() const { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADisSkeletalBreakable::ArkIsIncapacitated")); return {}; }  // DISHONORED(port): IArkHealthInterface pure virtual
+    virtual UBOOL ArkIsDeadOrDestroyed() const { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADisSkeletalBreakable::ArkIsDeadOrDestroyed")); return {}; }  // DISHONORED(port): IArkHealthInterface pure virtual
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisSkeletalBreakable,ASkeletalMeshActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredUsableObject: retail sizeof 784, reflected span 664..772 (2012 PDB sizeof 768)
+class ADishonoredUsableObject : public ADisSkeletalBreakable, public IDisInteractableInterface, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DishonoredUsableObject
+    class UDisTweaks_UsableObject* m_pUsableObjTweaks;
+    TArrayNoInit<FString> m_MatchingKeys;
+    BITFIELD m_bLocked:1;
+    BITFIELD m_bEnabled:1;
+    BITFIELD m_bTriggerActivated:1;
+    BITFIELD m_bCancelUseRequested:1;
+    BITFIELD m_bDoNPCAnim:1;
+    BITFIELD m_bUsableObjectDestroyed:1;
+    BITFIELD m_bForceTickAndMeshUpdate:1;
+    BITFIELD m_bIsBeingUsed:1;
+    BITFIELD m_bIsInterpolating:1;
+    class AActor* m_pConnectedActor;
+    class ASkeletalMeshActor* m_pRemoteActorToDrive;
+    FLOAT m_fInitialProgress;
+    class ULightEnvironmentComponent* m_StaticMeshLightEnvironment;
+    BYTE m_State;
+    class ADishonoredPawn* m_pInstigator;
+    FName m_AnimationName;
+    INT m_iActiveStage;
+    INT m_iLastStageCompleted;
+    class UStaticMeshComponent* m_pStaticUsableComponent;
+    class USkeletalMeshComponent* m_pHighlightSkeletalMeshComponent;
+    class UStaticMeshComponent* m_pHighlightStaticMeshComponent;
+    class UAnimNodeSequence* m_pSeqNode;
+    FLOAT m_fHeldTransitionProgress;
+    class UAnimNodeSequence* m_pRemoteActorSeqNode;
+    class UStaticMeshComponent* m_pHideoutCollisionMesh;
+    class UDisHideoutComponent* m_pHideoutComponent;
+    INT m_HighlightFlags;
+    class UStaticMeshComponent* m_BoxBoundsForPVS;
+    //## END PROPS DishonoredUsableObject
+
+    DECLARE_FUNCTION(execOnToggle_Native);
+    DECLARE_CLASS(ADishonoredUsableObject,ADisSkeletalBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSpawnRequesterInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisSpawnRequesterInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisSpawnRequesterInterface
+    //## END PROPS DisSpawnRequesterInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisSpawnRequesterInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisSpawnRequesterInterface
+{
+protected:
+    virtual ~IDisSpawnRequesterInterface() {}
+public:
+    typedef UDisSpawnRequesterInterface UClassType;
+};
+
+// DishonoredGame.DisAmbushPoint: retail sizeof 640, reflected span 584..628 (2012 PDB sizeof 640)
+class ADisAmbushPoint : public AActor
+{
+public:
+    //## BEGIN PROPS DisAmbushPoint
+    FLOAT m_fAmbushAreaDirection;
+    FLOAT m_fAmbushAreaLength;
+    FLOAT m_fAmbushAreaWidth;
+    FLOAT m_fAmbushAreaTop;
+    FLOAT m_fAmbushAreaBottom;
+    BITFIELD m_bManaged:1;
+    BITFIELD m_bClaimed:1;
+    class UDisAmbushComponent* m_pAmbushComponent;
+    class UPrimitiveComponent* m_pSpriteComponent;
+    class UPrimitiveComponent* m_pErrorSpriteComponent;
+    class UPrimitiveComponent* m_pEncroachmentComponent;
+    FLOAT m_fPreEditYaw;
+    //## END PROPS DisAmbushPoint
+
+    DECLARE_CLASS(ADisAmbushPoint,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisConvSpeakerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisConvSpeakerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisConvSpeakerInterface
+    //## END PROPS DisConvSpeakerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisConvSpeakerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisConvSpeakerInterface
+{
+protected:
+    virtual ~IDisConvSpeakerInterface() {}
+public:
+    typedef UDisConvSpeakerInterface UClassType;
+};
+
+// DishonoredGame.DisAudioLogPlayer: retail sizeof 848, reflected span 772..836 (2012 PDB sizeof 800)
+class ADisAudioLogPlayer : public ADishonoredUsableObject, public IDisConvSpeakerInterface
+{
+public:
+    //## BEGIN PROPS DisAudioLogPlayer
+    class UDisAbstractItemAudioLog* m_pAudioLog;
+    class UDisDialogVoiceData* m_pAudioLogDialogData;
+    class UDisTweaks_AudioLogPlayer* m_pAudioLogPlayerTweaks;
+    class UDisConversationComponent* m_pConvComponent;
+    BITFIELD m_bInitializedComponent:1;
+    BITFIELD m_bIsPlaying:1;
+    BITFIELD m_bUpdateEnabled:1;
+    FLOAT m_fUpdateTimer;
+    FLOAT m_fCurrentRadius;
+    BYTE m_SpeakerPropagationCache[32];  // DISHONORED(layout): retail SDK gap @804: StructProperty m_SpeakerPropagationCache (script_classes_2013) the dump did not type
+    //## END PROPS DisAudioLogPlayer
+
+    DECLARE_CLASS(ADisAudioLogPlayer,ADishonoredUsableObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageCauserInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisDamageCauserInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisDamageCauserInterface
+    //## END PROPS DisDamageCauserInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisDamageCauserInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisDamageCauserInterface
+{
+protected:
+    virtual ~IDisDamageCauserInterface() {}
+public:
+    typedef UDisDamageCauserInterface UClassType;
+};
+
+struct DishonoredKAsset_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DishonoredKAsset_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredKAsset: retail sizeof 672, reflected span 600..672 (2012 PDB sizeof 672)
+class ADishonoredKAsset : public AKAsset, public IDisContactTypeInterface, public IDisNoiseMakerInterface, public IDisHitReboundInterface, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DishonoredKAsset
+    FDisPhysicsContactInfo m_ContactPhysicsInfo;
+    BITFIELD m_bPlayerDeservesBlame:1;
+    FDisAudioCellCache m_AudioCellCache;
+    class UDisTweaks_KAsset* m_pTweaks;
+    //## END PROPS DishonoredKAsset
+
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DishonoredKAsset_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_CLASS(ADishonoredKAsset,AKAsset,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Item");}
+};
+
+// DishonoredGame.DisClimbable: retail sizeof 704, reflected span 672..704 (2012 PDB sizeof 704)
+class ADisClimbable : public ADishonoredKAsset, public IDisInteractableInterface, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisClimbable
+    class UDisTweaks_Climbable* m_pClimbableTweaks;
+    class UMaterialInterface* m_MaterialBackup;
+    FLOAT m_fNoCollisionDuration;
+    FLOAT m_fSwingingSoundMomentum;
+    INT m_HighlightFlags;
+    BITFIELD m_bRigidBodyIsAwake:1;
+    BITFIELD m_bRigidBodyAwakeFlagIsUpToDate:1;
+    BITFIELD m_bTickedOnce:1;
+    //## END PROPS DisClimbable
+
+    DECLARE_CLASS(ADisClimbable,ADishonoredKAsset,0,DishonoredGame)
+};
+
+struct DisCrusher_eventEncroachingOn_Parms
+{
+    class AActor* Other;
+    UBOOL ReturnValue;
+    DisCrusher_eventEncroachingOn_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisCrusher: retail sizeof 624, reflected span 584..612 (2012 PDB sizeof 624)
+class ADisCrusher : public AActor
+{
+public:
+    //## BEGIN PROPS DisCrusher
+    FVector m_OldLocation;
+    FRotator m_OldRotation;
+    BITFIELD m_bIsMoving:1;
+    //## END PROPS DisCrusher
+
+    UBOOL eventEncroachingOn(class AActor* Other)
+    {
+        DisCrusher_eventEncroachingOn_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        Parms.Other=Other;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_EncroachingOn),&Parms);
+        return Parms.ReturnValue;
+    }
+    DECLARE_FUNCTION(execEncroachingOn);
+    DECLARE_CLASS(ADisCrusher,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredGameInfo.BarkLogInfo: retail SDK size 28 (2012 PDB 28)
+struct FBarkLogInfo
+{
+    FName m_DialogHookName;
+    BYTE m_DialogHookPriority;
+    class UObject* m_pDialogHookInitiator;
+    FName m_DialogLineName;
+    class UObject* m_pSpeaker;
+
+    /** Constructors */
+    FBarkLogInfo() {}
+    FBarkLogInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FBarkLogInfo));
+    }
+};
+
+// DishonoredGame.DishonoredGameInfo.BendTimeActorInfo: retail SDK size 8 (2012 PDB 8)
+struct FBendTimeActorInfo
+{
+    FLOAT m_fTimeRemaining;
+    BITFIELD m_bAdjustVelocities:1;
+
+    /** Constructors */
+    FBendTimeActorInfo() {}
+    FBendTimeActorInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FBendTimeActorInfo));
+    }
+};
+
+// DishonoredGame.DishonoredGameInfo.BendTimeChannelInfo: retail SDK size 64 (2012 PDB 64)
+struct FBendTimeChannelInfo
+{
+    BYTE m_EffectType;
+    FLOAT m_fCurrentEffectIntensity;
+    FLOAT m_fTargetEffectIntensity;
+    FLOAT m_fEffectIntensityVelocity;
+    FLOAT m_fCurrentWorldTimeDilation;
+    FLOAT m_fTargetWorldTimeDilation;
+    FLOAT m_fWorldTimeDilationVelocity;
+    FLOAT m_fCurrentPlayerTimeDilation;
+    FLOAT m_fTargetPlayerTimeDilation;
+    FLOAT m_fPlayerTimeDilationVelocity;
+    FLOAT m_fCurrentPlayerTimeDilation_Input;
+    FLOAT m_fTargetPlayerTimeDilation_Input;
+    FLOAT m_fPlayerTimeDilationVelocity_Input;
+    BITFIELD m_bExclusive:1;
+    FLOAT m_fMaxDilation;
+    BITFIELD m_bAlwaysAffectWorld:1;
+    BITFIELD m_bAlwaysAffectPlayer:1;
+    BITFIELD m_bAffectsBendTimePower:1;
+    BITFIELD m_bSerializeForGameSave:1;
+
+    /** Constructors */
+    FBendTimeChannelInfo() {}
+    FBendTimeChannelInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FBendTimeChannelInfo));
+    }
+};
+
+// DishonoredGame.DishonoredGameInfo.BendTimeTrack: retail SDK size 24 (2012 PDB 24)
+struct FBendTimeTrack
+{
+    FLOAT m_fPlayerDilation;
+    FLOAT m_fPlayerDilation_Input;
+    FLOAT m_fWorldDilation;
+    FLOAT m_fEffectIntensity[3];
+
+    /** Constructors */
+    FBendTimeTrack() {}
+    FBendTimeTrack(EEventParm)
+    {
+        appMemzero(this, sizeof(FBendTimeTrack));
+    }
+};
+
+// DishonoredGame.DishonoredGameInfo.DisChapterTarget: retail SDK size 16 (2012 PDB 16)
+struct FDisChapterTarget
+{
+    FStringNoInit m_PortraitPath;
+    BYTE m_State;
+
+    /** Constructors */
+    FDisChapterTarget() {}
+    FDisChapterTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisChapterTarget));
+    }
+};
+
+// DishonoredGame.DishonoredGameInfo.MissionInfos: retail SDK size 28 (2012 PDB 28)
+struct FMissionInfos
+{
+    INT MissionNumber;
+    TArrayNoInit<FString> Maps;
+    TArrayNoInit<FString> Movies;
+
+    /** Constructors */
+    FMissionInfos() {}
+    FMissionInfos(EEventParm)
+    {
+        appMemzero(this, sizeof(FMissionInfos));
+    }
+};
+
+struct DishonoredGameInfo_eventPreventDeath_Parms
+{
+    class APawn* _pKilledPawn;
+    class AController* _pKiller;
+    class UClass* _pDamageType;
+    FVector _HitLocation;
+    UBOOL ReturnValue;
+    DishonoredGameInfo_eventPreventDeath_Parms(EEventParm)
+    : _HitLocation(EC_EventParm)
+    {
+    }
+};
+struct DishonoredGameInfo_eventNotifyPathChanged_Parms
+{
+    DishonoredGameInfo_eventNotifyPathChanged_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredGameInfo_eventStartMatch_Parms
+{
+    DishonoredGameInfo_eventStartMatch_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredGameInfo_eventGameEnding_Parms
+{
+    DishonoredGameInfo_eventGameEnding_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredGameInfo: retail sizeof 5680, reflected span 972..5680 (2012 PDB sizeof 5632)
+class ADishonoredGameInfo : public AGameInfo, public IArkSettingsListenerInterface, public IInterface_NavigationHandle
+{
+public:
+    //## BEGIN PROPS DishonoredGameInfo
+    BITFIELD m_bGlobalManagersInitialized:1;
+    BITFIELD m_bIsInPlaytestMode:1;
+    BITFIELD m_bGameOverPending:1;
+    BITFIELD m_bMatchStarted:1;
+    BITFIELD m_bNewNPCPhysWalking:1;
+    BITFIELD m_bNewNPCIK:1;
+    BITFIELD m_bNewAvoidance:1;
+    BITFIELD m_bLogGamePlayStats:1;
+    BITFIELD m_bLogBarks:1;
+    class UDisPostProcessManager* m_pPpManager;
+    class UDishonoredContactSystem* m_pContactSystem;
+    class UDishonoredGlobalAIManager* m_pGlobalAIManager;
+    class UDisAINoiseManager* m_pAINoiseManager;
+    class UDisConvGlobalMan* m_pConvGlobalMan;
+    class UDisDistractionGlobalManager* m_pDistractionGlobalManager;
+    class UDisAlarmGlobalManager* m_pAlarmGlobalManager;
+    class UDisAmbushGlobalManager* m_pAmbushGlobalManager;
+    class UDisWaterVolumeManager* m_pWaterVolumeManager;
+    class UDisGlobalCombatManager* m_pGlobalCombatManager;
+    class UDisGlobalFactionManager* m_pGlobalFactionManager;
+    class UDisRatSwarmGlobalManager* m_pRatSwarmGlobalManager;
+    class UDisGlobalAIDangerManager* m_pGlobalAIDangerManager;
+    class UDisGlobalAIAttentionManager* m_pGlobalAIAttentionManager;
+    class UDisGlobalMusicManager* m_pGlobalMusicManager;
+    class UDisGlobalProjectileManager* m_pGlobalProjectileManager;
+    class UDisNPCTravelManager* m_pNPCTravelManager;
+    class UDisGlobalUIManager* m_pGlobalUIManager;
+    class UDisGameCrowdPopulationManager* m_pPopulationManager;
+    class UDisGlobalDLCManager* m_pDLCManager;
+    TArrayNoInit<class AActor*> m_DestroyWhenNotVisible;
+    TArrayNoInit<class ADishonoredSpawner*> m_SpawnerList;
+    INT m_NextNPCID;
+    BYTE m_Difficulty;
+    INT m_CurrentMissionNum;
+    FName m_CurrentChapterTag;
+    FDisChapterTarget m_CurrentChapterTargets[2];
+    class UNavigationHandle* m_pNavigationHandle;
+    FNavMeshPathParams m_NavMeshPathParams;
+    FVector m_NavMeshZAdjust;
+    FLOAT m_fGameOverDelay;
+    FStringNoInit m_GameOverReason;
+    FLOAT m_fBendTimeEffectIntensity[3];
+    FBendTimeChannelInfo m_BendTimeInfo[11];
+    FBendTimeTrack m_TimeDilationTrack[120];
+    INT m_TimeDilationTrackPos;
+    TMap<class AActor*,FBendTimeActorInfo> m_BendTimePowerActorMap;  // DISHONORED(layout): retail SDK gap @4816: MapProperty m_BendTimePowerActorMap (script_classes_2013), type from the 2012 PDB
+    TMap<class AActor*,INT> m_BendTimeDisallowAutoReturn;  // DISHONORED(layout): retail SDK gap @4876: MapProperty m_BendTimeDisallowAutoReturn (script_classes_2013), type from the 2012 PDB
+    FLOAT m_fBendTimePowerRealTimeSeconds;
+    FName m_BendTimePostNodeName[3];
+    FName m_BendTimePostMICParameterName[3];
+    class UDisParticleSystemComponent* m_pPlayerBendTimeEffectComponent;
+    TArrayNoInit<FBarkLogInfo> m_BarkLogInfos;
+    TArrayNoInit<class UDisBlinderInterface*> m_Blinders;
+    TArrayNoInit<FMissionInfos> m_MissionsGame;
+    FStringNoInit m_DefaultPawnTweak;
+    FStringNoInit m_DefaultPawnTweakPackage;
+    FStringNoInit m_CampaignPawnTweak;
+    FStringNoInit m_CampaignPawnTweakPackage;
+    TArrayNoInit<FName> m_MapsToBarkProfile;
+    FLOAT m_fDestroyWhenNotVisibleDistance;
+    FStringNoInit m_MissionImages[21];
+    FStringNoInit m_MissionNames[21];
+    INT m_MissionChaosThreshold[21];
+    //## END PROPS DishonoredGameInfo
+
+    UBOOL eventPreventDeath(class APawn* _pKilledPawn,class AController* _pKiller,class UClass* _pDamageType,FVector _HitLocation)
+    {
+        DishonoredGameInfo_eventPreventDeath_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        Parms._pKilledPawn=_pKilledPawn;
+        Parms._pKiller=_pKiller;
+        Parms._pDamageType=_pDamageType;
+        Parms._HitLocation=_HitLocation;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_PreventDeath),&Parms);
+        return Parms.ReturnValue;
+    }
+    void eventNotifyPathChanged()
+    {
+        DishonoredGameInfo_eventNotifyPathChanged_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_NotifyPathChanged),&Parms);
+    }
+    void eventStartMatch()
+    {
+        DishonoredGameInfo_eventStartMatch_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_StartMatch),&Parms);
+    }
+    void eventGameEnding()
+    {
+        DishonoredGameInfo_eventGameEnding_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_GameEnding),&Parms);
+    }
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    virtual UObject* GetUObjectInterfaceInterface_NavigationHandle() { return this; }  // DISHONORED(port): IInterface_NavigationHandle interface glue
+    virtual FVector GetEdgeZAdjust(struct FNavMeshEdgeBase* Edge) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::GetEdgeZAdjust")); return {}; }  // DISHONORED(port): IInterface_NavigationHandle pure virtual
+    virtual void SetupPathfindingParams( struct FNavMeshPathParams& out_ParamCache ) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::SetupPathfindingParams")); }  // DISHONORED(port): IInterface_NavigationHandle pure virtual
+    virtual void InitForPathfinding() { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::InitForPathfinding")); }  // DISHONORED(port): IInterface_NavigationHandle pure virtual
+    DECLARE_FUNCTION(execPreventDeath_Native);
+    DECLARE_FUNCTION(execSpawnPlayer);
+    DECLARE_FUNCTION(execCanStartMatch);
+    DECLARE_FUNCTION(execGameEnding);
+    DECLARE_FUNCTION(execGetDishonoredEngineVersion);
+    DECLARE_FUNCTION(execGetChangelist);
+    DECLARE_CLASS(ADishonoredGameInfo,AGameInfo,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttnTargetParams: retail SDK size 64 (2012 PDB 64)
+struct FDisAttnTargetParams
+{
+    FPointer m_pTargetTweaks;
+    FPointer m_pObservableComponent;
+    FVector m_Location;
+    FVector m_Velocity;
+    FVector m_Extent;
+    FVector m_FocalPoint;
+    BITFIELD m_bIsPlayer:1;
+    BITFIELD m_bIsDead:1;
+    BITFIELD m_bIsCombatable:1;
+    class AActor* m_pActor;
+
+    /** Constructors */
+    FDisAttnTargetParams() {}
+    FDisAttnTargetParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttnTargetParams));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisCachedPositionInfo: retail SDK size 28 (2012 PDB 28)
+struct FDisCachedPositionInfo
+{
+    FLOAT m_CachedPositionTimeStamp;
+    FVector m_CachedPosition;
+    FVector m_CachedVelocity;
+
+    /** Constructors */
+    FDisCachedPositionInfo() {}
+    FDisCachedPositionInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCachedPositionInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisDeferredItemEquip: retail SDK size 8 (2012 PDB 8)
+struct FDisDeferredItemEquip
+{
+    class UClass* m_pItemClass;
+    INT m_Flags;
+
+    /** Constructors */
+    FDisDeferredItemEquip() {}
+    FDisDeferredItemEquip(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDeferredItemEquip));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisFootCache: retail SDK size 48 (2012 PDB 48)
+struct FDisFootCache
+{
+    BITFIELD m_bHadFootFallTick:1;
+    BITFIELD m_bLastHit:1;
+    FLOAT m_fFootTimer;
+    FVector m_RefFootPos;
+    FVector m_LastFootPosWorld;
+    class UDisSkelControl_FootPlacement* m_pFoot_PlacementNode;
+    BYTE m_pFoot_AdditionalNodes[12];  // DISHONORED(layout): retail SDK gap @36: ArrayProperty m_pFoot_AdditionalNodes (script_classes_2013) the dump did not type
+
+    /** Constructors */
+    FDisFootCache() {}
+    FDisFootCache(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFootCache));
+    }
+};
+
+// DishonoredGame.DisRatTargetInterface.DisRatTargetContext: retail SDK size 20 (2012 PDB 20)
+struct FDisRatTargetContext
+{
+    TArrayNoInit<FName> m_UnavailableRatSockets;
+    BYTE m_EatenState;
+    INT m_EaterCount;
+
+    /** Constructors */
+    FDisRatTargetContext() {}
+    FDisRatTargetContext(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRatTargetContext));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisRegionCached: retail SDK size 16 (2012 PDB 16)
+struct FDisRegionCached
+{
+    FPointer m_pRegionInfo;
+    TArrayNoInit<INT> m_BBoxPhysicsBodies;
+
+    /** Constructors */
+    FDisRegionCached() {}
+    FDisRegionCached(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRegionCached));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisVulnerableInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisVulnerableInfo
+{
+    FDisZoneTracker m_Zone;
+    FLOAT m_fExtraVulnerableTime;
+    FLOAT m_fTimeOfLastExit;
+
+    /** Constructors */
+    FDisVulnerableInfo() {}
+    FDisVulnerableInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisVulnerableInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.PawnDodgeTarget: retail SDK size 20 (2012 PDB 20)
+struct FPawnDodgeTarget
+{
+    class ADishonoredPawn* m_pAttacker;
+    class UDisItemContext* m_pAttackContext;
+    BYTE m_DodgeDir;
+    BITFIELD m_bDidDodge:1;
+    INT m_TrackID;
+
+    /** Constructors */
+    FPawnDodgeTarget() {}
+    FPawnDodgeTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FPawnDodgeTarget));
+    }
+};
+
+// DishonoredGame.DisAttentionTargetInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisAttentionTargetInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisAttentionTargetInterface
+    //## END PROPS DisAttentionTargetInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisAttentionTargetInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisAttentionTargetInterface
+{
+protected:
+    virtual ~IDisAttentionTargetInterface() {}
+public:
+    typedef UDisAttentionTargetInterface UClassType;
+};
+
+// DishonoredGame.DisLookAtInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisLookAtInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisLookAtInterface
+    //## END PROPS DisLookAtInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisLookAtInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisLookAtInterface
+{
+protected:
+    virtual ~IDisLookAtInterface() {}
+public:
+    typedef UDisLookAtInterface UClassType;
+};
+
+// DishonoredGame.DisNoiseListenerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisNoiseListenerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisNoiseListenerInterface
+    //## END PROPS DisNoiseListenerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisNoiseListenerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisNoiseListenerInterface
+{
+protected:
+    virtual ~IDisNoiseListenerInterface() {}
+public:
+    typedef UDisNoiseListenerInterface UClassType;
+};
+
+// DishonoredGame.DisRatTargetInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisRatTargetInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisRatTargetInterface
+    //## END PROPS DisRatTargetInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisRatTargetInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisRatTargetInterface
+{
+protected:
+    virtual ~IDisRatTargetInterface() {}
+public:
+    typedef UDisRatTargetInterface UClassType;
+};
+
+// DishonoredGame.DisRelationshipInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisRelationshipInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisRelationshipInterface
+    //## END PROPS DisRelationshipInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisRelationshipInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisRelationshipInterface
+{
+protected:
+    virtual ~IDisRelationshipInterface() {}
+public:
+    typedef UDisRelationshipInterface UClassType;
+};
+
+// DishonoredGame.DisStoryGroupInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisStoryGroupInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisStoryGroupInterface
+    //## END PROPS DisStoryGroupInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisStoryGroupInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisStoryGroupInterface
+{
+protected:
+    virtual ~IDisStoryGroupInterface() {}
+public:
+    typedef UDisStoryGroupInterface UClassType;
+};
+
+// DishonoredGame.DisVulnerabilityInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisVulnerabilityInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisVulnerabilityInterface
+    //## END PROPS DisVulnerabilityInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisVulnerabilityInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisVulnerabilityInterface
+{
+protected:
+    virtual ~IDisVulnerabilityInterface() {}
+public:
+    typedef UDisVulnerabilityInterface UClassType;
+};
+
+struct DishonoredPawn_eventLanded_Parms
+{
+    FVector HitNormal;
+    class AActor* pFloorActor;
+    DishonoredPawn_eventLanded_Parms(EEventParm)
+    : HitNormal(EC_EventParm)
+    {
+    }
+};
+struct DishonoredPawn_eventBreakConstraint_Parms
+{
+    FName _JointName;
+    DishonoredPawn_eventBreakConstraint_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPawn_eventChooseAndTriggerDeathEvent_Parms
+{
+    class UClass* _pDamageType;
+    DishonoredPawn_eventChooseAndTriggerDeathEvent_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPawn_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DishonoredPawn_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+struct DishonoredPawn_eventFireTakeDamageKismetEvent_Parms
+{
+    class AActor* _pInInstigator;
+    class UClass* _pInDamageType;
+    INT _inAmount;
+    DishonoredPawn_eventFireTakeDamageKismetEvent_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredPawn: retail sizeof 2192, reflected span 1188..2184 (2012 PDB sizeof 2000)
+class ADishonoredPawn : public AGamePawn, public IDisContactTypeInterface, public IDisAttributesInterface, public IDisLookAtInterface, public IDisNoiseMakerInterface, public IDisNoiseListenerInterface, public IDisRelationshipInterface, public IDisTweaksInterface, public IDisVulnerabilityInterface, public IDisHitReboundInterface, public IDisAttentionTargetInterface, public IDisConvSpeakerInterface, public IDisRatTargetInterface, public IDisStoryGroupInterface
+{
+public:
+    //## BEGIN PROPS DishonoredPawn
+    TArrayNoInit<class ADishonoredWaterVolume*> m_CurrentWaterVolumes;
+    class ADishonoredWaterVolume* m_pActiveWaterVolume;
+    FLOAT m_fCurrentWaterPostProcessTimer;
+    FStringNoInit m_EnterWaterPPName;
+    FStringNoInit m_ExitWaterPPName;
+    FLOAT m_fCurrentWaterPostProcessRate;
+    BITFIELD m_bWaterVolumesRelevant:1;
+    BITFIELD m_bSprinting:1;
+    BITFIELD m_bStrafing:1;
+    BITFIELD m_bMovingBackwards:1;
+    BITFIELD m_bRegenIsInProgress:1;
+    BITFIELD m_bGenerateFootfalls_Last:1;
+    BITFIELD m_bCachedAttnParamsValid:1;
+    BITFIELD m_bAllowTickPawnMinorSubsystems:1;
+    BITFIELD m_bAllowTickBody:1;
+    BITFIELD m_bGotPostBeginPlay:1;
+    BITFIELD m_bIsOfficiallyDead:1;
+    BITFIELD m_bPlayedDying:1;
+    BITFIELD m_bHasJiggleBones:1;
+    BITFIELD m_bIsControlledByAMatinee:1;
+    BITFIELD m_bShouldProccessMatineeRootMotion:1;
+    BITFIELD m_bSpecialRootMotionExtract:1;
+    class UDisTweaks_Faction* m_pCurFactionTweak;
+    class UDisTweaks_StoryGroup* m_pCurStoryGroupTweak;
+    FDisRelationshipOverrideInfo m_PersonalRelationships;
+    FLOAT m_fLastSpeedModifier;
+    FLOAT m_HealthRegenTickCountdown;
+    INT m_MinimumScriptedHealth;
+    INT m_HealthRegenAmount;
+    class UDishonoredInventory* m_pInventory;
+    class URB_Handle* m_pMovable_Handle;
+    TArrayNoInit<FDisDeferredItemEquip> m_DesiredEquippedItems;
+    INT m_nPendingEquip;
+    TMap<FName,eDisHitRegion> m_HitRegions_Map;  // DISHONORED(layout): retail SDK gap @1460: MapProperty m_HitRegions_Map (script_classes_2013), type from the 2012 PDB
+    TMap<eDisHitRegion,FDisRegionCached*> m_HitRegionInfo_Map;  // DISHONORED(layout): retail SDK gap @1520: MapProperty m_HitRegionInfo_Map (script_classes_2013), type from the 2012 PDB
+    TArrayNoInit<FDisRegionCached> m_HitRegionCache;
+    class USkelControlSingleBone* m_pEyeControl_Left;
+    class USkelControlSingleBone* m_pEyeControl_Right;
+    TArrayNoInit<FDisFootCache> m_Foot_Caches;
+    FDisCachedPositionInfo m_CurrentCachedPosition;
+    FDisCachedPositionInfo m_LastCachedPosition;
+    FLOAT m_fPredictionTimer;
+    FLOAT m_fPredictionConfidence;
+    FLOAT m_fLastCrushTimeStamp;
+    FLOAT m_fPredictionInterval;
+    FLOAT m_fCrushDamageRefireDelay;
+    FPawnDodgeTarget m_DodgeTarget;
+    FLOAT m_fDodgeDelay_Timer;
+    FLOAT m_fTimeOfLastLinkedVersus;
+    FDisVulnerableInfo m_VulnerableInfo[2];
+    FDisRatTargetContext m_RatTargetContext;
+    FVector m_AttnTargetFocalPoint;
+    INT m_AttnTargetFocalPointSkelMeshTag;
+    FDisAttnTargetParams m_CachedAttnParams;
+    class UDisAttentionTargetComponent* m_pAttnTargetComponent;
+    class UDynamicLightEnvironmentComponent* m_pStealthLightingDLE;
+    class UDisTweaks_Pawn* m_pPawnTweaks;
+    class ADishonoredDecalActor* m_pGroundBloodDecal;
+    TArrayNoInit<class AActor*> m_AssociatedActors;
+    TArrayNoInit<class AActor*> m_Attachments;
+    TArrayNoInit<class UDisInteractableInterface*> m_LatentInteractables;
+    class UArkAvoidable* m_pAvoidable;
+    class UDynamicLightEnvironmentComponent* m_pLightEnvironment;
+    class UDisAttributes* m_pAttributes;
+    FPointer m_pCpntObservable;
+    FPointer m_pCpntRetargeting;
+    BYTE m_ActivePowers[12];  // DISHONORED(layout): retail SDK gap @1928: ArrayProperty m_ActivePowers (script_classes_2013) the dump did not type
+    FLOAT m_fPowersInhibitedUntil;
+    FDisAudioCellCache m_NoiseMakerAudioCellCache;
+    FDisAudioCellCache m_ListenerAudioCellCache;
+    BYTE m_SpeakerPropagationCache[32];  // DISHONORED(layout): retail SDK gap @1984: StructProperty m_SpeakerPropagationCache (script_classes_2013) the dump did not type
+    BYTE m_LastHitReactType;
+    FPointer m_pFishAttractor;
+    FLOAT m_fFishEatTimer;
+    FLOAT m_fFishSeverLimbTimer;
+    FMatrix m_BackupedLocalToWorld;
+    FMatrix m_BackupedMeshLocalToWorld;
+    FVector m_vBackupedPosition;
+    FRotator m_rBackupedRotation;
+    //## END PROPS DishonoredPawn
+
+    void eventLanded(FVector HitNormal,class AActor* pFloorActor)
+    {
+        DishonoredPawn_eventLanded_Parms Parms(EC_EventParm);
+        Parms.HitNormal=HitNormal;
+        Parms.pFloorActor=pFloorActor;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_Landed),&Parms);
+    }
+    void eventBreakConstraint(FName _JointName)
+    {
+        DishonoredPawn_eventBreakConstraint_Parms Parms(EC_EventParm);
+        Parms._JointName=_JointName;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BreakConstraint),&Parms);
+    }
+    void eventChooseAndTriggerDeathEvent(class UClass* _pDamageType)
+    {
+        DishonoredPawn_eventChooseAndTriggerDeathEvent_Parms Parms(EC_EventParm);
+        Parms._pDamageType=_pDamageType;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_ChooseAndTriggerDeathEvent),&Parms);
+    }
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DishonoredPawn_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    void eventFireTakeDamageKismetEvent(class AActor* _pInInstigator,class UClass* _pInDamageType,INT _inAmount)
+    {
+        DishonoredPawn_eventFireTakeDamageKismetEvent_Parms Parms(EC_EventParm);
+        Parms._pInInstigator=_pInInstigator;
+        Parms._pInDamageType=_pInDamageType;
+        Parms._inAmount=_inAmount;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_FireTakeDamageKismetEvent),&Parms);
+    }
+    DECLARE_FUNCTION(execOnDLC05SetStoryGroup);
+    DECLARE_FUNCTION(execJumpOffPawn);
+    DECLARE_FUNCTION(execCrushedBy_Native);
+    DECLARE_FUNCTION(execOnModifyElixirCount);
+    DECLARE_FUNCTION(execOnGetAbstractItemQuantity);
+    DECLARE_FUNCTION(execOnRemoveAbstractItem);
+    DECLARE_FUNCTION(execOnAddAbstractItem);
+    DECLARE_FUNCTION(execOnModifyAmmo);
+    DECLARE_FUNCTION(execOnEquipItemType);
+    DECLARE_FUNCTION(execOnAddInventoryItem);
+    DECLARE_FUNCTION(execOnSetDisposition);
+    DECLARE_FUNCTION(execOnTeleport_Native);
+    DECLARE_FUNCTION(execLanded_Native);
+    DECLARE_FUNCTION(execChooseAndTriggerDeathEvent_Native);
+    DECLARE_FUNCTION(execPlayDying_Native);
+    DECLARE_FUNCTION(execTakeFallingDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execDisplayDebug_Native);
+    DECLARE_ABSTRACT_CLASS(ADishonoredPawn,AGamePawn,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Pawn");}
+};
+
+// DishonoredGame.DisPossessablePawn: retail sizeof 2224, reflected span 2184..2220 (2012 PDB sizeof 2032)
+class ADisPossessablePawn : public ADishonoredPawn
+{
+public:
+    //## BEGIN PROPS DisPossessablePawn
+    TScriptInterface<class IDisPossessableInterface> m_pPossessee;
+    class ADishonoredPlayerController* m_pPossessingController;
+    class ADishonoredPlayerPawn* m_pPossessingPlayerPawn;
+    class UDisTweaks_StoryGroup* m_pStoryGroupWhilePossessed;
+    class AController* m_pControllerBeforePossession;
+    FLOAT m_fPossessingPawnHeight;
+    FLOAT m_fPossessingPawnRadius;
+    BITFIELD m_bUnpossessFromCenter:1;
+    BITFIELD m_bOldCanBeBaseForPawns:1;
+    BITFIELD m_bOldPlayerHardAttach:1;
+    //## END PROPS DisPossessablePawn
+
+    DECLARE_ABSTRACT_CLASS(ADisPossessablePawn,ADishonoredPawn,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisArmor: retail SDK size 8
+struct FDisArmor
+{
+    BITFIELD m_bDroppedYet:1;
+    class UStaticMeshComponent* m_pComponent;
+
+    /** Constructors */
+    FDisArmor() {}
+    FDisArmor(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisArmor));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisBodyIntention: retail SDK size 12 (2012 PDB 12)
+struct FDisBodyIntention
+{
+    BYTE m_IntendedBodyStance;
+    class UClass* m_pDesiredPrimaryItemClass;
+    class UClass* m_pDesiredSecondaryItemClass;
+
+    /** Constructors */
+    FDisBodyIntention() {}
+    FDisBodyIntention(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBodyIntention));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisNPCDamageInfo: retail SDK size 88 (2012 PDB 76)
+struct FDisNPCDamageInfo
+{
+    class ADishonoredPawn* m_pDamageInstigator;
+    class ADishonoredPawn* m_pDamageCulprit;
+    class AActor* m_pDamageCausingActor;
+    class UClass* m_pDamageType;
+    FVector m_DamageHitLocation;
+    FVector m_DamageSourceLocation;
+    FTraceHitInfo m_DamageHitInfo;
+    FVector m_DamageMomentum;
+    INT m_iHealthBeforeDamage;
+    INT m_iDamage;
+
+    /** Constructors */
+    FDisNPCDamageInfo() {}
+    FDisNPCDamageInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCDamageInfo));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisNPCDeathInfo: retail SDK size 44 (2012 PDB 28)
+struct FDisNPCDeathInfo
+{
+    class ADishonoredPawn* m_pInstigator;
+    class ADishonoredPawn* m_pCulprit;
+    class AActor* m_pDamageCausingActor;
+    FVector m_DamageSourceLocation;
+    FName m_NameOfDeadNPC;
+    class UClass* m_pCauseOfDeath;
+    BITFIELD m_bCorpseHandled:1;
+    BITFIELD m_bIgnoreForCorpseCleanup:1;
+    BITFIELD m_bWasSpawnedDead:1;
+    BITFIELD m_bIgnoreDeath:1;
+    BYTE m_Awareness;
+
+    /** Constructors */
+    FDisNPCDeathInfo() {}
+    FDisNPCDeathInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCDeathInfo));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisNPCPostGameLoadParams: retail SDK size 16 (2012 PDB 12)
+struct FDisNPCPostGameLoadParams
+{
+    BITFIELD m_bIsAsleep:1;
+    FLOAT m_fVisibilityAsCorpse;
+    class UDisMovableComponent* m_fHeldMovable;
+    BITFIELD m_bShadowKilled:1;
+
+    /** Constructors */
+    FDisNPCPostGameLoadParams() {}
+    FDisNPCPostGameLoadParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCPostGameLoadParams));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisNPCRotationIntent: retail SDK size 24 (2012 PDB 24)
+struct FDisNPCRotationIntent
+{
+    FVector m_RotationFocus;
+    FLOAT m_fRotationRateDegrees;
+    BITFIELD m_bIsActive:1;
+    BITFIELD m_bDeactivateWhenReached:1;
+    INT m_RequestID;
+
+    /** Constructors */
+    FDisNPCRotationIntent() {}
+    FDisNPCRotationIntent(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCRotationIntent));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisNPCSeveredLimb: retail SDK size 8 (2012 PDB 8)
+struct FDisNPCSeveredLimb
+{
+    FName m_SeverBoneName;
+
+    /** Constructors */
+    FDisNPCSeveredLimb() {}
+    FDisNPCSeveredLimb(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCSeveredLimb));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisPendingArmorDrop: retail SDK size 32 (2012 PDB 32)
+struct FDisPendingArmorDrop
+{
+    INT m_iIndexToDrop;
+    BITFIELD m_bVerticalKnockoffOnly:1;
+    FVector m_DropVelocity;
+    FVector m_DropRotationalVel;
+
+    /** Constructors */
+    FDisPendingArmorDrop() {}
+    FDisPendingArmorDrop(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPendingArmorDrop));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisPhysicsSensorShape: retail SDK size 80 (2012 PDB 80)
+struct FDisPhysicsSensorShape
+{
+    FMatrix m_RelativeTM;
+    INT m_BoneIndex;
+
+    /** Constructors */
+    FDisPhysicsSensorShape() {}
+    FDisPhysicsSensorShape(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPhysicsSensorShape));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisPhysicsSensor: retail SDK size 16 (2012 PDB 16)
+struct FDisPhysicsSensor
+{
+    class URB_BodyInstance* m_pBodyInstance;
+    TArrayNoInit<FDisPhysicsSensorShape> m_Shapes;
+
+    /** Constructors */
+    FDisPhysicsSensor() {}
+    FDisPhysicsSensor(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPhysicsSensor));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisRagdollImpulseDeferred: retail SDK size 36 (2012 PDB 36)
+struct FDisRagdollImpulseDeferred
+{
+    FVector m_Impulse;
+    FVector m_Position;
+    FName m_BoneName;
+    BITFIELD m_bVelChange:1;
+
+    /** Constructors */
+    FDisRagdollImpulseDeferred() {}
+    FDisRagdollImpulseDeferred(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRagdollImpulseDeferred));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisSeveredLimbRequest: retail SDK size 36 (2012 PDB 36)
+struct FDisSeveredLimbRequest
+{
+    FName m_JointName;
+    BITFIELD m_bHideBones:1;
+    BITFIELD m_bShowSeveredFX:1;
+    BITFIELD m_bShowGoredFX:1;
+    BITFIELD m_bShowEatenFX:1;
+    BYTE m_ImpulseMode;
+    FLOAT m_fImpulseStrength;
+    FVector m_DamageDir;
+    class ADisProjectile_Arrow* m_pSeveringArrow;
+
+    /** Constructors */
+    FDisSeveredLimbRequest() {}
+    FDisSeveredLimbRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSeveredLimbRequest));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisSleepDamageInfo: retail SDK size 16 (2012 PDB 16)
+struct FDisSleepDamageInfo
+{
+    class AController* m_pInstigator;
+    class UClass* m_pDamageType;
+    INT m_DamageAmount;
+    BITFIELD m_bAlreadyDeferred:1;
+
+    /** Constructors */
+    FDisSleepDamageInfo() {}
+    FDisSleepDamageInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSleepDamageInfo));
+    }
+};
+
+// DishonoredGame.DisConvOneShotOwnerInterface.DisSpeakerOneShotInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisSpeakerOneShotInfo
+{
+    class UDisDialogVoiceData* m_pOneShot;
+    BITFIELD m_bIsOwner:1;
+
+    /** Constructors */
+    FDisSpeakerOneShotInfo() {}
+    FDisSpeakerOneShotInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpeakerOneShotInfo));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisSpawnerInfo: retail SDK size 104 (2012 PDB 104)
+struct FDisSpawnerInfo
+{
+    class UDisDialogVoiceData* m_pDialogVoiceData;
+    TArrayNoInit<FDisSpeakerOneShotInfo> m_DialogOneShots;
+    FName m_Squad;
+    BITFIELD m_bCapableOfFleeing:1;
+    TArrayNoInit<class ADisTetherVolume*> m_TetherVolumes;
+    BITFIELD m_bPatrolUponStartup:1;
+    class UDisTweaks_Faction* m_pFactionTweakOverride;
+    class UDisTweaks_StoryGroup* m_pStoryGroupTweakOverride;
+    FDisLocRot m_Position;
+    BITFIELD m_bSpawnDead:1;
+    BITFIELD m_bStraightToRagdoll:1;
+    class UAnimSet* m_pDeadPoseAnimSet;
+    FName m_DeadPoseAnimName;
+    BITFIELD m_bTreatAsKnockedOut:1;
+    FName m_DEBUG_SpawnerName;
+
+    /** Constructors */
+    FDisSpawnerInfo() {}
+    FDisSpawnerInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpawnerInfo));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisWalkUpperBodyDesire: retail SDK size 12 (2012 PDB 12)
+struct FDisWalkUpperBodyDesire
+{
+    BYTE m_WalkUpperBodyAnim;
+    INT m_iAnimGroup;
+    INT m_iAnimStep;
+
+    /** Constructors */
+    FDisWalkUpperBodyDesire() {}
+    FDisWalkUpperBodyDesire(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisWalkUpperBodyDesire));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.MatineeControllerInfos: retail SDK size 12 (2012 PDB 12)
+struct FMatineeControllerInfos
+{
+    class USeqAct_Interp* m_pMatinee;
+    BYTE m_SoireePriority;
+    BITFIELD m_bIsBlocking:1;
+
+    /** Constructors */
+    FMatineeControllerInfos() {}
+    FMatineeControllerInfos(EEventParm)
+    {
+        appMemzero(this, sizeof(FMatineeControllerInfos));
+    }
+};
+
+// DishonoredGame.DisCorpseInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisCorpseInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisCorpseInterface
+    //## END PROPS DisCorpseInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisCorpseInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisCorpseInterface
+{
+protected:
+    virtual ~IDisCorpseInterface() {}
+public:
+    typedef UDisCorpseInterface UClassType;
+};
+
+// DishonoredGame.DisNPCAttachmentOwnerInterface: retail sizeof 56, reflected span 56..56 (new in 2013)
+class UDisNPCAttachmentOwnerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisNPCAttachmentOwnerInterface
+    //## END PROPS DisNPCAttachmentOwnerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisNPCAttachmentOwnerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisNPCAttachmentOwnerInterface
+{
+protected:
+    virtual ~IDisNPCAttachmentOwnerInterface() {}
+public:
+    typedef UDisNPCAttachmentOwnerInterface UClassType;
+};
+
+// DishonoredGame.DisPossessableInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisPossessableInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisPossessableInterface
+    //## END PROPS DisPossessableInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisPossessableInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisPossessableInterface
+{
+protected:
+    virtual ~IDisPossessableInterface() {}
+public:
+    typedef UDisPossessableInterface UClassType;
+};
+
+// DishonoredGame.DisSpringRazorTargetInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisSpringRazorTargetInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisSpringRazorTargetInterface
+    //## END PROPS DisSpringRazorTargetInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisSpringRazorTargetInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisSpringRazorTargetInterface
+{
+protected:
+    virtual ~IDisSpringRazorTargetInterface() {}
+public:
+    typedef UDisSpringRazorTargetInterface UClassType;
+};
+
+// DishonoredGame.DisStealthVolumeUserInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisStealthVolumeUserInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisStealthVolumeUserInterface
+    //## END PROPS DisStealthVolumeUserInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisStealthVolumeUserInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisStealthVolumeUserInterface
+{
+protected:
+    virtual ~IDisStealthVolumeUserInterface() {}
+public:
+    typedef UDisStealthVolumeUserInterface UClassType;
+};
+
+struct DishonoredNPCPawn_eventPhysicsVolumeChange_Parms
+{
+    class APhysicsVolume* _pNewVolume;
+    DishonoredNPCPawn_eventPhysicsVolumeChange_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredNPCPawn_eventBreakConstraint_Parms
+{
+    FName _JointName;
+    DishonoredNPCPawn_eventBreakConstraint_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredNPCPawn_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DishonoredNPCPawn_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredNPCPawn: retail sizeof 3584, reflected span 2220..3572 (2012 PDB sizeof 3328) [layout synthesized from the package member list]
+class ADishonoredNPCPawn : public ADisPossessablePawn, public IDisInteractableInterface, public IDisSoulRenderInterface, public IDisPossessableInterface, public IDisCorpseInterface, public IDisSpringRazorTargetInterface, public IDisStealthVolumeUserInterface, public IDisNPCAttachmentOwnerInterface
+{
+public:
+    //## BEGIN PROPS DishonoredNPCPawn
+    INT m_NPCID;
+    FDisNPCDamageInfo m_LastNPCDamageInfo;
+    FDisNPCDeathInfo m_NPCDeathInfo;
+    FLOAT m_fTimeBeforeSleep;
+    FDisSleepDamageInfo m_LastSleepDamageInfo;
+    BITFIELD m_bDisableThowHitReact:1;
+    BITFIELD m_bIsDramaAssassinationHandled:1;
+    BITFIELD m_bLastNeedSlopeOffset:1;
+    BITFIELD m_bLastNeedsFootPlacement:1;
+    BITFIELD m_bTickedNPCBody:1;
+    BITFIELD m_bRenderedByPlayer:1;
+    BITFIELD m_bLastRenderedByPlayer:1;
+    BITFIELD m_bUseSpineBendingTarget:1;
+    BITFIELD m_bWasRecentlyPossessed:1;
+    BITFIELD m_bLocoModifierNeedsApplication:1;
+    BITFIELD m_bRestoreInitialPossessedRot:1;
+    BITFIELD m_bUseSimplifiedPhysWalk:1;
+    BITFIELD m_bAllowFootPlacement:1;
+    BITFIELD m_bNoTick:1;
+    BITFIELD m_bAwareOfDistraction:1;
+    BITFIELD m_bOverrideReactionDisableFromSoiree:1;
+    BITFIELD m_bDisableTeleportOnNavmesh:1;
+    BITFIELD m_bCarriable:1;
+    BITFIELD m_bHeartWhisperAllowed:1;
+    BITFIELD m_bShouldUseRootMotionForceMultiplier:1;
+    BITFIELD m_bNotifyAIOfRelationshipChange:1;
+    BITFIELD m_bNotifiedFakeDeath:1;
+    BITFIELD m_bExpectingPutpocket:1;
+    BITFIELD m_bShouldForceBodyIntention:1;
+    BITFIELD m_bDisableCollisionForSoiree:1;
+    BITFIELD m_bInCombatVisionCone:1;
+    TArrayNoInit<class AActor*> m_MovableLimbs;
+    FLOAT m_fLastFallingStartHeight;
+    class UDisSkelControl_SpineBender* m_pSpineBender;
+    FLOAT m_fRotationLockTimer;
+    FVector m_SpineBendingTarget;
+    BYTE m_CurrentBodyStancePriority;
+    BYTE m_CurrentPrimaryItemPriority;
+    BYTE m_CurrentSecondaryItemPriority;
+    BYTE m_CurrentManifestedBodyStance; // DISHONORED(layout): type from the 2012 PDB (SDK: eDisNPCBodyStance)
+    BYTE m_CurrentNPCRotationPriority;
+    FDisBodyIntention m_BodyIntention[15];
+    class ADishonoredNPCPawn* m_pNextHostileViewer;
+    FVector m_PrevRearLegLoc;
+    class ADishonoredPawn* m_pCurrentMurderer;
+    FLOAT m_fHackForbidEquipStateDuration;
+    INT m_iRandomHeadMeshSel;
+    FDisMaterialsOverride m_HeadMeshMaterialsOverride;
+    FDisMaterialsOverride m_BodyMeshMaterialsOverride;
+    INT m_RandomAccessoriesSel[2];
+    class UStaticMeshComponent* m_AccessoryComponents[2];
+    TArrayNoInit<FDisArmor> m_ArmorComponents;
+    TArrayNoInit<FDisPendingArmorDrop> m_ArmorIndicesToDrop;
+    FDisNPCRotationIntent m_NPCRotationIntent[17];
+    FRotator m_FinalDesiredRotation;
+    FRotator m_FinalRotationRateFixed;
+    class UDisTweaks_Possessable* m_pScriptOverridePossessableTweaks;
+    class AActor* m_pScriptOverrideExitPointActor;
+    FRotator m_InitialPossessedRot;
+    FLOAT m_fPossessCamZOffset;
+    INT m_iNumReactionDisableRequestsFromSoiree;
+    INT m_iNumFakeDeathRequestsFromSoiree;
+    FLOAT m_fLastTeleportTime;
+    class UDisSeqAct_NPCMarkForVanish* m_pMarkedForVanishAction;
+    FLOAT m_fMarkedForVanishTimer;
+    class UDisSeqAct_NPCDoTeleportSpell* m_pTeleportSpellAction;
+    FDisSpawnerInfo m_SpawnerInfo;
+    class UDishonoredNativeStateMachine* m_pNPCMasterFSM;
+    class UDisSkeletalMeshComponent* m_pHeadMesh;
+    TArrayNoInit<class USkeletalMeshComponent*> m_SecondaryMeshes;
+    TArrayNoInit<INT> m_BodyGroupIndices;
+    INT m_NumBodyGroup;
+    TArrayNoInit<FDisNPCSeveredLimb> m_SeveredLimbs;
+    TArrayNoInit<FDisSeveredLimbRequest> m_GoreRequestDeferred;
+    TArrayNoInit<FDisRagdollImpulseDeferred> m_RagdollImpulseDeferred;
+    FDisPhysicsSensor m_PhysicsSensor;
+    class UDisConversationComponent* m_pConvComponent;
+    class UDisNPCDistractionComponent* m_pDistraction;
+    FLOAT m_fDistractionCooldownTime_Countdown;
+    TArrayNoInit<FMatineeControllerInfos> m_MatineeControllersInfos;
+    INT m_iMatineeLookAtRequestID;
+    class ADisPickup_Base* m_pStealable;
+    class ADisPickup_Base* m_pDroppedStealable;
+    FPointer m_pCpntLocomotion;
+    FPointer m_pCpntFaceTo;
+    FPointer m_pCpntLookat;
+    FPointer m_pCpntAnimPlayer;
+    FPointer m_pCpntRBDamages;
+    FPointer m_pCpntLODManager;
+    class UArkAnimNodeBlendPose* m_pBlendPoseNode;
+    FLOAT m_fCosAvoidanceSteeringMaxAngle;
+    INT m_TripID;
+    FDisPhysicsContactInfo m_CorpseContactPhysicsInfo;
+    class UParticleSystemComponent* m_VisionConeParticleEffect;
+    class UParticleSystemComponent* m_MiscParticleEffect;
+    FDisWalkUpperBodyDesire m_WalkUpperBodyDesire;
+    class ADisTetherVolume* m_pCurrentTetherVolume;
+    class ADisTetherVolume* m_pNextTetherVolume;
+    FVector m_PrevTetherCheckLocation;
+    class ADisTetherVolume* m_PrevTetherCheckResult;
+    FDisNPCPostGameLoadParams m_PostGameLoadParams;
+    class UDisConv_Blurb* m_pPreviewDialogConvBlurb;
+    FPointer m_pPreviewDialogVoiceTextBlurb;
+    INT m_PreviewDialogBlurbPlayingID;
+    FLOAT m_fPreviewDialogBlurbSeekInSound;
+    //## END PROPS DishonoredNPCPawn
+
+    void eventPhysicsVolumeChange(class APhysicsVolume* _pNewVolume)
+    {
+        DishonoredNPCPawn_eventPhysicsVolumeChange_Parms Parms(EC_EventParm);
+        Parms._pNewVolume=_pNewVolume;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_PhysicsVolumeChange),&Parms);
+    }
+    void eventBreakConstraint(FName _JointName)
+    {
+        DishonoredNPCPawn_eventBreakConstraint_Parms Parms(EC_EventParm);
+        Parms._JointName=_JointName;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BreakConstraint),&Parms);
+    }
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DishonoredNPCPawn_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    DECLARE_FUNCTION(execSetDesiredRotation);
+    DECLARE_FUNCTION(execSetPushesRigidBodies);
+    DECLARE_FUNCTION(execOnNPCAddPutPocketInteraction);
+    DECLARE_FUNCTION(execOnNPCSetMaterials);
+    DECLARE_FUNCTION(execOnSetIgnoreDeath);
+    DECLARE_FUNCTION(execOnOverridePossess);
+    DECLARE_FUNCTION(execOnPlayMusicBox);
+    DECLARE_FUNCTION(execOnEquipItemType);
+    DECLARE_FUNCTION(execOnSpawnStealable);
+    DECLARE_FUNCTION(execOnNPCDoTeleportSpell);
+    DECLARE_FUNCTION(execOnNPCMarkForVanish);
+    DECLARE_FUNCTION(execOnSeverLimb);
+    DECLARE_FUNCTION(execNPCTouchedDeepWater);
+    DECLARE_FUNCTION(execTakeFallingDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execPlayDying_Native);
+    DECLARE_FUNCTION(execChooseAndTriggerDeathEvent_Native);
+    DECLARE_FUNCTION(execDisplayDebug_Native);
+    DECLARE_CLASS(ADishonoredNPCPawn,ADisPossessablePawn,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.DisExplosion: retail sizeof 624, reflected span 584..612 (2012 PDB sizeof 624)
+class ADisExplosion : public AActor, public IDisNoiseMakerInterface, public IDisTweaksInterface, public IDisDamageCauserInterface, public IDisAttributesInterface
+{
+public:
+    //## BEGIN PROPS DisExplosion
+    class UDisTweaks_Explosion* m_pExplosionTweaks;
+    BITFIELD m_bHasExploded:1;
+    class UDisAttributes* m_pAttributes;
+    //## END PROPS DisExplosion
+
+    DECLARE_CLASS(ADisExplosion,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPlayerControllerBase: retail sizeof 1344, reflected span 1328..1332 (2012 PDB sizeof 1344)
+class ADisPlayerControllerBase : public AGamePlayerController
+{
+public:
+    //## BEGIN PROPS DisPlayerControllerBase
+    BITFIELD m_bNeedToEnablePlaytestNextTick:1;
+    //## END PROPS DisPlayerControllerBase
+
+    DECLARE_FUNCTION(execPlaytest_native);
+    DECLARE_FUNCTION(execSetPlaytestFlag);
+    DECLARE_ABSTRACT_CLASS(ADisPlayerControllerBase,AGamePlayerController,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredPlayerController.DisPlayerViewTarget: retail SDK size 104 (2012 PDB 104)
+struct FDisPlayerViewTarget
+{
+    class AActor* m_pTarget;
+    class USkeletalMeshComponent* m_pMesh;
+    FName m_LookBone;
+    FVector m_LookBoneOffset;
+    INT m_StartRot;
+    INT m_TargetFixedRot;
+    BYTE m_TrackType;
+    BITFIELD m_bHasCachedBonePos:1;
+    FVector m_CachedBonePos;
+    INT m_TrackID;
+    INT m_Flags;
+    FLOAT m_fLimitRadius_Max;
+    FLOAT m_fLimitRadius_Min;
+    INT m_MaxPlayerControlledDelta;
+    INT m_PlayerControlledDelta_SoftenThreshold;
+    INT m_CurPlayerControlledDelta;
+    INT m_CurPlayerControlledDelta_Blended;
+    BYTE m_SoftenType;
+    FLOAT m_fZoomFOVOverride;
+    FLOAT m_fCurWeight;
+    FLOAT m_fBlendSpeed;
+
+    /** Constructors */
+    FDisPlayerViewTarget() {}
+    FDisPlayerViewTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerViewTarget));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerController.DisPlayerViewTracking: retail SDK size 212 (2012 PDB 212)
+struct FDisPlayerViewTracking
+{
+    FDisPlayerViewTarget m_ViewYawTarget;
+    FDisPlayerViewTarget m_ViewPitchTarget;
+    INT m_CurTrackID;
+
+    /** Constructors */
+    FDisPlayerViewTracking() {}
+    FDisPlayerViewTracking(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerViewTracking));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerController.DisPossessionEffectSettings: retail SDK size 12 (2012 PDB 12)
+struct FDisPossessionEffectSettings
+{
+    BYTE m_Stage;
+    FLOAT m_BlurAtExitStart;
+    FLOAT m_DistortAtExitStart;
+
+    /** Constructors */
+    FDisPossessionEffectSettings() {}
+    FDisPossessionEffectSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPossessionEffectSettings));
+    }
+};
+
+struct DishonoredPlayerController_eventCallGetUIController_Parms
+{
+    class UUIInteraction* ReturnValue;
+    DishonoredPlayerController_eventCallGetUIController_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPlayerController_eventPlayRumbleWaveForm_Parms
+{
+    class UForceFeedbackWaveform* _pWaveForm;
+    class AActor* _pInstigatorActor;
+    DishonoredPlayerController_eventPlayRumbleWaveForm_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPlayerController_eventReceivedPlayer_Parms
+{
+    DishonoredPlayerController_eventReceivedPlayer_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredPlayerController: retail sizeof 1840, reflected span 1332..1840 (2012 PDB sizeof 1840)
+class ADishonoredPlayerController : public ADisPlayerControllerBase, public IArkSettingsListenerInterface, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DishonoredPlayerController
+    FDisPlayerViewTracking m_ViewTracking;
+    BITFIELD m_bLimitPlayerPitch:1;
+    BITFIELD m_bLimitPlayerYaw:1;
+    BITFIELD m_bRequestWheel:1;
+    BITFIELD m_bLatentEquipChangeValid:1;
+    BITFIELD m_bShortcutJustChanged:1;
+    BITFIELD m_bForbidGamepad:1;
+    BITFIELD m_bForbidKeyboardMouse:1;
+    BITFIELD m_bSprintEnabled_FromGamePad:1;
+    BITFIELD m_bSprintEnabled_FromToggle:1;
+    BITFIELD m_bHeldSprintCanceledSneak:1;
+    BITFIELD m_bLean_UsingAnalogStick:1;
+    BITFIELD m_bLeanStateChanged_GamePad:1;
+    BITFIELD m_bInputIgnoreInput_Cinematic:1;
+    BITFIELD m_bCanInteractWithCrosshairActor:1;
+    BITFIELD m_bShouldPlayHiddenEffect:1;
+    BITFIELD m_bDisableStealthShroud:1;
+    BITFIELD m_bStealthAttentionDesaturationIsOn:1;
+    BITFIELD m_bAllowProjectilesAndExplosionsInCinematicMode:1;
+    FLOAT m_fStartingPlayerPitch;
+    FLOAT m_fLimitPlayerPitch_Min;
+    FLOAT m_fLimitPlayerPitch_Max;
+    FLOAT m_fStartingPlayerYaw;
+    FLOAT m_fLimitPlayerYaw_Min;
+    FLOAT m_fLimitPlayerYaw_Max;
+    BYTE m_bHoldingPrimary;
+    BYTE m_bHoldingSecondary;
+    BYTE m_bBlockButton;
+    BYTE m_bChokeButton;
+    BYTE m_bBlockButton_Last;
+    BYTE m_WheelPreviousSelection;
+    BYTE m_WheelCurrentSelection;
+    BYTE m_bUseButton;
+    BYTE m_bJumpButton;
+    BYTE m_bSprintButton;
+    BYTE m_bSprintButton_GamePad;
+    BYTE m_bLeanLeftButton;
+    BYTE m_bLeanRightButton;
+    BYTE m_bLeanForwardButton;
+    BYTE m_bLeanButton_GamePad;
+    BYTE m_bLeanLeftButton_GamePad;
+    BYTE m_bLeanRightButton_GamePad;
+    BYTE m_bLeanForwardButton_GamePad;
+    BYTE m_CrosshairStatus;
+    BYTE m_bLeftThumbstickPressed;
+    BYTE m_bRightThumbstickPressed;
+    FLOAT m_fRequestWheelStartTime;
+    INT m_CurWheelShortcutFlags;
+    INT m_CurWheelShortcutIdx;
+    INT m_PrevWheelShortcutFlags;
+    INT m_RelativeShortcutOffset;
+    FLOAT m_fRelativeShortcutTimer;
+    DOUBLE m_dLastWheelCloseTime;
+    FLOAT m_fShortcutsInputTimer;
+    class UDishonoredNativeStateMachine* m_pUseInteractionFSM;
+    INT m_InputEnableMask[11];
+    FLOAT m_fCurZoomToggleTime;
+    class AActor* m_pCrosshairActor;
+    class AActor* m_pCrosshairHighlightActor;
+    FName m_PlayerTravelLocationName;
+    FName m_PlayerTravelOriginLevelName;
+    FLOAT m_fLastHitTime;
+    class UMaterialInstanceConstant* m_pCachedPostMIC[10];
+    class UMaterialInstanceTimeVarying* m_pCachedPostMITV[4];
+    FLOAT m_fSlomoPostOpacity;
+    FLOAT m_fAdrenalineWeight;
+    class UDishonoredObjectivesComponent* m_pObjectivesComponent;
+    class UDisThreatPerceptionComponent* m_pThreatPerceptionComponent;
+    FLOAT m_fStealthAttentionTargetDesaturation;
+    class UDisFogComponent* m_CurrentWaterFogComponent;
+    FDisPossessionEffectSettings m_PossessionEffectSettings;
+    class UDisTweaks_PlayerInput* m_pInputTweaks;
+    class UArkPpNodeMaterial* m_pBlindnessPpNode;
+    FLOAT m_fBlindedTimer;
+    class ADishonoredPawn* m_pDebug_AttentionVerboseTarget;
+    FStringNoInit m_MainMenuCommand;
+    //## END PROPS DishonoredPlayerController
+
+    class UUIInteraction* eventCallGetUIController()
+    {
+        DishonoredPlayerController_eventCallGetUIController_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=NULL;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_CallGetUIController),&Parms);
+        return Parms.ReturnValue;
+    }
+    void eventPlayRumbleWaveForm(class UForceFeedbackWaveform* _pWaveForm,class AActor* _pInstigatorActor)
+    {
+        DishonoredPlayerController_eventPlayRumbleWaveForm_Parms Parms(EC_EventParm);
+        Parms._pWaveForm=_pWaveForm;
+        Parms._pInstigatorActor=_pInstigatorActor;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_PlayRumbleWaveForm),&Parms);
+    }
+    void eventReceivedPlayer()
+    {
+        DishonoredPlayerController_eventReceivedPlayer_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_ReceivedPlayer),&Parms);
+    }
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredPlayerController::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_FUNCTION(execOnControllerChanged_Native);
+    DECLARE_FUNCTION(execCalcPlayerSwimAccelRate);
+    DECLARE_FUNCTION(execGetProfileSettings);
+    DECLARE_FUNCTION(execOnShowPowerMenu);
+    DECLARE_FUNCTION(execOnObjectiveAction);
+    DECLARE_FUNCTION(execProcessViewRotation);
+    DECLARE_FUNCTION(execSetCinematicMode_Native);
+    DECLARE_FUNCTION(execPreSetCinematicMode_Native);
+    DECLARE_FUNCTION(execIsLookInputIgnored);
+    DECLARE_FUNCTION(execIsMoveInputIgnored);
+    DECLARE_FUNCTION(execToggleScreenConfig);
+    DECLARE_FUNCTION(execShowScreenConfig);
+    DECLARE_FUNCTION(execDis_Zoom);
+    DECLARE_FUNCTION(execDis_VersusAlt);
+    DECLARE_FUNCTION(execDis_Lean_Toggle);
+    DECLARE_FUNCTION(execDis_LeanWithAnalogStick_End);
+    DECLARE_FUNCTION(execDisToggleSprint);
+    DECLARE_FUNCTION(execDis_SelectPower);
+    DECLARE_FUNCTION(execDis_OpenPauseMenu);
+    DECLARE_FUNCTION(execDis_OpenJournalTab);
+    DECLARE_FUNCTION(execDis_ToggleJournal);
+    DECLARE_FUNCTION(execDis_CancelPossession);
+    DECLARE_FUNCTION(execDis_ExitKeyhole);
+    DECLARE_FUNCTION(execDis_LeanOrAdrenaline_Multi);
+    DECLARE_FUNCTION(execDis_UseAdrenaline_Multi);
+    DECLARE_FUNCTION(execDis_UseAdrenaline);
+    DECLARE_FUNCTION(execDis_ConsumeElixir);
+    DECLARE_FUNCTION(execDis_PrevItemOption);
+    DECLARE_FUNCTION(execDis_NextItemOption);
+    DECLARE_FUNCTION(execDis_UseSecondaryItem);
+    DECLARE_FUNCTION(execDis_UsePrimaryItem);
+    DECLARE_FUNCTION(execDis_UsePrimaryItemOrAdrenaline_Multi);
+    DECLARE_FUNCTION(execDis_EquipItemByType);
+    DECLARE_FUNCTION(execDis_PrevEquippedItem);
+    DECLARE_FUNCTION(execDis_NextEquippedItem);
+    DECLARE_FUNCTION(execDis_WheelShortcuts_MouseNext);
+    DECLARE_FUNCTION(execDis_WheelShortcuts_MousePrevious);
+    DECLARE_FUNCTION(execDis_WheelShortcuts_KeyboardUse);
+    DECLARE_FUNCTION(execDis_WheelShortcuts_KeyboardSelect);
+    DECLARE_FUNCTION(execDis_WheelShortcuts_GamepadUse);
+    DECLARE_FUNCTION(execDis_WheelShortcuts_GamepadSelect);
+    DECLARE_FUNCTION(execDis_Wheel_Close);
+    DECLARE_FUNCTION(execDis_Wheel_Open);
+    DECLARE_FUNCTION(execOnTeleport_Native);
+    DECLARE_FUNCTION(execReceivedPlayer_Native);
+    DECLARE_FUNCTION(execHandleWalking);
+    DECLARE_FUNCTION(execHandleHeldButtons);
+    DECLARE_CLASS(ADishonoredPlayerController,ADisPlayerControllerBase,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Player");}
+};
+
+// DishonoredGame.DishonoredPlayerPawn.TimeStampedValue: retail SDK size 8 (2012 PDB 8)
+struct FTimeStampedValue
+{
+    FLOAT m_fTime;
+    FLOAT m_fValue;
+
+    /** Constructors */
+    FTimeStampedValue() {}
+    FTimeStampedValue(EEventParm)
+    {
+        appMemzero(this, sizeof(FTimeStampedValue));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.AchievementTracker: retail SDK size 20 (2012 PDB 20)
+struct FAchievementTracker
+{
+    BITFIELD m_bUnlocked:1;
+    TArrayNoInit<FTimeStampedValue> m_StreakValues;
+    BITFIELD m_bEnabled:1;
+
+    /** Constructors */
+    FAchievementTracker() {}
+    FAchievementTracker(EEventParm)
+    {
+        appMemzero(this, sizeof(FAchievementTracker));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.DisCollectedWhaleBoneCharm: retail SDK size 8 (2012 PDB 8)
+struct FDisCollectedWhaleBoneCharm
+{
+    BYTE m_Level;
+    INT m_CharmInfoIndex;
+
+    /** Constructors */
+    FDisCollectedWhaleBoneCharm() {}
+    FDisCollectedWhaleBoneCharm(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCollectedWhaleBoneCharm));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.DisMissionStatValue: retail SDK size 12 (2012 PDB 12)
+struct FDisMissionStatValue
+{
+    BYTE m_Stat;
+    FLOAT m_fValue;
+    INT m_MaxValue;
+
+    /** Constructors */
+    FDisMissionStatValue() {}
+    FDisMissionStatValue(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMissionStatValue));
+    }
+};
+
+// DishonoredGame.DisAnimStateComponent.DisAnimState_CustomSeq: retail SDK size 20 (2012 PDB 20)
+struct FDisAnimState_CustomSeq
+{
+    FName m_Alias;
+    FName m_Sequence;
+    BYTE m_PreviewType;
+
+    /** Constructors */
+    FDisAnimState_CustomSeq() {}
+    FDisAnimState_CustomSeq(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimState_CustomSeq));
+    }
+};
+
+// DishonoredGame.DisAnimStateComponent.DisAnimState: retail SDK size 36 (2012 PDB 36)
+struct FDisAnimState
+{
+    FName m_StateName;
+    FLOAT m_fBlendTime;
+    FName m_AnimStateTree;
+    BITFIELD m_bBlocksChildren:1;
+    BITFIELD m_bNonLooping:1;
+    TArrayNoInit<FDisAnimState_CustomSeq> m_CustomSequences;
+
+    /** Constructors */
+    FDisAnimState() {}
+    FDisAnimState(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimState));
+    }
+};
+
+// DishonoredGame.DisAnimStateComponent.DisPawnAnimState: retail SDK size 52 (2012 PDB 52)
+struct FDisPawnAnimState : public FDisAnimState
+{
+    BYTE m_RootMotionMode;
+    BYTE m_RootMotionRotationMode;
+    BITFIELD m_bAddItemPrefix:1;
+    BYTE m_ApplyItemEquipPrefix;
+    BITFIELD m_bDisableAutoFootsteps:1;
+
+    /** Constructors */
+    FDisPawnAnimState() {}
+    FDisPawnAnimState(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnAnimState));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.DisAnimStateMapKey_WithPrefix: retail SDK size 16 (2012 PDB 16)
+struct FDisAnimStateMapKey_WithPrefix
+{
+    FName m_PrefixName;
+    FName m_StateName;
+
+    /** Constructors */
+    FDisAnimStateMapKey_WithPrefix() {}
+    FDisAnimStateMapKey_WithPrefix(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimStateMapKey_WithPrefix));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.DisPawnAnimState_PickerInfo: retail SDK size 132 (2012 PDB 132)
+struct FDisPawnAnimState_PickerInfo
+{
+    TMap<FDisAnimStateMapKey_WithPrefix,INT> m_AnimStateMap_PrefixList;  // DISHONORED(layout): retail SDK gap @0: MapProperty m_AnimStateMap_PrefixList (script_classes_2013), type from the 2012 PDB
+    TMap<FName,FDisPawnAnimState*> m_AnimStateMap;  // DISHONORED(layout): retail SDK gap @60: MapProperty m_AnimStateMap (script_classes_2013), type from the 2012 PDB
+    TArrayNoInit<FPointer> m_StateArrays;
+
+    /** Constructors */
+    FDisPawnAnimState_PickerInfo() {}
+    FDisPawnAnimState_PickerInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnAnimState_PickerInfo));
+    }
+};
+
+// DishonoredGame.DishonoredBarkManager.DisPlayerBarkPair: retail SDK size 4 (2012 PDB 4)
+MS_ALIGN(4) struct FDisPlayerBarkPair
+{
+    BYTE m_BarkType;
+    BYTE m_BarkPriority;
+    BYTE m_Dummy[2];
+
+    /** Constructors */
+    FDisPlayerBarkPair() {}
+    FDisPlayerBarkPair(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerBarkPair));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.DisPlayerHealthEffect: retail SDK size 192 (2012 PDB 192)
+struct FDisPlayerHealthEffect
+{
+    FName m_Name;
+    FLOAT m_fHealthThreshold;
+    FLOAT m_fBlendInTime;
+    FLOAT m_fBlendOutTime;
+    BITFIELD m_bApplyPostProcess:1;
+    FArkPpConfig m_ArkPpSettings;
+    TArrayNoInit<FDisPlayerBarkPair> m_Bark_OnEnable;
+    TArrayNoInit<FDisPlayerBarkPair> m_Bark_OnDisable;
+    class UDisTweaks_EmitterCameraLensEffect* m_pLensEffect;
+    FLOAT m_fCurWeight;
+    FLOAT m_fCurDuration;
+
+    /** Constructors */
+    FDisPlayerHealthEffect() {}
+    FDisPlayerHealthEffect(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerHealthEffect));
+    }
+};
+
+// DishonoredGame.DisStoryFlagSet.DisStoryFlagInstance: retail SDK size 28 (2012 PDB 32)
+struct FDisStoryFlagInstance
+{
+    FName m_StoryFlagSet_Path;
+    FGuid m_GUID;
+    BITFIELD m_bCurValue:1;
+
+    /** Constructors */
+    FDisStoryFlagInstance() {}
+    FDisStoryFlagInstance(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisStoryFlagInstance));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.PlayerDebugVars: retail SDK size 16 (2012 PDB 16)
+struct FPlayerDebugVars
+{
+    FVector m_LastJumpLandVel;
+    BITFIELD m_bIgnoreAimOffset:1;
+    BITFIELD m_bIsGhosting:1;
+    BITFIELD m_bGhostChestView:1;
+
+    /** Constructors */
+    FPlayerDebugVars() {}
+    FPlayerDebugVars(EEventParm)
+    {
+        appMemzero(this, sizeof(FPlayerDebugVars));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.TatooGlowInfo: retail SDK size 16 (2012 PDB 16)
+struct FTatooGlowInfo
+{
+    FLOAT m_fDuration;
+    FLOAT m_fRampDownDuration;
+    FLOAT m_fRampDownTimeRemaining;
+    BITFIELD m_bEnding:1;
+
+    /** Constructors */
+    FTatooGlowInfo() {}
+    FTatooGlowInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FTatooGlowInfo));
+    }
+};
+
+// DishonoredGame.DisAnimStateFiringInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisAnimStateFiringInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisAnimStateFiringInterface
+    //## END PROPS DisAnimStateFiringInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisAnimStateFiringInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisAnimStateFiringInterface
+{
+protected:
+    virtual ~IDisAnimStateFiringInterface() {}
+public:
+    typedef UDisAnimStateFiringInterface UClassType;
+};
+
+// DishonoredGame.DisAnimStateOwnerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisAnimStateOwnerInterface : public UDisAnimStateFiringInterface
+{
+public:
+    //## BEGIN PROPS DisAnimStateOwnerInterface
+    //## END PROPS DisAnimStateOwnerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisAnimStateOwnerInterface,UDisAnimStateFiringInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisAnimStateOwnerInterface : public IDisAnimStateFiringInterface
+{
+protected:
+    virtual ~IDisAnimStateOwnerInterface() {}
+public:
+    typedef UDisAnimStateOwnerInterface UClassType;
+};
+
+// DishonoredGame.DisConvOneShotOwnerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisConvOneShotOwnerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisConvOneShotOwnerInterface
+    //## END PROPS DisConvOneShotOwnerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisConvOneShotOwnerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisConvOneShotOwnerInterface
+{
+protected:
+    virtual ~IDisConvOneShotOwnerInterface() {}
+public:
+    typedef UDisConvOneShotOwnerInterface UClassType;
+};
+
+struct DishonoredPlayerPawn_eventUnlockAchievement_Parms
+{
+    INT AchievementId;
+    DishonoredPlayerPawn_eventUnlockAchievement_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPlayerPawn_eventEndCrouch_Parms
+{
+    FLOAT _fHeightAdjust;
+    DishonoredPlayerPawn_eventEndCrouch_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPlayerPawn_eventStartCrouch_Parms
+{
+    FLOAT _fHeightAdjust;
+    DishonoredPlayerPawn_eventStartCrouch_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredPlayerPawn_eventDisplayDebug_Script_Parms
+{
+    class AHUD* _pHUD;
+    FLOAT _rfOut_YL;
+    FLOAT _rfOut_YPos;
+    DishonoredPlayerPawn_eventDisplayDebug_Script_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredPlayerPawn: retail sizeof 4688, reflected span 2184..4684 (2012 PDB sizeof 3856)
+class ADishonoredPlayerPawn : public ADishonoredPawn, public IDisAnimStateOwnerInterface, public IDisConvOneShotOwnerInterface, public IArkSettingsListenerInterface, public IDisStealthVolumeUserInterface
+{
+public:
+    //## BEGIN PROPS DishonoredPlayerPawn
+    class UDishonoredMantleEdgeFinderComponent* m_pMantleEdgeFinder;
+    class UDishonoredMantleEdgeFinderComponent* m_pMantleEdgeFinder_Blink;
+    BITFIELD m_bMantleAllowed:1;
+    BITFIELD m_bNeedAdrenalineEffect:1;
+    BITFIELD m_bAdrenalineEnabled:1;
+    BITFIELD m_bIsInCombat:1;
+    BITFIELD m_bLeftHandDisabled:1;
+    BITFIELD m_bSneakModeToggled:1;
+    BITFIELD m_bLettingGoOfClimbable:1;
+    BITFIELD m_bHandleInstantEquipChange:1;
+    BITFIELD m_bManaRegenIsInProgress:1;
+    BITFIELD m_bWantsToDropCorpse:1;
+    BITFIELD m_bWantsToDropCorpse_ForceHighDrop:1;
+    BITFIELD m_bUnderWater:1;
+    BITFIELD m_bConsumingAir:1;
+    BITFIELD m_bIsUpgradeBackupValid:1;
+    BITFIELD m_bNeedsCrouchingDetection:1;
+    BITFIELD m_bWasAccelerating:1;
+    BITFIELD m_bCameraRelativeClimbing:1;
+    BITFIELD m_bClimbingUp:1;
+    FLOAT m_fMantleDisallowFallTimer;
+    class USkelControlSingleBone* m_pLookAtControl_LeftHand;
+    class USkelControlSingleBone* m_pLookAtControl_RightHand;
+    class USkelControlSingleBone* m_pLookAtControl_Camera;
+    BYTE m_PlayerStance[3];
+    BYTE m_DesiredPlayerStance[3];
+    BYTE m_NextPhysicsMode;
+    BYTE m_BodyMode;
+    BYTE m_TutorialNoteAlreadyDisplayed[43];
+    FLOAT m_fFocusTimer;
+    INT m_iActiveHealthEffect;
+    INT m_iActiveHealthEffect_Last;
+    INT m_LastHealth;
+    class AEmitterCameraLensEffectBase* m_pCurHealthLensEffect;
+    FDisZoneTracker m_SloMoAnimZone;
+    FLOAT m_fProjectedTimeInSlomo;
+    FLOAT m_fTimeEnteredSlomo;
+    FLOAT m_fVulnerabiltyTimer;
+    FLOAT m_fDizzyTimer;
+    FLOAT m_fTimeOfLastPlayerKnockdown;
+    FLOAT m_fAdrenaline;
+    FLOAT m_fAdrenalineCooldown;
+    FVector m_NetExternalVelocity;
+    FLOAT m_MusicalEffectUberParametersWeight;
+    FLOAT m_MusicalEffectDuration;
+    TArrayNoInit<FDisPlayerHealthEffect> m_HealthEffects;
+    FLOAT m_fRaySpeedScale;
+    FLOAT m_fRaySpeedScale_Max;
+    FLOAT m_fMinSpeedRayScale;
+    FLOAT m_fCollisionRadius_VsPawns;
+    FLOAT m_fTimeOfLastLandedContact;
+    FTatooGlowInfo m_TatooGlowInfo;
+    FLOAT m_fIgnoreFootfallsAfterLand_Time;
+    class UDishonoredSearchCrumbsComponent* m_pSearchCrumbsComponent;
+    class UDishonoredVisibilityComponent* m_pVisibilityComponent;
+    class UDisTweaks_PlayerVisSettings* m_pScriptedPlayerVisSettings;
+    class ADisStealthVolume* m_pStealthVolumesList;
+    class UArkAnimNodeBlendPose* m_pMatineeBlender;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Navigation;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Assassination;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Fatality;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Items;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Items_Melee;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Items_Ranged;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_LeftHand_Items;
+    class UDishonoredAIBrain* m_pAttentiveBrainsList;
+    FLOAT m_fLastDeltaSeconds;
+    class ADisPlayerAudioLogDummyActor* m_pAudioLogConvActor;
+    INT m_UnpossessionBlockerCount;
+    class UDisAnimStateComponent* m_pAnimStateComp;
+    TArrayNoInit<FDisPawnAnimState_PickerInfo> m_AnimStatePickerInfo;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Misc;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Misc;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_Special_Misc;
+    class UDishonoredBarkManager* m_pBarkManager;
+    FPlayerDebugVars m_Debug_Player;
+    class UDishonoredNativeStateMachine* m_pPlayerMasterFSM;
+    class UDishonoredNativeStateMachine* m_pPlayerUpperFSM;
+    class UDishonoredNativeStateMachine* m_pPlayerLeftArmFSM;
+    class UDishonoredPowersComponent* m_pPowersComponent;
+    class UStaticMeshComponent* m_pBlinkTargetingGoalIndicator;
+    TArrayNoInit<INT> m_UsableActivePowerIndices;
+    TArrayNoInit<INT> m_UsablePassivePowerIndices;
+    INT m_iFirstAcquiredActivePower;
+    INT m_iFirstAcquiredPassivePower;
+    INT m_Mana;
+    INT m_ManaMax;
+    INT m_PreviousMana;
+    FDisConvSaveData m_DialogSaveData;
+    FDisConvSaveData m_DialogSaveData_Global;
+    TArrayNoInit<FDisStoryFlagInstance> m_StoryFlagInstances;
+    class UDisKeyRing* m_pKeyRing;
+    class UDisDarknessManager* m_pDarknessManager;
+    FLOAT m_fWindBlastOpacity;
+    FLOAT m_fAffectedByPlagueUntil;
+    class ADisClimbable* m_pClimbable;
+    FLOAT m_fClimbingSoundLastTime;
+    class UDishonoredActivePowerComponent_Blink* m_pBlinkPower;
+    class UDishonoredActivePowerComponent_Possess* m_pPossessPower;
+    class UDisActivePowerComponent_DarkVision* m_pDarkVisionPower;
+    BYTE m_pDevouringSwarmPower[4];  // DISHONORED(layout): retail SDK gap @2740: ComponentProperty m_pDevouringSwarmPower (script_classes_2013) the dump did not type
+    FLOAT m_fAirCapacity;
+    FLOAT m_fMaxAirCapacity;
+    FLOAT m_fDrowningDamageCountdown;
+    class ADisEmitterCameraLensEffect* m_pWaterExitEffect;
+    TArrayNoInit<class ADishonoredNPCPawn*> m_AwarenessDisplayOverrides;
+    TArrayNoInit<class AActor*> m_PowerInhibitingSources;
+    FVector m_PreviousTravelLocation;
+    FVector m_DeathLocation;
+    FRotator m_DeathRotation;
+    FVector m_DeathVelocity;
+    INT m_WhaleBoneCharmSlots[10];
+    TArrayNoInit<FDisCollectedWhaleBoneCharm> m_WhaleBoneCharms;
+    TArrayNoInit<INT> m_AvailableBoneCharmInfoIndexes;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_Upgrades;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_Upgrades_Backup;
+    FLOAT m_fBreathlessness;
+    INT m_OldCrouchState;
+    TArrayNoInit<FLOAT> m_StatValues;
+    TArrayNoInit<FDisMissionStatValue> m_MissionStatValues;
+    INT m_PowerInhibitedMessageID;
+    FAchievementTracker m_AchievementTrackers[81];
+    FVector m_LastSecondLocation;
+    FLOAT m_fLastSecondLocationTime;
+    INT m_BlockVisibilityMask;
+    FLOAT m_fPushDuration;
+    class UDisPursuitTracker* m_pPursuitTracker;
+    class UDisSkirmishTracker* m_pSkirmishTracker;
+    class UDisCorpseDiscoveredTracker* m_pCorpseDiscoveredTracker;
+    class UDisTutorialTracker* m_TutorialTrackers[8];
+    FLOAT m_fManaRegenCountDown;
+    INT m_ManaRegenAmount;
+    TArrayNoInit<class ADisPickup_Base*> m_HeartTargets;
+    INT m_ClimbingAimThreshold;
+    FLOAT m_fOffscreenMeleeDamageReduction[4];
+    //## END PROPS DishonoredPlayerPawn
+
+    void eventUnlockAchievement(INT AchievementId)
+    {
+        DishonoredPlayerPawn_eventUnlockAchievement_Parms Parms(EC_EventParm);
+        Parms.AchievementId=AchievementId;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_UnlockAchievement),&Parms);
+    }
+    void eventEndCrouch(FLOAT _fHeightAdjust)
+    {
+        DishonoredPlayerPawn_eventEndCrouch_Parms Parms(EC_EventParm);
+        Parms._fHeightAdjust=_fHeightAdjust;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_EndCrouch),&Parms);
+    }
+    void eventStartCrouch(FLOAT _fHeightAdjust)
+    {
+        DishonoredPlayerPawn_eventStartCrouch_Parms Parms(EC_EventParm);
+        Parms._fHeightAdjust=_fHeightAdjust;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_StartCrouch),&Parms);
+    }
+    void eventDisplayDebug_Script(class AHUD* _pHUD,FLOAT& _rfOut_YL,FLOAT& _rfOut_YPos)
+    {
+        DishonoredPlayerPawn_eventDisplayDebug_Script_Parms Parms(EC_EventParm);
+        Parms._pHUD=_pHUD;
+        Parms._rfOut_YL=_rfOut_YL;
+        Parms._rfOut_YPos=_rfOut_YPos;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_DisplayDebug_Script),&Parms);
+        _rfOut_YL=Parms._rfOut_YL;
+        _rfOut_YPos=Parms._rfOut_YPos;
+    }
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredPlayerPawn::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_FUNCTION(execOnDestroy_Native);
+    DECLARE_FUNCTION(execNativePostRenderFor);
+    DECLARE_FUNCTION(execOnPlayerResurrect);
+    DECLARE_FUNCTION(execOnCancelPlayerActivePower);
+    DECLARE_FUNCTION(execOnToggleTutorial);
+    DECLARE_FUNCTION(execOnToggleChoke);
+    DECLARE_FUNCTION(execOnOverrideAwarenessDisplay);
+    DECLARE_FUNCTION(execOnSetPlayerMana);
+    DECLARE_FUNCTION(execOnSetPlayerHealth);
+    DECLARE_FUNCTION(execOnAdrenalineToggle);
+    DECLARE_FUNCTION(execOnGivePickup);
+    DECLARE_FUNCTION(execOnApplyPlayerLoadout);
+    DECLARE_FUNCTION(execOnTogglePlayerLeftHand);
+    DECLARE_FUNCTION(execOnToggleJournal);
+    DECLARE_FUNCTION(execOnTogglePowerWheel);
+    DECLARE_FUNCTION(execOnToggleAchievementEval);
+    DECLARE_FUNCTION(execOnGetPlayerStat);
+    DECLARE_FUNCTION(execOnEvalAchievement);
+    DECLARE_FUNCTION(execOnGiveUpgrade);
+    DECLARE_FUNCTION(execOnRemoveKey);
+    DECLARE_FUNCTION(execOnAddKey);
+    DECLARE_FUNCTION(execOnMinPowers);
+    DECLARE_FUNCTION(execOnMaxPowers);
+    DECLARE_FUNCTION(execOnRemoveAttributeModifier);
+    DECLARE_FUNCTION(execOnAddAttributeModifier);
+    DECLARE_FUNCTION(execOnRemovePower);
+    DECLARE_FUNCTION(execOnAddPower);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execPlayDying_Native);
+    DECLARE_FUNCTION(execFaceRotation);
+    DECLARE_FUNCTION(execIsInvisible);
+    DECLARE_FUNCTION(execCheatFly_Native);
+    DECLARE_FUNCTION(execCheatGhost_Native);
+    DECLARE_FUNCTION(execCheatWalk_Native);
+    DECLARE_FUNCTION(execDisplayDebug_Cheats);
+    DECLARE_FUNCTION(execDoJump);
+    DECLARE_FUNCTION(execEndCrouch);
+    DECLARE_FUNCTION(execStartCrouch);
+    DECLARE_FUNCTION(execLanded_Native);
+    DECLARE_FUNCTION(execTakeFallingDamage_Native);
+    DECLARE_FUNCTION(execDisplayDebug_Native);
+    DECLARE_CLASS(ADishonoredPlayerPawn,ADishonoredPawn,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Player");}
+};
+
+// DishonoredGame.DisNoiseListenerInterface.DisAINoiseParameters: retail SDK size 48 (2012 PDB 48)
+struct FDisAINoiseParameters
+{
+    class ADishonoredPawn* m_pNoiseMakerPawn;
+    FName m_NoiseCauserName;
+    FVector m_NoiseOrigin;
+    BYTE m_Loudness;
+    BYTE m_NoiseContext;
+    class AActor* m_pNotedActor;
+    FVector m_NotedPosition;
+    INT m_NoiseFlags;
+
+    /** Constructors */
+    FDisAINoiseParameters() {}
+    FDisAINoiseParameters(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAINoiseParameters));
+    }
+};
+
+// DishonoredGame.DisNoiseListenerInterface.DisAINoiseInfo: retail SDK size 72 (2012 PDB 72)
+struct FDisAINoiseInfo
+{
+    TScriptInterface<class IDisNoiseMakerInterface> m_pNoiseMakerInterface;
+    FDisAINoiseParameters m_NoiseParameters;
+    FLOAT m_fAttenuation;
+    FVector m_NoiseNormal;
+
+    /** Constructors */
+    FDisAINoiseInfo() {}
+    FDisAINoiseInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAINoiseInfo));
+    }
+};
+
+// DishonoredGame.DishonoredSpawner.DisAlarmSpawnInfo: retail SDK size 24 (2012 PDB 24)
+struct FDisAlarmSpawnInfo
+{
+    class ADisAlarmBell* m_pAlarm;
+    FVector m_AlarmResponseLocation;
+    INT m_AlarmAttentionTag;
+    class AActor* m_pAlarmTroublemaker;
+
+    /** Constructors */
+    FDisAlarmSpawnInfo() {}
+    FDisAlarmSpawnInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAlarmSpawnInfo));
+    }
+};
+
+// DishonoredGame.DishonoredSpawner.DisSpawnInfo: retail SDK size 116 (2012 PDB 116)
+struct FDisSpawnInfo
+{
+    TScriptInterface<class IDisSpawnRequesterInterface> m_pSpawnRequester;
+    INT m_NPCID;
+    BITFIELD m_bSpawnEvenIfVisible:1;
+    BITFIELD m_bHearSoundOnSpawn:1;
+    FDisAINoiseInfo m_HearSoundOnSpawnNoiseInfo;
+    BITFIELD m_bSendAlarmOnSpawn:1;
+    FDisAlarmSpawnInfo m_SendAlarmOnSpawnInfo;
+
+    /** Constructors */
+    FDisSpawnInfo() {}
+    FDisSpawnInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSpawnInfo));
+    }
+};
+
+// DishonoredGame.DisDrawVisionComponentOwnerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisDrawVisionComponentOwnerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisDrawVisionComponentOwnerInterface
+    //## END PROPS DisDrawVisionComponentOwnerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisDrawVisionComponentOwnerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisDrawVisionComponentOwnerInterface
+{
+protected:
+    virtual ~IDisDrawVisionComponentOwnerInterface() {}
+public:
+    typedef UDisDrawVisionComponentOwnerInterface UClassType;
+};
+
+// DishonoredGame.DisSquadInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisSquadInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisSquadInterface
+    //## END PROPS DisSquadInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisSquadInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisSquadInterface
+{
+protected:
+    virtual ~IDisSquadInterface() {}
+public:
+    typedef UDisSquadInterface UClassType;
+};
+
+// DishonoredGame.DishonoredSpawner: retail sizeof 1184, reflected span 584..1176 (2012 PDB sizeof 1184)
+class ADishonoredSpawner : public ASpawner, public IDisTweaksInterface, public IDisSquadInterface, public IDisConvOneShotOwnerInterface, public IDisNoiseListenerInterface, public IDisDrawVisionComponentOwnerInterface, public FDisDialogSelNotify
+{
+public:
+    //## BEGIN PROPS DishonoredSpawner
+    class UDisActorFactoryNPCPawn* m_pFactory;
+    TArrayNoInit<class ADishonoredNPCPawn*> m_SpawnedPawns;
+    TArrayNoInit<FDisSpeakerOneShotInfo> m_DialogOneShots;
+    TArrayNoInit<class UClass*> m_CopyToSpawnedEvents;
+    FDisAudioCellCache m_AudioCellCache;
+    FDisSpawnInfo m_PendingSpawns[3];
+    INT m_NumPendingSpawns;
+    INT m_FirstPendingSpawn;
+    INT m_NumRetryAttempts;
+    FLOAT m_fRetryTimer;
+    FLOAT m_fTimeSinceLastSpawn;
+    class UAnimTree* m_pPreviewAnimTreeTemplate;
+    BYTE m_PreviewMeshInfo[12];  // DISHONORED(layout): retail SDK gap @1040: ArrayProperty m_PreviewMeshInfo (script_classes_2013) the dump did not type
+    TArrayNoInit<class USkeletalMeshComponent*> m_PreviewSkeletalComponents;
+    TArrayNoInit<class UStaticMeshComponent*> m_PreviewStaticComponents;
+    class USpriteComponent* m_pDialogTree_HighlightSprite;
+    class USpriteComponent* m_pAllyResponder_Sprite;
+    class UDrawSphereComponent* m_pFarRadius;
+    class UDrawSphereComponent* m_pMediumRadius;
+    class UDrawSphereComponent* m_pNearRadius;
+    class UDisTweaks_NPCPawn* m_pPawnTweaks_Last;
+    class UDisDrawVisionComponent* m_pVisionComponent;
+    class UDisTweaks_NPCPawn* m_pPawnTweaks;
+    class UDisTweaks_Faction* m_pFactionTweakOverride;
+    class UDisTweaks_StoryGroup* m_pStoryGroupTweakOverride;
+    BITFIELD m_bSpawnOnBeginPlay:1;
+    BITFIELD m_bCanSpawnWhenVisible:1;
+    BITFIELD m_bCanSpawnWhenPlayerNear:1;
+    BITFIELD m_bSpawnOnHearHelpRequest:1;
+    BITFIELD m_bOverrideDelayBetweenSpawns:1;
+    BITFIELD m_bSpawnDead:1;
+    BITFIELD m_bSpawnDead_AlreadyHandled:1;
+    BITFIELD m_bTreatAsKnockedOut:1;
+    BITFIELD m_bPatrolUponStartup:1;
+    BITFIELD m_bAwareOfPlayerUponStartup:1;
+    BITFIELD m_bCapableOfFleeing:1;
+    FLOAT m_fDelayBetweenSpawnsOverride;
+    class UAnimSet* m_pDeadPoseAnimSet;
+    FName m_DeadPoseAnimName;
+    FName m_Squad;
+    BYTE m_SpawnAtSuspicionLevel;
+    TArrayNoInit<class ADisTetherVolume*> m_TetherVolumes;
+    class UDisDialogVoiceData* m_pDialogVoiceData;
+    class ADisPickup_Base* m_pStealablePickup;
+    INT m_MaxSpawnsPerFrame;
+    FLOAT m_fPostVisibilityWaitToSpawn;
+    //## END PROPS DishonoredSpawner
+
+    DECLARE_FUNCTION(execOnStartSpawn);
+    DECLARE_CLASS(ADishonoredSpawner,ASpawner,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttentionChangeReasonInfo: retail SDK size 12 (2012 PDB 12)
+struct FDisAttentionChangeReasonInfo
+{
+    class AActor* m_pActor;
+    INT m_iParam1;
+    INT m_iParam2;
+
+    /** Constructors */
+    FDisAttentionChangeReasonInfo() {}
+    FDisAttentionChangeReasonInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionChangeReasonInfo));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttentionChangeReason: retail SDK size 16 (2012 PDB 16)
+struct FDisAttentionChangeReason
+{
+    BYTE m_ReasonType;
+    FDisAttentionChangeReasonInfo m_ReasonInfo;
+
+    /** Constructors */
+    FDisAttentionChangeReason() {}
+    FDisAttentionChangeReason(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionChangeReason));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttentionProxyInfo: retail SDK size 64 (2012 PDB 64)
+struct FDisAttentionProxyInfo
+{
+    FVector m_Loc;
+    FVector m_Vel;
+    FLOAT m_fHeight;
+    FDisAttentionChangeReason m_ProxyUpdateReason;
+    INT m_AttentionTag;
+    BYTE m_Status;
+    FVector m_MostRecentVerifiedLoc;
+
+    /** Constructors */
+    FDisAttentionProxyInfo() {}
+    FDisAttentionProxyInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionProxyInfo));
+    }
+};
+
+// DishonoredGame.DisFireProjectileInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisFireProjectileInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisFireProjectileInterface
+    //## END PROPS DisFireProjectileInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisFireProjectileInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisFireProjectileInterface
+{
+protected:
+    virtual ~IDisFireProjectileInterface() {}
+public:
+    typedef UDisFireProjectileInterface UClassType;
+};
+
+struct DisTrigger_eventCallUsedBy_Parms
+{
+    class APawn* User;
+    UBOOL ReturnValue;
+    DisTrigger_eventCallUsedBy_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisTrigger: retail sizeof 624, reflected span 596..612 (2012 PDB sizeof 624)
+class ADisTrigger : public ATrigger, public IDisInteractableInterface, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisTrigger
+    FLOAT m_fWindBlastForceToTrigger;
+    class UDisTweaks_Trigger* m_pTweaks;
+    //## END PROPS DisTrigger
+
+    UBOOL eventCallUsedBy(class APawn* User)
+    {
+        DisTrigger_eventCallUsedBy_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        Parms.User=User;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_CallUsedBy),&Parms);
+        return Parms.ReturnValue;
+    }
+    DECLARE_CLASS(ADisTrigger,ATrigger,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDebugNPCController: retail sizeof 1344, reflected span 1332..1332 (2012 PDB sizeof 1344)
+class ADisDebugNPCController : public ADisPlayerControllerBase
+{
+public:
+    //## BEGIN PROPS DisDebugNPCController
+    //## END PROPS DisDebugNPCController
+
+    DECLARE_FUNCTION(execDis_StartPower);
+    DECLARE_FUNCTION(execDis_StartFire);
+    DECLARE_FUNCTION(execHandleWalking);
+    DECLARE_CLASS(ADisDebugNPCController,ADisPlayerControllerBase,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Player");}
+};
+
+// DishonoredGame.DisWhaleOilConsumerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisWhaleOilConsumerInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisWhaleOilConsumerInterface
+    //## END PROPS DisWhaleOilConsumerInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisWhaleOilConsumerInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisWhaleOilConsumerInterface
+{
+protected:
+    virtual ~IDisWhaleOilConsumerInterface() {}
+public:
+    typedef UDisWhaleOilConsumerInterface UClassType;
+};
+
+// DishonoredGame.DisDefenceTower: retail sizeof 672, reflected span 584..664 (2012 PDB sizeof 672)
+class ADisDefenceTower : public AActor, public IDisTweaksInterface, public IDisWhaleOilConsumerInterface, public IDisSoulRenderInterface, public IInterface_NavMeshPathObject
+{
+public:
+    //## BEGIN PROPS DisDefenceTower
+    BITFIELD m_bReversed:1;
+    BITFIELD m_bTouchedPreviousTick:1;
+    BITFIELD m_bAffectPathFinding:1;
+    FLOAT m_fChargePercentage;
+    FLOAT m_fStatePercentage;
+    BYTE m_eCurrentState;
+    class UMaterialInstanceConstant* m_pTower_MIC;
+    class UParticleSystemComponent* m_pActivePSC;
+    class UParticleSystemComponent* m_pChargePSC;
+    class UMaterialInstanceConstant* m_pChargeMIC;
+    class UStaticMeshComponent* m_pTowerMeshCpnt;
+    class USkeletalMeshComponent* m_pTowerCoreMeshCpnt;
+    class UCylinderComponent* m_pDetectionCylinder;
+    class UDisTweaks_DefenceTower* m_pDefenceTowerTweaks;
+    TArrayNoInit<class UDisTweaks_Faction*> m_FriendlyFactionsOverride;
+    class ADisWhaleOilReceptacle* m_pAttachedReceptacle;
+    //## END PROPS DisDefenceTower
+
+    virtual UObject* GetUObjectInterfaceInterface_NavMeshPathObject() { return this; }  // DISHONORED(port): IInterface_NavMeshPathObject interface glue
+    DECLARE_CLASS(ADisDefenceTower,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisFleePointActor: retail sizeof 592, reflected span 584..592 (2012 PDB sizeof 592)
+class ADisFleePointActor : public AActor, public IDisSquadInterface
+{
+public:
+    //## BEGIN PROPS DisFleePointActor
+    class UDisFleeComponent* m_pFleeComponent;
+    //## END PROPS DisFleePointActor
+
+    DECLARE_FUNCTION(execOnToggle);
+    DECLARE_CLASS(ADisFleePointActor,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGuardWatchPoint: retail sizeof 608, reflected span 584..596 (2012 PDB sizeof 608)
+class ADisGuardWatchPoint : public AActor, public IDisLookAtInterface
+{
+public:
+    //## BEGIN PROPS DisGuardWatchPoint
+    FLOAT m_fMinWatchTime;
+    FLOAT m_fMaxWatchTime;
+    //## END PROPS DisGuardWatchPoint
+
+    DECLARE_CLASS(ADisGuardWatchPoint,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisHideoutAccessPoint: retail sizeof 624, reflected span 584..612 (2012 PDB sizeof 624)
+class ADisHideoutAccessPoint : public AActor
+{
+public:
+    //## BEGIN PROPS DisHideoutAccessPoint
+    FLOAT m_fBackOutDistance;
+    TArrayNoInit<class ADisHideoutAccessPoint*> m_HasLosTo;
+    class UPrimitiveComponent* m_pSpriteComponent;
+    class UPrimitiveComponent* m_pErrorSpriteComponent;
+    class UPrimitiveComponent* m_pEncroachmentComponent;
+    //## END PROPS DisHideoutAccessPoint
+
+    DECLARE_CLASS(ADisHideoutAccessPoint,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisHideoutVolume: retail sizeof 640, reflected span 628..636 (2012 PDB sizeof 640)
+class ADisHideoutVolume : public AVolume
+{
+public:
+    //## BEGIN PROPS DisHideoutVolume
+    class UDisHideoutComponent* m_pHideoutComponent;
+    FLOAT m_FallBackHeightLimit;
+    //## END PROPS DisHideoutVolume
+
+    DECLARE_CLASS(ADisHideoutVolume,AVolume,0,DishonoredGame)
+};
+
+// DishonoredGame.DisInterpActor: retail sizeof 672, reflected span 656..660 (new in 2013)
+class ADisInterpActor : public AInterpActor
+{
+public:
+    //## BEGIN PROPS DisInterpActor
+    BITFIELD m_bTraceAsWorldGeometry:1;
+    //## END PROPS DisInterpActor
+
+    DECLARE_CLASS(ADisInterpActor,AInterpActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNPCDistractor: retail sizeof 592, reflected span 584..588 (2012 PDB sizeof 592)
+class ADisNPCDistractor : public AActor
+{
+public:
+    //## BEGIN PROPS DisNPCDistractor
+    class UDisNPCDistractionComponent* m_pDistraction;
+    //## END PROPS DisNPCDistractor
+
+    DECLARE_FUNCTION(execOnToggle);
+    DECLARE_CLASS(ADisNPCDistractor,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPlayerAudioLogDummyActor: retail sizeof 656, reflected span 584..648 (2012 PDB sizeof 624)
+class ADisPlayerAudioLogDummyActor : public AActor, public IDisConvSpeakerInterface, public IDisConvOneShotOwnerInterface
+{
+public:
+    //## BEGIN PROPS DisPlayerAudioLogDummyActor
+    class UDisConversationComponent* m_pConvComponent;
+    BITFIELD m_bInitializedComponent:1;
+    BITFIELD m_bFinishedIntro:1;
+    TArrayNoInit<FDisSpeakerOneShotInfo> m_DialogOneShots;
+    FPointer m_ppFlavorSounds;
+    BYTE m_SpeakerPropagationCache[32];  // DISHONORED(layout): retail SDK gap @616: StructProperty m_SpeakerPropagationCache (script_classes_2013) the dump did not type
+    //## END PROPS DisPlayerAudioLogDummyActor
+
+    DECLARE_CLASS(ADisPlayerAudioLogDummyActor,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPossessionProxyPawn: retail sizeof 2224, reflected span 2220..2224 (2012 PDB sizeof 2048)
+class ADisPossessionProxyPawn : public ADisPossessablePawn
+{
+public:
+    //## BEGIN PROPS DisPossessionProxyPawn
+    BITFIELD m_bCanSwim:1;
+    BITFIELD m_bIsInUse:1;
+    BITFIELD m_bImmuneToPlague:1;
+    //## END PROPS DisPossessionProxyPawn
+
+    DECLARE_FUNCTION(execPlayDying_Native);
+    DECLARE_CLASS(ADisPossessionProxyPawn,ADisPossessablePawn,0|CLASS_Config,DishonoredGame)
+};
+
+struct DisProjectileLauncher_eventBaseChange_Parms
+{
+    DisProjectileLauncher_eventBaseChange_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisProjectileLauncher: retail sizeof 704, reflected span 664..692 (2012 PDB sizeof 688)
+class ADisProjectileLauncher : public ADisSkeletalBreakable, public IDisSoulRenderInterface, public IDisInteractableInterface
+{
+public:
+    //## BEGIN PROPS DisProjectileLauncher
+    class UDisTweaks_ProjectileLauncher* m_pProjectileLauncherTweaks;
+    class AActor* m_pTarget;
+    BITFIELD m_bArmed:1;
+    BITFIELD m_bHarvested:1;
+    class USkeletalMeshComponent* m_HighlightSkeletalMeshComponent;
+    INT m_HighlightFlags;
+    //## END PROPS DisProjectileLauncher
+
+    void eventBaseChange()
+    {
+        DisProjectileLauncher_eventBaseChange_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BaseChange),&Parms);
+    }
+    DECLARE_FUNCTION(execOnToggle_Native);
+    DECLARE_FUNCTION(execBaseChange);
+    DECLARE_CLASS(ADisProjectileLauncher,ADisSkeletalBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisProtectionTuneSource: retail sizeof 624, reflected span 584..616 (2012 PDB sizeof 624)
+class ADisProtectionTuneSource : public AActor, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisProtectionTuneSource
+    class UDrawSphereComponent* m_PreviewComponent_Disorient;
+    class UDrawSphereComponent* m_PreviewComponent_InhibitPowers;
+    BITFIELD m_bCustomRadiuses:1;
+    BITFIELD m_bIsStartedOnSpawn:1;
+    FLOAT m_fEffectRadius_Disorient;
+    FLOAT m_fEffectRadius_InhibitPowers;
+    class UDisTweaks_TuneSource_Protection* m_pTuneTweak;
+    class UArkComponentContainer* m_ComponentContainer;
+    //## END PROPS DisProtectionTuneSource
+
+    DECLARE_FUNCTION(execOnToggle);
+    DECLARE_CLASS(ADisProtectionTuneSource,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPylon: retail sizeof 960, reflected span 924..948 (2012 PDB sizeof 960)
+class ADisPylon : public APylon
+{
+public:
+    //## BEGIN PROPS DisPylon
+    BITFIELD m_bEnableTallBoyNavigation:1;
+    BITFIELD m_bMergeNavMeshPolys:1;
+    FLOAT m_fTallBoyMaxPolyHeight;
+    class UStaticMesh* m_pImportedNavMesh;
+    FStringNoInit m_pImportedPathEngineMesh;
+    //## END PROPS DisPylon
+
+    DECLARE_CLASS(ADisPylon,APylon,0,DishonoredGame)
+};
+
+// DishonoredGame.DisRiverKrustBodyPart: retail sizeof 912, reflected span 876..900 (2012 PDB sizeof 912)
+class ADisRiverKrustBodyPart : public ADishonoredKActor
+{
+public:
+    //## BEGIN PROPS DisRiverKrustBodyPart
+    FLOAT m_fDrawScale;
+    FVector m_DrawScale3D;
+    BITFIELD m_bDetachOnParentRagdoll:1;
+    class UDisTweaks_RiverKrustBodyPart* m_pRiverKrustBodyPartTweaks;
+    //## END PROPS DisRiverKrustBodyPart
+
+    DECLARE_CLASS(ADisRiverKrustBodyPart,ADishonoredKActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSoundCaptureBox: retail sizeof 592, reflected span 584..588 (2012 PDB sizeof 592)
+class ADisSoundCaptureBox : public AActor
+{
+public:
+    //## BEGIN PROPS DisSoundCaptureBox
+    class AActor* m_pSoundRedirectedActor;
+    //## END PROPS DisSoundCaptureBox
+
+    DECLARE_CLASS(ADisSoundCaptureBox,AActor,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+};
+
+// DishonoredGame.DisSoundSource: retail sizeof 608, reflected span 584..608 (2012 PDB sizeof 608)
+class ADisSoundSource : public AActor, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisSoundSource
+    class UDisTweaks_SoundSource* m_pTweaks;
+    BITFIELD m_bStarted:1;
+    FLOAT m_fAISoundTimer;
+    TScriptInterface<class IDisNoiseMakerInterface> m_pNoiseMaker;
+    //## END PROPS DisSoundSource
+
+    DECLARE_CLASS(ADisSoundSource,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSpotLightMovable: retail sizeof 608, reflected span 592..596 (2012 PDB sizeof 608)
+class ADisSpotLightMovable : public ASpotLightMovable
+{
+public:
+    //## BEGIN PROPS DisSpotLightMovable
+    class UDisRatLightComponent* m_pRatLightComponent;
+    //## END PROPS DisSpotLightMovable
+
+    DECLARE_CLASS(ADisSpotLightMovable,ASpotLightMovable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisMantleableInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisMantleableInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisMantleableInterface
+    //## END PROPS DisMantleableInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisMantleableInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisMantleableInterface
+{
+protected:
+    virtual ~IDisMantleableInterface() {}
+public:
+    typedef UDisMantleableInterface UClassType;
+};
+
+// DishonoredGame.DisStaticCollisionActor: retail sizeof 608, reflected span 592..600 (2012 PDB sizeof 608)
+class ADisStaticCollisionActor : public AStaticMeshActor, public IDisMantleableInterface
+{
+public:
+    //## BEGIN PROPS DisStaticCollisionActor
+    BITFIELD bCollideOnlyWithNPCMovement:1;
+    BITFIELD m_bRejectPlayerMantle:1;
+    //## END PROPS DisStaticCollisionActor
+
+    DECLARE_CLASS(ADisStaticCollisionActor,AStaticMeshActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTallboyNPCPawn: retail sizeof 3632, reflected span 3572..3632 (2012 PDB sizeof 3392)
+class ADisTallboyNPCPawn : public ADishonoredNPCPawn
+{
+public:
+    //## BEGIN PROPS DisTallboyNPCPawn
+    class USkeletalMeshComponent* m_pStiltsMesh;
+    class UDisParticleSystemComponent* m_pLightParticleSystem;
+    class UClass* m_pDisWindblastClass;
+    FLOAT m_fAttachedLightRotationSpeed;
+    BITFIELD m_bIsGameLoadInProgress:1;
+    BITFIELD m_bHasEnteredRagdollState:1;
+    BITFIELD m_bHasSwitchedToDyingContent:1;
+    class ASpotLight* m_pAttachedLight;
+    FDisSpotlightManager m_SpotlightManager;
+    FVector m_LastDamageMomentum;
+    //## END PROPS DisTallboyNPCPawn
+
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisTallboyNPCPawn,ADishonoredNPCPawn,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisTravelSpawner: retail sizeof 1200, reflected span 1176..1188 (2012 PDB sizeof 1184)
+class ADisTravelSpawner : public ADishonoredSpawner
+{
+public:
+    //## BEGIN PROPS DisTravelSpawner
+    TArrayNoInit<FName> m_PlayerTravelLocationTags;
+    //## END PROPS DisTravelSpawner
+
+    DECLARE_CLASS(ADisTravelSpawner,ADishonoredSpawner,0|CLASS_Config,DishonoredGame)
+};
+
+struct DisTriggerAbstractItem_eventCallUsedBy_Parms
+{
+    class APawn* User;
+    UBOOL ReturnValue;
+    DisTriggerAbstractItem_eventCallUsedBy_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisTriggerAbstractItem: retail sizeof 640, reflected span 612..628 (2012 PDB sizeof 640)
+class ADisTriggerAbstractItem : public ADisTrigger
+{
+public:
+    //## BEGIN PROPS DisTriggerAbstractItem
+    class UDisAbstractItem* m_pRequiredItem;
+    INT m_Quantity;
+    BITFIELD m_bRemoveFromInventory:1;
+    BITFIELD m_bEnabled:1;
+    class AActor* m_pActorToHighlight;
+    //## END PROPS DisTriggerAbstractItem
+
+    UBOOL eventCallUsedBy(class APawn* User)
+    {
+        DisTriggerAbstractItem_eventCallUsedBy_Parms Parms(EC_EventParm);
+        Parms.ReturnValue=FALSE;
+        Parms.User=User;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_CallUsedBy),&Parms);
+        return Parms.ReturnValue;
+    }
+    DECLARE_FUNCTION(execOnToggle_Native);
+    DECLARE_CLASS(ADisTriggerAbstractItem,ADisTrigger,0,DishonoredGame)
+};
+
+struct DisTripwire_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DisTripwire_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DisTripwire: retail sizeof 672, reflected span 632..660 (2012 PDB sizeof 656)
+class ADisTripwire : public ASkeletalMeshActor, public IDisSoulRenderInterface, public IDisInteractableInterface, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisTripwire
+    class UDisTweaks_Tripwire* m_pTripwireTweaks;
+    BYTE m_TripwireStatus;
+    class USkeletalMeshComponent* m_pHighlightMesh;
+    INT m_HighlightFlags;
+    //## END PROPS DisTripwire
+
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DisTripwire_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisTripwire,ASkeletalMeshActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisUpgrade: retail sizeof 624, reflected span 584..612 (2012 PDB sizeof 624)
+class ADisUpgrade : public AActor, public IDisInteractableInterface, public IDisTweaksInterface, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisUpgrade
+    class UDisTweaks_Upgrade* m_pTweaks;
+    class UStaticMeshComponent* m_pMesh;
+    class UStaticMeshComponent* m_pHighlightMesh;
+    INT m_HighlightFlags;
+    //## END PROPS DisUpgrade
+
+    DECLARE_CLASS(ADisUpgrade,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ComponentObservable.DisComponentObservableConfig: retail SDK size 8 (2012 PDB 8)
+struct FDisComponentObservableConfig
+{
+    FLOAT m_fLOSCheckPeriod;
+    BYTE m_eVisiblePointMethod;
+    BYTE m_eCategory;
+
+    /** Constructors */
+    FDisComponentObservableConfig() {}
+    FDisComponentObservableConfig(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisComponentObservableConfig));
+    }
+};
+
+// DishonoredGame.DisSquadInterface.DisSquadProperty: retail SDK size 8 (2012 PDB 8)
+struct FDisSquadProperty
+{
+    FName m_SquadName;
+
+    /** Constructors */
+    FDisSquadProperty() {}
+    FDisSquadProperty(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSquadProperty));
+    }
+};
+
+// DishonoredGame.DisBlinderInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisBlinderInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisBlinderInterface
+    //## END PROPS DisBlinderInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisBlinderInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisBlinderInterface
+{
+protected:
+    virtual ~IDisBlinderInterface() {}
+public:
+    typedef UDisBlinderInterface UClassType;
+};
+
+// DishonoredGame.DisUsableConnectionInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisUsableConnectionInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisUsableConnectionInterface
+    //## END PROPS DisUsableConnectionInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisUsableConnectionInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisUsableConnectionInterface
+{
+protected:
+    virtual ~IDisUsableConnectionInterface() {}
+public:
+    typedef UDisUsableConnectionInterface UClassType;
+};
+
+struct DisWatchTower_eventTakeDamage_Parms
+{
+    INT Damage;
+    class AController* InstigatedBy;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DisWatchTower_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DisWatchTower: retail sizeof 1024, reflected span 584..1016 (2012 PDB sizeof 1024)
+class ADisWatchTower : public AActor, public IDisTweaksInterface, public IDisNoiseListenerInterface, public IDisWhaleOilConsumerInterface, public IDisRelationshipInterface, public IDisUsableConnectionInterface, public IDisBlinderInterface, public IDisSquadInterface, public IDisNoiseMakerInterface, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisWatchTower
+    BYTE m_eCurrentState;
+    FVector m_LastTargetLocation;
+    FVector m_FranticPos;
+    FVector m_FranticPerpVector;
+    BITFIELD m_bPolarityReversed:1;
+    BITFIELD m_bYawAndPitchSet:1;
+    BITFIELD m_bWarningPlayedThisVolley:1;
+    BITFIELD m_bBatteryIncluded:1;
+    FLOAT m_fTowerYaw;
+    FLOAT m_fLightPitch;
+    FDisSpotlightManager m_SpotlightManager;
+    FLOAT m_fDesiredLightIntensity;
+    FLOAT m_fSuspectTimeWithoutActors;
+    FLOAT m_fTimeToFire;
+    INT m_nVolleyShotsRemaining;
+    FLOAT m_fSpeedPercentBonus;
+    FLOAT m_fTowerOrientAnimLength;
+    FLOAT m_fLightOrientAnimLength;
+    TArrayNoInit<class AActor*> m_pSeenActors;
+    class ADishonoredPawn* m_pLastAttackedPawn;
+    TArrayNoInit<class AActor*> m_pAlreadyNotedCorpses;
+    class ADishonoredNPCPawn* m_pAllyAwareOfPlayer;
+    FVector m_AllysPlayerLocation;
+    FLOAT m_fReversedBatteryChargeTime;
+    class UDisParticleSystemComponent* m_pLightParticleSystem;
+    class UDisParticleSystemComponent* m_pAlertLightParticleSystem;
+    TArrayNoInit<class UMaterialInstanceConstant*> m_LightMICs;
+    FLOAT m_fAttackLightBlend;
+    FLOAT m_fDesiredAttackLightBlend;
+    class ADishonoredPawn* m_pScriptedTarget;
+    class USkeletalMeshComponent* m_pTowerMeshCpnt;
+    class UStaticMeshComponent* m_pBaseMeshCpnt;
+    class UStaticMeshComponent* m_pGunMeshCpnt;
+    class UStaticMeshComponent* m_pGeneratorWallMeshCpnt;
+    class ADisWhaleOilReceptacle* m_pAttachedReceptacle;
+    class ADishonoredUsableObject* m_pAttachedPanel;
+    class ADisSpotLightMovable* m_pAttachedLight;
+    class ULightEnvironmentComponent* m_pLightEnvironment;
+    TArrayNoInit<FDisSquadProperty> m_SupportedSquads;
+    class AActor* m_pExploreTracked;
+    FLightingChannelContainer m_LightingChannels;
+    class UDisTweaks_WatchTower* m_pWatchTowerTweaks;
+    class UDisTweaks_Faction* m_pFactionTweakOverride;
+    class UArkComponentContainer* m_ComponentContainer;
+    FDisComponentObservableConfig m_ComponentObservableConfig;
+    FDisRelationshipOverrideInfo m_PersonalRelationships;
+    FDisAudioCellCache m_AudioCellCache;
+    //## END PROPS DisWatchTower
+
+    void eventTakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DisWatchTower_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.Damage=Damage;
+        Parms.InstigatedBy=InstigatedBy;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_FUNCTION(execOnWatchTowerShootAtTarget);
+    DECLARE_FUNCTION(execOnSetDisposition);
+    DECLARE_CLASS(ADisWatchTower,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWatchTowerPlatform: retail sizeof 608, reflected span 584..596 (2012 PDB sizeof 608)
+class ADisWatchTowerPlatform : public AActor, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisWatchTowerPlatform
+    class UStaticMeshComponent* m_pMesh;
+    class UDynamicLightEnvironmentComponent* m_pLightEnvironment;
+    //## END PROPS DisWatchTowerPlatform
+
+    DECLARE_CLASS(ADisWatchTowerPlatform,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWaterSource: retail sizeof 784, reflected span 772..772 (2012 PDB sizeof 768)
+class ADisWaterSource : public ADishonoredUsableObject
+{
+public:
+    //## BEGIN PROPS DisWaterSource
+    //## END PROPS DisWaterSource
+
+    DECLARE_CLASS(ADisWaterSource,ADishonoredUsableObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAkComponent.DisAudioDebugPath: retail SDK size 12 (2012 PDB 12)
+struct FDisAudioDebugPath
+{
+    TArrayNoInit<FVector> m_Points;
+
+    /** Constructors */
+    FDisAudioDebugPath() {}
+    FDisAudioDebugPath(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAudioDebugPath));
+    }
+};
+
+// DishonoredGame.DisAkComponent.DisAudioPath: retail SDK size 40 (2012 PDB 40)
+struct FDisAudioPath
+{
+    FVector m_Direction;
+    FLOAT m_fDistance;
+    FLOAT m_fObstruction;
+    FLOAT m_fOcclusion;
+    FLOAT m_fFinalDist;
+    TArrayNoInit<class ADishonoredAudioPortal*> m_Portals;
+
+    /** Constructors */
+    FDisAudioPath() {}
+    FDisAudioPath(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAudioPath));
+    }
+};
+
+// DishonoredGame.DisAkComponent.DisAudioPropagationCache: retail SDK size 60 (2012 PDB 60)
+struct FDisAudioPropagationCache
+{
+    FVector m_SoundPoint;
+    FVector m_ListenerPoint;
+    class ADishonoredAudioVolume* m_pSoundCell;
+    class ADishonoredAudioVolume* m_pListenerCell;
+    FLOAT m_fMaxAudibleDistance;
+    FLOAT m_fRawDistance;
+    TArrayNoInit<FDisAudioPath> m_Paths;
+    FLOAT m_fObstruction;
+    FLOAT m_fOcclusion;
+
+    /** Constructors */
+    FDisAudioPropagationCache() {}
+    FDisAudioPropagationCache(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAudioPropagationCache));
+    }
+};
+
+// DishonoredGame.DishonoredAudioListenerTest: retail sizeof 672, reflected span 584..664 (2012 PDB sizeof 672)
+class ADishonoredAudioListenerTest : public AActor
+{
+public:
+    //## BEGIN PROPS DishonoredAudioListenerTest
+    class AActor* m_pSourceActor;
+    FLOAT m_fMaxRadius;
+    FDisAudioPropagationCache m_PropagationCache;
+    TArrayNoInit<FDisAudioDebugPath> m_DebugPaths;
+    //## END PROPS DishonoredAudioListenerTest
+
+    DECLARE_CLASS(ADishonoredAudioListenerTest,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAudioPortal: retail sizeof 720, reflected span 688..716 (2012 PDB sizeof 720)
+class ADishonoredAudioPortal : public AGenericPortal
+{
+public:
+    //## BEGIN PROPS DishonoredAudioPortal
+    class ADishonoredAudioVolume* m_pCellA;
+    class ADishonoredAudioVolume* m_pCellB;
+    FLOAT m_fOcclusion;
+    FLOAT m_fOcclusion_HeardByAI;
+    FLOAT m_fOcclusion_HeardByPlayer;
+    BYTE m_AudioPropagationIndex;
+    class USpriteComponent* m_pSpriteComponent;
+    //## END PROPS DishonoredAudioPortal
+
+    DECLARE_CLASS(ADishonoredAudioPortal,AGenericPortal,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAudioVolume.DisSoundRTPC: retail SDK size 16 (2012 PDB 16)
+struct FDisSoundRTPC
+{
+    FName m_Parameter;
+    FLOAT m_fValue;
+    FLOAT m_fChangeRate;
+
+    /** Constructors */
+    FDisSoundRTPC() {}
+    FDisSoundRTPC(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSoundRTPC));
+    }
+};
+
+// DishonoredGame.DishonoredAudioVolume: retail sizeof 688, reflected span 629..680 (2012 PDB sizeof 688)
+class ADishonoredAudioVolume : public AInOutVolume
+{
+public:
+    //## BEGIN PROPS DishonoredAudioVolume
+    TArrayNoInit<class ADishonoredAudioPortal*> m_LinkedPortals;
+    BYTE m_AudioPropagationIndex;
+    class UAkEvent* m_pSoundEvent;
+    TArrayNoInit<FDisSoundRTPC> m_SoundParameters;
+    FName m_Environment;
+    class UDisTweaks_ThrownObjects* m_pThrownObjects;
+    BITFIELD m_bAllowRandomRatSwarm:1;
+    //## END PROPS DishonoredAudioVolume
+
+    DECLARE_CLASS(ADishonoredAudioVolume,AInOutVolume,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAutoTestManager: retail sizeof 784, reflected span 768..772 (2012 PDB sizeof 784)
+class ADishonoredAutoTestManager : public AAutoTestManager
+{
+public:
+    //## BEGIN PROPS DishonoredAutoTestManager
+    BITFIELD m_bDisableStatRendering:1;
+    //## END PROPS DishonoredAutoTestManager
+
+    DECLARE_FUNCTION(execDoSentinel_PerfAtSpecificLocation);
+    DECLARE_FUNCTION(execDoSentinel_MemoryAtSpecificLocation);
+    DECLARE_FUNCTION(execGetTravelLocations);
+    DECLARE_FUNCTION(execDoSentinelActionBeforeExit_Native);
+    DECLARE_FUNCTION(execDoSentinelActionPerLoadedLevel_Native);
+    DECLARE_FUNCTION(execDoSentinelActionPerLoadedMap);
+    DECLARE_FUNCTION(execEndSentinelRun);
+    DECLARE_FUNCTION(execBeginSentinelRun);
+    DECLARE_CLASS(ADishonoredAutoTestManager,AAutoTestManager,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDecalActorBase: retail sizeof 592, reflected span 584..588 (2012 PDB sizeof 592)
+class ADishonoredDecalActorBase : public AActor
+{
+public:
+    //## BEGIN PROPS DishonoredDecalActorBase
+    class UDishonoredDecalComponent* m_pDishonoredDecal;
+    //## END PROPS DishonoredDecalActorBase
+
+    DECLARE_ABSTRACT_CLASS(ADishonoredDecalActorBase,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDecalActor: retail sizeof 592, reflected span 588..588 (2012 PDB sizeof 592)
+class ADishonoredDecalActor : public ADishonoredDecalActorBase
+{
+public:
+    //## BEGIN PROPS DishonoredDecalActor
+    //## END PROPS DishonoredDecalActor
+
+    DECLARE_CLASS(ADishonoredDecalActor,ADishonoredDecalActorBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDynamicUsableObject: retail sizeof 784, reflected span 772..772 (2012 PDB sizeof 768)
+class ADishonoredDynamicUsableObject : public ADishonoredUsableObject
+{
+public:
+    //## BEGIN PROPS DishonoredDynamicUsableObject
+    //## END PROPS DishonoredDynamicUsableObject
+
+    DECLARE_CLASS(ADishonoredDynamicUsableObject,ADishonoredUsableObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredEmitterPool: retail sizeof 672, reflected span 672..672 (2012 PDB sizeof 672)
+class ADishonoredEmitterPool : public AEmitterPool
+{
+public:
+    //## BEGIN PROPS DishonoredEmitterPool
+    //## END PROPS DishonoredEmitterPool
+
+    DECLARE_FUNCTION(execSpawnEmitterMeshAttachment);
+    DECLARE_FUNCTION(execSpawnEmitter);
+    DECLARE_CLASS(ADishonoredEmitterPool,AEmitterPool,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+};
+
+struct DishonoredNPCController_eventCallClearLatentAction_Parms
+{
+    class UClass* _pActionClass;
+    UBOOL _bAborted;
+    class USeqAct_Latent* _pExceptionAction;
+    DishonoredNPCController_eventCallClearLatentAction_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredNPCController: retail sizeof 944, reflected span 896..936 (2012 PDB sizeof 944)
+class ADishonoredNPCController : public AController
+{
+public:
+    //## BEGIN PROPS DishonoredNPCController
+    class UDishonoredAIBrain* m_pAIBrain;
+    class UArkComponentContainer* m_ComponentContainer;
+    FPointer m_pComponentVisionNPC;
+    FLOAT m_fAutoLookRadius;
+    FLOAT m_fAutoGlanceRadius;
+    FLOAT m_fGlanceTime;
+    class UDisSeqAct_AIGoToActor* m_pLastGoToKismetAction;
+    class UDisSeqAct_AIShoot* m_pLastShootKismetAction;
+    BITFIELD m_bGotRepeatableDestroy:1;
+    class ADishonoredPawn* m_pPawnBeforePossession;
+    //## END PROPS DishonoredNPCController
+
+    void eventCallClearLatentAction(class UClass* _pActionClass,UBOOL _bAborted=FALSE,class USeqAct_Latent* _pExceptionAction=NULL)
+    {
+        DishonoredNPCController_eventCallClearLatentAction_Parms Parms(EC_EventParm);
+        Parms._pActionClass=_pActionClass;
+        Parms._bAborted=_bAborted ? FIRST_BITFIELD : FALSE;
+        Parms._pExceptionAction=_pExceptionAction;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_CallClearLatentAction),&Parms);
+    }
+    DECLARE_FUNCTION(execIsDead);
+    DECLARE_FUNCTION(execDisplayDebug_Native);
+    DECLARE_FUNCTION(execOnAIRingAlarm);
+    DECLARE_FUNCTION(execOnAIStartDistraction);
+    DECLARE_FUNCTION(execOnAIGetBrainFlags);
+    DECLARE_FUNCTION(execOnAISetBrainFlags);
+    DECLARE_FUNCTION(execOnAIPsychicAttention);
+    DECLARE_FUNCTION(execOnAIClearAttention);
+    DECLARE_FUNCTION(execOnAISetSuspicionLevel);
+    DECLARE_FUNCTION(execOnAIProtectNeutralsOverride);
+    DECLARE_FUNCTION(execOnAIShoot);
+    DECLARE_FUNCTION(execOnAISetSenses);
+    DECLARE_FUNCTION(execOnAISetPatrol);
+    DECLARE_FUNCTION(execOnAIGuard);
+    DECLARE_FUNCTION(execOnAIGoToActor);
+    DECLARE_FUNCTION(execOnAIDoSearch);
+    DECLARE_FUNCTION(execOnAIAmbush);
+    DECLARE_FUNCTION(execGetMoveTargetLocation);
+    DECLARE_CLASS(ADishonoredNPCController,AController,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.DishonoredNavPoint: retail sizeof 816, reflected span 784..808 (2012 PDB sizeof 816)
+class ADishonoredNavPoint : public ANavigationPoint
+{
+public:
+    //## BEGIN PROPS DishonoredNavPoint
+    FLOAT m_fGuardDuration;
+    BYTE m_WatchPointOrdering;
+    TArrayNoInit<class ADisGuardWatchPoint*> m_WatchPoints;
+    BITFIELD m_bGuardForever:1;
+    BITFIELD m_bDirectionMatters:1;
+    //## END PROPS DishonoredNavPoint
+
+    DECLARE_CLASS(ADishonoredNavPoint,ANavigationPoint,0,DishonoredGame)
+};
+
+struct DishonoredNote_eventPostRenderFor_Parms
+{
+    class APlayerController* PC;
+    class UCanvas* Canvas;
+    FVector CameraPosition;
+    FVector CameraDir;
+    DishonoredNote_eventPostRenderFor_Parms(EEventParm)
+    : CameraPosition(EC_EventParm)
+    , CameraDir(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredNote: retail sizeof 656, reflected span 584..648 (2012 PDB sizeof 656)
+class ADishonoredNote : public AActor
+{
+public:
+    //## BEGIN PROPS DishonoredNote
+    FStringNoInit m_SummaryText;
+    FStringNoInit m_MainText;
+    FLinearColor m_NoteColor;
+    FLOAT m_fSummaryDist;
+    FLOAT m_fFullDist;
+    FLOAT m_fMaxNoteWidth;
+    FLOAT m_fMaxNoteHeight;
+    BITFIELD m_bDestroyed:1;
+    BITFIELD m_bHiddenGame_Old:1;
+    class USpriteComponent* m_pSprite;
+    //## END PROPS DishonoredNote
+
+    void eventPostRenderFor(class APlayerController* PC,class UCanvas* Canvas,FVector CameraPosition,FVector CameraDir)
+    {
+        DishonoredNote_eventPostRenderFor_Parms Parms(EC_EventParm);
+        Parms.PC=PC;
+        Parms.Canvas=Canvas;
+        Parms.CameraPosition=CameraPosition;
+        Parms.CameraDir=CameraDir;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_PostRenderFor),&Parms);
+    }
+    DECLARE_FUNCTION(execNativeNotePostRender);
+    DECLARE_CLASS(ADishonoredNote,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredRiver: retail sizeof 640, reflected span 584..640 (2012 PDB sizeof 640)
+class ADishonoredRiver : public AActor
+{
+public:
+    //## BEGIN PROPS DishonoredRiver
+    FLOAT m_fCellSize;
+    INT m_MaxVertexes;
+    FLOAT m_fDepthBasedMaxDamping;
+    FLOAT m_fDampingDepthThreshold;
+    FLOAT m_fMaxDepthVertexInfo;
+    class UStaticMeshComponent* m_pStaticMeshComponent;
+    BITFIELD m_bSkipBuildProcess:1;
+    TArrayNoInit<FVector2D> m_FlowGrid;
+    INT m_FlowGridWidth;
+    INT m_FlowGridHeight;
+    FVector2D m_FlowGridOrigin;
+    //## END PROPS DishonoredRiver
+
+    DECLARE_CLASS(ADishonoredRiver,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredRiverExtremity: retail sizeof 592, reflected span 584..588 (2012 PDB sizeof 592)
+class ADishonoredRiverExtremity : public AActor
+{
+public:
+    //## BEGIN PROPS DishonoredRiverExtremity
+    FLOAT m_fHeight;
+    //## END PROPS DishonoredRiverExtremity
+
+    DECLARE_CLASS(ADishonoredRiverExtremity,AActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredRoute: retail sizeof 672, reflected span 612..660 (2012 PDB sizeof 672)
+class ADishonoredRoute : public ARoute, public IDisSquadInterface
+{
+public:
+    //## BEGIN PROPS DishonoredRoute
+    TArrayNoInit<FDisSquadProperty> m_SupportedSquads;
+    INT m_Capacity;
+    FLOAT m_AdoptionRange;
+    FLOAT m_NeglectThreshold;
+    INT m_PatrolAttentionSpan;
+    BITFIELD m_bIsActive:1;
+    class ADishonoredRoute* m_pNextRoute;
+    FLOAT m_NeglectTimer;
+    INT m_NumNPCAdopters;
+    //## END PROPS DishonoredRoute
+
+    DECLARE_FUNCTION(execResolveRouteIndex);
+    DECLARE_FUNCTION(execOnToggle);
+    DECLARE_CLASS(ADishonoredRoute,ARoute,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredScout: retail sizeof 1312, reflected span 1308..1308 (2012 PDB sizeof 1312)
+class ADishonoredScout : public AScout
+{
+public:
+    //## BEGIN PROPS DishonoredScout
+    //## END PROPS DishonoredScout
+
+    DECLARE_CLASS(ADishonoredScout,AScout,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredWaterVolume: retail sizeof 720, reflected span 692..712 (2012 PDB sizeof 720)
+class ADishonoredWaterVolume : public APhysicsVolume, public IDisContactTypeInterface
+{
+public:
+    //## BEGIN PROPS DishonoredWaterVolume
+    class UDishonoredWaterVolumeInfo* m_pWaterVolumeInfo;
+    class ADishonoredRiver* m_pRiver;
+    FLOAT m_fFlowFactor;
+    BITFIELD m_bShallowWater:1;
+    //## END PROPS DishonoredWaterVolume
+
+    DECLARE_CLASS(ADishonoredWaterVolume,APhysicsVolume,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+};
+
+// DishonoredGame.DisSerializableObject_Base.DisSerializableObject: retail SDK size 4 (2012 PDB 4)
+struct FDisSerializableObject
+{
+    FPointer m_VTable_Pointer_Dummy;
+
+    /** Constructors */
+    FDisSerializableObject() {}
+    FDisSerializableObject(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSerializableObject));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIBlackboardRecord: retail SDK size 16 (2012 PDB 16)
+struct FAIBlackboardRecord : public FDisSerializableObject
+{
+    FLOAT m_TimeStamp_Created;
+    FLOAT m_TimeStamp_Modified;
+    BITFIELD m_bHasBeenSetup:1;
+
+    /** Constructors */
+    FAIBlackboardRecord() {}
+    FAIBlackboardRecord(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIBlackboardRecord));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIKnowledgeRecord: retail SDK size 16 (2012 PDB 16)
+struct FAIKnowledgeRecord : public FAIBlackboardRecord
+{
+
+    /** Constructors */
+    FAIKnowledgeRecord() {}
+    FAIKnowledgeRecord(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIKnowledgeRecord));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIKnowledgeRecord_Hideout: retail SDK size 20 (2012 PDB 20)
+struct FAIKnowledgeRecord_Hideout : public FAIKnowledgeRecord
+{
+    class UDisHideoutComponent* m_pHideout;
+
+    /** Constructors */
+    FAIKnowledgeRecord_Hideout() {}
+    FAIKnowledgeRecord_Hideout(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIKnowledgeRecord_Hideout));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIKnowledgeRecord_LastCorpse: retail SDK size 28 (2012 PDB 28)
+struct FAIKnowledgeRecord_LastCorpse : public FAIKnowledgeRecord
+{
+    TScriptInterface<class IDisCorpseInterface> m_pCorpse;
+    class ADishonoredPawn* m_pKiller;
+
+    /** Constructors */
+    FAIKnowledgeRecord_LastCorpse() {}
+    FAIKnowledgeRecord_LastCorpse(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIKnowledgeRecord_LastCorpse));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIKnowledgeRecord_Pawn: retail SDK size 24 (2012 PDB 24)
+struct FAIKnowledgeRecord_Pawn : public FAIKnowledgeRecord
+{
+    class APawn* m_pPawnHandle;
+    BYTE m_eLastReachability;
+
+    /** Constructors */
+    FAIKnowledgeRecord_Pawn() {}
+    FAIKnowledgeRecord_Pawn(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIKnowledgeRecord_Pawn));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIKnowledgeRecord_WhaleOilDevice: retail SDK size 24 (2012 PDB 24)
+struct FAIKnowledgeRecord_WhaleOilDevice : public FAIKnowledgeRecord
+{
+    class AActor* m_pDevice;
+    BYTE m_bTrusted;
+    BYTE m_bNoticedTamperedWith;
+
+    /** Constructors */
+    FAIKnowledgeRecord_WhaleOilDevice() {}
+    FAIKnowledgeRecord_WhaleOilDevice(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIKnowledgeRecord_WhaleOilDevice));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIOccupyAccessPointTaskRecord: retail SDK size 28 (2012 PDB 28)
+struct FAIOccupyAccessPointTaskRecord : public FAIBlackboardRecord
+{
+    class ADisHideoutAccessPoint* m_pAccesspoint;
+    class ADishonoredNPCPawn* m_pTaskedPawn;
+    FPointer m_pHideout;
+
+    /** Constructors */
+    FAIOccupyAccessPointTaskRecord() {}
+    FAIOccupyAccessPointTaskRecord(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIOccupyAccessPointTaskRecord));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttentionProxy: retail SDK size 16 (2012 PDB 16)
+struct FDisAttentionProxy
+{
+    class UDishonoredAIBrain* m_pBrain;
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTarget;
+    class AActor* m_pCachedTargetActor;
+
+    /** Constructors */
+    FDisAttentionProxy() {}
+    FDisAttentionProxy(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionProxy));
+    }
+};
+
+// DishonoredGame.DisBehaviorPanic.AIPanicThreat: retail SDK size 32 (2012 PDB 32)
+struct FAIPanicThreat
+{
+    BYTE m_ePanicReason;
+    class AActor* m_pPanicActor;
+    class ADishonoredPawn* m_PawnThreat;
+    FDisAttentionProxy m_ProxyThreat;
+    class ADisRatSwarm* m_pRatSwarmThreat;
+
+    /** Constructors */
+    FAIPanicThreat() {}
+    FAIPanicThreat(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIPanicThreat));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIRecordGrenadeThrow: retail SDK size 24 (2012 PDB 24)
+struct FAIRecordGrenadeThrow : public FAIBlackboardRecord
+{
+    class ADishonoredPawn* m_pThrowingPawn;
+    class UClass* m_pThrowType;
+
+    /** Constructors */
+    FAIRecordGrenadeThrow() {}
+    FAIRecordGrenadeThrow(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIRecordGrenadeThrow));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIRecord_CountWolfHound: retail SDK size 20 (2012 PDB 20)
+struct FAIRecord_CountWolfHound : public FAIBlackboardRecord
+{
+    INT m_iWolfHoundInCombat;
+
+    /** Constructors */
+    FAIRecord_CountWolfHound() {}
+    FAIRecord_CountWolfHound(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIRecord_CountWolfHound));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIRecord_PanickingNPCs: retail SDK size 20 (2012 PDB 20)
+struct FAIRecord_PanickingNPCs : public FAIBlackboardRecord
+{
+    INT m_iCount;
+
+    /** Constructors */
+    FAIRecord_PanickingNPCs() {}
+    FAIRecord_PanickingNPCs(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIRecord_PanickingNPCs));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIRecord_RegisteredHideout: retail SDK size 24 (2012 PDB 24)
+struct FAIRecord_RegisteredHideout : public FAIBlackboardRecord
+{
+    class UDisHideoutComponent* m_pHideout;
+    BITFIELD m_bIsPlayerIn:1;
+
+    /** Constructors */
+    FAIRecord_RegisteredHideout() {}
+    FAIRecord_RegisteredHideout(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIRecord_RegisteredHideout));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AIRecord_ShootingPosition: retail SDK size 32 (2012 PDB 32)
+struct FAIRecord_ShootingPosition : public FAIBlackboardRecord
+{
+    class ADishonoredNPCPawn* m_pClaimingNPC;
+    FVector m_ShootingPosition;
+
+    /** Constructors */
+    FAIRecord_ShootingPosition() {}
+    FAIRecord_ShootingPosition(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIRecord_ShootingPosition));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AISeekAllyTaskRecord: retail SDK size 24 (2012 PDB 24)
+struct FAISeekAllyTaskRecord : public FAIBlackboardRecord
+{
+    class ADishonoredPawn* m_pInvolvedPawn;
+    class ADishonoredNPCPawn* m_pTaskedPawn;
+
+    /** Constructors */
+    FAISeekAllyTaskRecord() {}
+    FAISeekAllyTaskRecord(EEventParm)
+    {
+        appMemzero(this, sizeof(FAISeekAllyTaskRecord));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AISeekCombatGroupTaskRecord: retail SDK size 36 (2012 PDB 36)
+struct FAISeekCombatGroupTaskRecord : public FAIBlackboardRecord
+{
+    class ADishonoredPawn* m_pInstigatorPawn;
+    class ADisRatSwarm* m_pEnemySwarm;
+    TArrayNoInit<class ADishonoredPawn*> m_NearbyAllyPawns;
+
+    /** Constructors */
+    FAISeekCombatGroupTaskRecord() {}
+    FAISeekCombatGroupTaskRecord(EEventParm)
+    {
+        appMemzero(this, sizeof(FAISeekCombatGroupTaskRecord));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct : public FDisSerializableObject
+{
+    BYTE m_StimID;
+    INT m_RefCount;
+    class UDisStimManager* m_pStimManager;
+    class UObject* m_pSource;
+
+    /** Constructors */
+    FAIStimStruct() {}
+    FAIStimStruct(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ActivateAlarm: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_ActivateAlarm : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_ActivateAlarm() {}
+    FAIStimStruct_ActivateAlarm(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ActivateAlarm));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ActorTamperedWith: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_ActorTamperedWith : public FAIStimStruct
+{
+    class AActor* m_pTamperedWith;
+
+    /** Constructors */
+    FAIStimStruct_ActorTamperedWith() {}
+    FAIStimStruct_ActorTamperedWith(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ActorTamperedWith));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Alarm: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_Alarm : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTroubleMaker;
+    class ADisAlarmBell* m_pAlarm;
+    INT m_AttentionTag;
+
+    /** Constructors */
+    FAIStimStruct_Alarm() {}
+    FAIStimStruct_Alarm(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Alarm));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_AllyBusted: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_AllyBusted : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+
+    /** Constructors */
+    FAIStimStruct_AllyBusted() {}
+    FAIStimStruct_AllyBusted(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_AllyBusted));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_AmbushAbortRequest: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_AmbushAbortRequest : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_AmbushAbortRequest() {}
+    FAIStimStruct_AmbushAbortRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_AmbushAbortRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_AmbushRequest: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_AmbushRequest : public FAIStimStruct
+{
+    class ADisAmbushPoint* m_pAmbushPoint;
+    class ADishonoredPawn* m_pAmbushTarget;
+    class AActor* m_pFleeTarget;
+    BITFIELD m_bLieInWaitIndefinitely:1;
+
+    /** Constructors */
+    FAIStimStruct_AmbushRequest() {}
+    FAIStimStruct_AmbushRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_AmbushRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_AttackedByEnemy: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_AttackedByEnemy : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+
+    /** Constructors */
+    FAIStimStruct_AttackedByEnemy() {}
+    FAIStimStruct_AttackedByEnemy(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_AttackedByEnemy));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_AttentionBehaviorBegin: retail SDK size 52
+struct FAIStimStruct_AttentionBehaviorBegin : public FAIStimStruct
+{
+    FDisAttentionProxy m_AttentionTargetProxy;
+    FDisAttentionChangeReason m_AttentionChangeReason;
+
+    /** Constructors */
+    FAIStimStruct_AttentionBehaviorBegin() {}
+    FAIStimStruct_AttentionBehaviorBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_AttentionBehaviorBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_BattleVictory: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_BattleVictory : public FAIStimStruct
+{
+    FDisAttentionProxy m_EnemyProxy;
+
+    /** Constructors */
+    FAIStimStruct_BattleVictory() {}
+    FAIStimStruct_BattleVictory(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_BattleVictory));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_BehaviorAbort: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_BehaviorAbort : public FAIStimStruct
+{
+    class UClass* m_AbortedBehavior;
+
+    /** Constructors */
+    FAIStimStruct_BehaviorAbort() {}
+    FAIStimStruct_BehaviorAbort(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_BehaviorAbort));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_BlockingDialogEnd: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_BlockingDialogEnd : public FAIStimStruct
+{
+    INT m_iRunningInstID;
+
+    /** Constructors */
+    FAIStimStruct_BlockingDialogEnd() {}
+    FAIStimStruct_BlockingDialogEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_BlockingDialogEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_BlockingDialogRequest: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_BlockingDialogRequest : public FAIStimStruct
+{
+    INT m_iRunningInstID;
+    BITFIELD m_bStopBlockingForAINotice:1;
+
+    /** Constructors */
+    FAIStimStruct_BlockingDialogRequest() {}
+    FAIStimStruct_BlockingDialogRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_BlockingDialogRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_BrainInit: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_BrainInit : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_BrainInit() {}
+    FAIStimStruct_BrainInit(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_BrainInit));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_CarryCorpseOrBodyPart: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_CarryCorpseOrBodyPart : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pCarrier;
+    TScriptInterface<class IDisCorpseInterface> m_pCorpseOrBodyPart;
+
+    /** Constructors */
+    FAIStimStruct_CarryCorpseOrBodyPart() {}
+    FAIStimStruct_CarryCorpseOrBodyPart(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_CarryCorpseOrBodyPart));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ClearAllMinAttention: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_ClearAllMinAttention : public FAIStimStruct
+{
+    BYTE m_Type;
+
+    /** Constructors */
+    FAIStimStruct_ClearAllMinAttention() {}
+    FAIStimStruct_ClearAllMinAttention(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ClearAllMinAttention));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ClearAttention: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_ClearAttention : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pForTarget;
+    FLOAT m_fForHowLong;
+
+    /** Constructors */
+    FAIStimStruct_ClearAttention() {}
+    FAIStimStruct_ClearAttention(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ClearAttention));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ClearMinAttentionForTarget: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_ClearMinAttentionForTarget : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pForTarget;
+    BYTE m_Type;
+
+    /** Constructors */
+    FAIStimStruct_ClearMinAttentionForTarget() {}
+    FAIStimStruct_ClearMinAttentionForTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ClearMinAttentionForTarget));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_CombatBegin: retail SDK size 52 (2012 PDB 52)
+struct FAIStimStruct_CombatBegin : public FAIStimStruct_AttentionBehaviorBegin
+{
+
+    /** Constructors */
+    FAIStimStruct_CombatBegin() {}
+    FAIStimStruct_CombatBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_CombatBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_CombatEnd: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_CombatEnd : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_CombatEnd() {}
+    FAIStimStruct_CombatEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_CombatEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_CombatEngageRejected: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_CombatEngageRejected : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_CombatEngageRejected() {}
+    FAIStimStruct_CombatEngageRejected(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_CombatEngageRejected));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_CombatToSearch: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_CombatToSearch : public FAIStimStruct
+{
+    BITFIELD m_bWantCombatLostBark:1;
+    class ADishonoredPawn* m_pGroupedAlly;
+
+    /** Constructors */
+    FAIStimStruct_CombatToSearch() {}
+    FAIStimStruct_CombatToSearch(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_CombatToSearch));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_CoordinatedAttackRequest: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_CoordinatedAttackRequest : public FAIStimStruct
+{
+    class ADishonoredNPCPawn* m_pRequestingPawn;
+    BYTE m_eStage;
+    FLOAT m_fTimerToUse;
+
+    /** Constructors */
+    FAIStimStruct_CoordinatedAttackRequest() {}
+    FAIStimStruct_CoordinatedAttackRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_CoordinatedAttackRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DLC06_OnAssassummon: retail SDK size 24
+struct FAIStimStruct_DLC06_OnAssassummon : public FAIStimStruct
+{
+    class ADishonoredNPCPawn* m_pSummonTarget;
+
+    /** Constructors */
+    FAIStimStruct_DLC06_OnAssassummon() {}
+    FAIStimStruct_DLC06_OnAssassummon(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DLC06_OnAssassummon));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DLC06_SmokeBombed: retail SDK size 40
+struct FAIStimStruct_DLC06_SmokeBombed : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pAttacker;
+    FVector m_BombLocation;
+
+    /** Constructors */
+    FAIStimStruct_DLC06_SmokeBombed() {}
+    FAIStimStruct_DLC06_SmokeBombed(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DLC06_SmokeBombed));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DLC06_WitnessSilentExplosion: retail SDK size 44
+struct FAIStimStruct_DLC06_WitnessSilentExplosion : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pExplosionInstigator;
+    FVector m_ExplosionLocation;
+    FLOAT m_fExplosionRadius;
+
+    /** Constructors */
+    FAIStimStruct_DLC06_WitnessSilentExplosion() {}
+    FAIStimStruct_DLC06_WitnessSilentExplosion(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DLC06_WitnessSilentExplosion));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DLC07_Pulled: retail SDK size 32
+struct FAIStimStruct_DLC07_Pulled : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pInstigator;
+    FLOAT m_fAttnProxyLocRatio;
+
+    /** Constructors */
+    FAIStimStruct_DLC07_Pulled() {}
+    FAIStimStruct_DLC07_Pulled(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DLC07_Pulled));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DLC07_Resurrected: retail SDK size 92
+struct FAIStimStruct_DLC07_Resurrected : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTopEnemyAtDeath;
+    FDisAttentionProxyInfo m_TopEnemyProxyInfoAtDeath;
+
+    /** Constructors */
+    FAIStimStruct_DLC07_Resurrected() {}
+    FAIStimStruct_DLC07_Resurrected(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DLC07_Resurrected));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DLC07_SightedRiverKrust: retail SDK size 24
+struct FAIStimStruct_DLC07_SightedRiverKrust : public FAIStimStruct
+{
+    class ADisRiverKrust* m_pRiverKrust;
+
+    /** Constructors */
+    FAIStimStruct_DLC07_SightedRiverKrust() {}
+    FAIStimStruct_DLC07_SightedRiverKrust(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DLC07_SightedRiverKrust));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DeathByWoL: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_DeathByWoL : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pDeadPawn;
+    class ADisWallOfLight* m_pWoL;
+
+    /** Constructors */
+    FAIStimStruct_DeathByWoL() {}
+    FAIStimStruct_DeathByWoL(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DeathByWoL));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DestinationReached: retail SDK size 40 (2012 PDB 40)
+struct FAIStimStruct_DestinationReached : public FAIStimStruct
+{
+    FVector m_Location;
+    BITFIELD m_bExact:1;
+    class UObject* m_pRequestOriginator;
+
+    /** Constructors */
+    FAIStimStruct_DestinationReached() {}
+    FAIStimStruct_DestinationReached(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DestinationReached));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DialogAttentionChange: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_DialogAttentionChange : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTarget;
+    BYTE m_ToThreshold;
+
+    /** Constructors */
+    FAIStimStruct_DialogAttentionChange() {}
+    FAIStimStruct_DialogAttentionChange(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DialogAttentionChange));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DifficultyChanged: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_DifficultyChanged : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_DifficultyChanged() {}
+    FAIStimStruct_DifficultyChanged(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DifficultyChanged));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DiscoveredCorpse: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_DiscoveredCorpse : public FAIStimStruct
+{
+    TScriptInterface<class IDisCorpseInterface> m_pDeadBody;
+    class ADishonoredPawn* m_pCulprit;
+    FVector m_DiscoveredLoc;
+
+    /** Constructors */
+    FAIStimStruct_DiscoveredCorpse() {}
+    FAIStimStruct_DiscoveredCorpse(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DiscoveredCorpse));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Distracted_Anim: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_Distracted_Anim : public FAIStimStruct
+{
+    class UDisNPCDistractionComponent* m_pDistraction;
+
+    /** Constructors */
+    FAIStimStruct_Distracted_Anim() {}
+    FAIStimStruct_Distracted_Anim(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Distracted_Anim));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Distracted_HeadLook: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_Distracted_HeadLook : public FAIStimStruct
+{
+    class UDisNPCDistractionComponent* m_pDistraction;
+
+    /** Constructors */
+    FAIStimStruct_Distracted_HeadLook() {}
+    FAIStimStruct_Distracted_HeadLook(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Distracted_HeadLook));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DocileRatIsNear: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_DocileRatIsNear : public FAIStimStruct
+{
+    class ADisGameCrowdAgentSkeletalRat* m_pDocileRat;
+    BITFIELD m_bPossessedByThePlayer:1;
+    FLOAT m_fInteractionRadius;
+
+    /** Constructors */
+    FAIStimStruct_DocileRatIsNear() {}
+    FAIStimStruct_DocileRatIsNear(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DocileRatIsNear));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DoorUsedByPlayer: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_DoorUsedByPlayer : public FAIStimStruct
+{
+    class ADisDoor* m_pDoor;
+
+    /** Constructors */
+    FAIStimStruct_DoorUsedByPlayer() {}
+    FAIStimStruct_DoorUsedByPlayer(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DoorUsedByPlayer));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_DoorUsedByPlayerWhileWary: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_DoorUsedByPlayerWhileWary : public FAIStimStruct
+{
+    class ADisDoor* m_pDoor;
+
+    /** Constructors */
+    FAIStimStruct_DoorUsedByPlayerWhileWary() {}
+    FAIStimStruct_DoorUsedByPlayerWhileWary(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_DoorUsedByPlayerWhileWary));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EndDistracted: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_EndDistracted : public FAIStimStruct
+{
+    class UDisNPCDistractionComponent* m_pDistraction;
+
+    /** Constructors */
+    FAIStimStruct_EndDistracted() {}
+    FAIStimStruct_EndDistracted(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EndDistracted));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EndPossession: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_EndPossession : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_EndPossession() {}
+    FAIStimStruct_EndPossession(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EndPossession));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EnemyBusted: retail SDK size 40 (2012 PDB 40)
+struct FAIStimStruct_EnemyBusted : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pTargetEnemy;
+    FDisAttentionChangeReason m_AttentionChangeReason;
+
+    /** Constructors */
+    FAIStimStruct_EnemyBusted() {}
+    FAIStimStruct_EnemyBusted(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EnemyBusted));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EscapedBeingChoked: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_EscapedBeingChoked : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pChoker;
+
+    /** Constructors */
+    FAIStimStruct_EscapedBeingChoked() {}
+    FAIStimStruct_EscapedBeingChoked(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EscapedBeingChoked));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EscapedBeingPossessed: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_EscapedBeingPossessed : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pPossessor;
+
+    /** Constructors */
+    FAIStimStruct_EscapedBeingPossessed() {}
+    FAIStimStruct_EscapedBeingPossessed(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EscapedBeingPossessed));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EvadedMelee_Incoming: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_EvadedMelee_Incoming : public FAIStimStruct
+{
+    class UDisItemContext_MeleeAttack* m_pMeleeAttackContext;
+    BYTE m_EvasionType;
+
+    /** Constructors */
+    FAIStimStruct_EvadedMelee_Incoming() {}
+    FAIStimStruct_EvadedMelee_Incoming(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EvadedMelee_Incoming));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_EvadedMelee_Outgoing: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_EvadedMelee_Outgoing : public FAIStimStruct
+{
+    class UDisItemContext_MeleeAttack* m_pOutgoingAttackContext;
+    class UDisItemContext_MeleeBlock* m_pEnemyBlockContext;
+    BYTE m_EvasionType;
+
+    /** Constructors */
+    FAIStimStruct_EvadedMelee_Outgoing() {}
+    FAIStimStruct_EvadedMelee_Outgoing(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_EvadedMelee_Outgoing));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Explosion: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_Explosion : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_Explosion() {}
+    FAIStimStruct_Explosion(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Explosion));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_FollowRequest: retail SDK size 40 (2012 PDB 40)
+struct FAIStimStruct_FollowRequest : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pFollowedPawn;
+    BITFIELD m_bInterruptable:1;
+    BITFIELD m_bOverwriteFollowParameters:1;
+    FFollowParameters m_OverwriteFollowParameters;
+
+    /** Constructors */
+    FAIStimStruct_FollowRequest() {}
+    FAIStimStruct_FollowRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_FollowRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ForceRingAlarm: retail SDK size 40 (2012 PDB 40)
+struct FAIStimStruct_ForceRingAlarm : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pEnemy;
+    BITFIELD m_bUseEnemyLocOverride:1;
+    FVector m_EnemyLocOverride;
+
+    /** Constructors */
+    FAIStimStruct_ForceRingAlarm() {}
+    FAIStimStruct_ForceRingAlarm(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ForceRingAlarm));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_GoToRequest: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_GoToRequest : public FAIStimStruct
+{
+    class UDisSeqAct_AIGoToActor* m_pAssociatedKismetGoToAction;
+
+    /** Constructors */
+    FAIStimStruct_GoToRequest() {}
+    FAIStimStruct_GoToRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_GoToRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_GuardRequest: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_GuardRequest : public FAIStimStruct
+{
+    class AActor* m_pHomeActor;
+    FLOAT m_fGuardAwarenessRadius;
+
+    /** Constructors */
+    FAIStimStruct_GuardRequest() {}
+    FAIStimStruct_GuardRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_GuardRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_HeadTrackBegin: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_HeadTrackBegin : public FAIStimStruct
+{
+    FDisAttentionProxy m_HeadTrackTargetProxy;
+
+    /** Constructors */
+    FAIStimStruct_HeadTrackBegin() {}
+    FAIStimStruct_HeadTrackBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_HeadTrackBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_HeadTrackEnd: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_HeadTrackEnd : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_HeadTrackEnd() {}
+    FAIStimStruct_HeadTrackEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_HeadTrackEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_HeardCorpseSplat: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_HeardCorpseSplat : public FAIStimStruct
+{
+    TScriptInterface<class IDisCorpseInterface> m_pCorpse;
+
+    /** Constructors */
+    FAIStimStruct_HeardCorpseSplat() {}
+    FAIStimStruct_HeardCorpseSplat(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_HeardCorpseSplat));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_HeardSomething: retail SDK size 68 (2012 PDB 68)
+struct FAIStimStruct_HeardSomething : public FAIStimStruct
+{
+    FDisAINoiseParameters m_NoiseParams;
+
+    /** Constructors */
+    FAIStimStruct_HeardSomething() {}
+    FAIStimStruct_HeardSomething(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_HeardSomething));
+    }
+};
+
+// DishonoredGame.DisAttentionInfo_Complex.DisAttentionIncreaseInfo: retail SDK size 32 (2012 PDB 32)
+struct FDisAttentionIncreaseInfo
+{
+    FVector m_Loc;
+    FVector m_Vel;
+    FLOAT m_fHeight;
+    INT m_AttentionTag;
+
+    /** Constructors */
+    FDisAttentionIncreaseInfo() {}
+    FDisAttentionIncreaseInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionIncreaseInfo));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Help: retail SDK size 60 (2012 PDB 60)
+struct FAIStimStruct_Help : public FAIStimStruct
+{
+    class ADishonoredNPCPawn* m_pNPCInTrouble;
+    class ADishonoredPawn* m_pTroubleMaker;
+    FDisAttentionIncreaseInfo m_ProxyInfo;
+
+    /** Constructors */
+    FAIStimStruct_Help() {}
+    FAIStimStruct_Help(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Help));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_HelpFromRats: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_HelpFromRats : public FAIStimStruct
+{
+    class ADishonoredNPCPawn* m_pNPCInTrouble;
+    class ADisRatSwarm* m_pRatSwarm;
+
+    /** Constructors */
+    FAIStimStruct_HelpFromRats() {}
+    FAIStimStruct_HelpFromRats(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_HelpFromRats));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_IdleRequest: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_IdleRequest : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_IdleRequest() {}
+    FAIStimStruct_IdleRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_IdleRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ImpendingExplosion: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_ImpendingExplosion : public FAIStimStruct
+{
+    class AActor* m_pExplodingActor;
+    FVector m_vExplosionPosition;
+
+    /** Constructors */
+    FAIStimStruct_ImpendingExplosion() {}
+    FAIStimStruct_ImpendingExplosion(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ImpendingExplosion));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_IncomingDamage: retail SDK size 48 (2012 PDB 48)
+struct FAIStimStruct_IncomingDamage : public FAIStimStruct
+{
+    class AActor* m_pAttacker;
+    class UClass* m_pDamageType;
+    INT m_iDamageAmount;
+    BITFIELD m_bHasDamageCauserLoc:1;
+    FVector m_DamageCauserLoc;
+
+    /** Constructors */
+    FAIStimStruct_IncomingDamage() {}
+    FAIStimStruct_IncomingDamage(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_IncomingDamage));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_InhibitBegin: retail SDK size 20
+struct FAIStimStruct_InhibitBegin : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_InhibitBegin() {}
+    FAIStimStruct_InhibitBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_InhibitBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_InhibitEnd: retail SDK size 20
+struct FAIStimStruct_InhibitEnd : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_InhibitEnd() {}
+    FAIStimStruct_InhibitEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_InhibitEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_InteractBegin: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_InteractBegin : public FAIStimStruct
+{
+    BITFIELD m_bInterruptable:1;
+    FVector m_BodyFacingDir;
+
+    /** Constructors */
+    FAIStimStruct_InteractBegin() {}
+    FAIStimStruct_InteractBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_InteractBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_InteractEnd: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_InteractEnd : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_InteractEnd() {}
+    FAIStimStruct_InteractEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_InteractEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Intimidated: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_Intimidated : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pTerrorist;
+
+    /** Constructors */
+    FAIStimStruct_Intimidated() {}
+    FAIStimStruct_Intimidated(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Intimidated));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ItemContext_End: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_ItemContext_End : public FAIStimStruct
+{
+    class UDisItemContext* m_pItemContext;
+
+    /** Constructors */
+    FAIStimStruct_ItemContext_End() {}
+    FAIStimStruct_ItemContext_End(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ItemContext_End));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ItemContext_Start: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_ItemContext_Start : public FAIStimStruct
+{
+    class UDisItemContext* m_pItemContext;
+
+    /** Constructors */
+    FAIStimStruct_ItemContext_Start() {}
+    FAIStimStruct_ItemContext_Start(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ItemContext_Start));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_LocoPushedByPlayer: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_LocoPushedByPlayer : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_LocoPushedByPlayer() {}
+    FAIStimStruct_LocoPushedByPlayer(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_LocoPushedByPlayer));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_MaxOutAttention: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_MaxOutAttention : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pForTarget;
+
+    /** Constructors */
+    FAIStimStruct_MaxOutAttention() {}
+    FAIStimStruct_MaxOutAttention(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_MaxOutAttention));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_MeleeConnected_Outgoing: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_MeleeConnected_Outgoing : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pEnemy;
+
+    /** Constructors */
+    FAIStimStruct_MeleeConnected_Outgoing() {}
+    FAIStimStruct_MeleeConnected_Outgoing(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_MeleeConnected_Outgoing));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_NPCReachAttentionLevel: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_NPCReachAttentionLevel : public FAIStimStruct
+{
+    BYTE m_OldAttentionLevel;
+    BYTE m_NewAttentionLevel;
+    TScriptInterface<class IDisAttentionTargetInterface> m_pAttentionTarget;
+
+    /** Constructors */
+    FAIStimStruct_NPCReachAttentionLevel() {}
+    FAIStimStruct_NPCReachAttentionLevel(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_NPCReachAttentionLevel));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_NoMoreWolfHoundInFight: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_NoMoreWolfHoundInFight : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_NoMoreWolfHoundInFight() {}
+    FAIStimStruct_NoMoreWolfHoundInFight(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_NoMoreWolfHoundInFight));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_NoticeBegin: retail SDK size 52 (2012 PDB 36)
+struct FAIStimStruct_NoticeBegin : public FAIStimStruct_AttentionBehaviorBegin
+{
+
+    /** Constructors */
+    FAIStimStruct_NoticeBegin() {}
+    FAIStimStruct_NoticeBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_NoticeBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_NoticeEnd: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_NoticeEnd : public FAIStimStruct
+{
+    BITFIELD m_bShouldBark:1;
+
+    /** Constructors */
+    FAIStimStruct_NoticeEnd() {}
+    FAIStimStruct_NoticeEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_NoticeEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_NoticeRequest: retail SDK size 64 (2012 PDB 64)
+struct FAIStimStruct_NoticeRequest : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pNoticer;
+    TScriptInterface<class IDisAttentionTargetInterface> m_pNoticedTarget;
+    FDisAttentionIncreaseInfo m_IncreaseInfo;
+
+    /** Constructors */
+    FAIStimStruct_NoticeRequest() {}
+    FAIStimStruct_NoticeRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_NoticeRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Panicked: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_Panicked : public FAIStimStruct
+{
+    class AActor* m_pPanicActor;
+    BITFIELD m_bCheckPanicCount:1;
+    BYTE m_ePanicReason;
+
+    /** Constructors */
+    FAIStimStruct_Panicked() {}
+    FAIStimStruct_Panicked(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Panicked));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PathingFail: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PathingFail : public FAIStimStruct
+{
+    class UObject* m_pRequestOriginator;
+
+    /** Constructors */
+    FAIStimStruct_PathingFail() {}
+    FAIStimStruct_PathingFail(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PathingFail));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PathingSuccess: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PathingSuccess : public FAIStimStruct
+{
+    class UObject* m_pRequestOriginator;
+
+    /** Constructors */
+    FAIStimStruct_PathingSuccess() {}
+    FAIStimStruct_PathingSuccess(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PathingSuccess));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PatrolRequest: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PatrolRequest : public FAIStimStruct
+{
+    class AActor* m_pStartingActor;
+
+    /** Constructors */
+    FAIStimStruct_PatrolRequest() {}
+    FAIStimStruct_PatrolRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PatrolRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PatrolSearchRequest: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PatrolSearchRequest : public FAIStimStruct
+{
+    class AActor* m_pStartingActor;
+
+    /** Constructors */
+    FAIStimStruct_PatrolSearchRequest() {}
+    FAIStimStruct_PatrolSearchRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PatrolSearchRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PlagueZone: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_PlagueZone : public FAIStimStruct
+{
+    BITFIELD m_bJustEntered:1;
+    class ADishonoredPawn* m_pPlagueSource;
+
+    /** Constructors */
+    FAIStimStruct_PlagueZone() {}
+    FAIStimStruct_PlagueZone(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PlagueZone));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PlayerHideoutTransition: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_PlayerHideoutTransition : public FAIStimStruct
+{
+    class UDisHideoutComponent* m_pHideout;
+    BITFIELD m_bActivating:1;
+    BITFIELD m_bWitnessed:1;
+    BITFIELD m_bForAttention:1;
+    BITFIELD m_bSwitchedHideout:1;
+
+    /** Constructors */
+    FAIStimStruct_PlayerHideoutTransition() {}
+    FAIStimStruct_PlayerHideoutTransition(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PlayerHideoutTransition));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PlayerMessingWithActor: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PlayerMessingWithActor : public FAIStimStruct
+{
+    class AActor* m_pMessedWith;
+
+    /** Constructors */
+    FAIStimStruct_PlayerMessingWithActor() {}
+    FAIStimStruct_PlayerMessingWithActor(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PlayerMessingWithActor));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PlayerUsed: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PlayerUsed : public FAIStimStruct
+{
+    BYTE m_CrosshairStatus;
+
+    /** Constructors */
+    FAIStimStruct_PlayerUsed() {}
+    FAIStimStruct_PlayerUsed(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PlayerUsed));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ProjectileLaunched: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_ProjectileLaunched : public FAIStimStruct
+{
+    class ADisProjectile* m_pProjectile;
+
+    /** Constructors */
+    FAIStimStruct_ProjectileLaunched() {}
+    FAIStimStruct_ProjectileLaunched(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ProjectileLaunched));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PsychicAttentionDisabled: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_PsychicAttentionDisabled : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pForTarget;
+    BYTE m_Type;
+
+    /** Constructors */
+    FAIStimStruct_PsychicAttentionDisabled() {}
+    FAIStimStruct_PsychicAttentionDisabled(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PsychicAttentionDisabled));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PsychicAttentionDisabled_AllTargets: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_PsychicAttentionDisabled_AllTargets : public FAIStimStruct
+{
+    BYTE m_Type;
+
+    /** Constructors */
+    FAIStimStruct_PsychicAttentionDisabled_AllTargets() {}
+    FAIStimStruct_PsychicAttentionDisabled_AllTargets(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PsychicAttentionDisabled_AllTargets));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_PsychicAttentionEnabled: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_PsychicAttentionEnabled : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pForTarget;
+    BYTE m_Type;
+
+    /** Constructors */
+    FAIStimStruct_PsychicAttentionEnabled() {}
+    FAIStimStruct_PsychicAttentionEnabled(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_PsychicAttentionEnabled));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ReachabilityChange: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_ReachabilityChange : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+    FVector m_vAdvisedMeleePos;
+    BITFIELD m_bJustBecameUnReachable:1;
+    BYTE m_eNewReachability;
+
+    /** Constructors */
+    FAIStimStruct_ReachabilityChange() {}
+    FAIStimStruct_ReachabilityChange(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ReachabilityChange));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ReactionRequest: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_ReactionRequest : public FAIStimStruct
+{
+    BYTE m_eAnimationToPlay;
+    BITFIELD m_bDoFaceTo:1;
+    FVector m_ReactPos;
+    BYTE m_eBarkToPlay;
+
+    /** Constructors */
+    FAIStimStruct_ReactionRequest() {}
+    FAIStimStruct_ReactionRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ReactionRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_RelationshipChanged: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_RelationshipChanged : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_RelationshipChanged() {}
+    FAIStimStruct_RelationshipChanged(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_RelationshipChanged));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ReturnTravelRequest: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_ReturnTravelRequest : public FAIStimStruct
+{
+    FVector m_ReturnDestination;
+    INT m_DestinationYaw;
+
+    /** Constructors */
+    FAIStimStruct_ReturnTravelRequest() {}
+    FAIStimStruct_ReturnTravelRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ReturnTravelRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_RotationReached: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_RotationReached : public FAIStimStruct
+{
+    FVector m_RotationFocus;
+    class UObject* m_pRequestOriginator;
+
+    /** Constructors */
+    FAIStimStruct_RotationReached() {}
+    FAIStimStruct_RotationReached(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_RotationReached));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ScrambleRequest: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_ScrambleRequest : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pAmbushTarget;
+    class ADisAmbushPoint* m_pAmbushPoint;
+    INT m_ScramblerCount;
+
+    /** Constructors */
+    FAIStimStruct_ScrambleRequest() {}
+    FAIStimStruct_ScrambleRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ScrambleRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SearchBegin: retail SDK size 52 (2012 PDB 52)
+struct FAIStimStruct_SearchBegin : public FAIStimStruct_AttentionBehaviorBegin
+{
+
+    /** Constructors */
+    FAIStimStruct_SearchBegin() {}
+    FAIStimStruct_SearchBegin(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SearchBegin));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SearchEnd: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_SearchEnd : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_SearchEnd() {}
+    FAIStimStruct_SearchEnd(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SearchEnd));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SearchReachedProxy: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_SearchReachedProxy : public FAIStimStruct
+{
+    FDisAttentionProxy m_Proxy;
+
+    /** Constructors */
+    FAIStimStruct_SearchReachedProxy() {}
+    FAIStimStruct_SearchReachedProxy(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SearchReachedProxy));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SearchRequest: retail SDK size 64 (2012 PDB 64)
+struct FAIStimStruct_SearchRequest : public FAIStimStruct
+{
+    class ADishonoredNPCPawn* m_pSearchingAlly;
+    class ADishonoredPawn* m_pTroubleMaker;
+    BYTE m_SearchRequestCause;
+    BYTE m_SearchRequesterTransitSpeed;
+    FDisAttentionIncreaseInfo m_ProxyInfo;
+
+    /** Constructors */
+    FAIStimStruct_SearchRequest() {}
+    FAIStimStruct_SearchRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SearchRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SetMinAttentionForTarget: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_SetMinAttentionForTarget : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pForTarget;
+    BYTE m_MinAttentionLevel;
+    BYTE m_Type;
+
+    /** Constructors */
+    FAIStimStruct_SetMinAttentionForTarget() {}
+    FAIStimStruct_SetMinAttentionForTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SetMinAttentionForTarget));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ShootRequest: retail SDK size 40 (2012 PDB 40)
+struct FAIStimStruct_ShootRequest : public FAIStimStruct
+{
+    class AActor* m_pTarget;
+    BITFIELD m_bShootForever:1;
+    INT m_iMaxNumShots;
+    BITFIELD m_bOverrideAccuracy:1;
+    FLOAT m_fOverrideAccuracyPercentage;
+
+    /** Constructors */
+    FAIStimStruct_ShootRequest() {}
+    FAIStimStruct_ShootRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ShootRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_ShownRangedThreat: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_ShownRangedThreat : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+
+    /** Constructors */
+    FAIStimStruct_ShownRangedThreat() {}
+    FAIStimStruct_ShownRangedThreat(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_ShownRangedThreat));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SightedRatSwarm: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_SightedRatSwarm : public FAIStimStruct
+{
+    class ADisRatSwarm* m_pRatSwarm;
+
+    /** Constructors */
+    FAIStimStruct_SightedRatSwarm() {}
+    FAIStimStruct_SightedRatSwarm(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SightedRatSwarm));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Soiree: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_Soiree : public FAIStimStruct
+{
+    FGuid m_SoireeGUID;
+    BYTE m_SoireeEvent;
+    BYTE m_SoireePriority;
+    BITFIELD m_bIsBlocking:1;
+
+    /** Constructors */
+    FAIStimStruct_Soiree() {}
+    FAIStimStruct_Soiree(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Soiree));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SoireeRejected: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_SoireeRejected : public FAIStimStruct
+{
+    FGuid m_SoireeGUID;
+    BYTE m_SoireePriority;
+    BITFIELD m_bFromBlockingDialog:1;
+
+    /** Constructors */
+    FAIStimStruct_SoireeRejected() {}
+    FAIStimStruct_SoireeRejected(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SoireeRejected));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Stolen: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_Stolen : public FAIStimStruct
+{
+    FLOAT m_fDelay;
+
+    /** Constructors */
+    FAIStimStruct_Stolen() {}
+    FAIStimStruct_Stolen(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Stolen));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_SuspicionLevelChanged: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_SuspicionLevelChanged : public FAIStimStruct
+{
+    BYTE m_NewSuspicionLevel;
+
+    /** Constructors */
+    FAIStimStruct_SuspicionLevelChanged() {}
+    FAIStimStruct_SuspicionLevelChanged(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_SuspicionLevelChanged));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TargetSighted: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_TargetSighted : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTarget;
+
+    /** Constructors */
+    FAIStimStruct_TargetSighted() {}
+    FAIStimStruct_TargetSighted(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TargetSighted));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TargetTouched: retail SDK size 32 (2012 PDB 28)
+struct FAIStimStruct_TargetTouched : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTarget;
+    BITFIELD m_bUnpossessTouch:1;
+
+    /** Constructors */
+    FAIStimStruct_TargetTouched() {}
+    FAIStimStruct_TargetTouched(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TargetTouched));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TargetUnsighted: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_TargetUnsighted : public FAIStimStruct
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pTarget;
+
+    /** Constructors */
+    FAIStimStruct_TargetUnsighted() {}
+    FAIStimStruct_TargetUnsighted(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TargetUnsighted));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Teleported: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_Teleported : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_Teleported() {}
+    FAIStimStruct_Teleported(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Teleported));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TetherRequest: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_TetherRequest : public FAIStimStruct
+{
+    class ADisTetherVolume* m_pTetherVolume;
+    BITFIELD m_bIsRequestingTether:1;
+    FDisAttentionProxy m_EnemyProxy;
+
+    /** Constructors */
+    FAIStimStruct_TetherRequest() {}
+    FAIStimStruct_TetherRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TetherRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TopAttnProxyReplaced: retail SDK size 36 (2012 PDB 36)
+struct FAIStimStruct_TopAttnProxyReplaced : public FAIStimStruct
+{
+    FDisAttentionProxy m_NewTopAttnProxy;
+
+    /** Constructors */
+    FAIStimStruct_TopAttnProxyReplaced() {}
+    FAIStimStruct_TopAttnProxyReplaced(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TopAttnProxyReplaced));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TopAttnProxyUpdated: retail SDK size 40 (2012 PDB 40)
+struct FAIStimStruct_TopAttnProxyUpdated : public FAIStimStruct
+{
+    BYTE m_RelationshipToTopAttnProxy;
+    FDisAttentionProxy m_TopAttnProxy;
+
+    /** Constructors */
+    FAIStimStruct_TopAttnProxyUpdated() {}
+    FAIStimStruct_TopAttnProxyUpdated(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TopAttnProxyUpdated));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TouchedAlly: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_TouchedAlly : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+
+    /** Constructors */
+    FAIStimStruct_TouchedAlly() {}
+    FAIStimStruct_TouchedAlly(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TouchedAlly));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TouchedEnemy: retail SDK size 28 (2012 PDB 28)
+struct FAIStimStruct_TouchedEnemy : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+    BITFIELD m_bSendKismetEvent:1;
+
+    /** Constructors */
+    FAIStimStruct_TouchedEnemy() {}
+    FAIStimStruct_TouchedEnemy(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TouchedEnemy));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_TouchedNeutral: retail SDK size 24 (2012 PDB 24)
+struct FAIStimStruct_TouchedNeutral : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pPawn;
+
+    /** Constructors */
+    FAIStimStruct_TouchedNeutral() {}
+    FAIStimStruct_TouchedNeutral(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_TouchedNeutral));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_Traveled: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_Traveled : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_Traveled() {}
+    FAIStimStruct_Traveled(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_Traveled));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_WitnessDeath: retail SDK size 44 (2012 PDB 44)
+struct FAIStimStruct_WitnessDeath : public FAIStimStruct
+{
+    TScriptInterface<class IDisCorpseInterface> m_pDeadBody;
+    class ADishonoredPawn* m_pCulprit;
+    FVector m_KillerLocation;
+
+    /** Constructors */
+    FAIStimStruct_WitnessDeath() {}
+    FAIStimStruct_WitnessDeath(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_WitnessDeath));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_WitnessMagic: retail SDK size 32 (2012 PDB 32)
+struct FAIStimStruct_WitnessMagic : public FAIStimStruct
+{
+    class UClass* m_pActivePowerClass;
+    class ADishonoredPawn* m_pMagicUser;
+    BITFIELD m_bDisappearance:1;
+
+    /** Constructors */
+    FAIStimStruct_WitnessMagic() {}
+    FAIStimStruct_WitnessMagic(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_WitnessMagic));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_WitnessPickpocket: retail SDK size 20 (2012 PDB 20)
+struct FAIStimStruct_WitnessPickpocket : public FAIStimStruct
+{
+
+    /** Constructors */
+    FAIStimStruct_WitnessPickpocket() {}
+    FAIStimStruct_WitnessPickpocket(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_WitnessPickpocket));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.AIStimStruct_WitnessShadowKill: retail SDK size 36
+struct FAIStimStruct_WitnessShadowKill : public FAIStimStruct
+{
+    class ADishonoredPawn* m_pKiller;
+    FVector m_ShadowKillLoc;
+
+    /** Constructors */
+    FAIStimStruct_WitnessShadowKill() {}
+    FAIStimStruct_WitnessShadowKill(EEventParm)
+    {
+        appMemzero(this, sizeof(FAIStimStruct_WitnessShadowKill));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AITaskRecord_CoordinatedAttack: retail SDK size 40 (2012 PDB 40)
+struct FAITaskRecord_CoordinatedAttack : public FAIBlackboardRecord
+{
+    class ADishonoredPawn* m_pInstigatorPawn;
+    class ADishonoredPawn* m_TargetPawn;
+    TArrayNoInit<class ADishonoredNPCPawn*> m_ParticipantPawns;
+    BITFIELD m_bTriggerAttack:1;
+
+    /** Constructors */
+    FAITaskRecord_CoordinatedAttack() {}
+    FAITaskRecord_CoordinatedAttack(EEventParm)
+    {
+        appMemzero(this, sizeof(FAITaskRecord_CoordinatedAttack));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AITaskRecord_SummonWolfHound: retail SDK size 20 (2012 PDB 20)
+struct FAITaskRecord_SummonWolfHound : public FAIBlackboardRecord
+{
+    class ADishonoredNPCPawn* m_pTaskedPawn;
+
+    /** Constructors */
+    FAITaskRecord_SummonWolfHound() {}
+    FAITaskRecord_SummonWolfHound(EEventParm)
+    {
+        appMemzero(this, sizeof(FAITaskRecord_SummonWolfHound));
+    }
+};
+
+// DishonoredGame.DisAIBlackboard.AITaskRecord_Weeping: retail SDK size 24 (2012 PDB 24)
+struct FAITaskRecord_Weeping : public FAIBlackboardRecord
+{
+    class ADishonoredNPCPawn* m_pTaskedPawn;
+    BYTE m_eRunningIncentive;
+
+    /** Constructors */
+    FAITaskRecord_Weeping() {}
+    FAITaskRecord_Weeping(EEventParm)
+    {
+        appMemzero(this, sizeof(FAITaskRecord_Weeping));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerStats.AchievementStatEval: retail SDK size 20 (2012 PDB 20)
+struct FAchievementStatEval
+{
+    INT m_StatIndex;
+    BYTE m_eValueInequality;
+    FLOAT m_fThreshold;
+    FLOAT m_fStreakValue;
+    FLOAT m_fStreakTime;
+
+    /** Constructors */
+    FAchievementStatEval() {}
+    FAchievementStatEval(EEventParm)
+    {
+        appMemzero(this, sizeof(FAchievementStatEval));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerStats.AchievementInfo: retail SDK size 16 (2012 PDB 16)
+struct FAchievementInfo
+{
+    BITFIELD m_bEvaluatedAtKismet:1;
+    TArrayNoInit<FAchievementStatEval> m_StatEvals;
+
+    /** Constructors */
+    FAchievementInfo() {}
+    FAchievementInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FAchievementInfo));
+    }
+};
+
+// DishonoredGame.DisAmbushGlobalManager.AmbushPointDistanceSqrdPair: retail SDK size 8 (2012 PDB 8)
+struct FAmbushPointDistanceSqrdPair
+{
+    FPointer m_pAmbushPoint;
+    FLOAT m_fDistanceSqrd;
+
+    /** Constructors */
+    FAmbushPointDistanceSqrdPair() {}
+    FAmbushPointDistanceSqrdPair(EEventParm)
+    {
+        appMemzero(this, sizeof(FAmbushPointDistanceSqrdPair));
+    }
+};
+
+// DishonoredGame.DishonoredEngine.DLC06EndGamePlayerInfo.AmmoInfo: retail SDK size 8
+struct FAmmoInfo
+{
+    INT Capacity;
+    INT Count;
+
+    /** Constructors */
+    FAmmoInfo() {}
+    FAmmoInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FAmmoInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrain.BehaviorTweak: retail SDK size 16 (2012 PDB 16)
+struct FBehaviorTweak
+{
+    class UDisTweaks_AIBehavior* m_Difficulty[4];
+
+    /** Constructors */
+    FBehaviorTweak() {}
+    FBehaviorTweak(EEventParm)
+    {
+        appMemzero(this, sizeof(FBehaviorTweak));
+    }
+};
+
+// DishonoredGame.DishonoredEngine.DLC06EndGamePlayerInfo.BoneCharm: retail SDK size 8
+struct FBoneCharm
+{
+    INT Level;
+    INT CharmIndex;
+
+    /** Constructors */
+    FBoneCharm() {}
+    FBoneCharm(EEventParm)
+    {
+        appMemzero(this, sizeof(FBoneCharm));
+    }
+};
+
+// DishonoredGame.DisInteractableInterface.CanInteractParams: retail SDK size 12 (2012 PDB 12)
+struct FCanInteractParams
+{
+    class ADishonoredPawn* m_pInteractor;
+    class UPrimitiveComponent* m_pWithComponent;
+    INT m_DisTraceFlags;
+
+    /** Constructors */
+    FCanInteractParams() {}
+    FCanInteractParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FCanInteractParams));
+    }
+};
+
+// DishonoredGame.DishonoredGlobalAIManager.CorpseIslandPawnInfo: retail SDK size 8 (2012 PDB 8)
+struct FCorpseIslandPawnInfo
+{
+    class ADishonoredNPCPawn* m_pPawn;
+    FLOAT m_fAge;
+
+    /** Constructors */
+    FCorpseIslandPawnInfo() {}
+    FCorpseIslandPawnInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FCorpseIslandPawnInfo));
+    }
+};
+
+// DishonoredGame.DishonoredGlobalAIManager.CorpseIslandInfo: retail SDK size 12 (2012 PDB 12)
+struct FCorpseIslandInfo
+{
+    TArrayNoInit<FCorpseIslandPawnInfo> m_PawnList;
+
+    /** Constructors */
+    FCorpseIslandInfo() {}
+    FCorpseIslandInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FCorpseIslandInfo));
+    }
+};
+
+// DishonoredGame.DishonoredGlobalAIManager.CustomIgnoreDeathInfo: retail SDK size 12 (2012 PDB 12)
+struct FCustomIgnoreDeathInfo
+{
+    class UDishonoredAIBrain* m_pIgnorer;
+    TScriptInterface<class IDisCorpseInterface> m_pIgnoree;
+
+    /** Constructors */
+    FCustomIgnoreDeathInfo() {}
+    FCustomIgnoreDeathInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FCustomIgnoreDeathInfo));
+    }
+};
+
+// DishonoredGame.DishonoredEngine.DLC06EndGamePlayerInfo.PowerInfo: retail SDK size 16
+struct FPowerInfo
+{
+    FStringNoInit Name;
+    INT Level;
+
+    /** Constructors */
+    FPowerInfo() {}
+    FPowerInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FPowerInfo));
+    }
+};
+
+// DishonoredGame.DishonoredEngine.DLC06EndGamePlayerInfo.StoryFlag: retail SDK size 32
+struct FStoryFlag
+{
+    FStringNoInit Name;
+    FGuid Guid;
+    INT bSet;
+
+    /** Constructors */
+    FStoryFlag() {}
+    FStoryFlag(EEventParm)
+    {
+        appMemzero(this, sizeof(FStoryFlag));
+    }
+};
+
+// DishonoredGame.DishonoredEngine.DLC06EndGamePlayerInfo: retail SDK size 192
+struct FDLC06EndGamePlayerInfo
+{
+    BITFIELD m_bIsValid:1;
+    INT m_ElixirCount[2];
+    INT m_InventoryItems[4];
+    FAmmoInfo m_AmmoInfo[12];
+    INT m_Gold;
+    INT m_Runes;
+    TArrayNoInit<FPowerInfo> m_ActivePowers;
+    TArrayNoInit<FPowerInfo> m_PassivePowers;
+    TArrayNoInit<FBoneCharm> m_BoneCharms;
+    TArrayNoInit<FStoryFlag> m_StoryFlags;
+    TArrayNoInit<FString> m_Upgrades;
+
+    /** Constructors */
+    FDLC06EndGamePlayerInfo() {}
+    FDLC06EndGamePlayerInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDLC06EndGamePlayerInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn.DLCPackItemInfo: retail SDK size 24
+struct FDLCPackItemInfo
+{
+    FName m_ItemName;
+    FName m_SpawnName;
+    FName m_PickupName;
+
+    /** Constructors */
+    FDLCPackItemInfo() {}
+    FDLCPackItemInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDLCPackItemInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn.DLCPackInfo: retail SDK size 144
+struct FDLCPackInfo
+{
+    FDLCPackItemInfo m_Upgrade;
+    FDLCPackItemInfo m_BoneCharm[3];
+    FDLCPackItemInfo m_Book;
+    FDLCPackItemInfo m_Pouch;
+
+    /** Constructors */
+    FDLCPackInfo() {}
+    FDLCPackInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDLCPackInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerStats.TweakNamePair: retail SDK size 16
+struct FTweakNamePair
+{
+    FName m_TweaksName;
+    FName m_TweaksNameCooked;
+
+    /** Constructors */
+    FTweakNamePair() {}
+    FTweakNamePair(EEventParm)
+    {
+        appMemzero(this, sizeof(FTweakNamePair));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn.Deed: retail SDK size 68 (2012 PDB 64)
+struct FDeed
+{
+    BYTE m_Stat;
+    INT m_Threshold;
+    FStringNoInit m_Text;
+    INT m_Value;
+    class UDisTweaksBase* m_pTweaks;
+    FTweakNamePair m_TweaksNamePair;
+    TArrayNoInit<class UDisTweaksBase*> m_ExcludedTweaks;
+    TArrayNoInit<FTweakNamePair> m_ExcludedTweaksNamePairs;
+
+    /** Constructors */
+    FDeed() {}
+    FDeed(EEventParm)
+    {
+        appMemzero(this, sizeof(FDeed));
+    }
+};
+
+// DishonoredGame.DisTutorialTracker.DelayedNoteInfo: retail SDK size 8 (2012 PDB 8)
+struct FDelayedNoteInfo
+{
+    FLOAT m_fDelay;
+    BYTE m_Note;
+
+    /** Constructors */
+    FDelayedNoteInfo() {}
+    FDelayedNoteInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDelayedNoteInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_SoundSource.DisAISoundSource: retail SDK size 8 (2012 PDB 8)
+struct FDisAISoundSource
+{
+    BYTE m_AINoiseLoudness;
+    BYTE m_AINoiseContext;
+    FLOAT m_fPeriodicity;
+
+    /** Constructors */
+    FDisAISoundSource() {}
+    FDisAISoundSource(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAISoundSource));
+    }
+};
+
+// DishonoredGame.DishonoredAudioSystem.DisAmbientSound: retail SDK size 12 (2012 PDB 12)
+struct FDisAmbientSound
+{
+    class AAkAmbientSound* m_pAmbientSound;
+    FLOAT m_fStartRadiusSq;
+    FLOAT m_fStopRadiusSq;
+
+    /** Constructors */
+    FDisAmbientSound() {}
+    FDisAmbientSound(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAmbientSound));
+    }
+};
+
+// DishonoredGame.DisAmbushGlobalManager.DisAmbushReservation: retail SDK size 8 (2012 PDB 8)
+struct FDisAmbushReservation
+{
+    class ADishonoredNPCPawn* m_pNPCPawn;
+    class ADisAmbushPoint* m_pAmbushPoint;
+
+    /** Constructors */
+    FDisAmbushReservation() {}
+    FDisAmbushReservation(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAmbushReservation));
+    }
+};
+
+// DishonoredGame.DisTweaks_Pawn.DisAmmoTweak: retail SDK size 8 (2012 PDB 8)
+struct FDisAmmoTweak
+{
+    BYTE m_AmmoType;
+    INT m_AmmoCount;
+
+    /** Constructors */
+    FDisAmmoTweak() {}
+    FDisAmmoTweak(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAmmoTweak));
+    }
+};
+
+// DishonoredGame.DisAnimStateComponent.DisAnimStateSeqHistory: retail SDK size 12 (2012 PDB 12)
+struct FDisAnimStateSeqHistory
+{
+    FName m_SeqName;
+    INT m_StatePicker;
+
+    /** Constructors */
+    FDisAnimStateSeqHistory() {}
+    FDisAnimStateSeqHistory(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimStateSeqHistory));
+    }
+};
+
+// DishonoredGame.DisAnimStateComponent.DisAnimState_Picker: retail SDK size 20 (2012 PDB 20)
+struct FDisAnimState_Picker
+{
+    class UDishonoredAnimNodeStatePicker* m_pStatePicker;
+    BYTE m_parentPicker;
+    class UAnimNodeBlendPerBone* m_pFilter;
+    FPointer m_pCurState;
+    BITFIELD m_bCurStatePotentiallyInvalid:1;
+    BITFIELD m_bLockedOut:1;
+    BITFIELD m_bLockedOut_Children:1;
+
+    /** Constructors */
+    FDisAnimState_Picker() {}
+    FDisAnimState_Picker(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimState_Picker));
+    }
+};
+
+// DishonoredGame.DisAnimStatePool.DisAnimTreePool: retail SDK size 20 (2012 PDB 20)
+struct FDisAnimTreePool
+{
+    class UDishonoredAnimTree* m_pPooledTemplate;
+    TArrayNoInit<class UDishonoredAnimTree*> m_PooledAnimTrees;
+    INT m_MaxPooledTrees;
+
+    /** Constructors */
+    FDisAnimTreePool() {}
+    FDisAnimTreePool(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimTreePool));
+    }
+};
+
+// DishonoredGame.DisAnimDefinitions.DisAnimation: retail SDK size 48 (2012 PDB 48)
+struct FDisAnimation
+{
+    TArrayNoInit<FName> m_Name;
+    FName m_FaceAnimName;
+    FName m_LinkedPlayerAnimName;
+    FLOAT m_fBlendInTime;
+    FLOAT m_fPlayRateModifierRange;
+    BYTE m_FirstItemPrefix;
+    BYTE m_SecondItemPrefix;
+    BITFIELD m_bLoop:1;
+    BITFIELD m_bOptional:1;
+    BITFIELD m_bNoAutoTransitions:1;
+    BYTE m_ItemAnimation;
+
+    /** Constructors */
+    FDisAnimation() {}
+    FDisAnimation(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimation));
+    }
+};
+
+// DishonoredGame.DisAnimDefinitions.DisAnimationGroup: retail SDK size 20 (2012 PDB 20)
+struct FDisAnimationGroup
+{
+    TArrayNoInit<FDisAnimation> m_Chain;
+    FLOAT m_fBlendOutTime;
+    BITFIELD m_bEndChainAfterOneAnimation:1;
+    BITFIELD m_bFallAllowed:1;
+
+    /** Constructors */
+    FDisAnimationGroup() {}
+    FDisAnimationGroup(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimationGroup));
+    }
+};
+
+// DishonoredGame.DisAnimDefinitions.DisAnimationChain: retail SDK size 20 (2012 PDB 20)
+struct FDisAnimationChain
+{
+    TArrayNoInit<FDisAnimationGroup> m_Groups;
+    BYTE m_RootMotionMode;
+    BYTE m_RootRotationMode;
+    BITFIELD m_bGoToRagdollIfPushed:1;
+
+    /** Constructors */
+    FDisAnimationChain() {}
+    FDisAnimationChain(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimationChain));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisAppliedAttentionChangeInfo: retail SDK size 72 (2012 PDB 72)
+struct FDisAppliedAttentionChangeInfo
+{
+    FLOAT m_fChangeAmount;
+    FLOAT m_fChangeAmount_Unclamped;
+    FDisAttentionProxyInfo m_ProxyInfoFromChange;
+
+    /** Constructors */
+    FDisAppliedAttentionChangeInfo() {}
+    FDisAppliedAttentionChangeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAppliedAttentionChangeInfo));
+    }
+};
+
+// DishonoredGame.DisAttentionInfo_Complex.DisAttentionChangeDebugInfo: retail SDK size 12 (2012 PDB 12)
+struct FDisAttentionChangeDebugInfo
+{
+    BYTE m_ReasonType;
+    FLOAT m_fByAmount;
+    BYTE m_ToThreshold;
+
+    /** Constructors */
+    FDisAttentionChangeDebugInfo() {}
+    FDisAttentionChangeDebugInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionChangeDebugInfo));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttentionChangeReasonSettings: retail SDK size 4 (2012 PDB 4)
+struct FDisAttentionChangeReasonSettings
+{
+    BITFIELD m_bCanIncreaseToBusted:1;
+
+    /** Constructors */
+    FDisAttentionChangeReasonSettings() {}
+    FDisAttentionChangeReasonSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionChangeReasonSettings));
+    }
+};
+
+// DishonoredGame.DisTweaks_PawnAttention.DisAttentionIncrease: retail SDK size 8 (2012 PDB 8)
+struct FDisAttentionIncrease
+{
+    FLOAT m_fByAmount;
+    BYTE m_ToThreshold;
+
+    /** Constructors */
+    FDisAttentionIncrease() {}
+    FDisAttentionIncrease(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionIncrease));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisAttentionLevelThreshold: retail SDK size 12 (2012 PDB 12)
+struct FDisAttentionLevelThreshold
+{
+    FLOAT m_fAttentionLevelToStart;
+    FLOAT m_fAttentionLevelToStop;
+    FLOAT m_fStoppingVariance;
+
+    /** Constructors */
+    FDisAttentionLevelThreshold() {}
+    FDisAttentionLevelThreshold(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionLevelThreshold));
+    }
+};
+
+// DishonoredGame.DisAttentionInfo_Complex.DisAttentionPendingChange: retail SDK size 44 (2012 PDB 44)
+struct FDisAttentionPendingChange
+{
+    FDisAttentionIncreaseInfo m_PendingChangeInfo;
+    FDisAttentionChangeReasonInfo m_PendingReasonInfo;
+
+    /** Constructors */
+    FDisAttentionPendingChange() {}
+    FDisAttentionPendingChange(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionPendingChange));
+    }
+};
+
+// DishonoredGame.DisAttentionInfo_Complex.DisAttentionPendingChangeAmount: retail SDK size 8 (2012 PDB 8)
+struct FDisAttentionPendingChangeAmount
+{
+    FLOAT m_fByAmount;
+    BYTE m_ToThreshold;
+
+    /** Constructors */
+    FDisAttentionPendingChangeAmount() {}
+    FDisAttentionPendingChangeAmount(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionPendingChangeAmount));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_Attention.DisAttentionReactionAction: retail SDK size 12 (2012 PDB 12)
+struct FDisAttentionReactionAction
+{
+    TArrayNoInit<BYTE> m_Reactions;
+
+    /** Constructors */
+    FDisAttentionReactionAction() {}
+    FDisAttentionReactionAction(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionReactionAction));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_Attention.DisAttnChangeCondition: retail SDK size 20 (2012 PDB 20)
+struct FDisAttnChangeCondition
+{
+    BYTE m_ChangeReason;
+    TArrayNoInit<BYTE> m_OptionalNoiseContexts;
+    BYTE m_DummyByteBecauseUnrealDemandsAtLeastFourBytesInAStruct0;
+    BYTE m_DummyByteBecauseUnrealDemandsAtLeastFourBytesInAStruct1;
+
+    /** Constructors */
+    FDisAttnChangeCondition() {}
+    FDisAttnChangeCondition(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttnChangeCondition));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_Attention.DisAttentionReactionContext: retail SDK size 20 (2012 PDB 20)
+struct FDisAttentionReactionContext
+{
+    BYTE m_AttentionLevel;
+    BYTE m_SuspicionLevel;
+    BYTE m_Relationship;
+    TArrayNoInit<FDisAttnChangeCondition> m_ChangeConditions;
+    FLOAT m_fChangeRate;
+
+    /** Constructors */
+    FDisAttentionReactionContext() {}
+    FDisAttentionReactionContext(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionReactionContext));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_Attention.DisAttentionReaction: retail SDK size 36 (2012 PDB 36)
+struct FDisAttentionReaction
+{
+    BITFIELD m_bAllowRepeatReactions:1;
+    FDisAttentionReactionContext m_Context;
+    FDisAttentionReactionAction m_EnterAction;
+
+    /** Constructors */
+    FDisAttentionReaction() {}
+    FDisAttentionReaction(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionReaction));
+    }
+};
+
+// DishonoredGame.DisAIBrainProcessAttention.DisAttentionSlot: retail SDK size 12 (2012 PDB 12)
+struct FDisAttentionSlot
+{
+    TScriptInterface<class IDisAttentionTargetInterface> m_pAttentionTarget;
+    class UDisAttentionInfo_Base* m_pAttentionInfo;
+
+    /** Constructors */
+    FDisAttentionSlot() {}
+    FDisAttentionSlot(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAttentionSlot));
+    }
+};
+
+// DishonoredGame.DisBinkOverlayManager.DisBinkTextOverlayInfo: retail SDK size 48 (2012 PDB 48)
+struct FDisBinkTextOverlayInfo
+{
+    BITFIELD m_bCentered:1;
+    BITFIELD m_bRightAligned:1;
+    BITFIELD m_bWrapped:1;
+    FVector2D m_Position;
+    FVector2D m_Size;
+    FLOAT m_fRotation;
+    FVector2D m_Scale;
+    FVector2D m_fTranslationFromCenter;
+    FLOAT m_fRotationFromCenter;
+    FColor m_Color;
+
+    /** Constructors */
+    FDisBinkTextOverlayInfo() {}
+    FDisBinkTextOverlayInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBinkTextOverlayInfo));
+    }
+};
+
+// DishonoredGame.DisDesireStructs.DisBodyIntentionRequest: retail SDK size 20 (2012 PDB 20)
+struct FDisBodyIntentionRequest
+{
+    class ADishonoredNPCPawn* m_pNPCPawn;
+    BITFIELD m_bDesired:1;
+    BITFIELD m_bPaused:1;
+    BYTE m_Priority;
+    BYTE m_BodyStance;
+    class UClass* m_pPrimaryItemClass;
+    class UClass* m_pSecondaryItemClass;
+
+    /** Constructors */
+    FDisBodyIntentionRequest() {}
+    FDisBodyIntentionRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBodyIntentionRequest));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisMaterialVariation: retail SDK size 8 (2012 PDB 8)
+struct FDisMaterialVariation
+{
+    class UMaterialInterface* m_pMaterial;
+    FLOAT m_fRandomChance;
+
+    /** Constructors */
+    FDisMaterialVariation() {}
+    FDisMaterialVariation(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMaterialVariation));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisBodyMaterialVariation: retail SDK size 12 (2012 PDB 12)
+struct FDisBodyMaterialVariation
+{
+    TArrayNoInit<FDisMaterialVariation> m_MaterialVariation;
+
+    /** Constructors */
+    FDisBodyMaterialVariation() {}
+    FDisBodyMaterialVariation(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBodyMaterialVariation));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisMeshMaterialVariationList: retail SDK size 12 (2012 PDB 12)
+struct FDisMeshMaterialVariationList
+{
+    TArrayNoInit<FDisBodyMaterialVariation> m_VariationMaterialIndex;
+
+    /** Constructors */
+    FDisMeshMaterialVariationList() {}
+    FDisMeshMaterialVariationList(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMeshMaterialVariationList));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisBodyMesh: retail SDK size 20 (2012 PDB 20)
+struct FDisBodyMesh
+{
+    class USkeletalMesh* m_pMesh;
+    FLOAT m_fRandomChance;
+    FDisMeshMaterialVariationList m_MaterialVariation;
+
+    /** Constructors */
+    FDisBodyMesh() {}
+    FDisBodyMesh(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBodyMesh));
+    }
+};
+
+// DishonoredGame.DisTweaks_SkeletalBreakable.DisBreakableMeshInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisBreakableMeshInfo
+{
+    class USkeletalMesh* m_pMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+
+    /** Constructors */
+    FDisBreakableMeshInfo() {}
+    FDisBreakableMeshInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisBreakableMeshInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCPawn.DisChokeAware: retail SDK size 4 (2012 PDB 4)
+struct FDisChokeAware
+{
+    BITFIELD m_bChoke:1;
+
+    /** Constructors */
+    FDisChokeAware() {}
+    FDisChokeAware(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisChokeAware));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Steering.DisCombatSteeringSettings: retail SDK size 20 (2012 PDB 20)
+struct FDisCombatSteeringSettings
+{
+    BITFIELD m_bTickAllowed:1;
+    FLOAT m_fDesiredFlankAngle;
+    FLOAT m_fDesiredFrontAngle;
+    FLOAT m_fInfluenceSmoothSpeed;
+    FLOAT m_fTwistSafetyDistance;
+
+    /** Constructors */
+    FDisCombatSteeringSettings() {}
+    FDisCombatSteeringSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCombatSteeringSettings));
+    }
+};
+
+// DishonoredGame.DisTweaks_ComponentHitReactionThrow.DisThrowForce: retail SDK size 20 (2012 PDB 20)
+struct FDisThrowForce
+{
+    INT m_FullragdollChancePct;
+    FLOAT m_fForce;
+    FLOAT m_fExtraUpForce;
+    FLOAT m_fForceRagdoll;
+    FLOAT m_fExtraUpForceRagdoll;
+
+    /** Constructors */
+    FDisThrowForce() {}
+    FDisThrowForce(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisThrowForce));
+    }
+};
+
+// DishonoredGame.DisTweaks_ComponentHitReactionThrow.DisComponentHitReactionThrowConfig: retail SDK size 156 (2012 PDB 156)
+struct FDisComponentHitReactionThrowConfig
+{
+    BITFIELD m_bShouldNotRagdollWhenAlive:1;
+    FLOAT m_fStrongHitReactThreshold;
+    FLOAT m_fAnimRagdollThreshold;
+    FLOAT m_fFullRagdollThreshold;
+    FLOAT m_fRagdollMoveEndThreshold;
+    BITFIELD m_bForceFullRagdollOnLedgeDetection:1;
+    FLOAT m_fEffectiveMassForThrowing;
+    BITFIELD m_bThrowFromLedges:1;
+    FLOAT m_fLedgeDetectionBack;
+    FLOAT m_fLedgeDetectionDown;
+    BITFIELD m_bDontThrowAtMinDistance:1;
+    FLOAT m_fMinLedgeDistance;
+    FLOAT m_fRailMinHeight;
+    FLOAT m_fRailMaxHeight;
+    FLOAT m_fRailMaxDepth;
+    FDisThrowForce m_LedgeForce;
+    FDisThrowForce m_RailLedgeForce;
+    BITFIELD m_bThrowIntoBreakables:1;
+    FLOAT m_fAttractDistance;
+    FLOAT m_fAutoBreakDistance;
+    FDisThrowForce m_BreakableForce;
+    FLOAT m_fBreakableZClamp;
+    FDisThrowForce m_WindblastedRagdollExtraForce;
+
+    /** Constructors */
+    FDisComponentHitReactionThrowConfig() {}
+    FDisComponentHitReactionThrowConfig(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisComponentHitReactionThrowConfig));
+    }
+};
+
+// DishonoredGame.DisSeveredLimbInfo.DisContactSub_CameraEffectEmitterInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisContactSub_CameraEffectEmitterInfo
+{
+    class UClass* m_pEffectClass;
+    class UDisTweaks_EmitterCameraLensEffect* m_pEffectTweaks;
+    BITFIELD m_bSkipWhenPlayerIsStruck:1;
+    FLOAT m_fAffectingDistance;
+    FLOAT m_fAffectingProbability;
+
+    /** Constructors */
+    FDisContactSub_CameraEffectEmitterInfo() {}
+    FDisContactSub_CameraEffectEmitterInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisContactSub_CameraEffectEmitterInfo));
+    }
+};
+
+// DishonoredGame.DisConvSpeakerInterface.DisConvSpeakerLocInfo: retail SDK size 24 (2012 PDB 20)
+struct FDisConvSpeakerLocInfo
+{
+    FVector m_Location;
+    class USkeletalMeshComponent* m_pSkelMeshCompForFaceFX;
+    class AActor* m_pAKEventOwner;
+    FPointer m_pAudioPropagationCache;
+
+    /** Constructors */
+    FDisConvSpeakerLocInfo() {}
+    FDisConvSpeakerLocInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvSpeakerLocInfo));
+    }
+};
+
+// DishonoredGame.DisConvSpeakerInterface.DisConvSpeakerLocInfoAudioPropagationCache: retail SDK size 32
+struct FDisConvSpeakerLocInfoAudioPropagationCache
+{
+    FVector m_Location;
+    FVector m_PlayerLocation;
+    FLOAT m_Distance;
+    FLOAT m_fMaxAudibleDistance;
+
+    /** Constructors */
+    FDisConvSpeakerLocInfoAudioPropagationCache() {}
+    FDisConvSpeakerLocInfoAudioPropagationCache(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisConvSpeakerLocInfoAudioPropagationCache));
+    }
+};
+
+// DishonoredGame.DisRatSwarmGlobalManager.DisCorpseToEat: retail SDK size 20 (2012 PDB 20)
+struct FDisCorpseToEat
+{
+    class ADishonoredNPCPawn* m_pPawn;
+    BITFIELD m_bAllowedToEat:1;
+    FVector m_LastCheckedLocation;
+
+    /** Constructors */
+    FDisCorpseToEat() {}
+    FDisCorpseToEat(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCorpseToEat));
+    }
+};
+
+// DishonoredGame.DisGameCrowdPopulationManager.DisCrowdGroundProbeInfo: retail SDK size 52 (2012 PDB 52)
+struct FDisCrowdGroundProbeInfo
+{
+    FBox m_Extent;
+    FVector m_Location;
+    FLOAT m_fTime;
+    FLOAT m_fGroundOffset;
+    BITFIELD m_bValid:1;
+
+    /** Constructors */
+    FDisCrowdGroundProbeInfo() {}
+    FDisCrowdGroundProbeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCrowdGroundProbeInfo));
+    }
+};
+
+// DishonoredGame.DisAnimStateComponent.DisCustomSeqMapEntry: retail SDK size 12 (2012 PDB 12)
+struct FDisCustomSeqMapEntry
+{
+    FPointer m_pAnimTree;
+    FName m_SeqAlias;
+
+    /** Constructors */
+    FDisCustomSeqMapEntry() {}
+    FDisCustomSeqMapEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisCustomSeqMapEntry));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Steering.DisDangerSteeringSettings: retail SDK size 8 (2012 PDB 8)
+struct FDisDangerSteeringSettings
+{
+    BITFIELD m_bTickAllowed:1;
+    FLOAT m_fInfluenceSmoothSpeed;
+
+    /** Constructors */
+    FDisDangerSteeringSettings() {}
+    FDisDangerSteeringSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDangerSteeringSettings));
+    }
+};
+
+// DishonoredGame.DisDesireStructs.DisDesireRequest: retail SDK size 60 (2012 PDB 60)
+struct FDisDesireRequest
+{
+    class UObject* m_pAsker;
+    FDisAttentionProxy m_ProxyTarget;
+    TScriptInterface<class IDisLookAtInterface> m_pLookAtTarget;
+    class AActor* m_pActorTarget;
+    INT m_Priority;
+    FVector m_LocationTarget;
+    BITFIELD m_bDesired:1;
+    BITFIELD m_bUsingProxy:1;
+    BITFIELD m_bUsingLocation:1;
+    BITFIELD m_bPaused:1;
+    BITFIELD m_bIsFaceToRequest:1;
+    BITFIELD m_bIsLocoRequest:1;
+    BITFIELD m_bIsLookAtRequest:1;
+    INT m_RequestID;
+    INT m_DebugRedundancyCount;
+
+    /** Constructors */
+    FDisDesireRequest() {}
+    FDisDesireRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDesireRequest));
+    }
+};
+
+// DishonoredGame.DisGlobalFactionManager.DisDetermineRelationshipFactionMap: retail SDK size 60 (2012 PDB 60)
+MS_ALIGN(4) struct FDisDetermineRelationshipFactionMap
+{
+    TMap<class UDisTweaks_Faction*,ERelationship> m_FactionRelationships;  // DISHONORED(layout): retail SDK gap @0: MapProperty m_FactionRelationships (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisDetermineRelationshipFactionMap() {}
+    FDisDetermineRelationshipFactionMap(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDetermineRelationshipFactionMap));
+    }
+};
+
+// DishonoredGame.DisGlobalFactionManager.DisDetermineRelationshipIndividualMap: retail SDK size 60 (2012 PDB 60)
+MS_ALIGN(4) struct FDisDetermineRelationshipIndividualMap
+{
+    TMap<class IDisRelationshipInterface*,ERelationship> m_IndividualRelationships;  // DISHONORED(layout): retail SDK gap @0: MapProperty m_IndividualRelationships (script_classes_2013), type from the 2012 PDB
+
+    /** Constructors */
+    FDisDetermineRelationshipIndividualMap() {}
+    FDisDetermineRelationshipIndividualMap(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDetermineRelationshipIndividualMap));
+    }
+};
+
+// DishonoredGame.DisSkeletalBreakStepsInterface.DisSkelBreakChunk: retail SDK size 12 (2012 PDB 12)
+struct FDisSkelBreakChunk
+{
+    class UStaticMesh* m_pStaticMesh;
+    FName m_BoneOrSocketName;
+
+    /** Constructors */
+    FDisSkelBreakChunk() {}
+    FDisSkelBreakChunk(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSkelBreakChunk));
+    }
+};
+
+// DishonoredGame.DisSkeletalBreakStepsInterface.DisSkelBreakStep: retail SDK size 52 (2012 PDB 52)
+struct FDisSkelBreakStep
+{
+    INT m_HealthThreshold;
+    class UAkEvent* m_pSoundEvent;
+    BYTE m_AINoiseLoudness;
+    BYTE m_AINoiseContext;
+    class UParticleSystem* m_pParticleSystem;
+    FName m_ParticleSystemSocketName;
+    BITFIELD m_bSwitchToFullRagdoll:1;
+    TArrayNoInit<class UMaterialInterface*> m_Materials;
+    TArrayNoInit<FDisSkelBreakChunk> m_Chunks;
+
+    /** Constructors */
+    FDisSkelBreakStep() {}
+    FDisSkelBreakStep(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSkelBreakStep));
+    }
+};
+
+// DishonoredGame.DisUsableObjectBreakSteps.DisUsableObjBreakStage: retail SDK size 8 (2012 PDB 8)
+struct FDisUsableObjBreakStage
+{
+    class UClass* m_pDamageType;
+    INT m_pStageIndex;
+
+    /** Constructors */
+    FDisUsableObjBreakStage() {}
+    FDisUsableObjBreakStage(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisUsableObjBreakStage));
+    }
+};
+
+// DishonoredGame.DisUsableObjectBreakSteps.DisUsableObjBreakStep: retail SDK size 64 (2012 PDB 64)
+struct FDisUsableObjBreakStep : public FDisSkelBreakStep
+{
+    BITFIELD m_bDisableObject:1;
+    BITFIELD m_bUnlock:1;
+    FDisUsableObjBreakStage m_BreakStage;
+
+    /** Constructors */
+    FDisUsableObjBreakStep() {}
+    FDisUsableObjBreakStep(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisUsableObjBreakStep));
+    }
+};
+
+// DishonoredGame.DisDoorBreakSteps.DisDoorBreakStep: retail SDK size 68 (2012 PDB 68)
+struct FDisDoorBreakStep : public FDisUsableObjBreakStep
+{
+    BITFIELD m_bOpenDoor:1;
+    BITFIELD m_bUnbreakableDoor:1;
+    BITFIELD m_bContinueToAffectPathFinding:1;
+
+    /** Constructors */
+    FDisDoorBreakStep() {}
+    FDisDoorBreakStep(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisDoorBreakStep));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCPawn.DisElectrocutedFX: retail SDK size 12 (2012 PDB 12)
+struct FDisElectrocutedFX
+{
+    FName m_BoneName;
+    class UParticleSystem* m_pPS;
+
+    /** Constructors */
+    FDisElectrocutedFX() {}
+    FDisElectrocutedFX(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisElectrocutedFX));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Steering.DisEnemyPushSteeringSettings: retail SDK size 12 (2012 PDB 12)
+struct FDisEnemyPushSteeringSettings
+{
+    BITFIELD m_bTickAllowed:1;
+    FLOAT m_fFallOffDist;
+    FLOAT m_fRangeSmoothSpeed;
+
+    /** Constructors */
+    FDisEnemyPushSteeringSettings() {}
+    FDisEnemyPushSteeringSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisEnemyPushSteeringSettings));
+    }
+};
+
+// DishonoredGame.DisDesireStructs.DisFaceToRequest: retail SDK size 84 (2012 PDB 84)
+struct FDisFaceToRequest : public FDisDesireRequest
+{
+    FPointer m_pFaceToComponent;
+    FPointer m_pCallback;
+    BITFIELD m_bUsingYaw:1;
+    BITFIELD m_bExactRotation:1;
+    INT m_YawTarget;
+    FLOAT m_fRotationSpeed;
+    INT m_DebugLastFaceToEvent;
+
+    /** Constructors */
+    FDisFaceToRequest() {}
+    FDisFaceToRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFaceToRequest));
+    }
+};
+
+// DishonoredGame.DisGlobalFactionManager.DisFactionPair: retail SDK size 8 (2012 PDB 8)
+struct FDisFactionPair
+{
+    class UDisTweaks_Faction* m_pFromFaction;
+    class UDisTweaks_Faction* m_pToFaction;
+
+    /** Constructors */
+    FDisFactionPair() {}
+    FDisFactionPair(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFactionPair));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisFootInfo: retail SDK size 40 (2012 PDB 40)
+struct FDisFootInfo
+{
+    FName m_FootBone;
+    FName m_Foot_PlacementNode;
+    TArrayNoInit<FName> m_Foot_AdditionalNodes;
+    FLOAT m_fFootDownHeightOffsetFromRef;
+    FLOAT m_fFootUpDelta;
+    FLOAT m_fFootTimeWindow;
+
+    /** Constructors */
+    FDisFootInfo() {}
+    FDisFootInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisFootInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerInput.DisGameActionBinding: retail SDK size 56 (2012 PDB 56)
+struct FDisGameActionBinding
+{
+    FName m_ActionName;
+    FKeyBind m_KeyBind_PC;
+    FKeyBind m_KeyBind_Gamepad;
+
+    /** Constructors */
+    FDisGameActionBinding() {}
+    FDisGameActionBinding(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisGameActionBinding));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCPlotSettings.DisGameOverSettings: retail SDK size 20 (2012 PDB 20)
+struct FDisGameOverSettings
+{
+    BITFIELD m_bGameOver:1;
+    FLOAT m_fDelay;
+    FStringNoInit m_ScreenMessage;
+
+    /** Constructors */
+    FDisGameOverSettings() {}
+    FDisGameOverSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisGameOverSettings));
+    }
+};
+
+// DishonoredGame.DisBehaviorInteract.DisInteractInfo: retail SDK size 48 (2012 PDB 48)
+struct FDisInteractInfo
+{
+    TScriptInterface<class IDisGoToFollowupInterface> m_pFollowUp;
+    BITFIELD m_bFollowUpResultPending:1;
+    FVector m_GoalLocation;
+    FRotator m_GoalRotation;
+    BITFIELD m_bSuspicious:1;
+    BITFIELD m_bExactPlacement:1;
+    BYTE m_TransitSpeed;
+    BITFIELD m_bInterruptable:1;
+
+    /** Constructors */
+    FDisInteractInfo() {}
+    FDisInteractInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisInteractInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_Pawn.DisInventorySlotTweak: retail SDK size 8 (2012 PDB 8)
+struct FDisInventorySlotTweak
+{
+    class UClass* m_pRequiredClass;
+    BYTE m_RequiredUsage;
+
+    /** Constructors */
+    FDisInventorySlotTweak() {}
+    FDisInventorySlotTweak(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisInventorySlotTweak));
+    }
+};
+
+// DishonoredGame.DisTweaks_InventoryItem_PlayerSpecific.DisItemArmPitchDif: retail SDK size 8 (2012 PDB 8)
+struct FDisItemArmPitchDif
+{
+    FLOAT m_fArmPitch;
+    FLOAT m_fArmPitch_Difference;
+
+    /** Constructors */
+    FDisItemArmPitchDif() {}
+    FDisItemArmPitchDif(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisItemArmPitchDif));
+    }
+};
+
+// DishonoredGame.DisTweaks_InventoryItem_PawnSpecific.DisItemContextInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisItemContextInfo
+{
+    class UDisTweaks_ItemContext* m_pItemContext;
+    FName m_ContextName;
+    FName m_RefOfContextWithName;
+
+    /** Constructors */
+    FDisItemContextInfo() {}
+    FDisItemContextInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisItemContextInfo));
+    }
+};
+
+// DishonoredGame.DisKeyRing.DisKeyInfo: retail SDK size 28 (2012 PDB 28)
+struct FDisKeyInfo
+{
+    FStringNoInit m_Name;
+    class UDisTweaks_Key* m_pTweaks;
+    FStringNoInit m_LocalizedName;
+
+    /** Constructors */
+    FDisKeyInfo() {}
+    FDisKeyInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisKeyInfo));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisLeakyAccumulator: retail SDK size 16 (2012 PDB 16)
+struct FDisLeakyAccumulator
+{
+    FLOAT m_fCurrentValue;
+    FLOAT m_fLeakRate;
+    FLOAT m_fMinValue;
+    FLOAT m_fMaxValue;
+
+    /** Constructors */
+    FDisLeakyAccumulator() {}
+    FDisLeakyAccumulator(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLeakyAccumulator));
+    }
+};
+
+// DishonoredGame.DisDesireStructs.DisLocoRequest: retail SDK size 96 (2012 PDB 96)
+struct FDisLocoRequest : public FDisDesireRequest
+{
+    FPointer m_pLocoComponent;
+    FPointer m_pCallback;
+    INT m_MaxSpeedIndex;
+    FLOAT m_fEndLocationThreshold;
+    FLOAT m_fMaxFunnelRadiusMultiplier;
+    BITFIELD m_bAccurateStop:1;
+    BITFIELD m_bSpeedIsLookAtDependent:1;
+    BITFIELD m_bFollow:1;
+    FLOAT m_fFollowAngle;
+    FLOAT m_fFollowDist;
+    INT m_DebugLastLocoEvent;
+
+    /** Constructors */
+    FDisLocoRequest() {}
+    FDisLocoRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLocoRequest));
+    }
+};
+
+// DishonoredGame.DisDesireStructs.DisLookAtInfluence: retail SDK size 12 (2012 PDB 12)
+struct FDisLookAtInfluence
+{
+    FLOAT m_fHeadInfluence;
+    FLOAT m_fTorsoInfluence;
+    BITFIELD m_bTorsoInfIsMoveSpeedDependant:1;
+
+    /** Constructors */
+    FDisLookAtInfluence() {}
+    FDisLookAtInfluence(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLookAtInfluence));
+    }
+};
+
+// DishonoredGame.DisDesireStructs.DisLookAtRequest: retail SDK size 88 (2012 PDB 88)
+struct FDisLookAtRequest : public FDisDesireRequest
+{
+    FPointer m_pLookAtComponent;
+    BITFIELD m_bLocal:1;
+    BITFIELD m_bAimAtTarget:1;
+    INT m_ProceduralPatternIndex;
+    FDisLookAtInfluence m_LookAtInfluence;
+    FLOAT m_fDuration;
+
+    /** Constructors */
+    FDisLookAtRequest() {}
+    FDisLookAtRequest(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLookAtRequest));
+    }
+};
+
+// DishonoredGame.DishonoredAIBrain.DisMagicalIncidentStruct: retail SDK size 12 (2012 PDB 12)
+struct FDisMagicalIncidentStruct
+{
+    class ADishonoredPawn* m_pMagicUsingPawn;
+    class UClass* m_pMagicalIncidentClass;
+    FLOAT m_fMagicalIncidentExpirationTimer;
+
+    /** Constructors */
+    FDisMagicalIncidentStruct() {}
+    FDisMagicalIncidentStruct(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMagicalIncidentStruct));
+    }
+};
+
+// DishonoredGame.DisBinkOverlayManager.DisMapHintBinding: retail SDK size 24 (2012 PDB 24)
+struct FDisMapHintBinding
+{
+    FStringNoInit m_MapName;
+    FStringNoInit m_HintSet;
+
+    /** Constructors */
+    FDisMapHintBinding() {}
+    FDisMapHintBinding(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMapHintBinding));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn.DisMaskOnEffectBlurPhase: retail SDK size 24 (2012 PDB 24)
+struct FDisMaskOnEffectBlurPhase
+{
+    FLOAT m_fStart;
+    FLOAT m_fBlurStrength;
+    FLOAT m_fDistoStrength;
+    FLOAT m_fMinRadius;
+    FLOAT m_fMaxRadius;
+    FLOAT m_fMaskOpacity;
+
+    /** Constructors */
+    FDisMaskOnEffectBlurPhase() {}
+    FDisMaskOnEffectBlurPhase(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMaskOnEffectBlurPhase));
+    }
+};
+
+// DishonoredGame.DisNPCTravelManager.DisMaterialIndexReplacement: retail SDK size 8 (2012 PDB 8)
+struct FDisMaterialIndexReplacement
+{
+    INT m_MaterialIndex;
+    INT m_VariationIndex;
+
+    /** Constructors */
+    FDisMaterialIndexReplacement() {}
+    FDisMaterialIndexReplacement(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMaterialIndexReplacement));
+    }
+};
+
+// DishonoredGame.DisNPCTravelManager.DisMaterialIndexesOverride: retail SDK size 12 (2012 PDB 12)
+struct FDisMaterialIndexesOverride
+{
+    TArrayNoInit<FDisMaterialIndexReplacement> m_MaterialIndexReplacements;
+
+    /** Constructors */
+    FDisMaterialIndexesOverride() {}
+    FDisMaterialIndexesOverride(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMaterialIndexesOverride));
+    }
+};
+
+// DishonoredGame.DisTweaks_InventoryItem.DisMeleeNonSocketData: retail SDK size 24 (2012 PDB 24)
+struct FDisMeleeNonSocketData
+{
+    FLOAT m_fNonSocketRange;
+    FLOAT m_fNonSocketWidth;
+    FLOAT m_fNonSocketHeight;
+    FVector m_NonSocketOffset;
+
+    /** Constructors */
+    FDisMeleeNonSocketData() {}
+    FDisMeleeNonSocketData(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMeleeNonSocketData));
+    }
+};
+
+// DishonoredGame.DisTweaks_InventoryItem.DisMeleeExtentTweak: retail SDK size 64 (2012 PDB 64)
+struct FDisMeleeExtentTweak
+{
+    FName m_MeleeExtentName;
+    FName m_MeleeExtent_Socket_BL;
+    FName m_MeleeExtent_Socket_UR;
+    FLOAT m_fScaleAgainstPlayer;
+    FLOAT m_fScaleAsPlayer;
+    BITFIELD m_bExtentOnPawnMesh:1;
+    BITFIELD m_bIgnoreSockets:1;
+    FDisMeleeNonSocketData m_NonSocketData;
+    class UParticleSystemComponent* m_ParticleSystemComponent;
+
+    /** Constructors */
+    FDisMeleeExtentTweak() {}
+    FDisMeleeExtentTweak(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMeleeExtentTweak));
+    }
+};
+
+// DishonoredGame.DisTweaks_Movable.DisMovableParams: retail SDK size 8 (2012 PDB 8)
+struct FDisMovableParams
+{
+    BYTE m_WeightClass;
+    INT m_Damage;
+
+    /** Constructors */
+    FDisMovableParams() {}
+    FDisMovableParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMovableParams));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerInput.DisMultiPressInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisMultiPressInfo
+{
+    INT m_NumButtonPresses;
+    FLOAT m_fTimeLastPressed;
+    FStringNoInit m_ChildCommand;
+
+    /** Constructors */
+    FDisMultiPressInfo() {}
+    FDisMultiPressInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMultiPressInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCPlotSettings.DisNPCPlotSettings: retail SDK size 76 (2012 PDB 76)
+struct FDisNPCPlotSettings
+{
+    BITFIELD m_bDoNotCleanUpCorpse:1;
+    FDisGameOverSettings m_GameOverWhenHostileToPlayer;
+    FDisGameOverSettings m_GameOverWhenDead;
+    FDisGameOverSettings m_GameOverWhenPossessedByPlayer;
+    TArrayNoInit<class UClass*> m_DamageTypesThatCauseGameOver;
+
+    /** Constructors */
+    FDisNPCPlotSettings() {}
+    FDisNPCPlotSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCPlotSettings));
+    }
+};
+
+// DishonoredGame.DisNPCTravelManager.DisRelationshipPair: retail SDK size 4 (2012 PDB 4)
+MS_ALIGN(4) struct FDisRelationshipPair
+{
+    BYTE m_RelationshipTo;
+    BYTE m_RelationshipFrom;
+    BYTE m_Padding[2];
+
+    /** Constructors */
+    FDisRelationshipPair() {}
+    FDisRelationshipPair(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRelationshipPair));
+    }
+};
+
+// DishonoredGame.DisNPCTravelManager.DisNPCTravelInfo: retail SDK size 244 (2012 PDB 244)
+struct FDisNPCTravelInfo
+{
+    INT m_TripID;
+    FName m_HomeLevelName;
+    FName m_NPCPawnTweaksName;
+    FDisMaterialIndexesOverride m_MeshMaterialVariations;
+    INT m_HeadMeshIndex;
+    FDisMaterialIndexesOverride m_HeadMeshMaterialVariations;
+    INT m_AccessoryIndexes[2];
+    INT m_Health;
+    INT m_MinScriptedHealth;
+    TArrayNoInit<INT> m_LostInventoryItemIndexes;
+    INT m_PrimaryEquippedItemIndex;
+    INT m_SecondaryEquippedItemIndex;
+    TArrayNoInit<INT> m_EquippedArmorIndexes;
+    FDisRelationshipPair m_PlayerRelationship;
+    TMap<INT,FDisRelationshipPair> m_NPCRelationships;  // DISHONORED(layout): retail SDK gap @100: MapProperty m_NPCRelationships (script_classes_2013), type from the 2012 PDB
+    TMap<FName,FDisRelationshipPair> m_FactionRelationships;  // DISHONORED(layout): retail SDK gap @160: MapProperty m_FactionRelationships (script_classes_2013), type from the 2012 PDB
+    FName m_VisitingLevelName;
+    BITFIELD m_bReturningHome:1;
+    BITFIELD m_bAwaitingArrival:1;
+    class ADisTravelSpawner* m_pSpawner;
+    FLOAT m_fTimeToSpawn;
+    class ADishonoredNPCPawn* m_pNPCPawn;
+
+    /** Constructors */
+    FDisNPCTravelInfo() {}
+    FDisNPCTravelInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNPCTravelInfo));
+    }
+};
+
+// DishonoredGame.DishonoredNativeStateMachine.DisNativeFSMRejectedInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisNativeFSMRejectedInfo
+{
+    class UClass* m_pRejectedStateID;
+    class UClass* m_pStateThatRejectedID;
+    BYTE m_RejectedReason;
+    FLOAT m_fTimeOfRejection;
+    INT m_NumRejections;
+
+    /** Constructors */
+    FDisNativeFSMRejectedInfo() {}
+    FDisNativeFSMRejectedInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisNativeFSMRejectedInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Panic.DisPanicRule: retail SDK size 4 (2012 PDB 4)
+struct FDisPanicRule
+{
+    BITFIELD m_bIsActive:1;
+
+    /** Constructors */
+    FDisPanicRule() {}
+    FDisPanicRule(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPanicRule));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Panic.DisPanicInhibitor_FightingRadius: retail SDK size 8 (2012 PDB 8)
+struct FDisPanicInhibitor_FightingRadius : public FDisPanicRule
+{
+    FLOAT m_fRadius;
+
+    /** Constructors */
+    FDisPanicInhibitor_FightingRadius() {}
+    FDisPanicInhibitor_FightingRadius(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPanicInhibitor_FightingRadius));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Panic.DisPanicInhibitor_PanicCount: retail SDK size 8 (2012 PDB 8)
+struct FDisPanicInhibitor_PanicCount : public FDisPanicRule
+{
+    INT m_iPanicCountLimit;
+
+    /** Constructors */
+    FDisPanicInhibitor_PanicCount() {}
+    FDisPanicInhibitor_PanicCount(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPanicInhibitor_PanicCount));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Panic.DisPanicRule_HearScaryNoise: retail SDK size 16 (2012 PDB 16)
+struct FDisPanicRule_HearScaryNoise : public FDisPanicRule
+{
+    TArrayNoInit<BYTE> m_ScaryNoises;
+
+    /** Constructors */
+    FDisPanicRule_HearScaryNoise() {}
+    FDisPanicRule_HearScaryNoise(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPanicRule_HearScaryNoise));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Panic.DisPanicRule_LastSurvivor: retail SDK size 20 (2012 PDB 20)
+struct FDisPanicRule_LastSurvivor : public FDisPanicRule
+{
+    INT m_iSurvivorCount;
+    INT m_iKillCount;
+    FLOAT m_fKillCountResetTimer;
+    FLOAT m_fFearDistanceFromKiller;
+
+    /** Constructors */
+    FDisPanicRule_LastSurvivor() {}
+    FDisPanicRule_LastSurvivor(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPanicRule_LastSurvivor));
+    }
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerPauseMenu.DisPauseMenuTutorial: retail SDK size 12 (2012 PDB 12)
+struct FDisPauseMenuTutorial
+{
+    FName m_NameID;
+    BYTE m_Note;
+
+    /** Constructors */
+    FDisPauseMenuTutorial() {}
+    FDisPauseMenuTutorial(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPauseMenuTutorial));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisPawnAccessory: retail SDK size 4 (2012 PDB 4)
+struct FDisPawnAccessory
+{
+    FLOAT m_fRandomChanceOfUse;
+
+    /** Constructors */
+    FDisPawnAccessory() {}
+    FDisPawnAccessory(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnAccessory));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisPawnAccessoryMesh: retail SDK size 16 (2012 PDB 16)
+struct FDisPawnAccessoryMesh
+{
+    class UStaticMesh* m_pMesh;
+    FName m_SocketName;
+    FLOAT m_fRandomChance;
+
+    /** Constructors */
+    FDisPawnAccessoryMesh() {}
+    FDisPawnAccessoryMesh(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnAccessoryMesh));
+    }
+};
+
+// DishonoredGame.DisTweaks_Armor.DisPawnArmorDamageType: retail SDK size 8 (2012 PDB 8)
+struct FDisPawnArmorDamageType
+{
+    class UClass* m_pDamageType;
+    BITFIELD m_bExactMatch:1;
+    BITFIELD m_bDoNotApplyToWeakHitReact:1;
+
+    /** Constructors */
+    FDisPawnArmorDamageType() {}
+    FDisPawnArmorDamageType(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnArmorDamageType));
+    }
+};
+
+// DishonoredGame.DisTweaks_Armor.DisPawnArmorKnockoffDamage: retail SDK size 12 (2012 PDB 12)
+struct FDisPawnArmorKnockoffDamage
+{
+    FDisPawnArmorDamageType m_DamageInfo;
+    BITFIELD m_bVerticalKnockoffOnly:1;
+    BITFIELD m_bDamagesAnyRegion:1;
+
+    /** Constructors */
+    FDisPawnArmorKnockoffDamage() {}
+    FDisPawnArmorKnockoffDamage(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnArmorKnockoffDamage));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCPawn.DisPawnRandomArmor: retail SDK size 8 (2012 PDB 8)
+struct FDisPawnRandomArmor
+{
+    FLOAT m_fPercentChance;
+    class UDisTweaks_Armor* m_pArmor;
+
+    /** Constructors */
+    FDisPawnRandomArmor() {}
+    FDisPawnRandomArmor(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPawnRandomArmor));
+    }
+};
+
+// DishonoredGame.DishonoredBarkManager.DisPlayerBarkInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisPlayerBarkInfo
+{
+    class UAkEvent* m_pSoundEvent;
+    BYTE m_BarkLayer;
+
+    /** Constructors */
+    FDisPlayerBarkInfo() {}
+    FDisPlayerBarkInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerBarkInfo));
+    }
+};
+
+// DishonoredGame.StatePlayerMasterChoice_Base.DisPlayerChoiceInfo: retail SDK size 16 (2012 PDB 12)
+struct FDisPlayerChoiceInfo
+{
+    FStringNoInit m_ChoiceText;
+    BITFIELD m_bDisablePlayerInputUntilMapChange:1;
+
+    /** Constructors */
+    FDisPlayerChoiceInfo() {}
+    FDisPlayerChoiceInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerChoiceInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerController.DisPlayerStealthAttentionIndicatorInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisPlayerStealthAttentionIndicatorInfo
+{
+    FLOAT m_fLastAttention;
+    FDisLeakyAccumulator m_Accumulator;
+
+    /** Constructors */
+    FDisPlayerStealthAttentionIndicatorInfo() {}
+    FDisPlayerStealthAttentionIndicatorInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerStealthAttentionIndicatorInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerPawn.DisPlayerStealthSaveVars: retail SDK size 4 (2012 PDB 4)
+struct FDisPlayerStealthSaveVars
+{
+    BITFIELD m_bSneakModeToggled:1;
+    BITFIELD m_bIsAutoCrouched:1;
+
+    /** Constructors */
+    FDisPlayerStealthSaveVars() {}
+    FDisPlayerStealthSaveVars(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerStealthSaveVars));
+    }
+};
+
+// DishonoredGame.DishonoredPlayerController.DisPlayerViewTracking_ExtraParams: retail SDK size 20 (2012 PDB 20)
+struct FDisPlayerViewTracking_ExtraParams
+{
+    FLOAT m_fMaxRadius;
+    FLOAT m_fMinRadius;
+    FLOAT m_fMaxPlayerControlledDelta_Pitch;
+    FLOAT m_fMaxPlayerControlledDelta_Yaw;
+    FLOAT m_fZoomFOVOverride;
+
+    /** Constructors */
+    FDisPlayerViewTracking_ExtraParams() {}
+    FDisPlayerViewTracking_ExtraParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayerViewTracking_ExtraParams));
+    }
+};
+
+// DishonoredGame.DishonoredAudioSystem.DisPlayingComponent: retail SDK size 8 (2012 PDB 8)
+struct FDisPlayingComponent
+{
+    class UDisAkComponent* m_pComponent;
+    class AActor* m_pInstigator;
+
+    /** Constructors */
+    FDisPlayingComponent() {}
+    FDisPlayingComponent(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPlayingComponent));
+    }
+};
+
+// DishonoredGame.DisTweaks_Possess.DisPossessLevel: retail SDK size 16 (2012 PDB 16)
+struct FDisPossessLevel
+{
+    FLOAT m_fPossessRange;
+    class UAkEvent* m_pIntroSoundEvent;
+    class UAkEvent* m_pOutroSoundEvent;
+    FLOAT m_fBendTimeExtension;
+
+    /** Constructors */
+    FDisPossessLevel() {}
+    FDisPossessLevel(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPossessLevel));
+    }
+};
+
+// DishonoredGame.DisTweaks_Possessable.DisPossessPowerLevelSettings: retail SDK size 4 (2012 PDB 4)
+struct FDisPossessPowerLevelSettings
+{
+    FLOAT m_fPossessDuration;
+
+    /** Constructors */
+    FDisPossessPowerLevelSettings() {}
+    FDisPossessPowerLevelSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPossessPowerLevelSettings));
+    }
+};
+
+// DishonoredGame.DisTweaks_Possessable.DisPossessableAwarenessSettings: retail SDK size 4 (2012 PDB 4)
+struct FDisPossessableAwarenessSettings
+{
+    BITFIELD m_bCanBePossessed:1;
+
+    /** Constructors */
+    FDisPossessableAwarenessSettings() {}
+    FDisPossessableAwarenessSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPossessableAwarenessSettings));
+    }
+};
+
+// DishonoredGame.DisPowerMenu.DisPowerMenuItem: retail SDK size 16 (2012 PDB 16)
+struct FDisPowerMenuItem
+{
+    FName PowerName;
+    INT PowerLevel;
+    INT Cost;
+
+    /** Constructors */
+    FDisPowerMenuItem() {}
+    FDisPowerMenuItem(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPowerMenuItem));
+    }
+};
+
+// DishonoredGame.DishonoredAIBehavior.DisQueuedDialogHookInfo: retail SDK size 12 (2012 PDB 12)
+struct FDisQueuedDialogHookInfo
+{
+    BYTE m_Hook;
+    TScriptInterface<class IDisConvSpeakerInterface> m_pInitiator;
+
+    /** Constructors */
+    FDisQueuedDialogHookInfo() {}
+    FDisQueuedDialogHookInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisQueuedDialogHookInfo));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisRagdollCollision: retail SDK size 12 (2012 PDB 12)
+struct FDisRagdollCollision
+{
+    class AActor* m_pActor;
+    class UPrimitiveComponent* m_pComponent;
+    INT m_iBodyIndex;
+
+    /** Constructors */
+    FDisRagdollCollision() {}
+    FDisRagdollCollision(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRagdollCollision));
+    }
+};
+
+// DishonoredGame.DishonoredNPCPawn.DisRagdollDamageConfig: retail SDK size 72 (2012 PDB 72)
+struct FDisRagdollDamageConfig
+{
+    FLOAT m_fMinForceToBounce;
+    FLOAT m_fMaxBounceForce;
+    FLOAT m_fMaxBounceForceZ;
+    FLOAT m_fBouncingPercentage;
+    FLOAT m_fBouncingPercentageZ;
+    FLOAT m_fDamageRefireDelay;
+    FLOAT m_fForceToMinDamage;
+    FLOAT m_fForceToMaxDamage;
+    FLOAT m_fMinDamage;
+    FLOAT m_fMaxDamage;
+    FLOAT m_fMinForceToDealHeightDamage;
+    FLOAT m_fFallHeightForMinDamage;
+    FLOAT m_fFallHeightForMaxDamage;
+    FLOAT m_fFallHeightToDie;
+    FLOAT m_fFallMinDamage;
+    FLOAT m_fFallMaxDamage;
+    FLOAT m_fMinForceToDamageOther;
+    INT m_iDamageToOther;
+
+    /** Constructors */
+    FDisRagdollDamageConfig() {}
+    FDisRagdollDamageConfig(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRagdollDamageConfig));
+    }
+};
+
+// DishonoredGame.DisTweaks_WeaponRanged.DisRangedAmmoTypeInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisRangedAmmoTypeInfo
+{
+    BYTE m_AmmoType;
+    class UDisTweaksBase* m_pProjectileType;
+
+    /** Constructors */
+    FDisRangedAmmoTypeInfo() {}
+    FDisRangedAmmoTypeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRangedAmmoTypeInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisRegionBone: retail SDK size 12 (2012 PDB 12)
+struct FDisRegionBone
+{
+    FName m_BoneName;
+    BITFIELD m_bUseInRegionBBox:1;
+
+    /** Constructors */
+    FDisRegionBone() {}
+    FDisRegionBone(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRegionBone));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisRegionFocusInfo: retail SDK size 32 (2012 PDB 32)
+struct FDisRegionFocusInfo
+{
+    FName m_FocusBone;
+    FVector m_FocusOffset;
+    TArrayNoInit<FName> m_AlternateFocusBones;
+
+    /** Constructors */
+    FDisRegionFocusInfo() {}
+    FDisRegionFocusInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRegionFocusInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPawn.DisRegionInfo: retail SDK size 208 (2012 PDB 208)
+struct FDisRegionInfo
+{
+    BYTE m_Region;
+    TArrayNoInit<FDisRegionBone> m_BoneInfo;
+    FDisRegionFocusInfo m_FocusRegions[6];
+
+    /** Constructors */
+    FDisRegionInfo() {}
+    FDisRegionInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisRegionInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn.DisSearchCooldownMeterSettings: retail SDK size 36 (2012 PDB 36)
+struct FDisSearchCooldownMeterSettings
+{
+    FVector2D m_BarPos;
+    FLOAT m_fBarHeight;
+    FLOAT m_fBarMinWidth;
+    FLOAT m_fBarMaxWidth;
+    FLOAT m_fSearchTimeLeftMin_s;
+    FLOAT m_fSearchTimeLeftMax_s;
+    FColor m_BarMinColor;
+    FColor m_BarMaxColor;
+
+    /** Constructors */
+    FDisSearchCooldownMeterSettings() {}
+    FDisSearchCooldownMeterSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSearchCooldownMeterSettings));
+    }
+};
+
+// DishonoredGame.DishonoredDamageType.DisSeverLimbsDamageParams: retail SDK size 24 (2012 PDB 24)
+struct FDisSeverLimbsDamageParams
+{
+    FLOAT m_fRequiredExtraDamage;
+    FLOAT m_fChanceOfTriggering;
+    FLOAT m_fChanceBonusRangeUpgrade;
+    FLOAT m_fRadiusAroundImpact;
+    FLOAT m_fChanceOfDestroying;
+    BITFIELD m_bIncludeNearestBone:1;
+    BITFIELD m_bExcludeChestBone:1;
+    BITFIELD m_bExcludeHeadBone:1;
+    BITFIELD m_bAllowChestBone_BloodThirsty_Lvl1:1;
+    BITFIELD m_bAllowChestBone_BloodThirsty_Lvl2:1;
+
+    /** Constructors */
+    FDisSeverLimbsDamageParams() {}
+    FDisSeverLimbsDamageParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSeverLimbsDamageParams));
+    }
+};
+
+// DishonoredGame.DisSeveredLimbInfo.DisSeveredLimbParticleInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisSeveredLimbParticleInfo
+{
+    FName m_LocationName;
+    BITFIELD m_bAttach:1;
+    BITFIELD m_bUseWhenSevered:1;
+    BITFIELD m_bUseWhenGored:1;
+    BITFIELD m_bUseWhenEaten:1;
+    class UParticleSystem* m_pParticleEmitter;
+    BYTE m_Orientation;
+
+    /** Constructors */
+    FDisSeveredLimbParticleInfo() {}
+    FDisSeveredLimbParticleInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSeveredLimbParticleInfo));
+    }
+};
+
+// DishonoredGame.DisSeveredLimbInfo.DisSeveredLimb: retail SDK size 64 (2012 PDB 64)
+struct FDisSeveredLimb
+{
+    FName m_BoneBreakName;
+    TArrayNoInit<FDisSeveredLimbParticleInfo> m_ParticleEffects;
+    TArrayNoInit<FName> m_AlsoSeverWhenGored;
+    FName m_MovableBoneName;
+    FRotator m_MovableOrientation;
+    FLOAT m_MovableOffsetFront;
+    FLOAT m_MovableOffsetDown;
+    BYTE m_MovableWeight;
+
+    /** Constructors */
+    FDisSeveredLimb() {}
+    FDisSeveredLimb(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSeveredLimb));
+    }
+};
+
+// DishonoredGame.DisTweaks_NPCPawn.DisShadowKillFX: retail SDK size 12 (2012 PDB 12)
+struct FDisShadowKillFX
+{
+    FName m_BoneName;
+    class UParticleSystem* m_pPS;
+
+    /** Constructors */
+    FDisShadowKillFX() {}
+    FDisShadowKillFX(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisShadowKillFX));
+    }
+};
+
+// DishonoredGame.DisTweaks_SimpleAttention.DisSimpleAttnNoiseContextInfo: retail SDK size 4 (2012 PDB 4)
+struct FDisSimpleAttnNoiseContextInfo
+{
+    BITFIELD m_bGainAttentionOnNoiseContext:1;
+    BITFIELD m_bCountsAsWitnessDeath:1;
+
+    /** Constructors */
+    FDisSimpleAttnNoiseContextInfo() {}
+    FDisSimpleAttnNoiseContextInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSimpleAttnNoiseContextInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn.DisSlideDamageInfo: retail SDK size 12 (2012 PDB 12)
+struct FDisSlideDamageInfo
+{
+    class UClass* m_pClassBeingDamaged;
+    BITFIELD m_bExactMatch:1;
+    INT m_SlideImpactDamage;
+
+    /** Constructors */
+    FDisSlideDamageInfo() {}
+    FDisSlideDamageInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSlideDamageInfo));
+    }
+};
+
+// DishonoredGame.StatePlayerMasterSoiree.DisSoireeControlState: retail SDK size 40 (2012 PDB 40)
+struct FDisSoireeControlState
+{
+    BITFIELD m_bControlledBySoiree:1;
+    class USeqAct_Interp* m_pMatinee;
+    INT m_Flags;
+    FVector m_StartPos;
+    FRotator m_StartRot;
+    BITFIELD m_bOldCollide_Actors:1;
+    BITFIELD m_bOldCollide_BlockActors:1;
+    BITFIELD m_bOldCollide_IgnoreEncroach:1;
+    BITFIELD m_bOldCollide_World:1;
+
+    /** Constructors */
+    FDisSoireeControlState() {}
+    FDisSoireeControlState(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSoireeControlState));
+    }
+};
+
+// DishonoredGame.DishonoredAudioSystem.DisSoundRTPCUpdater: retail SDK size 20 (2012 PDB 20)
+struct FDisSoundRTPCUpdater
+{
+    FName m_Parameter;
+    FLOAT m_fCurrentValue;
+    FLOAT m_fTargetValue;
+    FLOAT m_fChangeRate;
+
+    /** Constructors */
+    FDisSoundRTPCUpdater() {}
+    FDisSoundRTPCUpdater(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSoundRTPCUpdater));
+    }
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerBase.DisSoundThemeBinding: retail SDK size 16 (2012 PDB 16)
+struct FDisSoundThemeBinding
+{
+    FName ThemeName;
+    class UDisUISoundTheme* Theme;
+    class UDisUISoundTheme* ExternalTheme;
+
+    /** Constructors */
+    FDisSoundThemeBinding() {}
+    FDisSoundThemeBinding(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSoundThemeBinding));
+    }
+};
+
+// DishonoredGame.DishonoredMapInfo.DisSquadInfo: retail SDK size 24 (2012 PDB 24)
+struct FDisSquadInfo
+{
+    FName m_SquadName;
+    INT m_MaxNPCsAlive;
+    INT m_MaxNPCsTotal;
+    INT m_NumNPCsAlive;
+    INT m_NumNPCsTotal;
+
+    /** Constructors */
+    FDisSquadInfo() {}
+    FDisSquadInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisSquadInfo));
+    }
+};
+
+// DishonoredGame.DishonoredAIBrain.DisStimRef: retail SDK size 8 (2012 PDB 8)
+struct FDisStimRef
+{
+    FPointer m_pStim;
+    FLOAT m_fDelayTimer;
+
+    /** Constructors */
+    FDisStimRef() {}
+    FDisStimRef(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisStimRef));
+    }
+};
+
+// DishonoredGame.DisStoryFlagSet.DisStoryFlag: retail SDK size 24 (2012 PDB 24)
+struct FDisStoryFlag
+{
+    FName m_Name;
+    FGuid m_GUID;
+
+    /** Constructors */
+    FDisStoryFlag() {}
+    FDisStoryFlag(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisStoryFlag));
+    }
+};
+
+// DishonoredGame.DisTweaks_ThrownObjects.DisThrownObjectSelection: retail SDK size 16 (2012 PDB 16)
+struct FDisThrownObjectSelection
+{
+    FLOAT m_fWeight;
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UClass* m_pContactType;
+
+    /** Constructors */
+    FDisThrownObjectSelection() {}
+    FDisThrownObjectSelection(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisThrownObjectSelection));
+    }
+};
+
+// DishonoredGame.DisAttentionInfo_Complex.DisTickAttentionParams_AttentionTargetTweaks: retail SDK size 96 (2012 PDB 96)
+struct FDisTickAttentionParams_AttentionTargetTweaks
+{
+    BITFIELD m_bDirty:1;
+    FLOAT m_fAttentionProxyMinIncreaseRateForUpdate[21];
+    FLOAT m_fAttnProxyDetachmentDelay;
+    BYTE m_AttentionProxyMovementMode;
+
+    /** Constructors */
+    FDisTickAttentionParams_AttentionTargetTweaks() {}
+    FDisTickAttentionParams_AttentionTargetTweaks(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTickAttentionParams_AttentionTargetTweaks));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisVisCalcTuningParams: retail SDK size 32 (2012 PDB 32)
+struct FDisVisCalcTuningParams
+{
+    BYTE m_ApplyOp;
+    FLOAT m_fScalar;
+    FLOAT m_fBias;
+    FLOAT m_fExponent;
+    BITFIELD m_bUsePointsInsteadOfFormula:1;
+    BYTE m_Points[12];  // DISHONORED(layout): retail SDK gap @20: ArrayProperty m_Points (script_classes_2013) the dump did not type
+
+    /** Constructors */
+    FDisVisCalcTuningParams() {}
+    FDisVisCalcTuningParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisVisCalcTuningParams));
+    }
+};
+
+// DishonoredGame.DisAttentionInfo_Complex.DisTickAttentionParams_PawnAttentionTweaks: retail SDK size 208 (2012 PDB 208)
+struct FDisTickAttentionParams_PawnAttentionTweaks
+{
+    BITFIELD m_bDirty:1;
+    FLOAT m_fDistanceToLoseSight;
+    FDisVisCalcTuningParams m_DistanceValueTuning;
+    FLOAT m_fVisionIncreaseScalar;
+    FLOAT m_fTouchingPawnAttentionIncreaseRate;
+    FLOAT m_fAttentionLeakRate;
+    FLOAT m_fAttentionLeakRate_InConvo;
+    FLOAT m_fMaxAttention;
+    FDisAttentionLevelThreshold m_AttentionThresholds[4];
+    BITFIELD m_bAlarmsKeepRingingUntilNPCsLoseAttention:1;
+    BYTE m_AlarmsKeepRingingAttentionLevel;
+    FDisAttentionChangeReasonSettings m_ReasonSettings[21];
+    FLOAT m_fMinRangeToUnsightedBustedProxy;
+    BITFIELD m_bClampTargetVisibility:1;
+
+    /** Constructors */
+    FDisTickAttentionParams_PawnAttentionTweaks() {}
+    FDisTickAttentionParams_PawnAttentionTweaks(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTickAttentionParams_PawnAttentionTweaks));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweakChildInfo_ChildName: retail SDK size 12 (2012 PDB 12)
+struct FDisTweakChildInfo_ChildName
+{
+    FName m_ChildTweakName;
+    INT m_iAdditionalIndex;
+
+    /** Constructors */
+    FDisTweakChildInfo_ChildName() {}
+    FDisTweakChildInfo_ChildName(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweakChildInfo_ChildName));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweakChildInfo: retail SDK size 28 (2012 PDB 28)
+struct FDisTweakChildInfo
+{
+    FDisTweakChildInfo_ChildName m_ChildTweakName;
+    class UDisTweaksBase* m_pChildTweak;
+    INT m_ChildTweakFlags;
+    FName m_GroupName;
+
+    /** Constructors */
+    FDisTweakChildInfo() {}
+    FDisTweakChildInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweakChildInfo));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweakCookedFallback: retail SDK size 8 (2012 PDB 8)
+struct FDisTweakCookedFallback
+{
+    FName m_FallbackName;
+
+    /** Constructors */
+    FDisTweakCookedFallback() {}
+    FDisTweakCookedFallback(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweakCookedFallback));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweakError: retail SDK size 28 (2012 PDB 28)
+struct FDisTweakError
+{
+    FName m_ErrorID;
+    FName m_ExtraInfo;
+    FName m_ExtraInfo2;
+    class UDisTweaksBase* m_pOwner;
+
+    /** Constructors */
+    FDisTweakError() {}
+    FDisTweakError(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweakError));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweakFallbackInfo: retail SDK size 16 (2012 PDB 16)
+struct FDisTweakFallbackInfo
+{
+    FStringNoInit m_PropertyPathName;
+    BITFIELD m_bProcessed:1;
+
+    /** Constructors */
+    FDisTweakFallbackInfo() {}
+    FDisTweakFallbackInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweakFallbackInfo));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweakVersionBaseClass: retail SDK size 16 (2012 PDB 16)
+struct FDisTweakVersionBaseClass
+{
+    FStringNoInit m_BaseClassName;
+    INT m_VersionNum;
+
+    /** Constructors */
+    FDisTweakVersionBaseClass() {}
+    FDisTweakVersionBaseClass(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweakVersionBaseClass));
+    }
+};
+
+// DishonoredGame.DisTweaksBase.DisTweaksGenericThumbnailItem: retail SDK size 40 (2012 PDB 40)
+struct FDisTweaksGenericThumbnailItem
+{
+    FName m_ItemName;
+    FName m_AttachToItem;
+    FName m_AttachToSocket;
+    INT m_Flags;
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UStaticMesh* m_pStaticMesh;
+    class UPrimitiveComponent* m_pCachedComponent;
+
+    /** Constructors */
+    FDisTweaksGenericThumbnailItem() {}
+    FDisTweaksGenericThumbnailItem(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweaksGenericThumbnailItem));
+    }
+};
+
+// DishonoredGame.DisTweaks_Attachments.DisTweaks_Attachments_Attachment: retail SDK size 16 (2012 PDB 16)
+struct FDisTweaks_Attachments_Attachment
+{
+    FName m_Socket;
+    BITFIELD m_bSoftAttach:1;
+    class UDisTweaksBase* m_pAttachmentTweaks;
+
+    /** Constructors */
+    FDisTweaks_Attachments_Attachment() {}
+    FDisTweaks_Attachments_Attachment(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweaks_Attachments_Attachment));
+    }
+};
+
+// DishonoredGame.DisTweaks_Vulnerability.DisTweaks_Vulnerability_HitReact: retail SDK size 8 (2012 PDB 8)
+struct FDisTweaks_Vulnerability_HitReact
+{
+    BITFIELD m_bVulnerable:1;
+    BYTE m_ConvertToOtherReact;
+
+    /** Constructors */
+    FDisTweaks_Vulnerability_HitReact() {}
+    FDisTweaks_Vulnerability_HitReact(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweaks_Vulnerability_HitReact));
+    }
+};
+
+// DishonoredGame.DisTweaks_Vulnerability.DisTweaks_Vulnerability_InstaDeath: retail SDK size 4 (2012 PDB 4)
+struct FDisTweaks_Vulnerability_InstaDeath
+{
+    BITFIELD m_bVulnerable:1;
+
+    /** Constructors */
+    FDisTweaks_Vulnerability_InstaDeath() {}
+    FDisTweaks_Vulnerability_InstaDeath(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTweaks_Vulnerability_InstaDeath));
+    }
+};
+
+// DishonoredGame.DisTweaks_UsableObject.DisUnauthorizedEffect: retail SDK size 24 (2012 PDB 24)
+struct FDisUnauthorizedEffect
+{
+    class UAkEvent* m_Sound;
+    class UParticleSystem* m_pParticleSystem;
+    FVector m_ParticleSystemOffset;
+    INT m_Damage;
+
+    /** Constructors */
+    FDisUnauthorizedEffect() {}
+    FDisUnauthorizedEffect(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisUnauthorizedEffect));
+    }
+};
+
+// DishonoredGame.DisTweaks_Upgrade.DisUpgradeAttributeInfo: retail SDK size 12 (2012 PDB 12)
+struct FDisUpgradeAttributeInfo
+{
+    FName m_AttributeName;
+    FLOAT m_fValue;
+
+    /** Constructors */
+    FDisUpgradeAttributeInfo() {}
+    FDisUpgradeAttributeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisUpgradeAttributeInfo));
+    }
+};
+
+// DishonoredGame.DisAttentionDefs.DisVisCalcTuningParamsCurvePoint: retail SDK size 8 (2012 PDB 8)
+struct FDisVisCalcTuningParamsCurvePoint
+{
+    FLOAT m_fInputValue;
+    FLOAT m_fOutputValue;
+
+    /** Constructors */
+    FDisVisCalcTuningParamsCurvePoint() {}
+    FDisVisCalcTuningParamsCurvePoint(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisVisCalcTuningParamsCurvePoint));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerVisRegion.DisVisRegionSettings: retail SDK size 16 (2012 PDB 16)
+struct FDisVisRegionSettings
+{
+    FLOAT m_fWidth;
+    FLOAT m_fOffsetTowardsNPC;
+    FLOAT m_fTopHeight;
+    FLOAT m_fBottomHeight;
+
+    /** Constructors */
+    FDisVisRegionSettings() {}
+    FDisVisRegionSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisVisRegionSettings));
+    }
+};
+
+// DishonoredGame.DisTweaks_WatchTower.DisWTLightMaterial: retail SDK size 12 (2012 PDB 12)
+struct FDisWTLightMaterial
+{
+    FName m_MaterialParamName;
+    class UMaterialInterface* m_pMaterial;
+
+    /** Constructors */
+    FDisWTLightMaterial() {}
+    FDisWTLightMaterial(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisWTLightMaterial));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Steering.DisWallsSteeringSettings: retail SDK size 16 (2012 PDB 16)
+struct FDisWallsSteeringSettings
+{
+    BITFIELD m_bTickAllowed:1;
+    FLOAT m_fRangeDist;
+    FLOAT m_fFallOffDist;
+    FLOAT m_fInfluenceSmoothSpeed;
+
+    /** Constructors */
+    FDisWallsSteeringSettings() {}
+    FDisWallsSteeringSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisWallsSteeringSettings));
+    }
+};
+
+// DishonoredGame.DisWaterVolumeManager.DisWaterCollidingBody: retail SDK size 12 (2012 PDB 12)
+struct FDisWaterCollidingBody
+{
+    class URB_BodyInstance* m_pBodyInstance;
+    class ADishonoredWaterVolume* m_pMasterWaterVolume;
+    FLOAT m_fSurfaceZ;
+
+    /** Constructors */
+    FDisWaterCollidingBody() {}
+    FDisWaterCollidingBody(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisWaterCollidingBody));
+    }
+};
+
+// DishonoredGame.DisTweaks_WhaleBoneCharmList.DisWhaleBoneCharmLevel: retail SDK size 28 (2012 PDB 28)
+struct FDisWhaleBoneCharmLevel
+{
+    FStringNoInit m_Name;
+    FStringNoInit m_Text;
+    FLOAT m_fValue;
+
+    /** Constructors */
+    FDisWhaleBoneCharmLevel() {}
+    FDisWhaleBoneCharmLevel(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisWhaleBoneCharmLevel));
+    }
+};
+
+// DishonoredGame.DisTweaks_WhaleBoneCharmList.DisWhaleBoneCharmInfo: retail SDK size 20 (2012 PDB 20)
+struct FDisWhaleBoneCharmInfo
+{
+    FName m_AttributeName;
+    TArrayNoInit<FDisWhaleBoneCharmLevel> m_Levels;
+
+    /** Constructors */
+    FDisWhaleBoneCharmInfo() {}
+    FDisWhaleBoneCharmInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisWhaleBoneCharmInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_StaticBreakable.DishonoredBreakableChunk: retail SDK size 4 (2012 PDB 4)
+struct FDishonoredBreakableChunk
+{
+    class UStaticMesh* m_pStaticMesh;
+
+    /** Constructors */
+    FDishonoredBreakableChunk() {}
+    FDishonoredBreakableChunk(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredBreakableChunk));
+    }
+};
+
+// DishonoredGame.DisTweaks_StaticBreakable.DishonoredBreakableStep: retail SDK size 80 (2012 PDB 80)
+struct FDishonoredBreakableStep
+{
+    INT m_HealthThreshold;
+    FLOAT m_fStepTimer;
+    class UStaticMesh* m_pStaticMesh;
+    TArrayNoInit<class UMaterialInterface*> m_aMaterials;
+    class UAkEvent* m_pSoundEvent;
+    BYTE m_AINoiseLoudness;
+    BYTE m_AINoiseContext;
+    class UParticleSystem* m_pParticleSystem;
+    FVector m_ParticleSystemOffset;
+    class UDisTweaks_Explosion* m_pExplosion;
+    FVector m_ExplosionOffset;
+    TArrayNoInit<FDishonoredBreakableChunk> m_Chunks;
+    BITFIELD m_bUnfix:1;
+    BITFIELD m_bAISendImpendingExplosionStim:1;
+    BITFIELD m_bAttachParticleSystem:1;
+    BITFIELD m_ParticleSystemIgnoresParentRotation:1;
+    BITFIELD m_ExplosionIgnoresParentRotation:1;
+    BITFIELD m_bBroadcastGameEvent:1;
+    BITFIELD m_bKeepPhysics:1;
+
+    /** Constructors */
+    FDishonoredBreakableStep() {}
+    FDishonoredBreakableStep(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredBreakableStep));
+    }
+};
+
+// DishonoredGame.DishonoredDebugMenu.DishonoredDebugMenuItem: retail SDK size 56 (2012 PDB 56)
+struct FDishonoredDebugMenuItem
+{
+    FStringNoInit PageName;
+    FStringNoInit EntryName;
+    TArrayNoInit<FString> Commands;
+    TArrayNoInit<FString> Texts;
+    INT CurrentCommand;
+    BITFIELD bActivated:1;
+    BITFIELD bCloseMenuOnValidate:1;
+
+    /** Constructors */
+    FDishonoredDebugMenuItem() {}
+    FDishonoredDebugMenuItem(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredDebugMenuItem));
+    }
+};
+
+// DishonoredGame.DishonoredDecalActorBase.DishonoredDecalInfo: retail SDK size 72 (2012 PDB 72)
+struct FDishonoredDecalInfo
+{
+    class UMaterialInterface* m_pMaterial;
+    TArrayNoInit<class UMaterialInterface*> m_Materials;
+    TArrayNoInit<FName> m_BoneNames;
+    BYTE m_Behaviour;
+    INT m_MinWidth;
+    INT m_MinHeight;
+    INT m_MaxWidth;
+    INT m_MaxHeight;
+    BITFIELD m_bLoop:1;
+    FLOAT m_fTimeStep;
+    FLOAT m_fWidthStep;
+    FLOAT m_fHeightStep;
+    FLOAT m_fLifetime;
+    FLOAT m_fMinVelocity;
+
+    /** Constructors */
+    FDishonoredDecalInfo() {}
+    FDishonoredDecalInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredDecalInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPowersComponent.DishonoredPowerModifierInfo: retail SDK size 16 (2012 PDB 16)
+struct FDishonoredPowerModifierInfo
+{
+    FName m_AttributeName;
+    BYTE m_ModType;
+    FLOAT m_fModValue;
+
+    /** Constructors */
+    FDishonoredPowerModifierInfo() {}
+    FDishonoredPowerModifierInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredPowerModifierInfo));
+    }
+};
+
+// DishonoredGame.DishonoredPowersComponent.DishonoredPowerLevel: retail SDK size 16 (2012 PDB 16)
+struct FDishonoredPowerLevel
+{
+    INT m_RuneCost;
+    TArrayNoInit<FDishonoredPowerModifierInfo> m_Modifiers;
+
+    /** Constructors */
+    FDishonoredPowerLevel() {}
+    FDishonoredPowerLevel(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredPowerLevel));
+    }
+};
+
+// DishonoredGame.DishonoredPowersComponent.DishonoredPower: retail SDK size 28 (2012 PDB 28)
+struct FDishonoredPower
+{
+    FName m_Name;
+    BYTE m_eUISelection;
+    TArrayNoInit<FDishonoredPowerLevel> m_Levels;
+    INT m_CurrentLevel;
+
+    /** Constructors */
+    FDishonoredPower() {}
+    FDishonoredPower(EEventParm)
+    {
+        appMemzero(this, sizeof(FDishonoredPower));
+    }
+};
+
+// DishonoredGame.DisNPCDistractionComponent.DistractionChances: retail SDK size 8 (2012 PDB 8)
+struct FDistractionChances
+{
+    FLOAT m_fChanceToLook;
+    FLOAT m_fChanceToAnimate;
+
+    /** Constructors */
+    FDistractionChances() {}
+    FDistractionChances(EEventParm)
+    {
+        appMemzero(this, sizeof(FDistractionChances));
+    }
+};
+
+// DishonoredGame.DisNPCDistractionComponent.DistractionSoireeActors: retail SDK size 12 (2012 PDB 12)
+struct FDistractionSoireeActors
+{
+    FName m_SoireeGroupName;
+    class AActor* m_GroupActor;
+
+    /** Constructors */
+    FDistractionSoireeActors() {}
+    FDistractionSoireeActors(EEventParm)
+    {
+        appMemzero(this, sizeof(FDistractionSoireeActors));
+    }
+};
+
+// DishonoredGame.DisNPCDistractionComponent.DistractionSoireeLoops: retail SDK size 16 (2012 PDB 16)
+struct FDistractionSoireeLoops
+{
+    FName m_SoireeLoopName;
+    INT m_iLoopMin;
+    INT m_iLoopMax;
+
+    /** Constructors */
+    FDistractionSoireeLoops() {}
+    FDistractionSoireeLoops(EEventParm)
+    {
+        appMemzero(this, sizeof(FDistractionSoireeLoops));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Combat.DramaAssassinationParams: retail SDK size 28 (2012 PDB 28)
+struct FDramaAssassinationParams
+{
+    BYTE m_Channel;
+    BYTE m_EffectType;
+    FLOAT m_fWorldDilation;
+    FLOAT m_fPlayerDilation;
+    FLOAT m_fPlayerInputDilation;
+    FLOAT m_fDuration;
+    FLOAT m_fWarmupTime;
+    FLOAT m_fCooldownTime;
+
+    /** Constructors */
+    FDramaAssassinationParams() {}
+    FDramaAssassinationParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FDramaAssassinationParams));
+    }
+};
+
+// DishonoredGame.DisInteractableInterface.EndInteractParams: retail SDK size 8 (2012 PDB 8)
+struct FEndInteractParams
+{
+    class ADishonoredPawn* m_pInteractor;
+    BITFIELD m_bEndingBecauseTryingToAttack:1;
+
+    /** Constructors */
+    FEndInteractParams() {}
+    FEndInteractParams(EEventParm)
+    {
+        appMemzero(this, sizeof(FEndInteractParams));
+    }
+};
+
+// DishonoredGame.DishonoredGlobalAIManager.GlobalCorpseInfo: retail SDK size 32 (2012 PDB 32)
+struct FGlobalCorpseInfo
+{
+    FLOAT m_fTimeOfLastUse;
+    FLOAT m_fAge;
+    INT m_IslandID;
+    INT m_PhysAssetBodyIndex;
+    FLOAT m_fUpdateTimer;
+    FVector m_Location;
+
+    /** Constructors */
+    FGlobalCorpseInfo() {}
+    FGlobalCorpseInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FGlobalCorpseInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_Heart.Heartbeat: retail SDK size 8 (2012 PDB 8)
+struct FHeartbeat
+{
+    class UAkEvent* m_pSoundEvent;
+    class UForceFeedbackWaveform* m_pRumbleWaveform;
+
+    /** Constructors */
+    FHeartbeat() {}
+    FHeartbeat(EEventParm)
+    {
+        appMemzero(this, sizeof(FHeartbeat));
+    }
+};
+
+// DishonoredGame.DishonoredViewportClient.LowFPSData: retail SDK size 24 (2012 PDB 24)
+struct FLowFPSData
+{
+    DOUBLE m_dLastTime;
+    FLOAT m_fAverageMS;
+    FLOAT m_fDisplayTimeLeft;
+    FLOAT m_fBiggestFrameTime;
+    INT m_FrameCount;
+
+    /** Constructors */
+    FLowFPSData() {}
+    FLowFPSData(EEventParm)
+    {
+        appMemzero(this, sizeof(FLowFPSData));
+    }
+};
+
+// DishonoredGame.DishonoredEngine.MapConfig: retail SDK size 56 (2012 PDB 56)
+struct FMapConfig
+{
+    FStringNoInit m_Name;
+    FStringNoInit m_FriendlyName;
+    FStringNoInit m_ImageName;
+    FStringNoInit m_LoadingMovieName;
+    BITFIELD m_bShowLoadingTexts:1;
+    BITFIELD m_bShowMapNameOnlyOnXboxNoHDD:1;
+    BITFIELD m_bIsSaveNotificationMovie:1;
+    INT m_nRichPresenceChapter;
+
+    /** Constructors */
+    FMapConfig() {}
+    FMapConfig(EEventParm)
+    {
+        appMemzero(this, sizeof(FMapConfig));
+    }
+};
+
+// DishonoredGame.DisTweaks_WhaleOilBattery.MaterialChange: retail SDK size 16 (2012 PDB 16)
+struct FMaterialChange
+{
+    INT m_ChargeThreshold;
+    TArrayNoInit<class UMaterialInterface*> m_Materials;
+
+    /** Constructors */
+    FMaterialChange() {}
+    FMaterialChange(EEventParm)
+    {
+        appMemzero(this, sizeof(FMaterialChange));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerStats.NPCTypeInfo: retail SDK size 48 (2012 PDB 48)
+struct FNPCTypeInfo
+{
+    TArrayNoInit<class UDisTweaksBase*> m_Tweaks;
+    TArrayNoInit<class UDisTweaksBase*> m_ExcludedTweaks;
+    TArrayNoInit<FTweakNamePair> m_TweaksNamePairs;
+    TArrayNoInit<FTweakNamePair> m_ExcludedTweaksNamePairs;
+
+    /** Constructors */
+    FNPCTypeInfo() {}
+    FNPCTypeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FNPCTypeInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerStats.PlayerStatInfo: retail SDK size 80 (2012 PDB 64)
+struct FPlayerStatInfo
+{
+    BYTE m_Stat;
+    FStringNoInit m_Text;
+    class UDisTweaksBase* m_pTweaks;
+    class UDisAbstractItem* m_pAbstractItem;
+    TArrayNoInit<class UDisTweaksBase*> m_ExcludedTweaks;
+    TArrayNoInit<class UClass*> m_DamageTypes;
+    FTweakNamePair m_TweaksNamePair;
+    TArrayNoInit<FTweakNamePair> m_ExcludedTweaksNamePairs;
+    class UClass* m_pDamageType;
+
+    /** Constructors */
+    FPlayerStatInfo() {}
+    FPlayerStatInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FPlayerStatInfo));
+    }
+};
+
+// DishonoredGame.DisNavMeshGoal_WithinDistanceEnvelopeFrom.PolyPointer: retail SDK size 4
+struct FPolyPointer
+{
+    FPointer Dummy;
+
+    /** Constructors */
+    FPolyPointer() {}
+    FPolyPointer(EEventParm)
+    {
+        appMemzero(this, sizeof(FPolyPointer));
+    }
+};
+
+// DishonoredGame.DisTweaks_BendTime.PowerAttributes_BendTime: retail SDK size 40 (2012 PDB 40)
+struct FPowerAttributes_BendTime
+{
+    FLOAT m_WorldDilation;
+    FLOAT m_PlayerDilation;
+    FLOAT m_TimeDuration;
+    class UAkEvent* m_pBendTimeSoundStartEvent;
+    class UAkEvent* m_pBendTimeSoundStopEvent;
+    FLOAT m_fPostEffectWarmupTime;
+    FLOAT m_fPostEffectCooldownTime;
+    FLOAT m_fTimeDilationWarmupTime;
+    FLOAT m_fTimeDilationCooldownTime;
+    FLOAT m_fProjectileEarlyWakeupTime;
+
+    /** Constructors */
+    FPowerAttributes_BendTime() {}
+    FPowerAttributes_BendTime(EEventParm)
+    {
+        appMemzero(this, sizeof(FPowerAttributes_BendTime));
+    }
+};
+
+// DishonoredGame.DisTweaks_Blink.PowerAttributes_Blink: retail SDK size 76 (2012 PDB 76)
+struct FPowerAttributes_Blink
+{
+    FLOAT m_Distance;
+    FLOAT m_HorizDistance;
+    FLOAT m_VertDistance;
+    FLOAT m_fDefaultBlinkStepDistance;
+    FLOAT m_fDefaultTimeBetweenBlinkSteps;
+    FLOAT m_fBendTimeDownTime;
+    FLOAT m_fBendTimeUpTime;
+    FLOAT m_fWarmupTime;
+    FLOAT m_fCooldownTime;
+    FLOAT m_fWarmupWobbleMaxStrength;
+    FLOAT m_fWarmupWobblePerSecond;
+    FLOAT m_fWarmupDistorionMinStrength;
+    FLOAT m_fMoveDistortionMaxStrength;
+    FLOAT m_fMoveBlurMaxStrength;
+    FLOAT m_fMoveReachMaxAtPercentage;
+    INT m_CoolDownWobbleCount;
+    class UAkEvent* m_pBlinkWarmupSoundEvent;
+    class UAkEvent* m_pBlinkSoundEvent;
+    class UAkEvent* m_pFizzleSoundEvent;
+
+    /** Constructors */
+    FPowerAttributes_Blink() {}
+    FPowerAttributes_Blink(EEventParm)
+    {
+        appMemzero(this, sizeof(FPowerAttributes_Blink));
+    }
+};
+
+// DishonoredGame.DisTweaks_DevouringSwarm.PowerAttributes_DevouringSwarm: retail SDK size 72 (2012 PDB 72)
+struct FPowerAttributes_DevouringSwarm
+{
+    FLOAT m_fMaxDistance;
+    FLOAT m_fDuration;
+    FGameCrowdSpawnerSettings m_RatSpawnerSettings;
+    class UDisTweaks_RatSwarm* m_pRatSwarmTweaks;
+    class UAkEvent* m_pUseSoundEvent;
+    class UAkEvent* m_pImpactSoundEvent;
+    class UAkEvent* m_pPowerEndSoundEvent;
+    class UParticleSystem* m_pSpawnFX;
+
+    /** Constructors */
+    FPowerAttributes_DevouringSwarm() {}
+    FPowerAttributes_DevouringSwarm(EEventParm)
+    {
+        appMemzero(this, sizeof(FPowerAttributes_DevouringSwarm));
+    }
+};
+
+// DishonoredGame.DisTweaks_WindBlast.PowerAttributes_WindBlast: retail SDK size 64 (2012 PDB 64)
+struct FPowerAttributes_WindBlast
+{
+    FLOAT m_Force;
+    FLOAT m_ExtraUpForce;
+    FLOAT m_Angle;
+    FLOAT m_Damage;
+    FLOAT m_Distance;
+    FLOAT m_Speed;
+    class UAkEvent* m_pWindBlastSoundEvent;
+    class UParticleSystem* m_EffectTemplate;
+    class UParticleSystem* m_HandEffectTemplate;
+    class UAkEvent* m_pUnderwaterWindBlastSoundEvent;
+    class UParticleSystem* m_UnderwaterEffectTemplate;
+    class UParticleSystem* m_UnderwaterHandEffectTemplate;
+    FName m_HandEffectSocketName;
+    FLOAT m_PostProcessTime;
+    FLOAT m_PostProcessFadeOutTime;
+
+    /** Constructors */
+    FPowerAttributes_WindBlast() {}
+    FPowerAttributes_WindBlast(EEventParm)
+    {
+        appMemzero(this, sizeof(FPowerAttributes_WindBlast));
+    }
+};
+
+// DishonoredGame.DisTweaks_ActivePowerBase.Power_RumbleAndShake: retail SDK size 72 (2012 PDB 72)
+struct FPower_RumbleAndShake
+{
+    class UClass* m_pRumblePredefinedWaveForm;
+    class UForceFeedbackWaveform* m_pRumbleCustomWaveForm;
+    FDisCameraSustainedRumble m_CameraShakeSettings;
+    FLOAT m_fCameraShakeRange;
+
+    /** Constructors */
+    FPower_RumbleAndShake() {}
+    FPower_RumbleAndShake(EEventParm)
+    {
+        appMemzero(this, sizeof(FPower_RumbleAndShake));
+    }
+};
+
+// DishonoredGame.DisPostProcessManager.PpBridge: retail SDK size 300 (2012 PDB 204)
+struct FPpBridge
+{
+    class UArkPpNodeBlur* m_UnderWater_BendTime_Blink_Pp;
+    class UArkPpNodeMaterial* m_UnderWaterVectorsPp;
+    FArkUberPpParameters m_UnderWaterOriginalUberPpParameters;
+    class UArkPpNodeMaterial* m_BendTimeVectorsPp;
+    FArkUberPpParameters m_BendTimeVectorsUberBackup;
+    class UArkPpNodeMaterial* m_BendTimeUnderWaterVectorsPp;
+    class UArkPpNodeSwitch* m_BendTimeUnderWaterSwitch;
+    class UArkPpNodeSwitch* m_BendTimeSwitch;
+    class UArkPpNodeMaterial* m_BlinkVectorsPp;
+    class UArkPpNodeMaterial* m_BlinkVectors2Pp;
+    class UArkPpNodeSwitch* m_MainBlinkSwitch;
+    class UArkPpNodeSwitch* m_BlinkOnlySwitch;
+    class UArkPpNodeMaterial* m_AdrenalinePp;
+    class UArkPpNodeSwitch* m_AdrenalineSwitch;
+    class UArkPpNodeMaterial* m_PlagueVectors;
+    class UArkPpNodeSwitch* m_PlagueSwitch;
+    class UArkPpNodeMaterial* m_PossessionVectors;
+    class UArkPpNodeMaterial* m_PossessionInMaterial;
+    class UArkPpNodeMaterial* m_PossessionOutMaterial;
+    class UArkPpNodeSwitch* m_PossessionSwitch;
+    class UArkPpNodeAA* m_PpNodeAA;
+    class UArkPpNodeMaterial* m_KOBackupFrame;
+    class UArkPpNodeMaterial* m_KOBlendFrame;
+    class UArkPpNodeMaterial* m_KOVectors;
+    class UArkPpNodeSwitch* m_KOSwitch;
+    class UArkPpNodeMaterial* m_ZoomLensVectors;
+    class UArkPpNodeMaterial* m_ZoomLensCompose;
+    class UArkPpNodeSwitch* m_ZoomLensSwitch;
+    BITFIELD m_bInitDone:1;
+
+    /** Constructors */
+    FPpBridge() {}
+    FPpBridge(EEventParm)
+    {
+        appMemzero(this, sizeof(FPpBridge));
+    }
+};
+
+// DishonoredGame.DisTweaks_RiverKrust.RiverKrustAkEvent: retail SDK size 28 (2012 PDB 28)
+struct FRiverKrustAkEvent
+{
+    class UAkEvent* m_pAkEvent;
+    FName m_BoneName;
+    FDisRangedFloat m_VolumeMultiplierRange;
+    FDisRangedFloat m_PitchMultiplierRange;
+
+    /** Constructors */
+    FRiverKrustAkEvent() {}
+    FRiverKrustAkEvent(EEventParm)
+    {
+        appMemzero(this, sizeof(FRiverKrustAkEvent));
+    }
+};
+
+// DishonoredGame.DisTweaks_RiverKrust.RiverKrustAnimSequenceSpec: retail SDK size 36 (2012 PDB 36)
+struct FRiverKrustAnimSequenceSpec
+{
+    FName m_SequenceName;
+    FDisRangedFloat m_PlaybackRateRange;
+    FLOAT m_fBlendInTimeSeconds;
+    FLOAT m_fBlendOutTimeSeconds;
+    FDisRangedFloat m_StartTimeSecondsRange;
+    BITFIELD m_bIsLooping:1;
+    BITFIELD m_bShouldRestart:1;
+
+    /** Constructors */
+    FRiverKrustAnimSequenceSpec() {}
+    FRiverKrustAnimSequenceSpec(EEventParm)
+    {
+        appMemzero(this, sizeof(FRiverKrustAnimSequenceSpec));
+    }
+};
+
+// DishonoredGame.DisTweaks_RiverKrust.RiverKrustBodyPartSpec: retail SDK size 16 (2012 PDB 16)
+struct FRiverKrustBodyPartSpec
+{
+    class UDisTweaks_RiverKrustBodyPart* m_pBodyPartTweak;
+    FName m_AttachSocketName;
+    BITFIELD m_bDetachOnParentRagdoll:1;
+
+    /** Constructors */
+    FRiverKrustBodyPartSpec() {}
+    FRiverKrustBodyPartSpec(EEventParm)
+    {
+        appMemzero(this, sizeof(FRiverKrustBodyPartSpec));
+    }
+};
+
+// DishonoredGame.DisTweaks_RiverKrust.RiverKrustDamageFilter: retail SDK size 8 (2012 PDB 8)
+struct FRiverKrustDamageFilter
+{
+    class UClass* m_DamageType;
+    FLOAT m_fDamageMultiplier;
+
+    /** Constructors */
+    FRiverKrustDamageFilter() {}
+    FRiverKrustDamageFilter(EEventParm)
+    {
+        appMemzero(this, sizeof(FRiverKrustDamageFilter));
+    }
+};
+
+// DishonoredGame.DishonoredSearchCrumbsComponent.SearchCrumbStruct: retail SDK size 16 (2012 PDB 16)
+struct FSearchCrumbStruct
+{
+    FVector m_Position;
+    FLOAT m_fLifetime;
+
+    /** Constructors */
+    FSearchCrumbStruct() {}
+    FSearchCrumbStruct(EEventParm)
+    {
+        appMemzero(this, sizeof(FSearchCrumbStruct));
+    }
+};
+
+// DishonoredGame.DisNativeStateTransitionLogic.StateTransitionLogic: retail SDK size 12 (2012 PDB 12)
+struct FStateTransitionLogic
+{
+    class UClass* m_pFromClass;
+    class UClass* m_pToClass;
+    BYTE m_Result;
+
+    /** Constructors */
+    FStateTransitionLogic() {}
+    FStateTransitionLogic(EEventParm)
+    {
+        appMemzero(this, sizeof(FStateTransitionLogic));
+    }
+};
+
+// DishonoredGame.DisNativeStateTransitionLogic.StateTransitionLogicKey: retail SDK size 8 (2012 PDB 8)
+struct FStateTransitionLogicKey
+{
+    class UClass* m_pFromClass;
+    class UClass* m_pToClass;
+
+    /** Constructors */
+    FStateTransitionLogicKey() {}
+    FStateTransitionLogicKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FStateTransitionLogicKey));
+    }
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Reaction.TweakAIResponse: retail SDK size 40 (2012 PDB 40)
+struct FTweakAIResponse
+{
+    BITFIELD m_bEnabled:1;
+    INT m_iNumWarningsBeforeReaction;
+    BYTE m_WarningDialogHook;
+    BITFIELD m_bWarningsExpire:1;
+    FLOAT m_fWarnDuration;
+    FLOAT m_fResponseThreshold;
+    BYTE m_ReactionDialogHook;
+    BYTE m_eCategory;
+    FStringNoInit m_sCoSDescription;
+
+    /** Constructors */
+    FTweakAIResponse() {}
+    FTweakAIResponse(EEventParm)
+    {
+        appMemzero(this, sizeof(FTweakAIResponse));
+    }
+};
+
+// DishonoredGame.DisTweaks_UsableObject.UsableObjectStageHoldToUseData: retail SDK size 76 (2012 PDB 76)
+struct FUsableObjectStageHoldToUseData
+{
+    BITFIELD m_bAutoRewind:1;
+    BITFIELD m_bNeverCompleteStage:1;
+    FName m_RemoteActorAnimName;
+    FLOAT m_fTimeToFullyUse;
+    FLOAT m_fTimeToFullyRewind;
+    class UAkEvent* m_pForwardStartLoopEvent;
+    class UAkEvent* m_pForwardStopLoopEvent;
+    class UAkEvent* m_pForwardResumeLoopEvent;
+    class UAkEvent* m_pForwardCompleteEvent;
+    class UAkEvent* m_pReverseStartLoopEvent;
+    class UAkEvent* m_pReverseStopLoopEvent;
+    class UAkEvent* m_pReverseCompleteEvent;
+    class UAkEvent* m_pRemoteForwardStartLoopEvent;
+    class UAkEvent* m_pRemoteForwardStopLoopEvent;
+    class UAkEvent* m_pRemoteForwardResumeLoopEvent;
+    class UAkEvent* m_pRemoteForwardCompleteEvent;
+    class UAkEvent* m_pRemoteReverseStartLoopEvent;
+    class UAkEvent* m_pRemoteReverseStopLoopEvent;
+    class UAkEvent* m_pRemoteReverseCompleteEvent;
+
+    /** Constructors */
+    FUsableObjectStageHoldToUseData() {}
+    FUsableObjectStageHoldToUseData(EEventParm)
+    {
+        appMemzero(this, sizeof(FUsableObjectStageHoldToUseData));
+    }
+};
+
+// DishonoredGame.DisTweaks_UsableObject.UsableObjectStage: retail SDK size 120 (2012 PDB 120)
+struct FUsableObjectStage
+{
+    FName m_Name;
+    FName m_TransitionAnimName;
+    BITFIELD m_bActivatesCrouching:1;
+    BITFIELD m_bDeactivateUsableWhenDone:1;
+    BITFIELD m_bHoldToUse:1;
+    FName m_TransitionByNPCAnimName;
+    FStringNoInit m_InteractTextOverride;
+    BYTE m_eHideoutActivationStage;
+    FUsableObjectStageHoldToUseData m_HoldToUseData;
+
+    /** Constructors */
+    FUsableObjectStage() {}
+    FUsableObjectStage(EEventParm)
+    {
+        appMemzero(this, sizeof(FUsableObjectStage));
+    }
+};
+
+// DishonoredGame.DisSkeletalMeshComponent.UsedMaterial: retail SDK size 8 (2012 PDB 8)
+struct FUsedMaterial
+{
+    INT m_Index;
+    BITFIELD m_bShown:1;
+
+    /** Constructors */
+    FUsedMaterial() {}
+    FUsedMaterial(EEventParm)
+    {
+        appMemzero(this, sizeof(FUsedMaterial));
+    }
+};
+
+// DishonoredGame.DishonoredWaterVolumeInfo.WaterEffectInfo: retail SDK size 12 (2012 PDB 12)
+struct FWaterEffectInfo
+{
+    class UAkEvent* m_pSoundEvent;
+    class UParticleSystem* pParticleSystem;
+    FLOAT fVelocityThreshold;
+
+    /** Constructors */
+    FWaterEffectInfo() {}
+    FWaterEffectInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FWaterEffectInfo));
+    }
+};
+
+// DishonoredGame.DisAIRangedBehaviorInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisAIRangedBehaviorInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisAIRangedBehaviorInterface
+    //## END PROPS DisAIRangedBehaviorInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisAIRangedBehaviorInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisAIRangedBehaviorInterface
+{
+protected:
+    virtual ~IDisAIRangedBehaviorInterface() {}
+public:
+    typedef UDisAIRangedBehaviorInterface UClassType;
+};
+
+// DishonoredGame.DisDesiresInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisDesiresInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisDesiresInterface
+    //## END PROPS DisDesiresInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisDesiresInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisDesiresInterface
+{
+protected:
+    virtual ~IDisDesiresInterface() {}
+public:
+    typedef UDisDesiresInterface UClassType;
+};
+
+// DishonoredGame.DisGoToFollowupInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisGoToFollowupInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisGoToFollowupInterface
+    //## END PROPS DisGoToFollowupInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisGoToFollowupInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisGoToFollowupInterface
+{
+protected:
+    virtual ~IDisGoToFollowupInterface() {}
+public:
+    typedef UDisGoToFollowupInterface UClassType;
+};
+
+// DishonoredGame.DishonoredAIBehavior: retail sizeof 156, reflected span 56..156 (2012 PDB sizeof 156)
+class UDishonoredAIBehavior : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DishonoredAIBehavior
+    class UDishonoredAIBrain* m_pOwningBrain;
+    class UDishonoredGlobalAIManager* m_pGlobalAIMan;
+    BYTE m_DesignatedSlot;
+    BYTE m_ReasonForActivation;
+    BYTE m_LastFilteredStim;
+    BYTE m_LastUnsupportedBark;
+    FPointer m_pEvaluateStimMask;
+    FPointer m_pFilterStimMask;
+    FPointer m_pSubProcessesFilterStimMask;
+    FPointer m_pCompleteFilterStimMask;
+    FPointer m_pShouldFinishWhileDormantStimMask;
+    BITFIELD m_bHasStarted:1;
+    BITFIELD m_bIsPaused:1;
+    BITFIELD m_bIsPending:1;
+    BITFIELD m_bForceFinishDueToDormancy:1;
+    FDisQueuedDialogHookInfo m_OnResumeDialog;
+    class UDisAISubStateMachine* m_pBehaviorFSM;
+    TArrayNoInit<class UDisAISubProcess*> m_SubProcesses;
+    class UDisTweaks_AIBehavior* m_pBehaviorTweaks;
+    class AActor* m_pActionTargetActor;
+    FDisAttentionProxy m_ActionTargetProxy;
+    TScriptInterface<class IDisDesiresInterface> m_pDesires;
+    //## END PROPS DishonoredAIBehavior
+
+    DECLARE_ABSTRACT_CLASS(UDishonoredAIBehavior,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBehaviorWithDesires: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 160)
+class UDisAIBehaviorWithDesires : public UDishonoredAIBehavior, public IDisDesiresInterface
+{
+public:
+    //## BEGIN PROPS DisAIBehaviorWithDesires
+    //## END PROPS DisAIBehaviorWithDesires
+
+    DECLARE_ABSTRACT_CLASS(UDisAIBehaviorWithDesires,UDishonoredAIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBlackboard: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisAIBlackboard : public UObject
+{
+public:
+    //## BEGIN PROPS DisAIBlackboard
+    TArrayNoInit<FPointer> m_Records;
+    //## END PROPS DisAIBlackboard
+
+    DECLARE_CLASS(UDisAIBlackboard,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBrainProcess: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisAIBrainProcess : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcess
+    class UDisTweaks_AIBrainProcess* m_pBrainProcessTweaks;
+    class UDishonoredAIBrain* m_pOwningBrain;
+    class ADishonoredNPCPawn* m_pOwningPawn;
+    FPointer m_pFilterStimMask;
+    //## END PROPS DisAIBrainProcess
+
+    DECLARE_ABSTRACT_CLASS(UDisAIBrainProcess,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBrainProcessAttention: retail sizeof 192, reflected span 76..192 (2012 PDB sizeof 192)
+class UDisAIBrainProcessAttention : public UDisAIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcessAttention
+    TArrayNoInit<FDisAttentionSlot> m_AttentionInfos;
+    TArrayNoInit<INT> m_ReactionAlreadyActivated;
+    TArrayNoInit<INT> m_ActiveAttentionReactionContexts;
+    INT m_LatestAttentionTagForPlayer;
+    INT m_LatestAttentionTagForAnyTarget;
+    FLOAT m_AttnStopThresholds_Neutral[4];
+    FLOAT m_AttnStopThresholds_Ally[4];
+    FLOAT m_AttnStopThresholds_Enemy_Unsuspecting[4];
+    FLOAT m_AttnStopThresholds_Enemy_Suspecting[4];
+    BITFIELD m_Debug_DuringAttentionTick:1;
+    BITFIELD m_bAttentionInfosTweaksUpdated:1;
+    class UDisAttentionInfo_Base* m_pPlayerAttentionInfo;
+    //## END PROPS DisAIBrainProcessAttention
+
+    DECLARE_CLASS(UDisAIBrainProcessAttention,UDisAIBrainProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBrainProcessHideoutWatcher: retail sizeof 84, reflected span 76..84 (2012 PDB sizeof 84)
+class UDisAIBrainProcessHideoutWatcher : public UDisAIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcessHideoutWatcher
+    class UDisHideoutComponent* m_pWatchedHideOut;
+    BITFIELD m_bRunning:1;
+    BITFIELD m_bPlayerActivatedHideout:1;
+    //## END PROPS DisAIBrainProcessHideoutWatcher
+
+    DECLARE_CLASS(UDisAIBrainProcessHideoutWatcher,UDisAIBrainProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBrainProcessPanic: retail sizeof 92, reflected span 76..92 (2012 PDB sizeof 92)
+class UDisAIBrainProcessPanic : public UDisAIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcessPanic
+    class UDisBehaviorPanic* m_pPanicBehavior;
+    TArrayNoInit<FLOAT> m_KillQueue;
+    //## END PROPS DisAIBrainProcessPanic
+
+    DECLARE_CLASS(UDisAIBrainProcessPanic,UDisAIBrainProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBrainProcessRatCrusher: retail sizeof 84, reflected span 76..84 (2012 PDB sizeof 84)
+class UDisAIBrainProcessRatCrusher : public UDisAIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcessRatCrusher
+    class ADisRatSwarm* m_pTrackedRatSwarm;
+    FLOAT m_fRatSwarmTrackingInhibitor;
+    //## END PROPS DisAIBrainProcessRatCrusher
+
+    DECLARE_CLASS(UDisAIBrainProcessRatCrusher,UDisAIBrainProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAIBrainProcessWolfhound: retail sizeof 76, reflected span 76..76 (2012 PDB sizeof 76)
+class UDisAIBrainProcessWolfhound : public UDisAIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisAIBrainProcessWolfhound
+    //## END PROPS DisAIBrainProcessWolfhound
+
+    DECLARE_CLASS(UDisAIBrainProcessWolfhound,UDisAIBrainProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAINoiseManager: retail sizeof 84, reflected span 56..84 (2012 PDB sizeof 84)
+class UDisAINoiseManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisAINoiseManager
+    TArrayNoInit<class UDisNoiseListenerInterface*> m_RegisteredListeners;
+    FLOAT m_fCustomSoundRadiusFromKismet;
+    TArrayNoInit<FLOAT> m_LoudnessDistanceArray;
+    //## END PROPS DisAINoiseManager
+
+    DECLARE_CLASS(UDisAINoiseManager,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AI");}
+};
+
+// DishonoredGame.DisAISubProcess: retail sizeof 104, reflected span 56..104 (2012 PDB sizeof 104)
+class UDisAISubProcess : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisAISubProcess
+    class UDisTweaks_AISubProcess* m_pSubProcessTweaks;
+    class UDishonoredAIBrain* m_pOwningBrain;
+    class UDishonoredAIBehavior* m_pOwningBehavior;
+    FPointer m_pFilterStimMask;
+    BITFIELD m_bIsSubProcessEnabled:1;
+    BITFIELD m_bSubProcessHasBegun:1;
+    FDisAttentionProxy m_ActionTargetProxy;
+    TScriptInterface<class IDisDesiresInterface> m_pDesires;
+    //## END PROPS DisAISubProcess
+
+    DECLARE_ABSTRACT_CLASS(UDisAISubProcess,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessAmbientAnims: retail sizeof 108, reflected span 104..108 (2012 PDB sizeof 108)
+class UDisAISubProcessAmbientAnims : public UDisAISubProcess
+{
+public:
+    //## BEGIN PROPS DisAISubProcessAmbientAnims
+    FLOAT m_fAmbientAnimTimer;
+    //## END PROPS DisAISubProcessAmbientAnims
+
+    DECLARE_CLASS(UDisAISubProcessAmbientAnims,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessAmbientBarks: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 112)
+class UDisAISubProcessAmbientBarks : public UDisAISubProcess
+{
+public:
+    //## BEGIN PROPS DisAISubProcessAmbientBarks
+    BITFIELD m_bDoRouteSwitchBark:1;
+    BITFIELD m_bDisabledByLOD:1;
+    FLOAT m_fBarkInhibitionTimer;
+    //## END PROPS DisAISubProcessAmbientBarks
+
+    DECLARE_CLASS(UDisAISubProcessAmbientBarks,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessCombatBarks: retail sizeof 132, reflected span 104..132 (2012 PDB sizeof 132)
+class UDisAISubProcessCombatBarks : public UDisAISubProcess
+{
+public:
+    //## BEGIN PROPS DisAISubProcessCombatBarks
+    BYTE m_BarkState;
+    BITFIELD m_bPresenceIsFairlyConveyed:1;
+    BITFIELD m_bPresenceHasBeenAnnounced:1;
+    FLOAT m_fPresenceConveyingTimer;
+    FDisAttentionProxy m_EnemyProxy;
+    //## END PROPS DisAISubProcessCombatBarks
+
+    DECLARE_CLASS(UDisAISubProcessCombatBarks,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessWithDesires: retail sizeof 108, reflected span 104..108 (2012 PDB sizeof 108)
+class UDisAISubProcessWithDesires : public UDisAISubProcess, public IDisDesiresInterface
+{
+public:
+    //## BEGIN PROPS DisAISubProcessWithDesires
+    //## END PROPS DisAISubProcessWithDesires
+
+    DECLARE_ABSTRACT_CLASS(UDisAISubProcessWithDesires,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessDistractions: retail sizeof 208, reflected span 108..208 (2012 PDB sizeof 208)
+class UDisAISubProcessDistractions : public UDisAISubProcessWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubProcessDistractions
+    class UDisDistractionGlobalManager* m_pDistractionMan;
+    class UDisNPCDistractionComponent* m_pCurrentLookAtDistraction;
+    FLOAT m_fCurrentLookAtDistractionTimer;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubProcessDistractions
+
+    DECLARE_CLASS(UDisAISubProcessDistractions,UDisAISubProcessWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessFleetingGaze: retail sizeof 220, reflected span 108..220 (2012 PDB sizeof 220)
+class UDisAISubProcessFleetingGaze : public UDisAISubProcessWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubProcessFleetingGaze
+    FDisAttentionProxy m_TopNotedProxy;
+    FLOAT m_fGazeIntervalTimer;
+    FLOAT m_fGazeDurationTimer;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubProcessFleetingGaze
+
+    DECLARE_CLASS(UDisAISubProcessFleetingGaze,UDisAISubProcessWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessGenericBark: retail sizeof 128, reflected span 104..128 (2012 PDB sizeof 128)
+class UDisAISubProcessGenericBark : public UDisAISubProcess
+{
+public:
+    //## BEGIN PROPS DisAISubProcessGenericBark
+    FLOAT m_fBarkTimer;
+    FLOAT m_fBarkTiming_Min;
+    FLOAT m_fBarkTiming_Max;
+    BYTE m_eBarkToPlay;
+    BYTE m_eBarkToPlayWhenGrouped;
+    BITFIELD m_bIsOneOff:1;
+    class ADishonoredPawn* m_pBarkInstigator;
+    //## END PROPS DisAISubProcessGenericBark
+
+    DECLARE_CLASS(UDisAISubProcessGenericBark,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessHeadTrackBase: retail sizeof 124, reflected span 108..124 (2012 PDB sizeof 124)
+class UDisAISubProcessHeadTrackBase : public UDisAISubProcessWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubProcessHeadTrackBase
+    FDisAttentionProxy m_HeadTrackProxy;
+    //## END PROPS DisAISubProcessHeadTrackBase
+
+    DECLARE_ABSTRACT_CLASS(UDisAISubProcessHeadTrackBase,UDisAISubProcessWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessHeadTrackBark: retail sizeof 128, reflected span 124..128 (2012 PDB sizeof 128)
+class UDisAISubProcessHeadTrackBark : public UDisAISubProcessHeadTrackBase
+{
+public:
+    //## BEGIN PROPS DisAISubProcessHeadTrackBark
+    BITFIELD m_bWantsToBark:1;
+    //## END PROPS DisAISubProcessHeadTrackBark
+
+    DECLARE_CLASS(UDisAISubProcessHeadTrackBark,UDisAISubProcessHeadTrackBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessHeadTrackPause: retail sizeof 312, reflected span 124..312 (2012 PDB sizeof 312)
+class UDisAISubProcessHeadTrackPause : public UDisAISubProcessHeadTrackBase
+{
+public:
+    //## BEGIN PROPS DisAISubProcessHeadTrackPause
+    BITFIELD m_bIsPausing:1;
+    INT m_OriginalPauseYaw;
+    FDisLocoRequest m_LocoRequest;
+    FDisFaceToRequest m_FaceToRequest;
+    //## END PROPS DisAISubProcessHeadTrackPause
+
+    DECLARE_CLASS(UDisAISubProcessHeadTrackPause,UDisAISubProcessHeadTrackBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessPersonalSpace: retail sizeof 412, reflected span 108..412 (2012 PDB sizeof 412)
+class UDisAISubProcessPersonalSpace : public UDisAISubProcessWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubProcessPersonalSpace
+    BITFIELD m_bManageAmbientActions:1;
+    BYTE m_PersonalSpaceState;
+    FLOAT m_fPushCooldownTimer;
+    FLOAT m_fWarnTimer;
+    FLOAT m_fWarnCooldownTimer;
+    FDisAttentionProxy m_WarnedProxy;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubProcessPersonalSpace
+
+    DECLARE_CLASS(UDisAISubProcessPersonalSpace,UDisAISubProcessWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessStandardBodyIntention: retail sizeof 128, reflected span 108..128 (2012 PDB sizeof 128)
+class UDisAISubProcessStandardBodyIntention : public UDisAISubProcessWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubProcessStandardBodyIntention
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubProcessStandardBodyIntention
+
+    DECLARE_CLASS(UDisAISubProcessStandardBodyIntention,UDisAISubProcessWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessWatchPoints: retail sizeof 228, reflected span 108..228 (2012 PDB sizeof 228)
+class UDisAISubProcessWatchPoints : public UDisAISubProcessWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubProcessWatchPoints
+    class ADishonoredNavPoint* m_pWatchPointContainer;
+    INT m_CurrentGuardWatchPoint;
+    INT m_GuardWatchPointPingPongDir;
+    TArrayNoInit<INT> m_GuardWatchPointRandomOrder;
+    FLOAT m_fRemainingWatchDuration;
+    BITFIELD m_bWatchHasCycled:1;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubProcessWatchPoints
+
+    DECLARE_CLASS(UDisAISubProcessWatchPoints,UDisAISubProcessWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubProcessWolfHoundCount: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 112)
+class UDisAISubProcessWolfHoundCount : public UDisAISubProcess
+{
+public:
+    //## BEGIN PROPS DisAISubProcessWolfHoundCount
+    BITFIELD m_bCountWolfhounds:1;
+    FLOAT m_fTimerToStim;
+    //## END PROPS DisAISubProcessWolfHoundCount
+
+    DECLARE_CLASS(UDisAISubProcessWolfHoundCount,UDisAISubProcess,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNativeState: retail sizeof 64, reflected span 56..64 (2012 PDB sizeof 64)
+class UDishonoredNativeState : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredNativeState
+    class UDishonoredNativeStateMachine* m_pStateMachine;
+    BITFIELD m_bAllowRequestExitWhenPending:1;
+    //## END PROPS DishonoredNativeState
+
+    DECLARE_ABSTRACT_CLASS(UDishonoredNativeState,UObject,0,DishonoredGame)
+};
+
+struct DisAISubState_eventRequestStateExitCallback_Parms
+{
+    class UDishonoredNativeState* _pThisState;
+    DisAISubState_eventRequestStateExitCallback_Parms(EEventParm)
+    {
+    }
+};
+struct DisAISubState_eventRefreshCallback_Parms
+{
+    class UDisAISubState* _pThisState;
+    FLOAT _fTimeSinceLastThought;
+    DisAISubState_eventRefreshCallback_Parms(EEventParm)
+    {
+    }
+};
+struct DisAISubState_eventTickCallback_Parms
+{
+    class UDishonoredNativeState* _pThisState;
+    FLOAT _fDeltaSeconds;
+    DisAISubState_eventTickCallback_Parms(EEventParm)
+    {
+    }
+};
+struct DisAISubState_eventOnExitCallback_Parms
+{
+    class UDishonoredNativeState* _pThisState;
+    class UDishonoredNativeState* _pNextState;
+    DisAISubState_eventOnExitCallback_Parms(EEventParm)
+    {
+    }
+};
+struct DisAISubState_eventOnResetCallback_Parms
+{
+    class UDishonoredNativeState* _pThisState;
+    DisAISubState_eventOnResetCallback_Parms(EEventParm)
+    {
+    }
+};
+struct DisAISubState_eventOnEnterCallback_Parms
+{
+    class UDishonoredNativeState* _pThisState;
+    class UDishonoredNativeState* _pLastState;
+    DisAISubState_eventOnEnterCallback_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisAISubState: retail sizeof 204, reflected span 64..204 (2012 PDB sizeof 204)
+class UDisAISubState : public UDishonoredNativeState, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisAISubState
+    FName m_StateSuffix;
+    class UDisTweaks_AISubState* m_pSubStateTweaks;
+    class UDishonoredAIBrain* m_pOwningBrain;
+    class UDishonoredAIBehavior* m_pOwningBehavior;
+    FPointer m_pFilterStimMask;
+    BITFIELD m_bIsSubStatePaused:1;
+    FDisBodyIntention m_BodyIntentionBeforeEnterState;
+    FDisAttentionProxy m_ActionTargetProxy;
+    TScriptInterface<class IDisDesiresInterface> m_pDesires;
+    FScriptDelegate __OnEnterCallback__Delegate;
+    FScriptDelegate __OnResetCallback__Delegate;
+    FScriptDelegate __OnExitCallback__Delegate;
+    FScriptDelegate __TickCallback__Delegate;
+    FScriptDelegate __RefreshCallback__Delegate;
+    FScriptDelegate __RequestStateExitCallback__Delegate;
+    //## END PROPS DisAISubState
+
+    void delegateRequestStateExitCallback(class UDishonoredNativeState* _pThisState)
+    {
+        DisAISubState_eventRequestStateExitCallback_Parms Parms(EC_EventParm);
+        Parms._pThisState=_pThisState;
+        ProcessDelegate(DISHONOREDGAME_RequestStateExitCallback,&__RequestStateExitCallback__Delegate,&Parms);
+    }
+    void delegateRefreshCallback(class UDisAISubState* _pThisState,FLOAT _fTimeSinceLastThought)
+    {
+        DisAISubState_eventRefreshCallback_Parms Parms(EC_EventParm);
+        Parms._pThisState=_pThisState;
+        Parms._fTimeSinceLastThought=_fTimeSinceLastThought;
+        ProcessDelegate(DISHONOREDGAME_RefreshCallback,&__RefreshCallback__Delegate,&Parms);
+    }
+    void delegateTickCallback(class UDishonoredNativeState* _pThisState,FLOAT _fDeltaSeconds)
+    {
+        DisAISubState_eventTickCallback_Parms Parms(EC_EventParm);
+        Parms._pThisState=_pThisState;
+        Parms._fDeltaSeconds=_fDeltaSeconds;
+        ProcessDelegate(DISHONOREDGAME_TickCallback,&__TickCallback__Delegate,&Parms);
+    }
+    void delegateOnExitCallback(class UDishonoredNativeState* _pThisState,class UDishonoredNativeState* _pNextState)
+    {
+        DisAISubState_eventOnExitCallback_Parms Parms(EC_EventParm);
+        Parms._pThisState=_pThisState;
+        Parms._pNextState=_pNextState;
+        ProcessDelegate(DISHONOREDGAME_OnExitCallback,&__OnExitCallback__Delegate,&Parms);
+    }
+    void delegateOnResetCallback(class UDishonoredNativeState* _pThisState)
+    {
+        DisAISubState_eventOnResetCallback_Parms Parms(EC_EventParm);
+        Parms._pThisState=_pThisState;
+        ProcessDelegate(DISHONOREDGAME_OnResetCallback,&__OnResetCallback__Delegate,&Parms);
+    }
+    void delegateOnEnterCallback(class UDishonoredNativeState* _pThisState,class UDishonoredNativeState* _pLastState)
+    {
+        DisAISubState_eventOnEnterCallback_Parms Parms(EC_EventParm);
+        Parms._pThisState=_pThisState;
+        Parms._pLastState=_pLastState;
+        ProcessDelegate(DISHONOREDGAME_OnEnterCallback,&__OnEnterCallback__Delegate,&Parms);
+    }
+    DECLARE_ABSTRACT_CLASS(UDisAISubState,UDishonoredNativeState,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateWithDesires: retail sizeof 208, reflected span 204..208 (2012 PDB sizeof 208)
+class UDisAISubStateWithDesires : public UDisAISubState, public IDisDesiresInterface
+{
+public:
+    //## BEGIN PROPS DisAISubStateWithDesires
+    //## END PROPS DisAISubStateWithDesires
+
+    DECLARE_ABSTRACT_CLASS(UDisAISubStateWithDesires,UDisAISubState,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateCower: retail sizeof 332, reflected span 208..332 (2012 PDB sizeof 332)
+class UDisAISubStateCower : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateCower
+    class UDisFleeComponent* m_pCurrentFleeComponent;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    FDisAttentionProxy m_EnemyProxy;
+    //## END PROPS DisAISubStateCower
+
+    DECLARE_CLASS(UDisAISubStateCower,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+struct DisAISubStateFlee_eventThreatTerminatedCallback_Parms
+{
+    class UDisAISubStateFlee* pSubSate;
+    DisAISubStateFlee_eventThreatTerminatedCallback_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisAISubStateFlee: retail sizeof 344, reflected span 208..344 (2012 PDB sizeof 344)
+class UDisAISubStateFlee : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateFlee
+    class AActor* m_pThreat;
+    class UDisFleeComponent* m_pCurrentFleeComponent;
+    BYTE m_eCurrentPathfindStage;
+    BITFIELD m_bFleeHasStartedMoving:1;
+    BITFIELD m_bForReal:1;
+    FDisLocoRequest m_LocoRequest;
+    FStringNoInit m_sFleeDestinationDesc;
+    FScriptDelegate __ThreatTerminatedCallback__Delegate;
+    //## END PROPS DisAISubStateFlee
+
+    void delegateThreatTerminatedCallback(class UDisAISubStateFlee* pSubSate)
+    {
+        DisAISubStateFlee_eventThreatTerminatedCallback_Parms Parms(EC_EventParm);
+        Parms.pSubSate=pSubSate;
+        ProcessDelegate(DISHONOREDGAME_ThreatTerminatedCallback,&__ThreatTerminatedCallback__Delegate,&Parms);
+    }
+    DECLARE_CLASS(UDisAISubStateFlee,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+struct DisAISubStateFollow_eventNoMoreTargetCallback_Parms
+{
+    DisAISubStateFollow_eventNoMoreTargetCallback_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisAISubStateFollow: retail sizeof 336, reflected span 208..336 (2012 PDB sizeof 336)
+class UDisAISubStateFollow : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateFollow
+    FFollowParameters m_FollowParameters;
+    class ADishonoredPawn* m_pFollowedPawn;
+    BITFIELD m_bHaveNewParameters:1;
+    FDisLocoRequest m_LocoRequest;
+    FScriptDelegate __NoMoreTargetCallback__Delegate;
+    //## END PROPS DisAISubStateFollow
+
+    void delegateNoMoreTargetCallback()
+    {
+        DisAISubStateFollow_eventNoMoreTargetCallback_Parms Parms(EC_EventParm);
+        ProcessDelegate(DISHONOREDGAME_NoMoreTargetCallback,&__NoMoreTargetCallback__Delegate,&Parms);
+    }
+    DECLARE_CLASS(UDisAISubStateFollow,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateGenericAction: retail sizeof 224, reflected span 204..224 (2012 PDB sizeof 224)
+class UDisAISubStateGenericAction : public UDisAISubState
+{
+public:
+    //## BEGIN PROPS DisAISubStateGenericAction
+    BYTE m_ActionID;
+    BYTE m_GenericActionState;
+    INT m_GroupIdx;
+    INT m_ChainStep;
+    BITFIELD m_bUseDualPlayAnim:1;
+    BITFIELD m_bFetchTweaksValues:1;
+    FLOAT m_fGiveUpTimer;
+    //## END PROPS DisAISubStateGenericAction
+
+    DECLARE_CLASS(UDisAISubStateGenericAction,UDisAISubState,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateInit: retail sizeof 204, reflected span 204..204 (2012 PDB sizeof 204)
+class UDisAISubStateInit : public UDisAISubState
+{
+public:
+    //## BEGIN PROPS DisAISubStateInit
+    //## END PROPS DisAISubStateInit
+
+    DECLARE_CLASS(UDisAISubStateInit,UDisAISubState,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNativeStateMachine: retail sizeof 188, reflected span 56..188 (2012 PDB sizeof 188)
+class UDishonoredNativeStateMachine : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredNativeStateMachine
+    TMap<class UClass*,class UDishonoredNativeState*> m_NativeStateMap;  // DISHONORED(layout): retail SDK gap @56: MapProperty m_NativeStateMap (script_classes_2013), type from the 2012 PDB
+    TArrayNoInit<BYTE> m_DefaultStateParam;
+    class UDishonoredNativeState* m_pCurrentState;
+    class UClass* m_pCurrentStateID;
+    class UClass* m_pPendingStateID;
+    class UDishonoredNativeState* m_pPendingState;
+    class UDishonoredNativeState* m_pPartiallyLoadedState;
+    TArrayNoInit<class UDishonoredNativeState*> m_NativeStates;
+    class UObject* m_pManagedObject;
+    BITFIELD m_bIsLocked:1;
+    BITFIELD m_bDestroyFSMCalled:1;
+    class UDisNativeStateTransitionLogic* m_pTransitionLogic;
+    TArrayNoInit<FDisNativeFSMRejectedInfo> m_Debug_FailedStates;
+    FLOAT m_fDebug_KeepFailedStateTime;
+    //## END PROPS DishonoredNativeStateMachine
+
+    DECLARE_CLASS(UDishonoredNativeStateMachine,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+};
+
+// DishonoredGame.DisAISubStateMachine: retail sizeof 208, reflected span 188..208 (2012 PDB sizeof 208)
+class UDisAISubStateMachine : public UDishonoredNativeStateMachine
+{
+public:
+    //## BEGIN PROPS DisAISubStateMachine
+    INT m_CurrentAISubStateIndex;
+    class UDisAISubState* m_pCurrentAISubState;
+    BITFIELD m_bIsInTheProcessOfResetting:1;
+    INT m_PendingAISubStateIndex;
+    class UDisTweaks_AISubState* m_pPendingAISubStateTweaks;
+    //## END PROPS DisAISubStateMachine
+
+    DECLARE_CLASS(UDisAISubStateMachine,UDishonoredNativeStateMachine,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateMaintainDistance: retail sizeof 416, reflected span 208..416 (2012 PDB sizeof 416)
+class UDisAISubStateMaintainDistance : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateMaintainDistance
+    FDisAttentionProxy m_Focus;
+    FLOAT m_fIdealDistance;
+    BYTE m_eCurrentStage;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubStateMaintainDistance
+
+    DECLARE_CLASS(UDisAISubStateMaintainDistance,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateMenace: retail sizeof 332, reflected span 208..332 (2012 PDB sizeof 332)
+class UDisAISubStateMenace : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateMenace
+    FDisAttentionProxy m_EnemyProxy;
+    FLOAT m_fTauntTimer;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateMenace
+
+    DECLARE_CLASS(UDisAISubStateMenace,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateStand: retail sizeof 460, reflected span 208..460 (2012 PDB sizeof 460)
+class UDisAISubStateStand : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateStand
+    FDisLocRot m_Position;
+    BITFIELD m_bAccurateStop:1;
+    BITFIELD m_bExactRotation:1;
+    BITFIELD m_bNeedsRotationFocus:1;
+    BITFIELD m_bRotationFocusDisabled:1;
+    BITFIELD m_bReadyToFocus:1;
+    BITFIELD m_bAlwaysStrafe:1;
+    class AActor* m_pFocusActor;
+    FDisAttentionProxy m_FocusProxy;
+    BYTE m_eDesiredBodyStance;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisAISubStateStand
+
+    DECLARE_CLASS(UDisAISubStateStand,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateTakePosition: retail sizeof 512, reflected span 208..512 (2012 PDB sizeof 512)
+class UDisAISubStateTakePosition : public UDisAISubStateWithDesires
+{
+public:
+    //## BEGIN PROPS DisAISubStateTakePosition
+    BITFIELD m_bDestinationReached:1;
+    BITFIELD m_bRotationReached:1;
+    BITFIELD m_bRotationFocusSet:1;
+    BITFIELD m_bFullSpeed:1;
+    BITFIELD m_bExactRotation:1;
+    FDisLocRot m_lrDestination;
+    BYTE m_StopType;
+    BYTE m_eTakePosRotationTarget;
+    class AActor* m_pFocusTarget;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisAISubStateTakePosition
+
+    DECLARE_CLASS(UDisAISubStateTakePosition,UDisAISubStateWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAISubStateTakeActorPosition: retail sizeof 520, reflected span 512..520 (2012 PDB sizeof 520)
+class UDisAISubStateTakeActorPosition : public UDisAISubStateTakePosition
+{
+public:
+    //## BEGIN PROPS DisAISubStateTakeActorPosition
+    class AActor* m_pDestinationActor;
+    FLOAT m_fMinAllowedDistanceFromActor;
+    //## END PROPS DisAISubStateTakeActorPosition
+
+    DECLARE_CLASS(UDisAISubStateTakeActorPosition,UDisAISubStateTakePosition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisActorFactoryNPCPawn: retail sizeof 100, reflected span 88..100 (2012 PDB sizeof 100)
+class UDisActorFactoryNPCPawn : public UActorFactory
+{
+public:
+    //## BEGIN PROPS DisActorFactoryNPCPawn
+    class UClass* m_pNPCPawnClass;
+    class UDisTweaks_NPCPawn* m_pNPCPawnTweaks;
+    class ADishonoredSpawner* m_pSpawner;
+    //## END PROPS DisActorFactoryNPCPawn
+
+    DECLARE_CLASS(UDisActorFactoryNPCPawn,UActorFactory,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisActorFactoryTweakObj: retail sizeof 92, reflected span 88..92 (2012 PDB sizeof 92)
+class UDisActorFactoryTweakObj : public UActorFactory
+{
+public:
+    //## BEGIN PROPS DisActorFactoryTweakObj
+    class UDisTweaksBase* m_pTweakObject;
+    //## END PROPS DisActorFactoryTweakObj
+
+    DECLARE_CLASS(UDisActorFactoryTweakObj,UActorFactory,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisAkComponent: retail sizeof 168, reflected span 108..168 (2012 PDB sizeof 168)
+class UDisAkComponent : public UAkComponent
+{
+public:
+    //## BEGIN PROPS DisAkComponent
+    FDisAudioPropagationCache m_PropagationCache;
+    //## END PROPS DisAkComponent
+
+    DECLARE_CLASS(UDisAkComponent,UAkComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAlarmBellComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisAlarmBellComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisAlarmBellComponent
+    //## END PROPS DisAlarmBellComponent
+
+    DECLARE_CLASS(UDisAlarmBellComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAlarmGlobalManager: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisAlarmGlobalManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisAlarmGlobalManager
+    FLOAT m_fAlarmCooldown;
+    class ADisAlarmBell* m_pHeadAlarmBell;
+    FLOAT m_fAlarmCooldownTimer;
+    class ADisAlarmBell* m_pCurrentAlarmBeingTriggered;
+    INT m_NumActiveTriggerAlarms;
+    //## END PROPS DisAlarmGlobalManager
+
+    DECLARE_CLASS(UDisAlarmGlobalManager,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Level");}
+};
+
+// DishonoredGame.DisAmbushComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisAmbushComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisAmbushComponent
+    //## END PROPS DisAmbushComponent
+
+    DECLARE_CLASS(UDisAmbushComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAmbushGlobalManager: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisAmbushGlobalManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisAmbushGlobalManager
+    FPointer m_pAmbushPointHash;
+    INT m_AmbushPointCount;
+    TArrayNoInit<FDisAmbushReservation> m_AmbushReservations;
+    //## END PROPS DisAmbushGlobalManager
+
+    DECLARE_CLASS(UDisAmbushGlobalManager,UObject,0,DishonoredGame)
+    DECLARE_WITHIN(ADishonoredGameInfo)
+};
+
+// DishonoredGame.DisRenderProxyComponent: retail sizeof 464, reflected span 452..464 (2012 PDB sizeof 464)
+class UDisRenderProxyComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisRenderProxyComponent
+    BITFIELD m_bOnlyRenderIfSelected:1;
+    BITFIELD m_bShowBoxBounds:1;
+    BITFIELD m_bShowCylinderBounds:1;
+    FColor m_BoxBoundsColor;
+    FColor m_CylinderBoundsColor;
+    //## END PROPS DisRenderProxyComponent
+
+    DECLARE_CLASS(UDisRenderProxyComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAmbushRenderProxyComponent: retail sizeof 464, reflected span 464..464 (2012 PDB sizeof 464)
+class UDisAmbushRenderProxyComponent : public UDisRenderProxyComponent
+{
+public:
+    //## BEGIN PROPS DisAmbushRenderProxyComponent
+    //## END PROPS DisAmbushRenderProxyComponent
+
+    DECLARE_CLASS(UDisAmbushRenderProxyComponent,UDisRenderProxyComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimDefinitions: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisAnimDefinitions : public UObject
+{
+public:
+    //## BEGIN PROPS DisAnimDefinitions
+    TArrayNoInit<FDisAnimationChain> m_Animations;
+    //## END PROPS DisAnimDefinitions
+
+    DECLARE_CLASS(UDisAnimDefinitions,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimStateComponent: retail sizeof 284, reflected span 56..284 (2012 PDB sizeof 284)
+class UDisAnimStateComponent : public UObject
+{
+public:
+    //## BEGIN PROPS DisAnimStateComponent
+    TScriptInterface<class IDisAnimStateOwnerInterface> m_pAnimStateOwner;
+    TArrayNoInit<FDisAnimState_Picker> m_StatePickers;
+    TMap<FDisCustomSeqMapEntry,class UAnimNodeSequence*> m_AliasNodeMap;  // DISHONORED(layout): retail SDK gap @76: MapProperty m_AliasNodeMap (script_classes_2013), type from the 2012 PDB
+    FDisAnimStateSeqHistory m_AnimSeqHistory[12];
+    INT m_iCurNewestSeqInHistory;
+    //## END PROPS DisAnimStateComponent
+
+    DECLARE_CLASS(UDisAnimStateComponent,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimStatePool: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisAnimStatePool : public UObject
+{
+public:
+    //## BEGIN PROPS DisAnimStatePool
+    TArrayNoInit<FDisAnimTreePool> m_AnimTreePools;
+    //## END PROPS DisAnimStatePool
+
+    DECLARE_CLASS(UDisAnimStatePool,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAttentionDefs: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisAttentionDefs : public UObject
+{
+public:
+    //## BEGIN PROPS DisAttentionDefs
+    //## END PROPS DisAttentionDefs
+
+    DECLARE_ABSTRACT_CLASS(UDisAttentionDefs,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAttentionInfo_Base: retail sizeof 140, reflected span 56..140 (2012 PDB sizeof 140)
+class UDisAttentionInfo_Base : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisAttentionInfo_Base
+    class UDisTweaksBase* m_pAttentionTweaks;
+    BYTE m_PreviousRelationship;
+    BYTE m_WitnessDeathState;
+    BYTE m_bPsychicFlags;
+    BITFIELD m_bReactToHandledCorpses:1;
+    BITFIELD m_bIgnoreAllCorpses:1;
+    FLOAT m_fClearTimer;
+    FDisAttentionProxyInfo m_ProxyInfo;
+    //## END PROPS DisAttentionInfo_Base
+
+    DECLARE_ABSTRACT_CLASS(UDisAttentionInfo_Base,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAttentionInfo_Complex: retail sizeof 1644, reflected span 140..1644 (2012 PDB sizeof 1644)
+class UDisAttentionInfo_Complex : public UDisAttentionInfo_Base
+{
+public:
+    //## BEGIN PROPS DisAttentionInfo_Complex
+    FDisLeakyAccumulator m_AttentionAccumulator;
+    FLOAT m_StopThresholds[4];
+    BYTE m_CurrentAttentionLevel;
+    BYTE m_MinAttentionLevel[6];
+    BYTE m_ProxyAttachmentState;
+    FDisAttentionChangeReason m_MostRecentChangeReason;
+    FLOAT m_fPreviousAttentionValue;
+    class ADisAlarmBell* m_pHeardAlarm;
+    FDisAttentionPendingChangeAmount m_PendingAttentionChangeAmount[21];
+    FDisAttentionPendingChange m_PendingAttentionChange[21];
+    BITFIELD m_bHasLOS:1;
+    BITFIELD m_bIsSighted:1;
+    BITFIELD m_bIsTouched:1;
+    BITFIELD m_bIsPsychic:1;
+    BITFIELD m_bIsWithinHideout:1;
+    BITFIELD m_bProxyUpdated:1;
+    BITFIELD m_bDebug_FinalVisLevelIsClamped:1;
+    FLOAT m_fLastLOSDistance;
+    FLOAT m_fDebug_RawDistance;
+    FLOAT m_fDebug_FinalVisLevel_Clamped;
+    FLOAT m_fDebug_FinalVisLevel_Unclamped;
+    FLOAT m_fDebug_AttentionAccumulationRate;
+    FLOAT m_fDebug_AttentionDrainRate;
+    TArrayNoInit<FDisAttentionChangeDebugInfo> m_Debug_AttentionChangeInfos;
+    FDisTickAttentionParams_PawnAttentionTweaks m_PawnAttentionTweaks;  // DISHONORED(layout): native, 2012 PDB @1336, retail @1336 (SDK gap)
+    FDisTickAttentionParams_AttentionTargetTweaks m_AttentionTargetTweaks;  // DISHONORED(layout): native, 2012 PDB @1544, retail @1544 (SDK gap)
+    FLOAT m_fProxyDetachTimer;
+    //## END PROPS DisAttentionInfo_Complex
+
+    DECLARE_CLASS(UDisAttentionInfo_Complex,UDisAttentionInfo_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAttentionInfo_Simple: retail sizeof 160, reflected span 140..160 (2012 PDB sizeof 160)
+class UDisAttentionInfo_Simple : public UDisAttentionInfo_Base
+{
+public:
+    //## BEGIN PROPS DisAttentionInfo_Simple
+    BITFIELD m_bHasLOS:1;
+    BITFIELD m_bIsSighted:1;
+    BITFIELD m_bIsPsychic:1;
+    BITFIELD m_bGotInstantaneousAttention:1;
+    BITFIELD m_bIsDumb:1;
+    BITFIELD m_bIsBlind:1;
+    BITFIELD m_bIsDeaf:1;
+    BITFIELD m_bIsNumb:1;
+    BITFIELD m_bAttentionActive:1;
+    BYTE m_MinAttentionLevelFlags;
+    FLOAT m_fRemainingAttentionTime;
+    class UDisAttentionInfo_Simple* m_pSimpleAttnInfoFreeList_Next;
+    FLOAT m_fDebug_FinalCorpseVisibility;
+    //## END PROPS DisAttentionInfo_Simple
+
+    DECLARE_CLASS(UDisAttentionInfo_Simple,UDisAttentionInfo_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAttentionTargetComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisAttentionTargetComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisAttentionTargetComponent
+    //## END PROPS DisAttentionTargetComponent
+
+    DECLARE_CLASS(UDisAttentionTargetComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAudioListenerTestComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisAudioListenerTestComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisAudioListenerTestComponent
+    //## END PROPS DisAudioListenerTestComponent
+
+    DECLARE_CLASS(UDisAudioListenerTestComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAudioPropagationInfo: retail sizeof 108, reflected span 56..108 (2012 PDB sizeof 108)
+class UDisAudioPropagationInfo : public UAudioPropagationInfo
+{
+public:
+    //## BEGIN PROPS DisAudioPropagationInfo
+    FLOAT m_fMaxAudibleDistance;
+    FLOAT m_fDistCoeff;
+    INT m_NumPaths;
+    TArrayNoInit<BYTE> m_PathData;
+    TArrayNoInit<class ADishonoredAudioVolume*> m_Cells;
+    TArrayNoInit<class ADishonoredAudioPortal*> m_Portals;
+    INT m_BuildTag;
+    //## END PROPS DisAudioPropagationInfo
+
+    DECLARE_CLASS(UDisAudioPropagationInfo,UAudioPropagationInfo,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorAttentionBase: retail sizeof 176, reflected span 160..176 (new in 2013)
+class UDisBehaviorAttentionBase : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorAttentionBase
+    FDisAttentionProxy m_AttentionTargetProxy;
+    //## END PROPS DisBehaviorAttentionBase
+
+    DECLARE_CLASS(UDisBehaviorAttentionBase,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorBattleVictory: retail sizeof 468, reflected span 160..468 (2012 PDB sizeof 468)
+class UDisBehaviorBattleVictory : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorBattleVictory
+    FDisAttentionProxy m_EnemyProxy;
+    FLOAT m_BattleVictoryTimer;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorBattleVictory
+
+    DECLARE_CLASS(UDisBehaviorBattleVictory,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorBlockingDialog: retail sizeof 276, reflected span 160..276 (2012 PDB sizeof 276)
+class UDisBehaviorBlockingDialog : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorBlockingDialog
+    FDisFaceToRequest m_FaceToRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    BITFIELD m_bRotationReached:1;
+    BITFIELD m_bForceFinish:1;
+    class AActor* m_pLastConvoLookTarget;
+    INT m_iDlgRunningInstanceID;
+    //## END PROPS DisBehaviorBlockingDialog
+
+    DECLARE_CLASS(UDisBehaviorBlockingDialog,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorEscapeExplosion: retail sizeof 288, reflected span 160..288 (2012 PDB sizeof 204)
+class UDisBehaviorEscapeExplosion : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorEscapeExplosion
+    BITFIELD m_bFinished:1;
+    FVector m_vEscapePosition;
+    class AActor* m_pExplodingActor;
+    FLOAT m_fEscapeEndTimer;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    FDisFaceToRequest m_FaceToRequest;
+    //## END PROPS DisBehaviorEscapeExplosion
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execThreatTerminatedCallback_Flee);
+    DECLARE_FUNCTION(execRequestStateExitCallback_Flee);
+    DECLARE_FUNCTION(execRefreshCallback_Flee);
+    DECLARE_FUNCTION(execOnEnterCallback_Flee);
+    DECLARE_CLASS(UDisBehaviorEscapeExplosion,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorEscapePlague: retail sizeof 184, reflected span 156..184 (2012 PDB sizeof 184)
+class UDisBehaviorEscapePlague : public UDishonoredAIBehavior
+{
+public:
+    //## BEGIN PROPS DisBehaviorEscapePlague
+    BITFIELD m_bFinished:1;
+    FVector m_vEscapePosition;
+    TArrayNoInit<class ADishonoredPawn*> m_pPlagueSources;
+    //## END PROPS DisBehaviorEscapePlague
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
+    DECLARE_FUNCTION(execRefreshCallback_TakePosition);
+    DECLARE_FUNCTION(execOnResetCallback_TakePosition);
+    DECLARE_FUNCTION(execOnEnterCallback_TakePosition);
+    DECLARE_CLASS(UDisBehaviorEscapePlague,UDishonoredAIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorFollow: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 160)
+class UDisBehaviorFollow : public UDishonoredAIBehavior
+{
+public:
+    //## BEGIN PROPS DisBehaviorFollow
+    BITFIELD m_bIsFinished:1;
+    //## END PROPS DisBehaviorFollow
+
+    DECLARE_FUNCTION(execNoMoreTargetCallback_Follow);
+    DECLARE_CLASS(UDisBehaviorFollow,UDishonoredAIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorGoHome: retail sizeof 392, reflected span 160..392 (2012 PDB sizeof 392)
+class UDisBehaviorGoHome : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorGoHome
+    BITFIELD m_bFinishedTethering:1;
+    BITFIELD m_bOutsideTheTetherZone:1;
+    BITFIELD m_bRotationReached:1;
+    BYTE m_ExcuseAnim;
+    class ADisTetherVolume* m_pTetherVolume;
+    FDisAttentionProxy m_EnemyProxy;
+    FVector m_EnemyStartingPosition;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorGoHome
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
+    DECLARE_FUNCTION(execRefreshCallback_Menace);
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
+    DECLARE_FUNCTION(execRefreshCallback_TakePosition);
+    DECLARE_FUNCTION(execOnEnterCallback_TakePosition);
+    DECLARE_CLASS(UDisBehaviorGoHome,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorGoTo_Base: retail sizeof 384, reflected span 160..384 (2012 PDB sizeof 384)
+class UDisBehaviorGoTo_Base : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorGoTo_Base
+    BYTE m_GoToStage;
+    BYTE m_TransitSpeed;
+    BITFIELD m_bIsFinished:1;
+    BITFIELD m_bSuccess:1;
+    BITFIELD m_bAccurateStop:1;
+    BITFIELD m_bExactRotation:1;
+    BITFIELD m_bDoRotationAlign:1;
+    BITFIELD m_bHasReachedDestination:1;
+    class AActor* m_pDestinationActor;
+    FVector m_DestinationLocation;
+    FRotator m_DestinationRotation;
+    class UDisSeqAct_AIGoToActor* m_pAssociatedKismetGoToAction;
+    INT m_RotationYawTolerance_Fixed;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    //## END PROPS DisBehaviorGoTo_Base
+
+    DECLARE_ABSTRACT_CLASS(UDisBehaviorGoTo_Base,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorGoTo: retail sizeof 408, reflected span 384..408 (2012 PDB sizeof 408)
+class UDisBehaviorGoTo : public UDisBehaviorGoTo_Base
+{
+public:
+    //## BEGIN PROPS DisBehaviorGoTo
+    BITFIELD m_bInterruptable:1;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorGoTo
+
+    DECLARE_CLASS(UDisBehaviorGoTo,UDisBehaviorGoTo_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorGuard: retail sizeof 376, reflected span 160..376 (2012 PDB sizeof 376)
+class UDisBehaviorGuard : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorGuard
+    FDisAttentionProxy m_NeutralProxy;
+    FLOAT m_fGuardAwarenessRadius;
+    FLOAT m_fAttentionTimer;
+    class AActor* m_pGuardedActor;
+    BITFIELD m_bIsAtDestination:1;
+    FVector m_LocationWhenResumed;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    //## END PROPS DisBehaviorGuard
+
+    DECLARE_FUNCTION(execOnExitCallback_Stand);
+    DECLARE_FUNCTION(execRefreshCallback_Stand);
+    DECLARE_FUNCTION(execOnEnterCallback_Stand);
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
+    DECLARE_CLASS(UDisBehaviorGuard,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorIdle: retail sizeof 244, reflected span 160..244 (2012 PDB sizeof 244)
+class UDisBehaviorIdle : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorIdle
+    FDisFaceToRequest m_FaceToRequest;
+    //## END PROPS DisBehaviorIdle
+
+    DECLARE_CLASS(UDisBehaviorIdle,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorInhibited: retail sizeof 160, reflected span 156..160 (new in 2013)
+class UDisBehaviorInhibited : public UDishonoredAIBehavior
+{
+public:
+    //## BEGIN PROPS DisBehaviorInhibited
+    INT m_iNumInhibitors;
+    //## END PROPS DisBehaviorInhibited
+
+    DECLARE_CLASS(UDisBehaviorInhibited,UDishonoredAIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorInteract: retail sizeof 404, reflected span 160..404 (2012 PDB sizeof 404)
+class UDisBehaviorInteract : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorInteract
+    BITFIELD m_bFinished:1;
+    BITFIELD m_bDestinationReached:1;
+    BITFIELD m_bRotationReached:1;
+    FDisInteractInfo m_InteractInfo;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorInteract
+
+    DECLARE_FUNCTION(execOnExitCallback_Stand);
+    DECLARE_FUNCTION(execTickCallback_Stand);
+    DECLARE_FUNCTION(execOnExitCallback_TakePosition);
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
+    DECLARE_FUNCTION(execOnEnterCallback_TakePosition);
+    DECLARE_CLASS(UDisBehaviorInteract,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorMagicResponse: retail sizeof 192, reflected span 160..192 (2012 PDB sizeof 192)
+class UDisBehaviorMagicResponse : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorMagicResponse
+    BITFIELD m_bMagicResponseFinished:1;
+    BITFIELD m_bDisappeared:1;
+    BITFIELD m_bMagicUserIsAnAlly:1;
+    BITFIELD m_bHasBarked:1;
+    class UClass* m_pMagicType;
+    class ADishonoredPawn* m_pMagicUser;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorMagicResponse
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_CLASS(UDisBehaviorMagicResponse,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorNotice: retail sizeof 468, reflected span 176..468 (2012 PDB sizeof 468)
+class UDisBehaviorNotice : public UDisBehaviorAttentionBase
+{
+public:
+    //## BEGIN PROPS DisBehaviorNotice
+    BITFIELD m_bWantPeerAnim:1;
+    BITFIELD m_bFinished:1;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorNotice
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execOnExitCallback_Init);
+    DECLARE_FUNCTION(execOnEnterCallback_Init);
+    DECLARE_CLASS(UDisBehaviorNotice,UDisBehaviorAttentionBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorPanic: retail sizeof 400, reflected span 160..400 (2012 PDB sizeof 400)
+class UDisBehaviorPanic : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorPanic
+    FAIPanicThreat m_PanicThreat;
+    BITFIELD m_bIsFinished:1;
+    BITFIELD m_bCheckingFleeBeforePanicForPossibleCancellation:1;
+    FLOAT m_fFreeFlightTimer;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLocoRequest m_LocoRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorPanic
+
+    DECLARE_FUNCTION(execRefreshCallback_Cower);
+    DECLARE_FUNCTION(execRequestStateExitCallback_Cower);
+    DECLARE_FUNCTION(execRequestStateExitCallback_Flee);
+    DECLARE_FUNCTION(execRefreshCallback_Flee);
+    DECLARE_FUNCTION(execOnEnterCallback_Flee);
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execRefreshCallback_GenericAction);
+    DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
+    DECLARE_CLASS(UDisBehaviorPanic,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorPatrol: retail sizeof 284, reflected span 160..284 (2012 PDB sizeof 284)
+class UDisBehaviorPatrol : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorPatrol
+    FDisLookAtRequest m_LookAtRequest;
+    class ADishonoredRoute* m_pCurrentRoute;
+    INT m_CurrentIndex;
+    INT m_StartingIndex;
+    INT m_Repetitions;
+    BYTE m_RouteDirection;
+    FDisNonRepeatINTRandomHelper m_NonRepeatINTRandomHelper;
+    class ADishonoredNavPoint* m_pCurrentGuardPoint;
+    FLOAT m_fGuardTimer;
+    class AActor* m_pStartingActor;
+    //## END PROPS DisBehaviorPatrol
+
+    DECLARE_FUNCTION(execTickCallback_Stand);
+    DECLARE_FUNCTION(execOnEnterCallback_Stand);
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakeActorPosition);
+    DECLARE_FUNCTION(execTickCallback_TakeActorPosition);
+    DECLARE_CLASS(UDisBehaviorPatrol,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorRatStomp: retail sizeof 376, reflected span 160..376 (2012 PDB sizeof 376)
+class UDisBehaviorRatStomp : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorRatStomp
+    BITFIELD m_bFinished:1;
+    BITFIELD m_bRatReached:1;
+    BITFIELD m_bParalyzeRat:1;
+    class ADisGameCrowdAgentSkeletalRat* m_pRat;
+    FVector m_RatStartingLocation;
+    FLOAT m_fRatInteractionRadius;
+    FDisFaceToRequest m_FaceToRequest;
+    FDisLookAtRequest m_LookAtRequest;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorRatStomp
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakeActorPosition);
+    DECLARE_CLASS(UDisBehaviorRatStomp,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorReact: retail sizeof 268, reflected span 160..268 (2012 PDB sizeof 268)
+class UDisBehaviorReact : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorReact
+    BITFIELD m_bFinished:1;
+    BITFIELD m_bRotationReached:1;
+    BITFIELD m_bDoFaceTo:1;
+    BYTE m_eAnimationToPlay;
+    BYTE m_eBarkToPlay;
+    FVector m_ReactPos;
+    FLOAT m_fTerminateIn;
+    FDisFaceToRequest m_FaceToRequest;
+    //## END PROPS DisBehaviorReact
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
+    DECLARE_CLASS(UDisBehaviorReact,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorReturnTravel: retail sizeof 176, reflected span 160..176 (2012 PDB sizeof 176)
+class UDisBehaviorReturnTravel : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorReturnTravel
+    FVector m_ReturnDestination;
+    INT m_DestinationYaw;
+    //## END PROPS DisBehaviorReturnTravel
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
+    DECLARE_CLASS(UDisBehaviorReturnTravel,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorSoiree: retail sizeof 204, reflected span 160..204 (2012 PDB sizeof 200)
+class UDisBehaviorSoiree : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorSoiree
+    FGuid m_SoireeGUID;
+    BITFIELD m_bShouldForceFinish:1;
+    BYTE m_PendingBark;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorSoiree
+
+    DECLARE_CLASS(UDisBehaviorSoiree,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorStolen: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 160)
+class UDisBehaviorStolen : public UDishonoredAIBehavior
+{
+public:
+    //## BEGIN PROPS DisBehaviorStolen
+    BITFIELD m_bFinished:1;
+    //## END PROPS DisBehaviorStolen
+
+    DECLARE_CLASS(UDisBehaviorStolen,UDishonoredAIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBehaviorWeep: retail sizeof 204, reflected span 160..204 (2012 PDB sizeof 204)
+class UDisBehaviorWeep : public UDisAIBehaviorWithDesires
+{
+public:
+    //## BEGIN PROPS DisBehaviorWeep
+    FLOAT m_fBackToHomeTimer;
+    FLOAT m_fStandStillWeepingTimer;
+    FLOAT m_fCoughingTimer;
+    FLOAT m_fStartRunningTimer;
+    BITFIELD m_bIsFinished:1;
+    BYTE m_eWeepVariation;
+    FDisBodyIntentionRequest m_BodyIntentionRequest;
+    //## END PROPS DisBehaviorWeep
+
+    DECLARE_FUNCTION(execRequestStateExitCallback_DoWeaponManoeuver);
+    DECLARE_FUNCTION(execRequestStateExitCallback_Stand);
+    DECLARE_FUNCTION(execTickCallback_Stand);
+    DECLARE_FUNCTION(execOnEnterCallback_Stand);
+    DECLARE_FUNCTION(execRequestStateExitCallback_GenericAction);
+    DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
+    DECLARE_FUNCTION(execOnExitCallback_TakePosition);
+    DECLARE_FUNCTION(execOnEnterCallback_TakePosition);
+    DECLARE_FUNCTION(execRefreshCallback_TakePosition);
+    DECLARE_FUNCTION(execTickCallback_TakePosition);
+    DECLARE_CLASS(UDisBehaviorWeep,UDisAIBehaviorWithDesires,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBinkOverlayManager: retail sizeof 656, reflected span 56..656 (2012 PDB sizeof 656)
+class UDisBinkOverlayManager : public UArkBinkOverlayManager
+{
+public:
+    //## BEGIN PROPS DisBinkOverlayManager
+    FStringNoInit m_ContentPackageName;
+    FStringNoInit m_NormalFontName;
+    FStringNoInit m_TitleFontName;
+    FStringNoInit m_ButtonTextureName_Xenon;
+    FStringNoInit m_ButtonTextureName_PS3;
+    FStringNoInit m_ChapterTitleBgTextureName;
+    FDisBinkTextOverlayInfo m_MapNameTextInfo;
+    FDisBinkTextOverlayInfo m_HintTextInfo;
+    FDisBinkTextOverlayInfo m_LoadingTextInfo;
+    FDisBinkTextOverlayInfo m_PressToContinueTextInfo;
+    FDisBinkTextOverlayInfo m_ChapterTitleInfo;
+    FDisBinkTextOverlayInfo m_ChapterDescInfo;
+    FColor m_fMapNameShadowColor;
+    FLOAT m_fHintDuration;
+    FVector2D m_ButtonOffset;
+    FVector2D m_ChapterTitleBgOffset;
+    TArrayNoInit<FDisMapHintBinding> m_MapHintBindings;
+    FStringNoInit m_LoadingText;
+    FStringNoInit m_PressToContinueText_PC;
+    FStringNoInit m_PressToContinueText_Console;
+    FPointer m_pBinkMovie;
+    class UPackage* m_pContentPackage;
+    class UFont* m_pNormalFont;
+    class UFont* m_pTitleFont;
+    class UTexture2D* m_pButtonTexture;
+    class UTexture2D* m_pChapterTitleBgTexture;
+    BITFIELD m_bLoadingStarted:1;
+    BITFIELD m_bShowMapNameAndHints:1;
+    BITFIELD m_bCurrentHintSetUsingGamepad:1;
+    FLOAT m_fLoadingTime;
+    FStringNoInit m_MapName;
+    TArrayNoInit<FString> m_Hints;
+    TArrayNoInit<INT> m_HintOccurrences;
+    INT m_CurrentHintSetIndex;
+    FLOAT m_fCurrentHintTimer;
+    INT m_CurrentHintIndex;
+    FStringNoInit m_ChapterTitle;
+    FStringNoInit m_ChapterDescription;
+    FPointer m_pCriticalSection;
+    FStringNoInit m_SaveNotificationText;
+    FDisBinkTextOverlayInfo m_SaveNotificationTextInfo;
+    //## END PROPS DisBinkOverlayManager
+
+    DECLARE_CLASS(UDisBinkOverlayManager,UArkBinkOverlayManager,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("UI");}
+};
+
+// DishonoredGame.DisTutorialTracker: retail sizeof 64, reflected span 56..64 (2012 PDB sizeof 64)
+class UDisTutorialTracker : public UObject
+{
+public:
+    //## BEGIN PROPS DisTutorialTracker
+    INT m_TutorialID;
+    BITFIELD m_bEnabled:1;
+    //## END PROPS DisTutorialTracker
+
+    DECLARE_ABSTRACT_CLASS(UDisTutorialTracker,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisBlockTracker: retail sizeof 68, reflected span 64..68 (2012 PDB sizeof 68)
+class UDisBlockTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisBlockTracker
+    INT m_MissedBlockOpportunities;
+    //## END PROPS DisBlockTracker
+
+    DECLARE_CLASS(UDisBlockTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisCorpseDiscoveredTracker: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisCorpseDiscoveredTracker : public UObject
+{
+public:
+    //## BEGIN PROPS DisCorpseDiscoveredTracker
+    TArrayNoInit<FName> m_NPCNames;
+    //## END PROPS DisCorpseDiscoveredTracker
+
+    DECLARE_CLASS(UDisCorpseDiscoveredTracker,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDLC05BehaviorIdle: retail sizeof 244, reflected span 244..244 (new in 2013)
+class UDisDLC05BehaviorIdle : public UDisBehaviorIdle
+{
+public:
+    //## BEGIN PROPS DisDLC05BehaviorIdle
+    //## END PROPS DisDLC05BehaviorIdle
+
+    DECLARE_CLASS(UDisDLC05BehaviorIdle,UDisBehaviorIdle,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaksBase: retail sizeof 140, reflected span 56..140 (2012 PDB sizeof 140)
+class UDisTweaksBase : public UDisEngineTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaksBase
+    INT m_VersionNum;
+    TArrayNoInit<FDisTweakVersionBaseClass> m_BaseClassVersions;
+    FStringNoInit m_CustomMapWarning;
+    TArrayNoInit<FDisTweakFallbackInfo> m_FallbackSkip;
+    class UClass* m_pSpawnedObjectClass;
+    class UClass* m_pSpawnedObjectClass_Editor;
+    DOUBLE m_dFallbackTimeStamp;
+    BITFIELD m_bIsBeingEdited:1;
+    BITFIELD m_bFixupDefaultsCalled:1;
+    BITFIELD m_bLastSeenWithErrors:1;
+    BITFIELD m_bDidPostLoadErrorCheck:1;
+    BITFIELD m_bBeenLocalized:1;
+    BITFIELD m_bOnlyUseAsFallback:1;
+    TArrayNoInit<FDisTweakCookedFallback> m_FallbackChainCooked;
+    FName m_TweakNameCooked;
+    class UDisTweaksBase* m_pFallbackTweaks;
+    //## END PROPS DisTweaksBase
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaksBase,UDisEngineTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior: retail sizeof 168, reflected span 140..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior
+    BYTE m_DesignatedSlot;
+    TArrayNoInit<class UDisTweaks_AISubState*> m_SubStateTweaks;
+    TArrayNoInit<class UDisTweaks_AISubProcess*> m_SubProcessTweaks;
+    //## END PROPS DisTweaks_AIBehavior
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_AIBehavior,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Idle: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_Idle : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Idle
+    //## END PROPS DisTweaks_AIBehavior_Idle
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Idle,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDLC05Tweaks_AIBehavior_Idle: retail sizeof 168, reflected span 168..168 (new in 2013)
+class UDisDLC05Tweaks_AIBehavior_Idle : public UDisTweaks_AIBehavior_Idle
+{
+public:
+    //## BEGIN PROPS DisDLC05Tweaks_AIBehavior_Idle
+    //## END PROPS DisDLC05Tweaks_AIBehavior_Idle
+
+    DECLARE_CLASS(UDisDLC05Tweaks_AIBehavior_Idle,UDisTweaks_AIBehavior_Idle,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_KActor: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_KActor : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_KActor
+    class UClass* m_pContactTypeOverride;
+    FLOAT m_fMaxDrawDistance;
+    //## END PROPS DisTweaks_KActor
+
+    DECLARE_CLASS(UDisTweaks_KActor,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_StaticBreakable: retail sizeof 268, reflected span 148..268 (2012 PDB sizeof 268)
+class UDisTweaks_StaticBreakable : public UDisTweaks_KActor
+{
+public:
+    //## BEGIN PROPS DisTweaks_StaticBreakable
+    class UStaticMesh* m_pStaticMesh;
+    TArrayNoInit<class UMaterialInterface*> m_MaterialOverrides;
+    TArrayNoInit<class UMaterialInterface*> m_ChunkMaterialOverrides;
+    INT m_Health;
+    INT m_DamageThreshold;
+    FLOAT m_fCollisionSpeedToBreakWhenFallenOn;
+    TArrayNoInit<FDishonoredBreakableStep> m_Steps;
+    BITFIELD m_bFixed:1;
+    BITFIELD m_bAttachParticleSystem:1;
+    BITFIELD m_ParticleSystemIgnoresParentRotation:1;
+    BITFIELD m_bCanTakeCollisionDamageFromBreakableChunks:1;
+    BITFIELD m_bAttractsNPCs:1;
+    class UParticleSystem* m_pParticleSystem;
+    FVector m_ParticleSystemOffset;
+    INT m_DisableParticleSystemOnBreakStep;
+    INT m_WhichStepDropsLoot;
+    FLOAT m_fMinSpeedToCauseDamage;
+    FLOAT m_fMinSpeedToBeDamaged;
+    FLOAT m_fMinSpeedToBeDamagedOnDrop;
+    TArrayNoInit<class UClass*> m_pImmuneToDamageTypes;
+    TArrayNoInit<class UClass*> m_pInstantBreakDamageTypes;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_StaticBreakable
+
+    DECLARE_CLASS(UDisTweaks_StaticBreakable,UDisTweaks_KActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Movable: retail sizeof 284, reflected span 268..284 (2012 PDB sizeof 284)
+class UDisTweaks_Movable : public UDisTweaks_StaticBreakable
+{
+public:
+    //## BEGIN PROPS DisTweaks_Movable
+    FDisMovableParams m_MovableParams;
+    BITFIELD m_bBlocksPlayer:1;
+    BITFIELD m_bInteractable:1;
+    BITFIELD m_bTraceForMeleeEvenWhenAttached:1;
+    BITFIELD m_bIsKeyItem:1;
+    BITFIELD m_bNeverBlocksPlayer:1;
+    class UAkEvent* m_pGrabSound;
+    //## END PROPS DisTweaks_Movable
+
+    DECLARE_CLASS(UDisTweaks_Movable,UDisTweaks_StaticBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WhaleOilBattery: retail sizeof 352, reflected span 284..352 (2012 PDB sizeof 352)
+class UDisTweaks_WhaleOilBattery : public UDisTweaks_Movable
+{
+public:
+    //## BEGIN PROPS DisTweaks_WhaleOilBattery
+    INT m_NumberOfCharges;
+    INT m_InitialNumberOfCharges;
+    INT m_PawnChargeCost;
+    INT m_AmbientAnimalChargeCost;
+    INT m_WatchtowerChargeCost;
+    FLOAT m_fAvoidanceRadius;
+    FLOAT m_fEjectSpeed;
+    BITFIELD m_bIgnoreShield:1;
+    BITFIELD m_bVisibleAtLevel1:1;
+    BITFIELD m_bVisibleAtLevel2:1;
+    FLOAT m_fExplosionChainTimer;
+    TArrayNoInit<FMaterialChange> m_MaterialChangeOnChargeUse;
+    class UAkEvent* m_FuseStopEvent;
+    BYTE m_SoulMaterialToUse;
+    FStringNoInit m_EmptyName;
+    //## END PROPS DisTweaks_WhaleOilBattery
+
+    DECLARE_CLASS(UDisTweaks_WhaleOilBattery,UDisTweaks_Movable,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredCheatManager: retail sizeof 264, reflected span 92..264 (2012 PDB sizeof 260)
+class UDishonoredCheatManager : public UCheatManager
+{
+public:
+    //## BEGIN PROPS DishonoredCheatManager
+    BITFIELD m_bVerbose:1;
+    BITFIELD m_bDebugDialog:1;
+    BITFIELD m_bSkipGlobalDialogRules:1;
+    BITFIELD m_bDisplayBendTime:1;
+    BITFIELD m_bShowSpringRazorDebug:1;
+    BITFIELD m_bShowHeartDebug:1;
+    BITFIELD m_bShowRatDebug:1;
+    BITFIELD m_bBreakOnTargetedRat:1;
+    BITFIELD m_bHideDishonoredNotes:1;
+    BITFIELD m_bDormantDebugEnabled:1;
+    BITFIELD m_bHighlightCrosshairActor:1;
+    BITFIELD m_bDoorPoltergeistMode:1;
+    BITFIELD m_bVisSettingsMode:1;
+    BITFIELD m_bOverrideCorpseDropType:1;
+    BITFIELD m_bDebugBreakableCollision:1;
+    BITFIELD m_bNPCDisableLODSystem:1;
+    BITFIELD m_bDisableAvoidableSteering:1;
+    BITFIELD m_bDisableDangerSteering:1;
+    BITFIELD m_bDisableCombatSteering:1;
+    BITFIELD m_bDisableEnemyPushSteering:1;
+    BITFIELD m_bDisableWallSteering:1;
+    BITFIELD m_bDLC05TimerStopped:1;
+    BITFIELD m_bNPCGodMode:1;
+    BITFIELD m_NPCDodgeEverything:1;
+    BITFIELD m_NPCDodgeNothing:1;
+    BITFIELD m_bNPCForceFatality:1;
+    BITFIELD m_bNPCEasyDismemberment:1;
+    BITFIELD m_bAIDeaf:1;
+    BITFIELD m_bAIBlind:1;
+    BITFIELD m_bAINumb:1;
+    BITFIELD m_bAIDumb:1;
+    BITFIELD m_bAIOff:1;
+    BITFIELD m_bAIDontAttack:1;
+    BITFIELD m_bAITestGuns:1;
+    BITFIELD m_bAIDisableMagic:1;
+    BITFIELD m_bAIAutoPanic:1;
+    BITFIELD m_bAIAlwaysRingAlarm:1;
+    BITFIELD m_bAINeverRingAlarm:1;
+    BITFIELD m_bNPCSlowDeath:1;
+    BITFIELD m_bAIBeepWhenSeePlayer:1;
+    BITFIELD m_bNPCFreeze:1;
+    BITFIELD m_bNPCDisablePrediction:1;
+    BITFIELD m_bNPCDisableActionSpineBending:1;
+    BITFIELD m_bPauseOnPathFailure:1;
+    BITFIELD m_bAIAttentionLevelForced:1;
+    BITFIELD m_bAIUseSimpleAttentionInfoForPlayer:1;
+    BITFIELD m_bDisableSlopeOffset:1;
+    BITFIELD m_bPlayerDodgeEverything:1;
+    BITFIELD m_bPlayerDodgeNothing:1;
+    BITFIELD m_bPlayerForceReadyStance:1;
+    BITFIELD m_bPlayerDisableAssassinate:1;
+    BITFIELD m_bPlayerDisableFatality:1;
+    BITFIELD m_bPlayerDisableMeleeAssist:1;
+    BITFIELD m_bPlayerDisableTakeDamage:1;
+    BITFIELD m_bPlayerDisableStrongHitReaction:1;
+    BITFIELD m_bPlayerDisableKnockdown:1;
+    BITFIELD m_bPlayerInfiniteAmmo:1;
+    BITFIELD m_bBuddhaMode:1;
+    BITFIELD m_bPlayerShowNavMeshStatus:1;
+    BITFIELD m_bPlayerDisableAimAssist:1;
+    BITFIELD m_bPlayerDisableHomingArrow:1;
+    BITFIELD m_bForceProjectileKillCam:1;
+    BITFIELD m_bForceDramaticFatalities:1;
+    BITFIELD m_bEnableIronSight:1;
+    BITFIELD m_bPlayerInfiniteAdrenaline:1;
+    BITFIELD m_bPlayerNoAdrenalineCooldown:1;
+    BITFIELD m_bManaEnabled:1;
+    class ADisGameCrowdAgentSkeletalRat* m_pTargetedRat;
+    BYTE m_CorpseDropTypeOverride;
+    BYTE m_NPCVersusTestMode;
+    BYTE m_NPCParryTestMode;
+    BYTE m_AIForceAttentionLevel;
+    BYTE m_PlayerTestChain;
+    BYTE m_PlayerFixedFatalityMode;
+    BYTE m_PlayerFinishMoveForce;
+    BYTE m_PlayerForceDeathDirection;
+    BYTE m_PlayerAnimStateTest_Picker;
+    INT m_NPCPlayerVisibilityForLOD;
+    TArrayNoInit<FLOAT> m_ProgressiveSlomoDilatation;
+    FName m_SlomoModeName;
+    INT m_iProgressiveSlomoPlayerValueIndex;
+    INT m_iProgressiveSlomoWorldValueIndex;
+    FLOAT m_fStandardSlomoValueSlowed;
+    FLOAT m_fStandardSlomoValueAccelerated;
+    class ADishonoredNPCPawn* m_pTargetedAIPawn;
+    FLOAT m_fNPCDamageTestValue;
+    INT m_AISenseMaskToPlayer;
+    INT m_AISenseMaskToAIs;
+    FLOAT m_fAIShowThoughtsRadius;
+    TArrayNoInit<class UClass*> m_DisabledAIBehaviors;
+    TArrayNoInit<class UClass*> m_DisabledAISubStates;
+    FLOAT m_fNPCTravelDelay;
+    TArrayNoInit<BYTE> m_IgnoredAttentionTypes;
+    TArrayNoInit<BYTE> m_ExclusiveAttentionTypes;
+    INT m_CurrentBendTimePowerLevel;
+    FStringNoInit m_CheatItem_Package;
+    FLOAT m_fPlayerDamageTestValue;
+    FStringNoInit m_PlayerAnimStateTest_Anim;
+    //## END PROPS DishonoredCheatManager
+
+    DECLARE_FUNCTION(execDLC05StartChallenge);
+    DECLARE_FUNCTION(execDLC05UnlockExpertMode);
+    DECLARE_FUNCTION(execDLC05ToggleTimer);
+    DECLARE_FUNCTION(execIsAttentionTypeAllowed);
+    DECLARE_FUNCTION(execAttentionClearExclusiveType);
+    DECLARE_FUNCTION(execAttentionSetExclusiveType);
+    DECLARE_FUNCTION(execAttentionAddExclusiveType);
+    DECLARE_FUNCTION(execAttentionClearIgnoreType);
+    DECLARE_FUNCTION(execAttentionSetIgnoreType);
+    DECLARE_FUNCTION(execAttentionAddIgnoreType);
+    DECLARE_FUNCTION(execGiveAllUsableRequiredItems);
+    DECLARE_FUNCTION(execBlinkShowRangeFull);
+    DECLARE_FUNCTION(execBlinkShowRange);
+    DECLARE_FUNCTION(execDisSlomoCommand);
+    DECLARE_FUNCTION(execDisSlomoFull);
+    DECLARE_FUNCTION(execDisSlomo);
+    DECLARE_FUNCTION(execForceCorpseDropTypeOff);
+    DECLARE_FUNCTION(execForceCorpseDropType);
+    DECLARE_FUNCTION(execSetDebugMantleStepSize);
+    DECLARE_FUNCTION(execSetDebugMantleCheckTime);
+    DECLARE_FUNCTION(execNormalStepMantleEdgeFinder);
+    DECLARE_FUNCTION(execSingleStepMantleEdgeFinder);
+    DECLARE_FUNCTION(execSetVisSettingsLowVis);
+    DECLARE_FUNCTION(execSetVisSettingsHighVis);
+    DECLARE_FUNCTION(execStopVisSettingsMode);
+    DECLARE_FUNCTION(execStartVisSettingsMode);
+    DECLARE_FUNCTION(execGiveMoney);
+    DECLARE_FUNCTION(execGiveBoneCharm);
+    DECLARE_FUNCTION(execMinUpgrades);
+    DECLARE_FUNCTION(execMaxUpgrades);
+    DECLARE_FUNCTION(execRemoveUpgrade);
+    DECLARE_FUNCTION(execAddUpgrade);
+    DECLARE_FUNCTION(execReportDanglingPointers);
+    DECLARE_FUNCTION(execGetDifficulty);
+    DECLARE_FUNCTION(execSetDifficulty);
+    DECLARE_FUNCTION(execDebugDarkness);
+    DECLARE_FUNCTION(execAddDarkness);
+    DECLARE_FUNCTION(execToggleUsableHighlight);
+    DECLARE_FUNCTION(execToggleActorLightEnvironment);
+    DECLARE_FUNCTION(execLogDuplicateAnimSequences);
+    DECLARE_FUNCTION(execLogAnimSequences);
+    DECLARE_FUNCTION(execToggleRatProbingForGround);
+    DECLARE_FUNCTION(execSpawnRandomRatSwarm);
+    DECLARE_FUNCTION(execKillAllRats);
+    DECLARE_FUNCTION(execDebugRats);
+    DECLARE_FUNCTION(execDebugRat);
+    DECLARE_FUNCTION(execListActorTickTime);
+    DECLARE_FUNCTION(execListTickableActors);
+    DECLARE_FUNCTION(execListComponents);
+    DECLARE_FUNCTION(execTestNailing);
+    DECLARE_FUNCTION(execBendTimeDisplay);
+    DECLARE_FUNCTION(execBendTimeReport);
+    DECLARE_FUNCTION(execMinPowers);
+    DECLARE_FUNCTION(execMaxPowers);
+    DECLARE_FUNCTION(execRemovePower);
+    DECLARE_FUNCTION(execAddAttribute);
+    DECLARE_FUNCTION(execAddPower);
+    DECLARE_FUNCTION(execRemoveMod);
+    DECLARE_FUNCTION(execAddMod);
+    DECLARE_FUNCTION(execSingleStep_Native);
+    DECLARE_FUNCTION(execDialogSkipGlobalRules);
+    DECLARE_FUNCTION(execDebugDialog);
+    DECLARE_FUNCTION(execDebugToggleVerbose);
+    DECLARE_FUNCTION(execDebugMenuRight);
+    DECLARE_FUNCTION(execDebugMenuLeft);
+    DECLARE_FUNCTION(execDebugMenuDown);
+    DECLARE_FUNCTION(execDebugMenuUp);
+    DECLARE_FUNCTION(execDebugMenuEnter);
+    DECLARE_FUNCTION(execEndLiveSession);
+    DECLARE_FUNCTION(execCreateLiveSession);
+    DECLARE_FUNCTION(execWriteScoreToLeaderboard_Name);
+    DECLARE_FUNCTION(execWriteScoreToLeaderboard_ID);
+    DECLARE_FUNCTION(execGetLeaderboardsInfo_Name);
+    DECLARE_FUNCTION(execGetLeaderboardsInfo_ID);
+    DECLARE_FUNCTION(execResetAllSteamAchievements);
+    DECLARE_FUNCTION(execDeleteAllSteamSaveGames);
+    DECLARE_FUNCTION(execDLC05AddScore);
+    DECLARE_FUNCTION(execDLC05ShowChallenge);
+    DECLARE_FUNCTION(execShowStorePage);
+    DECLARE_FUNCTION(execSlack);
+    DECLARE_FUNCTION(execSwitchDLCLock);
+    DECLARE_FUNCTION(execGoreEnable);
+    DECLARE_FUNCTION(execGiveRunes);
+    DECLARE_FUNCTION(execShowPowerMenu);
+    DECLARE_FUNCTION(execDoorPoltergeistMode);
+    DECLARE_FUNCTION(execDormantDebugEnable);
+    DECLARE_FUNCTION(execDormantDebugToggle);
+    DECLARE_FUNCTION(execDestroyActor);
+    DECLARE_FUNCTION(execDisNoteShow);
+    DECLARE_FUNCTION(execDisNoteToggle);
+    DECLARE_FUNCTION(execNPCLogSteeringFlags);
+    DECLARE_FUNCTION(execNPCToggleSteeringWall);
+    DECLARE_FUNCTION(execNPCToggleSteeringEnemyPush);
+    DECLARE_FUNCTION(execNPCToggleSteeringCombat);
+    DECLARE_FUNCTION(execNPCToggleSteeringDanger);
+    DECLARE_FUNCTION(execNPCToggleSteeringAvoidable);
+    DECLARE_FUNCTION(execNPCToggleLookAtBlending);
+    DECLARE_FUNCTION(execNPCDelayTravel);
+    DECLARE_FUNCTION(execNPCSpawn);
+    DECLARE_FUNCTION(execNPCPlayerVisibilityForLOD);
+    DECLARE_FUNCTION(execNPCToggleLODSystem);
+    DECLARE_FUNCTION(execNPCClearForcedLOD);
+    DECLARE_FUNCTION(execNPCForceLODForAll);
+    DECLARE_FUNCTION(execNPCForceLOD);
+    DECLARE_FUNCTION(execNPCActionSpineBendingToggle);
+    DECLARE_FUNCTION(execNPCTogglePrediction);
+    DECLARE_FUNCTION(execNPCSetFreeze);
+    DECLARE_FUNCTION(execNPCFreeze);
+    DECLARE_FUNCTION(execNPCForceSkelMeshLOD);
+    DECLARE_FUNCTION(execNPCSlowDeath);
+    DECLARE_FUNCTION(execNPCToggleSlopeOffset);
+    DECLARE_FUNCTION(execNPCSlap);
+    DECLARE_FUNCTION(execNPCImpulse);
+    DECLARE_FUNCTION(execNPCKnockdown);
+    DECLARE_FUNCTION(execNPCBreakLinkedAction);
+    DECLARE_FUNCTION(execNPCSetDamage);
+    DECLARE_FUNCTION(execNPCEasyDismemberment);
+    DECLARE_FUNCTION(execNPCForceFatality);
+    DECLARE_FUNCTION(execNPCTestVersus);
+    DECLARE_FUNCTION(execNPCTestParry);
+    DECLARE_FUNCTION(execNPCDodgeNothing);
+    DECLARE_FUNCTION(execNPCDodgeEverything);
+    DECLARE_FUNCTION(execNPCDestroyNonVisible);
+    DECLARE_FUNCTION(execNPCDestroyNonSelected);
+    DECLARE_FUNCTION(execNPCDestroy);
+    DECLARE_FUNCTION(execGodNPC);
+    DECLARE_FUNCTION(execNavMeshCheck);
+    DECLARE_FUNCTION(execMatGoBackward);
+    DECLARE_FUNCTION(execMatGoForward);
+    DECLARE_FUNCTION(execLocoTeleport);
+    DECLARE_FUNCTION(execLocoShowPathAndStraightPath);
+    DECLARE_FUNCTION(execLocoShowAvoidance);
+    DECLARE_FUNCTION(execLocoNewPhysWalking);
+    DECLARE_FUNCTION(execLocoNewIK);
+    DECLARE_FUNCTION(execLocoNewAvoidance);
+    DECLARE_FUNCTION(execLocoForceUnaccuracy);
+    DECLARE_FUNCTION(execLocoForceModifier);
+    DECLARE_FUNCTION(execLocoForceLookAtMode);
+    DECLARE_FUNCTION(execLocoForceIdleAnim);
+    DECLARE_FUNCTION(execLocoDontRotate);
+    DECLARE_FUNCTION(execLocoDisableStartAnims);
+    DECLARE_FUNCTION(execAIUseSimpleAttentionForPlayer);
+    DECLARE_FUNCTION(execAIEnableAllSubStates);
+    DECLARE_FUNCTION(execAIDisableSubState);
+    DECLARE_FUNCTION(execAIEnableSubState);
+    DECLARE_FUNCTION(execAIEnableAllBehaviors);
+    DECLARE_FUNCTION(execAIDisableBehavior);
+    DECLARE_FUNCTION(execAIEnableBehavior);
+    DECLARE_FUNCTION(execAIShowThoughts);
+    DECLARE_FUNCTION(execAISetNumbToAIs);
+    DECLARE_FUNCTION(execAINumbToAIs);
+    DECLARE_FUNCTION(execAISetDeafToAIs);
+    DECLARE_FUNCTION(execAIDeafToAIs);
+    DECLARE_FUNCTION(execAISetBlindToAIs);
+    DECLARE_FUNCTION(execAIBlindToAIs);
+    DECLARE_FUNCTION(execAISetDumbToAIs);
+    DECLARE_FUNCTION(execAIDumbToAIs);
+    DECLARE_FUNCTION(execAISetNumbToPlayer);
+    DECLARE_FUNCTION(execAINumbToPlayer);
+    DECLARE_FUNCTION(execAISetDeafToPlayer);
+    DECLARE_FUNCTION(execAIDeafToPlayer);
+    DECLARE_FUNCTION(execAISetBlindToPlayer);
+    DECLARE_FUNCTION(execAIBlindToPlayer);
+    DECLARE_FUNCTION(execAISetDumbToPlayer);
+    DECLARE_FUNCTION(execAIDumbToPlayer);
+    DECLARE_FUNCTION(execAIForceAttentionLevelOff);
+    DECLARE_FUNCTION(execAIForceAttentionLevel);
+    DECLARE_FUNCTION(execAIClearAttention);
+    DECLARE_FUNCTION(execAIForcePanicNow);
+    DECLARE_FUNCTION(execAIForcePanic);
+    DECLARE_FUNCTION(execAIRegisterAllHideouts);
+    DECLARE_FUNCTION(execAIDebugHideout);
+    DECLARE_FUNCTION(execAISetLocoDebug);
+    DECLARE_FUNCTION(execAIGoToReset);
+    DECLARE_FUNCTION(execAIGoToCrosshair);
+    DECLARE_FUNCTION(execAIPauseOnPathFailure);
+    DECLARE_FUNCTION(execAIVerbosePathDebug);
+    DECLARE_FUNCTION(execAISetBeepWhenSeePlayer);
+    DECLARE_FUNCTION(execAIBeepWhenSeePlayer);
+    DECLARE_FUNCTION(execAIAlwaysRingAlarm);
+    DECLARE_FUNCTION(execAINeverRingAlarm);
+    DECLARE_FUNCTION(execAIDontRotate);
+    DECLARE_FUNCTION(execAIForceTransitSpeed);
+    DECLARE_FUNCTION(execAIToggleMagic);
+    DECLARE_FUNCTION(execAITestGuns);
+    DECLARE_FUNCTION(execAIEnable);
+    DECLARE_FUNCTION(execAIToggle);
+    DECLARE_FUNCTION(execAIDontAttack);
+    DECLARE_FUNCTION(execAISetSuspicion);
+    DECLARE_FUNCTION(execAIForget);
+    DECLARE_FUNCTION(execAIDumb);
+    DECLARE_FUNCTION(execAINumb);
+    DECLARE_FUNCTION(execAIBlind);
+    DECLARE_FUNCTION(execAIDeaf);
+    DECLARE_FUNCTION(execAIGibAll);
+    DECLARE_FUNCTION(execAIGib);
+    DECLARE_FUNCTION(execAIClearDebug);
+    DECLARE_FUNCTION(execAICycleDebug);
+    DECLARE_FUNCTION(execAISetDebug);
+    DECLARE_FUNCTION(execDisplayDebug_Native);
+    DECLARE_FUNCTION(execInitCheatManager_Native);
+    DECLARE_FUNCTION(execPlayerGhostChestView);
+    DECLARE_FUNCTION(execPlayerTestCamRumble);
+    DECLARE_FUNCTION(execEnableIronSight);
+    DECLARE_FUNCTION(execDoLineCheckStressTest);
+    DECLARE_FUNCTION(execPlayerForceDramaticFatalities);
+    DECLARE_FUNCTION(execPlayerForceKillCam);
+    DECLARE_FUNCTION(execPlayerToggleHomingArrow);
+    DECLARE_FUNCTION(execPlayerToggleAimAssist);
+    DECLARE_FUNCTION(execPlayerShowNavMeshStatus);
+    DECLARE_FUNCTION(execPlayerFillAdrenaline);
+    DECLARE_FUNCTION(execPlayerToggleAdrenalineCooldown);
+    DECLARE_FUNCTION(execPlayerInfiniteAdrenaline);
+    DECLARE_FUNCTION(execAbstractInventoryList);
+    DECLARE_FUNCTION(execPlayerInfiniteAmmo);
+    DECLARE_FUNCTION(execPlayerDisableKnockdown);
+    DECLARE_FUNCTION(execPlayerEnableKnockdown);
+    DECLARE_FUNCTION(execPlayerDisableStrongHitReaction);
+    DECLARE_FUNCTION(execPlayerEnableStrongHitReaction);
+    DECLARE_FUNCTION(execPlayerDisableTakeDamage);
+    DECLARE_FUNCTION(execPlayerEnableTakeDamage);
+    DECLARE_FUNCTION(execPlayerDamageProjectile_Stealth);
+    DECLARE_FUNCTION(execPlayerDamageProjectile);
+    DECLARE_FUNCTION(execPlayerDamageKnockdown);
+    DECLARE_FUNCTION(execPlayerDamageImpact);
+    DECLARE_FUNCTION(execPlayerDamageFastHit);
+    DECLARE_FUNCTION(execPlayerDamageElectricity);
+    DECLARE_FUNCTION(execPlayerDamageBullet);
+    DECLARE_FUNCTION(execPlayerDamageBash);
+    DECLARE_FUNCTION(execPlayerDamage);
+    DECLARE_FUNCTION(execHealthAdd);
+    DECLARE_FUNCTION(execBuddha);
+    DECLARE_FUNCTION(execManaToggle);
+    DECLARE_FUNCTION(execManaEnable);
+    DECLARE_FUNCTION(execManaAdd);
+    DECLARE_FUNCTION(execPlayerForceDeathDir);
+    DECLARE_FUNCTION(execClearObjectives);
+    DECLARE_FUNCTION(execRemoveObjective);
+    DECLARE_FUNCTION(execAddObjective);
+    DECLARE_FUNCTION(execPlayerTestAnim);
+    DECLARE_FUNCTION(execPlayerDisableMeleeAssist);
+    DECLARE_FUNCTION(execPlayerForceLongFinishers);
+    DECLARE_FUNCTION(execPlayerForceFastFinishers);
+    DECLARE_FUNCTION(execPlayerDisableAssassinate);
+    DECLARE_FUNCTION(execPlayerDisableFatality);
+    DECLARE_FUNCTION(execPlayerSetFixedFatality);
+    DECLARE_FUNCTION(execPlayerForceReadyStance);
+    DECLARE_FUNCTION(execPlayerSetDamage);
+    DECLARE_FUNCTION(execPlayerForceVisible);
+    DECLARE_FUNCTION(execPlayerDodgeNothing);
+    DECLARE_FUNCTION(execPlayerDodgeEverything);
+    DECLARE_FUNCTION(execPlayerTestChain);
+    DECLARE_FUNCTION(execidkfa);
+    DECLARE_FUNCTION(execMaxItems);
+    DECLARE_FUNCTION(execGivePlayerItem);
+    DECLARE_FUNCTION(execTogglePlayerBodyMode_Native);
+    DECLARE_FUNCTION(execPlayerArmsEnable);
+    DECLARE_FUNCTION(execPlayerArmsToggle);
+    DECLARE_FUNCTION(execSetCameraBob_Native);
+    DECLARE_CLASS(UDishonoredCheatManager,UCheatManager,0|CLASS_Config,DishonoredGame)
+    DECLARE_WITHIN(APlayerController)
+    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+};
+
+// DishonoredGame.DishonoredDamageType: retail sizeof 136, reflected span 88..133 (2012 PDB sizeof 136)
+class UDishonoredDamageType : public UDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType
+    BITFIELD m_bHasAreaOfEffect:1;
+    BITFIELD m_bSlowDeathOnly:1;
+    BITFIELD m_bFastDeathOnly:1;
+    BITFIELD m_bIsStealthDamage:1;
+    BITFIELD m_bCanThrow:1;
+    BITFIELD m_bForceThrowOnDeath:1;
+    BITFIELD m_bNoSmallHitReactOnNPC:1;
+    BITFIELD m_bNoSmallHitReactOnPlayer:1;
+    BITFIELD m_bInstaDeath_PlayerToNPC:1;
+    BITFIELD m_bInstaDeath_NonPlayerToNPC:1;
+    BITFIELD m_bInstaRagdoll:1;
+    BITFIELD m_bPutToSleep:1;
+    BITFIELD m_bPutToFire:1;
+    BITFIELD m_bInstantSleepForUnawareNPCs:1;
+    BITFIELD m_bSeverLimbsUponDeath:1;
+    BITFIELD m_bByPassRegenClamp:1;
+    BITFIELD m_bExplodesGrenades:1;
+    BITFIELD m_bExplodesWhiskeyBottles:1;
+    BITFIELD m_bExplodesRats:1;
+    BITFIELD m_bNoHitCameraFade:1;
+    BITFIELD m_bPushWithoutDamage:1;
+    BITFIELD m_bSpecifyHitReactImpulse:1;
+    BITFIELD m_bDisableHitReaction:1;
+    BITFIELD m_bCanInduceHatred:1;
+    BITFIELD m_bInstantHatred:1;
+    BITFIELD m_bAlwaysSyncedDeath:1;
+    BITFIELD m_bIgnoresArmor:1;
+    BITFIELD m_bDontTriggerTripWire:1;
+    BITFIELD m_bApplyDamageReduction:1;
+    BITFIELD m_bCausesBleeding:1;
+    BITFIELD m_bPinLimb:1;
+    BITFIELD m_bCanGiveAdrenaline:1;
+    BITFIELD m_bDramaticSlowmo:1;
+    BITFIELD m_bKillSleeper:1;
+    BITFIELD m_bCannotKillNPC:1;
+    BITFIELD m_bCausesInstinctiveTeleport:1;
+    BITFIELD m_bInstigatorGetsBlame:1;
+    BITFIELD m_bDoesNotBreakZoom:1;
+    FLOAT m_fTimeBeforeSleep;
+    FDisSeverLimbsDamageParams m_SeverLimbsUponDeathParams;
+    FLOAT m_fHitReactImpulse;
+    BYTE m_ExpectedHitReaction;
+    BYTE m_NPCCustomReactAnim;
+    BYTE m_NPCCustomDeathAnim;
+    BYTE m_NPCCustomDeathSubAnim;
+    BYTE m_NPCCustomReactionBark;
+    //## END PROPS DishonoredDamageType
+
+    DECLARE_CLASS(UDishonoredDamageType,UDamageType,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Weapon");}
+};
+
+// DishonoredGame.StateSharedActionBase: retail sizeof 76, reflected span 64..76 (2012 PDB sizeof 76)
+class UStateSharedActionBase : public UDishonoredNativeState
+{
+public:
+    //## BEGIN PROPS StateSharedActionBase
+    class ADishonoredPawn* m_pPawn;
+    FPointer m_pFiringObj;
+    FLOAT m_fTimeToGo;
+    //## END PROPS StateSharedActionBase
+
+    DECLARE_CLASS(UStateSharedActionBase,UDishonoredNativeState,0,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterAction: retail sizeof 100, reflected span 76..100 (2012 PDB sizeof 100)
+class UStateNPCMasterAction : public UStateSharedActionBase
+{
+public:
+    //## BEGIN PROPS StateNPCMasterAction
+    class ADishonoredNPCPawn* m_pNPCPawn;
+    class ADishonoredNPCController* m_pNPCController;
+    BITFIELD m_bOldWantsToCrouch:1;
+    BITFIELD m_bAnimAllowsTurnControl:1;
+    BITFIELD m_bCancelSoireeUponEntry:1;
+    BITFIELD m_bCancelConvoUponEntry:1;
+    BITFIELD m_bCanObstructAllyAttacks:1;
+    BYTE m_SoireeAvailability;
+    BYTE m_DialogAvailability;
+    FLOAT m_fYawAdjustmentSpeed;
+    FLOAT m_fYawAdjustmentAccelerationTime;
+    //## END PROPS StateNPCMasterAction
+
+    DECLARE_CLASS(UStateNPCMasterAction,UStateSharedActionBase,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.StateNPCMasterPlayAnim: retail sizeof 116, reflected span 100..116 (2012 PDB sizeof 116)
+class UStateNPCMasterPlayAnim : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterPlayAnim
+    BYTE m_AnimChainToPlay;
+    BYTE m_BodyFilter;
+    INT m_iAnimGroup;
+    INT m_iAnimStep;
+    BITFIELD m_bForceVisionForward:1;
+    BITFIELD m_bGoToRagdollIfPushed:1;
+    BITFIELD m_bStopLoop:1;
+    BITFIELD m_bIsLooping:1;
+    //## END PROPS StateNPCMasterPlayAnim
+
+    DECLARE_CLASS(UStateNPCMasterPlayAnim,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBrain: retail sizeof 204, reflected span 140..204 (2012 PDB sizeof 200)
+class UDisTweaks_AIBrain : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrain
+    TArrayNoInit<FBehaviorTweak> m_BehaviorTweak;
+    TArrayNoInit<class UDisTweaks_AIBrainProcess*> m_BrainProcessTweaks;
+    BYTE m_TalkingLoudness;
+    BYTE m_MinAttentionForAwareness;
+    BYTE m_UpperAnimationOnHeadTrack;
+    BYTE m_eWallsOfLightConfidence;
+    FLOAT m_fStolenMinDelay;
+    FLOAT m_fStolenMaxDelay;
+    BITFIELD m_bProtectNeutrals:1;
+    FLOAT m_fVisualDetectionRatioNear;
+    FLOAT m_fReachableMeleeRange;
+    FLOAT m_fReachableMeleeHeight;
+    class UClass* m_SuspectingEquippedPrimaryItemClass;
+    class UDisTweaks_AIBrain_Reaction* m_pReactionTweaks;
+    class UDisTweaks_AIBrain_Steering* m_pSteeringTweaks;
+    //## END PROPS DisTweaks_AIBrain
+
+    DECLARE_CLASS(UDisTweaks_AIBrain,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess: retail sizeof 144, reflected span 140..144 (2012 PDB sizeof 144)
+class UDisTweaks_AIBrainProcess : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrainProcess
+    BITFIELD m_bBrainProcessEnabled:1;
+    //## END PROPS DisTweaks_AIBrainProcess
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_AIBrainProcess,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBrain)
+};
+
+// DishonoredGame.DisTweaks_InventoryItem: retail sizeof 268, reflected span 140..268 (2012 PDB sizeof 268)
+class UDisTweaks_InventoryItem : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_InventoryItem
+    BYTE m_ItemTickMode;
+    BYTE m_RequiredEquipUsage;
+    BITFIELD m_bIsEquipable_NPC:1;
+    BITFIELD m_bIsEquipable_Player:1;
+    BITFIELD m_bHideWhenEquipped:1;
+    BITFIELD m_bNeverEquippedByPlayer:1;
+    BITFIELD m_bNeverRemove:1;
+    BITFIELD m_bDropOnAutoCorpseCarry:1;
+    FName m_ItemPrefix;
+    FName m_ItemPrefix_NPCOnly;
+    FLOAT m_fItemAimSpeed;
+    FName m_Sockets[4];
+    TArrayNoInit<FDisMeleeExtentTweak> m_MeleeCollisionInfo;
+    FStringNoInit m_DebugName;
+    class UDisTweaks_Pawn* m_pOnlyHeldByPawnType;
+    FName m_UpgradesSocketName;
+    class UDisTweaks_KActor* m_pPickupToDrop;
+    FLOAT m_fPickupToDrop_Chance;
+    class UDisTweaks_InventoryItem_Attributes* m_pAttributeTweak[4];
+    class UDisTweaks_InventoryItem_PlayerSpecific* m_pPlayerSpecificTweaks;
+    class UDisTweaks_InventoryItem_PawnSpecific* m_pNPCSpecificTweaks;
+    //## END PROPS DisTweaks_InventoryItem
+
+    DECLARE_CLASS(UDisTweaks_InventoryItem,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_SpringRazor: retail sizeof 276, reflected span 268..276 (2012 PDB sizeof 272)
+class UDisTweaks_SpringRazor : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_SpringRazor
+    class UDisTweaks_SpringRazorPlaced* m_pPlacedTweak;
+    class UClass* m_pPlacedDamageType;
+    //## END PROPS DisTweaks_SpringRazor
+
+    DECLARE_CLASS(UDisTweaks_SpringRazor,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_KAsset: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_KAsset : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_KAsset
+    class UClass* m_pContactTypeOverride;
+    FLOAT m_fMaxDrawDistance;
+    //## END PROPS DisTweaks_KAsset
+
+    DECLARE_CLASS(UDisTweaks_KAsset,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Pawn: retail sizeof 276, reflected span 140..276 (2012 PDB sizeof 276)
+class UDisTweaks_Pawn : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn
+    TArrayNoInit<class UAnimSet*> m_AnimSets;
+    class UAnimTree* m_pAnimTreeTemplate;
+    class UAnimTree* m_pAnimTreeWhenDeadTemplate;
+    class UClass* m_pAnimDefClass;
+    FLOAT m_fSpeedBlendDownSpeed;
+    FLOAT m_fCrouchHeight;
+    FLOAT m_fSneakHeight;
+    FLOAT m_fMaxFallSpeed;
+    FLOAT m_fMinSplashSpeed;
+    FLOAT m_fMinCrushKnockdownSpeed;
+    FLOAT m_fMaxWalkableFloorInDegrees;
+    BITFIELD m_bAlwaysOutOfBendTime:1;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UDisTweaks_Faction* m_pFactionTweak;
+    class UDisTweaks_StoryGroup* m_pStoryGroupTweak;
+    TArrayNoInit<FDisInventorySlotTweak> m_InventorySlots;
+    class UDisTweaks_ItemEmpty* m_pEmptyHandsItem;
+    class UDisTweaks_Attachments* m_pAttachmentsTweaks;
+    class UDisTweaks_Vulnerability* m_pVulnerabilityTweaks;
+    class UDisTweaks_AttentionTarget* m_pAttentionTargetTweaks;
+    class UDisTweaks_ComponentObservable* m_pObservableComponentTweaks;
+    class UDisTweaks_Pawn_Actions* m_pActionTweaks;
+    class UDisTweaks_Pawn_Animation* m_pAnimationTweaks;
+    class UDisTweaks_Pawn_Body* m_pBodyTweaks;
+    class UDisTweaks_Pawn_Combat* m_pCombatTweaks;
+    class UDisTweaks_Pawn_Attributes* m_pAttributeTweaks[4];
+    //## END PROPS DisTweaks_Pawn
+
+    DECLARE_CLASS(UDisTweaks_Pawn,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_NPCPawn: retail sizeof 924, reflected span 276..924 (2012 PDB sizeof 916)
+class UDisTweaks_NPCPawn : public UDisTweaks_Pawn
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPawn
+    class UDisTweaks_AIBrain* m_pBrainTweak;
+    class UDisTweaks_ComponentHitReactionThrow* m_pComponentHitReactionThrowConfig;
+    FName m_DistractionAnimPrefix;
+    TArrayNoInit<class UDisDialogVoiceData*> m_GenericDialogData;
+    class UDisTweaks_Possessable* m_pPossessableTweaks;
+    class UDisSeveredLimbInfo* m_pSeveredLimbInfo;
+    class UDisTweaks_ComponentMeshOffset* m_pComponentMeshOffsetConfig;
+    FLOAT m_fMaxHoverDistance;
+    FDisRagdollDamageConfig m_RagdollDamageConfig;
+    FLOAT m_fDistractionCooldownTime;
+    class UArkComponentLocomotionConfig* m_pComponentLocomotionConfig;
+    INT m_TransitSpeedToLocomotionSpeed[3];
+    TArrayNoInit<INT> m_LocomotionSpeedToTransitSpeed;
+    class UArkComponentLookatConfig* m_pComponentLookatConfig;
+    FLOAT m_fImpulseForceWhenLooted;
+    FLOAT m_fChokeActivateTime;
+    FLOAT m_fCarryCorpseActivateTime;
+    BITFIELD m_bHeartWhisperOnlyOnce:1;
+    BITFIELD m_bUnableToUseDoor:1;
+    BITFIELD m_bCanBeChoked:1;
+    BITFIELD m_bRagdollOnDeath:1;
+    BITFIELD m_bIsDramaticAssassinationTarget:1;
+    BITFIELD m_bKillCamEnabled:1;
+    BITFIELD m_bHasPlague:1;
+    BITFIELD m_bHolsterEquippedPrimaryWhenPossessed:1;
+    BITFIELD m_bHolsterEquippedSecondaryWhenPossessed:1;
+    FLOAT m_fCorpsePickupExtentCheck;
+    TArrayNoInit<class UDisTweaks_InventoryItem*> m_ContentInventoryLoadout;
+    class UClass* m_pContentInventory_DefaultEquipType_Primary;
+    class UClass* m_pContentInventory_DefaultEquipType_Secondary;
+    TArrayNoInit<FDisAmmoTweak> m_Ammo;
+    TArrayNoInit<class UDisTweaks_Armor*> m_EquippedNPCArmor;
+    TArrayNoInit<FDisPawnRandomArmor> m_PotentialNPCArmor;
+    FLOAT m_fChokeMaxHeightDelta;
+    FLOAT m_fChokeMaxAngle;
+    FDisChokeAware m_ChokeOnAwareness[8];
+    FLOAT m_fChokeHeightRatio;
+    TArrayNoInit<FDisPawnAccessoryMesh> m_HatMeshes;
+    TArrayNoInit<FDisPawnAccessoryMesh> m_MaskMeshes;
+    FDisPawnAccessory m_RandomAccessoryInfo[2];
+    TArrayNoInit<FDisBodyMesh> m_RandomHeadMeshes;
+    FDisMeshMaterialVariationList m_BodyVariationMaterials;
+    class UDisTweaks_LODConfig* m_pLODConfigTweak;
+    class UDisTweaks_Vision* m_pVisionTweak;
+    class UDisTweaks_Vision* m_pVisionTweak_InConversation;
+    class UAkEvent* m_pStartSnoringEvent;
+    class UAkEvent* m_pStopSnoringEvent;
+    FLOAT m_fSafeFallDistAfterCorpseDrop;
+    TArrayNoInit<FDisShadowKillFX> m_ShadowKillFXs;
+    FLOAT m_fShadowKillDelay;
+    FLOAT m_fShadowKillFadeToBlackDuration;
+    FLOAT m_fShadowKillFieryDuration;
+    class UMaterialInterface* m_pFieryMaterial;
+    class UAkEvent* m_pShadowKillSound;
+    TArrayNoInit<FDisElectrocutedFX> m_ElectrocutedFXs;
+    class UMaterialInterface* m_pElectrocutedMaterial;
+    FName m_ElectrocutedParameter;
+    FLOAT m_fElectrocutedDuration;
+    FLOAT m_fElectrocutedFadeDuration;
+    FLOAT m_fElectrocutedFadeBegin;
+    FLOAT m_fElectrocutedFadeEnd;
+    FLOAT m_fElectrocutedMomentumReduction;
+    FName m_ImmolatedParameter;
+    FName m_DefaultShockBone;
+    BYTE m_DeathRattleLoudness;
+    BYTE m_DramaticAssassinationAnims;
+    BYTE m_CombatIntensityType;
+    FLOAT m_fAvoidanceDefaultRadius;
+    FLOAT m_fAvoidanceRunningRadius;
+    FLOAT m_fAvoidanceFightingRadius;
+    FLOAT m_fAvoidanceDefaultForceMultiplier;
+    FLOAT m_fAvoidanceRootMotionForceMultiplier;
+    FLOAT m_fAvoidanceSteeringMaxAngle;
+    FLOAT m_fPlagueRadius;
+    FLOAT m_fPlagueDmgAngle;
+    INT m_iPlagueDmgPerTick;
+    FLOAT m_fPlagueDmgePeriod;
+    FDisRangedFloat m_fPlagueDmgLength;
+    class UParticleSystem* m_pPlagueVFX;
+    FName m_PlagueFXSocket;
+    class UClass* m_pPlagueLensFXClass;
+    class UAkEvent* m_PlagueSFX_Idle_Start;
+    class UAkEvent* m_PlagueSFX_Idle_Stop;
+    class UAkEvent* m_PlagueSFX_Damage;
+    FName m_PlagueSFX_RTPCName;
+    FLOAT m_PlagueSFX_MaxDistance;
+    FLOAT m_PlagueDeathFadeTimer;
+    FLOAT m_fFishAttractionStrength;
+    FLOAT m_fFishAttractionRadius;
+    FLOAT m_fFishAttractionRatio;
+    FStringNoInit m_BusyText;
+    FStringNoInit m_CannotStealMessage;
+    FStringNoInit m_AsleepCrosshairText;
+    class UParticleSystem* m_VisionConePatrolTemplate;
+    class UParticleSystem* m_VisionConeCombatTemplate;
+    FName m_SocketNameForVisionConeEffect;
+    FName m_VisionConeAlphaParameter;
+    class UParticleSystem* m_MiscPatrolTemplate;
+    class UParticleSystem* m_MiscCombatTemplate;
+    FName m_SocketNameForMiscEffect;
+    FLOAT m_fPlayerMinRangeForSpawning;
+    FLOAT m_fDelayBetweenSpawns;
+    class UDisTweaks_NPCPlotSettings* m_pPlotSettingsTweak;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    class UDisTweaks_StateNPCMasterDead_BeingCarried* m_pStateNPCMasterDead_BeingCarriedTweaks;
+    //## END PROPS DisTweaks_NPCPawn
+
+    DECLARE_CLASS(UDisTweaks_NPCPawn,UDisTweaks_Pawn,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ActivePowerBase: retail sizeof 348, reflected span 140..348 (2012 PDB sizeof 348)
+class UDisTweaks_ActivePowerBase : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ActivePowerBase
+    INT m_ManaCost;
+    INT m_RuneCosts[2];
+    FPawnAction m_UsePowerAction;
+    FPower_RumbleAndShake m_RumbleAndShake[2];
+    FLOAT m_fGlowDuration;
+    FLOAT m_fGlowRampDownDuration;
+    //## END PROPS DisTweaks_ActivePowerBase
+
+    DECLARE_CLASS(UDisTweaks_ActivePowerBase,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Explosion: retail sizeof 260, reflected span 140..260 (2012 PDB sizeof 260)
+class UDisTweaks_Explosion : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Explosion
+    FLOAT m_fAttachedDamage;
+    class UClass* m_pAttachedDamageType;
+    FLOAT m_fAttachedMomentum;
+    FLOAT m_fDamageRadius;
+    FLOAT m_fFullDamageRadius;
+    FLOAT m_fPlayerDamageRadius;
+    FLOAT m_fPlayerFullDamageRadius;
+    FLOAT m_fRadialDamage;
+    FDisAttribute m_RadialDamage;
+    class UClass* m_pRadialDamageType;
+    FLOAT m_fRadialMomentum;
+    class UClass* m_pExplosionContactType;
+    class UParticleSystem* m_pExplosionEffect;
+    class UAkEvent* m_pSoundEvent;
+    BYTE m_AINoiseLoudness;
+    BITFIELD m_bNoDamageOnSameBase:1;
+    BITFIELD m_bNoLineCheckToPotentialHits:1;
+    FLOAT m_fExtraUpForce;
+    FLOAT m_fMaxDistanceAboveWaterSurface;
+    FLOAT m_fMaxDistanceBelowWaterSurface;
+    class UParticleSystem* m_pAboveWaterSurfaceEffect;
+    class UParticleSystem* m_pBelowWaterSurfaceEffect;
+    class UAkEvent* m_pAboveWaterSurfaceSound;
+    class UAkEvent* m_pBelowWaterSurfaceSound;
+    FLOAT m_fAIDangerRatio;
+    //## END PROPS DisTweaks_Explosion
+
+    DECLARE_CLASS(UDisTweaks_Explosion,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_NPCAttachment: retail sizeof 284, reflected span 284..284 (new in 2013)
+class UDisTweaks_NPCAttachment : public UDisTweaks_Movable
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCAttachment
+    //## END PROPS DisTweaks_NPCAttachment
+
+    DECLARE_CLASS(UDisTweaks_NPCAttachment,UDisTweaks_Movable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_InventoryItem_PawnSpecific: retail sizeof 264, reflected span 140..264 (2012 PDB sizeof 264)
+class UDisTweaks_InventoryItem_PawnSpecific : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_InventoryItem_PawnSpecific
+    class USkeletalMesh* m_pEquippedMesh;
+    class UPhysicsAsset* m_pEquippedPhysicsAsset;
+    TArrayNoInit<class UAnimSet*> m_PawnItemAnimSets;
+    TArrayNoInit<class UAnimSet*> m_ItemAnimSets;
+    class UAnimTree* m_pItemAnimTree;
+    FName m_AnimStatePickerName;
+    FName m_DefaultAnimState;
+    TArrayNoInit<FDisAnimState> m_AnimStates_PawnSync;
+    TArrayNoInit<FDisItemContextInfo> m_ContextSlots_Primary;
+    TArrayNoInit<FDisItemContextInfo> m_ContextSlots_Bash;
+    TArrayNoInit<FDisItemContextInfo> m_ContextSlots_Parry;
+    TArrayNoInit<FDisItemContextInfo> m_ContextSlots_Reload;
+    TArrayNoInit<FDisItemContextInfo> m_ContextSlots_Direct;
+    //## END PROPS DisTweaks_InventoryItem_PawnSpecific
+
+    DECLARE_CLASS(UDisTweaks_InventoryItem_PawnSpecific,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn: retail sizeof 1816, reflected span 276..1816 (2012 PDB sizeof 1232)
+class UDisTweaks_PlayerPawn : public UDisTweaks_Pawn
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn
+    TArrayNoInit<class UDisDialogVoiceData*> m_AudioLogDialogData;
+    class UAkEvent* m_AudioLogFlavorSounds[3];
+    FLOAT m_fDialogChoiceBendTime_BlendTime;
+    FLOAT m_fDialogChoiceBendTime_BlendOutTime;
+    FDisPlayerBarkInfo m_BarkCues[12];
+    class UAkEvent* m_pBreathlessnessIncreaseEvent;
+    class UAkEvent* m_pBreathlessnessDecreaseEvent;
+    FName m_BreathlessnessRTPC;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_Upgrades;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_BoneCharmSlotDLCUpgrades;
+    class UAkEvent* m_pHealthElixirConsumptionEvent;
+    class UAkEvent* m_pManaElixirConsumptionEvent;
+    class UDisTweaks_Upgrade* m_pCrossbowRangeUpgrade;
+    FLOAT m_fIgnoreFootfallsAfterLand_Time;
+    FLOAT m_fAirControl;
+    BITFIELD m_bAllowDropCorpseWhileFalling:1;
+    BITFIELD m_bRatLightsBlinding:1;
+    BITFIELD m_bWatchTowerBlinding:1;
+    BITFIELD m_bSkipUnequipAnimsFromWheel:1;
+    BITFIELD m_bAutoEquipBoneCharm:1;
+    BITFIELD m_bAutoCrouchAllowedWhileCarryingCorpse:1;
+    BITFIELD m_bSlideAllowReturnToSprint:1;
+    BITFIELD m_bSlideAllowReturnToSprint_Gamepad:1;
+    BITFIELD m_bSlideRepulsesRats:1;
+    BITFIELD m_bSlideDamageIgnoresSleepers:1;
+    BITFIELD m_bShowAdrenalineKillMessage:1;
+    BITFIELD m_bSingleHeartTarget:1;
+    INT m_DamageThresholdForStrongHitReact;
+    FLOAT m_fDoorRemoteListenerMaxDistance;
+    FLOAT m_fDeathFadeDelay;
+    class UDisAbstractItem* m_pMoneyItem;
+    class UDisAbstractItem* m_pRuneItem;
+    class UPhysicsAsset* m_pDeathPhysicsAsset;
+    class UDisTweaksBase* m_pPreciousTweaks;
+    FName m_GlowParameterName;
+    class UDisTweaks_PlayerLoadout* m_pDefaultPlayerLoadout;
+    INT m_nMaxHealthElixir;
+    INT m_nHealthElixirValue;
+    INT m_nMaxManaElixir;
+    INT m_nManaElixirValue;
+    class UDisTweaks_ItemPowers* m_pPowersItem;
+    INT m_MaxActivatedBoneCharmCount;
+    FLOAT m_fJumpImpulse;
+    FLOAT m_fClimbingSpeed;
+    FLOAT m_fClimbingSoundMinDelay;
+    FLOAT m_fClimbingSoundMaxDelay;
+    FLOAT m_fAutoCrouchTestDistance;
+    FLOAT m_fAutoCrouchMinCrawlDepth;
+    FLOAT m_fSlideTime;
+    FLOAT m_fSlidePercentNotCancelable;
+    FLOAT m_fSlideVelocityDeactivateAngle;
+    FLOAT m_fSlideImpactCameraShake;
+    FLOAT m_fSlideImpactDamageVelRatio;
+    FLOAT m_fSlideDamageTestDistance;
+    TArrayNoInit<FDisSlideDamageInfo> m_SlideDamageInfo;
+    TArrayNoInit<class UClass*> m_SlideClassesImmuneToSlideDamage;
+    FLOAT m_fSlideRatRepulseStrength;
+    FLOAT m_fSlideRatRepulseRadius;
+    FLOAT m_fFishAttractionStrength;
+    FLOAT m_fFishAttractionRadius;
+    FLOAT m_fFishAttractionRatio;
+    FLOAT m_fStandUpRatSwarmAttackDistance;
+    FLOAT m_fCrouchedRatSwarmAttackDistance;
+    FLOAT m_fApneaMaxDuration;
+    FLOAT m_fApneaRecoveryDuration;
+    class UDisTweaks_EmitterCameraLensEffect* m_pWaterExitEffectTweaks;
+    class UAkEvent* m_pSurfaceSwimSound;
+    FLOAT m_fRatioPotionChanceSuccess;
+    FLOAT m_fBlindnessAttackTime;
+    FLOAT m_fBlindnessReleaseHalflife;
+    FLOAT m_fBreathRegainSpeed;
+    FLOAT m_fBreathlessnessSpeedSprint;
+    FLOAT m_fBreathlessnessSpeedRun;
+    FLOAT m_fMaxBreathlessnessRun;
+    FLOAT m_fBreathlessnessAnimWeight;
+    FLOAT m_fMinBaseBreathlessness;
+    FLOAT m_fMovementDispersionIncrease;
+    FLOAT m_fCameraMovementDispersionIncrease;
+    class UDisTweaks_PlayerStats* m_pPlayerStats;
+    TArrayNoInit<FDeed> m_Deeds;
+    TArrayNoInit<INT> m_DarknessLevels;
+    FStringNoInit m_DarknessLevelIncreasedMessage;
+    INT m_BlockMissThreshold;
+    FStringNoInit m_BlockTutorialMessage;
+    INT m_PerfectBlockMissThreshold;
+    FStringNoInit m_PerfectBlockTutorialMessage;
+    FStringNoInit m_AcquiredElixirTutorialMessage[2];
+    FStringNoInit m_AcquiredElixirTutorialMessage_PC[2];
+    FStringNoInit m_UseElixirTutorialMessage[2];
+    FStringNoInit m_UseElixirTutorialMessage_PC[2];
+    INT m_TutorialElixirThreshold[2];
+    FStringNoInit m_ThrowMovableTutorialMessage;
+    INT m_TutorialHeartTargetShowCount;
+    FLOAT m_TutorialHeartTargetDistanceBuffer;
+    FStringNoInit m_HeartTargetTutorialMessage;
+    INT m_TutorialWheelItemCountThreshold;
+    FStringNoInit m_WheelTutorialMessage;
+    FStringNoInit m_WheelTutorialNoteTitle;
+    FStringNoInit m_DropAssassinationNoteTitle;
+    FLOAT m_fDropAssassinationTutorialHeight;
+    FLOAT m_fDropAssassinationTutorialDistance;
+    FLOAT m_fDefenseTutorialDistance;
+    FLOAT m_fAvoidanceRadius;
+    FLOAT m_fAvoidanceForceMultiplier;
+    FLOAT m_fBeforePushDelay;
+    FLOAT m_fPushMaxDuration;
+    FLOAT m_fMinStickForceToPush;
+    INT m_MaxTravelingNPCs;
+    FLOAT m_fTravelingNPCSpeedModifier;
+    FLOAT m_fTravelingNPCDelay;
+    FStringNoInit m_PowerInhibitedMessage;
+    FDisSearchCooldownMeterSettings m_SearchCooldownMeterSettings;
+    class UParticleSystem* m_pBendTimeCameraEffect;
+    FLOAT m_fBendTimeCameraEffectFadeInTime;
+    FLOAT m_fBendTimeCameraEffectFadeOutTime;
+    FName m_BendTimeCameraEffectFadeName;
+    FLOAT m_fDLEMinTimeBetweenFullUpdates;
+    FLOAT m_fZoomLensEffectMinRadius;
+    FLOAT m_fZoomLensEffectMaxRadius;
+    FLOAT m_fMaskOnCompleteEffectDuration;
+    FLOAT m_fMaskOnBlueFlashRampUpBeginDelay;
+    FLOAT m_fMaskOnBlueFlashRampUpDuration;
+    FLOAT m_fMaskOnBlueFlashStallDuration;
+    FLOAT m_fMaskOnBlueFlashRampDownDuration;
+    TArrayNoInit<FDisMaskOnEffectBlurPhase> m_MaskOnBlurPhases;
+    FArkUberPpParameters m_MusicalEffectUberParameters;
+    FLOAT m_MusicalEffectSpeed;
+    FLOAT m_MusicalEffectFadeOutTime;
+    class UForceFeedbackWaveform* m_pDisabledPowerForceFeedback;
+    class UAkEvent* m_pStartManaRegenSound;
+    class UAkEvent* m_pEndManaRegenSound;
+    class UDisStoryFlagSet* m_pDLCPackStoryFlagSet;
+    FDLCPackInfo m_DLCPackInfo[4];
+    class UDisTweaks_PlayerPawn_Camera* m_pCameraTweaks;
+    class UDisTweaks_PlayerPawn_Visibility* m_pVisibilityTweaks;
+    class UDisTweaks_PlayerPawn_Mantle* m_pMantleTweaks;
+    class UDisTweaks_PlayerPawn_Mantle* m_pMantleBlinkTweaks;
+    class UDisTweaks_StatePlayerCarryCorpseIdle* m_pCarryCorpseTweaks;
+    class UDisTweaks_WhaleBoneCharmList* m_pCharmListTweaks;
+    //## END PROPS DisTweaks_PlayerPawn
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn,UDisTweaks_Pawn,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Attributes: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_Attributes : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Attributes
+    //## END PROPS DisTweaks_Attributes
+
+    DECLARE_CLASS(UDisTweaks_Attributes,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaksBase)
+};
+
+// DishonoredGame.DisTweaks_Pawn_Attributes: retail sizeof 1228, reflected span 140..1228 (2012 PDB sizeof 1228)
+class UDisTweaks_Pawn_Attributes : public UDisTweaks_Attributes
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_Attributes
+    FDisAttribute m_MeleeDamageBonus;
+    FDisAttribute m_ThrowStrength;
+    FDisAttribute m_MinMeleeHitQuality;
+    FDisAttribute_RangeLimits m_MinMeleeHitQuality_Limits;
+    FDisAttribute m_MaxMeleeHitQuality;
+    FDisAttribute_RangeLimits m_MaxMeleeHitQuality_Limits;
+    FDisAttribute m_MeleeVersusMiniGame_LoseMedium;
+    FDisAttribute m_MeleeVersusMiniGame_WinMedium;
+    FDisAttribute m_MeleeVersusMiniGame_WinBig;
+    FDisAttribute m_HealthMax;
+    FDisAttribute_RangeLimits m_HealthMax_Limits;
+    FDisAttribute m_HealthRegenRate;
+    FDisAttribute m_HealthRegenAmount;
+    FDisAttribute m_HealthRegenLimit;
+    FDisAttribute m_HealthRegenInitialDelay;
+    FDisAttribute m_FallingDamageModPercent;
+    FDisAttribute m_GroundSpeed;
+    FDisAttribute m_WaterSpeed;
+    FDisAttribute m_GroundSpeedSprint;
+    FDisAttribute m_GroundStrafeMultiplierRun;
+    FDisAttribute m_GroundStrafeMultiplierSneak;
+    FDisAttribute m_GroundStrafeMultiplierSprint;
+    FDisAttribute m_GroundBackwardMultiplierRun;
+    FDisAttribute m_GroundBackwardMultiplierSneak;
+    FDisAttribute m_GroundBackwardMultiplierSprint;
+    FDisAttribute m_AccelerationRate;
+    FDisAttribute m_GroundSpeedCarryingCorpse;
+    FDisAttribute m_MaxSpeedBeforeFallingDamage;
+    FDisAttribute m_MaxSpeedBeforeFallingDeath;
+    FDisAttribute m_ManaMax;
+    FDisAttribute m_Visibility;
+    FDisAttribute_RangeLimits m_Visibility_Limits;
+    FDisAttribute m_BulletCapacity;
+    FDisAttribute m_ExplosiveBulletCapacity;
+    FDisAttribute m_ArrowCapacity;
+    FDisAttribute m_SleepArrowCapacity;
+    FDisAttribute m_FlareArrowCapacity;
+    FDisAttribute m_GrenadeCapacity;
+    FDisAttribute m_StickyGrenadeCapacity;
+    FDisAttribute m_fExplosionResilience;
+    //## END PROPS DisTweaks_Pawn_Attributes
+
+    DECLARE_CLASS(UDisTweaks_Pawn_Attributes,UDisTweaks_Attributes,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Attributes: retail sizeof 2292, reflected span 1228..2292 (2012 PDB sizeof 2264)
+class UDisTweaks_PlayerPawn_Attributes : public UDisTweaks_Pawn_Attributes
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_Attributes
+    FDisAttribute m_MeleeSpeed;
+    FDisAttribute m_AdrenalineMax;
+    FDisAttribute m_AdrenalineCooldown;
+    FDisAttribute m_AdrenalineBurnRate;
+    FDisAttribute m_AdrenalineMultWhenTakingDamage;
+    FDisAttribute m_SeverLimbChanceMult;
+    FDisAttribute m_GroundSpeedBonusWhileCarrying;
+    FDisAttribute m_LandAnimRate;
+    FDisAttribute m_MantleAnimRate;
+    FDisAttribute m_JumpZ;
+    FDisAttribute m_JumpZCarryingCorpse;
+    FDisAttribute m_JumpZ_PowerJump;
+    FDisAttribute m_GroundSpeedCrouch;
+    FDisAttribute m_GroundSpeedWalk;
+    FDisAttribute m_GroundSpeedSlowWalk;
+    FDisAttribute m_CrouchSpringForwardSpeed;
+    FDisAttribute m_SwordUnsheathedSpeedFactor;
+    FDisAttribute m_SwordSheathedSpeedFactor;
+    FDisAttribute m_PowerJumpFullStop_PROTOTYPE;
+    FDisAttribute m_FullStop_ExtraStopVel_PROTOTYPE;
+    FDisAttribute m_HeldPowerJumpButtonTime_PROTOTYPE;
+    FDisAttribute m_HeldPowerJumpAccel_PROTOTYPE;
+    FDisAttribute m_SpyglassDistance;
+    FDisAttribute m_SpringRazorCapacity;
+    FDisAttribute m_ChokeTime;
+    FDisAttribute m_WaterDrinkingHealthBonus;
+    FDisAttribute m_DrowningDamageAmount;
+    FDisAttribute m_DrowningDamageStep;
+    FDisAttribute m_HealthPotionPotencyBonus;
+    FDisAttribute m_ManaRegenAmount;
+    FDisAttribute m_ManaRegenAdditivePortion;
+    FDisAttribute m_ManaRegenStepTime;
+    FDisAttribute m_ManaRegenInitialDelay;
+    FDisAttribute m_ManaPotionPotencyBonus;
+    FDisAttribute m_fWhiskeyFireResilience;
+    FDisAttribute m_BiteResilience;
+    FDisAttribute m_PlagueResilience;
+    FDisAttribute m_MusicDamageResilience;
+    //## END PROPS DisTweaks_PlayerPawn_Attributes
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_Attributes,UDisTweaks_Pawn_Attributes,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_Blink: retail sizeof 576, reflected span 348..576 (2012 PDB sizeof 576)
+class UDisTweaks_Blink : public UDisTweaks_ActivePowerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Blink
+    FPowerAttributes_Blink m_Levels[2];
+    FLOAT m_fTargetingGoalIndicatorSize;
+    FLOAT m_fTargetingGroundIndicatorSize;
+    BITFIELD m_bKnockdownAwarePawns:1;
+    BITFIELD m_bTargetThroughAwarePawns:1;
+    BITFIELD m_bLimitVerticalDistanceFromGround:1;
+    FLOAT m_fKnockdownMinDistance;
+    class UStaticMesh* m_pMantleMesh;
+    class UStaticMesh* m_pGroundMesh;
+    class UStaticMesh* m_pStandMesh;
+    class UParticleSystem* m_pGroundPS;
+    class UParticleSystem* m_pMantlePS;
+    class UParticleSystem* m_pLowFallPS;
+    class UParticleSystem* m_pHighFallPS;
+    FLOAT m_fFallThreshold;
+    FLOAT m_fGroundMeshHeight;
+    class UDisTweaks_EmitterCameraLensEffect* m_pCooldownEffect;
+    FVector m_TargetTestExtent;
+    FLOAT m_fCloseCollisionDistance;
+    FLOAT m_fCloseCollisionOffsetStep;
+    //## END PROPS DisTweaks_Blink
+
+    DECLARE_CLASS(UDisTweaks_Blink,UDisTweaks_ActivePowerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WeaponRanged: retail sizeof 296, reflected span 268..296 (2012 PDB sizeof 296)
+class UDisTweaks_WeaponRanged : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_WeaponRanged
+    TArrayNoInit<FDisRangedAmmoTypeInfo> m_RangedAmmoTypes;
+    BITFIELD m_bMaxDispersionOnSprint:1;
+    BITFIELD m_bMaxDispersionOnJump:1;
+    BITFIELD m_bMaxDispersionOnBlock:1;
+    BITFIELD m_bMaxDispersionOnMelee:1;
+    FName m_ZoomIdleAnimState;
+    class UDisTweaks_WeaponRanged_Attributes* m_pAttributeTweaks;
+    //## END PROPS DisTweaks_WeaponRanged
+
+    DECLARE_CLASS(UDisTweaks_WeaponRanged,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WeaponRanged_Attributes: retail sizeof 224, reflected span 140..224 (2012 PDB sizeof 224)
+class UDisTweaks_WeaponRanged_Attributes : public UDisTweaks_Attributes
+{
+public:
+    //## BEGIN PROPS DisTweaks_WeaponRanged_Attributes
+    FDisAttribute m_DispersionMax;
+    FDisAttribute m_DispersionMin;
+    FDisAttribute m_DispersionInterpolationSpeed;
+    //## END PROPS DisTweaks_WeaponRanged_Attributes
+
+    DECLARE_CLASS(UDisTweaks_WeaponRanged_Attributes,UDisTweaks_Attributes,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_WeaponRanged)
+};
+
+// DishonoredGame.StateNPCInstigatedMasterAction: retail sizeof 104, reflected span 100..104 (2012 PDB sizeof 104)
+class UStateNPCInstigatedMasterAction : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCInstigatedMasterAction
+    class ADishonoredPawn* m_pInstigator;
+    //## END PROPS StateNPCInstigatedMasterAction
+
+    DECLARE_CLASS(UStateNPCInstigatedMasterAction,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AISubState: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState
+    //## END PROPS DisTweaks_AISubState
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_AISubState,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerBase: retail sizeof 184, reflected span 140..184 (2012 PDB sizeof 184)
+class UDisTweaks_GFxMoviePlayerBase : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerBase
+    class USwfMovie* m_pMovieInfo;
+    FStringNoInit m_MoviePackageName;
+    FStringNoInit m_MovieName;
+    FLOAT m_fStickDeadZone;
+    TArrayNoInit<FDisSoundThemeBinding> m_SoundThemes;
+    //## END PROPS DisTweaks_GFxMoviePlayerBase
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerBase,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerJournal: retail sizeof 240, reflected span 184..240 (2012 PDB sizeof 240)
+class UDisTweaks_GFxMoviePlayerJournal : public UDisTweaks_GFxMoviePlayerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerJournal
+    FStringNoInit m_ElixirIconNames[2];
+    FStringNoInit m_BoneCharmIconNames[2];
+    class UAkEvent* m_pShowSound;
+    class UAkEvent* m_pHideSound;
+    //## END PROPS DisTweaks_GFxMoviePlayerJournal
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerJournal,UDisTweaks_GFxMoviePlayerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_RiverKrust: retail sizeof 1208, reflected span 140..1208 (2012 PDB sizeof 1192)
+class UDisTweaks_RiverKrust : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_RiverKrust
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UAnimTree* m_pAnimTreeTemplate;
+    FName m_FullBodyAnimNodeSlotName;
+    TArrayNoInit<class UAnimSet*> m_AnimSets;
+    FRiverKrustAnimSequenceSpec m_AnimSequences[17];
+    BYTE m_DeathAnimStateMap[17];
+    BYTE m_HitReactAnimStateMap[17];
+    BYTE m_DamageReactionState;
+    TArrayNoInit<FRiverKrustBodyPartSpec> m_pBodyParts;
+    class UClass* m_pContactTypeProtected;
+    class UClass* m_pContactTypeUnprotected;
+    BITFIELD m_bIsAllowedToRagdoll:1;
+    BITFIELD m_bInstantRagdollOnDeath:1;
+    BITFIELD m_bUseRadialImpulseOnRagdollDamage:1;
+    BITFIELD m_bDetachFromBaseWhenRagdolled:1;
+    BITFIELD m_bShouldProtectedAreasCauseHitRebound:1;
+    BITFIELD m_bShouldLeadTargetWhenFiringProjectile:1;
+    TArrayNoInit<FRiverKrustAkEvent> m_InstantRagdollAkEvents;
+    FDisRangedInt m_MaximumHealth;
+    TArrayNoInit<FRiverKrustDamageFilter> m_DamageFilters;
+    TArrayNoInit<FRiverKrustDamageFilter> m_ProtectedDamageFilters;
+    TArrayNoInit<BYTE> m_ProtectedAnimStates;
+    FDisRangedFloat m_DamageReactionStateDuration;
+    TArrayNoInit<BYTE> m_HitReactAnimSupportedDuringStates;
+    FLOAT m_WindBlastEffectMinForce;
+    class UParticleSystem* m_WindBlastEffectTemplate;
+    FName m_WindBlastEffectSocketName;
+    TArrayNoInit<BYTE> m_SpringRazorTriggerAnimStates;
+    class UDisTweaks_PickupBase* m_pLootTweak;
+    FDisRangedFloat m_ImpulseForceWhenLooted;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    class UDisTweaks_Faction* m_pFactionTweak;
+    class UDisTweaks_Possessable* m_pPossessableTweaks;
+    FVector m_BodySpacePossessExitOffset;
+    class UDisTweaks_Vision* m_pVisionTweak;
+    FLOAT m_fLostTargetRetentionTime;
+    FLOAT m_fDefensiveEnterRange;
+    FLOAT m_fDefensiveExitRange;
+    FLOAT m_fAggressiveEnterRange;
+    FLOAT m_fAggressiveExitRange;
+    FDisRangedFloat m_DefensiveEnterDelay;
+    FDisRangedFloat m_DefensiveExitDelay;
+    FDisRangedFloat m_AggressiveExitDelay;
+    class UDisTweaks_Projectile* m_pProjectileTweak;
+    FName m_ProjectileLaunchSocketName;
+    FLOAT m_fProjectileTargetGroundProbeTraceDist;
+    FLOAT m_fProjectileFieldOfFireAngle;
+    FDisRangedFloat m_ProjectileSpeed;
+    FDisRangedFloat m_ProjectileTargetDistanceToSpeedMap;
+    FLOAT m_fChanceForAccurateProjectileAim;
+    INT m_ProjectileDamage[4];
+    FLOAT m_fProjectileHeadshotMultiplier;
+    FDisRangedFloat m_InitialVolleyDelay;
+    FDisRangedFloat m_TimeBetweenVolleys;
+    FDisRangedFloat m_TimeBetweenShots;
+    FDisRangedInt m_NumShotsPerVolley;
+    FLOAT m_fPullDuration;
+    TArrayNoInit<BYTE> m_DemoStates;
+    FLOAT m_fDemoStateDurationSeconds;
+    FColor m_StateDefaultBoxColor;
+    FColor m_StateAmbientBoxColor;
+    FColor m_StateDefensiveBoxColor;
+    FColor m_StateAggressiveBoxColor;
+    FColor m_StateFiringBoxColor;
+    FColor m_DefensiveEnterRangeColor;
+    FColor m_DefensiveExitRangeColor;
+    FColor m_AggressiveEnterRangeColor;
+    FColor m_AggressiveExitRangeColor;
+    FColor m_NearestThreatBoxColor;
+    FLOAT m_fRangeCylinderHalfHeight;
+    INT m_NumSegmentsInCircularShapes;
+    FLOAT m_fDebugBoxThickness;
+    FLOAT m_fDebugInfoLifeTime;
+    FLOAT m_fNearestThreatBoundingBoxSize;
+    FLOAT m_fPlayerLookingAtAngleThreshold;
+    //## END PROPS DisTweaks_RiverKrust
+
+    DECLARE_CLASS(UDisTweaks_RiverKrust,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_PickupBase: retail sizeof 220, reflected span 148..220 (2012 PDB sizeof 220)
+class UDisTweaks_PickupBase : public UDisTweaks_KActor
+{
+public:
+    //## BEGIN PROPS DisTweaks_PickupBase
+    class UStaticMesh* m_pPickupStaticMesh;
+    class UAkEvent* m_pPickupSoundEvent;
+    class UAkEvent* m_pCannotPickupSoundEvent;
+    FName m_SocketName;
+    class UAkEvent* m_pProximitySoundStart;
+    class UAkEvent* m_pProximitySoundStop;
+    BITFIELD m_bZappable:1;
+    BITFIELD m_bDontDestroyOnPickup:1;
+    BITFIELD m_bNoPhysics:1;
+    BITFIELD m_bTrackedByHeart:1;
+    BITFIELD m_bNotUsableWhilePossessing:1;
+    BITFIELD m_bDropOnNavMesh:1;
+    BITFIELD m_bIsKeyItem:1;
+    BITFIELD m_bNotConsumableByPossessedPawn:1;
+    FLOAT m_fTravelToUserTime;
+    FLOAT m_TravelCameraOffset;
+    class UParticleSystem* m_pParticleSystem;
+    class UParticleSystem* m_pTargetFX;
+    class UDisTweaks_Interactable_PickupBase* m_pInteractableTweaks;
+    FDisMovableParams m_MovableParams;
+    TArrayNoInit<class UDisTweaks_Faction*> m_OwningFactions;
+    //## END PROPS DisTweaks_PickupBase
+
+    DECLARE_CLASS(UDisTweaks_PickupBase,UDisTweaks_KActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Assassination: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Assassination : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Assassination
+    //## END PROPS DisDamageType_Assassination
+
+    DECLARE_CLASS(UDisDamageType_Assassination,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_BlinkKnockdown: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_BlinkKnockdown : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_BlinkKnockdown
+    //## END PROPS DisDamageType_BlinkKnockdown
+
+    DECLARE_CLASS(UDisDamageType_BlinkKnockdown,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_BlinkPush: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_BlinkPush : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_BlinkPush
+    //## END PROPS DisDamageType_BlinkPush
+
+    DECLARE_CLASS(UDisDamageType_BlinkPush,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Choke: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Choke : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Choke
+    //## END PROPS DisDamageType_Choke
+
+    DECLARE_CLASS(UDisDamageType_Choke,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_CrushKnockdown: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_CrushKnockdown : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_CrushKnockdown
+    //## END PROPS DisDamageType_CrushKnockdown
+
+    DECLARE_CLASS(UDisDamageType_CrushKnockdown,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_CrushPush: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_CrushPush : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_CrushPush
+    //## END PROPS DisDamageType_CrushPush
+
+    DECLARE_CLASS(UDisDamageType_CrushPush,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Energy: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Energy : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Energy
+    //## END PROPS DisDamageType_Energy
+
+    DECLARE_CLASS(UDisDamageType_Energy,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Projectile: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Projectile : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Projectile
+    //## END PROPS DishonoredDamageType_Projectile
+
+    DECLARE_CLASS(UDishonoredDamageType_Projectile,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Bullet: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Bullet : public UDishonoredDamageType_Projectile
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Bullet
+    //## END PROPS DishonoredDamageType_Bullet
+
+    DECLARE_CLASS(UDishonoredDamageType_Bullet,UDishonoredDamageType_Projectile,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ExplosiveBullet: retail sizeof 136, reflected span 136..136 (new in 2013)
+class UDisDamageType_ExplosiveBullet : public UDishonoredDamageType_Bullet
+{
+public:
+    //## BEGIN PROPS DisDamageType_ExplosiveBullet
+    //## END PROPS DisDamageType_ExplosiveBullet
+
+    DECLARE_CLASS(UDisDamageType_ExplosiveBullet,UDishonoredDamageType_Bullet,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_FastHit: retail sizeof 140, reflected span 133..140 (2012 PDB sizeof 140)
+class UDishonoredDamageType_FastHit : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_FastHit
+    BITFIELD m_bIsUpwardSlash:1;
+    //## END PROPS DishonoredDamageType_FastHit
+
+    DECLARE_CLASS(UDishonoredDamageType_FastHit,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_FastHit_Left: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_FastHit_Left : public UDishonoredDamageType_FastHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_FastHit_Left
+    //## END PROPS DisDamageType_FastHit_Left
+
+    DECLARE_CLASS(UDisDamageType_FastHit_Left,UDishonoredDamageType_FastHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_FastHit_Right: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_FastHit_Right : public UDishonoredDamageType_FastHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_FastHit_Right
+    //## END PROPS DisDamageType_FastHit_Right
+
+    DECLARE_CLASS(UDisDamageType_FastHit_Right,UDishonoredDamageType_FastHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_FastHit_Up: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_FastHit_Up : public UDishonoredDamageType_FastHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_FastHit_Up
+    //## END PROPS DisDamageType_FastHit_Up
+
+    DECLARE_CLASS(UDisDamageType_FastHit_Up,UDishonoredDamageType_FastHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_FastHit_Up_Left: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_FastHit_Up_Left : public UDisDamageType_FastHit_Left
+{
+public:
+    //## BEGIN PROPS DisDamageType_FastHit_Up_Left
+    //## END PROPS DisDamageType_FastHit_Up_Left
+
+    DECLARE_CLASS(UDisDamageType_FastHit_Up_Left,UDisDamageType_FastHit_Left,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_FastHit_Up_Right: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_FastHit_Up_Right : public UDisDamageType_FastHit_Right
+{
+public:
+    //## BEGIN PROPS DisDamageType_FastHit_Up_Right
+    //## END PROPS DisDamageType_FastHit_Up_Right
+
+    DECLARE_CLASS(UDisDamageType_FastHit_Up_Right,UDisDamageType_FastHit_Right,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_FishBite: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_FishBite : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_FishBite
+    //## END PROPS DisDamageType_FishBite
+
+    DECLARE_CLASS(UDisDamageType_FishBite,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_GenericSleep: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_GenericSleep : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_GenericSleep
+    //## END PROPS DisDamageType_GenericSleep
+
+    DECLARE_CLASS(UDisDamageType_GenericSleep,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Impact: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Impact : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Impact
+    //## END PROPS DisDamageType_Impact
+
+    DECLARE_CLASS(UDisDamageType_Impact,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit : public UDishonoredDamageType_FastHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit
+    //## END PROPS DisDamageType_ImpactHit
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit,UDishonoredDamageType_FastHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Adrenaline: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Adrenaline : public UDishonoredDamageType_FastHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Adrenaline
+    //## END PROPS DisDamageType_ImpactHit_Adrenaline
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Adrenaline,UDishonoredDamageType_FastHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Adrenaline_Left: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Adrenaline_Left : public UDisDamageType_ImpactHit_Adrenaline
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Adrenaline_Left
+    //## END PROPS DisDamageType_ImpactHit_Adrenaline_Left
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Adrenaline_Left,UDisDamageType_ImpactHit_Adrenaline,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Adrenaline_Right: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Adrenaline_Right : public UDisDamageType_ImpactHit_Adrenaline
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Adrenaline_Right
+    //## END PROPS DisDamageType_ImpactHit_Adrenaline_Right
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Adrenaline_Right,UDisDamageType_ImpactHit_Adrenaline,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Adrenaline_Up: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Adrenaline_Up : public UDisDamageType_ImpactHit_Adrenaline
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Adrenaline_Up
+    //## END PROPS DisDamageType_ImpactHit_Adrenaline_Up
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Adrenaline_Up,UDisDamageType_ImpactHit_Adrenaline,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Adrenaline_Up_Left: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Adrenaline_Up_Left : public UDisDamageType_ImpactHit_Adrenaline_Left
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Adrenaline_Up_Left
+    //## END PROPS DisDamageType_ImpactHit_Adrenaline_Up_Left
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Adrenaline_Up_Left,UDisDamageType_ImpactHit_Adrenaline_Left,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Adrenaline_Up_Right: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Adrenaline_Up_Right : public UDisDamageType_ImpactHit_Adrenaline_Right
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Adrenaline_Up_Right
+    //## END PROPS DisDamageType_ImpactHit_Adrenaline_Up_Right
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Adrenaline_Up_Right,UDisDamageType_ImpactHit_Adrenaline_Right,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Left: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Left : public UDisDamageType_ImpactHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Left
+    //## END PROPS DisDamageType_ImpactHit_Left
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Left,UDisDamageType_ImpactHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Right: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Right : public UDisDamageType_ImpactHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Right
+    //## END PROPS DisDamageType_ImpactHit_Right
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Right,UDisDamageType_ImpactHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Up: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Up : public UDisDamageType_ImpactHit
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Up
+    //## END PROPS DisDamageType_ImpactHit_Up
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Up,UDisDamageType_ImpactHit,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Up_Left: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Up_Left : public UDisDamageType_ImpactHit_Left
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Up_Left
+    //## END PROPS DisDamageType_ImpactHit_Up_Left
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Up_Left,UDisDamageType_ImpactHit_Left,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_ImpactHit_Up_Right: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisDamageType_ImpactHit_Up_Right : public UDisDamageType_ImpactHit_Right
+{
+public:
+    //## BEGIN PROPS DisDamageType_ImpactHit_Up_Right
+    //## END PROPS DisDamageType_ImpactHit_Up_Right
+
+    DECLARE_CLASS(UDisDamageType_ImpactHit_Up_Right,UDisDamageType_ImpactHit_Right,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_InstantSleep: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDisDamageType_InstantSleep : public UDisDamageType_GenericSleep
+{
+public:
+    //## BEGIN PROPS DisDamageType_InstantSleep
+    //## END PROPS DisDamageType_InstantSleep
+
+    DECLARE_CLASS(UDisDamageType_InstantSleep,UDisDamageType_GenericSleep,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Minigame: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Minigame : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Minigame
+    //## END PROPS DisDamageType_Minigame
+
+    DECLARE_CLASS(UDisDamageType_Minigame,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Musical: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Musical : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Musical
+    //## END PROPS DisDamageType_Musical
+
+    DECLARE_CLASS(UDisDamageType_Musical,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_OutOfNavMesh: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_OutOfNavMesh : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_OutOfNavMesh
+    //## END PROPS DisDamageType_OutOfNavMesh
+
+    DECLARE_CLASS(UDisDamageType_OutOfNavMesh,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_PostPossessSleep: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_PostPossessSleep : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_PostPossessSleep
+    //## END PROPS DisDamageType_PostPossessSleep
+
+    DECLARE_CLASS(UDisDamageType_PostPossessSleep,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_RagdollImpact: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDisDamageType_RagdollImpact : public UDisDamageType_Impact
+{
+public:
+    //## BEGIN PROPS DisDamageType_RagdollImpact
+    //## END PROPS DisDamageType_RagdollImpact
+
+    DECLARE_CLASS(UDisDamageType_RagdollImpact,UDisDamageType_Impact,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_RiverKrustSpit: retail sizeof 136, reflected span 133..136 (new in 2013)
+class UDisDamageType_RiverKrustSpit : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_RiverKrustSpit
+    //## END PROPS DisDamageType_RiverKrustSpit
+
+    DECLARE_CLASS(UDisDamageType_RiverKrustSpit,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Sleep_Deferred: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Sleep_Deferred : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Sleep_Deferred
+    //## END PROPS DisDamageType_Sleep_Deferred
+
+    DECLARE_CLASS(UDisDamageType_Sleep_Deferred,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Bash: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Bash : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Bash
+    //## END PROPS DishonoredDamageType_Bash
+
+    DECLARE_CLASS(UDishonoredDamageType_Bash,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Slide: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDisDamageType_Slide : public UDishonoredDamageType_Bash
+{
+public:
+    //## BEGIN PROPS DisDamageType_Slide
+    //## END PROPS DisDamageType_Slide
+
+    DECLARE_CLASS(UDisDamageType_Slide,UDishonoredDamageType_Bash,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_SpringRazorPlaced: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_SpringRazorPlaced : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_SpringRazorPlaced
+    //## END PROPS DisDamageType_SpringRazorPlaced
+
+    DECLARE_CLASS(UDisDamageType_SpringRazorPlaced,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_UnpossessSquash: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDisDamageType_UnpossessSquash : public UDisDamageType_Impact
+{
+public:
+    //## BEGIN PROPS DisDamageType_UnpossessSquash
+    //## END PROPS DisDamageType_UnpossessSquash
+
+    DECLARE_CLASS(UDisDamageType_UnpossessSquash,UDisDamageType_Impact,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_WallOfLight: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDisDamageType_WallOfLight : public UDisDamageType_Energy
+{
+public:
+    //## BEGIN PROPS DisDamageType_WallOfLight
+    //## END PROPS DisDamageType_WallOfLight
+
+    DECLARE_CLASS(UDisDamageType_WallOfLight,UDisDamageType_Energy,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_Water: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_Water : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_Water
+    //## END PROPS DisDamageType_Water
+
+    DECLARE_CLASS(UDisDamageType_Water,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_WhiskeyFire: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_WhiskeyFire : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_WhiskeyFire
+    //## END PROPS DisDamageType_WhiskeyFire
+
+    DECLARE_CLASS(UDisDamageType_WhiskeyFire,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDamageType_WindBlast: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDisDamageType_WindBlast : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DisDamageType_WindBlast
+    //## END PROPS DisDamageType_WindBlast
+
+    DECLARE_CLASS(UDisDamageType_WindBlast,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisDefenseTutorialTracker: retail sizeof 76, reflected span 64..76 (2012 PDB sizeof 76)
+class UDisDefenseTutorialTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisDefenseTutorialTracker
+    FDelayedNoteInfo m_NoteInfo;
+    BITFIELD m_bShownNote:1;
+    //## END PROPS DisDefenseTutorialTracker
+
+    DECLARE_CLASS(UDisDefenseTutorialTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDesireStructs: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisDesireStructs : public UObject
+{
+public:
+    //## BEGIN PROPS DisDesireStructs
+    //## END PROPS DisDesireStructs
+
+    DECLARE_ABSTRACT_CLASS(UDisDesireStructs,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDistractionGlobalManager: retail sizeof 80, reflected span 56..80 (2012 PDB sizeof 80)
+class UDisDistractionGlobalManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisDistractionGlobalManager
+    TArrayNoInit<class UDisNPCDistractionComponent*> m_Distractions;
+    TArrayNoInit<class UDishonoredAIBrain*> m_InterestedBrains;
+    //## END PROPS DisDistractionGlobalManager
+
+    DECLARE_CLASS(UDisDistractionGlobalManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_SkeletalBreakable: retail sizeof 196, reflected span 140..196 (2012 PDB sizeof 196)
+class UDisTweaks_SkeletalBreakable : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_SkeletalBreakable
+    FDisBreakableMeshInfo m_UnbrokenMeshInfo;
+    FDisBreakableMeshInfo m_BrokenMeshInfo;
+    BITFIELD m_bHasPhysicsAssetInstance:1;
+    BITFIELD m_bShouldTraceAsWorldGeometry:1;
+    BITFIELD m_bTransparentForVisionChecks:1;
+    BITFIELD m_bAttractsNPCs:1;
+    INT m_Health;
+    INT m_DamageThreshold;
+    TArrayNoInit<class UClass*> m_pImmuneToDamageTypes;
+    TArrayNoInit<class UClass*> m_pVulnerableToDamageTypes;
+    class UDisSkeletalBreakStepsInterface* m_pBreakSteps;
+    //## END PROPS DisTweaks_SkeletalBreakable
+
+    DECLARE_CLASS(UDisTweaks_SkeletalBreakable,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSkeletalBreakStepsInterface: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisSkeletalBreakStepsInterface : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisSkeletalBreakStepsInterface
+    //## END PROPS DisSkeletalBreakStepsInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisSkeletalBreakStepsInterface,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_SkeletalBreakable)
+};
+
+// DishonoredGame.DisDoorBreakSteps: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisDoorBreakSteps : public UDisSkeletalBreakStepsInterface
+{
+public:
+    //## BEGIN PROPS DisDoorBreakSteps
+    TArrayNoInit<FDisDoorBreakStep> m_DoorBreakSteps;
+    //## END PROPS DisDoorBreakSteps
+
+    DECLARE_CLASS(UDisDoorBreakSteps,UDisSkeletalBreakStepsInterface,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_SkeletalBreakable)
+};
+
+// DishonoredGame.DisDrawVisionComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisDrawVisionComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisDrawVisionComponent
+    //## END PROPS DisDrawVisionComponent
+
+    DECLARE_CLASS(UDisDrawVisionComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDropAssassinationTracker: retail sizeof 64, reflected span 64..64 (2012 PDB sizeof 64)
+class UDisDropAssassinationTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisDropAssassinationTracker
+    //## END PROPS DisDropAssassinationTracker
+
+    DECLARE_CLASS(UDisDropAssassinationTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisElixirTracker: retail sizeof 80, reflected span 64..80 (2012 PDB sizeof 80)
+class UDisElixirTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisElixirTracker
+    INT m_ElixirAcquiredTutorialID[2];
+    INT m_UseElixirTutorialID[2];
+    //## END PROPS DisElixirTracker
+
+    DECLARE_CLASS(UDisElixirTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisFleeComponent: retail sizeof 480, reflected span 452..476 (2012 PDB sizeof 480)
+class UDisFleeComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisFleeComponent
+    class UDisFleeComponent* m_pNextFleePoint;
+    BITFIELD m_bFleeEnabled:1;
+    class ADishonoredNPCPawn* m_pNPCWhoClaimsMe;
+    TArrayNoInit<FDisSquadProperty> m_Squads;
+    //## END PROPS DisFleeComponent
+
+    DECLARE_CLASS(UDisFleeComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisFleeConstraint: retail sizeof 96, reflected span 76..96 (2012 PDB sizeof 96)
+class UDisFleeConstraint : public UNavMeshPathConstraint
+{
+public:
+    //## BEGIN PROPS DisFleeConstraint
+    FVector m_vFleeFromLoc;
+    FLOAT m_fForbiddenRadius;
+    FLOAT m_fForbiddenAngle;
+    //## END PROPS DisFleeConstraint
+
+    DECLARE_CLASS(UDisFleeConstraint,UNavMeshPathConstraint,0,DishonoredGame)
+};
+
+// DishonoredGame.DisFleePointManager: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60)
+class UDisFleePointManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisFleePointManager
+    class UDisFleeComponent* m_pFleePointList;
+    //## END PROPS DisFleePointManager
+
+    DECLARE_CLASS(UDisFleePointManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGlobalAIAttentionManager: retail sizeof 72, reflected span 56..72 (2012 PDB sizeof 72)
+class UDisGlobalAIAttentionManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisGlobalAIAttentionManager
+    class UDisAttentionInfo_Simple* m_pSimpleAttnInfoFreeList;
+    BITFIELD m_bDebug_AllocNumDirty:1;
+    INT m_Debug_NumAllocatedSimpleAttnInfos;
+    INT m_Debug_NumFreeSimpleAttnInfos;
+    //## END PROPS DisGlobalAIAttentionManager
+
+    DECLARE_CLASS(UDisGlobalAIAttentionManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGlobalDLCManager: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisGlobalDLCManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisGlobalDLCManager
+    //## END PROPS DisGlobalDLCManager
+
+    DECLARE_CLASS(UDisGlobalDLCManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGlobalFactionManager: retail sizeof 356, reflected span 56..356 (2012 PDB sizeof 356)
+class UDisGlobalFactionManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisGlobalFactionManager
+    TMap<class UDisTweaks_Faction*,FDisRelationshipOverrideInfo> m_GlobalRelationships;  // DISHONORED(layout): retail SDK gap @56: MapProperty m_GlobalRelationships (script_classes_2013), type from the 2012 PDB
+    TMultiMap<class IDisRelationshipInterface*,class UDisTweaks_Faction*> m_Trespassers; // DISHONORED(layout): type from the 2012 PDB (SDK: struct FMultiMap_Mirror)
+    TMap<class IDisRelationshipInterface*,FDisDetermineRelationshipIndividualMap> m_DetermineIndividualRelationshipCache;  // DISHONORED(layout): retail SDK gap @176: MapProperty m_DetermineIndividualRelationshipCache (script_classes_2013), type from the 2012 PDB
+    TMap<class IDisRelationshipInterface*,FDisDetermineRelationshipFactionMap> m_DetermineFactionRelationshipCache;  // DISHONORED(layout): retail SDK gap @236: MapProperty m_DetermineFactionRelationshipCache (script_classes_2013), type from the 2012 PDB
+    TMap<FDisFactionPair,ERelationship> m_FactionRelationshipCache;  // DISHONORED(layout): retail SDK gap @296: MapProperty m_FactionRelationshipCache (script_classes_2013), type from the 2012 PDB
+    //## END PROPS DisGlobalFactionManager
+
+    DECLARE_CLASS(UDisGlobalFactionManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisHeartTargetTracker: retail sizeof 80, reflected span 64..80 (2012 PDB sizeof 80)
+class UDisHeartTargetTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisHeartTargetTracker
+    INT m_ShowCount;
+    TArrayNoInit<class ADisPickup_Base*> m_HeartTargetsAlreadyTracked;
+    //## END PROPS DisHeartTargetTracker
+
+    DECLARE_CLASS(UDisHeartTargetTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisHideoutComponent: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisHideoutComponent : public UObject
+{
+public:
+    //## BEGIN PROPS DisHideoutComponent
+    TArrayNoInit<class ADisHideoutAccessPoint*> m_AccessPoints;
+    BITFIELD m_bAccessPointsInitialized:1;
+    INT m_iBelieversCount;
+    //## END PROPS DisHideoutComponent
+
+    DECLARE_ABSTRACT_CLASS(UDisHideoutComponent,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisHideoutComponent_Usable: retail sizeof 76, reflected span 76..76 (2012 PDB sizeof 76)
+class UDisHideoutComponent_Usable : public UDisHideoutComponent
+{
+public:
+    //## BEGIN PROPS DisHideoutComponent_Usable
+    //## END PROPS DisHideoutComponent_Usable
+
+    DECLARE_CLASS(UDisHideoutComponent_Usable,UDisHideoutComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisHideoutComponent_Volume: retail sizeof 76, reflected span 76..76 (2012 PDB sizeof 76)
+class UDisHideoutComponent_Volume : public UDisHideoutComponent
+{
+public:
+    //## BEGIN PROPS DisHideoutComponent_Volume
+    //## END PROPS DisHideoutComponent_Volume
+
+    DECLARE_CLASS(UDisHideoutComponent_Volume,UDisHideoutComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisKeyRing: retail sizeof 96, reflected span 56..96 (2012 PDB sizeof 96)
+class UDisKeyRing : public UObject
+{
+public:
+    //## BEGIN PROPS DisKeyRing
+    TArrayNoInit<FDisKeyInfo> m_Keys;
+    FStringNoInit m_UseMessage;
+    TArrayNoInit<FDisKeyInfo> m_Keys_Backup;
+    BITFIELD m_bBackupIsValid:1;
+    //## END PROPS DisKeyRing
+
+    DECLARE_CLASS(UDisKeyRing,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisLocalPlayer: retail sizeof 620, reflected span 612..620 (2012 PDB sizeof 616)
+class UDisLocalPlayer : public ULocalPlayer
+{
+public:
+    //## BEGIN PROPS DisLocalPlayer
+    BITFIELD m_bShowTitleScreen:1;
+    BITFIELD m_bDLC05ExpertMode:1;
+    INT m_DLC05ChallengeIndex;
+    //## END PROPS DisLocalPlayer
+
+    DECLARE_CLASS(UDisLocalPlayer,ULocalPlayer,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+    DECLARE_WITHIN(UEngine)
+};
+
+// DishonoredGame.DisMovableTracker: retail sizeof 64, reflected span 64..64 (2012 PDB sizeof 64)
+class UDisMovableTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisMovableTracker
+    //## END PROPS DisMovableTracker
+
+    DECLARE_CLASS(UDisMovableTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNPCDistractionComponent: retail sizeof 736, reflected span 452..728 (2012 PDB sizeof 736)
+class UDisNPCDistractionComponent : public UPrimitiveComponent, public IDisGoToFollowupInterface, public IDisLookAtInterface
+{
+public:
+    //## BEGIN PROPS DisNPCDistractionComponent
+    BITFIELD m_bDistractionEnabled:1;
+    BITFIELD m_bRequireLOS:1;
+    BITFIELD m_bLowerAIAlertness:1;
+    BITFIELD m_bUseSoireeInsteadAnim:1;
+    FName m_DistractionAnimPrefix;
+    FName m_DistractionAnimIntroSuffix;
+    FName m_DistractionAnimLoopSuffix;
+    FName m_DistractionAnimOutroSuffix;
+    FLOAT m_fDistractionLOSCheckPeriod;
+    TArrayNoInit<FName> m_DistractionCategories;
+    FLOAT m_fDistractionRange;
+    FLOAT m_fCooldownTime;
+    FLOAT m_fDistractionPulseTime;
+    FRawDistributionFloat m_DistractionTime;
+    FName m_DistractionCategory;
+    FDistractionChances m_SuspicionLvl1_Chances;
+    FDistractionChances m_SuspicionLvl234_Chances;
+    TArrayNoInit<class UDisTweaks_NPCPawn*> m_DistractablePawnTweaks;
+    TArrayNoInit<class UDisTweaks_NPCPawn*> m_NonDistractablePawnTweaks;
+    TArrayNoInit<class ADishonoredRoute*> m_AllowedRoutes;
+    TArrayNoInit<class UAnimSet*> m_NPCAnimSets;
+    BYTE m_NPCDistractionType;
+    BYTE m_AnimDistractionState;
+    TArrayNoInit<FDistractionSoireeActors> m_lDistractionSoireeActor;
+    class UMatineeData* m_pDistractionMatineeData;
+    TArrayNoInit<FDistractionSoireeLoops> m_lDistractionSoireeLoops;
+    FLOAT m_fEditorArrowLength;
+    FLOAT m_fEditorArrowWidth;
+    FColor m_EditorArrowColor;
+    FColor m_EditorRadiusColor;
+    FLOAT m_fCooldownTimer;
+    FLOAT m_fPulseTimer;
+    class UDishonoredAIBrain* m_NearbyBrains[5];
+    class UDishonoredAIBrain* m_BrainsToCheckOnTick[5];
+    class ADishonoredNPCPawn* m_pLinkedGoToPawn;
+    class ADishonoredNPCPawn* m_pLinkedAnimPawn;
+    //## END PROPS DisNPCDistractionComponent
+
+    DECLARE_CLASS(UDisNPCDistractionComponent,UPrimitiveComponent,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.DisNPCTravelManager: retail sizeof 240, reflected span 56..240 (2012 PDB sizeof 240)
+class UDisNPCTravelManager : public UObject, public IDisSpawnRequesterInterface
+{
+public:
+    //## BEGIN PROPS DisNPCTravelManager
+    class UClass* m_DisallowedNPCStates[8];
+    class UClass* m_TravelEndingNPCStates[3];
+    class ULevel* m_pCurrentLevel;
+    FName m_CurrentLevelName;
+    TMap<FName,TArray<class ADisTravelSpawner*>> m_ArrivalSpawners;  // DISHONORED(layout): retail SDK gap @116: MapProperty m_ArrivalSpawners (script_classes_2013), type from the 2012 PDB
+    TMap<INT,FDisNPCTravelInfo> m_TravelingNPCs;  // DISHONORED(layout): retail SDK gap @176: MapProperty m_TravelingNPCs (script_classes_2013), type from the 2012 PDB
+    INT m_NextTripID;
+    //## END PROPS DisNPCTravelManager
+
+    DECLARE_CLASS(UDisNPCTravelManager,UObject,0,DishonoredGame)
+    DECLARE_WITHIN(ADishonoredGameInfo)
+};
+
+// DishonoredGame.DisNativeStateMachine_PlayerAction: retail sizeof 196, reflected span 188..196 (2012 PDB sizeof 196)
+class UDisNativeStateMachine_PlayerAction : public UDishonoredNativeStateMachine
+{
+public:
+    //## BEGIN PROPS DisNativeStateMachine_PlayerAction
+    BYTE m_BoundAnimStatePicker;
+    BYTE m_BoundToItemUsage;
+    BYTE m_ActionUsage;
+    BITFIELD m_bUseNavigationState:1;
+    //## END PROPS DisNativeStateMachine_PlayerAction
+
+    DECLARE_CLASS(UDisNativeStateMachine_PlayerAction,UDishonoredNativeStateMachine,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DisNativeStateTransitionLogic: retail sizeof 132, reflected span 56..132 (2012 PDB sizeof 132)
+class UDisNativeStateTransitionLogic : public UObject
+{
+public:
+    //## BEGIN PROPS DisNativeStateTransitionLogic
+    TArrayNoInit<FStateTransitionLogic> m_Transitions;
+    TMap<FStateTransitionLogicKey,EStateTransitionLogicResult> m_TransitionMap;  // DISHONORED(layout): retail SDK gap @68: MapProperty m_TransitionMap (script_classes_2013), type from the 2012 PDB
+    BITFIELD m_bInitialized:1;
+    //## END PROPS DisNativeStateTransitionLogic
+
+    DECLARE_CLASS(UDisNativeStateTransitionLogic,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNavConstraint_MinDistanceFromLocation: retail sizeof 92, reflected span 76..92 (2012 PDB sizeof 92)
+class UDisNavConstraint_MinDistanceFromLocation : public UNavMeshPathConstraint
+{
+public:
+    //## BEGIN PROPS DisNavConstraint_MinDistanceFromLocation
+    FVector m_LocationToAvoid;
+    FLOAT m_fAvoidDistance;
+    //## END PROPS DisNavConstraint_MinDistanceFromLocation
+
+    DECLARE_CLASS(UDisNavConstraint_MinDistanceFromLocation,UNavMeshPathConstraint,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNavConstraint_ShootingPosition: retail sizeof 100, reflected span 76..100 (2012 PDB sizeof 100)
+class UDisNavConstraint_ShootingPosition : public UNavMeshPathConstraint
+{
+public:
+    //## BEGIN PROPS DisNavConstraint_ShootingPosition
+    class ADishonoredNPCPawn* m_pShootingNPC;
+    FVector m_TargetPosition;
+    FLOAT m_fIdealShootRange;
+    FLOAT m_fMaxPathRange;
+    //## END PROPS DisNavConstraint_ShootingPosition
+
+    DECLARE_CLASS(UDisNavConstraint_ShootingPosition,UNavMeshPathConstraint,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNavMeshGoal_BestFleePoint: retail sizeof 164, reflected span 152..164 (2012 PDB sizeof 164)
+class UDisNavMeshGoal_BestFleePoint : public UNavMeshGoal_ClosestActorInList
+{
+public:
+    //## BEGIN PROPS DisNavMeshGoal_BestFleePoint
+    FVector m_vFromLocation;
+    //## END PROPS DisNavMeshGoal_BestFleePoint
+
+    DECLARE_FUNCTION(execRecycleInternal);
+    DECLARE_CLASS(UDisNavMeshGoal_BestFleePoint,UNavMeshGoal_ClosestActorInList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNavMeshGoal_MinDistanceFromLocation: retail sizeof 96, reflected span 76..96 (2012 PDB sizeof 96)
+class UDisNavMeshGoal_MinDistanceFromLocation : public UNavMeshPathGoalEvaluator
+{
+public:
+    //## BEGIN PROPS DisNavMeshGoal_MinDistanceFromLocation
+    FVector m_Location;
+    FLOAT m_fMinDistSq;
+    FPointer m_pStartPoly;
+    //## END PROPS DisNavMeshGoal_MinDistanceFromLocation
+
+    DECLARE_CLASS(UDisNavMeshGoal_MinDistanceFromLocation,UNavMeshPathGoalEvaluator,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNavMeshGoal_SafeFromThreat: retail sizeof 148, reflected span 76..148 (2012 PDB sizeof 148)
+class UDisNavMeshGoal_SafeFromThreat : public UNavMeshPathGoalEvaluator
+{
+public:
+    //## BEGIN PROPS DisNavMeshGoal_SafeFromThreat
+    class AActor* m_pThreat;
+    FLOAT m_fMaxDistance;
+    FLOAT m_fMinDistance;
+    BITFIELD m_bCheckVisibility:1;
+    FPointer m_pStartPoly;
+    FVector m_vResultingSafePos;
+    class AActor* m_pCachedPathfindingActor;
+    class APawn* m_pCachedPathfindingPawn;
+    FPointer m_pCachedObservable;
+    FPointer m_pCachedVision;
+    FVector m_vCachedThreatViewPoint;
+    TArrayNoInit<FVector> m_CachedVisiblePoints;
+    //## END PROPS DisNavMeshGoal_SafeFromThreat
+
+    DECLARE_CLASS(UDisNavMeshGoal_SafeFromThreat,UNavMeshPathGoalEvaluator,0,DishonoredGame)
+};
+
+struct DisNavMeshGoal_ShootingPosition_eventRecycle_Parms
+{
+    DisNavMeshGoal_ShootingPosition_eventRecycle_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisNavMeshGoal_ShootingPosition: retail sizeof 132, reflected span 76..132 (2012 PDB sizeof 132)
+class UDisNavMeshGoal_ShootingPosition : public UNavMeshPathGoalEvaluator
+{
+public:
+    //## BEGIN PROPS DisNavMeshGoal_ShootingPosition
+    FDisAttentionProxy m_TargetProxy;
+    FVector m_TargetLocation;
+    class ADishonoredNPCPawn* m_pShootingNPCPawn;
+    FLOAT m_fIdealShootRange;
+    FPointer m_pStartPoly;
+    TArrayNoInit<FVector> m_ShootPositionCandidates;
+    BITFIELD m_bForbidStartingPoly:1;
+    //## END PROPS DisNavMeshGoal_ShootingPosition
+
+    void eventRecycle()
+    {
+        DisNavMeshGoal_ShootingPosition_eventRecycle_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_Recycle),&Parms);
+    }
+    DECLARE_FUNCTION(execRecycle);
+    DECLARE_CLASS(UDisNavMeshGoal_ShootingPosition,UNavMeshPathGoalEvaluator,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNavMeshGoal_WithinDistanceEnvelopeFrom: retail sizeof 116, reflected span 76..116 (2012 PDB sizeof 116)
+class UDisNavMeshGoal_WithinDistanceEnvelopeFrom : public UNavMeshPathGoalEvaluator
+{
+public:
+    //## BEGIN PROPS DisNavMeshGoal_WithinDistanceEnvelopeFrom
+    class AActor* m_pFrom;
+    FLOAT m_fIdealDistance;
+    FLOAT m_fTolerance;
+    FLOAT m_fSqrMaxDistance;
+    FLOAT m_fSqrMinDistance;
+    FLOAT m_fSqrIdealDistance;
+    FPolyPointer m_pStartPoly;
+    TArrayNoInit<FPolyPointer> m_GoalList;
+    //## END PROPS DisNavMeshGoal_WithinDistanceEnvelopeFrom
+
+    DECLARE_CLASS(UDisNavMeshGoal_WithinDistanceEnvelopeFrom,UNavMeshPathGoalEvaluator,0,DishonoredGame)
+};
+
+// DishonoredGame.DisParticleSystemComponent: retail sizeof 720, reflected span 704..708 (2012 PDB sizeof 720)
+class UDisParticleSystemComponent : public UParticleSystemComponent
+{
+public:
+    //## BEGIN PROPS DisParticleSystemComponent
+    FLOAT m_fTimeToDisable;
+    //## END PROPS DisParticleSystemComponent
+
+    DECLARE_FUNCTION(execInitializeForPool);
+    DECLARE_CLASS(UDisParticleSystemComponent,UParticleSystemComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPatrolManager: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60)
+class UDisPatrolManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisPatrolManager
+    class ADishonoredRoute* m_pRouteList;
+    //## END PROPS DisPatrolManager
+
+    DECLARE_CLASS(UDisPatrolManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPerfectBlockTracker: retail sizeof 80, reflected span 64..80 (2012 PDB sizeof 80)
+class UDisPerfectBlockTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisPerfectBlockTracker
+    INT m_MissedPerfectBlockOpportunities;
+    BITFIELD m_bShownCounterAttackNote:1;
+    FDelayedNoteInfo m_NoteInfo;
+    //## END PROPS DisPerfectBlockTracker
+
+    DECLARE_CLASS(UDisPerfectBlockTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPostProcessManager: retail sizeof 760, reflected span 56..760 (2012 PDB sizeof 656)
+class UDisPostProcessManager : public UObject, public IArkSettingsListenerInterface
+{
+public:
+    //## BEGIN PROPS DisPostProcessManager
+    FPpBridge m_PpBridge;
+    INT m_RequiredEffects[21];
+    BYTE m_EffectStates[21];
+    BYTE m_PCAntialiasingType;
+    FLOAT m_BendTimeIntensity;
+    FLinearColor m_BlinkParams;
+    FLinearColor m_AdrenalineParams;
+    FLinearColor m_PossessionParams;
+    FLOAT m_KnockOutTimer;
+    FLOAT m_ZoomLensStateTime;
+    FLOAT m_PossessionStateTime;
+    FLOAT m_KismetStateDuration;
+    FLOAT m_KismetPPFadeOutTime;
+    FLOAT m_KismetPPFadeInTime;
+    FLOAT m_KismetPPWeight;
+    FArkUberPpParameters m_KismetPPParams;
+    FLOAT m_UIStateDuration;
+    FLOAT m_UIPPFadeOutTime;
+    FLOAT m_UIPPFadeInTime;
+    FLOAT m_UIPPWeight;
+    FArkUberPpParameters m_UIPPParams;
+    FLOAT m_fElapsedFakeBlinkStateTime;
+    //## END PROPS DisPostProcessManager
+
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisPostProcessManager::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_CLASS(UDisPostProcessManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPowerMenu: retail sizeof 80, reflected span 56..80 (2012 PDB sizeof 80)
+class UDisPowerMenu : public UObject
+{
+public:
+    //## BEGIN PROPS DisPowerMenu
+    TArrayNoInit<FDisPowerMenuItem> m_Items;
+    INT m_CurrentItem;
+    BITFIELD m_bVisible:1;
+    class UDisAbstractItem* m_Currency;
+    //## END PROPS DisPowerMenu
+
+    DECLARE_CLASS(UDisPowerMenu,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisPursuitTracker: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisPursuitTracker : public UObject
+{
+public:
+    //## BEGIN PROPS DisPursuitTracker
+    TArrayNoInit<class ADishonoredNPCPawn*> m_Pursuers;
+    INT m_MaxPursuersCount;
+    BITFIELD m_bKilledPursuer:1;
+    //## END PROPS DisPursuitTracker
+
+    DECLARE_CLASS(UDisPursuitTracker,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisRatLightComponent: retail sizeof 464, reflected span 452..464 (2012 PDB sizeof 464)
+class UDisRatLightComponent : public UPrimitiveComponent, public IDisBlinderInterface
+{
+public:
+    //## BEGIN PROPS DisRatLightComponent
+    FLOAT m_fRadius;
+    BITFIELD m_bBlindPlayer:1;
+    //## END PROPS DisRatLightComponent
+
+    DECLARE_CLASS(UDisRatLightComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisRatSwarmGlobalManager: retail sizeof 108, reflected span 56..108 (2012 PDB sizeof 108)
+class UDisRatSwarmGlobalManager : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisRatSwarmGlobalManager
+    TArrayNoInit<FDisCorpseToEat> m_Corpses;
+    class ADishonoredNPCPawn* m_pTargetPawn;
+    FLOAT m_fTimeBeforeSpawning;
+    FLOAT m_fDispersalTimer;
+    class ADisGameCrowdDynamicSpawnPoint* m_pSpawnPoint;
+    class ADisRatSwarm* m_pRatSwarm;
+    class UDisTweaks_RatSwarmGlobalManager* m_pTweaks;
+    TArrayNoInit<class AGameCrowdAgent*> m_RandomRatSwarmSidePool;
+    //## END PROPS DisRatSwarmGlobalManager
+
+    DECLARE_CLASS(UDisRatSwarmGlobalManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisRiverKrustComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDisRiverKrustComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisRiverKrustComponent
+    //## END PROPS DisRiverKrustComponent
+
+    DECLARE_CLASS(UDisRiverKrustComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_IsPlayerInCombat: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)
+class UDisSeqCond_IsPlayerInCombat : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_IsPlayerInCombat
+    //## END PROPS DisSeqCond_IsPlayerInCombat
+
+    DECLARE_CLASS(UDisSeqCond_IsPlayerInCombat,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSerializableObject_Base: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisSerializableObject_Base : public UObject
+{
+public:
+    //## BEGIN PROPS DisSerializableObject_Base
+    //## END PROPS DisSerializableObject_Base
+
+    DECLARE_CLASS(UDisSerializableObject_Base,UObject,0|CLASS_NoExport,DishonoredGame)
+};
+
+// DishonoredGame.DisSeveredLimbInfo: retail sizeof 144, reflected span 56..144 (2012 PDB sizeof 144)
+class UDisSeveredLimbInfo : public UObject
+{
+public:
+    //## BEGIN PROPS DisSeveredLimbInfo
+    TArrayNoInit<FDisSeveredLimb> m_SeveredLimbInfo;
+    FDisContactSub_CameraEffectEmitterInfo m_CameraEffectEmitterInfoWhenSevered;
+    FDisContactSub_CameraEffectEmitterInfo m_CameraEffectEmitterInfoWhenGored;
+    FDisContactSub_CameraEffectEmitterInfo m_CameraEffectEmitterInfoWhenEaten;
+    FName m_ChestBoneBreakName;
+    FName m_HeadBoneBreakName;
+    //## END PROPS DisSeveredLimbInfo
+
+    DECLARE_CLASS(UDisSeveredLimbInfo,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSkeletalBreakSteps: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisSkeletalBreakSteps : public UDisSkeletalBreakStepsInterface
+{
+public:
+    //## BEGIN PROPS DisSkeletalBreakSteps
+    TArrayNoInit<FDisSkelBreakStep> m_SkeletalBreakSteps;
+    //## END PROPS DisSkeletalBreakSteps
+
+    DECLARE_CLASS(UDisSkeletalBreakSteps,UDisSkeletalBreakStepsInterface,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_SkeletalBreakable)
+};
+
+// DishonoredGame.DisSkeletalMeshComponent: retail sizeof 1104, reflected span 1088..1100 (2012 PDB sizeof 1072)
+class UDisSkeletalMeshComponent : public USkeletalMeshComponent
+{
+public:
+    //## BEGIN PROPS DisSkeletalMeshComponent
+    TArrayNoInit<FUsedMaterial> m_UsedMaterials;
+    //## END PROPS DisSkeletalMeshComponent
+
+    DECLARE_CLASS(UDisSkeletalMeshComponent,USkeletalMeshComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSkirmishTracker: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisSkirmishTracker : public UObject
+{
+public:
+    //## BEGIN PROPS DisSkirmishTracker
+    TArrayNoInit<class ADishonoredNPCPawn*> m_Attackers;
+    INT m_MaxAttackersCount;
+    INT m_KilledCount;
+    //## END PROPS DisSkirmishTracker
+
+    DECLARE_CLASS(UDisSkirmishTracker,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSpawnerRenderProxyComponent: retail sizeof 464, reflected span 464..464 (2012 PDB sizeof 464)
+class UDisSpawnerRenderProxyComponent : public UDisRenderProxyComponent
+{
+public:
+    //## BEGIN PROPS DisSpawnerRenderProxyComponent
+    //## END PROPS DisSpawnerRenderProxyComponent
+
+    DECLARE_CLASS(UDisSpawnerRenderProxyComponent,UDisRenderProxyComponent,0,DishonoredGame)
+    DECLARE_WITHIN(ADishonoredSpawner)
+};
+
+// DishonoredGame.DisStimManager: retail sizeof 80, reflected span 56..80 (2012 PDB sizeof 80)
+class UDisStimManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisStimManager
+    FPointer m_pStimData;
+    FPointer m_pFirstFreeBlock;
+    INT m_MaxStimSize_bytes;
+    INT m_MaxNumStims;
+    INT m_AllocSize;
+    INT m_NumAllocatedStims;
+    //## END PROPS DisStimManager
+
+    DECLARE_CLASS(UDisStimManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisStoryFlagSet: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisStoryFlagSet : public UObject
+{
+public:
+    //## BEGIN PROPS DisStoryFlagSet
+    TArrayNoInit<FDisStoryFlag> m_StoryFlags;
+    //## END PROPS DisStoryFlagSet
+
+    DECLARE_CLASS(UDisStoryFlagSet,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTallboyLightComponent: retail sizeof 84, reflected span 81..84 (2012 PDB sizeof 84)
+class UDisTallboyLightComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DisTallboyLightComponent
+    //## END PROPS DisTallboyLightComponent
+
+    DECLARE_CLASS(UDisTallboyLightComponent,UActorComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisThreatPerceptionComponent: retail sizeof 124, reflected span 81..124 (2012 PDB sizeof 124)
+class UDisThreatPerceptionComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DisThreatPerceptionComponent
+    class ADishonoredNPCPawn* m_Threats[5];
+    INT m_iNumThreats;
+    INT m_iCurrentThreatIndex;
+    FLOAT m_fUnawareThreatRadius;
+    FLOAT m_fEngagedThreatRadius;
+    FLOAT m_fThreatPredictionTime;
+    //## END PROPS DisThreatPerceptionComponent
+
+    DECLARE_CLASS(UDisThreatPerceptionComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Player");}
+};
+
+// DishonoredGame.DisTravelSpawnerComponent: retail sizeof 464, reflected span 452..464 (2012 PDB sizeof 464)
+class UDisTravelSpawnerComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DisTravelSpawnerComponent
+    TArrayNoInit<class ANavigationPoint*> m_PlayerTravelLocations;
+    //## END PROPS DisTravelSpawnerComponent
+
+    DECLARE_CLASS(UDisTravelSpawnerComponent,UPrimitiveComponent,0,DishonoredGame)
+    DECLARE_WITHIN(ADisTravelSpawner)
+};
+
+// DishonoredGame.DisTweaksList: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisTweaksList : public UObject
+{
+public:
+    //## BEGIN PROPS DisTweaksList
+    TArrayNoInit<class UDisTweaksBase*> m_TweaksList;
+    //## END PROPS DisTweaksList
+
+    DECLARE_CLASS(UDisTweaksList,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_BattleVictory: retail sizeof 176, reflected span 168..176 (2012 PDB sizeof 176)
+class UDisTweaks_AIBehavior_BattleVictory : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_BattleVictory
+    FDisRangedFloat m_BattleVictoryDuration;
+    //## END PROPS DisTweaks_AIBehavior_BattleVictory
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_BattleVictory,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_BlockingDialog: retail sizeof 172, reflected span 168..172 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_BlockingDialog : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_BlockingDialog
+    BITFIELD m_bStopBlockingForAINotice:1;
+    //## END PROPS DisTweaks_AIBehavior_BlockingDialog
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_BlockingDialog,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_EscapeExplosion: retail sizeof 196, reflected span 168..196 (2012 PDB sizeof 192)
+class UDisTweaks_AIBehavior_EscapeExplosion : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_EscapeExplosion
+    FLOAT m_fExplosionClearance;
+    FLOAT m_fDiscoveryAngle;
+    FLOAT m_fEscapeEndTimer;
+    FLOAT m_fEscapeThreatRadius;
+    FLOAT m_fEscapeThreatTimer;
+    FLOAT m_fEscapeThreatTimerAfterExplosion;
+    FLOAT m_fSurpriseChance;
+    //## END PROPS DisTweaks_AIBehavior_EscapeExplosion
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_EscapeExplosion,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_EscapePlague: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_EscapePlague : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_EscapePlague
+    //## END PROPS DisTweaks_AIBehavior_EscapePlague
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_EscapePlague,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Follow: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_Follow : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Follow
+    //## END PROPS DisTweaks_AIBehavior_Follow
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Follow,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_GoHome: retail sizeof 180, reflected span 168..180 (2012 PDB sizeof 180)
+class UDisTweaks_AIBehavior_GoHome : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_GoHome
+    FLOAT m_fBackOffRange;
+    FLOAT m_fTauntRange;
+    BITFIELD m_bFullSpeed:1;
+    //## END PROPS DisTweaks_AIBehavior_GoHome
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_GoHome,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Guard: retail sizeof 172, reflected span 168..172 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_Guard : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Guard
+    FLOAT m_fAttentionSpan;
+    //## END PROPS DisTweaks_AIBehavior_Guard
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Guard,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Inhibited: retail sizeof 168, reflected span 168..168 (new in 2013)
+class UDisTweaks_AIBehavior_Inhibited : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Inhibited
+    //## END PROPS DisTweaks_AIBehavior_Inhibited
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Inhibited,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Interact: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_Interact : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Interact
+    //## END PROPS DisTweaks_AIBehavior_Interact
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Interact,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_MagicResponse: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_MagicResponse : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_MagicResponse
+    //## END PROPS DisTweaks_AIBehavior_MagicResponse
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_MagicResponse,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Notice: retail sizeof 188, reflected span 168..188 (2012 PDB sizeof 176)
+class UDisTweaks_AIBehavior_Notice : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Notice
+    BITFIELD m_bIsWolfhound:1;
+    FLOAT m_fChanceToPlayAnim;
+    TArrayNoInit<BYTE> m_ReasonsThatCausePeerAnim;
+    //## END PROPS DisTweaks_AIBehavior_Notice
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Notice,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Panic: retail sizeof 276, reflected span 168..273 (2012 PDB sizeof 276)
+class UDisTweaks_AIBehavior_Panic : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Panic
+    FDisPanicRule_LastSurvivor m_LastSurvivor;
+    FDisPanicRule m_SeeRatSwarm;
+    FDisPanicRule_HearScaryNoise m_HearNoise;
+    FDisPanicRule m_WitnessDeath;
+    FDisPanicRule m_WitnessCorpse;
+    FDisPanicRule m_SeeEnemy;
+    FDisPanicRule m_WitnessAllyCombat;
+    FDisPanicRule m_WitnessAllyPanic;
+    FDisPanicRule m_WithinDangerZone;
+    FDisPanicRule m_AttackedMelee;
+    FDisPanicRule m_AttackedRanged;
+    FDisPanicInhibitor_FightingRadius m_FightingRadius;
+    FDisPanicInhibitor_PanicCount m_PanicCountLimit;
+    FLOAT m_fFreeFlightTimer;
+    FLOAT m_fFleeInterceptionDistance;
+    FLOAT m_fCowerReactionDistance;
+    FLOAT m_fFleePointClaimRadius;
+    BYTE m_eCaughtReaction;
+    //## END PROPS DisTweaks_AIBehavior_Panic
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Panic,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Patrol: retail sizeof 172, reflected span 168..172 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_Patrol : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Patrol
+    BITFIELD m_bDisableAmbientAnim:1;
+    //## END PROPS DisTweaks_AIBehavior_Patrol
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Patrol,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_PatrolSearch: retail sizeof 172, reflected span 172..172 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_PatrolSearch : public UDisTweaks_AIBehavior_Patrol
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_PatrolSearch
+    //## END PROPS DisTweaks_AIBehavior_PatrolSearch
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_PatrolSearch,UDisTweaks_AIBehavior_Patrol,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_RatStomp: retail sizeof 196, reflected span 168..193 (2012 PDB sizeof 196)
+class UDisTweaks_AIBehavior_RatStomp : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_RatStomp
+    FLOAT m_fChanceOfRatInteract;
+    FLOAT m_fChanceOfPossessedRatInteract;
+    FLOAT m_fChanceOfRatParalysis;
+    FLOAT m_fRatGiveupDistance;
+    FDisRangedFloat m_RatInteractCooldown;
+    BYTE m_RatChaseTransitSpeed;
+    //## END PROPS DisTweaks_AIBehavior_RatStomp
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_RatStomp,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_React: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_React : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_React
+    //## END PROPS DisTweaks_AIBehavior_React
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_React,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_ReturnTravel: retail sizeof 168, reflected span 168..168 (2012 PDB sizeof 168)
+class UDisTweaks_AIBehavior_ReturnTravel : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_ReturnTravel
+    //## END PROPS DisTweaks_AIBehavior_ReturnTravel
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_ReturnTravel,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Soiree: retail sizeof 172, reflected span 168..169 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_Soiree : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Soiree
+    BYTE m_SoireePriority;
+    //## END PROPS DisTweaks_AIBehavior_Soiree
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Soiree,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Stolen: retail sizeof 172, reflected span 168..172 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_Stolen : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Stolen
+    FLOAT m_fOccurencePercentage;
+    //## END PROPS DisTweaks_AIBehavior_Stolen
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Stolen,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_TakePosition: retail sizeof 172, reflected span 168..172 (2012 PDB sizeof 172)
+class UDisTweaks_AIBehavior_TakePosition : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_TakePosition
+    BITFIELD m_bRespondToUninterruptableStims:1;
+    BITFIELD m_bAccurateStop:1;
+    BITFIELD m_bExactRotation:1;
+    //## END PROPS DisTweaks_AIBehavior_TakePosition
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_TakePosition,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_TriggerAlarm: retail sizeof 204, reflected span 168..204 (2012 PDB sizeof 204)
+class UDisTweaks_AIBehavior_TriggerAlarm : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_TriggerAlarm
+    FLOAT m_fAlarmChanceUponSighting_Alone;
+    FLOAT m_fAlarmChanceUponSighting_InGroup;
+    FLOAT m_fAlarmChanceUponFoundCorpse;
+    FLOAT m_fAlarmChanceUponWitnessDeath;
+    FLOAT m_fAlarmChanceUponHelp;
+    FLOAT m_fFightRadius;
+    FLOAT m_fWaitTimeBeforeRing;
+    FLOAT m_fCompanionRange;
+    BITFIELD m_bCompanionMustMatchSquad:1;
+    BITFIELD m_bCompanionMustBeAlly:1;
+    //## END PROPS DisTweaks_AIBehavior_TriggerAlarm
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_TriggerAlarm,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBehavior_Weep: retail sizeof 248, reflected span 168..248 (2012 PDB sizeof 248)
+class UDisTweaks_AIBehavior_Weep : public UDisTweaks_AIBehavior
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBehavior_Weep
+    FLOAT m_fVariationChance_Plead;
+    FLOAT m_fVariationChance_Weep;
+    FLOAT m_fVariationChance_Grab;
+    FDisRangedFloat m_fVariationCooldown;
+    FLOAT m_fHomeRadius;
+    FLOAT m_fLostTimer_Min;
+    FLOAT m_fLostTimer_Max;
+    FDisRangedFloat m_fCoughingCooldown;
+    INT m_iSimultaneousRunnerAllowed;
+    FDisRangedFloat m_TimeBeforeRunning;
+    FLOAT m_fStandStillWeeping_Min;
+    FLOAT m_fStandStillWeeping_Max;
+    FLOAT m_fCallbackAngle;
+    FLOAT m_fFollowingBark_Min;
+    FLOAT m_fFollowingBark_Max;
+    FLOAT m_fStandStillWeepingBark_Min;
+    FLOAT m_fStandStillWeepingBark_Max;
+    //## END PROPS DisTweaks_AIBehavior_Weep
+
+    DECLARE_CLASS(UDisTweaks_AIBehavior_Weep,UDisTweaks_AIBehavior,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_Attention: retail sizeof 200, reflected span 144..200 (2012 PDB sizeof 200)
+class UDisTweaks_AIBrainProcess_Attention : public UDisTweaks_AIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrainProcess_Attention
+    class UDisTweaks_PawnAttention* m_pAttentionTweaks_Neutral;
+    class UDisTweaks_PawnAttention* m_pAttentionTweaks_Ally;
+    class UDisTweaks_PawnAttention* m_pAttentionTweaks_Enemy_Unsuspecting;
+    class UDisTweaks_PawnAttention* m_pAttentionTweaks_Enemy_Suspecting;
+    class UDisTweaks_SimpleAttention* m_pSimpleAttnTweaks_Ally;
+    class UDisTweaks_SimpleAttention* m_pSimpleAttnTweaks_Neutral;
+    class UDisTweaks_SimpleAttention* m_pSimpleAttnTweaks_Enemy;
+    BITFIELD m_bMonitorNPCAttention:1;
+    BITFIELD m_bAllowDrainDuringIncrease:1;
+    BITFIELD m_bReactToHandledCorpses:1;
+    BITFIELD m_bIgnoreAllCorpses:1;
+    BITFIELD m_bEscalateSuspicionIfSeeAnyCorpse:1;
+    BITFIELD m_bBecomeEnemyIfSeeCorpseCarry:1;
+    FLOAT m_fBroadcastAttentionStimRadius;
+    BYTE m_MinEnemyAttnForMurderDetection;
+    TArrayNoInit<FDisAttentionReaction> m_AttentionReactions;
+    FLOAT m_fDistanceDeltaForNewTopEnemy;
+    //## END PROPS DisTweaks_AIBrainProcess_Attention
+
+    DECLARE_CLASS(UDisTweaks_AIBrainProcess_Attention,UDisTweaks_AIBrainProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBrain)
+};
+
+// DishonoredGame.DisTweaks_AIBrainProcess_RatCrusher: retail sizeof 160, reflected span 144..160 (2012 PDB sizeof 160)
+class UDisTweaks_AIBrainProcess_RatCrusher : public UDisTweaks_AIBrainProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrainProcess_RatCrusher
+    FLOAT m_fDocileRatInteractRadius;
+    FLOAT m_fDocileRatInteractAngle;
+    FLOAT m_fPossessedRatInteractRadius;
+    FLOAT m_fPossessedRatInteractAngle;
+    //## END PROPS DisTweaks_AIBrainProcess_RatCrusher
+
+    DECLARE_CLASS(UDisTweaks_AIBrainProcess_RatCrusher,UDisTweaks_AIBrainProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBrain)
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Reaction: retail sizeof 540, reflected span 140..540 (2012 PDB sizeof 540)
+class UDisTweaks_AIBrain_Reaction : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrain_Reaction
+    FTweakAIResponse m_Response_HurtByPlayerAlly;
+    FTweakAIResponse m_Response_HurtByPlayerNeutral;
+    FTweakAIResponse m_Response_DestroyWoB;
+    FTweakAIResponse m_Response_Breakable_Broke;
+    FTweakAIResponse m_Response_PlayerThreats;
+    FTweakAIResponse m_Response_WoL_ZapObject;
+    FTweakAIResponse m_Response_CarryAllyCorpse;
+    FTweakAIResponse m_Response_CarryNeutralCorpse;
+    FTweakAIResponse m_Response_CarryEnemyCorpse;
+    FTweakAIResponse m_Response_WitnessPickpocket;
+    //## END PROPS DisTweaks_AIBrain_Reaction
+
+    DECLARE_CLASS(UDisTweaks_AIBrain_Reaction,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBrain)
+};
+
+// DishonoredGame.DisTweaks_AIBrain_Steering: retail sizeof 200, reflected span 140..200 (2012 PDB sizeof 200)
+class UDisTweaks_AIBrain_Steering : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AIBrain_Steering
+    FLOAT m_fInfluenceFadeSpeed;
+    FDisCombatSteeringSettings m_CombatSteeringSettings;
+    FDisEnemyPushSteeringSettings m_EnemyPushSteeringSettings;
+    FDisWallsSteeringSettings m_WallsSteeringSettings;
+    FDisDangerSteeringSettings m_DangerSteeringSettings;
+    //## END PROPS DisTweaks_AIBrain_Steering
+
+    DECLARE_CLASS(UDisTweaks_AIBrain_Steering,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBrain)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess
+    //## END PROPS DisTweaks_AISubProcess
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_AISubProcess,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_AmbientAnims: retail sizeof 156, reflected span 140..156 (2012 PDB sizeof 156)
+class UDisTweaks_AISubProcess_AmbientAnims : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_AmbientAnims
+    FLOAT m_fMinAmbientAnimFrequency;
+    FLOAT m_fMaxAmbientAnimFrequency;
+    BYTE m_eAnimToPlay;
+    BITFIELD m_bPlayFullBodyAnimation:1;
+    BITFIELD m_bCheckForMovement:1;
+    //## END PROPS DisTweaks_AISubProcess_AmbientAnims
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_AmbientAnims,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_AmbientBarks: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_AISubProcess_AmbientBarks : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_AmbientBarks
+    FLOAT m_fBarkInhibitionDuration;
+    FLOAT m_fSilenceBeforeRouteSwitchBark;
+    //## END PROPS DisTweaks_AISubProcess_AmbientBarks
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_AmbientBarks,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_CombatBarks: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_AISubProcess_CombatBarks : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_CombatBarks
+    FDisRangedFloat m_TimeBetweenWarningAndOffscreenAttack;
+    //## END PROPS DisTweaks_AISubProcess_CombatBarks
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_CombatBarks,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_Distractions: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess_Distractions : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_Distractions
+    //## END PROPS DisTweaks_AISubProcess_Distractions
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_Distractions,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_FleetingGaze: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_AISubProcess_FleetingGaze : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_FleetingGaze
+    FLOAT m_fGazeAngleDegrees;
+    FLOAT m_fGazeRadius;
+    FDisRangedFloat m_GazeInterval;
+    FDisRangedFloat m_GazeDuration;
+    //## END PROPS DisTweaks_AISubProcess_FleetingGaze
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_FleetingGaze,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_GenericBarks: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess_GenericBarks : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_GenericBarks
+    //## END PROPS DisTweaks_AISubProcess_GenericBarks
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_GenericBarks,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_HeadTrackBark: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess_HeadTrackBark : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_HeadTrackBark
+    //## END PROPS DisTweaks_AISubProcess_HeadTrackBark
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_HeadTrackBark,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_HeadTrackPause: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_AISubProcess_HeadTrackPause : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_HeadTrackPause
+    FLOAT m_fRearHalfAngleWidthToPause_Deg;
+    FLOAT m_fFrontHalfAngleWidthToResume_Deg;
+    //## END PROPS DisTweaks_AISubProcess_HeadTrackPause
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_HeadTrackPause,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_PersonalSpace: retail sizeof 156, reflected span 140..156 (2012 PDB sizeof 156)
+class UDisTweaks_AISubProcess_PersonalSpace : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_PersonalSpace
+    BITFIELD m_bDoBullying:1;
+    FLOAT m_fPushCooldown;
+    FLOAT m_fWarnDuration;
+    FLOAT m_fWarnCooldown;
+    //## END PROPS DisTweaks_AISubProcess_PersonalSpace
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_PersonalSpace,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_StandardBodyIntention: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess_StandardBodyIntention : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_StandardBodyIntention
+    //## END PROPS DisTweaks_AISubProcess_StandardBodyIntention
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_StandardBodyIntention,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_WatchPoints: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess_WatchPoints : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_WatchPoints
+    //## END PROPS DisTweaks_AISubProcess_WatchPoints
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_WatchPoints,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubProcess_WolfHoundCount: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubProcess_WolfHoundCount : public UDisTweaks_AISubProcess
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubProcess_WolfHoundCount
+    //## END PROPS DisTweaks_AISubProcess_WolfHoundCount
+
+    DECLARE_CLASS(UDisTweaks_AISubProcess_WolfHoundCount,UDisTweaks_AISubProcess,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_Cower: retail sizeof 144, reflected span 140..144 (2012 PDB sizeof 144)
+class UDisTweaks_AISubState_Cower : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_Cower
+    BITFIELD m_bFocusOnThreat:1;
+    //## END PROPS DisTweaks_AISubState_Cower
+
+    DECLARE_CLASS(UDisTweaks_AISubState_Cower,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_Flee: retail sizeof 160, reflected span 140..160 (2012 PDB sizeof 160)
+class UDisTweaks_AISubState_Flee : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_Flee
+    BITFIELD bDoBarkForHelp:1;
+    BITFIELD m_bAllowTeleport:1;
+    BITFIELD m_bUseFleePoints:1;
+    BITFIELD m_bUseSystemicFlee:1;
+    BITFIELD m_bUseDelegateOnThreatDeath:1;
+    FLOAT m_fSystemicFleeMinEnvellope;
+    FLOAT m_fSystemicFleeMaxEnvellope;
+    FLOAT m_fForbiddenAngle;
+    FLOAT m_fForbiddenRadius;
+    //## END PROPS DisTweaks_AISubState_Flee
+
+    DECLARE_CLASS(UDisTweaks_AISubState_Flee,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_Follow: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_AISubState_Follow : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_Follow
+    FFollowParameters m_FollowParameters;
+    //## END PROPS DisTweaks_AISubState_Follow
+
+    DECLARE_CLASS(UDisTweaks_AISubState_Follow,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_GenericAction: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_AISubState_GenericAction : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_GenericAction
+    BYTE m_ActionID;
+    BITFIELD m_bForceVisionForward:1;
+    BITFIELD m_bFailAnimOnIncomingAttack:1;
+    FLOAT m_fTimeBeforeGivingUp;
+    //## END PROPS DisTweaks_AISubState_GenericAction
+
+    DECLARE_CLASS(UDisTweaks_AISubState_GenericAction,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_Init: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState_Init : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_Init
+    //## END PROPS DisTweaks_AISubState_Init
+
+    DECLARE_CLASS(UDisTweaks_AISubState_Init,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_MaintainDistance: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState_MaintainDistance : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_MaintainDistance
+    //## END PROPS DisTweaks_AISubState_MaintainDistance
+
+    DECLARE_CLASS(UDisTweaks_AISubState_MaintainDistance,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_MeleeChase: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState_MeleeChase : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_MeleeChase
+    //## END PROPS DisTweaks_AISubState_MeleeChase
+
+    DECLARE_CLASS(UDisTweaks_AISubState_MeleeChase,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_MeleeEngage: retail sizeof 160, reflected span 140..160 (2012 PDB sizeof 160)
+class UDisTweaks_AISubState_MeleeEngage : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_MeleeEngage
+    FLOAT m_fMinRepositionFrequency;
+    FLOAT m_fMaxRepositionFrequency;
+    FLOAT m_fRotationSpeed;
+    FLOAT m_fInnerStrafeDistance;
+    FLOAT m_fStrafeRangeToOuter;
+    //## END PROPS DisTweaks_AISubState_MeleeEngage
+
+    DECLARE_CLASS(UDisTweaks_AISubState_MeleeEngage,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_Menace: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_AISubState_Menace : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_Menace
+    BITFIELD m_bImmediateFirstTaunt:1;
+    BITFIELD m_bDrawWeapon:1;
+    FLOAT m_fTauntMinTime;
+    FLOAT m_fTauntMaxTime;
+    //## END PROPS DisTweaks_AISubState_Menace
+
+    DECLARE_CLASS(UDisTweaks_AISubState_Menace,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_Stand: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState_Stand : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_Stand
+    //## END PROPS DisTweaks_AISubState_Stand
+
+    DECLARE_CLASS(UDisTweaks_AISubState_Stand,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_StareAtUnreachable: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_AISubState_StareAtUnreachable : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_StareAtUnreachable
+    //## END PROPS DisTweaks_AISubState_StareAtUnreachable
+
+    DECLARE_CLASS(UDisTweaks_AISubState_StareAtUnreachable,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_TakePosition: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_AISubState_TakePosition : public UDisTweaks_AISubState
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_TakePosition
+    FLOAT m_fDestinationThreshold;
+    BITFIELD m_bSpeedIsLookAtDependent:1;
+    BYTE m_eRotationStarts;
+    FLOAT m_fRotationStartDistance[3];
+    //## END PROPS DisTweaks_AISubState_TakePosition
+
+    DECLARE_CLASS(UDisTweaks_AISubState_TakePosition,UDisTweaks_AISubState,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AISubState_TakeActorPosition: retail sizeof 164, reflected span 164..164 (2012 PDB sizeof 164)
+class UDisTweaks_AISubState_TakeActorPosition : public UDisTweaks_AISubState_TakePosition
+{
+public:
+    //## BEGIN PROPS DisTweaks_AISubState_TakeActorPosition
+    //## END PROPS DisTweaks_AISubState_TakeActorPosition
+
+    DECLARE_CLASS(UDisTweaks_AISubState_TakeActorPosition,UDisTweaks_AISubState_TakePosition,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_AIBehavior)
+};
+
+// DishonoredGame.DisTweaks_AbstractItemPickup: retail sizeof 248, reflected span 220..248 (2012 PDB sizeof 244)
+class UDisTweaks_AbstractItemPickup : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AbstractItemPickup
+    class UDisAbstractItem* m_pAbstractItem;
+    INT m_Quantity;
+    INT m_MaximumQuantity;
+    BITFIELD m_bCountForStats:1;
+    FStringNoInit m_SingleItemPickupMessage;
+    //## END PROPS DisTweaks_AbstractItemPickup
+
+    DECLARE_CLASS(UDisTweaks_AbstractItemPickup,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AbstractItemPickupAudioLog: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 244)
+class UDisTweaks_AbstractItemPickupAudioLog : public UDisTweaks_AbstractItemPickup
+{
+public:
+    //## BEGIN PROPS DisTweaks_AbstractItemPickupAudioLog
+    //## END PROPS DisTweaks_AbstractItemPickupAudioLog
+
+    DECLARE_CLASS(UDisTweaks_AbstractItemPickupAudioLog,UDisTweaks_AbstractItemPickup,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AbstractItemPickupNote: retail sizeof 284, reflected span 248..284 (2012 PDB sizeof 280)
+class UDisTweaks_AbstractItemPickupNote : public UDisTweaks_AbstractItemPickup
+{
+public:
+    //## BEGIN PROPS DisTweaks_AbstractItemPickupNote
+    FLOAT m_DisplayDuration;
+    BITFIELD m_bPressKeyToRead:1;
+    BITFIELD m_bCanPickupMultipleTimes:1;
+    FStringNoInit m_PressKeyToReadMessage;
+    BYTE m_TutorialNote;
+    BYTE m_Map;
+    FStringNoInit m_OnPickupMessage;
+    //## END PROPS DisTweaks_AbstractItemPickupNote
+
+    DECLARE_CLASS(UDisTweaks_AbstractItemPickupNote,UDisTweaks_AbstractItemPickup,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_UsableObject: retail sizeof 400, reflected span 196..400 (2012 PDB sizeof 400)
+class UDisTweaks_UsableObject : public UDisTweaks_SkeletalBreakable
+{
+public:
+    //## BEGIN PROPS DisTweaks_UsableObject
+    TArrayNoInit<FUsableObjectStage> m_Stages;
+    class UAnimTree* m_pAnimTreeTemplate;
+    TArrayNoInit<class UAnimSet*> m_AnimSets;
+    FName m_AnimTreePlaybackNodeName;
+    TArrayNoInit<class UAnimSet*> m_NPCAnimSets;
+    BITFIELD m_bRestrictPlayerApproach:1;
+    BITFIELD m_bHoldToUse:1;
+    BITFIELD m_bUseUponUnlocking:1;
+    BITFIELD m_bRemoveFromInventory:1;
+    BITFIELD m_bKeepFocusedInTransition:1;
+    BITFIELD m_bPathColliding:1;
+    BITFIELD m_bInteractableAsDoor:1;
+    BITFIELD m_bUsableWhilePossessing:1;
+    BITFIELD m_bUsableWhileCarryingCorpse:1;
+    BITFIELD m_bUsableWhileCarryingSomething:1;
+    BITFIELD m_bVisibleAtLevel1:1;
+    BITFIELD m_bVisibleAtLevel2:1;
+    BITFIELD m_bIsHackable:1;
+    FName m_FocusBoneName;
+    TArrayNoInit<FName> m_NPCAlignmentBoneNames;
+    class UAkEvent* m_pUnlockSoundEvent;
+    class UAkEvent* m_pUseWhileLockedSoundEvent;
+    class UDisAbstractItem* m_RequiredAbstractItem;
+    FDisUnauthorizedEffect m_UnauthorizedEffect;
+    class UStaticMesh* m_pStaticMesh;
+    TArrayNoInit<class UDisTweaks_Faction*> m_OwningFactions;
+    FStringNoInit m_UnlockInteractText;
+    FStringNoInit m_LockedMessage;
+    FStringNoInit m_UnauthorizedMessage;
+    FStringNoInit m_FocusMessage;
+    FStringNoInit m_FocusLockedMessage;
+    BYTE m_SoulMaterialToUse;
+    class UStaticMesh* m_pHideoutCollisionMesh;
+    class UMaterialInterface* m_pHackedMaterial;
+    INT m_HackedMaterialSlot;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_UsableObject
+
+    DECLARE_CLASS(UDisTweaks_UsableObject,UDisTweaks_SkeletalBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Armor: retail sizeof 192, reflected span 140..192 (2012 PDB sizeof 192)
+class UDisTweaks_Armor : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Armor
+    class UDisTweaks_Movable* m_pDoppedItemTweaks;
+    BYTE m_ProtectedBodyRegion;
+    BYTE m_ProtectedSide;
+    TArrayNoInit<FDisPawnArmorKnockoffDamage> m_DamageTypesThatKnockOff;
+    TArrayNoInit<FDisPawnArmorDamageType> m_DamageTypesToAbsorb;
+    FName m_EquippedSocketName;
+    class UClass* m_pArmorContactType;
+    FLOAT m_fKnockoffVelocityPercent;
+    FLOAT m_fPingUpSpeed;
+    //## END PROPS DisTweaks_Armor
+
+    DECLARE_CLASS(UDisTweaks_Armor,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Attachments: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_Attachments : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Attachments
+    BYTE m_Attachments[12];  // DISHONORED(layout): retail SDK gap @140: ArrayProperty m_Attachments (script_classes_2013) the dump did not type
+    //## END PROPS DisTweaks_Attachments
+
+    DECLARE_CLASS(UDisTweaks_Attachments,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AttentionTarget: retail sizeof 232, reflected span 140..232 (2012 PDB sizeof 232)
+class UDisTweaks_AttentionTarget : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_AttentionTarget
+    BYTE m_AttentionProxyMovementMode;
+    FLOAT m_fAttentionProxyMinIncreaseRateForUpdate[21];
+    FLOAT m_fAttnProxyDetachmentDelay;
+    //## END PROPS DisTweaks_AttentionTarget
+
+    DECLARE_CLASS(UDisTweaks_AttentionTarget,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_AudioLogPlayer: retail sizeof 432, reflected span 400..432 (2012 PDB sizeof 432)
+class UDisTweaks_AudioLogPlayer : public UDisTweaks_UsableObject
+{
+public:
+    //## BEGIN PROPS DisTweaks_AudioLogPlayer
+    class UAkEvent* m_pPickupSoundEvent;
+    class UAkEvent* m_pFlavorSounds[3];
+    FName m_PlayingAnimName;
+    BYTE m_AINoiseLoudness;
+    BYTE m_AINoiseContext;
+    FLOAT m_fVolumeFactorWhenMuted;
+    //## END PROPS DisTweaks_AudioLogPlayer
+
+    DECLARE_CLASS(UDisTweaks_AudioLogPlayer,UDisTweaks_UsableObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_BendTime: retail sizeof 428, reflected span 348..428 (2012 PDB sizeof 428)
+class UDisTweaks_BendTime : public UDisTweaks_ActivePowerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_BendTime
+    FPowerAttributes_BendTime m_Levels[2];
+    //## END PROPS DisTweaks_BendTime
+
+    DECLARE_CLASS(UDisTweaks_BendTime,UDisTweaks_ActivePowerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Climbable: retail sizeof 212, reflected span 148..212 (2012 PDB sizeof 212)
+class UDisTweaks_Climbable : public UDisTweaks_KAsset
+{
+public:
+    //## BEGIN PROPS DisTweaks_Climbable
+    class USkeletalMesh* m_pMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UAkEvent* m_pClimbingSound;
+    FName m_pClimbingSoundVolumeParameter;
+    class UAkEvent* m_pSwinging;
+    class UAkEvent* m_pSwingingStop;
+    FName m_pSwingingSoundVolumeParameter;
+    FLOAT m_fLODDistance;
+    FLOAT m_fCollisionRestorationDelay;
+    FLOAT m_fWindblastForceFactor;
+    FStringNoInit m_StopClimbingInteractText;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_Climbable
+
+    DECLARE_CLASS(UDisTweaks_Climbable,UDisTweaks_KAsset,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ComponentHitReactionThrow: retail sizeof 296, reflected span 140..296 (2012 PDB sizeof 296)
+class UDisTweaks_ComponentHitReactionThrow : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ComponentHitReactionThrow
+    FDisComponentHitReactionThrowConfig m_ComponentConfig;
+    //## END PROPS DisTweaks_ComponentHitReactionThrow
+
+    DECLARE_CLASS(UDisTweaks_ComponentHitReactionThrow,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ComponentMeshOffset: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_ComponentMeshOffset : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ComponentMeshOffset
+    BITFIELD m_bPitchOnGround:1;
+    FLOAT m_fPitchSpeed;
+    FLOAT m_fMinHeightSpeed;
+    FLOAT m_fMinHeightSpeedWithFootProps;
+    FLOAT m_fOffsetDown;
+    FLOAT m_fGoDownMinZSpeed;
+    //## END PROPS DisTweaks_ComponentMeshOffset
+
+    DECLARE_CLASS(UDisTweaks_ComponentMeshOffset,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ComponentObservable: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_ComponentObservable : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ComponentObservable
+    FDisComponentObservableConfig m_ComponentConfig;
+    //## END PROPS DisTweaks_ComponentObservable
+
+    DECLARE_CLASS(UDisTweaks_ComponentObservable,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_DefenceTower: retail sizeof 316, reflected span 140..316 (2012 PDB sizeof 316)
+class UDisTweaks_DefenceTower : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_DefenceTower
+    class UAkEvent* m_pStartActivitySound;
+    class UAkEvent* m_pStopActivitySound;
+    class UAkEvent* m_pStartChargingSound;
+    class UAkEvent* m_pStopChargingSound;
+    class UAkEvent* m_pStartDetectingSound;
+    class UAkEvent* m_pStopDetectingSound;
+    class UAkEvent* m_pStartWillFireSound;
+    class UAkEvent* m_pStartFireSound;
+    class UAkEvent* m_pStartSwitchPolaritySound;
+    class UDisTweaks_Faction* m_pGuardFaction;
+    TArrayNoInit<class UDisTweaks_Faction*> m_FriendlyFactions;
+    FName m_PitchParameterName;
+    FName m_UVScrollParameterName;
+    FLOAT m_fDetectionRadius;
+    FLOAT m_fDetectionHeight;
+    BITFIELD m_bCanInteractDirectly:1;
+    BITFIELD m_bRequiresWhaleOil:1;
+    BITFIELD m_bVisibleAtLevel1:1;
+    BITFIELD m_bVisibleAtLevel2:1;
+    FLOAT m_fChargeDuration;
+    FLOAT m_fUnchargeDuration;
+    FLOAT m_fBeforeFireDuration;
+    FLOAT m_fFireDuration;
+    FLOAT m_fIdleDuration;
+    class UParticleSystem* m_LightningParticleSystem;
+    FName m_LightningSocketName;
+    FLOAT m_fEndFireHeight;
+    INT m_FireDamage;
+    BYTE m_NoiseLoudness;
+    BYTE m_SoulMaterialToUse;
+    class UParticleSystem* m_ShockParticleSystem;
+    FLOAT m_fRatKillingAoE;
+    class UStaticMesh* m_pTowerMesh;
+    class USkeletalMesh* m_pTowerCoreMesh;
+    class UAnimSet* m_pAnimSet;
+    FName m_ChargingAnimName;
+    class UParticleSystem* m_pActiveParticleSystem;
+    class UParticleSystem* m_pChargeParticleSystem;
+    FName m_ChargeParameterName;
+    FName m_CoreMICChargeParameterName;
+    //## END PROPS DisTweaks_DefenceTower
+
+    DECLARE_CLASS(UDisTweaks_DefenceTower,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_DetectionEye: retail sizeof 224, reflected span 140..221 (2012 PDB sizeof 224)
+class UDisTweaks_DetectionEye : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_DetectionEye
+    class USkeletalMesh* m_pSkeletalMesh;
+    TArrayNoInit<class UAnimSet*> m_AnimSets;
+    FName m_AnimSeqName;
+    FLOAT m_fDetectionRadius;
+    FLOAT m_fDetectionHeight;
+    FVector m_DetectionOffset;
+    class UAkEvent* m_ThreatDetectionSound;
+    class UAkEvent* m_ThreatDetectionStop;
+    class UAkEvent* m_FriendDetectionStart;
+    class UAkEvent* m_FriendDetectionStop;
+    class UMaterialInterface* m_NeutralMat;
+    class UMaterialInterface* m_ThreatMat;
+    class UMaterialInterface* m_FriendMat;
+    class UMaterialInterface* m_DisactiveMat;
+    BITFIELD m_bVisibleAtLevel1:1;
+    BITFIELD m_bVisibleAtLevel2:1;
+    BYTE m_SoulMaterialToUse;
+    //## END PROPS DisTweaks_DetectionEye
+
+    DECLARE_CLASS(UDisTweaks_DetectionEye,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_DevouringSwarm: retail sizeof 544, reflected span 348..544 (2012 PDB sizeof 544)
+class UDisTweaks_DevouringSwarm : public UDisTweaks_ActivePowerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_DevouringSwarm
+    FPowerAttributes_DevouringSwarm m_Levels[2];
+    FLOAT m_fTripwireTriggerRadius;
+    FStringNoInit m_CannotSpawnSwarmMessage;
+    class UParticleSystem* m_pHandFX;
+    FName m_HandFXSocketName;
+    class UMaterialInterface* m_pSpawnDecalMaterial;
+    FLOAT m_fSpawnDecalWidth;
+    FLOAT m_fSpawnDecalHeight;
+    FLOAT m_fSpawnDecalThickness;
+    FLOAT m_fSpawnDecalDuration;
+    FLOAT m_fRatSwarmSpawnDelay;
+    //## END PROPS DisTweaks_DevouringSwarm
+
+    DECLARE_CLASS(UDisTweaks_DevouringSwarm,UDisTweaks_ActivePowerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Door: retail sizeof 1228, reflected span 400..1228 (2012 PDB sizeof 1228)
+class UDisTweaks_Door : public UDisTweaks_UsableObject
+{
+public:
+    //## BEGIN PROPS DisTweaks_Door
+    FUsableObjectStage m_DoorOpenCCW;
+    FUsableObjectStage m_DoorOpenCW;
+    FUsableObjectStage m_DoorCloseCCW;
+    FUsableObjectStage m_DoorCloseCW;
+    FUsableObjectStage m_DoorSlamOpenCCW;
+    FUsableObjectStage m_DoorSlamOpenCW;
+    FLOAT m_fNPCClosenessToOpen;
+    FLOAT m_fNPCClosenessToNotClose;
+    FLOAT m_fPlayerClosenessToNotClose;
+    FLOAT m_fRepathRadius;
+    FName m_HingeJointName;
+    BITFIELD m_bIsDoubleDoor:1;
+    FLOAT m_fSoundOcclusion;
+    FLOAT m_fPlayerSoundOcclusion;
+    FLOAT m_fAISoundOcclusion;
+    FName m_AnimTreeAddAnimNodeName;
+    FName m_HitCCWAnimName;
+    FName m_HitCWAnimName;
+    FLOAT m_fRattleWindblastForce;
+    FLOAT m_fSlamWindblastForce;
+    FName m_RattleCCWAnimName;
+    FName m_RattleCWAnimName;
+    FName m_KeyHoleFrontSocketName;
+    FName m_KeyHoleBackSocketName;
+    FLOAT m_fHolePeekingActivateTime;
+    //## END PROPS DisTweaks_Door
+
+    DECLARE_CLASS(UDisTweaks_Door,UDisTweaks_UsableObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ElixirHealth: retail sizeof 220, reflected span 220..220 (2012 PDB sizeof 220)
+class UDisTweaks_ElixirHealth : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ElixirHealth
+    //## END PROPS DisTweaks_ElixirHealth
+
+    DECLARE_CLASS(UDisTweaks_ElixirHealth,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ElixirMana: retail sizeof 220, reflected span 220..220 (2012 PDB sizeof 220)
+class UDisTweaks_ElixirMana : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ElixirMana
+    //## END PROPS DisTweaks_ElixirMana
+
+    DECLARE_CLASS(UDisTweaks_ElixirMana,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Faction: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_Faction : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Faction
+    TArrayNoInit<class UDisTweaks_Faction*> m_AlliedFactions;
+    TArrayNoInit<class UDisTweaks_Faction*> m_EnemyFactions;
+    //## END PROPS DisTweaks_Faction
+
+    DECLARE_FUNCTION(execOnSetDisposition);
+    DECLARE_CLASS(UDisTweaks_Faction,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Fish: retail sizeof 252, reflected span 140..249 (2012 PDB sizeof 252)
+class UDisTweaks_Fish : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Fish
+    class USkeletalMesh* m_pMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    FLOAT m_fRoamingRadius;
+    FLOAT m_fSpeed;
+    FLOAT m_fAttackSpeed;
+    INT m_DamagePerHit[4];
+    FLOAT m_fMinTimeBetweenBites;
+    class UAnimSet* m_pAnimSet;
+    FName m_SwimmingAnimName;
+    TArrayNoInit<FName> m_BiteAnimNames;
+    FName m_EatingAnimName;
+    FName m_DeathAnimName;
+    class UDisTweaks_Possessable* m_pPossessableTweaks;
+    class UParticleSystem* m_pDestroyFX;
+    FLOAT m_fConsumeCorpseTime;
+    FLOAT m_fBiteDistanceFromCam;
+    FLOAT m_fEatImpulseForce;
+    FLOAT m_fSkeletonUpdateDistanceMax;
+    BITFIELD m_bVisibleAtLevel1:1;
+    BITFIELD m_bVisibleAtLevel2:1;
+    BYTE m_SoulMaterialToUse;
+    //## END PROPS DisTweaks_Fish
+
+    DECLARE_CLASS(UDisTweaks_Fish,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerGlobal: retail sizeof 184, reflected span 184..184 (2012 PDB sizeof 184)
+class UDisTweaks_GFxMoviePlayerGlobal : public UDisTweaks_GFxMoviePlayerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerGlobal
+    //## END PROPS DisTweaks_GFxMoviePlayerGlobal
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerGlobal,UDisTweaks_GFxMoviePlayerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerMainMenu: retail sizeof 328, reflected span 184..328 (2012 PDB sizeof 304)
+class UDisTweaks_GFxMoviePlayerMainMenu : public UDisTweaks_GFxMoviePlayerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerMainMenu
+    FStringNoInit m_NoProfileMessage;
+    FStringNoInit m_NoProfileChoiceOK;
+    FStringNoInit m_NoProfileChoiceBack;
+    FStringNoInit m_NoStorageDeviceMessage;
+    FStringNoInit m_NoStorageDeviceChoiceOK;
+    FStringNoInit m_NoStorageDeviceChoiceBack;
+    FStringNoInit m_GameInstallMessage;
+    FStringNoInit m_GameInstallChoiceOK;
+    FStringNoInit m_NewGameCommand;
+    FLOAT m_fTrailerTimer;
+    FStringNoInit m_TrailerName;
+    class UAkEvent* m_pStopMusicEvent;
+    class UAkEvent* m_pStartMusicEvent;
+    TArrayNoInit<class UDisTweaks_MissionStats*> m_MissionStatsTweaks;
+    //## END PROPS DisTweaks_GFxMoviePlayerMainMenu
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerMainMenu,UDisTweaks_GFxMoviePlayerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerMenuBase: retail sizeof 1268, reflected span 140..1268 (2012 PDB sizeof 1244)
+class UDisTweaks_GFxMoviePlayerMenuBase : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerMenuBase
+    FStringNoInit m_MapLargeImagePackage;
+    FStringNoInit m_MapSmallImagePackage;
+    FStringNoInit m_MissionSavePrefix;
+    FStringNoInit m_AutosavePrefix;
+    FStringNoInit m_QuicksavePrefix;
+    FStringNoInit m_CorruptedSave;
+    FStringNoInit m_DateFormat;
+    FStringNoInit m_SettingsCategory_General;
+    FStringNoInit m_SettingsSubCategory_GameplaySettings;
+    FStringNoInit m_SettingsSubCategory_HUDSettings;
+    FStringNoInit m_SettingsCategory_Controls;
+    FStringNoInit m_SettingsSubCategory_KeyboardMapping;
+    FStringNoInit m_SettingsSubCategory_MouseSettings;
+    FStringNoInit m_SettingsSubCategory_GamepadSettings;
+    FStringNoInit m_SettingsCategory_Graphics;
+    FStringNoInit m_SettingsSubMenu_VideoSettings;
+    FStringNoInit m_SettingsCategory_System;
+    FStringNoInit m_SettingsSubMenu_DeviceSelection;
+    FStringNoInit m_SettingsCategory_Audio;
+    FStringNoInit m_GamepadXenonImagePath;
+    FStringNoInit m_GamepadPS3ImagePath;
+    FStringNoInit m_GamepadMapping1[18];
+    FStringNoInit m_GamepadMapping2[18];
+    FStringNoInit m_GamepadMapping3[18];
+    FStringNoInit m_GamepadMapping4[18];
+    FStringNoInit m_QuitGameCommand;
+    //## END PROPS DisTweaks_GFxMoviePlayerMenuBase
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerMenuBase,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerMissionStats: retail sizeof 244, reflected span 184..244 (2012 PDB sizeof 244)
+class UDisTweaks_GFxMoviePlayerMissionStats : public UDisTweaks_GFxMoviePlayerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerMissionStats
+    FStringNoInit m_MissionSummary;
+    FStringNoInit m_EmptyMissionSummaryItem;
+    FStringNoInit m_MissionStats;
+    FStringNoInit m_HighChaos;
+    FStringNoInit m_LowChaos;
+    //## END PROPS DisTweaks_GFxMoviePlayerMissionStats
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerMissionStats,UDisTweaks_GFxMoviePlayerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GFxMoviePlayerPauseMenu: retail sizeof 208, reflected span 184..208 (2012 PDB sizeof 208)
+class UDisTweaks_GFxMoviePlayerPauseMenu : public UDisTweaks_GFxMoviePlayerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GFxMoviePlayerPauseMenu
+    FStringNoInit m_PlayerDiedMessage;
+    TArrayNoInit<FDisPauseMenuTutorial> m_Tutorials;
+    //## END PROPS DisTweaks_GFxMoviePlayerPauseMenu
+
+    DECLARE_CLASS(UDisTweaks_GFxMoviePlayerPauseMenu,UDisTweaks_GFxMoviePlayerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_GenericPickup: retail sizeof 220, reflected span 220..220 (2012 PDB sizeof 220)
+class UDisTweaks_GenericPickup : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_GenericPickup
+    //## END PROPS DisTweaks_GenericPickup
+
+    DECLARE_CLASS(UDisTweaks_GenericPickup,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Heart: retail sizeof 400, reflected span 268..400 (2012 PDB sizeof 400)
+class UDisTweaks_Heart : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_Heart
+    FLOAT m_fDirectnessAngle;
+    FLOAT m_fNearnessRange;
+    FLOAT m_fTargetNearRadius;
+    BITFIELD m_bWeightedNearness:1;
+    BITFIELD m_bUnequippedHeartBeats:1;
+    FLOAT m_fMinPulseRate;
+    FLOAT m_fMaxPulseRate;
+    TArrayNoInit<FHeartbeat> m_Heartbeats;
+    FLOAT m_fGlow;
+    FLOAT m_fTargetFXMaxDistance;
+    class UParticleSystem* m_pGlowFX;
+    FName m_GlowFXSocket;
+    FLOAT m_fHeartTargetDistanceBuffer;
+    class UAkEvent* m_pEquipSoundEvent;
+    class UAkEvent* m_pUnequipSoundEvent;
+    class UAkEvent* m_FlavorSoundEvents[3];
+    FDisRangedFloat m_WorldWhisperInterval;
+    FDisRangedFloat m_TargetWhisperInterval;
+    FDisRangedFloat m_TargetWhisperActivationTime;
+    FLOAT m_fTargetWhisperDistance;
+    TArrayNoInit<class UClass*> m_ValidAmbientTargetTypes;
+    FLOAT m_fUnequippedHeartBeatsFrequency;
+    class UAkEvent* m_pUnequippedHeartBeatsSoundEvent;
+    class UForceFeedbackWaveform* m_pUnequippedHeartBeatsRumbleWaveform;
+    //## END PROPS DisTweaks_Heart
+
+    DECLARE_CLASS(UDisTweaks_Heart,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_InteractableInterface: retail sizeof 224, reflected span 140..224 (2012 PDB sizeof 224)
+class UDisTweaks_InteractableInterface : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_InteractableInterface
+    FStringNoInit m_Name;
+    FStringNoInit m_InteractText;
+    FStringNoInit m_AltInteractText;
+    FStringNoInit m_UseMessage;
+    FStringNoInit m_AltUseMessage;
+    FStringNoInit m_CannotUseMessage;
+    BITFIELD m_bAllowedToHighlight:1;
+    class UMaterialInterface* m_HighLightMaterial;
+    FLOAT m_fMaxDistance;
+    //## END PROPS DisTweaks_InteractableInterface
+
+    DECLARE_CLASS(UDisTweaks_InteractableInterface,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Interactable_PickupBase: retail sizeof 236, reflected span 224..236 (2012 PDB sizeof 236)
+class UDisTweaks_Interactable_PickupBase : public UDisTweaks_InteractableInterface
+{
+public:
+    //## BEGIN PROPS DisTweaks_Interactable_PickupBase
+    FStringNoInit m_NotUsableWhilePossessingInteractText;
+    //## END PROPS DisTweaks_Interactable_PickupBase
+
+    DECLARE_CLASS(UDisTweaks_Interactable_PickupBase,UDisTweaks_InteractableInterface,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_InventoryItem_Attributes: retail sizeof 252, reflected span 140..252 (2012 PDB sizeof 252)
+class UDisTweaks_InventoryItem_Attributes : public UDisTweaks_Attributes
+{
+public:
+    //## BEGIN PROPS DisTweaks_InventoryItem_Attributes
+    FDisAttribute m_MeleeAttackSpeed;
+    FDisAttribute m_MeleeDamage;
+    FDisAttribute m_RangedDamage;
+    FDisAttribute m_RangedHeadshotMultiplier;
+    //## END PROPS DisTweaks_InventoryItem_Attributes
+
+    DECLARE_CLASS(UDisTweaks_InventoryItem_Attributes,UDisTweaks_Attributes,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaksBase)
+};
+
+// DishonoredGame.DisTweaks_InventoryItem_PlayerSpecific: retail sizeof 380, reflected span 264..380 (2012 PDB sizeof 380)
+class UDisTweaks_InventoryItem_PlayerSpecific : public UDisTweaks_InventoryItem_PawnSpecific
+{
+public:
+    //## BEGIN PROPS DisTweaks_InventoryItem_PlayerSpecific
+    TArrayNoInit<FDisItemArmPitchDif> m_ArmPitch_OffsetKeys;
+    BITFIELD m_bUseItemAimAdditives:1;
+    BITFIELD m_bUseFastEquipOnly:1;
+    BITFIELD m_bUseFastUnEquipOnly:1;
+    BITFIELD m_bItemCanZoom:1;
+    BITFIELD m_bZoomFocusOnPotentialTarget:1;
+    FLOAT m_fZoomFOV;
+    FLOAT m_fZoomBlendSpeed;
+    FLOAT m_fZoomDOFBlendSpeed;
+    FLOAT m_fZoomDOF_ForegroundBlurDist;
+    class UAkEvent* m_pZoomInSoundEvent;
+    class UAkEvent* m_pZoomOutSoundEvent;
+    class UAkEvent* m_pZoomMoreSoundEvent;
+    class UAkEvent* m_pZoomLessSoundEvent;
+    FLOAT m_fZoomAcquisitionAngle;
+    FLOAT m_fZoomListenerInterpSpeed;
+    FLOAT m_fZoomMatOpacityInterpSpeed;
+    BYTE m_ZoomFocusRegion;
+    BYTE m_JournalDisplaySection;
+    FLOAT m_fZoomFocusAngle;
+    FStringNoInit m_Name;
+    FStringNoInit m_Description;
+    FStringNoInit m_JournalIconName;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_SupportedUpgrades;
+    //## END PROPS DisTweaks_InventoryItem_PlayerSpecific
+
+    DECLARE_CLASS(UDisTweaks_InventoryItem_PlayerSpecific,UDisTweaks_InventoryItem_PawnSpecific,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem)
+};
+
+// DishonoredGame.DisTweaks_StatPickup: retail sizeof 408, reflected span 220..408 (2012 PDB sizeof 360)
+class UDisTweaks_StatPickup : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_StatPickup
+    INT m_HealthChange;
+    INT m_ManaChange;
+    INT m_Ammo[12];
+    FDisRangedInt m_AmmoRanges[12];
+    BYTE m_Type;
+    class UDisTweaks_Explosion* m_pExplosion;
+    FLOAT m_fExplosionChainTimer;
+    FStringNoInit m_SingleAmmoPickupMessage;
+    FStringNoInit m_EmptyPickupMessage;
+    //## END PROPS DisTweaks_StatPickup
+
+    DECLARE_CLASS(UDisTweaks_StatPickup,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_InventoryPickup: retail sizeof 428, reflected span 408..428 (2012 PDB sizeof 380)
+class UDisTweaks_InventoryPickup : public UDisTweaks_StatPickup
+{
+public:
+    //## BEGIN PROPS DisTweaks_InventoryPickup
+    class UDisTweaks_InventoryItem* m_pItem;
+    FVector m_AngularVelocity;
+    class UClass* m_pContactType;
+    //## END PROPS DisTweaks_InventoryPickup
+
+    DECLARE_CLASS(UDisTweaks_InventoryPickup,UDisTweaks_StatPickup,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ItemEmpty: retail sizeof 296, reflected span 268..296 (2012 PDB sizeof 296)
+class UDisTweaks_ItemEmpty : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_ItemEmpty
+    FLOAT m_fShowMovableHeight_Tiny;
+    FLOAT m_fShowMovableHeight_Small;
+    FLOAT m_fShowMovableHeight_Medium;
+    FLOAT m_fShowMovableHeight_Large;
+    FLOAT m_fInitialGrabTime;
+    FLOAT m_fMovableHoldDist;
+    BITFIELD m_bDoPhysicsWhenHoldingMovable:1;
+    //## END PROPS DisTweaks_ItemEmpty
+
+    DECLARE_CLASS(UDisTweaks_ItemEmpty,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ItemEmpty_PlayerSpecific: retail sizeof 380, reflected span 380..380 (2012 PDB sizeof 380)
+class UDisTweaks_ItemEmpty_PlayerSpecific : public UDisTweaks_InventoryItem_PlayerSpecific
+{
+public:
+    //## BEGIN PROPS DisTweaks_ItemEmpty_PlayerSpecific
+    //## END PROPS DisTweaks_ItemEmpty_PlayerSpecific
+
+    DECLARE_CLASS(UDisTweaks_ItemEmpty_PlayerSpecific,UDisTweaks_InventoryItem_PlayerSpecific,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem)
+};
+
+// DishonoredGame.DisTweaks_Key: retail sizeof 244, reflected span 220..244 (2012 PDB sizeof 244)
+class UDisTweaks_Key : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Key
+    FStringNoInit m_Description;
+    FStringNoInit m_JournalIconName;
+    //## END PROPS DisTweaks_Key
+
+    DECLARE_CLASS(UDisTweaks_Key,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_LODConfig: retail sizeof 176, reflected span 140..176 (2012 PDB sizeof 176)
+class UDisTweaks_LODConfig : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_LODConfig
+    class UDisTweaks_LODProfile* m_Config[9];
+    //## END PROPS DisTweaks_LODConfig
+
+    DECLARE_CLASS(UDisTweaks_LODConfig,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_LODProfile: retail sizeof 160, reflected span 140..160 (2012 PDB sizeof 160)
+class UDisTweaks_LODProfile : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_LODProfile
+    FLOAT m_fMidRangeDistance;
+    FLOAT m_fLongRangeDistance;
+    class UDisTweaks_LODSetup* m_LODSetup[3];
+    //## END PROPS DisTweaks_LODProfile
+
+    DECLARE_CLASS(UDisTweaks_LODProfile,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_LODSetup: retail sizeof 160, reflected span 140..157 (2012 PDB sizeof 160)
+class UDisTweaks_LODSetup : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_LODSetup
+    BYTE m_NeedDLE;
+    BYTE m_NeedShadow;
+    BYTE m_NeedMeshOffset;
+    BYTE m_NeedIK;
+    BYTE m_NeedTickBody;
+    BYTE m_NeedCollisions;
+    BYTE m_NeedLocomotion;
+    BYTE m_NeedSkeletonUpdate;
+    BYTE m_NeedMatineeBlender;
+    BYTE m_NeedAmbientBarkAndAnim;
+    BYTE m_NeedVision;
+    BYTE m_NeedObservablePlayer;
+    BYTE m_NeedObservableNPC;
+    BYTE m_NeedObservableGameplay;
+    BYTE m_NeedObservableDistraction;
+    BYTE m_NeedLookat;
+    BYTE m_NeedTick;
+    //## END PROPS DisTweaks_LODSetup
+
+    DECLARE_CLASS(UDisTweaks_LODSetup,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_MovableLimb: retail sizeof 152, reflected span 148..152 (2012 PDB sizeof 152)
+class UDisTweaks_MovableLimb : public UDisTweaks_KAsset
+{
+public:
+    //## BEGIN PROPS DisTweaks_MovableLimb
+    class UAkEvent* m_pGrabSound;
+    //## END PROPS DisTweaks_MovableLimb
+
+    DECLARE_CLASS(UDisTweaks_MovableLimb,UDisTweaks_KAsset,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Pawn_Animation: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_Pawn_Animation : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_Animation
+    class UDisTweaks_Pawn_FullBodyAnimation* m_pFullBodyTweaks;
+    class UDisTweaks_Pawn_UpperBodyAnimation* m_pUpperBodyTweaks;
+    class UDisTweaks_Pawn_SpecialAnimation* m_pSpecialTweaks;
+    //## END PROPS DisTweaks_Pawn_Animation
+
+    DECLARE_CLASS(UDisTweaks_Pawn_Animation,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn)
+};
+
+// DishonoredGame.DisTweaks_NPCPawn_Animation: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisTweaks_NPCPawn_Animation : public UDisTweaks_Pawn_Animation
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPawn_Animation
+    //## END PROPS DisTweaks_NPCPawn_Animation
+
+    DECLARE_CLASS(UDisTweaks_NPCPawn_Animation,UDisTweaks_Pawn_Animation,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_NPCPawn)
+};
+
+// DishonoredGame.DisTweaks_NPCPawn_Attributes: retail sizeof 1600, reflected span 1228..1600 (2012 PDB sizeof 1572)
+class UDisTweaks_NPCPawn_Attributes : public UDisTweaks_Pawn_Attributes
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPawn_Attributes
+    FDisAttribute m_DodgeLevel;
+    FDisAttribute_RangeLimits m_DodgeLevel_Limits;
+    FDisAttribute m_MinAccuracy;
+    FDisAttribute_RangeLimits m_MinAccuracy_Limits;
+    FDisAttribute m_MaxAccuracy;
+    FDisAttribute_RangeLimits m_MaxAccuracy_Limits;
+    FDisAttribute m_ParryChanceOfStarting;
+    FDisAttribute_RangeLimits m_ParryChanceOfStarting_Limits;
+    FDisAttribute m_ParryChanceOfChaining;
+    FDisAttribute_RangeLimits m_ParryChanceOfChaining_Limits;
+    FDisAttribute m_ParryChainsAllowed;
+    FDisAttribute_RangeLimits m_ParryChainsAllowed_Limits;
+    FDisAttribute m_BlockBreakRate_Min;
+    FDisAttribute m_BlockBreakRate_Max;
+    FDisAttribute m_FallingDeathHeight;
+    //## END PROPS DisTweaks_NPCPawn_Attributes
+
+    DECLARE_CLASS(UDisTweaks_NPCPawn_Attributes,UDisTweaks_Pawn_Attributes,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_NPCPawn)
+};
+
+// DishonoredGame.DisTweaks_Pawn_Body: retail sizeof 320, reflected span 140..320 (2012 PDB sizeof 320)
+class UDisTweaks_Pawn_Body : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_Body
+    FLOAT m_fBone_AngleOffset_Yaw;
+    FLOAT m_fBone_AngleOffset_Pitch;
+    FLOAT m_fBone_AngleOffset_Roll;
+    FName m_HeadBone;
+    FName m_AnchorBone;
+    FName m_EyeControl_Left;
+    FName m_EyeControl_Right;
+    TArrayNoInit<FDisRegionInfo> m_HitRegionInfo;
+    BITFIELD m_bAimLookDisabled:1;
+    BITFIELD m_bGenerateFootfalls:1;
+    BITFIELD m_bFallbackOnWideFootfallProbe:1;
+    TArrayNoInit<FDisFootInfo> m_FeetInfo;
+    INT m_iFootfallDamage;
+    FLOAT m_fFootfallDamageRadius;
+    class UClass* m_pFootfallContactType;
+    class UClass* m_pFootfallContactType_Run;
+    FLOAT m_fMaxStepHeight;
+    FLOAT m_fCylinderHalfHeight;
+    FLOAT m_fCylinderRadius;
+    FVector m_CylinderOffset;
+    FMatrix m_AngleOffsetMatrix;
+    //## END PROPS DisTweaks_Pawn_Body
+
+    DECLARE_CLASS(UDisTweaks_Pawn_Body,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn)
+};
+
+// DishonoredGame.DisTweaks_NPCPawn_Body: retail sizeof 528, reflected span 320..520 (2012 PDB sizeof 528)
+class UDisTweaks_NPCPawn_Body : public UDisTweaks_Pawn_Body
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPawn_Body
+    FLOAT m_fBumpSmoothHeight;
+    FLOAT m_fBumpSmoothDistance;
+    FLOAT m_fMaxFootIKCastHeight;
+    TArrayNoInit<BYTE> m_NoReboundMeleeForHitReacts;
+    FLOAT m_fRandomReboundChance;
+    BITFIELD m_bAllowThrowHitForWeakReacts:1;
+    BITFIELD m_bAllowProjectileHitReacts:1;
+    BITFIELD m_bOnlyWeakHitReact:1;
+    BITFIELD m_bUseFootPlacement:1;
+    BITFIELD m_bAllowSurfacesDisableFootPlacement:1;
+    BITFIELD m_bIsSlopeOffsettingEnabled:1;
+    BITFIELD m_bIsTurnOffsettingEnabled:1;
+    BITFIELD m_bRagdollRecoverRotatePawn:1;
+    BITFIELD m_bRagdollRecoverKillOnFail:1;
+    FLOAT m_fMaxZFloorForFootPlacement;
+    FLOAT m_fSpineBendUpperNullzone;
+    FLOAT m_fSpineBendLowerNullzone;
+    FName m_SpineBenderName;
+    FLOAT m_fMaxSlopeAngle;
+    FLOAT m_fMaxSlopeBendBack;
+    FLOAT m_fMaxSlopeBendForward;
+    FLOAT m_fSlopeBendPitchBlendSpeed;
+    FLOAT m_fRootToSpineDist;
+    FLOAT m_fSpineToLegDist;
+    FLOAT m_fMaxTurnAngle;
+    FDishonoredDecalInfo m_BloodDecal;
+    FName m_RagdollRecoverBone;
+    INT m_RagdollRecoverAxis;
+    INT m_RagdollRecoverMaxIteration;
+    FLOAT m_fRagdollRecoverAngleStep;
+    FLOAT m_fRagdollRecoverRangeStep;
+    FLOAT m_fFallBarkFallingHeight;
+    FLOAT m_fMaxRagdollSpeedToRecover;
+    FName m_WaterFXBone;
+    FName m_DrowningBone;
+    //## END PROPS DisTweaks_NPCPawn_Body
+
+    DECLARE_CLASS(UDisTweaks_NPCPawn_Body,UDisTweaks_Pawn_Body,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_NPCPawn)
+};
+
+// DishonoredGame.DisTweaks_Pawn_Combat: retail sizeof 204, reflected span 140..204 (2012 PDB sizeof 204)
+class UDisTweaks_Pawn_Combat : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_Combat
+    FLOAT m_fDodgeDelay;
+    BITFIELD m_bNoRandomDodge:1;
+    BITFIELD m_bDisableWeakHitReaction:1;
+    BITFIELD m_bRatSwarmPrey:1;
+    BITFIELD m_bRatSwarmEatable:1;
+    INT m_HitReact_Min_Damage;
+    INT m_HitReact_High_Damage;
+    FLOAT m_fMinHitReact_Camera;
+    FLOAT m_fMaxHitReact_Camera;
+    FLOAT m_fMinHitReact;
+    FLOAT m_fMaxHitReact;
+    FLOAT m_fHitReactRandomness;
+    TArrayNoInit<FName> m_RatAttachmentSockets;
+    FLOAT m_fRatSwarmDamagePerSecond;
+    class UDisTweaks_Pawn* m_pEatenPawnTweaks;
+    class UAkEvent* m_pStartRegenSound;
+    class UAkEvent* m_pEndRegenSound;
+    //## END PROPS DisTweaks_Pawn_Combat
+
+    DECLARE_CLASS(UDisTweaks_Pawn_Combat,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn)
+};
+
+// DishonoredGame.DisTweaks_NPCPawn_Combat: retail sizeof 248, reflected span 204..245 (2012 PDB sizeof 248)
+class UDisTweaks_NPCPawn_Combat : public UDisTweaks_Pawn_Combat
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPawn_Combat
+    FLOAT m_fWoundedFraction;
+    FLOAT m_fMomentumImpulseMax;
+    FLOAT m_fMomentumImpulseFactor;
+    FLOAT m_fChanceOfFastDeath;
+    FLOAT m_fSidestepClearance;
+    FLOAT m_fBackClearance;
+    class UParticleSystem* m_WindBlastEffectTemplate;
+    FName m_WindBlastEffectSocketName;
+    FLOAT m_WindBlastEffectMinForce;
+    BYTE m_SwarmCallForHelpLoudness;
+    //## END PROPS DisTweaks_NPCPawn_Combat
+
+    DECLARE_CLASS(UDisTweaks_NPCPawn_Combat,UDisTweaks_Pawn_Combat,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_NPCPawn)
+};
+
+// DishonoredGame.DisTweaks_NPCPlotSettings: retail sizeof 216, reflected span 140..216 (2012 PDB sizeof 216)
+class UDisTweaks_NPCPlotSettings : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCPlotSettings
+    FDisNPCPlotSettings m_PlotSettings;
+    //## END PROPS DisTweaks_NPCPlotSettings
+
+    DECLARE_CLASS(UDisTweaks_NPCPlotSettings,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_PawnAttention: retail sizeof 596, reflected span 140..596 (2012 PDB sizeof 596)
+class UDisTweaks_PawnAttention : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PawnAttention
+    FLOAT m_fAttentionLeakRate;
+    FLOAT m_fAttentionLeakRate_InConvo;
+    FLOAT m_fMaxAttention;
+    FDisAttentionLevelThreshold m_AttentionThresholds[4];
+    FDisAttentionChangeReasonSettings m_ReasonSettings[21];
+    FLOAT m_fMinRangeToUnsightedBustedProxy;
+    FDisAttentionIncrease m_IncreaseForDangerSound;
+    FDisAttentionIncrease m_IncreaseForThreateningSound;
+    FDisAttentionIncrease m_IncreaseForAnomalySound;
+    FDisAttentionIncrease m_IncreaseForHelpSound;
+    FDisAttentionIncrease m_IncreaseForNoticeRequest;
+    FDisAttentionIncrease m_IncreaseForSearchRequest;
+    FDisAttentionIncrease m_IncreaseForAlarmSound;
+    FDisAttentionIncrease m_IncreaseForAttackedBy;
+    FDisAttentionIncrease m_IncreaseForAttackedEnemy;
+    FDisAttentionIncrease m_IncreaseForDiscoveredCorpse;
+    FDisAttentionIncrease m_IncreaseForTalkedTo;
+    FDisAttentionIncrease m_IncreaseForDeathByWoL;
+    FDisAttentionIncrease m_IncreaseForMagic;
+    FDisAttentionIncrease m_IncreaseForDeathRattleSound;
+    BITFIELD m_bDeathRattleGivesAttentionForKiller:1;
+    BITFIELD m_bClampTargetVisibility:1;
+    BITFIELD m_bAlarmsKeepRingingUntilNPCsLoseAttention:1;
+    FDisAttentionIncrease m_IncreaseForAllyCombatTarget;
+    FDisAttentionIncrease m_IncreaseForAllySearchTarget;
+    FDisAttentionIncrease m_IncreaseForAllyPanicTarget;
+    FLOAT m_fTouchingPawnAttentionIncreaseRate;
+    FDisAttribute m_SeeingPawnAttentionIncreaseScalar_ToPlayer;
+    FLOAT m_fSeeingPawnAttentionIncreaseScalar_ToLiveNPC;
+    FLOAT m_fSeeingPawnAttentionIncreaseScalar_ToDeadNPC;
+    FLOAT m_fDistanceToLoseSight;
+    FLOAT m_fHeadTrackTorsoRatio;
+    FDisVisCalcTuningParams m_DistanceValueTuning;
+    BYTE m_AlarmsKeepRingingAttentionLevel;
+    FColor m_StealthMeterBackgroundColor;
+    FColor m_StealthMeterOutlineColor[2];
+    FColor m_StealthMeterTextColor[2];
+    FColor m_StealthMeterFillColor[5];
+    FLOAT m_fStealthMeterWidth;
+    FLOAT m_fStealthMeterHeight;
+    FLOAT m_fStealthMeterIndicatorWidth;
+    FColor m_AttentionProxyUpdatedLineColor;
+    FColor m_AttentionProxyNotUpdatedLineColor;
+    FLOAT m_AttentionProxyRadius[2];
+    FColor m_AttentionProxyColor[4];
+    //## END PROPS DisTweaks_PawnAttention
+
+    DECLARE_CLASS(UDisTweaks_PawnAttention,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Pawn_Actions: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_Pawn_Actions : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_Actions
+    //## END PROPS DisTweaks_Pawn_Actions
+
+    DECLARE_CLASS(UDisTweaks_Pawn_Actions,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn)
+};
+
+// DishonoredGame.DisTweaks_Pawn_FullBodyAnimation: retail sizeof 168, reflected span 140..168 (2012 PDB sizeof 168)
+class UDisTweaks_Pawn_FullBodyAnimation : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_FullBodyAnimation
+    FName m_FullBody_StatePicker_Name;
+    FName m_DefaultAnimState_FullBody;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Misc;
+    //## END PROPS DisTweaks_Pawn_FullBodyAnimation
+
+    DECLARE_CLASS(UDisTweaks_Pawn_FullBodyAnimation,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn_Animation)
+};
+
+// DishonoredGame.DisTweaks_Pawn_SpecialAnimation: retail sizeof 176, reflected span 140..176 (2012 PDB sizeof 176)
+class UDisTweaks_Pawn_SpecialAnimation : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_SpecialAnimation
+    FName m_Special_StatePicker_Name;
+    FName m_Special_Filter_Name;
+    FName m_DefaultAnimState_Special;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_Special_Misc;
+    //## END PROPS DisTweaks_Pawn_SpecialAnimation
+
+    DECLARE_CLASS(UDisTweaks_Pawn_SpecialAnimation,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn_Animation)
+};
+
+// DishonoredGame.DisTweaks_Pawn_UpperBodyAnimation: retail sizeof 176, reflected span 140..176 (2012 PDB sizeof 176)
+class UDisTweaks_Pawn_UpperBodyAnimation : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Pawn_UpperBodyAnimation
+    FName m_UpperBody_StatePicker_Name;
+    FName m_UpperBody_Filter_Name;
+    FName m_DefaultAnimState_UpperBody;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Misc;
+    //## END PROPS DisTweaks_Pawn_UpperBodyAnimation
+
+    DECLARE_CLASS(UDisTweaks_Pawn_UpperBodyAnimation,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_Pawn_Animation)
+};
+
+// DishonoredGame.DisTweaks_PlayerInput: retail sizeof 332, reflected span 140..332 (2012 PDB sizeof 324)
+class UDisTweaks_PlayerInput : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerInput
+    BITFIELD m_bUseLeanToggle:1;
+    BITFIELD m_bUseLeanToggle_GamePad:1;
+    BITFIELD m_bUseSprintToggle:1;
+    BITFIELD m_bUseSprintToggle_GamePad:1;
+    BITFIELD m_bCastOnAutoManaElixirConsume:1;
+    BITFIELD m_bAutoConsumeManaElixir:1;
+    BITFIELD m_bAllowZoomWhileSprint:1;
+    BITFIELD m_bLeanWithAnalogStick:1;
+    BITFIELD m_bAllowHoldToReequip:1;
+    BITFIELD m_bUseAimFriction_NonZoomed:1;
+    BITFIELD m_bUseAimFriction_Zoomed:1;
+    BITFIELD m_bLimitControllerSensitivity_Sprint:1;
+    BITFIELD m_bLimitControllerSensitivity_Keyhole:1;
+    BITFIELD m_bEnableQuickLeftHandSwap:1;
+    BITFIELD m_bClimbReuseDelayJump:1;
+    FLOAT m_fUsableObjectDist;
+    FLOAT m_fUsableObjectExtentBroad;
+    FLOAT m_fUsableObjectExtentNarrow;
+    FLOAT m_fLookTurnScale_Min;
+    FLOAT m_fLookTurnScale_Max;
+    FLOAT m_fLookTurnAcceleration;
+    FLOAT m_fLookTurnGamepad_MinSensitivity;
+    FLOAT m_fLookTurnGamepad_MaxSensitivity;
+    FLOAT m_fLookUpScale_Min;
+    FLOAT m_fLookUpScale_Max;
+    FLOAT m_fLookUpAcceleration;
+    FLOAT m_fLookUpGamepad_MinSensitivity;
+    FLOAT m_fLookUpGamepad_MaxSensitivity;
+    FLOAT m_fFOVScaleMultipliers[3];
+    FLOAT m_fFOVScaleMultipliers_Mouse[3];
+    FLOAT m_fSlowWalk_Trigger_Threshold;
+    FLOAT m_fWalk_Trigger_Threshold;
+    FLOAT m_fStopSprint_Threshold;
+    FLOAT m_fStrafeAngle_Forward;
+    FLOAT m_fStrafeAngle_Back;
+    FLOAT m_fBackwardsAngle;
+    FLOAT m_fFineAdjustment_Threshold;
+    FLOAT m_fLean_Trigger_Threshold;
+    FLOAT m_fBreakLean_Threshold_Gamepad;
+    FLOAT m_fBreakLean_Speed_PC;
+    FLOAT m_fAltInteractActivateTime;
+    FLOAT m_fUnequipButtonTime;
+    FLOAT m_fSkipMatineeButtonTime;
+    FLOAT m_fMultiPressMaxTime;
+    FLOAT m_fAssassinateHoldToAutoCorpseCarry;
+    FLOAT m_fChokeHoldToAutoCarry;
+    FLOAT m_fFrictionMult_Horiz;
+    FLOAT m_fFrictionMult_Vert;
+    FLOAT m_fMinSpeedToSlide;
+    FLOAT m_fLimitedMouseSensitivity_Sprint;
+    FLOAT m_fLimitedJoySensitivity_Sprint;
+    FLOAT m_fLimitedMouseSensitivity_Keyhole;
+    FLOAT m_fLimitedJoySensitivity_Keyhole;
+    FLOAT m_fClimbReuseDelay;
+    FLOAT m_fLookSoftenSpeed;
+    FLOAT m_fMaxLookSoftenAngle;
+    FLOAT m_fLookSoftenPercent;
+    BYTE m_PadBindingSetMap[4];
+    //## END PROPS DisTweaks_PlayerInput
+
+    DECLARE_CLASS(UDisTweaks_PlayerInput,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Actions: retail sizeof 156, reflected span 140..156 (2012 PDB sizeof 156)
+class UDisTweaks_PlayerPawn_Actions : public UDisTweaks_Pawn_Actions
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_Actions
+    class UDisTweaks_PlayerPawn_DebugActions* m_pDebugActionTweaks;
+    class UDisTweaks_PlayerPawn_ItemActions* m_pItemActionTweaks;
+    class UDisTweaks_PlayerPawn_MiscellaneousActions* m_pMiscellaneousActionTweaks;
+    class UDisTweaks_PlayerPawn_NavigationActions* m_pNavigationActionTweaks;
+    //## END PROPS DisTweaks_PlayerPawn_Actions
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_Actions,UDisTweaks_Pawn_Actions,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Animation: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)
+class UDisTweaks_PlayerPawn_Animation : public UDisTweaks_Pawn_Animation
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_Animation
+    //## END PROPS DisTweaks_PlayerPawn_Animation
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_Animation,UDisTweaks_Pawn_Animation,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Camera: retail sizeof 180, reflected span 140..180 (2012 PDB sizeof 180)
+class UDisTweaks_PlayerPawn_Camera : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_Camera
+    FName m_CameraBoneName;
+    FName m_LookAtControlName_LeftHand;
+    FName m_LookAtControlName_RightHand;
+    FName m_LookAtControlName_Camera;
+    FLOAT m_fMinViewPitch;
+    FLOAT m_fMaxViewPitch;
+    //## END PROPS DisTweaks_PlayerPawn_Camera
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_Camera,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Combat: retail sizeof 576, reflected span 204..576 (2012 PDB sizeof 576)
+class UDisTweaks_PlayerPawn_Combat : public UDisTweaks_Pawn_Combat
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_Combat
+    TArrayNoInit<FDisPlayerHealthEffect> m_HealthEffects;
+    FLOAT m_fRaySpeedScale;
+    FLOAT m_fRaySpeedScale_Max;
+    FLOAT m_fMinSpeedRayScale;
+    FLOAT m_fAdrenalineAddedOnStrongHitReact;
+    BITFIELD m_bDisableManualSaveInCombat:1;
+    BITFIELD m_bDisableAutosaveInCombat:1;
+    BITFIELD m_bDoStrongHitsWhenKnockdownIsPrevented:1;
+    FLOAT m_fDisableManualSaveAfterCombatTime_s;
+    FLOAT m_fFocusEffectTime;
+    FLOAT m_fFocusBlendSpeed;
+    FArkPpConfig m_Focus_PpOverride;
+    FLOAT m_fVulnerableTime_BigHit;
+    FLOAT m_fVulnerableTime_BigHit_Dizzy;
+    FLOAT m_fVulnerableTime_Knockdown;
+    FLOAT m_fVulnerableTime_Knockdown_Dizzy;
+    FArkPpConfig m_VulnerableTime_PpOverride;
+    FLOAT m_fVulnerableTime_BlendSpeed;
+    FLOAT m_fMinTimeBetweenPlayerKnockdowns;
+    FLOAT m_fAdrenalineFadeInDuration;
+    FLOAT m_fAdrenalineFadeOutDuration;
+    FLOAT m_fAdrenalineNoiseStrength;
+    FDramaAssassinationParams m_DramaAssassinationParams;
+    //## END PROPS DisTweaks_PlayerPawn_Combat
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_Combat,UDisTweaks_Pawn_Combat,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_DebugActions: retail sizeof 228, reflected span 140..228 (2012 PDB sizeof 228)
+class UDisTweaks_PlayerPawn_DebugActions : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_DebugActions
+    FPawnAction m_Actions_Debug_FullBody;
+    FPawnAction m_Actions_Debug_UpperBody;
+    //## END PROPS DisTweaks_PlayerPawn_DebugActions
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_DebugActions,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Actions)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_FullBodyAnimation: retail sizeof 204, reflected span 168..204 (2012 PDB sizeof 204)
+class UDisTweaks_PlayerPawn_FullBodyAnimation : public UDisTweaks_Pawn_FullBodyAnimation
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_FullBodyAnimation
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Navigation;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Assassination;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_FullBody_Fatality;
+    //## END PROPS DisTweaks_PlayerPawn_FullBodyAnimation
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_FullBodyAnimation,UDisTweaks_Pawn_FullBodyAnimation,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Animation)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_ItemActions: retail sizeof 844, reflected span 140..844 (2012 PDB sizeof 844)
+class UDisTweaks_PlayerPawn_ItemActions : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_ItemActions
+    FPawnAction m_Actions_GoToReady;
+    FPawnAction m_Actions_ExitReady;
+    FPawnAction m_Actions_UnEquipItem;
+    FPawnAction m_Actions_UnEquipItem_Ready;
+    FPawnAction m_Actions_UnEquipItem_Ready_Fast;
+    FPawnAction m_Actions_UnEquipItem_Sneak;
+    FPawnAction m_Actions_UnEquipItem_Sneak_Fast;
+    FPawnAction m_Actions_EquipItem;
+    FPawnAction m_Actions_EquipItem_Ready;
+    FPawnAction m_Actions_EquipItem_Ready_Fast;
+    FPawnAction m_Actions_EquipItem_Sneak;
+    FPawnAction m_Actions_EquipItem_Sneak_Fast;
+    FPawnAction m_Actions_CrossbowZoomIn;
+    FPawnAction m_Actions_CrossbowZoomOut;
+    FPawnAction m_Actions_PistolZoomIn;
+    FPawnAction m_Actions_PistolZoomOut;
+    //## END PROPS DisTweaks_PlayerPawn_ItemActions
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_ItemActions,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Actions)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_MiscellaneousActions: retail sizeof 580, reflected span 140..580 (2012 PDB sizeof 580)
+class UDisTweaks_PlayerPawn_MiscellaneousActions : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_MiscellaneousActions
+    FPawnAction m_Actions_SyncedAction;
+    FPawnAction m_Actions_Death;
+    FPawnAction m_Actions_Death_Water;
+    FPawnAction m_Actions_Kicked_Front;
+    FPawnAction m_Actions_Kicked_Left;
+    FPawnAction m_Actions_Kicked_Right;
+    FPawnAction m_Actions_Kicked_Back;
+    FPawnAction m_Actions_Stunned;
+    FPawnAction m_Actions_PrePossess;
+    FPawnAction m_Actions_Possess;
+    //## END PROPS DisTweaks_PlayerPawn_MiscellaneousActions
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_MiscellaneousActions,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Actions)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_NavigationActions: retail sizeof 712, reflected span 140..712 (2012 PDB sizeof 712)
+class UDisTweaks_PlayerPawn_NavigationActions : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_NavigationActions
+    FPawnAction m_Action_Mantle;
+    FPawnAction m_Action_JumpLandBig;
+    FPawnAction m_Action_JumpLandSmall;
+    FPawnAction m_Action_JumpLandSmall_Ready;
+    FPawnAction m_Action_JumpLandSmall_Sneak;
+    FPawnAction m_Action_JumpLandSmall_LeftHand;
+    FPawnAction m_Action_JumpIn_LeftHand;
+    FPawnAction m_Action_JumpIn;
+    FPawnAction m_Action_JumpIn_Sneak;
+    FPawnAction m_Action_GoToCrouch;
+    FPawnAction m_Action_GoToCrouch_Ready;
+    FPawnAction m_Action_LeaveCrouch;
+    FPawnAction m_Action_LeaveCrouch_Ready;
+    //## END PROPS DisTweaks_PlayerPawn_NavigationActions
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_NavigationActions,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Actions)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_SpecialAnimation: retail sizeof 188, reflected span 176..188 (2012 PDB sizeof 188)
+class UDisTweaks_PlayerPawn_SpecialAnimation : public UDisTweaks_Pawn_SpecialAnimation
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_SpecialAnimation
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_LeftHand_Items;
+    //## END PROPS DisTweaks_PlayerPawn_SpecialAnimation
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_SpecialAnimation,UDisTweaks_Pawn_SpecialAnimation,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Animation)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_UpperBodyAnimation: retail sizeof 212, reflected span 176..212 (2012 PDB sizeof 212)
+class UDisTweaks_PlayerPawn_UpperBodyAnimation : public UDisTweaks_Pawn_UpperBodyAnimation
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_UpperBodyAnimation
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Items;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Items_Melee;
+    TArrayNoInit<FDisPawnAnimState> m_AnimStates_UpperBody_Items_Ranged;
+    //## END PROPS DisTweaks_PlayerPawn_UpperBodyAnimation
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_UpperBodyAnimation,UDisTweaks_Pawn_UpperBodyAnimation,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn_Animation)
+};
+
+// DishonoredGame.DisTweaks_PlayerPawn_Visibility: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_PlayerPawn_Visibility : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerPawn_Visibility
+    class UDisTweaks_PlayerVisRegion* m_pPlayerVisRegion;
+    class UDisTweaks_PlayerVisibility* m_pPlayerVisTweaks;
+    //## END PROPS DisTweaks_PlayerPawn_Visibility
+
+    DECLARE_CLASS(UDisTweaks_PlayerPawn_Visibility,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_PlayerStats: retail sizeof 1544, reflected span 140..1544 (2012 PDB sizeof 1064)
+class UDisTweaks_PlayerStats : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerStats
+    FAchievementInfo m_Achievements[81];
+    TArrayNoInit<FPlayerStatInfo> m_StatInfos;
+    FNPCTypeInfo m_HostileNPCInfo;
+    FNPCTypeInfo m_CivilianNPCInfo;
+    //## END PROPS DisTweaks_PlayerStats
+
+    DECLARE_CLASS(UDisTweaks_PlayerStats,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_PlayerVisRegion: retail sizeof 188, reflected span 140..188 (2012 PDB sizeof 188)
+class UDisTweaks_PlayerVisRegion : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerVisRegion
+    FDisVisRegionSettings m_VisRegionSettings[3];
+    //## END PROPS DisTweaks_PlayerVisRegion
+
+    DECLARE_CLASS(UDisTweaks_PlayerVisRegion,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_PlayerVisSettings: retail sizeof 148, reflected span 140..148 (2012 PDB sizeof 148)
+class UDisTweaks_PlayerVisSettings : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerVisSettings
+    FLOAT m_fLightValueDarkestVal;
+    FLOAT m_fLightValueBrightestVal;
+    //## END PROPS DisTweaks_PlayerVisSettings
+
+    DECLARE_CLASS(UDisTweaks_PlayerVisSettings,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Possess: retail sizeof 524, reflected span 348..524 (2012 PDB sizeof 512)
+class UDisTweaks_Possess : public UDisTweaks_ActivePowerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Possess
+    FDisPossessLevel m_Levels[2];
+    class UDisTweaks_Pawn* m_pPossessProxyPawnTweaks;
+    FLOAT m_fMagicalAppearanceDelay;
+    BITFIELD m_bCanBeCrushedOnPossessEnd:1;
+    BITFIELD m_bCanUseDoorsWhilePossessing:1;
+    class UAkEvent* m_pCancelSoundEvent;
+    FLOAT m_fDistanceWeight;
+    FLOAT m_fAngleWeight;
+    FLOAT m_fTraceExtent;
+    FLOAT m_fTraceExtentGroundBuffer;
+    FLOAT m_fMaxAngleFOVFraction;
+    FLOAT m_fCancelCooldown;
+    FLOAT m_TargetingPriorityWeights[4];
+    FStringNoInit m_TargetObstructedMessage;
+    FStringNoInit m_TargetBusyMessage;
+    FStringNoInit m_DisallowPossessionMessage;
+    FLOAT m_fCameraFOVZoomSpeed;
+    FLOAT m_IntroDuration;
+    FLOAT m_WhileMaxBlur;
+    FLOAT m_WhileMaxDistort;
+    FLOAT m_WarnApparitionInSecondsBeforeForceExit;
+    FLOAT m_WarnFadeDuration;
+    FLOAT m_WarnMaxBlur;
+    FLOAT m_WarnMaxDistort;
+    FLOAT m_ExitFadeDuration;
+    class UParticleSystem* m_pHandCastParticle;
+    FName m_HandCastParticleAttachSocket;
+    class UClass* m_IntrusionLensEffect;
+    //## END PROPS DisTweaks_Possess
+
+    DECLARE_CLASS(UDisTweaks_Possess,UDisTweaks_ActivePowerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Possessable: retail sizeof 248, reflected span 140..248 (2012 PDB sizeof 256)
+class UDisTweaks_Possessable : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Possessable
+    FDisPossessPowerLevelSettings m_Levels[2];
+    FLOAT m_fGroundSpeedWhilePossessed;
+    FLOAT m_fWaterSpeedWhilePossessed;
+    BITFIELD m_bCanUseUsablesWhilePossessed:1;
+    BITFIELD m_bCanSprintWhilePossessed:1;
+    BITFIELD m_bDoNotCancelExistingNPCState:1;
+    BITFIELD m_bCanSwimWhilePossessed:1;
+    BITFIELD m_bImmuneToPlagueWhilePossessed:1;
+    BITFIELD m_bDisallowPossession:1;
+    BITFIELD m_bOverrideCameraCollision:1;
+    class UAkEvent* m_pActionFailSound;
+    FLOAT m_fPitchLimitWhilePossessed_Deg;
+    FLOAT m_fYawLimitWhilePossessed_Deg;
+    class UDisTweaks_StoryGroup* m_pStoryGroupWhilePossessed;
+    FDisPossessableAwarenessSettings m_AwarenessSettings[8];
+    INT m_RequiredPossessPowerLevel;
+    BYTE m_TargetingPriority;
+    BYTE m_UnpossessExpansionType;
+    class UParticleSystem* m_pTargetingHighlightEffect;
+    FName m_TargetingHighlightEffectAttachSocket;
+    FLOAT m_fCollisionHeight;
+    FLOAT m_fCollisionRadius;
+    FLOAT m_fCameraCollisionHeight;
+    FLOAT m_fCameraCollisionRadius;
+    FLOAT m_fTargetBelowGroundCompensationAmount;
+    //## END PROPS DisTweaks_Possessable
+
+    DECLARE_CLASS(UDisTweaks_Possessable,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_PostProcess: retail sizeof 248, reflected span 140..248 (2012 PDB sizeof 248)
+class UDisTweaks_PostProcess : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PostProcess
+    FArkUberPpParameters m_Parameters;
+    FLOAT m_fWeight;
+    FLOAT m_fFadeInTime;
+    FLOAT m_fFadeOutTime;
+    //## END PROPS DisTweaks_PostProcess
+
+    DECLARE_CLASS(UDisTweaks_PostProcess,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ProjectileLauncher: retail sizeof 296, reflected span 196..296 (2012 PDB sizeof 280)
+class UDisTweaks_ProjectileLauncher : public UDisTweaks_SkeletalBreakable
+{
+public:
+    //## BEGIN PROPS DisTweaks_ProjectileLauncher
+    class UAnimSet* m_pAnimSet;
+    FName m_TrippedAnimName;
+    FName m_DeactivatedAnimName;
+    FName m_FiringSocketName;
+    class UDisAbstractItem* m_pItemRequiredToHarvestAmmo;
+    INT m_HarvestedAmmo[12];
+    class UDisTweaks_Projectile* m_pProjectileTweak;
+    FLOAT m_fProjectileSpeed;
+    INT m_fProjectileDamage;
+    FLOAT m_fProjectileHeadshotMult;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_ProjectileLauncher
+
+    DECLARE_CLASS(UDisTweaks_ProjectileLauncher,UDisTweaks_SkeletalBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_RatSpawner: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_RatSpawner : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_RatSpawner
+    class UDisTweaks_RatSwarm* m_pSwarmTweaks;
+    FLOAT m_fDuration;
+    class UGameCrowd_ListOfAgents* m_pCrowdAgentList;
+    //## END PROPS DisTweaks_RatSpawner
+
+    DECLARE_CLASS(UDisTweaks_RatSpawner,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_RatSwarmGlobalManager: retail sizeof 212, reflected span 140..212 (2012 PDB sizeof 212)
+class UDisTweaks_RatSwarmGlobalManager : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_RatSwarmGlobalManager
+    FGameCrowdSpawnerSettings m_RatSpawnerSettings;
+    class UDisTweaks_RatSwarm* m_pRatSwarmTweaks;
+    FLOAT m_fMinCorpseDistance;
+    FLOAT m_fMaxCorpseDistance;
+    FLOAT m_fMinSpawnDelay;
+    FLOAT m_fMaxSpawnDelay;
+    FLOAT m_fMinSpawnDistance;
+    FLOAT m_fMaxSpawnDistance;
+    //## END PROPS DisTweaks_RatSwarmGlobalManager
+
+    DECLARE_CLASS(UDisTweaks_RatSwarmGlobalManager,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_RiverKrustBodyPart: retail sizeof 152, reflected span 148..152 (2012 PDB sizeof 152)
+class UDisTweaks_RiverKrustBodyPart : public UDisTweaks_KActor
+{
+public:
+    //## BEGIN PROPS DisTweaks_RiverKrustBodyPart
+    class UStaticMesh* m_pStaticMesh;
+    //## END PROPS DisTweaks_RiverKrustBodyPart
+
+    DECLARE_CLASS(UDisTweaks_RiverKrustBodyPart,UDisTweaks_KActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_SimpleAttention: retail sizeof 252, reflected span 140..252 (2012 PDB sizeof 252)
+class UDisTweaks_SimpleAttention : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_SimpleAttention
+    BITFIELD m_bGainAttentionOnSight:1;
+    BITFIELD m_bGainAttentionOnTouch:1;
+    BITFIELD m_bGainAttentionOnAttackEnemy:1;
+    BITFIELD m_bGainAttentionOnBeAttacked:1;
+    BITFIELD m_bGainAttentionOnSeeAllyCombat:1;
+    BITFIELD m_bGainAttentionOnHearAlarm:1;
+    BITFIELD m_bGainAttentionOnHelpRequest:1;
+    FDisSimpleAttnNoiseContextInfo m_bHearNoiseSettings[15];
+    FLOAT m_fLostContactTimeOut;
+    FLOAT m_fLostContactTimeOut_Dead;
+    FDisVisCalcTuningParams m_CorpseVis_DistanceValueTuning;
+    FLOAT m_fCorpseVis_VisLevelToSeeCorpse;
+    FLOAT m_fCorpseVis_VisLevelToSeeDeath;
+    //## END PROPS DisTweaks_SimpleAttention
+
+    DECLARE_CLASS(UDisTweaks_SimpleAttention,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_SoundSource: retail sizeof 156, reflected span 140..156 (2012 PDB sizeof 156)
+class UDisTweaks_SoundSource : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_SoundSource
+    class UAkEvent* m_pStartSoundEvent;
+    class UAkEvent* m_pStopSoundEvent;
+    FDisAISoundSource m_AiSound;
+    //## END PROPS DisTweaks_SoundSource
+
+    DECLARE_CLASS(UDisTweaks_SoundSource,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_SpringRazorPlaced: retail sizeof 272, reflected span 140..272 (2012 PDB sizeof 268)
+class UDisTweaks_SpringRazorPlaced : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_SpringRazorPlaced
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UAnimSet* m_pAnimSet;
+    class UParticleSystem* m_pDetonationEffect;
+    class UAkEvent* m_pDetonationSound;
+    INT m_NonNPCDamage[4];
+    INT m_ImmuneNPCDamage;
+    class UClass* m_pDamageType;
+    FLOAT m_fArmingTime;
+    class UAkEvent* m_pArmingSound;
+    FLOAT m_fMaxDamageDistance;
+    FLOAT m_fDetectionCylinderHeight;
+    FLOAT m_fDetectionCylinderRadius;
+    FLOAT m_fDetonationCylinderHeight;
+    FLOAT m_fDetonationCylinderRadius;
+    FLOAT m_fTriggerReactionTime;
+    FLOAT m_fDamageActorDelayTime;
+    FLOAT m_fDamageReactionTime;
+    FLOAT m_fSensorOffsetDistance;
+    FName m_TriggerAnimName;
+    FLOAT m_fImpulseForce;
+    INT m_nMinNumBonesToSever;
+    INT m_nMaxNumBonesToSever;
+    class UClass* m_pContactType;
+    class UDisTweaks_StatPickup* m_pStatPickup;
+    class UDisTweaks_StatPickup* m_pStatPickupAfterUseAttempt;
+    class UAkEvent* m_pGrabSound;
+    class UAkEvent* m_pCannotPickupSound;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_SpringRazorPlaced
+
+    DECLARE_CLASS(UDisTweaks_SpringRazorPlaced,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_StoryGroup: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
+class UDisTweaks_StoryGroup : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_StoryGroup
+    //## END PROPS DisTweaks_StoryGroup
+
+    DECLARE_CLASS(UDisTweaks_StoryGroup,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_TallboyAttachment: retail sizeof 284, reflected span 284..284 (2012 PDB sizeof 284)
+class UDisTweaks_TallboyAttachment : public UDisTweaks_Movable
+{
+public:
+    //## BEGIN PROPS DisTweaks_TallboyAttachment
+    //## END PROPS DisTweaks_TallboyAttachment
+
+    DECLARE_CLASS(UDisTweaks_TallboyAttachment,UDisTweaks_Movable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_TallboyNPCPawn: retail sizeof 1016, reflected span 924..1016 (2012 PDB sizeof 1004)
+class UDisTweaks_TallboyNPCPawn : public UDisTweaks_NPCPawn
+{
+public:
+    //## BEGIN PROPS DisTweaks_TallboyNPCPawn
+    class UDisTweaksBase* m_pSpawnBreakableTweaks;
+    class UPhysicsAsset* m_pDeathRagdollPhysics;
+    FLOAT m_fDeathHitMomentumMultiplier;
+    FLOAT m_fStrongDamageThreshold;
+    class USkeletalMesh* m_pStiltsSkeletalMesh;
+    class UPhysicalMaterial* m_pLegsPhysicalMaterial;
+    class UClass* m_pLightToSpawn;
+    FName m_LightSocket;
+    FLOAT m_fLightBrightness;
+    FLOAT m_fLightRadius;
+    FLOAT m_fLightOuterConeAngle;
+    class UParticleSystem* m_pLightParticleSystem;
+    class UParticleSystem* m_pLightParticleSystemDeath;
+    FLOAT m_fDefaultLightDistanceInFront;
+    FLOAT m_fLightRotationSpeedMin;
+    FLOAT m_fLightRotationSpeedMax;
+    FLOAT m_fLightRotationAccelerationTime;
+    FLOAT m_fLightRotationDecelerationTime;
+    FLOAT m_fMaxLightAngleFromLookDir;
+    class UAkEvent* m_pAmbientStartSoundEvent;
+    class UAkEvent* m_pAmbientStopSoundEvent;
+    FLOAT m_fMaxStepHeightWhilePossessed;
+    //## END PROPS DisTweaks_TallboyNPCPawn
+
+    DECLARE_CLASS(UDisTweaks_TallboyNPCPawn,UDisTweaks_NPCPawn,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ThrownObjects: retail sizeof 156, reflected span 140..156 (2012 PDB sizeof 156)
+class UDisTweaks_ThrownObjects : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ThrownObjects
+    TArrayNoInit<FDisThrownObjectSelection> m_ThrownObjects;
+    FLOAT m_fTotalWeight;
+    //## END PROPS DisTweaks_ThrownObjects
+
+    DECLARE_CLASS(UDisTweaks_ThrownObjects,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Trigger: retail sizeof 144, reflected span 140..144 (2012 PDB sizeof 144)
+class UDisTweaks_Trigger : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Trigger
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_Trigger
+
+    DECLARE_CLASS(UDisTweaks_Trigger,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Tripwire: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_Tripwire : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Tripwire
+    class USkeletalMesh* m_pSkeletalMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UAnimSet* m_pAnimSet;
+    FName m_TrippedAnimName;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_Tripwire
+
+    DECLARE_CLASS(UDisTweaks_Tripwire,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Tune: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisTweaks_Tune : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Tune
+    FLOAT m_fMusicEffectPeriod;
+    FDisAISoundSource m_AiSound;
+    //## END PROPS DisTweaks_Tune
+
+    DECLARE_CLASS(UDisTweaks_Tune,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_TuneSource_Protection: retail sizeof 144, reflected span 140..144 (2012 PDB sizeof 144)
+class UDisTweaks_TuneSource_Protection : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_TuneSource_Protection
+    class UDisTweaks_Tune* m_pTuneTweak;
+    //## END PROPS DisTweaks_TuneSource_Protection
+
+    DECLARE_CLASS(UDisTweaks_TuneSource_Protection,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Tune_Protection: retail sizeof 176, reflected span 152..176 (2012 PDB sizeof 176)
+class UDisTweaks_Tune_Protection : public UDisTweaks_Tune
+{
+public:
+    //## BEGIN PROPS DisTweaks_Tune_Protection
+    FLOAT m_fMusicEffectRadius_Disorient;
+    FLOAT m_fMusicEffectRadius_InhibitPowers;
+    class UAkEvent* m_SFX_Disorient_Start;
+    class UAkEvent* m_SFX_Disorient_Stop;
+    class UAkEvent* m_SFX_Inhibit_Start;
+    class UAkEvent* m_SFX_Inhibit_Stop;
+    //## END PROPS DisTweaks_Tune_Protection
+
+    DECLARE_CLASS(UDisTweaks_Tune_Protection,UDisTweaks_Tune,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Upgrade: retail sizeof 236, reflected span 140..236 (2012 PDB sizeof 236)
+class UDisTweaks_Upgrade : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Upgrade
+    class UStaticMesh* m_pMesh;
+    class UClass* m_pHostItemType;
+    class USkeletalMesh* m_pAttachMesh;
+    class UMaterialInterface* m_pSwapMaterial;
+    TArrayNoInit<FDisUpgradeAttributeInfo> m_Attributes;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_RevertedUpgrades;
+    class UAnimSet* m_pAnimSet;
+    FStringNoInit m_Name;
+    FStringNoInit m_Description;
+    BYTE m_JournalDisplaySection;
+    BYTE m_StoreDisplaySection;
+    FStringNoInit m_JournalIconName;
+    class UDisTweaks_Upgrade* m_pParentUpgrade;
+    class UDisTweaks_InventoryItem* m_pAddItemIfMissing;
+    class UDisTweaks_InteractableInterface* m_pInteractableTweaks;
+    //## END PROPS DisTweaks_Upgrade
+
+    DECLARE_CLASS(UDisTweaks_Upgrade,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Vision: retail sizeof 192, reflected span 140..192 (2012 PDB sizeof 192)
+class UDisTweaks_Vision : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Vision
+    FName m_Vision_BoneName;
+    FLOAT m_fVision_BoneNullzone_Deg;
+    FLOAT m_fVision_BonePullback;
+    FLOAT m_fVision_OuterFOV_Deg;
+    FLOAT m_fVision_InnerFOV_Deg;
+    FLOAT m_fVision_OuterVerticalFOVScale_Up;
+    FLOAT m_fVision_OuterVerticalFOVScale_Down;
+    FLOAT m_fVision_InnerVerticalFOVScale_Up;
+    FLOAT m_fVision_InnerVerticalFOVScale_Down;
+    FLOAT m_fVision_OuterMaxRange;
+    FLOAT m_fVision_InnerMaxRange;
+    FLOAT m_fVision_AngleLeeway_Deg;
+    //## END PROPS DisTweaks_Vision
+
+    DECLARE_CLASS(UDisTweaks_Vision,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_Vulnerability: retail sizeof 280, reflected span 140..280 (2012 PDB sizeof 252)
+class UDisTweaks_Vulnerability : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_Vulnerability
+    FDisTweaks_Vulnerability_InstaDeath m_InstaDeathVulnerability[8];
+    FDisTweaks_Vulnerability_HitReact m_HitReactVulnerability[10];
+    TArrayNoInit<class UClass*> m_DamageImmunities;
+    TArrayNoInit<class UClass*> m_DamageHitReactImmunities;
+    BITFIELD m_bInvulnerableToAllDamage:1;
+    BITFIELD m_bCompletelyIgnoreMeleeAttacks:1;
+    //## END PROPS DisTweaks_Vulnerability
+
+    DECLARE_CLASS(UDisTweaks_Vulnerability,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WallOfLight: retail sizeof 228, reflected span 140..228 (2012 PDB sizeof 228)
+class UDisTweaks_WallOfLight : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_WallOfLight
+    class UAkEvent* m_ActivateSound;
+    class UAkEvent* m_DisactivateSound;
+    class UAkEvent* m_ShockSound;
+    class UAkEvent* m_AmbientStart;
+    class UAkEvent* m_AmbientStop;
+    class UStaticMesh* m_pStaticMesh;
+    INT m_Damage;
+    TArrayNoInit<class UDisTweaks_Faction*> m_FriendlyFactions;
+    BITFIELD m_bJib:1;
+    BITFIELD m_bDisableSystemBetweenSparks:1;
+    BITFIELD m_bVisibleAtLevel1:1;
+    BITFIELD m_bVisibleAtLevel2:1;
+    class UParticleSystem* m_ShockParticleSystemTemplate;
+    FLOAT m_ActivationTime;
+    FLOAT m_ActivationTimeForPawnEffect;
+    class UMaterialInterface* m_ActivationMat;
+    class UAkEvent* m_pStartKillEffectSound;
+    class UAkEvent* m_pStopKillEffectSound;
+    class UParticleSystem* m_CrossSparkEffectTemplate;
+    FLOAT m_fMinSparkInterval;
+    FLOAT m_fMaxSparkInterval;
+    FLOAT m_fSparkDuration;
+    FLOAT m_fWindblastMinimumForce;
+    //## END PROPS DisTweaks_WallOfLight
+
+    DECLARE_CLASS(UDisTweaks_WallOfLight,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WatchTower: retail sizeof 572, reflected span 140..572 (2012 PDB sizeof 568)
+class UDisTweaks_WatchTower : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_WatchTower
+    class USkeletalMesh* m_pTowerMesh;
+    class UStaticMesh* m_pBaseMesh;
+    class UPhysicsAsset* m_pPhysicsAsset;
+    class UMaterialInterface* m_pActivatedMat;
+    class UMaterialInterface* m_pDeactivatedMat;
+    class UMaterialInterface* m_pAttackMat;
+    class UStaticMesh* m_pGunMesh;
+    FName m_GunSocketName;
+    class UStaticMesh* m_pGeneratorWallMesh;
+    class UDisTweaks_UsableObject* m_pGeneratorShieldTweaks;
+    class UDisTweaks_WhaleOilReceptacle* m_pWhaleOilReceptacleTweaks;
+    class UDisTweaks_WhaleOilBattery* m_pWhaleOilBatteryTweaks;
+    FName m_GeneratorSocketName;
+    FName m_BatterySocketName;
+    class UDisTweaks_UsableObject* m_pPanelTweaks;
+    class UDisTweaks_UsableObject* m_pPanelBoxTweaks;
+    FName m_PanelSocketName;
+    TArrayNoInit<FDisDispositionChange> m_HackedDispositions;
+    FLOAT m_fLightRadius;
+    FLOAT m_fLightBrightness;
+    FLOAT m_fLightAngleTransitionRate;
+    FLOAT m_fDesiredLightRadius;
+    FLOAT m_fLightCastDistance;
+    FLOAT m_fLightCastExtent;
+    FLOAT m_fMaximumLightConeAngle;
+    FColor m_LightColor;
+    FColor m_LightAttackColor;
+    class UParticleSystem* m_pLightParticleSystemOn;
+    class UParticleSystem* m_pLightParticleSystemOff;
+    TArrayNoInit<FDisWTLightMaterial> m_LightMaterials;
+    FName m_LightMaterialBlendParamName;
+    FLOAT m_LightMaterialBlendTime;
+    FLOAT m_fBlindnessRadius;
+    FLOAT m_fBlindnessDistance;
+    FLOAT m_fBlindnessAngle;
+    FLOAT m_fTowerToLightXDist;
+    FLOAT m_fTowerToLightYDist;
+    FLOAT m_fRatLightRepulsionStrength;
+    FLOAT m_fRatLightRadius;
+    BITFIELD m_bRatLightFalloff:1;
+    BITFIELD m_bProtectNeutrals:1;
+    class UParticleSystem* m_pAlertLightParticleSystemOn;
+    class UParticleSystem* m_pAlertLightParticleSystemOff;
+    FName m_AlertLight_SocketName;
+    class UDisTweaks_Vision* m_pVisionTweak;
+    class UDisTweaks_Vision* m_pHackedVisionTweak;
+    class UDisTweaks_Faction* m_pFactionTweak;
+    BYTE m_AllyAttentionLevelToTrack;
+    BYTE m_AINoiseLoudness;
+    BYTE m_ArrowDangerShape;
+    FLOAT m_fReversedBatteryChargeTime;
+    FLOAT m_fStateExploreSpeedIncrease;
+    FLOAT m_fStateMaxTowerRotSpeedDeg;
+    FLOAT m_fStateMaxLightRotSpeedDeg;
+    FLOAT m_fStateLightLowestRotDeg;
+    FLOAT m_fStateLightHighestRotDeg;
+    FLOAT m_fStateAttackTimeout;
+    FLOAT m_fStateAttackInitialDelay;
+    FLOAT m_fFranticSpeed;
+    FLOAT m_fFranticRandomRange;
+    class UDisTweaks_Projectile* m_pProjectileTweak;
+    FName m_ProjectileSocket;
+    FLOAT m_fProjectileSpeed;
+    INT m_ProjectileDamage;
+    FLOAT m_fProjectileHeadshotMult;
+    INT m_VolleyShots;
+    FLOAT m_fVolleyDelayBetweenShots;
+    FLOAT m_fDelayBetweenVolleys;
+    FLOAT m_fAttackFOVMultiplier;
+    FLOAT m_fHackedAttackFOVMultiplier;
+    FLOAT m_fArrowDangerRadius;
+    FLOAT m_fFireArrowMaxSpread;
+    FName m_AnimLightBone;
+    class UAnimTree* m_pAnimTreeTemplate;
+    TArrayNoInit<class UAnimSet*> m_AnimSets;
+    FName m_AnimNodeTower;
+    FName m_AnimTower;
+    FName m_AnimNodeLight;
+    FName m_AnimLight;
+    class UAkEvent* m_pSoundChirp;
+    class UAkEvent* m_pSoundAttackWarning;
+    FLOAT m_fSoundAttackWarningTime;
+    class UAkEvent* m_pSoundStartRotation;
+    class UAkEvent* m_pSoundStopRotation;
+    FName m_SoundRotationRTPC;
+    FLOAT m_fSoundRotationRTPCMax;
+    class UAkEvent* m_pSoundStartRotationSpot;
+    class UAkEvent* m_pSoundStopRotationSpot;
+    FName m_SoundRotationRTPCSpot;
+    FLOAT m_fSoundRotationRTPCMaxSpot;
+    class UAkEvent* m_pSoundTargetLost;
+    //## END PROPS DisTweaks_WatchTower
+
+    DECLARE_CLASS(UDisTweaks_WatchTower,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WhaleBoneCharm: retail sizeof 220, reflected span 220..220 (2012 PDB sizeof 220)
+class UDisTweaks_WhaleBoneCharm : public UDisTweaks_PickupBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_WhaleBoneCharm
+    //## END PROPS DisTweaks_WhaleBoneCharm
+
+    DECLARE_CLASS(UDisTweaks_WhaleBoneCharm,UDisTweaks_PickupBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WhaleBoneCharmList: retail sizeof 164, reflected span 140..164 (2012 PDB sizeof 164)
+class UDisTweaks_WhaleBoneCharmList : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_WhaleBoneCharmList
+    TArrayNoInit<FDisWhaleBoneCharmInfo> m_Charms;
+    TArrayNoInit<FDisWhaleBoneCharmInfo> m_ScriptedCharms;
+    //## END PROPS DisTweaks_WhaleBoneCharmList
+
+    DECLARE_CLASS(UDisTweaks_WhaleBoneCharmList,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_PlayerPawn)
+};
+
+// DishonoredGame.DisTweaks_WhaleOilReceptacle: retail sizeof 188, reflected span 140..188 (2012 PDB sizeof 188)
+class UDisTweaks_WhaleOilReceptacle : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_WhaleOilReceptacle
+    class UAkEvent* m_PlugSound;
+    class UAkEvent* m_UnplugSound;
+    class UStaticMesh* m_pStaticMesh;
+    FLOAT m_fDetectionRadius;
+    FLOAT m_fDetectionHeight;
+    FVector m_DetectionOffset;
+    BITFIELD m_bAllowEmptyBatteries:1;
+    FStringNoInit m_EmptyBatteryMessage;
+    //## END PROPS DisTweaks_WhaleOilReceptacle
+
+    DECLARE_CLASS(UDisTweaks_WhaleOilReceptacle,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_WindBlast: retail sizeof 496, reflected span 348..496 (2012 PDB sizeof 496)
+class UDisTweaks_WindBlast : public UDisTweaks_ActivePowerBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_WindBlast
+    FPowerAttributes_WindBlast m_Levels[2];
+    BITFIELD m_bUseDirectionalWindblast:1;
+    FLOAT m_fMinSpeedToExplodeNPCs;
+    FLOAT m_fExplodeImpulseStrength;
+    INT m_HitWallAdditionalDamage;
+    FLOAT m_fChanceToExplodeNPCs;
+    //## END PROPS DisTweaks_WindBlast
+
+    DECLARE_CLASS(UDisTweaks_WindBlast,UDisTweaks_ActivePowerBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisUsableObjectBreakSteps: retail sizeof 152, reflected span 140..152 (2012 PDB sizeof 152)
+class UDisUsableObjectBreakSteps : public UDisSkeletalBreakStepsInterface
+{
+public:
+    //## BEGIN PROPS DisUsableObjectBreakSteps
+    TArrayNoInit<FDisUsableObjBreakStep> m_UsableObjBreakSteps;
+    //## END PROPS DisUsableObjectBreakSteps
+
+    DECLARE_CLASS(UDisUsableObjectBreakSteps,UDisSkeletalBreakStepsInterface,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_SkeletalBreakable)
+};
+
+// DishonoredGame.DisWaterVolumeManager: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
+class UDisWaterVolumeManager : public UObject
+{
+public:
+    //## BEGIN PROPS DisWaterVolumeManager
+    TArrayNoInit<FDisWaterCollidingBody> m_CollidingBodyArray;
+    //## END PROPS DisWaterVolumeManager
+
+    DECLARE_CLASS(UDisWaterVolumeManager,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWheelTracker: retail sizeof 64, reflected span 64..64 (2012 PDB sizeof 64)
+class UDisWheelTracker : public UDisTutorialTracker
+{
+public:
+    //## BEGIN PROPS DisWheelTracker
+    //## END PROPS DisWheelTracker
+
+    DECLARE_CLASS(UDisWheelTracker,UDisTutorialTracker,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAIBrain: retail sizeof 500, reflected span 56..500 (2012 PDB sizeof 488)
+class UDishonoredAIBrain : public UObject, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DishonoredAIBrain
+    BITFIELD m_bCombatEngaged:1;
+    BITFIELD m_bHasEngagedEnemy:1;
+    BITFIELD m_bTopAttnTargetDead:1;
+    BITFIELD m_bDumbToNonPlayer:1;
+    BITFIELD m_bProtectNeutrals:1;
+    BITFIELD m_bNeedsRefreshThoughts:1;
+    BITFIELD m_bBrainIsInitialized:1;
+    BYTE m_PendingSuspicionLevel;
+    BYTE m_SuspicionLevel;
+    BYTE m_TopEnemyAttnTargetAttentionLevel;
+    BYTE m_TopEnemyAttnTargetRelationship;
+    BYTE m_TopAttnTargetAttentionLevel;
+    BYTE m_TopAttnTargetRelationship;
+    BYTE m_LastReceivedStim;
+    BYTE m_BrainFlags[6];
+    FDisAttentionProxy m_TopEnemyAttnTargetProxy;
+    FDisAttentionProxy m_TopAttnTargetProxy;
+    INT m_SenseMasksByType[5];
+    INT m_FinalSenseMask_Player;
+    INT m_FinalSenseMask_NonPlayer;
+    FLOAT m_fEmpathyInhibitionTimer;
+    class UDishonoredAIBrain* m_pNextPlayerAttentiveBrain;
+    FDisPlayerStealthAttentionIndicatorInfo m_PlayerAttentiveInfo;
+    FName m_PendingPlayerHeardKismetEventActorName;
+    FDisMagicalIncidentStruct m_PendingMagicalIncident;
+    FVector m_FinalSteeringForce;
+    TArrayNoInit<class UDisSteeringInfluence*> m_SteeringInfluences;
+    class UDisSteeringInfluence_Combat* m_pSteeringInfluence_Combat;
+    class UDisSteeringInfluence_EnemyPush* m_pSteeringInfluence_EnemyPush;
+    class UDisSteeringInfluence_Danger* m_pSteeringInfluence_Danger;
+    class UDisAIBrainProcessAttention* m_pAttentionProcess;
+    FLOAT m_fLastThoughtTime;
+    FDisLocRot m_Home;
+    class UDishonoredAIBehavior* m_ActiveBehaviorStack[19];
+    class UDishonoredAIBehavior* m_pCurrentBehavior;
+    TArrayNoInit<class UDisAIBrainProcess*> m_BrainProcesses;
+    class ADishonoredNPCPawn* m_pOwningPawn;
+    class ADishonoredNPCController* m_pOwningController;
+    TArrayNoInit<FDisStimRef> m_StimQueue;
+    class UDishonoredGlobalAIManager* m_pGlobalAIManager;
+    class UDisStimManager* m_pStimManager;
+    TArrayNoInit<class UDishonoredAIBehavior*> m_BehaviorArray;
+    FDisLookAtRequest m_LookAtRequest;
+    class UDisTweaks_AIBrain* m_pBrainTweaks;
+    class UArkComponentContainer* m_pBrainComponentContainer;
+    TArrayNoInit<class UDisTweaks_AIBehavior*> m_MandatoryBehaviors;
+    class UDishonoredAIBrain* m_pGlobalAI_NextBrain;
+    //## END PROPS DishonoredAIBrain
+
+    DECLARE_CLASS(UDishonoredAIBrain,UObject,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AI");}
+};
+
+// DishonoredGame.DishonoredAudioPortalComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
+class UDishonoredAudioPortalComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DishonoredAudioPortalComponent
+    //## END PROPS DishonoredAudioPortalComponent
+
+    DECLARE_CLASS(UDishonoredAudioPortalComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAudioSystem: retail sizeof 160, reflected span 56..160 (2012 PDB sizeof 160)
+class UDishonoredAudioSystem : public UAudioSystem, public IArkSettingsListenerInterface
+{
+public:
+    //## BEGIN PROPS DishonoredAudioSystem
+    FLOAT m_fOccludingDoorOpeningAngle;
+    TArrayNoInit<FDisSoundRTPCUpdater> m_RTPCUpdaters;
+    class ADishonoredAudioVolume* m_pListenerCell;
+    TArrayNoInit<FDisPlayingComponent> m_PlayingComponents;
+    TArrayNoInit<class UDisAkComponent*> m_FreeComponents;
+    BITFIELD m_bPaused:1;
+    BITFIELD m_bOverseerEffectEnabled:1;
+    BITFIELD m_bSuspended:1;
+    class UAkEvent* m_pPendingAmbientEvent;
+    class UAkEvent* m_pLastAmbientEvent;
+    FLOAT m_fLastAmbientTime;
+    FLOAT m_fMinTimeBetweenAmbientSwitch;
+    FName m_LastEnvironment;
+    INT m_LastEnvironmentID;
+    INT m_OverseerEffectID;
+    FPointer m_pEndOfEventNotifyQueue;
+    class ADisSoundCaptureBox* m_pDisSoundCaptureBox;
+    TArrayNoInit<FDisAmbientSound> m_RegisteredAmbientSounds;
+    //## END PROPS DishonoredAudioSystem
+
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDishonoredAudioSystem::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_CLASS(UDishonoredAudioSystem,UAudioSystem,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+};
+
+// DishonoredGame.DishonoredBarkManager: retail sizeof 196, reflected span 81..196 (2012 PDB sizeof 196)
+class UDishonoredBarkManager : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DishonoredBarkManager
+    FDisPlayerBarkInfo m_BarkCues[12];
+    INT m_BarkPlayingIDs[2];
+    FDisPlayerBarkPair m_BarkLayerVars[2];
+    //## END PROPS DishonoredBarkManager
+
+    DECLARE_CLASS(UDishonoredBarkManager,UActorComponent,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Game");}
+};
+
+// DishonoredGame.DishonoredCallbackSkeletalComponent: retail sizeof 1088, reflected span 1088..1088 (2012 PDB sizeof 1056)
+class UDishonoredCallbackSkeletalComponent : public USkeletalMeshComponent
+{
+public:
+    //## BEGIN PROPS DishonoredCallbackSkeletalComponent
+    //## END PROPS DishonoredCallbackSkeletalComponent
+
+    DECLARE_CLASS(UDishonoredCallbackSkeletalComponent,USkeletalMeshComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Bite: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Bite : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Bite
+    //## END PROPS DishonoredDamageType_Bite
+
+    DECLARE_CLASS(UDishonoredDamageType_Bite,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_BulletBlast: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_BulletBlast : public UDishonoredDamageType_Bullet
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_BulletBlast
+    //## END PROPS DishonoredDamageType_BulletBlast
+
+    DECLARE_CLASS(UDishonoredDamageType_BulletBlast,UDishonoredDamageType_Bullet,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_BulletFar: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_BulletFar : public UDishonoredDamageType_Bullet
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_BulletFar
+    //## END PROPS DishonoredDamageType_BulletFar
+
+    DECLARE_CLASS(UDishonoredDamageType_BulletFar,UDishonoredDamageType_Bullet,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_BulletMedium: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_BulletMedium : public UDishonoredDamageType_Bullet
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_BulletMedium
+    //## END PROPS DishonoredDamageType_BulletMedium
+
+    DECLARE_CLASS(UDishonoredDamageType_BulletMedium,UDishonoredDamageType_Bullet,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Electricity: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Electricity : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Electricity
+    //## END PROPS DishonoredDamageType_Electricity
+
+    DECLARE_CLASS(UDishonoredDamageType_Electricity,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Explosion: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Explosion : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Explosion
+    //## END PROPS DishonoredDamageType_Explosion
+
+    DECLARE_CLASS(UDishonoredDamageType_Explosion,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_FrontalImpale: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_FrontalImpale : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_FrontalImpale
+    //## END PROPS DishonoredDamageType_FrontalImpale
+
+    DECLARE_CLASS(UDishonoredDamageType_FrontalImpale,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Knockdown: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Knockdown : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Knockdown
+    //## END PROPS DishonoredDamageType_Knockdown
+
+    DECLARE_CLASS(UDishonoredDamageType_Knockdown,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Plague: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Plague : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Plague
+    //## END PROPS DishonoredDamageType_Plague
+
+    DECLARE_CLASS(UDishonoredDamageType_Plague,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Projectile_Stealth: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Projectile_Stealth : public UDishonoredDamageType_Projectile
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Projectile_Stealth
+    //## END PROPS DishonoredDamageType_Projectile_Stealth
+
+    DECLARE_CLASS(UDishonoredDamageType_Projectile_Stealth,UDishonoredDamageType_Projectile,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_SpawnRatSwarm: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_SpawnRatSwarm : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_SpawnRatSwarm
+    //## END PROPS DishonoredDamageType_SpawnRatSwarm
+
+    DECLARE_CLASS(UDishonoredDamageType_SpawnRatSwarm,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDamageType_Stomped: retail sizeof 136, reflected span 133..136 (2012 PDB sizeof 136)
+class UDishonoredDamageType_Stomped : public UDishonoredDamageType
+{
+public:
+    //## BEGIN PROPS DishonoredDamageType_Stomped
+    //## END PROPS DishonoredDamageType_Stomped
+
+    DECLARE_CLASS(UDishonoredDamageType_Stomped,UDishonoredDamageType,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDebugMenu: retail sizeof 80, reflected span 56..80 (2012 PDB sizeof 80)
+class UDishonoredDebugMenu : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredDebugMenu
+    TArrayNoInit<FDishonoredDebugMenuItem> m_Items;
+    INT m_CurrentItem;
+    BITFIELD m_bVisible:1;
+    INT m_CurrentCommand;
+    //## END PROPS DishonoredDebugMenu
+
+    DECLARE_FUNCTION(execToggleDebugMenu);
+    DECLARE_FUNCTION(execLoadMenu);
+    DECLARE_FUNCTION(execHideMenu);
+    DECLARE_CLASS(UDishonoredDebugMenu,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredDecalComponent: retail sizeof 848, reflected span 748..844 (2012 PDB sizeof 848)
+class UDishonoredDecalComponent : public UDecalComponent
+{
+public:
+    //## BEGIN PROPS DishonoredDecalComponent
+    FDishonoredDecalInfo m_DecalInfo;
+    FLOAT m_fLastTime;
+    BITFIELD m_bDone:1;
+    BITFIELD m_bDidOneTick:1;
+    FLOAT m_OriginalZ;
+    class UMaterialInterface* m_RuntimeMaterial;
+    FLOAT m_RuntimeWidth;
+    FLOAT m_RuntimeHeight;
+    //## END PROPS DishonoredDecalComponent
+
+    DECLARE_CLASS(UDishonoredDecalComponent,UDecalComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredEngine: retail sizeof 2052, reflected span 1804..2052 (2012 PDB sizeof 1964)
+class UDishonoredEngine : public UGameEngine
+{
+public:
+    //## BEGIN PROPS DishonoredEngine
+    INT m_nCurrentRichPresenceChapter;
+    INT m_nCurrentRichPresenceChaos;
+    BITFIELD m_bDLC06ToDLC07LowChaosFound:1;
+    BITFIELD m_bDLC06ToDLC07HighChaosFound:1;
+    BITFIELD m_bAutoSaveEnabled:1;
+    BITFIELD m_bSaveLoadEnabled:1;
+    BITFIELD m_bPendingAutosaveFromCode:1;
+    BITFIELD m_bSaveLevelState:1;
+    BITFIELD m_bCompleteSave:1;
+    BITFIELD m_bIsLastSaveInCurrentLevel:1;
+    BITFIELD m_bShowingProfileSaveUI:1;
+    BITFIELD m_bShowingGameSaveUI:1;
+    BITFIELD m_bUsingGamepad:1;
+    BITFIELD m_bShowLoadingMapNameAndHints:1;
+    BITFIELD m_bShowSaveNotificationMovie:1;
+    BITFIELD m_bRetry:1;
+    BITFIELD m_bProcessingCorruption:1;
+    BITFIELD m_bStateLoadFailed:1;
+    BITFIELD m_bInitialMissionCachingDone:1;
+    BITFIELD m_bDLC05DidIniVerificationCheck:1;
+    BITFIELD m_bDLC05DidFirstLoginStatusCheck:1;
+    BITFIELD m_bDLC05ForceLostConnectionMessage:1;
+    INT m_DisallowSavingRefCount[21];
+    FLOAT m_fDisallowSavingTimer;
+    INT m_IgnoreAutosavingRefCount[2];
+    BYTE m_SaveLoadCmd;
+    BYTE m_SaveLoadStatus;
+    BYTE m_SaveLoadMode;
+    BYTE m_DLC05LastLoginStatus;
+    BYTE m_TransitionSaveType;
+    TArrayNoInit<class UDisSeqAct_AutoSave*> m_SaveActionsToNotify;
+    INT m_NextAutoSaveSlot;
+    INT m_SavegameSlot;
+    INT m_PendingAutosaveSlot;
+    TArrayNoInit<class UDisSeqAct_AutoSave*> m_PendingAutosaveActions;
+    FLOAT m_fPendingAutosaveTimer;
+    INT m_PendingMissionStartSaveSlot;
+    class UDisSeqAct_AutoSave* m_pPendingMissionStartSaveAction;
+    FPointer m_pSaveFileArchivePC_PS3;
+    FPointer m_pSaveFileArchiveX360;
+    class UDishonoredDebugMenu* m_DebugMenu;
+    FPointer m_pGameState;
+    FLOAT m_fSaveValidationTime;
+    FPointer m_pSaveGameList;
+    FPointer m_pSaveGameDeleter;
+    FPointer m_pSaveGameLoader;
+    DOUBLE m_dLastAutoSaveTime;
+    TArrayNoInit<FMapConfig> m_MapConfig;
+    FLOAT m_fAutosaveWaitTime;
+    class UDisBinkOverlayManager* m_pBinkOverlayManager;
+    FLOAT m_fSaveNotificationMovieMinimumDuration;
+    FLOAT m_fSaveNotificationMovieMinimumDurationNoHD;
+    DOUBLE m_dSaveNotificationMovieEndTime;
+    class UDisDLC06SeqAct_EndDLC06* m_pEndGameAction;
+    FPointer m_pDLC06EndGamePlayerInfo;
+    //## END PROPS DishonoredEngine
+
+    DECLARE_FUNCTION(execPublishRichPresence);
+    DECLARE_FUNCTION(execUpdateRichPresenceChaos);
+    DECLARE_FUNCTION(execUpdateRichPresenceChapter);
+    DECLARE_FUNCTION(execOpenContentUnavailableMenu);
+    DECLARE_FUNCTION(execOpenControllerConnectionMenu);
+    DECLARE_FUNCTION(execOnControllerDisconnected);
+    DECLARE_FUNCTION(execOnControllerChanged);
+    DECLARE_FUNCTION(execOpenPauseMenu);
+    DECLARE_FUNCTION(execPlayLoadMapMovie);
+    DECLARE_FUNCTION(execPopIgnoreAutosave);
+    DECLARE_FUNCTION(execPushIgnoreAutosave);
+    DECLARE_FUNCTION(execPopDisableSave);
+    DECLARE_FUNCTION(execPushDisableSave);
+    DECLARE_FUNCTION(execDis_Load);
+    DECLARE_FUNCTION(execDis_Save);
+    DECLARE_CLASS(UDishonoredEngine,UGameEngine,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredGlobalAIManager: retail sizeof 252, reflected span 56..252 (2012 PDB sizeof 248)
+class UDishonoredGlobalAIManager : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredGlobalAIManager
+    TMap<class ADishonoredNPCPawn*,FGlobalCorpseInfo> m_Corpses;  // DISHONORED(layout): retail SDK gap @56: MapProperty m_Corpses (script_classes_2013), type from the 2012 PDB
+    TArrayNoInit<FCorpseIslandInfo> m_CorpseIslandInfo;
+    BITFIELD m_bCorpseIslandDirty:1;
+    BITFIELD m_bIgnoreIdealMaximumCount:1;
+    BITFIELD m_bInitialized:1;
+    TArrayNoInit<FCustomIgnoreDeathInfo> m_CustomIgnoreDeathInfos;
+    INT m_CorpseIdealMaximumCount;
+    INT m_CorpseAbsoluteMaximumCount;
+    FLOAT m_fCorpseIslandSize;
+    FLOAT m_fCorpseUpdateTime;
+    class UDishonoredAIBrain* m_pThinkCandidate;
+    class UDishonoredAIBrain* m_pBrainList;
+    class UDishonoredAIBrain* m_pRatStompingBrain;
+    TArrayNoInit<class UDishonoredAIBrain*> m_EngagedBrains;
+    INT m_iNumEngagedBrains;
+    INT m_iMaxEngagedBrains;
+    INT m_iCurrentAttentionTag;
+    class UDisStimManager* m_pStimManager;
+    class UDisAIBlackboard* m_pAIGlobalBlackBoard;
+    FLOAT m_fBullyCooldownTimer;
+    FLOAT m_fGroupDistance;
+    FDisRangedFloat m_ReactionDelay;
+    FDisRangedFloat m_MagicReactionDelay;
+    INT m_MaxNumAIStims;
+    INT m_MaxAIStimSize_bytes;
+    FDisRangedFloat m_BullyCooldownPeriod;
+    FDisRangedFloat m_TetherDelay;
+    //## END PROPS DishonoredGlobalAIManager
+
+    DECLARE_CLASS(UDishonoredGlobalAIManager,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AI");}
+};
+
+// DishonoredGame.DishonoredPlayerSkeletalComponent: retail sizeof 1120, reflected span 1100..1120 (2012 PDB sizeof 1088)
+class UDishonoredPlayerSkeletalComponent : public UDisSkeletalMeshComponent
+{
+public:
+    //## BEGIN PROPS DishonoredPlayerSkeletalComponent
+    BITFIELD m_bUseFOV:1;
+    FLOAT m_FOV;
+    FVector m_Offset;
+    //## END PROPS DishonoredPlayerSkeletalComponent
+
+    DECLARE_CLASS(UDishonoredPlayerSkeletalComponent,UDisSkeletalMeshComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredMapInfo: retail sizeof 184, reflected span 56..184 (2012 PDB sizeof 176)
+class UDishonoredMapInfo : public UMapInfo
+{
+public:
+    //## BEGIN PROPS DishonoredMapInfo
+    class UDisPatrolManager* m_pPatrolManager;
+    class UDisFleePointManager* m_pFleePointManager;
+    class UDisAnimStatePool* m_pAnimStateTreePool;
+    TArrayNoInit<FName> m_PreEditChangeSquadNames;
+    TArrayNoInit<FPointer> m_FishAttractors;
+    class ADisFish* m_pHeadFish;
+    TArrayNoInit<FDisSquadInfo> m_SquadInfos;
+    BITFIELD m_bEnableRandomRatSwarm:1;
+    BITFIELD m_bIsCampaignMap:1;
+    BITFIELD m_SentinelEnableAI:1;
+    BITFIELD m_SentinelTravelUseNavMesh:1;
+    BITFIELD m_bForcePlayerVisible:1;
+    BITFIELD m_bApplyMapInfoLightSettings:1;
+    class UDisTweaks_PlayerLoadout* m_pPlayerMapSpecificLoadout;
+    class UDisTweaks_PlayerVisSettings* m_pMapPlayerVisSettings;
+    FLinearColor m_AmbientShadowColor;
+    FVector m_AmbientShadowSourceDirection;
+    FLinearColor m_AmbientGlow;
+    class UDisTweaks_MusicEvents* m_pMapMusicEvents;
+    FLOAT m_fMaxAudibleDistance;
+    class UDisTweaks_ChapterInfoList* m_pChapters;
+    class UDisTweaks_NPCPawn* m_pMapSpecificSummonedAssassinTweaks[2];
+    //## END PROPS DishonoredMapInfo
+
+    DECLARE_CLASS(UDishonoredMapInfo,UMapInfo,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNoteComponent: retail sizeof 464, reflected span 452..456 (2012 PDB sizeof 464)
+class UDishonoredNoteComponent : public UPrimitiveComponent
+{
+public:
+    //## BEGIN PROPS DishonoredNoteComponent
+    BITFIELD m_bIsGameAsset:1;
+    //## END PROPS DishonoredNoteComponent
+
+    DECLARE_CLASS(UDishonoredNoteComponent,UPrimitiveComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredPlayerInput: retail sizeof 604, reflected span 444..604 (2012 PDB sizeof 604)
+class UDishonoredPlayerInput : public UPlayerInput, public IDisTweaksInterface, public IArkSettingsListenerInterface
+{
+public:
+    //## BEGIN PROPS DishonoredPlayerInput
+    class ADishonoredPlayerController* m_pPlayerController;
+    TArrayNoInit<FDisGameActionBinding> m_GameActionBindings;
+    BITFIELD m_bUsingGamepadForLook:1;
+    BITFIELD m_bSkipSceneGaugeIsDisplayed:1;
+    BITFIELD m_bGamepadInvertYAxisSettings:1;
+    BITFIELD m_bGamepadUseFrictionSettings:1;
+    BITFIELD m_bGamepadUseAutoAimSettings:1;
+    BITFIELD m_bMouseInvertYAxisSettings:1;
+    BITFIELD m_bMouseUseFrictionSettings:1;
+    BITFIELD m_bMouseUseAutoAimSettings:1;
+    FLOAT m_fOld_aLookUp;
+    FLOAT m_fOld_aTurn;
+    FLOAT m_fOld_aForward;
+    FLOAT m_fOld_aStrafe;
+    FLOAT m_fCurLookTurnScale;
+    FLOAT m_fCurLookUpScale;
+    TMap<FName,FDisMultiPressInfo> m_MultiPressMap;  // DISHONORED(layout): retail SDK gap @496: MapProperty m_MultiPressMap (script_classes_2013), type from the 2012 PDB
+    FLOAT m_fSkipPressedTime;
+    class UDisTweaks_PlayerInput* m_pTweaks;
+    FStringNoInit m_TweakName;
+    FVector2D m_MouseDir;
+    FLOAT m_fGamepadLookXSensitivitySettings;
+    FLOAT m_fGamepadLookYSensitivitySettings;
+    FLOAT m_fGamepadFrictionStrengthSettings;
+    FLOAT m_fMouseSensitivityModifierSetting;
+    FLOAT m_fMouseFrictionStrengthSettings;
+    //## END PROPS DishonoredPlayerInput
+
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDishonoredPlayerInput::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_FUNCTION(execGetFOVScale);
+    DECLARE_FUNCTION(execDis_PlayerChoice_RequestSkip_Released);
+    DECLARE_FUNCTION(execDis_PlayerChoice_RequestSkip);
+    DECLARE_FUNCTION(execDis_Jump_ButtonDown);
+    DECLARE_FUNCTION(execDis_SneakOrSlide);
+    DECLARE_CLASS(UDishonoredPlayerInput,UPlayerInput,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+    DECLARE_WITHIN(APlayerController)
+};
+
+// DishonoredGame.DishonoredPowersComponent: retail sizeof 112, reflected span 81..112 (2012 PDB sizeof 112)
+class UDishonoredPowersComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DishonoredPowersComponent
+    TArrayNoInit<FDishonoredPower> m_Powers;
+    TArrayNoInit<INT> m_StoredPowerLevels;
+    BITFIELD m_bArePassivePowerInhibited:1;
+    //## END PROPS DishonoredPowersComponent
+
+    DECLARE_CLASS(UDishonoredPowersComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Player");}
+};
+
+// DishonoredGame.DishonoredSearchCrumbsComponent: retail sizeof 212, reflected span 81..212 (2012 PDB sizeof 212)
+class UDishonoredSearchCrumbsComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DishonoredSearchCrumbsComponent
+    TArrayNoInit<FSearchCrumbStruct> m_SearchCrumbs;
+    INT m_SearchCrumbsIndex;
+    INT m_iNumBadWanders;
+    FVector m_LastCrumbLocation;
+    FVector m_SearchProxy;
+    FVector m_LastProxyLocation;
+    FVector m_LastWallNormal;
+    FVector m_KnownValidSearchLocation;
+    FLOAT m_fHeartbeatTimer;
+    FLOAT m_fStickyProxyTimer;
+    BITFIELD m_bIsOnNavMesh:1;
+    BITFIELD m_bUseRandomCrumbSelection:1;
+    INT m_iNumSearchCrumbs;
+    FLOAT m_fCrumbLifetime;
+    FLOAT m_fDistanceBetweenCrumbs;
+    FLOAT m_fHeartbeatInterval;
+    FLOAT m_fWanderAngularRange;
+    FLOAT m_fChanceOfPsychicSearch;
+    FLOAT m_fMinWanderStep;
+    FLOAT m_fMaxWanderStep;
+    FLOAT m_fStickyProxyDuration;
+    //## END PROPS DishonoredSearchCrumbsComponent
+
+    DECLARE_CLASS(UDishonoredSearchCrumbsComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AI");}
+};
+
+struct DishonoredViewportClient_eventPostRender_Parms
+{
+    class UCanvas* _pCanvas;
+    DishonoredViewportClient_eventPostRender_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredViewportClient: retail sizeof 340, reflected span 284..340 (2012 PDB sizeof 340)
+class UDishonoredViewportClient : public UGameViewportClient
+{
+public:
+    //## BEGIN PROPS DishonoredViewportClient
+    FLOAT m_fLowFPSDisplayDuration;
+    INT m_fLowFPSNeededFrameCount;
+    BITFIELD m_HideFPSWarningInShipping:1;
+    BITFIELD m_bListenerLocationOverride:1;
+    FLowFPSData m_LowFPSData;
+    FVector m_vListenerLocationOverride;
+    FLOAT m_TitleSafeFrame;
+    FLOAT m_ActionSafeFrame;
+    //## END PROPS DishonoredViewportClient
+
+    void eventPostRender(class UCanvas* _pCanvas)
+    {
+        DishonoredViewportClient_eventPostRender_Parms Parms(EC_EventParm);
+        Parms._pCanvas=_pCanvas;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_PostRender),&Parms);
+    }
+    DECLARE_FUNCTION(execPostRender_Native);
+    DECLARE_CLASS(UDishonoredViewportClient,UGameViewportClient,0|CLASS_Config|CLASS_Transient,DishonoredGame)
+    DECLARE_WITHIN(UEngine)
+};
+
+// DishonoredGame.DishonoredWaterVolumeInfo: retail sizeof 400, reflected span 56..400 (2012 PDB sizeof 400)
+class UDishonoredWaterVolumeInfo : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredWaterVolumeInfo
+    FStringNoInit m_PostProcessNameEntry;
+    FStringNoInit m_PostProcessNameExit;
+    TArrayNoInit<FWaterEffectInfo> m_WaterEntrySettings;
+    TArrayNoInit<FWaterEffectInfo> m_WaterExitSettings;
+    FWaterEffectInfo m_ObjectEntrySettings[4];
+    FWaterEffectInfo m_ObjectExitSettings[4];
+    FWaterEffectInfo m_ProjectileEntrySettings;
+    FWaterEffectInfo m_ProjectileExitSettings;
+    BITFIELD m_bUseObjectAndProjectileSettings:1;
+    FLOAT m_fBlendTime;
+    class UAkEvent* m_pUnderwaterPlaySoundEvent;
+    class UAkEvent* m_pUnderwaterStopSoundEvent;
+    FLOAT m_fInWaterAngularDamping;
+    FLOAT m_fInWaterLinearDamping;
+    FLOAT m_fWaterDensity;
+    FLOAT m_fBuoyancyNoise;
+    FArkPpConfig m_PpOverride;
+    FLOAT m_BlurStrength;
+    class UDisFogComponent* m_FogComponent;
+    class UClass* m_pContactTypeOverride;
+    //## END PROPS DishonoredWaterVolumeInfo
+
+    DECLARE_CLASS(UDishonoredWaterVolumeInfo,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCActionParry: retail sizeof 104, reflected span 100..104 (2012 PDB sizeof 104)
+class UStateNPCActionParry : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCActionParry
+    FLOAT m_fParryFestivalLifetime;
+    //## END PROPS StateNPCActionParry
+
+    DECLARE_CLASS(UStateNPCActionParry,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCAttractSpell: retail sizeof 116, reflected span 116..116 (2012 PDB sizeof 116)
+class UStateNPCAttractSpell : public UStateNPCMasterPlayAnim
+{
+public:
+    //## BEGIN PROPS StateNPCAttractSpell
+    //## END PROPS StateNPCAttractSpell
+
+    DECLARE_CLASS(UStateNPCAttractSpell,UStateNPCMasterPlayAnim,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCEscapeExplosion: retail sizeof 64, reflected span 64..64 (2012 PDB sizeof 64)
+class UStateNPCEscapeExplosion : public UDishonoredNativeState
+{
+public:
+    //## BEGIN PROPS StateNPCEscapeExplosion
+    //## END PROPS StateNPCEscapeExplosion
+
+    DECLARE_CLASS(UStateNPCEscapeExplosion,UDishonoredNativeState,0,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterActionImmolate: retail sizeof 156, reflected span 104..156 (2012 PDB sizeof 156)
+class UStateNPCMasterActionImmolate : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterActionImmolate
+    class UObject* m_pImmolationCauser;
+    FLOAT m_fDamageTimer;
+    FLOAT m_fNoiseTimer;
+    FImmolationParams m_ImmolationParams;
+    BITFIELD m_bRestoringFromSave:1;
+    //## END PROPS StateNPCMasterActionImmolate
+
+    DECLARE_CLASS(UStateNPCMasterActionImmolate,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterActionMelee: retail sizeof 112, reflected span 100..112 (2012 PDB sizeof 112)
+class UStateNPCMasterActionMelee : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterActionMelee
+    BYTE m_Animation;
+    BYTE m_BodyFilter;
+    BITFIELD m_bSpineBendTowardsTarget:1;
+    BITFIELD m_bAllowDodgeToInterrupt:1;
+    BITFIELD m_bAllowParryToInterrupt:1;
+    BITFIELD m_bInterruptable:1;
+    INT m_iVariation;
+    //## END PROPS StateNPCMasterActionMelee
+
+    DECLARE_CLASS(UStateNPCMasterActionMelee,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterActionMeleeSwarm: retail sizeof 120, reflected span 100..120 (2012 PDB sizeof 116)
+class UStateNPCMasterActionMeleeSwarm : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterActionMeleeSwarm
+    TArrayNoInit<class ADisRatSwarm*> m_Attackers;
+    BITFIELD m_bIsPlayingOutro:1;
+    FLOAT m_fLastAINoiseTime;
+    //## END PROPS StateNPCMasterActionMeleeSwarm
+
+    DECLARE_CLASS(UStateNPCMasterActionMeleeSwarm,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterActionMeleeVersus: retail sizeof 104, reflected span 100..101 (2012 PDB sizeof 104)
+class UStateNPCMasterActionMeleeVersus : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterActionMeleeVersus
+    BYTE m_CurrentVersusState;
+    //## END PROPS StateNPCMasterActionMeleeVersus
+
+    DECLARE_CLASS(UStateNPCMasterActionMeleeVersus,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterActionPostPossessed: retail sizeof 104, reflected span 104..104 (2012 PDB sizeof 104)
+class UStateNPCMasterActionPostPossessed : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterActionPostPossessed
+    //## END PROPS StateNPCMasterActionPostPossessed
+
+    DECLARE_CLASS(UStateNPCMasterActionPostPossessed,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterAim: retail sizeof 132, reflected span 100..132 (2012 PDB sizeof 132)
+class UStateNPCMasterAim : public UStateNPCMasterAction, public IDisFireProjectileInterface
+{
+public:
+    //## BEGIN PROPS StateNPCMasterAim
+    BYTE m_AimLogicState;
+    FLOAT m_fTimeSpentAiming;
+    FPointer m_pShootingContext;
+    FPointer m_pReloadContext;
+    FLOAT m_fTimeAimingRequiresBeforeShooting;
+    FLOAT m_fSlomoTrickOccurencePercentage;
+    BITFIELD m_bAnimationCompletionPending:1;
+    BITFIELD m_bNeedsToReturnToBendTime:1;
+    //## END PROPS StateNPCMasterAim
+
+    DECLARE_CLASS(UStateNPCMasterAim,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterAim_Grenade: retail sizeof 132, reflected span 132..132 (2012 PDB sizeof 132)
+class UStateNPCMasterAim_Grenade : public UStateNPCMasterAim
+{
+public:
+    //## BEGIN PROPS StateNPCMasterAim_Grenade
+    //## END PROPS StateNPCMasterAim_Grenade
+
+    DECLARE_CLASS(UStateNPCMasterAim_Grenade,UStateNPCMasterAim,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterBePossessed: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 108)
+class UStateNPCMasterBePossessed : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterBePossessed
+    FLOAT m_fGroundSpeedBeforePossess;
+    BITFIELD m_bIsFalling:1;
+    //## END PROPS StateNPCMasterBePossessed
+
+    DECLARE_CLASS(UStateNPCMasterBePossessed,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterBeingAssassinated: retail sizeof 120, reflected span 100..120 (2012 PDB sizeof 120)
+class UStateNPCMasterBeingAssassinated : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterBeingAssassinated
+    class ADishonoredPawn* m_pMaster;
+    class ADishonoredPawn* m_pAssassin;
+    BYTE m_SyncedAnimation;
+    INT m_iAnimIndex;
+    BITFIELD m_bRotateSlave:1;
+    BITFIELD m_bAutoPickingUpCorpse:1;
+    //## END PROPS StateNPCMasterBeingAssassinated
+
+    DECLARE_CLASS(UStateNPCMasterBeingAssassinated,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterBeingChoked: retail sizeof 104, reflected span 100..104 (2012 PDB sizeof 104)
+class UStateNPCMasterBeingChoked : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterBeingChoked
+    BITFIELD m_bFiredKismetEvent:1;
+    BITFIELD m_bIsBrainInhibitedByChoke:1;
+    //## END PROPS StateNPCMasterBeingChoked
+
+    DECLARE_CLASS(UStateNPCMasterBeingChoked,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterDistracted: retail sizeof 116, reflected span 100..116 (2012 PDB sizeof 116)
+class UStateNPCMasterDistracted : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterDistracted
+    BYTE m_DistractionType;
+    BITFIELD m_bIsInLoop:1;
+    FLOAT m_fLoopTimeLeft;
+    class UDisNPCDistractionComponent* m_pDistraction;
+    //## END PROPS StateNPCMasterDistracted
+
+    DECLARE_CLASS(UStateNPCMasterDistracted,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterDodge: retail sizeof 112, reflected span 100..112 (2012 PDB sizeof 112)
+class UStateNPCMasterDodge : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterDodge
+    BYTE m_RiposteType;
+    BYTE m_DodgeState;
+    BYTE m_DodgeType;
+    class ADishonoredPawn* m_pAttackingPawn;
+    FLOAT m_fDodgeFestivalLifetime;
+    //## END PROPS StateNPCMasterDodge
+
+    DECLARE_CLASS(UStateNPCMasterDodge,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterDualPlayAnim: retail sizeof 116, reflected span 116..116 (2012 PDB sizeof 116)
+class UStateNPCMasterDualPlayAnim : public UStateNPCMasterPlayAnim
+{
+public:
+    //## BEGIN PROPS StateNPCMasterDualPlayAnim
+    //## END PROPS StateNPCMasterDualPlayAnim
+
+    DECLARE_CLASS(UStateNPCMasterDualPlayAnim,UStateNPCMasterPlayAnim,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCUpperBodyAction: retail sizeof 84, reflected span 76..84 (2012 PDB sizeof 84)
+class UStateNPCUpperBodyAction : public UStateSharedActionBase
+{
+public:
+    //## BEGIN PROPS StateNPCUpperBodyAction
+    class ADishonoredNPCPawn* m_pNPCPawn;
+    class ADishonoredNPCController* m_pNPCController;
+    //## END PROPS StateNPCUpperBodyAction
+
+    DECLARE_CLASS(UStateNPCUpperBodyAction,UStateSharedActionBase,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.StateNPCMasterEquip: retail sizeof 96, reflected span 84..96 (2012 PDB sizeof 96)
+class UStateNPCMasterEquip : public UStateNPCUpperBodyAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterEquip
+    BYTE m_EquipIntention;
+    BYTE m_ItemIntention;
+    class UClass* m_pItemClass;
+    BITFIELD m_bAnimEnded:1;
+    BITFIELD m_bFullBody:1;
+    //## END PROPS StateNPCMasterEquip
+
+    DECLARE_CLASS(UStateNPCMasterEquip,UStateNPCUpperBodyAction,0,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterFalling: retail sizeof 104, reflected span 104..104 (2012 PDB sizeof 104)
+class UStateNPCMasterFalling : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterFalling
+    //## END PROPS StateNPCMasterFalling
+
+    DECLARE_CLASS(UStateNPCMasterFalling,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterFallingUncontrolled: retail sizeof 100, reflected span 100..100 (2012 PDB sizeof 100)
+class UStateNPCMasterFallingUncontrolled : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterFallingUncontrolled
+    //## END PROPS StateNPCMasterFallingUncontrolled
+
+    DECLARE_CLASS(UStateNPCMasterFallingUncontrolled,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterGesture: retail sizeof 104, reflected span 100..104 (2012 PDB sizeof 104)
+class UStateNPCMasterGesture : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterGesture
+    BITFIELD m_bLooping:1;
+    //## END PROPS StateNPCMasterGesture
+
+    DECLARE_CLASS(UStateNPCMasterGesture,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterLyingInWait: retail sizeof 100, reflected span 100..100 (2012 PDB sizeof 100)
+class UStateNPCMasterLyingInWait : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterLyingInWait
+    //## END PROPS StateNPCMasterLyingInWait
+
+    DECLARE_CLASS(UStateNPCMasterLyingInWait,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterMinigame: retail sizeof 100, reflected span 100..100 (2012 PDB sizeof 100)
+class UStateNPCMasterMinigame : public UStateNPCMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterMinigame
+    //## END PROPS StateNPCMasterMinigame
+
+    DECLARE_CLASS(UStateNPCMasterMinigame,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterProjectileHitReact: retail sizeof 124, reflected span 104..124 (2012 PDB sizeof 124)
+class UStateNPCMasterProjectileHitReact : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterProjectileHitReact
+    FVector m_vMomentum;
+    BYTE m_HitRegion;
+    BITFIELD m_bShouldThrow:1;
+    //## END PROPS StateNPCMasterProjectileHitReact
+
+    DECLARE_CLASS(UStateNPCMasterProjectileHitReact,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterRangedAttack: retail sizeof 116, reflected span 116..116 (2012 PDB sizeof 116)
+class UStateNPCMasterRangedAttack : public UStateNPCMasterPlayAnim
+{
+public:
+    //## BEGIN PROPS StateNPCMasterRangedAttack
+    //## END PROPS StateNPCMasterRangedAttack
+
+    DECLARE_CLASS(UStateNPCMasterRangedAttack,UStateNPCMasterPlayAnim,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterStrongHitReact: retail sizeof 116, reflected span 104..116 (2012 PDB sizeof 116)
+class UStateNPCMasterStrongHitReact : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterStrongHitReact
+    FLOAT m_fUncontrolledYawAdjustmentSpeed;
+    BYTE m_Direction;
+    class UClass* m_pDamageTypeToReactOn;
+    //## END PROPS StateNPCMasterStrongHitReact
+
+    DECLARE_CLASS(UStateNPCMasterStrongHitReact,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterStunned: retail sizeof 140, reflected span 104..140 (2012 PDB sizeof 140)
+class UStateNPCMasterStunned : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterStunned
+    BYTE m_Animation;
+    BYTE m_StunAnimState;
+    FLOAT m_fStunTimer;
+    FLOAT m_fRagdollTimer;
+    BITFIELD m_bStillStunned:1;
+    BITFIELD m_bIsStandUp:1;
+    FLOAT m_fRagdollToAnimBlendTime;
+    FVector m_vPerceivedHitLocation;
+    FLOAT m_fStunDuration;
+    //## END PROPS StateNPCMasterStunned
+
+    DECLARE_CLASS(UStateNPCMasterStunned,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterSurprised: retail sizeof 132, reflected span 116..132 (2012 PDB sizeof 132)
+class UStateNPCMasterSurprised : public UStateNPCMasterPlayAnim
+{
+public:
+    //## BEGIN PROPS StateNPCMasterSurprised
+    FVector m_LocationSurprisedBy;
+    BITFIELD m_bStillSurprised:1;
+    //## END PROPS StateNPCMasterSurprised
+
+    DECLARE_CLASS(UStateNPCMasterSurprised,UStateNPCMasterPlayAnim,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterTallboyAim: retail sizeof 172, reflected span 132..172 (2012 PDB sizeof 172)
+class UStateNPCMasterTallboyAim : public UStateNPCMasterAim
+{
+public:
+    //## BEGIN PROPS StateNPCMasterTallboyAim
+    FDisAttentionProxy m_AimTargetProxy;
+    FVector m_AimTargetLocation;
+    FLOAT m_fAimAlignedTime;
+    FLOAT m_fAimAlignYawDegrees;
+    FLOAT m_fAimAlignTimeBeforeShooting;
+    //## END PROPS StateNPCMasterTallboyAim
+
+    DECLARE_CLASS(UStateNPCMasterTallboyAim,UStateNPCMasterAim,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterThrown: retail sizeof 176, reflected span 104..176 (2012 PDB sizeof 172)
+class UStateNPCMasterThrown : public UStateNPCInstigatedMasterAction
+{
+public:
+    //## BEGIN PROPS StateNPCMasterThrown
+    BITFIELD m_bRagdoll:1;
+    BITFIELD m_bUseMomemtumAsForce:1;
+    BITFIELD m_bImpulseNextFrame:1;
+    BITFIELD m_bReadyToGoDeadLimp:1;
+    BITFIELD m_bNeedsChangeInDirection:1;
+    BITFIELD m_bComingFromStun:1;
+    BITFIELD m_bBlockNormalDeath:1;
+    BITFIELD m_bWindblast:1;
+    BITFIELD m_bDontReduceCollHeight:1;
+    BYTE m_ThrowDirection;
+    FVector m_vMomentum;
+    FVector m_vOrigin;
+    FLOAT m_fDistance;
+    FLOAT m_fHalfAngle;
+    FLOAT m_fOldCylinderHeight;
+    FLOAT m_fOldTimeDilation;
+    FLOAT m_fBodyAtRestTestTimer;
+    FLOAT m_fMinMomentumZ;
+    FLOAT m_fMinMomentum2DMagnitude;
+    FLOAT m_fMinMomentumZWhenStunned;
+    FLOAT m_fMinMomentum2DMagnitudeWhenStunned;
+    FLOAT m_fMinVelocityForAutoBreak;
+    //## END PROPS StateNPCMasterThrown
+
+    DECLARE_CLASS(UStateNPCMasterThrown,UStateNPCInstigatedMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMasterWalk: retail sizeof 68, reflected span 64..68 (2012 PDB sizeof 68)
+class UStateNPCMasterWalk : public UDishonoredNativeState
+{
+public:
+    //## BEGIN PROPS StateNPCMasterWalk
+    class ADishonoredNPCPawn* m_pNPCPawn;
+    //## END PROPS StateNPCMasterWalk
+
+    DECLARE_CLASS(UStateNPCMasterWalk,UDishonoredNativeState,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+};
+
+// DishonoredGame.StateNPCUpperPlayAnim: retail sizeof 100, reflected span 84..100 (2012 PDB sizeof 100)
+class UStateNPCUpperPlayAnim : public UStateNPCUpperBodyAction
+{
+public:
+    //## BEGIN PROPS StateNPCUpperPlayAnim
+    BYTE m_AnimChainToPlay;
+    INT m_iAnimGroup;
+    INT m_iAnimStep;
+    BITFIELD m_bForceVisionForward:1;
+    BITFIELD m_bStopLoop:1;
+    BITFIELD m_bIsLooping:1;
+    //## END PROPS StateNPCUpperPlayAnim
+
+    DECLARE_CLASS(UStateNPCUpperPlayAnim,UStateNPCUpperBodyAction,0,DishonoredGame)
+};
+
+// DishonoredGame.StateNPCMusicBox: retail sizeof 100, reflected span 100..100 (2012 PDB sizeof 100)
+class UStateNPCMusicBox : public UStateNPCUpperPlayAnim
+{
+public:
+    //## BEGIN PROPS StateNPCMusicBox
+    //## END PROPS StateNPCMusicBox
+
+    DECLARE_CLASS(UStateNPCMusicBox,UStateNPCUpperPlayAnim,0,DishonoredGame)
+};
+
+// DishonoredGame.StateSharedActionBase_PlayerOnly: retail sizeof 104, reflected span 76..104 (2012 PDB sizeof 104)
+class UStateSharedActionBase_PlayerOnly : public UStateSharedActionBase, public IDisAnimStateFiringInterface
+{
+public:
+    //## BEGIN PROPS StateSharedActionBase_PlayerOnly
+    FPointer m_pCurAction;
+    BITFIELD m_bActionIsExiting:1;
+    BITFIELD m_bOverrideInterrupt_ByUse:1;
+    BITFIELD m_bOverrideInterrupt_ByParry:1;
+    BITFIELD m_bLimitControllerSensitivity:1;
+    INT m_iCurrentAnimStateIndex;
+    FDisNonRepeatINTRandomHelper m_NonRepeatINTRandomHelper;
+    FLOAT m_fLimitedMouseSensitivity;
+    FLOAT m_fLimitedJoySensitivity;
+    //## END PROPS StateSharedActionBase_PlayerOnly
+
+    DECLARE_CLASS(UStateSharedActionBase_PlayerOnly,UStateSharedActionBase,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("PlayerState");}
+};
+
+// DishonoredGame.StatePlayerAction: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 112)
+class UStatePlayerAction : public UStateSharedActionBase_PlayerOnly
+{
+public:
+    //## BEGIN PROPS StatePlayerAction
+    class UDisNativeStateMachine_PlayerAction* m_pActionFSM;
+    class ADishonoredPlayerPawn* m_pPlayerPawn;
+    //## END PROPS StatePlayerAction
+
+    DECLARE_CLASS(UStatePlayerAction,UStateSharedActionBase_PlayerOnly,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerChangeReadyStance: retail sizeof 120, reflected span 112..120 (2012 PDB sizeof 120)
+class UStatePlayerChangeReadyStance : public UStatePlayerAction
+{
+public:
+    //## BEGIN PROPS StatePlayerChangeReadyStance
+    BYTE m_GoToStance;
+    BITFIELD m_bCheckBlend:1;
+    //## END PROPS StatePlayerChangeReadyStance
+
+    DECLARE_CLASS(UStatePlayerChangeReadyStance,UStatePlayerAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerBlock: retail sizeof 120, reflected span 120..120 (2012 PDB sizeof 120)
+class UStatePlayerBlock : public UStatePlayerChangeReadyStance
+{
+public:
+    //## BEGIN PROPS StatePlayerBlock
+    //## END PROPS StatePlayerBlock
+
+    DECLARE_CLASS(UStatePlayerBlock,UStatePlayerChangeReadyStance,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerUpperBase: retail sizeof 76, reflected span 64..76 (2012 PDB sizeof 76)
+class UStatePlayerUpperBase : public UDishonoredNativeState, public IDisAnimStateFiringInterface
+{
+public:
+    //## BEGIN PROPS StatePlayerUpperBase
+    class UDisNativeStateMachine_PlayerAction* m_pActionFSM;
+    class ADishonoredPlayerPawn* m_pPawn;
+    //## END PROPS StatePlayerUpperBase
+
+    DECLARE_CLASS(UStatePlayerUpperBase,UDishonoredNativeState,0,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerUpperIdle: retail sizeof 76, reflected span 76..76 (2012 PDB sizeof 76)
+class UStatePlayerUpperIdle : public UStatePlayerUpperBase
+{
+public:
+    //## BEGIN PROPS StatePlayerUpperIdle
+    //## END PROPS StatePlayerUpperIdle
+
+    DECLARE_CLASS(UStatePlayerUpperIdle,UStatePlayerUpperBase,0,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerEquipChange: retail sizeof 124, reflected span 112..124 (2012 PDB sizeof 124)
+class UStatePlayerEquipChange : public UStatePlayerAction
+{
+public:
+    //## BEGIN PROPS StatePlayerEquipChange
+    class UClass* m_pPendingItemClass;
+    class ADishonoredInventoryPickup* m_pPendingItemPickup;
+    BITFIELD m_bTemporary:1;
+    BITFIELD m_bUseFastEquip:1;
+    BITFIELD m_bSkipUnequip:1;
+    BITFIELD m_bUnequipBeingSkipped:1;
+    BITFIELD m_bRequestExitAtTick:1;
+    BITFIELD m_bDidEquipChange:1;
+    //## END PROPS StatePlayerEquipChange
+
+    DECLARE_CLASS(UStatePlayerEquipChange,UStatePlayerAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMeleeAttack: retail sizeof 172, reflected span 120..172 (2012 PDB sizeof 172)
+class UStatePlayerMeleeAttack : public UStatePlayerChangeReadyStance
+{
+public:
+    //## BEGIN PROPS StatePlayerMeleeAttack
+    class ADishonoredPawn* m_pCombatTarget;
+    class UDisItemContext_MeleeAttackPlayer* m_pMeleeContext;
+    class ADishonoredPlayerController* m_pPC;
+    FLOAT m_fAutoLookUpHeightThreshold;
+    FLOAT m_fAutoLookUpAngle;
+    FLOAT m_fAutoLookUpTime;
+    FLOAT m_fAutoLookDownHeightThreshold;
+    FLOAT m_fAutoLookDownAngle;
+    FLOAT m_fAutoLookDownTime;
+    FLOAT m_fCameraLookHelpAngle;
+    FLOAT m_fCameraLookHelpIgnoreAngle;
+    FLOAT m_fCameraLookHelpRadialScale;
+    FLOAT m_fCameraLookHelpTime;
+    //## END PROPS StatePlayerMeleeAttack
+
+    DECLARE_CLASS(UStatePlayerMeleeAttack,UStatePlayerChangeReadyStance,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerGenericFatality: retail sizeof 180, reflected span 172..180 (2012 PDB sizeof 180)
+class UStatePlayerGenericFatality : public UStatePlayerMeleeAttack
+{
+public:
+    //## BEGIN PROPS StatePlayerGenericFatality
+    INT m_TrackID;
+    BITFIELD m_bWasSneakingOnEnter:1;
+    BITFIELD m_bSkipTracking:1;
+    //## END PROPS StatePlayerGenericFatality
+
+    DECLARE_CLASS(UStatePlayerGenericFatality,UStatePlayerMeleeAttack,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerGrabCorpse: retail sizeof 128, reflected span 124..128 (2012 PDB sizeof 128)
+class UStatePlayerGrabCorpse : public UStatePlayerEquipChange
+{
+public:
+    //## BEGIN PROPS StatePlayerGrabCorpse
+    class ADishonoredNPCPawn* m_pDeadGuy;
+    //## END PROPS StatePlayerGrabCorpse
+
+    DECLARE_CLASS(UStatePlayerGrabCorpse,UStatePlayerEquipChange,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerGrabMovable: retail sizeof 120, reflected span 112..120 (2012 PDB sizeof 120)
+class UStatePlayerGrabMovable : public UStatePlayerAction
+{
+public:
+    //## BEGIN PROPS StatePlayerGrabMovable
+    class UDisMovableComponent* m_pPending_Movable;
+    BITFIELD m_bThrowOnDrop:1;
+    BITFIELD m_bDidTransition:1;
+    //## END PROPS StatePlayerGrabMovable
+
+    DECLARE_CLASS(UStatePlayerGrabMovable,UStatePlayerAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterAction: retail sizeof 116, reflected span 104..116 (2012 PDB sizeof 116)
+class UStatePlayerMasterAction : public UStateSharedActionBase_PlayerOnly
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterAction
+    class ADishonoredPlayerPawn* m_pPlayerPawn;
+    class ADishonoredNPCPawn* m_pLinkedNPC;
+    BITFIELD m_bIgnorePitch:1;
+    BITFIELD m_bAllowIncomingAttacks:1;
+    //## END PROPS StatePlayerMasterAction
+
+    DECLARE_CLASS(UStatePlayerMasterAction,UStateSharedActionBase_PlayerOnly,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterChangeReadyStance: retail sizeof 124, reflected span 116..124 (2012 PDB sizeof 124)
+class UStatePlayerMasterChangeReadyStance : public UStatePlayerMasterAction
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterChangeReadyStance
+    BYTE m_GoToStance_Primary;
+    BYTE m_GoToStance_Secondary;
+    BITFIELD m_bCheckBlend:1;
+    //## END PROPS StatePlayerMasterChangeReadyStance
+
+    DECLARE_CLASS(UStatePlayerMasterChangeReadyStance,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterAssassinate: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136)
+class UStatePlayerMasterAssassinate : public UStatePlayerMasterChangeReadyStance
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterAssassinate
+    class UDisItemContext* m_pItemContext;
+    BITFIELD m_bWasSneakingOnEnter:1;
+    BITFIELD m_bDisableAutoCorpseCarry:1;
+    BITFIELD m_bAutoPickingUpCorpse:1;
+    FLOAT m_fHoldTimeForAutoCorpseCarry;
+    //## END PROPS StatePlayerMasterAssassinate
+
+    DECLARE_CLASS(UStatePlayerMasterAssassinate,UStatePlayerMasterChangeReadyStance,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterBase: retail sizeof 80, reflected span 64..80 (2012 PDB sizeof 80)
+class UStatePlayerMasterBase : public UDishonoredNativeState
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterBase
+    class ADishonoredPlayerPawn* m_pPlayerPawn;
+    BITFIELD m_bCanApplyWalkFlags:1;
+    BITFIELD m_bIgnorePitch:1;
+    BITFIELD m_bBlendingFromLastState:1;
+    BITFIELD m_bAddYOffsetBasedOnPitch:1;
+    BITFIELD m_bCanBeInLinkedAction:1;
+    BITFIELD m_bSupressAutoFootfalls:1;
+    BITFIELD m_bCastPowersWithoutAnim:1;
+    BITFIELD m_bInstantEquipPowersItem:1;
+    BITFIELD m_bAllowIncomingAttacks:1;
+    BITFIELD m_bAllowExplosionsFromPlayer:1;
+    FLOAT m_fBlendTimeFromLastState;
+    FLOAT m_fBlendInTime;
+    //## END PROPS StatePlayerMasterBase
+
+    DECLARE_CLASS(UStatePlayerMasterBase,UDishonoredNativeState,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("PlayerState");}
+};
+
+// DishonoredGame.StatePlayerMasterChoice_Base: retail sizeof 92, reflected span 80..92 (2012 PDB sizeof 92)
+class UStatePlayerMasterChoice_Base : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterChoice_Base
+    INT m_iCurChoice;
+    BYTE m_DialogState;
+    BITFIELD m_bUseLetterboxing:1;
+    //## END PROPS StatePlayerMasterChoice_Base
+
+    DECLARE_ABSTRACT_CLASS(UStatePlayerMasterChoice_Base,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterChoke: retail sizeof 132, reflected span 116..132 (2012 PDB sizeof 132)
+class UStatePlayerMasterChoke : public UStatePlayerMasterAction
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterChoke
+    FLOAT m_fRequiredTime;
+    FLOAT m_fTimer;
+    BITFIELD m_bWasSneaking:1;
+    BITFIELD m_bAutoPickingUpCorpse:1;
+    FLOAT m_fHoldTimeForAutoCarry;
+    //## END PROPS StatePlayerMasterChoke
+
+    DECLARE_CLASS(UStatePlayerMasterChoke,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterClimb: retail sizeof 84, reflected span 80..84 (2012 PDB sizeof 84)
+class UStatePlayerMasterClimb : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterClimb
+    FLOAT m_fStartTime;
+    //## END PROPS StatePlayerMasterClimb
+
+    DECLARE_CLASS(UStatePlayerMasterClimb,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterDead: retail sizeof 144, reflected span 116..144 (2012 PDB sizeof 144)
+class UStatePlayerMasterDead : public UStatePlayerMasterAction
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterDead
+    FLOAT m_fGameOverTimer;
+    FLOAT m_fFadeToBlackTimer;
+    BITFIELD m_bDidGameOver:1;
+    BITFIELD m_bOverrideCameraLoc:1;
+    BITFIELD m_bAutoRestartOnGameOver:1;
+    FVector m_CameraLocOverride;
+    FLOAT m_fTimeUntilGameover;
+    //## END PROPS StatePlayerMasterDead
+
+    DECLARE_CLASS(UStatePlayerMasterDead,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterFalling: retail sizeof 108, reflected span 80..108 (2012 PDB sizeof 108)
+class UStatePlayerMasterFalling : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterFalling
+    FLOAT m_fFallTime;
+    FVector m_vStartingFallLocation;
+    BITFIELD m_bCameFromJump:1;
+    BITFIELD m_bIsStealthFall:1;
+    FLOAT m_fFall_Stun_Vel;
+    FLOAT m_fAnimateFallTime;
+    //## END PROPS StatePlayerMasterFalling
+
+    DECLARE_CLASS(UStatePlayerMasterFalling,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterHolePeeking: retail sizeof 96, reflected span 80..96 (2012 PDB sizeof 96)
+class UStatePlayerMasterHolePeeking : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterHolePeeking
+    class ADisDoor* m_pDoor;
+    FLOAT m_fFadeTime;
+    BYTE m_State;
+    BITFIELD m_bFadeIn:1;
+    BITFIELD m_bRepositionPlayerController:1;
+    //## END PROPS StatePlayerMasterHolePeeking
+
+    DECLARE_CLASS(UStatePlayerMasterHolePeeking,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterInScriptedChoice: retail sizeof 100, reflected span 92..100 (2012 PDB sizeof 96)
+class UStatePlayerMasterInScriptedChoice : public UStatePlayerMasterChoice_Base
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterInScriptedChoice
+    class UDisSeqAct_DialogScriptedChoice* m_pActiveScriptedChoice;
+    BITFIELD m_bAllowAttacksAndExplosions:1;
+    //## END PROPS StatePlayerMasterInScriptedChoice
+
+    DECLARE_CLASS(UStatePlayerMasterInScriptedChoice,UStatePlayerMasterChoice_Base,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterInStore: retail sizeof 92, reflected span 92..92 (2012 PDB sizeof 92)
+class UStatePlayerMasterInStore : public UStatePlayerMasterChoice_Base
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterInStore
+    //## END PROPS StatePlayerMasterInStore
+
+    DECLARE_CLASS(UStatePlayerMasterInStore,UStatePlayerMasterChoice_Base,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterJump: retail sizeof 112, reflected span 80..112 (2012 PDB sizeof 112)
+class UStatePlayerMasterJump : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterJump
+    FLOAT m_fHeldButtonTime;
+    BITFIELD m_bJumpingFromChain:1;
+    BITFIELD m_bPowerJumpAllowed:1;
+    BYTE m_JumpState;
+    BYTE m_JumpStyle;
+    FLOAT m_fStartJumpHeight;
+    FLOAT m_fMaxJumpHeight;
+    class UAkEvent* m_pPowerJumpSoundEvent;
+    FLOAT m_fPowerJumpFOV;
+    FLOAT m_fPowerJumpFOVBlendSpeed;
+    //## END PROPS StatePlayerMasterJump
+
+    DECLARE_CLASS(UStatePlayerMasterJump,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterLeaning: retail sizeof 112, reflected span 80..112 (2012 PDB sizeof 112)
+class UStatePlayerMasterLeaning : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterLeaning
+    BITFIELD m_bLeaning_Left:1;
+    BITFIELD m_bLeaning_Right:1;
+    BITFIELD m_bLeaning_Forward:1;
+    BITFIELD m_bUseLeanToggle:1;
+    BITFIELD m_bStartCrouchState:1;
+    BITFIELD m_bLeaning_Left_LastFrame:1;
+    BITFIELD m_bLeaning_Right_LastFrame:1;
+    FLOAT m_fReleaseTimer;
+    FLOAT m_fLeanSpeed;
+    FLOAT m_fLeanReleaseTime;
+    FLOAT m_fMinAllowedPitchDegrees;
+    FLOAT m_fMaxAllowedPitchDegrees;
+    FLOAT m_fMinAllowedYawDegrees;
+    FLOAT m_fMaxAllowedYawDegrees;
+    //## END PROPS StatePlayerMasterLeaning
+
+    DECLARE_CLASS(UStatePlayerMasterLeaning,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterMinigame: retail sizeof 124, reflected span 116..124 (2012 PDB sizeof 124)
+class UStatePlayerMasterMinigame : public UStatePlayerMasterAction
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterMinigame
+    FLOAT m_fDamageTimer;
+    INT m_iNumButtonPress;
+    //## END PROPS StatePlayerMasterMinigame
+
+    DECLARE_CLASS(UStatePlayerMasterMinigame,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterSlide: retail sizeof 180, reflected span 80..180 (2012 PDB sizeof 180)
+class UStatePlayerMasterSlide : public UStatePlayerMasterBase, public IDisAnimStateFiringInterface
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterSlide
+    FLOAT m_fStartTime;
+    FVector m_StartVelocity;
+    FVector m_TargetVelocity;
+    BITFIELD m_bStateBlendingOut:1;
+    BITFIELD m_bSlideHasImpacted:1;
+    BITFIELD m_bStopInterpolatingVelocity:1;
+    BITFIELD m_bFromGamepad:1;
+    TMap<class AActor*,FLOAT> m_LastSlideActorDamage;  // DISHONORED(layout): retail SDK gap @116: MapProperty m_LastSlideActorDamage (script_classes_2013), type from the 2012 PDB
+    INT m_RatRepulsorID;
+    //## END PROPS StatePlayerMasterSlide
+
+    DECLARE_CLASS(UStatePlayerMasterSlide,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterSoiree: retail sizeof 140, reflected span 80..140 (2012 PDB sizeof 136)
+class UStatePlayerMasterSoiree : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterSoiree
+    class USeqAct_Interp* m_pMatinee;
+    FLOAT m_fSoireeBlendInTime;
+    FLOAT m_fSoireeBlendOutTime;
+    INT m_Flags;
+    FDisSoireeControlState m_SoireeControlState;
+    BITFIELD m_bAllowAttacksAndExplosions:1;
+    //## END PROPS StatePlayerMasterSoiree
+
+    DECLARE_CLASS(UStatePlayerMasterSoiree,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterStunned: retail sizeof 136, reflected span 116..136 (2012 PDB sizeof 136)
+class UStatePlayerMasterStunned : public UStatePlayerMasterAction
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterStunned
+    BYTE m_StunAnimState;
+    FLOAT m_fStunTimer;
+    FLOAT m_fStunBlendTime;
+    BITFIELD m_bStillStunned:1;
+    FLOAT m_fStunDuration;
+    //## END PROPS StatePlayerMasterStunned
+
+    DECLARE_CLASS(UStatePlayerMasterStunned,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterSwim: retail sizeof 112, reflected span 80..112 (2012 PDB sizeof 112)
+class UStatePlayerMasterSwim : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterSwim
+    FLOAT m_fFallingTimer;
+    BITFIELD m_bRejectedFalling:1;
+    BITFIELD m_bConstantSpeedAtSurface:1;
+    FLOAT m_fCurStrokeTime;
+    FLOAT m_fMinSwimAccel;
+    FLOAT m_fMaxSwimAccel;
+    FLOAT m_fMaxSpeedNoStroke;
+    FLOAT m_fStrokeTime;
+    FLOAT m_fSurfaceSwimDelayBetweenStrokes;
+    //## END PROPS StatePlayerMasterSwim
+
+    DECLARE_CLASS(UStatePlayerMasterSwim,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterVersus: retail sizeof 120, reflected span 116..120 (2012 PDB sizeof 120)
+class UStatePlayerMasterVersus : public UStatePlayerMasterAction
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterVersus
+    INT m_NumVersusAttackRequest;
+    //## END PROPS StatePlayerMasterVersus
+
+    DECLARE_CLASS(UStatePlayerMasterVersus,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerMasterWalk: retail sizeof 88, reflected span 80..88 (2012 PDB sizeof 88)
+class UStatePlayerMasterWalk : public UStatePlayerMasterBase
+{
+public:
+    //## BEGIN PROPS StatePlayerMasterWalk
+    FLOAT m_fCrouchedFOV;
+    FLOAT m_fCrouchFOV_BlendSpeed;
+    //## END PROPS StatePlayerMasterWalk
+
+    DECLARE_CLASS(UStatePlayerMasterWalk,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerTransitionItemIn: retail sizeof 112, reflected span 112..112 (2012 PDB sizeof 112)
+class UStatePlayerTransitionItemIn : public UStatePlayerAction
+{
+public:
+    //## BEGIN PROPS StatePlayerTransitionItemIn
+    //## END PROPS StatePlayerTransitionItemIn
+
+    DECLARE_CLASS(UStatePlayerTransitionItemIn,UStatePlayerAction,0|CLASS_Config,DishonoredGame)
+};
+
+// DishonoredGame.StatePlayerUpperNav: retail sizeof 76, reflected span 76..76 (2012 PDB sizeof 76)
+class UStatePlayerUpperNav : public UStatePlayerUpperBase
+{
+public:
+    //## BEGIN PROPS StatePlayerUpperNav
+    //## END PROPS StatePlayerUpperNav
+
+    DECLARE_CLASS(UStatePlayerUpperNav,UStatePlayerUpperBase,0,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(ADishonoredKActor,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredKActor,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADishonoredKActor,-1,execDestroyIfPlayerCantSeeMe);
+AUTOGENERATE_FUNCTION(ADisSkeletalBreakable,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADisSkeletalBreakable,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredUsableObject,-1,execOnToggle_Native);
+AUTOGENERATE_FUNCTION(ADishonoredKAsset,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredKAsset,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADisCrusher,-1,execEncroachingOn);
+AUTOGENERATE_FUNCTION(ADishonoredGameInfo,-1,execPreventDeath_Native);
+AUTOGENERATE_FUNCTION(ADishonoredGameInfo,-1,execSpawnPlayer);
+AUTOGENERATE_FUNCTION(ADishonoredGameInfo,-1,execCanStartMatch);
+AUTOGENERATE_FUNCTION(ADishonoredGameInfo,-1,execGameEnding);
+AUTOGENERATE_FUNCTION(ADishonoredGameInfo,-1,execGetDishonoredEngineVersion);
+AUTOGENERATE_FUNCTION(ADishonoredGameInfo,-1,execGetChangelist);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnDLC05SetStoryGroup);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execJumpOffPawn);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execCrushedBy_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnModifyElixirCount);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnGetAbstractItemQuantity);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnRemoveAbstractItem);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnAddAbstractItem);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnModifyAmmo);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnEquipItemType);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnAddInventoryItem);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnSetDisposition);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execOnTeleport_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execLanded_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execChooseAndTriggerDeathEvent_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execPlayDying_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execTakeFallingDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADishonoredPawn,-1,execDisplayDebug_Native);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execSetDesiredRotation);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execSetPushesRigidBodies);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnNPCAddPutPocketInteraction);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnNPCSetMaterials);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnSetIgnoreDeath);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnOverridePossess);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnPlayMusicBox);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnEquipItemType);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnSpawnStealable);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnNPCDoTeleportSpell);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnNPCMarkForVanish);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execOnSeverLimb);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execNPCTouchedDeepWater);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execTakeFallingDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execPlayDying_Native);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execChooseAndTriggerDeathEvent_Native);
+AUTOGENERATE_FUNCTION(ADishonoredNPCPawn,-1,execDisplayDebug_Native);
+AUTOGENERATE_FUNCTION(ADisPlayerControllerBase,-1,execPlaytest_native);
+AUTOGENERATE_FUNCTION(ADisPlayerControllerBase,-1,execSetPlaytestFlag);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execOnControllerChanged_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execCalcPlayerSwimAccelRate);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execGetProfileSettings);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execOnShowPowerMenu);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execOnObjectiveAction);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execProcessViewRotation);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execSetCinematicMode_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execPreSetCinematicMode_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execIsLookInputIgnored);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execIsMoveInputIgnored);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execToggleScreenConfig);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execShowScreenConfig);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_Zoom);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_VersusAlt);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_Lean_Toggle);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_LeanWithAnalogStick_End);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDisToggleSprint);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_SelectPower);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_OpenPauseMenu);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_OpenJournalTab);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_ToggleJournal);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_CancelPossession);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_ExitKeyhole);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_LeanOrAdrenaline_Multi);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_UseAdrenaline_Multi);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_UseAdrenaline);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_ConsumeElixir);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_PrevItemOption);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_NextItemOption);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_UseSecondaryItem);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_UsePrimaryItem);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_UsePrimaryItemOrAdrenaline_Multi);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_EquipItemByType);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_PrevEquippedItem);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_NextEquippedItem);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_WheelShortcuts_MouseNext);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_WheelShortcuts_MousePrevious);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_WheelShortcuts_KeyboardUse);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_WheelShortcuts_KeyboardSelect);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_WheelShortcuts_GamepadUse);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_WheelShortcuts_GamepadSelect);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_Wheel_Close);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execDis_Wheel_Open);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execOnTeleport_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execReceivedPlayer_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execHandleWalking);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerController,-1,execHandleHeldButtons);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnDestroy_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execNativePostRenderFor);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnPlayerResurrect);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnCancelPlayerActivePower);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnToggleTutorial);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnToggleChoke);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnOverrideAwarenessDisplay);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnSetPlayerMana);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnSetPlayerHealth);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnAdrenalineToggle);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnGivePickup);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnApplyPlayerLoadout);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnTogglePlayerLeftHand);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnToggleJournal);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnTogglePowerWheel);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnToggleAchievementEval);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnGetPlayerStat);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnEvalAchievement);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnGiveUpgrade);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnRemoveKey);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnAddKey);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnMinPowers);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnMaxPowers);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnRemoveAttributeModifier);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnAddAttributeModifier);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnRemovePower);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execOnAddPower);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execPlayDying_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execFaceRotation);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execIsInvisible);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execCheatFly_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execCheatGhost_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execCheatWalk_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execDisplayDebug_Cheats);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execDoJump);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execEndCrouch);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execStartCrouch);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execLanded_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execTakeFallingDamage_Native);
+AUTOGENERATE_FUNCTION(ADishonoredPlayerPawn,-1,execDisplayDebug_Native);
+AUTOGENERATE_FUNCTION(ADishonoredSpawner,-1,execOnStartSpawn);
+AUTOGENERATE_FUNCTION(ADisDebugNPCController,-1,execDis_StartPower);
+AUTOGENERATE_FUNCTION(ADisDebugNPCController,-1,execDis_StartFire);
+AUTOGENERATE_FUNCTION(ADisDebugNPCController,-1,execHandleWalking);
+AUTOGENERATE_FUNCTION(ADisFleePointActor,-1,execOnToggle);
+AUTOGENERATE_FUNCTION(ADisNPCDistractor,-1,execOnToggle);
+AUTOGENERATE_FUNCTION(ADisPossessionProxyPawn,-1,execPlayDying_Native);
+AUTOGENERATE_FUNCTION(ADisProjectileLauncher,-1,execOnToggle_Native);
+AUTOGENERATE_FUNCTION(ADisProjectileLauncher,-1,execBaseChange);
+AUTOGENERATE_FUNCTION(ADisProtectionTuneSource,-1,execOnToggle);
+AUTOGENERATE_FUNCTION(ADisTallboyNPCPawn,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisTriggerAbstractItem,-1,execOnToggle_Native);
+AUTOGENERATE_FUNCTION(ADisTripwire,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADisTripwire,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisWatchTower,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADisWatchTower,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisWatchTower,-1,execOnWatchTowerShootAtTarget);
+AUTOGENERATE_FUNCTION(ADisWatchTower,-1,execOnSetDisposition);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execDoSentinel_PerfAtSpecificLocation);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execDoSentinel_MemoryAtSpecificLocation);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execGetTravelLocations);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execDoSentinelActionBeforeExit_Native);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execDoSentinelActionPerLoadedLevel_Native);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execDoSentinelActionPerLoadedMap);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execEndSentinelRun);
+AUTOGENERATE_FUNCTION(ADishonoredAutoTestManager,-1,execBeginSentinelRun);
+AUTOGENERATE_FUNCTION(ADishonoredEmitterPool,-1,execSpawnEmitterMeshAttachment);
+AUTOGENERATE_FUNCTION(ADishonoredEmitterPool,-1,execSpawnEmitter);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execIsDead);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execDisplayDebug_Native);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIRingAlarm);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIStartDistraction);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIGetBrainFlags);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAISetBrainFlags);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIPsychicAttention);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIClearAttention);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAISetSuspicionLevel);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIProtectNeutralsOverride);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIShoot);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAISetSenses);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAISetPatrol);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIGuard);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIGoToActor);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIDoSearch);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execOnAIAmbush);
+AUTOGENERATE_FUNCTION(ADishonoredNPCController,-1,execGetMoveTargetLocation);
+AUTOGENERATE_FUNCTION(ADishonoredNote,-1,execNativeNotePostRender);
+AUTOGENERATE_FUNCTION(ADishonoredRoute,-1,execResolveRouteIndex);
+AUTOGENERATE_FUNCTION(ADishonoredRoute,-1,execOnToggle);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapeExplosion,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapeExplosion,-1,execThreatTerminatedCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapeExplosion,-1,execRequestStateExitCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapeExplosion,-1,execRefreshCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapeExplosion,-1,execOnEnterCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapePlague,-1,execRequestStateExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapePlague,-1,execRefreshCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapePlague,-1,execOnResetCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorEscapePlague,-1,execOnEnterCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorFollow,-1,execNoMoreTargetCallback_Follow);
+AUTOGENERATE_FUNCTION(UDisBehaviorGoHome,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorGoHome,-1,execOnEnterCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorGoHome,-1,execRefreshCallback_Menace);
+AUTOGENERATE_FUNCTION(UDisBehaviorGoHome,-1,execRequestStateExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorGoHome,-1,execRefreshCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorGoHome,-1,execOnEnterCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorGuard,-1,execOnExitCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorGuard,-1,execRefreshCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorGuard,-1,execOnEnterCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorGuard,-1,execRequestStateExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorInteract,-1,execOnExitCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorInteract,-1,execTickCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorInteract,-1,execOnExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorInteract,-1,execRequestStateExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorInteract,-1,execOnEnterCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorMagicResponse,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorNotice,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorNotice,-1,execOnExitCallback_Init);
+AUTOGENERATE_FUNCTION(UDisBehaviorNotice,-1,execOnEnterCallback_Init);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execRefreshCallback_Cower);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execRequestStateExitCallback_Cower);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execRequestStateExitCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execRefreshCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execOnEnterCallback_Flee);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execRefreshCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorPanic,-1,execOnEnterCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorPatrol,-1,execTickCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorPatrol,-1,execOnEnterCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorPatrol,-1,execRequestStateExitCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorPatrol,-1,execTickCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorRatStomp,-1,execRequestStateExitCallback_TakeActorPosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorReact,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorReact,-1,execOnEnterCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorReturnTravel,-1,execRequestStateExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execRequestStateExitCallback_DoWeaponManoeuver);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execRequestStateExitCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execTickCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execOnEnterCallback_Stand);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execRequestStateExitCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execOnEnterCallback_GenericAction);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execOnExitCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execOnEnterCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execRefreshCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDisBehaviorWeep,-1,execTickCallback_TakePosition);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDLC05StartChallenge);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDLC05UnlockExpertMode);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDLC05ToggleTimer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execIsAttentionTypeAllowed);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAttentionClearExclusiveType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAttentionSetExclusiveType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAttentionAddExclusiveType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAttentionClearIgnoreType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAttentionSetIgnoreType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAttentionAddIgnoreType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGiveAllUsableRequiredItems);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execBlinkShowRangeFull);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execBlinkShowRange);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDisSlomoCommand);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDisSlomoFull);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDisSlomo);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execForceCorpseDropTypeOff);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execForceCorpseDropType);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSetDebugMantleStepSize);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSetDebugMantleCheckTime);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNormalStepMantleEdgeFinder);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSingleStepMantleEdgeFinder);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSetVisSettingsLowVis);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSetVisSettingsHighVis);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execStopVisSettingsMode);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execStartVisSettingsMode);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGiveMoney);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGiveBoneCharm);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMinUpgrades);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMaxUpgrades);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execRemoveUpgrade);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAddUpgrade);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execReportDanglingPointers);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGetDifficulty);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSetDifficulty);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugDarkness);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAddDarkness);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execToggleUsableHighlight);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execToggleActorLightEnvironment);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLogDuplicateAnimSequences);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLogAnimSequences);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execToggleRatProbingForGround);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSpawnRandomRatSwarm);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execKillAllRats);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugRats);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugRat);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execListActorTickTime);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execListTickableActors);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execListComponents);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execTestNailing);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execBendTimeDisplay);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execBendTimeReport);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMinPowers);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMaxPowers);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execRemovePower);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAddAttribute);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAddPower);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execRemoveMod);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAddMod);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSingleStep_Native);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDialogSkipGlobalRules);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugDialog);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugToggleVerbose);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugMenuRight);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugMenuLeft);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugMenuDown);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugMenuUp);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDebugMenuEnter);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execEndLiveSession);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execCreateLiveSession);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execWriteScoreToLeaderboard_Name);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execWriteScoreToLeaderboard_ID);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGetLeaderboardsInfo_Name);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGetLeaderboardsInfo_ID);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execResetAllSteamAchievements);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDeleteAllSteamSaveGames);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDLC05AddScore);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDLC05ShowChallenge);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execShowStorePage);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSlack);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSwitchDLCLock);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGoreEnable);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGiveRunes);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execShowPowerMenu);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDoorPoltergeistMode);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDormantDebugEnable);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDormantDebugToggle);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDestroyActor);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDisNoteShow);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDisNoteToggle);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCLogSteeringFlags);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleSteeringWall);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleSteeringEnemyPush);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleSteeringCombat);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleSteeringDanger);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleSteeringAvoidable);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleLookAtBlending);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCDelayTravel);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCSpawn);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCPlayerVisibilityForLOD);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleLODSystem);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCClearForcedLOD);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCForceLODForAll);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCForceLOD);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCActionSpineBendingToggle);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCTogglePrediction);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCSetFreeze);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCFreeze);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCForceSkelMeshLOD);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCSlowDeath);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCToggleSlopeOffset);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCSlap);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCImpulse);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCKnockdown);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCBreakLinkedAction);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCSetDamage);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCEasyDismemberment);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCForceFatality);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCTestVersus);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCTestParry);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCDodgeNothing);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCDodgeEverything);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCDestroyNonVisible);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCDestroyNonSelected);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNPCDestroy);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGodNPC);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execNavMeshCheck);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMatGoBackward);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMatGoForward);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoTeleport);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoShowPathAndStraightPath);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoShowAvoidance);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoNewPhysWalking);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoNewIK);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoNewAvoidance);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoForceUnaccuracy);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoForceModifier);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoForceLookAtMode);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoForceIdleAnim);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoDontRotate);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execLocoDisableStartAnims);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIUseSimpleAttentionForPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIEnableAllSubStates);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDisableSubState);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIEnableSubState);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIEnableAllBehaviors);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDisableBehavior);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIEnableBehavior);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIShowThoughts);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetNumbToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAINumbToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetDeafToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDeafToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetBlindToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIBlindToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetDumbToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDumbToAIs);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetNumbToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAINumbToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetDeafToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDeafToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetBlindToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIBlindToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetDumbToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDumbToPlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIForceAttentionLevelOff);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIForceAttentionLevel);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIClearAttention);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIForcePanicNow);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIForcePanic);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIRegisterAllHideouts);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDebugHideout);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetLocoDebug);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIGoToReset);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIGoToCrosshair);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIPauseOnPathFailure);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIVerbosePathDebug);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetBeepWhenSeePlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIBeepWhenSeePlayer);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIAlwaysRingAlarm);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAINeverRingAlarm);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDontRotate);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIForceTransitSpeed);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIToggleMagic);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAITestGuns);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIEnable);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIToggle);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDontAttack);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetSuspicion);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIForget);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDumb);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAINumb);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIBlind);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIDeaf);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIGibAll);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIGib);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAIClearDebug);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAICycleDebug);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAISetDebug);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDisplayDebug_Native);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execInitCheatManager_Native);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerGhostChestView);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerTestCamRumble);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execEnableIronSight);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execDoLineCheckStressTest);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceDramaticFatalities);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceKillCam);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerToggleHomingArrow);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerToggleAimAssist);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerShowNavMeshStatus);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerFillAdrenaline);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerToggleAdrenalineCooldown);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerInfiniteAdrenaline);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAbstractInventoryList);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerInfiniteAmmo);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDisableKnockdown);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerEnableKnockdown);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDisableStrongHitReaction);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerEnableStrongHitReaction);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDisableTakeDamage);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerEnableTakeDamage);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageProjectile_Stealth);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageProjectile);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageKnockdown);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageImpact);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageFastHit);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageElectricity);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageBullet);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamageBash);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDamage);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execHealthAdd);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execBuddha);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execManaToggle);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execManaEnable);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execManaAdd);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceDeathDir);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execClearObjectives);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execRemoveObjective);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execAddObjective);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerTestAnim);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDisableMeleeAssist);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceLongFinishers);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceFastFinishers);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDisableAssassinate);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDisableFatality);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerSetFixedFatality);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceReadyStance);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerSetDamage);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerForceVisible);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDodgeNothing);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerDodgeEverything);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerTestChain);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execidkfa);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execMaxItems);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execGivePlayerItem);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execTogglePlayerBodyMode_Native);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerArmsEnable);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execPlayerArmsToggle);
+AUTOGENERATE_FUNCTION(UDishonoredCheatManager,-1,execSetCameraBob_Native);
+AUTOGENERATE_FUNCTION(UDisNavMeshGoal_BestFleePoint,-1,execRecycleInternal);
+AUTOGENERATE_FUNCTION(UDisNavMeshGoal_ShootingPosition,-1,execRecycle);
+AUTOGENERATE_FUNCTION(UDisParticleSystemComponent,-1,execInitializeForPool);
+AUTOGENERATE_FUNCTION(UDisTweaks_Faction,-1,execOnSetDisposition);
+AUTOGENERATE_FUNCTION(UDishonoredDebugMenu,-1,execToggleDebugMenu);
+AUTOGENERATE_FUNCTION(UDishonoredDebugMenu,-1,execLoadMenu);
+AUTOGENERATE_FUNCTION(UDishonoredDebugMenu,-1,execHideMenu);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execPublishRichPresence);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execUpdateRichPresenceChaos);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execUpdateRichPresenceChapter);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execOpenContentUnavailableMenu);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execOpenControllerConnectionMenu);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execOnControllerDisconnected);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execOnControllerChanged);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execOpenPauseMenu);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execPlayLoadMapMovie);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execPopIgnoreAutosave);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execPushIgnoreAutosave);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execPopDisableSave);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execPushDisableSave);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execDis_Load);
+AUTOGENERATE_FUNCTION(UDishonoredEngine,-1,execDis_Save);
+AUTOGENERATE_FUNCTION(UDishonoredPlayerInput,-1,execGetFOVScale);
+AUTOGENERATE_FUNCTION(UDishonoredPlayerInput,-1,execDis_PlayerChoice_RequestSkip_Released);
+AUTOGENERATE_FUNCTION(UDishonoredPlayerInput,-1,execDis_PlayerChoice_RequestSkip);
+AUTOGENERATE_FUNCTION(UDishonoredPlayerInput,-1,execDis_Jump_ButtonDown);
+AUTOGENERATE_FUNCTION(UDishonoredPlayerInput,-1,execDis_SneakOrSlide);
+AUTOGENERATE_FUNCTION(UDishonoredViewportClient,-1,execPostRender_Native);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_NATIVE_DEFS
+#define DISHONOREDGAME_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME \
+	UDisContactTypeInterface::StaticClass(); \
+	UDisHitReboundInterface::StaticClass(); \
+	UDisNoiseMakerInterface::StaticClass(); \
+	UDisTweaksInterface::StaticClass(); \
+	ADishonoredKActor::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredKActor"), GDishonoredGameADishonoredKActorNatives); \
+	UDisInteractableInterface::StaticClass(); \
+	UDisSoulRenderInterface::StaticClass(); \
+	ADisSkeletalBreakable::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisSkeletalBreakable"), GDishonoredGameADisSkeletalBreakableNatives); \
+	ADishonoredUsableObject::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredUsableObject"), GDishonoredGameADishonoredUsableObjectNatives); \
+	UDisSpawnRequesterInterface::StaticClass(); \
+	ADisAmbushPoint::StaticClass(); \
+	UDisConvSpeakerInterface::StaticClass(); \
+	ADisAudioLogPlayer::StaticClass(); \
+	UDisDamageCauserInterface::StaticClass(); \
+	ADishonoredKAsset::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredKAsset"), GDishonoredGameADishonoredKAssetNatives); \
+	ADisClimbable::StaticClass(); \
+	ADisCrusher::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisCrusher"), GDishonoredGameADisCrusherNatives); \
+	ADishonoredGameInfo::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredGameInfo"), GDishonoredGameADishonoredGameInfoNatives); \
+	UDisAttentionTargetInterface::StaticClass(); \
+	UDisLookAtInterface::StaticClass(); \
+	UDisNoiseListenerInterface::StaticClass(); \
+	UDisRatTargetInterface::StaticClass(); \
+	UDisRelationshipInterface::StaticClass(); \
+	UDisStoryGroupInterface::StaticClass(); \
+	UDisVulnerabilityInterface::StaticClass(); \
+	ADishonoredPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredPawn"), GDishonoredGameADishonoredPawnNatives); \
+	ADisPossessablePawn::StaticClass(); \
+	UDisCorpseInterface::StaticClass(); \
+	UDisNPCAttachmentOwnerInterface::StaticClass(); \
+	UDisPossessableInterface::StaticClass(); \
+	UDisSpringRazorTargetInterface::StaticClass(); \
+	UDisStealthVolumeUserInterface::StaticClass(); \
+	ADishonoredNPCPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredNPCPawn"), GDishonoredGameADishonoredNPCPawnNatives); \
+	ADisExplosion::StaticClass(); \
+	ADisPlayerControllerBase::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisPlayerControllerBase"), GDishonoredGameADisPlayerControllerBaseNatives); \
+	ADishonoredPlayerController::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredPlayerController"), GDishonoredGameADishonoredPlayerControllerNatives); \
+	UDisAnimStateFiringInterface::StaticClass(); \
+	UDisAnimStateOwnerInterface::StaticClass(); \
+	UDisConvOneShotOwnerInterface::StaticClass(); \
+	ADishonoredPlayerPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredPlayerPawn"), GDishonoredGameADishonoredPlayerPawnNatives); \
+	UDisDrawVisionComponentOwnerInterface::StaticClass(); \
+	UDisSquadInterface::StaticClass(); \
+	ADishonoredSpawner::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredSpawner"), GDishonoredGameADishonoredSpawnerNatives); \
+	UDisFireProjectileInterface::StaticClass(); \
+	ADisTrigger::StaticClass(); \
+	ADisDebugNPCController::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisDebugNPCController"), GDishonoredGameADisDebugNPCControllerNatives); \
+	UDisWhaleOilConsumerInterface::StaticClass(); \
+	ADisDefenceTower::StaticClass(); \
+	ADisFleePointActor::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisFleePointActor"), GDishonoredGameADisFleePointActorNatives); \
+	ADisGuardWatchPoint::StaticClass(); \
+	ADisHideoutAccessPoint::StaticClass(); \
+	ADisHideoutVolume::StaticClass(); \
+	ADisInterpActor::StaticClass(); \
+	ADisNPCDistractor::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisNPCDistractor"), GDishonoredGameADisNPCDistractorNatives); \
+	ADisPlayerAudioLogDummyActor::StaticClass(); \
+	ADisPossessionProxyPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisPossessionProxyPawn"), GDishonoredGameADisPossessionProxyPawnNatives); \
+	ADisProjectileLauncher::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProjectileLauncher"), GDishonoredGameADisProjectileLauncherNatives); \
+	ADisProtectionTuneSource::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisProtectionTuneSource"), GDishonoredGameADisProtectionTuneSourceNatives); \
+	ADisPylon::StaticClass(); \
+	ADisRiverKrustBodyPart::StaticClass(); \
+	ADisSoundCaptureBox::StaticClass(); \
+	ADisSoundSource::StaticClass(); \
+	ADisSpotLightMovable::StaticClass(); \
+	UDisMantleableInterface::StaticClass(); \
+	ADisStaticCollisionActor::StaticClass(); \
+	ADisTallboyNPCPawn::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisTallboyNPCPawn"), GDishonoredGameADisTallboyNPCPawnNatives); \
+	ADisTravelSpawner::StaticClass(); \
+	ADisTriggerAbstractItem::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisTriggerAbstractItem"), GDishonoredGameADisTriggerAbstractItemNatives); \
+	ADisTripwire::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisTripwire"), GDishonoredGameADisTripwireNatives); \
+	ADisUpgrade::StaticClass(); \
+	UDisBlinderInterface::StaticClass(); \
+	UDisUsableConnectionInterface::StaticClass(); \
+	ADisWatchTower::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisWatchTower"), GDishonoredGameADisWatchTowerNatives); \
+	ADisWatchTowerPlatform::StaticClass(); \
+	ADisWaterSource::StaticClass(); \
+	ADishonoredAudioListenerTest::StaticClass(); \
+	ADishonoredAudioPortal::StaticClass(); \
+	ADishonoredAudioVolume::StaticClass(); \
+	ADishonoredAutoTestManager::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredAutoTestManager"), GDishonoredGameADishonoredAutoTestManagerNatives); \
+	ADishonoredDecalActorBase::StaticClass(); \
+	ADishonoredDecalActor::StaticClass(); \
+	ADishonoredDynamicUsableObject::StaticClass(); \
+	ADishonoredEmitterPool::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredEmitterPool"), GDishonoredGameADishonoredEmitterPoolNatives); \
+	ADishonoredNPCController::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredNPCController"), GDishonoredGameADishonoredNPCControllerNatives); \
+	ADishonoredNavPoint::StaticClass(); \
+	ADishonoredNote::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredNote"), GDishonoredGameADishonoredNoteNatives); \
+	ADishonoredRiver::StaticClass(); \
+	ADishonoredRiverExtremity::StaticClass(); \
+	ADishonoredRoute::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredRoute"), GDishonoredGameADishonoredRouteNatives); \
+	ADishonoredScout::StaticClass(); \
+	ADishonoredWaterVolume::StaticClass(); \
+	UDisAIRangedBehaviorInterface::StaticClass(); \
+	UDisDesiresInterface::StaticClass(); \
+	UDisGoToFollowupInterface::StaticClass(); \
+	UDishonoredAIBehavior::StaticClass(); \
+	UDisAIBehaviorWithDesires::StaticClass(); \
+	UDisAIBlackboard::StaticClass(); \
+	UDisAIBrainProcess::StaticClass(); \
+	UDisAIBrainProcessAttention::StaticClass(); \
+	UDisAIBrainProcessHideoutWatcher::StaticClass(); \
+	UDisAIBrainProcessPanic::StaticClass(); \
+	UDisAIBrainProcessRatCrusher::StaticClass(); \
+	UDisAIBrainProcessWolfhound::StaticClass(); \
+	UDisAINoiseManager::StaticClass(); \
+	UDisAISubProcess::StaticClass(); \
+	UDisAISubProcessAmbientAnims::StaticClass(); \
+	UDisAISubProcessAmbientBarks::StaticClass(); \
+	UDisAISubProcessCombatBarks::StaticClass(); \
+	UDisAISubProcessWithDesires::StaticClass(); \
+	UDisAISubProcessDistractions::StaticClass(); \
+	UDisAISubProcessFleetingGaze::StaticClass(); \
+	UDisAISubProcessGenericBark::StaticClass(); \
+	UDisAISubProcessHeadTrackBase::StaticClass(); \
+	UDisAISubProcessHeadTrackBark::StaticClass(); \
+	UDisAISubProcessHeadTrackPause::StaticClass(); \
+	UDisAISubProcessPersonalSpace::StaticClass(); \
+	UDisAISubProcessStandardBodyIntention::StaticClass(); \
+	UDisAISubProcessWatchPoints::StaticClass(); \
+	UDisAISubProcessWolfHoundCount::StaticClass(); \
+	UDishonoredNativeState::StaticClass(); \
+	UDisAISubState::StaticClass(); \
+	UDisAISubStateWithDesires::StaticClass(); \
+	UDisAISubStateCower::StaticClass(); \
+	UDisAISubStateFlee::StaticClass(); \
+	UDisAISubStateFollow::StaticClass(); \
+	UDisAISubStateGenericAction::StaticClass(); \
+	UDisAISubStateInit::StaticClass(); \
+	UDishonoredNativeStateMachine::StaticClass(); \
+	UDisAISubStateMachine::StaticClass(); \
+	UDisAISubStateMaintainDistance::StaticClass(); \
+	UDisAISubStateMenace::StaticClass(); \
+	UDisAISubStateStand::StaticClass(); \
+	UDisAISubStateTakePosition::StaticClass(); \
+	UDisAISubStateTakeActorPosition::StaticClass(); \
+	UDisActorFactoryNPCPawn::StaticClass(); \
+	UDisActorFactoryTweakObj::StaticClass(); \
+	UDisAkComponent::StaticClass(); \
+	UDisAlarmBellComponent::StaticClass(); \
+	UDisAlarmGlobalManager::StaticClass(); \
+	UDisAmbushComponent::StaticClass(); \
+	UDisAmbushGlobalManager::StaticClass(); \
+	UDisRenderProxyComponent::StaticClass(); \
+	UDisAmbushRenderProxyComponent::StaticClass(); \
+	UDisAnimDefinitions::StaticClass(); \
+	UDisAnimStateComponent::StaticClass(); \
+	UDisAnimStatePool::StaticClass(); \
+	UDisAttentionDefs::StaticClass(); \
+	UDisAttentionInfo_Base::StaticClass(); \
+	UDisAttentionInfo_Complex::StaticClass(); \
+	UDisAttentionInfo_Simple::StaticClass(); \
+	UDisAttentionTargetComponent::StaticClass(); \
+	UDisAudioListenerTestComponent::StaticClass(); \
+	UDisAudioPropagationInfo::StaticClass(); \
+	UDisBehaviorAttentionBase::StaticClass(); \
+	UDisBehaviorBattleVictory::StaticClass(); \
+	UDisBehaviorBlockingDialog::StaticClass(); \
+	UDisBehaviorEscapeExplosion::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorEscapeExplosion"), GDishonoredGameUDisBehaviorEscapeExplosionNatives); \
+	UDisBehaviorEscapePlague::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorEscapePlague"), GDishonoredGameUDisBehaviorEscapePlagueNatives); \
+	UDisBehaviorFollow::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorFollow"), GDishonoredGameUDisBehaviorFollowNatives); \
+	UDisBehaviorGoHome::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorGoHome"), GDishonoredGameUDisBehaviorGoHomeNatives); \
+	UDisBehaviorGoTo_Base::StaticClass(); \
+	UDisBehaviorGoTo::StaticClass(); \
+	UDisBehaviorGuard::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorGuard"), GDishonoredGameUDisBehaviorGuardNatives); \
+	UDisBehaviorIdle::StaticClass(); \
+	UDisBehaviorInhibited::StaticClass(); \
+	UDisBehaviorInteract::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorInteract"), GDishonoredGameUDisBehaviorInteractNatives); \
+	UDisBehaviorMagicResponse::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorMagicResponse"), GDishonoredGameUDisBehaviorMagicResponseNatives); \
+	UDisBehaviorNotice::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorNotice"), GDishonoredGameUDisBehaviorNoticeNatives); \
+	UDisBehaviorPanic::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorPanic"), GDishonoredGameUDisBehaviorPanicNatives); \
+	UDisBehaviorPatrol::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorPatrol"), GDishonoredGameUDisBehaviorPatrolNatives); \
+	UDisBehaviorRatStomp::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorRatStomp"), GDishonoredGameUDisBehaviorRatStompNatives); \
+	UDisBehaviorReact::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorReact"), GDishonoredGameUDisBehaviorReactNatives); \
+	UDisBehaviorReturnTravel::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorReturnTravel"), GDishonoredGameUDisBehaviorReturnTravelNatives); \
+	UDisBehaviorSoiree::StaticClass(); \
+	UDisBehaviorStolen::StaticClass(); \
+	UDisBehaviorWeep::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisBehaviorWeep"), GDishonoredGameUDisBehaviorWeepNatives); \
+	UDisBinkOverlayManager::StaticClass(); \
+	UDisTutorialTracker::StaticClass(); \
+	UDisBlockTracker::StaticClass(); \
+	UDisCorpseDiscoveredTracker::StaticClass(); \
+	UDisDLC05BehaviorIdle::StaticClass(); \
+	UDisTweaksBase::StaticClass(); \
+	UDisTweaks_AIBehavior::StaticClass(); \
+	UDisTweaks_AIBehavior_Idle::StaticClass(); \
+	UDisDLC05Tweaks_AIBehavior_Idle::StaticClass(); \
+	UDisTweaks_KActor::StaticClass(); \
+	UDisTweaks_StaticBreakable::StaticClass(); \
+	UDisTweaks_Movable::StaticClass(); \
+	UDisTweaks_WhaleOilBattery::StaticClass(); \
+	UDishonoredCheatManager::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredCheatManager"), GDishonoredGameUDishonoredCheatManagerNatives); \
+	UDishonoredDamageType::StaticClass(); \
+	UStateSharedActionBase::StaticClass(); \
+	UStateNPCMasterAction::StaticClass(); \
+	UStateNPCMasterPlayAnim::StaticClass(); \
+	UDisTweaks_AIBrain::StaticClass(); \
+	UDisTweaks_AIBrainProcess::StaticClass(); \
+	UDisTweaks_InventoryItem::StaticClass(); \
+	UDisTweaks_SpringRazor::StaticClass(); \
+	UDisTweaks_KAsset::StaticClass(); \
+	UDisTweaks_Pawn::StaticClass(); \
+	UDisTweaks_NPCPawn::StaticClass(); \
+	UDisTweaks_ActivePowerBase::StaticClass(); \
+	UDisTweaks_Explosion::StaticClass(); \
+	UDisTweaks_NPCAttachment::StaticClass(); \
+	UDisTweaks_InventoryItem_PawnSpecific::StaticClass(); \
+	UDisTweaks_PlayerPawn::StaticClass(); \
+	UDisTweaks_Attributes::StaticClass(); \
+	UDisTweaks_Pawn_Attributes::StaticClass(); \
+	UDisTweaks_PlayerPawn_Attributes::StaticClass(); \
+	UDisTweaks_Blink::StaticClass(); \
+	UDisTweaks_WeaponRanged::StaticClass(); \
+	UDisTweaks_WeaponRanged_Attributes::StaticClass(); \
+	UStateNPCInstigatedMasterAction::StaticClass(); \
+	UDisTweaks_AISubState::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerBase::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerJournal::StaticClass(); \
+	UDisTweaks_RiverKrust::StaticClass(); \
+	UDisTweaks_PickupBase::StaticClass(); \
+	UDisDamageType_Assassination::StaticClass(); \
+	UDisDamageType_BlinkKnockdown::StaticClass(); \
+	UDisDamageType_BlinkPush::StaticClass(); \
+	UDisDamageType_Choke::StaticClass(); \
+	UDisDamageType_CrushKnockdown::StaticClass(); \
+	UDisDamageType_CrushPush::StaticClass(); \
+	UDisDamageType_Energy::StaticClass(); \
+	UDishonoredDamageType_Projectile::StaticClass(); \
+	UDishonoredDamageType_Bullet::StaticClass(); \
+	UDisDamageType_ExplosiveBullet::StaticClass(); \
+	UDishonoredDamageType_FastHit::StaticClass(); \
+	UDisDamageType_FastHit_Left::StaticClass(); \
+	UDisDamageType_FastHit_Right::StaticClass(); \
+	UDisDamageType_FastHit_Up::StaticClass(); \
+	UDisDamageType_FastHit_Up_Left::StaticClass(); \
+	UDisDamageType_FastHit_Up_Right::StaticClass(); \
+	UDisDamageType_FishBite::StaticClass(); \
+	UDisDamageType_GenericSleep::StaticClass(); \
+	UDisDamageType_Impact::StaticClass(); \
+	UDisDamageType_ImpactHit::StaticClass(); \
+	UDisDamageType_ImpactHit_Adrenaline::StaticClass(); \
+	UDisDamageType_ImpactHit_Adrenaline_Left::StaticClass(); \
+	UDisDamageType_ImpactHit_Adrenaline_Right::StaticClass(); \
+	UDisDamageType_ImpactHit_Adrenaline_Up::StaticClass(); \
+	UDisDamageType_ImpactHit_Adrenaline_Up_Left::StaticClass(); \
+	UDisDamageType_ImpactHit_Adrenaline_Up_Right::StaticClass(); \
+	UDisDamageType_ImpactHit_Left::StaticClass(); \
+	UDisDamageType_ImpactHit_Right::StaticClass(); \
+	UDisDamageType_ImpactHit_Up::StaticClass(); \
+	UDisDamageType_ImpactHit_Up_Left::StaticClass(); \
+	UDisDamageType_ImpactHit_Up_Right::StaticClass(); \
+	UDisDamageType_InstantSleep::StaticClass(); \
+	UDisDamageType_Minigame::StaticClass(); \
+	UDisDamageType_Musical::StaticClass(); \
+	UDisDamageType_OutOfNavMesh::StaticClass(); \
+	UDisDamageType_PostPossessSleep::StaticClass(); \
+	UDisDamageType_RagdollImpact::StaticClass(); \
+	UDisDamageType_RiverKrustSpit::StaticClass(); \
+	UDisDamageType_Sleep_Deferred::StaticClass(); \
+	UDishonoredDamageType_Bash::StaticClass(); \
+	UDisDamageType_Slide::StaticClass(); \
+	UDisDamageType_SpringRazorPlaced::StaticClass(); \
+	UDisDamageType_UnpossessSquash::StaticClass(); \
+	UDisDamageType_WallOfLight::StaticClass(); \
+	UDisDamageType_Water::StaticClass(); \
+	UDisDamageType_WhiskeyFire::StaticClass(); \
+	UDisDamageType_WindBlast::StaticClass(); \
+	UDisDefenseTutorialTracker::StaticClass(); \
+	UDisDesireStructs::StaticClass(); \
+	UDisDistractionGlobalManager::StaticClass(); \
+	UDisTweaks_SkeletalBreakable::StaticClass(); \
+	UDisSkeletalBreakStepsInterface::StaticClass(); \
+	UDisDoorBreakSteps::StaticClass(); \
+	UDisDrawVisionComponent::StaticClass(); \
+	UDisDropAssassinationTracker::StaticClass(); \
+	UDisElixirTracker::StaticClass(); \
+	UDisFleeComponent::StaticClass(); \
+	UDisFleeConstraint::StaticClass(); \
+	UDisFleePointManager::StaticClass(); \
+	UDisGlobalAIAttentionManager::StaticClass(); \
+	UDisGlobalDLCManager::StaticClass(); \
+	UDisGlobalFactionManager::StaticClass(); \
+	UDisHeartTargetTracker::StaticClass(); \
+	UDisHideoutComponent::StaticClass(); \
+	UDisHideoutComponent_Usable::StaticClass(); \
+	UDisHideoutComponent_Volume::StaticClass(); \
+	UDisKeyRing::StaticClass(); \
+	UDisLocalPlayer::StaticClass(); \
+	UDisMovableTracker::StaticClass(); \
+	UDisNPCDistractionComponent::StaticClass(); \
+	UDisNPCTravelManager::StaticClass(); \
+	UDisNativeStateMachine_PlayerAction::StaticClass(); \
+	UDisNativeStateTransitionLogic::StaticClass(); \
+	UDisNavConstraint_MinDistanceFromLocation::StaticClass(); \
+	UDisNavConstraint_ShootingPosition::StaticClass(); \
+	UDisNavMeshGoal_BestFleePoint::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisNavMeshGoal_BestFleePoint"), GDishonoredGameUDisNavMeshGoal_BestFleePointNatives); \
+	UDisNavMeshGoal_MinDistanceFromLocation::StaticClass(); \
+	UDisNavMeshGoal_SafeFromThreat::StaticClass(); \
+	UDisNavMeshGoal_ShootingPosition::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisNavMeshGoal_ShootingPosition"), GDishonoredGameUDisNavMeshGoal_ShootingPositionNatives); \
+	UDisNavMeshGoal_WithinDistanceEnvelopeFrom::StaticClass(); \
+	UDisParticleSystemComponent::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisParticleSystemComponent"), GDishonoredGameUDisParticleSystemComponentNatives); \
+	UDisPatrolManager::StaticClass(); \
+	UDisPerfectBlockTracker::StaticClass(); \
+	UDisPostProcessManager::StaticClass(); \
+	UDisPowerMenu::StaticClass(); \
+	UDisPursuitTracker::StaticClass(); \
+	UDisRatLightComponent::StaticClass(); \
+	UDisRatSwarmGlobalManager::StaticClass(); \
+	UDisRiverKrustComponent::StaticClass(); \
+	UDisSeqCond_IsPlayerInCombat::StaticClass(); \
+	UDisSerializableObject_Base::StaticClass(); \
+	UDisSeveredLimbInfo::StaticClass(); \
+	UDisSkeletalBreakSteps::StaticClass(); \
+	UDisSkeletalMeshComponent::StaticClass(); \
+	UDisSkirmishTracker::StaticClass(); \
+	UDisSpawnerRenderProxyComponent::StaticClass(); \
+	UDisStimManager::StaticClass(); \
+	UDisStoryFlagSet::StaticClass(); \
+	UDisTallboyLightComponent::StaticClass(); \
+	UDisThreatPerceptionComponent::StaticClass(); \
+	UDisTravelSpawnerComponent::StaticClass(); \
+	UDisTweaksList::StaticClass(); \
+	UDisTweaks_AIBehavior_BattleVictory::StaticClass(); \
+	UDisTweaks_AIBehavior_BlockingDialog::StaticClass(); \
+	UDisTweaks_AIBehavior_EscapeExplosion::StaticClass(); \
+	UDisTweaks_AIBehavior_EscapePlague::StaticClass(); \
+	UDisTweaks_AIBehavior_Follow::StaticClass(); \
+	UDisTweaks_AIBehavior_GoHome::StaticClass(); \
+	UDisTweaks_AIBehavior_Guard::StaticClass(); \
+	UDisTweaks_AIBehavior_Inhibited::StaticClass(); \
+	UDisTweaks_AIBehavior_Interact::StaticClass(); \
+	UDisTweaks_AIBehavior_MagicResponse::StaticClass(); \
+	UDisTweaks_AIBehavior_Notice::StaticClass(); \
+	UDisTweaks_AIBehavior_Panic::StaticClass(); \
+	UDisTweaks_AIBehavior_Patrol::StaticClass(); \
+	UDisTweaks_AIBehavior_PatrolSearch::StaticClass(); \
+	UDisTweaks_AIBehavior_RatStomp::StaticClass(); \
+	UDisTweaks_AIBehavior_React::StaticClass(); \
+	UDisTweaks_AIBehavior_ReturnTravel::StaticClass(); \
+	UDisTweaks_AIBehavior_Soiree::StaticClass(); \
+	UDisTweaks_AIBehavior_Stolen::StaticClass(); \
+	UDisTweaks_AIBehavior_TakePosition::StaticClass(); \
+	UDisTweaks_AIBehavior_TriggerAlarm::StaticClass(); \
+	UDisTweaks_AIBehavior_Weep::StaticClass(); \
+	UDisTweaks_AIBrainProcess_Attention::StaticClass(); \
+	UDisTweaks_AIBrainProcess_RatCrusher::StaticClass(); \
+	UDisTweaks_AIBrain_Reaction::StaticClass(); \
+	UDisTweaks_AIBrain_Steering::StaticClass(); \
+	UDisTweaks_AISubProcess::StaticClass(); \
+	UDisTweaks_AISubProcess_AmbientAnims::StaticClass(); \
+	UDisTweaks_AISubProcess_AmbientBarks::StaticClass(); \
+	UDisTweaks_AISubProcess_CombatBarks::StaticClass(); \
+	UDisTweaks_AISubProcess_Distractions::StaticClass(); \
+	UDisTweaks_AISubProcess_FleetingGaze::StaticClass(); \
+	UDisTweaks_AISubProcess_GenericBarks::StaticClass(); \
+	UDisTweaks_AISubProcess_HeadTrackBark::StaticClass(); \
+	UDisTweaks_AISubProcess_HeadTrackPause::StaticClass(); \
+	UDisTweaks_AISubProcess_PersonalSpace::StaticClass(); \
+	UDisTweaks_AISubProcess_StandardBodyIntention::StaticClass(); \
+	UDisTweaks_AISubProcess_WatchPoints::StaticClass(); \
+	UDisTweaks_AISubProcess_WolfHoundCount::StaticClass(); \
+	UDisTweaks_AISubState_Cower::StaticClass(); \
+	UDisTweaks_AISubState_Flee::StaticClass(); \
+	UDisTweaks_AISubState_Follow::StaticClass(); \
+	UDisTweaks_AISubState_GenericAction::StaticClass(); \
+	UDisTweaks_AISubState_Init::StaticClass(); \
+	UDisTweaks_AISubState_MaintainDistance::StaticClass(); \
+	UDisTweaks_AISubState_MeleeChase::StaticClass(); \
+	UDisTweaks_AISubState_MeleeEngage::StaticClass(); \
+	UDisTweaks_AISubState_Menace::StaticClass(); \
+	UDisTweaks_AISubState_Stand::StaticClass(); \
+	UDisTweaks_AISubState_StareAtUnreachable::StaticClass(); \
+	UDisTweaks_AISubState_TakePosition::StaticClass(); \
+	UDisTweaks_AISubState_TakeActorPosition::StaticClass(); \
+	UDisTweaks_AbstractItemPickup::StaticClass(); \
+	UDisTweaks_AbstractItemPickupAudioLog::StaticClass(); \
+	UDisTweaks_AbstractItemPickupNote::StaticClass(); \
+	UDisTweaks_UsableObject::StaticClass(); \
+	UDisTweaks_Armor::StaticClass(); \
+	UDisTweaks_Attachments::StaticClass(); \
+	UDisTweaks_AttentionTarget::StaticClass(); \
+	UDisTweaks_AudioLogPlayer::StaticClass(); \
+	UDisTweaks_BendTime::StaticClass(); \
+	UDisTweaks_Climbable::StaticClass(); \
+	UDisTweaks_ComponentHitReactionThrow::StaticClass(); \
+	UDisTweaks_ComponentMeshOffset::StaticClass(); \
+	UDisTweaks_ComponentObservable::StaticClass(); \
+	UDisTweaks_DefenceTower::StaticClass(); \
+	UDisTweaks_DetectionEye::StaticClass(); \
+	UDisTweaks_DevouringSwarm::StaticClass(); \
+	UDisTweaks_Door::StaticClass(); \
+	UDisTweaks_ElixirHealth::StaticClass(); \
+	UDisTweaks_ElixirMana::StaticClass(); \
+	UDisTweaks_Faction::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisTweaks_Faction"), GDishonoredGameUDisTweaks_FactionNatives); \
+	UDisTweaks_Fish::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerGlobal::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerMainMenu::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerMenuBase::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerMissionStats::StaticClass(); \
+	UDisTweaks_GFxMoviePlayerPauseMenu::StaticClass(); \
+	UDisTweaks_GenericPickup::StaticClass(); \
+	UDisTweaks_Heart::StaticClass(); \
+	UDisTweaks_InteractableInterface::StaticClass(); \
+	UDisTweaks_Interactable_PickupBase::StaticClass(); \
+	UDisTweaks_InventoryItem_Attributes::StaticClass(); \
+	UDisTweaks_InventoryItem_PlayerSpecific::StaticClass(); \
+	UDisTweaks_StatPickup::StaticClass(); \
+	UDisTweaks_InventoryPickup::StaticClass(); \
+	UDisTweaks_ItemEmpty::StaticClass(); \
+	UDisTweaks_ItemEmpty_PlayerSpecific::StaticClass(); \
+	UDisTweaks_Key::StaticClass(); \
+	UDisTweaks_LODConfig::StaticClass(); \
+	UDisTweaks_LODProfile::StaticClass(); \
+	UDisTweaks_LODSetup::StaticClass(); \
+	UDisTweaks_MovableLimb::StaticClass(); \
+	UDisTweaks_Pawn_Animation::StaticClass(); \
+	UDisTweaks_NPCPawn_Animation::StaticClass(); \
+	UDisTweaks_NPCPawn_Attributes::StaticClass(); \
+	UDisTweaks_Pawn_Body::StaticClass(); \
+	UDisTweaks_NPCPawn_Body::StaticClass(); \
+	UDisTweaks_Pawn_Combat::StaticClass(); \
+	UDisTweaks_NPCPawn_Combat::StaticClass(); \
+	UDisTweaks_NPCPlotSettings::StaticClass(); \
+	UDisTweaks_PawnAttention::StaticClass(); \
+	UDisTweaks_Pawn_Actions::StaticClass(); \
+	UDisTweaks_Pawn_FullBodyAnimation::StaticClass(); \
+	UDisTweaks_Pawn_SpecialAnimation::StaticClass(); \
+	UDisTweaks_Pawn_UpperBodyAnimation::StaticClass(); \
+	UDisTweaks_PlayerInput::StaticClass(); \
+	UDisTweaks_PlayerPawn_Actions::StaticClass(); \
+	UDisTweaks_PlayerPawn_Animation::StaticClass(); \
+	UDisTweaks_PlayerPawn_Camera::StaticClass(); \
+	UDisTweaks_PlayerPawn_Combat::StaticClass(); \
+	UDisTweaks_PlayerPawn_DebugActions::StaticClass(); \
+	UDisTweaks_PlayerPawn_FullBodyAnimation::StaticClass(); \
+	UDisTweaks_PlayerPawn_ItemActions::StaticClass(); \
+	UDisTweaks_PlayerPawn_MiscellaneousActions::StaticClass(); \
+	UDisTweaks_PlayerPawn_NavigationActions::StaticClass(); \
+	UDisTweaks_PlayerPawn_SpecialAnimation::StaticClass(); \
+	UDisTweaks_PlayerPawn_UpperBodyAnimation::StaticClass(); \
+	UDisTweaks_PlayerPawn_Visibility::StaticClass(); \
+	UDisTweaks_PlayerStats::StaticClass(); \
+	UDisTweaks_PlayerVisRegion::StaticClass(); \
+	UDisTweaks_PlayerVisSettings::StaticClass(); \
+	UDisTweaks_Possess::StaticClass(); \
+	UDisTweaks_Possessable::StaticClass(); \
+	UDisTweaks_PostProcess::StaticClass(); \
+	UDisTweaks_ProjectileLauncher::StaticClass(); \
+	UDisTweaks_RatSpawner::StaticClass(); \
+	UDisTweaks_RatSwarmGlobalManager::StaticClass(); \
+	UDisTweaks_RiverKrustBodyPart::StaticClass(); \
+	UDisTweaks_SimpleAttention::StaticClass(); \
+	UDisTweaks_SoundSource::StaticClass(); \
+	UDisTweaks_SpringRazorPlaced::StaticClass(); \
+	UDisTweaks_StoryGroup::StaticClass(); \
+	UDisTweaks_TallboyAttachment::StaticClass(); \
+	UDisTweaks_TallboyNPCPawn::StaticClass(); \
+	UDisTweaks_ThrownObjects::StaticClass(); \
+	UDisTweaks_Trigger::StaticClass(); \
+	UDisTweaks_Tripwire::StaticClass(); \
+	UDisTweaks_Tune::StaticClass(); \
+	UDisTweaks_TuneSource_Protection::StaticClass(); \
+	UDisTweaks_Tune_Protection::StaticClass(); \
+	UDisTweaks_Upgrade::StaticClass(); \
+	UDisTweaks_Vision::StaticClass(); \
+	UDisTweaks_Vulnerability::StaticClass(); \
+	UDisTweaks_WallOfLight::StaticClass(); \
+	UDisTweaks_WatchTower::StaticClass(); \
+	UDisTweaks_WhaleBoneCharm::StaticClass(); \
+	UDisTweaks_WhaleBoneCharmList::StaticClass(); \
+	UDisTweaks_WhaleOilReceptacle::StaticClass(); \
+	UDisTweaks_WindBlast::StaticClass(); \
+	UDisUsableObjectBreakSteps::StaticClass(); \
+	UDisWaterVolumeManager::StaticClass(); \
+	UDisWheelTracker::StaticClass(); \
+	UDishonoredAIBrain::StaticClass(); \
+	UDishonoredAudioPortalComponent::StaticClass(); \
+	UDishonoredAudioSystem::StaticClass(); \
+	UDishonoredBarkManager::StaticClass(); \
+	UDishonoredCallbackSkeletalComponent::StaticClass(); \
+	UDishonoredDamageType_Bite::StaticClass(); \
+	UDishonoredDamageType_BulletBlast::StaticClass(); \
+	UDishonoredDamageType_BulletFar::StaticClass(); \
+	UDishonoredDamageType_BulletMedium::StaticClass(); \
+	UDishonoredDamageType_Electricity::StaticClass(); \
+	UDishonoredDamageType_Explosion::StaticClass(); \
+	UDishonoredDamageType_FrontalImpale::StaticClass(); \
+	UDishonoredDamageType_Knockdown::StaticClass(); \
+	UDishonoredDamageType_Plague::StaticClass(); \
+	UDishonoredDamageType_Projectile_Stealth::StaticClass(); \
+	UDishonoredDamageType_SpawnRatSwarm::StaticClass(); \
+	UDishonoredDamageType_Stomped::StaticClass(); \
+	UDishonoredDebugMenu::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredDebugMenu"), GDishonoredGameUDishonoredDebugMenuNatives); \
+	UDishonoredDecalComponent::StaticClass(); \
+	UDishonoredEngine::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredEngine"), GDishonoredGameUDishonoredEngineNatives); \
+	UDishonoredGlobalAIManager::StaticClass(); \
+	UDishonoredPlayerSkeletalComponent::StaticClass(); \
+	UDishonoredMapInfo::StaticClass(); \
+	UDishonoredNoteComponent::StaticClass(); \
+	UDishonoredPlayerInput::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredPlayerInput"), GDishonoredGameUDishonoredPlayerInputNatives); \
+	UDishonoredPowersComponent::StaticClass(); \
+	UDishonoredSearchCrumbsComponent::StaticClass(); \
+	UDishonoredViewportClient::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredViewportClient"), GDishonoredGameUDishonoredViewportClientNatives); \
+	UDishonoredWaterVolumeInfo::StaticClass(); \
+	UStateNPCActionParry::StaticClass(); \
+	UStateNPCAttractSpell::StaticClass(); \
+	UStateNPCEscapeExplosion::StaticClass(); \
+	UStateNPCMasterActionImmolate::StaticClass(); \
+	UStateNPCMasterActionMelee::StaticClass(); \
+	UStateNPCMasterActionMeleeSwarm::StaticClass(); \
+	UStateNPCMasterActionMeleeVersus::StaticClass(); \
+	UStateNPCMasterActionPostPossessed::StaticClass(); \
+	UStateNPCMasterAim::StaticClass(); \
+	UStateNPCMasterAim_Grenade::StaticClass(); \
+	UStateNPCMasterBePossessed::StaticClass(); \
+	UStateNPCMasterBeingAssassinated::StaticClass(); \
+	UStateNPCMasterBeingChoked::StaticClass(); \
+	UStateNPCMasterDistracted::StaticClass(); \
+	UStateNPCMasterDodge::StaticClass(); \
+	UStateNPCMasterDualPlayAnim::StaticClass(); \
+	UStateNPCUpperBodyAction::StaticClass(); \
+	UStateNPCMasterEquip::StaticClass(); \
+	UStateNPCMasterFalling::StaticClass(); \
+	UStateNPCMasterFallingUncontrolled::StaticClass(); \
+	UStateNPCMasterGesture::StaticClass(); \
+	UStateNPCMasterLyingInWait::StaticClass(); \
+	UStateNPCMasterMinigame::StaticClass(); \
+	UStateNPCMasterProjectileHitReact::StaticClass(); \
+	UStateNPCMasterRangedAttack::StaticClass(); \
+	UStateNPCMasterStrongHitReact::StaticClass(); \
+	UStateNPCMasterStunned::StaticClass(); \
+	UStateNPCMasterSurprised::StaticClass(); \
+	UStateNPCMasterTallboyAim::StaticClass(); \
+	UStateNPCMasterThrown::StaticClass(); \
+	UStateNPCMasterWalk::StaticClass(); \
+	UStateNPCUpperPlayAnim::StaticClass(); \
+	UStateNPCMusicBox::StaticClass(); \
+	UStateSharedActionBase_PlayerOnly::StaticClass(); \
+	UStatePlayerAction::StaticClass(); \
+	UStatePlayerChangeReadyStance::StaticClass(); \
+	UStatePlayerBlock::StaticClass(); \
+	UStatePlayerUpperBase::StaticClass(); \
+	UStatePlayerUpperIdle::StaticClass(); \
+	UStatePlayerEquipChange::StaticClass(); \
+	UStatePlayerMeleeAttack::StaticClass(); \
+	UStatePlayerGenericFatality::StaticClass(); \
+	UStatePlayerGrabCorpse::StaticClass(); \
+	UStatePlayerGrabMovable::StaticClass(); \
+	UStatePlayerMasterAction::StaticClass(); \
+	UStatePlayerMasterChangeReadyStance::StaticClass(); \
+	UStatePlayerMasterAssassinate::StaticClass(); \
+	UStatePlayerMasterBase::StaticClass(); \
+	UStatePlayerMasterChoice_Base::StaticClass(); \
+	UStatePlayerMasterChoke::StaticClass(); \
+	UStatePlayerMasterClimb::StaticClass(); \
+	UStatePlayerMasterDead::StaticClass(); \
+	UStatePlayerMasterFalling::StaticClass(); \
+	UStatePlayerMasterHolePeeking::StaticClass(); \
+	UStatePlayerMasterInScriptedChoice::StaticClass(); \
+	UStatePlayerMasterInStore::StaticClass(); \
+	UStatePlayerMasterJump::StaticClass(); \
+	UStatePlayerMasterLeaning::StaticClass(); \
+	UStatePlayerMasterMinigame::StaticClass(); \
+	UStatePlayerMasterSlide::StaticClass(); \
+	UStatePlayerMasterSoiree::StaticClass(); \
+	UStatePlayerMasterStunned::StaticClass(); \
+	UStatePlayerMasterSwim::StaticClass(); \
+	UStatePlayerMasterVersus::StaticClass(); \
+	UStatePlayerMasterWalk::StaticClass(); \
+	UStatePlayerTransitionItemIn::StaticClass(); \
+	UStatePlayerUpperNav::StaticClass(); \
+
+#endif // DISHONOREDGAME_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameADishonoredKActorNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredKActor, execTakeDamage_Native)
+	MAP_NATIVE(ADishonoredKActor, execTakeDamage)
+	MAP_NATIVE(ADishonoredKActor, execDestroyIfPlayerCantSeeMe)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisSkeletalBreakableNatives[] = 
+{ 
+	MAP_NATIVE(ADisSkeletalBreakable, execTakeDamage)
+	MAP_NATIVE(ADisSkeletalBreakable, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredUsableObjectNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredUsableObject, execOnToggle_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredKAssetNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredKAsset, execTakeDamage_Native)
+	MAP_NATIVE(ADishonoredKAsset, execTakeDamage)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisCrusherNatives[] = 
+{ 
+	MAP_NATIVE(ADisCrusher, execEncroachingOn)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredGameInfoNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredGameInfo, execPreventDeath_Native)
+	MAP_NATIVE(ADishonoredGameInfo, execSpawnPlayer)
+	MAP_NATIVE(ADishonoredGameInfo, execCanStartMatch)
+	MAP_NATIVE(ADishonoredGameInfo, execGameEnding)
+	MAP_NATIVE(ADishonoredGameInfo, execGetDishonoredEngineVersion)
+	MAP_NATIVE(ADishonoredGameInfo, execGetChangelist)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredPawnNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredPawn, execOnDLC05SetStoryGroup)
+	MAP_NATIVE(ADishonoredPawn, execJumpOffPawn)
+	MAP_NATIVE(ADishonoredPawn, execCrushedBy_Native)
+	MAP_NATIVE(ADishonoredPawn, execOnModifyElixirCount)
+	MAP_NATIVE(ADishonoredPawn, execOnGetAbstractItemQuantity)
+	MAP_NATIVE(ADishonoredPawn, execOnRemoveAbstractItem)
+	MAP_NATIVE(ADishonoredPawn, execOnAddAbstractItem)
+	MAP_NATIVE(ADishonoredPawn, execOnModifyAmmo)
+	MAP_NATIVE(ADishonoredPawn, execOnEquipItemType)
+	MAP_NATIVE(ADishonoredPawn, execOnAddInventoryItem)
+	MAP_NATIVE(ADishonoredPawn, execOnSetDisposition)
+	MAP_NATIVE(ADishonoredPawn, execOnTeleport_Native)
+	MAP_NATIVE(ADishonoredPawn, execLanded_Native)
+	MAP_NATIVE(ADishonoredPawn, execChooseAndTriggerDeathEvent_Native)
+	MAP_NATIVE(ADishonoredPawn, execPlayDying_Native)
+	MAP_NATIVE(ADishonoredPawn, execTakeFallingDamage_Native)
+	MAP_NATIVE(ADishonoredPawn, execTakeDamage_Native)
+	MAP_NATIVE(ADishonoredPawn, execTakeDamage)
+	MAP_NATIVE(ADishonoredPawn, execDisplayDebug_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredNPCPawnNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredNPCPawn, execSetDesiredRotation)
+	MAP_NATIVE(ADishonoredNPCPawn, execSetPushesRigidBodies)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnNPCAddPutPocketInteraction)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnNPCSetMaterials)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnSetIgnoreDeath)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnOverridePossess)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnPlayMusicBox)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnEquipItemType)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnSpawnStealable)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnNPCDoTeleportSpell)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnNPCMarkForVanish)
+	MAP_NATIVE(ADishonoredNPCPawn, execOnSeverLimb)
+	MAP_NATIVE(ADishonoredNPCPawn, execNPCTouchedDeepWater)
+	MAP_NATIVE(ADishonoredNPCPawn, execTakeFallingDamage_Native)
+	MAP_NATIVE(ADishonoredNPCPawn, execTakeDamage_Native)
+	MAP_NATIVE(ADishonoredNPCPawn, execTakeDamage)
+	MAP_NATIVE(ADishonoredNPCPawn, execPlayDying_Native)
+	MAP_NATIVE(ADishonoredNPCPawn, execChooseAndTriggerDeathEvent_Native)
+	MAP_NATIVE(ADishonoredNPCPawn, execDisplayDebug_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisPlayerControllerBaseNatives[] = 
+{ 
+	MAP_NATIVE(ADisPlayerControllerBase, execPlaytest_native)
+	MAP_NATIVE(ADisPlayerControllerBase, execSetPlaytestFlag)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredPlayerControllerNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredPlayerController, execOnControllerChanged_Native)
+	MAP_NATIVE(ADishonoredPlayerController, execCalcPlayerSwimAccelRate)
+	MAP_NATIVE(ADishonoredPlayerController, execGetProfileSettings)
+	MAP_NATIVE(ADishonoredPlayerController, execOnShowPowerMenu)
+	MAP_NATIVE(ADishonoredPlayerController, execOnObjectiveAction)
+	MAP_NATIVE(ADishonoredPlayerController, execProcessViewRotation)
+	MAP_NATIVE(ADishonoredPlayerController, execSetCinematicMode_Native)
+	MAP_NATIVE(ADishonoredPlayerController, execPreSetCinematicMode_Native)
+	MAP_NATIVE(ADishonoredPlayerController, execIsLookInputIgnored)
+	MAP_NATIVE(ADishonoredPlayerController, execIsMoveInputIgnored)
+	MAP_NATIVE(ADishonoredPlayerController, execToggleScreenConfig)
+	MAP_NATIVE(ADishonoredPlayerController, execShowScreenConfig)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_Zoom)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_VersusAlt)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_Lean_Toggle)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_LeanWithAnalogStick_End)
+	MAP_NATIVE(ADishonoredPlayerController, execDisToggleSprint)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_SelectPower)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_OpenPauseMenu)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_OpenJournalTab)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_ToggleJournal)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_CancelPossession)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_ExitKeyhole)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_LeanOrAdrenaline_Multi)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_UseAdrenaline_Multi)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_UseAdrenaline)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_ConsumeElixir)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_PrevItemOption)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_NextItemOption)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_UseSecondaryItem)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_UsePrimaryItem)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_UsePrimaryItemOrAdrenaline_Multi)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_EquipItemByType)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_PrevEquippedItem)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_NextEquippedItem)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_WheelShortcuts_MouseNext)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_WheelShortcuts_MousePrevious)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_WheelShortcuts_KeyboardUse)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_WheelShortcuts_KeyboardSelect)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_WheelShortcuts_GamepadUse)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_WheelShortcuts_GamepadSelect)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_Wheel_Close)
+	MAP_NATIVE(ADishonoredPlayerController, execDis_Wheel_Open)
+	MAP_NATIVE(ADishonoredPlayerController, execOnTeleport_Native)
+	MAP_NATIVE(ADishonoredPlayerController, execReceivedPlayer_Native)
+	MAP_NATIVE(ADishonoredPlayerController, execHandleWalking)
+	MAP_NATIVE(ADishonoredPlayerController, execHandleHeldButtons)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredPlayerPawnNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnDestroy_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execNativePostRenderFor)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnPlayerResurrect)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnCancelPlayerActivePower)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnToggleTutorial)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnToggleChoke)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnOverrideAwarenessDisplay)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnSetPlayerMana)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnSetPlayerHealth)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnAdrenalineToggle)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnGivePickup)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnApplyPlayerLoadout)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnTogglePlayerLeftHand)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnToggleJournal)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnTogglePowerWheel)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnToggleAchievementEval)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnGetPlayerStat)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnEvalAchievement)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnGiveUpgrade)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnRemoveKey)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnAddKey)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnMinPowers)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnMaxPowers)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnRemoveAttributeModifier)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnAddAttributeModifier)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnRemovePower)
+	MAP_NATIVE(ADishonoredPlayerPawn, execOnAddPower)
+	MAP_NATIVE(ADishonoredPlayerPawn, execTakeDamage_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execPlayDying_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execFaceRotation)
+	MAP_NATIVE(ADishonoredPlayerPawn, execIsInvisible)
+	MAP_NATIVE(ADishonoredPlayerPawn, execCheatFly_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execCheatGhost_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execCheatWalk_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execDisplayDebug_Cheats)
+	MAP_NATIVE(ADishonoredPlayerPawn, execDoJump)
+	MAP_NATIVE(ADishonoredPlayerPawn, execEndCrouch)
+	MAP_NATIVE(ADishonoredPlayerPawn, execStartCrouch)
+	MAP_NATIVE(ADishonoredPlayerPawn, execLanded_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execTakeFallingDamage_Native)
+	MAP_NATIVE(ADishonoredPlayerPawn, execDisplayDebug_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredSpawnerNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredSpawner, execOnStartSpawn)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisDebugNPCControllerNatives[] = 
+{ 
+	MAP_NATIVE(ADisDebugNPCController, execDis_StartPower)
+	MAP_NATIVE(ADisDebugNPCController, execDis_StartFire)
+	MAP_NATIVE(ADisDebugNPCController, execHandleWalking)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisFleePointActorNatives[] = 
+{ 
+	MAP_NATIVE(ADisFleePointActor, execOnToggle)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisNPCDistractorNatives[] = 
+{ 
+	MAP_NATIVE(ADisNPCDistractor, execOnToggle)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisPossessionProxyPawnNatives[] = 
+{ 
+	MAP_NATIVE(ADisPossessionProxyPawn, execPlayDying_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisProjectileLauncherNatives[] = 
+{ 
+	MAP_NATIVE(ADisProjectileLauncher, execOnToggle_Native)
+	MAP_NATIVE(ADisProjectileLauncher, execBaseChange)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisProtectionTuneSourceNatives[] = 
+{ 
+	MAP_NATIVE(ADisProtectionTuneSource, execOnToggle)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisTallboyNPCPawnNatives[] = 
+{ 
+	MAP_NATIVE(ADisTallboyNPCPawn, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisTriggerAbstractItemNatives[] = 
+{ 
+	MAP_NATIVE(ADisTriggerAbstractItem, execOnToggle_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisTripwireNatives[] = 
+{ 
+	MAP_NATIVE(ADisTripwire, execTakeDamage)
+	MAP_NATIVE(ADisTripwire, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisWatchTowerNatives[] = 
+{ 
+	MAP_NATIVE(ADisWatchTower, execTakeDamage)
+	MAP_NATIVE(ADisWatchTower, execTakeDamage_Native)
+	MAP_NATIVE(ADisWatchTower, execOnWatchTowerShootAtTarget)
+	MAP_NATIVE(ADisWatchTower, execOnSetDisposition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredAutoTestManagerNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredAutoTestManager, execDoSentinel_PerfAtSpecificLocation)
+	MAP_NATIVE(ADishonoredAutoTestManager, execDoSentinel_MemoryAtSpecificLocation)
+	MAP_NATIVE(ADishonoredAutoTestManager, execGetTravelLocations)
+	MAP_NATIVE(ADishonoredAutoTestManager, execDoSentinelActionBeforeExit_Native)
+	MAP_NATIVE(ADishonoredAutoTestManager, execDoSentinelActionPerLoadedLevel_Native)
+	MAP_NATIVE(ADishonoredAutoTestManager, execDoSentinelActionPerLoadedMap)
+	MAP_NATIVE(ADishonoredAutoTestManager, execEndSentinelRun)
+	MAP_NATIVE(ADishonoredAutoTestManager, execBeginSentinelRun)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredEmitterPoolNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredEmitterPool, execSpawnEmitterMeshAttachment)
+	MAP_NATIVE(ADishonoredEmitterPool, execSpawnEmitter)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredNPCControllerNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredNPCController, execIsDead)
+	MAP_NATIVE(ADishonoredNPCController, execDisplayDebug_Native)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIRingAlarm)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIStartDistraction)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIGetBrainFlags)
+	MAP_NATIVE(ADishonoredNPCController, execOnAISetBrainFlags)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIPsychicAttention)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIClearAttention)
+	MAP_NATIVE(ADishonoredNPCController, execOnAISetSuspicionLevel)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIProtectNeutralsOverride)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIShoot)
+	MAP_NATIVE(ADishonoredNPCController, execOnAISetSenses)
+	MAP_NATIVE(ADishonoredNPCController, execOnAISetPatrol)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIGuard)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIGoToActor)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIDoSearch)
+	MAP_NATIVE(ADishonoredNPCController, execOnAIAmbush)
+	MAP_NATIVE(ADishonoredNPCController, execGetMoveTargetLocation)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredNoteNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredNote, execNativeNotePostRender)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredRouteNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredRoute, execResolveRouteIndex)
+	MAP_NATIVE(ADishonoredRoute, execOnToggle)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorEscapeExplosionNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorEscapeExplosion, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorEscapeExplosion, execThreatTerminatedCallback_Flee)
+	MAP_NATIVE(UDisBehaviorEscapeExplosion, execRequestStateExitCallback_Flee)
+	MAP_NATIVE(UDisBehaviorEscapeExplosion, execRefreshCallback_Flee)
+	MAP_NATIVE(UDisBehaviorEscapeExplosion, execOnEnterCallback_Flee)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorEscapePlagueNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorEscapePlague, execRequestStateExitCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorEscapePlague, execRefreshCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorEscapePlague, execOnResetCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorEscapePlague, execOnEnterCallback_TakePosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorFollowNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorFollow, execNoMoreTargetCallback_Follow)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorGoHomeNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorGoHome, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorGoHome, execOnEnterCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorGoHome, execRefreshCallback_Menace)
+	MAP_NATIVE(UDisBehaviorGoHome, execRequestStateExitCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorGoHome, execRefreshCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorGoHome, execOnEnterCallback_TakePosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorGuardNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorGuard, execOnExitCallback_Stand)
+	MAP_NATIVE(UDisBehaviorGuard, execRefreshCallback_Stand)
+	MAP_NATIVE(UDisBehaviorGuard, execOnEnterCallback_Stand)
+	MAP_NATIVE(UDisBehaviorGuard, execRequestStateExitCallback_TakePosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorInteractNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorInteract, execOnExitCallback_Stand)
+	MAP_NATIVE(UDisBehaviorInteract, execTickCallback_Stand)
+	MAP_NATIVE(UDisBehaviorInteract, execOnExitCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorInteract, execRequestStateExitCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorInteract, execOnEnterCallback_TakePosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorMagicResponseNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorMagicResponse, execRequestStateExitCallback_GenericAction)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorNoticeNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorNotice, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorNotice, execOnExitCallback_Init)
+	MAP_NATIVE(UDisBehaviorNotice, execOnEnterCallback_Init)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorPanicNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorPanic, execRefreshCallback_Cower)
+	MAP_NATIVE(UDisBehaviorPanic, execRequestStateExitCallback_Cower)
+	MAP_NATIVE(UDisBehaviorPanic, execRequestStateExitCallback_Flee)
+	MAP_NATIVE(UDisBehaviorPanic, execRefreshCallback_Flee)
+	MAP_NATIVE(UDisBehaviorPanic, execOnEnterCallback_Flee)
+	MAP_NATIVE(UDisBehaviorPanic, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorPanic, execRefreshCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorPanic, execOnEnterCallback_GenericAction)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorPatrolNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorPatrol, execTickCallback_Stand)
+	MAP_NATIVE(UDisBehaviorPatrol, execOnEnterCallback_Stand)
+	MAP_NATIVE(UDisBehaviorPatrol, execRequestStateExitCallback_TakeActorPosition)
+	MAP_NATIVE(UDisBehaviorPatrol, execTickCallback_TakeActorPosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorRatStompNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorRatStomp, execRequestStateExitCallback_TakeActorPosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorReactNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorReact, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorReact, execOnEnterCallback_GenericAction)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorReturnTravelNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorReturnTravel, execRequestStateExitCallback_TakePosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisBehaviorWeepNatives[] = 
+{ 
+	MAP_NATIVE(UDisBehaviorWeep, execRequestStateExitCallback_DoWeaponManoeuver)
+	MAP_NATIVE(UDisBehaviorWeep, execRequestStateExitCallback_Stand)
+	MAP_NATIVE(UDisBehaviorWeep, execTickCallback_Stand)
+	MAP_NATIVE(UDisBehaviorWeep, execOnEnterCallback_Stand)
+	MAP_NATIVE(UDisBehaviorWeep, execRequestStateExitCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorWeep, execOnEnterCallback_GenericAction)
+	MAP_NATIVE(UDisBehaviorWeep, execOnExitCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorWeep, execOnEnterCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorWeep, execRefreshCallback_TakePosition)
+	MAP_NATIVE(UDisBehaviorWeep, execTickCallback_TakePosition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredCheatManagerNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredCheatManager, execDLC05StartChallenge)
+	MAP_NATIVE(UDishonoredCheatManager, execDLC05UnlockExpertMode)
+	MAP_NATIVE(UDishonoredCheatManager, execDLC05ToggleTimer)
+	MAP_NATIVE(UDishonoredCheatManager, execIsAttentionTypeAllowed)
+	MAP_NATIVE(UDishonoredCheatManager, execAttentionClearExclusiveType)
+	MAP_NATIVE(UDishonoredCheatManager, execAttentionSetExclusiveType)
+	MAP_NATIVE(UDishonoredCheatManager, execAttentionAddExclusiveType)
+	MAP_NATIVE(UDishonoredCheatManager, execAttentionClearIgnoreType)
+	MAP_NATIVE(UDishonoredCheatManager, execAttentionSetIgnoreType)
+	MAP_NATIVE(UDishonoredCheatManager, execAttentionAddIgnoreType)
+	MAP_NATIVE(UDishonoredCheatManager, execGiveAllUsableRequiredItems)
+	MAP_NATIVE(UDishonoredCheatManager, execBlinkShowRangeFull)
+	MAP_NATIVE(UDishonoredCheatManager, execBlinkShowRange)
+	MAP_NATIVE(UDishonoredCheatManager, execDisSlomoCommand)
+	MAP_NATIVE(UDishonoredCheatManager, execDisSlomoFull)
+	MAP_NATIVE(UDishonoredCheatManager, execDisSlomo)
+	MAP_NATIVE(UDishonoredCheatManager, execForceCorpseDropTypeOff)
+	MAP_NATIVE(UDishonoredCheatManager, execForceCorpseDropType)
+	MAP_NATIVE(UDishonoredCheatManager, execSetDebugMantleStepSize)
+	MAP_NATIVE(UDishonoredCheatManager, execSetDebugMantleCheckTime)
+	MAP_NATIVE(UDishonoredCheatManager, execNormalStepMantleEdgeFinder)
+	MAP_NATIVE(UDishonoredCheatManager, execSingleStepMantleEdgeFinder)
+	MAP_NATIVE(UDishonoredCheatManager, execSetVisSettingsLowVis)
+	MAP_NATIVE(UDishonoredCheatManager, execSetVisSettingsHighVis)
+	MAP_NATIVE(UDishonoredCheatManager, execStopVisSettingsMode)
+	MAP_NATIVE(UDishonoredCheatManager, execStartVisSettingsMode)
+	MAP_NATIVE(UDishonoredCheatManager, execGiveMoney)
+	MAP_NATIVE(UDishonoredCheatManager, execGiveBoneCharm)
+	MAP_NATIVE(UDishonoredCheatManager, execMinUpgrades)
+	MAP_NATIVE(UDishonoredCheatManager, execMaxUpgrades)
+	MAP_NATIVE(UDishonoredCheatManager, execRemoveUpgrade)
+	MAP_NATIVE(UDishonoredCheatManager, execAddUpgrade)
+	MAP_NATIVE(UDishonoredCheatManager, execReportDanglingPointers)
+	MAP_NATIVE(UDishonoredCheatManager, execGetDifficulty)
+	MAP_NATIVE(UDishonoredCheatManager, execSetDifficulty)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugDarkness)
+	MAP_NATIVE(UDishonoredCheatManager, execAddDarkness)
+	MAP_NATIVE(UDishonoredCheatManager, execToggleUsableHighlight)
+	MAP_NATIVE(UDishonoredCheatManager, execToggleActorLightEnvironment)
+	MAP_NATIVE(UDishonoredCheatManager, execLogDuplicateAnimSequences)
+	MAP_NATIVE(UDishonoredCheatManager, execLogAnimSequences)
+	MAP_NATIVE(UDishonoredCheatManager, execToggleRatProbingForGround)
+	MAP_NATIVE(UDishonoredCheatManager, execSpawnRandomRatSwarm)
+	MAP_NATIVE(UDishonoredCheatManager, execKillAllRats)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugRats)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugRat)
+	MAP_NATIVE(UDishonoredCheatManager, execListActorTickTime)
+	MAP_NATIVE(UDishonoredCheatManager, execListTickableActors)
+	MAP_NATIVE(UDishonoredCheatManager, execListComponents)
+	MAP_NATIVE(UDishonoredCheatManager, execTestNailing)
+	MAP_NATIVE(UDishonoredCheatManager, execBendTimeDisplay)
+	MAP_NATIVE(UDishonoredCheatManager, execBendTimeReport)
+	MAP_NATIVE(UDishonoredCheatManager, execMinPowers)
+	MAP_NATIVE(UDishonoredCheatManager, execMaxPowers)
+	MAP_NATIVE(UDishonoredCheatManager, execRemovePower)
+	MAP_NATIVE(UDishonoredCheatManager, execAddAttribute)
+	MAP_NATIVE(UDishonoredCheatManager, execAddPower)
+	MAP_NATIVE(UDishonoredCheatManager, execRemoveMod)
+	MAP_NATIVE(UDishonoredCheatManager, execAddMod)
+	MAP_NATIVE(UDishonoredCheatManager, execSingleStep_Native)
+	MAP_NATIVE(UDishonoredCheatManager, execDialogSkipGlobalRules)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugDialog)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugToggleVerbose)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugMenuRight)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugMenuLeft)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugMenuDown)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugMenuUp)
+	MAP_NATIVE(UDishonoredCheatManager, execDebugMenuEnter)
+	MAP_NATIVE(UDishonoredCheatManager, execEndLiveSession)
+	MAP_NATIVE(UDishonoredCheatManager, execCreateLiveSession)
+	MAP_NATIVE(UDishonoredCheatManager, execWriteScoreToLeaderboard_Name)
+	MAP_NATIVE(UDishonoredCheatManager, execWriteScoreToLeaderboard_ID)
+	MAP_NATIVE(UDishonoredCheatManager, execGetLeaderboardsInfo_Name)
+	MAP_NATIVE(UDishonoredCheatManager, execGetLeaderboardsInfo_ID)
+	MAP_NATIVE(UDishonoredCheatManager, execResetAllSteamAchievements)
+	MAP_NATIVE(UDishonoredCheatManager, execDeleteAllSteamSaveGames)
+	MAP_NATIVE(UDishonoredCheatManager, execDLC05AddScore)
+	MAP_NATIVE(UDishonoredCheatManager, execDLC05ShowChallenge)
+	MAP_NATIVE(UDishonoredCheatManager, execShowStorePage)
+	MAP_NATIVE(UDishonoredCheatManager, execSlack)
+	MAP_NATIVE(UDishonoredCheatManager, execSwitchDLCLock)
+	MAP_NATIVE(UDishonoredCheatManager, execGoreEnable)
+	MAP_NATIVE(UDishonoredCheatManager, execGiveRunes)
+	MAP_NATIVE(UDishonoredCheatManager, execShowPowerMenu)
+	MAP_NATIVE(UDishonoredCheatManager, execDoorPoltergeistMode)
+	MAP_NATIVE(UDishonoredCheatManager, execDormantDebugEnable)
+	MAP_NATIVE(UDishonoredCheatManager, execDormantDebugToggle)
+	MAP_NATIVE(UDishonoredCheatManager, execDestroyActor)
+	MAP_NATIVE(UDishonoredCheatManager, execDisNoteShow)
+	MAP_NATIVE(UDishonoredCheatManager, execDisNoteToggle)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCLogSteeringFlags)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleSteeringWall)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleSteeringEnemyPush)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleSteeringCombat)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleSteeringDanger)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleSteeringAvoidable)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleLookAtBlending)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCDelayTravel)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCSpawn)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCPlayerVisibilityForLOD)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleLODSystem)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCClearForcedLOD)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCForceLODForAll)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCForceLOD)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCActionSpineBendingToggle)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCTogglePrediction)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCSetFreeze)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCFreeze)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCForceSkelMeshLOD)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCSlowDeath)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCToggleSlopeOffset)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCSlap)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCImpulse)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCKnockdown)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCBreakLinkedAction)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCSetDamage)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCEasyDismemberment)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCForceFatality)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCTestVersus)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCTestParry)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCDodgeNothing)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCDodgeEverything)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCDestroyNonVisible)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCDestroyNonSelected)
+	MAP_NATIVE(UDishonoredCheatManager, execNPCDestroy)
+	MAP_NATIVE(UDishonoredCheatManager, execGodNPC)
+	MAP_NATIVE(UDishonoredCheatManager, execNavMeshCheck)
+	MAP_NATIVE(UDishonoredCheatManager, execMatGoBackward)
+	MAP_NATIVE(UDishonoredCheatManager, execMatGoForward)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoTeleport)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoShowPathAndStraightPath)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoShowAvoidance)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoNewPhysWalking)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoNewIK)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoNewAvoidance)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoForceUnaccuracy)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoForceModifier)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoForceLookAtMode)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoForceIdleAnim)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoDontRotate)
+	MAP_NATIVE(UDishonoredCheatManager, execLocoDisableStartAnims)
+	MAP_NATIVE(UDishonoredCheatManager, execAIUseSimpleAttentionForPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIEnableAllSubStates)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDisableSubState)
+	MAP_NATIVE(UDishonoredCheatManager, execAIEnableSubState)
+	MAP_NATIVE(UDishonoredCheatManager, execAIEnableAllBehaviors)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDisableBehavior)
+	MAP_NATIVE(UDishonoredCheatManager, execAIEnableBehavior)
+	MAP_NATIVE(UDishonoredCheatManager, execAIShowThoughts)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetNumbToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAINumbToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetDeafToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDeafToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetBlindToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAIBlindToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetDumbToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDumbToAIs)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetNumbToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAINumbToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetDeafToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDeafToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetBlindToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIBlindToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetDumbToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDumbToPlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIForceAttentionLevelOff)
+	MAP_NATIVE(UDishonoredCheatManager, execAIForceAttentionLevel)
+	MAP_NATIVE(UDishonoredCheatManager, execAIClearAttention)
+	MAP_NATIVE(UDishonoredCheatManager, execAIForcePanicNow)
+	MAP_NATIVE(UDishonoredCheatManager, execAIForcePanic)
+	MAP_NATIVE(UDishonoredCheatManager, execAIRegisterAllHideouts)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDebugHideout)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetLocoDebug)
+	MAP_NATIVE(UDishonoredCheatManager, execAIGoToReset)
+	MAP_NATIVE(UDishonoredCheatManager, execAIGoToCrosshair)
+	MAP_NATIVE(UDishonoredCheatManager, execAIPauseOnPathFailure)
+	MAP_NATIVE(UDishonoredCheatManager, execAIVerbosePathDebug)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetBeepWhenSeePlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIBeepWhenSeePlayer)
+	MAP_NATIVE(UDishonoredCheatManager, execAIAlwaysRingAlarm)
+	MAP_NATIVE(UDishonoredCheatManager, execAINeverRingAlarm)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDontRotate)
+	MAP_NATIVE(UDishonoredCheatManager, execAIForceTransitSpeed)
+	MAP_NATIVE(UDishonoredCheatManager, execAIToggleMagic)
+	MAP_NATIVE(UDishonoredCheatManager, execAITestGuns)
+	MAP_NATIVE(UDishonoredCheatManager, execAIEnable)
+	MAP_NATIVE(UDishonoredCheatManager, execAIToggle)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDontAttack)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetSuspicion)
+	MAP_NATIVE(UDishonoredCheatManager, execAIForget)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDumb)
+	MAP_NATIVE(UDishonoredCheatManager, execAINumb)
+	MAP_NATIVE(UDishonoredCheatManager, execAIBlind)
+	MAP_NATIVE(UDishonoredCheatManager, execAIDeaf)
+	MAP_NATIVE(UDishonoredCheatManager, execAIGibAll)
+	MAP_NATIVE(UDishonoredCheatManager, execAIGib)
+	MAP_NATIVE(UDishonoredCheatManager, execAIClearDebug)
+	MAP_NATIVE(UDishonoredCheatManager, execAICycleDebug)
+	MAP_NATIVE(UDishonoredCheatManager, execAISetDebug)
+	MAP_NATIVE(UDishonoredCheatManager, execDisplayDebug_Native)
+	MAP_NATIVE(UDishonoredCheatManager, execInitCheatManager_Native)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerGhostChestView)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerTestCamRumble)
+	MAP_NATIVE(UDishonoredCheatManager, execEnableIronSight)
+	MAP_NATIVE(UDishonoredCheatManager, execDoLineCheckStressTest)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceDramaticFatalities)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceKillCam)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerToggleHomingArrow)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerToggleAimAssist)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerShowNavMeshStatus)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerFillAdrenaline)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerToggleAdrenalineCooldown)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerInfiniteAdrenaline)
+	MAP_NATIVE(UDishonoredCheatManager, execAbstractInventoryList)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerInfiniteAmmo)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDisableKnockdown)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerEnableKnockdown)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDisableStrongHitReaction)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerEnableStrongHitReaction)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDisableTakeDamage)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerEnableTakeDamage)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageProjectile_Stealth)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageProjectile)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageKnockdown)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageImpact)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageFastHit)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageElectricity)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageBullet)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamageBash)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDamage)
+	MAP_NATIVE(UDishonoredCheatManager, execHealthAdd)
+	MAP_NATIVE(UDishonoredCheatManager, execBuddha)
+	MAP_NATIVE(UDishonoredCheatManager, execManaToggle)
+	MAP_NATIVE(UDishonoredCheatManager, execManaEnable)
+	MAP_NATIVE(UDishonoredCheatManager, execManaAdd)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceDeathDir)
+	MAP_NATIVE(UDishonoredCheatManager, execClearObjectives)
+	MAP_NATIVE(UDishonoredCheatManager, execRemoveObjective)
+	MAP_NATIVE(UDishonoredCheatManager, execAddObjective)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerTestAnim)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDisableMeleeAssist)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceLongFinishers)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceFastFinishers)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDisableAssassinate)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDisableFatality)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerSetFixedFatality)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceReadyStance)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerSetDamage)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerForceVisible)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDodgeNothing)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerDodgeEverything)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerTestChain)
+	MAP_NATIVE(UDishonoredCheatManager, execidkfa)
+	MAP_NATIVE(UDishonoredCheatManager, execMaxItems)
+	MAP_NATIVE(UDishonoredCheatManager, execGivePlayerItem)
+	MAP_NATIVE(UDishonoredCheatManager, execTogglePlayerBodyMode_Native)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerArmsEnable)
+	MAP_NATIVE(UDishonoredCheatManager, execPlayerArmsToggle)
+	MAP_NATIVE(UDishonoredCheatManager, execSetCameraBob_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisNavMeshGoal_BestFleePointNatives[] = 
+{ 
+	MAP_NATIVE(UDisNavMeshGoal_BestFleePoint, execRecycleInternal)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisNavMeshGoal_ShootingPositionNatives[] = 
+{ 
+	MAP_NATIVE(UDisNavMeshGoal_ShootingPosition, execRecycle)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisParticleSystemComponentNatives[] = 
+{ 
+	MAP_NATIVE(UDisParticleSystemComponent, execInitializeForPool)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisTweaks_FactionNatives[] = 
+{ 
+	MAP_NATIVE(UDisTweaks_Faction, execOnSetDisposition)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredDebugMenuNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredDebugMenu, execToggleDebugMenu)
+	MAP_NATIVE(UDishonoredDebugMenu, execLoadMenu)
+	MAP_NATIVE(UDishonoredDebugMenu, execHideMenu)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredEngineNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredEngine, execPublishRichPresence)
+	MAP_NATIVE(UDishonoredEngine, execUpdateRichPresenceChaos)
+	MAP_NATIVE(UDishonoredEngine, execUpdateRichPresenceChapter)
+	MAP_NATIVE(UDishonoredEngine, execOpenContentUnavailableMenu)
+	MAP_NATIVE(UDishonoredEngine, execOpenControllerConnectionMenu)
+	MAP_NATIVE(UDishonoredEngine, execOnControllerDisconnected)
+	MAP_NATIVE(UDishonoredEngine, execOnControllerChanged)
+	MAP_NATIVE(UDishonoredEngine, execOpenPauseMenu)
+	MAP_NATIVE(UDishonoredEngine, execPlayLoadMapMovie)
+	MAP_NATIVE(UDishonoredEngine, execPopIgnoreAutosave)
+	MAP_NATIVE(UDishonoredEngine, execPushIgnoreAutosave)
+	MAP_NATIVE(UDishonoredEngine, execPopDisableSave)
+	MAP_NATIVE(UDishonoredEngine, execPushDisableSave)
+	MAP_NATIVE(UDishonoredEngine, execDis_Load)
+	MAP_NATIVE(UDishonoredEngine, execDis_Save)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredPlayerInputNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredPlayerInput, execGetFOVScale)
+	MAP_NATIVE(UDishonoredPlayerInput, execDis_PlayerChoice_RequestSkip_Released)
+	MAP_NATIVE(UDishonoredPlayerInput, execDis_PlayerChoice_RequestSkip)
+	MAP_NATIVE(UDishonoredPlayerInput, execDis_Jump_ButtonDown)
+	MAP_NATIVE(UDishonoredPlayerInput, execDis_SneakOrSlide)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredViewportClientNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredViewportClient, execPostRender_Native)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_SIZE_NODIE(UDisContactTypeInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisHitReboundInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisNoiseMakerInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaksInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredKActor,DishonoredKActor,m_ContactPhysicsInfo)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredKActor,DishonoredKActor,m_AudioCellCache)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredKActor)
+VERIFY_CLASS_SIZE_NODIE(UDisInteractableInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisSoulRenderInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisSkeletalBreakable,DisSkeletalBreakable,m_pBreakableTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisSkeletalBreakable,DisSkeletalBreakable,m_WantedStep)
+VERIFY_CLASS_SIZE_NODIE(ADisSkeletalBreakable)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredUsableObject,DishonoredUsableObject,m_pUsableObjTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredUsableObject,DishonoredUsableObject,m_BoxBoundsForPVS)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredUsableObject)
+VERIFY_CLASS_SIZE_NODIE(UDisSpawnRequesterInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisAmbushPoint,DisAmbushPoint,m_fAmbushAreaDirection)
+VERIFY_CLASS_OFFSET_NODIE(ADisAmbushPoint,DisAmbushPoint,m_fPreEditYaw)
+VERIFY_CLASS_SIZE_NODIE(ADisAmbushPoint)
+VERIFY_CLASS_SIZE_NODIE(UDisConvSpeakerInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisAudioLogPlayer,DisAudioLogPlayer,m_pAudioLog)
+VERIFY_CLASS_OFFSET_NODIE(ADisAudioLogPlayer,DisAudioLogPlayer,m_fCurrentRadius)
+VERIFY_CLASS_SIZE_NODIE(ADisAudioLogPlayer)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageCauserInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredKAsset,DishonoredKAsset,m_ContactPhysicsInfo)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredKAsset,DishonoredKAsset,m_pTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredKAsset)
+VERIFY_CLASS_OFFSET_NODIE(ADisClimbable,DisClimbable,m_pClimbableTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisClimbable,DisClimbable,m_HighlightFlags)
+VERIFY_CLASS_SIZE_NODIE(ADisClimbable)
+VERIFY_CLASS_OFFSET_NODIE(ADisCrusher,DisCrusher,m_OldLocation)
+VERIFY_CLASS_OFFSET_NODIE(ADisCrusher,DisCrusher,m_OldRotation)
+VERIFY_CLASS_SIZE_NODIE(ADisCrusher)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredGameInfo,DishonoredGameInfo,m_pPpManager)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredGameInfo,DishonoredGameInfo,m_MissionChaosThreshold)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredGameInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisAttentionTargetInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisLookAtInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisNoiseListenerInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisRatTargetInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisRelationshipInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisStoryGroupInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisVulnerabilityInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPawn,DishonoredPawn,m_CurrentWaterVolumes)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPawn,DishonoredPawn,m_rBackupedRotation)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredPawn)
+VERIFY_CLASS_OFFSET_NODIE(ADisPossessablePawn,DisPossessablePawn,m_pPossessee)
+VERIFY_CLASS_OFFSET_NODIE(ADisPossessablePawn,DisPossessablePawn,m_fPossessingPawnRadius)
+VERIFY_CLASS_SIZE_NODIE(ADisPossessablePawn)
+VERIFY_CLASS_SIZE_NODIE(UDisCorpseInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisNPCAttachmentOwnerInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisPossessableInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisSpringRazorTargetInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisStealthVolumeUserInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNPCPawn,DishonoredNPCPawn,m_NPCID)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNPCPawn,DishonoredNPCPawn,m_fPreviewDialogBlurbSeekInSound)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredNPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(ADisExplosion,DisExplosion,m_pExplosionTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisExplosion,DisExplosion,m_pAttributes)
+VERIFY_CLASS_SIZE_NODIE(ADisExplosion)
+VERIFY_CLASS_SIZE_NODIE(ADisPlayerControllerBase)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPlayerController,DishonoredPlayerController,m_ViewTracking)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPlayerController,DishonoredPlayerController,m_MainMenuCommand)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredPlayerController)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimStateFiringInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimStateOwnerInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisConvOneShotOwnerInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPlayerPawn,DishonoredPlayerPawn,m_pMantleEdgeFinder)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredPlayerPawn,DishonoredPlayerPawn,m_fOffscreenMeleeDamageReduction)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredPlayerPawn)
+VERIFY_CLASS_SIZE_NODIE(UDisDrawVisionComponentOwnerInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisSquadInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredSpawner,DishonoredSpawner,m_pFactory)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredSpawner,DishonoredSpawner,m_fPostVisibilityWaitToSpawn)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredSpawner)
+VERIFY_CLASS_SIZE_NODIE(UDisFireProjectileInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisTrigger,DisTrigger,m_fWindBlastForceToTrigger)
+VERIFY_CLASS_OFFSET_NODIE(ADisTrigger,DisTrigger,m_pTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisTrigger)
+VERIFY_CLASS_SIZE_NODIE(ADisDebugNPCController)
+VERIFY_CLASS_SIZE_NODIE(UDisWhaleOilConsumerInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisDefenceTower,DisDefenceTower,m_fChargePercentage)
+VERIFY_CLASS_OFFSET_NODIE(ADisDefenceTower,DisDefenceTower,m_pAttachedReceptacle)
+VERIFY_CLASS_SIZE_NODIE(ADisDefenceTower)
+VERIFY_CLASS_OFFSET_NODIE(ADisFleePointActor,DisFleePointActor,m_pFleeComponent)
+VERIFY_CLASS_SIZE_NODIE(ADisFleePointActor)
+VERIFY_CLASS_OFFSET_NODIE(ADisGuardWatchPoint,DisGuardWatchPoint,m_fMinWatchTime)
+VERIFY_CLASS_OFFSET_NODIE(ADisGuardWatchPoint,DisGuardWatchPoint,m_fMaxWatchTime)
+VERIFY_CLASS_SIZE_NODIE(ADisGuardWatchPoint)
+VERIFY_CLASS_OFFSET_NODIE(ADisHideoutAccessPoint,DisHideoutAccessPoint,m_fBackOutDistance)
+VERIFY_CLASS_OFFSET_NODIE(ADisHideoutAccessPoint,DisHideoutAccessPoint,m_pEncroachmentComponent)
+VERIFY_CLASS_SIZE_NODIE(ADisHideoutAccessPoint)
+VERIFY_CLASS_OFFSET_NODIE(ADisHideoutVolume,DisHideoutVolume,m_pHideoutComponent)
+VERIFY_CLASS_OFFSET_NODIE(ADisHideoutVolume,DisHideoutVolume,m_FallBackHeightLimit)
+VERIFY_CLASS_SIZE_NODIE(ADisHideoutVolume)
+VERIFY_CLASS_SIZE_NODIE(ADisInterpActor)
+VERIFY_CLASS_OFFSET_NODIE(ADisNPCDistractor,DisNPCDistractor,m_pDistraction)
+VERIFY_CLASS_SIZE_NODIE(ADisNPCDistractor)
+VERIFY_CLASS_OFFSET_NODIE(ADisPlayerAudioLogDummyActor,DisPlayerAudioLogDummyActor,m_pConvComponent)
+VERIFY_CLASS_OFFSET_NODIE(ADisPlayerAudioLogDummyActor,DisPlayerAudioLogDummyActor,m_ppFlavorSounds)
+VERIFY_CLASS_SIZE_NODIE(ADisPlayerAudioLogDummyActor)
+VERIFY_CLASS_SIZE_NODIE(ADisPossessionProxyPawn)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectileLauncher,DisProjectileLauncher,m_pProjectileLauncherTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisProjectileLauncher,DisProjectileLauncher,m_HighlightFlags)
+VERIFY_CLASS_SIZE_NODIE(ADisProjectileLauncher)
+VERIFY_CLASS_OFFSET_NODIE(ADisProtectionTuneSource,DisProtectionTuneSource,m_PreviewComponent_Disorient)
+VERIFY_CLASS_OFFSET_NODIE(ADisProtectionTuneSource,DisProtectionTuneSource,m_ComponentContainer)
+VERIFY_CLASS_SIZE_NODIE(ADisProtectionTuneSource)
+VERIFY_CLASS_OFFSET_NODIE(ADisPylon,DisPylon,m_fTallBoyMaxPolyHeight)
+VERIFY_CLASS_OFFSET_NODIE(ADisPylon,DisPylon,m_pImportedPathEngineMesh)
+VERIFY_CLASS_SIZE_NODIE(ADisPylon)
+VERIFY_CLASS_OFFSET_NODIE(ADisRiverKrustBodyPart,DisRiverKrustBodyPart,m_fDrawScale)
+VERIFY_CLASS_OFFSET_NODIE(ADisRiverKrustBodyPart,DisRiverKrustBodyPart,m_pRiverKrustBodyPartTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisRiverKrustBodyPart)
+VERIFY_CLASS_OFFSET_NODIE(ADisSoundCaptureBox,DisSoundCaptureBox,m_pSoundRedirectedActor)
+VERIFY_CLASS_SIZE_NODIE(ADisSoundCaptureBox)
+VERIFY_CLASS_OFFSET_NODIE(ADisSoundSource,DisSoundSource,m_pTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisSoundSource,DisSoundSource,m_pNoiseMaker)
+VERIFY_CLASS_SIZE_NODIE(ADisSoundSource)
+VERIFY_CLASS_OFFSET_NODIE(ADisSpotLightMovable,DisSpotLightMovable,m_pRatLightComponent)
+VERIFY_CLASS_SIZE_NODIE(ADisSpotLightMovable)
+VERIFY_CLASS_SIZE_NODIE(UDisMantleableInterface)
+VERIFY_CLASS_SIZE_NODIE(ADisStaticCollisionActor)
+VERIFY_CLASS_OFFSET_NODIE(ADisTallboyNPCPawn,DisTallboyNPCPawn,m_pStiltsMesh)
+VERIFY_CLASS_OFFSET_NODIE(ADisTallboyNPCPawn,DisTallboyNPCPawn,m_LastDamageMomentum)
+VERIFY_CLASS_SIZE_NODIE(ADisTallboyNPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(ADisTravelSpawner,DisTravelSpawner,m_PlayerTravelLocationTags)
+VERIFY_CLASS_SIZE_NODIE(ADisTravelSpawner)
+VERIFY_CLASS_OFFSET_NODIE(ADisTriggerAbstractItem,DisTriggerAbstractItem,m_pRequiredItem)
+VERIFY_CLASS_OFFSET_NODIE(ADisTriggerAbstractItem,DisTriggerAbstractItem,m_pActorToHighlight)
+VERIFY_CLASS_SIZE_NODIE(ADisTriggerAbstractItem)
+VERIFY_CLASS_OFFSET_NODIE(ADisTripwire,DisTripwire,m_pTripwireTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisTripwire,DisTripwire,m_HighlightFlags)
+VERIFY_CLASS_SIZE_NODIE(ADisTripwire)
+VERIFY_CLASS_OFFSET_NODIE(ADisUpgrade,DisUpgrade,m_pTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisUpgrade,DisUpgrade,m_HighlightFlags)
+VERIFY_CLASS_SIZE_NODIE(ADisUpgrade)
+VERIFY_CLASS_SIZE_NODIE(UDisBlinderInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisUsableConnectionInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisWatchTower,DisWatchTower,m_eCurrentState)
+VERIFY_CLASS_OFFSET_NODIE(ADisWatchTower,DisWatchTower,m_AudioCellCache)
+VERIFY_CLASS_SIZE_NODIE(ADisWatchTower)
+VERIFY_CLASS_OFFSET_NODIE(ADisWatchTowerPlatform,DisWatchTowerPlatform,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(ADisWatchTowerPlatform,DisWatchTowerPlatform,m_pLightEnvironment)
+VERIFY_CLASS_SIZE_NODIE(ADisWatchTowerPlatform)
+VERIFY_CLASS_SIZE_NODIE(ADisWaterSource)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredAudioListenerTest,DishonoredAudioListenerTest,m_pSourceActor)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredAudioListenerTest,DishonoredAudioListenerTest,m_DebugPaths)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredAudioListenerTest)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredAudioPortal,DishonoredAudioPortal,m_pCellA)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredAudioPortal,DishonoredAudioPortal,m_pSpriteComponent)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredAudioPortal)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredAudioVolume,DishonoredAudioVolume,m_LinkedPortals)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredAudioVolume,DishonoredAudioVolume,m_pThrownObjects)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredAudioVolume)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredAutoTestManager)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredDecalActorBase,DishonoredDecalActorBase,m_pDishonoredDecal)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredDecalActorBase)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredDecalActor)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredDynamicUsableObject)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredEmitterPool)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNPCController,DishonoredNPCController,m_pAIBrain)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNPCController,DishonoredNPCController,m_pPawnBeforePossession)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredNPCController)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNavPoint,DishonoredNavPoint,m_fGuardDuration)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNavPoint,DishonoredNavPoint,m_WatchPoints)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredNavPoint)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNote,DishonoredNote,m_SummaryText)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredNote,DishonoredNote,m_pSprite)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredNote)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredRiver,DishonoredRiver,m_fCellSize)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredRiver,DishonoredRiver,m_FlowGridOrigin)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredRiver)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredRiverExtremity,DishonoredRiverExtremity,m_fHeight)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredRiverExtremity)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredRoute,DishonoredRoute,m_SupportedSquads)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredRoute,DishonoredRoute,m_NumNPCAdopters)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredRoute)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredScout)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredWaterVolume,DishonoredWaterVolume,m_pWaterVolumeInfo)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredWaterVolume,DishonoredWaterVolume,m_fFlowFactor)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredWaterVolume)
+VERIFY_CLASS_SIZE_NODIE(UDisAIRangedBehaviorInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisDesiresInterface)
+VERIFY_CLASS_SIZE_NODIE(UDisGoToFollowupInterface)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAIBehavior,DishonoredAIBehavior,m_pOwningBrain)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAIBehavior,DishonoredAIBehavior,m_pDesires)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAIBehavior)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBehaviorWithDesires)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBlackboard,DisAIBlackboard,m_Records)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBlackboard)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcess,DisAIBrainProcess,m_pBrainProcessTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcess,DisAIBrainProcess,m_pFilterStimMask)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcess)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessAttention,DisAIBrainProcessAttention,m_AttentionInfos)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessAttention,DisAIBrainProcessAttention,m_pPlayerAttentionInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcessAttention)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessHideoutWatcher,DisAIBrainProcessHideoutWatcher,m_pWatchedHideOut)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcessHideoutWatcher)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessPanic,DisAIBrainProcessPanic,m_pPanicBehavior)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessPanic,DisAIBrainProcessPanic,m_KillQueue)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcessPanic)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessRatCrusher,DisAIBrainProcessRatCrusher,m_pTrackedRatSwarm)
+VERIFY_CLASS_OFFSET_NODIE(UDisAIBrainProcessRatCrusher,DisAIBrainProcessRatCrusher,m_fRatSwarmTrackingInhibitor)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcessRatCrusher)
+VERIFY_CLASS_SIZE_NODIE(UDisAIBrainProcessWolfhound)
+VERIFY_CLASS_OFFSET_NODIE(UDisAINoiseManager,DisAINoiseManager,m_RegisteredListeners)
+VERIFY_CLASS_OFFSET_NODIE(UDisAINoiseManager,DisAINoiseManager,m_LoudnessDistanceArray)
+VERIFY_CLASS_SIZE_NODIE(UDisAINoiseManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcess,DisAISubProcess,m_pSubProcessTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcess,DisAISubProcess,m_pDesires)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcess)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessAmbientAnims,DisAISubProcessAmbientAnims,m_fAmbientAnimTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessAmbientAnims)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessAmbientBarks,DisAISubProcessAmbientBarks,m_fBarkInhibitionTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessAmbientBarks)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessCombatBarks,DisAISubProcessCombatBarks,m_BarkState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessCombatBarks,DisAISubProcessCombatBarks,m_EnemyProxy)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessCombatBarks)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessWithDesires)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessDistractions,DisAISubProcessDistractions,m_pDistractionMan)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessDistractions,DisAISubProcessDistractions,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessDistractions)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessFleetingGaze,DisAISubProcessFleetingGaze,m_TopNotedProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessFleetingGaze,DisAISubProcessFleetingGaze,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessFleetingGaze)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessGenericBark,DisAISubProcessGenericBark,m_fBarkTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessGenericBark,DisAISubProcessGenericBark,m_pBarkInstigator)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessGenericBark)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessHeadTrackBase,DisAISubProcessHeadTrackBase,m_HeadTrackProxy)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessHeadTrackBase)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessHeadTrackBark)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessHeadTrackPause,DisAISubProcessHeadTrackPause,m_OriginalPauseYaw)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessHeadTrackPause,DisAISubProcessHeadTrackPause,m_FaceToRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessHeadTrackPause)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessPersonalSpace,DisAISubProcessPersonalSpace,m_PersonalSpaceState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessPersonalSpace,DisAISubProcessPersonalSpace,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessPersonalSpace)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessStandardBodyIntention,DisAISubProcessStandardBodyIntention,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessStandardBodyIntention)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessWatchPoints,DisAISubProcessWatchPoints,m_pWatchPointContainer)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessWatchPoints,DisAISubProcessWatchPoints,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessWatchPoints)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubProcessWolfHoundCount,DisAISubProcessWolfHoundCount,m_fTimerToStim)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubProcessWolfHoundCount)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNativeState,DishonoredNativeState,m_pStateMachine)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNativeState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubState,DisAISubState,m_StateSuffix)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubState,DisAISubState,__RequestStateExitCallback__Delegate)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubState)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateWithDesires)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateCower,DisAISubStateCower,m_pCurrentFleeComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateCower,DisAISubStateCower,m_EnemyProxy)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateCower)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFlee,DisAISubStateFlee,m_pThreat)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFlee,DisAISubStateFlee,__ThreatTerminatedCallback__Delegate)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateFlee)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFollow,DisAISubStateFollow,m_FollowParameters)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateFollow,DisAISubStateFollow,__NoMoreTargetCallback__Delegate)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateFollow)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateGenericAction,DisAISubStateGenericAction,m_ActionID)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateGenericAction,DisAISubStateGenericAction,m_fGiveUpTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateGenericAction)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateInit)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNativeStateMachine,DishonoredNativeStateMachine,m_DefaultStateParam)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNativeStateMachine,DishonoredNativeStateMachine,m_fDebug_KeepFailedStateTime)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNativeStateMachine)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMachine,DisAISubStateMachine,m_CurrentAISubStateIndex)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMachine,DisAISubStateMachine,m_pPendingAISubStateTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateMachine)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMaintainDistance,DisAISubStateMaintainDistance,m_Focus)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMaintainDistance,DisAISubStateMaintainDistance,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateMaintainDistance)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMenace,DisAISubStateMenace,m_EnemyProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateMenace,DisAISubStateMenace,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateMenace)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateStand,DisAISubStateStand,m_Position)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateStand,DisAISubStateStand,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateStand)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateTakePosition,DisAISubStateTakePosition,m_lrDestination)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateTakePosition,DisAISubStateTakePosition,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateTakePosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateTakeActorPosition,DisAISubStateTakeActorPosition,m_pDestinationActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisAISubStateTakeActorPosition,DisAISubStateTakeActorPosition,m_fMinAllowedDistanceFromActor)
+VERIFY_CLASS_SIZE_NODIE(UDisAISubStateTakeActorPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisActorFactoryNPCPawn,DisActorFactoryNPCPawn,m_pNPCPawnClass)
+VERIFY_CLASS_OFFSET_NODIE(UDisActorFactoryNPCPawn,DisActorFactoryNPCPawn,m_pSpawner)
+VERIFY_CLASS_SIZE_NODIE(UDisActorFactoryNPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(UDisActorFactoryTweakObj,DisActorFactoryTweakObj,m_pTweakObject)
+VERIFY_CLASS_SIZE_NODIE(UDisActorFactoryTweakObj)
+VERIFY_CLASS_OFFSET_NODIE(UDisAkComponent,DisAkComponent,m_PropagationCache)
+VERIFY_CLASS_SIZE_NODIE(UDisAkComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisAlarmBellComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAlarmGlobalManager,DisAlarmGlobalManager,m_fAlarmCooldown)
+VERIFY_CLASS_OFFSET_NODIE(UDisAlarmGlobalManager,DisAlarmGlobalManager,m_NumActiveTriggerAlarms)
+VERIFY_CLASS_SIZE_NODIE(UDisAlarmGlobalManager)
+VERIFY_CLASS_SIZE_NODIE(UDisAmbushComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAmbushGlobalManager,DisAmbushGlobalManager,m_pAmbushPointHash)
+VERIFY_CLASS_OFFSET_NODIE(UDisAmbushGlobalManager,DisAmbushGlobalManager,m_AmbushReservations)
+VERIFY_CLASS_SIZE_NODIE(UDisAmbushGlobalManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisRenderProxyComponent,DisRenderProxyComponent,m_BoxBoundsColor)
+VERIFY_CLASS_OFFSET_NODIE(UDisRenderProxyComponent,DisRenderProxyComponent,m_CylinderBoundsColor)
+VERIFY_CLASS_SIZE_NODIE(UDisRenderProxyComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisAmbushRenderProxyComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimDefinitions,DisAnimDefinitions,m_Animations)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimDefinitions)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimStateComponent,DisAnimStateComponent,m_pAnimStateOwner)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimStateComponent,DisAnimStateComponent,m_iCurNewestSeqInHistory)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimStateComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimStatePool,DisAnimStatePool,m_AnimTreePools)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimStatePool)
+VERIFY_CLASS_SIZE_NODIE(UDisAttentionDefs)
+VERIFY_CLASS_OFFSET_NODIE(UDisAttentionInfo_Base,DisAttentionInfo_Base,m_pAttentionTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisAttentionInfo_Base,DisAttentionInfo_Base,m_ProxyInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisAttentionInfo_Base)
+VERIFY_CLASS_OFFSET_NODIE(UDisAttentionInfo_Complex,DisAttentionInfo_Complex,m_AttentionAccumulator)
+VERIFY_CLASS_OFFSET_NODIE(UDisAttentionInfo_Complex,DisAttentionInfo_Complex,m_fProxyDetachTimer)
+VERIFY_CLASS_SIZE_NODIE(UDisAttentionInfo_Complex)
+VERIFY_CLASS_OFFSET_NODIE(UDisAttentionInfo_Simple,DisAttentionInfo_Simple,m_MinAttentionLevelFlags)
+VERIFY_CLASS_OFFSET_NODIE(UDisAttentionInfo_Simple,DisAttentionInfo_Simple,m_fDebug_FinalCorpseVisibility)
+VERIFY_CLASS_SIZE_NODIE(UDisAttentionInfo_Simple)
+VERIFY_CLASS_SIZE_NODIE(UDisAttentionTargetComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisAudioListenerTestComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAudioPropagationInfo,DisAudioPropagationInfo,m_fMaxAudibleDistance)
+VERIFY_CLASS_OFFSET_NODIE(UDisAudioPropagationInfo,DisAudioPropagationInfo,m_BuildTag)
+VERIFY_CLASS_SIZE_NODIE(UDisAudioPropagationInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorAttentionBase,DisBehaviorAttentionBase,m_AttentionTargetProxy)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorAttentionBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorBattleVictory,DisBehaviorBattleVictory,m_EnemyProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorBattleVictory,DisBehaviorBattleVictory,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorBattleVictory)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorBlockingDialog,DisBehaviorBlockingDialog,m_FaceToRequest)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorBlockingDialog,DisBehaviorBlockingDialog,m_iDlgRunningInstanceID)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorBlockingDialog)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorEscapeExplosion,DisBehaviorEscapeExplosion,m_vEscapePosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorEscapeExplosion,DisBehaviorEscapeExplosion,m_FaceToRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorEscapeExplosion)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorEscapePlague,DisBehaviorEscapePlague,m_vEscapePosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorEscapePlague,DisBehaviorEscapePlague,m_pPlagueSources)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorEscapePlague)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorFollow)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGoHome,DisBehaviorGoHome,m_ExcuseAnim)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGoHome,DisBehaviorGoHome,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorGoHome)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGoTo_Base,DisBehaviorGoTo_Base,m_GoToStage)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGoTo_Base,DisBehaviorGoTo_Base,m_LocoRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorGoTo_Base)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGoTo,DisBehaviorGoTo,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorGoTo)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGuard,DisBehaviorGuard,m_NeutralProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorGuard,DisBehaviorGuard,m_LookAtRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorGuard)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorIdle,DisBehaviorIdle,m_FaceToRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorIdle)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorInhibited,DisBehaviorInhibited,m_iNumInhibitors)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorInhibited)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorInteract,DisBehaviorInteract,m_InteractInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorInteract,DisBehaviorInteract,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorInteract)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorMagicResponse,DisBehaviorMagicResponse,m_pMagicType)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorMagicResponse,DisBehaviorMagicResponse,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorMagicResponse)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorNotice,DisBehaviorNotice,m_FaceToRequest)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorNotice,DisBehaviorNotice,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorNotice)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorPanic,DisBehaviorPanic,m_PanicThreat)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorPanic,DisBehaviorPanic,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorPanic)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorPatrol,DisBehaviorPatrol,m_LookAtRequest)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorPatrol,DisBehaviorPatrol,m_pStartingActor)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorPatrol)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorRatStomp,DisBehaviorRatStomp,m_pRat)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorRatStomp,DisBehaviorRatStomp,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorRatStomp)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorReact,DisBehaviorReact,m_eAnimationToPlay)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorReact,DisBehaviorReact,m_FaceToRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorReact)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorReturnTravel,DisBehaviorReturnTravel,m_ReturnDestination)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorReturnTravel,DisBehaviorReturnTravel,m_DestinationYaw)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorReturnTravel)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorSoiree,DisBehaviorSoiree,m_SoireeGUID)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorSoiree,DisBehaviorSoiree,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorSoiree)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorStolen)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorWeep,DisBehaviorWeep,m_fBackToHomeTimer)
+VERIFY_CLASS_OFFSET_NODIE(UDisBehaviorWeep,DisBehaviorWeep,m_BodyIntentionRequest)
+VERIFY_CLASS_SIZE_NODIE(UDisBehaviorWeep)
+VERIFY_CLASS_OFFSET_NODIE(UDisBinkOverlayManager,DisBinkOverlayManager,m_ContentPackageName)
+VERIFY_CLASS_OFFSET_NODIE(UDisBinkOverlayManager,DisBinkOverlayManager,m_SaveNotificationTextInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisBinkOverlayManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisTutorialTracker,DisTutorialTracker,m_TutorialID)
+VERIFY_CLASS_SIZE_NODIE(UDisTutorialTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisBlockTracker,DisBlockTracker,m_MissedBlockOpportunities)
+VERIFY_CLASS_SIZE_NODIE(UDisBlockTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisCorpseDiscoveredTracker,DisCorpseDiscoveredTracker,m_NPCNames)
+VERIFY_CLASS_SIZE_NODIE(UDisCorpseDiscoveredTracker)
+VERIFY_CLASS_SIZE_NODIE(UDisDLC05BehaviorIdle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaksBase,DisTweaksBase,m_VersionNum)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaksBase,DisTweaksBase,m_pFallbackTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaksBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior,DisTweaks_AIBehavior,m_DesignatedSlot)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior,DisTweaks_AIBehavior,m_SubProcessTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Idle)
+VERIFY_CLASS_SIZE_NODIE(UDisDLC05Tweaks_AIBehavior_Idle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_KActor,DisTweaks_KActor,m_pContactTypeOverride)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_KActor,DisTweaks_KActor,m_fMaxDrawDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_KActor)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_StaticBreakable,DisTweaks_StaticBreakable,m_pStaticMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_StaticBreakable,DisTweaks_StaticBreakable,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_StaticBreakable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Movable,DisTweaks_Movable,m_MovableParams)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Movable,DisTweaks_Movable,m_pGrabSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Movable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhaleOilBattery,DisTweaks_WhaleOilBattery,m_NumberOfCharges)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhaleOilBattery,DisTweaks_WhaleOilBattery,m_EmptyName)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WhaleOilBattery)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCheatManager,DishonoredCheatManager,m_pTargetedRat)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredCheatManager,DishonoredCheatManager,m_PlayerAnimStateTest_Anim)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCheatManager)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredDamageType,DishonoredDamageType,m_fTimeBeforeSleep)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredDamageType,DishonoredDamageType,m_NPCCustomReactionBark)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType)
+VERIFY_CLASS_OFFSET_NODIE(UStateSharedActionBase,StateSharedActionBase,m_pPawn)
+VERIFY_CLASS_OFFSET_NODIE(UStateSharedActionBase,StateSharedActionBase,m_fTimeToGo)
+VERIFY_CLASS_SIZE_NODIE(UStateSharedActionBase)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterAction,StateNPCMasterAction,m_pNPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterAction,StateNPCMasterAction,m_fYawAdjustmentAccelerationTime)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterAction)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterPlayAnim,StateNPCMasterPlayAnim,m_AnimChainToPlay)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterPlayAnim,StateNPCMasterPlayAnim,m_iAnimStep)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterPlayAnim)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrain,DisTweaks_AIBrain,m_BehaviorTweak)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrain,DisTweaks_AIBrain,m_pSteeringTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrain)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrainProcess)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem,DisTweaks_InventoryItem,m_ItemTickMode)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem,DisTweaks_InventoryItem,m_pNPCSpecificTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_InventoryItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SpringRazor,DisTweaks_SpringRazor,m_pPlacedTweak)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SpringRazor,DisTweaks_SpringRazor,m_pPlacedDamageType)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_SpringRazor)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_KAsset,DisTweaks_KAsset,m_pContactTypeOverride)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_KAsset,DisTweaks_KAsset,m_fMaxDrawDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_KAsset)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn,DisTweaks_Pawn,m_AnimSets)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn,DisTweaks_Pawn,m_pAttributeTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn,DisTweaks_NPCPawn,m_pBrainTweak)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn,DisTweaks_NPCPawn,m_pStateNPCMasterDead_BeingCarriedTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ActivePowerBase,DisTweaks_ActivePowerBase,m_ManaCost)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ActivePowerBase,DisTweaks_ActivePowerBase,m_fGlowRampDownDuration)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ActivePowerBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Explosion,DisTweaks_Explosion,m_fAttachedDamage)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Explosion,DisTweaks_Explosion,m_fAIDangerRatio)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Explosion)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCAttachment)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem_PawnSpecific,DisTweaks_InventoryItem_PawnSpecific,m_pEquippedMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem_PawnSpecific,DisTweaks_InventoryItem_PawnSpecific,m_ContextSlots_Direct)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_InventoryItem_PawnSpecific)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn,DisTweaks_PlayerPawn,m_AudioLogDialogData)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn,DisTweaks_PlayerPawn,m_pCharmListTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Attributes)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Attributes,DisTweaks_Pawn_Attributes,m_MeleeDamageBonus)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Attributes,DisTweaks_Pawn_Attributes,m_fExplosionResilience)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_Attributes)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Attributes,DisTweaks_PlayerPawn_Attributes,m_MeleeSpeed)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Attributes,DisTweaks_PlayerPawn_Attributes,m_MusicDamageResilience)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_Attributes)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Blink,DisTweaks_Blink,m_Levels)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Blink,DisTweaks_Blink,m_fCloseCollisionOffsetStep)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Blink)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WeaponRanged,DisTweaks_WeaponRanged,m_RangedAmmoTypes)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WeaponRanged,DisTweaks_WeaponRanged,m_pAttributeTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WeaponRanged)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WeaponRanged_Attributes,DisTweaks_WeaponRanged_Attributes,m_DispersionMax)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WeaponRanged_Attributes,DisTweaks_WeaponRanged_Attributes,m_DispersionInterpolationSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WeaponRanged_Attributes)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCInstigatedMasterAction,StateNPCInstigatedMasterAction,m_pInstigator)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCInstigatedMasterAction)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerBase,DisTweaks_GFxMoviePlayerBase,m_pMovieInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerBase,DisTweaks_GFxMoviePlayerBase,m_SoundThemes)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerJournal,DisTweaks_GFxMoviePlayerJournal,m_ElixirIconNames)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerJournal,DisTweaks_GFxMoviePlayerJournal,m_pHideSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerJournal)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RiverKrust,DisTweaks_RiverKrust,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RiverKrust,DisTweaks_RiverKrust,m_fPlayerLookingAtAngleThreshold)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_RiverKrust)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PickupBase,DisTweaks_PickupBase,m_pPickupStaticMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PickupBase,DisTweaks_PickupBase,m_OwningFactions)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PickupBase)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Assassination)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_BlinkKnockdown)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_BlinkPush)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Choke)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_CrushKnockdown)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_CrushPush)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Energy)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Projectile)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Bullet)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ExplosiveBullet)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_FastHit)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_FastHit_Left)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_FastHit_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_FastHit_Up)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_FastHit_Up_Left)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_FastHit_Up_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_FishBite)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_GenericSleep)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Impact)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Adrenaline)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Adrenaline_Left)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Adrenaline_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Adrenaline_Up)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Adrenaline_Up_Left)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Adrenaline_Up_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Left)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Up)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Up_Left)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_ImpactHit_Up_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_InstantSleep)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Minigame)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Musical)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_OutOfNavMesh)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_PostPossessSleep)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_RagdollImpact)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_RiverKrustSpit)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Sleep_Deferred)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Bash)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Slide)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_SpringRazorPlaced)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_UnpossessSquash)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_WallOfLight)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_Water)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_WhiskeyFire)
+VERIFY_CLASS_SIZE_NODIE(UDisDamageType_WindBlast)
+VERIFY_CLASS_OFFSET_NODIE(UDisDefenseTutorialTracker,DisDefenseTutorialTracker,m_NoteInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisDefenseTutorialTracker)
+VERIFY_CLASS_SIZE_NODIE(UDisDesireStructs)
+VERIFY_CLASS_OFFSET_NODIE(UDisDistractionGlobalManager,DisDistractionGlobalManager,m_Distractions)
+VERIFY_CLASS_OFFSET_NODIE(UDisDistractionGlobalManager,DisDistractionGlobalManager,m_InterestedBrains)
+VERIFY_CLASS_SIZE_NODIE(UDisDistractionGlobalManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SkeletalBreakable,DisTweaks_SkeletalBreakable,m_UnbrokenMeshInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SkeletalBreakable,DisTweaks_SkeletalBreakable,m_pBreakSteps)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_SkeletalBreakable)
+VERIFY_CLASS_SIZE_NODIE(UDisSkeletalBreakStepsInterface)
+VERIFY_CLASS_OFFSET_NODIE(UDisDoorBreakSteps,DisDoorBreakSteps,m_DoorBreakSteps)
+VERIFY_CLASS_SIZE_NODIE(UDisDoorBreakSteps)
+VERIFY_CLASS_SIZE_NODIE(UDisDrawVisionComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisDropAssassinationTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisElixirTracker,DisElixirTracker,m_ElixirAcquiredTutorialID)
+VERIFY_CLASS_OFFSET_NODIE(UDisElixirTracker,DisElixirTracker,m_UseElixirTutorialID)
+VERIFY_CLASS_SIZE_NODIE(UDisElixirTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisFleeComponent,DisFleeComponent,m_pNextFleePoint)
+VERIFY_CLASS_OFFSET_NODIE(UDisFleeComponent,DisFleeComponent,m_Squads)
+VERIFY_CLASS_SIZE_NODIE(UDisFleeComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisFleeConstraint,DisFleeConstraint,m_vFleeFromLoc)
+VERIFY_CLASS_OFFSET_NODIE(UDisFleeConstraint,DisFleeConstraint,m_fForbiddenAngle)
+VERIFY_CLASS_SIZE_NODIE(UDisFleeConstraint)
+VERIFY_CLASS_OFFSET_NODIE(UDisFleePointManager,DisFleePointManager,m_pFleePointList)
+VERIFY_CLASS_SIZE_NODIE(UDisFleePointManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalAIAttentionManager,DisGlobalAIAttentionManager,m_pSimpleAttnInfoFreeList)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalAIAttentionManager,DisGlobalAIAttentionManager,m_Debug_NumFreeSimpleAttnInfos)
+VERIFY_CLASS_SIZE_NODIE(UDisGlobalAIAttentionManager)
+VERIFY_CLASS_SIZE_NODIE(UDisGlobalDLCManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisGlobalFactionManager,DisGlobalFactionManager,m_Trespassers)
+VERIFY_CLASS_SIZE_NODIE(UDisGlobalFactionManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisHeartTargetTracker,DisHeartTargetTracker,m_ShowCount)
+VERIFY_CLASS_OFFSET_NODIE(UDisHeartTargetTracker,DisHeartTargetTracker,m_HeartTargetsAlreadyTracked)
+VERIFY_CLASS_SIZE_NODIE(UDisHeartTargetTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisHideoutComponent,DisHideoutComponent,m_AccessPoints)
+VERIFY_CLASS_OFFSET_NODIE(UDisHideoutComponent,DisHideoutComponent,m_iBelieversCount)
+VERIFY_CLASS_SIZE_NODIE(UDisHideoutComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisHideoutComponent_Usable)
+VERIFY_CLASS_SIZE_NODIE(UDisHideoutComponent_Volume)
+VERIFY_CLASS_OFFSET_NODIE(UDisKeyRing,DisKeyRing,m_Keys)
+VERIFY_CLASS_OFFSET_NODIE(UDisKeyRing,DisKeyRing,m_Keys_Backup)
+VERIFY_CLASS_SIZE_NODIE(UDisKeyRing)
+VERIFY_CLASS_OFFSET_NODIE(UDisLocalPlayer,DisLocalPlayer,m_DLC05ChallengeIndex)
+VERIFY_CLASS_SIZE_NODIE(UDisLocalPlayer)
+VERIFY_CLASS_SIZE_NODIE(UDisMovableTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisNPCDistractionComponent,DisNPCDistractionComponent,m_DistractionAnimPrefix)
+VERIFY_CLASS_OFFSET_NODIE(UDisNPCDistractionComponent,DisNPCDistractionComponent,m_pLinkedAnimPawn)
+VERIFY_CLASS_SIZE_NODIE(UDisNPCDistractionComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisNPCTravelManager,DisNPCTravelManager,m_DisallowedNPCStates)
+VERIFY_CLASS_OFFSET_NODIE(UDisNPCTravelManager,DisNPCTravelManager,m_NextTripID)
+VERIFY_CLASS_SIZE_NODIE(UDisNPCTravelManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisNativeStateMachine_PlayerAction,DisNativeStateMachine_PlayerAction,m_BoundAnimStatePicker)
+VERIFY_CLASS_OFFSET_NODIE(UDisNativeStateMachine_PlayerAction,DisNativeStateMachine_PlayerAction,m_ActionUsage)
+VERIFY_CLASS_SIZE_NODIE(UDisNativeStateMachine_PlayerAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisNativeStateTransitionLogic,DisNativeStateTransitionLogic,m_Transitions)
+VERIFY_CLASS_SIZE_NODIE(UDisNativeStateTransitionLogic)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavConstraint_MinDistanceFromLocation,DisNavConstraint_MinDistanceFromLocation,m_LocationToAvoid)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavConstraint_MinDistanceFromLocation,DisNavConstraint_MinDistanceFromLocation,m_fAvoidDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisNavConstraint_MinDistanceFromLocation)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavConstraint_ShootingPosition,DisNavConstraint_ShootingPosition,m_pShootingNPC)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavConstraint_ShootingPosition,DisNavConstraint_ShootingPosition,m_fMaxPathRange)
+VERIFY_CLASS_SIZE_NODIE(UDisNavConstraint_ShootingPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_BestFleePoint,DisNavMeshGoal_BestFleePoint,m_vFromLocation)
+VERIFY_CLASS_SIZE_NODIE(UDisNavMeshGoal_BestFleePoint)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_MinDistanceFromLocation,DisNavMeshGoal_MinDistanceFromLocation,m_Location)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_MinDistanceFromLocation,DisNavMeshGoal_MinDistanceFromLocation,m_pStartPoly)
+VERIFY_CLASS_SIZE_NODIE(UDisNavMeshGoal_MinDistanceFromLocation)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_SafeFromThreat,DisNavMeshGoal_SafeFromThreat,m_pThreat)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_SafeFromThreat,DisNavMeshGoal_SafeFromThreat,m_CachedVisiblePoints)
+VERIFY_CLASS_SIZE_NODIE(UDisNavMeshGoal_SafeFromThreat)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_ShootingPosition,DisNavMeshGoal_ShootingPosition,m_TargetProxy)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_ShootingPosition,DisNavMeshGoal_ShootingPosition,m_ShootPositionCandidates)
+VERIFY_CLASS_SIZE_NODIE(UDisNavMeshGoal_ShootingPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_WithinDistanceEnvelopeFrom,DisNavMeshGoal_WithinDistanceEnvelopeFrom,m_pFrom)
+VERIFY_CLASS_OFFSET_NODIE(UDisNavMeshGoal_WithinDistanceEnvelopeFrom,DisNavMeshGoal_WithinDistanceEnvelopeFrom,m_GoalList)
+VERIFY_CLASS_SIZE_NODIE(UDisNavMeshGoal_WithinDistanceEnvelopeFrom)
+VERIFY_CLASS_OFFSET_NODIE(UDisParticleSystemComponent,DisParticleSystemComponent,m_fTimeToDisable)
+VERIFY_CLASS_SIZE_NODIE(UDisParticleSystemComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisPatrolManager,DisPatrolManager,m_pRouteList)
+VERIFY_CLASS_SIZE_NODIE(UDisPatrolManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisPerfectBlockTracker,DisPerfectBlockTracker,m_MissedPerfectBlockOpportunities)
+VERIFY_CLASS_OFFSET_NODIE(UDisPerfectBlockTracker,DisPerfectBlockTracker,m_NoteInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisPerfectBlockTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisPostProcessManager,DisPostProcessManager,m_PpBridge)
+VERIFY_CLASS_OFFSET_NODIE(UDisPostProcessManager,DisPostProcessManager,m_fElapsedFakeBlinkStateTime)
+VERIFY_CLASS_SIZE_NODIE(UDisPostProcessManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisPowerMenu,DisPowerMenu,m_Items)
+VERIFY_CLASS_OFFSET_NODIE(UDisPowerMenu,DisPowerMenu,m_Currency)
+VERIFY_CLASS_SIZE_NODIE(UDisPowerMenu)
+VERIFY_CLASS_OFFSET_NODIE(UDisPursuitTracker,DisPursuitTracker,m_Pursuers)
+VERIFY_CLASS_OFFSET_NODIE(UDisPursuitTracker,DisPursuitTracker,m_MaxPursuersCount)
+VERIFY_CLASS_SIZE_NODIE(UDisPursuitTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDisRatLightComponent,DisRatLightComponent,m_fRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisRatLightComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisRatSwarmGlobalManager,DisRatSwarmGlobalManager,m_Corpses)
+VERIFY_CLASS_OFFSET_NODIE(UDisRatSwarmGlobalManager,DisRatSwarmGlobalManager,m_RandomRatSwarmSidePool)
+VERIFY_CLASS_SIZE_NODIE(UDisRatSwarmGlobalManager)
+VERIFY_CLASS_SIZE_NODIE(UDisRiverKrustComponent)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_IsPlayerInCombat)
+VERIFY_CLASS_SIZE_NODIE(UDisSerializableObject_Base)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeveredLimbInfo,DisSeveredLimbInfo,m_SeveredLimbInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeveredLimbInfo,DisSeveredLimbInfo,m_HeadBoneBreakName)
+VERIFY_CLASS_SIZE_NODIE(UDisSeveredLimbInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkeletalBreakSteps,DisSkeletalBreakSteps,m_SkeletalBreakSteps)
+VERIFY_CLASS_SIZE_NODIE(UDisSkeletalBreakSteps)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkeletalMeshComponent,DisSkeletalMeshComponent,m_UsedMaterials)
+VERIFY_CLASS_SIZE_NODIE(UDisSkeletalMeshComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkirmishTracker,DisSkirmishTracker,m_Attackers)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkirmishTracker,DisSkirmishTracker,m_KilledCount)
+VERIFY_CLASS_SIZE_NODIE(UDisSkirmishTracker)
+VERIFY_CLASS_SIZE_NODIE(UDisSpawnerRenderProxyComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisStimManager,DisStimManager,m_pStimData)
+VERIFY_CLASS_OFFSET_NODIE(UDisStimManager,DisStimManager,m_NumAllocatedStims)
+VERIFY_CLASS_SIZE_NODIE(UDisStimManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisStoryFlagSet,DisStoryFlagSet,m_StoryFlags)
+VERIFY_CLASS_SIZE_NODIE(UDisStoryFlagSet)
+VERIFY_CLASS_SIZE_NODIE(UDisTallboyLightComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisThreatPerceptionComponent,DisThreatPerceptionComponent,m_Threats)
+VERIFY_CLASS_OFFSET_NODIE(UDisThreatPerceptionComponent,DisThreatPerceptionComponent,m_fThreatPredictionTime)
+VERIFY_CLASS_SIZE_NODIE(UDisThreatPerceptionComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTravelSpawnerComponent,DisTravelSpawnerComponent,m_PlayerTravelLocations)
+VERIFY_CLASS_SIZE_NODIE(UDisTravelSpawnerComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaksList,DisTweaksList,m_TweaksList)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaksList)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_BattleVictory,DisTweaks_AIBehavior_BattleVictory,m_BattleVictoryDuration)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_BattleVictory)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_BlockingDialog)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_EscapeExplosion,DisTweaks_AIBehavior_EscapeExplosion,m_fExplosionClearance)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_EscapeExplosion,DisTweaks_AIBehavior_EscapeExplosion,m_fSurpriseChance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_EscapeExplosion)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_EscapePlague)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Follow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_GoHome,DisTweaks_AIBehavior_GoHome,m_fBackOffRange)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_GoHome,DisTweaks_AIBehavior_GoHome,m_fTauntRange)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_GoHome)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Guard,DisTweaks_AIBehavior_Guard,m_fAttentionSpan)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Guard)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Inhibited)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Interact)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_MagicResponse)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Notice,DisTweaks_AIBehavior_Notice,m_fChanceToPlayAnim)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Notice,DisTweaks_AIBehavior_Notice,m_ReasonsThatCausePeerAnim)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Notice)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Panic,DisTweaks_AIBehavior_Panic,m_LastSurvivor)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Panic,DisTweaks_AIBehavior_Panic,m_eCaughtReaction)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Panic)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Patrol)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_PatrolSearch)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_RatStomp,DisTweaks_AIBehavior_RatStomp,m_fChanceOfRatInteract)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_RatStomp,DisTweaks_AIBehavior_RatStomp,m_RatChaseTransitSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_RatStomp)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_React)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_ReturnTravel)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Soiree,DisTweaks_AIBehavior_Soiree,m_SoireePriority)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Soiree)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Stolen,DisTweaks_AIBehavior_Stolen,m_fOccurencePercentage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Stolen)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_TakePosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_TriggerAlarm,DisTweaks_AIBehavior_TriggerAlarm,m_fAlarmChanceUponSighting_Alone)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_TriggerAlarm,DisTweaks_AIBehavior_TriggerAlarm,m_fCompanionRange)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_TriggerAlarm)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Weep,DisTweaks_AIBehavior_Weep,m_fVariationChance_Plead)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBehavior_Weep,DisTweaks_AIBehavior_Weep,m_fStandStillWeepingBark_Max)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBehavior_Weep)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrainProcess_Attention,DisTweaks_AIBrainProcess_Attention,m_pAttentionTweaks_Neutral)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrainProcess_Attention,DisTweaks_AIBrainProcess_Attention,m_fDistanceDeltaForNewTopEnemy)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrainProcess_Attention)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrainProcess_RatCrusher,DisTweaks_AIBrainProcess_RatCrusher,m_fDocileRatInteractRadius)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrainProcess_RatCrusher,DisTweaks_AIBrainProcess_RatCrusher,m_fPossessedRatInteractAngle)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrainProcess_RatCrusher)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrain_Reaction,DisTweaks_AIBrain_Reaction,m_Response_HurtByPlayerAlly)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrain_Reaction,DisTweaks_AIBrain_Reaction,m_Response_WitnessPickpocket)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrain_Reaction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrain_Steering,DisTweaks_AIBrain_Steering,m_fInfluenceFadeSpeed)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AIBrain_Steering,DisTweaks_AIBrain_Steering,m_DangerSteeringSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AIBrain_Steering)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_AmbientAnims,DisTweaks_AISubProcess_AmbientAnims,m_fMinAmbientAnimFrequency)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_AmbientAnims,DisTweaks_AISubProcess_AmbientAnims,m_eAnimToPlay)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_AmbientAnims)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_AmbientBarks,DisTweaks_AISubProcess_AmbientBarks,m_fBarkInhibitionDuration)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_AmbientBarks,DisTweaks_AISubProcess_AmbientBarks,m_fSilenceBeforeRouteSwitchBark)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_AmbientBarks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_CombatBarks,DisTweaks_AISubProcess_CombatBarks,m_TimeBetweenWarningAndOffscreenAttack)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_CombatBarks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_Distractions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_FleetingGaze,DisTweaks_AISubProcess_FleetingGaze,m_fGazeAngleDegrees)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_FleetingGaze,DisTweaks_AISubProcess_FleetingGaze,m_GazeDuration)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_FleetingGaze)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_GenericBarks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_HeadTrackBark)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_HeadTrackPause,DisTweaks_AISubProcess_HeadTrackPause,m_fRearHalfAngleWidthToPause_Deg)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_HeadTrackPause,DisTweaks_AISubProcess_HeadTrackPause,m_fFrontHalfAngleWidthToResume_Deg)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_HeadTrackPause)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_PersonalSpace,DisTweaks_AISubProcess_PersonalSpace,m_fPushCooldown)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubProcess_PersonalSpace,DisTweaks_AISubProcess_PersonalSpace,m_fWarnCooldown)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_PersonalSpace)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_StandardBodyIntention)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_WatchPoints)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubProcess_WolfHoundCount)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_Cower)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_Flee,DisTweaks_AISubState_Flee,m_fSystemicFleeMinEnvellope)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_Flee,DisTweaks_AISubState_Flee,m_fForbiddenRadius)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_Flee)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_Follow,DisTweaks_AISubState_Follow,m_FollowParameters)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_Follow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_GenericAction,DisTweaks_AISubState_GenericAction,m_ActionID)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_GenericAction,DisTweaks_AISubState_GenericAction,m_fTimeBeforeGivingUp)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_GenericAction)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_Init)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_MaintainDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_MeleeChase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_MeleeEngage,DisTweaks_AISubState_MeleeEngage,m_fMinRepositionFrequency)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_MeleeEngage,DisTweaks_AISubState_MeleeEngage,m_fStrafeRangeToOuter)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_MeleeEngage)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_Menace,DisTweaks_AISubState_Menace,m_fTauntMinTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_Menace,DisTweaks_AISubState_Menace,m_fTauntMaxTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_Menace)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_Stand)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_StareAtUnreachable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_TakePosition,DisTweaks_AISubState_TakePosition,m_fDestinationThreshold)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AISubState_TakePosition,DisTweaks_AISubState_TakePosition,m_fRotationStartDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_TakePosition)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AISubState_TakeActorPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AbstractItemPickup,DisTweaks_AbstractItemPickup,m_pAbstractItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AbstractItemPickup,DisTweaks_AbstractItemPickup,m_SingleItemPickupMessage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AbstractItemPickup)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AbstractItemPickupAudioLog)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AbstractItemPickupNote,DisTweaks_AbstractItemPickupNote,m_DisplayDuration)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AbstractItemPickupNote,DisTweaks_AbstractItemPickupNote,m_OnPickupMessage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AbstractItemPickupNote)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_UsableObject,DisTweaks_UsableObject,m_Stages)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_UsableObject,DisTweaks_UsableObject,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_UsableObject)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Armor,DisTweaks_Armor,m_pDoppedItemTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Armor,DisTweaks_Armor,m_fPingUpSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Armor)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Attachments)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AttentionTarget,DisTweaks_AttentionTarget,m_AttentionProxyMovementMode)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AttentionTarget,DisTweaks_AttentionTarget,m_fAttnProxyDetachmentDelay)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AttentionTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AudioLogPlayer,DisTweaks_AudioLogPlayer,m_pPickupSoundEvent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_AudioLogPlayer,DisTweaks_AudioLogPlayer,m_fVolumeFactorWhenMuted)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_AudioLogPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_BendTime,DisTweaks_BendTime,m_Levels)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_BendTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Climbable,DisTweaks_Climbable,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Climbable,DisTweaks_Climbable,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Climbable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ComponentHitReactionThrow,DisTweaks_ComponentHitReactionThrow,m_ComponentConfig)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ComponentHitReactionThrow)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ComponentMeshOffset,DisTweaks_ComponentMeshOffset,m_fPitchSpeed)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ComponentMeshOffset,DisTweaks_ComponentMeshOffset,m_fGoDownMinZSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ComponentMeshOffset)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ComponentObservable,DisTweaks_ComponentObservable,m_ComponentConfig)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ComponentObservable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DefenceTower,DisTweaks_DefenceTower,m_pStartActivitySound)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DefenceTower,DisTweaks_DefenceTower,m_CoreMICChargeParameterName)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_DefenceTower)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DetectionEye,DisTweaks_DetectionEye,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DetectionEye,DisTweaks_DetectionEye,m_SoulMaterialToUse)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_DetectionEye)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DevouringSwarm,DisTweaks_DevouringSwarm,m_Levels)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_DevouringSwarm,DisTweaks_DevouringSwarm,m_fRatSwarmSpawnDelay)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_DevouringSwarm)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Door,DisTweaks_Door,m_DoorOpenCCW)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Door,DisTweaks_Door,m_fHolePeekingActivateTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Door)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ElixirHealth)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ElixirMana)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Faction,DisTweaks_Faction,m_AlliedFactions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Faction,DisTweaks_Faction,m_EnemyFactions)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Faction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Fish,DisTweaks_Fish,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Fish,DisTweaks_Fish,m_SoulMaterialToUse)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Fish)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerGlobal)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerMainMenu,DisTweaks_GFxMoviePlayerMainMenu,m_NoProfileMessage)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerMainMenu,DisTweaks_GFxMoviePlayerMainMenu,m_MissionStatsTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerMainMenu)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerMenuBase,DisTweaks_GFxMoviePlayerMenuBase,m_MapLargeImagePackage)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerMenuBase,DisTweaks_GFxMoviePlayerMenuBase,m_QuitGameCommand)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerMenuBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerMissionStats,DisTweaks_GFxMoviePlayerMissionStats,m_MissionSummary)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerMissionStats,DisTweaks_GFxMoviePlayerMissionStats,m_LowChaos)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerMissionStats)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerPauseMenu,DisTweaks_GFxMoviePlayerPauseMenu,m_PlayerDiedMessage)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_GFxMoviePlayerPauseMenu,DisTweaks_GFxMoviePlayerPauseMenu,m_Tutorials)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GFxMoviePlayerPauseMenu)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_GenericPickup)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Heart,DisTweaks_Heart,m_fDirectnessAngle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Heart,DisTweaks_Heart,m_pUnequippedHeartBeatsRumbleWaveform)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Heart)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InteractableInterface,DisTweaks_InteractableInterface,m_Name)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InteractableInterface,DisTweaks_InteractableInterface,m_fMaxDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_InteractableInterface)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Interactable_PickupBase,DisTweaks_Interactable_PickupBase,m_NotUsableWhilePossessingInteractText)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Interactable_PickupBase)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem_Attributes,DisTweaks_InventoryItem_Attributes,m_MeleeAttackSpeed)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem_Attributes,DisTweaks_InventoryItem_Attributes,m_RangedHeadshotMultiplier)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_InventoryItem_Attributes)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem_PlayerSpecific,DisTweaks_InventoryItem_PlayerSpecific,m_ArmPitch_OffsetKeys)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryItem_PlayerSpecific,DisTweaks_InventoryItem_PlayerSpecific,m_SupportedUpgrades)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_InventoryItem_PlayerSpecific)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_StatPickup,DisTweaks_StatPickup,m_HealthChange)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_StatPickup,DisTweaks_StatPickup,m_EmptyPickupMessage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_StatPickup)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryPickup,DisTweaks_InventoryPickup,m_pItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_InventoryPickup,DisTweaks_InventoryPickup,m_pContactType)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_InventoryPickup)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ItemEmpty,DisTweaks_ItemEmpty,m_fShowMovableHeight_Tiny)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ItemEmpty,DisTweaks_ItemEmpty,m_fMovableHoldDist)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ItemEmpty)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ItemEmpty_PlayerSpecific)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Key,DisTweaks_Key,m_Description)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Key,DisTweaks_Key,m_JournalIconName)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Key)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_LODConfig,DisTweaks_LODConfig,m_Config)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_LODConfig)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_LODProfile,DisTweaks_LODProfile,m_fMidRangeDistance)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_LODProfile,DisTweaks_LODProfile,m_LODSetup)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_LODProfile)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_LODSetup,DisTweaks_LODSetup,m_NeedDLE)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_LODSetup,DisTweaks_LODSetup,m_NeedTick)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_LODSetup)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_MovableLimb,DisTweaks_MovableLimb,m_pGrabSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_MovableLimb)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Animation,DisTweaks_Pawn_Animation,m_pFullBodyTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Animation,DisTweaks_Pawn_Animation,m_pSpecialTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_Animation)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPawn_Animation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn_Attributes,DisTweaks_NPCPawn_Attributes,m_DodgeLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn_Attributes,DisTweaks_NPCPawn_Attributes,m_FallingDeathHeight)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPawn_Attributes)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Body,DisTweaks_Pawn_Body,m_fBone_AngleOffset_Yaw)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Body,DisTweaks_Pawn_Body,m_AngleOffsetMatrix)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_Body)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn_Body,DisTweaks_NPCPawn_Body,m_fBumpSmoothHeight)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn_Body,DisTweaks_NPCPawn_Body,m_DrowningBone)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPawn_Body)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Combat,DisTweaks_Pawn_Combat,m_fDodgeDelay)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_Combat,DisTweaks_Pawn_Combat,m_pEndRegenSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_Combat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn_Combat,DisTweaks_NPCPawn_Combat,m_fWoundedFraction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPawn_Combat,DisTweaks_NPCPawn_Combat,m_SwarmCallForHelpLoudness)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPawn_Combat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCPlotSettings,DisTweaks_NPCPlotSettings,m_PlotSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCPlotSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PawnAttention,DisTweaks_PawnAttention,m_fAttentionLeakRate)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PawnAttention,DisTweaks_PawnAttention,m_AttentionProxyColor)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PawnAttention)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_Actions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_FullBodyAnimation,DisTweaks_Pawn_FullBodyAnimation,m_FullBody_StatePicker_Name)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_FullBodyAnimation,DisTweaks_Pawn_FullBodyAnimation,m_AnimStates_FullBody_Misc)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_FullBodyAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_SpecialAnimation,DisTweaks_Pawn_SpecialAnimation,m_Special_StatePicker_Name)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_SpecialAnimation,DisTweaks_Pawn_SpecialAnimation,m_AnimStates_Special_Misc)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_SpecialAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_UpperBodyAnimation,DisTweaks_Pawn_UpperBodyAnimation,m_UpperBody_StatePicker_Name)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Pawn_UpperBodyAnimation,DisTweaks_Pawn_UpperBodyAnimation,m_AnimStates_UpperBody_Misc)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Pawn_UpperBodyAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerInput,DisTweaks_PlayerInput,m_fUsableObjectDist)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerInput,DisTweaks_PlayerInput,m_PadBindingSetMap)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerInput)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Actions,DisTweaks_PlayerPawn_Actions,m_pDebugActionTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Actions,DisTweaks_PlayerPawn_Actions,m_pNavigationActionTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_Actions)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_Animation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Camera,DisTweaks_PlayerPawn_Camera,m_CameraBoneName)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Camera,DisTweaks_PlayerPawn_Camera,m_fMaxViewPitch)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_Camera)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Combat,DisTweaks_PlayerPawn_Combat,m_HealthEffects)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Combat,DisTweaks_PlayerPawn_Combat,m_DramaAssassinationParams)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_Combat)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_DebugActions,DisTweaks_PlayerPawn_DebugActions,m_Actions_Debug_FullBody)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_DebugActions,DisTweaks_PlayerPawn_DebugActions,m_Actions_Debug_UpperBody)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_DebugActions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_FullBodyAnimation,DisTweaks_PlayerPawn_FullBodyAnimation,m_AnimStates_FullBody_Navigation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_FullBodyAnimation,DisTweaks_PlayerPawn_FullBodyAnimation,m_AnimStates_FullBody_Fatality)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_FullBodyAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_ItemActions,DisTweaks_PlayerPawn_ItemActions,m_Actions_GoToReady)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_ItemActions,DisTweaks_PlayerPawn_ItemActions,m_Actions_PistolZoomOut)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_ItemActions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_MiscellaneousActions,DisTweaks_PlayerPawn_MiscellaneousActions,m_Actions_SyncedAction)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_MiscellaneousActions,DisTweaks_PlayerPawn_MiscellaneousActions,m_Actions_Possess)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_MiscellaneousActions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_NavigationActions,DisTweaks_PlayerPawn_NavigationActions,m_Action_Mantle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_NavigationActions,DisTweaks_PlayerPawn_NavigationActions,m_Action_LeaveCrouch_Ready)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_NavigationActions)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_SpecialAnimation,DisTweaks_PlayerPawn_SpecialAnimation,m_AnimStates_LeftHand_Items)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_SpecialAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_UpperBodyAnimation,DisTweaks_PlayerPawn_UpperBodyAnimation,m_AnimStates_UpperBody_Items)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_UpperBodyAnimation,DisTweaks_PlayerPawn_UpperBodyAnimation,m_AnimStates_UpperBody_Items_Ranged)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_UpperBodyAnimation)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Visibility,DisTweaks_PlayerPawn_Visibility,m_pPlayerVisRegion)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerPawn_Visibility,DisTweaks_PlayerPawn_Visibility,m_pPlayerVisTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerPawn_Visibility)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerStats,DisTweaks_PlayerStats,m_Achievements)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerStats,DisTweaks_PlayerStats,m_CivilianNPCInfo)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerStats)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerVisRegion,DisTweaks_PlayerVisRegion,m_VisRegionSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerVisRegion)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerVisSettings,DisTweaks_PlayerVisSettings,m_fLightValueDarkestVal)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerVisSettings,DisTweaks_PlayerVisSettings,m_fLightValueBrightestVal)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerVisSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Possess,DisTweaks_Possess,m_Levels)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Possess,DisTweaks_Possess,m_IntrusionLensEffect)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Possess)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Possessable,DisTweaks_Possessable,m_Levels)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Possessable,DisTweaks_Possessable,m_fTargetBelowGroundCompensationAmount)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Possessable)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PostProcess,DisTweaks_PostProcess,m_Parameters)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PostProcess,DisTweaks_PostProcess,m_fFadeOutTime)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PostProcess)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ProjectileLauncher,DisTweaks_ProjectileLauncher,m_pAnimSet)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ProjectileLauncher,DisTweaks_ProjectileLauncher,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ProjectileLauncher)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RatSpawner,DisTweaks_RatSpawner,m_pSwarmTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RatSpawner,DisTweaks_RatSpawner,m_pCrowdAgentList)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_RatSpawner)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RatSwarmGlobalManager,DisTweaks_RatSwarmGlobalManager,m_RatSpawnerSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RatSwarmGlobalManager,DisTweaks_RatSwarmGlobalManager,m_fMaxSpawnDistance)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_RatSwarmGlobalManager)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_RiverKrustBodyPart,DisTweaks_RiverKrustBodyPart,m_pStaticMesh)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_RiverKrustBodyPart)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SimpleAttention,DisTweaks_SimpleAttention,m_bHearNoiseSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SimpleAttention,DisTweaks_SimpleAttention,m_fCorpseVis_VisLevelToSeeDeath)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_SimpleAttention)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SoundSource,DisTweaks_SoundSource,m_pStartSoundEvent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SoundSource,DisTweaks_SoundSource,m_AiSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_SoundSource)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SpringRazorPlaced,DisTweaks_SpringRazorPlaced,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_SpringRazorPlaced,DisTweaks_SpringRazorPlaced,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_SpringRazorPlaced)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_StoryGroup)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_TallboyAttachment)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_TallboyNPCPawn,DisTweaks_TallboyNPCPawn,m_pSpawnBreakableTweaks)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_TallboyNPCPawn,DisTweaks_TallboyNPCPawn,m_fMaxStepHeightWhilePossessed)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_TallboyNPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ThrownObjects,DisTweaks_ThrownObjects,m_ThrownObjects)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ThrownObjects,DisTweaks_ThrownObjects,m_fTotalWeight)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ThrownObjects)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Trigger,DisTweaks_Trigger,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Trigger)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Tripwire,DisTweaks_Tripwire,m_pSkeletalMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Tripwire,DisTweaks_Tripwire,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Tripwire)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Tune,DisTweaks_Tune,m_fMusicEffectPeriod)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Tune,DisTweaks_Tune,m_AiSound)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Tune)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_TuneSource_Protection,DisTweaks_TuneSource_Protection,m_pTuneTweak)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_TuneSource_Protection)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Tune_Protection,DisTweaks_Tune_Protection,m_fMusicEffectRadius_Disorient)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Tune_Protection,DisTweaks_Tune_Protection,m_SFX_Inhibit_Stop)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Tune_Protection)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Upgrade,DisTweaks_Upgrade,m_pMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Upgrade,DisTweaks_Upgrade,m_pInteractableTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Upgrade)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Vision,DisTweaks_Vision,m_Vision_BoneName)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Vision,DisTweaks_Vision,m_fVision_AngleLeeway_Deg)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Vision)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Vulnerability,DisTweaks_Vulnerability,m_InstaDeathVulnerability)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Vulnerability,DisTweaks_Vulnerability,m_DamageHitReactImmunities)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Vulnerability)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WallOfLight,DisTweaks_WallOfLight,m_ActivateSound)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WallOfLight,DisTweaks_WallOfLight,m_fWindblastMinimumForce)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WallOfLight)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WatchTower,DisTweaks_WatchTower,m_pTowerMesh)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WatchTower,DisTweaks_WatchTower,m_pSoundTargetLost)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WatchTower)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WhaleBoneCharm)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhaleBoneCharmList,DisTweaks_WhaleBoneCharmList,m_Charms)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhaleBoneCharmList,DisTweaks_WhaleBoneCharmList,m_ScriptedCharms)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WhaleBoneCharmList)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhaleOilReceptacle,DisTweaks_WhaleOilReceptacle,m_PlugSound)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WhaleOilReceptacle,DisTweaks_WhaleOilReceptacle,m_EmptyBatteryMessage)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WhaleOilReceptacle)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WindBlast,DisTweaks_WindBlast,m_Levels)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_WindBlast,DisTweaks_WindBlast,m_fChanceToExplodeNPCs)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_WindBlast)
+VERIFY_CLASS_OFFSET_NODIE(UDisUsableObjectBreakSteps,DisUsableObjectBreakSteps,m_UsableObjBreakSteps)
+VERIFY_CLASS_SIZE_NODIE(UDisUsableObjectBreakSteps)
+VERIFY_CLASS_OFFSET_NODIE(UDisWaterVolumeManager,DisWaterVolumeManager,m_CollidingBodyArray)
+VERIFY_CLASS_SIZE_NODIE(UDisWaterVolumeManager)
+VERIFY_CLASS_SIZE_NODIE(UDisWheelTracker)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAIBrain,DishonoredAIBrain,m_PendingSuspicionLevel)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAIBrain,DishonoredAIBrain,m_pGlobalAI_NextBrain)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAIBrain)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAudioPortalComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAudioSystem,DishonoredAudioSystem,m_fOccludingDoorOpeningAngle)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAudioSystem,DishonoredAudioSystem,m_RegisteredAmbientSounds)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAudioSystem)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredBarkManager,DishonoredBarkManager,m_BarkCues)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredBarkManager,DishonoredBarkManager,m_BarkLayerVars)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredBarkManager)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredCallbackSkeletalComponent)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Bite)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_BulletBlast)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_BulletFar)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_BulletMedium)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Electricity)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Explosion)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_FrontalImpale)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Knockdown)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Plague)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Projectile_Stealth)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_SpawnRatSwarm)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDamageType_Stomped)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredDebugMenu,DishonoredDebugMenu,m_Items)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredDebugMenu,DishonoredDebugMenu,m_CurrentCommand)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDebugMenu)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredDecalComponent,DishonoredDecalComponent,m_DecalInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredDecalComponent,DishonoredDecalComponent,m_RuntimeHeight)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredDecalComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredEngine,DishonoredEngine,m_nCurrentRichPresenceChapter)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredEngine,DishonoredEngine,m_pDLC06EndGamePlayerInfo)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredEngine)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredGlobalAIManager,DishonoredGlobalAIManager,m_CorpseIslandInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredGlobalAIManager,DishonoredGlobalAIManager,m_TetherDelay)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredGlobalAIManager)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredPlayerSkeletalComponent,DishonoredPlayerSkeletalComponent,m_FOV)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredPlayerSkeletalComponent,DishonoredPlayerSkeletalComponent,m_Offset)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredPlayerSkeletalComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredMapInfo,DishonoredMapInfo,m_pPatrolManager)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredMapInfo,DishonoredMapInfo,m_pMapSpecificSummonedAssassinTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredMapInfo)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNoteComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredPlayerInput,DishonoredPlayerInput,m_pPlayerController)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredPlayerInput,DishonoredPlayerInput,m_fMouseFrictionStrengthSettings)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredPlayerInput)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredPowersComponent,DishonoredPowersComponent,m_Powers)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredPowersComponent,DishonoredPowersComponent,m_StoredPowerLevels)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredPowersComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredSearchCrumbsComponent,DishonoredSearchCrumbsComponent,m_SearchCrumbs)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredSearchCrumbsComponent,DishonoredSearchCrumbsComponent,m_fStickyProxyDuration)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredSearchCrumbsComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredViewportClient,DishonoredViewportClient,m_fLowFPSDisplayDuration)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredViewportClient,DishonoredViewportClient,m_ActionSafeFrame)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredViewportClient)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWaterVolumeInfo,DishonoredWaterVolumeInfo,m_PostProcessNameEntry)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredWaterVolumeInfo,DishonoredWaterVolumeInfo,m_pContactTypeOverride)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredWaterVolumeInfo)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCActionParry,StateNPCActionParry,m_fParryFestivalLifetime)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCActionParry)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCAttractSpell)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCEscapeExplosion)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionImmolate,StateNPCMasterActionImmolate,m_pImmolationCauser)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionImmolate,StateNPCMasterActionImmolate,m_ImmolationParams)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterActionImmolate)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionMelee,StateNPCMasterActionMelee,m_Animation)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionMelee,StateNPCMasterActionMelee,m_iVariation)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterActionMelee)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionMeleeSwarm,StateNPCMasterActionMeleeSwarm,m_Attackers)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionMeleeSwarm,StateNPCMasterActionMeleeSwarm,m_fLastAINoiseTime)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterActionMeleeSwarm)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterActionMeleeVersus,StateNPCMasterActionMeleeVersus,m_CurrentVersusState)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterActionMeleeVersus)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterActionPostPossessed)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterAim,StateNPCMasterAim,m_AimLogicState)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterAim,StateNPCMasterAim,m_fSlomoTrickOccurencePercentage)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterAim)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterAim_Grenade)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterBePossessed,StateNPCMasterBePossessed,m_fGroundSpeedBeforePossess)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterBePossessed)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterBeingAssassinated,StateNPCMasterBeingAssassinated,m_pMaster)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterBeingAssassinated,StateNPCMasterBeingAssassinated,m_iAnimIndex)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterBeingAssassinated)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterBeingChoked)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterDistracted,StateNPCMasterDistracted,m_DistractionType)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterDistracted,StateNPCMasterDistracted,m_pDistraction)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterDistracted)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterDodge,StateNPCMasterDodge,m_RiposteType)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterDodge,StateNPCMasterDodge,m_fDodgeFestivalLifetime)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterDodge)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterDualPlayAnim)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCUpperBodyAction,StateNPCUpperBodyAction,m_pNPCPawn)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCUpperBodyAction,StateNPCUpperBodyAction,m_pNPCController)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCUpperBodyAction)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterEquip,StateNPCMasterEquip,m_EquipIntention)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterEquip,StateNPCMasterEquip,m_pItemClass)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterEquip)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterFalling)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterFallingUncontrolled)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterGesture)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterLyingInWait)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterMinigame)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterProjectileHitReact,StateNPCMasterProjectileHitReact,m_vMomentum)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterProjectileHitReact,StateNPCMasterProjectileHitReact,m_HitRegion)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterProjectileHitReact)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterRangedAttack)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterStrongHitReact,StateNPCMasterStrongHitReact,m_fUncontrolledYawAdjustmentSpeed)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterStrongHitReact,StateNPCMasterStrongHitReact,m_pDamageTypeToReactOn)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterStrongHitReact)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterStunned,StateNPCMasterStunned,m_Animation)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterStunned,StateNPCMasterStunned,m_fStunDuration)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterStunned)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterSurprised,StateNPCMasterSurprised,m_LocationSurprisedBy)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterSurprised)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterTallboyAim,StateNPCMasterTallboyAim,m_AimTargetProxy)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterTallboyAim,StateNPCMasterTallboyAim,m_fAimAlignTimeBeforeShooting)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterTallboyAim)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterThrown,StateNPCMasterThrown,m_ThrowDirection)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterThrown,StateNPCMasterThrown,m_fMinVelocityForAutoBreak)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterThrown)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCMasterWalk,StateNPCMasterWalk,m_pNPCPawn)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMasterWalk)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCUpperPlayAnim,StateNPCUpperPlayAnim,m_AnimChainToPlay)
+VERIFY_CLASS_OFFSET_NODIE(UStateNPCUpperPlayAnim,StateNPCUpperPlayAnim,m_iAnimStep)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCUpperPlayAnim)
+VERIFY_CLASS_SIZE_NODIE(UStateNPCMusicBox)
+VERIFY_CLASS_OFFSET_NODIE(UStateSharedActionBase_PlayerOnly,StateSharedActionBase_PlayerOnly,m_pCurAction)
+VERIFY_CLASS_OFFSET_NODIE(UStateSharedActionBase_PlayerOnly,StateSharedActionBase_PlayerOnly,m_fLimitedJoySensitivity)
+VERIFY_CLASS_SIZE_NODIE(UStateSharedActionBase_PlayerOnly)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerAction,StatePlayerAction,m_pActionFSM)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerAction,StatePlayerAction,m_pPlayerPawn)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerAction)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerChangeReadyStance,StatePlayerChangeReadyStance,m_GoToStance)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerChangeReadyStance)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerBlock)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerUpperBase,StatePlayerUpperBase,m_pActionFSM)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerUpperBase,StatePlayerUpperBase,m_pPawn)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerUpperBase)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerUpperIdle)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerEquipChange,StatePlayerEquipChange,m_pPendingItemClass)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerEquipChange,StatePlayerEquipChange,m_pPendingItemPickup)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerEquipChange)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMeleeAttack,StatePlayerMeleeAttack,m_pCombatTarget)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMeleeAttack,StatePlayerMeleeAttack,m_fCameraLookHelpTime)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMeleeAttack)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerGenericFatality,StatePlayerGenericFatality,m_TrackID)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerGenericFatality)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerGrabCorpse,StatePlayerGrabCorpse,m_pDeadGuy)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerGrabCorpse)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerGrabMovable,StatePlayerGrabMovable,m_pPending_Movable)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerGrabMovable)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterAction,StatePlayerMasterAction,m_pPlayerPawn)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterAction,StatePlayerMasterAction,m_pLinkedNPC)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterAction)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterChangeReadyStance,StatePlayerMasterChangeReadyStance,m_GoToStance_Primary)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterChangeReadyStance,StatePlayerMasterChangeReadyStance,m_GoToStance_Secondary)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterChangeReadyStance)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterAssassinate,StatePlayerMasterAssassinate,m_pItemContext)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterAssassinate,StatePlayerMasterAssassinate,m_fHoldTimeForAutoCorpseCarry)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterAssassinate)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterBase,StatePlayerMasterBase,m_pPlayerPawn)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterBase,StatePlayerMasterBase,m_fBlendInTime)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterBase)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterChoice_Base,StatePlayerMasterChoice_Base,m_iCurChoice)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterChoice_Base,StatePlayerMasterChoice_Base,m_DialogState)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterChoice_Base)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterChoke,StatePlayerMasterChoke,m_fRequiredTime)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterChoke,StatePlayerMasterChoke,m_fHoldTimeForAutoCarry)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterChoke)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterClimb,StatePlayerMasterClimb,m_fStartTime)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterClimb)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterDead,StatePlayerMasterDead,m_fGameOverTimer)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterDead,StatePlayerMasterDead,m_fTimeUntilGameover)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterDead)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterFalling,StatePlayerMasterFalling,m_fFallTime)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterFalling,StatePlayerMasterFalling,m_fAnimateFallTime)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterFalling)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterHolePeeking,StatePlayerMasterHolePeeking,m_pDoor)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterHolePeeking,StatePlayerMasterHolePeeking,m_State)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterHolePeeking)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterInScriptedChoice,StatePlayerMasterInScriptedChoice,m_pActiveScriptedChoice)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterInScriptedChoice)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterInStore)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterJump,StatePlayerMasterJump,m_fHeldButtonTime)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterJump,StatePlayerMasterJump,m_fPowerJumpFOVBlendSpeed)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterJump)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterLeaning,StatePlayerMasterLeaning,m_fReleaseTimer)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterLeaning,StatePlayerMasterLeaning,m_fMaxAllowedYawDegrees)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterLeaning)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterMinigame,StatePlayerMasterMinigame,m_fDamageTimer)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterMinigame,StatePlayerMasterMinigame,m_iNumButtonPress)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterMinigame)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterSlide,StatePlayerMasterSlide,m_fStartTime)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterSlide,StatePlayerMasterSlide,m_RatRepulsorID)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterSlide)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterSoiree,StatePlayerMasterSoiree,m_pMatinee)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterSoiree,StatePlayerMasterSoiree,m_SoireeControlState)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterSoiree)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterStunned,StatePlayerMasterStunned,m_StunAnimState)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterStunned,StatePlayerMasterStunned,m_fStunDuration)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterStunned)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterSwim,StatePlayerMasterSwim,m_fFallingTimer)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterSwim,StatePlayerMasterSwim,m_fSurfaceSwimDelayBetweenStrokes)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterSwim)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterVersus,StatePlayerMasterVersus,m_NumVersusAttackRequest)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterVersus)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterWalk,StatePlayerMasterWalk,m_fCrouchedFOV)
+VERIFY_CLASS_OFFSET_NODIE(UStatePlayerMasterWalk,StatePlayerMasterWalk,m_fCrouchFOV_BlendSpeed)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerMasterWalk)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerTransitionItemIn)
+VERIFY_CLASS_SIZE_NODIE(UStatePlayerUpperNav)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

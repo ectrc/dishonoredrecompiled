@@ -21,29 +21,29 @@ if(DISHONORED_REAL_LAUNCH)
   target_include_directories(DishonoredGame PRIVATE Inc Src)
   # Every module target links its predecessors PUBLICly, so the last one pulls in all of them
   set(launch_modules Core Engine)
-  foreach(m IN ITEMS GameFramework IpDrv WinDrv)
+  # agent T: the retail script-package modules (root CMakeLists.txt) replace their registrant stubs in DishonoredStubs.cpp
+  foreach(m IN ITEMS GameFramework IpDrv WinDrv D3D9Drv GFxUI AkAudio OnlineSubsystemSteamworks DishonoredGameModule)
     if(TARGET ${m})
       list(APPEND launch_modules ${m})
     endif()
   endforeach()
   target_link_libraries(DishonoredGame PRIVATE ${launch_modules})
+  # DISHONORED_HAVE_D3D9DRV: DishonoredStubs.cpp keeps the null-RHI stand-ins for D3D9CreateRHI & co. only
+  # while D3D9Drv is not a target (DISHONORED_ENABLE_D3D9DRV=OFF).
   target_compile_definitions(DishonoredGame PRIVATE
     DISHONORED_HAVE_GAMEFRAMEWORK=$<BOOL:$<TARGET_EXISTS:GameFramework>>
     DISHONORED_HAVE_IPDRV=$<BOOL:$<TARGET_EXISTS:IpDrv>>
-    DISHONORED_HAVE_WINDRV=$<BOOL:$<TARGET_EXISTS:WinDrv>>)
+    DISHONORED_HAVE_WINDRV=$<BOOL:$<TARGET_EXISTS:WinDrv>>
+    DISHONORED_HAVE_D3D9DRV=$<BOOL:$<TARGET_EXISTS:D3D9Drv>>
+    DISHONORED_HAVE_GFXUI=$<BOOL:$<TARGET_EXISTS:GFxUI>>
+    DISHONORED_HAVE_AKAUDIO=$<BOOL:$<TARGET_EXISTS:AkAudio>>
+    DISHONORED_HAVE_OSS=$<BOOL:$<TARGET_EXISTS:OnlineSubsystemSteamworks>>
+    DISHONORED_HAVE_DISHONOREDGAME=$<BOOL:$<TARGET_EXISTS:DishonoredGameModule>>)
   dishonored_apply_defines(DishonoredGame)
   target_compile_options(DishonoredGame PRIVATE ${DISHONORED_MSVC_WARNINGS})
   # UnVcWin32.cpp's stack walker needs symbols; keep the PDB next to the exe (Ninja default) and
   # make the map file available for link-error analysis.
   target_link_options(DishonoredGame PRIVATE /MAP:$<TARGET_FILE_DIR:DishonoredGame>/DishonoredGame.map)
-  # Engine/Src/UnPNG.cpp carries #pragma comment(lib, "libpng15.lib") for the reference's own libpng
-  # 1.5 build; ours is Dishonored::libPNG (FetchContent 1.6.43), so drop the injected name.
-  target_link_options(DishonoredGame PRIVATE /NODEFAULTLIB:libpng15.lib)
-  # Engine's UnTexCompress.cpp imports nvtt.dll (reference Development/External/nvtt, a VC8 DLL
-  # that also needs cudart/MSVCR80); retail ships no nvtt.dll. Delay-load it so the exe starts
-  # without it: nothing before package cooking calls into nvtt.
-  target_link_options(DishonoredGame PRIVATE /DELAYLOAD:nvtt.dll)
-  target_link_libraries(DishonoredGame PRIVATE delayimp)
 else()
   add_executable(DishonoredGame WIN32 Src/DishonoredLaunchStub.cpp)
 endif()

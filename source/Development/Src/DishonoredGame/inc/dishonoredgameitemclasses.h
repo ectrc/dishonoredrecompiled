@@ -1,105 +1,1326 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameitemclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (100):
-//   0x63c7a0  public: static class UClass * __cdecl UDishonoredItemEmpty::StaticClass(void)
-//   0x63c7c0  public: static class UClass * __cdecl UDisItemPowers::StaticClass(void)
-//   0x63c7e0  public: void __thiscall AController::execUnPossess(struct FFrame &, void * const)
-//   0x63c820  public: static class UClass * __cdecl ADisWhaleOilBattery::StaticClass(void)
-//   0x63c840  public: static class UClass * __cdecl ADisPickup_Base::StaticClass(void)
-//   0x63f350  public: void __thiscall ADisPickup_Base::execBaseChange(struct FFrame &, void * const)
-//   0x64f130  public: virtual class UObject * __thiscall ADisSkeletalBreakable::GetUObjectInterfaceDisEngineTweaksInterface(void)
-//   0x64f160  protected: virtual __thiscall ADisDetectionEye::~ADisDetectionEye(void)
-//   0x650bc0  public: static void __cdecl ADisDetectionEye::InternalConstructor(void *)
-//   0x656d50  protected: virtual __thiscall ADishonoredBreakable::~ADishonoredBreakable(void)
-//   0x656fa0  public: virtual class UObject * __thiscall ADishonoredMovable::GetUObjectInterfaceDisInteractableInterface(void)
-//   0x657020  protected: virtual __thiscall ADishonoredBreakableNavBlock::~ADishonoredBreakableNavBlock(void)
-//   0x658410  public: static void __cdecl ADishonoredBreakable::InternalConstructor(void *)
-//   0x658430  public: static void __cdecl ADishonoredBreakableNavBlock::InternalConstructor(void *)
-//   0x66ba90  protected: virtual __thiscall IDisMovableInterface::~IDisMovableInterface(void)
-//   0x66f1c0  protected: virtual __thiscall UDisMovableComponent::~UDisMovableComponent(void)
-//   0x672960  public: static void __cdecl UDisMovableComponent::InternalConstructor(void *)
-//   0x6763b0  protected: virtual __thiscall ADisPickup_Base::~ADisPickup_Base(void)
-//   0x676470  public: virtual class UObject * __thiscall ADishonoredBreakable::GetUObjectInterfaceArkHealthInterface(void)
-//   0x676480  public: virtual class UObject * __thiscall ADisPickup_Base::GetUObjectInterfaceDisSoulRenderInterface(void)
-//   0x6765c0  protected: virtual __thiscall ADisAbstractItemPickup::~ADisAbstractItemPickup(void)
-//   0x676830  protected: virtual __thiscall ADisAbstractItemPickupNote::~ADisAbstractItemPickupNote(void)
-//   0x6769d0  protected: virtual __thiscall ADisElixirHealth::~ADisElixirHealth(void)
-//   0x676b70  protected: virtual __thiscall ADisElixirMana::~ADisElixirMana(void)
-//   0x676d10  protected: virtual __thiscall ADisGenericPickup::~ADisGenericPickup(void)
-//   0x676eb0  protected: virtual __thiscall ADisKey_Base::~ADisKey_Base(void)
-//   0x677060  protected: virtual __thiscall ADisStatPickup::~ADisStatPickup(void)
-//   0x677200  protected: virtual __thiscall ADisWhaleBoneCharm::~ADisWhaleBoneCharm(void)
-//   0x677360  public: virtual class UObject * __thiscall ADisWallOfLight::GetUObjectInterfaceDisWhaleOilConsumerInterface(void)
-//   0x677370  public: virtual class UObject * __thiscall ADisWallOfLight::GetUObjectInterfaceInterface_NavMeshPathObject(void)
-//   0x677380  public: virtual class UObject * __thiscall ADisWallOfLight::GetUObjectInterfaceDisSoulRenderInterface(void)
-//   0x6773d0  protected: virtual __thiscall ADisWallOfLight::~ADisWallOfLight(void)
-//   0x677c30  public: static void __cdecl ADisPickup_Base::InternalConstructor(void *)
-//   0x677c50  public: static void __cdecl ADisAbstractItemPickupNote::InternalConstructor(void *)
-//   0x677c70  public: static void __cdecl ADisElixirHealth::InternalConstructor(void *)
-//   0x677c90  public: static void __cdecl ADisElixirMana::InternalConstructor(void *)
-//   0x677cb0  public: static void __cdecl ADisGenericPickup::InternalConstructor(void *)
-//   0x677cd0  public: static void __cdecl ADisKey_Base::InternalConstructor(void *)
-//   0x677cf0  public: static void __cdecl ADisStatPickup::InternalConstructor(void *)
-//   0x677d10  public: static void __cdecl ADisWhaleBoneCharm::InternalConstructor(void *)
-//   0x677d30  public: static void __cdecl ADisWallOfLight::InternalConstructor(void *)
-//   0x67c2f0  protected: virtual __thiscall ADishonoredMovable::~ADishonoredMovable(void)
-//   0x67d090  public: static void __cdecl ADishonoredMovable::InternalConstructor(void *)
-//   0x69c0a0  protected: virtual __thiscall UDisAbstractItem::~UDisAbstractItem(void)
-//   0x69c130  public: virtual class FString const __thiscall UDisAbstractItem::GetAbstractItemDesc(void)const
-//   0x69c1b0  protected: virtual __thiscall UDisAbstractItemAudioLog::~UDisAbstractItemAudioLog(void)
-//   0x69e720  public: static void __cdecl UDisAbstractItemAudioLog::InternalConstructor(void *)
-//   0x6a2fd0  protected: virtual __thiscall ADisAbstractItemPickupAudioLog::~ADisAbstractItemPickupAudioLog(void)
-//   0x6a4890  public: static void __cdecl ADisAbstractItemPickupAudioLog::InternalConstructor(void *)
-//   0x6a8d30  protected: virtual __thiscall ADisSpeaker_PA::~ADisSpeaker_PA(void)
-//   0x6a9ee0  public: static void __cdecl ADisSpeaker_PA::InternalConstructor(void *)
-//   0x718d80  protected: virtual __thiscall UDisTweaks_PlayerLoadout::~UDisTweaks_PlayerLoadout(void)
-//   0x7199d0  public: static void __cdecl UDisTweaks_PlayerLoadout::InternalConstructor(void *)
-//   0x7e6340  protected: virtual __thiscall ADisTallboyAttachment::~ADisTallboyAttachment(void)
-//   0x7ecd70  public: static void __cdecl ADisTallboyAttachment::InternalConstructor(void *)
-//   0x84a470  protected: virtual __thiscall UDishonoredInventoryItemPostUpdateTickComponent::~UDishonoredInventoryItemPostUpdateTickComponent(void)
-//   0x84ef20  public: static void __cdecl UDishonoredInventoryItemPostUpdateTickComponent::InternalConstructor(void *)
-//   0x858dd0  protected: virtual __thiscall UDishonoredInventory::~UDishonoredInventory(void)
-//   0x85a0f0  public: static void __cdecl UDishonoredInventory::InternalConstructor(void *)
-//   0x861660  public: virtual class UObject * __thiscall UDishonoredInventoryItem::GetUObjectInterfaceDisEngineTweaksInterface(void)
-//   0x8616a0  protected: virtual __thiscall UDishonoredInventoryItem::~UDishonoredInventoryItem(void)
-//   0x861980  public: static void __cdecl UDishonoredInventoryItem::InternalConstructor(void *)
-//   0x8629b0  protected: virtual __thiscall UDisItemContext::~UDisItemContext(void)
-//   0x862a50  protected: virtual __thiscall UDisItemContext_AimAssistAttack::~UDisItemContext_AimAssistAttack(void)
-//   0x862ac0  public: virtual class UObject * __thiscall UDisItemContext_AimAssistAttack::GetUObjectInterfaceArkSettingsListenerInterface(void)
-//   0x864900  protected: virtual __thiscall UDisItemContext_Choke::~UDisItemContext_Choke(void)
-//   0x86d040  public: static void __cdecl UDisItemContext::InternalConstructor(void *)
-//   0x86d060  public: static void __cdecl UDisItemContext_AimAssistAttack::InternalConstructor(void *)
-//   0x86d0a0  public: static void __cdecl UDisItemContext_Choke::InternalConstructor(void *)
-//   0x87b160  protected: virtual __thiscall ADishonoredInventoryPickup::~ADishonoredInventoryPickup(void)
-//   0x87d1a0  public: static void __cdecl ADishonoredInventoryPickup::InternalConstructor(void *)
-//   0x87e7d0  protected: virtual __thiscall UDisTweaks_LODConfig::~UDisTweaks_LODConfig(void)
-//   0x87e860  protected: virtual __thiscall UDisTweaks_Choke::~UDisTweaks_Choke(void)
-//   0x8801b0  protected: virtual __thiscall UDishonoredItemSkeletalComponent::~UDishonoredItemSkeletalComponent(void)
-//   0x880240  public: static void __cdecl UDisTweaks_LODConfig::InternalConstructor(void *)
-//   0x880260  public: static void __cdecl UDisTweaks_Choke::InternalConstructor(void *)
-//   0x882890  public: static void __cdecl UDishonoredItemSkeletalComponent::InternalConstructor(void *)
-//   0x893990  public: static void __cdecl UDisAbstractItem::InternalConstructor(void *)
-//   0x898cf0  public: static void __cdecl ADisAbstractItemPickup::InternalConstructor(void *)
-//   0x89ab30  protected: virtual __thiscall UDisTweaks_ItemPowers::~UDisTweaks_ItemPowers(void)
-//   0x89abd0  protected: virtual __thiscall UDisTweaks_NPCTune::~UDisTweaks_NPCTune(void)
-//   0x89ac60  protected: virtual __thiscall UDisTweaks_NPCTune_Protection::~UDisTweaks_NPCTune_Protection(void)
-//   0x89c660  public: static void __cdecl UDisTweaks_ItemPowers::InternalConstructor(void *)
-//   0x89c680  public: static void __cdecl UDisTweaks_NPCTune::InternalConstructor(void *)
-//   0x89c6a0  public: static void __cdecl UDisTweaks_NPCTune_Protection::InternalConstructor(void *)
-//   0x8aae90  protected: virtual __thiscall UDishonoredItemEmpty::~UDishonoredItemEmpty(void)
-//   0x8aaf60  protected: virtual __thiscall UDisItemPowers::~UDisItemPowers(void)
-//   0x8ac4a0  public: static void __cdecl UDishonoredItemEmpty::InternalConstructor(void *)
-//   0x8ac4f0  public: static void __cdecl UDisItemPowers::InternalConstructor(void *)
-//   0x8e6770  protected: virtual __thiscall ADisWhaleOilReceptacle::~ADisWhaleOilReceptacle(void)
-//   0x8e9000  public: static void __cdecl ADisWhaleOilReceptacle::InternalConstructor(void *)
-//   0x8eff00  protected: virtual __thiscall ADisWhaleOilBattery::~ADisWhaleOilBattery(void)
-//   0x8f0a50  public: static void __cdecl ADisWhaleOilBattery::InternalConstructor(void *)
-//   0xba8ad0  _dynamic_initializer_for__ADishonoredMovableexecOnSleepRBPhysics_NativeTemp__
-//   0xba8af0  _dynamic_initializer_for__ADisTallboyAttachmentexecTakeDamage_NativeTemp__
-//   0xba8b10  _dynamic_initializer_for__ADisWhaleOilBatteryexecTakeDamage_NativeTemp__
-//   0xba8b30  _dynamic_initializer_for__ADisPickup_BaseexecBaseChangeTemp__
-//   0xba8b50  _dynamic_initializer_for__ADisWhaleBoneCharmexecOnSetBoneCharmEffectTemp__
-//   0xba8b70  _dynamic_initializer_for__ADisWallOfLightexecTakeDamageTemp__
-//   0xba8b90  _dynamic_initializer_for__ADisWallOfLightexecTakeDamage_NativeTemp__
+/*===========================================================================
+    DishonoredGameItemClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameAttributesClasses.h"
+#include "DishonoredGameGlobalEnumsClasses.h"
+#include "DishonoredGameGlobalStructsClasses.h"
+#include "DishonoredGameClasses.h"
+#include "DishonoredGameDLC07PullClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_ITEM_ENUMS
+#define INCLUDED_DISHONOREDGAME_ITEM_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_ITEM_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_ITEM_CLASSES
+#define INCLUDED_DISHONOREDGAME_ITEM_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisMovableInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisMovableInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisMovableInterface
+    //## END PROPS DisMovableInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisMovableInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisMovableInterface
+{
+protected:
+    virtual ~IDisMovableInterface() {}
+public:
+    typedef UDisMovableInterface UClassType;
+};
+
+struct DisPickup_Base_eventBaseChange_Parms
+{
+    DisPickup_Base_eventBaseChange_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisPickup_Base: retail sizeof 960, reflected span 876..952 (2012 PDB sizeof 944)
+class ADisPickup_Base : public ADishonoredKActor, public IDisInteractableInterface, public IDisSoulRenderInterface, public IDisMovableInterface, public IDisDLC07PullTargetInterface
+{
+public:
+    //## BEGIN PROPS DisPickup_Base
+    class UDisMovableComponent* m_pMovableComponent;
+    class UStaticMeshComponent* m_pHighlightStaticMeshComponent;
+    class UDisParticleSystemComponent* m_pParticleSystem;
+    BITFIELD m_bProximitySoundStarted:1;
+    BITFIELD m_bPendingDestructionAfterOneFullTickCycle:1;
+    BITFIELD m_bIsAttachedAsStealable:1;
+    BITFIELD m_bIsKeyItemOverride:1;
+    BITFIELD m_bPullDisabled:1;
+    BITFIELD m_bBeingPulled:1;
+    class ADishonoredPlayerController* m_pTravellingTowardPC;
+    FLOAT m_fPickupTravelTime;
+    FLOAT m_fMaxTravelTime;
+    FVector m_PickupStartPos;
+    FVector m_OffsetToBoundsCenter;
+    INT m_HighlightFlags;
+    class UStaticMeshComponent* m_BoxBoundsForPVS;
+    //## END PROPS DisPickup_Base
+
+    void eventBaseChange()
+    {
+        DisPickup_Base_eventBaseChange_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_BaseChange),&Parms);
+    }
+    DECLARE_FUNCTION(execBaseChange);
+    DECLARE_ABSTRACT_CLASS(ADisPickup_Base,ADishonoredKActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAbstractItemPickup: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
+class ADisAbstractItemPickup : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisAbstractItemPickup
+    class UDisTweaks_AbstractItemPickup* m_pTweaks;
+    //## END PROPS DisAbstractItemPickup
+
+    DECLARE_CLASS(ADisAbstractItemPickup,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAbstractItemPickupAudioLog: retail sizeof 960, reflected span 956..960 (2012 PDB sizeof 960)
+class ADisAbstractItemPickupAudioLog : public ADisAbstractItemPickup
+{
+public:
+    //## BEGIN PROPS DisAbstractItemPickupAudioLog
+    class UDisAbstractItemAudioLog* m_pAudioLog;
+    //## END PROPS DisAbstractItemPickupAudioLog
+
+    DECLARE_CLASS(ADisAbstractItemPickupAudioLog,ADisAbstractItemPickup,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAbstractItemPickupNote: retail sizeof 976, reflected span 956..964 (2012 PDB sizeof 960)
+class ADisAbstractItemPickupNote : public ADisAbstractItemPickup
+{
+public:
+    //## BEGIN PROPS DisAbstractItemPickupNote
+    class UDisAbstractItem* m_pAbstractItem;
+    BITFIELD m_bAlreadyUsed:1;
+    //## END PROPS DisAbstractItemPickupNote
+
+    DECLARE_CLASS(ADisAbstractItemPickupNote,ADisAbstractItemPickup,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredBreakable.DisLootSettings: retail SDK size 16 (2012 PDB 16)
+struct FDisLootSettings
+{
+    class UDisLootPayload* m_pLootPayload;
+    INT m_NumToDropOverride;
+    FLOAT m_fImpulseForce;
+    BITFIELD m_bLootDropped:1;
+
+    /** Constructors */
+    FDisLootSettings() {}
+    FDisLootSettings(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLootSettings));
+    }
+};
+
+// DishonoredGame.DishonoredBreakable.DisPendingBreakage: retail SDK size 16 (2012 PDB 16)
+struct FDisPendingBreakage
+{
+    INT m_iWantedStep;
+    FVector m_BreakVelocity;
+
+    /** Constructors */
+    FDisPendingBreakage() {}
+    FDisPendingBreakage(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisPendingBreakage));
+    }
+};
+
+struct DishonoredBreakable_eventDetach_Parms
+{
+    class AActor* Other;
+    DishonoredBreakable_eventDetach_Parms(EEventParm)
+    {
+    }
+};
+struct DishonoredBreakable_eventAttach_Parms
+{
+    class AActor* Other;
+    DishonoredBreakable_eventAttach_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredBreakable: retail sizeof 1008, reflected span 876..1008 (2012 PDB sizeof 1008)
+class ADishonoredBreakable : public ADishonoredKActor, public IArkHealthInterface
+{
+public:
+    //## BEGIN PROPS DishonoredBreakable
+    class UDisTweaks_StaticBreakable* m_pBreakableTweaks;
+    FDisLootSettings m_LootSettings;
+    BITFIELD m_bIsCurFixed:1;
+    BITFIELD m_bDropped:1;
+    BITFIELD m_bWasCarried:1;
+    BITFIELD m_bHasReachedNonZeroVelocity:1;
+    BITFIELD m_bHasCollidedDuringLastPhysXstep:1;
+    BITFIELD m_bShouldTick:1;
+    BITFIELD m_bTickedOnce:1;
+    BITFIELD m_bPendingDestructionAfterOneFullTickCycle:1;
+    INT m_CurHealth;
+    INT m_NextStep;
+    FLOAT m_fStepTimer;
+    FDisPendingBreakage m_PendingBreakage;
+    FLOAT m_fImpendingExplosionBroadcastTimer;
+    BYTE m_eImpendingExplosionLoudness;
+    TMap<class AActor*,FLOAT> m_ActorCollisionTimes;  // DISHONORED(layout): retail SDK gap @940: MapProperty m_ActorCollisionTimes (script_classes_2013), type from the 2012 PDB
+    class UParticleSystemComponent* m_ParticleEffect;
+    class UStaticMeshComponent* m_BoxBoundsForPVS;
+    //## END PROPS DishonoredBreakable
+
+    void eventDetach(class AActor* Other)
+    {
+        DishonoredBreakable_eventDetach_Parms Parms(EC_EventParm);
+        Parms.Other=Other;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_Detach),&Parms);
+    }
+    void eventAttach(class AActor* Other)
+    {
+        DishonoredBreakable_eventAttach_Parms Parms(EC_EventParm);
+        Parms.Other=Other;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_Attach),&Parms);
+    }
+    virtual UObject* GetUObjectInterfaceArkHealthInterface() { return this; }  // DISHONORED(port): IArkHealthInterface interface glue
+    virtual INT ArkGetCurHealth() const { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredBreakable::ArkGetCurHealth")); return {}; }  // DISHONORED(port): IArkHealthInterface pure virtual
+    virtual UBOOL ArkIsIncapacitated() const { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredBreakable::ArkIsIncapacitated")); return {}; }  // DISHONORED(port): IArkHealthInterface pure virtual
+    virtual UBOOL ArkIsDeadOrDestroyed() const { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredBreakable::ArkIsDeadOrDestroyed")); return {}; }  // DISHONORED(port): IArkHealthInterface pure virtual
+    DECLARE_CLASS(ADishonoredBreakable,ADishonoredKActor,0,DishonoredGame)
+};
+
+struct DishonoredMovable_eventOnSleepRBPhysics_Parms
+{
+    DishonoredMovable_eventOnSleepRBPhysics_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DishonoredMovable: retail sizeof 1072, reflected span 1008..1060 (2012 PDB sizeof 1056)
+class ADishonoredMovable : public ADishonoredBreakable, public IDisInteractableInterface, public IDisMovableInterface, public IDisSoulRenderInterface, public IDisDLC07PullTargetInterface
+{
+public:
+    //## BEGIN PROPS DishonoredMovable
+    class UDisMovableComponent* m_pMovableComponent;
+    INT m_Damage;
+    INT m_HighlightFlags;
+    FVector m_PreviousPhysxLocation;
+    class UDisTweaks_Movable* m_pMovableTweaks;
+    class UStaticMeshComponent* m_pHighlightStaticMeshComponent;
+    BITFIELD m_bPullDisabled:1;
+    BITFIELD m_bInteractDisabled:1;
+    //## END PROPS DishonoredMovable
+
+    void eventOnSleepRBPhysics()
+    {
+        DishonoredMovable_eventOnSleepRBPhysics_Parms Parms(EC_EventParm);
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_OnSleepRBPhysics),&Parms);
+    }
+    DECLARE_FUNCTION(execOnSleepRBPhysics_Native);
+    DECLARE_CLASS(ADishonoredMovable,ADishonoredBreakable,0,DishonoredGame)
+};
+
+struct DisWhaleOilBattery_eventDetach_Parms
+{
+    class AActor* Other;
+    DisWhaleOilBattery_eventDetach_Parms(EEventParm)
+    {
+    }
+};
+struct DisWhaleOilBattery_eventAttach_Parms
+{
+    class AActor* Other;
+    DisWhaleOilBattery_eventAttach_Parms(EEventParm)
+    {
+    }
+};
+// DishonoredGame.DisWhaleOilBattery: retail sizeof 1120, reflected span 1060..1116 (2012 PDB sizeof 1104)
+class ADisWhaleOilBattery : public ADishonoredMovable
+{
+public:
+    //## BEGIN PROPS DisWhaleOilBattery
+    class UDisTweaks_WhaleOilBattery* m_pWhaleOilTweaks;
+    INT m_CurrentCharges;
+    class ADisWhaleOilReceptacle* m_pPlug;
+    class AActor* m_pLastDamageCulprit;
+    BITFIELD m_bRecharging:1;
+    BITFIELD m_bExplosionChain:1;
+    BITFIELD m_bThrown:1;
+    BITFIELD m_bDamaged:1;
+    FVector m_vEjectDir;
+    FLOAT m_fExplosionChainTimer;
+    class AController* m_pExplosionChainInstigator;
+    class AActor* m_pExplosionChainDamageCauser;
+    INT m_ResetThrownFrameCount;
+    FLOAT m_fReadyToPlugTime;
+    INT m_PostLoadGodFrameCount;
+    //## END PROPS DisWhaleOilBattery
+
+    void eventDetach(class AActor* Other)
+    {
+        DisWhaleOilBattery_eventDetach_Parms Parms(EC_EventParm);
+        Parms.Other=Other;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_Detach),&Parms);
+    }
+    void eventAttach(class AActor* Other)
+    {
+        DisWhaleOilBattery_eventAttach_Parms Parms(EC_EventParm);
+        Parms.Other=Other;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_Attach),&Parms);
+    }
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisWhaleOilBattery,ADishonoredMovable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNPCAttachment: retail sizeof 1072, reflected span 1060..1060 (new in 2013)
+class ADisNPCAttachment : public ADishonoredMovable
+{
+public:
+    //## BEGIN PROPS DisNPCAttachment
+    //## END PROPS DisNPCAttachment
+
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisNPCAttachment,ADishonoredMovable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisDetectionEye: retail sizeof 672, reflected span 632..664 (2012 PDB sizeof 672)
+class ADisDetectionEye : public ASkeletalMeshActor, public IDisTweaksInterface, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisDetectionEye
+    class UDisTweaks_DetectionEye* m_pEyeTweaks;
+    BITFIELD m_bOverrideTweakDetectionParams:1;
+    class UCylinderComponent* m_pDetectionCylinder;
+    class ADisWallOfLight* m_pWall;
+    BYTE m_EyeState;
+    class UStaticMeshComponent* m_BoxBoundsForPVS;
+    //## END PROPS DisDetectionEye
+
+    DECLARE_CLASS(ADisDetectionEye,ASkeletalMeshActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisElixirHealth: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
+class ADisElixirHealth : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisElixirHealth
+    class UDisTweaks_ElixirHealth* m_pPickupTweaks;
+    //## END PROPS DisElixirHealth
+
+    DECLARE_CLASS(ADisElixirHealth,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisElixirMana: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
+class ADisElixirMana : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisElixirMana
+    class UDisTweaks_ElixirMana* m_pPickupTweaks;
+    //## END PROPS DisElixirMana
+
+    DECLARE_CLASS(ADisElixirMana,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisGenericPickup: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
+class ADisGenericPickup : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisGenericPickup
+    class UDisTweaks_GenericPickup* m_pGenericPickupTweaks;
+    //## END PROPS DisGenericPickup
+
+    DECLARE_CLASS(ADisGenericPickup,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisKey_Base: retail sizeof 976, reflected span 952..968 (2012 PDB sizeof 960)
+class ADisKey_Base : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisKey_Base
+    FStringNoInit m_Name;
+    class UDisTweaks_Key* m_pKeyTweaks;
+    //## END PROPS DisKey_Base
+
+    DECLARE_CLASS(ADisKey_Base,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSpeaker_PA: retail sizeof 1072, reflected span 1008..1064 (2012 PDB sizeof 1024)
+class ADisSpeaker_PA : public ADishonoredBreakable, public IDisInteractableInterface
+{
+public:
+    //## BEGIN PROPS DisSpeaker_PA
+    BYTE m_SpeakerLocationType;
+    TArrayNoInit<class ADisSpeakerGroup_PA*> m_OwningSpeakerGroups;
+    INT m_HighlightFlags;
+    BYTE m_SpeakerPropagationCache[32];  // DISHONORED(layout): retail SDK gap @1032: StructProperty m_SpeakerPropagationCache (script_classes_2013) the dump did not type
+    //## END PROPS DisSpeaker_PA
+
+    DECLARE_CLASS(ADisSpeaker_PA,ADishonoredBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisStatPickup: retail sizeof 1024, reflected span 952..1012 (2012 PDB sizeof 992)
+class ADisStatPickup : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisStatPickup
+    INT m_CurAmmo[12];
+    INT m_LastConsumedAmmoCount;
+    FLOAT m_fExplosionChainTimer;
+    class UDisTweaks_StatPickup* m_pStatPickupTweaks;
+    //## END PROPS DisStatPickup
+
+    DECLARE_CLASS(ADisStatPickup,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTallboyAttachment: retail sizeof 1072, reflected span 1060..1060 (2012 PDB sizeof 1056)
+class ADisTallboyAttachment : public ADisNPCAttachment
+{
+public:
+    //## BEGIN PROPS DisTallboyAttachment
+    //## END PROPS DisTallboyAttachment
+
+    DECLARE_CLASS(ADisTallboyAttachment,ADisNPCAttachment,0,DishonoredGame)
+};
+
+struct DisWallOfLight_eventTakeDamage_Parms
+{
+    INT DamageAmount;
+    class AController* EventInstigator;
+    FVector HitLocation;
+    FVector Momentum;
+    class UClass* DamageType;
+    FTraceHitInfo HitInfo;
+    class AActor* DamageCauser;
+    DisWallOfLight_eventTakeDamage_Parms(EEventParm)
+    : HitLocation(EC_EventParm)
+    , Momentum(EC_EventParm)
+    , HitInfo(EC_EventParm)
+    {
+    }
+};
+// DishonoredGame.DisWallOfLight: retail sizeof 768, reflected span 640..764 (2012 PDB sizeof 768)
+class ADisWallOfLight : public ADynamicSMActor, public IDisTweaksInterface, public IDisHitReboundInterface, public IDisWhaleOilConsumerInterface, public IInterface_NavMeshPathObject, public IDisSoulRenderInterface
+{
+public:
+    //## BEGIN PROPS DisWallOfLight
+    class ADisWhaleOilReceptacle* m_pAttachedReceptacle;
+    class UDisTweaks_WallOfLight* m_pWallOfLightTweaks;
+    TArrayNoInit<class UDisTweaks_Faction*> m_FriendlyFactionsOverride;
+    class ADisDetectionEye* m_pEye;
+    BITFIELD m_bWoLAffectPathFinding:1;
+    BITFIELD m_bReversed:1;
+    BITFIELD m_bEnabled:1;
+    TArrayNoInit<class AEmitter*> m_Beams;
+    TArrayNoInit<class AEmitter*> m_SparkEffects;
+    class UParticleSystemComponent* m_CrossSparkEffect;
+    FLOAT m_ActivationTimer;
+    class UMaterialInterface* m_OriginalMaterial;
+    FLOAT m_fSparkTimer;
+    FLOAT m_fSparkDurationTimer;
+    class UArkComponentContainer* m_ComponentContainer;
+    FDisComponentObservableConfig m_ComponentObservableConfig;
+    BYTE m_InitialState;
+    FGuid NavGuid;
+    //## END PROPS DisWallOfLight
+
+    void eventTakeDamage(INT DamageAmount,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL)
+    {
+        DisWallOfLight_eventTakeDamage_Parms Parms(EC_EventParm);
+        Parms.DamageAmount=DamageAmount;
+        Parms.EventInstigator=EventInstigator;
+        Parms.HitLocation=HitLocation;
+        Parms.Momentum=Momentum;
+        Parms.DamageType=DamageType;
+        Parms.HitInfo=HitInfo;
+        Parms.DamageCauser=DamageCauser;
+        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_TakeDamage),&Parms);
+    }
+    virtual UObject* GetUObjectInterfaceInterface_NavMeshPathObject() { return this; }  // DISHONORED(port): IInterface_NavMeshPathObject interface glue
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execTakeDamage_Native);
+    DECLARE_CLASS(ADisWallOfLight,ADynamicSMActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWhaleBoneCharm: retail sizeof 976, reflected span 952..964 (2012 PDB sizeof 960)
+class ADisWhaleBoneCharm : public ADisPickup_Base
+{
+public:
+    //## BEGIN PROPS DisWhaleBoneCharm
+    class UDisTweaks_WhaleBoneCharm* m_pTweaks;
+    FPointer m_pActivatedWhaleBoneCharmLevel;
+    INT m_Effect;
+    //## END PROPS DisWhaleBoneCharm
+
+    DECLARE_FUNCTION(execOnSetBoneCharmEffect);
+    DECLARE_CLASS(ADisWhaleBoneCharm,ADisPickup_Base,0,DishonoredGame)
+};
+
+// DishonoredGame.DisWhaleOilReceptacle: retail sizeof 688, reflected span 640..684 (2012 PDB sizeof 688)
+class ADisWhaleOilReceptacle : public ADynamicSMActor, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DisWhaleOilReceptacle
+    class UDisTweaks_WhaleOilReceptacle* m_pWhaleOilTweaks;
+    class ADisWhaleOilBattery* m_pBattery;
+    BITFIELD m_bBatteryAttached:1;
+    class ADisWhaleOilBattery* m_pAttachedBattery;
+    class ADisWhaleOilBattery* m_pPreviousBattery;
+    class ADisWhaleOilBattery* m_pTouchingBattery;
+    class UCylinderComponent* m_pDetectionCylinder;
+    TArrayNoInit<class AActor*> m_aAttachedActors;
+    //## END PROPS DisWhaleOilReceptacle
+
+    DECLARE_CLASS(ADisWhaleOilReceptacle,ADynamicSMActor,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredBreakableNavBlock: retail sizeof 1072, reflected span 1008..1064 (2012 PDB sizeof 1072)
+class ADishonoredBreakableNavBlock : public ADishonoredBreakable, public IInterface_NavMeshPathObject, public IEditorLinkSelectionInterface
+{
+public:
+    //## BEGIN PROPS DishonoredBreakableNavBlock
+    BITFIELD m_bIsCurrentlyBlockingNavigation:1;
+    BITFIELD m_bIsBlockingNavigation:1;
+    BITFIELD m_bShouldBlockNavigationWhenDestroyed:1;
+    class ADishonoredBreakableNavBlock* m_pLinkedBreakableNavBlock;
+    FGuid m_NavGuid;
+    TArrayNoInit<FPolyReference> m_NavPolyRef;
+    TArrayNoInit<class ADishonoredNPCPawn*> m_NPCsMovingThru;
+    //## END PROPS DishonoredBreakableNavBlock
+
+    virtual UObject* GetUObjectInterfaceInterface_NavMeshPathObject() { return this; }  // DISHONORED(port): IInterface_NavMeshPathObject interface glue
+    virtual UObject* GetUObjectInterfaceEditorLinkSelectionInterface() { return this; }  // DISHONORED(port): IEditorLinkSelectionInterface interface glue
+    DECLARE_CLASS(ADishonoredBreakableNavBlock,ADishonoredBreakable,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredInventoryPickup: retail sizeof 1024, reflected span 1012..1020 (2012 PDB sizeof 1008)
+class ADishonoredInventoryPickup : public ADisStatPickup
+{
+public:
+    //## BEGIN PROPS DishonoredInventoryPickup
+    class UDishonoredInventoryItem* m_pItem;
+    class UDisTweaks_InventoryPickup* m_pInvPickupTweaks;
+    //## END PROPS DishonoredInventoryPickup
+
+    DECLARE_CLASS(ADishonoredInventoryPickup,ADisStatPickup,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_AimAssistAttack.DisAimAssistDistReduce: retail SDK size 8 (2012 PDB 8)
+struct FDisAimAssistDistReduce
+{
+    FLOAT m_fDistanceToReduce;
+    FLOAT m_fAimAssistWindowScale;
+
+    /** Constructors */
+    FDisAimAssistDistReduce() {}
+    FDisAimAssistDistReduce(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistDistReduce));
+    }
+};
+
+// DishonoredGame.DisItemContext_AimAssistAttack.DisAimAssistChoiceInfo: retail SDK size 28 (2012 PDB 28)
+struct FDisAimAssistChoiceInfo
+{
+    FLOAT m_fMaxAimAssistAngle;
+    FLOAT m_fMaxAimAssistDistance;
+    FLOAT m_fAimAssistAngleWeight;
+    FLOAT m_fAimAssistDistWeight;
+    TArrayNoInit<FDisAimAssistDistReduce> m_AimAssistDistReduceSettings;
+
+    /** Constructors */
+    FDisAimAssistChoiceInfo() {}
+    FDisAimAssistChoiceInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistChoiceInfo));
+    }
+};
+
+// DishonoredGame.DisItemContext_AimAssistAttack.DisAimAssistInfo: retail SDK size 24 (2012 PDB 24)
+struct FDisAimAssistInfo
+{
+    BITFIELD m_bUseAimAssist:1;
+    FLOAT m_fPriorityWeightScale;
+    FLOAT m_fAimAssist_SafePercent_X;
+    FLOAT m_fAimAssist_SafePercent_Y;
+    FLOAT m_fAimAssist_MaxSize_Horiz;
+    FLOAT m_fAimAssist_MaxSize_Vert;
+
+    /** Constructors */
+    FDisAimAssistInfo() {}
+    FDisAimAssistInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAimAssistInfo));
+    }
+};
+
+// DishonoredGame.DishonoredInventory.DisAmmoInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisAmmoInfo
+{
+    INT m_AmmoCount;
+    INT m_AmmoCapacity;
+
+    /** Constructors */
+    FDisAmmoInfo() {}
+    FDisAmmoInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAmmoInfo));
+    }
+};
+
+// DishonoredGame.DisTweaks_ItemContext.DisItemAction: retail SDK size 68 (2012 PDB 68)
+struct FDisItemAction : public FPawnAction
+{
+    TArrayNoInit<FName> m_AnimStates_NonReady;
+    BYTE m_Animation;
+    BYTE m_Direction;
+    BITFIELD m_bCannotBeDodged:1;
+    BITFIELD m_bUnblockable:1;
+    BITFIELD m_bKillingBlow:1;
+    class UClass* m_pDamageType;
+
+    /** Constructors */
+    FDisItemAction() {}
+    FDisItemAction(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisItemAction));
+    }
+};
+
+// DishonoredGame.DisTweaks_ItemContext.ItemLinkedAction: retail SDK size 140 (2012 PDB 140)
+struct FItemLinkedAction
+{
+    FDisItemAction m_MainAction;
+    FDisItemAction m_SlaveAction;
+    BITFIELD m_bDoNotRotateSlave:1;
+    BITFIELD m_bSlaveMovesMaster:1;
+
+    /** Constructors */
+    FItemLinkedAction() {}
+    FItemLinkedAction(EEventParm)
+    {
+        appMemzero(this, sizeof(FItemLinkedAction));
+    }
+};
+
+// DishonoredGame.DishonoredInventory.DisEquipUsageInfo: retail SDK size 40 (2012 PDB 40)
+struct FDisEquipUsageInfo
+{
+    INT m_iEquippedSlot;
+    INT m_iReequipSlot;
+    INT m_iReequipSlotNonEmpty;
+    INT m_iDropSlot_NextFrame;
+    FVector m_VelocitySupplement;
+    FVector m_RotationSupplement;
+
+    /** Constructors */
+    FDisEquipUsageInfo() {}
+    FDisEquipUsageInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisEquipUsageInfo));
+    }
+};
+
+// DishonoredGame.DishonoredInventoryItem.DisItemAnimState_PickerInfo: retail SDK size 72 (2012 PDB 72)
+struct FDisItemAnimState_PickerInfo
+{
+    TMap<FName,FDisAnimState*> m_AnimStateMap;  // DISHONORED(layout): retail SDK gap @0: MapProperty m_AnimStateMap (script_classes_2013), type from the 2012 PDB
+    TArrayNoInit<FPointer> m_StateArrays;
+
+    /** Constructors */
+    FDisItemAnimState_PickerInfo() {}
+    FDisItemAnimState_PickerInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisItemAnimState_PickerInfo));
+    }
+};
+
+// DishonoredGame.DishonoredInventoryItem.DisItemPendingPawnSync: retail SDK size 16 (2012 PDB 16)
+struct FDisItemPendingPawnSync
+{
+    FName m_StateName;
+    FPointer m_pFiringObj;
+    FPointer m_pAttachToState;
+
+    /** Constructors */
+    FDisItemPendingPawnSync() {}
+    FDisItemPendingPawnSync(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisItemPendingPawnSync));
+    }
+};
+
+// DishonoredGame.DisTweaks_PlayerLoadout.DisLoadoutPower: retail SDK size 12 (2012 PDB 12)
+struct FDisLoadoutPower
+{
+    FName m_PowerToGive;
+    INT m_PowerLevel;
+
+    /** Constructors */
+    FDisLoadoutPower() {}
+    FDisLoadoutPower(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLoadoutPower));
+    }
+};
+
+// DishonoredGame.DisLootPayload.DisLootInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisLootInfo
+{
+    class UDisTweaksBase* m_pWhatTweakToSpawn;
+    INT m_HowManyToSpawn;
+
+    /** Constructors */
+    FDisLootInfo() {}
+    FDisLootInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisLootInfo));
+    }
+};
+
+// DishonoredGame.DishonoredInventoryItem.DisMeleeExtentCacheEntry: retail SDK size 24 (2012 PDB 24)
+struct FDisMeleeExtentCacheEntry
+{
+    FVector m_BL;
+    FVector m_UR;
+
+    /** Constructors */
+    FDisMeleeExtentCacheEntry() {}
+    FDisMeleeExtentCacheEntry(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMeleeExtentCacheEntry));
+    }
+};
+
+// DishonoredGame.DishonoredInventoryItem.DisMeleeExtentCache: retail SDK size 228 (2012 PDB 228)
+struct FDisMeleeExtentCache
+{
+    FDisMeleeExtentCacheEntry m_MeleeExtentCache[8];
+    INT m_NumCachedMeleeExtents;
+    FLOAT m_DeltaTimeSinceLastRecord;
+    INT m_iLastMeleeCollision;
+    TArrayNoInit<class UDisItemContext*> m_MeleeExtentItemContexts;
+    FPointer m_pMeleeExtentTweak;
+    class UParticleSystemComponent* m_TrailPsc;
+    BITFIELD m_NeedTrailUpdate:1;
+
+    /** Constructors */
+    FDisMeleeExtentCache() {}
+    FDisMeleeExtentCache(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMeleeExtentCache));
+    }
+};
+
+// DishonoredGame.DisItemContext.DisMeleeInfo: retail SDK size 84 (2012 PDB 84)
+struct FDisMeleeInfo
+{
+    FImpactInfo m_ImpactInfo;
+    FLOAT m_fHitQuality;
+
+    /** Constructors */
+    FDisMeleeInfo() {}
+    FDisMeleeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisMeleeInfo));
+    }
+};
+
+// DishonoredGame.DishonoredInventory.PawnInventorySlot: retail SDK size 12 (2012 PDB 12)
+struct FPawnInventorySlot
+{
+    class UDishonoredInventoryItem* m_pItem;
+    class UClass* m_pRequiredType;
+    BYTE m_RequiredUsage;
+
+    /** Constructors */
+    FPawnInventorySlot() {}
+    FPawnInventorySlot(EEventParm)
+    {
+        appMemzero(this, sizeof(FPawnInventorySlot));
+    }
+};
+
+// DishonoredGame.DisAbstractItem: retail sizeof 116, reflected span 56..116 (2012 PDB sizeof 116)
+class UDisAbstractItem : public UObject
+{
+public:
+    //## BEGIN PROPS DisAbstractItem
+    FStringNoInit m_ItemName;
+    FStringNoInit m_PluralItemName;
+    FStringNoInit m_Description;
+    BITFIELD m_bRemoveAtZeroQuantity:1;
+    BYTE m_JournalDisplaySection;
+    BYTE m_StoreDisplaySection;
+    BYTE m_TutorialNote;
+    FStringNoInit m_JournalIconName;
+    class UDisAbstractItem* m_GroupParentItem;
+    //## END PROPS DisAbstractItem
+
+    DECLARE_CLASS(UDisAbstractItem,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAbstractItemAudioLog: retail sizeof 124, reflected span 116..124 (2012 PDB sizeof 124)
+class UDisAbstractItemAudioLog : public UDisAbstractItem
+{
+public:
+    //## BEGIN PROPS DisAbstractItemAudioLog
+    FName m_AudioLogName;
+    //## END PROPS DisAbstractItemAudioLog
+
+    DECLARE_CLASS(UDisAbstractItemAudioLog,UDisAbstractItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredInventoryItem: retail sizeof 276, reflected span 56..276 (2012 PDB sizeof 276)
+class UDishonoredInventoryItem : public UObject, public IDisAnimStateOwnerInterface, public IDisAttributesInterface, public IDisTweaksInterface
+{
+public:
+    //## BEGIN PROPS DishonoredInventoryItem
+    BITFIELD m_bFirstMeleeExtents:1;
+    BITFIELD m_bCanTakeDamage:1;
+    BITFIELD m_bDroppedPickup:1;
+    BITFIELD m_bNeedToTick:1;
+    TArrayNoInit<FDisMeleeExtentCache> m_MeleeExtentCache;
+    class UDishonoredInventory* m_pOwningInventory;
+    BYTE m_EquipUsage;
+    BYTE m_CurSocket;
+    BYTE m_ZoomLevel;
+    BYTE m_eUISelection;
+    class UDishonoredItemSkeletalComponent* m_pMesh;
+    class UDishonoredItemSkeletalComponent* m_pPlayerMesh;
+    FVector2D m_CurItemAim;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Primary_Player;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Primary_NPC;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Alternate_Player;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Alternate_NPC;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Parry_Player;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Parry_NPC;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Reload_Player;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Reload_NPC;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Direct_Player;
+    TArrayNoInit<class UDisItemContext*> m_ContextSlots_Direct_NPC;
+    class UDisAttributes* m_pAttributes;
+    FLOAT m_fCurZoomDOFDistance;
+    INT m_ZoomTrackID;
+    class UDisAnimStateComponent* m_pAnimStateCompPlayer;
+    TArrayNoInit<FDisItemAnimState_PickerInfo> m_AnimStatePickerInfoPlayer;
+    FDisItemPendingPawnSync m_UnattachedPawnSync;
+    BYTE m_pPostUpdateTickComponent[4];  // DISHONORED(layout): retail SDK gap @272: ComponentProperty m_pPostUpdateTickComponent (script_classes_2013) the dump did not type
+    //## END PROPS DishonoredInventoryItem
+
+    DECLARE_ABSTRACT_CLASS(UDishonoredInventoryItem,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext: retail sizeof 176, reflected span 56..176 (2012 PDB sizeof 168)
+class UDisItemContext : public UObject, public IDisAnimStateFiringInterface
+{
+public:
+    //## BEGIN PROPS DisItemContext
+    class UDishonoredInventoryItem* m_pOwner;
+    BYTE m_OwnerContextSlot;
+    BYTE m_ContextStatus;
+    BYTE m_DEBUG_NPCConfirmedRejections;
+    BYTE m_DEBUG_NPCConfirmedSuccesses;
+    FLOAT m_fLastUseTime;
+    FLOAT m_fLastCalculatedCooldown;
+    BITFIELD m_bNeedsPawnInfo_Melee:1;
+    BITFIELD m_bDrawDebugWhenNotActive:1;
+    FDisMeleeInfo m_PawnInfo_Melee;
+    class UDisTweaks_ItemContext* m_pContextTweaks;
+    INT m_DEBUG_NPCConfirmedRejectionsEx;
+    INT m_DEBUG_NPCConfirmedSuccessesEx;
+    //## END PROPS DisItemContext
+
+    DECLARE_ABSTRACT_CLASS(UDisItemContext,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemContext_AimAssistAttack: retail sizeof 196, reflected span 176..196 (2012 PDB sizeof 188)
+class UDisItemContext_AimAssistAttack : public UDisItemContext, public IArkSettingsListenerInterface
+{
+public:
+    //## BEGIN PROPS DisItemContext_AimAssistAttack
+    BITFIELD m_bAutoUseManaElixirSettings:1;
+    BITFIELD m_bGamepadUseAutoAimSettings:1;
+    BITFIELD m_bMouseUseAutoAimSettings:1;
+    BITFIELD m_bUseAutoAimSettings:1;
+    FLOAT m_fGamepadAutoAimStrengthSettings;
+    FLOAT m_fMouseAutoAimStrengthSettings;
+    FLOAT m_fAutoAimStrengthSettings;
+    //## END PROPS DisItemContext_AimAssistAttack
+
+    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisItemContext_AimAssistAttack::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
+    DECLARE_CLASS(UDisItemContext_AimAssistAttack,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_ItemContext: retail sizeof 176, reflected span 140..176 (2012 PDB sizeof 176)
+class UDisTweaks_ItemContext : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_ItemContext
+    FLOAT m_fMinContextRange;
+    FLOAT m_fMaxContextRange;
+    FLOAT m_fIdealContextRange;
+    FLOAT m_fMaxContextHeightDifference;
+    BITFIELD m_bTestHeightFromFeetToFeet:1;
+    BITFIELD m_bDrainsNPCStamina:1;
+    BITFIELD m_bDisabled:1;
+    BITFIELD m_bIsAttack:1;
+    FLOAT m_fAllowedAngle;
+    FLOAT m_fAllowedAngleFromTargetDir;
+    FDisRangedFloat m_ContextCooldown;
+    //## END PROPS DisTweaks_ItemContext
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_ItemContext,UDisTweaksBase,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisItemContext_Choke: retail sizeof 180, reflected span 176..177 (2012 PDB sizeof 172)
+class UDisItemContext_Choke : public UDisItemContext
+{
+public:
+    //## BEGIN PROPS DisItemContext_Choke
+    BYTE m_State;
+    //## END PROPS DisItemContext_Choke
+
+    DECLARE_CLASS(UDisItemContext_Choke,UDisItemContext,0,DishonoredGame)
+};
+
+// DishonoredGame.DisItemPowers: retail sizeof 288, reflected span 276..288 (2012 PDB sizeof 288)
+class UDisItemPowers : public UDishonoredInventoryItem
+{
+public:
+    //## BEGIN PROPS DisItemPowers
+    class UDishonoredActivePowerComponent* m_pCurrentActivePower;
+    INT m_iPowerSlot;
+    class UDisTweaks_ItemPowers* m_pPowersItemTweaks;
+    //## END PROPS DisItemPowers
+
+    DECLARE_CLASS(UDisItemPowers,UDishonoredInventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisLootPayload: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UDisLootPayload : public UObject
+{
+public:
+    //## BEGIN PROPS DisLootPayload
+    TArrayNoInit<FDisLootInfo> m_Loot;
+    INT m_MinNumToDrop;
+    INT m_MaxNumToDrop;
+    //## END PROPS DisLootPayload
+
+    DECLARE_CLASS(UDisLootPayload,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DisMovableComponent: retail sizeof 160, reflected span 81..160 (2012 PDB sizeof 160)
+class UDisMovableComponent : public UActorComponent, public IDisDamageCauserInterface
+{
+public:
+    //## BEGIN PROPS DisMovableComponent
+    TScriptInterface<class IDisMovableInterface> m_pMovable;
+    class URB_BodyInstance* m_pBody;
+    class URB_BodyInstance* m_pBody_Old;
+    BITFIELD m_bOldCollide_Actors:1;
+    BITFIELD m_bOldCollide_BlockActors:1;
+    BITFIELD m_bOldCollide_IgnoreEncroach:1;
+    FRBCollisionChannelContainer m_OldCollide_Channels;
+    BYTE m_OldCollide_MainChannel;
+    FVector m_ThrowFromLocation;
+    class ADishonoredPawn* m_pHeldBy;
+    class ADishonoredPawn* m_pHeldBy_Old;
+    FLOAT m_fMaxPawnSpeed_Tiny;
+    FLOAT m_fMaxPawnSpeed_Small;
+    FLOAT m_fMaxPawnSpeed_Medium;
+    FLOAT m_fMaxPawnSpeed_Large;
+    FLOAT m_fRadiusChannelReset;
+    FLOAT m_fCollisionSpeedToBreakWhenHeld;
+    //## END PROPS DisMovableComponent
+
+    DECLARE_CLASS(UDisMovableComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Item");}
+};
+
+// DishonoredGame.DisTweaks_Choke: retail sizeof 192, reflected span 176..192 (2012 PDB sizeof 192)
+class UDisTweaks_Choke : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_Choke
+    FLOAT m_fChokePlayerControlledPitchDegrees_Top;
+    FLOAT m_fChokePlayerControlledPitchDegrees_Bottom;
+    FLOAT m_fChokePlayerControlledYawDegrees_Left;
+    FLOAT m_fChokePlayerControlledYawDegrees_Right;
+    //## END PROPS DisTweaks_Choke
+
+    DECLARE_CLASS(UDisTweaks_Choke,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_ItemPowers: retail sizeof 312, reflected span 268..312 (2012 PDB sizeof 312)
+class UDisTweaks_ItemPowers : public UDisTweaks_InventoryItem
+{
+public:
+    //## BEGIN PROPS DisTweaks_ItemPowers
+    FPawnAction m_SwitchPowerAction;
+    //## END PROPS DisTweaks_ItemPowers
+
+    DECLARE_CLASS(UDisTweaks_ItemPowers,UDisTweaks_InventoryItem,0,DishonoredGame)
+};
+
+// DishonoredGame.DisTweaks_NPCTune: retail sizeof 180, reflected span 176..180 (2012 PDB sizeof 180)
+class UDisTweaks_NPCTune : public UDisTweaks_ItemContext
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCTune
+    class UDisTweaks_Tune* m_pTuneTweak;
+    //## END PROPS DisTweaks_NPCTune
+
+    DECLARE_ABSTRACT_CLASS(UDisTweaks_NPCTune,UDisTweaks_ItemContext,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_NPCTune_Protection: retail sizeof 180, reflected span 180..180 (2012 PDB sizeof 184)
+class UDisTweaks_NPCTune_Protection : public UDisTweaks_NPCTune
+{
+public:
+    //## BEGIN PROPS DisTweaks_NPCTune_Protection
+    //## END PROPS DisTweaks_NPCTune_Protection
+
+    DECLARE_CLASS(UDisTweaks_NPCTune_Protection,UDisTweaks_NPCTune,0,DishonoredGame)
+    DECLARE_WITHIN(UDisTweaks_InventoryItem_PawnSpecific)
+};
+
+// DishonoredGame.DisTweaks_PlayerLoadout: retail sizeof 220, reflected span 140..220 (2012 PDB sizeof 220)
+class UDisTweaks_PlayerLoadout : public UDisTweaksBase
+{
+public:
+    //## BEGIN PROPS DisTweaks_PlayerLoadout
+    FDisInventoryLoadout m_InventoryLoadout;
+    TArrayNoInit<FDisLoadoutPower> m_StartingPowers;
+    TArrayNoInit<class UDisTweaks_Upgrade*> m_StartingUpgrades;
+    INT m_NumStartingWhaleBoneCharms;
+    //## END PROPS DisTweaks_PlayerLoadout
+
+    DECLARE_CLASS(UDisTweaks_PlayerLoadout,UDisTweaksBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredInventory: retail sizeof 316, reflected span 56..316 (2012 PDB sizeof 316)
+class UDishonoredInventory : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredInventory
+    TArrayNoInit<FPawnInventorySlot> m_Slots;
+    FDisEquipUsageInfo m_EquipUsageInfo[3];
+    TArrayNoInit<FDisAmmoInfo> m_AmmoInfo;
+    TArrayNoInit<FDisAbstractItemInfo> m_AbstractItem;
+    INT m_ElixirCounts[2];
+    class ADishonoredPawn* m_pOwner;
+    BITFIELD m_bInitialized:1;
+    BITFIELD m_bBackupIsValid:1;
+    BITFIELD m_bNeedToDropAnItem:1;
+    FDisInventoryLoadout m_InventoryBackup;
+    TArrayNoInit<class UDisItemContext*> m_ActiveItemContexts;
+    FStringNoInit m_PlayerItem_SF_Package;
+    FStringNoInit m_PlayerItem_SF_ListName;
+    //## END PROPS DishonoredInventory
+
+    DECLARE_CLASS(UDishonoredInventory,UObject,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Item");}
+};
+
+// DishonoredGame.DishonoredInventoryItemPostUpdateTickComponent: retail sizeof 84, reflected span 81..84 (2012 PDB sizeof 84)
+class UDishonoredInventoryItemPostUpdateTickComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DishonoredInventoryItemPostUpdateTickComponent
+    //## END PROPS DishonoredInventoryItemPostUpdateTickComponent
+
+    DECLARE_CLASS(UDishonoredInventoryItemPostUpdateTickComponent,UActorComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredItemEmpty: retail sizeof 320, reflected span 276..320 (2012 PDB sizeof 320)
+class UDishonoredItemEmpty : public UDishonoredInventoryItem
+{
+public:
+    //## BEGIN PROPS DishonoredItemEmpty
+    class UDisMovableComponent* m_pGrabbed_Movable;
+    BITFIELD m_bInitialGrab:1;
+    FLOAT m_fGrabTime;
+    FVector m_Grab_Start_Pos;
+    FRotator m_Grab_Start_Rot;
+    BYTE m_OldMovableDepthGroup;
+    class UDisTweaks_ItemEmpty* m_pEmptyHandsTweaks;
+    //## END PROPS DishonoredItemEmpty
+
+    DECLARE_CLASS(UDishonoredItemEmpty,UDishonoredInventoryItem,0,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("Item");}
+};
+
+// DishonoredGame.DishonoredItemSkeletalComponent: retail sizeof 1136, reflected span 1120..1124 (2012 PDB sizeof 1104)
+class UDishonoredItemSkeletalComponent : public UDishonoredPlayerSkeletalComponent
+{
+public:
+    //## BEGIN PROPS DishonoredItemSkeletalComponent
+    class UDishonoredInventoryItem* m_pItem;
+    //## END PROPS DishonoredItemSkeletalComponent
+
+    DECLARE_CLASS(UDishonoredItemSkeletalComponent,UDishonoredPlayerSkeletalComponent,0,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_ITEM_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(ADisPickup_Base,-1,execBaseChange);
+AUTOGENERATE_FUNCTION(ADishonoredMovable,-1,execOnSleepRBPhysics_Native);
+AUTOGENERATE_FUNCTION(ADisWhaleOilBattery,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisNPCAttachment,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisWallOfLight,-1,execTakeDamage);
+AUTOGENERATE_FUNCTION(ADisWallOfLight,-1,execTakeDamage_Native);
+AUTOGENERATE_FUNCTION(ADisWhaleBoneCharm,-1,execOnSetBoneCharmEffect);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_ITEM_NATIVE_DEFS
+#define DISHONOREDGAME_ITEM_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_ITEM \
+	UDisMovableInterface::StaticClass(); \
+	ADisPickup_Base::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisPickup_Base"), GDishonoredGameADisPickup_BaseNatives); \
+	ADisAbstractItemPickup::StaticClass(); \
+	ADisAbstractItemPickupAudioLog::StaticClass(); \
+	ADisAbstractItemPickupNote::StaticClass(); \
+	ADishonoredBreakable::StaticClass(); \
+	ADishonoredMovable::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredMovable"), GDishonoredGameADishonoredMovableNatives); \
+	ADisWhaleOilBattery::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisWhaleOilBattery"), GDishonoredGameADisWhaleOilBatteryNatives); \
+	ADisNPCAttachment::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisNPCAttachment"), GDishonoredGameADisNPCAttachmentNatives); \
+	ADisDetectionEye::StaticClass(); \
+	ADisElixirHealth::StaticClass(); \
+	ADisElixirMana::StaticClass(); \
+	ADisGenericPickup::StaticClass(); \
+	ADisKey_Base::StaticClass(); \
+	ADisSpeaker_PA::StaticClass(); \
+	ADisStatPickup::StaticClass(); \
+	ADisTallboyAttachment::StaticClass(); \
+	ADisWallOfLight::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisWallOfLight"), GDishonoredGameADisWallOfLightNatives); \
+	ADisWhaleBoneCharm::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisWhaleBoneCharm"), GDishonoredGameADisWhaleBoneCharmNatives); \
+	ADisWhaleOilReceptacle::StaticClass(); \
+	ADishonoredBreakableNavBlock::StaticClass(); \
+	ADishonoredInventoryPickup::StaticClass(); \
+	UDisAbstractItem::StaticClass(); \
+	UDisAbstractItemAudioLog::StaticClass(); \
+	UDishonoredInventoryItem::StaticClass(); \
+	UDisItemContext::StaticClass(); \
+	UDisItemContext_AimAssistAttack::StaticClass(); \
+	UDisTweaks_ItemContext::StaticClass(); \
+	UDisItemContext_Choke::StaticClass(); \
+	UDisItemPowers::StaticClass(); \
+	UDisLootPayload::StaticClass(); \
+	UDisMovableComponent::StaticClass(); \
+	UDisTweaks_Choke::StaticClass(); \
+	UDisTweaks_ItemPowers::StaticClass(); \
+	UDisTweaks_NPCTune::StaticClass(); \
+	UDisTweaks_NPCTune_Protection::StaticClass(); \
+	UDisTweaks_PlayerLoadout::StaticClass(); \
+	UDishonoredInventory::StaticClass(); \
+	UDishonoredInventoryItemPostUpdateTickComponent::StaticClass(); \
+	UDishonoredItemEmpty::StaticClass(); \
+	UDishonoredItemSkeletalComponent::StaticClass(); \
+
+#endif // DISHONOREDGAME_ITEM_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameADisPickup_BaseNatives[] = 
+{ 
+	MAP_NATIVE(ADisPickup_Base, execBaseChange)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADishonoredMovableNatives[] = 
+{ 
+	MAP_NATIVE(ADishonoredMovable, execOnSleepRBPhysics_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisWhaleOilBatteryNatives[] = 
+{ 
+	MAP_NATIVE(ADisWhaleOilBattery, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisNPCAttachmentNatives[] = 
+{ 
+	MAP_NATIVE(ADisNPCAttachment, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisWallOfLightNatives[] = 
+{ 
+	MAP_NATIVE(ADisWallOfLight, execTakeDamage)
+	MAP_NATIVE(ADisWallOfLight, execTakeDamage_Native)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameADisWhaleBoneCharmNatives[] = 
+{ 
+	MAP_NATIVE(ADisWhaleBoneCharm, execOnSetBoneCharmEffect)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_SIZE_NODIE(UDisMovableInterface)
+VERIFY_CLASS_OFFSET_NODIE(ADisPickup_Base,DisPickup_Base,m_pMovableComponent)
+VERIFY_CLASS_OFFSET_NODIE(ADisPickup_Base,DisPickup_Base,m_BoxBoundsForPVS)
+VERIFY_CLASS_SIZE_NODIE(ADisPickup_Base)
+VERIFY_CLASS_OFFSET_NODIE(ADisAbstractItemPickup,DisAbstractItemPickup,m_pTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisAbstractItemPickup)
+VERIFY_CLASS_OFFSET_NODIE(ADisAbstractItemPickupAudioLog,DisAbstractItemPickupAudioLog,m_pAudioLog)
+VERIFY_CLASS_SIZE_NODIE(ADisAbstractItemPickupAudioLog)
+VERIFY_CLASS_OFFSET_NODIE(ADisAbstractItemPickupNote,DisAbstractItemPickupNote,m_pAbstractItem)
+VERIFY_CLASS_SIZE_NODIE(ADisAbstractItemPickupNote)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredBreakable,DishonoredBreakable,m_pBreakableTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredBreakable,DishonoredBreakable,m_BoxBoundsForPVS)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredBreakable)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredMovable,DishonoredMovable,m_pMovableComponent)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredMovable,DishonoredMovable,m_pHighlightStaticMeshComponent)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredMovable)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhaleOilBattery,DisWhaleOilBattery,m_pWhaleOilTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhaleOilBattery,DisWhaleOilBattery,m_PostLoadGodFrameCount)
+VERIFY_CLASS_SIZE_NODIE(ADisWhaleOilBattery)
+VERIFY_CLASS_SIZE_NODIE(ADisNPCAttachment)
+VERIFY_CLASS_OFFSET_NODIE(ADisDetectionEye,DisDetectionEye,m_pEyeTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisDetectionEye,DisDetectionEye,m_BoxBoundsForPVS)
+VERIFY_CLASS_SIZE_NODIE(ADisDetectionEye)
+VERIFY_CLASS_OFFSET_NODIE(ADisElixirHealth,DisElixirHealth,m_pPickupTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisElixirHealth)
+VERIFY_CLASS_OFFSET_NODIE(ADisElixirMana,DisElixirMana,m_pPickupTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisElixirMana)
+VERIFY_CLASS_OFFSET_NODIE(ADisGenericPickup,DisGenericPickup,m_pGenericPickupTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisGenericPickup)
+VERIFY_CLASS_OFFSET_NODIE(ADisKey_Base,DisKey_Base,m_Name)
+VERIFY_CLASS_OFFSET_NODIE(ADisKey_Base,DisKey_Base,m_pKeyTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisKey_Base)
+VERIFY_CLASS_OFFSET_NODIE(ADisSpeaker_PA,DisSpeaker_PA,m_SpeakerLocationType)
+VERIFY_CLASS_OFFSET_NODIE(ADisSpeaker_PA,DisSpeaker_PA,m_HighlightFlags)
+VERIFY_CLASS_SIZE_NODIE(ADisSpeaker_PA)
+VERIFY_CLASS_OFFSET_NODIE(ADisStatPickup,DisStatPickup,m_CurAmmo)
+VERIFY_CLASS_OFFSET_NODIE(ADisStatPickup,DisStatPickup,m_pStatPickupTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADisStatPickup)
+VERIFY_CLASS_SIZE_NODIE(ADisTallboyAttachment)
+VERIFY_CLASS_OFFSET_NODIE(ADisWallOfLight,DisWallOfLight,m_pAttachedReceptacle)
+VERIFY_CLASS_OFFSET_NODIE(ADisWallOfLight,DisWallOfLight,NavGuid)
+VERIFY_CLASS_SIZE_NODIE(ADisWallOfLight)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhaleBoneCharm,DisWhaleBoneCharm,m_pTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhaleBoneCharm,DisWhaleBoneCharm,m_Effect)
+VERIFY_CLASS_SIZE_NODIE(ADisWhaleBoneCharm)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhaleOilReceptacle,DisWhaleOilReceptacle,m_pWhaleOilTweaks)
+VERIFY_CLASS_OFFSET_NODIE(ADisWhaleOilReceptacle,DisWhaleOilReceptacle,m_aAttachedActors)
+VERIFY_CLASS_SIZE_NODIE(ADisWhaleOilReceptacle)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredBreakableNavBlock,DishonoredBreakableNavBlock,m_pLinkedBreakableNavBlock)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredBreakableNavBlock,DishonoredBreakableNavBlock,m_NPCsMovingThru)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredBreakableNavBlock)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredInventoryPickup,DishonoredInventoryPickup,m_pItem)
+VERIFY_CLASS_OFFSET_NODIE(ADishonoredInventoryPickup,DishonoredInventoryPickup,m_pInvPickupTweaks)
+VERIFY_CLASS_SIZE_NODIE(ADishonoredInventoryPickup)
+VERIFY_CLASS_OFFSET_NODIE(UDisAbstractItem,DisAbstractItem,m_ItemName)
+VERIFY_CLASS_OFFSET_NODIE(UDisAbstractItem,DisAbstractItem,m_GroupParentItem)
+VERIFY_CLASS_SIZE_NODIE(UDisAbstractItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisAbstractItemAudioLog,DisAbstractItemAudioLog,m_AudioLogName)
+VERIFY_CLASS_SIZE_NODIE(UDisAbstractItemAudioLog)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredInventoryItem,DishonoredInventoryItem,m_MeleeExtentCache)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredInventoryItem,DishonoredInventoryItem,m_UnattachedPawnSync)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredInventoryItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext,DisItemContext,m_pOwner)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext,DisItemContext,m_DEBUG_NPCConfirmedSuccessesEx)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_AimAssistAttack,DisItemContext_AimAssistAttack,m_fGamepadAutoAimStrengthSettings)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_AimAssistAttack,DisItemContext_AimAssistAttack,m_fAutoAimStrengthSettings)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_AimAssistAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ItemContext,DisTweaks_ItemContext,m_fMinContextRange)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ItemContext,DisTweaks_ItemContext,m_ContextCooldown)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ItemContext)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemContext_Choke,DisItemContext_Choke,m_State)
+VERIFY_CLASS_SIZE_NODIE(UDisItemContext_Choke)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemPowers,DisItemPowers,m_pCurrentActivePower)
+VERIFY_CLASS_OFFSET_NODIE(UDisItemPowers,DisItemPowers,m_pPowersItemTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDisItemPowers)
+VERIFY_CLASS_OFFSET_NODIE(UDisLootPayload,DisLootPayload,m_Loot)
+VERIFY_CLASS_OFFSET_NODIE(UDisLootPayload,DisLootPayload,m_MaxNumToDrop)
+VERIFY_CLASS_SIZE_NODIE(UDisLootPayload)
+VERIFY_CLASS_OFFSET_NODIE(UDisMovableComponent,DisMovableComponent,m_pMovable)
+VERIFY_CLASS_OFFSET_NODIE(UDisMovableComponent,DisMovableComponent,m_fCollisionSpeedToBreakWhenHeld)
+VERIFY_CLASS_SIZE_NODIE(UDisMovableComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Choke,DisTweaks_Choke,m_fChokePlayerControlledPitchDegrees_Top)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_Choke,DisTweaks_Choke,m_fChokePlayerControlledYawDegrees_Right)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_Choke)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_ItemPowers,DisTweaks_ItemPowers,m_SwitchPowerAction)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_ItemPowers)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_NPCTune,DisTweaks_NPCTune,m_pTuneTweak)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCTune)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_NPCTune_Protection)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerLoadout,DisTweaks_PlayerLoadout,m_InventoryLoadout)
+VERIFY_CLASS_OFFSET_NODIE(UDisTweaks_PlayerLoadout,DisTweaks_PlayerLoadout,m_NumStartingWhaleBoneCharms)
+VERIFY_CLASS_SIZE_NODIE(UDisTweaks_PlayerLoadout)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredInventory,DishonoredInventory,m_Slots)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredInventory,DishonoredInventory,m_PlayerItem_SF_ListName)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredInventory)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredInventoryItemPostUpdateTickComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredItemEmpty,DishonoredItemEmpty,m_pGrabbed_Movable)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredItemEmpty,DishonoredItemEmpty,m_pEmptyHandsTweaks)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredItemEmpty)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredItemSkeletalComponent,DishonoredItemSkeletalComponent,m_pItem)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredItemSkeletalComponent)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

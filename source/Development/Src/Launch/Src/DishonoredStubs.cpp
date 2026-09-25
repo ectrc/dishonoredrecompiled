@@ -9,27 +9,40 @@
 // ---- DishonoredGame (source/Development/Src/DishonoredGame, skeleton only) -------------------
 // LaunchEngineLoop.cpp InitializeRegistrantsAndRegisterNames / CheckNativeClassSizes call the
 // generated per-package hooks of the game module (DishonoredGame.upk, 1,485 script classes).
+// DISHONORED(port): agent T generates the real hooks (DishonoredGame/Src/DishonoredGameRegistrants.cpp,
+// same for AkAudio/GFxUI/OnlineSubsystemSteamworks); Launch/CMakeLists.txt defines DISHONORED_HAVE_<MODULE> when the module is a target.
+#if !DISHONORED_HAVE_DISHONOREDGAME
 void AutoInitializeRegistrantsDishonoredGame( INT& Lookup ) {}
 void AutoGenerateNamesDishonoredGame() {}
 void AutoCheckNativeClassSizesDishonoredGame( UBOOL& Mismatch ) {}
+#endif
 
 // ---- AkAudio (Wwise sound engine module, replaces XAudio2; module_map.md) --------------------
 // Same generated hooks for AkAudio.upk (UAkAudioDevice & co.).
+#if !DISHONORED_HAVE_AKAUDIO
 void AutoInitializeRegistrantsAkAudio( INT& Lookup ) {}
 void AutoGenerateNamesAkAudio() {}
+#endif
 
 // ---- GFxUI (Scaleform GFx 4 integration, WITH_GFx=0 until Phase 4) --------------------------
 // LaunchEngineLoop.cpp calls the GFxUI registrants unconditionally (not under WITH_GFx).
+#if !DISHONORED_HAVE_GFXUI
 void AutoInitializeRegistrantsGFxUI( INT& Lookup ) {}
+#endif
 
 // ---- OnlineSubsystemSteamworks (WITH_STEAMWORKS=0 until Phase 4) ----------------------------
 // The DISHONOREDGAME branch keeps the retail OSS selection (OnlineSubsystemSteamworks.upk).
+#if !DISHONORED_HAVE_OSS
 void AutoInitializeRegistrantsOnlineSubsystemSteamworks( INT& Lookup ) {}
 void AutoGenerateNamesOnlineSubsystemSteamworks() {}
+#endif
 
-// ---- D3D9Drv (imported, no target yet; milestone 1 runs on Engine's null RHI) ----------------
+// ---- D3D9Drv: a dishonored_module target since wave 2 (agentP.md); Launch links D3D9CreateRHI, the PIX
+// markers (D3D9Util.cpp), the shader compiler entry points and the compatibility evaluator from D3D9Drv.lib.
+// With DISHONORED_ENABLE_D3D9DRV=OFF the null RHI stands in again.
+#if !DISHONORED_HAVE_D3D9DRV
 // DynamicRHI.cpp RHIInit: the retail D3D9CreateRHI (PDB rva 0x60a180, D3D9Device.cpp) creates the
-// D3D9 device. Until D3D9Drv is a target, the null RHI keeps everything after appInit alive.
+// D3D9 device; without the module the null RHI keeps everything after appInit alive.
 extern FDynamicRHI* NullCreateRHI();
 FDynamicRHI* D3D9CreateRHI()
 {
@@ -61,6 +74,7 @@ UBOOL SetCompatibilityLevelWindows(FCompatibilityLevelInfo Level, UBOOL bWriteTo
 }
 // LaunchEngineLoop.cpp PreInit (-firstinstall only): D3D9HardwareSurvey.cpp picks the desktop resolution
 VOID SetDefaultResolutionForDevice() {}
+#endif // !DISHONORED_HAVE_D3D9DRV
 
 // ---- D3D11Drv (not imported: Dishonored ships no D3D11 path, module_map.md lists no d3d11drv) --
 // DynamicRHI.cpp RHIInit and ShaderCompiler.cpp reference the D3D11 entry points unconditionally.

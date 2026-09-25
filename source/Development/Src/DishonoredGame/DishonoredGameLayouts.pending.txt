@@ -1,0 +1,13 @@
+# Layout checks of DishonoredGameLayouts.h to leave as `// pending` (one type or Type.member per line).
+# Read by gen_classes_header.py --sdk. Everything here is an Engine dependency that the probe of the four
+# generated modules cannot see (the engine type itself is not probed); the shifted classes that the probe
+# does see are marked pending automatically (--probe, "not converged yet" reasons in the generated header).
+# Owner of the fix: the Engine convergence agents (PHASE4.md Q/R/S); remove the line once the engine type matches retail.
+# FTViewTarget: 44 bytes in our tree (2012 PDB), 40 in retail (retail SDK Engine struct) -> every FDishonoredViewTarget member after m_VT shifts
+FDishonoredViewTarget
+# FPolyReference: 28 bytes in our tree, 24 in retail (ADisDoor.m_DoorCwNavPolyRef at 1044 is right, m_DoorCcwNavPolyRef lands at 1072 instead of 1068)
+ADisDoor
+# USeqAct_Interp: 472 bytes in our tree (coord probe), 520 in retail (native_class_sizes.csv) -> 2013-only class, not probed
+UDisSeqAct_DLC05_Interp
+# USeqAct_MultiLevelStreaming: 288 in our tree (USeqAct_Latent 268 vs 264), 284 in retail -> 2013-only class, not probed
+UDisSeqAct_DLC05_StreamLevels

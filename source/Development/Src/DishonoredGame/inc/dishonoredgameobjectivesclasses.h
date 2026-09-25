@@ -1,50 +1,478 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameobjectivesclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (45):
-//   0x72f420  protected: virtual __thiscall UDishonoredObjective::~UDishonoredObjective(void)
-//   0x72f4d0  protected: virtual __thiscall UDishonoredObjectivesComponent::~UDishonoredObjectivesComponent(void)
-//   0x7311f0  public: static void __cdecl UDishonoredObjective::InternalConstructor(void *)
-//   0x731210  public: static void __cdecl UDishonoredObjectivesComponent::InternalConstructor(void *)
-//   0x734ce0  protected: virtual __thiscall UDishonoredTask_Base::~UDishonoredTask_Base(void)
-//   0x735de0  protected: virtual __thiscall UDishonoredTask_Custom::~UDishonoredTask_Custom(void)
-//   0x737fe0  public: static void __cdecl UDishonoredTask_Base::InternalConstructor(void *)
-//   0x738000  public: static void __cdecl UDishonoredTask_Custom::InternalConstructor(void *)
-//   0x7e4570  protected: virtual __thiscall UDisSeqAct_ObjectiveAction::~UDisSeqAct_ObjectiveAction(void)
-//   0x7e4610  protected: virtual __thiscall UDisSeqAct_AddObjective::~UDisSeqAct_AddObjective(void)
-//   0x7e46a0  protected: virtual __thiscall UDisSeqAct_CompleteObjective::~UDisSeqAct_CompleteObjective(void)
-//   0x7e4730  protected: virtual __thiscall UDisSeqAct_FailObjective::~UDisSeqAct_FailObjective(void)
-//   0x7e47c0  protected: virtual __thiscall UDisSeqAct_RemoveObjective::~UDisSeqAct_RemoveObjective(void)
-//   0x7e4850  protected: virtual __thiscall UDisSeqAct_SetObjectiveHidden::~UDisSeqAct_SetObjectiveHidden(void)
-//   0x7e48e0  protected: virtual __thiscall UDisSeqAct_TaskAction::~UDisSeqAct_TaskAction(void)
-//   0x7e4970  protected: virtual __thiscall UDisSeqAct_SetTaskHidden::~UDisSeqAct_SetTaskHidden(void)
-//   0x7e4a00  protected: virtual __thiscall UDisSeqAct_SetTaskState::~UDisSeqAct_SetTaskState(void)
-//   0x7e4a90  protected: virtual __thiscall UDisSeqAct_UpdateCustomTask::~UDisSeqAct_UpdateCustomTask(void)
-//   0x7e4b20  protected: virtual __thiscall UDisSeqAct_UpdateTaskTarget::~UDisSeqAct_UpdateTaskTarget(void)
-//   0x7e4bc0  protected: virtual __thiscall UDisSeqCond_HasObjective::~UDisSeqCond_HasObjective(void)
-//   0x7e4c50  protected: virtual __thiscall UDisSeqCond_IsObjectiveComplete::~UDisSeqCond_IsObjectiveComplete(void)
-//   0x7e4ce0  protected: virtual __thiscall UDisSeqCond_TaskState::~UDisSeqCond_TaskState(void)
-//   0x7e4d70  protected: virtual __thiscall UDisSeqEvent_ObjectiveCompleted::~UDisSeqEvent_ObjectiveCompleted(void)
-//   0x7e4e00  protected: virtual __thiscall UDisSeqEvent_TaskEvent::~UDisSeqEvent_TaskEvent(void)
-//   0x7e4e90  protected: virtual __thiscall UDisSeqEvent_TaskStateChanged::~UDisSeqEvent_TaskStateChanged(void)
-//   0x7e6420  public: static void __cdecl UDisSeqAct_ObjectiveAction::InternalConstructor(void *)
-//   0x7e6440  public: static void __cdecl UDisSeqAct_AddObjective::InternalConstructor(void *)
-//   0x7e6460  public: static void __cdecl UDisSeqAct_CompleteObjective::InternalConstructor(void *)
-//   0x7e6480  public: static void __cdecl UDisSeqAct_FailObjective::InternalConstructor(void *)
-//   0x7e64a0  public: static void __cdecl UDisSeqAct_RemoveObjective::InternalConstructor(void *)
-//   0x7e64c0  public: static void __cdecl UDisSeqAct_SetObjectiveHidden::InternalConstructor(void *)
-//   0x7e64e0  public: static void __cdecl UDisSeqAct_TaskAction::InternalConstructor(void *)
-//   0x7e6500  public: static void __cdecl UDisSeqAct_SetTaskHidden::InternalConstructor(void *)
-//   0x7e6520  public: static void __cdecl UDisSeqAct_SetTaskState::InternalConstructor(void *)
-//   0x7e6540  public: static void __cdecl UDisSeqAct_UpdateCustomTask::InternalConstructor(void *)
-//   0x7e6560  public: static void __cdecl UDisSeqAct_UpdateTaskTarget::InternalConstructor(void *)
-//   0x7e6580  public: static void __cdecl UDisSeqCond_HasObjective::InternalConstructor(void *)
-//   0x7e65a0  public: static void __cdecl UDisSeqCond_IsObjectiveComplete::InternalConstructor(void *)
-//   0x7e65c0  public: static void __cdecl UDisSeqCond_TaskState::InternalConstructor(void *)
-//   0x7e65e0  public: static void __cdecl UDisSeqEvent_ObjectiveCompleted::InternalConstructor(void *)
-//   0x7e6600  public: static void __cdecl UDisSeqEvent_TaskEvent::InternalConstructor(void *)
-//   0x7e6620  public: static void __cdecl UDisSeqEvent_TaskStateChanged::InternalConstructor(void *)
-//   0x811590  protected: virtual __thiscall UDisSeqVar_Task::~UDisSeqVar_Task(void)
-//   0x814840  public: static void __cdecl UDisSeqVar_Task::InternalConstructor(void *)
-//   0xba8d10  _dynamic_initializer_for__UDisSeqVar_TaskexecGetObjectValueTemp__
+/*===========================================================================
+    DishonoredGameObjectivesClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameKismetClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_OBJECTIVES_ENUMS
+#define INCLUDED_DISHONOREDGAME_OBJECTIVES_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_OBJECTIVES_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_OBJECTIVES_CLASSES
+#define INCLUDED_DISHONOREDGAME_OBJECTIVES_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DishonoredTask_Base.DisTaskTarget: retail SDK size 36 (2012 PDB 24)
+struct FDisTaskTarget
+{
+    class AActor* m_pActor;
+    FStringNoInit m_TargetNameLocFile;
+    FStringNoInit m_TargetNameLocSection;
+    BYTE m_VanishPreset;
+    BITFIELD m_bOptional:1;
+
+    /** Constructors */
+    FDisTaskTarget() {}
+    FDisTaskTarget(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTaskTarget));
+    }
+};
+
+// DishonoredGame.DishonoredTask_Base.DisTaskTargetsSaveData: retail SDK size 16 (2012 PDB 16)
+struct FDisTaskTargetsSaveData
+{
+    INT m_TaskID;
+    TArrayNoInit<FDisTaskTarget> m_Targets;
+
+    /** Constructors */
+    FDisTaskTargetsSaveData() {}
+    FDisTaskTargetsSaveData(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisTaskTargetsSaveData));
+    }
+};
+
+// DishonoredGame.DisObjectivesObserverInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UDisObjectivesObserverInterface : public UInterface
+{
+public:
+    //## BEGIN PROPS DisObjectivesObserverInterface
+    //## END PROPS DisObjectivesObserverInterface
+
+    DECLARE_ABSTRACT_CLASS(UDisObjectivesObserverInterface,UInterface,0|CLASS_Interface,DishonoredGame)
+};
+
+class IDisObjectivesObserverInterface
+{
+protected:
+    virtual ~IDisObjectivesObserverInterface() {}
+public:
+    typedef UDisObjectivesObserverInterface UClassType;
+};
+
+// DishonoredGame.DisSeqAct_ObjectiveAction: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
+class UDisSeqAct_ObjectiveAction : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_ObjectiveAction
+    BITFIELD m_bShowHUDNotification:1;
+    TArrayNoInit<class UDishonoredObjective*> m_Objectives;
+    //## END PROPS DisSeqAct_ObjectiveAction
+
+    DECLARE_ABSTRACT_CLASS(UDisSeqAct_ObjectiveAction,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_AddObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
+class UDisSeqAct_AddObjective : public UDisSeqAct_ObjectiveAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_AddObjective
+    //## END PROPS DisSeqAct_AddObjective
+
+    DECLARE_CLASS(UDisSeqAct_AddObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_CompleteObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
+class UDisSeqAct_CompleteObjective : public UDisSeqAct_ObjectiveAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_CompleteObjective
+    //## END PROPS DisSeqAct_CompleteObjective
+
+    DECLARE_CLASS(UDisSeqAct_CompleteObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_FailObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
+class UDisSeqAct_FailObjective : public UDisSeqAct_ObjectiveAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_FailObjective
+    //## END PROPS DisSeqAct_FailObjective
+
+    DECLARE_CLASS(UDisSeqAct_FailObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_RemoveObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
+class UDisSeqAct_RemoveObjective : public UDisSeqAct_ObjectiveAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_RemoveObjective
+    //## END PROPS DisSeqAct_RemoveObjective
+
+    DECLARE_CLASS(UDisSeqAct_RemoveObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetObjectiveHidden: retail sizeof 268, reflected span 264..268 (2012 PDB sizeof 268)
+class UDisSeqAct_SetObjectiveHidden : public UDisSeqAct_ObjectiveAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetObjectiveHidden
+    BITFIELD m_bHidden:1;
+    //## END PROPS DisSeqAct_SetObjectiveHidden
+
+    DECLARE_CLASS(UDisSeqAct_SetObjectiveHidden,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_TaskAction: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
+class UDisSeqAct_TaskAction : public UDisSeqAct_PlayerAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_TaskAction
+    BITFIELD m_bShowHUDNotification:1;
+    BITFIELD m_bOnlyOnTasksInActiveObjectives:1;
+    //## END PROPS DisSeqAct_TaskAction
+
+    DECLARE_ABSTRACT_CLASS(UDisSeqAct_TaskAction,UDisSeqAct_PlayerAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetTaskHidden: retail sizeof 256, reflected span 252..256 (2012 PDB sizeof 256)
+class UDisSeqAct_SetTaskHidden : public UDisSeqAct_TaskAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetTaskHidden
+    BITFIELD m_bHidden:1;
+    //## END PROPS DisSeqAct_SetTaskHidden
+
+    DECLARE_CLASS(UDisSeqAct_SetTaskHidden,UDisSeqAct_TaskAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_SetTaskState: retail sizeof 256, reflected span 252..253 (2012 PDB sizeof 256)
+class UDisSeqAct_SetTaskState : public UDisSeqAct_TaskAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_SetTaskState
+    BYTE m_TaskState;
+    //## END PROPS DisSeqAct_SetTaskState
+
+    DECLARE_CLASS(UDisSeqAct_SetTaskState,UDisSeqAct_TaskAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_UpdateCustomTask: retail sizeof 252, reflected span 252..252 (2012 PDB sizeof 252)
+class UDisSeqAct_UpdateCustomTask : public UDisSeqAct_TaskAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_UpdateCustomTask
+    //## END PROPS DisSeqAct_UpdateCustomTask
+
+    DECLARE_CLASS(UDisSeqAct_UpdateCustomTask,UDisSeqAct_TaskAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqAct_UpdateTaskTarget: retail sizeof 276, reflected span 252..273 (2012 PDB sizeof 276)
+class UDisSeqAct_UpdateTaskTarget : public UDisSeqAct_TaskAction
+{
+public:
+    //## BEGIN PROPS DisSeqAct_UpdateTaskTarget
+    INT m_TargetIndex;
+    class AActor* m_pTargetActor;
+    FStringNoInit m_TargetName;
+    BYTE m_MarkerVanishPreset;
+    //## END PROPS DisSeqAct_UpdateTaskTarget
+
+    DECLARE_CLASS(UDisSeqAct_UpdateTaskTarget,UDisSeqAct_TaskAction,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_HasObjective: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
+class UDisSeqCond_HasObjective : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_HasObjective
+    class UDishonoredObjective* m_pObjective;
+    //## END PROPS DisSeqCond_HasObjective
+
+    DECLARE_CLASS(UDisSeqCond_HasObjective,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_IsObjectiveComplete: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
+class UDisSeqCond_IsObjectiveComplete : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_IsObjectiveComplete
+    class UDishonoredObjective* m_pObjective;
+    //## END PROPS DisSeqCond_IsObjectiveComplete
+
+    DECLARE_CLASS(UDisSeqCond_IsObjectiveComplete,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqCond_TaskState: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)
+class UDisSeqCond_TaskState : public USequenceCondition
+{
+public:
+    //## BEGIN PROPS DisSeqCond_TaskState
+    //## END PROPS DisSeqCond_TaskState
+
+    DECLARE_CLASS(UDisSeqCond_TaskState,USequenceCondition,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_ObjectiveCompleted: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
+class UDisSeqEvent_ObjectiveCompleted : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_ObjectiveCompleted
+    class UDishonoredObjective* m_pObjective;
+    //## END PROPS DisSeqEvent_ObjectiveCompleted
+
+    DECLARE_CLASS(UDisSeqEvent_ObjectiveCompleted,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_TaskEvent: retail sizeof 280, reflected span 272..280 (2012 PDB sizeof 280)
+class UDisSeqEvent_TaskEvent : public UDisSeqEvent_PlayerEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_TaskEvent
+    class UDishonoredObjective* m_pObjective;
+    class UDishonoredTask_Base* m_pTask;
+    //## END PROPS DisSeqEvent_TaskEvent
+
+    DECLARE_ABSTRACT_CLASS(UDisSeqEvent_TaskEvent,UDisSeqEvent_PlayerEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_TaskActivated: retail sizeof 280, reflected span 280..280 (2012 PDB sizeof 280)
+class UDisSeqEvent_TaskActivated : public UDisSeqEvent_TaskEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_TaskActivated
+    //## END PROPS DisSeqEvent_TaskActivated
+
+    DECLARE_CLASS(UDisSeqEvent_TaskActivated,UDisSeqEvent_TaskEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqEvent_TaskStateChanged: retail sizeof 280, reflected span 280..280 (2012 PDB sizeof 280)
+class UDisSeqEvent_TaskStateChanged : public UDisSeqEvent_TaskEvent
+{
+public:
+    //## BEGIN PROPS DisSeqEvent_TaskStateChanged
+    //## END PROPS DisSeqEvent_TaskStateChanged
+
+    DECLARE_CLASS(UDisSeqEvent_TaskStateChanged,UDisSeqEvent_TaskEvent,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSeqVar_Task: retail sizeof 196, reflected span 176..196 (2012 PDB sizeof 196)
+class UDisSeqVar_Task : public USeqVar_Object
+{
+public:
+    //## BEGIN PROPS DisSeqVar_Task
+    class UDishonoredObjective* m_pObjective;
+    FName m_TaskName;
+    class UObject* m_pDummyTask;
+    class UObject* m_pTask;
+    //## END PROPS DisSeqVar_Task
+
+    DECLARE_FUNCTION(execGetObjectValue);
+    DECLARE_CLASS(UDisSeqVar_Task,USeqVar_Object,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredObjective: retail sizeof 108, reflected span 56..108 (2012 PDB sizeof 100)
+class UDishonoredObjective : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredObjective
+    FStringNoInit m_Description;
+    BYTE m_Priority;
+    BYTE m_ObjectiveState;
+    BITFIELD m_bInitiallyHidden:1;
+    BITFIELD m_bOptional:1;
+    BITFIELD m_bCompleteWhenAllTasksComplete:1;
+    BITFIELD m_bHUDMarkersInitiallyHidden:1;
+    BITFIELD m_bIsHidden:1;
+    BITFIELD m_bShowHUDMarkers:1;
+    TArrayNoInit<class UDisTweaks_ChapterInfo*> m_ChaptersShownIn;
+    TArrayNoInit<class UDishonoredTask_Base*> m_Tasks;
+    FName m_TemplateObjectiveName;
+    //## END PROPS DishonoredObjective
+
+    DECLARE_CLASS(UDishonoredObjective,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredObjectivesComponent: retail sizeof 112, reflected span 81..112 (2012 PDB sizeof 108)
+class UDishonoredObjectivesComponent : public UActorComponent
+{
+public:
+    //## BEGIN PROPS DishonoredObjectivesComponent
+    TArrayNoInit<class UDishonoredObjective*> m_Objectives;
+    BYTE m_Observers[12];  // DISHONORED(layout): retail SDK gap @96: ArrayProperty m_Observers (script_classes_2013) the dump did not type
+    INT m_LastTaskID;
+    //## END PROPS DishonoredObjectivesComponent
+
+    DECLARE_CLASS(UDishonoredObjectivesComponent,UActorComponent,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredTask_Base: retail sizeof 124, reflected span 56..124 (2012 PDB sizeof 112)
+class UDishonoredTask_Base : public UObject
+{
+public:
+    //## BEGIN PROPS DishonoredTask_Base
+    FStringNoInit m_Description;
+    FStringNoInit m_Status;
+    FStringNoInit m_StatusFormat;
+    BYTE m_InitialState;
+    BYTE m_TaskState;
+    BITFIELD m_bInitiallyHidden:1;
+    BITFIELD m_bOptional:1;
+    BITFIELD m_bHUDMarkersInitiallyHidden:1;
+    BITFIELD m_bHidden:1;
+    BITFIELD m_bShowHUDMarkers:1;
+    INT m_TaskID;
+    TArrayNoInit<FDisTaskTarget> m_Targets;
+    FName m_TemplateTaskName;
+    //## END PROPS DishonoredTask_Base
+
+    DECLARE_ABSTRACT_CLASS(UDishonoredTask_Base,UObject,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredTask_Custom: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 124)
+class UDishonoredTask_Custom : public UDishonoredTask_Base
+{
+public:
+    //## BEGIN PROPS DishonoredTask_Custom
+    FStringNoInit m_ActiveStatus;
+    //## END PROPS DishonoredTask_Custom
+
+    DECLARE_CLASS(UDishonoredTask_Custom,UDishonoredTask_Base,0,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_OBJECTIVES_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(UDisSeqVar_Task,-1,execGetObjectValue);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_OBJECTIVES_NATIVE_DEFS
+#define DISHONOREDGAME_OBJECTIVES_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_OBJECTIVES \
+	UDisObjectivesObserverInterface::StaticClass(); \
+	UDisSeqAct_ObjectiveAction::StaticClass(); \
+	UDisSeqAct_AddObjective::StaticClass(); \
+	UDisSeqAct_CompleteObjective::StaticClass(); \
+	UDisSeqAct_FailObjective::StaticClass(); \
+	UDisSeqAct_RemoveObjective::StaticClass(); \
+	UDisSeqAct_SetObjectiveHidden::StaticClass(); \
+	UDisSeqAct_TaskAction::StaticClass(); \
+	UDisSeqAct_SetTaskHidden::StaticClass(); \
+	UDisSeqAct_SetTaskState::StaticClass(); \
+	UDisSeqAct_UpdateCustomTask::StaticClass(); \
+	UDisSeqAct_UpdateTaskTarget::StaticClass(); \
+	UDisSeqCond_HasObjective::StaticClass(); \
+	UDisSeqCond_IsObjectiveComplete::StaticClass(); \
+	UDisSeqCond_TaskState::StaticClass(); \
+	UDisSeqEvent_ObjectiveCompleted::StaticClass(); \
+	UDisSeqEvent_TaskEvent::StaticClass(); \
+	UDisSeqEvent_TaskActivated::StaticClass(); \
+	UDisSeqEvent_TaskStateChanged::StaticClass(); \
+	UDisSeqVar_Task::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisSeqVar_Task"), GDishonoredGameUDisSeqVar_TaskNatives); \
+	UDishonoredObjective::StaticClass(); \
+	UDishonoredObjectivesComponent::StaticClass(); \
+	UDishonoredTask_Base::StaticClass(); \
+	UDishonoredTask_Custom::StaticClass(); \
+
+#endif // DISHONOREDGAME_OBJECTIVES_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameUDisSeqVar_TaskNatives[] = 
+{ 
+	MAP_NATIVE(UDisSeqVar_Task, execGetObjectValue)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_SIZE_NODIE(UDisObjectivesObserverInterface)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_ObjectiveAction,DisSeqAct_ObjectiveAction,m_Objectives)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_ObjectiveAction)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_AddObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_CompleteObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_FailObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_RemoveObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetObjectiveHidden)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_TaskAction)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetTaskHidden)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_SetTaskState,DisSeqAct_SetTaskState,m_TaskState)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_SetTaskState)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_UpdateCustomTask)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_UpdateTaskTarget,DisSeqAct_UpdateTaskTarget,m_TargetIndex)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqAct_UpdateTaskTarget,DisSeqAct_UpdateTaskTarget,m_MarkerVanishPreset)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqAct_UpdateTaskTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_HasObjective,DisSeqCond_HasObjective,m_pObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_HasObjective)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqCond_IsObjectiveComplete,DisSeqCond_IsObjectiveComplete,m_pObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_IsObjectiveComplete)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqCond_TaskState)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_ObjectiveCompleted,DisSeqEvent_ObjectiveCompleted,m_pObjective)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_ObjectiveCompleted)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_TaskEvent,DisSeqEvent_TaskEvent,m_pObjective)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqEvent_TaskEvent,DisSeqEvent_TaskEvent,m_pTask)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_TaskEvent)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_TaskActivated)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqEvent_TaskStateChanged)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqVar_Task,DisSeqVar_Task,m_pObjective)
+VERIFY_CLASS_OFFSET_NODIE(UDisSeqVar_Task,DisSeqVar_Task,m_pTask)
+VERIFY_CLASS_SIZE_NODIE(UDisSeqVar_Task)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredObjective,DishonoredObjective,m_Description)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredObjective,DishonoredObjective,m_TemplateObjectiveName)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredObjective)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredObjectivesComponent,DishonoredObjectivesComponent,m_Objectives)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredObjectivesComponent,DishonoredObjectivesComponent,m_LastTaskID)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredObjectivesComponent)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredTask_Base,DishonoredTask_Base,m_Description)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredTask_Base,DishonoredTask_Base,m_TemplateTaskName)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredTask_Base)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredTask_Custom,DishonoredTask_Custom,m_ActiveStatus)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredTask_Custom)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif

@@ -1,0 +1,9 @@
+# Types the GFxUI module's main header does not declare (collected from probe build logs)
+FAutoGFxValueArray
+FGFxAllocator
+FGFxEngine
+FGFxEngineBase
+FGFxFile
+FGFxLocalPlayerState
+FGFxMovie
+FGFxUFontProvider

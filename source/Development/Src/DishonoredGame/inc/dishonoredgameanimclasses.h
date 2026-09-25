@@ -1,206 +1,1947 @@
-#pragma once
-// DishonoredGame/inc/dishonoredgameanimclasses.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (233):
-//   0x6c5940  protected: virtual __thiscall UDisAnimNode3StateBlend::~UDisAnimNode3StateBlend(void)
-//   0x6c59d0  protected: virtual __thiscall UDisAnimNodeBlendByCorpseBeingCarried::~UDisAnimNodeBlendByCorpseBeingCarried(void)
-//   0x6c5a60  protected: virtual __thiscall UDisAnimNodeBlendByCorpseDropType::~UDisAnimNodeBlendByCorpseDropType(void)
-//   0x6c5af0  protected: virtual __thiscall UDisAnimNodeBlendByLocoType::~UDisAnimNodeBlendByLocoType(void)
-//   0x6c5b80  protected: virtual __thiscall UDisAnimNodeBlendByPhysicalCondition::~UDisAnimNodeBlendByPhysicalCondition(void)
-//   0x6c5c10  protected: virtual __thiscall UDisAnimNodeBlendByPlayerSneak::~UDisAnimNodeBlendByPlayerSneak(void)
-//   0x6c5ca0  protected: virtual __thiscall UDisAnimNodeBlendByPlayerStance::~UDisAnimNodeBlendByPlayerStance(void)
-//   0x6c5d30  protected: virtual __thiscall UDisAnimNodeBlendBySpeedPercent::~UDisAnimNodeBlendBySpeedPercent(void)
-//   0x6c5dc0  protected: virtual __thiscall UDisAnimNodeBlendItemAimAdditive::~UDisAnimNodeBlendItemAimAdditive(void)
-//   0x6c5e50  protected: virtual __thiscall ADisSkeletalMeshActorMAT::~ADisSkeletalMeshActorMAT(void)
-//   0x6c7280  public: static void __cdecl UDisAnimNode3StateBlend::InternalConstructor(void *)
-//   0x6c72a0  public: static void __cdecl UDisAnimNodeBlendByCorpseBeingCarried::InternalConstructor(void *)
-//   0x6c72c0  public: static void __cdecl UDisAnimNodeBlendByCorpseDropType::InternalConstructor(void *)
-//   0x6c72e0  public: static void __cdecl UDisAnimNodeBlendByLocoType::InternalConstructor(void *)
-//   0x6c7300  public: static void __cdecl UDisAnimNodeBlendByPhysicalCondition::InternalConstructor(void *)
-//   0x6c7320  public: static void __cdecl UDisAnimNodeBlendByPlayerSneak::InternalConstructor(void *)
-//   0x6c7340  public: static void __cdecl UDisAnimNodeBlendByPlayerStance::InternalConstructor(void *)
-//   0x6c7360  public: static void __cdecl UDisAnimNodeBlendBySpeedPercent::InternalConstructor(void *)
-//   0x6c7380  public: static void __cdecl UDisAnimNodeBlendItemAimAdditive::InternalConstructor(void *)
-//   0x6c73a0  public: static void __cdecl ADisSkeletalMeshActorMAT::InternalConstructor(void *)
-//   0x6cb030  protected: virtual __thiscall UDishonoredAnimTree::~UDishonoredAnimTree(void)
-//   0x6cc970  public: static void __cdecl UDishonoredAnimTree::InternalConstructor(void *)
-//   0x6cc990  protected: virtual __thiscall UDishonoredAnimSet::~UDishonoredAnimSet(void)
-//   0x6cdb60  public: static void __cdecl UDishonoredAnimSet::InternalConstructor(void *)
-//   0x6d1d90  protected: virtual __thiscall UDishonoredNotify_AllowMantleCancel::~UDishonoredNotify_AllowMantleCancel(void)
-//   0x6d1e20  protected: virtual __thiscall UDishonoredNotify_AllowMantleEnd::~UDishonoredNotify_AllowMantleEnd(void)
-//   0x6d1eb0  protected: virtual __thiscall UDishonoredNotify_AllowRagdoll::~UDishonoredNotify_AllowRagdoll(void)
-//   0x6d1f40  protected: virtual __thiscall UDishonoredNotify_AnimStateAdvance::~UDishonoredNotify_AnimStateAdvance(void)
-//   0x6d1fd0  protected: virtual __thiscall UDishonoredNotify_AnimStateExit::~UDishonoredNotify_AnimStateExit(void)
-//   0x6d2060  protected: virtual __thiscall UDishonoredNotify_AnimStateSyncEnd::~UDishonoredNotify_AnimStateSyncEnd(void)
-//   0x6d20f0  protected: virtual __thiscall UDishonoredNotify_AttachEquippedItem::~UDishonoredNotify_AttachEquippedItem(void)
-//   0x6d2180  protected: virtual __thiscall UDishonoredNotify_AttackInterruptable::~UDishonoredNotify_AttackInterruptable(void)
-//   0x6d2210  protected: virtual __thiscall UDisNotify_AttackInterruptable_Range::~UDisNotify_AttackInterruptable_Range(void)
-//   0x6d22a0  protected: virtual __thiscall UDishonoredNotify_AttackZone::~UDishonoredNotify_AttackZone(void)
-//   0x6d2330  protected: virtual __thiscall UDishonoredNotify_CameraPitchTarget::~UDishonoredNotify_CameraPitchTarget(void)
-//   0x6d23c0  protected: virtual __thiscall UDishonoredNotify_ChainExit::~UDishonoredNotify_ChainExit(void)
-//   0x6d2450  protected: virtual __thiscall UDishonoredNotify_ChainInput::~UDishonoredNotify_ChainInput(void)
-//   0x6d24e0  protected: virtual __thiscall UDishonoredNotify_ChainStart::~UDishonoredNotify_ChainStart(void)
-//   0x6d2570  protected: virtual __thiscall UDishonoredNotify_EndDropCorpse::~UDishonoredNotify_EndDropCorpse(void)
-//   0x6d2600  protected: virtual __thiscall UDishonoredNotify_FireDialogHook::~UDishonoredNotify_FireDialogHook(void)
-//   0x6d2690  protected: virtual __thiscall UDishonoredNotify_FireProjectile::~UDishonoredNotify_FireProjectile(void)
-//   0x6d2720  protected: virtual __thiscall UDishonoredNotify_Footfall::~UDishonoredNotify_Footfall(void)
-//   0x6d27b0  protected: virtual __thiscall UDishonoredNotify_PlayerMeleeWeaponHitFlesh::~UDishonoredNotify_PlayerMeleeWeaponHitFlesh(void)
-//   0x6d2840  protected: virtual __thiscall UDishonoredNotify_PlayTune::~UDishonoredNotify_PlayTune(void)
-//   0x6d28d0  protected: virtual __thiscall UDishonoredNotify_Ragdoll::~UDishonoredNotify_Ragdoll(void)
-//   0x6d2960  protected: virtual __thiscall UDishonoredNotify_ReleaseCorpse::~UDishonoredNotify_ReleaseCorpse(void)
-//   0x6d29f0  protected: virtual __thiscall UDishonoredNotify_SetBodyMode::~UDishonoredNotify_SetBodyMode(void)
-//   0x6d2a80  protected: virtual __thiscall UDishonoredNotify_SeverLimb::~UDishonoredNotify_SeverLimb(void)
-//   0x6d2b10  protected: virtual __thiscall UDishonoredNotify_ShowEquippedInvItem::~UDishonoredNotify_ShowEquippedInvItem(void)
-//   0x6d2ba0  protected: virtual __thiscall UDishonoredNotify_StartPlague::~UDishonoredNotify_StartPlague(void)
-//   0x6d2c30  protected: virtual __thiscall UDishonoredNotify_Stunned::~UDishonoredNotify_Stunned(void)
-//   0x6d2cc0  protected: virtual __thiscall UDishonoredNotify_UsableObjectActivate::~UDishonoredNotify_UsableObjectActivate(void)
-//   0x6d2d50  protected: virtual __thiscall UDisNotify_AnimStateUnlock::~UDisNotify_AnimStateUnlock(void)
-//   0x6d2de0  protected: virtual __thiscall UDisNotify_AttachItemInSlot::~UDisNotify_AttachItemInSlot(void)
-//   0x6d2e70  protected: virtual __thiscall UDisNotify_BendTime::~UDisNotify_BendTime(void)
-//   0x6d2f00  protected: virtual __thiscall UDisNotify_BendTime_Ranged::~UDisNotify_BendTime_Ranged(void)
-//   0x6d2f90  protected: virtual __thiscall UDisNotify_AdrenalineBendTime_Ranged::~UDisNotify_AdrenalineBendTime_Ranged(void)
-//   0x6d3020  protected: virtual __thiscall UDisNotify_BlockParryZone::~UDisNotify_BlockParryZone(void)
-//   0x6d30b0  protected: virtual __thiscall UDisNotify_CameraShake::~UDisNotify_CameraShake(void)
-//   0x6d3140  protected: virtual __thiscall UDisNotify_Destroy::~UDisNotify_Destroy(void)
-//   0x6d31d0  protected: virtual __thiscall UDisNotify_DevouringSwarm::~UDisNotify_DevouringSwarm(void)
-//   0x6d3260  protected: virtual __thiscall UDisNotify_DropArmor::~UDisNotify_DropArmor(void)
-//   0x6d32f0  protected: virtual __thiscall UDisNotify_DropItem::~UDisNotify_DropItem(void)
-//   0x6d3380  protected: virtual __thiscall UDisNotify_EnableLocomotion::~UDisNotify_EnableLocomotion(void)
-//   0x6d3410  protected: virtual __thiscall UDisNotify_EndSurprise::~UDisNotify_EndSurprise(void)
-//   0x6d34a0  protected: virtual __thiscall UDisNotify_FootLock_Ranged::~UDisNotify_FootLock_Ranged(void)
-//   0x6d3530  protected: virtual __thiscall UDisNotify_FootPlacement::~UDisNotify_FootPlacement(void)
-//   0x6d3590  public: virtual class FColor __thiscall UDisNotify_FootPlacement::GetEditorColor(void)
-//   0x6d35e0  protected: virtual __thiscall UDisNotify_Heartbeat::~UDisNotify_Heartbeat(void)
-//   0x6d3670  protected: virtual __thiscall UDisNotify_MakeAINoise::~UDisNotify_MakeAINoise(void)
-//   0x6d3700  protected: virtual __thiscall UDisNotify_MinigameBranch_Ranged::~UDisNotify_MinigameBranch_Ranged(void)
-//   0x6d3790  protected: virtual __thiscall UDisNotify_NPCDisableLookAt::~UDisNotify_NPCDisableLookAt(void)
-//   0x6d3820  protected: virtual __thiscall UDisNotify_NPCTurnControl::~UDisNotify_NPCTurnControl(void)
-//   0x6d38b0  protected: virtual __thiscall UDisNotify_ParryContact::~UDisNotify_ParryContact(void)
-//   0x6d3940  protected: virtual __thiscall UDisNotify_PlaceSpringRazor::~UDisNotify_PlaceSpringRazor(void)
-//   0x6d39d0  protected: virtual __thiscall UDisNotify_PlayerGenericInterruptable::~UDisNotify_PlayerGenericInterruptable(void)
-//   0x6d3a60  protected: virtual __thiscall UDisNotify_PlayRatBiteEffect::~UDisNotify_PlayRatBiteEffect(void)
-//   0x6d3af0  protected: virtual __thiscall UDisNotify_Possession::~UDisNotify_Possession(void)
-//   0x6d3b80  protected: virtual __thiscall UDisNotify_PowerRumble::~UDisNotify_PowerRumble(void)
-//   0x6d3c10  protected: virtual __thiscall UDisNotify_PowerShake::~UDisNotify_PowerShake(void)
-//   0x6d3ca0  protected: virtual __thiscall UDisNotify_ReloadAmmo::~UDisNotify_ReloadAmmo(void)
-//   0x6d3d30  protected: virtual __thiscall UDisNotify_ReloadArrow::~UDisNotify_ReloadArrow(void)
-//   0x6d3dc0  protected: virtual __thiscall UDisNotify_ReplaceMaterials::~UDisNotify_ReplaceMaterials(void)
-//   0x6d3e50  protected: virtual __thiscall UDisNotify_SetLightningTarget::~UDisNotify_SetLightningTarget(void)
-//   0x6d3ee0  protected: virtual __thiscall UDisNotify_ShowArrowHighRes::~UDisNotify_ShowArrowHighRes(void)
-//   0x6d3f70  protected: virtual __thiscall UDisNotify_ShowBullet::~UDisNotify_ShowBullet(void)
-//   0x6d4000  protected: virtual __thiscall UDisNotify_SwimStroke::~UDisNotify_SwimStroke(void)
-//   0x6d4090  protected: virtual __thiscall UDisNotify_TauntInterruptible_Ranged::~UDisNotify_TauntInterruptible_Ranged(void)
-//   0x6d4120  protected: virtual __thiscall UDisNotify_Trails::~UDisNotify_Trails(void)
-//   0x6d41b0  protected: virtual __thiscall UDisNotify_VulnerablePlayer::~UDisNotify_VulnerablePlayer(void)
-//   0x6d4240  protected: virtual __thiscall UDisNotify_VulnerableRange::~UDisNotify_VulnerableRange(void)
-//   0x6d42d0  protected: virtual __thiscall UDisNotify_WhiskeyFireDamage::~UDisNotify_WhiskeyFireDamage(void)
-//   0x6d4360  protected: virtual __thiscall UDisNotify_WindBlast::~UDisNotify_WindBlast(void)
-//   0x6d7db0  public: static void __cdecl UDishonoredNotify_AllowMantleCancel::InternalConstructor(void *)
-//   0x6d7dd0  public: static void __cdecl UDishonoredNotify_AllowMantleEnd::InternalConstructor(void *)
-//   0x6d7df0  public: static void __cdecl UDishonoredNotify_AllowRagdoll::InternalConstructor(void *)
-//   0x6d7e10  public: static void __cdecl UDishonoredNotify_AnimStateAdvance::InternalConstructor(void *)
-//   0x6d7e30  public: static void __cdecl UDishonoredNotify_AnimStateExit::InternalConstructor(void *)
-//   0x6d7e50  public: static void __cdecl UDishonoredNotify_AnimStateSyncEnd::InternalConstructor(void *)
-//   0x6d7e70  public: static void __cdecl UDishonoredNotify_AttachEquippedItem::InternalConstructor(void *)
-//   0x6d7e90  public: static void __cdecl UDishonoredNotify_AttackInterruptable::InternalConstructor(void *)
-//   0x6d7eb0  public: static void __cdecl UDisNotify_AttackInterruptable_Range::InternalConstructor(void *)
-//   0x6d7ed0  public: static void __cdecl UDishonoredNotify_AttackZone::InternalConstructor(void *)
-//   0x6d7ef0  public: static void __cdecl UDishonoredNotify_CameraPitchTarget::InternalConstructor(void *)
-//   0x6d7f10  public: static void __cdecl UDishonoredNotify_ChainExit::InternalConstructor(void *)
-//   0x6d7f30  public: static void __cdecl UDishonoredNotify_ChainInput::InternalConstructor(void *)
-//   0x6d7f50  public: static void __cdecl UDishonoredNotify_ChainStart::InternalConstructor(void *)
-//   0x6d7f70  public: static void __cdecl UDishonoredNotify_EndDropCorpse::InternalConstructor(void *)
-//   0x6d7f90  public: static void __cdecl UDishonoredNotify_FireDialogHook::InternalConstructor(void *)
-//   0x6d7fb0  public: static void __cdecl UDishonoredNotify_FireProjectile::InternalConstructor(void *)
-//   0x6d7fd0  public: static void __cdecl UDishonoredNotify_Footfall::InternalConstructor(void *)
-//   0x6d7ff0  public: static void __cdecl UDishonoredNotify_PlayerMeleeWeaponHitFlesh::InternalConstructor(void *)
-//   0x6d8010  public: static void __cdecl UDishonoredNotify_PlayTune::InternalConstructor(void *)
-//   0x6d8030  public: static void __cdecl UDishonoredNotify_Ragdoll::InternalConstructor(void *)
-//   0x6d8050  public: static void __cdecl UDishonoredNotify_ReleaseCorpse::InternalConstructor(void *)
-//   0x6d8070  public: static void __cdecl UDishonoredNotify_SetBodyMode::InternalConstructor(void *)
-//   0x6d8090  public: static void __cdecl UDishonoredNotify_SeverLimb::InternalConstructor(void *)
-//   0x6d80b0  public: static void __cdecl UDishonoredNotify_ShowEquippedInvItem::InternalConstructor(void *)
-//   0x6d80d0  public: static void __cdecl UDishonoredNotify_StartPlague::InternalConstructor(void *)
-//   0x6d80f0  public: static void __cdecl UDishonoredNotify_Stunned::InternalConstructor(void *)
-//   0x6d8110  public: static void __cdecl UDishonoredNotify_UsableObjectActivate::InternalConstructor(void *)
-//   0x6d8130  public: static void __cdecl UDisNotify_AnimStateUnlock::InternalConstructor(void *)
-//   0x6d8150  public: static void __cdecl UDisNotify_AttachItemInSlot::InternalConstructor(void *)
-//   0x6d8170  public: static void __cdecl UDisNotify_BendTime::InternalConstructor(void *)
-//   0x6d8190  public: static void __cdecl UDisNotify_BendTime_Ranged::InternalConstructor(void *)
-//   0x6d81b0  public: static void __cdecl UDisNotify_AdrenalineBendTime_Ranged::InternalConstructor(void *)
-//   0x6d81d0  public: static void __cdecl UDisNotify_BlockParryZone::InternalConstructor(void *)
-//   0x6d81f0  public: static void __cdecl UDisNotify_CameraShake::InternalConstructor(void *)
-//   0x6d8210  public: static void __cdecl UDisNotify_Destroy::InternalConstructor(void *)
-//   0x6d8230  public: static void __cdecl UDisNotify_DevouringSwarm::InternalConstructor(void *)
-//   0x6d8250  public: static void __cdecl UDisNotify_DropArmor::InternalConstructor(void *)
-//   0x6d8270  public: static void __cdecl UDisNotify_DropItem::InternalConstructor(void *)
-//   0x6d8290  public: static void __cdecl UDisNotify_EnableLocomotion::InternalConstructor(void *)
-//   0x6d82b0  public: static void __cdecl UDisNotify_EndSurprise::InternalConstructor(void *)
-//   0x6d82d0  public: static void __cdecl UDisNotify_FootLock_Ranged::InternalConstructor(void *)
-//   0x6d82f0  public: static void __cdecl UDisNotify_FootPlacement::InternalConstructor(void *)
-//   0x6d8310  public: static void __cdecl UDisNotify_Heartbeat::InternalConstructor(void *)
-//   0x6d8330  public: static void __cdecl UDisNotify_MakeAINoise::InternalConstructor(void *)
-//   0x6d8350  public: static void __cdecl UDisNotify_MinigameBranch_Ranged::InternalConstructor(void *)
-//   0x6d8370  public: static void __cdecl UDisNotify_NPCDisableLookAt::InternalConstructor(void *)
-//   0x6d8390  public: static void __cdecl UDisNotify_NPCTurnControl::InternalConstructor(void *)
-//   0x6d83b0  public: static void __cdecl UDisNotify_ParryContact::InternalConstructor(void *)
-//   0x6d83d0  public: static void __cdecl UDisNotify_PlaceSpringRazor::InternalConstructor(void *)
-//   0x6d83f0  public: static void __cdecl UDisNotify_PlayerGenericInterruptable::InternalConstructor(void *)
-//   0x6d8410  public: static void __cdecl UDisNotify_PlayRatBiteEffect::InternalConstructor(void *)
-//   0x6d8430  public: static void __cdecl UDisNotify_Possession::InternalConstructor(void *)
-//   0x6d8450  public: static void __cdecl UDisNotify_PowerRumble::InternalConstructor(void *)
-//   0x6d8470  public: static void __cdecl UDisNotify_PowerShake::InternalConstructor(void *)
-//   0x6d8490  public: static void __cdecl UDisNotify_ReloadAmmo::InternalConstructor(void *)
-//   0x6d84b0  public: static void __cdecl UDisNotify_ReloadArrow::InternalConstructor(void *)
-//   0x6d84d0  public: static void __cdecl UDisNotify_ReplaceMaterials::InternalConstructor(void *)
-//   0x6d84f0  public: static void __cdecl UDisNotify_SetLightningTarget::InternalConstructor(void *)
-//   0x6d8510  public: static void __cdecl UDisNotify_ShowArrowHighRes::InternalConstructor(void *)
-//   0x6d8530  public: static void __cdecl UDisNotify_ShowBullet::InternalConstructor(void *)
-//   0x6d8550  public: static void __cdecl UDisNotify_SwimStroke::InternalConstructor(void *)
-//   0x6d8570  public: static void __cdecl UDisNotify_TauntInterruptible_Ranged::InternalConstructor(void *)
-//   0x6d8590  public: static void __cdecl UDisNotify_Trails::InternalConstructor(void *)
-//   0x6d85b0  public: static void __cdecl UDisNotify_VulnerablePlayer::InternalConstructor(void *)
-//   0x6d85d0  public: static void __cdecl UDisNotify_VulnerableRange::InternalConstructor(void *)
-//   0x6d85f0  public: static void __cdecl UDisNotify_WhiskeyFireDamage::InternalConstructor(void *)
-//   0x6d8610  public: static void __cdecl UDisNotify_WindBlast::InternalConstructor(void *)
-//   0x6e4370  public: virtual class FString __thiscall UDishonoredNotify_AnimStateSyncEnd::GetEditorComment(void)
-//   0x6e43a0  public: virtual class FString __thiscall UDishonoredNotify_CameraPitchTarget::GetEditorComment(void)
-//   0x6e43d0  public: virtual class FString __thiscall UDishonoredNotify_Stunned::GetEditorComment(void)
-//   0x6e4430  public: virtual class FString __thiscall UDisNotify_FootPlacement::GetEditorComment(void)
-//   0x6e4460  public: virtual class FString __thiscall UDisNotify_MakeAINoise::GetEditorComment(void)
-//   0x6e4490  public: virtual class FString __thiscall UDisNotify_Trails::GetEditorComment(void)
-//   0x6f0020  protected: virtual __thiscall UDisAnimNodeBlendCastPower::~UDisAnimNodeBlendCastPower(void)
-//   0x6f00b0  protected: virtual __thiscall UDisAnimNodeBlendByStepUpMantle::~UDisAnimNodeBlendByStepUpMantle(void)
-//   0x6f0140  protected: virtual __thiscall UDisAnimNodeBlendBySwimState::~UDisAnimNodeBlendBySwimState(void)
-//   0x6f01d0  protected: virtual __thiscall UDisAnimNodeBlendByVulnerability::~UDisAnimNodeBlendByVulnerability(void)
-//   0x6f0260  protected: virtual __thiscall UDisAnimNodeBlendDirectional::~UDisAnimNodeBlendDirectional(void)
-//   0x6f02f0  protected: virtual __thiscall UDisAnimNodeBlendList::~UDisAnimNodeBlendList(void)
-//   0x6f0380  protected: virtual __thiscall UDisAnimNodeBlendByAssassinationState::~UDisAnimNodeBlendByAssassinationState(void)
-//   0x6f0410  protected: virtual __thiscall UDisAnimNodeBlendByGrenadeState::~UDisAnimNodeBlendByGrenadeState(void)
-//   0x6f04a0  protected: virtual __thiscall UDisAnimNodeBlendByMeleeBlockState::~UDisAnimNodeBlendByMeleeBlockState(void)
-//   0x6f0530  protected: virtual __thiscall UDisAnimNodeBlendByMeleeState::~UDisAnimNodeBlendByMeleeState(void)
-//   0x6f05c0  protected: virtual __thiscall UDisAnimNodeBlendByParryState::~UDisAnimNodeBlendByParryState(void)
-//   0x6f0650  protected: virtual __thiscall UDisAnimNodeBlendByPlayerSpringRazorState::~UDisAnimNodeBlendByPlayerSpringRazorState(void)
-//   0x6f06e0  protected: virtual __thiscall UDisAnimNodeBlendPerBone::~UDisAnimNodeBlendPerBone(void)
-//   0x6f0790  protected: virtual __thiscall UDisAnimNodeSlot::~UDisAnimNodeSlot(void)
-//   0x6f0820  protected: virtual __thiscall UDishonoredAnimNodeBlendBySpeed::~UDishonoredAnimNodeBlendBySpeed(void)
-//   0x6f08b0  protected: virtual __thiscall UDishonoredAnimNodeBlendByState::~UDishonoredAnimNodeBlendByState(void)
-//   0x6f0940  protected: virtual __thiscall UDishonoredAnimNodeBlendByStunState::~UDishonoredAnimNodeBlendByStunState(void)
-//   0x6f09d0  protected: virtual __thiscall UDishonoredAnimNodeLookAdd::~UDishonoredAnimNodeLookAdd(void)
-//   0x6f0a60  protected: virtual __thiscall UDishonoredAnimNodeSeq::~UDishonoredAnimNodeSeq(void)
-//   0x6f0b20  protected: virtual __thiscall UDisAnimNodeSeqPlayer::~UDisAnimNodeSeqPlayer(void)
-//   0x6f0bb0  protected: virtual __thiscall UDishonoredAnimNodeSeqAttack::~UDishonoredAnimNodeSeqAttack(void)
-//   0x6f0c40  protected: virtual __thiscall UDishonoredAnimNodeSeqMantle::~UDishonoredAnimNodeSeqMantle(void)
-//   0x6f0cd0  protected: virtual __thiscall UDishonoredSeqVersus::~UDishonoredSeqVersus(void)
-//   0x6f0d60  protected: virtual __thiscall UDishonoredAnimNodeTreeRef::~UDishonoredAnimNodeTreeRef(void)
-//   0x6f0e00  protected: virtual __thiscall UDishonoredAnimNodeTreeRef_Dynamic::~UDishonoredAnimNodeTreeRef_Dynamic(void)
-//   0x6f0ea0  protected: virtual __thiscall UDishonoredAnimNodeStatePicker::~UDishonoredAnimNodeStatePicker(void)
-//   0x6f0f50  protected: virtual __thiscall UDishonoredSeqBlendByAim::~UDishonoredSeqBlendByAim(void)
-//   0x6f0fe0  protected: virtual __thiscall UDisNotify_PawnMaterialParam::~UDisNotify_PawnMaterialParam(void)
-//   0x6f1080  protected: virtual __thiscall UDisSkelControl_FootPlacement::~UDisSkelControl_FootPlacement(void)
-//   0x6f1110  protected: virtual __thiscall UDisSkelControl_FootPlacementRotLock::~UDisSkelControl_FootPlacementRotLock(void)
-//   0x6f11a0  protected: virtual __thiscall UDisSkelControl_SpineBender::~UDisSkelControl_SpineBender(void)
-//   0x6f1c20  public: static void __cdecl UDisAnimNodeBlendCastPower::InternalConstructor(void *)
-//   0x6f1c40  public: static void __cdecl UDisAnimNodeBlendByStepUpMantle::InternalConstructor(void *)
-//   ... 33 more, see resources/docs/symbols/functions.csv
+/*===========================================================================
+    DishonoredGameAnimClasses.h - C++ class definitions of the retail (2013) DishonoredGame module.
+    Generated by resources/tools/symbols/gen_classes_header.py --sdk from the CodeRed SDK dump
+    (retail_sdk_layout.json: member offsets/types/flags, function parameter blocks), native_class_sizes.csv
+    (retail sizeof, ClassFlags, Within, config), script_classes_2013.json (enum values, consts, property
+    kinds, header groups) and the 2012 types.json (names of native-only members). DO NOT edit by hand:
+    regenerate, or carry the change into the generator.
+===========================================================================*/
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (push,4)
+#endif
+
+#include "DishonoredGameNames.h"
+
+#ifndef NAMES_ONLY
+#include "DishonoredGameEngineShims.h"
+#include "DishonoredGameGlobalEnumsClasses.h"
+#endif
+
+#if !NO_ENUMS && !defined(NAMES_ONLY)
+
+#ifndef INCLUDED_DISHONOREDGAME_ANIM_ENUMS
+#define INCLUDED_DISHONOREDGAME_ANIM_ENUMS 1
+
+
+#endif // !INCLUDED_DISHONOREDGAME_ANIM_ENUMS
+#endif // !NO_ENUMS
+
+#if !ENUMS_ONLY
+
+#ifndef NAMES_ONLY
+#define AUTOGENERATE_FUNCTION(cls,idx,name)
+#endif
+
+
+#ifndef NAMES_ONLY
+
+#ifndef INCLUDED_DISHONOREDGAME_ANIM_CLASSES
+#define INCLUDED_DISHONOREDGAME_ANIM_CLASSES 1
+#define ENABLE_DECLARECLASS_MACRO 1
+#include "UnObjBas.h"
+#undef ENABLE_DECLARECLASS_MACRO
+
+// DishonoredGame.DisSkeletalMeshActorMAT: retail sizeof 672, reflected span 656..660 (2012 PDB sizeof 656)
+class ADisSkeletalMeshActorMAT : public ASkeletalMeshActorMAT
+{
+public:
+    //## BEGIN PROPS DisSkeletalMeshActorMAT
+    class USkeletalMeshComponent* SkeletalMeshComponent2;
+    //## END PROPS DisSkeletalMeshActorMAT
+
+    DECLARE_CLASS(ADisSkeletalMeshActorMAT,ASkeletalMeshActorMAT,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimTree.DisAnimStateTreeInfo: retail SDK size 16 (2012 PDB 16)
+struct FDisAnimStateTreeInfo
+{
+    INT m_AnimStatePicker;
+    FPointer m_pAnimState_FiredFromObj;
+    FPointer m_pAnimState_AttachToState;
+    BITFIELD m_bIsAnimStateActive:1;
+
+    /** Constructors */
+    FDisAnimStateTreeInfo() {}
+    FDisAnimStateTreeInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimStateTreeInfo));
+    }
+};
+
+// DishonoredGame.DishonoredAnimNodeTreeRef_Dynamic.DisAnimTreePoolInfo: retail SDK size 8 (2012 PDB 8)
+struct FDisAnimTreePoolInfo
+{
+    INT m_TypicalSimultaneousActiveTrees;
+    BITFIELD m_bReturnToPoolNonRelevant:1;
+    BITFIELD m_bFetchAtSpawnTime:1;
+    BITFIELD m_bKeepUntilFullDestroy:1;
+
+    /** Constructors */
+    FDisAnimTreePoolInfo() {}
+    FDisAnimTreePoolInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FDisAnimTreePoolInfo));
+    }
+};
+
+// DishonoredGame.DishonoredAnimNodeTreeRef_Dynamic.DynamicTreeTemplate: retail SDK size 28 (2012 PDB 28)
+struct FDynamicTreeTemplate
+{
+    BITFIELD m_bUseAnimTreePooling:1;
+    FName m_AnimTree_Name;
+    class UDishonoredAnimTree* m_pAnimTree_Template;
+    FDisAnimTreePoolInfo m_PoolSettings;
+    class UDishonoredAnimTree* m_pAnimTree_Instance;
+
+    /** Constructors */
+    FDynamicTreeTemplate() {}
+    FDynamicTreeTemplate(EEventParm)
+    {
+        appMemzero(this, sizeof(FDynamicTreeTemplate));
+    }
+};
+
+// DishonoredGame.DisSkelControl_FootPlacement.FootLockProperties: retail SDK size 8 (2012 PDB 8)
+struct FFootLockProperties
+{
+    BITFIELD m_bIsFootLocked:1;
+    FLOAT m_fBlendPct;
+
+    /** Constructors */
+    FFootLockProperties() {}
+    FFootLockProperties(EEventParm)
+    {
+        appMemzero(this, sizeof(FFootLockProperties));
+    }
+};
+
+// DishonoredGame.DisSkelControl_FootPlacement.GroundTestResults: retail SDK size 44 (2012 PDB 44)
+struct FGroundTestResults
+{
+    FVector m_TestLocation;
+    FVector m_LocationOnGround;
+    FVector m_GroundNormal;
+    BYTE m_NavMeshState;
+    BITFIELD m_bDisableFootPlacement:1;
+    BITFIELD m_bValid:1;
+    BITFIELD m_bUsed:1;
+
+    /** Constructors */
+    FGroundTestResults() {}
+    FGroundTestResults(EEventParm)
+    {
+        appMemzero(this, sizeof(FGroundTestResults));
+    }
+};
+
+// DishonoredGame.DishonoredAnimNodeSeq.PendingRangedNotify: retail SDK size 12 (2012 PDB 12)
+struct FPendingRangedNotify
+{
+    class UAnimNotify* m_pNotify;
+    FLOAT m_fTimeLeft;
+    FLOAT m_fTotalTime;
+
+    /** Constructors */
+    FPendingRangedNotify() {}
+    FPendingRangedNotify(EEventParm)
+    {
+        appMemzero(this, sizeof(FPendingRangedNotify));
+    }
+};
+
+// DishonoredGame.DishonoredAnimNodeStatePicker.StateSlotInfo: retail SDK size 20 (2012 PDB 20)
+struct FStateSlotInfo
+{
+    FName m_StateName;
+    BITFIELD m_bActive:1;
+    class UDishonoredAnimTree* m_pTree;
+    class UDishonoredAnimNodeTreeRef_Dynamic* m_pTreeRef;
+
+    /** Constructors */
+    FStateSlotInfo() {}
+    FStateSlotInfo(EEventParm)
+    {
+        appMemzero(this, sizeof(FStateSlotInfo));
+    }
+};
+
+// DishonoredGame.DisAnimNode3StateBlend: retail sizeof 288, reflected span 256..284 (2012 PDB sizeof 288)
+class UDisAnimNode3StateBlend : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNode3StateBlend
+    FLOAT m_fBlendTime;
+    BITFIELD m_bFiniteLoop:1;
+    BITFIELD m_bPlayLoopForEver:1;
+    FLOAT m_fLoopTime;
+    FLOAT m_fTimeSinceBecameRelevant;
+    FLOAT m_fIntroAnimTime;
+    FLOAT m_fLoopAnimTime;
+    FLOAT m_fOutroAnimTime;
+    //## END PROPS DisAnimNode3StateBlend
+
+    DECLARE_CLASS(UDisAnimNode3StateBlend,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendList: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendList : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendList
+    class UDishonoredAnimTree* m_pDisParentAnimTree;
+    //## END PROPS DisAnimNodeBlendList
+
+    DECLARE_ABSTRACT_CLASS(UDisAnimNodeBlendList,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByAssassinationState: retail sizeof 272, reflected span 260..264 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByAssassinationState : public UDisAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByAssassinationState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByAssassinationState
+
+    DECLARE_CLASS(UDisAnimNodeBlendByAssassinationState,UDisAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByCorpseBeingCarried: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByCorpseBeingCarried : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByCorpseBeingCarried
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByCorpseBeingCarried
+
+    DECLARE_CLASS(UDisAnimNodeBlendByCorpseBeingCarried,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByCorpseDropType: retail sizeof 256, reflected span 256..256 (2012 PDB sizeof 256)
+class UDisAnimNodeBlendByCorpseDropType : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByCorpseDropType
+    //## END PROPS DisAnimNodeBlendByCorpseDropType
+
+    DECLARE_CLASS(UDisAnimNodeBlendByCorpseDropType,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByGrenadeState: retail sizeof 272, reflected span 260..264 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByGrenadeState : public UDisAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByGrenadeState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByGrenadeState
+
+    DECLARE_CLASS(UDisAnimNodeBlendByGrenadeState,UDisAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByHeadBob: retail sizeof 224, reflected span 221..224 (new in 2013)
+class UDisAnimNodeBlendByHeadBob : public UAnimNodeBlendBase
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByHeadBob
+    //## END PROPS DisAnimNodeBlendByHeadBob
+
+    DECLARE_CLASS(UDisAnimNodeBlendByHeadBob,UAnimNodeBlendBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByLocoType: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByLocoType : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByLocoType
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByLocoType
+
+    DECLARE_CLASS(UDisAnimNodeBlendByLocoType,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByMeleeBlockState: retail sizeof 272, reflected span 260..264 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByMeleeBlockState : public UDisAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByMeleeBlockState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByMeleeBlockState
+
+    DECLARE_CLASS(UDisAnimNodeBlendByMeleeBlockState,UDisAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByMeleeState: retail sizeof 272, reflected span 260..264 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByMeleeState : public UDisAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByMeleeState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByMeleeState
+
+    DECLARE_CLASS(UDisAnimNodeBlendByMeleeState,UDisAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByParryState: retail sizeof 272, reflected span 260..264 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByParryState : public UDisAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByParryState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByParryState
+
+    DECLARE_CLASS(UDisAnimNodeBlendByParryState,UDisAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByPhysicalCondition: retail sizeof 256, reflected span 244..244 (2012 PDB sizeof 256)
+class UDisAnimNodeBlendByPhysicalCondition : public UAnimNodeAdditiveBlending
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByPhysicalCondition
+    //## END PROPS DisAnimNodeBlendByPhysicalCondition
+
+    DECLARE_CLASS(UDisAnimNodeBlendByPhysicalCondition,UAnimNodeAdditiveBlending,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByPlayerSneak: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByPlayerSneak : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByPlayerSneak
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByPlayerSneak
+
+    DECLARE_CLASS(UDisAnimNodeBlendByPlayerSneak,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByPlayerSpringRazorState: retail sizeof 272, reflected span 260..264 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByPlayerSpringRazorState : public UDisAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByPlayerSpringRazorState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByPlayerSpringRazorState
+
+    DECLARE_CLASS(UDisAnimNodeBlendByPlayerSpringRazorState,UDisAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByPlayerStance: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByPlayerStance : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByPlayerStance
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByPlayerStance
+
+    DECLARE_CLASS(UDisAnimNodeBlendByPlayerStance,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendBySpeedPercent: retail sizeof 288, reflected span 221..280 (2012 PDB sizeof 288)
+class UDisAnimNodeBlendBySpeedPercent : public UAnimNodeBlendBase
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendBySpeedPercent
+    FLOAT m_fSliderPosition;
+    BYTE m_BlendMode;
+    FLOAT m_fBlendWeights[6];
+    FLOAT m_fTransition_TimeLeft;
+    FLOAT m_fCurSpeedWeight;
+    FLOAT m_fBlendDuration;
+    FLOAT m_fBlendDuration_Transition;
+    FLOAT m_fWalkThreshold;
+    FLOAT m_fSpeedPercentSpring;
+    //## END PROPS DisAnimNodeBlendBySpeedPercent
+
+    DECLARE_CLASS(UDisAnimNodeBlendBySpeedPercent,UAnimNodeBlendBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByStepUpMantle: retail sizeof 256, reflected span 244..248 (2012 PDB sizeof 256)
+class UDisAnimNodeBlendByStepUpMantle : public UAnimNodeAdditiveBlending
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByStepUpMantle
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendByStepUpMantle
+
+    DECLARE_CLASS(UDisAnimNodeBlendByStepUpMantle,UAnimNodeAdditiveBlending,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendBySwimState: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendBySwimState : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendBySwimState
+    FLOAT m_fBlendTime;
+    //## END PROPS DisAnimNodeBlendBySwimState
+
+    DECLARE_CLASS(UDisAnimNodeBlendBySwimState,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendByVulnerability: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDisAnimNodeBlendByVulnerability : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendByVulnerability
+    FLOAT m_fBlendTransitionTime;
+    //## END PROPS DisAnimNodeBlendByVulnerability
+
+    DECLARE_CLASS(UDisAnimNodeBlendByVulnerability,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendCastPower: retail sizeof 304, reflected span 284..292 (2012 PDB sizeof 304)
+class UDisAnimNodeBlendCastPower : public UDisAnimNode3StateBlend
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendCastPower
+    class UDishonoredAnimTree* m_pDisParentAnimTree;
+    class UDisItemContext_UsePower* m_pUsePowerContext;
+    //## END PROPS DisAnimNodeBlendCastPower
+
+    DECLARE_CLASS(UDisAnimNodeBlendCastPower,UDisAnimNode3StateBlend,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendDirectional: retail sizeof 256, reflected span 252..256 (2012 PDB sizeof 256)
+class UDisAnimNodeBlendDirectional : public UAnimNodeBlendDirectional
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendDirectional
+    BITFIELD m_bUseControllerInputDir:1;
+    //## END PROPS DisAnimNodeBlendDirectional
+
+    DECLARE_CLASS(UDisAnimNodeBlendDirectional,UAnimNodeBlendDirectional,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendHeartAdditive: retail sizeof 256, reflected span 244..244 (new in 2013)
+class UDisAnimNodeBlendHeartAdditive : public UAnimNodeAdditiveBlending
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendHeartAdditive
+    //## END PROPS DisAnimNodeBlendHeartAdditive
+
+    DECLARE_CLASS(UDisAnimNodeBlendHeartAdditive,UAnimNodeAdditiveBlending,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendItemAimAdditive: retail sizeof 256, reflected span 244..244 (2012 PDB sizeof 256)
+class UDisAnimNodeBlendItemAimAdditive : public UAnimNodeAdditiveBlending
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendItemAimAdditive
+    //## END PROPS DisAnimNodeBlendItemAimAdditive
+
+    DECLARE_CLASS(UDisAnimNodeBlendItemAimAdditive,UAnimNodeAdditiveBlending,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeBlendPerBone: retail sizeof 368, reflected span 292..356 (2012 PDB sizeof 368)
+class UDisAnimNodeBlendPerBone : public UAnimNodeBlendPerBone
+{
+public:
+    //## BEGIN PROPS DisAnimNodeBlendPerBone
+    FDisBoneAtomsFilter m_OptimizationFilter;
+    TArrayNoInit<FName> m_BranchEndBoneNames;
+    //## END PROPS DisAnimNodeBlendPerBone
+
+    DECLARE_CLASS(UDisAnimNodeBlendPerBone,UAnimNodeBlendPerBone,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeSeq: retail sizeof 336, reflected span 276..332 (2012 PDB sizeof 336)
+class UDishonoredAnimNodeSeq : public UAnimNodeSequence
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeSeq
+    TArrayNoInit<FPendingRangedNotify> m_PendingRangedNotifies;
+    FName m_ClassDisplayName;
+    BITFIELD m_bGotAnimStateExit:1;
+    BITFIELD m_bGotAnimStateAdvance:1;
+    BITFIELD m_bAddItemPrefix:1;
+    BITFIELD m_bRevaluateSeqNameOnRelevant:1;
+    BITFIELD m_bSequenceMustBeSetInAnimState:1;
+    BITFIELD m_bPlayOnBecomeRelevant:1;
+    BITFIELD m_bContainsAnimStateExit:1;
+    BITFIELD m_bContainsAnimStateAdvance:1;
+    BITFIELD m_bScaleByLandAnimRate:1;
+    BITFIELD m_bScaleByMantleAnimRate:1;
+    class UDishonoredAnimTree* m_pDisParentAnimTree;
+    FStringNoInit m_SequenceNameRoot;
+    BYTE m_ApplyItemEquipPrefix;
+    TArrayNoInit<class UClass*> m_RequiredAnimNotifies;
+    //## END PROPS DishonoredAnimNodeSeq
+
+    DECLARE_FUNCTION(execPlayAnim);
+    DECLARE_CLASS(UDishonoredAnimNodeSeq,UAnimNodeSequence,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeSeqPlayer: retail sizeof 368, reflected span 332..356 (2012 PDB sizeof 368)
+class UDisAnimNodeSeqPlayer : public UDishonoredAnimNodeSeq
+{
+public:
+    //## BEGIN PROPS DisAnimNodeSeqPlayer
+    FLOAT m_fPlayerController_StartPitch;
+    FLOAT m_fCamera_StartPitch;
+    FLOAT m_fCamera_TargetPitch;
+    FLOAT m_fCamera_TargetTime;
+    BITFIELD m_bDoingCamPitchFixup:1;
+    BITFIELD m_bFoundCamPitchValues:1;
+    BITFIELD m_bFixupCameraPitch:1;
+    FPointer m_pCameraPitchFixup;
+    //## END PROPS DisAnimNodeSeqPlayer
+
+    DECLARE_FUNCTION(execPlayAnim);
+    DECLARE_CLASS(UDisAnimNodeSeqPlayer,UDishonoredAnimNodeSeq,0,DishonoredGame)
+};
+
+// DishonoredGame.DisAnimNodeSlot: retail sizeof 288, reflected span 260..288 (2012 PDB sizeof 288)
+class UDisAnimNodeSlot : public UAnimNodeSlot
+{
+public:
+    //## BEGIN PROPS DisAnimNodeSlot
+    class UClass* m_AnimDefClass;
+    BYTE m_NPCAnimation;
+    BITFIELD m_bOverrideBlendInTimes:1;
+    BITFIELD m_bOverrideBlendOutTime:1;
+    BITFIELD m_bIsPlaying:1;
+    BITFIELD m_bIsLooping:1;
+    FLOAT m_fBlendInTime;
+    FLOAT m_fBlendOutTime;
+    INT m_iGroup;
+    INT m_iStep;
+    //## END PROPS DisAnimNodeSlot
+
+    DECLARE_CLASS(UDisAnimNodeSlot,UAnimNodeSlot,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_BendTime_Ranged: retail sizeof 84, reflected span 60..84 (2012 PDB sizeof 84)
+class UDisNotify_BendTime_Ranged : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_BendTime_Ranged
+    FLOAT m_fPlayerTimeScale;
+    FLOAT m_fWorldTimeScale;
+    BITFIELD m_bSetPlayerTimeScale_Input:1;
+    BITFIELD m_bDoSloMoEffects:1;
+    FLOAT m_fPlayerTimeScale_Input;
+    FLOAT m_fTransitionInTime;
+    FLOAT m_fTransitionOutTime;
+    //## END PROPS DisNotify_BendTime_Ranged
+
+    DECLARE_CLASS(UDisNotify_BendTime_Ranged,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_AdrenalineBendTime_Ranged: retail sizeof 84, reflected span 84..84 (2012 PDB sizeof 84)
+class UDisNotify_AdrenalineBendTime_Ranged : public UDisNotify_BendTime_Ranged
+{
+public:
+    //## BEGIN PROPS DisNotify_AdrenalineBendTime_Ranged
+    //## END PROPS DisNotify_AdrenalineBendTime_Ranged
+
+    DECLARE_CLASS(UDisNotify_AdrenalineBendTime_Ranged,UDisNotify_BendTime_Ranged,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_AnimStateUnlock: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDisNotify_AnimStateUnlock : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_AnimStateUnlock
+    BYTE m_AnimStateType;
+    //## END PROPS DisNotify_AnimStateUnlock
+
+    DECLARE_CLASS(UDisNotify_AnimStateUnlock,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_AttachItemInSlot: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
+class UDisNotify_AttachItemInSlot : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_AttachItemInSlot
+    BYTE m_ItemSocket;
+    class UClass* m_pItemSlotType;
+    //## END PROPS DisNotify_AttachItemInSlot
+
+    DECLARE_CLASS(UDisNotify_AttachItemInSlot,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AttackInterruptable: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_AttackInterruptable : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AttackInterruptable
+    //## END PROPS DishonoredNotify_AttackInterruptable
+
+    DECLARE_CLASS(UDishonoredNotify_AttackInterruptable,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_AttackInterruptable_Range: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_AttackInterruptable_Range : public UDishonoredNotify_AttackInterruptable
+{
+public:
+    //## BEGIN PROPS DisNotify_AttackInterruptable_Range
+    //## END PROPS DisNotify_AttackInterruptable_Range
+
+    DECLARE_CLASS(UDisNotify_AttackInterruptable_Range,UDishonoredNotify_AttackInterruptable,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_BendTime: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_BendTime : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_BendTime
+    //## END PROPS DisNotify_BendTime
+
+    DECLARE_CLASS(UDisNotify_BendTime,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_BlockParryZone: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_BlockParryZone : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_BlockParryZone
+    //## END PROPS DisNotify_BlockParryZone
+
+    DECLARE_CLASS(UDisNotify_BlockParryZone,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_CameraShake: retail sizeof 76, reflected span 60..76 (2012 PDB sizeof 76)
+class UDisNotify_CameraShake : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_CameraShake
+    FName m_BoneName;
+    FLOAT m_fMaxDistance;
+    FLOAT m_fHighestMagnitude;
+    //## END PROPS DisNotify_CameraShake
+
+    DECLARE_CLASS(UDisNotify_CameraShake,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_Destroy: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_Destroy : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_Destroy
+    //## END PROPS DisNotify_Destroy
+
+    DECLARE_CLASS(UDisNotify_Destroy,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_DevouringSwarm: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_DevouringSwarm : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_DevouringSwarm
+    //## END PROPS DisNotify_DevouringSwarm
+
+    DECLARE_CLASS(UDisNotify_DevouringSwarm,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_DropArmor: retail sizeof 76, reflected span 60..76 (2012 PDB sizeof 76)
+class UDisNotify_DropArmor : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_DropArmor
+    BYTE m_WhichArmor;
+    BYTE m_ByRegion;
+    FVector m_DropVelocity;
+    //## END PROPS DisNotify_DropArmor
+
+    DECLARE_CLASS(UDisNotify_DropArmor,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_DropItem: retail sizeof 76, reflected span 60..76 (2012 PDB sizeof 76)
+class UDisNotify_DropItem : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_DropItem
+    BYTE m_WhichItem;
+    BYTE m_ByUsage;
+    FVector m_DropVelocity;
+    //## END PROPS DisNotify_DropItem
+
+    DECLARE_CLASS(UDisNotify_DropItem,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_EnableLocomotion: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_EnableLocomotion : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_EnableLocomotion
+    //## END PROPS DisNotify_EnableLocomotion
+
+    DECLARE_CLASS(UDisNotify_EnableLocomotion,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_EndSurprise: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_EndSurprise : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_EndSurprise
+    //## END PROPS DisNotify_EndSurprise
+
+    DECLARE_CLASS(UDisNotify_EndSurprise,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_FootLock_Ranged: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_FootLock_Ranged : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_FootLock_Ranged
+    INT m_iFootIndex;
+    //## END PROPS DisNotify_FootLock_Ranged
+
+    DECLARE_CLASS(UDisNotify_FootLock_Ranged,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_FootPlacement: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_FootPlacement : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_FootPlacement
+    BITFIELD m_bEnableFootPlacement:1;
+    //## END PROPS DisNotify_FootPlacement
+
+    DECLARE_CLASS(UDisNotify_FootPlacement,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_Heartbeat: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_Heartbeat : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_Heartbeat
+    INT m_Index;
+    //## END PROPS DisNotify_Heartbeat
+
+    DECLARE_CLASS(UDisNotify_Heartbeat,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_MakeAINoise: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 64)
+class UDisNotify_MakeAINoise : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_MakeAINoise
+    BYTE m_NoiseContext;
+    BYTE m_NoiseLoudness;
+    INT m_NoiseFlags;
+    //## END PROPS DisNotify_MakeAINoise
+
+    DECLARE_CLASS(UDisNotify_MakeAINoise,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_MinigameBranch_Ranged: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDisNotify_MinigameBranch_Ranged : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_MinigameBranch_Ranged
+    BYTE m_eBranchToBlendLogic;
+    //## END PROPS DisNotify_MinigameBranch_Ranged
+
+    DECLARE_CLASS(UDisNotify_MinigameBranch_Ranged,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_NPCDisableLookAt: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDisNotify_NPCDisableLookAt : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_NPCDisableLookAt
+    BYTE m_LookAtFilter;
+    //## END PROPS DisNotify_NPCDisableLookAt
+
+    DECLARE_CLASS(UDisNotify_NPCDisableLookAt,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_NPCTurnControl: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_NPCTurnControl : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_NPCTurnControl
+    //## END PROPS DisNotify_NPCTurnControl
+
+    DECLARE_CLASS(UDisNotify_NPCTurnControl,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_ParryContact: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_ParryContact : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_ParryContact
+    //## END PROPS DisNotify_ParryContact
+
+    DECLARE_CLASS(UDisNotify_ParryContact,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_PawnMaterialParam: retail sizeof 84, reflected span 72..84 (2012 PDB sizeof 84)
+class UDisNotify_PawnMaterialParam : public UAnimNotify_PawnMaterialParam
+{
+public:
+    //## BEGIN PROPS DisNotify_PawnMaterialParam
+    TArrayNoInit<FScalarParameterInterpStruct> m_EndScalarParameterInterpArray;
+    //## END PROPS DisNotify_PawnMaterialParam
+
+    DECLARE_CLASS(UDisNotify_PawnMaterialParam,UAnimNotify_PawnMaterialParam,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_PlaceSpringRazor: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_PlaceSpringRazor : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_PlaceSpringRazor
+    //## END PROPS DisNotify_PlaceSpringRazor
+
+    DECLARE_CLASS(UDisNotify_PlaceSpringRazor,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_PlayRatBiteEffect: retail sizeof 88, reflected span 84..88 (2012 PDB sizeof 88)
+class UDisNotify_PlayRatBiteEffect : public UAnimNotify_PlayParticleEffect
+{
+public:
+    //## BEGIN PROPS DisNotify_PlayRatBiteEffect
+    class UParticleSystem* m_pEatAlternativeFX;
+    //## END PROPS DisNotify_PlayRatBiteEffect
+
+    DECLARE_CLASS(UDisNotify_PlayRatBiteEffect,UAnimNotify_PlayParticleEffect,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_PlayerGenericInterruptable: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_PlayerGenericInterruptable : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_PlayerGenericInterruptable
+    BITFIELD m_bInterruptable_ByItemUse:1;
+    BITFIELD m_bInterruptable_ByBlock:1;
+    //## END PROPS DisNotify_PlayerGenericInterruptable
+
+    DECLARE_CLASS(UDisNotify_PlayerGenericInterruptable,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_Possession: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_Possession : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_Possession
+    //## END PROPS DisNotify_Possession
+
+    DECLARE_CLASS(UDisNotify_Possession,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_PowerRumble: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_PowerRumble : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_PowerRumble
+    //## END PROPS DisNotify_PowerRumble
+
+    DECLARE_CLASS(UDisNotify_PowerRumble,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_PowerShake: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_PowerShake : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_PowerShake
+    //## END PROPS DisNotify_PowerShake
+
+    DECLARE_CLASS(UDisNotify_PowerShake,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_ReloadAmmo: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_ReloadAmmo : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_ReloadAmmo
+    //## END PROPS DisNotify_ReloadAmmo
+
+    DECLARE_CLASS(UDisNotify_ReloadAmmo,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_ReloadArrow: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_ReloadArrow : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_ReloadArrow
+    BITFIELD m_bReload:1;
+    //## END PROPS DisNotify_ReloadArrow
+
+    DECLARE_CLASS(UDisNotify_ReloadArrow,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_ReplaceMaterials: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_ReplaceMaterials : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_ReplaceMaterials
+    class UMaterialInterface* m_pNewMaterial;
+    //## END PROPS DisNotify_ReplaceMaterials
+
+    DECLARE_CLASS(UDisNotify_ReplaceMaterials,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_SetLightningTarget: retail sizeof 72, reflected span 60..72 (2012 PDB sizeof 72)
+class UDisNotify_SetLightningTarget : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_SetLightningTarget
+    BYTE m_Origin;
+    FName m_BoneName;
+    //## END PROPS DisNotify_SetLightningTarget
+
+    DECLARE_CLASS(UDisNotify_SetLightningTarget,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_ShowArrowHighRes: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDisNotify_ShowArrowHighRes : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_ShowArrowHighRes
+    BITFIELD m_bShow:1;
+    //## END PROPS DisNotify_ShowArrowHighRes
+
+    DECLARE_CLASS(UDisNotify_ShowArrowHighRes,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_ShowBullet: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_ShowBullet : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_ShowBullet
+    //## END PROPS DisNotify_ShowBullet
+
+    DECLARE_CLASS(UDisNotify_ShowBullet,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_SwimStroke: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_SwimStroke : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_SwimStroke
+    //## END PROPS DisNotify_SwimStroke
+
+    DECLARE_CLASS(UDisNotify_SwimStroke,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_TauntInterruptible_Ranged: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_TauntInterruptible_Ranged : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_TauntInterruptible_Ranged
+    //## END PROPS DisNotify_TauntInterruptible_Ranged
+
+    DECLARE_CLASS(UDisNotify_TauntInterruptible_Ranged,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_Trails: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
+class UDisNotify_Trails : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_Trails
+    FName m_Name;
+    //## END PROPS DisNotify_Trails
+
+    DECLARE_CLASS(UDisNotify_Trails,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_VulnerablePlayer: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_VulnerablePlayer : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_VulnerablePlayer
+    //## END PROPS DisNotify_VulnerablePlayer
+
+    DECLARE_CLASS(UDisNotify_VulnerablePlayer,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_VulnerableRange: retail sizeof 72, reflected span 60..72 (2012 PDB sizeof 72)
+class UDisNotify_VulnerableRange : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_VulnerableRange
+    BYTE m_VulnerabilityType;
+    BITFIELD m_bUseExtraTime:1;
+    FLOAT m_fExtraTime;
+    //## END PROPS DisNotify_VulnerableRange
+
+    DECLARE_CLASS(UDisNotify_VulnerableRange,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_WhiskeyFireDamage: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_WhiskeyFireDamage : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_WhiskeyFireDamage
+    //## END PROPS DisNotify_WhiskeyFireDamage
+
+    DECLARE_CLASS(UDisNotify_WhiskeyFireDamage,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisNotify_WindBlast: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDisNotify_WindBlast : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DisNotify_WindBlast
+    //## END PROPS DisNotify_WindBlast
+
+    DECLARE_CLASS(UDisNotify_WindBlast,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSkelControl_FootPlacement: retail sizeof 1040, reflected span 284..1032 (2012 PDB sizeof 1040)
+class UDisSkelControl_FootPlacement : public USkelControlFootPlacement
+{
+public:
+    //## BEGIN PROPS DisSkelControl_FootPlacement
+    FVector m_PrevFootLocWithoutIK;
+    FVector m_FootLockLoc;
+    INT m_iLockCount;
+    BITFIELD m_bDisableNewIK:1;
+    BITFIELD m_bIsInitialized:1;
+    BITFIELD m_bGroundTestArrayInitialized:1;
+    BITFIELD m_bLineCheckAllowed:1;
+    BITFIELD m_bCouldUsePrediction:1;
+    BITFIELD m_bBlendingInEffector:1;
+    BITFIELD m_bBlendingOutEffector:1;
+    BITFIELD m_bIsFootLocked:1;
+    BITFIELD m_bInitialized:1;
+    BITFIELD m_bSurfaceDisablesFootPlacement:1;
+    BITFIELD m_bLockBroken:1;
+    BITFIELD m_bBlendingFootRotation:1;
+    BITFIELD m_bBlendingEffector:1;
+    BITFIELD m_bLockTranslate:1;
+    BITFIELD m_bLockRotate:1;
+    BITFIELD m_bUseFootPrediction:1;
+    BITFIELD m_bShowDebugInfo:1;
+    BITFIELD m_bShowEffectorLoc:1;
+    BITFIELD m_bShowFootLocWithoutIK:1;
+    BITFIELD m_bShowLockLoc:1;
+    BITFIELD m_bShowLockLocWhenOnGround:1;
+    BITFIELD m_bShowPredictedLoc:1;
+    BITFIELD m_bShowPredictLocWhenActive:1;
+    BITFIELD m_bShowFootTest:1;
+    BITFIELD m_bShowFootOrient:1;
+    BITFIELD m_bCanUseNewIK:1;
+    FPointer m_pLocoAnimNode;
+    FPointer m_pMeshOffsetCpnt;
+    FPointer m_pSkelComp;
+    FVector m_PrevMeshLoc;
+    FVector m_GroundMove;
+    FVector m_OwnerLocation;
+    FVector m_OwnerMeshOffset;
+    FVector m_OwnerDir;
+    INT m_OwnerCurYaw;
+    INT m_OwnerPrevYaw;
+    INT m_FootBoneIdx;
+    INT m_FootIndex;
+    FArkCpntLocoFootProp m_FootProps;
+    FVector m_DefaultPoseFootLoc;
+    FVector m_CurFootLocWithoutIK;
+    FGroundTestResults m_GroundTests[6];
+    INT m_UsedGroundTestsCount;
+    INT m_LastGroundTestIdx;
+    BYTE m_GroundShape;
+    FVector m_PredictedFootOnGroundLoc;
+    FLOAT m_fCurZDelta;
+    FLOAT m_fTargetZDelta;
+    FLOAT m_fPredZSpeed;
+    FQuat m_CurFootOrientDelta;
+    FVector m_AnimFootEndLoc;
+    FVector m_TargFootEndLoc;
+    FVector m_CurFootEndLoc;
+    INT m_ToeBoneIdx;
+    FLOAT m_fBlendPct;
+    FLOAT m_fBlendDuration;
+    INT m_FootRotLockYawDelta;
+    FVector m_RefPoseFootLoc;
+    FQuat m_LockRotation;
+    FQuat m_CurFootRotation;
+    FLOAT m_fCurFootBlendOutTime;
+    FLOAT m_fHeightThreshold;
+    FLOAT m_fXZSameSpeedPctThreshold;
+    FLOAT m_fMoveSameDirPctThreshold;
+    FLOAT m_fReferenceSpeed;
+    FLOAT m_fFootBlendInDuration;
+    FLOAT m_fFootBlendOutDuration;
+    FLOAT m_fFootZMoveSpeed;
+    FLOAT m_fFootZMoveAccel;
+    FLOAT m_fFootBehindSlowDownPct;
+    FLOAT m_fAdaptHeightPct;
+    FLOAT m_fMaxPredictDist;
+    FLOAT m_fKeepGroundTestDist;
+    FLOAT m_fOrientFootMinSpeed;
+    FLOAT m_fOrientFootMaxSpeed;
+    FLOAT m_fOrientFootMaxZ;
+    FLOAT m_fFootRadius;
+    FLOAT m_fRejectAngleForOrient;
+    FLOAT m_fRejectAngleForPlacement;
+    FName m_FootRotateTowardsJoint;
+    FLOAT m_fLockMaxDistance;
+    FLOAT m_fLockRotateSpeed;
+    FLOAT m_fFootOrientSpeed;
+    FLOAT m_fFootPositionSpeed;
+    FLOAT m_fMinFootPositionBlendSnap;
+    FLOAT m_fFootBlendOutTime;
+    FLOAT m_fMaxFootPredictHeight;
+    FLOAT m_fFootPredictVelScale;
+    FLOAT m_fMaxFootPredictDist;
+    //## END PROPS DisSkelControl_FootPlacement
+
+    DECLARE_CLASS(UDisSkelControl_FootPlacement,USkelControlFootPlacement,0|CLASS_Config,DishonoredGame)
+    static const TCHAR* StaticConfigName() {return TEXT("AILocomotion");}
+};
+
+// DishonoredGame.DisSkelControl_FootPlacementRotLock: retail sizeof 240, reflected span 184..232 (2012 PDB sizeof 240)
+class UDisSkelControl_FootPlacementRotLock : public USkelControlBase
+{
+public:
+    //## BEGIN PROPS DisSkelControl_FootPlacementRotLock
+    FPointer m_pFootPlacementSkelControl;
+    BITFIELD m_IsFootLocked:1;
+    FBoneAtom m_FootLockedRotBoneAtom;
+    FName m_FootPlacementSkelCtrlName;
+    //## END PROPS DisSkelControl_FootPlacementRotLock
+
+    DECLARE_CLASS(UDisSkelControl_FootPlacementRotLock,USkelControlBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DisSkelControl_SpineBender: retail sizeof 336, reflected span 232..328 (2012 PDB sizeof 336)
+class UDisSkelControl_SpineBender : public USkelControlSingleBone
+{
+public:
+    //## BEGIN PROPS DisSkelControl_SpineBender
+    FLOAT m_fCurBendPitchTarget;
+    FLOAT m_fCurBendYawTarget;
+    FLOAT m_fCurBendPitchBlendSpeed;
+    BITFIELD m_bInterpolatingPitch:1;
+    BITFIELD m_bInterpolatingYaw:1;
+    FMatrix m_UnbentBoneTransform;
+    FLOAT m_fBendPitchDefaultBlendSpeed;
+    FLOAT m_fBendYawBlendSpeed;
+    //## END PROPS DisSkelControl_SpineBender
+
+    DECLARE_CLASS(UDisSkelControl_SpineBender,USkelControlSingleBone,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeBlendBySpeed: retail sizeof 320, reflected span 304..308 (2012 PDB sizeof 320)
+class UDishonoredAnimNodeBlendBySpeed : public UAnimNodeBlendBySpeed
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeBlendBySpeed
+    BITFIELD m_bUseControllerInputSpeed:1;
+    BITFIELD m_bUse2DSpeed:1;
+    //## END PROPS DishonoredAnimNodeBlendBySpeed
+
+    DECLARE_CLASS(UDishonoredAnimNodeBlendBySpeed,UAnimNodeBlendBySpeed,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeBlendByState: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
+class UDishonoredAnimNodeBlendByState : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeBlendByState
+    FLOAT m_fBlendTime;
+    //## END PROPS DishonoredAnimNodeBlendByState
+
+    DECLARE_CLASS(UDishonoredAnimNodeBlendByState,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeBlendByStunState: retail sizeof 256, reflected span 256..256 (2012 PDB sizeof 256)
+class UDishonoredAnimNodeBlendByStunState : public UAnimNodeBlendList
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeBlendByStunState
+    //## END PROPS DishonoredAnimNodeBlendByStunState
+
+    DECLARE_CLASS(UDishonoredAnimNodeBlendByStunState,UAnimNodeBlendList,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeLookAdd: retail sizeof 256, reflected span 244..244 (2012 PDB sizeof 256)
+class UDishonoredAnimNodeLookAdd : public UAnimNodeAdditiveBlending
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeLookAdd
+    //## END PROPS DishonoredAnimNodeLookAdd
+
+    DECLARE_CLASS(UDishonoredAnimNodeLookAdd,UAnimNodeAdditiveBlending,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeSeqAttack: retail sizeof 336, reflected span 332..336 (2012 PDB sizeof 336)
+class UDishonoredAnimNodeSeqAttack : public UDishonoredAnimNodeSeq
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeSeqAttack
+    BITFIELD m_bApplyAttackRate:1;
+    //## END PROPS DishonoredAnimNodeSeqAttack
+
+    DECLARE_FUNCTION(execPlayAnim);
+    DECLARE_CLASS(UDishonoredAnimNodeSeqAttack,UDishonoredAnimNodeSeq,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeSeqMantle: retail sizeof 352, reflected span 332..340 (2012 PDB sizeof 352)
+class UDishonoredAnimNodeSeqMantle : public UDishonoredAnimNodeSeq
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeSeqMantle
+    FLOAT m_fMantleTravelDistanceZ;
+    FPointer m_pMantleTransform;
+    //## END PROPS DishonoredAnimNodeSeqMantle
+
+    DECLARE_FUNCTION(execSetAnim);
+    DECLARE_CLASS(UDishonoredAnimNodeSeqMantle,UDishonoredAnimNodeSeq,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeStatePicker: retail sizeof 272, reflected span 221..264 (2012 PDB sizeof 272)
+class UDishonoredAnimNodeStatePicker : public UAnimNodeBlendBase
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeStatePicker
+    FName m_CurStateSlot;
+    INT m_iCurStateSlot;
+    FLOAT m_CurBlendSpeed;
+    TArrayNoInit<FStateSlotInfo> m_StateSlots;
+    TArrayNoInit<FDynamicTreeTemplate> m_PossibleTemplates;
+    //## END PROPS DishonoredAnimNodeStatePicker
+
+    DECLARE_CLASS(UDishonoredAnimNodeStatePicker,UAnimNodeBlendBase,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeTreeRef: retail sizeof 224, reflected span 204..224 (2012 PDB sizeof 224)
+class UDishonoredAnimNodeTreeRef : public UAnimNode
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeTreeRef
+    class UDishonoredAnimTree* m_pAnimTree_Instance;
+    class UDishonoredAnimTree* m_pAnimTree;
+    FStringNoInit m_Comment;
+    //## END PROPS DishonoredAnimNodeTreeRef
+
+    DECLARE_CLASS(UDishonoredAnimNodeTreeRef,UAnimNode,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimNodeTreeRef_Dynamic: retail sizeof 256, reflected span 224..252 (2012 PDB sizeof 256)
+class UDishonoredAnimNodeTreeRef_Dynamic : public UDishonoredAnimNodeTreeRef
+{
+public:
+    //## BEGIN PROPS DishonoredAnimNodeTreeRef_Dynamic
+    FName m_CurRef;
+    INT m_iCurRefIndex;
+    BITFIELD m_bInitializedSpawnedPoolTrees:1;
+    BITFIELD m_bPoolAllTreesAsTemporary:1;
+    TArrayNoInit<FDynamicTreeTemplate> m_PossibleTemplates;
+    //## END PROPS DishonoredAnimNodeTreeRef_Dynamic
+
+    DECLARE_CLASS(UDishonoredAnimNodeTreeRef_Dynamic,UDishonoredAnimNodeTreeRef,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimSet: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
+class UDishonoredAnimSet : public UAnimSet
+{
+public:
+    //## BEGIN PROPS DishonoredAnimSet
+    //## END PROPS DishonoredAnimSet
+
+    DECLARE_CLASS(UDishonoredAnimSet,UAnimSet,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredAnimTree: retail sizeof 544, reflected span 488..544 (2012 PDB sizeof 544)
+class UDishonoredAnimTree : public UAnimTree
+{
+public:
+    //## BEGIN PROPS DishonoredAnimTree
+    FDisAnimStateTreeInfo m_AnimStateInfo;
+    FName m_PreviewAnimState;
+    BYTE m_PreviewAnimState_Type;
+    FStringNoInit m_DefaultPrimaryPrefix;
+    FStringNoInit m_DefaultSecondaryPrefix;
+    class UClass* m_pPreviewAnimState_Owner;
+    //## END PROPS DishonoredAnimTree
+
+    DECLARE_CLASS(UDishonoredAnimTree,UAnimTree,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AllowMantleCancel: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_AllowMantleCancel : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AllowMantleCancel
+    //## END PROPS DishonoredNotify_AllowMantleCancel
+
+    DECLARE_CLASS(UDishonoredNotify_AllowMantleCancel,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AllowMantleEnd: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_AllowMantleEnd : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AllowMantleEnd
+    //## END PROPS DishonoredNotify_AllowMantleEnd
+
+    DECLARE_CLASS(UDishonoredNotify_AllowMantleEnd,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AllowRagdoll: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_AllowRagdoll : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AllowRagdoll
+    //## END PROPS DishonoredNotify_AllowRagdoll
+
+    DECLARE_CLASS(UDishonoredNotify_AllowRagdoll,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AnimStateAdvance: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_AnimStateAdvance : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AnimStateAdvance
+    //## END PROPS DishonoredNotify_AnimStateAdvance
+
+    DECLARE_CLASS(UDishonoredNotify_AnimStateAdvance,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AnimStateExit: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_AnimStateExit : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AnimStateExit
+    //## END PROPS DishonoredNotify_AnimStateExit
+
+    DECLARE_CLASS(UDishonoredNotify_AnimStateExit,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AnimStateSyncEnd: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDishonoredNotify_AnimStateSyncEnd : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AnimStateSyncEnd
+    BYTE m_AnimStateType;
+    //## END PROPS DishonoredNotify_AnimStateSyncEnd
+
+    DECLARE_CLASS(UDishonoredNotify_AnimStateSyncEnd,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AttachEquippedItem: retail sizeof 64, reflected span 60..62 (2012 PDB sizeof 64)
+class UDishonoredNotify_AttachEquippedItem : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AttachEquippedItem
+    BYTE m_ItemSocket;
+    BYTE m_EquipUsage;
+    //## END PROPS DishonoredNotify_AttachEquippedItem
+
+    DECLARE_CLASS(UDishonoredNotify_AttachEquippedItem,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_AttackZone: retail sizeof 80, reflected span 60..80 (2012 PDB sizeof 80)
+class UDishonoredNotify_AttackZone : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_AttackZone
+    FLOAT m_fVersusZoneMaxTime;
+    FLOAT m_fDamageZoneMaxTime;
+    BYTE m_SwingDirection;
+    FLOAT m_fLastDrawnStartTime;
+    FLOAT m_fLastDrawnEndTime;
+    //## END PROPS DishonoredNotify_AttackZone
+
+    DECLARE_CLASS(UDishonoredNotify_AttackZone,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_CameraPitchTarget: retail sizeof 76, reflected span 60..76 (2012 PDB sizeof 76)
+class UDishonoredNotify_CameraPitchTarget : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_CameraPitchTarget
+    FName m_CameraBone;
+    FLOAT m_fCamera_StartPitch;
+    FLOAT m_fCamera_TargetPitch;
+    //## END PROPS DishonoredNotify_CameraPitchTarget
+
+    DECLARE_CLASS(UDishonoredNotify_CameraPitchTarget,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_ChainExit: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_ChainExit : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_ChainExit
+    //## END PROPS DishonoredNotify_ChainExit
+
+    DECLARE_CLASS(UDishonoredNotify_ChainExit,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_ChainInput: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_ChainInput : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_ChainInput
+    //## END PROPS DishonoredNotify_ChainInput
+
+    DECLARE_CLASS(UDishonoredNotify_ChainInput,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_ChainStart: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_ChainStart : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_ChainStart
+    //## END PROPS DishonoredNotify_ChainStart
+
+    DECLARE_CLASS(UDishonoredNotify_ChainStart,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_EndDropCorpse: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_EndDropCorpse : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_EndDropCorpse
+    //## END PROPS DishonoredNotify_EndDropCorpse
+
+    DECLARE_CLASS(UDishonoredNotify_EndDropCorpse,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_FireDialogHook: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDishonoredNotify_FireDialogHook : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_FireDialogHook
+    BYTE m_DialogHook;
+    //## END PROPS DishonoredNotify_FireDialogHook
+
+    DECLARE_CLASS(UDishonoredNotify_FireDialogHook,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_FireProjectile: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_FireProjectile : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_FireProjectile
+    //## END PROPS DishonoredNotify_FireProjectile
+
+    DECLARE_CLASS(UDishonoredNotify_FireProjectile,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_Footfall: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDishonoredNotify_Footfall : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_Footfall
+    INT m_iFootIndex;
+    //## END PROPS DishonoredNotify_Footfall
+
+    DECLARE_CLASS(UDishonoredNotify_Footfall,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_PlayTune: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDishonoredNotify_PlayTune : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_PlayTune
+    BYTE m_eTuneToPlay;
+    //## END PROPS DishonoredNotify_PlayTune
+
+    DECLARE_CLASS(UDishonoredNotify_PlayTune,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_PlayerMeleeWeaponHitFlesh: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_PlayerMeleeWeaponHitFlesh : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_PlayerMeleeWeaponHitFlesh
+    //## END PROPS DishonoredNotify_PlayerMeleeWeaponHitFlesh
+
+    DECLARE_CLASS(UDishonoredNotify_PlayerMeleeWeaponHitFlesh,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_Ragdoll: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_Ragdoll : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_Ragdoll
+    //## END PROPS DishonoredNotify_Ragdoll
+
+    DECLARE_CLASS(UDishonoredNotify_Ragdoll,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_ReleaseCorpse: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_ReleaseCorpse : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_ReleaseCorpse
+    //## END PROPS DishonoredNotify_ReleaseCorpse
+
+    DECLARE_CLASS(UDishonoredNotify_ReleaseCorpse,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_SetBodyMode: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
+class UDishonoredNotify_SetBodyMode : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_SetBodyMode
+    BYTE m_BodyMode;
+    //## END PROPS DishonoredNotify_SetBodyMode
+
+    DECLARE_CLASS(UDishonoredNotify_SetBodyMode,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_SeverLimb: retail sizeof 80, reflected span 60..80 (2012 PDB sizeof 80)
+class UDishonoredNotify_SeverLimb : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_SeverLimb
+    FName m_SeverBoneName;
+    BITFIELD m_bUseBlood:1;
+    BITFIELD m_bHideLimb:1;
+    BITFIELD m_bGoToRagdoll:1;
+    BITFIELD m_bShowGore:1;
+    BITFIELD m_bShowEat:1;
+    BYTE m_ImpulseMode;
+    FLOAT m_fImpulseStrength;
+    //## END PROPS DishonoredNotify_SeverLimb
+
+    DECLARE_CLASS(UDishonoredNotify_SeverLimb,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_ShowEquippedInvItem: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDishonoredNotify_ShowEquippedInvItem : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_ShowEquippedInvItem
+    BITFIELD m_bShow:1;
+    //## END PROPS DishonoredNotify_ShowEquippedInvItem
+
+    DECLARE_CLASS(UDishonoredNotify_ShowEquippedInvItem,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_StartPlague: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
+class UDishonoredNotify_StartPlague : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_StartPlague
+    //## END PROPS DishonoredNotify_StartPlague
+
+    DECLARE_CLASS(UDishonoredNotify_StartPlague,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_Stunned: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDishonoredNotify_Stunned : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_Stunned
+    BITFIELD m_bStunned:1;
+    //## END PROPS DishonoredNotify_Stunned
+
+    DECLARE_CLASS(UDishonoredNotify_Stunned,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredNotify_UsableObjectActivate: retail sizeof 64, reflected span 60..64 (2012 PDB sizeof 64)
+class UDishonoredNotify_UsableObjectActivate : public UAnimNotify
+{
+public:
+    //## BEGIN PROPS DishonoredNotify_UsableObjectActivate
+    BITFIELD m_bAllowReturnToBendTime:1;
+    //## END PROPS DishonoredNotify_UsableObjectActivate
+
+    DECLARE_CLASS(UDishonoredNotify_UsableObjectActivate,UAnimNotify,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredSeqBlendByAim: retail sizeof 448, reflected span 400..448 (2012 PDB sizeof 448)
+class UDishonoredSeqBlendByAim : public UAnimNodeSequenceBlendByAim
+{
+public:
+    //## BEGIN PROPS DishonoredSeqBlendByAim
+    FName m_AnimationMainName;
+    BITFIELD m_bAutoCompleteAnimNames:1;
+    BITFIELD m_bRebuildNamesOnRelevant:1;
+    BITFIELD m_bAddItemPrefix:1;
+    BITFIELD m_bSequenceMustBeSetInAnimState:1;
+    FName m_ExtraPrefixName;
+    BYTE m_ApplyItemEquipPrefix;
+    BYTE m_AimBoneDesignation;
+    FLOAT m_fMaxLeftDegrees;
+    FLOAT m_fMaxRightDegrees;
+    FLOAT m_fMaxUpDegrees;
+    FLOAT m_fMaxDownDegrees;
+    FName m_LastKnownItemPrefixName;
+    //## END PROPS DishonoredSeqBlendByAim
+
+    DECLARE_CLASS(UDishonoredSeqBlendByAim,UAnimNodeSequenceBlendByAim,0,DishonoredGame)
+};
+
+// DishonoredGame.DishonoredSeqVersus: retail sizeof 336, reflected span 332..336 (2012 PDB sizeof 336)
+class UDishonoredSeqVersus : public UDishonoredAnimNodeSeq
+{
+public:
+    //## BEGIN PROPS DishonoredSeqVersus
+    BITFIELD m_bAddDirectionalModifier:1;
+    //## END PROPS DishonoredSeqVersus
+
+    DECLARE_CLASS(UDishonoredSeqVersus,UDishonoredAnimNodeSeq,0,DishonoredGame)
+};
+
+#undef DECLARE_CLASS
+#undef DECLARE_CASTED_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CASTED_CLASS
+#endif // !INCLUDED_DISHONOREDGAME_ANIM_CLASSES
+#endif // !NAMES_ONLY
+
+AUTOGENERATE_FUNCTION(UDishonoredAnimNodeSeq,-1,execPlayAnim);
+AUTOGENERATE_FUNCTION(UDisAnimNodeSeqPlayer,-1,execPlayAnim);
+AUTOGENERATE_FUNCTION(UDishonoredAnimNodeSeqAttack,-1,execPlayAnim);
+AUTOGENERATE_FUNCTION(UDishonoredAnimNodeSeqMantle,-1,execSetAnim);
+
+#ifndef NAMES_ONLY
+#undef AUTOGENERATE_FUNCTION
+#endif
+
+#ifdef STATIC_LINKING_MOJO
+#ifndef DISHONOREDGAME_ANIM_NATIVE_DEFS
+#define DISHONOREDGAME_ANIM_NATIVE_DEFS
+
+#define AUTO_INITIALIZE_REGISTRANTS_DISHONOREDGAME_ANIM \
+	ADisSkeletalMeshActorMAT::StaticClass(); \
+	UDisAnimNode3StateBlend::StaticClass(); \
+	UDisAnimNodeBlendList::StaticClass(); \
+	UDisAnimNodeBlendByAssassinationState::StaticClass(); \
+	UDisAnimNodeBlendByCorpseBeingCarried::StaticClass(); \
+	UDisAnimNodeBlendByCorpseDropType::StaticClass(); \
+	UDisAnimNodeBlendByGrenadeState::StaticClass(); \
+	UDisAnimNodeBlendByHeadBob::StaticClass(); \
+	UDisAnimNodeBlendByLocoType::StaticClass(); \
+	UDisAnimNodeBlendByMeleeBlockState::StaticClass(); \
+	UDisAnimNodeBlendByMeleeState::StaticClass(); \
+	UDisAnimNodeBlendByParryState::StaticClass(); \
+	UDisAnimNodeBlendByPhysicalCondition::StaticClass(); \
+	UDisAnimNodeBlendByPlayerSneak::StaticClass(); \
+	UDisAnimNodeBlendByPlayerSpringRazorState::StaticClass(); \
+	UDisAnimNodeBlendByPlayerStance::StaticClass(); \
+	UDisAnimNodeBlendBySpeedPercent::StaticClass(); \
+	UDisAnimNodeBlendByStepUpMantle::StaticClass(); \
+	UDisAnimNodeBlendBySwimState::StaticClass(); \
+	UDisAnimNodeBlendByVulnerability::StaticClass(); \
+	UDisAnimNodeBlendCastPower::StaticClass(); \
+	UDisAnimNodeBlendDirectional::StaticClass(); \
+	UDisAnimNodeBlendHeartAdditive::StaticClass(); \
+	UDisAnimNodeBlendItemAimAdditive::StaticClass(); \
+	UDisAnimNodeBlendPerBone::StaticClass(); \
+	UDishonoredAnimNodeSeq::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredAnimNodeSeq"), GDishonoredGameUDishonoredAnimNodeSeqNatives); \
+	UDisAnimNodeSeqPlayer::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DisAnimNodeSeqPlayer"), GDishonoredGameUDisAnimNodeSeqPlayerNatives); \
+	UDisAnimNodeSlot::StaticClass(); \
+	UDisNotify_BendTime_Ranged::StaticClass(); \
+	UDisNotify_AdrenalineBendTime_Ranged::StaticClass(); \
+	UDisNotify_AnimStateUnlock::StaticClass(); \
+	UDisNotify_AttachItemInSlot::StaticClass(); \
+	UDishonoredNotify_AttackInterruptable::StaticClass(); \
+	UDisNotify_AttackInterruptable_Range::StaticClass(); \
+	UDisNotify_BendTime::StaticClass(); \
+	UDisNotify_BlockParryZone::StaticClass(); \
+	UDisNotify_CameraShake::StaticClass(); \
+	UDisNotify_Destroy::StaticClass(); \
+	UDisNotify_DevouringSwarm::StaticClass(); \
+	UDisNotify_DropArmor::StaticClass(); \
+	UDisNotify_DropItem::StaticClass(); \
+	UDisNotify_EnableLocomotion::StaticClass(); \
+	UDisNotify_EndSurprise::StaticClass(); \
+	UDisNotify_FootLock_Ranged::StaticClass(); \
+	UDisNotify_FootPlacement::StaticClass(); \
+	UDisNotify_Heartbeat::StaticClass(); \
+	UDisNotify_MakeAINoise::StaticClass(); \
+	UDisNotify_MinigameBranch_Ranged::StaticClass(); \
+	UDisNotify_NPCDisableLookAt::StaticClass(); \
+	UDisNotify_NPCTurnControl::StaticClass(); \
+	UDisNotify_ParryContact::StaticClass(); \
+	UDisNotify_PawnMaterialParam::StaticClass(); \
+	UDisNotify_PlaceSpringRazor::StaticClass(); \
+	UDisNotify_PlayRatBiteEffect::StaticClass(); \
+	UDisNotify_PlayerGenericInterruptable::StaticClass(); \
+	UDisNotify_Possession::StaticClass(); \
+	UDisNotify_PowerRumble::StaticClass(); \
+	UDisNotify_PowerShake::StaticClass(); \
+	UDisNotify_ReloadAmmo::StaticClass(); \
+	UDisNotify_ReloadArrow::StaticClass(); \
+	UDisNotify_ReplaceMaterials::StaticClass(); \
+	UDisNotify_SetLightningTarget::StaticClass(); \
+	UDisNotify_ShowArrowHighRes::StaticClass(); \
+	UDisNotify_ShowBullet::StaticClass(); \
+	UDisNotify_SwimStroke::StaticClass(); \
+	UDisNotify_TauntInterruptible_Ranged::StaticClass(); \
+	UDisNotify_Trails::StaticClass(); \
+	UDisNotify_VulnerablePlayer::StaticClass(); \
+	UDisNotify_VulnerableRange::StaticClass(); \
+	UDisNotify_WhiskeyFireDamage::StaticClass(); \
+	UDisNotify_WindBlast::StaticClass(); \
+	UDisSkelControl_FootPlacement::StaticClass(); \
+	UDisSkelControl_FootPlacementRotLock::StaticClass(); \
+	UDisSkelControl_SpineBender::StaticClass(); \
+	UDishonoredAnimNodeBlendBySpeed::StaticClass(); \
+	UDishonoredAnimNodeBlendByState::StaticClass(); \
+	UDishonoredAnimNodeBlendByStunState::StaticClass(); \
+	UDishonoredAnimNodeLookAdd::StaticClass(); \
+	UDishonoredAnimNodeSeqAttack::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredAnimNodeSeqAttack"), GDishonoredGameUDishonoredAnimNodeSeqAttackNatives); \
+	UDishonoredAnimNodeSeqMantle::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("DishonoredAnimNodeSeqMantle"), GDishonoredGameUDishonoredAnimNodeSeqMantleNatives); \
+	UDishonoredAnimNodeStatePicker::StaticClass(); \
+	UDishonoredAnimNodeTreeRef::StaticClass(); \
+	UDishonoredAnimNodeTreeRef_Dynamic::StaticClass(); \
+	UDishonoredAnimSet::StaticClass(); \
+	UDishonoredAnimTree::StaticClass(); \
+	UDishonoredNotify_AllowMantleCancel::StaticClass(); \
+	UDishonoredNotify_AllowMantleEnd::StaticClass(); \
+	UDishonoredNotify_AllowRagdoll::StaticClass(); \
+	UDishonoredNotify_AnimStateAdvance::StaticClass(); \
+	UDishonoredNotify_AnimStateExit::StaticClass(); \
+	UDishonoredNotify_AnimStateSyncEnd::StaticClass(); \
+	UDishonoredNotify_AttachEquippedItem::StaticClass(); \
+	UDishonoredNotify_AttackZone::StaticClass(); \
+	UDishonoredNotify_CameraPitchTarget::StaticClass(); \
+	UDishonoredNotify_ChainExit::StaticClass(); \
+	UDishonoredNotify_ChainInput::StaticClass(); \
+	UDishonoredNotify_ChainStart::StaticClass(); \
+	UDishonoredNotify_EndDropCorpse::StaticClass(); \
+	UDishonoredNotify_FireDialogHook::StaticClass(); \
+	UDishonoredNotify_FireProjectile::StaticClass(); \
+	UDishonoredNotify_Footfall::StaticClass(); \
+	UDishonoredNotify_PlayTune::StaticClass(); \
+	UDishonoredNotify_PlayerMeleeWeaponHitFlesh::StaticClass(); \
+	UDishonoredNotify_Ragdoll::StaticClass(); \
+	UDishonoredNotify_ReleaseCorpse::StaticClass(); \
+	UDishonoredNotify_SetBodyMode::StaticClass(); \
+	UDishonoredNotify_SeverLimb::StaticClass(); \
+	UDishonoredNotify_ShowEquippedInvItem::StaticClass(); \
+	UDishonoredNotify_StartPlague::StaticClass(); \
+	UDishonoredNotify_Stunned::StaticClass(); \
+	UDishonoredNotify_UsableObjectActivate::StaticClass(); \
+	UDishonoredSeqBlendByAim::StaticClass(); \
+	UDishonoredSeqVersus::StaticClass(); \
+
+#endif // DISHONOREDGAME_ANIM_NATIVE_DEFS
+
+#ifdef NATIVES_ONLY
+FNativeFunctionLookup GDishonoredGameUDishonoredAnimNodeSeqNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredAnimNodeSeq, execPlayAnim)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDisAnimNodeSeqPlayerNatives[] = 
+{ 
+	MAP_NATIVE(UDisAnimNodeSeqPlayer, execPlayAnim)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredAnimNodeSeqAttackNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredAnimNodeSeqAttack, execPlayAnim)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GDishonoredGameUDishonoredAnimNodeSeqMantleNatives[] = 
+{ 
+	MAP_NATIVE(UDishonoredAnimNodeSeqMantle, execSetAnim)
+	{NULL, NULL}
+};
+
+#endif // NATIVES_ONLY
+#endif // STATIC_LINKING_MOJO
+
+#ifdef VERIFY_CLASS_SIZES
+VERIFY_CLASS_OFFSET_NODIE(ADisSkeletalMeshActorMAT,DisSkeletalMeshActorMAT,SkeletalMeshComponent2)
+VERIFY_CLASS_SIZE_NODIE(ADisSkeletalMeshActorMAT)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNode3StateBlend,DisAnimNode3StateBlend,m_fBlendTime)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNode3StateBlend,DisAnimNode3StateBlend,m_fOutroAnimTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNode3StateBlend)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendList,DisAnimNodeBlendList,m_pDisParentAnimTree)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendList)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByAssassinationState,DisAnimNodeBlendByAssassinationState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByAssassinationState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByCorpseBeingCarried,DisAnimNodeBlendByCorpseBeingCarried,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByCorpseBeingCarried)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByCorpseDropType)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByGrenadeState,DisAnimNodeBlendByGrenadeState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByGrenadeState)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByHeadBob)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByLocoType,DisAnimNodeBlendByLocoType,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByLocoType)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByMeleeBlockState,DisAnimNodeBlendByMeleeBlockState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByMeleeBlockState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByMeleeState,DisAnimNodeBlendByMeleeState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByMeleeState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByParryState,DisAnimNodeBlendByParryState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByParryState)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByPhysicalCondition)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByPlayerSneak,DisAnimNodeBlendByPlayerSneak,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByPlayerSneak)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByPlayerSpringRazorState,DisAnimNodeBlendByPlayerSpringRazorState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByPlayerSpringRazorState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByPlayerStance,DisAnimNodeBlendByPlayerStance,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByPlayerStance)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendBySpeedPercent,DisAnimNodeBlendBySpeedPercent,m_fSliderPosition)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendBySpeedPercent,DisAnimNodeBlendBySpeedPercent,m_fSpeedPercentSpring)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendBySpeedPercent)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByStepUpMantle,DisAnimNodeBlendByStepUpMantle,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByStepUpMantle)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendBySwimState,DisAnimNodeBlendBySwimState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendBySwimState)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendByVulnerability,DisAnimNodeBlendByVulnerability,m_fBlendTransitionTime)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendByVulnerability)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendCastPower,DisAnimNodeBlendCastPower,m_pDisParentAnimTree)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendCastPower,DisAnimNodeBlendCastPower,m_pUsePowerContext)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendCastPower)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendDirectional)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendHeartAdditive)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendItemAimAdditive)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendPerBone,DisAnimNodeBlendPerBone,m_OptimizationFilter)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeBlendPerBone,DisAnimNodeBlendPerBone,m_BranchEndBoneNames)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeBlendPerBone)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeSeq,DishonoredAnimNodeSeq,m_PendingRangedNotifies)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeSeq,DishonoredAnimNodeSeq,m_RequiredAnimNotifies)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeSeq)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeSeqPlayer,DisAnimNodeSeqPlayer,m_fPlayerController_StartPitch)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeSeqPlayer,DisAnimNodeSeqPlayer,m_pCameraPitchFixup)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeSeqPlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeSlot,DisAnimNodeSlot,m_AnimDefClass)
+VERIFY_CLASS_OFFSET_NODIE(UDisAnimNodeSlot,DisAnimNodeSlot,m_iStep)
+VERIFY_CLASS_SIZE_NODIE(UDisAnimNodeSlot)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_BendTime_Ranged,DisNotify_BendTime_Ranged,m_fPlayerTimeScale)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_BendTime_Ranged,DisNotify_BendTime_Ranged,m_fTransitionOutTime)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_BendTime_Ranged)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_AdrenalineBendTime_Ranged)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_AnimStateUnlock,DisNotify_AnimStateUnlock,m_AnimStateType)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_AnimStateUnlock)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_AttachItemInSlot,DisNotify_AttachItemInSlot,m_ItemSocket)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_AttachItemInSlot,DisNotify_AttachItemInSlot,m_pItemSlotType)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_AttachItemInSlot)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AttackInterruptable)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_AttackInterruptable_Range)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_BendTime)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_BlockParryZone)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_CameraShake,DisNotify_CameraShake,m_BoneName)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_CameraShake,DisNotify_CameraShake,m_fHighestMagnitude)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_CameraShake)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_Destroy)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_DevouringSwarm)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_DropArmor,DisNotify_DropArmor,m_WhichArmor)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_DropArmor,DisNotify_DropArmor,m_DropVelocity)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_DropArmor)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_DropItem,DisNotify_DropItem,m_WhichItem)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_DropItem,DisNotify_DropItem,m_DropVelocity)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_DropItem)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_EnableLocomotion)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_EndSurprise)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_FootLock_Ranged,DisNotify_FootLock_Ranged,m_iFootIndex)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_FootLock_Ranged)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_FootPlacement)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_Heartbeat,DisNotify_Heartbeat,m_Index)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_Heartbeat)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_MakeAINoise,DisNotify_MakeAINoise,m_NoiseContext)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_MakeAINoise,DisNotify_MakeAINoise,m_NoiseFlags)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_MakeAINoise)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_MinigameBranch_Ranged,DisNotify_MinigameBranch_Ranged,m_eBranchToBlendLogic)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_MinigameBranch_Ranged)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_NPCDisableLookAt,DisNotify_NPCDisableLookAt,m_LookAtFilter)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_NPCDisableLookAt)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_NPCTurnControl)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_ParryContact)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_PawnMaterialParam,DisNotify_PawnMaterialParam,m_EndScalarParameterInterpArray)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_PawnMaterialParam)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_PlaceSpringRazor)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_PlayRatBiteEffect,DisNotify_PlayRatBiteEffect,m_pEatAlternativeFX)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_PlayRatBiteEffect)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_PlayerGenericInterruptable)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_Possession)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_PowerRumble)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_PowerShake)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_ReloadAmmo)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_ReloadArrow)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_ReplaceMaterials,DisNotify_ReplaceMaterials,m_pNewMaterial)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_ReplaceMaterials)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_SetLightningTarget,DisNotify_SetLightningTarget,m_Origin)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_SetLightningTarget,DisNotify_SetLightningTarget,m_BoneName)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_SetLightningTarget)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_ShowArrowHighRes)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_ShowBullet)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_SwimStroke)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_TauntInterruptible_Ranged)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_Trails,DisNotify_Trails,m_Name)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_Trails)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_VulnerablePlayer)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_VulnerableRange,DisNotify_VulnerableRange,m_VulnerabilityType)
+VERIFY_CLASS_OFFSET_NODIE(UDisNotify_VulnerableRange,DisNotify_VulnerableRange,m_fExtraTime)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_VulnerableRange)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_WhiskeyFireDamage)
+VERIFY_CLASS_SIZE_NODIE(UDisNotify_WindBlast)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkelControl_FootPlacement,DisSkelControl_FootPlacement,m_PrevFootLocWithoutIK)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkelControl_FootPlacement,DisSkelControl_FootPlacement,m_fMaxFootPredictDist)
+VERIFY_CLASS_SIZE_NODIE(UDisSkelControl_FootPlacement)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkelControl_FootPlacementRotLock,DisSkelControl_FootPlacementRotLock,m_pFootPlacementSkelControl)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkelControl_FootPlacementRotLock,DisSkelControl_FootPlacementRotLock,m_FootPlacementSkelCtrlName)
+VERIFY_CLASS_SIZE_NODIE(UDisSkelControl_FootPlacementRotLock)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkelControl_SpineBender,DisSkelControl_SpineBender,m_fCurBendPitchTarget)
+VERIFY_CLASS_OFFSET_NODIE(UDisSkelControl_SpineBender,DisSkelControl_SpineBender,m_fBendYawBlendSpeed)
+VERIFY_CLASS_SIZE_NODIE(UDisSkelControl_SpineBender)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeBlendBySpeed)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeBlendByState,DishonoredAnimNodeBlendByState,m_fBlendTime)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeBlendByState)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeBlendByStunState)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeLookAdd)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeSeqAttack)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeSeqMantle,DishonoredAnimNodeSeqMantle,m_fMantleTravelDistanceZ)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeSeqMantle,DishonoredAnimNodeSeqMantle,m_pMantleTransform)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeSeqMantle)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeStatePicker,DishonoredAnimNodeStatePicker,m_CurStateSlot)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeStatePicker,DishonoredAnimNodeStatePicker,m_PossibleTemplates)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeStatePicker)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeTreeRef,DishonoredAnimNodeTreeRef,m_pAnimTree_Instance)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeTreeRef,DishonoredAnimNodeTreeRef,m_Comment)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeTreeRef)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeTreeRef_Dynamic,DishonoredAnimNodeTreeRef_Dynamic,m_CurRef)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimNodeTreeRef_Dynamic,DishonoredAnimNodeTreeRef_Dynamic,m_PossibleTemplates)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimNodeTreeRef_Dynamic)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimSet)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimTree,DishonoredAnimTree,m_AnimStateInfo)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredAnimTree,DishonoredAnimTree,m_pPreviewAnimState_Owner)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredAnimTree)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AllowMantleCancel)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AllowMantleEnd)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AllowRagdoll)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AnimStateAdvance)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AnimStateExit)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_AnimStateSyncEnd,DishonoredNotify_AnimStateSyncEnd,m_AnimStateType)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AnimStateSyncEnd)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_AttachEquippedItem,DishonoredNotify_AttachEquippedItem,m_ItemSocket)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_AttachEquippedItem,DishonoredNotify_AttachEquippedItem,m_EquipUsage)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AttachEquippedItem)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_AttackZone,DishonoredNotify_AttackZone,m_fVersusZoneMaxTime)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_AttackZone,DishonoredNotify_AttackZone,m_fLastDrawnEndTime)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_AttackZone)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_CameraPitchTarget,DishonoredNotify_CameraPitchTarget,m_CameraBone)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_CameraPitchTarget,DishonoredNotify_CameraPitchTarget,m_fCamera_TargetPitch)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_CameraPitchTarget)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_ChainExit)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_ChainInput)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_ChainStart)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_EndDropCorpse)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_FireDialogHook,DishonoredNotify_FireDialogHook,m_DialogHook)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_FireDialogHook)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_FireProjectile)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_Footfall,DishonoredNotify_Footfall,m_iFootIndex)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_Footfall)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_PlayTune,DishonoredNotify_PlayTune,m_eTuneToPlay)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_PlayTune)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_PlayerMeleeWeaponHitFlesh)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_Ragdoll)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_ReleaseCorpse)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_SetBodyMode,DishonoredNotify_SetBodyMode,m_BodyMode)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_SetBodyMode)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_SeverLimb,DishonoredNotify_SeverLimb,m_SeverBoneName)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredNotify_SeverLimb,DishonoredNotify_SeverLimb,m_fImpulseStrength)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_SeverLimb)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_ShowEquippedInvItem)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_StartPlague)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_Stunned)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredNotify_UsableObjectActivate)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredSeqBlendByAim,DishonoredSeqBlendByAim,m_AnimationMainName)
+VERIFY_CLASS_OFFSET_NODIE(UDishonoredSeqBlendByAim,DishonoredSeqBlendByAim,m_LastKnownItemPrefixName)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredSeqBlendByAim)
+VERIFY_CLASS_SIZE_NODIE(UDishonoredSeqVersus)
+#endif // VERIFY_CLASS_SIZES
+
+#endif // !ENUMS_ONLY
+
+#if SUPPORTS_PRAGMA_PACK
+#pragma pack (pop)
+#endif
