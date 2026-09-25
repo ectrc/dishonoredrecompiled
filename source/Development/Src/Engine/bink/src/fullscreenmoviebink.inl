@@ -26,7 +26,9 @@
 #include "PS3Client.h"
 #include "PS3Viewport.h"
 #else
-#include "XAudio2Device.h"
+// DISHONORED(retail): the Shipping PDB has no XAudio2 module and the retail exe drives Bink audio
+// through BinkOpenDirectSound (imports_2013.csv; BinkSetSoundSystem(BinkOpenDirectSound, 0) at
+// 2013 rva 0xe1fa8), so the Windows path does not include XAudio2Device.h.
 #endif
 
 #if DWTRIOVIZSDK
@@ -1316,7 +1318,8 @@ UBOOL FFullScreenMovieBink::PlayMovie(EMovieMode InMovieMode, const TCHAR* Movie
 				// increment load counter. this gets decremented when asynch load completes
 				StartupMovie.LoadCounter.Increment();
 				// load in background, which will happen before the game loads anything, so we don't need to block gamethread or anything
-				IO->LoadData(Pathname, 0, StartupMovie.BufferSize, StartupMovie.Buffer, &StartupMovie.LoadCounter, AIOP_Normal);
+				// DISHONORED(port): Arkane's FIOSystem::LoadData takes the request classification (UnIOBase.h EAsyncIORequestType, AIORT_Bink = 0)
+				IO->LoadData(Pathname, 0, StartupMovie.BufferSize, StartupMovie.Buffer, &StartupMovie.LoadCounter, AIOP_Normal, AIORT_Bink);
 			}
 			else
 			{
@@ -2106,8 +2109,10 @@ FBinkMovieAudio::FBinkMovieAudio()
 #elif XBOX
 	BinkSoundUseXAudio2(UXAudio2Device::XAudio2);
 #else
-	UXAudio2Device::InitHardware();
-	BinkSoundUseXAudio2(UXAudio2Device::XAudio2);
+	// DISHONORED(retail): retail 2013 calls BinkSetSoundSystem(BinkOpenDirectSound, 0) (rva 0xe1fa8,
+	// the only BinkSetSoundSystem call site); the reference XAudio2 path is not linked (no XAudio2 in
+	// the Shipping PDB, binkw32 imports have no BinkOpenXAudio2).
+	BinkSetSoundSystem(BinkOpenDirectSound, 0);
 #endif
 }
 
@@ -2253,7 +2258,67 @@ void FBinkMovieAudio::SetSoundTracks( const TCHAR* MovieName )
 	debugf( NAME_DevMovie, TEXT( "Channel map: %d/%d/%d/%d/%d/%d" ), BinkSoundTracks[0], BinkSoundTracks[1], BinkSoundTracks[2], BinkSoundTracks[3], BinkSoundTracks[4], BinkSoundTracks[5] );
 }
 
-#if XBOX || _WINDOWS
+#if _WINDOWS
+/**
+ * Handle setting of channel volumes for the DirectSound system
+ *
+ * DISHONORED(port): retail drives Bink audio through BinkOpenDirectSound and sets per-track
+ * volume/pan with BinkSetVolume/BinkSetPan (the only callers of those two imports). Ported from
+ * the 2012 Shipping decompile of FBinkMovieAudio::SetAudioChannels (rva 0xd95f0, this routine is
+ * inlined there): fewer than six tracks -> every track at foley volume, centred; otherwise the
+ * eight routed tracks by id: 0/6 left, 1/7 right, 3 (LFE) centred, all at foley volume, any other
+ * id (centre and surrounds) at voice volume, centred. Pan range 0..65535, 0x8000 = centre.
+ */
+void FBinkMovieAudio::HandleDirectSoundVolumes( BINK* Bink )
+{
+	const INT BinkFoleyVolume = appTrunc( FoleyVolume );
+	const INT BinkVoiceVolume = appTrunc( VoiceVolume );
+
+	if( Bink->NumTracks < 6 )
+	{
+		for( INT TrackIndex = 0; TrackIndex < Bink->NumTracks; TrackIndex++ )
+		{
+			BinkSetVolume( Bink, TrackIndex, BinkFoleyVolume );
+			BinkSetPan( Bink, TrackIndex, 0x8000 );
+		}
+		return;
+	}
+
+	for( UINT TrackIndex = 0; TrackIndex < ARRAY_COUNT( BinkSoundTracks ); TrackIndex++ )
+	{
+		const UINT TrackId = BinkSoundTracks[TrackIndex];
+		switch( TrackId )
+		{
+		case 0:
+			BinkSetVolume( Bink, TrackId, BinkFoleyVolume );
+			BinkSetPan( Bink, TrackId, 0 );
+			break;
+		case 1:
+			BinkSetVolume( Bink, TrackId, BinkFoleyVolume );
+			BinkSetPan( Bink, TrackId, 0xFFFF );
+			break;
+		case 3:
+			BinkSetVolume( Bink, TrackId, BinkFoleyVolume );
+			BinkSetPan( Bink, TrackId, 0x8000 );
+			break;
+		case 6:
+			BinkSetVolume( Bink, TrackId, BinkFoleyVolume );
+			BinkSetPan( Bink, TrackId, 0 );
+			break;
+		case 7:
+			BinkSetVolume( Bink, TrackId, BinkFoleyVolume );
+			BinkSetPan( Bink, TrackId, 0xFFFF );
+			break;
+		default:
+			BinkSetVolume( Bink, TrackId, BinkVoiceVolume );
+			BinkSetPan( Bink, TrackId, 0x8000 );
+			break;
+		}
+	}
+}
+#endif
+
+#if XBOX
 /**
  * Handle setting of channel volumes for the XAudio2 system
  */
@@ -2341,8 +2406,11 @@ void FBinkMovieAudio::SetAudioChannels(BINK* Bink)
 
 #if PS3
 	HandleMultiStreamVolumes( Bink );
-#else
+#elif XBOX
 	HandleXAudio2Volumes( Bink );
+#else
+	// DISHONORED(retail): DirectSound path, see HandleDirectSoundVolumes
+	HandleDirectSoundVolumes( Bink );
 #endif
 }
 
