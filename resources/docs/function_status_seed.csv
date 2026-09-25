@@ -1,0 +1,99 @@
+rva,status,note
+0x5a1a0,reference,operator<<(FPackageFileSummary&): identical; TextureAllocations threshold 770 (ref 767)
+0x6a420,reference,operator<<(FObjectExport&): identical
+0xd010,reference,operator<<(FObjectImport&): identical
+0x42a90,reference,operator<<(TArray<FCompressedChunk>&) incl. FCompressedChunk: identical
+0x3f9d0,reference,operator<<(FNameEntry&): identical
+0x4a80,reference,operator<<(FPropertyTag&): identical (633/673)
+0x87870,reference,FPropertyTag ctor: identical
+0x80f70,reference,FPropertyTag::SerializeTaggedProperty: identical
+0x192d20,reference,operator<<(FTextureAllocations&) (Engine): identical
+0x1844e0,reference,operator<<(FTextureAllocations::FTextureType&) (Engine): identical
+0xa25d0,port,ULinkerLoad::Tick: no FixupExportMap step
+0x7b030,reference,ULinkerLoad ctor: identical
+0x898a0,port,ULinkerLoad::CreateLoader: ArkBsPatch precache path; FPackagePrecacheInfo has 3 extra members
+0x8a330,reference,ULinkerLoad::SerializePackageFileSummary: identical (logging only)
+0x5a4a0,reference,ULinkerLoad::SerializeNameMap: identical
+0x30860,reference,ULinkerLoad::SerializeImportMap: identical
+0x6a6a0,reference,ULinkerLoad::SerializeExportMap: identical (no editor FaceFX scan)
+0x30a00,reference,ULinkerLoad::FixupImportMap: identical to FINAL_RELEASE path
+0x7b200,port,ULinkerLoad::RemapClasses: only <536 prefab fixup; no MobileGame remap (dead for 801)
+0x8b250,reference,ULinkerLoad::IntegrateScriptPatches: identical; patcher is a stub
+0x48db0,port,ULinkerLoad::GetScriptPatcher: allocates 12-byte stub FScriptPatcher
+0x48e00,reference,ULinkerLoad::SerializeDependsMap: identical
+0x5a810,reference,ULinkerLoad::SerializeGuidMaps: identical
+0x65d60,reference,ULinkerLoad::CreateExportHash: identical
+0x7b980,reference,ULinkerLoad::FindExistingExports: identical
+0xa22e0,reference,ULinkerLoad::FinalizeCreation: identical
+0x193010,port,ULinkerLoad::StartTextureAllocation (Engine): no CreateResourceMem allocation
+0xd150,reference,ULinkerLoad::Serialize(void*,INT): identical
+0x30d30,reference,ULinkerLoad::operator<<(FName&): identical
+0x9bca0,reference,ULinkerLoad::operator<<(UObject*&): identical
+0x94670,reference,ULinkerLoad::Preload: identical
+0x9e460,reference,ULinkerLoad::CreateExport: identical
+0x9b690,port,ULinkerLoad::CreateImport: only dead GearGameContentWeapons hack differs; keep reference body
+0xa0710,reference,ULinkerLoad::VerifyImport: identical
+0x9d8c0,reference,ULinkerLoad::VerifyImportInner: identical
+0xa0bc0,reference,ULinkerLoad::LoadAllObjects: identical
+0x9bb50,reference,ULinkerLoad::IndexToObject: identical
+0x949c0,reference,UObject::Serialize: identical
+0x20180,port,UObject::SerializeNetIndex: no NetIndex member; writes 0/-1 from ObjectFlags bit 63
+0x14d30,port,UObject::SetNetIndex: sets/clears ObjectFlags bit 63
+0x8a8f0,port,UObject::SerializeScriptProperties: no SerializeStateLocals
+0x6de00,port,UObject::SerializeScriptPropertiesBin: Arkane addition (no reference)
+0x879b0,reference,UStruct::SerializeTaggedProperties: identical (no HACK_ForceLoadEditorOnly term)
+0x4c30,reference,UStruct::SerializeBin: identical
+0x23630,reference,UStruct::SerializeBinEx: identical
+0x4bc0,reference,UStruct::SerializeBinProperty: identical
+0x4d70,port,UScriptStruct::SerializeBin: Arkane override (STRUCT_DevLoad + ArIsDisSaveLoad -> DisStructDevLoad)
+0x96240,reference,UField::Serialize: identical
+0x962b0,reference,UStruct::Serialize: identical
+0x2d120,reference,UStruct::SerializeExpr: not diffed line by line; opcodes match
+0x968d0,reference,UScriptStruct::Serialize: identical
+0x96a50,reference,UState::Serialize: identical
+0x96b70,port,UClass::Serialize: m_DropdownCategory at licensee>=10; m_OtherClassFlags at ver>=796; no ClassGroupNames
+0x88910,reference,UClass::SerializeDefaultObject: identical
+0x96ef0,reference,UFunction::Serialize: identical
+0x97080,reference,UConst::Serialize: identical
+0x97120,reference,UEnum::Serialize: identical
+0x971e0,reference,UPackage::Serialize: identical (no IsCountingMemory block)
+0x970b0,reference,UTextBuffer::Serialize: identical
+0x970f0,reference,UMetaData::Serialize: identical
+0x95b70,reference,UObjectRedirector::Serialize: identical
+0x98180,reference,UProperty::Serialize: identical
+0x98240,reference,UByteProperty::Serialize: identical
+0x98280,reference,UBoolProperty::Serialize: identical
+0x982b0,reference,UClassProperty::Serialize: identical (folded UObjectProperty/UStructProperty/UArrayProperty)
+0x982e0,reference,UStrProperty::Serialize: identical
+0x982f0,reference,UMapProperty::Serialize: identical (folded UDelegateProperty)
+0x98320,reference,UInterfaceProperty::Serialize: identical
+0x49aa0,reference,FName::Init(ANSICHAR): identical
+0x20060,reference,AllocateNameEntry: identical
+0x22f60,port,FArchive::SerializeCompressed: load identical (needs LZO); save uses ArIsSaveGame chunk size and is single-threaded
+0x14ae0,reference,appUncompressMemory: identical semantics; requires WITH_LZO
+0x14a80,port,appUncompressMemoryLZO: lzopro decompress_safe; port with lzo1x_decompress_safe
+0xa7300,port,UObject::LoadPackage: no UPackage::FileName; EndLoad(); no LOAD_NoSeekFreeLinkerDetatch
+0x9bff0,port,UObject::GetPackageLinker: no PackageNameToFileMapping
+0xa6990,reference,UObject::BeginLoad: identical
+0x728f0,port,UObject::EndLoad: body identical; signature has no LoadContext
+0x40300,reference,UObject::ResetLoaders: identical
+0xa2700,reference,FAsyncPackage::Tick: identical (helpers inlined)
+0x9b450,port,FAsyncPackage::CreateLinker: no FindExistingLinkerForPackage / package name mapping
+0x9d3e0,reference,FAsyncPackage::CreateImports: identical
+0x9f9b0,reference,FAsyncPackage::CreateExports: identical
+0x2cb30,reference,FAsyncPackage::PreLoadObjects: identical
+0x74d60,reference,FAsyncPackage::PostLoadObjects: identical
+0x67ae0,reference,FAsyncPackage::FinishObjects: identical
+0x995d0,reference,FAsyncPackage ctor: identical (no PackageType)
+0xa28e0,port,UObject::ProcessAsyncLoading: no ExcludeType; ticks head package only
+0xa29d0,port,UObject::FlushAsyncLoading: no ExcludeType
+0x38500,reference,FArchiveAsync ctor: identical
+0x2cd30,reference,FArchiveAsync::SetCompressionMap: identical
+0x2cdc0,reference,FArchiveAsync::FindCompressedChunkIndex: identical
+0x2ce70,port,FArchiveAsync::PrecacheCompressedChunk: LoadCompressedData takes extra EAsyncIORequestType (AIORT_Other)
+0x2cfb0,reference,FArchiveAsync::Precache: identical
+0x1b9e0,reference,FArchiveAsync::Serialize: identical
+0x46c0,reference,FArchiveAsync::BufferSwitcheroo: identical
+0x1b940,reference,FArchiveAsync::FlushCache: identical
+0x4730,reference,FArchiveAsync::Seek: identical
+0x46a0,reference,FArchiveAsync::Close: identical

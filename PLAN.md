@@ -191,7 +191,8 @@ pawns, AI brain processes, powers, UI last).
 |---|---|---|
 | PhysX 2.8.x / APEX | DLLs shipped; SDK headers in the reference tree (`Development/External/Novodex`) | Link to shipped DLLs via import libs. |
 | DirectX 9 | headers in the reference tree | June 2010 DirectX SDK for D3DX9 at build time. |
-| zlib, libpng, libogg, libvorbis, TinyXML, LZO (replaces LZOPro) | reference tree has zlib/libpng/libogg; rest via FetchContent | Data compatible; no decompile. |
+| LZO1X decompressor (replaces LZOPro) | **required for milestone 3**: every cooked package is `COMPRESS_LZO`; Dishonored calls `lzopro_lzo1x_decompress_safe` (LZO1X-compatible) | lzokay (MIT) or LZO 2.10 (GPL) via FetchContent; `WITH_LZO=1` |
+| zlib, libpng, libogg, libvorbis, TinyXML | zlib/libpng already via FetchContent; libogg/libvorbis not linked in Shipping (audio is Wwise) | Data compatible; no decompile. |
 | Steamworks | `steam_api.dll` shipped; reference `OnlineSubsystemSteamworks` source | Steamworks SDK of the matching interface version; offline path default. |
 | Bink | `binkw32.dll` shipped | Import lib from DLL exports; small reconstructed header. |
 | libcurl | 2013 exe only | Removed (Phase 8). |

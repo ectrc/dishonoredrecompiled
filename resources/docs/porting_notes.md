@@ -14,7 +14,7 @@ edit to a file copied from the reference carries a `// DISHONORED: <why>` commen
 | Include model | every `source/Development/Src/*/Inc` is on every module's include path | UnrealBuildTool adds all module Inc dirs globally; Core's `UnVcWin32.h` includes WinDrv's `PreWindowsApi.h`, `UnFile.h` includes `../../Engine/Inc/UnConsoleTools.h` |
 | Relative includes | kept as in the reference (`../../Engine/Inc/...`, `../../Launch/Resources/...`) | they resolve because the tree mirrors `Development/Src/<Module>` |
 | zlib | FetchContent v1.3.1 (`cmake/Dependencies.cmake`), `UnMisc.cpp` includes `<zlib.h>` | reference used `Development/External/zlib` which the clone lacks |
-| LZO | `WITH_LZO=0` for now | LZOPro not available; cooked packages use zlib only (`package_summary.md`) |
+| LZO | `WITH_LZO=0` for now — **milestone-3 blocker** | cooked packages are `PKG_StoreCompressed` with `CompressionFlags=2` = `COMPRESS_LZO` (earlier note wrongly read that as zlib); Dishonored links LZO Pro's `lzopro_lzo1x_decompress_safe`, LZO1X-compatible. Plan: lzokay (MIT) or LZO 2.10 via FetchContent, then `WITH_LZO=1` |
 | Excluded units | `Core/Src/UnitTest.cpp` | test harness |
 | Launch | reference `Launch.cpp`/`LaunchEngineLoop.cpp` imported but not compiled; `DishonoredLaunchStub.cpp` builds the exe until milestone 1 | |
 

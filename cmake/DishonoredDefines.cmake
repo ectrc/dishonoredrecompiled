@@ -29,7 +29,11 @@ set(DISHONORED_DEFINES
   WITH_STEAMWORKS_SOCKETS=0
   WITH_GFx=0
   WITH_GFx_IME=0
-  WITH_NOVODEX=1
+  # Engine's UnNovodexSupport.h needs PhysX 2.8.4 (NxCooking.h, NxSceneQuery.h, fluids/, Nxd),
+  # but the reference tree only ships Development/External/Novodex = NovodeX SDK 2.1.2 (2004,
+  # NxVersionNumber.h), which has neither. Off until Phase 4 provides PhysX 2.8.4; Shipping links
+  # it (physx/physxloader in module_map.md). UnBuild.h then sets NX_DISABLE_FLUIDS.
+  WITH_NOVODEX=0
   # APEX headers in the reference need the PhysX 3 foundation (foundation/PxSimpleTypes.h), which
   # the Novodex 2.8 SDK in the reference tree lacks; off until Phase 4 (Dishonored ships APEX DLLs).
   WITH_APEX=0
@@ -38,10 +42,19 @@ set(DISHONORED_DEFINES
   # Phase 4 provides a runtime. Engine class layouts that embed FaceFX members are checked by the
   # layout probe regardless.
   WITH_FACEFX=0
-  # The Shipping exe links LZOPro (0.4 % of code) but every cooked package uses zlib
-  # (package_summary.md); LZO stays off until Phase 4 decides on a replacement library.
+  # Every cooked package is PKG_StoreCompressed with CompressionFlags=2 = COMPRESS_LZO (Dishonored
+  # links LZO Pro, lzopro_lzo1x_decompress_safe; format-compatible with LZO1X). Package loading
+  # therefore needs an LZO1X decompressor before milestone 3: bring in lzokay (MIT) or LZO 2.x
+  # (GPL) via FetchContent and flip this to 1 (serialization_delta_core.md).
   WITH_LZO=0
-  WITH_OGGVORBIS=1
+  # The Shipping PDB has no FVorbisAudioInfo / UnAudioDecompress.cpp functions (audio is Wwise,
+  # AkAudio); libvorbis is not in the reference tree either (UnAudioDecompress.h includes
+  # vorbis/vorbisenc.h). Matches the shipped exe.
+  WITH_OGGVORBIS=0
+  # Dishonored-only switch (RawIndexBuffer.cpp): the reference nvTriStrip is the stock 16-bit-index
+  # library while UE3 calls Epic's 32-bit fork. The strip/cache optimiser is cook-time only and no
+  # CacheOptimize function exists in the Shipping PDB; on until Phase 4 ports the 32-bit fork.
+  WITH_NVTRISTRIP=0
   # Not present in the Shipping exe
   WITH_TTS=0
   WITH_SPEECH_RECOGNITION=0
