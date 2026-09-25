@@ -224,6 +224,159 @@ void TestPackageSummary()
 	CHECK_EQ("Summary matches the engine's licensee version (GPackageFileLicenseeVersion)", Summary.GetFileVersionLicensee(), GPackageFileLicenseeVersion);
 	CHECK_EQ("Summary matches the engine version (GEngineVersion)", Summary.EngineVersion, GEngineVersion);
 }
+
+// Milestone-3 blocker (PHASE3 K): every cooked package is PKG_StoreCompressed with COMPRESS_LZO. Reads the
+// single FCompressedChunk of Core.upk, decodes its header the way FArchive::SerializeCompressed does
+// ({PACKAGE_FILE_TAG, block size}, {total compressed, total uncompressed}, one FCompressedChunkInfo per
+// block), runs block 0 through appUncompressMemory(COMPRESS_LZO), then the whole chunk through
+// FArchive::SerializeCompressed (the ULinkerLoad path) and walks the name table that starts the chunk.
+void TestCompressedChunk()
+{
+	const char* Path = "D:/RecompileDishonored/Dishonored_Latest2026/DishonoredGame/CookedPCConsole/Core.upk";
+	FILE* File = fopen(Path, "rb");
+	if (!File)
+	{
+		Skip("LZO chunk from Core.upk", "Core.upk not found");
+		return;
+	}
+	fseek(File, 0, SEEK_END);
+	const long FileSize = ftell(File);
+	fseek(File, 0, SEEK_SET);
+	TArray<BYTE> Bytes;
+	Bytes.Add((INT)FileSize);
+	const size_t Read = fread(Bytes.GetData(), 1, Bytes.Num(), File);
+	fclose(File);
+	CHECK_EQ("Core.upk read completely", Read, FileSize);
+
+	FMemoryReader Reader(Bytes, TRUE);
+	FPackageFileSummary Summary;
+	Reader << Summary;
+	CHECK_EQ("GBaseCompressionMethod == COMPRESS_LZO (retail exe: 2)", GBaseCompressionMethod, COMPRESS_LZO);
+	CHECK_EQ("Summary.CompressionFlags == GBaseCompressionMethod", Summary.CompressionFlags, GBaseCompressionMethod);
+	if (Summary.CompressedChunks.Num() < 1)
+	{
+		Report(false, "Summary.CompressedChunks has a chunk", "no compressed chunk");
+		return;
+	}
+	const FCompressedChunk& Chunk = Summary.CompressedChunks(0);
+	CHECK_EQ("Chunk.CompressedOffset == 157 (right after the stored summary)", Chunk.CompressedOffset, Reader.Tell());
+	CHECK_EQ("Chunk.CompressedOffset + CompressedSize == file size", Chunk.CompressedOffset + Chunk.CompressedSize, Bytes.Num());
+	CHECK_EQ("Chunk.UncompressedOffset == Summary.NameOffset (141: summary without chunk table)", Chunk.UncompressedOffset, Summary.NameOffset);
+	CHECK_EQ("Chunk.UncompressedSize == 193512", Chunk.UncompressedSize, 193512);
+
+	Reader.Seek(Chunk.CompressedOffset);
+	FCompressedChunkInfo PackageFileTag;
+	FCompressedChunkInfo Total;
+	Reader << PackageFileTag << Total;
+	CHECK_EQ("Chunk header tag == PACKAGE_FILE_TAG", (DWORD)PackageFileTag.CompressedSize, (DWORD)PACKAGE_FILE_TAG);
+	CHECK_EQ("Chunk header block size == LOADING_COMPRESSION_CHUNK_SIZE", PackageFileTag.UncompressedSize, LOADING_COMPRESSION_CHUNK_SIZE);
+	CHECK_EQ("Chunk header total uncompressed == Chunk.UncompressedSize", Total.UncompressedSize, Chunk.UncompressedSize);
+	const INT BlockCount = (Total.UncompressedSize + PackageFileTag.UncompressedSize - 1) / PackageFileTag.UncompressedSize;
+	CHECK_EQ("Chunk block count == 2", BlockCount, 2);
+	TArray<FCompressedChunkInfo> Blocks;
+	INT SumCompressed = 0;
+	INT SumUncompressed = 0;
+	for (INT BlockIndex = 0; BlockIndex < BlockCount; BlockIndex++)
+	{
+		FCompressedChunkInfo Block;
+		Reader << Block;
+		Blocks.AddItem(Block);
+		SumCompressed += Block.CompressedSize;
+		SumUncompressed += Block.UncompressedSize;
+	}
+	CHECK_EQ("Sum of block compressed sizes == header total", SumCompressed, Total.CompressedSize);
+	CHECK_EQ("Sum of block uncompressed sizes == header total", SumUncompressed, Total.UncompressedSize);
+	CHECK_EQ("Chunk header + block table + blocks == Chunk.CompressedSize", 2 * sizeof(FCompressedChunkInfo) + BlockCount * sizeof(FCompressedChunkInfo) + SumCompressed, Chunk.CompressedSize);
+	CHECK_EQ("Block 0 uncompressed size == LOADING_COMPRESSION_CHUNK_SIZE", Blocks(0).UncompressedSize, LOADING_COMPRESSION_CHUNK_SIZE);
+
+	// appUncompressMemory books STAT_UncompressorTime; appInit (not run here) does GStatManager.Init(),
+	// which needs the synchronize factory Launch installs (LaunchEngineLoop.cpp: GSynchronizeFactory)
+	// and a config cache (appInit: GConfig = ConfigFactory(); an empty one with file operations disabled
+	// answers every query with FALSE without touching GFileManager, which the harness does not install).
+	static FSynchronizeFactoryWin SynchronizeFactory;
+	if (!GSynchronizeFactory)
+	{
+		GSynchronizeFactory = &SynchronizeFactory;
+	}
+	if (!GConfig)
+	{
+		GConfig = new FConfigCacheIni();
+		GConfig->DisableFileOperations();
+	}
+	GStatManager.Init();
+	Report(GStatManager.GetGroup(STATGROUP_AsyncIO) != NULL, "GStatManager.Init() registers STATGROUP_AsyncIO (STAT_UncompressorTime)");
+
+	TArray<BYTE> Block0;
+	Block0.Add(Blocks(0).UncompressedSize);
+	const BYTE* Block0Compressed = Bytes.GetData() + Reader.Tell();
+	const UBOOL bBlock0Ok = appUncompressMemory((ECompressionFlags)Summary.CompressionFlags, Block0.GetData(), Blocks(0).UncompressedSize, Block0Compressed, Blocks(0).CompressedSize);
+	Report(bBlock0Ok != 0, "appUncompressMemory(COMPRESS_LZO) decodes block 0");
+	Report(appUncompressMemory((ECompressionFlags)Summary.CompressionFlags, Block0.GetData(), Blocks(0).UncompressedSize, Block0Compressed, Blocks(0).CompressedSize - 1) == 0, "appUncompressMemory(COMPRESS_LZO) rejects a truncated block");
+	Report(appUncompressMemory((ECompressionFlags)Summary.CompressionFlags, Block0.GetData(), Blocks(0).UncompressedSize - 1, Block0Compressed, Blocks(0).CompressedSize) == 0, "appUncompressMemory(COMPRESS_LZO) rejects a too small destination");
+
+	Reader.Seek(Chunk.CompressedOffset);
+	TArray<BYTE> Uncompressed;
+	Uncompressed.Add(Chunk.UncompressedSize);
+	Reader.SerializeCompressed(Uncompressed.GetData(), Chunk.UncompressedSize, (ECompressionFlags)Summary.CompressionFlags);
+	Report(!Reader.IsError(), "FArchive::SerializeCompressed over the chunk without archive error");
+	CHECK_EQ("SerializeCompressed consumed the whole chunk", Reader.Tell(), Chunk.CompressedOffset + Chunk.CompressedSize);
+	Report(bBlock0Ok && appMemcmp(Block0.GetData(), Uncompressed.GetData(), Block0.Num()) == 0, "block 0 equals the start of the SerializeCompressed output");
+
+	// The chunk starts at NameOffset: NameCount x (FString name, QWORD flags), as operator<<(FNameEntry&) reads it
+	FMemoryReader NameReader(Uncompressed, TRUE);
+	FString FirstName;
+	FString LastName;
+	INT NumValid = 0;
+	bool SawNone = false;
+	bool SawCore = false;
+	bool SawObject = false;
+	bool Sorted = true;
+	FString Previous;
+	for (INT NameIndex = 0; NameIndex < Summary.NameCount && !NameReader.IsError(); NameIndex++)
+	{
+		FString Name;
+		QWORD Flags = 0;
+		NameReader << Name << Flags;
+		if (Name.Len() > 0 && Name.Len() < NAME_SIZE)
+		{
+			NumValid++;
+		}
+		if (NameIndex == 0)
+		{
+			FirstName = Name;
+		}
+		else if (appStricmp(*Previous, *Name) > 0)
+		{
+			Sorted = false;
+		}
+		Previous = Name;
+		LastName = Name;
+		SawNone = SawNone || Name == TEXT("None");
+		SawCore = SawCore || Name == TEXT("Core");
+		SawObject = SawObject || Name == TEXT("Object");
+	}
+	Report(!NameReader.IsError(), "Name table read without archive error");
+	CHECK_EQ("All 720 names have a plausible length", NumValid, Summary.NameCount);
+	CHECK_EQ("Name table ends at Summary.ImportOffset", Chunk.UncompressedOffset + NameReader.Tell(), Summary.ImportOffset);
+	char Detail[256];
+	snprintf(Detail, sizeof(Detail), "first \"%ls\", last \"%ls\"", *FirstName, *LastName);
+	Report(FirstName == TEXT("!") && LastName == TEXT("~="), "First name \"!\" and last name \"~=\" (cooked name table sorted)", Detail);
+	Report(Sorted, "Name table is sorted (appStricmp)");
+	Report(SawNone && SawCore && SawObject, "Name table contains None, Core and Object");
+
+	// Round trip through appCompressMemory: lzokay's LZO1X-1 output must decode back to the same bytes
+	TArray<BYTE> Recompressed;
+	Recompressed.Add(Blocks(0).UncompressedSize);
+	INT RecompressedSize = Recompressed.Num();
+	Report(appCompressMemory(COMPRESS_LZO, Recompressed.GetData(), RecompressedSize, Block0.GetData(), Block0.Num()) != 0, "appCompressMemory(COMPRESS_LZO) on block 0");
+	Report(RecompressedSize > 0 && RecompressedSize < Block0.Num(), "appCompressMemory(COMPRESS_LZO) shrinks block 0");
+	TArray<BYTE> RoundTrip;
+	RoundTrip.Add(Block0.Num());
+	Report(appUncompressMemory(COMPRESS_LZO, RoundTrip.GetData(), RoundTrip.Num(), Recompressed.GetData(), RecompressedSize) != 0 && appMemcmp(RoundTrip.GetData(), Block0.GetData(), Block0.Num()) == 0, "appCompressMemory -> appUncompressMemory round trip matches block 0");
+	INT TooSmall = 16;
+	BYTE Small[16];
+	Report(appCompressMemory(COMPRESS_LZO, Small, TooSmall, Block0.GetData(), Block0.Num()) == 0 && TooSmall == RecompressedSize, "appCompressMemory(COMPRESS_LZO) reports the needed size when the buffer is too small");
+}
 }
 
 LONG WINAPI CrashFilter(EXCEPTION_POINTERS* Info)
@@ -294,6 +447,7 @@ int main(int, char**)
 	TestNames();
 	TestContainers();
 	TestPackageSummary();
+	TestCompressedChunk();
 	printf("\n%d passed, %d failed, %d skipped\n", NumPassed, NumFailures, NumSkipped);
 	return NumFailures;
 }

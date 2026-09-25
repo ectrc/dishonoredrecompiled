@@ -43,10 +43,11 @@ set(DISHONORED_DEFINES
   # layout probe regardless.
   WITH_FACEFX=0
   # Every cooked package is PKG_StoreCompressed with CompressionFlags=2 = COMPRESS_LZO (Dishonored
-  # links LZO Pro, lzopro_lzo1x_decompress_safe; format-compatible with LZO1X). Package loading
-  # therefore needs an LZO1X decompressor before milestone 3: bring in lzokay (MIT) or LZO 2.x
-  # (GPL) via FetchContent and flip this to 1 (serialization_delta_core.md).
-  WITH_LZO=0
+  # links LZO Pro, lzopro_lzo1x_decompress_safe; format-compatible with LZO1X). The codec is lzokay
+  # (cmake/Dependencies.cmake), wired into Core/Src/UnMisc.cpp appCompressMemoryLZO /
+  # appUncompressMemoryLZO. WITH_LZO also selects COMPRESS_DefaultPC = COMPRESS_LZO in UnFile.h, so
+  # GBaseCompressionMethod defaults to 2 like the retail exe (serialization_delta_core.md).
+  WITH_LZO=1
   # The Shipping PDB has no FVorbisAudioInfo / UnAudioDecompress.cpp functions (audio is Wwise,
   # AkAudio); libvorbis is not in the reference tree either (UnAudioDecompress.h includes
   # vorbis/vorbisenc.h). Matches the shipped exe.

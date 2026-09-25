@@ -21,7 +21,9 @@ class FSmokeStdoutDevice : public FOutputDevice
 public:
 	void Serialize(const TCHAR* Text, EName Event)
 	{
-		printf("  [%ls] %ls\n", FName::SafeString(Event), Text);
+		// FName::SafeString returns an FString by value; printf needs its TCHAR buffer (agent K: every
+		// formatted GLog->Logf crashed here before, nothing in the harness had logged with arguments)
+		printf("  [%ls] %ls\n", *FName::SafeString(Event), Text);
 	}
 };
 
@@ -42,7 +44,7 @@ class FSmokeFeedbackContext : public FFeedbackContext
 public:
 	void Serialize(const TCHAR* Text, EName Event)
 	{
-		printf("  [warn %ls] %ls\n", FName::SafeString(Event), Text);
+		printf("  [warn %ls] %ls\n", *FName::SafeString(Event), Text);
 	}
 	VARARG_BODY(UBOOL, YesNof, const TCHAR*, VARARG_NONE)
 	{
@@ -55,6 +57,11 @@ public:
 		return TRUE;
 	}
 };
+
+// Core's UnAsyncLoading.cpp registers STAT_AsyncLoadingTime in STATGROUP_StreamingDetails, whose group
+// factory lives in Engine/Src/UnContentStreaming.cpp; GStatManager.Init() (CoreSmoke: LZO chunk test)
+// asserts on a cycle stat without its group, so the group is declared here for the Core-only link.
+DECLARE_STATS_GROUP(TEXT("StreamingDetails"), STATGROUP_StreamingDetails);
 
 static FSmokeStdoutDevice SmokeLog;
 static FSmokeErrorDevice SmokeError;

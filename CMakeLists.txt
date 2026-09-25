@@ -34,7 +34,7 @@ set(DISHONORED_MODULE_LIST "" CACHE INTERNAL "modules declared so far, in order"
 # modules still being brought up sit behind an option so the default configure stays green.
 dishonored_module(Core)
 # dbghelp: stack walker (UnVcWin32.cpp); winmm: timeBeginPeriod. Core.lib needs them in every exe.
-target_link_libraries(Core PUBLIC Dishonored::zlib Dishonored::DirectX9 Dishonored::libPNG dbghelp winmm)
+target_link_libraries(Core PUBLIC Dishonored::zlib Dishonored::lzokay Dishonored::DirectX9 Dishonored::libPNG dbghelp winmm)
 
 option(DISHONORED_ENABLE_ENGINE "Build the Engine module" ON)
 if(DISHONORED_ENABLE_ENGINE)

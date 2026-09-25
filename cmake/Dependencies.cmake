@@ -64,7 +64,19 @@ add_library(Dishonored::nvapi INTERFACE IMPORTED)
 target_include_directories(Dishonored::nvapi INTERFACE "${nvapi_SOURCE_DIR}")
 target_link_libraries(Dishonored::nvapi INTERFACE "${nvapi_SOURCE_DIR}/x86/nvapi.lib")
 
+# lzokay: LZO1X-1 compressor/decompressor (MIT, C++14, stream-compatible with LZO1X). Every cooked
+# package is PKG_StoreCompressed with CompressionFlags=2 = COMPRESS_LZO; the retail exe links LZO
+# Professional (lzopro_lzo1x_decompress_safe), whose SDK is not available. Core/Src/UnMisc.cpp
+# implements appCompressMemoryLZO/appUncompressMemoryLZO on it (WITH_LZO=1 in DishonoredDefines.cmake).
+# Pinned to master as of 2026-09 (the project has no tags). Its CMakeLists also declares the test
+# executable and the C wrapper, which nothing here uses.
+dishonored_fetch(lzokay https://github.com/jackoalan/lzokay.git db2df1fcbebc2ed06c10f727f72567d40f06a2be)
+set_target_properties(lzokaytest lzokay-c PROPERTIES EXCLUDE_FROM_ALL TRUE FOLDER "External")
+set_target_properties(lzokay PROPERTIES FOLDER "External")
+add_library(Dishonored::lzokay INTERFACE IMPORTED)
+target_link_libraries(Dishonored::lzokay INTERFACE lzokay)
+target_include_directories(Dishonored::lzokay INTERFACE "${lzokay_SOURCE_DIR}")
+
 # Examples for Phase 4 (uncomment when the module that needs them exists):
 # dishonored_fetch(ogg    https://github.com/xiph/ogg.git           v1.3.5)
 # dishonored_fetch(vorbis https://github.com/xiph/vorbis.git        v1.3.7)
-# dishonored_fetch(lzo    https://github.com/nemequ/lzo.git         2.10)

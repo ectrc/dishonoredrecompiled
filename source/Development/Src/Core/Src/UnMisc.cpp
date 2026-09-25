@@ -6271,80 +6271,13 @@ UBOOL appUncompressMemoryLZX( void* UncompressedBuffer, INT UncompressedSize, co
 
 
 #if WITH_LZO
-#include "../../../External/lzopro/include/lzo/lzoconf.h"
-#include "../../../External/lzopro/include/lzo/lzopro/lzo1x.h"
-#include "../../../External/lzopro/include/lzo/lzopro/lzo1y.h"
-#include "../../../External/lzopro/include/lzo/lzo1f.h"
-
-/**
- * Callback memory allocation function for the LZO*99* compressor to use
- * 
- * @param UserData	Points to the GLZOCallbacks structure
- * @param Items		Number of "items" to allocate
- * @param Size		Size of each "item" to allocate
- * 
- * @return A pointer to a block of memory Items * Size big
- */
-static lzo_voidp __LZO_CDECL LZOMalloc(lzo_callback_p UserData, lzo_uint Items, lzo_uint Size)
-{
-    return appMalloc(Items * Size);
-}
-
-/**
- * Callback memory deallocation function for the LZO*99* compressor to use
- * 
- * @param UserData	Points to the GLZOCallbacks structure
- * @param Ptr		Pointer to memory to free
- */
-static void __LZO_CDECL LZOFree(lzo_callback_p UserData, lzo_voidp Ptr)
-{
-    appFree(Ptr);
-}
-
-lzo_callback_t GLZOCallbacks = 
-{
-	LZOMalloc, // allocation routine
-	LZOFree, // deallocation routine
-	0, // progress callback
-	NULL, // user pointer
-	0, // user data
-	0 // user data
-};
-
-// NOTE: The following will be all cleaned up when we decide on the final choice of compressors to use!
-// each compression method needs a different amount of work mem
-#define LZO_STANDARD_MEM		LZOPRO_LZO1X_1_14_MEM_COMPRESS
-#define LZO_SPEED_MEM			LZOPRO_LZO1X_1_08_MEM_COMPRESS
-#define LZO_SIZE_MEM			0
-
-// allocate to fit the biggest one
-#define LZO_WORK_MEM_SIZE		(Max<INT>(Max<INT>(LZO_STANDARD_MEM, LZO_SPEED_MEM), LZO_SIZE_MEM))
-
-// each compression function must be in the same family (lzo1x, etc) for decompression
-#define LZO_STANDARD_COMPRESS	lzopro_lzo1x_1_14_compress
-#define LZO_SPEED_COMPRESS		lzopro_lzo1x_1_08_compress
-#define LZO_SIZE_COMPRESS(in, in_len, out, out_len) lzopro_lzo1x_99_compress(in, in_len, out, out_len, &GLZOCallbacks, 10);
-#if __WIN32__
-#define LZO_DECOMPRESS			lzopro_lzo1x_decompress_safe
-#else
-#define LZO_DECOMPRESS			lzopro_lzo1x_decompress
-#endif
-
-/** Critical section used to serialize access to working memory. */
-static FCriticalSection LZOCriticalSection;
-
-/**
- * Initializes LZO library, safe to call multiple times.
- */
-static void InitializeLZO()
-{
-	static UBOOL bIsInitialized = FALSE;
-	if( !bIsInitialized )
-	{
-		// Initialized lzo library and verify it succeeds.
-		verify( lzo_init() == LZO_E_OK );
-	}
-}
+// DISHONORED(port): the reference links LZO Professional (Development/External/lzopro: lzopro_lzo1x_1_08 /
+// _1_14 / _99 compressors, lzopro_lzo1x_decompress_safe) and so does the retail exe (appUncompressMemoryLZO
+// 0x14a80 calls __lzopro_lzo_init_v2 + lzopro_lzo1x_decompress_safe, serialization_delta_core.md). That SDK
+// is unavailable; lzokay (MIT, cmake/Dependencies.cmake) provides a stream-compatible LZO1X-1 codec, so the
+// three speed/size variants collapse to its single compressor and the decompressor is the bounds-checked
+// equivalent of lzo1x_decompress_safe. Signatures, return conventions and check() semantics are unchanged.
+#include <lzokay.hpp>
 
 // VS 2005 SP1 seems to generate bad code calling appUncompressMemoryLZO if optmizations are enabled.
 #if _MSC_VER == 1400
@@ -6364,64 +6297,29 @@ PRAGMA_DISABLE_OPTIMIZATION
  */
 static UBOOL appCompressMemoryLZO( ECompressionFlags Flags, void* CompressedBuffer, INT& CompressedSize, const void* UncompressedBuffer, INT UncompressedSize )
 {
-	void* LZOWorkMemoryBase = NULL;
-
 	check( UncompressedSize <= MaxUncompressedSize );
-
-	// Serialize access to working/ scratch memory.
-	FScopeLock ScopeLock( &LZOCriticalSection );
 
 	// we use a temporary buffer here that is bigger than the uncompressed size. this
 	// is because LZO expects CompressedSize to be bigger than UncompressedSize, in
 	// case the data is incompressible. Since there is no guarantee that CompressedSize
-	// is big enough, we can't use it, because LZO will happily overwrite past the end
-	// of CompressedBuffer (since it doesn't take as input the size of CompressedBuffer)
-
-	const PTRINT LZOAlignment = 0x10000;  // LZO uses the pointer low bits as a seed, we want to avoid that
-
-	BYTE* CompressScratchBufferBase = ( BYTE* )appMalloc( UncompressedSize + LZO_WORK_MEM_SIZE + LZOAlignment);
-	BYTE* CompressScratchBuffer = Align(CompressScratchBufferBase,LZOAlignment);
-
-	// LZO reads past the end of the source data, so we need to ensure that data is always the same.
-	BYTE* SourceDataBase = ( BYTE * )appMalloc( UncompressedSize + LZO_WORK_MEM_SIZE + LZOAlignment);
-	BYTE* SourceData = Align(SourceDataBase,LZOAlignment);
-	appMemzero( SourceData, UncompressedSize + LZO_WORK_MEM_SIZE );
-	appMemcpy( SourceData, UncompressedBuffer, UncompressedSize );
+	// is big enough, we can't use it; compressing into the worst-case sized scratch buffer
+	// lets us report the real compressed size back to the caller when it does not fit.
+	// DISHONORED(port): lzokay bounds-checks its output, so the LZO Pro over-read/over-write
+	// padding, the 64 KB alignment and the shared work memory (LZOCriticalSection) are not needed;
+	// the match dictionary is per call (heap allocated by lzokay::Dict), which keeps this thread-safe.
+	const std::size_t CompressScratchSize = lzokay::compress_worst_size( UncompressedSize );
+	BYTE* CompressScratchBuffer = ( BYTE* )appMalloc( CompressScratchSize );
 
 	// out variable for how big the compressed data actually is
-	lzo_uint FinalCompressedSize;
-	// attempt to compress the data 
-	INT Result = LZO_E_OK;
-	
-	// Make sure LZO is initialized before calling it.
-	InitializeLZO();
-
-	if( Flags & COMPRESS_BiasSpeed )
-	{
-		// Zero initialize scratch memory. The LZO compressor makes decisions based on values of uninitialized data.
-		LZOWorkMemoryBase = appMalloc( LZO_SPEED_MEM + LZOAlignment );
-		BYTE* LZOWorkMemory = (BYTE *)Align(LZOWorkMemoryBase,LZOAlignment);
-		appMemzero( LZOWorkMemory, LZO_SPEED_MEM );
-
-		Result = LZO_SPEED_COMPRESS( SourceData, UncompressedSize, CompressScratchBuffer, &FinalCompressedSize, LZOWorkMemory );
-	}
-	else if( Flags & COMPRESS_BiasMemory )
-	{
-		Result = LZO_SIZE_COMPRESS( SourceData, UncompressedSize, CompressScratchBuffer, &FinalCompressedSize );
-	}
-	else
-	{
-		// Zero initialize scratch memory. The LZO compressor makes decisions based on values of uninitialized data.
-		LZOWorkMemoryBase = appMalloc( LZO_STANDARD_MEM + LZOAlignment );
-		BYTE* LZOWorkMemory = (BYTE *)Align(LZOWorkMemoryBase,LZOAlignment);
-		appMemzero( LZOWorkMemory, LZO_STANDARD_MEM );
-
-		Result = LZO_STANDARD_COMPRESS( SourceData, UncompressedSize, CompressScratchBuffer, &FinalCompressedSize, LZOWorkMemory );
-	}
+	std::size_t FinalCompressedSize = 0;
+	// attempt to compress the data; Flags (COMPRESS_BiasSpeed / COMPRESS_BiasMemory) selected between
+	// the lzopro 1_08 / 99 / 1_14 compressors, lzokay has only the LZO1X-1 one
+	lzokay::Dict<> Dictionary;
+	const lzokay::EResult Result = lzokay::compress( ( const BYTE* )UncompressedBuffer, UncompressedSize, CompressScratchBuffer, CompressScratchSize, FinalCompressedSize, Dictionary );
 
 	// this shouldn't ever fail, apparently unless something catastrophic happened
 	// but the docs are really not clear, because there are no docs
-	check(Result == LZO_E_OK);
+	check(Result == lzokay::EResult::Success);
 
 	// by default we succeeded (ie fit into available memory)
 	UBOOL Return = TRUE;
@@ -6438,14 +6336,7 @@ static UBOOL appCompressMemoryLZO( ECompressionFlags Flags, void* CompressedBuff
 		Return = FALSE;
 	}
 
-	// Free up the work memory
-	if( LZOWorkMemoryBase )
-	{
-		appFree( LZOWorkMemoryBase );
-	}
-
-	appFree( SourceDataBase );
-	appFree( CompressScratchBufferBase );
+	appFree( CompressScratchBuffer );
 
 	// if this compression succeeded or failed, return how big it compressed it to
 	// this way, on a failure, it can be called again with a big enough buffer
@@ -6467,15 +6358,12 @@ static UBOOL appCompressMemoryLZO( ECompressionFlags Flags, void* CompressedBuff
  */
 static UBOOL appUncompressMemoryLZO( void* UncompressedBuffer, INT UncompressedSize, const void* CompressedBuffer, INT CompressedSize )
 {
-	// Make sure LZO is initialized before calling it.
-	InitializeLZO();
+	// LZO wants unsigned. UncompressedSize is the destination capacity the safe version uses for bounds checking.
+	std::size_t FinalUncompressedSize = 0;
+	const lzokay::EResult Result = lzokay::decompress( ( const BYTE* )CompressedBuffer, CompressedSize, ( BYTE* )UncompressedBuffer, UncompressedSize, FinalUncompressedSize );
 
-	// LZO wants unsigned. Initialized to uncompressed size as safe version uses this for bounds checking.
-	lzo_uint FinalUncompressedSize = UncompressedSize;
-	INT Result = LZO_DECOMPRESS((const BYTE*)CompressedBuffer, CompressedSize, (BYTE*)UncompressedBuffer, &FinalUncompressedSize, NULL);
-	
-	// if the call failed, return FALSE
-	if (Result != LZO_E_OK)
+	// if the call failed, return FALSE (like lzo1x_decompress_safe this also rejects unconsumed input)
+	if (Result != lzokay::EResult::Success)
 	{
 		return FALSE;
 	}
