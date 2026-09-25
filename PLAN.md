@@ -213,8 +213,11 @@ Wave 1 (`resources/docs/PHASE3.md`, done 2026-09-26): retail truth, Core/Engine 
 reconciled with retail, milestone 1. Wave 2 (`resources/docs/PHASE4.md`, done 2026-09-25 machine
 date): milestone 2 for the four native packages (O), D3D9Drv target (P), every Engine header on
 the retail SDK offsets (Q/R/S/V), DishonoredGame/GFxUI/AkAudio/OSS registrants + headers generated
-from the SDK dump (T), middleware versions + Phase 4 memo (U). Next wave: game packages +
-`Startup.upk` + `GEngine->Init()`, then per-function convergence (`progress.md`).
+from the SDK dump (T), middleware versions + Phase 4 memo (U). Wave 3 (`resources/docs/PHASE5.md`,
+planned 2026-09-25): Edge-animation bypass (W), milestone 3 driver to `GEngine->Init()` and the tick
+loop (X), first frame + Bink movies (Y), `DishonoredGameFull_P` up for play without PhysX (Z), Engine
+per-function convergence wave 1 (AA), GameFramework/IpDrv bases + pending asserts (AB), DishonoredGame
+natives on the startup path (AC). Wave 4: the Edge animation evaluator port.
 
 Order (sizes from `resources/docs/module_map.md`; Shipping has no OnlineSubsystemPC/XAudio2):
 
@@ -356,8 +359,9 @@ The 2013 exe is the target, so this is not a final polish step: every function p
 
 ## 6. Next concrete steps (2026-09-25)
 
-1. Restore the retail content (Steam verify), then run the combined exe with the four module options on:
-   game packages with the generated registrants, `Startup.upk`, `GEngine->Init()` → milestone 3.
+1. Wave 3 per `resources/docs/PHASE5.md`: coordinator pre-wave (native-stub macro, per-agent run
+   isolation, stub-exe guard), then agents W–AC: Edge bypass, `Startup.upk` + `GEngine->Init()` + tick
+   loop, first frame, map load, Engine convergence, base hygiene, startup-path natives.
 2. Converge the GameFramework/IpDrv bases behind the last 4 SDK rows and the pending asserts.
 3. Per-function Engine convergence from the shim tables (`agents/agentQ/R/S.md`) and `progress.md`;
    DishonoredGame natives from the named 2013 decompiles, in dependency order.
