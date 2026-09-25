@@ -133,6 +133,8 @@ UBOOL UPackageMap::SerializeObject( FArchive& Ar, UClass* Class, UObject*& Obj )
 //
 // Get a package map's net cache for a class.
 //
+IMPLEMENT_COMPARE_POINTER( UField, UnCoreNet, { return A->GetNetIndex() - B->GetNetIndex(); } )
+
 FClassNetCache* UPackageMap::GetClassNetCache( UClass* Class )
 {
 	FClassNetCache* Result = ClassFieldIndices.FindRef(Class);
@@ -150,11 +152,24 @@ FClassNetCache* UPackageMap::GetClassNetCache( UClass* Class )
 			Result->FieldsBase           = Result->Super->GetMaxIndex();
 		}
 
-		Result->Fields.Empty( Class->NetFields.Num() );
-		for( INT i=0; i<Class->NetFields.Num(); i++ )
+		// DISHONORED(layout): retail UClass has no NetFields; gather the CPF_Net properties and FUNC_Net functions directly
+		// (this function does not exist in either shipped exe; kept for the reference net code paths)
+		TArray<UField*> NetFields;
+		for( TFieldIterator<UField> It(Class,FALSE); It; ++It )
+		{
+			UProperty* NetP = Cast<UProperty>(*It);
+			UFunction* NetF = NetP ? NULL : Cast<UFunction>(*It);
+			if( (NetP && (NetP->PropertyFlags&CPF_Net)) || (NetF && (NetF->FunctionFlags&FUNC_Net) && !NetF->GetSuperFunction()) )
+			{
+				NetFields.AddItem(*It);
+			}
+		}
+		Sort<USE_COMPARE_POINTER(UField,UnCoreNet)>( NetFields.Num() ? &NetFields(0) : NULL, NetFields.Num() );
+		Result->Fields.Empty( NetFields.Num() );
+		for( INT i=0; i<NetFields.Num(); i++ )
 		{
 			// Add sandboxed items to net cache.
-			UField* Field = Class->NetFields(i);
+			UField* Field = NetFields(i);
 			if( SupportsObject(Field ) )
 			{
 				INT ConditionIndex = INDEX_NONE;

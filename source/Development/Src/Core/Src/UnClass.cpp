@@ -1623,7 +1623,7 @@ void UClass::StaticConstructor()
 {
 	UClass* TheClass = GetClass();
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UClass, ClassWithin ) );
-	TheClass->EmitObjectArrayReference( STRUCT_OFFSET( UClass, NetFields ) );
+	// DISHONORED(layout): no UClass::NetFields in retail
 	//@todo rtgc: I don't believe we need to handle TArray<FRepRecord> UClass::ClassReps;
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UClass, ClassDefaultObject ) );
 }
@@ -2109,8 +2109,6 @@ void UClass::FinishDestroy()
 	// Empty arrays.
 	//warning: Must be emptied explicitly in order for intrinsic classes
 	// to not show memory leakage on exit.
-	NetFields.Empty();
-
 	ClassDefaultObject = NULL;
 #if !CONSOLE
 	DefaultPropText = TEXT("");
@@ -2142,7 +2140,7 @@ void UClass::Link( FArchive& Ar, UBOOL Props )
 	Super::Link( Ar, Props );
 	if( !GIsEditor )
 	{
-		NetFields.Empty();
+		// DISHONORED(layout): retail UClass::Link (rva 0xa4290) builds ClassReps only; NetFields does not exist
 		ClassReps = (SuperStruct != NULL) ? GetSuperClass()->ClassReps : TArray<FRepRecord>();
 		for( TFieldIterator<UField> It(this,FALSE); It; ++It )
 		{
@@ -2152,7 +2150,6 @@ void UClass::Link( FArchive& Ar, UBOOL Props )
 			{
 				if( P->PropertyFlags&CPF_Net )
 				{
-					NetFields.AddItem( *It );
 					if( P->GetOuter()==this )
 					{
 						P->RepIndex = ClassReps.Num();
@@ -2163,12 +2160,10 @@ void UClass::Link( FArchive& Ar, UBOOL Props )
 			}
 			else if( (F=Cast<UFunction>(*It))!=NULL )
 			{
-				if( (F->FunctionFlags&FUNC_Net) && !F->GetSuperFunction() )
-					NetFields.AddItem( *It );
+				// DISHONORED(layout): FUNC_Net functions were only collected into NetFields
+				(void)F;
 			}
 		}
-		NetFields.Shrink();
-		Sort<USE_COMPARE_POINTER(UField,UnClass)>( &NetFields(0), NetFields.Num() );
 	}
 
 	// Emit tokens for all properties that are unique to this class.
@@ -2305,7 +2300,8 @@ void UClass::Serialize( FArchive& Ar )
 		// m_DropdownCategory follows bForceScriptOrder at LicenseeVer >= 10 (from 2012 decompile)
 		if( Ar.LicenseeVer() >= VER_DIS_LICENSEE_DROPDOWN_CATEGORY )
 		{
-			Ar << m_DropdownCategory;
+			FName DiscardedDropdownCategory; // DISHONORED(layout): retail keeps the read (LicenseeVer >= 10) but has no member for it
+			Ar << DiscardedDropdownCategory;
 		}
 
 		Ar << ClassHeaderFilename;
@@ -2569,7 +2565,6 @@ UClass::UClass
 ,	ClassUnique				( 0 )
 ,	ClassWithin				( InWithinClass )
 ,	ClassConfigName			()
-,	NetFields				()
 ,	ClassDefaultObject		( NULL )
 ,	ClassConstructor		( InClassConstructor )
 ,	ClassStaticConstructor	( InClassStaticConstructor )
@@ -2609,7 +2604,6 @@ UClass::UClass
 ,	ClassUnique				( 0 )
 ,	ClassWithin				( NULL )
 ,	ClassConfigName			()
-,	NetFields				()
 ,	ClassDefaultObject		( NULL )
 ,	ClassConstructor		( InClassConstructor )
 ,	ClassStaticConstructor	( InClassStaticConstructor )

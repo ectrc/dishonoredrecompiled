@@ -620,6 +620,7 @@ public:
     FTexture2DResourceMem* ResourceMem;
     INT FirstResourceMemMip;
     FLOAT Timer;
+    INT MinResidentMipCount;  // DISHONORED(layout): retail 2013 only (script_classes_2013.json; UTexture2D 368 -> 372)
     //## END PROPS Texture2D
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout

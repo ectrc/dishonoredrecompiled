@@ -3617,11 +3617,7 @@ void USkeletalMeshComponent::ProcessRootMotion( FLOAT DeltaTime, FBoneAtom& Extr
 				ExtractedRootMotionDelta.SetTranslation(ExtractedRootMotionDelta.GetTranslation() * RootMotionAccelScale);
 			}
 
-			// If Owner required a Script event forwarded when root motion has been extracted, forward it
-			if( Owner && bRootMotionExtractedNotify )
-			{
-				Owner->eventRootMotionExtracted(this, ExtractedRootMotionDelta);
-			}
+			// DISHONORED(layout): retail 2013 has no bRootMotionExtractedNotify / RootMotionExtracted delegate
 
 			// Root Motion delta is accumulated every time it is extracted.
 			// This is because on servers using autonomous physics, physics updates and ticking are out of synch.
@@ -3842,12 +3838,7 @@ void USkeletalMeshComponent::ProcessRootMotion( FLOAT DeltaTime, FBoneAtom& Extr
 		// Track root motion mode changes
 		if( RootMotionMode != PreviousRMM )
 		{
-			// notify owner that root motion mode changed. 
-			// if RootMotionMode != RMM_Ignore, then on next frame root motion will kick in.
-			if( bRootMotionModeChangeNotify && Owner )
-			{
-				Owner->eventRootMotionModeChanged(this);
-			}
+			// DISHONORED(layout): retail 2013 has no bRootMotionModeChangeNotify / RootMotionModeChanged delegate
 			PreviousRMM = RootMotionMode;
 
 			// If switching from ShouldBypassSimulatedClientPhysics to not, force a location & velocity update for replication.

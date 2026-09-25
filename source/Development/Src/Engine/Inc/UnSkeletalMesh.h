@@ -346,8 +346,7 @@ class USkeletalMeshComponent : public UMeshComponent
 	BITFIELD bTickAnimNodesWhenNotRendered:1;
 	BITFIELD bNotUpdatingKinematicDueToDistance:1;
 	BITFIELD bForceDiscardRootMotion:1;
-	BITFIELD bRootMotionModeChangeNotify:1;
-	BITFIELD bRootMotionExtractedNotify:1;
+	// DISHONORED(layout): retail 2013 removed bRootMotionModeChangeNotify / bRootMotionExtractedNotify (and the RootMotion* delegates)
 	BITFIELD bDisableFaceFXMaterialInstanceCreation:1;
 	BITFIELD bAnimTreeInitialised:1;
 	BITFIELD bForceMeshObjectUpdate:1;
@@ -405,6 +404,7 @@ class USkeletalMeshComponent : public UMeshComponent
 	BYTE CustomSortAlternateIndexMode;
 	FEdgeAnimData* m_pEdgeAnimData;  // DISHONORED(layout): 2012 PDB @968
 	USkeletalMeshComponent::FTickData m_TickData;  // DISHONORED(layout): 2012 PDB @976
+	FBoneAtom RawExtractedRootMotionDelta;  // DISHONORED(layout): retail 2013 only, appended after m_TickData (1056 -> 1088)
 
 	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
 	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout

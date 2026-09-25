@@ -656,7 +656,7 @@ class UClass : public UState
 	UClass*				ClassWithin;
 	FName				ClassConfigName;
 	TArray<FRepRecord>	ClassReps;
-	TArray<UField*>		NetFields;
+	// DISHONORED(layout): retail 2013 UClass has no NetFields (436 bytes; retail UClass::Link rva 0xa4290 only builds ClassReps @228; native_class_sizes.csv)
 #if !CONSOLE && !DEDICATED_SERVER
 	TArray<FName>		HideCategories;
 	TArray<FName>		AutoExpandCategories;
@@ -672,7 +672,7 @@ class UClass : public UState
 	void*				DLLBindHandle;
 #endif
 	UObject*			ClassDefaultObject;
-	FName				m_DropdownCategory;	// DISHONORED(layout): PDB UClass::m_DropdownCategory @332 (Arkane)
+	// DISHONORED(layout): retail 2013 removed m_DropdownCategory (2012 PDB @332); UClass::Serialize still reads and discards the FName
 
 	void(*ClassConstructor)(void*);
 	void(UObject::*ClassStaticConstructor)();
