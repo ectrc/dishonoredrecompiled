@@ -198,7 +198,7 @@ if package loading is reached, which milestone 1 does not require.
 
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
-| H | | Retail native class sizes | todo | | |
+| H | done | Retail native class sizes | done | 2026-09-26 | 2,857 retail classes, method validated 2,538/2,538 on 2012. Core contract types unchanged in retail except `UClass` 456→436 (m_DropdownCategory + one 12-byte member gone). 274 shared classes changed size (255 DishonoredGame, 14 Engine: UTexture2D +4, USkeletalMeshComponent +32, AGamePawn +16). 345 DLC/new classes. Retail uses a 12-dword `.data` descriptor per class → `GetPrivateStaticClass(desc)` (rva 0x79370), not ctor call sites |
 | I | | Package class/member tables + LZO1X (python) | todo | | |
 | J | | Name propagation 2012→2013 | todo | | |
 | K | | LZO in the engine | todo | | |
