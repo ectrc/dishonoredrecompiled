@@ -193,6 +193,11 @@ public:
     virtual void StopAllCameraAnims(UBOOL bImmediate=FALSE);
     virtual void StopAllCameraAnimsByType(class UCameraAnim* Anim,UBOOL bImmediate=FALSE);
     virtual void StopCameraAnim(class UCameraAnimInst* AnimInst,UBOOL bImmediate=FALSE);
+    // DISHONORED(port): GetCameraViewPoint is a native in the 2013 scripts (exec 0x1cfec0: CameraCache.POV)
+    DECLARE_FUNCTION(execGetCameraViewPoint);
+    // DISHONORED(port): GetFOVAngle is a native in the 2013 scripts (exec 0x1cfe60: bLockedFOV ? LockedFOV : CameraCache.POV.FOV)
+    FLOAT GetFOVAngle() const;
+    DECLARE_FUNCTION(execGetFOVAngle);
     DECLARE_FUNCTION(execApplyCameraModifiers)
     {
         P_GET_FLOAT(DeltaTime);
@@ -680,6 +685,8 @@ AUTOGENERATE_FUNCTION(UCameraModifier_CameraShake,-1,execUpdateCameraShake);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineACameraNatives[] = 
 { 
+	MAP_NATIVE(ACamera, execGetCameraViewPoint)
+	MAP_NATIVE(ACamera, execGetFOVAngle)
 	MAP_NATIVE(ACamera, execStopCameraAnim)
 	MAP_NATIVE(ACamera, execStopAllCameraAnimsByType)
 	MAP_NATIVE(ACamera, execStopAllCameraAnims)

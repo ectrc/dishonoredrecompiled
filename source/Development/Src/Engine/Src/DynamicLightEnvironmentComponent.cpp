@@ -2178,6 +2178,7 @@ void UDynamicLightEnvironmentComponent::AddReferencedObjects(TArray<UObject*>& O
 	}
 }
 
+// DISHONORED(port): 2013 rva 0xf0da0 (2012 rva 0xf1110), identical
 void UDynamicLightEnvironmentComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -2191,6 +2192,7 @@ void UDynamicLightEnvironmentComponent::Serialize(FArchive& Ar)
 	}
 }
 
+// DISHONORED(port): 2013 rva 0xe1d90 (2012 rva 0xdff80), identical
 void UDynamicLightEnvironmentComponent::PostLoad()
 {
 	Super::PostLoad();

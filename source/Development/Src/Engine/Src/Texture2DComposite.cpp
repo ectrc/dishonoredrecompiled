@@ -424,6 +424,7 @@ FLOAT UTexture2DComposite::GetSurfaceHeight() const
 	return 1.0f;
 }
 
+// DISHONORED(port): 2013 rva 0x185200 (2012 rva 0x18af50), identical
 void UTexture2DComposite::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

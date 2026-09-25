@@ -4078,3 +4078,40 @@ void APawn::UpdateScalarParameterInterp(FLOAT DeltaTime)
 		}
 	}
 }
+
+
+// DISHONORED(port): 2013 APawn::PossessedBy (0x2ab1f0)
+void APawn::PossessedBy( AController* C )
+{
+	bForceNetUpdate = TRUE;
+	NetPriority = 3.f;
+	Controller = C;
+	NetUpdateFrequency = 100.f;
+	SetOwner( C );
+	EyeHeight = BaseEyeHeight;
+	if( C && C->IsA( APlayerController::StaticClass() ) )
+	{
+		if( WorldInfo->NetMode != NM_Standalone )
+		{
+			RemoteRole = ROLE_AutonomousProxy;
+		}
+	}
+	else
+	{
+		RemoteRole = ((AActor*)GetClass()->GetDefaultObject())->RemoteRole;
+	}
+}
+
+// DISHONORED(port): 2013 APawn::UnPossessed (0x2a14e0)
+void APawn::UnPossessed()
+{
+	bForceNetUpdate = TRUE;
+	SetOwner( NULL );
+	Controller = NULL;
+}
+
+void APawn::execUnPossessed( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	UnPossessed();
+}

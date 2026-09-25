@@ -17,17 +17,21 @@ IMPLEMENT_CLASS(USplineMeshComponent);
 //////////////////////////////////////////////////////////////////////////
 // ASplineLoftActor
 
+// DISHONORED(port): 2013 rva 0x151090 (2012 rva 0x15a370): Arkane reset of DrawScale / DrawScale3D to 1 before the spline actor
+// PostLoad, then the spline mesh components are attached
 void ASplineLoftActor::PostLoad()
 {
+	DrawScale = 1.f;
+	DrawScale3D = FVector(1.f, 1.f, 1.f);
+
 	Super::PostLoad();
-	
+
 	// Make sure components get attached on load, if present
-		
 	for(INT i=0; i<SplineMeshComps.Num(); i++)
 	{
 		if(SplineMeshComps(i))
 		{
-			Components.AddItem(SplineMeshComps(i));	
+			Components.AddItem(SplineMeshComps(i));
 		}
 	}
 }

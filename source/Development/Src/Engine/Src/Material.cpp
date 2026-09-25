@@ -1111,11 +1111,7 @@ EBlendMode UMaterial::GetBlendModeFromString(const TCHAR* InBlendModeStr)
  */
 void UMaterial::CacheResourceShaders(EShaderPlatform ShaderPlatform, UBOOL bFlushExistingShaderMaps)
 {
-#if !CONSOLE
-	// Update the cached material function information, which will store off information about the functions this material uses
-	RebuildMaterialFunctionInfo();
-#endif
-
+	// DISHONORED(port): no RebuildMaterialFunctionInfo (MaterialFunctionInfos is reference-only, a shim; 2013 rva 0x10ff70)
 	// DISHONORED(retail): UMaterial::CacheResourceShaders, 2013 rva 0x10ff70 (2012 rva 0x112cc0, material.cpp:1022, 127 bytes): one
 	// material resource (no quality levels: no [Engine.Engine] bKeepAllMaterialQualityLevelsLoaded read, the string is absent from both
 	// exes), skipped on a Windows server, editor-only package dirtying when the resource has no Id, then FMaterial::InitShaderMap
@@ -1241,72 +1237,30 @@ void UMaterial::AddReferencedObjects(TArray<UObject*>& ObjectArray)
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x119a00 (2012 rva 0x11a930): one MaterialResources[0], no quality mask (reference 858), legacy
+// SM2 resource below 711, fallback materials leave the root set; no VER_FIXED_SCENECOLOR_USAGE expression scan
 void UMaterial::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	// explicitly record which qualities were saved out, so we know what to load in
-	// (default to just HIGH detail for old packages)
-	UINT QualityMask = 0x1;
-	if (Ar.Ver() >= VER_ADDED_MATERIAL_QUALITY_LEVEL)
+	if(!MaterialResources[MSQ_HIGH] && !IsTemplate())
 	{
-		// figure out what we are going to save
-		if (Ar.IsSaving())
-		{
-			for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
-			{
-				if (MaterialResources[QualityIndex])
-				{
-					QualityMask |= (1 << QualityIndex);
-				}
-			}
-		}
-
-		// serialize the mask
-		Ar << QualityMask;
+		MaterialResources[MSQ_HIGH] = AllocateResource();
 	}
 
-	for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
+	if(MaterialResources[MSQ_HIGH])
 	{
-		// don't serialize unwanted expressions
-		if ((QualityMask & (1<<QualityIndex)) == 0)
+		MaterialResources[MSQ_HIGH]->Serialize(Ar);
+		if (Ar.Ver() < VER_UNIFORM_EXPRESSIONS_IN_SHADER_CACHE)
 		{
-			continue;
-		}
-
-		if(!MaterialResources[QualityIndex])
-		{
-			if(!IsTemplate())
-			{
-				// Construct the material resource.
-				MaterialResources[QualityIndex] = AllocateResource();
-			}
-		}
-
-		if(MaterialResources[QualityIndex])
-		{
-			// Serialize the material resource.
-			MaterialResources[QualityIndex]->Serialize(Ar);
-			if (Ar.Ver() < VER_UNIFORM_EXPRESSIONS_IN_SHADER_CACHE)
-			{
-				// If we are loading a material resource saved before texture references were managed by the material resource,
-				// Pass the legacy texture references to the material resource.
-				MaterialResources[QualityIndex]->AddLegacyTextures(ReferencedTextures_DEPRECATED);
-				// Empty legacy texture references on load
-				ReferencedTextures_DEPRECATED.Empty();
-			}
+			MaterialResources[MSQ_HIGH]->AddLegacyTextures(ReferencedTextures_DEPRECATED);
+			ReferencedTextures_DEPRECATED.Empty();
 		}
 	}
 
-
-	if (Ar.Ver() < VER_REMOVED_SHADER_MODEL_2)
+	if (Ar.Ver() < VER_REMOVED_SHADER_MODEL_2 && !IsTemplate())
 	{
-		FMaterialResource* LegacySM2Resource = NULL;
-		if (!IsTemplate())
-		{
-			LegacySM2Resource = AllocateResource();
-		}
-
+		FMaterialResource* LegacySM2Resource = AllocateResource();
 		if (LegacySM2Resource)
 		{
 			LegacySM2Resource->Serialize(Ar);
@@ -1321,40 +1275,6 @@ void UMaterial::Serialize(FArchive& Ar)
 		// Objects in startup packages will be part of the root set
 		RemoveFromRoot();
 	}
-
-	// This fixup should never be needed on consoles, since it will have been done during cooking.
-	// Most of the expressions will be removed during cooking as well.
-#if !CONSOLE
-	if (Ar.IsLoading() && Ar.Ver() < VER_FIXED_SCENECOLOR_USAGE)
-	{
-		// Fixup old content whose bUsesSceneColor was not set correctly.
-		// Mark the material as using scene color based on the presence of material expressions that use it.
-		// Note that this is an overly conservative test, just because the expression exists in the material doesn't mean it was actually used in the compiled material.  
-		// It could have been disconnected from the graph or culled by a static switch parameter.
-		UBOOL bUsesSceneColor = FALSE;
-		for( INT ExpressionIdx=0; ExpressionIdx < Expressions.Num(); ExpressionIdx++ )
-		{
-			UMaterialExpression * Expr = Expressions(ExpressionIdx);
-			UMaterialExpressionDepthBiasedBlend* DepthBiasedBlendExpr = Cast<UMaterialExpressionDepthBiasedBlend>(Expr);
-			UMaterialExpressionDepthBiasBlend* DepthBiasBlendExpr = Cast<UMaterialExpressionDepthBiasBlend>(Expr);
-			UMaterialExpressionSceneTexture* SceneTextureExpr = Cast<UMaterialExpressionSceneTexture>(Expr);
-			UMaterialExpressionDestColor* DestColorExpr = Cast<UMaterialExpressionDestColor>(Expr);
-			if( DepthBiasedBlendExpr || DepthBiasBlendExpr || SceneTextureExpr || DestColorExpr )
-			{
-				bUsesSceneColor = TRUE;
-				break;
-			}
-		}
-
-		for (INT i = 0; i < MSQ_MAX; i++)
-		{
-			if (MaterialResources[i])
-			{
-				MaterialResources[i]->SetUsesSceneColor(bUsesSceneColor);
-			}
-		}
-	}
-#endif
 }
 
 void UMaterial::PostDuplicate()
@@ -1370,69 +1290,22 @@ void UMaterial::PostDuplicate()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x11f880 (2012 rva 0x128d80, material.cpp:1250): NULL expressions dropped in every build, shader
+// map for SM3 when cooking for PC else the running platform, no material function / minimal-compilation checks (reference-only),
+// then the Arkane bHasBloomPart / bHasDistortion flags from BloomColor / Distortion (a static switch contributes its default)
 void UMaterial::PostLoad()
 {
 	Super::PostLoad();
 
-#if !CONSOLE
-	//@todo. Are there other scenarios where we would want to do this?
-	if ((GIsEditor == TRUE) && (GIsUCCMake == FALSE))
-	{
-		// Clean up any removed material expression classes	
-		if (Expressions.RemoveItem(NULL) != 0)
-		{
-			// Force this material to recompile because its expressions have changed
-			FlushResourceShaderMaps();
-		}
-	}
-#endif
+	Expressions.RemoveItem(NULL);
 
-	for (INT FunctionIndex = 0; FunctionIndex < MaterialFunctionInfos.Num(); FunctionIndex++)
+	if (GCookingTarget & (UE3::PLATFORM_Windows|UE3::PLATFORM_WindowsServer|UE3::PLATFORM_WindowsConsole))
 	{
-		FMaterialFunctionInfo& CurrentFunctionInfo = MaterialFunctionInfos(FunctionIndex);
-		if (!CurrentFunctionInfo.Function || CurrentFunctionInfo.StateId != CurrentFunctionInfo.Function->StateId)
-		{
-			// Force this material to recompile because a function it depends on has been changed
-			MarkPackageDirty();
-			FlushResourceShaderMaps();
-#if WITH_EDITOR
-			if(GIsEditor)
-			{
-				// A material must be recompiled because a function it uses is out of date
-				MaterialPackagesWithDependentChanges.Add( GetOutermost() );
-			}
-#endif // WITH_EDITOR
-			break;
-		}
-	}
-
-	if (GForceMinimalShaderCompilation)
-	{
-		// do nothing
-	}
-	else if (GCookingTarget & (UE3::PLATFORM_Windows|UE3::PLATFORM_WindowsConsole))
-	{
-		//cache shaders for all PC platforms if we are cooking for PC
 		CacheResourceShaders(SP_PCD3D_SM3, FALSE);
-		if( !ShaderUtils::ShouldForceSM3ShadersOnPC() )
-		{
-			CacheResourceShaders(SP_PCD3D_SM5, FALSE);
-			CacheResourceShaders(SP_PCOGL, FALSE);
-		}
-	}
-	else if (GCookingTarget & UE3::PLATFORM_WindowsServer)
-	{
-		// do nothing
-	}
-	else if (GIsCooking)
-	{
-		//make sure the material's resource shaders are cached
-		CacheResourceShaders(GCookingShaderPlatform, FALSE);
 	}
 	else
 	{
-		//make sure the material's resource shaders are cached
-		CacheResourceShaders(GRHIShaderPlatform, FALSE);
+		CacheResourceShaders(GIsCooking ? GCookingShaderPlatform : GRHIShaderPlatform, FALSE);
 	}
 
 	if( GIsEditor && !IsTemplate() )
@@ -1449,8 +1322,20 @@ void UMaterial::PostLoad()
 		}
 	}
 
-	// DISHONORED(retail): UMaterial::PostLoad, 2013 rva 0x11f880 (2012 rva 0x128d80, material.cpp:1250): no quality-level tossing
-	// (single MaterialResources[0]; no [Engine.Engine] bKeepAllMaterialQualityLevelsLoaded string in either exe)
+	bHasBloomPart = FALSE;
+	if (BloomColor.Expression)
+	{
+		UMaterialExpressionStaticSwitchParameter* Switch = Cast<UMaterialExpressionStaticSwitchParameter>(BloomColor.Expression);
+		bHasBloomPart = Switch ? Switch->DefaultValue : TRUE;
+	}
+
+	bHasDistortion = bUsesDistortion;
+	if (bUsesDistortion && Distortion.Expression)
+	{
+		UMaterialExpressionStaticSwitchParameter* Switch = Cast<UMaterialExpressionStaticSwitchParameter>(Distortion.Expression);
+		bHasDistortion = Switch ? Switch->DefaultValue : TRUE;
+	}
+	bHasDistortion = !bUseOneLayerDistortion && bHasDistortion && IsTranslucentBlendMode((EBlendMode)BlendMode);
 }
 
 void UMaterial::PreEditChange(UProperty* PropertyThatChanged)

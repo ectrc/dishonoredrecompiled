@@ -429,21 +429,12 @@ void FParticleEmitterInstance::Init()
  */
 UBOOL FParticleEmitterInstance::Resize(INT NewMaxActiveParticles, UBOOL bSetMaxActiveCount)
 {
-	if (GEngine->MaxParticleResize > 0)
+	// DISHONORED(port): 2013 rva 0x46cd90 (2012 rva 0x495d60): the MaxParticleResize limit only applies once GEngine exists (startup
+	// packages initialize particle systems from UParticleSystemComponent::PostLoad before the engine object is created); no warning
+	if (GEngine && GEngine->MaxParticleResize > 0)
 	{
 		if ((NewMaxActiveParticles < 0) || (NewMaxActiveParticles > GEngine->MaxParticleResize))
 		{
-			if ((NewMaxActiveParticles < 0) || (NewMaxActiveParticles > GEngine->MaxParticleResizeWarn))
-			{
-				warnf(TEXT("Emitter::Resize> Invalid NewMaxActive (%d) for Emitter in PSys %s"),
-					NewMaxActiveParticles, 
-					Component	? 
-								Component->Template ? *(Component->Template->GetPathName()) 
-													: *(Component->GetName()) 
-								:
-								TEXT("INVALID COMPONENT"));
-			}
-
 			return FALSE;
 		}
 	}

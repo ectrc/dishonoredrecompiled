@@ -573,17 +573,11 @@ INT UMaterialExpression::CompilerError(FMaterialCompiler* Compiler, const TCHAR*
 	return Compiler->Errorf(TEXT("%s> %s"), Desc.Len() > 0 ? *Desc : *GetCaption(), pcMessage);
 }
 
+// DISHONORED(port): 2013 rva 0x1169a0 (2012 rva 0x127850): only the fallback-material root-set release; no EditorX/Y_DEPRECATED
+// conversion (reference 576, shims)
 void UMaterialExpression::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-
-#if WITH_EDITORONLY_DATA
-	if ( Ar.Ver() < VER_DEPRECATED_EDITOR_POSITION )
-	{
-		MaterialExpressionEditorX = EditorX_DEPRECATED;
-		MaterialExpressionEditorY = EditorY_DEPRECATED;
-	}
-#endif // WITH_EDITORONLY_DATA
 
 	if (GetOuter() && GetOuter()->IsA(UMaterial::StaticClass()) && Cast<UMaterial>(GetOuter())->IsFallbackMaterial())
 	{

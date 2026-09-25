@@ -873,7 +873,7 @@ AActor* UActorFactoryAI::CreateActor( const FVector* const Location, const FRota
 						// handle the team assignment
 						newController->eventSetTeam(TeamIndex);
 						// force the controller to possess, etc
-						newController->eventPossess(newPawn, false);
+						newController->Possess(newPawn);  // DISHONORED(port): native in 2013 (one parameter)
 
 
 						if (newController && newController->PlayerReplicationInfo && PawnName != TEXT("") )

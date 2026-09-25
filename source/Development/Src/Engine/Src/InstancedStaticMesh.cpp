@@ -1640,6 +1640,7 @@ void UInstancedStaticMeshComponent::GetLightAndShadowMapMemoryUsage( INT& LightM
  *
  * @param	Ar	Archive to serialize with
  */
+// DISHONORED(port): 2013 rva 0x11bd10 (2012 rva 0x11cb20), identical for loading (retail has no transacting SelectedInstances block)
 void UInstancedStaticMeshComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

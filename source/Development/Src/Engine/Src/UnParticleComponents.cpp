@@ -759,6 +759,7 @@ void UParticleLODLevel::PostEditChangeProperty(FPropertyChangedEvent& PropertyCh
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+// DISHONORED(port): 2013 rva 0x4cad10 (2012 rva 0x4eb590, unparticlecomponents.cpp:569), identical (the SpawnModule checkf aside)
 void UParticleLODLevel::PostLoad()
 {
 	Super::PostLoad();
@@ -1443,6 +1444,8 @@ INT ParticleEmitterHelper_FixupModuleLODErrors( INT LODIndex, INT ModuleIndex,
 	return Result;
 }
 
+// DISHONORED(port): 2013 rva 0x4c8a70 (2012 rva 0x4f10f0, unparticlecomponents.cpp:1200): the reference LOD/module fixups; no
+// MediumDetailSpawnRateScale clamp (reference-only member, a shim)
 void UParticleEmitter::PostLoad()
 {
 	Super::PostLoad();
@@ -1918,9 +1921,6 @@ void UParticleEmitter::PostLoad()
 		EmitterEditorColor.A = 255;
 	}
 #endif // WITH_EDITORONLY_DATA
-
-	// Clamp the detail spawn rate scale...
-	MediumDetailSpawnRateScale = Clamp<FLOAT>(MediumDetailSpawnRateScale, 0.0f, 1.0f);
 
 	UpdateModuleLists();
 }
@@ -2536,6 +2536,7 @@ void UParticleEmitter::GetParametersUtilized(TArray<FString>& ParticleSysParamLi
 /*-----------------------------------------------------------------------------
 	UParticleSpriteEmitter implementation.
 -----------------------------------------------------------------------------*/
+// DISHONORED(port): 2013 rva 0x4c95f0 (2012 rva 0x4f1cd0), identical
 void UParticleSpriteEmitter::PostLoad()
 {
 	Super::PostLoad();
@@ -2864,6 +2865,8 @@ void UParticleSystem::PreSave()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// DISHONORED(port): 2013 rva 0x4c9670 (2012 rva 0x4ec560, unparticlecomponents.cpp:2525): the reference body without the
+// reference-only passes marked below
 void UParticleSystem::PostLoad()
 {
 	Super::PostLoad();
@@ -2955,27 +2958,8 @@ void UParticleSystem::PostLoad()
 #endif	//#if !FINAL_RELEASE
 
 				//@todo. Move this into the editor and serialize?
-				for (INT LODIndex = 0; (LODIndex < Emitter->LODLevels.Num()) && (bHasPhysics == FALSE); LODIndex++)
-				{
-					//@todo. This is a temporary fix for emitters that apply physics.
-					// Check for collision modules with bApplyPhysics set to TRUE
-					UParticleLODLevel* LODLevel = Emitter->LODLevels(LODIndex);
-					if (LODLevel)
-					{
-						for (INT ModuleIndex = 0; ModuleIndex < LODLevel->Modules.Num(); ModuleIndex++)
-						{
-							UParticleModuleCollision* CollisionModule = Cast<UParticleModuleCollision>(LODLevel->Modules(ModuleIndex));
-							if (CollisionModule)
-							{
-								if (CollisionModule->bApplyPhysics == TRUE)
-								{
-									bHasPhysics = TRUE;
-									break;
-								}
-							}
-						}
-					}
-				}
+				// DISHONORED(port): no bHasPhysics scan of collision modules (bApplyPhysics is reference-only, a shim); retail
+				// clears bHasPhysics and never sets it here
 			}
 		}
 	}
@@ -3028,14 +3012,7 @@ void UParticleSystem::PostLoad()
 		}
 	}
 
-	if (GetLinker() && GetLinker()->Ver() < VER_PARTICLE_EMPTY_EMITTERS_FIXUP)
-	{
-		if (Emitters.Num() == 0)
-		{
-			LODDistances.Empty();
-			LODSettings.Empty();
-		}
-	}
+	// DISHONORED(port): no empty-emitter LOD reset (reference 818 ran on every Dishonored package)
 
 #if WITH_EDITOR
 //	if (GetLinker() && (GetLinker()->Ver() < VER_PARTICLE_LOD_DISTANCE_FIXUP))
@@ -3206,10 +3183,7 @@ void UParticleSystem::PostLoad()
 	FixedRelativeBoundingBox.IsValid = TRUE;
 
 #if WITH_EDITOR
- 	if (GIsEditor && !GIsUCCMake && GetLinker() && (GetLinker()->Ver() < VER_RECALCULATE_MAXACTIVEPARTICLE))
-	{
-		CalculateMaxActiveParticleCounts();
-	}
+ 	// DISHONORED(port): no editor max-active-particle recalculation (reference 813)
 #endif
 
 	// Set up the SoloTracking...
@@ -4036,18 +4010,11 @@ void UParticleSystemComponent::CheckForErrors()
 }
 #endif
 
+// DISHONORED(port): 2013 rva 0x4b1b60 (2012 rva 0x4d5fe0, unparticlecomponents.cpp:3215): template postload, view relevance dirty,
+// InitializeSystem; no light-environment AddRef for level-loaded components, no mobile detail culling
 void UParticleSystemComponent::PostLoad()
 {
 	Super::PostLoad();
-
-#if MOBILE
-	// If we're never going to be visible, drop our mesh reference so it gets garbage collected
-	// (on mobile where we can't change DetailMode at runtime [note that consoles do change for splitscreen])
-	if (DetailMode > GSystemSettings.DetailMode)
-	{
-		Template = NULL;
-	}
-#endif
 
 	if (Template)
 	{
@@ -4055,21 +4022,11 @@ void UParticleSystemComponent::PostLoad()
 	}
 	bIsViewRelevanceDirty = TRUE;
 
-	// If the net index is not NONE (it was loaded from a level), the Ref Count needs to be incremented because it is transient
-	if (GetNetIndex() != INDEX_NONE)
-	{
-		UParticleLightEnvironmentComponent* DLE = Cast<UParticleLightEnvironmentComponent>(LightEnvironment);
-		if (DLE != NULL)
-		{
-			DLE->AddRef();
-		}
-	}
-
 	// Initialize the system to avoid hitching
-	//@todo.SAS. Do we want to make this a flag on the PSys?
 	InitializeSystem();
 }
 
+// DISHONORED(port): 2013 rva 0x4a9130 (2012 rva 0x4cd420), identical
 void UParticleSystemComponent::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
@@ -7642,6 +7599,7 @@ void UParticleSystemComponent::TrailsNotifyEnd(const UAnimNotify_Trails* AnimNot
 }
 
 /** UParticleSystemReplay serialization */
+// DISHONORED(port): 2013 rva 0x4cc120 (2012 rva 0x4f2780), identical
 void UParticleSystemReplay::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );

@@ -378,6 +378,7 @@ void UParticleModuleTrailSpawn::PostEditChangeProperty(FPropertyChangedEvent& Pr
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+// DISHONORED(port): 2013 rva 0x4e7870 (2012 rva 0x51cac0), identical
 void UParticleModuleTrailSpawn::PostLoad()
 {
 	Super::PostLoad();

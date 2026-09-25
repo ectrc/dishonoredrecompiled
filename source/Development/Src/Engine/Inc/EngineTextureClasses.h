@@ -102,9 +102,11 @@ enum TextureGroup
     TEXTUREGROUP_ColorLookupTable=23,
     TEXTUREGROUP_Terrain_Heightmap=24,
     TEXTUREGROUP_Terrain_Weightmap=25,
-    TEXTUREGROUP_ImageBasedReflection=26,
-    TEXTUREGROUP_Bokeh      =27,
-    TEXTUREGROUP_MAX        =28,
+    // DISHONORED(layout): retail Engine.Texture.TextureGroup ends at Terrain_Weightmap (script_classes_2013.json: MAX = 26; 2012 PDB
+    // FTextureLODSettings::TextureLODGroups[26]); the two reference-only groups stay as out-of-range values for the reference code
+    TEXTUREGROUP_MAX        =26,
+    TEXTUREGROUP_ImageBasedReflection=27,
+    TEXTUREGROUP_Bokeh      =28,
 };
 #define FOREACH_ENUM_TEXTUREGROUP(op) \
     op(TEXTUREGROUP_World) \
@@ -132,9 +134,7 @@ enum TextureGroup
     op(TEXTUREGROUP_Shadowmap) \
     op(TEXTUREGROUP_ColorLookupTable) \
     op(TEXTUREGROUP_Terrain_Heightmap) \
-    op(TEXTUREGROUP_Terrain_Weightmap) \
-    op(TEXTUREGROUP_ImageBasedReflection) \
-    op(TEXTUREGROUP_Bokeh) 
+    op(TEXTUREGROUP_Terrain_Weightmap) 
 enum TextureAddress
 {
     TA_Wrap                 =0,

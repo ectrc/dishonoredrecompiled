@@ -428,6 +428,7 @@ ELightComponentType USpotLightComponent::GetLightType() const
 	return LightType_Spot;
 }
 
+// DISHONORED(port): 2013 rva 0x14d5e0 (2012 rva 0x156980), identical (editor-only check)
 void USpotLightComponent::PostLoad()
 {
 	Super::PostLoad();
@@ -456,6 +457,7 @@ void USpotLightComponent::PostLoad()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x1532f0 (2012 rva 0x15c0a0), identical
 void UDominantSpotLightComponent::Serialize(FArchive& Ar)
 {
 	if (Ar.Ver() >= VER_SPOTLIGHT_DOMINANTSHADOW_TRANSITION)

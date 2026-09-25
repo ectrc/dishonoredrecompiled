@@ -3497,50 +3497,14 @@ void UAnimNodeMirror::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYTE>& De
 //////////// UAnimTree ////////////////
 ///////////////////////////////////////
 
+// DISHONORED(port): 2013 rva 0x1b72b0 (2012 rva 0x1c19d0): below 598 retail only empties its editor preview lists (the reference
+// converts the _DEPRECATED preview members; all of them are shims here) and marks the package dirty; the 3-pass compose
+// branch names move below 608
 void UAnimTree::PostLoad()
 {
 	Super::PostLoad();
 
-	UBOOL bMarkDirty = FALSE;
-#if WITH_EDITORONLY_DATA
-	// Convert Previewing data to new profile system.
-	if( GetLinkerVersion() < VER_ANIMTREE_PREVIEW_PROFILES )
-	{
-		bMarkDirty = TRUE;
-
-		// Preview Mesh list
-		PreviewMeshList.Empty(1);
-		PreviewMeshList.AddZeroed(1);
-		PreviewMeshIndex = 0;
-
-		PreviewMeshList(0).DisplayName = FName(TEXT("Default"));
-		PreviewMeshList(0).PreviewSkelMesh = PreviewSkelMesh_DEPRECATED;
-		PreviewMeshList(0).PreviewMorphSets = PreviewMorphSets_DEPRECATED;
-
-		PreviewMorphSets_DEPRECATED.Empty();
-		PreviewSkelMesh_DEPRECATED = NULL;
-
-		// Preview Socket list
-		PreviewSocketList.Empty(1);
-		PreviewSocketList.AddZeroed(1);
-		PreviewSocketIndex = 0;
-
-		PreviewSocketList(0).DisplayName = FName(TEXT("Default"));
-		PreviewSocketList(0).SocketName = SocketName_DEPRECATED;
-		PreviewSocketList(0).PreviewSkelMesh = SocketSkelMesh_DEPRECATED;
-		PreviewSocketList(0).PreviewStaticMesh = SocketStaticMesh_DEPRECATED;
-
-		// Preview AnimSets list
-		PreviewAnimSetList.Empty(1);
-		PreviewAnimSetList.AddZeroed(1);
-		PreviewAnimSetList(0).DisplayName = FName(TEXT("Default"));
-		PreviewAnimSetList(0).PreviewAnimSets = PreviewAnimSets_DEPRECATED;
-		PreviewAnimSetListIndex = 0;
-		PreviewAnimSetIndex = 0;
-
-		PreviewAnimSets_DEPRECATED.Empty();
-	}
-#endif // WITH_EDITORONLY_DATA
+	const UBOOL bMarkDirty = GetLinkerVersion() < VER_ANIMTREE_PREVIEW_PROFILES;
 
 	// 3 Pass Skeletal Mesh Compose
 	if( GetLinkerVersion() < VER_THREE_PASS_SKELMESH_COMPOSE )

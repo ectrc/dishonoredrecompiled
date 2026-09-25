@@ -1025,6 +1025,7 @@ void SerializeSpeedtreeElements(FArchive& Ar, TArray<FMeshBatch>& RenderElements
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x4fc2f0 (2012 rva 0x53ac00): retail is the WITH_SPEEDTREE=0 branch (skip the blob), identical
 void USpeedTree::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

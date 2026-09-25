@@ -779,6 +779,7 @@ struct FTextureLODSettings
 		,	Filter(SF_AnisotropicPoint)
 		,	NumStreamedMips(-1)
 		,	MipGenSettings(TMGS_SimpleAverage)
+		,	KuwaharaFilterSettings(0)
 		{}
 		/** Minimum LOD mip count below which the code won't bias.						*/
 		INT MinLODMipCount;
@@ -792,6 +793,8 @@ struct FTextureLODSettings
 		INT NumStreamedMips;
 		/** Defines how the the mip-map generation works, e.g. sharpening				*/
 		TextureMipGenSettings MipGenSettings;
+		// DISHONORED(layout): 2012 PDB FTextureLODGroup @24 (TextureKuwaharaFilterSettings, 4 bytes; 28-byte group); not read from the ini yet
+		INT KuwaharaFilterSettings;
 	};
 
 protected:

@@ -588,6 +588,7 @@ void URB_BodySetup::PreSave()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// DISHONORED(port): 2013 rva 0x3cb830 (2012 rva 0x3ecd30), identical
 void URB_BodySetup::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -595,9 +596,18 @@ void URB_BodySetup::Serialize(FArchive& Ar)
 }
 
 
+// DISHONORED(port): 2013 rva 0x3acc00 (2012 rva 0x3ce730): box element extents made positive
 void URB_BodySetup::PostLoad()
 {
 	Super::PostLoad();
+
+	for (INT BoxIndex = 0; BoxIndex < AggGeom.BoxElems.Num(); BoxIndex++)
+	{
+		FKBoxElem& Box = AggGeom.BoxElems(BoxIndex);
+		Box.X = Abs(Box.X);
+		Box.Y = Abs(Box.Y);
+		Box.Z = Abs(Box.Z);
+	}
 }
 
 void URB_BodySetup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -1920,6 +1930,7 @@ void URB_BodyInstance::UpdateDampingProperties()
 //////// UPhysicsAssetInstance ////////
 ///////////////////////////////////////
 
+// DISHONORED(port): 2013 rva 0x3cb860 (2012 rva 0x3ecd60), identical (2013 rebuilds the CollisionDisableTable hash after loading)
 void UPhysicsAssetInstance::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

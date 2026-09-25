@@ -244,44 +244,33 @@ UBOOL ULightComponent::IsLACDynamicAndStaticAffecting()
 /**
  * Called after this UObject has been serialized
  */
+// DISHONORED(port): 2013 rva 0x116520 (2012 rva 0x11a5d0, lightcomponent.cpp:332): dominant lights lose bForceDynamicLight (no
+// LightShadowMode changes, no UseDirectLightMap -> Function reset), the light function duplicate fixup, the bounced light
+// environment color below 564 (dead for Dishonored's packages, not ported), classification, then the Arkane
+// LightingChannels.m_LightProbe = Static || Dynamic
 void ULightComponent::PostLoad()
 {
 	Super::PostLoad();
 
 	if (IsDominantLightType(GetLightType()))
 	{
-		// Not supported for dominant lights as the shaders required to handle a lightmapped object and a dynamic light in the base pass are not compiled
 		bForceDynamicLight = FALSE;
-		// Dominant lights must cast normal shadows
-		LightShadowMode = LightShadow_Normal;
-	}
-
-	if (LightShadowMode == LightShadow_ModulateBetter)
-	{
-		LightShadowMode = LightShadow_Modulate;
 	}
 
 	if ( Function != NULL && Function->GetOuter() != this && !IsTemplate() )
 	{
-		// this is the culprit behind PointLightComponents that have a NULL PreviewLightRadius;  basically, this PLC's Function is pointing to the Function object owned by a
-		// PLC that has been removed from the level....fix up these guys now
 		ULightFunction* NewFunction = Cast<ULightFunction>(StaticDuplicateObject(Function, Function, this, *Function->GetName()));
 		if ( NewFunction != NULL )
 		{
-			debugf(NAME_Warning, TEXT("Invalid LightFunction detected for %s: %s.  Replacing existing value with fresh copy %s"), *GetFullName(), *Function->GetFullName(), *NewFunction->GetFullName());
 			Function = NewFunction;
 		}
 	}
 
-	if (UseDirectLightMap)
-	{
-		// Light functions are only allowed on lights which render their direct lighting dynamically
-		Function = FALSE;
-	}
-
 	// so we have loaded up a map we want to make certain all of the lights have the most
-    // recent light classification icon
+	// recent light classification icon
 	SetLightAffectsClassificationBasedOnSettings();
+
+	LightingChannels.m_LightProbe = (LightingChannels.Static || LightingChannels.Dynamic) ? TRUE : FALSE;
 }
 
 void ULightComponent::PreEditUndo()
@@ -410,17 +399,14 @@ void ULightComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChan
 /**
  * Serialize function.
  */
+// DISHONORED(port): 2013 rva 0x124c10 (2012 rva 0x124600, lightcomponent.cpp:535): the inclusion/exclusion convex volumes are
+// always serialized into the members (the reference drops them at 829 into dummies)
 void ULightComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize( Ar );
 
-	if (Ar.Ver() < VER_REMOVE_UNUSED_LIGHTING_PROPERTIES)
-	{
-		TArray<FConvexVolume> Dummy;
-		Ar << Dummy;
-		TArray<FConvexVolume> Dummy2;
-		Ar << Dummy2;
-	}
+	Ar << InclusionConvexVolumes;
+	Ar << ExclusionConvexVolumes;
 }
 
 /**

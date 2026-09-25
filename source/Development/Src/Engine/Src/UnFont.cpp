@@ -16,6 +16,7 @@ IMPLEMENT_CLASS(UMultiFont);
 *
 * @param Ar - archive to serialize with
 */
+// DISHONORED(port): 2013 rva 0x23be30 (2012 rva 0x24cdc0), identical (2013 rebuilds the CharRemap hash after loading, which our TMap serializer does)
 void UFont::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
@@ -36,6 +37,7 @@ void UFont::Serialize( FArchive& Ar )
 /**
 * Called after object and all its dependencies have been serialized.
 */
+// DISHONORED(port): 2013 rva 0x2167e0 (2012 rva 0x22e790), identical
 void UFont::PostLoad()
 {
 	Super::PostLoad();
@@ -176,6 +178,7 @@ INT UFont::GetResourceSize()
 /**
  * Serialize the ResolutionTestTable as well
  */
+// DISHONORED(port): 2013 rva 0x23bee0 (2012 rva 0x24ce40), identical
 void UMultiFont::Serialize( FArchive& Ar )
 {
 	Super::Serialize( Ar );
@@ -190,6 +193,7 @@ void UMultiFont::Serialize( FArchive& Ar )
 /**
 * Called after object and all its dependencies have been serialized.
 */
+// DISHONORED(port): 2013 rva 0x2169e0 (2012 rva 0x22e990), identical
 void UMultiFont::PostLoad()
 {
 	// Call our parent implementation

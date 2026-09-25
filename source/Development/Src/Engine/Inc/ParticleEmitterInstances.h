@@ -209,6 +209,7 @@ public:
 
 	/** The material to render this instance with.						*/
 	UMaterialInterface* CurrentMaterial;
+	UBOOL bUseNxFluid;  // DISHONORED(layout): 2012 PDB FParticleEmitterInstance @328 (sizeof 340), before EventCount @332
 #if !FINAL_RELEASE
 	/** Number of events this emitter has generated... */
 	INT EventCount;

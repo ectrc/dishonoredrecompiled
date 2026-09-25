@@ -1714,6 +1714,35 @@ UBOOL AActor::IsReadyForFinishDestroy()
 	return Super::IsReadyForFinishDestroy() && DetachFence.GetNumPendingFences() == 0;
 }
 
+// DISHONORED(port): globals NeedUpdateCollisionSettings (2012 .data rva 0xeeb244) and bNeedUpdateBlockZeroExtentDisablePathColliding
+// (2012 .data rva 0xeeb240, 2013 .data rva 0x1042ecc): set by AActor::Serialize for old packages, consumed by AActor::PostLoad
+INT NeedUpdateCollisionSettings = 0;
+UBOOL bNeedUpdateBlockZeroExtentDisablePathColliding = FALSE;
+
+// DISHONORED(port): 2013 rva 0x1679b0 (2012 rva 0x171920, unactor.cpp:1707, 106 bytes in both): the Arkane load fixups: bPathColliding
+// from bStatic below 782, the zero-extent path-colliding fixup below 783, collision trace types below licensee 26
+void AActor::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+
+	if (Ar.Ver() < 782 && Ar.IsLoading())
+	{
+		bPathColliding = bStatic;
+	}
+	if (Ar.Ver() < 783 && Ar.IsLoading())
+	{
+		bNeedUpdateBlockZeroExtentDisablePathColliding = TRUE;
+	}
+	if (Ar.LicenseeVer() < VER_DIS_LICENSEE_ACTOR && Ar.IsLoading())
+	{
+		++NeedUpdateCollisionSettings;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x17dfd0 (2012 rva 0x193910, unactor.cpp:1729): no NULL-component removal in game, the Arkane
+// collision-trace fixup (a collision component whose BlockZeroExtent / BlockNonZeroExtent differs from its class default gets
+// the gameplay / movement trace bits from it) for packages below licensee 26, the path-colliding fixup below 783, and in the
+// editor only bHiddenEdTemporary from bHiddenEd (bHiddenEdScene and the group -> layer conversion are reference-only shims)
 void AActor::PostLoad()
 {
 	Super::PostLoad();
@@ -1727,13 +1756,6 @@ void AActor::PostLoad()
 		}
 	}
 
-	if (GIsGame && !IsTemplate())
-	{
-		// remove empty Components entries in game (from editor-only components and such)
-		// don't remove from templates as this could break the order needed for proper loading with archetypes
-		Components.RemoveItem(NULL);
-	}
-
 	// add ourselves to our Owner's Children array
 	if (Owner != NULL)
 	{
@@ -1741,25 +1763,43 @@ void AActor::PostLoad()
 		Owner->Children.AddItem(this);
 	}
 
-	SetDefaultCollisionType();
-
-	if ( GIsEditor )
+	if (NeedUpdateCollisionSettings > 0)
 	{
-		// Propagate the hidden at editor startup flag to the transient hidden flags
-		bHiddenEdTemporary = bHiddenEd;
-		bHiddenEdScene = bHiddenEd;
-
-		// Check/warning when loading actors in editor. Should never load bDeleteMe Actors!
-		if ( bDeleteMe )
+		if (CollisionComponent)
 		{
-			debugf( TEXT("Loaded Actor (%s) with bDeleteMe == true"), *GetName() );
+			UPrimitiveComponent* DefaultComponent = CollisionComponent->GetClass()->GetDefaultObject<UPrimitiveComponent>();
+			if (CollisionComponent->BlockZeroExtent != DefaultComponent->BlockZeroExtent)
+			{
+				const BITFIELD bBlock = CollisionComponent->BlockZeroExtent;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForGameplay_Crosshair = bBlock;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForGameplay_Projectile = bBlock;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForGameplay_Melee = bBlock;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForGameplay_VisionLOS = bBlock;
+			}
+			if (CollisionComponent->BlockNonZeroExtent != DefaultComponent->BlockNonZeroExtent)
+			{
+				const BITFIELD bBlock = CollisionComponent->BlockNonZeroExtent;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForMove_NonPawn = bBlock;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForMove_NonPlayerPawn = bBlock;
+				CollisionComponent->m_CollisionTraceTypes.m_bTraceForMove_Player = bBlock;
+			}
+		}
+		if (--NeedUpdateCollisionSettings < 0)
+		{
+			NeedUpdateCollisionSettings = 0;
 		}
 	}
 
-	if (GetLinker() && (GetLinker()->Ver() < VER_RENAMED_GROUPS_TO_LAYERS))
+	SetDefaultCollisionType();
+
+	if (bNeedUpdateBlockZeroExtentDisablePathColliding && CollisionType == COLLIDE_BlockWeapons)
 	{
-		Layer = Group_DEPRECATED;
-		bHiddenEdLayer = bHiddenEdGroup_DEPRECATED;
+		bPathColliding = FALSE;
+	}
+
+	if ( GIsEditor )
+	{
+		bHiddenEdTemporary = bHiddenEd;
 	}
 }
 
@@ -3576,6 +3616,7 @@ FString AActor::GetURLMap()
  *
  * @param Ar Archive to serialize with
  */
+// DISHONORED(port): 2013 rva 0x1686f0 (2012 rva 0x172660), identical
 void ABrush::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -3652,6 +3693,7 @@ void ABrush::InitPosRotScale()
 	PrePivot  = FVector(0,0,0);
 
 }
+// DISHONORED(port): 2013 rva 0x17ea30 (2012 rva 0x194110), identical
 void ABrush::PostLoad()
 {
 	Super::PostLoad();
@@ -4058,6 +4100,7 @@ void ALevelStreamingVolume::Serialize( FArchive& Ar )
 /**
 * Performs operations after the object is loaded. 
 */
+// DISHONORED(port): 2013 rva 0x17ecd0 (2012 rva 0x1943b0), identical
 void ALevelStreamingVolume::PostLoad()
 {
 	Super::PostLoad();

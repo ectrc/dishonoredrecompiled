@@ -249,6 +249,7 @@ void ULensFlare::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 /**
  *	Called when an object has been loaded...
  */
+// DISHONORED(port): 2013 rva 0x4d3cd0 (2012 rva 0x4fd0b0), identical
 void ULensFlare::PostLoad()
 {
 	Super::PostLoad();
@@ -722,10 +723,9 @@ void ULensFlareComponent::PostEditChangeProperty(FPropertyChangedEvent& Property
 	BeginDeferredReattach();
 }
 
+// DISHONORED(port): 2013 rva 0x4cd3b0 (2012 rva 0x4f45a0): Super only (NextTraceTime is reference-only, a shim)
 void ULensFlareComponent::PostLoad()
 {
-	// initialize to force immediate test
-	NextTraceTime = -1.0f * appFrand();
 	Super::PostLoad();
 }
 

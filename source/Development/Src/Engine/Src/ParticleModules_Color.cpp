@@ -18,6 +18,7 @@ IMPLEMENT_CLASS(UParticleModuleColorBase);
 -----------------------------------------------------------------------------*/
 IMPLEMENT_CLASS(UParticleModuleColor);
 
+// DISHONORED(port): 2013 rva 0x4c4fa0 (2012 rva 0x4e5d60), identical
 void UParticleModuleColor::PostLoad()
 {
 	Super::PostLoad();

@@ -346,6 +346,7 @@ void USkelControlBase::HandleControlSliderMove(FLOAT NewSliderValue)
 	StrengthTarget = NewSliderValue;
 }
 
+// DISHONORED(port): 2013 rva 0x30cf60 (2012 rva 0x32fdb0), identical
 void USkelControlBase::PostLoad()
 {
 	// If desired, use cubic interpolation for skeletal control, to allow them to blend in more smoothly.
@@ -360,6 +361,7 @@ void USkelControlBase::PostLoad()
 	Super::PostLoad();
 }
 
+// DISHONORED(port): 2013 rva 0x30cf80 (2012 rva 0x32fdd0), identical
 void USkelControlBase::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

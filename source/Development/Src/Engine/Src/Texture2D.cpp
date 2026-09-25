@@ -716,37 +716,14 @@ void UTexture2D::LegacySerialize(FArchive& Ar)
 	Mips.Serialize( Ar, this );
 }
 
+// DISHONORED(port): 2013 rva 0x182440 (2012 rva 0x187fa0): UTexture part, Mips, persistent-archive flag,
+// TextureFileCacheGuid (567), OriginalSize (<627), InternalFormatLODBias (<634), CachedPVRTCMips (>=674). Retail has no
+// ATITC/ETC/Flash mip caches (reference 857/864, shims) and no Android/MOBILE mip handling.
 void UTexture2D::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	// This is a workaround for Android to support multiple texture formats
-	// UTexture2D expects all data in Mips, but to support other compressed formats the data is kept in multiple caches
-	// So depending on the run-time detected format support,
-	// serialization occurs into Mips in the appropriate location, otherwise a dummy array is serialized into
-#if ANDROID
-	// Anything in DummyMips is data for the wrong format on Android and will be ignored
-	TIndirectArray<FTexture2DMipMap> DummyMips;
-
-	if (Ar.IsLoading())
-	{
-		if (appGetAndroidTextureFormat() & TEXSUPPORT_DXT)
-		{
-			// LegacySerialize is just a call to serialize Mips
-			LegacySerialize(Ar);
-		}
-		else
-		{
-			DummyMips.Serialize(Ar, this);
-		}
-	}
-	else
-	{
-		LegacySerialize(Ar);
-	}
-#else
 	LegacySerialize(Ar);
-#endif
 
 	// Keep track of the fact that we have been loaded from a persistent archive as it's a prerequisite of
 	// being streamable.
@@ -778,162 +755,10 @@ void UTexture2D::Serialize(FArchive& Ar)
 		}
 	}
 
-	// serialize the PVRTC data
 	if (Ar.Ver() >= VER_ADDED_CACHED_IPHONE_DATA)
 	{
-		// Support for multiple texture formats, see above comment
-#if ANDROID
-		if (Ar.IsLoading())
-		{
-			if (appGetAndroidTextureFormat() & TEXSUPPORT_PVRTC)
-			{
-				LegacySerialize(Ar);
-			}
-			else
-			{
-				DummyMips.Serialize(Ar, this);
-			}
-		}
-		else
-		{
-			CachedPVRTCMips.Serialize(Ar, this);
-		}
-#else
 		CachedPVRTCMips.Serialize(Ar, this);
-#endif
 	}
-
-	if (Ar.Ver() >= VER_VERSION_NUMBER_FIX_FOR_FLASH_TEXTURES)
-	{
-		Ar << CachedFlashMipsMaxResolution;
-
-		// Support for multiple texture formats, see above comment
-#if ANDROID
-		if (Ar.IsLoading())
-		{
-			if (appGetAndroidTextureFormat() & TEXSUPPORT_ATITC)
-			{
-				LegacySerialize(Ar);
-			}
-			else
-			{
-				DummyMips.Serialize(Ar, this);
-			}
-		}
-		else
-		{
-			CachedATITCMips.Serialize(Ar, this);
-		}
-#else
-		CachedATITCMips.Serialize(Ar, this);
-#endif
-
-		CachedFlashMips.Serialize(Ar, this, 0);
-
-		// toss outdated flash mips
-		if (Ar.Ver() < VER_FLASH_DXT5_TEXTURE_SUPPORT)
-		{
-			CachedFlashMips.RemoveBulkData();
-		}
-	}
-
-	if (Ar.Ver() >= VER_ANDROID_ETC_SEPARATED)
-	{
-		// Support for multiple texture formats, see above comment
-#if ANDROID
-		if (Ar.IsLoading())
-		{
-			if (appGetAndroidTextureFormat() & TEXSUPPORT_ETC  )
-			{
-				LegacySerialize(Ar);
-			}
-			else
-			{
-				DummyMips.Serialize(Ar, this);
-			}
-		}
-		else
-		{
-			CachedETCMips.Serialize(Ar, this);
-		}
-#else
-		CachedETCMips.Serialize(Ar, this);
-#endif
-	}
-
-#if MOBILE
-	// throw away large mips that were cooked into the package, but are not desired, based on SystemSettings
-	// this can happen on, say, mobile devices, where we use one cooked package, but it needs to run on 
-	// devices of very different memory profiles. The package must contain mips that don't fit on the lower
-	// end devices, so we toss them now
-	if (GIsGame && Ar.IsLoading())
-	{
-		// these groups are done in the respective serialize functions, but they haven't run yet,
-		// so mimic the behavior here
-		if (IsA(ULightMapTexture2D::StaticClass()))
-		{
-			LODGroup = TEXTUREGROUP_Lightmap;
-		}
-		else if (IsA(UShadowMapTexture2D::StaticClass()))
-		{
-			LODGroup = TEXTUREGROUP_Shadowmap;
-		}
-
-		INT NormalEmptyStartIdx = 0;
-		INT LODBias = GSystemSettings.TextureLODSettings.CalculateLODBias(this);
-		if (LODBias != 0)
-		{
-			if ((LODGroup == TEXTUREGROUP_WorldNormalMap) || (LODGroup == TEXTUREGROUP_CharacterNormalMap) || (LODGroup == TEXTUREGROUP_WeaponNormalMap) || (LODGroup == TEXTUREGROUP_VehicleNormalMap))
-			{
-				NormalEmptyStartIdx = LODBias;
-			}
-
-			LODBias = Min<INT>(LODBias, Mips.Num()-1);
-			for (INT EmptyIdx = 0; EmptyIdx < LODBias; EmptyIdx++)
-			{
-				Mips(EmptyIdx).Data.RemoveBulkData();
-				Mips(EmptyIdx).Data.SetBulkDataFlags(BULKDATA_Unused);
-			}
-		}
-
-#if WITH_MOBILE_RHI && !ANDROID
-		//Throw away ALL normal maps but the very lowest Mip for iPad
-		// @todo ib2merge: Could this be done before we even load the mips from the TFC, like we do with LODBias? Can't this actually be done with LODBias in the .ini????
-		if (GSystemSettings.MobileFeatureLevel == EPF_LowEndFeatures)
-		{
-			//HACK - assumes ALL normal maps are in these groups
-			if ((LODGroup == TEXTUREGROUP_WorldNormalMap) || (LODGroup == TEXTUREGROUP_CharacterNormalMap) || (LODGroup == TEXTUREGROUP_WeaponNormalMap) || (LODGroup == TEXTUREGROUP_VehicleNormalMap))
-			{
-				for (INT EmptyIdx = NormalEmptyStartIdx; EmptyIdx < Mips.Num()-1; EmptyIdx++)
-				{
-					Mips(EmptyIdx).Data.RemoveBulkData();
-					Mips(EmptyIdx).Data.SetBulkDataFlags(BULKDATA_Unused);
-				}
-			}
-		}
-#endif
-	}
-#endif
-
-// Fix-up Android values for certain formats
-#if ANDROID
-	if (Ar.IsLoading())
-	{	
-		if (!(appGetAndroidTextureFormat() & TEXSUPPORT_DXT))
-		{
-			// make the texture square (the mips were already squarified in ConditionalCachePVRTCTextures)
-			if (Format >= PF_DXT1 && Format <= PF_DXT5)
-			{
-				SizeX = SizeY = Max(SizeX, SizeY);
-			}
-		}
-		else
-		{
-			// DXT should not have bForcePVRTC4
-			bForcePVRTC4 = false;
-		}		
-	}
-#endif
 }
 void UTexture2D::PostEditUndo()
 {
@@ -1180,6 +1005,7 @@ void UTexture2D::CancelPendingTextureStreaming()
 /**
  * Called after object and all its dependencies have been serialized.
  */
+// DISHONORED(port): 2013 rva 0x17c1c0 (2012 rva 0x18d250), identical: MipTailBaseIdx fixup when not RF_Cooked, then UTexture::PostLoad
 void UTexture2D::PostLoad()
 {
 #if XBOX

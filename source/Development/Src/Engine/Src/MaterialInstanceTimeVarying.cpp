@@ -364,17 +364,19 @@ UMaterialInstanceTimeVarying::UMaterialInstanceTimeVarying()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x144a00 (2012 rva 0x14fdd0): scalar, vector, texture, font; no linear color parameters
+// (LinearColorParameterValues is reference-only, a shim)
 void UMaterialInstanceTimeVarying::InitResources()
 {
 	Super::InitResources();
 
 	InitMITVParameters<MITVScalarParameterMapping>(this);
 	InitMITVParameters<MITVVectorParameterMapping>(this);
-	InitMITVParameters<MITVLinearColorParameterMapping>(this);
 	InitMITVParameters<MITVTextureParameterMapping>(this);
 	InitMITVParameters<MITVFontParameterMapping>(this);
 }
 
+// DISHONORED(port): 2013 rva 0x132300 (2012 rva 0x1366d0), identical (StartTime fixup below 735)
 void UMaterialInstanceTimeVarying::PostLoad()
 {
 	// Ensure that the instance's parent is PostLoaded before the instance.

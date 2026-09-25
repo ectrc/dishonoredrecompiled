@@ -281,6 +281,8 @@ void UMaterialInterface::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+// DISHONORED(port): 2013 rva 0x127d10 (2012 rva 0x12bb90): SetLightingGuid below 600 only; no mobile parameter rename
+// (reference 855, the Mobile* members are shims)
 void UMaterialInterface::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -289,23 +291,6 @@ void UMaterialInterface::Serialize(FArchive& Ar)
 	if (Ar.Ver() < VER_INTEGRATED_LIGHTMASS)
 	{
 		SetLightingGuid();
-	}	
-
-	if (Ar.IsLoading() && (Ar.Ver() < VER_MOBILE_MATERIAL_PARAMETER_RENAME))
-	{
-		MobileDefaultUniformColor = DefaultUniformColor_DEPRECATED;
-		MobileTransformCenterX = TransformCenterX_DEPRECATED;
-		MobileTransformCenterY = TransformCenterY_DEPRECATED;
-		MobilePannerSpeedX = PannerSpeedX_DEPRECATED;
-		MobilePannerSpeedY = PannerSpeedY_DEPRECATED;
-		MobileRotateSpeed = RotateSpeed_DEPRECATED;
-		MobileFixedScaleX = FixedScaleX_DEPRECATED;
-		MobileFixedScaleY = FixedScaleY_DEPRECATED;
-		MobileSineScaleX = SineScaleX_DEPRECATED;
-		MobileSineScaleY = SineScaleY_DEPRECATED;
-		MobileSineScaleFrequencyMultipler = SineScaleFrequencyMultipler_DEPRECATED;
-		MobileFixedOffsetX = FixedOffsetX_DEPRECATED;
-		MobileFixedOffsetY = FixedOffsetY_DEPRECATED;
 	}
 }
 
@@ -1900,6 +1885,7 @@ void FMaterial::AddReferencedObjects(TArray<UObject*>& ObjectArray)
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x146520 (2012 rva 0x14eb00), identical (2013 rebuilds the TextureDependencyLengthMap hash after loading)
 void FMaterial::Serialize(FArchive& Ar)
 {
 	Ar << CompileErrors;
@@ -2044,10 +2030,15 @@ UBOOL FMaterial::InitShaderMap(FStaticParameterSet* StaticParameters, EShaderPla
 
 		if (appGetPlatformType() & UE3::PLATFORM_Stripped)
 		{
-			if (IsSpecialEngineMaterial())
+			if (IsSpecialEngineMaterial() && !GUsingNullRHI)
 			{
 				//assert if the default material's shader map was not found, since it will cause problems later
 				appErrorf(TEXT("Failed to find shader map for default material %s!  Please make sure cooking was successful."), *GetFriendlyName());
+			}
+			else if (IsSpecialEngineMaterial())
+			{
+				// DISHONORED(bringup): the cooked material shader maps do not load yet (renderer wave); headless runs carry on without one
+				warnf(TEXT("DISHONORED(bringup): no shader map for special material %s under the null RHI"), *GetFriendlyName());
 			}
 			else
 			{

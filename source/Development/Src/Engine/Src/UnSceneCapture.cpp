@@ -1760,6 +1760,7 @@ void ASceneCaptureActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyC
 }
 
 /** synchronize components after load */
+// DISHONORED(port): 2013 rva 0x2cbee0 (2012 rva 0x2e6fc0), identical
 void ASceneCaptureActor::PostLoad()
 {
 	Super::PostLoad();
@@ -1953,6 +1954,7 @@ void ASceneCaptureReflectActor::Init()
 /**
  * Called when the actor is loaded
  */
+// DISHONORED(port): 2013 rva 0x2cbfa0 (2012 rva 0x2e7070), identical
 void ASceneCaptureReflectActor::PostLoad()
 {
 	Super::PostLoad();
@@ -2052,6 +2054,7 @@ void APortalTeleporter::Spawned()
 	Super::Spawned();
 }
 
+// DISHONORED(port): 2013 rva 0x2df870 (2012 rva 0x312930), identical (the Super chain is inlined in retail)
 void APortalTeleporter::PostLoad()
 {
 	// create a render to texture target for the portal

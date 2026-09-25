@@ -475,6 +475,19 @@ IMPLEMENT_CLASS(UParticleModuleEventReceiverSpawn);
  *
  *	@return	UBOOL		TRUE if the event was processed; FALSE if not.
  */
+// DISHONORED(port): 2013 rva 0x46e1e0 (2012 rva 0x4970e0, 47 bytes in both): packages below 635 keep the event type and name in
+// this class's own members; copy them into the receiver base
+void UParticleModuleEventReceiverSpawn::PostLoad()
+{
+	Super::PostLoad();
+
+	if (GetLinker() && GetLinker()->Ver() < 635)
+	{
+		UParticleModuleEventReceiverBase::EventGeneratorType = EventGeneratorType;
+		UParticleModuleEventReceiverBase::EventName = EventName;
+	}
+}
+
 UBOOL UParticleModuleEventReceiverSpawn::ProcessParticleEvent(FParticleEmitterInstance* Owner, FParticleEventData& InEvent, FLOAT DeltaTime)
 {
 	if ((InEvent.EventName == EventName) && ((EventGeneratorType == EPET_Any) || (EventGeneratorType == InEvent.Type)))

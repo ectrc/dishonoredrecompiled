@@ -2871,6 +2871,9 @@ void AWorldInfo::AddReferencedObjects( TArray<UObject*>& ObjectArray )
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x259350 (2012 rva 0x2729f0, unlevact.cpp:3186): lightmass flag below 600 and the reference-collector
+// walk of the nav-mesh constraint / goal evaluator pools; no LMLevelSettings_DEPRECATED copy or LandscapeInfoMap reference
+// (reference-only members, shims)
 void AWorldInfo::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -2878,29 +2881,6 @@ void AWorldInfo::Serialize(FArchive& Ar)
 	{
 		bUseGlobalIllumination = FALSE;
 	}
-
-#if WITH_EDITORONLY_DATA
-	if (Ar.Ver() < VER_INTEGRATED_LIGHTMASS)
-	{
-		// Copy the deprecated LightmassLevelSettings if they are present.
-		if (LMLevelSettings_DEPRECATED != NULL)
-		{
-			LightmassSettings.NumIndirectLightingBounces = LMLevelSettings_DEPRECATED->NumIndirectLightingBounces;
-			LightmassSettings.EnvironmentColor = LMLevelSettings_DEPRECATED->EnvironmentColor;
-			LightmassSettings.EnvironmentIntensity = LMLevelSettings_DEPRECATED->EnvironmentIntensity;
-			LightmassSettings.EmissiveBoost = LMLevelSettings_DEPRECATED->EmissiveBoost;
-			LightmassSettings.DiffuseBoost = LMLevelSettings_DEPRECATED->DiffuseBoost;
-			LightmassSettings.SpecularBoost = LMLevelSettings_DEPRECATED->SpecularBoost;
-			LightmassSettings.bUseAmbientOcclusion = LMLevelSettings_DEPRECATED->bUseAmbientOcclusion;
-			LightmassSettings.bVisualizeAmbientOcclusion = LMLevelSettings_DEPRECATED->bVisualizeAmbientOcclusion;
-			LightmassSettings.DirectIlluminationOcclusionFraction = LMLevelSettings_DEPRECATED->DirectIlluminationOcclusionFraction;
-			LightmassSettings.IndirectIlluminationOcclusionFraction = LMLevelSettings_DEPRECATED->IndirectIlluminationOcclusionFraction;
-			LightmassSettings.OcclusionExponent = LMLevelSettings_DEPRECATED->OcclusionExponent;
-			LightmassSettings.FullyOccludedSamplesFraction = LMLevelSettings_DEPRECATED->FullyOccludedSamplesFraction;
-			LightmassSettings.MaxOcclusionDistance = LMLevelSettings_DEPRECATED->MaxOcclusionDistance;
-		}
-	}
-#endif // WITH_EDITORONLY_DATA
 
 	// add references to path constraints/goal evals in the pool
 	if( Ar.IsObjectReferenceCollector() )
@@ -2927,22 +2907,17 @@ void AWorldInfo::Serialize(FArchive& Ar)
 					Ar << Datum.List[Idx];
 				}
 			}
-		};
+		}
 	}
-
-#if WITH_EDITORONLY_DATA
-	if (!Ar.IsLoading() && !Ar.IsSaving())
-	{
-		// To reference LandscapeInfo
-		Ar << LandscapeInfoMap;
-	}
-#endif
 }
 // -- end Pathconstraint /Goaleval pooling
 
 /**
 * Called after this instance has been serialized.
 */
+// DISHONORED(port): 2013 rva 0x257120 (2012 rva 0x270790, unlevact.cpp:3252): blocking for BSP, always-loaded streaming levels
+// first, PhysX skin width. No post-process settings fixups or VisibleLayers conversion (DefaultPostProcessSettings and
+// VisibleGroups_DEPRECATED are reference-only, shims), no APEX destructible settings (WITH_APEX=0, retail never linked APEX)
 void AWorldInfo::PostLoad()
 {
 	Super::PostLoad();
@@ -2950,73 +2925,21 @@ void AWorldInfo::PostLoad()
 	// Force to be blocking, needed for BSP.
 	bBlockActors = TRUE;
 
-	// clamp desaturation to 0..1 (fixup for old data)
-	DefaultPostProcessSettings.Scene_Desaturation = Clamp(DefaultPostProcessSettings.Scene_Desaturation, 0.f, 1.f);
-	ULinkerLoad* LODLinkerLoad = GetLinker();
-	
-	if (LODLinkerLoad && (LODLinkerLoad->Ver() < VER_COLORGRADING2))
-	{
-		// Before the override flag was introduced the override state was derived if the texture was actually defined.
-		DefaultPostProcessSettings.bOverride_Scene_ColorGradingLUT = DefaultPostProcessSettings.ColorGrading_LookupTable != 0;
-	}
-
 	// Make sure that 'always loaded' maps are first in the array
-
 	TArray<ULevelStreaming*> AlwaysLoadedLevels;
-	// Iterate over each LevelStreaming object
 	for( INT LevelIndex=StreamingLevels.Num()-1; LevelIndex>=0; LevelIndex-- )
 	{
-		// See if its an 'always loaded' one
 		ULevelStreamingAlwaysLoaded* AlwaysLoadedLevel = Cast<ULevelStreamingAlwaysLoaded>( StreamingLevels(LevelIndex) );
 		if(AlwaysLoadedLevel)
 		{
-			// If it is, add to out list (preserving order), and remove from main list
 			AlwaysLoadedLevels.InsertItem(AlwaysLoadedLevel, 0);
 			StreamingLevels.Remove(LevelIndex);
 		}
 	}
 
-	// Now make new array that starts with 'always loaded' levels, followed by the rest
 	TArray<ULevelStreaming*> NewStreamingLevels = AlwaysLoadedLevels;
 	NewStreamingLevels.Append( StreamingLevels );
-	// And use that for the new StreamingLevels array
 	StreamingLevels = NewStreamingLevels;
-
-#if WITH_APEX
-	if ( GApexManager )
-	{
-		// NOTE: One WorldInfo will override another. Whichever WorldInfo gets loaded last, wins.
-		physx::apex::NxModuleDestructible *DestructibleModule = GApexManager->GetModuleDestructible();
-		if ( DestructibleModule  )
-		{
-			if ( DestructibleSettings.MaxChunkIslandCount >= 0 )
-			{
-				DestructibleModule->setMaxDynamicChunkIslandCount( DestructibleSettings.MaxChunkIslandCount );
-			}
-			else
-			{
-				DestructibleModule->setMaxDynamicChunkIslandCount( GSystemSettings.ApexDestructionMaxChunkIslandCount );
-			}
-			if ( DestructibleSettings.MaxShapeCount >= 0 )
-			{
-				DestructibleModule->setMaxChunkCount( DestructibleSettings.MaxShapeCount );
-			}
-			else
-			{
-				DestructibleModule->setMaxChunkCount( GSystemSettings.ApexDestructionMaxShapeCount );
-			}
-
-			if ( DestructibleSettings.bOverrideMaxChunkSeparationLOD )
-			{
-				DestructibleModule->setMaxChunkSeparationLOD( DestructibleSettings.MaxChunkSeparationLOD );
-			}
-			else
-			{
-				DestructibleModule->setMaxChunkSeparationLOD( GSystemSettings.ApexDestructionMaxChunkSeparationLOD );
-			}
-		}
-	}
-#endif
 
 #if WITH_NOVODEX
 	if( GNovodexSDK != NULL )
@@ -3024,13 +2947,6 @@ void AWorldInfo::PostLoad()
 		GNovodexSDK->setParameter(NX_SKIN_WIDTH, DefaultSkinWidth);
 	}
 #endif
-
-#if WITH_EDITORONLY_DATA
-	if (GetLinker() && (GetLinker()->Ver() < VER_RENAMED_GROUPS_TO_LAYERS))
-	{
-		VisibleLayers = VisibleGroups_DEPRECATED;
-	}
-#endif // WITH_EDITORONLY_DATA
 }
 
 /**

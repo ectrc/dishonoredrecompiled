@@ -3653,6 +3653,7 @@ public:
 
     DECLARE_CLASS(UParticleModuleEventReceiverSpawn,UParticleModuleEventReceiverBase,0,Engine)
 	// UObject functionality
+	virtual void PostLoad();  // DISHONORED(port): 2013 rva 0x46e1e0
 	
 	// Event Receiver functionality
 	/**

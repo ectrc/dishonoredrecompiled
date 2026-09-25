@@ -211,6 +211,7 @@ void UTexture::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEven
 	}
 }
 
+// DISHONORED(port): no own rva in 2013; inlined at the head of every subclass Serialize (UTexture2D 2013 rva 0x182440): SourceArt, SetLightingGuid below 600, identical
 void UTexture::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -223,6 +224,7 @@ void UTexture::Serialize(FArchive& Ar)
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x17baa0 (2012 rva 0x18d120), identical (CompressionNoMipmaps -> TMGS_NoMipmaps, RGBE, LOD bias, UpdateResource unless the outer is a cube map)
 void UTexture::PostLoad()
 {
 	Super::PostLoad();

@@ -468,6 +468,7 @@ ELightComponentType UDirectionalLightComponent::GetLightType() const
 	return LightType_Directional;
 }
 
+// DISHONORED(port): 2013 rva 0xef850 (2012 rva 0xefbc0), identical
 void UDominantDirectionalLightComponent::Serialize(FArchive& Ar)
 {
 	if (Ar.Ver() >= VER_DOMINANTLIGHT_NORMALSHADOWS)

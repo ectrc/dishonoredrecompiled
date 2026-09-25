@@ -72,6 +72,7 @@ ELightingBuildQuality GLightingBuildQuality = Quality_Preview;
 
 IMPLEMENT_CLASS(ULightMapTexture2D);
 
+// DISHONORED(port): 2013 rva 0x24b970 (2012 rva 0x26aa30), identical
 void FLightMap::Serialize(FArchive& Ar)
 {
 	Ar << LightGuids;
@@ -1899,6 +1900,9 @@ void FLightMap2D::AddReferencedObjects( TArray<UObject*>& ObjectArray )
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x24bab0 (2012 rva 0x26ab00, unlightmap.cpp:1640, 494 bytes in both): the reference body, then on load
+// outside the editor (or when cooking stripped) the unused coefficient textures are dropped: the simple coefficient when this
+// lightmap allows directional lightmaps, the directional ones otherwise (mobile cooks always keep only the simple one)
 void FLightMap2D::Serialize(FArchive& Ar)
 {
 	FLightMap::Serialize(Ar);
@@ -1919,17 +1923,30 @@ void FLightMap2D::Serialize(FArchive& Ar)
 		for(UINT CoefficientIndex = 0;CoefficientIndex < NUM_STORED_LIGHTMAP_COEF;CoefficientIndex++)
 		{
 			Ar << Textures[CoefficientIndex];
-
-			//@warning This used to use the FVector serialization (wrong). Now it would have used
-			//         the FVector4 serialization (correct), but this would cause backwards compability
-			//         problems.
-			//         We are now assuming that FVector and the first 12 bytes of FVector4 are binary compatible.
 			Ar << (FVector&)ScaleVectors[CoefficientIndex];
 		}
 	}
 
 	Ar << CoordinateScale << CoordinateBias;
 
+	UBOOL bStripSimple = bAllowDirectionalLightMaps;
+	UBOOL bStripDirectional = !bAllowDirectionalLightMaps;
+	if (GCookingTarget & (UE3::PLATFORM_IPhone|UE3::PLATFORM_Android))
+	{
+		bStripSimple = FALSE;
+		bStripDirectional = TRUE;
+	}
+	if (Ar.IsLoading() && (!GIsEditor || (GCookingTarget & UE3::PLATFORM_Stripped)))
+	{
+		for (INT CoefficientIndex = 0; CoefficientIndex < NUM_STORED_LIGHTMAP_COEF; CoefficientIndex++)
+		{
+			const UBOOL bSimpleCoefficient = CoefficientIndex >= SIMPLE_LIGHTMAP_COEF_INDEX;
+			if ((bStripSimple && bSimpleCoefficient) || (bStripDirectional && !bSimpleCoefficient))
+			{
+				Textures[CoefficientIndex] = NULL;
+			}
+		}
+	}
 }
 
 FLightMapInteraction FLightMap2D::GetInteraction() const
@@ -2382,6 +2399,7 @@ FLightMap1D::~FLightMap1D()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x24bca0 (2012 rva 0x26ae10), identical (cooking-only simple-sample strip mask aside)
 void FLightMap1D::Serialize(FArchive& Ar)
 {
 	FLightMap::Serialize(Ar);

@@ -156,6 +156,7 @@ void UModelComponent::ShrinkElements()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x2823c0 (2012 rva 0x2a0df0), identical
 void UModelComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -165,6 +166,7 @@ void UModelComponent::Serialize(FArchive& Ar)
 	Ar << ComponentIndex << Nodes;
 }
 
+// DISHONORED(port): 2013 rva 0x28d960 (2012 rva 0x2a7f40), identical
 void UModelComponent::PostLoad()
 {
 	Super::PostLoad();

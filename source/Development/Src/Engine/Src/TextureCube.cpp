@@ -39,6 +39,7 @@ void UTextureCube::PostEditChangeProperty(FPropertyChangedEvent& PropertyChanged
 /**
 * Called after loading
 */
+// DISHONORED(port): 2013 rva 0x17cff0 (2012 rva 0x18d480), identical
 void UTextureCube::PostLoad()
 {
 	//Dedicated servers have no texture internals

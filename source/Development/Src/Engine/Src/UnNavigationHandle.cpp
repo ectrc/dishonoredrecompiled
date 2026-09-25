@@ -5506,6 +5506,7 @@ void UNavigationHandle::AddReferencedObjects( TArray<UObject*>& ObjectArray )
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x26a380 (2012 rva 0x284b60), identical
 void UNavigationHandle::Serialize( FArchive& Ar )
 {
 	Super::Serialize(Ar);

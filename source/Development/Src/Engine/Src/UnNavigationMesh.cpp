@@ -1910,6 +1910,8 @@ UBOOL APylon::Explore_CreateGraph( AScout* Scout, FVector& SeedLocation )
 	return TRUE;
 }
 
+// DISHONORED(port): 2013 rva 0x25f780 (2012 rva 0x279ba0, unnavigationmesh.cpp:2119): the reference body plus the Arkane
+// m_LastNavMeshGeneratedImportedMeshOffset = m_ImportedMeshOffset on load
 void APylon::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -1927,6 +1929,11 @@ void APylon::Serialize(FArchive& Ar)
 		{
 			DrawScale = 1.0f;
 			DrawScale3D = FVector(1.f);
+		}
+
+		if( Ar.IsLoading() )
+		{
+			m_LastNavMeshGeneratedImportedMeshOffset = m_ImportedMeshOffset;
 		}
 	}
 }
@@ -1991,21 +1998,11 @@ void APylon::Spawned()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x286a10 (2012 rva 0x2a4c40, unnavigationmesh.cpp:2178): the reference body without the Recast generator
+// switch (bAllowRecastGenerator is reference-only, a shim) and without the invalid-pathdata warning
 void APylon::PostLoad()
 {
 	Super::PostLoad();
-
-	// Update allowed generators
-#if WITH_RECAST
-	if (GEngine->bUseRecastNavMesh)
-	{
-		bAllowRecastGenerator = TRUE;
-	}
-	else
-#endif
-	{
-		bAllowRecastGenerator = FALSE;
-	}
 
 	// Fixup poly ptrs back to the owning nav mesh
 	UNavigationMeshBase* NavMesh = GetNavMesh();
@@ -2042,40 +2039,25 @@ void APylon::PostLoad()
 	// VERIFY containing polys are valid for all verts!
 	if(NavMeshPtr != NULL)
 	{
+		for(INT VertIdx=0; VertIdx<NavMesh->Verts.Num(); ++VertIdx)
+		{
+			FMeshVertex& Vert = NavMesh->Verts(VertIdx);
 
-		#if(!CONSOLE)
-			UBOOL bNeedRebuild=FALSE;
-			for(INT VertIdx=0; VertIdx<NavMesh->Verts.Num(); ++VertIdx)
+			for (INT ContainingIdx=Vert.PolyIndices.Num()-1; ContainingIdx>=0; --ContainingIdx)
 			{
-				FMeshVertex& Vert = NavMesh->Verts(VertIdx);
-
-				for (INT ContainingIdx=Vert.PolyIndices.Num()-1; ContainingIdx>=0; --ContainingIdx)
+				VERTID TheIdx = Vert.PolyIndices(ContainingIdx);
+				if ( !(TheIdx < NavMesh->Polys.Num()))
 				{
-					VERTID TheIdx = Vert.PolyIndices(ContainingIdx);
-					if ( !(TheIdx < NavMesh->Polys.Num()))
-					{
-						bNeedRebuild=TRUE;
-						Vert.PolyIndices.Remove(ContainingIdx);
-					}
+					Vert.PolyIndices.Remove(ContainingIdx);
 				}
 			}
+		}
 
-			if(bNeedRebuild)
-			{
-				warnf(TEXT("WARNING! Map contains invalid pathdata!  Vert to poly indexes are wrong, REBUILD PATHS!"));
-			}
-		#endif
-
-		
 		if(GIsGame)
 		{
-			// delete storage data, because we don't need it any more 		
-			//debugf(TEXT("Emptying storage data for %s.%s  size was: %i "),*GetOutermost()->GetName(),*GetName(),NavMeshPtr->GetAllocatedEdgeStorageDataSize());
+			// delete storage data, because we don't need it any more
 			NavMeshPtr->FlushEdgeStorageData();
-			
 		}
- 
-		
 	}
 }
 
@@ -7159,47 +7141,20 @@ FNavMeshPolyBase* FPolyReference::operator*()
  */
 FNavMeshPolyBase* FPolyReference::GetPoly(UBOOL bEvenIfPylonDisabled/*=FALSE*/)
 {
-	APylon* RESTRICT Pylon = (APylon*)(*OwningPylon);
-	
-	if( Pylon == NULL || (!bEvenIfPylonDisabled && Pylon->bDisabled) )
+	// DISHONORED(port): 2013 rva 0x2723f0 (2012 rva 0x28cc60, identical bytes): no poly cache, no sub-mesh lookup; only a
+	// top-level id with SubPolyId == MAXWORD resolves
+	APylon* RESTRICT Pylon = (APylon*)OwningPylon.Actor;
+	if( Pylon == NULL || Pylon->NavMeshPtr == NULL || (Pylon->bDisabled && !bEvenIfPylonDisabled) )
 	{
-		CachedPoly = NULL;
 		return NULL;
 	}
 
-	// if we don't have a cace value yet, look it up
-	if( CachedPoly != NULL )
+	FNavMeshPolyBase* TLPoly = Pylon->NavMeshPtr->GetPolyFromId(GetTopLevelPolyId());
+	if( TLPoly == NULL || GetSubPolyId() != MAXWORD )
 	{
-		return CachedPoly;
+		return NULL;
 	}
-	
-	FNavMeshPolyBase* ReturnPoly = NULL;
-	if(Pylon != NULL && Pylon->NavMeshPtr != NULL && (bEvenIfPylonDisabled || !Pylon->bDisabled))
-	{
-		WORD SubPolyId = GetSubPolyId();
-		WORD TLPolyId = GetTopLevelPolyId();
-		FNavMeshPolyBase* TLPoly = Pylon->NavMeshPtr->GetPolyFromId(TLPolyId);
-		
-		if( TLPoly != NULL )
-		{
-			// if this mesh has subpoly and we have a valid subpolyid
-			if(TLPoly->NumObstaclesAffectingThisPoly > 0 && SubPolyId != MAXWORD)
-			{
-				UNavigationMeshBase* SubMesh = TLPoly->GetSubMesh();
-				if(SubMesh != NULL)
-				{
-					ReturnPoly = SubMesh->GetPolyFromId(SubPolyId);
-				}
-			}
-			else if(SubPolyId==MAXWORD)
-			{
-				ReturnPoly = TLPoly;
-			}
-		}
-	}
-
-	CachedPoly = ReturnPoly;
-	return CachedPoly;
+	return TLPoly;
 }
 
 UBOOL FPolyReference::operator==(FNavMeshPolyBase* Poly) const

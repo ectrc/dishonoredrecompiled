@@ -577,6 +577,11 @@ public:
     virtual void ClearPathStep();
     virtual void SetRootMotionInterpCurrentTime(FLOAT inTime,FLOAT DeltaTime=0,UBOOL bUpdateSkelPose=FALSE);
     void SetScalarParameterInterp(const struct FScalarParameterInterpStruct& ScalarParameterInterp);
+    // DISHONORED(port): UnPossessed is a native in the 2013 scripts (exec 0x1daac0, body 0x2a14e0); PossessedBy is the
+    // C++ virtual AController::Possess calls (0x2ab1f0)
+    virtual void PossessedBy(class AController* C);
+    virtual void UnPossessed();
+    DECLARE_FUNCTION(execUnPossessed);
     DECLARE_FUNCTION(execPickWallAdjust)
     {
         P_GET_STRUCT(FVector,WallHitNormal);
@@ -1819,6 +1824,7 @@ AUTOGENERATE_FUNCTION(AVehicle,-1,execGetMaxRiseForce);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAPawnNatives[] = 
 { 
+	MAP_NATIVE(APawn, execUnPossessed)
 	MAP_NATIVE(APawn, execSetScalarParameterInterp)
 	MAP_NATIVE(APawn, execSetRootMotionInterpCurrentTime)
 	MAP_NATIVE(APawn, execClearPathStep)

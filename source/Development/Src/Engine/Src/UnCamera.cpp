@@ -900,13 +900,14 @@ void ACameraActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChanged
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+// DISHONORED(port): 2013 rva 0x1bcfc0 (2012 rva 0x1cf2e0, uncamera.cpp:875): the old override flag is the retail bit
+// bCamOverridePostProcess (@584 mask 0x2; the reference reads bCamOverridePostProcess_DEPRECATED, a shim)
 void ACameraActor::PostLoad()
 {
-	// update to new variable setup
-	if (bCamOverridePostProcess_DEPRECATED)
+	if (bCamOverridePostProcess)
 	{
 		CamOverridePostProcessAlpha = 1.f;
-		bCamOverridePostProcess_DEPRECATED = FALSE;
+		bCamOverridePostProcess = FALSE;
 		MarkPackageDirty();
 	}
 
@@ -1320,4 +1321,26 @@ INT UCameraAnim::GetResourceSize()
 	}
 
 	return ResourceSize;
+}
+
+
+// DISHONORED(port): 2013 ACamera::execGetCameraViewPoint (0x1cfec0)
+void ACamera::execGetCameraViewPoint( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR_REF(OutCamLoc);
+	P_GET_ROTATOR_REF(OutCamRot);
+	P_FINISH;
+	OutCamLoc = CameraCache.POV.Location;
+	OutCamRot = CameraCache.POV.Rotation;
+}
+
+FLOAT ACamera::GetFOVAngle() const
+{
+	return bLockedFOV ? LockedFOV : CameraCache.POV.FOV;
+}
+
+void ACamera::execGetFOVAngle( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FLOAT*)Result = GetFOVAngle();
 }

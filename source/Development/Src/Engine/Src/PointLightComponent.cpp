@@ -467,6 +467,7 @@ void UPointLightComponent::PostEditChangeProperty(FPropertyChangedEvent& Propert
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+// DISHONORED(port): 2013 rva 0x133520 (2012 rva 0x139b30), identical (editor-only check)
 void UPointLightComponent::PostLoad()
 {
 	Super::PostLoad();

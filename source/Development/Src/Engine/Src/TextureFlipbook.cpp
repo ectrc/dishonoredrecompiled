@@ -264,6 +264,7 @@ void UTextureFlipBook::InitializeIntrinsicPropertyValues()
 /**
  * Serializes the data.
  */
+// DISHONORED(port): 2013 rva 0x182920 (2012 rva 0x188440), identical
 void UTextureFlipBook::Serialize(FArchive& Ar)
 {
 	//@todo. Remove this if it doesn't extend the base functionality
@@ -274,6 +275,7 @@ void UTextureFlipBook::Serialize(FArchive& Ar)
 /**
  * Postload initialization of movie texture. Creates decoder object and retriever first frame.
  */
+// DISHONORED(port): 2013 rva 0x17d050 (2012 rva 0x18d4b0), identical (UTexture2D::PostLoad inlined; the resource update is GEMINI_TODO in both)
 void UTextureFlipBook::PostLoad()
 {
 	Super::PostLoad();

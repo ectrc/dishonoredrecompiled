@@ -1148,6 +1148,9 @@ void FMultiSizeIndexContainer::StripData()
 * @param	Owner	UObject this structure is serialized within
 * @param	Idx		Index of current array entry being serialized
 */
+// DISHONORED(port): 2013 rva 0x354710 (2012 rva 0x373d70, unskeletalmesh.cpp:944): the index container reads 16-bit indices for
+// 801 packages (retail FRawStaticIndexBuffer), raw point indices converted from the WORD bulk data; no adjacency container
+// (reference 841) and no TRISORT_CustomLeftRight section validation (reference-only)
 void FStaticLODModel::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 {
 	Ar << Sections;
@@ -1221,49 +1224,6 @@ void FStaticLODModel::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 	{
 		Ar << VertexInfluences;
 	}
-
-	if ( Ar.Ver() >= VER_CRACK_FREE_DISPLACEMENT_SUPPORT )
-	{
-		Ar << AdjacencyMultiSizeIndexContainer;
-	}
-
-	// validate sections and reset incorrect sorting mode
-	if ( Ar.IsLoading() )
-	{
-		const INT kNumIndicesPerPrimitive = 3;
-		const INT kNumSetsOfIndices = 2;
-		for (INT IdxSection = 0, PreLastSection = Sections.Num() - 1; IdxSection < PreLastSection; ++IdxSection)
-		{
-			FSkelMeshSection & Section = Sections( IdxSection );
-			if (TRISORT_CustomLeftRight == Section.TriangleSorting)
-			{
-				DWORD IndicesInSection = Sections( IdxSection + 1 ).BaseIndex - Section.BaseIndex;
-				if (Section.NumTriangles * kNumIndicesPerPrimitive * kNumSetsOfIndices > IndicesInSection)
-				{
-					warnf( TEXT( "Section %d in LOD model %d of object %s doesn't have enough indices (%d, while %d are needed) to allow TRISORT_CustomLeftRight mode, resetting to TRISORT_None" ),
-						IdxSection, Idx, *Owner->GetName(),
-						IndicesInSection, Section.NumTriangles * kNumIndicesPerPrimitive * kNumSetsOfIndices
-						);
-					Section.TriangleSorting = TRISORT_None;
-				}
-			}
-		}
-
-		// last section is special case
-		FSkelMeshSection & Section = Sections( Sections.Num() - 1 );
-		if (TRISORT_CustomLeftRight == Section.TriangleSorting)
-		{
-			DWORD IndicesInSection = MultiSizeIndexContainer.GetIndexBuffer()->Num() - Sections( Sections.Num() - 1 ).BaseIndex;
-			if (Section.NumTriangles * kNumIndicesPerPrimitive * kNumSetsOfIndices > IndicesInSection)
-			{
-				warnf( TEXT( "Section %d in LOD model %d of object %s doesn't have enough indices (%d, while %d are needed) to allow TRISORT_CustomLeftRight mode, resetting to TRISORT_None" ),
-					Sections.Num() - 1, Idx, *Owner->GetName(),
-					IndicesInSection, Section.NumTriangles * kNumIndicesPerPrimitive * kNumSetsOfIndices
-					);
-				Section.TriangleSorting = TRISORT_None;
-			}
-		}
-	}
 }
 
 /**
@@ -1271,17 +1231,19 @@ void FStaticLODModel::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 *
 * @param Parent Parent mesh
 */
+// DISHONORED(port): 2013 rva 0x321bf0 (2012 rva 0x343c40, unskeletalmesh.cpp:1007): index buffer, GPU skin vertices unless CPU
+// skinned, influences, vertex colors; no adjacency container (reference-only)
 void FStaticLODModel::InitResources(class USkeletalMesh* Parent)
 {
 	check(Parent);
 	INC_DWORD_STAT_BY( STAT_SkeletalMeshIndexMemory, MultiSizeIndexContainer.IsIndexBufferValid() ? (MultiSizeIndexContainer.GetIndexBuffer()->Num() * MultiSizeIndexContainer.GetDataTypeSize()) : 0 );
-	
+
 	MultiSizeIndexContainer.InitResources();
 
 	if( !Parent->IsCPUSkinned() )
 	{
 		INC_DWORD_STAT_BY( STAT_SkeletalMeshVertexMemory, VertexBufferGPUSkin.GetVertexDataSize() );
-        BeginInitResource(&VertexBufferGPUSkin);
+		BeginInitResource(&VertexBufferGPUSkin);
 	}
 
 	for (INT VertexInfluenceIdx = 0; VertexInfluenceIdx<VertexInfluences.Num(); VertexInfluenceIdx++)
@@ -1290,19 +1252,11 @@ void FStaticLODModel::InitResources(class USkeletalMesh* Parent)
 	}
 
 	if( Parent->bHasVertexColors )
-	{	
+	{
 		// Only init the color buffer if the mesh has vertex colors
 		INC_DWORD_STAT_BY( STAT_SkeletalMeshVertexMemory, ColorVertexBuffer.GetVertexDataSize() );
 		BeginInitResource(&ColorVertexBuffer);
 	}
-
-#if WITH_D3D11_TESSELLATION
-	if( GRHIShaderPlatform == SP_PCD3D_SM5 ) 
-	{
-		AdjacencyMultiSizeIndexContainer.InitResources();
-		INC_DWORD_STAT_BY( STAT_SkeletalMeshIndexMemory, AdjacencyMultiSizeIndexContainer.IsIndexBufferValid() ? (AdjacencyMultiSizeIndexContainer.GetIndexBuffer()->Num() * AdjacencyMultiSizeIndexContainer.GetDataTypeSize()) : 0 );
-	}
-#endif
 }
 
 /**
@@ -1800,6 +1754,7 @@ void FSkelMeshChunk::CalcMaxBoneInfluences()
 /**
 * Initialize the mesh's render resources.
 */
+// DISHONORED(port): 2013 rva 0x321ca0 (2012 rva 0x343cf0), identical
 void USkeletalMesh::InitResources()
 {
 	// initialize resources for each lod
@@ -2244,67 +2199,13 @@ void USkeletalMesh::Serialize( FArchive& Ar )
 /** 
  * Postload 
  */
+// DISHONORED(port): 2013 rva 0x353140 (2012 rva 0x372640, unskeletalmesh.cpp:1792): LODInfo and TriangleSortSettings sizing, the
+// OLD_TriangleSorting fixup below 767 (retail threshold; reference 768), half-float UV conversion, InitResources, inverse
+// reference matrices, name map, runtime UID, then the Arkane UpdateOriginTransform. No Simplygon / optimization-setting /
+// APEX clothing paths and no UpdateTriangleSortingForAltVertexInfluences (reference-only)
 void USkeletalMesh::PostLoad()
 {
 	Super::PostLoad();
-
-#if WITH_EDITOR && !WITH_SIMPLYGON
-	if ( bHasBeenSimplified && SourceData.IsInitialized() )
-	{
-		// All LODs need to be removed as they may have been generated by Simplygon.
-		for ( INT LODIndex = LODModels.Num() - 1; LODIndex >= 0; --LODIndex )
-		{
-			if ( LODIndex > 0 && LODInfo.IsValidIndex( LODIndex ) && LODInfo( LODIndex ).bHasBeenSimplified == TRUE )
-			{
-				LODModels.Remove( LODIndex );
-				LODInfo.Remove( LODIndex );
-			}
-		}
-
-		if ( LODModels.Num() && LODInfo.Num() && LODInfo(0).bHasBeenSimplified == TRUE )
-		{
-			// Rebuild the base LOD from the source model.
-			FStaticLODModel* SrcModel = SourceData.GetModel();
-
-			// Create a new model.
-			FStaticLODModel** LODModelsArray = LODModels.GetTypedData();
-			delete LODModelsArray[0];
-			FStaticLODModel* NewModel = new FStaticLODModel();
-			LODModelsArray[0] = NewModel;
-
-			// Bulk data arrays need to be locked before a copy can be made.
-			SrcModel->RawPointIndices.Lock( LOCK_READ_ONLY );
-			SrcModel->LegacyRawPointIndices.Lock( LOCK_READ_ONLY );
-			*NewModel = *SrcModel;
-			SrcModel->RawPointIndices.Unlock();
-			SrcModel->LegacyRawPointIndices.Unlock();
-
-			// The index buffer needs to be rebuilt on copy.
-			FMultiSizeIndexContainerData IndexBufferData;
-			SrcModel->MultiSizeIndexContainer.GetIndexBufferData( IndexBufferData );
-			NewModel->MultiSizeIndexContainer.RebuildIndexBuffer( IndexBufferData );
-
-			// Clear the simplified flag.
-			LODInfo(0).bHasBeenSimplified = FALSE;
-
-			// Required bones need to be recalculated.
-			NewModel->RequiredBones.Empty();
-			CalculateRequiredBones( 0 );
-
-			// Build vertex buffers.
-			NewModel->BuildVertexBuffers( this, !LODInfo(0).bDisableCompression );
-
-			// Update per-poly kDOPs.
-			UpdatePerPolyKDOPs();
-		}
-
-		// Clear optimization settings and the simplified flag.
-		bHasBeenSimplified = FALSE;
-		OptimizationSettings.Empty();
-
-		warnf( LocalizeSecure( LocalizeUnrealEd( TEXT("MeshSimp_LicenseRequired_F") ), *GetPathName() ) );
-	}
-#endif // #if WITH_EDITOR && !WITH_SIMPLYGON
 
 	// If LODInfo is missing - create array of correct size.
 	if( LODInfo.Num() != LODModels.Num() )
@@ -2342,15 +2243,7 @@ void USkeletalMesh::PostLoad()
 		}
 	}
 
-	// Make sure the alternate vertex influence weight sets are updated as there are some pieces
-	// of data for them that are not serialized and need to be initialized here, especially in
-	// the case of custom left/right triangle sorting
-	for( INT LodIndex = 0; LodIndex < LODInfo.Num(); LodIndex++ )
-	{
-		LODModels(LodIndex).UpdateTriangleSortingForAltVertexInfluences();
-	}
-
-	if( GetLinker() && (GetLinker()->Ver() < VER_ADDED_SKELETAL_MESH_SORTING_LEFTRIGHT_BONE) )
+	if( GetLinker() && (GetLinker()->Ver() < 767) )
 	{
 		for(INT LodIndex=0; LodIndex<LODInfo.Num(); LodIndex++)
 		{
@@ -2358,14 +2251,11 @@ void USkeletalMesh::PostLoad()
 			FStaticLODModel& ThisLODModel = LODModels(LodIndex);
 
 			// Fix up any mismatch in the TriangleSorting between LODInfo and Section
-			// There was a bug in the mesh reimport code that failed to update the LODInfo or 
-			// initialize it
 			for ( INT SectionIndex = 0 ; SectionIndex < ThisLODModel.Sections.Num() ; ++SectionIndex )
 			{
-				if( SectionIndex < ThisLODInfo.OLD_TriangleSorting.Num() && 
+				if( SectionIndex < ThisLODInfo.OLD_TriangleSorting.Num() &&
 					ThisLODInfo.OLD_TriangleSorting(SectionIndex) != ThisLODModel.Sections(SectionIndex).TriangleSorting )
 				{
-					debugf(NAME_Warning, TEXT("Fixing up incorrect TriangleSorting setting for %s LOD %d section %d (%d vs %d)"), *GetPathName(), LodIndex, SectionIndex, ThisLODInfo.OLD_TriangleSorting(SectionIndex), ThisLODModel.Sections(SectionIndex).TriangleSorting);
 					ThisLODModel.Sections(SectionIndex).TriangleSorting = TRISORT_None;
 					ThisLODInfo.OLD_TriangleSorting(SectionIndex) = TRISORT_None;
 				}
@@ -2382,7 +2272,7 @@ void USkeletalMesh::PostLoad()
 		}
 	}
 
-	// Revert to using 32 bit Float UVs on hardware that doesn't support rendering with 16 bit Float UVs 
+	// Revert to using 32 bit Float UVs on hardware that doesn't support rendering with 16 bit Float UVs
 	if( !GIsCooking && !bUseFullPrecisionUVs && !GVertexElementTypeSupport.IsSupported(VET_Half2) )
 	{
 		bUseFullPrecisionUVs=TRUE;
@@ -2395,40 +2285,13 @@ void USkeletalMesh::PostLoad()
 			switch(NumTexCoords)
 			{
 			case 1: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<1>(); break;
-			case 2: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<2>(); break; 
-			case 3: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<3>(); break; 
-			case 4: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<4>(); break; 
+			case 2: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<2>(); break;
+			case 3: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<3>(); break;
+			case 4: LODModel.VertexBufferGPUSkin.ConvertToFullPrecisionUVs<4>(); break;
 			}
 		}
 	}
 
-	//Fix up optimization setting normal mode which has now been deprecated.
-	if( GetLinkerVersion() < VER_ADDED_EXTRA_MESH_OPTIMIZATION_SETTINGS )
-	{
-		for( INT SettingsIndex = 0; SettingsIndex < OptimizationSettings.Num(); ++SettingsIndex)
-		{
-			FSkeletalMeshOptimizationSettings& Settings = OptimizationSettings(SettingsIndex);
-			BYTE NormalMode = Settings.NormalMode_DEPRECATED;
-
-			const FLOAT NormalThresholdTable[] =
-			{
-				60.0f, // Recompute
-				80.0f, // Recompute (Smooth)
-				45.0f  // Recompute (Hard)
-			};
-
-			Settings.bRecalcNormals = TRUE;
-			Settings.NormalsThreshold = NormalThresholdTable[NormalMode];
-			
-			//Set defaults
-			Settings.WeldingThreshold = THRESH_POINTS_ARE_SAME * 4.0f;
-			Settings.ReductionMethod = SMOT_MaxDeviation;
-			Settings.NumOfTrianglesPercentage = 1.0f;
-			Settings.BoneReductionRatio = 1.0f;
-			Settings.MaxBonesPerVertex = 4;
-		}
-	}
-	
 	// initialize rendering resources
 	if (!GIsUCC)
 	{
@@ -2443,14 +2306,17 @@ void USkeletalMesh::PostLoad()
 		InitNameIndexMap();
 	}
 
-	// Create run time UID	
+	// Create run time UID
 	SkelMeshRUID = appCreateRuntimeUID();
-#if WITH_APEX
-	if(ClothingAssets.Num() > 0 && ClothingLodMap.Num() == 0)
-	{
-		InitClothingLod();
-	}
-#endif
+
+	UpdateOriginTransform();
+}
+
+// DISHONORED(port): 2012 rva 0x331560 (unskeletalmesh.cpp:1932), 2013 rva 0x30ec00, 436 bytes in both: translation by Origin
+// followed by the RotOrigin rotation
+void USkeletalMesh::UpdateOriginTransform()
+{
+	m_OriginTransform = FTranslationMatrix(Origin) * FRotationTranslationMatrix(RotOrigin, FVector(0.f,0.f,0.f));
 }
 
 /**
@@ -2846,6 +2712,7 @@ UBOOL USkeletalMeshSocket::GetSocketPositionWithOffset(FVector& OutPosition, cla
 -----------------------------------------------------------------------------*/
 
 //@compatibility
+// DISHONORED(port): 2013 rva 0x30ede0 (2012 rva 0x331740), identical (collision fixup below 591)
 void ASkeletalMeshActor::PostLoad()
 {
 	if (GetLinker() && GetLinker()->Ver() < VER_REMOVED_DEFAULT_SKELETALMESHACTOR_COLLISION)
@@ -4739,27 +4606,31 @@ void USkeletalMeshComponent::UpdateMorphMaterialUsageOnProxy()
 
 // UObject interface
 // Override to have counting working better
+// DISHONORED(port): 2013 rva 0x314750 (2012 rva 0x336f30, unskeletalmesh.cpp:4336): memory counting of the native arrays
+// (retail has no morph-target map or cloth arrays), then the Arkane licensee fixup: packages below licensee 28 clear
+// bEnableLineCheckWithBounds (2013 mask 0x2000000 @760)
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-		 	
+
 	if(Ar.IsCountingMemory())
- 	{
-		// add all native variables - mostly bigger chunks 
- 		SpaceBases.CountBytes(Ar);
- 		LocalAtoms.CountBytes(Ar);
+	{
+		// add all native variables - mostly bigger chunks
+		SpaceBases.CountBytes(Ar);
+		LocalAtoms.CountBytes(Ar);
 		CachedLocalAtoms.CountBytes(Ar);
 		CachedSpaceBases.CountBytes(Ar);
- 		RequiredBones.CountBytes(Ar);
- 		ComposeOrderedRequiredBones.CountBytes(Ar);
- 		ParentBoneMap.CountBytes(Ar);
- 		TemporarySavedAnimSets.CountBytes(Ar);
- 		MorphTargetIndexMap.CountBytes(Ar);
- 		InstanceVertexWeightBones.CountBytes(Ar);
- 		ClothMeshWeldedPosData.CountBytes(Ar);
- 		ClothMeshWeldedNormalData.CountBytes(Ar);
- 		ClothMeshWeldedIndexData.CountBytes(Ar);
- 	}
+		RequiredBones.CountBytes(Ar);
+		ComposeOrderedRequiredBones.CountBytes(Ar);
+		ParentBoneMap.CountBytes(Ar);
+		TemporarySavedAnimSets.CountBytes(Ar);
+		InstanceVertexWeightBones.CountBytes(Ar);
+	}
+
+	if (Ar.LicenseeVer() < VER_DIS_LICENSEE_SKELETALMESHCOMPONENT)
+	{
+		bEnableLineCheckWithBounds = FALSE;
+	}
 }
 
 /**

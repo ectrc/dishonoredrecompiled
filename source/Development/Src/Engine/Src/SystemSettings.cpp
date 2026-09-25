@@ -476,9 +476,9 @@ void FSystemSettings::Dump( FOutputDevice& Ar, ESystemSettingIntent SettingInten
  * Constructor, initializing all member variables.
  */
 FSystemSettings::FSystemSettings( void ) :
-	bInit( FALSE ),
 	bIsEditor( FALSE )
 {
+	bInit = FALSE;
 	NumberOfSystemSettings = ARRAY_COUNT( SystemSettings );
 }
 

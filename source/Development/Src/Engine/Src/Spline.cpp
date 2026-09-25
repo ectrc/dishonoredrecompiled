@@ -265,6 +265,7 @@ FVector USplineComponent::GetTangentAtDistanceAlongSpline(FLOAT Distance) const
 //////////////////////////////////////////////////////////////////////////
 // SPLINE ACTOR
 
+// DISHONORED(port): 2013 rva 0x150470 (2012 rva 0x159820), identical (retail logs nothing when it drops a bad back-link)
 void ASplineActor::PostLoad()
 {
 	for(INT i=0; i<Connections.Num(); i++)

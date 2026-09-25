@@ -1632,6 +1632,7 @@ class UBrushComponent : public UPrimitiveComponent
 	*	This flag overrides that behaviour
 	*/
 	BITFIELD	bBlockComplexCollisionTrace:1;
+	BITFIELD	m_bTwoSided:1;  // DISHONORED(layout): retail SDK @532 mask 0x2 (2012 PDB bit 1)
 
 	// UObject interface.
 	virtual void Serialize( FArchive& Ar );
@@ -1767,9 +1768,10 @@ class UArrowComponent : public UPrimitiveComponent
 
 	FColor			ArrowColor;
 	FLOAT			ArrowSize;
-	UBOOL			bTreatAsASprite;
+	// DISHONORED(layout): retail SDK bTreatAsASprite @460 mask 0x1, sizeof 464 (2012 PDB 464); SpriteCategoryName is reference-only
+	BITFIELD		bTreatAsASprite:1;
 #if WITH_EDITORONLY_DATA
-	FName			SpriteCategoryName;
+	DISHONORED_SHIM_STATIC FName	SpriteCategoryName;
 #endif
 
 	// UPrimitiveComponent interface.
@@ -1795,7 +1797,8 @@ class UDrawSphereComponent : public UPrimitiveComponent
 	INT					SphereSides;
 	BITFIELD			bDrawWireSphere:1;
 	BITFIELD			bDrawLitSphere:1;
-	BITFIELD			bDrawOnlyIfSelected:1;
+	// DISHONORED(layout): reference-only bit (retail SDK: the DWORD has the two draw bits only); storage-less shim, reads FALSE
+	DISHONORED_SHIM_STATIC BITFIELD bDrawOnlyIfSelected;
 
 	// UPrimitiveComponent interface.
 	/**
@@ -1830,7 +1833,8 @@ class UDrawCylinderComponent : public UPrimitiveComponent
 	INT							CylinderSides;
 	BITFIELD					bDrawWireCylinder:1;
 	BITFIELD					bDrawLitCylinder:1;
-	BITFIELD					bDrawOnlyIfSelected:1;
+	// DISHONORED(layout): reference-only bit (retail SDK: the DWORD has the two draw bits only); storage-less shim, reads FALSE
+	DISHONORED_SHIM_STATIC BITFIELD bDrawOnlyIfSelected;
 
 	// UPrimitiveComponent interface.
 	/**
@@ -1861,7 +1865,8 @@ class UDrawBoxComponent : public UPrimitiveComponent
 	FVector				BoxExtent;
 	BITFIELD			bDrawWireBox:1;
 	BITFIELD			bDrawLitBox:1;
-	BITFIELD			bDrawOnlyIfSelected:1;
+	// DISHONORED(layout): reference-only bit (retail SDK: the DWORD has the two draw bits only); storage-less shim, reads FALSE
+	DISHONORED_SHIM_STATIC BITFIELD bDrawOnlyIfSelected;
 
 	// UPrimitiveComponent interface.
 	/**
@@ -1893,7 +1898,8 @@ class UDrawCapsuleComponent : public UPrimitiveComponent
 	float				CapsuleRadius;
 	BITFIELD			bDrawWireCapsule:1;
 	BITFIELD			bDrawLitCapsule:1;
-	BITFIELD			bDrawOnlyIfSelected:1;
+	// DISHONORED(layout): reference-only bit (retail SDK: the DWORD has the two draw bits only); storage-less shim, reads FALSE
+	DISHONORED_SHIM_STATIC BITFIELD bDrawOnlyIfSelected;
 
 	// UPrimitiveComponent interface.
 	/**

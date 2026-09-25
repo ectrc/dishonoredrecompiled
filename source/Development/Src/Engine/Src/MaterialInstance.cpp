@@ -1461,78 +1461,41 @@ void UMaterialInstance::PreSave()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// DISHONORED(port): 2013 rva 0x11cbc0 (2012 rva 0x11dcc0): one StaticPermutationResources[0]/StaticParameters[0], no quality
+// mask (reference 858), legacy SM2 resource below 711, ParentLightingGuid below 600; no mobile texture parameter copy
+// (reference 855, the Mobile* members are shims)
 void UMaterialInstance::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	//only serialize the static permutation resource if one exists
 	if (bHasStaticPermutationResource)
 	{
-		// explicitly record which qualities were saved out, so we know what to load in
-		// (default to just HIGH detail for old packages)
-		UINT QualityMask = 0x1;
-		if (Ar.Ver() >= VER_ADDED_MATERIAL_QUALITY_LEVEL)
+		if (Ar.IsSaving())
 		{
-			// figure out what we are going to save
-			if (Ar.IsSaving())
-			{
-				for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
-				{
-					if (StaticPermutationResources[QualityIndex])
-					{
-						QualityMask |= (1 << QualityIndex);
-					}
-				}
-			}
-
-			// serialize the mask
-			Ar << QualityMask;
+			StaticPermutationResources[MSQ_HIGH]->RemoveExpressions();
 		}
-
-		for (INT QualityIndex = 0; QualityIndex < MSQ_MAX; QualityIndex++)
-		{
-			if (Ar.IsSaving() && StaticPermutationResources[QualityIndex])
-			{
-				//remove external private dependencies on the base material
-				//@todo dw - come up with a better solution
-				StaticPermutationResources[QualityIndex]->RemoveExpressions();
-			}
-
-			// don't serialize unwanted expressions
-			if ((QualityMask & (1<<QualityIndex)) == 0)
-			{
-				continue;
-			}
-
-
-			if (Ar.IsLoading())
-			{
-				StaticPermutationResources[QualityIndex] = AllocateResource();
-			}
-
-			StaticPermutationResources[QualityIndex]->Serialize(Ar);
-			if (Ar.Ver() < VER_UNIFORM_EXPRESSIONS_IN_SHADER_CACHE)
-			{
-				// If we are loading a material resource saved before texture references were managed by the material resource,
-				// Pass the legacy texture references to the material resource.
-				StaticPermutationResources[QualityIndex]->AddLegacyTextures(ReferencedTextures_DEPRECATED);
-			}
-
-			StaticParameters[QualityIndex]->Serialize(Ar);
-		}
-	}
-
-	if (bHasStaticPermutationResource && Ar.Ver() < VER_REMOVED_SHADER_MODEL_2)
-	{
-		FMaterialResource* LegacySM2Resource = NULL;
 		if (Ar.IsLoading())
 		{
-			LegacySM2Resource = AllocateResource();
+			StaticPermutationResources[MSQ_HIGH] = AllocateResource();
 		}
+		StaticPermutationResources[MSQ_HIGH]->Serialize(Ar);
+		if (Ar.Ver() < VER_UNIFORM_EXPRESSIONS_IN_SHADER_CACHE)
+		{
+			StaticPermutationResources[MSQ_HIGH]->AddLegacyTextures(ReferencedTextures_DEPRECATED);
+		}
+		StaticParameters[MSQ_HIGH]->Serialize(Ar);
 
-		LegacySM2Resource->Serialize(Ar);
-		FStaticParameterSet LegacySM2Paramters;
-		LegacySM2Paramters.Serialize(Ar);
+		if (Ar.Ver() < VER_REMOVED_SHADER_MODEL_2)
+		{
+			FMaterialResource* LegacySM2Resource = NULL;
+			if (Ar.IsLoading())
+			{
+				LegacySM2Resource = AllocateResource();
+			}
+			LegacySM2Resource->Serialize(Ar);
+			FStaticParameterSet LegacySM2Paramters;
+			LegacySM2Paramters.Serialize(Ar);
+		}
 	}
 
 	if (Ar.Ver() < VER_UNIFORM_EXPRESSIONS_IN_SHADER_CACHE)
@@ -1545,43 +1508,55 @@ void UMaterialInstance::Serialize(FArchive& Ar)
 	{
 		ParentLightingGuid = Parent ? Parent->GetLightingGuid() : FGuid(0,0,0,0);
 	}
-
-	if (Ar.IsLoading())
-	{
-		if ((GIsEditor || GIsCooking || GUsingMobileRHI) && (Ar.Ver() < VER_MOBILE_MATERIAL_PARAMETER_RENAME))
-		{
-			// We need to copy the overridden mobile texture stuff into the parameters...
-			if (MobileBaseTexture != NULL)
-			{
-				SetTextureParameterValue(NAME_MobileBaseTexture, MobileBaseTexture);
-			}
-			if (MobileEmissiveTexture != NULL)
-			{
-				SetTextureParameterValue(NAME_MobileEmissiveTexture, MobileEmissiveTexture);
-			}
-			if (MobileDetailTexture != NULL)
-			{
-				SetTextureParameterValue(NAME_MobileDetailTexture, MobileDetailTexture);
-			}
-			if (MobileEnvironmentTexture != NULL)
-			{
-				SetTextureParameterValue(NAME_MobileEnvironmentTexture, MobileEnvironmentTexture);
-			}
-			if (MobileNormalTexture != NULL)
-			{
-				SetTextureParameterValue(NAME_MobileNormalTexture, MobileNormalTexture);
-			}
-			if (MobileMaskTexture != NULL)
-			{
-				SetTextureParameterValue(NAME_MobileMaskTexture, MobileMaskTexture);
-			}
-		}
-	}
 }
 
+// DISHONORED(port): 2013 rva 0x123580 (2012 rva 0x12b2b0, materialinstance.cpp:1267): the Arkane bHasBloomPart / bHasDistortion
+// flags from the base material's BloomColor / Distortion inputs (a static switch contributes this instance's value), then the
+// reference body without bHasQualitySwitch (reference-only, a shim)
 void UMaterialInstance::PostLoad()
 {
 	Super::PostLoad();
+
+	bHasBloomPart = FALSE;
+	UMaterial* BaseMaterial = GetMaterial();
+	if (BaseMaterial && BaseMaterial->BloomColor.Expression)
+	{
+		UMaterialExpressionStaticSwitchParameter* Switch = Cast<UMaterialExpressionStaticSwitchParameter>(BaseMaterial->BloomColor.Expression);
+		if (Switch)
+		{
+			UBOOL bValue = FALSE;
+			FGuid ExpressionGuid;
+			if (GetStaticSwitchParameterValue(Switch->ParameterName, bValue, ExpressionGuid))
+			{
+				bHasBloomPart = bValue;
+			}
+		}
+		else
+		{
+			bHasBloomPart = TRUE;
+		}
+	}
+
+	bHasDistortion = FALSE;
+	BaseMaterial = GetMaterial();
+	if (BaseMaterial)
+	{
+		bHasDistortion = BaseMaterial->bUsesDistortion;
+		if (bHasDistortion && BaseMaterial->Distortion.Expression)
+		{
+			UMaterialExpressionStaticSwitchParameter* Switch = Cast<UMaterialExpressionStaticSwitchParameter>(BaseMaterial->Distortion.Expression);
+			if (Switch)
+			{
+				UBOOL bValue = FALSE;
+				FGuid ExpressionGuid;
+				if (GetStaticSwitchParameterValue(Switch->ParameterName, bValue, ExpressionGuid))
+				{
+					bHasDistortion = bValue;
+				}
+			}
+		}
+		bHasDistortion = !BaseMaterial->bUseOneLayerDistortion && bHasDistortion && IsTranslucentBlendMode((EBlendMode)BaseMaterial->BlendMode);
+	}
 
 	//fixup the instance if the parent doesn't exist anymore
 	if (bHasStaticPermutationResource && !Parent)
@@ -1589,16 +1564,10 @@ void UMaterialInstance::PostLoad()
 		bHasStaticPermutationResource = FALSE;
 	}
 
-	if (!IsTemplate())
-	{
-		// cache the quality switch before initializing anything
-		bHasQualitySwitch = GetMaterial() ? GetMaterial()->bHasQualitySwitch : FALSE;
-	}
-
 	// Make sure static parameters are up to date and shaders are cached for the current platform
 	InitStaticPermutation();
 
-	if (GIsEditor && GEngine != NULL && !IsTemplate())
+	if (GIsEditor && !IsTemplate())
 	{
 		// Ensure that the ReferencedTextureGuids array is up to date.
 		UpdateLightmassTextureTracking();
@@ -1611,9 +1580,6 @@ void UMaterialInstance::PostLoad()
 			Resources[i]->UpdateDistanceFieldPenumbraScale(GetDistanceFieldPenumbraScale());
 		}
 	}
-
-	// DISHONORED(retail): no quality-level tossing in UMaterialInstance::PostLoad (single StaticPermutationResources[0]; no
-	// bKeepAllMaterialQualityLevelsLoaded string in the 2012 or 2013 exe)
 }
 
 void UMaterialInstance::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

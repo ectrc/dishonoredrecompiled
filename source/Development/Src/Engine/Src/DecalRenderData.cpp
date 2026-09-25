@@ -563,11 +563,13 @@ void UDecalMaterial::PreSave()
 	Super::PreSave();
 }
 
+// DISHONORED(port): 2013 rva 0xda220 (2012 rva 0xd7c10), identical
 void UDecalMaterial::PostLoad()
 {
 	Super::PostLoad();
 }
 
+// DISHONORED(port): 2013 rva 0xda230 (2012 rva 0xd7c20), identical (only MaterialResources[0] exists)
 void UDecalMaterial::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

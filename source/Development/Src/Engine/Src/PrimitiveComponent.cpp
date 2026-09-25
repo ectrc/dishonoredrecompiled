@@ -1185,12 +1185,15 @@ void UPrimitiveComponent::CheckForErrors()
 //
 //	UPrimitiveComponent::PostLoad
 //
+// DISHONORED(port): 2013 rva 0x130c70 (2012 rva 0x134dc0, primitivecomponent.cpp:1277): the reference fixups with the lighting channel
+// check inlined on bUsePrecomputedShadows, then the Arkane conversion of the legacy TranslucencySortPriority (INT) into
+// DisTranslucencySortPriority (0 -> DTSP_Water, <0 -> DTSP_BelowWater, >0 -> DTSP_AboveWater; -42 marks it converted)
 void UPrimitiveComponent::PostLoad()
 {
 	Super::PostLoad();
 
 	if (bUsePrecomputedShadows
-		&& LightEnvironment 
+		&& LightEnvironment
 		&& LightEnvironment->IsEnabled())
 	{
 		// Disable an associated light environment when using precomputed shadows
@@ -1207,22 +1210,39 @@ void UPrimitiveComponent::PostLoad()
 		}
 	}
 
-	// Call the update ValidateLightingChannels on previously saved PrimitiveComponents.
-	ValidateLightingChannels();
+	// Don't allow dynamic objects to be in the static groups so we can discard entirely static lights.
+	if( !bUsePrecomputedShadows )
+	{
+		LightingChannels.BSP = FALSE;
+		LightingChannels.Static = FALSE;
+		LightingChannels.CompositeDynamic = FALSE;
+	}
 
 	// Make sure cached cull distance is up-to-date.
 	if( LDMaxDrawDistance > 0 )
 	{
-		// Directly use LD cull distance if cached one is not set.
 		if( CachedMaxDrawDistance == 0 )
 		{
 			CachedMaxDrawDistance = LDMaxDrawDistance;
 		}
-		// Use min of both if neither is 0. Need to check as 0 has special meaning.
 		else
 		{
 			CachedMaxDrawDistance = Min( LDMaxDrawDistance, CachedMaxDrawDistance );
 		}
+	}
+
+	if( TranslucencySortPriority != -42 )
+	{
+		if( TranslucencySortPriority == 0 )
+		{
+			DisTranslucencySortPriority = DTSP_Water;
+		}
+		else
+		{
+			DisTranslucencySortPriority = TranslucencySortPriority < 0 ? DTSP_BelowWater : DTSP_AboveWater;
+		}
+		TranslucencySortPriority = -42;
+		MarkPackageDirty();
 	}
 }
 

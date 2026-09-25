@@ -1256,16 +1256,16 @@ FStaticMeshRenderData::FStaticMeshRenderData()
  * @param	Owner	UObject this structure is serialized within
  * @param	Idx		Index of current array entry being serialized
  */
+// DISHONORED(port): 2013 rva 0x376220 (2012 rva 0x3979e0): raw triangles, elements, position/tangent/color buffers, NumVertices,
+// the half-float UV conversion when the device lacks VET_Half2 (retail does it here, not in UStaticMesh::PostLoad), index and
+// wireframe buffers, legacy shadow data below 686, legacy shadow vertex trim. No adjacency buffer (reference 841), no broken
+// color buffer probe (842), CPU access no longer read from bStripkDOPForConsole (a shim; it was always FALSE, so TRUE here)
 void FStaticMeshRenderData::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 {
-	UStaticMesh* StaticMesh = Cast<UStaticMesh>( Owner );
-	if( StaticMesh )
-	{
-		bNeedsCPUAccess = !StaticMesh->bStripkDOPForConsole;
-	}
+	bNeedsCPUAccess = TRUE;
 
 	RawTriangles.Serialize( Ar, Owner );
-	
+
 	Ar	<< Elements;
 	PositionVertexBuffer.Serialize( Ar, bNeedsCPUAccess );
 	if( Ar.Ver() < VER_MESH_PAINT_SYSTEM_ENUM )
@@ -1285,43 +1285,7 @@ void FStaticMeshRenderData::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 	else
 	{
 		VertexBuffer.Serialize( Ar, bNeedsCPUAccess );
-
-		// Some color buffers have been incorrectly serialized with non-zero vertex counts
-		// and no data causing serialization crashes. Fix up these broken assets.
-		if ( Ar.Ver() < VER_FIX_BROKEN_COLOR_VERTEX_BUFFERS && Ar.IsLoading() )
-		{
-			// Save the position in the archive and see what the stride and count of the color buffer will be.
-			INT ArPos = Ar.Tell();
-			INT ExpectedVertCount = VertexBuffer.GetNumVertices();
-			INT ColorBufferVertCount = 0;
-			INT ColorBufferStride = 0;
-			Ar << ColorBufferStride << ColorBufferVertCount;
-
-			// Speculatively read the stride of the bulk vertex color data.
-			INT ColorBulkDataStride = 0;
-			if ( Ar.Ver() >= VER_REMOVED_SHADOW_VOLUMES )
-			{
-				INT ArPos2 = Ar.Tell();
-				Ar << ColorBulkDataStride;
-				Ar.Seek( ArPos2 );
-			}
-
-			if ( ColorBufferVertCount == ExpectedVertCount || ( ColorBufferVertCount > 0 && ColorBulkDataStride == ColorBufferStride ) )
-			{
-				// The count is what we expect it to be, or at least it looks like the data has been serialized.
-				// There is one corner case:
-				//   ExpectedVertCount == 4 && ColorBufferVertCount > 0 && ColorBufferVertCount != 4 && ColorBufferStride == 4 && this->NumVertices == 4
-				// In this case, it could be a broken buffer but we can't tell for sure so do the conservative thing: try serializing it.
-				Ar.Seek( ArPos );
-				ColorVertexBuffer.Serialize( Ar, bNeedsCPUAccess );
-			}
-		}
-		else
-		{
-		// NOTE: This color vertex buffer may actually be empty (zero vertices) for static meshes which
-		//		 don't make use of vertex colors
 		ColorVertexBuffer.Serialize( Ar, bNeedsCPUAccess );
-	}
 	}
 
 	if (Ar.Ver() < VER_REMOVED_SHADOW_VOLUMES)
@@ -1329,8 +1293,21 @@ void FStaticMeshRenderData::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 		FLegacyExtrusionVertexBuffer ShadowExtrusionVertexBuffer;
 		Ar << ShadowExtrusionVertexBuffer;
 	}
-	
+
 	Ar	<< NumVertices;
+
+	// Revert to using 32 bit Float UVs on hardware that doesn't support rendering with 16 bit Float UVs
+	if( !GIsCooking && Ar.IsLoading() && !GVertexElementTypeSupport.IsSupported(VET_Half2) )
+	{
+		switch(VertexBuffer.GetNumTexCoords())
+		{
+		case 1:	VertexBuffer.ConvertToFullPrecisionUVs<1>(); break;
+		case 2:	VertexBuffer.ConvertToFullPrecisionUVs<2>(); break;
+		case 3:	VertexBuffer.ConvertToFullPrecisionUVs<3>(); break;
+		case 4:	VertexBuffer.ConvertToFullPrecisionUVs<4>(); break;
+		default: appErrorf(TEXT("Invalid number of texture coordinates"));
+		}
+	}
 
 	IndexBuffer.Serialize( Ar, bNeedsCPUAccess );
 	Ar << WireframeIndexBuffer;
@@ -1340,11 +1317,6 @@ void FStaticMeshRenderData::Serialize( FArchive& Ar, UObject* Owner, INT Idx )
 		LegacyEdges.BulkSerialize( Ar );
 		TArray<BYTE> LegacyShadowTriangleDoubleSided;
 		Ar << LegacyShadowTriangleDoubleSided;
-	}
-
-	if (Ar.Ver() >= VER_CRACK_FREE_DISPLACEMENT_SUPPORT)
-	{
-		AdjacencyIndexBuffer.Serialize( Ar, bNeedsCPUAccess );
 	}
 
 	if (Ar.IsLoading())
@@ -1495,23 +1467,17 @@ void FStaticMeshRenderData::SetupVertexFactory( FLocalVertexFactory& InOutVertex
  * Initializes the LOD's render resources.
  * @param Parent Parent mesh
  */
+// DISHONORED(port): 2013 rva 0x35e8b0 (2012 rva 0x380f60): instancing setup only when the index buffer is non-empty (no
+// preallocated instance count: ConsolePreallocateInstanceCount is a shim, it was always 0), no adjacency buffer (reference-only)
 void FStaticMeshRenderData::InitResources(UStaticMesh* Parent)
 {
-	if (Parent->bUsedForInstancing && 
+	if (Parent->bUsedForInstancing &&
+		IndexBuffer.Indices.Num() &&
 		VertexBuffer.GetNumVertices() &&
-		Elements.Num() == 1 // You really can't use hardware instancing on the consoles with multiple elements because they share the same index buffer. 
-		// The mesh emitter doesn't bother to enforce this; it will just render wrong, even on the PC.
+		Elements.Num() == 1 // You really can't use hardware instancing on the consoles with multiple elements because they share the same index buffer.
 		)
 	{
-		if (IndexBuffer.Indices.Num())
-		{
-			IndexBuffer.SetupForInstancing(VertexBuffer.GetNumVertices(), Parent->ConsolePreallocateInstanceCount);
-		}
-
-		if (AdjacencyIndexBuffer.Indices.Num())
-		{
-			AdjacencyIndexBuffer.SetupForInstancing(VertexBuffer.GetNumVertices(), Parent->ConsolePreallocateInstanceCount);
-		}
+		IndexBuffer.SetupForInstancing(VertexBuffer.GetNumVertices(), 0);
 	}
 
 	// Initialize the vertex and index buffers.
@@ -1519,7 +1485,7 @@ void FStaticMeshRenderData::InitResources(UStaticMesh* Parent)
 	if( WireframeIndexBuffer.Indices.Num() )
 	{
 		BeginInitResource(&WireframeIndexBuffer);
-	}	
+	}
 	BeginInitResource(&VertexBuffer);
 	BeginInitResource(&PositionVertexBuffer);
 	if( ColorVertexBuffer.GetNumVertices() > 0 )
@@ -1527,36 +1493,18 @@ void FStaticMeshRenderData::InitResources(UStaticMesh* Parent)
 		BeginInitResource(&ColorVertexBuffer);
 	}
 
-#if WITH_D3D11_TESSELLATION
-	if( GRHIShaderPlatform == SP_PCD3D_SM5 ) 
-	{
-		BeginInitResource(&AdjacencyIndexBuffer);
-	}
-#endif
-
 	SetupVertexFactory( VertexFactory, Parent, NULL );
 	BeginInitResource(&VertexFactory);
 
-	const DWORD StaticMeshVertexMemory = 
-		VertexBuffer.GetStride() * VertexBuffer.GetNumVertices() + 
+	const DWORD StaticMeshVertexMemory =
+		VertexBuffer.GetStride() * VertexBuffer.GetNumVertices() +
 		PositionVertexBuffer.GetStride() * PositionVertexBuffer.GetNumVertices();
-	const DWORD StaticMeshIndexMemory = (IndexBuffer.Indices.Num() + WireframeIndexBuffer.Indices.Num()) * 2 +
-#if WITH_D3D11_TESSELLATION
-		( (GRHIShaderPlatform == SP_PCD3D_SM5) ? (AdjacencyIndexBuffer.Indices.Num() * 2) : (0) );
-#else // #if WITH_D3D11_TESSELLATION
-		0;
-#endif // #if WITH_D3D11_TESSELLATION
+	const DWORD StaticMeshIndexMemory = (IndexBuffer.Indices.Num() + WireframeIndexBuffer.Indices.Num()) * 2;
 	const DWORD ResourceVertexColorMemory = ColorVertexBuffer.GetStride() * ColorVertexBuffer.GetNumVertices();
 
-#if PS3
-	INC_DWORD_STAT_BY( bNeedsCPUAccess == FALSE ? STAT_StaticMeshVideoMemory : STAT_StaticMeshVertexMemory, StaticMeshVertexMemory );
-	INC_DWORD_STAT_BY( bNeedsCPUAccess == FALSE ? STAT_ResourceVertexColorVideoMemory : STAT_ResourceVertexColorMemory, ResourceVertexColorMemory );
-	INC_DWORD_STAT_BY( bNeedsCPUAccess == FALSE ? STAT_StaticMeshIndexVideoMemory : STAT_StaticMeshIndexMemory, StaticMeshIndexMemory );
-#else
 	INC_DWORD_STAT_BY( STAT_StaticMeshVertexMemory, StaticMeshVertexMemory );
 	INC_DWORD_STAT_BY( STAT_ResourceVertexColorMemory, ResourceVertexColorMemory );
 	INC_DWORD_STAT_BY( STAT_StaticMeshIndexMemory, StaticMeshIndexMemory );
-#endif // PS3
 }
 
 /**
@@ -1706,6 +1654,7 @@ TMap<FString, FString> UStaticMesh::PropertyToolTipMap;
 /**
  * Initializes the static mesh's render resources.
  */
+// DISHONORED(port): 2013 rva 0x35e960 (2012 rva 0x381010), identical (stats aside)
 void UStaticMesh::InitResources()
 {
 	for(INT LODIndex = 0;LODIndex < LODModels.Num();LODIndex++)
@@ -2141,21 +2090,18 @@ void UStaticMesh::PostDuplicate()
 /**
  *	UStaticMesh::Serialize
  */
+// DISHONORED(port): 2013 rva 0x377370 (2012 rva 0x398bf0): Bounds, BodySetup, the legacy-format kDOP tree (no compact tree, no
+// 770 gate), InternalVersion, content tags below 593, LODModels, LODInfo, thumbnail, HighResSourceMesh (532), LightingGuid (600),
+// CachedStreamingTextureFactors at 771 (reference 797). No VertexPositionVersionNumber (the reference reads it at 801, which
+// shifts every Dishonored static mesh by 4 bytes), no source data / optimization settings / mesh proxy / degenerates /
+// per-LOD instancing members (reference 804..859, shims)
 void UStaticMesh::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
 	Ar << Bounds;
 	Ar << BodySetup;
-	if( !Ar.IsLoading() || Ar.Ver() >= VER_COMPACTKDOPSTATICMESH )
-	{
-		Ar << kDOPTree;
-	}
-	else if (Ar.IsLoading())
-	{
-		LegacykDOPTree = new LegacykDOPTreeType();
-		Ar << *LegacykDOPTree; // load the old tree for conversion in postload
-	}
+	Ar << kDOPTree;
 
 	if( Ar.IsLoading() )
 	{
@@ -2176,67 +2122,17 @@ void UStaticMesh::Serialize(FArchive& Ar)
 		Ar << IgnoredLegacyContentTags;
 	}
 
-	if ( Ar.Ver() >= VER_STATIC_MESH_SOURCE_DATA_COPY )
-	{
-		Ar << SourceData;
-		if ( Ar.Ver() >= VER_STORE_MESH_OPTIMIZATION_SETTINGS )
-		{
-			Ar << OptimizationSettings;
-		}
-		else if ( Ar.IsLoading() )
-		{
-			TArray<FLOAT> MaxDeviations;
-			Ar << MaxDeviations;
-			for ( INT LODIndex = 0; LODIndex < MaxDeviations.Num(); ++LODIndex )
-			{
-				check( OptimizationSettings.Num() == LODIndex );
-				FStaticMeshOptimizationSettings Settings;
-				const FLOAT MaxDeviation = MaxDeviations( LODIndex );
-				Settings.MaxDeviationPercentage = MaxDeviation / Bounds.SphereRadius;
-				OptimizationSettings.AddItem( Settings );
-			}
-		}
-		Ar << bHasBeenSimplified;
-	}
-	else
-	{
-		check( Ar.IsLoading() );
-		OptimizationSettings.Empty();
-		bHasBeenSimplified = FALSE;
-	}
-
-	if (Ar.Ver() >= VER_TAG_MESH_PROXIES)
-	{
-		Ar << bIsMeshProxy;
-	}
-	else
-	{
-		check(Ar.IsLoading());
-		bIsMeshProxy = FALSE;
-	}
-
 	LODModels.Serialize( Ar, this );
-	
+
 	Ar << LODInfo;
-	
+
 	Ar << ThumbnailAngle;
 
 	Ar << ThumbnailDistance;
-	
+
 	if( Ar.IsCountingMemory() )
 	{
 		Ar << PhysMeshScale3D;
-
-		// Include collision as part of memory used
-		if ( BodySetup )
-		{
-			BodySetup->Serialize( Ar );
-		}
-
-		//TODO: Count these members when calculating memory used
-		//Ar << kDOPTreeType;
-		//Ar << PhysMesh;
-		//Ar << ReleaseResourcesFence;
 	}
 
 	if( !Ar.IsLoading() || Ar.Ver() >= VER_STATICMESH_VERSION_18 )
@@ -2255,40 +2151,10 @@ void UStaticMesh::Serialize(FArchive& Ar)
 		Ar << LightingGuid;
 	}
 
-	// Serialize the vertex position version number if it's there
-	if ( Ar.Ver() >= VER_PRESERVE_SMC_VERT_COLORS )
-	{
-		Ar << VertexPositionVersionNumber;
-	}
-	else
-	{
-		VertexPositionVersionNumber = 0;
-	}
-
-	if ( Ar.Ver() >= VER_DYNAMICTEXTUREINSTANCES )
+	if ( Ar.Ver() >= 771 )
 	{
 		Ar << CachedStreamingTextureFactors;
 	}
-	
-	if( Ar.Ver() >= VER_KEEP_STATIC_MESH_DEGENERATES )
-	{
-		Ar << bRemoveDegenerates;
-	}
-	else
-	{
-		bRemoveDegenerates = TRUE;
-	}
-
-	if( Ar.Ver() >= VER_INSTANCED_STATIC_MESH_PER_LOD_STATIC_LIGHTING )
-	{
-		Ar << bPerLODStaticLightingForInstancing;
-		Ar << ConsolePreallocateInstanceCount;
-	}
-	else
-	{
-		bPerLODStaticLightingForInstancing = FALSE;
-		ConsolePreallocateInstanceCount = 0;
-}
 }
 
 
@@ -2297,348 +2163,39 @@ void UStaticMesh::Serialize(FArchive& Ar)
 //	UStaticMesh::PostLoad
 //
 
+// DISHONORED(port): 2013 rva 0x37fe20 (2012 rva 0x3a13a0, unstaticmesh.cpp:1925): rebuild below version 17, strip editor data on a
+// client (an UCC client returns before InitResources), InitResources. The half-float UV conversion lives in
+// FStaticMeshRenderData::Serialize; no editor element fixup, no Simplygon/adjacency/legacy-kDOP paths (reference-only), no
+// LODModels/LODInfo check. The editor tooltip metadata loop of retail is reduced to the reference's bEnableCollision entry.
 void UStaticMesh::PostLoad()
 {
 	Super::PostLoad();
 
-#if WITH_EDITOR
-	if (!GIsGame)
+	// Rebuild static mesh if internal version has been bumped and we allow meshes in this package to be rebuilt; version 18 only
+	// introduced the high res source mesh name.
+	if( InternalVersion < STATICMESH_VERSION && (GStaticMeshPackageNameToRebuild == NAME_None || GStaticMeshPackageNameToRebuild == GetOutermost()->GetFName()) )
 	{
-		// Fixup possible element issues
-		for (INT LODIdx = 0; LODIdx < LODModels.Num(); LODIdx++)
-		{
-			FStaticMeshRenderData& LODData = LODModels(LODIdx);
-			UBOOL bHasMismatchedIndices = FALSE;
-			TArray<INT> MaterialIndices;
-			MaterialIndices.Empty(LODData.Elements.Num());
-			MaterialIndices.AddZeroed(LODData.Elements.Num());
-
-			// Check each element for: 
-			//		Element.MaterialIndex != ElementIndex
-			//		(Element.NumTriangle == 0) && (Element.Material != NULL)
-			for (INT ElementIdx = 0; ElementIdx < LODData.Elements.Num(); ElementIdx++)
-			{
-				FStaticMeshElement& Element = LODData.Elements(ElementIdx);
-				MaterialIndices(ElementIdx) = Element.MaterialIndex;
-				if (Element.MaterialIndex != ElementIdx)
-				{
-					// We will fix this up next
-					bHasMismatchedIndices = TRUE;
-				}
-				if ((Element.NumTriangles == 0) && (Element.Material != NULL))
-				{
-					// Tell the user was are clearing this material as there are no triangles.
-					// This is to avoid pulling in unused material on cooked content platforms.
-					Element.Material = NULL;
-				}
-			}
-
-			if (bHasMismatchedIndices == TRUE)
-			{
-				warnf(NAME_Warning, *FString::Printf(LocalizeSecure(LocalizeUnrealEd(TEXT("FixingMismatchedIndicesOnStaticMesh"),TEXT("UnrealEd")), *GetPathName())));
-				//@todo. Sort them to be safe?
-				INT MaxMaterialIdx = -1;
-				INT MaxMaterialIdxIndex = -1;
-
-				// Find the max material index that is used
-				for (INT MaterialIdx = 0; MaterialIdx < MaterialIndices.Num(); MaterialIdx++)
-				{
-					if (MaterialIndices(MaterialIdx) > MaxMaterialIdx)
-					{
-						MaxMaterialIdx = MaterialIndices(MaterialIdx);
-						MaxMaterialIdxIndex = MaterialIdx;
-					}
-				}
-				check(MaxMaterialIdxIndex == MaterialIndices.Num() - 1);
-
-				// Find the 'missing' material indices
-				TMap<INT,UBOOL> MissingMaterialIndices;
-				for (INT CheckMtrlIdx = 0; CheckMtrlIdx < MaxMaterialIdx + 1; CheckMtrlIdx++)
-				{
-					INT DummyIdx;
-					if (MaterialIndices.FindItem(CheckMtrlIdx, DummyIdx) == FALSE)
-					{
-						MissingMaterialIndices.Set(CheckMtrlIdx,FALSE);
-					}
-				}
-
-				// Find any triangle that reference missing indices in the raw data of the mesh
-				TMap<INT,INT> RawTriangleMaterialIndices;
-				if (MissingMaterialIndices.Num() > 0)
-				{
-					// See if there are triangles that actually use that index...
-					FStaticMeshTriangle* RawTriangleData = (FStaticMeshTriangle*)(LODData.RawTriangles.Lock(LOCK_READ_ONLY));
-					if (RawTriangleData != NULL)
-					{
-						for (INT TriIdx = 0; TriIdx < LODData.RawTriangles.GetElementCount(); TriIdx++)
-						{
-							FStaticMeshTriangle& Triangle = RawTriangleData[TriIdx];
-							INT* Count = RawTriangleMaterialIndices.Find(Triangle.MaterialIndex);
-							if (Count == NULL)
-							{
-								RawTriangleMaterialIndices.Set(Triangle.MaterialIndex,0);
-								Count = RawTriangleMaterialIndices.Find(Triangle.MaterialIndex);
-							}
-							check(Count);
-							(*Count)++;
-						}
-						LODData.RawTriangles.Unlock();
-					}
-				}
-
-				// Update the max material index w/ those from the RawTriangle data (just to be safe)
-				for (TMap<INT,INT>::TIterator RawIt(RawTriangleMaterialIndices); RawIt; ++RawIt)
-				{
-					INT RawIdx = RawIt.Key();
-					if (RawIdx > MaxMaterialIdx)
-					{
-						MaxMaterialIdx = RawIdx;
-					}
-				}
-
-				// Make a new element array, and fill in with all the material indices
-				TArray<FStaticMeshElement> LODDataElements;
-				LODDataElements.Empty(MaxMaterialIdx+1);
-				LODDataElements.AddZeroed(MaxMaterialIdx+1);
-
-				for (INT MtrlIdx = MaxMaterialIdx; MtrlIdx >= 0; MtrlIdx--)
-				{
-					// Find the material index in the actual list...
-					FStaticMeshElement* OrigElement = NULL;
-					for (INT ElementIdx = 0; ElementIdx < LODData.Elements.Num(); ElementIdx++)
-					{
-						if (LODData.Elements(ElementIdx).MaterialIndex == MtrlIdx)
-						{
-							OrigElement = &LODData.Elements(ElementIdx);
-						}
-					}
-
-					INT* Count = RawTriangleMaterialIndices.Find(MtrlIdx);
-					if (OrigElement != NULL)
-					{
-						LODDataElements(MtrlIdx) = *OrigElement;
-					}
-					else
-					{
-						FStaticMeshElement& NewElement = LODDataElements(MtrlIdx);
-						NewElement.NumTriangles = Count ? *Count : 0;
-						NewElement.MaterialIndex = MtrlIdx;
-					}
-				}
-
-				// Just remove all empty elements from the end of the list
-				UBOOL bFoundNonEmptyElement = FALSE;
-				for (INT ElementIdx = LODDataElements.Num() - 1; (ElementIdx >= 0) && (bFoundNonEmptyElement == FALSE); ElementIdx--)
-				{
-					FStaticMeshElement& Element = LODDataElements(ElementIdx);
-					if (Element.NumTriangles == 0)
-					{
-						// Remove it...
-						LODDataElements.Remove(ElementIdx);
-					}
-					else
-					{
-						bFoundNonEmptyElement = TRUE;
-					}
-				}
-
-				// Set the new elements array
-				LODData.Elements.Empty();
-				LODData.Elements = LODDataElements;
-
-				// Force the mesh to be rebuilt... working around the bOnlyMinorDifferences check below (-2)
-				InternalVersion -= 2;
-			}
-		}
-
-		// Clear material references in source data.
-		SourceData.ClearMaterialReferences();
-	}
-
-	// Build adjacency information for meshes that have not yet had it built.
-#if WITH_D3D11_TESSELLATION
-	if (!GUseSeekFreeLoading && !(GCookingTarget & UE3::PLATFORM_Console))
-	{
-		UBOOL bShouldCheckAdjacencyInformation = FALSE;
-		GConfig->GetBool( TEXT("UnrealEd.PropertyFilters"), TEXT("bShowD3D11Properties"), bShouldCheckAdjacencyInformation, GEditorUserSettingsIni );
-		if ( bShouldCheckAdjacencyInformation )
-	{
-		for ( INT LODIndex = 0; LODIndex < LODModels.Num(); ++LODIndex )
-		{
-			FStaticMeshRenderData& LODModel = LODModels( LODIndex );
-			if ( LODModel.AdjacencyIndexBuffer.Indices.Num() == 0 )
-			{
-				warnf( TEXT("Building adjacency information for static mesh '%s'."), *GetPathName() );
-				BuildStaticAdjacencyIndexBuffer( LODModel.PositionVertexBuffer, LODModel.VertexBuffer, LODModel.IndexBuffer.Indices, LODModel.AdjacencyIndexBuffer.Indices );
-			}
-		}
-	}
-	}
-#endif // #if WITH_D3D11_TESSELLATION
-#endif	//#if WITH_EDITOR
-
-	UBOOL bWasBuilt = FALSE;
-
-#if WITH_EDITOR && !WITH_SIMPLYGON
-	if ( bHasBeenSimplified )
-	{
-		// All LODs need to be removed as they may have been generated by Simplygon.
-		for ( INT LODIndex = LODModels.Num() - 1; LODIndex > 0; --LODIndex )
-		{
-			LODModels.Remove( LODIndex );
-			if ( LODInfo.IsValidIndex( LODIndex ) )
-			{
-				LODInfo.Remove( LODIndex );
-			}
-		}
-
-		// Mesh proxies need to dump LOD 0 too.
-		if ( LODModels.Num() >= 1 && bIsMeshProxy )
-		{
-			FStaticMeshRenderData& BaseModel = LODModels(0);
-			BaseModel.RawTriangles.Lock(LOCK_READ_WRITE);
-			FStaticMeshTriangle* DegenerateTri = (FStaticMeshTriangle*)BaseModel.RawTriangles.Realloc(1);
-			appMemZero(*DegenerateTri);
-			BaseModel.RawTriangles.Unlock();
-			Build();
-			bWasBuilt = TRUE;
-		}
-		// Rebuild the base LOD from the source triangles.
-		else if ( LODModels.Num() >= 1 && SourceData.IsInitialized() )
-		{
-			FStaticMeshRenderData& SourceModel = GetSourceData();
-			FStaticMeshRenderData& BaseModel = LODModels(0);
-			const BYTE* SrcTriangles = (const BYTE*)SourceModel.RawTriangles.Lock( LOCK_READ_ONLY );
-			BaseModel.RawTriangles.Lock( LOCK_READ_WRITE );
-			BYTE* DestTriangles = (BYTE*)BaseModel.RawTriangles.Realloc( SourceModel.RawTriangles.GetElementCount() );
-			appMemcpy( DestTriangles, SrcTriangles, SourceModel.RawTriangles.GetBulkDataSize() );
-			BaseModel.RawTriangles.Unlock();
-			SourceModel.RawTriangles.Unlock();
-			Build();
-			bWasBuilt = TRUE;
-		}
-
-		// Clear optimization settings and the simplified flag.
-		bHasBeenSimplified = FALSE;
-		bIsMeshProxy = FALSE;
-		OptimizationSettings.Empty();
-
-		warnf( LocalizeSecure( LocalizeUnrealEd( TEXT("MeshSimp_LicenseRequired_F") ), *GetPathName() ) );
-	}
-#endif // #if WITH_EDITOR && !WITH_SIMPLYGON
-
-	// Rebuild static mesh if internal version has been bumped and we allow meshes in this package to be rebuilt. E.g. during package resave we only want to
-	// rebuild static meshes in the package we are going to save to cut down on the time it takes to resave all.
-	if(InternalVersion < STATICMESH_VERSION && (GStaticMeshPackageNameToRebuild == NAME_None || GStaticMeshPackageNameToRebuild == GetOutermost()->GetFName()) )
-	{	
-		// Don't bother rebuilding if there are only minor format differences
-		UBOOL bOnlyMinorDifferences = FALSE;
-
-		// NOTE: Version 18 only introduced a named reference to a 'high res source mesh name', no structural differences
-		const INT STATICMESH_VERSION_SIMPLIFICATION = 18;
-		if( STATICMESH_VERSION == STATICMESH_VERSION_SIMPLIFICATION &&
-			( InternalVersion == STATICMESH_VERSION - 1 ) )
-		{
-			bOnlyMinorDifferences = TRUE;
-		}
-
-		if( !bOnlyMinorDifferences )
+		if( InternalVersion != STATICMESH_VERSION - 1 )
 		{
 			Build();
-			bWasBuilt = TRUE;
 		}
 	}
 
-	// Revert to using 32 bit Float UVs on hardware that doesn't support rendering with 16 bit Float UVs 
-	if( !GIsCooking && !GVertexElementTypeSupport.IsSupported(VET_Half2) )
-	{
-		for (INT LODIdx = 0; LODIdx < LODModels.Num(); LODIdx++)
-		{
-			FStaticMeshRenderData& LODData = LODModels(LODIdx);
-			FStaticMeshVertexBuffer& VertexBuffer = LODData.VertexBuffer;
-			{
-				switch(VertexBuffer.GetNumTexCoords())
-				{
-				case 1:	VertexBuffer.ConvertToFullPrecisionUVs<1>(); break;
-				case 2:	VertexBuffer.ConvertToFullPrecisionUVs<2>(); break;
-				case 3:	VertexBuffer.ConvertToFullPrecisionUVs<3>(); break;
-				case 4:	VertexBuffer.ConvertToFullPrecisionUVs<4>(); break;
-				default: appErrorf(TEXT("Invalid number of texture coordinates"));
-				}
-			}
-		}
-	}
-
-#if DEDICATED_SERVER
-	if (!UseSimpleRigidBodyCollision && GIsSeekFreePCServer)
-	{
-		for( INT LODIdx=0; LODIdx < LODModels.Num(); LODIdx++ )
-		{
-			FStaticMeshRenderData& LODModel = LODModels(LODIdx);
-
-			// Strip Index buffers we were unable to strip during cook.  See UStaticMesh::StripData()
- 			LODModel.IndexBuffer.Indices.Empty();
-		}
-	}
-#endif
-
-	if (LegacykDOPTree && !bWasBuilt && LODModels.Num() )
-	{
-		DOUBLE StartTime = appSeconds();
-		TArray<FkDOPBuildCollisionTriangle<WORD> > kDOPBuildTriangles;
-		FPositionVertexBuffer* PositionVertexBuffer = &LODModels(0).PositionVertexBuffer;
-		for (INT TriangleIndex = 0; TriangleIndex < LegacykDOPTree->Triangles.Num(); TriangleIndex++)
-		{
-			FkDOPCollisionTriangle<WORD>& OldTriangle = LegacykDOPTree->Triangles(TriangleIndex);
-			new (kDOPBuildTriangles) FkDOPBuildCollisionTriangle<WORD>(
-				OldTriangle.v1,
-				OldTriangle.v2,
-				OldTriangle.v3,
-				OldTriangle.MaterialIndex,
-				PositionVertexBuffer->VertexPosition(OldTriangle.v1),
-				PositionVertexBuffer->VertexPosition(OldTriangle.v2),
-				PositionVertexBuffer->VertexPosition(OldTriangle.v3));
-		}
-		kDOPTree.Build(kDOPBuildTriangles);
-//		debugf(TEXT("Rebuilt kDop into compact format in %6.2fms"),FLOAT(appSeconds() - StartTime)*1000.0f);
-	}
-	else if (GetLinkerVersion() < VER_KDOP_ONE_NODE_FIX && kDOPTree.Nodes.Num() == 2 && !bWasBuilt && LODModels.Num() )
-	{
-		TArray<FkDOPBuildCollisionTriangle<WORD> > kDOPBuildTriangles;
-		FPositionVertexBuffer* PositionVertexBuffer = &LODModels(0).PositionVertexBuffer;
-		for (INT TriangleIndex = 0; TriangleIndex < kDOPTree.Triangles.Num(); TriangleIndex++)
-		{
-			FkDOPCollisionTriangle<WORD>& OldTriangle = kDOPTree.Triangles(TriangleIndex);
-			new (kDOPBuildTriangles) FkDOPBuildCollisionTriangle<WORD>(
-				OldTriangle.v1,
-				OldTriangle.v2,
-				OldTriangle.v3,
-				OldTriangle.MaterialIndex,
-				PositionVertexBuffer->VertexPosition(OldTriangle.v1),
-				PositionVertexBuffer->VertexPosition(OldTriangle.v2),
-				PositionVertexBuffer->VertexPosition(OldTriangle.v3));
-		}
-		kDOPTree.Build(kDOPBuildTriangles);
-	}
-	// we are done with the old tree
-	delete LegacykDOPTree; 
-	LegacykDOPTree = 0;
-
-
-#if !CONSOLE
 	// Strip away loaded Editor-only data if we're a client and never care about saving.
-	if( GIsClient && !GIsEditor && !GIsUCC )
+	if( GIsClient && !GIsEditor )
 	{
-		// Console platform is not a mistake, this ensures that as much as possible will be tossed.
-		StripData( (UE3::EPlatformType)(UE3::PLATFORM_Console | UE3::PLATFORM_WindowsConsole), FALSE );
+		if( GIsUCC )
+		{
+			return;
+		}
+		StripData( UE3::PLATFORM_Console, FALSE );
 	}
-#endif
 
 	if( !GIsUCC && !HasAnyFlags(RF_ClassDefaultObject) )
 	{
 		InitResources();
 	}
-	check(LODModels.Num() == LODInfo.Num());
+
 	if( GIsEditor )
 	{
 		UScriptStruct* LODElementStruct = CastChecked<UScriptStruct>( StaticFindObject( UScriptStruct::StaticClass(), ANY_PACKAGE, TEXT("StaticMeshLODElement")) );
@@ -4187,6 +3744,7 @@ UBOOL UStaticMeshComponent::FixupOverrideColorsIfNecessary()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// DISHONORED(port): 2013 rva 0x35ec60 (2012 rva 0x381310), identical (stats aside)
 void UStaticMeshComponent::InitResources()
 {
 	for(INT LODIndex = 0; LODIndex < LODData.Num(); LODIndex++)
@@ -4297,35 +3855,11 @@ void UStaticMeshComponent::PostEditUndo()
  * multiple objects loaded in one set is not deterministic though ConditionalPostLoad can be forced to
  * ensure an object has been "PostLoad"ed.
  */
+// DISHONORED(port): 2013 rva 0x35ede0 (2012 rva 0x381490): Super::PostLoad then InitResources; no mobile detail culling, editor
+// paint fixup or LOD trimming
 void UStaticMeshComponent::PostLoad()
 {
 	Super::PostLoad();
-
-#if MOBILE
-	// on mobile platforms, the detail level doesn't change at runtime
-	// so if the component will be culled by detail level, clear content references to restore some memory
-	if (DetailMode > GSystemSettings.DetailMode)
-	{
-		StaticMesh = NULL;
-		Materials.Empty();
-	}
-#endif
-
-	if ( GIsEditor && !GIsCooking && StaticMesh )
-	{
-		CachePaintedDataIfNecessary();
-		if ( FixupOverrideColorsIfNecessary() )
-		{
-			GWarn->MapCheck_Add( MCTYPE_INFO, GetOuter(), *FString::Printf( LocalizeSecure( LocalizeUnrealEd( "MapCheck_Message_RepairedPaintedVertexColors" ), *GetName() ) ), TEXT( "RepairedPaintedVertexColors" ) );
-		}
-	}
-
-	// make sure the component doesn't have more LOD levels than the mesh itself, as it can 
-	// confuse cooking for PS3 
-	if (StaticMesh && LODData.Num() > StaticMesh->LODModels.Num())
-	{
-		LODData.Remove(StaticMesh->LODModels.Num(), LODData.Num() - StaticMesh->LODModels.Num());
-	}
 
 	// Initialize the resources for the freshly loaded component.
 	InitResources();
@@ -5365,15 +4899,49 @@ void UStaticMeshComponent::GetStreamingTextureInfo(TArray<FStreamingTexturePrimi
 /**
  * Serializes the LocalToWorld transforms for the StaticMeshComponents contained in this actor.
  */
+// DISHONORED(port): 2013 rva 0x3715a0 (2012 rva 0x392de0, unstaticmesh.cpp:4080): each component's CachedParentToWorld (64 bytes, a
+// dummy for NULL entries) follows the actor data when loading or saving outside the class default object; the reference
+// dropped the matrices, which left 64 bytes per component unread in every Dishonored map
 void AStaticMeshCollectionActor::Serialize( FArchive& Ar )
 {
 	Super::Serialize(Ar);
 
-	if (!HasAnyFlags(RF_ClassDefaultObject) && Ar.GetLinker() != NULL && Ar.IsLoading())
+	if (!HasAnyFlags(RF_ClassDefaultObject) && Ar.GetLinker() != NULL)
+	{
+		if (Ar.IsLoading())
 		{
+			FMatrix DummyMatrix;
+			for (INT CompIndex = 0; CompIndex < StaticMeshComponents.Num(); CompIndex++)
+			{
+				if (StaticMeshComponents(CompIndex) != NULL)
+				{
+					Ar << StaticMeshComponents(CompIndex)->CachedParentToWorld;
+				}
+				else
+				{
+					Ar << DummyMatrix;
+				}
+			}
+
 			Components = (TArrayNoInit<UActorComponent*>&)StaticMeshComponents;
 			StaticMeshComponents.Empty();
 		}
+		else if (Ar.IsSaving())
+		{
+			FMatrix IdentityMatrix(FMatrix::Identity);
+			for (INT CompIndex = 0; CompIndex < StaticMeshComponents.Num(); CompIndex++)
+			{
+				if (StaticMeshComponents(CompIndex) != NULL)
+				{
+					Ar << StaticMeshComponents(CompIndex)->CachedParentToWorld;
+				}
+				else
+				{
+					Ar << IdentityMatrix;
+				}
+			}
+		}
+	}
 }
 
 /** 

@@ -2160,6 +2160,7 @@ public:
 	 * @param	Ar		The archive to serialize with.
 	 */
 	virtual void Serialize(FArchive& Ar);
+	virtual void PostLoad();  // DISHONORED(port): 2013 rva 0x218cd0
 
 	// USequenceAction interface
 
@@ -4562,6 +4563,7 @@ public:
     DECLARE_FUNCTION(execCheckTouchActivate);
     DECLARE_FUNCTION(execCheckUnTouchActivate);
     DECLARE_CLASS(USeqEvent_Touch,USequenceEvent,0,Engine)
+	virtual void Serialize(FArchive& Ar);  // DISHONORED(port): 2013 rva 0x2cf670
 	virtual UBOOL CheckTouchActivate(AActor *inOriginator, AActor *inInstigator, UBOOL bTest = FALSE);
 	virtual UBOOL CheckUnTouchActivate(AActor *inOriginator, AActor *inInstigator, UBOOL bTest = FALSE);
 

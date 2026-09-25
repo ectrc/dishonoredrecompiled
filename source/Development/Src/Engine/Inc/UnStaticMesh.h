@@ -1743,6 +1743,9 @@ struct FStaticMeshComponentLODInfo
 	void ReleaseResources();
 
 	/** Serializer. */
+	// DISHONORED(port): 2013 rva 0x3760a0 (2012 rva 0x3977c0): shadow maps, shadow vertex buffers, light map, override vertex colors
+	// (TArray below 678, bulk from 678) and nothing else: no VertexColorPositions (the reference reads a TArray<FVector> for
+	// 801 <= Ver < 823, 4 bytes too many per LOD of every placed static mesh component) and no PaintedVertices (reference 823+)
 	friend FArchive& operator<<(FArchive& Ar,FStaticMeshComponentLODInfo& I)
 	{
 		Ar << I.ShadowMaps;
@@ -1784,36 +1787,6 @@ struct FStaticMeshComponentLODInfo
 				}
 			}
 
-		}
-
-		// Legacy serialization for vertex color positions.
-		if ( Ar.Ver() >= VER_PRESERVE_SMC_VERT_COLORS && Ar.Ver() < VER_STATIC_MESH_SOURCE_DATA_COPY )
-		{
-			TArray<FVector> VertexColorPositions;
-			Ar << VertexColorPositions;
-		}
-
-		// Serialize out cached vertex information if necessary.
-		if ( Ar.Ver() >= VER_STATIC_MESH_SOURCE_DATA_COPY )
-		{
-			Ar << I.PaintedVertices;
-		}
-
-		// Fix components affected by the copy + paste bug.
-		if ( Ar.Ver() < VER_FIX_OVERRIDEVERTEXCOLORS_COPYPASTE )
-		{
-			// Components affected by this bug have a single painted vertex.
-			// Clear it and it will be rebuilt in PostLoad.
-			if ( I.PaintedVertices.Num() == 1 )
-			{
-				I.PaintedVertices.Empty();
-			}
-		}
-
-		// Empty when loading and we don't care about saving it again, like e.g. a client.
-		if( Ar.IsLoading() && ( !GIsEditor && !GIsUCC ) )
-		{
-			I.PaintedVertices.Empty();
 		}
 
 		return Ar;

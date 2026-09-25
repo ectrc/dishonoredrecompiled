@@ -1535,6 +1535,7 @@ FVector2D UDecalComponent::CalcDecalDotProductBlendRange() const
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// DISHONORED(port): 2013 rva 0xf5420 (2012 rva 0xf4e40), identical structure (static receivers, reference collection)
 void UDecalComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize( Ar );

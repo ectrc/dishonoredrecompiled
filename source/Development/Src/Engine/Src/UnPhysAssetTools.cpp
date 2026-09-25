@@ -659,6 +659,7 @@ void UPhysicsAsset::FixOuters()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x3cb930 (2012 rva 0x3eced0), identical
 void UPhysicsAsset::PostLoad()
 {
 	Super::PostLoad();

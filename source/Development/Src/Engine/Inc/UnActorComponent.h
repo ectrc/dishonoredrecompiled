@@ -352,6 +352,8 @@ struct FLightingChannelContainer
 			BITFIELD Gameplay_3:1;
 			BITFIELD Gameplay_4:1;
 			BITFIELD Crowd:1;
+			BITFIELD m_LightProbe:1;  // DISHONORED(port): retail SDK mask 0x8000000, set by ULightComponent::PostLoad (2013 rva 0x116520)
+			BITFIELD m_bOutsider:1;  // DISHONORED(port): retail SDK mask 0x10000000
 		};
 		DWORD Bitfield;
 	};

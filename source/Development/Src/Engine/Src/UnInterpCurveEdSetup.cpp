@@ -7,6 +7,7 @@
 
 IMPLEMENT_CLASS(UInterpCurveEdSetup);
 
+// DISHONORED(port): 2013 rva 0x22eca0 (2012 rva 0x253200), identical
 void UInterpCurveEdSetup::PostLoad()
 {
 	Super::PostLoad();
@@ -26,6 +27,7 @@ void UInterpCurveEdSetup::PostLoad()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x217960 (2012 rva 0x22f240), identical
 void UInterpCurveEdSetup::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

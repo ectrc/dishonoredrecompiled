@@ -452,6 +452,14 @@ public:
     virtual void EndClimbLadder();
     UBOOL InLatentExecution(INT LatentActionNumber);
     void StopLatentExecution();
+    // DISHONORED(port): Possess, UnPossess and GetPlayerViewPoint are natives in the 2013 scripts
+    // (execs 0x1da630 / 0x1d4d20 / 0x1d1430 call the virtuals at 0x1cb120 / 0x1cb1f0 / 0x1cb0d0)
+    virtual void Possess(class APawn* inPawn);
+    virtual void UnPossess();
+    virtual void GetPlayerViewPoint(FVector& out_Location,FRotator& out_Rotation);
+    DECLARE_FUNCTION(execPossess);
+    DECLARE_FUNCTION(execUnPossess);
+    DECLARE_FUNCTION(execGetPlayerViewPoint);
     DECLARE_FUNCTION(execIsLocalPlayerController)
     {
         P_FINISH;
@@ -1132,8 +1140,9 @@ struct FDebugTextInfo
     BITFIELD bAbsoluteLocation:1;  // DISHONORED(layout): retail SDK @52 mask 0x1, the only bit (bKeepAttachedToActor is reference-only)
     SCRIPT_ALIGN;
     DISHONORED_SHIM_STATIC BITFIELD bKeepAttachedToActor;
-    FVector OrigActorLocation;
-    class UFont* Font;
+    // DISHONORED(layout): retail SDK span 0..56 (2012 PDB 56): OrigActorLocation and Font are reference-only (storage-less shims)
+    DISHONORED_SHIM_STATIC FVector OrigActorLocation;
+    DISHONORED_SHIM_STATIC class UFont* Font;
 
     /** Constructors */
     FDebugTextInfo() {}
@@ -1913,6 +1922,12 @@ public:
     virtual UBOOL HasPeerConnection(const struct FUniqueNetId& PeerNetId) const;
     virtual void LogOutBugItGoToLogFile(const FString& InScreenShotDesc,const FString& InGoString,const FString& InLocString);
     virtual void LogOutBugItAIGoToLogFile(const FString& InScreenShotDesc,const FString& InGoString,const FString& InLocString);
+    // DISHONORED(port): PlayerController redeclares the native GetPlayerViewPoint (2013 body 0x1e17a0)
+    virtual void GetPlayerViewPoint(FVector& out_Location,FRotator& out_Rotation);
+    DECLARE_FUNCTION(execGetPlayerViewPoint);
+    // DISHONORED(port): GetFOVAngle is a native in the 2013 scripts (exec 0x1d3670, body 0x242fd0)
+    FLOAT GetFOVAngle() const;
+    DECLARE_FUNCTION(execGetFOVAngle);
     DECLARE_FUNCTION(execSetNetSpeed)
     {
         P_GET_INT(NewSpeed);
@@ -2878,6 +2893,9 @@ AUTOGENERATE_FUNCTION(APlayerController,-1,execSetNetSpeed);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAControllerNatives[] = 
 { 
+	MAP_NATIVE(AController, execPossess)
+	MAP_NATIVE(AController, execUnPossess)
+	MAP_NATIVE(AController, execGetPlayerViewPoint)
 	MAP_NATIVE(AController, execStopLatentExecution)
 	MAP_NATIVE(AController, execInLatentExecution)
 	MAP_NATIVE(AController, execEndClimbLadder)
@@ -2918,6 +2936,8 @@ FNativeFunctionLookup GEngineAControllerNatives[] =
 
 FNativeFunctionLookup GEngineAPlayerControllerNatives[] = 
 { 
+	MAP_NATIVE(APlayerController, execGetPlayerViewPoint)
+	MAP_NATIVE(APlayerController, execGetFOVAngle)
 	MAP_NATIVE(APlayerController, execLogOutBugItAIGoToLogFile)
 	MAP_NATIVE(APlayerController, execLogOutBugItGoToLogFile)
 	MAP_NATIVE(APlayerController, execHasPeerConnection)

@@ -2067,6 +2067,8 @@ void USequenceOp::OnReceivedImpulse( USequenceOp* ActivatorOp, INT InputLinkInde
 
 
 /** Called after the object is loaded. */
+// DISHONORED(port): 2013 rva 0x2ff070 (sub_6FF070, the Super call of every 2013 USequenceOp subclass PostLoad; 2012 rva 0x32c480),
+// identical (editor-only stacked-link repair)
 void USequenceOp::PostLoad()
 {
 	// Call parent implementation
@@ -2522,6 +2524,7 @@ static void AddNamedVariableToLink(FSeqVarLink& VarLink, USeqVar_Named *NamedVar
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x2f34b0 (2012 rva 0x328f20), identical (the CONSOLE comment strip is compiled out)
 void USequenceObject::PostLoad()
 {
 	if (ParentSequence == NULL)
@@ -2558,12 +2561,15 @@ USequenceObject* USequenceObject::FindKismetObject()
 	return NULL;
 }
 
+// DISHONORED(port): 2013 rva 0x2ff7a0 (2012 rva 0x32cbc0, unsequence.cpp:2473): NULL objects removed and the array shrunk, sequence
+// names with invalid characters renamed below 545
 void USequence::PostLoad()
 {
 	Super::PostLoad();
 
 	// Remove NULL entries.
 	SequenceObjects.RemoveItem( NULL );
+	SequenceObjects.Shrink();
 
 	if (GetLinkerVersion() < VER_FIXED_KISMET_SEQUENCE_NAMES)
 	{
@@ -2576,7 +2582,6 @@ void USequence::PostLoad()
 		}
 		if (MyName != GetName())
 		{
-			debugf(TEXT("Fixing up Kismet sequence name: '%s' to '%s'"), *GetName(), *MyName);
 			Rename(*MyName, NULL, REN_ForceNoResetLoaders);
 		}
 	}
@@ -5178,6 +5183,18 @@ void USeqEvent_Touch::execCheckUnTouchActivate(FFrame& Stack, RESULT_DECL)
 	*(UBOOL*)Result = CheckUnTouchActivate(InOriginator, InInstigator, bTest);
 }
 
+// DISHONORED(port): 2013 rva 0x2cf670 (2012 rva 0x2ea610, unsequence.cpp:5242, 51 bytes in both): Arkane licensee fixup, packages
+// below licensee 30 take m_bIgnorePossessingPawn from m_bIgnorePossessedPawn
+void USeqEvent_Touch::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+
+	if (Ar.LicenseeVer() < VER_DIS_LICENSEE_SEQEVENT_TOUCH)
+	{
+		m_bIgnorePossessingPawn = m_bIgnorePossessedPawn;
+	}
+}
+
 void USeqEvent_Touch::DoTouchActivation(AActor *InOriginator, AActor *InInstigator)
 {
 	// activate the event, first output link
@@ -5517,6 +5534,7 @@ void USeqAct_Latent::DeActivated()
 //==========================
 // USeqAct_Gate interface
 
+// DISHONORED(port): 2013 rva 0x301a00 (2012 rva 0x32de00), identical
 void USeqAct_Gate::PostLoad()
 {
 	//Initialize the gate count
@@ -5527,6 +5545,7 @@ void USeqAct_Gate::PostLoad()
 //==========================
 // USeqAct_Toggle interface
 
+// DISHONORED(port): 2013 rva 0x301a20 (2012 rva 0x32de20), identical
 void USeqAct_Toggle::PostLoad()
 {
 	Super::PostLoad();
@@ -6802,6 +6821,7 @@ void USeqAct_IsInObjectList::DeActivated()
 
 
 /** PostLoad to ensure color is correct. */
+// DISHONORED(port): 2013 rva 0x2f8f10 (2012 rva 0x32b9a0), identical
 void USeqVar_External::PostLoad()
 {
 	Super::PostLoad();
@@ -8860,16 +8880,11 @@ void USeqAct_StreamInTextures::PostEditChangeProperty(FPropertyChangedEvent& Pro
 	SelectedCinematicTextureGroups = UTexture::GetTextureGroupBitfield( CinematicTextureGroups );
 }
 
+// DISHONORED(port): 2013 rva 0x301cc0 (2012 rva 0x32dfc0, unsequence.cpp:8568): texture group bitfield only; no "Finished" -> "Out"
+// output link rename (reference-only)
 void USeqAct_StreamInTextures::PostLoad()
 {
 	Super::PostLoad();
-
-	//IMPORTANT: Renames OutputLink 0 from "Finished" to "Out" without marking the package as dirty.
-	// If the link configuration changes, make sure to update the version and move this code to UpdateObject, with version checking.
-	if ( OutputLinks.Num() > 1 && OutputLinks(0).LinkDesc == TEXT("Finished") )
-	{
-		OutputLinks(0).LinkDesc = TEXT("Out");
-	}
 
 	SelectedCinematicTextureGroups = UTexture::GetTextureGroupBitfield( CinematicTextureGroups );
 }
@@ -10611,10 +10626,12 @@ UBOOL USeqAct_WaitForLevelsVisible::UpdateOp(FLOAT DeltaTime)
 	return CheckLevelsVisible();
 }
 
+// DISHONORED(port): 2013 rva 0x301ce0 (2012 rva 0x32dfe0, unsequence.cpp:10009): UpdateStatus whenever a main level is set, not
+// only in the editor
 void USeqAct_PrepareMapChange::PostLoad()
 {
 	Super::PostLoad();
-	if( GIsEditor && MainLevelName != NAME_None )
+	if( MainLevelName != NAME_None )
 	{
 		UpdateStatus();
 	}
@@ -10714,19 +10731,21 @@ void USeqAct_PrepareMapChange::DeActivated()
 	}
 }
 
+// DISHONORED(port): 2012 rva 0x2f69d0 (inlined into PostLoad 2013 0x301ce0): the level names are looked up as they are, without
+// MakeSafeLevelName (no PIE prefix in retail; MakeSafeLevelName ensures !GIsRoutingPostLoad and PostLoad calls this).
 void USeqAct_PrepareMapChange::UpdateStatus()
 {
 	FString PackageFilename;
 	
 	// first the level to stream in
-	bStatusIsOk = GPackageFileCache->FindPackageFile(*MakeSafeLevelName( MainLevelName ).ToString(), NULL, PackageFilename);
+	bStatusIsOk = GPackageFileCache->FindPackageFile(*MainLevelName.ToString(), NULL, PackageFilename);
 
 	// if that succeeds, then check the sublevels
 	if (bStatusIsOk)
 	{
 		for (INT SubLevelIndex = 0; SubLevelIndex < InitiallyLoadedSecondaryLevelNames.Num(); SubLevelIndex++)
 		{
-			if (GPackageFileCache->FindPackageFile(*MakeSafeLevelName( InitiallyLoadedSecondaryLevelNames(SubLevelIndex) ).ToString(), NULL, PackageFilename) == FALSE)
+			if (GPackageFileCache->FindPackageFile(*InitiallyLoadedSecondaryLevelNames(SubLevelIndex).ToString(), NULL, PackageFilename) == FALSE)
 			{
 				bStatusIsOk = FALSE;
 				break;

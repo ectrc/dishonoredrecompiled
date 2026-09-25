@@ -686,31 +686,11 @@ void USeqAct_Interp::InitSeqObjectForGroup(class UInterpGroup* InGroup, USequenc
 /**
  * This function is being called after all objects referenced by this object have been serialized.
  */
+// DISHONORED(port): 2013 rva 0x212930 (2012 rva 0x22a890): only Super::PostLoad. Retail UInterpData holds m_Data (UMatineeData) and
+// m_iMatineeDataVersion; the director-group cache and bake/prune status work on reference-only members (shims)
 void UInterpData::PostLoad(void)
 {
 	Super::PostLoad();
-
-	// Ensure the cached director group is emptied out
-	CachedDirectorGroup = NULL;
-
-#if WITH_EDITOR
-	UpdateBakeAndPruneStatus();
-#endif
-
-	// If in the game, cache off the director group intentionally to avoid
-	// frequent searches for it
-	if ( GIsGame )
-	{
-		for( INT i = 0; i < InterpGroups.Num(); ++i )
-		{
-			UInterpGroupDirector* TestDirGroup = Cast<UInterpGroupDirector>( InterpGroups(i) );
-			if( TestDirGroup )
-			{
-				check( !CachedDirectorGroup ); // Should only have 1 DirectorGroup at most!
-				CachedDirectorGroup = TestDirGroup;
-			}
-		}
-	}
 }
 
 FString UInterpData::GetValueStr()
@@ -893,6 +873,24 @@ void UInterpData::UpdateBakeAndPruneStatus()
 /*-----------------------------------------------------------------------------
   USeqAct_Interp
 -----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x218cd0 (2012 rva 0x22fcf0, uninterpolation.cpp:1829, 441 bytes in both): missing in the reference;
+// every archetype output link whose description differs from (or is missing on) this instance is inserted zeroed at its index
+void USeqAct_Interp::PostLoad()
+{
+	Super::PostLoad();
+
+	USequenceOp* DefaultOp = GetArchetype<USequenceOp>();
+	for (INT Idx = 0; Idx < DefaultOp->OutputLinks.Num(); Idx++)
+	{
+		if (OutputLinks.Num() <= Idx || OutputLinks(Idx).LinkDesc != DefaultOp->OutputLinks(Idx).LinkDesc)
+		{
+			Modify();
+			OutputLinks.InsertZeroed(Idx);
+			OutputLinks(Idx).LinkDesc = DefaultOp->OutputLinks(Idx).LinkDesc;
+		}
+	}
+}
 
 void USeqAct_Interp::UpdateObject()
 {
@@ -2646,6 +2644,7 @@ void USeqAct_Interp::RecaptureActorState()
  *
  * @param	Ar		The archive to serialize with.
  */
+// DISHONORED(port): 2013 rva 0x23c820 (2012 rva 0x24e110), identical (2013 rebuilds the SavedActorTransforms hash after loading)
 void USeqAct_Interp::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -2731,6 +2730,8 @@ void USeqAct_Interp::OnVariableConnect(USequenceVariable *Var, INT LinkIdx)
  UInterpGroup
 -----------------------------------------------------------------------------*/
 
+// DISHONORED(port): 2013 rva 0x224770 (2012 rva 0x23af10): NULL tracks removed; no AnimSets -> GroupAnimSets conversion
+// (UInterpTrackAnimControl::AnimSets is reference-only, a shim)
 void UInterpGroup::PostLoad()
 {
 	Super::PostLoad();
@@ -2746,23 +2747,6 @@ void UInterpGroup::PostLoad()
 		else
 		{
 			InterpTracks.Remove(TrackIndex);
-		}
-	}
-
-	// Now we have moved the AnimSets array into InterpGroup, we need to fix up old content.
-	for(INT i=0; i<InterpTracks.Num(); i++)
-	{
-		UInterpTrackAnimControl* AnimTrack = Cast<UInterpTrackAnimControl>(InterpTracks(i));
-		if(AnimTrack)
-		{
-			// Copy contents from that AnimTrack into GroupAnimSets..
-			for(INT j=0; j<AnimTrack->AnimSets.Num(); j++)
-			{
-				GroupAnimSets.AddUniqueItem( AnimTrack->AnimSets(j) );
-			}
-
-			// ..and empty it
-			AnimTrack->AnimSets.Empty();
 		}
 	}
 }
@@ -8783,6 +8767,7 @@ void UInterpTrackInstSlomo::TermTrackInst(UInterpTrack* Track)
 	UInterpTrackAnimControl
 -----------------------------------------------------------------------------*/
 
+// DISHONORED(port): 2013 rva 0x21de00 (2012 rva 0x234c30), identical
 void UInterpTrackAnimControl::PostLoad()
 {
 	Super::PostLoad();
@@ -10195,16 +10180,11 @@ void UInterpTrackFloatMaterialParam::PreSave()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// DISHONORED(port): 2013 rva 0x215db0 (2012 rva 0x22ded0): material references flagged for update below 693; no Material_DEPRECATED
+// conversion (reference-only, a shim)
 void UInterpTrackFloatMaterialParam::PostLoad()
 {
 	Super::PostLoad();
-	//@compatibility: update deprecated single Material property
-	if (Material_DEPRECATED != NULL)
-	{
-		INT Index = Materials.AddZeroed();
-		Materials(Index).TargetMaterial = Material_DEPRECATED;
-	}
-	//@compatibility: format of MaterialReferenceList has changed
 
 	if (GetLinker() != NULL && GetLinker()->Ver() < VER_CHANGED_MATPARAMTRACK_MATERIAL_REFERENCES && !IsTemplate())
 	{

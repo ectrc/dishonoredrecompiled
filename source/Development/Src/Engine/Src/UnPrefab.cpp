@@ -135,6 +135,7 @@ APrefabInstance* AActor::FindOwningPrefabInstance() const
 	APrefabInstance
 -----------------------------------------------------------------------------*/
 
+// DISHONORED(port): 2013 rva 0x644720 (2012 rva 0x311f90), identical
 void APrefabInstance::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -197,6 +198,7 @@ FObjectInstancingGraph* APrefabInstance::GetCustomPostLoadInstanceGraph()
 }
 #endif
 
+// DISHONORED(port): 2013 rva 0x2cfe60 (2012 rva 0x2eaca0), identical
 void APrefabInstance::PostLoad()
 {
 	Super::PostLoad();
@@ -1139,6 +1141,7 @@ FString UPrefab::GetDesc()
 /**
  * Called after the data for this prefab has been loaded from disk.  Removes any NULL elements from the PrefabArchetypes array.
  */
+// DISHONORED(port): 2013 rva 0x2fe9b0 (2012 rva 0x32bf30), identical
 void UPrefab::PostLoad()
 {
 	Super::PostLoad();
@@ -1285,6 +1288,7 @@ APrefabInstance* UPrefabSequence::GetOwnerPrefab() const
 }
 
 /* === UObject interface === */
+// DISHONORED(port): 2013 rva 0x30ae00 (2012 rva 0x32e330), identical (editor-only flag fixups)
 void UPrefabSequence::PostLoad()
 {
 	// if this is the first time PostLoad() has been called on this object, and we're in a prefab instance

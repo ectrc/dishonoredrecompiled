@@ -37,6 +37,7 @@ IMPLEMENT_CLASS(UShadowMap1D);
 	extern UBOOL GAllowStreamingLightmaps;
 #endif
 
+// DISHONORED(port): 2013 rva 0x30c0c0 (2012 rva 0x32e9a0), identical
 void UShadowMapTexture2D::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

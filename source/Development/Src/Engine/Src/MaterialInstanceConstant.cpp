@@ -110,6 +110,7 @@ UMaterialInstanceConstant::UMaterialInstanceConstant()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x126f80 (2012 rva 0x1268a0), identical
 void UMaterialInstanceConstant::InitResources()
 {
 	Super::InitResources();
@@ -512,6 +513,7 @@ void UMaterialInstanceConstant::SetParent(UMaterialInterface* NewParent)
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x123730 (2012 rva 0x12b460), identical (the WITH_MOBILE_RHI block is compiled out on PC)
 void UMaterialInstanceConstant::PostLoad()
 {
 	// Ensure that the instance's parent is PostLoaded before the instance.

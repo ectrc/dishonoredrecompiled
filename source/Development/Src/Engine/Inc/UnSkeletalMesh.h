@@ -3379,11 +3379,10 @@ struct FSkeletalMeshLODInfo
 	TArray<BYTE>						OLD_TriangleSorting;	// deprecated
 	TArray<FTriangleSortSettings>		TriangleSortSettings;
 
-	/** If true, use 16 bit XYZs to save memory. If false, use 32 bit XYZs */
-	BITFIELD							bDisableCompression:1;
-
-	/** Whether to disable morph targets for this LOD. */
-	BITFIELD							bHasBeenSimplified:1;
+	// DISHONORED(layout): retail SDK / 2012 PDB FSkeletalMeshLODInfo is 56 bytes (ends with TriangleSortSettings @44);
+	// the reference bits are storage-less shims (agents X and Z hit garbage LODInfo(1) reads with the 60-byte struct)
+	DISHONORED_SHIM_STATIC BITFIELD bDisableCompression;
+	DISHONORED_SHIM_STATIC BITFIELD bHasBeenSimplified;
 };
 
 struct FBoneMirrorInfo
@@ -3903,6 +3902,9 @@ class USkeletalMesh : public UObject
 	/** Clear and create the NameIndexMap of bone name to bone index. */
 	void InitNameIndexMap();
 
+	// DISHONORED(port): 2012 rva 0x331560, 2013 rva 0x30ec00: m_OriginTransform from Origin / RotOrigin
+	void UpdateOriginTransform();
+
 	UBOOL	IsCPUSkinned() const;
 	INT		MatchRefBone( FName StartBoneName) const;
 	UBOOL	BoneIsChildOf( INT ChildBoneIndex, INT ParentBoneIndex ) const;
@@ -4061,7 +4063,9 @@ class USkeletalMesh : public UObject
 
 #include "UnkDOP.h"
 
-typedef TkDOPTreeCompact<class FSkelMeshCollisionDataProvider,WORD>	TSkeletalKDOPTree;
+// DISHONORED(port): the per-poly bone kDOPs are the legacy TkDOPTree in retail (2012 rva 0x36ade0 serializes 36-byte
+// FPerPolyBoneCollisionData: 32-byte nodes, 8-byte triangles, CollisionVerts; no compact tree, no RootBound)
+typedef TkDOPTree<class FSkelMeshCollisionDataProvider,WORD>	TSkeletalKDOPTree;
 typedef TkDOPTree<class FSkelMeshCollisionDataProvider,WORD>	TSkeletalKDOPTreeLegacy;
 
 
@@ -4076,55 +4080,11 @@ struct FPerPolyBoneCollisionData
 
 	FPerPolyBoneCollisionData() {}
 
+	// DISHONORED(port): 2012 rva 0x36ade0 (the TArray serializer inlines it): tree, then CollisionVerts; no conversion or rebuild
 	friend FArchive& operator<<(FArchive& Ar,FPerPolyBoneCollisionData& Data)
 	{
-		TSkeletalKDOPTreeLegacy LegacykDOPTree;
-		UBOOL bNeedsKDopConversion = FALSE;
-		if( !Ar.IsLoading() || Ar.Ver() >= VER_COMPACTKDOPSTATICMESH )		
-		{
-			Ar << Data.KDOPTree;
-		}
-		else if (Ar.IsLoading())
-		{
-			Ar << LegacykDOPTree; 
-			bNeedsKDopConversion = TRUE;
-		}
+		Ar << Data.KDOPTree;
 		Ar << Data.CollisionVerts;
-
-		if (bNeedsKDopConversion)
-		{
-			TArray<FkDOPBuildCollisionTriangle<WORD> > kDOPBuildTriangles;
-			for (INT TriangleIndex = 0; TriangleIndex < LegacykDOPTree.Triangles.Num(); TriangleIndex++)
-			{
-				FkDOPCollisionTriangle<WORD>& OldTriangle = LegacykDOPTree.Triangles(TriangleIndex);
-				new (kDOPBuildTriangles) FkDOPBuildCollisionTriangle<WORD>(
-					OldTriangle.v1,
-					OldTriangle.v2,
-					OldTriangle.v3,
-					OldTriangle.MaterialIndex,
-					Data.CollisionVerts(OldTriangle.v1),
-					Data.CollisionVerts(OldTriangle.v2),
-					Data.CollisionVerts(OldTriangle.v3));
-			}
-			Data.KDOPTree.Build(kDOPBuildTriangles);
-		}
-		else if (Ar.IsLoading() && Ar.Ver() < VER_KDOP_ONE_NODE_FIX && Data.KDOPTree.Nodes.Num() == 2 )
-		{
-			TArray<FkDOPBuildCollisionTriangle<WORD> > kDOPBuildTriangles;
-			for (INT TriangleIndex = 0; TriangleIndex < Data.KDOPTree.Triangles.Num(); TriangleIndex++)
-			{
-				FkDOPCollisionTriangle<WORD>& OldTriangle = Data.KDOPTree.Triangles(TriangleIndex);
-				new (kDOPBuildTriangles) FkDOPBuildCollisionTriangle<WORD>(
-					OldTriangle.v1,
-					OldTriangle.v2,
-					OldTriangle.v3,
-					OldTriangle.MaterialIndex,
-					Data.CollisionVerts(OldTriangle.v1),
-					Data.CollisionVerts(OldTriangle.v2),
-					Data.CollisionVerts(OldTriangle.v3));
-			}
-			Data.KDOPTree.Build(kDOPBuildTriangles);
-		}
 		return Ar;
 	}
 };

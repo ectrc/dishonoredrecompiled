@@ -177,6 +177,7 @@ void  USkyLightComponent::PostEditChangeProperty(FPropertyChangedEvent& Property
 /**
  * Called after data has been serialized.
  */
+// DISHONORED(port): 2013 rva 0x1473a0 (2012 rva 0x150710), identical
 void USkyLightComponent::PostLoad()
 {
 	Super::PostLoad();

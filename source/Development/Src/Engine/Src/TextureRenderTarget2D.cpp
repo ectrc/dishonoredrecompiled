@@ -33,6 +33,7 @@ EMaterialValueType UTextureRenderTarget2D::GetMaterialType()
 /**
  * Serialize properties (used for backwards compatibility with main branch)
  */
+// DISHONORED(port): 2013 rva 0x166130 (2012 rva 0x16fd00), identical
 void UTextureRenderTarget2D::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

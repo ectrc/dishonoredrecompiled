@@ -330,6 +330,7 @@ void UDistributionFloatConstantCurve::UpgradeInterpMethod()
 /*-----------------------------------------------------------------------------
 	UDistributionFloatUniform implementation.
 -----------------------------------------------------------------------------*/
+// DISHONORED(port): 2013 rva 0x1cb850 (2012 rva 0x1e20a0), identical
 void UDistributionFloatUniform::PostLoad()
 {
 	if (GetLinker() && (GetLinker()->Ver() < VER_UNIFORM_DISTRIBUTION_BAKING_UPDATE))
@@ -1769,6 +1770,7 @@ void UDistributionVectorConstantCurve::UpgradeInterpMethod()
 /*-----------------------------------------------------------------------------
 	UDistributionVectorUniform implementation.
 -----------------------------------------------------------------------------*/
+// DISHONORED(port): 2013 rva 0x1cc3b0 (2012 rva 0x1e2d20), identical
 void UDistributionVectorUniform::PostLoad()
 {
 	if (GetLinker() && (GetLinker()->Ver() < VER_UNIFORM_DISTRIBUTION_BAKING_UPDATE))
@@ -2368,6 +2370,7 @@ void UDistributionVectorUniform::GetRange(FVector& OutMin, FVector& OutMax)
 //
 //	UDistributionVectorUniformCurve
 //
+// DISHONORED(port): 2013 rva 0x1cda30 (2012 rva 0x1e3b70), identical
 void UDistributionVectorUniformCurve::PostLoad()
 {
 	if (GetLinker() && (GetLinker()->Ver() < VER_UNIFORM_DISTRIBUTION_BAKING_UPDATE))
@@ -2487,6 +2490,7 @@ FVector UDistributionVectorUniformCurve::GetMaxValue()
 }
 
 // UObject interface
+// DISHONORED(port): 2013 rva 0x1cdbe0 (2012 rva 0x1e3c50), identical
 void UDistributionVectorUniformCurve::Serialize(FArchive& Ar)
 {
 	// No need to override old versions - this is a new class...

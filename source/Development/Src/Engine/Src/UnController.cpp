@@ -3512,3 +3512,112 @@ void UCheatManager::GetAnalyticsUserId()
 
 
 
+
+
+// DISHONORED(port): 2013 AController::Possess (0x1cb120) - hand the pawn over, no Restart / weapon switch here
+void AController::Possess( APawn* inPawn )
+{
+	if( inPawn->Controller )
+	{
+		inPawn->Controller->UnPossess();
+	}
+	inPawn->PossessedBy( this );
+	Pawn = inPawn;
+	FVector FocalPoint = Pawn->Location + 512.f * Pawn->Rotation.Vector();
+	FocalPosition.Set( Pawn->Base, FocalPoint );
+}
+
+// DISHONORED(port): 2013 AController::UnPossess (0x1cb1f0)
+void AController::UnPossess()
+{
+	if( Pawn )
+	{
+		Pawn->UnPossessed();
+		Pawn = NULL;
+	}
+}
+
+// DISHONORED(port): 2013 AController::GetPlayerViewPoint (0x1cb0d0)
+void AController::GetPlayerViewPoint( FVector& out_Location, FRotator& out_Rotation )
+{
+	out_Location = Location;
+	out_Rotation = Rotation;
+}
+
+// DISHONORED(port): 2013 APlayerController::GetPlayerViewPoint (0x1e17a0): spawn the camera on demand, read its cache,
+// else the view target's or our own transform
+void APlayerController::GetPlayerViewPoint( FVector& out_Location, FRotator& out_Rotation )
+{
+	if( !PlayerCamera && CameraClass )
+	{
+		PlayerCamera = Cast<ACamera>( GWorld->SpawnActor( CameraClass, NAME_None, FVector(0,0,0), FRotator(0,0,0), NULL, FALSE, FALSE, this ) );
+		if( PlayerCamera )
+		{
+			// Camera.InitializeFor is a script event in 2013 (0x5d0400 wrapper); the reference camera has no event wrapper
+			UFunction* InitializeFor = PlayerCamera->FindFunction( FName(TEXT("InitializeFor"), FNAME_Find) );
+			if( InitializeFor )
+			{
+				struct { APlayerController* PC; } Parms;
+				Parms.PC = this;
+				PlayerCamera->ProcessEvent( InitializeFor, &Parms );
+			}
+		}
+	}
+	if( PlayerCamera )
+	{
+		out_Location = PlayerCamera->CameraCache.POV.Location;
+		out_Rotation = PlayerCamera->CameraCache.POV.Rotation;
+	}
+	else
+	{
+		AActor* TheViewTarget = GetViewTarget();
+		if( TheViewTarget )
+		{
+			out_Location = TheViewTarget->Location;
+			out_Rotation = TheViewTarget->Rotation;
+		}
+		else
+		{
+			out_Location = Location;
+			out_Rotation = Rotation;
+		}
+	}
+}
+
+void AController::execPossess( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(APawn,inPawn);
+	P_FINISH;
+	Possess( inPawn );
+}
+
+void AController::execUnPossess( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	UnPossess();
+}
+
+void AController::execGetPlayerViewPoint( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR_REF(out_Location);
+	P_GET_ROTATOR_REF(out_Rotation);
+	P_FINISH;
+	GetPlayerViewPoint( out_Location, out_Rotation );
+}
+
+void APlayerController::execGetPlayerViewPoint( FFrame& Stack, RESULT_DECL )
+{
+	AController::execGetPlayerViewPoint( Stack, Result );
+}
+
+// DISHONORED(port): 2013 APlayerController::GetFOVAngle (0x242fd0)
+FLOAT APlayerController::GetFOVAngle() const
+{
+	return PlayerCamera ? PlayerCamera->GetFOVAngle() : FOVAngle;
+}
+
+void APlayerController::execGetFOVAngle( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FLOAT*)Result = GetFOVAngle();
+}

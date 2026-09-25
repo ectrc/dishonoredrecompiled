@@ -29,3 +29,8 @@
 //   0x57e630  public: static void __cdecl ArkSettings::OnSettingsChanged(class UOnlinePlayerStorage *, class TArray<class TScriptInterface<class IArkSettingsListenerInterface>, class FDefaultAllocator> &, enum ArkSettings::EChangeReason)
 //   0x57e7f0  public: static void __cdecl ArkSettings::ResetSettings(class APlayerController *, class TArray<int, class FDefaultAllocator>)
 //   0x57eb60  public: static void __cdecl ArkSettings::ResetAllSettings(class APlayerController *)
+
+#include "EnginePrivate.h"
+
+// DISHONORED(port): Engine.ArkSettingsListenerInterface, 2013 GetPrivateStaticClass rva 0x533b00 / StaticClassNoInline 0x576b30 (native_class_sizes.csv: 56 bytes, flags 0x10004001)
+IMPLEMENT_CLASS(UArkSettingsListenerInterface);

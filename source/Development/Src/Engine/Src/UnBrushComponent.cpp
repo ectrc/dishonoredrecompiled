@@ -468,6 +468,7 @@ FPrimitiveSceneProxy* UBrushComponent::CreateSceneProxy()
 	return Proxy;
 }
 
+// DISHONORED(port): 2013 rva 0x1b8130 (2012 rva 0x1c1b00), identical (the cached convex elements)
 void UBrushComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

@@ -576,6 +576,7 @@ void AStaticLightCollectionActor::UpdateComponentsInternal( UBOOL bCollisionUpda
 /**
  * Serializes the LocalToWorld transforms for the StaticMeshComponents contained in this actor.
  */
+// DISHONORED(port): 2013 rva 0x2573a0 (2012 rva 0x270a70, unlight.cpp:631), identical (the save-path check(GIsCooking) aside)
 void AStaticLightCollectionActor::Serialize( FArchive& Ar )
 {
 	Super::Serialize(Ar);

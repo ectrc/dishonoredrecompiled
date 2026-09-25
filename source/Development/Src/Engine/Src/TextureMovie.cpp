@@ -139,6 +139,7 @@ void UTextureMovie::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 /**
 * Postload initialization of movie texture. Creates decoder object and retriever first frame.
 */
+// DISHONORED(port): 2013 rva 0x17d100 (2012 rva 0x18d560), identical but for the !GIsBuildMachine test retail lacks (always FALSE in game)
 void UTextureMovie::PostLoad()
 {
 	Super::PostLoad();
@@ -189,6 +190,7 @@ void UTextureMovie::PostLoad()
 *
 * @param Ar	FArchive to serialize Data with.
 */
+// DISHONORED(port): 2013 rva 0x166000 (2012 rva 0x16fa80), identical
 void UTextureMovie::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

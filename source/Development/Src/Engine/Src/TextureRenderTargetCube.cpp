@@ -111,6 +111,7 @@ void UTextureRenderTargetCube::PostEditChangeProperty(FPropertyChangedEvent& Pro
 /** 
  * Called after the object has been loaded
  */
+// DISHONORED(port): 2013 rva 0x17d420 (2012 rva 0x18d850), identical (the CONSOLE clamp is compiled out)
 void UTextureRenderTargetCube::PostLoad()
 {
 	Super::PostLoad();

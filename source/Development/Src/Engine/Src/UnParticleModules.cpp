@@ -38,6 +38,8 @@ IMPLEMENT_CLASS(UDistributionVectorParticleParameter);
 -----------------------------------------------------------------------------*/
 IMPLEMENT_CLASS(UParticleModule);
 
+// DISHONORED(port): 2013 rva 0x4c2f60 (2012 rva 0x4e48e0): only the editor -FIXUPTANGENTS pass. No seeded-distribution archetype
+// fixup: the reference gates it at 828, so it ran on every Dishonored package and re-parented distributions retail keeps
 void UParticleModule::PostLoad()
 {
 	Super::PostLoad();
@@ -57,71 +59,25 @@ void UParticleModule::PostLoad()
 				UDistributionVectorConstantCurve* VectorConstantCurve = Cast<UDistributionVectorConstantCurve>(Curve.CurveObject);
 				UDistributionVectorUniformCurve* VectorUniformCurve = Cast<UDistributionVectorUniformCurve>(Curve.CurveObject);
 
-				if (FloatConstantCurve)
+				if (FloatConstantCurve && FloatConstantCurve->UsingLegacyInterpMethod())
 				{
-					if (FloatConstantCurve->UsingLegacyInterpMethod())
-					{
-						FloatConstantCurve->UpgradeInterpMethod();
-					}
+					FloatConstantCurve->UpgradeInterpMethod();
 				}
-				if (FloatUniformCurve)
+				if (FloatUniformCurve && FloatUniformCurve->UsingLegacyInterpMethod())
 				{
-					if (FloatUniformCurve->UsingLegacyInterpMethod())
-					{
-						FloatUniformCurve->UpgradeInterpMethod();
-					}
+					FloatUniformCurve->UpgradeInterpMethod();
 				}
-				if (VectorConstantCurve)
+				if (VectorConstantCurve && VectorConstantCurve->UsingLegacyInterpMethod())
 				{
-					if (VectorConstantCurve->UsingLegacyInterpMethod())
-					{
-						VectorConstantCurve->UpgradeInterpMethod();
-					}
+					VectorConstantCurve->UpgradeInterpMethod();
 				}
-				if (VectorUniformCurve)
+				if (VectorUniformCurve && VectorUniformCurve->UsingLegacyInterpMethod())
 				{
-					if (VectorUniformCurve->UsingLegacyInterpMethod())
-					{
-						VectorUniformCurve->UpgradeInterpMethod();
-					}
+					VectorUniformCurve->UpgradeInterpMethod();
 				}
 			}
 		}
 	}
-
-#if !CONSOLE
-	if (GetLinker() && (GetLinker()->Ver() < VER_FIXUP_SEEDED_MODULE_DISTRIBUTIONS))
-	{
-		if (IsTemplate() == FALSE)
-		{
-			TArray<FParticleCurvePair> ModuleCurves;
-			GetCurveObjects(ModuleCurves);
-			for (INT CurveIdx = 0; CurveIdx < ModuleCurves.Num(); CurveIdx++)
-			{
-				FParticleCurvePair& Pair = ModuleCurves(CurveIdx);
-				if (Pair.CurveObject != NULL)
-				{
-					// Check if distribution archetype is wrong
-					UObject* ArchetypeObj = Pair.CurveObject->GetArchetype();
-					if (ArchetypeObj != NULL)
-					{
-						if (ArchetypeObj->GetOutermost()->GetName() != TEXT("Engine"))
-						{
-							debugf(TEXT("Fixing up bad archetype on %s (%s) in particle module %s"),
-								*(Pair.CurveObject->GetFullName()), *(ArchetypeObj->GetFullName()), *GetPathName());
-							Pair.CurveObject->SetArchetype(Pair.CurveObject->GetClass()->GetDefaultObject());
-						}
-					}
-					else
-					{
-						warnf(NAME_Warning, TEXT("Found distribution with no archetype: %s (%s)"),
-							*(Pair.CurveObject->GetPathName()), *GetPathName());
-					}
-				}
-			}
-		}
-	}
-#endif
 }
 
 void UParticleModule::Spawn(FParticleEmitterInstance* Owner, INT Offset, FLOAT SpawnTime)
@@ -975,6 +931,7 @@ void UParticleModuleRequired::PostEditChangeProperty(FPropertyChangedEvent& Prop
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+// DISHONORED(port): 2013 rva 0x4c34d0 (2012 rva 0x4e56e0), identical
 void UParticleModuleRequired::PostLoad()
 {
 	Super::PostLoad();
@@ -2561,6 +2518,7 @@ void UParticleModuleTypeDataMesh::PostEditChangeProperty(FPropertyChangedEvent& 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
+// DISHONORED(port): 2013 rva 0x4c3ad0 (2012 rva 0x4e5bb0), identical
 void UParticleModuleTypeDataMesh::PostLoad()
 {
 	Super::PostLoad();
