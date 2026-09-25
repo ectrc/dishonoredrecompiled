@@ -42,6 +42,27 @@ if(DISHONORED_ENABLE_ENGINE)
   target_link_libraries(Engine PUBLIC Dishonored::nvtt Dishonored::nvapi)
 endif()
 
+# Milestone 1 modules (agent N): the real Launch needs their registrants and the Core hooks they
+# own (WinSock init, game window globals, hardware survey). Each is default ON since it compiles.
+option(DISHONORED_ENABLE_GAMEFRAMEWORK "Build the GameFramework module" ON)
+if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_GAMEFRAMEWORK)
+  dishonored_module(GameFramework)
+endif()
+option(DISHONORED_ENABLE_IPDRV "Build the IpDrv module (WinSock, UDP/TCP net driver, debug server)" ON)
+if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_IPDRV)
+  dishonored_module(IpDrv)
+  # UnSocketWin.cpp / IpDrv.cpp: WinSock 2 and the WinInet HTTP downloader
+  target_link_libraries(IpDrv PUBLIC ws2_32 wininet)
+endif()
+option(DISHONORED_ENABLE_WINDRV "Build the WinDrv module (Windows client, viewport, DirectInput/XInput)" ON)
+if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_WINDRV)
+  dishonored_module(WinDrv)
+  # WinClient.cpp: DirectInput 8 joystick enumeration; XnaForceFeedbackManager.cpp: XInput
+  target_link_libraries(WinDrv PUBLIC dinput8 dxguid xinput)
+  # WintabSupport.h needs Development/External/wintab (tablet pressure, editor only), absent from the reference tree
+  target_compile_definitions(WinDrv PRIVATE WITH_WINTAB=0)
+endif()
+
 add_subdirectory(source/Development/Src/Launch)
 
 # Tests and probes

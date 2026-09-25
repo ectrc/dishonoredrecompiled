@@ -2,6 +2,11 @@
 # IpDrv_EXCLUDE: reference compile units left out of the module target (tests, tools).
 # IpDrv_NOT_IN_PDB: compiled, but the Shipping PDB attributes no function to them; verify in P2.7.
 set(IpDrv_EXCLUDE
+  # Not in the reference IpDrv.vcxproj and no function in the Shipping PDB: the reference
+  # IpDrvClasses.h declares no AUdpLink, and UCompressCommandlet uses FILECOPY_* enums that no
+  # longer exist (agent N, milestone 1).
+  Src/UdpLink.cpp
+  Src/UCompressCommandlet.cpp
 )
 set(IpDrv_NOT_IN_PDB
   Src/ClientBeaconAddressResolver.cpp

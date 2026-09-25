@@ -1,0 +1,128 @@
+"""Build DishonoredGame.exe, stage it next to the retail content, run it and diff the normalized
+Launch.log against the golden log's prefix (milestone 1: `Init: Object subsystem initialized`).
+
+Steps
+  1. cmake --build <build-dir> --target DishonoredGame (inside VsDevCmd x86), unless --no-build
+  2. resources/tools/stage_retail.py  -> build\\stage\\
+  3. run build\\stage\\Binaries\\Win32\\DishonoredGame.exe -log -nosteam -seekfreeloadingpcconsole
+     from that directory with a timeout (the process is killed when it expires)
+  4. normalize build\\stage\\DishonoredGame\\Logs\\Launch.log (normalize_log.py rules) and the
+     golden log, cut the golden one at --milestone, print a unified diff of the two prefixes
+
+Exit code: 0 when Launch.log contains the milestone line, 1 otherwise, 2 for build/stage errors.
+Usage: python resources/tools/build_and_smoke.py [--build-dir build\\agentN] [--timeout 120] [--no-build]
+       [--golden resources/docs/golden/2012_arkprofile_launch.log] [--extra-args "-nomovie"]
+"""
+import argparse
+import difflib
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "resources" / "tools"))
+from normalize_log import normalize  # noqa: E402
+from stage_retail import DEFAULT_RETAIL, GAME, stage  # noqa: E402
+
+VSDEVCMD = Path(r"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat")
+MILESTONE = "Init: Object subsystem initialized"
+# -unattended: appMsgf/appError must not block on a message box in a scripted run (UnOutputDevices.cpp HandleError)
+GAME_ARGS = ["-log", "-nosteam", "-seekfreeloadingpcconsole", "-unattended"]
+
+
+def build(build_dir: Path, log: Path) -> bool:
+    cmd = f'call "{VSDEVCMD}" -arch=x86 -host_arch=x64 -no_logo && cmake --build "{build_dir}" --target DishonoredGame -- -k 0'
+    with log.open("w", encoding="utf-8") as out:
+        rc = subprocess.run(["cmd", "/c", cmd], stdout=out, stderr=subprocess.STDOUT, cwd=REPO).returncode
+    text = log.read_text(encoding="utf-8", errors="replace")
+    errors = [line for line in text.splitlines() if ": error " in line or ": fatal error " in line]
+    print(f"build: exit {rc}, {len(errors)} error lines (log {log})")
+    for line in errors[:20]:
+        print("  " + line[-200:])
+    return rc == 0
+
+
+def run_game(exe: Path, extra_args: list[str], timeout: float, run_log: Path) -> int | None:
+    game_dir = exe.parent.parent.parent / GAME
+    launch_log = game_dir / "Logs" / "Launch.log"
+    if launch_log.exists():
+        launch_log.unlink()
+    for stale in (game_dir / "Config").glob("Dishonored*.ini"):
+        stale.unlink()
+    cmd = [str(exe), *GAME_ARGS, *extra_args]
+    print("run:", " ".join(cmd), f"(cwd {exe.parent}, timeout {timeout:.0f}s)")
+    with run_log.open("w", encoding="utf-8") as out:
+        proc = subprocess.Popen(cmd, cwd=exe.parent, stdout=out, stderr=subprocess.STDOUT)
+        try:
+            rc = proc.wait(timeout=timeout)
+            print(f"run: exit code {rc} (0x{rc & 0xFFFFFFFF:08X})")
+            return rc
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+            print("run: timeout, killed")
+            return None
+
+
+def golden_prefix(golden: Path, milestone: str) -> list[str]:
+    lines = normalize(golden.read_text(encoding="utf-8", errors="replace")).splitlines()
+    for i, line in enumerate(lines):
+        if milestone in line:
+            return lines[: i + 1]
+    raise SystemExit(f"milestone line not in golden log: {milestone}")
+
+
+def compare(launch_log: Path, golden: Path, milestone: str, out_dir: Path) -> bool:
+    if not launch_log.is_file():
+        print(f"no Launch.log at {launch_log}")
+        return False
+    raw = launch_log.read_text(encoding="utf-8", errors="replace")
+    ours = normalize(raw).splitlines()
+    (out_dir / "Launch.norm.log").write_text("\n".join(ours) + "\n", encoding="utf-8")
+    expected = golden_prefix(golden, milestone)
+    (out_dir / "golden_prefix.norm.log").write_text("\n".join(expected) + "\n", encoding="utf-8")
+    reached = any(milestone in line for line in ours)
+    cut = next((i + 1 for i, line in enumerate(ours) if milestone in line), len(ours))
+    diff = list(difflib.unified_diff(expected, ours[:cut], "golden(prefix)", "Launch.log", lineterm="", n=2))
+    (out_dir / "smoke_diff.txt").write_text("\n".join(diff) + "\n", encoding="utf-8")
+    print(f"Launch.log: {len(ours)} lines, milestone {'reached' if reached else 'NOT reached'}")
+    print("\n".join(diff) if diff else "normalized prefix identical to the golden log")
+    if not reached:
+        print("--- last 15 lines of Launch.log ---")
+        print("\n".join(ours[-15:]))
+    return reached
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--build-dir", type=Path, default=REPO / "build" / "agentN")
+    parser.add_argument("--retail", type=Path, default=DEFAULT_RETAIL)
+    parser.add_argument("--stage", type=Path, default=REPO / "build" / "stage")
+    parser.add_argument("--golden", type=Path, default=REPO / "resources" / "docs" / "golden" / "2012_arkprofile_launch.log")
+    parser.add_argument("--milestone", default=MILESTONE)
+    parser.add_argument("--timeout", type=float, default=120.0)
+    parser.add_argument("--no-build", action="store_true")
+    parser.add_argument("--extra-args", default="", help="appended to the game command line")
+    args = parser.parse_args(argv[1:])
+
+    build_dir = args.build_dir.resolve()
+    out_dir = build_dir / "smoke"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    if not args.no_build and not build(build_dir, out_dir / f"build_{stamp}.log"):
+        return 2
+    try:
+        exe = stage(build_dir, args.retail.resolve(), args.stage.resolve())
+    except SystemExit as e:
+        print(e)
+        return 2
+    run_game(exe, args.extra_args.split(), args.timeout, out_dir / f"run_{stamp}.log")
+    launch_log = args.stage.resolve() / GAME / "Logs" / "Launch.log"
+    ok = compare(launch_log, args.golden.resolve(), args.milestone, out_dir)
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

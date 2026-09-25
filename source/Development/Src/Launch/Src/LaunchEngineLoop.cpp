@@ -141,6 +141,10 @@ extern void AutoInitializeRegistrantsExoEditor( INT& Lookup );
 #elif GAMENAME == SWORDGAME
 extern void AutoInitializeRegistrantsSwordGame( INT& Lookup );
 extern void AutoInitializeRegistrantsSwordEditor( INT& Lookup );
+#elif GAMENAME == DISHONOREDGAME
+// DISHONORED: game slot 9 (LaunchGames.h); AkAudio replaces XAudio2 (module_map.md: akaudio, no xaudio2)
+extern void AutoInitializeRegistrantsDishonoredGame( INT& Lookup );
+extern void AutoInitializeRegistrantsAkAudio( INT& Lookup );
 #endif
 
 extern void AutoInitializeRegistrantsGFxUI( INT& Lookup );
@@ -195,6 +199,10 @@ extern void AutoGenerateNamesExoEditor();
 #elif GAMENAME == SWORDGAME
 extern void AutoGenerateNamesSwordGame();
 extern void AutoGenerateNamesSwordEditor();
+#elif GAMENAME == DISHONOREDGAME
+// DISHONORED: see AutoInitializeRegistrantsDishonoredGame above
+extern void AutoGenerateNamesDishonoredGame();
+extern void AutoGenerateNamesAkAudio();
 #endif
 
 #if WITH_GFx
@@ -459,6 +467,10 @@ INT			GEditorIcon	= IDICON_DemoEditor;
 #elif GAMENAME == SWORDGAME
 INT			GGameIcon	= IDICON_DemoGame;
 INT			GEditorIcon	= IDICON_DemoEditor;
+#elif GAMENAME == DISHONOREDGAME
+// DISHONORED: no game icon resource is compiled in yet (PCLaunch.rc is not built); the demo ids keep LoadIcon harmless
+INT			GGameIcon	= IDICON_DemoGame;
+INT			GEditorIcon	= IDICON_DemoEditor;
 #else
 	#error Hook up your game name here
 #endif
@@ -706,6 +718,9 @@ void appSetGameName()
 	appStrcpy(GGameName, TEXT("Fortress"));
 #elif GAMENAME == SWORDGAME
 	appStrcpy(GGameName, TEXT("Sword"));
+#elif GAMENAME == DISHONOREDGAME
+	// DISHONORED: retail tree is <root>\DishonoredGame\ (appGameDir appends "Game"), inis are DishonoredEngine.ini etc.
+	appStrcpy(GGameName, TEXT("Dishonored"));
 #else
 	#error Hook up your game name here
 #endif
@@ -813,7 +828,8 @@ const TCHAR* appGetOSSPackageName()
 	#if _WINDLL
 		// PIB has no OSS
 		return NULL;
-	#elif WITH_STEAMWORKS
+	#elif WITH_STEAMWORKS || IS_DISHONOREDGAME
+		// DISHONORED: retail links the Steamworks OSS even while WITH_STEAMWORKS=0 keeps the SDK out of our build
 		return TEXT("Steamworks");
 	#elif WITH_PANORAMA
 		// allow for a commandline option to disable all OSS entirely
@@ -1388,6 +1404,10 @@ void CheckNativeClassSizes()
 	extern void AutoCheckNativeClassSizesSwordEditor( UBOOL& Mismatch );
 	AutoCheckNativeClassSizesSwordEditor( Mismatch );
 #endif
+#elif GAMENAME == DISHONOREDGAME
+	// DISHONORED: no editor module; the game module check is a stub until DishonoredGame compiles
+	extern void AutoCheckNativeClassSizesDishonoredGame( UBOOL& Mismatch );
+	AutoCheckNativeClassSizesDishonoredGame( Mismatch );
 #else
 	#error Hook up your game name here
 #endif
@@ -4188,7 +4208,10 @@ void InitializeRegistrantsAndRegisterNames()
 #if WITH_UE3_NETWORKING
 	AutoInitializeRegistrantsIpDrv( Lookup );
 #endif	//#if WITH_UE3_NETWORKING
-#if !PS3 && !MOBILE && !PLATFORM_MACOSX && !WIIU
+#if GAMENAME == DISHONOREDGAME
+	// DISHONORED: Wwise (AkAudio) instead of XAudio2
+	AutoInitializeRegistrantsAkAudio( Lookup );
+#elif !PS3 && !MOBILE && !PLATFORM_MACOSX && !WIIU
 	AutoInitializeRegistrantsXAudio2( Lookup );
 #endif
 #if PLATFORM_MACOSX
@@ -4235,7 +4258,8 @@ void InitializeRegistrantsAndRegisterNames()
 	#if XBOX || WITH_PANORAMA
 		AutoInitializeRegistrantsOnlineSubsystemLive( Lookup );
 		AutoGenerateNamesOnlineSubsystemLive();
-	#elif WITH_STEAMWORKS
+	#elif WITH_STEAMWORKS || IS_DISHONOREDGAME
+		// DISHONORED: retail links the Steamworks OSS (see appGetOSSPackageName)
 		AutoInitializeRegistrantsOnlineSubsystemSteamworks( Lookup );
 		AutoGenerateNamesOnlineSubsystemSteamworks();
 	#elif WITH_GAMESPY
@@ -4288,6 +4312,10 @@ void InitializeRegistrantsAndRegisterNames()
 #if _WINDOWS && WITH_EDITOR
 	AutoInitializeRegistrantsSwordEditor( Lookup );
 #endif
+
+#elif GAMENAME == DISHONOREDGAME
+	// DISHONORED: no editor module
+	AutoInitializeRegistrantsDishonoredGame( Lookup );
 
 #else
 	#error Hook up your game name here
@@ -4358,6 +4386,11 @@ void InitializeRegistrantsAndRegisterNames()
 	#if _WINDOWS && WITH_EDITOR
 		AutoGenerateNamesSwordEditor();
 	#endif
+
+#elif GAMENAME == DISHONOREDGAME
+	// DISHONORED: AkAudio names come with the audio module registrants above
+	AutoGenerateNamesDishonoredGame();
+	AutoGenerateNamesAkAudio();
 
 #else
 	#error Hook up your game name here

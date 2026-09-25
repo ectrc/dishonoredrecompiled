@@ -1,4 +1,4 @@
-/*=============================================================================
+﻿/*=============================================================================
 	WinClient.cpp: UWindowsClient code.
 	Copyright 1998-2013 Epic Games, Inc. All Rights Reserved.
 =============================================================================*/
@@ -11,9 +11,9 @@
 #include <WbemIdl.h>
 #pragma pack(pop)
 
+#if WITH_WINTAB // DISHONORED: Development/External/wintab is not in the reference tree; WinViewport.cpp already guards this include (WITH_WINTAB=0 in CMakeLists.txt, no FWinTab function in the Shipping PDB)
 #include "WintabSupport.h"
 
-#if WITH_WINTAB
 FWinTab* GWinTab = NULL;
 #endif
 
