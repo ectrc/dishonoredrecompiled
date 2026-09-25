@@ -30,7 +30,7 @@ FUNC_HDR_RE = re.compile(r"^// Function (\S+)$")
 SPAN_RE = re.compile(r"^// 0x([0-9A-Fa-f]+) \(0x([0-9A-Fa-f]+) - 0x([0-9A-Fa-f]+)\)$")
 SIZE_RE = re.compile(r"^// 0x([0-9A-Fa-f]+)$")
 FLAGS_RE = re.compile(r"^// \[0x([0-9A-Fa-f]+)\]\s*(?:\((.*?)\))?\s*(?:\(iNative\[(\d+)\]\))?")
-DECL_RE = re.compile(r"^(class|struct) ([A-Za-z_]\w*)(?:\s*:\s*public\s+([A-Za-z_]\w*))?\s*$")
+DECL_RE = re.compile(r"^(class|struct) ([A-Za-z_]\w*)(?:\s*:\s*(?:public\s+)?([A-Za-z_]\w*))?\s*$")  # derived script structs are `struct X : Y`
 MEMBER_RE = re.compile(
     r"^\s+(?P<type>.+?)\s{2,}(?P<name>[A-Za-z_]\w*)(?:\[(?P<count>0x[0-9A-Fa-f]+|\d+)\])?(?P<bit>\s*:\s*1)?;\s*"
     r"//\s*0x(?P<off>[0-9A-Fa-f]+)\s*\(0x(?P<size>[0-9A-Fa-f]+)\)\s*(?P<rest>.*)$")
