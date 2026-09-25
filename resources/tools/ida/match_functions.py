@@ -831,7 +831,11 @@ class Matcher:
                 second_score, second_neg_dist = scored[1][0], scored[1][1]
                 if best_score - second_score < 0.1 and not (-neg_dist <= 2 and second_neg_dist <= neg_dist - 2 and best_score >= 0.9):
                     continue
-            n += self.add(ra, rb, sim, "order")
+            siblings = sum(1 for _s, _d, _sim, other in scored if other != rb and self.b.shape[other] == self.b.shape[rb])
+            if siblings:
+                n += self.add(ra, rb, min(sim, 0.89), "order-sibling")
+            else:
+                n += self.add(ra, rb, sim, "order")
         return n
 
     def run(self):
@@ -1025,7 +1029,8 @@ def run_report(csv_path: Path, path_a: Path, path_b: Path, out_md: Path, apply_l
         "neighbours": "best candidate among the callees of matched callers, callers of matched callees and users of matched globals (score = 0.5 similarity + 0.5 neighbour agreement, margin >= 0.1)",
         "vtable": "aligned slot of two matched function-pointer tables (vtables, GNatives, CRT initializer table); tables matched by membership votes of matched functions, slots aligned by longest common subsequence so inserted virtuals do not break the pairing",
         "tokens": "identical instruction-token stream, unique among the unmatched functions on both sides",
-        "order": "link-order window: candidate within 16 positions of the index predicted from the neighbouring matched anchors, scored by similarity + neighbour agreement, ties broken only by a clearly closer position",
+        "order": "link-order window: candidate within 16 positions of the index predicted from the neighbouring matched anchors, scored by similarity + neighbour agreement, ties broken only by a clearly closer position; no other candidate of the same shape in the window",
+        "order-sibling": "as `order` but another unmatched candidate with the same shape sits in the window; ratio capped at 0.89 so the name is not applied (validation against the 2013 native table showed ~15 % of these are sibling swaps)",
     }
     for m, c in methods.most_common():
         meaning = meanings.get(m) or (f"`{m[:-1]}` pair whose neighbour agreement ended below 0.5 after all rounds; ratio capped at 0.85, not applied" if m.endswith("?") else "")

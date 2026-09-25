@@ -124,7 +124,6 @@ ADishonoredPlayerController,0x00a620a0,0x6620a0
 UDishonoredCamera_PlayerControl,0x00a622d0,0x6622d0
 UStateNPCMasterThrown,0x00a62320,0x662320
 ADishonoredNPCController,0x00a62580,0x662580
-UDishonoredItemEmpty,0x00a62600,0x662600
 UDisItemPowers,0x00a62620,0x662620
 UDishonoredWeapon,0x00a62640,0x662640
 UDisItemContext_NPCAttractSpellCoupDeGrace,0x00a62660,0x662660

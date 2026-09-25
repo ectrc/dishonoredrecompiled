@@ -3974,6 +3974,7 @@ va,rva,name,demangled,type,size,segment
 0x00fc54b8,0xbc54b8,??_7?$FBranchingPCFProjectionPixelShader@VFLowQualityManualPCF@@@@6BFRenderResource@@@,const FBranchingPCFProjectionPixelShader<class FLowQualityManualPCF>::`vftable'{for `FRenderResource'},,4,.rdata
 0x00fc54e8,0xbc54e8,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$00$00$00$00$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<1, 1, 1, 1, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
 0x00fc5508,0xbc5508,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$0A@$00$00$00$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<0, 1, 1, 1, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
+0x00fc5528,0xbc5528,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$0A@$00$00$00$0GE@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<0, 1, 1, 1, 100>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
 0x00fc5548,0xbc5548,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$0A@$0A@$0A@$0A@$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<0, 0, 0, 0, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
 0x00fc5568,0xbc5568,??_7FRenderResource@@6B@,const FRenderResource::`vftable',,4,.rdata
 0x00fc5588,0xbc5588,??_7?$FBranchingPCFProjectionPixelShader@VFMediumQualityManualPCF@@@@6BFRenderResource@@@,const FBranchingPCFProjectionPixelShader<class FMediumQualityManualPCF>::`vftable'{for `FRenderResource'},,4,.rdata
@@ -4009,7 +4010,6 @@ va,rva,name,demangled,type,size,segment
 0x00fc5e48,0xbc5e48,__real@42200000,__real@42200000,,4,.rdata
 0x00fc5e4c,0xbc5e4c,__real@41200000,__real@41200000,,4,.rdata
 0x00fc5e50,0xbc5e50,__real@41f0000000000000,__real@41f0000000000000,,8,.rdata
-0x00fc61f8,0xbc61f8,??_7AFileLog@@6B@,const AFileLog::`vftable',,4,.rdata
 0x00fc6598,0xbc6598,__real@4059000000000000,__real@4059000000000000,,8,.rdata
 0x00fc65a0,0xbc65a0,__real@3f50624dd2f1a9fc,__real@3f50624dd2f1a9fc,,8,.rdata
 0x00fc65a8,0xbc65a8,__real@bf50624dd2f1a9fc,__real@bf50624dd2f1a9fc,,8,.rdata
@@ -4409,9 +4409,9 @@ va,rva,name,demangled,type,size,segment
 0x00fcd7dc,0xbcd7dc,??_7FGPUSkinDecalVertexFactoryShaderParameters@@6B@,const FGPUSkinDecalVertexFactoryShaderParameters::`vftable',,4,.rdata
 0x00fcd7ec,0xbcd7ec,??_7?$TShadowProjectionPixelShader@VF4SampleHwPCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F4SampleHwPCF>::`vftable'{for `FRenderResource'},,4,.rdata
 0x00fcd81c,0xbcd81c,??_7?$TShadowProjectionPixelShader@VF4SampleManualPCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F4SampleManualPCF>::`vftable'{for `FRenderResource'},,4,.rdata
-0x00fcd84c,0xbcd84c,??_7?$TShadowProjectionPixelShader@VF16SampleHwPCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F16SampleHwPCF>::`vftable'{for `FRenderResource'},,4,.rdata
-0x00fcd87c,0xbcd87c,??_7?$TShadowProjectionPixelShader@VF16SampleFetch4PCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F16SampleFetch4PCF>::`vftable'{for `FRenderResource'},,4,.rdata
-0x00fcd8ac,0xbcd8ac,??_7?$TShadowProjectionPixelShader@VF16SampleManualPCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F16SampleManualPCF>::`vftable'{for `FRenderResource'},,4,.rdata
+0x00fcd84c,0xbcd84c,??_7?$TShadowProjectionPixelShader@VF16SampleManualPCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F16SampleManualPCF>::`vftable'{for `FRenderResource'},,4,.rdata
+0x00fcd87c,0xbcd87c,??_7?$TShadowProjectionPixelShader@VF16SampleHwPCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F16SampleHwPCF>::`vftable'{for `FRenderResource'},,4,.rdata
+0x00fcd8ac,0xbcd8ac,??_7?$TShadowProjectionPixelShader@VF16SampleFetch4PCF@@@@6BFRenderResource@@@,const TShadowProjectionPixelShader<class F16SampleFetch4PCF>::`vftable'{for `FRenderResource'},,4,.rdata
 0x00fcd8dc,0xbcd8dc,__real@437f8000,__real@437f8000,,4,.rdata
 0x00fcd8e0,0xbcd8e0,??_7FDecalVertexBuffer@@6B@,const FDecalVertexBuffer::`vftable',,4,.rdata
 0x00fcd900,0xbcd900,aDecalVertexBuf,aDecalVertexBuf,,40,.rdata
@@ -4420,11 +4420,9 @@ va,rva,name,demangled,type,size,segment
 0x00fcd95c,0xbcd95c,aFindexbuffer,aFindexbuffer,,26,.rdata
 0x00fcd978,0xbcd978,??_7FLocalVertexFactory@@6B@,const FLocalVertexFactory::`vftable',,4,.rdata
 0x00fcd9a4,0xbcd9a4,__real@3c0efa35,__real@3c0efa35,,4,.rdata
-0x00fcd9b4,0xbcd9b4,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF4SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F4SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fcd9e4,0xbcd9e4,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF4SampleManualPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F4SampleManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fcda14,0xbcda14,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF16SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F16SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fcda44,0xbcda44,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF16SampleFetch4PCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F16SampleFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fcda74,0xbcda74,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF16SampleManualPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F16SampleManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fcd9e4,0xbcd9e4,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF4SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F4SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fcda44,0xbcda44,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF16SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F16SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fcda74,0xbcda74,??_7?$TModShadowProjectionPixelShader@VFDirectionalLightPolicy@@VF16SampleFetch4PCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FDirectionalLightPolicy, class F16SampleFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fcdaa4,0xbcdaa4,??_7FConsoleOutputDevice@@6B@,const FConsoleOutputDevice::`vftable',,4,.rdata
 0x00fcdab4,0xbcdab4,??_7FRawIndexBuffer@@6B@,const FRawIndexBuffer::`vftable',,4,.rdata
 0x00fcdad4,0xbcdad4,??_7FLocalDecalVertexFactory@@6BFDecalVertexFactoryBase@@@,const FLocalDecalVertexFactory::`vftable'{for `FDecalVertexFactoryBase'},,4,.rdata
@@ -4440,9 +4438,10 @@ va,rva,name,demangled,type,size,segment
 0x00fcdfc0,0xbcdfc0,__real@3fe921fb60000000,__real@3fe921fb60000000,,8,.rdata
 0x00fcdfc8,0xbcdfc8,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFLowQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FLowQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fcdff8,0xbcdff8,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFMediumQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FMediumQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fce028,0xbce028,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFHighQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FHighQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce058,0xbce058,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFLowQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FLowQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce088,0xbce088,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFMediumQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FMediumQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fce0b8,0xbce0b8,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFHighQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FHighQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fce0b8,0xbce0b8,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFHighQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FHighQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce0e8,0xbce0e8,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFLowQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FLowQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce118,0xbce118,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFMediumQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FMediumQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce148,0xbce148,??_7?$TBranchingPCFModProjectionPixelShader@VFDirectionalLightPolicy@@VFHighQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FDirectionalLightPolicy, class FHighQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
@@ -4457,7 +4456,6 @@ va,rva,name,demangled,type,size,segment
 0x00fce604,0xbce604,??_7?$TLightPixelShader@VFDirectionalLightPolicy@@VFNoStaticShadowingPolicy@@@@6BFRenderResource@@@,"const TLightPixelShader<class FDirectionalLightPolicy, class FNoStaticShadowingPolicy>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce630,0xbce630,??_7?$TLightPixelShader@VFDirectionalLightPolicy@@VFSignedDistanceFieldShadowTexturePolicy@@@@6BFRenderResource@@@,"const TLightPixelShader<class FDirectionalLightPolicy, class FSignedDistanceFieldShadowTexturePolicy>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fce910,0xbce910,??_7FDecalSceneProxy@@6B@,const FDecalSceneProxy::`vftable',,4,.rdata
-0x00fcf0f0,0xbcf0f0,??_7ABrush@@6B@,const ABrush::`vftable',,4,.rdata
 0x00fcf4a0,0xbcf4a0,??_7FFullScreenMovieBink@@6BFViewportClient@@@,const FFullScreenMovieBink::`vftable'{for `FViewportClient'},,4,.rdata
 0x00fcf518,0xbcf518,??_7FFullScreenMovieBink@@6BFTickableObject@@@,const FFullScreenMovieBink::`vftable'{for `FTickableObject'},,4,.rdata
 0x00fcf588,0xbcf588,??_7AController@@6B@,const AController::`vftable',,4,.rdata
@@ -4987,8 +4985,8 @@ va,rva,name,demangled,type,size,segment
 0x00fdb8c4,0xbdb8c4,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF4SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F4SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdb8f4,0xbdb8f4,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF4SampleManualPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F4SampleManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdb924,0xbdb924,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF16SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F16SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fdb954,0xbdb954,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF16SampleFetch4PCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F16SampleFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fdb984,0xbdb984,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF16SampleManualPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F16SampleManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fdb954,0xbdb954,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF16SampleManualPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F16SampleManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fdb984,0xbdb984,??_7?$TModShadowProjectionPixelShader@VFPointLightPolicy@@VF16SampleFetch4PCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FPointLightPolicy, class F16SampleFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdb9b8,0xbdb9b8,__real@4028000000000000,__real@4028000000000000,,8,.rdata
 0x00fdb9c0,0xbdb9c0,__real@3fe1000000000000,__real@3fe1000000000000,,8,.rdata
 0x00fdb9c8,0xbdb9c8,??_7FPrimitiveSceneProxy@@6B@,const FPrimitiveSceneProxy::`vftable',,4,.rdata
@@ -5002,11 +5000,11 @@ va,rva,name,demangled,type,size,segment
 0x00fdbd88,0xbdbd88,__real@3fc6f4b6,__real@3fc6f4b6,,4,.rdata
 0x00fdbd8c,0xbdbd8c,__real@3c8efa35,__real@3c8efa35,,4,.rdata
 0x00fdbd90,0xbdbd90,??_7FCameraConeSceneProxy@?1??CreateSceneProxy@UCameraConeComponent@@UAEPAVFPrimitiveSceneProxy@@XZ@6B@,const `public: virtual class FPrimitiveSceneProxy * __thiscall UCameraConeComponent::CreateSceneProxy(void)'::`2'::FCameraConeSceneProxy::`vftable',,4,.rdata
-0x00fdbe08,0xbdbe08,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFLowQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FLowQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fdbe38,0xbdbe38,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFMediumQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FMediumQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fdbe08,0xbdbe08,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFLowQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FLowQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fdbe38,0xbdbe38,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFMediumQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FMediumQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdbe68,0xbdbe68,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFHighQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FHighQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fdbe98,0xbdbe98,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFLowQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FLowQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fdbec8,0xbdbec8,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFMediumQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FMediumQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fdbe98,0xbdbe98,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFLowQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FLowQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fdbec8,0xbdbec8,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFMediumQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FMediumQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdbef8,0xbdbef8,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFHighQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FHighQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdbf28,0xbdbf28,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFLowQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FLowQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fdbf58,0xbdbf58,??_7?$TBranchingPCFModProjectionPixelShader@VFPointLightPolicy@@VFMediumQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FPointLightPolicy, class FMediumQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
@@ -5342,12 +5340,13 @@ va,rva,name,demangled,type,size,segment
 0x00fe4640,0xbe4640,??_7ASplineActor@@6B@,const ASplineActor::`vftable',,4,.rdata
 0x00fe4a20,0xbe4a20,??_7USplineComponent@@6B@,const USplineComponent::`vftable',,4,.rdata
 0x00fe50c0,0xbe50c0,??_7ASplineLoftActorMovable@@6B@,const ASplineLoftActorMovable::`vftable',,4,.rdata
-0x00fe5594,0xbe5594,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFLowQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FLowQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fe55c4,0xbe55c4,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFMediumQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FMediumQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fe55f4,0xbe55f4,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFHighQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FHighQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fe5624,0xbe5624,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFLowQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FLowQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fe5654,0xbe5654,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFMediumQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FMediumQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
-0x00fe5684,0xbe5684,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFHighQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FHighQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe5564,0xbe5564,??_7?$TModShadowProjectionPixelShader@VFSpotLightPolicy@@VF16SampleHwPCF@@@@6BFRenderResource@@@,"const TModShadowProjectionPixelShader<class FSpotLightPolicy, class F16SampleHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe5594,0xbe5594,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFLowQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FLowQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe55c4,0xbe55c4,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFMediumQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FMediumQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe55f4,0xbe55f4,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFHighQualityFetch4PCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FHighQualityFetch4PCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe5624,0xbe5624,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFLowQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FLowQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe5654,0xbe5654,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFMediumQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FMediumQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
+0x00fe5684,0xbe5684,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFHighQualityHwPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FHighQualityHwPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fe56b4,0xbe56b4,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFLowQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FLowQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fe56e4,0xbe56e4,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFMediumQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FMediumQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
 0x00fe5714,0xbe5714,??_7?$TBranchingPCFModProjectionPixelShader@VFSpotLightPolicy@@VFHighQualityManualPCF@@@@6BFRenderResource@@@,"const TBranchingPCFModProjectionPixelShader<class FSpotLightPolicy, class FHighQualityManualPCF>::`vftable'{for `FRenderResource'}",,4,.rdata
@@ -6254,7 +6253,7 @@ va,rva,name,demangled,type,size,segment
 0x00ff5d48,0xbf5d48,??_7ATrigger@@6B@,const ATrigger::`vftable',,4,.rdata
 0x00ff60e8,0xbf60e8,??_7ATrigger_LOS@@6B@,const ATrigger_LOS::`vftable',,4,.rdata
 0x00ff6488,0xbf6488,??_7AReplicationInfo@@6B@,const AReplicationInfo::`vftable',,4,.rdata
-0x00ff6bd0,0xbf6bd0,??_7ABrushShape@@6B@,const ABrushShape::`vftable',,4,.rdata
+0x00ff6828,0xbf6828,??_7AGameReplicationInfo@@6B@,const AGameReplicationInfo::`vftable',,4,.rdata
 0x00ff76f0,0xbf76f0,??_7ATeamInfo@@6B@,const ATeamInfo::`vftable',,4,.rdata
 0x00ff7e40,0xbf7e40,??_7ADynamicBlockingVolume@@6B@,const ADynamicBlockingVolume::`vftable',,4,.rdata
 0x00ff81f0,0xbf81f0,??_7ALevelStreamingVolume@@6B@,const ALevelStreamingVolume::`vftable',,4,.rdata
@@ -8881,8 +8880,10 @@ va,rva,name,demangled,type,size,segment
 0x0101bf30,0xc1bf30,__real@3ec00000,__real@3ec00000,,4,.rdata
 0x0101bf34,0xc1bf34,__real@bec00000,__real@bec00000,,4,.rdata
 0x0101bf38,0xc1bf38,__real@be000000,__real@be000000,,4,.rdata
+0x0101bf3c,0xc1bf3c,??_7BeginDrawingCommand@?5??TiledScreenshot@FViewport@@IAEXH@Z@6B@,const `protected: void __thiscall FViewport::TiledScreenshot(int)'::`6'::BeginDrawingCommand::`vftable',,4,.rdata
 0x0101bf48,0xc1bf48,??_7EndDrawingCommand@?BD@??TiledScreenshot@FViewport@@IAEXH@Z@6B@,const `protected: void __thiscall FViewport::TiledScreenshot(int)'::`19'::EndDrawingCommand::`vftable',,4,.rdata
 0x0101bf54,0xc1bf54,??_7ShouldClearMBInfoCommand@?1??SetClearMotionBlurInfoGameThread@FViewport@@QAEXI@Z@6B@,const `public: void __thiscall FViewport::SetClearMotionBlurInfoGameThread(unsigned int)'::`2'::ShouldClearMBInfoCommand::`vftable',,4,.rdata
+0x0101bf60,0xc1bf60,??_7BeginDrawingCommand@?BO@??Draw@FViewport@@QAEXI@Z@6B@,const `public: void __thiscall FViewport::Draw(unsigned int)'::`30'::BeginDrawingCommand::`vftable',,4,.rdata
 0x0101bf6c,0xc1bf6c,??_7EndDrawingCommand@?CM@??Draw@FViewport@@QAEXI@Z@6B@,const `public: void __thiscall FViewport::Draw(unsigned int)'::`44'::EndDrawingCommand::`vftable',,4,.rdata
 0x0101bf78,0xc1bf78,??_7UCodecMovie@@6B@,const UCodecMovie::`vftable',,4,.rdata
 0x0101c0d8,0xc1c0d8,??_7UCodecMovieFallback@@6B@,const UCodecMovieFallback::`vftable',,4,.rdata
@@ -9590,13 +9591,11 @@ va,rva,name,demangled,type,size,segment
 0x01027488,0xc27488,??_7UInterpTrackInstBoolProp@@6B@,const UInterpTrackInstBoolProp::`vftable',,4,.rdata
 0x01027848,0xc27848,??_7UInterpTrackInstEvent@@6B@,const UInterpTrackInstEvent::`vftable',,4,.rdata
 0x01027988,0xc27988,??_7UInterpTrackInstDirector@@6B@,const UInterpTrackInstDirector::`vftable',,4,.rdata
-0x01027ac8,0xc27ac8,??_7UInterpTrackInstFade@@6B@,const UInterpTrackInstFade::`vftable',,4,.rdata
 0x01027c08,0xc27c08,??_7UInterpTrackInstSlomo@@6B@,const UInterpTrackInstSlomo::`vftable',,4,.rdata
 0x01027d48,0xc27d48,??_7UInterpTrackInstAnimControl@@6B@,const UInterpTrackInstAnimControl::`vftable',,4,.rdata
 0x01027e88,0xc27e88,??_7UInterpTrackInstColorScale@@6B@,const UInterpTrackInstColorScale::`vftable',,4,.rdata
 0x01027fc8,0xc27fc8,??_7UInterpTrackInstFaceFX@@6B@,const UInterpTrackInstFaceFX::`vftable',,4,.rdata
 0x01028108,0xc28108,??_7UInterpTrackInstVisibility@@6B@,const UInterpTrackInstVisibility::`vftable',,4,.rdata
-0x01028248,0xc28248,??_7UInterpTrackInstParticleReplay@@6B@,const UInterpTrackInstParticleReplay::`vftable',,4,.rdata
 0x01028390,0xc28390,__real@3b360b61,__real@3b360b61,,4,.rdata
 0x01028398,0xc28398,??_7UInterpFilter@@6B@,const UInterpFilter::`vftable',,4,.rdata
 0x010284c0,0xc284c0,aUnrealedSequen,aUnrealedSequen,,60,.rdata
@@ -9629,7 +9628,6 @@ va,rva,name,demangled,type,size,segment
 0x0102a928,0xc2a928,??_7UInterpTrackDirector@@6BUObject@@@,const UInterpTrackDirector::`vftable'{for `UObject'},,4,.rdata
 0x0102ac18,0xc2ac18,??_7UInterpTrackSlomo@@6BUObject@@@,const UInterpTrackSlomo::`vftable'{for `UObject'},,4,.rdata
 0x0102ad90,0xc2ad90,??_7UInterpTrackAnimControl@@6BUObject@@@,const UInterpTrackAnimControl::`vftable'{for `UObject'},,4,.rdata
-0x0102af08,0xc2af08,??_7UInterpTrackFloatParticleParam@@6BUObject@@@,const UInterpTrackFloatParticleParam::`vftable'{for `UObject'},,4,.rdata
 0x0102b078,0xc2b078,??_7UInterpTrackColorScale@@6BUObject@@@,const UInterpTrackColorScale::`vftable'{for `UObject'},,4,.rdata
 0x0102b1e0,0xc2b1e0,??_7UInterpTrackFaceFX@@6BUObject@@@,const UInterpTrackFaceFX::`vftable'{for `UObject'},,4,.rdata
 0x0102b358,0xc2b358,??_7UInterpTrackMorphWeight@@6BUObject@@@,const UInterpTrackMorphWeight::`vftable'{for `UObject'},,4,.rdata
@@ -10791,7 +10789,6 @@ va,rva,name,demangled,type,size,segment
 0x010444b0,0xc444b0,__real@447fc000,__real@447fc000,,4,.rdata
 0x010444b4,0xc444b4,??_7FHitMaskUpdateCommand@?7??SetCaptureParameters@USceneCapture2DHitMaskComponent@@QAEXABVFVector@@M0I@Z@6B@,"const `public: void __thiscall USceneCapture2DHitMaskComponent::SetCaptureParameters(class FVector const &, float, class FVector const &, unsigned int)'::`8'::FHitMaskUpdateCommand::`vftable'",,4,.rdata
 0x010444c0,0xc444c0,__real@3c008081,__real@3c008081,,4,.rdata
-0x010444c4,0xc444c4,??_7FMipColorTexture@@6B@,const FMipColorTexture::`vftable',,4,.rdata
 0x010444ec,0xc444ec,__real@43330000,__real@43330000,,4,.rdata
 0x010444f0,0xc444f0,??_7?$TGlobalResource@V?$FColoredTexture@$0PP@$0PP@$0PP@$0PP@@@@@6B@,"const TGlobalResource<class FColoredTexture<255, 255, 255, 255>>::`vftable'",,4,.rdata
 0x01044518,0xc44518,??_7?$TGlobalResource@V?$FColoredTexture@$0A@$0A@$0A@$0PP@@@@@6B@,"const TGlobalResource<class FColoredTexture<0, 0, 0, 255>>::`vftable'",,4,.rdata
@@ -10890,10 +10887,10 @@ va,rva,name,demangled,type,size,segment
 0x0104b6f0,0xc4b6f0,??_7USeqAct_IsInObjectList@@6B@,const USeqAct_IsInObjectList::`vftable',,4,.rdata
 0x0104b880,0xc4b880,??_7USeqAct_LevelStreamingBase@@6B@,const USeqAct_LevelStreamingBase::`vftable',,4,.rdata
 0x0104ba18,0xc4ba18,??_7USeqAct_LevelVisibility@@6B@,const USeqAct_LevelVisibility::`vftable',,4,.rdata
+0x0104bbb0,0xc4bbb0,??_7USeqAct_Log@@6B@,const USeqAct_Log::`vftable',,4,.rdata
 0x0104bd40,0xc4bd40,??_7USeqAct_ModifyHealth@@6B@,const USeqAct_ModifyHealth::`vftable',,4,.rdata
 0x0104bed0,0xc4bed0,??_7USeqAct_MultiLevelStreaming@@6B@,const USeqAct_MultiLevelStreaming::`vftable',,4,.rdata
 0x0104c068,0xc4c068,??_7USeqAct_ParticleEventGenerator@@6B@,const USeqAct_ParticleEventGenerator::`vftable',,4,.rdata
-0x0104c1f8,0xc4c1f8,??_7USeqAct_PlayFaceFXAnim@@6B@,const USeqAct_PlayFaceFXAnim::`vftable',,4,.rdata
 0x0104c388,0xc4c388,??_7USeqAct_Possess@@6B@,const USeqAct_Possess::`vftable',,4,.rdata
 0x0104c518,0xc4c518,??_7USeqAct_PrepareMapChange@@6B@,const USeqAct_PrepareMapChange::`vftable',,4,.rdata
 0x0104c6b0,0xc4c6b0,??_7USeqAct_SetCameraTarget@@6B@,const USeqAct_SetCameraTarget::`vftable',,4,.rdata
@@ -11415,7 +11412,6 @@ va,rva,name,demangled,type,size,segment
 0x0105a378,0xc5a378,??_7FLegacyStaticMeshVertexBuffer@@6B@,const FLegacyStaticMeshVertexBuffer::`vftable',,4,.rdata
 0x0105a398,0xc5a398,??_7FStaticMeshVertexBuffer@@6B@,const FStaticMeshVertexBuffer::`vftable',,4,.rdata
 0x0105a3b8,0xc5a3b8,__real@44fa0000,__real@44fa0000,,4,.rdata
-0x0105a3bc,0xc5a3bc,??_7FStaticMeshStaticLightingTextureMapping@@6BFRefCountedObject@@@,const FStaticMeshStaticLightingTextureMapping::`vftable'{for `FRefCountedObject'},,4,.rdata
 0x0105a3c4,0xc5a3c4,??_7FStaticMeshStaticLightingTextureMapping@@6BFStaticLightingMapping@@@,const FStaticMeshStaticLightingTextureMapping::`vftable'{for `FStaticLightingMapping'},,4,.rdata
 0x0105a3ec,0xc5a3ec,??_7FStaticMeshStaticLightingVertexMapping@@6BFStaticLightingMapping@@@,const FStaticMeshStaticLightingVertexMapping::`vftable'{for `FStaticLightingMapping'},,4,.rdata
 0x0105a410,0xc5a410,??_7FGPUSkinVertexFactory@@6B@,const FGPUSkinVertexFactory::`vftable',,4,.rdata
@@ -12917,6 +12913,7 @@ va,rva,name,demangled,type,size,segment
 0x01073570,0xc73570,??_7ANxTornadoAngularForceField@@6B@,const ANxTornadoAngularForceField::`vftable',,4,.rdata
 0x01073920,0xc73920,??_7ANxTornadoForceField@@6B@,const ANxTornadoForceField::`vftable',,4,.rdata
 0x01073cd0,0xc73cd0,??_7ANxTornadoAngularForceFieldCapsule@@6B@,const ANxTornadoAngularForceFieldCapsule::`vftable',,4,.rdata
+0x01074080,0xc74080,??_7UUIDataProvider_OnlinePlayerStorage@@6B@,const UUIDataProvider_OnlinePlayerStorage::`vftable',,4,.rdata
 0x010741e8,0xc741e8,??_7UUIDataStore_Strings@@6B@,const UUIDataStore_Strings::`vftable',,4,.rdata
 0x01074354,0xc74354,??_7UUIDynamicDataProvider@@6BIUIListElementCellProvider@@@,const UUIDynamicDataProvider::`vftable'{for `IUIListElementCellProvider'},,4,.rdata
 0x01074368,0xc74368,??_7UUIMapSummary@@6BIUIListElementCellProvider@@@,const UUIMapSummary::`vftable'{for `IUIListElementCellProvider'},,4,.rdata
@@ -13293,8 +13290,9 @@ va,rva,name,demangled,type,size,segment
 0x01079c70,0xc79c70,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$0A@$0A@$00$0A@$02$0IA@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 1, 0, 0, 1, 0, 3, 128>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
 0x01079c90,0xc79c90,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$03$04$0A@$0A@$00$01$0A@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 4, 5, 0, 0, 1, 2, 0>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
 0x01079cb0,0xc79cb0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$07$0A@$0A@$0A@$00$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 8, 0, 0, 0, 1, 7, 255>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
-0x01079cd0,0xc79cd0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$04$0A@$00$04$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 1, 5, 0, 1, 5, 7, 255>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
+0x01079cd0,0xc79cd0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticStencilState@$00$06$0A@$0A@$01$0A@$06$0A@$0A@$0A@$0PP@$0PP@$0A@@@V?$TDynamicRHIResourceReference@$03@@@@6B@,"const TStaticStateRHI<class TStaticStencilState<1, 7, 0, 0, 2, 0, 7, 0, 0, 0, 255, 255, 0>, class TDynamicRHIResourceReference<4>>::FStaticStateResource::`vftable'",,4,.rdata
 0x01079cf0,0xc79cf0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$0A@$0A@$00$0A@$02$00@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 1, 0, 0, 1, 0, 3, 1>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
+0x01079d10,0xc79d10,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$04$0A@$00$04$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 1, 5, 0, 1, 5, 7, 255>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
 0x01079d30,0xc79d30,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$03$0A@$00$0A@$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 1, 4, 0, 1, 0, 7, 255>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
 0x01079d50,0xc79d50,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticRasterizerState@$01$00@@V?$TDynamicRHIResourceReference@$01@@@@6B@,"const TStaticStateRHI<class TStaticRasterizerState<2, 1>, class TDynamicRHIResourceReference<2>>::FStaticStateResource::`vftable'",,4,.rdata
 0x01079d70,0xc79d70,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticRasterizerState@$01$01@@V?$TDynamicRHIResourceReference@$01@@@@6B@,"const TStaticStateRHI<class TStaticRasterizerState<2, 2>, class TDynamicRHIResourceReference<2>>::FStaticStateResource::`vftable'",,4,.rdata
@@ -13807,10 +13805,8 @@ va,rva,name,demangled,type,size,segment
 0x0107f6f4,0xc7f6f4,??_7?$TGlobalResource@VFFilterVertexDeclaration@@@@6B@,const TGlobalResource<class FFilterVertexDeclaration>::`vftable',,4,.rdata
 0x0107f714,0xc7f714,??_7?$TGlobalResource@VFShadowFrustumVertexDeclaration@@@@6B@,const TGlobalResource<class FShadowFrustumVertexDeclaration>::`vftable',,4,.rdata
 0x0107f734,0xc7f734,??_7?$TFilterPixelShaderDepthInAlpha@$0P@@@6BFRenderResource@@@,const TFilterPixelShaderDepthInAlpha<15>::`vftable'{for `FRenderResource'},,4,.rdata
-0x0107f760,0xc7f760,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$0A@$00$00$00$0GE@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<0, 1, 1, 1, 100>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
 0x0107f780,0xc7f780,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$01$00$00$00$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<2, 1, 1, 1, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
 0x0107f7a0,0xc7f7a0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$02$00$00$00$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<3, 1, 1, 1, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
-0x0107f7c0,0xc7f7c0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticStencilState@$00$04$0A@$0A@$01$0A@$06$0A@$0A@$0A@$0PP@$0PP@$0A@@@V?$TDynamicRHIResourceReference@$03@@@@6B@,"const TStaticStateRHI<class TStaticStencilState<1, 5, 0, 0, 2, 0, 7, 0, 0, 0, 255, 255, 0>, class TDynamicRHIResourceReference<4>>::FStaticStateResource::`vftable'",,4,.rdata
 0x0107f7e0,0xc7f7e0,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$0A@$0A@$0A@$00$00$0A@@@V?$TDynamicRHIResourceReference@$04@@@@6B@,"const TStaticStateRHI<class TStaticBlendState<0, 1, 0, 0, 0, 1, 1, 0>, class TDynamicRHIResourceReference<5>>::FStaticStateResource::`vftable'",,4,.rdata
 0x0107f800,0xc7f800,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticStencilState@$00$06$0A@$05$0A@$00$06$0A@$06$0A@$0PP@$0PP@$0A@@@V?$TDynamicRHIResourceReference@$03@@@@6B@,"const TStaticStateRHI<class TStaticStencilState<1, 7, 0, 6, 0, 1, 7, 0, 7, 0, 255, 255, 0>, class TDynamicRHIResourceReference<4>>::FStaticStateResource::`vftable'",,4,.rdata
 0x0107f820,0xc7f820,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticStencilState@$00$06$0A@$0A@$05$00$06$0A@$0A@$06$0PP@$0PP@$0A@@@V?$TDynamicRHIResourceReference@$03@@@@6B@,"const TStaticStateRHI<class TStaticStencilState<1, 7, 0, 0, 6, 1, 7, 0, 0, 7, 255, 255, 0>, class TDynamicRHIResourceReference<4>>::FStaticStateResource::`vftable'",,4,.rdata
@@ -13949,7 +13945,7 @@ va,rva,name,demangled,type,size,segment
 0x01081410,0xc81410,??_7UParticleModule@@6B@,const UParticleModule::`vftable',,4,.rdata
 0x010815a8,0xc815a8,??_7UParticleModuleEventBase@@6B@,const UParticleModuleEventBase::`vftable',,4,.rdata
 0x01081740,0xc81740,??_7UParticleModuleSpawnBase@@6B@,const UParticleModuleSpawnBase::`vftable',,4,.rdata
-0x010818e0,0xc818e0,??_7UParticleModuleVelocityBase@@6B@,const UParticleModuleVelocityBase::`vftable',,4,.rdata
+0x010818e0,0xc818e0,??_7UParticleModuleTypeDataBase@@6B@,const UParticleModuleTypeDataBase::`vftable',,4,.rdata
 0x01081a88,0xc81a88,??_7UParticleModuleTypeDataMesh@@6B@,const UParticleModuleTypeDataMesh::`vftable',,4,.rdata
 0x01081c30,0xc81c30,??_7UParticleModuleTypeDataPhysX@@6B@,const UParticleModuleTypeDataPhysX::`vftable',,4,.rdata
 0x01081dd8,0xc81dd8,??_7UParticleModuleTypeDataMeshPhysX@@6B@,const UParticleModuleTypeDataMeshPhysX::`vftable',,4,.rdata
@@ -14573,8 +14569,8 @@ va,rva,name,demangled,type,size,segment
 0x0109334c,0xc9334c,??_7FFluidApplyPixelShader@@6BFRenderResource@@@,const FFluidApplyPixelShader::`vftable'{for `FRenderResource'},,4,.rdata
 0x0109338c,0xc9338c,??_7FArkComponentMeshOffset@@6BFArkComponentBase@@@,const FArkComponentMeshOffset::`vftable'{for `FArkComponentBase'},,4,.rdata
 0x010933b4,0xc933b4,aArkcpnttypeMes,aArkcpnttypeMes,,46,.rdata
-0x01093518,0xc93518,??_7UOnlineStatsWrite@@6B@,const UOnlineStatsWrite::`vftable',,4,.rdata
-0x01093668,0xc93668,??_7UIniLocPatcher@@6B@,const UIniLocPatcher::`vftable',,4,.rdata
+0x010938d8,0xc938d8,??_7UOnlinePlayerStorage@@6B@,const UOnlinePlayerStorage::`vftable',,4,.rdata
+0x01093a78,0xc93a78,??_7UOnlineProfileSettings@@6B@,const UOnlineProfileSettings::`vftable',,4,.rdata
 0x01093d88,0xc93d88,??_7USettings@@6B@,const USettings::`vftable',,4,.rdata
 0x01093f58,0xc93f58,aAspeedtreeacto,aAspeedtreeacto,,32,.rdata
 0x01093f78,0xc93f78,aAspeedtreeacto_0,aAspeedtreeacto_0,,32,.rdata
@@ -14910,7 +14906,6 @@ va,rva,name,demangled,type,size,segment
 0x0109cbb4,0xc9cbb4,__real@5368d4a5,__real@5368d4a5,,4,.rdata
 0x0109cbb8,0xc9cbb8,??_7?$TGlobalResource@V?$FArkDofRamp@$0BA@@?A0xd53d1594@@@@6B@,const TGlobalResource<class `anonymous namespace'::FArkDofRamp<16>>::`vftable',,4,.rdata
 0x0109cbdc,0xc9cbdc,__real@46fffe00,__real@46fffe00,,4,.rdata
-0x0109cbe8,0xc9cbe8,??_7UArkPpNode@@6B@,const UArkPpNode::`vftable',,4,.rdata
 0x0109cd30,0xc9cd30,??_7FArkPpNodeMaterialProxy@@6B@,const FArkPpNodeMaterialProxy::`vftable',,4,.rdata
 0x0109cd4c,0xc9cd4c,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$00$0A@$0A@$00$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<1, 0, 0, 1, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
 0x0109cd6c,0xc9cd6c,??_7FStaticStateResource@?$TStaticStateRHI@V?$TStaticSamplerState@$00$00$0A@$00$0A@@@V?$TDynamicRHIResourceReference@$00@@@@6B@,"const TStaticStateRHI<class TStaticSamplerState<1, 1, 0, 1, 0>, class TDynamicRHIResourceReference<1>>::FStaticStateResource::`vftable'",,4,.rdata
@@ -15477,7 +15472,6 @@ va,rva,name,demangled,type,size,segment
 0x010a9940,0xca9940,??_7AGameCameraBlockingVolume@@6B@,const AGameCameraBlockingVolume::`vftable',,4,.rdata
 0x010a9cf0,0xca9cf0,__real@43360b5e,__real@43360b5e,,4,.rdata
 0x010a9cf8,0xca9cf8,__real@404cf928002be912,__real@404cf928002be912,,8,.rdata
-0x010a9d00,0xca9d00,??_7AGamePlayerController@@6B@,const AGamePlayerController::`vftable',,4,.rdata
 0x010aa1e8,0xcaa1e8,??_7AGameCrowdInteractionPoint@@6B@,const AGameCrowdInteractionPoint::`vftable',,4,.rdata
 0x010aa58c,0xcaa58c,??_7AGameCrowdAgent@@6BIInterface_NavigationHandle@@@,const AGameCrowdAgent::`vftable'{for `IInterface_NavigationHandle'},,4,.rdata
 0x010aa5a0,0xcaa5a0,??_7AGameCrowdAgent@@6BAActor@@@,const AGameCrowdAgent::`vftable'{for `AActor'},,4,.rdata
@@ -15485,7 +15479,7 @@ va,rva,name,demangled,type,size,segment
 0x010aad28,0xcaad28,??_7USeqAct_GameCrowdSpawner@@6B@,const USeqAct_GameCrowdSpawner::`vftable',,4,.rdata
 0x010aaeb8,0xcaaeb8,??_7USeqEvent_CrowdAgentReachedDestination@@6B@,const USeqEvent_CrowdAgentReachedDestination::`vftable',,4,.rdata
 0x010ab058,0xcab058,??_7AGameDecalManager@@6B@,const AGameDecalManager::`vftable',,4,.rdata
-0x010ab410,0xcab410,??_7UGameDecal@@6B@,const UGameDecal::`vftable',,4,.rdata
+0x010ab410,0xcab410,??_7UGameDestinationConnRenderingComponent@@6B@,const UGameDestinationConnRenderingComponent::`vftable',,4,.rdata
 0x010ab6c0,0xcab6c0,??_7AGameKActorSpawnableEffect@@6B@,const AGameKActorSpawnableEffect::`vftable',,4,.rdata
 0x010aba68,0xcaba68,??_7UGameSkelCtrl_Recoil@@6B@,const UGameSkelCtrl_Recoil::`vftable',,4,.rdata
 0x010abbd4,0xcabbd4,__real@c7000000,__real@c7000000,,4,.rdata
@@ -16346,7 +16340,6 @@ va,rva,name,demangled,type,size,segment
 0x010b5d74,0xcb5d74,??_7GImage@@6B@,const GImage::`vftable',,4,.rdata
 0x010b5d78,0xcb5d78,??_7UGFxAction_Invoke@@6B@,const UGFxAction_Invoke::`vftable',,4,.rdata
 0x010b5f08,0xcb5f08,aGlobal_1,aGlobal_1,,14,.rdata
-0x010b6040,0xcb6040,??_7UFlashMovie@@6B@,const UFlashMovie::`vftable',,4,.rdata
 0x010b6164,0xcb6164,??_7DrawUIBackgroundColorCommand@?BC@??BeginDisplay@FGFxRenderer@@UAEXVGColor@@ABVGViewport@@MMMM@Z@6B@,"const `public: virtual void __thiscall FGFxRenderer::BeginDisplay(class GColor, class GViewport const &, float, float, float, float)'::`18'::DrawUIBackgroundColorCommand::`vftable'",,4,.rdata
 0x010b6170,0xcb6170,??_7DrawBlurRectCommand@?1??DrawBlurRect@FGFxRenderer@@UAEXPAVGTexture@@ABV?$GRect@M@@1ABUBlurFilterParams@GRenderer@@_N@Z@6B@,"const `public: virtual void __thiscall FGFxRenderer::DrawBlurRect(class GTexture *, class GRect<float> const &, class GRect<float> const &, struct GRenderer::BlurFilterParams const &, bool)'::`2'::DrawBlurRectCommand::`vftable'",,4,.rdata
 0x010b617c,0xcb617c,??_7DrawColorMatrixRectCommand@?1??DrawColorMatrixRect@FGFxRenderer@@UAEXPAVGTexture@@ABV?$GRect@M@@1PBM_N@Z@6B@,"const `public: virtual void __thiscall FGFxRenderer::DrawColorMatrixRect(class GTexture *, class GRect<float> const &, class GRect<float> const &, float const *, bool)'::`2'::DrawColorMatrixRectCommand::`vftable'",,4,.rdata
@@ -19332,18 +19325,16 @@ va,rva,name,demangled,type,size,segment
 0x010e10a0,0xce10a0,??_7UDisTweaks_TuneSource_Protection@@6B@,const UDisTweaks_TuneSource_Protection::`vftable',,4,.rdata
 0x010e11e0,0xce11e0,??_7ADisRatRepulsor@@6B@,const ADisRatRepulsor::`vftable',,4,.rdata
 0x010e1588,0xce1588,??_7UDisRenderProxyComponent@@6B@,const UDisRenderProxyComponent::`vftable',,4,.rdata
-0x010e1830,0xce1830,??_7UDisTweaks_SoundSource@@6B@,const UDisTweaks_SoundSource::`vftable',,4,.rdata
 0x010e1c60,0xce1c60,??_7UDisTweaks_Trigger@@6B@,const UDisTweaks_Trigger::`vftable',,4,.rdata
 0x010e1da0,0xce1da0,??_7UDisTweaks_Tripwire@@6B@,const UDisTweaks_Tripwire::`vftable',,4,.rdata
 0x010e1ee8,0xce1ee8,??_7UDisSeqAct_WallofLightControl@@6B@,const UDisSeqAct_WallofLightControl::`vftable',,4,.rdata
 0x010e2090,0xce2090,??_7ADisWaterSource@@6BIDisInteractableInterface@@@,const ADisWaterSource::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010e2570,0xce2570,??_7ADisAbstractItemPickupNote@@6BIDisMovableInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010e25a0,0xce25a0,??_7ADisAbstractItemPickupNote@@6BIDisSoulRenderInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010e2570,0xce2570,??_7ADisPickup_Base@@6BIDisMovableInterface@@@,const ADisPickup_Base::`vftable'{for `IDisMovableInterface'},,4,.rdata
+0x010e25a0,0xce25a0,??_7ADisPickup_Base@@6BIDisSoulRenderInterface@@@,const ADisPickup_Base::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010e25b8,0xce25b8,??_7ADisAbstractItemPickupNote@@6BIDisInteractableInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010e2628,0xce2628,??_7ADisAbstractItemPickupNote@@6BIDisTweaksInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x010e2644,0xce2644,??_7ADisAbstractItemPickupNote@@6BIDisHitReboundInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x010e2654,0xce2654,??_7ADisAbstractItemPickupNote@@6BIDisNoiseMakerInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
-0x010e2668,0xce2668,??_7ADisAbstractItemPickupNote@@6BIDisContactTypeInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
+0x010e2644,0xce2644,??_7ADisPickup_Base@@6BIDisHitReboundInterface@@@,const ADisPickup_Base::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
+0x010e2654,0xce2654,??_7ADisPickup_Base@@6BIDisNoiseMakerInterface@@@,const ADisPickup_Base::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
+0x010e2668,0xce2668,??_7ADisPickup_Base@@6BIDisContactTypeInterface@@@,const ADisPickup_Base::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010e2678,0xce2678,??_7ADisAbstractItemPickupNote@@6BAKActor@@@,const ADisAbstractItemPickupNote::`vftable'{for `AKActor'},,4,.rdata
 0x010e2a40,0xce2a40,??_7UDisAlarmBellComponent@@6B@,const UDisAlarmBellComponent::`vftable',,4,.rdata
 0x010e2e30,0xce2e30,??_7IDisConvSpeakerInterface@@6B@,const IDisConvSpeakerInterface::`vftable',,4,.rdata
@@ -19363,26 +19354,21 @@ va,rva,name,demangled,type,size,segment
 0x010e3a08,0xce3a08,??_7ADisSoundSource@@6BAActor@@@,const ADisSoundSource::`vftable'{for `AActor'},,4,.rdata
 0x010e3da8,0xce3da8,??_7ADisStaticCollisionActor@@6BAStaticMeshActor@@@,const ADisStaticCollisionActor::`vftable'{for `AStaticMeshActor'},,4,.rdata
 0x010e4148,0xce4148,??_7ADisStaticMeshActor@@6BAStaticMeshActor@@@,const ADisStaticMeshActor::`vftable'{for `AStaticMeshActor'},,4,.rdata
-0x010e44e8,0xce44e8,??_7ADisSplineLoftActor@@6BASplineLoftActor@@@,const ADisSplineLoftActor::`vftable'{for `ASplineLoftActor'},,4,.rdata
 0x010e48cc,0xce48cc,??_7ADisDetectionEye@@6BIDisTweaksInterface@@@,const ADisDetectionEye::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e4c8c,0xce4c8c,??_7ADishonoredKActor@@6BIDisTweaksInterface@@@,const ADishonoredKActor::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e4ca8,0xce4ca8,??_7ADishonoredKActor@@6BAKActor@@@,const ADishonoredKActor::`vftable'{for `AKActor'},,4,.rdata
 0x010e5058,0xce5058,??_7ADishonoredKAsset@@6BIDisTweaksInterface@@@,const ADishonoredKAsset::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e5078,0xce5078,??_7ADishonoredKAsset@@6BAKAsset@@@,const ADishonoredKAsset::`vftable'{for `AKAsset'},,4,.rdata
-0x010e5420,0xce5420,??_7ADisSkeletalBreakable@@6BIDisHitReboundInterface@@@,const ADisSkeletalBreakable::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
 0x010e5440,0xce5440,??_7ADisSkeletalBreakable@@6BASkeletalMeshActor@@@,const ADisSkeletalBreakable::`vftable'{for `ASkeletalMeshActor'},,4,.rdata
 0x010e57f4,0xce57f4,??_7ADisTrigger@@6BIDisTweaksInterface@@@,const ADisTrigger::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e5810,0xce5810,??_7ADisTrigger@@6BATrigger@@@,const ADisTrigger::`vftable'{for `ATrigger'},,4,.rdata
 0x010e5bb0,0xce5bb0,??_7ADisTriggerAbstractItem@@6BIDisTweaksInterface@@@,const ADisTriggerAbstractItem::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e5bd0,0xce5bd0,??_7ADisTriggerAbstractItem@@6BIDisInteractableInterface@@@,const ADisTriggerAbstractItem::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x010e5c40,0xce5c40,??_7ADisTriggerAbstractItem@@6BATrigger@@@,const ADisTriggerAbstractItem::`vftable'{for `ATrigger'},,4,.rdata
+0x010e5fe4,0xce5fe4,??_7ADisTripwire@@6BIDisTweaksInterface@@@,const ADisTripwire::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e6000,0xce6000,??_7ADisTripwire@@6BASkeletalMeshActor@@@,const ADisTripwire::`vftable'{for `ASkeletalMeshActor'},,4,.rdata
 0x010e63a8,0xce63a8,??_7ADisWatchTowerPlatform@@6BAActor@@@,const ADisWatchTowerPlatform::`vftable'{for `AActor'},,4,.rdata
 0x010e6748,0xce6748,??_7ADisPickup_Base@@6BIDisTweaksInterface@@@,const ADisPickup_Base::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x010e6764,0xce6764,??_7ADisPickup_Base@@6BIDisHitReboundInterface@@@,const ADisPickup_Base::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x010e6774,0xce6774,??_7ADisPickup_Base@@6BIDisNoiseMakerInterface@@@,const ADisPickup_Base::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
-0x010e6788,0xce6788,??_7ADisPickup_Base@@6BIDisContactTypeInterface@@@,const ADisPickup_Base::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
-0x010e6798,0xce6798,??_7ADisPickup_Base@@6BAKActor@@@,const ADisPickup_Base::`vftable'{for `AKActor'},,4,.rdata
 0x010e6c48,0xce6c48,??_7ADisStatPickup@@6BIDisTweaksInterface@@@,const ADisStatPickup::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e6c98,0xce6c98,??_7ADisStatPickup@@6BAKActor@@@,const ADisStatPickup::`vftable'{for `AKActor'},,4,.rdata
 0x010e7090,0xce7090,??_7ADisWhaleBoneCharm@@6BIDisMovableInterface@@@,const ADisWhaleBoneCharm::`vftable'{for `IDisMovableInterface'},,4,.rdata
@@ -19406,32 +19392,25 @@ va,rva,name,demangled,type,size,segment
 0x010e7e70,0xce7e70,??_7FAIStimStruct_DeathByWoL@@6B@,const FAIStimStruct_DeathByWoL::`vftable',,4,.rdata
 0x010e7e88,0xce7e88,??_7FAIRecord_RegisteredHideout@@6B@,const FAIRecord_RegisteredHideout::`vftable',,4,.rdata
 0x010e7eb8,0xce7eb8,aFairecordRegis,aFairecordRegis,,56,.rdata
-0x010e8068,0xce8068,??_7ADisProjectileLauncher@@6BIDisHitReboundInterface@@@,const ADisProjectileLauncher::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
+0x010e8068,0xce8068,??_7ADisProjectileLauncher@@6BIDisTweaksInterface@@@,const ADisProjectileLauncher::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e8088,0xce8088,??_7ADisProjectileLauncher@@6BASkeletalMeshActor@@@,const ADisProjectileLauncher::`vftable'{for `ASkeletalMeshActor'},,4,.rdata
-0x010e85bc,0xce85bc,??_7ADisElixirHealth@@6BIDisMovableInterface@@@,const ADisElixirHealth::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010e85ec,0xce85ec,??_7ADisElixirHealth@@6BIDisSoulRenderInterface@@@,const ADisElixirHealth::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
-0x010e8600,0xce8600,??_7ADisElixirHealth@@6BIDisInteractableInterface@@@,const ADisElixirHealth::`vftable'{for `IDisInteractableInterface'},,4,.rdata
+0x010e85bc,0xce85bc,??_7ADisAbstractItemPickupNote@@6BIDisMovableInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisMovableInterface'},,4,.rdata
+0x010e85ec,0xce85ec,??_7ADisAbstractItemPickupNote@@6BIDisSoulRenderInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010e8670,0xce8670,??_7ADisElixirHealth@@6BIDisTweaksInterface@@@,const ADisElixirHealth::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e868c,0xce868c,??_7ADisElixirHealth@@6BIDisHitReboundInterface@@@,const ADisElixirHealth::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
 0x010e869c,0xce869c,??_7ADisElixirHealth@@6BIDisNoiseMakerInterface@@@,const ADisElixirHealth::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x010e86b0,0xce86b0,??_7ADisElixirHealth@@6BIDisContactTypeInterface@@@,const ADisElixirHealth::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010e86c0,0xce86c0,??_7ADisElixirHealth@@6BAKActor@@@,const ADisElixirHealth::`vftable'{for `AKActor'},,4,.rdata
-0x010e8ab8,0xce8ab8,??_7ADisElixirMana@@6BIDisMovableInterface@@@,const ADisElixirMana::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010e8ae8,0xce8ae8,??_7ADisElixirMana@@6BIDisSoulRenderInterface@@@,const ADisElixirMana::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010e8b00,0xce8b00,??_7ADisElixirMana@@6BIDisInteractableInterface@@@,const ADisElixirMana::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x010e8b70,0xce8b70,??_7ADisElixirMana@@6BIDisTweaksInterface@@@,const ADisElixirMana::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010e8b8c,0xce8b8c,??_7ADisElixirMana@@6BIDisHitReboundInterface@@@,const ADisElixirMana::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
 0x010e8b9c,0xce8b9c,??_7ADisElixirMana@@6BIDisNoiseMakerInterface@@@,const ADisElixirMana::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x010e8bb0,0xce8bb0,??_7ADisElixirMana@@6BIDisContactTypeInterface@@@,const ADisElixirMana::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010e8bc0,0xce8bc0,??_7ADisElixirMana@@6BAKActor@@@,const ADisElixirMana::`vftable'{for `AKActor'},,4,.rdata
-0x010e8fb8,0xce8fb8,??_7ADisGenericPickup@@6BIDisMovableInterface@@@,const ADisGenericPickup::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010e8fe8,0xce8fe8,??_7ADisGenericPickup@@6BIDisSoulRenderInterface@@@,const ADisGenericPickup::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
-0x010e9000,0xce9000,??_7ADisGenericPickup@@6BIDisInteractableInterface@@@,const ADisGenericPickup::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010e9070,0xce9070,??_7ADisGenericPickup@@6BIDisTweaksInterface@@@,const ADisGenericPickup::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x010e908c,0xce908c,??_7ADisGenericPickup@@6BIDisHitReboundInterface@@@,const ADisGenericPickup::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x010e909c,0xce909c,??_7ADisGenericPickup@@6BIDisNoiseMakerInterface@@@,const ADisGenericPickup::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
-0x010e90b0,0xce90b0,??_7ADisGenericPickup@@6BIDisContactTypeInterface@@@,const ADisGenericPickup::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
-0x010e90c0,0xce90c0,??_7ADisGenericPickup@@6BAKActor@@@,const ADisGenericPickup::`vftable'{for `AKActor'},,4,.rdata
+0x010e9070,0xce9070,??_7ADisAbstractItemPickupNote@@6BIDisTweaksInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x010e908c,0xce908c,??_7ADisAbstractItemPickupNote@@6BIDisHitReboundInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
+0x010e909c,0xce909c,??_7ADisAbstractItemPickupNote@@6BIDisNoiseMakerInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
+0x010e90b0,0xce90b0,??_7ADisAbstractItemPickupNote@@6BIDisContactTypeInterface@@@,const ADisAbstractItemPickupNote::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010e9ac8,0xce9ac8,??_7UDisTweaks_Climbable@@6B@,const UDisTweaks_Climbable::`vftable',,4,.rdata
 0x010e9c08,0xce9c08,??_7FDisGenericNoteParams@@6B@,const FDisGenericNoteParams::`vftable',,4,.rdata
 0x010e9c0c,0xce9c0c,??_7FAIKnowledgeRecord_WhaleOilDevice@@6B@,const FAIKnowledgeRecord_WhaleOilDevice::`vftable',,4,.rdata
@@ -19452,13 +19431,11 @@ va,rva,name,demangled,type,size,segment
 0x010eaec0,0xceaec0,??_7ADisDefenceTower@@6BAActor@@@,const ADisDefenceTower::`vftable'{for `AActor'},,4,.rdata
 0x010eb260,0xceb260,??_7UDisTweaks_DefenceTower@@6B@,const UDisTweaks_DefenceTower::`vftable',,4,.rdata
 0x010eb3a0,0xceb3a0,??_7UDisTweaks_DetectionEye@@6B@,const UDisTweaks_DetectionEye::`vftable',,4,.rdata
-0x010eb4e8,0xceb4e8,??_7UDisTweaks_SkeletalBreakable@@6B@,const UDisTweaks_SkeletalBreakable::`vftable',,4,.rdata
-0x010eb640,0xceb640,??_7ADisWallOfLight@@6BIDisSoulRenderInterface@@@,const ADisWallOfLight::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010eb628,0xceb628,??_7ADisWallOfLight@@6BIDisSoulRenderInterface@@@,const ADisWallOfLight::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010eb640,0xceb640,??_7ADisWallOfLight@@6BIInterface_NavMeshPathObject@@@,const ADisWallOfLight::`vftable'{for `IInterface_NavMeshPathObject'},,4,.rdata
 0x010eb69c,0xceb69c,??_7ADisWallOfLight@@6BIDisWhaleOilConsumerInterface@@@,const ADisWallOfLight::`vftable'{for `IDisWhaleOilConsumerInterface'},,4,.rdata
 0x010eb6ac,0xceb6ac,??_7ADisWallOfLight@@6BIDisTweaksInterface@@@,const ADisWallOfLight::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010eb6c8,0xceb6c8,??_7ADisWallOfLight@@6BADynamicSMActor@@@,const ADisWallOfLight::`vftable'{for `ADynamicSMActor'},,4,.rdata
-0x010eba70,0xceba70,??_7UDisTweaks_WallOfLight@@6B@,const UDisTweaks_WallOfLight::`vftable',,4,.rdata
-0x010ebbb8,0xcebbb8,??_7UDisTweaks_WatchTower@@6B@,const UDisTweaks_WatchTower::`vftable',,4,.rdata
 0x010ebe60,0xcebe60,??_7ADisAlarmBell@@6BIDisInteractableInterface@@@,const ADisAlarmBell::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x010ebed0,0xcebed0,??_7ADisAlarmBell@@6BIDisNoiseMakerInterface@@@,const ADisAlarmBell::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x010ebf08,0xcebf08,??_7ADisAlarmBell@@6BIDisTweaksInterface@@@,const ADisAlarmBell::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -19473,7 +19450,6 @@ va,rva,name,demangled,type,size,segment
 0x010ec3f0,0xcec3f0,??_7ADishonoredKAsset@@6BIDisContactTypeInterface@@@,const ADishonoredKAsset::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010ec400,0xcec400,??_7ADisClimbable@@6BIDisSoulRenderInterface@@@,const ADisClimbable::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010ec418,0xcec418,??_7ADisClimbable@@6BIDisInteractableInterface@@@,const ADisClimbable::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010ec580,0xcec580,??_7ADishonoredUsableObject@@6BIDisHitReboundInterface@@@,const ADishonoredUsableObject::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
 0x010ec5a0,0xcec5a0,??_7ADishonoredUsableObject@@6BASkeletalMeshActor@@@,const ADishonoredUsableObject::`vftable'{for `ASkeletalMeshActor'},,4,.rdata
 0x010ec988,0xcec988,??_7ADisAudioLogPlayer@@6B@,const ADisAudioLogPlayer::`vftable',,4,.rdata
 0x010eca00,0xceca00,??_7ADisProjectileLauncher@@6BIDisInteractableInterface@@@,const ADisProjectileLauncher::`vftable'{for `IDisInteractableInterface'},,4,.rdata
@@ -19481,13 +19457,13 @@ va,rva,name,demangled,type,size,segment
 0x010eca84,0xceca84,??_7ADisStaticCollisionActor@@6BIDisMantleableInterface@@@,const ADisStaticCollisionActor::`vftable'{for `IDisMantleableInterface'},,4,.rdata
 0x010eca90,0xceca90,??_7ADisTrigger@@6BIDisInteractableInterface@@@,const ADisTrigger::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x010ecb00,0xcecb00,??_7ADisTripwire@@6BIDisInteractableInterface@@@,const ADisTripwire::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010ecb70,0xcecb70,??_7ADisDetectionEye@@6BIDisSoulRenderInterface@@@,const ADisDetectionEye::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010ecb70,0xcecb70,??_7ADisTripwire@@6BIDisSoulRenderInterface@@@,const ADisTripwire::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010ecb84,0xcecb84,??_7ADisWatchTowerPlatform@@6BIDisSoulRenderInterface@@@,const ADisWatchTowerPlatform::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
-0x010ecbe0,0xcecbe0,??_7ADisPickup_Base@@6BIDisMovableInterface@@@,const ADisPickup_Base::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010ecc10,0xcecc10,??_7ADisPickup_Base@@6BIDisSoulRenderInterface@@@,const ADisPickup_Base::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
-0x010ecc28,0xcecc28,??_7ADisPickup_Base@@6BIDisInteractableInterface@@@,const ADisPickup_Base::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010ecccc,0xcecccc,??_7ADisAbstractItemPickup@@6BIDisMovableInterface@@@,const ADisAbstractItemPickup::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010eccfc,0xceccfc,??_7ADisAbstractItemPickup@@6BIDisSoulRenderInterface@@@,const ADisAbstractItemPickup::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010ecb98,0xcecb98,??_7ADisDetectionEye@@6BIDisSoulRenderInterface@@@,const ADisDetectionEye::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010ecbe0,0xcecbe0,??_7ADisElixirMana@@6BIDisMovableInterface@@@,const ADisElixirMana::`vftable'{for `IDisMovableInterface'},,4,.rdata
+0x010ecc10,0xcecc10,??_7ADisElixirMana@@6BIDisSoulRenderInterface@@@,const ADisElixirMana::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
+0x010ecccc,0xcecccc,??_7ADisElixirHealth@@6BIDisMovableInterface@@@,const ADisElixirHealth::`vftable'{for `IDisMovableInterface'},,4,.rdata
+0x010eccfc,0xceccfc,??_7ADisElixirHealth@@6BIDisSoulRenderInterface@@@,const ADisElixirHealth::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010ecd10,0xcecd10,??_7ADisAbstractItemPickup@@6BIDisInteractableInterface@@@,const ADisAbstractItemPickup::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x010ecd80,0xcecd80,??_7ADisAbstractItemPickup@@6BIDisTweaksInterface@@@,const ADisAbstractItemPickup::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010ecd9c,0xcecd9c,??_7ADisAbstractItemPickup@@6BIDisHitReboundInterface@@@,const ADisAbstractItemPickup::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
@@ -19496,10 +19472,8 @@ va,rva,name,demangled,type,size,segment
 0x010ecdd0,0xcecdd0,??_7ADisAbstractItemPickup@@6BAKActor@@@,const ADisAbstractItemPickup::`vftable'{for `AKActor'},,4,.rdata
 0x010ed194,0xced194,??_7ADisSplineLoftActor@@6BIDisSoulRenderInterface@@@,const ADisSplineLoftActor::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010ed1a8,0xced1a8,??_7ADisStaticMeshActor@@6BIDisSoulRenderInterface@@@,const ADisStaticMeshActor::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
-0x010ed1c0,0xced1c0,??_7UDisTweaks_ProjectileLauncher@@6B@,const UDisTweaks_ProjectileLauncher::`vftable',,4,.rdata
 0x010ed6c0,0xced6c0,??_7UDisTweaks_InteractableInterface@@6B@,const UDisTweaks_InteractableInterface::`vftable',,4,.rdata
 0x010ed948,0xced948,??_7UDisSkeletalBreakSteps@@6B@,const UDisSkeletalBreakSteps::`vftable',,4,.rdata
-0x010edbd8,0xcedbd8,??_7UDisUsableObjectBreakSteps@@6B@,const UDisUsableObjectBreakSteps::`vftable',,4,.rdata
 0x010edd28,0xcedd28,??_7UDisTweaks_Movable@@6B@,const UDisTweaks_Movable::`vftable',,4,.rdata
 0x010ede68,0xcede68,??_7ADishonoredBreakable@@6B@,const ADishonoredBreakable::`vftable',,4,.rdata
 0x010ede7c,0xcede7c,??_7ADishonoredBreakable@@6BIDisTweaksInterface@@@,const ADishonoredBreakable::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -19691,9 +19665,6 @@ va,rva,name,demangled,type,size,segment
 0x010f0fc8,0xcf0fc8,??_7UDisSpawnerRenderProxyComponent@@6B@,const UDisSpawnerRenderProxyComponent::`vftable',,4,.rdata
 0x010f1270,0xcf1270,??_7FTravelSpawnerComponentSceneProxy@@6B@,const FTravelSpawnerComponentSceneProxy::`vftable',,4,.rdata
 0x010f12e8,0xcf12e8,??_7UDishonoredNoteComponent@@6B@,const UDishonoredNoteComponent::`vftable',,4,.rdata
-0x010f158c,0xcf158c,??_7AScout@@6BIArkHealthInterface@@@,const AScout::`vftable'{for `IArkHealthInterface'},,4,.rdata
-0x010f15a0,0xcf15a0,??_7AScout@@6BIInterface_NavigationHandle@@@,const AScout::`vftable'{for `IInterface_NavigationHandle'},,4,.rdata
-0x010f15b8,0xcf15b8,??_7AScout@@6BAActor@@@,const AScout::`vftable'{for `AActor'},,4,.rdata
 0x010f1ea0,0xcf1ea0,??_7UDisActorFactoryTweakObj@@6B@,const UDisActorFactoryTweakObj::`vftable',,4,.rdata
 0x010f1fe0,0xcf1fe0,??_7UDisDialogOneShotRenderingComponent@@6B@,const UDisDialogOneShotRenderingComponent::`vftable',,4,.rdata
 0x010f2288,0xcf2288,??_7UDisSpeakerGroup_PA_RenderingComponent@@6B@,const UDisSpeakerGroup_PA_RenderingComponent::`vftable',,4,.rdata
@@ -19701,13 +19672,7 @@ va,rva,name,demangled,type,size,segment
 0x010f27d8,0xcf27d8,??_7ADisAmbushPoint@@6B@,const ADisAmbushPoint::`vftable',,4,.rdata
 0x010f2b78,0xcf2b78,??_7UDisAmbushRenderProxyComponent@@6B@,const UDisAmbushRenderProxyComponent::`vftable',,4,.rdata
 0x010f2e20,0xcf2e20,??_7UDisAbstractItemAudioLog@@6B@,const UDisAbstractItemAudioLog::`vftable',,4,.rdata
-0x010f2f7c,0xcf2f7c,??_7ADisAbstractItemPickupAudioLog@@6BIDisMovableInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisMovableInterface'},,4,.rdata
-0x010f2fac,0xcf2fac,??_7ADisAbstractItemPickupAudioLog@@6BIDisSoulRenderInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x010f2fc0,0xcf2fc0,??_7ADisAbstractItemPickupAudioLog@@6BIDisInteractableInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x010f3030,0xcf3030,??_7ADisAbstractItemPickupAudioLog@@6BIDisTweaksInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x010f304c,0xcf304c,??_7ADisAbstractItemPickupAudioLog@@6BIDisHitReboundInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x010f305c,0xcf305c,??_7ADisAbstractItemPickupAudioLog@@6BIDisNoiseMakerInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
-0x010f3070,0xcf3070,??_7ADisAbstractItemPickupAudioLog@@6BIDisContactTypeInterface@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010f3080,0xcf3080,??_7ADisAbstractItemPickupAudioLog@@6BAKActor@@@,const ADisAbstractItemPickupAudioLog::`vftable'{for `AKActor'},,4,.rdata
 0x010f3588,0xcf3588,??_7ADisRiverKrustBodyPart@@6BIDisTweaksInterface@@@,const ADisRiverKrustBodyPart::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010f35a4,0xcf35a4,??_7ADisRiverKrustBodyPart@@6BIDisHitReboundInterface@@@,const ADisRiverKrustBodyPart::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
@@ -19717,7 +19682,7 @@ va,rva,name,demangled,type,size,segment
 0x010f3988,0xcf3988,??_7UDisRiverKrustComponent@@6B@,const UDisRiverKrustComponent::`vftable',,4,.rdata
 0x010f3c30,0xcf3c30,??_7IDisAttentionTargetInterface@@6B@,const IDisAttentionTargetInterface::`vftable',,4,.rdata
 0x010f3c90,0xcf3c90,??_7IDisRatTargetInterface@@6B@,const IDisRatTargetInterface::`vftable',,4,.rdata
-0x010f3cec,0xcf3cec,??_7IDisCorpseInterface@@6B@,const IDisCorpseInterface::`vftable',,4,.rdata
+0x010f3cec,0xcf3cec,??_7IAkIOHookBlocking@StreamMgr@AK@@6B@,const AK::StreamMgr::IAkIOHookBlocking::`vftable',,4,.rdata
 0x010f3d0c,0xcf3d0c,aNpc,aNpc,,8,.rdata
 0x010f3d14,0xcf3d14,??_7ADisUpgrade@@6BIDisTweaksInterface@@@,const ADisUpgrade::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x010f3d30,0xcf3d30,??_7ADisUpgrade@@6BAActor@@@,const ADisUpgrade::`vftable'{for `AActor'},,4,.rdata
@@ -19728,7 +19693,8 @@ va,rva,name,demangled,type,size,segment
 0x010f4124,0xcf4124,??_7ADishonoredMovable@@6BIDisContactTypeInterface@@@,const ADishonoredMovable::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
 0x010f4138,0xcf4138,??_7ADishonoredMovable@@6BAKActor@@@,const ADishonoredMovable::`vftable'{for `AKActor'},,4,.rdata
 0x010f4508,0xcf4508,??_7UDisMovableComponent@@6BUActorComponent@@@,const UDisMovableComponent::`vftable'{for `UActorComponent'},,4,.rdata
-0x010f50a8,0xcf50a8,??_7ADisTripwire@@6BIDisTweaksInterface@@@,const ADisTripwire::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x010f50a8,0xcf50a8,??_7ADisRatSpawner@@6B@,const ADisRatSpawner::`vftable',,4,.rdata
+0x010f50c4,0xcf50c4,??_7ADisRatSpawner@@6BIGameCrowdSpawnInterface@@@,const ADisRatSpawner::`vftable'{for `IGameCrowdSpawnInterface'},,4,.rdata
 0x010f50d0,0xcf50d0,??_7ADisRatSpawner@@6BAActor@@@,const ADisRatSpawner::`vftable'{for `AActor'},,4,.rdata
 0x010f5478,0xcf5478,??_7ADisGuardWatchPoint@@6BAActor@@@,const ADisGuardWatchPoint::`vftable'{for `AActor'},,4,.rdata
 0x010f5818,0xcf5818,??_7ADisFleePointActor@@6BAActor@@@,const ADisFleePointActor::`vftable'{for `AActor'},,4,.rdata
@@ -19758,6 +19724,7 @@ va,rva,name,demangled,type,size,segment
 0x010f7cb0,0xcf7cb0,??_7ADisDialogInanimateDummy@@6BIDisConvOneShotOwnerInterface@@@,const ADisDialogInanimateDummy::`vftable'{for `IDisConvOneShotOwnerInterface'},,4,.rdata
 0x010f7cc8,0xcf7cc8,??_7ADisDialogInanimateDummy@@6BIDisConvSpeakerInterface@@@,const ADisDialogInanimateDummy::`vftable'{for `IDisConvSpeakerInterface'},,4,.rdata
 0x010f7d40,0xcf7d40,??_7ADisDialogInanimateDummy@@6BAActor@@@,const ADisDialogInanimateDummy::`vftable'{for `AActor'},,4,.rdata
+0x010f80e0,0xcf80e0,??_7ADisDialogOneShot@@6B@,const ADisDialogOneShot::`vftable',,4,.rdata
 0x010f8490,0xcf8490,??_7ADisDialogOneShot_HeartGadget@@6B@,const ADisDialogOneShot_HeartGadget::`vftable',,4,.rdata
 0x010f8840,0xcf8840,??_7FDisDialogOneShotSceneProxy@@6B@,const FDisDialogOneShotSceneProxy::`vftable',,4,.rdata
 0x010f88b8,0xcf88b8,??_7ADisSpeaker_PA@@6BIDisInteractableInterface@@@,const ADisSpeaker_PA::`vftable'{for `IDisInteractableInterface'},,4,.rdata
@@ -19986,7 +19953,6 @@ va,rva,name,demangled,type,size,segment
 0x010ff7f8,0xcff7f8,??_7UStateNPCMasterGesture@@6B@,const UStateNPCMasterGesture::`vftable',,4,.rdata
 0x010ff9b0,0xcff9b0,??_7UStateNPCMasterLyingInWait@@6B@,const UStateNPCMasterLyingInWait::`vftable',,4,.rdata
 0x010ffb68,0xcffb68,??_7UStateNPCMasterMinigame@@6B@,const UStateNPCMasterMinigame::`vftable',,4,.rdata
-0x010ffd20,0xcffd20,??_7UStateNPCMasterPlayAnim@@6B@,const UStateNPCMasterPlayAnim::`vftable',,4,.rdata
 0x010ffee4,0xcffee4,??_7IDisAnimStateFiringInterface@@6B@,const IDisAnimStateFiringInterface::`vftable',,4,.rdata
 0x010ffefc,0xcffefc,aPlayerstate_0,aPlayerstate_0,,24,.rdata
 0x010fff18,0xcfff18,??_7UStatePlayerMasterBase@@6B@,const UStatePlayerMasterBase::`vftable',,4,.rdata
@@ -19995,7 +19961,6 @@ va,rva,name,demangled,type,size,segment
 0x01100248,0xd00248,??_7UStateNPCActionParry@@6B@,const UStateNPCActionParry::`vftable',,4,.rdata
 0x01100400,0xd00400,??_7UStateNPCInstigatedMasterAction@@6B@,const UStateNPCInstigatedMasterAction::`vftable',,4,.rdata
 0x011005b8,0xd005b8,??_7UStateNPCMasterFallingUncontrolled@@6B@,const UStateNPCMasterFallingUncontrolled::`vftable',,4,.rdata
-0x01100770,0xd00770,??_7UStateNPCAttractSpell@@6B@,const UStateNPCAttractSpell::`vftable',,4,.rdata
 0x01100938,0xd00938,??_7UStateNPCMasterDualPlayAnim@@6B@,const UStateNPCMasterDualPlayAnim::`vftable',,4,.rdata
 0x01100b00,0xd00b00,??_7UStateNPCUpperBodyAction@@6B@,const UStateNPCUpperBodyAction::`vftable',,4,.rdata
 0x01100c94,0xd00c94,??_7FDisItemContextParam_UseNPC@@6B@,const FDisItemContextParam_UseNPC::`vftable',,4,.rdata
@@ -20732,13 +20697,11 @@ va,rva,name,demangled,type,size,segment
 0x01119640,0xd19640,??_7UDishonoredPlayerInput@@6BUPlayerInput@@@,const UDishonoredPlayerInput::`vftable'{for `UPlayerInput'},,4,.rdata
 0x01119820,0xd19820,??_7ADishonoredPawn@@6BIDisStoryGroupInterface@@@,const ADishonoredPawn::`vftable'{for `IDisStoryGroupInterface'},,4,.rdata
 0x01119918,0xd19918,??_7ADishonoredPawn@@6BIDisHitReboundInterface@@@,const ADishonoredPawn::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x01119994,0xd19994,??_7ADishonoredPawn@@6BIDisLookAtInterface@@@,const ADishonoredPawn::`vftable'{for `IDisLookAtInterface'},,4,.rdata
 0x011199a4,0xd199a4,??_7ADishonoredPawn@@6BIArkHealthInterface@@@,const ADishonoredPawn::`vftable'{for `IArkHealthInterface'},,4,.rdata
 0x011199b8,0xd199b8,??_7ADishonoredPawn@@6BIInterface_NavigationHandle@@@,const ADishonoredPawn::`vftable'{for `IInterface_NavigationHandle'},,4,.rdata
 0x011199d0,0xd199d0,??_7ADishonoredPawn@@6BAActor@@@,const ADishonoredPawn::`vftable'{for `AActor'},,4,.rdata
 0x0111a200,0xd1a200,??_7ADishonoredPlayerPawn@@6BIDisStoryGroupInterface@@@,const ADishonoredPlayerPawn::`vftable'{for `IDisStoryGroupInterface'},,4,.rdata
 0x0111a2f8,0xd1a2f8,??_7ADishonoredPlayerPawn@@6BIDisTweaksInterface@@@,const ADishonoredPlayerPawn::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x0111a374,0xd1a374,??_7ADishonoredPlayerPawn@@6BIDisLookAtInterface@@@,const ADishonoredPlayerPawn::`vftable'{for `IDisLookAtInterface'},,4,.rdata
 0x0111a384,0xd1a384,??_7ADishonoredPlayerPawn@@6BIArkHealthInterface@@@,const ADishonoredPlayerPawn::`vftable'{for `IArkHealthInterface'},,4,.rdata
 0x0111a398,0xd1a398,??_7ADishonoredPlayerPawn@@6BIInterface_NavigationHandle@@@,const ADishonoredPlayerPawn::`vftable'{for `IInterface_NavigationHandle'},,4,.rdata
 0x0111a3b0,0xd1a3b0,??_7ADishonoredPlayerPawn@@6BAActor@@@,const ADishonoredPlayerPawn::`vftable'{for `AActor'},,4,.rdata
@@ -20953,7 +20916,6 @@ va,rva,name,demangled,type,size,segment
 0x011206f0,0xd206f0,??_7UDisMantleFinderState_CheckDestinationValid@@6B@,const UDisMantleFinderState_CheckDestinationValid::`vftable',,4,.rdata
 0x01120868,0xd20868,??_7UDisMantleFinderState_FindClearDistanceAboveOwner@@6B@,const UDisMantleFinderState_FindClearDistanceAboveOwner::`vftable',,4,.rdata
 0x011209e0,0xd209e0,??_7UDisMantleFinderState_ForwardSearches@@6B@,const UDisMantleFinderState_ForwardSearches::`vftable',,4,.rdata
-0x01120b58,0xd20b58,??_7UDisTweaks_AIBehavior_EscapeExplosion@@6B@,const UDisTweaks_AIBehavior_EscapeExplosion::`vftable',,4,.rdata
 0x01120ee8,0xd20ee8,??_7IDisDesiresInterface@@6B@,const IDisDesiresInterface::`vftable',,4,.rdata
 0x01120f20,0xd20f20,aAi_0,aAi_0,,6,.rdata
 0x01120f28,0xd20f28,??_7FDisItemContextParam_Reload@@6B@,const FDisItemContextParam_Reload::`vftable',,4,.rdata
@@ -20975,9 +20937,8 @@ va,rva,name,demangled,type,size,segment
 0x01121860,0xd21860,??_7UDisBehaviorBattleVictory@@6BIDisTweaksInterface@@@,const UDisBehaviorBattleVictory::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01121880,0xd21880,??_7UDisBehaviorBattleVictory@@6BUObject@@@,const UDisBehaviorBattleVictory::`vftable'{for `UObject'},,4,.rdata
 0x01121a28,0xd21a28,??_7UDisBehaviorBlockingDialog@@6B@,const UDisBehaviorBlockingDialog::`vftable',,4,.rdata
+0x01121a60,0xd21a60,??_7UDisBehaviorBlockingDialog@@6BIDisTweaksInterface@@@,const UDisBehaviorBlockingDialog::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01121a80,0xd21a80,??_7UDisBehaviorBlockingDialog@@6BUObject@@@,const UDisBehaviorBlockingDialog::`vftable'{for `UObject'},,4,.rdata
-0x01121c28,0xd21c28,??_7UDisBehaviorEnemyUnreachable@@6B@,const UDisBehaviorEnemyUnreachable::`vftable',,4,.rdata
-0x01121c60,0xd21c60,??_7UDisBehaviorEnemyUnreachable@@6BIDisTweaksInterface@@@,const UDisBehaviorEnemyUnreachable::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01121c80,0xd21c80,??_7UDisBehaviorEnemyUnreachable@@6BUObject@@@,const UDisBehaviorEnemyUnreachable::`vftable'{for `UObject'},,4,.rdata
 0x01121e40,0xd21e40,??_7FAIStimStruct_ReturnTravelRequest@@6B@,const FAIStimStruct_ReturnTravelRequest::`vftable',,4,.rdata
 0x01121e58,0xd21e58,??_7FAIStimStruct_WitnessPickpocket@@6B@,const FAIStimStruct_WitnessPickpocket::`vftable',,4,.rdata
@@ -20990,14 +20951,10 @@ va,rva,name,demangled,type,size,segment
 0x01122290,0xd22290,??_7FDisMantleFinderState_FindClearDistanceAboveOwner_Param@@6B@,const FDisMantleFinderState_FindClearDistanceAboveOwner_Param::`vftable',,4,.rdata
 0x01122298,0xd22298,??_7FDisUseState_AltInteract_Param@@6B@,const FDisUseState_AltInteract_Param::`vftable',,4,.rdata
 0x011222a0,0xd222a0,??_7UDishonoredSearchCrumbsComponent@@6B@,const UDishonoredSearchCrumbsComponent::`vftable',,4,.rdata
-0x01122668,0xd22668,??_7UMaterialExpression@@6B@,const UMaterialExpression::`vftable',,4,.rdata
 0x0112278c,0xd2278c,??_7ADishonoredPlayerCamera@@6BIArkSettingsListenerInterface@@@,const ADishonoredPlayerCamera::`vftable'{for `IArkSettingsListenerInterface'},,4,.rdata
 0x01122798,0xd22798,??_7ADishonoredPlayerCamera@@6BACamera@@@,const ADishonoredPlayerCamera::`vftable'{for `ACamera'},,4,.rdata
 0x01122b60,0xd22b60,__real@459c4000,__real@459c4000,,4,.rdata
 0x01122b68,0xd22b68,??_7UDisCamera_Rumble@@6B@,const UDisCamera_Rumble::`vftable',,4,.rdata
-0x01122df0,0xd22df0,??_7UDisTweaks_PlayerPawn_ItemActions@@6B@,const UDisTweaks_PlayerPawn_ItemActions::`vftable',,4,.rdata
-0x01122f30,0xd22f30,??_7UDisTweaks_PlayerPawn_MiscellaneousActions@@6B@,const UDisTweaks_PlayerPawn_MiscellaneousActions::`vftable',,4,.rdata
-0x01123070,0xd23070,??_7UDisTweaks_PlayerPawn_NavigationActions@@6B@,const UDisTweaks_PlayerPawn_NavigationActions::`vftable',,4,.rdata
 0x011231b0,0xd231b0,??_7UDishonoredAIBehavior@@6BIDisTweaksInterface@@@,const UDishonoredAIBehavior::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x011231d0,0xd231d0,??_7UDishonoredAIBehavior@@6BUObject@@@,const UDishonoredAIBehavior::`vftable'{for `UObject'},,4,.rdata
 0x01123378,0xd23378,??_7UDisAIBehaviorWithDesires@@6B@,const UDisAIBehaviorWithDesires::`vftable',,4,.rdata
@@ -21009,7 +20966,6 @@ va,rva,name,demangled,type,size,segment
 0x011239c8,0xd239c8,??_7UDisTweaks_Pawn_Attributes@@6B@,const UDisTweaks_Pawn_Attributes::`vftable',,4,.rdata
 0x01123b08,0xd23b08,??_7UDisTweaks_Pawn@@6B@,const UDisTweaks_Pawn::`vftable',,4,.rdata
 0x01123c48,0xd23c48,??_7UDisTweaks_ComponentMeshOffset@@6B@,const UDisTweaks_ComponentMeshOffset::`vftable',,4,.rdata
-0x01123d88,0xd23d88,??_7UDisTweaks_Pawn_Animation@@6B@,const UDisTweaks_Pawn_Animation::`vftable',,4,.rdata
 0x01124008,0xd24008,??_7UDisSkeletalMeshComponent@@6B@,const UDisSkeletalMeshComponent::`vftable',,4,.rdata
 0x011242d8,0xd242d8,??_7UDisTweaks_PlayerPawn@@6B@,const UDisTweaks_PlayerPawn::`vftable',,4,.rdata
 0x01124558,0xd24558,??_7FDishonoredPlayerSkeletalSceneProxy@@6B@,const FDishonoredPlayerSkeletalSceneProxy::`vftable',,4,.rdata
@@ -21167,6 +21123,8 @@ va,rva,name,demangled,type,size,segment
 0x011278a0,0xd278a0,??_7UDisBehaviorGuard@@6B@,const UDisBehaviorGuard::`vftable',,4,.rdata
 0x011278d8,0xd278d8,??_7UDisBehaviorGuard@@6BIDisTweaksInterface@@@,const UDisBehaviorGuard::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x011278f8,0xd278f8,??_7UDisBehaviorGuard@@6BUObject@@@,const UDisBehaviorGuard::`vftable'{for `UObject'},,4,.rdata
+0x01127ab0,0xd27ab0,??_7UDisBehaviorIdle@@6B@,const UDisBehaviorIdle::`vftable',,4,.rdata
+0x01127ae8,0xd27ae8,??_7UDisBehaviorIdle@@6BIDisTweaksInterface@@@,const UDisBehaviorIdle::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01127b08,0xd27b08,??_7UDisBehaviorIdle@@6BUObject@@@,const UDisBehaviorIdle::`vftable'{for `UObject'},,4,.rdata
 0x01127cb0,0xd27cb0,??_7UDisBehaviorInteract@@6B@,const UDisBehaviorInteract::`vftable',,4,.rdata
 0x01127ce8,0xd27ce8,??_7UDisBehaviorInteract@@6BIDisTweaksInterface@@@,const UDisBehaviorInteract::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -21206,6 +21164,9 @@ va,rva,name,demangled,type,size,segment
 0x011297e8,0xd297e8,??_7UDisBehaviorGoTo_Base@@6BIDisTweaksInterface@@@,const UDisBehaviorGoTo_Base::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01129808,0xd29808,??_7UDisBehaviorGoTo_Base@@6BUObject@@@,const UDisBehaviorGoTo_Base::`vftable'{for `UObject'},,4,.rdata
 0x01129a08,0xd29a08,??_7UDisBehaviorCombat@@6BUObject@@@,const UDisBehaviorCombat::`vftable'{for `UObject'},,4,.rdata
+0x01129bd0,0xd29bd0,??_7UDisBehaviorCombatMelee@@6BUDisBehaviorCombat@@@,const UDisBehaviorCombatMelee::`vftable'{for `UDisBehaviorCombat'},,4,.rdata
+0x01129c08,0xd29c08,??_7UDisBehaviorCombatMelee@@6BIDisTweaksInterface@@@,const UDisBehaviorCombatMelee::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x01129c28,0xd29c28,??_7UDisBehaviorCombatMelee@@6BUObject@@@,const UDisBehaviorCombatMelee::`vftable'{for `UObject'},,4,.rdata
 0x01129e08,0xd29e08,??_7FAIStimStruct_EndDistracted@@6B@,const FAIStimStruct_EndDistracted::`vftable',,4,.rdata
 0x01129e20,0xd29e20,??_7FAIStimStruct_CoordinatedAttackRequest@@6B@,const FAIStimStruct_CoordinatedAttackRequest::`vftable',,4,.rdata
 0x01129e38,0xd29e38,??_7FStateNPCEscapeExplosion_Param@@6B@,const FStateNPCEscapeExplosion_Param::`vftable',,4,.rdata
@@ -21221,6 +21182,7 @@ va,rva,name,demangled,type,size,segment
 0x0112a2b8,0xd2a2b8,??_7UDisBehaviorFollow@@6BUObject@@@,const UDisBehaviorFollow::`vftable'{for `UObject'},,4,.rdata
 0x0112a628,0xd2a628,??_7UDisBehaviorStolen@@6BIDisTweaksInterface@@@,const UDisBehaviorStolen::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0112a648,0xd2a648,??_7UDisBehaviorStolen@@6BUObject@@@,const UDisBehaviorStolen::`vftable'{for `UObject'},,4,.rdata
+0x0112a7f0,0xd2a7f0,??_7UDisBehaviorCombatMelee@@6BIDisAIRangedBehaviorInterface@@@,const UDisBehaviorCombatMelee::`vftable'{for `IDisAIRangedBehaviorInterface'},,4,.rdata
 0x0112b208,0xd2b208,??_7UDisBehaviorSummonWolfHound@@6B@,const UDisBehaviorSummonWolfHound::`vftable',,4,.rdata
 0x0112b21c,0xd2b21c,??_7UDisBehaviorSummonWolfHound@@6BIDisTweaksInterface@@@,const UDisBehaviorSummonWolfHound::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0112b238,0xd2b238,??_7UDisBehaviorSummonWolfHound@@6BUObject@@@,const UDisBehaviorSummonWolfHound::`vftable'{for `UObject'},,4,.rdata
@@ -21356,10 +21318,6 @@ va,rva,name,demangled,type,size,segment
 0x0112f594,0xd2f594,??_7UDisBehaviorCombatEliteGuard@@6BUDisBehaviorCombat@@@,const UDisBehaviorCombatEliteGuard::`vftable'{for `UDisBehaviorCombat'},,4,.rdata
 0x0112f5cc,0xd2f5cc,??_7UDisBehaviorCombatEliteGuard@@6BIDisTweaksInterface@@@,const UDisBehaviorCombatEliteGuard::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0112f5e8,0xd2f5e8,??_7UDisBehaviorCombatEliteGuard@@6BUObject@@@,const UDisBehaviorCombatEliteGuard::`vftable'{for `UObject'},,4,.rdata
-0x0112f7d0,0xd2f7d0,??_7UDisBehaviorCombatCityGuard@@6BIDisAIRangedBehaviorInterface@@@,const UDisBehaviorCombatCityGuard::`vftable'{for `IDisAIRangedBehaviorInterface'},,4,.rdata
-0x0112f7e4,0xd2f7e4,??_7UDisBehaviorCombatCityGuard@@6BUDisBehaviorCombat@@@,const UDisBehaviorCombatCityGuard::`vftable'{for `UDisBehaviorCombat'},,4,.rdata
-0x0112f81c,0xd2f81c,??_7UDisBehaviorCombatCityGuard@@6BIDisTweaksInterface@@@,const UDisBehaviorCombatCityGuard::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x0112f838,0xd2f838,??_7UDisBehaviorCombatCityGuard@@6BUObject@@@,const UDisBehaviorCombatCityGuard::`vftable'{for `UObject'},,4,.rdata
 0x0112fb58,0xd2fb58,??_7UDisBehaviorAssassinCombat@@6BIDisAIRangedBehaviorInterface@@@,const UDisBehaviorAssassinCombat::`vftable'{for `IDisAIRangedBehaviorInterface'},,4,.rdata
 0x0112fb6c,0xd2fb6c,??_7UDisBehaviorAssassinCombat@@6BUDisBehaviorCombat@@@,const UDisBehaviorAssassinCombat::`vftable'{for `UDisBehaviorCombat'},,4,.rdata
 0x0112fba4,0xd2fba4,??_7UDisBehaviorAssassinCombat@@6BIDisTweaksInterface@@@,const UDisBehaviorAssassinCombat::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -21401,6 +21359,7 @@ va,rva,name,demangled,type,size,segment
 0x011324b8,0xd324b8,??_7UDisBehaviorTallBoyCombat@@6B@,const UDisBehaviorTallBoyCombat::`vftable',,4,.rdata
 0x011324f0,0xd324f0,??_7UDisBehaviorTallBoyCombat@@6BIDisTweaksInterface@@@,const UDisBehaviorTallBoyCombat::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01132510,0xd32510,??_7UDisBehaviorTallBoyCombat@@6BUObject@@@,const UDisBehaviorTallBoyCombat::`vftable'{for `UObject'},,4,.rdata
+0x011326dc,0xd326dc,??_7UDisBehaviorCombatRatSwarmEliteGuard@@6B@,const UDisBehaviorCombatRatSwarmEliteGuard::`vftable',,4,.rdata
 0x01132714,0xd32714,??_7UDisBehaviorCombatRatSwarmEliteGuard@@6BIDisTweaksInterface@@@,const UDisBehaviorCombatRatSwarmEliteGuard::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01132730,0xd32730,??_7UDisBehaviorCombatRatSwarmEliteGuard@@6BUObject@@@,const UDisBehaviorCombatRatSwarmEliteGuard::`vftable'{for `UObject'},,4,.rdata
 0x011328f4,0xd328f4,??_7FDisAIKnowledgeComponent@@6BIArkComponentPreAsyncWork@@@,const FDisAIKnowledgeComponent::`vftable'{for `IArkComponentPreAsyncWork'},,4,.rdata
@@ -21486,6 +21445,7 @@ va,rva,name,demangled,type,size,segment
 0x01134388,0xd34388,??_7FAIStimStruct_LocoPushedByPlayer@@6B@,const FAIStimStruct_LocoPushedByPlayer::`vftable',,4,.rdata
 0x011343a0,0xd343a0,??_7FAIStimStruct_PsychicAttentionDisabled_AllTargets@@6B@,const FAIStimStruct_PsychicAttentionDisabled_AllTargets::`vftable',,4,.rdata
 0x011343b8,0xd343b8,??_7FAIStimStruct_SuspicionLevelChanged@@6B@,const FAIStimStruct_SuspicionLevelChanged::`vftable',,4,.rdata
+0x011343d0,0xd343d0,??_7FAIStimStruct_SoireeRejected@@6B@,const FAIStimStruct_SoireeRejected::`vftable',,4,.rdata
 0x011343e8,0xd343e8,??_7FAIStimStruct_TetherRequest@@6B@,const FAIStimStruct_TetherRequest::`vftable',,4,.rdata
 0x01134400,0xd34400,??_7FAIStimStruct_ReachabilityChange@@6B@,const FAIStimStruct_ReachabilityChange::`vftable',,4,.rdata
 0x01134418,0xd34418,??_7FAIStimStruct_ShownRangedThreat@@6B@,const FAIStimStruct_ShownRangedThreat::`vftable',,4,.rdata
@@ -21943,7 +21903,7 @@ va,rva,name,demangled,type,size,segment
 0x0113e928,0xd3e928,??_7UDisAIBrainProcessWolfhound@@6BUObject@@@,const UDisAIBrainProcessWolfhound::`vftable'{for `UObject'},,4,.rdata
 0x0113ea70,0xd3ea70,??_7UDisAIBrainProcessBattleSense@@6BIDisTweaksInterface@@@,const UDisAIBrainProcessBattleSense::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0113ea90,0xd3ea90,??_7UDisAIBrainProcessBattleSense@@6BUObject@@@,const UDisAIBrainProcessBattleSense::`vftable'{for `UObject'},,4,.rdata
-0x0113ebd8,0xd3ebd8,??_7UDisTweaks_PlayerVisRegion@@6B@,const UDisTweaks_PlayerVisRegion::`vftable',,4,.rdata
+0x0113ebd8,0xd3ebd8,??_7UDisTweaks_Pawn_Combat@@6B@,const UDisTweaks_Pawn_Combat::`vftable',,4,.rdata
 0x0113ed18,0xd3ed18,??_7UDisAIBrainProcessRatCrusher@@6BIDisTweaksInterface@@@,const UDisAIBrainProcessRatCrusher::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0113ed38,0xd3ed38,??_7UDisAIBrainProcessRatCrusher@@6BUObject@@@,const UDisAIBrainProcessRatCrusher::`vftable'{for `UObject'},,4,.rdata
 0x0113ee80,0xd3ee80,__real@43960000,__real@43960000,,4,.rdata
@@ -21966,7 +21926,6 @@ va,rva,name,demangled,type,size,segment
 0x01140c40,0xd40c40,??_7ADisPossessablePawn@@6BAActor@@@,const ADisPossessablePawn::`vftable'{for `AActor'},,4,.rdata
 0x01141538,0xd41538,??_7ADisPossessablePawn@@6BIDisStoryGroupInterface@@@,const ADisPossessablePawn::`vftable'{for `IDisStoryGroupInterface'},,4,.rdata
 0x01141630,0xd41630,??_7ADisPossessablePawn@@6BIDisHitReboundInterface@@@,const ADisPossessablePawn::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x011416ac,0xd416ac,??_7ADisPossessablePawn@@6BIDisLookAtInterface@@@,const ADisPossessablePawn::`vftable'{for `IDisLookAtInterface'},,4,.rdata
 0x011416e8,0xd416e8,??_7ADishonoredNPCPawn@@6BAActor@@@,const ADishonoredNPCPawn::`vftable'{for `AActor'},,4,.rdata
 0x01141f68,0xd41f68,aDestination_0,aDestination_0,,24,.rdata
 0x01141f80,0xd41f80,aDishonoredgame_18,aDishonoredgame_18,,136,.rdata
@@ -22057,7 +22016,6 @@ va,rva,name,demangled,type,size,segment
 0x011432a4,0xd432a4,??_7ADisTallboyNPCPawn@@6BIDisSpringRazorTargetInterface@@@,const ADisTallboyNPCPawn::`vftable'{for `IDisSpringRazorTargetInterface'},,4,.rdata
 0x01143410,0xd43410,??_7ADisTallboyNPCPawn@@6BIDisStoryGroupInterface@@@,const ADisTallboyNPCPawn::`vftable'{for `IDisStoryGroupInterface'},,4,.rdata
 0x01143508,0xd43508,??_7ADisTallboyNPCPawn@@6BIDisHitReboundInterface@@@,const ADisTallboyNPCPawn::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x01143584,0xd43584,??_7ADisTallboyNPCPawn@@6BIDisLookAtInterface@@@,const ADisTallboyNPCPawn::`vftable'{for `IDisLookAtInterface'},,4,.rdata
 0x01143594,0xd43594,??_7ADisTallboyNPCPawn@@6BIArkHealthInterface@@@,const ADisTallboyNPCPawn::`vftable'{for `IArkHealthInterface'},,4,.rdata
 0x011435a8,0xd435a8,??_7ADisTallboyNPCPawn@@6BIInterface_NavigationHandle@@@,const ADisTallboyNPCPawn::`vftable'{for `IInterface_NavigationHandle'},,4,.rdata
 0x011435c0,0xd435c0,??_7ADisTallboyNPCPawn@@6BAActor@@@,const ADisTallboyNPCPawn::`vftable'{for `AActor'},,4,.rdata
@@ -22972,6 +22930,7 @@ va,rva,name,demangled,type,size,segment
 0x0114daa8,0xd4daa8,??_7UDisSeqAct_ActivateProjectileLauncher@@6B@,const UDisSeqAct_ActivateProjectileLauncher::`vftable',,4,.rdata
 0x0114dc40,0xd4dc40,??_7UDisSeqAct_ActivateUsable@@6B@,const UDisSeqAct_ActivateUsable::`vftable',,4,.rdata
 0x0114ddd8,0xd4ddd8,??_7UDisSeqAct_AddAttributeModifier@@6B@,const UDisSeqAct_AddAttributeModifier::`vftable',,4,.rdata
+0x0114e0f8,0xd4e0f8,??_7UDisSeqAct_AttachAnimSet@@6B@,const UDisSeqAct_AttachAnimSet::`vftable',,4,.rdata
 0x0114e288,0xd4e288,??_7UDisSeqAct_DiscardAllLevelStates@@6B@,const UDisSeqAct_DiscardAllLevelStates::`vftable',,4,.rdata
 0x0114e418,0xd4e418,??_7UDisSeqAct_DiscardLevelState@@6B@,const UDisSeqAct_DiscardLevelState::`vftable',,4,.rdata
 0x0114e8c8,0xd4e8c8,??_7UDisSeqAct_AddKey@@6B@,const UDisSeqAct_AddKey::`vftable',,4,.rdata
@@ -23019,7 +22978,6 @@ va,rva,name,demangled,type,size,segment
 0x01153970,0xd53970,??_7UDisSeqAct_SetStoryFlag@@6B@,const UDisSeqAct_SetStoryFlag::`vftable',,4,.rdata
 0x01153b00,0xd53b00,??_7UDisSeqAct_SpawnCameraLensEffect@@6B@,const UDisSeqAct_SpawnCameraLensEffect::`vftable',,4,.rdata
 0x01153c98,0xd53c98,??_7UDisSeqAct_TriggerExplosion@@6B@,const UDisSeqAct_TriggerExplosion::`vftable',,4,.rdata
-0x01154150,0xd54150,??_7UDisSeqAct_AIGetBrainFlagValue@@6B@,const UDisSeqAct_AIGetBrainFlagValue::`vftable',,4,.rdata
 0x01154478,0xd54478,??_7UDisSeqAct_ToggleAchievementEval@@6B@,const UDisSeqAct_ToggleAchievementEval::`vftable',,4,.rdata
 0x01154608,0xd54608,??_7UDisSeqAct_NotifyMissionEnd@@6B@,const UDisSeqAct_NotifyMissionEnd::`vftable',,4,.rdata
 0x01154798,0xd54798,??_7UDisSeqAct_DialogInputs@@6B@,const UDisSeqAct_DialogInputs::`vftable',,4,.rdata
@@ -23047,7 +23005,6 @@ va,rva,name,demangled,type,size,segment
 0x01156fb0,0xd56fb0,??_7ADishonoredAudioPortal@@6B@,const ADishonoredAudioPortal::`vftable',,4,.rdata
 0x01157358,0xd57358,??_7UDishonoredAudioPortalComponent@@6B@,const UDishonoredAudioPortalComponent::`vftable',,4,.rdata
 0x01157600,0xd57600,??_7ADisSoundCaptureBox@@6B@,const ADisSoundCaptureBox::`vftable',,4,.rdata
-0x011579a0,0xd579a0,??_7UDisTweaks_MusicEvents@@6B@,const UDisTweaks_MusicEvents::`vftable',,4,.rdata
 0x01157c70,0xd57c70,??_7UDisSeqAct_EnableSystemicTutorials@@6B@,const UDisSeqAct_EnableSystemicTutorials::`vftable',,4,.rdata
 0x01157e00,0xd57e00,??_7UDisSeqAct_ShowTargetNotification@@6B@,const UDisSeqAct_ShowTargetNotification::`vftable',,4,.rdata
 0x011582c0,0xd582c0,??_7UDisSeqAct_AutoSave@@6B@,const UDisSeqAct_AutoSave::`vftable',,4,.rdata
@@ -23078,6 +23035,7 @@ va,rva,name,demangled,type,size,segment
 0x0115a498,0xd5a498,??_7FDisAudioListenerTestProxy@@6B@,const FDisAudioListenerTestProxy::`vftable',,4,.rdata
 0x0115a510,0xd5a510,??_7FDishonoredAudioPortalProxy@@6B@,const FDishonoredAudioPortalProxy::`vftable',,4,.rdata
 0x0115a718,0xd5a718,??_7UDisSeqAct_AIClearAttention@@6B@,const UDisSeqAct_AIClearAttention::`vftable',,4,.rdata
+0x0115a8a8,0xd5a8a8,??_7UDisSeqAct_GetAbstractItemQuantity@@6B@,const UDisSeqAct_GetAbstractItemQuantity::`vftable',,4,.rdata
 0x0115aa38,0xd5aa38,??_7UDisSeqAct_SetDisposition@@6B@,const UDisSeqAct_SetDisposition::`vftable',,4,.rdata
 0x0115aef0,0xd5aef0,??_7UDisSeqAct_RemoveObjective@@6B@,const UDisSeqAct_RemoveObjective::`vftable',,4,.rdata
 0x0115b088,0xd5b088,??_7UDisSeqAct_SetObjectiveHidden@@6B@,const UDisSeqAct_SetObjectiveHidden::`vftable',,4,.rdata
@@ -23097,8 +23055,6 @@ va,rva,name,demangled,type,size,segment
 0x0115cd70,0xd5cd70,??_7UDisGFxMoviePlayerHUD@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerHUD::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0115cd90,0xd5cd90,??_7UDisGFxMoviePlayerHUD@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerHUD::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
 0x0115cf98,0xd5cf98,??_7UDisSeqAct_DialogScriptedChoice@@6B@,const UDisSeqAct_DialogScriptedChoice::`vftable',,4,.rdata
-0x0115d130,0xd5d130,??_7UDisBinkOverlayManager@@6B@,const UDisBinkOverlayManager::`vftable',,4,.rdata
-0x0115d3b0,0xd5d3b0,??_7ADishonoredAudioListenerTest@@6B@,const ADishonoredAudioListenerTest::`vftable',,4,.rdata
 0x0115d750,0xd5d750,??_7UDisAkComponent@@6B@,const UDisAkComponent::`vftable',,4,.rdata
 0x0115d9d4,0xd5d9d4,??_7UDisSeqAct_AINoise@@6BIDisNoiseMakerInterface@@@,const UDisSeqAct_AINoise::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x0115d9e8,0xd5d9e8,??_7UDisSeqAct_StartSpawn@@6BIDisSpawnRequesterInterface@@@,const UDisSeqAct_StartSpawn::`vftable'{for `IDisSpawnRequesterInterface'},,4,.rdata
@@ -23664,7 +23620,6 @@ va,rva,name,demangled,type,size,segment
 0x01161a44,0xd61a44,aNotSet,aNotSet,,20,.rdata
 0x01161be8,0xd61be8,??_7UDisGFxMoviePlayerPowerWheel@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerPowerWheel::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01161c08,0xd61c08,??_7UDisGFxMoviePlayerPowerWheel@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerPowerWheel::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
-0x01161e08,0xd61e08,??_7UDisTweaks_GFxMoviePlayerPauseMenu@@6B@,const UDisTweaks_GFxMoviePlayerPauseMenu::`vftable',,4,.rdata
 0x01161f50,0xd61f50,??_7UDisContactPhysicalMaterial@@6B@,const UDisContactPhysicalMaterial::`vftable',,4,.rdata
 0x01162078,0xd62078,__real@47ad9c00,__real@47ad9c00,,4,.rdata
 0x01162080,0xd62080,__real@3fdbecde5a000000,__real@3fdbecde5a000000,,8,.rdata
@@ -23685,15 +23640,19 @@ va,rva,name,demangled,type,size,segment
 0x011635a8,0xd635a8,??_7FDisTaskMarker@@6B@,const FDisTaskMarker::`vftable',,4,.rdata
 0x011635c0,0xd635c0,??_7FDisAwarenessMarker@@6B@,const FDisAwarenessMarker::`vftable',,4,.rdata
 0x011635d8,0xd635d8,??_7FDisHeartMarker@@6B@,const FDisHeartMarker::`vftable',,4,.rdata
+0x011635f0,0xd635f0,??_7UDisGFxMoviePlayerPauseMenu@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerPauseMenu::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x01163610,0xd63610,??_7UDisGFxMoviePlayerPauseMenu@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerPauseMenu::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
 0x01163808,0xd63808,??_7FDisGrenadeMarker@@6B@,const FDisGrenadeMarker::`vftable',,4,.rdata
 0x01163bf0,0xd63bf0,??_7ADisDecalManager@@6B@,const ADisDecalManager::`vftable',,4,.rdata
 0x01163fc0,0xd63fc0,??_7UDisGFxMoviePlayerJournal@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerJournal::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
 0x01164448,0xd64448,??_7UDisTweaks_GFxMoviePlayerNote@@6B@,const UDisTweaks_GFxMoviePlayerNote::`vftable',,4,.rdata
-0x0116458c,0xd6458c,??_7UDisGFxMoviePlayerPauseMenu@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerPauseMenu::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x0116458c,0xd6458c,??_7UDisGFxMoviePlayerMenuBase@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerMenuBase::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x011645a8,0xd645a8,??_7UDisGFxMoviePlayerMenuBase@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerMenuBase::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
 0x011647f0,0xd647f0,??_7UDisGFxMoviePlayerHUDFX@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerHUDFX::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01164810,0xd64810,??_7UDisGFxMoviePlayerHUDFX@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerHUDFX::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
 0x01164a80,0xd64a80,??_7UDishonoredContactSystem@@6B@,const UDishonoredContactSystem::`vftable',,4,.rdata
+0x01164ba4,0xd64ba4,??_7UDisGFxMoviePlayerMainMenu@@6BIDisTweaksInterface@@@,const UDisGFxMoviePlayerMainMenu::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x01164bc0,0xd64bc0,??_7UDisGFxMoviePlayerMainMenu@@6BUGFxMoviePlayer@@@,const UDisGFxMoviePlayerMainMenu::`vftable'{for `UGFxMoviePlayer'},,4,.rdata
 0x01164fb0,0xd64fb0,aCanTCallDisbod,aCanTCallDisbod,const wchar_t,138,.rdata
 0x01165040,0xd65040,aCanTCallDisbod_2,aCanTCallDisbod_2,,142,.rdata
 0x011650d0,0xd650d0,aCUsersAarbonaP_389,aCUsersAarbonaP_389,,148,.rdata
@@ -23832,7 +23791,6 @@ va,rva,name,demangled,type,size,segment
 0x011667a8,0xd667a8,aNoObjectCounts,aNoObjectCounts,,60,.rdata
 0x01166860,0xd66860,??_7ADisPossessionProxyPawn@@6BIDisStoryGroupInterface@@@,const ADisPossessionProxyPawn::`vftable'{for `IDisStoryGroupInterface'},,4,.rdata
 0x01166958,0xd66958,??_7ADisPossessionProxyPawn@@6BIDisHitReboundInterface@@@,const ADisPossessionProxyPawn::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
-0x011669d4,0xd669d4,??_7ADisPossessionProxyPawn@@6BIDisLookAtInterface@@@,const ADisPossessionProxyPawn::`vftable'{for `IDisLookAtInterface'},,4,.rdata
 0x011669e4,0xd669e4,??_7ADisPossessionProxyPawn@@6BIArkHealthInterface@@@,const ADisPossessionProxyPawn::`vftable'{for `IArkHealthInterface'},,4,.rdata
 0x011669f8,0xd669f8,??_7ADisPossessionProxyPawn@@6BIInterface_NavigationHandle@@@,const ADisPossessionProxyPawn::`vftable'{for `IInterface_NavigationHandle'},,4,.rdata
 0x01166a10,0xd66a10,??_7ADisPossessionProxyPawn@@6BAActor@@@,const ADisPossessionProxyPawn::`vftable'{for `AActor'},,4,.rdata
@@ -23866,8 +23824,6 @@ va,rva,name,demangled,type,size,segment
 0x01168870,0xd68870,??_7UDisActivePowerComponent_DarkVision@@6BUActorComponent@@@,const UDisActivePowerComponent_DarkVision::`vftable'{for `UActorComponent'},,4,.rdata
 0x01168f28,0xd68f28,??_7UDishonoredActivePowerComponent_WindBlast@@6BIDisTweaksInterface@@@,const UDishonoredActivePowerComponent_WindBlast::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01168f48,0xd68f48,??_7UDishonoredActivePowerComponent_WindBlast@@6BUActorComponent@@@,const UDishonoredActivePowerComponent_WindBlast::`vftable'{for `UActorComponent'},,4,.rdata
-0x011690f8,0xd690f8,??_7UDisTweaks_WindBlast@@6B@,const UDisTweaks_WindBlast::`vftable',,4,.rdata
-0x01169378,0xd69378,??_7UDisTweaks_DarkVision@@6B@,const UDisTweaks_DarkVision::`vftable',,4,.rdata
 0x011695e0,0xd695e0,??_7UDishonoredStatCollectionInfoCustom@@6B@,const UDishonoredStatCollectionInfoCustom::`vftable',,4,.rdata
 0x01169708,0xd69708,??_7?$TDynamicPrimitiveDrawer@V?$TSoulPartMeshDrawingPolicyFactory@VFSoulPartMeshPolicy@@@@@@6B@,const TDynamicPrimitiveDrawer<class TSoulPartMeshDrawingPolicyFactory<class FSoulPartMeshPolicy>>::`vftable',,4,.rdata
 0x01169730,0xd69730,aUdistweaksEmit,aUdistweaksEmit,,70,.rdata
@@ -23965,7 +23921,7 @@ va,rva,name,demangled,type,size,segment
 0x0116ab7c,0xd6ab7c,aUdistweaksMele_2,aUdistweaksMele_2,,58,.rdata
 0x0116abb8,0xd6abb8,aMFparryattract,aMFparryattract,,50,.rdata
 0x0116abec,0xd6abec,aMFparryattract_0,aMFparryattract_0,,50,.rdata
-0x0116ac28,0xd6ac28,??_7UDisTweaks_InventoryPickup@@6B@,const UDisTweaks_InventoryPickup::`vftable',,4,.rdata
+0x0116ac28,0xd6ac28,??_7UDisTweaks_EmitterCameraLensEffect_Looping@@6B@,const UDisTweaks_EmitterCameraLensEffect_Looping::`vftable',,4,.rdata
 0x0116ad68,0xd6ad68,??_7UDisParticleModuleRainImpacts@@6B@,const UDisParticleModuleRainImpacts::`vftable',,4,.rdata
 0x0116af04,0xd6af04,??_7FMeleeVsAllMulti@@6B@,const FMeleeVsAllMulti::`vftable',,4,.rdata
 0x0116af10,0xd6af10,??_7UDishonoredInventoryItemPostUpdateTickComponent@@6B@,const UDishonoredInventoryItemPostUpdateTickComponent::`vftable',,4,.rdata
@@ -23995,19 +23951,17 @@ va,rva,name,demangled,type,size,segment
 0x0116c9a4,0xd6c9a4,??_7UDisItemContext@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0116c9bc,0xd6c9bc,??_7UDisItemContext_ProjectileAttack@@6BIDisFireProjectileInterface@@@,const UDisItemContext_ProjectileAttack::`vftable'{for `IDisFireProjectileInterface'},,4,.rdata
 0x0116c9d0,0xd6c9d0,??_7UDisParticleModuleRainDrops@@6B@,const UDisParticleModuleRainDrops::`vftable',,4,.rdata
+0x0116cb70,0xd6cb70,??_7UDisTweaks_InventoryPickup@@6B@,const UDisTweaks_InventoryPickup::`vftable',,4,.rdata
 0x0116cc98,0xd6cc98,??_7UDisStoryFlagSet@@6B@,const UDisStoryFlagSet::`vftable',,4,.rdata
 0x0116cdc0,0xd6cdc0,??_7UDishonoredInventory@@6B@,const UDishonoredInventory::`vftable',,4,.rdata
 0x0116d028,0xd6d028,??_7UDisItemContext_MeleeAttack@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_MeleeAttack::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0116d040,0xd6d040,??_7UDisItemContext_MeleeAttack@@6BUObject@@@,const UDisItemContext_MeleeAttack::`vftable'{for `UObject'},,4,.rdata
-0x0116d718,0xd6d718,??_7UDisTweaks_MeleeAttackPlayer@@6B@,const UDisTweaks_MeleeAttackPlayer::`vftable',,4,.rdata
 0x0116d858,0xd6d858,??_7UDisItemContext_MeleeAttackNPCBase@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_MeleeAttackNPCBase::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0116d870,0xd6d870,??_7UDisItemContext_MeleeAttackPlayer@@6BUObject@@@,const UDisItemContext_MeleeAttackPlayer::`vftable'{for `UObject'},,4,.rdata
-0x0116da90,0xd6da90,??_7UDisTweaks_Finisher@@6B@,const UDisTweaks_Finisher::`vftable',,4,.rdata
 0x0116dbd0,0xd6dbd0,??_7UDisItemContext_Assassinate@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_Assassinate::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0116dbe8,0xd6dbe8,??_7UDisItemContext_Assassinate@@6BUObject@@@,const UDisItemContext_Assassinate::`vftable'{for `UObject'},,4,.rdata
 0x0116de08,0xd6de08,??_7UDisItemContext_Fatality@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_Fatality::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0116de20,0xd6de20,??_7UDisItemContext_Fatality@@6BUObject@@@,const UDisItemContext_Fatality::`vftable'{for `UObject'},,4,.rdata
-0x0116e168,0xd6e168,??_7UDisTweaks_EmitterCameraLensEffect_Looping@@6B@,const UDisTweaks_EmitterCameraLensEffect_Looping::`vftable',,4,.rdata
 0x0116e3e8,0xd6e3e8,??_7UDishonoredInventoryItem@@6BIDisTweaksInterface@@@,const UDishonoredInventoryItem::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0116e404,0xd6e404,??_7UDishonoredInventoryItem@@6BIDisAttributesInterface@@@,const UDishonoredInventoryItem::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x0116e414,0xd6e414,??_7UDishonoredInventoryItem@@6BIDisAnimStateOwnerInterface@@@,const UDishonoredInventoryItem::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
@@ -24383,7 +24337,8 @@ va,rva,name,demangled,type,size,segment
 0x01175f10,0xd75f10,??_7UDisItemContext_NPCThrowWhiskey@@6BIDisFireProjectileInterface@@@,const UDisItemContext_NPCThrowWhiskey::`vftable'{for `IDisFireProjectileInterface'},,4,.rdata
 0x01175f20,0xd75f20,??_7UDisItemContext_NPCThrowWhiskey@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCThrowWhiskey::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01175f38,0xd75f38,??_7UDisItemContext_NPCThrowWhiskey@@6BUObject@@@,const UDisItemContext_NPCThrowWhiskey::`vftable'{for `UObject'},,4,.rdata
-0x011760f8,0xd760f8,??_7UDisTweaks_NPCThrowWhiskey@@6B@,const UDisTweaks_NPCThrowWhiskey::`vftable',,4,.rdata
+0x01176238,0xd76238,??_7UDisItemContext_NPCWhiskeyFire@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCWhiskeyFire::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
+0x01176250,0xd76250,??_7UDisItemContext_NPCWhiskeyFire@@6BUObject@@@,const UDisItemContext_NPCWhiskeyFire::`vftable'{for `UObject'},,4,.rdata
 0x01176538,0xd76538,??_7UDisItemContext_AttackNPCTallboyMelee@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_AttackNPCTallboyMelee::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01176550,0xd76550,??_7UDisItemContext_AttackNPCTallboyMelee@@6BUObject@@@,const UDisItemContext_AttackNPCTallboyMelee::`vftable'{for `UObject'},,4,.rdata
 0x0117677c,0xd7677c,??_7UDisItemContext_NPCAttractSpell@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCAttractSpell::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
@@ -24396,7 +24351,7 @@ va,rva,name,demangled,type,size,segment
 0x01176eb0,0xd76eb0,??_7UDisItemContext_NPCTune_Protection@@6BUObject@@@,const UDisItemContext_NPCTune_Protection::`vftable'{for `UObject'},,4,.rdata
 0x01177080,0xd77080,??_7UDisItemContext_NPCTune_Combat@@6BUObject@@@,const UDisItemContext_NPCTune_Combat::`vftable'{for `UObject'},,4,.rdata
 0x011775f8,0xd775f8,??_7UDisTweaks_Tune_Protection@@6B@,const UDisTweaks_Tune_Protection::`vftable',,4,.rdata
-0x01177738,0xd77738,??_7UDisItemContext_NPCWhiskeyFire@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCWhiskeyFire::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
+0x01177738,0xd77738,??_7UDisItemContext_NPCSideStep@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCSideStep::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01177750,0xd77750,??_7UDisItemContext_NPCSideStep@@6BUObject@@@,const UDisItemContext_NPCSideStep::`vftable'{for `UObject'},,4,.rdata
 0x01177a38,0xd77a38,??_7UDisItemContext_NPCTaunt@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCTaunt::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01177a50,0xd77a50,??_7UDisItemContext_NPCTaunt@@6BUObject@@@,const UDisItemContext_NPCTaunt::`vftable'{for `UObject'},,4,.rdata
@@ -24411,28 +24366,17 @@ va,rva,name,demangled,type,size,segment
 0x01178bd8,0xd78bd8,??_7UDisItemContext_WeeperGrab@@6BUObject@@@,const UDisItemContext_WeeperGrab::`vftable'{for `UObject'},,4,.rdata
 0x01178e1c,0xd78e1c,??_7UDisItemContext_NPCBackStep@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCBackStep::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01178e38,0xd78e38,??_7UDisItemContext_NPCBackStep@@6BUObject@@@,const UDisItemContext_NPCBackStep::`vftable'{for `UObject'},,4,.rdata
+0x01178ffc,0xd78ffc,??_7UDisWepMusicAmp@@6BIDisAttributesInterface@@@,const UDisWepMusicAmp::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x011791e4,0xd791e4,??_7UDishonoredWeapon_Ranged@@6BIDisTweaksInterface@@@,const UDishonoredWeapon_Ranged::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01179200,0xd79200,??_7UDishonoredWeapon_Ranged@@6BIDisAttributesInterface@@@,const UDishonoredWeapon_Ranged::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x01179210,0xd79210,??_7UDishonoredWeapon_Ranged@@6BIDisAnimStateOwnerInterface@@@,const UDishonoredWeapon_Ranged::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x01179238,0xd79238,??_7UDishonoredWeapon_Ranged@@6BUObject@@@,const UDishonoredWeapon_Ranged::`vftable'{for `UObject'},,4,.rdata
 0x01179540,0xd79540,??_7UDisTweaks_WHBark@@6B@,const UDisTweaks_WHBark::`vftable',,4,.rdata
-0x011797c0,0xd797c0,??_7UDisTweaks_Item_WolfhoundBite@@6B@,const UDisTweaks_Item_WolfhoundBite::`vftable',,4,.rdata
-0x01179900,0xd79900,??_7UDisWepBow@@6BIDisTweaksInterface@@@,const UDisWepBow::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x0117991c,0xd7991c,??_7UDisWepBow@@6BIDisAttributesInterface@@@,const UDisWepBow::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x0117992c,0xd7992c,??_7UDisWepBow@@6BIDisAnimStateOwnerInterface@@@,const UDisWepBow::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
-0x01179958,0xd79958,??_7UDisWepBow@@6BUObject@@@,const UDisWepBow::`vftable'{for `UObject'},,4,.rdata
-0x01179b1c,0xd79b1c,??_7UDisWepCrossbow@@6BIDisTweaksInterface@@@,const UDisWepCrossbow::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x01179b38,0xd79b38,??_7UDisWepCrossbow@@6BIDisAttributesInterface@@@,const UDisWepCrossbow::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x01179b48,0xd79b48,??_7UDisWepCrossbow@@6BIDisAnimStateOwnerInterface@@@,const UDisWepCrossbow::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
-0x01179b70,0xd79b70,??_7UDisWepCrossbow@@6BUObject@@@,const UDisWepCrossbow::`vftable'{for `UObject'},,4,.rdata
+0x0117992c,0xd7992c,??_7UDisItemContext_NPCAttackRight180@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCAttackRight180::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01179d34,0xd79d34,??_7UDisWepGrenade@@6BIDisTweaksInterface@@@,const UDisWepGrenade::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01179d50,0xd79d50,??_7UDisWepGrenade@@6BIDisAttributesInterface@@@,const UDisWepGrenade::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x01179d60,0xd79d60,??_7UDisWepGrenade@@6BIDisAnimStateOwnerInterface@@@,const UDisWepGrenade::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x01179d88,0xd79d88,??_7UDisWepGrenade@@6BUObject@@@,const UDisWepGrenade::`vftable'{for `UObject'},,4,.rdata
-0x01179f4c,0xd79f4c,??_7UDisItem_WolfhoundBark@@6BIDisTweaksInterface@@@,const UDisItem_WolfhoundBark::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x01179f68,0xd79f68,??_7UDisItem_WolfhoundBark@@6BIDisAttributesInterface@@@,const UDisItem_WolfhoundBark::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x01179f78,0xd79f78,??_7UDisItem_WolfhoundBark@@6BIDisAnimStateOwnerInterface@@@,const UDisItem_WolfhoundBark::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
-0x01179fa0,0xd79fa0,??_7UDisItem_WolfhoundBark@@6BUObject@@@,const UDisItem_WolfhoundBark::`vftable'{for `UObject'},,4,.rdata
 0x0117a290,0xd7a290,??_7UDisWepMusicBox@@6BIDisTweaksInterface@@@,const UDisWepMusicBox::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0117a2ac,0xd7a2ac,??_7UDisWepMusicBox@@6BIDisAttributesInterface@@@,const UDisWepMusicBox::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x0117a2bc,0xd7a2bc,??_7UDisWepMusicBox@@6BIDisAnimStateOwnerInterface@@@,const UDisWepMusicBox::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
@@ -24445,10 +24389,10 @@ va,rva,name,demangled,type,size,segment
 0x0117a6c8,0xd7a6c8,??_7UDisWepWhiskeyBottle@@6BIDisAttributesInterface@@@,const UDisWepWhiskeyBottle::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x0117a6d8,0xd7a6d8,??_7UDisWepWhiskeyBottle@@6BIDisAnimStateOwnerInterface@@@,const UDisWepWhiskeyBottle::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x0117a700,0xd7a700,??_7UDisWepWhiskeyBottle@@6BUObject@@@,const UDisWepWhiskeyBottle::`vftable'{for `UObject'},,4,.rdata
-0x0117a9f0,0xd7a9f0,??_7UDisGadget@@6BIDisTweaksInterface@@@,const UDisGadget::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x0117aa0c,0xd7aa0c,??_7UDisGadget@@6BIDisAttributesInterface@@@,const UDisGadget::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x0117aa1c,0xd7aa1c,??_7UDisGadget@@6BIDisAnimStateOwnerInterface@@@,const UDisGadget::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
-0x0117aa48,0xd7aa48,??_7UDisGadget@@6BUObject@@@,const UDisGadget::`vftable'{for `UObject'},,4,.rdata
+0x0117a9f0,0xd7a9f0,??_7UDisWepThrowingHand@@6BIDisTweaksInterface@@@,const UDisWepThrowingHand::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x0117aa0c,0xd7aa0c,??_7UDisWepThrowingHand@@6BIDisAttributesInterface@@@,const UDisWepThrowingHand::`vftable'{for `IDisAttributesInterface'},,4,.rdata
+0x0117aa1c,0xd7aa1c,??_7UDisWepThrowingHand@@6BIDisAnimStateOwnerInterface@@@,const UDisWepThrowingHand::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
+0x0117aa48,0xd7aa48,??_7UDisWepThrowingHand@@6BUObject@@@,const UDisWepThrowingHand::`vftable'{for `UObject'},,4,.rdata
 0x0117abf4,0xd7abf4,??_7UDisGadget_SpringRazor@@6BIDisTweaksInterface@@@,const UDisGadget_SpringRazor::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x0117ac10,0xd7ac10,??_7UDisGadget_SpringRazor@@6BIDisAttributesInterface@@@,const UDisGadget_SpringRazor::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x0117ac20,0xd7ac20,??_7UDisGadget_SpringRazor@@6BIDisAnimStateOwnerInterface@@@,const UDisGadget_SpringRazor::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
@@ -24472,7 +24416,6 @@ va,rva,name,demangled,type,size,segment
 0x0117bf58,0xd7bf58,??_7UDisItemContext_NPC_OverseerJumpAway@@6BIDisFireProjectileInterface@@@,const UDisItemContext_NPC_OverseerJumpAway::`vftable'{for `IDisFireProjectileInterface'},,4,.rdata
 0x0117bf68,0xd7bf68,??_7UDisItemContext_NPC_OverseerJumpAway@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPC_OverseerJumpAway::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0117bf80,0xd7bf80,??_7UDisItemContext_NPC_OverseerJumpAway@@6BUObject@@@,const UDisItemContext_NPC_OverseerJumpAway::`vftable'{for `UObject'},,4,.rdata
-0x0117c148,0xd7c148,??_7UDisTweaks_NPC_OverseerJumpAway@@6B@,const UDisTweaks_NPC_OverseerJumpAway::`vftable',,4,.rdata
 0x0117c2b0,0xd7c2b0,??_7UDisItemContext_NPCFireGun@@6BUObject@@@,const UDisItemContext_NPCFireGun::`vftable'{for `UObject'},,4,.rdata
 0x0117c464,0xd7c464,??_7UDisItemContext_NPCLobGrenadeAtUnreachable@@6BIDisFireProjectileInterface@@@,const UDisItemContext_NPCLobGrenadeAtUnreachable::`vftable'{for `IDisFireProjectileInterface'},,4,.rdata
 0x0117c474,0xd7c474,??_7UDisItemContext_NPCLobGrenadeAtUnreachable@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCLobGrenadeAtUnreachable::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
@@ -24480,7 +24423,7 @@ va,rva,name,demangled,type,size,segment
 0x0117c678,0xd7c678,??_7UDisItemContext_NPCAttackUnder_Gun@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCAttackUnder_Gun::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0117c690,0xd7c690,??_7UDisItemContext_NPCAttackUnder_Gun@@6BUObject@@@,const UDisItemContext_NPCAttackUnder_Gun::`vftable'{for `UObject'},,4,.rdata
 0x0117c844,0xd7c844,??_7UDishonoredWepSword@@6BIDisTweaksInterface@@@,const UDishonoredWepSword::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x0117c860,0xd7c860,??_7UDishonoredWepSword@@6BIDisAttributesInterface@@@,const UDishonoredWepSword::`vftable'{for `IDisAttributesInterface'},,4,.rdata
+0x0117c860,0xd7c860,??_7UDisWepCrossbow@@6BIDisAttributesInterface@@@,const UDisWepCrossbow::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x0117c870,0xd7c870,??_7UDishonoredWepSword@@6BIDisAnimStateOwnerInterface@@@,const UDishonoredWepSword::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x0117c898,0xd7c898,??_7UDishonoredWepSword@@6BUObject@@@,const UDishonoredWepSword::`vftable'{for `UObject'},,4,.rdata
 0x0117ca44,0xd7ca44,??_7UDisWeapon_WolfhoundBite@@6BIDisTweaksInterface@@@,const UDisWeapon_WolfhoundBite::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -24497,25 +24440,9 @@ va,rva,name,demangled,type,size,segment
 0x0117d41c,0xd7d41c,??_7UDisItemContext_NPCTeleportSpell@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_NPCTeleportSpell::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x0117d438,0xd7d438,??_7UDisItemContext_NPCTeleportSpell@@6BUObject@@@,const UDisItemContext_NPCTeleportSpell::`vftable'{for `UObject'},,4,.rdata
 0x0117d638,0xd7d638,??_7UDishonoredWepPistol@@6BUObject@@@,const UDishonoredWepPistol::`vftable'{for `UObject'},,4,.rdata
-0x0117d7fc,0xd7d7fc,??_7UDisWepMusicAmp@@6BIDisTweaksInterface@@@,const UDisWepMusicAmp::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x0117d818,0xd7d818,??_7UDisWepMusicAmp@@6BIDisAttributesInterface@@@,const UDisWepMusicAmp::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x0117d828,0xd7d828,??_7UDisWepMusicAmp@@6BIDisAnimStateOwnerInterface@@@,const UDisWepMusicAmp::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
+0x0117d828,0xd7d828,??_7UDisWepBow@@6BIDisAnimStateOwnerInterface@@@,const UDisWepBow::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x0117d850,0xd7d850,??_7UDisWepMusicAmp@@6BUObject@@@,const UDisWepMusicAmp::`vftable'{for `UObject'},,4,.rdata
-0x0117da00,0xd7da00,??_7UDisTweaks_UseSpringRazor@@6B@,const UDisTweaks_UseSpringRazor::`vftable',,4,.rdata
-0x0117db40,0xd7db40,??_7UDisTweaks_MultiFatality@@6B@,const UDisTweaks_MultiFatality::`vftable',,4,.rdata
-0x0117dc80,0xd7dc80,??_7UDisTweaks_Assassinate@@6B@,const UDisTweaks_Assassinate::`vftable',,4,.rdata
-0x0117ddc0,0xd7ddc0,??_7UDisTweaks_DropAssassinate@@6B@,const UDisTweaks_DropAssassinate::`vftable',,4,.rdata
-0x0117df00,0xd7df00,??_7UDisTweaks_FireCrossbow@@6B@,const UDisTweaks_FireCrossbow::`vftable',,4,.rdata
-0x0117e040,0xd7e040,??_7UDisTweaks_FirePistol@@6B@,const UDisTweaks_FirePistol::`vftable',,4,.rdata
-0x0117e7c0,0xd7e7c0,??_7UDisTweaks_NPCPush@@6B@,const UDisTweaks_NPCPush::`vftable',,4,.rdata
-0x0117ea40,0xd7ea40,??_7UDisTweaks_NPCRatCrushAttempt@@6B@,const UDisTweaks_NPCRatCrushAttempt::`vftable',,4,.rdata
-0x0117eb80,0xd7eb80,??_7UDisTweaks_Minigame@@6B@,const UDisTweaks_Minigame::`vftable',,4,.rdata
-0x0117ecc0,0xd7ecc0,??_7UDisTweaks_NPCReloadGun@@6B@,const UDisTweaks_NPCReloadGun::`vftable',,4,.rdata
-0x0117ee00,0xd7ee00,??_7UDisTweaks_WHArmAttack@@6B@,const UDisTweaks_WHArmAttack::`vftable',,4,.rdata
-0x0117ef40,0xd7ef40,??_7UDisTweaks_WHJumpAttack@@6B@,const UDisTweaks_WHJumpAttack::`vftable',,4,.rdata
-0x0117f080,0xd7f080,??_7UDisTweaks_WeeperGrab@@6B@,const UDisTweaks_WeeperGrab::`vftable',,4,.rdata
 0x0117f1c0,0xd7f1c0,?SQRT2@?1??ComputeCoefs@?$MultiChannelBiquadFilter@$05@DSP@AK@@QAEXW4FilterType@234@KMMM@Z@4MB,"float const `public: void __thiscall AK::DSP::MultiChannelBiquadFilter<6>::ComputeCoefs(enum AK::DSP::MultiChannelBiquadFilter<6>::FilterType, unsigned long, float, float, float)'::`2'::SQRT2",,4,.rdata
-0x0117f308,0xd7f308,??_7UDisTweaks_WepPistol@@6B@,const UDisTweaks_WepPistol::`vftable',,4,.rdata
 0x0117fabc,0xd7fabc,??_7ADisGrenade@@6BIDisSoulRenderInterface@@@,const ADisGrenade::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x0117fad0,0xd7fad0,??_7ADisGrenade@@6BIDisMovableInterface@@@,const ADisGrenade::`vftable'{for `IDisMovableInterface'},,4,.rdata
 0x0117fb00,0xd7fb00,??_7ADisGrenade@@6BIDisInteractableInterface@@@,const ADisGrenade::`vftable'{for `IDisInteractableInterface'},,4,.rdata
@@ -24524,7 +24451,6 @@ va,rva,name,demangled,type,size,segment
 0x0117fb98,0xd7fb98,??_7ADisProjectile@@6BIDisNoiseMakerInterface@@@,const ADisProjectile::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x0117fbb0,0xd7fbb0,??_7ADisProjectile@@6BIDisInteractableInterface@@@,const ADisProjectile::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x0117fc20,0xd7fc20,??_7ADisProjectile@@6BAActor@@@,const ADisProjectile::`vftable'{for `AActor'},,4,.rdata
-0x0117fff8,0xd7fff8,??_7UDisTweaks_Fatality@@6B@,const UDisTweaks_Fatality::`vftable',,4,.rdata
 0x01180138,0xd80138,??_7ADisGadget_SpringRazorPlaced@@6BIDisSoulRenderInterface@@@,const ADisGadget_SpringRazorPlaced::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x01180150,0xd80150,??_7ADisGadget_SpringRazorPlaced@@6BIDisInteractableInterface@@@,const ADisGadget_SpringRazorPlaced::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x01180300,0xd80300,aUdisgrenadecom,aUdisgrenadecom,,42,.rdata
@@ -24759,25 +24685,19 @@ va,rva,name,demangled,type,size,segment
 0x01183604,0xd83604,??_7UDisItemContext_UsePower@@6BIDisAnimStateFiringInterface@@@,const UDisItemContext_UsePower::`vftable'{for `IDisAnimStateFiringInterface'},,4,.rdata
 0x01183620,0xd83620,??_7UDisItemContext_UsePower@@6BUObject@@@,const UDisItemContext_UsePower::`vftable'{for `UObject'},,4,.rdata
 0x011837cc,0xd837cc,??_7UDisItemPowers@@6BIDisTweaksInterface@@@,const UDisItemPowers::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x011837e8,0xd837e8,??_7UDisItemPowers@@6BIDisAttributesInterface@@@,const UDisItemPowers::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x011837f8,0xd837f8,??_7UDisItemPowers@@6BIDisAnimStateOwnerInterface@@@,const UDisItemPowers::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x01183820,0xd83820,??_7UDisItemPowers@@6BUObject@@@,const UDisItemPowers::`vftable'{for `UObject'},,4,.rdata
 0x011839cc,0xd839cc,??_7UDishonoredItemEmpty@@6BIDisTweaksInterface@@@,const UDishonoredItemEmpty::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x011839e8,0xd839e8,??_7UDishonoredItemEmpty@@6BIDisAttributesInterface@@@,const UDishonoredItemEmpty::`vftable'{for `IDisAttributesInterface'},,4,.rdata
 0x011839f8,0xd839f8,??_7UDishonoredItemEmpty@@6BIDisAnimStateOwnerInterface@@@,const UDishonoredItemEmpty::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
 0x01183a20,0xd83a20,??_7UDishonoredItemEmpty@@6BUObject@@@,const UDishonoredItemEmpty::`vftable'{for `UObject'},,4,.rdata
-0x01183e50,0xd83e50,??_7UDishonoredWeapon@@6BIDisTweaksInterface@@@,const UDishonoredWeapon::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x01183e6c,0xd83e6c,??_7UDishonoredWeapon@@6BIDisAttributesInterface@@@,const UDishonoredWeapon::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x01183e7c,0xd83e7c,??_7UDishonoredWeapon@@6BIDisAnimStateOwnerInterface@@@,const UDishonoredWeapon::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
-0x01183ea8,0xd83ea8,??_7UDishonoredWeapon@@6BUObject@@@,const UDishonoredWeapon::`vftable'{for `UObject'},,4,.rdata
+0x01183e50,0xd83e50,??_7UDisItem_WolfhoundBark@@6BIDisTweaksInterface@@@,const UDisItem_WolfhoundBark::`vftable'{for `IDisTweaksInterface'},,4,.rdata
+0x01183e7c,0xd83e7c,??_7UDisItemPowers@@6BIDisAnimStateOwnerInterface@@@,const UDisItemPowers::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
+0x01183ea8,0xd83ea8,??_7UDisItem_WolfhoundBark@@6BUObject@@@,const UDisItem_WolfhoundBark::`vftable'{for `UObject'},,4,.rdata
 0x01184180,0xd84180,??_7UPhysicsLODVerticalEmitter@@6B@,const UPhysicsLODVerticalEmitter::`vftable',,4,.rdata
 0x011843d0,0xd843d0,??_7UDishonoredBarkManager@@6B@,const UDishonoredBarkManager::`vftable',,4,.rdata
 0x01184530,0xd84530,??_7UDisMusicState_Base@@6B@,const UDisMusicState_Base::`vftable',,4,.rdata
 0x011846a8,0xd846a8,??_7UDisMusicState_Chase@@6B@,const UDisMusicState_Chase::`vftable',,4,.rdata
 0x01184820,0xd84820,??_7UDisMusicState_Combat@@6B@,const UDisMusicState_Combat::`vftable',,4,.rdata
-0x01184998,0xd84998,??_7UDisMusicState_Exploration@@6B@,const UDisMusicState_Exploration::`vftable',,4,.rdata
-0x01184b10,0xd84b10,??_7UDisMusicState_RatAttack@@6B@,const UDisMusicState_RatAttack::`vftable',,4,.rdata
-0x01184c88,0xd84c88,??_7UDisMusicState_Suspense@@6B@,const UDisMusicState_Suspense::`vftable',,4,.rdata
 0x01184f40,0xd84f40,??_7FDisComponentHitReactionThrow@@6BIArkComponentPreAsyncWork@@@,const FDisComponentHitReactionThrow::`vftable'{for `IArkComponentPreAsyncWork'},,4,.rdata
 0x01184f48,0xd84f48,??_7FDisComponentHitReactionThrow@@6BFArkComponentBase@@@,const FDisComponentHitReactionThrow::`vftable'{for `FArkComponentBase'},,4,.rdata
 0x01184f70,0xd84f70,aDiscpnttypeHit,aDiscpnttypeHit,,58,.rdata
@@ -24789,6 +24709,9 @@ va,rva,name,demangled,type,size,segment
 0x01185164,0xd85164,??_7ADisProjectile_Arrow@@6BIDisNoiseMakerInterface@@@,const ADisProjectile_Arrow::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x01185178,0xd85178,??_7ADisProjectile_Arrow@@6BIDisInteractableInterface@@@,const ADisProjectile_Arrow::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x011851e8,0xd851e8,??_7ADisProjectile_Arrow@@6BAActor@@@,const ADisProjectile_Arrow::`vftable'{for `AActor'},,4,.rdata
+0x011855d4,0xd855d4,??_7ADisProjectile_Grenade@@6B@,const ADisProjectile_Grenade::`vftable',,4,.rdata
+0x011855e8,0xd855e8,??_7ADisProjectile_Grenade@@6BIDisDamageCauserInterface@@@,const ADisProjectile_Grenade::`vftable'{for `IDisDamageCauserInterface'},,4,.rdata
+0x01185610,0xd85610,??_7ADisProjectile_Grenade@@6BIDisNoiseMakerInterface@@@,const ADisProjectile_Grenade::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x01185a84,0xd85a84,??_7ADisProjectile_Arrow_Flare@@6B@,const ADisProjectile_Arrow_Flare::`vftable',,4,.rdata
 0x01185a98,0xd85a98,??_7ADisProjectile_Arrow_Flare@@6BIDisDamageCauserInterface@@@,const ADisProjectile_Arrow_Flare::`vftable'{for `IDisDamageCauserInterface'},,4,.rdata
 0x01185aa4,0xd85aa4,??_7ADisProjectile_Arrow_Flare@@6BIDisTweaksInterface@@@,const ADisProjectile_Arrow_Flare::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -24804,7 +24727,6 @@ va,rva,name,demangled,type,size,segment
 0x01186510,0xd86510,??_7ADisProjectile_StickyGrenade@@6BIDisDamageCauserInterface@@@,const ADisProjectile_StickyGrenade::`vftable'{for `IDisDamageCauserInterface'},,4,.rdata
 0x0118651c,0xd8651c,??_7ADisProjectile_StickyGrenade@@6BIDisTweaksInterface@@@,const ADisProjectile_StickyGrenade::`vftable'{for `IDisTweaksInterface'},,4,.rdata
 0x01186538,0xd86538,??_7ADisProjectile_StickyGrenade@@6BIDisNoiseMakerInterface@@@,const ADisProjectile_StickyGrenade::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
-0x01186550,0xd86550,??_7ADisProjectile_StickyGrenade@@6BIDisInteractableInterface@@@,const ADisProjectile_StickyGrenade::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x011865c0,0xd865c0,??_7ADisProjectile_StickyGrenade@@6BAActor@@@,const ADisProjectile_StickyGrenade::`vftable'{for `AActor'},,4,.rdata
 0x01186998,0xd86998,??_7ADisProjectile_ThrownObject@@6BIDisDamageCauserInterface@@@,const ADisProjectile_ThrownObject::`vftable'{for `IDisDamageCauserInterface'},,4,.rdata
 0x011869a4,0xd869a4,??_7ADisProjectile_ThrownObject@@6BIDisTweaksInterface@@@,const ADisProjectile_ThrownObject::`vftable'{for `IDisTweaksInterface'},,4,.rdata
@@ -24830,13 +24752,12 @@ va,rva,name,demangled,type,size,segment
 0x01187ce8,0xd87ce8,??_7FDisMusicState_Combat_Param@@6B@,const FDisMusicState_Combat_Param::`vftable',,4,.rdata
 0x01187cf0,0xd87cf0,??_7FDisMusicState_RatAttack_Param@@6B@,const FDisMusicState_RatAttack_Param::`vftable',,4,.rdata
 0x01187cf8,0xd87cf8,??_7UDisDarknessManager@@6B@,const UDisDarknessManager::`vftable',,4,.rdata
-0x01187f68,0xd87f68,??_7UDisTweaks_Heart@@6B@,const UDisTweaks_Heart::`vftable',,4,.rdata
+0x01187e28,0xd87e28,??_7UDisTweaks_NPCBackStep@@6B@,const UDisTweaks_NPCBackStep::`vftable',,4,.rdata
 0x011880a8,0xd880a8,??_7UDisTweaks_Armor@@6B@,const UDisTweaks_Armor::`vftable',,4,.rdata
 0x01188318,0xd88318,??_7UDisAmbushGlobalManager@@6B@,const UDisAmbushGlobalManager::`vftable',,4,.rdata
-0x01188568,0xd88568,??_7UDisAINoiseManager@@6B@,const UDisAINoiseManager::`vftable',,4,.rdata
 0x0118868c,0xd8868c,??_7ADisWhiskeyBottle@@6BIDisMovableInterface@@@,const ADisWhiskeyBottle::`vftable'{for `IDisMovableInterface'},,4,.rdata
 0x011886c0,0xd886c0,??_7ADisMovableLimb@@6BIDisInteractableInterface@@@,const ADisMovableLimb::`vftable'{for `IDisInteractableInterface'},,4,.rdata
-0x01188730,0xd88730,??_7ADisProjectile_Arrow_Explosive@@6B@,const ADisProjectile_Arrow_Explosive::`vftable',,4,.rdata
+0x01188730,0xd88730,??_7ADisProjectile_Arrow@@6B@,const ADisProjectile_Arrow::`vftable',,4,.rdata
 0x01188744,0xd88744,??_7ADisProjectile_GrenadeBase@@6B@,const ADisProjectile_GrenadeBase::`vftable',,4,.rdata
 0x011889e8,0xd889e8,??_7UDishonoredGlobalAIManager@@6B@,const UDishonoredGlobalAIManager::`vftable',,4,.rdata
 0x01188b10,0xd88b10,??_7UDisGlobalCombatManager@@6B@,const UDisGlobalCombatManager::`vftable',,4,.rdata
@@ -24957,6 +24878,7 @@ va,rva,name,demangled,type,size,segment
 0x0118a380,0xd8a380,??_7IArkComponentObservable@@6B@,const IArkComponentObservable::`vftable',,4,.rdata
 0x0118a3b0,0xd8a3b0,aDiscpnttypeRet,aDiscpnttypeRet,,48,.rdata
 0x0118a3e0,0xd8a3e0,??_7IArkComponentVision@@6B@,const IArkComponentVision::`vftable',,4,.rdata
+0x0118a3f0,0xd8a3f0,??_7ADisTetherVolume@@6B@,const ADisTetherVolume::`vftable',,4,.rdata
 0x0118a7d8,0xd8a7d8,??_7ADisWhaleOilBattery@@6BIDisSoulRenderInterface@@@,const ADisWhaleOilBattery::`vftable'{for `IDisSoulRenderInterface'},,4,.rdata
 0x0118a7ec,0xd8a7ec,??_7ADisWhaleOilBattery@@6BIDisMovableInterface@@@,const ADisWhaleOilBattery::`vftable'{for `IDisMovableInterface'},,4,.rdata
 0x0118a820,0xd8a820,??_7ADisWhaleOilBattery@@6BIDisInteractableInterface@@@,const ADisWhaleOilBattery::`vftable'{for `IDisInteractableInterface'},,4,.rdata
@@ -24987,7 +24909,6 @@ va,rva,name,demangled,type,size,segment
 0x0118bab8,0xd8bab8,??_7FDisComponentObservable@@6BIArkComponentObservable@@@,const FDisComponentObservable::`vftable'{for `IArkComponentObservable'},,4,.rdata
 0x0118bae8,0xd8bae8,??_7FDisComponentObservable@@6BFArkComponentBase@@@,const FDisComponentObservable::`vftable'{for `FArkComponentBase'},,4,.rdata
 0x0118bb10,0xd8bb10,aDiscpnttypeObs,aDiscpnttypeObs,,46,.rdata
-0x0118bb40,0xd8bb40,??_7FDisComponentTuneProtection@@6BIArkComponentPreAsyncWork@@@,const FDisComponentTuneProtection::`vftable'{for `IArkComponentPreAsyncWork'},,4,.rdata
 0x0118bb48,0xd8bb48,??_7FDisComponentTuneCombat@@6BFArkComponentBase@@@,const FDisComponentTuneCombat::`vftable'{for `FArkComponentBase'},,4,.rdata
 0x0118bbb4,0xd8bbb4,aDiscpnttypeTun_0,aDiscpnttypeTun_0,,46,.rdata
 0x0118bbe4,0xd8bbe4,??_7FDisComponentVision@@6BIArkComponentTimeSlicedTick@@@,const FDisComponentVision::`vftable'{for `IArkComponentTimeSlicedTick'},,4,.rdata
@@ -25018,7 +24939,6 @@ va,rva,name,demangled,type,size,segment
 0x0118cdd8,0xd8cdd8,??_7ADisGameCrowdAgentSkeletalRat@@6BIDisPossessableInterface@@@,const ADisGameCrowdAgentSkeletalRat::`vftable'{for `IDisPossessableInterface'},,4,.rdata
 0x0118ce10,0xd8ce10,??_7ADisGameCrowdAgentSkeletalRat@@6BIDisInteractableInterface@@@,const ADisGameCrowdAgentSkeletalRat::`vftable'{for `IDisInteractableInterface'},,4,.rdata
 0x0118ce80,0xd8ce80,??_7UDisRatSwarmSpawner@@6B@,const UDisRatSwarmSpawner::`vftable',,4,.rdata
-0x0118cfc8,0xd8cfc8,??_7UInterpTrackInstDialog@@6B@,const UInterpTrackInstDialog::`vftable',,4,.rdata
 0x0118d108,0xd8d108,??_7UDisTweaks_ChapterTarget@@6B@,const UDisTweaks_ChapterTarget::`vftable',,4,.rdata
 0x0118d248,0xd8d248,??_7UDisTweaks_Faction@@6B@,const UDisTweaks_Faction::`vftable',,4,.rdata
 0x0118d390,0xd8d390,??_7UDisTweaks_LODProfile@@6B@,const UDisTweaks_LODProfile::`vftable',,4,.rdata
@@ -25028,7 +24948,6 @@ va,rva,name,demangled,type,size,segment
 0x0118dd98,0xd8dd98,??_7FDisComponentRBDamages@@6BIArkComponentPostAsyncWork@@@,const FDisComponentRBDamages::`vftable'{for `IArkComponentPostAsyncWork'},,4,.rdata
 0x0118dda0,0xd8dda0,??_7FDisComponentRBDamages@@6BFArkComponentBase@@@,const FDisComponentRBDamages::`vftable'{for `FArkComponentBase'},,4,.rdata
 0x0118ddc8,0xd8ddc8,aDiscpnttypeRbd,aDiscpnttypeRbd,,44,.rdata
-0x0118e078,0xd8e078,??_7UDisTweaks_WhaleOilBattery@@6B@,const UDisTweaks_WhaleOilBattery::`vftable',,4,.rdata
 0x0118e1b8,0xd8e1b8,??_7UDisAttributes@@6B@,const UDisAttributes::`vftable',,4,.rdata
 0x0118e2e0,0xd8e2e0,aAdisforbiddenz_0,aAdisforbiddenz_0,,36,.rdata
 0x0118e304,0xd8e304,aAdisforbiddenz_1,aAdisforbiddenz_1,,36,.rdata
@@ -25639,11 +25558,11 @@ va,rva,name,demangled,type,size,segment
 0x01196c3c,0xd96c3c,aSSS_13,aSSS_13,const wchar_t,22,.rdata
 0x01196c58,0xd96c58,??_7ADisHideoutVolume@@6B@,const ADisHideoutVolume::`vftable',,4,.rdata
 0x011973b8,0xd973b8,??_7ADisStealthVolume@@6B@,const ADisStealthVolume::`vftable',,4,.rdata
-0x01197768,0xd97768,??_7ADisToggleableVolume@@6B@,const ADisToggleableVolume::`vftable',,4,.rdata
+0x01197768,0xd97768,??_7ADisSpotLightMovable@@6B@,const ADisSpotLightMovable::`vftable',,4,.rdata
 0x01197b20,0xd97b20,??_7UDisConv_Node_InGameData@@6B@,const UDisConv_Node_InGameData::`vftable',,4,.rdata
 0x01197c48,0xd97c48,??_7UDisConv_TimeLimit@@6B@,const UDisConv_TimeLimit::`vftable',,4,.rdata
 0x01197da8,0xd97da8,aConversation,aConversation,,26,.rdata
-0x01197dc8,0xd97dc8,??_7ADisTetherVolume@@6B@,const ADisTetherVolume::`vftable',,4,.rdata
+0x01197dc8,0xd97dc8,??_7ADisToggleableVolume@@6B@,const ADisToggleableVolume::`vftable',,4,.rdata
 0x01198180,0xd98180,??_7ADisForbiddenZone@@6B@,const ADisForbiddenZone::`vftable',,4,.rdata
 0x01198540,0xd98540,??_7UDisConv_Blurb_InGameData@@6B@,const UDisConv_Blurb_InGameData::`vftable',,4,.rdata
 0x01198668,0xd98668,??_7UDisConversation_InGameData_Base@@6B@,const UDisConversation_InGameData_Base::`vftable',,4,.rdata
@@ -25917,7 +25836,6 @@ va,rva,name,demangled,type,size,segment
 0x0119de80,0xd9de80,??_7UDisConv_SpeakerCombatStatus@@6B@,const UDisConv_SpeakerCombatStatus::`vftable',,4,.rdata
 0x0119dfe0,0xd9dfe0,??_7UDisConv_CheckSpeakerRelationship@@6B@,const UDisConv_CheckSpeakerRelationship::`vftable',,4,.rdata
 0x0119e140,0xd9e140,??_7UDisConv_CompareDarknessLevel@@6B@,const UDisConv_CompareDarknessLevel::`vftable',,4,.rdata
-0x0119e2a0,0xd9e2a0,??_7UDisConv_Hook_PlayerLoiter_InGameData@@6B@,const UDisConv_Hook_PlayerLoiter_InGameData::`vftable',,4,.rdata
 0x0119e4f0,0xd9e4f0,??_7UDisConv_Action@@6B@,const UDisConv_Action::`vftable',,4,.rdata
 0x0119e650,0xd9e650,??_7UDisConv_KismetActivateRemoteEvent@@6B@,const UDisConv_KismetActivateRemoteEvent::`vftable',,4,.rdata
 0x0119e7b0,0xd9e7b0,??_7UDisConv_PlayerLookAtActor@@6B@,const UDisConv_PlayerLookAtActor::`vftable',,4,.rdata
@@ -26550,9 +26468,7 @@ va,rva,name,demangled,type,size,segment
 0x011b08c0,0xdb08c0,aDlc06_5,aDlc06_5,,12,.rdata
 0x011b08cc,0xdb08cc,aDlc06player,aDlc06player,,24,.rdata
 0x011b1e6c,0xdb1e6c,aDlc06gadget,aDlc06gadget,,24,.rdata
-0x011b8570,0xdb8570,??_7UDisTweaks_WepGrenade@@6B@,const UDisTweaks_WepGrenade::`vftable',,4,.rdata
-0x011b86b0,0xdb86b0,??_7UDisTweaks_RiverKrust@@6B@,const UDisTweaks_RiverKrust::`vftable',,4,.rdata
-0x011b87f0,0xdb87f0,??_7UDisTweaks_MeleeBlockPlayer@@6B@,const UDisTweaks_MeleeBlockPlayer::`vftable',,4,.rdata
+0x011b86b0,0xdb86b0,??_7UDisTweaks_NPCThrowGrenade@@6B@,const UDisTweaks_NPCThrowGrenade::`vftable',,4,.rdata
 0x011b8af8,0xdb8af8,aUdisdlc06activ,aUdisdlc06activ,,84,.rdata
 0x011b8b4c,0xdb8b4c,aSVanishingLife,aSVanishingLife,,52,.rdata
 0x011b8b80,0xdb8b80,aUdisdlc06activ_0,aUdisdlc06activ_0,,84,.rdata
@@ -26834,10 +26750,6 @@ va,rva,name,demangled,type,size,segment
 0x011bcf88,0xdbcf88,aUdisdlc07behav_10,aUdisdlc07behav_10,,60,.rdata
 0x011bcfc8,0xdbcfc8,aUdisdlc07tweak_33,aUdisdlc07tweak_33,,80,.rdata
 0x011bd018,0xdbd018,aUdisdlc07tweak_34,aUdisdlc07tweak_34,,80,.rdata
-0x011bd958,0xdbd958,??_7UDisBehaviorCombatMelee@@6BIDisAIRangedBehaviorInterface@@@,const UDisBehaviorCombatMelee::`vftable'{for `IDisAIRangedBehaviorInterface'},,4,.rdata
-0x011bd96c,0xdbd96c,??_7UDisBehaviorCombatMelee@@6BUDisBehaviorCombat@@@,const UDisBehaviorCombatMelee::`vftable'{for `UDisBehaviorCombat'},,4,.rdata
-0x011bd9a4,0xdbd9a4,??_7UDisBehaviorCombatMelee@@6BIDisTweaksInterface@@@,const UDisBehaviorCombatMelee::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x011bd9c0,0xdbd9c0,??_7UDisBehaviorCombatMelee@@6BUObject@@@,const UDisBehaviorCombatMelee::`vftable'{for `UObject'},,4,.rdata
 0x011be324,0xdbe324,aDlc07_3,aDlc07_3,,12,.rdata
 0x011be344,0xdbe344,??_7ADisTravelSpawner@@6BIDisDrawVisionComponentOwnerInterface@@@,const ADisTravelSpawner::`vftable'{for `IDisDrawVisionComponentOwnerInterface'},,4,.rdata
 0x011be354,0xdbe354,??_7ADisTravelSpawner@@6BIDisNoiseListenerInterface@@@,const ADisTravelSpawner::`vftable'{for `IDisNoiseListenerInterface'},,4,.rdata
@@ -26853,7 +26765,6 @@ va,rva,name,demangled,type,size,segment
 0x011c4cfc,0xdc4cfc,??_7ADisKey_Base@@6BIDisHitReboundInterface@@@,const ADisKey_Base::`vftable'{for `IDisHitReboundInterface'},,4,.rdata
 0x011c4d0c,0xdc4d0c,??_7ADisKey_Base@@6BIDisNoiseMakerInterface@@@,const ADisKey_Base::`vftable'{for `IDisNoiseMakerInterface'},,4,.rdata
 0x011c4d20,0xdc4d20,??_7ADisKey_Base@@6BIDisContactTypeInterface@@@,const ADisKey_Base::`vftable'{for `IDisContactTypeInterface'},,4,.rdata
-0x011c50f8,0xdc50f8,??_7UDisTweaks_TallboyNPCPawn@@6B@,const UDisTweaks_TallboyNPCPawn::`vftable',,4,.rdata
 0x011ca810,0xdca810,??_7?$FRealCallableMethod@VUStateNPCMasterProjectileHitReact@@V1@ABVFArkGameEvent@@@@6B@,"const FRealCallableMethod<class UStateNPCMasterProjectileHitReact, class UStateNPCMasterProjectileHitReact, class FArkGameEvent const &>::`vftable'",,4,.rdata
 0x011cadd0,0xdcadd0,??_7FStateNPCPlayAnim_Param@@6B@,const FStateNPCPlayAnim_Param::`vftable',,4,.rdata
 0x011cfcb0,0xdcfcb0,__real@c7c35000,__real@c7c35000,,4,.rdata
@@ -26920,10 +26831,6 @@ va,rva,name,demangled,type,size,segment
 0x011d11c0,0xdd11c0,aUdisdlc07movie_9,aUdisdlc07movie_9,,56,.rdata
 0x011d11f8,0xdd11f8,aUdisdlc07tweak_47,aUdisdlc07tweak_47,,76,.rdata
 0x011d1248,0xdd1248,aUdisdlc07tweak_48,aUdisdlc07tweak_48,,76,.rdata
-0x011d20fc,0xdd20fc,??_7UDisWepThrowingHand@@6BIDisTweaksInterface@@@,const UDisWepThrowingHand::`vftable'{for `IDisTweaksInterface'},,4,.rdata
-0x011d2118,0xdd2118,??_7UDisWepThrowingHand@@6BIDisAttributesInterface@@@,const UDisWepThrowingHand::`vftable'{for `IDisAttributesInterface'},,4,.rdata
-0x011d2128,0xdd2128,??_7UDisWepThrowingHand@@6BIDisAnimStateOwnerInterface@@@,const UDisWepThrowingHand::`vftable'{for `IDisAnimStateOwnerInterface'},,4,.rdata
-0x011d2150,0xdd2150,??_7UDisWepThrowingHand@@6BUObject@@@,const UDisWepThrowingHand::`vftable'{for `UObject'},,4,.rdata
 0x011d3018,0xdd3018,??_7USeqEvent_AnimNotify@@6B@,const USeqEvent_AnimNotify::`vftable',,4,.rdata
 0x011d3d5c,0xdd3d5c,aBadAllocation_67,aBadAllocation_67,,15,.rdata
 0x011d3dc0,0xdd3dc0,a1110_15,a1110_15,,10,.rdata
@@ -27182,14 +27089,16 @@ va,rva,name,demangled,type,size,segment
 0x011d8644,0xdd8644,??_7?$CAkStmDeferredLinedUpBase@VCAkStdStmBase@StreamMgr@AK@@@StreamMgr@AK@@6B@_0,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkStdStmBase>::`vftable',,4,.rdata
 0x011d867c,0xdd867c,??_7?$CAkStmDeferredLinedUpBase@VCAkStdStmBase@StreamMgr@AK@@@StreamMgr@AK@@6B@,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkStdStmBase>::`vftable',,4,.rdata
 0x011d8680,0xdd8680,??_7?$CAkStmDeferredLinedUpBase@VCAkStdStmBase@StreamMgr@AK@@@StreamMgr@AK@@6BCAkStmTask@12@@,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkStdStmBase>::`vftable'{for `AK::StreamMgr::CAkStmTask'},,4,.rdata
-0x011d869c,0xdd869c,??_7?$CAkStmDeferredLinedUpBase@VCAkAutoStmBase@StreamMgr@AK@@@StreamMgr@AK@@6BIAkAutoStream@2@@,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkAutoStmBase>::`vftable'{for `AK::IAkAutoStream'},,4,.rdata
-0x011d86e4,0xdd86e4,??_7?$CAkStmDeferredLinedUpBase@VCAkAutoStmBase@StreamMgr@AK@@@StreamMgr@AK@@6BCAkStmTask@12@@,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkAutoStmBase>::`vftable'{for `AK::StreamMgr::CAkStmTask'},,4,.rdata
+0x011d869c,0xdd869c,??_7?$CAkStmDeferredLinedUpBase@VCAkAutoStmBase@StreamMgr@AK@@@StreamMgr@AK@@6B@_0,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkAutoStmBase>::`vftable',,4,.rdata
+0x011d86e4,0xdd86e4,??_7?$CAkStmDeferredLinedUpBase@VCAkAutoStmBase@StreamMgr@AK@@@StreamMgr@AK@@6B@,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkAutoStmBase>::`vftable',,4,.rdata
+0x011d86ec,0xdd86ec,??_7?$CAkStmDeferredLinedUpBase@VCAkAutoStmBase@StreamMgr@AK@@@StreamMgr@AK@@6BCAkStmTask@12@@,const AK::StreamMgr::CAkStmDeferredLinedUpBase<class AK::StreamMgr::CAkAutoStmBase>::`vftable'{for `AK::StreamMgr::CAkStmTask'},,4,.rdata
 0x011d8714,0xdd8714,??_7CAkStdStmDeferredLinedUp@StreamMgr@AK@@6BIAkStdStream@2@@,const AK::StreamMgr::CAkStdStmDeferredLinedUp::`vftable'{for `AK::IAkStdStream'},,4,.rdata
 0x011d874c,0xdd874c,??_7CAkStdStmDeferredLinedUp@StreamMgr@AK@@6BCAkStmTask@12@@,const AK::StreamMgr::CAkStdStmDeferredLinedUp::`vftable'{for `AK::StreamMgr::CAkStmTask'},,4,.rdata
 0x011d876c,0xdd876c,??_7CAkAutoStmDeferredLinedUp@StreamMgr@AK@@6BIAkAutoStream@2@@,const AK::StreamMgr::CAkAutoStmDeferredLinedUp::`vftable'{for `AK::IAkAutoStream'},,4,.rdata
 0x011d87b4,0xdd87b4,??_7CAkAutoStmDeferredLinedUp@StreamMgr@AK@@6BCAkStmTask@12@@,const AK::StreamMgr::CAkAutoStmDeferredLinedUp::`vftable'{for `AK::StreamMgr::CAkStmTask'},,4,.rdata
 0x011d87e4,0xdd87e4,??_7CAkDeviceBlocking@StreamMgr@AK@@6B@,const AK::StreamMgr::CAkDeviceBlocking::`vftable',,4,.rdata
 0x011d8808,0xdd8808,??_7CAkStdStmBlocking@StreamMgr@AK@@6B@_0,const AK::StreamMgr::CAkStdStmBlocking::`vftable',,4,.rdata
+0x011d8828,0xdd8828,??_7CAkStdStmBlocking@StreamMgr@AK@@6BIAkStdStream@2@@,const AK::StreamMgr::CAkStdStmBlocking::`vftable'{for `AK::IAkStdStream'},,4,.rdata
 0x011d8840,0xdd8840,??_7CAkStdStmBlocking@StreamMgr@AK@@6B@,const AK::StreamMgr::CAkStdStmBlocking::`vftable',,4,.rdata
 0x011d8844,0xdd8844,??_7CAkStdStmBlocking@StreamMgr@AK@@6BCAkStmTask@12@@,const AK::StreamMgr::CAkStdStmBlocking::`vftable'{for `AK::StreamMgr::CAkStmTask'},,4,.rdata
 0x011d8864,0xdd8864,??_7CAkAutoStmBlocking@StreamMgr@AK@@6BIAkAutoStream@2@@,const AK::StreamMgr::CAkAutoStmBlocking::`vftable'{for `AK::IAkAutoStream'},,4,.rdata
@@ -32068,7 +31977,6 @@ va,rva,name,demangled,type,size,segment
 0x0126a558,0xe6a558,_intUObjectexecJumpIfNotEditorOnly,_intUObjectexecJumpIfNotEditorOnly,,4,.data
 0x0126a5e8,0xe6a5e8,CharToEscapeSeqMap,CharToEscapeSeqMap,,4,.data
 0x0126a600,0xe6a600,PADDING,PADDING,,1,.data
-0x0126a644,0xe6a644,?GLZOCallbacks@@3Ulzo_callback_t@@A,struct lzo_callback_t GLZOCallbacks,,4,.data
 0x0126a65c,0xe6a65c,?GObjLastNonGCIndex@UObject@@0HA,private: static int UObject::GObjLastNonGCIndex,,4,.data
 0x0126a660,0xe6a660,aInt_2,aInt_2,wchar_t,8,.data
 0x0126a6e0,0xe6a6e0,?GEngineVersion@@3HA,int GEngineVersion,char[],4,.data
@@ -33260,7 +33168,6 @@ va,rva,name,demangled,type,size,segment
 0x0128d3b0,0xe8d3b0,_intACameraexecGetCameraViewPoint,_intACameraexecGetCameraViewPoint,,4,.data
 0x0128d3b4,0xe8d3b4,_intACameraexecGetFOVAngle,_intACameraexecGetFOVAngle,,4,.data
 0x0128d3b8,0xe8d3b8,_intACameraexecApplyCameraModifiers,_intACameraexecApplyCameraModifiers,,4,.data
-0x0128dea4,0xe8dea4,_intUDishonoredCheatManagerexecAISetDumbToPlayer,_intUDishonoredCheatManagerexecAISetDumbToPlayer,,4,.data
 0x0129388c,0xe9388c,RunningAverageDeltaTime,RunningAverageDeltaTime,,4,.data
 0x01293890,0xe93890,?GCameraCutLookAhead@@3MA,float GCameraCutLookAhead,,4,.data
 0x0129b2c0,0xe9b2c0,?GLogDetailedDumpStats@@3IA,unsigned int GLogDetailedDumpStats,,4,.data
@@ -34701,7 +34608,6 @@ va,rva,name,demangled,type,size,segment
 0x0143f548,0x103f548,?StaticType@FMemCopyVertexShader@@2VFGlobalShaderType@@A,public: static class FGlobalShaderType FMemCopyVertexShader::StaticType,,4,.data
 0x0143f5e4,0x103f5e4,?StaticType@FGPUSkinDecalVertexFactory@@2VFVertexFactoryType@@A,public: static class FVertexFactoryType FGPUSkinDecalVertexFactory::StaticType,,1,.data
 0x0143f62c,0x103f62c,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticRasterizerState@$01$0A@@@V?$TDynamicRHIResourceReference@$01@@@@SA?AV?$TDynamicRHIResourceReference@$01@@XZ@51,"`public: static class TDynamicRHIResourceReference<2> __cdecl TStaticStateRHI<class TStaticRasterizerState<2, 0>, class TDynamicRHIResourceReference<2>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
-0x0143f630,0x103f630,?Resource@?1??GetRHI@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$0A@$0A@$00$0A@$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@SA?AV?$TDynamicRHIResourceReference@$04@@XZ@4VFStaticStateResource@2@A,"class TStaticStateRHI<class TStaticBlendState<0, 1, 0, 0, 1, 0, 7, 255>, class TDynamicRHIResourceReference<5>>::FStaticStateResource `public: static class TDynamicRHIResourceReference<5> __cdecl TStaticStateRHI<class TStaticBlendState<0, 1, 0, 0, 1, 0, 7, 255>, class TDynamicRHIResourceReference<5>>::GetRHI(void)'::`2'::Resource",,1,.data
 0x0143f648,0x103f648,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$00$0A@$0A@$00$0A@$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@SA?AV?$TDynamicRHIResourceReference@$04@@XZ@51,"`public: static class TDynamicRHIResourceReference<5> __cdecl TStaticStateRHI<class TStaticBlendState<0, 1, 0, 0, 1, 0, 7, 255>, class TDynamicRHIResourceReference<5>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
 0x0143f664,0x103f664,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticDepthState@$0A@$06@@V?$TDynamicRHIResourceReference@$02@@@@SA?AV?$TDynamicRHIResourceReference@$02@@XZ@51,"`public: static class TDynamicRHIResourceReference<3> __cdecl TStaticStateRHI<class TStaticDepthState<0, 7>, class TDynamicRHIResourceReference<3>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
 0x0143f680,0x103f680,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticStencilState@$00$06$0A@$0A@$01$0A@$06$0A@$0A@$0A@$0PP@$0PP@$00@@V?$TDynamicRHIResourceReference@$03@@@@SA?AV?$TDynamicRHIResourceReference@$03@@XZ@51,"`public: static class TDynamicRHIResourceReference<4> __cdecl TStaticStateRHI<class TStaticStencilState<1, 7, 0, 0, 2, 0, 7, 0, 0, 0, 255, 255, 1>, class TDynamicRHIResourceReference<4>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
@@ -35262,6 +35168,7 @@ va,rva,name,demangled,type,size,segment
 0x01447824,0x1047824,?ENGINE_GetDebugAbbrev@@3VFName@@A,class FName ENGINE_GetDebugAbbrev,,4,.data
 0x01447834,0x1047834,?ENGINE_GetDrawComponent@@3VFName@@A,class FName ENGINE_GetDrawComponent,,4,.data
 0x0144783c,0x104783c,?ENGINE_GetDumpString@@3VFName@@A,class FName ENGINE_GetDumpString,,4,.data
+0x0144787c,0x104787c,?ENGINE_GetListElements@@3VFName@@A,class FName ENGINE_GetListElements,,4,.data
 0x01447884,0x1047884,?ENGINE_GetLoginStatus@@3VFName@@A,class FName ENGINE_GetLoginStatus,,4,.data
 0x0144788c,0x104788c,?ENGINE_GetNamedInterface@@3VFName@@A,class FName ENGINE_GetNamedInterface,,4,.data
 0x01447894,0x1047894,?ENGINE_GetNATType@@3VFName@@A,class FName ENGINE_GetNATType,,4,.data
@@ -37362,7 +37269,6 @@ va,rva,name,demangled,type,size,segment
 0x0144b1d8,0x104b1d8,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticRasterizerState@$01$00@@V?$TDynamicRHIResourceReference@$01@@@@SA?AV?$TDynamicRHIResourceReference@$01@@XZ@51,"`public: static class TDynamicRHIResourceReference<2> __cdecl TStaticStateRHI<class TStaticRasterizerState<2, 1>, class TDynamicRHIResourceReference<2>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
 0x0144b1f4,0x104b1f4,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticRasterizerState@$01$01@@V?$TDynamicRHIResourceReference@$01@@@@SA?AV?$TDynamicRHIResourceReference@$01@@XZ@51,"`public: static class TDynamicRHIResourceReference<2> __cdecl TStaticStateRHI<class TStaticRasterizerState<2, 2>, class TDynamicRHIResourceReference<2>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
 0x0144b210,0x104b210,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticStencilState@$00$03$0A@$0A@$0A@$0A@$06$0A@$0A@$0A@$0PPPPPPPP@$0PPPPPPPP@$0A@@@V?$TDynamicRHIResourceReference@$03@@@@SA?AV?$TDynamicRHIResourceReference@$03@@XZ@51,"`public: static class TDynamicRHIResourceReference<4> __cdecl TStaticStateRHI<class TStaticStencilState<1, 4, 0, 0, 0, 0, 7, 0, 0, 0, 4294967295, 4294967295, 0>, class TDynamicRHIResourceReference<4>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
-0x0144b214,0x104b214,?Resource@?1??GetRHI@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$03$04$0A@$0A@$04$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@SA?AV?$TDynamicRHIResourceReference@$04@@XZ@4VFStaticStateResource@2@A,"class TStaticStateRHI<class TStaticBlendState<0, 4, 5, 0, 0, 5, 7, 255>, class TDynamicRHIResourceReference<5>>::FStaticStateResource `public: static class TDynamicRHIResourceReference<5> __cdecl TStaticStateRHI<class TStaticBlendState<0, 4, 5, 0, 0, 5, 7, 255>, class TDynamicRHIResourceReference<5>>::GetRHI(void)'::`2'::Resource",,1,.data
 0x0144b22c,0x104b22c,??_B?1??GetRHI@?$TStaticStateRHI@V?$TStaticBlendState@$0A@$03$04$0A@$0A@$04$06$0PP@@@V?$TDynamicRHIResourceReference@$04@@@@SA?AV?$TDynamicRHIResourceReference@$04@@XZ@51,"`public: static class TDynamicRHIResourceReference<5> __cdecl TStaticStateRHI<class TStaticBlendState<0, 4, 5, 0, 0, 5, 7, 255>, class TDynamicRHIResourceReference<5>>::GetRHI(void)'::`2'::`local static guard'{2}'",,4,.data
 0x0144b230,0x104b230,?NullWindSources@?1??GetWindSources_RenderThread@FNULLSceneInterface@@UBEABV?$TArray@PAVFWindSourceSceneProxy@@VFDefaultAllocator@@@@XZ@4V3@A,"class TArray<class FWindSourceSceneProxy *, class FDefaultAllocator> `public: virtual class TArray<class FWindSourceSceneProxy *, class FDefaultAllocator> const & __thiscall FNULLSceneInterface::GetWindSources_RenderThread(void)const'::`2'::NullWindSources",,4,.data
 0x0144b23c,0x104b23c,??_B?1??GetWindSources_RenderThread@FNULLSceneInterface@@UBEABV?$TArray@PAVFWindSourceSceneProxy@@VFDefaultAllocator@@@@XZ@51,"`public: virtual class TArray<class FWindSourceSceneProxy *, class FDefaultAllocator> const & __thiscall FNULLSceneInterface::GetWindSources_RenderThread(void)const'::`2'::`local static guard'{2}'",,4,.data
@@ -39953,8 +39859,11 @@ va,rva,name,demangled,type,size,segment
 0x0146f0c4,0x106f0c4,?PrivateStaticClass@UDisContactType_JumpLand_Big@@0PAVUClass@@A,private: static class UClass * UDisContactType_JumpLand_Big::PrivateStaticClass,,4,.data
 0x0146f0c8,0x106f0c8,?PrivateStaticClass@UDisContactType_Slide@@0PAVUClass@@A,private: static class UClass * UDisContactType_Slide::PrivateStaticClass,,4,.data
 0x0146f0cc,0x106f0cc,?PrivateStaticClass@UDisContactType_SlideImpact@@0PAVUClass@@A,private: static class UClass * UDisContactType_SlideImpact::PrivateStaticClass,,4,.data
+0x0146f0d0,0x106f0d0,?g_DialogSelNotifyActors@@3V?$TArray@PAVFDisDialogSelNotify@@VFDefaultAllocator@@@@A,"class TArray<class FDisDialogSelNotify *, class FDefaultAllocator> g_DialogSelNotifyActors",,4,.data
 0x0146f0e0,0x106f0e0,SSE_XYZ_MASK_41,SSE_XYZ_MASK_41,,16,.data
 0x0146f0f0,0x106f0f0,InstanceNum,InstanceNum,char[],4,.data
+0x0146f100,0x106f100,ElixirDescriptions,ElixirDescriptions,,4,.data
+0x0146f118,0x106f118,ElixirNames,ElixirNames,,4,.data
 0x0146f260,0x106f260,gs_DisUsedPawnChannels,gs_DisUsedPawnChannels,,4,.data
 0x0146f268,0x106f268,?PrivateStaticClass@UDisActivePowerComponent_DarkVision@@0PAVUClass@@A,private: static class UClass * UDisActivePowerComponent_DarkVision::PrivateStaticClass,,4,.data
 0x0146f26c,0x106f26c,?PrivateStaticClass@UDisTweaks_DarkVision@@0PAVUClass@@A,private: static class UClass * UDisTweaks_DarkVision::PrivateStaticClass,,4,.data
@@ -40436,13 +40345,6 @@ va,rva,name,demangled,type,size,segment
 0x01471e28,0x1071e28,?PrivateStaticClass@UDisDesiresInterface@@0PAVUClass@@A,private: static class UClass * UDisDesiresInterface::PrivateStaticClass,,4,.data
 0x01471e2c,0x1071e2c,?PrivateStaticClass@UDisDesireStructs@@0PAVUClass@@A,private: static class UClass * UDisDesireStructs::PrivateStaticClass,,4,.data
 0x014722a0,0x10722a0,?PrivateStaticClass@UFoliageComponent@@0PAVUClass@@A,private: static class UClass * UFoliageComponent::PrivateStaticClass,,4,.data
-0x014726a8,0x10726a8,s_Mask_7,s_Mask_7,,1,.data
-0x01472724,0x1072724,b_Initialized_7,b_Initialized_7,,4,.data
-0x01472728,0x1072728,s_Mask_8,s_Mask_8,,1,.data
-0x014727a4,0x10727a4,b_Initialized_8,b_Initialized_8,,4,.data
-0x01472928,0x1072928,s_SubProcessesMask_4,s_SubProcessesMask_4,,1,.data
-0x014729a8,0x10729a8,s_CompleteMask_4,s_CompleteMask_4,,1,.data
-0x01472a24,0x1072a24,b_Initialized_53,b_Initialized_53,,4,.data
 0x01472ab0,0x1072ab0,SSE_SIGN_MASK_42,SSE_SIGN_MASK_42,,16,.data
 0x01472ac0,0x1072ac0,SSE_ONE_39,SSE_ONE_39,,16,.data
 0x01472ad0,0x1072ad0,SSE_XYZ_MASK_43,SSE_XYZ_MASK_43,,16,.data
