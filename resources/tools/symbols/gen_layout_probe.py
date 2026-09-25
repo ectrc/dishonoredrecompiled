@@ -95,6 +95,14 @@ MODULE_INCLUDES = {
                "EngineForceFieldClasses.h", "EnginePlatformInterfaceClasses.h", "EngineFogVolumeClasses.h", "EngineFluidClasses.h",
                "EngineProcBuildingClasses.h", "EngineFoliageClasses.h", "EngineSplineClasses.h", "EngineSpeedTreeClasses.h",
                "EnginePrefabClasses.h", "EngineLensFlareClasses.h"],
+    # D3D9Drv.h needs Engine.h first (D3D9DrvPrivate.h order); the hardware survey / compatibility evaluator
+    # types live in their own headers that no D3D9Drv.h include reaches.
+    "D3D9Drv": ["Engine.h", "D3D9Drv.h", "D3D9HardwareSurvey.h", "HardwareID.h", "VideoDevice.h", "BaseDevice.h"],
+    # wave 2 T: the generated module headers include every engine header their classes derive from
+    "GFxUI": ["GFxUI.h"],
+    "AkAudio": ["AkAudio.h"],
+    "OnlineSubsystemSteamworks": ["OnlineSubsystemSteamworks.h"],
+    "DishonoredGame": ["DishonoredGame.h"],
 }
 CHUNK = 100  # types per probe compile unit; Engine declares ~1,900, cl.exe stops a TU at 100 errors, and Engine.h parses in seconds
 
@@ -120,7 +128,8 @@ def probe_unit(module: str, types: dict, names: list[str], unit: str) -> str:
         for m in probe_members(types[n]):
             tag = f"{n}_{m['name']}"
             detectors.append(f"template<class U, class = void> struct Has_{tag} : std::false_type {{}};")
-            detectors.append(f"template<class U> struct Has_{tag}<U, std::void_t<decltype(&U::{m['name']})>> : std::true_type {{}};")
+            # is_member_object_pointer: a DISHONORED_SHIM_STATIC (static, declaration only) must report MISSING, not be addressed
+            detectors.append(f"template<class U> struct Has_{tag}<U, std::void_t<decltype(&U::{m['name']})>> : std::is_member_object_pointer<decltype(&U::{m['name']})> {{}};")
             fn.append(f"    if constexpr (Has_{tag}<U>::value) std::printf(\"{n}.{m['name']},%zu\\n\", OFF(U, {m['name']})); else std::printf(\"{n}.{m['name']},MISSING\\n\");")
         fn += ["}", ""]
         body += fn
@@ -211,7 +220,13 @@ def retail_sizes() -> dict[str, int]:
     if not RETAIL_SIZES.exists():
         return {}
     with RETAIL_SIZES.open(newline="", encoding="utf-8") as f:
-        return {r["class"]: int(r["size_2013"]) for r in csv.DictReader(f) if r.get("size_2013")}
+        sizes = {r["class"]: int(r["size_2013"]) for r in csv.DictReader(f) if r.get("size_2013")}
+    if RETAIL_SDK.exists():
+        # script structs have no native descriptor; the SDK dump prints their UScriptStruct size (alignment padding included)
+        for name, t in json.loads(RETAIL_SDK.read_text(encoding="utf-8"))["structs"].items():
+            if name not in sizes and t.get("span_end"):
+                sizes[name] = t["span_end"]
+    return sizes
 
 
 def compare(probe_output: Path) -> int:

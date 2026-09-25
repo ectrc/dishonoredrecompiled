@@ -223,13 +223,14 @@ End of wave:
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
 | C4 | coordinator | Wave-2 tooling (`sdk_props.py`, `sdk_show.py`, `xcheck --header`, smoke `--rhi/--expect/--skip-native`) | done | 2026-09-27 | verified on `UInterpTrackInst` (56 → 64, delta row gone) |
+| C5 | coordinator | Merge P/S/R/Q/U, regenerate asserts, ShowFlags follow-up | in-progress | 2026-09-28 | merged HEAD (clean worktree build, asserts on): SDK delta 1,132 types / 888 exact / 1 row (`UGameViewportClient`), compare 0 contract mismatches, CoreSmoke 99/99, milestone-1 smoke exit 0; Core 277 + Engine 763 asserts (retail script-struct sizes now come from the SDK dump). Open: ShowFlags QWORD, `FOnlinePlayerScore`/other 2012-only struct rows now pending, O and T in flight |
 | O | | Milestone 2: startup packages loaded | todo | | |
-| P | | D3D9Drv module + build follow-ups | todo | | |
-| Q | | Engine convergence: Interp/Sequence/Camera/Decal/LensFlare/Physics | todo | | |
-| R | | Engine convergence: Anim/Material/Particle/Light/Mesh/Texture/SpeedTree | todo | | |
-| S | | Engine convergence: EngineClasses/UI/AI/GameEngine/Controller/Client | todo | | |
+| P | done | D3D9Drv module + build follow-ups | done (part 1 committed) | 2026-09-28 | D3D9Drv compiles (4 mechanical fixes), links into the exe; `--rhi d3d9` creates the D3D9 RHI and reaches `Shader platform (RHI)`; nvtt users WITH_EDITOR-only, libpng15 pragma guarded, USE_UNIT_TESTS=0; probe 14 types / 9 exact, D3D9Drv/Inc/DishonoredLayouts.h. CMake/Launch/stubs wiring lands with T (shared files). Found: `[DevOptions.Shaders]` verifies and a ULevel GC-offset assert (handed to O) |
+| Q | done | Engine convergence: Interp/Sequence/Camera/Decal/LensFlare/Physics | done | 2026-09-28 | 43 PROPS blocks regenerated, 45 classes/structs; 40 rows -> 0 after the coordinator shimmed `FPhysEffectInfo::Sound`; ACamera 1040, USeqAct_Interp 520, URB_BodyInstance 224; shim clusters listed in agentQ.md |
+| R | done | Engine convergence: Anim/Material/Particle/Light/Mesh/Texture/SpeedTree | done | 2026-09-28 | 91 PROPS blocks regenerated + ULightComponent by hand; 79 rows -> 0, 95 size mismatches -> 0; nine *_DEPRECATED members renamed to retail names; 132 shims (120 used in Src) are porting TODOs |
+| S | done | Engine convergence: EngineClasses/UI/AI/GameEngine/Controller/Client | done | 2026-09-28 | 82 PROPS blocks regenerated; 0 rows in every header except `UGameViewportClient` (ShowFlags is a QWORD in retail/2012, TStaticBitArray<128> in the reference: engine-wide follow-up); new UI provider interfaces, USystem/UClient/ULineBatchComponent retail members |
 | T | | Registrants + headers from the SDK dump (DishonoredGame, GFxUI, AkAudio, OSS) | todo | | |
-| U | | Middleware versions + Phase 4 memo + Bink import lib | todo | | |
+| U | done | Middleware versions + Phase 4 memo + Bink import lib | done | 2026-09-28 | `middleware.md`: GFx 3.3.89, Wwise 2012.1 (bank v65), FaceFX 1.7.3.1, PhysX 2.8.4 (APEX shipped, never linked), Bink 1.9p, steam_api 1.30.50.46 (SDK 1.18/1.19), libcurl 7.77.0; Bink header/import lib behind DISHONORED_WITH_BINK, link check passed |
 
 ## Rules for agents (unchanged)
 

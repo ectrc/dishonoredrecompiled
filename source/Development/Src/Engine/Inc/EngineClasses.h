@@ -1590,7 +1590,8 @@ struct FPhysEffectInfo
     FLOAT Threshold;
     FLOAT ReFireDelay;
     class UParticleSystem* Effect;
-    class USoundCue* Sound;
+    // DISHONORED(layout): retail SDK struct span 0..12 and 2012 PDB sizeof 12: no Sound member (audio is Wwise); reference-only, kept as a storage-less shim
+    DISHONORED_SHIM_STATIC class USoundCue* Sound;
 
     /** Constructors */
     FPhysEffectInfo() {}

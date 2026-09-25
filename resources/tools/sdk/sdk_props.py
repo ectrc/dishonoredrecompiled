@@ -69,6 +69,8 @@ def map_type(t: str, inner: bool = False) -> str | None:
         return None if elem is None else f"{'TArray' if inner else 'TArrayNoInit'}<{elem}>"
     if t.startswith("class ") and t.endswith("*"):
         return t
+    if t.startswith("TScriptInterface<"):
+        return t
     if t in MIRROR_FALLBACK:
         return MIRROR_FALLBACK[t]
     if "Mirror" in t:
@@ -106,10 +108,31 @@ def pdb_decl(m: dict) -> str:
     return f"{declarator(fix_type(m['type']), m['name'])};".replace("struct class ", "class ")
 
 
+def fold_script_interfaces(members: list[dict]) -> list[dict]:
+    """The dump splits a TScriptInterface<I> property into `X_Object` + `X_Interface` (two 4-byte pointers);
+    fold them back into one 8-byte member `X` of type TScriptInterface<class I...>."""
+    by_name = {m["name"]: m for m in members}
+    out = []
+    skip = set()
+    for m in members:
+        if m["name"] in skip:
+            continue
+        if m["name"].endswith("_Object"):
+            stem = m["name"][:-len("_Object")]
+            other = by_name.get(stem + "_Interface")
+            if other and other["offset"] == m["offset"] + 4 and m["type"].startswith("class U") and m["type"].endswith("*"):
+                iface = "I" + m["type"][len("class U"):-1]
+                out.append({**m, "name": stem, "size": 8, "type": f"TScriptInterface<class {iface}>", "script_interface": True})
+                skip.add(other["name"])
+                continue
+        out.append(m)
+    return out
+
+
 def sdk_groups(members: list[dict]) -> list[list[dict]]:
     """members sorted by offset; bitfields sharing a DWORD form one group ordered by mask"""
     groups: list[list[dict]] = []
-    for m in sorted(members, key=lambda x: (x["offset"], x.get("mask", 0))):
+    for m in sorted(fold_script_interfaces(members), key=lambda x: (x["offset"], x.get("mask", 0))):
         if m.get("bitfield") and groups and groups[-1][0].get("bitfield") and groups[-1][0]["offset"] == m["offset"]:
             groups[-1].append(m)
         else:
@@ -230,10 +253,15 @@ def build_block(name: str, sdk: dict, pdb_t: dict | None, ref: dict[str, tuple[s
         lines.append("public:")
     removed = [n for n in ref if n not in emitted]
     span_end = sdk.get("span_end", cursor)
+    tail_pdb = [m for m in pdb_members if m["name"] not in emitted and (prev_name is None or pdb_index.get(m["name"], -1) > pdb_index.get(prev_name, -1))]
     if size_2013 is not None and size_2013 > span_end:
-        tail_pdb = [m for m in pdb_members if m["name"] not in emitted and (prev_name is None or pdb_index.get(m["name"], -1) > pdb_index.get(prev_name, -1))]
         notes.append(f"native tail: retail sizeof {size_2013} - span end {span_end} = {size_2013 - span_end} bytes after the block; "
                      f"2012 PDB members past the last reflected one: {', '.join(f'{m['name']}@{m['offset']}' for m in tail_pdb) or 'none'}")
+    elif tail_pdb:
+        notes.append(f"no native tail in retail (sizeof {size_2013} == span end {span_end}) but the 2012 PDB has members past the last reflected one: "
+                     f"{', '.join(f'{m['name']}@{m['offset']}' for m in tail_pdb)} — they do not exist in retail: delete them from the header (not shim)")
+    for m in [m for m in pdb_members if m["name"] not in emitted and m["name"] in ref and m["name"] not in {t["name"] for t in tail_pdb}]:
+        notes.append(f"{m['name']}: in the 2012 PDB (@{m['offset']}) and the reference block but not in retail at this position: verify it was removed (shimmed below)")
     return lines, added, removed, unresolved, notes
 
 

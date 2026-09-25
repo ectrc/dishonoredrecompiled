@@ -10,12 +10,12 @@ struct FDishonoredPackingProbeEngine { BYTE A; QWORD B; };
 static_assert(sizeof(FDishonoredPackingProbeEngine) == 12, "Dishonored is built with 4-byte struct packing (/Zp4, UE3 VCToolChain.cs); add /Zp4 to the compile options");
 
 static_assert(sizeof(AActor) == 592, "AActor: retail 2013 size is 592");
-// pending: sizeof(AAutoTestManager) == 768 (ours 752)
+static_assert(sizeof(AAutoTestManager) == 768, "AAutoTestManager: retail 2013 size is 768");
 static_assert(sizeof(ABlockingVolume) == 640, "ABlockingVolume: retail 2013 size is 640");
 static_assert(sizeof(ABrush) == 624, "ABrush: retail 2013 size is 624");
 static_assert(sizeof(ABrushShape) == 624, "ABrushShape: retail 2013 size is 624");
-// pending: sizeof(ACamera) == 1040 (ours 1328)
-// pending: sizeof(ACameraActor) == 752 (ours 944)
+static_assert(sizeof(ACamera) == 1040, "ACamera: retail 2013 size is 1040");
+static_assert(sizeof(ACameraActor) == 752, "ACameraActor: retail 2013 size is 752");
 static_assert(sizeof(AController) == 896, "AController: retail 2013 size is 896");
 static_assert(sizeof(ACullDistanceVolume) == 656, "ACullDistanceVolume: retail 2013 size is 656");
 static_assert(sizeof(ADefaultPhysicsVolume) == 704, "ADefaultPhysicsVolume: retail 2013 size is 704");
@@ -26,21 +26,21 @@ static_assert(sizeof(ADominantDirectionalLightMovable) == 592, "ADominantDirecti
 static_assert(sizeof(ADominantPointLight) == 592, "ADominantPointLight: retail 2013 size is 592");
 static_assert(sizeof(ADominantSpotLight) == 592, "ADominantSpotLight: retail 2013 size is 592");
 static_assert(sizeof(ADynamicBlockingVolume) == 640, "ADynamicBlockingVolume: retail 2013 size is 640");
-// pending: sizeof(ADynamicCameraActor) == 752 (ours 944)
-// pending: sizeof(ADynamicSMActor) == 640 (ours 656)
+static_assert(sizeof(ADynamicCameraActor) == 752, "ADynamicCameraActor: retail 2013 size is 752");
+static_assert(sizeof(ADynamicSMActor) == 640, "ADynamicSMActor: retail 2013 size is 640");
 static_assert(sizeof(AEmitter) == 608, "AEmitter: retail 2013 size is 608");
 static_assert(sizeof(AEmitterPool) == 672, "AEmitterPool: retail 2013 size is 672");
 static_assert(sizeof(AFileLog) == 608, "AFileLog: retail 2013 size is 608");
 static_assert(sizeof(AFileWriter) == 608, "AFileWriter: retail 2013 size is 608");
-// pending: sizeof(AGameInfo) == 976 (ours 1024)
+static_assert(sizeof(AGameInfo) == 976, "AGameInfo: retail 2013 size is 976");
 // pending: sizeof(AGameReplicationInfo) == 640 (ours 672)
 static_assert(sizeof(AGeneratedMeshAreaLight) == 592, "AGeneratedMeshAreaLight: retail 2013 size is 592");
 static_assert(sizeof(AHUD) == 1232, "AHUD: retail 2013 size is 1232");
 static_assert(sizeof(AInfo) == 592, "AInfo: retail 2013 size is 592");
-// pending: sizeof(AInterpActor) == 656 (ours 688)
-// pending: sizeof(AKActor) == 816 (ours 832)
+static_assert(sizeof(AInterpActor) == 656, "AInterpActor: retail 2013 size is 656");
+static_assert(sizeof(AKActor) == 816, "AKActor: retail 2013 size is 816");
 static_assert(sizeof(AKActorFromStatic) == 832, "AKActorFromStatic: retail 2013 size is 832");
-// pending: sizeof(AKActorSpawnable) == 816 (ours 832)
+static_assert(sizeof(AKActorSpawnable) == 816, "AKActorSpawnable: retail 2013 size is 816");
 static_assert(sizeof(AKAsset) == 608, "AKAsset: retail 2013 size is 608");
 static_assert(sizeof(AKeypoint) == 592, "AKeypoint: retail 2013 size is 592");
 static_assert(sizeof(ALensFlareSource) == 592, "ALensFlareSource: retail 2013 size is 592");
@@ -53,23 +53,23 @@ static_assert(sizeof(AMaterialInstanceActor) == 592, "AMaterialInstanceActor: re
 static_assert(sizeof(AMatineeActor) == 768, "AMatineeActor: retail 2013 size is 768");
 static_assert(sizeof(AMatineePawn) == 1200, "AMatineePawn: retail 2013 size is 1200 (2012 PDB: 1184)");
 static_assert(sizeof(AMutator) == 608, "AMutator: retail 2013 size is 608");
-// pending: sizeof(ANavigationPoint) == 784 (ours 800)
+static_assert(sizeof(ANavigationPoint) == 784, "ANavigationPoint: retail 2013 size is 784");
 static_assert(sizeof(ANote) == 608, "ANote: retail 2013 size is 608");
 static_assert(sizeof(APathBlockingVolume) == 640, "APathBlockingVolume: retail 2013 size is 640");
-// pending: sizeof(APathNode) == 784 (ours 800)
+static_assert(sizeof(APathNode) == 784, "APathNode: retail 2013 size is 784");
 static_assert(sizeof(APawn) == 1184, "APawn: retail 2013 size is 1184");
 static_assert(sizeof(APhysicsVolume) == 704, "APhysicsVolume: retail 2013 size is 704");
 static_assert(sizeof(APlayerController) == 1328, "APlayerController: retail 2013 size is 1328");
-// pending: sizeof(APlayerStart) == 800 (ours 816)
+static_assert(sizeof(APlayerStart) == 800, "APlayerStart: retail 2013 size is 800");
 static_assert(sizeof(APointLight) == 592, "APointLight: retail 2013 size is 592");
 static_assert(sizeof(APointLightMovable) == 592, "APointLightMovable: retail 2013 size is 592");
 static_assert(sizeof(APointLightToggleable) == 592, "APointLightToggleable: retail 2013 size is 592");
-// pending: sizeof(APortalMarker) == 800 (ours 816)
+static_assert(sizeof(APortalMarker) == 800, "APortalMarker: retail 2013 size is 800");
 static_assert(sizeof(APortalTeleporter) == 624, "APortalTeleporter: retail 2013 size is 624");
 static_assert(sizeof(APortalVolume) == 640, "APortalVolume: retail 2013 size is 640");
 static_assert(sizeof(APrecomputedVisibilityOverrideVolume) == 656, "APrecomputedVisibilityOverrideVolume: retail 2013 size is 656");
 static_assert(sizeof(APrecomputedVisibilityVolume) == 640, "APrecomputedVisibilityVolume: retail 2013 size is 640");
-// pending: sizeof(APylon) == 928 (ours 1008)
+static_assert(sizeof(APylon) == 928, "APylon: retail 2013 size is 928");
 static_assert(sizeof(ARB_ConstraintActor) == 624, "ARB_ConstraintActor: retail 2013 size is 624");
 static_assert(sizeof(ARB_LineImpulseActor) == 608, "ARB_LineImpulseActor: retail 2013 size is 608");
 static_assert(sizeof(ARB_RadialImpulseActor) == 608, "ARB_RadialImpulseActor: retail 2013 size is 608");
@@ -82,67 +82,67 @@ static_assert(sizeof(ASceneCaptureActor) == 592, "ASceneCaptureActor: retail 201
 static_assert(sizeof(ASceneCaptureCubeMapActor) == 608, "ASceneCaptureCubeMapActor: retail 2013 size is 608");
 static_assert(sizeof(ASceneCapturePortalActor) == 608, "ASceneCapturePortalActor: retail 2013 size is 608");
 static_assert(sizeof(ASceneCaptureReflectActor) == 608, "ASceneCaptureReflectActor: retail 2013 size is 608");
-// pending: sizeof(AScout) == 1312 (ours 1328)
+static_assert(sizeof(AScout) == 1312, "AScout: retail 2013 size is 1312");
 static_assert(sizeof(ASkyLight) == 592, "ASkyLight: retail 2013 size is 592");
 static_assert(sizeof(ASkyLightToggleable) == 592, "ASkyLightToggleable: retail 2013 size is 592");
 static_assert(sizeof(ASpotLight) == 592, "ASpotLight: retail 2013 size is 592");
 static_assert(sizeof(ASpotLightMovable) == 592, "ASpotLightMovable: retail 2013 size is 592");
 static_assert(sizeof(ASpotLightToggleable) == 592, "ASpotLightToggleable: retail 2013 size is 592");
 static_assert(sizeof(AStaticLightCollectionActor) == 608, "AStaticLightCollectionActor: retail 2013 size is 608");
-// pending: sizeof(AStaticMeshActor) == 592 (ours 608)
+static_assert(sizeof(AStaticMeshActor) == 592, "AStaticMeshActor: retail 2013 size is 592");
 static_assert(sizeof(AStaticMeshActorBase) == 592, "AStaticMeshActorBase: retail 2013 size is 592");
 static_assert(sizeof(AStaticMeshActorBasedOnExtremeContent) == 624, "AStaticMeshActorBasedOnExtremeContent: retail 2013 size is 624");
 static_assert(sizeof(AStaticMeshCollectionActor) == 608, "AStaticMeshCollectionActor: retail 2013 size is 608");
 static_assert(sizeof(ATargetPoint) == 608, "ATargetPoint: retail 2013 size is 608");
 static_assert(sizeof(ATeamInfo) == 624, "ATeamInfo: retail 2013 size is 624");
-// pending: sizeof(ATeleporter) == 832 (ours 848)
+static_assert(sizeof(ATeleporter) == 832, "ATeleporter: retail 2013 size is 832");
 static_assert(sizeof(ATrigger) == 608, "ATrigger: retail 2013 size is 608");
 static_assert(sizeof(ATriggerVolume) == 640, "ATriggerVolume: retail 2013 size is 640");
 static_assert(sizeof(AVolume) == 640, "AVolume: retail 2013 size is 640");
-// pending: sizeof(AVolumePathNode) == 800 (ours 816)
+static_assert(sizeof(AVolumePathNode) == 800, "AVolumePathNode: retail 2013 size is 800");
 static_assert(sizeof(AWindPointSource) == 592, "AWindPointSource: retail 2013 size is 592");
 static_assert(sizeof(AWorldInfo) == 1904, "AWorldInfo: retail 2013 size is 1904");
 static_assert(sizeof(AZoneInfo) == 608, "AZoneInfo: retail 2013 size is 608");
-static_assert(sizeof(FAchievementDetails) == 56, "FAchievementDetails: Dishonored PDB size is 56");
+static_assert(sizeof(FAchievementDetails) == 56, "FAchievementDetails: retail 2013 size is 56");
 static_assert(sizeof(FActorIterator) == 28, "FActorIterator: Dishonored PDB size is 28");
 static_assert(sizeof(FActorIteratorBase) == 20, "FActorIteratorBase: Dishonored PDB size is 20");
 static_assert(sizeof(FActorLink) == 8, "FActorLink: Dishonored PDB size is 8");
-static_assert(sizeof(FActorReference) == 20, "FActorReference: Dishonored PDB size is 20");
+static_assert(sizeof(FActorReference) == 20, "FActorReference: retail 2013 size is 20");
 static_assert(sizeof(FActorVisibilityHistoryInterface) == 4, "FActorVisibilityHistoryInterface: Dishonored PDB size is 4");
 static_assert(sizeof(FAnimSlotDesc) == 12, "FAnimSlotDesc: Dishonored PDB size is 12");
 // pending: sizeof(FAnimSlotInfo) == 52 (ours 20)
-static_assert(sizeof(FAnimTag) == 24, "FAnimTag: Dishonored PDB size is 24");
+static_assert(sizeof(FAnimTag) == 24, "FAnimTag: retail 2013 size is 24");
 static_assert(sizeof(FAnimTrailOwnerData) == 32, "FAnimTrailOwnerData: Dishonored PDB size is 32");
 static_assert(sizeof(FAnimTrailSamplePoint) == 88, "FAnimTrailSamplePoint: Dishonored PDB size is 88");
 static_assert(sizeof(FAnimTrailSocketSample) == 24, "FAnimTrailSocketSample: Dishonored PDB size is 24");
 // pending: sizeof(FAnimTrailTypeDataPayload) == 96 (ours 100)
-static_assert(sizeof(FApexModuleDestructibleSettings) == 12, "FApexModuleDestructibleSettings: Dishonored PDB size is 12");
-static_assert(sizeof(FArkPpBloomParameters) == 28, "FArkPpBloomParameters: Dishonored PDB size is 28");
-static_assert(sizeof(FArkPpColorBalanceParameters) == 52, "FArkPpColorBalanceParameters: Dishonored PDB size is 52");
-static_assert(sizeof(FArkPpConfig) == 132, "FArkPpConfig: Dishonored PDB size is 132");
-static_assert(sizeof(FArkPpDofParameters) == 16, "FArkPpDofParameters: Dishonored PDB size is 16");
-static_assert(sizeof(FArkPpHdrParameters) == 24, "FArkPpHdrParameters: Dishonored PDB size is 24");
-static_assert(sizeof(FArkSunGlareMeshParams) == 36, "FArkSunGlareMeshParams: Dishonored PDB size is 36");
-static_assert(sizeof(FArkUberPpParameters) == 96, "FArkUberPpParameters: Dishonored PDB size is 96");
+static_assert(sizeof(FApexModuleDestructibleSettings) == 12, "FApexModuleDestructibleSettings: retail 2013 size is 12");
+static_assert(sizeof(FArkPpBloomParameters) == 28, "FArkPpBloomParameters: retail 2013 size is 28");
+static_assert(sizeof(FArkPpColorBalanceParameters) == 52, "FArkPpColorBalanceParameters: retail 2013 size is 52");
+static_assert(sizeof(FArkPpConfig) == 132, "FArkPpConfig: retail 2013 size is 132");
+static_assert(sizeof(FArkPpDofParameters) == 16, "FArkPpDofParameters: retail 2013 size is 16");
+static_assert(sizeof(FArkPpHdrParameters) == 24, "FArkPpHdrParameters: retail 2013 size is 24");
+static_assert(sizeof(FArkSunGlareMeshParams) == 36, "FArkSunGlareMeshParams: retail 2013 size is 36");
+static_assert(sizeof(FArkUberPpParameters) == 96, "FArkUberPpParameters: retail 2013 size is 96");
 // pending: sizeof(FAsyncBufferFillData) == 28 (ours 32)
 static_assert(sizeof(FAsyncParticleFill) == 4, "FAsyncParticleFill: Dishonored PDB size is 4");
-static_assert(sizeof(FAttachment) == 48, "FAttachment: Dishonored PDB size is 48");
+static_assert(sizeof(FAttachment) == 48, "FAttachment: retail 2013 size is 48");
 static_assert(sizeof(FAttractorParticlePayload) == 20, "FAttractorParticlePayload: Dishonored PDB size is 20");
 static_assert(sizeof(FBaseParticle) == 128, "FBaseParticle: Dishonored PDB size is 128");
-static_assert(sizeof(FBasedPosition) == 52, "FBasedPosition: Dishonored PDB size is 52");
+static_assert(sizeof(FBasedPosition) == 52, "FBasedPosition: retail 2013 size is 52");
 static_assert(sizeof(FBatchedElementParameters) == 8, "FBatchedElementParameters: Dishonored PDB size is 8");
 static_assert(sizeof(FBatchedElements) == 400, "FBatchedElements: Dishonored PDB size is 400");
 static_assert(sizeof(FBeam2TypeDataPayload) == 96, "FBeam2TypeDataPayload: Dishonored PDB size is 96");
 static_assert(sizeof(FBeamParticleModifierPayloadData) == 32, "FBeamParticleModifierPayloadData: Dishonored PDB size is 32");
 static_assert(sizeof(FBeamParticleSourceBranchPayloadData) == 4, "FBeamParticleSourceBranchPayloadData: Dishonored PDB size is 4");
 static_assert(sizeof(FBeamParticleSourceTargetPayloadData) == 4, "FBeamParticleSourceTargetPayloadData: Dishonored PDB size is 4");
-static_assert(sizeof(FBeamTargetData) == 12, "FBeamTargetData: Dishonored PDB size is 12");
+static_assert(sizeof(FBeamTargetData) == 12, "FBeamTargetData: retail 2013 size is 12");
 // pending: sizeof(FBlendStateInitializerRHI) == 32 (ours 48)
-static_assert(sizeof(FBodyPart) == 20, "FBodyPart: Dishonored PDB size is 20");
+static_assert(sizeof(FBodyPart) == 20, "FBodyPart: retail 2013 size is 20");
 static_assert(sizeof(FBoneIndexPair) == 8, "FBoneIndexPair: Dishonored PDB size is 8");
-static_assert(sizeof(FBoneMirrorExport) == 20, "FBoneMirrorExport: Dishonored PDB size is 20");
-static_assert(sizeof(FBoneMirrorInfo) == 8, "FBoneMirrorInfo: Dishonored PDB size is 8");
-static_assert(sizeof(FBonePair) == 16, "FBonePair: Dishonored PDB size is 16");
+// pending: sizeof(FBoneMirrorExport) == 17 (ours 20)
+// pending: sizeof(FBoneMirrorInfo) == 5 (ours 8)
+static_assert(sizeof(FBonePair) == 16, "FBonePair: retail 2013 size is 16");
 static_assert(sizeof(FBoneRotationControl) == 28, "FBoneRotationControl: Dishonored PDB size is 28");
 static_assert(sizeof(FBoneTranslationControl) == 24, "FBoneTranslationControl: Dishonored PDB size is 24");
 static_assert(sizeof(FBoneVertInfo) == 24, "FBoneVertInfo: Dishonored PDB size is 24");
@@ -152,19 +152,19 @@ static_assert(sizeof(FCachedPerTriPhysSMData) == 16, "FCachedPerTriPhysSMData: D
 static_assert(sizeof(FCachedPhysSMData) == 16, "FCachedPhysSMData: Dishonored PDB size is 16");
 static_assert(sizeof(FCameraOffsetParticlePayload) == 8, "FCameraOffsetParticlePayload: Dishonored PDB size is 8");
 // pending: sizeof(FCanvas) == 140 (ours 144)
-static_assert(sizeof(FCanvasIcon) == 20, "FCanvasIcon: Dishonored PDB size is 20");
-static_assert(sizeof(FCanvasUVTri) == 48, "FCanvasUVTri: Dishonored PDB size is 48");
+static_assert(sizeof(FCanvasIcon) == 20, "FCanvasIcon: retail 2013 size is 20");
+static_assert(sizeof(FCanvasUVTri) == 48, "FCanvasUVTri: retail 2013 size is 48");
 static_assert(sizeof(FCheckResult) == 76, "FCheckResult: Dishonored PDB size is 76");
-static_assert(sizeof(FClientAdjustment) == 52, "FClientAdjustment: Dishonored PDB size is 52");
-static_assert(sizeof(FCollisionImpactData) == 36, "FCollisionImpactData: Dishonored PDB size is 36");
+// pending: sizeof(FClientAdjustment) == 49 (ours 52)
+static_assert(sizeof(FCollisionImpactData) == 36, "FCollisionImpactData: retail 2013 size is 36");
 static_assert(sizeof(FCollisionNotifyInfo) == 68, "FCollisionNotifyInfo: Dishonored PDB size is 68");
 static_assert(sizeof(FColorMaterialInput) == 36, "FColorMaterialInput: Dishonored PDB size is 36");
 static_assert(sizeof(FColorVertexBuffer) == 40, "FColorVertexBuffer: Dishonored PDB size is 40");
 // pending: sizeof(FColoredMaterialRenderProxy) == 108 (ours 188)
-static_assert(sizeof(FColumnMetaData) == 24, "FColumnMetaData: Dishonored PDB size is 24");
-static_assert(sizeof(FCommunityContentFile) == 52, "FCommunityContentFile: Dishonored PDB size is 52");
-static_assert(sizeof(FCommunityContentMetadata) == 16, "FCommunityContentMetadata: Dishonored PDB size is 16");
-static_assert(sizeof(FCompartmentRunList) == 4, "FCompartmentRunList: Dishonored PDB size is 4");
+static_assert(sizeof(FColumnMetaData) == 24, "FColumnMetaData: retail 2013 size is 24");
+static_assert(sizeof(FCommunityContentFile) == 52, "FCommunityContentFile: retail 2013 size is 52");
+static_assert(sizeof(FCommunityContentMetadata) == 16, "FCommunityContentMetadata: retail 2013 size is 16");
+static_assert(sizeof(FCompartmentRunList) == 4, "FCompartmentRunList: retail 2013 size is 4");
 static_assert(sizeof(FComponentReattachContext) == 12, "FComponentReattachContext: Dishonored PDB size is 12");
 // pending: sizeof(FCompressedShaderCodeCache) == 84 (ours 92)
 static_assert(sizeof(FCompressedShaderCodeChunk) == 16, "FCompressedShaderCodeChunk: Dishonored PDB size is 16");
@@ -178,25 +178,25 @@ static_assert(sizeof(FConvexCollisionVertexBuffer) == 36, "FConvexCollisionVerte
 static_assert(sizeof(FConvexCollisionVertexFactory) == 580, "FConvexCollisionVertexFactory: Dishonored PDB size is 580");
 static_assert(sizeof(FConvexVolume) == 288, "FConvexVolume: Dishonored PDB size is 288");
 // pending: sizeof(FCopyTextureRegion2D) == 24 (ours 36)
-static_assert(sizeof(FCullDistanceSizePair) == 8, "FCullDistanceSizePair: Dishonored PDB size is 8");
-static_assert(sizeof(FCurveEdEntry) == 44, "FCurveEdEntry: Dishonored PDB size is 44");
-static_assert(sizeof(FCurveEdTab) == 40, "FCurveEdTab: Dishonored PDB size is 40");
+static_assert(sizeof(FCullDistanceSizePair) == 8, "FCullDistanceSizePair: retail 2013 size is 8");
+static_assert(sizeof(FCurveEdEntry) == 44, "FCurveEdEntry: retail 2013 size is 44");
+static_assert(sizeof(FCurveEdTab) == 40, "FCurveEdTab: retail 2013 size is 40");
 static_assert(sizeof(FCustomInput) == 40, "FCustomInput: Dishonored PDB size is 40");
 // pending: sizeof(FDamageClassEventData) == 12 (ours 8)
-static_assert(sizeof(FDebugDisplayProperty) == 16, "FDebugDisplayProperty: Dishonored PDB size is 16");
-static_assert(sizeof(FDebugNavCost) == 16, "FDebugNavCost: Dishonored PDB size is 16");
+static_assert(sizeof(FDebugDisplayProperty) == 16, "FDebugDisplayProperty: retail 2013 size is 16");
+static_assert(sizeof(FDebugNavCost) == 16, "FDebugNavCost: retail 2013 size is 16");
 static_assert(sizeof(FDebugShadowRay) == 28, "FDebugShadowRay: Dishonored PDB size is 28");
 // pending: sizeof(FDebugTextInfo) == 56 (ours 72)
 static_assert(sizeof(FDecalVertexFactoryBase) == 144, "FDecalVertexFactoryBase: Dishonored PDB size is 144");
 static_assert(sizeof(FDeferredCleanupInterface) == 4, "FDeferredCleanupInterface: Dishonored PDB size is 4");
 static_assert(sizeof(FDeferredUpdateResource) == 20, "FDeferredUpdateResource: Dishonored PDB size is 20");
-static_assert(sizeof(FDepthFieldGlowInfo) == 36, "FDepthFieldGlowInfo: Dishonored PDB size is 36");
+static_assert(sizeof(FDepthFieldGlowInfo) == 36, "FDepthFieldGlowInfo: retail 2013 size is 36");
 static_assert(sizeof(FDepthStateInitializerRHI) == 8, "FDepthStateInitializerRHI: Dishonored PDB size is 8");
 // pending: sizeof(FDetailedTickStats) == 156 (ours 180)
-static_assert(sizeof(FDisPrimTraceMask) == 4, "FDisPrimTraceMask: Dishonored PDB size is 4");
-static_assert(sizeof(FDominantShadowInfo) == 176, "FDominantShadowInfo: Dishonored PDB size is 176");
+static_assert(sizeof(FDisPrimTraceMask) == 4, "FDisPrimTraceMask: retail 2013 size is 4");
+// pending: sizeof(FDominantShadowInfo) == 164 (ours 176)
 static_assert(sizeof(FDrawEvent) == 4, "FDrawEvent: Dishonored PDB size is 4");
-static_assert(sizeof(FDropNoteInfo) == 36, "FDropNoteInfo: Dishonored PDB size is 36");
+static_assert(sizeof(FDropNoteInfo) == 36, "FDropNoteInfo: retail 2013 size is 36");
 static_assert(sizeof(FDynamicActorIterator) == 28, "FDynamicActorIterator: Dishonored PDB size is 28");
 // pending: sizeof(FDynamicAnimTrailEmitterData) == 248 (ours 348)
 // pending: sizeof(FDynamicBeam2EmitterData) == 356 (ours 452)
@@ -224,36 +224,36 @@ static_assert(sizeof(FDynamicRHI) == 4, "FDynamicRHI: Dishonored PDB size is 4")
 // pending: sizeof(FDynamicTrailsEmitterData) == 88 (ours 152)
 // pending: sizeof(FDynamicTrailsEmitterReplayData) == 156 (ours 192)
 static_assert(sizeof(FEdgeStorageDatum) == 16, "FEdgeStorageDatum: Dishonored PDB size is 16");
-static_assert(sizeof(FEmitterBaseInfo) == 36, "FEmitterBaseInfo: Dishonored PDB size is 36");
+static_assert(sizeof(FEmitterBaseInfo) == 36, "FEmitterBaseInfo: retail 2013 size is 36");
 static_assert(sizeof(FEmitterDynamicParameterPayload) == 16, "FEmitterDynamicParameterPayload: Dishonored PDB size is 16");
 // pending: sizeof(FExposedTextureLODSettings) == 728 (ours 672)
-static_assert(sizeof(FExpressionInput) == 28, "FExpressionInput: Dishonored PDB size is 28");
+static_assert(sizeof(FExpressionInput) == 28, "FExpressionInput: retail 2013 size is 28");
 static_assert(sizeof(FExpressionOutput) == 32, "FExpressionOutput: Dishonored PDB size is 32");
-static_assert(sizeof(FFontCharacter) == 24, "FFontCharacter: Dishonored PDB size is 24");
-static_assert(sizeof(FFontImportOptionsData) == 148, "FFontImportOptionsData: Dishonored PDB size is 148");
+static_assert(sizeof(FFontCharacter) == 24, "FFontCharacter: retail 2013 size is 24");
+static_assert(sizeof(FFontImportOptionsData) == 148, "FFontImportOptionsData: retail 2013 size is 148");
 // pending: sizeof(FFontMaterialRenderProxy) == 104 (ours 184)
-static_assert(sizeof(FFontParameterValue) == 32, "FFontParameterValue: Dishonored PDB size is 32");
+static_assert(sizeof(FFontParameterValue) == 32, "FFontParameterValue: retail 2013 size is 32");
 static_assert(sizeof(FFontParameterValueOverTime) == 56, "FFontParameterValueOverTime: Dishonored PDB size is 56");
-static_assert(sizeof(FFontRenderInfo) == 40, "FFontRenderInfo: Dishonored PDB size is 40");
+static_assert(sizeof(FFontRenderInfo) == 40, "FFontRenderInfo: retail 2013 size is 40");
 static_assert(sizeof(FForceApplicator) == 4, "FForceApplicator: Dishonored PDB size is 4");
 static_assert(sizeof(FFragmentRange) == 8, "FFragmentRange: Dishonored PDB size is 8");
-static_assert(sizeof(FFriendsQuery) == 12, "FFriendsQuery: Dishonored PDB size is 12");
+static_assert(sizeof(FFriendsQuery) == 12, "FFriendsQuery: retail 2013 size is 12");
 // pending: sizeof(FFullScreenMovieFallback) == 24 (ours 8)
 // pending: sizeof(FFullScreenMovieSupport) == 24 (ours 8)
 static_assert(sizeof(FFullSubUVPayload) == 28, "FFullSubUVPayload: Dishonored PDB size is 28");
-static_assert(sizeof(FFullyLoadedPackagesInfo) == 40, "FFullyLoadedPackagesInfo: Dishonored PDB size is 40");
+static_assert(sizeof(FFullyLoadedPackagesInfo) == 40, "FFullyLoadedPackagesInfo: retail 2013 size is 40");
 static_assert(sizeof(FGPUSkinVertexBase) == 16, "FGPUSkinVertexBase: Dishonored PDB size is 16");
 static_assert(sizeof(FGPUSkinVertexColor) == 4, "FGPUSkinVertexColor: Dishonored PDB size is 4");
-static_assert(sizeof(FGameClassShortName) == 24, "FGameClassShortName: Dishonored PDB size is 24");
+static_assert(sizeof(FGameClassShortName) == 24, "FGameClassShortName: retail 2013 size is 24");
 static_assert(sizeof(FGamePatchHelper) == 4, "FGamePatchHelper: Dishonored PDB size is 4");
 static_assert(sizeof(FGameSessionInformation) == 112, "FGameSessionInformation: Dishonored PDB size is 112");
 static_assert(sizeof(FGameStatGroup) == 8, "FGameStatGroup: Dishonored PDB size is 8");
-static_assert(sizeof(FGameTypePrefix) == 52, "FGameTypePrefix: Dishonored PDB size is 52");
+static_assert(sizeof(FGameTypePrefix) == 52, "FGameTypePrefix: retail 2013 size is 52");
 static_assert(sizeof(FGameplayEventMetaData) == 24, "FGameplayEventMetaData: Dishonored PDB size is 24");
 // pending: sizeof(FGameplayEventsHeader) == 24 (ours 44)
 // pending: sizeof(FGammaCorrectionPixelShader) == 132 (ours 180)
 // pending: sizeof(FGammaCorrectionVertexShader) == 108 (ours 136)
-static_assert(sizeof(FGeomSelection) == 12, "FGeomSelection: Dishonored PDB size is 12");
+static_assert(sizeof(FGeomSelection) == 12, "FGeomSelection: retail 2013 size is 12");
 static_assert(sizeof(FGlobalBoundShaderStateResource) == 36, "FGlobalBoundShaderStateResource: Dishonored PDB size is 36");
 static_assert(sizeof(FGlobalComponentReattachContext) == 12, "FGlobalComponentReattachContext: Dishonored PDB size is 12");
 static_assert(sizeof(FGlobalDataStoreClientManager) == 4, "FGlobalDataStoreClientManager: Dishonored PDB size is 4");
@@ -263,43 +263,43 @@ static_assert(sizeof(FGlobalPrimitiveSceneAttachmentContext) == 12, "FGlobalPrim
 // pending: sizeof(FHitMaskMaterialInfo) == 32 (ours 36)
 static_assert(sizeof(FHitProxyConsumer) == 4, "FHitProxyConsumer: Dishonored PDB size is 4");
 static_assert(sizeof(FHitProxyId) == 4, "FHitProxyId: Dishonored PDB size is 4");
-static_assert(sizeof(FHudLocalizedMessage) == 64, "FHudLocalizedMessage: Dishonored PDB size is 64");
-static_assert(sizeof(FIdToStringMapping) == 12, "FIdToStringMapping: Dishonored PDB size is 12");
-static_assert(sizeof(FImpactInfo) == 80, "FImpactInfo: Dishonored PDB size is 80");
+static_assert(sizeof(FHudLocalizedMessage) == 64, "FHudLocalizedMessage: retail 2013 size is 64");
+static_assert(sizeof(FIdToStringMapping) == 12, "FIdToStringMapping: retail 2013 size is 12");
+static_assert(sizeof(FImpactInfo) == 80, "FImpactInfo: retail 2013 size is 80");
 static_assert(sizeof(FIndexBuffer) == 24, "FIndexBuffer: Dishonored PDB size is 24");
 static_assert(sizeof(FIndividualCompressedShaderInfo) == 8, "FIndividualCompressedShaderInfo: Dishonored PDB size is 8");
 static_assert(sizeof(FInfluenceBones) == 4, "FInfluenceBones: Dishonored PDB size is 4");
 static_assert(sizeof(FInfluenceWeights) == 4, "FInfluenceWeights: Dishonored PDB size is 4");
-// pending: sizeof(FIniLocFileEntry) == 16 (ours 44)
-static_assert(sizeof(FInputEntry) == 16, "FInputEntry: Dishonored PDB size is 16");
+// pending: sizeof(FIniLocFileEntry) == 13 (ours 16)
+// pending: sizeof(FInputEntry) == 13 (ours 16)
 static_assert(sizeof(FInputLatencyTimer) == 28, "FInputLatencyTimer: Dishonored PDB size is 28");
 static_assert(sizeof(FInstancedLightMap2D) == 128, "FInstancedLightMap2D: Dishonored PDB size is 128");
 static_assert(sizeof(FIntPair) == 8, "FIntPair: Dishonored PDB size is 8");
 static_assert(sizeof(FInterpEdInputData) == 44, "FInterpEdInputData: Dishonored PDB size is 44");
 static_assert(sizeof(FInterpEdInputInterface) == 4, "FInterpEdInputInterface: Dishonored PDB size is 4");
-static_assert(sizeof(FInterpEdSelKey) == 16, "FInterpEdSelKey: Dishonored PDB size is 16");
+static_assert(sizeof(FInterpEdSelKey) == 16, "FInterpEdSelKey: retail 2013 size is 16");
 static_assert(sizeof(FInterpTrackDrawParams) == 56, "FInterpTrackDrawParams: Dishonored PDB size is 56");
 static_assert(sizeof(FIteratorActorList) == 8, "FIteratorActorList: Dishonored PDB size is 8");
-static_assert(sizeof(FKAggregateGeom) == 56, "FKAggregateGeom: Dishonored PDB size is 56");
-static_assert(sizeof(FKBoxElem) == 80, "FKBoxElem: Dishonored PDB size is 80");
-static_assert(sizeof(FKCachedConvexData) == 12, "FKCachedConvexData: Dishonored PDB size is 12");
-static_assert(sizeof(FKCachedConvexDataElement) == 12, "FKCachedConvexDataElement: Dishonored PDB size is 12");
+static_assert(sizeof(FKAggregateGeom) == 56, "FKAggregateGeom: retail 2013 size is 56");
+static_assert(sizeof(FKBoxElem) == 80, "FKBoxElem: retail 2013 size is 80");
+static_assert(sizeof(FKCachedConvexData) == 12, "FKCachedConvexData: retail 2013 size is 12");
+static_assert(sizeof(FKCachedConvexDataElement) == 12, "FKCachedConvexDataElement: retail 2013 size is 12");
 static_assert(sizeof(FKCachedPerTriData) == 12, "FKCachedPerTriData: Dishonored PDB size is 12");
-static_assert(sizeof(FKConvexElem) == 100, "FKConvexElem: Dishonored PDB size is 100");
+static_assert(sizeof(FKConvexElem) == 100, "FKConvexElem: retail 2013 size is 100");
 static_assert(sizeof(FKConvexGeomRenderInfo) == 12, "FKConvexGeomRenderInfo: Dishonored PDB size is 12");
-static_assert(sizeof(FKSphereElem) == 80, "FKSphereElem: Dishonored PDB size is 80");
-static_assert(sizeof(FKSphylElem) == 80, "FKSphylElem: Dishonored PDB size is 80");
-static_assert(sizeof(FKeyValuePair) == 24, "FKeyValuePair: Dishonored PDB size is 24");
-// pending: sizeof(FKismetDrawTextInfo) == 40 (ours 52)
+// pending: sizeof(FKSphereElem) == 72 (ours 80)
+// pending: sizeof(FKSphylElem) == 76 (ours 80)
+static_assert(sizeof(FKeyValuePair) == 24, "FKeyValuePair: retail 2013 size is 24");
+static_assert(sizeof(FKismetDrawTextInfo) == 40, "FKismetDrawTextInfo: retail 2013 size is 40");
 static_assert(sizeof(FLODBurstFired) == 12, "FLODBurstFired: Dishonored PDB size is 12");
 static_assert(sizeof(FLeaf) == 4, "FLeaf: Dishonored PDB size is 4");
 static_assert(sizeof(FLegacyShadowExtrusionVertex) == 4, "FLegacyShadowExtrusionVertex: Dishonored PDB size is 4");
 static_assert(sizeof(FLegacyStaticMeshFullVertex) == 12, "FLegacyStaticMeshFullVertex: Dishonored PDB size is 12");
 static_assert(sizeof(FLegacyStaticMeshVertexBuffer) == 48, "FLegacyStaticMeshVertexBuffer: Dishonored PDB size is 48");
 static_assert(sizeof(FLensFlareDynamicData) == 360, "FLensFlareDynamicData: Dishonored PDB size is 360");
-// pending: sizeof(FLensFlareElement) == 320 (ours 324)
-static_assert(sizeof(FLensFlareElementCurvePair) == 16, "FLensFlareElementCurvePair: Dishonored PDB size is 16");
-static_assert(sizeof(FLensFlareElementMaterials) == 12, "FLensFlareElementMaterials: Dishonored PDB size is 12");
+static_assert(sizeof(FLensFlareElement) == 320, "FLensFlareElement: retail 2013 size is 320");
+static_assert(sizeof(FLensFlareElementCurvePair) == 16, "FLensFlareElementCurvePair: retail 2013 size is 16");
+static_assert(sizeof(FLensFlareElementMaterials) == 12, "FLensFlareElementMaterials: retail 2013 size is 12");
 static_assert(sizeof(FLensFlareElementOrder) == 8, "FLensFlareElementOrder: Dishonored PDB size is 8");
 static_assert(sizeof(FLensFlareElementValues) == 60, "FLensFlareElementValues: Dishonored PDB size is 60");
 static_assert(sizeof(FLensFlareRenderElement) == 324, "FLensFlareRenderElement: Dishonored PDB size is 324");
@@ -307,8 +307,8 @@ static_assert(sizeof(FLensFlareRenderElement) == 324, "FLensFlareRenderElement: 
 static_assert(sizeof(FLensFlareVertex) == 80, "FLensFlareVertex: Dishonored PDB size is 80");
 static_assert(sizeof(FLensFlareVertexFactory) == 456, "FLensFlareVertexFactory: Dishonored PDB size is 456");
 // pending: sizeof(FLensFlareVertexFactoryShaderParameters) == 24 (ours 40)
-static_assert(sizeof(FLevelGridCellCoordinate) == 12, "FLevelGridCellCoordinate: Dishonored PDB size is 12");
-static_assert(sizeof(FLevelStreamingStatus) == 12, "FLevelStreamingStatus: Dishonored PDB size is 12");
+static_assert(sizeof(FLevelGridCellCoordinate) == 12, "FLevelGridCellCoordinate: retail 2013 size is 12");
+static_assert(sizeof(FLevelStreamingStatus) == 12, "FLevelStreamingStatus: retail 2013 size is 12");
 static_assert(sizeof(FLevelViewportInfo) == 28, "FLevelViewportInfo: Dishonored PDB size is 28");
 static_assert(sizeof(FLightCacheInterface) == 4, "FLightCacheInterface: Dishonored PDB size is 4");
 // pending: sizeof(FLightChannelAllocator) == 64 (ours 24)
@@ -324,22 +324,22 @@ static_assert(sizeof(FLightMapSerializeHelper) == 8, "FLightMapSerializeHelper: 
 static_assert(sizeof(FLightRayIntersection) == 84, "FLightRayIntersection: Dishonored PDB size is 84");
 static_assert(sizeof(FLightSample) == 40, "FLightSample: Dishonored PDB size is 40");
 // pending: sizeof(FLightingBuildOptions) == 60 (ours 68)
-static_assert(sizeof(FLightingChannelContainer) == 4, "FLightingChannelContainer: Dishonored PDB size is 4");
+static_assert(sizeof(FLightingChannelContainer) == 4, "FLightingChannelContainer: retail 2013 size is 4");
 // pending: sizeof(FLightingDensityMaterialRenderProxy) == 116 (ours 196)
-static_assert(sizeof(FLightmassDebugOptions) == 20, "FLightmassDebugOptions: Dishonored PDB size is 20");
+static_assert(sizeof(FLightmassDebugOptions) == 20, "FLightmassDebugOptions: retail 2013 size is 20");
 static_assert(sizeof(FLightmassDirectionalLightSettings) == 16, "FLightmassDirectionalLightSettings: Dishonored PDB size is 16");
-static_assert(sizeof(FLightmassLightSettings) == 12, "FLightmassLightSettings: Dishonored PDB size is 12");
-static_assert(sizeof(FLightmassMaterialInterfaceSettings) == 24, "FLightmassMaterialInterfaceSettings: Dishonored PDB size is 24");
+static_assert(sizeof(FLightmassLightSettings) == 12, "FLightmassLightSettings: retail 2013 size is 12");
+static_assert(sizeof(FLightmassMaterialInterfaceSettings) == 24, "FLightmassMaterialInterfaceSettings: retail 2013 size is 24");
 static_assert(sizeof(FLightmassPointLightSettings) == 16, "FLightmassPointLightSettings: Dishonored PDB size is 16");
-static_assert(sizeof(FLightmassPrimitiveSettings) == 28, "FLightmassPrimitiveSettings: Dishonored PDB size is 28");
-static_assert(sizeof(FLightmassWorldInfoSettings) == 60, "FLightmassWorldInfoSettings: Dishonored PDB size is 60");
-static_assert(sizeof(FLinearDOFSetup) == 8, "FLinearDOFSetup: Dishonored PDB size is 8");
+static_assert(sizeof(FLightmassPrimitiveSettings) == 28, "FLightmassPrimitiveSettings: retail 2013 size is 28");
+static_assert(sizeof(FLightmassWorldInfoSettings) == 60, "FLightmassWorldInfoSettings: retail 2013 size is 60");
+static_assert(sizeof(FLinearDOFSetup) == 8, "FLinearDOFSetup: retail 2013 size is 8");
 static_assert(sizeof(FLocalPlayerIterator) == 8, "FLocalPlayerIterator: Dishonored PDB size is 8");
-static_assert(sizeof(FLocalTalker) == 4, "FLocalTalker: Dishonored PDB size is 4");
+static_assert(sizeof(FLocalTalker) == 4, "FLocalTalker: retail 2013 size is 4");
 static_assert(sizeof(FLocalVertexFactory) == 580, "FLocalVertexFactory: Dishonored PDB size is 580");
-static_assert(sizeof(FLocalizedStringSetting) == 12, "FLocalizedStringSetting: Dishonored PDB size is 12");
-static_assert(sizeof(FLocalizedStringSettingMetaData) == 36, "FLocalizedStringSettingMetaData: Dishonored PDB size is 36");
-// pending: sizeof(FLocalizedSubtitle) == 16 (ours 28)
+// pending: sizeof(FLocalizedStringSetting) == 9 (ours 12)
+static_assert(sizeof(FLocalizedStringSettingMetaData) == 36, "FLocalizedStringSettingMetaData: retail 2013 size is 36");
+static_assert(sizeof(FLocalizedSubtitle) == 16, "FLocalizedSubtitle: retail 2013 size is 16");
 static_assert(sizeof(FLocationEmitterInstancePayload) == 4, "FLocationEmitterInstancePayload: Dishonored PDB size is 4");
 // pending: sizeof(FMaterial) == 140 (ours 152)
 static_assert(sizeof(FMaterialCompiler) == 4, "FMaterialCompiler: Dishonored PDB size is 4");
@@ -355,7 +355,7 @@ static_assert(sizeof(FMaterialUniformExpression) == 8, "FMaterialUniformExpressi
 static_assert(sizeof(FMaterialUniformExpressionTexture) == 24, "FMaterialUniformExpressionTexture: Dishonored PDB size is 24");
 static_assert(sizeof(FMaterialUniformExpressionType) == 8, "FMaterialUniformExpressionType: Dishonored PDB size is 8");
 // pending: sizeof(FMaterialVertexShaderParameters) == 60 (ours 228)
-static_assert(sizeof(FMaterialViewRelevance) == 4, "FMaterialViewRelevance: Dishonored PDB size is 4");
+static_assert(sizeof(FMaterialViewRelevance) == 4, "FMaterialViewRelevance: retail 2013 size is 4");
 // pending: sizeof(FMemCopyVertexShader) == 120 (ours 160)
 static_assert(sizeof(FMeshBone) == 80, "FMeshBone: Dishonored PDB size is 80");
 static_assert(sizeof(FMeshEdge) == 16, "FMeshEdge: Dishonored PDB size is 16");
@@ -378,9 +378,9 @@ static_assert(sizeof(FModelVertexBuffer) == 48, "FModelVertexBuffer: Dishonored 
 // pending: sizeof(FModuleLocationBoneSocketInstancePayload) == 36 (ours 48)
 static_assert(sizeof(FModuleLocationBoneSocketParticlePayload) == 4, "FModuleLocationBoneSocketParticlePayload: Dishonored PDB size is 4");
 // pending: sizeof(FNULLPixelShader) == 108 (ours 136)
-static_assert(sizeof(FNamedInterface) == 12, "FNamedInterface: Dishonored PDB size is 12");
-static_assert(sizeof(FNamedInterfaceDef) == 20, "FNamedInterfaceDef: Dishonored PDB size is 20");
-static_assert(sizeof(FNamedNetDriver) == 12, "FNamedNetDriver: Dishonored PDB size is 12");
+static_assert(sizeof(FNamedInterface) == 12, "FNamedInterface: retail 2013 size is 12");
+static_assert(sizeof(FNamedInterfaceDef) == 20, "FNamedInterfaceDef: retail 2013 size is 20");
+static_assert(sizeof(FNamedNetDriver) == 12, "FNamedNetDriver: retail 2013 size is 12");
 // pending: sizeof(FNavMeshBasicOneWayEdge) == 52 (ours 112)
 // pending: sizeof(FNavMeshCollisionDataProvider) == 8 (ours 12)
 // pending: sizeof(FNavMeshCrossPylonEdge) == 104 (ours 176)
@@ -388,15 +388,15 @@ static_assert(sizeof(FNamedNetDriver) == 12, "FNamedNetDriver: Dishonored PDB si
 // pending: sizeof(FNavMeshEdgeBase) == 52 (ours 112)
 static_assert(sizeof(FNavMeshObject) == 4, "FNavMeshObject: Dishonored PDB size is 4");
 // pending: sizeof(FNavMeshOneWayBackRefEdge) == 104 (ours 176)
-static_assert(sizeof(FNavMeshPathConstraintCacheDatum) == 24, "FNavMeshPathConstraintCacheDatum: Dishonored PDB size is 24");
-static_assert(sizeof(FNavMeshPathGoalEvaluatorCacheDatum) == 24, "FNavMeshPathGoalEvaluatorCacheDatum: Dishonored PDB size is 24");
+static_assert(sizeof(FNavMeshPathConstraintCacheDatum) == 24, "FNavMeshPathConstraintCacheDatum: retail 2013 size is 24");
+static_assert(sizeof(FNavMeshPathGoalEvaluatorCacheDatum) == 24, "FNavMeshPathGoalEvaluatorCacheDatum: retail 2013 size is 24");
 // pending: sizeof(FNavMeshPathObjectEdge) == 128 (ours 200)
 // pending: sizeof(FNavMeshPolyBase) == 156 (ours 136)
 // pending: sizeof(FNavMeshWorld) == 76 (ours 200)
-static_assert(sizeof(FNavReference) == 20, "FNavReference: Dishonored PDB size is 20");
+static_assert(sizeof(FNavReference) == 20, "FNavReference: retail 2013 size is 20");
 static_assert(sizeof(FNavigationOctree) == 4, "FNavigationOctree: Dishonored PDB size is 4");
 static_assert(sizeof(FNavigationOctreeNode) == 16, "FNavigationOctreeNode: Dishonored PDB size is 16");
-static_assert(sizeof(FNavigationOctreeObject) == 52, "FNavigationOctreeObject: Dishonored PDB size is 52");
+// pending: sizeof(FNavigationOctreeObject) == 49 (ours 52)
 static_assert(sizeof(FNetRelevantActorIterator) == 28, "FNetRelevantActorIterator: Dishonored PDB size is 28");
 static_assert(sizeof(FNodeGroup) == 272, "FNodeGroup: Dishonored PDB size is 272");
 static_assert(sizeof(FNormalParameter) == 32, "FNormalParameter: Dishonored PDB size is 32");
@@ -404,23 +404,23 @@ static_assert(sizeof(FNullColorVertexBuffer) == 24, "FNullColorVertexBuffer: Dis
 static_assert(sizeof(FNullShadowmapVertexBuffer) == 24, "FNullShadowmapVertexBuffer: Dishonored PDB size is 24");
 static_assert(sizeof(FOctreeChildNodeRef) == 4, "FOctreeChildNodeRef: Dishonored PDB size is 4");
 static_assert(sizeof(FOctreeChildNodeSubset) == 4, "FOctreeChildNodeSubset: Dishonored PDB size is 4");
-static_assert(sizeof(FOctreeElementId) == 8, "FOctreeElementId: Dishonored PDB size is 8");
+static_assert(sizeof(FOctreeElementId) == 8, "FOctreeElementId: retail 2013 size is 8");
 static_assert(sizeof(FOctreeNode) == 16, "FOctreeNode: Dishonored PDB size is 16");
 static_assert(sizeof(FOctreeNodeBounds) == 16, "FOctreeNodeBounds: Dishonored PDB size is 16");
 static_assert(sizeof(FOctreeNodeContext) == 48, "FOctreeNodeContext: Dishonored PDB size is 48");
 // pending: sizeof(FOneColorPixelShader) == 116 (ours 148)
 // pending: sizeof(FOneColorVertexShader) == 108 (ours 136)
 static_assert(sizeof(FOnlineArbitrationRegistrant) == 20, "FOnlineArbitrationRegistrant: Dishonored PDB size is 20");
-// pending: sizeof(FOnlineContent) == 88 (ours 76)
-// pending: sizeof(FOnlineCrossTitleContent) == 92 (ours 80)
-static_assert(sizeof(FOnlineFriend) == 48, "FOnlineFriend: Dishonored PDB size is 48");
-static_assert(sizeof(FOnlineFriendMessage) == 36, "FOnlineFriendMessage: Dishonored PDB size is 36");
-static_assert(sizeof(FOnlinePartyMember) == 56, "FOnlinePartyMember: Dishonored PDB size is 56");
-static_assert(sizeof(FOnlinePlayerScore) == 16, "FOnlinePlayerScore: Dishonored PDB size is 16");
-static_assert(sizeof(FOnlineProfileSetting) == 24, "FOnlineProfileSetting: Dishonored PDB size is 24");
-static_assert(sizeof(FOnlineRegistrant) == 8, "FOnlineRegistrant: Dishonored PDB size is 8");
-static_assert(sizeof(FOnlineStatsColumn) == 16, "FOnlineStatsColumn: Dishonored PDB size is 16");
-static_assert(sizeof(FOnlineStatsRow) == 44, "FOnlineStatsRow: Dishonored PDB size is 44");
+static_assert(sizeof(FOnlineContent) == 88, "FOnlineContent: retail 2013 size is 88");
+static_assert(sizeof(FOnlineCrossTitleContent) == 92, "FOnlineCrossTitleContent: Dishonored PDB size is 92");
+static_assert(sizeof(FOnlineFriend) == 48, "FOnlineFriend: retail 2013 size is 48");
+static_assert(sizeof(FOnlineFriendMessage) == 36, "FOnlineFriendMessage: retail 2013 size is 36");
+static_assert(sizeof(FOnlinePartyMember) == 56, "FOnlinePartyMember: retail 2013 size is 56");
+static_assert(sizeof(FOnlinePlayerScore) == 28, "FOnlinePlayerScore: retail 2013 size is 28 (2012 PDB: 16)");
+static_assert(sizeof(FOnlineProfileSetting) == 24, "FOnlineProfileSetting: retail 2013 size is 24");
+static_assert(sizeof(FOnlineRegistrant) == 8, "FOnlineRegistrant: retail 2013 size is 8");
+static_assert(sizeof(FOnlineStatsColumn) == 16, "FOnlineStatsColumn: retail 2013 size is 16");
+static_assert(sizeof(FOnlineStatsRow) == 44, "FOnlineStatsRow: retail 2013 size is 44");
 static_assert(sizeof(FOrbitChainModuleInstancePayload) == 72, "FOrbitChainModuleInstancePayload: Dishonored PDB size is 72");
 static_assert(sizeof(FOutcode) == 4, "FOutcode: Dishonored PDB size is 4");
 static_assert(sizeof(FPNGHelper) == 44, "FPNGHelper: Dishonored PDB size is 44");
@@ -428,7 +428,7 @@ static_assert(sizeof(FPNGLoader) == 24, "FPNGLoader: Dishonored PDB size is 24")
 static_assert(sizeof(FPS3StaticMeshData) == 100, "FPS3StaticMeshData: Dishonored PDB size is 100");
 static_assert(sizeof(FPackedNormal) == 4, "FPackedNormal: Dishonored PDB size is 4");
 static_assert(sizeof(FPackedPosition) == 4, "FPackedPosition: Dishonored PDB size is 4");
-static_assert(sizeof(FParameterValueOverTime) == 48, "FParameterValueOverTime: Dishonored PDB size is 48");
+static_assert(sizeof(FParameterValueOverTime) == 48, "FParameterValueOverTime: retail 2013 size is 48");
 static_assert(sizeof(FParticleAnimTrailEmitterInstance) == 736, "FParticleAnimTrailEmitterInstance: Dishonored PDB size is 736");
 // pending: sizeof(FParticleBeam2EmitterInstance) == 636 (ours 632)
 // pending: sizeof(FParticleBeamEmitterInstance) == 340 (ours 336)
@@ -468,21 +468,21 @@ static_assert(sizeof(FParticleSpriteData) == 56, "FParticleSpriteData: Dishonore
 // pending: sizeof(FParticleVertexFactory) == 504 (ours 508)
 // pending: sizeof(FParticleVertexFactoryPool) == 132 (ours 96)
 // pending: sizeof(FParticleVertexFactoryShaderParameters) == 72 (ours 148)
-static_assert(sizeof(FPathSizeInfo) == 24, "FPathSizeInfo: Dishonored PDB size is 24");
+// pending: sizeof(FPathSizeInfo) == 21 (ours 24)
 // pending: sizeof(FPawnClassEventData) == 12 (ours 8)
 static_assert(sizeof(FPendingCleanupObjects) == 12, "FPendingCleanupObjects: Dishonored PDB size is 12");
-static_assert(sizeof(FPerPlayerSplitscreenData) == 16, "FPerPlayerSplitscreenData: Dishonored PDB size is 16");
+static_assert(sizeof(FPerPlayerSplitscreenData) == 16, "FPerPlayerSplitscreenData: retail 2013 size is 16");
 // pending: sizeof(FPerPolyBoneCollisionData) == 36 (ours 80)
 static_assert(sizeof(FPhysAssetCreateParams) == 28, "FPhysAssetCreateParams: Dishonored PDB size is 28");
-// pending: sizeof(FPhysEffectInfo) == 12 (ours 16)
-static_assert(sizeof(FPhysXEmitterVerticalProperties) == 24, "FPhysXEmitterVerticalProperties: Dishonored PDB size is 24");
-static_assert(sizeof(FPhysXSceneProperties) == 60, "FPhysXSceneProperties: Dishonored PDB size is 60");
-static_assert(sizeof(FPhysXSimulationProperties) == 12, "FPhysXSimulationProperties: Dishonored PDB size is 12");
-static_assert(sizeof(FPhysXVerticalProperties) == 24, "FPhysXVerticalProperties: Dishonored PDB size is 24");
+static_assert(sizeof(FPhysEffectInfo) == 12, "FPhysEffectInfo: retail 2013 size is 12");
+static_assert(sizeof(FPhysXEmitterVerticalProperties) == 24, "FPhysXEmitterVerticalProperties: retail 2013 size is 24");
+static_assert(sizeof(FPhysXSceneProperties) == 60, "FPhysXSceneProperties: retail 2013 size is 60");
+static_assert(sizeof(FPhysXSimulationProperties) == 12, "FPhysXSimulationProperties: retail 2013 size is 12");
+static_assert(sizeof(FPhysXVerticalProperties) == 24, "FPhysXVerticalProperties: retail 2013 size is 24");
 // pending: sizeof(FPixelFormatInfo) == 36 (ours 40)
 static_assert(sizeof(FPlatformStaticMeshData) == 4, "FPlatformStaticMeshData: Dishonored PDB size is 4");
 // pending: sizeof(FPlayerInformation) == 40 (ours 32)
-static_assert(sizeof(FPlayerResponseLine) == 44, "FPlayerResponseLine: Dishonored PDB size is 44");
+static_assert(sizeof(FPlayerResponseLine) == 44, "FPlayerResponseLine: retail 2013 size is 44");
 static_assert(sizeof(FPoly) == 328, "FPoly: Dishonored PDB size is 328");
 // pending: sizeof(FPolyReference) == 24 (ours 28)
 static_assert(sizeof(FPositionVertex) == 12, "FPositionVertex: Dishonored PDB size is 12");
@@ -491,11 +491,11 @@ static_assert(sizeof(FPrecomputedVisibilityBucket) == 28, "FPrecomputedVisibilit
 static_assert(sizeof(FPrecomputedVisibilityCell) == 16, "FPrecomputedVisibilityCell: Dishonored PDB size is 16");
 static_assert(sizeof(FPrecomputedVisibilityHandler) == 40, "FPrecomputedVisibilityHandler: Dishonored PDB size is 40");
 static_assert(sizeof(FPrefabUpdateArc) == 812, "FPrefabUpdateArc: Dishonored PDB size is 812");
-static_assert(sizeof(FPresetGeneratedPoint) == 24, "FPresetGeneratedPoint: Dishonored PDB size is 24");
+// pending: sizeof(FPresetGeneratedPoint) == 21 (ours 24)
 // pending: sizeof(FPreviewScene) == 36 (ours 40)
 // pending: sizeof(FPrimitiveDrawInterface) == 12 (ours 8)
 static_assert(sizeof(FPrimitiveHashBase) == 4, "FPrimitiveHashBase: Dishonored PDB size is 4");
-static_assert(sizeof(FPrimitiveMaterialRef) == 8, "FPrimitiveMaterialRef: Dishonored PDB size is 8");
+static_assert(sizeof(FPrimitiveMaterialRef) == 8, "FPrimitiveMaterialRef: retail 2013 size is 8");
 static_assert(sizeof(FPrimitiveOctree) == 224, "FPrimitiveOctree: Dishonored PDB size is 224");
 static_assert(sizeof(FPrimitiveSceneAttachmentContext) == 8, "FPrimitiveSceneAttachmentContext: Dishonored PDB size is 8");
 // pending: sizeof(FPrimitiveSceneProxy) == 160 (ours 176)
@@ -514,25 +514,25 @@ static_assert(sizeof(FQuantizedShadowSignedDistanceFieldData2D) == 24, "FQuantiz
 static_assert(sizeof(FQuantizedSignedDistanceFieldShadowSample) == 3, "FQuantizedSignedDistanceFieldShadowSample: Dishonored PDB size is 3");
 static_assert(sizeof(FQuantizedSimpleLightSample) == 4, "FQuantizedSimpleLightSample: Dishonored PDB size is 4");
 static_assert(sizeof(FQuatNoAlign) == 16, "FQuatNoAlign: Dishonored PDB size is 16");
-static_assert(sizeof(FRBCollisionChannelContainer) == 4, "FRBCollisionChannelContainer: Dishonored PDB size is 4");
+static_assert(sizeof(FRBCollisionChannelContainer) == 4, "FRBCollisionChannelContainer: retail 2013 size is 4");
 // pending: sizeof(FRBPhysScene) == 176 (ours 96)
 static_assert(sizeof(FRadialBlurSceneProxy) == 56, "FRadialBlurSceneProxy: Dishonored PDB size is 56");
 static_assert(sizeof(FRadiusOverlapCheck) == 16, "FRadiusOverlapCheck: Dishonored PDB size is 16");
 // pending: sizeof(FRasterizerStateInitializerRHI) == 16 (ours 20)
-static_assert(sizeof(FRawAnimSequenceTrack) == 24, "FRawAnimSequenceTrack: Dishonored PDB size is 24");
+static_assert(sizeof(FRawAnimSequenceTrack) == 24, "FRawAnimSequenceTrack: retail 2013 size is 24");
 static_assert(sizeof(FRawGPUIndexBuffer) == 40, "FRawGPUIndexBuffer: Dishonored PDB size is 40");
 static_assert(sizeof(FRawIndexBuffer) == 36, "FRawIndexBuffer: Dishonored PDB size is 36");
 static_assert(sizeof(FRawIndexBuffer16or32) == 36, "FRawIndexBuffer16or32: Dishonored PDB size is 36");
 // pending: sizeof(FRawStaticIndexBuffer) == 52 (ours 56)
-static_assert(sizeof(FRecogUserData) == 16, "FRecogUserData: Dishonored PDB size is 16");
-static_assert(sizeof(FRecogVocabulary) == 72, "FRecogVocabulary: Dishonored PDB size is 72");
-static_assert(sizeof(FRecognisableWord) == 28, "FRecognisableWord: Dishonored PDB size is 28");
-static_assert(sizeof(FRemoteTalker) == 16, "FRemoteTalker: Dishonored PDB size is 16");
+static_assert(sizeof(FRecogUserData) == 16, "FRecogUserData: retail 2013 size is 16");
+static_assert(sizeof(FRecogVocabulary) == 72, "FRecogVocabulary: retail 2013 size is 72");
+static_assert(sizeof(FRecognisableWord) == 28, "FRecognisableWord: retail 2013 size is 28");
+static_assert(sizeof(FRemoteTalker) == 16, "FRemoteTalker: retail 2013 size is 16");
 static_assert(sizeof(FRenderCommand) == 4, "FRenderCommand: Dishonored PDB size is 4");
-static_assert(sizeof(FRenderCommandFence) == 4, "FRenderCommandFence: Dishonored PDB size is 4");
+static_assert(sizeof(FRenderCommandFence) == 4, "FRenderCommandFence: retail 2013 size is 4");
 static_assert(sizeof(FRenderResource) == 20, "FRenderResource: Dishonored PDB size is 20");
 static_assert(sizeof(FRenderTarget) == 8, "FRenderTarget: Dishonored PDB size is 8");
-static_assert(sizeof(FRenderingChannelContainer) == 4, "FRenderingChannelContainer: Dishonored PDB size is 4");
+static_assert(sizeof(FRenderingChannelContainer) == 4, "FRenderingChannelContainer: retail 2013 size is 4");
 static_assert(sizeof(FResolveParams) == 24, "FResolveParams: Dishonored PDB size is 24");
 // pending: sizeof(FRestoreColorAndDepthPixelShader) == 128 (ours 164)
 // pending: sizeof(FRestoreColorAndDepthVertexShader) == 108 (ours 136)
@@ -541,17 +541,17 @@ static_assert(sizeof(FResolveParams) == 24, "FResolveParams: Dishonored PDB size
 // pending: sizeof(FRestoreDownsamplingDepthOnlyPixelShader) == 116 (ours 144)
 // pending: sizeof(FRibbonTypeDataPayload) == 64 (ours 68)
 static_assert(sizeof(FRigidBodyCollisionInfo) == 12, "FRigidBodyCollisionInfo: Dishonored PDB size is 12");
-static_assert(sizeof(FRigidBodyContactInfo) == 60, "FRigidBodyContactInfo: Dishonored PDB size is 60");
+static_assert(sizeof(FRigidBodyContactInfo) == 60, "FRigidBodyContactInfo: retail 2013 size is 60");
 static_assert(sizeof(FRigidBodyIndexPair) == 8, "FRigidBodyIndexPair: Dishonored PDB size is 8");
-static_assert(sizeof(FRigidBodyState) == 64, "FRigidBodyState: Dishonored PDB size is 64");
+// pending: sizeof(FRigidBodyState) == 57 (ours 64)
 static_assert(sizeof(FRigidSkinVertex) == 64, "FRigidSkinVertex: Dishonored PDB size is 64");
-static_assert(sizeof(FRootMotionCurve) == 28, "FRootMotionCurve: Dishonored PDB size is 28");
-static_assert(sizeof(FSMMaterialSetterDatum) == 8, "FSMMaterialSetterDatum: Dishonored PDB size is 8");
+static_assert(sizeof(FRootMotionCurve) == 28, "FRootMotionCurve: retail 2013 size is 28");
+static_assert(sizeof(FSMMaterialSetterDatum) == 8, "FSMMaterialSetterDatum: retail 2013 size is 8");
 // pending: sizeof(FSamplerStateInitializerRHI) == 20 (ours 32)
 static_assert(sizeof(FSavedPosition) == 32, "FSavedPosition: Dishonored PDB size is 32");
 static_assert(sizeof(FScalarMaterialInput) == 36, "FScalarMaterialInput: Dishonored PDB size is 36");
-static_assert(sizeof(FScalarParameterInterpStruct) == 20, "FScalarParameterInterpStruct: Dishonored PDB size is 20");
-static_assert(sizeof(FScalarParameterValue) == 28, "FScalarParameterValue: Dishonored PDB size is 28");
+static_assert(sizeof(FScalarParameterInterpStruct) == 20, "FScalarParameterInterpStruct: retail 2013 size is 20");
+static_assert(sizeof(FScalarParameterValue) == 28, "FScalarParameterValue: retail 2013 size is 28");
 static_assert(sizeof(FScalarParameterValueOverTime) == 68, "FScalarParameterValueOverTime: Dishonored PDB size is 68");
 // pending: sizeof(FScalarReplacementMaterialRenderProxy) == 104 (ours 184)
 static_assert(sizeof(FScaleSizeByLifePayload) == 4, "FScaleSizeByLifePayload: Dishonored PDB size is 4");
@@ -569,17 +569,17 @@ static_assert(sizeof(FSceneInterface) == 4, "FSceneInterface: Dishonored PDB siz
 // pending: sizeof(FSceneViewFamilyContext) == 80 (ours 84)
 // pending: sizeof(FSceneViewStateInterface) == 4 (ours 12)
 // pending: sizeof(FScopedDetailTickStats) == 16 (ours 20)
-static_assert(sizeof(FScreenMessageString) == 32, "FScreenMessageString: Dishonored PDB size is 32");
+static_assert(sizeof(FScreenMessageString) == 32, "FScreenMessageString: retail 2013 size is 32");
 static_assert(sizeof(FScreenResolutionRHI) == 12, "FScreenResolutionRHI: Dishonored PDB size is 12");
 static_assert(sizeof(FSeamlessTravelHandler) == 108, "FSeamlessTravelHandler: Dishonored PDB size is 108");
 static_assert(sizeof(FSelectedActorIterator) == 28, "FSelectedActorIterator: Dishonored PDB size is 28");
 static_assert(sizeof(FSelectedLightmapSample) == 56, "FSelectedLightmapSample: Dishonored PDB size is 56");
 static_assert(sizeof(FSelectionIterator) == 8, "FSelectionIterator: Dishonored PDB size is 8");
 static_assert(sizeof(FSeparatingAxisPointCheck) == 48, "FSeparatingAxisPointCheck: Dishonored PDB size is 48");
-static_assert(sizeof(FServerResponseLine) == 96, "FServerResponseLine: Dishonored PDB size is 96");
-static_assert(sizeof(FSettingsData) == 12, "FSettingsData: Dishonored PDB size is 12");
-static_assert(sizeof(FSettingsProperty) == 20, "FSettingsProperty: Dishonored PDB size is 20");
-static_assert(sizeof(FSettingsPropertyPropertyMetaData) == 64, "FSettingsPropertyPropertyMetaData: Dishonored PDB size is 64");
+static_assert(sizeof(FServerResponseLine) == 96, "FServerResponseLine: retail 2013 size is 96");
+static_assert(sizeof(FSettingsData) == 12, "FSettingsData: retail 2013 size is 12");
+// pending: sizeof(FSettingsProperty) == 17 (ours 20)
+static_assert(sizeof(FSettingsPropertyPropertyMetaData) == 64, "FSettingsPropertyPropertyMetaData: retail 2013 size is 64");
 // pending: sizeof(FShader) == 108 (ours 136)
 static_assert(sizeof(FShaderCache) == 8, "FShaderCache: Dishonored PDB size is 8");
 // pending: sizeof(FShaderCompilerEnvironment) == 144 (ours 140)
@@ -603,7 +603,7 @@ static_assert(sizeof(FSimplex) == 32, "FSimplex: Dishonored PDB size is 32");
 static_assert(sizeof(FSimplexVertex) == 36, "FSimplexVertex: Dishonored PDB size is 36");
 static_assert(sizeof(FSkelMeshChunk) == 52, "FSkelMeshChunk: Dishonored PDB size is 52");
 static_assert(sizeof(FSkelMeshCollisionDataProvider) == 144, "FSkelMeshCollisionDataProvider: Dishonored PDB size is 144");
-static_assert(sizeof(FSkelMeshComponentLODInfo) == 24, "FSkelMeshComponentLODInfo: Dishonored PDB size is 24");
+static_assert(sizeof(FSkelMeshComponentLODInfo) == 24, "FSkelMeshComponentLODInfo: retail 2013 size is 24");
 static_assert(sizeof(FSkelMeshExtraInfluenceImportData) == 68, "FSkelMeshExtraInfluenceImportData: Dishonored PDB size is 68");
 // pending: sizeof(FSkelMeshSection) == 12 (ours 16)
 // pending: sizeof(FSkeletalMeshLODInfo) == 56 (ours 60)
@@ -612,18 +612,18 @@ static_assert(sizeof(FSkeletalMeshSceneProxy) == 224, "FSkeletalMeshSceneProxy: 
 static_assert(sizeof(FSkeletalMeshVertexColorBuffer) == 40, "FSkeletalMeshVertexColorBuffer: Dishonored PDB size is 40");
 static_assert(sizeof(FSkeletalMeshVertexDataInterface) == 4, "FSkeletalMeshVertexDataInterface: Dishonored PDB size is 4");
 // pending: sizeof(FSkeletalMeshVertexInfluences) == 144 (ours 156)
-static_assert(sizeof(FSkeletalMesh_EditorOnly) == 28, "FSkeletalMesh_EditorOnly: Dishonored PDB size is 28");
+static_assert(sizeof(FSkeletalMesh_EditorOnly) == 28, "FSkeletalMesh_EditorOnly: retail 2013 size is 28");
 static_assert(sizeof(FSkipRenderCommand) == 8, "FSkipRenderCommand: Dishonored PDB size is 8");
 static_assert(sizeof(FSoftSkinVertex) == 68, "FSoftSkinVertex: Dishonored PDB size is 68");
 static_assert(sizeof(FSortedPathList) == 260, "FSortedPathList: Dishonored PDB size is 260");
 static_assert(sizeof(FSoundNodeEditorData) == 8, "FSoundNodeEditorData: Dishonored PDB size is 8");
-// pending: sizeof(FSourceTexture2DRegion) == 20 (ours 28)
+static_assert(sizeof(FSourceTexture2DRegion) == 20, "FSourceTexture2DRegion: retail 2013 size is 20");
 // pending: sizeof(FSplashPixelShader) == 116 (ours 144)
 // pending: sizeof(FSplashVertexShader) == 108 (ours 136)
-static_assert(sizeof(FSplitscreenData) == 12, "FSplitscreenData: Dishonored PDB size is 12");
+static_assert(sizeof(FSplitscreenData) == 12, "FSplitscreenData: retail 2013 size is 12");
 static_assert(sizeof(FStandardObjectPropagator) == 4, "FStandardObjectPropagator: Dishonored PDB size is 4");
-static_assert(sizeof(FStatColorMapEntry) == 8, "FStatColorMapEntry: Dishonored PDB size is 8");
-static_assert(sizeof(FStatColorMapping) == 28, "FStatColorMapping: Dishonored PDB size is 28");
+static_assert(sizeof(FStatColorMapEntry) == 8, "FStatColorMapEntry: retail 2013 size is 8");
+static_assert(sizeof(FStatColorMapping) == 28, "FStatColorMapping: retail 2013 size is 28");
 static_assert(sizeof(FStaticComponentMaskParameter) == 44, "FStaticComponentMaskParameter: Dishonored PDB size is 44");
 // pending: sizeof(FStaticLODModel) == 300 (ours 328)
 // pending: sizeof(FStaticLightingMapping) == 32 (ours 28)
@@ -639,7 +639,7 @@ static_assert(sizeof(FStaticMeshComponentReattachContext) == 16, "FStaticMeshCom
 static_assert(sizeof(FStaticMeshElement) == 64, "FStaticMeshElement: Dishonored PDB size is 64");
 static_assert(sizeof(FStaticMeshFullVertex) == 8, "FStaticMeshFullVertex: Dishonored PDB size is 8");
 // pending: sizeof(FStaticMeshLODElement) == 12 (ours 16)
-static_assert(sizeof(FStaticMeshLODInfo) == 12, "FStaticMeshLODInfo: Dishonored PDB size is 12");
+static_assert(sizeof(FStaticMeshLODInfo) == 12, "FStaticMeshLODInfo: retail 2013 size is 12");
 // pending: sizeof(FStaticMeshRenderData) == 864 (ours 928)
 static_assert(sizeof(FStaticMeshSceneProxy) == 288, "FStaticMeshSceneProxy: Dishonored PDB size is 288");
 static_assert(sizeof(FStaticMeshTriangle) == 372, "FStaticMeshTriangle: Dishonored PDB size is 372");
@@ -664,26 +664,26 @@ static_assert(sizeof(FStreamingHandlerTextureStatic) == 4, "FStreamingHandlerTex
 // pending: sizeof(FStreamingManagerTexture) == 560 (ours 2676)
 static_assert(sizeof(FStreamingTexturePrimitiveInfo) == 24, "FStreamingTexturePrimitiveInfo: Dishonored PDB size is 24");
 // pending: sizeof(FStreamingViewInfo) == 20 (ours 32)
-static_assert(sizeof(FStringIdToStringMapping) == 16, "FStringIdToStringMapping: Dishonored PDB size is 16");
-static_assert(sizeof(FSubTrackGroup) == 28, "FSubTrackGroup: Dishonored PDB size is 28");
-static_assert(sizeof(FSubtitleCue) == 16, "FSubtitleCue: Dishonored PDB size is 16");
-static_assert(sizeof(FSupportedSubTrackInfo) == 20, "FSupportedSubTrackInfo: Dishonored PDB size is 20");
+static_assert(sizeof(FStringIdToStringMapping) == 16, "FStringIdToStringMapping: retail 2013 size is 16");
+static_assert(sizeof(FSubTrackGroup) == 28, "FSubTrackGroup: retail 2013 size is 28");
+static_assert(sizeof(FSubtitleCue) == 16, "FSubtitleCue: retail 2013 size is 16");
+static_assert(sizeof(FSupportedSubTrackInfo) == 20, "FSupportedSubTrackInfo: retail 2013 size is 20");
 static_assert(sizeof(FSuspendRenderingThread) == 12, "FSuspendRenderingThread: Dishonored PDB size is 12");
-static_assert(sizeof(FSwarmDebugOptions) == 4, "FSwarmDebugOptions: Dishonored PDB size is 4");
-static_assert(sizeof(FSynchronizedActorVisibilityHistory) == 8, "FSynchronizedActorVisibilityHistory: Dishonored PDB size is 8");
+static_assert(sizeof(FSwarmDebugOptions) == 4, "FSwarmDebugOptions: retail 2013 size is 4");
+static_assert(sizeof(FSynchronizedActorVisibilityHistory) == 8, "FSynchronizedActorVisibilityHistory: retail 2013 size is 8");
 // pending: sizeof(FSystemSettings) == 11584 (ours 1088)
-static_assert(sizeof(FTCameraCache) == 32, "FTCameraCache: Dishonored PDB size is 32");
-// pending: sizeof(FTViewTarget) == 40 (ours 44)
+static_assert(sizeof(FTCameraCache) == 32, "FTCameraCache: retail 2013 size is 32");
+static_assert(sizeof(FTViewTarget) == 40, "FTViewTarget: retail 2013 size is 40");
 static_assert(sizeof(FTeamInformation) == 24, "FTeamInformation: Dishonored PDB size is 24");
-static_assert(sizeof(FTextSizingParameters) == 40, "FTextSizingParameters: Dishonored PDB size is 40");
+static_assert(sizeof(FTextSizingParameters) == 40, "FTextSizingParameters: retail 2013 size is 40");
 static_assert(sizeof(FTexture) == 64, "FTexture: Dishonored PDB size is 64");
 static_assert(sizeof(FTexture2DDynamicResource) == 76, "FTexture2DDynamicResource: Dishonored PDB size is 76");
-static_assert(sizeof(FTexture2DMipMap) == 60, "FTexture2DMipMap: Dishonored PDB size is 60");
+static_assert(sizeof(FTexture2DMipMap) == 60, "FTexture2DMipMap: retail 2013 size is 60");
 // pending: sizeof(FTexture2DResource) == 268 (ours 296)
-static_assert(sizeof(FTextureGroupContainer) == 4, "FTextureGroupContainer: Dishonored PDB size is 4");
+static_assert(sizeof(FTextureGroupContainer) == 4, "FTextureGroupContainer: retail 2013 size is 4");
 // pending: sizeof(FTextureLODSettings) == 728 (ours 672)
 static_assert(sizeof(FTextureMovieResource) == 104, "FTextureMovieResource: Dishonored PDB size is 104");
-static_assert(sizeof(FTextureParameterValue) == 28, "FTextureParameterValue: Dishonored PDB size is 28");
+static_assert(sizeof(FTextureParameterValue) == 28, "FTextureParameterValue: retail 2013 size is 28");
 static_assert(sizeof(FTextureParameterValueOverTime) == 52, "FTextureParameterValueOverTime: Dishonored PDB size is 52");
 static_assert(sizeof(FTextureRenderTarget2DResource) == 128, "FTextureRenderTarget2DResource: Dishonored PDB size is 128");
 static_assert(sizeof(FTextureRenderTargetCubeResource) == 132, "FTextureRenderTargetCubeResource: Dishonored PDB size is 132");
@@ -694,23 +694,23 @@ static_assert(sizeof(FTextureResource) == 68, "FTextureResource: Dishonored PDB 
 static_assert(sizeof(FTickableActorIterator) == 20, "FTickableActorIterator: Dishonored PDB size is 20");
 static_assert(sizeof(FTickableObject) == 4, "FTickableObject: Dishonored PDB size is 4");
 static_assert(sizeof(FTimer) == 8, "FTimer: Dishonored PDB size is 8");
-static_assert(sizeof(FTimerData) == 28, "FTimerData: Dishonored PDB size is 28");
-static_assert(sizeof(FTitleFile) == 28, "FTitleFile: Dishonored PDB size is 28");
-static_assert(sizeof(FTitleSafeZoneArea) == 16, "FTitleSafeZoneArea: Dishonored PDB size is 16");
-static_assert(sizeof(FTraceHitInfo) == 28, "FTraceHitInfo: Dishonored PDB size is 28");
+static_assert(sizeof(FTimerData) == 28, "FTimerData: retail 2013 size is 28");
+static_assert(sizeof(FTitleFile) == 28, "FTitleFile: retail 2013 size is 28");
+static_assert(sizeof(FTitleSafeZoneArea) == 16, "FTitleSafeZoneArea: retail 2013 size is 16");
+static_assert(sizeof(FTraceHitInfo) == 28, "FTraceHitInfo: retail 2013 size is 28");
 static_assert(sizeof(FTrail2TypeDataPayload) == 36, "FTrail2TypeDataPayload: Dishonored PDB size is 36");
 static_assert(sizeof(FTrailParticleSourcePayloadData) == 4, "FTrailParticleSourcePayloadData: Dishonored PDB size is 4");
 // pending: sizeof(FTrailsBaseTypeDataPayload) == 36 (ours 40)
-static_assert(sizeof(FTriangleSortSettings) == 12, "FTriangleSortSettings: Dishonored PDB size is 12");
+static_assert(sizeof(FTriangleSortSettings) == 12, "FTriangleSortSettings: retail 2013 size is 12");
 static_assert(sizeof(FTypeSpecificCompressedShaderCode) == 72, "FTypeSpecificCompressedShaderCode: Dishonored PDB size is 72");
-static_assert(sizeof(FURL) == 68, "FURL: Dishonored PDB size is 68");
+static_assert(sizeof(FURL) == 68, "FURL: retail 2013 size is 68");
 // pending: sizeof(FUniformExpressionSet) == 80 (ours 164)
-static_assert(sizeof(FUniqueNetId) == 8, "FUniqueNetId: Dishonored PDB size is 8");
+static_assert(sizeof(FUniqueNetId) == 8, "FUniqueNetId: retail 2013 size is 8");
 static_assert(sizeof(FUpdateTextureRegion2D) == 24, "FUpdateTextureRegion2D: Dishonored PDB size is 24");
-static_assert(sizeof(FUserBounds) == 24, "FUserBounds: Dishonored PDB size is 24");
+static_assert(sizeof(FUserBounds) == 24, "FUserBounds: retail 2013 size is 24");
 static_assert(sizeof(FVector2MaterialInput) == 40, "FVector2MaterialInput: Dishonored PDB size is 40");
 static_assert(sizeof(FVectorMaterialInput) == 44, "FVectorMaterialInput: Dishonored PDB size is 44");
-static_assert(sizeof(FVectorParameterValue) == 40, "FVectorParameterValue: Dishonored PDB size is 40");
+static_assert(sizeof(FVectorParameterValue) == 40, "FVectorParameterValue: retail 2013 size is 40");
 static_assert(sizeof(FVectorParameterValueOverTime) == 80, "FVectorParameterValueOverTime: Dishonored PDB size is 80");
 static_assert(sizeof(FVert) == 24, "FVert: Dishonored PDB size is 24");
 // pending: sizeof(FVertInfluence) == 8 (ours 12)
@@ -724,61 +724,61 @@ static_assert(sizeof(FVertexFactoryShaderParameters) == 4, "FVertexFactoryShader
 static_assert(sizeof(FVertexInfluence) == 8, "FVertexInfluence: Dishonored PDB size is 8");
 static_assert(sizeof(FVertexStreamComponent) == 12, "FVertexStreamComponent: Dishonored PDB size is 12");
 static_assert(sizeof(FViewElementDrawer) == 4, "FViewElementDrawer: Dishonored PDB size is 4");
-static_assert(sizeof(FViewTargetTransitionParams) == 16, "FViewTargetTransitionParams: Dishonored PDB size is 16");
+static_assert(sizeof(FViewTargetTransitionParams) == 16, "FViewTargetTransitionParams: retail 2013 size is 16");
 // pending: sizeof(FViewport) == 96 (ours 108)
 static_assert(sizeof(FViewportClient) == 4, "FViewportClient: Dishonored PDB size is 4");
 static_assert(sizeof(FViewportFrame) == 4, "FViewportFrame: Dishonored PDB size is 4");
-static_assert(sizeof(FVisiblePortalInfo) == 8, "FVisiblePortalInfo: Dishonored PDB size is 8");
+static_assert(sizeof(FVisiblePortalInfo) == 8, "FVisiblePortalInfo: retail 2013 size is 8");
 // pending: sizeof(FWaveModInfo) == 64 (ours 56)
-static_assert(sizeof(FWaveformSample) == 8, "FWaveformSample: Dishonored PDB size is 8");
+static_assert(sizeof(FWaveformSample) == 8, "FWaveformSample: retail 2013 size is 8");
 // pending: sizeof(FWeaponClassEventData) == 12 (ours 8)
 static_assert(sizeof(FWindPointSource) == 32, "FWindPointSource: Dishonored PDB size is 32");
 // pending: sizeof(FWindSourceSceneProxy) == 48 (ours 40)
-static_assert(sizeof(FWorldFractureSettings) == 28, "FWorldFractureSettings: Dishonored PDB size is 28");
-static_assert(sizeof(FWorldInfoNavMeshGenBaseParams) == 44, "FWorldInfoNavMeshGenBaseParams: Dishonored PDB size is 44");
-static_assert(sizeof(FWorldInfoNavMeshGenProcessParams) == 4, "FWorldInfoNavMeshGenProcessParams: Dishonored PDB size is 4");
-static_assert(sizeof(FWorldInfoNavMeshGenScoutParams) == 108, "FWorldInfoNavMeshGenScoutParams: Dishonored PDB size is 108");
-static_assert(sizeof(FWrappedStringElement) == 20, "FWrappedStringElement: Dishonored PDB size is 20");
+static_assert(sizeof(FWorldFractureSettings) == 28, "FWorldFractureSettings: retail 2013 size is 28");
+static_assert(sizeof(FWorldInfoNavMeshGenBaseParams) == 44, "FWorldInfoNavMeshGenBaseParams: retail 2013 size is 44");
+static_assert(sizeof(FWorldInfoNavMeshGenProcessParams) == 4, "FWorldInfoNavMeshGenProcessParams: retail 2013 size is 4");
+static_assert(sizeof(FWorldInfoNavMeshGenScoutParams) == 108, "FWorldInfoNavMeshGenScoutParams: retail 2013 size is 108");
+static_assert(sizeof(FWrappedStringElement) == 20, "FWrappedStringElement: retail 2013 size is 20");
 static_assert(sizeof(FZoneProperties) == 24, "FZoneProperties: Dishonored PDB size is 24");
 static_assert(sizeof(FZoneSet) == 8, "FZoneSet: Dishonored PDB size is 8");
 static_assert(sizeof(UActorComponent) == 84, "UActorComponent: retail 2013 size is 84");
-// pending: sizeof(UActorFactory) == 88 (ours 100)
-// pending: sizeof(UActorFactoryActor) == 92 (ours 104)
-// pending: sizeof(UActorFactoryArchetype) == 92 (ours 104)
-// pending: sizeof(UActorFactoryDominantDirectionalLight) == 88 (ours 100)
-// pending: sizeof(UActorFactoryDominantDirectionalLightMovable) == 88 (ours 100)
-// pending: sizeof(UActorFactoryDynamicSM) == 112 (ours 124)
-// pending: sizeof(UActorFactoryEmitter) == 92 (ours 104)
-// pending: sizeof(UActorFactoryLensFlare) == 92 (ours 104)
-// pending: sizeof(UActorFactoryLight) == 88 (ours 100)
-// pending: sizeof(UActorFactoryMover) == 112 (ours 124)
-// pending: sizeof(UActorFactoryPathNode) == 88 (ours 100)
-// pending: sizeof(UActorFactoryPhysicsAsset) == 124 (ours 136)
-// pending: sizeof(UActorFactoryPlayerStart) == 88 (ours 100)
-// pending: sizeof(UActorFactoryPylon) == 88 (ours 100)
-// pending: sizeof(UActorFactoryRigidBody) == 148 (ours 160)
-// pending: sizeof(UActorFactorySkeletalMesh) == 104 (ours 116)
-// pending: sizeof(UActorFactoryStaticMesh) == 104 (ours 116)
-// pending: sizeof(UActorFactoryTrigger) == 88 (ours 100)
+static_assert(sizeof(UActorFactory) == 88, "UActorFactory: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryActor) == 92, "UActorFactoryActor: retail 2013 size is 92");
+static_assert(sizeof(UActorFactoryArchetype) == 92, "UActorFactoryArchetype: retail 2013 size is 92");
+static_assert(sizeof(UActorFactoryDominantDirectionalLight) == 88, "UActorFactoryDominantDirectionalLight: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryDominantDirectionalLightMovable) == 88, "UActorFactoryDominantDirectionalLightMovable: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryDynamicSM) == 112, "UActorFactoryDynamicSM: retail 2013 size is 112");
+static_assert(sizeof(UActorFactoryEmitter) == 92, "UActorFactoryEmitter: retail 2013 size is 92");
+static_assert(sizeof(UActorFactoryLensFlare) == 92, "UActorFactoryLensFlare: retail 2013 size is 92");
+static_assert(sizeof(UActorFactoryLight) == 88, "UActorFactoryLight: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryMover) == 112, "UActorFactoryMover: retail 2013 size is 112");
+static_assert(sizeof(UActorFactoryPathNode) == 88, "UActorFactoryPathNode: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryPhysicsAsset) == 124, "UActorFactoryPhysicsAsset: retail 2013 size is 124");
+static_assert(sizeof(UActorFactoryPlayerStart) == 88, "UActorFactoryPlayerStart: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryPylon) == 88, "UActorFactoryPylon: retail 2013 size is 88");
+static_assert(sizeof(UActorFactoryRigidBody) == 148, "UActorFactoryRigidBody: retail 2013 size is 148");
+static_assert(sizeof(UActorFactorySkeletalMesh) == 104, "UActorFactorySkeletalMesh: retail 2013 size is 104");
+static_assert(sizeof(UActorFactoryStaticMesh) == 104, "UActorFactoryStaticMesh: retail 2013 size is 104");
+static_assert(sizeof(UActorFactoryTrigger) == 88, "UActorFactoryTrigger: retail 2013 size is 88");
 static_assert(sizeof(UArkHealthInterface) == 56, "UArkHealthInterface: retail 2013 size is 56");
 static_assert(sizeof(UArkSettingsListenerInterface) == 56, "UArkSettingsListenerInterface: retail 2013 size is 56");
 // pending: sizeof(UArrowComponent) == 464 (ours 480)
-// pending: sizeof(UBookMark) == 80 (ours 92)
+static_assert(sizeof(UBookMark) == 80, "UBookMark: retail 2013 size is 80");
 static_assert(sizeof(UBookMark2D) == 68, "UBookMark2D: retail 2013 size is 68");
 static_assert(sizeof(UBrushComponent) == 544, "UBrushComponent: retail 2013 size is 544");
 static_assert(sizeof(UCameraConeComponent) == 464, "UCameraConeComponent: retail 2013 size is 464");
 static_assert(sizeof(UCameraModifier) == 84, "UCameraModifier: retail 2013 size is 84");
 static_assert(sizeof(UCanvas) == 160, "UCanvas: retail 2013 size is 160");
-// pending: sizeof(UCheatManager) == 92 (ours 80)
-// pending: sizeof(UClient) == 80 (ours 76)
+static_assert(sizeof(UCheatManager) == 92, "UCheatManager: retail 2013 size is 92");
+static_assert(sizeof(UClient) == 80, "UClient: retail 2013 size is 80");
 static_assert(sizeof(UClipPadEntry) == 80, "UClipPadEntry: retail 2013 size is 80");
 static_assert(sizeof(UCodecMovie) == 60, "UCodecMovie: retail 2013 size is 60");
 static_assert(sizeof(UCodecMovieFallback) == 64, "UCodecMovieFallback: retail 2013 size is 64");
 static_assert(sizeof(UCurveEdPresetCurve) == 80, "UCurveEdPresetCurve: retail 2013 size is 80");
 static_assert(sizeof(UCustomPropertyItemHandler) == 56, "UCustomPropertyItemHandler: retail 2013 size is 56");
 static_assert(sizeof(UCylinderComponent) == 480, "UCylinderComponent: retail 2013 size is 480");
-// pending: sizeof(UDamageType) == 88 (ours 96)
-// pending: sizeof(UDirectionalLightComponent) == 464 (ours 400)
+static_assert(sizeof(UDamageType) == 88, "UDamageType: retail 2013 size is 88");
+static_assert(sizeof(UDirectionalLightComponent) == 464, "UDirectionalLightComponent: retail 2013 size is 464");
 static_assert(sizeof(UDistributionFloatConstant) == 80, "UDistributionFloatConstant: retail 2013 size is 80");
 static_assert(sizeof(UDistributionFloatConstantCurve) == 92, "UDistributionFloatConstantCurve: retail 2013 size is 92");
 static_assert(sizeof(UDistributionFloatParameterBase) == 108, "UDistributionFloatParameterBase: retail 2013 size is 108");
@@ -789,9 +789,9 @@ static_assert(sizeof(UDistributionVectorConstantCurve) == 100, "UDistributionVec
 static_assert(sizeof(UDistributionVectorParameterBase) == 156, "UDistributionVectorParameterBase: retail 2013 size is 156");
 static_assert(sizeof(UDistributionVectorUniform) == 108, "UDistributionVectorUniform: retail 2013 size is 108");
 static_assert(sizeof(UDistributionVectorUniformCurve) == 104, "UDistributionVectorUniformCurve: retail 2013 size is 104");
-// pending: sizeof(UDominantDirectionalLightComponent) == 656 (ours 592)
-// pending: sizeof(UDominantPointLightComponent) == 560 (ours 512)
-// pending: sizeof(UDominantSpotLightComponent) == 768 (ours 736)
+static_assert(sizeof(UDominantDirectionalLightComponent) == 656, "UDominantDirectionalLightComponent: retail 2013 size is 656");
+static_assert(sizeof(UDominantPointLightComponent) == 560, "UDominantPointLightComponent: retail 2013 size is 560");
+static_assert(sizeof(UDominantSpotLightComponent) == 768, "UDominantSpotLightComponent: retail 2013 size is 768");
 static_assert(sizeof(UDownloadableContentEnumerator) == 104, "UDownloadableContentEnumerator: retail 2013 size is 104");
 static_assert(sizeof(UDownloadableContentManager) == 192, "UDownloadableContentManager: retail 2013 size is 192 (2012 PDB: 180)");
 static_assert(sizeof(UDrawBoxComponent) == 480, "UDrawBoxComponent: retail 2013 size is 480");
@@ -804,14 +804,14 @@ static_assert(sizeof(UDrawLightRadiusComponent) == 480, "UDrawLightRadiusCompone
 static_assert(sizeof(UDrawPylonRadiusComponent) == 480, "UDrawPylonRadiusComponent: retail 2013 size is 480");
 static_assert(sizeof(UDrawQuadComponent) == 464, "UDrawQuadComponent: retail 2013 size is 464");
 static_assert(sizeof(UDrawSphereComponent) == 480, "UDrawSphereComponent: retail 2013 size is 480");
-// pending: sizeof(UDynamicLightEnvironmentComponent) == 292 (ours 276)
+static_assert(sizeof(UDynamicLightEnvironmentComponent) == 292, "UDynamicLightEnvironmentComponent: retail 2013 size is 292");
 static_assert(sizeof(UEdCoordSystem) == 144, "UEdCoordSystem: retail 2013 size is 144");
 static_assert(sizeof(UEditorLinkSelectionInterface) == 56, "UEditorLinkSelectionInterface: retail 2013 size is 56");
 static_assert(sizeof(UEngine) == 1480, "UEngine: retail 2013 size is 1480");
 static_assert(sizeof(UEngineTypes) == 56, "UEngineTypes: retail 2013 size is 56");
 static_assert(sizeof(UFaceFXAnimSet) == 104, "UFaceFXAnimSet: retail 2013 size is 104");
-// pending: sizeof(UFaceFXAsset) == 116 (ours 128)
-// pending: sizeof(UFont) == 328 (ours 332)
+static_assert(sizeof(UFaceFXAsset) == 116, "UFaceFXAsset: retail 2013 size is 116");
+static_assert(sizeof(UFont) == 328, "UFont: retail 2013 size is 328");
 static_assert(sizeof(UFontImportOptions) == 204, "UFontImportOptions: retail 2013 size is 204");
 static_assert(sizeof(UForceFeedbackManager) == 80, "UForceFeedbackManager: retail 2013 size is 80");
 static_assert(sizeof(UForceFeedbackWaveform) == 80, "UForceFeedbackWaveform: retail 2013 size is 80");
@@ -823,26 +823,26 @@ static_assert(sizeof(UGameplayEventsHandler) == 84, "UGameplayEventsHandler: Dis
 // pending: sizeof(UGameplayEventsWriter) == 320 (ours 340)
 static_assert(sizeof(UGenericParamListStatEntry) == 64, "UGenericParamListStatEntry: Dishonored PDB size is 64");
 static_assert(sizeof(UIManager_eventPauseGame_Parms) == 8, "UIManager_eventPauseGame_Parms: Dishonored PDB size is 8");
-// pending: sizeof(UIniLocPatcher) == 88 (ours 128)
+static_assert(sizeof(UIniLocPatcher) == 88, "UIniLocPatcher: retail 2013 size is 88");
 static_assert(sizeof(UInterface_NavigationHandle) == 56, "UInterface_NavigationHandle: retail 2013 size is 56");
 static_assert(sizeof(UInterpCurveEdSetup) == 72, "UInterpCurveEdSetup: retail 2013 size is 72");
 static_assert(sizeof(UInterpTrack) == 124, "UInterpTrack: retail 2013 size is 124");
 static_assert(sizeof(UKMeshProps) == 124, "UKMeshProps: retail 2013 size is 124");
-// pending: sizeof(UKillZDamageType) == 88 (ours 96)
+static_assert(sizeof(UKillZDamageType) == 88, "UKillZDamageType: retail 2013 size is 88");
 static_assert(sizeof(UKismetBookMark) == 80, "UKismetBookMark: retail 2013 size is 80");
-// pending: sizeof(ULensFlare) == 500 (ours 508)
+static_assert(sizeof(ULensFlare) == 500, "ULensFlare: retail 2013 size is 500");
 static_assert(sizeof(ULensFlareComponent) == 528, "ULensFlareComponent: retail 2013 size is 528");
 static_assert(sizeof(ULevel) == 796, "ULevel: retail 2013 size is 796");
 static_assert(sizeof(ULevelBase) == 140, "ULevelBase: retail 2013 size is 140");
 static_assert(sizeof(ULevelGridVolumeRenderingComponent) == 464, "ULevelGridVolumeRenderingComponent: retail 2013 size is 464");
-// pending: sizeof(ULevelStreaming) == 160 (ours 224)
-// pending: sizeof(ULevelStreamingAlwaysLoaded) == 164 (ours 224)
-// pending: sizeof(ULevelStreamingDistance) == 176 (ours 240)
-// pending: sizeof(ULevelStreamingKismet) == 160 (ours 224)
-// pending: sizeof(ULevelStreamingPersistent) == 160 (ours 224)
-// pending: sizeof(ULightComponent) == 432 (ours 368)
+static_assert(sizeof(ULevelStreaming) == 160, "ULevelStreaming: retail 2013 size is 160");
+static_assert(sizeof(ULevelStreamingAlwaysLoaded) == 164, "ULevelStreamingAlwaysLoaded: retail 2013 size is 164");
+static_assert(sizeof(ULevelStreamingDistance) == 176, "ULevelStreamingDistance: retail 2013 size is 176");
+static_assert(sizeof(ULevelStreamingKismet) == 160, "ULevelStreamingKismet: retail 2013 size is 160");
+static_assert(sizeof(ULevelStreamingPersistent) == 160, "ULevelStreamingPersistent: retail 2013 size is 160");
+static_assert(sizeof(ULightComponent) == 432, "ULightComponent: retail 2013 size is 432");
 static_assert(sizeof(ULightEnvironmentComponent) == 108, "ULightEnvironmentComponent: retail 2013 size is 108");
-// pending: sizeof(ULightFunction) == 72 (ours 76)
+static_assert(sizeof(ULightFunction) == 72, "ULightFunction: retail 2013 size is 72");
 static_assert(sizeof(ULightMapTexture2D) == 376, "ULightMapTexture2D: retail 2013 size is 376 (2012 PDB: 372)");
 static_assert(sizeof(ULightmappedSurfaceCollection) == 72, "ULightmappedSurfaceCollection: retail 2013 size is 72");
 static_assert(sizeof(ULightmassPrimitiveSettingsObject) == 84, "ULightmassPrimitiveSettingsObject: retail 2013 size is 84");
@@ -850,38 +850,38 @@ static_assert(sizeof(ULineBatchComponent) == 496, "ULineBatchComponent: retail 2
 static_assert(sizeof(ULocalPlayer) == 612, "ULocalPlayer: retail 2013 size is 612");
 static_assert(sizeof(UMapInfo) == 56, "UMapInfo: retail 2013 size is 56");
 static_assert(sizeof(UMaterial) == 912, "UMaterial: retail 2013 size is 912");
-// pending: sizeof(UMaterialExpression) == 96 (ours 124)
-// pending: sizeof(UMaterialExpressionAntialiasedTextureMask) == 160 (ours 224)
-// pending: sizeof(UMaterialExpressionComponentMask) == 128 (ours 156)
-// pending: sizeof(UMaterialExpressionDynamicParameter) == 108 (ours 136)
-// pending: sizeof(UMaterialExpressionFontSample) == 104 (ours 132)
-// pending: sizeof(UMaterialExpressionFontSampleParameter) == 128 (ours 164)
-// pending: sizeof(UMaterialExpressionLightmapUVs) == 96 (ours 124)
-// pending: sizeof(UMaterialExpressionMeshEmitterDynamicParameter) == 108 (ours 136)
-// pending: sizeof(UMaterialExpressionParameter) == 120 (ours 156)
-// pending: sizeof(UMaterialExpressionScalarParameter) == 124 (ours 160)
-// pending: sizeof(UMaterialExpressionStaticComponentMaskParameter) == 156 (ours 192)
-// pending: sizeof(UMaterialExpressionStaticSwitchParameter) == 184 (ours 220)
-// pending: sizeof(UMaterialExpressionTextureCoordinate) == 112 (ours 140)
-// pending: sizeof(UMaterialExpressionTextureSample) == 128 (ours 184)
-// pending: sizeof(UMaterialExpressionTextureSampleParameter) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionTextureSampleParameter2D) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionTextureSampleParameterCube) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionTextureSampleParameterMeshSubUV) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionTextureSampleParameterMeshSubUVBlend) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionTextureSampleParameterMovie) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionTextureSampleParameterNormal) == 156 (ours 220)
-// pending: sizeof(UMaterialExpressionTextureSampleParameterSubUV) == 152 (ours 216)
-// pending: sizeof(UMaterialExpressionVectorParameter) == 136 (ours 172)
+static_assert(sizeof(UMaterialExpression) == 96, "UMaterialExpression: retail 2013 size is 96");
+static_assert(sizeof(UMaterialExpressionAntialiasedTextureMask) == 160, "UMaterialExpressionAntialiasedTextureMask: retail 2013 size is 160");
+static_assert(sizeof(UMaterialExpressionComponentMask) == 128, "UMaterialExpressionComponentMask: retail 2013 size is 128");
+static_assert(sizeof(UMaterialExpressionDynamicParameter) == 108, "UMaterialExpressionDynamicParameter: retail 2013 size is 108");
+static_assert(sizeof(UMaterialExpressionFontSample) == 104, "UMaterialExpressionFontSample: retail 2013 size is 104");
+static_assert(sizeof(UMaterialExpressionFontSampleParameter) == 128, "UMaterialExpressionFontSampleParameter: retail 2013 size is 128");
+static_assert(sizeof(UMaterialExpressionLightmapUVs) == 96, "UMaterialExpressionLightmapUVs: retail 2013 size is 96");
+static_assert(sizeof(UMaterialExpressionMeshEmitterDynamicParameter) == 108, "UMaterialExpressionMeshEmitterDynamicParameter: retail 2013 size is 108");
+static_assert(sizeof(UMaterialExpressionParameter) == 120, "UMaterialExpressionParameter: retail 2013 size is 120");
+static_assert(sizeof(UMaterialExpressionScalarParameter) == 124, "UMaterialExpressionScalarParameter: retail 2013 size is 124");
+static_assert(sizeof(UMaterialExpressionStaticComponentMaskParameter) == 156, "UMaterialExpressionStaticComponentMaskParameter: retail 2013 size is 156");
+static_assert(sizeof(UMaterialExpressionStaticSwitchParameter) == 184, "UMaterialExpressionStaticSwitchParameter: retail 2013 size is 184");
+static_assert(sizeof(UMaterialExpressionTextureCoordinate) == 112, "UMaterialExpressionTextureCoordinate: retail 2013 size is 112");
+static_assert(sizeof(UMaterialExpressionTextureSample) == 128, "UMaterialExpressionTextureSample: retail 2013 size is 128");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameter) == 152, "UMaterialExpressionTextureSampleParameter: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameter2D) == 152, "UMaterialExpressionTextureSampleParameter2D: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameterCube) == 152, "UMaterialExpressionTextureSampleParameterCube: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameterMeshSubUV) == 152, "UMaterialExpressionTextureSampleParameterMeshSubUV: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameterMeshSubUVBlend) == 152, "UMaterialExpressionTextureSampleParameterMeshSubUVBlend: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameterMovie) == 152, "UMaterialExpressionTextureSampleParameterMovie: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameterNormal) == 156, "UMaterialExpressionTextureSampleParameterNormal: retail 2013 size is 156");
+static_assert(sizeof(UMaterialExpressionTextureSampleParameterSubUV) == 152, "UMaterialExpressionTextureSampleParameterSubUV: retail 2013 size is 152");
+static_assert(sizeof(UMaterialExpressionVectorParameter) == 136, "UMaterialExpressionVectorParameter: retail 2013 size is 136");
 static_assert(sizeof(UMaterialInstance) == 208, "UMaterialInstance: retail 2013 size is 208");
 static_assert(sizeof(UMaterialInstanceConstant) == 256, "UMaterialInstanceConstant: retail 2013 size is 256");
-// pending: sizeof(UMaterialInstanceTimeVarying) == 264 (ours 276)
+static_assert(sizeof(UMaterialInstanceTimeVarying) == 264, "UMaterialInstanceTimeVarying: retail 2013 size is 264");
 static_assert(sizeof(UMaterialInterface) == 116, "UMaterialInterface: retail 2013 size is 116");
 static_assert(sizeof(UMeshComponent) == 480, "UMeshComponent: retail 2013 size is 480");
-// pending: sizeof(UMeshComponentFactory) == 76 (ours 72)
+static_assert(sizeof(UMeshComponentFactory) == 76, "UMeshComponentFactory: retail 2013 size is 76");
 static_assert(sizeof(UModel) == 2568, "UModel: retail 2013 size is 2568");
 static_assert(sizeof(UModelComponent) == 496, "UModelComponent: retail 2013 size is 496");
-// pending: sizeof(UMultiFont) == 340 (ours 344)
+static_assert(sizeof(UMultiFont) == 340, "UMultiFont: retail 2013 size is 340");
 // pending: sizeof(UNavigationMeshBase) == 464 (ours 688)
 static_assert(sizeof(UObjectReferencer) == 68, "UObjectReferencer: retail 2013 size is 68");
 static_assert(sizeof(UOnlinePlayerStorage) == 100, "UOnlinePlayerStorage: retail 2013 size is 100");
@@ -889,21 +889,21 @@ static_assert(sizeof(UOnlineProfileSettings) == 136, "UOnlineProfileSettings: re
 static_assert(sizeof(UOnlineStats) == 68, "UOnlineStats: retail 2013 size is 68");
 static_assert(sizeof(UOnlineStatsRead) == 132, "UOnlineStatsRead: retail 2013 size is 132");
 static_assert(sizeof(UOnlineStatsWrite) == 132, "UOnlineStatsWrite: retail 2013 size is 132");
-// pending: sizeof(UOnlineSubsystem) == 180 (ours 252)
-// pending: sizeof(UParticleLightEnvironmentComponent) == 300 (ours 296)
-// pending: sizeof(UPhysicalMaterial) == 140 (ours 156)
+static_assert(sizeof(UOnlineSubsystem) == 180, "UOnlineSubsystem: retail 2013 size is 180 (2012 PDB: 168)");
+static_assert(sizeof(UParticleLightEnvironmentComponent) == 300, "UParticleLightEnvironmentComponent: retail 2013 size is 300");
+static_assert(sizeof(UPhysicalMaterial) == 140, "UPhysicalMaterial: retail 2013 size is 140");
 static_assert(sizeof(UPhysicalMaterialPropertyBase) == 56, "UPhysicalMaterialPropertyBase: retail 2013 size is 56");
 static_assert(sizeof(UPhysicsAsset) == 160, "UPhysicsAsset: retail 2013 size is 160");
 static_assert(sizeof(UPhysicsAssetInstance) == 176, "UPhysicsAssetInstance: retail 2013 size is 176");
 static_assert(sizeof(UPhysicsLODVerticalEmitter) == 60, "UPhysicsLODVerticalEmitter: retail 2013 size is 60");
 static_assert(sizeof(UPlayer) == 92, "UPlayer: retail 2013 size is 92");
-// pending: sizeof(UPointLightComponent) == 560 (ours 512)
+static_assert(sizeof(UPointLightComponent) == 560, "UPointLightComponent: retail 2013 size is 560");
 static_assert(sizeof(UPolys) == 72, "UPolys: retail 2013 size is 72");
-// pending: sizeof(UPostProcessChain) == 84 (ours 68)
+static_assert(sizeof(UPostProcessChain) == 84, "UPostProcessChain: retail 2013 size is 84");
 static_assert(sizeof(UPrimitiveComponent) == 464, "UPrimitiveComponent: retail 2013 size is 464");
-// pending: sizeof(UPrimitiveComponentFactory) == 64 (ours 60)
+static_assert(sizeof(UPrimitiveComponentFactory) == 64, "UPrimitiveComponentFactory: retail 2013 size is 64");
 static_assert(sizeof(URB_BSJointSetup) == 252, "URB_BSJointSetup: retail 2013 size is 252");
-// pending: sizeof(URB_BodyInstance) == 224 (ours 152)
+static_assert(sizeof(URB_BodyInstance) == 224, "URB_BodyInstance: retail 2013 size is 224");
 static_assert(sizeof(URB_BodySetup) == 200, "URB_BodySetup: retail 2013 size is 200");
 static_assert(sizeof(URB_ConstraintDrawComponent) == 464, "URB_ConstraintDrawComponent: retail 2013 size is 464");
 static_assert(sizeof(URB_ConstraintInstance) == 176, "URB_ConstraintInstance: retail 2013 size is 176");
@@ -925,10 +925,10 @@ static_assert(sizeof(USceneCapture2DHitMaskComponent) == 176, "USceneCapture2DHi
 static_assert(sizeof(USceneCaptureComponent) == 140, "USceneCaptureComponent: retail 2013 size is 140");
 static_assert(sizeof(USceneCaptureCubeMapComponent) == 164, "USceneCaptureCubeMapComponent: retail 2013 size is 164");
 static_assert(sizeof(USceneCapturePortalComponent) == 152, "USceneCapturePortalComponent: retail 2013 size is 152");
-// pending: sizeof(USceneCaptureReflectComponent) == 156 (ours 148)
+static_assert(sizeof(USceneCaptureReflectComponent) == 156, "USceneCaptureReflectComponent: retail 2013 size is 156");
 static_assert(sizeof(UScriptedTexture) == 292, "UScriptedTexture: retail 2013 size is 292");
 static_assert(sizeof(USelection) == 92, "USelection: retail 2013 size is 92");
-// pending: sizeof(USettings) == 128 (ours 104)
+static_assert(sizeof(USettings) == 128, "USettings: retail 2013 size is 128");
 // pending: sizeof(UShaderCache) == 128 (ours 132)
 static_assert(sizeof(UShadowMap1D) == 120, "UShadowMap1D: retail 2013 size is 120");
 static_assert(sizeof(UShadowMap2D) == 104, "UShadowMap2D: retail 2013 size is 104");
@@ -936,18 +936,18 @@ static_assert(sizeof(UShadowMapTexture2D) == 376, "UShadowMapTexture2D: retail 2
 static_assert(sizeof(USkeletalMesh) == 528, "USkeletalMesh: retail 2013 size is 528");
 static_assert(sizeof(USkeletalMeshComponent) == 1088, "USkeletalMeshComponent: retail 2013 size is 1088 (2012 PDB: 1056)");
 // pending: sizeof(USkeletalMeshSocket) == 120 (ours 124)
-// pending: sizeof(USkyLightComponent) == 432 (ours 368)
+static_assert(sizeof(USkyLightComponent) == 432, "USkyLightComponent: retail 2013 size is 432");
 static_assert(sizeof(USpeechRecognition) == 192, "USpeechRecognition: retail 2013 size is 192");
-// pending: sizeof(USphericalHarmonicLightComponent) == 592 (ours 528)
-// pending: sizeof(USpotLightComponent) == 576 (ours 544)
-// pending: sizeof(USpriteComponent) == 480 (ours 496)
+static_assert(sizeof(USphericalHarmonicLightComponent) == 592, "USphericalHarmonicLightComponent: retail 2013 size is 592");
+static_assert(sizeof(USpotLightComponent) == 576, "USpotLightComponent: retail 2013 size is 576");
+static_assert(sizeof(USpriteComponent) == 480, "USpriteComponent: retail 2013 size is 480");
 static_assert(sizeof(UStaticMesh) == 312, "UStaticMesh: retail 2013 size is 312");
 static_assert(sizeof(UStaticMeshComponent) == 576, "UStaticMeshComponent: retail 2013 size is 576");
-// pending: sizeof(UStaticMeshComponentFactory) == 80 (ours 76)
+static_assert(sizeof(UStaticMeshComponentFactory) == 80, "UStaticMeshComponentFactory: retail 2013 size is 80");
 static_assert(sizeof(USurface) == 56, "USurface: retail 2013 size is 56");
 static_assert(sizeof(UTexture) == 236, "UTexture: retail 2013 size is 236");
 static_assert(sizeof(UTexture2D) == 372, "UTexture2D: retail 2013 size is 372 (2012 PDB: 368)");
-// pending: sizeof(UTexture2DComposite) == 252 (ours 260)
+static_assert(sizeof(UTexture2DComposite) == 252, "UTexture2DComposite: retail 2013 size is 252");
 static_assert(sizeof(UTexture2DDynamic) == 256, "UTexture2DDynamic: retail 2013 size is 256");
 static_assert(sizeof(UTextureCube) == 280, "UTextureCube: retail 2013 size is 280");
 static_assert(sizeof(UTextureFlipBook) == 436, "UTextureFlipBook: retail 2013 size is 436 (2012 PDB: 432)");
@@ -964,6 +964,6 @@ static_assert(sizeof(UWindPointSourceComponent) == 112, "UWindPointSourceCompone
 static_assert(sizeof(UWorld) == 716, "UWorld: retail 2013 size is 716");
 
 // not reachable from Engine.h (declared in headers the module's .cpp files include on their own), not asserted:
-// ACrowdAgentBase, ADecalActor, ADecalActorBase, ADecalActorMovable, ADecalManager, AEmitterCameraLensEffectBase, AFluidInfluenceActor, AFluidSurfaceActor, AFluidSurfaceActorMovable, AInteractiveFoliageActor, ANxCylindricalForceField, ANxCylindricalForceFieldCapsule, ANxForceField, ANxForceFieldGeneric, ANxForceFieldRadial, ANxForceFieldTornado, ANxGenericForceField, ANxGenericForceFieldBox, ANxGenericForceFieldBrush, ANxGenericForceFieldCapsule, ANxRadialCustomForceField, ANxRadialForceField, ANxTornadoAngularForceField, ANxTornadoAngularForceFieldCapsule, ANxTornadoForceField, ANxTornadoForceFieldCapsule, AParticleEventManager, APathTargetPoint, APrefabInstance, APylonSeed, ARB_CylindricalForceActor, ARB_ForceFieldExcludeVolume, ARB_RadialForceActor, ASkeletalMeshActor, ASkeletalMeshActorBasedOnExtremeContent, ASkeletalMeshActorMAT, ASkeletalMeshActorSpawnable, ASkeletalMeshCinematicActor, ASpeedTreeActor, ASplineActor, ASplineLoftActor, ASplineLoftActorMovable, ATestSplittingVolume, FActivateOp, FActiveDecalInfo, FAimComponent, FAimOffsetProfile, FAimTransform, FAnimBlendChild, FAnimBlendInfo, FAnimControlTrackKey, FAnimGroup, FAnimInfo, FAnimNotifyEvent, FAnimSetMeshLinkup, FAnimSet_EditorOnly, FAutoCompleteCommand, FAutoCompleteNode, FBeamModifierOptions, FBiasedGoalActor, FBoolTrackKey, FBranchInfo, FCameraCutInfo, FChildBoneBlendInfo, FCompressedTrack, FCurveTrack, FDecalReceiver, FDirectorTrackCut, FDynamicResourceProviderDefinition, FEmitterDynamicParameter, FEventTrackKey, FFaceFXSoundCueKey, FFaceFXTrackKey, FFloatMaterialParamMICData, FGameResourceDataProvider, FInputEventParameters, FInputKeyAction, FInstancedStaticMeshInstanceData, FInstancedStaticMeshMappingInfo, FInterpLookupPoint, FInterpLookupTrack, FKeyBind, FLODSoloTrack, FLevelStreamingNameCombo, FLocationBoneSocketInfo, FNavMeshPathParams, FOrbitOptions, FParticleBurst, FParticleCurvePair, FParticleEmitterInstanceMotionBlurInfo, FParticleEmitterReplayFrame, FParticleEventCollideData, FParticleEventData, FParticleEventDeathData, FParticleEventKismetData, FParticleEventSpawnData, FParticleEvent_GenerateInfo, FParticleReplayTrackKey, FParticleSysParam, FParticleSystemLOD, FParticleSystemReplayFrame, FPathStore, FPerBoneMaskInfo, FPhysXEmitterVerticalLodProperties, FPlayerDataStoreGroup, FPlayerNickMetaData, FPlayerStorageArrayProvider, FPolySegmentSpan, FPreviewAnimSetsStruct, FPreviewSkelMeshStruct, FPreviewSocketStruct, FQueuedActivationInfo, FRandomAnimInfo, FRankMetaData, FRawInputKeyEventData, FRotationTrack, FSHVector, FSavedTransform, FSeqEventLink, FSeqOpInputLink, FSeqOpOutputInputLink, FSeqOpOutputLink, FSeqVarLink, FSkelControlListHead, FSkelControlModifier, FSkelMaterialSetterDatum, FSkelMeshActorControlTarget, FSoundClassEditorData, FSoundEventMapping, FSpeedTreeStaticLight, FSplineConnection, FSplineMeshParams, FSubscribedInputEventParameters, FSwitchClassInfo, FSwitchObjectCase, FSynchGroup, FTextureCoordinates, FTimeModifier, FToggleTrackKey, FTrailSample, FTrailSamplePoint, FTrailSocketSamplePoint, FTranslationTrack, FUIAxisEmulationData, FUIAxisEmulationDefinition, FUIDataStoreInputAlias, FUIInputKeyData, FUIKeyRepeatData, FUIMenuInputMap, FUIRangeData, FVectorMaterialParamMICData, FViewParticleEmitterInstanceMotionBlurInfo, FVisibilityTrackKey, FWeightNodeRule, FWeightRule, UActorFactoryDecal, UActorFactoryDecalMovable, UActorFactoryInteractiveFoliage, UAnimMetaData, UAnimMetaData_SkelControl, UAnimMetaData_SkelControlKeyFrame, UAnimNode, UAnimNodeAdditiveBlending, UAnimNodeAimOffset, UAnimNodeBlend, UAnimNodeBlendBase, UAnimNodeBlendByBase, UAnimNodeBlendByPhysics, UAnimNodeBlendByPosture, UAnimNodeBlendByProperty, UAnimNodeBlendBySpeed, UAnimNodeBlendDirectional, UAnimNodeBlendList, UAnimNodeBlendMultiBone, UAnimNodeBlendPerBone, UAnimNodeCrossfader, UAnimNodeMirror, UAnimNodePlayCustomAnim, UAnimNodeRandom, UAnimNodeScalePlayRate, UAnimNodeScaleRateBySpeed, UAnimNodeSequence, UAnimNodeSequenceBlendBase, UAnimNodeSequenceBlendByAim, UAnimNodeSlot, UAnimNodeSynch, UAnimNode_MultiBlendPerBone, UAnimNotify, UAnimNotify_CameraEffect, UAnimNotify_Footstep, UAnimNotify_Kismet, UAnimNotify_PawnMaterialParam, UAnimNotify_PlayParticleEffect, UAnimNotify_Rumble, UAnimNotify_Script, UAnimNotify_Scripted, UAnimNotify_Trails, UAnimObject, UAnimSequence, UAnimSet, UAnimTree, UAnimationCompressionAlgorithm, UAnimationCompressionAlgorithm_Automatic, UAnimationCompressionAlgorithm_BitwiseCompressOnly, UAnimationCompressionAlgorithm_PerTrackCompression, UAnimationCompressionAlgorithm_RemoveEverySecondKey, UAnimationCompressionAlgorithm_RemoveLinearKeys, UAnimationCompressionAlgorithm_RemoveTrivialKeys, UApexAsset, UApexComponentBase, UApexDynamicComponent, UApexGenericAsset, UApexStaticComponent, UConsole, UDataStoreClient, UDecalComponent, UDecalMaterial, UDistributionFloat, UDistributionFloatParticleParameter, UDistributionVector, UDistributionVectorParticleParameter, UFluidInfluenceComponent, UFluidSurfaceComponent, UForceFieldShape, UForceFieldShapeBox, UForceFieldShapeCapsule, UForceFieldShapeSphere, UGameUISceneClient, UIDataProvider_OnlinePlayerDataBase_eventOnRegister_Parms, UIDataStore_OnlinePlayerData_eventGetCachedPlayerProfile_Parms, UIDataStore_OnlinePlayerData_eventGetCachedPlayerStorage_Parms, UIDataStore_OnlinePlayerData_eventOnRegister_Parms, UIDataStore_OnlineStats_eventRefreshStats_Parms, UIDataStore_OnlineStats_eventShowGamercard_Parms, UIDataStore_eventOnDataStoreValueUpdated_Parms, UIDataStore_eventRefreshSubscribers_Parms, UIDataStore_eventRegistered_Parms, UIDataStore_eventSubscriberAttached_Parms, UIDataStore_eventSubscriberDetached_Parms, UIDataStore_eventUnregistered_Parms, UIInteraction_eventGetLoginStatus_Parms, UIInteraction_eventHasLinkConnection_Parms, UIInteraction_eventIsLoggedIn_Parms, UIPropertyDataProvider_eventCanSupportComplexPropertyType_Parms, UIResourceCombinationProvider_eventInitializeProvider_Parms, UIResourceDataProvider_eventInitializeProvider_Parms, UISoundTheme_eventProcessSoundEvent_Parms, UInput, UInstancedStaticMeshComponent, UInteraction, UInteractiveFoliageComponent, UInterface_NavMeshPathObject, UInterpData, UInterpFilter, UInterpFilter_Classes, UInterpFilter_Custom, UInterpGroup, UInterpGroupAI, UInterpGroupDirector, UInterpGroupInst, UInterpGroupInstAI, UInterpGroupInstDirector, UInterpTrackAnimControl, UInterpTrackAudioMaster, UInterpTrackBoolProp, UInterpTrackColorProp, UInterpTrackColorScale, UInterpTrackDirector, UInterpTrackEvent, UInterpTrackFaceFX, UInterpTrackFade, UInterpTrackFloatBase, UInterpTrackFloatMaterialParam, UInterpTrackFloatParticleParam, UInterpTrackFloatProp, UInterpTrackInst, UInterpTrackInstAnimControl, UInterpTrackInstAudioMaster, UInterpTrackInstBoolProp, UInterpTrackInstColorProp, UInterpTrackInstColorScale, UInterpTrackInstDirector, UInterpTrackInstEvent, UInterpTrackInstFaceFX, UInterpTrackInstFade, UInterpTrackInstFloatMaterialParam, UInterpTrackInstFloatParticleParam, UInterpTrackInstFloatProp, UInterpTrackInstLinearColorProp, UInterpTrackInstMorphWeight, UInterpTrackInstMove, UInterpTrackInstParticleReplay, UInterpTrackInstProperty, UInterpTrackInstSkelControlScale, UInterpTrackInstSlomo, UInterpTrackInstToggle, UInterpTrackInstVectorMaterialParam, UInterpTrackInstVectorProp, UInterpTrackInstVisibility, UInterpTrackLinearColorBase, UInterpTrackLinearColorProp, UInterpTrackMorphWeight, UInterpTrackMove, UInterpTrackMoveAxis, UInterpTrackParticleReplay, UInterpTrackSkelControlScale, UInterpTrackSlomo, UInterpTrackToggle, UInterpTrackVectorBase, UInterpTrackVectorMaterialParam, UInterpTrackVectorProp, UInterpTrackVisibility, UNavMeshGoalFilter_MinPathDistance, UNavMeshGoalFilter_NotNearOtherAI, UNavMeshGoalFilter_OutOfViewFrom, UNavMeshGoalFilter_OutSideOfDotProductWedge, UNavMeshGoalFilter_PolyEncompassesAI, UNavMeshGoal_At, UNavMeshGoal_ClosestActorInList, UNavMeshGoal_Filter, UNavMeshGoal_GenericFilterContainer, UNavMeshGoal_Null, UNavMeshGoal_PolyEncompassesAI, UNavMeshPathConstraint, UNavMeshPathGoalEvaluator, UNavMeshPath_AlongLine, UNavMeshPath_EnforceTwoWayEdges, UNavMeshPath_MinDistBetweenSpecsOfType, UNavMeshPath_Toward, UNavMeshPath_WithinDistanceEnvelope, UNavMeshPath_WithinTraversalDist, UNavMeshRenderingComponent, UNavigationHandle, UParticleEmitter, UParticleLODLevel, UParticleModule, UParticleModuleAcceleration, UParticleModuleAccelerationBase, UParticleModuleAccelerationOverLifetime, UParticleModuleAttractorBase, UParticleModuleAttractorLine, UParticleModuleAttractorParticle, UParticleModuleAttractorPoint, UParticleModuleBeamBase, UParticleModuleBeamModifier, UParticleModuleBeamNoise, UParticleModuleBeamSource, UParticleModuleBeamTarget, UParticleModuleCameraBase, UParticleModuleCameraOffset, UParticleModuleCollision, UParticleModuleCollisionBase, UParticleModuleColor, UParticleModuleColorBase, UParticleModuleColorByParameter, UParticleModuleColorOverLife, UParticleModuleColorScaleOverLife, UParticleModuleEventBase, UParticleModuleEventGenerator, UParticleModuleEventReceiverBase, UParticleModuleEventReceiverKillParticles, UParticleModuleEventReceiverSpawn, UParticleModuleEventSendToGame, UParticleModuleKillBase, UParticleModuleKillBox, UParticleModuleKillHeight, UParticleModuleLifetime, UParticleModuleLifetimeBase, UParticleModuleLocation, UParticleModuleLocationBase, UParticleModuleLocationBoneSocket, UParticleModuleLocationDirect, UParticleModuleLocationEmitter, UParticleModuleLocationEmitterDirect, UParticleModuleLocationPrimitiveBase, UParticleModuleLocationPrimitiveCylinder, UParticleModuleLocationPrimitiveSphere, UParticleModuleMaterialBase, UParticleModuleMaterialByParameter, UParticleModuleMeshMaterial, UParticleModuleMeshRotation, UParticleModuleMeshRotationRate, UParticleModuleMeshRotationRateMultiplyLife, UParticleModuleMeshRotationRateOverLife, UParticleModuleOrbit, UParticleModuleOrbitBase, UParticleModuleOrientationAxisLock, UParticleModuleOrientationBase, UParticleModuleParameterBase, UParticleModuleParameterDynamic, UParticleModuleRequired, UParticleModuleRotation, UParticleModuleRotationBase, UParticleModuleRotationOverLifetime, UParticleModuleRotationRate, UParticleModuleRotationRateBase, UParticleModuleRotationRateMultiplyLife, UParticleModuleSize, UParticleModuleSizeBase, UParticleModuleSizeMultiplyLife, UParticleModuleSizeMultiplyVelocity, UParticleModuleSizeScale, UParticleModuleSizeScaleByTime, UParticleModuleSourceMovement, UParticleModuleSpawn, UParticleModuleSpawnBase, UParticleModuleSpawnPerUnit, UParticleModuleStoreSpawnTime, UParticleModuleStoreSpawnTimeBase, UParticleModuleSubUV, UParticleModuleSubUVBase, UParticleModuleSubUVDirect, UParticleModuleSubUVMovie, UParticleModuleSubUVSelect, UParticleModuleTrailBase, UParticleModuleTrailSource, UParticleModuleTrailSpawn, UParticleModuleTrailTaper, UParticleModuleTypeDataAnimTrail, UParticleModuleTypeDataBase, UParticleModuleTypeDataBeam, UParticleModuleTypeDataBeam2, UParticleModuleTypeDataMesh, UParticleModuleTypeDataMeshPhysX, UParticleModuleTypeDataPhysX, UParticleModuleTypeDataRibbon, UParticleModuleTypeDataTrail, UParticleModuleTypeDataTrail2, UParticleModuleUberBase, UParticleModuleUberLTISIVCL, UParticleModuleUberLTISIVCLIL, UParticleModuleUberLTISIVCLILIRSSBLIRR, UParticleModuleUberRainDrops, UParticleModuleUberRainImpacts, UParticleModuleUberRainSplashA, UParticleModuleUberRainSplashB, UParticleModuleVelocity, UParticleModuleVelocityBase, UParticleModuleVelocityInheritParent, UParticleModuleVelocityOverLifetime, UParticleSpriteEmitter, UParticleSystem, UParticleSystemComponent, UParticleSystemReplay, UPathRenderingComponent, UPhysXParticleSystem, UPlayerInput, UPlayerManagerInteraction, UPrefab, UPrefabSequence, UPrefabSequenceContainer, URouteRenderingComponent, USeqAct_AccessObjectList, USeqAct_ActivateRemoteEvent, USeqAct_ActorFactory, USeqAct_ActorFactoryEx, USeqAct_AddFloat, USeqAct_AddInt, USeqAct_AndGate, USeqAct_AttachToEvent, USeqAct_CameraFade, USeqAct_CameraLookAt, USeqAct_CastToFloat, USeqAct_CastToInt, USeqAct_ChangeCollision, USeqAct_CommitMapChange, USeqAct_ConvertToString, USeqAct_Delay, USeqAct_DivideFloat, USeqAct_DivideInt, USeqAct_DrawText, USeqAct_FinishSequence, USeqAct_ForceGarbageCollection, USeqAct_Gate, USeqAct_GetDistance, USeqAct_GetLocationAndRotation, USeqAct_GetProperty, USeqAct_GetVectorComponents, USeqAct_GetVelocity, USeqAct_Interp, USeqAct_IsInObjectList, USeqAct_Latent, USeqAct_LevelStreaming, USeqAct_LevelStreamingBase, USeqAct_LevelVisibility, USeqAct_Log, USeqAct_ModifyHealth, USeqAct_ModifyObjectList, USeqAct_MultiLevelStreaming, USeqAct_MultiplyFloat, USeqAct_MultiplyInt, USeqAct_ParticleEventGenerator, USeqAct_PlayFaceFXAnim, USeqAct_Possess, USeqAct_PrepareMapChange, USeqAct_RandomSwitch, USeqAct_SetBlockRigidBody, USeqAct_SetBool, USeqAct_SetCameraTarget, USeqAct_SetDOFParams, USeqAct_SetFloat, USeqAct_SetInt, USeqAct_SetLocation, USeqAct_SetMatInstScalarParam, USeqAct_SetMaterial, USeqAct_SetMesh, USeqAct_SetMotionBlurParams, USeqAct_SetObject, USeqAct_SetPhysics, USeqAct_SetRigidBodyIgnoreVehicles, USeqAct_SetSequenceVariable, USeqAct_SetString, USeqAct_SetVectorComponents, USeqAct_StreamInTextures, USeqAct_SubtractFloat, USeqAct_SubtractInt, USeqAct_Switch, USeqAct_Timer, USeqAct_Toggle, USeqAct_Trace, USeqAct_WaitForLevelsVisible, USeqCond_CompareBool, USeqCond_CompareFloat, USeqCond_CompareInt, USeqCond_CompareObject, USeqCond_GetServerType, USeqCond_Increment, USeqCond_IncrementFloat, USeqCond_IsAlive, USeqCond_IsConsole, USeqCond_IsLoggedIn, USeqCond_IsSameTeam, USeqCond_MatureLanguage, USeqCond_ShowGore, USeqCond_SwitchBase, USeqCond_SwitchClass, USeqCond_SwitchObject, USeqCond_SwitchPlatform, USeqEvent_AISeeEnemy, USeqEvent_AnimNotify, USeqEvent_Console, USeqEvent_ConstraintBroken, USeqEvent_Destroyed, USeqEvent_LevelLoaded, USeqEvent_Mover, USeqEvent_ParticleEvent, USeqEvent_RemoteEvent, USeqEvent_RigidBodyCollision, USeqEvent_SeeDeath, USeqEvent_SequenceActivated, USeqEvent_TakeDamage, USeqEvent_Touch, USeqEvent_Used, USeqVar_Bool, USeqVar_Character, USeqVar_External, USeqVar_Float, USeqVar_Int, USeqVar_Named, USeqVar_Object, USeqVar_ObjectList, USeqVar_ObjectVolume, USeqVar_Player, USeqVar_RandomFloat, USeqVar_RandomInt, USeqVar_String, USeqVar_Vector, USequence, USequenceAction, USequenceCondition, USequenceEvent, USequenceFrame, USequenceFrameWrapped, USequenceObject, USequenceOp, USequenceVariable, USkelControlBase, USkelControlFootPlacement, USkelControlHandlebars, USkelControlLimb, USkelControlLookAt, USkelControlSingleBone, USkelControlSpline, USkelControlTrail, USkelControlWheel, USkelControl_CCD_IK, USkelControl_Multiply, USkelControl_TwistBone, USpeedTree, USpeedTreeActorFactory, USpeedTreeComponent, USpeedTreeComponentFactory, USplineComponent, USplineMeshComponent, UUIDataProvider, UUIDataProvider_MenuItem, UUIDataProvider_OnlineFriends, UUIDataProvider_OnlinePlayerDataBase, UUIDataProvider_OnlinePlayerStorage, UUIDataProvider_OnlinePlayerStorageArray, UUIDataProvider_OnlineProfileSettings, UUIDataProvider_PlayerAchievements, UUIDataProvider_Settings, UUIDataProvider_SettingsArray, UUIDataStore, UUIDataStorePublisher, UUIDataStoreSubscriber, UUIDataStore_DynamicResource, UUIDataStore_Fonts, UUIDataStore_GameResource, UUIDataStore_GameState, UUIDataStore_InputAlias, UUIDataStore_MenuItems, UUIDataStore_OnlinePlayerData, UUIDataStore_OnlineStats, UUIDataStore_Registry, UUIDataStore_Remote, UUIDataStore_Settings, UUIDataStore_StringAliasMap, UUIDataStore_StringBase, UUIInteraction, UUIPropertyDataProvider, UUIResourceCombinationProvider, UUIResourceDataProvider, UUIRoot, UUISceneClient, UUISoundTheme
+// ACrowdAgentBase, ADecalActor, ADecalActorBase, ADecalActorMovable, ADecalManager, AEmitterCameraLensEffectBase, AFluidInfluenceActor, AFluidSurfaceActor, AFluidSurfaceActorMovable, AInteractiveFoliageActor, ANxCylindricalForceField, ANxCylindricalForceFieldCapsule, ANxForceField, ANxForceFieldGeneric, ANxForceFieldRadial, ANxForceFieldTornado, ANxGenericForceField, ANxGenericForceFieldBox, ANxGenericForceFieldBrush, ANxGenericForceFieldCapsule, ANxRadialCustomForceField, ANxRadialForceField, ANxTornadoAngularForceField, ANxTornadoAngularForceFieldCapsule, ANxTornadoForceField, ANxTornadoForceFieldCapsule, AParticleEventManager, APathTargetPoint, APrefabInstance, APylonSeed, ARB_CylindricalForceActor, ARB_ForceFieldExcludeVolume, ARB_RadialForceActor, ASkeletalMeshActor, ASkeletalMeshActorBasedOnExtremeContent, ASkeletalMeshActorMAT, ASkeletalMeshActorSpawnable, ASkeletalMeshCinematicActor, ASpeedTreeActor, ASplineActor, ASplineLoftActor, ASplineLoftActorMovable, ATestSplittingVolume, FActivateOp, FActiveDecalInfo, FAimComponent, FAimOffsetProfile, FAimTransform, FAnimBlendChild, FAnimBlendInfo, FAnimControlTrackKey, FAnimGroup, FAnimInfo, FAnimNodeForSearch, FAnimNotifyEvent, FAnimSetMeshLinkup, FAnimSet_EditorOnly, FAnimTree_EditorOnly, FAutoCompleteCommand, FAutoCompleteNode, FBeamModifierOptions, FBiasedGoalActor, FBoolTrackKey, FBranchInfo, FCameraCutInfo, FChildBoneBlendInfo, FCompressedTrack, FCurveTrack, FDecalReceiver, FDirectorTrackCut, FDistractionLoopOverride, FDynamicResourceProviderDefinition, FEmitterDynamicParameter, FEventTrackKey, FFaceFXSoundCueKey, FFaceFXTrackKey, FFloatMaterialParamMICData, FGameResourceDataProvider, FInputEventParameters, FInputKeyAction, FInstancedStaticMeshInstanceData, FInstancedStaticMeshMappingInfo, FInterpLookupPoint, FInterpLookupTrack, FKeyBind, FLODSoloTrack, FLevelStreamingNameCombo, FLocationBoneSocketInfo, FNavMeshPathParams, FOrbitOptions, FParticleBurst, FParticleCurvePair, FParticleEmitterInstanceMotionBlurInfo, FParticleEmitterReplayFrame, FParticleEventCollideData, FParticleEventData, FParticleEventDeathData, FParticleEventKismetData, FParticleEventSpawnData, FParticleEvent_GenerateInfo, FParticleReplayTrackKey, FParticleSysParam, FParticleSystemLOD, FParticleSystemReplayFrame, FPathStore, FPerBoneMaskInfo, FPhysXEmitterVerticalLodProperties, FPlayerDataStoreGroup, FPlayerNickMetaData, FPlayerStorageArrayProvider, FPolySegmentSpan, FPreviewAnimSetsStruct, FPreviewSkelMeshStruct, FPreviewSocketStruct, FQueuedActivationInfo, FRandomAnimInfo, FRankMetaData, FRawInputKeyEventData, FRotationTrack, FSHVector, FSavedTransform, FSeqEventLink, FSeqOpInputLink, FSeqOpOutputInputLink, FSeqOpOutputLink, FSeqVarLink, FSettingsArrayProvider, FSkelControlListHead, FSkelControlModifier, FSkelMaterialSetterDatum, FSkelMeshActorControlTarget, FSoundClassEditorData, FSoundEventMapping, FSpeedTreeStaticLight, FSplineConnection, FSplineMeshParams, FSubscribedInputEventParameters, FSwitchClassInfo, FSwitchObjectCase, FSynchGroup, FTextureCoordinates, FTimeModifier, FToggleTrackKey, FTrailSample, FTrailSamplePoint, FTrailSocketSamplePoint, FTranslationTrack, FUIAxisEmulationData, FUIAxisEmulationDefinition, FUIDataStoreInputAlias, FUIInputKeyData, FUIKeyRepeatData, FUIMenuInputMap, FUIRangeData, FVectorMaterialParamMICData, FViewParticleEmitterInstanceMotionBlurInfo, FVisibilityTrackKey, FWeightNodeRule, FWeightRule, UActorFactoryDecal, UActorFactoryDecalMovable, UActorFactoryInteractiveFoliage, UAnimMetaData, UAnimMetaData_SkelControl, UAnimMetaData_SkelControlKeyFrame, UAnimNode, UAnimNodeAdditiveBlending, UAnimNodeAimOffset, UAnimNodeBlend, UAnimNodeBlendBase, UAnimNodeBlendByBase, UAnimNodeBlendByPhysics, UAnimNodeBlendByPosture, UAnimNodeBlendByProperty, UAnimNodeBlendBySpeed, UAnimNodeBlendDirectional, UAnimNodeBlendList, UAnimNodeBlendMultiBone, UAnimNodeBlendPerBone, UAnimNodeCrossfader, UAnimNodeMirror, UAnimNodePlayCustomAnim, UAnimNodeRandom, UAnimNodeScalePlayRate, UAnimNodeScaleRateBySpeed, UAnimNodeSequence, UAnimNodeSequenceBlendBase, UAnimNodeSequenceBlendByAim, UAnimNodeSlot, UAnimNodeSynch, UAnimNode_MultiBlendPerBone, UAnimNotify, UAnimNotify_CameraEffect, UAnimNotify_Footstep, UAnimNotify_Kismet, UAnimNotify_PawnMaterialParam, UAnimNotify_PlayParticleEffect, UAnimNotify_Rumble, UAnimNotify_Script, UAnimNotify_Scripted, UAnimNotify_Trails, UAnimObject, UAnimSequence, UAnimSet, UAnimTree, UAnimationCompressionAlgorithm, UAnimationCompressionAlgorithm_Automatic, UAnimationCompressionAlgorithm_BitwiseCompressOnly, UAnimationCompressionAlgorithm_PerTrackCompression, UAnimationCompressionAlgorithm_RemoveEverySecondKey, UAnimationCompressionAlgorithm_RemoveLinearKeys, UAnimationCompressionAlgorithm_RemoveTrivialKeys, UApexAsset, UApexComponentBase, UApexDynamicComponent, UApexGenericAsset, UApexStaticComponent, UConsole, UDataStoreClient, UDecalComponent, UDecalMaterial, UDistributionFloat, UDistributionFloatParticleParameter, UDistributionVector, UDistributionVectorParticleParameter, UFluidInfluenceComponent, UFluidSurfaceComponent, UForceFieldShape, UForceFieldShapeBox, UForceFieldShapeCapsule, UForceFieldShapeSphere, UGameUISceneClient, UIDataProvider_OnlinePlayerDataBase_eventOnRegister_Parms, UIDataStore_OnlinePlayerData_eventGetCachedPlayerProfile_Parms, UIDataStore_OnlinePlayerData_eventGetCachedPlayerStorage_Parms, UIDataStore_OnlinePlayerData_eventOnRegister_Parms, UIDataStore_OnlineStats_eventRefreshStats_Parms, UIDataStore_OnlineStats_eventShowGamercard_Parms, UIDataStore_eventOnDataStoreValueUpdated_Parms, UIDataStore_eventRefreshSubscribers_Parms, UIDataStore_eventRegistered_Parms, UIDataStore_eventSubscriberAttached_Parms, UIDataStore_eventSubscriberDetached_Parms, UIDataStore_eventUnregistered_Parms, UIInteraction_eventGetLoginStatus_Parms, UIInteraction_eventHasLinkConnection_Parms, UIInteraction_eventIsLoggedIn_Parms, UIPropertyDataProvider_eventCanSupportComplexPropertyType_Parms, UIResourceCombinationProvider_eventInitializeProvider_Parms, UIResourceDataProvider_eventInitializeProvider_Parms, UISoundTheme_eventProcessSoundEvent_Parms, UInput, UInstancedStaticMeshComponent, UInteraction, UInteractiveFoliageComponent, UInterface_NavMeshPathObject, UInterpData, UInterpFilter, UInterpFilter_Classes, UInterpFilter_Custom, UInterpGroup, UInterpGroupAI, UInterpGroupDirector, UInterpGroupInst, UInterpGroupInstAI, UInterpGroupInstDirector, UInterpTrackAnimControl, UInterpTrackAudioMaster, UInterpTrackBoolProp, UInterpTrackColorProp, UInterpTrackColorScale, UInterpTrackDirector, UInterpTrackEvent, UInterpTrackFaceFX, UInterpTrackFade, UInterpTrackFloatBase, UInterpTrackFloatMaterialParam, UInterpTrackFloatParticleParam, UInterpTrackFloatProp, UInterpTrackInst, UInterpTrackInstAnimControl, UInterpTrackInstAudioMaster, UInterpTrackInstBoolProp, UInterpTrackInstColorProp, UInterpTrackInstColorScale, UInterpTrackInstDirector, UInterpTrackInstEvent, UInterpTrackInstFaceFX, UInterpTrackInstFade, UInterpTrackInstFloatMaterialParam, UInterpTrackInstFloatParticleParam, UInterpTrackInstFloatProp, UInterpTrackInstLinearColorProp, UInterpTrackInstMorphWeight, UInterpTrackInstMove, UInterpTrackInstParticleReplay, UInterpTrackInstProperty, UInterpTrackInstSkelControlScale, UInterpTrackInstSlomo, UInterpTrackInstToggle, UInterpTrackInstVectorMaterialParam, UInterpTrackInstVectorProp, UInterpTrackInstVisibility, UInterpTrackLinearColorBase, UInterpTrackLinearColorProp, UInterpTrackMorphWeight, UInterpTrackMove, UInterpTrackMoveAxis, UInterpTrackParticleReplay, UInterpTrackSkelControlScale, UInterpTrackSlomo, UInterpTrackToggle, UInterpTrackVectorBase, UInterpTrackVectorMaterialParam, UInterpTrackVectorProp, UInterpTrackVisibility, UNavMeshGoalFilter_MinPathDistance, UNavMeshGoalFilter_NotNearOtherAI, UNavMeshGoalFilter_OutOfViewFrom, UNavMeshGoalFilter_OutSideOfDotProductWedge, UNavMeshGoalFilter_PolyEncompassesAI, UNavMeshGoal_At, UNavMeshGoal_ClosestActorInList, UNavMeshGoal_Filter, UNavMeshGoal_GenericFilterContainer, UNavMeshGoal_Null, UNavMeshGoal_PolyEncompassesAI, UNavMeshPathConstraint, UNavMeshPathGoalEvaluator, UNavMeshPath_AlongLine, UNavMeshPath_EnforceTwoWayEdges, UNavMeshPath_MinDistBetweenSpecsOfType, UNavMeshPath_Toward, UNavMeshPath_WithinDistanceEnvelope, UNavMeshPath_WithinTraversalDist, UNavMeshRenderingComponent, UNavigationHandle, UParticleEmitter, UParticleLODLevel, UParticleModule, UParticleModuleAcceleration, UParticleModuleAccelerationBase, UParticleModuleAccelerationOverLifetime, UParticleModuleAttractorBase, UParticleModuleAttractorLine, UParticleModuleAttractorParticle, UParticleModuleAttractorPoint, UParticleModuleBeamBase, UParticleModuleBeamModifier, UParticleModuleBeamNoise, UParticleModuleBeamSource, UParticleModuleBeamTarget, UParticleModuleCameraBase, UParticleModuleCameraOffset, UParticleModuleCollision, UParticleModuleCollisionBase, UParticleModuleColor, UParticleModuleColorBase, UParticleModuleColorByParameter, UParticleModuleColorOverLife, UParticleModuleColorScaleOverLife, UParticleModuleEventBase, UParticleModuleEventGenerator, UParticleModuleEventReceiverBase, UParticleModuleEventReceiverKillParticles, UParticleModuleEventReceiverSpawn, UParticleModuleEventSendToGame, UParticleModuleKillBase, UParticleModuleKillBox, UParticleModuleKillHeight, UParticleModuleLifetime, UParticleModuleLifetimeBase, UParticleModuleLocation, UParticleModuleLocationBase, UParticleModuleLocationBoneSocket, UParticleModuleLocationDirect, UParticleModuleLocationEmitter, UParticleModuleLocationEmitterDirect, UParticleModuleLocationPrimitiveBase, UParticleModuleLocationPrimitiveCylinder, UParticleModuleLocationPrimitiveSphere, UParticleModuleMaterialBase, UParticleModuleMaterialByParameter, UParticleModuleMeshMaterial, UParticleModuleMeshRotation, UParticleModuleMeshRotationRate, UParticleModuleMeshRotationRateMultiplyLife, UParticleModuleMeshRotationRateOverLife, UParticleModuleOrbit, UParticleModuleOrbitBase, UParticleModuleOrientationAxisLock, UParticleModuleOrientationBase, UParticleModuleParameterBase, UParticleModuleParameterDynamic, UParticleModuleRequired, UParticleModuleRotation, UParticleModuleRotationBase, UParticleModuleRotationOverLifetime, UParticleModuleRotationRate, UParticleModuleRotationRateBase, UParticleModuleRotationRateMultiplyLife, UParticleModuleSize, UParticleModuleSizeBase, UParticleModuleSizeMultiplyLife, UParticleModuleSizeMultiplyVelocity, UParticleModuleSizeScale, UParticleModuleSizeScaleByTime, UParticleModuleSourceMovement, UParticleModuleSpawn, UParticleModuleSpawnBase, UParticleModuleSpawnPerUnit, UParticleModuleStoreSpawnTime, UParticleModuleStoreSpawnTimeBase, UParticleModuleSubUV, UParticleModuleSubUVBase, UParticleModuleSubUVDirect, UParticleModuleSubUVMovie, UParticleModuleSubUVSelect, UParticleModuleTrailBase, UParticleModuleTrailSource, UParticleModuleTrailSpawn, UParticleModuleTrailTaper, UParticleModuleTypeDataAnimTrail, UParticleModuleTypeDataBase, UParticleModuleTypeDataBeam, UParticleModuleTypeDataBeam2, UParticleModuleTypeDataMesh, UParticleModuleTypeDataMeshPhysX, UParticleModuleTypeDataPhysX, UParticleModuleTypeDataRibbon, UParticleModuleTypeDataTrail, UParticleModuleTypeDataTrail2, UParticleModuleUberBase, UParticleModuleUberLTISIVCL, UParticleModuleUberLTISIVCLIL, UParticleModuleUberLTISIVCLILIRSSBLIRR, UParticleModuleUberRainDrops, UParticleModuleUberRainImpacts, UParticleModuleUberRainSplashA, UParticleModuleUberRainSplashB, UParticleModuleVelocity, UParticleModuleVelocityBase, UParticleModuleVelocityInheritParent, UParticleModuleVelocityOverLifetime, UParticleSpriteEmitter, UParticleSystem, UParticleSystemComponent, UParticleSystemReplay, UPathRenderingComponent, UPhysXParticleSystem, UPlayerInput, UPlayerManagerInteraction, UPrefab, UPrefabSequence, UPrefabSequenceContainer, URouteRenderingComponent, USeqAct_AccessObjectList, USeqAct_ActivateRemoteEvent, USeqAct_ActorFactory, USeqAct_ActorFactoryEx, USeqAct_AddFloat, USeqAct_AddInt, USeqAct_AndGate, USeqAct_AttachToEvent, USeqAct_CameraFade, USeqAct_CameraLookAt, USeqAct_CastToFloat, USeqAct_CastToInt, USeqAct_ChangeCollision, USeqAct_CommitMapChange, USeqAct_ConvertToString, USeqAct_Delay, USeqAct_DivideFloat, USeqAct_DivideInt, USeqAct_DrawText, USeqAct_FinishSequence, USeqAct_ForceGarbageCollection, USeqAct_Gate, USeqAct_GetDistance, USeqAct_GetLocationAndRotation, USeqAct_GetProperty, USeqAct_GetVectorComponents, USeqAct_GetVelocity, USeqAct_Interp, USeqAct_IsInObjectList, USeqAct_Latent, USeqAct_LevelStreaming, USeqAct_LevelStreamingBase, USeqAct_LevelVisibility, USeqAct_Log, USeqAct_ModifyHealth, USeqAct_ModifyObjectList, USeqAct_MultiLevelStreaming, USeqAct_MultiplyFloat, USeqAct_MultiplyInt, USeqAct_ParticleEventGenerator, USeqAct_PlayFaceFXAnim, USeqAct_Possess, USeqAct_PrepareMapChange, USeqAct_RandomSwitch, USeqAct_SetBlockRigidBody, USeqAct_SetBool, USeqAct_SetCameraTarget, USeqAct_SetDOFParams, USeqAct_SetFloat, USeqAct_SetInt, USeqAct_SetLocation, USeqAct_SetMatInstScalarParam, USeqAct_SetMaterial, USeqAct_SetMesh, USeqAct_SetMotionBlurParams, USeqAct_SetObject, USeqAct_SetPhysics, USeqAct_SetRigidBodyIgnoreVehicles, USeqAct_SetSequenceVariable, USeqAct_SetString, USeqAct_SetVectorComponents, USeqAct_StreamInTextures, USeqAct_SubtractFloat, USeqAct_SubtractInt, USeqAct_Switch, USeqAct_Timer, USeqAct_Toggle, USeqAct_Trace, USeqAct_WaitForLevelsVisible, USeqCond_CompareBool, USeqCond_CompareFloat, USeqCond_CompareInt, USeqCond_CompareObject, USeqCond_GetServerType, USeqCond_Increment, USeqCond_IncrementFloat, USeqCond_IsAlive, USeqCond_IsConsole, USeqCond_IsLoggedIn, USeqCond_IsSameTeam, USeqCond_MatureLanguage, USeqCond_ShowGore, USeqCond_SwitchBase, USeqCond_SwitchClass, USeqCond_SwitchObject, USeqCond_SwitchPlatform, USeqEvent_AISeeEnemy, USeqEvent_AnimNotify, USeqEvent_Console, USeqEvent_ConstraintBroken, USeqEvent_Destroyed, USeqEvent_LevelLoaded, USeqEvent_Mover, USeqEvent_ParticleEvent, USeqEvent_RemoteEvent, USeqEvent_RigidBodyCollision, USeqEvent_SeeDeath, USeqEvent_SequenceActivated, USeqEvent_TakeDamage, USeqEvent_Touch, USeqEvent_Used, USeqVar_Bool, USeqVar_Character, USeqVar_External, USeqVar_Float, USeqVar_Int, USeqVar_Named, USeqVar_Object, USeqVar_ObjectList, USeqVar_ObjectVolume, USeqVar_Player, USeqVar_RandomFloat, USeqVar_RandomInt, USeqVar_String, USeqVar_Vector, USequence, USequenceAction, USequenceCondition, USequenceEvent, USequenceFrame, USequenceFrameWrapped, USequenceObject, USequenceOp, USequenceVariable, USkelControlBase, USkelControlFootPlacement, USkelControlHandlebars, USkelControlLimb, USkelControlLookAt, USkelControlSingleBone, USkelControlSpline, USkelControlTrail, USkelControlWheel, USkelControl_CCD_IK, USkelControl_Multiply, USkelControl_TwistBone, USpeedTree, USpeedTreeActorFactory, USpeedTreeComponent, USpeedTreeComponentFactory, USplineComponent, USplineMeshComponent, UUIDataProvider, UUIDataProvider_MenuItem, UUIDataProvider_OnlineFriends, UUIDataProvider_OnlinePlayerDataBase, UUIDataProvider_OnlinePlayerStorage, UUIDataProvider_OnlinePlayerStorageArray, UUIDataProvider_OnlineProfileSettings, UUIDataProvider_PlayerAchievements, UUIDataProvider_Settings, UUIDataProvider_SettingsArray, UUIDataStore, UUIDataStorePublisher, UUIDataStoreSubscriber, UUIDataStore_DynamicResource, UUIDataStore_Fonts, UUIDataStore_GameResource, UUIDataStore_GameState, UUIDataStore_InputAlias, UUIDataStore_MenuItems, UUIDataStore_OnlinePlayerData, UUIDataStore_OnlineStats, UUIDataStore_Registry, UUIDataStore_Remote, UUIDataStore_Settings, UUIDataStore_StringAliasMap, UUIDataStore_StringBase, UUIDynamicDataProvider, UUIInteraction, UUIListElementCellProvider, UUIListElementProvider, UUIPropertyDataProvider, UUIResourceCombinationProvider, UUIResourceDataProvider, UUIRoot, UUISceneClient, UUISoundTheme
 
 #endif // DISHONORED_LAYOUT_CHECKS
