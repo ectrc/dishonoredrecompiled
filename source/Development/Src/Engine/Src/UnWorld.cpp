@@ -2258,7 +2258,7 @@ void UWorld::UpdateLevelStreaming( FSceneViewFamily* ViewFamily )
 					if( GIsEditor || !GEngine->bUseBackgroundLevelStreaming )
 					{
 						// Finish all async loading.
-						UObject::FlushAsyncLoading( NAME_None );
+						UObject::FlushAsyncLoading(); // DISHONORED(port): Dishonored FlushAsyncLoading has no exclude-type parameter (agent L, Core rva in UnObj.cpp)
 
 						// Completion callback should have associated level by now.
 						if( StreamingLevel->LoadedLevel == NULL )
@@ -2356,7 +2356,7 @@ void UWorld::UpdateLevelStreaming( FSceneViewFamily* ViewFamily )
 	if (bLevelsHaveLoadRequestPending && (!HasBegunPlay() || (GEngine->IsA(UGameEngine::StaticClass()) ? ((UGameEngine*)GEngine)->bWorldWasLoadedThisTick : GetTimeSeconds() < 1.f)))
 	{
 		// Block till all async requests are finished.
-		UObject::FlushAsyncLoading( NAME_None );
+		UObject::FlushAsyncLoading(); // DISHONORED(port): Dishonored FlushAsyncLoading has no exclude-type parameter (agent L, Core rva in UnObj.cpp)
 	}
 
 	if( bLevelsHaveBeenUnloaded && !GIsEditor )
@@ -2393,7 +2393,7 @@ void UWorld::FlushLevelStreaming( FSceneViewFamily* ViewFamily, UBOOL bOnlyFlush
 	if( !bOnlyFlushVisibility )
 	{
 		// Make sure all outstanding loads are taken care of, other than ones associated with the excluded type
-		UObject::FlushAsyncLoading(ExcludeType);
+		UObject::FlushAsyncLoading(); // DISHONORED(port): Dishonored FlushAsyncLoading has no exclude-type parameter (agent L, Core rva in UnObj.cpp)
 	}
 
 	// Kick off making levels visible if loading finished by flushing.
@@ -2412,7 +2412,7 @@ void UWorld::FlushLevelStreaming( FSceneViewFamily* ViewFamily, UBOOL bOnlyFlush
 			if( !bOnlyFlushVisibility )
 			{
 				// Make sure all outstanding loads are taken care of...
-				UObject::FlushAsyncLoading(NAME_None);
+				UObject::FlushAsyncLoading(); // DISHONORED(port): Dishonored FlushAsyncLoading has no exclude-type parameter (agent L, Core rva in UnObj.cpp)
 			}
 	
 			// Update level streaming.

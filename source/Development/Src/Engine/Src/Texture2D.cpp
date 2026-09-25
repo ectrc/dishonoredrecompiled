@@ -3169,7 +3169,8 @@ void FTexture2DResource::LoadMipData()
 					TheMipData,											// dest pointer
 					MipMap.Data.GetDecompressionFlags(),				// compressed data format
 					&Owner->PendingMipChangeRequestStatus,				// counter to decrement
-					AsyncIOPriority										// priority
+					AsyncIOPriority,										// priority
+					AIORT_MipMap /* DISHONORED(port): FIOSystem request type */
 					);
 				check(IORequestIndices[MipIndex]);
 			}
@@ -3188,7 +3189,8 @@ void FTexture2DResource::LoadMipData()
 					MipMap.Data.GetBulkDataSize(),						// size
 					TheMipData,											// dest pointer
 					&Owner->PendingMipChangeRequestStatus,				// counter to decrement
-					AsyncIOPriority										// priority
+					AsyncIOPriority,										// priority
+					AIORT_MipMap /* DISHONORED(port): FIOSystem request type */
 					);
 				check(IORequestIndices[MipIndex]);
 			}

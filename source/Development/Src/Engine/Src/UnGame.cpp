@@ -2792,7 +2792,7 @@ void UGameEngine::ConditionalCommitMapChange()
 		// Block on remaining async data.
 		if( !IsReadyForMapChange() )
 		{
-			FlushAsyncLoading( NAME_None );
+			FlushAsyncLoading(); // DISHONORED(port): Dishonored FlushAsyncLoading has no exclude-type parameter (agent L, Core rva in UnObj.cpp)
 			check( IsReadyForMapChange() );
 		}
 		

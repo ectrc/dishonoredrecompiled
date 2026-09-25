@@ -134,7 +134,7 @@ struct FIOSystem
 		void* Dest,
 		FThreadSafeCounter* Counter,
 		EAsyncIOPriority Priority,
-		EAsyncIORequestType RequestType = AIORT_Other ) = 0;
+		EAsyncIORequestType RequestType ) = 0;
 
 	/**
 	 * Requests compressed data to be loaded async. Returns immediately.
@@ -161,7 +161,7 @@ struct FIOSystem
 		ECompressionFlags CompressionFlags,
 		FThreadSafeCounter* Counter,
 		EAsyncIOPriority Priority,
-		EAsyncIORequestType RequestType = AIORT_Other ) = 0;
+		EAsyncIORequestType RequestType ) = 0;
 
 	/**
 	 * Removes N outstanding requests from the queue and returns how many were canceled. We can't cancel
