@@ -5,15 +5,25 @@ include(FetchContent)
 
 set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/external" CACHE PATH "" FORCE)
 set(FETCHCONTENT_QUIET OFF)
+# Sources and the download sub-builds are shared under external/ (fetched once, never updated on a reconfigure);
+# every build directory compiles its own copy of the libraries under <build>/_deps so parallel agent builds
+# do not race on generated headers (pnglibconf.h C1083 during wave 3).
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
 
 # Extra arguments go to FetchContent_Declare (OVERRIDE_FIND_PACKAGE, ...).
 function(dishonored_fetch name url tag)
+  # An already fetched source tree is used as-is (FETCHCONTENT_SOURCE_DIR_<NAME>): no download sub-build runs, so
+  # concurrent configures never touch the shared external/<name>-subbuild ("ninja: failed recompaction").
+  string(TOUPPER "${name}" _upper)
+  if(EXISTS "${FETCHCONTENT_BASE_DIR}/${name}-src/CMakeLists.txt" AND NOT DEFINED FETCHCONTENT_SOURCE_DIR_${_upper})
+    set(FETCHCONTENT_SOURCE_DIR_${_upper} "${FETCHCONTENT_BASE_DIR}/${name}-src" CACHE PATH "" FORCE)
+  endif()
   FetchContent_Declare(${name}
     GIT_REPOSITORY ${url}
     GIT_TAG ${tag}
     GIT_SHALLOW TRUE
     SOURCE_DIR "${FETCHCONTENT_BASE_DIR}/${name}-src"
-    BINARY_DIR "${FETCHCONTENT_BASE_DIR}/${name}-build"
+    BINARY_DIR "${CMAKE_BINARY_DIR}/_deps/${name}-build"
     ${ARGN}
   )
   FetchContent_MakeAvailable(${name})

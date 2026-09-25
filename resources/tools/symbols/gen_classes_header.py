@@ -2338,9 +2338,12 @@ def sdk_main(args: argparse.Namespace) -> int:
                 probe_offsets[(t, m)] = int(v)
             else:
                 probe_sizes[key] = int(v)
+    # <Module>NativeStubs.ported.txt is the merged list; agents add <Module>NativeStubs.ported.agent<X>.txt beside it
+    # (wave 4, PHASE6.md) so parallel packages never edit one file. The coordinator folds them into the merged list.
     ported_file = module_dir / f"{module}NativeStubs.ported.txt"
+    ported_files = [ported_file] + sorted(module_dir.glob(f"{module}NativeStubs.ported.*.txt"))
     writer = SdkWriter(data, sel)
-    writer.ported = {tuple(l.strip().split("::")) for l in ported_file.read_text(encoding="utf-8").splitlines() if "::" in l} if ported_file.exists() else set()
+    writer.ported = {tuple(l.strip().split("::")) for f in ported_files if f.exists() for l in f.read_text(encoding="utf-8").splitlines() if "::" in l}
     headers = [sdk_header_name(module, grp) for grp, _ in sel.groups]
     texts = {}
     for i, (grp, names) in enumerate(sel.groups):

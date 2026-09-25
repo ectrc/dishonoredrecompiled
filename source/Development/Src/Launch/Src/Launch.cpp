@@ -438,6 +438,29 @@ INT GuardedMainWrapper( const TCHAR* CmdLine, HINSTANCE hInInstance, HINSTANCE h
 	return ErrorLevel;
 }
 
+#if defined( _DEBUG )
+// DISHONORED(bringup): Debug builds call GuardedMain without SEH so a debugger can trap the crash; without a debugger an
+// access violation on any thread ends the process silently. This filter logs the stack (CreateMiniDump + HandleError) first.
+static LONG WINAPI DishonoredDebugUnhandledException( EXCEPTION_POINTERS* ExceptionInfo )
+{
+	static UBOOL bHandling = FALSE;
+	if( !bHandling )
+	{
+		bHandling = TRUE;
+		CreateMiniDump( ExceptionInfo );
+		if( GError )
+		{
+			GError->HandleError();
+		}
+		if( GLog )
+		{
+			GLog->Flush();
+		}
+	}
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
+
 INT WINAPI WinMain( HINSTANCE hInInstance, HINSTANCE hPrevInstance, char*, INT nCmdShow )
 {
 	// Setup common Windows settings
@@ -476,6 +499,7 @@ INT WINAPI WinMain( HINSTANCE hInInstance, HINSTANCE hPrevInstance, char*, INT n
 #endif
 
 #if defined( _DEBUG )
+	SetUnhandledExceptionFilter( DishonoredDebugUnhandledException );  // DISHONORED(bringup): see above
 	if( TRUE && !GAlwaysReportCrash )
 #else
 	if( appIsDebuggerPresent() && !GAlwaysReportCrash )

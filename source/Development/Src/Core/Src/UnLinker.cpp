@@ -4456,13 +4456,21 @@ UObject* ULinkerLoad::IndexToObject( PACKAGE_INDEX Index )
 	if( Index > 0 )
 	{
 		if( !ExportMap.IsValidIndex( Index-1 ) )
-			appErrorf( LocalizeSecure(LocalizeError(TEXT("ExportIndex"),TEXT("Core")), Index-1, ExportMap.Num()) );			
+		{
+			// DISHONORED(bringup): an out-of-range index is a Serialize layout delta; name the package and the object being read
+			appErrorf( TEXT("Bad export index %i/%i [package %s, serializing %s]"), Index-1, ExportMap.Num(),
+				*Filename, GSerializedObject ? *GSerializedObject->GetFullName() : TEXT("<none>") );
+		}
 		return CreateExport( Index-1 );
 	}
 	else if( Index < 0 )
 	{
 		if( !ImportMap.IsValidIndex( -Index-1 ) )
-			appErrorf( LocalizeSecure(LocalizeError(TEXT("ImportIndex"),TEXT("Core")), -Index-1, ImportMap.Num()) );
+		{
+			// DISHONORED(bringup): see the export branch
+			appErrorf( TEXT("Bad import index %i/%i [package %s, serializing %s]"), -Index-1, ImportMap.Num(),
+				*Filename, GSerializedObject ? *GSerializedObject->GetFullName() : TEXT("<none>") );
+		}
 		return CreateImport( -Index-1 );
 	}
 	else return NULL;
