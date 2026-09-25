@@ -1,0 +1,7 @@
+# For clangd users (the VS Code cpptools setup lives in .vscode/). Uses the same compile database
+# the MSVC build writes; clangd understands the cl.exe command lines it contains.
+CompileFlags:
+  CompilationDatabase: build/x86-debug
+  Add: [-Wno-unknown-pragmas, -Wno-microsoft, -fms-compatibility, -fms-extensions, -fdelayed-template-parsing]
+Diagnostics:
+  Suppress: [pp_file_not_found]

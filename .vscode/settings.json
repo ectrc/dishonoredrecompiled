@@ -1,0 +1,30 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.configurePreset": "x86-debug",
+  "cmake.buildPreset": "x86-debug",
+  "cmake.configureOnOpen": false,
+  "cmake.generator": "Ninja",
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/x86-debug/compile_commands.json",
+  "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.intelliSenseEngine": "default",
+  "C_Cpp.errorSquiggles": "enabled",
+  "files.associations": {
+    "*.inl": "cpp",
+    "*.uc": "c",
+    "*.uci": "c"
+  },
+  "files.exclude": {
+    "build/**": true,
+    "external/**": true,
+    "resources/reference/**": true
+  },
+  "search.exclude": {
+    "build/**": true,
+    "external/**": true,
+    "resources/reference/**": true,
+    "resources/docs/symbols/*.csv": true,
+    "resources/docs/types/*.json": true
+  }
+}
