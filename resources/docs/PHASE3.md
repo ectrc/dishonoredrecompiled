@@ -205,7 +205,7 @@ if package loading is reached, which milestone 1 does not require.
 | L | done | Core serialization port (24 functions) | done | 2026-09-26 | 26 ported from the 2012 decompile (UClass::Serialize, UScriptStruct::SerializeBin, CreateLoader+ArkBsPatch, AsyncPreloadPackage .bs patches, FIOSystem request types, version enums); `function_status.csv` created. Engine call sites fixed by coordinator (FlushAsyncLoading(), AIORT_MipMap) |
 | M | | Engine layout probe | todo | | |
 | N | | Milestone 1: real Launch | todo | | |
-| C1 | coordinator | Retail reconciliation of Core | todo | | after H, I |
+| C1 | coordinator | Retail reconciliation of Core | in-progress | | `types/retail_reconciliation.md`: only UClass differs (456→436: m_DropdownCategory + one of ClassReps/NetFields removed, serialization format unchanged); header change waits for J's UClass::Link |
 | C2 | coordinator | Retail reconciliation of Engine | todo | | after M, H, I |
 
 ## Rules for agents (unchanged from Phase 2)
