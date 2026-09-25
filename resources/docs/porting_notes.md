@@ -41,6 +41,16 @@ applied, files touched.
 | C3240/C2838/C4596 qualified names in in-class declarations (`FFileManagerWindows.h`) | 8 | drop the `FFileManagerWindows::` qualifier on 3 declarations | reference code relied on VS2010 leniency |
 | C1083 `..\..\..\External\libpng\png.h` via `Engine.h` → `UnPNG.h` | 1 | libPNG headers/libs from the reference tree (`Dishonored::libPNG`), `UnPNG.h` includes `<png.h>`/`<zlib.h>` | Core's `UnMisc.cpp`, `UnVcWin32.cpp`, `UnStatsNotifyProviders.cpp` include `Engine.h` (Epic's own layering violation) |
 
+## Layout probe limitations
+
+`source/Tests/LayoutProbe` (generated) prints `sizeof`/offsets for every PDB type the module
+declares. `#define private public` before `Core.h` exposes explicitly `private:`/`protected:`
+members, but members that are private *by default* (declared right after `class X {` with no
+access specifier) stay private, and the SFINAE member detection then reports them as `MISSING`.
+Sizes are always compared. If those offsets are ever needed, build the probe unit with
+`clang-cl -fno-access-control`. Types the module's main header does not reach are listed in
+`resources/docs/types/probe_skip_<Module>.txt`.
+
 ## Warnings (Core, first clean build: 987)
 
 | Warning | Count | Action |

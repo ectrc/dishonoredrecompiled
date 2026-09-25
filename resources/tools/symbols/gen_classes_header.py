@@ -1,0 +1,141 @@
+"""P2.7: generate a <Module>Classes.h-style header from the PDB for the UObject classes of a module.
+
+The reference engine generates these headers from UnrealScript with its script compiler; we do not
+have Dishonored's .uc for the engine and only decompiled ones for DishonoredGame, so the class
+layouts come from the PDB types (exact), the native function list from natives.csv and the class
+list from classes.csv (StaticClass functions attributed to the module).
+
+Usage: python resources/tools/symbols/gen_classes_header.py <Module> [--out path]
+Default output: resources/reference/<Module>Classes.pdb.h (gitignored; copied into the module by hand
+once reviewed). The header is a starting point for hand editing, not a drop-in.
+"""
+import argparse
+import csv
+import json
+import re
+import sys
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[3]
+DOCS = REPO / "resources" / "docs"
+SYM = DOCS / "symbols"
+TYPES = DOCS / "types"
+
+TYPE_FIXES = [
+    (re.compile(r"\bstruct (F\w+)"), r"\1"),
+    (re.compile(r"\bclass (U\w+|A\w+|F\w+|T\w+)"), r"\1"),
+    (re.compile(r"\benum (E\w+)"), r"\1"),
+    (re.compile(r"\bunsigned __int64\b"), "QWORD"),
+    (re.compile(r"\b__int64\b"), "SQWORD"),
+    (re.compile(r"\bunsigned int\b"), "UINT"),
+    (re.compile(r"\bunsigned char\b"), "BYTE"),
+    (re.compile(r"\bunsigned short\b"), "WORD"),
+    (re.compile(r"\bunsigned long\b"), "DWORD"),
+    (re.compile(r"\bint\b"), "INT"),
+    (re.compile(r"\bfloat\b"), "FLOAT"),
+    (re.compile(r"\bwchar_t\b"), "TCHAR"),
+    (re.compile(r"\bconst\b\s*"), ""),
+    (re.compile(r"\s*\*"), "*"),
+    (re.compile(r",(?! )"), ", "),
+]
+
+
+def fix_type(t: str) -> str:
+    for rx, rep in TYPE_FIXES:
+        t = rx.sub(rep, t)
+    return t.strip()
+
+
+def load() -> tuple[dict, dict[str, str], dict[str, list[dict]], dict[str, str]]:
+    with (TYPES / "types.json").open(encoding="utf-8") as f:
+        types = {t["name"]: t for t in json.load(f)["types"]}
+    with (SYM / "functions.csv").open(newline="", encoding="utf-8") as f:
+        module_of_rva = {r["rva"]: r["module"] for r in csv.DictReader(f)}
+    with (SYM / "classes.csv").open(newline="", encoding="utf-8") as f:
+        class_module = {r["class"]: module_of_rva.get(r["staticclass_rva"], "") for r in csv.DictReader(f)}
+    natives: dict[str, list[dict]] = {}
+    with (SYM / "natives.csv").open(newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            natives.setdefault(r["class"], []).append(r)
+    return types, class_module, natives, module_of_rva
+
+
+def base_of(t: dict) -> str:
+    for m in t["members"]:
+        if m["is_base"]:
+            return fix_type(m["type"])
+    return ""
+
+
+def order_classes(names: list[str], types: dict) -> list[str]:
+    """Bases before derived classes."""
+    done: list[str] = []
+    seen = set()
+
+    def visit(n: str) -> None:
+        if n in seen or n not in types:
+            return
+        seen.add(n)
+        b = base_of(types[n])
+        if b in names:
+            visit(b)
+        done.append(n)
+
+    for n in sorted(names):
+        visit(n)
+    return done
+
+
+def emit_class(name: str, t: dict, natives: list[dict], module: str) -> list[str]:
+    base = base_of(t) or "UObject"
+    base_type = None
+    lines = [f"// PDB size {t['size']}, {len(t['members'])} members", f"class {name} : public {base}", "{", "public:"]
+    inherited = 0
+    for m in t["members"]:
+        if m["is_base"]:
+            inherited = m["size"] or 0
+            continue
+        if m["is_vftable"]:
+            continue
+        ty = fix_type(m["type"])
+        if m.get("bits") is not None:
+            lines.append(f"    BITFIELD {m['name']}:{m['bits']};  // 0x{m['offset']:03x}")
+            continue
+        arr = ""
+        am = re.match(r"^(.*?)\[(\d+)\]$", ty)
+        if am:
+            ty, arr = am.group(1), f"[{am.group(2)}]"
+        lines.append(f"    {ty} {m['name']}{arr};  // 0x{m['offset']:03x} ({m['size']})")
+    if natives:
+        lines.append("")
+        for n in sorted(natives, key=lambda r: r["func"]):
+            lines.append(f"    DECLARE_FUNCTION(exec{n['func']});  // rva {n['rva']}" + (f", GNatives {n['native_index']}" if n["native_index"] not in ("", "-1") else ""))
+    lines += ["", f"    DECLARE_CLASS({name},{base},0,{module})", "};", ""]
+    return lines
+
+
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("module")
+    ap.add_argument("--out", default=None)
+    args = ap.parse_args(argv[1:])
+    types, class_module, natives, _ = load()
+    module = args.module
+    names = [c for c, m in class_module.items() if m == module.lower() and c in types]
+    ordered = order_classes(names, types)
+    out = Path(args.out) if args.out else REPO / "resources" / "reference" / f"{module}Classes.pdb.h"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    lines = [f"// {module}Classes.pdb.h — generated by resources/tools/symbols/gen_classes_header.py from the 2012 Shipping PDB.",
+             "// Layout (offsets/sizes in comments) is exact; type names are IDA's spelling normalized to UE3 typedefs.",
+             "// Enums, defaultproperties and script functions are not represented; use the DFSDK .uc for those.",
+             f"// {len(ordered)} classes.", "", "#pragma pack(push, 4)", ""]
+    for n in ordered:
+        lines += emit_class(n, types[n], natives.get(n, []), module)
+    lines += ["#pragma pack(pop)", ""]
+    out.write_text("\n".join(lines), encoding="utf-8")
+    print(f"{module}: {len(ordered)} classes -> {out}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
