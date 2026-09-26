@@ -296,13 +296,17 @@ Versions and evidence: `resources/docs/middleware.md` (wave 2 U). Status 2026-09
    63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P` up for play, `Initial startup: 5.2s`
    on the null RHI (`PHASE5.md`, wave result). Still to do: the load-all test over all 471 `.upk` and every
    `.pck` with object counts compared with the reference build.
-4. D3D9 device up; Bink startup movie and Scaleform main menu render. **PARTIAL 2026-09-25 (wave 3 Y)**: D3D9
-   device and viewport, cooked global shaders load, a frame is presented in Y's snapshot, the 8 Bink startup
-   movies play; the merged d3d9 run stops at the missing material shader maps (wave 4 renderer package);
-   Scaleform menu pending the `middleware.md` decision.
-5. `open` a mission map; player spawns; input works. **STARTED 2026-09-25**: `DishonoredGameFull_P` is up
-   for play and the player controller possesses its pawn (null RHI); the tick loop dies on a streaming-package
-   serializer delta (`Bad export index`, wave 4).
+4. D3D9 device up; Bink startup movie and Scaleform main menu render. **MOSTLY DONE 2026-09-26 (waves 3 Y,
+   4 AG/AH)**: D3D9 device and viewport, the 8 Bink startup movies, and the cooked shader caches now load
+   whole (127 global records and 2,580 material maps, 0 mismatches, 0 undeclared); the scene renderer runs
+   every frame instead of being skipped. Left: a Release or `FMallocBinned` build for long d3d9 runs (the
+   debug allocator exhausts the 32-bit heap with the caches resident), the Arkane/GFx post-process shader
+   families, and the Scaleform main menu pending the `middleware.md` decision.
+5. `open` a mission map; player spawns; input works. **NEARLY DONE 2026-09-26 (wave 4)**: the null-RHI run
+   reaches `Initial startup` in 7.7 s, renders frames, and commits the map change into the mission map
+   (`Committed map change via DishonoredEngine`) with no critical error anywhere; the player controller
+   possesses its pawn and the tweak chain applies the pawn's own tweak set. The possessed/input-moved
+   evidence is package AF, in flight at the time of writing.
 6. Retail savegames load; save/load round-trip.
 7. Full campaign; then DLC05/06/07 (needs Phase 7).
 8. Test suite: golden-log diffs (milestones 2–5), package load-all, save load-all, scripted
@@ -364,9 +368,12 @@ The 2013 exe is the target, so this is not a final polish step: every function p
 
 ## 6. Next concrete steps (2026-09-25, wave 3 landed)
 
-1. Wave 4 per `resources/docs/PHASE6.md`: the `Bad export index` streaming serializer blocker, the
-   Engine/GameFramework natives without a C++ body (Z's list), the scene renderer on the retail cooked
-   shader caches (d3d9 world frame), DishonoredGame infrastructure natives (685 stubs), Engine
-   convergence wave 2, the input/tick path, build hygiene (per-build FetchContent dirs).
-2. Load-all test over all 471 `.upk` / every `.pck` (milestone 3 exit check); whole-tree Edge path (W's memo).
-3. Phase 4: obtain PhysX 2.8.4 / Wwise 2012.1 / Steamworks 1.18 SDKs; decide Scaleform (`middleware.md`).
+1. Finish wave 4: package AF (milestone 5 evidence) and its `ADishonoredPlayerPawn::execPlayDying_Native`.
+2. Wave 5, from the follow-ups in `PHASE6.md` "Wave result": Arkane anim nodes (the tweak anim tree is gated
+   behind `-distweakanimtree` until they exist), the 275 DishonoredGame stubs behind the AI brain /
+   sub-process / item-context classes, the Arkane and GFx post-process shader families, a Release or
+   `FMallocBinned` build for long d3d9 runs, the ~100 remaining Engine/GameFramework shim classes, the
+   retail nav-mesh runtime, and the whole-tree Edge path.
+3. Load-all test over all 471 `.upk` / every `.pck` (milestone 3 exit check), now that `-loadall` exists.
+4. Phase 4: obtain PhysX 2.8.4 / Wwise 2012.1 / Steamworks 1.18 SDKs (the last 3 unported natives on the
+   path are Steamworks `Read*`); decide Scaleform (`middleware.md`).

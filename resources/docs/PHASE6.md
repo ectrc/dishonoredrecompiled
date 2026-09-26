@@ -278,14 +278,43 @@ Owner: agent AK. Build dir `build\agentAK`. Files: `cmake/*` (after the coordina
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
 | C7 | coordinator | Per-build dependency dirs, per-agent ported/status files, baseline in STATUS/PLAN, this plan | done | 2026-09-26 | see the checklist above; Debug crash filter + linker index diagnostics added |
-| AD | | Streaming serialization: nav mesh (0x2909e0), ULevel gates, async IO, `-loadall` sweep | todo | | |
-| AE | | Engine/GameFramework retail natives without a body (Z's list), movement/camera first | todo | | |
-| AF | | Milestone 5: `L_Tower_P` streamed in, player possessed, input moves the pawn | todo | | |
-| AG | | Renderer A: material shader maps from the retail caches (786/798, uniform expressions) | todo | | |
-| AH | | Renderer B: global shaders + scene renderer, null-RHI skip removed, D3D9 world frame | todo | | |
-| AI | | Engine convergence wave 2: UEngine virtuals, UWorld::Init audio/MapInfo, UFont, matinee classes into Engine | todo | | |
-| AJ | | DishonoredGame infrastructure: tweaks, FSM, inventory, game-info/NPC natives, 10 serializers | todo | | |
-| AK | | Build hygiene, debug tools, Edge in-engine check + whole-tree memo | todo | | |
+| AD | AD | Streaming serialization: nav mesh (0x2909e0), ULevel gates, async IO, `-loadall` sweep | done | 2026-09-26 | commit 8af9425: the blocker was the reference poly serializer reading a `TArray<FCoverReference>` retail lacks at licensee 30; class 688 -> retail 464; 5 serializers ported; `-loadall` 3 menu + 9 tower packages, 0 errors. `ULevel::Serialize` and `FAsyncIORequest` checked and left alone |
+| AE | AE | Engine/GameFramework retail natives without a body (Z's list), movement/camera first | done | 2026-09-26 | commit f8bad4f: 109 natives given retail bodies (145 missing -> 29 real gaps); no `Engine/GameFramework native not ported` line left on the map path; 22 UI data-store natives left (off-path). Runs need `-forcelogflush` |
+| AF | AF | Milestone 5: `L_Tower_P` streamed in, player possessed, input moves the pawn | in flight | | last package of the wave; its files (UnGame/UnIn/UnPlayer/UnLevTic, the player-controller and input units) are the only ones left uncommitted. `ADishonoredPlayerPawn::execPlayDying_Native` is the last strict-natives abort and is AF's |
+| AG | AG | Renderer A: material shader maps from the retail caches (786/798, uniform expressions) | done | 2026-09-26 | commit ad3f9ae: 0 maps -> **2580 loaded, 0 undeclared, 0 mismatches**, 142,902 shader references all consuming their exact cooked ranges; `IsComplete` was the culprit (retail 0x3ea7d0: FALSE only while compiling); retail registers only 17 vertex factory types |
+| AH | AH | Renderer B: global shaders + scene renderer, null-RHI skip removed, D3D9 world frame | done | 2026-09-26 | commit f8dfe78: 62 -> **127 records, 58 -> 0 mismatches**, null-RHI skip gone, scene renderer runs every frame (>210 frames at 1920x1080); two shared parameter structs explained most of the 58; D3D9 world frame re-measured at merge |
+| AI | AI | Engine convergence wave 2: UEngine virtuals, UWorld::Init audio/MapInfo, UFont, matinee classes into Engine | done | 2026-09-26 | commit 03f5335: UEngine virtuals in 2013 vtable order, `UWorld::Init` audio system + MapInfo (0x3945f0), `SpawnActor` init functor (0x256990), `UFont::GetScalingFactor` (text was invisible), 19 Arkane classes + 6 structs moved into Engine, 44 functions |
+| AJ | AJ | DishonoredGame infrastructure: tweaks, FSM, inventory, game-info/NPC natives, 10 serializers | done | 2026-09-26 | commit 6e9d1ad: all 10 serializers, the full tweak interface + fallback chain through AI's init functor, native FSM (18), inventory core (12), 74 functions; module regenerated (119 -> 100 shim classes, 0 pending). 7 of 120 natives: the 275 left need the AI brain / item context first (triage in the report) |
+| AK | AK | Build hygiene, debug tools, Edge in-engine check + whole-tree memo | done | 2026-09-26 | commit 571bd0e: 3 concurrent full builds with no C1083, `--forbid`/`--expect-count`, `resources/tools/debug/` (its stack gave AD the blocker chain), `make_snapshot.py`, edgeanim.md section 7 (keep the per-sequence evaluator for wave 5; in-engine check still pending) |
+
+## Wave result (coordinator, 2026-09-26)
+
+Seven of the eight packages are merged: AK `571bd0e`, AD `8af9425`, AI `03f5335`, AE `f8bad4f`, AG `ad3f9ae`,
+AH `f8dfe78`, AJ `6e9d1ad` (with the module regeneration AI's class move needed, and a coordinator bridge
+guarding the two reference-only `Actor.PostInitAnimTree` / `Actor.AnimTreeUpdated` events). AF is still in
+flight and owns the only uncommitted files.
+
+**The wave's headline: the game boots, loads, renders and changes map with no crash anywhere.** On the merged
+clean-worktree build (`build/head_wt`, layout checks on, all module options, 785 units, 0 errors):
+
+| Check | Wave 3 | Wave 4 (7 packages) |
+|---|---|---|
+| null-RHI run | died 0.5 s after `Initial startup` on `Bad export index` | `Initial startup: 7.73s`, **`Committed map change via DishonoredEngine`**, no `Critical` line at all |
+| scene rendering | skipped entirely under the null RHI | **runs every frame**, 180+ frames logged at 1920x1080 |
+| cooked global shaders | 62 records, 58 parameter mismatches | **127 records, 0 mismatches** |
+| cooked material shader maps | 0 loaded, d3d9 aborted on the default material | **2580 loaded, 0 undeclared, 0 mismatches** |
+| natives without a body on the path | ~140 | **4**: 3 Steamworks `Read*` (need the Steam SDK) and `ADishonoredPlayerPawn::execPlayDying_Native` (AF) |
+| CoreSmoke / xcheck / verify_phase2 | 99/99 / 0 rows / 2/2 | 99/99 / **0 rows** (2,314 types) / **2/2** |
+
+`function_status.csv` folded the six per-agent files: 1,200 rows (+307), Engine per-function 0.8 % -> 1.2 %.
+
+Known follow-ups recorded for wave 5: Arkane anim nodes (the tweak anim tree asserts on a state picker with
+zero child weights, so the assignment is gated behind `-distweakanimtree`), the 275 DishonoredGame stubs that
+need the AI brain / sub-process / item-context classes (triage in `agentAJ.md`), the Arkane and GFx
+post-process shader families (136 undeclared types), `UShaderCache` 132 -> 128 with
+`FCompressedShaderCodeCache`, a Release or `FMallocBinned` build for long d3d9 runs (`_DEBUG` uses
+`FMallocDebug` and the now-resident caches exhaust the 32-bit heap ~2 s in), the ~100 remaining
+Engine/GameFramework shim classes, and the whole-tree Edge path.
 
 ## Rules for agents (wave 2/3 rules, repeated)
 
