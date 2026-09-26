@@ -948,7 +948,10 @@ void FOctreeNode::ActorZeroExtentLineCheck(FPrimitiveOctree* o,
 
 			if( !(o->ChkTraceFlags & TRACE_ShadowCast) )
 			{
-				if( !TestPrimitive->BlockZeroExtent || !TestPrimitive->ShouldCollide() )
+				// DISHONORED(retail): 2013 FOctreeNode::ActorZeroExtentLineCheck rva 0x2b12c0 gates on
+				// FDisPrimTraceMask::MatchesTraceFlags(&Prim->m_CollisionTraceTypes, ChkActor, ChkTraceFlags) && ShouldCollide(),
+				// not on BlockZeroExtent, which Arkane leaves unset in every cooked package.
+				if( !TestPrimitive->m_CollisionTraceTypes.MatchesTraceFlags( o->ChkActor, o->ChkTraceFlags ) || !TestPrimitive->ShouldCollide() )
 				{
 					continue;
 				}
@@ -1342,7 +1345,10 @@ void FOctreeNode::ActorZeroExtentLineCheck(FPrimitiveOctree* o, FZETraversalNumb
 
 			if( !(o->ChkTraceFlags & TRACE_ShadowCast) )
 			{
-				if( !TestPrimitive->BlockZeroExtent || !TestPrimitive->ShouldCollide() )
+				// DISHONORED(retail): 2013 FOctreeNode::ActorZeroExtentLineCheck rva 0x2b12c0 (the second, single-node-filtered copy) gates on
+				// FDisPrimTraceMask::MatchesTraceFlags(&Prim->m_CollisionTraceTypes, ChkActor, ChkTraceFlags) && ShouldCollide(),
+				// not on BlockZeroExtent, which Arkane leaves unset in every cooked package.
+				if( !TestPrimitive->m_CollisionTraceTypes.MatchesTraceFlags( o->ChkActor, o->ChkTraceFlags ) || !TestPrimitive->ShouldCollide() )
 				{
 					continue;
 				}
@@ -1587,7 +1593,9 @@ void FOctreeNode::ActorNonZeroExtentLineCheck(FPrimitiveOctree* o, const FOctree
 #endif
 
 			// Check collision.
-			if( TestPrimitive->BlockNonZeroExtent &&
+			// DISHONORED(retail): 2013 FOctreeNode::ActorNonZeroExtentLineCheck rva 0x2b1880 gates on
+			// FDisPrimTraceMask::MatchesTraceFlags(&Prim->m_CollisionTraceTypes, ChkActor, ChkTraceFlags) && ShouldCollide().
+			if( TestPrimitive->m_CollisionTraceTypes.MatchesTraceFlags( o->ChkActor, o->ChkTraceFlags ) &&
 				TestPrimitive->ShouldCollide() &&
 				!o->ChkActor->IsOwnedBy(PrimOwner) &&
 				!PrimOwner->IsOwnedBy(o->ChkActor) && 
@@ -1827,7 +1835,9 @@ void FOctreeNode::ActorPointCheck(FPrimitiveOctree* o, const FOctreeNodeBounds& 
 					continue;
 				}
 #endif
-				if ((o->bChkExtentIsZero ? TestPrimitive->BlockZeroExtent : TestPrimitive->BlockNonZeroExtent) &&
+				// DISHONORED(retail): 2013 FOctreeNode::ActorPointCheck rva 0x2b1fa0 gates on
+				// FDisPrimTraceMask::MatchesTraceFlags(&Prim->m_CollisionTraceTypes, ChkActor, ChkTraceFlags) && ShouldCollide().
+				if (TestPrimitive->m_CollisionTraceTypes.MatchesTraceFlags( o->ChkActor, o->ChkTraceFlags ) &&
 					TestPrimitive->ShouldCollide() &&
 					PrimOwner->ShouldTrace(TestPrimitive,NULL, o->ChkTraceFlags) )
 				{
@@ -2541,6 +2551,7 @@ FCheckResult* FPrimitiveOctree::ActorPointCheck(FMemStack& Mem,
 	bChkExtentIsZero = ChkExtent.IsZero();
 	ChkTraceFlags	= TraceFlags;
 	ChkBox			= FBox(ChkStart - ChkExtent, ChkStart + ChkExtent);
+	ChkActor		= NULL;  // DISHONORED(port): 2013 FPrimitiveOctree::ActorPointCheck rva 0x2b3760 clears ChkActor (@60) before descending; the node filter now reads it
 
 	RootNode->ActorPointCheck(this, RootNodeBounds);
 

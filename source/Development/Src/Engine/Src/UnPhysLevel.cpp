@@ -1069,8 +1069,272 @@ void UWorld::TermWorldRBPhys()
 }
 
 /** Fire off physics engine thread. */
+// DISHONORED(bringup): -distrace, the measurement that turns "the pawn falls" into numbers. Once per world tick it
+// reports, on one line per subject: the player pawn's location / physics mode / base / velocity and the KillZ it is
+// heading for; every ULevelStreaming entry's loaded, visible, block-on-load and pending-visibility state together with
+// its actor count; and three collision probes taken at the spawn anchor (a zero-extent downward line check, the same
+// check with the pawn's cylinder extent, and a point check), so a missing floor can be told apart from a floor that is
+// there but does not collide. Also counts the attached, collidable primitives in the world and how many static meshes
+// carry a non-empty kDOP tree, because UE3's PHYS_Walking collision is the kDOP path (Engine/Src/UnPhysic.cpp has no
+// WITH_NOVODEX at all) and not the PhysX one.
+static INT GDisTraceState = -1;                  // -1 unparsed, 0 off, 1 on
+static FLOAT GDisTraceNextReport = 0.f;
+static FLOAT GDisTraceStart = 0.f;
+static FVector GDisTraceAnchor( 0.f, 0.f, 0.f );
+static UBOOL GDisTraceHaveAnchor = FALSE;
+static UWorld* GDisTraceWorld = NULL;
+static UBOOL GDisDumpedCollisionBits = FALSE;
+
+// DISHONORED(bringup): one-shot dump of the collision bitfields of the first attached, collidable primitives, with the
+// reflected offset and bit mask of each script bool next to the raw DWORD the loader wrote and the value the C++
+// bitfield reads back. A header whose BITFIELD run does not match the package's masks shows up here as "raw bit set,
+// C++ reads 0".
+static void DishonoredDumpCollisionBits()
+{
+	if( GDisDumpedCollisionBits )
+	{
+		return;
+	}
+	GDisDumpedCollisionBits = TRUE;
+
+	const TCHAR* Names[] = { TEXT("CollideActors"), TEXT("AlwaysCheckCollision"), TEXT("BlockActors"),
+		TEXT("BlockZeroExtent"), TEXT("BlockNonZeroExtent"), TEXT("CanBlockCamera"), TEXT("BlockRigidBody"),
+		TEXT("bDisableAllRigidBody"), TEXT("HiddenGame"), TEXT("bAcceptsLights") };
+	for( INT n = 0; n < ARRAY_COUNT(Names); n++ )
+	{
+		UBoolProperty* Prop = FindField<UBoolProperty>( UPrimitiveComponent::StaticClass(), Names[n] );
+		debugf( TEXT("DISHONORED(bringup): disbits property %-22s %s"), Names[n],
+			Prop ? *FString::Printf( TEXT("offset %d mask 0x%08x owner %s"), Prop->Offset, Prop->BitMask, *Prop->GetOwnerClass()->GetName() )
+				 : TEXT("NOT FOUND") );
+	}
+	UStructProperty* TraceProp = FindField<UStructProperty>( UPrimitiveComponent::StaticClass(), TEXT("m_CollisionTraceTypes") );
+	debugf( TEXT("DISHONORED(bringup): disbits property m_CollisionTraceTypes  %s"),
+		TraceProp ? *FString::Printf( TEXT("offset %d"), TraceProp->Offset ) : TEXT("NOT FOUND") );
+
+	INT Dumped = 0;
+	for( TObjectIterator<UPrimitiveComponent> It; It && Dumped < 4; ++It )
+	{
+		UPrimitiveComponent* Prim = *It;
+		if( !Prim->IsAttached() || !Prim->CollideActors )
+		{
+			continue;
+		}
+		Dumped++;
+		const BYTE* Raw = (const BYTE*)Prim;
+		debugf( TEXT("DISHONORED(bringup): disbits %s (%s) owner %s: raw @272 0x%08x @276 0x%08x @280 0x%08x @284 0x%08x @320 0x%08x"),
+			*Prim->GetName(), *Prim->GetClass()->GetName(), Prim->GetOwner() ? *Prim->GetOwner()->GetName() : TEXT("none"),
+			*(const DWORD*)(Raw+272), *(const DWORD*)(Raw+276), *(const DWORD*)(Raw+280), *(const DWORD*)(Raw+284),
+			*(const DWORD*)(Raw+320) );
+		debugf( TEXT("DISHONORED(bringup): disbits %s C++ reads CollideActors %d AlwaysCheckCollision %d BlockActors %d BlockZeroExtent %d BlockNonZeroExtent %d CanBlockCamera %d BlockRigidBody %d; trace move %d/%d/%d gameplay %d/%d/%d/%d"),
+			*Prim->GetName(), (INT)Prim->CollideActors, (INT)Prim->AlwaysCheckCollision, (INT)Prim->BlockActors,
+			(INT)Prim->BlockZeroExtent, (INT)Prim->BlockNonZeroExtent, (INT)Prim->CanBlockCamera, (INT)Prim->BlockRigidBody,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForMove_NonPawn,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForMove_NonPlayerPawn,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForMove_Player,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForGameplay_Crosshair,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForGameplay_Projectile,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForGameplay_Melee,
+			(INT)Prim->m_CollisionTraceTypes.m_bTraceForGameplay_VisionLOS );
+		UPrimitiveComponent* CDO = Prim->GetClass()->GetDefaultObject<UPrimitiveComponent>();
+		if( CDO )
+		{
+			const BYTE* CRaw = (const BYTE*)CDO;
+			debugf( TEXT("DISHONORED(bringup): disbits %s class default: raw @280 0x%08x @320 0x%08x, CollideActors %d BlockActors %d BlockZeroExtent %d BlockNonZeroExtent %d"),
+				*Prim->GetClass()->GetName(), *(const DWORD*)(CRaw+280), *(const DWORD*)(CRaw+320),
+				(INT)CDO->CollideActors, (INT)CDO->BlockActors, (INT)CDO->BlockZeroExtent, (INT)CDO->BlockNonZeroExtent );
+		}
+	}
+}
+
+static void DishonoredWorldTrace()
+{
+	if( GDisTraceState == -1 )
+	{
+		GDisTraceState = ParseParam( appCmdLine(), TEXT("distrace") ) ? 1 : 0;
+	}
+	if( GDisTraceState != 1 || !GWorld || !GWorld->GetWorldInfo() )
+	{
+		return;
+	}
+
+	AWorldInfo* Info = GWorld->GetWorldInfo();
+	ULocalPlayer* Player = ( GEngine && GEngine->GamePlayers.Num() > 0 ) ? GEngine->GamePlayers(0) : NULL;
+	APlayerController* PC = Player ? Player->Actor : NULL;
+	APawn* Pawn = PC ? PC->Pawn : NULL;
+
+	if( GDisTraceWorld != GWorld )
+	{
+		GDisTraceWorld = GWorld;
+		GDisTraceHaveAnchor = FALSE;
+		GDisDumpedCollisionBits = FALSE;
+	}
+
+	if( !GDisTraceHaveAnchor )
+	{
+		if( !Pawn )
+		{
+			return;
+		}
+		GDisTraceAnchor = Pawn->Location;
+		GDisTraceHaveAnchor = TRUE;
+		GDisTraceStart = appSeconds();
+		GDisTraceNextReport = 0.f;
+		debugf( TEXT("DISHONORED(bringup): distrace anchor %s in %s, KillZ %.1f, SoftKill %.1f, gravity %.1f, levels %d, streaming %d"),
+			*GDisTraceAnchor.ToString(), *GWorld->GetOutermost()->GetName(), Info->KillZ, Info->SoftKill,
+			Info->GetGravityZ(), GWorld->Levels.Num(), Info->StreamingLevels.Num() );
+	}
+
+	const FLOAT Elapsed = (FLOAT)( appSeconds() - GDisTraceStart );
+	if( Elapsed < GDisTraceNextReport )
+	{
+		return;
+	}
+	GDisTraceNextReport = Elapsed + 1.f;
+
+	DishonoredDumpCollisionBits();
+
+	// -- the pawn
+	if( Pawn )
+	{
+		FVector CylExtent( 0.f, 0.f, 0.f );
+		Pawn->GetBoundingCylinder( CylExtent.X, CylExtent.Z );
+		CylExtent.Y = CylExtent.X;
+		debugf( TEXT("DISHONORED(bringup): distrace %5.1fs pawn %s at %s vel %s physics %d base %s floor %s collide %d/%d/%d cyl %.1fx%.1f"),
+			Elapsed, *Pawn->GetName(), *Pawn->Location.ToString(), *Pawn->Velocity.ToString(), (INT)Pawn->Physics,
+			Pawn->Base ? *Pawn->Base->GetName() : TEXT("none"), *Pawn->Floor.ToString(),
+			(INT)Pawn->bCollideActors, (INT)Pawn->bCollideWorld, (INT)Pawn->bBlockActors,
+			CylExtent.X, CylExtent.Z );
+	}
+
+	// -- the streaming levels, and which of them is in GWorld->Levels
+	for( INT i = 0; i < Info->StreamingLevels.Num(); i++ )
+	{
+		ULevelStreaming* SL = Info->StreamingLevels(i);
+		if( !SL )
+		{
+			continue;
+		}
+		const INT WorldIndex = SL->LoadedLevel ? GWorld->Levels.FindItemIndex( SL->LoadedLevel ) : INDEX_NONE;
+		debugf( TEXT("DISHONORED(bringup): distrace %5.1fs level %s (%s) loaded %d visible %d block %d bIsVisible %d LoadedLevel %d pendingVis %d worldIndex %d actors %d"),
+			Elapsed, *SL->PackageName.ToString(), *SL->GetClass()->GetName(), (INT)SL->bShouldBeLoaded,
+			(INT)SL->bShouldBeVisible, (INT)SL->bShouldBlockOnLoad, (INT)SL->bIsVisible, SL->LoadedLevel ? 1 : 0,
+			SL->LoadedLevel ? (INT)SL->LoadedLevel->bHasVisibilityRequestPending : -1, WorldIndex,
+			SL->LoadedLevel ? SL->LoadedLevel->Actors.Num() : -1 );
+	}
+
+	// -- the collision probes at the anchor
+	{
+		const FVector Start = GDisTraceAnchor;
+		const FVector End   = GDisTraceAnchor - FVector( 0.f, 0.f, 20000.f );
+		FCheckResult Hit( 1.f );
+		const UBOOL bClearZero = GWorld->SingleLineCheck( Hit, NULL, End, Start, TRACE_World | TRACE_StopAtAnyHit );
+		FString ZeroText = bClearZero ? FString( TEXT("clear") )
+			: FString::Printf( TEXT("hit %s.%s at %s"),
+				Hit.Actor ? *Hit.Actor->GetName() : TEXT("none"),
+				Hit.Component ? *Hit.Component->GetName() : TEXT("none"), *Hit.Location.ToString() );
+
+		FVector Extent( 34.f, 34.f, 78.f );
+		if( Pawn )
+		{
+			Pawn->GetBoundingCylinder( Extent.X, Extent.Z );
+			Extent.Y = Extent.X;
+		}
+		FCheckResult HitE( 1.f );
+		const UBOOL bClearExt = GWorld->SingleLineCheck( HitE, NULL, End, Start, TRACE_World | TRACE_StopAtAnyHit, Extent );
+		FString ExtText = bClearExt ? FString( TEXT("clear") )
+			: FString::Printf( TEXT("hit %s.%s at %s"),
+				HitE.Actor ? *HitE.Actor->GetName() : TEXT("none"),
+				HitE.Component ? *HitE.Component->GetName() : TEXT("none"), *HitE.Location.ToString() );
+
+		FCheckResult HitP( 1.f );
+		const UBOOL bClearPoint = GWorld->SinglePointCheck( HitP, Start, Extent, TRACE_World );
+
+		debugf( TEXT("DISHONORED(bringup): distrace %5.1fs probe down zero: %s | extent %.0fx%.0f: %s | point at anchor: %s"),
+			Elapsed, *ZeroText, Extent.X, Extent.Z, *ExtText,
+			bClearPoint ? TEXT("clear") : ( HitP.Actor ? *HitP.Actor->GetName() : TEXT("hit none") ) );
+	}
+
+	// -- what PhysX made of the level's rigid bodies (the same SDK counters as the one-shot scene summary below)
+#if WITH_NOVODEX
+	if( GWorld->RBPhysScene && GNovodexSDK )
+	{
+		NxScene* Scene = GWorld->RBPhysScene->GetNovodexPrimaryScene();
+		if( Scene )
+		{
+			debugf( TEXT("DISHONORED(bringup): distrace %5.1fs PhysX %d actors, %d static shapes, %d dynamic shapes; SDK %d convex meshes, %d triangle meshes"),
+				Elapsed, (INT)Scene->getNbActors(), (INT)Scene->getNbStaticShapes(), (INT)Scene->getNbDynamicShapes(),
+				(INT)GNovodexSDK->getNbConvexMeshes(), (INT)GNovodexSDK->getNbTriangleMeshes() );
+		}
+	}
+#endif
+
+	// -- what could possibly be collided with
+	{
+		INT NumPrim = 0, NumAttached = 0, NumCollide = 0, NumBlockNonZero = 0, NumBlockZero = 0;
+		INT NumMovePlayer = 0, NumMoveAny = 0, NumGameplayAny = 0;
+		INT NumSM = 0, NumSMkDOP = 0, NumSMNokDOP = 0, NumSMTris = 0;
+		for( TObjectIterator<UPrimitiveComponent> It; It; ++It )
+		{
+			UPrimitiveComponent* Prim = *It;
+			NumPrim++;
+			if( !Prim->IsAttached() )
+			{
+				continue;
+			}
+			NumAttached++;
+			if( !Prim->CollideActors )
+			{
+				continue;
+			}
+			NumCollide++;
+			if( Prim->BlockNonZeroExtent )
+			{
+				NumBlockNonZero++;
+			}
+			if( Prim->BlockZeroExtent )
+			{
+				NumBlockZero++;
+			}
+			if( Prim->m_CollisionTraceTypes.m_bTraceForMove_Player )
+			{
+				NumMovePlayer++;
+			}
+			if( Prim->m_CollisionTraceTypes.m_bTraceForMove_NonPawn || Prim->m_CollisionTraceTypes.m_bTraceForMove_NonPlayerPawn
+			||  Prim->m_CollisionTraceTypes.m_bTraceForMove_Player )
+			{
+				NumMoveAny++;
+			}
+			if( Prim->m_CollisionTraceTypes.m_bTraceForGameplay_Crosshair || Prim->m_CollisionTraceTypes.m_bTraceForGameplay_Projectile
+			||  Prim->m_CollisionTraceTypes.m_bTraceForGameplay_Melee || Prim->m_CollisionTraceTypes.m_bTraceForGameplay_VisionLOS )
+			{
+				NumGameplayAny++;
+			}
+			UStaticMeshComponent* SMC = Cast<UStaticMeshComponent>( Prim );
+			if( SMC && SMC->StaticMesh )
+			{
+				NumSM++;
+				const INT Nodes = SMC->StaticMesh->kDOPTree.Nodes.Num();
+				if( Nodes > 0 )
+				{
+					NumSMkDOP++;
+					NumSMTris += SMC->StaticMesh->kDOPTree.Triangles.Num();
+				}
+				else
+				{
+					NumSMNokDOP++;
+				}
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): distrace %5.1fs primitives %d, attached %d, CollideActors %d, BlockNonZeroExtent %d, BlockZeroExtent %d, TraceForMove_Player %d, TraceForMove_any %d, TraceForGameplay_any %d; static meshes %d (kDOP %d, no kDOP %d, %d collision triangles)"),
+			Elapsed, NumPrim, NumAttached, NumCollide, NumBlockNonZero, NumBlockZero, NumMovePlayer, NumMoveAny, NumGameplayAny,
+			NumSM, NumSMkDOP, NumSMNokDOP, NumSMTris );
+	}
+}
+
 void UWorld::TickWorldRBPhys(FLOAT DeltaSeconds)
 {
+	DishonoredWorldTrace();
+
 
 #if WITH_NOVODEX
 	if (!RBPhysScene)

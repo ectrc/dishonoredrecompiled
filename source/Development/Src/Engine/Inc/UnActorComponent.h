@@ -463,6 +463,29 @@ struct FDisPrimTraceMask
 	BITFIELD m_bTraceForGameplay_Projectile:1;
 	BITFIELD m_bTraceForGameplay_Melee:1;
 	BITFIELD m_bTraceForGameplay_VisionLOS:1;
+
+	// DISHONORED(port): 2013 rva 0x129990 (2012 rva 0x12dd30, bit-identical). This is the gate every collision check in the
+	// primitive octree goes through instead of the reference's BlockZeroExtent / BlockNonZeroExtent: the mask says which
+	// kinds of trace this primitive stops, and TraceFlags (or, with no Arkane flag, the tracing actor itself) says which
+	// kind this check is. Defined in Engine/Src/UnLevAct.cpp because it needs AActor.
+	UBOOL MatchesTraceFlags( const class AActor* SourceActor, DWORD TraceFlags ) const;
+
+	// DISHONORED(port): 2013 rva 0x129000 / 0x129030 / 0x166310 (2012 0x12d260 / 0x12d290 / 0x16fd70), all bit-identical.
+	// UPrimitiveComponent::SetTraceBlocking maps the reference's two booleans onto these two setters (2013 rva 0x12a230):
+	// BlockNonZeroExtent is "traces for all movement", BlockZeroExtent is "traces for all gameplay".
+	void SetAllMovementTrace( UBOOL bTrace )
+	{
+		m_bTraceForMove_NonPawn = m_bTraceForMove_NonPlayerPawn = m_bTraceForMove_Player = bTrace ? 1 : 0;
+	}
+	void SetAllGameplayTrace( UBOOL bTrace )
+	{
+		m_bTraceForGameplay_Crosshair = m_bTraceForGameplay_Projectile = bTrace ? 1 : 0;
+		m_bTraceForGameplay_Melee = m_bTraceForGameplay_VisionLOS = bTrace ? 1 : 0;
+	}
+	UBOOL TracesForAllMove() const
+	{
+		return m_bTraceForMove_NonPawn && m_bTraceForMove_NonPlayerPawn && m_bTraceForMove_Player;
+	}
 };
 
 enum EDisTranslucencySortPriority

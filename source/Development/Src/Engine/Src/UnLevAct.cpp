@@ -1948,7 +1948,7 @@ UBOOL UWorld::CheckEncroachment
 		(	Test->Actor!=Actor
 		&&	!Test->Actor->bWorldGeometry
 		&&  !Test->Actor->IsBasedOn(Actor)
-		&& (Test->Component == NULL || (bIsZeroExtent ? Test->Component->BlockZeroExtent : Test->Component->BlockNonZeroExtent))
+		&& (Test->Component == NULL || Test->Component->m_CollisionTraceTypes.MatchesTraceFlags( Actor, 0 ))  // DISHONORED(retail): 2013 UWorld::CheckEncroachment rva 0x243e40 tests m_CollisionTraceTypes (@320) with TraceFlags 0, not BlockZeroExtent / BlockNonZeroExtent
 		&&	Actor->IsBlockedBy( Test->Actor, Test->Component ) )
 		{
 			UBOOL bStillEncroaching = TRUE;
@@ -2027,7 +2027,7 @@ UBOOL UWorld::CheckEncroachment
 		&&	!Test->Actor->bWorldGeometry
 		&&  !Test->Actor->IsBasedOn(Actor)
 		&&	Test->Actor!=GetWorldInfo()
-		&& (Test->Component == NULL || (bIsZeroExtent ? Test->Component->BlockZeroExtent : Test->Component->BlockNonZeroExtent)) )
+		&& (Test->Component == NULL || Test->Component->m_CollisionTraceTypes.MatchesTraceFlags( Actor, 0 )) )  // DISHONORED(retail): 2013 UWorld::CheckEncroachment rva 0x243e40
 		{
 			if( Actor->IsBlockedBy(Test->Actor,Test->Component) )
 			{
@@ -2177,6 +2177,51 @@ DECLARE_CYCLE_STAT(TEXT("Check Sort"),			STAT_Col_Sort,			STATGROUP_Collision);
 //
 // Trace a line and return the first hit actor (Actor->bWorldGeometry means hit the world geomtry).
 //
+
+// DISHONORED(port): 2013 rva 0x129990 (2012 rva 0x12dd30). The disassembly is a chain of flag tests:
+//   test edx,0F000000h -> 0x08000000 ? bit6 : 0x01000000 ? bit3 : 0x04000000 ? bit5 : 0x02000000 ? bit4 : FALSE
+//   else 0x10000000 ? bit1 : 0x20000000 ? bit2
+//   else the source actor decides: not a pawn -> bit0, a pawn that is not the player -> bit1, the player -> bit2.
+// Retail spells the last two tests with AActor::m_ActorTypeFlags (byte @266: `& 0x20` is "is a pawn", `== 0x24` is "is the
+// player pawn"); nothing in this tree ever writes that byte, so the equivalent engine predicates are used instead.
+UBOOL FDisPrimTraceMask::MatchesTraceFlags( const AActor* SourceActor, DWORD TraceFlags ) const
+{
+	if( TraceFlags & TRACE_DisGameplay )
+	{
+		if( TraceFlags & TRACE_DisGameplay_VisionLOS )
+		{
+			return m_bTraceForGameplay_VisionLOS;
+		}
+		if( TraceFlags & TRACE_DisGameplay_Crosshair )
+		{
+			return m_bTraceForGameplay_Crosshair;
+		}
+		if( TraceFlags & TRACE_DisGameplay_Melee )
+		{
+			return m_bTraceForGameplay_Melee;
+		}
+		if( TraceFlags & TRACE_DisGameplay_Projectile )
+		{
+			return m_bTraceForGameplay_Projectile;
+		}
+		return FALSE;
+	}
+	if( TraceFlags & TRACE_DisMove_NonPlayerPawn )
+	{
+		return m_bTraceForMove_NonPlayerPawn;
+	}
+	if( TraceFlags & TRACE_DisMove_Player )
+	{
+		return m_bTraceForMove_Player;
+	}
+	const APawn* SourcePawn = SourceActor ? SourceActor->GetAPawn() : NULL;
+	if( !SourcePawn )
+	{
+		return m_bTraceForMove_NonPawn;
+	}
+	return SourcePawn->IsPlayerPawn() ? m_bTraceForMove_Player : m_bTraceForMove_NonPlayerPawn;
+}
+
 UBOOL UWorld::SingleLineCheck
 (
 	FCheckResult&		Hit,

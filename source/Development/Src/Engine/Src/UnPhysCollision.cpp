@@ -851,19 +851,42 @@ NxActorDesc* FKAggregateGeom::InstanceNovodexGeom(const FVector& uScale3D, FKCac
 		NumElems = ConvexElems.Num();
 	}
 
-	if (NumElems == 0)
+	if (NumElems == 0 && BoxElems.Num() == 0)
 	{
-		if (!pScale3D.IsUniform() && GetElementCount() > 0)
-		{
-			debugf(TEXT("FKAggregateGeom::InstanceNovodexGeom: (%s) Cannot 3D-Scale rigid-body primitives (sphere, box, sphyl)."), debugName);
-		}
-		else
-		{
-			debugf(TEXT("FKAggregateGeom::InstanceNovodexGeom: (%s) No geometries in FKAggregateGeom."), debugName);
-		}
+		debugf(TEXT("FKAggregateGeom::InstanceNovodexGeom: (%s) No geometries in FKAggregateGeom."), debugName);
 	}
 
 	NxActorDesc* ActorDesc = new NxActorDesc;
+
+	// DISHONORED(retail): 2013 rva 0x3c8330. Retail does not give up on a non-uniformly scaled aggregate the way the
+	// reference does ("Cannot 3D-Scale rigid-body primitives", which fired 235 times in l_tower_p alone, once per
+	// Env_Blockout.collisions.Collision_model instance): it keeps the box elements whose element transform is unrotated and
+	// unscaled, and scales each half-extent by its own axis. The retail test is
+	// `fabs(pScale.X-pScale.Y) >= 1e-4 || fabs(pScale.Y-pScale.Z) >= 1e-4` (i.e. !IsUniform()) followed, per element, by
+	// `(BoxElem->bNoRBCollision == 0) && BoxElem->TM.IsUnrotatedAndUnscaled(1e-4)`, and the dimensions are
+	// `0.5f * Dim * Abs(pScale.Axis) + 0.025f` where 0.025 is PhysSkinWidth.
+	if (!pScale3D.IsUniform())
+	{
+		for (INT i = 0; i < BoxElems.Num(); i++)
+		{
+			FKBoxElem* BoxElem = &BoxElems(i);
+			if (!BoxElem->bNoRBCollision && BoxElem->TM.IsUnrotatedAndUnscaled())
+			{
+				NxMat34 RelativeTM = U2NMatrixCopy(BoxElem->TM);
+				ScaleNovodexTMPosition(RelativeTM, pScale3D);
+
+				NxBoxShapeDesc* BoxDesc = new NxBoxShapeDesc;
+				BoxDesc->dimensions = (0.5f * NxVec3(BoxElem->X * Abs(pScale3D.X), BoxElem->Y * Abs(pScale3D.Y), BoxElem->Z * Abs(pScale3D.Z))) + NxVec3(PhysSkinWidth, PhysSkinWidth, PhysSkinWidth);
+				BoxDesc->localPose = RelativeTM;
+				if(bCreateCCDSkel)
+				{
+					MakeCCDSkelForBox(BoxDesc);
+				}
+
+				ActorDesc->shapes.pushBack(BoxDesc);
+			}
+		}
+	}
 
 	// Include spheres, boxes and sphyls only when the scale is uniform.
 	if (pScale3D.IsUniform())

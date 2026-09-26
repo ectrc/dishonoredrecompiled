@@ -3687,6 +3687,15 @@ public:
 	/** Returns TRUE if any element of this matrix is NaN */
 	inline UBOOL ContainsNaN() const;
 
+	// DISHONORED(port): 2013 rva 0x3a77b0 (2012 rva 0x3c94b0, bit-identical). Rows 0 and 1 are compared against the identity
+	// component by component and row 2 through FVector::Equals, all with strict <, exactly as the retail body does.
+	UBOOL IsUnrotatedAndUnscaled(FLOAT Tolerance=KINDA_SMALL_NUMBER) const
+	{
+		return Abs(M[0][0] - 1.f) < Tolerance && Abs(M[0][1]) < Tolerance && Abs(M[0][2]) < Tolerance
+			&& Abs(M[1][0]) < Tolerance && Abs(M[1][1] - 1.f) < Tolerance && Abs(M[1][2]) < Tolerance
+			&& FVector(M[2][0], M[2][1], M[2][2]).Equals(FVector(0.f, 0.f, 1.f), Tolerance);
+	}
+
 	inline void ScaleTranslation(const FVector& Scale3D);
 
 	/** @return the maximum magnitude of any row of the matrix. */

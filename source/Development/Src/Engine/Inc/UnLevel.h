@@ -297,6 +297,17 @@ enum ETraceFlags
 	TRACE_Accurate				= 0x80000, // Don't do the legacy pullback by an arbitrary amount of collision results
 	TRACE_MoveIgnoresDestruction= 0x100000, // Skip collision with dynamic rigid bodies
 
+	// DISHONORED(retail): Arkane replaced UPrimitiveComponent's BlockZeroExtent / BlockNonZeroExtent pair by the seven-bit
+	// FDisPrimTraceMask m_CollisionTraceTypes, and the trace flags carry which of those seven a check is for. Values read out
+	// of FDisPrimTraceMask::MatchesTraceFlags (2013 rva 0x129990, 2012 rva 0x12dd30), which tests 0x0F000000 first and then
+	// 0x10000000 / 0x20000000 before falling back to the source actor's pawn / player-pawn state.
+	TRACE_DisGameplay_Crosshair	= 0x01000000, // gameplay trace: what the crosshair can hit      (m_bTraceForGameplay_Crosshair)
+	TRACE_DisGameplay_Projectile	= 0x02000000, // gameplay trace: what a projectile can hit       (m_bTraceForGameplay_Projectile)
+	TRACE_DisGameplay_Melee		= 0x04000000, // gameplay trace: what a melee swing can hit      (m_bTraceForGameplay_Melee)
+	TRACE_DisGameplay_VisionLOS	= 0x08000000, // gameplay trace: what blocks AI line of sight    (m_bTraceForGameplay_VisionLOS)
+	TRACE_DisMove_NonPlayerPawn	= 0x10000000, // movement trace as a non-player pawn             (m_bTraceForMove_NonPlayerPawn)
+	TRACE_DisMove_Player		= 0x20000000, // movement trace as the player                   (m_bTraceForMove_Player)
+
 	// Combinations.
 	TRACE_Hash					= TRACE_Pawns	|	TRACE_Movers |	TRACE_Volumes	|	TRACE_Others			|	TRACE_Terrain	|	TRACE_LevelGeometry,
 	TRACE_Actors				= TRACE_Pawns	|	TRACE_Movers |	TRACE_Others	|	TRACE_LevelGeometry		|	TRACE_Terrain,
@@ -304,6 +315,8 @@ enum ETraceFlags
 	TRACE_AllColliding			= TRACE_Level	|	TRACE_Actors |	TRACE_Volumes,
 	TRACE_ProjTargets			= TRACE_AllColliding	| TRACE_OnlyProjActor,
 	TRACE_AllBlocking			= TRACE_Blocking		| TRACE_AllColliding,
+	// DISHONORED(retail): the "any gameplay trace" mask MatchesTraceFlags tests first (2013 rva 0x129990: test edx, 0F000000h)
+	TRACE_DisGameplay			= TRACE_DisGameplay_Crosshair | TRACE_DisGameplay_Projectile | TRACE_DisGameplay_Melee | TRACE_DisGameplay_VisionLOS,
 };
 
 //
