@@ -1904,14 +1904,20 @@ enum EBoneBreakOption
 	BONEBREAK_RigidPreferred	=2
 };
 
+// DISHONORED(layout): 2013 rva 0x314150 (FSkeletalMeshSceneProxy::DrawDynamicElementsSection) tests
+// FSkelMeshSection::TriangleSorting == 6 for the CustomLeftRight second index set, and the script enum
+// TriangleSortOption (resources/docs/types/script_classes_2013.json) keeps TRISORT_Tootle at 3: every option from
+// MergeContiguous on is one higher than the reference enum. Without Tootle a TRISORT_Custom (5) section was read as
+// CustomLeftRight and FirstIndex was advanced past the end of the LOD index buffer.
 enum ETriangleSortOption
 {
 	TRISORT_None						= 0,
 	TRISORT_CenterRadialDistance		= 1,
 	TRISORT_Random						= 2,
-	TRISORT_MergeContiguous				= 3,
-	TRISORT_Custom						= 4,
-	TRISORT_CustomLeftRight				= 5,
+	TRISORT_Tootle						= 3,
+	TRISORT_MergeContiguous				= 4,
+	TRISORT_Custom						= 5,
+	TRISORT_CustomLeftRight				= 6,
 };
 
 /** Helper to convert the above enum to string */
@@ -1923,6 +1929,8 @@ static const TCHAR* TriangleSortOptionToString(ETriangleSortOption Option)
 			return TEXT("CenterRadialDistance");
 		case TRISORT_Random:
 			return TEXT("Random");
+		case TRISORT_Tootle:
+			return TEXT("Tootle");
 		case TRISORT_MergeContiguous:
 			return TEXT("MergeContiguous");
 		case TRISORT_Custom:
@@ -1983,7 +1991,13 @@ struct FSkelMeshSection
 		
 		if (Ar.Ver() < VER_DWORD_SKELETAL_MESH_INDICES)
 		{
-			WORD NumTriangles;
+			// DISHONORED(retail): 2013 rva 0x30c2d0 serializes the section's own 16-bit triangle count in place
+			// (FSkelMeshSection is 12 bytes in retail: WORD NumTriangles at +8, BYTE TriangleSorting at +10; the
+			// 12-byte stride is visible in the section iterator at 2013 rva 0x335180). The reference widened the
+			// field to a DWORD and reads it through a temporary it then assigns back for EVERY archive, so a
+			// non-loading archive - the GC's reference collector, memory counting - wrote the low word of an
+			// uninitialised stack slot over the live triangle count and the LOD then drew past its index buffer.
+			WORD NumTriangles = (WORD)S.NumTriangles;
 			Ar << NumTriangles;
 			S.NumTriangles = NumTriangles;
 		}
