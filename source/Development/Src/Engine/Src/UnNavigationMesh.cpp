@@ -20,6 +20,16 @@
 #endif
 
 IMPLEMENT_CLASS(UNavigationMeshBase);
+// DISHONORED(layout): the single definitions of the reference-only shared members declared in UnPath.h (they are not part of
+// the 464-byte retail object; their producers are gated with DISHONORED(bringup), so they stay empty)
+DynamicEdgeList UNavigationMeshBase::DynamicEdges;
+IncomingEdgeListType UNavigationMeshBase::IncomingDynamicEdges;
+PolyObstacleInfoList UNavigationMeshBase::PolyObstacleInfoMap;
+TMap< UNavigationMeshBase*, WORD > UNavigationMeshBase::SubMeshToParentPolyMap;
+PolyToObstacleMap UNavigationMeshBase::SubMeshPolyIDToLinkeObstacleMap;
+TArray<UNavigationMeshBase::FDynamicSnapInfo> UNavigationMeshBase::DynamicSnapRevertData;
+// DISHONORED(layout): retail UNavigationMeshBase is 464 bytes (native_class_sizes.csv, 2012 PDB member list in UnPath.h)
+checkAtCompileTime(sizeof(UNavigationMeshBase) == 464, UNavigationMeshBase_is_464_bytes_in_retail);
 IMPLEMENT_CLASS(APathTargetPoint);
 IMPLEMENT_CLASS(APylonSeed);
 IMPLEMENT_CLASS(UInterface_PylonGeometryProvider);
@@ -5929,27 +5939,29 @@ UBOOL   APylon::IsPtWithinExpansionBounds(const FVector& Pt, FLOAT Buffer)
 	
 }
 
+// DISHONORED(port): UNavigationMeshBase::Serialize 2013 rva 0x2909e0 (2012 0x2b0000, 1915 bytes, same code): the reference
+// collector loop over DynamicEdges/PolyCover/PolyObstacleInfoMap is gone (retail emits the cross-pylon pylon refs of the
+// same package and DropEdgeMesh); the load path reads NavMeshVersionNum, VersionAtGenerationTime (>= 11, raises
+// FPathBuilder::LoadedPathVersionNum), Verts, EdgeStorageData, Polys, the dummy object ref below 7, LocalToWorld/WorldToLocal
+// (>= 8), BorderEdgeSegments (>= 9, only when the outer APylon is not bStatic: AActor bit @288 mask 1), ConstructLoadedEdges,
+// BuildBounds below 12 / BoxBounds from 12, then every edge; the reference's VER_EDGE_WIDTH_GENERATION clause does not exist
+// in retail. The trailing Arkane block (loading, NavMeshVersionNum < 28, outer APylon bImportedMesh @860 mask 1) bakes the
+// LocalToWorld translation into the verts, rebuilds the poly bounds/centers with the pylon's poly-up vector and
+// ExpansionPolyBoundsDownOffset, recenters the edges, stores the offset in APylon::m_ImportedMeshOffset (@896) and resets the
+// transforms to identity.
 void UNavigationMeshBase::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
 	if( Ar.IsObjectReferenceCollector() )
 	{
- 		
-		// add refs to pylons ref'd by dynamic edges
-		for(DynamicEdgeList::TIterator Itt(DynamicEdges);Itt;++Itt)
- 		{
- 			FNavMeshEdgeBase* CurEdge = Itt.Value();
- 			CurEdge->Serialize(Ar);
- 		}
-
 		// add refs to pylons ref'd by cross-pylon edges
 		for(INT CPIdx=0;CPIdx<CrossPylonEdges.Num();CPIdx++)
 		{
 			FNavMeshCrossPylonEdge* CPEdge = CrossPylonEdges(CPIdx);
-			
+
 			// if it's reffing an actor in the same level, emit a reference
-			if(CPEdge->Poly0Ref.OwningPylon.Actor != NULL && CPEdge->Poly1Ref.OwningPylon.Actor != NULL && 
+			if(CPEdge->Poly0Ref.OwningPylon.Actor != NULL && CPEdge->Poly1Ref.OwningPylon.Actor != NULL &&
 				CPEdge->Poly0Ref.OwningPylon.Actor->GetOutermost() == CPEdge->Poly1Ref.OwningPylon.Actor->GetOutermost())
 			{
 				Ar << CPEdge->Poly0Ref.OwningPylon.Actor;
@@ -5957,33 +5969,8 @@ void UNavigationMeshBase::Serialize(FArchive& Ar)
 			}
 		}
 
-		// add references to cover ref'd by polys
-		for(INT PolyIdx=0;PolyIdx<Polys.Num();++PolyIdx)
-		{
-			FNavMeshPolyBase* Poly = &Polys(PolyIdx);
-			for(INT PolyCoverIdx=0;PolyCoverIdx<Poly->PolyCover.Num();++PolyCoverIdx)
-			{
-				if( Poly->PolyCover(PolyCoverIdx).Actor != NULL &&
-					Poly->PolyCover(PolyCoverIdx).Actor->GetOutermost() == GetOutermost())
-				{
-					Ar << Poly->PolyCover(PolyCoverIdx).Actor;
-				}
-			}
-		}
-
-		// add refs to submeshes 
-		for( PolyObstacleInfoList::TIterator It(PolyObstacleInfoMap);It;++It)
-		{
-			FPolyObstacleInfo& Info = It.Value();
-			if(Info.SubMesh != NULL)
-			{
-				Ar << Info.SubMesh;
-			}
-		}
-
 		// ref dropedgemesh
 		Ar << DropEdgeMesh;
-
 	}
 
 	if( Ar.IsCountingMemory() )
@@ -5992,12 +5979,6 @@ void UNavigationMeshBase::Serialize(FArchive& Ar)
 		Ar << Polys;
 		Ar << EdgeDataBuffer;
 		Ar << EdgeStorageData;
-		Ar << KDOPTree;
-		SubMeshToParentPolyMap.CountBytes(Ar);
-		BorderEdgeSegments.CountBytes(Ar);
-		Polys.CountBytes(Ar);
-		CrossPylonEdges.CountBytes(Ar);
-		EdgePtrs.CountBytes(Ar);
 	}
 
 	if( Ar.IsSaving() || Ar.IsLoading() )
@@ -6020,7 +6001,7 @@ void UNavigationMeshBase::Serialize(FArchive& Ar)
 		// if this is an older version than VER_REMOVED_BASEACTOR we need to pretend to care about the old 'BaseActor' ref
 		if(NavMeshVersionNum < VER_REMOVED_BASEACTOR)
 		{
-			AActor* DummyBaseActor=NULL;
+			UObject* DummyBaseActor=NULL;
 			Ar << DummyBaseActor;
 		}
 
@@ -6032,12 +6013,12 @@ void UNavigationMeshBase::Serialize(FArchive& Ar)
 
 		if(NavMeshVersionNum >= VER_SERIALIZE_BORDEREDGELIST)
 		{
-			if(NavMeshVersionNum >= VER_EDGE_WIDTH_GENERATION || (GetPylon() && !GetPylon()->IsStatic())) //@FIXME: dangerous to base serialization on script property values
+			APylon* OuterPylon = Cast<APylon>(GetOuter());
+			if(OuterPylon != NULL && !OuterPylon->IsStatic())
 			{
 				Ar << BorderEdgeSegments;
-			}			
+			}
 		}
-		
 
 		// if we just loaded, construct our edges
 		if(Ar.IsLoading())
@@ -6055,13 +6036,54 @@ void UNavigationMeshBase::Serialize(FArchive& Ar)
 		}
 	}
 
-	// always serialize edges 
+	// always serialize edges
 	for(INT EdgeIdx=0;EdgeIdx<GetNumEdges();EdgeIdx++)
 	{
 		FNavMeshEdgeBase* Edge = GetEdgeAtIdx(EdgeIdx);
 		Edge->Serialize(Ar);
 	}
 
+	if( Ar.IsLoading() && NavMeshVersionNum < VER_DIS_IMPORTED_MESH_OFFSET )
+	{
+		APylon* OuterPylon = Cast<APylon>(GetOuter());
+		if( OuterPylon != NULL && OuterPylon->bImportedMesh )
+		{
+			debugf(TEXT("DISHONORED(bringup): %s nav mesh version %d < %d with an imported mesh: baking the LocalToWorld translation into the verts (2013 rva 0x2909e0 tail)"),
+				*GetPathName(), NavMeshVersionNum, VER_DIS_IMPORTED_MESH_OFFSET);
+			const FVector Offset = LocalToWorld.GetOrigin();
+			for( INT VertIdx=Verts.Num()-1; VertIdx>=0; --VertIdx )
+			{
+				FMeshVertex& Vert = Verts(VertIdx);
+				Vert.X += Offset.X;
+				Vert.Y += Offset.Y;
+				Vert.Z += Offset.Z;
+			}
+			for( INT PolyIdx=Polys.Num()-1; PolyIdx>=0; --PolyIdx )
+			{
+				FNavMeshPolyBase& Poly = Polys(PolyIdx);
+				// the 2013 exe asks the outer pylon (vtable +988) for the poly's up vector; ours uses the poly normal
+				const FVector Up = Poly.PolyNormal;
+				Poly.BoxBounds.Init();
+				FVector Center(0.f);
+				for( INT VertIdx=0; VertIdx<Poly.PolyVerts.Num(); ++VertIdx )
+				{
+					const FVector& VertLoc = Verts(Poly.PolyVerts(VertIdx));
+					Poly.BoxBounds += VertLoc + Up * Poly.PolyHeight;
+					Poly.BoxBounds += VertLoc - Up * ExpansionPolyBoundsDownOffset;
+					Center += VertLoc;
+				}
+				Poly.SetPolyCenter(Center / (FLOAT)Poly.PolyVerts.Num());
+			}
+			for( INT EdgeIdx=0; EdgeIdx<GetNumEdges(); ++EdgeIdx )
+			{
+				GetEdgeAtIdx(EdgeIdx)->UpdateEdgeCenter(this);
+			}
+			OuterPylon->m_ImportedMeshOffset = Offset;
+			LocalToWorld = FMatrix::Identity;
+			WorldToLocal = FMatrix::Identity;
+			BuildBounds();
+		}
+	}
 }
 
 void UNavigationMeshBase::BuildBounds()
@@ -10008,6 +10030,8 @@ FNavMeshDropDownEdge::FNavMeshDropDownEdge( UNavigationMeshBase* Mesh, VERTID Id
 }
 
 
+// DISHONORED(port): FNavMeshDropDownEdge::Serialize 2013 rva 0x27e5b0 (2012 0x298f40, identical bytes): DropHeight from nav
+// version 14, zeroed on load below it; EdgeType stays what the stream holds (no GetEdgeType() overwrite).
 FArchive& FNavMeshDropDownEdge::Serialize( FArchive& Ar )
 {
 	FNavMeshCrossPylonEdge::Serialize( Ar );
@@ -10020,8 +10044,6 @@ FArchive& FNavMeshDropDownEdge::Serialize( FArchive& Ar )
 	{
 		DropHeight = 0.f; // disable the edge since we don't have a valid drop height!
 	}
-
-	EdgeType = GetEdgeType();
 
 	return Ar;
 }
@@ -10180,6 +10202,7 @@ FNavMeshEdgeBase::FNavMeshEdgeBase( UNavigationMeshBase* Mesh, VERTID IdxV1, VER
 	UpdateEdgeCenter( Mesh );
 
 	// default to -1 indicating it needs to be computed
+	EdgeLength=(Mesh != NULL) ? (Mesh->Verts(IdxV1) - Mesh->Verts(IdxV2)).Size() : -1.f; // DISHONORED(port): 2012 PDB EdgeLength @24, serialized by 2013 rva 0x279d40
 	EffectiveEdgeLength=-1.f;
 }
 
@@ -10383,20 +10406,17 @@ FNavMeshSpecialMoveEdge(OwningMesh,Poly0,Pylon0IdxV1,Pylon0IdxV2,Poly1,Pylon1Idx
 	EdgeType = NAVEDGE_Coverslip;
 }
 
+// DISHONORED(port): FNavMeshEdgeBase::Serialize 2013 rva 0x279d40 (2012 0x294700): SerializeEdgeVerts, Poly0, Poly1, EdgeLength
+// (every version; the reference had removed it at VER_REMOVED_EDGELENGTH), EffectiveEdgeLength from nav version 10 (below it:
+// EffectiveEdgeLength = EdgeLength and a non-cross-pylon edge recomputes EdgeLength from its verts), EdgeCenter, EdgeType.
+// No EdgeGroupID / EdgePerp in the retail stream (reference VER_EDGE_GROUPS / VER_EDGEPERP data does not exist).
 FArchive& FNavMeshEdgeBase::Serialize( FArchive& Ar )
 {
-	
 	SerializeEdgeVerts(Ar);
 
 	Ar << Poly0;
 	Ar << Poly1;
-
-	// if this is old data account for edgelength float still being in the stream
-	if( NavMesh != NULL && NavMesh->NavMeshVersionNum < VER_REMOVED_EDGELENGTH )
-	{
-		FLOAT DummyFloat;
-		Ar << DummyFloat;
-	}
+	Ar << EdgeLength;
 
 	if(NavMesh != NULL && NavMesh->NavMeshVersionNum >= VER_EFFECTIVE_EDGE_LEN)
 	{
@@ -10404,33 +10424,16 @@ FArchive& FNavMeshEdgeBase::Serialize( FArchive& Ar )
 	}
 	else
 	{
-		if(!IsCrossPylon())
+		EffectiveEdgeLength = EdgeLength;
+		if(!bIsCrossPylon)
 		{
-			EffectiveEdgeLength = (GetVertLocation(0,LOCAL_SPACE) - GetVertLocation(1,LOCAL_SPACE)).Size();
-		}
-		else
-		{
-			EffectiveEdgeLength=-1.0f;
+			EdgeLength = (NavMesh->Verts(Vert0) - NavMesh->Verts(Vert1)).Size();
 		}
 	}
 	Ar << EdgeCenter;
 	Ar << EdgeType;
 
-	if(NavMesh != NULL && NavMesh->NavMeshVersionNum >= VER_EDGE_GROUPS)
-	{
-		Ar << EdgeGroupID;
-	}
-
-	if(NavMesh != NULL && NavMesh->NavMeshVersionNum >= VER_EDGEPERP)
-	{
-		Ar << EdgePerp;
-	}
-	else
-	{
-		EdgePerp = FVector(0.f);
-	}
-
-
+	EdgePerp = FVector(0.f);
 
 	return Ar;
 }
@@ -10502,6 +10505,9 @@ FVector FNavMeshSpecialMoveEdge::GetEdgeDestination( const FNavMeshPathParams& P
 }
 
 
+// DISHONORED(port): FNavMeshCrossPylonEdge::Serialize 2013 rva 0x279fc0 (2012 0x294980, identical bytes): Poly0Ref/Poly1Ref
+// from nav version 4 (FPolyReference: OwningPylon, PolyId with the < 620 sub-poly fix-up), no ObstaclePolyID (reference
+// VER_SERIALIZE_OBSTACLEPOLYID); below nav version 10 EdgeLength is recomputed from the mesh verts.
 FArchive& FNavMeshCrossPylonEdge::Serialize( FArchive& Ar )
 {
 	FNavMeshEdgeBase::Serialize( Ar );
@@ -10512,9 +10518,9 @@ FArchive& FNavMeshCrossPylonEdge::Serialize( FArchive& Ar )
 		Ar << Poly1Ref;
 	}
 
-	if(NavMesh != NULL && NavMesh->NavMeshVersionNum >= VER_SERIALIZE_OBSTACLEPOLYID)
+	if(NavMesh != NULL && NavMesh->NavMeshVersionNum < VER_EFFECTIVE_EDGE_LEN)
 	{
-		Ar << ObstaclePolyID;
+		EdgeLength = (NavMesh->GetVertLocation(Vert0, LOCAL_SPACE) - NavMesh->GetVertLocation(Vert1, LOCAL_SPACE)).Size();
 	}
 
 	return Ar;
@@ -12209,13 +12215,9 @@ FNavMeshPolyBase* FMeshVertex::GetContainingPolyAtIdx(INT Idx, UNavigationMeshBa
 /** Sets and returns OwningPylon */
 APylon* UNavigationMeshBase::GetPylon()
 {
-	if( OwningPylon != NULL )
-	{
-		return OwningPylon;
-	}
-
-	OwningPylon = Cast<APylon>(GetOuter());
-	return OwningPylon;
+	// DISHONORED(layout): no OwningPylon cache in the 464-byte retail object; 2013 UNavigationMeshBase::Serialize (rva 0x2909e0)
+	// takes the pylon as Cast<APylon>(Outer)
+	return Cast<APylon>(GetOuter());
 }
 
 /**
@@ -20568,6 +20570,15 @@ void APylon::GetPolysAffectedByObstacleShape(IInterface_NavMeshPathObstacle* Obs
 */
 UBOOL IInterface_NavMeshPathObstacle::RegisterObstacleWithNavMesh()
 {
+	// DISHONORED(bringup): the reference obstacle registration fills PolyObstacleInfoMap / sub-meshes, which are shared shims
+	// in the 464-byte retail layout (UnPath.h); Arkane's path objects use FNavMeshPathObjectEdge instead (2013 rva 0x27ad50)
+	static UBOOL bWarned = FALSE;
+	if( !bWarned )
+	{
+		bWarned = TRUE;
+		debugf(TEXT("DISHONORED(bringup): IInterface_NavMeshPathObstacle::RegisterObstacleWithNavMesh skipped (no obstacle sub-meshes in the retail nav mesh)"));
+	}
+	return FALSE;
 	// So you can toggle this code with one simple change
 #if CAPTURE_DYNAMIC_NAV_MESH_PERF
 	static UBOOL bDoIt = FALSE;
@@ -21415,6 +21426,15 @@ UBOOL bMergeDynamicMeshes=TRUE;
 UBOOL bCreateSubMeshEdges=TRUE;
 UBOOL UNavigationMeshBase::BuildSubMeshForPoly(WORD PolyIdx, TArray<FPolyObstacleInfo*>& out_ObstaclesThatWereJustBuilt)
 {
+	// DISHONORED(bringup): Arkane's nav mesh (2012 PDB UNavigationMeshBase, 464 bytes) has no obstacle sub-meshes; the reference
+	// sub-mesh maps are shared shims (UnPath.h), so no sub-mesh is ever built (runtime path finding is a later wave)
+	static UBOOL bWarned = FALSE;
+	if( !bWarned )
+	{
+		bWarned = TRUE;
+		debugf(TEXT("DISHONORED(bringup): UNavigationMeshBase::BuildSubMeshForPoly skipped (no obstacle sub-meshes in the retail nav mesh)"));
+	}
+	return FALSE;
 	//SCOPE_QUICK_TIMERX(BuildSubmesh,FALSE)
 
 	

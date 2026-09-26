@@ -740,6 +740,9 @@ struct FNavMeshEdgeBase : public FNavMeshObject
 	VERTID Vert1;
 	/** Polys attached to this edge (used only during build) */
 	TArray<FNavMeshPolyBase*> BuildTempEdgePolys;
+	/** DISHONORED(port): serialized edge length, 2012 PDB FNavMeshEdgeBase::EdgeLength @24 (2013 FNavMeshEdgeBase::Serialize rva
+	 *  0x279d40 reads it after Poly0/Poly1 for every nav mesh version; the reference had dropped it at VER_REMOVED_EDGELENGTH). */
+	FLOAT EdgeLength;
 	/** Computed effective (e.g. supported) edge length */
 	FLOAT EffectiveEdgeLength;
 
@@ -792,7 +795,8 @@ public:
 		bIsCrossPylon(FALSE),
 		Vert0(MAXVERTID),
 		Vert1(MAXVERTID),
-		EffectiveEdgeLength(0.f),
+		EdgeLength(-1.f), // DISHONORED(port): FNavMeshEdgeBaseConstructor 2013 rva 0x272640 stores -1.0 in EdgeLength @24 and EffectiveEdgeLength @28
+		EffectiveEdgeLength(-1.f),
 		EdgeCenter(0.f),
 		EdgeType(0),
 		ExtraEdgeCost(0),
@@ -2373,9 +2377,15 @@ public:
 		Ar << T.PolyNormal;
 		Ar << T.BoxBounds;
 
-		if( Ar.Ver() >= VER_NAVMESH_COVERREF )
+		// DISHONORED(port): operator<<(FArchive&, FNavMeshPolyBase&) 2013 rva 0x2780f0 (2012 0x2928c0, identical bytes): the
+		// cover reference array is a dummy TArray<BYTE> read only for 586 <= Ver with LicenseeVer < 27; Dishonored packages
+		// (licensee 30) go straight to PolyHeight. The reference read a TArray<FCoverReference> here, which took the first
+		// PolyHeight float (0x3F7FFFFF) as an array count and the following floats as object indices ("Bad export index
+		// 1065353215/6389" on Dishonored_MainMenu_Env DisPylon_0.NavigationMeshBase_4469).
+		if( Ar.Ver() >= VER_NAVMESH_COVERREF && Ar.LicenseeVer() < VER_DIS_LICENSEE_LEVEL )
 		{
-			Ar << T.PolyCover;
+			TArray<BYTE> LegacyCoverRefs;
+			Ar << LegacyCoverRefs;
 		}
 
 		if( Ar.Ver() >= VER_NAVMESH_POLYHEIGHT)
@@ -2504,10 +2514,16 @@ typedef TMultiMap<FMeshVertex,VERTID> FVertHash;
 // 6/9/2011 - fixed GDOs not reporting correct poly height
 #define VER_FIXED_GDO_HEIGHT 43
 
-#define VER_LATEST_NAVMESH		VER_FIXED_GDO_HEIGHT
+// DISHONORED(retail): Arkane's nav mesh format stops at 28: the UNavigationMeshBase constructor (2013 rva 0x294fb0, 2012
+// 0x2aeac0) stores NavMeshVersionNum = 28 and UNavigationMeshBase::Serialize (2013 rva 0x2909e0) gates its imported-mesh
+// fix-up on < 28. The reference versions 29..43 (edge groups, edge perp, edge A*, GDO fixes) never appear in the cooked data.
+// APylon::PostBeginPlay (2013 rva 0x25f8b0, 2012 0x279cd0) clears WorldInfo.bPathsRebuilt when VersionAtGenerationTime < 23.
+#define VER_DIS_IMPORTED_MESH_OFFSET 28
+#define VER_DIS_MIN_PATHING 23
+#define VER_LATEST_NAVMESH		VER_DIS_IMPORTED_MESH_OFFSET
 
 // if a navmesh is loaded which was generated with a version less than this, PATHS NEED TO BE REBUILT warnings will let fly
-#define VER_MIN_PATHING			VER_FIXED_GDO_HEIGHT
+#define VER_MIN_PATHING			VER_DIS_MIN_PATHING
 
 
 // struct that contains the necessary info for a particular edge (data, and type info)
@@ -2670,20 +2686,20 @@ public:
 	/** USED DURING MESH GENERATION: List of nodes that are on the border of the mesh */
 	PolyList BorderPolys;
 
-	// dynamic edges are edges added at runtime, and are not serialized (they are transient)
-	DynamicEdgeList DynamicEdges;
-	
-	// list of cross pylon edges that reference this mesh (for use when this mesh needs to be cleaned up)
-	IncomingEdgeListType IncomingDynamicEdges;
+	// DISHONORED(layout): UNavigationMeshBase is 464 bytes in retail (native_class_sizes.csv) with the 2012 PDB member order:
+	// Verts @56, StaticVertCount @68, EdgeStorageData @72, EdgeDataBuffer @84, DropEdgeMesh @96, EdgePtrs @100,
+	// CrossPylonEdges @112, BuildPolys @124, BuildPolyIndexMap @140, Polys @152, BorderPolys @164, SavedSessionID @180,
+	// bMeshHasBeenCleanedUp @184, BorderEdgeSegments @188, ActiveEdgeToHandleMap @200, BoxBounds @260, PolyOctree @288,
+	// VertHash @292, KDOPInitialized @296, NavMeshVersionNum @300, VersionAtGenerationTime @304, KDOPTree @308,
+	// LocalToWorld @336, WorldToLocal @400. The reference dynamic-edge / obstacle sub-mesh members (DynamicEdges,
+	// IncomingDynamicEdges, PolyObstacleInfoMap, SubMeshToParentPolyMap, SubMeshPolyIDToLinkeObstacleMap) are shims below
+	// and their producers are gated (Arkane's nav mesh has no obstacle sub-meshes; runtime path finding is a later wave).
 
 	/** the path session ID this mesh was last updated using - indicates when we need to rebuild submeshes */
-	INT SavedSessionID;
-
-	/** this will be TRUE when dynamic obstacles need to be recalculated for at east one poly in this mesh */
-	UBOOL bNeedsObstacleRecompute;
+	INT SavedSessionID;  // DISHONORED(layout): 2012 PDB @180
 
 	/** when TRUE this mesh has been cleaned up and is ready for deletion */
-	UBOOL bMeshHasBeenCleanedUp;
+	UBOOL bMeshHasBeenCleanedUp;  // DISHONORED(layout): 2012 PDB @184
 
 	// border edge segments are only used for dynamic meshes (meshes that move) and represent any edges of polys which
 	// are on the border of the mesh.. These edges are what are checked against other meshes for purposes of dynamic
@@ -2706,25 +2722,28 @@ public:
 		}
 
 	};
-	TArray<BorderEdgeInfo> BorderEdgeSegments;
+	TArray<BorderEdgeInfo> BorderEdgeSegments;  // DISHONORED(layout): 2012 PDB @188
 
-	/** Map of polygons which are being affected by dynamic obstacles, and the info related */
-	PolyObstacleInfoList PolyObstacleInfoMap;
-
-	/** Map of submeshes to their parent poly (in this mesh) */
-	TMap< UNavigationMeshBase*, WORD > SubMeshToParentPolyMap;
-
-	/** Map of submesh polygon IDs to obstacles that the poly is internal to (e.g. geometry inside the obstacle) */
-	PolyToObstacleMap SubMeshPolyIDToLinkeObstacleMap;
+	/** DISHONORED(layout): 2012 PDB UNavigationMeshBase::ActiveEdgeToHandleMap @200 (60 bytes); the reference tracks active
+	 *  edges through FNavMeshEdgeBase::ExtraEdgeCost (MarkEdgeAsActive), so this is layout storage only. */
+	TMultiMap<FNavMeshEdgeBase*, UNavigationHandle*> ActiveEdgeToHandleMap;
 
 	/** bounds of this mesh (used for octree checks, etc)  */
-	FBox	BoxBounds;
+	FBox	BoxBounds;  // DISHONORED(layout): 2012 PDB @260
 
-	/** indicates whether this mesh has a non-identity transform (and whether we need to transform or not) */
-	UBOOL bNeedsTransform;
-
-	/** cached version of the pylon that owns this mesh */
-	APylon* OwningPylon;
+	// DISHONORED(layout): reference-only members (no 2012 PDB counterpart) as shared statics, so the unported reference
+	// sub-mesh / dynamic-edge code compiles without taking space in the 464-byte retail object; their producers
+	// (AddDynamicCrossPylonEdge, IInterface_NavMeshPathObstacle::RegisterObstacleWithNavMesh, BuildSubMeshForPoly) are gated
+	// with DISHONORED(bringup), so the shared containers stay empty. bNeedsTransform / bNeedsObstacleRecompute became bits of
+	// the KDOPInitialized DWORD @296 and the OwningPylon cache is GetPylon() = Cast<APylon>(GetOuter()), as in 2013
+	// UNavigationMeshBase::Serialize (rva 0x2909e0). Plain `static` with one definition in UnNavigationMesh.cpp, not
+	// DISHONORED_SHIM_STATIC (= inline static): the containers' ctor/dtor/atexit code and Debug type info in each of the 19
+	// translation units that include UnPath.h grew Engine.lib by 75 MB and made link.exe fail with an access violation.
+	static DynamicEdgeList DynamicEdges;
+	static IncomingEdgeListType IncomingDynamicEdges;
+	static PolyObstacleInfoList PolyObstacleInfoMap;
+	static TMap< UNavigationMeshBase*, WORD > SubMeshToParentPolyMap;
+	static PolyToObstacleMap SubMeshPolyIDToLinkeObstacleMap;
 
 	/**
 	 * Build bounds for this navmesh
@@ -2774,7 +2793,6 @@ public:
 		bNeedsObstacleRecompute=FALSE;
 		bMeshHasBeenCleanedUp=FALSE;
 		bNeedsTransform=FALSE;
-		OwningPylon=NULL;
 	}
 
 #if !FINAL_RELEASE
@@ -2880,26 +2898,26 @@ public:
 	/**
 	 *	@Returns TRUE if this mesh is an obstacle mesh, and not one for navigation
 	 */
-	UBOOL IsObstacleMesh() { return (GetPylon() && OwningPylon->ObstacleMesh==this);}
+	UBOOL IsObstacleMesh() { APylon* Pylon = GetPylon(); return (Pylon && Pylon->ObstacleMesh==this);}
 
 	/**
 	 *	@Returns TRUE if this mesh is an obstacle mesh that was created at runtime
 	 */
-	UBOOL IsDynamicObstacleMesh() { return (GetPylon() && OwningPylon->DynamicObstacleMesh==this);}
+	UBOOL IsDynamicObstacleMesh() { APylon* Pylon = GetPylon(); return (Pylon && Pylon->DynamicObstacleMesh==this);}
 
 	/**
 	 *	@Returns TRUE if this mesh is a submesh of another higher level mesh
 	 */
-	UBOOL IsSubMesh() { return (GetPylon() && OwningPylon->NavMeshPtr != this && OwningPylon->ObstacleMesh != this && OwningPylon->DynamicObstacleMesh != this); }
+	UBOOL IsSubMesh() { APylon* Pylon = GetPylon(); return (Pylon && Pylon->NavMeshPtr != this && Pylon->ObstacleMesh != this && Pylon->DynamicObstacleMesh != this); }
 
 
 	/**
 	 *	@Returns the obstacle mesh associated with this mesh (could be this)
 	 */
-	UNavigationMeshBase* GetObstacleMesh() { return (IsObstacleMesh()) ? this : (GetPylon()) ? OwningPylon->ObstacleMesh : NULL; }
+	UNavigationMeshBase* GetObstacleMesh() { APylon* Pylon = GetPylon(); return (IsObstacleMesh()) ? this : (Pylon) ? Pylon->ObstacleMesh : NULL; }
 
 	// this will return the topmost mesh (if this is a submesh, get the parent, if not return self)
-	UNavigationMeshBase* GetTopLevelMesh() {return (GetPylon()) ? OwningPylon->NavMeshPtr : NULL;}
+	UNavigationMeshBase* GetTopLevelMesh() { APylon* Pylon = GetPylon(); return (Pylon) ? Pylon->NavMeshPtr : NULL;}
 
 	/** 
 	* Add a dynamic (runtime) vert to the pool -- return the index of the new vert
@@ -4100,13 +4118,13 @@ public:
 	 */
 	void RevertDynamicSnap();
 
-	/** disables RevertDynamicSnap function */
-	UBOOL bSkipDynamicSnapRevert;
+	// DISHONORED(layout): bSkipDynamicSnapRevert is a bit of the KDOPInitialized DWORD @296 (declared below); the mesh-generation
+	// snap revert data is a shim (no 2012 PDB counterpart, 464-byte retail object)
 
 private:
-	
+
 	/** temporary data used for reverting dynamic vertex snap */
-	TArray<FDynamicSnapInfo> DynamicSnapRevertData;
+	static TArray<FDynamicSnapInfo> DynamicSnapRevertData;  // DISHONORED(layout): shared static, see the shim block above
 	
 	/**
 	 * attempts to construct the largest squares possible out of the grid created during exploration
@@ -4192,8 +4210,15 @@ private:
 	/** Hash of verts.. used during build to quickly detect when a vertex has already been added in a location*/
 	FVertHash*		 VertHash;
 
+public:
 	/** whether or not the KDOP for this mesh has been built yet */
-	UBOOL			 KDOPInitialized;
+	BITFIELD		 KDOPInitialized:1;  // DISHONORED(layout): 2012 PDB UBOOL @296; the two reference-only flags share its DWORD
+	/** indicates whether this mesh has a non-identity transform (and whether we need to transform or not) */
+	BITFIELD		 bNeedsTransform:1;
+	/** this will be TRUE when dynamic obstacles need to be recalculated for at east one poly in this mesh */
+	BITFIELD		 bNeedsObstacleRecompute:1;
+	/** disables RevertDynamicSnap function */
+	BITFIELD		 bSkipDynamicSnapRevert:1;
 
 public:
 	// the version this mesh was saved at (for serialization)
@@ -4515,6 +4540,15 @@ void UNavigationMeshBase::AddDynamicCrossPylonEdge( const FVector& inV1,
 												   VERTID Poly1Vert0Idx,
 												   VERTID Poly1Vert1Idx)
 {
+	// DISHONORED(bringup): dynamic cross-pylon edges live in the reference-only DynamicEdges / IncomingDynamicEdges shims (shared
+	// across meshes in the 464-byte retail layout), so none is created; Arkane's dynamic pylons are a later runtime port
+	static UBOOL bWarned = FALSE;
+	if( !bWarned )
+	{
+		bWarned = TRUE;
+		debugf(TEXT("DISHONORED(bringup): UNavigationMeshBase::AddDynamicCrossPylonEdge skipped (no dynamic edges in the retail nav mesh layout)"));
+	}
+	return;
 	FNavMeshPolyBase* Poly0 = ConnectedPolys(0);
 	FNavMeshPolyBase* Poly1 = ConnectedPolys(1);
 	check(Poly0 != Poly1);

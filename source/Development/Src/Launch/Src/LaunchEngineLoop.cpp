@@ -3778,6 +3778,11 @@ INT FEngineLoop::Init()
 
 	debugf(TEXT(">>>>>>>>>>>>>> Initial startup: %.2fs <<<<<<<<<<<<<<<"), appSeconds() - GStartTime);
 
+	// DISHONORED(bringup): -loadall=<pkg+pkg|@listfile> loads every listed package here, logs one
+	// "DISHONORED(bringup): loadall <pkg>: <N> exports, <E> errors" line per package and requests exit (Engine/Src/DishonoredLoadAll.cpp)
+	extern void DishonoredLoadAllPackages();
+	DishonoredLoadAllPackages();
+
 	// handle test movie
 	if( appStrfind(GCmdLine, TEXT("movietest")) != NULL )
 	{
