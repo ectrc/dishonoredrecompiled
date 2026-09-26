@@ -3059,18 +3059,498 @@ void USequence::CheckForErrors()
  * Steps through the supplied operation stack, adding any newly activated operations to
  * the top of the stack.  Returns TRUE when the OpStack is empty.
  */
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup): -diskismet, the sequence census.
+
+	Counts what the Kismet of the loaded world actually runs: sequence ticks, sequence ops executed /
+	activated / deactivated per tick, delayed activations, and events fired, with a per-class histogram of
+	both. Re-armed for every new world, so the mission map is measured and not the menu map. A one-shot
+	inventory names every root sequence, every SeqEvent_Console (the "ce <name>" entry points), every
+	level-streaming action with the ULevelStreaming object it resolves to, every SeqAct_AttachToEvent with
+	its attachee / event counts, and every ULevelStreaming of the world with its four state bits -- which is
+	what says whether a LevelStreamingKismet such as L_Tower_Water is being driven at all.
+-----------------------------------------------------------------------------*/
+
+struct FDishonoredKismetCensus
+{
+	UBOOL				bParsed;
+	UBOOL				bEnabled;
+	UWorld*				World;
+	DOUBLE				NextReport;
+	DOUBLE				WorldStart;
+	INT					InventoryLevels;
+	UBOOL				bForceParsed;
+	UBOOL				bForceDone;
+	FLOAT				ForceDelay;
+	TArray<FString>		ForcePatterns;
+	QWORD				SequenceTicks;
+	QWORD				OpsExecuted;
+	QWORD				OpsActivated;
+	QWORD				OpsDeactivated;
+	QWORD				OpsLatent;
+	QWORD				OpsStillActive;
+	QWORD				OpsReActivated;
+	QWORD				OutputsFollowed;
+	QWORD				DelayedQueued;
+	QWORD				DelayedFired;
+	QWORD				StepCaps;
+	QWORD				EventsChecked;
+	QWORD				EventsFired;
+	QWORD				EventsQueued;
+	QWORD				EventsRegistered;
+	QWORD				ScriptFinds;
+	TMap<FName,INT>		OpsByClass;
+	TMap<FName,INT>		EventsByClass;
+
+	UBOOL IsOn()
+	{
+		if( !bParsed )
+		{
+			bParsed = TRUE;
+			bEnabled = ParseParam( appCmdLine(), TEXT("diskismet") );
+		}
+		return bEnabled;
+	}
+
+	void Reset()
+	{
+		World			= GWorld;
+		WorldStart		= appSeconds();
+		NextReport		= WorldStart;
+		InventoryLevels	= -1;
+		bForceDone		= FALSE;
+		SequenceTicks = OpsExecuted = OpsActivated = OpsDeactivated = OpsLatent = OpsStillActive = 0;
+		OpsReActivated = OutputsFollowed = DelayedQueued = DelayedFired = StepCaps = 0;
+		EventsChecked = EventsFired = EventsQueued = EventsRegistered = ScriptFinds = 0;
+		OpsByClass.Empty();
+		EventsByClass.Empty();
+	}
+
+	static void Bump( TMap<FName,INT>& Histogram, UObject* Object )
+	{
+		const FName ClassName = Object->GetClass()->GetFName();
+		INT* Count = Histogram.Find( ClassName );
+		if( Count != NULL )
+		{
+			(*Count)++;
+		}
+		else
+		{
+			Histogram.Set( ClassName, 1 );
+		}
+	}
+
+	static FString Describe( const TMap<FName,INT>& Histogram, INT MaxEntries )
+	{
+		TArray<FName> Names;
+		TArray<INT> Counts;
+		for( TMap<FName,INT>::TConstIterator It(Histogram); It; ++It )
+		{
+			Names.AddItem( It.Key() );
+			Counts.AddItem( It.Value() );
+		}
+		FString Out;
+		for( INT Emitted = 0; Emitted < MaxEntries; Emitted++ )
+		{
+			INT Best = INDEX_NONE;
+			for( INT Idx = 0; Idx < Counts.Num(); Idx++ )
+			{
+				if( Counts(Idx) >= 0 && ( Best == INDEX_NONE || Counts(Idx) > Counts(Best) ) )
+				{
+					Best = Idx;
+				}
+			}
+			if( Best == INDEX_NONE )
+			{
+				break;
+			}
+			Out += FString::Printf( TEXT("%s%s x%d"), Out.Len() ? TEXT(", ") : TEXT(""), *Names(Best).ToString(), Counts(Best) );
+			Counts(Best) = -1;
+		}
+		return Out.Len() ? Out : FString(TEXT("none"));
+	}
+
+	void CountOp( USequenceOp* Op )
+	{
+		OpsExecuted++;
+		Bump( OpsByClass, Op );
+	}
+
+	void CountEvent( USequenceEvent* Event )
+	{
+		EventsFired++;
+		Bump( EventsByClass, Event );
+	}
+
+	void Collect( USequence* Sequence, TMap<FName,INT>& ClassCount, TArray<USequenceObject*>& Notable, INT& Objects, INT& Nested )
+	{
+		if( Sequence == NULL )
+		{
+			return;
+		}
+		for( INT Idx = 0; Idx < Sequence->SequenceObjects.Num(); Idx++ )
+		{
+			USequenceObject* Object = Sequence->SequenceObjects(Idx);
+			if( Object == NULL )
+			{
+				continue;
+			}
+			Objects++;
+			Bump( ClassCount, Object );
+			if( Object->IsA(USeqEvent_Console::StaticClass())
+			||	Object->IsA(USeqAct_LevelStreamingBase::StaticClass())
+			||	Object->IsA(USeqAct_AttachToEvent::StaticClass())
+			||	Object->IsA(USeqAct_PrepareMapChange::StaticClass())
+			||	Object->IsA(USeqAct_CommitMapChange::StaticClass()) )
+			{
+				Notable.AddUniqueItem( Object );
+			}
+		}
+		for( INT Idx = 0; Idx < Sequence->NestedSequences.Num(); Idx++ )
+		{
+			if( Sequence->NestedSequences(Idx) != NULL )
+			{
+				Nested++;
+				Collect( Sequence->NestedSequences(Idx), ClassCount, Notable, Objects, Nested );
+			}
+		}
+	}
+
+	void Inventory()
+	{
+		TMap<FName,INT> ClassCount;
+		TArray<USequenceObject*> Notable;
+		INT Roots = 0, Objects = 0, Nested = 0;
+		for( INT LevelIdx = 0; LevelIdx < GWorld->Levels.Num(); LevelIdx++ )
+		{
+			ULevel* Level = GWorld->Levels(LevelIdx);
+			if( Level == NULL )
+			{
+				continue;
+			}
+			for( INT SeqIdx = 0; SeqIdx < Level->GameSequences.Num(); SeqIdx++ )
+			{
+				USequence* Sequence = Level->GameSequences(SeqIdx);
+				if( Sequence == NULL )
+				{
+					continue;
+				}
+				Roots++;
+				const INT ObjectsBefore = Objects, NestedBefore = Nested;
+				Collect( Sequence, ClassCount, Notable, Objects, Nested );
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: root %s (enabled %d, %d objects, %d nested)"),
+					*Sequence->GetPathName(), (INT)Sequence->IsEnabled(), Objects - ObjectsBefore, Nested - NestedBefore );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): kismet inventory: %s: %d root sequences, %d nested, %d sequence objects"),
+			*GWorld->GetOutermost()->GetName(), Roots, Nested, Objects );
+		debugf( TEXT("DISHONORED(bringup): kismet inventory: persistent level %s, current level %s, GetGameSequence %s, committed %s"),
+			GWorld->PersistentLevel != NULL ? *GWorld->PersistentLevel->GetOutermost()->GetName() : TEXT("NONE"),
+			GWorld->CurrentLevel != NULL ? *GWorld->CurrentLevel->GetOutermost()->GetName() : TEXT("NONE"),
+			GWorld->GetGameSequence() != NULL ? *GWorld->GetGameSequence()->GetPathName() : TEXT("NONE"),
+			GWorld->GetWorldInfo() != NULL ? *GWorld->GetWorldInfo()->CommittedPersistentLevelName.ToString() : TEXT("NONE") );
+		debugf( TEXT("DISHONORED(bringup): kismet inventory: classes present: %s"), *Describe( ClassCount, 200 ) );
+		for( INT Idx = 0; Idx < Notable.Num(); Idx++ )
+		{
+			USequenceObject* Object = Notable(Idx);
+			USeqEvent_Console* ConsoleEvent = Cast<USeqEvent_Console>(Object);
+			USeqAct_LevelStreaming* Streaming = Cast<USeqAct_LevelStreaming>(Object);
+			USeqAct_MultiLevelStreaming* MultiStreaming = Cast<USeqAct_MultiLevelStreaming>(Object);
+			USeqAct_AttachToEvent* Attach = Cast<USeqAct_AttachToEvent>(Object);
+			if( ConsoleEvent != NULL )
+			{
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: console event 'ce %s' %s (enabled %d, registered %d, triggers %d/%d, outputs %d)"),
+					*ConsoleEvent->ConsoleEventName.ToString(), *ConsoleEvent->GetPathName(), (INT)ConsoleEvent->bEnabled,
+					(INT)ConsoleEvent->bRegistered, ConsoleEvent->TriggerCount, ConsoleEvent->MaxTriggerCount, ConsoleEvent->OutputLinks.Num() );
+			}
+			else if( Streaming != NULL )
+			{
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: level streaming '%s' %s -> %s (visibleAfterLoad %d, blockOnLoad %d, active %d)"),
+					*Streaming->LevelName.ToString(), *Streaming->GetPathName(),
+					Streaming->Level != NULL ? *Streaming->Level->GetName() : TEXT("NONE"),
+					(INT)Streaming->bMakeVisibleAfterLoad, (INT)Streaming->bShouldBlockOnLoad, (INT)Streaming->bActive );
+			}
+			else if( MultiStreaming != NULL )
+			{
+				FString Levels;
+				for( INT ComboIdx = 0; ComboIdx < MultiStreaming->Levels.Num(); ComboIdx++ )
+				{
+					Levels += FString::Printf( TEXT("%s%s"), Levels.Len() ? TEXT(" ") : TEXT(""), *MultiStreaming->Levels(ComboIdx).LevelName.ToString() );
+				}
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: multi level streaming %s -> %s (visibleAfterLoad %d, active %d)"),
+					*MultiStreaming->GetPathName(), *Levels, (INT)MultiStreaming->bMakeVisibleAfterLoad, (INT)MultiStreaming->bActive );
+			}
+			else if( Attach != NULL )
+			{
+				TArray<UObject**> ObjVars;
+				Attach->GetObjectVars( ObjVars, TEXT("Attachee") );
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: attach to event %s: %d attachee vars, %d linked events, %d variable links"),
+					*Attach->GetPathName(), ObjVars.Num(),
+					Attach->EventLinks.Num() ? Attach->EventLinks(0).LinkedEvents.Num() : 0, Attach->VariableLinks.Num() );
+			}
+			else
+			{
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: map change op %s (%s)"),
+					*Object->GetPathName(), *Object->GetClass()->GetName() );
+			}
+		}
+		AWorldInfo* WorldInfo = GWorld->GetWorldInfo();
+		for( INT Idx = 0; WorldInfo != NULL && Idx < WorldInfo->StreamingLevels.Num(); Idx++ )
+		{
+			ULevelStreaming* Streaming = WorldInfo->StreamingLevels(Idx);
+			if( Streaming != NULL )
+			{
+				debugf( TEXT("DISHONORED(bringup): kismet inventory: streaming level %s (%s) loaded %d visible %d shouldBeLoaded %d shouldBeVisible %d blockOnLoad %d loadPending %d"),
+					*Streaming->PackageName.ToString(), *Streaming->GetClass()->GetName(),
+					(INT)(Streaming->LoadedLevel != NULL), (INT)Streaming->bIsVisible, (INT)Streaming->bShouldBeLoaded,
+					(INT)Streaming->bShouldBeVisible, (INT)Streaming->bShouldBlockOnLoad, (INT)Streaming->bHasLoadRequestPending );
+			}
+		}
+	}
+
+	void CollectActive( USequence* Sequence, TArray<USequenceOp*>& Active )
+	{
+		if( Sequence == NULL )
+		{
+			return;
+		}
+		for( INT Idx = 0; Idx < Sequence->SequenceObjects.Num(); Idx++ )
+		{
+			USequenceOp* Op = Cast<USequenceOp>( Sequence->SequenceObjects(Idx) );
+			if( Op != NULL && Op->bActive && Cast<USequence>(Op) == NULL )
+			{
+				Active.AddUniqueItem( Op );
+			}
+		}
+		for( INT Idx = 0; Idx < Sequence->NestedSequences.Num(); Idx++ )
+		{
+			CollectActive( Sequence->NestedSequences(Idx), Active );
+		}
+	}
+
+	void CountActivations( USequence* Sequence, INT& Total, INT& Ever, TArray<USequenceOp*>* Activated = NULL )
+	{
+		if( Sequence == NULL )
+		{
+			return;
+		}
+		for( INT Idx = 0; Idx < Sequence->SequenceObjects.Num(); Idx++ )
+		{
+			USequenceOp* Op = Cast<USequenceOp>( Sequence->SequenceObjects(Idx) );
+			if( Op != NULL && Cast<USequence>(Op) == NULL )
+			{
+				Total++;
+				if( Op->ActivateCount > 0 )
+				{
+					Ever++;
+					if( Activated != NULL )
+					{
+						Activated->AddUniqueItem( Op );
+					}
+				}
+			}
+		}
+		for( INT Idx = 0; Idx < Sequence->NestedSequences.Num(); Idx++ )
+		{
+			CountActivations( Sequence->NestedSequences(Idx), Total, Ever, Activated );
+		}
+	}
+
+	/** DISHONORED(bringup): -diskismetforce=<substring>[,...] fires input 0 of the matching ops once. */
+	void ForceOps( USequence* Sequence, INT& Fired )
+	{
+		if( Sequence == NULL )
+		{
+			return;
+		}
+		for( INT Idx = 0; Idx < Sequence->SequenceObjects.Num(); Idx++ )
+		{
+			USequenceOp* Op = Cast<USequenceOp>( Sequence->SequenceObjects(Idx) );
+			if( Op == NULL || Cast<USequence>(Op) != NULL || Op->InputLinks.Num() == 0 )
+			{
+				continue;
+			}
+			const FString Path = Op->GetPathName();
+			for( INT PatternIdx = 0; PatternIdx < ForcePatterns.Num(); PatternIdx++ )
+			{
+				if( Path.InStr( ForcePatterns(PatternIdx), FALSE, TRUE ) != INDEX_NONE )
+				{
+					debugf( TEXT("DISHONORED(bringup): kismet census: forcing input 0 of %s (%s)"), *Path, *Op->GetClass()->GetName() );
+					Op->ForceActivateInput( 0 );
+					Fired++;
+					break;
+				}
+			}
+		}
+		for( INT Idx = 0; Idx < Sequence->NestedSequences.Num(); Idx++ )
+		{
+			ForceOps( Sequence->NestedSequences(Idx), Fired );
+		}
+	}
+
+	void TickForce( DOUBLE Now )
+	{
+		if( !bForceParsed )
+		{
+			bForceParsed = TRUE;
+			FString Value;
+			if( Parse( appCmdLine(), TEXT("diskismetforce="), Value ) )
+			{
+				Value.ParseIntoArray( &ForcePatterns, TEXT(","), TRUE );
+			}
+			ForceDelay = 12.f;
+			Parse( appCmdLine(), TEXT("diskismetforcedelay="), ForceDelay );
+		}
+		if( bForceDone || ForcePatterns.Num() == 0 || Now - WorldStart < ForceDelay )
+		{
+			return;
+		}
+		bForceDone = TRUE;
+		INT Fired = 0;
+		for( INT LevelIdx = 0; LevelIdx < GWorld->Levels.Num(); LevelIdx++ )
+		{
+			ULevel* Level = GWorld->Levels(LevelIdx);
+			for( INT SeqIdx = 0; Level != NULL && SeqIdx < Level->GameSequences.Num(); SeqIdx++ )
+			{
+				ForceOps( Level->GameSequences(SeqIdx), Fired );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): kismet census: -diskismetforce fired %d ops after %.1fs"), Fired, Now - WorldStart );
+	}
+
+	void ReportActive()
+	{
+		TArray<USequenceOp*> Active;
+		for( INT LevelIdx = 0; LevelIdx < GWorld->Levels.Num(); LevelIdx++ )
+		{
+			ULevel* Level = GWorld->Levels(LevelIdx);
+			for( INT SeqIdx = 0; Level != NULL && SeqIdx < Level->GameSequences.Num(); SeqIdx++ )
+			{
+				CollectActive( Level->GameSequences(SeqIdx), Active );
+			}
+		}
+		FString Names;
+		for( INT Idx = 0; Idx < Active.Num() && Idx < 30; Idx++ )
+		{
+			Names += FString::Printf( TEXT("%s%s (%s, latent %d, activations %d)"), Names.Len() ? TEXT(", ") : TEXT(""),
+				*Active(Idx)->GetPathName(), *Active(Idx)->GetClass()->GetName(),
+				(INT)Active(Idx)->bLatentExecution, Active(Idx)->ActivateCount );
+		}
+		debugf( TEXT("DISHONORED(bringup): kismet census: %d ops active now: %s"), Active.Num(), Names.Len() ? *Names : TEXT("none") );
+	}
+
+	void Report()
+	{
+		if( !IsOn() || GWorld == NULL )
+		{
+			return;
+		}
+		if( World != GWorld )
+		{
+			Reset();
+		}
+		const DOUBLE Now = appSeconds();
+		if( Now < NextReport )
+		{
+			return;
+		}
+		NextReport = Now + 1.0;
+		TickForce( Now );
+		// re-run the inventory whenever the set of levels changes: a streamed-in level brings its own sequences
+		if( InventoryLevels != GWorld->Levels.Num() )
+		{
+			InventoryLevels = GWorld->Levels.Num();
+			Inventory();
+		}
+		debugf( TEXT("DISHONORED(bringup): kismet census: %s %.1fs: sequence ticks %I64u, ops executed %I64u (activated %I64u, deactivated %I64u, latent %I64u, still-active %I64u, re-activated %I64u), outputs followed %I64u, delayed queued %I64u fired %I64u, step caps %I64u"),
+			*GWorld->GetOutermost()->GetName(), Now - WorldStart, SequenceTicks, OpsExecuted, OpsActivated,
+			OpsDeactivated, OpsLatent, OpsStillActive, OpsReActivated, OutputsFollowed, DelayedQueued, DelayedFired, StepCaps );
+		debugf( TEXT("DISHONORED(bringup): kismet census: events fired %I64u (checked %I64u, queued %I64u, registered %I64u), script FindSeqObjectsByClass %I64u"),
+			EventsFired, EventsChecked, EventsQueued, EventsRegistered, ScriptFinds );
+		INT Controllers = 0, PlayerControllers = 0;
+		for( AController* Controller = GWorld->GetFirstController(); Controller != NULL; Controller = Controller->NextController )
+		{
+			Controllers++;
+			PlayerControllers += ( Cast<APlayerController>(Controller) != NULL ) ? 1 : 0;
+		}
+		ULocalPlayer* LocalPlayer = ( GEngine != NULL && GEngine->GamePlayers.Num() ) ? GEngine->GamePlayers(0) : NULL;
+		debugf( TEXT("DISHONORED(bringup): kismet census: world: %d controllers (%d player), GamePlayers(0) %s -> Actor %s, levels %d, game sequence %s, pending visibility %s"),
+			Controllers, PlayerControllers,
+			LocalPlayer != NULL ? *LocalPlayer->GetName() : TEXT("NONE"),
+			( LocalPlayer != NULL && LocalPlayer->Actor != NULL ) ? *LocalPlayer->Actor->GetName() : TEXT("NONE"),
+			GWorld->Levels.Num(),
+			GWorld->GetGameSequence() != NULL ? *GWorld->GetGameSequence()->GetName() : TEXT("NONE"),
+			GWorld->CurrentLevelPendingVisibility != NULL ? *GWorld->CurrentLevelPendingVisibility->GetOutermost()->GetName() : TEXT("NONE") );
+		debugf( TEXT("DISHONORED(bringup): kismet census: ops executed by class: %s"), *Describe( OpsByClass, 60 ) );
+		debugf( TEXT("DISHONORED(bringup): kismet census: events fired by class: %s"), *Describe( EventsByClass, 60 ) );
+		ReportActive();
+		FString Roots;
+		for( INT LevelIdx = 0; LevelIdx < GWorld->Levels.Num(); LevelIdx++ )
+		{
+			ULevel* Level = GWorld->Levels(LevelIdx);
+			for( INT SeqIdx = 0; Level != NULL && SeqIdx < Level->GameSequences.Num(); SeqIdx++ )
+			{
+				INT Total = 0, Ever = 0;
+				TArray<USequenceOp*> Activated;
+				CountActivations( Level->GameSequences(SeqIdx), Total, Ever, &Activated );
+				Roots += FString::Printf( TEXT("%s%s %d/%d"), Roots.Len() ? TEXT(", ") : TEXT(""),
+					*Level->GetOutermost()->GetName(), Ever, Total );
+				if( Activated.Num() > 0 && Activated.Num() <= 40 )
+				{
+					FString Paths;
+					for( INT Idx = 0; Idx < Activated.Num(); Idx++ )
+					{
+						Paths += FString::Printf( TEXT("%s%s (%s x%d)"), Paths.Len() ? TEXT(", ") : TEXT(""),
+							*Activated(Idx)->GetPathName(), *Activated(Idx)->GetClass()->GetName(), Activated(Idx)->ActivateCount );
+					}
+					debugf( TEXT("DISHONORED(bringup): kismet census: %s activated: %s"), *Level->GetOutermost()->GetName(), *Paths );
+				}
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): kismet census: ops ever activated per level: %s"), *Roots );
+	}
+};
+
+static FDishonoredKismetCensus GDisKismetCensus;
+
 UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 {
+	// DISHONORED(port): 2013 rva 0x300740, reached from USequence::UpdateOp (0x301550). Three deltas against
+	// the reference, all of them retail's:
+	//  1. retail scales DeltaTime by AGameInfo::GetBendTimeDilation(FALSE) -- vtable +976, the
+	//     ADishonoredGameInfo override (2013 rva 0x5e9e90) is
+	//     m_fCurrentWorldTimeDilation / m_fCurrentPlayerTimeDilation -- for every op and every delayed
+	//     activation that does not carry m_bAlwaysOutOfBendTime (SequenceOp @140 mask 0x400, an Arkane bit that
+	//     means "tick at real time even while Bend Time is slowing the world down").
+	//  2. retail has no USeqAct_Latent special case at all: the 2013 Sequence class has no DelayedLatentOps and
+	//     the 2013 SeqAct_Latent has no LatentActivationTime (script_classes_2013.json). The reference's
+	//     DelayedLatentOps is a DISHONORED_SHIM_STATIC in EngineSequenceClasses.h, i.e. ONE array shared by
+	//     every sequence of every world: a latent op pushed while the main-menu level was up was popped and
+	//     re-queued by the next world's sequence, and the IsA() on that freed op is agent AL's
+	//     "USequence::ExecuteActiveOps -> UObject::IsA" access violation -- agent AF's blocker B2.
+	//  3. retail's two step limits are checked before the pop and it emits no warning when they bite; the
+	//     census counts the caps instead.
+	FLOAT BendTimeDeltaTime = DeltaTime;
+	AGameInfo* GameInfo = GWorld->GetGameInfo();
+	if( GameInfo != NULL )
+	{
+		// retail divides unguarded; the guard only matters before AGameInfo's defaults are applied
+		const FLOAT PlayerTimeDilation = GameInfo->m_fCurrentPlayerTimeDilation;
+		if( PlayerTimeDilation != 0.f )
+		{
+			BendTimeDeltaTime = DeltaTime * ( GameInfo->m_fCurrentWorldTimeDilation / PlayerTimeDilation );
+		}
+	}
+
 	// first check delay activations
 	for (INT Idx = 0; Idx < DelayedActivatedOps.Num(); Idx++)
 	{
 		FActivateOp& DelayedOp = DelayedActivatedOps(Idx);
+		USequenceOp* OpToActivate = DelayedOp.Op;
 
-		DelayedOp.RemainingDelay -= DeltaTime;
+		DelayedOp.RemainingDelay -= OpToActivate->m_bAlwaysOutOfBendTime ? DeltaTime : BendTimeDeltaTime;
 		if (DelayedOp.RemainingDelay <= 0.f)
 		{
-			USequenceOp* OpToActivate = DelayedOp.Op;
-
 			// don't activate if the link is disabled, or if we're in the editor and it's disabled for PIE only
 			if ( OpToActivate->InputLinks(DelayedOp.InputIdx).ActivateInputLink() )
 			{
@@ -3090,52 +3570,38 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 							((APlayerController*)Controller)->eventClientMessage(OpToActivate->ObjComment,NAME_None);
 						}
 					}
-				}          
+				}
 
 				// stick the op on the activated stack
 				QueueSequenceOp(OpToActivate, FALSE);
 			}
-			
+			GDisKismetCensus.DelayedFired++; // DISHONORED(bringup)
+
 			// and remove from the list
 			DelayedActivatedOps.Remove(Idx--,1);
 		}
 	}
-	// add all delayed latent ops to the activated stack
-	while(DelayedLatentOps.Num() > 0)
-	{
-		QueueSequenceOp(DelayedLatentOps.Pop(),FALSE);
-	}
 
 	TArray<FActivateOp> NewlyActivatedOps;
 	TArray<USequenceOp*> ActiveLatentOps;
-	
+
 	// while there are still active ops on stack,
 	INT Steps = 0;
-	while (ActiveSequenceOps.Num() > 0 &&
-		   (Steps++ < MaxSteps || MaxSteps == 0))
+	while (ActiveSequenceOps.Num() > 0)
 	{
-		// make sure we haven't hit an infinite loop
-		if (Steps >= MAX_SEQUENCE_STEPS)
+		// DISHONORED(retail): both of retail's limits, tested before the pop
+		if( ( MaxSteps != 0 && Steps >= MaxSteps ) || ( Steps + 1 ) >= MAX_SEQUENCE_STEPS )
 		{
-			KISMET_WARN(TEXT("Max Kismet scripting execution steps exceeded, aborting!"));
+			GDisKismetCensus.StepCaps++; // DISHONORED(bringup)
 			break;
 		}
+		Steps++;
 		// pop top node
 		USequenceOp *NextOp = ActiveSequenceOps.Pop();
 		// execute next action
 		if (NextOp != NULL)
 		{
-			// Latent Operations in a loop might cause problems before hitting MAX_SEQUENCE_STEPs, so this is another check to avoid problems
-			if(NextOp->IsA(USeqAct_Latent::StaticClass()))
-			{
-				USeqAct_Latent* LatentOp = CastChecked<USeqAct_Latent>(NextOp);
-				if(LatentOp->bActive && appIsNearlyEqual(LatentOp->LatentActivationTime, GWorld->GetTimeSeconds()))
-				{
-					// Delay this latent operation to the next frame
-					DelayedLatentOps.Push(LatentOp);
-					continue;
-				}
-			}
+			GDisKismetCensus.CountOp(NextOp); // DISHONORED(bringup)
 			// copy any linked variable values to the op's matching properties
 			NextOp->PublishLinkedVariableValues();
 			// if it isn't already active
@@ -3145,29 +3611,19 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 				// activate the op
 				NextOp->bActive = TRUE;
 				(NextOp->ActivateCount)++;
+				GDisKismetCensus.OpsActivated++; // DISHONORED(bringup)
 				NextOp->Activated();
 				NextOp->eventActivated();
-				// Set activation time on Latent Ops
-				if(NextOp->IsA(USeqAct_Latent::StaticClass()))
-				{
-					USeqAct_Latent* LatentOp = CastChecked<USeqAct_Latent>(NextOp);
-					LatentOp->LatentActivationTime = GWorld->GetTimeSeconds();
-				}
 
 #if !CONSOLE && WITH_EDITOR
 				NextOp->PIEActivationTime = GWorld->GetTimeSeconds();
 #endif
 			}
-			else if(NextOp->IsA(USeqAct_Latent::StaticClass()))
-			{
-					USeqAct_Latent* LatentOp = CastChecked<USeqAct_Latent>(NextOp);
-					LatentOp->LatentActivationTime = GWorld->GetTimeSeconds();
-			}
 			UBOOL bOpDeActivated = FALSE;
 			// update the op
 			if (NextOp->bActive)
 			{
-				NextOp->bActive = !NextOp->UpdateOp(DeltaTime);
+				NextOp->bActive = !NextOp->UpdateOp(NextOp->m_bAlwaysOutOfBendTime ? DeltaTime : BendTimeDeltaTime);
 				// if it's no longer active, or a latent action
 				if (!NextOp->bActive ||
 					NextOp->bLatentExecution)
@@ -3176,6 +3632,7 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 					if(!NextOp->bActive)
 					{
 						bOpDeActivated = TRUE;
+						GDisKismetCensus.OpsDeactivated++; // DISHONORED(bringup)
 						KISMET_LOG(TEXT("-> %s (%s) has finished execution"),*NextOp->ObjName,*NextOp->GetName());
 						NextOp->DeActivated();
 						NextOp->eventDeactivated();
@@ -3211,6 +3668,7 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 							}
 #endif
 
+							GDisKismetCensus.OutputsFollowed++; // DISHONORED(bringup)
 							KISMET_LOG(TEXT("--> Link %s (%d) activated"),*Link.LinkDesc,OutputIdx);
 							// iterate through all linked inputs looking for linked ops
 							for (INT InputIdx = 0; InputIdx < Link.Links.Num(); InputIdx++)
@@ -3237,7 +3695,8 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 				}
 				else
 				{
-					debugf(NAME_Warning,TEXT("Op %s (%s) still active while bLatentExecution == FALSE"),*NextOp->GetFullName(),*NextOp->ObjName);
+					// DISHONORED(retail): retail carries on silently here (no reference warning); counted instead
+					GDisKismetCensus.OpsStillActive++;
 				}
 			}
 			// clear inputs on this op
@@ -3250,6 +3709,7 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 					KISMET_LOG(TEXT("Reactivating %s, %d queued activations"),*NextOp->GetName(),NextOp->InputLinks(InputIdx).QueuedActivations);
 					// retain the impulse, decrement the queue count, and re-add it to the execution list
 					NextOp->InputLinks(InputIdx).QueuedActivations--;
+					GDisKismetCensus.OpsReActivated++; // DISHONORED(bringup)
 					QueueSequenceOp(NextOp);
 				}
 				else
@@ -3290,7 +3750,7 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 								((APlayerController*)Controller)->eventClientMessage(Op->ObjComment,NAME_None);
 							}
 						}
-					}          
+					}
 				}
 				// and remove from list
 				NewlyActivatedOps.Pop();
@@ -3330,6 +3790,7 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 		if (LatentOp != NULL &&
 			LatentOp->bActive)
 		{
+			GDisKismetCensus.OpsLatent++; // DISHONORED(bringup)
 			QueueSequenceOp(LatentOp,TRUE);
 		}
 	}
@@ -3369,6 +3830,11 @@ UBOOL USequence::UpdateOp(FLOAT DeltaTime)
 			// Remove it from the list
 			UnregisteredEvents.Remove( UnRegIdx-- );
 		}
+	}
+	GDisKismetCensus.SequenceTicks++; // DISHONORED(bringup)
+	if (ParentSequence == NULL)
+	{
+		GDisKismetCensus.Report(); // DISHONORED(bringup)
 	}
 	if (IsEnabled())
 	{
@@ -4524,6 +4990,7 @@ UBOOL USequence::QueueDelayedSequenceOp( USequenceOp* NewSequenceOp, FSeqOpOutpu
 		if( !bFoundExisting )
 		{
 			// add to the list of delayed activation
+			GDisKismetCensus.DelayedQueued++; // DISHONORED(bringup)
 			INT aIdx = DelayedActivatedOps.AddZeroed();
 			DelayedActivatedOps(aIdx).ActivatorOp = NewSequenceOp;
 			DelayedActivatedOps(aIdx).Op = LinkedOp;
@@ -4882,6 +5349,14 @@ void USequence::execFindSeqObjectsByClass(FFrame &Stack,RESULT_DECL)
 	check( DesiredClass->IsChildOf(USequenceObject::StaticClass()) );
 
 	FindSeqObjectsByClass(DesiredClass, OutputObjects, bRecursive);
+
+	// DISHONORED(bringup): the script side of PlayerController.ServerCauseEvent ("ce <name>") goes through here
+	GDisKismetCensus.ScriptFinds++;
+	if( GDisKismetCensus.IsOn() )
+	{
+		debugf( TEXT("DISHONORED(bringup): kismet census: script FindSeqObjectsByClass(%s, recursive %d) on %s -> %d objects"),
+			*DesiredClass->GetName(), (INT)bRecursive, *GetPathName(), OutputObjects.Num() );
+	}
 }
 
 void USequence::execFindSeqObjectsByName(FFrame &Stack,RESULT_DECL)
@@ -4932,6 +5407,7 @@ UBOOL USequenceEvent::RegisterEvent()
 
 	eventRegisterEvent();
 	bRegistered = TRUE;
+	GDisKismetCensus.EventsRegistered++; // DISHONORED(bringup)
 
 	return bRegistered;
 }
@@ -4962,9 +5438,15 @@ void USequenceEvent::ActivateEvent(AActor *InOriginator, AActor *InInstigator, T
 		TriggerCount++;
 	}
 
+	// DISHONORED(bringup)
+	if (!bFromQueued)
+	{
+		GDisKismetCensus.CountEvent(this);
+	}
 	// if we're already active then queue this activation
 	if (bActive && ParentSequence != NULL)
 	{
+		GDisKismetCensus.EventsQueued++; // DISHONORED(bringup)
 		KISMET_LOG(TEXT("- queuing activation"));
 		INT Idx = ParentSequence->QueuedActivations.AddZeroed();
 		ParentSequence->QueuedActivations(Idx).ActivatedEvent = this;
@@ -5041,6 +5523,7 @@ void USequenceEvent::ActivateEvent(AActor *InOriginator, AActor *InInstigator, T
  */
 UBOOL USequenceEvent::CheckActivate(AActor *InOriginator, AActor *InInstigator, UBOOL bTest, TArray<INT>* ActivateIndices, UBOOL bPushTop)
 {
+	GDisKismetCensus.EventsChecked++; // DISHONORED(bringup)
 	UBOOL bActivated = FALSE;
 	if ( (bClientSideOnly ? GWorld->GetWorldInfo()->NetMode != NM_DedicatedServer : GWorld->GetWorldInfo()->NetMode != NM_Client) &&
 		GWorld->HasBegunPlay() && !IsPendingKill() && (ParentSequence == NULL || ParentSequence->IsEnabled()) )
@@ -9712,7 +10195,26 @@ void USeqAct_AttachToEvent::Activated()
 	{
 		if (targets.Num() == 0)
 		{
-			KISMET_WARN(TEXT("Attach to Event %s has no targets!"),*GetName());
+			// DISHONORED(bringup): name the variable links, so "has no targets" says which one is empty
+			FString Attachees;
+			for (INT LinkIdx = 0; LinkIdx < VariableLinks.Num(); LinkIdx++)
+			{
+				const FSeqVarLink& Link = VariableLinks(LinkIdx);
+				if (Link.LinkDesc != TEXT("Attachee"))
+				{
+					continue;
+				}
+				for (INT VarIdx = 0; VarIdx < Link.LinkedVariables.Num(); VarIdx++)
+				{
+					USequenceVariable* Var = Link.LinkedVariables(VarIdx);
+					UObject** Ref = (Var != NULL) ? Var->GetObjectRef(0) : NULL;
+					Attachees += FString::Printf( TEXT("%s%s = %s"), Attachees.Len() ? TEXT(", ") : TEXT(""),
+						Var != NULL ? *Var->GetPathName() : TEXT("NULL variable"),
+						(Ref != NULL && *Ref != NULL) ? *(*Ref)->GetFullName() : TEXT("None") );
+				}
+			}
+			KISMET_WARN(TEXT("Attach to Event %s has no targets! Attachee links: %s"),*GetName(),
+				Attachees.Len() ? *Attachees : TEXT("none"));
 		}
 		if (Events.Num() == 0)
 		{
@@ -10229,20 +10731,22 @@ void USeqAct_LevelStreamingBase::ActivateLevel( ULevelStreaming* LevelStreamingO
 			LevelStreamingObject->bShouldBeLoaded		= FALSE;
 			LevelStreamingObject->bShouldBeVisible		= FALSE;
 		}
+		// DISHONORED(bringup): retail logs nothing here (2013 rva 0x2dc230); the reference's unconditional
+		// debugf fired for every player on every frame the action was active
+		if( GDisKismetCensus.IsOn() )
+		{
+			debugf( TEXT("DISHONORED(bringup): kismet census: %s activated level %s: shouldBeLoaded %d shouldBeVisible %d blockOnLoad %d (load impulse %d, unload impulse %d)"),
+				*GetPathName(), *LevelStreamingObject->PackageName.ToString(),
+				(INT)LevelStreamingObject->bShouldBeLoaded, (INT)LevelStreamingObject->bShouldBeVisible,
+				(INT)LevelStreamingObject->bShouldBlockOnLoad,
+				(INT)InputLinks(0).bHasImpulse, InputLinks.Num() > 1 ? (INT)InputLinks(1).bHasImpulse : 0 );
+		}
 		// notify players of the change
 		for (AController *Controller = GWorld->GetWorldInfo()->ControllerList; Controller != NULL; Controller = Controller->NextController)
 		{
 			APlayerController *PC = Cast<APlayerController>(Controller);
 			if (PC != NULL)
 			{
-				debugf(TEXT("ActivateLevel %s %i %i %i"), 
-							*LevelStreamingObject->PackageName.ToString(), 
-							LevelStreamingObject->bShouldBeLoaded, 
-							LevelStreamingObject->bShouldBeVisible, 
-							LevelStreamingObject->bShouldBlockOnLoad );
-
-
-
 				PC->eventLevelStreamingStatusChanged( 
 					LevelStreamingObject, 
 					LevelStreamingObject->bShouldBeLoaded, 
@@ -10388,9 +10892,13 @@ void USeqAct_MultiLevelStreaming::Activated()
 						APlayerController* PlayerController = Controller->GetAPlayerController();
 						if (PlayerController != NULL)
 						{
-							debugf( TEXT("Activated %s %i %i %i"), *StreamingLevel->PackageName.ToString(), StreamingLevel->bShouldBeLoaded, 
-																	StreamingLevel->bShouldBeVisible, StreamingLevel->bShouldBlockOnLoad );
-
+							// DISHONORED(bringup): retail logs nothing here (2013 rva 0x2e5f90); the reference's debugf fired
+				// for every player and every streaming level on every activation
+				if( GDisKismetCensus.IsOn() )
+				{
+					debugf( TEXT("DISHONORED(bringup): kismet census: %s unloaded other level %s"),
+						*GetPathName(), *StreamingLevel->PackageName.ToString() );
+				}
 							PlayerController->eventLevelStreamingStatusChanged( StreamingLevel, StreamingLevel->bShouldBeLoaded,
 																				StreamingLevel->bShouldBeVisible, StreamingLevel->bShouldBlockOnLoad );
 						}

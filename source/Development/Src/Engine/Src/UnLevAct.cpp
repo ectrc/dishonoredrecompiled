@@ -547,6 +547,9 @@ AActor* UWorld::SpawnActor
 	Actor->bTicked		= !Ticked;
 	Actor->CreationTime = GetTimeSeconds();
 	Actor->WorldInfo	= GetWorldInfo();
+	// DISHONORED(retail): 2013 UWorld::SpawnActor sets Arkane's m_bSpawned (store at 0x256bb5, @300 mask 0x1).
+	// UWorld::CleanUpBeforeLevelTransition and AActor::ShouldTrace's callers read it; nothing wrote it before.
+	Actor->m_bSpawned = TRUE;
 
 	// Set network role.
 	check(Actor->Role==ROLE_Authority);
@@ -912,14 +915,44 @@ void UWorld::CleanUpBeforeLevelTransition()
 	// Unmount the PersistentFaceFXAnimSet
 	SetPersistentFaceFXAnimSet(NULL);
 
-	// Kill actors we are supposed to remove reference to during e.g. seamless map transitions.
+	// DISHONORED(port): 2013 UWorld::CleanUpBeforeLevelTransition (rva 0x258bb0) does NOT destroy every actor
+	// with bKillDuringLevelTransition (@292 mask 0x8, which the cook leaves TRUE on every actor): it also
+	// requires Arkane's m_bSpawned (@300 mask 0x1, written by UWorld::SpawnActor, store at 0x256bb5) and the
+	// absence of m_bPersistsAcrossLevelTransition (@300 mask 0x2), and destroys with
+	// DestroyActor( Actor, FALSE, TRUE ). Without the two extra bits the menu's seamless map change destroyed the
+	// WorldInfo, the GameInfo, the PlayerStart, the DishonoredPlayerController and its pawn -- and with no player
+	// controller there is no view, so UWorld::UpdateLevelStreaming never made the new persistent level visible and
+	// nothing was left to run the menu's own "ce ChangeLvl_StartNewGame". That is agent AF's blocker B2.
+	// DISHONORED(bringup): -diskismet names what the transition destroys and keeps.
+	static const UBOOL bLogTransition = ParseParam( appCmdLine(), TEXT("diskismet") );
 	for( INT ActorIndex=0; ActorIndex<PersistentLevel->Actors.Num(); ActorIndex++ )
 	{
 		AActor* Actor = PersistentLevel->Actors(ActorIndex);
-		if( Actor && Actor->bKillDuringLevelTransition )
+		if( Actor == NULL )
 		{
-			DestroyActor( Actor );
+			continue;
 		}
+		if( bLogTransition && Actor->bKillDuringLevelTransition )
+		{
+			debugf( TEXT("DISHONORED(bringup): kismet census: level transition %s %s (spawned %d, persists %d)"),
+				( Actor->m_bSpawned && !Actor->m_bPersistsAcrossLevelTransition ) ? TEXT("destroys") : TEXT("keeps"),
+				*Actor->GetFullName(), (INT)Actor->m_bSpawned, (INT)Actor->m_bPersistsAcrossLevelTransition );
+		}
+		if( Actor->bKillDuringLevelTransition && Actor->m_bSpawned && !Actor->m_bPersistsAcrossLevelTransition )
+		{
+			DestroyActor( Actor, FALSE, TRUE );
+		}
+	}
+	if( bLogTransition )
+	{
+		INT Controllers = 0;
+		for( AController* Controller = GetFirstController(); Controller != NULL; Controller = Controller->NextController )
+		{
+			Controllers++;
+			debugf( TEXT("DISHONORED(bringup): kismet census: level transition keeps controller %s (killDuringTransition %d)"),
+				*Controller->GetFullName(), (INT)Controller->bKillDuringLevelTransition );
+		}
+		debugf( TEXT("DISHONORED(bringup): kismet census: level transition left %d controllers"), Controllers );
 	}
 }
 
@@ -1428,7 +1461,10 @@ UBOOL UWorld::MoveActor
 	FVector FinalDelta = Delta;
 	FRotator const OldRotation = Actor->Rotation;
 	FVector const OldLocation = Actor->Location;
-	DWORD TraceFlags = 0;
+	// DISHONORED(retail): 2013 UWorld::MoveActor starts its trace flags at TRACE_DisTouchOverlap
+	// (stores at 0x24cf23 `0x200000` and 0x24d0e1 `0x200800`), so the components the four
+	// ADis*::ShouldTrace overrides hide from movement traces are still swept for touches
+	DWORD TraceFlags = TRACE_DisTouchOverlap;
 
 	if ( Actor->IsEncroacher() )
 	{
@@ -1791,7 +1827,8 @@ UBOOL UWorld::MoveActor
 					// at this point the actor's already been moved so offset from our delta
 					Start = primComp->Bounds.Origin - FinalDelta;
 					End = primComp->Bounds.Origin;
-					TraceFlags = TRACE_Pawns | TRACE_Others | TRACE_Volumes;
+					// DISHONORED(retail): 2013 stores 0x200019 at 0x24e14a (0x220019 at 0x24e15d with complex collision)
+					TraceFlags = TRACE_DisTouchOverlap | TRACE_Pawns | TRACE_Others | TRACE_Volumes;
 
 					if( Actor->bCollideComplex )
 					{

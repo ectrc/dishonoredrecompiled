@@ -3345,12 +3345,33 @@ static void DishonoredTickStartMap( UGameEngine* Engine )
 	debugf( TEXT("DISHONORED(bringup): startmap: '%s' after the %s commit"), *Command,
 		*GWorld->GetWorldInfo()->CommittedPersistentLevelName.ToString() );
 	APlayerController* PlayerController = ( Engine->GamePlayers.Num() && Engine->GamePlayers(0) ) ? Engine->GamePlayers(0)->Actor : NULL;
+	// DISHONORED(bringup): agent AT's probe for blocker B2
+	debugf( TEXT("DISHONORED(bringup): startmap: GamePlayers %d, GamePlayers(0) %s, its Actor %s"),
+		Engine->GamePlayers.Num(),
+		( Engine->GamePlayers.Num() && Engine->GamePlayers(0) ) ? *Engine->GamePlayers(0)->GetFullName() : TEXT("NONE"),
+		PlayerController != NULL ? *PlayerController->GetFullName() : TEXT("NONE") );
+	for( AController* Controller = GWorld->GetFirstController(); Controller != NULL; Controller = Controller->NextController )
+	{
+		APlayerController* AnyPlayerController = Cast<APlayerController>(Controller);
+		debugf( TEXT("DISHONORED(bringup): startmap: controller %s (player controller %d, Player %s, pending kill %d)"),
+			*Controller->GetFullName(), (INT)(AnyPlayerController != NULL),
+			( AnyPlayerController != NULL && AnyPlayerController->Player != NULL ) ? *AnyPlayerController->Player->GetFullName() : TEXT("NONE"),
+			(INT)Controller->IsPendingKill() );
+	}
 	if( bNewGame && PlayerController )
 	{
-		PlayerController->ConsoleCommand( Command, TRUE );
+		// DISHONORED(bringup): agent AT's probe for blocker B2 -- the console command is silent, so say who runs it
+		UFunction* ExecFunction = PlayerController->FindFunction( FName(TEXT("CE"), FNAME_Find) );
+		debugf( TEXT("DISHONORED(bringup): startmap: controller %s, Player %s, exec CE %s"),
+			*PlayerController->GetFullName(),
+			PlayerController->Player != NULL ? *PlayerController->Player->GetFullName() : TEXT("NONE"),
+			ExecFunction != NULL ? *ExecFunction->GetFullName() : TEXT("NOT FOUND") );
+		const FString Result = PlayerController->ConsoleCommand( Command, FALSE );
+		debugf( TEXT("DISHONORED(bringup): startmap: console command returned '%s'"), *Result );
 	}
 	else
 	{
+		debugf( TEXT("DISHONORED(bringup): startmap: no player controller, issuing through UGameEngine::Exec") );
 		Engine->Exec( *Command, *GLog );
 	}
 }
