@@ -74,6 +74,18 @@ public:
 class ArkSettings
 {
 public:
+	// DISHONORED(layout): ArkSettings' own change reason, mapped onto the listener's one by
+	// OnSettingsChanged (2013 rva 0x53b7e0: 0 -> ASLI_ReadProfileFromStorage, 1 -> ASLI_ModifiedByUser,
+	// 2 -> ASLI_ValidatedByUser).
+	enum EChangeReason
+	{
+		ECR_ReadFromStorage = 0,
+		ECR_ModifiedByUser = 1,
+		ECR_ValidatedByUser = 2,
+	};
+
 	static ArkSettingsParameters& GetParameters();
 	static void ApplyCurrentSettings( IArkSettingsListenerInterface* Listener );
+	static void FindListeners( TArray<TScriptInterface<IArkSettingsListenerInterface> >& OutListeners );
+	static void OnSettingsChanged( UOnlinePlayerStorage* Settings, TArray<TScriptInterface<IArkSettingsListenerInterface> >& Listeners, EChangeReason Reason );
 };

@@ -1,0 +1,3 @@
+UOnlineSubsystemSteamworks::execReadFriendsList
+UOnlineSubsystemSteamworks::execReadProfileSettings
+UOnlineSubsystemSteamworks::execReadAchievements

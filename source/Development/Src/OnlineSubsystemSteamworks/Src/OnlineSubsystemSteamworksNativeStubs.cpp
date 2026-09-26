@@ -66,10 +66,6 @@ void UOnlineSubsystemSteamworks::execGetAchievements( FFrame& Stack, RESULT_DECL
 {
 	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execGetAchievements);
 }
-void UOnlineSubsystemSteamworks::execReadAchievements( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execReadAchievements);
-}
 void UOnlineSubsystemSteamworks::execShowPlayersUI( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execShowPlayersUI);
@@ -166,10 +162,6 @@ void UOnlineSubsystemSteamworks::execGetFriendsList( FFrame& Stack, RESULT_DECL 
 {
 	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execGetFriendsList);
 }
-void UOnlineSubsystemSteamworks::execReadFriendsList( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execReadFriendsList);
-}
 void UOnlineSubsystemSteamworks::execWriteProfileSettingsCompleted( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execWriteProfileSettingsCompleted);
@@ -181,10 +173,6 @@ void UOnlineSubsystemSteamworks::execWriteProfileSettings( FFrame& Stack, RESULT
 void UOnlineSubsystemSteamworks::execReadProfileSettingsCompleted( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execReadProfileSettingsCompleted);
-}
-void UOnlineSubsystemSteamworks::execReadProfileSettings( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(OnlineSubsystemSteamworks, UOnlineSubsystemSteamworks, execReadProfileSettings);
 }
 void UOnlineSubsystemSteamworks::execAreAnyFriends( FFrame& Stack, RESULT_DECL )
 {

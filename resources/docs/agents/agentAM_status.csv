@@ -1,0 +1,33 @@
+rva,status,note
+0x5a4550,ported,UOnlineSubsystemSteamworks::execReadFriendsList -> ReadFriendsList; OnlineSubsystemSteamworksReads.cpp (agent AM)
+0x5aaf30,ported,"UOnlineSubsystemSteamworks::ReadFriendsList (vtable +380); S_OK only with Steam up for the logged-in player, delegates fire either way"
+0x5a4370,ported,"UOnlineSubsystemSteamworks::execReadProfileSettings -> ReadProfileSettings (3 params incl. bForceRead, CodeRed parms)"
+0x5ad8f0,ported,"UOnlineSubsystemSteamworks::ReadProfileSettings (vtable +364, 2013-only signature); cloud read + WriteProfileSettings follow-up not ported"
+0x5a4e50,ported,UOnlineSubsystemSteamworks::execReadAchievements -> ReadAchievements
+0x5aaf90,ported,UOnlineSubsystemSteamworks::ReadAchievements (vtable +484); ISteamUserStats::RequestCurrentStats (slot 0) + AchievementReadDelegates
+0x5ac1d0,ported,"UOnlineSubsystemSteamworks::InitSteamworks; interface accessors, GSteamAppID, warning hook, callback bridge, cloud quota, Steam sign-in. Low-violence flag / game server / AllowP2PPacketRelay not ported"
+0x5aa980,ported,UOnlineSubsystemSteamworks::TickSteamworksTasks; SteamAPI_RunCallbacks. Avatar request queue not ported (needs GetOnlineAvatar 0x5a92d0)
+0x5ab400,ported,"SteamCallbackBridge::SteamCallbackBridge (sizeof 244 = 1 ptr + 12 CCallbacks); 7 client callbacks registered, the 5 game-server ones left out"
+0x5a8840,ported,"appIsSteamEnabled (Core/Src/UnSteamworks.cpp); -NOSTEAM, bEnableSteam, editor/make/cook tokens, plus a steam_api.dll presence check"
+0x5a50f0,ported,"appSteamHandleCmdLine; strips the Steam client's ""+connect "" prefix"
+0x5efc80,ported,UUIDataProvider_OnlinePlayerStorage::execOnReadStorageComplete_Native (new Engine native binding); body 0x3e1660
+0x3e1660,ported,UUIDataProvider_OnlinePlayerStorage::OnReadStorageComplete_Native; behind -arksettings until the DishonoredGame ApplyGameSettings shims exist
+0x539580,ported,ArkSettings::FindListeners; every live UObject implementing Engine.ArkSettingsListenerInterface
+0x53b7e0,ported,ArkSettings::OnSettingsChanged; Parameters.Read + ApplyGameSettings per listener. GEnableForceFeedback has no equivalent in this tree
+0x5f07d0,ported,UOnlineSubsystemSteamworks::OnUserStatsReceived (2012 rva; 2013 dropped the callback) -> UserStatsReceivedState + AchievementReadDelegates
+0x5f0840,ported,"UOnlineSubsystemSteamworks::OnUserStatsStored (2012 rva); achievement half only, FlushOnlineStatsDelegates does not exist in this tree"
+0x5ea150,ported,SteamCallbackBridge::OnSteamShutdown (2012 rva) -> appRequestExit(FALSE)
+0x5ea160,ported,SteamCallbackBridge::OnGameOverlayActivated (2012 rva) -> GEngine->OnLostFocusPause
+0x5ea190,ported,SteamCallbackBridge::OnDLCInstalled (2012 rva) -> bDLCHasBeenInstalled
+0x5f11e0,ported,SteamCallbackBridge::OnSteamServersConnected (2012 rva) -> ConnectionStatusChangeDelegates(OSCS_Connected)
+0x5f1220,ported,SteamCallbackBridge::OnSteamServersDisconnected (2012 rva) -> ConnectionStatusChangeDelegates(OSCS_ConnectionDropped)
+0x5eebb0,ported,appSteamInit (2012 rva; unmatched in 2013): bRelaunchInSteam + SteamAPI_RestartAppIfNecessary(205100) + SteamAPI_Init
+0x5e9ea0,ported,appSteamShutdown (2012 rva): SteamAPI_Shutdown. Game-server half not ported
+0x5adaa0,needed,"UOnlineSubsystemSteamworks::GetFriendsList (vtable +384); ISteamFriends slots 3/4/6/7/8 are declared, the FOnlineFriend fill is not ported"
+0x5ade40,needed,UOnlineSubsystemSteamworks::GetAchievements (vtable +488); needs LoadAchievementDetails over ISteamUserStats slots 6/11/12
+0x5a92d0,needed,UOnlineSubsystemSteamworks::GetOnlineAvatar; ISteamFriends slots 27/28/29 + ISteamUtils GetImageSize/GetImageRGBA are declared
+0x5aa8c0,needed,UOnlineSubsystemSteamworks::OnAvatarImageLoaded; needed before the AvatarImageLoaded_t callback can be registered
+0x5a89c0,needed,UOnlineSubsystemSteamworks::OnGameServerChangeRequested; needed before GameServerChangeRequested_t can be registered
+0x5a8b60,needed,UOnlineSubsystemSteamworks::OnGameJoinRequested; needed before GameRichPresenceJoinRequested_t can be registered
+0x5a8960,needed,UOnlineSubsystemSteamworks::CheckDLCOwnership; ISteamApps::BIsDlcInstalled (slot 7) is declared
+0x5ab620,needed,the 140-byte leaderboard helper (CCallResults for callbacks 1104/1105/1106); needs ISteamUserStats slots 14.. which are deliberately not declared

@@ -2522,6 +2522,13 @@ const TCHAR* appGetGameSpySecretKey(void);
 /** Returns the title id of this game */
 DWORD appGetTitleId(void);
 
+/**
+ * Whether SteamAPI_Init succeeded (retail 2013 global 0x101b298, ?GSteamworksInitialized@@3IA). Declared
+ * and defined in every configuration, not just WITH_STEAMWORKS=1: the ported OnlineSubsystemSteamworks
+ * natives branch on it and their offline branch has to compile without the bindings.
+ */
+extern UBOOL GSteamworksInitialized;
+
 #if WITH_STEAMWORKS
 /**
  * Gets the Steam appid for this game
@@ -2529,6 +2536,28 @@ DWORD appGetTitleId(void);
  * @return	The appid of the game, or INDEX_NONE if it cannot be retrieved
  */
 INT appGetSteamworksAppId();
+
+// DISHONORED(port): Dishonored's Steam app id, the literal the 2012 appSteamInit (rva 0x5eebb0) passes to
+// SteamAPI_RestartAppIfNecessary.
+#define DISHONORED_STEAM_APPID 205100
+
+/**
+ * Whether the Steam client API may be used at all: -nosteam, bEnableSteam in GEngineIni and the
+ * cook/editor commandlet tokens (retail 2013 rva 0x5a8840, 2012 rva 0x5eeac0)
+ */
+UBOOL appIsSteamEnabled();
+
+/** Brings the Steam client API up (retail 2012 rva 0x5eebb0); called from appInit */
+void appSteamInit();
+
+/** Takes the Steam client API down (retail 2012 rva 0x5e9ea0); called from appPreExit */
+void appSteamShutdown();
+
+/**
+ * Skips the "+connect " prefix the Steam client puts in front of a join-a-server command line
+ * (retail 2013 rva 0x5a50f0); called from GuardedMain
+ */
+void appSteamHandleCmdLine(const TCHAR** CmdLine);
 #endif
 
 

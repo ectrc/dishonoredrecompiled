@@ -329,6 +329,15 @@ public:
     DISHONORED_SHIM_STATIC BITFIELD bIsExternalUIOpen;
     DISHONORED_SHIM_STATIC BITFIELD bNeedsDeferredRefresh;
 
+    // DISHONORED(port): retail's own native (vtable slot 87 = +348, 2013 rva 0x3e1660; exec thunk
+    // 0x5efc80 takes no parameters). Body in Engine/Src/arksettings.cpp. Agent AM.
+    virtual void OnReadStorageComplete_Native();
+    DECLARE_FUNCTION(execOnReadStorageComplete_Native)
+    {
+        P_FINISH;
+        this->OnReadStorageComplete_Native();
+    }
+
     DECLARE_CLASS(UUIDataProvider_OnlinePlayerStorage,UUIDataProvider_OnlinePlayerDataBase,0|CLASS_Transient|CLASS_Config,Engine)
     static const TCHAR* StaticConfigName() {return TEXT("Game");}
 
@@ -2030,6 +2039,7 @@ public:
 #endif // !INCLUDED_ENGINE_UIPRIVATE_CLASSES
 #endif // !NAMES_ONLY
 
+AUTOGENERATE_FUNCTION(UUIDataProvider_OnlinePlayerStorage,-1,execOnReadStorageComplete_Native);
 AUTOGENERATE_FUNCTION(UUIDataProvider_PlayerAchievements,-1,execGetMaxTotalGamerScore);
 AUTOGENERATE_FUNCTION(UUIDataProvider_PlayerAchievements,-1,execGetTotalGamerScore);
 AUTOGENERATE_FUNCTION(UUIDataStore_DynamicResource,-1,execOnLoginChange);
@@ -2072,6 +2082,7 @@ AUTOGENERATE_FUNCTION(UGameUISceneClient,-1,execGetCurrentNetMode);
 	UUIDataProvider_OnlineFriends::StaticClass(); \
 	UUIDataProvider_OnlinePartyChatList::StaticClass(); \
 	UUIDataProvider_OnlinePlayerStorage::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("UIDataProvider_OnlinePlayerStorage"), GEngineUUIDataProvider_OnlinePlayerStorageNatives); \
 	UUIDataProvider_OnlineProfileSettings::StaticClass(); \
 	UUIDataProvider_PlayerAchievements::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("UIDataProvider_PlayerAchievements"), GEngineUUIDataProvider_PlayerAchievementsNatives); \
@@ -2110,6 +2121,12 @@ AUTOGENERATE_FUNCTION(UGameUISceneClient,-1,execGetCurrentNetMode);
 #endif // ENGINE_UIPRIVATE_NATIVE_DEFS
 
 #ifdef NATIVES_ONLY
+FNativeFunctionLookup GEngineUUIDataProvider_OnlinePlayerStorageNatives[] =
+{
+	MAP_NATIVE(UUIDataProvider_OnlinePlayerStorage, execOnReadStorageComplete_Native)
+	{NULL, NULL}
+};
+
 FNativeFunctionLookup GEngineUUIDataProvider_PlayerAchievementsNatives[] = 
 { 
 	MAP_NATIVE(UUIDataProvider_PlayerAchievements, execGetMaxTotalGamerScore)

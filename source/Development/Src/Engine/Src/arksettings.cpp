@@ -147,3 +147,53 @@ void ArkSettings::ApplyCurrentSettings( IArkSettingsListenerInterface* Listener 
 {
 	Listener->ApplyGameSettings( &GetParameters(), IArkSettingsListenerInterface::ASLI_ApplyCurrentValues );
 }
+
+// DISHONORED(port): 2013 rva 0x539580 (2012 0x57a0e0, arksettings.cpp): every live UObject that implements
+// Engine.ArkSettingsListenerInterface, skipping the ones flagged 0x200 (RF_Unreachable).
+void ArkSettings::FindListeners( TArray<TScriptInterface<IArkSettingsListenerInterface> >& OutListeners )
+{
+	for ( TObjectIterator<UObject> It; It; ++It )
+	{
+		UObject* Object = *It;
+		if ( Object->HasAnyFlags( RF_Unreachable ) || Object->GetInterfaceAddress( UArkSettingsListenerInterface::StaticClass() ) == NULL )
+		{
+			continue;
+		}
+		TScriptInterface<IArkSettingsListenerInterface> Entry;
+		Entry.SetObject( Object );
+		Entry.SetInterface( Object->GetInterfaceAddress( UArkSettingsListenerInterface::StaticClass() ) );
+		OutListeners.AddItem( Entry );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x53b7e0 (2012 0x57e630): rereads the shared parameters out of the storage
+// object - with the system-settings override only when the profile was just read - hands them to every
+// listener and republishes the vibration setting through GEnableForceFeedback.
+void ArkSettings::OnSettingsChanged( UOnlinePlayerStorage* Settings, TArray<TScriptInterface<IArkSettingsListenerInterface> >& Listeners, EChangeReason Reason )
+{
+	IArkSettingsListenerInterface::EChangeReason ListenerReason = IArkSettingsListenerInterface::ASLI_ReadProfileFromStorage;
+	if ( Reason == ECR_ModifiedByUser )
+	{
+		ListenerReason = IArkSettingsListenerInterface::ASLI_ModifiedByUser;
+	}
+	else if ( Reason == ECR_ValidatedByUser )
+	{
+		ListenerReason = IArkSettingsListenerInterface::ASLI_ValidatedByUser;
+	}
+
+	ArkSettingsParameters& Parameters = GetParameters();
+	Parameters.Read( Settings, ListenerReason == IArkSettingsListenerInterface::ASLI_ReadProfileFromStorage );
+
+	for ( INT Index = 0; Index < Listeners.Num(); Index++ )
+	{
+		IArkSettingsListenerInterface* Listener = (IArkSettingsListenerInterface*)Listeners( Index ).GetInterface();
+		if ( Listener != NULL )
+		{
+			Listener->ApplyGameSettings( &Parameters, ListenerReason );
+		}
+	}
+
+	// DISHONORED(bringup): retail ends with GEnableForceFeedback = Parameters.m_bGamepadVibration; that
+	// global does not exist in this tree (WinDrv drives force feedback through UForceFeedbackManager).
+}
+

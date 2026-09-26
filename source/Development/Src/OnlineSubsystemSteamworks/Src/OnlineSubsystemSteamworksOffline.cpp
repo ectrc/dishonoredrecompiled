@@ -24,9 +24,17 @@ void UOnlineSubsystemSteamworks::execInit( FFrame& Stack, RESULT_DECL )
 	LoggedInStatus = LS_NotLoggedIn;
 	appMemzero(&LoggedInPlayerId, sizeof(LoggedInPlayerId));
 
+	// DISHONORED(port): InitSteamworks (2013 rva 0x5ac1d0, OnlineSubsystemSteamworksClient.cpp). Without
+	// Steam it does exactly what this file used to do inline - fire the connection-status delegates with
+	// OSCS_ServiceUnavailable and return TRUE - and with Steam up it caches the interfaces and signs the
+	// Steam user in. Agent AM.
+#if WITH_UE3_NETWORKING && WITH_STEAMWORKS
+	InitSteamworks();
+#else
 	OnlineSubsystemSteamworks_eventOnConnectionStatusChange_Parms ConnectionParms(EC_EventParm);
 	ConnectionParms.ConnectionStatus = OSCS_ServiceUnavailable;
 	TriggerOnlineDelegates(this, ConnectionStatusChangeDelegates, &ConnectionParms);
+#endif
 
 	eventSetAccountInterface(this);
 	eventSetPlayerInterface(this);
@@ -38,12 +46,18 @@ void UOnlineSubsystemSteamworks::execInit( FFrame& Stack, RESULT_DECL )
 		ProfileDataDirectory = TEXT(".\\");
 	}
 
-	LoggedInPlayerName = CastChecked<UOnlineSubsystemSteamworks>(GetClass()->GetDefaultObject())->LocalProfileName;
-	LoggedInPlayerNum = 0;
-	LoggedInStatus = LS_UsingLocalProfile;
-	OnlineSubsystemSteamworks_eventOnLoginChange_Parms LoginParms(EC_EventParm);
-	LoginParms.LocalUserNum = 0;
-	TriggerOnlineDelegates(this, LoginChangeDelegates, &LoginParms);
+	// DISHONORED(port): SignInLocally (2013 rva 0x5aab40) only runs when the Steam user is not logged on
+	// (its first test is GSteamworksInitialized && GSteamUser->BLoggedOn()), so a real Steam sign-in from
+	// InitSteamworks above is not overwritten. Agent AM.
+	if (LoggedInStatus == LS_NotLoggedIn)
+	{
+		LoggedInPlayerName = CastChecked<UOnlineSubsystemSteamworks>(GetClass()->GetDefaultObject())->LocalProfileName;
+		LoggedInPlayerNum = 0;
+		LoggedInStatus = LS_UsingLocalProfile;
+		OnlineSubsystemSteamworks_eventOnLoginChange_Parms LoginParms(EC_EventParm);
+		LoginParms.LocalUserNum = 0;
+		TriggerOnlineDelegates(this, LoginChangeDelegates, &LoginParms);
+	}
 
 	*(UBOOL*)Result = TRUE;
 }
@@ -71,6 +85,12 @@ void UOnlineSubsystemSteamworks::execIsControllerConnected( FFrame& Stack, RESUL
 // ticks need the Steamworks SDK). Keeps the local sign-in for a not-logged-in user and the connection-status change delegates.
 void UOnlineSubsystemSteamworks::Tick(FLOAT DeltaTime)
 {
+	// DISHONORED(port): retail's Tick pumps the Steam callbacks first (2013 rva 0x5ac4e0 ->
+	// TickSteamworksTasks 0x5aa980); with Steam off it is a no-op. Agent AM.
+#if WITH_UE3_NETWORKING && WITH_STEAMWORKS
+	TickSteamworksTasks(DeltaTime);
+#endif
+
 	if (LoggedInStatus == LS_NotLoggedIn)
 	{
 		LoggedInPlayerName = CastChecked<UOnlineSubsystemSteamworks>(GetClass()->GetDefaultObject())->LocalProfileName;

@@ -27,9 +27,10 @@
 #endif
 
 #include "IConsoleManager.h"
-#if WITH_STEAMWORKS
-#include "OnlineSubsystemSteamworks.h"
-#endif
+// DISHONORED(bringup): the reference includes OnlineSubsystemSteamworks.h here for appSteamInit /
+// appSteamShutdown, which would make Core include Engine's and the module's generated headers. Those two
+// (and appIsSteamEnabled / GSteamworksInitialized) are declared in UnFile.h and defined in
+// Core/Src/UnSteamworks.cpp instead - see the header comment there.
 
 /*-----------------------------------------------------------------------------
 	Misc.
