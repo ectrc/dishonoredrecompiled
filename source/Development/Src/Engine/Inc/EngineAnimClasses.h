@@ -3848,6 +3848,11 @@ public:
 	 *  @param  bAcceptPooled   If true, function is allowed to return pooled anim tree*/
 	UAnimTree*		CopyAnimTree(UObject* NewTreeOuter, UBOOL bAcceptPooled = FALSE);
 
+	// DISHONORED(port): the Arkane entry points for a nested anim tree (UDishonoredAnimNodeTreeRef). InitAnimTree is
+	// 2012 rva 0x1ae3c0, TickTree 2013 rva 0x19c0d0 (2012 0x1a7dc0); bodies in UnAnimTree.cpp.
+	virtual void	InitAnimTree(USkeletalMeshComponent* Mesh);
+	virtual void	TickTree(FLOAT DeltaSeconds, FLOAT TopmostNodeWeight);
+
 	/** Returns this Anim Tree to the global pool, if it is safe to do so */
 	void            ReturnToPool();
 

@@ -149,11 +149,12 @@ void USkeletalMeshComponent::PostLoad()
 
 void USkeletalMeshComponent::DeleteAnimTree()
 {
-	// make sure any playing camera anims are cleaned up
-	UINT const NumAnimNodes = AnimTickArray.Num();
+	// DISHONORED(retail): the tick array is the tree's, not the component's (UnAnimTree.h)
+	TArray<UAnimNode*>& DisTickArray = DisAnimTickArray(this);
+	UINT const NumAnimNodes = DisTickArray.Num();
 	for(UINT i=0; i<NumAnimNodes; i++)
 	{
-		UAnimNodeSequence* const SeqNode = Cast<UAnimNodeSequence>(AnimTickArray(i));
+		UAnimNodeSequence* const SeqNode = Cast<UAnimNodeSequence>(DisTickArray(i));
 		if (SeqNode && SeqNode->ActiveCameraAnimInstance)
 		{
 			SeqNode->StopCameraAnim();
@@ -177,9 +178,7 @@ void USkeletalMeshComponent::DeleteAnimTree()
 	// Clear flag
 	bAnimTreeInitialised = FALSE;
 
-	// Also clear refs to nodes in tree.
-	AnimTickArray.Empty();
-	AnimAlwaysTickArray.Empty();
+	// DISHONORED(retail): only SkelControlTickArray is the component's; the node arrays go with the tree
 	SkelControlTickArray.Empty();
 
 	// clear morph target index map
@@ -811,7 +810,7 @@ void USkeletalMeshComponent::Detach( UBOOL bWillReattach )
 	// if it won't reattach, make sure you delete the animnodesequences used by this
 	if ( !bWillReattach )
 	{
-		AnimAlwaysTickArray.Empty();
+		DisAnimAlwaysTickArray(this).Empty();
 		UAnimNodeSlot::ReleaseSequenceNodes(this);
 
 		UAnimTree* RESTRICT Tree			= Cast<UAnimTree>(Animations);
@@ -1038,139 +1037,29 @@ void USkeletalMeshComponent::TickAnimNodes(FLOAT DeltaTime)
 		AnimTree->SyncGroupPreTickUpdate();
 	}
 
-	check( AnimTickArray.Num() == AnimTickWeightsArray.Num() && AnimTickRelevancyArray.Num() == AnimTickArray.Num() );
-	const INT AnimNodeCount = AnimTickArray.Num();
-
-	// Reset weights
-	appMemzero((BYTE*)AnimTickWeightsArray.GetData(), AnimNodeCount * sizeof(FLOAT));
-
+	// DISHONORED(port): 2012 rva 0x334d30: retail bumps TickTag and hands the per-node tick loop to
+	// UAnimTree::TickTree(DeltaTime, 1.f), which walks the tree's own arrays (UnAnimTree.h) and ends with
+	// UpdateAnimNodeSeqGroups. bPauseAnims / bTickDuringPausedAnims are not consulted, as in retail.
 	TickTag++;
-	check(Animations->SkelComponent == this);
-
-	AnimTickWeightsArray(0) = 1.f;
-
-	for(INT i=0; i<AnimNodeCount; ++i)
+	if( AnimTree )
 	{
-		INT& bRelevant = AnimTickRelevancyArray(i);
-		const FLOAT& NodeWeight = AnimTickWeightsArray(i);
-
-		// Call final blend relevancy notifications
-		if( !bRelevant )
-		{
-			// Node not relevant, skip to next one
-			if( NodeWeight <= ZERO_ANIMWEIGHT_THRESH )
-			{
-				continue;
-			}
-			// node becoming relevant this frame.
-			else
-			{
-				bRelevant = TRUE;
-
-				UAnimNode* Node = AnimTickArray(i);
-				Node->bRelevant = TRUE;
-				Node->bJustBecameRelevant = TRUE;
-				Node->OnBecomeRelevant();
-			}
-		}
-		else
-		{
-			UAnimNode* Node = AnimTickArray(i);
-
-			if( NodeWeight <= ZERO_ANIMWEIGHT_THRESH )
-			{
-				bRelevant = FALSE;
-
-				// Node is not going to be ticked, but still update NodeTickTag, if we do things in OnCeaseRelevant that rely on that.
-				Node->NodeTickTag = TickTag;
-				Node->OnCeaseRelevant();
-				Node->bRelevant = FALSE;
-				Node->bJustBecameRelevant = FALSE;
-				// Update the node's new weight too.
-				Node->NodeTotalWeight = NodeWeight;
-
-				// not relevant, not going to be ticked, go to next one.
-				continue;
-			}
-
-			Node->bJustBecameRelevant = FALSE;
-		}
-
-		// Clear just became relevant flag
-		UAnimNode* Node = AnimTickArray(i);
-		// Set proper weight on the node.
-		Node->NodeTotalWeight = NodeWeight;
-
-		// Call Deferred InitAnim if we have to.
-		if( Node->NodeInitTag != InitTag )
-		{
-			Node->NodeInitTag = InitTag;
-			Node->DeferredInitAnim();
-		}
-
-		// If we are not skipping because of zero weight, call the Tick function.
-		// Also check if all anims are paused, or this is ticked anyway
-		if( !bPauseAnims || Node->bTickDuringPausedAnims )
-		{
-			Node->NodeTickTag = TickTag;
-
-#if !FINAL_RELEASE && PERF_SHOW_ANIMNODE_TICK_TIMES
-			DOUBLE Start = 0.f;
-			if( GShouldLogOutAFrameOfSkelCompTick )
-			{
-				Start = appSeconds();
-			}
-#endif
-
-			// Call Tick() on node, to update child weights.
-			Node->TickAnim(DeltaTime);
-
-#if !FINAL_RELEASE && PERF_SHOW_ANIMNODE_TICK_TIMES
-			if( GShouldLogOutAFrameOfSkelCompTick )
-			{
-				DOUBLE End = appSeconds();
-				debugf(TEXT("-- %s - %s:\t%fms"), SkeletalMesh?*SkeletalMesh->GetName():TEXT("None"), *Node->GetName(), (End-Start)*1000.f);
-			}
-#endif
-		}
+		AnimTree->TickTree(DeltaTime, 1.f);
 	}
-
-	// Handle Nodes that should always be ticked even when not relevant.
-	INT NumAlwaysTickNode = AnimAlwaysTickArray.Num();
-	for(INT i=0; i<AnimAlwaysTickArray.Num(); i++)
+	else if( Animations )
 	{
-		UAnimNode* Node = AnimAlwaysTickArray(i);
-
-		// Call Deferred InitAnim if we have to.
-		if( Node->NodeInitTag != InitTag )
+		if( Animations->NodeInitTag != InitTag )
 		{
-			Node->NodeInitTag = InitTag;
-			Node->DeferredInitAnim();
+			Animations->NodeInitTag = InitTag;
+			Animations->DeferredInitAnim();
 		}
-
-		// Only tick nodes which haven't been ticked previously.
-		if( Node->NodeTickTag != TickTag )
+		if( !Animations->bRelevant )
 		{
-			Node->NodeTickTag = TickTag;
-			Node->TickAnim(DeltaTime);
-
-			// If NodeCount changed, one or more nodes have been removed.
-			// Restart from beginning in that case.
-			if( NumAlwaysTickNode != AnimAlwaysTickArray.Num() )
-			{
-				i = 0;
-				// Set new size
-				NumAlwaysTickNode = AnimAlwaysTickArray.Num();
-			}
+			Animations->OnBecomeRelevant();
 		}
-	}
-
-	// After all nodes have been ticked, and weights have been updated, take another pass for AnimNodeSequence groups.
-	// (Anim Synchronization, and notification groups).
-	if( AnimTree && !bPauseAnims)
-	{
-		SCOPE_CYCLE_COUNTER(STAT_AnimSyncGroupTime);
-		AnimTree->UpdateAnimNodeSeqGroups(DeltaTime);
+		Animations->NodeTotalWeight = 1.f;
+		Animations->bRelevant = TRUE;
+		Animations->NodeTickTag = TickTag;
+		Animations->TickAnim(DeltaTime);
 	}
 }
 
@@ -5538,85 +5427,29 @@ void USkeletalMeshComponent::InitAnimTree(UBOOL bForceReInit)
 			Tree->bRebuildAnimTickArray = FALSE;
 		}
 
-		// See if our template already has built the parent node array. Otherwise we have to do it here.
-		UBOOL const bParentNodeArrayBuilt = Tree ? (Tree->bParentNodeArrayBuilt && !bRebuildAnimTickArray) : FALSE;
-
-		// Estimate number of nodes for our allocations
-		INT NodeCount = AnimTickArray.Num();
-		UBOOL const bAlreadyHasAnimTickArray = (GIsGame && Tree && Tree->AnimTickArray.Num() > 0 && !bRebuildAnimTickArray);
-
-		if( bAlreadyHasAnimTickArray )
-		{	
-			// Copy the AnimTickArray from our Tree...
-			AnimTickArray = Tree->AnimTickArray;
-			NodeCount = AnimTickArray.Num();
-		}
-
-		// If Parent Node array hasn't been already built, then build it now.
-		// In the editor, always rebuild it, as we maybe we adding/removing nodes.
-		if( !bParentNodeArrayBuilt || (GIsEditor && !GIsGame) )
+		// DISHONORED(port): 2012 rva 0x364e20. Retail bumps InitTag and hands the whole node-list build to
+		// UAnimTree::InitAnimTree(this): the tick array, the relevancy array and the weights array are members of the
+		// tree, not of the component (UnAnimTree.h). The reference code built them on the component's
+		// DISHONORED_SHIM_STATIC arrays, i.e. one set shared by every skeletal mesh component in the game.
+		InitTag = Animations->NodeInitTag + 1;
+		if( Tree )
 		{
-			INITANIM_CUSTOM(NAME_BuildParentNodesArray);
-			// Traverse Tree a first time to build the ParentNodes array in each node.
-			// Hopefully we can serialize this in the future.
+			if( bRebuildAnimTickArray )
+			{
+				Tree->AnimTickArray.Empty();
+			}
+			INITANIM_CUSTOM(NAME_BuildTickArray_Setup)
+			EXCLUDE_PARENT_TIME
+			Tree->InitAnimTree(this);
+		}
+		else
+		{
 			UAnimNode::CurrentSearchTag++;
 			Animations->BuildParentNodesArray();
-
-			// Keep track that ParentNodes array is up to date, so we don't have to do it in-game at run time.
-			if( Tree )
-			{
-				Tree->bParentNodeArrayBuilt = TRUE;
-			}
-		}
-
-		// Trigger DeferredAnimInit call on relevant nodes
-		InitTag = Animations->NodeInitTag + 1;
-
-		// Build array in tick order. Start by adding root node and call from there.
-		// Only do this in editor, or if we don't have a template to get this data from.
-		if( (GIsEditor && !GIsGame) || !bAlreadyHasAnimTickArray )
-		{
-			INITANIM_CUSTOM(NAME_BuildTickArray_Setup)
-
 			TickTag++;
-
-			AnimTickArray.Empty(NodeCount);
-			Animations->TickArrayIndex = AnimTickArray.AddItem(Animations);
-
-			// Do initialization on Root Node
 			Animations->SkelComponent = this;
 			Animations->NodeTickTag = TickTag;
-			{
-				EXCLUDE_PARENT_TIME
-				// Traverse the tree a second time, build tick order array, and call InitAnim on all the nodes
-				Animations->BuildTickArray(AnimTickArray);
-			}
-
-			// Update our nodecount here, in case we didn't have it before.
-			NodeCount = AnimTickArray.Num();
-
-			// Back up our AnimTickArray in our Tree node, so we don't have to keep building it.
-			if( Tree )
-			{
-				Tree->AnimTickArray = AnimTickArray;
-			}
-		}
-
-		// Reset those arrays as well.
-		AnimTickRelevancyArray.Empty(NodeCount);
-		AnimTickRelevancyArray.AddZeroed(NodeCount);
-		AnimTickWeightsArray.Empty(NodeCount);
-		AnimTickWeightsArray.Add(NodeCount);
-
-		// Call InitAnim on all of the nodes
-		// This needs to be done once the ParentNodes array is setup, as some initialization code calls IsChildOf().
-		{
-			for(INT i=0; i<NodeCount; i++)
-			{
-				AnimTickArray(i)->SkelComponent = this;
-				AnimTickArray(i)->NodeTickTag = TickTag;
-				AnimTickArray(i)->InitAnim(this, NULL);
-			}
+			Animations->InitAnim(this, NULL);
 		}
 
 		// init morph targets
@@ -6973,10 +6806,11 @@ void USkeletalMeshComponent::UpdateAnimations()
 		// Increase InitTag to trigger DeferredInitAnim()
 		InitTag = Animations->NodeInitTag + 1;
 
-		const INT AnimNodeCount = AnimTickArray.Num();
+		TArray<UAnimNode*>& DisTickArray = DisAnimTickArray(this);
+		const INT AnimNodeCount = DisTickArray.Num();
 		for(INT i=0; i<AnimNodeCount; i++)
 		{
-			UAnimNode* Node = AnimTickArray(i);
+			UAnimNode* Node = DisTickArray(i);
 			Node->AnimSetsUpdated();
 		}
 	}

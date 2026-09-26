@@ -9925,6 +9925,7 @@ public:
     //## END PROPS DisAnimStatePool
 
     DECLARE_CLASS(UDisAnimStatePool,UObject,0,DishonoredGame)
+#include "CppText/UDisAnimStatePool.h"
 };
 
 // DishonoredGame.DisAttentionDefs: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)

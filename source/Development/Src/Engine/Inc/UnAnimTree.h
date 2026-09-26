@@ -234,4 +234,15 @@ UBOOL DebugCompare(const FBoneAtom & BoneAtom, const FMatrix & InMatrix);
 
 #endif
 
+// DISHONORED(retail): retail's USkeletalMeshComponent has no AnimTickArray / AnimAlwaysTickArray /
+// AnimTickRelevancyArray / AnimTickWeightsArray - the retail SDK dump gives the component only SkelControlTickArray (@484)
+// and puts all four on UAnimTree (@424 / @436 / @448 / @460), which is what UAnimTree::InitAnimTree (2012 rva 0x1ae3c0)
+// and UAnimTree::TickTree (2013 rva 0x19c0d0) work on. The reference members survive as storage-less
+// DISHONORED_SHIM_STATIC shims in UnSkeletalMesh.h, so they are ONE array shared by every component: reference code that
+// reaches them through the component must go through the owning tree instead. A component whose Animations is not a
+// UAnimTree gets a shared empty array (agent AV).
+extern class UAnimTree* DisAnimTickTree( class USkeletalMeshComponent* Comp );
+extern TArray<class UAnimNode*>& DisAnimTickArray( class USkeletalMeshComponent* Comp );
+extern TArray<class UAnimNode*>& DisAnimAlwaysTickArray( class USkeletalMeshComponent* Comp );
+
 #endif // __UNANIMTREE_H__

@@ -169,23 +169,11 @@ void ADishonoredPawn::ApplyTweakChanges_Derived()
 	if( Mesh )
 	{
 		Mesh->AnimSets = Tweaks->m_AnimSets;
-		// DISHONORED(bringup): assigning the tweaks' anim tree makes the pawn evaluate an Arkane blend tree, and the Arkane
-		// anim node classes are not ported (DishonoredAnimNodeStatePicker leaves its child weights at 0, so the reference
-		// UAnimNodeBlendBase::GetBoneAtoms asserts, UnAnimTree.cpp:1583). -distweakanimtree applies it as retail does.
-		static const UBOOL bApplyTweakAnimTree = ParseParam( appCmdLine(), TEXT("distweakanimtree") );
-		if( bApplyTweakAnimTree )
-		{
-			Mesh->AnimTreeTemplate = Tweaks->m_pAnimTreeTemplate;
-		}
-		else
-		{
-			static UBOOL bWarned = FALSE;
-			if( !bWarned && Tweaks->m_pAnimTreeTemplate )
-			{
-				bWarned = TRUE;
-				debugf( TEXT("DISHONORED(bringup): pawn tweaks keep the level's anim tree (-distweakanimtree applies %s)"), *Tweaks->m_pAnimTreeTemplate->GetPathName() );
-			}
-		}
+		// DISHONORED(port): the tweaks' anim tree is applied unconditionally, as retail does. The -distweakanimtree gate
+		// agent AJ added is gone: the Arkane nodes the tree needs (UDishonoredAnimNodeStatePicker, the two tree-ref nodes,
+		// UDishonoredAnimTree, UDisAnimStatePool) are ported, so UAnimNodeBlendBase::GetBoneAtoms is no longer reached with
+		// every child at weight 0 (agent AV).
+		Mesh->AnimTreeTemplate = Tweaks->m_pAnimTreeTemplate;
 		if( GIsGame && Mesh->IsAttached() )
 		{
 			Mesh->SetPhysicsAsset( Tweaks->m_pPhysicsAsset, FALSE );

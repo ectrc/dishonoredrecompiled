@@ -1032,21 +1032,45 @@ void UAnimNode::SaveCachedResults(const FBoneAtomArray& NewAtoms, const FBoneAto
 	NodeCachedAtomsTag = SkelComponent->CachedAtomsTag;
 }
 
+// DISHONORED(retail): the tick arrays of a skeletal mesh component live on its UAnimTree (see UnAnimTree.h)
+UAnimTree* DisAnimTickTree( USkeletalMeshComponent* Comp )
+{
+	return Comp ? Cast<UAnimTree>(Comp->Animations) : NULL;
+}
+
+static TArray<UAnimNode*> GDisNoAnimTickArray;
+
+TArray<UAnimNode*>& DisAnimTickArray( USkeletalMeshComponent* Comp )
+{
+	UAnimTree* Tree = DisAnimTickTree( Comp );
+	if( Tree )
+	{
+		return Tree->AnimTickArray;
+	}
+	GDisNoAnimTickArray.Reset();
+	return GDisNoAnimTickArray;
+}
+
+static TArray<UAnimNode*> GDisNoAnimAlwaysTickArray;
+
+TArray<UAnimNode*>& DisAnimAlwaysTickArray( USkeletalMeshComponent* Comp )
+{
+	UAnimTree* Tree = DisAnimTickTree( Comp );
+	return Tree ? Tree->AnimAlwaysTickArray : GDisNoAnimAlwaysTickArray;
+}
+
 void UAnimNode::GetNodes(TArray<UAnimNode*>& Nodes, bool bForceTraversal/*=FALSE*/)
 {
-	if( SkelComponent && SkelComponent->AnimTickArray.Num() > 0 )
+	// DISHONORED(port): 2012 rva 0x1a6b00: retail always traverses and only uses this node's own tree's tick array as a
+	// reserve hint (the reference shortcut read the component's shared shim array, which is not this node's tree)
+	UAnimTree* OwnTree = GetAnimTree();
+	if( !OwnTree )
 	{
-		// If we're at the root, then we can just directly use the AnimTickArray, without having to traverse the tree.
-		if( !bForceTraversal && SkelComponent->Animations == this )
-		{
-			Nodes = SkelComponent->AnimTickArray;
-			return;
-		}
-		else
-		{
-			// Make sure we have reserved enough, so we don't pay allocation costs.
-			Nodes.Empty( SkelComponent->AnimTickArray.Num() );
-		}
+		OwnTree = m_pParentAnimTree;
+	}
+	if( OwnTree && OwnTree->AnimTickArray.Num() > 0 )
+	{
+		Nodes.Empty( OwnTree->AnimTickArray.Num() );
 	}
 
 	// we can't start another search while we're already in one as it would invalidate SearchTags on the original search
@@ -1084,10 +1108,11 @@ void UAnimNode::GetNodesByClass(TArray<UAnimNode*>& Nodes, UClass* BaseClass)
 	TArray<UAnimNode*>* AllNodes;
 	TArray<UAnimNode*> AlternateArray;
 
-	// Directly use AnimTickArray if starting from the root
-	if( SkelComponent && SkelComponent->Animations == this && SkelComponent->AnimTickArray.Num() > 0 )
+	// DISHONORED(retail): the tick array belongs to this node's tree, not to the component (UnAnimTree.h)
+	UAnimTree* ThisTree = GetAnimTree();
+	if( ThisTree == this && ThisTree->AnimTickArray.Num() > 0 )
 	{
-		AllNodes = &SkelComponent->AnimTickArray;
+		AllNodes = &ThisTree->AnimTickArray;
 	}
 	else
 	{
@@ -1406,9 +1431,14 @@ void UAnimNodeBlendBase::UpdateChildWeight(INT ChildIndex)
 	UAnimNode* ChildNode = Children(ChildIndex).Anim;
 	if( ChildNode )
 	{
-		// Calculate the 'global weight' of the connection to this child.
-		FLOAT& ChildNodeWeight = SkelComponent->AnimTickWeightsArray( ChildNode->TickArrayIndex );
-		ChildNodeWeight = ::Min(ChildNodeWeight + NodeTotalWeight * Children(ChildIndex).Weight, 1.f);
+		// DISHONORED(port): 2012 rva 0x19ec90: the weights array belongs to this node's own anim tree
+		// (m_pParentAnimTree), not to the skeletal mesh component - a component can be evaluating a nested tree
+		UAnimTree* WeightTree = m_pParentAnimTree;
+		if( WeightTree && WeightTree->AnimTickWeightsArray.IsValidIndex( ChildNode->TickArrayIndex ) )
+		{
+			FLOAT& ChildNodeWeight = WeightTree->AnimTickWeightsArray( ChildNode->TickArrayIndex );
+			ChildNodeWeight = ::Min(ChildNodeWeight + NodeTotalWeight * Children(ChildIndex).Weight, 1.f);
+		}
 	}
 }
 
@@ -3519,12 +3549,174 @@ void UAnimTree::PostLoad()
 	}
 }
 
+// DISHONORED(bringup): anim-tree census. -disanimdump prints each instanced tree once, -disanimcensus
+// counts the bones whose local atom changed between two consecutive root evaluations.
+static UBOOL DisAnimDumpEnabled()
+{
+	static UBOOL bEnabled = ParseParam( appCmdLine(), TEXT("disanimdump") );
+	return bEnabled;
+}
+
+static UBOOL DisAnimCensusEnabled()
+{
+	static UBOOL bEnabled = ParseParam( appCmdLine(), TEXT("disanimcensus") );
+	return bEnabled;
+}
+
+static void DisAnimDumpNode( UAnimNode* Node, INT Depth, const FString& Label, FLOAT Weight )
+{
+	FString Indent;
+	for( INT i = 0; i < Depth; i++ )
+	{
+		Indent += TEXT("  ");
+	}
+	if( !Node )
+	{
+		debugf( TEXT("DISHONORED(bringup): animdump %s%s w=%.3f <NULL>"), *Indent, *Label, Weight );
+		return;
+	}
+	UAnimNodeBlendBase* Blend = Cast<UAnimNodeBlendBase>(Node);
+	UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>(Node);
+	FString SeqInfo;
+	if( Seq )
+	{
+		SeqInfo = FString::Printf( TEXT(" anim=%s seq=%s playing=%d looping=%d rate=%.2f time=%.3f"),
+			*Seq->AnimSeqName.ToString(), Seq->AnimSeq ? *Seq->AnimSeq->SequenceName.ToString() : TEXT("NULL"),
+			(INT)Seq->bPlaying, (INT)Seq->bLooping, Seq->Rate, Seq->CurrentTime );
+	}
+	debugf( TEXT("DISHONORED(bringup): animdump %s%s w=%.3f %s '%s' children=%d total=%.3f%s"),
+		*Indent, *Label, Weight, *Node->GetClass()->GetName(), *Node->NodeName.ToString(),
+		Blend ? Blend->Children.Num() : 0, Blend ? Blend->GetChildWeightTotal() : 0.f, *SeqInfo );
+	if( !Blend || Depth > 24 )
+	{
+		return;
+	}
+	for( INT i = 0; i < Blend->Children.Num(); i++ )
+	{
+		DisAnimDumpNode( Blend->Children(i).Anim, Depth + 1,
+			FString::Printf( TEXT("[%d]%s%s"), i, *Blend->Children(i).Name.ToString(), Blend->Children(i).bIsAdditive ? TEXT("+") : TEXT("") ),
+			Blend->Children(i).Weight );
+	}
+}
+
+/** The previous root pose of one tree, 7 floats per bone, so the census can count the bones that moved. */
+struct FDisAnimCensusEntry
+{
+	TArray<FLOAT>	Prev;
+	INT				Evals;
+	INT				EvalsWithMotion;
+	INT				MovedMax;
+	INT				MovedLast;
+
+	FDisAnimCensusEntry() : Evals(0), EvalsWithMotion(0), MovedMax(0), MovedLast(0) {}
+};
+static TMap<UAnimTree*,FDisAnimCensusEntry> GDisAnimCensus;
+
+static void DisAnimCensusSample( UAnimTree* Tree, const FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones )
+{
+	FDisAnimCensusEntry* Entry = GDisAnimCensus.Find( Tree );
+	if( !Entry )
+	{
+		Entry = &GDisAnimCensus.Set( Tree, FDisAnimCensusEntry() );
+	}
+	const INT NumBones = Atoms.Num();
+	const UBOOL bHavePrev = ( Entry->Prev.Num() == NumBones * 7 );
+	TArray<FLOAT> Cur;
+	Cur.Add( NumBones * 7 );
+	for( INT BoneIndex = 0; BoneIndex < NumBones; BoneIndex++ )
+	{
+		const FQuat Q = Atoms(BoneIndex).GetRotation();
+		const FVector T = Atoms(BoneIndex).GetTranslation();
+		FLOAT* Out = &Cur(BoneIndex * 7);
+		Out[0] = Q.X; Out[1] = Q.Y; Out[2] = Q.Z; Out[3] = Q.W;
+		Out[4] = T.X; Out[5] = T.Y; Out[6] = T.Z;
+	}
+	INT Moved = 0;
+	if( bHavePrev )
+	{
+		for( INT i = 0; i < DesiredBones.Num(); i++ )
+		{
+			const INT BoneIndex = DesiredBones(i);
+			if( BoneIndex >= NumBones )
+			{
+				continue;
+			}
+			const FLOAT* A = &Cur(BoneIndex * 7);
+			const FLOAT* B = &Entry->Prev(BoneIndex * 7);
+			UBOOL bDiff = FALSE;
+			for( INT c = 0; c < 4 && !bDiff; c++ )
+			{
+				bDiff = Abs( A[c] - B[c] ) > 0.0005f;
+			}
+			for( INT c = 4; c < 7 && !bDiff; c++ )
+			{
+				bDiff = Abs( A[c] - B[c] ) > 0.01f;
+			}
+			if( bDiff )
+			{
+				Moved++;
+			}
+		}
+	}
+	Entry->Prev = Cur;
+	Entry->Evals++;
+	Entry->MovedLast = Moved;
+	Entry->MovedMax = Max( Entry->MovedMax, Moved );
+	if( Moved > 0 )
+	{
+		Entry->EvalsWithMotion++;
+	}
+	if( Entry->Evals == 1 )
+	{
+		INT Named = 0, Resolved = 0;
+		FString FirstMissing;
+		for( INT NodeIdx = 0; NodeIdx < Tree->AnimTickArray.Num(); NodeIdx++ )
+		{
+			UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>( Tree->AnimTickArray(NodeIdx) );
+			if( Seq && Seq->AnimSeqName != NAME_None )
+			{
+				Named++;
+				if( Seq->AnimSeq )
+				{
+					Resolved++;
+				}
+				else if( FirstMissing.Len() == 0 )
+				{
+					FirstMissing = Seq->AnimSeqName.ToString();
+				}
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): animcensus tree=%s nodes=%d animSets=%d namedSeqNodes=%d resolved=%d firstMissing=%s"),
+			*Tree->GetName(), Tree->AnimTickArray.Num(),
+			Tree->SkelComponent ? Tree->SkelComponent->AnimSets.Num() : -1,
+			Named, Resolved, FirstMissing.Len() ? *FirstMissing : TEXT("none") );
+	}
+
+	if( ( Entry->Evals % 120 ) == 0 )
+	{
+		AActor* Owner = Tree->SkelComponent ? Tree->SkelComponent->GetOwner() : NULL;
+		debugf( TEXT("DISHONORED(bringup): animcensus owner=%s tree=%s bones=%d evals=%d movingEvals=%d movedBones last=%d max=%d"),
+			Owner ? *Owner->GetName() : TEXT("NULL"), *Tree->GetName(), NumBones,
+			Entry->Evals, Entry->EvalsWithMotion, Entry->MovedLast, Entry->MovedMax );
+	}
+}
+
 void UAnimTree::InitAnim(USkeletalMeshComponent* meshComp, UAnimNodeBlendBase* Parent)
 {
 	START_INITANIM_TIMER
 	{
 		EXCLUDE_PARENT_TIME
 		Super::InitAnim(meshComp, Parent);
+	}
+
+	// DISHONORED(bringup): the instanced tree, once, when -disanimdump is on
+	if( DisAnimDumpEnabled() && meshComp && !Parent )
+	{
+		AActor* DumpOwner = meshComp->GetOwner();
+		debugf( TEXT("DISHONORED(bringup): animdump tree %s on %s (mesh %s)"), *GetName(),
+			DumpOwner ? *DumpOwner->GetName() : TEXT("NULL"),
+			meshComp->SkeletalMesh ? *meshComp->SkeletalMesh->GetName() : TEXT("NULL") );
+		DisAnimDumpNode( this, 0, TEXT("root"), 1.f );
 	}
 
 	if( meshComp )
@@ -4147,6 +4339,12 @@ void UAnimTree::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredB
 	{
 		Super::GetBoneAtoms(Atoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys);
 	}
+
+	// DISHONORED(bringup): -disanimcensus, how many bones moved since the previous evaluation
+	if( DisAnimCensusEnabled() )
+	{
+		DisAnimCensusSample( this, Atoms, DesiredBones );
+	}
 }
 
 /** 
@@ -4386,6 +4584,161 @@ void UAnimTree::ReturnToPool(void)
 
 		GWorld->AnimTreePool.Push(this);
 	}
+}
+
+// DISHONORED(port): 2012 rva 0x1ae3c0 (unnamed in the 2013 db): retail's UAnimTree::InitAnimTree. The reference engine
+// does this inside USkeletalMeshComponent::InitAnimTree on the component's own arrays; retail keeps the tick array, the
+// relevancy array and the weight array on the tree, so a tree that is only a sub-tree of another one can be initialised
+// on its own. Not ported: InitAnimNodeListFastSearch (Arkane's FindAnimNodeFast lookup table does not exist here).
+void UAnimTree::InitAnimTree(USkeletalMeshComponent* Mesh)
+{
+	if( !Mesh )
+	{
+		return;
+	}
+
+	EditorOnlyInfo.m_pEditorPreviewNode = NULL;
+
+	if( !bParentNodeArrayBuilt || (GIsEditor && !GIsGame) )
+	{
+		UAnimNode::CurrentSearchTag++;
+		BuildParentNodesArray();
+		bParentNodeArrayBuilt = TRUE;
+	}
+
+	INT NodeCount = AnimTickArray.Num();
+	if( (GIsEditor && !GIsGame) || NodeCount == 0 )
+	{
+		Mesh->TickTag++;
+		if( Mesh->TickTag == NodeTickTag )
+		{
+			Mesh->TickTag++;
+		}
+
+		AnimTickArray.Empty(NodeCount);
+		TickArrayIndex = AnimTickArray.AddItem(this);
+		SkelComponent = Mesh;
+		NodeTickTag = Mesh->TickTag;
+		BuildTickArray(AnimTickArray);
+		NodeCount = AnimTickArray.Num();
+	}
+
+	AnimTickRelevancyArray.Empty(NodeCount);
+	AnimTickRelevancyArray.AddZeroed(NodeCount);
+	AnimTickWeightsArray.Empty(NodeCount);
+	AnimTickWeightsArray.AddZeroed(NodeCount);
+
+	m_pParentAnimTree_ForRef = NULL;
+	for(INT NodeIdx=0; NodeIdx<NodeCount; NodeIdx++)
+	{
+		UAnimNode* Node = AnimTickArray(NodeIdx);
+		if( !Node )
+		{
+			continue;
+		}
+		Node->SkelComponent = Mesh;
+		Node->m_pParentAnimTree = this;
+		Node->NodeTickTag = Mesh->TickTag;
+		Node->NodeInitTag = Mesh->InitTag - 1;
+		Node->InitAnim(Mesh, NULL);
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x19c0d0 (2012 0x1a7dc0): retail's UAnimTree::TickTree, the per-node tick loop of
+// USkeletalMeshComponent::TickAnimNodes run against this tree's own arrays, with the root's weight passed in (a sub-tree
+// root carries the weight of the tree-ref node that owns it).
+void UAnimTree::TickTree(FLOAT DeltaSeconds, FLOAT TopmostNodeWeight)
+{
+	if( !SkelComponent )
+	{
+		return;
+	}
+
+	SyncGroupPreTickUpdate();
+
+	const INT AnimNodeCount = AnimTickArray.Num();
+	if( AnimNodeCount == 0 || AnimTickWeightsArray.Num() < AnimNodeCount || AnimTickRelevancyArray.Num() < AnimNodeCount )
+	{
+		return;
+	}
+
+	appMemzero((BYTE*)AnimTickWeightsArray.GetData(), AnimNodeCount * sizeof(FLOAT));
+	AnimTickWeightsArray(0) = TopmostNodeWeight;
+
+	for(INT NodeIdx=0; NodeIdx<AnimNodeCount; NodeIdx++)
+	{
+		INT& bNodeRelevant = AnimTickRelevancyArray(NodeIdx);
+		const FLOAT NodeWeight = AnimTickWeightsArray(NodeIdx);
+		UAnimNode* Node = AnimTickArray(NodeIdx);
+		if( !Node )
+		{
+			continue;
+		}
+
+		if( !bNodeRelevant )
+		{
+			if( NodeWeight <= ZERO_ANIMWEIGHT_THRESH )
+			{
+				continue;
+			}
+			bNodeRelevant = TRUE;
+			Node->bRelevant = TRUE;
+			Node->bJustBecameRelevant = TRUE;
+			Node->OnBecomeRelevant();
+		}
+		else if( NodeWeight <= ZERO_ANIMWEIGHT_THRESH )
+		{
+			bNodeRelevant = FALSE;
+			Node->NodeTickTag = SkelComponent->TickTag;
+			Node->OnCeaseRelevant();
+			Node->bRelevant = FALSE;
+			Node->bJustBecameRelevant = FALSE;
+			Node->NodeTotalWeight = NodeWeight;
+			continue;
+		}
+		else
+		{
+			Node->bJustBecameRelevant = FALSE;
+		}
+
+		Node->NodeTotalWeight = NodeWeight;
+
+		if( Node->NodeInitTag != SkelComponent->InitTag )
+		{
+			Node->NodeInitTag = SkelComponent->InitTag;
+			Node->DeferredInitAnim();
+		}
+
+		Node->NodeTickTag = SkelComponent->TickTag;
+		Node->TickAnim(DeltaSeconds);
+	}
+
+	INT NumAlwaysTickNode = AnimAlwaysTickArray.Num();
+	for(INT NodeIdx=0; NodeIdx<AnimAlwaysTickArray.Num(); NodeIdx++)
+	{
+		UAnimNode* Node = AnimAlwaysTickArray(NodeIdx);
+		if( !Node )
+		{
+			continue;
+		}
+		if( Node->NodeInitTag != SkelComponent->InitTag )
+		{
+			Node->NodeInitTag = SkelComponent->InitTag;
+			Node->DeferredInitAnim();
+		}
+		if( Node->NodeTickTag != SkelComponent->TickTag )
+		{
+			Node->NodeTickTag = SkelComponent->TickTag;
+			Node->TickAnim(DeltaSeconds);
+			if( NumAlwaysTickNode != AnimAlwaysTickArray.Num() )
+			{
+				NodeIdx = 0;
+				NumAlwaysTickNode = AnimAlwaysTickArray.Num();
+			}
+		}
+	}
+
+	UpdateAnimNodeSeqGroups(DeltaSeconds);
 }
 
 UAnimTree* UAnimTree::CopyAnimTree(UObject* NewTreeOuter, UBOOL bAcceptPooled)
@@ -7072,9 +7425,9 @@ void UAnimNodeSlot::MAT_SetAnimPosition(INT ChannelIndex, FName InAnimSeqName, F
 		// make sure they don't exists in tickarray
 		// these seqNodes gets updated here manually, so if ticknode gets called
 		// it will change previoustime/currenttime messing up root motion
-		if ( SkelComponent && SkelComponent->AnimAlwaysTickArray.ContainsItem(SeqNode) )
+		if ( SkelComponent && DisAnimAlwaysTickArray(SkelComponent).ContainsItem(SeqNode) )
 		{
- 			SkelComponent->AnimAlwaysTickArray.RemoveItem(SeqNode);
+ 			DisAnimAlwaysTickArray(SkelComponent).RemoveItem(SeqNode);
 		}
 
 		// Update Animation if needed
@@ -7367,8 +7720,8 @@ FLOAT UAnimNodeSlot::PlayCustomAnim(FName AnimName, FLOAT Rate, FLOAT BlendInTim
 		if(!bDontAddToAlwaysTickArray)
 		{
 			// Force the AnimNodeSlot and AnimNodeSequence to be always ticked.
-			SkelComponent->AnimAlwaysTickArray.AddUniqueItem(this);
-			SkelComponent->AnimAlwaysTickArray.AddUniqueItem(SeqNode);
+			DisAnimAlwaysTickArray(SkelComponent).AddUniqueItem(this);
+			DisAnimAlwaysTickArray(SkelComponent).AddUniqueItem(SeqNode);
 		}
 
 #if 0 // DEBUG
@@ -7485,24 +7838,24 @@ void UAnimNodeSlot::SetAllowPauseAnims(UBOOL bSet)
 	{
 		bDontAddToAlwaysTickArray = true;
 		// Remove any nodes that might be in the always tick array
-		SkelComponent->AnimAlwaysTickArray.RemoveItem(this);
+		DisAnimAlwaysTickArray(SkelComponent).RemoveItem(this);
 		for(INT i = 0; i < Children.Num(); ++i)
 		{
 			UAnimNodeSequence* SeqNode = Cast<UAnimNodeSequence>(Children(i).Anim);
 			if(SeqNode)
-				SkelComponent->AnimAlwaysTickArray.RemoveItem(SeqNode);	
+				DisAnimAlwaysTickArray(SkelComponent).RemoveItem(SeqNode);	
 		}
 	}
 	else
 	{
 		bDontAddToAlwaysTickArray = false;
 		// Add back the nodes to the always tick array
-		SkelComponent->AnimAlwaysTickArray.AddUniqueItem(this);
+		DisAnimAlwaysTickArray(SkelComponent).AddUniqueItem(this);
 		for(INT i = 0; i < Children.Num(); ++i)
 		{
 			UAnimNodeSequence* SeqNode = Cast<UAnimNodeSequence>(Children(i).Anim);
 			if(SeqNode)
-				SkelComponent->AnimAlwaysTickArray.AddUniqueItem(SeqNode);
+				DisAnimAlwaysTickArray(SkelComponent).AddUniqueItem(SeqNode);
 		}
 	}
 }
@@ -7615,7 +7968,7 @@ void UAnimNodeSlot::TickAnim(FLOAT DeltaSeconds)
 #endif
 					// whenever release it, make sure it removes from tick array
  					GAnimSlotNodeSequencePool.ReleaseSlotNodeSequence(SeqNode);
- 					SkelComponent->AnimAlwaysTickArray.RemoveItem(SeqNode);
+ 					DisAnimAlwaysTickArray(SkelComponent).RemoveItem(SeqNode);
 				}
  			}
 			// no need to remove from always tick array?
@@ -7717,7 +8070,7 @@ void UAnimNodeSlot::TickChildWeights(FLOAT DeltaSeconds)
 					if( SeqNode )
 					{
 						// Remove this sequence from the AnimAlwaysTickArray list.
-						SkelComponent->AnimAlwaysTickArray.RemoveItem(SeqNode);
+						DisAnimAlwaysTickArray(SkelComponent).RemoveItem(SeqNode);
 						if( SeqNode->bCauseActorAnimEnd )
 						{
 							SeqNode->bCauseActorAnimEnd = FALSE;
@@ -7732,7 +8085,7 @@ void UAnimNodeSlot::TickChildWeights(FLOAT DeltaSeconds)
 							// so make sure it's not added yet. 
 							// if I do this before on anim end, some on animend expects you to have 
 							// child.anim exists
-							if (SkelComponent->AnimAlwaysTickArray.ContainsItem(SeqNode) == FALSE)
+							if (DisAnimAlwaysTickArray(SkelComponent).ContainsItem(SeqNode) == FALSE)
 							{
 #if DEBUG_SLOTNODE_ANIMSEQPOOL
 								debugf(TEXT("TickAnim(3): Releasing SlotNode Sequence (%x)."), SeqNode);
@@ -7759,20 +8112,20 @@ void UAnimNodeSlot::TickChildWeights(FLOAT DeltaSeconds)
 
 					UAnimNodeSequence* SeqNode = Cast<UAnimNodeSequence>(Children(i).Anim);
 
-					if (SkelComponent->AnimAlwaysTickArray.ContainsItem(SeqNode))
+					if (DisAnimAlwaysTickArray(SkelComponent).ContainsItem(SeqNode))
 					{
 						if (i!=0)
 						{
 							GAnimSlotNodeSequencePool.ReleaseSlotNodeSequence(SeqNode);
 						}
 
-						SkelComponent->AnimAlwaysTickArray.RemoveItem(SeqNode);
+						DisAnimAlwaysTickArray(SkelComponent).RemoveItem(SeqNode);
 					}
 				}
 
 				bIsPlayingCustomAnim = FALSE;
 				// Remove us from the AnimAlwaysTickArray list
-				SkelComponent->AnimAlwaysTickArray.RemoveItem(this);
+				DisAnimAlwaysTickArray(SkelComponent).RemoveItem(this);
 			}
 		}
 		else
@@ -7990,7 +8343,7 @@ void UAnimNodeSlot::SetActiveChild(INT ChildIndex, FLOAT BlendTime)
 				{
 					bIsPlayingCustomAnim = FALSE;
 					// Remove us from the AnimAlwaysTickArray list
-					SkelComponent->AnimAlwaysTickArray.RemoveItem(this);
+					DisAnimAlwaysTickArray(SkelComponent).RemoveItem(this);
 				}
 			}
 		}
@@ -8012,7 +8365,7 @@ void UAnimNodeSlot::SetActiveChild(INT ChildIndex, FLOAT BlendTime)
 					if( SeqNode )
 					{
 						// Remove this sequence from the AnimAlwaysTickArray list.
-						SkelComponent->AnimAlwaysTickArray.RemoveItem(SeqNode);
+						DisAnimAlwaysTickArray(SkelComponent).RemoveItem(SeqNode);
 						if( SeqNode->bCauseActorAnimEnd )
 						{
 							SeqNode->bCauseActorAnimEnd = FALSE;
@@ -8030,7 +8383,7 @@ void UAnimNodeSlot::SetActiveChild(INT ChildIndex, FLOAT BlendTime)
 							// so make sure it's not added yet. 
 							// if I do this before on anim end, some onanimend expects you to have 
 							// child.anim exists
-							if (SkelComponent->AnimAlwaysTickArray.ContainsItem(SeqNode) == FALSE)
+							if (DisAnimAlwaysTickArray(SkelComponent).ContainsItem(SeqNode) == FALSE)
 							{
 								GAnimSlotNodeSequencePool.ReleaseSlotNodeSequence(SeqNode);
 							}

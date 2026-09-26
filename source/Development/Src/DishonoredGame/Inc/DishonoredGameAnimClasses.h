@@ -1193,6 +1193,7 @@ public:
     //## END PROPS DishonoredAnimNodeStatePicker
 
     DECLARE_CLASS(UDishonoredAnimNodeStatePicker,UAnimNodeBlendBase,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeStatePicker.h"
 };
 
 // DishonoredGame.DishonoredAnimNodeTreeRef: retail sizeof 224, reflected span 204..224 (2012 PDB sizeof 224)
@@ -1206,6 +1207,7 @@ public:
     //## END PROPS DishonoredAnimNodeTreeRef
 
     DECLARE_CLASS(UDishonoredAnimNodeTreeRef,UAnimNode,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeTreeRef.h"
 };
 
 // DishonoredGame.DishonoredAnimNodeTreeRef_Dynamic: retail sizeof 256, reflected span 224..252 (2012 PDB sizeof 256)
@@ -1221,6 +1223,7 @@ public:
     //## END PROPS DishonoredAnimNodeTreeRef_Dynamic
 
     DECLARE_CLASS(UDishonoredAnimNodeTreeRef_Dynamic,UDishonoredAnimNodeTreeRef,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeTreeRef_Dynamic.h"
 };
 
 // DishonoredGame.DishonoredAnimSet: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)
@@ -1247,6 +1250,7 @@ public:
     //## END PROPS DishonoredAnimTree
 
     DECLARE_CLASS(UDishonoredAnimTree,UAnimTree,0,DishonoredGame)
+#include "CppText/UDishonoredAnimTree.h"
 };
 
 // DishonoredGame.DishonoredNotify_AllowMantleCancel: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)

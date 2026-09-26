@@ -103,7 +103,6 @@ set(DishonoredGame_EXCLUDE
   Src/disanimstatecomponent.cpp
   Src/disanimstatefiringinterface.cpp
   Src/disanimstateownerinterface.cpp
-  Src/disanimstatepool.cpp
   Src/disattentiondefs.cpp
   Src/disattentioninfo_base.cpp
   Src/disattentioninfo_complex.cpp
@@ -332,13 +331,9 @@ set(DishonoredGame_EXCLUDE
   Src/dishonoredanimnodelookadd.cpp
   Src/dishonoredanimnodeseq.cpp
   Src/dishonoredanimnodeseqmantle.cpp
-  Src/dishonoredanimnodestatepicker.cpp
-  Src/dishonoredanimnodetreeref.cpp
-  Src/dishonoredanimnodetreeref_dynamic.cpp
   Src/dishonoredanimnotifies.cpp
   Src/dishonoredanimnotify_attackzone.cpp
   Src/dishonoredanimset.cpp
-  Src/dishonoredanimtree.cpp
   Src/dishonoredaudiolistenertest.cpp
   Src/dishonoredaudioportal.cpp
   Src/dishonoredaudioportalcomponent.cpp
