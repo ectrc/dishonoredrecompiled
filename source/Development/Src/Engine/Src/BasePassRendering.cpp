@@ -497,6 +497,7 @@ void FBasePassOpaqueDrawingPolicyFactory::AddStaticMesh(FScene* Scene,FStaticMes
 		// allow for decals to batch using translucent materials when rendered on opaque meshes
 		StaticMesh->IsDecal() )
 	{
+		GDisCensusBasePassAdded++;	// DISHONORED(bringup): scene census
 		ProcessBasePassMesh(
 			FProcessBasePassMeshParameters(
 				*StaticMesh,
@@ -506,6 +507,10 @@ void FBasePassOpaqueDrawingPolicyFactory::AddStaticMesh(FScene* Scene,FStaticMes
 				),
 			FDrawBasePassStaticMeshAction(Scene,StaticMesh)
 			);
+	}
+	else
+	{
+		GDisCensusBasePassBlendSkipped++;	// DISHONORED(bringup): scene census
 	}
 }
 

@@ -855,6 +855,8 @@ void FScene::AddPrimitiveSceneInfo_RenderThread(FPrimitiveSceneInfo* PrimitiveSc
 {
 	SCOPE_CYCLE_COUNTER(STAT_AddScenePrimitiveRenderThreadTime);
 
+	GDisCensusPrimAdded++;	// DISHONORED(bringup): scene census
+
 	// Allocate an entry in the primitives array for the primitive, and initialize its compact scene info.
 	PrimitiveSceneInfo->Id = Primitives.Add().Index;
 	Primitives(PrimitiveSceneInfo->Id) = PrimitiveSceneInfo;
@@ -920,6 +922,7 @@ void FScene::AddPrimitive(UPrimitiveComponent* Primitive)
 		GMalloc->Exec( TEXT("ENDTRACKINGTHREAD") );
 #endif
 		// Primitives which don't have a proxy are irrelevant to the scene manager.
+		GDisCensusPrimNoProxy++;	// DISHONORED(bringup): scene census
 		return;
 	}
 

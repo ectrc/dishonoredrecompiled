@@ -31,6 +31,27 @@ class SceneRenderingSetAllocator
 // Forward declarations.
 class FScene;
 
+// DISHONORED(bringup): scene census. Counts what reaches the scene, what survives culling and what the static draw
+// lists actually issue, so a world that renders but shows nothing can be localised without a graphics debugger.
+// One line every 30th frame next to "scene rendered" (RenderViewFamily_RenderThread). Retail has none of this; drop
+// it together with the other bring-up lines when the FArkPp graph lands.
+extern UINT GDisCensusPrimAdded;                 // FScene::AddPrimitiveSceneInfo_RenderThread
+extern UINT GDisCensusPrimNoProxy;               // UPrimitiveComponent::CreateSceneProxy returned NULL
+extern UINT GDisCensusStaticElements;            // FStaticMesh entries cached by FPrimitiveSceneInfo::AddToScene
+extern UINT GDisCensusPrimNoStaticElements;      // primitives that cached none
+extern UINT GDisCensusBasePassAdded;             // FBasePassOpaqueDrawingPolicyFactory::AddStaticMesh accepted
+extern UINT GDisCensusBasePassBlendSkipped;      // ... rejected by its blend mode
+extern UINT GDisCensusFrameProcessed;            // per frame, reset in FSceneRenderer::InitViews
+extern UINT GDisCensusFrameDistanceCulled;
+extern UINT GDisCensusFrameFrustumCulled;
+extern UINT GDisCensusFrameOccluded;
+extern UINT GDisCensusFrameVisible;
+extern UINT GDisCensusFrameStaticRelevant;
+extern UINT GDisCensusFrameDynamicRelevant;
+extern UINT GDisCensusFrameNoRelevance;
+extern UINT GDisCensusFrameDrawListVisited;      // static draw list elements walked by DrawVisible
+extern UINT GDisCensusFrameDrawListDrawn;        // ... whose visibility bit was set
+
 /** max DPG for scene rendering */
 enum { SDPG_MAX_SceneRender = SDPG_PostProcess };
 

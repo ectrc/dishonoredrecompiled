@@ -357,6 +357,13 @@ void FPrimitiveSceneInfo::AddToScene()
 	Proxy->DrawStaticElements(&BatchingSPDI);
 	StaticMeshes.Shrink();
 
+	// DISHONORED(bringup): scene census
+	GDisCensusStaticElements += StaticMeshes.Num();
+	if (StaticMeshes.Num() == 0)
+	{
+		GDisCensusPrimNoStaticElements++;
+	}
+
 	for(INT MeshIndex = 0;MeshIndex < StaticMeshes.Num();MeshIndex++)
 	{
 		FStaticMesh& Mesh = StaticMeshes(MeshIndex);

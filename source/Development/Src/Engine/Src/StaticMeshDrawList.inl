@@ -220,12 +220,14 @@ UBOOL TStaticMeshDrawList<DrawingPolicyType>::DrawVisible(
 		UBOOL bDrawnShared = FALSE;
 		PREFETCH(&DrawingPolicyLink->CompactElements(0));
 		const INT NumElements = DrawingPolicyLink->Elements.Num();
+		GDisCensusFrameDrawListVisited += NumElements;	// DISHONORED(bringup): scene census
 		PREFETCH(&((&DrawingPolicyLink->CompactElements(0))->VisibilityBitReference));
 		const FElementCompact* CompactElementPtr = &DrawingPolicyLink->CompactElements(0);
 		for(INT ElementIndex = 0; ElementIndex < NumElements; ElementIndex++, CompactElementPtr++)
 		{
 			if(StaticMeshVisibilityMap.AccessCorrespondingBit(CompactElementPtr->VisibilityBitReference))
 			{
+				GDisCensusFrameDrawListDrawn++;	// DISHONORED(bringup): scene census
 				const FElement& Element = DrawingPolicyLink->Elements(ElementIndex);
 #if STATS
 				if( Element.Mesh->IsDecal() )

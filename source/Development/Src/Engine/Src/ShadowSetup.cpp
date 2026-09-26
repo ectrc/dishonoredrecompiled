@@ -547,8 +547,10 @@ void FProjectedShadowInfo::AddWholeSceneSubjectPrimitive(FPrimitiveSceneInfo* Pr
 				for (INT MeshIndex = 0; MeshIndex < PrimitiveSceneInfo->StaticMeshes.Num(); MeshIndex++)
 				{
 					const FStaticMesh& StaticMesh = PrimitiveSceneInfo->StaticMeshes(MeshIndex);
-					const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared * (StaticMesh.LODIndex == 0 ? 1.0f : Square(GSystemSettings.MaxDrawDistanceScale));
-					const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared * Square(GSystemSettings.MaxDrawDistanceScale);
+					// DISHONORED(retail): no MaxDrawDistanceScale in retail (2013 rva 0x45f060); the shim read 0 and
+					// rejected every shadow-casting element
+					const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared;
+					const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared;
 					if (StaticMesh.CastShadow 
 						&& DistanceSquared >= AdjustedMinDrawDistanceSquared
 						&& DistanceSquared <  AdjustedMaxDrawDistanceSquared)
@@ -617,8 +619,9 @@ void FProjectedShadowInfo::AddSubjectPrimitive(FPrimitiveSceneInfo* PrimitiveSce
 						for (INT MeshIndex = 0; MeshIndex < PrimitiveSceneInfo->StaticMeshes.Num(); MeshIndex++)
 						{
 							const FStaticMesh& StaticMesh = PrimitiveSceneInfo->StaticMeshes(MeshIndex);
-							const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared * (StaticMesh.LODIndex == 0 ? 1.0f : Square(GSystemSettings.MaxDrawDistanceScale));
-							const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared * Square(GSystemSettings.MaxDrawDistanceScale);
+							// DISHONORED(retail): no MaxDrawDistanceScale in retail (2013 rva 0x45f060)
+							const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared;
+							const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared;
 							if (StaticMesh.CastShadow 
 								&& DistanceSquared >= AdjustedMinDrawDistanceSquared 
 								&& DistanceSquared <  AdjustedMaxDrawDistanceSquared)

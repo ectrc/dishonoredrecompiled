@@ -643,6 +643,7 @@ BYTE FSceneRenderer::ProcessPrimitiveCullingInner(const FPrimitiveSceneInfoCompa
 	BYTE AddChildrenForViews = 0;
 
 	STAT(NumProcessedPrimitives++);
+	GDisCensusFrameProcessed++;	// DISHONORED(bringup): scene census
 
 	// we use a moving bit here to avoid (1 << ViewIndex) which will generate microcode on consoles and stall the pipeline
 	INT ViewBit = 1;
@@ -753,7 +754,8 @@ BYTE FSceneRenderer::ProcessPrimitiveCullingInner(const FPrimitiveSceneInfoCompa
 #if !FINAL_RELEASE
 				!bIsVisibilityPredetermined &&
 #endif
-				( DistanceSquared > Min( CompactPrimitiveSceneInfo.MaxDrawDistanceSquared * Square(GSystemSettings.MaxDrawDistanceScale), MaxViewDistanceSquaredOverride ) );
+				// DISHONORED(retail): unscaled, as ProcessPrimitiveCulling<0> (2013 rva 0x4626a0) does
+				( DistanceSquared > Min( CompactPrimitiveSceneInfo.MaxDrawDistanceSquared, MaxViewDistanceSquaredOverride ) );
 
 			// Cull the primitive if it is closer to the view origin than its min draw distance
 			const UBOOL bIsMinDistanceCulled =
@@ -868,6 +870,7 @@ BYTE FSceneRenderer::ProcessPrimitiveCullingInner(const FPrimitiveSceneInfoCompa
 				// Cull the primitive if it shouldn't be visible right now
 				if( !bShouldBeVisible )
 				{
+					GDisCensusFrameDistanceCulled++;	// DISHONORED(bringup): scene census
 					// Skip to the next primitive!
 					continue;
 				}
@@ -914,16 +917,19 @@ BYTE FSceneRenderer::ProcessPrimitiveCullingInner(const FPrimitiveSceneInfoCompa
 				else
 				{
 					STAT(NumOccludedPrimitives++);
+					GDisCensusFrameOccluded++;	// DISHONORED(bringup): scene census
 				}
 			}
 			else
 			{
 				STAT(NumCulledPrimitives++);
+				GDisCensusFrameFrustumCulled++;	// DISHONORED(bringup): scene census
 			}
 		}
 		else
 		{
 			STAT(NumCulledPrimitives++);
+			GDisCensusFrameFrustumCulled++;	// DISHONORED(bringup): scene census
 		}
 	}
 
@@ -1582,6 +1588,18 @@ void FSceneRenderer::InitViews()
 			View.PrecomputedVisibilityData = NULL;
 		}
 	}
+
+	// DISHONORED(bringup): scene census, per-frame counters
+	GDisCensusFrameProcessed = 0;
+	GDisCensusFrameDistanceCulled = 0;
+	GDisCensusFrameFrustumCulled = 0;
+	GDisCensusFrameOccluded = 0;
+	GDisCensusFrameVisible = 0;
+	GDisCensusFrameStaticRelevant = 0;
+	GDisCensusFrameDynamicRelevant = 0;
+	GDisCensusFrameNoRelevance = 0;
+	GDisCensusFrameDrawListVisited = 0;
+	GDisCensusFrameDrawListDrawn = 0;
 
     PerformViewFrustumCulling();
 
@@ -3665,6 +3683,20 @@ UBOOL FSceneRenderer::ProcessVisible(
 	// Mark this entry in View.PrimitiveViewRelevanceMap as having been cached for this frame
 	ViewRelevance.bInitializedThisFrame = TRUE;
 
+	// DISHONORED(bringup): scene census
+	if (ViewRelevance.bStaticRelevance)
+	{
+		GDisCensusFrameStaticRelevant++;
+	}
+	else if (ViewRelevance.bDynamicRelevance)
+	{
+		GDisCensusFrameDynamicRelevant++;
+	}
+	else
+	{
+		GDisCensusFrameNoRelevance++;
+	}
+
 	const UBOOL bShouldUpdateLODFading = GAllowScreenDoorFade && View.State != NULL && View.ViewOrigin.W > 0.0f;
 	if(ViewRelevance.bStaticRelevance)
 	{
@@ -3740,8 +3772,12 @@ UBOOL FSceneRenderer::ProcessVisible(
 			{
 				const FStaticMesh& StaticMesh = CompactPrimitiveSceneInfo.PrimitiveSceneInfo->StaticMeshes(MeshIndex);
 				// For all LODs other than the base, be sure to scale both min and max draw distances to prevent a gap
-				const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared * (StaticMesh.LODIndex == 0 ? 1.0f : Square(GSystemSettings.MaxDrawDistanceScale));
-				const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared * Square(GSystemSettings.MaxDrawDistanceScale);
+				// DISHONORED(retail): no MaxDrawDistanceScale in retail's FSystemSettingsData; ProcessVisible (2013 rva
+				// 0x45f060) compares LODFactorDistanceSquared against the element's own Min/MaxDrawDistanceSquared
+				// directly. Ours multiplied by Square() of a storage-less shim that reads 0, so AdjustedMax was always 0
+				// and no static mesh element was ever marked visible: the whole static draw list drew nothing.
+				const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared;
+				const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared;
 				if(	LODFactorDistanceSquared >= AdjustedMinDrawDistanceSquared &&
 					LODFactorDistanceSquared <  AdjustedMaxDrawDistanceSquared )
 				{
@@ -3768,8 +3804,12 @@ UBOOL FSceneRenderer::ProcessVisible(
 			for(INT MeshIndex = 0;MeshIndex < StaticMeshesNum;MeshIndex++)
 			{
 				const FStaticMesh& StaticMesh = CompactPrimitiveSceneInfo.PrimitiveSceneInfo->StaticMeshes(MeshIndex);
-				const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared * (StaticMesh.LODIndex == 0 ? 1.0f : Square(GSystemSettings.MaxDrawDistanceScale));
-				const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared * Square(GSystemSettings.MaxDrawDistanceScale);
+				// DISHONORED(retail): no MaxDrawDistanceScale in retail's FSystemSettingsData; ProcessVisible (2013 rva
+				// 0x45f060) compares LODFactorDistanceSquared against the element's own Min/MaxDrawDistanceSquared
+				// directly. Ours multiplied by Square() of a storage-less shim that reads 0, so AdjustedMax was always 0
+				// and no static mesh element was ever marked visible: the whole static draw list drew nothing.
+				const FLOAT AdjustedMinDrawDistanceSquared = StaticMesh.MinDrawDistanceSquared;
+				const FLOAT AdjustedMaxDrawDistanceSquared = StaticMesh.MaxDrawDistanceSquared;
 				if(	LODToRender != INDEX_NONE && StaticMesh.LODIndex == LODToRender
 					|| LODToRender == INDEX_NONE && LODFactorDistanceSquared >= AdjustedMinDrawDistanceSquared && LODFactorDistanceSquared < AdjustedMaxDrawDistanceSquared )
 				{
@@ -3934,8 +3974,9 @@ UBOOL FSceneRenderer::ProcessVisible(
 		{
 			FDecalInteraction* Decal = CompactPrimitiveSceneInfo.Proxy->Decals[FPrimitiveSceneProxy::STATIC_DECALS](DecalIdx);
 			if( Decal &&
-				DistanceSquared >= Decal->DecalStaticMesh->MinDrawDistanceSquared * (Decal->DecalStaticMesh->LODIndex == 0 ? 1.0f : Square(GSystemSettings.MaxDrawDistanceScale)) && 
-				DistanceSquared < Decal->DecalStaticMesh->MaxDrawDistanceSquared * Square(GSystemSettings.MaxDrawDistanceScale) )
+				// DISHONORED(retail): unscaled (2013 rva 0x45f060)
+				DistanceSquared >= Decal->DecalStaticMesh->MinDrawDistanceSquared && 
+				DistanceSquared < Decal->DecalStaticMesh->MaxDrawDistanceSquared )
 			{
 				// Distance cull using decal's CullDistance (perspective views only)
 				FLOAT SquaredDistanceToDecal = 0.0f;
@@ -4046,6 +4087,7 @@ UBOOL FSceneRenderer::ProcessVisible(
 		FPrimitiveSceneInfo* PrimitiveSceneInfo = CompactPrimitiveSceneInfo.PrimitiveSceneInfo;
 
 		// This primitive is in the view frustum, view relevant, and unoccluded; it's visible.
+		GDisCensusFrameVisible++;	// DISHONORED(bringup): scene census
 		View.PrimitiveVisibilityMap(PrimitiveId) = TRUE;
 		ViewVisibilityMap |= (1<<ViewIndex);
 #if WITH_REALD
@@ -4614,6 +4656,24 @@ BeginRenderingViewFamily
  *
  * @param SceneRenderer	Scene renderer to use for rendering.
  */
+// DISHONORED(bringup): scene census counters, declared in ScenePrivate.h
+UINT GDisCensusPrimAdded = 0;
+UINT GDisCensusPrimNoProxy = 0;
+UINT GDisCensusStaticElements = 0;
+UINT GDisCensusPrimNoStaticElements = 0;
+UINT GDisCensusBasePassAdded = 0;
+UINT GDisCensusBasePassBlendSkipped = 0;
+UINT GDisCensusFrameProcessed = 0;
+UINT GDisCensusFrameDistanceCulled = 0;
+UINT GDisCensusFrameFrustumCulled = 0;
+UINT GDisCensusFrameOccluded = 0;
+UINT GDisCensusFrameVisible = 0;
+UINT GDisCensusFrameStaticRelevant = 0;
+UINT GDisCensusFrameDynamicRelevant = 0;
+UINT GDisCensusFrameNoRelevance = 0;
+UINT GDisCensusFrameDrawListVisited = 0;
+UINT GDisCensusFrameDrawListDrawn = 0;
+
 static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 {
     FMemMark MemStackMark(GRenderingThreadMemStack);
@@ -4669,6 +4729,41 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 		SET_MEMORY_STAT(STAT_RenderingMemStackMemory, GRenderingThreadMemStack.GetByteCount());
 		SET_MEMORY_STAT(STAT_LightInteractionMemory, FLightPrimitiveInteraction::GetMemoryPoolSize());
 #endif
+
+		// DISHONORED(bringup): scene census, the same cadence as "scene rendered" above
+		{
+			static INT NumCensusFrames = 0;
+			if (NumCensusFrames == 0 || (NumCensusFrames % 30) == 0)
+			{
+				const INT StaticVisible = SceneRenderer->Views.Num() ? SceneRenderer->Views(0).NumVisibleStaticMeshElements : 0;
+				debugf(TEXT("DISHONORED(bringup): scene census: scene %i prims (%i no proxy), %i static elements (%i prims with none), base pass adds %i (%i blend-skipped); frame: %i processed, %i dist-culled, %i frustum-culled, %i occluded, %i visible (%i static, %i dynamic, %i no relevance), %i static elements visible, draw lists %i/%i drawn"),
+					GDisCensusPrimAdded, GDisCensusPrimNoProxy, GDisCensusStaticElements, GDisCensusPrimNoStaticElements,
+					GDisCensusBasePassAdded, GDisCensusBasePassBlendSkipped,
+					GDisCensusFrameProcessed, GDisCensusFrameDistanceCulled, GDisCensusFrameFrustumCulled,
+					GDisCensusFrameOccluded, GDisCensusFrameVisible, GDisCensusFrameStaticRelevant,
+					GDisCensusFrameDynamicRelevant, GDisCensusFrameNoRelevance, StaticVisible,
+					GDisCensusFrameDrawListDrawn, GDisCensusFrameDrawListVisited);
+			}
+			NumCensusFrames++;
+
+			// DISHONORED(bringup): -apshot=N asks UGameViewportClient::Draw for one bitmap in appScreenShotDir()
+			// once N scene frames have been rendered, so a run can be looked at as well as counted.
+			static INT ShotFrame = -1;
+			if (ShotFrame == -1)
+			{
+				ShotFrame = 0;
+				if (!Parse(appCmdLine(), TEXT("apshot="), ShotFrame) || ShotFrame <= 0)
+				{
+					ShotFrame = 0;
+				}
+			}
+			if (ShotFrame > 0 && NumCensusFrames == ShotFrame)
+			{
+				extern UBOOL GScreenShotRequest;	// UnPlayer.cpp
+				debugf(TEXT("DISHONORED(bringup): -apshot: screenshot requested at scene frame %i"), NumCensusFrames);
+				GScreenShotRequest = TRUE;
+			}
+		}
 
         // Delete the scene renderer.
 		delete SceneRenderer;

@@ -382,8 +382,10 @@ public:
 
 	// DISHONORED(layout): reference-only members below are storage-less shims (DISHONORED_SHIM_STATIC): not in the retail
 	// FSystemSettingsData, not read from the ini by the retail table (SystemSettings.cpp); every use is a porting TODO
-	/** Scale applied to primitive's MaxDrawDistance. */
-	DISHONORED_SHIM_STATIC FLOAT	MaxDrawDistanceScale;
+	// DISHONORED(retail): MaxDrawDistanceScale removed. Retail's FSystemSettingsData has no such member and no
+	// draw-distance test scales by it (ProcessVisible 2013 rva 0x45f060, ProcessPrimitiveCulling<0> 0x4626a0). As a
+	// storage-less shim it read 0, which zeroed every AdjustedMaxDrawDistanceSquared and left the static draw lists
+	// with nothing visible to draw.
 	/** Whether to use D3D11 when it's available.						*/
 	DISHONORED_SHIM_STATIC UBOOL	bAllowD3D11;
 	/** Whether to use OpenGL when it's available.						*/
