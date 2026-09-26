@@ -32,13 +32,27 @@ public:
 	FMLAAVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
 		FGlobalShader(Initializer)
 	{
+		InvTextureSizeParameter.Bind(Initializer.ParameterMap, TEXT("InvTextureSize"), TRUE);
+		TexCoordScaleBiasParameter.Bind(Initializer.ParameterMap, TEXT("TexCoordScaleBias"), TRUE);
 	}
 
-	/** Serializer */
+	/**
+	 * Serializer
+	 * DISHONORED(layout): the cooked FMLAAVertexShader is Arkane's (arkppnodeaa.cpp, FArkPpNodeAAProxy): two parameters
+	 * (2013 rva 0x50e170 SetParameters: (1/w, 1/h) @108 and (scale.xy, offset.xy) of the source rectangle @114; Serialize
+	 * 0x411fe0). The names are not recoverable from the shipping exe. The reference MLAA pass that binds this type is
+	 * never run (FSceneRenderer::RenderFinish); the Arkane AA node comes with the FArkPp graph.
+	 */
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
-		return FShader::Serialize(Ar);
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << InvTextureSizeParameter;
+		Ar << TexCoordScaleBiasParameter;
+		return bShaderHasOutdatedParameters;
 	}
+
+	FShaderParameter InvTextureSizeParameter;
+	FShaderParameter TexCoordScaleBiasParameter;
 };
 
 /*-----------------------------------------------------------------------------
@@ -179,17 +193,24 @@ public:
 		FGlobalShader(Initializer)
 	{
 		fxaaQualityRcpFrameParameter.Bind(Initializer.ParameterMap, TEXT("fxaaQualityRcpFrame"), TRUE);
+		TexCoordScaleBiasParameter.Bind(Initializer.ParameterMap, TEXT("TexCoordScaleBias"), TRUE);
 	}
 
-	/** Serializer */
+	/**
+	 * Serializer
+	 * DISHONORED(layout): the cooked FFXAAVertexShader is Arkane's (arkppnodeaa.cpp): two parameters (2013 rva 0x50e090
+	 * SetParameters: (1/w, 1/h) @108 and the source rectangle scale/offset @114), same shape as FMLAAVertexShader above.
+	 */
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
 		Ar << fxaaQualityRcpFrameParameter;
+		Ar << TexCoordScaleBiasParameter;
 		return bShaderHasOutdatedParameters;
 	}
 
 	FShaderParameter fxaaQualityRcpFrameParameter;
+	FShaderParameter TexCoordScaleBiasParameter;
 };
 
 /*-----------------------------------------------------------------------------

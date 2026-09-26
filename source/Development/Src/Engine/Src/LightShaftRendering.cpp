@@ -140,7 +140,14 @@ IMPLEMENT_SHADER_TYPE(,FSimpleF32PixelShader,TEXT("SimpleF32PixelShader"),TEXT("
 	FLightShaftPixelShaderParameters
 -----------------------------------------------------------------------------*/
 
-/** Light shaft parameters that are shared between multiple pixel shaders. */
+/**
+ * Light shaft parameters that are shared between multiple pixel shaders.
+ * DISHONORED(layout): retail FLightShaftPixelShaderParameters is 60 bytes = 10 parameters (2013 rva 0x415690 operator<<,
+ * 0x420300 SetParameters: TextureSpaceBlurOrigin @0, WorldSpaceBlurOriginAndRadius @6, WorldSpaceCameraPositionAndDistance
+ * @12, UVMinMax @18, AspectRatioAndInvAspectRatio @24, LightShaftParameters @30, BloomTintAndThreshold @36,
+ * BloomScreenBlendThreshold @42, DistanceFade @48, SourceTexture @54). No spot-light direction / angles in retail
+ * (retail light shafts are directional or point, TDownsampleLightShaftsPixelShader<FALSE/TRUE>).
+ */
 class FLightShaftPixelShaderParameters
 {
 public:
@@ -148,8 +155,6 @@ public:
 	{
 		TextureSpaceBlurOriginParameter.Bind(ParameterMap,TEXT("TextureSpaceBlurOrigin"), TRUE);
 		WorldSpaceBlurOriginAndRadiusParameter.Bind(ParameterMap,TEXT("WorldSpaceBlurOriginAndRadius"), TRUE);
-		WorldSpaceSpotDirectionParameter.Bind(ParameterMap,TEXT("WorldSpaceSpotDirection"), TRUE);
-		SpotAnglesParameter.Bind(ParameterMap,TEXT("SpotAngles"), TRUE);
 		WorldSpaceCameraPositionParameter.Bind(ParameterMap,TEXT("WorldSpaceCameraPositionAndDistance"), TRUE);
 		UVMinMaxParameter.Bind(ParameterMap,TEXT("UVMinMax"), TRUE);
 		AspectRatioAndInvAspectRatioParameter.Bind(ParameterMap,TEXT("AspectRatioAndInvAspectRatio"), TRUE);
@@ -164,8 +169,6 @@ public:
 	{
 		Ar << Parameters.TextureSpaceBlurOriginParameter;
 		Ar << Parameters.WorldSpaceBlurOriginAndRadiusParameter;
-		Ar << Parameters.SpotAnglesParameter;
-		Ar << Parameters.WorldSpaceSpotDirectionParameter;
 		Ar << Parameters.WorldSpaceCameraPositionParameter;
 		Ar << Parameters.UVMinMaxParameter;
 		Ar << Parameters.AspectRatioAndInvAspectRatioParameter;
@@ -211,7 +214,7 @@ public:
 
 		SetPixelShaderValue(Shader->GetPixelShader(), WorldSpaceBlurOriginAndRadiusParameter, FVector4(WorldSpaceBlurOrigin, LightSceneInfo->GetRadius()));
 
-		SetSpotLightShaftParameters(Shader, LightSceneInfo, WorldSpaceSpotDirectionParameter, SpotAnglesParameter);
+		// DISHONORED(retail): no spot-light shaft parameters (2013 rva 0x420300)
 
 		const FLOAT DistanceFromLight = ((FVector)View.ViewOrigin - WorldSpaceBlurOrigin).Size() + PointLightFadeDistanceIncrease;
 		SetPixelShaderValue(Shader->GetPixelShader(), WorldSpaceCameraPositionParameter, FVector4(View.ViewOrigin, DistanceFromLight));
@@ -278,8 +281,6 @@ private:
 #endif
 	FShaderParameter TextureSpaceBlurOriginParameter;
 	FShaderParameter WorldSpaceBlurOriginAndRadiusParameter;
-	FShaderParameter SpotAnglesParameter;
-	FShaderParameter WorldSpaceSpotDirectionParameter;
 	FShaderParameter WorldSpaceCameraPositionParameter;
 	FShaderParameter UVMinMaxParameter;
 	FShaderParameter AspectRatioAndInvAspectRatioParameter;
@@ -316,62 +317,23 @@ public:
 		FGlobalShader(Initializer)
 	{
 		ScreenToWorldParameter.Bind(Initializer.ParameterMap,TEXT("ScreenToWorld"), TRUE);
-		//@BEGIN - JTM - Aug 23, 2012 02:50PM - Added shader parameter for multi-viewport lightshafts
-		ScreenToViewportParameter.Bind(Initializer.ParameterMap,TEXT("ScreenToViewport"), TRUE);
-		//@END
 	}
 
-	/** Serializer */
+	/**
+	 * Serializer
+	 * DISHONORED(layout): one parameter in retail (cooked history 3 words; 2013 rva 0x415460 sets ScreenToWorld @108 only).
+	 * The reference ScreenToViewport (a 2012 multi-viewport addition) does not exist.
+	 */
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
 		Ar << ScreenToWorldParameter;
-		//@BEGIN - JTM - Aug 23, 2012 02:50PM - Added shader parameter for multi-viewport lightshafts
-		Ar << ScreenToViewportParameter;
-		//@END
-
-		ScreenToWorldParameter.SetShaderParamName(TEXT("ScreenToWorld"));
-		//@BEGIN - JTM - Aug 23, 2012 02:50PM - Added shader parameter for multi-viewport lightshafts
-		ScreenToViewportParameter.SetShaderParamName(TEXT("ScreenToViewport"));
-		//@END
-
 		return bShaderHasOutdatedParameters;
 	}
 
-	/** Sets shader parameter values */
+	/** Sets shader parameter values (DISHONORED(port): 2013 rva 0x415460) */
 	void SetParameters(const FViewInfo& View)
 	{
-		//@BEGIN - JTM - Aug 23, 2012 02:50PM - Added shader parameter for multi-viewport lightshafts
-		const UINT FilterBufferSizeX = GSceneRenderTargets.GetFilterBufferSizeX();
-		const UINT FilterBufferSizeY = GSceneRenderTargets.GetFilterBufferSizeY();
-		const UINT FilterDownsampleFactor = GSceneRenderTargets.GetFilterDownsampleFactor();
-		const UINT DownsampledX = View.RenderTargetX / FilterDownsampleFactor;
-		const UINT DownsampledY = View.RenderTargetY / FilterDownsampleFactor;
-		const UINT DownsampledSizeX = View.RenderTargetSizeX / FilterDownsampleFactor;
-		const UINT DownsampledSizeY = View.RenderTargetSizeY / FilterDownsampleFactor;
-
-		const FLOAT Sx = (DownsampledSizeX > 0)
-			? (FLOAT)FilterBufferSizeX / (FLOAT)DownsampledSizeX
-			: 1.0f;
-		const FLOAT Sy = (DownsampledSizeY > 0)
-			? (FLOAT)FilterBufferSizeY / (FLOAT)DownsampledSizeY
-			: 1.0f;
-		const FLOAT Dx = (FilterBufferSizeX > 0)
-			? ((2.0f * (FLOAT)DownsampledX + DownsampledSizeX) / (FLOAT)FilterBufferSizeX) - 1.0f
-			: 0.0f;
-		const FLOAT Dy = (FilterBufferSizeY > 0)
-			? ((2.0f * (FLOAT)DownsampledY + DownsampledSizeY) / (FLOAT)FilterBufferSizeY) - 1.0f
-			: 0.0f;
-
-		FMatrix ScreenToViewport = FMatrix(
-			FPlane(Sx,0,0,0),
-			FPlane(0,Sy,0,0),
-			FPlane(0,0,1,0),
-			FPlane(-Sx * Dx,-Sy * Dy,0,1));
-
-		SetVertexShaderValue(GetVertexShader(),ScreenToViewportParameter,ScreenToViewport);
-		//@END
-
 		FMatrix ScreenToWorld = FMatrix(
 			FPlane(1,0,0,0),
 			FPlane(0,1,0,0),
@@ -380,16 +342,12 @@ public:
 			) *
 			View.InvTranslatedViewProjectionMatrix;
 
-		// Set the view constants, as many as were bound to the parameter.
 		SetVertexShaderValue(GetVertexShader(),ScreenToWorldParameter,ScreenToWorld);
 	}
 
 private:
 
 	FShaderParameter ScreenToWorldParameter;
-	//@BEGIN - JTM - Aug 23, 2012 02:50PM - Added shader parameter for multi-viewport lightshafts
-	FShaderParameter ScreenToViewportParameter;
-	//@END
 };
 
 IMPLEMENT_SHADER_TYPE(,FDownsampleLightShaftsVertexShader,TEXT("LightShaftShader"),TEXT("DownsampleLightShaftsVertexMain"),SF_Vertex,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
@@ -406,7 +364,13 @@ enum ELightShaftLightType
 	TDownsampleLightShaftsPixelShader
 -----------------------------------------------------------------------------*/
 
-template<ELightShaftLightType LightType> 
+/**
+ * DISHONORED(retail): retail instantiates TDownsampleLightShaftsPixelShader<FALSE> (directional / dominant directional
+ * lights) and <TRUE> (every other light: point light shafts), 2012 rva 0x459dc0 / 2013 0x437480 RenderLightShafts; the
+ * cooked type names are "TDownsampleLightShaftsPixelShader<FALSE>" / "<TRUE>". Layout (ctor 2013 rva 0x416c70, Serialize
+ * 0x416d00): light shaft parameters, SampleOffsets, scene textures, SmallSceneColorTexture = 17 parameters (51 words).
+ */
+template<UBOOL bPointLightShafts>
 class TDownsampleLightShaftsPixelShader : public FGlobalShader
 {
 	DECLARE_SHADER_TYPE(TDownsampleLightShaftsPixelShader,Global);
@@ -414,17 +378,14 @@ public:
 
 	static UBOOL ShouldCache(EShaderPlatform Platform)
 	{
-		return TRUE; 
+		return TRUE;
 	}
 
 	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment)
 	{
-		OutEnvironment.Definitions.Set(TEXT("POINT_LIGHT_SHAFTS"), *FString::Printf(TEXT("%u"), (UBOOL)(LightType == LS_Point || LightType == LS_Spot)));
-		OutEnvironment.Definitions.Set(TEXT("SPOT_LIGHT_SHAFTS"), *FString::Printf(TEXT("%u"), (UBOOL)(LightType == LS_Spot)));
+		OutEnvironment.Definitions.Set(TEXT("POINT_LIGHT_SHAFTS"), *FString::Printf(TEXT("%u"), (UBOOL)bPointLightShafts));
 		OutEnvironment.Definitions.Set(TEXT("POINT_LIGHT_RADIUS_FADE_FACTOR"), *FString::Printf(TEXT("%f"), PointLightRadiusFadeFactor));
 	}
-
-	/** Default constructor. */
 	TDownsampleLightShaftsPixelShader() {}
 
 	/** Initialization constructor. */
@@ -494,9 +455,8 @@ private:
 	FShaderResourceParameter SmallSceneColorTextureParameter;
 };
 
-IMPLEMENT_SHADER_TYPE(template<>,TDownsampleLightShaftsPixelShader<LS_Point>,TEXT("LightShaftShader"),TEXT("DownsampleLightShaftsPixelMain"),SF_Pixel,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
-IMPLEMENT_SHADER_TYPE(template<>,TDownsampleLightShaftsPixelShader<LS_Spot>,TEXT("LightShaftShader"),TEXT("DownsampleLightShaftsPixelMain"),SF_Pixel,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
-IMPLEMENT_SHADER_TYPE(template<>,TDownsampleLightShaftsPixelShader<LS_Directional>,TEXT("LightShaftShader"),TEXT("DownsampleLightShaftsPixelMain"),SF_Pixel,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
+IMPLEMENT_SHADER_TYPE(template<>,TDownsampleLightShaftsPixelShader<TRUE>,TEXT("LightShaftShader"),TEXT("DownsampleLightShaftsPixelMain"),SF_Pixel,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
+IMPLEMENT_SHADER_TYPE(template<>,TDownsampleLightShaftsPixelShader<FALSE>,TEXT("LightShaftShader"),TEXT("DownsampleLightShaftsPixelMain"),SF_Pixel,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
 
 /*-----------------------------------------------------------------------------
 	FBlurLightShaftsPixelShader
@@ -798,7 +758,6 @@ private:
 IMPLEMENT_SHADER_TYPE(,FApplyLightShaftsPixelShader,TEXT("LightShaftShader"),TEXT("ApplyLightShaftsPixelMain"),SF_Pixel,VER_RES_INDEPENDENT_LIGHTSHAFTS,0);
 
 FGlobalBoundShaderState DownsamplePointLightShaftsBoundShaderState;
-FGlobalBoundShaderState DownsampleSpotLightShaftsBoundShaderState;
 FGlobalBoundShaderState DownsampleDirectionalLightShaftsBoundShaderState;
 FGlobalBoundShaderState BlurLightShaftsBoundShaderState;
 FGlobalBoundShaderState ApplyLightShaftsBoundShaderState;
@@ -1101,21 +1060,16 @@ UBOOL FSceneRenderer::RenderLightShafts()
 						// Set shaders and texture
 						TShaderMapRef<FDownsampleLightShaftsVertexShader> DownsampleLightShaftsVertexShader(GetGlobalShaderMap());
 
+						// DISHONORED(port): 2013 rva 0x437480 (2012 0x459dc0): <FALSE> for directional lights, <TRUE> for the rest
 						if (LightSceneInfo->LightType == LightType_Directional || LightSceneInfo->LightType == LightType_DominantDirectional)
 						{
-							TShaderMapRef<TDownsampleLightShaftsPixelShader<LS_Directional> > DownsampleLightShaftsPixelShader(GetGlobalShaderMap());
+							TShaderMapRef<TDownsampleLightShaftsPixelShader<FALSE> > DownsampleLightShaftsPixelShader(GetGlobalShaderMap());
 							SetGlobalBoundShaderState(DownsampleDirectionalLightShaftsBoundShaderState, GFilterVertexDeclaration.VertexDeclarationRHI, *DownsampleLightShaftsVertexShader, *DownsampleLightShaftsPixelShader, sizeof(FFilterVertex));
-							DownsampleLightShaftsPixelShader->SetParameters(LightSceneInfo, View);
-						}
-						else if(LightSceneInfo->LightType == LightType_Spot || LightSceneInfo->LightType == LightType_DominantSpot)
-						{
-							TShaderMapRef<TDownsampleLightShaftsPixelShader<LS_Spot> > DownsampleLightShaftsPixelShader(GetGlobalShaderMap());
-							SetGlobalBoundShaderState(DownsampleSpotLightShaftsBoundShaderState, GFilterVertexDeclaration.VertexDeclarationRHI, *DownsampleLightShaftsVertexShader, *DownsampleLightShaftsPixelShader, sizeof(FFilterVertex));
 							DownsampleLightShaftsPixelShader->SetParameters(LightSceneInfo, View);
 						}
 						else
 						{
-							TShaderMapRef<TDownsampleLightShaftsPixelShader<LS_Point> > DownsampleLightShaftsPixelShader(GetGlobalShaderMap());
+							TShaderMapRef<TDownsampleLightShaftsPixelShader<TRUE> > DownsampleLightShaftsPixelShader(GetGlobalShaderMap());
 							SetGlobalBoundShaderState(DownsamplePointLightShaftsBoundShaderState, GFilterVertexDeclaration.VertexDeclarationRHI, *DownsampleLightShaftsVertexShader, *DownsampleLightShaftsPixelShader, sizeof(FFilterVertex));
 							DownsampleLightShaftsPixelShader->SetParameters(LightSceneInfo, View);
 						}

@@ -56,7 +56,7 @@ void FSceneRenderer::FinishRenderViewTarget(const FViewInfo* View, UBOOL bIgnore
 	// unless the scene needs an upscale in which case LDR scene color needs to be copied to the view's render target.
 	if( View->bUseLDRSceneColor 
 		&& (!GSystemSettings.NeedsUpscale() || bIgnoreScaling)
-		&& !View->Family->bScreenCaptureRenderTarget
+		// DISHONORED(retail): no bScreenCaptureRenderTarget in retail's FSceneViewFamily (80 bytes, Scene.h): the term is gone
 		// Also skip the final copy to View.RenderTarget if disabled by the view family
 		|| !View->Family->bResolveScene )
 	{

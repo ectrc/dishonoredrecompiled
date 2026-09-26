@@ -85,54 +85,11 @@ void RHIInit( UBOOL bIsEditor )
 			else
 #endif
 			{
-				// command line overrides
-				const UBOOL bForceD3D9 = FALSE; //ParseParam( appCmdLine() ,TEXT( "d3d9" ) ) || ParseParam( appCmdLine(), TEXT( "sm3" ) ) || ParseParam( appCmdLine(), TEXT( "dx9" ) );
-				const UBOOL bForceD3D11 = TRUE; //ParseParam( appCmdLine(), TEXT( "d3d11" ) ) || ParseParam( appCmdLine(), TEXT( "sm5" ) ) || ParseParam( appCmdLine(), TEXT( "dx11" ) );
-				UBOOL bForceOpenGL = FALSE; //ParseParam(appCmdLine(),TEXT("opengl"));
-				const UBOOL bRenderModeForced = bForceD3D9 || bForceD3D11 || bForceOpenGL;
-
-				if ((bForceD3D11 && bForceD3D9) || (bForceD3D11 && bForceOpenGL) || (bForceD3D9 && bForceOpenGL))
-				{
-					appErrorf(TEXT("-d3d9, -d3d11 and -opengl are mutually exclusive options, but more than one was specified on the command-line."));
-				}
-
-				UBOOL bUseD3D11 = bForceD3D11;
-				UBOOL bAllowOpenGL = GSystemSettings.bAllowOpenGL;
-
-				// If the render mode isn't being forced through the commandline, pick it up from the Ini file
-				if( !bRenderModeForced )
-				{
-					bUseD3D11 = ( GRenderMode == RENDER_MODE_DX11 );
-				}
-				else
-				{
-					GForcedRenderMode = (bForceD3D11 ? RENDER_MODE_DX11 : RENDER_MODE_DX9);
-				}
-
-				// Only check for D3D11 support if we're wanting D3D11 mode so we don't have a dependency on the dll unless we need it
-				UBOOL bSupportsD3D11Features = FALSE;
-				IsDirect3D11Supported( bSupportsD3D11Features );
-
-				// If D3D11 was requested but not supported then warn the user
-				if( bUseD3D11 && !bSupportsD3D11Features )
-				{
-					warnf( NAME_Warning, TEXT("Command line -d3d11 set, but D3D11 is not supported on this machine.  Will fallback to older API.") );
-				}
-
-				// Choose D3D API
-				if( bUseD3D11 && bSupportsD3D11Features )
-				{
-					GDynamicRHI = D3D11CreateRHI();
-				}
-				// if we are forcing opengl or not forcing d3d9 and we can run the opengl path
-				else if(bForceOpenGL || (!bForceD3D9 && bAllowOpenGL))
-				{
-					GDynamicRHI = OpenGLCreateRHI();
-				}
-				else
-				{
-					GDynamicRHI = D3D9CreateRHI();
-				}
+				// DISHONORED(retail): the retail exe has one PC RHI, D3D9 (no D3D11/OpenGL dll, no RENDER_MODE_DX11 path:
+				// 2013 rva 0x5bc1e0 creates the device directly). The reference block forced bForceD3D11 = TRUE (a UDK
+				// leftover) and warned "Command line -d3d11 set" on every start.
+				GForcedRenderMode = RENDER_MODE_DX9;
+				GDynamicRHI = D3D9CreateRHI();
 			}
 		}
 #elif PLATFORM_MACOSX

@@ -560,6 +560,9 @@ extern TGlobalResource<FShadowFrustumVertexDeclaration> GShadowFrustumVertexDecl
 
 /**
 * A vertex shader for projecting a shadow depth buffer onto the scene.
+* DISHONORED(layout): the cooked FShadowProjectionVertexShader / FModShadowProjectionVertexShader records carry no
+* parameter (history = FShader::Serialize only, 296 bytes of code): retail's projection vertex shader is a pass-through,
+* the screen-to-shadow transform is a pixel shader constant (TShadowProjectionPixelShader::ScreenToShadowMatrixParameter).
 */
 class FShadowProjectionVertexShader : public FGlobalShader
 {
@@ -573,8 +576,6 @@ public:
 
 	void SetParameters(const FSceneView& View, const FProjectedShadowInfo* ShadowInfo);
 	virtual UBOOL Serialize(FArchive& Ar);
-
-	FShaderParameter ScreenToShadowMatrixParameter;
 };
 
 
@@ -732,6 +733,40 @@ public:
 };
 
 /**
+ * DISHONORED(retail): the retail projection shader set is F4SampleHwPCF, F4SampleManualPCF, F16SampleHwPCF,
+ * F16SampleFetch4PCF, F16SampleManualPCF (2013 rva 0x45cc20 GetProjPixelShaderRef, 0x1451e0 GetModProjPixelShaderRef);
+ * there is no per-fragment (SM5 MSAA) variant. The reference *PerPixel / *PerFragment policies above stay only for the
+ * light shader types of LightRendering.h (agent AG).
+ */
+class F4SampleManualPCF
+{
+public:
+	static const UINT NumSamples = 4;
+	static const UBOOL bUseHardwarePCF = FALSE;
+	static const UBOOL bUseFetch4 = FALSE;
+	static const UBOOL bPerFragment = FALSE;
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+};
+
+class F16SampleManualPCF
+{
+public:
+	static const UINT NumSamples = 16;
+	static const UBOOL bUseHardwarePCF = FALSE;
+	static const UBOOL bUseFetch4 = FALSE;
+	static const UBOOL bPerFragment = FALSE;
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+};
+
+/**
  * Samples used with the SM3 version
  */
 static const FVector2D SixteenSampleOffsets[] =
@@ -782,141 +817,17 @@ public:
 
 };
 
-/** Shadow projection parameters used by multiple shaders. */
-class FShadowProjectionShaderParameters
-{
-public:
-
-	void Bind(const FShaderParameterMap& ParameterMap)
-	{
-		DeferredParameters.Bind(ParameterMap);
-		ScreenToShadowMatrixParameter.Bind(ParameterMap,TEXT("ScreenToShadowMatrix"));
-		HomShadowStartPosParameter.Bind(ParameterMap,TEXT("HomShadowStartPos"), TRUE);
-		ShadowBufferSizeAndSoftTransitionScaleParameter.Bind(ParameterMap,TEXT("ShadowBufferSizeAndSoftTransitionScale"),TRUE);
-		ShadowTexelSizeParameter.Bind(ParameterMap,TEXT("ShadowTexelSize"),TRUE);
-		ShadowDepthTextureParameter.Bind(ParameterMap,TEXT("ShadowDepthTexture"));
-	}
-
-	void Set(FShader* Shader, const FSceneView& View, const FProjectedShadowInfo* ShadowInfo, UBOOL bUseHardwarePCF, UBOOL bUseFetch4)
-	{
-		DeferredParameters.Set(View, Shader, SceneDepthUsage_ProjectedShadows);
-
-		// Set the transform from screen coordinates to shadow depth texture coordinates.
-		const FMatrix ScreenToShadow = ShadowInfo->GetScreenToShadowMatrix(View, FALSE);
-		SetShaderValue(Shader->GetPixelShader(), ScreenToShadowMatrixParameter, ScreenToShadow);
-
-		FVector4 HomShadowStartPosValue = ScreenToShadow.TransformFVector4(FVector4(0.0f, 0.0f, 0.0f, 1.0f));
-		SetShaderValue(Shader->GetPixelShader(), HomShadowStartPosParameter, HomShadowStartPosValue);
-
-		const FIntPoint ShadowBufferResolution = ShadowInfo->GetShadowBufferResolution(FALSE);
-
-		if (ShadowBufferSizeAndSoftTransitionScaleParameter.IsBound() || ShadowTexelSizeParameter.IsBound())
-		{
-			// Scale up the size passed to the shader for Cascaded Shadow Maps so that the penumbra size of distant splits will better match up with the closer ones
-			const FLOAT SizeScale = (ShadowInfo->SplitIndex > 0 && ShadowInfo->bDirectionalLight) ? ShadowInfo->SplitIndex / GSystemSettings.CSMSplitPenumbraScale : 1.0f;
-
-			FLOAT TransitionScale;
-
-			if (ShadowInfo->bFullSceneShadow && ShadowInfo->bDirectionalLight)
-			{
-				// Scale down the soft transition distance for distant splits
-				TransitionScale = GSystemSettings.PerSceneShadowTransition * (ShadowInfo->SplitIndex > 0 ? GSystemSettings.CSMSplitSoftTransitionDistanceScale * ShadowInfo->SplitIndex : 1.0f); 
-			}
-			else
-			{
-				TransitionScale = GSystemSettings.PerObjectShadowTransition;
-			}
-
-			SetPixelShaderValue(Shader->GetPixelShader(), ShadowBufferSizeAndSoftTransitionScaleParameter, FVector(
-				(FLOAT)ShadowBufferResolution.X * SizeScale, 
-				(FLOAT)ShadowBufferResolution.Y * SizeScale,
-				TransitionScale));
-
-			SetPixelShaderValue(Shader->GetPixelShader(), ShadowTexelSizeParameter, FVector2D(
-				1.0f / ((FLOAT)ShadowBufferResolution.X * SizeScale), 
-				1.0f / ((FLOAT)ShadowBufferResolution.Y * SizeScale)));
-		}
-
-		FTexture2DRHIRef ShadowDepthSampler;
-		FSamplerStateRHIParamRef DepthSamplerState;
-
-		if (bUseHardwarePCF)
-		{
-			//take advantage of linear filtering on nvidia depth stencil textures
-			DepthSamplerState = TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI();
-			//sample the depth texture
-			ShadowDepthSampler = GSceneRenderTargets.GetShadowDepthZTexture(ShadowInfo->IsPrimaryWholeSceneDominantShadow(), ShadowInfo->bAllocatedInPreshadowCache);
-		}
-		else if (GSupportsDepthTextures)
-		{
-			DepthSamplerState = TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI();
-			//sample the depth texture
-			ShadowDepthSampler = GSceneRenderTargets.GetShadowDepthZTexture(ShadowInfo->IsPrimaryWholeSceneDominantShadow(), ShadowInfo->bAllocatedInPreshadowCache);
-		} 
-		else if (bUseFetch4)
-		{
-			//enable Fetch4 on this sampler
-			DepthSamplerState = TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp,MIPBIAS_Get4>::GetRHI();
-			//sample the depth texture
-			ShadowDepthSampler = GSceneRenderTargets.GetShadowDepthZTexture(ShadowInfo->IsPrimaryWholeSceneDominantShadow(), ShadowInfo->bAllocatedInPreshadowCache);
-		}
-		else
-		{
-			DepthSamplerState = TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI();
-			//sample the color depth texture
-			ShadowDepthSampler = GSceneRenderTargets.GetShadowDepthColorTexture(ShadowInfo->IsPrimaryWholeSceneDominantShadow(), ShadowInfo->bAllocatedInPreshadowCache);
-		}
-
-		SetTextureParameterDirectly(
-			Shader->GetPixelShader(),
-			ShadowDepthTextureParameter,
-			DepthSamplerState,
-			ShadowDepthSampler
-			);
-	}
-
-	/** Serializer. */
-	friend FArchive& operator<<(FArchive& Ar,FShadowProjectionShaderParameters& P)
-	{
-		Ar << P.DeferredParameters;
-		Ar << P.ScreenToShadowMatrixParameter;
-		Ar << P.HomShadowStartPosParameter;
-		Ar << P.ShadowBufferSizeAndSoftTransitionScaleParameter;
-		Ar << P.ShadowTexelSizeParameter;
-		Ar << P.ShadowDepthTextureParameter;
-
-#if WITH_MOBILE_RHI
-		if (GUsingMobileRHI)
-		{
-			P.DeferredParameters.SceneTextureParameters.SceneColorTextureParameter.SetBaseIndex( 0 );
-			P.DeferredParameters.SceneTextureParameters.SceneDepthTextureParameter.SetBaseIndex( 1, TRUE );
-
-			P.ShadowDepthTextureParameter.SetBaseIndex( 2, TRUE );
-			P.ScreenToShadowMatrixParameter.SetShaderParamName(TEXT("ScreenToShadowMatrix"));
-			P.HomShadowStartPosParameter.SetShaderParamName(TEXT("HomShadowStartPos"));
-			P.ShadowBufferSizeAndSoftTransitionScaleParameter.SetShaderParamName(TEXT("ShadowBufferSizeAndSoftTransitionScale"));
-			P.ShadowTexelSizeParameter.SetShaderParamName(TEXT("ShadowTexelSize"));
-		}
-#endif
-
-		return Ar;
-	}
-
-private:
-
-	FDeferredPixelShaderParameters DeferredParameters;
-	FShaderParameter ScreenToShadowMatrixParameter;
-	FShaderParameter HomShadowStartPosParameter;
-	FShaderParameter ShadowBufferSizeAndSoftTransitionScaleParameter;
-	FShaderParameter ShadowTexelSizeParameter;
-	FShaderResourceParameter ShadowDepthTextureParameter;
-};
-
 /**
  * TShadowProjectionPixelShader
  * A pixel shader for projecting a shadow depth buffer onto the scene.  Used with any light type casting normal shadows.
+ *
+ * DISHONORED(layout): retail layout from the 2013 decompiles (ctor 0xe34b0, Serialize 0xe3610 / 0xe3800, SetParameters
+ * 0xed400): SampleOffsets[NumSamples] @108, then SceneTextureParams (5 parameters), ScreenToShadowMatrix,
+ * ShadowDepthTexture, SampleOffsets, ShadowBufferSize, ShadowFadeFraction = 10 parameters (30 cooked history words).
+ * The reference FShadowProjectionShaderParameters (deferred G-buffer parameters, HomShadowStartPos, ShadowTexelSize)
+ * and the LightingChannelMask parameter do not exist in retail (no deferred shading).
  */
-template<class UniformPCFPolicy> 
+template<class UniformPCFPolicy>
 class TShadowProjectionPixelShader : public FShadowProjectionPixelShaderInterface
 {
 	DECLARE_SHADER_TYPE(TShadowProjectionPixelShader,Global);
@@ -924,8 +835,8 @@ public:
 
 	TShadowProjectionPixelShader()
 		: FShadowProjectionPixelShaderInterface()
-	{ 
-		SetSampleOffsets(); 
+	{
+		SetSampleOffsets();
 	}
 
 	/**
@@ -935,10 +846,12 @@ public:
 	TShadowProjectionPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
 	FShadowProjectionPixelShaderInterface(Initializer)
 	{
-		ProjectionParameters.Bind(Initializer.ParameterMap);
+		SceneTextureParams.Bind(Initializer.ParameterMap);
+		ScreenToShadowMatrixParameter.Bind(Initializer.ParameterMap,TEXT("ScreenToShadowMatrix"));
+		ShadowDepthTextureParameter.Bind(Initializer.ParameterMap,TEXT("ShadowDepthTexture"));
 		SampleOffsetsParameter.Bind(Initializer.ParameterMap,TEXT("SampleOffsets"),TRUE);
+		ShadowBufferSizeParameter.Bind(Initializer.ParameterMap,TEXT("ShadowBufferSize"),TRUE);
 		ShadowFadeFractionParameter.Bind(Initializer.ParameterMap,TEXT("ShadowFadeFraction"),TRUE);
-		LightingChannelMaskParameter.Bind(Initializer.ParameterMap,TEXT("LightingChannelMask"),TRUE);
 
 		SetSampleOffsets();
 	}
@@ -979,25 +892,13 @@ public:
 		OutEnvironment.Definitions.Set(TEXT("PER_FRAGMENT"),UniformPCFPolicy::bPerFragment ? TEXT("1") : TEXT("0"));
 	}
 
-	virtual void SetLightChannelParameter(const FProjectedShadowInfo* ShadowInfo)
-	{
-		// Using the G buffer's lighting channels to implement self shadowing modes
-		if (ShouldUseDeferredShading() && ShadowInfo->LightSceneInfo->LightingChannels.GetDeferredShadingChannelMask() > 0)
-		{
-			FLightingChannelContainer AllChannels;
-			AllChannels.SetAllChannels();
-
-			const FLOAT Mask = (ShadowInfo->bSelfShadowOnly || ShadowInfo->LightSceneInfo->bNonModulatedSelfShadowing) ? 
-				// Self shadow only and bNonModulatedSelfShadowing in the normal shadow pass want to affect just the shadow caster
-				ShadowInfo->LightSceneInfo->LightingChannels.GetDeferredShadingChannelMask() : 
-				AllChannels.GetDeferredShadingChannelMask();
-
-			SetPixelShaderValue(GetPixelShader(), LightingChannelMaskParameter, Mask);
-		}
-	}
-
 	/**
 	 * Sets the pixel shader's parameters
+	 * DISHONORED(port): 2013 rva 0xed400 (2012 0xedb30): scene textures (projected-shadow depth usage), ScreenToShadowMatrix,
+	 * ShadowBufferSize = (resolution, resolution, 60.0), ShadowFadeFraction, the shadow depth texture with a point
+	 * sampler (the depth texture when depth textures are supported, the color depth texture otherwise), then the
+	 * rotated sample offsets (TexelRadius = ShadowFilterRadius / 2 / resolution). Retail has one FadeAlpha per shadow;
+	 * this tree keeps the reference per-view FadeAlphas (ShadowRendering.h, FProjectedShadowInfo).
 	 * @param View - current view
 	 * @param ShadowInfo - projected shadow info for a single light
 	 */
@@ -1007,17 +908,34 @@ public:
 		const FProjectedShadowInfo* ShadowInfo
 		)
 	{
-		ProjectionParameters.Set(this, View, ShadowInfo, UniformPCFPolicy::bUseHardwarePCF, UniformPCFPolicy::bUseFetch4);
+		SceneTextureParams.Set(&View, this, SF_Point, SceneDepthUsage_ProjectedShadows);
+
+		const FMatrix ScreenToShadow = ShadowInfo->GetScreenToShadowMatrix(View, FALSE);
+		SetPixelShaderValue(FShader::GetPixelShader(), ScreenToShadowMatrixParameter, ScreenToShadow);
 
 		const FIntPoint ShadowBufferResolution = ShadowInfo->GetShadowBufferResolution(FALSE);
+		if (ShadowBufferSizeParameter.IsBound())
+		{
+			SetPixelShaderValue(FShader::GetPixelShader(), ShadowBufferSizeParameter, FVector((FLOAT)ShadowBufferResolution.X, (FLOAT)ShadowBufferResolution.Y, 60.0f));
+		}
 
-		SetLightChannelParameter(ShadowInfo);
+		SetPixelShaderValue(FShader::GetPixelShader(), ShadowFadeFractionParameter, ShadowInfo->FadeAlphas(ViewIndex));
 
-#if WITH_REALD
-		SetPixelShaderValue(GetPixelShader(),ShadowFadeFractionParameter, ShadowInfo->FadeAlphas(0));
-#else
-		SetPixelShaderValue(GetPixelShader(),ShadowFadeFractionParameter, ShadowInfo->FadeAlphas(ViewIndex));
-#endif
+		FTexture2DRHIRef ShadowDepthSampler;
+		if (UniformPCFPolicy::bUseHardwarePCF || GSupportsDepthTextures)
+		{
+			ShadowDepthSampler = GSceneRenderTargets.GetShadowDepthZTexture(ShadowInfo->IsPrimaryWholeSceneDominantShadow(), ShadowInfo->bAllocatedInPreshadowCache);
+		}
+		else
+		{
+			ShadowDepthSampler = GSceneRenderTargets.GetShadowDepthColorTexture(ShadowInfo->IsPrimaryWholeSceneDominantShadow(), ShadowInfo->bAllocatedInPreshadowCache);
+		}
+		SetTextureParameterDirectly(
+			FShader::GetPixelShader(),
+			ShadowDepthTextureParameter,
+			UniformPCFPolicy::bUseFetch4 ? TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp,MIPBIAS_Get4>::GetRHI() : TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),
+			ShadowDepthSampler
+			);
 
 		const static FLOAT CosRotation = appCos(0.25f * (FLOAT)PI);
 		const static FLOAT SinRotation = appSin(0.25f * (FLOAT)PI);
@@ -1042,32 +960,29 @@ public:
 
 	/**
 	 * Serialize the parameters for this shader
+	 * DISHONORED(port): 2013 rva 0xe3610 / 0xe3800 (2012 0xe14d0 / 0xe1720): the six retail serializations in member order
 	 * @param Ar - archive to serialize to
 	 */
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
-		Ar << ProjectionParameters;
+		Ar << SceneTextureParams;
+		Ar << ScreenToShadowMatrixParameter;
+		Ar << ShadowDepthTextureParameter;
 		Ar << SampleOffsetsParameter;
+		Ar << ShadowBufferSizeParameter;
 		Ar << ShadowFadeFractionParameter;
-		Ar << LightingChannelMaskParameter;
-
-#if WITH_MOBILE_RHI
-		if (GUsingMobileRHI)
-		{
-			ShadowFadeFractionParameter.SetShaderParamName(TEXT("ShadowFadeFraction"));
-		}
-#endif
-
 		return bShaderHasOutdatedParameters;
 	}
 
 protected:
 	FVector2D SampleOffsets[UniformPCFPolicy::NumSamples];
-	FShadowProjectionShaderParameters ProjectionParameters;
-	FShaderParameter SampleOffsetsParameter;	
+	FSceneTextureShaderParameters SceneTextureParams;
+	FShaderParameter ScreenToShadowMatrixParameter;
+	FShaderResourceParameter ShadowDepthTextureParameter;
+	FShaderParameter SampleOffsetsParameter;
+	FShaderParameter ShadowBufferSizeParameter;
 	FShaderParameter ShadowFadeFractionParameter;
-	FShaderParameter LightingChannelMaskParameter;
 };
 
 /**
@@ -1148,6 +1063,8 @@ public:
 	{
 		ShadowModulateColorParam.Bind(Initializer.ParameterMap,TEXT("ShadowModulateColor"));
 		ScreenToWorldParam.Bind(Initializer.ParameterMap,TEXT("ScreenToWorld"),TRUE);
+		EmissiveAlphaMaskScaleParam.Bind(Initializer.ParameterMap,TEXT("EmissiveAlphaMaskScale"),TRUE);
+		UseEmissiveMaskParam.Bind(Initializer.ParameterMap,TEXT("UseEmissiveMask"),TRUE);
 		LightTypePolicy::ModShadowPixelParamsType::Bind(Initializer.ParameterMap);
 	}
 
@@ -1170,25 +1087,11 @@ public:
         LightTypePolicy::ModShadowPixelParamsType::ModifyCompilationEnvironment(Platform, OutEnvironment);	
 	}
 
-	virtual void SetLightChannelParameter(const FProjectedShadowInfo* ShadowInfo)
-	{
-		// Using the G buffer's lighting channels to implement self shadowing modes
-		if (ShouldUseDeferredShading() && ShadowInfo->LightSceneInfo->LightingChannels.GetDeferredShadingChannelMask() > 0)
-		{
-			FLightingChannelContainer AllChannels;
-			AllChannels.SetAllChannels();
-
-			const BYTE DeferredShadingChannelMask = ShadowInfo->LightSceneInfo->LightingChannels.GetDeferredShadingChannelMask();
-			const FLOAT Mask = ShadowInfo->LightSceneInfo->bNonModulatedSelfShadowing ? 
-				// Self shadow only wants to affect only the shadow caster
-				// bNonModulatedSelfShadowing in the modulated shadow pass wants to affect everything but the shadow caster
-				(ShadowInfo->bSelfShadowOnly ? DeferredShadingChannelMask : (DeferredShadingChannelMask ^ 255)) :
-				AllChannels.GetDeferredShadingChannelMask();
-
-			SetPixelShaderValue(FShader::GetPixelShader(), TShadowProjectionPixelShader<UniformPCFPolicy>::LightingChannelMaskParameter, Mask);
-		}
-	}
-
+	/**
+	 * DISHONORED(port): 2013 rva 0xf2010 (2012 0xf17e0, the branching-PCF twin is identical): base parameters, then
+	 * ShadowModulateColor = Lerp(White, ModShadowColor, FadeAlpha) and ScreenToWorld; the two emissive-mask parameters are
+	 * not written by retail's SetParameters. No deferred lighting-channel mask in retail.
+	 */
 	/**
 	 * Sets the pixel shader's parameters
 	 * @param View - current view
@@ -1226,28 +1129,31 @@ public:
 	 * Serialize the parameters for this shader
 	 * @param Ar - archive to serialize to
 	 */
+	/**
+	 * DISHONORED(port): 2013 rva 0xe7de0 (directional, 2012 0xe8180) / 0x134440 (point, 2012 0x13a760) / 0x162950 (spot):
+	 * the base class, four own parameters (ShadowModulateColor, ScreenToWorld and two more), then the light policy's
+	 * parameters. Cooked history: 42 / 48 / 54 words for directional / point / spot.
+	 */
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = TShadowProjectionPixelShader<UniformPCFPolicy>::Serialize(Ar);
 		Ar << ShadowModulateColorParam;
 		Ar << ScreenToWorldParam;
+		Ar << EmissiveAlphaMaskScaleParam;
+		Ar << UseEmissiveMaskParam;
 		LightTypePolicy::ModShadowPixelParamsType::Serialize(Ar);
-
-#if WITH_MOBILE_RHI
-		if (GUsingMobileRHI)
-		{
-			ShadowModulateColorParam.SetShaderParamName(TEXT("ShadowModulateColor"));
-		}
-#endif
-
 		return bShaderHasOutdatedParameters;
 	}
 
 private:
 	/** color to modulate shadowed areas on screen */
-	FShaderParameter ShadowModulateColorParam;	
+	FShaderParameter ShadowModulateColorParam;
 	/** needed to get world positions from deferred scene depth values */
 	FShaderParameter ScreenToWorldParam;
+	// DISHONORED(layout): the third and fourth retail parameters (+212/+218 in the directional F4SampleHwPCF instance);
+	// retail never sets them in SetParameters, the names are the UE3 2010/2011 emissive-mask ones (unverified).
+	FShaderParameter EmissiveAlphaMaskScaleParam;
+	FShaderParameter UseEmissiveMaskParam;
 };
 
 /**
@@ -1383,7 +1289,8 @@ FShadowProjectionPixelShaderInterface* GetModProjPixelShaderRef(BYTE LightShadow
 		}
 		else
 		{
-			TShaderMapRef<TModShadowProjectionPixelShader<LightTypePolicy,F4SampleManualPCFPerPixel> > ModShadowShader(GetGlobalShaderMap());
+			// DISHONORED(retail): 2013 rva 0x1451e0 GetModProjPixelShaderRef<FPointLightPolicy>: the manual variant is F4SampleManualPCF
+			TShaderMapRef<TModShadowProjectionPixelShader<LightTypePolicy,F4SampleManualPCF> > ModShadowShader(GetGlobalShaderMap());
 			return *ModShadowShader;
 		}
 	}
@@ -1401,7 +1308,7 @@ FShadowProjectionPixelShaderInterface* GetModProjPixelShaderRef(BYTE LightShadow
 		}
 		else
 		{
-			TShaderMapRef<TModShadowProjectionPixelShader<LightTypePolicy,F16SampleManualPCFPerPixel> > ModShadowShader(GetGlobalShaderMap());
+			TShaderMapRef<TModShadowProjectionPixelShader<LightTypePolicy,F16SampleManualPCF> > ModShadowShader(GetGlobalShaderMap());
 			return *ModShadowShader;
 		}
 	}

@@ -2198,6 +2198,12 @@ UBOOL FSceneRenderer::ApplyMobileDPGLights( UINT DPGIndex )
 * @param bDeferPrePostProcessResolve - TRUE if the pre post process resolve is deferred
 * @param bSceneColorDirty - TRUE if the scene color is left dirty
 */
+/**
+ * DISHONORED(bringup): the reference height-fog pass is off until DisFog is ported (see RenderDPGEnd); -referencefog
+ * turns it back on for experiments on a compiler-equipped build.
+ */
+static UBOOL GDishonoredRenderReferenceFog = ParseParam(appCmdLine(), TEXT("referencefog"));
+
 void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResolve, UBOOL& bSceneColorDirty, UBOOL bIsOcclusionTesting)
 {
 	UBOOL bRenderUnlitTranslucency = (ViewFamily.ShowFlags & SHOW_UnlitTranslucency) != 0;
@@ -2261,21 +2267,15 @@ void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResol
 			BeginOcclusionTests();
 		}
 
-		if(ViewFamily.ShowFlags & SHOW_Lighting)
+		// DISHONORED(retail): 2013 rva 0x464290 RenderDPGEnd (2012 0x48cf90): no image reflections, no subsurface scattering,
+		// no "affect lighting only" post-process pass; between the soft-masked base pass and the fog pass retail runs
+		// RenderBloomParts (the Arkane bloom, FArkBloomPartPrimSet). The reference passes' shaders have no cooked record.
+
+		// DISHONORED(bringup): retail fog is DisFog (FDisFogPixelShader<N,M>, FSceneRenderer::RenderFog 2013 rva 0x4370a0 on
+		// FViewInfo::DisPrecomputedFogs); the reference height-fog shaders (THeightFogPixelShader, TExponentialHeightFog*)
+		// have no cooked record, so the fog pass is skipped until DisFog is ported (wave 5).
+		if(ShouldRenderFog(ViewFamily.ShowFlags) && GDishonoredRenderReferenceFog)
 		{
-			// Render image reflections
-			bSceneColorDirty |= RenderImageReflections(DPGIndex);
-
-			// Render subsurface scattering.
-			bSceneColorDirty |= RenderSubsurfaceScattering(DPGIndex);
-
-			// Render post process effects that affect lighting only
-			bSceneColorDirty |= RenderPostProcessEffects(DPGIndex, TRUE);
-		}
-
-		if(ShouldRenderFog(ViewFamily.ShowFlags))
-		{
-			// Render the scene fog.
 			bSceneColorDirty |= RenderFog(DPGIndex);
 		}
 
@@ -2327,14 +2327,8 @@ void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResol
 			RenderLightShafts();
 		}
 
-		// Render the velocities of movable objects for the motion blur effect.
-		if( bIsWorldDpg
-			&& GSystemSettings.bAllowMotionBlur
-			&& ( ViewFamily.ShowFlags & SHOW_MotionBlur ) != 0
-			&& ViewFamily.ShouldPostProcess() )
-		{
-			RenderVelocities(DPGIndex);
-		}
+		// DISHONORED(retail): no velocity pass in retail RenderDPGEnd (2013 rva 0x464290); the Arkane motion blur
+		// (FArkPpMotionBlur*) lives in the FArkPp post-process graph. The reference FVelocity* material shaders are AG's.
 
 		// post process effects pass for scene DPGs
 		RenderPostProcessEffects(DPGIndex);
@@ -2567,8 +2561,9 @@ void FSceneRenderer::VisualizeSceneTexture()
 */
 void FSceneRenderer::RenderFinish(UBOOL bDeferPrePostProcessResolve)
 {
-	// Apply temporal anti-aliasing before post processing, so that there won't be ghosting from blurring effects like DOF
-	RenderTemporalAA();
+	// DISHONORED(retail): 2013 rva 0x45e5e0 RenderFinish (2012 0x4872d0): resolve, RenderPostProcessEffects(SDPG_PostProcess),
+	// FinishRenderViewTarget, frozen-view text, VisualizeTexture. No temporal AA and no reference MLAA/FXAA pass: Arkane's
+	// AA runs inside the FArkPp graph (FArkPpNodeAAProxy::RenderFxaa 2013 rva 0x5203c0 / RenderMlaa 0x521720).
 
 	// If all post process effects are in SDPG_PostProcess, then only one resolve is necessary after the scene is rendered.
 	if( bDeferPrePostProcessResolve )
@@ -2596,16 +2591,7 @@ void FSceneRenderer::RenderFinish(UBOOL bDeferPrePostProcessResolve)
 		}
 	}
 
-	// PostProcessAA
-	if(const FPostProcessAA* PostProcessAA = FPostProcessAA::GetDeferredObject())
-	{
-		SCOPED_DRAW_EVENT(EventFinish)(DEC_SCENE_ITEMS,TEXT("PostProcessAA"));
-
-		for(INT ViewIndex = 0;ViewIndex < Views.Num();ViewIndex++)
-		{	
-			PostProcessAA->Render(Views(ViewIndex));
-		}
-	}
+	// DISHONORED(retail): FPostProcessAA (reference FSRGBMLAA* / FFXAABlendPixelShader*) has no cooked shaders; see above.
 
 #if !FINAL_RELEASE
 	ProcessAndRenderDebugOptions();
@@ -2859,7 +2845,9 @@ void FSceneRenderer::Render()
 		// not created off-screen render targets).
 
 		UBOOL bRestoreSceneTargets = FALSE;
-		if (ViewFamily.bScreenCaptureRenderTarget)
+		// DISHONORED(retail): FSceneViewFamily has no bScreenCaptureRenderTarget (80 bytes, Scene.h); the mobile GFx
+		// screen-capture override never happens on PC
+		if (FALSE)
 		{
 			if (!GMobileAllowPostProcess && !GSystemSettings.NeedsUpscale())
 			{
@@ -3296,6 +3284,32 @@ UBOOL FSceneRenderer::RenderBasePass(UINT DPGIndex)
 */
 UBOOL FSceneRenderer::RenderPostProcessEffects(UINT DPGIndex, UBOOL bAffectLightingOnly)
 {
+	// DISHONORED(retail): 2013 rva 0x448990 (2012 0x46bef0): retail post-processing is the FArkPp graph
+	// (FSceneView::m_PostProcessProxy->Render at SDPG_PostProcess, when a back buffer exists); no per-DPG effect
+	// proxies. The reference proxies (uber post-process, DOF/bloom, material effects, ...) bind shaders that have no
+	// cooked record, so none of them may run. Reported once, then the pass only does the view-target copy below.
+	// DISHONORED(bringup): the FArkPp graph is wave-5 work; until then a frame ends with FinishRenderViewTarget.
+	{
+		static UBOOL bReported = FALSE;
+		INT NumProxies = 0;
+		for(INT ViewIndex = 0;ViewIndex < Views.Num();ViewIndex++)
+		{
+			NumProxies += Views(ViewIndex).PostProcessSceneProxies.Num();
+		}
+		if (NumProxies > 0)
+		{
+			if (!bReported)
+			{
+				bReported = TRUE;
+				warnf(TEXT("DISHONORED(bringup): post-process: %i reference effect proxies skipped (retail renders the FArkPp graph, not ported)"), NumProxies);
+			}
+			return FALSE;
+		}
+		if (DPGIndex != SDPG_PostProcess)
+		{
+			return FALSE;
+		}
+	}
 	SCOPE_CONDITIONAL_CYCLE_COUNTER(STAT_PostProcessDrawTime, !bIsSceneCapture);
 	SCOPED_DRAW_EVENT(EventPP)(DEC_SCENE_ITEMS,TEXT("PostProcessEffects%s"), bAffectLightingOnly ? TEXT(" LightingOnly") : TEXT(""));
 
@@ -4604,17 +4618,22 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 {
     FMemMark MemStackMark(GRenderingThreadMemStack);
 
-    if( GUsingNullRHI )
-    {
-        // DISHONORED(bringup): the headless smoke runs with -nullrhi and the cooked global shader cache lacks the
-        // shader types the scene renderer asserts on (FDownsampleSceneDepthPixelShader ...); rendering is the
-        // renderer wave's job (agent Y, d3d9). Skip the scene render, keep the game thread going.
-        delete SceneRenderer;
-        return;
-    }
-
     {
 		SCOPE_CYCLE_COUNTER(STAT_TotalSceneRenderingTime);
+
+		// DISHONORED(bringup): the wave-3 null-RHI skip is gone (the cooked global types the scene renderer binds now load);
+		// one line at the first scene render and every 30th after it, so the smoke can see the renderer running.
+		{
+			static INT NumScenesRendered = 0;
+			if (NumScenesRendered == 0 || (NumScenesRendered % 30) == 0)
+			{
+				debugf(TEXT("DISHONORED(bringup): scene rendered (%i so far, %s, %i views, %ux%u)"), NumScenesRendered,
+					GUsingNullRHI ? TEXT("null RHI") : TEXT("d3d9"), SceneRenderer->Views.Num(),
+					SceneRenderer->ViewFamily.RenderTarget ? SceneRenderer->ViewFamily.RenderTarget->GetSizeX() : 0,
+					SceneRenderer->ViewFamily.RenderTarget ? SceneRenderer->ViewFamily.RenderTarget->GetSizeY() : 0);
+			}
+			NumScenesRendered++;
+		}
 
 		if(SceneRenderer->ViewFamily.ShowFlags & SHOW_HitProxies)
 		{

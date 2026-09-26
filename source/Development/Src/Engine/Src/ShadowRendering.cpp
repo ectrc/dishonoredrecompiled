@@ -217,10 +217,10 @@ private:
 
 enum EShadowDepthVertexShaderMode
 {
-	VertexShadowDepth_PerspectiveCorrect,
-	VertexShadowDepth_OutputDepth,
-	VertexShadowDepth_OutputDepthToColor,
-	VertexShadowDepth_OnePassPointLight
+	ShadowDepth_PerspectiveCorrect,
+	ShadowDepth_OutputDepth,
+	ShadowDepth_OutputDepthToColor,
+	ShadowDepth_OnePassPointLight
 };
 
 /**
@@ -245,16 +245,16 @@ public:
 			// Compile the version that outputs depth to a depth buffer for all platforms,
 			// Only compile the version that outputs depth to color for PC platforms.
 			// @todo wiiu: WiiU doesn't need this when depth textures are working
-			&& (ShaderMode != VertexShadowDepth_OutputDepthToColor || IsPCPlatform(Platform) || Platform == SP_WIIU)
+			&& (ShaderMode != ShadowDepth_OutputDepthToColor || IsPCPlatform(Platform) || Platform == SP_WIIU)
 			// Only compile one pass point light shaders for SM5
-			&& (ShaderMode != VertexShadowDepth_OnePassPointLight || Platform == SP_PCD3D_SM5);
+			&& (ShaderMode != ShadowDepth_OnePassPointLight || Platform == SP_PCD3D_SM5);
 	}
 
 	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment)
 	{
-		OutEnvironment.Definitions.Set(TEXT("OUTPUT_DEPTH_TO_COLOR"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == VertexShadowDepth_OutputDepthToColor)));
-		OutEnvironment.Definitions.Set(TEXT("PERSPECTIVE_CORRECT_DEPTH"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == VertexShadowDepth_PerspectiveCorrect)));
-		OutEnvironment.Definitions.Set(TEXT("ONEPASS_POINTLIGHT_SHADOW"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == VertexShadowDepth_OnePassPointLight)));
+		OutEnvironment.Definitions.Set(TEXT("OUTPUT_DEPTH_TO_COLOR"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == ShadowDepth_OutputDepthToColor)));
+		OutEnvironment.Definitions.Set(TEXT("PERSPECTIVE_CORRECT_DEPTH"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == ShadowDepth_PerspectiveCorrect)));
+		OutEnvironment.Definitions.Set(TEXT("ONEPASS_POINTLIGHT_SHADOW"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == ShadowDepth_OnePassPointLight)));
 	}
 };
 
@@ -364,12 +364,12 @@ public:
 
 	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
 	{
-		return TShadowDepthVertexShader<VertexShadowDepth_OnePassPointLight>::ShouldCache(Platform, Material, VertexFactoryType);
+		return TShadowDepthVertexShader<ShadowDepth_OnePassPointLight>::ShouldCache(Platform, Material, VertexFactoryType);
 	}
 
 	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment)
 	{
-		TShadowDepthVertexShader<VertexShadowDepth_OnePassPointLight>::ModifyCompilationEnvironment(Platform, OutEnvironment);
+		TShadowDepthVertexShader<ShadowDepth_OnePassPointLight>::ModifyCompilationEnvironment(Platform, OutEnvironment);
 	}
 
 	FOnePassPointShadowProjectionGeometryShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
@@ -437,9 +437,11 @@ private:
 	FShaderParameter MeshVisibleToFaceParameter;
 };
 
+// DISHONORED(retail): the cooked vertex shader types are named TShadowDepthVertexShader<ShadowDepth_PerspectiveCorrect> /
+// <ShadowDepth_OutputDepth> / <ShadowDepth_OutputDepthToColor> (2013 rva 0xb81860 / 0xb818a0 / 0xb818e0, constructed with 786 / 23),
+// i.e. the template-id with the enumerator is the registered name (agent AG, material shader classes of this unit).
 #define IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(ShaderMode) \
-	typedef TShadowDepthVertexShader<ShaderMode> TShadowDepthVertexShader##ShaderMode;	\
-	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthVertexShader##ShaderMode,TEXT("ShadowDepthVertexShader"),TEXT("Main"),SF_Vertex,0,0);	\
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthVertexShader<ShaderMode>,TEXT("ShadowDepthVertexShader"),TEXT("Main"),SF_Vertex,786,23);	\
 	typedef TShadowDepthHullShader<ShaderMode> TShadowDepthHullShader##ShaderMode;	\
 	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthHullShader##ShaderMode,TEXT("ShadowDepthVertexShader"),TEXT("MainHull"),SF_Hull,0,0);	\
 	typedef TShadowDepthDomainShader<ShaderMode> TShadowDepthDomainShader##ShaderMode;	\
@@ -450,15 +452,14 @@ IMPLEMENT_SHADER_TYPE(,FOnePassPointShadowProjectionGeometryShader,TEXT("ShadowD
 #else // #if WITH_D3D11_TESSELLATION
 
 #define IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(ShaderMode) \
-	typedef TShadowDepthVertexShader<ShaderMode> TShadowDepthVertexShader##ShaderMode;	\
-	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthVertexShader##ShaderMode,TEXT("ShadowDepthVertexShader"),TEXT("Main"),SF_Vertex,0,0);	
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthVertexShader<ShaderMode>,TEXT("ShadowDepthVertexShader"),TEXT("Main"),SF_Vertex,786,23);
 
 #endif
 
-IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(VertexShadowDepth_PerspectiveCorrect); 
-IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(VertexShadowDepth_OutputDepth); 
-IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(VertexShadowDepth_OutputDepthToColor);
-IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(VertexShadowDepth_OnePassPointLight);
+IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(ShadowDepth_PerspectiveCorrect);
+IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(ShadowDepth_OutputDepth);
+IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(ShadowDepth_OutputDepthToColor);
+IMPLEMENT_SHADOW_DEPTH_SHADERMODE_SHADERS(ShadowDepth_OnePassPointLight);
 
 /**
  * A pixel shader for rendering the depth of a mesh.
@@ -479,8 +480,6 @@ public:
 		MaterialParameters.Bind(Initializer.ParameterMap);
 		InvMaxSubjectDepthParameter.Bind(Initializer.ParameterMap,TEXT("InvMaxSubjectDepth"),TRUE);
 		DepthBiasParameter.Bind(Initializer.ParameterMap,TEXT("DepthBias"),TRUE);
-		ShadowCasterPositionParameter.Bind(Initializer.ParameterMap,TEXT("ShadowCasterPosition"),TRUE);
-		ModShadowColorParameter.Bind(Initializer.ParameterMap,TEXT("ModShadowColor"),TRUE);
 	}
 
 	FShadowDepthPixelShader() {}
@@ -510,15 +509,6 @@ public:
 		SetPixelShaderValue(GetPixelShader(),InvMaxSubjectDepthParameter,1.0f / ShadowInfo->MaxSubjectDepth);
 		const FLOAT DepthBias = GetShadowDepthBias(ShadowInfo, MaterialRenderProxy);
 		SetPixelShaderValue(GetPixelShader(),DepthBiasParameter,DepthBias);
-
-#if WITH_MOBILE_RHI
-		if (GUsingMobileRHI)
-		{
-			SetPixelShaderValue(GetPixelShader(),ShadowCasterPositionParameter, ShadowInfo->ParentSceneInfo->Bounds.Origin + View.PreViewTranslation);
-			const FLinearColor ModShadowColor = Lerp(FLinearColor::White, ShadowInfo->LightSceneInfo->ModShadowColor, ShadowInfo->FadeAlphas(0));
-			SetPixelShaderValue(GetPixelShader(), ModShadowColorParameter, ModShadowColor);
-		}
-#endif
 	}
 
 	void SetMesh(const FPrimitiveSceneInfo* PrimitiveSceneInfo, const FMeshBatch& Mesh, INT BatchElementIndex,const FSceneView& View,UBOOL bBackFace)
@@ -526,42 +516,35 @@ public:
 		MaterialParameters.SetMesh(this,PrimitiveSceneInfo,Mesh,BatchElementIndex,View,bBackFace);
 	}
 
+	// DISHONORED(layout): retail FShadowDepthPixelShader is 312 bytes (2012 PDB): FShader, the material parameters @108,
+	// InvMaxSubjectDepth @300, DepthBias @306. No ShadowCasterPosition / ModShadowColor (mobile-only in the reference).
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
 		Ar << MaterialParameters;
 		Ar << InvMaxSubjectDepthParameter;
 		Ar << DepthBiasParameter;
-		Ar << ShadowCasterPositionParameter;
-		Ar << ModShadowColorParameter;
-
-		ShadowCasterPositionParameter.SetShaderParamName(TEXT("ShadowCasterWorldPosition"));
-		ModShadowColorParameter.SetShaderParamName(TEXT("ModShadowColor"));
-
 		return bShaderHasOutdatedParameters;
 	}
 
-	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const 
-	{ 
-		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet); 
+	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const
+	{
+		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet);
 	}
 
 private:
 	FMaterialPixelShaderParameters MaterialParameters;
 	FShaderParameter InvMaxSubjectDepthParameter;
 	FShaderParameter DepthBiasParameter;
-	FShaderParameter ShadowCasterPositionParameter;
-	FShaderParameter ModShadowColorParameter;
 };
 
-enum EShadowDepthPixelShaderMode
-{
-	PixelShadowDepth_NonPerspectiveCorrect,
-	PixelShadowDepth_PerspectiveCorrect,
-	PixelShadowDepth_OnePassPointLight
-};
-
-template <EShadowDepthPixelShaderMode ShaderMode, UBOOL bUseScreenDoorFade>
+/**
+ * DISHONORED(retail): retail TShadowDepthPixelShader<bUseScreenDoorFade> has the screen-door argument only (2012 PDB
+ * TShadowDepthPixelShader<0> / <1>, 312 bytes each); the cooked types are TShadowDepthPixelShaderFALSE / TShadowDepthPixelShaderTRUE
+ * (2013 rva 0xb81960 / 0xb81920, constructed with 798 / 23). The reference perspective-correct and one-pass point light pixel
+ * modes do not exist (the vertex shader carries the perspective-correct mode).
+ */
+template <UBOOL bUseScreenDoorFade>
 class TShadowDepthPixelShader : public FShadowDepthPixelShader
 {
 	DECLARE_SHADER_TYPE(TShadowDepthPixelShader,MeshMaterial);
@@ -569,17 +552,13 @@ public:
 
 	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
 	{
-		return (FShadowDepthPixelShader::ShouldCache(Platform, Material, VertexFactoryType) ||
+		return FShadowDepthPixelShader::ShouldCache(Platform, Material, VertexFactoryType) ||
 			// Only compile the non-screendoor fade version for masked or lit translucent materials
-			!bUseScreenDoorFade && (Material->IsMasked() || Material->CastLitTranslucencyShadowAsMasked()))
-			// Only compile one pass point light shaders for SM5
-			&& (ShaderMode != PixelShadowDepth_OnePassPointLight || Platform == SP_PCD3D_SM5);
+			!bUseScreenDoorFade && (Material->IsMasked() || Material->CastLitTranslucencyShadowAsMasked());
 	}
 
 	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment)
 	{
-		OutEnvironment.Definitions.Set(TEXT("PERSPECTIVE_CORRECT_DEPTH"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == PixelShadowDepth_PerspectiveCorrect)));
-		OutEnvironment.Definitions.Set(TEXT("ONEPASS_POINTLIGHT_SHADOW"),*FString::Printf(TEXT("%u"),(UBOOL)(ShaderMode == PixelShadowDepth_OnePassPointLight)));
 		if (bUseScreenDoorFade)
 		{
 			// Enable screendoor fading for the versions of this shader that are compiled for the default material
@@ -595,17 +574,108 @@ public:
 	TShadowDepthPixelShader() {}
 };
 
-// typedef required to get around macro expansion failure due to commas in template argument list for TShadowDepthPixelShader
-#define IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(ShaderMode,bUseScreenDoorFade) \
-	typedef TShadowDepthPixelShader<ShaderMode,bUseScreenDoorFade> TShadowDepthPixelShader##ShaderMode##bUseScreenDoorFade; \
-	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthPixelShader##ShaderMode##bUseScreenDoorFade,TEXT("ShadowDepthPixelShader"),TEXT("Main"),SF_Pixel,0,0);
+#define IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(bUseScreenDoorFade) \
+	typedef TShadowDepthPixelShader<bUseScreenDoorFade> TShadowDepthPixelShader##bUseScreenDoorFade; \
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TShadowDepthPixelShader##bUseScreenDoorFade,TEXT("ShadowDepthPixelShader"),TEXT("Main"),SF_Pixel,798,23);
 
-IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(PixelShadowDepth_NonPerspectiveCorrect,TRUE);
-IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(PixelShadowDepth_NonPerspectiveCorrect,FALSE);
-IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(PixelShadowDepth_PerspectiveCorrect,TRUE);
-IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(PixelShadowDepth_PerspectiveCorrect,FALSE);
-IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(PixelShadowDepth_OnePassPointLight,TRUE);
-IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(PixelShadowDepth_OnePassPointLight,FALSE);
+IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(TRUE);
+IMPLEMENT_SHADOWDEPTHPASS_PIXELSHADER_TYPE(FALSE);
+
+/**
+ * DISHONORED(written): the mesh shaders of Arkane's modulated shadow attenuation pass (retail declares them in this unit,
+ * 2012 PDB shadowrendering.h:1037 / shadowrendering.cpp). Only the types are declared: the cooked material shader maps
+ * reference them (renderer.md 2), so without a declaration every such map counts an undeclared type. The pass that draws
+ * with them is not ported (modulated shadows, agent AH / wave 5); nothing selects these shaders yet.
+ * DISHONORED(layout): FModShadowMeshVertexShader is 204 bytes (2012 PDB, ctor rva 0x47d170): FShader,
+ * FVertexFactoryParameterRef @108, FMaterialVertexShaderParameters @136, LightPosition @196.
+ */
+class FModShadowMeshVertexShader : public FMeshMaterialVertexShader
+{
+	DECLARE_SHADER_TYPE(FModShadowMeshVertexShader,MeshMaterial);
+public:
+	FModShadowMeshVertexShader() {}
+
+	FModShadowMeshVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FMeshMaterialVertexShader(Initializer)
+	{
+		MaterialParameters.Bind(Initializer.ParameterMap);
+		LightPositionParameter.Bind(Initializer.ParameterMap,TEXT("LightPosition"),TRUE);
+	}
+
+	// DISHONORED(bringup): retail's gating is not recoverable (no shader compiler in the shipping exes); the type accepts every
+	// material and compiles nothing, so only the cooked shaders ever exist.
+	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		bShaderHasOutdatedParameters |= Ar << VertexFactoryParameters;
+		Ar << MaterialParameters;
+		Ar << LightPositionParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const
+	{
+		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet);
+	}
+
+private:
+	FMaterialVertexShaderParameters MaterialParameters;
+	FShaderParameter LightPositionParameter;
+};
+
+/**
+ * DISHONORED(layout): FModShadowMeshPixelShader is 308 bytes (2012 PDB): FShader, FMaterialPixelShaderParameters @108,
+ * AttenAllowed @300.
+ * DISHONORED(port): 2013 rva 0x453fd0 Serialize (2012 0x47d240, identical): FShader, the material parameters, AttenAllowed.
+ */
+class FModShadowMeshPixelShader : public FShader
+{
+	DECLARE_SHADER_TYPE(FModShadowMeshPixelShader,MeshMaterial);
+public:
+	FModShadowMeshPixelShader() {}
+
+	FModShadowMeshPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FShader(Initializer)
+	{
+		MaterialParameters.Bind(Initializer.ParameterMap);
+		AttenAllowedParameter.Bind(Initializer.ParameterMap,TEXT("AttenAllowed"),TRUE);
+	}
+
+	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << MaterialParameters;
+		Ar << AttenAllowedParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const
+	{
+		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet);
+	}
+
+private:
+	FMaterialPixelShaderParameters MaterialParameters;
+	FShaderParameter AttenAllowedParameter;
+};
+
+// DISHONORED(retail): 2013 rva 0xb81c80 / 0xb81cc0: "ModShadowMeshAttenuationVS" / "ModShadowMeshAttenuationPS", Main, 786 / 23.
+IMPLEMENT_MATERIAL_SHADER_TYPE(,FModShadowMeshVertexShader,TEXT("ModShadowMeshAttenuationVS"),TEXT("Main"),SF_Vertex,786,23);
+IMPLEMENT_MATERIAL_SHADER_TYPE(,FModShadowMeshPixelShader,TEXT("ModShadowMeshAttenuationPS"),TEXT("Main"),SF_Pixel,786,23);
 
 /** The shadow frustum vertex declaration. */
 TGlobalResource<FShadowFrustumVertexDeclaration> GShadowFrustumVertexDeclaration;
@@ -622,30 +692,17 @@ UBOOL FShadowProjectionVertexShader::ShouldCache(EShaderPlatform Platform)
 FShadowProjectionVertexShader::FShadowProjectionVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
 	FGlobalShader(Initializer)
 {
-	ScreenToShadowMatrixParameter.Bind(Initializer.ParameterMap, TEXT("ScreenToShadowMatrix"), TRUE);
 }
 
+// DISHONORED(retail): the retail projection vertex shaders have no parameter (cooked history = FShader::Serialize only);
+// the screen-to-shadow matrix is a pixel shader constant (ShadowRendering.h)
 void FShadowProjectionVertexShader::SetParameters(const FSceneView& View, const FProjectedShadowInfo* ShadowInfo)
 {
-	// Set the transform from screen coordinates to shadow depth texture coordinates.
-	const FMatrix ScreenToShadow = ShadowInfo->GetScreenToShadowMatrix(View, FALSE);
-	SetShaderValue(GetVertexShader(), ScreenToShadowMatrixParameter, ScreenToShadow);
 }
 
 UBOOL FShadowProjectionVertexShader::Serialize(FArchive& Ar)
 {
-	UBOOL bRet = FShader::Serialize(Ar);
-	Ar << ScreenToShadowMatrixParameter;
-
-#if WITH_MOBILE_RHI
-	if (GUsingMobileRHI)
-	{
-		ScreenToShadowMatrixParameter.SetShaderParamName(TEXT("ScreenToShadowMatrix"));
-	}
-#endif
-
-
-	return bRet;
+	return FShader::Serialize(Ar);
 }
 
 IMPLEMENT_SHADER_TYPE(,FShadowProjectionVertexShader,TEXT("ShadowProjectionVertexShader"),TEXT("Main"),SF_Vertex,0,0);
@@ -691,18 +748,18 @@ IMPLEMENT_SHADER_TYPE(,FModShadowProjectionVertexShader,TEXT("ModShadowProjectio
  * Implementations for TShadowProjectionPixelShader.  
  */
 
+// DISHONORED(retail): the five cooked TShadowProjectionPixelShader<*> types (GlobalShaderCache-PC-D3D-SM3.bin; 2013 rva
+// 0x45cc20 GetProjPixelShaderRef): no *PerPixel / *PerFragment instances.
 //Cheap version that uses Hardware PCF
 IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F4SampleHwPCF>,TEXT("ShadowProjectionPixelShader"),TEXT("HardwarePCFMain"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
 //Cheap version
-IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F4SampleManualPCFPerPixel>,TEXT("ShadowProjectionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
-IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F4SampleManualPCFPerFragment>,TEXT("ShadowProjectionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
+IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F4SampleManualPCF>,TEXT("ShadowProjectionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
 //Full version that uses Hardware PCF
 IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F16SampleHwPCF>,TEXT("ShadowProjectionPixelShader"),TEXT("HardwarePCFMain"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
 //Full version that uses Fetch4
 IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F16SampleFetch4PCF>,TEXT("ShadowProjectionPixelShader"),TEXT("Fetch4Main"),SF_Pixel,0,0);
 //Full version
-IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F16SampleManualPCFPerPixel>,TEXT("ShadowProjectionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
-IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F16SampleManualPCFPerFragment>,TEXT("ShadowProjectionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
+IMPLEMENT_SHADER_TYPE(template<>,TShadowProjectionPixelShader<F16SampleManualPCF>,TEXT("ShadowProjectionPixelShader"),TEXT("Main"),SF_Pixel,VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,0);
 //Implement a geometry shader for rendering one pass point light shadows
 IMPLEMENT_SHADER_TYPE(,FOnePassPointShadowProjectionPixelShader,TEXT("ShadowProjectionPixelShader"),TEXT("MainOnePassPointLightPS"),SF_Pixel,0,0);
 
@@ -713,13 +770,12 @@ IMPLEMENT_SHADER_TYPE(,FShadowPerFragmentMaskPixelShader,TEXT("PerFragmentMaskSh
 * Get the version of TShadowProjectionPixelShader that should be used based on the hardware's capablities
 * @return a pointer to the chosen shader
 */
-FShadowProjectionPixelShaderInterface* GetProjPixelShaderRef(BYTE LightShadowQuality,UBOOL bPerFragment)
+// DISHONORED(port): 2013 rva 0x45cc20 (2012 0x485ab0): 4 samples below the biased medium quality (hardware PCF when
+// allowed and supported, else manual), 16 samples otherwise (hardware PCF, then Fetch4, else manual). No per-fragment variant.
+FShadowProjectionPixelShaderInterface* GetProjPixelShaderRef(BYTE LightShadowQuality)
 {
 	FShadowProjectionPixelShaderInterface* PixelShader = NULL;
-
-	//apply the system settings bias to the light's shadow quality
 	BYTE EffectiveShadowFilterQuality = Max(LightShadowQuality + GSystemSettings.ShadowFilterQualityBias, 0);
-
 	if (EffectiveShadowFilterQuality == SFQ_Low)
 	{
 		if (GSceneRenderTargets.IsHardwarePCFSupported())
@@ -729,19 +785,10 @@ FShadowProjectionPixelShaderInterface* GetProjPixelShaderRef(BYTE LightShadowQua
 		}
 		else
 		{
-			if(bPerFragment)
-			{
-				TShaderMapRef<TShadowProjectionPixelShader<F4SampleManualPCFPerFragment> > FourSamplePixelShader(GetGlobalShaderMap());
-				PixelShader = *FourSamplePixelShader;
-			}
-			else
-			{
-				TShaderMapRef<TShadowProjectionPixelShader<F4SampleManualPCFPerPixel> > FourSamplePixelShader(GetGlobalShaderMap());
-				PixelShader = *FourSamplePixelShader;
-			}
+			TShaderMapRef<TShadowProjectionPixelShader<F4SampleManualPCF> > FourSamplePixelShader(GetGlobalShaderMap());
+			PixelShader = *FourSamplePixelShader;
 		}
 	}
-	//todo - implement medium quality path, 9 samples?
 	else
 	{
 		if (GSceneRenderTargets.IsHardwarePCFSupported())
@@ -756,26 +803,13 @@ FShadowProjectionPixelShaderInterface* GetProjPixelShaderRef(BYTE LightShadowQua
 		}
 		else
 		{
-			if(bPerFragment)
-			{
-				TShaderMapRef<TShadowProjectionPixelShader<F16SampleManualPCFPerFragment> > SixteenSamplePixelShader(GetGlobalShaderMap());
-				PixelShader = *SixteenSamplePixelShader;
-			}
-			else
-			{
-				TShaderMapRef<TShadowProjectionPixelShader<F16SampleManualPCFPerPixel> > SixteenSamplePixelShader(GetGlobalShaderMap());
-				PixelShader = *SixteenSamplePixelShader;
-			}
+			TShaderMapRef<TShadowProjectionPixelShader<F16SampleManualPCF> > SixteenSamplePixelShader(GetGlobalShaderMap());
+			PixelShader = *SixteenSamplePixelShader;
 		}
 	}
 	return PixelShader;
 }
 
-/** 
- * ChooseBoundShaderState - decides which bound shader state should be used based on quality settings
- * @param LightShadowQuality - light's filter quality setting
- * @return FGlobalBoundShaderState - the bound shader state chosen
- */
 FGlobalBoundShaderState* ChooseBoundShaderState(
 	BYTE LightShadowQuality,
 	TStaticArray<FGlobalBoundShaderState,SFQ_Num>& BoundShaderStates
@@ -845,47 +879,47 @@ FShadowDepthDrawingPolicy::FShadowDepthDrawingPolicy(
 	// Vertex related shaders
 	if (bOnePassPointLightShadow)
 	{
-		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<VertexShadowDepth_OnePassPointLight> >(InVertexFactory->GetType());	
+		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<ShadowDepth_OnePassPointLight> >(InVertexFactory->GetType());	
 #if WITH_D3D11_TESSELLATION
 		// Use the geometry shader which will clone output triangles to all faces of the cube map
 		GeometryShader = VertexShaderMaterialResource.GetShader<FOnePassPointShadowProjectionGeometryShader>(InVertexFactory->GetType());
 		if(bInitializeTessellationShaders)
 		{
-			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<VertexShadowDepth_OnePassPointLight> >(InVertexFactory->GetType());	
-			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<VertexShadowDepth_OnePassPointLight> >(InVertexFactory->GetType());	
+			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<ShadowDepth_OnePassPointLight> >(InVertexFactory->GetType());	
+			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<ShadowDepth_OnePassPointLight> >(InVertexFactory->GetType());	
 		}
 #endif
 	}
 	else if (bUsePerspectiveCorrectShadowDepths)
 	{
-		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<VertexShadowDepth_PerspectiveCorrect> >(InVertexFactory->GetType());	
+		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<ShadowDepth_PerspectiveCorrect> >(InVertexFactory->GetType());	
 #if WITH_D3D11_TESSELLATION
 		if(bInitializeTessellationShaders)
 		{
-			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<VertexShadowDepth_PerspectiveCorrect> >(InVertexFactory->GetType());	
-			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<VertexShadowDepth_PerspectiveCorrect> >(InVertexFactory->GetType());	
+			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<ShadowDepth_PerspectiveCorrect> >(InVertexFactory->GetType());	
+			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<ShadowDepth_PerspectiveCorrect> >(InVertexFactory->GetType());	
 		}
 #endif
 	}
 	else if (!bTranslucentPreShadow && (GSceneRenderTargets.IsFetch4Supported() || GSceneRenderTargets.IsHardwarePCFSupported()) || GSupportsDepthTextures)
 	{
-		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<VertexShadowDepth_OutputDepth> >(InVertexFactory->GetType());	
+		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<ShadowDepth_OutputDepth> >(InVertexFactory->GetType());	
 #if WITH_D3D11_TESSELLATION
 		if(bInitializeTessellationShaders)
 		{
-			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<VertexShadowDepth_OutputDepth> >(InVertexFactory->GetType());	
-			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<VertexShadowDepth_OutputDepth> >(InVertexFactory->GetType());	
+			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<ShadowDepth_OutputDepth> >(InVertexFactory->GetType());	
+			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<ShadowDepth_OutputDepth> >(InVertexFactory->GetType());	
 		}
 #endif
 	}
 	else
 	{
-		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<VertexShadowDepth_OutputDepthToColor> >(InVertexFactory->GetType());	
+		VertexShader = VertexShaderMaterialResource.GetShader<TShadowDepthVertexShader<ShadowDepth_OutputDepthToColor> >(InVertexFactory->GetType());	
 #if WITH_D3D11_TESSELLATION
 		if(bInitializeTessellationShaders)
 		{
-			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<VertexShadowDepth_OutputDepthToColor> >(InVertexFactory->GetType());	
-			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<VertexShadowDepth_OutputDepthToColor> >(InVertexFactory->GetType());	
+			HullShader = VertexShaderMaterialResource.GetShader<TShadowDepthHullShader<ShadowDepth_OutputDepthToColor> >(InVertexFactory->GetType());	
+			DomainShader = VertexShaderMaterialResource.GetShader<TShadowDepthDomainShader<ShadowDepth_OutputDepthToColor> >(InVertexFactory->GetType());	
 		}
 #endif
 	}
@@ -896,16 +930,16 @@ FShadowDepthDrawingPolicy::FShadowDepthDrawingPolicy(
 		if (bUsePerspectiveCorrectShadowDepths)
 		{
 			// Nothing to do if bInUseScreenDoorDefaultMaterialShader == TRUE because fading will already work since we are not using the default material's shaders
-			PixelShader = InMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_PerspectiveCorrect,FALSE> >(InVertexFactory->GetType());
+			PixelShader = InMaterialResource.GetShader<TShadowDepthPixelShader<FALSE> >(InVertexFactory->GetType());
 		}
 		else if (bOnePassPointLightShadow)
 		{
-			PixelShader = InMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_OnePassPointLight,FALSE> >(InVertexFactory->GetType());
+			PixelShader = InMaterialResource.GetShader<TShadowDepthPixelShader<FALSE> >(InVertexFactory->GetType());
 		}
 		else
 		{
 			// Nothing to do if bInUseScreenDoorDefaultMaterialShader == TRUE because fading will already work since we are not using the default material's shaders
-			PixelShader = InMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_NonPerspectiveCorrect,FALSE> >(InVertexFactory->GetType());
+			PixelShader = InMaterialResource.GetShader<TShadowDepthPixelShader<FALSE> >(InVertexFactory->GetType());
 		}
 	}
 	else
@@ -915,11 +949,11 @@ FShadowDepthDrawingPolicy::FShadowDepthDrawingPolicy(
 			if (bInUseScreenDoorDefaultMaterialShader)
 			{
 				// If we were going to get the pixel shader from the default material, use the screen door shader if fading is happening
-				PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_PerspectiveCorrect,TRUE> >(InVertexFactory->GetType());
+				PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<TRUE> >(InVertexFactory->GetType());
 			}
 			else
 			{
-				PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_PerspectiveCorrect,FALSE> >(InVertexFactory->GetType());
+				PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<FALSE> >(InVertexFactory->GetType());
 			}
 		}
 		else
@@ -931,7 +965,7 @@ FShadowDepthDrawingPolicy::FShadowDepthDrawingPolicy(
 				if (bInUseScreenDoorDefaultMaterialShader)
 				{
 					// If we were going to get the pixel shader from the default material, use the screen door shader if fading is happening
-					PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_NonPerspectiveCorrect,TRUE> >(InVertexFactory->GetType());
+					PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<TRUE> >(InVertexFactory->GetType());
 				}
 				else
 				{
@@ -943,7 +977,7 @@ FShadowDepthDrawingPolicy::FShadowDepthDrawingPolicy(
 				if (bInUseScreenDoorDefaultMaterialShader)
 				{
 					// If we were going to get the pixel shader from the default material, use the screen door shader if fading is happening
-					PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_NonPerspectiveCorrect,TRUE> >(InVertexFactory->GetType());
+					PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<TRUE> >(InVertexFactory->GetType());
 				}
 				else if (bOnePassPointLightShadow)
 				{
@@ -952,7 +986,7 @@ FShadowDepthDrawingPolicy::FShadowDepthDrawingPolicy(
 				}
 				else
 				{
-					PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<PixelShadowDepth_NonPerspectiveCorrect,FALSE> >(InVertexFactory->GetType());
+					PixelShader = DefaultMaterialResource.GetShader<TShadowDepthPixelShader<FALSE> >(InVertexFactory->GetType());
 				}
 			}
 		}
@@ -2227,7 +2261,8 @@ void FProjectedShadowInfo::RenderProjection(INT ViewIndex, const FViewInfo* View
 				RHISetColorWriteEnable(TRUE);
 
 				// Use the per-fragment shadow pixel shader.
-				FShadowProjectionPixelShaderInterface* PerFragmentPixelShader = GetProjPixelShaderRef(LightSceneInfo->ShadowFilterQuality,TRUE);
+				// DISHONORED(retail): SM5-only path, unreachable on D3D9; retail has no per-fragment projection shader
+				FShadowProjectionPixelShaderInterface* PerFragmentPixelShader = GetProjPixelShaderRef(LightSceneInfo->ShadowFilterQuality);
 				FGlobalBoundShaderState* PerFragmentBoundShaderState = ChooseBoundShaderState(LightSceneInfo->ShadowFilterQuality,PerFragmentShadowProjectionBoundShaderStates);
 				SetGlobalBoundShaderState(
 					*PerFragmentBoundShaderState,
@@ -2280,7 +2315,7 @@ void FProjectedShadowInfo::RenderProjection(INT ViewIndex, const FViewInfo* View
 				}
 			}
 
-			FShadowProjectionPixelShaderInterface * PixelShader = GetProjPixelShaderRef(LightSceneInfo->ShadowFilterQuality,FALSE);
+			FShadowProjectionPixelShaderInterface * PixelShader = GetProjPixelShaderRef(LightSceneInfo->ShadowFilterQuality);
 			PixelShader->SetParameters(ViewIndex,*View,this);
 
 			FGlobalBoundShaderState* CurrentBoundShaderState = ChooseBoundShaderState(LightSceneInfo->ShadowFilterQuality,ShadowProjectionBoundShaderStates);

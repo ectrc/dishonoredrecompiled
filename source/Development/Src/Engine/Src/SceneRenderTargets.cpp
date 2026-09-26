@@ -2998,19 +2998,13 @@ void FSceneTextureShaderParameters::Bind(const FShaderParameterMap& ParameterMap
 	SceneColorTextureParameter.Bind(ParameterMap,TEXT("SceneColorTexture"),TRUE);
 	// only used if Material has an expression that requires SceneDepthTexture
 	SceneDepthTextureParameter.Bind(ParameterMap,TEXT("SceneDepthTexture"),TRUE);
-	// only used if Material has an expression that requires SceneColorTextureMSAA
-	SceneDepthSurfaceParameter.Bind(ParameterMap,TEXT("SceneDepthSurface"),TRUE);
 	// only used if Material has an expression that requires SceneDepthTexture
 	SceneDepthCalcParameter.Bind(ParameterMap,TEXT("MinZ_MaxZRatio"),TRUE);
 	// only used if Material has an expression that requires ScreenPosition biasing
 	ScreenPositionScaleBiasParameter.Bind(ParameterMap,TEXT("ScreenPositionScaleBias"),TRUE);
-	// only used if Material has an expression that requires ScreenSize
-	ScreenAndTexelSizeParameter.Bind(ParameterMap,TEXT("ScreenAndTexelSize"),TRUE);
-#if !CONSOLE
-    // Contains parameters needed to transform from stereo clip space to mono clip space
-    NvStereoFixTextureParameter.Bind(ParameterMap,TEXT("NvStereoFixTexture"),TRUE);
-#endif
-	DecompressSceneColorParameter.Bind(ParameterMap,TEXT("bDecompressSceneColor"),TRUE);
+	// Contains parameters needed to transform from stereo clip space to mono clip space
+	NvStereoFixTextureParameter.Bind(ParameterMap,TEXT("NvStereoFixTexture"),TRUE);
+	// DISHONORED(layout): no SceneDepthSurface / ScreenAndTexelSize / bDecompressSceneColor in retail (ShaderManager.h)
 }
 
 void FSceneTextureShaderParameters::SetSceneColorTextureOnly(FShader* PixelShader) const
@@ -3083,31 +3077,19 @@ void FSceneTextureShaderParameters::SetCustom(const FSceneView* View,FShader* Pi
 		}
 	}
 
-	if(GRHIShaderPlatform == SP_PCD3D_SM5)
+	// DISHONORED(port): 2013 rva 0x4550b0: scene color, scene depth (when depth textures are supported), the stereo fix
+	// texture, then RHISetViewPixelParameters; no SM5 depth surface, no ScreenAndTexelSize, no scene color decompression
+	if (NvStereoFixTextureParameter.IsBound())
 	{
-		SetSurfaceParameter(RHIPixelShader, SceneDepthSurfaceParameter, GSceneRenderTargets.GetSceneDepthSurface());
-	}
-
-#if !CONSOLE
-    if (NvStereoFixTextureParameter.IsBound())
-    {
-        SetTextureParameter(
-            RHIPixelShader,
-            NvStereoFixTextureParameter,
-            TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),
+		SetTextureParameter(
+			RHIPixelShader,
+			NvStereoFixTextureParameter,
+			TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),
 			nv::stereo::IsStereoEnabled() ? (const FTextureRHIRef&)GSceneRenderTargets.GetStereoFixTexture() : GWhiteTexture->TextureRHI
-            );
-    }
-#endif
-
-	RHISetViewPixelParameters( View, RHIPixelShader, &SceneDepthCalcParameter, &ScreenPositionScaleBiasParameter, &ScreenAndTexelSizeParameter );
-
-	if (DecompressSceneColorParameter.IsBound())
-	{
-		// Tell the shader to decompress from the 7e3 raw scene color format if we are before the Uber node in the post process chain,
-		// After which we will be reading from scene color LDR which needs no decompression
-		SetPixelShaderBool(RHIPixelShader, DecompressSceneColorParameter, GSceneRenderTargets.bSceneColorTextureIsRaw && !View->bUseLDRSceneColor);
+			);
 	}
+
+	RHISetViewPixelParameters( View, RHIPixelShader, &SceneDepthCalcParameter, &ScreenPositionScaleBiasParameter, NULL );
 }
 
 void FSceneTextureShaderParameters::Set(const FSceneView* View,FShader* PixelShader, ESamplerFilter ColorFilter/*=SF_Point*/, ESceneDepthUsage DepthUsage/*=SceneDepthUsage_Normal*/) const
@@ -3116,21 +3098,14 @@ void FSceneTextureShaderParameters::Set(const FSceneView* View,FShader* PixelSha
 }
 
 //
+// DISHONORED(port): 2013 rva 0x447e20 (2012 0x46b260, identical): the five retail parameters in member order
 FArchive& operator<<(FArchive& Ar,FSceneTextureShaderParameters& Parameters)
 {
 	Ar << Parameters.SceneColorTextureParameter;
 	Ar << Parameters.SceneDepthTextureParameter;
-	Ar << Parameters.SceneDepthSurfaceParameter;
 	Ar << Parameters.SceneDepthCalcParameter;
 	Ar << Parameters.ScreenPositionScaleBiasParameter;
-	Ar << Parameters.ScreenAndTexelSizeParameter;
-#if CONSOLE
-	FShaderResourceParameter dummy;
-	Ar << dummy;
-#else
-    Ar << Parameters.NvStereoFixTextureParameter;
-#endif
-	Ar << Parameters.DecompressSceneColorParameter;
+	Ar << Parameters.NvStereoFixTextureParameter;
 
 #if WITH_MOBILE_RHI
 	if (GUsingMobileRHI)

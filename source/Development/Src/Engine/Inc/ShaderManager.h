@@ -1504,7 +1504,15 @@ extern void DumpShaderStats( EShaderPlatform Platform, EShaderFrequency Frequenc
  */
 extern FShaderType* FindShaderTypeByName(const TCHAR* ShaderTypeName);
 
-/** Encapsulates scene texture shader parameter bindings. */
+/**
+ * Encapsulates scene texture shader parameter bindings.
+ * DISHONORED(layout): retail FSceneTextureShaderParameters is 30 bytes = 5 parameters, serialized in member order
+ * (2013 rva 0x447e20 operator<<: +0 SceneColorTexture, +6 SceneDepthTexture, +12 SceneDepthCalc, +18 ScreenPositionScaleBias,
+ * +24 NvStereoFixTexture; 2013 rva 0x4550b0 Set). The reference SceneDepthSurface, ScreenAndTexelSize and
+ * DecompressSceneColor parameters do not exist in retail: every cooked global/material shader that embeds this struct
+ * (FDownsampleSceneDepthPixelShader 0x448b20, TShadowProjectionPixelShader 0xe3610, FBranchingPCFProjectionPixelShader
+ * 0xb3db0, the light shaft / halo / shader complexity types, FMaterialPixelShaderParameters) counts 15 history words for it.
+ */
 class FSceneTextureShaderParameters
 {
 public:
@@ -1531,20 +1539,15 @@ private:
 	FShaderResourceParameter SceneColorTextureParameter;
 	/** The SceneDepthTexture parameter for materials that use SceneDepth */
 	FShaderResourceParameter SceneDepthTextureParameter;
-	/** The SceneColorTextureMSAA parameter for materials that use SceneColorTextureMSAA */
-	FShaderResourceParameter SceneDepthSurfaceParameter;
 	/** Required parameter for using SceneDepthTexture on certain platforms. */
 	FShaderParameter SceneDepthCalcParameter;
 	/** Required parameter for using SceneColorTexture. */
 	FShaderParameter ScreenPositionScaleBiasParameter;
-	/** Required parameter for using SreenSize expression. */
-	FShaderParameter ScreenAndTexelSizeParameter;
-#if !CONSOLE
 	/** Parameter to fix stereo offsets */
-    FShaderResourceParameter NvStereoFixTextureParameter;
-#endif
-	/** true if GSceneRenderTargets.bSceneColorTextureIsRaw */
-	FShaderParameter DecompressSceneColorParameter;
+	FShaderResourceParameter NvStereoFixTextureParameter;
+	// DISHONORED(retail): reference-only (SM5 MSAA depth surface); never bound or serialized here, kept only because
+	// MaterialShader.cpp (agent AG) unbinds it. Remove with that line.
+	FShaderResourceParameter SceneDepthSurfaceParameter;
 };
 
 

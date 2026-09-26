@@ -349,6 +349,13 @@ Retail has no shader for these; the renderer paths that bind them must be guarde
 
 ## 5. Work list, in order
 
+**Wave-4 update (agent AH, 2026-09-26).** Items 3 and 5 are **done**; item 2 is agent AG's; item 4 is wave 5. The cooked
+global cache now reports `263 shaders, 127 loaded, 136 undeclared types, 0 parameter mismatches, 0 other skips` and
+`global shader map: 133 types without a cooked shader` (was 62 / 143 / 58 / 144). The scene renderer runs every frame on
+the null RHI (the wave-3 skip in `RenderViewFamily_RenderThread` is gone); a D3D9 world frame still waits on item 2.
+Details and the per-type rvas: `agents/agentAH.md`, `agents/agentAH_status.csv`.
+
+
 1. **First frame** (this wave): nothing more needed from the cache: `FSimpleElement*` (canvas, 6 types), `FOneColor*`
    (clears through `DrawClearQuad`), the Bink shaders and `TFilterPixelShader`/`TFilterVertexShader` load.
 2. **Material shaders** (blocks every D3D9 run: `FMaterial::InitShaderMap` aborts on a default material without a shader map,
@@ -368,21 +375,41 @@ Retail has no shader for these; the renderer paths that bind them must be guarde
    Retail `FMaterialShaderMap::IsComplete` (2013 rva 0x3ea7d0, 116 bytes) returns FALSE only while the map compiles (the
    per-vertex-factory lookups are there but unused); the reference checks every type and vertex factory. Full list:
    `build\agentY\material_types.txt`.
-3. **Global types whose layout differs (58)**: shadow projection (`TShadowProjectionPixelShader<*>`, 3),
-   `TModShadowProjectionPixelShader<*>` (9), `TBranchingPCFModProjectionPixelShader<*>` (27) and the 9 branching-PCF quality
-   types, `FShadowProjectionVertexShader`, `FModShadowProjectionVertexShader`, light shafts (`FApplyLightShaftsPixelShader`,
-   `FBlurLightShaftsPixelShader`, `FDownsampleLightShaftsVertexShader`), `FDownsampleSceneDepthPixelShader`,
-   `FDepthDependentHaloApplyPixelShader`, `FShaderComplexityApplyPixelShader`, `FMLAAVertexShader`, `FFXAAVertexShader`:
-   port each Serialize from its 2012 decompile, add the Arkane parameters to the class and to its `SetParameters`.
-4. **Undeclared Arkane types (143)**: `FDisFog*` 30 (+`FHeightFogMask*` 2), `FArkPp*` 16, `FKuwa*` 4, `FBloom*`/`TBloom*` 6,
-   `FFXAAPixelShader_*` 3, `FMLAA*` 4, `TFilterPixelShaderDepthInAlpha<1..16>` 16, `TShadowProjectionPixelShader<*ManualPCF>` 2,
-   `TModShadowProjectionPixelShader<*ManualPCF>` 6, `TDownsampleLightShaftsPixelShader<TRUE/FALSE>` 2, `TMeshPaint*` 2, and
-   the 50 GFx shaders (Scaleform, gated by the GFxUI decision). The PDB has **no UDT** for most Arkane shader classes (local
+3. **Global types whose layout differs (58)**: **done (agent AH, wave 4; 0 mismatches left)**. Most of the 58 fell to two
+   shared structs rather than to per-type work: `FSceneTextureShaderParameters` is 5 parameters / 30 bytes in retail
+   (SceneColorTexture, SceneDepthTexture, SceneDepthCalc, ScreenPositionScaleBias, NvStereoFixTexture; `operator<<`
+   2013 rva 0x447e20, `Set` 0x4550b0) against 8 here, and `FLightShaftPixelShaderParameters` is 10 parameters / 60 bytes
+   (no spot direction / spot angles; 0x415690, `SetParameters` 0x420300) against 12. Per type on top of that:
+   the projection vertex shaders (`FShadowProjectionVertexShader`, `FModShadowProjectionVertexShader`) carry **no**
+   parameter (the screen-to-shadow matrix is a pixel shader constant); `TShadowProjectionPixelShader<*>` is scene textures
+   + ScreenToShadowMatrix + ShadowDepthTexture + SampleOffsets + ShadowBufferSize + ShadowFadeFraction (ctor 0xe34b0,
+   `Serialize` 0xe3610, `SetParameters` 0xed400) with no deferred G-buffer parameters and no lighting-channel mask;
+   `TModShadowProjectionPixelShader<*,*>` and `TBranchingPCFModProjectionPixelShader<*,*>` add **four** own parameters
+   before the light policy's (0xe7de0 / 0x134440 / 0x162950, 0x1383c0 / 0x162fd0), of which retail's `SetParameters` writes
+   only ShadowModulateColor and ScreenToWorld; `FDownsampleLightShaftsVertexShader` has ScreenToWorld only (0x415460);
+   `FMLAAVertexShader` / `FFXAAVertexShader` are Arkane's with two parameters each (0x50e170 / 0x50e090). The retail
+   uniform-PCF policy set is `F4SampleHwPCF`, `F4SampleManualPCF`, `F16SampleHwPCF`, `F16SampleFetch4PCF`,
+   `F16SampleManualPCF` (0x45cc20 `GetProjPixelShaderRef`, 0x1451e0 `GetModProjPixelShaderRef`) - no per-fragment variant -
+   and the light shaft pixel shader is templated on a `UBOOL` (`<FALSE>` directional, `<TRUE>` everything else, 0x437480).
+4. **Undeclared Arkane types (143 -> 136, wave 5)**: the 10 that were only misnamed are declared and loading since wave 4
+   (`TShadowProjectionPixelShader<*ManualPCF>` 2, `TModShadowProjectionPixelShader<*,*ManualPCF>` 6,
+   `TDownsampleLightShaftsPixelShader<TRUE/FALSE>` 2). What is left needs its Arkane pass: `FDisFog*` 30
+   (+`FHeightFogMask*` 2), `FArkPp*` 16, `FKuwa*` 4, `FBloom*`/`TBloom*` 6, `FFXAAPixelShader_*` 3, `FMLAA*` 4,
+   `TFilterPixelShaderDepthInAlpha<1..16>` 16, `TMeshPaint*` 2, and the 50 GFx shaders (Scaleform, gated by the GFxUI
+   decision). `FSceneRenderer::RenderBloomParts` (2012 rva 0x566120 / 2013 0x5251a0, between the soft-masked base pass and
+   the fog pass in retail's `RenderDPGEnd`) is the entry point for the Arkane bloom set. The PDB has **no UDT** for most Arkane shader classes (local
    classes of their .cpp files); their parameter layouts come from their `Serialize` / `SetParameters` / constructor
    decompiles (2012 names in `functions.csv`, e.g. `FArkPpDofLutBlenderPS::Serialize`, `FBloomComposePixelShader::Serialize`,
    `FFluidSimulatePixelShader::Serialize`) checked against the history word counts of section 3. They are useless without
    their render passes (the FArkPp node graph, DisFog, Arkane bloom), so each is declared together with its pass.
-5. **Reference-only types (section 4)**: retail has none of them: the uber post-process chain (`FUberPostProcess*`,
+5. **Reference-only types (section 4)**: **guarded (agent AH, wave 4)**; 144 -> 133 declared types without a cooked
+   shader, and no pass that binds one can be reached any more: `FSceneRenderer::RenderDPGEnd` (2013 rva 0x464290) lost the
+   image-reflection, subsurface-scattering, lighting-only post-process and velocity passes and gates the reference
+   height-fog pass off until DisFog lands (`-referencefog` re-enables it for experiments), `RenderFinish` (0x45e5e0) lost
+   temporal AA and the reference MLAA/FXAA pass, and `RenderPostProcessEffects` (0x448990) runs only at `SDPG_PostProcess`
+   and skips the reference effect proxies with one `DISHONORED(bringup)` warning (retail renders the FArkPp graph there).
+   The 11 reference-only shadow-projection / light-shaft instances were removed outright. Retail has none of these: the
+   uber post-process chain (`FUberPostProcess*`,
    `FUberHalfRes*`, `FDOFAndBloom*`, `FBloomGather*`, `FLUTBlender*`), temporal AA, SSAO (`TAmbientOcclusion*`,
    `TAOApply*`, `FAmbientOcclusionVertexShader`, `FStaticHistoryUpdate*`, `FHistoryUpdate*`, `TEdgePreserving*`), the reference
    FXAA/MLAA (`FFXAABlendPixelShader0..5`, `FSRGBMLAA*`), `FOneLayerFogPixelShader`/`FFourLayerFogPixelShader`/

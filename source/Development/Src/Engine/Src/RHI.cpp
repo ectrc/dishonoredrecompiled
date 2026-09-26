@@ -32,7 +32,9 @@ INT GCurrentColorExpBias = 0;
 #endif
 UBOOL GUsingES2RHI = FALSE;
 UBOOL GUsingMobileRHI = FALSE;
-UBOOL GMobileTiledRenderer = TRUE;
+// DISHONORED(retail): PC is never a tiled renderer; the reference default TRUE made UGameViewportClient::Draw issue an
+// extra ClearAll per frame (agent Y follow-up 6). Retail has no GMobileTiledRenderer (no mobile RHI).
+UBOOL GMobileTiledRenderer = FALSE;
 UBOOL GMobileUsePackedDepthStencil = FALSE;
 
 /** Whether to use the post-process code path on mobile. */

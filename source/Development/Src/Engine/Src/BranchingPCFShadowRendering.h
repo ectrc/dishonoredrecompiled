@@ -616,6 +616,8 @@ public:
 	{
 		ShadowModulateColorParam.Bind(Initializer.ParameterMap,TEXT("ShadowModulateColor"));
 		ScreenToWorldParam.Bind(Initializer.ParameterMap,TEXT("ScreenToWorld"),TRUE);
+		EmissiveAlphaMaskScaleParam.Bind(Initializer.ParameterMap,TEXT("EmissiveAlphaMaskScale"),TRUE);
+		UseEmissiveMaskParam.Bind(Initializer.ParameterMap,TEXT("UseEmissiveMask"),TRUE);
 	}
 
 	/**
@@ -653,11 +655,19 @@ public:
 	* Serialize the parameters for this shader
 	* @param Ar - archive to serialize to
 	*/
+	/**
+	 * DISHONORED(port): retail FBranchingPCFModProjectionPixelShader adds four parameters (+252..+270; 2013 rva 0x1383c0
+	 * TBranchingPCFModProjectionPixelShader<FPointLightPolicy,FLowQualityHwPCF>::Serialize reads the light parameters at
+	 * +276, 0xf2010 SetParameters writes ShadowModulateColor @252 and ScreenToWorld @258 only). Cooked history: 51 / 57 / 63
+	 * words for directional / point / spot.
+	 */
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FBranchingPCFProjectionPixelShader< BranchingPCFPolicy >::Serialize(Ar);
 		Ar << ShadowModulateColorParam;
 		Ar << ScreenToWorldParam;
+		Ar << EmissiveAlphaMaskScaleParam;
+		Ar << UseEmissiveMaskParam;
 		return bShaderHasOutdatedParameters;
 	}
 
@@ -677,9 +687,12 @@ public:
 
 private:
 	/** color to modulate shadowed areas on screen */
-	FShaderParameter ShadowModulateColorParam;	
+	FShaderParameter ShadowModulateColorParam;
 	/** needed to get world positions from deferred scene depth values */
 	FShaderParameter ScreenToWorldParam;
+	// DISHONORED(layout): the third and fourth retail parameters; names as in TModShadowProjectionPixelShader (unverified)
+	FShaderParameter EmissiveAlphaMaskScaleParam;
+	FShaderParameter UseEmissiveMaskParam;
 };
 
 /**
