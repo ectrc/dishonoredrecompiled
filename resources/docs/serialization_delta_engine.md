@@ -59,7 +59,7 @@ diverges above 766 (agent E). Engine uses left after this pass: `UnLevel.cpp:336
 | `UTextureMovie::Serialize` | 0x16fa80 | 0x166000 | 70/70 | verified | identical |
 | `UTextureMovie::PostLoad` | 0x18d560 | 0x17d100 | 464/464 | verified | identical but for a !GIsBuildMachine test (always FALSE in game) |
 | `UTextureRenderTarget2D::Serialize` | 0x16fd00 | 0x166130 | 55/55 | verified | identical |
-| `UTextureRenderTarget2D::PostLoad` | 0x18d760 | 0x17d330 | 147/147 | port | Arkane m_ResolutionType (@255, ETrt2dResolutionMode) resizes SizeX/SizeY from GSceneRenderTargets.BufferSizeX/Y >> {0,0,1,2}[type]; member missing from our PROPS block (AB) - not ported |
+| `UTextureRenderTarget2D::PostLoad` | 0x18d760 | 0x17d330 | 147/147 | ported | Arkane m_ResolutionType (@255, ETrt2dResolutionMode) resizes SizeX/SizeY from GSceneRenderTargets.GetBufferSizeX/Y() >> {0,0,1,2}[type] (agent AI: the BYTE replaced the SCRIPT_ALIGN after AddressY) |
 | `UTextureRenderTargetCube::PostLoad` | 0x18d850 | 0x17d420 | 44/44 | verified | identical (CONSOLE clamp compiled out) |
 | `UShadowMapTexture2D::Serialize` | 0x32e9a0 | 0x30c0c0 | 27/27 | verified | identical |
 | `USeqAct_StreamInTextures::PostLoad` | 0x32dfc0 | 0x301cc0 | 31/31 | ported | no Finished->Out output link rename |
@@ -182,7 +182,7 @@ diverges above 766 (agent E). Engine uses left after this pass: `UnLevel.cpp:336
 | `USeqAct_Interp::Serialize` | 0x24e110 | 0x23c820 | 60/107 | verified | identical |
 | `USeqAct_Interp::PostLoad` | 0x22fcf0 | 0x218cd0 | 441/441 | written | missing in the reference: archetype output links re-inserted |
 | `UInterpData::PostLoad` | 0x22a890 | 0x212930 | 5/5 | ported | Super only (director cache / bake-prune work on shims) |
-| `UInterpData::Serialize` | 0x22a850 | 0x2128f0 | 59/59 | port | Arkane: m_iMatineeDataVersion <- m_Data->m_iDataVersion (MarkPackageDirty); UMatineeData lives in DishonoredGame's Engine shims, not portable in Engine yet |
+| `UInterpData::Serialize` | 0x22a850 | 0x2128f0 | 59/59 | written | Arkane: m_iMatineeDataVersion <- m_Data->m_iDataVersion (MarkPackageDirty); agent AI moved UMatineeData and the Arkane interp tracks into Engine (EngineInterpolationClasses.h), so it is ported now |
 | `UInterpGroup::PostLoad` | 0x23af10 | 0x224770 | 97/97 | ported | no AnimSets conversion (shim) |
 | `UInterpTrackAnimControl::PostLoad` | 0x234c30 | 0x21de00 | 195/195 | verified | identical |
 | `UPrefabSequence::PostLoad` | 0x32e330 | 0x30ae00 | 592/612 | verified | identical |
@@ -236,9 +236,7 @@ diverges above 766 (agent E). Engine uses left after this pass: `UnLevel.cpp:336
 
 | Functions | Why |
 |---|---|
-| `UAkBank::PostLoad`, `UAkEvent::PostLoad`, `UMatineeData::Serialize`, `UInterpTrackFaceTo/LookAt/Locomotion/StretchAnimControl::PostLoad`, `UArkComponentContainer::Serialize`, `UUIDynamicFieldProvider::Serialize` | classes of `Engine.upk` that our tree defines only in agent T's `DishonoredGame` shims (`DishonoredGameEngineShims.h`), not in `Engine/Src` |
-| `UInterpData::Serialize` (`port`) | retail keeps the matinee data in `UMatineeData` (`m_Data`); needs that class in Engine |
-| `UTextureRenderTarget2D::PostLoad` (`port`) | Arkane `m_ResolutionType` (@255, `ETrt2dResolutionMode`) resizes the target from `GSceneRenderTargets.BufferSizeX/Y >> {0,0,1,2}[type]`; the member sits in the `SCRIPT_ALIGN` of our PROPS block (agent AB) |
+| `UUIDynamicFieldProvider::Serialize` | the class is still a `DishonoredGame` shim: it derives from `UUIDataProvider` of `EngineUIPrivateClasses.h`, which `Engine.h` does not include (agent AI hand-over). The other classes of this row (`UAkBank`, `UAkEvent`, `UMatineeData`, `UArkComponentContainer`, the Arkane interp tracks) are in Engine now, with their `Serialize`/`PostLoad` ported (agent AI) |
 | `UAnimSequence::Serialize/PostLoad`, Edge codec | agent W |
 | `UFaceFX*`, `UApex*`, `USpeedTreeComponent::*` | `WITH_FACEFX=0`, `WITH_APEX=0`, `WITH_SPEEDTREE=0` |
 | `USeqAct_Log/Delay`, `UAnimMetaData_SkelControl`, `ANxForceFieldRadial`, `UUIState`, `ALevelGridVolume`, `UApexComponentBase::PostLoad` | 2012 functions without a 2013 match; not located in the 2013 db |

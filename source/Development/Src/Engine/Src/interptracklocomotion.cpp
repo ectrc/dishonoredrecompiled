@@ -15,3 +15,56 @@
 //   0x548f70  public: static class UClass * __cdecl UInterpTrackLocomotion::GetPrivateStaticClassUInterpTrackLocomotion(wchar_t const *)
 //   0x549300  public: static class UClass * __cdecl UInterpTrackLocomotion::StaticClassNoInline(void)
 //   0xb9ed40  _dynamic_initializer_for__UInterpTrackLocomotion::s_TrackLocoPlayerTargerName__
+
+#include "EnginePrivate.h"
+#include "EngineSequenceClasses.h"      // USeqVar_Character, used by the matinee group instances
+#include "EngineInterpolationClasses.h"
+
+IMPLEMENT_CLASS(UInterpTrackLocomotion);
+IMPLEMENT_CLASS(UInterpTrackLocomotionKeyProperties);
+IMPLEMENT_CLASS(UInterpTrackInstLocomotion);
+
+// DISHONORED(port): 2013 rva 0x4fcc30 (2012 0x53bd80)
+INT UInterpTrackLocomotion::s_iInterpTrackLocomotionPriority = 0;
+
+void UInterpTrackLocomotion::SetLocomotionPriority( INT LocomotionPriority )
+{
+	s_iInterpTrackLocomotionPriority = LocomotionPriority;
+}
+
+// DISHONORED(port): 2013 rva 0x5039d0 (2012 0x542510, interptracklocomotion.cpp:100): outside a package (i.e. inside a UMatineeData) every key's target
+// group is looked up by name in the owning matinee data; a key without a target name loses its group pointer.
+void UInterpTrackLocomotion::PostLoad()
+{
+	Super::PostLoad();
+	if( GetOuter()->IsA(UPackage::StaticClass()) )
+	{
+		return;
+	}
+	UInterpGroup* Group = GetOwningGroup();
+	if( !Group || Group->GetOuter()->IsA(UPackage::StaticClass()) )
+	{
+		return;
+	}
+	UMatineeData* Data = CastChecked<UMatineeData>( Group->GetOuter() );
+	for( INT KeyIndex = 0; KeyIndex < LocoKeys.Num(); KeyIndex++ )
+	{
+		UInterpTrackLocomotionKeyProperties* Properties = LocoKeys(KeyIndex).Properties;
+		if( !Properties )
+		{
+			continue;
+		}
+		if( Properties->m_TargetName != NAME_None )
+		{
+			const INT GroupIndex = Data->FindGroupByName( Properties->m_TargetName );
+			if( GroupIndex != INDEX_NONE )
+			{
+				Properties->m_Target = Data->GetInterpGroup( GroupIndex );
+			}
+		}
+		else
+		{
+			Properties->m_Target = NULL;
+		}
+	}
+}

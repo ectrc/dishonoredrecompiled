@@ -754,6 +754,9 @@ public:
     virtual UBOOL BeginHostMigration();
     virtual void ToggleHostMigration(UBOOL bEnabled);
     void ClearObjectPools();
+    // DISHONORED(port): 2013 WorldInfo.GetGlobalGravityZ is native (exec 0x1c69a0, body 0x2a1650; agent AE, body in UnActor.cpp)
+    FLOAT GetGlobalGravityZ();
+    DECLARE_FUNCTION(execGetGlobalGravityZ);
     DECLARE_FUNCTION(execReleaseCachedConstraintsAndEvaluators)
     {
         P_FINISH;
@@ -1180,6 +1183,11 @@ public:
     virtual void DeleteDLC(const FString& DLCName);
     virtual void InstallDLC(const FString& DLCName);
     virtual void TriggerFindDLCDelegates();
+    // DISHONORED(port): 2013 natives (agent AE): UninstallDLC exec 0x1eea40 / body 0xfdaf0, CleanLaunchedDLC 0x1d3fd0 / 0x1cb0c0
+    virtual void UninstallDLC(const FString& DLCName,UBOOL bForceUninstallIfActive);
+    virtual void CleanLaunchedDLC(BYTE LocalUserNum);
+    DECLARE_FUNCTION(execUninstallDLC);
+    DECLARE_FUNCTION(execCleanLaunchedDLC);
     DECLARE_FUNCTION(execFindDLC)
     {
         P_FINISH;
@@ -1251,6 +1259,15 @@ public:
     virtual void InstallPackages(const struct FOnlineContent& DLCBundle);
     virtual void InstallNonPackageFiles(const struct FOnlineContent& DLCBundle);
     virtual void AddPackagesToFullyLoad(const FString& Filename);
+    // DISHONORED(port): 2013 natives (agent AE): BackupDLCList exec 0x1d4070 / body 0xf85b0, RemoveUnavailableDLC 0x5efc40 / 0xf5bf0, UninstallDLC 0x1fe610 / 0x10c3a0, UninstallDLCs 0x205aa0 / 0xfdbf0
+    virtual void BackupDLCList();
+    virtual void RemoveUnavailableDLC();
+    virtual UBOOL UninstallDLC(struct FOnlineContent& DLCBundle,UBOOL bForceUninstallIfActive);
+    virtual void UninstallDLCs(TArray<struct FOnlineContent>& DLCBundles);
+    DECLARE_FUNCTION(execBackupDLCList);
+    DECLARE_FUNCTION(execRemoveUnavailableDLC);
+    DECLARE_FUNCTION(execUninstallDLC);
+    DECLARE_FUNCTION(execUninstallDLCs);
     DECLARE_FUNCTION(execInstallDLC)
     {
         P_GET_STRUCT_INIT_REF(struct FOnlineContent,DLCBundle);
@@ -1423,7 +1440,7 @@ class UEngine : public USubsystem, public IArkSettingsListenerInterface
 {
 public:
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface(){return this;}
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) {}  // DISHONORED: stub, port UEngine::ApplyGameSettings
+    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason);  // DISHONORED(port): 2013 rva 0x1d87b0 (2012 0x1ef030), UnEngine.cpp
 public:
     //## BEGIN PROPS Engine
     // DISHONORED(layout): 2012 PDB size 1480; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: MobileEmulationMasterMaterial, MobileEmulationMasterMaterialName, bScreenshotRequested, bCheckForMultiplePawnsSpawnedInAFrame, bUseRecastNavMesh, bUseNormalMapsForSimpleLightMaps, bStartWithMatineeCapture, bCompressMatineeCapture, bLockReadOnlyLevels, ImageReflectionTextureSize, LandscapeHolePhysMaterial, LandscapeHolePhysMaterialName, ApexDamageParams, ApexDamageParamsName, ScreenDoorNoiseTexture, ScreenDoorNoiseTextureName, ImageGrainNoiseTexture, ImageGrainNoiseTextureName, DefaultSound, DefaultSoundName, NumPawnsAllowedToBeSpawnedInAFrame, DefaultHoveredMaterialColor, GlobalTranslationContext, LoadingMovieStartTime, MatineeCaptureName, MatineePackageCaptureName, VisibleLevelsForMatineeCapture, MatineeCaptureFPS, MatineeCaptureType)
@@ -1726,8 +1743,10 @@ public:
     UBOOL IsUsingES2Renderer();
     class UAudioDevice* GetAudioDevice();
     FString GetLastMovieName();
-    UBOOL PlayLoadMapMovie();
-    void StopMovie(UBOOL bDelayStopUntilGameHasRendered);
+    // DISHONORED(retail): the 2013 natives PlayLoadMapMovie (exec 0x1eee70: MapName, MovieName) and StopMovie (exec 0x1d4890) call the UEngine
+    // virtuals declared below; the reference no-argument PlayLoadMapMovie() stays for the reference LoadMap caller (UnGame.cpp)
+    UBOOL PlayLoadMapMovie() { return PlayLoadMapMovie(FString(), FString()); }
+    void WaitMovie();  // DISHONORED(written): 2013 rva 0x1d8930 (2012 0x1ef1b0), exec 0x1e2600
     void RemoveAllOverlays();
     void AddOverlay(class UFont* Font,const FString& Text,FLOAT X,FLOAT Y,FLOAT ScaleX,FLOAT ScaleY,UBOOL bIsCentered);
     void AddOverlayWrapped(class UFont* Font,const FString& Text,FLOAT X,FLOAT Y,FLOAT ScaleX,FLOAT ScaleY,FLOAT WrapWidth);
@@ -1847,8 +1866,34 @@ public:
     }
     DECLARE_FUNCTION(execPlayLoadMapMovie)
     {
+        // DISHONORED(port): 2013 exec rva 0x1eee70 (2012 0x204da0) reads MapName and MovieName
+        P_GET_STR(MapName);
+        P_GET_STR(MovieName);
         P_FINISH;
-        *(UBOOL*)Result=this->PlayLoadMapMovie();
+        *(UBOOL*)Result=this->PlayLoadMapMovie(MapName,MovieName);
+    }
+    // DISHONORED(written): 2013 native table entries UEngine.OpenPauseMenu (exec 0x1c8910), OnControllerDisconnected (0x1d47c0),
+    // OpenContentUnavailableMenu (0x1c5e90) and WaitMovie (0x1e2600); the reference has no such natives
+    DECLARE_FUNCTION(execOpenPauseMenu)
+    {
+        P_FINISH;
+        this->OpenPauseMenu();
+    }
+    DECLARE_FUNCTION(execOnControllerDisconnected)
+    {
+        P_GET_INT(ControllerId);
+        P_FINISH;
+        this->OnControllerDisconnected(ControllerId);
+    }
+    DECLARE_FUNCTION(execOpenContentUnavailableMenu)
+    {
+        P_FINISH;
+        this->OpenContentUnavailableMenu();
+    }
+    DECLARE_FUNCTION(execWaitMovie)
+    {
+        P_FINISH;
+        this->WaitMovie();
     }
     DECLARE_FUNCTION(execStopMovie)
     {
@@ -1968,15 +2013,32 @@ public:
 	virtual void FinishDestroy();
 
 	// UEngine interface.
-	virtual void Init();
-
-	/**
-	 * Called at shutdown, just before the exit purge.
-	 */
-	virtual void PreExit() {}
-
+	// DISHONORED(retail): the virtuals are declared in the 2013 vtable order (UEngine vftable rva 0xc1edc0: slots 73.. after the 73 UObject
+	// slots; UGameEngine 0xc1f0a8, UDishonoredEngine 0xcdb390 override them). Bodies in UnEngine.cpp. FExec::Exec is the secondary vtable.
 	virtual UBOOL Exec( const TCHAR* Cmd, FOutputDevice& Out=*GLog );
+	/** slot 73 (+292) */
 	virtual void Tick( FLOAT DeltaSeconds ) PURE_VIRTUAL(UEngine::Tick,);
+	/** slot 74 (+296), 2013 rva 0x2097d0: plays a [FullScreenMovie] LoadMapMovies entry (or MovieName) with the map's intro movie */
+	virtual UBOOL PlayLoadMapMovie( const FString& MapName, const FString& MovieName );
+	/** slot 75 (+300): nothing in the engine; UDishonoredEngine (2013 rva 0x605150) opens the GFx pause menu */
+	virtual void OpenPauseMenu() {}
+	/** slot 76 (+304): empty in every 2013 class */
+	virtual void OnControllerDisconnected( INT ControllerId ) {}
+	/** slots 77, 78 (+308, +312): UDishonoredEngine 2013 rva 0x5e4270 / 0x5e42a0 route them to the global UI manager */
+	virtual void OpenControllerConnectionMenu() const {}
+	virtual void OpenContentUnavailableMenu() const {}
+	/** slot 79 (+316), 2013 rva 0x1d8900 */
+	virtual void StopMovie( UBOOL bDelayStopUntilGameHasRendered );
+	/** slot 80 (+320), 2013 rva 0x1fe910 */
+	virtual void Init();
+	/** slots 81, 82 (+324, +328): pure in the engine (2013 rva 0x209530 / 0x209550); UDishonoredEngine 0x5e41b0 / 0x6050b0 */
+	virtual void LoadProfile() PURE_VIRTUAL(UEngine::LoadProfile,);
+	virtual void SaveProfile( const void* Data, INT Size ) PURE_VIRTUAL(UEngine::SaveProfile,);
+	/** slot 83 (+332), 2013 rva 0x1d8850: StopAllSounds on the client's Wwise device (the AkAudio stub has no device, nothing to do) */
+	virtual void PreExit() {}
+	/** slot 84 (+336): pure in the engine (2013 rva 0x209570); UDishonoredEngine's override is empty */
+	virtual void TickDisconnectedController() PURE_VIRTUAL(UEngine::TickDisconnectedController,);
+	/** slots 85..87 */
 	virtual void SetClientTravel( const TCHAR* NextURL, ETravelType TravelType ) PURE_VIRTUAL(UEngine::SetClientTravel,);
 	virtual FLOAT GetMaxTickRate( FLOAT /*DeltaTime*/, UBOOL bAllowFrameRateSmoothing = TRUE );
 	virtual void SetProgress( EProgressMessageType MessageType, const FString& Title, const FString& Message );
@@ -2038,6 +2100,24 @@ public:
 	 * @param	bForceDump	Whether to dump even if no info has been captured yet (will force an update in that case).
 	 */
 	virtual void DumpMemoryChart( UBOOL bForceDump = FALSE );
+#endif // DO_CHARTING
+	// DISHONORED(retail): 2013 UEngine slots 96..104 (+384..+416)
+	/** slot 96: empty in the engine; UDishonoredEngine (2013 rva 0x5fbd40) records the deleted actor for the save game. Called by UWorld::DestroyActor */
+	virtual void NotifyActorDestroyed( AActor* Actor ) {}
+	/** slots 97, 98: the shipping exe compiles the debug menu out (empty / FALSE in every 2013 class) */
+	virtual void RenderDebugMenu( class FCanvas* Canvas ) {}
+	virtual UBOOL IsDebugMenuVisible() const { return FALSE; }
+	/** slot 99: an empty one-argument virtual no 2013 class overrides (2012 slot 94 as well); its name is unknown */
+	virtual void UnnamedSlot99( void* ) {}
+	/** slots 100, 101: 2013 rva 0x1e3330 shrinks the engine's arrays before a map change; UDishonoredEngine 0x616150 / 0x6152f0 override both */
+	virtual void PreCommitMapChange();
+	virtual void PostCommitMapChange() {}
+	/** slot 102, 2013 rva 0x1d88d0 */
+	virtual UBOOL ShouldStopMovieAtEndOfLoadMap( const FString& MapName );
+	/** slots 103, 104: FALSE in the engine; UDishonoredEngine 0x5e4500 (m_TransitionSaveType == 2) / 0x5e4510 (game state) */
+	virtual UBOOL IsLoadingGame() const { return FALSE; }
+	virtual UBOOL IsLoadingLevelState() const { return FALSE; }
+#if DO_CHARTING
 
 
 private:
@@ -2059,7 +2139,7 @@ private:
 	/**
 	 * Dumps the frame times information to the special stats log file.
 	 */
-	virtual void DumpFrameTimesToStatsLog( FLOAT TotalTime, FLOAT DeltaTime, INT NumFrames );
+	void DumpFrameTimesToStatsLog( FLOAT TotalTime, FLOAT DeltaTime, INT NumFrames );  // DISHONORED(retail): not a 2013 virtual (no slot between DumpFPSChartToStatsLog and DumpMemoryChartToHTML)
 
 	/**
 	 * Dumps the Memory chart information to HTML.
@@ -2097,6 +2177,8 @@ public:
 	 *
 	 * @return The created NetDriver object, or NULL if it fails
 	 */
+	// DISHONORED(retail): not a 2013 virtual (UEngine has no slot between SpawnServerActors and GetAViewport); kept virtual for the
+	// reference GEngine->ConstructNetDriver() callers in UnPenLev.cpp
 	virtual class UNetDriver* ConstructNetDriver()
 	{
 		return NULL;
@@ -2169,6 +2251,12 @@ public:
 	}
 
 	/**
+	 * DISHONORED(retail): 2013 slot 120 (+480), FALSE in the engine. UDishonoredEngine (2013 rva 0x601a80) answers
+	 * DisSaveLoad::FGameState::findLevelIndex(FName(LevelName)) != INDEX_NONE; PlayLoadMapMovie drops the intro movie of such a level.
+	 */
+	virtual UBOOL IsLevelInGameState( const FString& LevelName ) const { return FALSE; }
+
+	/**
 	 * Enables or disables the ScreenSaver (PC only)
 	 *
 	 * @param bEnable	If TRUE the enable the screen saver, if FALSE disable it.
@@ -2182,7 +2270,7 @@ public:
 	 *
 	 * @return	Index of the provided sprite category, if possible; INDEX_NONE otherwise
 	 */
-	virtual INT GetSpriteCategoryIndex( const FName& InSpriteCategory )
+	INT GetSpriteCategoryIndex( const FName& InSpriteCategory )  // DISHONORED(retail): not a 2013 virtual
 	{
 		// The editor may override this to handle sprite categories as necessary
 		return INDEX_NONE;
@@ -2724,6 +2812,10 @@ AUTOGENERATE_FUNCTION(UEngine,-1,execAddOverlay);
 AUTOGENERATE_FUNCTION(UEngine,-1,execRemoveAllOverlays);
 AUTOGENERATE_FUNCTION(UEngine,-1,execStopMovie);
 AUTOGENERATE_FUNCTION(UEngine,-1,execPlayLoadMapMovie);
+AUTOGENERATE_FUNCTION(UEngine,-1,execOpenPauseMenu);
+AUTOGENERATE_FUNCTION(UEngine,-1,execOnControllerDisconnected);
+AUTOGENERATE_FUNCTION(UEngine,-1,execOpenContentUnavailableMenu);
+AUTOGENERATE_FUNCTION(UEngine,-1,execWaitMovie);
 AUTOGENERATE_FUNCTION(UEngine,-1,execGetLastMovieName);
 AUTOGENERATE_FUNCTION(UEngine,-1,execGetAudioDevice);
 AUTOGENERATE_FUNCTION(UEngine,-1,execIsUsingES2Renderer);
@@ -2776,6 +2868,7 @@ AUTOGENERATE_FUNCTION(UGameEngine,-1,execCreateNamedNetDriver);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAWorldInfoNatives[] = 
 { 
+	MAP_NATIVE(AWorldInfo, execGetGlobalGravityZ)
 	MAP_NATIVE(AWorldInfo, execClearObjectPools)
 	MAP_NATIVE(AWorldInfo, execToggleHostMigration)
 	MAP_NATIVE(AWorldInfo, execBeginHostMigration)
@@ -2832,6 +2925,8 @@ FNativeFunctionLookup GEngineAWorldInfoNatives[] =
 
 FNativeFunctionLookup GEngineUDownloadableContentEnumeratorNatives[] = 
 { 
+	MAP_NATIVE(UDownloadableContentEnumerator, execUninstallDLC)
+	MAP_NATIVE(UDownloadableContentEnumerator, execCleanLaunchedDLC)
 	MAP_NATIVE(UDownloadableContentEnumerator, execTriggerFindDLCDelegates)
 	MAP_NATIVE(UDownloadableContentEnumerator, execInstallDLC)
 	MAP_NATIVE(UDownloadableContentEnumerator, execDeleteDLC)
@@ -2841,6 +2936,10 @@ FNativeFunctionLookup GEngineUDownloadableContentEnumeratorNatives[] =
 
 FNativeFunctionLookup GEngineUDownloadableContentManagerNatives[] = 
 { 
+	MAP_NATIVE(UDownloadableContentManager, execBackupDLCList)
+	MAP_NATIVE(UDownloadableContentManager, execRemoveUnavailableDLC)
+	MAP_NATIVE(UDownloadableContentManager, execUninstallDLC)
+	MAP_NATIVE(UDownloadableContentManager, execUninstallDLCs)
 	MAP_NATIVE(UDownloadableContentManager, execAddPackagesToFullyLoad)
 	MAP_NATIVE(UDownloadableContentManager, execInstallNonPackageFiles)
 	MAP_NATIVE(UDownloadableContentManager, execInstallPackages)
@@ -2872,6 +2971,10 @@ FNativeFunctionLookup GEngineUEngineNatives[] =
 	MAP_NATIVE(UEngine, execRemoveAllOverlays)
 	MAP_NATIVE(UEngine, execStopMovie)
 	MAP_NATIVE(UEngine, execPlayLoadMapMovie)
+	MAP_NATIVE(UEngine, execOpenPauseMenu)
+	MAP_NATIVE(UEngine, execOnControllerDisconnected)
+	MAP_NATIVE(UEngine, execOpenContentUnavailableMenu)
+	MAP_NATIVE(UEngine, execWaitMovie)
 	MAP_NATIVE(UEngine, execGetLastMovieName)
 	MAP_NATIVE(UEngine, execGetAudioDevice)
 	MAP_NATIVE(UEngine, execIsUsingES2Renderer)

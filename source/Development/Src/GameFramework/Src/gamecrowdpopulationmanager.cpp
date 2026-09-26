@@ -29,6 +29,12 @@ static_assert(sizeof(UGameCrowdPopulationManager) == 144, "UGameCrowdPopulationM
 
 // DISHONORED(bringup): not ported yet (2013 rva 0x5620b0, 238 bytes; 2012 rva 0x5a2f40): applies the crowd shadow/quality settings.
 // Listed as needed in function_status.csv; nothing reaches it before a crowd exists.
+// DISHONORED(port): 2013 rva 0x5620b0 (2012 0x5a2f40, gamecrowdpopulationmanager.cpp:463): the rat-shadow setting is stored and
+// pushed to every spawner and pooled agent.
+// DISHONORED(bringup): the two loops are not ported: m_AgentSpawners is a native TArray<FPointer> of UGameCrowdSpawner (the spawner's
+// shadow flag is at +188) and the pooled agents are told through AGameCrowdAgent vtable +984; both are agent AJ's / GameFramework's
+// crowd work and no crowd exists on the startup path.
 void UGameCrowdPopulationManager::ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason)
 {
+	m_bAllowShadow = Parameters->m_bRatShadows;
 }

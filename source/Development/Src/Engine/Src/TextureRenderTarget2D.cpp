@@ -4,6 +4,7 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
+#include "SceneRenderTargets.h"  // DISHONORED(port): GSceneRenderTargets for UTextureRenderTarget2D::PostLoad
 
 /*-----------------------------------------------------------------------------
 	UTextureRenderTarget2D
@@ -148,14 +149,18 @@ void UTextureRenderTarget2D::PostEditChangeProperty(FPropertyChangedEvent& Prope
 /** 
 * Called after the object has been loaded
 */
+// DISHONORED(port): 2013 rva 0x17d330 (2012 0x18d760, identical bytes; TextureRenderTarget2D.cpp:185): Arkane m_ResolutionType resizes
+// the target from the scene buffer size >> {0,0,1,2}[type] (at least 1x1) before Super::PostLoad creates the resource; the CONSOLE clamp
+// of the reference is compiled out
 void UTextureRenderTarget2D::PostLoad()
 {
-#if CONSOLE
-	// Clamp the render target size in order to avoid reallocating the scene render targets,
-	// before the FTextureRenderTarget2DResource() is created in Super::PostLoad().
-	SizeX = Min<INT>(SizeX,GScreenWidth);
-	SizeY = Min<INT>(SizeY,GScreenHeight);
-#endif
+	if( m_ResolutionType )
+	{
+		static const INT Shifts[4] = { 0, 0, 1, 2 };
+		const INT Shift = Shifts[ Min<INT>( m_ResolutionType, 3 ) ];
+		SizeX = Max<INT>( GSceneRenderTargets.GetBufferSizeX() >> Shift, 1 );
+		SizeY = Max<INT>( GSceneRenderTargets.GetBufferSizeY() >> Shift, 1 );
+	}
 
 	Super::PostLoad();
 
@@ -164,7 +169,7 @@ void UTextureRenderTarget2D::PostLoad()
 		!GSupportsRenderTargetFormat_PF_G8 &&
 		Format == PF_G8)
 	{
-		Format = PF_A8R8G8B8;					
+		Format = PF_A8R8G8B8;
 	}
 }
 

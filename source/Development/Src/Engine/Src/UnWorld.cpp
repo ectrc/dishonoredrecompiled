@@ -479,6 +479,10 @@ UBOOL UWorld::SaveWorld( const FString& Filename, UBOOL bForceGarbageCollection,
 /**
  * Initializes the world, associates the persistent level and sets the proper zones.
  */
+// DISHONORED(port): Engine.AudioSystem, Arkane's abstract audio-system base (EngineArkaneClasses.h). The 2012 PDB attributes its
+// class registration (InitializePrivateStaticClassUAudioSystem, rva 0x3a23a0) to engine/src/unworld.cpp, the unit that creates it.
+IMPLEMENT_CLASS(UAudioSystem);
+
 void UWorld::Init()
 {
 	if( PersistentLevel->GetOuter() != this )
@@ -560,7 +564,32 @@ void UWorld::Init()
 	Levels.AddItem( PersistentLevel );
 	GStreamingManager->AddLevel( PersistentLevel );
 
+	// DISHONORED(port): 2013 rva 0x3945f0 (2012 0x3bbd00, unworld.cpp): the world owns an audio system of the class named by
+	// [DishonoredMods] AudioSystemClass of the engine ini (DishonoredGame.DishonoredAudioSystem) and initializes it through the first
+	// UAudioSystem virtual (vtable +292). The reference engine has no such object; UAudioDevice stays untouched.
+	UClass* AudioSystemClass = UObject::StaticLoadClass( UAudioSystem::StaticClass(), NULL, TEXT("engine-ini:DishonoredMods.AudioSystemClass"), NULL, LOAD_None, NULL );
+	if( AudioSystemClass )
+	{
+		m_pAudioSystem = ConstructObject<UAudioSystem>( AudioSystemClass, this );
+		m_pAudioSystem->Init();
+		debugf( TEXT("DISHONORED(bringup): audio system %s"), *AudioSystemClass->GetName() );
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): no [DishonoredMods] AudioSystemClass, the world has no audio system") );
+	}
+
 	AWorldInfo* WorldInfo = GetWorldInfo();
+
+	// DISHONORED(port): the same function loads [DishonoredMods] MapInfoClass and gives the world info one when the map brought none
+	if( !WorldInfo->GetMapInfo() )
+	{
+		UClass* MapInfoClass = UObject::StaticLoadClass( UMapInfo::StaticClass(), NULL, TEXT("engine-ini:DishonoredMods.MapInfoClass"), NULL, LOAD_None, NULL );
+		if( MapInfoClass )
+		{
+			WorldInfo->SetMapInfo( ConstructObject<UMapInfo>( MapInfoClass, WorldInfo ) );
+		}
+	}
 	for( INT ActorIndex=0; ActorIndex<PersistentLevel->Actors.Num(); ActorIndex++ )
 	{
 		AActor* Actor = PersistentLevel->Actors(ActorIndex);

@@ -1582,7 +1582,7 @@ public:
     BYTE Format;
     BYTE AddressX;
     BYTE AddressY;
-    SCRIPT_ALIGN;
+    BYTE m_ResolutionType;  // DISHONORED(layout): retail SDK @255 (ETrt2dResolutionMode: 0 fixed size, 1 scene buffer, 2 half, 3 quarter; agent AA follow-up 1)
     FLinearColor ClearColor;
     BITFIELD bForceLinearGamma:1;
     SCRIPT_ALIGN;

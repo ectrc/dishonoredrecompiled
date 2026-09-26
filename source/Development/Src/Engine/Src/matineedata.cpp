@@ -12,3 +12,42 @@
 //   0x547ec0  public: static class UClass * __cdecl UMatineeData::GetPrivateStaticClassUMatineeData(wchar_t const *)
 //   0x5482a0  public: static class UClass * __cdecl UMatineeData::StaticClassNoInline(void)
 //   0x549490  public: void __thiscall UMatineeData::GetAllLoopNames(class TArray<class FString, class FDefaultAllocator> &)
+
+#include "EnginePrivate.h"
+#include "EngineSequenceClasses.h"      // USeqVar_Character, used by the matinee group instances
+#include "EngineInterpolationClasses.h"
+
+IMPLEMENT_CLASS(UMatineeData);
+
+// DISHONORED(port): 2013 rva 0x4fcec0 (2012 0x53bfc0, identical bytes; matineedata.cpp:46): saving clears the dirty-version bit
+void UMatineeData::Serialize( FArchive& Ar )
+{
+	if( Ar.IsSaving() )
+	{
+		m_bDataVersionIncremented = FALSE;
+	}
+	Super::Serialize( Ar );
+}
+
+// DISHONORED(port): 2013 rva 0x501790 (2012 0x540900, matineedata.cpp:56)
+INT UMatineeData::FindGroupByName( FName InGroupName )
+{
+	if( InGroupName == NAME_None )
+	{
+		return INDEX_NONE;
+	}
+	for( INT i = 0; i < m_RunData.InterpGroups.Num(); i++ )
+	{
+		if( m_RunData.InterpGroups(i)->GroupName == InGroupName )
+		{
+			return i;
+		}
+	}
+	return INDEX_NONE;
+}
+
+// DISHONORED(port): 2013 rva 0x218660 (2012 0x22f6e0, matineedata.h:98)
+UInterpGroup* UMatineeData::GetInterpGroup( INT Index ) const
+{
+	return m_RunData.InterpGroups(Index);
+}

@@ -33,6 +33,7 @@ IMPLEMENT_CLASS(AMatineeActor);
 IMPLEMENT_CLASS(USeqAct_Interp);
 
 IMPLEMENT_CLASS(UInterpData);
+IMPLEMENT_CLASS(UInterpTrackKeyProperties);  // DISHONORED(port): Engine.InterpTrackKeyProperties, moved out of DishonoredGame's shims
 
 IMPLEMENT_CLASS(UInterpGroup);
 IMPLEMENT_CLASS(UInterpGroupInst);
@@ -691,6 +692,19 @@ void USeqAct_Interp::InitSeqObjectForGroup(class UInterpGroup* InGroup, USequenc
 void UInterpData::PostLoad(void)
 {
 	Super::PostLoad();
+}
+
+// DISHONORED(port): 2013 rva 0x2128f0 (2012 0x22a850, identical bytes; uninterpolation.cpp:681): the sequence variable tracks the
+// version of the matinee data it points at, so a package whose UMatineeData was edited is marked dirty on save. Missing in the
+// reference, whose UInterpData carries the groups itself.
+void UInterpData::Serialize( FArchive& Ar )
+{
+	if( m_Data && m_iMatineeDataVersion < m_Data->m_iDataVersion )
+	{
+		m_iMatineeDataVersion = m_Data->m_iDataVersion;
+		MarkPackageDirty();
+	}
+	Super::Serialize( Ar );
 }
 
 FString UInterpData::GetValueStr()

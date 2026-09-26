@@ -25,3 +25,56 @@
 //   0x544990  public: virtual int __thiscall UInterpTrackFaceTo::AddKeyframe(float, class UInterpTrackInst *, enum EInterpCurveMode)
 //   0x548ee0  public: static class UClass * __cdecl UInterpTrackFaceTo::GetPrivateStaticClassUInterpTrackFaceTo(wchar_t const *)
 //   0x5492d0  public: static class UClass * __cdecl UInterpTrackFaceTo::StaticClassNoInline(void)
+
+#include "EnginePrivate.h"
+#include "EngineSequenceClasses.h"      // USeqVar_Character, used by the matinee group instances
+#include "EngineInterpolationClasses.h"
+
+IMPLEMENT_CLASS(UInterpTrackFaceTo);
+IMPLEMENT_CLASS(UInterpTrackFaceToKeyProperties);
+IMPLEMENT_CLASS(UInterpTrackInstFaceTo);
+
+// DISHONORED(port): 2013 rva 0x4fc8a0 (2012 0x53ba60): the request priority the game sets once at startup
+INT UInterpTrackFaceTo::s_InterpTrackFaceToPriority = 0;
+
+void UInterpTrackFaceTo::SetFaceToPriority( INT FaceToPriority )
+{
+	s_InterpTrackFaceToPriority = FaceToPriority;
+}
+
+// DISHONORED(port): 2013 rva 0x503200 (2012 0x542060, interptrackfaceto.cpp:86): outside a package (i.e. inside a UMatineeData) every key's target
+// group is looked up by name in the owning matinee data; a key without a target name loses its group pointer.
+void UInterpTrackFaceTo::PostLoad()
+{
+	Super::PostLoad();
+	if( GetOuter()->IsA(UPackage::StaticClass()) )
+	{
+		return;
+	}
+	UInterpGroup* Group = GetOwningGroup();
+	if( !Group || Group->GetOuter()->IsA(UPackage::StaticClass()) )
+	{
+		return;
+	}
+	UMatineeData* Data = CastChecked<UMatineeData>( Group->GetOuter() );
+	for( INT KeyIndex = 0; KeyIndex < FaceToKeys.Num(); KeyIndex++ )
+	{
+		UInterpTrackFaceToKeyProperties* Properties = FaceToKeys(KeyIndex).Properties;
+		if( !Properties )
+		{
+			continue;
+		}
+		if( Properties->m_TargetName != NAME_None )
+		{
+			const INT GroupIndex = Data->FindGroupByName( Properties->m_TargetName );
+			if( GroupIndex != INDEX_NONE )
+			{
+				Properties->m_Target = Data->GetInterpGroup( GroupIndex );
+			}
+		}
+		else
+		{
+			Properties->m_Target = NULL;
+		}
+	}
+}

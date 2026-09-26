@@ -4531,6 +4531,11 @@ public:
     SCRIPT_ALIGN;
     //## END PROPS SeqEvent_TakeDamage
 
+    // DISHONORED(port): 2013 natives (agent AE): HandleDamage exec 0x1d9e60 / body 0x2efaf0, IsValidDamageType 0x1d9e00 / 0x2dd410
+    void HandleDamage(class AActor* InOriginator,class AActor* InInstigator,class UClass* InDamageType,INT InAmount);
+    UBOOL IsValidDamageType(class UClass* InDamageType);
+    DECLARE_FUNCTION(execHandleDamage);
+    DECLARE_FUNCTION(execIsValidDamageType);
     DECLARE_CLASS(USeqEvent_TakeDamage,USequenceEvent,0,Engine)
 #if WITH_EDITOR
 	// Gives op a chance to add realtime debugging information (when enabled)
@@ -4735,6 +4740,8 @@ public:
 	 * This function is being called after all objects referenced by this object have been serialized.
 	 */
 	virtual void PostLoad(void);
+	// DISHONORED(port): 2013 rva 0x2128f0, UnInterpolation.cpp (the version of m_Data is tracked on save)
+	virtual void Serialize( FArchive& Ar );
 
 	// SequenceVariable interface
 	virtual FString GetValueStr();
@@ -5417,6 +5424,7 @@ AUTOGENERATE_FUNCTION(USeqVar_Player,-1,execUpdatePlayersList);
 	USeqEvent_SeeDeath::StaticClass(); \
 	USeqEvent_SequenceActivated::StaticClass(); \
 	USeqEvent_TakeDamage::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("SeqEvent_TakeDamage"), GEngineUSeqEvent_TakeDamageNatives); \
 	USeqEvent_Touch::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("SeqEvent_Touch"), GEngineUSeqEvent_TouchNatives); \
 	USeqEvent_TouchInput::StaticClass(); \
@@ -5511,6 +5519,13 @@ FNativeFunctionLookup GEngineUSeqAct_WaitForLevelsVisibleNatives[] =
 FNativeFunctionLookup GEngineUSequenceEventNatives[] = 
 { 
 	MAP_NATIVE(USequenceEvent, execCheckActivate)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GEngineUSeqEvent_TakeDamageNatives[] = 
+{ 
+	MAP_NATIVE(USeqEvent_TakeDamage, execHandleDamage)
+	MAP_NATIVE(USeqEvent_TakeDamage, execIsValidDamageType)
 	{NULL, NULL}
 };
 

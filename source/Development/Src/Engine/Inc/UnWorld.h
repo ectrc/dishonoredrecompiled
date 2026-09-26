@@ -34,6 +34,16 @@ struct FDisWorldNetworkNotify : public FNetworkNotify
 	virtual void NotifyProgress( EProgressMessageType MessageType, const FString& Title, const FString& Message );
 };
 
+// DISHONORED(port): retail UWorld::SpawnActor (2013 rva 0x256990) takes a twelfth parameter, a functor called on the new actor after
+// its location and rotation are set and before ConditionalForceUpdateComponents and the begin-play chain. DishonoredGame's
+// FSpawnActor_TweakObj (2013 rva 0x885650, DoInit 2012 rva 0x8ec500) uses it to hand the actor its tweak object before PostBeginPlay.
+// 2012 PDB: one vtable pointer, sizeof 4.
+#define DISHONORED_HAVE_FSPAWNACTORINITFUNCTOR 1  // DishonoredGameNative.h keeps its own copy until this exists (agent AJ)
+struct FSpawnActorInitFunctor
+{
+	virtual void DoInit( AActor* SpawnedActor ) = 0;
+};
+
 class UWorld : public UObject
 {
 	DECLARE_CLASS_INTRINSIC(UWorld,UObject,0,Engine)
@@ -706,7 +716,7 @@ public:
 	 */
 	void RemoveActor( AActor* Actor, UBOOL bShouldModifyLevel );
 
-	AActor* SpawnActor( UClass* Class, FName InName=NAME_None, const FVector& Location=FVector(0,0,0), const FRotator& Rotation=FRotator(0,0,0), AActor* Template=NULL, UBOOL bNoCollisionFail=0, UBOOL bRemoteOwned=0, AActor* Owner=NULL, APawn* Instigator=NULL, UBOOL bNoFail=0, class ULevel* OverrideLevel = NULL );
+	AActor* SpawnActor( UClass* Class, FName InName=NAME_None, const FVector& Location=FVector(0,0,0), const FRotator& Rotation=FRotator(0,0,0), AActor* Template=NULL, UBOOL bNoCollisionFail=0, UBOOL bRemoteOwned=0, AActor* Owner=NULL, APawn* Instigator=NULL, UBOOL bNoFail=0, class ULevel* OverrideLevel = NULL, FSpawnActorInitFunctor* InitFunctor = NULL );
 	ABrush*	SpawnBrush();
 	/** spawns a PlayerController and binds it to the passed in Player with the specified RemoteRole and options
 	 * @param Player - the Player to set on the PlayerController

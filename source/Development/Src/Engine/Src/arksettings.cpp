@@ -34,3 +34,116 @@
 
 // DISHONORED(port): Engine.ArkSettingsListenerInterface, 2013 GetPrivateStaticClass rva 0x533b00 / StaticClassNoInline 0x576b30 (native_class_sizes.csv: 56 bytes, flags 0x10004001)
 IMPLEMENT_CLASS(UArkSettingsListenerInterface);
+
+// DISHONORED(port): 2013 rva 0x53b450 (2012 0x57e3c0, arksettingsparameters.cpp:14): a transient UArkProfileSettings set to its defaults
+// is read with the system-settings override. UArkProfileSettings is an Engine class the DishonoredGame module still declares (shim), so
+// it is found by name; without it (Engine-only builds) the plain UOnlinePlayerStorage defaults are read.
+ArkSettingsParameters::ArkSettingsParameters()
+{
+	UClass* ProfileClass = FindObject<UClass>( ANY_PACKAGE, TEXT("ArkProfileSettings") );
+	if( !ProfileClass )
+	{
+		ProfileClass = UOnlinePlayerStorage::StaticClass();
+	}
+	UOnlinePlayerStorage* Defaults = ConstructObject<UOnlinePlayerStorage>( ProfileClass, UObject::GetTransientPackage() );
+	Defaults->SetToDefaults();
+	Read( Defaults, TRUE );
+}
+
+// DISHONORED(port): 2013 rva 0x539730 (2012 0x57a260, arksettingsparameters.cpp:21): the profile setting ids of UArkProfileSettings read
+// through UOnlinePlayerStorage (GetProfileSettingValueFloat +380, GetProfileSettingValueId +328, GetProfileSettingValueInt +384,
+// SetProfileSettingValueId +344). The resolution comes from the static PCResolutionSettingProvider (not ported): with the override it is
+// GSystemSettings like retail, without it retail asks the provider's current value, which is GSystemSettings as well after Refresh().
+void ArkSettingsParameters::Read( UOnlinePlayerStorage* Settings, UBOOL bOverrideStorageSettingsWithSystemSettings )
+{
+	INT Value = 0;
+	Settings->GetProfileSettingValueFloat( 65, m_fMouseSensitivity );
+	Settings->GetProfileSettingValueId( 66, Value ); m_bMouseSmoothing = Value == 1;
+	Settings->GetProfileSettingValueId( 67, Value ); m_bMouseInvertY = Value == 1;
+	Settings->GetProfileSettingValueId( 68, Value ); m_bMouseAutoAim = Value == 1;
+	Settings->GetProfileSettingValueInt( 69, m_MouseAutoAimStrength );
+	Settings->GetProfileSettingValueId( 70, Value ); m_bMouseFriction = Value == 1;
+	Settings->GetProfileSettingValueInt( 71, m_MouseFrictionStrength );
+	Settings->GetProfileSettingValueId( 74, m_GamepadBindingSet );
+	Settings->GetProfileSettingValueId( 75, Value ); m_bGamepadVibration = Value == 1;
+	Settings->GetProfileSettingValueInt( 76, m_GamepadLookXSensitivity );
+	Settings->GetProfileSettingValueInt( 77, m_GamepadLookYSensitivity );
+	Settings->GetProfileSettingValueId( 78, Value ); m_bGamepadInvertY = Value == 1;
+	if( Value == -1 )
+	{
+		Settings->GetProfileSettingValueId( 2, Value );
+		m_bGamepadInvertY = Value == 1;
+		Settings->SetProfileSettingValueId( 78, m_bGamepadInvertY );
+	}
+	Settings->GetProfileSettingValueId( 79, Value ); m_bGamepadAutoAim = Value == 1;
+	Settings->GetProfileSettingValueInt( 80, m_GamepadAutoAimStrength );
+	Settings->GetProfileSettingValueId( 81, Value ); m_bGamepadFriction = Value == 1;
+	Settings->GetProfileSettingValueInt( 82, m_GamepadFrictionStrength );
+	Settings->GetProfileSettingValueId( 85, m_HUDVisibility );
+	Settings->GetProfileSettingValueId( 86, Value ); m_bShowObjectivePopups = Value == 1;
+	Settings->GetProfileSettingValueId( 87, Value ); m_bShowTutorialNotifications = Value == 1;
+	Settings->GetProfileSettingValueId( 88, Value ); m_bShowInteractions = Value == 1;
+	Settings->GetProfileSettingValueId( 89, Value ); m_bShowHighlight = Value == 1;
+	Settings->GetProfileSettingValueId( 90, Value ); m_bShowPickupLog = Value == 1;
+	Settings->GetProfileSettingValueId( 91, Value ); m_bShowContextualIcons = Value == 1;
+	Settings->GetProfileSettingValueId( 92, Value ); m_bShowPlayerStance = Value == 1;
+	Settings->GetProfileSettingValueId( 93, Value ); m_bShowGrenadeMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 94, Value ); m_bShowAwarenessMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 95, Value ); m_bShowHeartTargetMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 96, m_CrosshairStyle );
+	Settings->GetProfileSettingValueId( 97, Value ); m_bCrosshairMovement = Value == 1;
+	Settings->GetProfileSettingValueInt( 98, m_CrosshairOpacity );
+	Settings->GetProfileSettingValueId( 101, Value ); m_bAutoUseManaElixir = Value == 1;
+	Settings->GetProfileSettingValueId( 102, m_KillCamMode );
+	Settings->GetProfileSettingValueId( 104, Value ); m_bAutoSaveInMenu = Value == 1;
+	Settings->GetProfileSettingValueFloat( 105, m_fHeadBobAmount );
+	Settings->GetProfileSettingValueId( 106, Value ); m_bCameraRelativeClimbing = Value == 1;
+	Settings->GetProfileSettingValueFloat( 109, m_fGamma );
+	m_ResX = GSystemSettings.ResX;
+	m_ResY = GSystemSettings.ResY;
+	Settings->GetProfileSettingValueId( 113, Value );
+	if( bOverrideStorageSettingsWithSystemSettings )
+	{
+		Value = GSystemSettings.bFullscreen != 0;
+		Settings->SetProfileSettingValueId( 113, Value );
+	}
+	m_bFullscreen = Value == 1;
+	Settings->GetProfileSettingValueId( 114, Value );
+	if( bOverrideStorageSettingsWithSystemSettings )
+	{
+		Value = GSystemSettings.bUseVSync != 0;
+		Settings->SetProfileSettingValueId( 114, Value );
+	}
+	m_bVSync = Value == 1;
+	Settings->GetProfileSettingValueInt( 115, m_FOV );
+	Settings->GetProfileSettingValueId( 116, m_TextureDetails );
+	Settings->GetProfileSettingValueId( 117, m_ModelDetails );
+	Settings->GetProfileSettingValueId( 118, m_PostProcessQuality );
+	Settings->GetProfileSettingValueId( 119, m_AntiAliasingMode );
+	Settings->GetProfileSettingValueId( 120, Value ); m_bRatShadows = Value == 1;
+	Settings->GetProfileSettingValueInt( 123, m_GlobalVolume );
+	Settings->GetProfileSettingValueInt( 124, m_MusicVolume );
+	Settings->GetProfileSettingValueInt( 125, m_SFXVolume );
+	Settings->GetProfileSettingValueInt( 126, m_VoicesVolume );
+	Settings->GetProfileSettingValueId( 127, m_SubtitlesMode );
+	Settings->GetProfileSettingValueId( 130, Value );
+	if( bOverrideStorageSettingsWithSystemSettings )
+	{
+		Value = GSystemSettings.SpeakerConfiguration;
+		Settings->SetProfileSettingValueId( 130, Value );
+	}
+	m_SpeakerConfiguration = Value;
+}
+
+// DISHONORED(port): 2013 rva 0x53b730 (2012 0x57e580, identical): function-static instance, built on first use
+ArkSettingsParameters& ArkSettings::GetParameters()
+{
+	static ArkSettingsParameters s_Parameters;
+	return s_Parameters;
+}
+
+// DISHONORED(port): 2013 rva 0x53b790 (2012 0x57e5e0, identical)
+void ArkSettings::ApplyCurrentSettings( IArkSettingsListenerInterface* Listener )
+{
+	Listener->ApplyGameSettings( &GetParameters(), IArkSettingsListenerInterface::ASLI_ApplyCurrentValues );
+}

@@ -2615,6 +2615,360 @@ public:
 	virtual void InitTrackInst(UInterpTrack* Track);
 };
 
+
+// DISHONORED(port): Arkane's own Engine-package matinee classes, moved here out of DishonoredGame's shim header
+// (DishonoredGameEngineShims.h): retail UInterpData keeps its groups in UMatineeData (m_Data) instead of the reference members, so
+// every matinee object of an Engine/level package is one of these. Layouts are the retail SDK dump, copied verbatim from the
+// generated shim blocks; bodies in matineedata.cpp / interptrack*.cpp / UnInterpolation.cpp.
+// Engine.MatineeData.RuntimeMatineeData: retail SDK size 40 (2012 PDB 40)
+struct FRuntimeMatineeData
+{
+    TArrayNoInit<class UInterpGroup*> InterpGroups;
+    FLOAT InterpLength;
+    FLOAT PathBuildTime;
+    BITFIELD bShouldBakeAndPrune:1;
+    FGuid m_ConversationNodeGUID;
+
+    /** Constructors */
+    FRuntimeMatineeData() {}
+    FRuntimeMatineeData(EEventParm)
+    {
+        appMemzero(this, sizeof(FRuntimeMatineeData));
+    }
+};
+
+// Engine.MatineeData.EditorMatineeData: retail SDK size 40 (2012 PDB 40)
+struct FEditorMatineeData
+{
+    class UInterpCurveEdSetup* CurveEdSetup;
+    TArrayNoInit<class UInterpFilter*> InterpFilters;
+    class UInterpFilter* SelectedFilter;
+    TArrayNoInit<class UInterpFilter*> DefaultFilters;
+    FLOAT EdSectionStart;
+    FLOAT EdSectionEnd;
+
+    /** Constructors */
+    FEditorMatineeData() {}
+    FEditorMatineeData(EEventParm)
+    {
+        appMemzero(this, sizeof(FEditorMatineeData));
+    }
+};
+
+// Engine.InterpTrackFaceTo.FaceToControlTrackKey: retail SDK size 12 (2012 PDB 12)
+struct FFaceToControlTrackKey
+{
+    FLOAT StartTime;
+    FLOAT KeyLength;
+    class UInterpTrackFaceToKeyProperties* Properties;
+
+    /** Constructors */
+    FFaceToControlTrackKey() {}
+    FFaceToControlTrackKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FFaceToControlTrackKey));
+    }
+};
+
+// Engine.InterpTrackLookAt.LookAtControlTrackKey: retail SDK size 16 (2012 PDB 16)
+struct FLookAtControlTrackKey
+{
+    FLOAT StartTime;
+    FLOAT KeyLength;
+    class UInterpGroup* Target;
+    class UInterpTrackLookAtKeyProperties* Properties;
+
+    /** Constructors */
+    FLookAtControlTrackKey() {}
+    FLookAtControlTrackKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FLookAtControlTrackKey));
+    }
+};
+
+// Engine.InterpTrackLocomotion.LocomotionControlTrackKey: retail SDK size 12 (2012 PDB 12)
+struct FLocomotionControlTrackKey
+{
+    FLOAT StartTime;
+    FLOAT KeyLength;
+    class UInterpTrackLocomotionKeyProperties* Properties;
+
+    /** Constructors */
+    FLocomotionControlTrackKey() {}
+    FLocomotionControlTrackKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FLocomotionControlTrackKey));
+    }
+};
+
+// Engine.InterpTrackStretchAnimControl.StretchAnimControlTrackKey: retail SDK size 56 (2012 PDB 56)
+struct FStretchAnimControlTrackKey
+{
+    FLOAT StartTime;
+    FName AnimSeqName;
+    FLOAT AnimStartOffset;
+    FLOAT AnimEndOffset;
+    FLOAT AnimPlayRate;
+    BITFIELD bReverse:1;
+    FLOAT SoireeOffsets[6];
+    class UInterpTrackStretchAnimKeyProperties* Properties;
+
+    /** Constructors */
+    FStretchAnimControlTrackKey() {}
+    FStretchAnimControlTrackKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FStretchAnimControlTrackKey));
+    }
+};
+
+// Engine.InterpTrackKeyProperties: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
+class UInterpTrackKeyProperties : public UObject
+{
+public:
+    //## BEGIN PROPS InterpTrackKeyProperties
+    //## END PROPS InterpTrackKeyProperties
+
+    DECLARE_CLASS(UInterpTrackKeyProperties,UObject,0,Engine)
+};
+
+// Engine.MatineeData: retail sizeof 144, reflected span 56..144 (2012 PDB sizeof 144)
+class UMatineeData : public UObject
+{
+public:
+    //## BEGIN PROPS MatineeData
+    FRuntimeMatineeData m_RunData;
+    FEditorMatineeData m_EdData;
+    INT m_iDataVersion;
+    BITFIELD m_bDataVersionIncremented:1;
+    //## END PROPS MatineeData
+
+
+    // DISHONORED(port): matineedata.cpp. 2013 rvas: Serialize 0x4fcec0, FindGroupByName 0x501790, GetInterpGroup 0x218660
+    virtual void Serialize( FArchive& Ar );
+    INT FindGroupByName( FName InGroupName );
+    class UInterpGroup* GetInterpGroup( INT Index ) const;
+    DECLARE_CLASS(UMatineeData,UObject,0|CLASS_NoExport,Engine)
+};
+
+// Engine.InterpTrackFaceTo: retail sizeof 156, reflected span 144..156 (2012 PDB sizeof 156)
+class UInterpTrackFaceTo : public UInterpTrackFloatBase
+{
+public:
+    //## BEGIN PROPS InterpTrackFaceTo
+    TArrayNoInit<FFaceToControlTrackKey> FaceToKeys;
+    //## END PROPS InterpTrackFaceTo
+
+
+    // DISHONORED(port): interptrackfaceto.cpp, PostLoad 2013 rva 0x503200
+    virtual void PostLoad();
+
+    // DISHONORED(port): 2013 rva 0x4fc8a0 (2012 0x53ba60), the matinee face-to request priority UDishonoredEngine::Init sets
+    static void SetFaceToPriority( INT FaceToPriority );
+    static INT s_InterpTrackFaceToPriority;
+    DECLARE_CLASS(UInterpTrackFaceTo,UInterpTrackFloatBase,0,Engine)
+};
+
+// Engine.InterpTrackFaceToKeyProperties: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
+class UInterpTrackFaceToKeyProperties : public UInterpTrackKeyProperties
+{
+public:
+    //## BEGIN PROPS InterpTrackFaceToKeyProperties
+    BYTE m_TargetType;
+    FName m_TargetName;
+    BITFIELD m_bAllowProceduralRotation:1;
+    class UInterpGroup* m_Target;
+    //## END PROPS InterpTrackFaceToKeyProperties
+
+    DECLARE_CLASS(UInterpTrackFaceToKeyProperties,UInterpTrackKeyProperties,0,Engine)
+};
+
+// Engine.InterpTrackInstFaceTo: retail sizeof 72, reflected span 64..72 (2012 PDB sizeof 72)
+class UInterpTrackInstFaceTo : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstFaceTo
+    INT m_iLastKeyStarted;
+    INT m_iLastRequestID;
+    //## END PROPS InterpTrackInstFaceTo
+
+    DECLARE_CLASS(UInterpTrackInstFaceTo,UInterpTrackInst,0,Engine)
+};
+
+// Engine.InterpTrackLookAt: retail sizeof 156, reflected span 144..156 (2012 PDB sizeof 156)
+class UInterpTrackLookAt : public UInterpTrackFloatBase
+{
+public:
+    //## BEGIN PROPS InterpTrackLookAt
+    TArrayNoInit<FLookAtControlTrackKey> LookAtKeys;
+    //## END PROPS InterpTrackLookAt
+
+
+    // DISHONORED(port): interptracklookat.cpp, PostLoad 2013 rva 0x504120
+    virtual void PostLoad();
+
+    // DISHONORED(port): 2013 rva 0x4fcc90 (2012 0x53bde0)
+    static void SetLookatPriority( INT LookatLowPriority, INT LookatMediumPriority, INT LookatHighPriority );
+    static INT ms_InterpTrackLookAtLowPriority;
+    static INT ms_InterpTrackLookAtMediumPriority;
+    static INT ms_InterpTrackLookAtHighPriority;
+    DECLARE_CLASS(UInterpTrackLookAt,UInterpTrackFloatBase,0,Engine)
+};
+
+// Engine.InterpTrackLookAtKeyProperties: retail sizeof 84, reflected span 56..84 (2012 PDB sizeof 84)
+class UInterpTrackLookAtKeyProperties : public UInterpTrackKeyProperties
+{
+public:
+    //## BEGIN PROPS InterpTrackLookAtKeyProperties
+    BYTE m_TargetType;
+    BYTE m_LookAtInfluence;
+    FName m_TargetName;
+    class UInterpGroup* m_Target;
+    FLOAT m_SpeedFactor;
+    FName m_BoneOrSocket;
+    //## END PROPS InterpTrackLookAtKeyProperties
+
+    DECLARE_CLASS(UInterpTrackLookAtKeyProperties,UInterpTrackKeyProperties,0,Engine)
+};
+
+// Engine.InterpTrackInstLookAt: retail sizeof 72, reflected span 64..72 (2012 PDB sizeof 72)
+class UInterpTrackInstLookAt : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstLookAt
+    FLOAT LastUpdate;
+    INT LastReachedGoalIndex;
+    //## END PROPS InterpTrackInstLookAt
+
+    DECLARE_CLASS(UInterpTrackInstLookAt,UInterpTrackInst,0,Engine)
+};
+
+// Engine.InterpTrackLocomotion: retail sizeof 172, reflected span 144..172 (2012 PDB sizeof 172)
+class UInterpTrackLocomotion : public UInterpTrackFloatBase
+{
+public:
+    //## BEGIN PROPS InterpTrackLocomotion
+    TArrayNoInit<class UAnimSet*> AnimSets;
+    TArrayNoInit<FLocomotionControlTrackKey> LocoKeys;
+    BITFIELD bEnableRootMotion:1;
+    //## END PROPS InterpTrackLocomotion
+
+
+    // DISHONORED(port): interptracklocomotion.cpp, PostLoad 2013 rva 0x5039d0
+    virtual void PostLoad();
+
+    // DISHONORED(port): 2013 rva 0x4fcc30 (2012 0x53bd80)
+    static void SetLocomotionPriority( INT LocomotionPriority );
+    static INT s_iInterpTrackLocomotionPriority;
+    DECLARE_CLASS(UInterpTrackLocomotion,UInterpTrackFloatBase,0,Engine)
+};
+
+// Engine.InterpTrackLocomotionKeyProperties: retail sizeof 104, reflected span 56..104 (2012 PDB sizeof 104)
+class UInterpTrackLocomotionKeyProperties : public UInterpTrackKeyProperties
+{
+public:
+    //## BEGIN PROPS InterpTrackLocomotionKeyProperties
+    BITFIELD WaitForGoalReached:1;
+    BITFIELD m_bStopLocoRequestAtEnd:1;
+    BITFIELD m_bAcurateStop:1;
+    INT m_iSpeedIdxNumber;
+    FName m_SpeedIdxName;
+    FName m_TargetName;
+    class UInterpGroup* m_Target;
+    BYTE m_Modifier;
+    FLOAT m_fTargetStopDistance;
+    INT m_iEndSpeedIdxNumber;
+    FName m_EndSpeedIdxName;
+    //## END PROPS InterpTrackLocomotionKeyProperties
+
+    DECLARE_CLASS(UInterpTrackLocomotionKeyProperties,UInterpTrackKeyProperties,0,Engine)
+};
+
+// Engine.InterpTrackInstLocomotion: retail sizeof 208, reflected span 64..196 (2012 PDB sizeof 208)
+class UInterpTrackInstLocomotion : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstLocomotion
+    FVector ResetLocation;
+    FRotator ResetRotation;
+    FMatrix InitialTM;
+    FQuat InitialQuat;
+    INT m_CurrentGoalKeyIndex;
+    INT m_LastReachedGoalKeyIndex;
+    FLOAT m_LastPosition;
+    INT m_iCurrentLocoRequestId;
+    INT m_iPendingStopLocoRequestId;
+    //## END PROPS InterpTrackInstLocomotion
+
+    DECLARE_CLASS(UInterpTrackInstLocomotion,UInterpTrackInst,0,Engine)
+};
+
+// Engine.InterpTrackStretchAnimControl: retail sizeof 168, reflected span 144..168 (2012 PDB sizeof 164)
+class UInterpTrackStretchAnimControl : public UInterpTrackFloatBase
+{
+public:
+    //## BEGIN PROPS InterpTrackStretchAnimControl
+    FName SlotName;
+    TArrayNoInit<FStretchAnimControlTrackKey> AnimSeqs;
+    BITFIELD m_bSpecialRootMotionExtract:1;
+    //## END PROPS InterpTrackStretchAnimControl
+
+
+    // DISHONORED(port): interptrackstretchanimcontrol.cpp, PostLoad 2013 rva 0x504b10
+    virtual void PostLoad();
+    DECLARE_CLASS(UInterpTrackStretchAnimControl,UInterpTrackFloatBase,0,Engine)
+};
+
+// Engine.InterpTrackStretchAnimKeyProperties: retail sizeof 64, reflected span 56..64 (2012 PDB sizeof 64)
+class UInterpTrackStretchAnimKeyProperties : public UInterpTrackKeyProperties
+{
+public:
+    //## BEGIN PROPS InterpTrackStretchAnimKeyProperties
+    BYTE m_MatineeRootMotionMode;
+    BYTE m_MeshTranslationMode;
+    BITFIELD m_bDisableCollision:1;
+    //## END PROPS InterpTrackStretchAnimKeyProperties
+
+    DECLARE_CLASS(UInterpTrackStretchAnimKeyProperties,UInterpTrackKeyProperties,0,Engine)
+};
+
+// Engine.InterpTrackInstStretchAnimControl: retail sizeof 100, reflected span 64..100 (2012 PDB sizeof 92)
+class UInterpTrackInstStretchAnimControl : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstStretchAnimControl
+    FLOAT LastUpdatePosition;
+    FLOAT OffsetForLoopWhileSyncing;
+    BITFIELD bAnimIsLooping:1;
+    FLOAT LoopStart;
+    FLOAT LoopEnd;
+    INT m_ChannelIndex;
+    INT m_iPreviousKeyIndex;
+    FLOAT m_fCurrentAnimPosition;
+    FLOAT m_fBackupAnimPosition;
+    //## END PROPS InterpTrackInstStretchAnimControl
+
+    DECLARE_CLASS(UInterpTrackInstStretchAnimControl,UInterpTrackInst,0,Engine)
+};
+static_assert(sizeof(UMatineeData) == 144, "UMatineeData: retail sizeof 144");
+static_assert(sizeof(UInterpTrackKeyProperties) == 56, "UInterpTrackKeyProperties: retail sizeof 56");
+static_assert(sizeof(UInterpTrackFaceTo) == 156, "UInterpTrackFaceTo: retail sizeof 156");
+static_assert(sizeof(UInterpTrackLookAt) == 156, "UInterpTrackLookAt: retail sizeof 156");
+static_assert(sizeof(UInterpTrackLocomotion) == 172, "UInterpTrackLocomotion: retail sizeof 172");
+static_assert(sizeof(UInterpTrackStretchAnimControl) == 168, "UInterpTrackStretchAnimControl: retail sizeof 168");
+static_assert(sizeof(UInterpTrackInstFaceTo) == 72, "UInterpTrackInstFaceTo: retail sizeof 72");
+static_assert(sizeof(UInterpTrackInstLookAt) == 72, "UInterpTrackInstLookAt: retail sizeof 72");
+static_assert(sizeof(UInterpTrackInstLocomotion) == 208, "UInterpTrackInstLocomotion: retail sizeof 208");
+static_assert(sizeof(UInterpTrackInstStretchAnimControl) == 100, "UInterpTrackInstStretchAnimControl: retail sizeof 100");
+static_assert(sizeof(UInterpTrackFaceToKeyProperties) == 76, "UInterpTrackFaceToKeyProperties: retail sizeof 76");
+static_assert(sizeof(UInterpTrackLookAtKeyProperties) == 84, "UInterpTrackLookAtKeyProperties: retail sizeof 84");
+static_assert(sizeof(UInterpTrackLocomotionKeyProperties) == 104, "UInterpTrackLocomotionKeyProperties: retail sizeof 104");
+static_assert(sizeof(UInterpTrackStretchAnimKeyProperties) == 64, "UInterpTrackStretchAnimKeyProperties: retail sizeof 64");
+static_assert(STRUCT_OFFSET(UMatineeData, m_iDataVersion) == 136, "UMatineeData::m_iDataVersion: retail SDK @136");
+static_assert(STRUCT_OFFSET(UInterpTrackFaceTo, FaceToKeys) == 144, "UInterpTrackFaceTo::FaceToKeys: retail SDK @144");
+static_assert(STRUCT_OFFSET(UInterpTrackLocomotion, LocoKeys) == 156, "UInterpTrackLocomotion::LocoKeys: retail SDK @156");
+static_assert(STRUCT_OFFSET(UInterpTrackInstLocomotion, m_iPendingStopLocoRequestId) == 192, "UInterpTrackInstLocomotion::m_iPendingStopLocoRequestId: retail SDK @192");
+static_assert(STRUCT_OFFSET(UInterpTrackLocomotionKeyProperties, m_EndSpeedIdxName) == 96, "UInterpTrackLocomotionKeyProperties::m_EndSpeedIdxName: retail SDK @96");
+
 #undef DECLARE_CLASS
 #undef DECLARE_CASTED_CLASS
 #undef DECLARE_ABSTRACT_CLASS
@@ -2701,6 +3055,20 @@ public:
 	UInterpTrackInstToggle::StaticClass(); \
 	UInterpTrackInstVectorMaterialParam::StaticClass(); \
 	UInterpTrackInstVisibility::StaticClass(); \
+	UMatineeData::StaticClass(); \
+	UInterpTrackKeyProperties::StaticClass(); \
+	UInterpTrackFaceTo::StaticClass(); \
+	UInterpTrackFaceToKeyProperties::StaticClass(); \
+	UInterpTrackInstFaceTo::StaticClass(); \
+	UInterpTrackLookAt::StaticClass(); \
+	UInterpTrackLookAtKeyProperties::StaticClass(); \
+	UInterpTrackInstLookAt::StaticClass(); \
+	UInterpTrackLocomotion::StaticClass(); \
+	UInterpTrackLocomotionKeyProperties::StaticClass(); \
+	UInterpTrackInstLocomotion::StaticClass(); \
+	UInterpTrackStretchAnimControl::StaticClass(); \
+	UInterpTrackStretchAnimKeyProperties::StaticClass(); \
+	UInterpTrackInstStretchAnimControl::StaticClass(); \
 
 #endif // ENGINE_INTERPOLATION_NATIVE_DEFS
 

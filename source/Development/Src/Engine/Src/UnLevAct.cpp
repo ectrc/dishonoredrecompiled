@@ -356,7 +356,8 @@ AActor* UWorld::SpawnActor
 	AActor*			Owner,
 	APawn*			Instigator,
 	UBOOL			bNoFail,
-	ULevel* OverrideLevel
+	ULevel* OverrideLevel,
+	FSpawnActorInitFunctor* InitFunctor
 )
 {
 #if ENABLE_DETAILED_SPAWNACTOR_STATS
@@ -557,6 +558,13 @@ AActor* UWorld::SpawnActor
 	// Set the actor's location and rotation.
 	Actor->Location = NewLocation;
 	Actor->Rotation = Rotation;
+
+	// DISHONORED(port): 2013 rva 0x256990 calls the caller's init functor here, after the transform and before the components are
+	// updated and the begin-play chain runs (DishonoredGame's tweak spawns need their tweak object before PostBeginPlay)
+	if( InitFunctor )
+	{
+		InitFunctor->DoInit( Actor );
+	}
 
 	// Initialize the actor's components.
 	Actor->ConditionalForceUpdateComponents(FALSE,FALSE);
@@ -850,6 +858,12 @@ UBOOL UWorld::DestroyActor( AActor* ThisActor, UBOOL bNetForce, UBOOL bShouldMod
 	if( ThisActor->Owner )
 	{
 		ThisActor->SetOwner(NULL);
+		// DISHONORED(port): 2013 rva 0x252cf0 notifies the engine here, before the actor leaves the level's actor list
+		// (UDishonoredEngine::NotifyActorDestroyed, 2013 rva 0x5fbd40, records it for the save game)
+		if( GEngine )
+		{
+			GEngine->NotifyActorDestroyed( ThisActor );
+		}
 		if( ThisActor->bDeleteMe )
 		{
 			return TRUE;

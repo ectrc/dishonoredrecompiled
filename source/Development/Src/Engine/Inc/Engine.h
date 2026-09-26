@@ -388,6 +388,7 @@ struct FURL;
 #include "ParticleBeamTrailVertexFactory.h"	// Particle beam/trail vertex factory definition.
 #include "TerrainVertexFactory.h"			// Terrain vertex factory definition
 #include "UnClient.h"						// Platform specific client interface definition.
+#include "arksettings.h"						// DISHONORED(written): ArkSettingsParameters / ArkSettings statics
 #include "UnTex.h"							// Textures.
 #include "SystemSettings.h"					// Scalability options.
 #include "UnObj.h"							// Standard object definitions.
@@ -426,6 +427,7 @@ struct FURL;
 #include "UnPhysic.h"						// Physics constants
 #include "EngineGameEngineClasses.h"		// Main Unreal engine declarations
 #include "UnLevel.h"						// Level object.
+#include "EngineArkaneClasses.h"			// DISHONORED(port): Arkane Engine-package classes (audio system, Ak objects, component container)
 #include "UnWorld.h"						// World object.
 #include "UnKeys.h"							// Key name definitions.
 #include "UnUIKeys.h"						// UI key name definitions.

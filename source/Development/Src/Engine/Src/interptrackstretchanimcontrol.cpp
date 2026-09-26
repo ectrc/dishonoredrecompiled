@@ -54,3 +54,30 @@
 //   0x549690  public: int __thiscall UInterpTrackStretchAnimControl::CalcChannelIndex(void)
 //   0x549ac0  public: virtual void __thiscall UInterpTrackInstStretchAnimControl::InitTrackInst(class UInterpTrack *)
 //   0xb9ed70  _dynamic_initializer_for__s_StretchAnimDragOperationMatchingPoints__
+
+#include "EnginePrivate.h"
+#include "EngineSequenceClasses.h"      // USeqVar_Character, used by the matinee group instances
+#include "EngineInterpolationClasses.h"
+
+IMPLEMENT_CLASS(UInterpTrackStretchAnimControl);
+IMPLEMENT_CLASS(UInterpTrackStretchAnimKeyProperties);
+IMPLEMENT_CLASS(UInterpTrackInstStretchAnimControl);
+
+// DISHONORED(port): 2013 rva 0x504b10 (2012 0x5451f0, interptrackstretchanimcontrol.cpp:100): a key with a degenerate play rate is
+// reset to 1 and a key without its properties object gets a transactional one
+void UInterpTrackStretchAnimControl::PostLoad()
+{
+	Super::PostLoad();
+	for( INT KeyIndex = 0; KeyIndex < AnimSeqs.Num(); KeyIndex++ )
+	{
+		FStretchAnimControlTrackKey& Key = AnimSeqs(KeyIndex);
+		if( Key.AnimPlayRate < 0.001f )
+		{
+			Key.AnimPlayRate = 1.0f;
+		}
+		if( !Key.Properties )
+		{
+			Key.Properties = ConstructObject<UInterpTrackStretchAnimKeyProperties>( UInterpTrackStretchAnimKeyProperties::StaticClass(), this, NAME_None, RF_Transactional );
+		}
+	}
+}

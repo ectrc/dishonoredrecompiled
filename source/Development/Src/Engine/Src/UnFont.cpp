@@ -108,9 +108,11 @@ INT UFont::GetResolutionPageIndex(FLOAT HeightTest) const
  *
  * @return	the percentage scale required to match the size of the multi-font's closest matching subfont.
  */
+// DISHONORED(port): 2013 vtable slot 74 (+296) of UFont (vftable rva 0xc2c8e0) is the folded `fld1; ret 4`: retail has no ScalingFactor
+// member (the reference one is a shim) and a plain font never scales. UMultiFont overrides it (2013 rva 0x216b40).
 FLOAT UFont::GetScalingFactor(FLOAT HeightTest) const
 {
-	return ScalingFactor;
+	return 1.0f;
 }
 
 /**
@@ -291,11 +293,12 @@ FLOAT UMultiFont::GetAuthoredViewportHeight( FLOAT ViewportHeight ) const
  */
 FLOAT UMultiFont::GetScalingFactor(FLOAT HeightTest) const
 {
+	// DISHONORED(port): 2013 rva 0x216b40 (2012 0x22eaf0, UnFont.cpp:289): HeightTest / ResolutionTestTable(Index), 1 past the table; no ScalingFactor
 	INT RTTIndex = GetResolutionTestTableIndex(HeightTest);
 	if (RTTIndex < ResolutionTestTable.Num() )
 	{
-		return ((HeightTest / ResolutionTestTable(RTTIndex)) * ScalingFactor);
+		return HeightTest / ResolutionTestTable(RTTIndex);
 	}
 
-	return Super::GetScalingFactor(HeightTest);
+	return 1.0f;
 }

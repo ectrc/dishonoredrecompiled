@@ -261,6 +261,7 @@ void AutoInitializeRegistrantsEngine( INT& Lookup )
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_FOGVOLUME
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_MESH
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_INTERPOLATION
+	AUTO_INITIALIZE_REGISTRANTS_ENGINE_ARKANE  // DISHONORED(port): EngineArkaneClasses.h
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_MATERIAL
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_PARTICLE
 	AUTO_INITIALIZE_REGISTRANTS_ENGINE_PHYSICS
@@ -1330,39 +1331,103 @@ FString UEngine::GetLastMovieName()
 /**
  * Play one of the LoadMap loading movies as configured by ini file
  */
-UBOOL UEngine::PlayLoadMapMovie()
+// DISHONORED(port): 2013 rva 0x2097d0 (2012 0x21bde0, UnEngine.cpp:1338). Retail takes the map's intro movie from the [FullScreenMovie]
+// entry keyed by the map name (dropped when the level is already in the save game, IsLevelInGameState slot 120, or a game is being
+// loaded, IsLoadingGame), also collects the PlayOnce entries (unused afterwards, kept for fidelity), plays MovieName when given or a
+// random LoadMapMovies entry through GameThreadPlayLoadingMovieAndIntro(MM_LoopFromStream).
+UBOOL UEngine::PlayLoadMapMovie( const FString& MapName, const FString& MovieName )
 {
-	// don't try to load a movie if one is already going
-	UBOOL bStartedLoadMapMovie=FALSE;
-	if (GFullScreenMovie && !GFullScreenMovie->GameThreadIsMoviePlaying(TEXT("")))
+	UBOOL bStartedLoadMapMovie = FALSE;
+	if( GFullScreenMovie && !GFullScreenMovie->GameThreadIsMoviePlaying( TEXT("") ) )
 	{
-		// potentially load a movie here
-		FConfigSection* MovieIni = GConfig->GetSectionPrivate(TEXT("FullScreenMovie"), FALSE, TRUE, GEngineIni);
-		if (MovieIni)
+		FConfigSection* MovieIni = GConfig->GetSectionPrivate( TEXT("FullScreenMovie"), FALSE, TRUE, GEngineIni );
+		if( MovieIni )
 		{
+			FString IntroMovie;
+			const FName MapNameKey( *MapName );
 			TArray<FString> LoadMapMovies;
-			// find all the loadmap movie possibilities
-			for (FConfigSectionMap::TIterator It(*MovieIni); It; ++It)
+			TArray<FString> PlayOnceMovies;
+			for( FConfigSectionMap::TIterator It(*MovieIni); It; ++It )
 			{
-				if (It.Key() == TEXT("LoadMapMovies"))
+				if( It.Key() == TEXT("LoadMapMovies") )
 				{
-					LoadMapMovies.AddItem(It.Value());
+					LoadMapMovies.AddItem( It.Value() );
+				}
+				if( It.Key() == TEXT("PlayOnce") )
+				{
+					PlayOnceMovies.AddItem( It.Value() );
+				}
+				if( It.Key() == MapNameKey )
+				{
+					IntroMovie = It.Value();
+					if( MapNameKey.ToString() == MapName && GEngine && GEngine->IsLevelInGameState( MapNameKey.ToString() ) )
+					{
+						IntroMovie = TEXT("");
+					}
 				}
 			}
-
-			// load a random mobvie from the list, if there were any
-			if (LoadMapMovies.Num() != 0)
+			const TCHAR* Intro = IsLoadingGame() ? TEXT("") : *IntroMovie;
+			if( MovieName.Len() > 0 )
 			{
-				PlayLoadingMovie( *LoadMapMovies(appRand() % LoadMapMovies.Num()) );
-
-				// keep track of starting playback for loadmap so it can be stopped
-				bStartedLoadMapMovie = TRUE;
+				GFullScreenMovie->GameThreadPlayLoadingMovieAndIntro( MM_LoopFromStream, *MovieName, Intro, 0, -1, -1 );
 			}
+			else if( LoadMapMovies.Num() == 0 )
+			{
+				return FALSE;
+			}
+			else
+			{
+				GFullScreenMovie->GameThreadPlayLoadingMovieAndIntro( MM_LoopFromStream, *LoadMapMovies( appRand() % LoadMapMovies.Num() ), Intro, 0, -1, -1 );
+			}
+			bStartedLoadMapMovie = TRUE;
 		}
 	}
-
-	// return if we started or not
 	return bStartedLoadMapMovie;
+}
+
+// DISHONORED(written): 2013 rva 0x1d8930 (2012 0x1ef1b0)
+void UEngine::WaitMovie()
+{
+	GFullScreenMovie->GameThreadWaitForMovie();
+}
+
+// DISHONORED(written): 2013 rva 0x1d88d0 (2012 0x1ef150, identical): [FullScreenMovie] bShouldStopMovieAtEndOfLoadMap of the engine ini;
+// retail leaves the result uninitialized when the key is missing, FALSE here
+UBOOL UEngine::ShouldStopMovieAtEndOfLoadMap( const FString& MapName )
+{
+	UBOOL bResult = FALSE;
+	GConfig->GetBool( TEXT("FullScreenMovie"), TEXT("bShouldStopMovieAtEndOfLoadMap"), bResult, GEngineIni );
+	return bResult;
+}
+
+// DISHONORED(written): 2013 rva 0x1e3330 (666 bytes, slot 100): shrinks the engine's TArray members (AdditionalFonts @144,
+// AdditionalFontNames @156, LightComplexityColors @724, ShaderComplexityColors @736, StatColorMappings @816, GamePlayers @1152,
+// DeferredCommands @1168, PendingDroppedNotes @1364, IgnoreSimulatedFuncWarnings @1448) before a map change commits
+void UEngine::PreCommitMapChange()
+{
+	AdditionalFonts.Shrink();
+	AdditionalFontNames.Shrink();
+	LightComplexityColors.Shrink();
+	ShaderComplexityColors.Shrink();
+	StatColorMappings.Shrink();
+	GamePlayers.Shrink();
+	DeferredCommands.Shrink();
+	PendingDroppedNotes.Shrink();
+	IgnoreSimulatedFuncWarnings.Shrink();
+}
+
+// DISHONORED(port): 2013 rva 0x1d87b0 (2012 0x1ef030, UnEngine.cpp:835): the client's gamma and its listener come first, then the
+// Wwise device (UAkAudioDevice::ApplyGameSettings on Client->GetAkAudioDevice(); the AkAudio stub has neither), then the subtitle
+// bits from m_SubtitlesMode (0 off, 1 all, 2 primary only)
+void UEngine::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	if( Client )
+	{
+		Client->DisplayGamma = Parameters->m_fGamma;
+		Client->ApplyGameSettings( Parameters, Reason );
+	}
+	bSubtitlesEnabled = Parameters->m_SubtitlesMode > 0;
+	bHideSecondarySubtitles = Parameters->m_SubtitlesMode < 2;
 }
 
 /**
