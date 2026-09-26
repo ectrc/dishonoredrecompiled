@@ -5,22 +5,28 @@ Steps
   1. cmake --build <build-dir> --target DishonoredGame (inside VsDevCmd x86), unless --no-build
   2. resources/tools/stage_retail.py -> copies our DishonoredGame.exe into the retail Binaries\\Win32 (no junctions,
      nothing else touched; see the incident note in that script)
-  3. run <retail>\\Binaries\\Win32\\DishonoredGame.exe -log -nosteam -seekfreeloadingpcconsole
-     from that directory with a timeout (the process is killed when it expires)
+  3. run <retail>\\Binaries\\Win32\\DishonoredGame.exe -log -nosteam -unattended
+     from that directory with a timeout (the process is killed when it expires). No -seekfreeloadingpcconsole:
+     the retail default is seek-free PC console loading since agent X's FEngineLoop::PreInit port (2013 rva 0x5e1910)
   4. normalize <retail>\\DishonoredGame\\Logs\\Launch.log (normalize_log.py rules) and the
      golden log, cut the golden one at --milestone, print a unified diff of the two prefixes
 
-Exit code: 0 when Launch.log contains the milestone line and every --expect substring, 1 otherwise,
-2 for build/stage errors.
+Exit code: 0 when Launch.log contains the milestone line, every --expect substring, every --expect-count
+LINE at least N times and no --forbid substring; 1 otherwise; 2 for build/stage errors.
 Usage: python resources/tools/build_and_smoke.py [--build-dir build\\agentN] [--timeout 120] [--no-build]
        [--golden resources/docs/golden/2012_arkprofile_launch.log] [--milestone "<golden line>"]
-       [--rhi null|d3d9] [--expect "<our log line>" ...] [--skip-native GFxUI,AkAudio,...] [--extra-args "-nomovie"]
+       [--rhi null|d3d9] [--expect "<our log line>" ...] [--expect-count "<line>=N" ...] [--forbid "<line>" ...]
+       [--skip-native GFxUI,AkAudio,...] [--extra-args "-nomovie"]
   --milestone  golden-log line the diff is cut at (must exist in the golden log); milestone lines further
                down: "Log: Shader platform (RHI): PC-D3D-SM3", "objects as part of root set at end of
                initial load", "Log: Initializing Engine..."
   --rhi        null (default) passes -nullrhi so RHIInit picks the null RHI (DynamicRHI.cpp); d3d9 does not
   --expect     substring that must appear in Launch.log (our own lines that the golden log lacks, e.g.
                "Finished loading startup packages"); repeatable; recorded in <build-dir>/smoke/expect.txt
+  --expect-count  "<substring>=N": the substring must appear on at least N lines of Launch.log (e.g.
+               "Committed map change via DishonoredEngine=2" for the second, L_Tower_P, map change); repeatable
+  --forbid     substring that must NOT appear in Launch.log ("Bad export index", "Serial size mismatch",
+               "native not ported"); the first offending line is printed; repeatable
   --skip-native  comma list -> -skipnativepkgs=<list> (bring-up switch in appGetScriptPackageNames)
   Lines containing DISHONORED(bringup) are dropped by normalize_log.py and never reach the diff.
 """
@@ -40,7 +46,8 @@ from stage_retail import DEFAULT_RETAIL, GAME, stage  # noqa: E402
 VSDEVCMD = Path(r"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat")
 MILESTONE = "Init: Object subsystem initialized"
 # -unattended: appMsgf/appError must not block on a message box in a scripted run (UnOutputDevices.cpp HandleError)
-GAME_ARGS = ["-log", "-nosteam", "-seekfreeloadingpcconsole", "-unattended"]
+# no -seekfreeloadingpcconsole: GIsSeekFreePCConsole is the retail default (FEngineLoop::PreInit, 2013 rva 0x5e1910)
+GAME_ARGS = ["-log", "-nosteam", "-unattended"]
 
 
 def build(build_dir: Path, log: Path) -> bool:
@@ -55,7 +62,9 @@ def build(build_dir: Path, log: Path) -> bool:
     return rc == 0
 
 
-def run_game(exe: Path, extra_args: list[str], timeout: float, run_log: Path, log_name: str, ini_dir: Path | None) -> int | None:
+def prepare_run(exe: Path, log_name: str, ini_dir: Path | None) -> tuple[Path, list[str]]:
+    """Removes the previous log and generated inis of this agent; returns (Launch.log path, -LOG=/-*INI= switches).
+    Shared with resources/tools/debug/dbgrun.py so a debugged run uses the same isolation as the smoke."""
     game_dir = exe.parent.parent.parent / GAME
     launch_log = game_dir / "Logs" / log_name
     if launch_log.exists():
@@ -68,6 +77,11 @@ def run_game(exe: Path, extra_args: list[str], timeout: float, run_log: Path, lo
     if ini_dir:
         ini_dir.mkdir(parents=True, exist_ok=True)
         isolation += [f"-{kind}INI={ini_dir / ('Dishonored' + name + '.ini')}" for kind, name in (("ENGINE", "Engine"), ("GAME", "Game"), ("INPUT", "Input"), ("UI", "UI"))]
+    return launch_log, isolation
+
+
+def run_game(exe: Path, extra_args: list[str], timeout: float, run_log: Path, log_name: str, ini_dir: Path | None) -> int | None:
+    _, isolation = prepare_run(exe, log_name, ini_dir)
     cmd = [str(exe), *GAME_ARGS, *isolation, *extra_args]
     print("run:", " ".join(cmd), f"(cwd {exe.parent}, timeout {timeout:.0f}s)")
     with run_log.open("w", encoding="utf-8") as out:
@@ -124,6 +138,39 @@ def compare(launch_log: Path, golden: Path, milestone: str, out_dir: Path) -> bo
     return reached
 
 
+def parse_expect_count(spec: str) -> tuple[str, int]:
+    line, _, count = spec.rpartition("=")
+    if not line or not count.isdigit():
+        raise SystemExit(f"--expect-count wants '<substring>=N', got {spec!r}")
+    return line, int(count)
+
+
+def check_lines(launch_log: Path, expects: list[str], expect_counts: list[str], forbids: list[str], out_dir: Path) -> bool:
+    """--expect / --expect-count / --forbid against the raw Launch.log; results go to <out_dir>/expect.txt."""
+    lines = launch_log.read_text(encoding="utf-8", errors="replace").splitlines() if launch_log.is_file() else []
+    results = []
+    ok = True
+    for e in expects:
+        hit = any(e in line for line in lines)
+        ok = ok and hit
+        results.append(f"{'ok' if hit else 'MISSING'}: {e}")
+    for spec in expect_counts:
+        needle, wanted = parse_expect_count(spec)
+        got = sum(1 for line in lines if needle in line)
+        hit = got >= wanted
+        ok = ok and hit
+        results.append(f"{'ok' if hit else 'MISSING'}: {needle} x{got} (wanted >= {wanted})")
+    for f in forbids:
+        offending = next(((i + 1, line) for i, line in enumerate(lines) if f in line), None)
+        ok = ok and offending is None
+        results.append(f"ok: no {f}" if offending is None else f"FORBIDDEN: {f} at Launch.log:{offending[0]}: {offending[1].strip()[:200]}")
+    if results:
+        (out_dir / "expect.txt").write_text("".join(r + "\n" for r in results), encoding="utf-8")
+        for r in results:
+            print("expect " + r)
+    return ok
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--build-dir", type=Path, default=REPO / "build" / "agentN")
@@ -136,11 +183,15 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--extra-args", default="", help="appended to the game command line")
     parser.add_argument("--rhi", choices=["null", "d3d9"], default="null", help="null adds -nullrhi (default)")
     parser.add_argument("--expect", action="append", default=[], help="substring that must appear in Launch.log; repeatable")
+    parser.add_argument("--expect-count", action="append", default=[], metavar="LINE=N", help="substring that must appear on at least N lines of Launch.log; repeatable")
+    parser.add_argument("--forbid", action="append", default=[], metavar="LINE", help="substring that must not appear in Launch.log; repeatable")
     parser.add_argument("--skip-native", default="", help="comma list of native script packages to skip (-skipnativepkgs=)")
     parser.add_argument("--log-name", default="Launch.log", help="-LOG= name under DishonoredGame\\Logs (per-agent isolation)")
     parser.add_argument("--ini-dir", type=Path, default=None, help="directory for the generated Dishonored*.ini (-ENGINEINI= etc.); default: the retail Config")
     parser.add_argument("--exe-name", default=None, help="name of the staged exe next to Dishonored.exe (default DishonoredGame.exe); agents use DishonoredGame_<X>.exe")
     args = parser.parse_args(argv[1:])
+    for spec in args.expect_count:
+        parse_expect_count(spec)  # a malformed spec fails before the build and the run, not after
 
     build_dir = args.build_dir.resolve()
     out_dir = build_dir / "smoke"
@@ -162,13 +213,7 @@ def main(argv: list[str]) -> int:
     run_game(exe, game_args, args.timeout, out_dir / f"run_{stamp}.log", args.log_name, ini_dir)
     launch_log = exe.parent.parent.parent / GAME / "Logs" / args.log_name
     ok = compare(launch_log, args.golden.resolve(), args.milestone, out_dir)
-    if args.expect:
-        text = launch_log.read_text(encoding="utf-8", errors="replace") if launch_log.is_file() else ""
-        missing = [e for e in args.expect if e not in text]
-        (out_dir / "expect.txt").write_text("".join(f"{'MISSING' if e in missing else 'ok'}: {e}\n" for e in args.expect), encoding="utf-8")
-        for e in args.expect:
-            print(f"expect {'MISSING' if e in missing else 'ok'}: {e}")
-        ok = ok and not missing
+    ok = check_lines(launch_log, args.expect, args.expect_count, args.forbid, out_dir) and ok
     return 0 if ok else 1
 
 

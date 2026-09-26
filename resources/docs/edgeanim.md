@@ -196,3 +196,75 @@ locomotion extraction in the leaf callback (`FLocomotionState`, the six root opt
 5. Locomotion: for all 790 sequences with `offsetLocomotionDelta`, the stored delta translation equals the evaluated
    locomotion-joint translation at `duration` minus at 0, in the parent space (max 0.04 units, from quantization).
 6. The 2 non-Edge sequences keep their UE codecs (`SetInterfaceLinks` unchanged for formats 0..6).
+
+## 7. Decision memo — whole-tree Edge path vs Plan B (agent AK, wave 4, 2026-09-26)
+
+**Question.** Retail evaluates the *whole* animation tree of a skeletal mesh component as one Edge job
+(`UAnimNode::GetEdgeAnimTree` → `BuildEdgeAnimTree` per node class → `FEdgeAnimJobDesc::Process` →
+`edgeAnimProcessBlendTree`, §3). We ship Plan B (§5): every `ACF_EdgeAnim` leaf is decoded by the ported evaluator into
+`FBoneAtom`s and the reference UE3 CPU blend tree composes the pose. Do we port the whole-tree path in wave 5?
+
+### 7.1 What each path does
+
+| Stage | Retail whole-tree job | Plan B (HEAD) | Same result? |
+|---|---|---|---|
+| Leaf decode (`__edgeAnimEvaluate*`) | Edge, per leaf inside the job | the same functions, ported (`EdgeAnimEvaluate.cpp`) | **yes, bit-exact** (2,743 sequences, 213,117 samples, 96.8 M floats, §6.3) |
+| Animation joint → skeleton joint, base pose | `AnimLeafCallback` stage 0 | `EdgeAnimEvaluateSkeletonPose` (same mapping, same rolling-hint hash search) | yes at data level: joint *i* == bone *i*, base pose == `RefSkeleton`, poses finite, \|q\|-1 ≤ 3.6e-4 (§6.1/6.4); **in-engine on an NPC still pending** (7.3) |
+| Copy to `LocalAtoms` | `UpdateSkelPoseEnd`, no `FlipSignOfRotationW` | `FEdgeAnimSequencePose`, no W flip | yes by construction; the in-engine check is the confirmation |
+| Blend of two poses (`UAnimNodeBlend*`, crossfades) | Edge `_edgeAnimBlend*` (linear joint blend with quaternion sign alignment, renormalized per joint) | UE3 `BlendFBABuffers` / `FBoneAtom::Blend` (lerp + `FastLerp` quats, shortest arc, normalize) | numerically close, not identical: both are normalized lerps but with different sign-alignment rules on the `w` side and different `rsqrt` precision; **not measured** |
+| Additive layers (773 additive sequences) | Edge relative blend: `_edgeAnimBlendAdditive` applies the delta on the base in *Edge's* order | `UAnimNodeAdditiveBlending` → `ApplyAdditiveAnimation` (UE order: delta rotation × base rotation, translations added) | **order not verified** (§5, W follow-up 2). A mismatch shows as a mirrored/over-rotated additive on joints whose base rotation is far from identity (aim offsets, breathing, hit reactions), not as garbage |
+| Mirroring (`UAnimNodeMirror`) | Edge `MirrorJoints` on the pose | UE3 mirror table on `FBoneAtom`s | equivalent design; retail's is the mesh's `SkelMirrorTable` fed to Edge; **not compared** |
+| Root motion | locomotion joint delta against `FLocomotionState`, six 2-bit root options packed by `BuildEdgeAnimTreeLeaf` | `ExtractRootMotion` on the Edge pose root (`GetRootMotionBoneAtom`), `bZeroRootRotation/Translation` | retail extracts against the *previous* evaluation state and the loop wrap; Plan B differentiates the pose. Same value while a sequence plays forward without a wrap (§6.5: the stored locomotion delta equals the evaluated joint delta over one loop, ≤ 0.04 units); **loop-wrap and blend-weighted root motion differ** |
+| Node cache / pose stack | Edge pose stack, `numJoints + 1` joints, 98,304-byte scratch | none (UE atoms) | not a correctness item |
+
+### 7.2 Cost of the whole-tree path (W's estimate, re-checked against the decompile sizes)
+
++8–12 days for one agent: `BuildEdgeAnimTree` on every node class that overrides it (the 2013 vtables of
+`UAnimNode`, `UAnimNodeBlendBase`, `UAnimNodeBlend`, `UAnimNodeBlendList`, `UAnimNodeBlendPerBone`,
+`UAnimNodeBlendMultiBone`, `UAnimNodeAdditiveBlending`, `UAnimNodeMirror`, `UAnimNodeSlot`, `UAnimNodeSequence*`,
+`UAnimNodeAimOffset`, `UAnimNodeSynch`, `UAnimNodeScalePlayRate`, the Arkane `UDis*`/`UArk*` nodes),
+`FEdgeAnimJobDesc::Process` (job setup, scratch budget, `_edgeAnimCopyQuadwords`), `edgeAnimProcessBlendTree` and the
+`_edgeAnimBlend*` / `MirrorJoints` / `LocalJointsToWorldJoints` kernels (SSE, same oracle method as §6.3), the locomotion
+half of `AnimLeafCallback` (13,540 bytes) with `FLocomotionState`, plus the `UAnimNodeSequence` layout bits it reads
+(`m_LoopCount`'s neighbour word). All of it is verifiable with the existing oracle (`Dishonored.exe` mapped in-process,
+`source/Tests/EdgeAnimSmoke`): the blend kernels take plain joint arrays, so bit-exactness is testable per kernel before
+any in-engine run.
+
+### 7.3 In-engine check (step 5 of AK's package)
+
+Requires an NPC in a loaded map: `L_Tower_P` through AF's `-startmap`, on AD's serializers. At the time of writing
+neither has landed in the shared tree (AD's `Bad export index` in `Dishonored_MainMenu_Env.upk` still ends every null-RHI
+run 0.5 s after `Initial startup`), so the check is **pending**. Procedure when it can run (AK snapshot with AD+AF files,
+`build_and_smoke.py ... --extra-args "-startmap=L_Tower_P"`, then the same with `-edgerefpose`):
+
+1. Both runs tick 30 s in `L_Tower_P` with no assert from `UnAnimPlay.cpp` / `AnimationEncodingFormat_EdgeAnim.cpp`.
+2. `DISHONORED(bringup)` probe (to add in `FEdgeAnimSequencePose`, one warn-once per mesh): every `LocalAtoms` rotation finite,
+   \|q\|-1 < 1e-3, root translation within the mesh bounds; the same mesh under `-edgerefpose` reports the reference pose.
+3. `w` sign: the first frame of the first NPC sequence per mesh compared with `RefSkeleton` (`dot(q_anim, q_ref) > 0` for the
+   ≥ 90 % of joints an idle barely moves); a systematic negative dot on all joints would be the W-flip bug.
+
+### 7.4 Recommendation for wave 5
+
+**Keep Plan B for wave 5.** Reasons, in order:
+
+1. Milestone 5/6 do not depend on blend parity: player movement is `PHYS_Walking` against collision (PHASE6.md facts), the
+   possess/input/save-load paths never read a pose, and NPC AI reads root motion only through the same `ExtractRootMotion`
+   contract Plan B already serves. Every stage that can *break* (decode, mapping, W convention) is proven bit-exact or
+   data-exact; what remains (blend/additive order, loop-wrap root motion) degrades quality, not stability.
+2. The evidence that would justify +8–12 days is visual, and nothing renders an NPC before AG/AH's D3D9 world frame lands.
+   Deciding now would be deciding blind; the 7.3 check plus one look at an additive-heavy NPC (a guard aiming, a
+   weeper's idle) on the rendered frame is the cheap experiment that tells whether the additive order is wrong.
+3. The whole-tree job is a self-contained package with its own oracle, so it does not get cheaper or dearer by waiting; it
+   gets *safer* once the map runs and an NPC can be watched.
+
+**Triggers that flip the decision to "port the whole tree" (wave 5 or 6):** (a) the 7.3 check or the first D3D9 NPC shows
+an additive/blend artefact that `UAnimNodeAdditiveBlending`'s order cannot explain away with a one-line swap; (b) an NPC
+behaviour that depends on root motion across loop wraps or on blend-weighted root motion (synchronized takedowns, ledge
+mantles, `DisSynchronizedAnim`-style sequences) misplaces the pawn; (c) the multiplayer end goal (dismod) needs
+pose/root-motion determinism identical to retail across clients (cosmetic poses do not; root-motion-driven pawn positions
+would). Absent a trigger, the whole-tree path is the *last* animation item, after the renderer shows the world.
+
+**Small wave-5 items that stay under Plan B (≤ 1 day total):** verify the additive order once against
+`_edgeAnimBlendAdditive` in the 2013 decompile and fix `ApplyAdditiveAnimation`'s multiply order if it differs; the
+7.3 probe; `USkeletalMeshComponent::ExtractRootMotionCurve` (W follow-up 3) reading the Edge locomotion delta instead of
+`GetBoneAtom` identity.

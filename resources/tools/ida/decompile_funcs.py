@@ -5,8 +5,9 @@ Usage:
   python resources/tools/ida/run.py resources/tools/ida/decompile_funcs.py <db.i64> <out_dir> --file <listfile>
 
 A pattern is matched (case-sensitive substring or regex with the `re:` prefix) against the demangled
-name; `rva:0x1234` selects by address. One `<out_dir>/<sanitized name>.c` per function, with the
-demangled name, rva and PDB file:line (from functions.csv) as a header comment.
+name; `rva:0x1234` selects by address. One `<out_dir>/<sanitized name>_<rva hex>.c` per function (the rva
+suffix keeps overloads such as `operator<<` apart, agent AA follow-up 5), with the demangled name, rva and PDB
+file:line (from functions.csv) as a header comment.
 """
 import csv
 import re
@@ -67,7 +68,7 @@ def main() -> None:
             continue
         file, line = files.get(rva(func.start_ea), ("", ""))
         header = f"// {name}\n// rva 0x{rva(func.start_ea):x}  size {func.size()}  {file}:{line}\n\n"
-        (out_dir / f"{sanitize(name)}.c").write_text(header + text, encoding="utf-8")
+        (out_dir / f"{sanitize(name)}_{rva(func.start_ea):x}.c").write_text(header + text, encoding="utf-8")
         done += 1
     log(f"decompiled {done} functions -> {out_dir}")
 
