@@ -1426,6 +1426,9 @@ public:
 
 	DECLARE_FUNCTION(execSaveAnimSets);
 	DECLARE_FUNCTION(execRestoreSavedAnimSets);
+	// DISHONORED(port): 2013 natives GetBoneMatrixLocal (exec 0x318810, body 0x318630) and PlayParticleEffect (exec 0x348d50) (agent AE, UnPhysic.cpp)
+	DECLARE_FUNCTION(execGetBoneMatrixLocal);
+	DECLARE_FUNCTION(execPlayParticleEffect);
 	DECLARE_FUNCTION(execGetBoneMatrix);
 	DECLARE_FUNCTION(execMatchRefBone);
 	DECLARE_FUNCTION(execGetBoneName);

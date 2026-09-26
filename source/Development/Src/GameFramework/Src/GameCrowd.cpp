@@ -2009,3 +2009,588 @@ void AGameCrowdAgent::CheckSeePlayer()
 {
 	// DISHONORED(port): no reference AGameCrowdPopulationManager in retail (the crowd population is UGameCrowdPopulationManager, a UObject owned by DishonoredGame)
 }
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 GameCrowd natives without a reference body (agent AE, PHASE6 AE.2). The
+	reference runs these in GameCrowd*.uc; retail 2013 made them native (rvas below). Retail keeps no
+	group / player-info / behavior-list data on these paths (the Dishonored crowd is the rat swarm).
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 AGameCrowdAgent::SetCurrentDestination (0x5599c0)
+void AGameCrowdAgent::SetCurrentDestination( AGameCrowdDestination* NewDest )
+{
+	if( NewDest == CurrentDestination )
+	{
+		return;
+	}
+	if( CurrentDestination )
+	{
+		CurrentDestination->DecrementCustomerCount( this );
+	}
+	bCurrentDestinationReached = FALSE;
+	CurrentDestination = NewDest;
+	if( CurrentDestination )
+	{
+		CurrentDestination->IncrementCustomerCount( this );
+		ReachThreshold = CurrentDestination->bSoftPerimeter ? (0.5f + 0.5f * appFrand()) : 1.f;
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdAgent::KillAgent (vtable +972, 0x55fe80): detaches every attached actor,
+// notifies the spawner (UGameCrowdSpawner vtable +304) and the current destination, then returns the agent to
+// the population pool (AddedToPool, vtable +944). The spawner / pool virtuals are not declared on our
+// GameFramework classes yet (hand-over), so the agent is expired the reference way (LifeSpan / TimeSinceLastTick).
+void AGameCrowdAgent::KillAgent()
+{
+	if( bIsInSpawnPool )
+	{
+		return;
+	}
+	for( INT AttachedIdx = Attached.Num() - 1; AttachedIdx >= 0; AttachedIdx-- )
+	{
+		AActor* AttachedActor = Attached(AttachedIdx);
+		if( AttachedActor )
+		{
+			AttachedActor->SetBase( NULL );
+		}
+	}
+	if( CurrentDestination )
+	{
+		CurrentDestination->DecrementCustomerCount( this );
+		CurrentDestination = NULL;
+	}
+	LifeSpan = -0.1f;
+	TimeSinceLastTick = 1000.f;
+}
+
+// DISHONORED(port): 2013 AGameCrowdAgent::OnDestroyedByKismet (exec 0x55a790): KillAgent()
+void AGameCrowdAgent::OnDestroyedByKismet()
+{
+	KillAgent();
+}
+
+// DISHONORED(port): 2013 AGameCrowdAgent::VolumeBasedDestroy (vtable +316, 0x559930): KillAgent() instead of Destroy()
+void AGameCrowdAgent::VolumeBasedDestroy( APhysicsVolume* PV )
+{
+	KillAgent();
+}
+
+// DISHONORED(port): 2013 AGameCrowdAgent::TakeDamage (exec folded with AActor's, body 0x559800): retail only
+// counts the damage and plays the death through the PlayDeath virtual (+928)
+void AGameCrowdAgent::TakeDamage( INT DamageAmount, AController* EventInstigator, FVector HitLocation, FVector Momentum, UClass* DamageType, FTraceHitInfo HitInfo, AActor* DamageCauser )
+{
+	if( Health > 0 )
+	{
+		Health -= DamageAmount;
+		if( Health <= 0 )
+		{
+			// retail's PlayDeath takes (Killer, Momentum, DamageType, DamageCauser); ours keeps the reference (FVector) signature (hand-over)
+			UDamageType* DamageTypeDefault = DamageType ? DamageType->GetDefaultObject<UDamageType>() : NULL;
+			PlayDeath( Momentum.SafeNormal() * (DamageTypeDefault ? DamageTypeDefault->KDamageImpulse : 0.f) + FVector( 0.f, 0.f, 1.f ) * (DamageTypeDefault ? DamageTypeDefault->KDeathUpKick : 0.f) );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdAgent::InitializeAgent (exec 0x5577a0, body 0x56c2a0, 2012 0x5af1e0):
+// GameCrowdAgent.uc InitializeAgent without the reference's player-info array and group. Retail warms the
+// agent up on a random point between the spawn destination and its next one, biased by the local player's
+// view point and checked against the nav mesh with line checks.
+void AGameCrowdAgent::InitializeAgent( AActor* SpawnLoc, AGameCrowdAgent* AgentTemplate, FLOAT AgentWarmupTime, UBOOL bWarmupPosition, UBOOL bCheckWarmupVisibility )
+{
+	MyArchetype = AgentTemplate;
+	ForceUpdateTime = WorldInfo->TimeSeconds;
+	m_AvoidOtherRadius = m_AvoidOtherRadiusMin + (m_AvoidOtherRadiusMax - m_AvoidOtherRadiusMin) * appFrand();
+	LastRenderTime = WorldInfo->TimeSeconds + AgentWarmupTime * (0.5f + appFrand());
+	InitialLastRenderTime = LastRenderTime;
+
+	AGameCrowdDestination* SpawnDest = Cast<AGameCrowdDestination>( SpawnLoc );
+	if( !SpawnDest )
+	{
+		eventUpdateIntermediatePoint( NULL );
+		return;
+	}
+	SetCurrentDestination( SpawnDest );
+	const UBOOL bRealPreferVisible = bPreferVisibleDestination;
+	bPreferVisibleDestination = bPreferVisibleDestinationOnSpawn || !SpawnDest->bWillBeVisible;
+	LastRenderTime = WorldInfo->TimeSeconds;
+	CurrentDestination->ReachedDestination( this );
+	bPreferVisibleDestination = bRealPreferVisible;
+	if( !bWarmupPosition || !CurrentDestination )
+	{
+		eventUpdateIntermediatePoint( NULL );
+		return;
+	}
+
+	FVector ViewLocation( 0.f, 0.f, 0.f );
+	FRotator ViewRotation( 0, 0, 0 );
+	APlayerController* LocalPC = GetALocalPlayerController();
+	if( LocalPC )
+	{
+		LocalPC->eventGetPlayerViewPoint( ViewLocation, ViewRotation );
+	}
+	FLOAT TryPct = appFrand();
+	// DISHONORED(bringup): retail reads the spawner's population manager for the max spawn distance; UGameCrowdSpawner
+	// is a DishonoredGame shim class here (hand-over in agentAE.md), so the beyond-spawn-distance branch uses 0
+	const FLOAT MaxSpawnDist = 0.f;
+	if( SpawnDest->bIsBeyondSpawnDistance )
+	{
+		const FLOAT DestDist = (CurrentDestination->Location - ViewLocation).Size();
+		if( CurrentDestination->bIsBeyondSpawnDistance || DestDist > MaxSpawnDist )
+		{
+			TryPct = (DestDist < (SpawnDest->Location - ViewLocation).SizeSquared()) ? 1.f : 0.f;
+		}
+		else
+		{
+			const FLOAT StartDist = (SpawnDest->Location - ViewLocation).Size();
+			TryPct = (StartDist > DestDist) ? (1.f - (MaxSpawnDist - DestDist) / (StartDist - DestDist)) * 0.9f : 0.f;
+		}
+	}
+	else if( !SpawnDest->bWillBeVisible )
+	{
+		TryPct = 0.5f * TryPct + 0.5f;
+	}
+	else
+	{
+		TryPct *= 0.9f;
+	}
+
+	FVector TryLoc = SpawnDest->Location * (1.f - TryPct) + CurrentDestination->Location * TryPct;
+	if( bCheckWarmupVisibility && !SpawnDest->bIsBeyondSpawnDistance )
+	{
+		FCheckResult Hit( 1.f );
+		if( GWorld->SingleLineCheck( Hit, LocalPC, TryLoc, ViewLocation, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision ) )
+		{
+			TryPct *= 0.5f;
+			TryLoc = SpawnDest->Location * (1.f - TryPct) + CurrentDestination->Location * TryPct;
+			if( GWorld->SingleLineCheck( Hit, LocalPC, TryLoc, ViewLocation, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision ) )
+			{
+				eventUpdateIntermediatePoint( NULL );
+				return;
+			}
+		}
+	}
+
+	FCheckResult Hit( 1.f );
+	if( GWorld->SingleLineCheck( Hit, this, TryLoc, CurrentDestination->Location, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision ) )
+	{
+		const FVector Side = ((CurrentDestination->Location - SpawnDest->Location) ^ FVector( 0.f, 0.f, 1.f )).SafeNormal();
+		const FVector SideLoc = TryLoc + Side * (m_AvoidOtherRadius * (2.f * appFrand() - 1.f));
+		if( GWorld->SingleLineCheck( Hit, this, SideLoc, CurrentDestination->Location, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision ) )
+		{
+			TryLoc = SideLoc;
+		}
+		if( !GWorld->SingleLineCheck( Hit, this, TryLoc - FVector( 0.f, 0.f, 250.f ), TryLoc, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision ) )
+		{
+			TryLoc.Z = Hit.Location.Z + 5.f;
+		}
+		SetLocation( TryLoc );
+		if( SpawnDest->bWillBeVisible && CurrentDestination->bIsVisible && appFrand() < 0.5f )
+		{
+			PreviousDestination = CurrentDestination;
+			CurrentDestination->DecrementCustomerCount( this );
+			CurrentDestination = NULL;
+			SetCurrentDestination( SpawnDest );
+		}
+	}
+	eventUpdateIntermediatePoint( NULL );
+}
+
+// DISHONORED(port): 2013 AGameCrowdAgentSkeletal::OnAnimEnd (exec 0x557910, body 0x559c60): an ended idle
+// animation clears the idle flags and picks the next idle (+976, PlayIdleAnimation)
+void AGameCrowdAgentSkeletal::OnAnimEnd( UAnimNodeSequence* SeqNode, FLOAT PlayedTime, FLOAT ExcessTime )
+{
+	if( SeqNode && SeqNode->AnimSeqName == LastPlayedAnimName )
+	{
+		if( bIsPlayingIdleAnimation )
+		{
+			bIsPlayingIdleAnimation = FALSE;
+			eventPlayIdleAnimation();
+		}
+		bIsPlayingDeathAnimation = FALSE;
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdInteractionPoint::SetEnabled (exec 0x5579d0, body 0x559530)
+void AGameCrowdInteractionPoint::SetEnabled( UBOOL bNewIsEnabled )
+{
+	bIsEnabled = bNewIsEnabled ? TRUE : FALSE;
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestinationQueuePoint::HasSpace (0x55a1c0)
+UBOOL AGameCrowdDestinationQueuePoint::HasSpace() const
+{
+	const AGameCrowdDestinationQueuePoint* QueuePoint = this;
+	while( QueuePoint )
+	{
+		if( !QueuePoint->QueuedAgent )
+		{
+			const AGameCrowdDestinationQueuePoint* Next = QueuePoint->NextQueuePosition;
+			if( !Next || !Next->bPendingAdvance || !Next->QueuedAgent )
+			{
+				return TRUE;
+			}
+		}
+		QueuePoint = QueuePoint->NextQueuePosition;
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestinationQueuePoint::AddCustomer (0x55a180): first free slot down the queue
+void AGameCrowdDestinationQueuePoint::AddCustomer( AGameCrowdAgent* NewCustomer, AGameCrowdInteractionPoint* PreviousPosition )
+{
+	AGameCrowdDestinationQueuePoint* QueuePoint = this;
+	while( QueuePoint )
+	{
+		if( PreviousPosition )
+		{
+			QueuePoint->PreviousQueuePosition = PreviousPosition;
+		}
+		if( !QueuePoint->QueuedAgent )
+		{
+			QueuePoint->QueuedAgent = NewCustomer;
+			return;
+		}
+		PreviousPosition = QueuePoint;
+		QueuePoint = QueuePoint->NextQueuePosition;
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestinationQueuePoint::AdvanceCustomerTo (0x55a130): ActuallyAdvance after AverageReactionTime
+void AGameCrowdDestinationQueuePoint::AdvanceCustomerTo( AGameCrowdInteractionPoint* FrontPosition )
+{
+	bPendingAdvance = TRUE;
+	PreviousQueuePosition = FrontPosition;
+	static const FName NAME_ActuallyAdvance( TEXT("ActuallyAdvance") );
+	SetTimer( AverageReactionTime, FALSE, NAME_ActuallyAdvance );
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestinationQueuePoint::ActuallyAdvance (exec folded, body 0x56abb0)
+void AGameCrowdDestinationQueuePoint::ActuallyAdvance()
+{
+	bPendingAdvance = FALSE;
+	AGameCrowdAgent* TempAgent = QueuedAgent;
+	if( !TempAgent )
+	{
+		return;
+	}
+	bClearingQueue = FALSE;
+	QueuedAgent = NULL;
+	AGameCrowdDestinationQueuePoint* FrontQueuePosition = Cast<AGameCrowdDestinationQueuePoint>( PreviousQueuePosition );
+	if( FrontQueuePosition )
+	{
+		if( FrontQueuePosition->QueuedAgent )
+		{
+			if( FrontQueuePosition->NextQueuePosition )
+			{
+				FrontQueuePosition->NextQueuePosition->AddCustomer( TempAgent, FrontQueuePosition );
+			}
+		}
+		else
+		{
+			FrontQueuePosition->QueuedAgent = TempAgent;
+		}
+	}
+	else
+	{
+		AGameCrowdDestination* QueueFront = Cast<AGameCrowdDestination>( PreviousQueuePosition );
+		if( !QueueFront )
+		{
+			return;
+		}
+		QueueFront->IncrementCustomerCount( TempAgent );
+	}
+	if( !QueuedAgent && NextQueuePosition )
+	{
+		NextQueuePosition->AdvanceCustomerTo( this );
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestination::ReachedDestination (exec 0x557a40, body 0x5678f0): the kismet
+// event, the kill-when-reached path and the next-destination pick; the reference's interaction tags,
+// behaviors and groups are gone in retail
+void AGameCrowdDestination::ReachedDestination( AGameCrowdAgent* Agent )
+{
+	if( bKillWhenReached )
+	{
+		DecrementCustomerCount( Agent );
+		Agent->CurrentDestination = NULL;
+		Agent->KillAgent();
+		return;
+	}
+	UBOOL bEventActivated = FALSE;
+	for( INT EventIdx = 0; EventIdx < GeneratedEvents.Num(); EventIdx++ )
+	{
+		USeqEvent_CrowdAgentReachedDestination* ReachedEvent = Cast<USeqEvent_CrowdAgentReachedDestination>( GeneratedEvents(EventIdx) );
+		if( !ReachedEvent )
+		{
+			continue;
+		}
+		if( ReachedEvent->OutputLinks.Num() > 0 )
+		{
+			for( INT LinkIdx = 0; LinkIdx < ReachedEvent->OutputLinks(0).Links.Num(); LinkIdx++ )
+			{
+				USequenceOp* LinkedOp = ReachedEvent->OutputLinks(0).Links(LinkIdx).LinkedOp;
+				if( LinkedOp )
+				{
+					LinkedOp->bActive = FALSE;
+				}
+			}
+		}
+		bEventActivated = ReachedEvent->CheckActivate( this, Agent );
+		break;
+	}
+	if( !bEventActivated && NextDestinations.Num() > 0 )
+	{
+		PickNewDestinationFor( Agent, FALSE );
+		if( !Agent->CurrentDestination )
+		{
+			if( Agent->NotVisibleLifeSpan > 0.f && WorldInfo->TimeSeconds - Agent->LastRenderTime > Agent->NotVisibleLifeSpan )
+			{
+				Agent->KillAgent();
+			}
+			else
+			{
+				PickNewDestinationFor( Agent, TRUE );
+			}
+		}
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestination::PickNewDestinationFor (exec 0x557aa0, body 0x5613b0): frequency
+// weighted pick over NextDestinations; bIgnoreRestrictions reuses the cached bLastAllowableResult
+void AGameCrowdDestination::PickNewDestinationFor( AGameCrowdAgent* Agent, UBOOL bIgnoreRestrictions )
+{
+	DecrementCustomerCount( Agent );
+	Agent->CurrentDestination = NULL;
+
+	FLOAT DestinationFrequencySum = 0.f;
+	for( INT DestIdx = 0; DestIdx < NextDestinations.Num(); DestIdx++ )
+	{
+		AGameCrowdDestination* Dest = NextDestinations(DestIdx);
+		if( Dest && (bIgnoreRestrictions || Dest->AllowableDestinationFor( Agent )) )
+		{
+			const UBOOL bBonus = !bIsVisible && Agent->bPreferVisibleDestination && (Dest->bIsVisible || Dest->bWillBeVisible);
+			DestinationFrequencySum += Dest->Frequency * (bBonus ? 2.f : 1.f);
+		}
+	}
+
+	const FLOAT DestinationPickValue = DestinationFrequencySum * appFrand();
+	DestinationFrequencySum = 0.f;
+	for( INT DestIdx = 0; DestIdx < NextDestinations.Num(); DestIdx++ )
+	{
+		AGameCrowdDestination* Dest = NextDestinations(DestIdx);
+		if( Dest && (bIgnoreRestrictions || Dest->bLastAllowableResult) )
+		{
+			const UBOOL bBonus = !bIsVisible && Agent->bPreferVisibleDestination && (Dest->bIsVisible || Dest->bWillBeVisible);
+			DestinationFrequencySum += Dest->Frequency * (bBonus ? 2.f : 1.f);
+			if( DestinationFrequencySum > DestinationPickValue )
+			{
+				Agent->SetCurrentDestination( Dest );
+				Agent->PreviousDestination = this;
+				Agent->eventUpdateIntermediatePoint( NULL );
+				break;
+			}
+		}
+	}
+	Agent->PreviousDestination = this;
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestination::DecrementCustomerCount (exec 2012 0x63c740 folded, body 0x561af0)
+void AGameCrowdDestination::DecrementCustomerCount( AGameCrowdAgent* DepartingAgent )
+{
+	if( DepartingAgent->CurrentDestination != this )
+	{
+		return;
+	}
+	for( AGameCrowdDestinationQueuePoint* QueuePoint = QueueHead; QueuePoint; QueuePoint = QueuePoint->NextQueuePosition )
+	{
+		if( QueuePoint->QueuedAgent == DepartingAgent )
+		{
+			if( !QueuePoint->bClearingQueue )
+			{
+				QueuePoint->bClearingQueue = TRUE;
+				if( QueuePoint->QueuedAgent == DepartingAgent )
+				{
+					AGameCrowdDestinationQueuePoint* Next = QueuePoint->NextQueuePosition;
+					QueuePoint->QueuedAgent = NULL;
+					if( Next )
+					{
+						Next->AdvanceCustomerTo( QueuePoint );
+					}
+				}
+				QueuePoint->bClearingQueue = FALSE;
+			}
+			return;
+		}
+	}
+	CustomerCount--;
+	if( QueueHead && QueueHead->QueuedAgent )
+	{
+		QueueHead->AdvanceCustomerTo( this );
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestination::IncrementCustomerCount (exec folded, body 0x55e5c0)
+void AGameCrowdDestination::IncrementCustomerCount( AGameCrowdAgent* ArrivingAgent )
+{
+	if( CustomerCount >= Capacity || (QueueHead && QueueHead->bPendingAdvance) )
+	{
+		if( QueueHead && QueueHead->HasSpace() )
+		{
+			if( AgentEnRoute && !ReachedByAgent( AgentEnRoute, AgentEnRoute->Location, FALSE )
+				&& (ArrivingAgent->Location - Location).SizeSquared() < (AgentEnRoute->Location - Location).SizeSquared() )
+			{
+				QueueHead->AddCustomer( AgentEnRoute, this );
+				AgentEnRoute = ArrivingAgent;
+			}
+			else
+			{
+				QueueHead->AddCustomer( ArrivingAgent, this );
+			}
+		}
+	}
+	else
+	{
+		AgentEnRoute = ArrivingAgent;
+		CustomerCount++;
+	}
+}
+
+// DISHONORED(port): 2013 AGameCrowdDestination::AllowableDestinationFor (exec folded with APawn::execIsValidTargetFor
+// 0x1d4c40, body 0x561820): the result is cached in bLastAllowableResult; retail checks the enabled flag, the
+// previous-destination rule, capacity / queue space and the supported / restricted class and archetype lists
+UBOOL AGameCrowdDestination::AllowableDestinationFor( AGameCrowdAgent* Agent )
+{
+	bLastAllowableResult = !bIsBeyondSpawnDistance;
+	if( bLastAllowableResult )
+	{
+		bLastAllowableResult = bIsEnabled && (bAllowAsPreviousDestination || Agent->PreviousDestination != this);
+	}
+	if( bLastAllowableResult )
+	{
+		bLastAllowableResult = CustomerCount < Capacity || (QueueHead && QueueHead->HasSpace());
+	}
+	if( bLastAllowableResult && bHasRestrictions )
+	{
+		bLastAllowableResult = SupportedAgentClasses.Num() == 0 && SupportedArchetypes.Num() == 0;
+		for( INT ClassIdx = 0; ClassIdx < SupportedAgentClasses.Num() && !bLastAllowableResult; ClassIdx++ )
+		{
+			bLastAllowableResult = Agent->IsA( SupportedAgentClasses(ClassIdx) );
+		}
+		for( INT ArchIdx = 0; ArchIdx < SupportedArchetypes.Num() && !bLastAllowableResult; ArchIdx++ )
+		{
+			bLastAllowableResult = SupportedArchetypes(ArchIdx) == Agent->MyArchetype;
+		}
+		for( INT ClassIdx = 0; ClassIdx < RestrictedAgentClasses.Num() && bLastAllowableResult; ClassIdx++ )
+		{
+			bLastAllowableResult = !Agent->IsA( RestrictedAgentClasses(ClassIdx) );
+		}
+		for( INT ArchIdx = 0; ArchIdx < RestrictedArchetypes.Num() && bLastAllowableResult; ArchIdx++ )
+		{
+			bLastAllowableResult = RestrictedArchetypes(ArchIdx) != Agent->MyArchetype;
+		}
+	}
+	return bLastAllowableResult;
+}
+
+void AGameCrowdAgent::execInitializeAgent( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AActor,SpawnLoc);
+	P_GET_OBJECT(AGameCrowdAgent,AgentTemplate);
+	P_GET_FLOAT(AgentWarmupTime);
+	P_GET_UBOOL(bWarmupPosition);
+	P_GET_UBOOL(bCheckWarmupVisibility);
+	P_FINISH;
+	InitializeAgent( SpawnLoc, AgentTemplate, AgentWarmupTime, bWarmupPosition, bCheckWarmupVisibility );
+}
+
+void AGameCrowdAgent::execOnDestroyedByKismet( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	OnDestroyedByKismet();
+}
+
+void AGameCrowdAgent::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	AActor::execTakeDamage( Stack, Result );
+}
+
+void AGameCrowdAgent::execVolumeBasedDestroy( FFrame& Stack, RESULT_DECL )
+{
+	AActor::execVolumeBasedDestroy( Stack, Result );
+}
+
+// DISHONORED(port): 2013 GameCrowdAgent.FellOutOfWorld / OutsideWorldBounds are native events; the 2013 execs are
+// unnamed (OutsideWorldBounds folds with AHUD::execDisplayConsoleMessages 0x5f25d0 = vtable +940 = KillAgent's
+// neighbour), both kill the agent like the reference script
+void AGameCrowdAgent::execFellOutOfWorld( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UClass,dmgType);
+	P_FINISH;
+	KillAgent();
+}
+
+void AGameCrowdAgent::execOutsideWorldBounds( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	KillAgent();
+}
+
+void AGameCrowdAgentSkeletal::execOnAnimEnd( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UAnimNodeSequence,SeqNode);
+	P_GET_FLOAT(PlayedTime);
+	P_GET_FLOAT(ExcessTime);
+	P_FINISH;
+	OnAnimEnd( SeqNode, PlayedTime, ExcessTime );
+}
+
+void AGameCrowdInteractionPoint::execSetEnabled( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(_bIsEnabled);
+	P_FINISH;
+	SetEnabled( _bIsEnabled );
+}
+
+void AGameCrowdDestinationQueuePoint::execActuallyAdvance( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ActuallyAdvance();
+}
+
+void AGameCrowdDestination::execReachedDestination( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AGameCrowdAgent,Agent);
+	P_FINISH;
+	ReachedDestination( Agent );
+}
+
+void AGameCrowdDestination::execPickNewDestinationFor( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AGameCrowdAgent,Agent);
+	P_GET_UBOOL(bIgnoreRestrictions);
+	P_FINISH;
+	PickNewDestinationFor( Agent, bIgnoreRestrictions );
+}
+
+void AGameCrowdDestination::execDecrementCustomerCount( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AGameCrowdAgent,DepartingAgent);
+	P_FINISH;
+	DecrementCustomerCount( DepartingAgent );
+}
+
+void AGameCrowdDestination::execIncrementCustomerCount( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AGameCrowdAgent,ArrivingAgent);
+	P_FINISH;
+	IncrementCustomerCount( ArrivingAgent );
+}
+
+void AGameCrowdDestination::execAllowableDestinationFor( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AGameCrowdAgent,Agent);
+	P_FINISH;
+	*(UBOOL*)Result = AllowableDestinationFor( Agent );
+}

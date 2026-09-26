@@ -2997,6 +2997,8 @@ public:
 	DECLARE_FUNCTION(execVRand);
     DECLARE_FUNCTION(execVRandCone);
 	DECLARE_FUNCTION(execVRandCone2);
+	DECLARE_FUNCTION(execVSmerp);  // DISHONORED(port): 2013 Object.VSmerp (exec 0x9af0, agent AE)
+	DECLARE_FUNCTION(execRSmerp);  // DISHONORED(port): 2013 Object.RSmerp (exec 0xad80, agent AE)
 	DECLARE_FUNCTION(execVLerp);
 	DECLARE_FUNCTION(execVInterpTo);
 	DECLARE_FUNCTION(execClampLength);

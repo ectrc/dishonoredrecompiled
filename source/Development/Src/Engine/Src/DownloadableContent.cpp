@@ -611,3 +611,148 @@ void UDownloadableContentManager::BuildDLCConfigCacheUndo(const TCHAR* ConfigFil
 		CacheChanges->SectionsToRemove += SectionsIncluded;
 	}
 }
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 DLC natives without a reference body (agent AE, PHASE6 AE.2). They run on the
+	startup path (Z's list: BackupDLCList / RemoveUnavailableDLC / UninstallDLCs right after `Initial startup`).
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 UDownloadableContentManager::BackupDLCList (exec 0x1d4070, body 0xf85b0): InstalledDLCBackup = InstalledDLC
+void UDownloadableContentManager::BackupDLCList()
+{
+	InstalledDLCBackup = InstalledDLC;
+}
+
+// DISHONORED(port): 2013 UDownloadableContentManager::UninstallDLC (exec 0x1fe610, body 0x10c3a0): an installed
+// bundle with a name is dropped from InstalledDLC unless it is active (the DishonoredGameInfo virtual
+// vtable +1012 is not declared on AGameInfo yet: an installed bundle counts as inactive) and not corrupt;
+// bForceUninstallIfActive removes it even while active. Retail also unloads the bundle's packages and
+// non-package files (0xf5d80 / 0x10bfd0); the package cache side stays a follow-up.
+UBOOL UDownloadableContentManager::UninstallDLC( FOnlineContent& DLCBundle, UBOOL bForceUninstallIfActive )
+{
+	if( !GameEngine )
+	{
+		GameEngine = Cast<UGameEngine>( GEngine );
+		if( !GameEngine )
+		{
+			return FALSE;
+		}
+	}
+	if( DLCBundle.FriendlyName.Len() == 0 )
+	{
+		return FALSE;
+	}
+	const UBOOL bIsActive = FALSE;
+	if( bIsActive && !bForceUninstallIfActive )
+	{
+		return FALSE;
+	}
+	if( bIsActive || !DLCBundle.bIsCorrupt )
+	{
+		InstalledDLC.RemoveItem( DLCBundle.FriendlyName );
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 UDownloadableContentManager::UninstallDLCs (exec 0x205aa0, body 0xfdbf0): every bundle
+// that uninstalls (forced) leaves the array
+void UDownloadableContentManager::UninstallDLCs( TArray<FOnlineContent>& DLCBundles )
+{
+	for( INT BundleIdx = DLCBundles.Num() - 1; BundleIdx >= 0; BundleIdx-- )
+	{
+		if( UninstallDLC( DLCBundles(BundleIdx), TRUE ) )
+		{
+			DLCBundles.Remove( BundleIdx );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 UDownloadableContentManager::RemoveUnavailableDLC (exec 0x5efc40, body 0xf5bf0): every
+// name of the backup list is uninstalled through the engine's DLC enumerator (forced) and dropped from
+// InstalledDLC, then the backup list is emptied
+void UDownloadableContentManager::RemoveUnavailableDLC()
+{
+	UGameEngine* Engine = Cast<UGameEngine>( GEngine );
+	UDownloadableContentEnumerator* Enumerator = Engine ? Engine->DLCEnumerator : NULL;
+	for( INT NameIdx = 0; NameIdx < InstalledDLCBackup.Num(); NameIdx++ )
+	{
+		const FString DLCName = InstalledDLCBackup(NameIdx);
+		if( Enumerator )
+		{
+			Enumerator->UninstallDLC( DLCName, TRUE );
+		}
+		InstalledDLC.RemoveItem( DLCName );
+	}
+	InstalledDLCBackup.Empty();
+}
+
+// DISHONORED(port): 2013 UDownloadableContentEnumerator::UninstallDLC (exec 0x1eea40, body 0xfdaf0): the bundle
+// named DLCName goes through the manager's UninstallDLC and leaves DLCBundles when that succeeds
+void UDownloadableContentEnumerator::UninstallDLC( const FString& DLCName, UBOOL bForceUninstallIfActive )
+{
+	UGameEngine* Engine = Cast<UGameEngine>( GEngine );
+	UDownloadableContentManager* Manager = Engine ? Engine->DLCManager : NULL;
+	if( !Manager )
+	{
+		return;
+	}
+	for( INT BundleIdx = 0; BundleIdx < DLCBundles.Num(); BundleIdx++ )
+	{
+		if( DLCBundles(BundleIdx).FriendlyName == DLCName )
+		{
+			if( Manager->UninstallDLC( DLCBundles(BundleIdx), bForceUninstallIfActive ) )
+			{
+				DLCBundles.Remove( BundleIdx );
+			}
+			return;
+		}
+	}
+}
+
+// DISHONORED(port): 2013 UDownloadableContentEnumerator::CleanLaunchedDLC (exec 0x1d3fd0, vtable +312 = 0x1cb0c0): empty in retail
+void UDownloadableContentEnumerator::CleanLaunchedDLC( BYTE LocalUserNum )
+{
+}
+
+void UDownloadableContentManager::execBackupDLCList( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	BackupDLCList();
+}
+
+void UDownloadableContentManager::execRemoveUnavailableDLC( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	RemoveUnavailableDLC();
+}
+
+void UDownloadableContentManager::execUninstallDLC( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT_REF(FOnlineContent,DLCBundle);
+	P_GET_UBOOL(bForceUninstallIfActive);
+	P_FINISH;
+	*(UBOOL*)Result = UninstallDLC( DLCBundle, bForceUninstallIfActive );
+}
+
+void UDownloadableContentManager::execUninstallDLCs( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_TARRAY_REF(FOnlineContent,DLCBundles);
+	P_FINISH;
+	UninstallDLCs( DLCBundles );
+}
+
+void UDownloadableContentEnumerator::execUninstallDLC( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(DLCName);
+	P_GET_UBOOL(bForceUninstallIfActive);
+	P_FINISH;
+	UninstallDLC( DLCName, bForceUninstallIfActive );
+}
+
+void UDownloadableContentEnumerator::execCleanLaunchedDLC( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_BYTE(LocalUserNum);
+	P_FINISH;
+	CleanLaunchedDLC( LocalUserNum );
+}

@@ -1310,6 +1310,13 @@ public:
 		return 0;
 	}
 
+	// DISHONORED(bringup): 2013 *_Debug natives (PutRigidBodyToSleep_Debug exec 0x3a27e0, RigidBodyIsAwake_Debug 0x3a3460, SetRBPosition_Debug 0x3a31a0,
+	// SetRBRotation_Debug 0x3a32a0) are PhysX no-ops here; ShouldComponentAddToPrimitiveOctree (exec 0x129270) returns TRUE (agent AE, UnPhysic.cpp)
+	DECLARE_FUNCTION(execPutRigidBodyToSleep_Debug);
+	DECLARE_FUNCTION(execRigidBodyIsAwake_Debug);
+	DECLARE_FUNCTION(execSetRBPosition_Debug);
+	DECLARE_FUNCTION(execSetRBRotation_Debug);
+	DECLARE_FUNCTION(execShouldComponentAddToPrimitiveOctree);
 	DECLARE_FUNCTION(execAddImpulse);
 	DECLARE_FUNCTION(execAddRadialImpulse);
 	DECLARE_FUNCTION(execAddForce);

@@ -8,6 +8,7 @@
 #include "EngineInterpolationClasses.h"
 #include "EngineAnimClasses.h"
 #include "EngineCameraClasses.h"
+#include "EngineParticleClasses.h"  // DISHONORED(port): AEmitterCameraLensEffectBase in the camera lens-effect natives (agent AE)
 #include "EngineAudioDeviceClasses.h"
 
 IMPLEMENT_CLASS(ACamera);
@@ -1343,4 +1344,384 @@ void ACamera::execGetFOVAngle( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
 	*(FLOAT*)Result = GetFOVAngle();
+}
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 Camera natives without a reference body (agent AE, PHASE6 AE.2).
+	Script `Camera.UpdateCamera` / the lens-effect functions are native in the retail packages; the
+	reference implements them in Camera.uc. Every body below is the 2013 one (rvas in the comments).
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 ACamera::FillCameraCache (0x1bd0a0): Camera.uc FillCameraCache made C++
+void ACamera::FillCameraCache( const FTPOV& NewPOV )
+{
+	if( CameraCache.TimeStamp != WorldInfo->TimeSeconds )
+	{
+		LastFrameCameraCache = CameraCache;
+	}
+	CameraCache.TimeStamp = WorldInfo->TimeSeconds;
+	CameraCache.POV = NewPOV;
+}
+
+// DISHONORED(port): 2013 ACamera::BlendViewTargets (0x1dd9c0): Camera.uc BlendViewTargets made C++
+FTPOV ACamera::BlendViewTargets( const FTViewTarget& A, const FTViewTarget& B, FLOAT Alpha )
+{
+	FTPOV POV;
+	POV.Location = Lerp( A.POV.Location, B.POV.Location, Alpha );
+	POV.FOV = Lerp( A.POV.FOV, B.POV.FOV, Alpha );
+	const FRotator DeltaRotation = (B.POV.Rotation - A.POV.Rotation).GetNormalized();
+	POV.Rotation = A.POV.Rotation + DeltaRotation * Alpha;
+	return POV;
+}
+
+// DISHONORED(port): 2013 ACamera::ProcessViewRotation (0x1e5ac0): every modifier gets the script
+// ProcessViewRotation(ViewTarget, DeltaTime, out ViewRotation, out DeltaRot) until one returns TRUE
+void ACamera::ProcessViewRotation( FLOAT DeltaTime, FRotator& OutViewRotation, FRotator& OutDeltaRot )
+{
+	struct FModifierParms
+	{
+		AActor* ViewTarget;
+		FLOAT DeltaTime;
+		FRotator OutViewRotation;
+		FRotator OutDeltaRot;
+		UBOOL ReturnValue;
+	};
+	static const FName NAME_ProcessViewRotation( TEXT("ProcessViewRotation") );
+	for( INT ModifierIdx = 0; ModifierIdx < ModifierList.Num(); ModifierIdx++ )
+	{
+		UCameraModifier* Modifier = ModifierList(ModifierIdx);
+		if( !Modifier )
+		{
+			continue;
+		}
+		UFunction* Function = Modifier->FindFunction( NAME_ProcessViewRotation );
+		if( !Function )
+		{
+			continue;
+		}
+		FModifierParms Parms;
+		Parms.ViewTarget = ViewTarget.Target;
+		Parms.DeltaTime = DeltaTime;
+		Parms.OutViewRotation = OutViewRotation;
+		Parms.OutDeltaRot = OutDeltaRot;
+		Parms.ReturnValue = FALSE;
+		Modifier->ProcessEvent( Function, &Parms );
+		OutViewRotation = Parms.OutViewRotation;
+		OutDeltaRot = Parms.OutDeltaRot;
+		if( Parms.ReturnValue )
+		{
+			break;
+		}
+	}
+}
+
+// DISHONORED(port): 2013 ACamera::UpdateViewTarget (0x1e6350, 2012 0x21aa30): Camera.uc UpdateViewTarget
+// made C++. Retail differences: a CameraActor target copies its FOV / aspect ratio / Arkane post-process
+// config straight from the actor, the mesh-translation offsets of the reference are gone, an unknown
+// CameraStyle keeps the previous POV, and modifiers are applied only on the CameraActor / CalcCamera paths.
+void ACamera::UpdateViewTarget( FTViewTarget& OutVT, FLOAT DeltaTime )
+{
+	if( PendingViewTarget.Target && BlendParams.bLockOutgoing && appMemcmp( &OutVT, &ViewTarget, sizeof(FTViewTarget) ) == 0 )
+	{
+		return;
+	}
+
+	const FTPOV OrigPOV = OutVT.POV;
+	OutVT.POV.FOV = DefaultFOV;
+
+	ACameraActor* CamActor = Cast<ACameraActor>( OutVT.Target );
+	if( CamActor )
+	{
+		CamActor->eventGetActorEyesViewPoint( OutVT.POV.Location, OutVT.POV.Rotation );
+		OutVT.POV.FOV = CamActor->FOVAngle;
+		OutVT.AspectRatio = CamActor->AspectRatio;
+		CamOverridePostProcessAlpha = CamActor->CamOverridePostProcessAlpha;
+		m_CamPostProcessSettings = CamActor->m_CamOverridePostProcess;
+		ApplyCameraModifiers( DeltaTime, OutVT.POV );
+		return;
+	}
+
+	APawn* TargetPawn = Cast<APawn>( OutVT.Target );
+	if( TargetPawn )
+	{
+		// Actor.CalcCamera is an event in the 2013 scripts (retail calls AActor::eventCalcCamera); the reference has no wrapper
+		struct FCalcCameraParms
+		{
+			FLOAT fDeltaTime;
+			FVector out_CamLoc;
+			FRotator out_CamRot;
+			FLOAT out_FOV;
+			UBOOL ReturnValue;
+		};
+		static const FName NAME_CalcCamera( TEXT("CalcCamera") );
+		UFunction* CalcCamera = TargetPawn->FindFunction( NAME_CalcCamera );
+		if( CalcCamera )
+		{
+			FCalcCameraParms Parms;
+			Parms.fDeltaTime = DeltaTime;
+			Parms.out_CamLoc = OutVT.POV.Location;
+			Parms.out_CamRot = OutVT.POV.Rotation;
+			Parms.out_FOV = OutVT.POV.FOV;
+			Parms.ReturnValue = FALSE;
+			TargetPawn->ProcessEvent( CalcCamera, &Parms );
+			OutVT.POV.Location = Parms.out_CamLoc;
+			OutVT.POV.Rotation = Parms.out_CamRot;
+			OutVT.POV.FOV = Parms.out_FOV;
+			if( Parms.ReturnValue )
+			{
+				ApplyCameraModifiers( DeltaTime, OutVT.POV );
+				return;
+			}
+		}
+	}
+
+	static const FName NAME_ThirdPersonStyle( TEXT("ThirdPerson") );
+	static const FName NAME_FreeCamStyle( TEXT("FreeCam") );
+	static const FName NAME_FreeCamDefaultStyle( TEXT("FreeCam_Default") );
+	static const FName NAME_FirstPersonStyle( TEXT("FirstPerson") );
+	static const FName NAME_FixedStyle( TEXT("Fixed") );
+	if( CameraStyle == NAME_FirstPersonStyle )
+	{
+		OutVT.Target->eventGetActorEyesViewPoint( OutVT.POV.Location, OutVT.POV.Rotation );
+	}
+	else if( CameraStyle == NAME_ThirdPersonStyle || CameraStyle == NAME_FreeCamStyle || CameraStyle == NAME_FreeCamDefaultStyle )
+	{
+		FVector Loc = OutVT.Target->Location;
+		FRotator Rot = OutVT.Target->Rotation;
+		if( CameraStyle == NAME_FreeCamStyle || CameraStyle == NAME_FreeCamDefaultStyle )
+		{
+			Rot = PCOwner->Rotation;
+		}
+		Loc += FRotationMatrix( Rot ).TransformNormal( FreeCamOffset );
+		const FVector Pos = Loc - Rot.Vector() * FreeCamDistance;
+		FCheckResult Hit( 1.f );
+		GWorld->SingleLineCheck( Hit, this, Pos, Loc, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision, FVector( 12.f, 12.f, 12.f ) );
+		OutVT.POV.Location = Hit.Actor ? Hit.Location : Pos;
+		OutVT.POV.Rotation = Rot;
+	}
+	else if( CameraStyle == NAME_FixedStyle )
+	{
+		OutVT.POV = OrigPOV;
+	}
+}
+
+// DISHONORED(port): 2013 ACamera::UpdateCamera (exec 0x1cffd0, body 0x1e5eb0, 2012 0x1fbd60): Camera.uc
+// UpdateCamera/DoUpdateCamera made C++. Retail additions: the FOV is widened for screens wider than the
+// closest of 16:9 / 16:10 / 4:3 (Arkane), the reference audio fade is gone.
+void ACamera::UpdateCamera( FLOAT DeltaTime )
+{
+	if( bEnableColorScaleInterp )
+	{
+		const FLOAT BlendPct = Clamp( (WorldInfo->TimeSeconds - ColorScaleInterpStartTime) / ColorScaleInterpDuration, 0.f, 1.f );
+		ColorScale = Lerp( OriginalColorScale, DesiredColorScale, BlendPct );
+		if( BlendPct == 1.f )
+		{
+			bEnableColorScaleInterp = FALSE;
+		}
+	}
+
+	bConstrainAspectRatio = FALSE;
+	CamOverridePostProcessAlpha = 0.f;
+
+	if( !PendingViewTarget.Target || !BlendParams.bLockOutgoing )
+	{
+		CheckViewTarget( ViewTarget );
+		UpdateViewTarget( ViewTarget, DeltaTime );
+	}
+
+	ConstrainedAspectRatio = ViewTarget.AspectRatio;
+	FTPOV NewPOV = ViewTarget.POV;
+
+	if( PendingViewTarget.Target )
+	{
+		BlendTimeToGo -= DeltaTime;
+		bConstrainAspectRatio = FALSE;
+		CheckViewTarget( PendingViewTarget );
+		UpdateViewTarget( PendingViewTarget, DeltaTime );
+
+		if( BlendTimeToGo > 0.f )
+		{
+			const FLOAT DurationPct = (BlendParams.BlendTime - BlendTimeToGo) / BlendParams.BlendTime;
+			FLOAT BlendPct = DurationPct;
+			switch( BlendParams.BlendFunction )
+			{
+			case VTBlend_Cubic:
+				BlendPct = CubicInterp( 0.f, 0.f, 1.f, 0.f, DurationPct );
+				break;
+			case VTBlend_EaseIn:
+				BlendPct = appPow( DurationPct, BlendParams.BlendExp );
+				break;
+			case VTBlend_EaseOut:
+				BlendPct = appPow( DurationPct, 1.f / BlendParams.BlendExp );
+				break;
+			case VTBlend_EaseInOut:
+				BlendPct = FInterpEaseInOut( 0.f, 1.f, DurationPct, BlendParams.BlendExp );
+				break;
+			default:
+				break;
+			}
+			NewPOV = BlendViewTargets( ViewTarget, PendingViewTarget, BlendPct );
+		}
+		else
+		{
+			ViewTarget = PendingViewTarget;
+			PendingViewTarget.Target = NULL;
+			PendingViewTarget.Controller = NULL;
+			BlendTimeToGo = 0.f;
+			NewPOV = PendingViewTarget.POV;
+		}
+
+		if( bConstrainAspectRatio )
+		{
+			ConstrainedAspectRatio = PendingViewTarget.AspectRatio;
+		}
+	}
+
+	// Arkane: keep the horizontal field of view of the closest standard aspect ratio on wider screens
+	INT SizeX = 0;
+	INT SizeY = 0;
+	if( GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport )
+	{
+		SizeX = GEngine->GameViewport->Viewport->GetSizeX();
+		SizeY = GEngine->GameViewport->Viewport->GetSizeY();
+	}
+	if( SizeX > 0 && SizeY > 0 )
+	{
+		static const FLOAT AspectWidths[3] = { 16.f, 16.f, 4.f };
+		static const FLOAT AspectHeights[3] = { 9.f, 10.f, 3.f };
+		const FLOAT ScreenAspect = (FLOAT)SizeX / (FLOAT)SizeY;
+		INT Closest = 0;
+		FLOAT ClosestDelta = Abs( ScreenAspect - AspectWidths[0] / AspectHeights[0] );
+		for( INT AspectIdx = 1; AspectIdx < 3; AspectIdx++ )
+		{
+			const FLOAT Delta = Abs( ScreenAspect - AspectWidths[AspectIdx] / AspectHeights[AspectIdx] );
+			if( Delta < ClosestDelta )
+			{
+				ClosestDelta = Delta;
+				Closest = AspectIdx;
+			}
+		}
+		const FLOAT Scale = Max( (AspectHeights[Closest] * (FLOAT)SizeX) / (AspectWidths[Closest] * (FLOAT)SizeY), 1.f );
+		NewPOV.FOV = appAtan2( appTan( NewPOV.FOV * (PI / 180.f) * 0.5f ) * Scale, 1.f ) * (360.f / PI);
+	}
+
+	FillCameraCache( NewPOV );
+
+	if( bEnableFading && FadeTimeRemaining > 0.f )
+	{
+		FadeTimeRemaining = Max( FadeTimeRemaining - DeltaTime, 0.f );
+		if( FadeTime > 0.f )
+		{
+			FadeAmount = FadeAlpha.X + (1.f - FadeTimeRemaining / FadeTime) * (FadeAlpha.Y - FadeAlpha.X);
+		}
+	}
+}
+
+// DISHONORED(port): 2013 ACamera::FindCameraLensEffect (exec 0x1d0250, body 0x1e5c60)
+AEmitterCameraLensEffectBase* ACamera::FindCameraLensEffect( UClass* LensEffectEmitterClass )
+{
+	AEmitterCameraLensEffectBase* ClassDefault = LensEffectEmitterClass ? Cast<AEmitterCameraLensEffectBase>( LensEffectEmitterClass->GetDefaultObject() ) : NULL;
+	for( INT EffectIdx = 0; EffectIdx < CameraLensEffects.Num(); EffectIdx++ )
+	{
+		AEmitterCameraLensEffectBase* LensEffect = CameraLensEffects(EffectIdx);
+		if( !LensEffect || LensEffect->bDeleteMe || LensEffect->IsPendingKill() )
+		{
+			continue;
+		}
+		if( LensEffect->GetClass() == LensEffectEmitterClass
+			|| LensEffect->EmittersToTreatAsSame.ContainsItem( LensEffectEmitterClass )
+			|| (ClassDefault && ClassDefault->EmittersToTreatAsSame.ContainsItem( LensEffect->GetClass() )) )
+		{
+			return LensEffect;
+		}
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2013 ACamera::AddCameraLensEffect (exec 0x1d02c0, body 0x1e5d90): retail returns the effect
+AEmitterCameraLensEffectBase* ACamera::AddCameraLensEffect( UClass* LensEffectEmitterClass )
+{
+	if( !LensEffectEmitterClass )
+	{
+		return NULL;
+	}
+	AEmitterCameraLensEffectBase* ClassDefault = Cast<AEmitterCameraLensEffectBase>( LensEffectEmitterClass->GetDefaultObject() );
+	if( ClassDefault && !ClassDefault->bAllowMultipleInstances )
+	{
+		AEmitterCameraLensEffectBase* Existing = FindCameraLensEffect( LensEffectEmitterClass );
+		if( Existing )
+		{
+			Existing->NotifyRetriggered();
+			return Existing;
+		}
+	}
+	AActor* SpawnOwner = PCOwner ? PCOwner->GetViewTarget() : NULL;
+	AEmitterCameraLensEffectBase* LensEffect = Cast<AEmitterCameraLensEffectBase>( GWorld->SpawnActor( LensEffectEmitterClass, NAME_None, Location, Rotation, NULL, FALSE, FALSE, SpawnOwner ) );
+	if( LensEffect )
+	{
+		// DISHONORED(port): 2013 ACamera::execGetCameraViewPoint (0x1cfec0) returns CameraCache.POV
+		const FVector CamLoc = CameraCache.POV.Location;
+		const FRotator CamRot = CameraCache.POV.Rotation;
+		LensEffect->UpdateLocation( CamLoc, CamRot, GetFOVAngle() );
+		LensEffect->RegisterCamera( this );
+		CameraLensEffects.AddItem( LensEffect );
+	}
+	return LensEffect;
+}
+
+// DISHONORED(port): 2013 ACamera::RemoveCameraLensEffect (exec 0x1d0360, body 0x1f2d40)
+void ACamera::RemoveCameraLensEffect( AEmitterCameraLensEffectBase* Emitter )
+{
+	CameraLensEffects.RemoveItem( Emitter );
+}
+
+// DISHONORED(port): 2013 ACamera::ClearCameraLensEffects (exec 0x1d03c0, body 0x1f2d60): unregisters the
+// camera before destroying each effect so Destroyed does not remove from the array being walked
+void ACamera::ClearCameraLensEffects()
+{
+	for( INT EffectIdx = CameraLensEffects.Num() - 1; EffectIdx >= 0; EffectIdx-- )
+	{
+		AEmitterCameraLensEffectBase* LensEffect = CameraLensEffects(EffectIdx);
+		if( LensEffect )
+		{
+			LensEffect->RegisterCamera( NULL );
+			GWorld->DestroyActor( LensEffect, FALSE, TRUE );
+		}
+	}
+	CameraLensEffects.Empty();
+}
+
+void ACamera::execUpdateCamera( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	UpdateCamera( DeltaTime );
+}
+
+void ACamera::execFindCameraLensEffect( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UClass,LensEffectEmitterClass);
+	P_FINISH;
+	*(AEmitterCameraLensEffectBase**)Result = FindCameraLensEffect( LensEffectEmitterClass );
+}
+
+void ACamera::execAddCameraLensEffect( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UClass,LensEffectEmitterClass);
+	P_FINISH;
+	*(AEmitterCameraLensEffectBase**)Result = AddCameraLensEffect( LensEffectEmitterClass );
+}
+
+void ACamera::execRemoveCameraLensEffect( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AEmitterCameraLensEffectBase,Emitter);
+	P_FINISH;
+	RemoveCameraLensEffect( Emitter );
+}
+
+void ACamera::execClearCameraLensEffects( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ClearCameraLensEffects();
 }

@@ -119,6 +119,8 @@ public:
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineUSkeletalMeshComponentNatives[] = 
 { 
+	MAP_NATIVE(USkeletalMeshComponent, execGetBoneMatrixLocal)
+	MAP_NATIVE(USkeletalMeshComponent, execPlayParticleEffect)
 	MAP_NATIVE(USkeletalMeshComponent, execSetMaterial)
 	MAP_NATIVE(USkeletalMeshComponent, execGetRotation)
 	MAP_NATIVE(USkeletalMeshComponent, execGetPosition)

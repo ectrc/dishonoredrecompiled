@@ -12549,3 +12549,95 @@ void USeqAct_SetActiveAnimChild::Activated()
 		}
 	}
 }
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 SeqEvent_TakeDamage natives (agent AE, PHASE6 AE.2); SeqEvent_TakeDamage.uc in the reference.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 USeqEvent_TakeDamage::IsValidDamageType (exec 0x1d9e00, body 0x2dd410)
+UBOOL USeqEvent_TakeDamage::IsValidDamageType( UClass* InDamageType )
+{
+	if( DamageTypes.Num() > 0 )
+	{
+		UBOOL bValidDamageType = FALSE;
+		for( INT TypeIdx = 0; TypeIdx < DamageTypes.Num(); TypeIdx++ )
+		{
+			if( InDamageType && InDamageType->IsChildOf( DamageTypes(TypeIdx) ) )
+			{
+				bValidDamageType = TRUE;
+				break;
+			}
+		}
+		if( !bValidDamageType )
+		{
+			return FALSE;
+		}
+	}
+	for( INT TypeIdx = 0; TypeIdx < IgnoreDamageTypes.Num(); TypeIdx++ )
+	{
+		if( InDamageType && InDamageType->IsChildOf( IgnoreDamageTypes(TypeIdx) ) )
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 USeqEvent_TakeDamage::HandleDamage (exec 0x1d9e60, body 0x2efaf0): the reference body
+// without PublishLinkedVariableValues; "Damage Taken" float variables receive the accumulated damage
+void USeqEvent_TakeDamage::HandleDamage( AActor* InOriginator, AActor* InInstigator, UClass* InDamageType, INT InAmount )
+{
+	if( !InOriginator || !bEnabled || (FLOAT)InAmount < MinDamageAmount || !IsValidDamageType( InDamageType ) )
+	{
+		return;
+	}
+	if( bPlayerOnly && (!InInstigator || !InInstigator->IsPlayerOwned()) )
+	{
+		return;
+	}
+	CurrentDamage += (FLOAT)InAmount;
+	if( CurrentDamage < DamageThreshold )
+	{
+		return;
+	}
+	const UBOOL bAlreadyActivatedThisTick = bActive && ActivationTime == GWorld->GetTimeSeconds();
+	if( !CheckActivate( InOriginator, InInstigator, FALSE ) )
+	{
+		return;
+	}
+	for( INT LinkIdx = 0; LinkIdx < VariableLinks.Num(); LinkIdx++ )
+	{
+		FSeqVarLink& VarLink = VariableLinks(LinkIdx);
+		if( VarLink.LinkDesc != TEXT("Damage Taken") )
+		{
+			continue;
+		}
+		for( INT VarIdx = 0; VarIdx < VarLink.LinkedVariables.Num(); VarIdx++ )
+		{
+			USeqVar_Float* FloatVar = Cast<USeqVar_Float>( VarLink.LinkedVariables(VarIdx) );
+			if( FloatVar )
+			{
+				FloatVar->FloatValue = bAlreadyActivatedThisTick ? FloatVar->FloatValue + CurrentDamage : CurrentDamage;
+			}
+		}
+	}
+	CurrentDamage = (DamageThreshold > 0.f) ? CurrentDamage - DamageThreshold : 0.f;
+}
+
+void USeqEvent_TakeDamage::execHandleDamage( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AActor,InOriginator);
+	P_GET_OBJECT(AActor,InInstigator);
+	P_GET_OBJECT(UClass,InDamageType);
+	P_GET_INT(InAmount);
+	P_FINISH;
+	HandleDamage( InOriginator, InInstigator, InDamageType, InAmount );
+}
+
+void USeqEvent_TakeDamage::execIsValidDamageType( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UClass,InDamageType);
+	P_FINISH;
+	*(UBOOL*)Result = IsValidDamageType( InDamageType );
+}

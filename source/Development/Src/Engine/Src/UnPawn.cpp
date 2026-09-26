@@ -4115,3 +4115,421 @@ void APawn::execUnPossessed( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	UnPossessed();
 }
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 Pawn natives without a reference body (agent AE, PHASE6 AE.2). Pawn.uc runs
+	these in script in the reference; retail 2013 made them native. Script events retail raises from
+	them and the reference has no C++ wrapper for (NotifyTakeHit, PreventDeath, ChooseAndTriggerDeathEvent,
+	NotifyKilled, PlayDying) go through FindFunction + ProcessEvent.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 APawn::AddVelocity (exec 0x1dade0, body 0x16e070)
+void APawn::AddVelocity( FVector NewVelocity, FVector HitLocation, UClass* DamageType, FTraceHitInfo HitInfo )
+{
+	if( bIgnoreForces || NewVelocity.IsZero() )
+	{
+		return;
+	}
+	const FLOAT DefaultJumpZ = APawn::StaticClass()->GetDefaultObject<APawn>()->JumpZ;
+	if( Physics == PHYS_Walking || ((Physics == PHYS_Ladder || Physics == PHYS_Spider) && NewVelocity.Z > DefaultJumpZ) )
+	{
+		setPhysics( PHYS_Falling );
+	}
+	if( Velocity.Z > DefaultJumpZ && NewVelocity.Z > 0.f )
+	{
+		NewVelocity.Z *= 0.5f;
+	}
+	Velocity += NewVelocity;
+}
+
+// DISHONORED(port): 2013 APawn::HandleMomentum (exec 0x1dac90, body 0x1754b0)
+void APawn::HandleMomentum( FVector Momentum, FVector HitLocation, UClass* DamageType, FTraceHitInfo HitInfo )
+{
+	AddVelocity( Momentum, HitLocation, DamageType, HitInfo );
+}
+
+// DISHONORED(port): 2013 APawn::PlayHit (exec 0x1db0a0, body 0x1694e0): only the LastPainTime stamp is left in retail
+void APawn::PlayHit( FLOAT Damage, AController* InstigatedBy, FVector HitLocation, UClass* DamageType, FVector Momentum, FTraceHitInfo HitInfo )
+{
+	if( Damage > 0.f || (Controller && Controller->bGodMode) )
+	{
+		LastPainTime = WorldInfo->TimeSeconds;
+	}
+}
+
+// DISHONORED(port): 2013 APawn::FaceRotation (exec 0x1daf30, body 0x2a1460): retail first asks a script
+// event (name index 0x1447934, a bool) whether the rotation is locked; the name is not resolved yet, so the
+// reference Pawn.uc body runs unconditionally
+void APawn::FaceRotation( FRotator NewRotation, FLOAT DeltaTime )
+{
+	if( Physics == PHYS_Walking || Physics == PHYS_Falling )
+	{
+		NewRotation.Pitch = 0;
+	}
+	SetRotation( NewRotation );
+}
+
+// DISHONORED(port): 2013 APawn::IsRagdoll (exec 0x1daa80, body 0x382d00)
+UBOOL APawn::IsRagdoll()
+{
+	return Physics == PHYS_RigidBody && CollisionComponent == Mesh;
+}
+
+// DISHONORED(port): 2013 APawn::GetNavigationHandle (exec 0x1da990, body 0x1ca5d0)
+UNavigationHandle* APawn::GetNavigationHandle()
+{
+	return m_NavigationHandle;
+}
+
+// DISHONORED(port): 2013 APawn::InitNavigationHandle (exec 0x5f27b0, body 0x1e09f0)
+void APawn::InitNavigationHandle()
+{
+	if( m_NavigationHandleClass )
+	{
+		m_NavigationHandle = ConstructObject<UNavigationHandle>( m_NavigationHandleClass, this );
+	}
+}
+
+// DISHONORED(port): 2013 APawn::IsValidTargetFor (exec 0x1d4c40, body 0x233610): retail Shipping returns FALSE
+UBOOL APawn::IsValidTargetFor( AController* C )
+{
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 APawn::Died (exec 0x1dafd0, body 0x17f600, 2012 0x196ab0): Pawn.uc Died made C++.
+// Retail: bails when the death already played (bPlayedDeath) or the world's game is not set, has no vehicle /
+// weapon / inventory handling, raises ChooseAndTriggerDeathEvent and NotifyKilled (2013 events) instead of
+// the reference's SeqEvent_Death trigger and GameInfo.Killed, and forces the player's replication update inline.
+UBOOL APawn::Died( AController* Killer, UClass* DamageType, FVector HitLocation )
+{
+	if( bPlayedDeath )
+	{
+		return FALSE;
+	}
+	if( !DamageType )
+	{
+		DamageType = UDamageType::StaticClass();
+	}
+	AGameInfo* Game = WorldInfo ? WorldInfo->Game : NULL;
+	if( bDeleteMe || !Game || Game->bLevelChange )
+	{
+		return FALSE;
+	}
+	UDamageType* DamageTypeDefault = DamageType->GetDefaultObject<UDamageType>();
+	if( DamageTypeDefault && DamageTypeDefault->bCausedByWorld && (!Killer || Killer == Controller) && LastHitBy )
+	{
+		Killer = LastHitBy;
+	}
+
+	struct FPreventDeathParms
+	{
+		APawn* KilledPawn;
+		AController* Killer;
+		UClass* DamageType;
+		FVector HitLocation;
+		UBOOL ReturnValue;
+	};
+	static const FName NAME_PreventDeath( TEXT("PreventDeath") );
+	UFunction* PreventDeath = Game->FindFunction( NAME_PreventDeath );
+	if( PreventDeath )
+	{
+		FPreventDeathParms Parms;
+		Parms.KilledPawn = this;
+		Parms.Killer = Killer;
+		Parms.DamageType = DamageType;
+		Parms.HitLocation = HitLocation;
+		Parms.ReturnValue = FALSE;
+		Game->ProcessEvent( PreventDeath, &Parms );
+		if( Parms.ReturnValue )
+		{
+			Health = Max( Health, 1 );
+			return FALSE;
+		}
+	}
+	Health = Min( 0, Health );
+
+	static const FName NAME_ChooseAndTriggerDeathEvent( TEXT("ChooseAndTriggerDeathEvent") );
+	UFunction* ChooseAndTriggerDeathEvent = FindFunction( NAME_ChooseAndTriggerDeathEvent );
+	if( ChooseAndTriggerDeathEvent )
+	{
+		struct { UClass* _pDamageType; } Parms;
+		Parms._pDamageType = DamageType;
+		ProcessEvent( ChooseAndTriggerDeathEvent, &Parms );
+	}
+
+	for( INT ActionIdx = 0; ActionIdx < LatentActions.Num(); ActionIdx++ )
+	{
+		USeqAct_Latent* Action = LatentActions(ActionIdx);
+		if( Action )
+		{
+			Action->AbortFor( this );
+		}
+	}
+	LatentActions.Empty();
+
+	struct FNotifyKilledParms
+	{
+		AController* Killer;
+		AController* Killed;
+		APawn* KilledPawn;
+		UClass* DamageType;
+	};
+	static const FName NAME_NotifyKilled( TEXT("NotifyKilled") );
+	UFunction* NotifyKilled = Game->FindFunction( NAME_NotifyKilled );
+	if( NotifyKilled )
+	{
+		FNotifyKilledParms Parms;
+		Parms.Killer = Killer;
+		Parms.Killed = Controller ? Controller : Cast<AController>( Owner );
+		Parms.KilledPawn = this;
+		Parms.DamageType = DamageType;
+		Game->ProcessEvent( NotifyKilled, &Parms );
+	}
+
+	Velocity.Z *= 1.3f;
+	if( IsHumanControlled() )
+	{
+		APlayerController* PC = Cast<APlayerController>( Controller );
+		if( PC )
+		{
+			PC->LastUpdateTime = WorldInfo->TimeSeconds - 10.f;
+		}
+	}
+	NetUpdateFrequency = APawn::StaticClass()->GetDefaultObject<APawn>()->NetUpdateFrequency;
+
+	struct FPlayDyingParms
+	{
+		AController* Killer;
+		UClass* DamageType;
+		FVector HitLoc;
+	};
+	static const FName NAME_PlayDying( TEXT("PlayDying") );
+	UFunction* PlayDying = FindFunction( NAME_PlayDying );
+	if( PlayDying )
+	{
+		FPlayDyingParms Parms;
+		Parms.Killer = Killer;
+		Parms.DamageType = DamageType;
+		Parms.HitLoc = HitLocation;
+		ProcessEvent( PlayDying, &Parms );
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 APawn::TakeDamage (exec shared with AActor's 0x1c1640, body 0x183700, 2012 0x197ff0):
+// Pawn.uc TakeDamage made C++. Retail has no Role check, no vehicle, calls the C++ GameInfo::ReduceDamage,
+// raises NotifyTakeHit (2013 event) and keeps the PlayHit pain-time stamp inline.
+void APawn::TakeDamage( INT Damage, AController* InstigatedBy, FVector HitLocation, FVector Momentum, UClass* DamageType, FTraceHitInfo HitInfo, AActor* DamageCauser )
+{
+	if( Health <= 0 )
+	{
+		return;
+	}
+	if( !DamageType )
+	{
+		DamageType = UDamageType::StaticClass();
+	}
+	Damage = Max( Damage, 0 );
+	UDamageType* DamageTypeDefault = DamageType->GetDefaultObject<UDamageType>();
+	if( Physics == PHYS_None )
+	{
+		setPhysics( (PhysicsVolume && PhysicsVolume->bWaterVolume) ? PHYS_Swimming : PHYS_Falling );
+	}
+	if( Physics == PHYS_Walking && DamageTypeDefault && DamageTypeDefault->bExtraMomentumZ )
+	{
+		Momentum.Z = Max( Momentum.Z, 0.4f * Momentum.Size() );
+	}
+	Momentum = Momentum / Mass;
+
+	INT ActualDamage = Damage;
+	if( WorldInfo && WorldInfo->Game )
+	{
+		WorldInfo->Game->ReduceDamage( ActualDamage, this, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser );
+	}
+	AActor::TakeDamage( ActualDamage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+	Health -= ActualDamage;
+	if( HitLocation.IsZero() )
+	{
+		HitLocation = Location;
+	}
+
+	if( Health > 0 )
+	{
+		AddVelocity( Momentum, HitLocation, DamageType, HitInfo );
+		struct FNotifyTakeHitParms
+		{
+			AController* InstigatedBy;
+			FVector HitLocation;
+			INT Damage;
+			UClass* DamageType;
+			FVector Momentum;
+		};
+		static const FName NAME_NotifyTakeHit( TEXT("NotifyTakeHit") );
+		UFunction* NotifyTakeHit = FindFunction( NAME_NotifyTakeHit );
+		if( NotifyTakeHit )
+		{
+			FNotifyTakeHitParms Parms;
+			Parms.InstigatedBy = InstigatedBy;
+			Parms.HitLocation = HitLocation;
+			Parms.Damage = ActualDamage;
+			Parms.DamageType = DamageType;
+			Parms.Momentum = Momentum;
+			ProcessEvent( NotifyTakeHit, &Parms );
+		}
+		if( InstigatedBy && InstigatedBy != Controller )
+		{
+			LastHitBy = InstigatedBy;
+		}
+	}
+	else
+	{
+		APlayerController* PC = Cast<APlayerController>( Controller );
+		if( PC && DamageTypeDefault )
+		{
+			PC->eventClientPlayForceFeedbackWaveform( DamageTypeDefault->KilledFFWaveform, NULL );
+		}
+		AController* Killer = InstigatedBy;
+		if( (!Killer || Killer == Controller) && DamageTypeDefault && DamageTypeDefault->bCausedByWorld && LastHitBy )
+		{
+			Killer = LastHitBy;
+		}
+		TearOffMomentum = Momentum;
+		Died( Killer, DamageType, HitLocation );
+	}
+
+	if( ActualDamage > 0 || (Controller && Controller->bGodMode) )
+	{
+		LastPainTime = WorldInfo->TimeSeconds;
+	}
+}
+
+void APawn::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	AActor::execTakeDamage( Stack, Result );
+}
+
+void APawn::execDied( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AController,Killer);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_VECTOR(HitLocation);
+	P_FINISH;
+	*(UBOOL*)Result = Died( Killer, DamageType, HitLocation );
+}
+
+void APawn::execFaceRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_ROTATOR(NewRotation);
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	FaceRotation( NewRotation, DeltaTime );
+}
+
+void APawn::execAddVelocity( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(NewVelocity);
+	P_GET_VECTOR(HitLocation);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_STRUCT_OPTX(FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+	P_FINISH;
+	AddVelocity( NewVelocity, HitLocation, DamageType, HitInfo );
+}
+
+void APawn::execHandleMomentum( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(Momentum);
+	P_GET_VECTOR(HitLocation);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_STRUCT_OPTX(FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+	P_FINISH;
+	HandleMomentum( Momentum, HitLocation, DamageType, HitInfo );
+}
+
+void APawn::execPlayHit( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(Damage);
+	P_GET_OBJECT(AController,InstigatedBy);
+	P_GET_VECTOR(HitLocation);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_VECTOR(Momentum);
+	P_GET_STRUCT(FTraceHitInfo,HitInfo);
+	P_FINISH;
+	PlayHit( Damage, InstigatedBy, HitLocation, DamageType, Momentum, HitInfo );
+}
+
+void APawn::execIsRagdoll( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = IsRagdoll();
+}
+
+void APawn::execGetNavigationHandle( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UNavigationHandle**)Result = GetNavigationHandle();
+}
+
+void APawn::execInitNavigationHandle( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	InitNavigationHandle();
+}
+
+void APawn::execIsValidTargetFor( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AController,C);
+	P_FINISH;
+	*(UBOOL*)Result = IsValidTargetFor( C );
+}
+
+// DISHONORED(port): 2013 APawn::execUpdateAnimSetList is folded with ASkeletalMeshActorMAT's (2012 0x1f0990):
+// the exec calls the existing UpdateAnimSetList
+void ASkeletalMeshActorMAT::execUpdateAnimSetList( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	UpdateAnimSetList();
+}
+
+// DISHONORED(port): 2013 ASkeletalMeshActorMAT::ClearAnimNodes (exec 0x1db540, body 0x321f70): SlotNodes.Empty()
+void ASkeletalMeshActorMAT::ClearAnimNodes()
+{
+	SlotNodes.Empty();
+}
+
+void ASkeletalMeshActorMAT::execClearAnimNodes( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ClearAnimNodes();
+}
+
+// DISHONORED(port): 2013 ASkeletalMeshActor::TakeDamage (exec folded with AActor's, body 0x313e90): applies the
+// damage type's KDamageImpulse along the momentum to the hit component when bCanBeDamaged... retail reads
+// bit @584 mask 1 (bCollideWhenPlacing? the first SkeletalMeshActor flag) - kept as the reference's bDamageAppliesImpulse gate
+void ASkeletalMeshActor::TakeDamage( INT Damage, AController* EventInstigator, FVector HitLocation, FVector Momentum, UClass* DamageType, FTraceHitInfo HitInfo, AActor* DamageCauser )
+{
+	AActor::TakeDamage( Damage, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+	UDamageType* DamageTypeDefault = DamageType ? DamageType->GetDefaultObject<UDamageType>() : NULL;
+	if( bDamageAppliesImpulse && DamageTypeDefault && DamageTypeDefault->KDamageImpulse > 0.f && !Momentum.IsNearlyZero() && HitInfo.HitComponent )
+	{
+		const FVector ApplyImpulse = Momentum.SafeNormal() * DamageTypeDefault->KDamageImpulse;
+		HitInfo.HitComponent->AddImpulse( ApplyImpulse, HitLocation, HitInfo.BoneName );
+	}
+}
+
+void ASkeletalMeshActor::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	AActor::execTakeDamage( Stack, Result );
+}
+
+// DISHONORED(port): 2013 ASkeletalMeshActor::PostBeginPlaySkeletalMeshIsHidden_Native (exec folded with
+// AInterpActor::execSetShadowParentOnAllAttachedComponents 0x1c26e0, body 0x59d10): empty in retail
+void ASkeletalMeshActor::PostBeginPlaySkeletalMeshIsHidden_Native()
+{
+}
+
+void ASkeletalMeshActor::execPostBeginPlaySkeletalMeshIsHidden_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	PostBeginPlaySkeletalMeshIsHidden_Native();
+}

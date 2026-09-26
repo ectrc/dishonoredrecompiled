@@ -9,6 +9,8 @@
 #include "EngineSequenceClasses.h"
 #include "EngineInterpolationClasses.h"
 #include "EnginePhysicsClasses.h"
+#include "EngineAnimClasses.h"  // DISHONORED(port): UAnimNodeSlot::AddToSynchGroup (agent AE)
+#include "EngineParticleClasses.h"  // DISHONORED(port): AEmitterCameraLensEffectBase natives (agent AE)
 
 #if 0
 	#define DEBUGPHYSONLY(x)		{ ##x }
@@ -3474,3 +3476,243 @@ void AActor::physInterpolating(FLOAT DeltaTime)
 	bIsMoving = bMovingNow;
 }
 
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 natives of the smaller Engine classes (agent AE, PHASE6 AE.2): AutoTestManager,
+	AnimNodeSlot, KActor / KAsset, EmitterCameraLensEffectBase.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(bringup): 2013 AAutoTestManager::DoSentinelActionPerLoadedLevel_Native (exec 0x5f6340, body 0x30be60)
+// writes ..\..\DishonoredGame\PROFILING\MapInfos\<map>.inf under -dumpmapinfos; DoSentinelActionBeforeExit_Native
+// (exec 0x5ed7c0, vtable +948 = 0x59d10) is empty. Both are Sentinel-only: no-ops here.
+void AAutoTestManager::DoSentinelActionBeforeExit_Native()
+{
+}
+
+void AAutoTestManager::DoSentinelActionPerLoadedLevel_Native()
+{
+}
+
+void AAutoTestManager::execDoSentinelActionBeforeExit_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	DoSentinelActionBeforeExit_Native();
+}
+
+void AAutoTestManager::execDoSentinelActionPerLoadedLevel_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	DoSentinelActionPerLoadedLevel_Native();
+}
+
+// DISHONORED(port): 2013 UAnimNodeSlot::AddToSynchGroup (exec 0x1dc970, body 0x1af140): moves the custom anim
+// node between synch groups, finding the tree's AnimNodeSynch once (SynchNode, retail SDK @256)
+void UAnimNodeSlot::AddToSynchGroup( FName GroupName )
+{
+	UAnimNodeSequence* SeqNode = GetCustomAnimNodeSeq();
+	if( !SeqNode || SeqNode->SynchGroupName == GroupName )
+	{
+		return;
+	}
+	if( !SynchNode )
+	{
+		TArray<UAnimNode*> Nodes;
+		GetNodes( Nodes );
+		for( INT NodeIdx = 0; NodeIdx < Nodes.Num(); NodeIdx++ )
+		{
+			SynchNode = Cast<UAnimNodeSynch>( Nodes(NodeIdx) );
+			if( SynchNode )
+			{
+				break;
+			}
+		}
+	}
+	if( SynchNode )
+	{
+		if( SeqNode->SynchGroupName != NAME_None )
+		{
+			SynchNode->RemoveNodeFromGroup( SeqNode, SeqNode->SynchGroupName );
+		}
+		if( GroupName != NAME_None )
+		{
+			SynchNode->AddNodeToGroup( SeqNode, GroupName );
+		}
+	}
+}
+
+void UAnimNodeSlot::execAddToSynchGroup( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(GroupName);
+	P_FINISH;
+	AddToSynchGroup( GroupName );
+}
+
+// DISHONORED(port): 2013 AKActor::ApplyImpulse (exec 0x1cfb20, body 0x382f40): KActor.uc ApplyImpulse made C++
+void AKActor::ApplyImpulse( FVector ImpulseDir, FLOAT ImpulseMag, FVector HitLocation, FTraceHitInfo HitInfo, UClass* DamageType )
+{
+	const FVector ApplyImpulse = ImpulseDir.SafeNormal() * ImpulseMag;
+	if( HitInfo.HitComponent )
+	{
+		HitInfo.HitComponent->AddImpulse( ApplyImpulse, HitLocation, HitInfo.BoneName );
+	}
+	else if( StaticMeshComponent )
+	{
+		StaticMeshComponent->AddImpulse( ApplyImpulse, HitLocation );
+	}
+}
+
+// DISHONORED(port): 2013 AKActor::TakeDamage (exec folded with AActor's, body 0x385fe0): KActor.uc TakeDamage made C++
+void AKActor::TakeDamage( INT Damage, AController* EventInstigator, FVector HitLocation, FVector Momentum, UClass* DamageType, FTraceHitInfo HitInfo, AActor* DamageCauser )
+{
+	AActor::TakeDamage( Damage, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+	UDamageType* DamageTypeDefault = DamageType ? DamageType->GetDefaultObject<UDamageType>() : NULL;
+	if( bDamageAppliesImpulse && DamageTypeDefault && DamageTypeDefault->KDamageImpulse > 0.f && !Momentum.IsNearlyZero() )
+	{
+		ApplyImpulse( Momentum, DamageTypeDefault->KDamageImpulse, HitLocation, HitInfo, DamageType );
+	}
+}
+
+void AKActor::execApplyImpulse( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(ImpulseDir);
+	P_GET_FLOAT(ImpulseMag);
+	P_GET_VECTOR(HitLocation);
+	P_GET_STRUCT_OPTX(FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+	P_GET_OBJECT_OPTX(UClass,DamageType,NULL);
+	P_FINISH;
+	ApplyImpulse( ImpulseDir, ImpulseMag, HitLocation, HitInfo, DamageType );
+}
+
+void AKActor::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	AActor::execTakeDamage( Stack, Result );
+}
+
+// DISHONORED(port): 2013 AKAsset::TakeDamage (exec folded with AActor's, body 0x3a8860): KAsset.uc TakeDamage
+// made C++ - CheckHitInfo against the skeletal component, then the impulse on the hit bone
+void AKAsset::TakeDamage( INT Damage, AController* EventInstigator, FVector HitLocation, FVector Momentum, UClass* DamageType, FTraceHitInfo HitInfo, AActor* DamageCauser )
+{
+	AActor::TakeDamage( Damage, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+	UDamageType* DamageTypeDefault = DamageType ? DamageType->GetDefaultObject<UDamageType>() : NULL;
+	if( bDamageAppliesImpulse && DamageTypeDefault && DamageTypeDefault->KDamageImpulse > 0.f && !Momentum.IsNearlyZero() )
+	{
+		const FVector ApplyImpulse = Momentum.SafeNormal() * DamageTypeDefault->KDamageImpulse;
+		CheckHitInfo( HitInfo, SkeletalMeshComponent, ApplyImpulse.SafeNormal(), HitLocation );
+		if( HitInfo.HitComponent )
+		{
+			HitInfo.HitComponent->AddImpulse( ApplyImpulse, HitLocation, HitInfo.BoneName );
+		}
+	}
+}
+
+void AKAsset::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	AActor::execTakeDamage( Stack, Result );
+}
+
+// DISHONORED(port): 2013 AEmitterCameraLensEffectBase::ActivateLensEffect (exec 0x1bb590, body 0x4bebe0): the
+// gore or non-extreme particle system, unless this is a dedicated server
+void AEmitterCameraLensEffectBase::ActivateLensEffect()
+{
+	if( !WorldInfo || WorldInfo->NetMode == NM_DedicatedServer )
+	{
+		return;
+	}
+	const UBOOL bShowGore = WorldInfo->GRI ? WorldInfo->GRI->eventShouldShowGore() : TRUE;
+	UParticleSystem* PSToActuallySpawn = bShowGore ? PS_CameraEffect : PS_CameraEffectNonExtremeContent;
+	if( PSToActuallySpawn )
+	{
+		SetTemplate( PSToActuallySpawn, bDestroyOnSystemFinish );
+	}
+}
+
+// DISHONORED(port): 2013 AEmitterCameraLensEffectBase::RegisterCamera (exec unnamed, body 0x49d5c0)
+void AEmitterCameraLensEffectBase::RegisterCamera( ACamera* C )
+{
+	BaseCamera = C;
+}
+
+// DISHONORED(port): 2013 AEmitterCameraLensEffectBase::NotifyRetriggered: empty in the reference script and no
+// named 2013 exec; retail's vtable neighbour (+928, 0x5ea8d0) is a DishonoredGame override
+void AEmitterCameraLensEffectBase::NotifyRetriggered()
+{
+}
+
+void AEmitterCameraLensEffectBase::execActivateLensEffect( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ActivateLensEffect();
+}
+
+void AEmitterCameraLensEffectBase::execRegisterCamera( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(ACamera,C);
+	P_FINISH;
+	RegisterCamera( C );
+}
+
+void AEmitterCameraLensEffectBase::execNotifyRetriggered( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	NotifyRetriggered();
+}
+
+// DISHONORED(bringup): the 2013 PrimitiveComponent *_Debug natives (PutRigidBodyToSleep_Debug exec 0x3a27e0 /
+// body 0x3a27a0, RigidBodyIsAwake_Debug 0x3a3460 / 0x3a3420, SetRBPosition_Debug 0x3a31a0 / 0x3a2ff0,
+// SetRBRotation_Debug 0x3a32a0 / 0x3a30c0) drive the NxActor of the bone; PhysX is off (WITH_NOVODEX=0), so
+// they are no-ops. ShouldComponentAddToPrimitiveOctree (exec 0x129270, vtable +620 = 0x17d890) returns TRUE.
+void UPrimitiveComponent::execPutRigidBodyToSleep_Debug( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME_OPTX(BoneName,NAME_None);
+	P_FINISH;
+}
+
+void UPrimitiveComponent::execRigidBodyIsAwake_Debug( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME_OPTX(BoneName,NAME_None);
+	P_FINISH;
+	*(UBOOL*)Result = FALSE;
+}
+
+void UPrimitiveComponent::execSetRBPosition_Debug( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(NewPos);
+	P_GET_NAME_OPTX(BoneName,NAME_None);
+	P_FINISH;
+}
+
+void UPrimitiveComponent::execSetRBRotation_Debug( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_ROTATOR(NewRot);
+	P_GET_NAME_OPTX(BoneName,NAME_None);
+	P_FINISH;
+}
+
+void UPrimitiveComponent::execShouldComponentAddToPrimitiveOctree( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = TRUE;
+}
+
+// DISHONORED(port): 2013 USkeletalMeshComponent::execGetBoneMatrixLocal (0x318810, body 0x318630): the bone's
+// local-space atom as a matrix (SpaceBases), identity outside the range
+void USkeletalMeshComponent::execGetBoneMatrixLocal( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(BoneIndex);
+	P_FINISH;
+	FMatrix& OutMatrix = *(FMatrix*)Result;
+	OutMatrix = FMatrix::Identity;
+	if( BoneIndex >= 0 && BoneIndex < LocalAtoms.Num() )
+	{
+		OutMatrix = LocalAtoms(BoneIndex).ToMatrix();
+	}
+}
+
+// DISHONORED(port): 2013 USkeletalMeshComponent::execPlayParticleEffect (0x348d50): the PlayParticleEffect event
+void USkeletalMeshComponent::execPlayParticleEffect( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UAnimNotify_PlayParticleEffect,AnimNotifyData);
+	P_FINISH;
+	*(UBOOL*)Result = eventPlayParticleEffect( AnimNotifyData );
+}

@@ -2602,6 +2602,35 @@ public:
     virtual UBOOL ShouldBeHiddenBySHOW_NavigationNodes();
     virtual INT GetActorMetrics(BYTE MetricsType);
     virtual class USpriteComponent* GetActorSpriteComponent() const;
+    // DISHONORED(port): 2013 natives (agent AE): TakeDamage exec 0x1c1640 / body 0x1753f0, CheckHitInfo 0x1c1800 / 0x16dd40, FindEventsOfClass 0x1fcc40 / 0x175310,
+    // VolumeBasedDestroy 0x1c03a0 / 0x168420, DoKismetAttachment 0x1df6c0 / 0x18ab50 (parameters consumed only: FAttachmentInfos is a DishonoredGame shim), PostAkEvent 0x1c1050 / 0x2cd730,
+    // SetRTPCValue 0x1c10b0 / 0x2d8040, SetSwitch 0x1c11e0 / 0x2d81f0, SetState 0x1c1150 / 0x2d8100, PostTrigger 0x1c1270 / 0x2d8300, ActivateOcclusion 0x1c12e0 / 0x2cd770,
+    // PlayActorFaceFXAnim 0x1e76c0 / 0x169520, StopActorFaceFXAnim 0x1c1ac0 / 0x59d10
+    virtual void TakeDamage(INT DamageAmount,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    void CheckHitInfo(struct FTraceHitInfo& HitInfo,class UPrimitiveComponent* FallBackComponent,FVector Dir,FVector& out_HitLocation);
+    UBOOL FindEventsOfClass(class UClass* EventClass,TArray<class USequenceEvent*>* out_EventList,UBOOL bIncludeDisabled);
+    virtual void VolumeBasedDestroy(class APhysicsVolume* PV);
+    void PostAkEvent(class UAkEvent* InAkEvent);
+    void SetRTPCValue(FName InRTPC,FLOAT TargetValue);
+    void SetSwitch(FName InSwitchGroup,FName InSwitch);
+    void SetState(FName InStateGroup,FName InState);
+    void PostTrigger(FName InTrigger);
+    void ActivateOcclusion(UBOOL bInActivate);
+    virtual UBOOL PlayActorFaceFXAnim(class UFaceFXAnimSet* AnimSet,const FString& GroupName,const FString& SeqName,class UAkEvent* AkEventToPlay);
+    virtual void StopActorFaceFXAnim();
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execCheckHitInfo);
+    DECLARE_FUNCTION(execFindEventsOfClass);
+    DECLARE_FUNCTION(execDoKismetAttachment);
+    DECLARE_FUNCTION(execVolumeBasedDestroy);
+    DECLARE_FUNCTION(execPostAkEvent);
+    DECLARE_FUNCTION(execSetRTPCValue);
+    DECLARE_FUNCTION(execSetSwitch);
+    DECLARE_FUNCTION(execSetState);
+    DECLARE_FUNCTION(execPostTrigger);
+    DECLARE_FUNCTION(execActivateOcclusion);
+    DECLARE_FUNCTION(execPlayActorFaceFXAnim);
+    DECLARE_FUNCTION(execStopActorFaceFXAnim);
     DECLARE_FUNCTION(execForceUpdateComponents)
     {
         P_GET_UBOOL_OPTX(bCollisionUpdate,FALSE);
@@ -6016,6 +6045,10 @@ public:
     FLOAT MaxZVelocity;
     FLOAT StayOpenTime;
     //## END PROPS InterpActor
+    // DISHONORED(port): 2013 InterpActor.SetShadowParentOnAllAttachedComponents is native (exec 0x1c26e0, body 0x174cd0; agent AE)
+    using AActor::SetShadowParentOnAllAttachedComponents;
+    virtual void SetShadowParentOnAllAttachedComponents();
+    DECLARE_FUNCTION(execSetShadowParentOnAllAttachedComponents);
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
@@ -6752,6 +6785,13 @@ public:
     void Draw3DLine(FVector Start,FVector End,FColor LineColor);
     void Draw2DLine(INT X1,INT Y1,INT X2,INT Y2,FColor LineColor);
     virtual void DrawActorOverlays(FVector ViewPoint,FRotator ViewRotation);
+    // DISHONORED(port): 2013 natives (agent AE): DisplayConsoleMessages exec 0x5f25d0 / body 0x2f21e0, ShouldDisplayDebug 0x1c3c50 / 0x9c4b50, ShowDebug 0x1c3bd0 / 0x128ad0
+    virtual void DisplayConsoleMessages();
+    virtual UBOOL ShouldDisplayDebug(FName DebugType);
+    virtual void ShowDebug(FName DebugType);
+    DECLARE_FUNCTION(execDisplayConsoleMessages);
+    DECLARE_FUNCTION(execShouldDisplayDebug);
+    DECLARE_FUNCTION(execShowDebug);
     DECLARE_FUNCTION(execDraw3DLine)
     {
         P_GET_STRUCT(FVector,Start);
@@ -7328,6 +7368,11 @@ public:
     virtual void AppendContextsToURL(FString& URL);
     virtual void BuildURL(FString& URL);
     virtual void UpdateFromURL(const FString& URL,class AGameInfo* Game);
+    // DISHONORED(port): 2013 natives (agent AE): GetSettingsDataString exec 0x1e8e40 / body 0x4f4730, SetSettingsDataString 0x1e8d30 / 0x4f1620
+    static FString GetSettingsDataString(struct FSettingsData& Data);
+    static void SetSettingsDataString(struct FSettingsData& Data,const FString& InString);
+    DECLARE_FUNCTION(execGetSettingsDataString);
+    DECLARE_FUNCTION(execSetSettingsDataString);
     DECLARE_FUNCTION(execSetSettingsDataFloat)
     {
         P_GET_STRUCT_REF(struct FSettingsData,Data);
@@ -9036,6 +9081,11 @@ public:
     virtual void DoSentinel_PerfAtSpecificLocation(const FVector& InLocation,const FRotator& InRotation);
     virtual void DoSentinel_ViewDependentMemoryAtSpecificLocation(const FVector& InLocation,const FRotator& InRotation);
     virtual void DoMemoryTracking();
+    // DISHONORED(port): 2013 Sentinel natives (agent AE): DoSentinelActionBeforeExit_Native exec 0x5ed7c0, DoSentinelActionPerLoadedLevel_Native 0x5f6340 / 0x30be60
+    virtual void DoSentinelActionBeforeExit_Native();
+    virtual void DoSentinelActionPerLoadedLevel_Native();
+    DECLARE_FUNCTION(execDoSentinelActionBeforeExit_Native);
+    DECLARE_FUNCTION(execDoSentinelActionPerLoadedLevel_Native);
     DECLARE_FUNCTION(execBeginSentinelRun)
     {
         P_GET_STR(TaskDescription);
@@ -11584,6 +11634,9 @@ public:
     void SwapPlayerControllers(class APlayerController* OldPC,class APlayerController* NewPC);
     virtual void SetBandwidthLimit(FLOAT AsyncIOBandwidthLimit);
     virtual void EnableStandbyCheatDetection(UBOOL bIsEnabled);
+    // DISHONORED(port): 2013 GameInfo.ReduceDamage is native (exec 0x1c6170, body 0x2cd830; agent AE)
+    virtual void ReduceDamage(INT& Damage,class APawn* injured,class AController* InstigatedBy,FVector HitLocation,FVector& Momentum,class UClass* DamageType,class AActor* DamageCauser);
+    DECLARE_FUNCTION(execReduceDamage);
     DECLARE_FUNCTION(execGetSupportedGameTypes)
     {
         P_GET_STR_REF(InFilename);
@@ -14462,6 +14515,10 @@ public:
     virtual void VerifyNavMeshCoverRefs();
     virtual void DumpCoverStats();
     virtual void GetAnalyticsUserId();
+    // DISHONORED(port): 2013 natives (agent AE): SetTargetedActor exec 0x1c9c60, ShowActor 0x1dffa0
+    virtual void SetTargetedActor(class AActor* _pTarget);
+    DECLARE_FUNCTION(execSetTargetedActor);
+    DECLARE_FUNCTION(execShowActor);
     DECLARE_FUNCTION(execLogPlaySoundCalls)
     {
         P_GET_UBOOL(bShouldLog);
@@ -18616,6 +18673,16 @@ public:
     virtual void AppendVersionToSettings();
     virtual INT GetVersionNumber();
     virtual void SetDefaultVersionNumber();
+    // DISHONORED(port): 2013 natives (agent AE): GetRangedProfileSettingValueFloat exec 0x1cd110 / body 0x4f77e0, GetRangedProfileSettingValueInt 0x1cd210 / 0x4f7860,
+    // SetRangedProfileSettingValueFloat 0x1ccec0 / 0x4f74a0, SetRangedProfileSettingValueInt 0x1ccf50 / 0x4f75d0
+    virtual UBOOL GetRangedProfileSettingValueFloat(INT PropertyId,FLOAT& OutValue);
+    virtual UBOOL GetRangedProfileSettingValueInt(INT PropertyId,INT& OutValue);
+    virtual UBOOL SetRangedProfileSettingValueFloat(INT PropertyId,FLOAT NewValue);
+    virtual UBOOL SetRangedProfileSettingValueInt(INT PropertyId,INT NewValue);
+    DECLARE_FUNCTION(execGetRangedProfileSettingValueFloat);
+    DECLARE_FUNCTION(execGetRangedProfileSettingValueInt);
+    DECLARE_FUNCTION(execSetRangedProfileSettingValueFloat);
+    DECLARE_FUNCTION(execSetRangedProfileSettingValueInt);
     DECLARE_FUNCTION(execGetProfileSettingId)
     {
         P_GET_NAME(ProfileSettingName);
@@ -19535,6 +19602,8 @@ public:
     FVector2D Project(FVector WorldLoc);
     void FastDeProject(FVector2D RelativeScreenPos,FVector& WorldOrigin,FVector& WorldDirection);
     FVector2D FastProject(FVector WorldLoc);
+    // DISHONORED(bringup): 2013 LocalPlayer.ZeroOverridePPDeltaSettings has no located body (agent AE)
+    DECLARE_FUNCTION(execZeroOverridePPDeltaSettings);
     DECLARE_FUNCTION(execSpawnPlayActor)
     {
         P_GET_STR(URL);
@@ -21977,6 +22046,7 @@ AUTOGENERATE_FUNCTION(UUIManager,-1,execGetUIManager);
 	GNativeLookupFuncs.Set(FName("DroppedPickup"), GEngineADroppedPickupNatives); \
 	ADynamicSMActor::StaticClass(); \
 	AInterpActor::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("InterpActor"), GEngineAInterpActorNatives); \
 	AEmitter::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("Emitter"), GEngineAEmitterNatives); \
 	AEmitterPool::StaticClass(); \
@@ -22315,6 +22385,19 @@ AUTOGENERATE_FUNCTION(UUIManager,-1,execGetUIManager);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAActorNatives[] = 
 { 
+	MAP_NATIVE(AActor, execTakeDamage)
+	MAP_NATIVE(AActor, execCheckHitInfo)
+	MAP_NATIVE(AActor, execFindEventsOfClass)
+	MAP_NATIVE(AActor, execDoKismetAttachment)
+	MAP_NATIVE(AActor, execVolumeBasedDestroy)
+	MAP_NATIVE(AActor, execPostAkEvent)
+	MAP_NATIVE(AActor, execSetRTPCValue)
+	MAP_NATIVE(AActor, execSetSwitch)
+	MAP_NATIVE(AActor, execSetState)
+	MAP_NATIVE(AActor, execPostTrigger)
+	MAP_NATIVE(AActor, execActivateOcclusion)
+	MAP_NATIVE(AActor, execPlayActorFaceFXAnim)
+	MAP_NATIVE(AActor, execStopActorFaceFXAnim)
 	MAP_NATIVE(AActor, execGetActorSpriteComponent)
 	MAP_NATIVE(AActor, execGetActorMetrics)
 	MAP_NATIVE(AActor, execShouldBeHiddenBySHOW_NavigationNodes)
@@ -22481,8 +22564,17 @@ FNativeFunctionLookup GEngineAEmitterPoolNatives[] =
 	{NULL, NULL}
 };
 
+FNativeFunctionLookup GEngineAInterpActorNatives[] = 
+{ 
+	MAP_NATIVE(AInterpActor, execSetShadowParentOnAllAttachedComponents)
+	{NULL, NULL}
+};
+
 FNativeFunctionLookup GEngineAHUDNatives[] = 
 { 
+	MAP_NATIVE(AHUD, execDisplayConsoleMessages)
+	MAP_NATIVE(AHUD, execShouldDisplayDebug)
+	MAP_NATIVE(AHUD, execShowDebug)
 	MAP_NATIVE(AHUD, execDrawActorOverlays)
 	MAP_NATIVE(AHUD, execDraw2DLine)
 	MAP_NATIVE(AHUD, execDraw3DLine)
@@ -22491,6 +22583,8 @@ FNativeFunctionLookup GEngineAHUDNatives[] =
 
 FNativeFunctionLookup GEngineAAutoTestManagerNatives[] = 
 { 
+	MAP_NATIVE(AAutoTestManager, execDoSentinelActionBeforeExit_Native)
+	MAP_NATIVE(AAutoTestManager, execDoSentinelActionPerLoadedLevel_Native)
 	MAP_NATIVE(AAutoTestManager, execDoMemoryTracking)
 	MAP_NATIVE(AAutoTestManager, execDoSentinel_ViewDependentMemoryAtSpecificLocation)
 	MAP_NATIVE(AAutoTestManager, execDoSentinel_PerfAtSpecificLocation)
@@ -22522,6 +22616,7 @@ FNativeFunctionLookup GEngineAFileWriterNatives[] =
 
 FNativeFunctionLookup GEngineAGameInfoNatives[] = 
 { 
+	MAP_NATIVE(AGameInfo, execReduceDamage)
 	MAP_NATIVE(AGameInfo, execSpawnPlayerController)
 	MAP_NATIVE(AGameInfo, execEnableStandbyCheatDetection)
 	MAP_NATIVE(AGameInfo, execSetBandwidthLimit)
@@ -22760,6 +22855,8 @@ FNativeFunctionLookup GEngineUCanvasNatives[] =
 
 FNativeFunctionLookup GEngineUCheatManagerNatives[] = 
 { 
+	MAP_NATIVE(UCheatManager, execSetTargetedActor)
+	MAP_NATIVE(UCheatManager, execShowActor)
 	MAP_NATIVE(UCheatManager, execGetAnalyticsUserId)
 	MAP_NATIVE(UCheatManager, execDumpCoverStats)
 	MAP_NATIVE(UCheatManager, execVerifyNavMeshCoverRefs)
@@ -22958,6 +23055,10 @@ FNativeFunctionLookup GEngineUOnlineMatchmakingStatsNatives[] =
 
 FNativeFunctionLookup GEngineUOnlinePlayerStorageNatives[] = 
 { 
+	MAP_NATIVE(UOnlinePlayerStorage, execGetRangedProfileSettingValueFloat)
+	MAP_NATIVE(UOnlinePlayerStorage, execGetRangedProfileSettingValueInt)
+	MAP_NATIVE(UOnlinePlayerStorage, execSetRangedProfileSettingValueFloat)
+	MAP_NATIVE(UOnlinePlayerStorage, execSetRangedProfileSettingValueInt)
 	MAP_NATIVE(UOnlinePlayerStorage, execSetDefaultVersionNumber)
 	MAP_NATIVE(UOnlinePlayerStorage, execGetVersionNumber)
 	MAP_NATIVE(UOnlinePlayerStorage, execAppendVersionToSettings)
@@ -23054,6 +23155,7 @@ FNativeFunctionLookup GEngineUPlayerNatives[] =
 
 FNativeFunctionLookup GEngineULocalPlayerNatives[] = 
 { 
+	MAP_NATIVE(ULocalPlayer, execZeroOverridePPDeltaSettings)
 	MAP_NATIVE(ULocalPlayer, execFastProject)
 	MAP_NATIVE(ULocalPlayer, execFastDeProject)
 	MAP_NATIVE(ULocalPlayer, execProject)
@@ -23105,6 +23207,8 @@ FNativeFunctionLookup GEngineUGameViewportClientNatives[] =
 
 FNativeFunctionLookup GEngineUSettingsNatives[] = 
 { 
+	MAP_NATIVE(USettings, execGetSettingsDataString)
+	MAP_NATIVE(USettings, execSetSettingsDataString)
 	MAP_NATIVE(USettings, execUpdateFromURL)
 	MAP_NATIVE(USettings, execBuildURL)
 	MAP_NATIVE(USettings, execAppendContextsToURL)

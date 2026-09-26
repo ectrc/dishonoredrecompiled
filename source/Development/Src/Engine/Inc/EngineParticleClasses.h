@@ -688,6 +688,13 @@ public:
     class ACamera* BaseCamera;
     //## END PROPS EmitterCameraLensEffectBase
 
+    // DISHONORED(port): 2013 natives (agent AE): ActivateLensEffect exec 0x1bb590 / body 0x4bebe0, RegisterCamera body 0x49d5c0, NotifyRetriggered (empty)
+    virtual void ActivateLensEffect();
+    virtual void RegisterCamera(class ACamera* C);
+    virtual void NotifyRetriggered();
+    DECLARE_FUNCTION(execActivateLensEffect);
+    DECLARE_FUNCTION(execRegisterCamera);
+    DECLARE_FUNCTION(execNotifyRetriggered);
     virtual void UpdateLocation(const FVector& CamLoc,const FRotator& CamRot,FLOAT CamFOVDeg);
     DECLARE_FUNCTION(execUpdateLocation)
     {
@@ -7446,6 +7453,9 @@ AUTOGENERATE_FUNCTION(UParticleSystem,-1,execGetCurrentLODMethod);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAEmitterCameraLensEffectBaseNatives[] = 
 { 
+	MAP_NATIVE(AEmitterCameraLensEffectBase, execActivateLensEffect)
+	MAP_NATIVE(AEmitterCameraLensEffectBase, execRegisterCamera)
+	MAP_NATIVE(AEmitterCameraLensEffectBase, execNotifyRetriggered)
 	MAP_NATIVE(AEmitterCameraLensEffectBase, execUpdateLocation)
 	{NULL, NULL}
 };

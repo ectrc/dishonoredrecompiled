@@ -1801,3 +1801,36 @@ void USettings::FinishDestroy(void)
 	Super::FinishDestroy();
 }
 
+
+
+// DISHONORED(port): 2013 USettings::GetSettingsDataString (exec 0x1e8e40, body 0x4f4730) / SetSettingsDataString
+// (exec 0x1e8d30, body 0x4f1620): static string accessors of FSettingsData (agent AE)
+FString USettings::GetSettingsDataString( FSettingsData& Data )
+{
+	FString Result;
+	if( Data.Type == SDT_String )
+	{
+		Data.GetData( Result );
+	}
+	return Result;
+}
+
+void USettings::SetSettingsDataString( FSettingsData& Data, const FString& InString )
+{
+	Data.SetData( InString );
+}
+
+void USettings::execGetSettingsDataString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_REF(FSettingsData,Data);
+	P_FINISH;
+	*(FString*)Result = GetSettingsDataString( Data );
+}
+
+void USettings::execSetSettingsDataString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_REF(FSettingsData,Data);
+	P_GET_STR(InString);
+	P_FINISH;
+	SetSettingsDataString( Data, InString );
+}

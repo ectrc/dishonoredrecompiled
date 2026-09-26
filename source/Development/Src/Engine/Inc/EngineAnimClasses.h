@@ -282,6 +282,11 @@ public:
     virtual void UpdateAnimSetList();
     virtual void MAT_BeginAnimControl(class UInterpGroup* InInterpGroup);
     virtual void MAT_FinishAnimControl(class UInterpGroup* InInterpGroup);
+    // DISHONORED(port): 2013 natives (agent AE): TakeDamage body 0x313e90 (exec = AActor's), PostBeginPlaySkeletalMeshIsHidden_Native exec folded with 0x1c26e0 (empty body 0x59d10)
+    virtual void TakeDamage(INT Damage,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    virtual void PostBeginPlaySkeletalMeshIsHidden_Native();
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execPostBeginPlaySkeletalMeshIsHidden_Native);
     DECLARE_FUNCTION(execUpdateAnimSetList)
     {
         P_FINISH;
@@ -425,6 +430,10 @@ public:
     virtual void MAT_SetSkelControlScale(FName SkelControlName,FLOAT Scale);
     virtual void MAT_SetSkelControlStrength(FName SkelControlName,FLOAT ControlStrength);
     virtual void MAT_SetAnimPosition(FName SlotName,INT ChannelIndex,FName InAnimSeqName,FLOAT InPosition,UBOOL bFireNotifies,UBOOL bLooping,UBOOL bEnableRootMotion);
+    // DISHONORED(port): 2013 natives (agent AE): ClearAnimNodes exec 0x1db540 / body 0x321f70, UpdateAnimSetList (exec 2012 0x1f0990, the SkeletalMeshActor virtual)
+    void ClearAnimNodes();
+    DECLARE_FUNCTION(execClearAnimNodes);
+    DECLARE_FUNCTION(execUpdateAnimSetList);
     DECLARE_FUNCTION(execMAT_SetAnimWeights)
     {
         P_GET_TARRAY(struct FAnimSlotInfo,SlotInfos);
@@ -3325,6 +3334,9 @@ public:
     void SetAllowPauseAnims(UBOOL bSet);
     void SetCustomAnim(FName AnimName);
     void SetActorAnimEndNotification(UBOOL bNewStatus);
+    // DISHONORED(port): 2013 AnimNodeSlot.AddToSynchGroup is native (exec 0x1dc970, body 0x1af140; agent AE)
+    void AddToSynchGroup(FName GroupName);
+    DECLARE_FUNCTION(execAddToSynchGroup);
     class UAnimNodeSequence* GetCustomAnimNodeSeq();
     void SetRootBoneAxisOption(BYTE AxisX=0,BYTE AxisY=0,BYTE AxisZ=0);
     void SetRootBoneRotationOption(BYTE AxisX=0,BYTE AxisY=0,BYTE AxisZ=0);
@@ -5226,6 +5238,8 @@ AUTOGENERATE_FUNCTION(UMorphTargetSet,-1,execFindMorphTarget);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineASkeletalMeshActorNatives[] = 
 { 
+	MAP_NATIVE(ASkeletalMeshActor, execTakeDamage)
+	MAP_NATIVE(ASkeletalMeshActor, execPostBeginPlaySkeletalMeshIsHidden_Native)
 	MAP_NATIVE(ASkeletalMeshActor, execMAT_FinishAnimControl)
 	MAP_NATIVE(ASkeletalMeshActor, execMAT_BeginAnimControl)
 	MAP_NATIVE(ASkeletalMeshActor, execUpdateAnimSetList)
@@ -5234,6 +5248,8 @@ FNativeFunctionLookup GEngineASkeletalMeshActorNatives[] =
 
 FNativeFunctionLookup GEngineASkeletalMeshActorMATNatives[] = 
 { 
+	MAP_NATIVE(ASkeletalMeshActorMAT, execClearAnimNodes)
+	MAP_NATIVE(ASkeletalMeshActorMAT, execUpdateAnimSetList)
 	MAP_NATIVE(ASkeletalMeshActorMAT, execMAT_SetAnimPosition)
 	MAP_NATIVE(ASkeletalMeshActorMAT, execMAT_SetSkelControlStrength)
 	MAP_NATIVE(ASkeletalMeshActorMAT, execMAT_SetSkelControlScale)
@@ -5327,6 +5343,7 @@ FNativeFunctionLookup GEngineUAnimNodeBlendMultiBoneNatives[] =
 
 FNativeFunctionLookup GEngineUAnimNodeSlotNatives[] = 
 { 
+	MAP_NATIVE(UAnimNodeSlot, execAddToSynchGroup)
 	MAP_NATIVE(UAnimNodeSlot, execTickChildWeights)
 	MAP_NATIVE(UAnimNodeSlot, execSetRootBoneRotationOption)
 	MAP_NATIVE(UAnimNodeSlot, execSetRootBoneAxisOption)

@@ -3621,3 +3621,297 @@ void APlayerController::execGetFOVAngle( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	*(FLOAT*)Result = GetFOVAngle();
 }
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 PlayerController movement natives (agent AE, PHASE6 AE.2). The reference runs
+	these in PlayerController.uc (state PlayerWalking); retail 2013 made them native C++ virtuals.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 APawn::ProcessViewRotation (0x12ffc0): Pawn.uc ProcessViewRotation made C++,
+// the pitch limit of LimitViewRotation inlined for player-controlled pawns
+void APawn::ProcessViewRotation( FLOAT DeltaTime, FRotator& out_ViewRotation, FRotator& out_DeltaRot )
+{
+	out_ViewRotation += out_DeltaRot;
+	out_DeltaRot = FRotator( 0, 0, 0 );
+	if( Cast<APlayerController>( Controller ) )
+	{
+		const INT PitchMin = (INT)ViewPitchMin;
+		const INT PitchMax = (INT)ViewPitchMax;
+		INT Pitch = out_ViewRotation.Pitch & 65535;
+		if( Pitch > PitchMax && Pitch < PitchMin + 65535 )
+		{
+			Pitch = (Pitch >= 32768) ? PitchMin + 65535 : PitchMax;
+		}
+		out_ViewRotation.Pitch = Pitch;
+	}
+}
+
+// DISHONORED(port): 2013 APlayerController::LimitViewRotation (exec 0x1d3930, body 0x129410)
+FRotator APlayerController::LimitViewRotation( FRotator ViewRotation, INT ViewPitchMin, INT ViewPitchMax )
+{
+	INT Pitch = ViewRotation.Pitch & 65535;
+	if( Pitch > ViewPitchMax && Pitch < ViewPitchMin + 65535 )
+	{
+		Pitch = (Pitch >= 32768) ? ViewPitchMin + 65535 : ViewPitchMax;
+	}
+	ViewRotation.Pitch = Pitch;
+	return ViewRotation;
+}
+
+// DISHONORED(port): 2013 APlayerController::ProcessViewRotation (exec 0x1d3840, body 0x133010): the camera
+// modifiers first, then the pawn; without a pawn the pitch is clamped to +-16383
+void APlayerController::ProcessViewRotation( FLOAT DeltaTime, FRotator& out_ViewRotation, FRotator DeltaRot )
+{
+	if( PlayerCamera )
+	{
+		PlayerCamera->ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
+	}
+	if( Pawn )
+	{
+		Pawn->ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
+	}
+	else
+	{
+		out_ViewRotation += DeltaRot;
+		INT Pitch = out_ViewRotation.Pitch & 65535;
+		if( (DWORD)(Pitch - 16384) <= 0x7FFE )
+		{
+			Pitch = (Pitch >= 32768) ? 49151 : 16383;
+		}
+		out_ViewRotation.Pitch = Pitch;
+	}
+}
+
+// DISHONORED(port): 2013 APlayerController::UpdateRotation (exec 0x1d37e0, body 0x1292d0): PlayerController.uc
+// UpdateRotation made C++ (SetDesiredRotation on the pawn, PlayerInput aTurn/aLookUp, FaceRotation)
+void APlayerController::UpdateRotation( FLOAT DeltaTime )
+{
+	FRotator ViewRotation = Rotation;
+	if( Pawn )
+	{
+		Pawn->SetDesiredRotation( ViewRotation, FALSE, FALSE, -1.f, TRUE );
+	}
+	FRotator DeltaRot( 0, 0, 0 );
+	if( PlayerInput )
+	{
+		DeltaRot.Yaw = appTrunc( PlayerInput->aTurn );
+		DeltaRot.Pitch = appTrunc( PlayerInput->aLookUp );
+	}
+	ProcessViewRotation( DeltaTime, ViewRotation, DeltaRot );
+	SetRotation( ViewRotation );
+	if( Pawn )
+	{
+		Pawn->FaceRotation( FRotator( ViewRotation.Pitch, ViewRotation.Yaw, Rotation.Roll ), DeltaTime );
+	}
+}
+
+// DISHONORED(port): 2013 APlayerController::PlayerMove_Walking (exec 0x1d3a00, body 0x12fdb0): state
+// PlayerWalking's PlayerMove/ProcessMove made C++. Retail keeps the acceleration from aForward/aStrafe in
+// the pawn's rotation frame, clears bDoubleJump, updates the remote view pitch, then calls the virtual
+// CheckJumpOrDuck (vtable +1240, empty in Engine, DishonoredPlayerController's is 0x6ae490) and clears bPressedJump.
+void APlayerController::PlayerMove_Walking( FLOAT DeltaTime )
+{
+	static const FName NAME_DeadState( TEXT("Dead") );
+	if( !Pawn )
+	{
+		GotoState( NAME_DeadState );
+		return;
+	}
+	const FRotationMatrix PawnFrame( Pawn->Rotation );
+	FVector NewAccel( 0.f, 0.f, 0.f );
+	if( PlayerInput )
+	{
+		NewAccel = PawnFrame.GetAxis( 0 ) * PlayerInput->aForward + PawnFrame.GetAxis( 1 ) * PlayerInput->aStrafe;
+	}
+	NewAccel.Z = 0.f;
+	NewAccel = NewAccel.SafeNormal() * Pawn->AccelRate;
+
+	UpdateRotation( DeltaTime );
+	bDoubleJump = FALSE;
+	Pawn->SetRemoteViewPitch( Rotation.Pitch );
+	Pawn->Acceleration = NewAccel;
+	CheckJumpOrDuck();
+	bPressedJump = FALSE;
+}
+
+// DISHONORED(port): 2013 APlayerController::HandleWalking (exec 0x1d35c0, body 0x243000): bRun drives the
+// pawn's bIsWalking directly (no SetWalking event in retail)
+void APlayerController::HandleWalking( FLOAT DeltaTime )
+{
+	if( Pawn )
+	{
+		const UBOOL bWantsWalking = (bRun != 0);
+		if( bWantsWalking != (Pawn->bIsWalking != 0) )
+		{
+			Pawn->bIsWalking = bWantsWalking;
+		}
+	}
+}
+
+// DISHONORED(port): 2013 APlayerController::IsLookInputIgnored (exec 0x1d3ab0, body 0x243050)
+UBOOL APlayerController::IsLookInputIgnored() const
+{
+	return bIgnoreLookInput != 0;
+}
+
+// DISHONORED(port): 2013 APlayerController::IsMoveInputIgnored (exec 0x1d3a70, body 0x243040)
+UBOOL APlayerController::IsMoveInputIgnored() const
+{
+	return bIgnoreMoveInput != 0;
+}
+
+// DISHONORED(port): 2013 APlayerController::CleanOutSavedMoves (exec 0x1d3310, body 0x129450)
+void APlayerController::CleanOutSavedMoves()
+{
+	SavedMoves = NULL;
+	PendingMove = NULL;
+}
+
+// DISHONORED(port): 2013 APlayerController::ResetTimeMargin (exec 0x1d32e0, body 0x130160)
+void APlayerController::ResetTimeMargin()
+{
+	TimeMargin = -0.1f;
+	MaxTimeMargin = AGameInfo::StaticClass()->GetDefaultObject<AGameInfo>()->MaxTimeMargin;
+}
+
+// DISHONORED(port): 2013 APlayerController::CleanUpBeforeLevelTransition (exec 0x1d3af0, body 0x1ca1f0):
+// GWorld->CleanUpBeforeLevelTransition() (0x258bb0) is the whole body
+void APlayerController::CleanUpBeforeLevelTransition()
+{
+	GWorld->CleanUpBeforeLevelTransition();
+}
+
+// DISHONORED(bringup): 2013 APlayerController::Sentinel_TakeScreenshot (exec 0x1ee6a0, body 0x2e0780) queues a
+// "<name>#<changelist>.png" screenshot through the global screenshot request; the Sentinel screenshot
+// globals are not ported, the request is logged instead
+void APlayerController::Sentinel_TakeScreenshot( const FString& InName )
+{
+	debugf( TEXT("DISHONORED(bringup): Sentinel_TakeScreenshot %s#%7d.png not taken"), *InName, GBuiltFromChangeList );
+}
+
+// DISHONORED(port): 2013 APlayerController::Sentinel_TakeScreenshotEnabled (exec 0x1d3d30, body 0x2cc170)
+UBOOL APlayerController::Sentinel_TakeScreenshotEnabled()
+{
+	return !ParseParam( appCmdLine(), TEXT("nosentinelscreenshots") );
+}
+
+// DISHONORED(port): 2013 APlayerController::SetControllerTiltDesiredIfAvailable (exec 0x1d3380, body 0x1cb0c0): empty in retail
+void APlayerController::SetControllerTiltDesiredIfAvailable( UBOOL bActive )
+{
+}
+
+// DISHONORED(port): 2013 APlayerController::CheckJumpOrDuck (vtable +1240, 0x59d10): empty in Engine, the
+// jump/duck handling is ADishonoredPlayerController::CheckJumpOrDuck (0x6ae490, agent AF)
+void APlayerController::CheckJumpOrDuck()
+{
+}
+
+void APlayerController::execPlayerMove_Walking( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	PlayerMove_Walking( DeltaTime );
+}
+
+void APlayerController::execProcessViewRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaTime);
+	P_GET_ROTATOR_REF(out_ViewRotation);
+	P_GET_ROTATOR(DeltaRot);
+	P_FINISH;
+	ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
+}
+
+void APlayerController::execUpdateRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	UpdateRotation( DeltaTime );
+}
+
+void APlayerController::execHandleWalking( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	HandleWalking( DeltaTime );
+}
+
+void APlayerController::execLimitViewRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_ROTATOR(ViewRotation);
+	P_GET_INT(ViewPitchMin);
+	P_GET_INT(ViewPitchMax);
+	P_FINISH;
+	*(FRotator*)Result = LimitViewRotation( ViewRotation, ViewPitchMin, ViewPitchMax );
+}
+
+void APlayerController::execIsLookInputIgnored( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = IsLookInputIgnored();
+}
+
+void APlayerController::execIsMoveInputIgnored( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = IsMoveInputIgnored();
+}
+
+void APlayerController::execCleanOutSavedMoves( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	CleanOutSavedMoves();
+}
+
+void APlayerController::execResetTimeMargin( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ResetTimeMargin();
+}
+
+void APlayerController::execCleanUpBeforeLevelTransition( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	CleanUpBeforeLevelTransition();
+}
+
+void APlayerController::execSentinel_TakeScreenshot( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(InName);
+	P_FINISH;
+	Sentinel_TakeScreenshot( InName );
+}
+
+void APlayerController::execSentinel_TakeScreenshotEnabled( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = Sentinel_TakeScreenshotEnabled();
+}
+
+void APlayerController::execSetControllerTiltDesiredIfAvailable( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bActive);
+	P_FINISH;
+	SetControllerTiltDesiredIfAvailable( bActive );
+}
+
+// DISHONORED(port): 2013 UCheatManager::execSetTargetedActor (0x1c9c60): stores the cheat target
+// (m_pTargetedActor, retail SDK @88); execShowActor (0x1dffa0) reads its name and does nothing in Shipping
+void UCheatManager::SetTargetedActor( AActor* _pTarget )
+{
+	m_pTargetedActor = _pTarget;
+}
+
+void UCheatManager::execSetTargetedActor( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AActor,_pTarget);
+	P_FINISH;
+	SetTargetedActor( _pTarget );
+}
+
+void UCheatManager::execShowActor( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(actorName);
+	P_FINISH;
+}

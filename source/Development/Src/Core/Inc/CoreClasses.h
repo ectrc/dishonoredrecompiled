@@ -96,6 +96,8 @@ public:
         ProcessEvent(FindFunctionChecked(CORE_Main),&Parms);
         return Parms.ReturnValue;
     }
+    // DISHONORED(port): 2013 Commandlet.Main is a native event (exec 0x34270, agent AE)
+    DECLARE_FUNCTION(execMain);
     DECLARE_ABSTRACT_CLASS(UCommandlet,UObject,0|CLASS_Transient,Core)
 	virtual INT Main(const FString& Params);
 
@@ -145,6 +147,7 @@ public:
     //## BEGIN PROPS HelpCommandlet
     //## END PROPS HelpCommandlet
 
+    DECLARE_FUNCTION(execMain);  // DISHONORED(port): HelpCommandlet.Main native event (agent AE)
     DECLARE_CLASS(UHelpCommandlet,UCommandlet,0|CLASS_Transient,Core)
 	virtual INT Main(const FString& Params);
 };
@@ -497,7 +500,9 @@ AUTOGENERATE_FUNCTION(UDistributionVector,-1,execGetVectorValue);
 	UObject::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("Object"), GCoreUObjectNatives); \
 	UCommandlet::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("Commandlet"), GCoreUCommandletNatives); \
 	UHelpCommandlet::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("HelpCommandlet"), GCoreUHelpCommandletNatives); \
 	UComponent::StaticClass(); \
 	UDistributionFloat::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("DistributionFloat"), GCoreUDistributionFloatNatives); \
@@ -545,8 +550,22 @@ AUTOGENERATE_FUNCTION(UDistributionVector,-1,execGetVectorValue);
 #endif // CORE_NATIVE_DEFS
 
 #ifdef NATIVES_ONLY
+FNativeFunctionLookup GCoreUCommandletNatives[] = 
+{ 
+	MAP_NATIVE(UCommandlet, execMain)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GCoreUHelpCommandletNatives[] = 
+{ 
+	MAP_NATIVE(UHelpCommandlet, execMain)
+	{NULL, NULL}
+};
+
 FNativeFunctionLookup GCoreUObjectNatives[] = 
 { 
+	MAP_NATIVE(UObject, execVSmerp)
+	MAP_NATIVE(UObject, execRSmerp)
 	MAP_NATIVE(UObject, execProfNodeEvent)
 	MAP_NATIVE(UObject, execProfNodeSetDepthThreshold)
 	MAP_NATIVE(UObject, execProfNodeSetTimeThresholdSeconds)

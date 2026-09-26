@@ -2079,6 +2079,11 @@ FNativeFunctionLookup GEngineAFractureManagerNatives[] =
 
 FNativeFunctionLookup GEngineUPrimitiveComponentNatives[] = 
 { 
+	MAP_NATIVE(UPrimitiveComponent, execPutRigidBodyToSleep_Debug)
+	MAP_NATIVE(UPrimitiveComponent, execRigidBodyIsAwake_Debug)
+	MAP_NATIVE(UPrimitiveComponent, execSetRBPosition_Debug)
+	MAP_NATIVE(UPrimitiveComponent, execSetRBRotation_Debug)
+	MAP_NATIVE(UPrimitiveComponent, execShouldComponentAddToPrimitiveOctree)
 	MAP_NATIVE(UPrimitiveComponent, execClosestPointOnComponentToComponent)
 	MAP_NATIVE(UPrimitiveComponent, execClosestPointOnComponentToPoint)
 	MAP_NATIVE(UPrimitiveComponent, execGetRotation)

@@ -194,6 +194,23 @@ public:
     virtual void StopAllCameraAnimsByType(class UCameraAnim* Anim,UBOOL bImmediate=FALSE);
     virtual void StopCameraAnim(class UCameraAnimInst* AnimInst,UBOOL bImmediate=FALSE);
     // DISHONORED(port): GetCameraViewPoint is a native in the 2013 scripts (exec 0x1cfec0: CameraCache.POV)
+    // DISHONORED(port): 2013 natives without a reference body (agent AE): UpdateCamera exec 0x1cffd0 / body 0x1e5eb0, FindCameraLensEffect 0x1d0250 / 0x1e5c60,
+    // AddCameraLensEffect 0x1d02c0 / 0x1e5d90, RemoveCameraLensEffect 0x1d0360 / 0x1f2d40, ClearCameraLensEffects 0x1d03c0 / 0x1f2d60; UpdateViewTarget 0x1e6350,
+    // ProcessViewRotation 0x1e5ac0, FillCameraCache 0x1bd0a0 and BlendViewTargets 0x1dd9c0 are C++ in 2013 (script in the reference)
+    virtual void UpdateCamera(FLOAT DeltaTime);
+    virtual void UpdateViewTarget(struct FTViewTarget& OutVT,FLOAT DeltaTime);
+    virtual void ProcessViewRotation(FLOAT DeltaTime,FRotator& OutViewRotation,FRotator& OutDeltaRot);
+    virtual class AEmitterCameraLensEffectBase* FindCameraLensEffect(class UClass* LensEffectEmitterClass);
+    virtual class AEmitterCameraLensEffectBase* AddCameraLensEffect(class UClass* LensEffectEmitterClass);
+    virtual void RemoveCameraLensEffect(class AEmitterCameraLensEffectBase* Emitter);
+    virtual void ClearCameraLensEffects();
+    void FillCameraCache(const struct FTPOV& NewPOV);
+    struct FTPOV BlendViewTargets(const struct FTViewTarget& A,const struct FTViewTarget& B,FLOAT Alpha);
+    DECLARE_FUNCTION(execUpdateCamera);
+    DECLARE_FUNCTION(execFindCameraLensEffect);
+    DECLARE_FUNCTION(execAddCameraLensEffect);
+    DECLARE_FUNCTION(execRemoveCameraLensEffect);
+    DECLARE_FUNCTION(execClearCameraLensEffects);
     DECLARE_FUNCTION(execGetCameraViewPoint);
     // DISHONORED(port): GetFOVAngle is a native in the 2013 scripts (exec 0x1cfe60: bLockedFOV ? LockedFOV : CameraCache.POV.FOV)
     FLOAT GetFOVAngle() const;
@@ -685,6 +702,11 @@ AUTOGENERATE_FUNCTION(UCameraModifier_CameraShake,-1,execUpdateCameraShake);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineACameraNatives[] = 
 { 
+	MAP_NATIVE(ACamera, execUpdateCamera)
+	MAP_NATIVE(ACamera, execFindCameraLensEffect)
+	MAP_NATIVE(ACamera, execAddCameraLensEffect)
+	MAP_NATIVE(ACamera, execRemoveCameraLensEffect)
+	MAP_NATIVE(ACamera, execClearCameraLensEffects)
 	MAP_NATIVE(ACamera, execGetCameraViewPoint)
 	MAP_NATIVE(ACamera, execGetFOVAngle)
 	MAP_NATIVE(ACamera, execStopCameraAnim)

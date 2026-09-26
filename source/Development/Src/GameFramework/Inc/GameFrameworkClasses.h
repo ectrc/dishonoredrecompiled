@@ -1174,6 +1174,20 @@ public:
     virtual UBOOL IsIdle();
     virtual void PlayDeath(FVector KillMomentum);
     virtual void NativePostRenderFor(class APlayerController* PC,class UCanvas* Canvas,FVector CameraPosition,FVector CameraDir);
+    // DISHONORED(port): 2013 natives (agent AE): InitializeAgent exec 0x5577a0 / body 0x56c2a0, OnDestroyedByKismet 0x55a790 (KillAgent 0x55fe80), TakeDamage body 0x559800,
+    // VolumeBasedDestroy 0x559930, FellOutOfWorld / OutsideWorldBounds (events, kill the agent); SetCurrentDestination 0x5599c0 is C++ in 2013
+    virtual void InitializeAgent(class AActor* SpawnLoc,class AGameCrowdAgent* AgentTemplate,FLOAT AgentWarmupTime,UBOOL bWarmupPosition,UBOOL bCheckWarmupVisibility);
+    virtual void OnDestroyedByKismet();
+    virtual void KillAgent();
+    void SetCurrentDestination(class AGameCrowdDestination* NewDest);
+    virtual void TakeDamage(INT DamageAmount,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    virtual void VolumeBasedDestroy(class APhysicsVolume* PV);
+    DECLARE_FUNCTION(execInitializeAgent);
+    DECLARE_FUNCTION(execOnDestroyedByKismet);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execVolumeBasedDestroy);
+    DECLARE_FUNCTION(execFellOutOfWorld);
+    DECLARE_FUNCTION(execOutsideWorldBounds);
     DECLARE_FUNCTION(execGetCollisionExtent)
     {
         P_FINISH;
@@ -1435,6 +1449,9 @@ public:
 
     virtual void PlayDeath(FVector KillMomentum);
     virtual void SetRootMotion(UBOOL bRootMotionEnabled);
+    // DISHONORED(port): 2013 GameCrowdAgentSkeletal.OnAnimEnd is native (exec 0x557910, body 0x559c60; agent AE)
+    virtual void OnAnimEnd(class UAnimNodeSequence* SeqNode,FLOAT PlayedTime,FLOAT ExcessTime);
+    DECLARE_FUNCTION(execOnAnimEnd);
     DECLARE_FUNCTION(execSetRootMotion)
     {
         P_GET_UBOOL(bRootMotionEnabled);
@@ -1557,6 +1574,9 @@ public:
     class UCylinderComponent* CylinderComponent;
     //## END PROPS GameCrowdInteractionPoint
 
+    // DISHONORED(port): 2013 GameCrowdInteractionPoint.SetEnabled is native (exec 0x5579d0, body 0x559530; agent AE)
+    virtual void SetEnabled(UBOOL bNewIsEnabled);
+    DECLARE_FUNCTION(execSetEnabled);
     DECLARE_ABSTRACT_CLASS(AGameCrowdInteractionPoint,AActor,0,GameFramework)
 #if WITH_EDITOR
 	// AActor interface.
@@ -1678,6 +1698,18 @@ public:
     DISHONORED_SHIM_STATIC FLOAT LastSpawnTime;
     DISHONORED_SHIM_STATIC class AGameCrowdPopulationManager* MyPopMgr;
 
+    // DISHONORED(port): 2013 natives (agent AE): ReachedDestination exec 0x557a40 / body 0x5678f0, PickNewDestinationFor 0x557aa0 / 0x5613b0, AllowableDestinationFor (exec folded) / 0x561820,
+    // IncrementCustomerCount 0x55e5c0, DecrementCustomerCount 0x561af0
+    virtual void ReachedDestination(class AGameCrowdAgent* Agent);
+    virtual void PickNewDestinationFor(class AGameCrowdAgent* Agent,UBOOL bIgnoreRestrictions);
+    virtual UBOOL AllowableDestinationFor(class AGameCrowdAgent* Agent);
+    virtual void IncrementCustomerCount(class AGameCrowdAgent* ArrivingAgent);
+    virtual void DecrementCustomerCount(class AGameCrowdAgent* DepartingAgent);
+    DECLARE_FUNCTION(execReachedDestination);
+    DECLARE_FUNCTION(execPickNewDestinationFor);
+    DECLARE_FUNCTION(execAllowableDestinationFor);
+    DECLARE_FUNCTION(execIncrementCustomerCount);
+    DECLARE_FUNCTION(execDecrementCustomerCount);
     virtual UBOOL ReachedByAgent(class AGameCrowdAgent* Agent,FVector TestPosition,UBOOL bTestExactly);
     DECLARE_FUNCTION(execReachedByAgent)
     {
@@ -1753,6 +1785,12 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC class UClass* QueueBehaviorClass;
 
+    // DISHONORED(port): 2013 natives (agent AE): ActuallyAdvance body 0x56abb0; HasSpace 0x55a1c0, AddCustomer 0x55a180, AdvanceCustomerTo 0x55a130 are C++ in 2013
+    void ActuallyAdvance();
+    UBOOL HasSpace() const;
+    void AddCustomer(class AGameCrowdAgent* NewCustomer,class AGameCrowdInteractionPoint* PreviousPosition);
+    void AdvanceCustomerTo(class AGameCrowdInteractionPoint* FrontPosition);
+    DECLARE_FUNCTION(execActuallyAdvance);
     virtual UBOOL QueueReachedBy(class AGameCrowdAgent* Agent,FVector TestPosition);
     DECLARE_FUNCTION(execQueueReachedBy)
     {
@@ -2060,6 +2098,11 @@ public:
     void ClientPlayMovie(const FString& MovieName,INT InStartOfRenderingMovieFrame,INT InEndOfRenderingMovieFrame,UBOOL bRestrictPausing,UBOOL bPlayOnceFromStream,UBOOL bOnlyBackButtonSkipsMovie);
     void ClientStopMovie(FLOAT DelayInSeconds,UBOOL bAllowMovieToFinish,UBOOL bForceStopNonSkippable,UBOOL bForceStopLoadingMovie);
     void GetCurrentMovie(FString& MovieName);
+    // DISHONORED(port): 2013 natives (agent AE): CrowdFocus exec 0x5f3bf0 / body 0x566940, CrowdToggle (2012 exec 0x1e8140) / 0x566af0
+    virtual void CrowdFocus();
+    virtual void CrowdToggle();
+    DECLARE_FUNCTION(execCrowdFocus);
+    DECLARE_FUNCTION(execCrowdToggle);
     DECLARE_FUNCTION(execGetUIPlayerIndex)
     {
         P_FINISH;
@@ -3699,6 +3742,7 @@ AUTOGENERATE_FUNCTION(UNavMeshGoal_OutOfViewFrom,-1,execRecycleNative);
 	UGameCrowdGroup::StaticClass(); \
 	AGameCrowdInfoVolume::StaticClass(); \
 	AGameCrowdInteractionPoint::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("GameCrowdInteractionPoint"), GGameFrameworkAGameCrowdInteractionPointNatives); \
 	AGameCrowdBehaviorPoint::StaticClass(); \
 	AGameCrowdDestination::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("GameCrowdDestination"), GGameFrameworkAGameCrowdDestinationNatives); \
@@ -3776,6 +3820,12 @@ FNativeFunctionLookup GGameFrameworkAGameAIControllerNatives[] =
 
 FNativeFunctionLookup GGameFrameworkAGameCrowdAgentNatives[] = 
 { 
+	MAP_NATIVE(AGameCrowdAgent, execInitializeAgent)
+	MAP_NATIVE(AGameCrowdAgent, execOnDestroyedByKismet)
+	MAP_NATIVE(AGameCrowdAgent, execTakeDamage)
+	MAP_NATIVE(AGameCrowdAgent, execVolumeBasedDestroy)
+	MAP_NATIVE(AGameCrowdAgent, execFellOutOfWorld)
+	MAP_NATIVE(AGameCrowdAgent, execOutsideWorldBounds)
 	MAP_NATIVE(AGameCrowdAgent, execNativePostRenderFor)
 	MAP_NATIVE(AGameCrowdAgent, execPlayDeath)
 	MAP_NATIVE(AGameCrowdAgent, execIsIdle)
@@ -3787,6 +3837,7 @@ FNativeFunctionLookup GGameFrameworkAGameCrowdAgentNatives[] =
 
 FNativeFunctionLookup GGameFrameworkAGameCrowdAgentSkeletalNatives[] = 
 { 
+	MAP_NATIVE(AGameCrowdAgentSkeletal, execOnAnimEnd)
 	MAP_NATIVE(AGameCrowdAgentSkeletal, execSetRootMotion)
 	MAP_NATIVE(AGameCrowdAgentSkeletal, execPlayDeath)
 	{NULL, NULL}
@@ -3820,14 +3871,26 @@ FNativeFunctionLookup GGameFrameworkUGameCrowdBehavior_WaitInQueueNatives[] =
 	{NULL, NULL}
 };
 
+FNativeFunctionLookup GGameFrameworkAGameCrowdInteractionPointNatives[] = 
+{ 
+	MAP_NATIVE(AGameCrowdInteractionPoint, execSetEnabled)
+	{NULL, NULL}
+};
+
 FNativeFunctionLookup GGameFrameworkAGameCrowdDestinationNatives[] = 
 { 
+	MAP_NATIVE(AGameCrowdDestination, execReachedDestination)
+	MAP_NATIVE(AGameCrowdDestination, execPickNewDestinationFor)
+	MAP_NATIVE(AGameCrowdDestination, execAllowableDestinationFor)
+	MAP_NATIVE(AGameCrowdDestination, execIncrementCustomerCount)
+	MAP_NATIVE(AGameCrowdDestination, execDecrementCustomerCount)
 	MAP_NATIVE(AGameCrowdDestination, execReachedByAgent)
 	{NULL, NULL}
 };
 
 FNativeFunctionLookup GGameFrameworkAGameCrowdDestinationQueuePointNatives[] = 
 { 
+	MAP_NATIVE(AGameCrowdDestinationQueuePoint, execActuallyAdvance)
 	MAP_NATIVE(AGameCrowdDestinationQueuePoint, execQueueReachedBy)
 	{NULL, NULL}
 };
@@ -3840,6 +3903,8 @@ FNativeFunctionLookup GGameFrameworkAGameExplosionActorNatives[] =
 
 FNativeFunctionLookup GGameFrameworkAGamePlayerControllerNatives[] = 
 { 
+	MAP_NATIVE(AGamePlayerController, execCrowdFocus)
+	MAP_NATIVE(AGamePlayerController, execCrowdToggle)
 	MAP_NATIVE(AGamePlayerController, execGetCurrentMovie)
 	MAP_NATIVE(AGamePlayerController, execClientStopMovie)
 	MAP_NATIVE(AGamePlayerController, execClientPlayMovie)

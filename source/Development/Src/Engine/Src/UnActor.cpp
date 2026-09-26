@@ -4951,3 +4951,364 @@ UObject* UCloudSaveSystem::DeserializeObject(class UClass* ObjectClass, TArray<B
 	return DeserializeObject(ObjectClass, MemoryReader, VersionSupport, VersionNumber);
 }
 
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 Actor / HUD / GameInfo / WorldInfo / InterpActor natives without a reference
+	body (agent AE, PHASE6 AE.2). Bodies are the retail 2013 ones (rvas below).
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 AActor::TakeDamage (exec 0x1c1640, body 0x1753f0): Actor.uc TakeDamage made C++ -
+// every SeqEvent_TakeDamage in GeneratedEvents gets HandleDamage
+void AActor::TakeDamage( INT DamageAmount, AController* EventInstigator, FVector HitLocation, FVector Momentum, UClass* DamageType, FTraceHitInfo HitInfo, AActor* DamageCauser )
+{
+	for( INT EventIdx = 0; EventIdx < GeneratedEvents.Num(); EventIdx++ )
+	{
+		USeqEvent_TakeDamage* DamageEvent = Cast<USeqEvent_TakeDamage>( GeneratedEvents(EventIdx) );
+		if( DamageEvent )
+		{
+			DamageEvent->HandleDamage( this, EventInstigator, DamageType, DamageAmount );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 AActor::CheckHitInfo (exec 0x1c1800, body 0x16dd40): fills a missing bone / hit
+// component by tracing 128 units through the fallback skeletal component along Dir
+void AActor::CheckHitInfo( FTraceHitInfo& HitInfo, UPrimitiveComponent* FallBackComponent, FVector Dir, FVector& out_HitLocation )
+{
+	USkeletalMeshComponent* HitSkelComp = Cast<USkeletalMeshComponent>( HitInfo.HitComponent );
+	if( HitSkelComp && HitInfo.BoneName != NAME_None )
+	{
+		return;
+	}
+	USkeletalMeshComponent* FallBackSkelComp = Cast<USkeletalMeshComponent>( FallBackComponent );
+	if( !HitInfo.HitComponent || !HitSkelComp )
+	{
+		if( !FallBackSkelComp )
+		{
+			return;
+		}
+		HitInfo.HitComponent = FallBackComponent;
+	}
+	if( HitInfo.BoneName != NAME_None )
+	{
+		return;
+	}
+	if( Dir.IsZero() )
+	{
+		Dir = Rotation.Vector();
+	}
+	if( out_HitLocation.IsZero() )
+	{
+		out_HitLocation = Location;
+	}
+	Dir = Dir.SafeNormal();
+	FCheckResult Hit( 1.f );
+	// retail traces the component (AActor::TraceComponent 0x2ccfd0 = the component's LineCheck plus the hit info)
+	if( !HitInfo.HitComponent->LineCheck( Hit, out_HitLocation - Dir * 128.f, out_HitLocation + Dir * 128.f, FVector( 0.f, 0.f, 0.f ), TRACE_ComplexCollision ) )
+	{
+		HitInfo.BoneName = Hit.BoneName;
+		HitInfo.PhysMaterial = Hit.PhysMaterial;
+		out_HitLocation = Hit.Location;
+	}
+}
+
+// DISHONORED(port): 2013 AActor::FindEventsOfClass (exec 0x1fcc40, body 0x175310)
+UBOOL AActor::FindEventsOfClass( UClass* EventClass, TArray<USequenceEvent*>* out_EventList, UBOOL bIncludeDisabled )
+{
+	UBOOL bFoundEvent = FALSE;
+	for( INT EventIdx = 0; EventIdx < GeneratedEvents.Num(); EventIdx++ )
+	{
+		USequenceEvent* Evt = GeneratedEvents(EventIdx);
+		if( Evt && (Evt->bEnabled || bIncludeDisabled) && Evt->IsA( EventClass ) && (Evt->MaxTriggerCount == 0 || Evt->MaxTriggerCount > Evt->TriggerCount) )
+		{
+			bFoundEvent = TRUE;
+			if( !out_EventList )
+			{
+				return TRUE;
+			}
+			out_EventList->AddItem( Evt );
+		}
+	}
+	return bFoundEvent;
+}
+
+// DISHONORED(port): 2013 AActor::VolumeBasedDestroy (exec 0x1c03a0, body 0x168420): UWorld::DestroyActor(this, FALSE, TRUE) (0x252cf0)
+void AActor::VolumeBasedDestroy( APhysicsVolume* PV )
+{
+	GWorld->DestroyActor( this, FALSE, TRUE );
+}
+
+// DISHONORED(bringup): the 2013 Wwise natives (PostAkEvent 0x2cd730, SetRTPCValue 0x2d8040, SetSwitch 0x2d81f0,
+// SetState 0x2d8100, PostTrigger 0x2d8300, ActivateOcclusion 0x2cd770) forward to UAkAudioDevice::Get() when
+// the device exists; our AkAudio module is the silent stub without a device, so they are no-ops (audio stays
+// silent this wave, PHASE6 facts table)
+void AActor::PostAkEvent( UAkEvent* InAkEvent )
+{
+}
+
+void AActor::SetRTPCValue( FName InRTPC, FLOAT TargetValue )
+{
+}
+
+void AActor::SetSwitch( FName InSwitchGroup, FName InSwitch )
+{
+}
+
+void AActor::SetState( FName InStateGroup, FName InState )
+{
+}
+
+void AActor::PostTrigger( FName InTrigger )
+{
+}
+
+void AActor::ActivateOcclusion( UBOOL bInActivate )
+{
+}
+
+// DISHONORED(port): 2013 AActor::PlayActorFaceFXAnim (exec 0x1e76c0, vtable +340 = 0x169520 `return 0`) and
+// StopActorFaceFXAnim (exec 0x1c1ac0, vtable +344 = 0x59d10 empty); the APawn overrides (0x175520 / 0x169530)
+// drive Mesh->PlayFaceFXAnim / StopFaceFXAnim and are left to the FaceFX port
+UBOOL AActor::PlayActorFaceFXAnim( UFaceFXAnimSet* AnimSet, const FString& GroupName, const FString& SeqName, UAkEvent* AkEventToPlay )
+{
+	return FALSE;
+}
+
+void AActor::StopActorFaceFXAnim()
+{
+}
+
+void AActor::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(DamageAmount);
+	P_GET_OBJECT(AController,EventInstigator);
+	P_GET_VECTOR(HitLocation);
+	P_GET_VECTOR(Momentum);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_STRUCT_OPTX(FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+	P_GET_OBJECT_OPTX(AActor,DamageCauser,NULL);
+	P_FINISH;
+	TakeDamage( DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+}
+
+void AActor::execCheckHitInfo( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_REF(FTraceHitInfo,HitInfo);
+	P_GET_OBJECT(UPrimitiveComponent,FallBackComponent);
+	P_GET_VECTOR(Dir);
+	P_GET_VECTOR_REF(out_HitLocation);
+	P_FINISH;
+	CheckHitInfo( HitInfo, FallBackComponent, Dir, out_HitLocation );
+}
+
+void AActor::execFindEventsOfClass( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UClass,EventClass);
+	P_GET_TARRAY_REF(USequenceEvent*,out_EventList);
+	P_GET_UBOOL_OPTX(bIncludeDisabled,FALSE);
+	P_FINISH;
+	*(UBOOL*)Result = FindEventsOfClass( EventClass, pout_EventList, bIncludeDisabled );
+}
+
+// DISHONORED(bringup): 2013 AActor::execDoKismetAttachment (0x1df6c0) reads an Actor and a 36-byte
+// AttachmentInfos struct and calls the virtual DoKismetAttachment (+336, 0x18ab50; APawn's 0x2a1180). The
+// struct lives in DishonoredGameEngineShims.h until agent AI moves it into Engine, so the exec only consumes
+// its parameters (hand-over in agentAE.md)
+void AActor::execDoKismetAttachment( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(AActor,Attachment);
+	BYTE AttachInfos[36];
+	appMemzero( AttachInfos, sizeof(AttachInfos) );
+	Stack.Step( Stack.Object, AttachInfos );
+	P_FINISH;
+}
+
+void AActor::execVolumeBasedDestroy( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(APhysicsVolume,PV);
+	P_FINISH;
+	VolumeBasedDestroy( PV );
+}
+
+void AActor::execPostAkEvent( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UObject,InAkEvent);
+	P_FINISH;
+	PostAkEvent( (UAkEvent*)InAkEvent );
+}
+
+void AActor::execSetRTPCValue( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(InRTPC);
+	P_GET_FLOAT(TargetValue);
+	P_FINISH;
+	SetRTPCValue( InRTPC, TargetValue );
+}
+
+void AActor::execSetSwitch( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(InSwitchGroup);
+	P_GET_NAME(InSwitch);
+	P_FINISH;
+	SetSwitch( InSwitchGroup, InSwitch );
+}
+
+void AActor::execSetState( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(InStateGroup);
+	P_GET_NAME(InState);
+	P_FINISH;
+	SetState( InStateGroup, InState );
+}
+
+void AActor::execPostTrigger( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(InTrigger);
+	P_FINISH;
+	PostTrigger( InTrigger );
+}
+
+void AActor::execActivateOcclusion( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bInActivate);
+	P_FINISH;
+	ActivateOcclusion( bInActivate );
+}
+
+void AActor::execPlayActorFaceFXAnim( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UFaceFXAnimSet,AnimSet);
+	P_GET_STR(GroupName);
+	P_GET_STR(SeqName);
+	P_GET_OBJECT(UObject,AkEventToPlay);
+	P_FINISH;
+	*(UBOOL*)Result = PlayActorFaceFXAnim( AnimSet, GroupName, SeqName, (UAkEvent*)AkEventToPlay );
+}
+
+void AActor::execStopActorFaceFXAnim( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	StopActorFaceFXAnim();
+}
+
+// DISHONORED(port): 2013 AInterpActor::SetShadowParentOnAllAttachedComponents (exec 0x1c26e0, body 0x174cd0):
+// the no-argument InterpActor variant of AActor's (own StaticMeshComponent / LightEnvironment), without the
+// reference's nested-attachment stack
+void AInterpActor::SetShadowParentOnAllAttachedComponents()
+{
+	for( INT AttachedIdx = 0; AttachedIdx < Attached.Num(); AttachedIdx++ )
+	{
+		AActor* AttachedActor = Attached(AttachedIdx);
+		if( !AttachedActor || AttachedActor->bDeleteMe )
+		{
+			continue;
+		}
+		for( INT ComponentIdx = 0; ComponentIdx < AttachedActor->Components.Num(); ComponentIdx++ )
+		{
+			UMeshComponent* MeshComp = Cast<UMeshComponent>( AttachedActor->Components(ComponentIdx) );
+			if( !MeshComp )
+			{
+				continue;
+			}
+			MeshComp->SetShadowParent( StaticMeshComponent );
+			if( MeshComp->LightEnvironment && MeshComp->LightEnvironment != LightEnvironment )
+			{
+				MeshComp->LightEnvironment->SetEnabled( FALSE );
+			}
+			MeshComp->SetLightEnvironment( LightEnvironment );
+			if( StaticMeshComponent )
+			{
+				MeshComp->SetLightingChannels( StaticMeshComponent->LightingChannels );
+			}
+		}
+	}
+}
+
+void AInterpActor::execSetShadowParentOnAllAttachedComponents( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	SetShadowParentOnAllAttachedComponents();
+}
+
+// DISHONORED(port): 2013 AGameInfo::ReduceDamage (exec 0x1c6170, body 0x2cd830): neutral zone or god mode zeroes the damage
+void AGameInfo::ReduceDamage( INT& Damage, APawn* injured, AController* InstigatedBy, FVector HitLocation, FVector& Momentum, UClass* DamageType, AActor* DamageCauser )
+{
+	if( (injured->PhysicsVolume && injured->PhysicsVolume->bNeutralZone) || (injured->Controller && injured->Controller->bGodMode) )
+	{
+		Damage = 0;
+	}
+}
+
+void AGameInfo::execReduceDamage( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT_REF(Damage);
+	P_GET_OBJECT(APawn,injured);
+	P_GET_OBJECT(AController,InstigatedBy);
+	P_GET_VECTOR(HitLocation);
+	P_GET_VECTOR_REF(Momentum);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_OBJECT(AActor,DamageCauser);
+	P_FINISH;
+	ReduceDamage( Damage, injured, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser );
+}
+
+// DISHONORED(port): 2013 AWorldInfo::GetGlobalGravityZ (exec 0x1c69a0, body 0x2a1650)
+FLOAT AWorldInfo::GetGlobalGravityZ()
+{
+	if( WorldGravityZ == 0.f )
+	{
+		WorldGravityZ = (GlobalGravityZ != 0.f) ? GlobalGravityZ : DefaultGravityZ;
+	}
+	return WorldGravityZ;
+}
+
+void AWorldInfo::execGetGlobalGravityZ( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FLOAT*)Result = GetGlobalGravityZ();
+}
+
+// DISHONORED(port): 2013 AHUD::DisplayConsoleMessages (exec 0x5f25d0, body 0x2f21e0): Shipping only empties the
+// ConsoleMessages array; ShouldDisplayDebug (exec 0x1c3c50, vtable +936 = 0x9c4b50 `return 0`) and ShowDebug
+// (exec 0x1c3bd0, vtable +932 = 0x128ad0 empty) are stripped in Shipping
+void AHUD::DisplayConsoleMessages()
+{
+	ConsoleMessages.Empty();
+}
+
+UBOOL AHUD::ShouldDisplayDebug( FName DebugType )
+{
+	return FALSE;
+}
+
+void AHUD::ShowDebug( FName DebugType )
+{
+}
+
+void AHUD::execDisplayConsoleMessages( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	DisplayConsoleMessages();
+}
+
+void AHUD::execShouldDisplayDebug( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(DebugType);
+	P_FINISH;
+	*(UBOOL*)Result = ShouldDisplayDebug( DebugType );
+}
+
+void AHUD::execShowDebug( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME_OPTX(DebugType,NAME_None);
+	P_FINISH;
+	ShowDebug( DebugType );
+}
+
+// DISHONORED(bringup): 2013 ULocalPlayer.ZeroOverridePPDeltaSettings has no named exec in the 2013 or 2012 db
+// (a Sentinel/debug helper); no-op until its body is located
+void ULocalPlayer::execZeroOverridePPDeltaSettings( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+}

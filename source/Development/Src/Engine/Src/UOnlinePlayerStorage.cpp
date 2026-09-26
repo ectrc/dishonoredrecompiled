@@ -989,3 +989,134 @@ INT UOnlinePlayerStorage::GetProfileSaveCount(const TArray<FOnlineProfileSetting
 	}
 	return SaveCount;
 }
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 OnlinePlayerStorage typed ranged accessors (agent AE): the reference only has the
+	float SetRangedProfileSettingValue/GetRangedProfileSettingValue pair.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 UOnlinePlayerStorage::GetRangedProfileSettingValueFloat (exec 0x1cd110, body 0x4f77e0)
+UBOOL UOnlinePlayerStorage::GetRangedProfileSettingValueFloat( INT PropertyId, FLOAT& OutValue )
+{
+	for( INT SettingIdx = 0; SettingIdx < ProfileSettings.Num(); SettingIdx++ )
+	{
+		FOnlineProfileSetting& Setting = ProfileSettings(SettingIdx);
+		if( Setting.ProfileSetting.PropertyId == PropertyId )
+		{
+			if( Setting.ProfileSetting.Data.Type != SDT_Float )
+			{
+				return FALSE;
+			}
+			Setting.ProfileSetting.Data.GetData( OutValue );
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 UOnlinePlayerStorage::GetRangedProfileSettingValueInt (exec 0x1cd210, body 0x4f7860)
+UBOOL UOnlinePlayerStorage::GetRangedProfileSettingValueInt( INT PropertyId, INT& OutValue )
+{
+	for( INT SettingIdx = 0; SettingIdx < ProfileSettings.Num(); SettingIdx++ )
+	{
+		FOnlineProfileSetting& Setting = ProfileSettings(SettingIdx);
+		if( Setting.ProfileSetting.PropertyId == PropertyId )
+		{
+			if( Setting.ProfileSetting.Data.Type != SDT_Int32 )
+			{
+				return FALSE;
+			}
+			Setting.ProfileSetting.Data.GetData( OutValue );
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 UOnlinePlayerStorage::SetRangedProfileSettingValueFloat (exec 0x1ccec0, body 0x4f74a0):
+// clamps to the mapping range (GetProfileSettingRange), truncates when the range formats as int, stores a float
+UBOOL UOnlinePlayerStorage::SetRangedProfileSettingValueFloat( INT PropertyId, FLOAT NewValue )
+{
+	FLOAT MinValue = 0.f;
+	FLOAT MaxValue = 0.f;
+	FLOAT Increment = 0.f;
+	BYTE bFormatAsInt = 0;
+	if( !GetProfileSettingRange( PropertyId, MinValue, MaxValue, Increment, bFormatAsInt ) )
+	{
+		return FALSE;
+	}
+	NewValue = Clamp( NewValue, MinValue, MaxValue );
+	if( bFormatAsInt )
+	{
+		NewValue = (FLOAT)appTrunc( NewValue );
+	}
+	for( INT SettingIdx = 0; SettingIdx < ProfileSettings.Num(); SettingIdx++ )
+	{
+		FOnlineProfileSetting& Setting = ProfileSettings(SettingIdx);
+		if( Setting.ProfileSetting.PropertyId == PropertyId )
+		{
+			Setting.ProfileSetting.Data.SetData( NewValue );
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 UOnlinePlayerStorage::SetRangedProfileSettingValueInt (exec 0x1ccf50, body 0x4f75d0):
+// clamps to the mapping range, rounds to the nearest half and stores an int
+UBOOL UOnlinePlayerStorage::SetRangedProfileSettingValueInt( INT PropertyId, INT NewValue )
+{
+	FLOAT MinValue = 0.f;
+	FLOAT MaxValue = 0.f;
+	FLOAT Increment = 0.f;
+	BYTE bFormatAsInt = 0;
+	if( !GetProfileSettingRange( PropertyId, MinValue, MaxValue, Increment, bFormatAsInt ) )
+	{
+		return FALSE;
+	}
+	const FLOAT Clamped = Clamp( (FLOAT)NewValue, MinValue, MaxValue );
+	const INT Rounded = appTrunc( Clamped * 2.f + 0.5f ) >> 1;
+	for( INT SettingIdx = 0; SettingIdx < ProfileSettings.Num(); SettingIdx++ )
+	{
+		FOnlineProfileSetting& Setting = ProfileSettings(SettingIdx);
+		if( Setting.ProfileSetting.PropertyId == PropertyId )
+		{
+			Setting.ProfileSetting.Data.SetData( Rounded );
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+void UOnlinePlayerStorage::execGetRangedProfileSettingValueFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(PropertyId);
+	P_GET_FLOAT_REF(OutValue);
+	P_FINISH;
+	*(UBOOL*)Result = GetRangedProfileSettingValueFloat( PropertyId, OutValue );
+}
+
+void UOnlinePlayerStorage::execGetRangedProfileSettingValueInt( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(PropertyId);
+	P_GET_INT_REF(OutValue);
+	P_FINISH;
+	*(UBOOL*)Result = GetRangedProfileSettingValueInt( PropertyId, OutValue );
+}
+
+void UOnlinePlayerStorage::execSetRangedProfileSettingValueFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(PropertyId);
+	P_GET_FLOAT(NewValue);
+	P_FINISH;
+	*(UBOOL*)Result = SetRangedProfileSettingValueFloat( PropertyId, NewValue );
+}
+
+void UOnlinePlayerStorage::execSetRangedProfileSettingValueInt( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(PropertyId);
+	P_GET_INT(NewValue);
+	P_FINISH;
+	*(UBOOL*)Result = SetRangedProfileSettingValueInt( PropertyId, NewValue );
+}

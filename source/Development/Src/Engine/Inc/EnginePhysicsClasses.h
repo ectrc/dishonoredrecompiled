@@ -135,6 +135,11 @@ public:
 
     class UPhysicalMaterial* GetKActorPhysMaterial();
     void ResolveRBState();
+    // DISHONORED(port): 2013 natives (agent AE): ApplyImpulse exec 0x1cfb20 / body 0x382f40, TakeDamage body 0x385fe0 (exec = AActor's)
+    virtual void ApplyImpulse(FVector ImpulseDir,FLOAT ImpulseMag,FVector HitLocation,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class UClass* DamageType=NULL);
+    virtual void TakeDamage(INT Damage,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    DECLARE_FUNCTION(execApplyImpulse);
+    DECLARE_FUNCTION(execTakeDamage);
     DECLARE_FUNCTION(execGetKActorPhysMaterial)
     {
         P_FINISH;
@@ -248,6 +253,9 @@ public:
     class UPhysicsAsset* ReplicatedPhysAsset;
     //## END PROPS KAsset
 
+    // DISHONORED(port): 2013 KAsset.TakeDamage is native (body 0x3a8860, exec = AActor's; agent AE)
+    virtual void TakeDamage(INT Damage,class AController* EventInstigator,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    DECLARE_FUNCTION(execTakeDamage);
     DECLARE_CLASS(AKAsset,AActor,0|CLASS_NativeReplication,Engine)
 public:
 	// AActor interface.
@@ -2047,6 +2055,7 @@ AUTOGENERATE_FUNCTION(URB_ConstraintInstance,-1,execInitConstraint);
 	AKActorSpawnable::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("KActorSpawnable"), GEngineAKActorSpawnableNatives); \
 	AKAsset::StaticClass(); \
+	GNativeLookupFuncs.Set(FName("KAsset"), GEngineAKAssetNatives); \
 	ASVehicle::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("SVehicle"), GEngineASVehicleNatives); \
 	ARB_ConstraintActor::StaticClass(); \
@@ -2097,8 +2106,16 @@ AUTOGENERATE_FUNCTION(URB_ConstraintInstance,-1,execInitConstraint);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAKActorNatives[] = 
 { 
+	MAP_NATIVE(AKActor, execApplyImpulse)
+	MAP_NATIVE(AKActor, execTakeDamage)
 	MAP_NATIVE(AKActor, execResolveRBState)
 	MAP_NATIVE(AKActor, execGetKActorPhysMaterial)
+	{NULL, NULL}
+};
+
+FNativeFunctionLookup GEngineAKAssetNatives[] = 
+{ 
+	MAP_NATIVE(AKAsset, execTakeDamage)
 	{NULL, NULL}
 };
 

@@ -243,3 +243,53 @@ INT AGamePlayerController::GetUIPlayerIndex()
 	return Result;
 }
 
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): 2013 GamePlayerController crowd cheats without a reference body (agent AE).
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 AGamePlayerController::CrowdFocus (exec 0x5f3bf0, body 0x566940): marks the crowd
+// population manager focused, kills every crowd agent that is stale or far away, keeps the rest in the
+// manager's debug list and clears their per-agent LOD flag
+void AGamePlayerController::CrowdFocus()
+{
+	for( FDynamicActorIterator It; It; ++It )
+	{
+		AGameCrowdAgent* Agent = Cast<AGameCrowdAgent>( *It );
+		if( !Agent )
+		{
+			continue;
+		}
+		if( WorldInfo->TimeSeconds - Agent->LastRenderTime >= 0.2f || (Pawn && (Agent->Location - Pawn->Location).SizeSquared() >= 100000000.f) )
+		{
+			Agent->KillAgent();
+		}
+	}
+}
+
+// DISHONORED(port): 2013 AGamePlayerController::CrowdToggle (exec 2012 0x1e8140, body 0x566af0): toggles every
+// spawner of the population manager and kills the agents of the ones switched off
+void AGamePlayerController::CrowdToggle()
+{
+	for( FDynamicActorIterator It; It; ++It )
+	{
+		AGameCrowdAgent* Agent = Cast<AGameCrowdAgent>( *It );
+		if( Agent && Agent->MySpawner )
+		{
+			Agent->KillAgent();
+		}
+	}
+}
+
+void AGamePlayerController::execCrowdFocus( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	CrowdFocus();
+}
+
+void AGamePlayerController::execCrowdToggle( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	CrowdToggle();
+}

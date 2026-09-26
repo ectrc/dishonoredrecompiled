@@ -144,6 +144,18 @@ public:
     TArrayNoInit<struct FActiveDecalInfo> ActiveDecals;
     //## END PROPS DecalManager
 
+    // DISHONORED(port): 2013 natives (agent AE): CanSpawnDecals (vtable +932 = AreDynamicDecalsEnabled), SetDecalParameters exec 0x1d40f0 / body 0xde1f0,
+    // GetPooledComponent 0x1d4410 / 0x104d00, OnDecalFinished (2012 exec 0x1d94f0) / 0x104c20, SpawnDecal 0x1d4450 / 0xe42e0
+    virtual UBOOL CanSpawnDecals();
+    static void SetDecalParameters(class UDecalComponent* TheDecal,class UMaterialInterface* DecalMaterial,FVector DecalLocation,FRotator DecalOrientation,FLOAT Width,FLOAT Height,FLOAT Thickness,UBOOL bNoClip,FLOAT DecalRotation,class UPrimitiveComponent* HitComponent,UBOOL bProjectOnTerrain,UBOOL bProjectOnSkeletalMeshes,FName HitBone,INT HitNodeIndex,INT HitLevelIndex,INT InFracturedStaticMeshComponentIndex,FLOAT DepthBias,FVector2D BlendRange);
+    virtual class UDecalComponent* GetPooledComponent();
+    virtual void OnDecalFinished(class UDecalComponent* Decal);
+    virtual class UDecalComponent* SpawnDecal(class UMaterialInterface* DecalMaterial,FVector DecalLocation,FRotator DecalOrientation,FLOAT Width,FLOAT Height,FLOAT Thickness,UBOOL bNoClip,FLOAT DecalRotation,FLOAT InDecalLifeSpan,FLOAT InDepthBias,FVector2D InBlendRange,UBOOL bProjectOnTerrain,UBOOL bProjectOnSkeletalMeshes,class UPrimitiveComponent* HitComponent,FName HitBone,INT HitNodeIndex,INT HitLevelIndex,INT InFracturedStaticMeshComponentIndex);
+    DECLARE_FUNCTION(execCanSpawnDecals);
+    DECLARE_FUNCTION(execSetDecalParameters);
+    DECLARE_FUNCTION(execGetPooledComponent);
+    DECLARE_FUNCTION(execOnDecalFinished);
+    DECLARE_FUNCTION(execSpawnDecal);
     UBOOL AreDynamicDecalsEnabled();
     DECLARE_FUNCTION(execAreDynamicDecalsEnabled)
     {
@@ -536,6 +548,11 @@ AUTOGENERATE_FUNCTION(UDecalComponent,-1,execResetToDefaults);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineADecalManagerNatives[] = 
 { 
+	MAP_NATIVE(ADecalManager, execCanSpawnDecals)
+	MAP_NATIVE(ADecalManager, execSetDecalParameters)
+	MAP_NATIVE(ADecalManager, execGetPooledComponent)
+	MAP_NATIVE(ADecalManager, execOnDecalFinished)
+	MAP_NATIVE(ADecalManager, execSpawnDecal)
 	MAP_NATIVE(ADecalManager, execAreDynamicDecalsEnabled)
 	{NULL, NULL}
 };

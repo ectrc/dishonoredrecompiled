@@ -6873,3 +6873,48 @@ void UObject::execProfNodeEvent( FFrame& Stack, RESULT_DECL )
 IMPLEMENT_FUNCTION(UObject,INDEX_NONE,execProfNodeEvent);
 
 
+
+
+// DISHONORED(port): 2013 UObject::execVSmerp (0x9af0) / execRSmerp (0xad80): smoothstep interpolation of vectors
+// and rotators (Arkane additions to Object.uc; agent AE)
+void UObject::execVSmerp( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_VECTOR(A);
+	P_GET_VECTOR(B);
+	P_GET_FLOAT(Alpha);
+	P_FINISH;
+	const FLOAT S = (3.f - 2.f * Alpha) * Alpha * Alpha;
+	*(FVector*)Result = A + (B - A) * S;
+}
+IMPLEMENT_FUNCTION( UObject, -1, execVSmerp );
+
+void UObject::execRSmerp( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_ROTATOR(A);
+	P_GET_ROTATOR(B);
+	P_GET_FLOAT(Alpha);
+	P_GET_UBOOL_OPTX(bShortestPath,FALSE);
+	P_FINISH;
+	FRotator Delta = B - A;
+	if( bShortestPath )
+	{
+		Delta = Delta.GetNormalized();
+	}
+	const FLOAT S = (3.f - 2.f * Alpha) * Alpha * Alpha;
+	*(FRotator*)Result = A + Delta * S;
+}
+IMPLEMENT_FUNCTION( UObject, -1, execRSmerp );
+
+// DISHONORED(port): 2013 UCommandlet::execMain (0x34270): the Main virtual (0x5d8a0); HelpCommandlet.Main binds
+// through the same exec (its 2013 exec is unnamed)
+void UCommandlet::execMain( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Params);
+	P_FINISH;
+	*(INT*)Result = Main( Params );
+}
+
+void UHelpCommandlet::execMain( FFrame& Stack, RESULT_DECL )
+{
+	UCommandlet::execMain( Stack, Result );
+}

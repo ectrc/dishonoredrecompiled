@@ -581,6 +581,30 @@ public:
     // C++ virtual AController::Possess calls (0x2ab1f0)
     virtual void PossessedBy(class AController* C);
     virtual void UnPossessed();
+    // DISHONORED(port): 2013 natives (agent AE): TakeDamage body 0x183700 (exec = AActor's), Died exec 0x1dafd0 / body 0x17f600, FaceRotation 0x1daf30 / 0x2a1460,
+    // AddVelocity 0x1dade0 / 0x16e070, HandleMomentum 0x1dac90 / 0x1754b0, PlayHit 0x1db0a0 / 0x1694e0, IsRagdoll 0x1daa80 / 0x382d00, GetNavigationHandle 0x1da990 / 0x1ca5d0,
+    // InitNavigationHandle 0x5f27b0 / 0x1e09f0, IsValidTargetFor 0x1d4c40 / 0x233610; ProcessViewRotation 0x12ffc0 is C++ in 2013
+    virtual void TakeDamage(INT Damage,class AController* InstigatedBy,FVector HitLocation,FVector Momentum,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm),class AActor* DamageCauser=NULL);
+    UBOOL Died(class AController* Killer,class UClass* DamageType,FVector HitLocation);
+    virtual void FaceRotation(FRotator NewRotation,FLOAT DeltaTime);
+    void AddVelocity(FVector NewVelocity,FVector HitLocation,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm));
+    void HandleMomentum(FVector Momentum,FVector HitLocation,class UClass* DamageType,struct FTraceHitInfo HitInfo=FTraceHitInfo(EC_EventParm));
+    void PlayHit(FLOAT Damage,class AController* InstigatedBy,FVector HitLocation,class UClass* DamageType,FVector Momentum,struct FTraceHitInfo HitInfo);
+    virtual UBOOL IsRagdoll();
+    virtual class UNavigationHandle* GetNavigationHandle();
+    virtual void InitNavigationHandle();
+    virtual UBOOL IsValidTargetFor(class AController* C);
+    void ProcessViewRotation(FLOAT DeltaTime,FRotator& out_ViewRotation,FRotator& out_DeltaRot);
+    DECLARE_FUNCTION(execTakeDamage);
+    DECLARE_FUNCTION(execDied);
+    DECLARE_FUNCTION(execFaceRotation);
+    DECLARE_FUNCTION(execAddVelocity);
+    DECLARE_FUNCTION(execHandleMomentum);
+    DECLARE_FUNCTION(execPlayHit);
+    DECLARE_FUNCTION(execIsRagdoll);
+    DECLARE_FUNCTION(execGetNavigationHandle);
+    DECLARE_FUNCTION(execInitNavigationHandle);
+    DECLARE_FUNCTION(execIsValidTargetFor);
     DECLARE_FUNCTION(execUnPossessed);
     DECLARE_FUNCTION(execPickWallAdjust)
     {
@@ -1824,6 +1848,16 @@ AUTOGENERATE_FUNCTION(AVehicle,-1,execGetMaxRiseForce);
 #ifdef NATIVES_ONLY
 FNativeFunctionLookup GEngineAPawnNatives[] = 
 { 
+	MAP_NATIVE(APawn, execTakeDamage)
+	MAP_NATIVE(APawn, execDied)
+	MAP_NATIVE(APawn, execFaceRotation)
+	MAP_NATIVE(APawn, execAddVelocity)
+	MAP_NATIVE(APawn, execHandleMomentum)
+	MAP_NATIVE(APawn, execPlayHit)
+	MAP_NATIVE(APawn, execIsRagdoll)
+	MAP_NATIVE(APawn, execGetNavigationHandle)
+	MAP_NATIVE(APawn, execInitNavigationHandle)
+	MAP_NATIVE(APawn, execIsValidTargetFor)
 	MAP_NATIVE(APawn, execUnPossessed)
 	MAP_NATIVE(APawn, execSetScalarParameterInterp)
 	MAP_NATIVE(APawn, execSetRootMotionInterpCurrentTime)

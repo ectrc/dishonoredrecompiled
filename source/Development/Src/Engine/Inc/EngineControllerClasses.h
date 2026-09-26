@@ -1928,6 +1928,37 @@ public:
     // DISHONORED(port): GetFOVAngle is a native in the 2013 scripts (exec 0x1d3670, body 0x242fd0)
     FLOAT GetFOVAngle() const;
     DECLARE_FUNCTION(execGetFOVAngle);
+    // DISHONORED(port): 2013 movement natives (agent AE): PlayerMove_Walking exec 0x1d3a00 / body 0x12fdb0, ProcessViewRotation 0x1d3840 / 0x133010,
+    // UpdateRotation 0x1d37e0 / 0x1292d0, HandleWalking 0x1d35c0 / 0x243000, LimitViewRotation 0x1d3930 / 0x129410, IsLookInputIgnored 0x1d3ab0 / 0x243050,
+    // IsMoveInputIgnored 0x1d3a70 / 0x243040, CleanOutSavedMoves 0x1d3310 / 0x129450, ResetTimeMargin 0x1d32e0 / 0x130160, CleanUpBeforeLevelTransition 0x1d3af0 / 0x1ca1f0,
+    // Sentinel_TakeScreenshot 0x1ee6a0 / 0x2e0780, Sentinel_TakeScreenshotEnabled 0x1d3d30 / 0x2cc170, SetControllerTiltDesiredIfAvailable 0x1d3380 / 0x1cb0c0, CheckJumpOrDuck vtable +1240
+    virtual void PlayerMove_Walking(FLOAT DeltaTime);
+    virtual void ProcessViewRotation(FLOAT DeltaTime,FRotator& out_ViewRotation,FRotator DeltaRot);
+    void UpdateRotation(FLOAT DeltaTime);
+    virtual void HandleWalking(FLOAT DeltaTime);
+    FRotator LimitViewRotation(FRotator ViewRotation,INT ViewPitchMin,INT ViewPitchMax);
+    virtual UBOOL IsLookInputIgnored() const;
+    virtual UBOOL IsMoveInputIgnored() const;
+    void CleanOutSavedMoves();
+    void ResetTimeMargin();
+    virtual void CleanUpBeforeLevelTransition();
+    virtual void Sentinel_TakeScreenshot(const FString& InName);
+    virtual UBOOL Sentinel_TakeScreenshotEnabled();
+    virtual void SetControllerTiltDesiredIfAvailable(UBOOL bActive);
+    virtual void CheckJumpOrDuck();
+    DECLARE_FUNCTION(execPlayerMove_Walking);
+    DECLARE_FUNCTION(execProcessViewRotation);
+    DECLARE_FUNCTION(execUpdateRotation);
+    DECLARE_FUNCTION(execHandleWalking);
+    DECLARE_FUNCTION(execLimitViewRotation);
+    DECLARE_FUNCTION(execIsLookInputIgnored);
+    DECLARE_FUNCTION(execIsMoveInputIgnored);
+    DECLARE_FUNCTION(execCleanOutSavedMoves);
+    DECLARE_FUNCTION(execResetTimeMargin);
+    DECLARE_FUNCTION(execCleanUpBeforeLevelTransition);
+    DECLARE_FUNCTION(execSentinel_TakeScreenshot);
+    DECLARE_FUNCTION(execSentinel_TakeScreenshotEnabled);
+    DECLARE_FUNCTION(execSetControllerTiltDesiredIfAvailable);
     DECLARE_FUNCTION(execSetNetSpeed)
     {
         P_GET_INT(NewSpeed);
@@ -2936,6 +2967,19 @@ FNativeFunctionLookup GEngineAControllerNatives[] =
 
 FNativeFunctionLookup GEngineAPlayerControllerNatives[] = 
 { 
+	MAP_NATIVE(APlayerController, execPlayerMove_Walking)
+	MAP_NATIVE(APlayerController, execProcessViewRotation)
+	MAP_NATIVE(APlayerController, execUpdateRotation)
+	MAP_NATIVE(APlayerController, execHandleWalking)
+	MAP_NATIVE(APlayerController, execLimitViewRotation)
+	MAP_NATIVE(APlayerController, execIsLookInputIgnored)
+	MAP_NATIVE(APlayerController, execIsMoveInputIgnored)
+	MAP_NATIVE(APlayerController, execCleanOutSavedMoves)
+	MAP_NATIVE(APlayerController, execResetTimeMargin)
+	MAP_NATIVE(APlayerController, execCleanUpBeforeLevelTransition)
+	MAP_NATIVE(APlayerController, execSentinel_TakeScreenshot)
+	MAP_NATIVE(APlayerController, execSentinel_TakeScreenshotEnabled)
+	MAP_NATIVE(APlayerController, execSetControllerTiltDesiredIfAvailable)
 	MAP_NATIVE(APlayerController, execGetPlayerViewPoint)
 	MAP_NATIVE(APlayerController, execGetFOVAngle)
 	MAP_NATIVE(APlayerController, execLogOutBugItAIGoToLogFile)
