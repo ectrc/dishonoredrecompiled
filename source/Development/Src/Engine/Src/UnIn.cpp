@@ -639,14 +639,7 @@ void UInput::Tick(FLOAT DeltaTime)
 		}
 	}
 
-
-	// look for any held down touches
-	for (INT TouchIndex = 0; TouchIndex < CurrentTouches.Num(); TouchIndex++)
-	{
-		const FTouchTracker& TouchTracker = CurrentTouches(TouchIndex);
-		ProcessTouchKismetEvents(0, TouchIndex, (EInputEvent)IE_Repeat);
-	}
-
+	// DISHONORED(retail): 2013 UInput::Tick (0x3da5d0) has no touch tracking; CurrentTouches is a storage-less shim here (agent S)
 	Super::Tick(DeltaTime);
 }
 
@@ -989,7 +982,195 @@ UBOOL UPlayerInput::InputTouch(INT ControllerId, UINT Handle, ETouchType Type, F
 	return bTrapped;
 }
 
-/** 
+// DISHONORED(port): 2013 UPlayerInput::PlayerInput (0x3f2730, 2012 0x432b10), the reference PlayerInput.uc event made C++ (vtable
+// +348). Order from the decompile: the four raw joy axes saved, DeltaTime undilated by WorldInfo->TimeDilation, PreProcessInput
+// (+340), the axes scaled by 100 * DeltaTime and their speed/scale factors (aBaseY, aStrafe, aTurn, aUp, aLookUp),
+// CatchDoubleClickInput, GetFOVScale(FALSE) under bEnableFOVScaling for the look axes, AdjustMouseSensitivity(GetFOVScale(TRUE)),
+// mouse smoothing under bEnableMouseSmoothing, the mouse folded into turn (or strafe while bStrafe) and look, the two inversions,
+// aForward += aBaseY, HandleWalking (controller vtable +1156), the turn lock, and the move/look ignore tests (+1172/+1176) with
+// aTurn_BeforeClear / aLookUp_BeforeClear saved before the look clear. Retail has no PostProcessInput and no ProcessInputMatching.
+void UPlayerInput::PlayerInput( FLOAT DeltaTime )
+{
+	APlayerController* PC = GetOuterAPlayerController();
+
+	RawJoyUp = aBaseY;
+	RawJoyRight = aStrafe;
+	RawJoyLookRight = aTurn;
+	RawJoyLookUp = aLookUp;
+
+	if( PC->WorldInfo && PC->WorldInfo->TimeDilation > 0.f )
+	{
+		DeltaTime /= PC->WorldInfo->TimeDilation;
+	}
+	PreProcessInput( DeltaTime );
+
+	const FLOAT TimeScale = DeltaTime * 100.f;
+	aBaseY *= TimeScale * MoveForwardSpeed;
+	aStrafe *= TimeScale * MoveStrafeSpeed;
+	aUp *= TimeScale * MoveStrafeSpeed;
+	aTurn *= TimeScale * LookRightScale;
+	aLookUp *= TimeScale * LookUpScale;
+
+	CatchDoubleClickInput();
+
+	FLOAT FOVScale = 1.f;
+	if( bEnableFOVScaling )
+	{
+		FOVScale = GetFOVScale( FALSE );
+	}
+	AdjustMouseSensitivity( GetFOVScale( TRUE ) );
+
+	if( bEnableMouseSmoothing )
+	{
+		aMouseX = SmoothMouse( aMouseX, DeltaTime, bXAxis, 0 );
+		aMouseY = SmoothMouse( aMouseY, DeltaTime, bYAxis, 1 );
+	}
+
+	aTurn *= FOVScale;
+	aLookUp *= FOVScale;
+	if( bStrafe == 0 )
+	{
+		aTurn += aMouseX + aBaseX;
+	}
+	else
+	{
+		aStrafe += aMouseX + aBaseX;
+	}
+	aLookUp += aMouseY;
+	if( bInvertMouse )
+	{
+		aLookUp *= -1.f;
+	}
+	if( bInvertTurn )
+	{
+		aTurn *= -1.f;
+	}
+	aForward += aBaseY;
+
+	PC->HandleWalking( DeltaTime );
+
+	if( bLockTurnUntilRelease )
+	{
+		if( RawJoyLookRight != 0.f )
+		{
+			aTurn = 0.f;
+			if( AutoUnlockTurnTime > 0.f )
+			{
+				AutoUnlockTurnTime -= DeltaTime;
+				if( AutoUnlockTurnTime < 0.f )
+				{
+					bLockTurnUntilRelease = FALSE;
+				}
+			}
+		}
+		else
+		{
+			bLockTurnUntilRelease = FALSE;
+		}
+	}
+
+	if( PC->IsMoveInputIgnored() )
+	{
+		aForward = 0.f;
+		aStrafe = 0.f;
+		aUp = 0.f;
+	}
+	aTurn_BeforeClear = aTurn;
+	aLookUp_BeforeClear = aLookUp;
+	if( PC->IsLookInputIgnored() )
+	{
+		aTurn = 0.f;
+		aLookUp = 0.f;
+	}
+}
+
+// DISHONORED(port): 2013 UPlayerInput::AdjustMouseSensitivity (0x3fd250, 2012 0x421470, identical bytes)
+void UPlayerInput::AdjustMouseSensitivity( FLOAT FOVScale )
+{
+	aMouseX *= MouseSensitivity * FOVScale;
+	aMouseY *= MouseSensitivity * FOVScale;
+}
+
+// DISHONORED(port): 2013 UPlayerInput::GetFOVScale (0x3d4010, 2012 0x3f6820): the outer controller's FOV over 90 degrees
+FLOAT UPlayerInput::GetFOVScale( UBOOL bIsForMouse )
+{
+	return GetOuterAPlayerController()->GetFOVAngle() * 0.011111111f;
+}
+
+// DISHONORED(port): 2013 UPlayerInput::SmoothMouse (0x3ebcb0, 2012 0x432790, identical bytes): the reference PlayerInput.uc SmoothMouse
+FLOAT UPlayerInput::SmoothMouse( FLOAT aMouse, FLOAT DeltaTime, BYTE& SampleCount, INT Index )
+{
+	if( DeltaTime >= 0.25f )
+	{
+		ClearSmoothing();
+		SampleCount = 0;
+		return aMouse;
+	}
+	const FLOAT MouseSamplingTime = MouseSamplingTotal / MouseSamples;
+	if( aMouse == 0.f )
+	{
+		ZeroTime[Index] += DeltaTime;
+		if( ZeroTime[Index] < MouseSamplingTime )
+		{
+			aMouse = SmoothedMouse[Index] / MouseSamplingTime * DeltaTime;
+		}
+		else
+		{
+			SmoothedMouse[Index] = 0.f;
+		}
+		SampleCount = 0;
+	}
+	else
+	{
+		ZeroTime[Index] = 0.f;
+		if( SmoothedMouse[Index] != 0.f )
+		{
+			if( DeltaTime < MouseSamplingTime * (FLOAT)( SampleCount + 1 ) )
+			{
+				aMouse = aMouse * DeltaTime / ( (FLOAT)SampleCount * MouseSamplingTime );
+			}
+			else
+			{
+				SampleCount = (BYTE)( DeltaTime / MouseSamplingTime );
+			}
+		}
+		SmoothedMouse[Index] = SampleCount ? ( aMouse / (FLOAT)SampleCount ) : aMouse;
+		SampleCount = 0;
+	}
+	return aMouse;
+}
+
+// DISHONORED(port): 2013 UPlayerInput::ClearSmoothing (0x3ebc50, 2012 0x432730, identical bytes)
+void UPlayerInput::ClearSmoothing()
+{
+	ZeroTime[0] = 0.f;
+	ZeroTime[1] = 0.f;
+	SmoothedMouse[0] = 0.f;
+	SmoothedMouse[1] = 0.f;
+	UPlayerInput* Defaults = (UPlayerInput*)UPlayerInput::StaticClass()->GetDefaultObject();
+	MouseSamplingTotal = Defaults->MouseSamplingTotal;
+	MouseSamples = Defaults->MouseSamples;
+}
+
+// DISHONORED(port): 2013 UPlayerInput::CatchDoubleClickInput (0x3d3ea0, 2012 0x3f66b0): the reference PlayerInput.uc function; retail
+// skips it while the controller ignores move input (native +1172)
+void UPlayerInput::CatchDoubleClickInput()
+{
+	if( GetOuterAPlayerController()->IsMoveInputIgnored() )
+	{
+		return;
+	}
+	bEdgeForward = ( ( bWasForward != 0 ) != ( aBaseY > 0.f ) );
+	bEdgeBack = ( ( bWasBack != 0 ) != ( aBaseY < 0.f ) );
+	bEdgeLeft = ( ( bWasLeft != 0 ) != ( aStrafe < 0.f ) );
+	bEdgeRight = ( ( bWasRight != 0 ) != ( aStrafe > 0.f ) );
+	bWasForward = aBaseY > 0.f;
+	bWasBack = aBaseY < 0.f;
+	bWasLeft = aStrafe < 0.f;
+	bWasRight = aStrafe > 0.f;
+}
+
+/**
  * Stub function to workaround script wonkiness
  */
 void UPlayerInput::CancelMobileInput()

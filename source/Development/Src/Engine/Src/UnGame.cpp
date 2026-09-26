@@ -74,6 +74,30 @@ void UGameEngine::RedrawViewports( UBOOL bShouldPresent /*= TRUE*/ )
 {
 	SCOPE_CYCLE_COUNTER(STAT_RedrawViewports);
 
+	// DISHONORED(bringup): -noscenerender drops the viewport draw, which is what milestone 5 (PLAN.md Phase 6) needs: it is judged
+	// on the null RHI, where the scene render adds nothing but does reach the reference-only passes retail has no shader for. Today
+	// the first of those aborts the rendering thread with `Assertion failed: Parameter.IsInitialized()` in
+	// FHeightFogShaderParameters::Set from TBasePassVertexShader::SetParameters - the reference height fog that PHASE6 AH.2 lists as
+	// "guarded so they are never reached" (Arkane has DisFog instead). Off by default, so the renderer work is unaffected.
+	// The viewport draw is also where UE3 updates level streaming (UGameViewportClient::Draw passes the view family to
+	// UWorld::UpdateLevelStreaming, and UGameEngine::Tick's own call is behind `GIsServer`, which is 0 for a game client in the
+	// reference too), so the switch keeps that one call: without it a mission map never loads its ULevelStreamingAlwaysLoaded
+	// sub-levels and the player pawn falls through a floorless world.
+	// DISHONORED(bringup): -nolevelstream additionally drops that streaming update. Associating L_Tower_P's sub-levels deadlocks the
+	// game thread inside the CRT heap in FPendingCleanupObjects -> FSkeletalMeshObject::FinishCleanup ->
+	// ~FSkeletalMeshObjectGPUSkin -> ~TIndirectArray<FGPUSkinDecalVertexFactory> (build/agentAF/dbg/hang4.txt), so this switch is
+	// what lets the input chain be measured at all while that is open.
+	static const UBOOL bNoSceneRender = ParseParam( appCmdLine(), TEXT("noscenerender") );
+	static const UBOOL bNoLevelStream = ParseParam( appCmdLine(), TEXT("nolevelstream") );
+	if( bNoSceneRender )
+	{
+		if( GWorld && !bNoLevelStream )
+		{
+			GWorld->UpdateLevelStreaming();
+		}
+		return;
+	}
+
 	if ( GameViewport != NULL )
 	{
 		GameViewport->eventLayoutPlayers();
@@ -2295,6 +2319,9 @@ UBOOL UGameEngine::LoadMap( const FURL& URL, UPendingLevel* Pending, FString& Er
 	GWorld = FindObjectChecked<UWorld>( WorldPackage, TEXT("TheWorld") );
 	GWorld->AddToRoot();
 	GWorld->Init();
+	// DISHONORED(port): 2013 UGameEngine::LoadMap (0x240b40) refreshes the world-info cache right after UWorld::Init
+	// (UWorld::UpdateWorldInfoCache 0x38cac0; agent Z follow-up 4)
+	GWorld->UpdateWorldInfoCache();
 
 	// Re enable sound spawning.
 	if(GEngine->Client && GEngine->Client->GetAudioDevice())
@@ -2683,72 +2710,79 @@ static void AsyncMapChangeLevelLoadCompletionCallback( UObject* LevelPackage, vo
  *			FALSE otherwise. FALSE as a return value also indicates that the code has given
  *			up.
  */
+// DISHONORED(port): 2013 UGameEngine::PrepareMapChange (0x229d30, 2012 0x23fa60): the in-progress test comes first, the game info is
+// told (AGameInfo vtable +1000; ADishonoredGameInfo's override 0x5e9d50 is UAkAudioDevice::StopAllSounds - not declared on our
+// AGameInfo, hand-over), the loading movie starts here from the first level name, and the package-file check runs in Shipping too
+// (no FINAL_RELEASE gate: retail logs "Couldn't find package for level" through PendingMapChangeFailureDescription).
 UBOOL UGameEngine::PrepareMapChange(const TArray<FName>& LevelNames)
 {
 	// make sure level streaming isn't frozen
 	GWorld->bIsLevelStreamingFrozen = FALSE;
 
 	// Make sure we don't interrupt a pending map change in progress.
-	if( !IsPreparingMapChange() )
-	{
-		LevelsToLoadForPendingMapChange.Empty();
-		LevelsToLoadForPendingMapChange += LevelNames;
-
-#if !FINAL_RELEASE
-		// Verify that all levels specified are in the package file cache.
-		FString Dummy;
-		for( INT LevelIndex=0; LevelIndex<LevelsToLoadForPendingMapChange.Num(); LevelIndex++ )
-		{
-			const FName LevelName = LevelsToLoadForPendingMapChange(LevelIndex);
-			if( !GPackageFileCache->FindPackageFile( *LevelName.ToString(), NULL, Dummy ) )
-			{
-				LevelsToLoadForPendingMapChange.Empty();
-				PendingMapChangeFailureDescription = FString::Printf(TEXT("Couldn't find package for level '%s'"), *LevelName.ToString());
-				// write it out immediately so make sure it's in the log even without a CommitMapChange happening
-				debugf(NAME_Warning, TEXT("PREPAREMAPCHANGE: %s"), *PendingMapChangeFailureDescription);
-
-				// tell user on screen!
-				extern UBOOL GIsPrepareMapChangeBroken;
-				GIsPrepareMapChangeBroken = TRUE;
-
-				return FALSE;
-			}
-			//@todo streaming: make sure none of the maps are already loaded/ being loaded?
-		}
-#endif
-
-		// copy LevelNames into the WorldInfo's array to keep track of the map change that we're preparing (primarily for servers so clients that join in progress can be notified)
-		if (GWorld != NULL)
-		{
-			GWorld->GetWorldInfo()->PreparingLevelNames = LevelNames;
-		}
-
-		// Kick off async loading of packages.
-		for( INT LevelIndex=0; LevelIndex<LevelsToLoadForPendingMapChange.Num(); LevelIndex++ )
-		{
-			const FName LevelName = LevelsToLoadForPendingMapChange(LevelIndex);
-			if( GUseSeekFreeLoading )
-			{
-				// Only load localized package if it exists as async package loading doesn't handle errors gracefully.
-				FString LocalizedPackageName = LevelName.ToString() + LOCALIZED_SEEKFREE_SUFFIX;
-				FString LocalizedFileName;
-				if( GPackageFileCache->FindPackageFile( *LocalizedPackageName, NULL, LocalizedFileName ) )
-				{
-					// Load localized part of level first in case it exists. We don't need to worry about GC or completion 
-					// callback as we always kick off another async IO for the level below.
-					UObject::LoadPackageAsync( *LocalizedPackageName, NULL, NULL );
-				}
-			}
-			UObject::LoadPackageAsync( *LevelName.ToString(), AsyncMapChangeLevelLoadCompletionCallback, this );
-		}
-
-		return TRUE;
-	}
-	else
+	if( IsPreparingMapChange() )
 	{
 		PendingMapChangeFailureDescription = TEXT("Current map change still in progress");
 		return FALSE;
 	}
+
+	// DISHONORED(port): retail plays the loading movie of the first level here through the two-argument UEngine virtual
+	// (UEngine::PlayLoadMapMovie(Map, TEXT("")) 0x2097d0, agent AI); UDishonoredEngine's override 0x601b80 picks the movie from its
+	// m_MapConfig. Bink itself is inert (WITH_BINK stubs), so this only advances the rich-presence chapter.
+	if( LevelNames.Num() > 0 )
+	{
+		PlayLoadMapMovie( LevelNames(0).ToString(), TEXT("") );
+	}
+
+	LevelsToLoadForPendingMapChange.Empty();
+	LevelsToLoadForPendingMapChange += LevelNames;
+
+	// Verify that all levels specified are in the package file cache.
+	FString Dummy;
+	for( INT LevelIndex=0; LevelIndex<LevelsToLoadForPendingMapChange.Num(); LevelIndex++ )
+	{
+		const FName LevelName = LevelsToLoadForPendingMapChange(LevelIndex);
+		if( !GPackageFileCache->FindPackageFile( *LevelName.ToString(), NULL, Dummy ) )
+		{
+			LevelsToLoadForPendingMapChange.Empty();
+			PendingMapChangeFailureDescription = FString::Printf(TEXT("Couldn't find package for level '%s'"), *LevelName.ToString());
+			// write it out immediately so make sure it's in the log even without a CommitMapChange happening
+			debugf(NAME_Warning, TEXT("PREPAREMAPCHANGE: %s"), *PendingMapChangeFailureDescription);
+
+			// tell user on screen!
+			extern UBOOL GIsPrepareMapChangeBroken;
+			GIsPrepareMapChangeBroken = TRUE;
+
+			return FALSE;
+		}
+	}
+
+	// copy LevelNames into the WorldInfo's array to keep track of the map change that we're preparing (primarily for servers so clients that join in progress can be notified)
+	if (GWorld != NULL)
+	{
+		GWorld->GetWorldInfo()->PreparingLevelNames = LevelNames;
+	}
+
+	// Kick off async loading of packages.
+	for( INT LevelIndex=0; LevelIndex<LevelsToLoadForPendingMapChange.Num(); LevelIndex++ )
+	{
+		const FName LevelName = LevelsToLoadForPendingMapChange(LevelIndex);
+		if( GUseSeekFreeLoading )
+		{
+			// Only load localized package if it exists as async package loading doesn't handle errors gracefully.
+			FString LocalizedPackageName = LevelName.ToString() + LOCALIZED_SEEKFREE_SUFFIX;
+			FString LocalizedFileName;
+			if( GPackageFileCache->FindPackageFile( *LocalizedPackageName, NULL, LocalizedFileName ) )
+			{
+				// Load localized part of level first in case it exists. We don't need to worry about GC or completion
+				// callback as we always kick off another async IO for the level below.
+				UObject::LoadPackageAsync( *LocalizedPackageName, NULL, NULL );
+			}
+		}
+		UObject::LoadPackageAsync( *LevelName.ToString(), AsyncMapChangeLevelLoadCompletionCallback, this );
+	}
+
+	return TRUE;
 }
 
 /**
@@ -2784,30 +2818,37 @@ UBOOL UGameEngine::IsReadyForMapChange()
 /**
  * Commit map change if requested and map change is pending. Called every frame.
  */
+// DISHONORED(port): 2013 UGameEngine::ConditionalCommitMapChange (0x232770, 2012 0x245de0): pending texture streaming is cancelled
+// and async loading flushed unconditionally (no IsReadyForMapChange check), then CommitMapChange runs and the loading movie is
+// stopped. The reference `debugf` stays: "Committed map change via <engine>" is the golden line (:365 and :389).
 void UGameEngine::ConditionalCommitMapChange()
 {
-	// Check whether there actually is a pending map change and whether we want it to be committed yet.
 	if( bShouldCommitPendingMapChange && IsPreparingMapChange() )
 	{
-		// Block on remaining async data.
-		if( !IsReadyForMapChange() )
+		const FString MapName = LevelsToLoadForPendingMapChange(0).ToString();
+		if( GStreamingManager )
 		{
-			FlushAsyncLoading(); // DISHONORED(port): Dishonored FlushAsyncLoading has no exclude-type parameter (agent L, Core rva in UnObj.cpp)
-			check( IsReadyForMapChange() );
+			UTexture2D::CancelPendingTextureStreaming();
 		}
-		
-		// Perform map change.
+		UObject::FlushAsyncLoading();
+
 		if (!CommitMapChange())
 		{
 			debugf(NAME_Warning, TEXT("Committing map change via %s was not successful: %s"), *GetFullName(), *GetMapChangeFailureDescription());
 		}
-		// No pending map change - called commit without prepare.
 		else
 		{
 			debugf(TEXT("Committed map change via %s"), *GetFullName());
 		}
 
-		// We just commited, so reset the flag.
+		// DISHONORED(port): retail asks UEngine::ShouldStopMovieAtEndOfLoadMap(Map) (vtable +408, 0x227730, agent AI) whether the
+		// movie is stopped (vtable +316 StopMovie) or only its loading state cleared (0x5d8930, the Bink overlay's own bookkeeping,
+		// which our inert Bink stub does not need)
+		if( GFullScreenMovie && ShouldStopMovieAtEndOfLoadMap( MapName ) )
+		{
+			StopMovie( TRUE );
+		}
+
 		bShouldCommitPendingMapChange = FALSE;
 	}
 }
@@ -3240,6 +3281,79 @@ FLOAT UGameEngine::GetMaxTickRate( FLOAT DeltaTime, UBOOL bAllowFrameRateSmoothi
 //
 // Update everything.
 //
+
+// DISHONORED(bringup): -startmap=<map> and -newgame stand in for the GFx main menu's New Game while WITH_GFx=0.
+// Retail path: UDisGFxMoviePlayerMainMenu::OnNewGameConfirm (2013 rva 0x7c1ff0, reached from exec 0x5f7d70 through vtable +600)
+// stores the difficulty in the profile settings and sets m_bStartingNewGame; the menu then runs the tweak string
+// UDisTweaks_GFxMoviePlayerMainMenu::m_NewGameCommand through ADishonoredPlayerController::s_pInstance->ConsoleCommand (2012
+// 0x820080 does exactly that). That string is "ce ChangeLvl_StartNewGame" (Default__DisTweaks_GFxMoviePlayerMainMenu in
+// DishonoredGame.upk, read with resources/tools/pdb/read_package_classes.py): a Kismet console event of DishonoredGameFull_P whose
+// sequence prepares and commits the map change into the prologue (golden :389, the second "Committed map change via
+// DishonoredEngine" with the l_tower_p levels). -newgame issues that console command; -startmap=<map> issues UGameEngine::Exec's
+// STREAMMAP (2013 0x23d020: PrepareMapChange + bShouldCommitPendingMapChange + ConditionalCommitMapChange) for any map, which is
+// the same engine entry the Kismet action uses. Both wait until the main-menu map change has committed.
+// -startmapopen takes the engine's own travel path instead (UGameEngine::Exec's OPEN -> SetClientTravel -> LoadMap), and issues it
+// as soon as the tick loop runs, before the main menu has streamed in. That is not how the menu starts a mission, but it is the only
+// way to get a player into a mission map today: tearing the streamed-in main menu down again deadlocks between the garbage
+// collector's UStaticMesh::BeginDestroy -> BeginReleaseResource and the rendering thread's
+// FPrimitiveSceneInfo::RemoveFromScene -> ~FStaticMesh (identical stacks 60 s apart, build/agentAF/dbg/hang1.txt and hang2.txt;
+// also with -onethread, where the single thread sits in the CRT heap). With -startmapopen the only world torn down is
+// DishonoredGameFull_P, which LoadMap already does once at startup.
+static void DishonoredTickStartMap( UGameEngine* Engine )
+{
+	static FString StartMap;
+	static UBOOL bNewGame = FALSE;
+	static UBOOL bOpen = FALSE;
+	static INT State = -1; // -1 unparsed, -2 off or done, 0 waiting for the main-menu commit, N > 0 ticks left before the command
+	if( State == -1 )
+	{
+		State = -2;
+		bNewGame = ParseParam( appCmdLine(), TEXT("newgame") );
+		bOpen = ParseParam( appCmdLine(), TEXT("startmapopen") );
+		if( ( Parse( appCmdLine(), TEXT("startmap="), StartMap ) && StartMap.Len() > 0 ) || bNewGame )
+		{
+			State = 0;
+		}
+	}
+	if( State == -2 || !GWorld || !GWorld->GetWorldInfo() )
+	{
+		return;
+	}
+	if( State == 0 )
+	{
+		// the main-menu map change sets CommittedPersistentLevelName (UGameEngine::CommitMapChange)
+		if( bOpen || ( GWorld->GetWorldInfo()->CommittedPersistentLevelName != NAME_None && !Engine->IsPreparingMapChange() ) )
+		{
+			State = 5;
+		}
+		return;
+	}
+	if( --State > 0 )
+	{
+		return;
+	}
+	State = -2;
+	FString Command;
+	if( bNewGame )
+	{
+		Command = TEXT("ce ChangeLvl_StartNewGame");
+	}
+	else
+	{
+		Command = FString::Printf( bOpen ? TEXT("OPEN %s") : TEXT("STREAMMAP %s"), *StartMap );
+	}
+	debugf( TEXT("DISHONORED(bringup): startmap: '%s' after the %s commit"), *Command,
+		*GWorld->GetWorldInfo()->CommittedPersistentLevelName.ToString() );
+	APlayerController* PlayerController = ( Engine->GamePlayers.Num() && Engine->GamePlayers(0) ) ? Engine->GamePlayers(0)->Actor : NULL;
+	if( bNewGame && PlayerController )
+	{
+		PlayerController->ConsoleCommand( Command, TRUE );
+	}
+	else
+	{
+		Engine->Exec( *Command, *GLog );
+	}
+}
 
 void UGameEngine::Tick( FLOAT DeltaSeconds )
 {
@@ -3744,6 +3858,7 @@ void UGameEngine::Tick( FLOAT DeltaSeconds )
 
 	// See whether any map changes are pending and we requested them to be committed.
 	ConditionalCommitMapChange();
+	DishonoredTickStartMap( this );
 
 	// Tick the GRenderingRealtimeClock, unless it's paused
 	if ( GPauseRenderingRealtimeClock == FALSE )

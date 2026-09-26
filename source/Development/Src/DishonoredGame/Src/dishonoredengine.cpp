@@ -163,9 +163,11 @@ UBOOL UDishonoredEngine::PlayLoadMapMovie( const FString& MapName, const FString
 		// DISHONORED(bringup): otherwise m_pBinkOverlayManager->OnPlayLoadingMovie(MapName, TRUE, m_bShowLoadingTexts) (2013 rva 0x7b60e0)
 	}
 	// DISHONORED(bringup): without a map config OnPlayLoadingMovie(MapName, FALSE, m_bShowLoadingMapNameAndHints).
-	// Retail chains to UEngine::PlayLoadMapMovie(MapName, MapConfig ? m_LoadingMovieName : MovieName) (2013 rva 0x2097d0: the
-	// [FullScreenMovie] entry keyed by the map name, else LoadMapMovies); our UEngine only has the reference no-argument version.
-	return UEngine::PlayLoadMapMovie();
+	// DISHONORED(port): retail chains to UEngine::PlayLoadMapMovie(MapName, MapConfig ? m_LoadingMovieName : MovieName)
+	// (2013 rva 0x2097d0: the [FullScreenMovie] entry keyed by the map name, else a random LoadMapMovies entry). The call is
+	// qualified on purpose: agent AI's reference no-argument UEngine::PlayLoadMapMovie() forwards to this two-argument virtual, so
+	// chaining to the no-argument one recursed until the stack overflowed (0xC00000FD in FindMapConfig).
+	return UEngine::PlayLoadMapMovie( MapName, MapConfig ? MapConfig->m_LoadingMovieName : MovieName );
 }
 
 // DISHONORED(written): 2013 rva 0x605150 (2012 0x6422b0): nothing happens while a movie plays

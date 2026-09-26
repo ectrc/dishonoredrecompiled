@@ -1216,6 +1216,57 @@ UBOOL APlayerController::CanIdleKick()
 PlayerControllers
 Controllers are never animated, and do not look for an owner to be ticked before them
 */
+// DISHONORED(port): 2013 APlayerController::PlayerTick (0x247dd0, 2012 0x261ac0). Retail made the reference's script PlayerTick
+// event a C++ member; the 2013 Engine.PlayerController class has no PlayerTick function at all, so the reference `eventPlayerTick`
+// aborts in FindFunctionChecked. Kept as a file-static helper because the declaration would have to go into
+// EngineControllerClasses.h, which agent AE owns this wave (hand-over in agentAF.md).
+// Retail order: acknowledge a new pawn, the C++ UPlayerInput::PlayerInput (vtable +348), ClientUpdatePosition while
+// bUpdatePosition, the state's PlayerMove event, then FOVAngle chases DesiredFOV by at least 7 per tick (0.9 * delta * DeltaTime
+// beyond that) and snaps when within 10. 2013 has no bShortConnectTimeOut / ServerShortTimeout block here.
+static void DishonoredRaiseEvent( AActor* Actor, const TCHAR* EventName, void* Parms )
+{
+	UFunction* Function = Actor->FindFunction( FName( EventName, FNAME_Find ) );
+	if( Function )
+	{
+		Actor->ProcessEvent( Function, Parms );
+	}
+}
+
+static void DishonoredPlayerTick( APlayerController* PC, FLOAT DeltaTime )
+{
+	if( PC->Pawn != PC->AcknowledgedPawn )
+	{
+		struct { APawn* P; } AckParms;
+		AckParms.P = PC->Pawn;
+		DishonoredRaiseEvent( PC, TEXT("AcknowledgePossession"), &AckParms );
+	}
+	PC->PlayerInput->PlayerInput( DeltaTime );
+	if( PC->bUpdatePosition )
+	{
+		DishonoredRaiseEvent( PC, TEXT("ClientUpdatePosition"), NULL );
+	}
+	struct { FLOAT DeltaTime; } MoveParms;
+	MoveParms.DeltaTime = DeltaTime;
+	DishonoredRaiseEvent( PC, TEXT("PlayerMove"), &MoveParms );
+	if( PC->FOVAngle != PC->DesiredFOV )
+	{
+		FLOAT Step = ( PC->FOVAngle - PC->DesiredFOV ) * DeltaTime * 0.9f;
+		if( PC->FOVAngle <= PC->DesiredFOV )
+		{
+			Step = Min( Step, -7.f );
+		}
+		else
+		{
+			Step = Max( Step, 7.f );
+		}
+		PC->FOVAngle -= Step;
+		if( Abs( PC->FOVAngle - PC->DesiredFOV ) <= 10.f )
+		{
+			PC->FOVAngle = PC->DesiredFOV;
+		}
+	}
+}
+
 UBOOL APlayerController::Tick( FLOAT DeltaSeconds, ELevelTick TickType )
 {
 	bTicked = GWorld->Ticked;
@@ -1280,11 +1331,11 @@ UBOOL APlayerController::Tick( FLOAT DeltaSeconds, ELevelTick TickType )
 			if(Interactions(InteractionIndex))
 				Interactions(InteractionIndex)->Tick(DeltaSeconds);
 
+		// DISHONORED(port): 2013 APlayerController::Tick (0x255040) calls the C++ PlayerTick (0x247dd0), not a script event
 		if(PlayerInput)
-			if( FindFunction( FName(TEXT("PlayerTick"), FNAME_Find) ) ) // DISHONORED(retail): PlayerTick is not a 2013 event
-			{
-				eventPlayerTick(DeltaSeconds);
-			}
+		{
+			DishonoredPlayerTick( this, DeltaSeconds );
+		}
 
 		for(INT InteractionIndex = 0;InteractionIndex < Interactions.Num();InteractionIndex++)
 			if(Interactions(InteractionIndex))
@@ -3277,7 +3328,7 @@ void UWorld::Tick( ELevelTick TickType, FLOAT DeltaSeconds )
 				APlayerController*	PC		= Actor->GetAPlayerController();
 				if( ( PC != NULL ) && ( PC->PlayerInput != NULL ) )
 				{
-					PC->PlayerInput->eventPlayerInput( DeltaSeconds );
+					PC->PlayerInput->PlayerInput( DeltaSeconds ); // DISHONORED(port): UPlayerInput::PlayerInput 0x3f2730 is the C++ virtual (+348); the 2013 PlayerInput class has no script event
 					for( TFieldIterator<UFloatProperty> Jtr(PC->PlayerInput->GetClass()); Jtr; ++Jtr )
 					{
 						if( Jtr->PropertyFlags & CPF_Input )

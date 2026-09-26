@@ -338,8 +338,157 @@ void UGameViewportClient::DetachViewportClient()
  * Called every frame to allow the game viewport to update time based state.
  * @param	DeltaTime - The time since the last call to Tick.
  */
+// DISHONORED(bringup): -inputtest drives the retail input chain with no keyboard attached, through the same two viewport entry
+// points UWindowsClient::ProcessInput uses (FViewport::InputKey / InputAxis -> UGameViewportClient -> UPlayerInput). Once the pawn
+// is possessed in the -startmap level, W is pressed (UInput::Tick then repeats the held key as an axis every frame, which is how
+// "Axis aBaseY Speed=1.0" of GBA_MoveForward accumulates), released after 2 s, then a mouse-X sweep runs for 1 s; the distance the
+// pawn moved and the yaw it turned are logged as "DISHONORED(bringup): inputtest moved <dist> turned <yaw>".
+static void DishonoredTickInputTest( UGameViewportClient* Client, FLOAT DeltaTime )
+{
+	static INT State = -1; // -1 unparsed, -2 off or done, 0 waiting for the pawn, 1 W held, 2 mouse sweep
+	static FLOAT Timer = 0.f;
+	static FVector StartLocation( 0.f, 0.f, 0.f );
+	static INT StartYaw = 0;
+	static FLOAT MaxSpeed2D = 0.f;
+	static FLOAT MaxAccel2D = 0.f;
+	static FString StartMap;
+	if( State == -1 )
+	{
+		State = ParseParam( appCmdLine(), TEXT("inputtest") ) ? 0 : -2;
+		Parse( appCmdLine(), TEXT("startmap="), StartMap );
+	}
+	if( State == -2 || !Client->Viewport || !GWorld || !GWorld->GetWorldInfo() )
+	{
+		return;
+	}
+	ULocalPlayer* Player = ( GEngine->GamePlayers.Num() > 0 ) ? GEngine->GamePlayers(0) : NULL;
+	APlayerController* PC = Player ? Player->Actor : NULL;
+	APawn* Pawn = PC ? PC->Pawn : NULL;
+	if( State == 0 )
+	{
+		// -startmap streams the map in (CommittedPersistentLevelName), -startmapopen makes it the persistent level instead
+		const FName StartMapName( *StartMap );
+		const UBOOL bInStartMap = StartMap.Len() == 0
+			|| GWorld->GetWorldInfo()->CommittedPersistentLevelName == StartMapName
+			|| ( GWorld->PersistentLevel && GWorld->PersistentLevel->GetOutermost()->GetFName() == StartMapName );
+		if( !Pawn || !bInStartMap )
+		{
+			return;
+		}
+		// Wait until the pawn is standing on something: a pawn that is still PHYS_Falling has only air control, so pressing W would
+		// measure gravity instead of walking. L_Tower_P's floor arrives with its streaming levels a few seconds after the persistent
+		// level, so give it time and log what the pawn is doing while we wait.
+		Timer += DeltaTime;
+		if( Pawn->Physics != PHYS_Walking && Timer < 30.f )
+		{
+			static FLOAT NextReport = 0.f;
+			if( Timer >= NextReport )
+			{
+				if( NextReport == 0.f )
+				{
+					// what the mission map brought with it: L_Tower_P keeps its geometry in ULevelStreamingAlwaysLoaded sub-levels
+					AWorldInfo* Info = GWorld->GetWorldInfo();
+					debugf( TEXT("DISHONORED(bringup): inputtest streaming levels: %d"), Info->StreamingLevels.Num() );
+					for( INT i = 0; i < Info->StreamingLevels.Num(); i++ )
+					{
+						ULevelStreaming* SL = Info->StreamingLevels(i);
+						if( SL )
+						{
+							debugf( TEXT("DISHONORED(bringup):   %s (%s) bShouldBeLoaded %d bShouldBeVisible %d bIsVisible %d LoadedLevel %s"),
+								*SL->PackageName.ToString(), *SL->GetClass()->GetName(), (INT)SL->bShouldBeLoaded,
+								(INT)SL->bShouldBeVisible, (INT)SL->bIsVisible, SL->LoadedLevel ? TEXT("yes") : TEXT("no") );
+						}
+					}
+				}
+				NextReport = Timer + 2.f;
+				debugf( TEXT("DISHONORED(bringup): inputtest waiting for ground: %.1fs, physics %d, pawn at %s, floor %s"),
+					Timer, (INT)Pawn->Physics, *Pawn->Location.ToString(),
+					Pawn->Base ? *Pawn->Base->GetName() : TEXT("none") );
+			}
+			return;
+		}
+		if( Timer < 1.f )
+		{
+			return;
+		}
+		StartLocation = Pawn->Location;
+		StartYaw = PC->Rotation.Yaw;
+		Timer = 0.f;
+		State = 1;
+		{
+			INT InputIndex = INDEX_NONE;
+			for( INT i = 0; i < Client->GlobalInteractions.Num(); i++ )
+			{
+				if( Client->GlobalInteractions(i) == PC->PlayerInput )
+				{
+					InputIndex = i;
+				}
+			}
+			FString Names;
+			for( INT i = 0; i < Client->GlobalInteractions.Num(); i++ )
+			{
+				Names += FString::Printf( TEXT("%s%s"), i ? TEXT(", ") : TEXT(""),
+					Client->GlobalInteractions(i) ? *Client->GlobalInteractions(i)->GetClass()->GetName() : TEXT("NULL") );
+			}
+			debugf( TEXT("DISHONORED(bringup): inputtest viewport interactions: %d (%s), the player's input is at %d"),
+				Client->GlobalInteractions.Num(), *Names, InputIndex );
+		}
+		debugf( TEXT("DISHONORED(bringup): inputtest controller state '%s', pawn state '%s'"),
+			PC->GetStateFrame() && PC->GetStateFrame()->StateNode ? *PC->GetStateFrame()->StateNode->GetName() : TEXT("none"),
+			Pawn->GetStateFrame() && Pawn->GetStateFrame()->StateNode ? *Pawn->GetStateFrame()->StateNode->GetName() : TEXT("none") );
+		debugf( TEXT("DISHONORED(bringup): inputtest start in %s: pawn %s (%s) at %s, controller %s, input %s, physics %d, yaw %d, bindings %d"),
+			*GWorld->GetWorldInfo()->CommittedPersistentLevelName.ToString(), *Pawn->GetName(), *Pawn->GetClass()->GetName(),
+			*StartLocation.ToString(), *PC->GetClass()->GetName(),
+			PC->PlayerInput ? *PC->PlayerInput->GetClass()->GetName() : TEXT("none"), (INT)Pawn->Physics, StartYaw,
+			PC->PlayerInput ? PC->PlayerInput->Bindings.Num() : 0 );
+		Client->InputKey( Client->Viewport, 0, KEY_W, IE_Pressed, 1.f, FALSE );
+		return;
+	}
+	Timer += DeltaTime;
+	if( Pawn )
+	{
+		MaxSpeed2D = Max( MaxSpeed2D, Pawn->Velocity.Size2D() );
+		MaxAccel2D = Max( MaxAccel2D, Pawn->Acceleration.Size2D() );
+	}
+	if( State == 1 )
+	{
+		if( Timer >= 2.f )
+		{
+			Client->InputKey( Client->Viewport, 0, KEY_W, IE_Released, 0.f, FALSE );
+			debugf( TEXT("DISHONORED(bringup): inputtest W released: pawn at %s, velocity %s, acceleration %s, aForward %.2f"),
+				Pawn ? *Pawn->Location.ToString() : TEXT("none"), Pawn ? *Pawn->Velocity.ToString() : TEXT("none"),
+				Pawn ? *Pawn->Acceleration.ToString() : TEXT("none"),
+				PC->PlayerInput ? PC->PlayerInput->aForward : 0.f );
+			Timer = 0.f;
+			State = 2;
+		}
+		return;
+	}
+	if( Timer < 1.f )
+	{
+		const UBOOL bHandled = Client->InputAxis( Client->Viewport, 0, KEY_MouseX, 20.f, DeltaTime, FALSE );
+		static UBOOL bReported = FALSE;
+		if( !bReported && PC->PlayerInput )
+		{
+			bReported = TRUE;
+			debugf( TEXT("DISHONORED(bringup): inputtest mouse-X handled %d, aMouseX %.3f aTurn %.3f aTurn_BeforeClear %.3f yaw %d"),
+				(INT)bHandled, PC->PlayerInput->aMouseX, PC->PlayerInput->aTurn, PC->PlayerInput->aTurn_BeforeClear, PC->Rotation.Yaw );
+		}
+		return;
+	}
+	const FLOAT Moved = Pawn ? ( Pawn->Location - StartLocation ).Size2D() : 0.f;
+	INT Turned = PC ? ( PC->Rotation.Yaw - StartYaw ) : 0;
+	Turned = ( Turned + 32768 ) & 65535;
+	Turned -= 32768;
+	debugf( TEXT("DISHONORED(bringup): inputtest moved %.1f turned %d (yaw %d -> %d, peak 2D speed %.1f, peak 2D accel %.1f, physics %d, pawn %s at %s)"),
+		Moved, Turned, StartYaw, PC ? PC->Rotation.Yaw : 0, MaxSpeed2D, MaxAccel2D, Pawn ? (INT)Pawn->Physics : -1,
+		Pawn ? *Pawn->GetClass()->GetName() : TEXT("none"), Pawn ? *Pawn->Location.ToString() : TEXT("none") );
+	State = -2;
+}
+
 void UGameViewportClient::Tick( FLOAT DeltaTime )
 {
+	DishonoredTickInputTest( this, DeltaTime );
 	// first call the unrealscript tick
 	eventTick(DeltaTime);
 
@@ -371,6 +520,37 @@ FString UGameViewportClient::ConsoleCommand(const FString& Command)
  *
  * @return	TRUE to consume the key event, FALSE to pass it on.
  */
+
+// DISHONORED(bringup): hand viewport input to the local players' UPlayerInput when the interaction list does not carry it.
+// In UE3 the player's input reaches UGameViewportClient because PlayerController's script InitInputSystem inserts it into
+// GlobalInteractions (GameViewportClient.InsertInteraction is a script event in the 2013 packages too - script_classes_2013.json:
+// Defined|Event|HasOptionalParms|Public - not a native we could be missing). In our runs the list holds only 3 entries and the
+// player's UDishonoredPlayerInput is not among them ("the player's input is at -1"), so every key and axis was dropped between
+// FWindowsViewport and UPlayerInput and nothing the player pressed could move or turn the pawn. Routing here restores the chain
+// PHASE6 AF.3 describes; it is a no-op once the insertion works, because the interaction loop consumes the event first.
+static UBOOL DishonoredRouteInputToPlayers( UGameViewportClient* Client, FName Key, EInputEvent Event, FLOAT Delta, FLOAT DeltaTime,
+	UBOOL bGamepad, UBOOL bAxis, INT ControllerId )
+{
+	UBOOL bResult = FALSE;
+	for( INT PlayerIndex = 0; !bResult && PlayerIndex < GEngine->GamePlayers.Num(); PlayerIndex++ )
+	{
+		ULocalPlayer* Player = GEngine->GamePlayers(PlayerIndex);
+		if( !Player || Player->ViewportClient != Client || !Player->Actor || !Player->Actor->PlayerInput )
+		{
+			continue;
+		}
+		// already routed through the interaction list
+		if( Client->GlobalInteractions.ContainsItem( Player->Actor->PlayerInput ) )
+		{
+			continue;
+		}
+		bResult = bAxis
+			? Player->Actor->PlayerInput->InputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad )
+			: Player->Actor->PlayerInput->InputKey( ControllerId, Key, Event, Delta, bGamepad );
+	}
+	return bResult;
+}
+
 UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName Key,EInputEvent EventType,FLOAT AmountDepressed,UBOOL bGamepad)
 {
 	// if a movie is playing then handle input key
@@ -414,6 +594,11 @@ UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName K
 		bResult = bResult || Interaction->InputKey(ControllerId, Key, EventType, AmountDepressed, bGamepad);
 	}
 
+	if( !bResult )
+	{
+		bResult = DishonoredRouteInputToPlayers( this, Key, EventType, AmountDepressed, 0.f, bGamepad, FALSE, ControllerId );
+	}
+
 	return bResult;
 }
 
@@ -430,6 +615,13 @@ UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName K
  */
 UBOOL UGameViewportClient::InputAxis(FViewport* Viewport,INT ControllerId,FName Key,FLOAT Delta,FLOAT DeltaTime, UBOOL bGamepad)
 {
+	// DISHONORED(port): 2013 UGameViewportClient::InputAxis (0x2b9680, 2012 0x2cb970) swallows axis input while a full-screen
+	// movie plays, the way InputKey already does
+	if( GFullScreenMovie && GFullScreenMovie->GameThreadIsMoviePlaying(TEXT("")) )
+	{
+		return TRUE;
+	}
+
 	UBOOL bResult = FALSE;
 
 	// give script the chance to process this input first
@@ -448,6 +640,11 @@ UBOOL UGameViewportClient::InputAxis(FViewport* Viewport,INT ControllerId,FName 
 		}
 
 		bResult = bResult || Interaction->InputAxis(ControllerId, Key, Delta, DeltaTime, bGamepad);
+	}
+
+	if( !bResult )
+	{
+		bResult = DishonoredRouteInputToPlayers( this, Key, IE_Axis, Delta, DeltaTime, bGamepad, TRUE, ControllerId );
 	}
 
 	return bResult;

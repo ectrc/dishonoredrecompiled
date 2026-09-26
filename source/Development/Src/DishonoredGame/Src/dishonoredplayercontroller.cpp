@@ -203,6 +203,60 @@ void ADishonoredPlayerController::OnControllerChanged_Native( UBOOL bIsConnected
 {
 }
 
+// DISHONORED(written): 2013 rva 0x6a0ae0 (2012 0x6d1320, identical): the override only chains to APlayerController::Possess. The
+// DISHONORED(bringup) line is agent AF's milestone-5 marker; retail logs nothing (Shipping).
+void ADishonoredPlayerController::Possess( APawn* inPawn )
+{
+	APlayerController::Possess( inPawn );
+	// DISHONORED(bringup): retail's APlayerController::Possess (2013 rva 0x1330b0) ends by raising a no-parameter script event on the
+	// controller - the one that puts it into the pawn's land movement state - after setting Pawn, SetTickIsDisabled(inPawn, FALSE),
+	// TimeMargin = -0.1 and MaxTimeMargin from the AGameInfo default. Our APlayerController has no Possess override at all
+	// (Engine/Src/playercontroller.cpp is still an import_reference.py stub), so AController::Possess runs and the controller stays
+	// in no state: GetStateFrame()->StateNode is the class itself, `PlayerMove` dispatches nothing, and with it neither
+	// PlayerMove_Walking nor UpdateRotation ever run, so input moves and turns nothing. Raising Restart here is the bring-up stand-in.
+	// Hand-over to agent AE, who owns UnController.cpp / EngineControllerClasses.h: port APlayerController::Possess and UnPossess
+	// (0x1330b0 / 0x130090) so this block can go.
+	UFunction* Restart = FindFunction( FName(TEXT("Restart"), FNAME_Find) );
+	if( Restart )
+	{
+		ProcessEvent( Restart, NULL );
+	}
+	else
+	{
+		warnf( TEXT("DISHONORED(bringup): ADishonoredPlayerController::Possess: no Restart event, the controller stays stateless") );
+	}
+	const FString MapName = ( GWorld && GWorld->GetWorldInfo() && GWorld->GetWorldInfo()->CommittedPersistentLevelName != NAME_None )
+		? GWorld->GetWorldInfo()->CommittedPersistentLevelName.ToString()
+		: ( GWorld && GWorld->PersistentLevel ? GWorld->PersistentLevel->GetOutermost()->GetName() : FString(TEXT("None")) );
+	debugf( TEXT("DISHONORED(bringup): possessed %s (%s) in %s by %s at %s"),
+		inPawn ? *inPawn->GetName() : TEXT("None"), inPawn ? *inPawn->GetClass()->GetName() : TEXT("None"),
+		*MapName, *GetClass()->GetName(), inPawn ? *inPawn->Location.ToString() : TEXT("None") );
+}
+
+// DISHONORED(written): 2013 rva 0x6a0af0 (2012 0x6d1330): a thunk to APlayerController::UnPossess
+void ADishonoredPlayerController::UnPossess()
+{
+	APlayerController::UnPossess();
+}
+
+// DISHONORED(written): 2013 rva 0x6a0770 (2012 0x6d0fa0): with a pawn the held-button pass runs instead of the reference's bRun
+// handling (APlayerController::HandleWalking 0x243000 is never reached from here). HandleHeldButtons (vtable +1264, 2013 0x6ba9a0)
+// needs the player FSM and the tweak-driven movement helpers, so it is still a warn-once native stub: walking accelerates through
+// APlayerController::PlayerMove_Walking from the aForward/aStrafe axes, which is what milestone 5 exercises.
+void ADishonoredPlayerController::HandleWalking( FLOAT DeltaTime )
+{
+	if( Pawn )
+	{
+		UFunction* HandleHeldButtons = FindFunction( FName(TEXT("HandleHeldButtons"), FNAME_Find) );
+		if( HandleHeldButtons )
+		{
+			struct { FLOAT DeltaSeconds; } Parms;
+			Parms.DeltaSeconds = DeltaTime;
+			ProcessEvent( HandleHeldButtons, &Parms );
+		}
+	}
+}
+
 // DISHONORED(written): 2013 rva 0x1d3a70 = APlayerController::execIsMoveInputIgnored (vtable +1172)
 void ADishonoredPlayerController::execIsMoveInputIgnored( FFrame& Stack, RESULT_DECL )
 {

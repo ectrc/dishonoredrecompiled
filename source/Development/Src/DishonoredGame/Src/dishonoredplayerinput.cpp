@@ -43,13 +43,94 @@ void UDishonoredPlayerInput::OnInit( ADishonoredPlayerController* Owner )
 		bUsingGamepad = DishonoredEngine->m_bUsingGamepad;
 	}
 	// DISHONORED(bringup): ArkSettings::ApplyCurrentSettings(IArkSettingsListenerInterface) (Engine, 2013 rva 0x53b790) is not in our
-	// Engine yet; the sensitivity/invert options stay at their defaults
+	// Engine yet, so the sensitivity/invert options stay at their defaults and the binding half of ApplyGameSettings is called here
+	BuildBindings();
 }
 
 // DISHONORED(written): 2013 rva 0x6a12b0 (2012 0x6d1a80, same bytes)
 void UDishonoredPlayerInput::Dis_Jump_ButtonDown()
 {
 	m_pPlayerController->bPressedJump = TRUE;
+}
+
+// DISHONORED(written): 2013 rva 0x6a12c0 (2012 0x6d1a90, identical bytes), retail vtable +348: after the base tick the four axes are
+// kept for the next frame (m_fOld_aLookUp <- aLookUp, m_fOld_aTurn <- aTurn, m_fOld_aForward <- aForward, m_fOld_aStrafe <- aStrafe).
+void UDishonoredPlayerInput::PlayerInput( FLOAT DeltaTime )
+{
+	UPlayerInput::PlayerInput( DeltaTime );
+	m_fOld_aLookUp = aLookUp;
+	m_fOld_aTurn = aTurn;
+	m_fOld_aForward = aForward;
+	m_fOld_aStrafe = aStrafe;
+}
+
+// DISHONORED(written): 2013 rva 0x6b84f0 (2012 0x6efbe0): merge one binding set into Bindings. A set entry whose Name and modifier
+// bits match an existing binding appends its command behind a '|'; one whose modifiers are a strict superset replaces the existing
+// entry; anything else is added. Retail compares the ten FKeyBind bits of the 2013 struct (Control..m_bIgnoreRMouse).
+void UDishonoredPlayerInput::AddBindingSet( const TArrayNoInit<FKeyBind>& Set )
+{
+	for( INT SetIndex = 0; SetIndex < Set.Num(); SetIndex++ )
+	{
+		const FKeyBind& New = Set(SetIndex);
+		UBOOL bHandled = FALSE;
+		for( INT BindIndex = 0; BindIndex < Bindings.Num(); BindIndex++ )
+		{
+			FKeyBind& Bind = Bindings(BindIndex);
+			if( Bind.Name != New.Name )
+			{
+				continue;
+			}
+			const UBOOL bSameModifiers =
+				(UBOOL)Bind.Control == (UBOOL)New.Control && (UBOOL)Bind.Shift == (UBOOL)New.Shift &&
+				(UBOOL)Bind.Alt == (UBOOL)New.Alt && (UBOOL)Bind.m_bLMouseHeld == (UBOOL)New.m_bLMouseHeld &&
+				(UBOOL)Bind.m_bRMouseHeld == (UBOOL)New.m_bRMouseHeld && (UBOOL)Bind.bIgnoreCtrl == (UBOOL)New.bIgnoreCtrl &&
+				(UBOOL)Bind.bIgnoreShift == (UBOOL)New.bIgnoreShift && (UBOOL)Bind.bIgnoreAlt == (UBOOL)New.bIgnoreAlt &&
+				(UBOOL)Bind.m_bIgnoreLMouse == (UBOOL)New.m_bIgnoreLMouse && (UBOOL)Bind.m_bIgnoreRMouse == (UBOOL)New.m_bIgnoreRMouse;
+			if( bSameModifiers )
+			{
+				Bind.Command += TEXT("|");
+				Bind.Command += New.Command;
+				bHandled = TRUE;
+				break;
+			}
+			const UBOOL bNewCovers =
+				( New.Control || !Bind.Control ) && ( New.Shift || !Bind.Shift ) && ( New.Alt || !Bind.Alt ) &&
+				( New.m_bLMouseHeld || !Bind.m_bLMouseHeld ) && ( New.m_bRMouseHeld || !Bind.m_bRMouseHeld );
+			if( bNewCovers )
+			{
+				Bind = New;
+				bHandled = TRUE;
+				break;
+			}
+		}
+		if( !bHandled )
+		{
+			Bindings.AddItem( New );
+		}
+	}
+}
+
+// DISHONORED(written): the binding half of 2013 UDishonoredPlayerInput::ApplyGameSettings (0x6bd610): Bindings = BaseBindings, then
+// AddBindingSet(m_PCBindings) and AddBindingSet(m_PadBindingSet[m_PadBindingSetMap[0]]) (TranslateBindingSet 0x6afe50 maps the
+// gamepad-scheme setting through the tweak). Without it Bindings stays empty and no key reaches the player controller.
+// DISHONORED(bringup): ReadPCBindingsFromProfile (0x6b8240, the user's rebinds), TranslateBaseBindings (0x6baa80, the non-US
+// keyboard-layout remap) and InitGameActionBindings (0x6bac10, the UI glyph table) are not run: there is no profile yet and the
+// settings interface ArkSettings::ApplyCurrentSettings (Engine, 0x53b790) is not in our Engine.
+void UDishonoredPlayerInput::BuildBindings()
+{
+	Bindings = BaseBindings;
+	AddBindingSet( m_PCBindings );
+	UDisTweaks_PlayerInput* Tweaks = m_pTweaks ? m_pTweaks : (UDisTweaks_PlayerInput*)UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject();
+	const INT PadSet = Tweaks ? Tweaks->m_PadBindingSetMap[0] : 0;
+	switch( PadSet )
+	{
+	case 1:		AddBindingSet( m_PadBindingSet2 ); break;
+	case 2:		AddBindingSet( m_PadBindingSet3 ); break;
+	case 3:		AddBindingSet( m_PadBindingSet4 ); break;
+	default:	AddBindingSet( m_PadBindingSet1 ); break;
+	}
+	debugf( TEXT("DISHONORED(bringup): player input bindings: %d base + %d pc + pad set %d -> %d bindings"),
+		BaseBindings.Num(), m_PCBindings.Num(), PadSet, Bindings.Num() );
 }
 
 // DISHONORED(written): 2013 rva 0x5efd00 (vtable +360)

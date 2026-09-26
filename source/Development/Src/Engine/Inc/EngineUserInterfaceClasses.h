@@ -1081,6 +1081,19 @@ public:
 	virtual UBOOL InputMotion(INT ControllerId, const FVector& Tilt, const FVector& RotationRate, const FVector& Gravity, const FVector& Acceleration);
 	virtual void  UpdateAxisValue( FLOAT* Axis, FLOAT Delta );
 	virtual UBOOL IsGamepadKey(FName Name) const;
+
+	// DISHONORED(retail): retail's PlayerInput tick is C++, not script: the 2013 Engine.PlayerInput class declares only
+	// InitInputSystem, so the reference `eventPlayerInput` would abort in FindFunctionChecked. 2013 UPlayerInput vtable
+	// +340 PreProcessInput, +344 AdjustMouseSensitivity (0x3fd250), +348 PlayerInput (0x3f2730), +352 GetFOVScale
+	// (0x3d4010); SmoothMouse 0x3ebcb0, ClearSmoothing 0x3ebc50, CatchDoubleClickInput 0x3d3ea0. There is no
+	// PostProcessInput in retail. Bodies in UnIn.cpp (agent AF).
+	virtual void PreProcessInput( FLOAT DeltaTime ) {}
+	virtual void AdjustMouseSensitivity( FLOAT FOVScale );
+	virtual void PlayerInput( FLOAT DeltaTime );
+	virtual FLOAT GetFOVScale( UBOOL bIsForMouse );
+	FLOAT SmoothMouse( FLOAT aMouse, FLOAT DeltaTime, BYTE& SampleCount, INT Index );
+	void ClearSmoothing();
+	void CatchDoubleClickInput();
 };
 
 class UPlayerManagerInteraction : public UInteraction

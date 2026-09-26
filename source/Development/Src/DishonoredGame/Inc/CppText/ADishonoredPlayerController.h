@@ -6,6 +6,12 @@ public:
 	// (2013: 205 references)
 	static ADishonoredPlayerController* s_pInstance;
 
+	// DISHONORED(written): retail vtable +956 Possess (2013 rva 0x6a0ae0, 2012 0x6d1320: Super only), +960 UnPossess (0x6a0af0,
+	// a thunk to APlayerController::UnPossess), +1156 HandleWalking (0x6a0770)
+	virtual void Possess( APawn* inPawn );
+	virtual void UnPossess();
+	virtual void HandleWalking( FLOAT DeltaTime );
+
 	virtual void PostBeginPlay();
 	virtual void BeginDestroy();
 	virtual UBOOL IsMoveInputIgnored() const;
