@@ -8,6 +8,15 @@
 	UObject::StaticShutdownAfterError has run; the sweep catches the throw, counts it, logs the package line with
 	the GErrorHist text and exits right away since the object system is shut down (the driver
 	build/agentAD/loadall_driver.py restarts the sweep at the next package). No retail counterpart.
+
+	DISHONORED(bringup): agent AX additions for the milestone 3 exit sweep over all 471 cooked packages
+	(additive; agent AD owns this file). -loadallpurge collects with RF_Native|RF_Marked instead of
+	RF_Native|RF_Marked|RF_Standalone so the swept package's assets are actually reclaimed - without it a
+	few dozen packages exhaust the 32-bit address space, with it the whole cooked tree sweeps in one
+	process. A LoadPackage that returns NULL (an unresolvable package name) is counted and the sweep goes
+	on: only a linker abort shuts the object system down and forces the exit. A second line,
+	"loadall purged <pkg>: <N> objects live", is logged after the collect: its absence for a package whose load
+	line is there is a crash in the *teardown* of that package's objects, not in its serializers.
 =============================================================================*/
 
 #include "EnginePrivate.h"
@@ -64,10 +73,11 @@ static INT DishonoredLoadAllCountExports(UPackage* Package, INT& OutCreated)
 	return Count;
 }
 
-static UBOOL DishonoredLoadAllOne(const FString& PackageName, INT& OutExports, INT& OutCreated, FString& OutError)
+static UBOOL DishonoredLoadAllOne(const FString& PackageName, INT& OutExports, INT& OutCreated, FString& OutError, UBOOL& bOutFatal)
 {
 	OutExports = 0;
 	OutCreated = 0;
+	bOutFatal = FALSE;
 	try
 	{
 		UPackage* Package = UObject::LoadPackage(NULL, *PackageName, LOAD_None);
@@ -81,6 +91,8 @@ static UBOOL DishonoredLoadAllOne(const FString& PackageName, INT& OutExports, I
 	}
 	catch( ... )
 	{
+		// appErrorf ran UObject::StaticShutdownAfterError before throwing: nothing can be loaded after this
+		bOutFatal = TRUE;
 		OutError = FString(GErrorHist).Replace(TEXT("\r"), TEXT(" ")).Replace(TEXT("\n"), TEXT(" ")).Left(400);
 		return FALSE;
 	}
@@ -95,7 +107,9 @@ void DishonoredLoadAllPackages()
 	}
 	TArray<FString> Packages;
 	DishonoredLoadAllParseList(Spec, Packages);
-	debugf(TEXT("DISHONORED(bringup): loadall: %d packages"), Packages.Num());
+	const UBOOL bPurge = ParseParam(appCmdLine(), TEXT("loadallpurge"));
+	const EObjectFlags KeepFlags = bPurge ? (RF_Native | RF_Marked) : (RF_Native | RF_Marked | RF_Standalone);
+	debugf(TEXT("DISHONORED(bringup): loadall: %d packages%s"), Packages.Num(), bPurge ? TEXT(", purging") : TEXT(""));
 
 	INT TotalErrors = 0;
 	for( INT Index=0; Index<Packages.Num(); ++Index )
@@ -104,22 +118,30 @@ void DishonoredLoadAllPackages()
 		INT Exports = 0;
 		INT Created = 0;
 		FString Error;
+		UBOOL bFatal = FALSE;
 		const DOUBLE StartTime = appSeconds();
-		const UBOOL bLoaded = DishonoredLoadAllOne(PackageName, Exports, Created, Error);
+		const UBOOL bLoaded = DishonoredLoadAllOne(PackageName, Exports, Created, Error, bFatal);
 		if( bLoaded )
 		{
-			debugf(TEXT("DISHONORED(bringup): loadall %s: %d exports, 0 errors (%d objects created, %.2fs)"), *PackageName, Exports, Created, appSeconds() - StartTime);
-			UObject::CollectGarbage(RF_Native | RF_Marked | RF_Standalone);
+			// the load result is logged before the collect, so a package whose *teardown* crashes still has its load line
+			debugf(TEXT("DISHONORED(bringup): loadall %s: %d exports, 0 errors (%d objects created, %.2fs)"),
+				*PackageName, Exports, Created, appSeconds() - StartTime);
+			UObject::CollectGarbage(KeepFlags);
+			debugf(TEXT("DISHONORED(bringup): loadall purged %s: %d objects live"), *PackageName, UObject::GetObjectArrayNum());
 		}
 		else
 		{
 			++TotalErrors;
 			debugf(TEXT("DISHONORED(bringup): loadall %s: %d exports, 1 errors: %s"), *PackageName, Exports, *Error);
-			debugf(TEXT("DISHONORED(bringup): loadall: aborting after the error in %s (%d of %d packages done), object system shut down by appErrorf"),
-				*PackageName, Index + 1, Packages.Num());
-			GLog->Flush();
-			appRequestExit(TRUE);
-			return;
+			if( bFatal )
+			{
+				debugf(TEXT("DISHONORED(bringup): loadall: aborting after the error in %s (%d of %d packages done), object system shut down by appErrorf"),
+					*PackageName, Index + 1, Packages.Num());
+				GLog->Flush();
+				appRequestExit(TRUE);
+				return;
+			}
+			UObject::CollectGarbage(KeepFlags);
 		}
 	}
 	debugf(TEXT("DISHONORED(bringup): loadall done: %d packages, %d errors"), Packages.Num(), TotalErrors);

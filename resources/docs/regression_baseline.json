@@ -1,0 +1,169 @@
+{
+  "_about": [
+    "Expected values of resources/tools/run_regression.py, one entry per metric: op (>=, <=, ==, >), value,",
+    "optional (a metric whose log line does not exist yet is skipped instead of failing) and a free-text note.",
+    "Measured by agent AX on 2026-09-26 on the Release build of HEAD a64f9b4 in the clean snapshot worktree",
+    "build/agentAX_wt, d3d9 windowed 1280x720. Each note carries the value measured there.",
+    "These are REGRESSION bounds, not performance targets. Timings and per-frame counts on this machine vary by a",
+    "factor of five with how many agents are building at the same time (the same run measured 20,220 frames idle and",
+    "4,380 under load, 2.7 s and 25.2 s of startup), so every load-sensitive bound sits far below its measured value",
+    "and exists to catch a counter that went to zero, a crash, or a milestone that stopped being reached - which is",
+    "what every defect of waves 4 and 5 actually looked like. Correctness metrics (layout, CoreSmoke, criticals,",
+    "physics counts, the walked distance) are load-independent and are pinned tight.",
+    "The three optional census metrics are the counters wave 5's packages AR (textures), AS (touches) and AT",
+    "(sequence ops) add. The contract is what agent AP's scene census already does: one DISHONORED(bringup) line",
+    "reading '<thing> census: <N> ...' whose first integer is the headline count. Flip optional to false once the",
+    "line is in HEAD, so the counter can never be dropped again without failing this run."
+  ],
+  "_extra_args": {
+    "d3d9": [],
+    "inputtest": [
+      "-distouch"
+    ]
+  },
+  "coresmoke_passed": {
+    "op": ">=",
+    "value": 99,
+    "note": "CoreSmoke.exe from the repo root"
+  },
+  "coresmoke_failed": {
+    "op": "==",
+    "value": 0
+  },
+  "layout_types": {
+    "op": "==",
+    "value": 2314,
+    "note": "xcheck_sdk_layout.py: retail SDK dump types probed"
+  },
+  "layout_mismatching": {
+    "op": "==",
+    "value": 0
+  },
+  "layout_contract": {
+    "op": "==",
+    "value": 0
+  },
+  "layout_probed": {
+    "op": ">=",
+    "value": 2341,
+    "note": "gen_layout_probe.py compare (2012 PDB / retail sizes)"
+  },
+  "layout_compare_contract": {
+    "op": "==",
+    "value": 0
+  },
+  "verify_phase2_passed": {
+    "op": ">=",
+    "value": 2,
+    "note": "verify_phase2.py retail"
+  },
+  "verify_phase2_total": {
+    "op": "==",
+    "value": 2
+  },
+  "startup_seconds": {
+    "op": "<=",
+    "value": 60.0,
+    "note": "null RHI; 2.7 s measured at HEAD. A cliff detector only: with four other agents building on the same machine the same run measured 25 s, so the bound catches a hang, not a slowdown"
+  },
+  "nullrhi_criticals": {
+    "op": "==",
+    "value": 0
+  },
+  "nullrhi_level_seconds": {
+    "op": "<=",
+    "value": 60.0,
+    "note": "Finished loading level"
+  },
+  "d3d9_startup_seconds": {
+    "op": "<=",
+    "value": 60.0,
+    "note": "3.4 s measured at HEAD (3.2 s in PHASE7.md); cliff detector only, see startup_seconds"
+  },
+  "d3d9_criticals": {
+    "op": "==",
+    "value": 0
+  },
+  "d3d9_frames": {
+    "op": ">=",
+    "value": 1000,
+    "note": "scene rendered, 90 s run: 20,220 measured at HEAD idle, 4,380 under load. The bound says the render loop keeps running, not how fast"
+  },
+  "d3d9_draws_per_frame": {
+    "op": ">=",
+    "value": 400,
+    "note": "static draw-list elements drawn in the busiest census line: 784 at HEAD, 979 in agent AP's run, 588 under load - camera and time dependent. The bound catches the 0 of 6,381 that AP's draw-distance bug produced"
+  },
+  "d3d9_draw_elements": {
+    "op": ">=",
+    "value": 6000,
+    "note": "static draw-list elements in the scene; 6,381 in PHASE7.md"
+  },
+  "d3d9_visible_prims": {
+    "op": ">=",
+    "value": 200,
+    "note": "primitives surviving culling in the busiest census line: 392 at HEAD, 279 under load"
+  },
+  "texture_census": {
+    "op": ">",
+    "value": 0,
+    "optional": true,
+    "note": "agent AR's texture census"
+  },
+  "touch_census": {
+    "op": ">",
+    "value": 0,
+    "optional": true,
+    "note": "agent AS's -distouch census"
+  },
+  "sequence_census": {
+    "op": ">",
+    "value": 0,
+    "optional": true,
+    "note": "agent AT's sequence-op census"
+  },
+  "inputtest_moved": {
+    "op": ">=",
+    "value": 800.0,
+    "note": "2D distance the pawn walks; 1029.6 measured at HEAD (1030 in PHASE7.md)"
+  },
+  "inputtest_peak_speed": {
+    "op": ">=",
+    "value": 400.0,
+    "note": "peak 2D speed; 500 in PHASE7.md"
+  },
+  "physics_actors": {
+    "op": ">=",
+    "value": 850,
+    "note": "PhysX scene actors; 895 in PHASE7.md"
+  },
+  "physics_static_shapes": {
+    "op": ">=",
+    "value": 1250,
+    "note": "PhysX static shapes; 1,312 in PHASE7.md"
+  },
+  "unported_natives": {
+    "op": "<=",
+    "value": 4,
+    "note": "distinct natives without a body that actually fire on the walking path. At HEAD they are execGameEnding, execHandleHeldButtons, execLanded_Native and execTakeFallingDamage_Native - PHASE7.md's table names Dis_Zoom instead of the two Pawn ones, which do not fire. Agent AU takes them; lower this bound as they land"
+  },
+  "inputtest_criticals": {
+    "op": "==",
+    "value": 0
+  },
+  "nullrhi_log_lines": {
+    "op": ">=",
+    "value": 500,
+    "note": "guard: 0 means the run never started and no other metric of this stage is trustworthy"
+  },
+  "d3d9_log_lines": {
+    "op": ">=",
+    "value": 500,
+    "note": "guard: 0 means the run never started and no other metric of this stage is trustworthy"
+  },
+  "inputtest_log_lines": {
+    "op": ">=",
+    "value": 500,
+    "note": "guard: 0 means the run never started and no other metric of this stage is trustworthy"
+  }
+}
