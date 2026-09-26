@@ -85,6 +85,90 @@ UBOOL FD3D9DynamicRHI::GetTextureMemoryVisualizeData( FColor* /*TextureData*/, I
 	return FALSE;
 }
 
+
+/**
+ * DISHONORED(bringup): -distexfill (agent AR). Paints every managed mip level of a newly created 2D
+ * texture magenta in its own format, so a level the engine never uploads into stays magenta on screen
+ * instead of showing whatever the driver left in that surface.
+ */
+static UBOOL GDisTexFill = FALSE;
+static UBOOL GDisTexFillChecked = FALSE;
+static UINT GDisTexFilledTextures = 0;
+static UINT GDisTexFilledLevels = 0;
+
+static void DisFillTexture2D( FD3D9Texture2D& Texture, DWORD RHIFlags )
+{
+	if( !GDisTexFillChecked )
+	{
+		GDisTexFillChecked = TRUE;
+		GDisTexFill = ParseParam( appCmdLine(), TEXT("distexfill") );
+	}
+	if( !GDisTexFill || (RHIFlags & (TexCreate_ResolveTargetable | TexCreate_DepthStencil)) )
+	{
+		return;
+	}
+
+	// magenta in each format the cook uses; anything else is left as 0xff bytes
+	static const BYTE DXT1Block[8]	= { 0x1f, 0xf8, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x00 };
+	static const BYTE DXT5Block[16]	= { 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1f, 0xf8, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x00 };
+	const EPixelFormat Format = Texture.GetUnrealFormat();
+	const BYTE* Pattern = NULL;
+	UINT PatternBytes = 0;
+	switch( Format )
+	{
+	case PF_DXT1:		Pattern = DXT1Block; PatternBytes = 8; break;
+	case PF_DXT3:
+	case PF_DXT5:		Pattern = DXT5Block; PatternBytes = 16; break;
+	default:			break;
+	}
+
+	const UINT NumMips = Texture->GetLevelCount();
+	for( UINT MipIndex = 0; MipIndex < NumMips; MipIndex++ )
+	{
+		D3DSURFACE_DESC Desc;
+		if( FAILED(Texture->GetLevelDesc( MipIndex, &Desc )) )
+		{
+			continue;
+		}
+		D3DLOCKED_RECT LockedRect;
+		if( FAILED(Texture->LockRect( MipIndex, &LockedRect, NULL, D3DLOCK_NOSYSLOCK )) )
+		{
+			continue;
+		}
+		const UINT BlockSizeY = Max<UINT>( 1, GPixelFormats[Format].BlockSizeY );
+		const UINT NumRows = (Desc.Height + BlockSizeY - 1) / BlockSizeY;
+		for( UINT Row = 0; Row < NumRows; Row++ )
+		{
+			BYTE* Dest = (BYTE*)LockedRect.pBits + Row * LockedRect.Pitch;
+			if( Pattern )
+			{
+				for( UINT Offset = 0; Offset + PatternBytes <= (UINT)LockedRect.Pitch; Offset += PatternBytes )
+				{
+					appMemcpy( Dest + Offset, Pattern, PatternBytes );
+				}
+			}
+			else if( Format == PF_A8R8G8B8 )
+			{
+				DWORD* Row32 = (DWORD*)Dest;
+				for( UINT Offset = 0; Offset + 4 <= (UINT)LockedRect.Pitch; Offset += 4 )
+				{
+					*Row32++ = 0xffff00ff;
+				}
+			}
+			else
+			{
+				appMemset( Dest, 0xff, LockedRect.Pitch );
+			}
+		}
+		Texture->UnlockRect( MipIndex );
+		GDisTexFilledLevels++;
+	}
+	if( (++GDisTexFilledTextures % 500) == 0 )
+	{
+		debugf(TEXT("DISHONORED(bringup): -distexfill: %u textures, %u levels painted magenta"), GDisTexFilledTextures, GDisTexFilledLevels);
+	}
+}
+
 void D3D9TextureAllocated( FD3D9Texture2D& Texture )
 {
 	UINT NumMips = Texture->GetLevelCount();
@@ -132,6 +216,7 @@ FTexture2DRHIRef FD3D9DynamicRHI::CreateTexture2D(UINT SizeX,UINT SizeY,BYTE For
 	{
 		D3D9TextureAllocated( *Texture2D );
 	}
+	DisFillTexture2D( *Texture2D, Flags );	// DISHONORED(bringup): -distexfill
 	return Texture2D;
 }
 

@@ -27,6 +27,46 @@ enum ETextureStreamingState
 	TexState_InProgress_AsyncAllocation = 102
 };
 
+
+/**
+ * DISHONORED(bringup): texture census counters (agent AR). Defined in Texture2D.cpp, printed from
+ * FStreamingManagerCollection::UpdateResourceStreaming. Plain globals, render thread.
+ */
+extern UINT GDisTexCreated;
+extern UINT GDisTexFmtDXT1;
+extern UINT GDisTexFmtDXT3;
+extern UINT GDisTexFmtDXT5;
+extern UINT GDisTexFmtBC5;
+extern UINT GDisTexFmtARGB;
+extern UINT GDisTexFmtG8;
+extern UINT GDisTexFmtOther;
+extern UINT GDisTexGrpLightmap;
+extern UINT GDisTexGrpWorld;
+extern UINT GDisTexGrpChar;
+extern UINT GDisTexGrpOther;
+extern UINT GDisTexStreamable;
+extern UINT GDisTexResident;
+extern UINT GDisTexLevelsCreated;
+extern UINT GDisTexLevelsFilled;
+extern UINT GDisTexLevelsMissing;
+extern UINT GDisTexWithHoles;
+extern UINT GDisTexPitchMismatch;
+extern UINT GDisTexSizeMismatch;
+extern UINT GDisTexMinMips;
+extern UINT GDisTexMaxMips;
+extern UINT GDisTexNoMipTail;
+extern UINT GDisTexStreamRequests;
+extern UINT GDisTexStreamSharedCopied;
+extern UINT GDisTexStreamSharedNone;
+extern UINT GDisTexStreamLevelsInline;
+extern UINT GDisTexStreamLevelsIOPlain;
+extern UINT GDisTexStreamLevelsIOComp;
+extern UINT GDisTexStreamLevelsNotInTFC;
+extern UINT GDisTexStreamPitchMismatch;
+extern UINT GDisTexStreamSizeMismatch;
+extern UINT GDisTexStreamFinalizeOk;
+extern UINT GDisTexStreamFinalizeFail;
+
 /** 
  * The rendering resource which represents a texture.
  */

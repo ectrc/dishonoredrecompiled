@@ -219,6 +219,7 @@ struct FStreamingTexture
 		STAT_FAST( MostResidentMips = InTexture->ResidentMips );
 		LODGroup = (TextureGroup) InTexture->LODGroup;
 		NumMipTailLevels = Max(0, InTexture->Mips.Num() - InTexture->MipTailBaseIdx);
+		MinResidentMips = InTexture->MinResidentMipCount;	// DISHONORED(written): 2013 rva 0x16b090, mips the cook left inline (UTexture2D::CreateResource)
 		ForceLoadRefCount = 0;
 		bIsStreamingLightmap = IsStreamingLightmap( Texture );
 		bUsesStaticHeuristics = FALSE;
@@ -397,6 +398,8 @@ struct FStreamingTexture
 	INT				TextureLODBias;
 	/** Cached number of mip-maps in the mip-tail (on Xbox). */
 	INT				NumMipTailLevels;
+	/** DISHONORED(written): mip-levels the cook left inline in the package, which cannot be streamed from the .tfc. */
+	INT				MinResidentMips;
 	/** Cached number of cinematic (high-resolution) mip-maps. Normally not streamed in, unless the texture is forcibly fully loaded. */
 	INT				NumCinematicMipLevels;
 
@@ -1471,6 +1474,28 @@ void FStreamingManagerCollection::UpdateResourceStreaming( FLOAT DeltaTime, UBOO
 		// Reset number of iterations to 1 for next frame.
 		NumIterations = 1;
 	}
+
+	// DISHONORED(bringup): texture census (agent AR), once a second, in the style of agent AP's scene census.
+	{
+		static DOUBLE LastCensusTime = 0.0;
+		const DOUBLE Now = appSeconds();
+		if( Now - LastCensusTime > 1.0 )
+		{
+			LastCensusTime = Now;
+			debugf(TEXT("DISHONORED(bringup): texture census: %u created (%u DXT1, %u DXT3, %u DXT5, %u BC5, %u ARGB, %u G8, %u other), groups %u lightmap/%u world/%u char/%u other, %u streamed + %u resident, mips %u..%u (%u with no mip tail)"),
+				GDisTexCreated, GDisTexFmtDXT1, GDisTexFmtDXT3, GDisTexFmtDXT5, GDisTexFmtBC5, GDisTexFmtARGB, GDisTexFmtG8, GDisTexFmtOther,
+				GDisTexGrpLightmap, GDisTexGrpWorld, GDisTexGrpChar, GDisTexGrpOther,
+				GDisTexStreamable, GDisTexResident,
+				GDisTexMinMips == 0xffffffff ? 0 : GDisTexMinMips, GDisTexMaxMips, GDisTexNoMipTail);
+			debugf(TEXT("DISHONORED(bringup): texture census: upload %u levels created, %u filled, %u missing over %u textures, %u pitch mismatches, %u size mismatches; stream %u requests, %u shared levels copied (%u with none), new levels %u inline/%u io/%u io-compressed (%u NOT in the tfc), %u pitch mismatches, %u size mismatches, %u finalized, %u failed"),
+				GDisTexLevelsCreated, GDisTexLevelsFilled, GDisTexLevelsMissing, GDisTexWithHoles,
+				GDisTexPitchMismatch, GDisTexSizeMismatch,
+				GDisTexStreamRequests, GDisTexStreamSharedCopied, GDisTexStreamSharedNone,
+				GDisTexStreamLevelsInline, GDisTexStreamLevelsIOPlain, GDisTexStreamLevelsIOComp, GDisTexStreamLevelsNotInTFC,
+				GDisTexStreamPitchMismatch, GDisTexStreamSizeMismatch,
+				GDisTexStreamFinalizeOk, GDisTexStreamFinalizeFail);
+		}
+	}
 }
 
 /**
@@ -2333,6 +2358,7 @@ UBOOL FStreamingManagerTexture::StreamOutTextureData( INT RequiredMemorySize )
 		// Number of mip-levels that must be resident due to mip-tails and GMinTextureResidentMipCount.
 		INT NumRequiredResidentMips = (Texture->MipTailBaseIdx >= 0) ? Max<INT>(Texture->Mips.Num() - Texture->MipTailBaseIdx, 0 ) : 0;
 		NumRequiredResidentMips = Max<INT>(NumRequiredResidentMips, GMinTextureResidentMipCount);
+		NumRequiredResidentMips = Max<INT>(NumRequiredResidentMips, Texture->MinResidentMipCount);	// DISHONORED(written): 2013 rva 0x16b090
 
 		// Only consider streamable textures that have enough miplevels, and who are currently ready for streaming.
 		if ( Texture->bIsStreamable && Texture->NeverStream == FALSE && Texture->ResidentMips > NumRequiredResidentMips && Texture->IsReadyForStreaming() )
@@ -4073,6 +4099,7 @@ void FStreamingManagerTexture::CalcMinMaxMips( FStreamingTexture& StreamingTextu
 	// Calculate the minimum number of mip-levels required.
 	StreamingTexture.MinAllowedMips = Min( StreamingTexture.MipCount - TextureLODBias, GMinTextureResidentMipCount );
 	StreamingTexture.MinAllowedMips	= Max( StreamingTexture.MinAllowedMips, StreamingTexture.NumMipTailLevels );
+	StreamingTexture.MinAllowedMips	= Max( StreamingTexture.MinAllowedMips, StreamingTexture.MinResidentMips );	// DISHONORED(written): 2013 rva 0x16b090
 
 	// Calculate the maximum number of mip-levels.
 	INT MaxTextureMipCount = GMaxTextureMipCount;

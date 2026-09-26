@@ -5,6 +5,43 @@
 
 #include "EnginePrivate.h"
 
+// DISHONORED(bringup): texture census counters (agent AR), declared in UnTex.h.
+UINT GDisTexCreated = 0;
+UINT GDisTexFmtDXT1 = 0;
+UINT GDisTexFmtDXT3 = 0;
+UINT GDisTexFmtDXT5 = 0;
+UINT GDisTexFmtBC5 = 0;
+UINT GDisTexFmtARGB = 0;
+UINT GDisTexFmtG8 = 0;
+UINT GDisTexFmtOther = 0;
+UINT GDisTexGrpLightmap = 0;
+UINT GDisTexGrpWorld = 0;
+UINT GDisTexGrpChar = 0;
+UINT GDisTexGrpOther = 0;
+UINT GDisTexStreamable = 0;
+UINT GDisTexResident = 0;
+UINT GDisTexLevelsCreated = 0;
+UINT GDisTexLevelsFilled = 0;
+UINT GDisTexLevelsMissing = 0;
+UINT GDisTexWithHoles = 0;
+UINT GDisTexPitchMismatch = 0;
+UINT GDisTexSizeMismatch = 0;
+UINT GDisTexMinMips = 0xffffffff;
+UINT GDisTexMaxMips = 0;
+UINT GDisTexNoMipTail = 0;
+UINT GDisTexStreamRequests = 0;
+UINT GDisTexStreamSharedCopied = 0;
+UINT GDisTexStreamSharedNone = 0;
+UINT GDisTexStreamLevelsInline = 0;
+UINT GDisTexStreamLevelsIOPlain = 0;
+UINT GDisTexStreamLevelsIOComp = 0;
+UINT GDisTexStreamLevelsNotInTFC = 0;
+UINT GDisTexStreamPitchMismatch = 0;
+UINT GDisTexStreamSizeMismatch = 0;
+UINT GDisTexStreamFinalizeOk = 0;
+UINT GDisTexStreamFinalizeFail = 0;
+
+
 #if PS3
 #include "FFileManagerPS3.h"
 #include "PS3DownloadableContent.h"
@@ -1899,6 +1936,26 @@ FTextureResource* UTexture2D::CreateResource()
 	// Only allow streaming if enabled on the engine level.
 	bIsStreamable = bIsStreamable && GUseTextureStreaming;
 
+	// DISHONORED(written): the cook writes a streaming texture's upper mips into TextureFileCacheName's
+	// .tfc (BULKDATA_StoreInSeparateFile) and leaves the lower ones inline in the package, and
+	// FTexture2DResource::LoadMipData (2013 rva 0x16b090) reads every streamed level from that one file.
+	// An inline level's BulkDataOffsetInFile is a package offset, so streaming it reads unrelated bytes;
+	// the trailing inline run has to stay resident instead. MinResidentMipCount (retail 2013 only, @368)
+	// is that count and is the floor for RequestedMips here and for MinAllowedMips in the streamer.
+	MinResidentMipCount = 0;
+	static INT DisNoTfcFloor = -1;	// DISHONORED(bringup): -disnotfcfloor reproduces the defect for a before/after pair
+	if( DisNoTfcFloor == -1 )
+	{
+		DisNoTfcFloor = ParseParam( appCmdLine(), TEXT("disnotfcfloor") ) ? 1 : 0;
+	}
+	if( bIsStreamable && TextureFileCacheName != NAME_None && DisNoTfcFloor == 0 )
+	{
+		for( INT MipIndex=Mips.Num()-1; MipIndex>=0 && !Mips(MipIndex).Data.IsStoredInSeparateFile(); MipIndex-- )
+		{
+			MinResidentMipCount++;
+		}
+	}
+
 	if(GetEffectivePixelFormat((EPixelFormat)Format, SRGB) != Format)
 	{
 		// we don't want to stream texture that require on load conversion
@@ -1937,6 +1994,8 @@ FTextureResource* UTexture2D::CreateResource()
 		RequestedMips	= Min( MipCount, RequestedMips );
 		// Make sure that we at least load the mips that reside in the packed miptail
 		RequestedMips	= Max( RequestedMips, NumMipTailLevels );
+		// ... and the mips the cook left inline, which the streamer cannot fetch from the .tfc.
+		RequestedMips	= Max( RequestedMips, MinResidentMipCount );	// DISHONORED(written): 2013 rva 0x16b090
 		// should be as big as the mips we have already directly loaded into GPU mem
 		if( ResourceMem )
 		{	
@@ -2452,16 +2511,64 @@ void FTexture2DResource::InitRHI()
 		}
 		else
 		{
+			// DISHONORED(bringup): texture census (agent AR): what was created, and what was actually uploaded
+			UINT CensusMissing = 0;
+			GDisTexCreated++;
+			switch( EffectiveFormat )
+			{
+			case PF_DXT1:		GDisTexFmtDXT1++; break;
+			case PF_DXT3:		GDisTexFmtDXT3++; break;
+			case PF_DXT5:		GDisTexFmtDXT5++; break;
+			case PF_BC5:		GDisTexFmtBC5++; break;
+			case PF_A8R8G8B8:	GDisTexFmtARGB++; break;
+			case PF_G8:			GDisTexFmtG8++; break;
+			default:			GDisTexFmtOther++; break;
+			}
+			switch( Owner->LODGroup )
+			{
+			case TEXTUREGROUP_Lightmap:
+			case TEXTUREGROUP_Shadowmap:			GDisTexGrpLightmap++; break;
+			case TEXTUREGROUP_World:
+			case TEXTUREGROUP_WorldNormalMap:
+			case TEXTUREGROUP_WorldSpecular:		GDisTexGrpWorld++; break;
+			case TEXTUREGROUP_Character:
+			case TEXTUREGROUP_CharacterNormalMap:
+			case TEXTUREGROUP_CharacterSpecular:	GDisTexGrpChar++; break;
+			default:								GDisTexGrpOther++; break;
+			}
+			if( Owner->bIsStreamable ) { GDisTexStreamable++; } else { GDisTexResident++; }
+			if( Owner->MipTailBaseIdx == -1 ) { GDisTexNoMipTail++; }
+			GDisTexMinMips = Min<UINT>( GDisTexMinMips, Owner->Mips.Num() );
+			GDisTexMaxMips = Max<UINT>( GDisTexMaxMips, Owner->Mips.Num() );
+
 			// Read the resident mip-levels into the RHI texture.
 			for( INT MipIndex=FirstMip; MipIndex<Owner->Mips.Num(); MipIndex++ )
 			{
+				GDisTexLevelsCreated++;
 				if( MipData[MipIndex] != NULL )
 				{
+					GDisTexLevelsFilled++;
 					UINT DestPitch;
 					void* TheMipData = RHILockTexture2D( Texture2DRHI, MipIndex - FirstMip, TRUE, DestPitch, FALSE );
 					GetData( MipIndex, TheMipData, DestPitch );
 					RHIUnlockTexture2D( Texture2DRHI, MipIndex - FirstMip, FALSE );
 				}
+				else
+				{
+					GDisTexLevelsMissing++;
+					CensusMissing++;
+					if( GDisTexWithHoles < 12 )
+					{
+						debugf(TEXT("DISHONORED(bringup): texture hole: %s mip %i of %i (first %i, requested %i, resident %i, streamable %i, separate-file %i, fmt %i, %ix%i) never uploaded"),
+							*Owner->GetPathName(), MipIndex, Owner->Mips.Num(), FirstMip, Owner->RequestedMips, Owner->ResidentMips,
+							(INT)Owner->bIsStreamable, (INT)Owner->Mips(MipIndex).Data.IsStoredInSeparateFile(),
+							(INT)EffectiveFormat, Owner->Mips(MipIndex).SizeX, Owner->Mips(MipIndex).SizeY);
+					}
+				}
+			}
+			if( CensusMissing > 0 )
+			{
+				GDisTexWithHoles++;
 			}
 		}
 	}
@@ -2600,6 +2707,27 @@ void FTexture2DResource::GetData( UINT MipIndex, void* Dest, UINT DestPitch )
 		TEXT("Texture '%s', mip %d, has a BulkDataSize [%d] that doesn't match calculated size [%d]. Texture size %dx%d, format %d"),
 		*Owner->GetPathName(), MipIndex, MipMap.Data.GetBulkDataSize(), EffectiveSize, Owner->SizeX, Owner->SizeY, EffectiveFormat);
 #endif
+
+	// DISHONORED(bringup): texture census (agent AR): a wrong pitch or a wrong bulk-data size is exactly
+	// what blocky colour noise looks like, so count both rather than assume either.
+	if ( SrcPitch != DestPitch )
+	{
+		if( GDisTexPitchMismatch < 12 )
+		{
+			debugf(TEXT("DISHONORED(bringup): texture pitch: %s mip %i (%ix%i fmt %i): src %u dest %u"),
+				*Owner->GetPathName(), MipIndex, MipMap.SizeX, MipMap.SizeY, (INT)EffectiveFormat, SrcPitch, DestPitch);
+		}
+		GDisTexPitchMismatch++;
+	}
+	if ( EffectiveSize != (UINT)MipMap.Data.GetBulkDataSize() )
+	{
+		if( GDisTexSizeMismatch < 12 )
+		{
+			debugf(TEXT("DISHONORED(bringup): texture size: %s mip %i (%ix%i fmt %i): effective %u bulk %i"),
+				*Owner->GetPathName(), MipIndex, MipMap.SizeX, MipMap.SizeY, (INT)EffectiveFormat, EffectiveSize, MipMap.Data.GetBulkDataSize());
+		}
+		GDisTexSizeMismatch++;
+	}
 
 	if ( SrcPitch == DestPitch )
 	{
@@ -2822,6 +2950,11 @@ void FTexture2DResource::UpdateMipCount()
 
 		SCOPED_DRAW_EVENT(EventUpdateMipCount)(DEC_SCENE_ITEMS,TEXT("UpdateMipCount"));
 
+		// DISHONORED(bringup): texture census (agent AR): a non-positive NumSharedMips means the levels the
+		// new texture inherits from the old one are never copied, which leaves them at whatever the driver
+		// had in that surface.
+		if( NumSharedMips > 0 ) { GDisTexStreamSharedCopied += NumSharedMips; } else { GDisTexStreamSharedNone++; }
+
 		// Copy shared miplevels.
 		for( INT MipIndex=0; MipIndex < NumSharedMips; MipIndex++ )
 		{
@@ -2877,6 +3010,17 @@ void FTexture2DResource::LoadMipData()
 	check(Owner->PendingMipChangeRequestStatus.GetValue() == TexState_InProgress_Loading);
 
 	IORequestCount = 0;
+	GDisTexStreamRequests++;	// DISHONORED(bringup): texture census
+	if( GDisTexStreamRequests <= 8 )
+	{
+		debugf(TEXT("DISHONORED(bringup): stream file: %s -> '%s' (size %i), mips %i, resident %i, requested %i, offset %i, on-disk %i, size %i, compressed %i, separate %i"),
+			*Owner->GetPathName(), *Filename, GFileManager->FileSize(*Filename), Owner->Mips.Num(), Owner->ResidentMips, Owner->RequestedMips,
+			Owner->Mips(Owner->Mips.Num() - Owner->RequestedMips).Data.GetBulkDataOffsetInFile(),
+			Owner->Mips(Owner->Mips.Num() - Owner->RequestedMips).Data.GetBulkDataSizeOnDisk(),
+			Owner->Mips(Owner->Mips.Num() - Owner->RequestedMips).Data.GetBulkDataSize(),
+			(INT)Owner->Mips(Owner->Mips.Num() - Owner->RequestedMips).Data.IsStoredCompressedOnDisk(),
+			(INT)Owner->Mips(Owner->Mips.Num() - Owner->RequestedMips).Data.IsStoredInSeparateFile());
+	}
 	if ( IsValidRef(IntermediateTextureRHI) && !Owner->bHasCancelationPending )
 	{
 		STAT( IntermediateTextureSize = Owner->CalcTextureMemorySize( Owner->RequestedMips ) );
@@ -2914,6 +3058,42 @@ void FTexture2DResource::LoadMipData()
 			// Lock new texture.
 			UINT DestPitch;
 			void* TheMipData = RHILockTexture2D( IntermediateTextureRHI, MipIndex, TRUE, DestPitch, FALSE );
+
+			// DISHONORED(bringup): texture census (agent AR): the streamed-mip upload, level by level
+			if( GDisTexStreamLevelsIOPlain + GDisTexStreamLevelsIOComp < 24 )
+			{
+				debugf(TEXT("DISHONORED(bringup): stream level: %s owner-mip %i -> rhi-mip %i (%ix%i fmt %i), flags 0x%08x, offset %i, on-disk %i, size %i, dest pitch %u, group %i"),
+					*Owner->GetPathName(), MipIndex + FirstMip, MipIndex, MipMap.SizeX, MipMap.SizeY, (INT)Owner->Format,
+					MipMap.Data.GetBulkDataFlags(), MipMap.Data.GetBulkDataOffsetInFile(), MipMap.Data.GetBulkDataSizeOnDisk(), MipMap.Data.GetBulkDataSize(), DestPitch, (INT)Owner->LODGroup);
+				INT NumTfcMips = 0;
+				while( NumTfcMips < Owner->Mips.Num() && Owner->Mips(NumTfcMips).Data.IsStoredInSeparateFile() ) { NumTfcMips++; }
+				debugf(TEXT("DISHONORED(bringup): stream level:   mips %i, miptail base %i, lod bias %i, resident %i, requested %i, MinResidentMipCount %i, tfc mips %i"),
+					Owner->Mips.Num(), Owner->MipTailBaseIdx, Owner->GetCachedLODBias(), Owner->ResidentMips, Owner->RequestedMips, Owner->MinResidentMipCount, NumTfcMips);
+			}
+			{
+				const EPixelFormat CensusFormat = UTexture2D::GetEffectivePixelFormat((EPixelFormat)Owner->Format, Owner->SRGB);
+				const UINT CensusColumns = (MipMap.SizeX + GPixelFormats[CensusFormat].BlockSizeX - 1) / GPixelFormats[CensusFormat].BlockSizeX;
+				const UINT CensusRows = (MipMap.SizeY + GPixelFormats[CensusFormat].BlockSizeY - 1) / GPixelFormats[CensusFormat].BlockSizeY;
+				const UINT CensusSrcPitch = CensusColumns * GPixelFormats[CensusFormat].BlockBytes;
+				if( CensusSrcPitch != DestPitch )
+				{
+					if( GDisTexStreamPitchMismatch < 12 )
+					{
+						debugf(TEXT("DISHONORED(bringup): stream pitch: %s mip %i (%ix%i fmt %i): src %u dest %u"),
+							*Owner->GetPathName(), MipIndex, MipMap.SizeX, MipMap.SizeY, (INT)CensusFormat, CensusSrcPitch, DestPitch);
+					}
+					GDisTexStreamPitchMismatch++;
+				}
+				if( CensusSrcPitch * CensusRows != (UINT)MipMap.Data.GetBulkDataSize() )
+				{
+					if( GDisTexStreamSizeMismatch < 12 )
+					{
+						debugf(TEXT("DISHONORED(bringup): stream size: %s mip %i (%ix%i fmt %i): effective %u bulk %i"),
+							*Owner->GetPathName(), MipIndex, MipMap.SizeX, MipMap.SizeY, (INT)CensusFormat, CensusSrcPitch * CensusRows, MipMap.Data.GetBulkDataSize());
+					}
+					GDisTexStreamSizeMismatch++;
+				}
+			}
 
 #if PS3
 			void* OriginalMipData = NULL;
@@ -2956,6 +3136,7 @@ void FTexture2DResource::LoadMipData()
 			// Mip data is already loaded
 			if( MipMap.Data.IsBulkDataLoaded() && MipMap.Data.GetBulkDataSize() > 0 )
 			{
+				GDisTexStreamLevelsInline++;	// DISHONORED(bringup): texture census
 				// Const cast here so that we can pass into the GetCopy function, we will not mutate it since we do not allow GetCopy to discard the internal copy
 				FTexture2DMipMap& MutableMipMap = const_cast< FTexture2DMipMap& >( MipMap );
 
@@ -2974,6 +3155,8 @@ void FTexture2DResource::LoadMipData()
 			// returns.
 			Owner->PendingMipChangeRequestStatus.Increment();
 
+				GDisTexStreamLevelsIOComp++;	// DISHONORED(bringup): texture census
+				if( !MipMap.Data.IsStoredInSeparateFile() ) { GDisTexStreamLevelsNotInTFC++; }
 				IORequestIndices[IORequestCount++] = IO->LoadCompressedData( 
 					Filename,											// filename
 					MipMap.Data.GetBulkDataOffsetInFile(),				// offset
@@ -2996,6 +3179,16 @@ void FTexture2DResource::LoadMipData()
 				// returns.	
 				Owner->PendingMipChangeRequestStatus.Increment();
 
+				GDisTexStreamLevelsIOPlain++;	// DISHONORED(bringup): texture census
+				if( !MipMap.Data.IsStoredInSeparateFile() ) { GDisTexStreamLevelsNotInTFC++; }
+				if( MipMap.Data.GetBulkDataSizeOnDisk() != MipMap.Data.GetBulkDataSize() )
+				{
+					GDisTexStreamSizeMismatch++;
+					if( GDisTexStreamSizeMismatch < 12 )
+					{
+						debugf(TEXT("DISHONORED(bringup): stream plain-but-packed: %s mip %i flags 0x%08x on-disk %i size %i"), *Owner->GetPathName(), MipIndex + FirstMip, MipMap.Data.GetBulkDataFlags(), MipMap.Data.GetBulkDataSizeOnDisk(), MipMap.Data.GetBulkDataSize());
+					}
+				}
 				IORequestIndices[IORequestCount++] = IO->LoadData( 
 					Filename,											// filename
 					MipMap.Data.GetBulkDataOffsetInFile(),				// offset
@@ -3076,6 +3269,7 @@ void FTexture2DResource::FinalizeMipCount()
 		// Perform switcheroo if the request hasn't been canceled.
 		if( !Owner->bHasCancelationPending )
 		{
+			GDisTexStreamFinalizeOk++;	// DISHONORED(bringup): texture census
 			bSuccess		= TRUE;
 			TextureRHI		= IntermediateTextureRHI;
 			Texture2DRHI	= IntermediateTextureRHI;
@@ -3124,6 +3318,7 @@ void FTexture2DResource::FinalizeMipCount()
 	else
 	{
 		// failed
+		GDisTexStreamFinalizeFail++;	// DISHONORED(bringup): texture census
 		DEC_DWORD_STAT_BY( STAT_TextureMemory, IntermediateTextureSize );
 		DEC_DWORD_STAT_BY( Owner->LODGroup + STAT_TextureGroupFirst, IntermediateTextureSize );
 	}
