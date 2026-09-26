@@ -257,11 +257,13 @@ UBOOL APawn::ShouldTrace(UPrimitiveComponent* Primitive,AActor *SourceActor, DWO
 /** Save off commonly used nodes so the tree doesn't need to be iterated over often */
 void APawn::CacheAnimNodes()
 {
-	for (INT i = 0; i < Mesh->AnimTickArray.Num(); i++)
+	// DISHONORED(retail): the tick array is the mesh's anim tree's (UnAnimTree.h)
+	TArray<UAnimNode*>& DisTickArray = DisAnimTickArray(Mesh);
+	for (INT i = 0; i < DisTickArray.Num(); i++)
 	{
-		if (Mesh->AnimTickArray(i)->IsA(UAnimNodeSlot::StaticClass()))
+		if (DisTickArray(i)->IsA(UAnimNodeSlot::StaticClass()))
 		{
-			SlotNodes.AddItem(Cast<UAnimNodeSlot>(Mesh->AnimTickArray(i)));
+			SlotNodes.AddItem(Cast<UAnimNodeSlot>(DisTickArray(i)));
 		}
 	}
 }
@@ -701,7 +703,13 @@ UBOOL APawn::moveToward(const FVector &Dest, AActor *GoalActor )
 		 && (Abs(Location.Z - Controller->MoveTarget->Location.Z) < CylinderComponent->CollisionHeight)
 		 && (Square(Location.X - Controller->MoveTarget->Location.X) + Square(Location.Y - Controller->MoveTarget->Location.Y) < Square(CylinderComponent->CollisionRadius)) )
 	{
-		 Controller->MoveTarget->eventTouch(this, this->CollisionComponent, Location, (Controller->MoveTarget->Location - Location) );
+		 // DISHONORED(retail): the 2013 Actor script declares no Touch function, so this checked call aborts for any
+		 // class without its own handler - the same guard as the one in UnActor.cpp (agent AU found 13 such classes
+		 // on the hub map).
+		 if( Controller->MoveTarget->FindFunction( FName(TEXT("Touch"), FNAME_Find) ) )
+		 {
+			 Controller->MoveTarget->eventTouch(this, this->CollisionComponent, Location, (Controller->MoveTarget->Location - Location) );
+		 }
 	}
 	
 	FLOAT Distance = Direction.Size();
