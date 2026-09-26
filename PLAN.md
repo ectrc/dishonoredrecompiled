@@ -259,23 +259,28 @@ DFSDK `.uc` for comments; exec-parameter structs and `FunctionFlags` for the `ev
 wrappers come from the dump's `*_parameters.hpp`; then rewrite natives and native classes in dependency order (`DisGlobalEnums`, items,
 pawns, AI brain processes, powers, UI last).
 
-### Phase 4 — Third-party dependencies
+### Phase 4 — Third-party dependencies — **DONE for PhysX, Steamworks, Wwise and Bink 2026-09-26**
 
-Versions and evidence: `resources/docs/middleware.md` (wave 2 U). Status 2026-09-25:
+Nothing had to be obtained: the retail install ships the runtime DLLs and the 2012 tree ships their PDBs, so
+the bindings are **written by us** (`source/Development/Src/External/`, one `cmake/<Name>.cmake` each, a
+throw-away stub DLL per library purely for its import lib, the shipped DLL as the runtime, nothing copied or
+redistributed). See `agents/agentAL.md` (PhysX 2.8.4), `agentAM.md` (Steamworks), `agentAN.md` (Wwise 2012.1)
+and `middleware.md`.
 
-| Library | Status | Plan |
-|---|---|---|
-| PhysX **2.8.4** (DLLs 2.8.4.6) / APEX | `WITH_NOVODEX=0`; the reference tree only has NovodeX 2.1.2. **APEX is shipped but never linked by retail** → `WITH_APEX=0` is final | PhysX 2.8.4 SDK headers + `NxdDoubleBuffered` must be obtained (user); link the shipped DLLs via import libs; needed at milestone 5 |
-| DirectX 9 | done: reference SDK mirrored without `rpcsal.h`; D3D9Drv is a module, `--rhi d3d9` creates the RHI | D3DX is editor-time in retail; guard like nvtt later |
-| LZO1X (replaces LZOPro) | **done** (wave 1 K): lzokay via FetchContent, `WITH_LZO=1`, retail chunks decompress | — |
-| zlib, libpng, libogg, libvorbis, TinyXML | zlib/libpng already via FetchContent; libogg/libvorbis not linked in Shipping (audio is Wwise) | Data compatible; no decompile. |
-| Steamworks | `steam_api.dll` 1.30.50.46, interfaces of the **SDK 1.18/1.19** generation; `WITH_STEAMWORKS=0`; OSS registrants generated (T) | SDK from the partner archive (user); `-nosteam` offline path with a delay-loaded DLL (Phase 8) |
-| Bink **1.9p** | **done** (wave 2 U): `Engine/Bink/Src/bink.h` reconstructed from the 2012 PDB, import lib built from a stub DLL (`cmake/Bink.cmake`), link check passed behind `DISHONORED_WITH_BINK` | play the startup movie at milestone 4 (`FDisFullScreenMovieBink`, `UArkBinkOverlayManager`) |
-| libcurl | 2013 exe only | Removed (Phase 8). |
-| Scaleform GFx **3.3.89** (`libgfx`, `libgfx_ime`) | static, 10.4 % of the exe; no SDK anywhere; GFxUI registrants generated (T) | matching 3.3.x licensee SDK if sourceable, else a GFx-3 API subset behind a GFxUI adapter (e.g. on Ruffle); never a rewrite of the 1.1 MB lib. Gates the main-menu half of milestone 4 |
-| Wwise **2012.1** (bank format 65) | static, ~4 %; AkAudio registrants generated (T), audio silent | link the free 2012.1 SDK when installed (user) |
-| FaceFX **SDK 1.7.3.1** | static, 1.3 %; the SDK source was compiled inside Arkane's tree; `WITH_FACEFX=0` (assets round-trip as byte blobs) | decompile-driven rewrite (1,317 named functions) at milestone 6 |
-| PathEngine, SpeedTree | not in Shipping | Nothing to do. |
+* **PhysX 2.8.4** — `WITH_NOVODEX=1`: 68 interfaces at their PDB vtable slots, 109 descriptors, 33 default sets
+  decoded out of the DLLs' compiled inline code, the SDK descriptor from retail's own construction. Creates its
+  scene, cooks convex meshes from the packages' precooked data, runs rigid-body init for 235 components.
+  Narrower than retail and tagged: empty contact stream, fluids off, no double buffering, no character controller.
+* **Steamworks** — `WITH_STEAMWORKS=1`: 10 headers from the shipped DLL's exports, its version strings and 21
+  retail call sites pinning the vtable slots; the three remaining unported natives ported. Sockets stay off on
+  evidence (retail's networking is plain IpDrv). No Steam client here, so only the import and init path is
+  proven live; with Steam installed, `steam_appid.txt` = 205100 and no `-nosteam` finishes the proof.
+* **Wwise 2012.1** — headers from the 2012 PDB with a `static_assert` per struct size, plus a silent backend
+  that really reads the shipped banks: 65 file packages, 39 banks loaded, 463 of 468 events resolved, and the
+  Wwise name hash verified as FNV-1 over all 981 shipped containers. Real audio needs the licensed SDK, after
+  which `DISHONORED_WWISE_SDK=<path>` is the whole switch, or an evaluator for the bank logic.
+* **Still open**: Scaleform GFx (the main menu, `middleware.md` decision) and FaceFX. APEX stays off
+  permanently — retail ships the DLLs but never linked it.
 
 ### Phase 5 — Build system
 
