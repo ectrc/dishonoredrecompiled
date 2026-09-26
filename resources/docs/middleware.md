@@ -106,6 +106,14 @@ Three categories:
   `NxdFluid`/`NxdSoftBody`/`NxdWheelShape`...) is the SDK's "double buffered" helper library shipped
   as source + prebuilt lib inside `PhysX SDK 2.8.x\SDKs\NxdDoubleBuffered`. It is not in a DLL, so
   it is part of what the SDK must provide.
+* **Done (agent AL, 2026-09-26): no SDK is needed.** `source/Development/Src/External/PhysX284` is our own
+  reconstruction of the 2.8.4 API, read out of the PDBs that ship next to the DLLs in `Dishonored_Debug2012`
+  (`resources/tools/pdb/dia_types.py`: 109 descriptors, 68 interfaces with exact vtable slots, 103 enums), with every
+  descriptor default decoded from the DLLs' own compiled `setToDefault()` and `NxPhysicsSDKDesc`'s from retail
+  `InitGameRBPhys` (2013 rva `0x3d5710`). `cmake/PhysX.cmake` builds a `PhysXLoader.dll` import library the Bink way,
+  `WITH_NOVODEX=1` compiles and links, and the shipped SDK creates scenes, actors, shapes, materials and convex meshes
+  at runtime. `NX_DISABLE_FLUIDS=1`, `USE_QUICKLOAD_CONVEX=0` and `SUPPORT_DOUBLE_BUFFERING=0` (no
+  `libnxdoublebuffered`); see `agents/agentAL.md`. The rest of this section is the pre-AL analysis.
 * Availability: the PhysX 2.8.4 SDK (installer `PhysX_2.8.4_SDK_Core.msi`, 2010) was a registered
   NVIDIA developer download, EOL; copies exist in UE3 licensee trees (`Development/External/PhysX/
   SDKs`) and are mirrored. The reference 10897 tree does not carry it. **Blocker for the user:**
@@ -261,9 +269,9 @@ Keep `WITH_APEX=0`, `WITH_OGGVORBIS=0`; nothing to do. The `cudart*.dll`s belong
 
 ## 4. Blockers the user must resolve (SDKs to obtain, never committed)
 
-1. **PhysX 2.8.4 SDK** headers + `NxdDoubleBuffered` (+ `NxCharacter` include) — needed for
-   `WITH_NOVODEX=1` (milestone 5). Registered NVIDIA download, now only via mirrors / UE3 licensee
-   trees.
+1. ~~**PhysX 2.8.4 SDK**~~ — **resolved without it** (agent AL): the API was reconstructed from the shipped
+   DLLs and their PDBs, `WITH_NOVODEX=1` is on by default. Only the SDK's static `libnxdoublebuffered`
+   (`NxdScene`) has no substitute, so the build runs single-buffered.
 2. **Wwise 2012.1.x SDK** — free from Audiokinetic's Launcher (legacy versions), needed to link the
    real audio runtime; until then audio is a stub.
 3. **Steamworks SDK 1.18/1.19** — free from the partner site archive; needed for

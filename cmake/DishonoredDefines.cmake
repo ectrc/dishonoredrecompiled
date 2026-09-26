@@ -24,22 +24,24 @@ set(DISHONORED_DEFINES
   WITH_MANAGED_CODE=0
   # UnBuild.h switches, set to what Shipping links (Steamworks OSS, Scaleform, PhysX+APEX, FaceFX, LZO)
   WITH_UE3_NETWORKING=1
-  # Shipping uses the Steamworks OSS and Scaleform GFx 4 (10.4 % of code), but neither SDK is in
-  # the reference tree (steam/steam_api.h, Kernel/SF_Types.h). Both are off until Phase 4 provides
-  # them; Engine.h pulls their headers into every module otherwise.
-  WITH_STEAMWORKS=0
+  # Shipping uses the Steamworks OSS and Scaleform GFx 4 (10.4 % of code). Steamworks is ours now:
+  # source/Development/Src/External/SteamworksFlat reconstructs the flat surface of the shipped
+  # steam_api.dll and cmake/Steamworks.cmake provides Dishonored::steamworks, so WITH_STEAMWORKS
+  # follows DISHONORED_WITH_STEAMWORKS (default ON when those headers are present). GFx has no
+  # runtime yet and stays off; Engine.h would pull its headers into every module otherwise.
+  # WITH_STEAMWORKS_SOCKETS stays 0 in every configuration: neither the 2012 PDB nor the retail 2013
+  # exe has one UnSocketSteamworks / UnNetSteamworks function, so retail's net driver is plain IpDrv
+  # (evidence in cmake/Steamworks.cmake).
+  WITH_STEAMWORKS=$<BOOL:${DISHONORED_WITH_STEAMWORKS}>
   WITH_STEAMWORKS_SOCKETS=0
   WITH_GFx=0
   WITH_GFx_IME=0
-  # Engine's UnNovodexSupport.h needs PhysX 2.8.4 (NxCooking.h, NxSceneQuery.h, fluids/, Nxd),
-  # but the reference tree only ships Development/External/Novodex = NovodeX SDK 2.1.2 (2004,
-  # NxVersionNumber.h), which has neither. Off until Phase 4 provides PhysX 2.8.4; Shipping links
-  # it (physx/physxloader in module_map.md). UnBuild.h then sets NX_DISABLE_FLUIDS.
-  WITH_NOVODEX=0
-  # APEX headers in the reference need the PhysX 3 foundation (foundation/PxSimpleTypes.h), which
-  # the Novodex 2.8 SDK in the reference tree lacks; off until Phase 4 (Dishonored ships APEX DLLs).
+  # WITH_NOVODEX / WITH_PHYSX_COOKING / NX_DISABLE_FLUIDS are set per target by
+  # dishonored_apply_defines() from DISHONORED_WITH_PHYSX (cmake/PhysX.cmake), because they must be
+  # identical in every module and they depend on the reconstructed PhysX 2.8.4 headers being present.
+  # APEX stays off permanently: the retail exe imports nothing from any APEX_*.dll and the 2012 PDB
+  # has no NxApex/physx::apex function at all (resources/docs/middleware.md 1, row APEX).
   WITH_APEX=0
-  WITH_PHYSX_COOKING=1
   # FaceFX is linked into Shipping (1.3 %), but its SDK is not in the reference tree; off until
   # Phase 4 provides a runtime. Engine class layouts that embed FaceFX members are checked by the
   # layout probe regardless.
@@ -120,5 +122,39 @@ function(dishonored_apply_defines target)
   if(DISHONORED_WITH_BINK)
     target_compile_definitions(${target} PRIVATE USE_BINK_CODEC=1)
     target_link_libraries(${target} PUBLIC Dishonored::bink)
+  endif()
+  # PhysX 2.8.4 (cmake/PhysX.cmake). WITH_NOVODEX guards ~100 Engine files and changes class layouts
+  # (UnPhysPublic.h, EnginePhysicsClasses.h), so it must be identical in every module.
+  #  * WITH_PHYSX_COOKING=1 is what UnBuild.h sets on every platform and what retail does (the exe
+  #    imports NxGetCookingLib and cooks the level BSP at load time, InitGameRBPhys 2013 rva 0x3d5710);
+  #  * NX_DISABLE_FLUIDS=1 is what UnBuild.h derives when PhysX is off and what this bring-up keeps on
+  #    purpose: the fluid/particle path is not on the collision path and would pull in another ~20
+  #    files (resources/docs/agents/agentAL.md);
+  #  * USE_QUICKLOAD_CONVEX=0 because the retail exe imports nothing from PhysXExtensions.dll
+  #    (imports_2013.csv), i.e. Arkane shipped with the QuickLoad convex path off;
+  #  * SUPPORT_DOUBLE_BUFFERING=0 because NxdScene lives in the SDK's static libnxdoublebuffered,
+  #    which is not a DLL and which we do not have (middleware.md 2.2).
+  if(DISHONORED_WITH_PHYSX)
+    target_compile_definitions(${target} PRIVATE
+      WITH_NOVODEX=1 WITH_PHYSX_COOKING=1 NX_DISABLE_FLUIDS=1
+      USE_QUICKLOAD_CONVEX=0 SUPPORT_DOUBLE_BUFFERING=0
+      DISHONORED_PHYSX_IMPORT_LIB=1)
+    target_link_libraries(${target} PUBLIC Dishonored::physx)
+  else()
+    target_compile_definitions(${target} PRIVATE WITH_NOVODEX=0 WITH_PHYSX_COOKING=1)
+  endif()
+  # WITH_STEAMWORKS (above) changes FUniqueNetId's conversion guards in EngineClasses.h, so the switch
+  # must be identical in every module; the import library and the header directory come with the target.
+  if(DISHONORED_WITH_STEAMWORKS)
+    target_link_libraries(${target} PUBLIC Dishonored::steamworks)
+  endif()
+  # Wwise 2012.1 (cmake/Wwise.cmake): our own AK headers plus the silent backend, or the installed SDK.
+  # It goes on every module for the same reason Bink does: Engine's akbank.cpp / akevent.cpp / UnActor.cpp call
+  # AK::SoundEngine as much as AkAudio does, and DishonoredGame's UDishonoredAudioSystem does too, so the
+  # switch must have the same value in every unit. Without it those bodies stay DISHONORED(bringup) stubs.
+  if(TARGET Dishonored::wwise)
+    target_link_libraries(${target} PUBLIC Dishonored::wwise)
+  else()
+    target_compile_definitions(${target} PRIVATE DISHONORED_WITH_WWISE=0)
   endif()
 endfunction()

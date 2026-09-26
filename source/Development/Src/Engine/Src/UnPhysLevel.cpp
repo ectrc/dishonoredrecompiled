@@ -980,6 +980,9 @@ void UWorld::InitWorldRBPhys()
 
 		RBPhysScene			= CreateRBPhysScene(Gravity);
 
+		// DISHONORED(bringup): one scene summary per world, see UWorld::TickWorldRBPhys.
+		GDishonoredLoggedPhysXSceneSummary = FALSE;
+
 #if WITH_APEX 
 		if ( (RBPhysScene != NULL) && (RBPhysScene->ApexScene != NULL) )
 		{
@@ -1087,6 +1090,24 @@ void UWorld::TickWorldRBPhys(FLOAT DeltaSeconds)
 	if(NovodexScene)
 	{
 		NovodexScene->setGravity( U2NPosition(DefaultGravity) );
+	}
+
+	// DISHONORED(bringup): one line per world, proving the reconstructed PhysX 2.8.4 bindings
+	// (source/Development/Src/External/PhysX284) really reach the shipped SDK: how many actors and
+	// shapes the scene holds and how much cooked geometry the SDK has taken from the packages.
+	// Numbers come straight out of the SDK vtables, so a wrong vtable slot shows up here.
+	if( NovodexScene && GNovodexSDK && !GDishonoredLoggedPhysXSceneSummary )
+	{
+		GDishonoredLoggedPhysXSceneSummary = TRUE;
+		debugf( NAME_DevPhysics, TEXT("DISHONORED(bringup): PhysX scene: %d actors, %d static shapes, %d dynamic shapes; SDK: %d triangle meshes, %d convex meshes, %d height fields, %d materials, gravity %s"),
+			(INT)NovodexScene->getNbActors(),
+			(INT)NovodexScene->getNbStaticShapes(),
+			(INT)NovodexScene->getNbDynamicShapes(),
+			(INT)GNovodexSDK->getNbTriangleMeshes(),
+			(INT)GNovodexSDK->getNbConvexMeshes(),
+			(INT)GNovodexSDK->getNbHeightFields(),
+			(INT)NovodexScene->getNbMaterials(),
+			*DefaultGravity.ToString() );
 	}
 
 	TickRBPhysScene(UseScene, DeltaSeconds);

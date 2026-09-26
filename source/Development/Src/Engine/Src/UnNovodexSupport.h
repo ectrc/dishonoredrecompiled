@@ -19,10 +19,16 @@ NxGroupsMask CreateGroupsMask(BYTE Channel, FRBCollisionChannelContainer* Collid
 #endif // XBOX || PS3 || IPHONE || ANDROID || PLATFORM_MACOSX
 
 // Double buffering currently only on PC
+// DISHONORED(bringup): overridable from cmake/PhysX.cmake, which sets SUPPORT_DOUBLE_BUFFERING=0.
+// NxdScene lives in the SDK'''s static libnxdoublebuffered (1,289 functions in the retail exe,
+// resources/docs/middleware.md 2.2); it is not in any shipped DLL, so the reconstructed headers
+// cannot provide it and the single-buffered scene is used instead.
+#ifndef SUPPORT_DOUBLE_BUFFERING
 #if defined(WIN32) && !defined(_WIN64)
 #define SUPPORT_DOUBLE_BUFFERING 1
 #else
 #define SUPPORT_DOUBLE_BUFFERING 0
+#endif
 #endif
 
 /** 
@@ -185,6 +191,8 @@ inline void addForce(NxActor* nActor, const NxVec3 &force, NxForceMode mode=NX_F
 #include "NvApexManager.h"
 /** Global pointer to APEX SDK objects. */
 extern NxPhysicsSDK*			GNovodexSDK;
+// DISHONORED(bringup): guards the one-per-world PhysX scene summary in UWorld::TickWorldRBPhys.
+extern UBOOL					GDishonoredLoggedPhysXSceneSummary;
 extern NxExtensionQuickLoad*	GNovodeXQuickLoad;
 #if WITH_PHYSX_COOKING
 extern NxCookingInterface*		GNovodexCooking;
@@ -333,10 +341,16 @@ extern INT						GNumPhysXTriMeshes;
 //#define		SHOW_SLOW_CONVEX
 
 // Some platforms do not yet support PhysX extensions like QuickLoadConvex
+// DISHONORED(retail): overridable from cmake/PhysX.cmake, which sets USE_QUICKLOAD_CONVEX=0 -
+// the retail 2013 exe imports nothing from PhysXExtensions.dll (resources/docs/symbols/imports_2013.csv),
+// and InitGameRBPhys (2013 rva 0x3d5710) calls the four-argument NxCreatePhysicsSDK, i.e. the
+// non-QuickLoad branch below.
+#ifndef USE_QUICKLOAD_CONVEX
 #if IPHONE || ANDROID || WIIU || NGP || FLASH
 	#define		USE_QUICKLOAD_CONVEX	0
 #else
 	#define		USE_QUICKLOAD_CONVEX	1
+#endif
 #endif
 //#define		ENABLE_CCD
 

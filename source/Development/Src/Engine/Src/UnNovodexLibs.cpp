@@ -77,6 +77,14 @@
 
 #elif _WINDOWS // Win32
 
+// DISHONORED(retail): cmake/PhysX.cmake puts our own import library for the retail
+// PhysXLoader.dll on the link line and nothing else - the retail 2013 exe imports six functions
+// from PhysXLoader.dll and nothing at all from PhysXCooking.dll or PhysXExtensions.dll
+// (resources/docs/symbols/imports_2013.csv), and libnxdoublebuffered is a static SDK library we
+// do not have (SUPPORT_DOUBLE_BUFFERING is 0). So the default-lib directives below, which name
+// SDK libraries that do not exist in this tree, are skipped.
+#if !DISHONORED_PHYSX_IMPORT_LIB
+
 #if (defined _DEBUG) && (defined USE_DEBUG_NOVODEX)
 //	#pragma message("Linking Win32 DEBUG Novodex Libs")
 	#if WITH_PHYSX_COOKING
@@ -105,9 +113,14 @@
 
 	#pragma comment(lib, "DelayImp.lib")
 
+#endif // !DISHONORED_PHYSX_IMPORT_LIB
+
 #endif	//#if defined(XBOX)
 
 NxPhysicsSDK*			GNovodexSDK = NULL;
+// DISHONORED(bringup): set once UWorld::TickWorldRBPhys has logged the scene summary that shows
+// the reconstructed PhysX bindings reaching the shipped SDK.
+UBOOL					GDishonoredLoggedPhysXSceneSummary = FALSE;
 NxExtensionQuickLoad *	GNovodeXQuickLoad = NULL;
 #if WITH_PHYSX_COOKING
 NxCookingInterface*		GNovodexCooking = NULL;

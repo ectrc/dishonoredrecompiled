@@ -89,6 +89,11 @@ target_include_directories(Dishonored::lzokay INTERFACE "${lzokay_SOURCE_DIR}")
 
 # Bink: import library from the retail binkw32.dll behind DISHONORED_WITH_BINK (default OFF)
 include(cmake/Bink.cmake)
+# PhysX 2.8.4: our own reconstruction of the API plus an import library for the retail
+# PhysXLoader.dll, behind DISHONORED_WITH_PHYSX (default ON when the headers are present).
+# Must come after Bink.cmake, which declares DISHONORED_RETAIL_DIR.
+include(cmake/PhysX.cmake)
+include(cmake/Steamworks.cmake)
 
 # Examples for Phase 4 (uncomment when the module that needs them exists):
 # dishonored_fetch(ogg    https://github.com/xiph/ogg.git           v1.3.5)

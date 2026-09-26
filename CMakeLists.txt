@@ -22,6 +22,11 @@ add_compile_definitions(UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS)
 
 include(cmake/Dependencies.cmake)
 include(cmake/ReferenceExternals.cmake)
+# Declared before cmake/Wwise.cmake, which needs to know whether the AkAudio module is in the build: the
+# Wwise glue (the low-level IO hook, UAkAudioDevice, the AK allocation hooks) lives in that module, and
+# Engine's akbank.cpp / akevent.cpp / UnActor.cpp call into it. The module section below uses this value.
+option(DISHONORED_ENABLE_AKAUDIO "Build the AkAudio module (retail classes plus the Wwise 2012.1 glue when DISHONORED_WITH_WWISE)" OFF)
+include(cmake/Wwise.cmake)
 include(cmake/DishonoredDefines.cmake)
 include(cmake/DishonoredModule.cmake)
 
@@ -89,7 +94,6 @@ if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_GFXUI)
   dishonored_module(GFxUI)
   target_compile_definitions(GFxUI PRIVATE DISHONORED_SDK_LAYOUT_CHECKS=$<BOOL:${DISHONORED_SDK_LAYOUT_CHECKS}>)
 endif()
-option(DISHONORED_ENABLE_AKAUDIO "Build the AkAudio module (retail class registrants only, no Wwise)" OFF)
 if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_AKAUDIO)
   dishonored_module(AkAudio)
   target_compile_definitions(AkAudio PRIVATE DISHONORED_SDK_LAYOUT_CHECKS=$<BOOL:${DISHONORED_SDK_LAYOUT_CHECKS}>)
