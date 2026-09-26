@@ -486,6 +486,28 @@ struct FDisPrimTraceMask
 	{
 		return m_bTraceForMove_NonPawn && m_bTraceForMove_NonPlayerPawn && m_bTraceForMove_Player;
 	}
+	UBOOL TracesForAnyMove() const
+	{
+		return m_bTraceForMove_NonPawn || m_bTraceForMove_NonPlayerPawn || m_bTraceForMove_Player;
+	}
+	UBOOL TracesForAllGameplay() const
+	{
+		return m_bTraceForGameplay_Crosshair && m_bTraceForGameplay_Projectile
+			&& m_bTraceForGameplay_Melee && m_bTraceForGameplay_VisionLOS;
+	}
+	UBOOL TracesForAnyGameplay() const
+	{
+		return m_bTraceForGameplay_Crosshair || m_bTraceForGameplay_Projectile
+			|| m_bTraceForGameplay_Melee || m_bTraceForGameplay_VisionLOS;
+	}
+
+	// DISHONORED(port): retail's AActor::SetCollisionFromCollisionType (2013 rva 0x17e260) zeroes the whole word at offset
+	// 320 before setting the bits its collision type wants; only the seven declared bits exist, so clearing them is the same.
+	void ClearAllTrace()
+	{
+		SetAllMovementTrace(FALSE);
+		SetAllGameplayTrace(FALSE);
+	}
 };
 
 enum EDisTranslucencySortPriority

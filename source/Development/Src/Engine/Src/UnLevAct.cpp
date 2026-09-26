@@ -2445,6 +2445,12 @@ UBOOL UWorld::BSPPointCheck( FCheckResult &Result, AActor *Owner, const FVector&
 // if the zone hasn't changed.
 //
 
+// DISHONORED(bringup): the -distouch counters, declared in Engine/Src/UnActor.cpp where the census report lives
+extern UBOOL DisTouchCensusEnabled();
+extern INT GDisVolumeEntered;
+extern INT GDisVolumeLeft;
+extern INT GDisPhysVolumeChanged;
+
 void AActor::SetZone( UBOOL bTest, UBOOL bForceRefresh )
 {
 	if( bDeleteMe )
@@ -2458,8 +2464,22 @@ void AActor::SetZone( UBOOL bTest, UBOOL bForceRefresh )
 	{
 		if( NewVolume != PhysicsVolume )
 		{
+			const UBOOL bCensus = DisTouchCensusEnabled();
+			if( bCensus )
+			{
+				GDisPhysVolumeChanged++;
+				GDisVolumeEntered++;
+				debugf( TEXT("DISHONORED(bringup): distouch %s entered PhysicsVolume %s (%s), left %s"),
+					*GetName(), NewVolume ? *NewVolume->GetName() : TEXT("none"),
+					NewVolume ? *NewVolume->GetClass()->GetName() : TEXT("none"),
+					PhysicsVolume ? *PhysicsVolume->GetName() : TEXT("none") );
+			}
 			if( PhysicsVolume )
 			{
+				if( bCensus )
+				{
+					GDisVolumeLeft++;
+				}
 				PhysicsVolume->eventActorLeavingVolume(this);
 				eventPhysicsVolumeChange(NewVolume);
 			}
@@ -2497,10 +2517,23 @@ void APawn::SetZone( UBOOL bTest, UBOOL bForceRefresh )
 	APhysicsVolume *NewHeadVolume = GWorld->GetWorldInfo()->GetPhysicsVolume(Location + FVector(0,0,BaseEyeHeight),this,bCollideActors && !bTest && !bForceRefresh);
 	if ( NewVolume != PhysicsVolume )
 	{
+		if ( !bTest && DisTouchCensusEnabled() )
+		{
+			GDisPhysVolumeChanged++;
+			GDisVolumeEntered++;
+			debugf( TEXT("DISHONORED(bringup): distouch pawn %s entered PhysicsVolume %s (%s), left %s"),
+				*GetName(), NewVolume ? *NewVolume->GetName() : TEXT("none"),
+				NewVolume ? *NewVolume->GetClass()->GetName() : TEXT("none"),
+				PhysicsVolume ? *PhysicsVolume->GetName() : TEXT("none") );
+		}
 		if ( !bTest )
 		{
 			if ( PhysicsVolume )
 			{
+				if( DisTouchCensusEnabled() )
+				{
+					GDisVolumeLeft++;
+				}
 				PhysicsVolume->eventPawnLeavingVolume(this);
 				eventPhysicsVolumeChange(NewVolume);
 			}

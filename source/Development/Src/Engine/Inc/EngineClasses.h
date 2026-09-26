@@ -48,29 +48,34 @@ enum ETravelType
     op(TRAVEL_Absolute) \
     op(TRAVEL_Partial) \
     op(TRAVEL_Relative) 
+// DISHONORED(layout): Arkane's own ECollisionType, spelt as retail's script package declares it
+// (script_classes_2013.json, Engine.Actor.ECollisionType). The reference's weapon-flavoured names described the
+// BlockZeroExtent / BlockNonZeroExtent pair; retail's describe the FDisPrimTraceMask bit groups instead, which is the
+// mapping AActor::SetDefaultCollisionType (2013 rva 0x179a00) and SetCollisionFromCollisionType (0x17e260) implement.
+// The nine values are unchanged in number and order, so no byte on disk moves.
 enum ECollisionType
 {
     COLLIDE_CustomDefault   =0,
     COLLIDE_NoCollision     =1,
     COLLIDE_BlockAll        =2,
-    COLLIDE_BlockWeapons    =3,
+    COLLIDE_BlockGameplay   =3,
     COLLIDE_TouchAll        =4,
-    COLLIDE_TouchWeapons    =5,
-    COLLIDE_BlockAllButWeapons=6,
-    COLLIDE_TouchAllButWeapons=7,
-    COLLIDE_BlockWeaponsKickable=8,
+    COLLIDE_BlockMovement   =5,
+    COLLIDE_TouchMovement   =6,
+    COLLIDE_BlockNPCVision  =7,
+    COLLIDE_BlockMovement_PlayerOnly=8,
     COLLIDE_MAX             =9,
 };
 #define FOREACH_ENUM_ECOLLISIONTYPE(op) \
     op(COLLIDE_CustomDefault) \
     op(COLLIDE_NoCollision) \
     op(COLLIDE_BlockAll) \
-    op(COLLIDE_BlockWeapons) \
+    op(COLLIDE_BlockGameplay) \
     op(COLLIDE_TouchAll) \
-    op(COLLIDE_TouchWeapons) \
-    op(COLLIDE_BlockAllButWeapons) \
-    op(COLLIDE_TouchAllButWeapons) \
-    op(COLLIDE_BlockWeaponsKickable) 
+    op(COLLIDE_BlockMovement) \
+    op(COLLIDE_TouchMovement) \
+    op(COLLIDE_BlockNPCVision) \
+    op(COLLIDE_BlockMovement_PlayerOnly) 
 enum ENetRole
 {
     ROLE_None               =0,

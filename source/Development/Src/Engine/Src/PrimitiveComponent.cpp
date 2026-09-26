@@ -1285,14 +1285,18 @@ void UPrimitiveComponent::PostCrossLevelFixup()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x12a230 (2012 rva 0x12e650, bit-identical). Retail writes m_CollisionTraceTypes, never the
+// two booleans nothing in retail reads: the script parameter NewBlockNonZeroExtent is "traces for all movement" and
+// NewBlockZeroExtent is "traces for all gameplay". The decompiled masked store keeps bits 7+ of the word, which is what
+// the two setters do as well, so every script call to SetTraceBlocking now actually changes collision.
 void UPrimitiveComponent::execSetTraceBlocking(FFrame& Stack,RESULT_DECL)
 {
 	P_GET_UBOOL(NewBlockZeroExtent);
 	P_GET_UBOOL(NewBlockNonZeroExtent);
 	P_FINISH;
 
-	BlockZeroExtent = NewBlockZeroExtent;
-	BlockNonZeroExtent = NewBlockNonZeroExtent;
+	m_CollisionTraceTypes.SetAllMovementTrace(NewBlockNonZeroExtent);
+	m_CollisionTraceTypes.SetAllGameplayTrace(NewBlockZeroExtent);
 }
 
 void UPrimitiveComponent::execSetActorCollision(FFrame& Stack,RESULT_DECL)

@@ -1331,9 +1331,13 @@ static void DishonoredWorldTrace()
 	}
 }
 
+// DISHONORED(bringup): agent AS's touch census, defined in Engine/Src/UnActor.cpp next to the touch notifications
+extern void DishonoredTouchCensus();
+
 void UWorld::TickWorldRBPhys(FLOAT DeltaSeconds)
 {
 	DishonoredWorldTrace();
+	DishonoredTouchCensus();
 
 
 #if WITH_NOVODEX

@@ -297,6 +297,13 @@ enum ETraceFlags
 	TRACE_Accurate				= 0x80000, // Don't do the legacy pullback by an arbitrary amount of collision results
 	TRACE_MoveIgnoresDestruction= 0x100000, // Skip collision with dynamic rigid bodies
 
+	// DISHONORED(retail): set by AActor::FindTouchingActors (2013 rva 0x189870) and by UWorld::MoveActor's encroachment
+	// pass (the 200000h store at 2013 rva 0x24cf23) on top of TRACE_AllColliding. The readers are the DishonoredGame
+	// ShouldTrace overrides of ADishonoredUsableObject (0x6494f0), ADisDefenceTower, ADisWhaleOilReceptacle and
+	// ADisDetectionEye, which let a check through a component they hide from real movement traces when it is set, so the
+	// bit means "this check is a touch / overlap sweep, not a move".
+	TRACE_DisTouchOverlap		= 0x200000,
+
 	// DISHONORED(retail): Arkane replaced UPrimitiveComponent's BlockZeroExtent / BlockNonZeroExtent pair by the seven-bit
 	// FDisPrimTraceMask m_CollisionTraceTypes, and the trace flags carry which of those seven a check is for. Values read out
 	// of FDisPrimTraceMask::MatchesTraceFlags (2013 rva 0x129990, 2012 rva 0x12dd30), which tests 0x0F000000 first and then

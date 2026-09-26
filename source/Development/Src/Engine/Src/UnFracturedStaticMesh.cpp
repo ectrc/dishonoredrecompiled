@@ -2951,9 +2951,9 @@ void AFracturedStaticMeshActor::PostEditChangeProperty(FPropertyChangedEvent& Pr
 	// For FSMAs, turn off bWorldGeometry automatically when you want touch notifies
 	if (PropertyThatChanged != NULL && PropertyThatChanged->GetFName() == FName(TEXT("CollisionType")))
 	{
+		// DISHONORED(layout): retail's ECollisionType has one touching-but-not-blocking value besides COLLIDE_TouchAll
 		if(	CollisionType == COLLIDE_TouchAll || 
-			CollisionType == COLLIDE_TouchWeapons || 
-			CollisionType == COLLIDE_TouchAllButWeapons )
+			CollisionType == COLLIDE_TouchMovement )
 		{
 			bWorldGeometry = FALSE;
 		}

@@ -1795,7 +1795,7 @@ void AActor::PostLoad()
 
 	SetDefaultCollisionType();
 
-	if (bNeedUpdateBlockZeroExtentDisablePathColliding && CollisionType == COLLIDE_BlockWeapons)
+	if (bNeedUpdateBlockZeroExtentDisablePathColliding && CollisionType == COLLIDE_BlockGameplay)
 	{
 		bPathColliding = FALSE;
 	}
@@ -2047,6 +2047,10 @@ void AActor::EditorApplyMirror(const FVector& MirrorScale, const FVector& PivotL
 }
 #endif
 
+// DISHONORED(port): 2013 rva 0x179a00 (2012 rva 0x1911e0, bit-identical). Retail derives CollisionType from
+// m_CollisionTraceTypes; the reference derived the two dead booleans from CollisionType, i.e. it ran the mapping
+// backwards. Each branch below is one of the decompiled mask comparisons, in the decompile's order, and
+// bBlocks (the actor and its collision component both blocking) is what picks Block over Touch throughout.
 void AActor::SetDefaultCollisionType()
 {
 	// default to 'custom' (programmer set nonstandard settings)
@@ -2056,28 +2060,31 @@ void AActor::SetDefaultCollisionType()
 	{
 		if (!bBlockActors || CollisionComponent->BlockActors)
 		{
-			if (CollisionComponent->BlockZeroExtent)
-			{
-				if (CollisionComponent->BlockNonZeroExtent)
-				{
-					CollisionType = (bBlockActors && CollisionComponent->BlockActors) ? COLLIDE_BlockAll : COLLIDE_TouchAll;
-				}
-				else
-				{
-					CollisionType = (bBlockActors && CollisionComponent->BlockActors) ? COLLIDE_BlockWeapons : COLLIDE_TouchWeapons;
+			const FDisPrimTraceMask& Trace = CollisionComponent->m_CollisionTraceTypes;
+			const UBOOL bBlocks = bBlockActors && CollisionComponent->BlockActors;
 
-					// See if we are COLLIDE_BlockWeaponsKickable
-					if( CollisionType == COLLIDE_BlockWeapons && 
-						CollisionComponent->BlockRigidBody && 
-						CollisionComponent->RBChannel == RBCC_EffectPhysics )
-					{
-						CollisionType = COLLIDE_BlockWeaponsKickable;
-					}
-				}
-			}
-			else if (CollisionComponent->BlockNonZeroExtent)
+			if (Trace.TracesForAllGameplay() && Trace.TracesForAllMove())
 			{
-				CollisionType = (bBlockActors && CollisionComponent->BlockActors) ? COLLIDE_BlockAllButWeapons : COLLIDE_TouchAllButWeapons;
+				CollisionType = bBlocks ? COLLIDE_BlockAll : COLLIDE_TouchAll;
+			}
+			else if (Trace.TracesForAllGameplay() && !Trace.TracesForAnyMove() && bBlocks)
+			{
+				CollisionType = COLLIDE_BlockGameplay;
+			}
+			else if (Trace.m_bTraceForGameplay_VisionLOS && !Trace.m_bTraceForGameplay_Crosshair
+				&& !Trace.m_bTraceForGameplay_Projectile && !Trace.m_bTraceForGameplay_Melee
+				&& !Trace.TracesForAnyMove() && bBlocks)
+			{
+				CollisionType = COLLIDE_BlockNPCVision;
+			}
+			else if (Trace.TracesForAllMove() && !Trace.TracesForAnyGameplay())
+			{
+				CollisionType = bBlocks ? COLLIDE_BlockMovement : COLLIDE_TouchMovement;
+			}
+			else if (Trace.m_bTraceForMove_Player && !Trace.m_bTraceForMove_NonPawn && !Trace.m_bTraceForMove_NonPlayerPawn
+				&& !Trace.TracesForAnyGameplay() && bBlocks)
+			{
+				CollisionType = COLLIDE_BlockMovement_PlayerOnly;
 			}
 		}
 		// else (bBlockActors && !CollisionComponent->BlockActors), we're using some custom collision (e.g. only secondary collision component blocks)
@@ -2134,6 +2141,9 @@ void AActor::SetCollisionType(BYTE NewCollisionType)
 }
 
 /** sets collision flags based on the current CollisionType */
+// DISHONORED(port): 2013 rva 0x17e260 (2012 rva 0x191380). The inverse of SetDefaultCollisionType: every branch writes
+// m_CollisionTraceTypes instead of the two dead booleans, COLLIDE_CustomDefault copies the whole mask off the class
+// default, and the tail keeps bPathColliding in step with the mask's non-player-pawn movement bit.
 void AActor::SetCollisionFromCollisionType()
 {
 	if (CollisionComponent != NULL)
@@ -2161,8 +2171,7 @@ void AActor::SetCollisionFromCollisionType()
 					{
 						CollisionComponent->CollideActors = DefaultActor->CollisionComponent->CollideActors;
 						CollisionComponent->BlockActors = DefaultActor->CollisionComponent->BlockActors;
-						CollisionComponent->BlockNonZeroExtent = DefaultActor->CollisionComponent->BlockNonZeroExtent;
-						CollisionComponent->BlockZeroExtent = DefaultActor->CollisionComponent->BlockZeroExtent;
+						CollisionComponent->m_CollisionTraceTypes = DefaultActor->CollisionComponent->m_CollisionTraceTypes;
 						CollisionComponent->SetBlockRigidBody(DefaultActor->CollisionComponent->BlockRigidBody);
 					}
 					else
@@ -2173,29 +2182,45 @@ void AActor::SetCollisionFromCollisionType()
 			}
 			case COLLIDE_NoCollision:
 				bCollideActors = FALSE;
-				bBlockActors = FALSE;
 				CollisionComponent->CollideActors = FALSE;
 				CollisionComponent->SetBlockRigidBody(FALSE);
+				CollisionComponent->m_CollisionTraceTypes.ClearAllTrace();
 				break;
 			case COLLIDE_BlockAll:
-			case COLLIDE_BlockWeapons:
-			case COLLIDE_BlockAllButWeapons:
-			case COLLIDE_BlockWeaponsKickable:
+			case COLLIDE_BlockGameplay:
+			case COLLIDE_BlockMovement:
+			case COLLIDE_BlockNPCVision:
+			case COLLIDE_BlockMovement_PlayerOnly:
 				bCollideActors = TRUE;
 				bBlockActors = TRUE;
 				CollisionComponent->CollideActors = TRUE;
 				CollisionComponent->BlockActors = TRUE;
-				CollisionComponent->BlockNonZeroExtent = (CollisionType == COLLIDE_BlockAll || CollisionType == COLLIDE_BlockAllButWeapons);
-				CollisionComponent->SetBlockRigidBody(CollisionComponent->BlockNonZeroExtent || (CollisionType == COLLIDE_BlockWeaponsKickable));
-				CollisionComponent->BlockZeroExtent = (CollisionType == COLLIDE_BlockAll || CollisionType == COLLIDE_BlockWeapons || CollisionType == COLLIDE_BlockWeaponsKickable);
-				if(CollisionType == COLLIDE_BlockWeaponsKickable)
+				CollisionComponent->m_CollisionTraceTypes.ClearAllTrace();
+				switch (CollisionType)
 				{
-					CollisionComponent->SetRBChannel(RBCC_EffectPhysics);
+					case COLLIDE_BlockAll:
+						CollisionComponent->m_CollisionTraceTypes.SetAllMovementTrace(TRUE);
+						CollisionComponent->m_CollisionTraceTypes.SetAllGameplayTrace(TRUE);
+						break;
+					case COLLIDE_BlockGameplay:
+						CollisionComponent->m_CollisionTraceTypes.SetAllGameplayTrace(TRUE);
+						CollisionComponent->SetBlockRigidBody(FALSE);
+						break;
+					case COLLIDE_BlockMovement:
+						CollisionComponent->m_CollisionTraceTypes.SetAllMovementTrace(TRUE);
+						break;
+					case COLLIDE_BlockNPCVision:
+						CollisionComponent->m_CollisionTraceTypes.m_bTraceForGameplay_VisionLOS = TRUE;
+						CollisionComponent->SetBlockRigidBody(FALSE);
+						break;
+					case COLLIDE_BlockMovement_PlayerOnly:
+						CollisionComponent->m_CollisionTraceTypes.m_bTraceForMove_Player = TRUE;
+						CollisionComponent->SetBlockRigidBody(FALSE);
+						break;
 				}
 				break;
 			case COLLIDE_TouchAll:
-			case COLLIDE_TouchWeapons:
-			case COLLIDE_TouchAllButWeapons:
+			case COLLIDE_TouchMovement:
 				// bWorldGeometry actors must block if they collide at all, so force the flags to respect that even if the LD tries to change them
 				if (bWorldGeometry)
 				{
@@ -2213,8 +2238,12 @@ void AActor::SetCollisionFromCollisionType()
 					CollisionComponent->CollideActors = TRUE;
 					CollisionComponent->BlockActors = FALSE;
 					CollisionComponent->SetBlockRigidBody(FALSE);
-					CollisionComponent->BlockNonZeroExtent = (CollisionType == COLLIDE_TouchAll || CollisionType == COLLIDE_TouchAllButWeapons);
-					CollisionComponent->BlockZeroExtent = (CollisionType == COLLIDE_TouchAll || CollisionType == COLLIDE_TouchWeapons);
+					CollisionComponent->m_CollisionTraceTypes.ClearAllTrace();
+					CollisionComponent->m_CollisionTraceTypes.SetAllMovementTrace(TRUE);
+					if (CollisionType == COLLIDE_TouchAll)
+					{
+						CollisionComponent->m_CollisionTraceTypes.SetAllGameplayTrace(TRUE);
+					}
 				}
 				break;
 			default:
@@ -2222,6 +2251,9 @@ void AActor::SetCollisionFromCollisionType()
 				bCollideActors = FALSE;
 				break;
 		}
+
+		// a primitive that no longer stops non-player-pawn movement is no longer part of the path network
+		bPathColliding = CollisionComponent->m_CollisionTraceTypes.m_bTraceForMove_NonPlayerPawn ? bStatic : FALSE;
 
 		// mirror BlockRigidBody flag
 		BlockRigidBody = CollisionComponent->BlockRigidBody;
@@ -2420,15 +2452,17 @@ void AActor::FindTouchingActors()
 	TLookupMap<AActor*> NewTouching;
 
 	
+	// DISHONORED(port): 2013 rva 0x189870. Retail still asks for the bounding cylinder and then throws it away: the
+	// zero-extent / non-zero-extent distinction is gone, the trace mask of the hit component decides on its own, and the
+	// encroachment check carries TRACE_DisTouchOverlap so usable objects expose their touch component.
 	FLOAT ColRadius, ColHeight;
 	GetBoundingCylinder(ColRadius, ColHeight);
-	UBOOL bIsZeroExtent = (ColRadius == 0.f) && (ColHeight == 0.f);
-	FCheckResult* FirstHit = GWorld->Hash ? GWorld->Hash->ActorEncroachmentCheck( GMainThreadMemStack, this, Location, Rotation, TRACE_AllColliding ) : NULL;	
+	FCheckResult* FirstHit = GWorld->Hash ? GWorld->Hash->ActorEncroachmentCheck( GMainThreadMemStack, this, Location, Rotation, TRACE_AllColliding | TRACE_DisTouchOverlap ) : NULL;	
 	for( FCheckResult* Test = FirstHit; Test; Test=Test->GetNext() )
 		if(	Test->Actor!=this && !Test->Actor->IsBasedOn(this) && Test->Actor != GWorld->GetWorldInfo() )
 		{
 			if( !IsBlockedBy(Test->Actor,Test->Component)
-				&& (!Test->Component || (bIsZeroExtent ? Test->Component->BlockZeroExtent : Test->Component->BlockNonZeroExtent)) )
+				&& (!Test->Component || Test->Component->m_CollisionTraceTypes.MatchesTraceFlags(this, 0)) )
 			{
 				// Make sure Test->Location is not Zero, if that's the case, use Location
 				FVector	HitLocation = Test->Location.IsZero() ? Location : Test->Location;
@@ -2780,7 +2814,9 @@ UBOOL AActor::IsOverlapping( AActor* Other, FCheckResult* Hit, UPrimitiveCompone
 		{
 			UPrimitiveComponent*	MyPrimComp = Cast<UPrimitiveComponent>(Components(MyComponentIndex));
 
-			if( MyPrimComp != NULL && MyPrimComp->IsAttached() && MyPrimComp->CollideActors && MyPrimComp->BlockNonZeroExtent) 
+			// DISHONORED(port): 2013 rva 0x173920. The outer loop no longer filters on a blocking bit at all; the trace-mask
+			// test is in the inner loop, where retail asks whether either side's mask stops a movement trace by the other.
+			if( MyPrimComp != NULL && MyPrimComp->IsAttached() && MyPrimComp->CollideActors ) 
 			{
 				// cache off version that is a cylinder comp, so if they're both cylinder comps we can do a true cyl-cyl collision
 				UCylinderComponent* CylComp1 = Cast<UCylinderComponent>(MyPrimComp);
@@ -2790,7 +2826,9 @@ UBOOL AActor::IsOverlapping( AActor* Other, FCheckResult* Hit, UPrimitiveCompone
 				{
 					UPrimitiveComponent*	OtherPrimComponent = Cast<UPrimitiveComponent>(Other->Components(OtherComponentIndex));
 					
-					if( OtherPrimComponent != NULL && OtherPrimComponent->IsAttached() && OtherPrimComponent->CollideActors && OtherPrimComponent->BlockNonZeroExtent )
+					if( OtherPrimComponent != NULL && OtherPrimComponent->IsAttached() && OtherPrimComponent->CollideActors
+						&& ( MyPrimComp->m_CollisionTraceTypes.MatchesTraceFlags(Other, 0)
+						  || OtherPrimComponent->m_CollisionTraceTypes.MatchesTraceFlags(this, 0) ) )
 					{
 
 						// cache off version that is a cylinder comp, so if they're both cylinder comps we can do a true cyl-cyl collision
@@ -2882,7 +2920,11 @@ UBOOL AActor::IsOverlapping( AActor* Other, FCheckResult* Hit, UPrimitiveCompone
 	// Only check against passed in component if passed in.
 	if (OtherPrimitiveComponent != NULL && PrimitiveActor == Other)
 	{
-		if( OtherPrimitiveComponent->CollideActors && OtherPrimitiveComponent->BlockNonZeroExtent )
+		// DISHONORED(port): 2013 rva 0x173920. This branch only runs when PrimitiveActor == Other, so `this` is the box
+		// actor, which is the source actor retail passes to both mask tests here.
+		if( OtherPrimitiveComponent->CollideActors
+			&& ( OtherPrimitiveComponent->m_CollisionTraceTypes.MatchesTraceFlags(this, 0)
+			  || (CollisionComponent && CollisionComponent->m_CollisionTraceTypes.MatchesTraceFlags(this, 0)) ) )
 		{
 			if( OtherPrimitiveComponent->PointCheck(*Hit, BoxCenter, BoxExtent, (BoxActor->bCollideComplex && !bForceSimpleCollision) ? TRACE_ComplexCollision : 0) == 0 )
 			{
@@ -2896,7 +2938,11 @@ UBOOL AActor::IsOverlapping( AActor* Other, FCheckResult* Hit, UPrimitiveCompone
 		for(UINT ComponentIndex = 0; ComponentIndex < (UINT)PrimitiveActor->Components.Num(); ComponentIndex++)
 		{
 			UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(PrimitiveActor->Components(ComponentIndex));
-			if(PrimComp && PrimComp->CollideActors && PrimComp->BlockNonZeroExtent)
+			// DISHONORED(port): 2013 rva 0x173920: the primitive stops a trace by the box actor, or the box actor's own
+			// collision component stops a trace by the primitive actor.
+			if( PrimComp && PrimComp->CollideActors
+				&& ( PrimComp->m_CollisionTraceTypes.MatchesTraceFlags(BoxActor, 0)
+				  || (BoxActor->CollisionComponent && BoxActor->CollisionComponent->m_CollisionTraceTypes.MatchesTraceFlags(PrimitiveActor, 0)) ) )
 			{
 				if( PrimComp->PointCheck(*Hit, BoxCenter, BoxExtent, (BoxActor->bCollideComplex && !bForceSimpleCollision) ? TRACE_ComplexCollision : 0) == 0 )
 				{
@@ -2982,6 +3028,295 @@ void AActor::SetTickIsDisabled(UBOOL bInDisabled)
 
 
 /*-----------------------------------------------------------------------------
+	-distouch: the touch census.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(bringup): -distouch answers "does anything ever touch anything" with numbers instead of a guess, the way
+// agent AQ's -distrace answered "is there any collision". Every touch notification in the engine funnels through TouchTo,
+// BeginTouch and EndTouch below, and every physics-volume transition through AActor::SetZone / APawn::SetZone in
+// UnLevAct.cpp, so the counters sit there and the once-a-second report sits here. Off by default and free when off.
+INT GDisTouchState = -1;                 // -1 unparsed, 0 off, 1 on
+INT GDisTouchBegin = 0;                  // touch notifications delivered (eventTouch)
+INT GDisTouchEnd = 0;                    // untouch notifications delivered (eventUnTouch)
+INT GDisTouchVolumeBegin = 0;            // of those begins, how many had an AVolume on either side
+INT GDisTouchTriggerBegin = 0;           // of those begins, how many had an ATrigger on either side
+INT GDisVolumeEntered = 0;               // APhysicsVolume::eventActorEnteredVolume / eventPawnEnteredVolume
+INT GDisVolumeLeft = 0;                  // APhysicsVolume::eventActorLeavingVolume / eventPawnLeavingVolume
+INT GDisPhysVolumeChanged = 0;           // PhysicsVolume reassignments
+INT GDisSeqEventTouchFired = 0;          // SeqEvent_Touch activations (TriggerCount went up)
+static INT GDisTouchLogged = 0;          // how many distinct begin-touch pairs have been named in the log
+static UBOOL GDisTouchInventoried = FALSE;
+
+UBOOL DisTouchCensusEnabled()
+{
+	if( GDisTouchState == -1 )
+	{
+		GDisTouchState = ParseParam( appCmdLine(), TEXT("distouch") ) ? 1 : 0;
+	}
+	return GDisTouchState == 1;
+}
+
+static const TCHAR* DisTouchKind( AActor* Actor )
+{
+	if( Actor == NULL )
+	{
+		return TEXT("none");
+	}
+	if( Actor->GetAVolume() != NULL )
+	{
+		return TEXT("volume");
+	}
+	if( Actor->IsA(ATrigger::StaticClass()) )
+	{
+		return TEXT("trigger");
+	}
+	if( Actor->GetAPawn() != NULL )
+	{
+		return TEXT("pawn");
+	}
+	return TEXT("actor");
+}
+
+// Named once per new pair, bounded, so a run's log shows what the pawn actually walked into and not one line per frame.
+static void DisTouchNote( AActor* Actor, AActor* Other )
+{
+	GDisTouchBegin++;
+	const UBOOL bVolume = (Actor->GetAVolume() != NULL) || (Other->GetAVolume() != NULL);
+	const UBOOL bTrigger = Actor->IsA(ATrigger::StaticClass()) || Other->IsA(ATrigger::StaticClass());
+	if( bVolume )
+	{
+		GDisTouchVolumeBegin++;
+	}
+	if( bTrigger )
+	{
+		GDisTouchTriggerBegin++;
+	}
+	if( GDisTouchLogged < 80 )
+	{
+		GDisTouchLogged++;
+		debugf( TEXT("DISHONORED(bringup): distouch begin %s (%s, %s) <- %s (%s, %s) events %d/%d"),
+			*Actor->GetName(), *Actor->GetClass()->GetName(), DisTouchKind(Actor),
+			*Other->GetName(), *Other->GetClass()->GetName(), DisTouchKind(Other),
+			Actor->GeneratedEvents.Num(), Other->GeneratedEvents.Num() );
+	}
+}
+
+// DISHONORED(bringup): the trace mask and the collision type of one primitive, as one short field.
+static FString DisTouchPrimDesc( UPrimitiveComponent* Prim )
+{
+	if( Prim == NULL )
+	{
+		return TEXT("no collision component");
+	}
+	const FDisPrimTraceMask& M = Prim->m_CollisionTraceTypes;
+	return FString::Printf( TEXT("%s collide %d block %d move %d%d%d gameplay %d%d%d%d"),
+		*Prim->GetClass()->GetName(), (INT)Prim->CollideActors, (INT)Prim->BlockActors,
+		(INT)M.m_bTraceForMove_NonPawn, (INT)M.m_bTraceForMove_NonPlayerPawn, (INT)M.m_bTraceForMove_Player,
+		(INT)M.m_bTraceForGameplay_Crosshair, (INT)M.m_bTraceForGameplay_Projectile,
+		(INT)M.m_bTraceForGameplay_Melee, (INT)M.m_bTraceForGameplay_VisionLOS );
+}
+
+// DISHONORED(bringup): one-shot inventory of what the mission map expects to react to touch, with the collision type
+// AActor::SetDefaultCollisionType now derives from the mask (2013 rva 0x179a00) next to the mask itself. An actor that
+// carries a SeqEvent_Touch and reads CollisionType 0 with an all-zero mask is one the octree can never hand a touch to.
+static INT DisTouchEventCount( AActor* Actor )
+{
+	INT TouchEvents = 0;
+	for( INT Idx = 0; Idx < Actor->GeneratedEvents.Num(); Idx++ )
+	{
+		if( Cast<USeqEvent_Touch>(Actor->GeneratedEvents(Idx)) != NULL )
+		{
+			TouchEvents++;
+		}
+	}
+	return TouchEvents;
+}
+
+// A volume, a trigger, a pickup or anything carrying a SeqEvent_Touch: the classes this package exists to serve.
+static UBOOL DisTouchIsSubject( AActor* Actor )
+{
+	if( Actor->GetAVolume() != NULL || Actor->IsA(ATrigger::StaticClass()) || DisTouchEventCount(Actor) > 0 )
+	{
+		return TRUE;
+	}
+	const FString ClassName = Actor->GetClass()->GetName();
+	return ClassName.InStr( TEXT("Pickup"), FALSE, TRUE ) != INDEX_NONE
+		|| ClassName.InStr( TEXT("Inventory"), FALSE, TRUE ) != INDEX_NONE;
+}
+
+static void DisTouchInventory( APawn* Pawn )
+{
+	INT Listed = 0;
+	for( FActorIterator It; It && Listed < 200; ++It )
+	{
+		AActor* Actor = *It;
+		if( !DisTouchIsSubject(Actor) )
+		{
+			continue;
+		}
+		const INT TouchEvents = DisTouchEventCount(Actor);
+		Listed++;
+		debugf( TEXT("DISHONORED(bringup): distouch inventory %s (%s) CollisionType %d bCollideActors %d touchEvents %d dist %.0f [%s]"),
+			*Actor->GetName(), *Actor->GetClass()->GetName(), (INT)Actor->CollisionType, (INT)Actor->bCollideActors,
+			TouchEvents, Pawn ? (Actor->Location - Pawn->Location).Size() : -1.f,
+			*DisTouchPrimDesc(Actor->CollisionComponent) );
+	}
+}
+
+// DISHONORED(bringup): -distouchprobe walks the pawn into the touch-driven actors of the map one per second, because a
+// -inputtest run only moves it a thousand units and the intro map's triggers are nowhere near the spawn anchor. It is the
+// same code path a real walk-in takes: UWorld::FarMoveActor calls AActor::FindTouchingActors and AActor::SetZone itself.
+static INT GDisTouchProbeState = -1;
+static TArray<AActor*> GDisTouchProbeTargets;
+static INT GDisTouchProbeNext = 0;
+
+static void DisTouchProbe( APawn* Pawn, FLOAT Elapsed )
+{
+	if( GDisTouchProbeState == -1 )
+	{
+		GDisTouchProbeState = ParseParam( appCmdLine(), TEXT("distouchprobe") ) ? 1 : 0;
+	}
+	// after the -inputtest walk has finished, so the two measurements do not move the same pawn
+	if( GDisTouchProbeState != 1 || Pawn == NULL || Elapsed < 14.f )
+	{
+		return;
+	}
+
+	if( GDisTouchProbeTargets.Num() == 0 )
+	{
+		for( FActorIterator It; It; ++It )
+		{
+			AActor* Actor = *It;
+			if( Actor->bCollideActors && Actor != Pawn && DisTouchIsSubject(Actor)
+				&& !Actor->IsA(ADefaultPhysicsVolume::StaticClass()) )
+			{
+				GDisTouchProbeTargets.AddUniqueItem( Actor );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): distouch probe armed with %d volume / trigger / pickup actors"),
+			GDisTouchProbeTargets.Num() );
+	}
+
+	if( GDisTouchProbeNext >= GDisTouchProbeTargets.Num() )
+	{
+		return;
+	}
+	AActor* Target = GDisTouchProbeTargets( GDisTouchProbeNext++ );
+	if( Target == NULL || Target->bDeleteMe )
+	{
+		return;
+	}
+
+	// a brush volume's Location is its pivot, which is usually outside the brush: aim at the collision bounds instead
+	const FVector Dest = Target->CollisionComponent ? Target->CollisionComponent->Bounds.Origin : Target->Location;
+	const UBOOL bMoved = GWorld->FarMoveActor( Pawn, Dest, FALSE, TRUE, FALSE );
+	FString Names;
+	for( INT i = 0; i < Pawn->Touching.Num(); i++ )
+	{
+		if( Pawn->Touching(i) )
+		{
+			Names += FString::Printf( TEXT(" %s(%s)"), *Pawn->Touching(i)->GetName(), *Pawn->Touching(i)->GetClass()->GetName() );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): distouch probe %d/%d -> %s (%s) at %s: moved %d, hit %d, pawn now at %s, PhysicsVolume %s, touching %d:%s"),
+		GDisTouchProbeNext, GDisTouchProbeTargets.Num(), *Target->GetName(), *Target->GetClass()->GetName(),
+		*Dest.ToString(), (INT)bMoved, (INT)Pawn->Touching.ContainsItem(Target), *Pawn->Location.ToString(),
+		Pawn->PhysicsVolume ? *Pawn->PhysicsVolume->GetName() : TEXT("none"), Pawn->Touching.Num(), *Names );
+}
+
+void DishonoredTouchCensus()
+{
+	if( !DisTouchCensusEnabled() || !GWorld || !GWorld->GetWorldInfo() )
+	{
+		return;
+	}
+
+	static UWorld* CensusWorld = NULL;
+	static DOUBLE CensusStart = 0.0;
+	static FLOAT NextReport = 0.f;
+	if( CensusWorld != GWorld )
+	{
+		CensusWorld = GWorld;
+		CensusStart = appSeconds();
+		NextReport = 0.f;
+		GDisTouchBegin = GDisTouchEnd = GDisTouchVolumeBegin = GDisTouchTriggerBegin = 0;
+		GDisVolumeEntered = GDisVolumeLeft = GDisPhysVolumeChanged = GDisSeqEventTouchFired = 0;
+		GDisTouchLogged = 0;
+		GDisTouchInventoried = FALSE;
+		GDisTouchProbeTargets.Empty();
+		GDisTouchProbeNext = 0;
+	}
+
+	const FLOAT Elapsed = (FLOAT)( appSeconds() - CensusStart );
+	if( Elapsed < NextReport )
+	{
+		return;
+	}
+	NextReport = Elapsed + 1.f;
+
+	INT NumActors = 0, NumTouching = 0, NumPairs = 0, NumVolumes = 0, NumTriggers = 0, NumTouchEvents = 0, NumCollide = 0;
+	for( FActorIterator It; It; ++It )
+	{
+		AActor* Actor = *It;
+		NumActors++;
+		if( Actor->bCollideActors )
+		{
+			NumCollide++;
+		}
+		if( Actor->Touching.Num() > 0 )
+		{
+			NumTouching++;
+			NumPairs += Actor->Touching.Num();
+		}
+		if( Actor->GetAVolume() != NULL )
+		{
+			NumVolumes++;
+		}
+		if( Actor->IsA(ATrigger::StaticClass()) )
+		{
+			NumTriggers++;
+		}
+		for( INT Idx = 0; Idx < Actor->GeneratedEvents.Num(); Idx++ )
+		{
+			if( Cast<USeqEvent_Touch>(Actor->GeneratedEvents(Idx)) != NULL )
+			{
+				NumTouchEvents++;
+			}
+		}
+	}
+
+	debugf( TEXT("DISHONORED(bringup): distouch %5.1fs %s: touch begin %d end %d (volume %d, trigger %d), volume entered %d left %d, PhysicsVolume changes %d, SeqEvent_Touch fired %d"),
+		Elapsed, *GWorld->GetOutermost()->GetName(), GDisTouchBegin, GDisTouchEnd, GDisTouchVolumeBegin,
+		GDisTouchTriggerBegin, GDisVolumeEntered, GDisVolumeLeft, GDisPhysVolumeChanged, GDisSeqEventTouchFired );
+	debugf( TEXT("DISHONORED(bringup): distouch %5.1fs world: actors %d (bCollideActors %d), volumes %d, triggers %d, SeqEvent_Touch instances %d; touching now %d actors / %d pairs"),
+		Elapsed, NumActors, NumCollide, NumVolumes, NumTriggers, NumTouchEvents, NumTouching, NumPairs );
+
+	ULocalPlayer* Player = ( GEngine && GEngine->GamePlayers.Num() > 0 ) ? GEngine->GamePlayers(0) : NULL;
+	APlayerController* PC = Player ? Player->Actor : NULL;
+	APawn* Pawn = PC ? PC->Pawn : NULL;
+	if( !GDisTouchInventoried && Elapsed >= 4.f )
+	{
+		GDisTouchInventoried = TRUE;
+		DisTouchInventory( Pawn );
+	}
+	DisTouchProbe( Pawn, Elapsed );
+	if( Pawn )
+	{
+		FString Names;
+		for( INT i = 0; i < Pawn->Touching.Num(); i++ )
+		{
+			if( Pawn->Touching(i) )
+			{
+				Names += FString::Printf( TEXT(" %s(%s)"), *Pawn->Touching(i)->GetName(), *Pawn->Touching(i)->GetClass()->GetName() );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): distouch %5.1fs pawn %s at %s physics %d PhysicsVolume %s touching %d:%s"),
+			Elapsed, *Pawn->GetName(), *Pawn->Location.ToString(), (INT)Pawn->Physics,
+			Pawn->PhysicsVolume ? *Pawn->PhysicsVolume->GetName() : TEXT("none"), Pawn->Touching.Num(), *Names );
+	}
+}
+
+/*-----------------------------------------------------------------------------
 	Actor touch minions.
 -----------------------------------------------------------------------------*/
 
@@ -3005,9 +3340,22 @@ static UBOOL TouchTo( AActor* Actor, AActor* Other, UPrimitiveComponent* OtherCo
 			USeqEvent_Touch *TouchEvent = Cast<USeqEvent_Touch>(Actor->GeneratedEvents(Idx));
 			if (TouchEvent != NULL)
 			{
+				// DISHONORED(bringup): TriggerCount is the only observable that says the event really activated
+				const INT TriggersBefore = TouchEvent->TriggerCount;
 				TouchEvent->CheckTouchActivate(Actor,Other);
+				if( DisTouchCensusEnabled() && TouchEvent->TriggerCount > TriggersBefore )
+				{
+					GDisSeqEventTouchFired++;
+					debugf( TEXT("DISHONORED(bringup): distouch SeqEvent_Touch %s fired on %s touched by %s (TriggerCount %d)"),
+						*TouchEvent->GetPathName(), *Actor->GetName(), *Other->GetName(), TouchEvent->TriggerCount );
+				}
 			}
 		}
+	}
+
+	if( DisTouchCensusEnabled() )
+	{
+		DisTouchNote( Actor, Other );
 	}
 
 	// Make Actor touch TouchActor.
@@ -3049,6 +3397,10 @@ void AActor::EndTouch( AActor* Other, UBOOL bNoNotifySelf )
 	INT i=0;
 	if ( !bNoNotifySelf && Touching.FindItem(Other,i) )
 	{
+		if( DisTouchCensusEnabled() )
+		{
+			GDisTouchEnd++;
+		}
 		eventUnTouch( Other );
 	}
 	Touching.RemoveItem(Other);
@@ -3077,6 +3429,10 @@ void AActor::EndTouch( AActor* Other, UBOOL bNoNotifySelf )
 
 	if ( Other->Touching.FindItem(this,i) )
 	{
+		if( DisTouchCensusEnabled() )
+		{
+			GDisTouchEnd++;
+		}
 		Other->eventUnTouch( this );
 		Other->Touching.RemoveItem(this);
 	}
