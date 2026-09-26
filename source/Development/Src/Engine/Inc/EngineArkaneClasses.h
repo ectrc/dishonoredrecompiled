@@ -37,11 +37,16 @@ public:
     //## END PROPS AkBank
 
 
-    // DISHONORED(port): akbank.cpp. 2013 rvas: PostLoad 0xcdac0, BeginDestroy 0xc7830, Load 0xc7210, Unload 0xc7680
+    // DISHONORED(port): akbank.cpp. 2013 rvas: PostLoad 0xcdac0, BeginDestroy 0xc7830, Load 0xc7210,
+    // Unload 0xc7680, LoadAsync 0xc74f0, UnloadAsync 0xc7760. The two async forms take the Wwise bank
+    // callback and its cookie; they are void* here because Engine must not depend on the AK headers
+    // (AkAudio's akbank callers cast back, as retail's own signature `UBOOL LoadAsync(void*, void*)` does).
     virtual void PostLoad();
     virtual void BeginDestroy();
     UBOOL Load();
     void Unload();
+    UBOOL LoadAsync( void* Callback, void* Cookie );
+    void UnloadAsync( void* Callback, void* Cookie );
     DECLARE_CLASS(UAkBank,UObject,0,Engine)
 };
 

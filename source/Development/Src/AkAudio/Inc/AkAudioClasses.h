@@ -11,6 +11,9 @@
 #endif
 
 #include "AkAudioNames.h"
+// DISHONORED(written): hand-added (agent AN). The Wwise 2012.1 headers the CppText blocks below need;
+// re-add this line if this header is regenerated with gen_classes_header.py --sdk.
+#include "AkAudioWwise.h"
 
 #if !NO_ENUMS && !defined(NAMES_ONLY)
 
@@ -74,6 +77,7 @@ public:
     INT m_bEnded;
     //## END PROPS AkAmbientSound
 
+#include "CppText/AAkAmbientSound.h"
     DECLARE_CLASS(AAkAmbientSound,AKeypoint,0,AkAudio)
 };
 
@@ -84,6 +88,7 @@ public:
     //## BEGIN PROPS AkAmbientSoundMovable
     //## END PROPS AkAmbientSoundMovable
 
+#include "CppText/AAkAmbientSoundMovable.h"
     DECLARE_CLASS(AAkAmbientSoundMovable,AAkAmbientSound,0,AkAudio)
 };
 
@@ -137,6 +142,7 @@ public:
     FVector m_ListenerPosition;  // DISHONORED(layout): native, 2012 PDB @124, retail @124 (SDK gap)
     //## END PROPS AkAudioDevice
 
+#include "CppText/UAkAudioDevice.h"
     DECLARE_CLASS_INTRINSIC(UAkAudioDevice,USubsystem,0|CLASS_Config|CLASS_Transient,AkAudio)
 };
 
@@ -150,6 +156,7 @@ public:
     TArrayNoInit<FAkPlayingRadius> m_PlayingRadii;
     //## END PROPS AkComponent
 
+#include "CppText/UAkComponent.h"
     DECLARE_CLASS(UAkComponent,UActorComponent,0,AkAudio)
 };
 
@@ -205,6 +212,7 @@ public:
     //## BEGIN PROPS SeqAct_AkClearBanks
     //## END PROPS SeqAct_AkClearBanks
 
+#include "CppText/USeqAct_AkClearBanks.h"
     DECLARE_CLASS(USeqAct_AkClearBanks,USequenceAction,0,AkAudio)
 };
 
@@ -219,6 +227,7 @@ public:
     INT Signal;
     //## END PROPS SeqAct_AkLoadBank
 
+#include "CppText/USeqAct_AkLoadBank.h"
     DECLARE_CLASS(USeqAct_AkLoadBank,USeqAct_Latent,0,AkAudio)
 };
 
@@ -233,6 +242,7 @@ public:
     class UAkEvent* Event;
     //## END PROPS SeqAct_AkPostEvent
 
+#include "CppText/USeqAct_AkPostEvent.h"
     DECLARE_CLASS(USeqAct_AkPostEvent,USeqAct_Latent,0,AkAudio)
 };
 
@@ -244,6 +254,7 @@ public:
     FStringNoInit Trigger;
     //## END PROPS SeqAct_AkPostTrigger
 
+#include "CppText/USeqAct_AkPostTrigger.h"
     DECLARE_CLASS(USeqAct_AkPostTrigger,USequenceAction,0,AkAudio)
 };
 
@@ -257,6 +268,7 @@ public:
     BITFIELD Running:1;
     //## END PROPS SeqAct_AkSetRTPCValue
 
+#include "CppText/USeqAct_AkSetRTPCValue.h"
     DECLARE_CLASS(USeqAct_AkSetRTPCValue,USeqAct_Latent,0,AkAudio)
 };
 
@@ -269,6 +281,7 @@ public:
     FStringNoInit State;
     //## END PROPS SeqAct_AkSetState
 
+#include "CppText/USeqAct_AkSetState.h"
     DECLARE_CLASS(USeqAct_AkSetState,USequenceAction,0,AkAudio)
 };
 
@@ -281,6 +294,7 @@ public:
     FStringNoInit Switch;
     //## END PROPS SeqAct_AkSetSwitch
 
+#include "CppText/USeqAct_AkSetSwitch.h"
     DECLARE_CLASS(USeqAct_AkSetSwitch,USequenceAction,0,AkAudio)
 };
 
@@ -291,6 +305,7 @@ public:
     //## BEGIN PROPS SeqAct_AkStartAmbientSound
     //## END PROPS SeqAct_AkStartAmbientSound
 
+#include "CppText/USeqAct_AkStartAmbientSound.h"
     DECLARE_CLASS(USeqAct_AkStartAmbientSound,USequenceAction,0,AkAudio)
 };
 
@@ -301,6 +316,7 @@ public:
     //## BEGIN PROPS SeqAct_AkStopAll
     //## END PROPS SeqAct_AkStopAll
 
+#include "CppText/USeqAct_AkStopAll.h"
     DECLARE_CLASS(USeqAct_AkStopAll,USequenceAction,0,AkAudio)
 };
 

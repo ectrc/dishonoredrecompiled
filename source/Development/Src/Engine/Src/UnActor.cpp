@@ -4,6 +4,9 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
+#if DISHONORED_WITH_WWISE
+#include "AkAudio.h"		// DISHONORED(written): AActor's five Wwise natives reach UAkAudioDevice (agent AN)
+#endif
 #include "UnNet.h"
 #include "EngineAIClasses.h"
 #include "EnginePhysicsClasses.h"
@@ -5039,30 +5042,72 @@ void AActor::VolumeBasedDestroy( APhysicsVolume* PV )
 	GWorld->DestroyActor( this, FALSE, TRUE );
 }
 
-// DISHONORED(bringup): the 2013 Wwise natives (PostAkEvent 0x2cd730, SetRTPCValue 0x2d8040, SetSwitch 0x2d81f0,
-// SetState 0x2d8100, PostTrigger 0x2d8300, ActivateOcclusion 0x2cd770) forward to UAkAudioDevice::Get() when
-// the device exists; our AkAudio module is the silent stub without a device, so they are no-ops (audio stays
-// silent this wave, PHASE6 facts table)
+// The 2013 Wwise natives of AActor. PostAkEvent is ported from 0x2cd730 (UAkAudioDevice::Get() then
+// PostEvent(Event, this, NAME_None, 0, NULL, NULL, FALSE)); the four game-sync ones are written in the same
+// shape onto the device methods their names match (native rvas SetRTPCValue 0x2d8040, SetSwitch 0x2d81f0,
+// SetState 0x2d8100, PostTrigger 0x2d8300) - their bodies were not decompiled, so they are DISHONORED(written)
+// rather than ported. ActivateOcclusion (0x2cd770) stays a stub: it needs the actor's occlusion component.
+// DISHONORED(port): 2013 rva 0x2cd730
 void AActor::PostAkEvent( UAkEvent* InAkEvent )
 {
+#if DISHONORED_WITH_WWISE
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice )
+	{
+		AudioDevice->PostEvent( InAkEvent, this, NAME_None, 0, NULL, NULL, FALSE );
+	}
+#endif
 }
 
+// DISHONORED(written): native 0x2d8040
 void AActor::SetRTPCValue( FName InRTPC, FLOAT TargetValue )
 {
+#if DISHONORED_WITH_WWISE
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice && InRTPC != NAME_None )
+	{
+		AudioDevice->SetRTPCValue( *InRTPC.ToString(), TargetValue, this, NAME_None );
+	}
+#endif
 }
 
+// DISHONORED(written): native 0x2d81f0
 void AActor::SetSwitch( FName InSwitchGroup, FName InSwitch )
 {
+#if DISHONORED_WITH_WWISE
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice && InSwitchGroup != NAME_None && InSwitch != NAME_None )
+	{
+		AudioDevice->SetSwitch( *InSwitchGroup.ToString(), *InSwitch.ToString(), this, NAME_None );
+	}
+#endif
 }
 
+// DISHONORED(written): native 0x2d8100
 void AActor::SetState( FName InStateGroup, FName InState )
 {
+#if DISHONORED_WITH_WWISE
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice && InStateGroup != NAME_None && InState != NAME_None )
+	{
+		AudioDevice->SetState( *InStateGroup.ToString(), *InState.ToString() );
+	}
+#endif
 }
 
+// DISHONORED(written): native 0x2d8300
 void AActor::PostTrigger( FName InTrigger )
 {
+#if DISHONORED_WITH_WWISE
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice && InTrigger != NAME_None )
+	{
+		AudioDevice->PostTrigger( *InTrigger.ToString(), this, NAME_None );
+	}
+#endif
 }
 
+// DISHONORED(bringup): 2013 rva 0x2cd770 needs the actor's occlusion component, which is not in the tree.
 void AActor::ActivateOcclusion( UBOOL bInActivate )
 {
 }

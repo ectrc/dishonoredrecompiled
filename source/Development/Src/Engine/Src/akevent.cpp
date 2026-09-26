@@ -18,6 +18,10 @@
 
 #include "EnginePrivate.h"
 
+#if DISHONORED_WITH_WWISE
+#include "AkAudioWwise.h"
+#endif
+
 IMPLEMENT_CLASS(UAkBaseSoundObject);
 IMPLEMENT_CLASS(UAkEvent);
 
@@ -35,18 +39,45 @@ void UAkEvent::PostRename()
 	ComputeAkID();
 }
 
-// DISHONORED(bringup): 2013 rva 0xc7840 (2012 0xc39d0) is m_akID = AK::SoundEngine::GetIDFromString(*GetName()), the Wwise name hash.
-// Wwise 2012.1 is a user blocker (middleware.md) and the AkAudio module is a stub, so the id stays 0 and no event ever resolves.
+// DISHONORED(port): 2013 rva 0xc7840 (2012 0xc39d0): the event id is the Wwise name hash of the object's name.
 void UAkEvent::ComputeAkID()
 {
+#if DISHONORED_WITH_WWISE
+	m_akID = (INT)AK::SoundEngine::GetIDFromString( *GetName() );
+#else
 	m_akID = 0;
+#endif
 }
 
-// DISHONORED(bringup): 2013 rva 0xc7aa0 (2012 0xc3a70) queries the Wwise object hierarchy for the largest attenuation radius of the
-// event and stores -1 when it has none. Without Wwise every event keeps -1.
+/**
+ * DISHONORED(port): 2013 rva 0xc7aa0 (2012 0xc3a70). Ask the sound engine for the audio objects the event
+ * reaches (two passes: count, then fill), take the largest fMaxDistance of those that use attenuation, and
+ * store -1 when the event has none.
+ */
 void UAkEvent::ComputeMaxRadius()
 {
 	m_fMaxRadius = -1.0f;
+#if DISHONORED_WITH_WWISE
+	const AkUniqueID EventID = AK::SoundEngine::GetIDFromString( *GetName() );
+	AkUInt32 NumObjects = 0;
+	AK::SoundEngine::Query::QueryAudioObjectIDs( EventID, NumObjects, NULL );
+	if( !NumObjects )
+	{
+		return;
+	}
+	TArray<AkObjectInfo> Objects;
+	Objects.Add( NumObjects );
+	AK::SoundEngine::Query::QueryAudioObjectIDs( EventID, NumObjects, Objects.GetTypedData() );
+	for( AkUInt32 ObjectIndex = 0; ObjectIndex < NumObjects && ObjectIndex < (AkUInt32)Objects.Num(); ++ObjectIndex )
+	{
+		AkPositioningInfo Info;
+		if( AK::SoundEngine::Query::GetPositioningInfo( Objects( ObjectIndex ).objID, Info ) == AK_Success &&
+			Info.bUseAttenuation && Info.fMaxDistance > m_fMaxRadius )
+		{
+			m_fMaxRadius = Info.fMaxDistance;
+		}
+	}
+#endif
 }
 
 // DISHONORED(port): 2013 rva 0xcdb40 (2012 0xc7410): computed on first use, cached in m_fMaxRadius
