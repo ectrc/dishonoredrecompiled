@@ -3360,7 +3360,14 @@ static UBOOL TouchTo( AActor* Actor, AActor* Other, UPrimitiveComponent* OtherCo
 
 	// Make Actor touch TouchActor.
 	Actor->Touching.AddItem(Other);
-	Actor->eventTouch( Other, OtherComp, HitLocation, HitNormal );
+	// DISHONORED(retail): the 2013 Actor script declares no Touch function at all (script_classes_2013.json: 208
+	// entries in its func map, only TouchingActors and PostTouch), so eventTouch's FindFunctionChecked aborts for
+	// every class without its own handler - reachable in ordinary play now that touch works, e.g. a pawn meeting
+	// DishonoredWaterVolume. Same guard wave 3 gave the other reference-only events.
+	if( Actor->FindFunction( FName(TEXT("Touch"), FNAME_Find) ) )
+	{
+		Actor->eventTouch( Other, OtherComp, HitLocation, HitNormal );
+	}
 
 	// See if first actor did something that caused an UnTouch.
 	INT i = 0;
@@ -3401,7 +3408,10 @@ void AActor::EndTouch( AActor* Other, UBOOL bNoNotifySelf )
 		{
 			GDisTouchEnd++;
 		}
-		eventUnTouch( Other );
+		if( FindFunction( FName(TEXT("UnTouch"), FNAME_Find) ) )  // DISHONORED(retail): see the Touch guard above
+		{
+			eventUnTouch( Other );
+		}
 	}
 	Touching.RemoveItem(Other);
 
@@ -3433,7 +3443,10 @@ void AActor::EndTouch( AActor* Other, UBOOL bNoNotifySelf )
 		{
 			GDisTouchEnd++;
 		}
-		Other->eventUnTouch( this );
+		if( Other->FindFunction( FName(TEXT("UnTouch"), FNAME_Find) ) )  // DISHONORED(retail): see the Touch guard above
+		{
+			Other->eventUnTouch( this );
+		}
 		Other->Touching.RemoveItem(this);
 	}
 }

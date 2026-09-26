@@ -1933,9 +1933,15 @@ void UMaterial::FinishDestroy()
 		}
 	}
 
-	delete DefaultMaterialInstances[0];
-	delete DefaultMaterialInstances[1];
-	delete DefaultMaterialInstances[2];
+	// DISHONORED(layout): DefaultMaterialInstances is FDefaultMaterialInstance*[2] in the retail layout
+	// (EngineMaterialClasses.h), so the reference's third delete ran on whatever follows the array - the INT
+	// EditorX, i.e. a material-editor coordinate treated as a pointer. Agent AX traced 29 of 471 packages
+	// crashing on teardown to exactly this, and it fires at ordinary process shutdown too.
+	for( INT InstanceIndex = 0; InstanceIndex < ARRAY_COUNT(DefaultMaterialInstances); InstanceIndex++ )
+	{
+		delete DefaultMaterialInstances[InstanceIndex];
+		DefaultMaterialInstances[InstanceIndex] = NULL;
+	}
 	Super::FinishDestroy();
 }
 

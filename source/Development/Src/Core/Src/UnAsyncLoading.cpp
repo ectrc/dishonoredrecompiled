@@ -940,7 +940,9 @@ UBOOL FAsyncIOSystemBase::InternalRead( FAsyncIOHandle FileHandle, INT Offset, I
 	STAT(DOUBLE ReadTime = 0);
 	{	
 		SCOPE_SECONDS_COUNTER(ReadTime);
-		PlatformReadDoNotCallDirectly( FileHandle, Offset, Size, Dest );
+		// DISHONORED(bringup): the reference drops this result, so InternalRead always reported failure and no
+		// I/O error could ever surface (agent AR: a missing or unopenable streaming file is silent today).
+		bRetVal = PlatformReadDoNotCallDirectly( FileHandle, Offset, Size, Dest );
 	}	
 	INC_FLOAT_STAT_BY(STAT_AsyncIO_PlatformReadTime,(FLOAT)ReadTime);
 
