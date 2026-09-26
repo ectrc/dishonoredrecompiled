@@ -18,3 +18,28 @@
 //   0x672d40  public: virtual void __thiscall ADishonoredKAsset::PostBeginPlay(void)
 //   0x677f80  public: static class UClass * __cdecl ADishonoredKAsset::GetPrivateStaticClassADishonoredKAsset(wchar_t const *)
 //   0x67a1f0  public: static class UClass * __cdecl ADishonoredKAsset::StaticClassNoInline(void)
+// ---- agent AU ports (PHASE7 AU) ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): 2013 rva 0x6211d0 (2012 0x66f7e0): as ADishonoredKActor's, except that the blame flag is
+// assigned rather than accumulated, and the damage goes to this class's TakeDamage_Impl (retail vtable +932).
+void ADishonoredKAsset::TakeDamage_Native( INT Damage, AController* const InstigatedBy, const FVector& HitLocation, const FVector& Momentum, UClass* const DamageType, const FTraceHitInfo& HitInfo, AActor* const DamageCauser )
+{
+	m_bPlayerDeservesBlame = ( Cast<ADishonoredPlayerPawn>( DamageCauser ) != NULL );
+	TakeDamage_Impl( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+}
+
+void ADishonoredKAsset::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Damage);
+	P_GET_OBJECT(AController,InstigatedBy);
+	P_GET_STRUCT(FVector,HitLocation);
+	P_GET_STRUCT(FVector,Momentum);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_STRUCT_OPTX(FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+	P_GET_OBJECT_OPTX(AActor,DamageCauser,NULL);
+	P_FINISH;
+	TakeDamage_Native( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+}

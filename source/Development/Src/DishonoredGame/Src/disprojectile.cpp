@@ -51,3 +51,35 @@
 //   0x8a6a00  public: virtual void __thiscall ADisProjectile::physProjectile(float, int)
 //   0x8a6f70  public: virtual unsigned int __thiscall ADisProjectile::OnWindblast(struct AActor::WindBlastParams const &, float &)
 //   0x8a9430  protected: virtual unsigned int __thiscall UDisTweaks_Projectile::FixupDefaults_Derived(void)
+// ---- agent AU ports (PHASE7 AU) ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): 2013 rva 0x83c940 (2012 0x8877a0, same bytes): a damaged projectile leaves bend time, blamed on
+// the instigating pawn or, failing that, on whatever caused the damage.
+// DISHONORED(bringup): DisPullFromBendTime is ported as a no-op (the ADishonoredGameInfo bend-time virtuals are not
+// ported, see dishonoredutilities.cpp), so this native's whole observable effect is currently nothing - which is also
+// true of retail whenever bend time is off.
+void ADisProjectile::TakeDamage_Native( INT Damage, AController* const InstigatedBy, const FVector& HitLocation, const FVector& Momentum, UClass* const DamageType, const FTraceHitInfo& HitInfo, AActor* const DamageCauser )
+{
+	AActor* Cause = DisGetPawnInstigator( InstigatedBy );
+	if( !Cause )
+	{
+		Cause = DamageCauser;
+	}
+	DisPullFromBendTime( this, Cause, TRUE, FALSE );
+}
+
+void ADisProjectile::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Damage);
+	P_GET_OBJECT(AController,InstigatedBy);
+	P_GET_STRUCT(FVector,HitLocation);
+	P_GET_STRUCT(FVector,Momentum);
+	P_GET_OBJECT(UClass,DamageType);
+	P_GET_STRUCT_OPTX(FTraceHitInfo,HitInfo,FTraceHitInfo(EC_EventParm));
+	P_GET_OBJECT_OPTX(AActor,DamageCauser,NULL);
+	P_FINISH;
+	TakeDamage_Native( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+}

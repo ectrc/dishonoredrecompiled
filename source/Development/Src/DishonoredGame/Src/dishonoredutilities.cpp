@@ -56,3 +56,110 @@
 //   0x83efb0  void __cdecl DisMatchSeqOutputLinksToDefault(class USequenceOp *)
 //   0x840cd0  unsigned int __cdecl DisIsPackageSeekFree(wchar_t const *)
 //   0xbaab50  _dynamic_initializer_for__g_DialogSelNotifyActors__
+
+// ---- agent AU ports (PHASE7 AU): the utilities the pickup path calls ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): 2013 rva 0x7cf970 (2012 0x832010, same bytes): the world's emitter pool spawns the effect and
+// remembers which actor's lifetime bounds it.
+UDisParticleSystemComponent* DishonoredSpawnEmitter( UParticleSystem* EmitterTemplate, const FVector& SpawnLocation, const FRotator& SpawnRotation, AActor* TimeBoundActor, UBOOL bAttachToActor )
+{
+	AWorldInfo* WorldInfo = GWorld ? GWorld->GetWorldInfo() : NULL;
+	if( !WorldInfo || !EmitterTemplate )
+	{
+		return NULL;
+	}
+	ADishonoredEmitterPool* Pool = Cast<ADishonoredEmitterPool>( WorldInfo->MyEmitterPool );
+	if( !Pool )
+	{
+		return NULL;
+	}
+	// DISHONORED(bringup): ADishonoredEmitterPool::SpawnPooledEmitter is a comment-only unit, so the idle particle
+	// system of a pickup is not spawned yet; nothing else on the collection path depends on it.
+	return NULL;
+}
+
+// DISHONORED(written): 2013 rva 0x7bafa0 (2012 0x823960, same bytes): a negative LifeSpan is the engine's
+// "destroy on the next tick" marker.
+void DisDestroyActorNextTick( AActor& Actor )
+{
+	Actor.LifeSpan = -1.f;
+}
+
+// DISHONORED(written): 2013 rva 0x7bf060 (2012 0x826fb0, same bytes)
+ADishonoredPawn* DisGetPawnInstigator( const AController* Controller )
+{
+	if( !Controller )
+	{
+		return NULL;
+	}
+	if( Controller == ADishonoredPlayerController::s_pInstance )
+	{
+		return ADishonoredPlayerPawn::s_pInstance;
+	}
+	return Cast<ADishonoredPawn>( Controller->Pawn );
+}
+
+// DISHONORED(written): 2013 rva 0x7c7b30 (2012 0x82cc90): every enabled sequence event the actor generated whose class
+// matches (exactly, or by inheritance) is offered the activation; the originator falls back to the instigator and then
+// to the actor itself.
+void DisFireKismetEvent( AActor* const Actor, UClass* const EventClass, AActor* const Instigator, AActor* const Originator, UBOOL bExactClass, TArray<INT>* ActivateIndices )
+{
+	if( !Actor )
+	{
+		return;
+	}
+	for( INT Idx = 0; Idx < Actor->GeneratedEvents.Num(); Idx++ )
+	{
+		USequenceEvent* Event = Actor->GeneratedEvents(Idx);
+		if( !Event || !Event->bEnabled )
+		{
+			continue;
+		}
+		const UBOOL bMatches = bExactClass ? ( Event->GetClass() == EventClass ) : Event->IsA( EventClass );
+		if( !bMatches )
+		{
+			continue;
+		}
+		AActor* InOriginator = Originator ? Originator : ( Instigator ? Instigator : Actor );
+		Event->CheckActivate( InOriginator, Instigator, FALSE, ActivateIndices, FALSE );
+	}
+}
+
+// DISHONORED(written): 2013 rva 0x7bec00 (2012 0x826c20).
+// DISHONORED(bringup): the body is four ADishonoredGameInfo virtuals (vtable +968 AddActorToBendTime,
+// +972 GetBendTimeLeftFor, +1072 RemoveActorFromBendTime) that are not ported, and AActor::AdjustBendTime does not
+// exist in this build's Engine; with DisIsBendTimeOn() always FALSE every caller of this is already dead code.
+void DisPullFromBendTime( AActor* Actor, AActor* Cause, UBOOL bRecursive, UBOOL bOnlyIfStaticOrTickDisabled )
+{
+}
+
+// DISHONORED(written): 2013 rva 0x7bf010 (2012 0x826f60, same bytes): the actor's Instigator, unless it is being
+// destroyed or is pending kill.
+ADishonoredPawn* DisGetValidInstigator( const AActor& Actor )
+{
+	APawn* Instigator = Actor.Instigator;
+	if( !Instigator || Instigator->bDeleteMe || Instigator->IsPendingKill() )
+	{
+		return NULL;
+	}
+	return Cast<ADishonoredPawn>( Instigator );
+}
+
+// DISHONORED(written): 2013 rva 0x7b2420 (2012 0x814ef0), UDisGFxMoviePlayerHUD::AddUseMessage, reduced to the part
+// this build can run: a non-empty message reaches the HUD's game-message slot.
+// DISHONORED(bringup): UDisGFxMoviePlayerHUD::SetGameMessage is GFx and not ported (see agentAW.md's decision), so the
+// message is logged under -dispickup instead of being displayed.
+void DisAddUseMessage( const FString& Message )
+{
+	if( Message.Len() <= 0 )
+	{
+		return;
+	}
+	if( DisPickupCensusEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): dispickup use message: %s"), *Message );
+	}
+}

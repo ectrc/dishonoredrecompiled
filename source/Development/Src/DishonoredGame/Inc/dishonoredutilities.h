@@ -21,3 +21,27 @@ class UDisLocalPlayer* DisGetLocalPlayer();
 class UDishonoredAudioSystem* DisGetAudioSystem();
 class UArkPpNode* DisGetArkPpNode( const FName& EffectName );
 class UArkPpNodeMaterial* DisGetArkPpNodeMaterial( const FName& EffectName, UBOOL bMakeUnique );
+
+// DISHONORED(written): agent AU (PHASE7 AU). The utilities the pickup collection path calls; 2013 rvas with the bodies.
+class UDisGFxMoviePlayerHUD* DisGetGFxHUD();                                                   // 0x7bf730
+UBOOL DisIsBendTimeOn();                                                                       // 0x7bf2c0
+UBOOL DisIsBendTimeFrozen();                                                                   // 0x7bf2f0
+void DisPullFromBendTime( class AActor* Actor, class AActor* Cause, UBOOL bRecursive, UBOOL bOnlyIfStaticOrTickDisabled ); // 0x7bec00
+class ADishonoredPawn* DisGetPawnInstigator( const class AController* Controller );             // 0x7bf060
+class ADishonoredPawn* DisGetValidInstigator( const class AActor& Actor );                      // 0x7bf010
+class UDisParticleSystemComponent* DishonoredSpawnEmitter( class UParticleSystem* EmitterTemplate, const FVector& SpawnLocation, const FRotator& SpawnRotation, class AActor* TimeBoundActor, UBOOL bAttachToActor ); // 0x7cf970
+void DisDestroyActorNextTick( class AActor& Actor );                                            // 0x7bafa0
+void DisFireKismetEvent( class AActor* const Actor, class UClass* const EventClass, class AActor* const Instigator, class AActor* const Originator, UBOOL bExactClass, TArray<INT>* ActivateIndices ); // 0x7c7b30
+UBOOL DisIsObjectStateGoingToBeRestored( class UObject* Object );                                // 0x7ec6a0
+void DisAddUseMessage( const FString& Message );                                                 // 0x7b2420
+
+// DISHONORED(written): agent AU. -dispickup, the pickup census and the -dispickupprobe walk-in; defined in
+// dishonoredplayercontroller.cpp next to the ported HandleHeldButtons.
+UBOOL DisPickupCensusEnabled();
+void DisPickupReport( class UWorld* World, FLOAT DeltaSeconds );
+
+// DISHONORED(written): agent AU. 2013 rva 0x7e88b0, body in dishonoredutilities_physics.cpp.
+struct FDisPhysicsUtil
+{
+	static UBOOL PhysObjectShouldTraceCommon( const class AActor* PhysObject, DWORD TraceFlags );
+};

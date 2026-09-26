@@ -1,0 +1,91 @@
+rva,status,note
+0x62b4c0,written,ADisPickup_Base::PostBeginPlay (2012 0x680a00) - draw distance, heart target, idle FX, first tick
+0x619a60,written,ADisPickup_Base::PostLoad (2012 0x66a830)
+0x62aac0,written,ADisPickup_Base::ApplyTweakChanges_Derived (2012 0x680050) - the tweaks' static mesh
+0x62ad90,written,ADisPickup_Base::GetInteractableTweaks_Derived (2012 0x680320)
+0x619be0,written,ADisPickup_Base::WantsTick_Derived (2012 0x66a9b0)
+0x61d6e0,written,ADisPickup_Base::OnRigidBodyStatusChange (2012 0x66c7b0)
+0x61d820,written,ADisPickup_Base::ShouldTrace (2012 0x66c900) - uses agent AQ/AS's trace mask
+0x62afe0,written,ADisPickup_Base::GetPlayerPawnFromUser (2012 0x680500) - possession branch not ported
+0x62ad30,written,ADisPickup_Base::IsUseBlockedByPossession (2012 0x6802c0) - IsPossessing not ported
+0x631ba0,written,ADisPickup_Base::GetCrosshairStatus (2012 0x682c50)
+0x631bf0,written,ADisPickup_Base::AttemptInteract_Derived (2012 0x682ca0) - the interact itself
+0x62adc0,written,ADisPickup_Base::AttemptCannotUseInteract_Derived (2012 0x680350)
+0x62ab40,written,ADisPickup_Base::StartPickupTravel (2012 0x6800d0) - the fly-to-hand
+0x61d770,written,ADisPickup_Base::ConsumePickup (2012 0x66c840)
+0x62b130,written,ADisPickup_Base::Tick (2012 0x6806b0) - travel interpolation and destruction
+0x62b440,written,ADisPickup_Base::setPhysics (2012 0x680980)
+0x62b0a0,written,ADisPickup_Base::Attach (2012 0x6805c0)
+0x6226c0,written,ADisPickup_Base::Detach (2012 0x6705f0)
+0x61dbb0,written,ADisPickup_Base::BaseChange (2012 0x6706b0)
+0x5f93a0,written,ADisPickup_Base::execBaseChange (2012 0x63f350) - native
+0x61d990,written,ADisPickup_Base::AdjustDetachedPosition (2012 0x66ca70) - PhysX resync tail not ported
+0x622750,written,ADisPickup_Base::ClearComponents (2012 0x670680)
+0x62acd0,written,ADisPickup_Base::OnActorTerminated (2012 0x680260)
+0x61d6a0,written,ADisPickup_Base::IgnoreBlockingBy (2012 0x6705b0)
+0x62af90,written,ADisPickup_Base::HasSoul (2012 0x6804b0)
+0x62b060,written,ADisPickup_Base::GetMovableWeightClass (2012 0x680580)
+0x619a90,written,ADisPickup_Base::TakeDamage_Impl (2012 0x66a870)
+0x63f8d0,written,ADisPickup_Base::Steal (2012 0x680650)
+0x66c820,written,ADisPickup_Base::CanSplash (2012 rva; no distinct 2013 symbol - ICF folded)
+0x63df60,written,IDisInteractableInterface::AttemptInteract (2012 0x678010)
+0x63e200,written,IDisInteractableInterface::AttemptCannotUseInteract (2012 0x678320)
+0x621550,written,IDisInteractableInterface::GetInteractableTweaks (2012 0x67c3f0)
+0x6280a0,written,IDisInteractableInterface::GetInteractableName (2012 0x67d160)
+0x628190,written,IDisInteractableInterface::GetUseMessage (2012 0x67d250)
+0x6281c0,written,IDisInteractableInterface::GetAltUseMessage (2012 0x67d280)
+0x6281f0,written,IDisInteractableInterface::GetCannotUseMessage (2012 0x67d2b0)
+0x61c8c0,written,IDisInteractableInterface::FormatText (2012 0x66bdd0)
+0x627ff0,written,IDisInteractableInterface::DoHighlight (2012 0x67d0b0)
+0x628060,written,IDisInteractableInterface::UnDoHighlight (2012 0x67d120)
+0x630710,written,IDisInteractableInterface::SetHighlightBit (2012 0x681680)
+0x630740,written,IDisInteractableInterface::ClearHighlightBit (2012 0x6816b0)
+0x6307e0,written,IDisInteractableInterface::GainCrosshairFocus (2012 0x681720)
+0x63b560,written,IDisInteractableInterface::WitnessInteraction (2012 0x6774e0) - needs the AI brain; empty with a note
+0x636730,written,ADisStatPickup::PostBeginPlay (2012 0x6872c0) - rolls each ammo type's amount
+0x6367a0,written,ADisStatPickup::DoInteract_Impl (2012 0x687330) - health/mana/ammo
+0x6368d0,written,ADisStatPickup::HasStatsSet (2012 0x687460)
+0x636980,written,ADisStatPickup::CanBePickedUp (2012 0x687520)
+0x636a70,written,ADisStatPickup::GetUseMessage (2012 0x687610)
+0x61dda0,written,ADisStatPickup::FormatText (2012 0x66cca0)
+0x619ce0,written,ADisStatPickup::WantsTick_Derived (2012 0x66aa50)
+0x63cdc0,written,ADisStatPickup::Tick (2012 0x68afd0)
+0x636af0,written,ADisStatPickup::Explode (2012 0x687690)
+0x3710,written,ADisStatPickup::GetTweaks_Derived (2012 0x66aa40)
+0x61dd90,written,ADisStatPickup::SetTweaks_Derived (2012 0x66cc90)
+0x84bd60,written,ADisAbstractItemPickup::DoInteract_Impl (2012 0x8a4b90) - the abstract item into the inventory
+0x84c100,written,ADisAbstractItemPickup::CanBePickedUp (2012 0x8a4ef0)
+0x84bee0,written,ADisAbstractItemPickup::GetUseMessage (2012 0x8a4cd0)
+0x84bf30,written,ADisAbstractItemPickup::FormatText (2012 0x8a4d20)
+0x8452f0,written,ADisAbstractItemPickup::ShouldTrace (2012 0x88fc00)
+0x84c090,written,ADisAbstractItemPickup::Steal (2012 0x8a4e80)
+0x61d560,written,ADisElixirHealth::DoInteract_Impl (2012 0x66c6e0)
+0x622160,written,ADisElixirHealth::CanBePickedUp (2012 0x6704f0)
+0x61d590,written,ADisElixirMana::DoInteract_Impl (2012 0x66c710)
+0x6222c0,written,ADisElixirMana::CanBePickedUp (2012 0x670550)
+0x61d5c0,written,ADisElixirHealth/Mana::SetTweaks_Derived (2012 0x88b260) and the folded getters
+0x810560,written,ADishonoredInventoryPickup::DoInteract_Impl (2012 0x883340) - stat half only
+0x805440,written,UDishonoredInventory::ConsumeStatPickup (2012 0x8529e0) - the inventory side of a stat pickup
+0x6210b0,written,ADishonoredKActor::PropagateMaxDrawDistance (2012 0x66f6c0)
+0x621010,written,ADishonoredKActor::TakeDamage_Native (2012 0x66f620) - native
+0x6185f0,written,ADishonoredKActor::DestroyIfPlayerCantSeeMe (2012 0x669870) - native
+0x6211d0,written,ADishonoredKAsset::TakeDamage_Native (2012 0x66f7e0) - native
+0x5fa8a0,written,UDisParticleSystemComponent::InitializeForPool (2012 0x6407d0) - native
+0x83c940,written,ADisProjectile::TakeDamage_Native (2012 0x8877a0) - native; bend time is inert in this build
+0x6ba9a0,written,ADishonoredPlayerController::HandleHeldButtons (2012 0x6f9b80) - native; _Movement/_Lean not ported
+0x6ba900,written,ADishonoredPlayerController::HandleHeldButtons_Context (2012 0x6f9ae0)
+0x6a2e70,written,ADishonoredPlayerController::HandleHeldButtons_Context_Interactables (2012 0x6d6e10)
+0x6a2e40,written,ADishonoredPlayerController::Dis_Zoom (2012 0x6d6de0) - native
+0x5f9f60,written,ADishonoredGameInfo::GameEnding (2012 0x63fb20) - native
+0x7bf730,written,DisGetGFxHUD (2012 0x827490)
+0x7bf2c0,written,DisIsBendTimeOn (2012 0x8270c0) - returns FALSE; the game-info virtuals are not ported
+0x7bf2f0,written,DisIsBendTimeFrozen (2012 0x8270f0) - same
+0x7bec00,written,DisPullFromBendTime (2012 0x826c20) - empty with a note; game-info virtuals not ported
+0x7bf060,written,DisGetPawnInstigator (2012 0x826fb0)
+0x7bf010,written,DisGetValidInstigator (2012 0x826f60)
+0x7cf970,written,DishonoredSpawnEmitter (2012 0x832010) - emitter pool not ported
+0x7bafa0,written,DisDestroyActorNextTick (2012 0x823960)
+0x7c7b30,written,DisFireKismetEvent (2012 0x82cc90) - drives UDisSeqEvent_Interact from a pickup
+0x7ec6a0,written,DisIsObjectStateGoingToBeRestored (2012 0x82f3d0) - save-state half not ported
+0x7e88b0,written,FDisPhysicsUtil::PhysObjectShouldTraceCommon (2012 0x8286d0)
+0x7b2420,written,DisAddUseMessage / UDisGFxMoviePlayerHUD::AddUseMessage (2012 0x814ef0) - logged, GFx not ported

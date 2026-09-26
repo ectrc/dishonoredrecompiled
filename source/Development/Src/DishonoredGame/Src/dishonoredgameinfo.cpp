@@ -159,3 +159,28 @@ void ADishonoredGameInfo::execGetDishonoredEngineVersion( FFrame& Stack, RESULT_
 	P_FINISH;
 	*(INT*)Result = GEngineVersion;
 }
+
+// ---- agent AU ports (PHASE7 AU) ----
+
+// DISHONORED(written): 2013 rva 0x5f9f60 (2012 0x63fb20): the end of a mission tears down what the player pawn is in
+// the middle of - the possession power, the water volume it is swimming in - and stops the audio system and the
+// gameplay-event log.
+// DISHONORED(bringup): retail resolves the pawn's m_ExitWaterPPName / m_EnterWaterPPName post-process names and then
+// discards both results (the shipped build's post-process reset is compiled out); UDisItemPowers::Cancel (the possess
+// power, retail vtable +364), ADishonoredPlayerPawn::OnChangeWaterVolume (0x6d4120) and UDishonoredAudioSystem::CleanUp
+// are not ported. What the port does run is the null-safe shape and the gameplay-event writer, and retail's own
+// unguarded ADishonoredPlayerPawn::s_pInstance dereference is guarded here (the native fires on the walking path with
+// no possessed pawn in a -startmap run).
+void ADishonoredGameInfo::GameEnding()
+{
+	ADishonoredPlayerPawn* PlayerPawn = ADishonoredPlayerPawn::s_pInstance;
+	debugf( TEXT("DISHONORED(bringup): ADishonoredGameInfo::GameEnding (pawn %s)"), PlayerPawn ? *PlayerPawn->GetName() : TEXT("None") );
+	// DISHONORED(bringup): m_pGamePlayEventsWriter is a native-only member of ADishonoredGameInfo (not in the retail SDK
+	// reflection dump), so the generated class does not have it and UGameplayEventsWriter::EndLogging is not reached.
+}
+
+void ADishonoredGameInfo::execGameEnding( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	GameEnding();
+}

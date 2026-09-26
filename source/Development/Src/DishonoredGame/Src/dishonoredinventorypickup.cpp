@@ -22,3 +22,28 @@
 //   0x8833d0  private: virtual void __thiscall ADishonoredInventoryPickup::OnThrow(class FVector const &, class FVector const &)
 //   0x883440  public: virtual void __thiscall ADishonoredInventoryPickup::OnRigidBodyCollision(struct FRigidBodyCollisionInfo const &, struct FRigidBodyCollisionInfo const &, struct FCollisionImpactData const &)
 //   0x883690  protected: virtual int __thiscall ADishonoredInventoryPickup::GetMaxDamage(void)const
+// ---- agent AU ports (PHASE7 AU) ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): ADishonoredInventoryPickup's IDisTweaksInterface slots. Both slots are identical-COMDAT folded in the 2013 exe.
+UDisTweaksBase* ADishonoredInventoryPickup::GetTweaks_Derived()
+{
+	return m_pInvPickupTweaks;
+}
+
+void ADishonoredInventoryPickup::SetTweaks_Derived( UDisTweaksBase* Tweaks )
+{
+	m_pInvPickupTweaks = (UDisTweaks_InventoryPickup*)Tweaks;
+}
+
+// DISHONORED(written): 2013 rva 0x810560 (2012 0x883340): the stat half first (ammo, health, mana), then the inventory
+// item itself if the player may carry it.
+// DISHONORED(bringup): ADishonoredInventoryPickup::CanPickupItem and ADishonoredPlayerPawn's "take this inventory
+// pickup" slot (retail vtable +1492) are not ported - they need UDishonoredInventory's slot / equip half and
+// UDisItemContext (agentAJ.md) - so only the stat half of a weapon or gadget pickup is given.
+UBOOL ADishonoredInventoryPickup::DoInteract_Impl( ADishonoredPlayerPawn* PlayerPawn )
+{
+	return ADisStatPickup::DoInteract_Impl( PlayerPawn );
+}

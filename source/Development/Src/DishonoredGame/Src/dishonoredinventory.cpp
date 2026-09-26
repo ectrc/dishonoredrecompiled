@@ -258,3 +258,33 @@ void UDishonoredInventory::SetElixirCount( BYTE ElixirType, INT Count )
 	const INT MaxCount = ElixirType == ElixirType_Health ? Tweaks->m_nMaxHealthElixir : ElixirType == ElixirType_Mana ? Tweaks->m_nMaxManaElixir : 0;
 	m_ElixirCounts[ElixirType] = Clamp<INT>( Count, 0, MaxCount );
 }
+
+// ---- agent AU ports (PHASE7 AU) ----
+
+// DISHONORED(written): 2013 rva 0x805440 (2012 0x8529e0): every ammo type the pickup carries is offered to AddAmmo, the
+// pickup keeps what did not fit, and the total taken is reported back so ADisStatPickup's use message can name it.
+// DISHONORED(bringup): the Attribute_StatPickupCapacityBonusChance roll (one extra round at a chance the player's
+// attributes carry) needs IDisAttributesInterface::GetAttributeValue / UDisAttributes, which are not ported, so the
+// chance is 0; UDisGFxMoviePlayerHUD::OnAmmoPickedUp is GFx and not ported.
+UBOOL UDishonoredInventory::ConsumeStatPickup( class ADisStatPickup* Pickup, INT* OutConsumedAmmoCount )
+{
+	INT ConsumedAmmoCount = 0;
+	if( Pickup )
+	{
+		for( INT Type = 0; Type < eDisAmmoType_MAX && Type < m_AmmoInfo.Num(); Type++ )
+		{
+			if( Pickup->m_CurAmmo[Type] == 0 )
+			{
+				continue;
+			}
+			const INT Added = AddAmmo( Type, Pickup->m_CurAmmo[Type] );
+			Pickup->m_CurAmmo[Type] -= Added;
+			ConsumedAmmoCount += Added;
+		}
+	}
+	if( OutConsumedAmmoCount )
+	{
+		*OutConsumedAmmoCount = ConsumedAmmoCount;
+	}
+	return ConsumedAmmoCount > 0;
+}

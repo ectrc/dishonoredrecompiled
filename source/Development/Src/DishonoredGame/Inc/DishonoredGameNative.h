@@ -14,6 +14,11 @@ class UDisTweaksBase;
 class ADishonoredSpawner;
 struct FDisRelationshipOverrideInfo;
 struct FAnimPlayerNotificationParams;
+// DISHONORED(written): agent AV, the anim-state node set. UDisAnimStatePool's cpptext names these before
+// DishonoredGameAnimClasses.h defines them.
+class UDishonoredAnimTree;
+class UDishonoredAnimNodeTreeRef_Dynamic;
+struct FDynamicTreeTemplate;
 
 // DISHONORED(written): the state-change request carried through UDishonoredNativeStateMachine::RequestStateChange /
 // DemandStateChange (2013 rvas 0x674fa0 / 0x672190); InitFSM (0x67ba50) copies SizeOf() bytes of it into m_DefaultStateParam

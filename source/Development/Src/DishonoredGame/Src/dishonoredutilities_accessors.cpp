@@ -124,3 +124,31 @@ UArkPpNodeMaterial* DisGetArkPpNodeMaterial( const FName& EffectName, UBOOL bMak
 	}
 	return Node;
 }
+
+// ---- agent AU ports (PHASE7 AU) ----
+
+// DISHONORED(written): 2013 rva 0x7bf730 (2012 0x827490): the game info's UI manager holds the HUD movie player, and
+// only an open movie answers.
+UDisGFxMoviePlayerHUD* DisGetGFxHUD()
+{
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( !UIManager || !UIManager->m_pHUD )
+	{
+		return NULL;
+	}
+	return UIManager->m_pHUD->bMovieIsOpen ? UIManager->m_pHUD : NULL;
+}
+
+// DISHONORED(written): 2013 rva 0x7bf2c0 (2012 0x8270c0).
+// DISHONORED(bringup): ADishonoredGameInfo's bend-time accessors (vtable +980 IsBendTimeOn, +1080 IsBendTimeFrozen) are
+// not ported, so bend time reads as off and every bend-time branch of the ported bodies is inert.
+UBOOL DisIsBendTimeOn()
+{
+	return FALSE;
+}
+
+// DISHONORED(written): 2013 rva 0x7bf2f0 (2012 0x8270f0); same hand-over as DisIsBendTimeOn.
+UBOOL DisIsBendTimeFrozen()
+{
+	return FALSE;
+}

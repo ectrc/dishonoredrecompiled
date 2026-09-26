@@ -6,3 +6,5 @@ public:
 	virtual APawn* SpawnPlayer( UClass* SpawnClass, FVector SpawnLocation, FRotator SpawnRotation );
 	virtual UBOOL PreventDeath_Native( APawn* KilledPawn, AController* Killer, UClass* DamageType, FVector HitLocation );
 	UDisTweaks_PlayerPawn* LoadDefaultPlayerTweaks( UBOOL bCampaign );
+	// DISHONORED(written): agent AU. GameEnding 2013 rva 0x5f9f60 (2012 0x63fb20), body in dishonoredgameinfo.cpp.
+	virtual void GameEnding();

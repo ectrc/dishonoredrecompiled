@@ -292,3 +292,277 @@ void ADishonoredPlayerController::execOnControllerChanged_Native( FFrame& Stack,
 	P_FINISH;
 	OnControllerChanged_Native( bIsConnected );
 }
+
+// ---- agent AU ports (PHASE7 AU): HandleHeldButtons, Dis_Zoom, and the -dispickup census / -dispickupprobe ----
+
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): 2013 rva 0x6ba9a0 (2012 0x6f9b80): a paused world, and a single-stepped world that is currently
+// paused between steps, skip the whole held-button pass; both thumbsticks pressed together toggles the debug menu.
+// DISHONORED(bringup): of the three sub-handlers only HandleHeldButtons_Context is ported. The other two are named here
+// rather than silently skipped, because their own dependencies are unported subsystems:
+//   HandleHeldButtons_Movement 2013 rva 0x6aeb10 (+ _Movement_Gamepad 0x6ae610, _Movement_Movable 0x6a2ec0) - the
+//     movable-object carry and the gamepad dead zones, which need UDisMovableComponent and UDisTweaks_PlayerInput;
+//   HandleHeldButtons_Lean 2013 rva 0x6b3ff0 - the lean state, which needs the player master FSM's lean state.
+void ADishonoredPlayerController::HandleHeldButtons( FLOAT DeltaSeconds )
+{
+	if( DisPickupCensusEnabled() )
+	{
+		DisPickupReport( GWorld, DeltaSeconds );
+	}
+
+	AWorldInfo* Info = WorldInfo;
+	if( Info && !Info->Paused && ( !Info->m_bSingleStep || !Info->m_bSingleStepPaused ) )
+	{
+		static UBOOL bWarnedSubHandlers = FALSE;
+		if( !bWarnedSubHandlers )
+		{
+			bWarnedSubHandlers = TRUE;
+			debugf( TEXT("DISHONORED(bringup): HandleHeldButtons: _Movement (2013 rva 0x6aeb10) and _Lean (0x6b3ff0) are not ported; _Context is") );
+		}
+		HandleHeldButtons_Context( DeltaSeconds );
+	}
+
+	if( m_bLeftThumbstickPressed && m_bRightThumbstickPressed )
+	{
+		ConsoleCommand( FString( TEXT("ToggleDebugMenu") ), TRUE );
+		m_bLeftThumbstickPressed = FALSE;
+		m_bRightThumbstickPressed = FALSE;
+	}
+}
+
+// DISHONORED(written): 2013 rva 0x6ba900 (2012 0x6f9ae0, same bytes): retail reads the player input's tweaks and the
+// world's real time (both results discarded in the shipped build, which is why the two calls look dead) and then runs
+// the three context handlers, finally stopping the secondary item's zoom when zoom input is disabled.
+// DISHONORED(bringup): _Context_Block (2012 rva 0x6e2c90) and _Context_PowerWheel (2013 0x6b7d30) need the block state
+// and the GFx power wheel; UDishonoredInventoryItem::StopZoom needs the item contexts (agentAJ.md's UDisItemContext).
+void ADishonoredPlayerController::HandleHeldButtons_Context( FLOAT DeltaSeconds )
+{
+	if( !PlayerInput )
+	{
+		return;
+	}
+	HandleHeldButtons_Context_Interactables( DeltaSeconds );
+}
+
+// DISHONORED(written): 2013 rva 0x6a2e70 (2012 0x6d6e10, same bytes): while use input is disabled the use-interaction
+// FSM is pushed back to its waiting state, and the machine is ticked either way.
+// DISHONORED(bringup): m_pUseInteractionFSM is never created, because ADishonoredPlayerController::PostBeginPlay's
+// UDishonoredNativeStateMachine::InitFSM call and the UDisUseState_* classes are not ported (agentAJ.md); the state
+// parameter FDisUseState_WaitForInput_Param does not exist either. Until they are, the pickup path is reached through
+// -dispickupprobe below, which makes the same IDisInteractableInterface::AttemptInteract call
+// UDisUseState_WaitForInput::TickState (2013 rva 0x6d5ba0) makes.
+void ADishonoredPlayerController::HandleHeldButtons_Context_Interactables( FLOAT DeltaSeconds )
+{
+	if( !m_pUseInteractionFSM )
+	{
+		return;
+	}
+	m_pUseInteractionFSM->TickStateMachine( DeltaSeconds );
+}
+
+// DISHONORED(written): 2013 rva 0x6a2e40 (2012 0x6d6de0, same bytes): the secondary item's zoom toggle.
+// DISHONORED(bringup): UDishonoredInventory::GetEquippedItem is ported (agent AJ) but
+// UDishonoredInventoryItem::ToggleZoom (retail vtable +400) is not, so only the input gate runs.
+void ADishonoredPlayerController::Dis_Zoom()
+{
+	if( !IsInputEnabled( 0x8000 ) )
+	{
+		return;
+	}
+	ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( Pawn );
+	UDishonoredInventory* Inventory = DisPawn ? DisPawn->m_pInventory : NULL;
+	if( Inventory )
+	{
+		Inventory->GetEquippedItem( EDisEquipUsage_Secondary );
+	}
+}
+
+void ADishonoredPlayerController::execHandleHeldButtons( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaSeconds);
+	P_FINISH;
+	HandleHeldButtons( DeltaSeconds );
+}
+
+void ADishonoredPlayerController::execDis_Zoom( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	Dis_Zoom();
+}
+
+/*-----------------------------------------------------------------------------
+	-dispickup / -dispickupprobe (DISHONORED(bringup) only, free when off)
+
+	-dispickup      once a second, per world: the pickup inventory of the map, how many of them a trace or a touch can
+	                reach, the player's inventory, and how many pickups this run has consumed.
+	-dispickupprobe after the census has settled, walk the pawn to one pickup per second (UWorld::FarMoveActor, the same
+	                path agent AS's -distouchprobe uses) and then make the call UDisUseState_WaitForInput::TickState
+	                makes on the crosshair actor: IDisInteractableInterface::AttemptInteract( PlayerPawn ).
+-----------------------------------------------------------------------------*/
+
+static INT GDisPickupCensus = -1;
+static INT GDisPickupProbe = -1;
+
+UBOOL DisPickupCensusEnabled()
+{
+	if( GDisPickupCensus < 0 )
+	{
+		GDisPickupCensus = ( appStrfind( appCmdLine(), TEXT("-dispickup") ) != NULL ) ? 1 : 0;
+	}
+	return GDisPickupCensus != 0;
+}
+
+static UBOOL DisPickupProbeEnabled()
+{
+	if( GDisPickupProbe < 0 )
+	{
+		GDisPickupProbe = ( appStrfind( appCmdLine(), TEXT("-dispickupprobe") ) != NULL ) ? 1 : 0;
+	}
+	return GDisPickupProbe != 0;
+}
+
+/** Everything the census and the probe remember between frames, re-armed for every new world. */
+struct FDisPickupCensusState
+{
+	UWorld* World;
+	FLOAT NextReportTime;
+	FLOAT NextProbeTime;
+	INT Interacts;
+	INT Collected;
+	TArray<ADisPickup_Base*> Targets;
+	TArray<ADisPickup_Base*> Probed;
+
+	FDisPickupCensusState() : World(NULL), NextReportTime(0.f), NextProbeTime(0.f), Interacts(0), Collected(0) {}
+};
+
+static FDisPickupCensusState GDisPickupState;
+
+static void DisPickupLogInventory( const TCHAR* Tag, ADishonoredPlayerPawn* PlayerPawn )
+{
+	if( !PlayerPawn )
+	{
+		debugf( TEXT("DISHONORED(bringup): dispickup %s inventory: no player pawn"), Tag );
+		return;
+	}
+	UDishonoredInventory* Inventory = PlayerPawn->m_pInventory;
+	FString Ammo;
+	INT AmmoTotal = 0;
+	if( Inventory )
+	{
+		for( INT Type = 0; Type < Inventory->m_AmmoInfo.Num(); Type++ )
+		{
+			AmmoTotal += Inventory->m_AmmoInfo(Type).m_AmmoCount;
+			Ammo += FString::Printf( TEXT("%i/%i "), Inventory->m_AmmoInfo(Type).m_AmmoCount, Inventory->m_AmmoInfo(Type).m_AmmoCapacity );
+		}
+	}
+	FString Items;
+	if( Inventory )
+	{
+		for( INT Idx = 0; Idx < Inventory->m_AbstractItem.Num(); Idx++ )
+		{
+			UDisAbstractItem* Item = Inventory->m_AbstractItem(Idx).m_pItem;
+			Items += FString::Printf( TEXT("%s=%i "), Item ? *Item->GetName() : TEXT("None"), Inventory->m_AbstractItem(Idx).m_Quantity );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): dispickup %s inventory: health %i/%i mana %i/%i elixirs %i/%i ammo total %i [%s] items %i [%s]"),
+		Tag, PlayerPawn->Health, PlayerPawn->HealthMax, PlayerPawn->m_Mana, PlayerPawn->m_ManaMax,
+		Inventory ? Inventory->m_ElixirCounts[0] : 0, Inventory ? Inventory->m_ElixirCounts[1] : 0,
+		AmmoTotal, *Ammo, Inventory ? Inventory->m_AbstractItem.Num() : 0, *Items );
+}
+
+void DisPickupReport( UWorld* World, FLOAT DeltaSeconds )
+{
+	if( !World || !World->GetWorldInfo() )
+	{
+		return;
+	}
+	const FLOAT Now = World->GetTimeSeconds();
+	if( GDisPickupState.World != World )
+	{
+		GDisPickupState = FDisPickupCensusState();
+		GDisPickupState.World = World;
+		GDisPickupState.NextProbeTime = Now + 14.f;
+	}
+	// The pickups of a map live in its streamed sub-levels (L_Pub_Day_P holds 147 of them), which are added seconds
+	// after the persistent level, so the target list is re-collected until it stops growing.
+	if( Now >= GDisPickupState.NextReportTime )
+	{
+		const INT Was = GDisPickupState.Targets.Num();
+		GDisPickupState.Targets.Empty();
+		for( FActorIterator It; It; ++It )
+		{
+			ADisPickup_Base* Pickup = Cast<ADisPickup_Base>( *It );
+			if( Pickup )
+			{
+				GDisPickupState.Targets.AddItem( Pickup );
+			}
+		}
+		if( GDisPickupState.Targets.Num() != Was )
+		{
+			debugf( TEXT("DISHONORED(bringup): dispickup %s: target list %i -> %i pickups"), *World->GetOutermost()->GetName(), Was, GDisPickupState.Targets.Num() );
+		}
+	}
+
+	ADishonoredPlayerPawn* PlayerPawn = ADishonoredPlayerPawn::s_pInstance;
+
+	if( Now >= GDisPickupState.NextReportTime )
+	{
+		GDisPickupState.NextReportTime = Now + 1.f;
+		INT Reachable = 0;
+		INT Consumed = 0;
+		for( INT Idx = 0; Idx < GDisPickupState.Targets.Num(); Idx++ )
+		{
+			ADisPickup_Base* Pickup = GDisPickupState.Targets(Idx);
+			if( !Pickup || Pickup->IsPendingKill() )
+			{
+				continue;
+			}
+			if( Pickup->m_bPendingDestructionAfterOneFullTickCycle )
+			{
+				Consumed++;
+			}
+			else if( Pickup->bCollideActors )
+			{
+				Reachable++;
+			}
+		}
+		GDisPickupState.Collected = Consumed;
+		debugf( TEXT("DISHONORED(bringup): dispickup %6.1fs %s: pickups %i (collidable %i, consumed %i), interacts attempted %i"),
+			Now, *World->GetOutermost()->GetName(), GDisPickupState.Targets.Num(), Reachable, Consumed, GDisPickupState.Interacts );
+		DisPickupLogInventory( TEXT("now"), PlayerPawn );
+	}
+
+	if( !DisPickupProbeEnabled() || !PlayerPawn || Now < GDisPickupState.NextProbeTime )
+	{
+		return;
+	}
+	GDisPickupState.NextProbeTime = Now + 1.f;
+	for( INT Idx = 0; Idx < GDisPickupState.Targets.Num(); Idx++ )
+	{
+		ADisPickup_Base* Pickup = GDisPickupState.Targets(Idx);
+		INT Unused = 0;
+		if( !Pickup || Pickup->IsPendingKill() || Pickup->m_bPendingDestructionAfterOneFullTickCycle
+			|| GDisPickupState.Probed.FindItem( Pickup, Unused ) )
+		{
+			continue;
+		}
+		GDisPickupState.Probed.AddItem( Pickup );
+		// The pawn is walked to the pickup the way agent AS's -distouchprobe does: at the collision component's bounds
+		// origin, which is inside the brush or mesh, not at the pivot.
+		FVector Target = Pickup->CollisionComponent ? Pickup->CollisionComponent->Bounds.Origin : Pickup->Location;
+		Target.Z += 40.f;
+		GWorld->FarMoveActor( PlayerPawn, Target, FALSE, TRUE, TRUE );
+
+		DisPickupLogInventory( TEXT("before"), PlayerPawn );
+		const UBOOL bCanBePickedUp = Pickup->CanBePickedUp( PlayerPawn );
+		const eCrossHairStatus Status = Pickup->GetCrosshairStatus( PlayerPawn );
+		GDisPickupState.Interacts++;
+		const UBOOL bInteracted = Pickup->AttemptInteract( PlayerPawn );
+		debugf( TEXT("DISHONORED(bringup): dispickup probe %i/%i %s (%s): CanBePickedUp %i crosshair %i AttemptInteract %i travelling %i"),
+			GDisPickupState.Probed.Num(), GDisPickupState.Targets.Num(), *Pickup->GetName(), *Pickup->GetClass()->GetName(),
+			bCanBePickedUp, (INT)Status, bInteracted, Pickup->m_pTravellingTowardPC != NULL );
+		DisPickupLogInventory( TEXT("after "), PlayerPawn );
+		return;
+	}
+}

@@ -8,3 +8,18 @@
 //   0x67c6e0  public: static class UClass * __cdecl ADisGenericPickup::StaticClassNoInline(void)
 //   0x67c710  public: static void __cdecl UDisTweaks_GenericPickup::InitializePrivateStaticClassUDisTweaks_GenericPickup(void)
 //   0x67fff0  public: static class UClass * __cdecl UDisTweaks_GenericPickup::StaticClassNoInline(void)
+// ---- agent AU ports (PHASE7 AU) ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): ADisGenericPickup's IDisTweaksInterface slots. Both slots are identical-COMDAT folded with the other pickups' pair in the 2013 exe.
+UDisTweaksBase* ADisGenericPickup::GetTweaks_Derived()
+{
+	return m_pGenericPickupTweaks;
+}
+
+void ADisGenericPickup::SetTweaks_Derived( UDisTweaksBase* Tweaks )
+{
+	m_pGenericPickupTweaks = (UDisTweaks_GenericPickup*)Tweaks;
+}

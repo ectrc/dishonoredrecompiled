@@ -18,3 +18,6 @@ public:
 
 	void AddElixir( BYTE ElixirType, INT Count );
 	void SetElixirCount( BYTE ElixirType, INT Count );
+	// DISHONORED(written): agent AU. ConsumeStatPickup 2013 rva 0x805440 (2012 0x8529e0), body in
+	// dishonoredinventory.cpp; the inventory side of ADisStatPickup::DoInteract_Impl.
+	UBOOL ConsumeStatPickup( class ADisStatPickup* Pickup, INT* OutConsumedAmmoCount );

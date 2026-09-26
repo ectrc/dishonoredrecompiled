@@ -14,3 +14,26 @@
 //   0x82f5b0  void __cdecl DisPushIgnoreAutosave(enum EDisIgnoreAutosaveType)
 //   0x82f5e0  void __cdecl DisPopIgnoreAutosave(enum EDisIgnoreAutosaveType)
 //   0x82f610  void __cdecl DisPeriodicAutosave(float)
+
+// ---- agent AU ports (PHASE7 AU) ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): 2013 rva 0x7ec6a0 (2012 0x82f3d0): while a game is loading, and for every object the saved level
+// state covers, the object's own begin-play must not build state the save is about to overwrite.
+UBOOL DisIsObjectStateGoingToBeRestored( UObject* Object )
+{
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	if( !Engine )
+	{
+		return FALSE;
+	}
+	if( Engine->IsLoadingGame() )
+	{
+		return TRUE;
+	}
+	// DISHONORED(bringup): UDishonoredEngine::IsObjectPartOfSavedLevelState is not ported (DisSaveLoad, agentAJ.md's
+	// hand-over 6), so only the loading-game half of the test answers.
+	return FALSE;
+}

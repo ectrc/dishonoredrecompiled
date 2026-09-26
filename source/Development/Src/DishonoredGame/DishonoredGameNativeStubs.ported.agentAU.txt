@@ -1,0 +1,9 @@
+ADisPickup_Base::execBaseChange
+ADishonoredPlayerController::execHandleHeldButtons
+ADishonoredPlayerController::execDis_Zoom
+ADishonoredGameInfo::execGameEnding
+ADishonoredKActor::execTakeDamage_Native
+ADishonoredKActor::execDestroyIfPlayerCantSeeMe
+ADishonoredKAsset::execTakeDamage_Native
+UDisParticleSystemComponent::execInitializeForPool
+ADisProjectile::execTakeDamage_Native

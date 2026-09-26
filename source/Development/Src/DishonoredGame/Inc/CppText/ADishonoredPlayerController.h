@@ -21,3 +21,20 @@ public:
 	virtual void OnControllerChanged_Native( UBOOL bIsConnected );
 
 	UBOOL IsInputEnabled( INT InputMask ) const;
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	// DISHONORED(written): agent AU. HandleHeldButtons 2013 rva 0x6ba9a0 (2012 0x6f9b80), _Context 0x6ba900 (0x6f9ae0),
+	// _Context_Interactables 0x6a2e70 (0x6d6e10), Dis_Zoom 0x6a2e40 (0x6d6de0). Bodies in dishonoredplayercontroller.cpp.
+	virtual void HandleHeldButtons( FLOAT DeltaSeconds );
+	virtual void Dis_Zoom();
+	void HandleHeldButtons_Context( FLOAT DeltaSeconds );
+	void HandleHeldButtons_Context_Interactables( FLOAT DeltaSeconds );
