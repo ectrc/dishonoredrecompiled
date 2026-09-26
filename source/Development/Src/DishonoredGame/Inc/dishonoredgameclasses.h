@@ -148,6 +148,7 @@ protected:
     virtual ~IDisTweaksInterface() {}
 public:
     typedef UDisTweaksInterface UClassType;
+#include "CppText/IDisTweaksInterface.h"
 };
 
 struct DishonoredKActor_eventTakeDamage_Parms
@@ -1239,6 +1240,7 @@ public:
     DECLARE_FUNCTION(execDisplayDebug_Native);
     DECLARE_ABSTRACT_CLASS(ADishonoredPawn,AGamePawn,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Pawn");}
+#include "CppText/ADishonoredPawn.h"
 };
 
 // DishonoredGame.DisPossessablePawn: retail sizeof 2224, reflected span 2184..2220 (2012 PDB sizeof 2032)
@@ -3457,6 +3459,7 @@ public:
     DECLARE_FUNCTION(execOnWatchTowerShootAtTarget);
     DECLARE_FUNCTION(execOnSetDisposition);
     DECLARE_CLASS(ADisWatchTower,AActor,0,DishonoredGame)
+#include "CppText/ADisWatchTower.h"
 };
 
 // DishonoredGame.DisWatchTowerPlatform: retail sizeof 608, reflected span 584..596 (2012 PDB sizeof 608)
@@ -9111,6 +9114,7 @@ public:
     //## END PROPS DisAIBlackboard
 
     DECLARE_CLASS(UDisAIBlackboard,UObject,0,DishonoredGame)
+#include "CppText/UDisAIBlackboard.h"
 };
 
 // DishonoredGame.DisAIBrainProcess: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
@@ -9427,6 +9431,7 @@ public:
     //## END PROPS DishonoredNativeState
 
     DECLARE_ABSTRACT_CLASS(UDishonoredNativeState,UObject,0,DishonoredGame)
+#include "CppText/UDishonoredNativeState.h"
 };
 
 struct DisAISubState_eventRequestStateExitCallback_Parms
@@ -10658,6 +10663,7 @@ public:
     //## END PROPS DisTweaks_StaticBreakable
 
     DECLARE_CLASS(UDisTweaks_StaticBreakable,UDisTweaks_KActor,0,DishonoredGame)
+#include "CppText/UDisTweaks_StaticBreakable.h"
 };
 
 // DishonoredGame.DisTweaks_Movable: retail sizeof 284, reflected span 268..284 (2012 PDB sizeof 284)
@@ -12523,6 +12529,7 @@ public:
     //## END PROPS DisTweaks_SkeletalBreakable
 
     DECLARE_CLASS(UDisTweaks_SkeletalBreakable,UDisTweaksBase,0,DishonoredGame)
+#include "CppText/UDisTweaks_SkeletalBreakable.h"
 };
 
 // DishonoredGame.DisSkeletalBreakStepsInterface: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)
@@ -12830,6 +12837,7 @@ public:
     //## END PROPS DisNativeStateTransitionLogic
 
     DECLARE_CLASS(UDisNativeStateTransitionLogic,UObject,0,DishonoredGame)
+#include "CppText/UDisNativeStateTransitionLogic.h"
 };
 
 // DishonoredGame.DisNavConstraint_MinDistanceFromLocation: retail sizeof 92, reflected span 76..92 (2012 PDB sizeof 92)
@@ -14041,6 +14049,7 @@ public:
     //## END PROPS DisTweaks_UsableObject
 
     DECLARE_CLASS(UDisTweaks_UsableObject,UDisTweaks_SkeletalBreakable,0,DishonoredGame)
+#include "CppText/UDisTweaks_UsableObject.h"
 };
 
 // DishonoredGame.DisTweaks_Armor: retail sizeof 192, reflected span 140..192 (2012 PDB sizeof 192)
@@ -14221,6 +14230,7 @@ public:
     //## END PROPS DisTweaks_DefenceTower
 
     DECLARE_CLASS(UDisTweaks_DefenceTower,UDisTweaksBase,0,DishonoredGame)
+#include "CppText/UDisTweaks_DefenceTower.h"
 };
 
 // DishonoredGame.DisTweaks_DetectionEye: retail sizeof 224, reflected span 140..221 (2012 PDB sizeof 224)
@@ -16078,10 +16088,9 @@ public:
     TArrayNoInit<FDisAmbientSound> m_RegisteredAmbientSounds;
     //## END PROPS DishonoredAudioSystem
 
-    virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDishonoredAudioSystem::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_CLASS(UDishonoredAudioSystem,UAudioSystem,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Game");}
+#include "CppText/UDishonoredAudioSystem.h"
 };
 
 // DishonoredGame.DishonoredBarkManager: retail sizeof 196, reflected span 81..196 (2012 PDB sizeof 196)
@@ -16380,6 +16389,7 @@ public:
 
     DECLARE_CLASS(UDishonoredGlobalAIManager,UObject,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("AI");}
+#include "CppText/UDishonoredGlobalAIManager.h"
 };
 
 // DishonoredGame.DishonoredPlayerSkeletalComponent: retail sizeof 1120, reflected span 1100..1120 (2012 PDB sizeof 1088)

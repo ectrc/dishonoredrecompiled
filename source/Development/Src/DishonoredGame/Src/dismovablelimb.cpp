@@ -59,3 +59,14 @@
 //   0x6aa330  private: virtual unsigned int __thiscall ADisMovableLimb::AttemptInteract_Derived(class ADishonoredPawn *, unsigned int &)
 //   0x6ac700  public: static class UClass * __cdecl ADisMovableLimb::GetPrivateStaticClassADisMovableLimb(wchar_t const *)
 //   0x6ad8a0  public: static class UClass * __cdecl ADisMovableLimb::StaticClassNoInline(void)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x642c30 (2012 0x6910d0, same shape): AActor::Serialize, then the relationship overrides
+void ADisMovableLimb::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	DisSerializeRelationshipOverrideInfo( m_RelationshipOverrideInfo, Ar );
+}

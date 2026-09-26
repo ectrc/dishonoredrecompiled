@@ -43,3 +43,18 @@
 //   0x65ec40  public: virtual void __thiscall ADisDefenceTower::OnBatteryPlugged(void)
 //   0x65ed60  public: virtual void __thiscall ADisDefenceTower::OnBatteryUnplugged(void)
 //   0x65f6a0  public: virtual unsigned int __thiscall ADisDefenceTower::Tick(float, enum ELevelTick)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x6208a0 (2012 0x646bb0, same bytes): tweak versions up to 3 loaded in the game (not a class
+// default, not a commandlet) get their guard faction appended to the friendly factions
+void UDisTweaks_DefenceTower::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( m_VersionNum <= 3 && Ar.IsLoading() && !HasAnyFlags( RF_ClassDefaultObject ) && !GIsUCC )
+	{
+		m_FriendlyFactions.AddItem( m_pGuardFaction );
+	}
+}

@@ -1058,6 +1058,7 @@ public:
 
     DECLARE_CLASS(UDishonoredInventory,UObject,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Item");}
+#include "CppText/UDishonoredInventory.h"
 };
 
 // DishonoredGame.DishonoredInventoryItemPostUpdateTickComponent: retail sizeof 84, reflected span 81..84 (2012 PDB sizeof 84)

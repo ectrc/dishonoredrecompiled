@@ -5406,7 +5406,10 @@ void USkeletalMeshComponent::SetAnimTreeTemplate(UAnimTree* NewTemplate)
 
 	// Let our own know that we've updated our AnimTree, if it needs to update any node caching information
 	AActor* Owner = GetOwner();
-	if( Owner )
+	// DISHONORED(retail): the retail Actor script has no AnimTreeUpdated event (script_classes_2013.json), so the 2013
+	// skeletal component cannot raise it; the reference call aborts in FindFunctionChecked (agent AJ snapshot patch,
+	// hand-over to the Engine owner)
+	if( Owner && Owner->FindFunction( FName(TEXT("AnimTreeUpdated")) ) )
 	{
 		Owner->eventAnimTreeUpdated(this);
 	}
@@ -5637,7 +5640,10 @@ void USkeletalMeshComponent::InitAnimTree(UBOOL bForceReInit)
 		}
 
 		// if there's an Owner, notify it that our AnimTree was initialized so it can cache references to controllers and such
-		if( Tree != NULL && Owner != NULL )
+		// DISHONORED(retail): the retail Actor script has no PostInitAnimTree event (script_classes_2013.json), so the 2013
+		// skeletal component cannot raise it; the reference call aborts in FindFunctionChecked (agent AJ snapshot patch,
+		// hand-over to the Engine owner)
+		if( Tree != NULL && Owner != NULL && Owner->FindFunction( FName(TEXT("PostInitAnimTree")) ) )
 		{
 			INITANIM_CUSTOM(NAME_PostInitAnimTree);
 			Owner->eventPostInitAnimTree(this);

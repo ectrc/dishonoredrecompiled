@@ -378,26 +378,6 @@ void ADishonoredPawn::execCrushedBy_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execCrushedBy_Native);
 }
-void ADishonoredPawn::execOnModifyElixirCount( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnModifyElixirCount);
-}
-void ADishonoredPawn::execOnGetAbstractItemQuantity( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnGetAbstractItemQuantity);
-}
-void ADishonoredPawn::execOnRemoveAbstractItem( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnRemoveAbstractItem);
-}
-void ADishonoredPawn::execOnAddAbstractItem( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnAddAbstractItem);
-}
-void ADishonoredPawn::execOnModifyAmmo( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnModifyAmmo);
-}
 void ADishonoredPawn::execOnEquipItemType( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnEquipItemType);
@@ -417,14 +397,6 @@ void ADishonoredPawn::execOnTeleport_Native( FFrame& Stack, RESULT_DECL )
 void ADishonoredPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execLanded_Native);
-}
-void ADishonoredPawn::execChooseAndTriggerDeathEvent_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execChooseAndTriggerDeathEvent_Native);
-}
-void ADishonoredPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execPlayDying_Native);
 }
 void ADishonoredPawn::execTakeFallingDamage_Native( FFrame& Stack, RESULT_DECL )
 {

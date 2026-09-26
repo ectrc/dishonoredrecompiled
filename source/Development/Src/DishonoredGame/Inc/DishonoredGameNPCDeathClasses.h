@@ -110,6 +110,7 @@ public:
     //## END PROPS DisMovableLimb
 
     DECLARE_CLASS(ADisMovableLimb,ADishonoredKAsset,0,DishonoredGame)
+#include "CppText/ADisMovableLimb.h"
 };
 
 // DishonoredGame.DisTweaks_StatePlayerCarryCorpseIdle.DisCarryCorpseAnimTreeSyncInfo: retail SDK size 12 (2012 PDB 12)

@@ -62,3 +62,14 @@
 //   0x687100  public: virtual void __thiscall ADisWatchTower::TakeDamage_Native(int &, class AController *, class FVector, class FVector &, class UClass *, struct FTraceHitInfo, class AActor *)
 //   0x68ae90  public: virtual unsigned int __thiscall ADisWatchTower::Tick(float, enum ELevelTick)
 //   0x68ffb0  public: void __thiscall ADisWatchTower::SwitchPolarity(void)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x6195c0 (2012 0x66a4d0, same bytes; diswatchtower.cpp:107)
+void ADisWatchTower::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	DisSerializeRelationshipOverrideInfo( m_PersonalRelationships, Ar );
+}

@@ -21,3 +21,19 @@
 //   0x7a0510  public: virtual int __thiscall ADisProjectile_Grenade::InteractDTraceFlag(void)const
 //   0x7a0610  public: static class UClass * __cdecl UDisAIBlackboard::GetPrivateStaticClassUDisAIBlackboard(wchar_t const *)
 //   0x7a1f20  public: static class UClass * __cdecl UDisAIBlackboard::StaticClassNoInline(void)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x72ffc0 (2012 0x792c30): memory counting reports the object and every record
+// (FAIBlackboardRecord::GetSize + GetExtraSize, vtable +36/+40).
+// DISHONORED(bringup): the native record classes are not ported (m_Records holds FPointers), so only the object is counted.
+void UDisAIBlackboard::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( Ar.IsCountingMemory() )
+	{
+		Ar.CountBytes( sizeof(UDisAIBlackboard), sizeof(UDisAIBlackboard) );
+	}
+}

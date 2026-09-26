@@ -97,3 +97,22 @@
 //   0x68fe70  public: void __thiscall ADishonoredUsableObject::HandleTransitionComplete(float)
 //   0x690590  public: virtual unsigned int __thiscall ADishonoredUsableObject::AttemptInteract_Derived(class ADishonoredPawn *, unsigned int &)
 //   0x6905c0  public: virtual unsigned int __thiscall ADishonoredUsableObject::Tick(float, enum ELevelTick)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x64e170 (2012 0x671590): licensee versions below 29 fold the deprecated
+// m_bUsableWhileCarryingCorpse into m_bUsableWhileCarryingSomething, fallback skip included
+void UDisTweaks_UsableObject::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( Ar.LicenseeVer() < 29 )
+	{
+		m_bUsableWhileCarryingSomething = m_bUsableWhileCarryingCorpse;
+		if( FindFallbackSkip( TEXT("m_bUsableWhileCarryingCorpse") ) != INDEX_NONE )
+		{
+			SkipFallback( FName( TEXT("m_bUsableWhileCarryingSomething") ) );
+		}
+	}
+}

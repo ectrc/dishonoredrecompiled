@@ -33,3 +33,21 @@
 //   0x8d1d50  public: void __thiscall UDishonoredGlobalAIManager::Init_GlobalAI(void)
 //   0x8d1dd0  public: void __thiscall UDishonoredGlobalAIManager::Tick_GlobalAI(float)
 //   0x8d41c0  public: static class UClass * __cdecl UDishonoredGlobalAIManager::StaticClassNoInline(void)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x860430 (2012 0x8cecd0, same bytes): object reference collectors see the corpse map (retail
+// serializes the whole TMap; the values are plain data, so the pawn keys are what a collector gets)
+void UDishonoredGlobalAIManager::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( Ar.IsObjectReferenceCollector() )
+	{
+		for( TMap<ADishonoredNPCPawn*,FGlobalCorpseInfo>::TIterator It( m_Corpses ); It; ++It )
+		{
+			Ar << (UObject*&)It.Key();
+		}
+	}
+}

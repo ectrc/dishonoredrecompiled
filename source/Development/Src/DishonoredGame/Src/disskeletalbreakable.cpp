@@ -38,3 +38,19 @@
 //   0x684bc0  protected: virtual unsigned int __thiscall UDisTweaks_SkeletalBreakable::FixupDefaults_Derived(void)
 //   0x684bf0  public: void __thiscall ADisSkeletalBreakable::OnBrokenTransferSkeletalMesh(int, int, class FVector const &, class FVector const &, class AActor *, class USkeletalMeshComponent *)
 //   0x689c90  public: virtual void __thiscall ADisSkeletalBreakable::OnBroken(int, int, class FVector const &, class FVector const &, class AActor *, class UClass const *)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x618c30 (2012 0x669cd0): licensee versions below 24 upgrade m_pBreakSteps through a
+// UDisSkeletalBreakStepsInterface virtual (2013 slot +328). The retail cooked content is licensee 30 (UnObjVer.cpp), so the
+// branch is never taken; the step-interface virtual is not ported.
+void UDisTweaks_SkeletalBreakable::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( Ar.LicenseeVer() < 24 )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s: licensee version %d break-step upgrade not ported"), *GetPathName(), Ar.LicenseeVer() );
+	}
+}

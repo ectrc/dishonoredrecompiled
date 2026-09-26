@@ -33,3 +33,20 @@
 //   0x662230  protected: void __thiscall ADishonoredBreakable::DoExplosion(int)
 //   0x662450  protected: void __thiscall ADishonoredBreakable::UpdateBreakingStep(void)
 //   0x662df0  public: virtual unsigned int __thiscall ADishonoredBreakable::Tick(float, enum ELevelTick)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x6209a0 (2012 0x646c00): licensee versions below 24 reset every step's AI noise context to 4
+void UDisTweaks_StaticBreakable::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( Ar.LicenseeVer() < 24 )
+	{
+		for( INT Index = 0; Index < m_Steps.Num(); Index++ )
+		{
+			m_Steps(Index).m_AINoiseContext = 4;
+		}
+	}
+}

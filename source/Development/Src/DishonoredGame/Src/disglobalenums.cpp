@@ -17,3 +17,21 @@
 //   0x89fc80  public: void __thiscall FDisRelationshipOverrideInfo::GameSave(class FArchive &, enum ESaveLoadLocation)
 //   0x89fef0  public: void __thiscall FDisRelationshipOverrideInfo::GameLoad(class FArchive &, enum ESaveLoadLocation)
 //   0x8a0670  public: unsigned int __thiscall FDisRelationshipOverrideInfo::OverrideFactionRelationship(class UDisTweaks_Faction const &, enum ERelationship)
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): FDisRelationshipOverrideInfo::Serialize 2013 rva 0x85e3d0 (2012 0x89f900, disglobalenums.cpp:29): only
+// an object reference collector sees the faction keys of m_FactionOverrideMap (the individual map holds interface pointers)
+void DisSerializeRelationshipOverrideInfo( FDisRelationshipOverrideInfo& Info, FArchive& Ar )
+{
+	if( !Ar.IsObjectReferenceCollector() )
+	{
+		return;
+	}
+	for( TMap<UDisTweaks_Faction*,ERelationship>::TIterator It( Info.m_FactionOverrideMap ); It; ++It )
+	{
+		Ar << (UObject*&)It.Key();
+	}
+}

@@ -1,0 +1,7 @@
+ADishonoredPawn::execChooseAndTriggerDeathEvent_Native
+ADishonoredPawn::execOnAddAbstractItem
+ADishonoredPawn::execOnGetAbstractItemQuantity
+ADishonoredPawn::execOnModifyAmmo
+ADishonoredPawn::execOnModifyElixirCount
+ADishonoredPawn::execOnRemoveAbstractItem
+ADishonoredPawn::execPlayDying_Native

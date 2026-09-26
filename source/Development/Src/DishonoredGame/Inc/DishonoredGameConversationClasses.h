@@ -1981,6 +1981,7 @@ public:
     //## END PROPS DisDialogTree
 
     DECLARE_CLASS(UDisDialogTree,UDisConversation,0,DishonoredGame)
+#include "CppText/UDisDialogTree.h"
 };
 
 // DishonoredGame.DisDialogTree_InGameBind: retail sizeof 324, reflected span 56..324 (2012 PDB sizeof 324)

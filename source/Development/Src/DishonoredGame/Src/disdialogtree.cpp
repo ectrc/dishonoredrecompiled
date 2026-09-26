@@ -22,3 +22,17 @@
 //   0x914190  public: virtual void __thiscall UDisDialogTree::InitNode(class UDisConversation *, unsigned int, unsigned int)
 //   0x914910  public: static class UClass * __cdecl UDisDialogTree_OneShot::StaticClassNoInline(void)
 //   0xbaae70  _dynamic_initializer_for__g_DialogHookInfo__
+
+// ---- agent AJ ports ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(written): 2013 rva 0x88b210 (2012 0x8f97f0): a real save (not a transaction) clears the resave request
+void UDisDialogTree::Serialize( FArchive& Ar )
+{
+	Super::Serialize( Ar );
+	if( Ar.IsSaving() && !Ar.IsTransacting() )
+	{
+		m_bNeedsResaving = FALSE;
+	}
+}

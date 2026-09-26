@@ -6017,17 +6017,6 @@ enum ELookAtFilter
     op(ELAF_Eyes) \
     op(ELAF_Head) \
     op(ELAF_Torso) 
-enum ELookAtInfluence
-{
-    ELAI_Eyes               =0,
-    ELAI_Head               =1,
-    ELAI_Torso              =2,
-    ELAI_MAX                =3,
-};
-#define FOREACH_ENUM_ELOOKATINFLUENCE(op) \
-    op(ELAI_Eyes) \
-    op(ELAI_Head) \
-    op(ELAI_Torso) 
 enum EMatineeFireWeaponType
 {
     MFWT_Pistol             =0,
@@ -6059,17 +6048,6 @@ enum EMovableWeightClass
     op(MWC_Small) \
     op(MWC_Medium) \
     op(MWC_Large) 
-enum ENPCControlTargetType
-{
-    ENCTT_Player            =0,
-    ENCTT_Self              =1,
-    ENCTT_Target            =2,
-    ENCTT_MAX               =3,
-};
-#define FOREACH_ENUM_ENPCCONTROLTARGETTYPE(op) \
-    op(ENCTT_Player) \
-    op(ENCTT_Self) \
-    op(ENCTT_Target) 
 enum ENPCDoTeleportSpellInputEnum
 {
     NPCDoTeleportSpellInput_Start=0,
@@ -6580,23 +6558,6 @@ enum ESoireeEvent
     op(ESE_Start) \
     op(ESE_Break) \
     op(ESE_Stop) 
-enum ESoireeMarkers
-{
-    SMK_Accent              =0,
-    SMK_Apex                =1,
-    SMK_Loop                =2,
-    SMK_End                 =3,
-    SMK_In                  =4,
-    SMK_Out                 =5,
-    SMK_MAX                 =6,
-};
-#define FOREACH_ENUM_ESOIREEMARKERS(op) \
-    op(SMK_Accent) \
-    op(SMK_Apex) \
-    op(SMK_Loop) \
-    op(SMK_End) \
-    op(SMK_In) \
-    op(SMK_Out) 
 enum ESpeakerConfigurationProfile
 {
     SpeakerConfiguration_Auto=0,
@@ -6871,15 +6832,6 @@ enum KeyAttachmentType
 #define FOREACH_ENUM_KEYATTACHMENTTYPE(op) \
     op(EKAT_Attach) \
     op(EKAT_Detach) 
-enum KeyLocomotionModifier
-{
-    EKLM_Empty              =0,
-    EKLM_Sword              =1,
-    EKLM_MAX                =2,
-};
-#define FOREACH_ENUM_KEYLOCOMOTIONMODIFIER(op) \
-    op(EKLM_Empty) \
-    op(EKLM_Sword) 
 enum eAIGetBrainFlagOutputs
 {
     GBFOUTPUT_FALSE         =0,
@@ -9934,9 +9886,6 @@ class IDisVisSettingsUserInterface;
 class IDisVulnerabilityInterface;
 class IDisWhaleOilConsumerInterface;
 class UActorFactoryTargetPoint;
-class UAkBank;
-class UAkBaseSoundObject;
-class UAkEvent;
 class UAnimNotify_AkEvent;
 class UAnimNotify_SoireeAccent;
 class UAnimNotify_SoireeApex;
@@ -9953,7 +9902,6 @@ class UArkAnimNodeRat;
 class UArkAnimNodeStack;
 class UArkAvoidable;
 class UArkBinkOverlayManager;
-class UArkComponentContainer;
 class UArkComponentLocomotionConfig;
 class UArkComponentLookatConfig;
 class UArkDLCManagementBridge;
@@ -9972,7 +9920,6 @@ class UArkPpSettings;
 class UArkProfileSettings;
 class UArkSeqAct_ChangePylonConnection;
 class UAudioPropagationInfo;
-class UAudioSystem;
 class UDEPRECATED_DisContactType_Env_Foliage;
 class UDEPRECATED_DisDLC06SeqAct_EndGame;
 class UDebugManager;
@@ -11575,26 +11522,12 @@ class UInterpTrackAttachment;
 class UInterpTrackAttachmentKeyProperties;
 class UInterpTrackDialog;
 class UInterpTrackDialogKeyProperties;
-class UInterpTrackFaceTo;
-class UInterpTrackFaceToKeyProperties;
 class UInterpTrackInstAIControl;
 class UInterpTrackInstAttachment;
 class UInterpTrackInstDialog;
-class UInterpTrackInstFaceTo;
-class UInterpTrackInstLocomotion;
-class UInterpTrackInstLookAt;
 class UInterpTrackInstSoireeControl;
-class UInterpTrackInstStretchAnimControl;
-class UInterpTrackKeyProperties;
-class UInterpTrackLocomotion;
-class UInterpTrackLocomotionKeyProperties;
-class UInterpTrackLookAt;
-class UInterpTrackLookAtKeyProperties;
 class UInterpTrackSoireeControl;
 class UInterpTrackSoireeControlKeyProperties;
-class UInterpTrackStretchAnimControl;
-class UInterpTrackStretchAnimKeyProperties;
-class UMatineeData;
 class UNaturalVoiceEnums;
 class UParticleModuleTypeDataDecal;
 class UParticleStaticMeshComponent;
@@ -11731,6 +11664,7 @@ protected:
     virtual ~IDisEngineTweaksInterface() {}
 public:
     typedef UDisEngineTweaksInterface UClassType;
+#include "CppText/IDisEngineTweaksInterface.h"
 };
 
 // Core.Object.Double: retail SDK size 8 [shim: Core package]
@@ -12675,39 +12609,6 @@ struct FEdgeAnimGenerationParameters
     }
 };
 
-// Engine.MatineeData.EditorMatineeData: retail SDK size 40 (2012 PDB 40) [shim: Engine package]
-struct FEditorMatineeData
-{
-    class UInterpCurveEdSetup* CurveEdSetup;
-    TArrayNoInit<class UInterpFilter*> InterpFilters;
-    class UInterpFilter* SelectedFilter;
-    TArrayNoInit<class UInterpFilter*> DefaultFilters;
-    FLOAT EdSectionStart;
-    FLOAT EdSectionEnd;
-
-    /** Constructors */
-    FEditorMatineeData() {}
-    FEditorMatineeData(EEventParm)
-    {
-        appMemzero(this, sizeof(FEditorMatineeData));
-    }
-};
-
-// Engine.InterpTrackFaceTo.FaceToControlTrackKey: retail SDK size 12 (2012 PDB 12) [shim: Engine package]
-struct FFaceToControlTrackKey
-{
-    FLOAT StartTime;
-    FLOAT KeyLength;
-    class UInterpTrackFaceToKeyProperties* Properties;
-
-    /** Constructors */
-    FFaceToControlTrackKey() {}
-    FFaceToControlTrackKey(EEventParm)
-    {
-        appMemzero(this, sizeof(FFaceToControlTrackKey));
-    }
-};
-
 // Engine.ArkPpNodeAA.FxAaConfig: retail SDK size 16 (2012 PDB 16) [shim: Engine package]
 struct FFxAaConfig
 {
@@ -12719,37 +12620,6 @@ struct FFxAaConfig
     FFxAaConfig(EEventParm)
     {
         appMemzero(this, sizeof(FFxAaConfig));
-    }
-};
-
-// Engine.InterpTrackLocomotion.LocomotionControlTrackKey: retail SDK size 12 (2012 PDB 12) [shim: Engine package]
-struct FLocomotionControlTrackKey
-{
-    FLOAT StartTime;
-    FLOAT KeyLength;
-    class UInterpTrackLocomotionKeyProperties* Properties;
-
-    /** Constructors */
-    FLocomotionControlTrackKey() {}
-    FLocomotionControlTrackKey(EEventParm)
-    {
-        appMemzero(this, sizeof(FLocomotionControlTrackKey));
-    }
-};
-
-// Engine.InterpTrackLookAt.LookAtControlTrackKey: retail SDK size 16 (2012 PDB 16) [shim: Engine package]
-struct FLookAtControlTrackKey
-{
-    FLOAT StartTime;
-    FLOAT KeyLength;
-    class UInterpGroup* Target;
-    class UInterpTrackLookAtKeyProperties* Properties;
-
-    /** Constructors */
-    FLookAtControlTrackKey() {}
-    FLookAtControlTrackKey(EEventParm)
-    {
-        appMemzero(this, sizeof(FLookAtControlTrackKey));
     }
 };
 
@@ -12869,23 +12739,6 @@ struct FRadialBlurConfig
     }
 };
 
-// Engine.MatineeData.RuntimeMatineeData: retail SDK size 40 (2012 PDB 40) [shim: Engine package]
-struct FRuntimeMatineeData
-{
-    TArrayNoInit<class UInterpGroup*> InterpGroups;
-    FLOAT InterpLength;
-    FLOAT PathBuildTime;
-    BITFIELD bShouldBakeAndPrune:1;
-    FGuid m_ConversationNodeGUID;
-
-    /** Constructors */
-    FRuntimeMatineeData() {}
-    FRuntimeMatineeData(EEventParm)
-    {
-        appMemzero(this, sizeof(FRuntimeMatineeData));
-    }
-};
-
 // Engine.InterpTrackInstSoireeControl.SoireeControlKeyStatus: retail SDK size 8 (2012 PDB 8) [shim: Engine package]
 struct FSoireeControlKeyStatus
 {
@@ -12912,26 +12765,6 @@ struct FSoireeControlTrackKey
     FSoireeControlTrackKey(EEventParm)
     {
         appMemzero(this, sizeof(FSoireeControlTrackKey));
-    }
-};
-
-// Engine.InterpTrackStretchAnimControl.StretchAnimControlTrackKey: retail SDK size 56 (2012 PDB 56) [shim: Engine package]
-struct FStretchAnimControlTrackKey
-{
-    FLOAT StartTime;
-    FName AnimSeqName;
-    FLOAT AnimStartOffset;
-    FLOAT AnimEndOffset;
-    FLOAT AnimPlayRate;
-    BITFIELD bReverse:1;
-    FLOAT SoireeOffsets[6];
-    class UInterpTrackStretchAnimKeyProperties* Properties;
-
-    /** Constructors */
-    FStretchAnimControlTrackKey() {}
-    FStretchAnimControlTrackKey(EEventParm)
-    {
-        appMemzero(this, sizeof(FStretchAnimControlTrackKey));
     }
 };
 
@@ -12963,43 +12796,6 @@ public:
     //## END PROPS ActorFactoryTargetPoint
 
     DECLARE_CLASS(UActorFactoryTargetPoint,UActorFactory,0|CLASS_Config,Engine)
-};
-
-// Engine.AkBank: retail sizeof 64, reflected span 56..64 (2012 PDB sizeof 64) [shim: Engine package]
-class UAkBank : public UObject
-{
-public:
-    //## BEGIN PROPS AkBank
-    INT m_AkPackageID;
-    BITFIELD AutoLoad:1;
-    BITFIELD GenerateDefinition:1;
-    BITFIELD AutoGenerated:1;
-    //## END PROPS AkBank
-
-    DECLARE_CLASS(UAkBank,UObject,0,Engine)
-};
-
-// Engine.AkBaseSoundObject: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
-class UAkBaseSoundObject : public UObject
-{
-public:
-    //## BEGIN PROPS AkBaseSoundObject
-    //## END PROPS AkBaseSoundObject
-
-    DECLARE_ABSTRACT_CLASS(UAkBaseSoundObject,UObject,0,Engine)
-};
-
-// Engine.AkEvent: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68) [shim: Engine package]
-class UAkEvent : public UAkBaseSoundObject
-{
-public:
-    //## BEGIN PROPS AkEvent
-    class UAkBank* RequiredBank;
-    FLOAT m_fMaxRadius;
-    INT m_akID;
-    //## END PROPS AkEvent
-
-    DECLARE_CLASS(UAkEvent,UAkBaseSoundObject,0,Engine)
 };
 
 // Engine.AnimNotify_AkEvent: retail sizeof 84, reflected span 60..84 (2012 PDB sizeof 84) [shim: Engine package]
@@ -13295,17 +13091,6 @@ public:
 
     DECLARE_CLASS(UArkBinkOverlayManager,UObject,0,Engine)
 #include "CppText/UArkBinkOverlayManager.h"
-};
-
-// Engine.ArkComponentContainer: retail sizeof 96, reflected span 81..96 (2012 PDB sizeof 96) [shim: Engine package]
-class UArkComponentContainer : public UActorComponent
-{
-public:
-    //## BEGIN PROPS ArkComponentContainer
-    TArrayNoInit<FPointer> m_Components;
-    //## END PROPS ArkComponentContainer
-
-    DECLARE_CLASS(UArkComponentContainer,UActorComponent,0,Engine)
 };
 
 // Engine.ArkComponentLocomotionConfig: retail sizeof 336, reflected span 56..336 (2012 PDB sizeof 332) [shim: Engine package]
@@ -13626,16 +13411,6 @@ public:
     DECLARE_ABSTRACT_CLASS(UAudioPropagationInfo,UObject,0,Engine)
 };
 
-// Engine.AudioSystem: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
-class UAudioSystem : public UObject
-{
-public:
-    //## BEGIN PROPS AudioSystem
-    //## END PROPS AudioSystem
-
-    DECLARE_ABSTRACT_CLASS(UAudioSystem,UObject,0,Engine)
-};
-
 // Engine.DebugManager: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60) [shim: Engine package]
 class UDebugManager : public UObject
 {
@@ -13709,16 +13484,6 @@ public:
     //## END PROPS DisOnlineLeaderboards
 
     DECLARE_ABSTRACT_CLASS(UDisOnlineLeaderboards,UObject,0,Engine)
-};
-
-// Engine.InterpTrackKeyProperties: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
-class UInterpTrackKeyProperties : public UObject
-{
-public:
-    //## BEGIN PROPS InterpTrackKeyProperties
-    //## END PROPS InterpTrackKeyProperties
-
-    DECLARE_CLASS(UInterpTrackKeyProperties,UObject,0,Engine)
 };
 
 // GameFramework.GameCrowdSpawner: retail sizeof 204, reflected span 56..204 (2012 PDB sizeof 204) [shim: GameFramework package]
@@ -13927,31 +13692,6 @@ public:
     DECLARE_CLASS(UInterpTrackAttachmentKeyProperties,UInterpTrackKeyProperties,0,Engine)
 };
 
-// Engine.InterpTrackFaceTo: retail sizeof 156, reflected span 144..156 (2012 PDB sizeof 156) [shim: Engine package]
-class UInterpTrackFaceTo : public UInterpTrackFloatBase
-{
-public:
-    //## BEGIN PROPS InterpTrackFaceTo
-    TArrayNoInit<FFaceToControlTrackKey> FaceToKeys;
-    //## END PROPS InterpTrackFaceTo
-
-    DECLARE_CLASS(UInterpTrackFaceTo,UInterpTrackFloatBase,0,Engine)
-};
-
-// Engine.InterpTrackFaceToKeyProperties: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76) [shim: Engine package]
-class UInterpTrackFaceToKeyProperties : public UInterpTrackKeyProperties
-{
-public:
-    //## BEGIN PROPS InterpTrackFaceToKeyProperties
-    BYTE m_TargetType;
-    FName m_TargetName;
-    BITFIELD m_bAllowProceduralRotation:1;
-    class UInterpGroup* m_Target;
-    //## END PROPS InterpTrackFaceToKeyProperties
-
-    DECLARE_CLASS(UInterpTrackFaceToKeyProperties,UInterpTrackKeyProperties,0,Engine)
-};
-
 // Engine.InterpTrackInstAIControl: retail sizeof 68, reflected span 64..68 (2012 PDB sizeof 68) [shim: Engine package]
 class UInterpTrackInstAIControl : public UInterpTrackInst
 {
@@ -13977,49 +13717,6 @@ public:
     DECLARE_CLASS(UInterpTrackInstAttachment,UInterpTrackInst,0,Engine)
 };
 
-// Engine.InterpTrackInstFaceTo: retail sizeof 72, reflected span 64..72 (2012 PDB sizeof 72) [shim: Engine package]
-class UInterpTrackInstFaceTo : public UInterpTrackInst
-{
-public:
-    //## BEGIN PROPS InterpTrackInstFaceTo
-    INT m_iLastKeyStarted;
-    INT m_iLastRequestID;
-    //## END PROPS InterpTrackInstFaceTo
-
-    DECLARE_CLASS(UInterpTrackInstFaceTo,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackInstLocomotion: retail sizeof 208, reflected span 64..196 (2012 PDB sizeof 208) [shim: Engine package]
-class UInterpTrackInstLocomotion : public UInterpTrackInst
-{
-public:
-    //## BEGIN PROPS InterpTrackInstLocomotion
-    FVector ResetLocation;
-    FRotator ResetRotation;
-    FMatrix InitialTM;
-    FQuat InitialQuat;
-    INT m_CurrentGoalKeyIndex;
-    INT m_LastReachedGoalKeyIndex;
-    FLOAT m_LastPosition;
-    INT m_iCurrentLocoRequestId;
-    INT m_iPendingStopLocoRequestId;
-    //## END PROPS InterpTrackInstLocomotion
-
-    DECLARE_CLASS(UInterpTrackInstLocomotion,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackInstLookAt: retail sizeof 72, reflected span 64..72 (2012 PDB sizeof 72) [shim: Engine package]
-class UInterpTrackInstLookAt : public UInterpTrackInst
-{
-public:
-    //## BEGIN PROPS InterpTrackInstLookAt
-    FLOAT LastUpdate;
-    INT LastReachedGoalIndex;
-    //## END PROPS InterpTrackInstLookAt
-
-    DECLARE_CLASS(UInterpTrackInstLookAt,UInterpTrackInst,0,Engine)
-};
-
 // Engine.InterpTrackInstSoireeControl: retail sizeof 88, reflected span 64..88 (2012 PDB sizeof 88) [shim: Engine package]
 class UInterpTrackInstSoireeControl : public UInterpTrackInst
 {
@@ -14032,86 +13729,6 @@ public:
     //## END PROPS InterpTrackInstSoireeControl
 
     DECLARE_CLASS(UInterpTrackInstSoireeControl,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackInstStretchAnimControl: retail sizeof 100, reflected span 64..100 (2012 PDB sizeof 92) [shim: Engine package]
-class UInterpTrackInstStretchAnimControl : public UInterpTrackInst
-{
-public:
-    //## BEGIN PROPS InterpTrackInstStretchAnimControl
-    FLOAT LastUpdatePosition;
-    FLOAT OffsetForLoopWhileSyncing;
-    BITFIELD bAnimIsLooping:1;
-    FLOAT LoopStart;
-    FLOAT LoopEnd;
-    INT m_ChannelIndex;
-    INT m_iPreviousKeyIndex;
-    FLOAT m_fCurrentAnimPosition;
-    FLOAT m_fBackupAnimPosition;
-    //## END PROPS InterpTrackInstStretchAnimControl
-
-    DECLARE_CLASS(UInterpTrackInstStretchAnimControl,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackLocomotion: retail sizeof 172, reflected span 144..172 (2012 PDB sizeof 172) [shim: Engine package]
-class UInterpTrackLocomotion : public UInterpTrackFloatBase
-{
-public:
-    //## BEGIN PROPS InterpTrackLocomotion
-    TArrayNoInit<class UAnimSet*> AnimSets;
-    TArrayNoInit<FLocomotionControlTrackKey> LocoKeys;
-    BITFIELD bEnableRootMotion:1;
-    //## END PROPS InterpTrackLocomotion
-
-    DECLARE_CLASS(UInterpTrackLocomotion,UInterpTrackFloatBase,0,Engine)
-};
-
-// Engine.InterpTrackLocomotionKeyProperties: retail sizeof 104, reflected span 56..104 (2012 PDB sizeof 104) [shim: Engine package]
-class UInterpTrackLocomotionKeyProperties : public UInterpTrackKeyProperties
-{
-public:
-    //## BEGIN PROPS InterpTrackLocomotionKeyProperties
-    BITFIELD WaitForGoalReached:1;
-    BITFIELD m_bStopLocoRequestAtEnd:1;
-    BITFIELD m_bAcurateStop:1;
-    INT m_iSpeedIdxNumber;
-    FName m_SpeedIdxName;
-    FName m_TargetName;
-    class UInterpGroup* m_Target;
-    BYTE m_Modifier;
-    FLOAT m_fTargetStopDistance;
-    INT m_iEndSpeedIdxNumber;
-    FName m_EndSpeedIdxName;
-    //## END PROPS InterpTrackLocomotionKeyProperties
-
-    DECLARE_CLASS(UInterpTrackLocomotionKeyProperties,UInterpTrackKeyProperties,0,Engine)
-};
-
-// Engine.InterpTrackLookAt: retail sizeof 156, reflected span 144..156 (2012 PDB sizeof 156) [shim: Engine package]
-class UInterpTrackLookAt : public UInterpTrackFloatBase
-{
-public:
-    //## BEGIN PROPS InterpTrackLookAt
-    TArrayNoInit<FLookAtControlTrackKey> LookAtKeys;
-    //## END PROPS InterpTrackLookAt
-
-    DECLARE_CLASS(UInterpTrackLookAt,UInterpTrackFloatBase,0,Engine)
-};
-
-// Engine.InterpTrackLookAtKeyProperties: retail sizeof 84, reflected span 56..84 (2012 PDB sizeof 84) [shim: Engine package]
-class UInterpTrackLookAtKeyProperties : public UInterpTrackKeyProperties
-{
-public:
-    //## BEGIN PROPS InterpTrackLookAtKeyProperties
-    BYTE m_TargetType;
-    BYTE m_LookAtInfluence;
-    FName m_TargetName;
-    class UInterpGroup* m_Target;
-    FLOAT m_SpeedFactor;
-    FName m_BoneOrSocket;
-    //## END PROPS InterpTrackLookAtKeyProperties
-
-    DECLARE_CLASS(UInterpTrackLookAtKeyProperties,UInterpTrackKeyProperties,0,Engine)
 };
 
 // Engine.InterpTrackSoireeControl: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136) [shim: Engine package]
@@ -14140,46 +13757,6 @@ public:
     //## END PROPS InterpTrackSoireeControlKeyProperties
 
     DECLARE_CLASS(UInterpTrackSoireeControlKeyProperties,UInterpTrackKeyProperties,0,Engine)
-};
-
-// Engine.InterpTrackStretchAnimControl: retail sizeof 168, reflected span 144..168 (2012 PDB sizeof 164) [shim: Engine package]
-class UInterpTrackStretchAnimControl : public UInterpTrackFloatBase
-{
-public:
-    //## BEGIN PROPS InterpTrackStretchAnimControl
-    FName SlotName;
-    TArrayNoInit<FStretchAnimControlTrackKey> AnimSeqs;
-    BITFIELD m_bSpecialRootMotionExtract:1;
-    //## END PROPS InterpTrackStretchAnimControl
-
-    DECLARE_CLASS(UInterpTrackStretchAnimControl,UInterpTrackFloatBase,0,Engine)
-};
-
-// Engine.InterpTrackStretchAnimKeyProperties: retail sizeof 64, reflected span 56..64 (2012 PDB sizeof 64) [shim: Engine package]
-class UInterpTrackStretchAnimKeyProperties : public UInterpTrackKeyProperties
-{
-public:
-    //## BEGIN PROPS InterpTrackStretchAnimKeyProperties
-    BYTE m_MatineeRootMotionMode;
-    BYTE m_MeshTranslationMode;
-    BITFIELD m_bDisableCollision:1;
-    //## END PROPS InterpTrackStretchAnimKeyProperties
-
-    DECLARE_CLASS(UInterpTrackStretchAnimKeyProperties,UInterpTrackKeyProperties,0,Engine)
-};
-
-// Engine.MatineeData: retail sizeof 144, reflected span 56..144 (2012 PDB sizeof 144) [shim: Engine package]
-class UMatineeData : public UObject
-{
-public:
-    //## BEGIN PROPS MatineeData
-    FRuntimeMatineeData m_RunData;
-    FEditorMatineeData m_EdData;
-    INT m_iDataVersion;
-    BITFIELD m_bDataVersionIncremented:1;
-    //## END PROPS MatineeData
-
-    DECLARE_CLASS(UMatineeData,UObject,0|CLASS_NoExport,Engine)
 };
 
 // Engine.NaturalVoiceEnums: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
@@ -15197,9 +14774,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	ATrigger_LOS::StaticClass(); \
 	AWaterVolume::StaticClass(); \
 	UActorFactoryTargetPoint::StaticClass(); \
-	UAkBank::StaticClass(); \
-	UAkBaseSoundObject::StaticClass(); \
-	UAkEvent::StaticClass(); \
 	UAnimNotify_AkEvent::StaticClass(); \
 	UAnimNotify_SoireeAccent::StaticClass(); \
 	UAnimNotify_SoireeApex::StaticClass(); \
@@ -15218,7 +14792,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UArkAnimNodeStack::StaticClass(); \
 	UArkAvoidable::StaticClass(); \
 	UArkBinkOverlayManager::StaticClass(); \
-	UArkComponentContainer::StaticClass(); \
 	UArkComponentLocomotionConfig::StaticClass(); \
 	UArkComponentLookatConfig::StaticClass(); \
 	UArkDLCManagementBridge::StaticClass(); \
@@ -15238,14 +14811,12 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	GNativeLookupFuncs.Set(FName("ArkProfileSettings"), GDishonoredGameUArkProfileSettingsNatives); \
 	UArkSeqAct_ChangePylonConnection::StaticClass(); \
 	UAudioPropagationInfo::StaticClass(); \
-	UAudioSystem::StaticClass(); \
 	UDebugManager::StaticClass(); \
 	UDisEngineTweaksBase::StaticClass(); \
 	UDisFogComponent::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("DisFogComponent"), GDishonoredGameUDisFogComponentNatives); \
 	UDisFogDisplayComponent::StaticClass(); \
 	UDisOnlineLeaderboards::StaticClass(); \
-	UInterpTrackKeyProperties::StaticClass(); \
 	UGameCrowdSpawner::StaticClass(); \
 	UGameCrowd_ListOfAgents::StaticClass(); \
 	UGameDamageType::StaticClass(); \
@@ -15260,24 +14831,11 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UInterpTrackAkEventKeyProperties::StaticClass(); \
 	UInterpTrackAttachment::StaticClass(); \
 	UInterpTrackAttachmentKeyProperties::StaticClass(); \
-	UInterpTrackFaceTo::StaticClass(); \
-	UInterpTrackFaceToKeyProperties::StaticClass(); \
 	UInterpTrackInstAIControl::StaticClass(); \
 	UInterpTrackInstAttachment::StaticClass(); \
-	UInterpTrackInstFaceTo::StaticClass(); \
-	UInterpTrackInstLocomotion::StaticClass(); \
-	UInterpTrackInstLookAt::StaticClass(); \
 	UInterpTrackInstSoireeControl::StaticClass(); \
-	UInterpTrackInstStretchAnimControl::StaticClass(); \
-	UInterpTrackLocomotion::StaticClass(); \
-	UInterpTrackLocomotionKeyProperties::StaticClass(); \
-	UInterpTrackLookAt::StaticClass(); \
-	UInterpTrackLookAtKeyProperties::StaticClass(); \
 	UInterpTrackSoireeControl::StaticClass(); \
 	UInterpTrackSoireeControlKeyProperties::StaticClass(); \
-	UInterpTrackStretchAnimControl::StaticClass(); \
-	UInterpTrackStretchAnimKeyProperties::StaticClass(); \
-	UMatineeData::StaticClass(); \
 	UNaturalVoiceEnums::StaticClass(); \
 	UParticleModuleTypeDataDecal::StaticClass(); \
 	UParticleStaticMeshComponent::StaticClass(); \
@@ -15506,12 +15064,6 @@ VERIFY_CLASS_OFFSET_NODIE(AWaterVolume,WaterVolume,EntryActor)
 VERIFY_CLASS_OFFSET_NODIE(AWaterVolume,WaterVolume,ExitActor)
 VERIFY_CLASS_SIZE_NODIE(AWaterVolume)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryTargetPoint)
-VERIFY_CLASS_OFFSET_NODIE(UAkBank,AkBank,m_AkPackageID)
-VERIFY_CLASS_SIZE_NODIE(UAkBank)
-VERIFY_CLASS_SIZE_NODIE(UAkBaseSoundObject)
-VERIFY_CLASS_OFFSET_NODIE(UAkEvent,AkEvent,RequiredBank)
-VERIFY_CLASS_OFFSET_NODIE(UAkEvent,AkEvent,m_akID)
-VERIFY_CLASS_SIZE_NODIE(UAkEvent)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_AkEvent,AnimNotify_AkEvent,AkEvent)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_AkEvent,AnimNotify_AkEvent,PitchMultiplier)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_AkEvent)
@@ -15541,8 +15093,6 @@ VERIFY_CLASS_OFFSET_NODIE(UArkAvoidable,ArkAvoidable,m_Force)
 VERIFY_CLASS_OFFSET_NODIE(UArkAvoidable,ArkAvoidable,m_PropertyFlags)
 VERIFY_CLASS_SIZE_NODIE(UArkAvoidable)
 VERIFY_CLASS_SIZE_NODIE(UArkBinkOverlayManager)
-VERIFY_CLASS_OFFSET_NODIE(UArkComponentContainer,ArkComponentContainer,m_Components)
-VERIFY_CLASS_SIZE_NODIE(UArkComponentContainer)
 VERIFY_CLASS_OFFSET_NODIE(UArkComponentLocomotionConfig,ArkComponentLocomotionConfig,m_fRepathCoef)
 VERIFY_CLASS_OFFSET_NODIE(UArkComponentLocomotionConfig,ArkComponentLocomotionConfig,m_fReturnToNavMeshSpeed)
 VERIFY_CLASS_SIZE_NODIE(UArkComponentLocomotionConfig)
@@ -15586,7 +15136,6 @@ VERIFY_CLASS_OFFSET_NODIE(UArkProfileSettings,ArkProfileSettings,m_BindableKeyMa
 VERIFY_CLASS_SIZE_NODIE(UArkProfileSettings)
 VERIFY_CLASS_SIZE_NODIE(UArkSeqAct_ChangePylonConnection)
 VERIFY_CLASS_SIZE_NODIE(UAudioPropagationInfo)
-VERIFY_CLASS_SIZE_NODIE(UAudioSystem)
 VERIFY_CLASS_OFFSET_NODIE(UDebugManager,DebugManager,FirstColoredMip)
 VERIFY_CLASS_SIZE_NODIE(UDebugManager)
 VERIFY_CLASS_SIZE_NODIE(UDisEngineTweaksBase)
@@ -15595,7 +15144,6 @@ VERIFY_CLASS_OFFSET_NODIE(UDisFogComponent,DisFogComponent,m_WorldOrigin)
 VERIFY_CLASS_SIZE_NODIE(UDisFogComponent)
 VERIFY_CLASS_SIZE_NODIE(UDisFogDisplayComponent)
 VERIFY_CLASS_SIZE_NODIE(UDisOnlineLeaderboards)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackKeyProperties)
 VERIFY_CLASS_OFFSET_NODIE(UGameCrowdSpawner,GameCrowdSpawner,Settings)
 VERIFY_CLASS_OFFSET_NODIE(UGameCrowdSpawner,GameCrowdSpawner,m_pLightEnvironment)
 VERIFY_CLASS_SIZE_NODIE(UGameCrowdSpawner)
@@ -15632,56 +15180,19 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackAttachment)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachmentKeyProperties,InterpTrackAttachmentKeyProperties,m_KeyType)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachmentKeyProperties,InterpTrackAttachmentKeyProperties,m_AttachmentInfo)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackAttachmentKeyProperties)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackFaceTo,InterpTrackFaceTo,FaceToKeys)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackFaceTo)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackFaceToKeyProperties,InterpTrackFaceToKeyProperties,m_TargetType)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackFaceToKeyProperties,InterpTrackFaceToKeyProperties,m_Target)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackFaceToKeyProperties)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAIControl,InterpTrackInstAIControl,m_LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAIControl)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LocationBackup)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAttachment)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstFaceTo,InterpTrackInstFaceTo,m_iLastKeyStarted)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstFaceTo,InterpTrackInstFaceTo,m_iLastRequestID)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstFaceTo)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstLocomotion,InterpTrackInstLocomotion,ResetLocation)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstLocomotion,InterpTrackInstLocomotion,m_iPendingStopLocoRequestId)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstLocomotion)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstLookAt,InterpTrackInstLookAt,LastUpdate)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstLookAt,InterpTrackInstLookAt,LastReachedGoalIndex)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstLookAt)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstSoireeControl,InterpTrackInstSoireeControl,m_lKeysStatus)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstSoireeControl,InterpTrackInstSoireeControl,m_fCurrentPauseDuration)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstSoireeControl)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstStretchAnimControl,InterpTrackInstStretchAnimControl,LastUpdatePosition)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstStretchAnimControl,InterpTrackInstStretchAnimControl,m_fBackupAnimPosition)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstStretchAnimControl)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLocomotion,InterpTrackLocomotion,AnimSets)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLocomotion,InterpTrackLocomotion,LocoKeys)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackLocomotion)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLocomotionKeyProperties,InterpTrackLocomotionKeyProperties,m_iSpeedIdxNumber)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLocomotionKeyProperties,InterpTrackLocomotionKeyProperties,m_EndSpeedIdxName)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackLocomotionKeyProperties)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLookAt,InterpTrackLookAt,LookAtKeys)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackLookAt)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLookAtKeyProperties,InterpTrackLookAtKeyProperties,m_TargetType)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackLookAtKeyProperties,InterpTrackLookAtKeyProperties,m_BoneOrSocket)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackLookAtKeyProperties)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackSoireeControl,InterpTrackSoireeControl,SoireeControlKeys)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackSoireeControl)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackSoireeControlKeyProperties,InterpTrackSoireeControlKeyProperties,m_SoireeControlType)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackSoireeControlKeyProperties,InterpTrackSoireeControlKeyProperties,m_BreakImmediatelyBlendOut)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackSoireeControlKeyProperties)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackStretchAnimControl,InterpTrackStretchAnimControl,SlotName)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackStretchAnimControl,InterpTrackStretchAnimControl,AnimSeqs)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackStretchAnimControl)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackStretchAnimKeyProperties,InterpTrackStretchAnimKeyProperties,m_MatineeRootMotionMode)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackStretchAnimKeyProperties,InterpTrackStretchAnimKeyProperties,m_MeshTranslationMode)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackStretchAnimKeyProperties)
-VERIFY_CLASS_OFFSET_NODIE(UMatineeData,MatineeData,m_RunData)
-VERIFY_CLASS_OFFSET_NODIE(UMatineeData,MatineeData,m_iDataVersion)
-VERIFY_CLASS_SIZE_NODIE(UMatineeData)
 VERIFY_CLASS_SIZE_NODIE(UNaturalVoiceEnums)
 VERIFY_CLASS_OFFSET_NODIE(UParticleModuleTypeDataDecal,ParticleModuleTypeDataDecal,m_pDecalMaterial)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleTypeDataDecal)

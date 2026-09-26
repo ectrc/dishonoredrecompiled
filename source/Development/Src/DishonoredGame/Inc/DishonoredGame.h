@@ -37,6 +37,7 @@
 #include "GFxUI.h"
 #include "AkAudio.h"
 #include "OnlineSubsystemSteamworks.h"
+#include "DishonoredGameNative.h"
 #include "DishonoredGameEngineShims.h"
 #include "DishonoredGameAttributesClasses.h"
 #include "DishonoredGameGlobalEnumsClasses.h"
