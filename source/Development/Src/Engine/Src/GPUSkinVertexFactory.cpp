@@ -200,6 +200,12 @@ FGPUSkinVertexFactoryShaderParameters
 -----------------------------------------------------------------------------*/
 
 /** Shader parameters for use with FGPUSkinVertexFactory */
+/**
+ * Shader parameters for the GPU skin vertex factory.
+ * DISHONORED(layout): retail FGPUSkinVertexFactoryShaderParameters is 40 bytes (2012 PDB): LocalToWorld @4, WorldToLocal @10,
+ * BoneMatrices @16, MaxBoneInfluences @22, MeshOrigin @28, MeshExtension @34. The reference BoneScales (QUAT_SKINNING),
+ * BoneIndexOffsetAndScale, PreviousBoneMatrices and bUsePerBoneMotionBlur parameters do not exist in retail.
+ */
 class FGPUSkinVertexFactoryShaderParameters : public FVertexFactoryShaderParameters
 {
 public:
@@ -211,20 +217,14 @@ public:
 	{
 		LocalToWorldParameter.Bind(ParameterMap,TEXT("LocalToWorld"));
 		WorldToLocalParameter.Bind(ParameterMap,TEXT("WorldToLocal"),TRUE);
-#if QUAT_SKINNING
-		BoneMatricesParameter.Bind(ParameterMap,TEXT("BoneQuats"));
-		BoneScalesParameter.Bind(ParameterMap,TEXT("BoneScales"), TRUE);
-#else
 		BoneMatricesParameter.Bind(ParameterMap,TEXT("BoneMatrices"), TRUE);
-#endif
-		BoneIndexOffsetAndScaleParameter.Bind(ParameterMap,TEXT("BoneIndexOffsetAndScale"),TRUE);
+		MaxBoneInfluencesParameter.Bind(ParameterMap,TEXT("MaxBoneInfluences"),TRUE);
 		MeshOriginParameter.Bind(ParameterMap,TEXT("MeshOrigin"),TRUE);
 		MeshExtensionParameter.Bind(ParameterMap,TEXT("MeshExtension"),TRUE);
-		PreviousBoneMatricesParameter.Bind(ParameterMap,TEXT("PreviousBoneMatrices"),TRUE);
-		UsePerBoneMotionBlurParameter.Bind(ParameterMap,TEXT("bUsePerBoneMotionBlur"),TRUE);
 	}
 	/**
 	* Serialize shader params to an archive
+	* DISHONORED(port): 2013 rva 0xe26f0 (2012 0xe0900, identical): the six parameters at +4..+34 in member order.
 	* @param	Ar - archive to serialize to
 	*/
 	virtual void Serialize(FArchive& Ar)
@@ -232,21 +232,14 @@ public:
 		Ar << LocalToWorldParameter;
 		Ar << WorldToLocalParameter;
 		Ar << BoneMatricesParameter;
-#if QUAT_SKINNING
-		Ar << BoneScalesParameter;
-#endif
-		Ar << BoneIndexOffsetAndScaleParameter;
+		Ar << MaxBoneInfluencesParameter;
 		Ar << MeshOriginParameter;
 		Ar << MeshExtensionParameter;
-		Ar << PreviousBoneMatricesParameter;
-		Ar << UsePerBoneMotionBlurParameter;
-		
-		// set parameter names for platforms that need them
-		LocalToWorldParameter.SetShaderParamName(TEXT("LocalToWorld"));
-		BoneMatricesParameter.SetShaderParamName(TEXT("BoneMatrices"));
 	}
 	/**
 	* Set any shader data specific to this vertex factory
+	* DISHONORED(port): 2012 rva 0xe0a80 FGPUSkinVertexFactoryShaderParameters::Set: the bone matrices as vertex shader values,
+	* MaxBoneInfluences, MeshOrigin, MeshExtension. Retail has no per-bone motion blur (no PrevPerBoneMotionBlur buffer).
 	*/
 	virtual void Set(FShader* VertexShader,const FVertexFactory* VertexFactory,const FSceneView& View) const
 	{
@@ -257,103 +250,30 @@ public:
 			ShaderData.BoneMatrices.GetTypedData(),
 			ShaderData.BoneMatrices.Num()
 			);
-#if QUAT_SKINNING
-		SetVertexShaderFloats(
+		SetVertexShaderValue<FLOAT>(
 			VertexShader->GetVertexShader(),
-			BoneScalesParameter,
-			ShaderData.BoneScales.GetTypedData(),
-			ShaderData.BoneScales.Num());
-#endif
+			MaxBoneInfluencesParameter,
+			(FLOAT)ShaderData.MaxBoneInfluences
+			);
 		SetVertexShaderValue<FVector>(
-			VertexShader->GetVertexShader(), 
-			MeshOriginParameter, 
+			VertexShader->GetVertexShader(),
+			MeshOriginParameter,
 			ShaderData.MeshOrigin
 			);
 		SetVertexShaderValue<FVector>(
-			VertexShader->GetVertexShader(), 
-			MeshExtensionParameter, 
+			VertexShader->GetVertexShader(),
+			MeshExtensionParameter,
 			ShaderData.MeshExtension
 			);
-
-
-		UBOOL bLocalPerBoneMotionBlur = FALSE;
-
-		if(GSceneRenderTargets.PrevPerBoneMotionBlur.IsLocked())
-		{
-			// we are in the velocity rendering pass
-
-			// 0xffffffff or valid index
-			UINT OldBoneDataIndex = ShaderData.GetOldBoneData(View.FrameNumber);
-
-			// Read old data if it was written last frame (normal data) or this frame (e.g. split screen)
-			bLocalPerBoneMotionBlur = (OldBoneDataIndex != 0xffffffff) && View.RenderingOverrides.bAllowMotionBlurSkinning;
-
-			// we tell the shader where to pickup the data (always, even if we don't have bone data, to avoid false binding)
-			SetVertexShaderTextureParameter(
-				VertexShader->GetVertexShader(),
-				PreviousBoneMatricesParameter,
-				GSceneRenderTargets.PrevPerBoneMotionBlur.GetReadData()->GetTexture2DRHI());
-
-			if(bLocalPerBoneMotionBlur)
-			{
-				FVector4 BoneIndexOffsetAndScale;
-
-				// we have old bone data for this draw call available
-				FLOAT InvTextureWidth = GSceneRenderTargets.PrevPerBoneMotionBlur.GetInvSizeX();	
-				// 0.5 for the half texel offset to do a stable lookup at the texel center
-				BoneIndexOffsetAndScale.X = (OldBoneDataIndex + 0.5f) * InvTextureWidth;
-				BoneIndexOffsetAndScale.Y = (OldBoneDataIndex + 1.5f) * InvTextureWidth;
-				BoneIndexOffsetAndScale.Z = (OldBoneDataIndex + 2.5f) * InvTextureWidth;
-				// 3 because we have three texels per bone (one texel: float4, one bone matrix: 4x3 matrix)
-				BoneIndexOffsetAndScale.W = 3.0f * InvTextureWidth;
-
-				SetVertexShaderValue<FVector4>(
-					VertexShader->GetVertexShader(), 
-					BoneIndexOffsetAndScaleParameter, 
-					BoneIndexOffsetAndScale
-					);
-			}
-
-#if XBOX
-			// on Xbox360 we use static branching to get more efficient shader execution
-			// Should be a bool on all platforms, but bool params don't work in vertex shaders yet (TTP 125134)
-			SetVertexShaderBool(VertexShader->GetVertexShader(), UsePerBoneMotionBlurParameter, bLocalPerBoneMotionBlur);	
-#else // XBOX
-/*			if(!bLocalPerBoneMotionBlur)
-			{
-				// disable texture lookup (needed for PC)
-				FVector4 BoneIndexOffsetAndScale(0, 0, 0, 0);
-
-				SetVertexShaderValue<FVector4>(
-					VertexShader->GetVertexShader(), 
-					BoneIndexOffsetAndScaleParameter, 
-					BoneIndexOffsetAndScale
-					);
-			}
-*/
-#endif // XBOX
-
-			// if we haven't copied the data yet we skip the update (e.g. splitscreen)
-			if(ShaderData.IsOldBoneDataUpdateNeeded(View.FrameNumber))
-			{
-				const FGPUSkinVertexFactory* GPUVertexFactory = (const FGPUSkinVertexFactory*)VertexFactory;
-
-				// copy the bone data and tell the instance where it can pick it up next frame
-
-				// append data to a buffer we bind next frame to read old matrix data for motionblur
-				UINT OldBoneDataStartIndex = GSceneRenderTargets.PrevPerBoneMotionBlur.AppendData(ShaderData.BoneMatrices.GetTypedData(), ShaderData.BoneMatrices.Num());
-				GPUVertexFactory->SetOldBoneDataStartIndex(View.FrameNumber, OldBoneDataStartIndex);
-			}
-		}
 	}
 	/**
 	* Set the l2w transform shader
+	* DISHONORED(port): 2012 rva 0xe0b30 FGPUSkinVertexFactoryShaderParameters::SetMesh: LocalToWorld with the view translation
+	* folded in, then WorldToLocal with the rotation determinant flip packed into M[0][3] (retail packs no motion blur flag).
 	*/
 	virtual void SetMesh(FShader* VertexShader, const FMeshBatch& Mesh, INT BatchElementIndex, const FSceneView& View) const
 	{
 		const FMeshBatchElement& BatchElement = Mesh.Elements(BatchElementIndex);
-		const FGPUSkinVertexFactory* VertexFactory = (const FGPUSkinVertexFactory*)Mesh.VertexFactory;
-		const FGPUSkinVertexFactory::ShaderDataType& ShaderData = VertexFactory->GetShaderData();
 
 		SetVertexShaderValue(
 			VertexShader->GetVertexShader(),
@@ -361,7 +281,7 @@ public:
 			BatchElement.LocalToWorld.ConcatTranslation(View.PreViewTranslation)
 			);
 
-		// Used to flip the normal direction if LocalToWorldRotDeterminant is negative.  
+		// Used to flip the normal direction if LocalToWorldRotDeterminant is negative.
 		// This prevents non-uniform negative scaling from making vectors transformed with CalcTangentToWorld pointing in the wrong quadrant.
 		const FLOAT LocalToWorldRotDeterminant = BatchElement.LocalToWorld.RotDeterminant();
 
@@ -369,16 +289,14 @@ public:
 		//		 3x3 part for the WorldToLocal matrix, and the other 3 floats are general-purpose.
 		FMatrix WorldToLocalWithFriends = BatchElement.WorldToLocal;
 
-		UBOOL bLocalPerBoneMotionBlur = (ShaderData.GetOldBoneData(View.FrameNumber) != 0xffffffff) && View.RenderingOverrides.bAllowMotionBlurSkinning;
-
 		// NOTE: We pack the data into the WorldToLocal 4x4 matrix in
 		//		 order to free up vertex shader constants.
 		//       Bone matrices use up a lot of constants so this is crucial!
 		WorldToLocalWithFriends.M[0][3] = appFloatSelect(LocalToWorldRotDeterminant, 1, -1);
-		WorldToLocalWithFriends.M[1][3] = bLocalPerBoneMotionBlur ? 1.0f : 0.0f;
 
 		// This matrix should always be treated as a 3x3 in the shader code so we'll zero out the other
 		// unused elements.
+		WorldToLocalWithFriends.M[1][3] = 0.0f;
 		WorldToLocalWithFriends.M[2][3] = 0.0f;
 		WorldToLocalWithFriends.M[3][3] = 0.0f;
 
@@ -389,14 +307,9 @@ private:
 	FShaderParameter LocalToWorldParameter;
 	FShaderParameter WorldToLocalParameter;
 	FShaderParameter BoneMatricesParameter;
-#if QUAT_SKINNING
-	FShaderParameter BoneScalesParameter;
-#endif
-	FShaderParameter BoneIndexOffsetAndScaleParameter;
+	FShaderParameter MaxBoneInfluencesParameter;
 	FShaderParameter MeshOriginParameter;
 	FShaderParameter MeshExtensionParameter;
-	FShaderResourceParameter PreviousBoneMatricesParameter;
-	FShaderParameter UsePerBoneMotionBlurParameter;
 };
 
 FVertexFactoryShaderParameters* FGPUSkinVertexFactory::ConstructShaderParameters(EShaderFrequency ShaderFrequency)

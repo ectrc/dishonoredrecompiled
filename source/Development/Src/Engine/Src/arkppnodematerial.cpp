@@ -30,3 +30,139 @@
 //   0xb9f8d0  _dynamic_initializer_for__TPpMaterialVertexShader_FPpMaterialMeshPolicy_::StaticType__
 //   0xb9f910  _dynamic_initializer_for__TPpMaterialPixelShader_ArkPpAddGammaValue_FPpMaterialMeshPolicy_0___::StaticType__
 //   0xb9f950  _dynamic_initializer_for__TPpMaterialPixelShader_ArkPpAddGammaValue_FPpMaterialMeshPolicy_1___::StaticType__
+
+#include "EnginePrivate.h"
+#include "ScenePrivate.h"
+
+/**
+ * DISHONORED(written): the shader types of Arkane's post-process material node (UArkPpNodeMaterial, 2013 rva 0x5599b0 ff.),
+ * which draws a material over a post-process surface with up to eight bound node textures. Only the types are declared: the
+ * cooked material shader maps reference them (renderer.md 2), and without a declaration every such map counts an undeclared
+ * type. The FArkPp node graph that drives the pass is wave-5 work (renderer.md 5); nothing selects these shaders yet.
+ */
+class FPpMaterialMeshPolicy {};
+class FPpMaterialLinearSpaceMeshPolicy {};
+class FPpMaterialGammaSpaceMeshPolicy {};
+
+/** The number of post-process node textures a pp-material pixel shader can sample (2012 PDB: FShaderResourceParameter[8]). */
+#define ARK_PP_MATERIAL_NUM_TEXTURES 8
+
+/**
+ * DISHONORED(layout): TPpMaterialVertexShader<FPpMaterialMeshPolicy> is 196 bytes (2012 PDB): FShader,
+ * FVertexFactoryParameterRef @108, FMaterialVertexShaderParameters @136 (2012 ctor rva 0x55cfd0).
+ */
+template<typename MeshPolicyType>
+class TPpMaterialVertexShader : public FMeshMaterialVertexShader
+{
+	DECLARE_SHADER_TYPE(TPpMaterialVertexShader,MeshMaterial);
+public:
+	TPpMaterialVertexShader() {}
+
+	TPpMaterialVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FMeshMaterialVertexShader(Initializer)
+	{
+		MaterialParameters.Bind(Initializer.ParameterMap);
+	}
+
+	// DISHONORED(bringup): retail's gating is not recoverable (no shader compiler in the shipping exes); the type accepts
+	// every material and compiles nothing, so only the cooked shaders ever exist.
+	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		bShaderHasOutdatedParameters |= Ar << VertexFactoryParameters;
+		Ar << MaterialParameters;
+		return bShaderHasOutdatedParameters;
+	}
+
+	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const
+	{
+		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet);
+	}
+
+private:
+	FMaterialVertexShaderParameters MaterialParameters;
+};
+
+/**
+ * DISHONORED(layout): TPpMaterialPixelShader is 368 bytes (2012 PDB TPpMaterialPixelShader<ArkPpAddGammaValue<Policy,0|1> >):
+ * FShader, FMaterialPixelShaderParameters @108, FShaderResourceParameter m_ArkPpTextureSampleParameter[8] @300,
+ * m_ScreenPositionScaleBias @348, m_SurfaceResolution @354, m_ScreenResolution @360.
+ * DISHONORED(port): 2013 rva 0x51caa0 Serialize: the material parameters, the eight texture samplers, then the three vectors.
+ * The registered names are TPpMaterialPixelShader<FPpMaterialLinearSpaceMeshPolicy> / <FPpMaterialGammaSpaceMeshPolicy>
+ * (the cooked type names), which is why the gamma variant is a policy here and not the retail template's integer argument.
+ */
+template<typename MeshPolicyType>
+class TPpMaterialPixelShader : public FShader
+{
+	DECLARE_SHADER_TYPE(TPpMaterialPixelShader,MeshMaterial);
+public:
+	TPpMaterialPixelShader() {}
+
+	TPpMaterialPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FShader(Initializer)
+	{
+		MaterialParameters.Bind(Initializer.ParameterMap);
+		for (INT TextureIndex = 0; TextureIndex < ARK_PP_MATERIAL_NUM_TEXTURES; TextureIndex++)
+		{
+			// DISHONORED(bringup): the retail parameter names are not in the shipping exes (no Bind); loaded from the caches only
+			m_ArkPpTextureSampleParameter[TextureIndex].Bind(Initializer.ParameterMap,*FString::Printf(TEXT("ArkPpTexture_%u"),TextureIndex),TRUE);
+		}
+		m_ScreenPositionScaleBiasParameter.Bind(Initializer.ParameterMap,TEXT("ScreenPositionScaleBias"),TRUE);
+		m_SurfaceResolutionParameter.Bind(Initializer.ParameterMap,TEXT("SurfaceResolution"),TRUE);
+		m_ScreenResolutionParameter.Bind(Initializer.ParameterMap,TEXT("ScreenResolution"),TRUE);
+	}
+
+	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << MaterialParameters;
+		for (INT TextureIndex = 0; TextureIndex < ARK_PP_MATERIAL_NUM_TEXTURES; TextureIndex++)
+		{
+			Ar << m_ArkPpTextureSampleParameter[TextureIndex];
+		}
+		Ar << m_ScreenPositionScaleBiasParameter;
+		Ar << m_SurfaceResolutionParameter;
+		Ar << m_ScreenResolutionParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const
+	{
+		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet);
+	}
+
+private:
+	FMaterialPixelShaderParameters MaterialParameters;
+	FShaderResourceParameter m_ArkPpTextureSampleParameter[ARK_PP_MATERIAL_NUM_TEXTURES];
+	FShaderParameter m_ScreenPositionScaleBiasParameter;
+	FShaderParameter m_SurfaceResolutionParameter;
+	FShaderParameter m_ScreenResolutionParameter;
+};
+
+// DISHONORED(retail): 2013 rva 0xb83150 ("ArkPpMaterialVertexShader", 786 / 23), 0xb83190 / 0xb831d0
+// ("ArkPpMaterialPixelShader", 801 / 23 - the highest material gate in the exe).
+IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TPpMaterialVertexShader<FPpMaterialMeshPolicy>,TEXT("ArkPpMaterialVertexShader"),TEXT("Main"),SF_Vertex,786,23);
+IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TPpMaterialPixelShader<FPpMaterialLinearSpaceMeshPolicy>,TEXT("ArkPpMaterialPixelShader"),TEXT("Main"),SF_Pixel,801,23);
+IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TPpMaterialPixelShader<FPpMaterialGammaSpaceMeshPolicy>,TEXT("ArkPpMaterialPixelShader"),TEXT("Main"),SF_Pixel,801,23);
+
+/**
+ * DISHONORED(bringup): see DishonoredLinkArkPartMeshShaderTypes - the static library drops an unreferenced object file, and
+ * with it these shader type registrations. Drop this once the FArkPp material node pass is ported and called.
+ */
+void DishonoredLinkArkPpMaterialShaderTypes()
+{
+}

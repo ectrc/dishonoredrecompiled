@@ -6,19 +6,28 @@
 #include "ImageReflectionRendering.h"
 #include "DepthOfFieldCommon.h"				// FDepthOfFieldParams, FDOFShaderParameters
 
-/** The minimum package version to load FMaterialShaderMaps with. Bump this to force existing FMaterialShaderMaps to be discarded on load. */
-#define VER_MIN_MATERIALSHADERMAP				VER_INVALIDATE_SHADERCACHE5
+/**
+ * DISHONORED(retail): the retail material shader gates. UShaderCache::Load (2013 rva 0x164a60) skips a material shader map whose
+ * saved version is below 786 / licensee 23 (`v55 < 786 || v57 < 23`). The material shader types are constructed with
+ * MinPackageVersion 786 (0x312, e.g. TDepthOnlyVertexShader 0xb7f540, FHitProxyVertexShader 0xb815e0), 792 (0x318, the
+ * TLight* types 0xb6f2d0..0xb71920), 798 (0x31e, TBasePassVertexShader<FNoLightMapPolicy> 0xb7ea00 /
+ * TBasePassPixelShader<FNoLightMapPolicy,0,0> 0xb7ea40, TDepthOnlySolidPixelShader 0xb7f580, TLightMapDensity* 0xb6ff50..)
+ * or 801 (0x321, TPpMaterialPixelShader 0xb83190) and licensee 23 (0x17; 24 for the TSoulPartMesh* types 0xb8efe0 / 0xb8f020);
+ * build\agentAG\statictypes2013.csv lists every initializer. The cooked content is 801 / 30, so every retail gate passes; the
+ * reference VER_INVALIDATE_SHADERCACHE5 (836) rejected every cooked map.
+ */
+#define VER_MIN_MATERIALSHADERMAP				786
 /** The minimum package version to load material pixel shaders with. */
-#define VER_MIN_MATERIAL_PIXELSHADER			VER_INVALIDATE_SHADERCACHE5
+#define VER_MIN_MATERIAL_PIXELSHADER			786
 /** The minimum package version to load material vertex shaders with. */
-#define VER_MIN_MATERIAL_VERTEXSHADER			VER_INVALIDATE_SHADERCACHE5
+#define VER_MIN_MATERIAL_VERTEXSHADER			786
 
 /** Same as VER_MIN_MATERIALSHADERMAP, but for the licensee package version. */
-#define LICENSEE_VER_MIN_MATERIALSHADERMAP		0
+#define LICENSEE_VER_MIN_MATERIALSHADERMAP		23
 /** Same as VER_MIN_MATERIAL_PIXELSHADER, but for the licensee package version. */
-#define LICENSEE_VER_MIN_MATERIAL_PIXELSHADER	0
+#define LICENSEE_VER_MIN_MATERIAL_PIXELSHADER	23
 /** Same as VER_MIN_MATERIAL_VERTEXSHADER, but for the licensee package version. */
-#define LICENSEE_VER_MIN_MATERIAL_VERTEXSHADER	0
+#define LICENSEE_VER_MIN_MATERIAL_VERTEXSHADER	23
 
 /** A macro to implement material shaders which checks the package version for VER_MIN_MATERIAL_*SHADER and LICENSEE_VER_MIN_MATERIAL_*SHADER. */
 #define IMPLEMENT_MATERIAL_SHADER_TYPE(TemplatePrefix,ShaderClass,SourceFilename,FunctionName,Frequency,MinPackageVersion,MinLicenseePackageVersion) \
@@ -59,21 +68,41 @@ struct TUniformParameter
 	}
 };
 
-/** Base class of the material parameters for a shader. */
+typedef TArray<TUniformParameter<FShaderParameter> > FUniformShaderParameterArray;
+typedef TArray<TUniformParameter<FShaderResourceParameter> > FUniformShaderResourceParameterArray;
+
+/**
+ * Base class of the material parameters for a shader.
+ * DISHONORED(layout): retail FMaterialShaderParameters is 36 bytes = the six parameters below in this order (2012 PDB;
+ * 2013 rva 0x3deca0 operator<<(FMaterialVertexShaderParameters&) serializes them at +0..+30 first). The reference
+ * LocalToWorld / WorldToLocal / WorldToView / InvViewProjection / ViewProjection parameters exist in the pixel class only,
+ * ViewToWorld, TemporalAA, ActorWorldPosition and the DOF parameters do not exist, and the uniform parameter arrays belong
+ * to the frequency classes (pixel: scalar, vector, 2D, cube; vertex: scalar, vector).
+ */
 class FMaterialShaderParameters
 {
 public:
 
-	void Bind(const FShaderParameterMap& ParameterMap, EShaderFrequency Frequency);
+	void Bind(const FShaderParameterMap& ParameterMap);
 
-	/** Sets pixel parameters that are material specific but not FMeshBatch specific. */
+	static void BindUniformParameters(
+		const FShaderParameterMap& ParameterMap,
+		EShaderFrequency Frequency,
+		FUniformShaderParameterArray& UniformScalarShaderParameters,
+		FUniformShaderParameterArray& UniformVectorShaderParameters,
+		FUniformShaderResourceParameterArray* Uniform2DShaderResourceParameters);
+
+	/** Sets the uniform expression parameters and the camera position (material specific but not FMeshBatch specific). */
 	template<typename ShaderRHIParamRef>
 	void SetShader(
-		const ShaderRHIParamRef ShaderRHI, 
-		const FShaderFrequencyUniformExpressions& InExpressions, 
+		const ShaderRHIParamRef ShaderRHI,
+		const FShaderFrequencyUniformExpressions& InExpressions,
 		const FMaterialRenderContext& MaterialRenderContext,
-		FShaderFrequencyUniformExpressionValues& InValues) const;
-	
+		FShaderFrequencyUniformExpressionValues& InValues,
+		const FUniformShaderParameterArray& UniformScalarShaderParameters,
+		const FUniformShaderParameterArray& UniformVectorShaderParameters,
+		const FUniformShaderResourceParameterArray* Uniform2DShaderResourceParameters) const;
+
 	/**
 	* Set the material shader parameters which depend on the mesh element being rendered.
 	* @param Shader - The shader to set the parameters for.
@@ -89,43 +118,49 @@ public:
 		const FSceneView& View
 		) const;
 
-	UBOOL IsUniformExpressionSetValid(const FShaderFrequencyUniformExpressions& UniformExpressions) const;
+	static UBOOL AreUniformParametersValid(
+		const FShaderFrequencyUniformExpressions& UniformExpressions,
+		const FUniformShaderParameterArray& UniformScalarShaderParameters,
+		const FUniformShaderParameterArray& UniformVectorShaderParameters,
+		const FUniformShaderResourceParameterArray* Uniform2DShaderResourceParameters);
 
 	friend FArchive& operator<<(FArchive& Ar,FMaterialShaderParameters& Parameters);
 
 protected:
-	/** matrix parameter for materials with a world transform */
-	FShaderParameter LocalToWorldParameter;
-	/** matrix parameter for materials with a local transform */
-	FShaderParameter WorldToLocalParameter;
-	/** matrix parameter for materials with a view transform */
-	FShaderParameter WorldToViewParameter;
-	/** matrix parameter for materials with a view to world transform */
-	FShaderParameter ViewToWorldParameter;
-	/** matrix parameter for materials with a world position transform */
-	FShaderParameter InvViewProjectionParameter;
-	/** matrix parameter for materials with a world position node */
-	FShaderParameter ViewProjectionParameter;
 	/** world-space camera position */
 	FShaderParameter CameraWorldPositionParameter;
-	FShaderParameter TemporalAAParameters;
 	/** Primitive component bounds origin and radius. */
 	FShaderParameter ObjectWorldPositionAndRadiusParameter;
-	/** MT-> world position of actor that owns primitive! */
-	FShaderParameter ActorWorldPositionParameter;
 	FShaderParameter ObjectOrientationParameter;
 	FShaderParameter WindDirectionAndSpeedParameter;
 	FShaderParameter FoliageImpulseDirectionParameter;
 	FShaderParameter FoliageNormalizedRotationAxisAndAngleParameter;
-	/** The parameters needs to calculate depth-of-field blur amount for the DOFFunction material expression. */
-	FDOFShaderParameters DOFParameters;
-
-	TArray<TUniformParameter<FShaderParameter> > UniformScalarShaderParameters;
-	TArray<TUniformParameter<FShaderParameter> > UniformVectorShaderParameters;
-	TArray<TUniformParameter<FShaderResourceParameter> > Uniform2DShaderResourceParameters;
 };
 
-/** An encapsulation of the material parameters for a pixel shader. */
+/**
+ * DISHONORED(layout): Arkane's world cube map binding, 6 bytes = one FShaderResourceParameter (2012 PDB
+ * FWorldCubeMapTextureShaderParameters, member of FMaterialPixelShaderParameters @144). Set (2012 rva 0x4715a0,
+ * scenerendertargets.cpp:1977) samples FSceneView::SceneReflectionTexture->Resource when the parameter is bound. The shader
+ * parameter name is not in the shipping exes (no compiler, no Bind); the binding only ever comes from the cooked caches.
+ */
+class FWorldCubeMapTextureShaderParameters
+{
+public:
+	void Bind(const FShaderParameterMap& ParameterMap);
+	void Set(const FSceneView* View, FShader* PixelShader) const;
+	friend FArchive& operator<<(FArchive& Ar,FWorldCubeMapTextureShaderParameters& P);
+private:
+	FShaderResourceParameter CubemapTextureParameter;
+};
+
+/**
+ * An encapsulation of the material parameters for a pixel shader.
+ * DISHONORED(layout): retail FMaterialPixelShaderParameters is 192 bytes (2012 PDB): the 36-byte base, the four uniform
+ * parameter arrays @36..84, LocalToWorld @84, WorldToLocal @90, WorldToView @96, InvViewProjection @102, ViewProjection @108,
+ * FSceneTextureShaderParameters @114 (30 bytes), FWorldCubeMapTextureShaderParameters @144, TwoSidedSign @150, InvGamma @156,
+ * DecalFarPlaneDistance @162, ObjectPostProjectionPosition @168, ObjectNDCPosition @174, ObjectMacroUVScales @180,
+ * OcclusionPercentage @186. No screen-door fade, alpha sample, fluid detail normal or DOF parameters.
+ */
 class FMaterialPixelShaderParameters : public FMaterialShaderParameters
 {
 public:
@@ -134,7 +169,7 @@ public:
 
 	/** Sets pixel parameters that are material specific but not FMeshBatch specific. */
 	void Set(FShader* PixelShader,const FMaterialRenderContext& MaterialRenderContext, ESceneDepthUsage DepthUsage = SceneDepthUsage_Normal) const;
-	
+
 	/**
 	* Set the material shader parameters which depend on the mesh element being rendered.
 	* @param PixelShader - The pixel shader to set the parameters for.
@@ -156,15 +191,29 @@ public:
 	UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& InSet) const;
 
 private:
-	TArray<TUniformParameter<FShaderResourceParameter> > UniformPixelCubeShaderResourceParameters;
+	FUniformShaderParameterArray UniformPixelScalarShaderParameters;
+	FUniformShaderParameterArray UniformPixelVectorShaderParameters;
+	FUniformShaderResourceParameterArray UniformPixel2DShaderResourceParameters;
+	FUniformShaderResourceParameterArray UniformPixelCubeShaderResourceParameters;
+	/** matrix parameter for materials with a world transform */
+	FShaderParameter LocalToWorldParameter;
+	/** matrix parameter for materials with a local transform */
+	FShaderParameter WorldToLocalParameter;
+	/** matrix parameter for materials with a view transform */
+	FShaderParameter WorldToViewParameter;
+	/** matrix parameter for materials with a world position transform */
+	FShaderParameter InvViewProjectionParameter;
+	/** matrix parameter for materials with a world position node */
+	FShaderParameter ViewProjectionParameter;
 	/** The scene texture parameters. */
 	FSceneTextureShaderParameters SceneTextureParameters;
+	FWorldCubeMapTextureShaderParameters WorldCubemapParameters;
 	/** Parameter indicating whether the front-side or the back-side of a two-sided material is being rendered. */
 	FShaderParameter TwoSidedSignParameter;
 	/** Inverse gamma parameter. Only used when USE_GAMMA_CORRECTION 1 */
 	FShaderParameter InvGammaParameter;
-	/** Parameter for distance to [near,far] plane for the decal (local or world space) */
-	FShaderParameter DecalNearFarPlaneDistanceParameter;
+	/** Parameter for distance to far plane for the decal (local or world space) */
+	FShaderParameter DecalFarPlaneDistanceParameter;
 	/** Object position in post projection space. */
 	FShaderParameter ObjectPostProjectionPositionParameter;
 	/** Object position in Normalized Device Coordinates. */
@@ -173,23 +222,14 @@ private:
 	FShaderParameter ObjectMacroUVScalesParameter;
 	/** Parameter for occlusion percentage of the object being rendered */
 	FShaderParameter OcclusionPercentageParameter;
-	/** Enables screen door clip masking in the pixel shader (via static branch.) */
-	FShaderParameter EnableScreenDoorFadeParameter;
-	/** Settings for screen door fade effect (opacity, noise scale, noise bias, noise texture scale) */
-	FShaderParameter ScreenDoorFadeSettingsParameter;
-	/** Additional settings for screen door fade effect (texture offset) */
-	FShaderParameter ScreenDoorFadeSettings2Parameter;
-	/** Noise texture which is mapped to screen space for screen door */
-	FShaderResourceParameter ScreenDoorNoiseTextureParameter;
-	/** Alpha sample texture. */
-	FShaderResourceParameter AlphaSampleTextureParameter;
-	/** Texture parameter used by the Fluid Normal node. */
-	FShaderResourceParameter FluidDetailNormalTextureParameter;
 };
 
 #if WITH_D3D11_TESSELLATION
 
-/** An encapsulation of the material parameters for a domain shader. */
+/**
+ * DISHONORED(retail): the domain and hull parameter classes are reference-only (retail has no D3D11 stages, no cooked
+ * SF_Hull / SF_Domain record exists); kept as vertex-shaped shells so the tessellation shader types still compile.
+ */
 class FMaterialDomainShaderParameters : public FMaterialShaderParameters
 {
 public:
@@ -198,14 +238,7 @@ public:
 
 	/** Sets domain shader parameters that are material specific but not FMeshBatch specific. */
 	void Set(FShader* DomainShader,const FMaterialRenderContext& MaterialRenderContext) const;
-	
-	/**
-	* Set the material shader parameters which depend on the mesh element being rendered.
-	* @param DomainShader - The domain shader to set the parameters for.
-	* @param View - The view that is being rendered.
-	* @param Mesh - The mesh that is being rendered.
-	* @param bBackFace - True if the backfaces of a two-sided material are being rendered.
-	*/
+
 	void SetMesh(
 		FShader* DomainShader,
 		const FPrimitiveSceneInfo* PrimitiveSceneInfo,
@@ -216,11 +249,16 @@ public:
 
 	UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& ExpressionSet) const
 	{
-		return FMaterialShaderParameters::IsUniformExpressionSetValid(ExpressionSet.GetExpresssions(SF_Domain));
+		return AreUniformParametersValid(ExpressionSet.GetExpresssions(SF_Domain), UniformScalarShaderParameters, UniformVectorShaderParameters, NULL);
 	}
+
+	friend FArchive& operator<<(FArchive& Ar,FMaterialDomainShaderParameters& Parameters);
+
+private:
+	FUniformShaderParameterArray UniformScalarShaderParameters;
+	FUniformShaderParameterArray UniformVectorShaderParameters;
 };
 
-/** An encapsulation of the material parameters for a hull shader. */
 class FMaterialHullShaderParameters : public FMaterialShaderParameters
 {
 public:
@@ -229,14 +267,7 @@ public:
 
 	/** Sets hull shader parameters that are material specific but not FMeshBatch specific. */
 	void Set(FShader* HullShader,const FMaterialRenderContext& MaterialRenderContext) const;
-	
-	/**
-	* Set the material shader parameters which depend on the mesh element being rendered.
-	* @param HullShader - The hull shader to set the parameters for.
-	* @param View - The view that is being rendered.
-	* @param Mesh - The mesh that is being rendered.
-	* @param bBackFace - True if the backfaces of a two-sided material are being rendered.
-	*/
+
 	void SetMesh(
 		FShader* HullShader,
 		const FPrimitiveSceneInfo* PrimitiveSceneInfo,
@@ -247,13 +278,24 @@ public:
 
 	UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& ExpressionSet) const
 	{
-		return FMaterialShaderParameters::IsUniformExpressionSetValid(ExpressionSet.GetExpresssions(SF_Hull));
+		return AreUniformParametersValid(ExpressionSet.GetExpresssions(SF_Hull), UniformScalarShaderParameters, UniformVectorShaderParameters, NULL);
 	}
+
+	friend FArchive& operator<<(FArchive& Ar,FMaterialHullShaderParameters& Parameters);
+
+private:
+	FUniformShaderParameterArray UniformScalarShaderParameters;
+	FUniformShaderParameterArray UniformVectorShaderParameters;
 };
 
 #endif
 
-/** An encapsulation of the material parameters for a vertex shader. */
+/**
+ * An encapsulation of the material parameters for a vertex shader.
+ * DISHONORED(layout): retail FMaterialVertexShaderParameters is 60 bytes (2012 PDB): the 36-byte base, then the
+ * UniformVertexScalar @36 and UniformVertexVector @48 arrays (2013 rva 0x3deca0 serializes exactly these); no 2D texture
+ * expressions in vertex shaders, no transform matrices (the vertex factory provides them).
+ */
 class FMaterialVertexShaderParameters : public FMaterialShaderParameters
 {
 public:
@@ -278,8 +320,14 @@ public:
 
 	UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& ExpressionSet) const
 	{
-		return FMaterialShaderParameters::IsUniformExpressionSetValid(ExpressionSet.GetExpresssions(SF_Vertex));
+		return AreUniformParametersValid(ExpressionSet.GetExpresssions(SF_Vertex), UniformVertexScalarShaderParameters, UniformVertexVectorShaderParameters, NULL);
 	}
+
+	friend FArchive& operator<<(FArchive& Ar,FMaterialVertexShaderParameters& Parameters);
+
+private:
+	FUniformShaderParameterArray UniformVertexScalarShaderParameters;
+	FUniformShaderParameterArray UniformVertexVectorShaderParameters;
 };
 
 /**
@@ -363,6 +411,79 @@ private:
 	ConstructCompiledType ConstructCompiledRef;
 	ShouldCacheType ShouldCacheRef;
 };
+
+/**
+ * DISHONORED(bringup): inventory of the cooked material shader maps (PHASE6 package AG accept line). Every shader reference of a
+ * loaded map is one of: loaded (declared type, cooked record loaded), undeclared (no FShaderType of that name) or missing
+ * (declared type whose cooked record was rejected by FShaderLoadArchive, i.e. a parameter layout mismatch, or skipped). Each
+ * problem type is named once; FMaterial::InitShaderMap prints the totals whenever the number of loaded maps changed.
+ */
+struct FDishonoredShaderMapLoadStats
+{
+	INT NumMaterialShaderMaps;
+	INT NumMeshShaderMapsWithoutVertexFactory;
+	INT NumShaderRefs;
+	INT NumUndeclaredRefs;
+	INT NumMissingRefs;
+	INT NumSkippedRefs;
+	INT NumReportedMaps;
+	TSet<FName> UndeclaredTypes;
+	TSet<FName> MissingTypes;
+	/** References of the mesh shader map being read; committed or discarded once its vertex factory name follows. */
+	TArray<FName> PendingUndeclared;
+	TArray<FName> PendingMissing;
+	INT NumPendingRefs;
+
+	FDishonoredShaderMapLoadStats():
+		NumMaterialShaderMaps(0),
+		NumMeshShaderMapsWithoutVertexFactory(0),
+		NumShaderRefs(0),
+		NumUndeclaredRefs(0),
+		NumMissingRefs(0),
+		NumSkippedRefs(0),
+		NumReportedMaps(0),
+		NumPendingRefs(0)
+	{}
+
+	static FDishonoredShaderMapLoadStats& Get();
+	void NoteShaderRef(const FName& TypeName, FShaderType* Type, FShader* Shader);
+	/**
+	 * bHasVertexFactory FALSE = the map named a vertex factory this game does not have, so retail drops the whole map and
+	 * every record in it (FindVertexFactoryType returns NULL, VertexFactory.cpp): those references are skips, not mismatches.
+	 */
+	void CommitPending(UBOOL bHasVertexFactory, const FString& MapName);
+	void ReportIfChanged();
+};
+
+/**
+ * DISHONORED(bringup): loads the TMap<FShaderType*,TRefCountPtr<FShader> > of a shader map by hand so the type names of the
+ * cooked entries are known to the inventory. The format is the reference TMap one: INT Num, then per pair the key
+ * (FShaderType* as an FName, 2013 rva 0x160310) and the value (TRefCountPtr<FShader> = FShader*: the FGuid Id followed by
+ * the type name, 2013 rva 0x160590, resolved through FShaderType::FindShaderById). Entries whose type is undeclared or whose
+ * shader did not load are dropped, as the reference TMap load would keep them as NULL pairs.
+ */
+template<typename ShaderMetaType>
+void DishonoredLoadShaderMap(FArchive& Ar, TShaderMap<ShaderMetaType>& ShaderMap)
+{
+	INT NumEntries = 0;
+	Ar << NumEntries;
+	for (INT EntryIndex = 0; EntryIndex < NumEntries; EntryIndex++)
+	{
+		FName KeyTypeName = NAME_None;
+		Ar << KeyTypeName;
+		FGuid ShaderId;
+		Ar << ShaderId;
+		FName ValueTypeName = NAME_None;
+		Ar << ValueTypeName;
+		FShaderType* Type = FindShaderTypeByName(*ValueTypeName.ToString());
+		FShader* Shader = Type ? Type->FindShaderById(ShaderId) : NULL;
+		FDishonoredShaderMapLoadStats::Get().NoteShaderRef(ValueTypeName, Type, Shader);
+		if (Type && Shader)
+		{
+			ShaderMap.AddShader((ShaderMetaType*)Type, Shader);
+		}
+	}
+}
 
 /**
  * The set of material shaders for a single material.

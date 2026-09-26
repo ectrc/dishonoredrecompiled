@@ -95,8 +95,60 @@ FArchive& operator<<(FArchive& Ar,FVertexFactoryType*& TypeRef)
 	return Ar;
 }
 
+/**
+ * DISHONORED(retail): retail registers 17 vertex factory types (the 2013 static type initializers, dumped to
+ * build\agentAG\statictypes2013.csv: FLocalVertexFactory, FLocalDecalVertexFactory, FLocalVertexFactoryApex,
+ * FInstancedStaticMeshVertexFactory, FSplineMeshVertexFactory, FGPUSkinVertexFactory, FGPUSkinDecalVertexFactory,
+ * FGPUSkinVertexFactoryApexDestructible, FGPUSkinVertexFactoryApexClothing, FParticleVertexFactory,
+ * FParticleDynamicParameterVertexFactory, FParticleSubUVVertexFactory, FParticleSubUVDynamicParameterVertexFactory,
+ * FParticleBeamTrailVertexFactory, FParticleBeamTrailDynamicParameterVertexFactory, FParticleInstancedMeshVertexFactory,
+ * FLensFlareVertexFactory). It has no terrain, landscape or SpeedTree vertex factory code at all: neither the factories nor
+ * their FVertexFactoryShaderParameters subclasses exist in the 2012 PDB, so no retail parameter layout exists for them.
+ *
+ * The cooked material shader caches were written by the editor, which does register them, so they contain mesh shader maps
+ * and shader records for those factories. Retail skips both because FindVertexFactoryType returns NULL for an unregistered
+ * name (operator<<(FArchive&,FMeshMaterialShaderMap&) empties the map; operator<<(FArchive&,FVertexFactoryParameterRef&),
+ * 2013 rva 0x388e30, reports outdated parameters and the record is dropped). This tree compiles the reference terrain,
+ * landscape and SpeedTree factories, so without this gate their records would be parsed with reference parameter layouts
+ * that never match the cooked history - which is what made every mesh-material shader type look mismatched.
+ */
+static UBOOL DishonoredIsReferenceOnlyVertexFactory(FName TypeName)
+{
+	static const TCHAR* ReferenceOnlyNames[] =
+	{
+		TEXT("FTerrainVertexFactory"),
+		TEXT("FTerrainDecalVertexFactory"),
+		TEXT("FTerrainMorphVertexFactory"),
+		TEXT("FTerrainMorphDecalVertexFactory"),
+		TEXT("FTerrainFullMorphVertexFactory"),
+		TEXT("FTerrainFullMorphDecalVertexFactory"),
+		TEXT("FLandscapeVertexFactory"),
+		TEXT("FLandscapeDecalVertexFactory"),
+		TEXT("FLandscapeVertexFactoryMobile"),
+		TEXT("FSpeedTreeBillboardVertexFactory"),
+		TEXT("FSpeedTreeBranchVertexFactory"),
+		TEXT("FSpeedTreeFrondVertexFactory"),
+		TEXT("FSpeedTreeLeafCardVertexFactory"),
+		TEXT("FSpeedTreeLeafMeshVertexFactory"),
+	};
+
+	for (INT NameIndex = 0; NameIndex < ARRAY_COUNT(ReferenceOnlyNames); NameIndex++)
+	{
+		if (TypeName == FName(ReferenceOnlyNames[NameIndex], FNAME_Find))
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 FVertexFactoryType* FindVertexFactoryType(FName TypeName)
 {
+	if (DishonoredIsReferenceOnlyVertexFactory(TypeName))
+	{
+		return NULL;
+	}
+
 	// Search the global vertex factory list for a type with a matching name.
 	for(TLinkedList<FVertexFactoryType*>::TIterator VertexFactoryTypeIt(FVertexFactoryType::GetTypeList());VertexFactoryTypeIt;VertexFactoryTypeIt.Next())
 	{

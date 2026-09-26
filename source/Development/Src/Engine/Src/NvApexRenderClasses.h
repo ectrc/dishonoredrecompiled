@@ -1944,9 +1944,15 @@ public:
 		BoneMatricesParameter.Bind(ParameterMap,TEXT("BoneMatrices"));
 		MeshOriginParameter.Bind(ParameterMap,TEXT("MeshOrigin"),TRUE);
 		MeshExtensionParameter.Bind(ParameterMap,TEXT("MeshExtension"),TRUE);
-		UsePerBoneMotionBlurParameter.Bind(ParameterMap,TEXT("bUsePerBoneMotionBlur"),TRUE);
 	}
 
+	/**
+	 * DISHONORED(port): 2013 rva 0x527720 (2012 0x568730, identical): the local vertex factory parameters then BoneMatrices,
+	 * MeshOrigin, MeshExtension - six parameters. Retail FGPUSkinVertexFactoryShaderParametersApexDestructible is 48 bytes
+	 * (2012 PDB: base 24, BoneMatrices @24, MeshOrigin @30, MeshExtension @36, UINT MaxBones @44) and has no
+	 * bUsePerBoneMotionBlur parameter; that seventh serialization was rejecting every cooked mesh-material record of this
+	 * vertex factory (the cooked skeletal meshes of Startup.upk are all keyed by it).
+	 */
 	virtual void Serialize(FArchive& Ar)
 	{
 		FLocalVertexFactoryShaderParameters::Serialize(Ar);
@@ -1954,7 +1960,6 @@ public:
 		Ar << BoneMatricesParameter;
 		Ar << MeshOriginParameter;
 		Ar << MeshExtensionParameter;
-		Ar << UsePerBoneMotionBlurParameter;
 	}
 
 	virtual void Set(FShader *VertexShader, const FVertexFactory *VertexFactory, const FSceneView &View) const
@@ -1992,8 +1997,8 @@ private:
 	FShaderParameter BoneMatricesParameter;
 	FShaderParameter MeshOriginParameter;
 	FShaderParameter MeshExtensionParameter;
+	// DISHONORED(layout): retail ends here (48 bytes, MaxBones @44); no bUsePerBoneMotionBlur parameter
 	UINT             MaxBones;
-	FShaderParameter UsePerBoneMotionBlurParameter;
 };
 
 FVertexFactoryShaderParameters* FGPUSkinVertexFactoryApexDestructible::ConstructShaderParameters(EShaderFrequency ShaderFrequency)

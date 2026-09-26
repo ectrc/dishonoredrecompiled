@@ -343,48 +343,36 @@ public:
 FTexture* GStratifiedTranslucencySampleTexture = new TGlobalResource<TStratifiedTranslucencySampleTexture<4,16> >;
 #endif
 
+// DISHONORED(port): 2013 rva 0x3deca0 (2012 0x3ffe50) operator<<(FMaterialVertexShaderParameters&) and 0x3de320 (2012 0x3ffd30)
+// operator<<(FMaterialPixelShaderParameters&) both start with the six common parameters at +0..+30 in member order.
 FArchive& operator<<(FArchive& Ar,FMaterialShaderParameters& Parameters)
 {
 	Ar << Parameters.CameraWorldPositionParameter;
-	Ar << Parameters.TemporalAAParameters;
 	Ar << Parameters.ObjectWorldPositionAndRadiusParameter;
 	Ar << Parameters.ObjectOrientationParameter;
 	Ar << Parameters.WindDirectionAndSpeedParameter;
 	Ar << Parameters.FoliageImpulseDirectionParameter;
 	Ar << Parameters.FoliageNormalizedRotationAxisAndAngleParameter;
-	Ar << Parameters.UniformScalarShaderParameters;
-	Ar << Parameters.UniformVectorShaderParameters;
-	Ar << Parameters.Uniform2DShaderResourceParameters;
-	Ar << Parameters.LocalToWorldParameter;
-	Ar << Parameters.WorldToLocalParameter;
-	Ar << Parameters.WorldToViewParameter;
-	Ar << Parameters.ViewToWorldParameter;
-	Ar << Parameters.InvViewProjectionParameter;
-	Ar << Parameters.ViewProjectionParameter;
-	Ar << Parameters.ActorWorldPositionParameter;
 	return Ar;
 }
 
-void FMaterialShaderParameters::Bind(const FShaderParameterMap& ParameterMap, EShaderFrequency Frequency)
+void FMaterialShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
 {
-	// only used if Material has a Transform expression 
-	LocalToWorldParameter.Bind(ParameterMap,TEXT("LocalToWorldMatrix"),TRUE);
-	WorldToLocalParameter.Bind(ParameterMap,TEXT("WorldToLocalMatrix"),TRUE);
-	WorldToViewParameter.Bind(ParameterMap,TEXT("WorldToViewMatrix"),TRUE);
-	ViewToWorldParameter.Bind(ParameterMap,TEXT("ViewToWorldMatrix"),TRUE);
-	InvViewProjectionParameter.Bind(ParameterMap,TEXT("InvViewProjectionMatrix"),TRUE);
-	ViewProjectionParameter.Bind(ParameterMap,TEXT("ViewProjectionMatrix"),TRUE);
-
 	CameraWorldPositionParameter.Bind(ParameterMap,TEXT("CameraWorldPos"),TRUE);
-	TemporalAAParameters.Bind(ParameterMap,TEXT("TemporalAAParameters"),TRUE);
 	ObjectWorldPositionAndRadiusParameter.Bind(ParameterMap, TEXT("ObjectWorldPositionAndRadius"),TRUE);
-	/* owning actor's world position */
-	ActorWorldPositionParameter.Bind(ParameterMap, TEXT("ActorWorldPos"),TRUE);
 	ObjectOrientationParameter.Bind(ParameterMap, TEXT("ObjectOrientation"),TRUE);
 	WindDirectionAndSpeedParameter.Bind(ParameterMap, TEXT("WindDirectionAndSpeed"),TRUE);
 	FoliageImpulseDirectionParameter.Bind(ParameterMap, TEXT("FoliageImpulseDirection"),TRUE);
 	FoliageNormalizedRotationAxisAndAngleParameter.Bind(ParameterMap, TEXT("FoliageNormalizedRotationAxisAndAngle"),TRUE);
+}
 
+void FMaterialShaderParameters::BindUniformParameters(
+	const FShaderParameterMap& ParameterMap,
+	EShaderFrequency Frequency,
+	FUniformShaderParameterArray& UniformScalarShaderParameters,
+	FUniformShaderParameterArray& UniformVectorShaderParameters,
+	FUniformShaderResourceParameterArray* Uniform2DShaderResourceParameters)
+{
 	const TCHAR* ShaderFrequencyName = GetShaderFrequencyName(Frequency);
 	const FShaderFrequencyUniformExpressions& ShaderUniformExpressions = ParameterMap.UniformExpressionSet->GetExpresssions(Frequency);
 	// Bind uniform scalar expression parameters.
@@ -416,29 +404,33 @@ void FMaterialShaderParameters::Bind(const FShaderParameterMap& ParameterMap, ES
 	}
 
 	// Bind uniform 2D texture parameters.
-	for(INT ParameterIndex = 0;ParameterIndex < ShaderUniformExpressions.Uniform2DTextureExpressions.Num();ParameterIndex++)
+	if (Uniform2DShaderResourceParameters)
 	{
-		FShaderResourceParameter ShaderParameter;
-		FString ParameterName = FString::Printf(TEXT("%sTexture2D_%u"), ShaderFrequencyName, ParameterIndex);
-		ShaderParameter.Bind(ParameterMap,*ParameterName,TRUE);
-		if(ShaderParameter.IsBound())
+		for(INT ParameterIndex = 0;ParameterIndex < ShaderUniformExpressions.Uniform2DTextureExpressions.Num();ParameterIndex++)
 		{
-			TUniformParameter<FShaderResourceParameter>* UniformParameter = new(Uniform2DShaderResourceParameters) TUniformParameter<FShaderResourceParameter>();
-			UniformParameter->Index = ParameterIndex;
-			UniformParameter->ShaderParameter = ShaderParameter;
+			FShaderResourceParameter ShaderParameter;
+			FString ParameterName = FString::Printf(TEXT("%sTexture2D_%u"), ShaderFrequencyName, ParameterIndex);
+			ShaderParameter.Bind(ParameterMap,*ParameterName,TRUE);
+			if(ShaderParameter.IsBound())
+			{
+				TUniformParameter<FShaderResourceParameter>* UniformParameter = new(*Uniform2DShaderResourceParameters) TUniformParameter<FShaderResourceParameter>();
+				UniformParameter->Index = ParameterIndex;
+				UniformParameter->ShaderParameter = ShaderParameter;
+			}
 		}
 	}
-
-	DOFParameters.Bind(ParameterMap);
 }
 
 /** Sets shader parameters that are material specific but not FMeshBatch specific. */
 template<typename ShaderRHIParamRef>
 void FMaterialShaderParameters::SetShader(
-	const ShaderRHIParamRef ShaderRHI, 
-	const FShaderFrequencyUniformExpressions& InExpressions, 
+	const ShaderRHIParamRef ShaderRHI,
+	const FShaderFrequencyUniformExpressions& InExpressions,
 	const FMaterialRenderContext& MaterialRenderContext,
-	FShaderFrequencyUniformExpressionValues& InValues) const
+	FShaderFrequencyUniformExpressionValues& InValues,
+	const FUniformShaderParameterArray& UniformScalarShaderParameters,
+	const FUniformShaderParameterArray& UniformVectorShaderParameters,
+	const FUniformShaderResourceParameterArray* Uniform2DShaderResourceParameters) const
 {
 	// Set the uniform parameters.
 	FShaderFrequencyUniformExpressionValues NewValues;
@@ -449,7 +441,7 @@ void FMaterialShaderParameters::SetShader(
 		InValues.Update(InExpressions, MaterialRenderContext, !MaterialRenderContext.MaterialRenderProxy->bCacheable);
 		CachedValues = &InValues;
 	}
-	else 
+	else
 	{
 		// Update the temporary values since we are not caching
 		NewValues.Update(InExpressions, MaterialRenderContext, TRUE);
@@ -478,13 +470,11 @@ void FMaterialShaderParameters::SetShader(
 		SetShaderValue(ShaderRHI,UniformParameter.ShaderParameter,Value);
 	}
 
-#if WITH_MOBILE_RHI
-	if( !GUsingMobileRHI )
-#endif
+	if (Uniform2DShaderResourceParameters)
 	{
-		for(INT ParameterIndex = 0;ParameterIndex < Uniform2DShaderResourceParameters.Num();ParameterIndex++)
+		for(INT ParameterIndex = 0;ParameterIndex < Uniform2DShaderResourceParameters->Num();ParameterIndex++)
 		{
-			const TUniformParameter<FShaderResourceParameter>& UniformResourceParameter = Uniform2DShaderResourceParameters(ParameterIndex);
+			const TUniformParameter<FShaderResourceParameter>& UniformResourceParameter = (*Uniform2DShaderResourceParameters)(ParameterIndex);
 			if (UniformResourceParameter.Index >= InExpressions.Uniform2DTextureExpressions.Num())
 			{
 				continue;
@@ -493,7 +483,7 @@ void FMaterialShaderParameters::SetShader(
 			checkSlow(Value);
 			const FLOAT MipBias = Value->MipBiasFade.CalcMipBias();
 			// Set the min mip level to 3 if we are told to work around deferred mip artifacts
-			// Textures with mip maps in deferred passes cause problems because the GPU picks a very low mip at large depth discontinuities, 
+			// Textures with mip maps in deferred passes cause problems because the GPU picks a very low mip at large depth discontinuities,
 			// Which manifests as a one pixel line around foreground objects.  Disallowing the lower mips works around this.
 			const INT MinMipLevel = MaterialRenderContext.bWorkAroundDeferredMipArtifacts ? 3 : -1;
 			// Also force linear filtering on the min filter if we are working around deferred mip artifacts,
@@ -501,13 +491,6 @@ void FMaterialShaderParameters::SetShader(
 			SetTextureParameter(ShaderRHI,UniformResourceParameter.ShaderParameter,Value,0,MipBias,-1,MinMipLevel,MaterialRenderContext.bWorkAroundDeferredMipArtifacts);
 		}
 	}
-
-
-	// set view matrix for use by view space Transform expressions
-	// Note because the shader uses only the rotation component we can safely use ViewMatrix instead of TranslatedViewMatrix
-	SetShaderValue(ShaderRHI,WorldToViewParameter,MaterialRenderContext.View->ViewMatrix);
-	SetShaderValue(ShaderRHI,ViewToWorldParameter,MaterialRenderContext.View->InvViewMatrix);
-
 
 	// set camera world position
 	SetShaderValue(ShaderRHI,CameraWorldPositionParameter,MaterialRenderContext.View->ViewOrigin);
@@ -531,32 +514,9 @@ void FMaterialShaderParameters::SetMeshShader(
 	const FMeshBatchElement& BatchElement = Mesh.Elements(BatchElementIndex);
 	if (PrimitiveSceneInfo)
 	{
-		/* Owning actor world position */
-		if (ActorWorldPositionParameter.IsBound() )
-		{
-			if( PrimitiveSceneInfo->Owner != NULL )
-			{
-				SetShaderValue(Shader,ActorWorldPositionParameter,FVector(PrimitiveSceneInfo->Owner->Location));
-			}
-			else
-			{
-				SetShaderValue(Shader,ActorWorldPositionParameter,FVector(0.f));
-			}
-		}
-
 		if (ObjectWorldPositionAndRadiusParameter.IsBound())
 		{
 			SetShaderValue(Shader,ObjectWorldPositionAndRadiusParameter,FVector4(PrimitiveSceneInfo->Bounds.Origin, PrimitiveSceneInfo->Bounds.SphereRadius));
-		}
-		
-		if (TemporalAAParameters.IsBound())
-		{
-			const UBOOL bAllowTemporalAA = View.bRenderTemporalAA
-				&& View.ViewProjectionMatrix.TransformFVector(PrimitiveSceneInfo->Bounds.Origin).Z - PrimitiveSceneInfo->Bounds.SphereRadius > View.TemporalAAParameters.StartDepth
-				&& !PrimitiveSceneInfo->bMovable
-				&& !Mesh.IsTranslucent();
-
-			SetShaderValue(Shader, TemporalAAParameters, FVector(View.TemporalAAParameters.Offset.X, View.TemporalAAParameters.Offset.Y, bAllowTemporalAA ? 1.0f : 0.0f));
 		}
 
 		if (ObjectOrientationParameter.IsBound())
@@ -564,7 +524,7 @@ void FMaterialShaderParameters::SetMeshShader(
 			// Set the object orientation parameter as the local space up vector, in world space
 			SetShaderValue(Shader,ObjectOrientationParameter,BatchElement.LocalToWorld.GetAxis(2).SafeNormal());
 		}
-		
+
 		if (WindDirectionAndSpeedParameter.IsBound())
 		{
 			SetShaderValue(Shader,WindDirectionAndSpeedParameter,PrimitiveSceneInfo->Scene->GetWindParameters(PrimitiveSceneInfo->Bounds.Origin));
@@ -579,18 +539,13 @@ void FMaterialShaderParameters::SetMeshShader(
 			SetShaderValue(Shader,FoliageNormalizedRotationAxisAndAngleParameter,FoliageNormalizedRotationAxisAndAngle);
 		}
 	}
-	else
-	{
-		SetShaderValue(Shader, TemporalAAParameters, FVector(0, 0, 0));
-	}
-
-	// set world matrix for use by world/view space Transform expressions
-	SetShaderValue(Shader,LocalToWorldParameter,BatchElement.LocalToWorld);
-	// set world to local matrix used by Transform expressions
-	SetShaderValue(Shader,WorldToLocalParameter,BatchElement.WorldToLocal);
 }
 
-UBOOL FMaterialShaderParameters::IsUniformExpressionSetValid(const FShaderFrequencyUniformExpressions& UniformExpressions) const
+UBOOL FMaterialShaderParameters::AreUniformParametersValid(
+	const FShaderFrequencyUniformExpressions& UniformExpressions,
+	const FUniformShaderParameterArray& UniformScalarShaderParameters,
+	const FUniformShaderParameterArray& UniformVectorShaderParameters,
+	const FUniformShaderResourceParameterArray* Uniform2DShaderResourceParameters)
 {
 	for (INT ParameterIndex = 0; ParameterIndex < UniformScalarShaderParameters.Num(); ParameterIndex++)
 	{
@@ -610,21 +565,48 @@ UBOOL FMaterialShaderParameters::IsUniformExpressionSetValid(const FShaderFreque
 		}
 	}
 
-	for(INT ParameterIndex = 0;ParameterIndex < Uniform2DShaderResourceParameters.Num();ParameterIndex++)
+	if (Uniform2DShaderResourceParameters)
 	{
-		const TUniformParameter<FShaderResourceParameter>& UniformResourceParameter = Uniform2DShaderResourceParameters(ParameterIndex);
-		if (UniformResourceParameter.Index >= UniformExpressions.Uniform2DTextureExpressions.Num())
+		for(INT ParameterIndex = 0;ParameterIndex < Uniform2DShaderResourceParameters->Num();ParameterIndex++)
 		{
-			return FALSE;
+			const TUniformParameter<FShaderResourceParameter>& UniformResourceParameter = (*Uniform2DShaderResourceParameters)(ParameterIndex);
+			if (UniformResourceParameter.Index >= UniformExpressions.Uniform2DTextureExpressions.Num())
+			{
+				return FALSE;
+			}
 		}
 	}
-	
+
 	return TRUE;
+}
+
+void FWorldCubeMapTextureShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
+{
+	// DISHONORED(bringup): the retail parameter name is not recoverable (no Bind in the shipping exes); never bound at runtime
+	CubemapTextureParameter.Bind(ParameterMap,TEXT("WorldCubemapTexture"),TRUE);
+}
+
+// DISHONORED(port): 2012 rva 0x4715a0 FWorldCubeMapTextureShaderParameters::Set: View->SceneReflectionTexture->Resource when bound.
+// DISHONORED(bringup): FSceneView::SceneReflectionTexture (2012 PDB @32) is not declared here yet (agent AH, Scene.h); a bound
+// parameter samples the white cube until it is.
+void FWorldCubeMapTextureShaderParameters::Set(const FSceneView* View, FShader* PixelShader) const
+{
+	if (CubemapTextureParameter.IsBound())
+	{
+		SetTextureParameter(PixelShader->GetPixelShader(), CubemapTextureParameter, GWhiteTextureCube);
+	}
+}
+
+FArchive& operator<<(FArchive& Ar,FWorldCubeMapTextureShaderParameters& P)
+{
+	Ar << P.CubemapTextureParameter;
+	return Ar;
 }
 
 void FMaterialPixelShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
 {
-	FMaterialShaderParameters::Bind(ParameterMap, SF_Pixel);
+	FMaterialShaderParameters::Bind(ParameterMap);
+	BindUniformParameters(ParameterMap, SF_Pixel, UniformPixelScalarShaderParameters, UniformPixelVectorShaderParameters, &UniformPixel2DShaderResourceParameters);
 
 	// Bind uniform cube texture parameters.
 	for(INT ParameterIndex = 0;ParameterIndex < ParameterMap.UniformExpressionSet->UniformCubeTextureExpressions.Num();ParameterIndex++)
@@ -640,27 +622,26 @@ void FMaterialPixelShaderParameters::Bind(const FShaderParameterMap& ParameterMa
 		}
 	}
 
+	// only used if Material has a Transform expression
+	LocalToWorldParameter.Bind(ParameterMap,TEXT("LocalToWorldMatrix"),TRUE);
+	WorldToLocalParameter.Bind(ParameterMap,TEXT("WorldToLocalMatrix"),TRUE);
+	WorldToViewParameter.Bind(ParameterMap,TEXT("WorldToViewMatrix"),TRUE);
+	InvViewProjectionParameter.Bind(ParameterMap,TEXT("InvViewProjectionMatrix"),TRUE);
+	ViewProjectionParameter.Bind(ParameterMap,TEXT("ViewProjectionMatrix"),TRUE);
+
 	SceneTextureParameters.Bind(ParameterMap);
+	WorldCubemapParameters.Bind(ParameterMap);
 
 	// Only used for two-sided materials.
 	TwoSidedSignParameter.Bind(ParameterMap,TEXT("TwoSidedSign"),TRUE);
 	// Only used when material needs gamma correction
 	InvGammaParameter.Bind(ParameterMap,TEXT("MatInverseGamma"),TRUE);
 	// Only used for decal materials
-	DecalNearFarPlaneDistanceParameter.Bind(ParameterMap,TEXT("DecalNearFarPlaneDistance"),TRUE);	
+	DecalFarPlaneDistanceParameter.Bind(ParameterMap,TEXT("DecalFarPlaneDistance"),TRUE);
 	ObjectPostProjectionPositionParameter.Bind(ParameterMap, TEXT("ObjectPostProjectionPosition"),TRUE);
-	ObjectMacroUVScalesParameter.Bind(ParameterMap, TEXT("ObjectMacroUVScales"),TRUE);
 	ObjectNDCPositionParameter.Bind(ParameterMap, TEXT("ObjectNDCPosition"),TRUE);
+	ObjectMacroUVScalesParameter.Bind(ParameterMap, TEXT("ObjectMacroUVScales"),TRUE);
 	OcclusionPercentageParameter.Bind(ParameterMap, TEXT("OcclusionPercentage"), TRUE);
-
-	// Used for all material shaders that set MATERIAL_USE_SCREEN_DOOR_FADE to 1
-	EnableScreenDoorFadeParameter.Bind(ParameterMap,TEXT("bEnableScreenDoorFade"),TRUE);
-	ScreenDoorFadeSettingsParameter.Bind(ParameterMap,TEXT("ScreenDoorFadeSettings"),TRUE);
-	ScreenDoorFadeSettings2Parameter.Bind(ParameterMap,TEXT("ScreenDoorFadeSettings2"),TRUE);
-	ScreenDoorNoiseTextureParameter.Bind(ParameterMap,TEXT("ScreenDoorNoiseTexture"),TRUE);
-
-	AlphaSampleTextureParameter.Bind(ParameterMap,TEXT("AlphaSampleTexture"),TRUE);
-	FluidDetailNormalTextureParameter.Bind(ParameterMap,TEXT("FluidDetailNormalTexture"),TRUE);
 }
 
 /** Sets pixel parameters that are material specific but not FMeshBatch specific. */
@@ -669,85 +650,35 @@ void FMaterialPixelShaderParameters::Set(FShader* PixelShader,const FMaterialRen
 	const FPixelShaderRHIParamRef PixelShaderRHI = PixelShader->GetPixelShader();
 	const FMaterialRenderProxy& MaterialRenderProxy = *MaterialRenderContext.MaterialRenderProxy;
 	const FUniformExpressionSet& UniformExpressionSet = MaterialRenderContext.Material.ShaderMap->GetUniformExpressionSet();
-	FMaterialShaderParameters::SetShader(PixelShaderRHI, UniformExpressionSet.PixelExpressions, MaterialRenderContext, MaterialRenderProxy.UniformParameterCache.PixelValues);
+	FMaterialShaderParameters::SetShader(
+		PixelShaderRHI,
+		UniformExpressionSet.PixelExpressions,
+		MaterialRenderContext,
+		MaterialRenderProxy.UniformParameterCache.PixelValues,
+		UniformPixelScalarShaderParameters,
+		UniformPixelVectorShaderParameters,
+		&UniformPixel2DShaderResourceParameters);
 
-#if WITH_MOBILE_RHI
-	if( GUsingMobileRHI )
+	for(INT ParameterIndex = 0;ParameterIndex < UniformPixelCubeShaderResourceParameters.Num();ParameterIndex++)
 	{
-		FTexture* BaseTexture = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Base_MobileTexture);
-
-		if (BaseTexture)
+		const TUniformParameter<FShaderResourceParameter>& UniformResourceParameter = UniformPixelCubeShaderResourceParameters(ParameterIndex);
+		checkSlow(UniformResourceParameter.Index < UniformExpressionSet.UniformCubeTextureExpressions.Num());
+		const FTexture* Value = NULL;
+		UniformExpressionSet.UniformCubeTextureExpressions(UniformResourceParameter.Index)->GetTextureValue(MaterialRenderContext,MaterialRenderContext.Material,Value);
+		if (!Value)
 		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Base_MobileTexture, BaseTexture->SamplerStateRHI, BaseTexture->TextureRHI, 0.0f, -1.0f, -1.0f);
+			Value = GWhiteTextureCube;
 		}
 
-		FTexture* MobileDetailTexture = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Detail_MobileTexture);
-		if (MobileDetailTexture)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Detail_MobileTexture, MobileDetailTexture->SamplerStateRHI, MobileDetailTexture->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-
-		FTexture* MobileDetailTexture2 = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Detail_MobileTexture2);
-		if (MobileDetailTexture2)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Detail_MobileTexture2, MobileDetailTexture2->SamplerStateRHI, MobileDetailTexture2->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-
-		FTexture* MobileDetailTexture3 = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Detail_MobileTexture3);
-		if (MobileDetailTexture3)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Detail_MobileTexture3, MobileDetailTexture3->SamplerStateRHI, MobileDetailTexture3->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-
-		FTexture* MobileNormalTexture = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Normal_MobileTexture);
-		if (MobileNormalTexture)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Normal_MobileTexture, MobileNormalTexture->SamplerStateRHI, MobileNormalTexture->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-
-		FTexture* MobileEnvironmentTexture = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Environment_MobileTexture);
-		if (MobileEnvironmentTexture)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Environment_MobileTexture, MobileEnvironmentTexture->SamplerStateRHI, MobileEnvironmentTexture->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-
-		FTexture* MobileMaskTexture = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Mask_MobileTexture);
-		if (MobileMaskTexture)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Mask_MobileTexture, MobileMaskTexture->SamplerStateRHI, MobileMaskTexture->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-
-		FTexture* MobileEmissiveTexture = MaterialRenderContext.MaterialRenderProxy->GetMobileTexture(Emissive_MobileTexture);
-		if (MobileEmissiveTexture)
-		{
-			RHISetMobileTextureSamplerState(PixelShader->GetPixelShader(), Emissive_MobileTexture, MobileEmissiveTexture->SamplerStateRHI, MobileEmissiveTexture->TextureRHI, 0.0f, -1.0f, -1.0f);
-		}
-	
-		FMobileMaterialPixelParams MobileMaterialPixelParams;
-		MaterialRenderContext.MaterialRenderProxy->FillMobileMaterialPixelParams(MobileMaterialPixelParams);
-		RHISetMobileMaterialPixelParams(MobileMaterialPixelParams);
+		checkSlow(Value);
+		Value->LastRenderTime = GCurrentTime;
+		const INT MinMipLevel = MaterialRenderContext.bWorkAroundDeferredMipArtifacts ? 3 : -1;
+		SetTextureParameter(PixelShaderRHI,UniformResourceParameter.ShaderParameter,Value,0,0,-1,MinMipLevel,MaterialRenderContext.bWorkAroundDeferredMipArtifacts);
 	}
-	else
-#endif
-	{
-		const FUniformExpressionSet& UniformExpressionSet = MaterialRenderContext.Material.ShaderMap->GetUniformExpressionSet();
-		for(INT ParameterIndex = 0;ParameterIndex < UniformPixelCubeShaderResourceParameters.Num();ParameterIndex++)
-		{
-			const TUniformParameter<FShaderResourceParameter>& UniformResourceParameter = UniformPixelCubeShaderResourceParameters(ParameterIndex);
-			checkSlow(UniformResourceParameter.Index < UniformExpressionSet.UniformCubeTextureExpressions.Num());
-			const FTexture* Value = NULL;
-			UniformExpressionSet.UniformCubeTextureExpressions(UniformResourceParameter.Index)->GetTextureValue(MaterialRenderContext,MaterialRenderContext.Material,Value);
-			if (!Value)
-			{
-				Value = GWhiteTextureCube;
-			}
 
-			checkSlow(Value);
-			Value->LastRenderTime = GCurrentTime;
-			const INT MinMipLevel = MaterialRenderContext.bWorkAroundDeferredMipArtifacts ? 3 : -1;
-			SetTextureParameter(PixelShaderRHI,UniformResourceParameter.ShaderParameter,Value,0,0,-1,MinMipLevel,MaterialRenderContext.bWorkAroundDeferredMipArtifacts);
-		}
-	}
+	// set view matrix for use by view space Transform expressions
+	// Note because the shader uses only the rotation component we can safely use ViewMatrix instead of TranslatedViewMatrix
+	SetPixelShaderValue(PixelShaderRHI,WorldToViewParameter,MaterialRenderContext.View->ViewMatrix);
 
 	// set the inverse projection transform
 	SetPixelShaderValue(
@@ -764,7 +695,7 @@ void FMaterialPixelShaderParameters::Set(FShader* PixelShader,const FMaterialRen
 		);
 
 	if( InvGammaParameter.IsBound() && MaterialRenderContext.Material.IsUsedWithGammaCorrection() )
-	{			
+	{
 		// set inverse gamma shader constant
 		checkSlow(MaterialRenderContext.View->Family->GammaCorrection > 0.0f );
 		SetPixelShaderValue( PixelShaderRHI, InvGammaParameter, 1.0f / MaterialRenderContext.View->Family->GammaCorrection );
@@ -773,16 +704,10 @@ void FMaterialPixelShaderParameters::Set(FShader* PixelShader,const FMaterialRen
 	SceneTextureParameters.Set(
 		MaterialRenderContext.View,
 		PixelShader,
-		SF_Point, 
+		SF_Point,
 		DepthUsage);
 
-#if PLATFORM_SUPPORTS_D3D10_PLUS
-	SetTextureParameter(
-		PixelShaderRHI,
-		AlphaSampleTextureParameter,
-		GStratifiedTranslucencySampleTexture
-		);
-#endif
+	WorldCubemapParameters.Set(MaterialRenderContext.View, PixelShader);
 }
 
 /**
@@ -799,8 +724,13 @@ void FMaterialPixelShaderParameters::SetMesh(
 	UBOOL bBackFace
 	) const
 {
+	const FMeshBatchElement& BatchElement = Mesh.Elements(BatchElementIndex);
 	FMaterialShaderParameters::SetMeshShader(PixelShader->GetPixelShader(),PrimitiveSceneInfo,Mesh,BatchElementIndex,View);
-	DOFParameters.SetPS(PixelShader, View.DepthOfFieldParams);
+
+	// set world matrix for use by world/view space Transform expressions
+	SetPixelShaderValue(PixelShader->GetPixelShader(),LocalToWorldParameter,BatchElement.LocalToWorld);
+	// set world to local matrix used by Transform expressions
+	SetPixelShaderValue(PixelShader->GetPixelShader(),WorldToLocalParameter,BatchElement.WorldToLocal);
 
 	// Set the two-sided sign parameter.
 	SetPixelShaderValue(
@@ -810,19 +740,18 @@ void FMaterialPixelShaderParameters::SetMesh(
 		);
 
 	// set the distance to the decal far plane used for clipping the decal
-	if( DecalNearFarPlaneDistanceParameter.IsBound() )
-	{	
-		FLOAT DecalNearFarPlaneDist[2] = {-65536.f,65536.f};
-		if( Mesh.bIsDecal && 
+	if( DecalFarPlaneDistanceParameter.IsBound() )
+	{
+		FLOAT DecalFarPlaneDist = 65536.f;
+		if( Mesh.bIsDecal &&
 			Mesh.DecalState &&
 			!Mesh.DecalState->bUseSoftwareClip &&
 			!Mesh.bWireframe )
 		{
 			// far plane decal distance relative to attachment transform
-			DecalNearFarPlaneDist[0] = Mesh.DecalState->NearPlaneDistance;
-			DecalNearFarPlaneDist[1] = Mesh.DecalState->FarPlaneDistance;
+			DecalFarPlaneDist = Mesh.DecalState->FarPlaneDistance;
 		}
-		SetPixelShaderValue(PixelShader->GetPixelShader(),DecalNearFarPlaneDistanceParameter,DecalNearFarPlaneDist);
+		SetPixelShaderValue(PixelShader->GetPixelShader(),DecalFarPlaneDistanceParameter,DecalFarPlaneDist);
 	}
 
 	if (PrimitiveSceneInfo)
@@ -833,7 +762,7 @@ void FMaterialPixelShaderParameters::SetMesh(
 			FVector ObjectNDCPosition;
 			FVector4 ObjectMacroUVScales;
 			PrimitiveSceneInfo->Proxy->GetObjectPositionAndScale(
-				View, 
+				View,
 				ObjectPostProjectionPosition,
 				ObjectNDCPosition,
 				ObjectMacroUVScales);
@@ -845,168 +774,39 @@ void FMaterialPixelShaderParameters::SetMesh(
 
 		if (OcclusionPercentageParameter.IsBound())
 		{
-			SetPixelShaderValue(PixelShader->GetPixelShader(), OcclusionPercentageParameter, 
+			SetPixelShaderValue(PixelShader->GetPixelShader(), OcclusionPercentageParameter,
 				PrimitiveSceneInfo->Proxy->GetOcclusionPercentage(View));
 		}
-
-		if (FluidDetailNormalTextureParameter.IsBound())
-		{
-			const FTexture2DRHIRef* FluidDetailNormal = PrimitiveSceneInfo->Scene->GetFluidDetailNormal();
-			if (!FluidDetailNormal || !IsValidRef(*FluidDetailNormal))
-			{
-				// Use the black texture if no valid fluid surface is active, 
-				// This will result in a normal straight up in tangent space, since only the tangent X and Y are stored in the texture
-				FluidDetailNormal = (FTexture2DRHIRef*)&GBlackTexture->TextureRHI;
-			}
-			SetTextureParameter(
-				PixelShader->GetPixelShader(),
-				FluidDetailNormalTextureParameter,
-				TStaticSamplerState<SF_Trilinear,AM_Wrap,AM_Wrap,AM_Wrap>::GetRHI(),
-				*FluidDetailNormal
-				);
-		}
 	}
-
-
-	if( EnableScreenDoorFadeParameter.IsBound() )
-	{
-		// Grab the current fade opacity for this primitive in this view
-		FLOAT FadeOpacity = 1.0f;
-		EScreenDoorPattern::Type ScreenDoorPattern = EScreenDoorPattern::Normal;
-		if( PrimitiveSceneInfo != NULL )
-		{
-			const FSceneViewState* SceneViewState = static_cast<const FSceneViewState*>( View.State );
-			if( SceneViewState != NULL )
-			{
-				FadeOpacity = SceneViewState->GetPrimitiveFadeOpacity( PrimitiveSceneInfo->Component, Mesh.LODIndex, ScreenDoorPattern );
-			}
-		}
-		const UBOOL bIsCurrentlyFading = ( FadeOpacity < 0.99f );
-		
-		
-		// Whether screen door fade is enabled or not.  The shader may branch off this bool.
-		SetPixelShaderBool(
-			PixelShader->GetPixelShader(),
-			EnableScreenDoorFadeParameter,
-			bIsCurrentlyFading );
-
-
-		// Only set the other screen door fade parameters if the primitive is actually fading
-		if( bIsCurrentlyFading )
-		{
-			FVector4 ScreenDoorFadeSettings;
-			FVector4 ScreenDoorFadeSettings2;
-			{
-				// Send the object opacity to the shader
-				ScreenDoorFadeSettings.X = FadeOpacity;		// X = Opacity
-
-				// Set the noise value scale/bias.  This is used to enable cross-fading between objects
-				// that are directly overlapping while avoiding Z-fighting artifacts.  Object A will fade
-				// in using inverted screen door noise values from Object B that's fading out.
-				const UBOOL bUseInvertedNoiseValues = ( ScreenDoorPattern == EScreenDoorPattern::Inverse );
-				if( bUseInvertedNoiseValues )
-				{
-					// Inverted!
-					ScreenDoorFadeSettings.Y = -1.0f;			// Y = Noise value scale
-					ScreenDoorFadeSettings.Z = 1.0f;			// Z = Noise value bias
-				}
-				else
-				{
-					// Non-inverted
-					ScreenDoorFadeSettings.Y = 1.0f;			// Y = Noise value scale
-					ScreenDoorFadeSettings.Z = 0.0f;			// Z = Noise value bias
-				}
-
-				// unused
-				ScreenDoorFadeSettings.W = 0;
-
-				// Set this to TRUE to enable a "TV static" style dissolve instead of a fixed dissolve pattern
-				const UBOOL bUseTVStaticDissolve = FALSE;
-
-				ScreenDoorFadeSettings2.X = bUseTVStaticDissolve ? View.ScreenDoorRandomOffset.X : 0.0f;
-				ScreenDoorFadeSettings2.Y = bUseTVStaticDissolve ? View.ScreenDoorRandomOffset.Y : 0.0f;
-
-				// Set the noise texture UV scaling amount.  Note that currently the noise texture is 64x64
-				// we map to the 64x64 tiling texture
-				ScreenDoorFadeSettings2.Z = 1.0f / 64.0f;
-				ScreenDoorFadeSettings2.W = -1.0f / 64.0f;
-			}
-			SetPixelShaderValue(
-				PixelShader->GetPixelShader(),
-				ScreenDoorFadeSettingsParameter,
-				ScreenDoorFadeSettings );
-			SetPixelShaderValue(
-				PixelShader->GetPixelShader(),
-				ScreenDoorFadeSettings2Parameter,
-				ScreenDoorFadeSettings2 );
-		}
-
-		// Screen door noise texture
-		// Note: Always set this if the shader reference it, if even it's if:ed out.
-		// Otherwise it'll be detected as an missing texture error by the PS3 RHI.
-		if ( ScreenDoorNoiseTextureParameter.IsBound() )
-		{
-			UTexture2D* ScreenDoorNoiseTexture = GEngine->ScreenDoorNoiseTexture;
-			checkSlow( ScreenDoorNoiseTexture != NULL );
-			SetTextureParameter(
-				PixelShader->GetPixelShader(),
-				ScreenDoorNoiseTextureParameter,
-				TStaticSamplerState<SF_Point,AM_Wrap,AM_Wrap,AM_Wrap>::GetRHI(),
-				ScreenDoorNoiseTexture->Resource->TextureRHI );
-		}
-	}
-
-
-
-#if WITH_MOBILE_RHI
-	if( GUsingMobileRHI )
-	{
-		FMobileMeshPixelParams MobileMeshPixelParams;
-
-		// Set whether sky light affects this primitive
-		MobileMeshPixelParams.bEnableSkyLight = PrimitiveSceneInfo != NULL ? PrimitiveSceneInfo->HasDynamicSkyLighting() : FALSE;
-
-		RHISetMobileMeshPixelParams( MobileMeshPixelParams );
-	}
-#endif
 }
 
+// DISHONORED(port): 2013 rva 0x3de320 (2012 0x3ffd30, identical): the common six, the four uniform arrays (scalar, vector, 2D, cube),
+// LocalToWorld, WorldToLocal, WorldToView, InvViewProjection, ViewProjection, the scene texture parameters, the world cube map,
+// TwoSidedSign, InvGamma, DecalFarPlaneDistance, ObjectPostProjectionPosition, ObjectMacroUVScales, ObjectNDCPosition, OcclusionPercentage.
 FArchive& operator<<(FArchive& Ar,FMaterialPixelShaderParameters& Parameters)
 {
 	check(Ar.Ver() >= VER_MIN_MATERIAL_PIXELSHADER);
 
 	Ar << (FMaterialShaderParameters&)Parameters;
 
+	Ar << Parameters.UniformPixelScalarShaderParameters;
+	Ar << Parameters.UniformPixelVectorShaderParameters;
+	Ar << Parameters.UniformPixel2DShaderResourceParameters;
 	Ar << Parameters.UniformPixelCubeShaderResourceParameters;
+	Ar << Parameters.LocalToWorldParameter;
+	Ar << Parameters.WorldToLocalParameter;
+	Ar << Parameters.WorldToViewParameter;
+	Ar << Parameters.InvViewProjectionParameter;
+	Ar << Parameters.ViewProjectionParameter;
 	Ar << Parameters.SceneTextureParameters;
+	Ar << Parameters.WorldCubemapParameters;
 	Ar << Parameters.TwoSidedSignParameter;
 	Ar << Parameters.InvGammaParameter;
-	Ar << Parameters.DecalNearFarPlaneDistanceParameter;
+	Ar << Parameters.DecalFarPlaneDistanceParameter;
 	Ar << Parameters.ObjectPostProjectionPositionParameter;
 	Ar << Parameters.ObjectMacroUVScalesParameter;
 	Ar << Parameters.ObjectNDCPositionParameter;
 	Ar << Parameters.OcclusionPercentageParameter;
-	Ar << Parameters.EnableScreenDoorFadeParameter;
-	Ar << Parameters.ScreenDoorFadeSettingsParameter;
-	Ar << Parameters.ScreenDoorFadeSettings2Parameter;
-	Ar << Parameters.ScreenDoorNoiseTextureParameter;
-	Ar << Parameters.AlphaSampleTextureParameter;
-	Ar << Parameters.FluidDetailNormalTextureParameter;
-	Ar << Parameters.DOFParameters;
-
-#if WITH_MOBILE_RHI
-	if( GUsingMobileRHI )
-	{
-		Parameters.SceneTextureParameters.SceneColorTextureParameter.Unbind();
-		Parameters.SceneTextureParameters.SceneDepthTextureParameter.Unbind();
-		Parameters.SceneTextureParameters.SceneDepthSurfaceParameter.Unbind();
-		Parameters.EnableScreenDoorFadeParameter.Unbind();
-#if !CONSOLE
-		Parameters.SceneTextureParameters.NvStereoFixTextureParameter.Unbind();
-#endif
-	}
-#endif
-
 	return Ar;
 }
 
@@ -1020,32 +820,30 @@ UBOOL FMaterialPixelShaderParameters::IsUniformExpressionSetValid(const FUniform
 			return FALSE;
 		}
 	}
-	return FMaterialShaderParameters::IsUniformExpressionSetValid(UniformExpressionSet.GetExpresssions(SF_Pixel));
+	return AreUniformParametersValid(UniformExpressionSet.GetExpresssions(SF_Pixel), UniformPixelScalarShaderParameters, UniformPixelVectorShaderParameters, &UniformPixel2DShaderResourceParameters);
 }
 
 #if WITH_D3D11_TESSELLATION
 
 void FMaterialDomainShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
 {
-	FMaterialShaderParameters::Bind(ParameterMap, SF_Domain);
+	FMaterialShaderParameters::Bind(ParameterMap);
+	BindUniformParameters(ParameterMap, SF_Domain, UniformScalarShaderParameters, UniformVectorShaderParameters, NULL);
 }
 
-/** Sets domain shader parameters that are material specific but not FMeshBatch specific. */
 void FMaterialDomainShaderParameters::Set(FShader* DomainShader,const FMaterialRenderContext& MaterialRenderContext) const
 {
 	const FUniformExpressionSet& UniformExpressionSet = MaterialRenderContext.Material.ShaderMap->GetUniformExpressionSet();
 	FMaterialShaderParameters::SetShader(
-		DomainShader->GetDomainShader(), 
+		DomainShader->GetDomainShader(),
 		UniformExpressionSet.DomainExpressions,
-		MaterialRenderContext, 
-		MaterialRenderContext.MaterialRenderProxy->UniformParameterCache.DomainValues);
+		MaterialRenderContext,
+		MaterialRenderContext.MaterialRenderProxy->UniformParameterCache.DomainValues,
+		UniformScalarShaderParameters,
+		UniformVectorShaderParameters,
+		NULL);
 }
 
-/**
-* Set local transforms for rendering a material with a single mesh
-* @param MaterialRenderContext - material specific info for setting the shader
-* @param LocalToWorld - l2w for rendering a single mesh
-*/
 void FMaterialDomainShaderParameters::SetMesh(
 	FShader* DomainShader,
 	const FPrimitiveSceneInfo* PrimitiveSceneInfo,
@@ -1055,30 +853,35 @@ void FMaterialDomainShaderParameters::SetMesh(
 	) const
 {
 	FMaterialShaderParameters::SetMeshShader(DomainShader->GetDomainShader(),PrimitiveSceneInfo,Mesh,BatchElementIndex,View);
-	DOFParameters.SetDS(DomainShader, View.DepthOfFieldParams);
+}
+
+FArchive& operator<<(FArchive& Ar,FMaterialDomainShaderParameters& Parameters)
+{
+	Ar << (FMaterialShaderParameters&)Parameters;
+	Ar << Parameters.UniformScalarShaderParameters;
+	Ar << Parameters.UniformVectorShaderParameters;
+	return Ar;
 }
 
 void FMaterialHullShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
 {
-	FMaterialShaderParameters::Bind(ParameterMap, SF_Hull);
+	FMaterialShaderParameters::Bind(ParameterMap);
+	BindUniformParameters(ParameterMap, SF_Hull, UniformScalarShaderParameters, UniformVectorShaderParameters, NULL);
 }
 
-/** Sets hull shader parameters that are material specific but not FMeshBatch specific. */
 void FMaterialHullShaderParameters::Set(FShader* HullShader,const FMaterialRenderContext& MaterialRenderContext) const
 {
 	const FUniformExpressionSet& UniformExpressionSet = MaterialRenderContext.Material.ShaderMap->GetUniformExpressionSet();
 	FMaterialShaderParameters::SetShader(
-		HullShader->GetHullShader(), 
+		HullShader->GetHullShader(),
 		UniformExpressionSet.HullExpressions,
-		MaterialRenderContext, 
-		MaterialRenderContext.MaterialRenderProxy->UniformParameterCache.HullValues);
+		MaterialRenderContext,
+		MaterialRenderContext.MaterialRenderProxy->UniformParameterCache.HullValues,
+		UniformScalarShaderParameters,
+		UniformVectorShaderParameters,
+		NULL);
 }
 
-/**
-* Set local transforms for rendering a material with a single mesh
-* @param MaterialRenderContext - material specific info for setting the shader
-* @param LocalToWorld - l2w for rendering a single mesh
-*/
 void FMaterialHullShaderParameters::SetMesh(
 	FShader* HullShader,
 	const FPrimitiveSceneInfo* PrimitiveSceneInfo,
@@ -1090,11 +893,20 @@ void FMaterialHullShaderParameters::SetMesh(
 	FMaterialShaderParameters::SetMeshShader(HullShader->GetHullShader(),PrimitiveSceneInfo,Mesh,BatchElementIndex,View);
 }
 
+FArchive& operator<<(FArchive& Ar,FMaterialHullShaderParameters& Parameters)
+{
+	Ar << (FMaterialShaderParameters&)Parameters;
+	Ar << Parameters.UniformScalarShaderParameters;
+	Ar << Parameters.UniformVectorShaderParameters;
+	return Ar;
+}
+
 #endif
 
 void FMaterialVertexShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
 {
-	FMaterialShaderParameters::Bind(ParameterMap, SF_Vertex);
+	FMaterialShaderParameters::Bind(ParameterMap);
+	BindUniformParameters(ParameterMap, SF_Vertex, UniformVertexScalarShaderParameters, UniformVertexVectorShaderParameters, NULL);
 }
 
 /** Sets vertex parameters that are material specific but not FMeshBatch specific. */
@@ -1102,23 +914,14 @@ void FMaterialVertexShaderParameters::Set(FShader* VertexShader,const FMaterialR
 {
 	const FUniformExpressionSet& UniformExpressionSet = MaterialRenderContext.Material.ShaderMap->GetUniformExpressionSet();
 	FMaterialShaderParameters::SetShader(
-		VertexShader->GetVertexShader(), 
+		VertexShader->GetVertexShader(),
 		UniformExpressionSet.VertexExpressions,
-		MaterialRenderContext, 
-		MaterialRenderContext.MaterialRenderProxy->UniformParameterCache.VertexValues);
-
-#if WITH_MOBILE_RHI
-	if( GUsingMobileRHI )
-	{
-		FMobileMaterialVertexParams MobileMaterialVertexParams;
-		MaterialRenderContext.Material.FillMobileMaterialVertexParams(MobileMaterialVertexParams);
-		//overrides PER proxy (mesh particles)
-		MaterialRenderContext.MaterialRenderProxy->FillMobileMaterialVertexParams(MobileMaterialVertexParams);
-		RHISetMobileMaterialVertexParams(MobileMaterialVertexParams);
-	}
-#endif
+		MaterialRenderContext,
+		MaterialRenderContext.MaterialRenderProxy->UniformParameterCache.VertexValues,
+		UniformVertexScalarShaderParameters,
+		UniformVertexVectorShaderParameters,
+		NULL);
 }
-
 
 /**
  * Set the material shader parameters which depend on the mesh element being rendered.
@@ -1133,72 +936,16 @@ void FMaterialVertexShaderParameters::SetMesh(
 	const FSceneView& View
 	) const
 {
-	const FMeshBatchElement& BatchElement = Mesh.Elements(BatchElementIndex);
 	FMaterialShaderParameters::SetMeshShader(VertexShader->GetVertexShader(), PrimitiveSceneInfo, Mesh, BatchElementIndex, View);
-	DOFParameters.SetVS(VertexShader, View.DepthOfFieldParams);
+}
 
-#if WITH_MOBILE_RHI
-	if( GUsingMobileRHI )
-	{
-		FMobileMeshVertexParams MobileMeshVertexParams;
-
-		{
-			// Find the brightest light affecting this primitive
-			// Note: This is currently only used for per-vertex specular on mobile platforms
-			FLightSceneInfo* BrightestLightSceneInfo = NULL;
-			if( PrimitiveSceneInfo != NULL )
-			{
-				// Iterate over all lights this primitive is interacting with.
-				FLightPrimitiveInteraction* LightPrimitiveInteraction = PrimitiveSceneInfo->LightList;
-				while( LightPrimitiveInteraction )
-				{
-					FLightSceneInfo* CurLight = LightPrimitiveInteraction->GetLight();
-
-					// We only care about directional lights for per-vertex specular on mobile
-					if( CurLight->LightType == LightType_Directional || CurLight->LightType == LightType_DominantDirectional )
-					{
-						if (!BrightestLightSceneInfo
-							|| CurLight->Color.GetMax() > BrightestLightSceneInfo->Color.GetMax())
-						{
-							BrightestLightSceneInfo = CurLight;
-						}	
-					}
-
-					LightPrimitiveInteraction = LightPrimitiveInteraction->GetNextLight();
-				}
-			}
-
-			if( BrightestLightSceneInfo != NULL )
-			{
-				MobileMeshVertexParams.BrightestLightDirection = BrightestLightSceneInfo->GetDirection();
-				MobileMeshVertexParams.BrightestLightColor = BrightestLightSceneInfo->Color;
-			}
-			else
-			{
- 				MobileMeshVertexParams.BrightestLightDirection = FVector( 0, 0, -1 );
- 				MobileMeshVertexParams.BrightestLightColor = FLinearColor( 1, 1, 1, 1 );
-			}
-		}
-
-		MobileMeshVertexParams.CameraPosition = View.ViewOrigin;
-		if (PrimitiveSceneInfo)
-		{
-			MobileMeshVertexParams.ObjectPosition = PrimitiveSceneInfo->Bounds.Origin;
-			MobileMeshVertexParams.ObjectBounds = PrimitiveSceneInfo->Bounds;
-		}
-		else
-		{
-			//for canvas material
-			MobileMeshVertexParams.ObjectPosition = View.ViewOrigin;
-			MobileMeshVertexParams.ObjectBounds = FBoxSphereBounds(View.ViewOrigin, FVector(1.0f, 1.0f, 1.0f), 1.0f);
-		}
-		MobileMeshVertexParams.LocalToWorld = &BatchElement.LocalToWorld;
-
-		MobileMeshVertexParams.ParticleScreenAlignment = Mesh.VertexFactory->GetSpriteScreenAlignment();
-
-		RHISetMobileMeshVertexParams(MobileMeshVertexParams);
-	}
-#endif
+// DISHONORED(port): 2013 rva 0x3deca0 (2012 0x3ffe50, identical): the common six, then the vertex scalar and vector uniform arrays.
+FArchive& operator<<(FArchive& Ar,FMaterialVertexShaderParameters& Parameters)
+{
+	Ar << (FMaterialShaderParameters&)Parameters;
+	Ar << Parameters.UniformVertexScalarShaderParameters;
+	Ar << Parameters.UniformVertexVectorShaderParameters;
+	return Ar;
 }
 
 /**
@@ -1564,58 +1311,13 @@ void FMaterialShaderMap::ProcessCompilationResults(
 #endif
 }
 
+// DISHONORED(port): 2013 rva 0x3ea7d0 (2012 0x40b9f0, identical, 116 bytes): FALSE only while the map is in ShaderMapsBeingCompiled;
+// the loop over the vertex factory types only does per-type lookups without effect. The reference walk over every declared shader
+// and vertex factory type would call every cooked map incomplete (this tree declares types retail never cooked) and send the
+// material to the compiler retail does not have.
 UBOOL FMaterialShaderMap::IsComplete(const FMaterial* Material, UBOOL bSilent) const
 {
-	UBOOL bIsComplete = TRUE;
-
-	TArray<FMaterial*>* CorrespondingMaterials = FMaterialShaderMap::ShaderMapsBeingCompiled.Find(this);
-	if (CorrespondingMaterials)
-	{
-		return FALSE;
-	}
-
-	// Iterate over all vertex factory types.
-	for(TLinkedList<FVertexFactoryType*>::TIterator VertexFactoryTypeIt(FVertexFactoryType::GetTypeList());VertexFactoryTypeIt;VertexFactoryTypeIt.Next())
-	{
-		FVertexFactoryType* VertexFactoryType = *VertexFactoryTypeIt;
-
-		if(VertexFactoryType->IsUsedWithMaterials())
-		{
-			// Find the shaders for this vertex factory type.
-			const FMeshMaterialShaderMap* MeshShaderMap = GetMeshShaderMap(VertexFactoryType);
-			if(!FMeshMaterialShaderMap::IsComplete(MeshShaderMap,Platform,Material,VertexFactoryType,bSilent))
-			{
-				if (!MeshShaderMap && !bSilent)
-				{
-					warnf(NAME_DevShaders, TEXT("Incomplete material %s, missing Vertex Factory %s."), *Material->GetFriendlyName(), VertexFactoryType->GetName());
-				}
-				bIsComplete = FALSE;
-				break;
-			}
-		}
-	}
-
-	// Iterate over all material shader types.
-	for(TLinkedList<FShaderType*>::TIterator ShaderTypeIt(FShaderType::GetTypeList());ShaderTypeIt;ShaderTypeIt.Next())
-	{
-		// Find this shader type in the material's shader map.
-		FMaterialShaderType* ShaderType = ShaderTypeIt->GetMaterialShaderType();
-		if (ShaderType && 
-			ShaderType->ShouldCache(Platform,Material) && 
-			Material->ShouldCache(Platform, ShaderType, NULL) &&
-			!HasShader(ShaderType)
-			)
-		{
-			if (!bSilent)
-			{
-				warnf(NAME_DevShaders, TEXT("Incomplete material %s, missing FMaterialShader %s."), *Material->GetFriendlyName(), ShaderType->GetName());
-			}
-			bIsComplete = FALSE;
-			break;
-		}
-	}
-
-	return bIsComplete;
+	return FMaterialShaderMap::ShaderMapsBeingCompiled.Find(this) == NULL;
 }
 
 /** Returns TRUE if all the shaders in this shader map have their compressed shader code in Cache. */
@@ -1891,11 +1593,89 @@ void FMaterialShaderMap::FlushShadersByVertexFactoryType(const FVertexFactoryTyp
 	InitOrderedMeshShaderMaps();
 }
 
-// DISHONORED(port): 2013 rva 0x40ef30 (2012 rva 0x432680), identical (2013 rebuilds the shader map hash after loading)
+FDishonoredShaderMapLoadStats& FDishonoredShaderMapLoadStats::Get()
+{
+	static FDishonoredShaderMapLoadStats Stats;
+	return Stats;
+}
+
+void FDishonoredShaderMapLoadStats::NoteShaderRef(const FName& TypeName, FShaderType* Type, FShader* Shader)
+{
+	NumPendingRefs++;
+	if (!Type)
+	{
+		PendingUndeclared.AddItem(TypeName);
+	}
+	else if (!Shader)
+	{
+		PendingMissing.AddItem(TypeName);
+	}
+}
+
+void FDishonoredShaderMapLoadStats::CommitPending(UBOOL bHasVertexFactory, const FString& MapName)
+{
+	if (bHasVertexFactory)
+	{
+		NumShaderRefs += NumPendingRefs;
+		NumUndeclaredRefs += PendingUndeclared.Num();
+		NumMissingRefs += PendingMissing.Num();
+		for (INT Index = 0; Index < PendingUndeclared.Num(); Index++)
+		{
+			const FName TypeName = PendingUndeclared(Index);
+			if (!UndeclaredTypes.Contains(TypeName))
+			{
+				UndeclaredTypes.Add(TypeName);
+				warnf(TEXT("DISHONORED(bringup): material shader map %s references the undeclared shader type %s"), *MapName, *TypeName.ToString());
+			}
+		}
+		for (INT Index = 0; Index < PendingMissing.Num(); Index++)
+		{
+			const FName TypeName = PendingMissing(Index);
+			if (!MissingTypes.Contains(TypeName))
+			{
+				MissingTypes.Add(TypeName);
+				warnf(TEXT("DISHONORED(bringup): material shader map %s references shader type %s whose cooked record did not load"), *MapName, *TypeName.ToString());
+			}
+		}
+	}
+	else
+	{
+		// The whole map belongs to a vertex factory this game does not have; retail drops it and all of its records.
+		NumSkippedRefs += NumPendingRefs;
+		NumMeshShaderMapsWithoutVertexFactory++;
+	}
+	PendingUndeclared.Empty();
+	PendingMissing.Empty();
+	NumPendingRefs = 0;
+}
+
+void FDishonoredShaderMapLoadStats::ReportIfChanged()
+{
+	if (NumReportedMaps != NumMaterialShaderMaps)
+	{
+		NumReportedMaps = NumMaterialShaderMaps;
+		debugf(TEXT("DISHONORED(bringup): material shader maps: %i loaded, %i skipped, %i undeclared types, %i mismatches (%i shader references: %i undeclared, %i not loaded, %i for vertex factories retail does not have)"),
+			NumMaterialShaderMaps, NumMeshShaderMapsWithoutVertexFactory, UndeclaredTypes.Num(), MissingTypes.Num(),
+			NumShaderRefs, NumUndeclaredRefs, NumMissingRefs, NumSkippedRefs);
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x40ef30 (2012 rva 0x432680): the shader map (TShaderMap::Serialize), MeshShaderMaps, MaterialId,
+// FriendlyName, StaticParameters, the uniform expression set at 656+, Platform as an INT, then InitVertexFactoryMap when loading.
+// Identical field order; the loading side reads the shader map through DishonoredLoadShaderMap for the inventory.
 void FMaterialShaderMap::Serialize(FArchive& Ar)
 {
 	check(Ar.Ver() >= VER_MIN_MATERIALSHADERMAP);
-	TShaderMap<FMaterialShaderType>::Serialize(Ar);
+	if (Ar.IsLoading())
+	{
+		DishonoredLoadShaderMap(Ar, *(TShaderMap<FMaterialShaderType>*)this);
+		// The material's own shader map has no vertex factory, so its references are always relevant.
+		FDishonoredShaderMapLoadStats::Get().CommitPending(TRUE, TEXT("(material)"));
+	}
+	else
+	{
+		TShaderMap<FMaterialShaderType>::Serialize(Ar);
+	}
 	Ar << MeshShaderMaps;
 	Ar << MaterialId;
 	Ar << FriendlyName;
@@ -1914,6 +1694,7 @@ void FMaterialShaderMap::Serialize(FArchive& Ar)
 
 	if(Ar.IsLoading())
 	{
+		FDishonoredShaderMapLoadStats::Get().NumMaterialShaderMaps++;
 		// When loading, reinitialize OrderedMeshShaderMaps from the new contents of MeshShaderMaps.
 		InitOrderedMeshShaderMaps();
 	}

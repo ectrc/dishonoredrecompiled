@@ -26,6 +26,20 @@ UBOOL MeshSupportsDeferredLighting(const FMaterial* Material, const FPrimitiveSc
 /** Whether to replace lightmap textures with solid colors to visualize the mip-levels. */
 UBOOL GVisualizeMipLevels = FALSE;
 
+/**
+ * DISHONORED(bringup): Arkane's mesh-material shader types live in units whose passes are not ported yet
+ * (arkbloompartsrendering.cpp: TBloomPartMesh* / TSoulPartMesh*, arkppnodematerial.cpp: TPpMaterial*). Nothing references
+ * those object files, so the static library would drop them together with their shader type registrations and the cooked
+ * material shader maps would report the types as undeclared. Referencing one symbol per unit forces the link.
+ */
+extern void DishonoredLinkArkPartMeshShaderTypes();
+extern void DishonoredLinkArkPpMaterialShaderTypes();
+void (*GDishonoredArkMeshShaderTypeLinkAnchors[])() =
+{
+	&DishonoredLinkArkPartMeshShaderTypes,
+	&DishonoredLinkArkPpMaterialShaderTypes,
+};
+
 #if WITH_D3D11_TESSELLATION
 // Typedef is necessary because the C preprocessor thinks the comma in the template parameter list is a comma in the macro parameter list.
 // BasePass Vertex Shader needs to include hull and domain shaders for tessellation, these only compile for D3D11
@@ -43,14 +57,34 @@ UBOOL GVisualizeMipLevels = FALSE;
 	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassVertexShader##LightMapPolicyType##FogDensityPolicyType,TEXT("BasePassVertexShader"),TEXT("Main"),SF_Vertex,0,0); 
 #endif
 
-#define IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,bEnableSkyLight,SkyLightShaderName) \
-	typedef TBasePassPixelShader<LightMapPolicyType,bEnableSkyLight> TBasePassPixelShader##LightMapPolicyType##SkyLightShaderName; \
-	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassPixelShader##LightMapPolicyType##SkyLightShaderName,TEXT("BasePassPixelShader"),TEXT("Main"),SF_Pixel,VER_FIXED_TRANSLUCENT_SHADOW_FILTERING,0);
+// DISHONORED(retail): the cooked vertex shader type is TBasePassVertexShader<LightMapPolicy> without a fog density policy, registered
+// as TBasePassVertexShader##LightMapPolicyType with 798 / 23 (2013 rva 0xb7ea00 TBasePassVertexShaderFNoLightMapPolicy, 0xb7eb40 /
+// 0xb7ec80 / 0xb7f040 / 0xb7f180 for the other policies). This tree's FNoDensityPolicy instantiation carries that name.
+#if WITH_D3D11_TESSELLATION
+#define IMPLEMENT_BASEPASS_RETAIL_VERTEXSHADER_TYPE(LightMapPolicyType) \
+	typedef TBasePassVertexShader<LightMapPolicyType,FNoDensityPolicy> TBasePassVertexShader##LightMapPolicyType; \
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassVertexShader##LightMapPolicyType,TEXT("BasePassVertexShader"),TEXT("Main"),SF_Vertex,798,23); \
+	typedef TBasePassHullShader<LightMapPolicyType,FNoDensityPolicy> TBasePassHullShader##LightMapPolicyType##FNoDensityPolicy; \
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassHullShader##LightMapPolicyType##FNoDensityPolicy,TEXT("BasePassTessellationShaders"),TEXT("MainHull"),SF_Hull,0,0); \
+	typedef TBasePassDomainShader<LightMapPolicyType,FNoDensityPolicy> TBasePassDomainShader##LightMapPolicyType##FNoDensityPolicy; \
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassDomainShader##LightMapPolicyType##FNoDensityPolicy,TEXT("BasePassTessellationShaders"),TEXT("MainDomain"),SF_Domain,0,0);
+#else
+#define IMPLEMENT_BASEPASS_RETAIL_VERTEXSHADER_TYPE(LightMapPolicyType) \
+	typedef TBasePassVertexShader<LightMapPolicyType,FNoDensityPolicy> TBasePassVertexShader##LightMapPolicyType; \
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassVertexShader##LightMapPolicyType,TEXT("BasePassVertexShader"),TEXT("Main"),SF_Vertex,798,23);
+#endif
+
+// DISHONORED(retail): four cooked pixel shader types per light map policy, named <Policy>NoSkyLightFALSEFALSE / NoSkyLightFALSETRUE /
+// SkyLightTRUEFALSE / SkyLightTRUETRUE (2013 rva 0xb7ea40 / 0xb7eac0 / 0xb7ea80 / 0xb7eb00 for FNoLightMapPolicy), constructed with 798 / 23.
+#define IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,bEnableSkyLight,SkyLightShaderName,bUsePrecomputedFog) \
+	typedef TBasePassPixelShader<LightMapPolicyType,bEnableSkyLight,bUsePrecomputedFog> TBasePassPixelShader##LightMapPolicyType##SkyLightShaderName##bEnableSkyLight##bUsePrecomputedFog; \
+	IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TBasePassPixelShader##LightMapPolicyType##SkyLightShaderName##bEnableSkyLight##bUsePrecomputedFog,TEXT("BasePassPixelShader"),TEXT("Main"),SF_Pixel,798,23);
 
 // Implement a vertex shader for each supported combination of affecting fog primitives
 // These are for forward per-vertex fogging of translucency, opaque materials will always use FNoDensityPolicy
+// DISHONORED(retail): the fog density variants are reference-only (no cooked record); kept so the fog volume drawing policies link
 #define IMPLEMENT_BASEPASS_LIGHTMAPPED_VERTEXONLY_TYPE(LightMapPolicyType) \
-	IMPLEMENT_BASEPASS_VERTEXSHADER_TYPE(LightMapPolicyType,FNoDensityPolicy); \
+	IMPLEMENT_BASEPASS_RETAIL_VERTEXSHADER_TYPE(LightMapPolicyType); \
 	IMPLEMENT_BASEPASS_VERTEXSHADER_TYPE(LightMapPolicyType,FConstantDensityPolicy); \
 	IMPLEMENT_BASEPASS_VERTEXSHADER_TYPE(LightMapPolicyType,FLinearHalfspaceDensityPolicy); \
 	IMPLEMENT_BASEPASS_VERTEXSHADER_TYPE(LightMapPolicyType,FSphereDensityPolicy); \
@@ -59,8 +93,10 @@ UBOOL GVisualizeMipLevels = FALSE;
 // Implement a pixel shader type for skylights and one without, and one vertex shader that will be shared between them
 #define IMPLEMENT_BASEPASS_LIGHTMAPPED_SHADER_TYPE(LightMapPolicyType) \
 	IMPLEMENT_BASEPASS_LIGHTMAPPED_VERTEXONLY_TYPE(LightMapPolicyType) \
-	IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,FALSE,NoSkyLight); \
-	IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,TRUE,SkyLight);
+	IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,FALSE,NoSkyLight,FALSE); \
+	IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,FALSE,NoSkyLight,TRUE); \
+	IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,TRUE,SkyLight,FALSE); \
+	IMPLEMENT_BASEPASS_PIXELSHADER_TYPE(LightMapPolicyType,TRUE,SkyLight,TRUE);
 
 // Implement shader types per lightmap policy
 IMPLEMENT_BASEPASS_LIGHTMAPPED_SHADER_TYPE(FNoLightMapPolicy); 

@@ -1209,20 +1209,18 @@ void FShaderFrequencyUniformExpressions::GetInputsString(EShaderFrequency Freque
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x1464d0 (2012 0x14eab0, identical): retail FUniformExpressionSet is 80 bytes = six arrays serialized in
+// member order (2012 PDB): UniformPixelVectorExpressions @8, UniformPixelScalarExpressions @20, Uniform2DTextureExpressions @32,
+// UniformCubeTextureExpressions @44, UniformVertexVectorExpressions @56, UniformVertexScalarExpressions @68. Vertex shaders have no
+// 2D texture expressions and there are no hull / domain sets (the reference wrote two empty dummies for them).
 void FUniformExpressionSet::Serialize(FArchive& Ar)
 {
-	Ar << PixelExpressions;
+	Ar << PixelExpressions.UniformVectorExpressions;
+	Ar << PixelExpressions.UniformScalarExpressions;
+	Ar << PixelExpressions.Uniform2DTextureExpressions;
 	Ar << UniformCubeTextureExpressions;
-	Ar << VertexExpressions;
-#if WITH_D3D11_TESSELLATION
-	Ar << HullExpressions;
-	Ar << DomainExpressions;
-#else
-	FShaderFrequencyUniformExpressions Dummy0;
-	FShaderFrequencyUniformExpressions Dummy1;
-	Ar << Dummy0;
-	Ar << Dummy1;
-#endif
+	Ar << VertexExpressions.UniformVectorExpressions;
+	Ar << VertexExpressions.UniformScalarExpressions;
 }
 
 UBOOL FUniformExpressionSet::IsEmpty() const
@@ -2007,6 +2005,8 @@ UBOOL FMaterial::InitShaderMap(FStaticParameterSet* StaticParameters, EShaderPla
 	}
 	// Find the material's cached shader map.
 	ShaderMap = FMaterialShaderMap::FindId(*StaticParameters, Platform);
+	// DISHONORED(bringup): the cooked material shader map inventory line, once per batch of loaded caches (MaterialShader.h)
+	FDishonoredShaderMapLoadStats::Get().ReportIfChanged();
 	UBOOL bRequiredRecompile = FALSE;
 	if(!bValidCompilationOutput || !ShaderMap || !ShaderMap->IsComplete(this, TRUE))
 	{

@@ -240,6 +240,16 @@ public:
 		FVector MeshOrigin;
 		FVector MeshExtension;
 
+		/**
+		 * DISHONORED(layout): retail FGPUSkinVertexFactory::ShaderDataType is 32 bytes (2012 PDB): BoneMatrices @0,
+		 * MaxBoneInfluences @4, MeshOrigin @8, MeshExtension @20. The shader constant is set by
+		 * FGPUSkinVertexFactoryShaderParameters::Set (2012 rva 0xe0a80); the per-bone motion blur members below are
+		 * reference-only (retail has no PrevPerBoneMotionBlur buffer).
+		 * DISHONORED(bringup): the skeletal mesh renderer does not fill this yet (hand-over, agent AG report); 4 is the
+		 * reference maximum influence count, which is what the cooked skinning shaders were compiled with.
+		 */
+		INT MaxBoneInfluences = 4;
+
 		/** @return 0xffffffff means not valid */
 		UINT GetOldBoneData(UINT InFrameNumber) const
 		{

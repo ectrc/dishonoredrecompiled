@@ -203,9 +203,19 @@ void FMeshMaterialShaderMap::FlushShadersByShaderType(FShaderType* ShaderType)
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x40ef30 FMaterialShaderMap::Serialize reads MeshShaderMaps through the reference TIndirectArray path:
+// the shader map, then the vertex factory type by name. The loading side reads the shader map through DishonoredLoadShaderMap
+// (MaterialShader.h) for the inventory; a mesh shader map whose vertex factory type this tree lacks is counted as skipped.
 FArchive& operator<<(FArchive& Ar,FMeshMaterialShaderMap& S)
 {
-	S.Serialize(Ar);
+	if (Ar.IsLoading())
+	{
+		DishonoredLoadShaderMap(Ar, *(TShaderMap<FMeshMaterialShaderType>*)&S);
+	}
+	else
+	{
+		S.Serialize(Ar);
+	}
 	Ar << S.VertexFactoryType;
 	if (Ar.IsLoading())
 	{
@@ -216,6 +226,7 @@ FArchive& operator<<(FArchive& Ar,FMeshMaterialShaderMap& S)
 		{
 			S.Empty();
 		}
+		FDishonoredShaderMapLoadStats::Get().CommitPending(VFType != NULL, FString(TEXT("(")) + (VFType ? VFType->GetName() : TEXT("no vertex factory")) + TEXT(")"));
 	}
 	return Ar;
 }

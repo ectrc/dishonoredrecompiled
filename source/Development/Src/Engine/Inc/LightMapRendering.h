@@ -680,12 +680,14 @@ class FForwardShadowingShaderParameters
 {
 public:
 
+	// DISHONORED(layout): retail FForwardShadowingShaderParameters is 24 bytes = bReceiveDynamicShadows, ScreenToShadowMatrix,
+	// ShadowBufferAndTexelSize, ShadowDepthTexture (2012 PDB; inlined in that order in TLightPixelShader::Serialize 2013 rva 0xf43e0
+	// @326..344 and TBasePassPixelShaderBaseType<FDirectionalLightLightMapPolicy>::Serialize 0x4260f0 @114..132). No ShadowOverrideFactor.
 	void Bind(const FShaderParameterMap& ParameterMap)
 	{
 		bReceiveDynamicShadowsParameter.Bind(ParameterMap, TEXT("bReceiveDynamicShadows"), TRUE);
 		ScreenToShadowMatrixParameter.Bind(ParameterMap,TEXT("ScreenToShadowMatrix"),TRUE);
 		ShadowBufferAndTexelSizeParameter.Bind(ParameterMap,TEXT("ShadowBufferAndTexelSize"),TRUE);
-		ShadowOverrideFactorParameter.Bind(ParameterMap,TEXT("ShadowOverrideFactor"),TRUE);
 		ShadowDepthTextureParameter.Bind(ParameterMap,TEXT("ShadowDepthTexture"),TRUE);
 	}
 
@@ -694,7 +696,6 @@ public:
 		Ar << bReceiveDynamicShadowsParameter;
 		Ar << ScreenToShadowMatrixParameter;
 		Ar << ShadowBufferAndTexelSizeParameter;
-		Ar << ShadowOverrideFactorParameter;
 		Ar << ShadowDepthTextureParameter;
 	}
 
@@ -712,7 +713,6 @@ private:
 	FShaderParameter bReceiveDynamicShadowsParameter;
 	FShaderParameter ScreenToShadowMatrixParameter;
 	FShaderParameter ShadowBufferAndTexelSizeParameter;
-	FShaderParameter ShadowOverrideFactorParameter;
 	FShaderResourceParameter ShadowDepthTextureParameter;
 };
 

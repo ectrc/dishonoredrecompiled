@@ -319,17 +319,7 @@ void FParticleVertexFactoryShaderParameters::Set(FShader* VertexShader,const FVe
 		}
 	}
 
-	if (GRHIShaderPlatform == SP_PS3 || GRHIShaderPlatform == SP_PCOGL)
-	{
-		FVector4 CornerUVs[4] = 
-			{ 
-				FVector4(0.0f, 0.0f, 0.0f, 0.0f), 
-				FVector4(0.0f, 1.0f, 0.0f, 0.0f), 
-				FVector4(1.0f, 1.0f, 0.0f, 0.0f), 
-				FVector4(1.0f, 0.0f, 0.0f, 0.0f)
-			};
-		SetVertexShaderValue(VertexShader->GetVertexShader(), CornerUVsParameter, CornerUVs);
-	}
+	// DISHONORED(layout): no CornerUVs parameter in retail (PS3 / OpenGL only in the reference; ParticleVertexFactory.h)
 }
 
 void FParticleVertexFactoryShaderParameters::SetMesh(FShader* VertexShader, const FMeshBatch& Mesh, INT BatchElementIndex,const FSceneView& View) const

@@ -487,12 +487,13 @@ class FInstancedStaticMeshVertexFactoryShaderParameters : public FLocalVertexFac
 		}
 	}
 
+	// DISHONORED(port): 2013 rva 0x1111f0 (2012 0x114070, identical): the local vertex factory parameters, InstancedViewTranslation,
+	// InstancingParameters; retail FInstancedStaticMeshVertexFactoryShaderParameters is 36 bytes (2012 PDB), no InstancingFadeOutParams.
 	void Serialize(FArchive& Ar)
 	{
 		FLocalVertexFactoryShaderParameters::Serialize(Ar);
 		Ar << InstancedViewTranslationParameter;
 		Ar << InstancingParameters;
-		Ar << InstancingFadeOutParamsParameter;
 	}
 
 private:

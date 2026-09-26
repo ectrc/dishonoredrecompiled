@@ -493,8 +493,7 @@ void FForwardShadowingShaderParameters::Set(
 		SetPixelShaderValue(PixelShader->GetPixelShader(),ShadowBufferAndTexelSizeParameter,
 			FVector4(ShadowBufferSize.X, ShadowBufferSize.Y, 1.0f / ShadowBufferSize.X, 1.0f / ShadowBufferSize.Y));
 
-		SetPixelShaderValue(PixelShader->GetPixelShader(),ShadowOverrideFactorParameter, 1.0f);
-
+		// DISHONORED(layout): no ShadowOverrideFactor parameter in retail (LightMapRendering.h)
 		SetTextureParameter(
 			PixelShader->GetPixelShader(),
 			ShadowDepthTextureParameter,
@@ -510,9 +509,6 @@ void FForwardShadowingShaderParameters::Set(
 
 		SetPixelShaderValue(PixelShader->GetPixelShader(),ShadowBufferAndTexelSizeParameter,
 			FVector4(1.0f, 1.0f, 1.0f, 1.0f));
-
-		// Set the override factor to 0 to force the whole object to be shadowed, as that is multiplied by the final shadow factor
-		SetPixelShaderValue(PixelShader->GetPixelShader(),ShadowOverrideFactorParameter, 0.0f);
 
 		SetTextureParameter(
 			PixelShader->GetPixelShader(),

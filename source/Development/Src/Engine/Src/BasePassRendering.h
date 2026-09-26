@@ -70,18 +70,17 @@ public:
 		FogDensityPolicyType::ModifyCompilationEnvironment(Platform, OutEnvironment);
 	}
 
+	// DISHONORED(port): 2013 rva 0x424c10 TBasePassVertexShader<FSHLightLightMapPolicy>::Serialize (2012 0x11c470, identical; 0x424d10 /
+	// 0x424e30 for the multi-type policies): FShader, the light map policy vertex parameters (@136), the vertex factory parameters
+	// (@108), the material parameters (@144). Retail TBasePassVertexShader<LightMapPolicy> has one template argument and no height
+	// fog / fog volume parameters (2012 PDB: 196 bytes = FMeshMaterialVertexShader + FMaterialVertexShaderParameters for
+	// FNoLightMapPolicy); the fog density policy variants of this tree are reference-only and never in the cooked caches.
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
-#if PS3
-		//@hack - compiler bug? optimized version crashes during FShader::Serialize call
-		static INT RemoveMe=0;	RemoveMe=1;
-#endif
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
 		LightMapPolicyType::VertexParametersType::Serialize(Ar);
 		bShaderHasOutdatedParameters |= Ar << VertexFactoryParameters;
-		Ar << HeightFogParameters;
 		Ar << MaterialParameters;
-		Ar << FogVolumeParameters;
 		return bShaderHasOutdatedParameters;
 	}
 
@@ -261,10 +260,8 @@ public:
 		LightMapPolicyType::PixelParametersType::Bind(Initializer.ParameterMap);
 		MaterialParameters.Bind(Initializer.ParameterMap);
 		AmbientColorAndSkyFactorParameter.Bind(Initializer.ParameterMap,TEXT("AmbientColorAndSkyFactor"),TRUE);
-		TemporalAAParameters.Bind(Initializer.ParameterMap,TEXT("TemporalAAParametersPS"),TRUE);
 		UpperSkyColorParameter.Bind(Initializer.ParameterMap,TEXT("UpperSkyColor"),TRUE);
 		LowerSkyColorParameter.Bind(Initializer.ParameterMap,TEXT("LowerSkyColor"),TRUE);
-		DeferredRenderingParameters.Bind(Initializer.ParameterMap,TEXT("DeferredRenderingParameters"),TRUE);
 	}
 	TBasePassPixelShaderBaseType() {}
 
@@ -290,38 +287,7 @@ public:
 
 	void SetMesh(const FPrimitiveSceneInfo* PrimitiveSceneInfo,const FMeshBatch& Mesh, INT BatchElementIndex,const FSceneView& View,UBOOL bBackFace,EBlendMode BlendMode)
 	{
-		VertexFactoryParameters.SetMesh(this, Mesh, BatchElementIndex, View);
 		MaterialParameters.SetMesh(this,PrimitiveSceneInfo,Mesh,BatchElementIndex,View,bBackFace);
-
-#if XBOX
-		if (PrimitiveSceneInfo)
-		{
-			const UBOOL bShouldDisableTemporalAA = !View.bRenderTemporalAA || ( PrimitiveSceneInfo->bMovable && !IsTranslucentBlendMode(BlendMode) );
-			SetPixelShaderValue(
-				GetPixelShader(),
-				TemporalAAParameters,
-				FVector2D(View.TemporalAAParameters.StartDepth, bShouldDisableTemporalAA ? 0.0f : 1.0f)
-				);
-		}
-#endif
-
-#if PLATFORM_SUPPORTS_D3D10_PLUS
-		if (DeferredRenderingParameters.IsBound() && PrimitiveSceneInfo)
-		{
-			const FMaterial* Material = Mesh.MaterialRenderProxy->GetMaterial();
-			const UBOOL bSupportsDeferredLighting = MeshSupportsDeferredLighting(Material, PrimitiveSceneInfo);
-
-			SetPixelShaderValue(
-				GetPixelShader(),
-				DeferredRenderingParameters,
-				FVector4(
-					bSupportsDeferredLighting ? 1.0f : 0.0f, 
-					Material->GetImageReflectionNormalDampening(),
-					PrimitiveSceneInfo->LightingChannels.GetDeferredShadingChannelMask()
-					)
-				);
-		}
-#endif
 	}
 
 	void SetSkyColor(const FLinearColor& UpperSkyColor,const FLinearColor& LowerSkyColor)
@@ -330,55 +296,51 @@ public:
 		SetPixelShaderValue(GetPixelShader(),LowerSkyColorParameter,LowerSkyColor);
 	}
 
+	// DISHONORED(port): 2013 rva 0x425ca0 TBasePassPixelShaderBaseType<FNoLightMapPolicy>::Serialize (2012 0x448120, identical; 0x425f00 /
+	// 0x4260f0 / 0x4267e0 for the texture, directional and SH light map policies): FShader, the light map policy pixel parameters,
+	// the material parameters, AmbientColorAndSkyFactor, UpperSkyColor, LowerSkyColor (2012 PDB: 320 bytes for FNoLightMapPolicy).
+	// No vertex factory parameters (retail pixel shaders derive from FShader), no TemporalAA / DeferredRendering parameters.
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
-#if PS3
-		//@hack - compiler bug? optimized version crashes during FShader::Serialize call
-		static INT RemoveMe=0;	RemoveMe=1;
-#endif
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
-		bShaderHasOutdatedParameters |= Ar << VertexFactoryParameters;
 		LightMapPolicyType::PixelParametersType::Serialize(Ar);
 		Ar << MaterialParameters;
 		Ar << AmbientColorAndSkyFactorParameter;
-		Ar << TemporalAAParameters;
 		Ar << UpperSkyColorParameter;
 		Ar << LowerSkyColorParameter;
-		Ar << DeferredRenderingParameters;
-
-		// set parameter names for platforms that need them
-		UpperSkyColorParameter.SetShaderParamName(TEXT("UpperSkyColor"));
-		LowerSkyColorParameter.SetShaderParamName(TEXT("LowerSkyColor"));
-		
 		return bShaderHasOutdatedParameters;
 	}
 
-	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const 
-	{ 
-		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet); 
+	virtual UBOOL IsUniformExpressionSetValid(const FUniformExpressionSet& UniformExpressionSet) const
+	{
+		return MaterialParameters.IsUniformExpressionSetValid(UniformExpressionSet);
 	}
 
 private:
 	FMaterialPixelShaderParameters MaterialParameters;
 	FShaderParameter AmbientColorAndSkyFactorParameter;
-	FShaderParameter TemporalAAParameters;
 	FShaderParameter UpperSkyColorParameter;
 	FShaderParameter LowerSkyColorParameter;
-	FShaderParameter DeferredRenderingParameters;
 };
 
-/** The concrete base pass pixel shader type, parameterized by whether sky lighting is needed. */
-template<typename LightMapPolicyType,UBOOL bEnableSkyLight>
+/**
+ * The concrete base pass pixel shader type, parameterized by whether sky lighting is needed.
+ * DISHONORED(layout): Arkane's TBasePassPixelShader has a third template argument (2012 PDB TBasePassPixelShader<Policy,0|1,0|1>,
+ * 328 bytes = the base type + PrecomputedFogParameter @320; 2013 rva 0x4298c0 Serialize = base + that parameter). The cooked type
+ * names end in NoSkyLightFALSEFALSE / NoSkyLightFALSETRUE / SkyLightTRUEFALSE / SkyLightTRUETRUE (2013 rva 0xb7ea40..0xb7eb00); the
+ * third argument is the DisFog precomputed-fog variant (FDisPrecomputedFogSceneInfo in FViewInfo, renderer.md 6).
+ */
+template<typename LightMapPolicyType,UBOOL bEnableSkyLight,UBOOL bUsePrecomputedFog>
 class TBasePassPixelShader : public TBasePassPixelShaderBaseType<LightMapPolicyType>
 {
 	DECLARE_SHADER_TYPE(TBasePassPixelShader,MeshMaterial);
 public:
-	
+
 	static UBOOL ShouldCache(EShaderPlatform Platform,const FMaterial* Material,const FVertexFactoryType* VertexFactoryType)
 	{
 		//don't compile skylight versions if the material is unlit
 		const UBOOL bCacheShaders = !bEnableSkyLight || (Material->GetLightingModel() != MLM_Unlit);
-		return bCacheShaders && 
+		return bCacheShaders &&
 			TBasePassPixelShaderBaseType<LightMapPolicyType>::ShouldCache(Platform, Material, VertexFactoryType, bEnableSkyLight);
 	}
 
@@ -386,15 +348,29 @@ public:
 	{
 		TBasePassPixelShaderBaseType<LightMapPolicyType>::ModifyCompilationEnvironment(Platform, OutEnvironment);
 		OutEnvironment.Definitions.Set(TEXT("ENABLE_SKY_LIGHT"),bEnableSkyLight ? TEXT("1") : TEXT("0"));
+		OutEnvironment.Definitions.Set(TEXT("USE_PRECOMPUTED_FOG"),bUsePrecomputedFog ? TEXT("1") : TEXT("0"));
 	}
-	
+
 	/** Initialization constructor. */
 	TBasePassPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
 		TBasePassPixelShaderBaseType<LightMapPolicyType>(Initializer)
-	{}
+	{
+		// DISHONORED(bringup): the retail parameter name is not in the shipping exes (no Bind); only ever loaded from the caches
+		PrecomputedFogParameter.Bind(Initializer.ParameterMap,TEXT("PrecomputedFog"),TRUE);
+	}
 
 	/** Default constructor. */
 	TBasePassPixelShader() {}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = TBasePassPixelShaderBaseType<LightMapPolicyType>::Serialize(Ar);
+		Ar << PrecomputedFogParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderParameter PrecomputedFogParameter;
 };
 
 /**
@@ -473,13 +449,14 @@ public:
 		VertexShader = InMaterialResource.GetShader<TBasePassVertexShader<LightMapPolicyType,FogDensityPolicyType> >(InVertexFactory->GetType());
 
 		// Find the appropriate shaders based on whether sky lighting is needed.
+		// DISHONORED(bringup): the precomputed-fog (DisFog) variants are not selected until the DisFog pass is ported (renderer.md 5)
 		if (bEnableSkyLight)
 		{
-			PixelShader = InMaterialResource.GetShader<TBasePassPixelShader<LightMapPolicyType,TRUE> >(InVertexFactory->GetType());
+			PixelShader = InMaterialResource.GetShader<TBasePassPixelShader<LightMapPolicyType,TRUE,FALSE> >(InVertexFactory->GetType());
 		}
 		else
 		{
-			PixelShader = InMaterialResource.GetShader<TBasePassPixelShader<LightMapPolicyType,FALSE> >(InVertexFactory->GetType());
+			PixelShader = InMaterialResource.GetShader<TBasePassPixelShader<LightMapPolicyType,FALSE,FALSE> >(InVertexFactory->GetType());
 		}
 	}
 

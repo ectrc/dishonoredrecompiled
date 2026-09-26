@@ -610,7 +610,6 @@ public:
 		UBOOL bReceiveDynamicShadows,
 		UBOOL bUseTranslucencyLightAttenuation)
 	{
-		VertexFactoryParameters.Set(this, VertexFactory, *View);
 		FMaterialRenderContext MaterialRenderContext(MaterialRenderProxy, MaterialResource, View->Family->CurrentWorldTime, View->Family->CurrentRealTime, View);
 		MaterialParameters.Set(this,MaterialRenderContext);
 
@@ -637,15 +636,17 @@ public:
 		UBOOL bOverrideDynamicShadowsOnTranslucency,
 		UBOOL bBackFace)
 	{
-		VertexFactoryParameters.SetMesh(this,Mesh,BatchElementIndex,View);
 		MaterialParameters.SetMesh(this,PrimitiveSceneInfo,Mesh,BatchElementIndex,View,bBackFace);
 		ForwardShadowingParameters.Set(View, this, bOverrideDynamicShadowsOnTranslucency, TranslucentPreShadowInfo);
 	}
 
+	// DISHONORED(port): 2013 rva 0xf43e0 TLightPixelShader<FDirectionalLightPolicy,FNoStaticShadowingPolicy>::Serialize (2012 0xf4650,
+	// identical; 0x13b0a0 point, 0x160d90 spot, 0x160bf0 SH, 0xf4520 / 0x13b250 / 0x160e90 with the distance field shadow policy):
+	// FShader, the light policy pixel parameters (@108), the shadowing policy pixel parameters, the material parameters (@128),
+	// LightAttenuationTexture, the four forward shadowing parameters. No vertex factory parameters (2012 PDB: 352 bytes, FShader base).
 	virtual UBOOL Serialize(FArchive& Ar)
 	{
 		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
-		bShaderHasOutdatedParameters |= Ar << VertexFactoryParameters;
 		LightTypePolicy::PixelParametersType::Serialize(Ar);
 		ShadowingTypePolicy::PixelParametersType::Serialize(Ar);
 		Ar << MaterialParameters;
@@ -752,6 +753,11 @@ private:
 	);
 
 /**
+* DISHONORED(retail): the two TModShadowProjectionPixelShader instances below use the retail uniform-PCF policy names
+* F4SampleManualPCF / F16SampleManualPCF (2013 rva 0x1451e0 GetModProjPixelShaderRef, 0x45cc20 GetProjPixelShaderRef);
+* that declares the six cooked TModShadowProjectionPixelShader<*,*ManualPCF> records (renderer.md 3) and drops six
+* reference-only types (renderer.md 4). The rest of this header is agent AG's.
+*
 * Implements all of the shader types which must be compiled for a particular light policy type. 
 *
 * A IMPLEMENT_LIGHTSHADOWING_SHADER_TYPE for each static shadowing policy
@@ -768,10 +774,10 @@ private:
 #define IMPLEMENT_LIGHT_SHADER_TYPE(LightPolicyType,VertexShaderFilename,PixelShaderFilename,MinPackageVersion,MinLicenseePackageVersion) \
 	IMPLEMENT_SHADOWLESS_LIGHT_SHADER_TYPE(LightPolicyType,VertexShaderFilename,PixelShaderFilename,MinPackageVersion,MinLicenseePackageVersion) \
 	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("HardwarePCFMain"),F4SampleHwPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
-	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("Main"),F4SampleManualPCFPerPixel,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
+	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("Main"),F4SampleManualPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
 	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("HardwarePCFMain"),F16SampleHwPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
 	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("Fetch4Main"),F16SampleFetch4PCF,MinPackageVersion,MinLicenseePackageVersion) \
-	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("Main"),F16SampleManualPCFPerPixel,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
+	IMPLEMENT_LIGHT_UNIFORMPCF_SHADER_TYPE(LightPolicyType,TEXT("Main"),F16SampleManualPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
 	IMPLEMENT_LIGHT_BPCF_SHADER_TYPE(LightPolicyType,TEXT("HardwarePCFMain"),FLowQualityHwPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
 	IMPLEMENT_LIGHT_BPCF_SHADER_TYPE(LightPolicyType,TEXT("HardwarePCFMain"),FMediumQualityHwPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \
 	IMPLEMENT_LIGHT_BPCF_SHADER_TYPE(LightPolicyType,TEXT("HardwarePCFMain"),FHighQualityHwPCF,Max((UINT)VER_CONTENT_RESAVE_AUGUST_2007_QA_BUILD,(UINT)MinPackageVersion),MinLicenseePackageVersion) \

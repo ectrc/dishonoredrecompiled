@@ -159,9 +159,10 @@ public:
 		NormalsTypeParameter.Bind(ParameterMap, TEXT("NormalsType"),TRUE);
 		NormalsSphereCenterParameter.Bind(ParameterMap, TEXT("NormalsSphereCenter"),TRUE);
 		NormalsCylinderUnitDirectionParameter.Bind(ParameterMap, TEXT("NormalsCylinderUnitDirection"),TRUE);
-		CornerUVsParameter.Bind(ParameterMap, TEXT("CornerUVs"), (GRHIShaderPlatform != SP_PS3 && GRHIShaderPlatform != SP_PCOGL) ? TRUE : FALSE);
 	}
 
+	// DISHONORED(port): 2013 rva 0x46f100 (2012 0x497f20, identical): the eleven parameters @4..64 in member order; retail
+	// FParticleVertexFactoryShaderParameters is 72 bytes (2012 PDB) and has no CornerUVs parameter.
 	virtual void Serialize(FArchive& Ar)
 	{
 		Ar << CameraWorldPositionParameter;
@@ -175,18 +176,6 @@ public:
 		Ar << NormalsTypeParameter;
 		Ar << NormalsSphereCenterParameter;
 		Ar << NormalsCylinderUnitDirectionParameter;
-		Ar << CornerUVsParameter;
-		
-		// set parameter names for platforms that need them
-		CameraWorldPositionParameter.SetShaderParamName(TEXT("CameraWorldPosition"));
-		CameraRightParameter.SetShaderParamName(TEXT("CameraRight"));
-		CameraUpParameter.SetShaderParamName(TEXT("CameraUp"));
-		ScreenAlignmentParameter.SetShaderParamName(TEXT("ScreenAlignment"));
-		LocalToWorldParameter.SetShaderParamName(TEXT("LocalToWorld"));
-		AxisRotationVectorSourceIndexParameter.SetShaderParamName(TEXT("AxisRotationVectorSourceIndex"));
-		AxisRotationVectorsArrayParameter.SetShaderParamName(TEXT("AxisRotationVectors"));
-		ParticleUpRightResultScalarsParameter.SetShaderParamName(TEXT("ParticleUpRightResultScalars"));
-		CornerUVsParameter.SetShaderParamName(TEXT("CornerUVs"));
 	}
 
 	virtual void Set(FShader* VertexShader,const FVertexFactory* VertexFactory,const FSceneView& View) const;
@@ -205,5 +194,4 @@ private:
 	FShaderParameter NormalsTypeParameter;
 	FShaderParameter NormalsSphereCenterParameter;
 	FShaderParameter NormalsCylinderUnitDirectionParameter;
-	FShaderParameter CornerUVsParameter;
 };
