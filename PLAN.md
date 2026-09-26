@@ -277,8 +277,9 @@ and `middleware.md`.
   proven live; with Steam installed, `steam_appid.txt` = 205100 and no `-nosteam` finishes the proof.
 * **Wwise 2012.1** — headers from the 2012 PDB with a `static_assert` per struct size, plus a silent backend
   that really reads the shipped banks: 65 file packages, 39 banks loaded, 463 of 468 events resolved, and the
-  Wwise name hash verified as FNV-1 over all 981 shipped containers. Real audio needs the licensed SDK, after
-  which `DISHONORED_WWISE_SDK=<path>` is the whole switch, or an evaluator for the bank logic.
+  Wwise name hash verified as FNV-1 over all 981 shipped containers. **This is where audio stops until Phase 10**
+  (the user's call, 2026-09-26: audio is polish). Real audio then needs either the licensed SDK, after which
+  `DISHONORED_WWISE_SDK=<path>` is the whole switch, or an evaluator for the bank logic.
 * **Still open**: Scaleform GFx (the main menu, `middleware.md` decision) and FaceFX. APEX stays off
   permanently — retail ships the DLLs but never linked it.
 
@@ -343,6 +344,26 @@ The 2013 exe is the target, so this is not a final polish step: every function p
 - [x] `resources/tools/ida/`: export scripts + headless batch decompile (`decompile_funcs.py`) + matcher.
 - [x] Per-function status: `resources/docs/function_status.csv` + `progress.md`; per-agent packages and
       reports in `PHASE<n>.md` / `agents/agent<X>.md` (the parallel-session workflow used since Phase 2).
+
+### Phase 10 — Polish, late (audio, cosmetics)
+
+Deliberately last, by the user's decision on 2026-09-26: **audio is polish and is not needed to get the game
+playable.** The Wwise bindings and the silent backend already in the tree are enough for bring-up — they load
+the real banks, resolve the real event ids and keep the audio calls traceable — so nothing here blocks a
+milestone. Do not spend a wave on it until the game plays.
+
+- [ ] Real audio, either route (`agents/agentAN.md` sections 1, 3 and 7 have the detail):
+      (a) install the licensed Wwise 2012.1 SDK and set `DISHONORED_WWISE_SDK=<path>`, then restore the nine
+      plug-in and codec factories, give the sink the viewport window handle, and check the CRT mismatch; or
+      (b) write an evaluator for the bank logic (action lists, attenuation and RTPC curves, state and switch
+      containers, the music hierarchy) on top of the AKPK and BKHD readers that already work.
+- [ ] Tick the audio device (`UClient::GetAkAudioElement` slot, `UWindowsClient::Tick`) and fill
+      `UDishonoredAudioSystem::RegisterAmbientSound` / `Update` / `ConsumeEndOfEventNotifies` /
+      `PostAkEventAtPoint`, all decompiled; `UAkAudioDevice::ApplyGameSettings`; the matinee Ak tracks.
+      Until then `PostEvent` is never reached, which is why the silent backend logs banks but no events.
+- [ ] FaceFX (`WITH_FACEFX=0`): facial animation, same character — cosmetic, and its SDK is not in the tree.
+- [ ] Cosmetic rendering left over from wave 4: the Arkane and GFx post-process shader families
+      (136 undeclared types), Arkane bloom, DisFog.
 
 ## 5. Risks and open questions
 

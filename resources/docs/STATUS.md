@@ -46,6 +46,7 @@ has no data.
 | Layouts vs retail | `xcheck_sdk_layout.py build/game/layout_probe.txt`: 2,314 types, **0 rows**; `gen_layout_probe.py compare`: 2,341 types, 0 contract mismatches; `verify_phase2.py retail` 2/2; DishonoredGame 12,502 layout asserts, 0 pending |
 | Engine convergence | 143 functions of the startup assets checked against 2013 (87 identical, 49 ported, 5 written; `serialization_delta_engine.md`); `progress.md` Engine 60 ported / 30 written / 87 verified |
 | Renderer | `renderer.md`: D3D9 RHI, cooked global shader cache (VER_MIN_SHADER 786, SF_Pixel = 1); material shader caches (786/23, 798/23 gates) and 143 Arkane shader types not declared; under the null RHI the scene render is skipped (`RenderViewFamily_RenderThread`) because the global cache lacks e.g. `FDownsampleSceneDepthPixelShader` |
+| Audio | **deferred to Phase 10 as polish** (the user's call, 2026-09-26): the silent backend loads the real banks and resolves the real event ids, which is all bring-up needs. Do not open an audio package until the game plays |
 | Middleware, ours | **PhysX 2.8.4, Steamworks and Wwise 2012.1 bindings are written by us** from the shipped DLLs and their PDBs, no vendor SDK downloaded and nothing redistributed: `source/Development/Src/External/{PhysX284,SteamworksFlat,Wwise2012}`, `cmake/{PhysX,Steamworks,Wwise}.cmake`, stub-DLL import libraries as for Bink. `WITH_NOVODEX=1` (scene created, convex meshes cooked, 235 rigid bodies in the streamed levels), `WITH_STEAMWORKS=1` (the last 3 unported natives ported), Wwise with a silent backend (65 file packages, 39 banks, 463 of 468 events resolved; real audio needs the licensed SDK, which is then one cmake switch). Still off: `WITH_GFx` (Scaleform decision), `WITH_FACEFX`, `WITH_APEX` (retail never linked it), `WITH_OGGVORBIS` |
 | Middleware (`middleware.md`) | GFx 3.3.89, Wwise 2012.1 (bank v65), FaceFX 1.7.3.1, PhysX 2.8.4, Bink 1.9p (import lib in use), steam_api 1.30.50.46, libcurl 7.77.0; SDKs the user must obtain |
 | Versions pinned | `UnObjVer.cpp`: engine 9411, package 801, licensee 30, cooked content 133. `UnNames.h`: 499 hardcoded names + 69 reference-only |
@@ -63,7 +64,9 @@ behind the AI brain / sub-process / item-context classes (triage in `agents/agen
 post-process shader families, a Release or `FMallocBinned` build for long d3d9 runs, `UShaderCache` 132 -> 128,
 the ~100 remaining Engine/GameFramework shim classes, the retail nav-mesh runtime, and the whole-tree Edge
 path. Also the load-all test over all 471 `.upk` (milestone 3 exit check), now that AD's `-loadall` exists,
-and Phase 4 SDKs (PhysX 2.8.4, Wwise 2012.1, Steamworks 1.18; Scaleform per `middleware.md`).
+Phase 4 is done: the PhysX, Steamworks and Wwise bindings are ours, written from the shipped DLLs and
+their PDBs, so nothing there waits on a download. What is left of the middleware is Scaleform GFx, which
+gates the main menu (`middleware.md`), and **audio, which is deliberately last — PLAN.md Phase 10, polish**.
 
 ## Known pitfalls
 
