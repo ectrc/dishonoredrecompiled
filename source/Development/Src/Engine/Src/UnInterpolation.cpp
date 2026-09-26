@@ -1635,6 +1635,13 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 	if(!bIsPlaying || bPaused || !InterpData)
 		return;
 
+	// DISHONORED(bringup): a zero-length matinee makes the two looping wraps below
+	// (`while(NewPosition > InterpData->InterpLength)` and `while(NewPosition < 0.f)`) spin forever, which is where the world tick
+	// stops after the main-menu map change (Dishonored_MainMenu's SeqAct_Interp_14). Arkane keeps the tracks in
+	// UMatineeData::m_Data and leaves UInterpData::InterpLength at 0 until that is ported (agent AF's finding B1, wave 5 item).
+	if(InterpData->InterpLength <= 0.f)
+		return;
+
 	// do nothing if client side only and no affected Actors are recently visible
 	UBOOL bSkipUpdate = FALSE;
 	if (bClientSideOnly && bSkipUpdateIfNotVisible)

@@ -295,7 +295,13 @@ void GCreateMalloc()
 #elif WIIU
 	GMalloc = new FMallocBinned();
 #elif _DEBUG && !USE_MALLOC_PROFILER
-	GMalloc = new FMallocDebug();
+	// DISHONORED(bringup): FMallocDebug's per-free bookkeeping turns the streamed-level teardown of a
+	// map change into minutes of wall time, and with the cooked shader caches resident it exhausts the 32-bit heap seconds into a
+	// d3d9 run. -binnedmalloc picks the shipping allocator instead. The raw Win32 command line is read because GCreateMalloc runs
+	// on the first allocation, before the engine parses its own (agent AF's finding, wave 4).
+	GMalloc = ( GetCommandLineW() != NULL && wcsstr( GetCommandLineW(), L"-binnedmalloc" ) != NULL )
+		? (FMalloc*)new FMallocBinned()
+		: (FMalloc*)new FMallocDebug();
 #elif _WINDOWS
 	GMalloc = new FMallocBinned();
 #else

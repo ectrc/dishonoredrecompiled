@@ -280,7 +280,7 @@ Owner: agent AK. Build dir `build\agentAK`. Files: `cmake/*` (after the coordina
 | C7 | coordinator | Per-build dependency dirs, per-agent ported/status files, baseline in STATUS/PLAN, this plan | done | 2026-09-26 | see the checklist above; Debug crash filter + linker index diagnostics added |
 | AD | AD | Streaming serialization: nav mesh (0x2909e0), ULevel gates, async IO, `-loadall` sweep | done | 2026-09-26 | commit 8af9425: the blocker was the reference poly serializer reading a `TArray<FCoverReference>` retail lacks at licensee 30; class 688 -> retail 464; 5 serializers ported; `-loadall` 3 menu + 9 tower packages, 0 errors. `ULevel::Serialize` and `FAsyncIORequest` checked and left alone |
 | AE | AE | Engine/GameFramework retail natives without a body (Z's list), movement/camera first | done | 2026-09-26 | commit f8bad4f: 109 natives given retail bodies (145 missing -> 29 real gaps); no `Engine/GameFramework native not ported` line left on the map path; 22 UI data-store natives left (off-path). Runs need `-forcelogflush` |
-| AF | AF | Milestone 5: `L_Tower_P` streamed in, player possessed, input moves the pawn | in flight | | last package of the wave; its files (UnGame/UnIn/UnPlayer/UnLevTic, the player-controller and input units) are the only ones left uncommitted. `ADishonoredPlayerPawn::execPlayDying_Native` is the last strict-natives abort and is AF's |
+| AF | AF | Milestone 5: `L_Tower_P` streamed in, player possessed, input moves the pawn | done (milestone not claimed) | 2026-09-26 | commit f184f60: `LoadMap: L_Tower_P`, a `DishonoredPlayerPawn` possessed by a `DishonoredPlayerController` at the PlayerStart, 172 retail bindings, state `PlayerWalking`, W producing real movement acceleration and the mouse turning the view 13,328 yaw units — but the pawn does not move (spawns in a world with no collision, falls to the kill plane, freezes at `PHYS_None`), so AF rightly did not claim the milestone. Also fixed a wave regression: `UDishonoredEngine::PlayLoadMapMovie` recursed into itself. Found the retail New Game route (`m_NewGameCommand` = `ce ChangeLvl_StartNewGame`, `OnNewGameConfirm` 0x7c1ff0). Six switches, all off by default |
 | AG | AG | Renderer A: material shader maps from the retail caches (786/798, uniform expressions) | done | 2026-09-26 | commit ad3f9ae: 0 maps -> **2580 loaded, 0 undeclared, 0 mismatches**, 142,902 shader references all consuming their exact cooked ranges; `IsComplete` was the culprit (retail 0x3ea7d0: FALSE only while compiling); retail registers only 17 vertex factory types |
 | AH | AH | Renderer B: global shaders + scene renderer, null-RHI skip removed, D3D9 world frame | done | 2026-09-26 | commit f8dfe78: 62 -> **127 records, 58 -> 0 mismatches**, null-RHI skip gone, scene renderer runs every frame (>210 frames at 1920x1080); two shared parameter structs explained most of the 58; D3D9 world frame re-measured at merge |
 | AI | AI | Engine convergence wave 2: UEngine virtuals, UWorld::Init audio/MapInfo, UFont, matinee classes into Engine | done | 2026-09-26 | commit 03f5335: UEngine virtuals in 2013 vtable order, `UWorld::Init` audio system + MapInfo (0x3945f0), `SpawnActor` init functor (0x256990), `UFont::GetScalingFactor` (text was invisible), 19 Arkane classes + 6 structs moved into Engine, 44 functions |
@@ -289,10 +289,11 @@ Owner: agent AK. Build dir `build\agentAK`. Files: `cmake/*` (after the coordina
 
 ## Wave result (coordinator, 2026-09-26)
 
-Seven of the eight packages are merged: AK `571bd0e`, AD `8af9425`, AI `03f5335`, AE `f8bad4f`, AG `ad3f9ae`,
+All eight packages are merged: AK `571bd0e`, AD `8af9425`, AI `03f5335`, AE `f8bad4f`, AG `ad3f9ae`,
 AH `f8dfe78`, AJ `6e9d1ad` (with the module regeneration AI's class move needed, and a coordinator bridge
-guarding the two reference-only `Actor.PostInitAnimTree` / `Actor.AnimTreeUpdated` events). AF is still in
-flight and owns the only uncommitted files.
+guarding the two reference-only `Actor.PostInitAnimTree` / `Actor.AnimTreeUpdated` events), AF `f184f60`,
+and two more coordinator bridges from AF's snapshot-only repairs: the zero-length matinee guard in
+`USeqAct_Interp::StepInterp` and a `-binnedmalloc` switch for `_DEBUG` builds.
 
 **The wave's headline: the game boots, loads, renders and changes map with no crash anywhere.** On the merged
 clean-worktree build (`build/head_wt`, layout checks on, all module options, 785 units, 0 errors):
@@ -308,13 +309,29 @@ clean-worktree build (`build/head_wt`, layout checks on, all module options, 785
 
 `function_status.csv` folded the six per-agent files: 1,200 rows (+307), Engine per-function 0.8 % -> 1.2 %.
 
+**The matinee guard moved the end of the run, and exposed the next blocker.** Before it, the world tick
+spun forever in `StepInterp` right after the map change; with it, on the merged tree (`build/game`, all
+eight packages):
+
+| Run | Result |
+|---|---|
+| null RHI, `-noscenerender` | **no critical error at all**: `Initial startup: 6.62s`, `Committed map change via DishonoredEngine` at 7.40 s, and the world keeps ticking to 33.7 s (the run is killed by the harness timeout, not by a fault) |
+| null RHI, scene rendering on (default) | the renderer now draws real geometry and asserts at ~7 s on a mesh batch whose index range exceeds its index buffer (`DynamicIndexBuffer != NULL \|\| ... BatchElement.FirstIndex + ...`). This is the **next blocker**, newly exposed rather than newly caused: before the guard the tick never got this far |
+
 Known follow-ups recorded for wave 5: Arkane anim nodes (the tweak anim tree asserts on a state picker with
 zero child weights, so the assignment is gated behind `-distweakanimtree`), the 275 DishonoredGame stubs that
 need the AI brain / sub-process / item-context classes (triage in `agentAJ.md`), the Arkane and GFx
 post-process shader families (136 undeclared types), `UShaderCache` 132 -> 128 with
 `FCompressedShaderCodeCache`, a Release or `FMallocBinned` build for long d3d9 runs (`_DEBUG` uses
 `FMallocDebug` and the now-resident caches exhaust the 32-bit heap ~2 s in), the ~100 remaining
-Engine/GameFramework shim classes, and the whole-tree Edge path.
+Engine/GameFramework shim classes, and the whole-tree Edge path. Added by AF's five documented blockers: the
+mesh-batch index-range assert above; the sub-level association hang in `FSkeletalMeshObject` cleanup
+(identical stacks under `FMallocDebug`, `FMallocBinned` and `-onethread`, so almost certainly one heap
+corruption, and it is what stands between here and a walking pawn); world collision, without which the pawn
+falls to the kill plane; `APlayerController::Possess`/`UnPossess` still being `import_reference.py` stubs; the
+reference height-fog parameter assert on the first world frame; and the player's `UPlayerInput` never entering
+`GlobalInteractions`. `UInterpData::InterpLength` should be set when `UMatineeData::m_Data` is ported, which
+retires the guard.
 
 ## Rules for agents (wave 2/3 rules, repeated)
 

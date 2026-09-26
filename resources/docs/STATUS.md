@@ -1,4 +1,4 @@
-# Project status — 2026-09-26 (Phase 3 wave 4: 7 of 8 packages landed; the game boots, loads, renders and changes map with no crash)
+# Project status — 2026-09-26 (Phase 3 wave 4 landed, all 8 packages: the game boots, loads, renders, changes map and keeps ticking)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md` (done), `PHASE2.md`
 (done), `PHASE3.md` (wave 1, done), `PHASE4.md` (wave 2, done), `PHASE5.md` (wave 3, done — read its
@@ -35,7 +35,7 @@ has no data.
 | 2. `Init: Object subsystem initialized` | done (wave 1/2), null RHI and d3d9 |
 | 3. Load `Core.upk` … `Startup.upk`, `GEngine->Init()` | **done (wave 3 X/Z)**: retail seek-free path, `Startup.upk` 63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P`, `Bringing World … up for play`, `Finished loading level`, `Initial startup: 5.2s`; the tick loop runs (null RHI, `--skip-native OnlineSubsystemPC`) |
 | 4. D3D9 device, Bink movie, Scaleform menu | **mostly done (waves 3 Y, 4 AG/AH)**: device + viewport + the 8 Bink startup movies, and the cooked caches now load whole — 127 global shader records and 2,580 material shader maps with 0 mismatches and 0 undeclared types; the scene renderer runs every frame instead of being skipped (180+ frames at 1920x1080 under the null RHI). Left: a Release or `FMallocBinned` build for long d3d9 runs (`_DEBUG` uses `FMallocDebug`, and with the caches resident the 32-bit heap is exhausted ~2 s in), the Arkane/GFx post-process shader families (136 undeclared), and the Scaleform menu pending `middleware.md` |
-| 5. Mission map, player spawns, input | **nearly done (wave 4)**: the null-RHI run reaches `Initial startup: 7.73s`, renders frames, and commits the map change into the mission map (`Committed map change via DishonoredEngine`) with **no `Critical` line anywhere**; the player controller possesses its pawn and the tweak chain applies the pawn's own tweak set (`Ply_Player_at`). Only 4 natives on the whole path still lack a body: 3 Steamworks `Read*` (need the Steam SDK) and `ADishonoredPlayerPawn::execPlayDying_Native` (package AF, in flight). The possessed/input-moved evidence is AF's |
+| 5. Mission map, player spawns, input (see the wave-4 result in `PHASE6.md` for the two run modes) | **nearly done (wave 4)**: the null-RHI run reaches `Initial startup: 7.73s`, renders frames, and commits the map change into the mission map (`Committed map change via DishonoredEngine`) with **no `Critical` line anywhere**; the player controller possesses its pawn and the tweak chain applies the pawn's own tweak set (`Ply_Player_at`). Only 4 natives on the whole path still lack a body: 3 Steamworks `Read*` (need the Steam SDK) and `ADishonoredPlayerPawn::execPlayDying_Native` (package AF, in flight). The possessed/input-moved evidence is AF's |
 
 | Area | State |
 |---|---|
@@ -53,9 +53,11 @@ has no data.
 
 ## Next
 
-Wave 4 is merged except package AF (`PHASE6.md` tracker and "Wave result" have the numbers and the commits
-`571bd0e`, `8af9425`, `03f5335`, `f8bad4f`, `ad3f9ae`, `f8dfe78`, `6e9d1ad`). AF owns the only uncommitted
-files and the last unported native on the path. Then wave 5 from the follow-ups in `PHASE6.md`: Arkane anim
+Wave 4 is fully merged (`PHASE6.md` tracker and "Wave result" have the numbers and the commits `571bd0e`,
+`8af9425`, `03f5335`, `f8bad4f`, `ad3f9ae`, `f8dfe78`, `6e9d1ad`, `f184f60` plus the bridge commit). With
+`-noscenerender` the merged tree reaches the map change and keeps ticking with no critical error; with the
+scene renderer on it asserts at ~7 s on a mesh batch whose index range exceeds its index buffer, which is the
+next blocker. Then wave 5 from the follow-ups in `PHASE6.md`: Arkane anim
 nodes (the tweak anim tree is gated behind `-distweakanimtree` until they exist), the 275 DishonoredGame stubs
 behind the AI brain / sub-process / item-context classes (triage in `agents/agentAJ.md`), the Arkane and GFx
 post-process shader families, a Release or `FMallocBinned` build for long d3d9 runs, `UShaderCache` 132 -> 128,
