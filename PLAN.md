@@ -308,7 +308,11 @@ and `middleware.md`.
    every frame instead of being skipped. Left: a Release or `FMallocBinned` build for long d3d9 runs (the
    debug allocator exhausts the 32-bit heap with the caches resident), the Arkane/GFx post-process shader
    families, and the Scaleform main menu pending the `middleware.md` decision.
-5. `open` a mission map; player spawns; input works. **NEARLY DONE 2026-09-26 (wave 4)**: the null-RHI run
+5. `open` a mission map; player spawns; input works. **DONE 2026-09-26**: the map renders and the pawn
+   stands on the world and walks (`-inputtest moved` 1030.1 where it was 0.0). Two causes, each one variable
+   deep: a draw-distance scale left as a storage-less shim read 0 and culled every static mesh element, and
+   Arkane's 7-bit collision trace mask replaced the engine's two blocking booleans, which are FALSE in every
+   cooked package, so all 1,229 collidable primitives were rejected. Superseded note (wave 4): the null-RHI run
    reaches `Initial startup` in 7.7 s, renders frames, and commits the map change into the mission map
    (`Committed map change via DishonoredEngine`) with no critical error anywhere; the player controller
    possesses its pawn and the tweak chain applies the pawn's own tweak set. The possessed/input-moved

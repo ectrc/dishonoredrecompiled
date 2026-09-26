@@ -1,4 +1,4 @@
-# Project status — 2026-09-26 (wave 4 landed, then the three middleware bindings and the renderer fix: the game renders its own world)
+# Project status — 2026-09-26 (milestone 5 done: the world renders and the player walks in it)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md` (done), `PHASE2.md`
 (done), `PHASE3.md` (wave 1, done), `PHASE4.md` (wave 2, done), `PHASE5.md` (wave 3, done — read its
@@ -35,7 +35,7 @@ has no data.
 | 2. `Init: Object subsystem initialized` | done (wave 1/2), null RHI and d3d9 |
 | 3. Load `Core.upk` … `Startup.upk`, `GEngine->Init()` | **done (wave 3 X/Z)**: retail seek-free path, `Startup.upk` 63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P`, `Bringing World … up for play`, `Finished loading level`, `Initial startup: 5.2s`; the tick loop runs (null RHI, `--skip-native OnlineSubsystemPC`) |
 | 4. D3D9 device, Bink movie, Scaleform menu | **done bar the menu**: the first mission map with all 8 sub-levels streamed in renders **20,370 frames under d3d9** windowed at 1280x720 over 90 s with **0 critical errors**, and 37,470 under the null RHI; the cooked caches load whole (127 global records, 2,580 material maps, 0 mismatches). The Scaleform main menu still waits on the GFx decision in `middleware.md`; long runs use `resourcesuild-release.cmd` |
-| 5. Mission map, player spawns, input | **one step left, and it is level streaming, not physics**: the map loads and renders, the pawn is possessed, 172 bindings are built and the mouse turns the view, but the pawn is spawned ~0.7 s before the first sub-level becomes visible (all 8 `LevelStreamingAlwaysLoaded` entries report not-loaded and not-visible on the first tick, and `LoadMap`'s flushes only flush visibility), so it falls past `KillZ` and `PHYS_None` is terminal. Agent AL verified the same failure with `WITH_NOVODEX` off on the unmodified tree: UE3 walking collision is the kDOP path and contains no PhysX |
+| 5. Mission map, player spawns, input | **done 2026-09-26**: the first mission map renders (20,370 frames, d3d9 windowed 1280x720, 90 s, 0 criticals) and the pawn stands on it in `PHYS_Walking` and walks (`-inputtest moved` 1030.1, peak speed 500.7, still walking at 115 s with all seven always-loaded sub-levels visible). Two defects found by playing it are the lead packages of wave 5 (`PHASE7.md`): textures are corrupt on large surfaces, and touch notifications never fire so triggers, volumes and pickups are inert |
 
 | Area | State |
 |---|---|
@@ -53,6 +53,11 @@ has no data.
 | Tools | `resources/tools/sdk/` (`parse_codered_sdk.py`, `sdk_props.py`, `sdk_show.py`, `xcheck_sdk_layout.py`), `symbols/gen_layout_probe.py`, `gen_layout_asserts.py`, `gen_classes_header.py --sdk` (+ `Inc/CppText/<Class>.h` hook, `<Module>NativeStubs.ported.txt` skip list), `ida/decompile_funcs.py`, `build_and_smoke.py`, `stage_retail.py`, `build/head_wt_build.cmd` (clean-worktree verification), `resources/build-game.cmd` |
 
 ## Next
+
+Wave 5 is planned in `PHASE7.md`, built around the two defects the user found by running the game: **AR**
+textures, **AS** touch/triggers/volumes, then **AT** Kismet (which also fixes the menu teardown and the retail
+New Game route), **AU** the DishonoredGame AI-brain foundation and pickups, **AV** the Arkane animation nodes,
+**AW** the Scaleform decision, **AX** the load-all sweep and a regression harness. Audio stays out (Phase 10).
 
 Wave 4 is fully merged (`PHASE6.md` tracker and "Wave result" have the numbers and the commits `571bd0e`,
 `8af9425`, `03f5335`, `f8bad4f`, `ad3f9ae`, `f8dfe78`, `6e9d1ad`, `f184f60` plus the bridge commit). With
