@@ -166,32 +166,32 @@ void GFxStream::ReadMatrix(GMatrix2D* out)
 void GFxStream::ReadCxformRgb(GRenderer::Cxform* out)
 {
     Align();
-    for (int i = 0; i < 4; ++i) { out->M_[0][i] = 1.f; out->M_[1][i] = 0.f; }
+    for (int i = 0; i < 4; ++i) { out->M_[i][0] = 1.f; out->M_[i][1] = 0.f; }
     unsigned int hasAdd = ReadUBits(1);
     unsigned int hasMult = ReadUBits(1);
     unsigned int nbits = ReadUBits(4);
     if (hasMult)
         for (int i = 0; i < 3; ++i)
-            out->M_[0][i] = (float)ReadSBits(nbits) / 256.0f;
+            out->M_[i][0] = (float)ReadSBits(nbits) / 256.0f;
     if (hasAdd)
         for (int i = 0; i < 3; ++i)
-            out->M_[1][i] = (float)ReadSBits(nbits);
+            out->M_[i][1] = (float)ReadSBits(nbits);
     Align();
 }
 
 void GFxStream::ReadCxformRgba(GRenderer::Cxform* out)
 {
     Align();
-    for (int i = 0; i < 4; ++i) { out->M_[0][i] = 1.f; out->M_[1][i] = 0.f; }
+    for (int i = 0; i < 4; ++i) { out->M_[i][0] = 1.f; out->M_[i][1] = 0.f; }
     unsigned int hasAdd = ReadUBits(1);
     unsigned int hasMult = ReadUBits(1);
     unsigned int nbits = ReadUBits(4);
     if (hasMult)
         for (int i = 0; i < 4; ++i)
-            out->M_[0][i] = (float)ReadSBits(nbits) / 256.0f;
+            out->M_[i][0] = (float)ReadSBits(nbits) / 256.0f;
     if (hasAdd)
         for (int i = 0; i < 4; ++i)
-            out->M_[1][i] = (float)ReadSBits(nbits);
+            out->M_[i][1] = (float)ReadSBits(nbits);
     Align();
 }
 
@@ -232,7 +232,7 @@ GFxCharPosInfo::GFxCharPosInfo()
     : PlaceFlags(0), Depth(0), CharacterId(0), Ratio(0.f), ClipDepth(0), BlendMode(0)
 {
     Name[0] = 0;
-    for (int i = 0; i < 4; ++i) { ColorTransform.M_[0][i] = 1.f; ColorTransform.M_[1][i] = 0.f; }
+    for (int i = 0; i < 4; ++i) { ColorTransform.M_[i][0] = 1.f; ColorTransform.M_[i][1] = 0.f; }
 }
 
 void GFxPlaceObject2Tag::Read(GFxStream* s, unsigned int tagCode)

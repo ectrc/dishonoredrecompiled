@@ -1038,7 +1038,7 @@ bool GFxValue::ObjectInterface::GetDisplayInfo(void* obj, DisplayInfo* info) con
     info->SetY(m.M_[1][2] * GFxTwipsToPixels);
     info->SetXScale(m.M_[0][0] * 100.0);
     info->SetYScale(m.M_[1][1] * 100.0);
-    info->SetAlpha(ch->GetCxform().M_[0][3] * 100.0);
+    info->SetAlpha(ch->GetCxform().M_[3][0] * 100.0);
     info->SetVisible(ch->GetVisible());
     info->SetRotation(0.0);
     return true;
@@ -1060,7 +1060,7 @@ bool GFxValue::ObjectInterface::SetDisplayInfo(void* obj, const DisplayInfo& inf
     if (info.IsFlagSet(DisplayInfo::V_alpha))
     {
         GRenderer::Cxform cx = ch->GetCxform();
-        cx.M_[0][3] = (float)(info.GetAlpha() / 100.0);
+        cx.M_[3][0] = (float)(info.GetAlpha() / 100.0);
         ch->SetCxform(cx);
     }
     if (info.IsFlagSet(DisplayInfo::V_visible))

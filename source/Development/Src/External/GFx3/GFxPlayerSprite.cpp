@@ -35,7 +35,7 @@ GFxCharacter::GFxCharacter(GFxASCharacter* parent, GFxResourceId id)
     : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true)
 {
     Id = id;
-    for (int i = 0; i < 4; ++i) { ColorTransform.M_[0][i] = 1.f; ColorTransform.M_[1][i] = 0.f; }
+    for (int i = 0; i < 4; ++i) { ColorTransform.M_[i][0] = 1.f; ColorTransform.M_[i][1] = 0.f; }
 }
 
 GFxCharacter::~GFxCharacter() {}
@@ -303,7 +303,7 @@ bool GFxASCharacter::GetStandardMember(GASBuiltinString which, GASValue* out) co
     {
     case GASbuiltin__x:       out->SetNumber(Matrix.M_[0][2] * GFxTwipsToPixels); return true;
     case GASbuiltin__y:       out->SetNumber(Matrix.M_[1][2] * GFxTwipsToPixels); return true;
-    case GASbuiltin__alpha:   out->SetNumber(ColorTransform.M_[0][3] * 100.0); return true;
+    case GASbuiltin__alpha:   out->SetNumber(ColorTransform.M_[3][0] * 100.0); return true;
     case GASbuiltin__visible: out->SetBool(bVisible); return true;
     case GASbuiltin__name:    out->SetString(Name); return true;
     default:                  return false;
@@ -316,7 +316,7 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
     {
     case GASbuiltin__x:       Matrix.M_[0][2] = (float)(v.GetNumber() * GFxPixelsToTwips); return true;
     case GASbuiltin__y:       Matrix.M_[1][2] = (float)(v.GetNumber() * GFxPixelsToTwips); return true;
-    case GASbuiltin__alpha:   ColorTransform.M_[0][3] = (float)(v.GetNumber() / 100.0); return true;
+    case GASbuiltin__alpha:   ColorTransform.M_[3][0] = (float)(v.GetNumber() / 100.0); return true;
     case GASbuiltin__visible: bVisible = v.GetBool(); return true;
     default:                  return false;
     }

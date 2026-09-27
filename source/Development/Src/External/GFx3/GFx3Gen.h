@@ -1799,7 +1799,11 @@ public:
     class Cxform
     {
     public:
-        float M_[2][4];
+        // DISHONORED(layout): channel-major - M_[channel][0] multiply, M_[channel][1] add, channels
+        // R G B A. The PDB spells this [2][4] because DIA reports the innermost extent first (see
+        // GMatrix2D in GTypes.h); the source order is the one retail's renderer indexes,
+        // M[Channel * 2 + 0/1] in FGFxCxformSetIdentity.
+        float M_[4][2];
     };
     class BlurFilterParams
     {
