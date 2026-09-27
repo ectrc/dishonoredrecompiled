@@ -317,7 +317,14 @@ and `middleware.md`.
    (`Committed map change via DishonoredEngine`) with no critical error anywhere; the player controller
    possesses its pawn and the tweak chain applies the pawn's own tweak set. The possessed/input-moved
    evidence is package AF, in flight at the time of writing.
-6. Retail savegames load; save/load round-trip.
+6. Retail savegames load; save/load round-trip. **DONE 2026-09-27** (wave 7, agent CF): all 51 real
+   retail saves load and round-trip byte-exactly. The cause of every failure was one number:
+   `BUILT_FROM_CHANGELIST` was 334700 where retail is 1274963, so the version check rejected every retail
+   save by construction. Reading *inside* the level blobs is not done and is a wave of its own - it needs
+   `UObject::GameSave`, `GameLoad`, `IsSaveable`, `IsRefSaveable` and `PostGameLoad`, which retail overrides
+   105, 108 and 11 times. It is all or nothing: each object's `GameSave` is written inline with no length
+   prefix, so one missing override desynchronises every object after it. That is the half that carries
+   transforms, so the player's position on load waits on it.
 7. Full campaign; then DLC05/06/07 (needs Phase 7).
 8. Test suite: golden-log diffs (milestones 2–5), package load-all, save load-all, scripted
    flythrough on two maps to catch physics/animation drift.

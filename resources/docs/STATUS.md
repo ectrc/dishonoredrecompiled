@@ -1,9 +1,10 @@
-# Project status — 2026-09-27 (wave 6: the world assembles correctly, the fog renders, and the ActionScript machine runs the menu asset)
+# Project status — 2026-09-27 (wave 7: the interface runtime is complete and draws the game's own art, retail saves load, and the post-process graph renders)
 
-Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md` (done), `PHASE2.md`
-(done), `PHASE3.md` (wave 1, done), `PHASE4.md` (wave 2, done), `PHASE5.md` (wave 3, done — read its
-"Wave result"), `PHASE6.md` (wave 4, current). Decisions and fixes: `porting_notes.md`.
-Per-function status: `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..AC>.md`.
+Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE5.md` (waves 1–3,
+done — read each "Wave result"), `PHASE6.md` (wave 4, done), `PHASE7.md` (wave 5, done), `PHASE8.md`
+(wave 6, done), `PHASE9.md` (wave 7, done), **`PHASE10.md` (wave 8, current)**. Decisions and fixes:
+`porting_notes.md`. Per-function status: `progress.md` + `function_status.csv`. Agent reports:
+`agents/agent<A..CG>.md`.
 
 ## Incident 2026-09-25 (read before running anything)
 
@@ -36,6 +37,8 @@ has no data.
 | 3. Load `Core.upk` … `Startup.upk`, `GEngine->Init()` | **done (wave 3 X/Z)**: retail seek-free path, `Startup.upk` 63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P`, `Bringing World … up for play`, `Finished loading level`, `Initial startup: 5.2s`; the tick loop runs (null RHI, `--skip-native OnlineSubsystemPC`) |
 | 4. D3D9 device, Bink movie, Scaleform menu | **done bar the menu**: the first mission map with all 8 sub-levels streamed in renders **20,370 frames under d3d9** windowed at 1280x720 over 90 s with **0 critical errors**, and 37,470 under the null RHI; the cooked caches load whole (127 global records, 2,580 material maps, 0 mismatches). The Scaleform main menu still waits on the GFx decision in `middleware.md`; long runs use `resourcesuild-release.cmd` |
 | 5. Mission map, player spawns, input | **done 2026-09-26**: the first mission map renders (20,370 frames, d3d9 windowed 1280x720, 90 s, 0 criticals) and the pawn stands on it in `PHYS_Walking` and walks (`-inputtest moved` 1030.1, peak speed 500.7, still walking at 115 s with all seven always-loaded sub-levels visible). Two defects found by playing it are the lead packages of wave 5 (`PHASE7.md`): textures are corrupt on large surfaces, and touch notifications never fire so triggers, volumes and pickups are inert |
+| 6. Save and load | **done 2026-09-27 (wave 7, agent CF)**: all 51 real retail saves load and round-trip byte-exactly. `BUILT_FROM_CHANGELIST` was 334700 against retail's 1274963, so every retail save had been rejected by construction. What remains is reading *inside* the level blobs, which needs the five `UObject` save virtuals — 105 `GameSave` and 108 `GameLoad` overrides, all or nothing, because each is written inline with no length prefix. That is what restores the player's transform on load |
+| Interface runtime (toward milestone 4's menu) | **reconstructed and verified, not yet wired in (wave 7)**: the GFx 3.3 API and engine seam (BB), the ActionScript machine (BC), the text engine and glyph rasteriser (CB), the renderer's drawing half (CC) and the tag loaders (CD). CC renders a 1280x720 first frame of `UI_Global.Global` with 40 of its 41 cooked bitmaps; CB rasterises 2,481 glyphs from the game's own fonts; every one of the 22 cooked movies parses with 0 placeholders. `DISHONORED_GFXUI_GFX3_RUNTIME` is still 0 — flipping it is wave 8 package DC |
 
 | Area | State |
 |---|---|
@@ -54,11 +57,20 @@ has no data.
 
 ## Next
 
-Wave 6 is fully merged (`PHASE8.md` "Wave result"; harness 31 checks, 0 failures). Wave 7 is the text engine
-and glyph rasteriser, which is the one thing between the reconstructed interface runtime and a visible menu,
-the Arkane post-process graph now that its input chain is populated, the save system (milestone 6, also what
-the menu's load and continue entries need), and the scene-colour rebinding defect agent BD measured, which is
-tree-wide rather than a fog bug.
+Wave 8 is running (`PHASE10.md`): **DC** flips `DISHONORED_GFXUI_GFX3_RUNTIME` and brings the game's own menu
+up in the running game, **DA** ports the depth-of-field node's LUT uber pass — which is where the game's
+colour balance, exposure and gamma actually live, not in a material node — and **DB** ports Arkane's bloom
+parts. Agent CG (the AI brain root) carries over from wave 7. Held for the wave after: the five `UObject`
+save virtuals, the AS2 garbage collector, and whatever DA hands over of the remaining DOF passes.
+
+Wave 7 is merged: `c403e2f` CA, `54b57d4` + `4bb6772` CB, `d40e26c` CF, `683fa03` CD, `2da00d8` CC,
+`dec3fd4` CE, plus `8e61755` (a wave-6 measurement correction) and `42e9cbe` (the Cxform bridge).
+`PHASE9.md` has the tracker. Two findings reach past their own packages: **three bring-up switches had been
+permanently off** since they were written, because a file-scope `static UBOOL G... = ParseParam(appCmdLine(),
+...)` in a static library runs before `WinMain` sets `GCmdLine` — one of them had corrupted a published
+measurement (the wave-6 fog figure was 8.4 % of pixels, not 37 %); and **`GRenderer::Cxform` had reached the
+tree transposed** from the generator, so the ActionScript machine and the renderer disagreed about all four
+colour channels in the same 32 bytes.
 
 Wave 5 is planned in `PHASE7.md`, built around the two defects the user found by running the game: **AR**
 textures, **AS** touch/triggers/volumes, then **AT** Kismet (which also fixes the menu teardown and the retail
