@@ -387,6 +387,8 @@ FSceneView::FSceneView(
 	PostProcessChain(InPostProcessChain),
 	// DISHONORED(port): FSceneView @28 - filled in by ULocalPlayer::CalcSceneView from m_CurrentArkPpSettings.
 	m_ArkPpConfig(NULL),
+	// DISHONORED(port): FSceneView @36 - the Arkane post-process proxy tree, built by FViewInfo's constructor.
+	m_PostProcessProxy(NULL),
 	PostProcessSettings(InPostProcessSettings),
 	Drawer(InDrawer),
 	X(InX),
@@ -468,6 +470,8 @@ FSceneView::FSceneView(
 	PostProcessChain(InPostProcessChain),
 	// DISHONORED(port): FSceneView @28 - filled in by ULocalPlayer::CalcSceneView from m_CurrentArkPpSettings.
 	m_ArkPpConfig(NULL),
+	// DISHONORED(port): FSceneView @36 - the Arkane post-process proxy tree, built by FViewInfo's constructor.
+	m_PostProcessProxy(NULL),
 	PostProcessSettings(InPostProcessSettings),
 	Drawer(InDrawer),
 	X(InX),

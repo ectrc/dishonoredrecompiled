@@ -30,6 +30,7 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
+#include "arkpp.h"
 
 /**
  * DISHONORED(port): the shader types of Arkane's Kuwahara painterly filter node (UArkPpNodeKuwa /
@@ -109,6 +110,93 @@ IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaVertexShader5Type,TEXT("FKuwaVertexS
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaPixelShader5Type,TEXT("FKuwaPixelShader5"),TEXT("ArkKuwa"),TEXT("MainPS"),SF_Pixel,793,26);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaVertexShader3Type,TEXT("FKuwaVertexShader3"),TEXT("ArkKuwa"),TEXT("MainVS"),SF_Vertex,793,26);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaPixelShader3Type,TEXT("FKuwaPixelShader3"),TEXT("ArkKuwa"),TEXT("MainPS"),SF_Pixel,793,26);
+
+/*-----------------------------------------------------------------------------
+	UArkPpNodeKuwa / FArkPpNodeKuwaProxy (2012 PDB 28 bytes; ctor 0x54bac0, Render 0x5646b0, RenderKuwa 0x564150)
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): the Kuwahara filter node's proxy: the graph shape and the surface delegation are retail's.
+ * DISHONORED(bringup): the filter pass itself is not ported - see Render.
+ */
+class FArkPpNodeKuwaProxy : public FArkPpNodeProxy
+{
+public:
+	/** DISHONORED(port): 2013 rva 0x50b230 (2012 0x54bac0). */
+	FArkPpNodeKuwaProxy(FArkPpCreateProxyConfig& Config,UArkPpNodeKuwa* InNode)
+		: m_Type(InNode->m_Type)
+		, mStrength(InNode->m_Strength)
+	{
+		m_TargetProxy = InNode->m_SurfaceTarget ? InNode->m_SurfaceTarget->CreateSceneProxy(Config) : NULL;
+		m_InProxy = InNode->m_SrcColor ? InNode->m_SrcColor->CreateSceneProxy(Config) : NULL;
+	}
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x5238c0 (2012 0x5646b0) - retail renders the source colour and the target with m_bForceToDestination
+	 * cleared and then draws the filter (RenderKuwa, 0x564150) with TKuwa{Vertex,Pixel}Shader<3|5>.
+	 * DISHONORED(bringup): the filter pass is not ported. The source colour is rendered with the unchanged config, so
+	 * the image still reaches the destination - unfiltered. The four shader types load (agentBD.md 1); the pass needs
+	 * TKuwaVertexShader::SetParameters (0x5555e0) and TKuwaPixelShader::SetParameters (0x54dab0) with
+	 * FArkPpKuwaParameters (2012 PDB 112 bytes).
+	 */
+	virtual UBOOL Render(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+	{
+		if (m_bDone)
+		{
+			return FALSE;
+		}
+		m_bDone = TRUE;
+		GDisCensusArkPpSkipped++;
+		UBOOL bDirty = m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
+		if (m_TargetProxy)
+		{
+			bDirty |= m_TargetProxy->Render(Scene,View,FArkPpRenderConfig(FALSE));
+		}
+		return bDirty;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x50e9d0 (2012 0x54f120) / 0x54f130 - everything is the source colour's. */
+	virtual const FSurfaceRHIRef GetSurface(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetSurface(View) : FSurfaceRHIRef(); }
+	virtual const FTexture2DRHIRef GetTexture(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetTexture(View) : FTexture2DRHIRef(); }
+	virtual UINT GetSurfaceSizeX() { return m_InProxy ? m_InProxy->GetSurfaceSizeX() : 0; }
+	virtual UINT GetSurfaceSizeY() { return m_InProxy ? m_InProxy->GetSurfaceSizeY() : 0; }
+
+private:
+	TRefCountPtr<FArkPpNodeProxy> m_InProxy;
+	TRefCountPtr<FArkPpNodeProxy> m_TargetProxy;
+	INT m_Type;
+	FLOAT mStrength;
+};
+
+/** DISHONORED(port): 2013 rva 0x524710 (2012 0x565610). */
+UBOOL UArkPpNodeKuwa::IsValid(FArkPpIsValidData& Cache)
+{
+	UBOOL* Memo = Cache.mIsValidCache.Find(this);
+	if (Memo)
+	{
+		return *Memo;
+	}
+	const UBOOL bValid = m_SurfaceTarget && m_SurfaceTarget->IsValid(Cache) && m_SrcColor && m_SrcColor->IsValid(Cache);
+	Cache.mIsValidCache.Set(this,bValid);
+	return bValid;
+}
+
+/** DISHONORED(port): 2013 rva 0x5247c0 (2012 0x5656c0) - a hidden node, or one with no kernel, is its surface target. */
+FArkPpNodeProxy* UArkPpNodeKuwa::CreateSceneProxy(FArkPpCreateProxyConfig& Config)
+{
+	if (!IsShownInConfig(Config) || m_Type <= 0)
+	{
+		return m_SurfaceTarget ? m_SurfaceTarget->CreateSceneProxy(Config) : NULL;
+	}
+	FArkPpNodeProxy* Cached = NULL;
+	if (ArkPpFindCachedProxy(Config,this,Cached))
+	{
+		return Cached;
+	}
+	FArkPpNodeProxy* Proxy = new FArkPpNodeKuwaProxy(Config,this);
+	Config.mNodeCache.Set(this,Proxy);
+	return Proxy;
+}
 
 /** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
 void DishonoredLinkArkPpKuwaShaderTypes()

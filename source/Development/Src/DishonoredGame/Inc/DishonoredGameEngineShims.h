@@ -6214,56 +6214,6 @@ enum EPpNodeAAFxAaLumaType
     op(EPpAaFxAaLt_Compute) \
     op(EPpAaFxAaLt_AsGreen) \
     op(EPpAaFxAaLt_InAlpha) 
-enum EPpNodeAAType
-{
-    EPpAa_None              =0,
-    EPpAa_Mlaa              =1,
-    EPpAa_Fxaa              =2,
-    EPpAa_MAX               =3,
-};
-#define FOREACH_ENUM_EPPNODEAATYPE(op) \
-    op(EPpAa_None) \
-    op(EPpAa_Mlaa) \
-    op(EPpAa_Fxaa) 
-enum EPpNodeBlurType
-{
-    EPpBt_Box               =0,
-    EPpBt_Motion            =1,
-    EPpBt_Radial            =2,
-    EPpBt_MAX               =3,
-};
-#define FOREACH_ENUM_EPPNODEBLURTYPE(op) \
-    op(EPpBt_Box) \
-    op(EPpBt_Motion) \
-    op(EPpBt_Radial) 
-enum EPpNodeCommonTarget
-{
-    EPpCt_AttenuationBuffer =0,
-    EPpCt_FogMask           =1,
-    EPpRs_SceneColor        =2,
-    EPpRs_SceneColorLdr     =3,
-    EPpRs_LowResParticles   =4,
-    EPpNodeCommonTarget_MAX =5,
-};
-#define FOREACH_ENUM_EPPNODECOMMONTARGET(op) \
-    op(EPpCt_AttenuationBuffer) \
-    op(EPpCt_FogMask) \
-    op(EPpRs_SceneColor) \
-    op(EPpRs_SceneColorLdr) \
-    op(EPpRs_LowResParticles) 
-enum EPpNodeRenderStage
-{
-    EPpRs_BeforeAll         =0,
-    EPpRs_BeforeDraw        =1,
-    EPpRs_AfterDraw         =2,
-    EPpRs_AfterAll          =3,
-    EPpRs_MAX               =4,
-};
-#define FOREACH_ENUM_EPPNODERENDERSTAGE(op) \
-    op(EPpRs_BeforeAll) \
-    op(EPpRs_BeforeDraw) \
-    op(EPpRs_AfterDraw) \
-    op(EPpRs_AfterAll) 
 enum EPullPlayerAnim
 {
     EPullPlayerAnim_In      =0,
@@ -9904,18 +9854,6 @@ class UArkBinkOverlayManager;
 class UArkComponentLocomotionConfig;
 class UArkComponentLookatConfig;
 class UArkDLCManagementBridge;
-class UArkPpNode;
-class UArkPpNodeAA;
-class UArkPpNodeBlur;
-class UArkPpNodeCommonTarget;
-class UArkPpNodeController;
-class UArkPpNodeDof;
-class UArkPpNodeKuwa;
-class UArkPpNodeMaterial;
-class UArkPpNodeSceneColor;
-class UArkPpNodeSwitch;
-class UArkPpNodeTarget;
-class UArkPpSettings;
 class UArkProfileSettings;
 class UArkSeqAct_ChangePylonConnection;
 class UAudioPropagationInfo;
@@ -12000,23 +11938,6 @@ struct FAIControlTrackKey
     }
 };
 
-// Engine.ArkPpNodeMaterial.AnInput: retail SDK size 20 (2012 PDB 20) [shim: Engine package]
-struct FAnInput
-{
-    class UArkPpNode* m_Node;
-    FStringNoInit m_Name;
-    BYTE m_FilterType;
-    BYTE m_TileU;
-    BYTE m_TileV;
-
-    /** Constructors */
-    FAnInput() {}
-    FAnInput(EEventParm)
-    {
-        appMemzero(this, sizeof(FAnInput));
-    }
-};
-
 // Engine.ArkAnimNodeLocomotion.AnimNodeLocoAngleSlot: retail SDK size 8 (2012 PDB 8) [shim: Engine package]
 struct FAnimNodeLocoAngleSlot
 {
@@ -12515,19 +12436,6 @@ struct FBitArray_Mirror
     }
 };
 
-// Engine.ArkPpNodeBlur.BoxBlurConfig: retail SDK size 4 (2012 PDB 4) [shim: Engine package]
-struct FBoxBlurConfig
-{
-    FLOAT m_KernelSize;
-
-    /** Constructors */
-    FBoxBlurConfig() {}
-    FBoxBlurConfig(EEventParm)
-    {
-        appMemzero(this, sizeof(FBoxBlurConfig));
-    }
-};
-
 // Engine.ArkAnimNodeLookAt.DynInterpFVector2D: retail SDK size 64 (2012 PDB 64) [shim: Engine package]
 struct FDynInterpFVector2D
 {
@@ -12565,20 +12473,6 @@ struct FEdgeAnimGenerationParameters
     FEdgeAnimGenerationParameters(EEventParm)
     {
         appMemzero(this, sizeof(FEdgeAnimGenerationParameters));
-    }
-};
-
-// Engine.ArkPpNodeAA.FxAaConfig: retail SDK size 16 (2012 PDB 16) [shim: Engine package]
-struct FFxAaConfig
-{
-    FVector m_LuminanceEquation;
-    BYTE m_Luma;
-
-    /** Constructors */
-    FFxAaConfig() {}
-    FFxAaConfig(EEventParm)
-    {
-        appMemzero(this, sizeof(FFxAaConfig));
     }
 };
 
@@ -12627,36 +12521,6 @@ struct FMap_Mirror
     }
 };
 
-// Engine.ArkPpNodeAA.MlAaConfig: retail SDK size 16 (2012 PDB 16) [shim: Engine package]
-struct FMlAaConfig
-{
-    FVector m_LuminanceEquation;
-    FLOAT m_EdgeDetectionThresold;
-
-    /** Constructors */
-    FMlAaConfig() {}
-    FMlAaConfig(EEventParm)
-    {
-        appMemzero(this, sizeof(FMlAaConfig));
-    }
-};
-
-// Engine.ArkPpNodeBlur.MotionBlurConfig: retail SDK size 16 (2012 PDB 16) [shim: Engine package]
-struct FMotionBlurConfig
-{
-    FLOAT m_LengthStrength;
-    FLOAT m_InitialOffsetStrength;
-    INT m_PassCount;
-    BITFIELD m_FullOffsetInVectorField:1;
-
-    /** Constructors */
-    FMotionBlurConfig() {}
-    FMotionBlurConfig(EEventParm)
-    {
-        appMemzero(this, sizeof(FMotionBlurConfig));
-    }
-};
-
 // Engine.ArkAnimNodeRat.MoveAnimInfo: retail SDK size 12 (2012 PDB 12) [shim: Engine package]
 struct FMoveAnimInfo
 {
@@ -12681,20 +12545,6 @@ struct FMultiMap_Mirror
     FMultiMap_Mirror(EEventParm)
     {
         appMemzero(this, sizeof(FMultiMap_Mirror));
-    }
-};
-
-// Engine.ArkPpNodeBlur.RadialBlurConfig: retail SDK size 12 (2012 PDB 12) [shim: Engine package]
-struct FRadialBlurConfig
-{
-    FLOAT m_Strength;
-    FVector2D m_Center;
-
-    /** Constructors */
-    FRadialBlurConfig() {}
-    FRadialBlurConfig(EEventParm)
-    {
-        appMemzero(this, sizeof(FRadialBlurConfig));
     }
 };
 
@@ -13156,175 +13006,6 @@ public:
     //## END PROPS ArkDLCManagementBridge
 
     DECLARE_CLASS(UArkDLCManagementBridge,UObject,0,Engine)
-};
-
-// Engine.ArkPpNode: retail sizeof 104, reflected span 56..104 (2012 PDB sizeof 104) [shim: Engine package]
-class UArkPpNode : public UObject
-{
-public:
-    //## BEGIN PROPS ArkPpNode
-    BITFIELD m_bShowInEditor:1;
-    BITFIELD m_bShowInGame:1;
-    FName EffectName;
-    class UArkPpNodeController* m_Controller;
-    INT NodePosY;
-    INT NodePosX;
-    INT DrawWidth;
-    INT DrawHeight;
-    INT OutDrawY;
-    TArrayNoInit<INT> InDrawY;
-    //## END PROPS ArkPpNode
-
-    DECLARE_ABSTRACT_CLASS(UArkPpNode,UObject,0,Engine)
-};
-
-// Engine.ArkPpNodeAA: retail sizeof 144, reflected span 104..144 (2012 PDB sizeof 144) [shim: Engine package]
-class UArkPpNodeAA : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeAA
-    BYTE m_Type;
-    FFxAaConfig m_FxAaConfig;
-    FMlAaConfig m_MlAaConfig;
-    class UArkPpNode* m_SurfaceTarget;
-    //## END PROPS ArkPpNodeAA
-
-    DECLARE_CLASS(UArkPpNodeAA,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeBlur: retail sizeof 256, reflected span 104..256 (2012 PDB sizeof 256) [shim: Engine package]
-class UArkPpNodeBlur : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeBlur
-    BYTE m_Type;
-    FBoxBlurConfig m_BoxBlurConfig;
-    FMotionBlurConfig m_MotionBlurConfig;
-    FRadialBlurConfig m_RadialConfig;
-    BITFIELD m_bOverrideUberPp:1;
-    FArkUberPpParameters m_UberParameters;
-    FLOAT m_UberParametersWeight;
-    class UArkPpNode* m_Input;
-    class UArkPpNode* m_Output;
-    class UArkPpNode* m_VectorField;
-    //## END PROPS ArkPpNodeBlur
-
-    DECLARE_CLASS(UArkPpNodeBlur,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeCommonTarget: retail sizeof 128, reflected span 104..128 (2012 PDB sizeof 128) [shim: Engine package]
-class UArkPpNodeCommonTarget : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeCommonTarget
-    BYTE m_Target;
-    BITFIELD m_bClear:1;
-    FLinearColor m_ClearColor;
-    //## END PROPS ArkPpNodeCommonTarget
-
-    DECLARE_CLASS(UArkPpNodeCommonTarget,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeController: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
-class UArkPpNodeController : public UObject
-{
-public:
-    //## BEGIN PROPS ArkPpNodeController
-    //## END PROPS ArkPpNodeController
-
-    DECLARE_ABSTRACT_CLASS(UArkPpNodeController,UObject,0,Engine)
-};
-
-// Engine.ArkPpNodeDof: retail sizeof 208, reflected span 104..208 (2012 PDB sizeof 208) [shim: Engine package]
-class UArkPpNodeDof : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeDof
-    class UArkPpNode* m_SurfaceTarget;
-    class UTexture2D* m_LinearToGammaRamp;
-    FArkUberPpParameters m_Parameters;
-    //## END PROPS ArkPpNodeDof
-
-    DECLARE_CLASS(UArkPpNodeDof,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeKuwa: retail sizeof 120, reflected span 104..120 (2012 PDB sizeof 120) [shim: Engine package]
-class UArkPpNodeKuwa : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeKuwa
-    INT m_Type;
-    FLOAT m_Strength;
-    class UArkPpNode* m_SurfaceTarget;
-    class UArkPpNode* m_SrcColor;
-    //## END PROPS ArkPpNodeKuwa
-
-    DECLARE_CLASS(UArkPpNodeKuwa,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeMaterial: retail sizeof 228, reflected span 104..228 (2012 PDB sizeof 228) [shim: Engine package]
-class UArkPpNodeMaterial : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeMaterial
-    class UArkPpNode* m_SurfaceTarget;
-    TArrayNoInit<FAnInput> m_Inputs;
-    class UMaterialInterface* m_Material;
-    BITFIELD m_bPreserveAlphaChannel:1;
-    BITFIELD m_bOverrideUberPp:1;
-    FArkUberPpParameters m_UberParameters;
-    FLOAT m_UberParametersWeight;
-    //## END PROPS ArkPpNodeMaterial
-
-    DECLARE_CLASS(UArkPpNodeMaterial,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeSceneColor: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 112) [shim: Engine package]
-class UArkPpNodeSceneColor : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeSceneColor
-    class UArkPpNode* m_Out;
-    BITFIELD m_LowRange:1;
-    //## END PROPS ArkPpNodeSceneColor
-
-    DECLARE_CLASS(UArkPpNodeSceneColor,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeSwitch: retail sizeof 128, reflected span 104..128 (2012 PDB sizeof 128) [shim: Engine package]
-class UArkPpNodeSwitch : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeSwitch
-    class UArkPpNode* m_TRUE;
-    class UArkPpNode* m_FALSE;
-    BITFIELD m_Selection:1;
-    BITFIELD m_bFromPostProcessChain:1;
-    FStringNoInit m_Switch;
-    //## END PROPS ArkPpNodeSwitch
-
-    DECLARE_CLASS(UArkPpNodeSwitch,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpNodeTarget: retail sizeof 108, reflected span 104..108 (2012 PDB sizeof 108) [shim: Engine package]
-class UArkPpNodeTarget : public UArkPpNode
-{
-public:
-    //## BEGIN PROPS ArkPpNodeTarget
-    class UTextureRenderTarget2D* m_Surface;
-    //## END PROPS ArkPpNodeTarget
-
-    DECLARE_CLASS(UArkPpNodeTarget,UArkPpNode,0,Engine)
-};
-
-// Engine.ArkPpSettings: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
-class UArkPpSettings : public UObject
-{
-public:
-    //## BEGIN PROPS ArkPpSettings
-    //## END PROPS ArkPpSettings
-
-    DECLARE_CLASS(UArkPpSettings,UObject,0,Engine)
 };
 
 struct ArkProfileSettings_eventSetToDefaults_Parms
@@ -14708,18 +14389,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UArkComponentLocomotionConfig::StaticClass(); \
 	UArkComponentLookatConfig::StaticClass(); \
 	UArkDLCManagementBridge::StaticClass(); \
-	UArkPpNode::StaticClass(); \
-	UArkPpNodeAA::StaticClass(); \
-	UArkPpNodeBlur::StaticClass(); \
-	UArkPpNodeCommonTarget::StaticClass(); \
-	UArkPpNodeController::StaticClass(); \
-	UArkPpNodeDof::StaticClass(); \
-	UArkPpNodeKuwa::StaticClass(); \
-	UArkPpNodeMaterial::StaticClass(); \
-	UArkPpNodeSceneColor::StaticClass(); \
-	UArkPpNodeSwitch::StaticClass(); \
-	UArkPpNodeTarget::StaticClass(); \
-	UArkPpSettings::StaticClass(); \
 	UArkProfileSettings::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("ArkProfileSettings"), GDishonoredGameUArkProfileSettingsNatives); \
 	UArkSeqAct_ChangePylonConnection::StaticClass(); \
@@ -15003,36 +14672,6 @@ VERIFY_CLASS_SIZE_NODIE(UArkComponentLookatConfig)
 VERIFY_CLASS_OFFSET_NODIE(UArkDLCManagementBridge,ArkDLCManagementBridge,m_DLCStatus)
 VERIFY_CLASS_OFFSET_NODIE(UArkDLCManagementBridge,ArkDLCManagementBridge,m_nbElements)
 VERIFY_CLASS_SIZE_NODIE(UArkDLCManagementBridge)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNode,ArkPpNode,EffectName)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNode,ArkPpNode,InDrawY)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNode)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeAA,ArkPpNodeAA,m_Type)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeAA,ArkPpNodeAA,m_SurfaceTarget)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeAA)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeBlur,ArkPpNodeBlur,m_Type)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeBlur,ArkPpNodeBlur,m_VectorField)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeBlur)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeCommonTarget,ArkPpNodeCommonTarget,m_Target)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeCommonTarget,ArkPpNodeCommonTarget,m_ClearColor)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeCommonTarget)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeController)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeDof,ArkPpNodeDof,m_SurfaceTarget)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeDof,ArkPpNodeDof,m_Parameters)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeDof)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeKuwa,ArkPpNodeKuwa,m_Type)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeKuwa,ArkPpNodeKuwa,m_SrcColor)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeKuwa)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeMaterial,ArkPpNodeMaterial,m_SurfaceTarget)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeMaterial,ArkPpNodeMaterial,m_UberParametersWeight)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeMaterial)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeSceneColor,ArkPpNodeSceneColor,m_Out)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeSceneColor)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeSwitch,ArkPpNodeSwitch,m_TRUE)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeSwitch,ArkPpNodeSwitch,m_Switch)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeSwitch)
-VERIFY_CLASS_OFFSET_NODIE(UArkPpNodeTarget,ArkPpNodeTarget,m_Surface)
-VERIFY_CLASS_SIZE_NODIE(UArkPpNodeTarget)
-VERIFY_CLASS_SIZE_NODIE(UArkPpSettings)
 VERIFY_CLASS_OFFSET_NODIE(UArkProfileSettings,ArkProfileSettings,m_BindableKeyMapping)
 VERIFY_CLASS_SIZE_NODIE(UArkProfileSettings)
 VERIFY_CLASS_SIZE_NODIE(UArkSeqAct_ChangePylonConnection)

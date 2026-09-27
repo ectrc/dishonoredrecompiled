@@ -84,7 +84,56 @@ public:
 	 */
 	void DrawTile(const class FViewInfo& View, const FMaterialRenderProxy* MaterialRenderProxy, FLOAT X, FLOAT Y, FLOAT SizeX, FLOAT SizeY, FLOAT U, FLOAT V, FLOAT SizeU, FLOAT SizeV, UBOOL bIsHitTesting=FALSE, const FHitProxyId HitProxyId=FHitProxyId());
 
+	/**
+	 * DISHONORED(port): 2013 rva 0x51e510 (2012 0x55f000) (tilerendering.h:117) - a full-view tile drawn through a policy factory of
+	 * its own, with that factory's context. Arkane's post-process material node draws every node of its graph this way
+	 * (TPpMaterialDrawingPolicyFactory, arkppnodematerial.cpp), which is why the reference DrawTile above - hard-wired
+	 * to the base-pass and translucency factories - gained this template in retail rather than a fourth overload.
+	 */
+	template<typename FactoryType>
+	void DrawTile(const class FViewInfo& View, const FMaterialRenderProxy* MaterialRenderProxy, typename FactoryType::ContextType Context)
+	{
+		Mesh.UseDynamicData = FALSE;
+		Mesh.MaterialRenderProxy = MaterialRenderProxy;
+		PrepareShaders<FactoryType>(View, MaterialRenderProxy, Context, FMatrix::Identity, TRUE, FALSE, FHitProxyId());
+	}
+
 private:
+	/**
+	 * DISHONORED(port): 2013 rva 0x51d9c0 (2012 0x55e510) (tilerendering.h:128) - the template PrepareShaders the one above calls: it
+	 * takes the same identity view-projection detour as the reference one, sets the view parameters and hands the
+	 * shared FMeshBatch to the factory. It neither reads the material's blend mode (retail fetches it and drops the
+	 * result) nor sets a blend state: a post-process node pass owns its own.
+	 */
+	template<typename FactoryType>
+	void PrepareShaders(const class FViewInfo& View, const FMaterialRenderProxy* MaterialRenderProxy, typename FactoryType::ContextType Context, const FMatrix& LocalToWorld, UBOOL bUseIdentityViewProjection, UBOOL bIsHitTesting, const FHitProxyId HitProxyId)
+	{
+		static FMatrix SaveViewProjectionMatrix = FMatrix::Identity;
+		static FVector4 SaveViewOrigin(0,0,0,0);
+		static FVector SavePreViewTranslation(0,0,0);
+		if (bUseIdentityViewProjection)
+		{
+			SaveViewProjectionMatrix = View.TranslatedViewProjectionMatrix;
+			SaveViewOrigin = View.ViewOrigin;
+			SavePreViewTranslation = View.PreViewTranslation;
+			const_cast<FViewInfo&>(View).TranslatedViewProjectionMatrix = FMatrix::Identity;
+			const_cast<FViewInfo&>(View).ViewOrigin.Set( 0, 0, 0, 0 );
+			const_cast<FViewInfo&>(View).PreViewTranslation.Set( 0, 0, 0 );
+		}
+
+		RHISetViewParameters(View);
+
+		Mesh.Elements(0).LocalToWorld = LocalToWorld;
+		FactoryType::DrawDynamicMesh(View, Context, Mesh, FALSE, FALSE, NULL, HitProxyId);
+
+		if (bUseIdentityViewProjection)
+		{
+			const_cast<FViewInfo&>(View).TranslatedViewProjectionMatrix = SaveViewProjectionMatrix;
+			const_cast<FViewInfo&>(View).ViewOrigin = SaveViewOrigin;
+			const_cast<FViewInfo&>(View).PreViewTranslation = SavePreViewTranslation;
+		}
+	}
+
 	static UBOOL bInitialized;
 	/** Global vertex factory used by material post process effects */
 	static TGlobalResource<FLocalVertexFactory> VertexFactory;

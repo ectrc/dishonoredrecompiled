@@ -8,6 +8,7 @@
 #include "ScenePrivate.h"
 #include "ScreenRendering.h"
 #include "SceneFilterRendering.h"
+#include "arkpp.h"
 #if WITH_REALD
 	#include "RealD/RealD.h"
 #endif
@@ -255,6 +256,103 @@ FViewInfo::FViewInfo(const FSceneView* InView)
 			PostProcessSceneProxies(FinalIdx)->TerminatesPostProcessChain( TRUE );
 		}
 	}
+
+	// DISHONORED(port): 2013 rva 0x46b3a0 (2012 0x493e40) - and then retail's own post-processing: the Arkane node graph of the view's
+	// post-process chain becomes a tree of FArkPpNodeProxy objects, unless the view was handed one already (a scene
+	// capture builds its proxies on the game thread). Gated on SHOW_PostProcess, exactly where the reference chain is.
+	if (Family->ShowFlags & SHOW_PostProcess)
+	{
+		if (InView->m_PostProcessProxy)
+		{
+			m_PostProcessProxy = InView->m_PostProcessProxy;
+			m_PostProcessProxy->AddRef();
+		}
+		else if (PostProcessChain && PostProcessChain->m_GraphRoot)
+		{
+			// retail validates the graph in the editor only: IsValid walks it with a memo (FArkPpIsValidData)
+			UBOOL bChainIsValid = TRUE;
+			if (GIsEditor)
+			{
+				FArkPpIsValidData IsValidData;
+				bChainIsValid = PostProcessChain->m_GraphRoot->IsValid(IsValidData);
+			}
+			if (bChainIsValid)
+			{
+				FArkPpCreateProxyConfig Config;
+				if (m_ArkPpConfig)
+				{
+					Config.PushUberOverride(m_ArkPpConfig->m_UberPpParameters,1.0f);
+				}
+				Config.mbOnlyInEditor = (Family->ShowFlags & SHOW_Editor) ? 1 : 0;
+				AddPostProcessProxy(PostProcessChain->m_GraphRoot->CreateSceneProxy(Config));
+
+				// DISHONORED(bringup): one line for the first graph built, so a run says what the content's graph is.
+				static UBOOL bReportedGraph = FALSE;
+				if (!bReportedGraph)
+				{
+					bReportedGraph = TRUE;
+					INT NumMaterial = 0, NumTarget = 0, NumCommonTarget = 0, NumSceneColor = 0, NumSwitch = 0;
+					INT NumBlur = 0, NumDof = 0, NumKuwa = 0, NumAA = 0, NumOther = 0;
+					for (INT NodeIndex = 0; NodeIndex < PostProcessChain->m_AllNodes.Num(); NodeIndex++)
+					{
+						UArkPpNode* Node = PostProcessChain->m_AllNodes(NodeIndex);
+						if (!Node) { continue; }
+						if (Node->IsA(UArkPpNodeMaterial::StaticClass())) { NumMaterial++; }
+						else if (Node->IsA(UArkPpNodeTarget::StaticClass())) { NumTarget++; }
+						else if (Node->IsA(UArkPpNodeCommonTarget::StaticClass())) { NumCommonTarget++; }
+						else if (Node->IsA(UArkPpNodeSceneColor::StaticClass())) { NumSceneColor++; }
+						else if (Node->IsA(UArkPpNodeSwitch::StaticClass())) { NumSwitch++; }
+						else if (Node->IsA(UArkPpNodeBlur::StaticClass())) { NumBlur++; }
+						else if (Node->IsA(UArkPpNodeDof::StaticClass())) { NumDof++; }
+						else if (Node->IsA(UArkPpNodeKuwa::StaticClass())) { NumKuwa++; }
+						else if (Node->IsA(UArkPpNodeAA::StaticClass())) { NumAA++; }
+						else { NumOther++; }
+					}
+					debugf(TEXT("DISHONORED(bringup): FArkPp graph: root %s, %i nodes (%i material, %i target, %i common target, %i scene colour, %i switch, %i blur, %i dof, %i kuwa, %i aa, %i other), proxy %s, %i proxies built"),
+						*PostProcessChain->m_GraphRoot->GetPathName(), PostProcessChain->m_AllNodes.Num(),
+						NumMaterial, NumTarget, NumCommonTarget, NumSceneColor, NumSwitch,
+						NumBlur, NumDof, NumKuwa, NumAA, NumOther,
+						m_PostProcessProxy ? TEXT("built") : TEXT("none"), Config.mNodeCache.Num());
+
+					// DISHONORED(bringup): -arkppdbg dumps every node of the graph and every switch of the chain, which is
+					// what says why a node did or did not end up with a proxy.
+					if (ParseParam(appCmdLine(),TEXT("arkppdbg")))
+					{
+						for (INT SwitchIndex = 0; SwitchIndex < PostProcessChain->m_Switches.Num(); SwitchIndex++)
+						{
+							debugf(TEXT("DISHONORED(bringup): FArkPp chain switch %i: %s = %i"),SwitchIndex,
+								*PostProcessChain->m_Switches(SwitchIndex).m_Name,
+								PostProcessChain->m_Switches(SwitchIndex).m_Value);
+						}
+						for (INT NodeIndex = 0; NodeIndex < PostProcessChain->m_AllNodes.Num(); NodeIndex++)
+						{
+							UArkPpNode* Node = PostProcessChain->m_AllNodes(NodeIndex);
+							if (!Node) { continue; }
+							UArkPpNodeSwitch* SwitchNode = Cast<UArkPpNodeSwitch>(Node);
+							UArkPpNodeMaterial* MaterialNode = Cast<UArkPpNodeMaterial>(Node);
+							debugf(TEXT("DISHONORED(bringup): FArkPp node %2i %s %s: game %i editor %i, controller %s, proxy %s%s%s"),
+								NodeIndex, *Node->GetClass()->GetName(), *Node->GetName(),
+								(INT)Node->m_bShowInGame, (INT)Node->m_bShowInEditor,
+								Node->m_Controller ? *Node->m_Controller->GetClass()->GetName() : TEXT("none"),
+								Config.mNodeCache.Find(Node) ? TEXT("yes") : TEXT("no"),
+								SwitchNode ? *FString::Printf(TEXT(", switch %s = %i (from chain %i)"),*SwitchNode->m_Switch,(INT)SwitchNode->m_Selection,(INT)SwitchNode->m_bFromPostProcessChain) : TEXT(""),
+								MaterialNode ? *FString::Printf(TEXT(", material %s, %i inputs"),MaterialNode->m_Material ? *MaterialNode->m_Material->GetName() : TEXT("none"),MaterialNode->m_Inputs.Num()) : TEXT(""));
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+/** DISHONORED(port): 2013 rva 0x447d90 (2012 0x46b1d0). */
+void FViewInfo::AddPostProcessProxy(FArkPpNodeProxy* InProxy)
+{
+	if (InProxy)
+	{
+		m_PostProcessProxy = InProxy;
+		m_PostProcessProxy->AddRef();
+	}
 }
 
 void FViewInfo::Init()
@@ -295,6 +393,13 @@ FViewInfo::~FViewInfo()
 	for(INT PostProcessIndex = 0; PostProcessIndex < PostProcessSceneProxies.Num(); PostProcessIndex++)
 	{
 		delete PostProcessSceneProxies(PostProcessIndex);
+	}
+
+	// DISHONORED(port): the Arkane proxy tree is ref-counted; releasing the root takes the whole tree with it.
+	if (m_PostProcessProxy)
+	{
+		m_PostProcessProxy->Release();
+		m_PostProcessProxy = NULL;
 	}
 }
 
@@ -2221,13 +2326,24 @@ UBOOL FSceneRenderer::ApplyMobileDPGLights( UINT DPGIndex )
  * DISHONORED(bringup): the reference height-fog pass is off until DisFog is ported (see RenderDPGEnd); -referencefog
  * turns it back on for experiments on a compiler-equipped build.
  */
-static UBOOL GDishonoredRenderReferenceFog = ParseParam(appCmdLine(), TEXT("referencefog"));
+static UBOOL DishonoredRenderReferenceFog()
+{
+	// DISHONORED(bringup): read on first use, not at static-initialisation time: GCmdLine (UnMisc.cpp:4567) is still
+	// empty when a static library's dynamic initialisers run, so a file-scope ParseParam(appCmdLine(),...) is always
+	// FALSE. The reference engine's own switches use this function-local form (UnAnimPlay.cpp:583, UnChan.cpp:2212).
+	static UBOOL bOn = ParseParam(appCmdLine(), TEXT("referencefog"));
+	return bOn;
+}
 
 /**
  * DISHONORED(bringup): -nopostprocess skips the Arkane post-process passes of package BD (the DisFog pass today,
  * the FArkPp graph when it lands), so one build can take the before-and-after pair of the same camera.
  */
-static UBOOL GDishonoredNoPostProcess = ParseParam(appCmdLine(), TEXT("nopostprocess"));
+static UBOOL DishonoredNoPostProcess()
+{
+	static UBOOL bOn = ParseParam(appCmdLine(), TEXT("nopostprocess"));
+	return bOn;
+}
 
 void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResolve, UBOOL& bSceneColorDirty, UBOOL bIsOcclusionTesting)
 {
@@ -2301,11 +2417,11 @@ void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResol
 		// height fog instead, which has no cooked shader and is only there for experiments (agent AH).
 		if(ShouldRenderFog(ViewFamily.ShowFlags))
 		{
-			if(GDishonoredRenderReferenceFog)
+			if(DishonoredRenderReferenceFog())
 			{
 				bSceneColorDirty |= RenderReferenceFog(DPGIndex);
 			}
-			else if(!GDishonoredNoPostProcess)
+			else if(!DishonoredNoPostProcess())
 			{
 				bSceneColorDirty |= RenderFog(DPGIndex);
 			}
@@ -3316,11 +3432,36 @@ UBOOL FSceneRenderer::RenderBasePass(UINT DPGIndex)
 */
 UBOOL FSceneRenderer::RenderPostProcessEffects(UINT DPGIndex, UBOOL bAffectLightingOnly)
 {
-	// DISHONORED(retail): 2013 rva 0x448990 (2012 0x46bef0): retail post-processing is the FArkPp graph
-	// (FSceneView::m_PostProcessProxy->Render at SDPG_PostProcess, when a back buffer exists); no per-DPG effect
-	// proxies. The reference proxies (uber post-process, DOF/bloom, material effects, ...) bind shaders that have no
-	// cooked record, so none of them may run. Reported once, then the pass only does the view-target copy below.
-	// DISHONORED(bringup): the FArkPp graph is wave-5 work; until then a frame ends with FinishRenderViewTarget.
+	// DISHONORED(port): 2013 rva 0x448990 (2012 0x46bef0): retail post-processing is the FArkPp graph -
+	// Views(0).m_PostProcessProxy->Render at SDPG_PostProcess, when a back buffer exists - and nothing else. The
+	// reference proxies (uber post-process, DOF/bloom, material effects, ...) bind shaders that have no cooked record,
+	// so none of them may run; reported once, as before.
+	{
+		if (bAffectLightingOnly)
+		{
+			return FALSE;
+		}
+
+		// DISHONORED(bringup): -noarkpp leaves the graph out of one run, for the before-and-after pair of the same camera.
+		static UBOOL bNoArkPp = ParseParam(appCmdLine(),TEXT("noarkpp"));
+
+		if (!bNoArkPp && Views.Num() && Views(0).m_PostProcessProxy && GSceneRenderTargets.GetBackBuffer() && DPGIndex == SDPG_PostProcess)
+		{
+			SCOPED_DRAW_EVENT(EventArkPp)(DEC_SCENE_ITEMS,TEXT("PostProcessEffects"));
+			FViewInfo& View = Views(0);
+			GDisCensusArkPpNodes = 0;
+			GDisCensusArkPpDraws = 0;
+			GDisCensusArkPpMaterialDraws = 0;
+			GDisCensusArkPpSkipped = 0;
+			RHISetViewParameters(View);
+			// retail widens the pixel shader's constant allocation for the graph and restores it afterwards
+			RHISetShaderRegisterAllocation(24,104);
+			const UBOOL bGraphDirty = View.m_PostProcessProxy->Render(Scene,View,FArkPpRenderConfig(TRUE));
+			RHISetShaderRegisterAllocation(64,64);
+			return bGraphDirty;
+		}
+	}
+	// DISHONORED(bringup): the reference chain's own report, kept until the bring-up lines of package BD go.
 	{
 		static UBOOL bReported = FALSE;
 		INT NumProxies = 0;
@@ -4697,6 +4838,8 @@ INT GDisCensusBloomPartPrims = 0;	// bloom-part primitives found for the view
 INT GDisCensusBloomPartDraws = 0;	// draws of the bloom parts pass (mesh draws + downsample + blur + compose)
 INT GDisCensusArkPpNodes = 0;		// FArkPp graph nodes rendered
 INT GDisCensusArkPpDraws = 0;		// draws of the FArkPp graph
+INT GDisCensusArkPpMaterialDraws = 0;	// material-node tiles drawn (the colour treatment)
+INT GDisCensusArkPpSkipped = 0;		// nodes whose own pass is not ported (blur, dof, kuwa, aa) or that had nothing to draw
 
 static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 {
@@ -4768,11 +4911,11 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 					GDisCensusFrameDynamicRelevant, GDisCensusFrameNoRelevance, StaticVisible,
 					GDisCensusFrameDrawListDrawn, GDisCensusFrameDrawListVisited);
 
-				// DISHONORED(bringup): the post-process chain, counted per pass (package BD).
-				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes; bloom parts %i prims, %i draws; FArkPp %i nodes, %i draws"),
+				// DISHONORED(bringup): the post-process chain, counted per pass (packages BD and CE).
+				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes; bloom parts %i prims, %i draws; FArkPp %i nodes rendered, %i draws (%i material tiles), %i passes not ported"),
 					GDisCensusFogScene, GDisCensusFogLayers, GDisCensusFogDraws,
 					GDisCensusBloomPartPrims, GDisCensusBloomPartDraws,
-					GDisCensusArkPpNodes, GDisCensusArkPpDraws);
+					GDisCensusArkPpNodes, GDisCensusArkPpDraws, GDisCensusArkPpMaterialDraws, GDisCensusArkPpSkipped);
 			}
 			NumCensusFrames++;
 

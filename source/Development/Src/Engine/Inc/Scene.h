@@ -1723,6 +1723,15 @@ public:
 	 */
 	const struct FArkPpConfig* m_ArkPpConfig;
 
+	/**
+	 * DISHONORED(layout): 2012 PDB FSceneView @36 - the root of this view's Arkane post-process proxy tree, built by
+	 * FViewInfo::FViewInfo (2013 rva 0x46b3a0 (2012 0x493e40)) from the chain's m_GraphRoot and rendered by
+	 * FSceneRenderer::RenderPostProcessEffects (0x46bef0). It is ref-counted (FViewInfo's destructor releases it) and
+	 * a scene capture may hand its own down, which is why it lives on FSceneView and not on FViewInfo.
+	 * The one PDB member of this block still missing is SceneReflectionTexture @32 (agent AG's hand-over 2).
+	 */
+	class FArkPpNodeProxy* m_PostProcessProxy;
+
 	/** The view-specific post process settings. */
 	const struct FPostProcessSettings* PostProcessSettings;
 

@@ -64,6 +64,7 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
+#include "arkpp.h"
 
 /**
  * DISHONORED(port): the shader types of Arkane's anti-aliasing node (UArkPpNodeAA / FArkPpNodeAAProxy), which runs
@@ -264,6 +265,91 @@ IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAAEdgeDetection_Linear_PixelShaderType
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAAEdgeDetection_SRGB_PixelShaderType,TEXT("FMLAAEdgeDetection_SRGB_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_SeperatingLines_PS"),SF_Pixel,786,1);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAABlend_Linear_PixelShaderType,TEXT("FMLAABlend_Linear_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_BlendColor_PS"),SF_Pixel,786,1);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAABlend_SRGB_PixelShaderType,TEXT("FMLAABlend_SRGB_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_BlendColor_PS"),SF_Pixel,786,1);
+
+/*-----------------------------------------------------------------------------
+	UArkPpNodeAA / FArkPpNodeAAProxy (2012 PDB 52 bytes; ctor 0x54b800, Render 0x5625d0,
+	RenderFxaa 0x5610b0, RenderMlaa 0x5623f0 with its three passes 0x561570 / 0x561990 / 0x561ee0)
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): the antialiasing node's proxy: the graph shape, the configuration and the surface delegation are
+ * retail's. DISHONORED(bringup): the FXAA and MLAA passes themselves are not ported - see Render.
+ */
+class FArkPpNodeAAProxy : public FArkPpNodeProxy
+{
+public:
+	/** DISHONORED(port): 2013 rva 0x50afe0 (2012 0x54b800). */
+	FArkPpNodeAAProxy(FArkPpCreateProxyConfig& Config,UArkPpNodeAA* InNode)
+		: m_Type(InNode->m_Type)
+		, m_FxAaConfig(InNode->m_FxAaConfig)
+		, m_MlAaConfig(InNode->m_MlAaConfig)
+	{
+		m_InProxy = InNode->m_SurfaceTarget ? InNode->m_SurfaceTarget->CreateSceneProxy(Config) : NULL;
+	}
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x5218d0 (2012 0x5625d0) - retail renders the input with m_bForceToDestination cleared and then draws
+	 * MLAA (m_Type 1: edge detection, line length, blend) or FXAA (m_Type 2); any other type only renders the input,
+	 * with the bit cleared as well.
+	 * DISHONORED(bringup): neither antialiasing pass is ported. The input is rendered with the unchanged config, so an
+	 * AA node that ends the graph - which is where retail puts it - still puts the image on the destination surface,
+	 * aliased. The ten shader types load (agentBD.md 1); the passes need FFXAAVertexShader::SetParameters (0x54e7b0),
+	 * TFXAAPixelShader::SetParameters, FMLAAVertexShader::SetParameters (0x54e900) and the three MLAA pixel shaders'
+	 * (0x555760 / 0x5558b0 / 0x558ba0 / 0x558dc0), plus the MLAAEdgeMask and MLAAEdgeCount targets.
+	 */
+	virtual UBOOL Render(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+	{
+		if (m_bDone)
+		{
+			return FALSE;
+		}
+		m_bDone = TRUE;
+		GDisCensusArkPpSkipped++;
+		return m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x50b0b0 (2012 0x54b8d0) / 0x54b900 / 0x54b930 / 0x54b940 - everything is the input's. */
+	virtual const FSurfaceRHIRef GetSurface(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetSurface(View) : FSurfaceRHIRef(); }
+	virtual const FTexture2DRHIRef GetTexture(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetTexture(View) : FTexture2DRHIRef(); }
+	virtual UINT GetSurfaceSizeX() { return m_InProxy ? m_InProxy->GetSurfaceSizeX() : 0; }
+	virtual UINT GetSurfaceSizeY() { return m_InProxy ? m_InProxy->GetSurfaceSizeY() : 0; }
+
+private:
+	TRefCountPtr<FArkPpNodeProxy> m_InProxy;
+	BYTE m_Type;
+	FFxAaConfig m_FxAaConfig;
+	FMlAaConfig m_MlAaConfig;
+};
+
+/** DISHONORED(port): 2013 rva 0x524220 (2012 0x565120). */
+UBOOL UArkPpNodeAA::IsValid(FArkPpIsValidData& Cache)
+{
+	UBOOL* Memo = Cache.mIsValidCache.Find(this);
+	if (Memo)
+	{
+		return *Memo;
+	}
+	const UBOOL bValid = m_SurfaceTarget && m_SurfaceTarget->IsValid(Cache);
+	Cache.mIsValidCache.Set(this,bValid);
+	return bValid;
+}
+
+/** DISHONORED(port): 2013 rva 0x5242c0 (2012 0x5651c0) - an AA node with no type is its input. */
+FArkPpNodeProxy* UArkPpNodeAA::CreateSceneProxy(FArkPpCreateProxyConfig& Config)
+{
+	if (m_Type == EPpAa_None)
+	{
+		return m_SurfaceTarget ? m_SurfaceTarget->CreateSceneProxy(Config) : NULL;
+	}
+	FArkPpNodeProxy* Cached = NULL;
+	if (ArkPpFindCachedProxy(Config,this,Cached))
+	{
+		return Cached;
+	}
+	FArkPpNodeProxy* Proxy = new FArkPpNodeAAProxy(Config,this);
+	Config.mNodeCache.Set(this,Proxy);
+	return Proxy;
+}
 
 /** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
 void DishonoredLinkArkPpAAShaderTypes()

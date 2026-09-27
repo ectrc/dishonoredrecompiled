@@ -34,6 +34,7 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
+#include "arkpp.h"
 
 /**
  * DISHONORED(port): the shader types of Arkane's post-process blur node (UArkPpNodeBlur / FArkPpNodeBlurProxy).
@@ -151,6 +152,105 @@ IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpMotionBlurPixelShaderType,TEXT("FAr
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpMotionBlur2PixelShaderType,TEXT("FArkPpMotionBlur2PixelShader"),TEXT("ArkPpBlur"),TEXT("MainPS"),SF_Pixel,786,1);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpMotionBlur2NoOffsPixelShaderType,TEXT("FArkPpMotionBlur2NoOffsPixelShader"),TEXT("ArkPpBlur"),TEXT("MainPS"),SF_Pixel,786,1);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpRadialBlurPixelShaderType,TEXT("FArkPpRadialBlurPixelShader"),TEXT("ArkPpBlur"),TEXT("MainPS"),SF_Pixel,786,1);
+
+/*-----------------------------------------------------------------------------
+	UArkPpNodeBlur / FArkPpNodeBlurProxy (2012 PDB 60 bytes; ctor 0x54ea90, Render 0x54ec70, RenderMotionBlur 0x5626c0)
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): the blur node's proxy: the graph shape, the configuration and the surface delegation are retail's.
+ * DISHONORED(bringup): the blur pass itself is not ported - see Render.
+ */
+class FArkPpNodeBlurProxy : public FArkPpNodeProxy
+{
+public:
+	/** DISHONORED(port): 2013 rva 0x50e350 (2012 0x54ea90) - an output node is optional and then the input's proxy is the output too. */
+	FArkPpNodeBlurProxy(FArkPpCreateProxyConfig& Config,UArkPpNodeBlur* InNode)
+		: mType(InNode->m_Type)
+		, mBoxBlur(InNode->m_BoxBlurConfig)
+		, mMotionBlur(InNode->m_MotionBlurConfig)
+		, mRadialBlur(InNode->m_RadialConfig)
+	{
+		if (InNode->m_bOverrideUberPp)
+		{
+			Config.PushUberOverride(InNode->m_UberParameters,InNode->m_UberParametersWeight);
+		}
+		if (InNode->m_VectorField)
+		{
+			m_VectorFieldProxy = InNode->m_VectorField->CreateSceneProxy(Config);
+		}
+		m_InProxy = InNode->m_Input ? InNode->m_Input->CreateSceneProxy(Config) : NULL;
+		m_OutProxy = InNode->m_Output ? InNode->m_Output->CreateSceneProxy(Config) : m_InProxy.GetReference();
+	}
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x50e560 (2012 0x54ec70) - retail renders the input with m_bForceToDestination cleared and then draws
+	 * the blur (RenderMotionBlur, 0x5626c0) into the destination with TArkPpBlur{Vertex,Pixel}Shader<Policy>.
+	 * DISHONORED(bringup): the blur pass is not ported. The input is rendered with the *unchanged* config instead, so a
+	 * blur node that ends the graph still puts its input on the destination surface rather than nothing: the image is
+	 * the unblurred one. The shader types load (agentBD.md 1) and the pass needs TArkPpBlurVertexShader::SetParameters
+	 * (0x554e90) and TArkPpBlurPixelShader::SetParameters (0x554f70) with FArkPpBlurParameters (2012 PDB 176 bytes).
+	 */
+	virtual UBOOL Render(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+	{
+		if (m_bDone)
+		{
+			return FALSE;
+		}
+		m_bDone = TRUE;
+		GDisCensusArkPpSkipped++;
+		return m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x50b2f0 (2012 0x54bb80) / 0x54f0f0 - everything is the input's. */
+	virtual const FSurfaceRHIRef GetSurface(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetSurface(View) : FSurfaceRHIRef(); }
+	virtual const FTexture2DRHIRef GetTexture(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetTexture(View) : FTexture2DRHIRef(); }
+	virtual UINT GetSurfaceSizeX() { return m_InProxy ? m_InProxy->GetSurfaceSizeX() : 0; }
+	virtual UINT GetSurfaceSizeY() { return m_InProxy ? m_InProxy->GetSurfaceSizeY() : 0; }
+
+private:
+	TRefCountPtr<FArkPpNodeProxy> m_InProxy;
+	TRefCountPtr<FArkPpNodeProxy> m_OutProxy;
+	TRefCountPtr<FArkPpNodeProxy> m_VectorFieldProxy;
+	BYTE mType;
+	FBoxBlurConfig mBoxBlur;
+	FMotionBlurConfig mMotionBlur;
+	FRadialBlurConfig mRadialBlur;
+};
+
+/** DISHONORED(port): 2013 rva 0x524390 (2012 0x565290) - the input, and the vector field when this is a motion blur. */
+UBOOL UArkPpNodeBlur::IsValid(FArkPpIsValidData& Cache)
+{
+	UBOOL* Memo = Cache.mIsValidCache.Find(this);
+	if (Memo)
+	{
+		return *Memo;
+	}
+	const UBOOL bVectorFieldOk = (m_Type != EPpBt_Motion) || (m_VectorField && m_VectorField->IsValid(Cache));
+	const UBOOL bValid = m_Input && m_Input->IsValid(Cache)
+		&& (!m_Output || m_Output->IsValid(Cache))
+		&& (!m_VectorField || m_VectorField->IsValid(Cache))
+		&& bVectorFieldOk;
+	Cache.mIsValidCache.Set(this,bValid);
+	return bValid;
+}
+
+/** DISHONORED(port): 2013 rva 0x524490 (2012 0x565390) - a hidden blur node is its input. */
+FArkPpNodeProxy* UArkPpNodeBlur::CreateSceneProxy(FArkPpCreateProxyConfig& Config)
+{
+	FArkPpNodeProxy* Cached = NULL;
+	if (ArkPpFindCachedProxy(Config,this,Cached))
+	{
+		return Cached;
+	}
+	if (!IsShownInConfig(Config))
+	{
+		return m_Input ? m_Input->CreateSceneProxy(Config) : NULL;
+	}
+	FArkPpNodeProxy* Proxy = new FArkPpNodeBlurProxy(Config,this);
+	Config.mNodeCache.Set(this,Proxy);
+	return Proxy;
+}
 
 /** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
 void DishonoredLinkArkPpBlurShaderTypes()

@@ -645,6 +645,13 @@ public:
 	*/
 	void AddPostProcessProxy(FPostProcessSceneProxy* InProxy);
 
+	/**
+	 * DISHONORED(port): 2013 rva 0x447d90 (2012 0x46b1d0) - takes the root of this view's Arkane post-process proxy tree (the graph of
+	 * enginearkppclasses.h nodes, built in the constructor below) and keeps a reference to it. Retail's own overload:
+	 * the reference chain above and Arkane's graph are two different things and both live on the view.
+	 */
+	void AddPostProcessProxy(class FArkPpNodeProxy* InProxy);
+
 	/** 
 	* To output Warning that uber post process is required. 
 	*/

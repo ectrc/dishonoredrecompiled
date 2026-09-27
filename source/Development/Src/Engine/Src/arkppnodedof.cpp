@@ -42,6 +42,7 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
+#include "arkpp.h"
 
 /**
  * DISHONORED(port): the shader types of Arkane's depth-of-field node (UArkPpNodeDof / FArkPpNodeDofProxy), which is
@@ -263,6 +264,95 @@ typedef TArkPpDofUberPS<0,1> FArkPpDofUber_01PSType;
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpDofUber_11PSType,TEXT("FArkPpDofUber_11PS"),TEXT("ArkPpDof"),TEXT("Uber_PS"),SF_Pixel,787,1);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpDofUber_10PSType,TEXT("FArkPpDofUber_10PS"),TEXT("ArkPpDof"),TEXT("Uber_PS"),SF_Pixel,787,1);
 IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpDofUber_01PSType,TEXT("FArkPpDofUber_01PS"),TEXT("ArkPpDof"),TEXT("Uber_PS"),SF_Pixel,787,1);
+
+/*-----------------------------------------------------------------------------
+	UArkPpNodeDof / FArkPpNodeDofProxy (2012 PDB 116 bytes; ctor 0x54ef00, Render 0x563f40,
+	Downsample 0x563050, LutCreation 0x563560, Blend 0x5637a0)
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): the depth-of-field node's proxy. The interesting half of the constructor is retail's: the node's
+ * own uber parameters are defaulted where they override nothing and then every push on the config's override stack is
+ * applied to them newest-first, which is how a camera, a volume or a controller reaches the depth-of-field pass.
+ * DISHONORED(bringup): the four passes themselves are not ported - see Render.
+ */
+class FArkPpNodeDofProxy : public FArkPpNodeProxy
+{
+public:
+	/** DISHONORED(port): 2013 rva 0x50e7e0 (2012 0x54ef00). */
+	FArkPpNodeDofProxy(FArkPpCreateProxyConfig& Config,UArkPpNodeDof* InNode)
+	{
+		m_InProxy = InNode->m_SurfaceTarget ? InNode->m_SurfaceTarget->CreateSceneProxy(Config) : NULL;
+		m_UberPpParams = InNode->m_Parameters;
+		// DISHONORED(bringup): FArkUberPpParameters::SetDefaultOnNoOverride (2012 rva 0x4718a0) and ApplyTo (0x471130)
+		// are DishonoredGame-side helpers of the script struct and are not ported; the node's own parameters stand.
+		for (INT OverrideIndex = Config.m_UberOverrides.Num() - 1; OverrideIndex >= 0; OverrideIndex--)
+		{
+			// retail: m_UberOverrides(OverrideIndex).m_UberParams.ApplyTo(m_UberPpParams,Weight,FALSE)
+		}
+		if (m_UberPpParams.m_DOFParameters.m_FarBlurAmount < 0.01f)
+		{
+			m_UberPpParams.m_DOFParameters.m_FarBlurAmount = 0.0f;
+		}
+	}
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x523170 (2012 0x563f40) - retail renders the input with m_bForceToDestination cleared and then runs
+	 * four passes: Downsample (0x563050) into ArkDofHalf and ArkDofQuarter, LutCreation (0x563560), the uber pass with
+	 * TArkPpDofUberPS<a,b> and Blend (0x5637a0).
+	 * DISHONORED(bringup): those four passes are not ported. The input is rendered with the unchanged config, so a
+	 * depth-of-field node that ends the graph still puts its input on the destination: the image is in focus
+	 * throughout. The eight shader types load (agentBD.md 1) and the two half/quarter targets exist; what is missing
+	 * is FArkPpDofUberVS/PS::SetParameters (0x54f290 / 0x54f1f0 / 0x54f440) with FArkPpDofUberParameters (320 bytes)
+	 * and the GDofRamp resource (0x555220).
+	 */
+	virtual UBOOL Render(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+	{
+		if (m_bDone)
+		{
+			return FALSE;
+		}
+		m_bDone = TRUE;
+		GDisCensusArkPpSkipped++;
+		return m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
+	}
+
+	/** DISHONORED(port): everything is the input's (the bodies are folded with the blur proxy's, 0x54bb80). */
+	virtual const FSurfaceRHIRef GetSurface(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetSurface(View) : FSurfaceRHIRef(); }
+	virtual const FTexture2DRHIRef GetTexture(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetTexture(View) : FTexture2DRHIRef(); }
+	virtual UINT GetSurfaceSizeX() { return m_InProxy ? m_InProxy->GetSurfaceSizeX() : 0; }
+	virtual UINT GetSurfaceSizeY() { return m_InProxy ? m_InProxy->GetSurfaceSizeY() : 0; }
+
+private:
+	TRefCountPtr<FArkPpNodeProxy> m_InProxy;
+	FArkUberPpParameters m_UberPpParams;
+};
+
+/** DISHONORED(port): 2013 rva 0x5245b0 (2012 0x5654b0). */
+UBOOL UArkPpNodeDof::IsValid(FArkPpIsValidData& Cache)
+{
+	UBOOL* Memo = Cache.mIsValidCache.Find(this);
+	if (Memo)
+	{
+		return *Memo;
+	}
+	const UBOOL bValid = m_SurfaceTarget && m_SurfaceTarget->IsValid(Cache);
+	Cache.mIsValidCache.Set(this,bValid);
+	return bValid;
+}
+
+/** DISHONORED(port): 2013 rva 0x524640 (2012 0x565540) - no show gate on this node in retail. */
+FArkPpNodeProxy* UArkPpNodeDof::CreateSceneProxy(FArkPpCreateProxyConfig& Config)
+{
+	FArkPpNodeProxy* Cached = NULL;
+	if (ArkPpFindCachedProxy(Config,this,Cached))
+	{
+		return Cached;
+	}
+	FArkPpNodeProxy* Proxy = new FArkPpNodeDofProxy(Config,this);
+	Config.mNodeCache.Set(this,Proxy);
+	return Proxy;
+}
 
 /** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
 void DishonoredLinkArkPpDofShaderTypes()
