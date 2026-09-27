@@ -99,6 +99,7 @@ public:
     }
     DECLARE_FUNCTION(execBaseChange);
     DECLARE_ABSTRACT_CLASS(ADisPickup_Base,ADishonoredKActor,0,DishonoredGame)
+#include "CppText/ADisPickup_Base.h"
 };
 
 // DishonoredGame.DisAbstractItemPickup: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
@@ -110,6 +111,7 @@ public:
     //## END PROPS DisAbstractItemPickup
 
     DECLARE_CLASS(ADisAbstractItemPickup,ADisPickup_Base,0,DishonoredGame)
+#include "CppText/ADisAbstractItemPickup.h"
 };
 
 // DishonoredGame.DisAbstractItemPickupAudioLog: retail sizeof 960, reflected span 956..960 (2012 PDB sizeof 960)
@@ -342,6 +344,7 @@ public:
     //## END PROPS DisElixirHealth
 
     DECLARE_CLASS(ADisElixirHealth,ADisPickup_Base,0,DishonoredGame)
+#include "CppText/ADisElixirHealth.h"
 };
 
 // DishonoredGame.DisElixirMana: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
@@ -353,6 +356,7 @@ public:
     //## END PROPS DisElixirMana
 
     DECLARE_CLASS(ADisElixirMana,ADisPickup_Base,0,DishonoredGame)
+#include "CppText/ADisElixirMana.h"
 };
 
 // DishonoredGame.DisGenericPickup: retail sizeof 960, reflected span 952..956 (2012 PDB sizeof 960)
@@ -364,6 +368,7 @@ public:
     //## END PROPS DisGenericPickup
 
     DECLARE_CLASS(ADisGenericPickup,ADisPickup_Base,0,DishonoredGame)
+#include "CppText/ADisGenericPickup.h"
 };
 
 // DishonoredGame.DisKey_Base: retail sizeof 976, reflected span 952..968 (2012 PDB sizeof 960)
@@ -404,6 +409,7 @@ public:
     //## END PROPS DisStatPickup
 
     DECLARE_CLASS(ADisStatPickup,ADisPickup_Base,0,DishonoredGame)
+#include "CppText/ADisStatPickup.h"
 };
 
 // DishonoredGame.DisTallboyAttachment: retail sizeof 1072, reflected span 1060..1060 (2012 PDB sizeof 1056)
@@ -536,6 +542,7 @@ public:
     //## END PROPS DishonoredInventoryPickup
 
     DECLARE_CLASS(ADishonoredInventoryPickup,ADisStatPickup,0,DishonoredGame)
+#include "CppText/ADishonoredInventoryPickup.h"
 };
 
 // DishonoredGame.DisItemContext_AimAssistAttack.DisAimAssistDistReduce: retail SDK size 8 (2012 PDB 8)

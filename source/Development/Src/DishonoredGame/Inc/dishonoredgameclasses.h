@@ -205,6 +205,7 @@ public:
     DECLARE_FUNCTION(execDestroyIfPlayerCantSeeMe);
     DECLARE_CLASS(ADishonoredKActor,AKActor,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Item");}
+#include "CppText/ADishonoredKActor.h"
 };
 
 // DishonoredGame.DisInteractableInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -223,6 +224,7 @@ protected:
     virtual ~IDisInteractableInterface() {}
 public:
     typedef UDisInteractableInterface UClassType;
+#include "CppText/IDisInteractableInterface.h"
 };
 
 // DishonoredGame.DisSoulRenderInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -490,6 +492,7 @@ public:
     DECLARE_FUNCTION(execTakeDamage);
     DECLARE_CLASS(ADishonoredKAsset,AKAsset,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Item");}
+#include "CppText/ADishonoredKAsset.h"
 };
 
 // DishonoredGame.DisClimbable: retail sizeof 704, reflected span 672..704 (2012 PDB sizeof 704)
@@ -12971,6 +12974,7 @@ public:
 
     DECLARE_FUNCTION(execInitializeForPool);
     DECLARE_CLASS(UDisParticleSystemComponent,UParticleSystemComponent,0,DishonoredGame)
+#include "CppText/UDisParticleSystemComponent.h"
 };
 
 // DishonoredGame.DisPatrolManager: retail sizeof 60, reflected span 56..60 (2012 PDB sizeof 60)

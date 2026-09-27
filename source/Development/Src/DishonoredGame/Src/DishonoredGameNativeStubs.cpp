@@ -330,17 +330,9 @@ void UWorldRainComponent::execSetEnabled( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UWorldRainComponent, execSetEnabled);
 }
-void ADishonoredKActor::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredKActor, execTakeDamage_Native);
-}
 void ADishonoredKActor::execTakeDamage( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredKActor, execTakeDamage);
-}
-void ADishonoredKActor::execDestroyIfPlayerCantSeeMe( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredKActor, execDestroyIfPlayerCantSeeMe);
 }
 void ADisSkeletalBreakable::execTakeDamage( FFrame& Stack, RESULT_DECL )
 {
@@ -354,10 +346,6 @@ void ADishonoredUsableObject::execOnToggle_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredUsableObject, execOnToggle_Native);
 }
-void ADishonoredKAsset::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredKAsset, execTakeDamage_Native);
-}
 void ADishonoredKAsset::execTakeDamage( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredKAsset, execTakeDamage);
@@ -365,10 +353,6 @@ void ADishonoredKAsset::execTakeDamage( FFrame& Stack, RESULT_DECL )
 void ADisCrusher::execEncroachingOn( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADisCrusher, execEncroachingOn);
-}
-void ADishonoredGameInfo::execGameEnding( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredGameInfo, execGameEnding);
 }
 void ADishonoredPawn::execJumpOffPawn( FFrame& Stack, RESULT_DECL )
 {
@@ -518,10 +502,6 @@ void ADishonoredPlayerController::execShowScreenConfig( FFrame& Stack, RESULT_DE
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execShowScreenConfig);
 }
-void ADishonoredPlayerController::execDis_Zoom( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_Zoom);
-}
 void ADishonoredPlayerController::execDis_VersusAlt( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_VersusAlt);
@@ -649,10 +629,6 @@ void ADishonoredPlayerController::execOnTeleport_Native( FFrame& Stack, RESULT_D
 void ADishonoredPlayerController::execHandleWalking( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execHandleWalking);
-}
-void ADishonoredPlayerController::execHandleHeldButtons( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execHandleHeldButtons);
 }
 void ADishonoredPlayerPawn::execOnPlayerResurrect( FFrame& Stack, RESULT_DECL )
 {
@@ -1498,10 +1474,6 @@ void UDisNavMeshGoal_ShootingPosition::execRecycle( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisNavMeshGoal_ShootingPosition, execRecycle);
 }
-void UDisParticleSystemComponent::execInitializeForPool( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisParticleSystemComponent, execInitializeForPool);
-}
 void UDisTweaks_Faction::execOnSetDisposition( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisTweaks_Faction, execOnSetDisposition);
@@ -1677,10 +1649,6 @@ void UDisBehaviorShoot::execRequestStateExitCallback_FirePistol( FFrame& Stack, 
 void UDisBehaviorTallBoyCombat::execRequestStateExitCallback_FindShootingPosition( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorTallBoyCombat, execRequestStateExitCallback_FindShootingPosition);
-}
-void ADisPickup_Base::execBaseChange( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADisPickup_Base, execBaseChange);
 }
 void ADishonoredMovable::execOnSleepRBPhysics_Native( FFrame& Stack, RESULT_DECL )
 {
@@ -2297,10 +2265,6 @@ void UDisGFxMoviePlayerStore::execReq_UpgradesList( FFrame& Stack, RESULT_DECL )
 void UDisGFxMoviePlayerStore::execReq_PurchasesList( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerStore, execReq_PurchasesList);
-}
-void ADisProjectile::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADisProjectile, execTakeDamage_Native);
 }
 void ADisProjectile::execTakeDamage( FFrame& Stack, RESULT_DECL )
 {

@@ -121,6 +121,7 @@ public:
     DECLARE_FUNCTION(execTakeDamage_Native);
     DECLARE_FUNCTION(execTakeDamage);
     DECLARE_ABSTRACT_CLASS(ADisProjectile,AActor,0,DishonoredGame)
+#include "CppText/ADisProjectile.h"
 };
 
 // DishonoredGame.DisBullet: retail sizeof 800, reflected span 728..788 (2012 PDB sizeof 800)
