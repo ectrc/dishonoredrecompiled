@@ -467,6 +467,16 @@ int GASArrayObject::ParseIndex(const GASString& name)
 
 void GASArrayObject::Resize(unsigned int n)
 {
+    // An AS2 array index that came out of an undefined value is 0x80000000 or worse; growing to it
+    // is a bad_alloc with nothing to say. The bound is generous against any real content (the
+    // largest array in the cook's menus is the save-slot list) and it reports rather than throws.
+    enum { MaxElements = 1 << 20 };
+    if (n > MaxElements)
+    {
+        GFxLogf("DISHONORED(bringup): AS2 array refused a length of %u (bound %u)",
+                n, (unsigned int)MaxElements);
+        return;
+    }
     if (n > Capacity)
     {
         unsigned int cap = Capacity ? Capacity * 2 : 8;

@@ -365,6 +365,9 @@ public:
 // GFx_GenerateMouseButtonEvents 0xa66a90) needs the mouse path and is not in this package: the
 // definition is complete, the instance is a display object with the up-state records placed.
 
+// The bounds of a definition in twips, or an empty rectangle when it has none. GFxCharacterDefs.cpp.
+GRect<int> GFxCharacterDefGetBoundsTwips(const GFxCharacterDef* def);
+
 class GFxButtonRecord
 {
 public:

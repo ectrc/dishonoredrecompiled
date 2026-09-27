@@ -1928,8 +1928,23 @@ UBOOL UGFxMoviePlayer::Start( UBOOL bStartPaused )
 	{
 		return FALSE;
 	}
+	// DISHONORED(port, agent DG): UDisGFxMoviePlayerBase::PreLoad (2012 0x822820) is PreLoad plus
+	// InitTexts, and InitTexts needs the view, which PreLoad's Load has just created. See the seam
+	// note in gfxuiengine.h for why it arrives as a hook.
+	if( GGFxMoviePlayerPreLoadedHook != NULL )
+	{
+		GGFxMoviePlayerPreLoadedHook( this );
+	}
 	GGFxEngine->StartScene( GetMovie(), RenderTexture, TRUE, bStartPaused ? FALSE : TRUE );
 	bMovieIsOpen = TRUE;
+	// DISHONORED(port, agent DG): UDisGFxMoviePlayerBase::Start (2012 0x7f4200) ends with
+	// OnMovieStackChanged and PostStart. Without it a Dishonored menu opens with every one of its
+	// screens on top of each other and none of them told which to show, which is what agent DC's
+	// screenshot was.
+	if( GGFxMoviePlayerStartedHook != NULL )
+	{
+		GGFxMoviePlayerStartedHook( this );
+	}
 	return TRUE;
 }
 
@@ -1978,6 +1993,13 @@ void UGFxMoviePlayer::Close( UBOOL bUnload )
 // the vtable so the Dishonored menus' override runs.
 void UGFxMoviePlayer::Advance( FLOAT DeltaTime )
 {
+	// DISHONORED(port, agent DG): UDisGFxMoviePlayerMenuBase::PreAdvance (2012 0x817160) and the main
+	// menu's own (0x822280) run before the movie advances; the main menu's is the state machine that
+	// takes the interface from the start screen to the menu proper.
+	if( GGFxMoviePlayerPreAdvanceHook != NULL )
+	{
+		GGFxMoviePlayerPreAdvanceHook( this, DeltaTime );
+	}
 	FGFxMovie* Movie = GetMovie();
 	if( GGFxEngine && Movie && Movie->pView.GetPtr() )
 	{
@@ -2670,8 +2692,19 @@ void UGFxMoviePlayer::ProcessDataStoreCall( const char* MethodName, const GFxVal
 
 // DISHONORED(port): 2012 rva 0x5deb60 / 0x5deb40 - both are empty in the base class; the movie's own input
 // path is FGFxEngine::InputKey / InputAxis and the Dishonored menus override these.
+// DISHONORED(port, agent DG): the retail base's own body is `return FALSE` (2012 0x5deb60); what
+// answers is UDisGFxMoviePlayerBase::FilterButtonInput (0x7f45a0) and the two overrides below it.
+FGFxMoviePlayerHook      GGFxMoviePlayerPreLoadedHook = NULL;
+FGFxMoviePlayerHook      GGFxMoviePlayerStartedHook = NULL;
+FGFxMoviePlayerTickHook  GGFxMoviePlayerPreAdvanceHook = NULL;
+FGFxMoviePlayerInputHook GGFxMoviePlayerFilterButtonHook = NULL;
+
 UBOOL UGFxMoviePlayer::FilterButtonInput( INT ControllerId, FName Key, BYTE Event, UBOOL& bHandled )
 {
+	if( GGFxMoviePlayerFilterButtonHook != NULL )
+	{
+		return GGFxMoviePlayerFilterButtonHook( this, ControllerId, Key, Event, bHandled );
+	}
 	return FALSE;
 }
 

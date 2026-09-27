@@ -16,6 +16,33 @@
 //     bits are stored inverted (0xa26190).
 // DISHONORED(port): 2013 rvas beside each function; see agentCD.md.
 #include "GFxCharacterDefs.h"
+
+// DISHONORED(port, agent DG): the definition's own extent, which is what a clip's _width and _height
+// are measured from. A definition with no geometry answers an empty rectangle, exactly as retail's
+// GFxCharacterDef::GetBoundsLocal does for a placeholder.
+GRect<int> GFxCharacterDefGetBoundsTwips(const GFxCharacterDef* def)
+{
+    GRect<int> empty(0, 0, 0, 0);
+    if (def == 0)
+        return empty;
+    switch (def->GetResourceTypeCode())
+    {
+    case GFxResource::RT_ShapeDef:
+        return ((const GFxShapeCharacterDef*)def)->GetBoundsTwips();
+    case GFxResource::RT_EditTextDef:
+        return ((const GFxEditTextCharacterDef*)def)->TextRect;
+    case GFxResource::RT_TextDef:
+        return ((const GFxStaticTextCharacterDef*)def)->Bounds;
+    case GFxResource::RT_Image:
+    {
+        const GFxImageCharacterDef* img = (const GFxImageCharacterDef*)def;
+        // An image is placed at its own pixel size; the twips factor is the renderer's 20.
+        return GRect<int>(0, 0, (int)img->TargetWidth * 20, (int)img->TargetHeight * 20);
+    }
+    default:
+        return empty;
+    }
+}
 // Package CB's text field: GFxEditTextCharacterDef::CreateCharacterInstance builds one (see there).
 #include "GFxTextField.h"
 

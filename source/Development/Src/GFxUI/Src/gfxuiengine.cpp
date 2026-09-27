@@ -39,6 +39,7 @@
 #include "GFxLoaderImpl.h"
 #include "GFxTextField.h"
 #include "GFxAS2Runtime.h"
+#include "GFxInput.h"
 
 /** the process-wide GFx engine */
 FGFxEngine* GGFxEngine = NULL;
@@ -1148,9 +1149,109 @@ void FGFxEngine::SetMovieCanReceiveInput( FGFxMovie* InMovie, UBOOL bCanReceiveI
 // DISHONORED(port): 2013 0x57b140 (2012 0x5bfa30). The clock is the world's unless the movie asked for
 // real time, the step is clamped to 0.05 s, and a movie whose fUpdate is FALSE is paused - which is what
 // UGFxMoviePlayer::SetPause writes, so a paused movie still draws.
+// DISHONORED(bringup, agent DG): -gfxuikey=<drawnframe>:<KeyName>[,<drawnframe>:<KeyName>...]
+// delivers a press and a release through FGFxEngine::InputKey, which is the entry point
+// UGFxInteraction::InputKey calls - so what a screenshot after it shows is the real input path and
+// not a variable poked into the movie. Read on first use.
+void FGFxEngine::TickScriptedKeys()
+{
+	static TArray<INT> KeyFrames;
+	static TArray<FName> KeyNames;
+	static UBOOL bParsed = FALSE;
+	if( !bParsed )
+	{
+		bParsed = TRUE;
+		FString Value;
+		if( Parse( appCmdLine(), TEXT("gfxuikey="), Value ) )
+		{
+			while( Value.Len() )
+			{
+				const INT Comma = Value.InStr( TEXT(",") );
+				const FString One = Comma >= 0 ? Value.Left( Comma ) : Value;
+				Value = Comma >= 0 ? Value.Mid( Comma + 1 ) : FString();
+				const INT Colon = One.InStr( TEXT(":") );
+				if( Colon > 0 )
+				{
+					KeyFrames.AddItem( appAtoi( *One.Left( Colon ) ) );
+					KeyNames.AddItem( FName( *One.Mid( Colon + 1 ) ) );
+				}
+			}
+		}
+	}
+	// -gfxuishotafterkey=<N>: request a screenshot N engine ticks after the last scripted key. The
+	// drawn-frame counter advances twice per game frame (UGameViewportClient::Draw calls RenderUI
+	// twice), so counting ticks here is what makes "the frame after the key" mean what it says.
+	static INT ShotAfterKey = -2;
+	static INT ShotCountdown = -1;
+	if( ShotAfterKey == -2 )
+	{
+		FString Value;
+		ShotAfterKey = Parse( appCmdLine(), TEXT("gfxuishotafterkey="), Value ) ? appAtoi( *Value ) : -1;
+	}
+	if( ShotCountdown > 0 && --ShotCountdown == 0 )
+	{
+		FString Name;
+		if( !Parse( appCmdLine(), TEXT("gfxuishotname="), Name ) )
+		{
+			Name = TEXT("gfxui");
+		}
+		GScreenShotName = Name + TEXT("afterkey");
+		GScreenShotRequest = TRUE;
+		debugf( TEXT("DISHONORED(bringup): GFx UI: screenshot %s requested %d ticks after the key"),
+			*GScreenShotName, ShotAfterKey );
+	}
+	for( INT Index = 0; Index < KeyFrames.Num(); Index++ )
+	{
+		if( KeyFrames( Index ) != DrawnFrames )
+		{
+			continue;
+		}
+		if( ShotAfterKey >= 0 )
+		{
+			ShotCountdown = ShotAfterKey > 0 ? ShotAfterKey : 1;
+		}
+		// The focused movie is the one UGFxInteraction would route to. On a menu map there is no
+		// local player yet, so PlayerStates is empty and GetFocusedMovieFromControllerID answers
+		// NULL; the scripted key then goes to the open movie directly, which is the same
+		// FGFxEngine::InputKey(ControllerId, Movie, ...) the focused path calls one level down.
+		FGFxMovie* Movie = GetFocusedMovieFromControllerID( 0 );
+		const TCHAR* Route = TEXT("focused movie");
+		if( Movie == NULL && OpenMovies.Num() > 0 )
+		{
+			Movie = OpenMovies( OpenMovies.Num() - 1 );
+			Route = TEXT("topmost open movie (no local player owns focus)");
+		}
+		const UBOOL bPressed = Movie != NULL && InputKey( 0, Movie, KeyNames( Index ), IE_Pressed );
+		const UBOOL bReleased = Movie != NULL && InputKey( 0, Movie, KeyNames( Index ), IE_Released );
+		LogCensus( TEXT("after a scripted key") );
+		debugf( TEXT("DISHONORED(bringup): GFx UI: scripted key %s on drawn frame %d via %s -> pressed %s, released %s"),
+			*KeyNames( Index ).ToString(), DrawnFrames, Route,
+			bPressed ? TEXT("handled") : TEXT("not handled"),
+			bReleased ? TEXT("handled") : TEXT("not handled") );
+	}
+}
+
 void FGFxEngine::Tick( FLOAT DeltaTime )
 {
 	(void)DeltaTime;
+	{
+		// DISHONORED(bringup, agent DG): -gfxuinoclassbind and -gfxuiclasstrace, read on first use.
+		static UBOOL bRead = FALSE;
+		if( !bRead )
+		{
+			bRead = TRUE;
+			if( ParseParam( appCmdLine(), TEXT("gfxuinoclassbind") ) )
+			{
+				GFxSprite::bBindRegisteredClasses = false;
+				debugf( TEXT("DISHONORED(bringup): GFx UI: Object.registerClass instantiation is OFF") );
+			}
+			if( ParseParam( appCmdLine(), TEXT("gfxuiclasstrace") ) )
+			{
+				GFxSprite::bTraceClassBinding = true;
+			}
+		}
+	}
+	TickScriptedKeys();
 	const DOUBLE GameTime = GWorld ? GWorld->GetTimeSeconds() : 0.0;
 	const DOUBLE RealTime = GCurrentTime;
 
@@ -1309,19 +1410,39 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 	// of UGameViewportClient::Draw reads the back buffer and writes the bitmap. Read on first use, never
 	// as a file-scope static (GCmdLine does not exist during static initialisation).
 	{
-		static INT ShotFrame = -2;
-		if( ShotFrame == -2 )
+		// DISHONORED(bringup, agent DG): a list rather than one frame, so a run can photograph the
+		// interface before and after an input event. -gfxuishotname=<prefix> names the files.
+		static TArray<INT> ShotFrames;
+		static FString ShotName;
+		static UBOOL bShotParsed = FALSE;
+		if( !bShotParsed )
 		{
+			bShotParsed = TRUE;
 			FString Value;
-			ShotFrame = Parse( appCmdLine(), TEXT("gfxuishot="), Value ) ? appAtoi( *Value ) : -1;
+			if( Parse( appCmdLine(), TEXT("gfxuishot="), Value ) )
+			{
+				while( Value.Len() )
+				{
+					const INT Comma = Value.InStr( TEXT(",") );
+					ShotFrames.AddItem( appAtoi( *( Comma >= 0 ? Value.Left( Comma ) : Value ) ) );
+					Value = Comma >= 0 ? Value.Mid( Comma + 1 ) : FString();
+				}
+			}
+			if( !Parse( appCmdLine(), TEXT("gfxuishotname="), ShotName ) )
+			{
+				ShotName = TEXT("gfxui");
+			}
 		}
 		++DrawnFrames;
-		if( ShotFrame > 0 && DrawnFrames == ShotFrame )
+		for( INT Index = 0; Index < ShotFrames.Num(); Index++ )
 		{
-			GScreenShotName = TEXT("agentDC_gfxui");
-			GScreenShotRequest = TRUE;
-			debugf( TEXT("DISHONORED(bringup): GFx UI: screenshot requested on drawn frame %d"),
-				DrawnFrames );
+			if( ShotFrames( Index ) == DrawnFrames )
+			{
+				GScreenShotName = ShotName + appItoa( DrawnFrames );
+				GScreenShotRequest = TRUE;
+				debugf( TEXT("DISHONORED(bringup): GFx UI: screenshot %s requested on drawn frame %d"),
+					*GScreenShotName, DrawnFrames );
+			}
 		}
 	}
 }
@@ -1354,6 +1475,10 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 			ScriptErrors += C.ScriptErrors;
 		}
 	}
+	// DISHONORED(bringup, agent DG): the input half of the same line. A key that reaches the movie's
+	// door and is refused is not the same thing as one the movie used, and the census is where a run
+	// has to say which; these are the runtime's own counters.
+	const GFxInputCensus& Input = GFxInputGetCensus();
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): movies open %d [%s], drawn %d, display objects %d ")
 		TEXT("(%d sprites, %d shapes, %d text fields, %d bitmap fills), %d draws, %d triangles, ")
 		TEXT("%d glyph batches / %d glyphs, %d masks, atlas %d glyphs rasterised / %d missed; ")
@@ -1366,6 +1491,11 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 		Glyphs ? (INT)Glyphs->GetMissCount() : 0,
 		Frames, Sprites, Placed, Buffers, GASActionBuffer::OpsExecuted,
 		GASActionBuffer::OpsUnimplemented, ScriptErrors );
+	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): input: %u events HE_Handled / %u HE_NotHandled, ")
+		TEXT("%u key downs, %u key ups, %u chars typed, %u mouse events, ")
+		TEXT("%u AS2 listeners registered, %u listener calls"),
+		Reason, Input.EventsHandled, Input.EventsNotHandled, Input.KeyDowns, Input.KeyUps,
+		Input.CharsTyped, Input.MouseEvents, Input.ListenersAdded, Input.KeyListenerCalls );
 	appMemzero( &RenderCensus, sizeof(RenderCensus) );
 
 	// The renderer's own half of the same count, which is what says whether a draw the walk submitted

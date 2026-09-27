@@ -15,6 +15,7 @@
 //     answer IsActionTag(), and drains the session.
 // DISHONORED(port): see GFxAS2.h.
 #include "GFxPlayer.h"
+#include "GFxCharacterDefs.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -290,6 +291,84 @@ GASString GFxASCharacter::GetTargetPath(GASStringContext* sc) const
     return sc->CreateString(buf);
 }
 
+// m * child, in GMatrix2D's own 2x3 shape. There is no Prepend on this type and one composition is
+// all the bounds walk needs.
+static GMatrix2D GFxComposeMatrix(const GMatrix2D& m, const GMatrix2D& child)
+{
+    GMatrix2D out;
+    out.M_[0][0] = m.M_[0][0] * child.M_[0][0] + m.M_[0][1] * child.M_[1][0];
+    out.M_[0][1] = m.M_[0][0] * child.M_[0][1] + m.M_[0][1] * child.M_[1][1];
+    out.M_[0][2] = m.M_[0][0] * child.M_[0][2] + m.M_[0][1] * child.M_[1][2] + m.M_[0][2];
+    out.M_[1][0] = m.M_[1][0] * child.M_[0][0] + m.M_[1][1] * child.M_[1][0];
+    out.M_[1][1] = m.M_[1][0] * child.M_[0][1] + m.M_[1][1] * child.M_[1][1];
+    out.M_[1][2] = m.M_[1][0] * child.M_[0][2] + m.M_[1][1] * child.M_[1][2] + m.M_[1][2];
+    return out;
+}
+
+// DISHONORED(port, agent DG): 2012 0x9d2ab0. The character's extent through `m`. This is what a
+// clip's _width and _height read, and a clip that answers `undefined` for them makes the content's
+// own layout loops non-terminating - see the report.
+GRect<float> GFxCharacter::GetBoundsTwips(const GMatrix2D& m) const
+{
+    const GRect<int> local = GFxCharacterDefGetBoundsTwips(GetCharacterDef());
+    if (local.Right <= local.Left && local.Bottom <= local.Top)
+        return GRect<float>(0.f, 0.f, 0.f, 0.f);
+    // All four corners, because a rotation turns the axis-aligned box into a quad and the bounds are
+    // the box of that quad.
+    float xs[4] = { (float)local.Left, (float)local.Right, (float)local.Left, (float)local.Right };
+    float ys[4] = { (float)local.Top, (float)local.Top, (float)local.Bottom, (float)local.Bottom };
+    GRect<float> out(0.f, 0.f, 0.f, 0.f);
+    for (int i = 0; i < 4; ++i)
+    {
+        float x = xs[i], y = ys[i];
+        m.Transform(&x, &y);
+        if (i == 0)
+        {
+            out.Left = out.Right = x;
+            out.Top = out.Bottom = y;
+        }
+        else
+        {
+            if (x < out.Left) out.Left = x;
+            if (x > out.Right) out.Right = x;
+            if (y < out.Top) out.Top = y;
+            if (y > out.Bottom) out.Bottom = y;
+        }
+    }
+    return out;
+}
+
+// A sprite has no geometry of its own: its extent is the union of its display list, each child
+// through its own matrix composed with `m`.
+GRect<float> GFxSprite::GetBoundsTwips(const GMatrix2D& m) const
+{
+    GRect<float> out(0.f, 0.f, 0.f, 0.f);
+    bool bAny = false;
+    for (unsigned int i = 0; i < DisplayList.GetCount(); ++i)
+    {
+        GFxCharacter* ch = DisplayList.GetAt(i);
+        if (ch == 0)
+            continue;
+        const GMatrix2D child = GFxComposeMatrix(m, ch->GetMatrix());
+        const GRect<float> r = ch->GetBoundsTwips(child);
+        if (r.Right <= r.Left && r.Bottom <= r.Top)
+            continue;
+        if (!bAny)
+        {
+            out = r;
+            bAny = true;
+        }
+        else
+        {
+            if (r.Left < out.Left) out.Left = r.Left;
+            if (r.Top < out.Top) out.Top = r.Top;
+            if (r.Right > out.Right) out.Right = r.Right;
+            if (r.Bottom > out.Bottom) out.Bottom = r.Bottom;
+        }
+    }
+    return out;
+}
+
 void GFxASCharacter::Set__proto__(GASStringContext* sc, GASObject* proto)
 {
     pProto = proto;
@@ -334,6 +413,26 @@ bool GFxASCharacter::GetMemberRaw(GASStringContext* sc, const GASString& name, G
         if (name == sc->GetBuiltin(standard[i]) && GetStandardMember(standard[i], val))
             return true;
 
+    // _width / _height / _rotation are not in the builtin string table, and `clip._width` in source
+    // compiles to a GetMember rather than to ActionGetProperty, so the name has to be answered here
+    // too. GFxAS2GetDisplayProperty holds the one implementation.
+    {
+        const char* n = name.ToCStr();
+        if (n != 0 && n[0] == '_')
+        {
+            int propIndex = -1;
+            if (strcmp(n, "_width") == 0)         propIndex = 8;
+            else if (strcmp(n, "_height") == 0)   propIndex = 9;
+            else if (strcmp(n, "_rotation") == 0) propIndex = 10;
+            else if (strcmp(n, "_xscale") == 0)   propIndex = 2;
+            else if (strcmp(n, "_yscale") == 0)   propIndex = 3;
+            if (propIndex >= 0)
+            {
+                GFxAS2GetDisplayProperty(const_cast<GFxASCharacter*>(this), propIndex, val);
+                return true;
+            }
+        }
+    }
     if (name == sc->GetBuiltin(GASbuiltin__parent))
     {
         val->SetAsCharacter(pParent);
@@ -363,6 +462,18 @@ bool GFxASCharacter::GetMemberRaw(GASStringContext* sc, const GASString& name, G
         return true;
     if (pProto && pProto->GetMemberRaw(sc, name, val))
         return true;
+    // The built-in prototype for this kind of character, last. Retail answers the MovieClip
+    // built-ins from the character itself (GFxSprite::GetMember, 2012 0x9fb540, resolves them
+    // through GetStandardMemberConstant and its own switch before it looks at __proto__), so a
+    // registered class can replace __proto__ with anything and the clip still has attachMovie. This
+    // tree keeps them on a prototype object instead, so the equivalent is to consult it here -
+    // without it, Object.registerClass takes attachMovie away from the clip it just classed.
+    if (pMovieRoot != 0 && ToSprite() != 0)
+    {
+        GASObject* builtin = pMovieRoot->GetASContext()->GetPrototype(GASGlobalContext::Proto_MovieClip);
+        if (builtin != 0 && builtin != pProto && builtin->GetMemberRaw(sc, name, val))
+            return true;
+    }
     return false;
 }
 
@@ -483,6 +594,23 @@ void GFxAS2GetDisplayProperty(GFxASCharacter* ch, int index, GASValue* out)
     case 5:  out->SetInt(sp ? (int)sp->GetFrameCount() : 0); break;
     case 6:  ch->GetStandardMember(GASbuiltin__alpha, out); break;
     case 7:  ch->GetStandardMember(GASbuiltin__visible, out); break;
+    case 8:
+    case 9:
+    {
+        // _width and _height: the clip's bounds in its PARENT's space, i.e. through its own matrix,
+        // in pixels. 2012 GFxASCharacter::GetStandardMember's Standard__width / __height arms.
+        const GRect<float> r = ch->GetBoundsTwips(ch->GetMatrix());
+        out->SetNumber((double)((index == 8 ? (r.Right - r.Left) : (r.Bottom - r.Top))
+                                * GFxTwipsToPixels));
+        break;
+    }
+    case 10:
+    {
+        // _rotation, in degrees, out of the composed matrix.
+        const GMatrix2D& mx = ch->GetMatrix();
+        out->SetNumber(atan2((double)mx.M_[1][0], (double)mx.M_[0][0]) * 57.29577951308232);
+        break;
+    }
     case 11: out->SetString(ch->GetTargetPath(ch->GetMovieRoot()->GetASContext()->GetSC())); break;
     case 12: out->SetInt(sp ? (int)sp->GetFrameCount() : 0); break;
     case 13: ch->GetStandardMember(GASbuiltin__name, out); break;
@@ -720,6 +848,58 @@ GFxMovieDataDef* GFxSprite::GetOwnDataDef() const
     return pDefImpl ? pDefImpl->GetDataDef() : 0;
 }
 
+// DISHONORED(port, agent DG): 2012 0x9fee10's class binding, shared with AttachMovie. Retail queues
+// it as an action-queue entry at priority 1 and the frame-0 events at priority 3, so the constructor
+// runs before the clip's own first-frame actions; calling it here, before ExecuteFrame0Events, is
+// that ordering without the queue.
+bool GFxSprite::bTraceClassBinding = false;
+bool GFxSprite::bBindRegisteredClasses = true;
+
+void GFxSprite::BindRegisteredClass(GFxSprite* child, const GASString& symbol)
+{
+    GFxMovieRoot* root = child ? child->GetMovieRoot() : 0;
+    if (root == 0 || symbol.GetSize() == 0 || !bBindRegisteredClasses)
+        return;
+    GASGlobalContext* gc = root->GetASContext();
+    GASFunctionObject* ctor = gc->FindRegisteredClass(symbol);
+    if (ctor == 0)
+    {
+        if (bTraceClassBinding)
+            GFxLogf("DISHONORED(bringup): class binding: '%s' has no registered class",
+                    symbol.ToCStr());
+        return;
+    }
+    GASValue protoVal;
+    if (ctor->GetMemberRaw(gc->GetSC(), gc->GetBuiltin(GASbuiltin_prototype), &protoVal))
+    {
+        GASObject* proto = protoVal.GetObject();
+        if (bTraceClassBinding)
+        {
+            const GASObject* mcProto = gc->GetPrototype(GASGlobalContext::Proto_MovieClip);
+            int depth = 0;
+            bool bReachesMovieClip = false;
+            for (const GASObject* p = proto; p != 0 && depth < 32; ++depth)
+            {
+                if (p == mcProto)
+                {
+                    bReachesMovieClip = true;
+                    break;
+                }
+                p = p->Get__proto__();
+            }
+            GFxLogf("DISHONORED(bringup): class binding: '%s' -> class, chain depth %d, %s",
+                    symbol.ToCStr(), depth,
+                    bReachesMovieClip ? "reaches MovieClip.prototype"
+                                      : "DOES NOT reach MovieClip.prototype");
+        }
+        child->Set__proto__(gc->GetSC(), proto);
+    }
+    GASEnvironment* env = root->GetASEnvironment();
+    GASValue result;
+    GASFnCall call(&result, child, env, 0, env->GetTopIndex());
+    ctor->Invoke(call);
+}
+
 GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)   // 2012 0x9fee10
 {
     GFxMovieDataDef* dataDef = GetOwnDataDef();
@@ -730,6 +910,15 @@ GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)   // 2012 0
             pMovieRoot->LogScriptError("PlaceObject: character %u is not in the dictionary",
                                        pos.CharacterId);
         return 0;
+    }
+    if (bTraceClassBinding)
+    {
+        GFxLogf("DISHONORED(bringup): place: char %u depth %d on %s, dataDef %p%s, def %p",
+                pos.CharacterId, pos.Depth,
+                pMovieRoot ? GetTargetPath(pMovieRoot->GetASContext()->GetSC()).ToCStr() : "?",
+                (void*)dataDef,
+                (pDefImpl != 0 && dataDef == pDefImpl->GetDataDef()) ? " (root)" : " (IMPORTED)",
+                (void*)def);
     }
     GFxResourceId id;
     id.Id = pos.CharacterId;
@@ -765,9 +954,20 @@ GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)   // 2012 0
 
     GFxSprite* childSprite = ch->IsASCharacter() ? ch->ToASCharacterDef()->ToSprite() : 0;
     if (childSprite)
+    {
+        // Retail looks the symbol up on the character definition itself; the export table is the
+        // same mapping. Without this every timeline-placed clip in a Dishonored menu stays a bare
+        // movie clip, so the movie player's PostStart finds no Open on the screen it wants to show
+        // and every screen of the asset is left visible at once - which is what agent DC's
+        // screenshot was, and what its report read as "the content's response to Open".
+        if (pMovieRoot != 0 && dataDef != 0)
+            pMovieRoot->QueueClassBinding(childSprite, dataDef->GetExportedName(pos.CharacterId));
         childSprite->ExecuteFrame0Events();
+    }
     else
+    {
         ch->OnEventLoad();
+    }
     return ch;
 }
 
@@ -853,21 +1053,7 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
     // Object.registerClass binds an AS2 class to a library symbol; if one is registered for this
     // symbol the clip is constructed as that class, which is what makes every CLIK widget in the
     // cook behave like its script class rather than like a bare movie clip.
-    if (pMovieRoot)
-    {
-        GASGlobalContext* gc = pMovieRoot->GetASContext();
-        GASFunctionObject* ctor = gc->FindRegisteredClass(symbolName);
-        if (ctor)
-        {
-            GASValue protoVal;
-            if (ctor->GetMemberRaw(gc->GetSC(), gc->GetBuiltin(GASbuiltin_prototype), &protoVal))
-                child->Set__proto__(gc->GetSC(), protoVal.GetObject());
-            GASEnvironment* env = pMovieRoot->GetASEnvironment();
-            GASValue result;
-            GASFnCall call(&result, child, env, 0, env->GetTopIndex());
-            ctor->Invoke(call);
-        }
-    }
+    BindRegisteredClass(child, symbolName);
 
     GFxCharPosInfo pos;
     pos.Depth = depth;

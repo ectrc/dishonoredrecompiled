@@ -45,6 +45,7 @@ if(DISHONORED_WITH_GFX3)
     "${DISHONORED_GFX3_DIR}/GFx3Layout.cpp"
     "${DISHONORED_GFX3_DIR}/GFx3Support.cpp"
     "${DISHONORED_GFX3_DIR}/GFx3RuntimeStubs.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxInput.cpp"
     "${DISHONORED_GFX3_DIR}/GFxGfxFile.cpp"
     # The ActionScript 2 machine and the player, package BC (resources/docs/agents/agentBC.md).
     # These units include no engine header either, so they do not change what the game compiles
@@ -120,6 +121,9 @@ if(DISHONORED_WITH_GFX3)
   #   <dir>/Binaries/Win32/GFx3Run.exe --run <payload>.gfx --frames 5 --verbose
   #   <dir>/Binaries/Win32/GFx3Run.exe --opcodes --classes
   add_executable(GFx3Run EXCLUDE_FROM_ALL "${DISHONORED_GFX3_DIR}/Tools/GFx3Run.cpp")
+  # A crash in the machine prints its stack as module-relative addresses (agent DG); the map is what
+  # turns them back into names, with build/agentDG/map.py.
+  target_link_options(GFx3Run PRIVATE /MAP:$<TARGET_FILE_DIR:GFx3Run>/GFx3Run.map)
   target_compile_definitions(GFx3Run PRIVATE _CRT_SECURE_NO_WARNINGS)
   target_compile_options(GFx3Run PRIVATE /Zp4)
   target_link_libraries(GFx3Run PRIVATE gfx3)

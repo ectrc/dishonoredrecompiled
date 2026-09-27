@@ -16,6 +16,7 @@
 // DISHONORED(port): see GFxAS2.h.
 #include "GFxAS2Runtime.h"
 #include "GFxPlayer.h"
+#include "GFxInput.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1103,4 +1104,9 @@ void GASGlobalContext::InitStandardLibrary()
     globalVal.SetAsObject(pGlobal);
     pGlobal->SetConstMemberRaw(&SC, "_global", globalVal,
                                GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+
+    // DISHONORED(port, agent DG): AsBroadcaster, Key and Mouse. This is what an interface listens
+    // with - the Dishonored menus register with Key.addListener and read Key.getCode() from their
+    // own onKeyDown, which is how a selection moves. GFxInput.cpp.
+    GFxInputInstall(this, pGlobal);
 }

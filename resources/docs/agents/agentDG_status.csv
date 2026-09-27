@@ -1,0 +1,86 @@
+rva_2013,status,note
+0x9fad40,ported,"GFxMovieRoot::HandleEvent - key, char, mouse and focus events queued; answers HE_Completed where retail does"
+0xa077d0,ported,GFxMovieRoot::ProcessInput - drained at the head of Advance; the focus-key half is not (ProcessFocusKey)
+0xa039d0,partial,GFxMovieRoot::ProcessKeyboard - the Key broadcaster; the level OnKeyEvent walk and ProcessFocusKey are not ported
+0xa05330,partial,GFxMovieRoot::ProcessMouse - position and the Mouse broadcaster; no topmost-entity tracking and no button state machine
+0x9fb1c0,ported,GFxMovieRoot::NotifyMouseState
+0x9c4170,ported,GFxMovieRoot::GetMouseState
+0x9c4150,ported,GFxMovieRoot::GetKeyboardState
+0x9f8150,ported,GFxMovieRoot::SetKeyboardListener
+0xa530b0,ported,GFxKeyboardState::GFxKeyboardState
+0xa52e70,ported,GFxKeyboardState::IsKeyDown
+0xa52eb0,ported,"GFxKeyboardState::IsKeyToggled - three lock keys, as retail"
+0xa52ef0,ported,GFxKeyboardState::SetKeyToggled
+0xa52f30,partial,GFxKeyboardState::SetKeyDown - no KeyQueue (0xa5ef30); nothing reads it
+0xa52f80,partial,GFxKeyboardState::SetKeyUp - same
+0xa52df0,ported,GFxKeyboardState::ResetState
+0xa52fd0,ported,GFxKeyboardState::NotifyListeners
+0xa53030,ported,GFxKeyboardState::UpdateListeners
+0xa53060,ported,GFxKeyboardState::SetListener
+0x9f87d0,ported,"GFxInputEventsQueue::AddEmptyQueueEntry - flat queue, not retail's ring"
+0x9f8830,ported,GFxInputEventsQueue::AddMouseMove
+0x9f8870,ported,GFxInputEventsQueue::AddMouseButtonEvent
+0x9f88d0,ported,GFxInputEventsQueue::AddMouseWheel
+0x9f8a50,ported,GFxInputEventsQueue::AddKeyDown
+0x9f8a90,ported,GFxInputEventsQueue::AddKeyUp
+0x9f8ad0,ported,GFxInputEventsQueue::AddCharTyped
+0x9f8930,ported,GFxInputEventsQueue::GetEntry
+0xa803a0,ported,GASKeyCtorFunction::GASKeyCtorFunction - as a GASObject on _global.Key rather than a ctor function; nothing constructs Key
+0xa80100,ported,GASKeyCtorFunction::KeyGetAscii
+0xa80160,ported,GASKeyCtorFunction::KeyGetCode
+0xa801c0,ported,GASKeyCtorFunction::KeyIsDown
+0xa80280,ported,GASKeyCtorFunction::KeyIsToggled
+0xa80840,ported,GASKeyCtorFunction::NotifyListeners
+0xa80960,ported,GASKeyCtorFunction::OnKeyDown
+0xa80990,ported,GASKeyCtorFunction::OnKeyUp
+0xa800d0,ported,GASKeyCtorFunction::Update
+0xa64230,ported,GASAsBroadcaster::InitializeInstance
+0xa64120,ported,GASAsBroadcaster::InitializeProto - folded into initialize
+0xa64990,ported,GASAsBroadcaster::Initialize
+0xa642c0,ported,GASAsBroadcaster::AddListener
+0xa643c0,ported,GASAsBroadcaster::RemoveListener
+0xa649c0,ported,GASAsBroadcaster::BroadcastMessage
+0xa64540,partial,"GASAsBroadcaster::BroadcastMessageWithCallback - one callback shape (the LocalInvokeCallback retail installs), not the general one"
+0xa64840,ported,GASAsBroadcasterProto::AddListener
+0xa64890,ported,GASAsBroadcasterProto::RemoveListener
+0xa64a10,ported,GASAsBroadcasterProto::BroadcastMessage
+0xa64ac0,ported,GASAsBroadcasterCtorFunction::Initialize
+0xa65ae0,partial,"GASMouseCtorFunction::GASMouseCtorFunction - the broadcaster, show and hide; the cursor and topmost-entity members are not ported"
+0xa64d80,ported,GASMouseCtorFunction::Show
+0xa64e10,ported,GASMouseCtorFunction::Hide
+0xa64f60,ported,GASMouseCtorFunction::OnMouseMove
+0xa64fc0,partial,GASMouseCtorFunction::OnMouseDown - no topmost entity argument
+0xa65100,partial,GASMouseCtorFunction::OnMouseUp - same
+0xa65190,ported,GASMouseCtorFunction::OnMouseWheel
+0x9f5830,ported,GFxSprite::AddDisplayObject - the Object.registerClass binding it queues was missing entirely; now queued at the same point
+0x9f36c0,ported,GFx_FindClassAndInitializeClassInstance - as GFxSprite::BindRegisteredClass
+0x9c48d0,ported,GFxASCharacter::SetProtoToPrototypeOf
+0x9dd380,verified,GASGlobalContext::FindRegisteredClass - already present; now reached
+0x9d2ab0,ported,GFxASCharacter::GetBounds (2012 rva; no 2013 match) - as GetBoundsTwips; _width and _height had no implementation at all
+0x7a3f40,ported,"UDisGFxMoviePlayerBase::Start - through a hook, not a virtual override"
+0x7b9590,ported,UDisGFxMoviePlayerBase::PreLoad - through a hook; InitTexts is the body
+0x7b76d0,ported,UDisGFxMoviePlayerBase::InitTexts - 149 strings from DishonoredGame.INT into _root.texts
+0x821730,written,"FindLocalizedConfigSection (2012 rva; no 2013 match) - the file search, in the shape UObject::LoadLocalizedDynamicArray uses"
+0x787ab0,partial,UDisGFxMoviePlayerBase::FilterButtonInput - the closing arm; the analogue-stick emulation needs stick state this build does not deliver
+0x821e00,partial,UDisGFxMoviePlayerMainMenu::PostStart (2012 rva; no 2013 match) - the two screens and the four Open arguments; no RegisterCommonDelegates and no trailer
+0x822280,partial,UDisGFxMoviePlayerMainMenu::PreAdvance (2012 rva; no 2013 match) - the login-step-7 transition; the profile and save-list waits have nothing to wait on
+0x822590,partial,UDisGFxMoviePlayerMainMenu::FilterButtonInput (2012 rva; no 2013 match) - the start-screen arm; the login and mission-stats arms are not ported
+0x58e820,ported,UGFxMoviePlayer::Start - plus the two hook call sites
+0x575510,ported,UGFxMoviePlayer::Advance - plus the PreAdvance hook call site
+0x5a1340,ported,UGFxMoviePlayer::FilterButtonInput - plus the hook
+0x590fd0,verified,FGFxEngine::InputKey (movie) (2012 rva; no 2013 match) - unchanged; now answers handled
+0x591470,verified,FGFxEngine::InputKey (controller) (2012 rva; no 2013 match) - unchanged
+0xa00c60,remaining,"GFxMovieRoot::ProcessFocusKey - 4,941 bytes; the tab order and focus movement"
+0xa00b40,remaining,GFxMovieRoot::InitFocusKeyInfo
+0xa00a50,remaining,GFxMovieRoot::FillTabableArray
+0x9fe6f0,remaining,GFxMovieRoot::FinalizeProcessFocusKey
+0x9fd9f0,remaining,GFxMovieRoot::QueueSetFocusTo
+0x9fdb30,remaining,GFxMovieRoot::TransferFocus
+0x9fe800,remaining,GFxMovieRoot::SetFocusTo
+0x9fabf0,remaining,GFxMovieRoot::GetTopMostEntity - needed by the mouse path
+0xa5ad10,remaining,"GFx_GenerateMouseButtonEvents - 1,339 bytes; the menu has one DefineButton2 in 477 tags, so it is not what makes it operable"
+0xa5bbd0,remaining,GFxButtonCharacter::GFxButtonCharacter - 38 functions; see the note above
+0x9cc410,remaining,GFxDisplayList::SwapDepths - no menu in the cook calls swapDepths
+0x9b1050,remaining,GFxTranslator::OnWordWrapping - not what fills the menu's text: InitTexts is (agentDG.md 3)
+0x9bdf80,remaining,GFxFontMap::MapFont - same
+0x5926d0,remaining,GFxUITranslator::Translate - same

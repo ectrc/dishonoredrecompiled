@@ -1245,48 +1245,10 @@ void GFxMovieRoot::Display()
     // it as four floats on the movie root (this+36..39 in the decompile of 0xa07aa0) and recomputes it
     // in SetViewport from the scale mode. SM_ShowAll keeps the aspect ratio and shows *more* than the
     // frame on the long axis, which is what the four numbers below are.
-    const float movieW = pDefImpl ? pDefImpl->GetWidth() : 0.0f;
-    const float movieH = pDefImpl ? pDefImpl->GetHeight() : 0.0f;
-    float x0 = 0.0f, y0 = 0.0f, x1 = movieW, y1 = movieH;
-    if (movieW > 0.0f && movieH > 0.0f && Viewport.Width > 0 && Viewport.Height > 0)
-    {
-        const float vw = (float)Viewport.Width;
-        const float vh = (float)Viewport.Height;
-        if (ScaleMode == GFxMovieView::SM_NoScale)
-        {
-            x1 = vw;
-            y1 = vh;
-        }
-        else if (ScaleMode == GFxMovieView::SM_ShowAll || ScaleMode == GFxMovieView::SM_NoBorder)
-        {
-            const float sx = vw / movieW;
-            const float sy = vh / movieH;
-            const float scale = (ScaleMode == GFxMovieView::SM_ShowAll)
-                                    ? (sx < sy ? sx : sy)
-                                    : (sx > sy ? sx : sy);
-            const float visW = vw / scale;
-            const float visH = vh / scale;
-            // Alignment: the default is centred, which is what every UI movie in the cook uses.
-            x0 = (movieW - visW) * 0.5f;
-            y0 = (movieH - visH) * 0.5f;
-            if (Alignment == GFxMovieView::Align_TopLeft || Alignment == GFxMovieView::Align_TopCenter
-                || Alignment == GFxMovieView::Align_TopRight)
-                y0 = 0.0f;
-            if (Alignment == GFxMovieView::Align_BottomLeft
-                || Alignment == GFxMovieView::Align_BottomCenter
-                || Alignment == GFxMovieView::Align_BottomRight)
-                y0 = movieH - visH;
-            if (Alignment == GFxMovieView::Align_TopLeft || Alignment == GFxMovieView::Align_CenterLeft
-                || Alignment == GFxMovieView::Align_BottomLeft)
-                x0 = 0.0f;
-            if (Alignment == GFxMovieView::Align_TopRight
-                || Alignment == GFxMovieView::Align_CenterRight
-                || Alignment == GFxMovieView::Align_BottomRight)
-                x0 = movieW - visW;
-            x1 = x0 + visW;
-            y1 = y0 + visH;
-        }
-    }
+    // DISHONORED(port, agent DG): the same rectangle the mouse is mapped back through, so the two
+    // halves cannot disagree about where the movie is on screen. GFxInput.cpp.
+    float x0, y0, x1, y1;
+    GetVisibleFrameRectPixels(&x0, &y0, &x1, &y1);
 
     GColor background = BackgroundColor;
     background.SetAlpha((GUByte)(BackgroundAlpha * 255.0f + 0.5f));

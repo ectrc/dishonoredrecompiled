@@ -133,6 +133,15 @@ void GASEnvironment::Push(const GASValue& v)
 {
     if (StackSize >= StackCapacity)
     {
+        // The value stack is bounded for the same reason the local-frame array is: a runaway
+        // recursion in content must produce a reported error, not a bad_alloc out of the machine.
+        enum { MaxStack = 1 << 18 };
+        if (StackCapacity >= MaxStack)
+        {
+            LogScriptError("AS2 value stack overflow: more than %u values pushed (%u local frames)",
+                           (unsigned int)MaxStack, FrameCount);
+            return;
+        }
         unsigned int cap = StackCapacity * 2;
         GASValue* next = new GASValue[cap];
         for (unsigned int i = 0; i < StackSize; ++i)

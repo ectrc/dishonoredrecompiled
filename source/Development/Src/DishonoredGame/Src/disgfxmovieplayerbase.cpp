@@ -198,3 +198,125 @@ void UDisGFxMoviePlayerBase::execReq_EquipmentIconImage( FFrame& Stack, RESULT_D
 // time only. The engine's own per-frame call has no such condition. Why the switch exists at all is in
 // agentDC.md: UDisGlobalUIManager's config movie set does not name the main menu, the game's own
 // UnrealScript constructs it, and none of that chain runs in this build.
+// ------ DG tail ------
+
+
+/*-----------------------------------------------------------------------------
+	InitTexts: where every string in the interface comes from. Agent DG.
+
+	Agent DC's report said the menu reads "Text" everywhere because retail fills the fields through
+	GFxTranslator / GFxFontMap. Measured, it does not. UDisGFxMoviePlayerBase::PreLoad (2012
+	0x822820) calls InitTexts (0x8218a0), which:
+
+	  1. finds the localisation file that holds a [DisGFxMoviePlayerBase_Texts] section for the
+	     current language (retail's FindLocalizedConfigSection, which caches the path and the
+	     language it was found for in two file-scope statics),
+	  2. creates one AS2 object and sticks it on _root.texts,
+	  3. walks the class chain from the concrete movie player up to UDisGFxMoviePlayerBase and, for
+	     each class, copies every key of its own [<ClassName>_Texts] section to
+	     _root.texts.<Key> as a sticky variable.
+
+	The asset then reads _root.texts.t_NewGame and its kin. DishonoredGame.int carries
+	DisGFxMoviePlayerMainMenu_Texts with t_PressStart, t_NewGame, t_Missions and the difficulty
+	descriptions, which is exactly what the main menu shows.
+-----------------------------------------------------------------------------*/
+
+/** 2012 0x821730 (FindLocalizedConfigSection): the first localisation file that has this section,
+    searched the way UObject::LoadLocalizedDynamicArray searches - the current language first, then
+    INT, over GSys->LocalizationPaths from the back. */
+static UBOOL DisFindLocalizedConfigFile( const TCHAR* Section, FString& OutPath )
+{
+	const TCHAR* LangExt = UObject::GetLanguage();
+	for( INT PathIndex = GSys->LocalizationPaths.Num() - 1; PathIndex >= 0; PathIndex-- )
+	{
+		const TCHAR* Languages[2] = { LangExt, TEXT("INT") };
+		for( INT LangIndex = 0; LangIndex < 2; LangIndex++ )
+		{
+			if( LangIndex == 1 && appStricmp( LangExt, TEXT("INT") ) == 0 )
+			{
+				continue;
+			}
+			// Retail names the file after the game module, which is what makes one file hold every
+			// movie player's section: DishonoredGame.<lang>.
+			const FString Path = FString::Printf( TEXT("%s") PATH_SEPARATOR TEXT("%s") PATH_SEPARATOR TEXT("DishonoredGame.%s"),
+				*GSys->LocalizationPaths( PathIndex ), Languages[LangIndex], Languages[LangIndex] );
+			if( GConfig->GetSectionPrivate( Section, FALSE, TRUE, *Path ) != NULL )
+			{
+				OutPath = Path;
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x8218a0
+void DisGFxMoviePlayerInitTexts( UDisGFxMoviePlayerBase* Player )
+{
+	FGFxMovie* Movie = Player->GetMovie();
+	GFxMovieView* View = Movie ? Movie->pView.GetPtr() : NULL;
+	if( View == NULL )
+	{
+		return;
+	}
+	// The language and the file are looked up once per language change, as retail's two statics do;
+	// read on first use, never as a file-scope initialiser.
+	static FString TextsFile;
+	static FString TextsLanguage;
+	static UBOOL bTextsFileFound = FALSE;
+	const FString Language = UObject::GetLanguage();
+	if( TextsLanguage != Language )
+	{
+		bTextsFileFound = DisFindLocalizedConfigFile( TEXT("DisGFxMoviePlayerBase_Texts"), TextsFile );
+		TextsLanguage = Language;
+	}
+	if( !bTextsFileFound )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): InitTexts: no localisation file with [DisGFxMoviePlayerBase_Texts]") );
+		return;
+	}
+
+	GFxValue Texts;
+	View->CreateObject( &Texts, NULL, NULL, 0 );
+	View->SetVariable( "_root.texts", Texts, GFxMovie::SV_Sticky );
+
+	INT Sections = 0;
+	INT Keys = 0;
+	for( const UClass* Class = Player->GetClass(); Class != NULL; Class = Class->GetSuperClass() )
+	{
+		const FString SectionName = Class->GetName() + TEXT("_Texts");
+		FConfigSection* Section = GConfig->GetSectionPrivate( *SectionName, FALSE, TRUE, *TextsFile );
+		if( Section != NULL )
+		{
+			Sections++;
+			for( FConfigSection::TIterator It( *Section ); It; ++It )
+			{
+				const FString Path = FString( TEXT("_root.texts.") ) + It.Key().ToString();
+				GFxValue Value;
+				Value.SetStringW( *It.Value() );
+				View->SetVariable( TCHAR_TO_ANSI( *Path ), Value, GFxMovie::SV_Sticky );
+				Keys++;
+			}
+		}
+		if( Class == UDisGFxMoviePlayerBase::StaticClass() )
+		{
+			break;
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): InitTexts: %s from %s, %d sections, %d strings"),
+		*Player->GetClass()->GetName(), *TextsFile, Sections, Keys );
+}
+
+// DISHONORED(port): 2012 rva 0x7f45a0. The base filter: a movie that is closing eats everything, and
+// the analogue-stick emulation is the rest of the retail body (UpdateAnalogInputForAS, which needs
+// the stick state this build does not deliver).
+UBOOL DisGFxMoviePlayerFilterButtonInput( UDisGFxMoviePlayerBase* Player, INT ControllerId,
+	FName Key, BYTE Event, UBOOL& bHandled )
+{
+	if( Player->m_bIsClosing )
+	{
+		bHandled = TRUE;
+		return TRUE;
+	}
+	return FALSE;
+}

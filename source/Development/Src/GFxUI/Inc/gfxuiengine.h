@@ -225,6 +225,8 @@ private:
 	static void InitGFxLoaderCommon(GFxLoader& Loader);                              // 2013 0x590ba0
 	void InitRenderer();
 	void InitLocalization();
+	/** -gfxuikey=<drawnframe>:<KeyName>: deliver a press and a release through the real path */
+	void TickScriptedKeys();
 	void SetMovieSize(FGFxMovie* Movie);                                             // 2013 0x57b300
 	UBOOL InputKey(INT ControllerId, FGFxMovie* pFocusMovie, FName ukey, EInputEvent uevent);// 2013 0x590fd0
 	UBOOL IsKeyCaptured(FName ukey);                                                 // 2013 0x5916b0
@@ -261,3 +263,40 @@ extern FGFxEngine* GGFxEngine;
     a file-scope ParseParam in a static library runs before WinMain sets GCmdLine - PHASE9.md's rule and
     agent CA's measurement). */
 extern UBOOL GFxUIIsDisabled();
+
+/*-----------------------------------------------------------------------------
+	The DishonoredGame seam, agent DG.
+
+	Retail's UDisGFxMoviePlayerBase overrides three of UGFxMoviePlayer's virtuals and every menu in
+	the game depends on what the overrides add:
+
+	  UDisGFxMoviePlayerBase::PreLoad   2012 0x822820  UGFxMoviePlayer::PreLoad, then InitTexts
+	                                                   (0x8218a0), which is what fills every string
+	                                                   in the interface from the localisation tables
+	  UDisGFxMoviePlayerBase::Start     2012 0x7f4200  UGFxMoviePlayer::Start, then
+	                                                   UDisGlobalUIManager::OnMovieStackChanged and
+	                                                   the player's own PostStart, which is what
+	                                                   opens a screen at all
+	  UDisGFxMoviePlayerMenuBase::PreAdvance 2012 0x817160 / the main menu's 0x822280, which is the
+	                                                   state machine that moves from the start screen
+	                                                   to the menu proper
+
+	Declaring those overrides means adding CppText hooks to the DishonoredGame generator and
+	regenerating DishonoredGameUIClasses.h - and that regeneration rewrites dishonoredgameclasses.h
+	and DishonoredGameNative.h, which agent DF is live in. So the game module installs the three
+	bodies here instead and the base calls them at exactly the retail call sites. Same order, same
+	arguments; the deviation is the dispatch, and it is agentDG.md deviation 5.
+-----------------------------------------------------------------------------*/
+typedef void (*FGFxMoviePlayerHook)( class UGFxMoviePlayer* Player );
+typedef void (*FGFxMoviePlayerTickHook)( class UGFxMoviePlayer* Player, FLOAT DeltaTime );
+typedef UBOOL (*FGFxMoviePlayerInputHook)( class UGFxMoviePlayer* Player, INT ControllerId,
+                                           FName Key, BYTE Event, UBOOL& bHandled );
+
+/** after UGFxMoviePlayer::PreLoad succeeded, before Start's StartScene: InitTexts */
+extern FGFxMoviePlayerHook     GGFxMoviePlayerPreLoadedHook;
+/** after StartScene: OnMovieStackChanged, then PostStart */
+extern FGFxMoviePlayerHook     GGFxMoviePlayerStartedHook;
+/** at the head of UGFxMoviePlayer::Advance: PreAdvance */
+extern FGFxMoviePlayerTickHook GGFxMoviePlayerPreAdvanceHook;
+/** UDisGFxMoviePlayerBase::FilterButtonInput and its two overrides */
+extern FGFxMoviePlayerInputHook GGFxMoviePlayerFilterButtonHook;

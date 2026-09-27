@@ -15,10 +15,99 @@
 // Payloads come out of the cooked *_SF.upk packages with build/agentBB/extract_gfx.py.
 // DISHONORED(written): resources/docs/agents/agentBC.md.
 #include "GFxCharacterDefs.h"
+#include "GFxInput.h"
+#include "GFxAS2Runtime.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <exception>
+#include <new>
+#include <intrin.h>
+
+#ifdef _WIN32
+// The whole GFx3 reconstruction compiles with /Zp4 (retail's packing) and the Windows headers
+// static_assert against a non-default packing; nothing of theirs is shared with the runtime here.
+#define WINDOWS_IGNORE_PACKING_MISMATCH
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+// Agent DG: where the machine died, as module-relative addresses. No debugger and no PDB needed;
+// build/agentDG/map.py resolves them against GFx3Run.map.
+// A throw out of the machine is caught in main(), so the unhandled filter never sees it and the
+// stack is gone by then. A first-chance handler prints it at the throw site instead.
+static LONG WINAPI GFxRunFirstChance(EXCEPTION_POINTERS* info)
+{
+    if (info->ExceptionRecord->ExceptionCode != 0xe06d7363)
+        return EXCEPTION_CONTINUE_SEARCH;
+    static bool bReported = false;
+    if (bReported)
+        return EXCEPTION_CONTINUE_SEARCH;
+    bReported = true;
+    void* frames[40];
+    const USHORT n = CaptureStackBackTrace(0, 40, frames, 0);
+    const char* base = (const char*)GetModuleHandleA(0);
+    printf("\n== THROW at first chance (module base %p)\n", base);
+    for (USHORT i = 0; i < n; ++i)
+    {
+        const char* f = (const char*)frames[i];
+        if (f > base && f - base < 0x2000000)
+            printf("   frame %2u  rva 0x%tx\n", i, f - base);
+    }
+    fflush(stdout);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static LONG WINAPI GFxRunCrashFilter(EXCEPTION_POINTERS* info)
+{
+    void* frames[32];
+    const USHORT n = CaptureStackBackTrace(0, 32, frames, 0);
+    const char* base = (const char*)GetModuleHandleA(0);
+    printf("\n== CRASH: code 0x%08lx at %p (module base %p)\n",
+           info->ExceptionRecord->ExceptionCode, info->ExceptionRecord->ExceptionAddress, base);
+    printf("   rva 0x%tx\n", (const char*)info->ExceptionRecord->ExceptionAddress - base);
+    for (USHORT i = 0; i < n; ++i)
+        printf("   frame %2u  rva 0x%tx\n", i, (const char*)frames[i] - base);
+    fflush(stdout);
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
+
+#ifdef _WIN32
+// Agent DG: an allocation this large is always a defect in the machine, never content. Printing
+// the size and the return address turns "bad allocation" into a site.
+void* operator new(size_t n)
+{
+    static size_t total = 0;
+    static size_t nextReport = 128u << 20;
+    total += n;
+    if (total > nextReport)
+    {
+        nextReport = total + (128u << 20);
+        const char* b = (const char*)GetModuleHandleA(0);
+        const char* r = (const char*)_ReturnAddress();
+        printf("\n== ALLOCATED %zu MB, last block %zu bytes from rva 0x%tx\n",
+               total >> 20, n, r - b);
+        fflush(stdout);
+    }
+    if (n > (64u << 20))
+    {
+        const char* base = (const char*)GetModuleHandleA(0);
+        const char* ret = (const char*)_ReturnAddress();
+        printf("\n== HUGE ALLOCATION %zu bytes from rva 0x%tx\n", n, ret - base);
+        fflush(stdout);
+    }
+    void* p = malloc(n ? n : 1);
+    if (p == 0)
+        throw std::bad_alloc();
+    return p;
+}
+void operator delete(void* p) noexcept { free(p); }
+void operator delete(void* p, size_t) noexcept { free(p); }
+void* operator new[](size_t n) { return operator new(n); }
+void operator delete[](void* p) noexcept { free(p); }
+void operator delete[](void* p, size_t) noexcept { free(p); }
+#endif
 
 namespace
 {
@@ -287,8 +376,20 @@ void PrintClassTable()
            doneCount, rows, doneFns, totalFns, 100.0 * (double)doneFns / (double)totalFns);
 }
 
+// Agent DG: one scripted step, "<frame>:<what>". `--invoke 2:_root.startScreen_mc.Open` calls that
+// path after the second advance; `--key 5:40` delivers a key-down/key-up pair for key code 40 after
+// the fifth. Between them they are the whole menu flow - PostStart's Open, a key press, the
+// selection move - driven without the game.
+struct GFxRunStep
+{
+    unsigned int Frame;
+    const char*  Text;
+    bool         bKey;
+};
+
 int RunMovie(const char* path, unsigned int frames, bool verbose,
-             DirImportResolver* imports, const char* platform)
+             DirImportResolver* imports, const char* platform,
+             const GFxRunStep* steps, unsigned int stepCount)
 {
     unsigned char* data = 0;
     unsigned int size = 0;
@@ -456,6 +557,7 @@ int RunMovie(const char* path, unsigned int frames, bool verbose,
     GFxMovieView* view = defImpl->CreateInstance(params, false);
     GFxMovieRoot* root = (GFxMovieRoot*)view;
     GFxMovieRoot::bTraceTeardown = true;
+    GFxSprite::bTraceClassBinding = verbose;
 
     // The one thing the harness has to stand in for the engine on. The CLIK components in the shared
     // lib movie switch their button-glyph frames with `this.gotoAndStop(_global.PlatformName)`, and
@@ -473,9 +575,37 @@ int RunMovie(const char* path, unsigned int frames, bool verbose,
     printf("  root clip      _level0, %u frames, def '%s'\n",
            root->GetLevel0()->GetFrameCount(), dataDef->GetDefTypeName());
 
+    GFxInputResetCensus();
     for (unsigned int f = 0; f < frames; ++f)
     {
         root->Advance(1.0f / (info.FrameRate > 0.f ? info.FrameRate : 30.f), 0);
+        for (unsigned int s = 0; s < stepCount; ++s)
+        {
+            if (steps[s].Frame != f + 1)
+                continue;
+            if (steps[s].bKey)
+            {
+                const int code = atoi(steps[s].Text);
+                GFxKeyEvent down;
+                memset(&down, 0, sizeof(down));
+                down.Type = GFxEvent::KeyDown;
+                down.KeyCode = (GFxKey::Code)code;
+                const unsigned int rd = root->HandleEvent(down);
+                GFxKeyEvent up = down;
+                up.Type = GFxEvent::KeyUp;
+                const unsigned int ru = root->HandleEvent(up);
+                printf("  [frame %u] key %d -> HandleEvent %s / %s\n", f + 1, code,
+                       (rd & GFxMovieView::HE_Handled) ? "HE_Handled" : "HE_NotHandled",
+                       (ru & GFxMovieView::HE_Handled) ? "HE_Handled" : "HE_NotHandled");
+            }
+            else
+            {
+                GFxValue result;
+                const bool ok = root->Invoke(steps[s].Text, &result, (const GFxValue*)0, 0);
+                printf("  [frame %u] invoke %s -> %s\n", f + 1, steps[s].Text,
+                       ok ? "ok" : "NOT FOUND");
+            }
+        }
         if (verbose)
             printf("  [frame %u] sprites %u placed %u removed %u buffers %u objects %u\n",
                    f + 1, root->GetCensus().SpritesCreated, root->GetCensus().DisplayObjectsPlaced,
@@ -498,6 +628,13 @@ int RunMovie(const char* path, unsigned int frames, bool verbose,
     printf("  interned strings       %u\n",
            root->GetASContext()->GetStringManager()->GetNodeCount());
     printf("  classes registered     %u via Object.registerClass\n", c.ClassesRegistered);
+    {
+        const GFxInputCensus& ic = GFxInputGetCensus();
+        printf("  input                  %u handled / %u not handled, %u key downs, %u key ups, "
+               "%u chars, %u mouse, %u listeners added, %u listener calls\n",
+               ic.EventsHandled, ic.EventsNotHandled, ic.KeyDowns, ic.KeyUps, ic.CharsTyped,
+               ic.MouseEvents, ic.KeyListenerCalls);
+    }
     printf("  script errors          %u\n", c.ScriptErrors);
     printf("  opcodes executed       %u, of which %u had no implementation\n",
            GASActionBuffer::OpsExecuted, GASActionBuffer::OpsUnimplemented);
@@ -600,10 +737,14 @@ int main(int argc, char** argv)
 {
     // Unbuffered, because a crash in the machine must not swallow the report that says how far it got.
     setvbuf(stdout, 0, _IONBF, 0);
+#ifdef _WIN32
+    SetUnhandledExceptionFilter(GFxRunCrashFilter);
+    AddVectoredExceptionHandler(1, GFxRunFirstChance);
+#endif
     if (argc < 2)
     {
         printf("GFx3Run --run <file.gfx> [--frames N] [--verbose] [--imports <dir>] [--platform PC]"
-               " | --opcodes | --classes\n");
+               " [--invoke <frame>:<path>] [--key <frame>:<code>] | --opcodes | --classes\n");
         return 2;
     }
     unsigned int frames = 1;
@@ -612,6 +753,8 @@ int main(int argc, char** argv)
     bool wantOpcodes = false, wantClasses = false;
     const char* importDir = 0;
     const char* platform = 0;
+    GFxRunStep steps[32];
+    unsigned int stepCount = 0;
 
     for (int i = 1; i < argc; ++i)
     {
@@ -622,6 +765,19 @@ int main(int argc, char** argv)
         else if (strcmp(argv[i], "--platform") == 0 && i + 1 < argc) platform = argv[++i];
         else if (strcmp(argv[i], "--opcodes") == 0) wantOpcodes = true;
         else if (strcmp(argv[i], "--classes") == 0) wantClasses = true;
+        else if (strcmp(argv[i], "--optrace") == 0 && i + 1 < argc)
+            GFxAS2OpTraceFrom = (unsigned int)atoi(argv[++i]);
+        else if ((strcmp(argv[i], "--invoke") == 0 || strcmp(argv[i], "--key") == 0)
+                 && i + 1 < argc && stepCount < 32)
+        {
+            const bool bKey = strcmp(argv[i], "--key") == 0;
+            const char* spec = argv[++i];
+            const char* colon = strchr(spec, ':');
+            steps[stepCount].Frame = colon ? (unsigned int)atoi(spec) : 1;
+            steps[stepCount].Text = colon ? colon + 1 : spec;
+            steps[stepCount].bKey = bKey;
+            ++stepCount;
+        }
         else if (argv[i][0] != '-' && path == 0) path = argv[i];
     }
 
@@ -631,7 +787,23 @@ int main(int argc, char** argv)
         // The resolver owns the movies it loads and every one of them outlives the movie that
         // imported their symbols, so it is destroyed after RunMovie returns and not before.
         DirImportResolver resolver(importDir ? importDir : ".");
-        rc = RunMovie(path, frames ? frames : 1, verbose, importDir ? &resolver : 0, platform);
+        // A C++ exception out of the machine (0xe06d7363) says nothing through the crash filter, so
+        // it is caught here where what() is still readable. Agent DG.
+        try
+        {
+            rc = RunMovie(path, frames ? frames : 1, verbose, importDir ? &resolver : 0, platform,
+                          steps, stepCount);
+        }
+        catch (const std::exception& e)
+        {
+            printf("\n== EXCEPTION out of the machine: %s\n", e.what());
+            rc = 3;
+        }
+        catch (...)
+        {
+            printf("\n== EXCEPTION out of the machine: not a std::exception\n");
+            rc = 3;
+        }
     }
     if (wantOpcodes)
     {

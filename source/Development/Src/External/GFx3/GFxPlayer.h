@@ -18,6 +18,7 @@
 #define INC_GFX3_GFXPLAYER_H
 
 #include "GFxAS2Runtime.h"
+#include "GFxInput.h"
 #include "GFxGfxFile.h"
 
 #pragma pack(push, 8)
@@ -394,6 +395,9 @@ public:
     virtual GFxASCharacter*   ToASCharacterDef() { return 0; }
     virtual bool              IsASCharacter() const { return false; }
     virtual const char*       GetCharacterTypeName() const = 0;
+    /** the character's bounds in twips, through `m`. A definition with no geometry answers an empty
+        rectangle; a sprite unions its display list. 2012 0x9d2ab0 / GFxSprite's own override. */
+    virtual GRect<float>      GetBoundsTwips(const GMatrix2D& m) const;
     virtual void              OnEventLoad() {}
     virtual void              OnEventUnload() {}
     virtual void              AdvanceFrame(bool bAdvance, float framePos)
@@ -558,6 +562,7 @@ public:
     virtual ~GFxSprite();
 
     virtual GFxCharacterDef* GetCharacterDef() const { return pCharDef; }
+    virtual GRect<float>     GetBoundsTwips(const GMatrix2D& m) const;
     virtual const char* GetCharacterTypeName() const { return "Sprite"; }
     virtual GASObjectType GetObjectType() const { return Object_Sprite; }
     virtual GFxSprite* ToSprite() { return this; }
@@ -575,6 +580,15 @@ public:
 
     // The four display-list mutators a PlaceObject/RemoveObject tag lands in.
     GFxCharacter* AddDisplayObject(const GFxCharPosInfo& pos);         // 2012 0x9fee10
+    // Object.registerClass's half of instantiation: the clip is constructed as the class registered
+    // for its library symbol, which is what gives a Dishonored screen its Open / Close / SetMenu.
+    static void BindRegisteredClass(GFxSprite* child, const GASString& symbol);
+    /** narrates every class binding: which symbol, which class, and whether the class's prototype
+        chain still reaches MovieClip.prototype (if it does not, the clip loses attachMovie and its
+        kin, which is a real content-versus-runtime disagreement rather than a missing method). */
+    static bool bTraceClassBinding;
+    /** off only for a comparison run; retail always binds (agentDG.md 4) */
+    static bool bBindRegisteredClasses;
     void          MoveDisplayObject(const GFxCharPosInfo& pos);        // 2012 0x9f48a0
     void          ReplaceDisplayObject(const GFxCharPosInfo& pos);     // 2012 0x9f6300
     void          RemoveDisplayObject(int depth, GFxResourceId id);    // 2012 0x9f4970
@@ -641,6 +655,7 @@ public:
     void             AddExport(const char* name, unsigned int id);
     GFxCharacterDef* GetExportedCharacter(const char* name) const;
     int              GetExportedId(const char* name) const;
+    const char*      GetExportedName(unsigned int id) const;
 
     // The loaders call back into these three: GFx_SpriteLoader recurses into the nested timeline,
     // GFx_ImportLoader records an unresolved symbol, and the two action loaders count bytes.
@@ -925,6 +940,10 @@ public:
     // session GFxSprite::CallFrameActions opened, and DoActionsForSession drains it. That ordering
     // is why a class registered in frame 1 is visible to frame 1's own timeline actions.
     void PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target, GFxActionPriority prio);
+    // The other kind of queue entry retail has: construct this clip as the AS2 class registered for
+    // its library symbol. It is queued rather than run inline because the frame's own init actions
+    // are what register the class (2012 0x9fee10's InsertEntry(queue, 1)).
+    void QueueClassBinding(GFxSprite* target, const char* exportSymbol);
     void DrainActionSessions();
     void DoActions();
     unsigned int GetQueuedActionCount() const { return ActionCount; }
@@ -956,6 +975,19 @@ public:
 
     void LogScriptError(const char* fmt, ...);
 
+    // --- the input half (GFxInput.cpp) ---
+    enum { MaxKeyboards = 4, MaxMice = 4 };
+    GFxKeyboardState* GetKeyboardState(unsigned int index);           // 2012 0x9cd8b0
+    void SetKeyboardListener(GFxKeyboardState::IListener* l);         // 2012 0xa01730
+    void ProcessInput();                                              // 2012 0xa10d80
+    void ProcessKeyboard(const GFxInputEventsQueue::QueueEntry& e);   // 2012 0xa0cfa0
+    void ProcessMouse(const GFxInputEventsQueue::QueueEntry& e);      // 2012 0xa0e900
+    // The movie's own pixel rectangle that maps onto the viewport: what BeginDisplay is given and
+    // what a viewport-space mouse position is mapped back through. Retail keeps it as four floats on
+    // the movie root (this+36..39 in the decompile of 0xa07aa0) and recomputes it in SetViewport.
+    void GetVisibleFrameRectPixels(float* x0, float* y0, float* x1, float* y1) const;
+    GPoint<float> ViewportToTwips(float x, float y) const;
+
     // Set by the harness to narrate the three teardown steps; off in any other build.
     static bool bTraceTeardown;
     // DISHONORED(bringup, agent DC): narrates the constructor, which is where the first in-game
@@ -965,10 +997,11 @@ public:
 private:
     struct ActionEntry
     {
-        GASActionBuffer*  pBuffer;
+        GASActionBuffer*  pBuffer;        // null for a class binding
         GFxSprite*        pTarget;
         GFxActionPriority Priority;
         unsigned int      Session;
+        const char*       BindSymbol;     // into the data def's export table, which outlives the queue
     };
 
     enum { MaxStates = 40 };
@@ -991,6 +1024,12 @@ private:
     float                     FrameTime;
     unsigned int              MouseCursorCount;
     unsigned int              ControllerCount;
+    bool                      bMovieFocused;
+    GFxKeyboardState          KeyboardStates[MaxKeyboards];
+    GFxInputEventsQueue       InputQueue;
+    float                     MouseX[MaxMice];
+    float                     MouseY[MaxMice];
+    unsigned int              MouseButtons[MaxMice];
     GFxState*                 States[MaxStates];
 
     ActionEntry* Actions;

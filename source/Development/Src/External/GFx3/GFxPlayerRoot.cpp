@@ -29,9 +29,15 @@ GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
     : pDefImpl(defImpl), pGC(0), pLevel0(0), ObjInterface(this), ScaleMode(GFxMovieView::SM_ShowAll),
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
       bPaused(false), bVisible(true), bDirty(true), pUserData(0), TimeElapsed(0.f), FrameTime(0.f),
-      MouseCursorCount(0), ControllerCount(1), Actions(0), ActionCount(0), ActionCapacity(0),
-      bInActionQueue(false), SessionFill(0)
+      MouseCursorCount(0), ControllerCount(1), bMovieFocused(true), Actions(0), ActionCount(0),
+      ActionCapacity(0), bInActionQueue(false), SessionFill(0)
 {
+    for (unsigned int i = 0; i < MaxMice; ++i)
+    {
+        MouseX[i] = 0.f;
+        MouseY[i] = 0.f;
+        MouseButtons[i] = 0;
+    }
     memset(&Stats, 0, sizeof(Stats));
     memset(&LastDisplayStats, 0, sizeof(LastDisplayStats));
     for (int i = 0; i < MaxStates; ++i)
@@ -131,6 +137,35 @@ void GFxMovieRoot::PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target,
     Actions[at].pTarget = target;
     Actions[at].Priority = prio;
     Actions[at].Session = SessionFill;
+    Actions[at].BindSymbol = 0;
+    ++ActionCount;
+}
+
+// DISHONORED(port, agent DG): 2012 0x9fee10's InsertEntry(queue, 1). GFxAP_User rather than
+// GFxAP_Init because this tree queues DoInitAction at GFxAP_Init and PushActionBuffer's insert is
+// stable, so an equal priority would keep the tag order - and the tag order is exactly what is
+// wrong: ten of the menu's screens are placed before the __Packages tag that registers their class.
+void GFxMovieRoot::QueueClassBinding(GFxSprite* target, const char* exportSymbol)
+{
+    if (target == 0 || exportSymbol == 0)
+        return;
+    if (ActionCount >= ActionCapacity)
+    {
+        ActionCapacity = ActionCapacity ? ActionCapacity * 2 : 16;
+        Actions = (ActionEntry*)realloc(Actions, ActionCapacity * sizeof(ActionEntry));
+    }
+    unsigned int at = ActionCount;
+    while (at > 0 && Actions[at - 1].Priority > GFxAP_User)
+    {
+        Actions[at] = Actions[at - 1];
+        --at;
+    }
+    Actions[at].pBuffer = 0;
+    Actions[at].pTarget = target;
+    Actions[at].Priority = GFxAP_User;
+    Actions[at].Session = SessionFill;
+    Actions[at].BindSymbol = exportSymbol;
+    target->AddRef();
     ++ActionCount;
 }
 
@@ -157,6 +192,15 @@ void GFxMovieRoot::DoActions()
             continue;
         ActionEntry e = Actions[i];
         Env.SetTarget(e.pTarget ? e.pTarget : pLevel0);
+        if (e.pBuffer == 0)
+        {
+            if (e.BindSymbol != 0)
+                GFxSprite::BindRegisteredClass(e.pTarget, CreateString(e.BindSymbol));
+            if (e.pTarget)
+                e.pTarget->Release();
+            Env.SetTarget(pLevel0);
+            continue;
+        }
         e.pBuffer->Execute(&Env);
         ++Stats.ActionBuffersRun;
         if (Env.bThrowing)
@@ -190,6 +234,9 @@ void GFxMovieRoot::DrainActionSessions()
     {
         LogScriptError("action queue did not settle in %d sessions; %u buffers dropped",
                        (int)MaxSessionsPerFrame, ActionCount);
+        for (unsigned int i = 0; i < ActionCount; ++i)
+            if (Actions[i].pBuffer == 0 && Actions[i].pTarget != 0)
+                Actions[i].pTarget->Release();
         ActionCount = 0;
     }
 }
@@ -469,7 +516,9 @@ GFxMovieView::AlignType GFxMovieRoot::GetViewAlignment() const { return Alignmen
 
 GRect<float> GFxMovieRoot::GetVisibleFrameRect() const                 // 2012 0xa102a0
 {
-    return pDefImpl->GetFrameRect();
+    float x0, y0, x1, y1;
+    GetVisibleFrameRectPixels(&x0, &y0, &x1, &y1);
+    return GRect<float>(x0, y0, x1, y1);
 }
 
 void GFxMovieRoot::SetPerspective3D(const GMatrix3D& m) {}
@@ -488,6 +537,15 @@ void GFxMovieRoot::Restart()
 
 float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0xa11830
 {
+    // DISHONORED(port, agent DG): 2012 0xa11830 drains the input queue at the head of the advance
+    // (GFxMovieRoot::ProcessInput), before the frame's own tags, so that a key pressed between two
+    // frames has moved the selection by the time the frame that draws it is built.
+    // The frame's opcode budget (GFxAS2Interp.cpp). One per advance rather than one per action
+    // buffer, so a frame that queues fifty runaway buffers is bounded too.
+    GFxAS2OpsThisBuffer = 0;
+
+    ProcessInput();
+
     if (bPaused)
         return FrameTime;
 
@@ -539,22 +597,10 @@ void GFxMovieRoot::SetBackgroundColor(const GColor c) { BackgroundColor = c; }
 void GFxMovieRoot::SetBackgroundAlpha(float a) { BackgroundAlpha = a; }
 float GFxMovieRoot::GetBackgroundAlpha() const { return BackgroundAlpha; }
 
-unsigned int GFxMovieRoot::HandleEvent(const GFxEvent& e)
-{
-    // Mouse, key and focus events need the button and focus model (GFxButtonCharacter, 38 retail
-    // functions, plus GFx_GenerateMouseButtonEvents at 2012 0xa66a90). Not this wave.
-    return GFxMovieView::HE_NotHandled;
-}
-
-void GFxMovieRoot::GetMouseState(unsigned int i, float* x, float* y, unsigned int* buttons)
-{
-    if (x) *x = 0.f;
-    if (y) *y = 0.f;
-    if (buttons) *buttons = 0;
-}
-
-void GFxMovieRoot::NotifyMouseState(float x, float y, unsigned int buttons, unsigned int index)
-{ (void)x; (void)y; (void)buttons; (void)index; }
+// DISHONORED(port, agent DG): HandleEvent (2012 0xa042d0), NotifyMouseState (0xa04750),
+// GetMouseState (0x9cd8d0), ProcessInput (0xa10d80), ProcessKeyboard (0xa0cfa0) and ProcessMouse
+// (0xa0e900) are in GFxInput.cpp with the key state, the event queue and the AS2 Key broadcaster.
+// They answered HE_NotHandled here until this package.
 bool GFxMovieRoot::HitTest(float x, float y, GFxMovieView::HitTestType t, unsigned int c)
 { (void)x; (void)y; (void)t; (void)c; return false; }
 bool GFxMovieRoot::HitTest3D(GPoint3<float>* p, float x, float y, unsigned int c)
@@ -564,7 +610,7 @@ void* GFxMovieRoot::GetUserData() const { return pUserData; }
 void GFxMovieRoot::SetUserData(void* d) { pUserData = d; }
 bool GFxMovieRoot::AttachDisplayCallback(const char* path, void* cb, void* userData)
 { return false; }
-bool GFxMovieRoot::IsMovieFocused() const { return true; }
+bool GFxMovieRoot::IsMovieFocused() const { return bMovieFocused; }
 bool GFxMovieRoot::GetDirtyFlag(bool clear)
 {
     bool v = bDirty;

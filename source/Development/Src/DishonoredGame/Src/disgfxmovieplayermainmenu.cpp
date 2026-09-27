@@ -366,3 +366,217 @@ void DisMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
 	// DISHONORED(bringup): retail then starts the map-image package loading through
 	// UDisGlobalUIManager::LoadTexturePackageAsync(m_MapLargeImagePackage); not declared in this tree.
 }
+// ------ DG tail ------
+
+
+/*-----------------------------------------------------------------------------
+	The main menu's own state machine. Agent DG.
+
+	Three retail bodies, and between them they are what turns the asset from "every screen drawn on
+	top of every other" into a menu:
+
+	  PostStart         2012 0x821e00  opens startScreen_mc or mainMenu_mc, depending on the local
+	                                   player's m_bShowTitleScreen bit
+	  FilterButtonInput 2012 0x822590  on the start screen, any key press closes it and moves to
+	                                   login step 7
+	  PreAdvance        2012 0x822280  at login step 7, once the profile and the save list are ready,
+	                                   closes the start screen and opens mainMenu_mc with the four
+	                                   booleans the asset's Open() takes
+
+	m_Screen is the enum the two share: 1 = start screen, 2 = in transit, 3 = the menu proper.
+-----------------------------------------------------------------------------*/
+
+/** the two bodies of disgfxmovieplayerbase.cpp this unit's seam installs */
+void DisGFxMoviePlayerInitTexts( UDisGFxMoviePlayerBase* Player );
+UBOOL DisGFxMoviePlayerFilterButtonInput( UDisGFxMoviePlayerBase* Player, INT ControllerId,
+	FName Key, BYTE Event, UBOOL& bHandled );
+
+/** `_root.<clip>.<method>(args)` - the GetVariable + ObjectInterface::Invoke pair every one of the
+    three bodies uses, which GFxMovieView::Invoke resolves from the same path in one call */
+static void DisMainMenuInvoke( UDisGFxMoviePlayerMainMenu* Menu, const char* Path,
+	const GFxValue* Args, UINT NumArgs )
+{
+	GFxMovieView* View = DisMainMenuView( Menu );
+	if( View == NULL )
+	{
+		return;
+	}
+	GFxValue Result;
+	const UBOOL bOk = View->Invoke( Path, &Result, Args, NumArgs );
+	debugf( TEXT("DISHONORED(bringup): main menu: %s(%d) -> %s"), ANSI_TO_TCHAR( Path ), NumArgs,
+		bOk ? TEXT("ok") : TEXT("NOT FOUND") );
+}
+
+/** mainMenu_mc.Open(bCanContinue, bCanLoad, bCanNewGame, bSaveLoadEnabled) - the four booleans of
+    both retail call sites, in their order */
+static void DisMainMenuOpenMenu( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	// DISHONORED(bringup): retail asks UDishonoredEngine::HasSaveGame(0) and IsSaveLoadEnabled();
+	// neither is ported, and retail's own `!Engine || ...` shape means a missing engine answers TRUE,
+	// which is the conservative arm - the menu offers Continue and Load and the entry reports back.
+	const UBOOL bHasSave = TRUE;
+	const UBOOL bSaveLoadEnabled = TRUE;
+	(void)Engine;
+	GFxValue Args[4];
+	Args[0].SetBoolean( bHasSave ? true : false );
+	Args[1].SetBoolean( bHasSave ? true : false );
+	Args[2].SetBoolean( true );
+	Args[3].SetBoolean( bSaveLoadEnabled ? true : false );
+	DisMainMenuInvoke( Menu, "_root.mainMenu_mc.Open", Args, 4 );
+	Menu->m_Screen = 3;
+}
+
+static void DisMainMenuCloseScreen( UDisGFxMoviePlayerMainMenu* Menu, BYTE Screen )
+{
+	if( Screen == 1 )
+	{
+		DisMainMenuInvoke( Menu, "_root.startScreen_mc.Close", NULL, 0 );
+	}
+	else if( Screen == 3 )
+	{
+		DisMainMenuInvoke( Menu, "_root.mainMenu_mc.Close", NULL, 0 );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x821e00
+void DisGFxMoviePlayerMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	Menu->m_LoginStep = 0;
+	Menu->m_Screen = 0;
+	Menu->m_DelegatesControllerId = -1;
+	Menu->Advance( 0.f );
+
+	// DISHONORED(bringup): retail also calls RegisterCommonDelegates through ProcessEvent here; the
+	// UnrealScript that implements it is the online-subsystem login flow and nothing in this build
+	// has a profile to sign in with.
+	UDisLocalPlayer* LocalPlayer = DisGetLocalPlayer();
+	const UBOOL bTitleScreen = GIsEditor || ( LocalPlayer != NULL && LocalPlayer->m_bShowTitleScreen );
+	Menu->m_fTrailerTimer = 0.f;
+	if( bTitleScreen )
+	{
+		if( Menu->m_Screen != 1 )
+		{
+			DisMainMenuCloseScreen( Menu, Menu->m_Screen );
+			DisMainMenuInvoke( Menu, "_root.startScreen_mc.Open", NULL, 0 );
+		}
+		Menu->m_LoginStep = 1;
+		Menu->m_Screen = 1;
+	}
+	else
+	{
+		if( Menu->m_Screen != 3 )
+		{
+			DisMainMenuCloseScreen( Menu, Menu->m_Screen );
+			DisMainMenuOpenMenu( Menu );
+		}
+		Menu->m_LoginStep = 8;
+		Menu->m_Screen = 3;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x822280
+void DisGFxMoviePlayerMainMenuPreAdvance( UDisGFxMoviePlayerMainMenu* Menu, FLOAT DeltaTime )
+{
+	if( Menu->m_LoginStep != 7 )
+	{
+		return;
+	}
+	// DISHONORED(bringup): retail waits for the profile read (AsyncState 0 or 3) and for
+	// UDishonoredEngine::IsSaveGameListReady. Neither the profile read nor the save list exists in
+	// this build, and retail's own shape answers "ready" when the engine cast fails, so the step
+	// completes on the next advance.
+	DisMainMenuCloseScreen( Menu, Menu->m_Screen );
+	DisMainMenuOpenMenu( Menu );
+	Menu->m_LoginStep = 8;
+	Menu->m_Screen = 3;
+}
+
+// DISHONORED(port): 2012 rva 0x822590. On the start screen a key press - any key, on press rather
+// than on release - closes it and moves to login step 7, which is where PreAdvance takes over.
+UBOOL DisGFxMoviePlayerMainMenuFilterButtonInput( UDisGFxMoviePlayerMainMenu* Menu, INT ControllerId,
+	FName Key, BYTE Event, UBOOL& bHandled )
+{
+	if( Menu->m_LoginStep == 1 )
+	{
+		if( Event == IE_Pressed )
+		{
+			Menu->m_fTrailerTimer = 0.f;
+			if( Menu->m_Screen != 2 )
+			{
+				DisMainMenuCloseScreen( Menu, Menu->m_Screen );
+			}
+			Menu->m_LoginStep = 7;
+			Menu->m_Screen = 2;
+			debugf( TEXT("DISHONORED(bringup): main menu: start screen dismissed by %s"), *Key.ToString() );
+		}
+		bHandled = TRUE;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+
+/*-----------------------------------------------------------------------------
+	The seam. gfxuiengine.h says why these arrive as hooks rather than as the virtual overrides
+	retail has; the bodies and the call sites are retail's.
+-----------------------------------------------------------------------------*/
+
+static void DisGFxMoviePlayerPreLoaded( UGFxMoviePlayer* Player )
+{
+	if( UDisGFxMoviePlayerBase* Base = Cast<UDisGFxMoviePlayerBase>( Player ) )
+	{
+		DisGFxMoviePlayerInitTexts( Base );
+	}
+}
+
+static void DisGFxMoviePlayerStarted( UGFxMoviePlayer* Player )
+{
+	// DISHONORED(bringup): UDisGlobalUIManager::OnMovieStackChanged (the movie stack's focus and
+	// pause bookkeeping) runs between the two in retail; UDisGlobalUIManager has no movie stack in
+	// this build because nothing but the bring-up switch opens a movie.
+	if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Player ) )
+	{
+		DisGFxMoviePlayerMainMenuPostStart( Menu );
+	}
+}
+
+static void DisGFxMoviePlayerPreAdvance( UGFxMoviePlayer* Player, FLOAT DeltaTime )
+{
+	if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Player ) )
+	{
+		DisGFxMoviePlayerMainMenuPreAdvance( Menu, DeltaTime );
+	}
+}
+
+static UBOOL DisGFxMoviePlayerFilterButton( UGFxMoviePlayer* Player, INT ControllerId, FName Key,
+	BYTE Event, UBOOL& bHandled )
+{
+	UDisGFxMoviePlayerBase* Base = Cast<UDisGFxMoviePlayerBase>( Player );
+	if( Base == NULL )
+	{
+		return FALSE;
+	}
+	if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Base ) )
+	{
+		if( DisGFxMoviePlayerMainMenuFilterButtonInput( Menu, ControllerId, Key, Event, bHandled ) )
+		{
+			return TRUE;
+		}
+	}
+	return DisGFxMoviePlayerFilterButtonInput( Base, ControllerId, Key, Event, bHandled );
+}
+
+/** installs the four bodies above. A file-scope constructor is safe here and only here: it writes a
+    zero-initialised pointer in another translation unit, which is ordered by the standard, and it
+    reads nothing - in particular not appCmdLine(), which is what PHASE9.md's rule is about. */
+static struct FDisGFxMoviePlayerSeam
+{
+	FDisGFxMoviePlayerSeam()
+	{
+		GGFxMoviePlayerPreLoadedHook = &DisGFxMoviePlayerPreLoaded;
+		GGFxMoviePlayerStartedHook = &DisGFxMoviePlayerStarted;
+		GGFxMoviePlayerPreAdvanceHook = &DisGFxMoviePlayerPreAdvance;
+		GGFxMoviePlayerFilterButtonHook = &DisGFxMoviePlayerFilterButton;
+	}
+} GDisGFxMoviePlayerSeam;

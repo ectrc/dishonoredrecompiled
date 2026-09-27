@@ -596,6 +596,17 @@ void GFxMovieDataDef::AddExport(const char* name, unsigned int id)
     ++Stats.Exports;
 }
 
+// The reverse of GetExportedId: what Object.registerClass is keyed by. Retail reads it out of the
+// character def itself (`NameOfExportedResource` in the decompile of GFxSprite::AddDisplayObject,
+// 2012 0x9fee10); the export table is the same mapping read the other way round.
+const char* GFxMovieDataDef::GetExportedName(unsigned int id) const
+{
+    for (unsigned int i = 0; i < ExportSize; ++i)
+        if (Exports[i].Id == id)
+            return Exports[i].Name;
+    return 0;
+}
+
 int GFxMovieDataDef::GetExportedId(const char* name) const
 {
     for (unsigned int i = 0; i < ExportSize; ++i)

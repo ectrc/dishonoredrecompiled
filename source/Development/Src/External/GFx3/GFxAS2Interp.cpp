@@ -19,6 +19,13 @@
 #include <stdio.h>
 
 unsigned int GASActionBuffer::OpsExecuted = 0;
+
+// The budget and its counter. The counter is reset by the outermost Execute, so a deep but finite
+// call tree spends one budget rather than one per frame.
+unsigned int GFxAS2OpBudget = 1000000;
+unsigned int GFxAS2OpsThisBuffer = 0;
+unsigned int GFxAS2OpTraceFrom = 0;
+unsigned int GFxAS2OpTraceCount = 200;
 unsigned int GASActionBuffer::OpsUnimplemented = 0;
 unsigned int GASActionBuffer::OpCounts[256] = { 0 };
 
@@ -537,9 +544,14 @@ static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
         // missing on a Sprite is a class-library gap, a method missing on a Shape or an EditText is
         // the content asking a non-clip for a MovieClip method, which retail also refuses.
         GFxASCharacter* recvChar = self ? self->ToASCharacter() : 0;
-        env->LogScriptError("call of a value that is not a function: '%s' on %s", name.ToCStr(),
+        // DISHONORED(bringup): the receiver's own target path, not just its type. "attachMovie on
+        // Sprite" does not say which clip asked, and which clip it was is the answer to every one of
+        // the seven script errors the menu's census reports (agentDG.md 2).
+        GASString path = recvChar != 0 ? recvChar->GetTargetPath(env->GetSC()) : GASString();
+        env->LogScriptError("call of a value that is not a function: '%s' on %s %s", name.ToCStr(),
                             recvChar != 0 ? recvChar->GetCharacterTypeName()
-                                          : (self != 0 ? "an object" : "undefined"));
+                                          : (self != 0 ? "an object" : "undefined"),
+                            recvChar != 0 ? path.ToCStr() : "");
         result->SetUndefined();
         return;
     }
@@ -556,6 +568,7 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
 {                                                                     // 2012 0x9ea900
     if (Bytes == 0 || Length == 0)
         return;
+
 
     GASStringContext* sc = env->GetSC();
     const int stopPC = startPC + execBytes > (int)Length ? (int)Length : startPC + execBytes;
@@ -590,6 +603,30 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
 
         ++OpsExecuted;
         ++OpCounts[op];
+        ++GFxAS2OpsThisBuffer;
+        if (GFxAS2OpTraceFrom != 0 && GFxAS2OpsThisBuffer >= GFxAS2OpTraceFrom
+            && GFxAS2OpsThisBuffer < GFxAS2OpTraceFrom + GFxAS2OpTraceCount)
+        {
+            GFxLogf("DISHONORED(bringup): AS2 op %u: pc %4d %-16s stack %2u top '%s'",
+                    GFxAS2OpsThisBuffer, pc, GFxAS2GetOpcodeName(op), env->GetStackSize(),
+                    env->GetStackSize() > 0 ? env->Top(0).ToString(env).ToCStr() : "");
+        }
+        if (GFxAS2OpsThisBuffer > GFxAS2OpBudget)
+        {
+            // Reported once per advance, not once per buffer: the first buffer to run out of
+            // budget names the frame and the rest of the frame is abandoned quietly.
+            if (GFxAS2OpsThisBuffer == GFxAS2OpBudget + 1)
+            {
+                GFxASCharacter* t = env->GetTarget();
+                env->LogScriptError("this frame's action buffers exceeded %u opcodes and were "
+                                    "abandoned (a loop whose exit depends on a library method that "
+                                    "is not ported); running on %s at pc %d of %d, %d local frames",
+                                    GFxAS2OpBudget,
+                                    t ? t->GetTargetPath(env->GetSC()).ToCStr() : "no target",
+                                    pc, (int)Length, env->GetLocalFrameDepth());
+            }
+            break;
+        }
 
         GFxASCharacter* target = env->GetTarget();
         GFxSprite* sprite = target ? target->ToSprite() : 0;
@@ -1051,7 +1088,17 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             GASValue out;
             GASObjectInterface* oi = objVal.ToObjectInterface(env);
             if (oi)
+            {
                 oi->GetMember(env, name, &out);
+                // A PROPERTY is a getter/setter pair, never a value: whatever answered the lookup,
+                // the stack gets the getter's result. Without this the comparison operators see the
+                // pair itself and every `member == undefined` test against a property is false.
+                if (out.IsProperty())
+                {
+                    const GASValue prop = out;
+                    prop.GetPropertyValue(env, oi, &out);
+                }
+            }
             else if (objVal.IsString() && name == env->GetBuiltin(GASbuiltin_length))
                 out.SetInt((int)objVal.GetString().GetSize());
             env->Top() = out;
