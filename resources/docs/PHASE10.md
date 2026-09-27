@@ -51,6 +51,13 @@ The three packages are independent by construction, so they run at once:
   touches every module, so it waits until CG has cleared `DishonoredGame`.
 - The AS2 garbage collector (~147 functions).
 - The remaining DOF blur passes and the LensCompose node, depending on what DA hands over.
+- **The DishonoredGame regeneration is one command, not two halves.**
+  `python resources/tools/symbols/gen_classes_header.py DishonoredGame --sdk --module-header --sources-cmake`.
+  Merging CG I ran it without `--sources-cmake`, so the 14 units that come off the skeleton-exclude set were
+  compiled out and HEAD linked with **113 unresolved externals**. Wave 6 cost two broken HEADs by committing a
+  *subset of the generator's output*; this was a subset of the *generator*. Same rule, and the same check
+  catches both: build a clean checkout of the commit.
+
 - Audio, which stays where the user put it: `PLAN.md` Phase 10, polish.
 
 ## Rules for agents
@@ -80,4 +87,5 @@ As `PHASE9.md`. The additions this wave:
 | DE | DE | Make the content's own grade reach the renderer | doing | 2026-09-27 | DA's hand-over 1: ULocalPlayer::UpdatePostProcessSettings (0x2b08b0) writes nothing to m_CurrentArkPpSettings, so the level's, the volumes', the camera's and Kismet's grade never reaches the LUT. The eighth storage-less placeholder |
 | DB | DB | Arkane's bloom parts | doing | 2026-09-27 | costed by CE |
 | DC | DC | Flip the GFx runtime live and bring the menu up | doing | 2026-09-27 | the user's standing ask |
-| CG | CG | The AI brain root | doing | 2026-09-27 | carried over from wave 7 |
+| CG | CG | The AI brain root | done | 2026-09-27 | commit f13ad82: 0 NPC pawns -> 26, each with a controller, an initialized brain, a behaviour and a running sub-state machine. The map has 41 spawners and no placed NPCs, which nobody had measured - that is why the AI root looked bottomless. Gate on a clean checkout: 31 ok, 0 failed, and the AI shows in the numbers (PhysX actors 895 -> 1,369, sequence ops 35,812 -> 87,380, probe_natives 7 -> 6) |
+| DF | DF | The 17 AI sub-state classes and their _Param structs | doing | 2026-09-27 | CG's named next package: where 35 of the 109 blocked natives live. Also the game-event dispatcher, which is ported but never instantiated |
