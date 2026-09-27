@@ -430,7 +430,6 @@ void AutoGenerateNamesDishonoredGame()
 IMPLEMENT_CLASS(AArkDynamicPylon);
 IMPLEMENT_CLASS(UDisEngineTweaksInterface);
 IMPLEMENT_CLASS(ASpawner);
-IMPLEMENT_CLASS(ADisFog);
 IMPLEMENT_CLASS(AGenericPortal);
 IMPLEMENT_CLASS(AInOutVolume);
 IMPLEMENT_CLASS(ADynamicGameCrowdDestination);
@@ -483,8 +482,6 @@ IMPLEMENT_CLASS(UArkSeqAct_ChangePylonConnection);
 IMPLEMENT_CLASS(UAudioPropagationInfo);
 IMPLEMENT_CLASS(UDebugManager);
 IMPLEMENT_CLASS(UDisEngineTweaksBase);
-IMPLEMENT_CLASS(UDisFogComponent);
-IMPLEMENT_CLASS(UDisFogDisplayComponent);
 IMPLEMENT_CLASS(UDisOnlineLeaderboards);
 IMPLEMENT_CLASS(UGameCrowdSpawner);
 IMPLEMENT_CLASS(UGameCrowd_ListOfAgents);

@@ -306,6 +306,7 @@ public:
     DECLARE_FUNCTION(execNotifyGameSessionEnded);
     DECLARE_FUNCTION(execGetFocusMovie);
     DECLARE_CLASS(UGFxInteraction,UInteraction,0|CLASS_Transient,GFxUI)
+#include "CppText/UGFxInteraction.h"
 };
 
 class ASUClasses;  // DISHONORED(port): native type named by a 2012 PDB declaration, not declared yet
@@ -579,6 +580,7 @@ public:
     DECLARE_FUNCTION(execPreLoad);
     DECLARE_CLASS(UGFxMoviePlayer,UObject,0,GFxUI)
     static const TCHAR* StaticConfigName() {return TEXT("UI");}
+#include "CppText/UGFxMoviePlayer.h"
 };
 
 struct GFxObject_eventWidgetUnloaded_Parms
@@ -697,6 +699,7 @@ public:
     DECLARE_FUNCTION(execGet);
     DECLARE_CLASS(UGFxObject,UObject,0,GFxUI)
     DECLARE_WITHIN(UGFxMoviePlayer)
+#include "CppText/UGFxObject.h"
 };
 
 #undef DECLARE_CLASS

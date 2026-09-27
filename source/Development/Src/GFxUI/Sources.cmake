@@ -6,8 +6,9 @@
 # Agent BE (PHASE8.md package BE) ported Src/gfxuimovie.cpp (UGFxObject + UGFxMoviePlayer, 113 natives) and
 # added Src/gfxuinatives.cpp, Src/gfxuiexternalinterface.cpp and Src/gfxuigfx3absent.cpp, so those four
 # compile; the rest of the GFx-3 skeletons are agent BB's and stay excluded until that package lands.
+# Agent BD (package BD) put the 50 GFx shader type declarations of the cooked global shader cache into
+# Src/gfxuishaders.cpp (types only, no Scaleform runtime), so that unit compiles too.
 set(GFxUI_EXCLUDE
-  Src/gfxuishaders.cpp
   Src/GFxUI.cpp
   Src/Render/RHI_ConsoleMeshCache.cpp
   Src/Render/RHI_HAL.cpp

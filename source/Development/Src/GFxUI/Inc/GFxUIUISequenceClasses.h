@@ -238,6 +238,7 @@ public:
     }
     DECLARE_FUNCTION(execFSCommand);
     DECLARE_CLASS(UGFxFSCmdHandler_Kismet,UGFxFSCmdHandler,0,GFxUI)
+#include "CppText/UGFxFSCmdHandler_Kismet.h"
 };
 
 #undef DECLARE_CLASS

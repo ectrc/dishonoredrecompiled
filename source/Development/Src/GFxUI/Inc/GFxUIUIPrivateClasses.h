@@ -49,14 +49,7 @@ public:
     //## END PROPS GFxDataStoreSubscriber
 
     virtual UObject* GetUObjectInterfaceUIDataStorePublisher() { return this; }  // DISHONORED(port): IUIDataStorePublisher interface glue
-    virtual UBOOL SaveSubscriberValue(TArray<class UUIDataStore*>& out_BoundDataStores,INT BindingIndex=-1) { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::SaveSubscriberValue")); return {}; }  // DISHONORED(port): IUIDataStorePublisher pure virtual
     virtual UObject* GetUObjectInterfaceUIDataStoreSubscriber() { return this; }  // DISHONORED(port): IUIDataStoreSubscriber interface glue
-    virtual void SetDataStoreBinding(const FString& MarkupText,INT BindingIndex=-1) { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::SetDataStoreBinding")); }  // DISHONORED(port): IUIDataStoreSubscriber pure virtual
-    virtual FString GetDataStoreBinding(INT BindingIndex=-1) const { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::GetDataStoreBinding")); return {}; }  // DISHONORED(port): IUIDataStoreSubscriber pure virtual
-    virtual UBOOL RefreshSubscriberValue(INT BindingIndex=-1) { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::RefreshSubscriberValue")); return {}; }  // DISHONORED(port): IUIDataStoreSubscriber pure virtual
-    virtual void NotifyDataStoreValueUpdated(class UUIDataStore* SourceDataStore,UBOOL bValuesInvalidated,FName PropertyTag,class UUIDataProvider* SourceProvider,INT ArrayIndex) { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::NotifyDataStoreValueUpdated")); }  // DISHONORED(port): IUIDataStoreSubscriber pure virtual
-    virtual void GetBoundDataStores(TArray<class UUIDataStore*>& out_BoundDataStores) { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::GetBoundDataStores")); }  // DISHONORED(port): IUIDataStoreSubscriber pure virtual
-    virtual void ClearBoundDataStores() { appErrorf(TEXT("GFxUI native not ported: %s"), TEXT("UGFxDataStoreSubscriber::ClearBoundDataStores")); }  // DISHONORED(port): IUIDataStoreSubscriber pure virtual
     DECLARE_FUNCTION(execSaveSubscriberValue);
     DECLARE_FUNCTION(execClearBoundDataStores);
     DECLARE_FUNCTION(execGetBoundDataStores);
@@ -66,6 +59,7 @@ public:
     DECLARE_FUNCTION(execSetDataStoreBinding);
     DECLARE_FUNCTION(execPublishValues);
     DECLARE_CLASS(UGFxDataStoreSubscriber,UObject,0,GFxUI)
+#include "CppText/UGFxDataStoreSubscriber.h"
 };
 
 #undef DECLARE_CLASS

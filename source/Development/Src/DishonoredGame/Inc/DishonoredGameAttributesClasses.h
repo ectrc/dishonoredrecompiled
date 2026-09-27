@@ -56,6 +56,7 @@ protected:
     virtual ~IDisAttributesInterface() {}
 public:
     typedef UDisAttributesInterface UClassType;
+#include "CppText/IDisAttributesInterface.h"
 };
 
 // DishonoredGame.DisAttributes.DisAttribute: retail SDK size 28 (2012 PDB 28)
@@ -136,6 +137,7 @@ public:
     //## END PROPS DisAttributes
 
     DECLARE_CLASS(UDisAttributes,UObject,0,DishonoredGame)
+#include "CppText/UDisAttributes.h"
 };
 
 #undef DECLARE_CLASS
