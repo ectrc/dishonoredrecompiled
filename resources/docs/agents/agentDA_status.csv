@@ -1,0 +1,35 @@
+rva_2013,status,note
+0x514bc0,ported,FArkDofRamp<16>::InitDynamicRHI - 256x16 PF_A8R8G8B8 + targetable surface; TexCreate flags 0x12
+0x514cf0,ported,FArkDofRamp<16>::ReleaseDynamicRHI
+0x50eab0,ported,FArkPpDofDownsampleVS::SetParameters - (1/w 1/h 36 42)
+0x50eb50,ported,FArkPpDofUberVS::SetParameters - resolutions viewport scale/bias and the two never-repeating noise indices
+0x514d40,ported,TArkPpDofUberPS<a b>::SetParameters - four textures focus params MinZ_MaxZRatio film grain
+0x50ed00,ported,FArkPpDofLutBlenderPS::SetParameters - THE colour treatment: tones opacity exposure gamma desaturations overlay brightness/contrast
+0x50efb0,ported,FArkPpDofUberParameters ctor - four FTextures and the viewport cleared; the rest written by Blend
+0x50f130,ported,FArkPpDofUberParameters dtor - implicit
+0x50e7e0,ported,FArkPpNodeDofProxy ctor - SetDefaultOnNoOverride then the override stack then the 0.01 far-blur floor
+0x50e9e0,ported,FArkPpNodeDofProxy dtor - implicit
+0x522210,ported,FArkPpNodeDofProxy::Downsample - both passes 1:1; the gaussian blur call is this tree's signature (deviation documented at the site)
+0x522750,ported,FArkPpNodeDofProxy::LutCreation - one triangle over the ramp; -arkppdoflut dumps it
+0x522990,ported,FArkPpNodeDofProxy::Blend - the uber pass; <1 1> with a far blur <0 1> without
+0x523170,ported,FArkPpNodeDofProxy::Render - input then blend+rasterizer state then the three passes then bUseLDRSceneColor
+0x50b2f0,verified,GetSurface folded with the blur proxy's - the input's
+0x50e4b0,verified,GetTexture folded with the blur proxy's - the input's
+0x5245b0,verified,UArkPpNodeDof::IsValid - agent CE
+0x524640,verified,UArkPpNodeDof::CreateSceneProxy - agent CE
+0x2a2980,ported,FArkPpColorBalanceParameters::SetDefaultOnNoOverride
+0x2a2a30,ported,FArkPpColorBalanceParameters::ForceDefault
+0x2aca00,ported,FArkPpColorBalanceParameters::ApplyTo
+0x2a2d20,ported,FArkUberPpParameters::SetDefaultOnNoOverride - retail's inverted m_InFocusRadius test ported as retail has it
+0x2acbc0,ported,FArkUberPpParameters::ApplyTo
+0x2a2e00,not ported,FArkUberPpParameters::ForceDefault - only UpdatePostProcessSettings needs it; hand-over 1
+0x2adb50,not ported,FArkPpConfig::ApplyTo - the camera override blend; hand-over 1
+0x2b08b0,defect,ULocalPlayer::UpdatePostProcessSettings - this tree still has the reference FPostProcessSettings body so m_CurrentArkPpSettings keeps its script defaults and the level's grade never reaches the LUT. Hand-over 1
+0x24b0c0,not ported,AWorldInfo::GetPostProcessSettings(FVector&,FArkPpConfig&) - the level and volume half of the same path; hand-over 1
+0x6adeb0,not ported,ADishonoredPlayerController::ModifyPostProcessSettings(FArkPpConfig&) - the controller half; hand-over 1
+0x5203c0,not ported,FArkPpNodeAAProxy::RenderFxaa - hand-over 2
+0x521720,not ported,FArkPpNodeAAProxy::RenderMlaa and its three passes - hand-over 2
+0x521990,not ported,FArkPpNodeBlurProxy::RenderMotionBlur - hand-over 2
+0x523350,not ported,FArkPpNodeKuwaProxy::RenderKuwa - hand-over 2
+0x51e720,verified,FArkPpNodeMaterialProxy::Render - agent CE; the LensCompose root is still not shown in game (hand-over 3)
+0x2d2a40,not ported,UPostProcessChain::CreateMutableMaterialInstanceOnNodes - agent CE hand-over 3

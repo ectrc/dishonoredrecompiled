@@ -103,6 +103,18 @@ struct FArkPpCreateProxyConfig
 	}
 };
 
+/**
+ * DISHONORED(port): the four methods of the uber-parameter script structs of EngineClasses.h (2013 rvas 0x2a2980,
+ * 0x2a2a30, 0x2a2d20, 0x2aca00, 0x2acbc0), which every FArkPp filter node resolves its parameters with. They are
+ * free functions rather than members because EngineClasses.h is generated and its Arkane structs have no CppText
+ * hook yet; arkppnodedof.cpp holds the bodies.
+ */
+extern void ArkPpColorBalanceSetDefaultOnNoOverride(FArkPpColorBalanceParameters& Params);
+extern void ArkPpColorBalanceForceDefault(FArkPpColorBalanceParameters& Params);
+extern void ArkPpColorBalanceApplyTo(const FArkPpColorBalanceParameters& Params,FArkPpColorBalanceParameters& oResult,FLOAT iAlpha);
+extern void ArkUberPpSetDefaultOnNoOverride(FArkUberPpParameters& Params);
+extern void ArkUberPpApplyTo(const FArkUberPpParameters& Params,FArkUberPpParameters& oResult,FLOAT iAlpha,UBOOL bDOFOnlyBlendAmount);
+
 /** DISHONORED(port): arkppnodes.cpp - the node-cache lookup and the viewport every node pass sets. */
 extern UBOOL ArkPpFindCachedProxy(FArkPpCreateProxyConfig& Config,UArkPpNode* Node,FArkPpNodeProxy*& OutProxy);
 extern void ArkPpSetNodeViewport(const FViewInfo& View,UINT SizeX,UINT SizeY);
