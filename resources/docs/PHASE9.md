@@ -156,13 +156,13 @@ Files: the DishonoredGame AI units, `DishonoredGameNativeStubs.ported.agentCG.tx
 
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
-| C10 | coordinator | Fold wave-6 rows, this plan, baseline | todo | | |
-| CA | | The scene-colour rebinding defect | todo | | blocks CE and CC |
-| CB | | Text engine and glyph rasteriser | todo | | the large one |
-| CC | | The renderer's drawing half | todo | | |
-| CD | | Remaining tag loaders and import binding | todo | | |
-| CE | | The Arkane post-process graph | todo | | needs CA |
-| CF | | The save system | todo | | milestone 6 |
+| C10 | coordinator | Fold wave-6 rows, this plan, baseline | done | 2026-09-27 | plus the Cxform bridge from CC (42e9cbe): the machine and the renderer disagreed about all four colour channels |
+| CA | CA | The scene-colour rebinding defect | done | 2026-09-27 | commit c403e2f: the binding was never broken. Three bring-up switches were permanently off - a file-scope static read of ParseParam runs before GCmdLine exists - and the wave-6 fog figure came from one of them. Real value 8.4 % of pixels, mean 3.44, corrected in 8e61755 |
+| CB | CB | Text engine and glyph rasteriser | done | 2026-09-27 | commits 54b57d4 and 4bb6772: real glyphs come out of the game's own fonts, and the follow-up found that its two style helpers were a port of functions retail does not call on this path - deleted, then cross-checked glyph by glyph against CD's walk, 2,423 of 2,423 agreeing |
+| CC | CC | The renderer's drawing half | done | 2026-09-27 | commit 2da00d8: the full 892-byte FGFxRenderer, 54 slots with their render-thread halves. 1280x720 first frame of UI_Global.Global with 40 of its 41 cooked bitmaps. Found the refcounts starting at 0 and SetUIViewport writing CurrentMatrix |
+| CD | CD | Remaining tag loaders and import binding | done | 2026-09-27 | commit 683fa03: every tag loads, every import binds, and five silent defects in the interface loader |
+| CE | CE | The Arkane post-process graph | done | 2026-09-27 | commit dec3fd4: 99.2 % of pixels changed against a 0.09 % noise floor. Twelve node classes moved into Engine. The colour treatment turns out to be the DOF node's LUT uber pass (0x522750 / 0x522990), not a material node - that pass is the next package |
+| CF | CF | The save system | done | 2026-09-27 | commit d40e26c: all 51 real retail saves load and round-trip. BUILT_FROM_CHANGELIST was 334700, so every retail save was rejected by construction; it is 1274963 now |
 | CG | | The AI brain root | todo | | |
 
 ## Rules for agents
