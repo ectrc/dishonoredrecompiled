@@ -21,3 +21,19 @@ public:
 
 	FMapConfig* FindMapConfig( const FString& MapName );
 	UBOOL IsSavingAllowed() const;
+
+	// DISHONORED(port): agent CF (PHASE9 CF) - the save list agent BE's menu data models were blocked on.
+	// m_pSaveGameList / m_pSaveGameDeleter are the reflected FPointer properties of this class; the types they
+	// point at are in DishonoredGame/Inc/dishonoredutilities_saveload.h, where retail declares them.
+	FMapConfig* FindMapConfigFromFriendlyName( const FString& FriendlyName );	// 2013 rva 0x5fbef0
+	void LoadGame();												// 2013 rva 0x614c90
+	void SetSaveLoadEnabled( UBOOL bEnabled );								// 2012 rva 0x62bb30
+	void RefreshSaveGameList();													// 2013 rva 0x609870
+	UBOOL IsSaveGameListReady() const;											// 2013 rva 0x5e44d0
+	void WaitSaveGameListReady() const;											// 2012 rva 0x62bb80
+	UBOOL HasSaveGame( INT _Slot ) const;										// 2013 rva 0x609920
+	INT GetNumSaveGames() const;												// 2013 rva 0x609a30
+	struct FDisSaveGame* GetSaveGame( INT _ListIdx ) const;						// 2013 rva 0x6099c0
+	void DeleteSaveGame( INT _Slot );											// 2013 rva 0x5fbc80
+	INT GetNextAutoSaveSlot();													// 2013 rva 0x60b050
+	INT GetNextUserSaveSlot() const;											// 2013 rva 0x5fb930

@@ -1,0 +1,73 @@
+rva,status,note
+0x4790,ported,FAsyncWorkBase::FAsyncWorkBase; dishonoredengine.cpp (agent CF) - declared in dishonoredutilities_saveload.h because Core/Inc/UnAsyncWork.h is the reference header
+0x4810,ported,FAsyncWorkBase::DoThreadedWork; dishonoredengine.cpp (agent CF)
+0x4830,ported,FAsyncWorkBase::~FAsyncWorkBase; dishonoredengine.cpp (agent CF)
+0x48a0,ported,FAsyncWorkBase::Dispose; dishonoredengine.cpp (agent CF)
+0x48d0,ported,FAsyncWorkBase::IsDone; dishonoredengine.cpp (agent CF)
+0x37610,ported,FArchiveSaveCompressedProxy ctor: Arkane's block-size argument added with a default; Core/Src/UnArchive.cpp (agent CF)
+0x38830,ported,FArchiveLoadCompressedProxy ctor: same block-size argument; Core/Src/UnArchive.cpp (agent CF)
+0x5e43f0,ported,UDishonoredEngine::IsSaveLoadEnabled; already present, now actually set (agent CF)
+0x62bb30,ported,UDishonoredEngine::SetSaveLoadEnabled (2012 rva; 2013 unmatched); dishonoredengine.cpp (agent CF)
+0x5e44d0,ported,UDishonoredEngine::IsSaveGameListReady; dishonoredengine.cpp (agent CF)
+0x62bb80,ported,UDishonoredEngine::WaitSaveGameListReady (2012 rva; 2013 unmatched); dishonoredengine.cpp (agent CF)
+0x609870,ported,UDishonoredEngine::RefreshSaveGameList; dishonoredengine.cpp (agent CF)
+0x608ef0,ported,FDisAsyncSaveGameLister::FDisAsyncSaveGameLister; dishonoredengine.cpp (agent CF) - the DLC campaign prefix is the base game's empty one
+0x609020,ported,FDisAsyncSaveGameLister::DoWork; dishonoredengine.cpp (agent CF) - found through the 2013 vtable slot 3; Steam's GetFileTimestamp replaced by the file mtime
+0x5e40d0,ported,FDisAsyncSaveGameLister::Wait; dishonoredengine.cpp (agent CF)
+0x6086f0,ported,Sort<FDisSaveGame CompareDishonoredEngineFDisSaveGameConstRef>; IMPLEMENT_COMPARE_CONSTREF in dishonoredengine.cpp (agent CF)
+0x609920,ported,UDishonoredEngine::HasSaveGame; dishonoredengine.cpp (agent CF)
+0x6099c0,ported,UDishonoredEngine::GetSaveGame; dishonoredengine.cpp (agent CF)
+0x609a30,ported,UDishonoredEngine::GetNumSaveGames; dishonoredengine.cpp (agent CF)
+0x5fbc80,ported,UDishonoredEngine::DeleteSaveGame; dishonoredengine.cpp (agent CF)
+0x5fb860,ported,FDisAsyncSaveGameDeleter::FDisAsyncSaveGameDeleter; dishonoredengine.cpp (agent CF)
+0x601950,ported,FDisAsyncSaveGameDeleter::DoWork; dishonoredengine.cpp (agent CF)
+0x60b050,ported,UDishonoredEngine::GetNextAutoSaveSlot; dishonoredengine.cpp (agent CF)
+0x5fb930,ported,UDishonoredEngine::GetNextUserSaveSlot; dishonoredengine.cpp (agent CF)
+0x5fb7f0,ported,GetSaveGameSlot (the lister's 4..55 scan); dishonoredengine.cpp (agent CF)
+0x5fb660,ported,the slot name builder (OPTIONS / DLC02 markers / DisMission / DisAutoSave / DisQuickSave / Dishonored%i); dishonoredengine.cpp (agent CF)
+0x5fbef0,ported,UDishonoredEngine::FindMapConfigFromFriendlyName; dishonoredengine.cpp (agent CF)
+0x60c750,ported,UDishonoredEngine::Dis_Load; calls LoadGame directly because ProcessSaveLoadCmd is not ported (agent CF)
+0x614c90,ported,UDishonoredEngine::LoadGame; dishonoredengine.cpp (agent CF) - the chaos-marker mode of FGameState::Load is not ported
+0x612f30,ported,DisSaveLoad::FStringDictionary::FStringDictionary; dissavegame.cpp (agent CF)
+0x611f40,ported,DisSaveLoad::FStringDictionary::Init; dissavegame.cpp (agent CF)
+0x612130,ported,DisSaveLoad::FStringDictionary::Clear; dissavegame.cpp (agent CF)
+0x611ab0,ported,DisSaveLoad::FStringDictionary::GetStringIndex; dissavegame.cpp (agent CF)
+0x5fe5a0,ported,DisSaveLoad::FStringDictionary::Save; dissavegame.cpp (agent CF)
+0x611fb0,ported,DisSaveLoad::FStringDictionary::Load; dissavegame.cpp (agent CF)
+0x5fe700,ported,DisSaveLoad::FStringDictionary::LoadFName; dissavegame.cpp (agent CF)
+0x5ea560,ported,DisSaveLoad::FGameState::LoadMapName; dissavegame.cpp (agent CF)
+0x612340,ported,DisSaveLoad::FGameState::Save; dissavegame.cpp (agent CF) - container only; the per-level object blobs are written verbatim
+0x614020,ported,DisSaveLoad::FGameState::Load; dissavegame.cpp (agent CF) - container only; the chaos-marker and mission-start argument branches are not ported
+0x5fe7a0,ported,DisSaveLoad::FGameState::findLevelIndex; dissavegame.cpp (agent CF)
+0x6122c0,ported,DisSaveLoad::FGameState::discardLevelState; dissavegame.cpp (agent CF)
+0x613f10,ported,DisSaveLoad::FGameState::DiscardLevelState; dissavegame.cpp (agent CF)
+0x7e6ce0,ported,DisGetLevelName; dissavegame.cpp (agent CF)
+0x7ef1e0,ported,DisFindLevelFromName; dissavegame.cpp (agent CF)
+0x7ef0c0,ported,DisGetCurrentLevel; dissavegame.cpp (agent CF)
+0xb7aa0,stub,DisGetInstalledContentMask: UArkDLCManagementBridge is not declared; returns 0x0f so no save is refused for missing content (agent CF)
+0x5ea500,stub,DisSaveLoad::IsSubLevelUnshared: needs ULevelStreaming's per-slot bit; only the SLL_MEMORY_* paths of the object layer use it (agent CF)
+0x813930,ported,UDisGFxMoviePlayerMenuBase::CreateGFxLoadGameList: the list now walks the real save list; disgfxmovieplayermenubase.cpp (agent CF)
+0x8137f0,ported,UDisGFxMoviePlayerMenuBase::FindSaveName (2012 rva); file-static DisFindSaveName in disgfxmovieplayermenubase.cpp (agent CF)
+0x806880,ported,UDisGFxMoviePlayerMenuBase::FormatSaveDate (2012 rva); file-static DisFormatSaveDate (agent CF)
+0x7f7120,ported,UDisGFxMoviePlayerMenuBase::FindSaveImagePath (2012 rva); file-static DisFindSaveImagePath (agent CF)
+0x7c25e0,ported,UDisGFxMoviePlayerMenuBase::Req_CanLoadGame body: Engine && HasSaveGame(0); disgfxmovieplayermenubase.cpp (agent CF)
+0x821e00,ported,UDisGFxMoviePlayerMainMenu::PostStart's bHasSaveGame (2012 rva): !Engine || HasSaveGame(0) (agent CF)
+0x5f81d0,ported,UDisGFxMoviePlayerMainMenu::OnContinueClicked: loads save-list row 0 (the newest); the retail body is a vtable slot with no PDB name in either build, so the row-0 choice is inferred (agent CF)
+0x5fbc80,ported,UDisGFxMoviePlayerMenuBase::OnDeleteSaveConfirm now calls DeleteSaveGame (agent CF)
+0x611b80,unported,DisSaveLoad::FLevelSaver::GetObjectIndex - the object layer; format decoded and documented in agentCF.md section 5
+0x612190,unported,DisSaveLoad::FLevelSaver::operator<<(UObject*&) - the object layer
+0x611b30,unported,DisSaveLoad::FLevelSaver::operator<<(FName&) - the object layer
+0x615730,unported,DisSaveLoad::FLevelSaver::FLevelSaver - the object layer
+0x609d70,unported,DisSaveLoad::FLevelSaver::SerializeLevel - the object layer
+0x607ac0,unported,DisSaveLoad::FLevelSaver::ShouldSaveObject - the object layer
+0x613070,unported,DisSaveLoad::FLevelLoader::FLevelLoader - the object layer
+0x60c930,unported,DisSaveLoad::FLevelLoader::operator<<(UObject*&) - the object layer
+0x5fe780,unported,DisSaveLoad::FLevelLoader::operator<<(FName&) - the object layer
+0x607b30,unported,DisSaveLoad::FLevelLoader::ShouldLoadObject - the object layer
+0x60bbc0,unported,DisSaveLoad::FLevelLoader::NotifyPostGameLoad - the object layer
+0x613db0,unported,DisSaveLoad::FGameState::LoadLevel - the object layer
+0x602920,unported,DisSaveLoad::FGameState::SaveGameState - the object layer
+0x5fe820,unported,DisSaveLoad::FGameState::ContainsObjectState - the object layer
+0x602760,unported,DisSaveLoad::InitializeSequencePostLoad - the object layer
+0x6162d0,unported,UDishonoredEngine::ProcessSaveLoadCmd - the save/load state machine that drives SLC_PostLoad's map travel
+0x6095a0,unported,UDishonoredEngine::DoSaveGame - needs FGameState::SaveGameState

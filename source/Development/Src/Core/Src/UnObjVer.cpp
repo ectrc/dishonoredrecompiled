@@ -13,7 +13,11 @@
 // Defined separately so the build script can get to it easily (DO NOT CHANGE THIS MANUALLY)
 #define	ENGINE_VERSION	9411	// DISHONORED: retail 2013 build (resources/docs/symbols/package_summary.md)
 
-#define	BUILT_FROM_CHANGELIST	334700	// DISHONORED: Arkane changelist of the retail 2013 build
+// DISHONORED(retail): 1274963 is the DWORD at retail rva 0xe6a6e4 (?GBuiltFromChangeList@@3HA) in
+// Dishonored_Latest2026/Binaries/Win32/Dishonored.exe; 2012 Shipping carries 254295 at 0xe2a6e8. It was 334700 here,
+// which is not either build's value, and DisSaveLoad::FGameState::Load (2013 rva 0x614020) refuses any save whose
+// stored changelist is greater than ours - so with 334700 every retail .sav (all carry 1274963) was rejected.
+#define	BUILT_FROM_CHANGELIST	1274963
 
 
 INT	GEngineVersion				= ENGINE_VERSION;

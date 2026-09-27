@@ -108,6 +108,7 @@ void UDisGFxMoviePlayerMainMenu::execOnLoginChange( FFrame& Stack, RESULT_DECL )
 
 #include "gfxui_gfx3.h"
 #include "dishonoredutilities.h"
+#include "dishonoredutilities_saveload.h"
 
 /** the movie view, or NULL when no movie is open */
 static GFxMovieView* DisMainMenuView( UDisGFxMoviePlayerMainMenu* Menu )
@@ -185,10 +186,18 @@ void UDisGFxMoviePlayerMainMenu::execOnNewGameClicked( FFrame& Stack, RESULT_DEC
 void UDisGFxMoviePlayerMainMenu::execOnContinueClicked( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
+	// DISHONORED(port): agent CF - the save list is sorted newest first (2013 rva 0x6086f0 compares m_Time
+	// descending), so Continue is row 0. The body behind retail's exec is a vtable slot with no PDB name in
+	// either build; the row-0 choice is what the newest-first sort exists for and it is flagged as inferred
+	// in resources/docs/agents/agentCF.md.
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	FDisSaveGame* SaveGame = Engine ? Engine->GetSaveGame( 0 ) : NULL;
+	if( SaveGame == NULL )
+	{
+		return;
+	}
 	m_bLoadingGame = TRUE;
-	// DISHONORED(bringup): the slot comes from UDishonoredEngine's save list (GetSaveGame / HasSaveGame,
-	// 2012 0x6425f0 / 0x642540), which this tree does not declare; see the note in
-	// disgfxmovieplayermenubase.cpp.
+	Engine->Dis_Load( SaveGame->m_Slot );
 }
 
 // DISHONORED(port): 2012 rva 0x829090 - one console command, m_QuitGameCommand of the menu-base tweaks
@@ -329,10 +338,9 @@ void DisMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
 	}
 	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
 	const UBOOL bSaveLoadEnabled = Engine && Engine->m_bSaveLoadEnabled;
-	// DISHONORED(bringup): bHasSaveGame is UDishonoredEngine::HasSaveGame over the slots >= 10 (2012
-	// 0x642540); with no save list declared it is FALSE, which is what the asset shows for a first run -
-	// Continue and Load greyed out, New Game live.
-	const UBOOL bHasSaveGame = FALSE;
+	// DISHONORED(port): agent CF - retail's PostStart (2012 rva 0x821e00) computes exactly
+	// !Engine || Engine->HasSaveGame(0), i.e. a missing engine reads as "there is a save"
+	const UBOOL bHasSaveGame = ( Engine == NULL ) || Engine->HasSaveGame( 0 );
 
 	if( Menu->m_Screen == 1 )
 	{

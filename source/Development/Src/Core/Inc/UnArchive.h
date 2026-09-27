@@ -1903,8 +1903,11 @@ public:
 	 *
 	 * @param	InCompressedData [ref]	Array of bytes that is going to hold compressed data
 	 * @param	InCompressionFlags		Compression flags to use for compressing data
+	 * @param	InBufferSize			size of the uncompressed staging buffer, i.e. the compressed block size
 	 */
-	FArchiveSaveCompressedProxy( TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags );
+	// DISHONORED(port): 2013 rva 0x37610 - Arkane's proxy takes the block size; DisSaveLoad passes 0x10000 for every
+	// save-game blob, so a Dishonored save is a sequence of 64 KB compressed blocks (2013 0x612340 FGameState::Save)
+	FArchiveSaveCompressedProxy( TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags, INT InBufferSize = LOADING_COMPRESSION_CHUNK_SIZE );
 
 	/** Destructor, flushing array if needed. Also frees temporary memory. */
 	virtual ~FArchiveSaveCompressedProxy();
@@ -1970,7 +1973,8 @@ public:
 	 * @param	InCompressedData	Array of bytes that is holding compressed data
 	 * @param	InCompressionFlags	Compression flags that were used to compress data
 	 */
-	FArchiveLoadCompressedProxy( const TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags );
+	// DISHONORED(port): 2013 rva 0x38830 - the matching Arkane block size (DisSaveLoad passes 0x10000)
+	FArchiveLoadCompressedProxy( const TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags, INT InBufferSize = LOADING_COMPRESSION_CHUNK_SIZE );
 
 	/** Destructor, freeing temporary memory. */
 	virtual ~FArchiveLoadCompressedProxy();

@@ -600,7 +600,6 @@ set(DishonoredGame_EXCLUDE
   Src/disriverkrust.cpp
   Src/disriverkrustbodypart.cpp
   Src/disriverkrustcomponent.cpp
-  Src/dissavegame.cpp
   Src/disseqact_adddarkness.cpp
   Src/disseqact_addobjective.cpp
   Src/disseqact_aiclearattention.cpp

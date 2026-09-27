@@ -2463,7 +2463,7 @@ FArchive& FArchiveObjectReferenceCollector::operator<<( UObject*& Object )
  * @param	InCompressedData [ref]	Array of bytes that is going to hold compressed data
  * @param	InCompressionFlags		Compression flags to use for compressing data
  */
-FArchiveSaveCompressedProxy::FArchiveSaveCompressedProxy( TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags )
+FArchiveSaveCompressedProxy::FArchiveSaveCompressedProxy( TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags, INT InBufferSize )
 :	CompressedData(InCompressedData)
 ,	CompressionFlags(InCompressionFlags)
 {
@@ -2475,8 +2475,9 @@ FArchiveSaveCompressedProxy::FArchiveSaveCompressedProxy( TArray<BYTE>& InCompre
 	CurrentIndex						= 0;
 
 	// Allocate temporary memory.
-	TmpDataStart	= (BYTE*) appMalloc(LOADING_COMPRESSION_CHUNK_SIZE);
-	TmpDataEnd		= TmpDataStart + LOADING_COMPRESSION_CHUNK_SIZE;
+	// DISHONORED(port): 2013 rva 0x37610 - the block size is Arkane's ctor argument, not the loading constant
+	TmpDataStart	= (BYTE*) appMalloc(InBufferSize);
+	TmpDataEnd		= TmpDataStart + InBufferSize;
 	TmpData			= TmpDataStart;
 }
 
@@ -2603,7 +2604,7 @@ INT FArchiveSaveCompressedProxy::Tell()
  * @param	InCompressedData	Array of bytes that is holding compressed data
  * @param	InCompressionFlags	Compression flags that were used to compress data
  */
-FArchiveLoadCompressedProxy::FArchiveLoadCompressedProxy( const TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags )
+FArchiveLoadCompressedProxy::FArchiveLoadCompressedProxy( const TArray<BYTE>& InCompressedData, ECompressionFlags InCompressionFlags, INT InBufferSize )
 :	CompressedData(InCompressedData)
 ,	CompressionFlags(InCompressionFlags)
 {
@@ -2615,8 +2616,9 @@ FArchiveLoadCompressedProxy::FArchiveLoadCompressedProxy( const TArray<BYTE>& In
 	CurrentIndex						= 0;
 
 	// Allocate temporary memory.
-	TmpDataStart	= (BYTE*) appMalloc(LOADING_COMPRESSION_CHUNK_SIZE);
-	TmpDataEnd		= TmpDataStart + LOADING_COMPRESSION_CHUNK_SIZE;
+	// DISHONORED(port): 2013 rva 0x38830 - see the saving proxy; a Dishonored blob's blocks are 64 KB
+	TmpDataStart	= (BYTE*) appMalloc(InBufferSize);
+	TmpDataEnd		= TmpDataStart + InBufferSize;
 	TmpData			= TmpDataEnd;
 }
 

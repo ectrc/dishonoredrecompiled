@@ -71,6 +71,7 @@
 
 #include "DishonoredGame.h"
 #include "gfxui_gfx3.h"
+#include "dishonoredutilities_saveload.h"
 
 /** the movie view, or NULL when no movie is open - every leaf below starts here */
 static GFxMovieView* DisMenuView( UDisGFxMoviePlayerMenuBase* Menu )
@@ -217,6 +218,81 @@ static void DisShowSettingsCategoryList( UDisGFxMoviePlayerMenuBase* Menu )
 	Categories.ReleaseManaged();
 }
 
+// DISHONORED(port): 2012 rva 0x8137f0 (FindSaveName). "<autosave or quicksave prefix><localised map name>".
+// Retail reads the prefixes off m_pMenuBaseTweaks and the map name out of the localised MapNames config section
+// keyed by FMapConfig::m_Name. Retail has this as a protected method of the class; it is a file-static here for
+// the same reason agent BE made the other leaves static - UDisGFxMoviePlayerMenuBase has no CppText header and
+// adding one would need an edit to a generated header.
+static void DisFindSaveName( UDisGFxMoviePlayerMenuBase* Menu, const FDisSaveGame* SaveGame, FString& OutName )
+{
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	FMapConfig* MapConfig = Engine ? Engine->FindMapConfigFromFriendlyName( SaveGame->m_MapName ) : NULL;
+
+	// DISHONORED(bringup): m_pMenuBaseTweaks is a per-subclass tweaks pointer, so it is NULL until the tweak
+	// objects load; the census line in DisFillLoadGameMenu prints what was actually read.
+	if( SaveGame->m_Slot == DIS_SAVE_SLOT_FIRST_AUTO || SaveGame->m_Slot == DIS_SAVE_SLOT_FIRST_AUTO + 1 )
+	{
+		OutName = Menu->m_pMenuBaseTweaks ? Menu->m_pMenuBaseTweaks->m_AutosavePrefix : FString();
+	}
+	else if( SaveGame->m_Slot == DIS_SAVE_SLOT_QUICK )
+	{
+		OutName = Menu->m_pMenuBaseTweaks ? Menu->m_pMenuBaseTweaks->m_QuicksavePrefix : FString();
+	}
+	else
+	{
+		OutName = FString();
+	}
+
+	if( MapConfig )
+	{
+		// retail looks the map name up in the localised MapNames section keyed by FMapConfig::m_Name
+		const FString Localised = Localize( TEXT("MapNames"), *MapConfig->m_Name, TEXT("DishonoredGame"), NULL, TRUE );
+		if( Localised.Len() > 0 )
+		{
+			OutName += Localised;
+			return;
+		}
+		// the friendly name is what the save file itself carries, and it is what the map list is keyed on
+		OutName += MapConfig->m_FriendlyName;
+		return;
+	}
+	OutName += SaveGame->m_MapName.Len() > 0 ? SaveGame->m_MapName : FString( TEXT("UNKNOWN") );
+}
+
+// DISHONORED(port): 2012 rva 0x806880 (FormatSaveDate) - m_DateFormat with day / month / year / hour / minute
+// replaced in place from localtime of the file's mtime
+static void DisFormatSaveDate( UDisGFxMoviePlayerMenuBase* Menu, const FDisSaveGame* SaveGame, FString& OutDate )
+{
+	OutDate = Menu->m_pMenuBaseTweaks ? Menu->m_pMenuBaseTweaks->m_DateFormat : FString( TEXT("day/month/year hour:minute") );
+	const __time64_t SaveTime = (__time64_t)SaveGame->m_Time;
+	struct tm* Local = _localtime64( &SaveTime );
+	if( Local == NULL )
+	{
+		return;
+	}
+	OutDate.ReplaceInline( TEXT("day"), *FString::Printf( TEXT("%02i"), Local->tm_mday ) );
+	OutDate.ReplaceInline( TEXT("month"), *FString::Printf( TEXT("%02i"), Local->tm_mon + 1 ) );
+	OutDate.ReplaceInline( TEXT("year"), *FString::Printf( TEXT("%02i"), Local->tm_year + 1900 ) );
+	OutDate.ReplaceInline( TEXT("hour"), *FString::Printf( TEXT("%02i"), Local->tm_hour ) );
+	OutDate.ReplaceInline( TEXT("minute"), *FString::Printf( TEXT("%02i"), Local->tm_min ) );
+}
+
+// DISHONORED(port): 2012 rva 0x7f7120 (FindSaveImagePath) - "img://<package>.MissionsScreen_<image>_Small"
+static void DisFindSaveImagePath( UDisGFxMoviePlayerMenuBase* Menu, const FDisSaveGame* SaveGame, FString& OutPath, UBOOL bLarge )
+{
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	FMapConfig* MapConfig = Engine ? Engine->FindMapConfigFromFriendlyName( SaveGame->m_MapName ) : NULL;
+	OutPath = TEXT("img://");
+	if( MapConfig == NULL || MapConfig->m_ImageName.Len() == 0 || Menu->m_pMenuBaseTweaks == NULL )
+	{
+		return;
+	}
+	OutPath += bLarge ? Menu->m_pMenuBaseTweaks->m_MapLargeImagePackage : Menu->m_pMenuBaseTweaks->m_MapSmallImagePackage;
+	OutPath += TEXT(".MissionsScreen_");
+	OutPath += MapConfig->m_ImageName;
+	OutPath += bLarge ? TEXT("_Large") : TEXT("_Small");
+}
+
 // DISHONORED(port): 2012 rva 0x815830 (FillLoadGameMenu) + 0x813930 (CreateGFxLoadGameList). The list is an
 // AS2 array of objects with chapterName / saveDate / itemThumb, pushed into _root.loadGame_mc.SetLoadGame,
 // and m_LoadGameSlots is the parallel array of real save slots that OnLoadGameConfirm indexes.
@@ -231,12 +307,46 @@ static void DisFillLoadGameMenu( UDisGFxMoviePlayerMenuBase* Menu )
 
 	GFxValue LoadGameList;
 	View->CreateArray( &LoadGameList );
-	// DISHONORED(bringup): retail walks UDishonoredEngine::GetSaveGame(0) .. and for every slot >= 10 pushes
-	// { chapterName = FindSaveName(SaveGame), saveDate = FormatSaveDate(SaveGame),
-	//   itemThumb = "img://" + m_pMenuBaseTweaks->m_MapSmallImagePackage + ".MissionsScreen_" +
-	//   MapConfig->m_ImageName + "_Small" } while recording SaveGame->m_Slot in m_LoadGameSlots.
-	// FDisSaveGame is not declared in this tree and UDishonoredEngine has no reflected save list, so the
-	// list is sent empty - which is exactly what the asset shows when there is nothing to load.
+
+	// DISHONORED(port): agent CF - the save list is real now (2012 0x813930). Retail walks GetSaveGame(0)..
+	// until it returns NULL, keeps every row whose slot is a user slot, and records the slot in
+	// m_LoadGameSlots so OnLoadGameConfirm can turn a row index back into a slot.
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	INT SaveListIdx = 0;
+	for( FDisSaveGame* SaveGame = Engine ? Engine->GetSaveGame( SaveListIdx ) : NULL;
+		 SaveGame != NULL;
+		 SaveGame = Engine->GetSaveGame( ++SaveListIdx ) )
+	{
+		if( SaveGame->m_Slot < DIS_SAVE_SLOT_FIRST_AUTO )
+		{
+			continue;
+		}
+		FString SaveName;
+		FString FormattedDate;
+		FString SaveImagePath;
+		DisFindSaveName( Menu, SaveGame, SaveName );
+		DisFormatSaveDate( Menu, SaveGame, FormattedDate );
+		DisFindSaveImagePath( Menu, SaveGame, SaveImagePath, FALSE );
+
+		GFxValue Entry;
+		View->CreateObject( &Entry );
+		DisSetGFxString( Entry, "chapterName", SaveName );
+		DisSetGFxString( Entry, "saveDate", FormattedDate );
+		DisSetGFxString( Entry, "itemThumb", SaveImagePath );
+		LoadGameList.PushBack( Entry );
+		Entry.ReleaseManaged();
+
+		Menu->m_LoadGameSlots.AddItem( SaveGame->m_Slot );
+	}
+	// instrumentation, because m_pMenuBaseTweaks is a per-subclass pointer and reading it through the base is
+	// exactly the trap that has caught two agents on this tree
+	warnf( TEXT("DisFillLoadGameMenu: %d of %d saves listed, tweaks %s (autosave '%s' quicksave '%s' date '%s' small '%s')"),
+		Menu->m_LoadGameSlots.Num(), SaveListIdx,
+		Menu->m_pMenuBaseTweaks ? *Menu->m_pMenuBaseTweaks->GetPathName() : TEXT("NULL"),
+		Menu->m_pMenuBaseTweaks ? *Menu->m_pMenuBaseTweaks->m_AutosavePrefix : TEXT(""),
+		Menu->m_pMenuBaseTweaks ? *Menu->m_pMenuBaseTweaks->m_QuicksavePrefix : TEXT(""),
+		Menu->m_pMenuBaseTweaks ? *Menu->m_pMenuBaseTweaks->m_DateFormat : TEXT(""),
+		Menu->m_pMenuBaseTweaks ? *Menu->m_pMenuBaseTweaks->m_MapSmallImagePackage : TEXT("") );
 
 	GFxValue LoadGame;
 	if( View->GetVariable( &LoadGame, "_root.loadGame_mc" ) )
@@ -304,9 +414,11 @@ void UDisGFxMoviePlayerMenuBase::execOnDeleteSaveConfirm( FFrame& Stack, RESULT_
 	P_FINISH;
 
 	m_bLoadGameListDirty = TRUE;
-	if( m_LoadGameSlots.IsValidIndex( _ListIdx ) )
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	if( Engine && m_LoadGameSlots.IsValidIndex( _ListIdx ) )
 	{
-		// DISHONORED(bringup): UDishonoredEngine::DeleteSaveGame(m_LoadGameSlots(_ListIdx)) (2012 0x642660)
+		// DISHONORED(port): agent CF - 2013 rva 0x5fbc80 queues the async deleter and sets SLC_WaitDeleting
+		Engine->DeleteSaveGame( m_LoadGameSlots(_ListIdx) );
 	}
 }
 
@@ -323,9 +435,9 @@ void UDisGFxMoviePlayerMenuBase::execReq_CanLoadGame( FFrame& Stack, RESULT_DECL
 {
 	P_FINISH;
 	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
-	// DISHONORED(bringup): retail asks UDishonoredEngine::HasSaveGame for any slot >= 10 (2012 0x642540);
-	// with no save list declared the honest answer is "nothing to load".
-	*(UBOOL*)Result = ( Engine && m_LoadGameSlots.Num() > 0 ) ? TRUE : FALSE;
+	// DISHONORED(port): agent CF - the whole body of retail's Req_CanLoadGame (2013 rva 0x7c25e0, reached
+	// through the exec at 0x5f7960) is "is there an engine and does it have any save at all"
+	*(UBOOL*)Result = ( Engine && Engine->HasSaveGame( 0 ) ) ? TRUE : FALSE;
 }
 
 // DISHONORED(port): 2012 rva 0x5f7920 exec / 0x62bb50 body - the engine's own m_bSaveLoadEnabled bit, which

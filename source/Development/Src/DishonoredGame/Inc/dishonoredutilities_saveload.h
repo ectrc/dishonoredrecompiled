@@ -1,138 +1,301 @@
 #pragma once
 // DishonoredGame/inc/dishonoredutilities_saveload.h
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (133):
-//   0x641630  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisTaskTargetsSaveData>(wchar_t const *)
-//   0x66eec0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisPhysicsContactInfo>(wchar_t const *)
-//   0x66ef50  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisAudioCellCache>(wchar_t const *)
-//   0x696750  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisNPCDeathInfo>(wchar_t const *)
-//   0x696830  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisSpawnInfo>(wchar_t const *)
-//   0x696960  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FRiverKrustSeenActorInfo>(wchar_t const *)
-//   0x6b5d50  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FImmolationParams>(wchar_t const *)
-//   0x701280  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAchievementTracker>(wchar_t const *)
-//   0x701390  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisCollectedWhaleBoneCharm>(wchar_t const *)
-//   0x701600  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisConvSaveData>(wchar_t const *)
-//   0x701690  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisStoryFlagInstance>(wchar_t const *)
-//   0x7018b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisPlayerStealthSaveVars>(wchar_t const *)
-//   0x701940  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisKeyInfo>(wchar_t const *)
-//   0x7019d0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisRelationshipPair>(wchar_t const *)
-//   0x76a010  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_BrainInit>(wchar_t const *)
-//   0x76a0a0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_AttackedByEnemy>(wchar_t const *)
-//   0x76a130  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_BattleVictory>(wchar_t const *)
-//   0x76a1c0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_MeleeConnected_Outgoing>(wchar_t const *)
-//   0x76a250  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TouchedEnemy>(wchar_t const *)
-//   0x76a2e0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TouchedAlly>(wchar_t const *)
-//   0x76a370  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TouchedNeutral>(wchar_t const *)
-//   0x76a400  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Traveled>(wchar_t const *)
-//   0x76a490  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EvadedMelee_Incoming>(wchar_t const *)
-//   0x76a520  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EvadedMelee_Outgoing>(wchar_t const *)
-//   0x76a5b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_HeardSomething>(wchar_t const *)
-//   0x76a640  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_HeardCorpseSplat>(wchar_t const *)
-//   0x76a6d0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_HeadTrackBegin>(wchar_t const *)
-//   0x76a760  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_HeadTrackEnd>(wchar_t const *)
-//   0x76a7f0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SearchRequest>(wchar_t const *)
-//   0x76a880  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SetMinAttentionForTarget>(wchar_t const *)
-//   0x76a910  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Help>(wchar_t const *)
-//   0x76a9a0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_HelpFromRats>(wchar_t const *)
-//   0x76aa30  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Alarm>(wchar_t const *)
-//   0x76aac0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_AllyBusted>(wchar_t const *)
-//   0x76ab50  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DiscoveredCorpse>(wchar_t const *)
-//   0x76abe0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_GoToRequest>(wchar_t const *)
-//   0x76ac70  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_FollowRequest>(wchar_t const *)
-//   0x76ad00  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ForceRingAlarm>(wchar_t const *)
-//   0x76ad90  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_BehaviorAbort>(wchar_t const *)
-//   0x76ae20  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_GuardRequest>(wchar_t const *)
-//   0x76aeb0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ShootRequest>(wchar_t const *)
-//   0x76af40  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PatrolRequest>(wchar_t const *)
-//   0x76afd0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PatrolSearchRequest>(wchar_t const *)
-//   0x76b060  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_IdleRequest>(wchar_t const *)
-//   0x76b0f0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_BlockingDialogRequest>(wchar_t const *)
-//   0x76b180  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_BlockingDialogEnd>(wchar_t const *)
-//   0x76b210  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Distracted_Anim>(wchar_t const *)
-//   0x76b2a0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Distracted_HeadLook>(wchar_t const *)
-//   0x76b330  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DocileRatIsNear>(wchar_t const *)
-//   0x76b3c0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DoorUsedByPlayer>(wchar_t const *)
-//   0x76b450  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DoorUsedByPlayerWhileWary>(wchar_t const *)
-//   0x76b4e0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EndDistracted>(wchar_t const *)
-//   0x76b570  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EndPossession>(wchar_t const *)
-//   0x76b600  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_InteractBegin>(wchar_t const *)
-//   0x76b690  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_InteractEnd>(wchar_t const *)
-//   0x76b720  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PathingSuccess>(wchar_t const *)
-//   0x76b7b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PathingFail>(wchar_t const *)
-//   0x76b840  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DestinationReached>(wchar_t const *)
-//   0x76b8d0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DifficultyChanged>(wchar_t const *)
-//   0x76b960  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DialogAttentionChange>(wchar_t const *)
-//   0x76b9f0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_RotationReached>(wchar_t const *)
-//   0x76ba80  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Stolen>(wchar_t const *)
-//   0x76bb10  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SuspicionLevelChanged>(wchar_t const *)
-//   0x76bba0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TargetSighted>(wchar_t const *)
-//   0x76bc30  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TargetTouched>(wchar_t const *)
-//   0x76bcc0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TargetUnsighted>(wchar_t const *)
-//   0x76bd50  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Panicked>(wchar_t const *)
-//   0x76bde0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Intimidated>(wchar_t const *)
-//   0x76be70  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SightedRatSwarm>(wchar_t const *)
-//   0x76bf00  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_RelationshipChanged>(wchar_t const *)
-//   0x76bf90  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ReturnTravelRequest>(wchar_t const *)
-//   0x76c020  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PlayerUsed>(wchar_t const *)
-//   0x76c0b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ProjectileLaunched>(wchar_t const *)
-//   0x76c140  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PsychicAttentionEnabled>(wchar_t const *)
-//   0x76c1d0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PsychicAttentionDisabled>(wchar_t const *)
-//   0x76c260  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PsychicAttentionDisabled_AllTargets>(wchar_t const *)
-//   0x76c2f0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Soiree>(wchar_t const *)
-//   0x76c380  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SoireeRejected>(wchar_t const *)
-//   0x76c410  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TetherRequest>(wchar_t const *)
-//   0x76c4a0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ReachabilityChange>(wchar_t const *)
-//   0x76c530  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ShownRangedThreat>(wchar_t const *)
-//   0x76c5c0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EnemyBusted>(wchar_t const *)
-//   0x76c650  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EscapedBeingChoked>(wchar_t const *)
-//   0x76c6e0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_EscapedBeingPossessed>(wchar_t const *)
-//   0x76c770  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_NoticeBegin>(wchar_t const *)
-//   0x76c800  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_NoticeEnd>(wchar_t const *)
-//   0x76c890  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_NoticeRequest>(wchar_t const *)
-//   0x76c920  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_NPCReachAttentionLevel>(wchar_t const *)
-//   0x76c9b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ScrambleRequest>(wchar_t const *)
-//   0x76ca40  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SearchBegin>(wchar_t const *)
-//   0x76cad0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SearchEnd>(wchar_t const *)
-//   0x76cb60  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_SearchReachedProxy>(wchar_t const *)
-//   0x76cbf0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_CombatBegin>(wchar_t const *)
-//   0x76cc80  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_CombatEnd>(wchar_t const *)
-//   0x76cd10  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_CombatEngageRejected>(wchar_t const *)
-//   0x76cda0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_AmbushRequest>(wchar_t const *)
-//   0x76ce30  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_AmbushAbortRequest>(wchar_t const *)
-//   0x76cec0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PlagueZone>(wchar_t const *)
-//   0x76cf50  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ItemContext_End>(wchar_t const *)
-//   0x76cfe0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ItemContext_Start>(wchar_t const *)
-//   0x76d070  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_LocoPushedByPlayer>(wchar_t const *)
-//   0x76d100  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_MaxOutAttention>(wchar_t const *)
-//   0x76d190  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ImpendingExplosion>(wchar_t const *)
-//   0x76d220  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_IncomingDamage>(wchar_t const *)
-//   0x76d2b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Explosion>(wchar_t const *)
-//   0x76d340  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_DeathByWoL>(wchar_t const *)
-//   0x76d3d0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_WitnessDeath>(wchar_t const *)
-//   0x76d460  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_WitnessMagic>(wchar_t const *)
-//   0x76d4f0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TopAttnProxyReplaced>(wchar_t const *)
-//   0x76d580  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_TopAttnProxyUpdated>(wchar_t const *)
-//   0x76d610  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_CombatToSearch>(wchar_t const *)
-//   0x76d6a0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PlayerMessingWithActor>(wchar_t const *)
-//   0x76d730  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ActivateAlarm>(wchar_t const *)
-//   0x76d7c0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ActorTamperedWith>(wchar_t const *)
-//   0x76d850  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ReactionRequest>(wchar_t const *)
-//   0x76d8e0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_CarryCorpseOrBodyPart>(wchar_t const *)
-//   0x76d970  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ClearAllMinAttention>(wchar_t const *)
-//   0x76da00  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ClearAttention>(wchar_t const *)
-//   0x76da90  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_ClearMinAttentionForTarget>(wchar_t const *)
-//   0x76db20  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_CoordinatedAttackRequest>(wchar_t const *)
-//   0x76dbb0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_NoMoreWolfHoundInFight>(wchar_t const *)
-//   0x76dc40  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_PlayerHideoutTransition>(wchar_t const *)
-//   0x76dcd0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_WitnessPickpocket>(wchar_t const *)
-//   0x76dd60  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FAIStimStruct_Teleported>(wchar_t const *)
-//   0x791cb0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisAttentionPendingChange>(wchar_t const *)
-//   0x7af380  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisSpawnerInfo>(wchar_t const *)
-//   0x7af410  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisSleepDamageInfo>(wchar_t const *)
-//   0x7ce1b0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisSpotlightManager>(wchar_t const *)
-//   0x84ee00  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisInventoryLoadout>(wchar_t const *)
-//   0x88b930  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisProjectileHomingData>(wchar_t const *)
-//   0x88ba10  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FRBCollisionChannelContainer>(wchar_t const *)
-//   0x8daef0  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisAttributeModifier>(wchar_t const *)
-//   0x8fa880  class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisDialogRunningInstance>(wchar_t const *)
+// The save/load layer of DishonoredGame. Retail declares all of DisSaveLoad here (the PDB attributes every
+// _DishonoredGetScriptStruct<> instantiation of the module to this header, which is how we know it is the one
+// save header the module includes); there is no dissavegame.h in the retail source list.
+// Ported by agent CF (PHASE9 CF). Layouts are the 2012 Shipping PDB (DIA dump, build/agentCF/types_saveload.txt);
+// bodies are the 2013 retail decompiles, with the 2012 decompile beside them where retail has no match.
+//
+// The file format this header describes, proved against all 51 retail .sav files on this machine
+// (build/agentCF/parse_sav.py, and DisSaveGameSelfTest below):
+//   INT     SaveLoadVersion   == GBuiltFromChangeList, must be >= 258971 and <= ours
+//   INT     SaveVersion       == 24 (DIS_SAVE_VERSION), only present when SaveLoadVersion > 258971
+//   FString SaveDetails       the FMapConfig friendly name, e.g. "1 - Coldridge Prison"
+//   INT     DLCMask           UArkDLCManagementBridge's installed-content bits
+//   BYTE    bHasObjectMarkers
+//   TArray<BYTE> CompressedStringDictionary   (64 KB zlib blocks)
+//   TArray<BYTE> CompressedGameState          (64 KB zlib blocks)
+//   per level state, in m_LevelStates order:
+//     TArray<BYTE> CompressedObjectDictionary
+//     TArray<BYTE> CompressedObjectData
+
+// DISHONORED(layout): 2012 PDB enum ESaveLoadLocation (4 bytes). Not reflected, so it is C++ only.
+enum ESaveLoadLocation
+{
+	SLL_MEMORY_PARTIAL	= 0,
+	SLL_MEMORY_COMPLETE	= 1,
+	SLL_FILE			= 2,
+};
+
+// DISHONORED(port): 2013 rva 0x614020 (DisSaveLoad::FGameState::Load's version gate). A save older than 15 or
+// newer than 24 is refused; 258971 is the changelist below which the version INT is not in the file at all.
+#define DIS_SAVE_VERSION			24
+#define DIS_SAVE_VERSION_MIN		15
+#define DIS_SAVE_CHANGELIST_MIN		258971
+
+// Slot numbering, from the 2013 name builder (rva 0x5fb660), GDisSaveGameSlotNames (2012 0xe34180),
+// GetNextAutoSaveSlot (2013 0x60b050, which writes 13 and 14) and GetNextUserSaveSlot (2013 0x5fb930, which
+// keys a 40-entry bitmap on Slot - 16). 2013 put three slots in front of the 2012 numbering, which is why
+// Dis_Load clamps to 0..55 and not 2012's 0..52:
+//   1      OPTIONS                 (the profile blob, not a game save)
+//   2, 3   DLC02_LOW_AUTOSAVE, DLC02_HIGH_AUTOSAVE
+//   4..12  DisMission0..8          the per-mission checkpoints
+//   13, 14 DisAutoSave0, 1
+//   15     DisQuickSave
+//   16..55 Dishonored0..39         the user slots, and the only ones the load list shows
+// Every name above slot 3 also takes the campaign prefix: "" for the base game, "DLC02_" for The Knife of
+// Dunwall and "DLC03_" for The Brigmore Witches.
+#define DIS_SAVE_SLOT_OPTIONS			1
+#define DIS_SAVE_SLOT_DLC02_LOW			2
+#define DIS_SAVE_SLOT_DLC02_HIGH		3
+#define DIS_SAVE_SLOT_FIRST_NAMED		4
+#define DIS_SAVE_SLOT_FIRST_AUTO		13
+#define DIS_SAVE_SLOT_QUICK				15
+#define DIS_SAVE_SLOT_FIRST_USER		16
+#define DIS_SAVE_SLOT_NUM_USER			40
+#define DIS_SAVE_SLOT_MAX				(DIS_SAVE_SLOT_FIRST_USER + DIS_SAVE_SLOT_NUM_USER - 1)
+
+/** DISHONORED(layout): 2012 PDB GDisSaveGameSlotNames, const wchar_t*[12] @0xe34180 (slots 1..12) */
+extern const TCHAR* GDisSaveGameSlotNames[12];
+
+/** DISHONORED(port): 2012 rva 0x63ed20 - the slot a save file's base name belongs to, 0 when it is not one of ours */
+INT GetSaveGameSlot( const TCHAR* _Path );
+
+/** DISHONORED(written): the directory the lister scans and the writer writes: appGameDir() + SaveData\ through the
+    file manager's absolute/user mapping (2012 0x64f3b0, 2013 0x614e20) */
+FString DisGetSaveGameDir();
+/** DISHONORED(written): DisGetSaveGameDir() + the slot's base name + ".sav" (2013 deleter 0x601950) */
+FString DisGetSaveGamePath( INT _Slot );
+/** DISHONORED(written): the base name of a slot, i.e. GDisSaveGameSlotNames[Slot-1] or Dishonored<Slot-13> */
+FString DisGetSaveGameSlotName( INT _Slot );
+
+/** DISHONORED(layout): 2012 PDB FDisSaveGame, sizeof 32. One row of UDishonoredEngine's save list. */
+struct FDisSaveGame
+{
+	INT		m_Slot;
+	QWORD	m_Time;
+	INT		m_MissionIndex;
+	FString	m_MapName;
+	UBOOL	m_bIsOwner;
+
+	FDisSaveGame()
+	:	m_Slot(0)
+	,	m_Time(0)
+	,	m_MissionIndex(-1)
+	,	m_bIsOwner(FALSE)
+	{}
+};
+
+/** DISHONORED(port): 2013 rva 0x4790 .. 0x48d0 - Arkane's queued-work base, retail Core/Src/UnAsyncWork.cpp:22.
+    Declared here because this tree's Core/Inc/UnAsyncWork.h is the reference one and has no FAsyncWorkBase; fold it
+    back into Core when that header is reconciled. */
+class FAsyncWorkBase : public FQueuedWork
+{
+public:
+	FAsyncWorkBase( FThreadSafeCounter* InWorkCompletionCounter, const TCHAR* InTaskName );
+	virtual ~FAsyncWorkBase();
+
+	virtual void DoThreadedWork();
+	virtual void Abandon() {}
+	virtual void DoWork() = 0;
+	virtual void Dispose();
+
+	UBOOL IsDone();
+
+protected:
+	FEvent*				DoneEvent;
+	FThreadSafeCounter*	WorkCompletionCounter;
+};
+
+/** DISHONORED(layout): 2012 PDB FDisAsyncSaveGameLister, sizeof 40 (2013 allocates 0x40 and also carries the DLC
+    campaign file-name prefix, 2013 rva 0x608ef0). Scans the save directory and reads each file's header. */
+class FDisAsyncSaveGameLister : public FAsyncWorkBase
+{
+public:
+	FDisAsyncSaveGameLister();
+
+	virtual void DoWork();
+	void Wait();
+
+	TArray<FDisSaveGame>	m_SaveGames;
+	DOUBLE					m_fStartTime;
+	DOUBLE					m_fEndTime;
+	/** 2013 only (the two DWORDs its constructor zeroes): the DLC02 chaos-marker files exist */
+	UBOOL					m_bDLC02LowChaosFound;
+	UBOOL					m_bDLC02HighChaosFound;
+};
+
+/** DISHONORED(layout): 2012 PDB FDisAsyncSaveGameDeleter, sizeof 28 */
+class FDisAsyncSaveGameDeleter : public FAsyncWorkBase
+{
+public:
+	FDisAsyncSaveGameDeleter( const TCHAR* _SaveGamePath );
+
+	virtual void DoWork();
+
+	FString	m_SaveGamePath;
+	UBOOL	m_bSucceeded;
+};
+
+namespace DisSaveLoad
+{
+	/** DISHONORED(layout): 2012 PDB DisSaveLoad::FDeletedActor, sizeof 16 */
+	struct FDeletedActor
+	{
+		FName m_LevelName;
+		FName m_ActorName;
+
+		FDeletedActor()
+		:	m_LevelName(NAME_None)
+		,	m_ActorName(NAME_None)
+		{}
+
+		UBOOL operator==( const FDeletedActor& Other ) const
+		{
+			return m_LevelName == Other.m_LevelName && m_ActorName == Other.m_ActorName;
+		}
+	};
+
+	/** DISHONORED(layout): 2012 PDB DisSaveLoad::FSubLevelState, sizeof 12 */
+	struct FSubLevelState
+	{
+		FName	m_PackageName;
+		BYTE	m_Flags;
+
+		FSubLevelState()
+		:	m_PackageName(NAME_None)
+		,	m_Flags(0)
+		{}
+	};
+
+	/** DISHONORED(layout): 2012 PDB DisSaveLoad::FLevelState, sizeof 56 */
+	struct FLevelState
+	{
+		FName				m_LevelName;
+		FName				m_PackageName;
+		ESaveLoadLocation	m_Location;
+		WORD				m_NumObjects;
+		WORD				m_NumSavedObjects;
+		WORD				m_NumSharedObjects;
+		WORD				m_NumSavedSharedObjects;
+		TArray<BYTE>		m_CompressedObjectDictionary;
+		TArray<BYTE>		m_CompressedObjectData;
+		INT					m_SaveVersion;
+
+		FLevelState()
+		:	m_LevelName(NAME_None)
+		,	m_PackageName(NAME_None)
+		,	m_Location(SLL_FILE)
+		,	m_NumObjects(0)
+		,	m_NumSavedObjects(0)
+		,	m_NumSharedObjects(0)
+		,	m_NumSavedSharedObjects(0)
+		,	m_SaveVersion(DIS_SAVE_VERSION)
+		{}
+	};
+
+	/** DISHONORED(layout): 2012 PDB DisSaveLoad::FGameStateData, sizeof 36 */
+	struct FGameStateData
+	{
+		FName					m_RootLevelName;
+		TArray<FSubLevelState>	m_SubLevels;
+		FString					m_SaveDetails;
+		INT						m_nMissionIndex;
+
+		FGameStateData()
+		:	m_RootLevelName(NAME_None)
+		,	m_nMissionIndex(-1)
+		{}
+	};
+
+	/** DISHONORED(layout): 2012 PDB DisSaveLoad::FStringDictionary, sizeof 72. Index 0 is always NAME_None: the
+	    constructor interns it, which is why every saved index is >= 1. */
+	class FStringDictionary
+	{
+	public:
+		FStringDictionary();										// 2013 rva 0x612f30
+
+		WORD GetStringIndex( const FName& _rName );					// 2013 rva 0x611ab0
+		void Save( FArchive& _rArchive );							// 2013 rva 0x5fe5a0
+		void Load( FArchive& _rArchive );							// 2013 rva 0x611fb0
+		void LoadFName( FArchive& _rArchive, FName& _rName );		// 2013 rva 0x5fe700
+		void Clear();												// 2013 rva 0x612130
+
+		INT Num() const { return m_Names.Num(); }
+		FName GetName( INT _Index ) const;
+
+	private:
+		void Init( INT _NumNames );									// 2013 rva 0x611f40
+
+		TArray<INT>		m_Names;
+		TMap<INT,WORD>	m_Dictionary;
+	};
+
+	/** DISHONORED(layout): 2012 PDB DisSaveLoad::FGameState, sizeof 136. 2013 allocates 0xC0 and adds the three
+	    failure flags, the save version and the DLC mask this header keeps at the end (2013 rva 0x614020 writes
+	    +136 / +140 / +144 / +152). */
+	class FGameState
+	{
+	public:
+		FGameState();
+		~FGameState();
+
+		/** 2013 rva 0x612340 - the whole container: header, dictionary, game state, then each level's two blobs */
+		void Save( FArchive& _rArchive, const FString& _rSaveDetails );
+		/** 2013 rva 0x614020 - the reading half, including retail's changelist / version / content gates */
+		UBOOL Load( FArchive& _rArchive );
+		/** 2013 rva 0x5ea560 (2012 0x6300f0) - the header-only read the save lister uses */
+		static UBOOL LoadMapName( FArchive& _rArchive, FString& _rMapName );
+
+		INT findLevelIndex( const FName& _rLevelName ) const;		// 2013 rva 0x5fe7a0
+		void discardLevelState( INT _Index );						// 2013 rva 0x6122c0
+		void DiscardLevelState( const FName& _rLevelName );			// 2013 rva 0x613f10
+		void DiscardAllLevelStates();
+
+		FStringDictionary&		GetStringDictionary()			{ return m_StringDictionary; }
+		FGameStateData&			GetData()						{ return m_GameStateData; }
+		const FGameStateData&	GetData() const					{ return m_GameStateData; }
+		INT						NumLevelStates() const			{ return m_LevelStates.Num(); }
+		FLevelState&			GetLevelState( INT _Index )		{ return *m_LevelStates(_Index); }
+		const FLevelState&		GetLevelState( INT _Index ) const{ return *m_LevelStates(_Index); }
+		FLevelState&			AddLevelState();
+		TArray<FDeletedActor>&	GetDeletedActors()				{ return m_DeletedActors; }
+
+		UBOOL IsCorrupt() const			{ return m_bCorrupt; }
+		UBOOL IsNewerThanBuild() const	{ return m_bSaveIsNewer; }
+		UBOOL IsMissingContent() const	{ return m_bMissingContent; }
+		INT GetSaveVersion() const		{ return m_SaveVersion; }
+		INT GetDLCMask() const			{ return m_DLCMask; }
+
+	private:
+		FStringDictionary		m_StringDictionary;
+		TArray<FLevelState*>	m_LevelStates;
+		TArray<FDeletedActor>	m_DeletedActors;
+		FGameStateData			m_GameStateData;
+		UBOOL					m_bIsLoadingLevelState;
+		UBOOL					m_bSaveIsNewer;
+		UBOOL					m_bMissingContent;
+		UBOOL					m_bCorrupt;
+		INT						m_SaveVersion;
+		INT						m_DLCMask;
+	};
+
+	/** DISHONORED(port): 2013 rva 0x5ea500 - a sub-level whose streaming object is not shared between save slots */
+	UBOOL IsSubLevelUnshared( const ULevel* _pLevel );
+
+} // namespace DisSaveLoad
+
+/** DISHONORED(port): 2013 rva 0x7e6ce0 (2012 0x8245e0) - the level's package name, or the persistent level's */
+FName DisGetLevelName( class ULevel* _pLevel );
+/** DISHONORED(port): 2013 rva 0x7ef1e0 (2012 0x82f2e0) */
+class ULevel* DisFindLevelFromName( const FName& _rLevelName );
+/** DISHONORED(port): 2013 rva 0x7ef0c0 (2012 0x82f1c0) */
+class ULevel* DisGetCurrentLevel();
+
+/** DISHONORED(written): the current installed-content mask retail writes into the save header, from
+    UGameEngine::DLCManagementBridge (2013 rva 0xb7aa0 over the bridge's per-entry state bytes) */
+INT DisGetInstalledContentMask();
+
+/** DISHONORED(written): -savetest - reads every save in the directory through the ported container and, with
+    -savetestwrite, writes one back out and re-reads it. Defined in dishonoredengine.cpp. */
+void DisSaveGameSelfTest();
