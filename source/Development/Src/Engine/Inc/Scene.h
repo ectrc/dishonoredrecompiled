@@ -963,6 +963,17 @@ struct FPrimitiveViewRelevance
 	BITFIELD bDynamicLitTranslucencyPostRenderDepthPass : 1;
 	/** The primitive has one or more distortion elements. */
 	BITFIELD bDistortionRelevance : 1;
+	/**
+	 * The primitive has one or more bloom-part elements.
+	 * DISHONORED(layout): 2012 PDB FPrimitiveViewRelevance bit 15, right after bDistortionRelevance (bit 14), read as
+	 * mRaw & 0x8000 by ProcessVisible (2013 rva 0x45f060) and FArkBloomPartPrimSet::DrawBloomPrims (0x524f00). Ours
+	 * cannot land on bit 15 as well, because this struct still carries the six reference-engine members retail does not
+	 * have (bStaticButFadingRelevance, bInheritDominantShadowsRelevance, bSceneTextureRenderBehindTranslucency,
+	 * bTranslucencyDoFRelevance, bSeparateTranslucencyRelevance, bInitializedThisFrame) and lacks retail's mRaw,
+	 * bUsesDynamicMeshElementData and iSoulRenderingRelevance. Nothing reads the word as a word here, so the position
+	 * relative to bDistortionRelevance is what is reproduced.
+	 */
+	BITFIELD bBloomPartRelevance : 1;
 	/** The primitive has one or more one-layer distortion elements. */
 	BITFIELD bOneLayerDistortionRelevance : 1;
 	/** The primitive has one or more elements with the material setting bTranslucencyInheritDominantShadowsFromOpaque enabled. */
@@ -1010,6 +1021,7 @@ struct FPrimitiveViewRelevance
 		bDynamicLitTranslucencyPrepass(FALSE),
 		bDynamicLitTranslucencyPostRenderDepthPass(FALSE),
 		bDistortionRelevance(FALSE),
+		bBloomPartRelevance(FALSE),
 		bOneLayerDistortionRelevance(FALSE),
 		bInheritDominantShadowsRelevance(FALSE),
 		bLightingRelevance(FALSE),
@@ -1041,6 +1053,7 @@ struct FPrimitiveViewRelevance
 		bDynamicLitTranslucencyPrepass |= B.bDynamicLitTranslucencyPrepass != 0;
 		bDynamicLitTranslucencyPostRenderDepthPass |= B.bDynamicLitTranslucencyPostRenderDepthPass != 0;
 		bDistortionRelevance |= B.bDistortionRelevance != 0;
+		bBloomPartRelevance |= B.bBloomPartRelevance != 0;
 		bOneLayerDistortionRelevance |= B.bOneLayerDistortionRelevance != 0;
 		bInheritDominantShadowsRelevance |= B.bInheritDominantShadowsRelevance != 0;
 		bLightingRelevance |= B.bLightingRelevance != 0;
@@ -1113,6 +1126,13 @@ public:
 	BITFIELD bMasked : 1;
 	BITFIELD bTranslucency : 1;
 	BITFIELD bDistortion : 1;
+	/**
+	 * DISHONORED(layout): 2012 PDB FMaterialViewRelevance bit 4, exactly here - between bDistortion and
+	 * bOneLayerDistortionRelevance. UMaterialInterface::GetViewRelevance (2013 rva 0x12d8b0) fills it from
+	 * bHasBloomPart (@84 bit 0) with no regard for the blend mode, and SetPrimitiveViewRelevance (0x26ffa0) shifts it
+	 * into bit 15 of the primitive relevance.
+	 */
+	BITFIELD bBloomPart : 1;
 	BITFIELD bOneLayerDistortionRelevance : 1;
 	BITFIELD bInheritDominantShadowsRelevance : 1;
 	BITFIELD bLit : 1;
@@ -1130,6 +1150,7 @@ public:
 		bMasked(FALSE),
 		bTranslucency(FALSE),
 		bDistortion(FALSE),
+		bBloomPart(FALSE),
 		bOneLayerDistortionRelevance(FALSE),
 		bInheritDominantShadowsRelevance(FALSE),
 		bLit(FALSE),
@@ -1149,6 +1170,7 @@ public:
 		bMasked |= B.bMasked;
 		bTranslucency |= B.bTranslucency;
 		bDistortion |= B.bDistortion;
+		bBloomPart |= B.bBloomPart;
 		bOneLayerDistortionRelevance |= B.bOneLayerDistortionRelevance;
 		bInheritDominantShadowsRelevance |= B.bInheritDominantShadowsRelevance;
 		bLit |= B.bLit;
@@ -1177,6 +1199,8 @@ public:
 		OutViewRelevance.bMaskedRelevance = bMasked;
 		OutViewRelevance.bTranslucentRelevance = bTranslucency;
 		OutViewRelevance.bDistortionRelevance = bDistortion;
+		// DISHONORED(port): 2013 rva 0x26ffa0 - bit 4 of the material relevance becomes bit 15 of the primitive's.
+		OutViewRelevance.bBloomPartRelevance = bBloomPart;
 		OutViewRelevance.bOneLayerDistortionRelevance = bOneLayerDistortionRelevance;
 		OutViewRelevance.bInheritDominantShadowsRelevance = bInheritDominantShadowsRelevance;
 		OutViewRelevance.bLightingRelevance = bLit;

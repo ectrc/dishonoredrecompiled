@@ -811,6 +811,13 @@ public:
 	virtual UBOOL IsLightFunction() const = 0;
 	virtual UBOOL IsWireframe() const = 0;
 	virtual UBOOL IsDistorted() const = 0;
+	/**
+	 * DISHONORED(port): retail's FMaterial vtable slot 12, between IsDistorted (11) and IsSpecialEngineMaterial (13):
+	 * FMaterialResource::HasBloomPartForCompilation (2013 rva 0x128320). It is what decides whether the bloom-part
+	 * shaders were cooked for this material and what TBloomPartMeshDrawingPolicyFactory tests per element. Not pure:
+	 * FTerrainMaterialResource and the decal materials have no bloom part.
+	 */
+	virtual UBOOL HasBloomPartForCompilation() const { return FALSE; }
 	virtual UBOOL HasSubsurfaceScattering() const = 0;
 	virtual UBOOL HasSeparateTranslucency() const = 0;
 	virtual UBOOL IsSpecialEngineMaterial() const = 0;
@@ -1525,6 +1532,7 @@ public:
 #endif //WITH_MOBILE_RHI
 	virtual FLOAT GetOpacityMaskClipValue() const;
 	virtual UBOOL IsDistorted() const;
+	virtual UBOOL HasBloomPartForCompilation() const;
 	virtual UBOOL HasSubsurfaceScattering() const;
 	virtual UBOOL HasSeparateTranslucency() const;
 	virtual UBOOL IsMasked() const;

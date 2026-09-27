@@ -1103,6 +1103,22 @@ void FSceneRenderTargets::FinishRenderingBloom()
 	RHICopyToResolveTarget(GetBloomPartsSurface(),FALSE,FResolveParams());
 }
 
+/**
+ * DISHONORED(port): 2013 rva 0x448f00 (2012 0x46c460) - the full-size fog-mask target with the scene depth buffer.
+ * FSceneRenderer::RenderBloomParts draws the bloom parts into it before reducing it; RenderFogMaskStencil (0x433f80),
+ * which is not ported, is its other user.
+ */
+void FSceneRenderTargets::BeginRenderingFogMask()
+{
+	RHISetRenderTarget(GetFogMaskSurface(),GetSceneDepthSurface());
+}
+
+/** DISHONORED(port): 2013 rva 0x448f30 (2012 0x46c490). */
+void FSceneRenderTargets::FinishRenderingFogMask()
+{
+	RHICopyToResolveTarget(GetFogMaskSurface(),FALSE,FResolveParams());
+}
+
 void FSceneRenderTargets::BeginRenderingTranslucency(const FViewInfo& View, UBOOL bDownSampled, UBOOL bStateChanged)
 {
 	SCOPED_DRAW_EVENT(Event)(DEC_SCENE_ITEMS,TEXT("Begin %s Translucency"), bDownSampled ? TEXT("Downsampled") : TEXT("FullRes"));
@@ -2336,17 +2352,22 @@ void FSceneRenderTargets::InitDynamicRHI()
 			const UINT HalfSizeX = Max<UINT>(BufferSizeX >> 1, 1);
 			const UINT HalfSizeY = Max<UINT>(BufferSizeY >> 1, 1);
 
-			RenderTargets[ArkFogMask].Texture = RHICreateTexture2D(BufferSizeX,BufferSizeY,PF_G8,1,TexCreate_ResolveTargetable,NULL);
+			// DISHONORED(retail): FSceneRenderTargets::InitDynamicRHI (2013 rva 0x451080) creates "FogMask" at the full
+			// buffer size with EPixelFormat 2 = PF_A8R8G8B8 and the two "BloomBuffer" targets at a quarter with format
+			// 10 = PF_FloatRGBA (texture flags 0x22 = ResolveTargetable|WriteOnce, surface flag 8 = Multisample). The
+			// fog mask carries the bloom parts' own colour through RenderBloomParts, so PF_G8 dropped two channels of
+			// it and, being D3DFMT_L8, is not a render-target format this RHI is given at all.
+			RenderTargets[ArkFogMask].Texture = RHICreateTexture2D(BufferSizeX,BufferSizeY,PF_A8R8G8B8,1,TexCreate_ResolveTargetable,NULL);
 			RenderTargets[ArkFogMask].Surface = RHICreateTargetableSurface(
-				BufferSizeX,BufferSizeY,PF_G8,RenderTargets[ArkFogMask].Texture,0,TEXT("ArkFogMask"));
+				BufferSizeX,BufferSizeY,PF_A8R8G8B8,RenderTargets[ArkFogMask].Texture,0,TEXT("ArkFogMask"));
 
-			RenderTargets[ArkBloom].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGB,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkBloom].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGBA,1,TexCreate_ResolveTargetable,NULL);
 			RenderTargets[ArkBloom].Surface = RHICreateTargetableSurface(
-				QuarterSizeX,QuarterSizeY,PF_FloatRGB,RenderTargets[ArkBloom].Texture,0,TEXT("ArkBloom"));
+				QuarterSizeX,QuarterSizeY,PF_FloatRGBA,RenderTargets[ArkBloom].Texture,0,TEXT("ArkBloom"));
 
-			RenderTargets[ArkBloom2].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGB,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkBloom2].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGBA,1,TexCreate_ResolveTargetable,NULL);
 			RenderTargets[ArkBloom2].Surface = RHICreateTargetableSurface(
-				QuarterSizeX,QuarterSizeY,PF_FloatRGB,RenderTargets[ArkBloom2].Texture,0,TEXT("ArkBloom2"));
+				QuarterSizeX,QuarterSizeY,PF_FloatRGBA,RenderTargets[ArkBloom2].Texture,0,TEXT("ArkBloom2"));
 
 			RenderTargets[ArkDofHalf].Texture = RHICreateTexture2D(HalfSizeX,HalfSizeY,PF_FloatRGBA,1,TexCreate_ResolveTargetable,NULL);
 			RenderTargets[ArkDofHalf].Surface = RHICreateTargetableSurface(

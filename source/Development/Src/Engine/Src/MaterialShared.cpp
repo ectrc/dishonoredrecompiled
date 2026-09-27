@@ -38,6 +38,9 @@ FMaterialViewRelevance UMaterialInterface::GetViewRelevance()
 		MaterialViewRelevance.bMasked = Material->bIsMasked;
 		MaterialViewRelevance.bTranslucency = bIsTranslucent;
 		MaterialViewRelevance.bDistortion = Material->HasDistortion();
+		// DISHONORED(port): 2013 rva 0x12d8b0 - bit 4 from bHasBloomPart, which Material.cpp / MaterialInstance.cpp
+		// already compute from the material's BloomColor input. Not gated on the blend mode: an opaque material blooms.
+		MaterialViewRelevance.bBloomPart = bHasBloomPart;
 		MaterialViewRelevance.bOneLayerDistortionRelevance = bIsTranslucent && Material->bUseOneLayerDistortion;
 		MaterialViewRelevance.bInheritDominantShadowsRelevance = bIsTranslucent && Material->bTranslucencyInheritDominantShadowsFromOpaque;
 		MaterialViewRelevance.bLit = bIsLit;
@@ -2468,6 +2471,8 @@ FLOAT FMaterialResource::GetOpacityMaskClipValue() const { return Material->Opac
 * @return TRUE if material uses distortion
 */
 UBOOL FMaterialResource::IsDistorted() const { return Material->bUsesDistortion && !Material->bUseOneLayerDistortion; }
+// DISHONORED(port): 2013 rva 0x128320 - `Material->BloomColor.Expression != NULL` and nothing else.
+UBOOL FMaterialResource::HasBloomPartForCompilation() const { return Material->BloomColor.Expression != NULL; }
 
 UBOOL FMaterialResource::HasSubsurfaceScattering() const { return Material->EnableSubsurfaceScattering; }
 

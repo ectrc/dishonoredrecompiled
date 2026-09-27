@@ -51,6 +51,10 @@ extern UINT GDisCensusFrameDynamicRelevant;
 extern UINT GDisCensusFrameNoRelevance;
 extern UINT GDisCensusFrameDrawListVisited;      // static draw list elements walked by DrawVisible
 extern UINT GDisCensusFrameDrawListDrawn;        // ... whose visibility bit was set
+extern INT GDisCensusBloomPartRelevant;          // ProcessVisible: the relevance carried the bloom-part bit
+extern INT GDisCensusBloomPartSetPrims[4];       // primitives in each of FViewInfo::BloomPartPrimSet (SDPG_MAX_SceneRender)
+extern INT GDisCensusBloomPartPrims;             // primitives of the DPG FSceneRenderer::RenderBloomParts runs at
+extern INT GDisCensusBloomPartDraws;             // draws that pass issued (mesh draws + downsample + 2 blurs + compose)
 
 /** max DPG for scene rendering */
 enum { SDPG_MAX_SceneRender = SDPG_PostProcess };
@@ -76,6 +80,8 @@ enum { SDPG_MAX_SceneRender = SDPG_PostProcess };
 #include "ShadowRendering.h"
 #include "BranchingPCFShadowRendering.h"
 #include "DistortionRendering.h"
+// DISHONORED(written): FViewInfo carries FArkBloomPartPrimSet, so its declaration has to precede SceneRendering.h.
+#include "arkbloompartsrendering.h"
 #include "SceneRendering.h"
 #include "StaticMeshDrawList.h"
 #include "DynamicPrimitiveDrawing.h"

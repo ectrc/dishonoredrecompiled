@@ -500,6 +500,12 @@ public:
 
 	/** Set of distortion prims for this view - one for each DPG */
 	FDistortionPrimSet DistortionPrimSet[SDPG_MAX_SceneRender];
+
+	/**
+	 * Set of bloom-part prims for this view - one for each DPG.
+	 * DISHONORED(layout): 2012 PDB FViewInfo::BloomPartPrimSet @1856, straight after DistortionPrimSet @1808.
+	 */
+	FArkBloomPartPrimSet BloomPartPrimSet[SDPG_MAX_SceneRender];
 	
 	/** A map from light ID to a boolean visibility value. */
 	TArray<FVisibleLightViewInfo,SceneRenderingAllocator> VisibleLightInfos;
@@ -512,6 +518,16 @@ public:
 
 	/** TRUE if the DPG has at least one mesh in ViewMeshElements[DPGIndex] with a translucent material. */
 	BITFIELD bHasTranslucentViewMeshElements : SDPG_MAX_SceneRender;
+
+	/**
+	 * TRUE if the DPG has at least one mesh in ViewMeshElements[DPGIndex] with a bloom-part material.
+	 * DISHONORED(layout): 2012 PDB FViewInfo @3569 bit 0, i.e. bits 8..11 of the word at 3568 that holds
+	 * bHasTranslucentViewMeshElements (bits 0..3) and bHasDistortionViewMeshElements (bits 4..7). It is the second half
+	 * of FSceneRenderer::RenderBloomParts' gate (2013 rva 0x5251a0, `(word >> 8) & 2` for SDPG_World). Nothing fills it
+	 * in the game: ViewMeshElements is an editor path, which is why the reference bHasTranslucentViewMeshElements beside
+	 * it is also only ever read.
+	 */
+	BITFIELD bHasBloomPartViewMeshElements : SDPG_MAX_SceneRender;
 
 	/** The dynamic resources used by the view elements. */
 	TArray<FDynamicPrimitiveResource*> DynamicResources;
@@ -1037,6 +1053,12 @@ private:
 
 	/** Renders the scene's distortion */
 	UBOOL RenderDistortion(UINT DPGIndex);
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x5251a0 - Arkane's bloom: draw the primitives whose material has a bloom part, reduce,
+	 * blur and compose (arkbloompartsrendering.cpp).
+	 */
+	UBOOL RenderBloomParts(UINT DPGIndex);
 	
 	/** 
 	 * Renders the scene's translucency.

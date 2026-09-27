@@ -430,6 +430,8 @@ public:
 	const FSurfaceRHIRef& GetFogMaskSurface() const { return RenderTargets[ArkFogMask].Surface; }
 	void BeginRenderingBloom();
 	void FinishRenderingBloom();
+	void BeginRenderingFogMask();
+	void FinishRenderingFogMask();
 	const FTexture2DRHIRef& GetSceneColorTexture() const { return RenderTargets[SceneColor].Texture; }
 	const FTexture2DRHIRef& GetSceneColorLDRTexture() const { return RenderTargets[LightAttenuation0].Texture; }
 	const FTextureRHIRef& GetLUTBlendTexture() const;

@@ -173,6 +173,7 @@ void FViewInfo::AddPostProcessProxy(FPostProcessSceneProxy* InProxy)
 FViewInfo::FViewInfo(const FSceneView* InView)
 	:	FSceneView(*InView)
 	,	bHasTranslucentViewMeshElements( 0 )
+,	bHasBloomPartViewMeshElements( 0 )	// DISHONORED(layout): 2012 PDB FViewInfo @3569 bit 0
 	,	bRenderExponentialFog( FALSE )
 	,	bRequiresVelocities( FALSE )
 	,	bRequiresPrevTransforms( FALSE )
@@ -1697,6 +1698,7 @@ void FSceneRenderer::InitViews()
 
 	// DISHONORED(bringup): scene census, per-frame counters
 	GDisCensusFrameProcessed = 0;
+	GDisCensusBloomPartRelevant = 0;	// DISHONORED(bringup): counted by ProcessVisible below
 	GDisCensusFrameDistanceCulled = 0;
 	GDisCensusFrameFrustumCulled = 0;
 	GDisCensusFrameOccluded = 0;
@@ -2409,8 +2411,12 @@ void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResol
 		}
 
 		// DISHONORED(retail): 2013 rva 0x464290 RenderDPGEnd (2012 0x48cf90): no image reflections, no subsurface scattering,
-		// no "affect lighting only" post-process pass; between the soft-masked base pass and the fog pass retail runs
-		// RenderBloomParts (the Arkane bloom, FArkBloomPartPrimSet). The reference passes' shaders have no cooked record.
+		// no "affect lighting only" post-process pass. The reference passes' shaders have no cooked record.
+
+		// DISHONORED(port): 2013 rva 0x464290 calls RenderBloomParts here, after the soft-masked base pass and the
+		// occlusion tests and before the fog pass - which is what lets the fog pass compose the bloom target instead of
+		// this pass doing it (m_BloomNeedBlit).
+		bSceneColorDirty |= RenderBloomParts(DPGIndex);
 
 		// DISHONORED(port): retail's fog pass is DisFog (FSceneRenderer::RenderFog, 2013 rva 0x4370a0), here in
 		// RenderDPGEnd between the soft-masked base pass and the distortion pass. -referencefog runs the reference
@@ -4045,6 +4051,27 @@ UBOOL FSceneRenderer::ProcessVisible(
 #endif
 	}
 
+	// DISHONORED(port): 2013 rva 0x45f060 ProcessVisible - the bloom-part sets are filled from the relevance bit alone,
+	// before the dynamic-primitive list and outside the translucency branch the distortion set sits in: a bloom part is
+	// usually an opaque mesh element.
+	if( ViewRelevance.bBloomPartRelevance )
+	{
+		GDisCensusBloomPartRelevant++;
+		for (UINT CheckDPGIndex = 0; CheckDPGIndex < SDPG_MAX_SceneRender; CheckDPGIndex++)
+		{
+			if (ViewRelevance.GetDPG(CheckDPGIndex) == TRUE)
+			{
+				View.BloomPartPrimSet[CheckDPGIndex].AddScenePrimitive(CompactPrimitiveSceneInfo.PrimitiveSceneInfo,View);
+#if WITH_REALD
+				if (bDoStereo)
+				{
+					View2->BloomPartPrimSet[CheckDPGIndex].AddScenePrimitive(CompactPrimitiveSceneInfo.PrimitiveSceneInfo,*View2);
+				}
+#endif
+			}
+		}
+	}
+
 	if( ViewRelevance.bTranslucentRelevance )
 	{
 		for (UINT CheckDPGIndex = 0; CheckDPGIndex < SDPG_MAX_SceneRender; CheckDPGIndex++)
@@ -4834,6 +4861,8 @@ UINT GDisCensusFrameDrawListDrawn = 0;
 INT GDisCensusFogScene = 0;			// DisFog layers in the scene
 INT GDisCensusFogLayers = 0;		// layers the fog pass drew with (summed over its passes)
 INT GDisCensusFogDraws = 0;			// full-screen fog triangles
+INT GDisCensusBloomPartRelevant = 0;	// primitives whose relevance carried the bloom-part bit this frame
+INT GDisCensusBloomPartSetPrims[SDPG_MAX_SceneRender] = { 0, 0, 0, 0 };	// primitives in each of the four sets
 INT GDisCensusBloomPartPrims = 0;	// bloom-part primitives found for the view
 INT GDisCensusBloomPartDraws = 0;	// draws of the bloom parts pass (mesh draws + downsample + blur + compose)
 INT GDisCensusArkPpNodes = 0;		// FArkPp graph nodes rendered
@@ -4912,8 +4941,10 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 					GDisCensusFrameDrawListDrawn, GDisCensusFrameDrawListVisited);
 
 				// DISHONORED(bringup): the post-process chain, counted per pass (packages BD and CE).
-				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes; bloom parts %i prims, %i draws; FArkPp %i nodes rendered, %i draws (%i material tiles), %i passes not ported"),
+				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes; bloom parts %i relevant, sets %i/%i/%i/%i, %i prims, %i draws; FArkPp %i nodes rendered, %i draws (%i material tiles), %i passes not ported"),
 					GDisCensusFogScene, GDisCensusFogLayers, GDisCensusFogDraws,
+					GDisCensusBloomPartRelevant,
+					GDisCensusBloomPartSetPrims[0], GDisCensusBloomPartSetPrims[1], GDisCensusBloomPartSetPrims[2], GDisCensusBloomPartSetPrims[3],
 					GDisCensusBloomPartPrims, GDisCensusBloomPartDraws,
 					GDisCensusArkPpNodes, GDisCensusArkPpDraws, GDisCensusArkPpMaterialDraws, GDisCensusArkPpSkipped);
 			}
@@ -4936,6 +4967,7 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 				debugf(TEXT("DISHONORED(bringup): -apshot: screenshot requested at scene frame %i"), NumCensusFrames);
 				GScreenShotRequest = TRUE;
 			}
+
 		}
 
         // Delete the scene renderer.
@@ -5025,10 +5057,45 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 #endif
 }
 
+/**
+ * DISHONORED(bringup): -apshottime=<seconds> asks for one bitmap of the first frame whose world time has reached that
+ * mark. It is tested here, on the game thread, and not beside the census in RenderViewFamily_RenderThread, because
+ * GScreenShotRequest is consumed at the end of UGameViewportClient::Draw (UnPlayer.cpp:1858) by reading back the frame
+ * that Draw just submitted. Setting it from the render thread makes the captured frame depend on how far the game thread
+ * has run ahead, which depends on how fast the frames are - so a pass that costs GPU time moves the captured frame, and
+ * a before-and-after pair keyed that way compares two different moments of the world. Keyed here, both runs capture the
+ * frame whose world time was tested. -apshot=<frame> beside the census has that flaw and is left as it was.
+ */
+static void DishonoredTimedScreenShot(const FSceneViewFamily* ViewFamily)
+{
+	static FLOAT ShotTime = -1.0f;
+	static UBOOL bRequested = FALSE;
+	if (ShotTime < 0.0f)
+	{
+		ShotTime = 0.0f;
+		if (!Parse(appCmdLine(), TEXT("apshottime="), ShotTime) || ShotTime <= 0.0f)
+		{
+			ShotTime = 0.0f;
+		}
+	}
+	if (ShotTime > 0.0f && !bRequested && ViewFamily && ViewFamily->CurrentWorldTime >= ShotTime)
+	{
+		extern UBOOL GScreenShotRequest;	// UnPlayer.cpp
+		extern FString GScreenShotName;		// UnPlayer.cpp - the file name, "ScreenShot" when empty
+		bRequested = TRUE;
+		debugf(TEXT("DISHONORED(bringup): -apshottime: screenshot of the frame at world time %.3f"), ViewFamily->CurrentWorldTime);
+		// the retail screenshot directory is shared by every agent's runs, so this one gets a name of its own
+		GScreenShotName = TEXT("apshottime");
+		GScreenShotRequest = TRUE;
+	}
+}
+
 void BeginRenderingViewFamily(FCanvas* Canvas,const FSceneViewFamily* ViewFamily)
 {
 	// Enforce the editor only show flags restrictions.
 	check(GIsEditor || !(ViewFamily->ShowFlags & SHOW_EditorOnly_Mask));
+
+	DishonoredTimedScreenShot(ViewFamily);
 
 	// Flush the canvas first.
 	Canvas->Flush();
