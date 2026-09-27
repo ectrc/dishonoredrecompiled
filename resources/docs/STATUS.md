@@ -58,9 +58,11 @@ has no data.
 ## Next
 
 Wave 8 is running (`PHASE10.md`): **DC** flips `DISHONORED_GFXUI_GFX3_RUNTIME` and brings the game's own menu
-up in the running game, **DA** ports the depth-of-field node's LUT uber pass — which is where the game's
-colour balance, exposure and gamma actually live, not in a material node — and **DB** ports Arkane's bloom
-parts. Agent CG (the AI brain root) carries over from wave 7. Held for the wave after: the five `UObject`
+up in the running game, **DA** ported the depth-of-field node's LUT uber pass — which is where the game's
+colour balance, exposure and gamma actually live, not in a material node — and **DB** ported Arkane's bloom
+parts (the pub's windows and lantern bloom, 3.7 % of pixels against a floor of exactly zero). **DE** is now
+making the content's own grade reach the renderer at all: `ULocalPlayer::UpdatePostProcessSettings` writes
+nothing to `m_CurrentArkPpSettings`, so no grade the content authors has ever reached the LUT. Agent CG (the AI brain root) carries over from wave 7. Held for the wave after: the five `UObject`
 save virtuals, the AS2 garbage collector, and whatever DA hands over of the remaining DOF passes.
 
 Wave 7 is merged: `c403e2f` CA, `54b57d4` + `4bb6772` CB, `d40e26c` CF, `683fa03` CD, `2da00d8` CC,

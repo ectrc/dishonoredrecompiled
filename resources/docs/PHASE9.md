@@ -180,8 +180,24 @@ What this wave delivered:
 | | |
 |---|---|
 | the interface runtime | **complete and verified, and it draws the game's own art.** CC renders a 1280x720 first frame of `UI_Global.Global` with 40 of its 41 cooked bitmaps; CB rasterises 2,481 glyphs from the game's own fonts; CD makes every tag load and every import bind; all 22 cooked movies parse with 0 placeholders. It is deliberately not wired in: `DISHONORED_GFXUI_GFX3_RUNTIME` only flips in the commit that lets GFxUI call the runtime, which is wave 8 |
-| the real look | CE's post-process graph changes **99.2 % of pixels** against a 0.09 % noise floor - and found that the game's colour treatment is the depth-of-field node's LUT uber pass, not a material node, which redirects the next package |
+| the real look | CE's post-process graph renders (its figure is corrected below) - and found that the game's colour treatment is the depth-of-field node's LUT uber pass, not a material node, which redirects the next package |
 | milestone 6 | all 51 real retail saves load and round-trip. One number did it: `BUILT_FROM_CHANGELIST` was 334700 against retail's 1274963 |
+
+**Superseded figure (coordinator, 2026-09-27).** CE's "99.2 % of pixels" was measured with `-apshot`,
+which agent DB later showed captures a frame nobody chose: the request is raised on the render thread
+and consumed on the game thread, so a pass that costs GPU time moves the captured frame by itself.
+Re-measured on the merged tree with DB's `-apshottime`, four captures at one world time, the graph
+changes **0.30 % of pixels, mean 1.66 of 765, largest channel delta 34 of 255**, against a floor of
+0.01 % and mean 0.00. `-noarkpp` is doing its job: `FArkPp 1 nodes rendered, 2 draws` becomes `0` and
+`0`, over 267 and 234 census lines respectively.
+
+Both numbers were true of their own trees, and the reason is the useful part: **exactly one of the
+graph's 42 nodes renders** - the depth-of-field node - and agent DA's port of it lands on the same
+image as the fallback it replaced (`FinishRenderViewTarget`'s gamma copy, which they agree with to
+0.55 of 255). The graph's presence stopped changing the frame at the moment its one live node became
+faithful. It will change the frame again when a real grade reaches it, which is what package DE is
+for. The figures to quote for this corner are now DA's two probes: black out the bake and the frame
+goes black, 99.51 %; push a real grade through and every pixel moves.
 
 **Three findings that reach past their own packages.**
 
