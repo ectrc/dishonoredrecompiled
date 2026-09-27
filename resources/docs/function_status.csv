@@ -1240,6 +1240,199 @@ rva,status,note
 0x3c8330,ported,"FKAggregateGeom::InstanceNovodexGeom: retail does NOT bail out on a non-uniform scale the way the reference does (`Cannot 3D-Scale rigid-body primitives`, which fired 235 times in l_tower_p). When !pScale3D.IsUniform() it emits an NxBoxShapeDesc for every box element with bNoRBCollision == 0 and TM.IsUnrotatedAndUnscaled(1e-4), with dimensions 0.5f * Dim * Abs(pScale3D.Axis) + PhysSkinWidth (retail: +0.025). Engine/Src/UnPhysCollision.cpp:854. 235 URB_BodyInstance::InitBody shape failures -> 0"
 0x3c9620,verified,URB_BodyInstance::InitBody - unchanged; its `Could not create new Shape` warning simply stops firing once InstanceNovodexGeom returns shapes for the 3D-scaled blockout collision meshes
 0x16cf40,verified,"AActor::ShouldTrace - our body matches retail field for field (bWorldGeometry @288 bit 7 vs TRACE_LevelGeometry 0x80, TRACE_Others 0x10, TRACE_OnlyProjActor 0x20 -> bProjTarget | (bBlockActors && Primitive->BlockActors @280 mask 0x40), TRACE_Blocking 0x40 -> IsBlockedBy). The only delta is a leading AActor::IsConsideredTransparent(TraceFlags) guard, which is an Arkane addition and can only reject more"
-0x12a230,todo,"UPrimitiveComponent::execSetTraceBlocking(bNewBlockZeroExtent, bNewBlockNonZeroExtent) must write the mask, not the two dead booleans: retail does `m_CollisionTraceTypes.SetAllMovementTrace(NewBlockNonZeroExtent); m_CollisionTraceTypes.SetAllGameplayTrace(NewBlockZeroExtent);` (offset 320, preserving bits 7+). Engine/Src/PrimitiveComponent.cpp:1288 - agent AP owns that file this wave, so it is left for the coordinator"
-0x179a00,todo,"AActor::SetDefaultCollisionType derives CollisionType (@263) FROM m_CollisionTraceTypes in retail (TracesForAllMove, the all-gameplay combination, the gameplay-only combination, ...); ours derives the two dead booleans from CollisionType instead (Engine/Src/UnActor.cpp 2059..2217). Decompile in build/agentAQ_decomp/AActor_SetDefaultCollisionType_179a00.c"
+0x12a230,ported,"UPrimitiveComponent::execSetTraceBlocking - the whole body is `m_CollisionTraceTypes.SetAllMovementTrace(NewBlockNonZeroExtent); SetAllGameplayTrace(NewBlockZeroExtent);`. The decompiled masked store fills bits 0..2 from the second script parameter and bits 3..6 from the first while preserving bits 7+, which is exactly what agent AQ's two setters do. Was writing BlockZeroExtent / BlockNonZeroExtent, which nothing in retail reads, so every script call to SetTraceBlocking was a silent no-op. Engine/Src/PrimitiveComponent.cpp:1288"
+0x179a00,ported,"AActor::SetDefaultCollisionType - retail derives CollisionType @263 FROM m_CollisionTraceTypes; the reference derived the mask from CollisionType, i.e. it ran the mapping backwards. Branches in the decompile's order: all four gameplay bits + TracesForAllMove -> BlockAll / TouchAll; all gameplay, no move, blocking -> BlockGameplay; VisionLOS only, no other gameplay, no move, blocking -> BlockNPCVision; all move, no gameplay -> BlockMovement / TouchMovement; TraceForMove_Player only, no gameplay, blocking -> BlockMovement_PlayerOnly. Block versus Touch is (bBlockActors && CollisionComponent->BlockActors) everywhere. Engine/Src/UnActor.cpp:2049"
 0x2c1ff0,todo,"RepresentConvexAsBox - retail replaces a uniformly scaled single-convex aggregate by one box when the convex is box-like (called from InstanceNovodexGeom, decompile line 499). Not ported; it is an optimisation, not a correctness gate"
+0x16b090,verified,"FTexture2DResource::LoadMipData - THE cause of the corrupt textures. Retail reads every streamed mip level from the single Filename the resource was built with (the TextureFileCacheName .tfc for streaming textures) and has no fallback, so a level the cook left inline in the package cannot be streamed: its BulkDataOffsetInFile is a package offset and the read lands on unrelated bytes. Our body already matched retail line for line; the divergence was that nothing kept the inline run resident, so 1779 of 3260 streamed levels in L_Pub_Day_P were filled with garbage. Fixed in UTexture2D::CreateResource + FStreamingManagerTexture (MinResidentMipCount). Our tree also carries a reference-only MipMap.Data.IsBulkDataLoaded() branch retail does not have; the census shows it fires 0 times"
+0x16af50,verified,"FTexture2DResource::GetData - identical to ours: SrcPitch = BlockBytes * ((SizeX+BlockSizeX-1)/BlockSizeX); if SrcPitch == DestPitch a single memcpy of BlockBytes*NumColumns*NumRows, otherwise row by row with Min(SrcPitch,DestPitch) for NumRows rows. The 552 pitch mismatches the census reports in L_Pub_Day_P are all 1x1/2x2/2x1 levels of uncompressed formats where D3D9 pads the lock pitch to 4 bytes, and retail copies them the same way. Not the defect"
+0x5bea00,verified,"FD3D9DynamicRHI::CreateTexture2D - identical to ours. TexCreate_SRGB = 1, TexCreate_ResolveTargetable = 2, TexCreate_DepthStencil = 4, TexCreate_Dynamic = 0x40; managed pool iff (Flags & 6) == 0; VERIFYD3D9CREATETEXTURERESULT with the same arguments; D3D9TextureAllocated only for non-target textures"
+0x5beb80,verified,"FD3D9DynamicRHI::LockTexture2D - identical to ours: one LockRect on the mip, DestStride = LockedRect.Pitch, returns pBits"
+0x5bebf0,verified,"FD3D9DynamicRHI::UnlockTexture2D - identical to ours, a single UnlockRect"
+0x5b5db0,verified,"FD3D9DynamicRHI::CopyMipToMipAsync - identical to ours: lock source read-only, lock destination for write, memcpy Size bytes, unlock both. Retail has no check(SrcStride == DestStride); ours does and it never fires (44312 shared levels copied in a pub run)"
+0x47300,verified,"FAsyncIOSystemBase::FulfillCompressedRead - matches ours structurally (8-byte header, TotalChunkCount = (UncompressedSize+ChunkSize-1)/ChunkSize + 1, chunk table, double-buffered reads with Offset = INDEX_NONE, FAsyncTask<FAsyncUncompress>). Retail decompresses with lzopro_lzo1x_decompress_safe for COMPRESS_LZO and zlib uncompress for COMPRESS_ZLIB; our lzokay path decodes the real Textures.tfc chunks to the exact expected sizes (build/agentAR_lzotest.cpp). Eliminated as a cause: -disstreamsync bypassed this whole path with a synchronous FArchive read and the corruption was identical"
+0x17c1c0,verified,"UTexture2D::PostLoad - MipTailBaseIdx = Max(0, Mips.Num()-1) for non-template objects, then Super::PostLoad. Ours matches; the census confirms MipTailBaseIdx == Mips.Num()-1 on every cooked texture (0 with no mip tail), so NumMipTailLevels is always 1 and was never the floor that mattered"
+0x182440,verified,"UTexture2D::Serialize - does not touch MinResidentMipCount (@368), so the member is reflected-only in retail too and the cooked packages leave it at 0. CreateResource now derives it from the bulk-data flags (DISHONORED(written))"
+0x173920,ported,"AActor::IsOverlapping (AActor vtable +456, unnamed in the idb; found through execIsOverlapping 0x2cd6c0). Three gates converted in Engine/Src/UnActor.cpp. (1) the outer per-component loop drops its blocking test entirely and keeps only `!= NULL && IsAttached() && CollideActors`; (2) the inner loop gains the symmetric pair `MyPrimComp->m_CollisionTraceTypes.MatchesTraceFlags(Other, 0) || OtherPrimComponent->m_CollisionTraceTypes.MatchesTraceFlags(this, 0)`, i.e. either side's mask stopping a movement trace by the other is enough; (3) the box-overlap branches do the same with BoxActor / PrimitiveActor as the source actors. TraceFlags is the literal 0 at all five call sites, so MatchesTraceFlags falls through to the source actor's pawn / player-pawn state. This is the function whose FALSE return was end-touching every actor the frame after it began touching (measured: 4558 begin / 4558 end per 85 s of pure churn before, 250 / 240 stable after)"
+0x189870,ported,"AActor::FindTouchingActors (unnamed in the idb; found through AActor::SetCollisionType 0x18a390). `bIsZeroExtent ? Test->Component->BlockZeroExtent : Test->Component->BlockNonZeroExtent` becomes `Test->Component->m_CollisionTraceTypes.MatchesTraceFlags(this, 0)`; retail still calls GetBoundingCylinder and throws the radius and height away. The encroachment check carries TRACE_AllColliding | TRACE_DisTouchOverlap (0x20209f in the decompile). Engine/Src/UnActor.cpp:2431"
+0x17e260,ported,"AActor::SetCollisionFromCollisionType (unnamed in the idb; called from SetCollisionType 0x18a390). The inverse mapping: every case clears the mask and sets the bit group its collision type names, COLLIDE_CustomDefault copies the whole mask off the class default's collision component (`*(comp+320) = *(defaultcomp+320)`), and the tail sets `bPathColliding = m_bTraceForMove_NonPlayerPawn ? bStatic : FALSE` before mirroring BlockRigidBody. Retail's COLLIDE_NoCollision does not clear bBlockActors and its BlockAll does not call SetBlockRigidBody, both of which the reference did. Engine/Src/UnActor.cpp:2150"
+0x6494f0,evidence,"ADishonoredUsableObject::ShouldTrace - one of the four readers that identify trace flag 0x200000: `a2 != this[189] || (a4 & 0x200000)`, i.e. the flag lets a check through a component the object hides from real movement traces. The others are ADisDefenceTower::ShouldTrace (test at 0x6181f4), ADisWhaleOilReceptacle::ShouldTrace (0x865cd4) and ADisDetectionEye::ShouldTrace (0x8bfdd4); the writers are FindTouchingActors (0x189870) and UWorld::MoveActor (the 200000h store at 0x24cf23). Named TRACE_DisTouchOverlap in Engine/Inc/UnLevel.h"
+0x24cf23,ported,"UWorld::MoveActor initialises its trace flags to TRACE_DisTouchOverlap (0x200000): `mov dword ptr [ebp-18h], 200000h` at 0x24cf23 and `200800h` at 0x24d0e1, then ORs 0x19 / 0x2086 / 0x20000 / 0x100000 on top. Agent AS's hand-over (agentAS.md follow-up 1); ours started at 0, so the components ADishonoredUsableObject / ADisDefenceTower / ADisWhaleOilReceptacle / ADisDetectionEye hide from movement traces never began a touch from movement. Engine/Src/UnLevAct.cpp:1431"
+0x680a00,todo,"ADisPickup_Base::PostBeginPlay - not ported, and neither is any of the other 41 functions attributed to DishonoredGame/Src/dispickup_base.cpp (the file is 46 lines of comments). This is why DisStatPickup_0 in l_tower_p loads with bCollideActors 0 and an all-zero trace mask. Hand-over to agent AU"
+0x66c900,todo,ADisPickup_Base::ShouldTrace - the crosshair / focus gate a pickup needs to be selectable. Not ported. Hand-over to agent AU
+0x682ca0,todo,"ADisPickup_Base::AttemptInteract_Derived - the pick-up itself, with GetCrosshairStatus (0x682c50), ConsumePickup (0x66c840), Steal (0x680650), StartPickupTravel (0x6800d0), Attach (0x6805c0) and Detach (0x6705f0). DisPickup_Base declares no script Touch event (script_classes_2013.json: OnToggleHidden and the native BaseChange only), so picking a pickup up is entirely this C++ focus path, not the touch path. Hand-over to agent AU"
+0x8529e0,todo,"UDishonoredInventory::ConsumeStatPickup(ADisStatPickup*, INT*) - the inventory side of a stat pickup, not ported (DishonoredGame/Src/dishonoredinventory.cpp lists it but has no body). Hand-over to agent AU"
+0x300740,ported,"USequence::ExecuteActiveOps (unnamed in the idb; reached from USequence::UpdateOp 0x301550, which is an exact match already). Three retail deltas: (1) DeltaTime is scaled by AGameInfo::GetBendTimeDilation(FALSE) for every op and every delayed activation that does not carry m_bAlwaysOutOfBendTime (SequenceOp @140 mask 0x400, Arkane); (2) retail has NO USeqAct_Latent special case and no USequence::DelayedLatentOps -- the 2013 Sequence class has no such array and 2013's SeqAct_Latent has no LatentActivationTime, while the reference's DelayedLatentOps is a DISHONORED_SHIM_STATIC, i.e. one array shared by every sequence of every world, which is agent AL's ExecuteActiveOps -> UObject::IsA access violation; (3) the two step limits are tested before the pop and retail emits no warning when they bite. Engine/Src/UnSequence.cpp"
+0x301550,verified,"USequence::UpdateOp. Byte-for-byte the same shape as ours: the UnregisteredEvents/RegisterEvent sweep (vtable +404, remove on success), then bEnabled && (ParentSequence == NULL || ParentSequence->IsEnabled()), ExecuteActiveOps(DeltaTime, 0), then the NestedSequences loop (vtable +368, remove NULLs). No change needed"
+0x5e9e90,ported,"ADishonoredGameInfo::GetBendTimeDilation(UBOOL bPlayer) const, AGameInfo vtable +976: `return bPlayer ? 1.0f : m_fCurrentWorldTimeDilation / m_fCurrentPlayerTimeDilation` (AGameInfo @936 / @940, both already in EngineClasses.h). Inlined at its one caller in ExecuteActiveOps with a divide-by-zero guard retail does not have; AGameInfo has no such virtual declared in EngineClasses.h yet, so declaring it is a follow-up for whoever owns that header"
+0x258bb0,ported,"UWorld::CleanUpBeforeLevelTransition -- agent AF's blocker B2. Retail's gate is `bKillDuringLevelTransition (@292 mask 0x8) && m_bSpawned (@300 mask 0x1) && !m_bPersistsAcrossLevelTransition (@300 mask 0x2)`, destroying with DestroyActor(Actor, FALSE, TRUE). The cook leaves bKillDuringLevelTransition TRUE on every actor, so with only that bit the menu's seamless map change destroyed the WorldInfo, the GameInfo, the PlayerStart, the DishonoredPlayerController, its camera, its pawn and the HUD; with no player controller there is no view, UWorld::UpdateLevelStreaming therefore computed bShouldBeVisible FALSE for the new fake persistent level, and nothing was left to run the menu's own `ce ChangeLvl_StartNewGame`. Engine/Src/UnLevAct.cpp"
+0x256bb5,ported,"UWorld::SpawnActor's store of Arkane's AActor::m_bSpawned (`or dword ptr [esi+12Ch], 1`, @300 mask 0x1). Nothing in the tree wrote it; UWorld::CleanUpBeforeLevelTransition is the reader that matters. Engine/Src/UnLevAct.cpp"
+0x24e14a,ported,"UWorld::MoveActor's second, non-collision-component pass: `mov dword ptr [ebp-18h], 200019h` (0x220019 at 0x24e15d when bCollideComplex adds TRACE_ComplexCollision), i.e. TRACE_DisTouchOverlap | TRACE_Pawns | TRACE_Others | TRACE_Volumes. Engine/Src/UnLevAct.cpp:1794"
+0x2dc230,verified,"USeqAct_LevelStreamingBase::ActivateLevel. Ours matches: input 0 sets bShouldBeLoaded TRUE, ORs bMakeVisibleAfterLoad into bShouldBeVisible and assigns bShouldBlockOnLoad; input 1 clears bShouldBeLoaded and bShouldBeVisible (retail `&= 0xFFFFFE7F`, i.e. only those two bits); then every APlayerController gets eventLevelStreamingStatusChanged. Retail identifies the player controllers by AActor's type byte @266 == 20 rather than by a cast (m_ActorTypeFlags, still never written here -- agentAS.md follow-up 3). The reference's unconditional debugf, which fired for every player every frame, is now behind -diskismet"
+0x2cf700,verified,USeqAct_LevelStreamingBase::UpdateLevel. Exact match including the bMakeVisibleAfterLoad / bIsVisible tail and the GEngine->bUseBackgroundLevelStreaming branch
+0x2e5ed0,verified,USeqAct_LevelStreaming::Activated. Matches apart from the reference's extra USequenceOp::Activated() call at the top
+0x2cf770,verified,USeqAct_LevelStreaming::UpdateOp -- `return UpdateLevel(Level)`
+0x2e5f00,verified,"USeqAct_LevelStreaming::UpdateStatus -- clears a stale Level whose PackageName no longer matches LevelName, then bStatusIsOk = FindAndCacheLevelStreamingObject(...) != NULL"
+0x2e5f90,verified,"USeqAct_MultiLevelStreaming::Activated. Matches: ActivateLevel for every Levels(i), then, when bUnloadAllOtherLevels, clear bShouldBeLoaded / bShouldBeVisible on every streaming level not in the list (matched by pointer or PackageName) and notify the players. The reference's second unconditional debugf is now behind -diskismet"
+0x2dc370,verified,"USeqAct_MultiLevelStreaming::UpdateOp -- UpdateLevel over every combo, FALSE on the first one that is not done"
+0x3813b0,verified,ULevelStreamingKismet::ShouldBeVisible -- `bShouldBeVisible || (bShouldBeVisibleInEditor && !GIsGame)` (@92 masks 0x100 / 0x8)
+0x3813e0,verified,"ULevelStreamingKismet::ShouldBeLoaded -- `return bShouldBeLoaded` (@92 mask 0x80). So a LevelStreamingKismet is driven entirely by SeqAct_LevelStreaming / SeqAct_MultiLevelStreaming, which is why L_Tower_Water stays unloaded until its Kismet action fires"
+0x2cf3a0,verified,"USequenceEvent::CheckActivate. Exact match: the NetMode gate on bClientSideOnly (@260 mask 0x8), HasBegunPlay, !IsPendingKill (vtable +52), the parent sequence's IsEnabled, bPlayerOnly (@260 mask 0x2) -> InInstigator->IsPlayerOwned (vtable +348), MaxTriggerCount, ReTriggerDelay, then ActivateEvent through vtable +408 when !bTest && bEnabled"
+0x2ec120,verified,USequence::CleanUp -- the editor-only Kismet back-pointer clear plus CleanUp (vtable +348) on every SequenceObject
+0x2d9d70,verified,USequence::MarkSequencePendingKill -- RF_PendingKill on the sequence and every SequenceObject and recursion into NestedSequences
+0x2cf2f0,verified,USequence::FinishDestroy -- closes and deletes the Kismet log file (@224) before Super
+0x3004b0,verified,"USequence::NotifyMatchStarted -- BeginPlay when bShouldActivateLevelLoadedEvents, recursion into the nested sequences (vtable +428), then the SeqEvent_LevelStartup / SeqEvent_LevelLoaded activations"
+0x300120,todo,"USequence::BeginPlay. Structurally ours, but retail raises SeqEvent_SequenceActivated through ActivateEvent (vtable +408) behind its own inline gates (bEnabled @260 mask 0x1, the bClientSideOnly NetMode test, MaxTriggerCount) where ours calls CheckActivateSimple, and retail's first statement is a virtual at vtable +104 rather than InitializeSequence directly. Nothing observed to misbehave, so it is left as a difference to close"
+0x39c1e0,verified,"UWorld::RemoveFromWorld's Kismet teardown -- CleanUp on each of the level's GameSequences and removal from the parent sequence's SequenceObjects and NestedSequences. Ours matches, so a streamed-out level leaves no sequence behind"
+0x1f51d0,verified,"APlayerController::ConsoleCommand. Ours matches, including the `if (Player == NULL) return TEXT(\\"")` guard at the top (@896) that made -newgame silent while the menu world had no player controller"""
+0x5ea010,todo,"ADishonoredGameInfo::FlushCrowdAgents, AGameInfo vtable +996, called by UWorld::CleanUpBeforeLevelTransition before the actor sweep. Not ported; with it the crowd agents of the outgoing map would be flushed on a seamless transition"
+0x62b4c0,written,ADisPickup_Base::PostBeginPlay (2012 0x680a00) - draw distance
+0x619a60,written,ADisPickup_Base::PostLoad (2012 0x66a830)
+0x62aac0,written,ADisPickup_Base::ApplyTweakChanges_Derived (2012 0x680050) - the tweaks' static mesh
+0x62ad90,written,ADisPickup_Base::GetInteractableTweaks_Derived (2012 0x680320)
+0x619be0,written,ADisPickup_Base::WantsTick_Derived (2012 0x66a9b0)
+0x61d6e0,written,ADisPickup_Base::OnRigidBodyStatusChange (2012 0x66c7b0)
+0x61d820,written,ADisPickup_Base::ShouldTrace (2012 0x66c900) - uses agent AQ/AS's trace mask
+0x62afe0,written,ADisPickup_Base::GetPlayerPawnFromUser (2012 0x680500) - possession branch not ported
+0x62ad30,written,ADisPickup_Base::IsUseBlockedByPossession (2012 0x6802c0) - IsPossessing not ported
+0x631ba0,written,ADisPickup_Base::GetCrosshairStatus (2012 0x682c50)
+0x631bf0,written,ADisPickup_Base::AttemptInteract_Derived (2012 0x682ca0) - the interact itself
+0x62adc0,written,ADisPickup_Base::AttemptCannotUseInteract_Derived (2012 0x680350)
+0x62ab40,written,ADisPickup_Base::StartPickupTravel (2012 0x6800d0) - the fly-to-hand
+0x61d770,written,ADisPickup_Base::ConsumePickup (2012 0x66c840)
+0x62b130,written,ADisPickup_Base::Tick (2012 0x6806b0) - travel interpolation and destruction
+0x62b440,written,ADisPickup_Base::setPhysics (2012 0x680980)
+0x62b0a0,written,ADisPickup_Base::Attach (2012 0x6805c0)
+0x6226c0,written,ADisPickup_Base::Detach (2012 0x6705f0)
+0x61dbb0,written,ADisPickup_Base::BaseChange (2012 0x6706b0)
+0x5f93a0,written,ADisPickup_Base::execBaseChange (2012 0x63f350) - native
+0x61d990,written,ADisPickup_Base::AdjustDetachedPosition (2012 0x66ca70) - PhysX resync tail not ported
+0x622750,written,ADisPickup_Base::ClearComponents (2012 0x670680)
+0x62acd0,written,ADisPickup_Base::OnActorTerminated (2012 0x680260)
+0x61d6a0,written,ADisPickup_Base::IgnoreBlockingBy (2012 0x6705b0)
+0x62af90,written,ADisPickup_Base::HasSoul (2012 0x6804b0)
+0x62b060,written,ADisPickup_Base::GetMovableWeightClass (2012 0x680580)
+0x619a90,written,ADisPickup_Base::TakeDamage_Impl (2012 0x66a870)
+0x63f8d0,written,ADisPickup_Base::Steal (2012 0x680650)
+0x66c820,written,ADisPickup_Base::CanSplash (2012 rva; no distinct 2013 symbol - ICF folded)
+0x63df60,written,IDisInteractableInterface::AttemptInteract (2012 0x678010)
+0x63e200,written,IDisInteractableInterface::AttemptCannotUseInteract (2012 0x678320)
+0x621550,written,IDisInteractableInterface::GetInteractableTweaks (2012 0x67c3f0)
+0x6280a0,written,IDisInteractableInterface::GetInteractableName (2012 0x67d160)
+0x628190,written,IDisInteractableInterface::GetUseMessage (2012 0x67d250)
+0x6281c0,written,IDisInteractableInterface::GetAltUseMessage (2012 0x67d280)
+0x6281f0,written,IDisInteractableInterface::GetCannotUseMessage (2012 0x67d2b0)
+0x61c8c0,written,IDisInteractableInterface::FormatText (2012 0x66bdd0)
+0x627ff0,written,IDisInteractableInterface::DoHighlight (2012 0x67d0b0)
+0x628060,written,IDisInteractableInterface::UnDoHighlight (2012 0x67d120)
+0x630710,written,IDisInteractableInterface::SetHighlightBit (2012 0x681680)
+0x630740,written,IDisInteractableInterface::ClearHighlightBit (2012 0x6816b0)
+0x6307e0,written,IDisInteractableInterface::GainCrosshairFocus (2012 0x681720)
+0x63b560,written,IDisInteractableInterface::WitnessInteraction (2012 0x6774e0) - needs the AI brain; empty with a note
+0x636730,written,ADisStatPickup::PostBeginPlay (2012 0x6872c0) - rolls each ammo type's amount
+0x6367a0,written,ADisStatPickup::DoInteract_Impl (2012 0x687330) - health/mana/ammo
+0x6368d0,written,ADisStatPickup::HasStatsSet (2012 0x687460)
+0x636980,written,ADisStatPickup::CanBePickedUp (2012 0x687520)
+0x636a70,written,ADisStatPickup::GetUseMessage (2012 0x687610)
+0x61dda0,written,ADisStatPickup::FormatText (2012 0x66cca0)
+0x619ce0,written,ADisStatPickup::WantsTick_Derived (2012 0x66aa50)
+0x63cdc0,written,ADisStatPickup::Tick (2012 0x68afd0)
+0x636af0,written,ADisStatPickup::Explode (2012 0x687690)
+0x3710,written,ADisStatPickup::GetTweaks_Derived (2012 0x66aa40)
+0x61dd90,written,ADisStatPickup::SetTweaks_Derived (2012 0x66cc90)
+0x84bd60,written,ADisAbstractItemPickup::DoInteract_Impl (2012 0x8a4b90) - the abstract item into the inventory
+0x84c100,written,ADisAbstractItemPickup::CanBePickedUp (2012 0x8a4ef0)
+0x84bee0,written,ADisAbstractItemPickup::GetUseMessage (2012 0x8a4cd0)
+0x84bf30,written,ADisAbstractItemPickup::FormatText (2012 0x8a4d20)
+0x8452f0,written,ADisAbstractItemPickup::ShouldTrace (2012 0x88fc00)
+0x84c090,written,ADisAbstractItemPickup::Steal (2012 0x8a4e80)
+0x61d560,written,ADisElixirHealth::DoInteract_Impl (2012 0x66c6e0)
+0x622160,written,ADisElixirHealth::CanBePickedUp (2012 0x6704f0)
+0x61d590,written,ADisElixirMana::DoInteract_Impl (2012 0x66c710)
+0x6222c0,written,ADisElixirMana::CanBePickedUp (2012 0x670550)
+0x61d5c0,written,ADisElixirHealth/Mana::SetTweaks_Derived (2012 0x88b260) and the folded getters
+0x810560,written,ADishonoredInventoryPickup::DoInteract_Impl (2012 0x883340) - stat half only
+0x805440,written,UDishonoredInventory::ConsumeStatPickup (2012 0x8529e0) - the inventory side of a stat pickup
+0x6210b0,written,ADishonoredKActor::PropagateMaxDrawDistance (2012 0x66f6c0)
+0x621010,written,ADishonoredKActor::TakeDamage_Native (2012 0x66f620) - native
+0x6185f0,written,ADishonoredKActor::DestroyIfPlayerCantSeeMe (2012 0x669870) - native
+0x6211d0,written,ADishonoredKAsset::TakeDamage_Native (2012 0x66f7e0) - native
+0x5fa8a0,written,UDisParticleSystemComponent::InitializeForPool (2012 0x6407d0) - native
+0x83c940,written,ADisProjectile::TakeDamage_Native (2012 0x8877a0) - native; bend time is inert in this build
+0x6ba9a0,written,ADishonoredPlayerController::HandleHeldButtons (2012 0x6f9b80) - native; _Movement/_Lean not ported
+0x6ba900,written,ADishonoredPlayerController::HandleHeldButtons_Context (2012 0x6f9ae0)
+0x6a2e70,written,ADishonoredPlayerController::HandleHeldButtons_Context_Interactables (2012 0x6d6e10)
+0x6a2e40,written,ADishonoredPlayerController::Dis_Zoom (2012 0x6d6de0) - native
+0x5f9f60,written,ADishonoredGameInfo::GameEnding (2012 0x63fb20) - native
+0x7bf730,written,DisGetGFxHUD (2012 0x827490)
+0x7bf2c0,written,DisIsBendTimeOn (2012 0x8270c0) - returns FALSE; the game-info virtuals are not ported
+0x7bf2f0,written,DisIsBendTimeFrozen (2012 0x8270f0) - same
+0x7bec00,written,DisPullFromBendTime (2012 0x826c20) - empty with a note; game-info virtuals not ported
+0x7bf060,written,DisGetPawnInstigator (2012 0x826fb0)
+0x7bf010,written,DisGetValidInstigator (2012 0x826f60)
+0x7cf970,written,DishonoredSpawnEmitter (2012 0x832010) - emitter pool not ported
+0x7bafa0,written,DisDestroyActorNextTick (2012 0x823960)
+0x7c7b30,written,DisFireKismetEvent (2012 0x82cc90) - drives UDisSeqEvent_Interact from a pickup
+0x7ec6a0,written,DisIsObjectStateGoingToBeRestored (2012 0x82f3d0) - save-state half not ported
+0x7e88b0,written,FDisPhysicsUtil::PhysObjectShouldTraceCommon (2012 0x8286d0)
+0x7b2420,written,DisAddUseMessage / UDisGFxMoviePlayerHUD::AddUseMessage (2012 0x814ef0) - logged
+0x6f2ab0,written,UDishonoredAnimNodeStatePicker::InitAnim (2013 rva 0x69e770): Super then InitStateSlots (agent AV)
+0x6f29a0,written,UDishonoredAnimNodeStatePicker::InitStateSlots (2013 rva 0x69e660): one FStateSlotInfo per child; each child TreeRef_Dynamic receives the picker's m_PossibleTemplates (agent AV)
+0x6f2ae0,written,UDishonoredAnimNodeStatePicker::TickAnim (2013 rva 0x69e7a0): releases slots whose tree reference has gone
+0x6d49f0,written,UDishonoredAnimNodeStatePicker::GetBoneAtoms (2013 rva 0x67de60): total child weight below ZERO_ANIMWEIGHT_THRESH answers the reference pose instead of entering UAnimNodeBlendBase::GetBoneAtoms; this is what the -distweakanimtree gate deferred (agent AV)
+0x6d9210,written,UDishonoredAnimNodeStatePicker::OnCeaseRelevant (2013 rva 0x689d70): clears every slot then ClearState; goes to UAnimNode not to the blend base (agent AV)
+0x6d9190,written,UDishonoredAnimNodeStatePicker::ClearState (2013 rva 0x689cf0) (agent AV)
+0x6d9300,written,UDishonoredAnimNodeStatePicker::IsStateFullWeight (2013 rva 0x689e50) (agent AV)
+0x6d9290,written,UDishonoredAnimNodeStatePicker::GetDominantTree (2013 rva 0x689df0) (agent AV)
+0x6d0010,written,UDishonoredAnimNodeStatePicker::HasActiveState (2013 rva unmatched): inline in the CppText header (agent AV)
+0x6eed40,written,UDishonoredAnimNodeStatePicker::CleanupForAnimStates (2013 rva 0x69c5a0) (agent AV)
+0x6f2f10,written,UDishonoredAnimNodeStatePicker::SetState 3-arg (2013 rva 0x69ebd0): the single-slot form; slot 0 takes the state at full weight (agent AV)
+0x6f6bc0,written,UDishonoredAnimNodeStatePicker::SetState 4-arg (2013 rva 0x69edf0): reuses a slot already holding the state
+0x6f2ee0,written,UDishonoredAnimNodeStatePicker::OnRemoveChild (2013 rva unmatched): retail calls UAnimNodeBlendBase::OnAddChild here
+0x6f4c30,written,UDishonoredAnimNodeStatePicker::PostAnimNodeInstance (2013 rva unmatched): an instanced picker starts with no slots (agent AV)
+0x6e47d0,written,UDishonoredAnimNodeStatePicker::RenameChildren (2013 rva unmatched): the children are named StateTree1..N (agent AV)
+0x6ed460,not_ported,UDishonoredAnimNodeStatePicker::GetChildBoneAtoms (2013 rva 0x69ad60): the anchor-bone fixup that keeps two cross-fading state trees pivoting around the same UDisTweaks_Pawn bone; warn-once DISHONORED(bringup) instead (agent AV)
+0x6cffb0,not_ported,UDishonoredAnimNodeStatePicker::BuildEdgeAnimTree (2013 rva 0x67dee0): the whole-tree Edge path does not exist in this tree (agent W follow-up 5) (agent AV)
+0x6d0040,written,UDishonoredAnimNodeTreeRef::InitTreeInstance (2013 rva 0x67dfd0): UAnimTree::InitAnimTree on the instance + m_pParentAnimTree_ForRef (agent AV)
+0x6d0070,written,UDishonoredAnimNodeTreeRef::InitAnim (2013 rva 0x67e000) (agent AV)
+0x6d4b50,written,UDishonoredAnimNodeTreeRef::TickAnim (2013 rva 0x682930): the sub-tree is ticked with this node's NodeTotalWeight as its root weight (agent AV)
+0x6d00d0,written,UDishonoredAnimNodeTreeRef::GetBoneAtoms (2013 rva 0x67e090) (agent AV)
+0x6d0140,written,UDishonoredAnimNodeTreeRef::CallDeferredInitAnim (2013 rva 0x67e100) (agent AV)
+0x6d4b10,written,UDishonoredAnimNodeTreeRef::PostAnimNodeInstance (2013 rva 0x6926a0): CopyAnimTree of the referenced tree into the source node's outer (agent AV)
+0x6d9370,written,UDishonoredAnimNodeTreeRef::GetNodesInternal (2013 rva unmatched): the sub-tree's nodes join the parent's node list (agent AV)
+0x6d0110,not_ported,UDishonoredAnimNodeTreeRef::BuildEdgeAnimTree (2013 rva 0x67e0d0): no whole-tree Edge path (agent AV)
+0x6d4ae0,not_ported,UDishonoredAnimNodeTreeRef::GetConnectionLocation (2013 rva 0x67e060): editor only (agent AV)
+0x6e4900,not_ported,UDishonoredAnimNodeTreeRef::GetNodeTitle (2013 rva 0x689f20): editor only (agent AV)
+0x6f31c0,not_ported,UDishonoredAnimNodeTreeRef::DrawAnimNode (2013 rva 0x69d8d0): editor only (agent AV)
+0x6d93e0,written,UDishonoredAnimNodeTreeRef_Dynamic::InitAnim (2013 rva 0x68a060): in game every instanced template is initialised
+0x6d94b0,written,UDishonoredAnimNodeTreeRef_Dynamic::PostAnimNodeInstance (2013 rva 0x6926f0): pooled templates register their pool settings
+0x6d9680,written,UDishonoredAnimNodeTreeRef_Dynamic::BuildParentNodesArray (2013 rva 0x68a130) (agent AV)
+0x6d9700,written,UDishonoredAnimNodeTreeRef_Dynamic::BuildTickArray (2013 rva 0x68a1b0): m_bFetchAtSpawnTime templates take a tree out of the pool once; deliberately no Super call (agent AV)
+0x6d97c0,written,UDishonoredAnimNodeTreeRef_Dynamic::CheckForReleaseToPool (2013 rva 0x68a270) (agent AV)
+0x6e49a0,written,UDishonoredAnimNodeTreeRef_Dynamic::ClearActiveTreeReference (2013 rva 0x6928c0): the sub-tree's nodes lose relevancy and weight so the state restarts next time (agent AV)
+0x6ed730,written,UDishonoredAnimNodeTreeRef_Dynamic::CleanupForAnimStates (2013 rva 0x69b030) (agent AV)
+0x6ed810,written,UDishonoredAnimNodeTreeRef_Dynamic::OnCeaseRelevant (2013 rva 0x69b110) (agent AV)
+0x6eee20,written,UDishonoredAnimNodeTreeRef_Dynamic::SetActiveTreeReference (2013 rva unmatched): picks the named template
+0x6b1c40,written,UDishonoredAnimTree::EndAnimState (2013 rva 0x67d6c0) (agent AV)
+0x6b1c60,written,UDishonoredAnimTree::InitAnim (2013 rva 0x67d6e0) (agent AV)
+0x6b1c90,written,UDishonoredAnimTree::OnCeaseRelevant (2013 rva 0x67d710): goes to UAnimNode not to the blend base (agent AV)
+0x6b1cc0,written,UDishonoredAnimTree::GetAnimStateInfo (2013 rva 0x67d740) (agent AV)
+0x6bdcc0,written,UDishonoredAnimTree::IsAnimStateActive (2013 rva 0x688a90): an NPC's tree always counts as inside an anim state (agent AV)
+0x6c5750,written,UDishonoredAnimTree::GetAnimStateFireInterface (2013 rva 0x6918c0) (agent AV)
+0x6c8c60,not_ported,UDishonoredAnimTree::GetAnimStateEquipUsage (2013 rva 0x69a1a0): needs UDisItemContext / UStatePlayerAction (agent AU) (agent AV)
+0x6c0dd0,not_ported,UDishonoredAnimTree::TransformSingleBone (2013 rva unmatched): only GetChildBoneAtoms uses it (agent AV)
+0x890b20,written,UDisAnimStatePool::FindAnimTreePool (2013 rva 0x845e60) (agent AV)
+0x898c00,written,UDisAnimStatePool::GetPooledTree (2013 rva 0x858b80): an empty pool grows by one; retail dereferences FindAnimTreePool without a null check
+0x89a560,written,UDisAnimStatePool::UpdatePoolSettings (2013 rva 0x85aeb0) (agent AV)
+0x898af0,written,UDisAnimStatePool::AddTreesToPool (2013 rva unmatched): the copies live in the transient package and their bParentNodeArrayBuilt is cleared (agent AV)
+0x898bc0,written,UDisAnimStatePool::ReturnToPool (2013 rva unmatched) (agent AV)
+0x896840,written,UDisAnimStatePool::CallPostAnimNodeInstance (2013 rva unmatched): PostAnimNodeInstance down both trees in lockstep; retail passes a NULL node map
+0x1ae3c0,written,UAnimTree::InitAnimTree (2013 rva unmatched): retail's node-list build on the TREE's own AnimTickArray / AnimTickRelevancyArray / AnimTickWeightsArray; InitAnimNodeListFastSearch not ported (agent AV)
+0x1a7dc0,written,UAnimTree::TickTree (2013 rva 0x19c0d0): retail's per-node tick loop on the tree's own arrays
+0x364e20,written,USkeletalMeshComponent::InitAnimTree (2013 rva unmatched): ++InitTag then UAnimTree::InitAnimTree(this); the reference loops built the shared DISHONORED_SHIM_STATIC arrays (agent AV)
+0x334d30,written,USkeletalMeshComponent::TickAnimNodes (2013 rva unmatched): ++TickTag then UAnimTree::TickTree(DeltaTime
+0x343910,partial,USkeletalMeshComponent::DeleteAnimTree (2013 rva unmatched): the camera-anim sweep and the clears now go through the tree's arrays; retail's UAnimTree::OnDeleteAnimTree (2012 0x1a0c00) split is not ported (agent AV)
+0x1a6b00,written,UAnimNode::GetNodes (2013 rva unmatched): retail always traverses and only uses the node's OWN tree's tick array as a reserve hint (agent AV)
+0x19ec90,written,UAnimNodeBlendBase::TickAnim / UpdateChildWeight (2013 rva unmatched): the weights array belongs to the node's m_pParentAnimTree
+0x769720,written,ADishonoredPawn::ApplyTweakChanges_Derived (2013 rva 0x769720): the -distweakanimtree gate agent AJ added is deleted; the tweaks' anim tree is applied unconditionally (agent AV)
+0x7200e0,not_ported,ADishonoredPlayerPawn::PreBeginPlay_AnimStates (2013 rva 0x6e2060): the retail driver that sets the pawn's first anim state from its tweaks; with UDisAnimStateComponent::SetAnimState (2013 0x6cc0d0) and ADishonoredPawn::PreBeginPlay (2012 0x78e220) this is the remaining link to real locomotion - hand-over to AU (agent AV)
+0x0,needed,"UMaterial::FinishDestroy (Engine/Src/Material.cpp:1925) deletes DefaultMaterialInstances[0..2] but the array is FDefaultMaterialInstance*[2] (retail/2012 PDB layout, EngineMaterialClasses.h:3949), so index 2 aliases the next member, INT EditorX, and `delete (FDefaultMaterialInstance*)EditorX` faults. 29 of the 471 cooked packages crash in the garbage-collect purge because of it (EBP chain UMaterial::FinishDestroy+0x56 <- IncrementalPurgeGarbage <- CollectGarbage, read at 0xfffffcfd = EditorX -771). Fix: loop to ARRAY_COUNT(DefaultMaterialInstances) as UMaterial::UMaterial already does for MaterialResources. Not AX's file - coordinator or the renderer package."
