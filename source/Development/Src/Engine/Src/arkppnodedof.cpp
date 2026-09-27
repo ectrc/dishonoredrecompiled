@@ -38,3 +38,233 @@
 //   0xb9f710  _dynamic_initializer_for__FArkPpDofUberVS::StaticType__
 //   0xb9f750  _dynamic_initializer_for__FArkPpDofLutBlenderPS::StaticType__
 //   0xb9f790  _dynamic_initializer_for__FArkPpDofLutBlenderVS::StaticType__
+
+#include "EnginePrivate.h"
+#include "ScenePrivate.h"
+#include "SceneFilterRendering.h"
+
+/**
+ * DISHONORED(port): the shader types of Arkane's depth-of-field node (UArkPpNodeDof / FArkPpNodeDofProxy), which is
+ * also where the colour treatment happens: the uber pixel shader applies focus, the linear-to-gamma ramp and the film
+ * grain, and the LUT blender builds the colour-balance lookup out of FArkUberPpParameters. 2013 rva 0xb82e50 ff.,
+ * source ArkPpDof, entry points Downsample_VS/PS, Uber_VS/PS, LUTBlender_VS/PS.
+ */
+
+/** DISHONORED(layout): one parameter, (1/w, 1/h, 42, 36) (2013 rva 0x50eab0 SetParameters). */
+class FArkPpDofDownsampleVS : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FArkPpDofDownsampleVS,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FArkPpDofDownsampleVS() {}
+
+	FArkPpDofDownsampleVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mResolutionParams.Bind(Initializer.ParameterMap,TEXT("ResolutionParams"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mResolutionParams;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderParameter mResolutionParams;
+};
+
+/** DISHONORED(layout): one parameter, the source colour. */
+class FArkPpDofDownsamplePS : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FArkPpDofDownsamplePS,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FArkPpDofDownsamplePS() {}
+
+	FArkPpDofDownsamplePS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mSrcColorParam.Bind(Initializer.ParameterMap,TEXT("SrcColor"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mSrcColorParam;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderResourceParameter mSrcColorParam;
+};
+
+/** DISHONORED(layout): three parameters (2013 rva 0x50eb50 SetParameters), gate 787 / 1 (0xb82f90). */
+class FArkPpDofUberVS : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FArkPpDofUberVS,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FArkPpDofUberVS() {}
+
+	FArkPpDofUberVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mResolutionParams.Bind(Initializer.ParameterMap,TEXT("ResolutionParams"),TRUE);
+		mViewportScaleBias.Bind(Initializer.ParameterMap,TEXT("ViewportScaleBias"),TRUE);
+		mNoiseParams.Bind(Initializer.ParameterMap,TEXT("NoiseParams"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mResolutionParams;
+		Ar << mViewportScaleBias;
+		Ar << mNoiseParams;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderParameter mResolutionParams;
+	FShaderParameter mViewportScaleBias;
+	FShaderParameter mNoiseParams;
+};
+
+/**
+ * DISHONORED(layout): seven parameters (2013 rva 0x50b520 Serialize): source colour, source depth, the low-resolution
+ * blurred colour, the focus constants, the linear-to-gamma ramp texture, the scene depth reconstruction constant and
+ * the film grain constants. The two template arguments are the cooked name's suffix (_01, _10, _11): whether the node
+ * blurs the near field and whether it blurs the far field. Gate 787 / 1 (0xb82ed0 ff.).
+ */
+template<UINT bNearBlur,UINT bFarBlur>
+class TArkPpDofUberPS : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TArkPpDofUberPS,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TArkPpDofUberPS() {}
+
+	TArkPpDofUberPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mSrcColorParam.Bind(Initializer.ParameterMap,TEXT("SrcColor"),TRUE);
+		mSrcDepthParam.Bind(Initializer.ParameterMap,TEXT("SrcDepth"),TRUE);
+		mLowColorParam.Bind(Initializer.ParameterMap,TEXT("LowColor"),TRUE);
+		mFocusParams.Bind(Initializer.ParameterMap,TEXT("FocusParams"),TRUE);
+		mLinearToGammaParam.Bind(Initializer.ParameterMap,TEXT("LinearToGamma"),TRUE);
+		mSceneDepthCalcParameter.Bind(Initializer.ParameterMap,TEXT("MinZ_MaxZRatio"),TRUE);
+		mFilmGrainParams.Bind(Initializer.ParameterMap,TEXT("FilmGrainParams"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mSrcColorParam;
+		Ar << mSrcDepthParam;
+		Ar << mLowColorParam;
+		Ar << mFocusParams;
+		Ar << mLinearToGammaParam;
+		Ar << mSceneDepthCalcParameter;
+		Ar << mFilmGrainParams;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderResourceParameter mSrcColorParam;
+	FShaderResourceParameter mSrcDepthParam;
+	FShaderResourceParameter mLowColorParam;
+	FShaderParameter mFocusParams;
+	FShaderResourceParameter mLinearToGammaParam;
+	FShaderParameter mSceneDepthCalcParameter;
+	FShaderParameter mFilmGrainParams;
+};
+
+/** DISHONORED(layout): no parameters at all (the cooked record has 0 parameter words). */
+class FArkPpDofLutBlenderVS : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FArkPpDofLutBlenderVS,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FArkPpDofLutBlenderVS() {}
+
+	FArkPpDofLutBlenderVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+	}
+};
+
+/**
+ * DISHONORED(layout): six parameters (2013 rva 0x50b1c0 Serialize, 0x50ed00 SetParameters): the source lookup
+ * texture, the three colour-balance constants (shadow, mid and high tones, from FArkPpColorBalanceParameters), the
+ * overlay opacity and the brightness/contrast pair. Gate 789 / 1 (0xb82fd0), the highest of the FArkPp family.
+ */
+class FArkPpDofLutBlenderPS : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FArkPpDofLutBlenderPS,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FArkPpDofLutBlenderPS() {}
+
+	FArkPpDofLutBlenderPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mLUTParams.Bind(Initializer.ParameterMap,TEXT("LUTParams"),TRUE);
+		mCBParams[0].Bind(Initializer.ParameterMap,TEXT("CBShadowTones"),TRUE);
+		mCBParams[1].Bind(Initializer.ParameterMap,TEXT("CBMidTones"),TRUE);
+		mCBParams[2].Bind(Initializer.ParameterMap,TEXT("CBHighTones"),TRUE);
+		mOverlay.Bind(Initializer.ParameterMap,TEXT("Overlay"),TRUE);
+		mBrightnessContrast.Bind(Initializer.ParameterMap,TEXT("BrightnessContrast"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mLUTParams;
+		Ar << mCBParams[0];
+		Ar << mCBParams[1];
+		Ar << mCBParams[2];
+		Ar << mOverlay;
+		Ar << mBrightnessContrast;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderParameter mLUTParams;
+	FShaderParameter mCBParams[3];
+	FShaderParameter mOverlay;
+	FShaderParameter mBrightnessContrast;
+};
+
+// DISHONORED(retail): 2013 rva 0xb82e50 .. 0xb83010.
+IMPLEMENT_SHADER_TYPE(,FArkPpDofDownsamplePS,TEXT("ArkPpDof"),TEXT("Downsample_PS"),SF_Pixel,786,1);
+IMPLEMENT_SHADER_TYPE(,FArkPpDofDownsampleVS,TEXT("ArkPpDof"),TEXT("Downsample_VS"),SF_Vertex,786,1);
+IMPLEMENT_SHADER_TYPE(,FArkPpDofUberVS,TEXT("ArkPpDof"),TEXT("Uber_VS"),SF_Vertex,787,1);
+IMPLEMENT_SHADER_TYPE(,FArkPpDofLutBlenderPS,TEXT("ArkPpDof"),TEXT("LUTBlender_PS"),SF_Pixel,789,1);
+IMPLEMENT_SHADER_TYPE(,FArkPpDofLutBlenderVS,TEXT("ArkPpDof"),TEXT("LUTBlender_VS"),SF_Vertex,786,1);
+
+typedef TArkPpDofUberPS<1,1> FArkPpDofUber_11PSType;
+typedef TArkPpDofUberPS<1,0> FArkPpDofUber_10PSType;
+typedef TArkPpDofUberPS<0,1> FArkPpDofUber_01PSType;
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpDofUber_11PSType,TEXT("FArkPpDofUber_11PS"),TEXT("ArkPpDof"),TEXT("Uber_PS"),SF_Pixel,787,1);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpDofUber_10PSType,TEXT("FArkPpDofUber_10PS"),TEXT("ArkPpDof"),TEXT("Uber_PS"),SF_Pixel,787,1);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FArkPpDofUber_01PSType,TEXT("FArkPpDofUber_01PS"),TEXT("ArkPpDof"),TEXT("Uber_PS"),SF_Pixel,787,1);
+
+/** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
+void DishonoredLinkArkPpDofShaderTypes()
+{
+}

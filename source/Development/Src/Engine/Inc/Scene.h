@@ -1434,6 +1434,12 @@ public:
 	 * @param FogComponent - fog component to remove
 	 */	
 	virtual void RemoveHeightFog(class UHeightFogComponent* FogComponent) = 0;
+	/**
+	 * DISHONORED(port): the fog retail actually renders (2013 rva 0x422340 / 0x41fa20). A UDisFogComponent adds one
+	 * layer to the scene's fog array on attach and removes it on detach; FSceneRenderer::RenderFog draws them.
+	 */
+	virtual void AddDisFog(class UDisFogComponent* FogComponent) = 0;
+	virtual void RemoveDisFog(class UDisFogComponent* FogComponent) = 0;
 	/** 
 	 * Adds a new exponential height fog component to the scene
 	 * 
@@ -1708,6 +1714,14 @@ public:
 
 	/** Chain of post process effects for this view */
 	const UPostProcessChain* PostProcessChain;
+
+	/**
+	 * DISHONORED(layout): 2012 PDB FSceneView @28 - the Arkane post-process settings of this view (the camera's
+	 * m_CamPostProcessSettings blended with the level's and whatever a colour-scale volume last pushed, kept by
+	 * ULocalPlayer::m_CurrentArkPpSettings). FBloomDownSamplePixelShader::SetParameters (2013 rva 0x50e5a0) and the
+	 * FArkPp depth-of-field node read it; it is NULL for a view that has none, and the shaders then use neutral values.
+	 */
+	const struct FArkPpConfig* m_ArkPpConfig;
 
 	/** The view-specific post process settings. */
 	const struct FPostProcessSettings* PostProcessSettings;

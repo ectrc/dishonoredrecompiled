@@ -26,3 +26,91 @@
 //   0xb9f810  _dynamic_initializer_for__TKuwaPixelShader_5_::StaticType__
 //   0xb9f850  _dynamic_initializer_for__TKuwaVertexShader_3_::StaticType__
 //   0xb9f890  _dynamic_initializer_for__TKuwaPixelShader_3_::StaticType__
+
+#include "EnginePrivate.h"
+#include "ScenePrivate.h"
+#include "SceneFilterRendering.h"
+
+/**
+ * DISHONORED(port): the shader types of Arkane's Kuwahara painterly filter node (UArkPpNodeKuwa /
+ * FArkPpNodeKuwaProxy). The template argument is the kernel radius, 3 or 5 (2013 rva 0xb83050 ff., source ArkKuwa,
+ * entry points MainVS / MainPS, 793 / 26).
+ */
+
+/** DISHONORED(layout): two parameters (2013 rva 0x5155e0 SetParameters: (1/w, 1/h, strength) and the viewport scale/bias). */
+template<UINT KernelRadius>
+class TKuwaVertexShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TKuwaVertexShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TKuwaVertexShader() {}
+
+	TKuwaVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		m_OORTSizeParameter.Bind(Initializer.ParameterMap,TEXT("OORTSize"),TRUE);
+		m_ViewportScaleBiasParameter.Bind(Initializer.ParameterMap,TEXT("ViewportScaleBias"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << m_OORTSizeParameter;
+		Ar << m_ViewportScaleBiasParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderParameter m_OORTSizeParameter;
+	FShaderParameter m_ViewportScaleBiasParameter;
+};
+
+/** DISHONORED(layout): one parameter, the source colour (2013 rva 0x50dab0 SetParameters). */
+template<UINT KernelRadius>
+class TKuwaPixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TKuwaPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TKuwaPixelShader() {}
+
+	TKuwaPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		m_SrcColor.Bind(Initializer.ParameterMap,TEXT("SrcColor"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << m_SrcColor;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderResourceParameter m_SrcColor;
+};
+
+// DISHONORED(retail): 2013 rva 0xb83050 .. 0xb83110 ("ArkKuwa", 793 / 26).
+typedef TKuwaVertexShader<5> FKuwaVertexShader5Type;
+typedef TKuwaPixelShader<5> FKuwaPixelShader5Type;
+typedef TKuwaVertexShader<3> FKuwaVertexShader3Type;
+typedef TKuwaPixelShader<3> FKuwaPixelShader3Type;
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaVertexShader5Type,TEXT("FKuwaVertexShader5"),TEXT("ArkKuwa"),TEXT("MainVS"),SF_Vertex,793,26);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaPixelShader5Type,TEXT("FKuwaPixelShader5"),TEXT("ArkKuwa"),TEXT("MainPS"),SF_Pixel,793,26);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaVertexShader3Type,TEXT("FKuwaVertexShader3"),TEXT("ArkKuwa"),TEXT("MainVS"),SF_Vertex,793,26);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaPixelShader3Type,TEXT("FKuwaPixelShader3"),TEXT("ArkKuwa"),TEXT("MainPS"),SF_Pixel,793,26);
+
+/** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
+void DishonoredLinkArkPpKuwaShaderTypes()
+{
+}

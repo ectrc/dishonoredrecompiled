@@ -1035,6 +1035,9 @@ public:
 	/** The exponential fog components in the scene. */
 	TArray<FExponentialHeightFogSceneInfo> ExponentialFogs;
 
+	/** DISHONORED(port): the DisFog layers in the scene, sorted so the ones with a colour lookup texture come first. */
+	TArray<FDisFogSceneInfo> DisFogs;
+
 	/** The wind sources in the scene. */
 	TArray<class FWindSourceSceneProxy*> WindSources;
 
@@ -1147,6 +1150,8 @@ public:
 	virtual void UpdatePreviewSkyLightColor(const FLinearColor& NewColor);
 	virtual void AddHeightFog(UHeightFogComponent* FogComponent);
 	virtual void RemoveHeightFog(UHeightFogComponent* FogComponent);
+	virtual void AddDisFog(UDisFogComponent* FogComponent);
+	virtual void RemoveDisFog(UDisFogComponent* FogComponent);
 	virtual void AddExponentialHeightFog(UExponentialHeightFogComponent* FogComponent);
 	virtual void RemoveExponentialHeightFog(UExponentialHeightFogComponent* FogComponent);
 	virtual void AddWindSource(UWindDirectionalSourceComponent* WindComponent);

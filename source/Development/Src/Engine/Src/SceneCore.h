@@ -304,6 +304,7 @@ public:
 
 IMPLEMENT_COMPARE_CONSTREF(FHeightFogSceneInfo,SceneCore,{ return A.Height < B.Height ? +1 : (A.Height > B.Height ? -1 : 0); });
 
+
 /** The properties of a exponential height fog layer which are used for rendering. */
 class FExponentialHeightFogSceneInfo
 {

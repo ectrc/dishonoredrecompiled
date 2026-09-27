@@ -3497,70 +3497,26 @@ void ULocalPlayer::TouchPlayerPostProcessChain()
  */
 void ULocalPlayer::RebuildPlayerPostProcessChain()
 {
-	// Release the current PlayerPostProcessChain.
+	// DISHONORED(port): 2013 rva 0x2b9ac0. Retail's chain is Arkane's node graph, not the reference's list of
+	// UPostProcessEffect objects: the rebuild duplicates the single inserted chain into the transient package and
+	// takes that duplicate whole, m_GraphRoot and m_AllNodes with it. The reference version built an empty chain and
+	// copied `Effects`, which is a storage-less shim here (retail UPostProcessChain has no such member), so the
+	// player ended up with a chain of nothing - the graph the content ships was thrown away at this line.
 	if (PlayerPostProcessChains.Num() == 0)
 	{
 		PlayerPostProcess = NULL;
 		return;
 	}
 
-	PlayerPostProcess = ConstructObject<UPostProcessChain>(UPostProcessChain::StaticClass(), UObject::GetTransientPackage());
-	check(PlayerPostProcess);
-	
-#if DWTRIOVIZSDK
-	UBOOL bDwFoundTriovizNode = FALSE;
-#endif
-
-	UBOOL bUberEffectInserted = FALSE;
-	for (INT ChainIndex = 0; ChainIndex < PlayerPostProcessChains.Num(); ChainIndex++)
+	// DISHONORED(port): retail notifies every controller first (AController vtable slot 238) - not ported.
+	if (PlayerPostProcessChains.Num() == 1)
 	{
-		UPostProcessChain* PPChain = PlayerPostProcessChains(ChainIndex);
-		if (PPChain)
-		{
-			for (INT EffectIndex = 0; EffectIndex < PPChain->Effects.Num(); EffectIndex++)
-			{
-				UPostProcessEffect* PPEffect = PPChain->Effects(EffectIndex);
-				if (PPEffect)
-				{
-#if DWTRIOVIZSDK
-					// track if there was already Trioviz PP effect in the chain
-					if (PPEffect->IsA(UDwTriovizImplEffect::StaticClass()) == TRUE)
-					{
-						bDwFoundTriovizNode = TRUE;
-					}
-#endif
-					if (PPEffect->IsA(UUberPostProcessEffect::StaticClass())== TRUE)
-					{
-						if (bUberEffectInserted == FALSE)
-						{
-							PlayerPostProcess->Effects.AddItem(PPEffect);
-							bUberEffectInserted = TRUE;
-						}
-						else
-						{
-							warnf(TEXT("LocalPlayer %d - Multiple UberPostProcessEffects present..."), ControllerId);
-						}
-					}
-					else
-					{
-						PlayerPostProcess->Effects.AddItem(PPEffect);
-					}
-				}
-			}
-		}
+		UPostProcessChain* SourceChain = PlayerPostProcessChains(0);
+		PlayerPostProcess = Cast<UPostProcessChain>(StaticDuplicateObject(SourceChain, SourceChain, UObject::GetTransientPackage(), TEXT("None"), RF_AllFlags & (~RF_Standalone)));
+		// DISHONORED(bringup): UPostProcessChain::CreateMutableMaterialInstanceOnNodes (2013 rva 0x2d2a40) gives each
+		// material node its own mutable material instance; it needs UArkPpNodeMaterial, which is declared in
+		// DishonoredGame's shim header, so it waits for the FArkPp graph port.
 	}
-
-#if DWTRIOVIZSDK
-	// if there wasn't already a Trioviz in the chain, we need to add it for the stereoscopic effect to work
-	if( bDwFoundTriovizNode == FALSE )
-	{
-		UDwTriovizImplEffect* Effect = ConstructObject<UDwTriovizImplEffect>(UDwTriovizImplEffect::StaticClass());
-		if (Effect)
-		{
-			PlayerPostProcess->Effects.AddItem(Effect);
-		}
-	}
-#endif
 }
 
 
@@ -4271,6 +4227,52 @@ FSceneView* ULocalPlayer::CalcSceneView( FSceneViewFamily* ViewFamily, FVector& 
 		bCameraCut,
 		TemporalAAParameters
 		);
+
+	// DISHONORED(port): retail passes the player's blended Arkane post-process settings to the FSceneView constructor
+	// as its eighth argument (2013 rva 0x422e40 / FSceneView @28): the level's, the camera's and whatever a colour-scale
+	// volume or Kismet last pushed, kept in m_CurrentArkPpSettings. The bloom down-sample shader and the FArkPp
+	// depth-of-field node read it; a view without it uses neutral values.
+	View->m_ArkPpConfig = &m_CurrentArkPpSettings;
+
+	// DISHONORED(bringup): what the post-process chain of this view actually holds, once (package BD).
+	{
+		static UBOOL bLoggedPostProcessChain = FALSE;
+		if (!bLoggedPostProcessChain)
+		{
+			bLoggedPostProcessChain = TRUE;
+			const FArkPpBloomParameters& Bloom = m_CurrentArkPpSettings.m_PpBloomParameters;
+			// How many objects of Arkane's post-process node classes the loaded packages hold: the FArkPp graph can
+			// only run if the content has one (the classes themselves are not declared in this tree yet).
+			INT NumArkPpNodes = 0;
+			FString FirstNode;
+			for (TObjectIterator<UObject> It; It; ++It)
+			{
+				if (appStrstr(*It->GetClass()->GetName(),TEXT("ArkPpNode")) != NULL)
+				{
+					NumArkPpNodes++;
+					if (FirstNode.Len() == 0)
+					{
+						FirstNode = It->GetPathName();
+					}
+				}
+			}
+			const UPostProcessChain* WorldChain = GWorld->GetWorldInfo()->WorldPostProcessChain;
+			debugf(TEXT("DISHONORED(bringup): post-process chain: world chain %s (%i nodes), engine default chain %s, %i chains inserted on the player, first ArkPpNode object %s"),
+				WorldChain ? *WorldChain->GetPathName() : TEXT("none"),
+				WorldChain ? WorldChain->m_AllNodes.Num() : 0,
+				GEngine->GetWorldPostProcessChain() ? TEXT("loads") : TEXT("none"),
+				PlayerPostProcessChains.Num(),
+				FirstNode.Len() ? *FirstNode : TEXT("none"));
+			debugf(TEXT("DISHONORED(bringup): post-process chain: %s (player %s, default %s), graph root %s, %i nodes in chain, %i ArkPpNode objects loaded; bloom enable %i scale %.3f threshold %.3f"),
+				ActivePostProccessChain ? *ActivePostProccessChain->GetPathName() : TEXT("none"),
+				PlayerPostProcess ? TEXT("set") : TEXT("none"),
+				GEngine->GetDefaultPostProcessChain() ? TEXT("set") : TEXT("none"),
+				(ActivePostProccessChain && ActivePostProccessChain->m_GraphRoot) ? TEXT("set") : TEXT("none"),
+				ActivePostProccessChain ? ActivePostProccessChain->m_AllNodes.Num() : 0,
+				NumArkPpNodes,
+				(INT)Bloom.m_bEnable, Bloom.m_Scale, Bloom.m_Threshold);
+		}
+	}
 
 	View->bForceLowestMassiveLOD = GWorld->GetWorldInfo()->IsInsideMassiveLODVolume(ViewLocation);
 

@@ -188,3 +188,208 @@ IMPLEMENT_MATERIAL_SHADER_TYPE(template<>,TSoulPartMeshPixelShader<FSoulPartMesh
 void DishonoredLinkArkPartMeshShaderTypes()
 {
 }
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): the global shaders of Arkane's bloom (2013 rva 0xb826d0 .. 0xb82810, source
+	ArkBloomPartVertexShader / ArkBloomPartPixelShader, entry points MainDownSample, MainBlur, MainCompose, 786 / 23).
+	FSceneRenderer::RenderBloomParts (2013 rva 0x5251a0) draws the bloom-part primitives of FArkBloomPartPrimSet into
+	the quarter-size bloom target with the mesh shaders above, downsamples, blurs it five taps at a time between
+	m_BloomRT and m_BloomRT2, and composes the result back over scene colour.
+-----------------------------------------------------------------------------*/
+
+/** DISHONORED(layout): no parameters (the cooked record has 0 parameter words). */
+class FBloomComposeVertexShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FBloomComposeVertexShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FBloomComposeVertexShader() {}
+
+	FBloomComposeVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+	}
+};
+
+/** DISHONORED(layout): the five scene texture parameters and the bloom texture (2013 rva 0x50b650 Serialize). */
+class FBloomComposePixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FBloomComposePixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FBloomComposePixelShader() {}
+
+	FBloomComposePixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mSceneTextureParameters.Bind(Initializer.ParameterMap);
+		mBloomTexture.Bind(Initializer.ParameterMap,TEXT("BloomTexture"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mSceneTextureParameters;
+		Ar << mBloomTexture;
+		return bShaderHasOutdatedParameters;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x50e520 - scene colour and the blurred bloom target. */
+	void SetParameters(const FSceneView* View,const FTexture2DRHIRef& BloomTexture)
+	{
+		mSceneTextureParameters.Set(View,this,SF_Point);
+		SetTextureParameterDirectly(GetPixelShader(),mBloomTexture,TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),BloomTexture);
+	}
+
+private:
+	FSceneTextureShaderParameters mSceneTextureParameters;
+	FShaderResourceParameter mBloomTexture;
+};
+
+/** DISHONORED(layout): no parameters. */
+class FBloomDownSampleVertexShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FBloomDownSampleVertexShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FBloomDownSampleVertexShader() {}
+
+	FBloomDownSampleVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+	}
+};
+
+/**
+ * DISHONORED(layout): two parameters, the source texture and the bloom tint (2013 rva 0x50e5a0 SetParameters, which
+ * takes the tint and threshold from FSceneView::m_ArkPpConfig->m_PpBloomParameters: tint * scale in RGB and
+ * -threshold * scale in alpha). This is where a colour-scale volume's bloom settings reach the image.
+ */
+class FBloomDownSamplePixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FBloomDownSamplePixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	FBloomDownSamplePixelShader() {}
+
+	FBloomDownSamplePixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mBloomTexture.Bind(Initializer.ParameterMap,TEXT("BloomTexture"),TRUE);
+		mBloomTint.Bind(Initializer.ParameterMap,TEXT("BloomTint"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mBloomTexture;
+		Ar << mBloomTint;
+		return bShaderHasOutdatedParameters;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x50e5a0. */
+	void SetParameters(const FSceneView* View,const FTexture2DRHIRef& SourceTexture)
+	{
+		SetTextureParameterDirectly(GetPixelShader(),mBloomTexture,TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),SourceTexture);
+
+		FLinearColor BloomTint(1.0f,1.0f,1.0f,0.0f);
+		if (View->m_ArkPpConfig)
+		{
+			const FArkPpBloomParameters& Bloom = View->m_ArkPpConfig->m_PpBloomParameters;
+			BloomTint = FLinearColor(Bloom.m_Tint.R * Bloom.m_Scale,Bloom.m_Tint.G * Bloom.m_Scale,Bloom.m_Tint.B * Bloom.m_Scale,-(Bloom.m_Threshold * Bloom.m_Scale));
+		}
+		SetPixelShaderValue(GetPixelShader(),mBloomTint,BloomTint);
+	}
+
+private:
+	FShaderResourceParameter mBloomTexture;
+	FShaderParameter mBloomTint;
+};
+
+/** DISHONORED(layout): one parameter, the sample offsets of the blur (NumSamples taps per pass). */
+template<UINT NumSamples>
+class TBloomBlurVertexShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TBloomBlurVertexShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TBloomBlurVertexShader() {}
+
+	TBloomBlurVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		SampleOffsetsParameter.Bind(Initializer.ParameterMap,TEXT("SampleOffsets"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << SampleOffsetsParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	void SetParameters(const FVector2D* SampleOffsets)
+	{
+		SetVertexShaderValues(GetVertexShader(),SampleOffsetsParameter,SampleOffsets,NumSamples);
+	}
+
+private:
+	FShaderParameter SampleOffsetsParameter;
+};
+
+/** DISHONORED(layout): one parameter, the source texture (2013 rva 0x50b9e0 Serialize). */
+template<UINT NumSamples>
+class TBloomBlurPixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TBloomBlurPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TBloomBlurPixelShader() {}
+
+	TBloomBlurPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		BlurTextureParameter.Bind(Initializer.ParameterMap,TEXT("BlurTexture"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << BlurTextureParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	void SetParameters(const FTexture2DRHIRef& SourceTexture)
+	{
+		SetTextureParameterDirectly(GetPixelShader(),BlurTextureParameter,TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),SourceTexture);
+	}
+
+private:
+	FShaderResourceParameter BlurTextureParameter;
+};
+
+// DISHONORED(retail): 2013 rva 0xb826d0 .. 0xb82810.
+IMPLEMENT_SHADER_TYPE(,FBloomComposePixelShader,TEXT("ArkBloomPartPixelShader"),TEXT("MainCompose"),SF_Pixel,786,23);
+IMPLEMENT_SHADER_TYPE(,FBloomComposeVertexShader,TEXT("ArkBloomPartVertexShader"),TEXT("MainCompose"),SF_Vertex,786,23);
+IMPLEMENT_SHADER_TYPE(,FBloomDownSampleVertexShader,TEXT("ArkBloomPartVertexShader"),TEXT("MainDownSample"),SF_Vertex,786,23);
+IMPLEMENT_SHADER_TYPE(,FBloomDownSamplePixelShader,TEXT("ArkBloomPartPixelShader"),TEXT("MainDownSample"),SF_Pixel,786,23);
+typedef TBloomBlurVertexShader<5> TBloomBlurVertexShader5Type;
+typedef TBloomBlurPixelShader<5> TBloomBlurPixelShader5Type;
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,TBloomBlurVertexShader5Type,TEXT("TBloomBlurVertexShader<5>"),TEXT("ArkBloomPartVertexShader"),TEXT("MainBlur"),SF_Vertex,786,23);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,TBloomBlurPixelShader5Type,TEXT("TBloomBlurPixelShader<5>"),TEXT("ArkBloomPartPixelShader"),TEXT("MainBlur"),SF_Pixel,786,23);

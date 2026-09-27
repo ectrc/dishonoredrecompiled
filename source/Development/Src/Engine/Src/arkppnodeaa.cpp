@@ -60,3 +60,212 @@
 //   0xb9f2f0  _dynamic_initializer_for__TMLAABlendPixelShader_1_::StaticType__
 //   0xb9f330  _dynamic_initializer_for__FMLAAVertexShader::StaticType__
 //   0xb9f370  _dynamic_initializer_for__FMLAAComputeLineLengthPixelShader::StaticType__
+
+#include "EnginePrivate.h"
+#include "ScenePrivate.h"
+#include "SceneFilterRendering.h"
+
+/**
+ * DISHONORED(port): the shader types of Arkane's anti-aliasing node (UArkPpNodeAA / FArkPpNodeAAProxy), which runs
+ * either FXAA (RenderFxaa, 2013 rva 0x5210b0) or MLAA in three passes (edge detection, line length, blend colour;
+ * 0x521570 / 0x521990 / 0x521ee0). 2013 rva 0xb828f0 ff., sources FXAAShader and MLAAShader.
+ *
+ * FMLAAVertexShader, FFXAAVertexShader and FMLAAComputeLineLengthPixelShader are Arkane's too, but this tree declares
+ * them in PostProcessAA.cpp (agent AH gave them the retail layout there) and they already load; only the types with
+ * no declaration at all are here.
+ */
+
+/**
+ * DISHONORED(layout): eleven parameters (2013 rva 0x50b2e0 Serialize): three scene colour textures (the plain one and
+ * two exposure-biased copies), the luminance equation, the inverse display gamma and six FXAA tuning constants.
+ * The template arguments are the luma source (0 compute, 1 green channel, 2 alpha), the quality preset and whether
+ * the pass reads scene colour rather than the node's own surface - which is the cooked name's _ForSceneColor suffix.
+ */
+template<UINT LumaSource,UINT Quality,UINT bForSceneColor>
+class TFXAAPixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TFXAAPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TFXAAPixelShader() {}
+
+	TFXAAPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		m_SceneColorTextureParameter.Bind(Initializer.ParameterMap,TEXT("SceneColorTexture"),TRUE);
+		m_SceneColorExpNegOneTextureParameter.Bind(Initializer.ParameterMap,TEXT("SceneColorExpNegOneTexture"),TRUE);
+		m_SceneColorExpNegTwoTextureParameter.Bind(Initializer.ParameterMap,TEXT("SceneColorExpNegTwoTexture"),TRUE);
+		m_LuminanceEquationParameter.Bind(Initializer.ParameterMap,TEXT("LuminanceEquation"),TRUE);
+		m_InverseDisplayGammaParameter.Bind(Initializer.ParameterMap,TEXT("InverseDisplayGamma"),TRUE);
+		m_ConsoleRcpFrameOptParameter.Bind(Initializer.ParameterMap,TEXT("fxaaConsoleRcpFrameOpt"),TRUE);
+		m_ConsoleRcpFrameOpt2Parameter.Bind(Initializer.ParameterMap,TEXT("fxaaConsoleRcpFrameOpt2"),TRUE);
+		m_Console360RcpFrameOpt2Parameter.Bind(Initializer.ParameterMap,TEXT("fxaaConsole360RcpFrameOpt2"),TRUE);
+		m_QualityParamsParameter.Bind(Initializer.ParameterMap,TEXT("fxaaQualityParams"),TRUE);
+		m_ConsoleParamsParameter.Bind(Initializer.ParameterMap,TEXT("fxaaConsoleParams"),TRUE);
+		m_Console360ConstDirParameter.Bind(Initializer.ParameterMap,TEXT("fxaaConsole360ConstDir"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << m_SceneColorTextureParameter;
+		Ar << m_SceneColorExpNegOneTextureParameter;
+		Ar << m_SceneColorExpNegTwoTextureParameter;
+		Ar << m_LuminanceEquationParameter;
+		Ar << m_InverseDisplayGammaParameter;
+		Ar << m_ConsoleRcpFrameOptParameter;
+		Ar << m_ConsoleRcpFrameOpt2Parameter;
+		Ar << m_Console360RcpFrameOpt2Parameter;
+		Ar << m_QualityParamsParameter;
+		Ar << m_ConsoleParamsParameter;
+		Ar << m_Console360ConstDirParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderResourceParameter m_SceneColorTextureParameter;
+	FShaderResourceParameter m_SceneColorExpNegOneTextureParameter;
+	FShaderResourceParameter m_SceneColorExpNegTwoTextureParameter;
+	FShaderParameter m_LuminanceEquationParameter;
+	FShaderParameter m_InverseDisplayGammaParameter;
+	FShaderParameter m_ConsoleRcpFrameOptParameter;
+	FShaderParameter m_ConsoleRcpFrameOpt2Parameter;
+	FShaderParameter m_Console360RcpFrameOpt2Parameter;
+	FShaderParameter m_QualityParamsParameter;
+	FShaderParameter m_ConsoleParamsParameter;
+	FShaderParameter m_Console360ConstDirParameter;
+};
+
+/**
+ * DISHONORED(layout): the MLAA edge pass (2013 rva 0x50b390 Serialize, 0x5155e0 / 0x515760 SetParameters). The
+ * template argument picks linear (0) or sRGB (1) source colour, and only the linear one carries the inverse display
+ * gamma: the cooked FMLAAEdgeDetection_Linear_PixelShader has 4 parameters, the sRGB one 3.
+ */
+template<UINT bSRGB>
+class TMLAAEdgeDetectionPixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TMLAAEdgeDetectionPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TMLAAEdgeDetectionPixelShader() {}
+
+	TMLAAEdgeDetectionPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mSceneTextureParameters.Bind(Initializer.ParameterMap,TEXT("SceneColorTexture"),TRUE);
+		mRTSizeParameter.Bind(Initializer.ParameterMap,TEXT("RTSize"),TRUE);
+		mLuminanceEquationParameter.Bind(Initializer.ParameterMap,TEXT("LuminanceEquation"),TRUE);
+		if (bSRGB == 0)
+		{
+			mInverseDisplayGammaParameter.Bind(Initializer.ParameterMap,TEXT("InverseDisplayGamma"),TRUE);
+		}
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mSceneTextureParameters;
+		Ar << mRTSizeParameter;
+		Ar << mLuminanceEquationParameter;
+		if (bSRGB == 0)
+		{
+			Ar << mInverseDisplayGammaParameter;
+		}
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderResourceParameter mSceneTextureParameters;
+	FShaderParameter mRTSizeParameter;
+	FShaderParameter mLuminanceEquationParameter;
+	FShaderParameter mInverseDisplayGammaParameter;
+};
+
+/**
+ * DISHONORED(layout): the MLAA blend pass (2013 rva 0x50b3e0 / 0x50b440 Serialize): the source colour, the edge count
+ * texture the second pass wrote, the target size and the luminance equation, plus the inverse display gamma for the
+ * linear variant only (5 parameters against 4).
+ */
+template<UINT bSRGB>
+class TMLAABlendPixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(TMLAABlendPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform) { return TRUE; }
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TMLAABlendPixelShader() {}
+
+	TMLAABlendPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		mSceneTextureParameters.Bind(Initializer.ParameterMap,TEXT("SceneColorTexture"),TRUE);
+		mEdgeCountTextureParameter.Bind(Initializer.ParameterMap,TEXT("EdgeCountTexture"),TRUE);
+		mRTSizeParameter.Bind(Initializer.ParameterMap,TEXT("RTSize"),TRUE);
+		mLuminanceEquationParameter.Bind(Initializer.ParameterMap,TEXT("LuminanceEquation"),TRUE);
+		if (bSRGB == 0)
+		{
+			mInverseDisplayGammaParameter.Bind(Initializer.ParameterMap,TEXT("InverseDisplayGamma"),TRUE);
+		}
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mSceneTextureParameters;
+		Ar << mEdgeCountTextureParameter;
+		Ar << mRTSizeParameter;
+		Ar << mLuminanceEquationParameter;
+		if (bSRGB == 0)
+		{
+			Ar << mInverseDisplayGammaParameter;
+		}
+		return bShaderHasOutdatedParameters;
+	}
+
+private:
+	FShaderResourceParameter mSceneTextureParameters;
+	FShaderResourceParameter mEdgeCountTextureParameter;
+	FShaderParameter mRTSizeParameter;
+	FShaderParameter mLuminanceEquationParameter;
+	FShaderParameter mInverseDisplayGammaParameter;
+};
+
+// DISHONORED(retail): 2013 rva 0xb82930 .. 0xb82b70. The three _ForSceneColor variants have no cooked shader in the
+// PC cache - retail registers them all the same, so they are declared here for the same reason.
+typedef TFXAAPixelShader<0,1,0> FFXAAPixelShader_ComputeLuma_SRGBColorType;
+typedef TFXAAPixelShader<2,1,0> FFXAAPixelShader_LumaInAlpha_SRGBColorType;
+typedef TFXAAPixelShader<1,1,0> FFXAAPixelShader_LumaAsGreen_SRGBColorType;
+typedef TFXAAPixelShader<0,1,1> FFXAAPixelShader_ComputeLuma_SRGBColor_ForSceneColorType;
+typedef TFXAAPixelShader<2,1,1> FFXAAPixelShader_LumaInAlpha_SRGBColor_ForSceneColorType;
+typedef TFXAAPixelShader<1,1,1> FFXAAPixelShader_LumaAsGreen_SRGBColor_ForSceneColorType;
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FFXAAPixelShader_ComputeLuma_SRGBColorType,TEXT("FFXAAPixelShader_ComputeLuma_SRGBColor"),TEXT("FXAAShader"),TEXT("FXAA_PixelMain"),SF_Pixel,786,24);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FFXAAPixelShader_LumaInAlpha_SRGBColorType,TEXT("FFXAAPixelShader_LumaInAlpha_SRGBColor"),TEXT("FXAAShader"),TEXT("FXAA_PixelMain"),SF_Pixel,786,24);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FFXAAPixelShader_LumaAsGreen_SRGBColorType,TEXT("FFXAAPixelShader_LumaAsGreen_SRGBColor"),TEXT("FXAAShader"),TEXT("FXAA_PixelMain"),SF_Pixel,786,24);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FFXAAPixelShader_ComputeLuma_SRGBColor_ForSceneColorType,TEXT("FFXAAPixelShader_ComputeLuma_SRGBColor_ForSceneColor"),TEXT("FXAAShader"),TEXT("FXAA_PixelMain"),SF_Pixel,786,24);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FFXAAPixelShader_LumaInAlpha_SRGBColor_ForSceneColorType,TEXT("FFXAAPixelShader_LumaInAlpha_SRGBColor_ForSceneColor"),TEXT("FXAAShader"),TEXT("FXAA_PixelMain"),SF_Pixel,786,24);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FFXAAPixelShader_LumaAsGreen_SRGBColor_ForSceneColorType,TEXT("FFXAAPixelShader_LumaAsGreen_SRGBColor_ForSceneColor"),TEXT("FXAAShader"),TEXT("FXAA_PixelMain"),SF_Pixel,786,24);
+
+typedef TMLAAEdgeDetectionPixelShader<0> FMLAAEdgeDetection_Linear_PixelShaderType;
+typedef TMLAAEdgeDetectionPixelShader<1> FMLAAEdgeDetection_SRGB_PixelShaderType;
+typedef TMLAABlendPixelShader<0> FMLAABlend_Linear_PixelShaderType;
+typedef TMLAABlendPixelShader<1> FMLAABlend_SRGB_PixelShaderType;
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAAEdgeDetection_Linear_PixelShaderType,TEXT("FMLAAEdgeDetection_Linear_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_SeperatingLines_PS"),SF_Pixel,786,1);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAAEdgeDetection_SRGB_PixelShaderType,TEXT("FMLAAEdgeDetection_SRGB_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_SeperatingLines_PS"),SF_Pixel,786,1);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAABlend_Linear_PixelShaderType,TEXT("FMLAABlend_Linear_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_BlendColor_PS"),SF_Pixel,786,1);
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAABlend_SRGB_PixelShaderType,TEXT("FMLAABlend_SRGB_PixelShader"),TEXT("MLAAShader"),TEXT("MLAA_BlendColor_PS"),SF_Pixel,786,1);
+
+/** DISHONORED(bringup): the link anchor of this unit - see DishonoredLinkArkPartMeshShaderTypes. */
+void DishonoredLinkArkPpAAShaderTypes()
+{
+}

@@ -133,6 +133,15 @@ enum ESceneRenderTargetTypes
 	CapturedSceneColor,
 	// The depth buffer to use when rendering to offscreen render targets (only necessary on devices that don't allow re-use of the main depth buffer)
 	OffscreenDepthBuffer,
+	// DISHONORED(layout): Arkane's own targets, retail FSceneRenderTargets members m_FogMaskRT @492, m_BloomRT @504,
+	// m_BloomRT2 @516, m_DofHalfRT @528, m_DofQuarterRT @540 (2012 PDB, 592 bytes). The fog mask is full size, the
+	// two bloom targets a quarter of it (FSceneRenderer::RenderBloomParts, 2013 rva 0x5251a0, blurs between them at
+	// BufferSize >> 2), and the depth-of-field pair half and quarter size for the FArkPp DOF node.
+	ArkFogMask,
+	ArkBloom,
+	ArkBloom2,
+	ArkDofHalf,
+	ArkDofQuarter,
 
 	// --- insert new items before this line ---
 
@@ -412,6 +421,15 @@ public:
 	}
 
 	const FTexture2DRHIRef& GetScaleformTempTexture() const { return RenderTargets[ScaleformTemp].Texture; }
+	// DISHONORED(port): Arkane's targets (2013 rva 0x42c4e0 BeginRenderingBloom / 0x42c500 FinishRenderingBloom).
+	const FTexture2DRHIRef& GetFogMaskTexture() const { return RenderTargets[ArkFogMask].Texture; }
+	const FTexture2DRHIRef& GetBloomPartsTexture() const { return RenderTargets[ArkBloom].Texture; }
+	const FTexture2DRHIRef& GetBloomPartsTexture2() const { return RenderTargets[ArkBloom2].Texture; }
+	const FSurfaceRHIRef& GetBloomPartsSurface() const { return RenderTargets[ArkBloom].Surface; }
+	const FSurfaceRHIRef& GetBloomPartsSurface2() const { return RenderTargets[ArkBloom2].Surface; }
+	const FSurfaceRHIRef& GetFogMaskSurface() const { return RenderTargets[ArkFogMask].Surface; }
+	void BeginRenderingBloom();
+	void FinishRenderingBloom();
 	const FTexture2DRHIRef& GetSceneColorTexture() const { return RenderTargets[SceneColor].Texture; }
 	const FTexture2DRHIRef& GetSceneColorLDRTexture() const { return RenderTargets[LightAttenuation0].Texture; }
 	const FTextureRHIRef& GetLUTBlendTexture() const;

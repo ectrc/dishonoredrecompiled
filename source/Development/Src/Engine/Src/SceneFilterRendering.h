@@ -82,6 +82,55 @@ protected:
 	FShaderParameter SampleMaskRectParameter;
 };
 
+/**
+ * DISHONORED(port): Arkane's filter pixel shader that keeps scene depth in the alpha channel (2013 rva 0xb80a10 ff.,
+ * "TFilterPixelShaderDepthInAlpha<N>", source FilterPixelShader, entry point MainDepthInAlpha, 786 / 1). It is
+ * TFilterPixelShader<N> plus the scene textures, so its cooked record carries 8 parameters (24 history words): the
+ * three filter parameters of the base class and the five of FSceneTextureShaderParameters.
+ * Layout: constructor 2012 rva 0x46f300, Serialize 0x46f350, SetParameters 0x47c520.
+ */
+template<UINT NumSamples>
+class TFilterPixelShaderDepthInAlpha : public TFilterPixelShader<NumSamples>
+{
+	DECLARE_SHADER_TYPE(TFilterPixelShaderDepthInAlpha,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment)
+	{
+		TFilterPixelShader<NumSamples>::ModifyCompilationEnvironment(Platform, OutEnvironment);
+	}
+
+	TFilterPixelShaderDepthInAlpha() {}
+
+	TFilterPixelShaderDepthInAlpha(const typename TFilterPixelShader<NumSamples>::ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		TFilterPixelShader<NumSamples>(Initializer)
+	{
+		SceneTextureParameters.Bind(Initializer.ParameterMap);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = TFilterPixelShader<NumSamples>::Serialize(Ar);
+		Ar << SceneTextureParameters;
+		return bShaderHasOutdatedParameters;
+	}
+
+	/** DISHONORED(port): 2012 rva 0x47c520 - the base parameters, then the scene textures with point sampling and the half-resolution scene depth. */
+	void SetParameters(const FSceneView* View,FSamplerStateRHIParamRef SamplerStateRHI,FTextureRHIParamRef TextureRHI,const FLinearColor* SampleWeights,FVector2D SampleMaskMin,FVector2D SampleMaskMax)
+	{
+		TFilterPixelShader<NumSamples>::SetParameters(SamplerStateRHI,TextureRHI,SampleWeights,SampleMaskMin,SampleMaskMax);
+		SceneTextureParameters.Set(View,this,SF_Point);
+	}
+
+private:
+	FSceneTextureShaderParameters SceneTextureParameters;
+};
+
 /** A pixel shader which filters a texture and puts the depth channel in alpha channel */
 class FDownsampleScene : public FGlobalShader
 {

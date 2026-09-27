@@ -519,6 +519,12 @@ public:
 	/** fog params for 4 layers of height fog */
 	FHeightFogParams HeightFogParams;
 
+	/**
+	 * DISHONORED(layout): 2012 PDB FViewInfo @4032 - the DisFog layers of this view in the form the base pass wants
+	 * them. TDisFogPixelShader::SetParameters fills it during the exterior fog pass (2013 rva 0x41c940).
+	 */
+	FDisPrecomputedFogSceneInfo DisPrecomputedFogs;
+
 	/** Parameters for exponential height fog. */
 	FVector4 ExponentialFogParameters;
 	FVector ExponentialFogColor;
@@ -1004,8 +1010,17 @@ private:
 	 */
 	UBOOL GetMobilePostProcessSettings( const FSceneView& View, FPostProcessSettings& OutSettings ) const;
 
-	/** Renders the scene's fogging. */
+	/**
+	 * DISHONORED(port): retail's fog pass (2013 rva 0x4370a0): the scene's DisFog layers split into an interior and
+	 * an exterior set, at most four each, drawn as one full-screen triangle per set at SDPG_World.
+	 */
 	UBOOL RenderFog(UINT DPGIndex);
+
+	/** DISHONORED(port): one set of layers (2013 rva 0x436d10); Type 0 is interior, 1 exterior. */
+	UBOOL RenderFogPass(UINT Type,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount,UBOOL bRestoreStencilToZero);
+
+	/** DISHONORED(bringup): the reference height fog, kept behind -referencefog for experiments (agent AH). */
+	UBOOL RenderReferenceFog(UINT DPGIndex);
 
 	/** Renders the scene's lighting. */
 	UBOOL RenderLights(UINT DPGIndex,UBOOL bAffectedByModulatedShadows, UBOOL bWasSceneColorDirty);
@@ -1262,6 +1277,13 @@ private:
 	/** Whether or not to perform min distance checks during primitive culling */
 	UBOOL bPerformMinDistanceChecks;
 #endif
+
+	/**
+	 * DISHONORED(layout): 2012 PDB FSceneRenderer @4516 - set by FSceneRenderer::RenderBloomParts when it drew bloom
+	 * parts into the bloom target this frame. The fog pass reads it twice: it skips the scene colour resolve when the
+	 * bloom pass already did one, and it binds the bloom target instead of black in TDisFogPixelShader::SetParameters.
+	 */
+	UBOOL m_BloomNeedBlit;
 
 	/** Temp stat variables for gathering stats for one frame of culling */
 	STAT(INT NumOccludedPrimitives);

@@ -15,9 +15,12 @@ IMPLEMENT_SHADER_TYPE(,VisualizeTexturePixelShader,TEXT("FilterPixelShader"),TEX
 IMPLEMENT_SHADER_TYPE(,FDownsampleScene,TEXT("FilterPixelShader"),TEXT("DownsampleScene"),SF_Pixel,0,0); \
 
 /** A macro to declaring a filter shader type for a specific number of samples. */
+// DISHONORED(retail): the depth-in-alpha variant is registered next to every filter sample count (2013 rva 0xb80a10 ff.,
+// source FilterPixelShader, entry point MainDepthInAlpha, 786 / 1).
 #define IMPLEMENT_FILTER_SHADER_TYPE(NumSamples) \
 	IMPLEMENT_SHADER_TYPE(template<>,TFilterPixelShader<NumSamples>,TEXT("FilterPixelShader"),TEXT("Main"),SF_Pixel,0,0); \
-	IMPLEMENT_SHADER_TYPE(template<>,TFilterVertexShader<NumSamples>,TEXT("FilterVertexShader"),TEXT("Main"),SF_Vertex,0,0);
+	IMPLEMENT_SHADER_TYPE(template<>,TFilterVertexShader<NumSamples>,TEXT("FilterVertexShader"),TEXT("Main"),SF_Vertex,0,0); \
+	IMPLEMENT_SHADER_TYPE(template<>,TFilterPixelShaderDepthInAlpha<NumSamples>,TEXT("FilterPixelShader"),TEXT("MainDepthInAlpha"),SF_Pixel,786,1);
 
 /*
  * The filter shader types for 1-MAX_FILTER_SAMPLES samples.

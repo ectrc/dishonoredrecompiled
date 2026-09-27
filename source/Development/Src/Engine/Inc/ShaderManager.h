@@ -1244,6 +1244,28 @@ private:
 		ShaderClass::ShouldCache \
 		);
 
+/**
+ * DISHONORED(retail): the same, with the registered type name given explicitly instead of taken from the C++ class name.
+ * Arkane's own shader types are registered under names that differ from their class: the cooked global shader cache holds
+ * FDisFogPixelShader00Layer for TDisFogPixelShader<FDisFogPolicy<0,0>> (2013 rva 0xb7fa00), FArkPpDofUber_01PS for
+ * TArkPpDofUberPS<0,1> (0xb82f50), FMLAABlend_SRGB_PixelShader for TMLAABlendPixelShader<1> (0xb82b70). The record is
+ * found by that name, so the name is part of the type's specification.
+ */
+#define IMPLEMENT_SHADER_TYPE_NAMED(TemplatePrefix,ShaderClass,TypeName,SourceFilename,FunctionName,Frequency,MinPackageVersion,MinLicenseePackageVersion) \
+	TemplatePrefix \
+	ShaderClass::ShaderMetaType ShaderClass::StaticType( \
+		TypeName, \
+		SourceFilename, \
+		FunctionName, \
+		Frequency, \
+		Max((UINT)VER_MIN_SHADER,(UINT)MinPackageVersion), \
+		Max((UINT)LICENSEE_VER_MIN_SHADER,(UINT)MinLicenseePackageVersion), \
+		ShaderClass::ConstructSerializedInstance, \
+		ShaderClass::ConstructCompiledInstance, \
+		ShaderClass::ModifyCompilationEnvironment, \
+		ShaderClass::ShouldCache \
+		);
+
 
  /**
  * A macro to implement a shader type, the function name and the source filename comes from the class.

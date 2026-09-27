@@ -324,6 +324,7 @@ FSceneRenderer::FSceneRenderer(const FSceneViewFamily* InViewFamily,FHitProxyCon
 ,	bHasInheritDominantShadowMaterials(FALSE)
 ,	bIsSceneCapture(bInIsSceneCapture)
 ,	PreviousFrameTime(0)
+,	m_BloomNeedBlit(FALSE)	// DISHONORED(layout): FSceneRenderer @4516, set by RenderBloomParts
 {
 	// Copy the individual views.
 	Views.Empty(InViewFamily->Views.Num());
@@ -2222,6 +2223,12 @@ UBOOL FSceneRenderer::ApplyMobileDPGLights( UINT DPGIndex )
  */
 static UBOOL GDishonoredRenderReferenceFog = ParseParam(appCmdLine(), TEXT("referencefog"));
 
+/**
+ * DISHONORED(bringup): -nopostprocess skips the Arkane post-process passes of package BD (the DisFog pass today,
+ * the FArkPp graph when it lands), so one build can take the before-and-after pair of the same camera.
+ */
+static UBOOL GDishonoredNoPostProcess = ParseParam(appCmdLine(), TEXT("nopostprocess"));
+
 void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResolve, UBOOL& bSceneColorDirty, UBOOL bIsOcclusionTesting)
 {
 	UBOOL bRenderUnlitTranslucency = (ViewFamily.ShowFlags & SHOW_UnlitTranslucency) != 0;
@@ -2289,12 +2296,19 @@ void FSceneRenderer::RenderDPGEnd(UINT DPGIndex, UBOOL bDeferPrePostProcessResol
 		// no "affect lighting only" post-process pass; between the soft-masked base pass and the fog pass retail runs
 		// RenderBloomParts (the Arkane bloom, FArkBloomPartPrimSet). The reference passes' shaders have no cooked record.
 
-		// DISHONORED(bringup): retail fog is DisFog (FDisFogPixelShader<N,M>, FSceneRenderer::RenderFog 2013 rva 0x4370a0 on
-		// FViewInfo::DisPrecomputedFogs); the reference height-fog shaders (THeightFogPixelShader, TExponentialHeightFog*)
-		// have no cooked record, so the fog pass is skipped until DisFog is ported (wave 5).
-		if(ShouldRenderFog(ViewFamily.ShowFlags) && GDishonoredRenderReferenceFog)
+		// DISHONORED(port): retail's fog pass is DisFog (FSceneRenderer::RenderFog, 2013 rva 0x4370a0), here in
+		// RenderDPGEnd between the soft-masked base pass and the distortion pass. -referencefog runs the reference
+		// height fog instead, which has no cooked shader and is only there for experiments (agent AH).
+		if(ShouldRenderFog(ViewFamily.ShowFlags))
 		{
-			bSceneColorDirty |= RenderFog(DPGIndex);
+			if(GDishonoredRenderReferenceFog)
+			{
+				bSceneColorDirty |= RenderReferenceFog(DPGIndex);
+			}
+			else if(!GDishonoredNoPostProcess)
+			{
+				bSceneColorDirty |= RenderFog(DPGIndex);
+			}
 		}
 
 		if(bRenderUnlitTranslucency)
@@ -4674,6 +4688,16 @@ UINT GDisCensusFrameNoRelevance = 0;
 UINT GDisCensusFrameDrawListVisited = 0;
 UINT GDisCensusFrameDrawListDrawn = 0;
 
+// DISHONORED(bringup): per-pass counters of the Arkane post-process chain, so a run says which pass actually ran
+// rather than leaving it to the eye. Reset every frame, printed with the scene census below.
+INT GDisCensusFogScene = 0;			// DisFog layers in the scene
+INT GDisCensusFogLayers = 0;		// layers the fog pass drew with (summed over its passes)
+INT GDisCensusFogDraws = 0;			// full-screen fog triangles
+INT GDisCensusBloomPartPrims = 0;	// bloom-part primitives found for the view
+INT GDisCensusBloomPartDraws = 0;	// draws of the bloom parts pass (mesh draws + downsample + blur + compose)
+INT GDisCensusArkPpNodes = 0;		// FArkPp graph nodes rendered
+INT GDisCensusArkPpDraws = 0;		// draws of the FArkPp graph
+
 static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 {
     FMemMark MemStackMark(GRenderingThreadMemStack);
@@ -4743,6 +4767,12 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 					GDisCensusFrameOccluded, GDisCensusFrameVisible, GDisCensusFrameStaticRelevant,
 					GDisCensusFrameDynamicRelevant, GDisCensusFrameNoRelevance, StaticVisible,
 					GDisCensusFrameDrawListDrawn, GDisCensusFrameDrawListVisited);
+
+				// DISHONORED(bringup): the post-process chain, counted per pass (package BD).
+				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes; bloom parts %i prims, %i draws; FArkPp %i nodes, %i draws"),
+					GDisCensusFogScene, GDisCensusFogLayers, GDisCensusFogDraws,
+					GDisCensusBloomPartPrims, GDisCensusBloomPartDraws,
+					GDisCensusArkPpNodes, GDisCensusArkPpDraws);
 			}
 			NumCensusFrames++;
 

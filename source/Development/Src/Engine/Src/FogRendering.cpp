@@ -6,6 +6,8 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "AmbientOcclusionRendering.h"
+#include "SceneFilterRendering.h"
+#include "arkcommonvertexdeclaration.h"
 
 /** Binds the parameters. */
 void FExponentialHeightFogShaderParameters::Bind(const FShaderParameterMap& ParameterMap)
@@ -413,6 +415,427 @@ IMPLEMENT_SHADER_TYPE(template<>,FPerFragmentOneLayerFogPixelShader,TEXT("Height
 typedef THeightFogPixelShader<4,MSAASF_PerFragment>  FPerFragmentFourLayerFogPixelShader;
 IMPLEMENT_SHADER_TYPE(template<>,FPerFragmentFourLayerFogPixelShader,TEXT("HeightFogPixelShader"),TEXT("FourLayerMain"),SF_Pixel,VER_HEIGHTFOG_PIXELSHADER_START_DIST_FIX,0);
 
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): DisFog, Arkane's layered fog.
+
+	Retail has no height fog and no exponential height fog: every fog in the game is a UDisFogComponent, and the 30
+	cooked FDisFog* global shaders above are the only fog shaders in the cache (renderer.md 2). A fog shader is
+	picked by a pair - the number of layers (0..4) and how many of them carry a colour lookup texture - which is
+	Arkane's FDisFogPolicy<Layers,Luts>; FlushDisFogShader (2013 rva 0x4365f0) indexes the 15 combinations with
+	LayerBaseOffset[Layers] + Luts.
+-----------------------------------------------------------------------------*/
+
+/** DISHONORED(layout): the number of layers one fog pass can draw (FSceneRenderer::RenderFog, 2013 rva 0x4370a0, clamps to 4). */
+#define MAX_DISFOG_LAYERS 4
+
+/** DISHONORED(port): the policy both DisFog shaders are templated on (2012 PDB FDisFogPolicy<N,M>, an empty base). */
+template<UINT InNumLayers,UINT InNumLuts>
+class FDisFogPolicy
+{
+public:
+	enum { NumLayers = InNumLayers };
+	enum { NumLuts = InNumLuts };
+};
+
+/**
+ * DISHONORED(layout): 2012 PDB FDisFogVertexShaderInterface (108 bytes, = FGlobalShader): the fog pass keeps one
+ * TShaderMapRef per policy in an array of the interface type and calls SetParameters through it (0x4365f0).
+ */
+class FDisFogVertexShaderInterface : public FGlobalShader
+{
+public:
+	FDisFogVertexShaderInterface() {}
+	FDisFogVertexShaderInterface(const ShaderMetaType::CompiledShaderInitializerType& Initializer): FGlobalShader(Initializer) {}
+
+	virtual void SetParameters(const FViewInfo& View,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount) = 0;
+};
+
+/** DISHONORED(layout): 2012 PDB FDisFogPixelShaderInterface (108 bytes). */
+class FDisFogPixelShaderInterface : public FGlobalShader
+{
+public:
+	FDisFogPixelShaderInterface() {}
+	FDisFogPixelShaderInterface(const ShaderMetaType::CompiledShaderInitializerType& Initializer): FGlobalShader(Initializer) {}
+
+	virtual void SetParameters(const FViewInfo& View,FDisPrecomputedFogSceneInfo* PrecomputedFog,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount,UBOOL bHasBloom) = 0;
+};
+
+/**
+ * DISHONORED(layout): TDisFogVertexShader<FDisFogPolicy<N,M>> is 120 bytes (2012 PDB): the interface plus
+ * ScreenPositionScaleBias @108 and ScreenToWorld @114. Serialize 2013 rva 0x411fe0, SetParameters 0x416590.
+ */
+template<typename PolicyType>
+class TDisFogVertexShader : public FDisFogVertexShaderInterface, public PolicyType
+{
+	DECLARE_SHADER_TYPE(TDisFogVertexShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TDisFogVertexShader() {}
+
+	TDisFogVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FDisFogVertexShaderInterface(Initializer)
+	{
+		// DISHONORED(bringup): the retail parameter names are not in the shipping exes (there is no shader compiler,
+		// so nothing calls Bind); these are the reference names of the same two constants.
+		ScreenPositionScaleBiasParameter.Bind(Initializer.ParameterMap,TEXT("ScreenPositionScaleBias"),TRUE);
+		ScreenToWorldParameter.Bind(Initializer.ParameterMap,TEXT("ScreenToWorld"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << ScreenPositionScaleBiasParameter;
+		Ar << ScreenToWorldParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x416590 - the screen position scale/bias and the screen-to-world matrix of the view. */
+	virtual void SetParameters(const FViewInfo& View,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount)
+	{
+		SetVertexShaderValue(GetVertexShader(),ScreenPositionScaleBiasParameter,View.ScreenPositionScaleBias);
+
+		const FLOAT InvDeviceZ = 1.0f - Z_PRECISION;
+		const FMatrix ScreenToWorld = FMatrix(
+			FPlane(1,0,0,0),
+			FPlane(0,1,0,0),
+			FPlane(0,0,InvDeviceZ,1),
+			FPlane(0,0,-View.NearClippingDistance * InvDeviceZ,0)
+			) * View.InvTranslatedViewProjectionMatrix;
+		SetVertexShaderValue(GetVertexShader(),ScreenToWorldParameter,ScreenToWorld);
+	}
+
+private:
+	FShaderParameter ScreenPositionScaleBiasParameter;
+	FShaderParameter ScreenToWorldParameter;
+};
+
+/**
+ * DISHONORED(layout): TDisFogPixelShader<FDisFogPolicy<N,M>> is 228 bytes (2012 PDB): the interface, the five scene
+ * texture parameters @108, the eight per-layer constants, the mask texture, the bloom parts texture, four fog LUT
+ * textures and the sun direction - 20 parameters, which is the 60 history words of every cooked FDisFogPixelShader
+ * record. Constructor 2013 rva 0x416a20, Serialize 0x416ad0, SetParameters 0x41c720 / 0x41c940.
+ */
+template<typename PolicyType>
+class TDisFogPixelShader : public FDisFogPixelShaderInterface, public PolicyType
+{
+	DECLARE_SHADER_TYPE(TDisFogPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	TDisFogPixelShader() {}
+
+	TDisFogPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FDisFogPixelShaderInterface(Initializer)
+	{
+		// DISHONORED(bringup): parameter names as above - retail binds nothing, the cooked record carries the indices.
+		mSceneTextureParameters.Bind(Initializer.ParameterMap);
+		mLayerMinHeights.Bind(Initializer.ParameterMap,TEXT("LayerMinHeights"),TRUE);
+		mLayerMaxHeights.Bind(Initializer.ParameterMap,TEXT("LayerMaxHeights"),TRUE);
+		mLayerNearPlanes.Bind(Initializer.ParameterMap,TEXT("LayerNearPlanes"),TRUE);
+		mLayerNoFogPlanes.Bind(Initializer.ParameterMap,TEXT("LayerNoFogPlanes"),TRUE);
+		mLayerHeightDensityFactor.Bind(Initializer.ParameterMap,TEXT("LayerHeightDensityFactor"),TRUE);
+		mLayerInvFarMinusNearPlanes.Bind(Initializer.ParameterMap,TEXT("LayerInvFarMinusNearPlanes"),TRUE);
+		mLayerColors.Bind(Initializer.ParameterMap,TEXT("LayerColors"),TRUE);
+		mLayerOpacities.Bind(Initializer.ParameterMap,TEXT("LayerOpacities"),TRUE);
+		mMaskTextureParameter.Bind(Initializer.ParameterMap,TEXT("MaskTexture"),TRUE);
+		mBloomParts.Bind(Initializer.ParameterMap,TEXT("BloomParts"),TRUE);
+		for (INT LutIndex = 0; LutIndex < MAX_DISFOG_LAYERS; LutIndex++)
+		{
+			mFogLUT[LutIndex].Bind(Initializer.ParameterMap,*FString::Printf(TEXT("FogLUT%u"),LutIndex),TRUE);
+		}
+		mSunDirection.Bind(Initializer.ParameterMap,TEXT("SunDirection"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << mSceneTextureParameters;
+		Ar << mLayerMinHeights;
+		Ar << mLayerMaxHeights;
+		Ar << mLayerNearPlanes;
+		Ar << mLayerNoFogPlanes;
+		Ar << mLayerHeightDensityFactor;
+		Ar << mLayerInvFarMinusNearPlanes;
+		Ar << mLayerColors;
+		Ar << mLayerOpacities;
+		Ar << mMaskTextureParameter;
+		Ar << mBloomParts;
+		for (INT LutIndex = 0; LutIndex < MAX_DISFOG_LAYERS; LutIndex++)
+		{
+			Ar << mFogLUT[LutIndex];
+		}
+		Ar << mSunDirection;
+		return bShaderHasOutdatedParameters;
+	}
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x41c940. Every layer contributes one lane of each four-float constant, relative to
+	 * the view height; a layer with a custom transition fades its opacity out once the camera is above it; the unused
+	 * lanes repeat layer 0 with opacity 0. PrecomputedFog is filled for the exterior pass only, for the base pass.
+	 */
+	virtual void SetParameters(const FViewInfo& View,FDisPrecomputedFogSceneInfo* PrecomputedFog,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount,UBOOL bHasBloom)
+	{
+		mSceneTextureParameters.Set(&View,this,SF_Point);
+
+		const FLOAT ViewHeight = View.ViewOrigin.Z;
+		const UINT NumLayers = Min<UINT>(DisFogCount,MAX_DISFOG_LAYERS);
+		if (PrecomputedFog)
+		{
+			PrecomputedFog->iNbFogs = NumLayers;
+		}
+
+		FVector4 MinHeights(0,0,0,0);
+		FVector4 MaxHeights(0,0,0,0);
+		FVector4 NearPlanes(0,0,0,0);
+		FVector4 InvFarMinusNearPlanes(0,0,0,0);
+		FVector4 NoFogPlanes(0,0,0,0);
+		FVector4 HeightDensityFactors(0,0,0,0);
+		FVector4 Opacities(0,0,0,0);
+		FLinearColor Colors[MAX_DISFOG_LAYERS];
+
+		for (UINT LayerIndex = 0; LayerIndex < MAX_DISFOG_LAYERS; LayerIndex++)
+		{
+			// DISHONORED(port): 0x41c940 - the lanes past the layer count repeat layer 0 and are switched off by opacity.
+			const FDisFogSceneInfo& Fog = *DisFogs[LayerIndex < NumLayers ? LayerIndex : 0];
+			const UBOOL bUsedLayer = LayerIndex < NumLayers;
+
+			MinHeights[LayerIndex] = Fog.mOrigin - ViewHeight;
+			MaxHeights[LayerIndex] = (Fog.mHeight + Fog.mOrigin) - ViewHeight;
+			NearPlanes[LayerIndex] = Fog.mNearPlane;
+			InvFarMinusNearPlanes[LayerIndex] = 1.0f / (Fog.mFarPlane - Fog.mNearPlane);
+			NoFogPlanes[LayerIndex] = Fog.mNoFogPlane;
+			HeightDensityFactors[LayerIndex] = Fog.mHeightDensityFactor;
+			Colors[LayerIndex] = Fog.mLightColor;
+
+			FLOAT Opacity = bUsedLayer ? Fog.mOpacity : 0.0f;
+			if (bUsedLayer && Fog.m_bCustomTransition)
+			{
+				const FLOAT TopOfLayer = Max(MaxHeights[LayerIndex],MinHeights[LayerIndex]);
+				const FLOAT TransitionHeight = Fog.m_fCustomTransitionHeight;
+				if (TransitionHeight > TopOfLayer)
+				{
+					Opacity *= 1.0f - (TransitionHeight - TopOfLayer) / TransitionHeight;
+				}
+			}
+			Opacities[LayerIndex] = Opacity;
+
+			const FTexture* LutTexture = (bUsedLayer && Fog.m_pFogLUTTexture) ? Fog.m_pFogLUTTexture->Resource : GBlackTexture;
+			if (mFogLUT[LayerIndex].IsBound() && LutTexture)
+			{
+				SetTextureParameter(GetPixelShader(),mFogLUT[LayerIndex],LutTexture);
+			}
+			if (PrecomputedFog)
+			{
+				PrecomputedFog->pLuts[LayerIndex] = (bUsedLayer && Fog.m_pFogLUTTexture) ? &Fog.m_pFogLUTTextureData : NULL;
+			}
+		}
+
+		// DISHONORED(port): the sun comes from the first layer only, and only when that layer is the sun layer.
+		const FDisFogSceneInfo& FirstFog = *DisFogs[0];
+		const FVector4 SunDirection(-FirstFog.mSunDirection.X,-FirstFog.mSunDirection.Y,-FirstFog.mSunDirection.Z,FirstFog.mIsSun ? FirstFog.mSunPower : 0.0f);
+
+		if (PrecomputedFog)
+		{
+			PrecomputedFog->mins = MinHeights;
+			PrecomputedFog->maxs = MaxHeights;
+			PrecomputedFog->nears = NearPlanes;
+			PrecomputedFog->fars = InvFarMinusNearPlanes;
+			PrecomputedFog->opacities = Opacities;
+			PrecomputedFog->heightdensityfactors = HeightDensityFactors;
+			PrecomputedFog->sunDirection = SunDirection;
+			for (INT ColorIndex = 0; ColorIndex < MAX_DISFOG_LAYERS; ColorIndex++)
+			{
+				PrecomputedFog->colors[ColorIndex] = Colors[ColorIndex];
+			}
+		}
+
+		SetPixelShaderValue(GetPixelShader(),mLayerMinHeights,MinHeights);
+		SetPixelShaderValue(GetPixelShader(),mLayerMaxHeights,MaxHeights);
+		SetPixelShaderValue(GetPixelShader(),mLayerNearPlanes,NearPlanes);
+		SetPixelShaderValue(GetPixelShader(),mLayerInvFarMinusNearPlanes,InvFarMinusNearPlanes);
+		SetPixelShaderValue(GetPixelShader(),mLayerNoFogPlanes,NoFogPlanes);
+		SetPixelShaderValue(GetPixelShader(),mLayerHeightDensityFactor,HeightDensityFactors);
+		SetPixelShaderValues(GetPixelShader(),mLayerColors,Colors,MAX_DISFOG_LAYERS);
+		SetPixelShaderValue(GetPixelShader(),mLayerOpacities,Opacities);
+		SetPixelShaderValue(GetPixelShader(),mSunDirection,SunDirection);
+
+		if (mBloomParts.IsBound())
+		{
+			// DISHONORED(port): the bloom parts render target, or black when RenderBloomParts drew nothing this frame.
+			const FTexture2DRHIRef& BloomTexture = GSceneRenderTargets.GetBloomPartsTexture();
+			if (bHasBloom && IsValidRef(BloomTexture))
+			{
+				SetTextureParameterDirectly(GetPixelShader(),mBloomParts,TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),BloomTexture);
+			}
+			else
+			{
+				SetTextureParameter(GetPixelShader(),mBloomParts,GBlackTexture);
+			}
+		}
+	}
+
+private:
+	FSceneTextureShaderParameters mSceneTextureParameters;
+	FShaderParameter mLayerMinHeights;
+	FShaderParameter mLayerMaxHeights;
+	FShaderParameter mLayerNearPlanes;
+	FShaderParameter mLayerNoFogPlanes;
+	FShaderParameter mLayerHeightDensityFactor;
+	FShaderParameter mLayerInvFarMinusNearPlanes;
+	FShaderParameter mLayerColors;
+	FShaderParameter mLayerOpacities;
+	FShaderResourceParameter mMaskTextureParameter;
+	FShaderResourceParameter mBloomParts;
+	FShaderResourceParameter mFogLUT[MAX_DISFOG_LAYERS];
+	FShaderParameter mSunDirection;
+};
+
+/**
+ * DISHONORED(retail): the 15 policies of each frequency, with the retail type names, source file and gate
+ * (2013 rva 0xb7f640 ff. / 0xb7fa00 ff.: "DisFogVertexShader" / "DisFogPixelShader", entry point Main, 797 / 23).
+ */
+#define IMPLEMENT_DISFOG_SHADER_TYPE(Layers,Luts) \
+	typedef TDisFogVertexShader<FDisFogPolicy<Layers,Luts> > FDisFogVertexShader##Layers##Luts##LayerType; \
+	typedef TDisFogPixelShader<FDisFogPolicy<Layers,Luts> > FDisFogPixelShader##Layers##Luts##LayerType; \
+	IMPLEMENT_SHADER_TYPE_NAMED(template<>,FDisFogVertexShader##Layers##Luts##LayerType,TEXT("FDisFogVertexShader") TEXT(#Layers) TEXT(#Luts) TEXT("Layer"),TEXT("DisFogVertexShader"),TEXT("Main"),SF_Vertex,797,23); \
+	IMPLEMENT_SHADER_TYPE_NAMED(template<>,FDisFogPixelShader##Layers##Luts##LayerType,TEXT("FDisFogPixelShader") TEXT(#Layers) TEXT(#Luts) TEXT("Layer"),TEXT("DisFogPixelShader"),TEXT("Main"),SF_Pixel,797,23);
+
+IMPLEMENT_DISFOG_SHADER_TYPE(0,0);
+IMPLEMENT_DISFOG_SHADER_TYPE(1,0);
+IMPLEMENT_DISFOG_SHADER_TYPE(1,1);
+IMPLEMENT_DISFOG_SHADER_TYPE(2,0);
+IMPLEMENT_DISFOG_SHADER_TYPE(2,1);
+IMPLEMENT_DISFOG_SHADER_TYPE(2,2);
+IMPLEMENT_DISFOG_SHADER_TYPE(3,0);
+IMPLEMENT_DISFOG_SHADER_TYPE(3,1);
+IMPLEMENT_DISFOG_SHADER_TYPE(3,2);
+IMPLEMENT_DISFOG_SHADER_TYPE(3,3);
+IMPLEMENT_DISFOG_SHADER_TYPE(4,0);
+IMPLEMENT_DISFOG_SHADER_TYPE(4,1);
+IMPLEMENT_DISFOG_SHADER_TYPE(4,2);
+IMPLEMENT_DISFOG_SHADER_TYPE(4,3);
+IMPLEMENT_DISFOG_SHADER_TYPE(4,4);
+
+/**
+ * DISHONORED(port): the fog mask shaders (2013 rva 0xb7f600 "HeightFogVertexShader" / MaskMain, 786 / 15, and
+ * 0xb7fdc0 "HeightFogCubeMapPixelShader" / MaskMain, 797 / 19). FSceneRenderer::RenderFogMaskStencil (0x433f80)
+ * draws the fog mask meshes with them to build the stencil the fog pass tests against.
+ */
+class FHeightFogMaskVertexShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FHeightFogMaskVertexShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+
+	FHeightFogMaskVertexShader() {}
+
+	FHeightFogMaskVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		TransformParameter.Bind(Initializer.ParameterMap,TEXT("Transform"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << TransformParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x411e60 - the local-to-projection transform of the mask mesh. */
+	void SetParameters(const FMatrix& Transform)
+	{
+		SetVertexShaderValue(GetVertexShader(),TransformParameter,Transform);
+	}
+
+private:
+	FShaderParameter TransformParameter;
+};
+
+/** DISHONORED(port): the mask pixel shader writes one constant (2013 rva 0x4167e0). */
+template<UINT FillMode>
+class FHeightFogMaskPixelShader : public FGlobalShader
+{
+	DECLARE_SHADER_TYPE(FHeightFogMaskPixelShader,Global);
+public:
+
+	static UBOOL ShouldCache(EShaderPlatform Platform)
+	{
+		return TRUE;
+	}
+
+	static void ModifyCompilationEnvironment(EShaderPlatform Platform, FShaderCompilerEnvironment& OutEnvironment) {}
+
+	FHeightFogMaskPixelShader() {}
+
+	FHeightFogMaskPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
+		FGlobalShader(Initializer)
+	{
+		FillValueParameter.Bind(Initializer.ParameterMap,TEXT("FillValue"),TRUE);
+	}
+
+	virtual UBOOL Serialize(FArchive& Ar)
+	{
+		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
+		Ar << FillValueParameter;
+		return bShaderHasOutdatedParameters;
+	}
+
+	void SetParameters(FLOAT FillValue)
+	{
+		SetPixelShaderValue(GetPixelShader(),FillValueParameter,FillValue);
+	}
+
+private:
+	FShaderParameter FillValueParameter;
+};
+
+IMPLEMENT_SHADER_TYPE(,FHeightFogMaskVertexShader,TEXT("HeightFogVertexShader"),TEXT("MaskMain"),SF_Vertex,786,15);
+// DISHONORED(retail): the cooked type name has the spaces of the template argument, "FHeightFogMaskPixelShader< 0 >" (0xb7fdc0).
+typedef FHeightFogMaskPixelShader<0> FHeightFogMaskPixelShader0Type;
+IMPLEMENT_SHADER_TYPE_NAMED(template<>,FHeightFogMaskPixelShader0Type,TEXT("FHeightFogMaskPixelShader< 0 >"),TEXT("HeightFogCubeMapPixelShader"),TEXT("MaskMain"),SF_Pixel,797,19);
+
+/**
+ * DISHONORED(bringup): Engine is a static library, so an object file nothing references is dropped from the exe and
+ * its shader type initializers never run - the cooked records then report the types as undeclared (agent AG found this
+ * with the Arkane mesh-material units). The Arkane post-process units have no caller until their passes are ported, so
+ * one symbol of each is referenced here. Drop this once the FArkPp graph is wired in.
+ */
+extern void DishonoredLinkArkPpBlurShaderTypes();
+extern void DishonoredLinkArkPpDofShaderTypes();
+extern void DishonoredLinkArkPpKuwaShaderTypes();
+extern void DishonoredLinkArkPpAAShaderTypes();
+#if DISHONORED_WITH_GFXUI_SHADERS
+extern void DishonoredLinkGFxShaderTypes();
+#endif
+void (*GDishonoredArkPostProcessLinkAnchors[])() =
+{
+	&DishonoredLinkArkPpBlurShaderTypes,
+	&DishonoredLinkArkPpDofShaderTypes,
+	&DishonoredLinkArkPpKuwaShaderTypes,
+	&DishonoredLinkArkPpAAShaderTypes,
+#if DISHONORED_WITH_GFXUI_SHADERS
+	&DishonoredLinkGFxShaderTypes,
+#endif
+};
+
 /** The fog vertex declaration resource type. */
 class FFogVertexDeclaration : public FRenderResource
 {
@@ -611,7 +1034,11 @@ void SetFogShaders(FScene* Scene,const FViewInfo& View)
 	}
 }
 
-UBOOL FSceneRenderer::RenderFog(UINT DPGIndex)
+/**
+ * DISHONORED(bringup): the reference height-fog pass. Retail has no shader for any of the types it binds
+ * (renderer.md 4), so it is only reachable through -referencefog; FSceneRenderer::RenderFog below is the retail one.
+ */
+UBOOL FSceneRenderer::RenderReferenceFog(UINT DPGIndex)
 {
 	const INT NumSceneFogLayers = Scene->Fogs.Num();
 	if (DPGIndex == SDPG_World && (NumSceneFogLayers > 0 || Scene->ExponentialFogs.Num() > 0))
@@ -813,6 +1240,305 @@ UBOOL RenderQuarterDownsampledDepthAndFog(const FScene* Scene, const FViewInfo& 
 	}
 #endif
 	return FALSE;
+}
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): the DisFog pass (FSceneRenderer::RenderFog, 2013 rva 0x4370a0).
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(bringup): -fogresolvetargets runs the fog pass with retail's render-target pair around it
+ * (ResolveSceneColor, BeginRenderingSceneColor, FinishRenderingSceneColor; 2013 rva 0x4370a0). Measured on this tree
+ * with a red RHIClear at four points of the pass: with the pair, neither the clear nor the fog reaches the screen;
+ * without it - drawing into the target the caller already has bound - both do (mean per-pixel difference 27.96 of 765
+ * over the same camera with -nopostprocess, 37 % of the image, agentBD.md). The difference is this tree's resolve handling, not the
+ * pass: FD3D9DynamicRHI::CopyToResolveTarget (D3D9RenderTarget.cpp:24) leaves the *resolve destination* bound as the
+ * render target and no pass re-binds the scene colour surface afterwards, so a pass that binds it again writes to a
+ * surface nothing resolves again. Hand-over in agentBD.md; the switch is here so the next agent can re-measure in one
+ * run once that is fixed.
+ */
+static UBOOL GDisFogResolveTargets = ParseParam(appCmdLine(),TEXT("fogresolvetargets"));
+
+/** DISHONORED(bringup): per-pass draw counts for the census line in SceneRendering.cpp. */
+extern INT GDisCensusFogScene;
+extern INT GDisCensusFogLayers;
+extern INT GDisCensusFogDraws;
+
+namespace
+{
+	/** The shader map references of the 15 policies, resolved once (2013 rva 0x4365f0: gDisFogVertexShaders / gDisFogPixelShaders). */
+	FDisFogVertexShaderInterface* GDisFogVertexShaders[15] = {0};
+	FDisFogPixelShaderInterface* GDisFogPixelShaders[15] = {0};
+	FGlobalBoundShaderState GDisFogBoundShaderStates[15];
+	UBOOL GDisFogShadersResolved = FALSE;
+
+	/** LayerBaseOffset[Layers] + Luts is the index of a policy (0x4365f0). */
+	const UINT GDisFogLayerBaseOffset[5] = { 0, 1, 3, 6, 10 };
+
+	template<UINT Layers,UINT Luts>
+	void ResolveDisFogPolicy()
+	{
+		const UINT Index = GDisFogLayerBaseOffset[Layers] + Luts;
+		TShaderMapRef<TDisFogVertexShader<FDisFogPolicy<Layers,Luts> > > VertexShader(GetGlobalShaderMap());
+		TShaderMapRef<TDisFogPixelShader<FDisFogPolicy<Layers,Luts> > > PixelShader(GetGlobalShaderMap());
+		GDisFogVertexShaders[Index] = *VertexShader;
+		GDisFogPixelShaders[Index] = *PixelShader;
+	}
+
+	void ResolveDisFogShaders()
+	{
+		if (GDisFogShadersResolved)
+		{
+			return;
+		}
+		ResolveDisFogPolicy<0,0>();
+		ResolveDisFogPolicy<1,0>();
+		ResolveDisFogPolicy<1,1>();
+		ResolveDisFogPolicy<2,0>();
+		ResolveDisFogPolicy<2,1>();
+		ResolveDisFogPolicy<2,2>();
+		ResolveDisFogPolicy<3,0>();
+		ResolveDisFogPolicy<3,1>();
+		ResolveDisFogPolicy<3,2>();
+		ResolveDisFogPolicy<3,3>();
+		ResolveDisFogPolicy<4,0>();
+		ResolveDisFogPolicy<4,1>();
+		ResolveDisFogPolicy<4,2>();
+		ResolveDisFogPolicy<4,3>();
+		ResolveDisFogPolicy<4,4>();
+		GDisFogShadersResolved = TRUE;
+	}
+
+	/** DISHONORED(port): 2013 rva 0x4365f0 - bind the policy's pair and set its parameters. */
+	void FlushDisFogShader(UINT Type,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount,UINT LayerLutCount,FScene& Scene,FViewInfo& View,UBOOL bHasBloom)
+	{
+		ResolveDisFogShaders();
+
+		const UINT Index = GDisFogLayerBaseOffset[Min<UINT>(DisFogCount,4)] + Min<UINT>(LayerLutCount,4);
+		FDisFogVertexShaderInterface* VertexShader = GDisFogVertexShaders[Index];
+		FDisFogPixelShaderInterface* PixelShader = GDisFogPixelShaders[Index];
+		// DISHONORED(bringup): one line the first time a policy is used, so a run says which shader pair it bound.
+		{
+			static UBOOL bLoggedPolicy[15] = {0};
+			if (!bLoggedPolicy[Index])
+			{
+				bLoggedPolicy[Index] = TRUE;
+				debugf(TEXT("DISHONORED(bringup): DisFog policy %i (%i layers, %i luts): vertex shader %s, pixel shader %s"),
+					Index,DisFogCount,LayerLutCount,VertexShader ? TEXT("found") : TEXT("MISSING"),PixelShader ? TEXT("found") : TEXT("MISSING"));
+				for (UINT FogIndex = 0; FogIndex < DisFogCount; FogIndex++)
+				{
+					const FDisFogSceneInfo& Fog = *DisFogs[FogIndex];
+					debugf(TEXT("DISHONORED(bringup): DisFog layer %i: origin %.1f height %.1f near %.1f far %.1f nofog %.1f density %.3f opacity %.3f colour (%.2f %.2f %.2f) interior %i sun %i exclusive %i custom %i lut %s"),
+						FogIndex,Fog.mOrigin,Fog.mHeight,Fog.mNearPlane,Fog.mFarPlane,Fog.mNoFogPlane,Fog.mHeightDensityFactor,Fog.mOpacity,
+						Fog.mLightColor.R,Fog.mLightColor.G,Fog.mLightColor.B,
+						(INT)Fog.mInterior,(INT)Fog.mIsSun,(INT)Fog.mIsExclusive,(INT)Fog.m_bCustomTransition,
+						Fog.m_pFogLUTTexture ? TEXT("set") : TEXT("none"));
+				}
+			}
+		}
+
+		if (!VertexShader || !PixelShader)
+		{
+			return;
+		}
+
+		// DISHONORED(port): 2013 rva 0x4365f0 - the two-float-position declaration, stride 8.
+		SetGlobalBoundShaderState(GDisFogBoundShaderStates[Index],ArkGetCommonVertexDeclaration(ARK_COMMON_VD_FLOAT2),VertexShader,PixelShader,sizeof(FVector2D));
+		VertexShader->SetParameters(View,DisFogs,DisFogCount);
+		// DISHONORED(port): only the exterior pass fills the precomputed fog the base pass reads.
+		PixelShader->SetParameters(View,Type == 1 ? &View.DisPrecomputedFogs : NULL,DisFogs,DisFogCount,bHasBloom);
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x436d10. Layers whose custom transition puts them entirely below the camera are
+ * dropped, the fog mask stencil is built, and one full-screen triangle is drawn with the policy's shader pair.
+ */
+UBOOL FSceneRenderer::RenderFogPass(UINT Type,const FDisFogSceneInfo* const* DisFogs,UINT DisFogCount,UBOOL bRestoreStencilToZero)
+{
+	SCOPED_DRAW_EVENT(EventFogPass)(DEC_SCENE_ITEMS,Type == 1 ? TEXT("Exterior") : TEXT("Interior"));
+
+	if (!Views.Num())
+	{
+		return FALSE;
+	}
+	FViewInfo& View = Views(0);
+	const FLOAT ViewHeight = View.ViewOrigin.Z;
+
+	const FDisFogSceneInfo* ViewDisFogs[16];
+	UINT ViewDisFogCount = 0;
+	for (UINT FogIndex = 0; FogIndex < DisFogCount; FogIndex++)
+	{
+		const FDisFogSceneInfo* Fog = DisFogs[FogIndex];
+		if (Fog->m_bCustomTransition)
+		{
+			const FLOAT TopOfLayer = Max((Fog->mHeight + Fog->mOrigin) - ViewHeight,Fog->mOrigin - ViewHeight);
+			if (TopOfLayer <= 0.0f)
+			{
+				continue;
+			}
+		}
+		ViewDisFogs[ViewDisFogCount++] = Fog;
+	}
+
+	RHISetViewport(View.RenderTargetX,View.RenderTargetY,0.0f,View.RenderTargetX + View.RenderTargetSizeX,View.RenderTargetY + View.RenderTargetSizeY,1.0f);
+	RHISetViewParameters(View);
+	RHISetScissorRect(TRUE,View.RenderTargetX,View.RenderTargetY,View.RenderTargetX + View.RenderTargetSizeX,View.RenderTargetY + View.RenderTargetSizeY);
+
+	// DISHONORED(bringup): the fog mask stencil (2013 rva 0x433f80) draws the fog mask meshes of the level into
+	// stencil so interior fog stops at a portal. Not ported: without it every layer covers the whole view, which is
+	// what a level with no mask meshes does anyway.
+	const UBOOL bHasMask = FALSE;
+
+	// DISHONORED(port): 2013 rva 0x436d10 sets the states in this order and ends with an opaque blend: the fog pixel
+	// shader samples scene colour itself (FSceneTextureShaderParameters) and writes the composited result, so the
+	// draw overwrites RGB instead of blending into it.
+	RHISetBlendState(TStaticBlendState<BO_Add,BF_One,BF_SourceAlpha,BO_Add,BF_One,BF_Zero>::GetRHI());
+	RHISetDepthState(TStaticDepthState<FALSE,CF_Always>::GetRHI());
+	RHISetRasterizerState(TStaticRasterizerState<FM_Solid,CM_None>::GetRHI());
+	if (bHasMask)
+	{
+		RHISetStencilState(TStaticStencilState<TRUE,CF_NotEqual,SO_Keep,SO_Keep,SO_Keep,FALSE,CF_Always,SO_Keep,SO_Keep,SO_Keep,0xff,0xff,0>::GetRHI());
+	}
+	else
+	{
+		RHISetStencilState(TStaticStencilState<>::GetRHI());
+	}
+	RHISetColorWriteEnable(TRUE);
+	RHISetColorWriteMask(CW_RGB);
+	RHISetBlendState(TStaticBlendState<BO_Add,BF_One,BF_Zero,BO_Add,BF_One,BF_Zero>::GetRHI());
+
+	// the leading run of layers that carry a colour lookup texture (the array is sorted so they come first)
+	UINT LayerLutCount = 0;
+	while (LayerLutCount < ViewDisFogCount && ViewDisFogs[LayerLutCount]->m_pFogLUTTexture)
+	{
+		LayerLutCount++;
+	}
+
+	FlushDisFogShader(Type,ViewDisFogs,ViewDisFogCount,LayerLutCount,*Scene,View,m_BloomNeedBlit);
+
+	// DISHONORED(port): one clip-space triangle of two-float positions (2013 rva 0x436d10, stride 8).
+	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
+	GDisCensusFogDraws++;
+	GDisCensusFogLayers += ViewDisFogCount;
+
+	if (bRestoreStencilToZero && bHasMask)
+	{
+		RHIClear(FALSE,FLinearColor::Black,FALSE,0.0f,TRUE,0);
+	}
+	RHISetScissorRect(FALSE,0,0,0,0);
+	return TRUE;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x4370a0. The scene's DisFog layers are split into interior and exterior sets; an
+ * exclusive layer is moved to the front of its set and then it is the only one drawn; a sun layer is moved to the
+ * front because the pixel shader takes the sun direction from layer 0. Both sets are clamped to four layers.
+ */
+UBOOL FSceneRenderer::RenderFog(UINT DPGIndex)
+{
+	if (DPGIndex != SDPG_World)
+	{
+		return FALSE;
+	}
+
+	const INT NumSceneDisFogLayers = Scene->DisFogs.Num();
+	GDisCensusFogScene = NumSceneDisFogLayers;
+	GDisCensusFogLayers = 0;
+	GDisCensusFogDraws = 0;
+	if (NumSceneDisFogLayers <= 0)
+	{
+		return FALSE;
+	}
+
+	const FDisFogSceneInfo* InteriorFogs[16];
+	const FDisFogSceneInfo* ExteriorFogs[16];
+	UINT InteriorCount = 0;
+	UINT ExteriorCount = 0;
+	for (INT FogIndex = 0; FogIndex < NumSceneDisFogLayers && FogIndex < 16; FogIndex++)
+	{
+		const FDisFogSceneInfo* Fog = &Scene->DisFogs(FogIndex);
+		if (Fog->mInterior)
+		{
+			InteriorFogs[InteriorCount++] = Fog;
+		}
+		else
+		{
+			ExteriorFogs[ExteriorCount++] = Fog;
+		}
+	}
+
+	// the sun layer first, so TDisFogPixelShader::SetParameters finds it at index 0
+	for (UINT FogIndex = 1; FogIndex < ExteriorCount; FogIndex++)
+	{
+		if (ExteriorFogs[FogIndex]->mIsSun)
+		{
+			Exchange(ExteriorFogs[0],ExteriorFogs[FogIndex]);
+			break;
+		}
+	}
+	for (UINT FogIndex = 1; FogIndex < InteriorCount; FogIndex++)
+	{
+		if (InteriorFogs[FogIndex]->mIsSun)
+		{
+			Exchange(InteriorFogs[0],InteriorFogs[FogIndex]);
+			break;
+		}
+	}
+
+	// an exclusive exterior layer replaces the whole exterior set and switches the interior set off
+	UBOOL bHasInterior = InteriorCount > 0;
+	for (UINT FogIndex = 0; FogIndex < ExteriorCount; FogIndex++)
+	{
+		if (ExteriorFogs[FogIndex]->mIsExclusive)
+		{
+			Exchange(ExteriorFogs[0],ExteriorFogs[FogIndex]);
+			ExteriorCount = 1;
+			bHasInterior = FALSE;
+			break;
+		}
+	}
+	InteriorCount = Min<UINT>(InteriorCount,MAX_DISFOG_LAYERS);
+	ExteriorCount = Min<UINT>(ExteriorCount,MAX_DISFOG_LAYERS);
+
+	SCOPED_DRAW_EVENT(EventFog)(DEC_SCENE_ITEMS,TEXT("DisFog"));
+
+	// DISHONORED(port): 2013 rva 0x4370a0 resolves scene colour first, so the fog pixel shader can sample it through
+	// FSceneTextureShaderParameters, and then renders into the scene colour surface. The resolve is kept; the
+	// surface switch is not (see GDisFogResolveTargets above): on this tree the resolve leaves the resolve
+	// destination - the texture the frame ends up being read from - bound, and that is where the pass must draw.
+	if (!m_BloomNeedBlit)
+	{
+		GSceneRenderTargets.ResolveSceneColor();
+	}
+	if (GDisFogResolveTargets)
+	{
+		GSceneRenderTargets.BeginRenderingSceneColor(FALSE);
+	}
+
+	if (bHasInterior && InteriorCount > 0)
+	{
+		RenderFogPass(0,InteriorFogs,InteriorCount,ExteriorCount == 0);
+	}
+	if (ExteriorCount > 0)
+	{
+		RenderFogPass(1,ExteriorFogs,ExteriorCount,TRUE);
+	}
+
+	if (GDisFogResolveTargets)
+	{
+		const FViewInfo& View = Views(0);
+		GSceneRenderTargets.FinishRenderingSceneColor(TRUE,FResolveRect(View.RenderTargetX,View.RenderTargetY,View.RenderTargetX + View.RenderTargetSizeX,View.RenderTargetY + View.RenderTargetSizeY));
+	}
+
+	RHISetColorWriteEnable(TRUE);
+	RHISetColorWriteMask(CW_RGBA);
+	RHISetDepthState(TStaticDepthState<TRUE,CF_LessEqual>::GetRHI());
+	RHISetBlendState(TStaticBlendState<>::GetRHI());
+	RHISetStencilState(TStaticStencilState<>::GetRHI());
+	RHISetScissorRect(FALSE,0,0,0,0);
+	return TRUE;
 }
 
 UBOOL ShouldRenderFog(const EShowFlags& ShowFlags)

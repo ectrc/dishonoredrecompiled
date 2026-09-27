@@ -1,0 +1,38 @@
+rva_2013,status,note
+0xb85120,written,"FGFxFilterPixelShader<FS2_*> 26 types declared (GFxUI/Src/gfxuishaders.cpp, 12 parameters, GFxFilterPixelShader/FBox*); all 26 cooked records load"
+0xb857a0,written,"FGFxPixelShader<GFx_PS_*> 17 types declared (4 textures + 12 constants, GFxPixelShader/Main_*); all 17 cooked records load"
+0xb85be0,written,"FGFxVertexShader<GFx_VS_*> 7 types declared (transform + 2 texture matrices, GFxVertexShader/Main*); all 7 cooked records load"
+0xb7f640,written,"TDisFogVertexShader<FDisFogPolicy<N,M>> 15 types (FogRendering.cpp, ScreenPositionScaleBias + ScreenToWorld, DisFogVertexShader/Main, 797/23)"
+0xb7fa00,written,"TDisFogPixelShader<FDisFogPolicy<N,M>> 15 types (scene textures + 8 layer constants + mask + bloom parts + 4 LUTs + sun, 20 parameters, 797/23)"
+0xb7f600,written,"FHeightFogMaskVertexShader (HeightFogVertexShader/MaskMain, 786/15)"
+0xb7fdc0,written,"FHeightFogMaskPixelShader< 0 > (HeightFogCubeMapPixelShader/MaskMain, 797/19; the cooked type name carries the spaces)"
+0xb80a10,written,"TFilterPixelShaderDepthInAlpha<1..16> 16 types (SceneFilterRendering.h, TFilterPixelShader<N> + FSceneTextureShaderParameters, MainDepthInAlpha, 786/1)"
+0xb82c30,written,"TArkPpBlurVertexShader/PixelShader 8 types (arkppnodeblur.cpp, 3 parameters each, ArkPpBlur/MainVS,MainPS, 786/1)"
+0xb82e50,written,"FArkPpDofDownsampleVS/PS, FArkPpDofUberVS, TArkPpDofUberPS<0/1,0/1>, FArkPpDofLutBlenderVS/PS 8 types (arkppnodedof.cpp, ArkPpDof, 786-789/1)"
+0xb83050,written,"TKuwaVertexShader/PixelShader<3,5> 4 types (arkppnodekuwa.cpp, ArkKuwa/MainVS,MainPS, 793/26)"
+0xb82930,written,"TFXAAPixelShader<Luma,Quality,ForSceneColor> 6 types, 11 parameters (arkppnodeaa.cpp, FXAAShader/FXAA_PixelMain, 786/24); 3 have no cooked PC shader, as in retail"
+0xb82ab0,written,"TMLAAEdgeDetectionPixelShader<0/1> and TMLAABlendPixelShader<0/1> (MLAAShader; the linear variants carry the inverse display gamma, the sRGB ones do not)"
+0xb826d0,written,"FBloomCompose/DownSample VS+PS and TBloomBlur VS+PS<5> 6 types (arkbloompartsrendering.cpp, ArkBloomPart*Shader, 786/23)"
+0x422340,written,FScene::AddDisFog: the render command and the sort by colour-lookup texture (Scene.cpp)
+0x41fa20,written,FScene::RemoveDisFog (Scene.cpp)
+0x421bc0,written,"FDisFogSceneInfo(const UDisFogComponent*) (SceneCore.cpp; origin from m_WorldOrigin when m_UseWorldOrigin, sun direction from the owner's rotation)"
+0xd5ef0,written,UDisFogComponent::Attach (disfogcomponent.cpp)
+0xd5f10,written,UDisFogComponent::UpdateTransform (disfogcomponent.cpp)
+0xd5f40,written,UDisFogComponent::Detach (disfogcomponent.cpp)
+0xdc9c0,written,UDisFogComponent::SetParentToWorld: only the height of the transform (disfogcomponent.cpp)
+0x1c8530,written,UDisFogComponent::execSetEnabled + SetEnabled (EngineDisFogClasses.h / disfogcomponent.cpp)
+0x4370a0,written,"FSceneRenderer::RenderFog: interior/exterior split, sun and exclusive layer first, 4-layer clamp, one pass each (FogRendering.cpp)"
+0x436d10,written,"FSceneRenderer::RenderFogPass: custom-transition cull, viewport/scissor, retail state block, LUT count, one full-screen triangle"
+0x4365f0,written,"FlushDisFogShader: the 15-policy shader map refs, LayerBaseOffset[Layers]+Luts, bound shader state and parameters"
+0x41c940,written,"TDisFogPixelShader::SetParameters: per-layer heights/planes/density/colour/opacity, custom-transition fade, LUT textures, sun direction, bloom parts, FDisPrecomputedFogSceneInfo"
+0x416590,written,TDisFogVertexShader::SetParameters: screen position scale/bias and the screen-to-world matrix
+0x41a3f0,written,"FCommonVertexDeclaration::InitRHI: the float2, float4 and float2+UV declarations (arkcommonvertexdeclaration.cpp)"
+0x410900,written,ArkGetCommonVertexDeclaration (arkcommonvertexdeclaration.cpp)
+0x2b9ac0,written,"ULocalPlayer::RebuildPlayerPostProcessChain: duplicate the inserted chain whole instead of the reference's empty-chain-plus-Effects rebuild; the player's chain now carries the 42 graph nodes"
+0x422e40,written,"FSceneView::m_ArkPpConfig (@28) declared and filled from ULocalPlayer::m_CurrentArkPpSettings (Scene.h, Scene.cpp, UnPlayer.cpp)"
+0x42c4e0,written,FSceneRenderTargets::BeginRenderingBloom (SceneRenderTargets.cpp)
+0x42c500,written,FSceneRenderTargets::FinishRenderingBloom (SceneRenderTargets.cpp)
+0x5251a0,todo,"FSceneRenderer::RenderBloomParts: the bloom-part mesh pass needs FViewInfo::BloomPartPrimSet and the per-primitive relevance that fills it; the shaders and the two quarter-size targets are in place"
+0x524ae0,todo,"UArkPpNodeSceneColor::CreateSceneProxy and the rest of the FArkPp proxy family (FArkPpNodeProxy 12 bytes + 8 subclasses); the node classes are in DishonoredGame's shim header and have to move to Engine first"
+0x493e40,todo,"FViewInfo::FViewInfo(const FSceneView*): builds the graph (m_GraphRoot->IsValid, FArkPpCreateProxyConfig, PushUberOverride, CreateSceneProxy, AddPostProcessProxy) - the entry point for the FArkPp port"
+0x433f80,todo,FSceneRenderer::RenderFogMaskStencil: the fog mask meshes that stop interior fog at a portal (the pass runs without a mask today)

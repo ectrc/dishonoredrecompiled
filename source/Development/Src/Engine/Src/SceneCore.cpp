@@ -743,6 +743,33 @@ FHeightFogSceneInfo::FHeightFogSceneInfo(const UHeightFogComponent* InComponent)
 {
 }
 
+/**
+ * DISHONORED(port): 2013 rva 0x421bc0 - the render-thread copy of one DisFog layer. The origin is the component's
+ * own when it follows its actor and the world origin when m_UseWorldOrigin is set, and the sun direction is the
+ * owning actor's rotation as a vector.
+ */
+FDisFogSceneInfo::FDisFogSceneInfo(const UDisFogComponent* InComponent):
+	mComponent(InComponent),
+	mLightColor(FLinearColor(InComponent->LightColor)),
+	mOrigin(InComponent->m_UseWorldOrigin ? InComponent->m_WorldOrigin : InComponent->Origin),
+	mHeight(InComponent->Height),
+	mFarPlane(InComponent->FarPlane),
+	mNearPlane(InComponent->NearPlane),
+	mNoFogPlane(InComponent->NoFogPlane),
+	mHeightDensityFactor(InComponent->HeightDensityFactor),
+	mOpacity(InComponent->Opacity),
+	mInterior(InComponent->bInteriorFog),
+	mIsSun(InComponent->bIsSun),
+	mIsExclusive(InComponent->m_IsExclusive),
+	m_bCustomTransition(InComponent->bCustomTransition),
+	mSunDirection(InComponent->GetOwner() ? InComponent->GetOwner()->Rotation.Vector() : FVector(0.0f,0.0f,1.0f)),
+	mSunPower(InComponent->SunPower),
+	m_fCustomTransitionHeight(InComponent->fCustomTransitionHeight),
+	m_pFogLUTTexture(InComponent->FogLUT),
+	m_pFogLUTTextureData(InComponent->m_RawLut)
+{
+}
+
 /** Initialization constructor. */
 FExponentialHeightFogSceneInfo::FExponentialHeightFogSceneInfo(const UExponentialHeightFogComponent* InComponent):
 	Component(InComponent),

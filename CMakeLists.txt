@@ -100,6 +100,10 @@ option(DISHONORED_ENABLE_GFXUI "Build the GFxUI module (retail class registrants
 if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_GFXUI)
   dishonored_module(GFxUI)
   target_compile_definitions(GFxUI PRIVATE DISHONORED_SDK_LAYOUT_CHECKS=$<BOOL:${DISHONORED_SDK_LAYOUT_CHECKS}>)
+  # DISHONORED(bringup, agent BD): GFxUI/Src/gfxuishaders.cpp declares the 50 GFx shader types of the cooked global
+  # shader cache. Nothing in GFxUI references that unit, so Engine/Src/FogRendering.cpp takes the address of its link
+  # anchor; this tells Engine the symbol exists.
+  target_compile_definitions(Engine PRIVATE DISHONORED_WITH_GFXUI_SHADERS=1)
 endif()
 if(DISHONORED_ENABLE_ENGINE AND DISHONORED_ENABLE_AKAUDIO)
   dishonored_module(AkAudio)

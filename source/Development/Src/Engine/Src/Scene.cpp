@@ -385,6 +385,8 @@ FSceneView::FSceneView(
 	ActorVisibilityHistory(InActorVisibilityHistory),
 	ViewActor(InViewActor),
 	PostProcessChain(InPostProcessChain),
+	// DISHONORED(port): FSceneView @28 - filled in by ULocalPlayer::CalcSceneView from m_CurrentArkPpSettings.
+	m_ArkPpConfig(NULL),
 	PostProcessSettings(InPostProcessSettings),
 	Drawer(InDrawer),
 	X(InX),
@@ -464,6 +466,8 @@ FSceneView::FSceneView(
 	ActorVisibilityHistory(InActorVisibilityHistory),
 	ViewActor(InViewActor),
 	PostProcessChain(InPostProcessChain),
+	// DISHONORED(port): FSceneView @28 - filled in by ULocalPlayer::CalcSceneView from m_CurrentArkPpSettings.
+	m_ArkPpConfig(NULL),
 	PostProcessSettings(InPostProcessSettings),
 	Drawer(InDrawer),
 	X(InX),
@@ -1406,6 +1410,42 @@ void FScene::RemoveHeightFog(UHeightFogComponent* FogComponent)
 				if(Scene->Fogs(FogIndex).Component == FogComponent)
 				{
 					Scene->Fogs.Remove(FogIndex);
+					break;
+				}
+			}
+		});
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x422340 - the same shape as AddHeightFog, but the array is sorted by whether the layer
+ * has a colour lookup texture, because RenderFogPass counts the leading run of layers that have one to pick the
+ * FDisFogPolicy<Layers,Luts> shader.
+ */
+void FScene::AddDisFog(UDisFogComponent* FogComponent)
+{
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		FAddDisFogCommand,
+		FScene*,Scene,this,
+		FDisFogSceneInfo,DisFogSceneInfo,FDisFogSceneInfo(FogComponent),
+		{
+			new(Scene->DisFogs) FDisFogSceneInfo(DisFogSceneInfo);
+			Sort<USE_COMPARE_CONSTREF(FDisFogSceneInfo,SceneCore)>(&Scene->DisFogs(0),Scene->DisFogs.Num());
+		});
+}
+
+/** DISHONORED(port): 2013 rva 0x41fa20. */
+void FScene::RemoveDisFog(UDisFogComponent* FogComponent)
+{
+	ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		FRemoveDisFogCommand,
+		FScene*,Scene,this,
+		UDisFogComponent*,FogComponent,FogComponent,
+		{
+			for(INT FogIndex = 0;FogIndex < Scene->DisFogs.Num();FogIndex++)
+			{
+				if(Scene->DisFogs(FogIndex).mComponent == FogComponent)
+				{
+					Scene->DisFogs.Remove(FogIndex);
 					break;
 				}
 			}
@@ -2446,6 +2486,9 @@ public:
 
 	virtual void AddHeightFog(class UHeightFogComponent* FogComponent){}
 	virtual void RemoveHeightFog(class UHeightFogComponent* FogComponent){}
+
+	virtual void AddDisFog(class UDisFogComponent* FogComponent){}
+	virtual void RemoveDisFog(class UDisFogComponent* FogComponent){}
 
 	virtual void AddExponentialHeightFog(class UExponentialHeightFogComponent* FogComponent){}
 	virtual void RemoveExponentialHeightFog(class UExponentialHeightFogComponent* FogComponent){}

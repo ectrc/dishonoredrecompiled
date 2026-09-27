@@ -428,6 +428,7 @@ struct FURL;
 #include "EngineGameEngineClasses.h"		// Main Unreal engine declarations
 #include "UnLevel.h"						// Level object.
 #include "EngineArkaneClasses.h"			// DISHONORED(port): Arkane Engine-package classes (audio system, Ak objects, component container)
+#include "EngineDisFogClasses.h"			// DISHONORED(port): Arkane fog classes (DisFog, DisFogComponent, DisFogDisplayComponent)
 #include "UnWorld.h"						// World object.
 #include "UnKeys.h"							// Key name definitions.
 #include "UnUIKeys.h"						// UI key name definitions.

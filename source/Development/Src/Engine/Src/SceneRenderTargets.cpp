@@ -1089,6 +1089,18 @@ void FSceneRenderTargets::FinishRenderingLightAttenuation(UBOOL bUseTexture0)
 	RHICopyToResolveTarget(GetLightAttenuationSurface(bUseTexture0), FALSE, FResolveParams(FResolveRect(),CubeFace_PosX,RenderTargets[bUseTexture0 ? LightAttenuation0 : LightAttenuation1].Texture));
 }
 
+/** DISHONORED(port): 2013 rva 0x42c4e0 - the bloom parts target, with no depth buffer. */
+void FSceneRenderTargets::BeginRenderingBloom()
+{
+	RHISetRenderTarget(GetBloomPartsSurface(),FSurfaceRHIRef());
+}
+
+/** DISHONORED(port): 2013 rva 0x42c500 - resolve it into its texture. */
+void FSceneRenderTargets::FinishRenderingBloom()
+{
+	RHICopyToResolveTarget(GetBloomPartsSurface(),FALSE,FResolveParams());
+}
+
 void FSceneRenderTargets::BeginRenderingTranslucency(const FViewInfo& View, UBOOL bDownSampled, UBOOL bStateChanged)
 {
 	SCOPED_DRAW_EVENT(Event)(DEC_SCENE_ITEMS,TEXT("Begin %s Translucency"), bDownSampled ? TEXT("Downsampled") : TEXT("FullRes"));
@@ -2313,6 +2325,36 @@ void FSceneRenderTargets::InitDynamicRHI()
 			}
 		#endif
 
+		// DISHONORED(port): Arkane's own targets (retail FSceneRenderTargets m_FogMaskRT / m_BloomRT / m_BloomRT2 /
+		// m_DofHalfRT / m_DofQuarterRT, 2012 PDB @492..540). The bloom pair is a quarter of the buffer, which is the
+		// size FSceneRenderer::RenderBloomParts (2013 rva 0x5251a0) blurs at; the DOF pair is half and quarter.
+		{
+			const UINT QuarterSizeX = Max<UINT>(BufferSizeX >> 2, 1);
+			const UINT QuarterSizeY = Max<UINT>(BufferSizeY >> 2, 1);
+			const UINT HalfSizeX = Max<UINT>(BufferSizeX >> 1, 1);
+			const UINT HalfSizeY = Max<UINT>(BufferSizeY >> 1, 1);
+
+			RenderTargets[ArkFogMask].Texture = RHICreateTexture2D(BufferSizeX,BufferSizeY,PF_G8,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkFogMask].Surface = RHICreateTargetableSurface(
+				BufferSizeX,BufferSizeY,PF_G8,RenderTargets[ArkFogMask].Texture,0,TEXT("ArkFogMask"));
+
+			RenderTargets[ArkBloom].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGB,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkBloom].Surface = RHICreateTargetableSurface(
+				QuarterSizeX,QuarterSizeY,PF_FloatRGB,RenderTargets[ArkBloom].Texture,0,TEXT("ArkBloom"));
+
+			RenderTargets[ArkBloom2].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGB,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkBloom2].Surface = RHICreateTargetableSurface(
+				QuarterSizeX,QuarterSizeY,PF_FloatRGB,RenderTargets[ArkBloom2].Texture,0,TEXT("ArkBloom2"));
+
+			RenderTargets[ArkDofHalf].Texture = RHICreateTexture2D(HalfSizeX,HalfSizeY,PF_FloatRGBA,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkDofHalf].Surface = RHICreateTargetableSurface(
+				HalfSizeX,HalfSizeY,PF_FloatRGBA,RenderTargets[ArkDofHalf].Texture,0,TEXT("ArkDofHalf"));
+
+			RenderTargets[ArkDofQuarter].Texture = RHICreateTexture2D(QuarterSizeX,QuarterSizeY,PF_FloatRGBA,1,TexCreate_ResolveTargetable,NULL);
+			RenderTargets[ArkDofQuarter].Surface = RHICreateTargetableSurface(
+				QuarterSizeX,QuarterSizeY,PF_FloatRGBA,RenderTargets[ArkDofQuarter].Texture,0,TEXT("ArkDofQuarter"));
+		}
+
 		if(GSystemSettings.bAllowPostprocessMLAA)
 		{
 			// on console we only support FXAA which doesn't require the rendertargets we only need for MLAA
@@ -2681,6 +2723,12 @@ UBOOL FSceneRenderTargets::IsRenderTargetADepthTexture(ESceneRenderTargetTypes I
 		case MLAAEdgeMask:
 		case MLAAEdgeCount:
 		case CapturedSceneColor:
+		// DISHONORED(port): Arkane's targets are colour targets.
+		case ArkFogMask:
+		case ArkBloom:
+		case ArkBloom2:
+		case ArkDofHalf:
+		case ArkDofQuarter:
 			// this is a color one
 			break;
 
@@ -2760,7 +2808,19 @@ FString FSceneRenderTargets::GetRenderTargetInfo(ESceneRenderTargetTypes EnumInd
 			case MLAAEdgeCount:
 			case CapturedSceneColor:
 			case OffscreenDepthBuffer:
+			case ArkFogMask:
 				OutExtent = FIntPoint(BufferSizeX, BufferSizeY);
+				break;
+
+			// DISHONORED(port): the Arkane bloom and depth-of-field targets, quarter and half of the buffer.
+			case ArkBloom:
+			case ArkBloom2:
+			case ArkDofQuarter:
+				OutExtent = FIntPoint(Max<INT>(BufferSizeX >> 2, 1), Max<INT>(BufferSizeY >> 2, 1));
+				break;
+
+			case ArkDofHalf:
+				OutExtent = FIntPoint(Max<INT>(BufferSizeX >> 1, 1), Max<INT>(BufferSizeY >> 1, 1));
 				break;
 
 			case TranslucencyShadowDepthZ:
@@ -2949,6 +3009,11 @@ FString FSceneRenderTargets::GetRenderTargetName(ESceneRenderTargetTypes RTEnum)
 		RTENUMNAME(MLAAEdgeCount)
 		RTENUMNAME(CapturedSceneColor)
 		RTENUMNAME(OffscreenDepthBuffer)
+		RTENUMNAME(ArkFogMask)
+		RTENUMNAME(ArkBloom)
+		RTENUMNAME(ArkBloom2)
+		RTENUMNAME(ArkDofHalf)
+		RTENUMNAME(ArkDofQuarter)
 		default: RenderTargetName = FString::Printf(TEXT("%08X"),(INT)RTEnum);
 	}
 #undef RTENUMNAME
