@@ -57,7 +57,26 @@ if(DISHONORED_WITH_GFX3)
     "${DISHONORED_GFX3_DIR}/GFxAS2Lib.cpp"
     "${DISHONORED_GFX3_DIR}/GFxPlayerData.cpp"
     "${DISHONORED_GFX3_DIR}/GFxPlayerSprite.cpp"
-    "${DISHONORED_GFX3_DIR}/GFxPlayerRoot.cpp")
+    "${DISHONORED_GFX3_DIR}/GFxPlayerRoot.cpp"
+    # The text engine and the glyph rasteriser, package CB (resources/docs/agents/agentCB.md).
+    # Agent BB proved the game fonts are DefineFont3 glyph outlines with no font-texture tag
+    # anywhere in the cook, so a rasteriser has to exist for any character of text to appear.
+    # These eight units include no engine header either and nothing in the game instantiates a
+    # text field yet, so linking them in cannot change how the game runs.
+    "${DISHONORED_GFX3_DIR}/GFxShape.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxRasterizer.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxFont.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxGlyphCache.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxTextFormat.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxStyledText.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxTextDocView.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxTextField.cpp"
+    # The tag loaders and the character definitions, package CD (resources/docs/agents/agentCD.md).
+    # These are what turn a dictionary entry from a placeholder into a real definition: the two
+    # retail loader tables, the shape/edit-text/static-text/button/image/font definitions, and the
+    # import binding. They include no engine header either.
+    "${DISHONORED_GFX3_DIR}/GFxCharacterDefs.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxTagLoaders.cpp")
   target_include_directories(gfx3 PUBLIC "${DISHONORED_GFX3_DIR}")
   target_compile_definitions(gfx3 PRIVATE _CRT_SECURE_NO_WARNINGS)
   # UE3's 4-byte packing, the same option every module gets. The GFx headers push pack(8) of their
@@ -97,6 +116,22 @@ if(DISHONORED_WITH_GFX3)
   target_compile_options(GFx3Run PRIVATE /Zp4)
   target_link_libraries(GFx3Run PRIVATE gfx3)
   set_target_properties(GFx3Run PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
+    FOLDER "External")
+
+  # Package CB's acceptance harness: the fonts, the rasteriser and the layout engine, driven from
+  # a cooked payload with no engine, no renderer and no game.
+  #   cmake --build <dir> --target GFx3Text
+  #   <dir>/Binaries/Win32/GFx3Text.exe --fonts DisFonts_SF.gfxfontlib.gfx
+  #   <dir>/Binaries/Win32/GFx3Text.exe --raster <fontlib.gfx> --string Dishonored --size 32 --dump <dir>
+  #   <dir>/Binaries/Win32/GFx3Text.exe --run <asset.gfx> --fontlib <fontlib.gfx> --verbose
+  #   <dir>/Binaries/Win32/GFx3Text.exe --layout <fontlib.gfx> --string "a b c" --box 260 140
+  #   <dir>/Binaries/Win32/GFx3Text.exe --table
+  add_executable(GFx3Text EXCLUDE_FROM_ALL "${DISHONORED_GFX3_DIR}/Tools/GFx3Text.cpp")
+  target_compile_definitions(GFx3Text PRIVATE _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(GFx3Text PRIVATE /Zp4)
+  target_link_libraries(GFx3Text PRIVATE gfx3)
+  set_target_properties(GFx3Text PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
     FOLDER "External")
 

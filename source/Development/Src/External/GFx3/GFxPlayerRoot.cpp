@@ -30,7 +30,7 @@ GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
       bPaused(false), bVisible(true), bDirty(true), pUserData(0), TimeElapsed(0.f), FrameTime(0.f),
       MouseCursorCount(0), ControllerCount(1), Actions(0), ActionCount(0), ActionCapacity(0),
-      bInActionQueue(false)
+      bInActionQueue(false), SessionFill(0)
 {
     memset(&Stats, 0, sizeof(Stats));
     for (int i = 0; i < MaxStates; ++i)
@@ -123,18 +123,31 @@ void GFxMovieRoot::PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target,
     Actions[at].pBuffer = buffer;
     Actions[at].pTarget = target;
     Actions[at].Priority = prio;
+    Actions[at].Session = SessionFill;
     ++ActionCount;
 }
 
+// A drain is a SESSION, and that is the whole point of retail's queue rather than an implementation
+// detail of it. GFxSprite::CallFrameActions (2012 0x9f63b0) calls
+// GFxMovieRoot::ActionQueueType::StartNewSession, pushes the frame's tags, and then drains through
+// DoActionsForSession (0xa0d9e0), whose ActionQueueSessionIterator stops at the session boundary -
+// so a buffer queued *by* a drained action belongs to the next session and is not executed by this
+// drain. Walking a growing count instead, which is what this body did, does not terminate on the
+// content: the platform-switch clips of the imported CLIK components run
+// `this.gotoAndStop(_global.PlatformName)`, and gotoAndStop re-executes the target frame's tags,
+// which re-queue that same buffer. It ran 148,000 times before the interpreter's guard fired, and it
+// only became reachable once the imports were bound and the frame labels existed.
 void GFxMovieRoot::DoActions()
 {
     if (bInActionQueue)
         return;
     bInActionQueue = true;
-    // The queue can grow while it is being drained - a frame action that calls gotoAndPlay queues
-    // more - so the index walks forward rather than snapshotting the count.
+    const unsigned int session = SessionFill;
+    ++SessionFill;
     for (unsigned int i = 0; i < ActionCount; ++i)
     {
+        if (Actions[i].Session != session)
+            continue;
         ActionEntry e = Actions[i];
         Env.SetTarget(e.pTarget ? e.pTarget : pLevel0);
         e.pBuffer->Execute(&Env);
@@ -145,9 +158,33 @@ void GFxMovieRoot::DoActions()
             Env.bThrowing = false;
         }
     }
-    ActionCount = 0;
+    // Remove the session that was just drained and keep whatever the drain queued behind, which is
+    // what AddToFreeList does at the end of both retail drains.
+    unsigned int kept = 0;
+    for (unsigned int i = 0; i < ActionCount; ++i)
+        if (Actions[i].Session != session)
+            Actions[kept++] = Actions[i];
+    ActionCount = kept;
     bInActionQueue = false;
     Env.SetTarget(pLevel0);
+}
+
+// Drain sessions until the queue is empty. Retail reaches the same state by construction: every
+// gotoAndX opens a session and drains it before returning (GFxSprite::CallFrameActions 0x9f63b0), so
+// by the time Advance returns nothing is left queued. Doing it as a bounded loop here keeps the
+// session semantics without threading a session id through every call site, and the bound is what
+// turns a content-level infinite ping-pong into a reported error instead of a hang.
+void GFxMovieRoot::DrainActionSessions()
+{
+    enum { MaxSessionsPerFrame = 64 };
+    for (unsigned int n = 0; n < MaxSessionsPerFrame && ActionCount != 0; ++n)
+        DoActions();
+    if (ActionCount != 0)
+    {
+        LogScriptError("action queue did not settle in %d sessions; %u buffers dropped",
+                       (int)MaxSessionsPerFrame, ActionCount);
+        ActionCount = 0;
+    }
 }
 
 // --- GFxMovie -------------------------------------------------------------------------------
@@ -452,10 +489,16 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
     if (pLevel0)
     {
         bool bFirst = Stats.FramesAdvanced == 0;
+        // Sessions queued by a drain are drained by the next one, and a frame is not finished until
+        // the queue is empty; retail reaches the same fixed point because every gotoAndX opens its
+        // own session. The bound is retail's own frame-catch-up bound and it is what keeps a
+        // content-level ping-pong (frame 1 goes to 2, frame 2 goes to 1) from hanging the player
+        // instead of merely animating.
+        (void)bFirst;
         if (bFirst)
         {
             pLevel0->ExecuteFrame0Events();
-            DoActions();
+            DrainActionSessions();
         }
         else
         {
@@ -465,13 +508,13 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
             {
                 TimeElapsed -= FrameTime;
                 pLevel0->AdvanceFrame(true, 0.f);
-                DoActions();
+                DrainActionSessions();
                 ++steps;
             }
             if (steps == 0)
             {
                 pLevel0->AdvanceFrame(false, 0.f);
-                DoActions();
+                DrainActionSessions();
             }
         }
         ++Stats.FramesAdvanced;

@@ -230,10 +230,17 @@ public:
     GASEnvironment*     pEnv;
     int                 NArgs;
     int                 FirstArgBottomIndex;
+    // The name the call was made under, which is what `super` needs and nothing else does. Retail
+    // carries it the same way: GASObjectInterface::Invoke's third parameter is `char const* name`
+    // and InvokeContext keeps it at +16, where InvokeContext::Setup (2012 0x9f2b40) reads it to find
+    // the prototype that declares the function. Null when the callee was reached without a name -
+    // a function value off the stack - in which case retail falls back to `this.__proto__` too.
+    const GASString*    pFuncName;
 
     GASFnCall(GASValue* result, GASObjectInterface* self, GASEnvironment* env, int nargs,
-              int firstArg)
-        : pResult(result), pThis(self), pEnv(env), NArgs(nargs), FirstArgBottomIndex(firstArg) {}
+              int firstArg, const GASString* name = 0)
+        : pResult(result), pThis(self), pEnv(env), NArgs(nargs), FirstArgBottomIndex(firstArg),
+          pFuncName(name) {}
 
     const GASValue& Arg(int n) const;
     int  GetNumArgs() const { return NArgs; }

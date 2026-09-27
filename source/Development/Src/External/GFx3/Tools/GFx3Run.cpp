@@ -1,7 +1,7 @@
 // Agent BC's acceptance harness for the AS2 machine. It drives the runtime from a cooked asset and
 // nothing else: no engine, no renderer, no game.
 //
-//   GFx3Run --run <file.gfx> [--frames N] [--verbose]
+//   GFx3Run --run <file.gfx> [--frames N] [--verbose] [--imports <dir>] [--platform PC]
 //       parse the payload, instantiate its root movie clip, advance N frames (1 by default) and
 //       report the characters created, the display-list operations, the action buffers executed, the
 //       opcodes executed by code, and the AS2 classes the content registered.
@@ -14,7 +14,7 @@
 //
 // Payloads come out of the cooked *_SF.upk packages with build/agentBB/extract_gfx.py.
 // DISHONORED(written): resources/docs/agents/agentBC.md.
-#include "GFxPlayer.h"
+#include "GFxCharacterDefs.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,6 +92,119 @@ const ClassRow Classes[] =
     { "the filter classes", 48, false, "Drop shadow, glow, bevel, colour matrix, blur" },
     { "SharedObject",    11, false, "" },
     { "NetConnection / NetStream", 14, false, "video, out of scope" }
+};
+
+int LoadFile(const char* path, unsigned char** outData, unsigned int* outSize);
+
+// The import resolver. A GFX payload's ImportAssets URL is a relative authoring path -
+// '..\DisFonts\gfxfontlib.swf' or '../common_assets/lib.swf' - and what it has to resolve to is the
+// cooked movie that exports the symbol. In the engine that mapping is a package lookup behind
+// FGFxFileOpener (agent BB's seam); in this harness the payloads are files named
+// <package>.<movie>.gfx, so the URL's basename minus its extension is matched against the movie half
+// of the file name. Both are the same function - take an authoring URL, produce a movie - which is
+// why GFxMovieDataDef::ImportResolver is the seam rather than a file path.
+class DirImportResolver : public GFxMovieDataDef::ImportResolver
+{
+public:
+    DirImportResolver(const char* dir) : Dir(dir), Count(0) {}
+    ~DirImportResolver()
+    {
+        // The imported movies outlive the movie that imported them, because an imported definition
+        // stays owned by its exporter; the resolver is that owner and it is destroyed last.
+        for (unsigned int i = 0; i < Count; ++i)
+        {
+            delete Cache[i].pDef;
+            free(Cache[i].pData);
+        }
+    }
+
+    virtual GFxMovieDataDef* ResolveImportMovie(const char* url)
+    {
+        char stem[160];
+        BaseStem(url, stem, sizeof(stem));
+        for (unsigned int i = 0; i < Count; ++i)
+            if (_stricmp(Cache[i].Stem, stem) == 0)
+                return Cache[i].pDef;
+        if (Count >= MaxCache)
+            return 0;
+
+        char path[512];
+        if (!FindPayload(stem, path, sizeof(path)))
+            return 0;
+        unsigned char* data = 0;
+        unsigned int size = 0;
+        if (LoadFile(path, &data, &size) != 0)
+            return 0;
+        GFxMovieDataDef* def = new GFxMovieDataDef;
+        if (!def->Read(data, size))
+        {
+            delete def;
+            free(data);
+            return 0;
+        }
+        Entry& e = Cache[Count++];
+        strncpy(e.Stem, stem, sizeof(e.Stem) - 1);
+        e.Stem[sizeof(e.Stem) - 1] = 0;
+        e.pDef = def;
+        e.pData = data;
+        // An imported movie has imports of its own - every UI movie imports the font library through
+        // lib.swf - so the bind is transitive, exactly as GFxLoadStates::CloneForImport (2012
+        // 0xa240b0) makes it in retail.
+        def->BindImports(this);
+        return def;
+    }
+
+    unsigned int GetMovieCount() const { return Count; }
+    const char*  GetMovieStem(unsigned int i) const { return Cache[i].Stem; }
+
+private:
+    enum { MaxCache = 16 };
+    struct Entry { char Stem[160]; GFxMovieDataDef* pDef; unsigned char* pData; };
+
+    static void BaseStem(const char* url, char* out, unsigned int outSize)
+    {
+        const char* base = url;
+        for (const char* c = url; *c; ++c)
+            if (*c == '/' || *c == '\\')
+                base = c + 1;
+        unsigned int n = 0;
+        for (const char* c = base; *c && n + 1 < outSize; ++c)
+        {
+            if (*c == '.')
+                break;
+            out[n++] = *c;
+        }
+        out[n] = 0;
+    }
+
+    // <package>.<movie>.gfx, matched on the movie half. Two packages export lib.swf's symbols
+    // (DishonoredGame.lib and Startup.lib) and they are byte-identical payloads, so the first match
+    // wins and the report says which one was taken.
+    bool FindPayload(const char* stem, char* out, unsigned int outSize) const
+    {
+        static const char* const Packages[] =
+        {
+            "DishonoredGame", "Startup", "DisFonts_SF", "Dishonored_MainMenu",
+            "UI_HUD_SF", "UI_PauseMenu_SF", "UI_Shop_SF", "UI_Journal_SF",
+            "UI_PowerWheel_SF", "UI_MissionStats_SF", "UI_Gamma_SF"
+        };
+        for (unsigned int i = 0; i < sizeof(Packages) / sizeof(Packages[0]); ++i)
+        {
+            _snprintf(out, outSize, "%s/%s.%s.gfx", Dir, Packages[i], stem);
+            out[outSize - 1] = 0;
+            FILE* f = fopen(out, "rb");
+            if (f != 0)
+            {
+                fclose(f);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    const char*  Dir;
+    Entry        Cache[MaxCache];
+    unsigned int Count;
 };
 
 int LoadFile(const char* path, unsigned char** outData, unsigned int* outSize)
@@ -174,7 +287,8 @@ void PrintClassTable()
            doneCount, rows, doneFns, totalFns, 100.0 * (double)doneFns / (double)totalFns);
 }
 
-int RunMovie(const char* path, unsigned int frames, bool verbose)
+int RunMovie(const char* path, unsigned int frames, bool verbose,
+             DirImportResolver* imports, const char* platform)
 {
     unsigned char* data = 0;
     unsigned int size = 0;
@@ -190,6 +304,13 @@ int RunMovie(const char* path, unsigned int frames, bool verbose)
         return 1;
     }
 
+    // Import binding, before anything instantiates a character: retail does it in
+    // GFxMovieBindProcess, between the data def's parse and the movie def's creation, which is why
+    // GFxMovieDefImpl::CreateInstance can rely on every dictionary slot being real.
+    unsigned int importsBound = 0;
+    if (imports != 0)
+        importsBound = dataDef->BindImports(imports);
+
     const GFxGfxFileInfo& info = dataDef->GetFileInfo();
     const GFxMovieDataDef::ReadStats& rs = dataDef->GetReadStats();
 
@@ -201,7 +322,123 @@ int RunMovie(const char* path, unsigned int frames, bool verbose)
            rs.Tags, rs.TagsHandled, rs.TagsSkipped);
     printf("  dictionary     %u characters (%u sprites, %u placeholders)\n",
            rs.Characters, rs.Sprites, rs.Placeholders);
-    printf("  exports        %u   imports %u\n", rs.Exports, rs.Imports);
+    printf("  definitions    %u shape, %u morph, %u edittext, %u text, %u button, %u font, %u image\n",
+           rs.Shapes, rs.MorphShapes, rs.EditTexts, rs.StaticTexts, rs.Buttons, rs.Fonts, rs.Images);
+    printf("  exports        %u   imports %u (%u bound, %u this pass)   unhandled tags %u\n",
+           rs.Exports, rs.Imports, rs.ImportsBound, importsBound, rs.Unhandled);
+
+    // The shape geometry, which is the point of the loaders: counting definitions proves only that a
+    // dictionary slot was filled, while the path and edge totals prove the records were decoded. A
+    // loader that consumed no bytes would show definitions and zero paths.
+    {
+        unsigned int paths = 0, edges = 0, fills = 0, lines = 0, curves = 0, glyphs = 0;
+        unsigned int newStyleShapes = 0;
+        unsigned int fields = 0, withFont = 0, buttons = 0, buttonRecs = 0, images = 0, subImages = 0;
+        for (unsigned int i = 0; i < dataDef->GetDictSize(); ++i)
+        {
+            GFxCharacterDef* def = dataDef->GetDictDef(i);
+            if (def == 0)
+                continue;
+            switch (def->GetResourceTypeCode())
+            {
+            case GFxResource::RT_ShapeDef:
+            {
+                if (strcmp(def->GetDefTypeName(), "MorphShape") == 0)
+                    break;
+                GFxShapeCharacterDef* sh = (GFxShapeCharacterDef*)def;
+                if (sh->Shape.ShapeCount > 1)
+                    ++newStyleShapes;
+                paths += sh->GetPathCount();
+                edges += sh->GetEdgeCount();
+                fills += sh->GetFillStyleCount();
+                lines += sh->GetLineStyleCount();
+                for (unsigned int p = 0; p < sh->GetPathCount(); ++p)
+                {
+                    const GFxShapePathCD* pp = sh->Shape.GetPath(p);
+                    for (unsigned int e = 0; e < pp->EdgeCount; ++e)
+                        if (pp->Edges[e].bCurve)
+                            ++curves;
+                }
+                break;
+            }
+            case GFxResource::RT_EditTextDef:
+                ++fields;
+                if (((GFxEditTextCharacterDef*)def)->FontId != GFxResourceId::InvalidId)
+                    ++withFont;
+                break;
+            case GFxResource::RT_ButtonDef:
+                ++buttons;
+                buttonRecs += ((GFxButtonCharacterDef*)def)->RecordCount;
+                break;
+            case GFxResource::RT_Font:
+                glyphs += ((GFxFontCharacterDef*)def)->GetGlyphCount();
+                break;
+            case GFxResource::RT_Image:
+                ++images;
+                if (((GFxImageCharacterDef*)def)->bIsSubImage)
+                    ++subImages;
+                break;
+            default:
+                break;
+            }
+        }
+        // The cross-check that the fill records were decoded and not merely consumed: every bitmap
+        // fill names a character id, and in a well-formed payload that id is an image definition in
+        // the same dictionary. A misaligned fill reader produces ids that resolve to nothing.
+        unsigned int bmpFills = 0, bmpResolved = 0, bmpNull = 0, gradFills = 0;
+        unsigned int badFills = 0;
+        for (unsigned int i = 0; i < dataDef->GetDictSize(); ++i)
+        {
+            GFxCharacterDef* def = dataDef->GetDictDef(i);
+            if (def == 0 || def->GetResourceTypeCode() != GFxResource::RT_ShapeDef ||
+                strcmp(def->GetDefTypeName(), "Shape") != 0)
+                continue;
+            GFxShapeCharacterDef* sh = (GFxShapeCharacterDef*)def;
+            for (unsigned int k = 0; k < sh->GetFillStyleCount(); ++k)
+            {
+                const GFxFillStyle* f = sh->GetFillStyle(k);
+                // A type retail does not branch on means the style array was misaligned; it is the
+                // cheapest direct symptom there is, so it is counted rather than inferred from the
+                // bitmap ids downstream.
+                if (f->Type != GFxFill_Solid && (f->Type & 0x10) == 0 && (f->Type & 0x40) == 0)
+                    ++badFills;
+                if (f->IsGradient())
+                    ++gradFills;
+                if (!f->IsImage())
+                    continue;
+                // 0xFFFF is the SWF null character id: a bitmap fill with no bitmap, which the
+                // exporter leaves behind when the image was stripped. It is not a failed lookup.
+                if (f->ImageId == 0xFFFFu)
+                {
+                    ++bmpNull;
+                    continue;
+                }
+                ++bmpFills;
+                GFxCharacterDef* img = dataDef->GetCharacterDefById(f->ImageId);
+                if (img != 0 && img->GetResourceTypeCode() == GFxResource::RT_Image)
+                    ++bmpResolved;
+                else if (verbose)
+                    printf("    bitmap fill id %-6u -> %s\n", f->ImageId,
+                           img != 0 ? img->GetDefTypeName() : "nothing in the dictionary");
+            }
+        }
+        printf("  shape geometry %u paths, %u edges (%u quadratic), %u fill styles, %u line styles,"
+               " %u shapes with a NewStyles record\n",
+               paths, edges, curves, fills, lines, newStyleShapes);
+        printf("  fill styles    %u bitmap (%u resolve to an image def, %u with the null id),"
+               " %u gradient, %u with an unknown type\n",
+               bmpFills, bmpResolved, bmpNull, gradFills, badFills);
+        printf("  other defs     %u text fields (%u with a font), %u buttons with %u state records,"
+               " %u images (%u sub), %u glyphs\n",
+               fields, withFont, buttons, buttonRecs, images, subImages, glyphs);
+    }
+    if (verbose)
+        for (unsigned int i = 0; i < dataDef->GetImportCount(); ++i)
+        {
+            const GFxMovieDataDef::ImportEntry& e = dataDef->GetImport(i);
+            printf("    import %-5s id %-5u %-28s from %s\n", e.bBound ? "bound" : "UNRES",
+                   e.Id, e.Symbol, e.Url);
+        }
     printf("  actions        %u DoAction, %u DoInitAction, %u bytes of bytecode\n",
            rs.DoActions, rs.DoInitActions, rs.ActionBytes);
     if (verbose && rs.SkippedCodeCount)
@@ -220,11 +457,31 @@ int RunMovie(const char* path, unsigned int frames, bool verbose)
     GFxMovieRoot* root = (GFxMovieRoot*)view;
     GFxMovieRoot::bTraceTeardown = true;
 
+    // The one thing the harness has to stand in for the engine on. The CLIK components in the shared
+    // lib movie switch their button-glyph frames with `this.gotoAndStop(_global.PlatformName)`, and
+    // the engine sets that variable before the first advance; with it undefined the clip asks for a
+    // frame label that does not exist on every pass, which is a content-level ping-pong rather than a
+    // runtime defect. Setting it is what the engine's own movie player does, and the difference it
+    // makes is measured in agentCD.md rather than assumed.
+    if (platform != 0)
+    {
+        GFxValue pv;
+        pv.SetString(platform);
+        root->SetVariable("_global.PlatformName", pv, GFxMovie::SV_Normal);
+    }
+
     printf("  root clip      _level0, %u frames, def '%s'\n",
            root->GetLevel0()->GetFrameCount(), dataDef->GetDefTypeName());
 
     for (unsigned int f = 0; f < frames; ++f)
+    {
         root->Advance(1.0f / (info.FrameRate > 0.f ? info.FrameRate : 30.f), 0);
+        if (verbose)
+            printf("  [frame %u] sprites %u placed %u removed %u buffers %u objects %u\n",
+                   f + 1, root->GetCensus().SpritesCreated, root->GetCensus().DisplayObjectsPlaced,
+                   root->GetCensus().DisplayObjectsRemoved, root->GetCensus().ActionBuffersRun,
+                   root->GetASContext()->GetCollector()->GetCreatedCount());
+    }
 
     const GFxMovieRoot::Census& c = root->GetCensus();
     printf("\n  -- after %u advance(s) --\n", frames);
@@ -345,19 +602,24 @@ int main(int argc, char** argv)
     setvbuf(stdout, 0, _IONBF, 0);
     if (argc < 2)
     {
-        printf("GFx3Run --run <file.gfx> [--frames N] [--verbose] | --opcodes | --classes\n");
+        printf("GFx3Run --run <file.gfx> [--frames N] [--verbose] [--imports <dir>] [--platform PC]"
+               " | --opcodes | --classes\n");
         return 2;
     }
     unsigned int frames = 1;
     bool verbose = false;
     const char* path = 0;
     bool wantOpcodes = false, wantClasses = false;
+    const char* importDir = 0;
+    const char* platform = 0;
 
     for (int i = 1; i < argc; ++i)
     {
         if (strcmp(argv[i], "--run") == 0 && i + 1 < argc) path = argv[++i];
         else if (strcmp(argv[i], "--frames") == 0 && i + 1 < argc) frames = (unsigned int)atoi(argv[++i]);
         else if (strcmp(argv[i], "--verbose") == 0) verbose = true;
+        else if (strcmp(argv[i], "--imports") == 0 && i + 1 < argc) importDir = argv[++i];
+        else if (strcmp(argv[i], "--platform") == 0 && i + 1 < argc) platform = argv[++i];
         else if (strcmp(argv[i], "--opcodes") == 0) wantOpcodes = true;
         else if (strcmp(argv[i], "--classes") == 0) wantClasses = true;
         else if (argv[i][0] != '-' && path == 0) path = argv[i];
@@ -365,7 +627,12 @@ int main(int argc, char** argv)
 
     int rc = 0;
     if (path)
-        rc = RunMovie(path, frames ? frames : 1, verbose);
+    {
+        // The resolver owns the movies it loads and every one of them outlives the movie that
+        // imported their symbols, so it is destroyed after RunMovie returns and not before.
+        DirImportResolver resolver(importDir ? importDir : ".");
+        rc = RunMovie(path, frames ? frames : 1, verbose, importDir ? &resolver : 0, platform);
+    }
     if (wantOpcodes)
     {
         printf("\n");

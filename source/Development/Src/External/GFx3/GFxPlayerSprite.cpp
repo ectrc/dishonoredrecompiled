@@ -542,7 +542,7 @@ void GFxSprite::ExecuteInitActionFrameTags(unsigned int frame)         // 2012 0
     InitActionsExecuted[frame] = 1;
 }
 
-void GFxSprite::ExecuteFrameTags(unsigned int frame)                   // 2012 0x9f60a0
+void GFxSprite::ExecuteFrameTags(unsigned int frame, bool bWithActions)  // 2012 0x9f60a0
 {
     if (pTimelineDef == 0 || frame >= pTimelineDef->GetFrameCount())
         return;
@@ -551,7 +551,19 @@ void GFxSprite::ExecuteFrameTags(unsigned int frame)                   // 2012 0
     if (list == 0)
         return;
     for (unsigned int i = 0; i < list->GetSize(); ++i)
+    {
+        // bWithActions is false for the frames a goto passes THROUGH, and that is retail's own
+        // distinction rather than a shortcut. GFxSprite::GotoFrame (2012 0xa012a0) does not call
+        // ExecuteFrameTags on the intervening frames at all: it builds a GFxTimelineSnapshot of them
+        // (GFxSprite::MakeSnapshot) and replays it through ExecuteSnapshot(this, snapshot, 4), and a
+        // snapshot is display state - the place and remove records - with no action buffers in it.
+        // Only the target frame gets the full ExecuteFrameTags. Replaying the actions of every
+        // skipped frame instead is what made the imported CLIK platform-switch clips re-queue the
+        // very DoAction that called gotoAndStop, 148,000 times before a guard caught it.
+        if (!bWithActions && (*list)[i]->IsActionTag())
+            continue;
         (*list)[i]->ExecuteWithPriority(this, GFxAP_Frame);
+    }
 }
 
 void GFxSprite::ExecuteFrame0Events()                                 // 2012 0x9f8ac0
@@ -627,20 +639,32 @@ void GFxSprite::GotoFrame(unsigned int frame)                         // 2012 0x
         frame = total - 1;
     if (frame == CurrentFrame)
         return;
+    // CurrentFrame is assigned BEFORE the target frame's tags run, and that order is not cosmetic:
+    // retail's body (2012 0xa012a0) writes the frame number (`this[27].__vftable = v8`) and only then
+    // calls ExecuteFrameTags(v8), on both the forward and the rewind path. Executing first and
+    // assigning afterwards is an infinite loop, because a frame whose own DoAction calls
+    // gotoAndPlay on that same frame - which is what a two-frame CLIK component's idle loop is -
+    // still sees the old CurrentFrame, fails the `frame == CurrentFrame` early out and re-enters.
+    // That is the hang that binding the imports exposed: the loop is in the imported components.
+    const unsigned int from = CurrentFrame;
+    CurrentFrame = frame;
     // A backward goto replays the timeline from 0, because the display list of frame N is the sum of
-    // frames 0..N. Retail does the same and calls it the "rewind" path.
-    if (frame < CurrentFrame)
+    // frames 0..N. Retail marks the list for removal, replays, and sweeps, which is why a rewind does
+    // not accumulate children.
+    if (frame < from)
     {
-        DisplayList.UnloadAll();
-        for (unsigned int f = 0; f <= frame; ++f)
-            ExecuteFrameTags(f);
+        DisplayList.MarkAllEntriesForRemoval(0);
+        for (unsigned int f = 0; f < frame; ++f)
+            ExecuteFrameTags(f, false);
+        ExecuteFrameTags(frame, true);
+        DisplayList.UnloadMarkedObjects();
     }
     else
     {
-        for (unsigned int f = CurrentFrame + 1; f <= frame; ++f)
-            ExecuteFrameTags(f);
+        for (unsigned int f = from + 1; f < frame; ++f)
+            ExecuteFrameTags(f, false);
+        ExecuteFrameTags(frame, true);
     }
-    CurrentFrame = frame;
 }
 
 bool GFxSprite::GotoLabeledFrame(const char* label, int offset)         // 2012 0x9f6130
@@ -682,9 +706,23 @@ void GFxSprite::ExecuteBuffer(GASActionBuffer* buffer)                 // 2012 0
         pMovieRoot->PushActionBuffer(buffer, this, GFxAP_Frame);
 }
 
+GFxMovieDataDef* GFxSprite::GetOwnDataDef() const
+{
+    // A GFxSpriteDef records the movie data def it was parsed out of (pMovieDef), which is what makes
+    // an imported clip's timeline resolve against its exporter's dictionary rather than the importing
+    // movie's. The root clip's timeline def is the movie data def itself, so the fall-back is the
+    // bound def impl's.
+    GFxSpriteDef* spriteDef = pCharDef != 0
+        && pCharDef->GetResourceTypeCode() == GFxResource::RT_SpriteDef
+            ? (GFxSpriteDef*)pCharDef : 0;
+    if (spriteDef != 0 && spriteDef->pMovieDef != 0)
+        return spriteDef->pMovieDef;
+    return pDefImpl ? pDefImpl->GetDataDef() : 0;
+}
+
 GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)   // 2012 0x9fee10
 {
-    GFxMovieDataDef* dataDef = pDefImpl ? pDefImpl->GetDataDef() : 0;
+    GFxMovieDataDef* dataDef = GetOwnDataDef();
     GFxCharacterDef* def = dataDef ? dataDef->GetCharacterDefById(pos.CharacterId) : 0;
     if (def == 0)
     {
@@ -742,7 +780,7 @@ void GFxSprite::MoveDisplayObject(const GFxCharPosInfo& pos)           // 2012 0
 
 void GFxSprite::ReplaceDisplayObject(const GFxCharPosInfo& pos)        // 2012 0x9f6300
 {
-    GFxMovieDataDef* dataDef = pDefImpl ? pDefImpl->GetDataDef() : 0;
+    GFxMovieDataDef* dataDef = GetOwnDataDef();
     GFxCharacterDef* def = dataDef ? dataDef->GetCharacterDefById(pos.CharacterId) : 0;
     if (def == 0)
         return;
@@ -794,7 +832,7 @@ GFxSprite* GFxSprite::CreateEmptyMovieClip(const GASString& name, int depth)
 GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& instanceName,
                                   int depth)
 {
-    GFxMovieDataDef* dataDef = pDefImpl ? pDefImpl->GetDataDef() : 0;
+    GFxMovieDataDef* dataDef = GetOwnDataDef();
     GFxCharacterDef* def = dataDef ? dataDef->GetExportedCharacter(symbolName.ToCStr()) : 0;
     if (def == 0)
     {

@@ -395,8 +395,21 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
         else thisVal.SetAsObject(call.pThis->ToASObject());
     }
 
-    // `super`: the prototype one level above the object's own, with the real `this` kept so that
-    // super.method() runs against the instance. GASSuperObject is retail's own answer, 18 functions.
+    // `super`: the prototype one level above the prototype that DECLARES the running function, with
+    // the real `this` kept so that super.method() runs against the instance.
+    //
+    // Deriving it from `this.__proto__.__proto__` is the defect agent BC measured as the shop asset's
+    // stack overflow (agentBC.md 6.5): when a method declared on a base prototype is invoked with an
+    // instance of a subclass two levels down, `this.__proto__.__proto__` is the base prototype
+    // itself, so `super.method` resolves to the very function that is running and the call recurses
+    // until the 64-activation guard fires. Every one of the 669 __Packages registrations in the cook
+    // builds a chain deep enough for that to happen.
+    //
+    // Retail's answer is InvokeContext::Setup (2012 0x9f2b40): it starts at `this.__proto__` and,
+    // when the call carried a method name, walks the prototype chain with
+    // GASObjectInterface::FindOwner (0x9dac70) to find the object that actually owns that name -
+    // `v57 = FindOwner(v54 + 16, sc, name)` - and builds the GASSuperObject from *that* prototype's
+    // __proto__ and *that* prototype's __constructor__. That is what is ported here.
     GASValue superVal;
     if (call.pThis)
     {
@@ -404,10 +417,19 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
         GASObject* proto = self ? self->Get__proto__() : 0;
         if (proto == 0 && call.pThis->ToASCharacter())
             proto = call.pThis->ToASCharacter()->pProto;
-        GASObject* superProto = proto ? proto->Get__proto__() : 0;
+        GASObject* declaring = proto;
+        if (proto != 0 && call.pFuncName != 0)
+        {
+            GASObjectInterface* owner = proto->FindOwner(sc, *call.pFuncName);
+            if (owner != 0 && owner->ToASObject() != 0)
+                declaring = owner->ToASObject();
+        }
+        GASObject* superProto = declaring ? declaring->Get__proto__() : 0;
         if (superProto)
         {
-            GASFunctionObject* superCtor = superProto->Get__constructor__(sc);
+            GASFunctionObject* superCtor = declaring->Get__constructor__(sc);
+            if (superCtor == 0)
+                superCtor = superProto->Get__constructor__(sc);
             GASSuperObject* so = new GASSuperObject(sc, superProto, call.pThis, superCtor);
             superVal.SetAsObject(so);
         }
@@ -511,11 +533,19 @@ static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
         fn = fnVal.GetObject()->ToFunction();
     if (fn == 0)
     {
-        env->LogScriptError("call of a value that is not a function: '%s'", name.ToCStr());
+        // Naming the receiver is what makes this error actionable rather than a count: a method
+        // missing on a Sprite is a class-library gap, a method missing on a Shape or an EditText is
+        // the content asking a non-clip for a MovieClip method, which retail also refuses.
+        GFxASCharacter* recvChar = self ? self->ToASCharacter() : 0;
+        env->LogScriptError("call of a value that is not a function: '%s' on %s", name.ToCStr(),
+                            recvChar != 0 ? recvChar->GetCharacterTypeName()
+                                          : (self != 0 ? "an object" : "undefined"));
         result->SetUndefined();
         return;
     }
-    GASFnCall call(result, self, env, nargs, env->GetTopIndex());
+    // The name is handed on, because `super` inside the callee is resolved against the prototype
+    // that declares it; retail passes the same string down as Invoke's third parameter.
+    GASFnCall call(result, self, env, nargs, env->GetTopIndex(), &name);
     fn->Invoke(call);
 }
 

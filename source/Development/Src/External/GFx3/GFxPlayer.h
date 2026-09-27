@@ -29,6 +29,8 @@ class GFxMovieDataDef;
 class GFxMovieDefImpl;
 class GFxMovieRoot;
 class GFxSpriteDef;
+class GFxLoadProcess;
+struct GFxTagInfo;
 
 // One twip is 1/20 of a pixel; every coordinate in a SWF/GFX tag stream is in twips.
 const float GFxTwipsToPixels = 0.05f;
@@ -312,14 +314,20 @@ public:
 class GFxSpriteDef : public GFxCharacterDef, public GFxTimelineDef
 {
 public:
-    GFxSpriteDef(GFxMovieDataDef* movie) : pMovieDef(movie) {}
+    GFxSpriteDef(GFxMovieDataDef* movie) : pMovieDef(movie), bHasScale9Grid(false) {}
 
     virtual GFxCharacter* CreateCharacterInstance(GFxASCharacter* parent, GFxResourceId id,
                                                   GFxMovieDefImpl* defImpl);  // 2012 0xa00390
     virtual unsigned int GetResourceTypeCode() const;
     virtual const char* GetDefTypeName() const { return "SpriteDef"; }
 
+    // GFx_Scale9GridLoader (2012 0xa36680) applies the grid to a sprite or a button definition;
+    // GFxButtonCharacterDef::SetScale9Grid is its sibling at 0xa35150.
+    void SetScale9Grid(const GRect<float>& r) { Scale9Grid = r; bHasScale9Grid = true; }
+
     GFxMovieDataDef* pMovieDef;
+    GRect<float>     Scale9Grid;
+    bool             bHasScale9Grid;
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -494,14 +502,15 @@ protected:
 class GFxGenericCharacter : public GFxASCharacter
 {
 public:
-    GFxGenericCharacter(GFxPlaceholderDef* def, GFxASCharacter* parent, GFxResourceId id,
+    GFxGenericCharacter(GFxCharacterDef* def, GFxASCharacter* parent, GFxResourceId id,
                         GFxMovieRoot* root)
         : GFxASCharacter(parent, id, root), pDef(def) {}
 
     virtual GFxCharacterDef* GetCharacterDef() const { return pDef; }
     virtual const char* GetCharacterTypeName() const;
+    virtual GASObjectType GetObjectType() const;
 
-    GFxPlaceholderDef* pDef;
+    GFxCharacterDef* pDef;
 };
 
 // GFxSprite: a movie clip. The timeline state is the four members every decompile touches -
@@ -521,7 +530,7 @@ public:
 
     virtual void AdvanceFrame(bool bAdvance, float framePos);          // 2012 0x9f93f0
     void IncrementFrameAndCheckForLoop();                             // 2012 0x9f4500
-    void ExecuteFrameTags(unsigned int frame);                         // 2012 0x9f60a0
+    void ExecuteFrameTags(unsigned int frame, bool bWithActions = true); // 2012 0x9f60a0
     void ExecuteInitActionFrameTags(unsigned int frame);               // 2012 0x9f4640
     void ExecuteFrame0Events();                                        // 2012 0x9f8ac0
     void CallFrameActions(unsigned int frame);                         // 2012 0x9f63b0
@@ -550,6 +559,14 @@ public:
     virtual bool GetStandardMember(GASBuiltinString which, GASValue* out) const;
     virtual bool SetStandardMember(GASBuiltinString which, const GASValue& v);
     virtual bool GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val);
+
+    // GetOwnDataDef is the dictionary a PlaceObject inside this sprite's own timeline resolves
+    // against, and it is NOT the root movie's. An imported symbol is a sprite whose timeline was
+    // authored in another file, so its child ids index that file's dictionary; retail keeps the
+    // distinction in GFxSpriteDef::pMovieDef and binds an import as a resource handle into the
+    // exporting movie's library, which is the same thing. Without it every child of an imported
+    // clip resolves to nothing, which is exactly what binding the imports first exposed.
+    GFxMovieDataDef* GetOwnDataDef() const;
 
     GFxTimelineDef*  pTimelineDef;
     GFxCharacterDef* pCharDef;
@@ -590,6 +607,41 @@ public:
     GFxCharacterDef* GetExportedCharacter(const char* name) const;
     int              GetExportedId(const char* name) const;
 
+    // The loaders call back into these three: GFx_SpriteLoader recurses into the nested timeline,
+    // GFx_ImportLoader records an unresolved symbol, and the two action loaders count bytes.
+    void ReadSpriteTags(GFxStream* s, GFxSpriteDef* sprite, unsigned int endPos);
+    void AddImport(const char* url, const char* symbol, unsigned int id);
+    void NoteActionBytes(unsigned int bytes, bool bInit);
+    void SetSWFFlags(unsigned int flags) { SWFFlags = flags; }
+    unsigned int GetSWFFlags() const { return SWFFlags; }
+
+    // Import binding. GFx_ImportLoader (2012 0xa385f0) only records the URL and the symbol names and
+    // leaves a handle in the dictionary; the resolution happens later, in GFxMovieBindProcess, which
+    // clones the load states for the imported file (GFxLoadStates::CloneForImport 0xa240b0), opens it
+    // through the state bag's file opener (GFxLoadStates::OpenFile 0xa22520) and replaces each
+    // handle with the exported definition of that movie. BindImports is that step; the resolver is
+    // the seam the file opener sits behind, which is FGFxFileOpener in the engine and a path map in
+    // the harness.
+    class ImportResolver
+    {
+    public:
+        virtual ~ImportResolver() {}
+        virtual GFxMovieDataDef* ResolveImportMovie(const char* url) = 0;
+    };
+    unsigned int BindImports(ImportResolver* resolver);
+
+    struct ImportEntry
+    {
+        char         Url[192];
+        char         Symbol[160];
+        unsigned int Id;
+        bool         bBound;
+    };
+    unsigned int       GetImportCount() const { return ImportSize; }
+    const ImportEntry& GetImport(unsigned int i) const { return Imports[i]; }
+    unsigned int       GetDictSize() const { return DictSize; }
+    GFxCharacterDef*   GetDictDef(unsigned int i) const { return Dict[i].pDef; }
+
     const GFxGfxFileInfo& GetFileInfo() const { return FileInfo; }
 
     unsigned int GetVersion() const { return Version; }
@@ -609,6 +661,15 @@ public:
         unsigned int Placeholders;
         unsigned int Exports;
         unsigned int Imports;
+        unsigned int ImportsBound;
+        unsigned int Shapes;
+        unsigned int MorphShapes;
+        unsigned int EditTexts;
+        unsigned int StaticTexts;
+        unsigned int Buttons;
+        unsigned int Fonts;
+        unsigned int Images;
+        unsigned int Unhandled;
         unsigned int DoActions;
         unsigned int DoInitActions;
         unsigned int ActionBytes;
@@ -624,6 +685,7 @@ private:
 
     bool ReadTags(GFxStream* s, GFxTimelineDef* timeline, unsigned int endPos, unsigned int depth);
     void NoteSkipped(unsigned int code);
+    void NoteDefined(GFxCharacterDef* def);
 
     DictEntry*   Dict;
     unsigned int DictSize;
@@ -631,6 +693,10 @@ private:
     ExportEntry* Exports;
     unsigned int ExportSize;
     unsigned int ExportCapacity;
+    ImportEntry* Imports;
+    unsigned int ImportSize;
+    unsigned int ImportCapacity;
+    unsigned int SWFFlags;
 
     unsigned int Version;
     float        FrameRate;
@@ -804,6 +870,7 @@ public:
     // session GFxSprite::CallFrameActions opened, and DoActionsForSession drains it. That ordering
     // is why a class registered in frame 1 is visible to frame 1's own timeline actions.
     void PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target, GFxActionPriority prio);
+    void DrainActionSessions();
     void DoActions();
     unsigned int GetQueuedActionCount() const { return ActionCount; }
 
@@ -839,6 +906,7 @@ private:
         GASActionBuffer*  pBuffer;
         GFxSprite*        pTarget;
         GFxActionPriority Priority;
+        unsigned int      Session;
     };
 
     enum { MaxStates = 40 };
@@ -865,6 +933,7 @@ private:
 
     ActionEntry* Actions;
     unsigned int ActionCount;
+    unsigned int SessionFill;            // the session a push joins; see GFxMovieRoot::DoActions
     unsigned int ActionCapacity;
     bool         bInActionQueue;
 

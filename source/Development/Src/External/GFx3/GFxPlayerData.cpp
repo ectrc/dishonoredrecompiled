@@ -13,7 +13,7 @@
 // each is recorded as a GFxPlaceholderDef with its tag code and body size, which keeps the character
 // dictionary complete and the display list honest while the geometry is still missing.
 // DISHONORED(port): see GFxAS2.h.
-#include "GFxPlayer.h"
+#include "GFxCharacterDefs.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -472,44 +472,21 @@ bool GFxTimelineDef::GetLabeledFrame(const char* label, unsigned int* outFrame) 
 
 unsigned int GFxPlaceholderDef::GetResourceTypeCode() const
 {
-    switch (TagCode)
-    {
-    case GFxTag_DefineShape:
-    case GFxTag_DefineShape2:
-    case GFxTag_DefineShape3:
-    case GFxTag_DefineShape4:      return GFxResource::RT_ShapeDef;
-    case GFxTag_DefineEditText:    return GFxResource::RT_EditTextDef;
-    case GFxTag_DefineButton2:     return GFxResource::RT_ButtonDef;
-    case GFxTag_DefineFont:
-    case GFxTag_DefineFont2:
-    case GFxTag_DefineFont3:       return GFxResource::RT_Font;
-    default:                       return GFxResource::RT_None;
-    }
+    // RT_None is the point: every tag that defines a real character now has a loader, so a
+    // placeholder means one thing only - an imported symbol whose source movie has not been bound -
+    // and the resource type has to say so, because that is what BindImports repoints.
+    return GFxResource::RT_None;
 }
 
 const char* GFxPlaceholderDef::GetDefTypeName() const
 {
-    switch (TagCode)
-    {
-    case GFxTag_DefineShape:       return "Shape";
-    case GFxTag_DefineShape2:      return "Shape2";
-    case GFxTag_DefineShape3:      return "Shape3";
-    case GFxTag_DefineShape4:      return "Shape4";
-    case GFxTag_DefineEditText:    return "EditText";
-    case GFxTag_DefineButton2:     return "Button2";
-    case GFxTag_DefineFont:        return "Font";
-    case GFxTag_DefineFont2:       return "Font2";
-    case GFxTag_DefineFont3:       return "Font3";
-    case GFxTag_DefineMorphShape:  return "MorphShape";
-    case 11:                       return "Text";
-    case 33:                       return "Text2";
-    default:                       return "Character";
-    }
+    return TagCode == 71 || TagCode == 57 ? "UnboundImport" : "Placeholder";
 }
 
 GFxCharacter* GFxPlaceholderDef::CreateCharacterInstance(GFxASCharacter* parent, GFxResourceId id,
                                                          GFxMovieDefImpl* defImpl)
 {
+    (void)defImpl;
     return new GFxGenericCharacter(this, parent, id, parent ? parent->GetMovieRoot() : 0);
 }
 
@@ -529,11 +506,24 @@ const char* GFxGenericCharacter::GetCharacterTypeName() const
     return pDef ? pDef->GetDefTypeName() : "Character";
 }
 
+// The object type follows the definition, but only inside the character span [2,5] that
+// GFxValue::ObjectInterface::GetMember (2012 0x9b0450) routes to ToASCharacter: a generic character
+// is a display object, so a script-object type here would send every member access down the wrong
+// branch. Retail's GFxGenericCharacter does not override this at all and takes GFxASCharacter's
+// value; the one case worth distinguishing is a button, because the object type is how the button's
+// event model will find it when package CB's focus and mouse path lands.
+GASObjectType GFxGenericCharacter::GetObjectType() const
+{
+    return pDef != 0 && pDef->GetResourceTypeCode() == GFxResource::RT_ButtonDef
+               ? Object_Button : Object_EditText;
+}
+
 // ---------------------------------------------------------------------------------------------
 // GFxMovieDataDef
 
 GFxMovieDataDef::GFxMovieDataDef()
     : Dict(0), DictSize(0), DictCapacity(0), Exports(0), ExportSize(0), ExportCapacity(0),
+      Imports(0), ImportSize(0), ImportCapacity(0), SWFFlags(0),
       Version(0), FrameRate(0.f), WidthPixels(0.f), HeightPixels(0.f)
 {
     memset(FrameRectTwips, 0, sizeof(FrameRectTwips));
@@ -542,10 +532,19 @@ GFxMovieDataDef::GFxMovieDataDef()
 
 GFxMovieDataDef::~GFxMovieDataDef()
 {
+    // An imported definition belongs to the movie that exported it, so a bound slot is skipped here;
+    // that is the same ownership rule as retail's resource handles.
     for (unsigned int i = 0; i < DictSize; ++i)
-        delete Dict[i].pDef;
+    {
+        bool bImported = false;
+        for (unsigned int k = 0; k < ImportSize && !bImported; ++k)
+            bImported = Imports[k].bBound && Imports[k].Id == Dict[i].Id;
+        if (!bImported)
+            delete Dict[i].pDef;
+    }
     free(Dict);
     free(Exports);
+    free(Imports);
 }
 
 unsigned int GFxMovieDataDef::GetResourceTypeCode() const
@@ -634,201 +633,140 @@ void GFxMovieDataDef::NoteSkipped(unsigned int code)
     }
 }
 
-static bool GFxIsCharacterDefTag(unsigned int code)
+void GFxMovieDataDef::NoteDefined(GFxCharacterDef* def)
 {
-    // Every tag that begins with a u16 character id, i.e. everything that defines a dictionary
-    // entry. The list is the intersection of the SWF spec with the 43 GFx_*Loader functions.
-    switch (code)
+    switch (def->GetResourceTypeCode())
     {
-    case GFxTag_DefineShape:
-    case GFxTag_DefineBits:
-    case GFxTag_DefineFont:            // 10
-    case 11:                           // DefineText
-    case 13:                           // DefineFontInfo has an id but defines no character
-    case GFxTag_DefineBitsLossless:
-    case GFxTag_DefineBitsJPEG2:
-    case GFxTag_DefineShape2:
-    case 32:
-    case 33:                           // DefineText2
-    case GFxTag_DefineButton2:
-    case GFxTag_DefineBitsJPEG3:
-    case GFxTag_DefineBitsLossless2:
-    case GFxTag_DefineEditText:
-    case GFxTag_DefineMorphShape:
-    case GFxTag_DefineFont2:
-    case GFxTag_DefineFont3:
-    case GFxTag_DefineShape4:
-    case GFxTag_DefineBitsJPEG4:
-    case 84:                           // DefineMorphShape2
-        return true;
-    default:
-        return false;
+    case GFxResource::RT_ShapeDef:
+        if (strcmp(def->GetDefTypeName(), "MorphShape") == 0) ++Stats.MorphShapes;
+        else                                                  ++Stats.Shapes;
+        break;
+    case GFxResource::RT_EditTextDef: ++Stats.EditTexts;   break;
+    case GFxResource::RT_TextDef:     ++Stats.StaticTexts; break;
+    case GFxResource::RT_ButtonDef:   ++Stats.Buttons;     break;
+    case GFxResource::RT_Font:        ++Stats.Fonts;       break;
+    case GFxResource::RT_Image:       ++Stats.Images;      break;
+    case GFxResource::RT_SpriteDef:   ++Stats.Sprites;     break;
+    default:                          ++Stats.Placeholders; break;
     }
+}
+
+void GFxMovieDataDef::AddImport(const char* url, const char* symbol, unsigned int id)
+{
+    if (ImportSize >= ImportCapacity)
+    {
+        ImportCapacity = ImportCapacity ? ImportCapacity * 2 : 16;
+        Imports = (ImportEntry*)realloc(Imports, ImportCapacity * sizeof(ImportEntry));
+    }
+    ImportEntry& e = Imports[ImportSize++];
+    strncpy(e.Url, url, sizeof(e.Url) - 1);          e.Url[sizeof(e.Url) - 1] = 0;
+    strncpy(e.Symbol, symbol, sizeof(e.Symbol) - 1); e.Symbol[sizeof(e.Symbol) - 1] = 0;
+    e.Id = id;
+    e.bBound = false;
+    ++Stats.Imports;
+    // The dictionary slot is taken now and repointed at bind time, which is what retail's
+    // GFxMovieDataDef::LoadTaskData::AddNewResourceHandle does inside GFx_ImportLoader: a handle with
+    // no resource behind it yet. Until BindImports runs the slot answers as a placeholder, so a
+    // PlaceObject naming it still produces a character rather than nothing.
+    AddCharacter(id, new GFxPlaceholderDef(71, 0));
+}
+
+void GFxMovieDataDef::NoteActionBytes(unsigned int bytes, bool bInit)
+{
+    if (bInit) ++Stats.DoInitActions;
+    else       { ++Stats.DoActions; Stats.ActionBytes += bytes; }
+}
+
+void GFxMovieDataDef::ReadSpriteTags(GFxStream* s, GFxSpriteDef* sprite, unsigned int endPos)
+{
+    ReadTags(s, sprite, endPos, 1);
+}
+
+// The URL a GFX payload imports from is a relative authoring path and what it has to resolve to is
+// the cooked movie that exports the symbol. Retail splits the URL in GFxURLBuilder
+// (GFxLoadStates::BuildURL 2012 0xa225c0) and hands the result to the state bag's file opener;
+// ImportResolver is that seam and nothing more.
+unsigned int GFxMovieDataDef::BindImports(ImportResolver* resolver)
+{
+    if (resolver == 0)
+        return 0;
+    unsigned int bound = 0;
+    for (unsigned int i = 0; i < ImportSize; ++i)
+    {
+        ImportEntry& e = Imports[i];
+        if (e.bBound)
+            continue;
+        GFxMovieDataDef* source = resolver->ResolveImportMovie(e.Url);
+        if (source == 0)
+            continue;
+        GFxCharacterDef* def = source->GetExportedCharacter(e.Symbol);
+        if (def == 0)
+            continue;
+        // The imported definition stays owned by the movie that exported it - retail holds a
+        // GFxResourceHandle into the other movie's library, not a copy - so the slot is repointed and
+        // the placeholder that stood in for it is destroyed.
+        for (unsigned int d = 0; d < DictSize; ++d)
+        {
+            if (Dict[d].Id != e.Id)
+                continue;
+            GFxCharacterDef* old = Dict[d].pDef;
+            Dict[d].pDef = def;
+            if (old != 0 && old != def && old->GetResourceTypeCode() == GFxResource::RT_None)
+            {
+                --Stats.Placeholders;
+                delete old;
+            }
+            break;
+        }
+        e.bBound = true;
+        ++bound;
+        ++Stats.ImportsBound;
+        NoteDefined(def);
+    }
+    return bound;
 }
 
 bool GFxMovieDataDef::ReadTags(GFxStream* s, GFxTimelineDef* timeline, unsigned int endPos,
                                unsigned int depth)
 {
-    unsigned int frame = 0;
+    // One dispatch through the retail loader table and no tag-specific code here at all, which is
+    // what GFxMovieDataDef::LoadTaskData::Read (2012 0xa21d10) is: open the tag, look the loader up
+    // through GFxLoaderImpl::GetTagLoader (0x9badf0), call it, close the tag by length.
+    (void)depth;
+    GFxLoadProcess process(this, s, timeline);
     while (s->Tell() < endPos)
     {
         unsigned int code = 0, tagEnd = 0;
+        const unsigned int tagStart = s->Tell();
         if (!s->OpenTag(&code, &tagEnd))
             break;
         ++Stats.Tags;
-        bool handled = true;
 
-        switch (code)
-        {
-        case GFxTag_End:
+        if (code == GFxTag_End)
             return true;
 
-        case GFxTag_ShowFrame:
-            ++frame;
-            break;
+        GFxTagInfo info;
+        info.TagType = code;
+        info.TagOffset = tagStart;
+        info.TagDataOffset = s->Tell();
+        info.TagLength = tagEnd > info.TagDataOffset ? tagEnd - info.TagDataOffset : 0;
 
-        case GFxTag_SetBackgroundColor:
+        GFxTagLoaderFn loader = GFxGetTagLoader(code);
+        if (loader != 0)
         {
-            GFxSetBackgroundColorTag* tag = new GFxSetBackgroundColorTag;
-            tag->Read(s);
-            timeline->AddTagToFrame(frame, tag);
-            break;
-        }
-
-        case 4:                        // PlaceObject
-        case GFxTag_PlaceObject2:
-        case 70:                       // PlaceObject3
-        {
-            GFxPlaceObject2Tag* tag = new GFxPlaceObject2Tag;
-            if (code == 4)
-            {
-                // PlaceObject (2012 0xa37910 / Unpack 0xa019d0): character id, depth, matrix and an
-                // optional colour transform detected by the remaining tag length.
-                tag->Pos.CharacterId = s->ReadU16();
-                tag->Pos.Depth = s->ReadU16();
-                s->ReadMatrix(&tag->Pos.Matrix);
-                tag->Pos.PlaceFlags = GFxCharPosInfo::Place_HasCharacter
-                                    | GFxCharPosInfo::Place_HasMatrix;
-                if (s->Tell() < tagEnd)
-                {
-                    s->ReadCxformRgb(&tag->Pos.ColorTransform);
-                    tag->Pos.PlaceFlags |= GFxCharPosInfo::Place_HasCxform;
-                }
-            }
-            else
-            {
-                tag->Read(s, code);
-            }
-            timeline->AddTagToFrame(frame, tag);
-            break;
-        }
-
-        case 5:                        // RemoveObject
-        case GFxTag_RemoveObject2:
-        {
-            GFxRemoveObject2Tag* tag = new GFxRemoveObject2Tag;
-            tag->Read(s, code);
-            timeline->AddTagToFrame(frame, tag);
-            break;
-        }
-
-        case GFxTag_DoAction:
-        {
-            GASDoActionTag* tag = new GASDoActionTag;
-            tag->Read(s, tagEnd);
-            timeline->AddTagToFrame(frame, tag);
-            ++Stats.DoActions;
-            Stats.ActionBytes += tagEnd - s->Tell();
-            break;
-        }
-
-        case GFxTag_DoInitAction:
-        {
-            GASDoInitActionTag* tag = new GASDoInitActionTag;
-            tag->Read(s, tagEnd);
-            timeline->AddInitActionToFrame(frame, tag);
-            ++Stats.DoInitActions;
-            break;
-        }
-
-        case GFxTag_FrameLabel:
-        {
-            char label[96];
-            s->ReadString(label, sizeof(label));
-            timeline->AddFrameLabel(label, frame);
-            break;
-        }
-
-        case GFxTag_DefineSprite:      // 2012 0xa35a00 -> GFxSpriteDef::Read 0x9fa170
-        {
-            unsigned int id = s->ReadU16();
-            unsigned int frames = s->ReadU16();
-            GFxSpriteDef* sprite = new GFxSpriteDef(this);
-            sprite->BeginFrames(frames);
-            AddCharacter(id, sprite);
-            ++Stats.Sprites;
-            ReadTags(s, sprite, tagEnd, depth + 1);
-            break;
-        }
-
-        case GFxTag_ExportAssets:      // 2012 0xa35bf0
-        {
-            unsigned int count = s->ReadU16();
-            for (unsigned int i = 0; i < count && s->Tell() < tagEnd; ++i)
-            {
-                unsigned int id = s->ReadU16();
-                char name[160];
-                s->ReadString(name, sizeof(name));
-                AddExport(name, id);
-            }
-            break;
-        }
-
-        case GFxTag_ImportAssets:      // 2012 0xa385f0
-        case GFxTag_ImportAssets2:
-        {
-            char url[192];
-            s->ReadString(url, sizeof(url));
-            if (code == GFxTag_ImportAssets2)
-            {
-                s->ReadU8();
-                s->ReadU8();
-            }
-            unsigned int count = s->ReadU16();
-            for (unsigned int i = 0; i < count && s->Tell() < tagEnd; ++i)
-            {
-                unsigned int id = s->ReadU16();
-                char name[160];
-                s->ReadString(name, sizeof(name));
-                // An imported symbol is a placeholder until the fontlib movie is bound, which needs
-                // the loader's file opener. It keeps its dictionary slot so a PlaceObject naming it
-                // still produces a character rather than nothing.
-                AddCharacter(id, new GFxPlaceholderDef(code, 0));
-                ++Stats.Imports;
-                ++Stats.Placeholders;
-            }
-            break;
-        }
-
-        default:
-            if (GFxIsCharacterDefTag(code))
-            {
-                unsigned int id = s->ReadU16();
-                AddCharacter(id, new GFxPlaceholderDef(code, tagEnd - s->Tell()));
-                ++Stats.Placeholders;
-                handled = false;
-                NoteSkipped(code);
-            }
-            else
-            {
-                handled = false;
-                NoteSkipped(code);
-            }
-            break;
-        }
-
-        if (handled)
+            const unsigned int dictBefore = DictSize;
+            loader(&process, info);
             ++Stats.TagsHandled;
+            for (unsigned int i = dictBefore; i < DictSize; ++i)
+                NoteDefined(Dict[i].pDef);
+        }
+        else
+        {
+            // No row in either retail table. GFxStream::CloseTag skips the body by length, which is
+            // the same thing retail does when GetTagLoader answers null.
+            ++Stats.Unhandled;
+            NoteSkipped(code);
+        }
         s->CloseTag();
     }
     return true;
@@ -875,7 +813,7 @@ float GFxMovieDefImpl::GetHeight() const { return pDataDef->GetHeight(); }
 unsigned int GFxMovieDefImpl::GetFrameCount() const { return pDataDef->GetFrameCount(); }
 float GFxMovieDefImpl::GetFrameRate() const { return pDataDef->GetFrameRate(); }
 GRect<float> GFxMovieDefImpl::GetFrameRect() const { return pDataDef->GetFrameRect(); }
-unsigned int GFxMovieDefImpl::GetSWFFlags() const { return 0; }
+unsigned int GFxMovieDefImpl::GetSWFFlags() const { return pDataDef->GetSWFFlags(); }
 const char* GFxMovieDefImpl::GetFileURL() const { return pDataDef->GetFileInfo().ExporterInfo.SWFName; }
 GFxResource* GFxMovieDefImpl::GetMovieDataResource() const { return pDataDef; }
 unsigned int GFxMovieDefImpl::GetResourceTypeCode() const { return GFxResource::RT_MovieDef; }
@@ -887,11 +825,13 @@ GFxResource* GFxMovieDefImpl::GetResource(const char* name) const
 
 GFxMovieView* GFxMovieDefImpl::CreateInstance(const GFxMovieDef::MemoryParams& params, bool bd)
 {                                                                     // 2012 0xa1b960
+    (void)params; (void)bd;
     return new GFxMovieRoot(this);
 }
 
 GFxMovieView* GFxMovieDefImpl::CreateInstance(GFxMovieDef::MemoryContext* ctx, bool bd)
 {                                                                     // 2012 0xa1ba00
+    (void)ctx; (void)bd;
     return new GFxMovieRoot(this);
 }
 
