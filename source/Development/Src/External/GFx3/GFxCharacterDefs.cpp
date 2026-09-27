@@ -16,6 +16,8 @@
 //     bits are stored inverted (0xa26190).
 // DISHONORED(port): 2013 rvas beside each function; see agentCD.md.
 #include "GFxCharacterDefs.h"
+// Package CB's text field: GFxEditTextCharacterDef::CreateCharacterInstance builds one (see there).
+#include "GFxTextField.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -607,13 +609,28 @@ GFxCharacter* GFxEditTextCharacterDef::CreateCharacterInstance(GFxASCharacter* p
                                                               GFxResourceId id,
                                                               GFxMovieDefImpl* defImpl)
 {
-    // Retail's slot (2012 0xa32df0) builds a GFxEditTextCharacter (0xa2c470), the 294-function text
-    // field whose layout engine and glyph cache are package CB's. Until that lands the instance is a
-    // display object with the definition attached, which is what makes the field's _x/_y/_visible and
-    // its member store work; the text itself lives in a member named `text`, which is where AS2
-    // writes it anyway.
+    // DISHONORED(port): 0xa32df0 - retail's slot builds a GFxEditTextCharacter (0xa2c470), the text
+    // field whose layout engine and glyph cache are package CB's. CB has landed (54b57d4), so this is
+    // the adapter its report specified: every field of this definition was read out of the same retail
+    // body (0xa26190) that CB's descriptor was, so the copy is field for field and the flag word goes
+    // across whole - CB's GFxTextFieldDesc::DefFlags and this class's Flags are the same bits at the
+    // same values by construction.
     (void)defImpl;
-    return new GFxGenericCharacter(this, parent, id, parent ? parent->GetMovieRoot() : 0);
+    GFxTextFieldDesc d;
+    d.TextRectTwips    = TextRect;
+    d.FontId           = FontId;
+    d.FontHeightTwips  = FontHeight;
+    d.TextColor        = TextColor;
+    d.MaxLength        = MaxLength;
+    d.Align            = Alignment;
+    d.LeftMarginTwips  = LeftMargin;
+    d.RightMarginTwips = RightMargin;
+    d.IndentTwips      = Indent;
+    d.LeadingTwips     = Leading;
+    d.Flags            = Flags;
+    memcpy(d.VariableName, VariableName, sizeof(d.VariableName));
+    memcpy(d.InitialText, InitialText, sizeof(d.InitialText));
+    return new GFxEditTextCharacter(d, parent, id, parent ? parent->GetMovieRoot() : 0);
 }
 
 // ---------------------------------------------------------------------------------------------

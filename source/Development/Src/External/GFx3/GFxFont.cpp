@@ -44,6 +44,7 @@ bool GFxFontData::Read(GFxStream* s, unsigned int tagType, unsigned int tagEnd)
     Advances.Clear();
     Kerning.Clear();
     CodeTable.Clear();
+    GlyphRanges.Clear();
     Flags = 0;
     Ascent = Descent = Leading = 0.0f;
 
@@ -85,6 +86,8 @@ bool GFxFontData::Read(GFxStream* s, unsigned int tagType, unsigned int tagEnd)
             GPtr<GFxConstShapeNoStyles> shape = new GFxConstShapeNoStyles;
             shape->Read(s, GFxTag_DefineShape, end);
             Glyphs[i] = shape.GetPtr();
+            GlyphRange gr; gr.Start = at; gr.End = end;
+            GlyphRanges.PushBack(gr);
         }
         ReadEndPos = s->Tell();
         buildLookups();
@@ -180,6 +183,8 @@ bool GFxFontData::Read(GFxStream* s, unsigned int tagType, unsigned int tagEnd)
         GPtr<GFxConstShapeNoStyles> shape = new GFxConstShapeNoStyles;
         shape->Read(s, shapeTag, next);
         Glyphs[i] = shape.GetPtr();
+        GlyphRange gr; gr.Start = at; gr.End = next;
+        GlyphRanges.PushBack(gr);
 
         if (hasLayout)
         {

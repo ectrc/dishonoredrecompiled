@@ -635,3 +635,174 @@ snapshot `build/agentCB_wt` (detached at `2cdd7b3`) and the two build directorie
 IDA: one own copy, `resources/docs/idb/shipping2012_agentCB.i64`, opened headlessly through
 `resources/tools/ida/run.py` only; **no MCP tool of any kind was used, and no FModel tool**. No
 commits, no `git add`, no junctions, nothing deleted under `Dishonored_Latest2026`.
+
+---
+
+# Addendum — agent CD's two follow-ups (2026-09-27, after the merges at `54b57d4` and `683fa03`)
+
+Package CB merged at `54b57d4`, package CD at `683fa03`. CD's report left this package two follow-ups
+(`agentCD.md` section 8, hand-over 1 and 2). Both are taken. One of the three defects CD reported is
+**not** a defect, and chasing that down turned the second follow-up into a better outcome than either
+report proposed: **two functions this package had invented are deleted rather than corrected.**
+
+| follow-up | outcome |
+|---|---|
+| 1. The twelve-line adapter in `GFxEditTextCharacterDef::CreateCharacterInstance` (2012 0xa32df0) | **done**: **282 of 282** edit-text definitions in the cook now become live `GFxEditTextCharacter` instances instead of `GFxGenericCharacter`, all 282 lay out and all 282 produce glyph output |
+| 2. Three claimed transcription slips in my style skippers | **two confirmed, one refuted, and both functions deleted**: they were an invention, not a port — retail has no such walk. Section A.2 |
+| Verification | **green**: full RELEASE build at `683fa03` + my 6 files, **31 ok / 0 failed / 0 skipped**, `-newgame` 0 criticals, and every text and glyph number in this report unchanged |
+
+## A.1 The adapter, and the proof that is not an assertion
+
+`GFxEditTextCharacterDef::CreateCharacterInstance` returned a `GFxGenericCharacter`; it now fills a
+`GFxTextFieldDesc` field for field and returns a `GFxEditTextCharacter`. Thirteen lines and a
+`#include`, exactly as section 9's hand-over specified, in CD's `GFxCharacterDefs.cpp`.
+
+The interesting part is proving it. `--run` builds a field straight from a `DefineEditText` body, which
+exercises my reader but not the wiring, so the harness gained **`--defs`**: it builds the movie's
+dictionary through **CD's** tag loaders, then asks every edit-text definition in it for a character
+instance and checks what comes back. On the main menu:
+
+```
+  asset          Dishonored_MainMenu.MainMenu.gfx  292 dictionary entries
+    id 32    EditText  lines 1  glyphs 4   raster 4   'Text'
+    id 62    EditText  lines 1  glyphs 58  raster 50  'No downloadable content installed on Hard Disk Drive (HDD)'
+    id 158   EditText  lines 1  glyphs 5   raster 5   'PRESS'
+    ...
+  edit-text definitions in the dictionary   12
+  character instances created               12
+  came back an EditText (the adapter)       12
+  came back something else                  0
+  of those, laid out                        12
+  of those, produced glyph output           12
+  glyph entries 122, rasterised 112
+```
+
+Over all 22 payloads (`build/agentCB/defs_all.txt`):
+
+| | edit-text defs | instances | **came back EditText** | came back something else | laid out | with glyph output | entries | rasterised |
+|---|---|---|---|---|---|---|---|---|
+| **total** | **282** | **282** | **282** | **0** | **282** | **282** | **2,636** | **2,481** |
+
+`Startup.OptionsMenu` 53, `DishonoredGame.Note` 41, `UI_HUD_SF.HUD` 33, `UI_Journal_SF.Journal` 31,
+`UI_HUD_DLCTest_SF.HUD` 28 — and **the 2,636 / 2,481 totals are identical to the ones `--run` reports
+by building the fields directly from the tag bodies**, which is the cross-validation: two independent
+routes to the same 282 fields agree to the glyph.
+
+## A.2 The three claimed slips: two real, one not, and why both functions are now gone
+
+CD cited `GFxFillStyle::Read` (0xa90290), `GFxLineStyle::Read` (0xa907d0) and
+`GFxLoadProcess::ReadRgbaTag` (0xa22460). I decompiled all three from my own database rather than take
+either report on trust, and then found the function CD and I had both been comparing against the wrong
+thing.
+
+| claim | verdict against retail |
+|---|---|
+| my `GFxSkipFillStyles` read a focal gradient's focal point **before** the gradient records | **CONFIRMED.** 0xa90290 reads the matrix, then the info byte, then loops `info & 0xF` times through `GFxGradientRecord::Read`, and **only then** `if (*this == 19) ReadU16() * 0.00390625` — the focal point is last, and it is an 8.8 fixed value |
+| my `GFxSkipLineStyles` tested the DefineShape4 miter flag as `0x0800` | **CONFIRMED.** 0xa907d0: `if (a3 == 83) { flags = ReadU16(); if ((flags & 0x20) != 0) ReadU16() * 0.00390625; }`. The flag is **0x20** and the value is an 8.8 fixed miter limit. CD's own `GFxLineStyle::Flag2_HasMiterLimit = 0x20` is right |
+| my colour skips "branch on the tag type at the wrong threshold … a test that puts DefineShape2 on the four-byte side" | **NOT A DEFECT.** 0xa22460 is `if (tagType > 22) ReadRgba else ReadRgb`, i.e. DefineShape2 is on the **three**-byte side — which is exactly where my `GFxShapeTagHasAlpha` already put it. Mine was `tagType == 32 \|\| tagType == 83`, and for all four DefineShape tags {2, 22, 32, 83} that is the same answer retail gives. CD's fix to *its own* reader is right; the transcription of it into a claim about mine is not |
+
+So far that is one report correcting another. The finding that matters came from asking which retail
+function my helpers were a port *of*. Not the two style readers: the record walk
+(`GFxConstShapeNoStyles::Read`, 0xa42ab0) **contains no style-array reading at all**, and its
+`StateNewStyles` arm instead calls two helpers I had not identified —
+
+```
+      v29 = sub_A429C0(a3);          // GFx_ReadFillStyles, 2012 0xa429c0
+      ...
+      v31 = sub_A41270(a3);          // GFx_ReadLineStyles,  2012 0xa41270
+      ... memmove ... SetPosition(v33);
+      UInt = ReadUInt(&v93, 4u);     // fillBits again
+      v86  = ReadUInt(&v93, 4u);     // lineBits again
+```
+
+— whose names come from their own error strings. Decompiled, they say something neither report did:
+
+1. `GFx_ReadFillStyles` reads a `u8` count, promoted by a `0xFF` sentinel **only when `tagType > 2`**;
+   `GFx_ReadLineStyles` reads its count and promotes it **unconditionally**. The two thresholds differ,
+   and neither is the `>= 22` my helpers used or the `> 22` CD described.
+2. **When there is no style owner — which is precisely the no-style shape this class is — neither
+   helper walks anything. It logs an error and returns**:
+   `"Error: GFx_ReadFillStyles, trying to read %d fillstyles into no-style shape"`. Only with an owner
+   does it call `GFxFillStyle::Read` / `GFxLineStyle::Read` per style, and the record walk then
+   `memmove`s those bytes *out* of the blob it is building — which is why
+   `GFxSwfPathData::PathsIterator::ReadNext` (0xa3a7f0) only ever accumulates style *bases*.
+
+**So my two helpers were not a port with three errors in it; they were an invention of a wire-format
+walk retail does not perform.** Correcting the two real slips would have left a function that is still
+not retail's. Both are therefore deleted, and the `StateNewStyles` arm now does what 0xa429c0 and
+0xa41270 do with a null style owner: consume the two counts (with the two different sentinel rules),
+count the refusal, and let the record walk re-read `fillBits`/`lineBits`. That is smaller, faithful,
+and it makes CD's `GFxFillStyle::Read` and `GFxLineStyle::Read` **the tree's only implementation of
+0xa90290 and 0xa907d0** — the collapse CD asked for, by removal rather than by correction.
+
+The refusal is counted rather than assumed, in `GFxShapeBase::StyleRecordsRefused`, so the harness can
+show the number.
+
+## A.3 The cross-check, which is the real verification
+
+Neither record walk can replace the other — CD's `GFxFontCharacterDef` stores **my**
+`GFxConstShapeNoStyles` and my rasteriser consumes it, while CD's `GFxShapeRecord` carries the style
+arrays my class by definition has none of. So rather than assert the two agree, `--xcheck` runs **both
+over the identical byte range of every glyph** (`GFxFontData` now records each glyph's stream range for
+exactly this) and compares path and edge counts glyph by glyph:
+
+| payload | glyphs compared | agree | differ | style arrays a no-style shape had to refuse |
+|---|---|---|---|---|
+| `DisFonts_SF.gfxfontlib` | 376 | 376 | 0 | 0 |
+| `DisFonts_SF.fonts_efigs` | 376 | 376 | 0 | 0 |
+| `DisFonts_LRUS_SF.gfxfontlib` | 376 | 376 | 0 | 0 |
+| `DisFonts_LRUS_SF.fonts_rus` | 557 | 557 | 0 | 0 |
+| `DisFonts_LCZEHUNPOL_SF.gfxfontlib` | 376 | 376 | 0 | 0 |
+| `DisFonts_LCZEHUNPOL_SF.fonts_czehunpol` | 362 | 362 | 0 | 0 |
+| **total** | **2,423** | **2,423** | **0** | **0** |
+
+Two things fall out of that last column. **No glyph record in the entire cook carries a
+`StateNewStyles` record with style arrays**, so the deleted helpers were unreachable code on the only
+path that ever called them — which is why my harness never caught the two real slips, and why deleting
+them changes no output. And the two independent walks agree on 2,423 glyphs, 4,145 paths and 64,060
+edges, which is a far stronger statement about either one than either could make alone.
+
+The "changes no output" claim is checked rather than argued: every figure in sections 3 to 5 of this
+report is byte-identical after the deletion — 187 of 188 glyphs with outlines, 2,163 and 5,000 kerning
+pairs, 20 glyphs and 2,802 covered pixels for `"Dishonored"` at 32 px, the four alignment offsets
+103 / 52 / 5,117, and the whole-cook 282 / 2,636 / 2,481 / 516,737.
+
+## A.4 Verification of the addendum
+
+* **Base**: the snapshot was rebuilt at the **new** HEAD `683fa03` (both merges in) plus my six changed
+  files — `GFxShape.{h,cpp}`, `GFxFont.{h,cpp}`, `Tools/GFx3Text.cpp` and CD's
+  `GFxCharacterDefs.cpp` (the adapter). `cmake/GFx.cmake` needs nothing: HEAD's copy already carries
+  both packages' blocks and the `GFx3Text` target, so `build/agentCB/patch_snapshot_cmake.py` is
+  retired.
+* **Full RELEASE build**: 0 errors, 0 link errors, all six targets; the no-engine build
+  (`build/agentCB_run.cmd`, now linking CD's two units as well) is 0 errors and **0 warnings at `/W3`**.
+* **Regression**: `run_regression.py --build-dir build/agentCB_rel --no-build` → **31 ok, 0 failed,
+  0 skipped, 422 s** (`build/agentCB_regression2.txt`).
+* **`-newgame`**: exit 0, `Initial startup: 2.75s`, both map changes, **0 criticals**
+  (`build/agentCB_newgame2_out.txt`). Both the regression and this were re-run on the *final*
+  relinked `DishonoredGame.exe`, not on an earlier one.
+* **Agent BC's harness still agrees with itself** on the fuller HEAD: `GFx3Run --run MainMenu
+  --frames 5 --imports build/agentBB/gfx` reports 292 dictionary entries with **0 placeholders**,
+  **12 text fields all with a font**, 376 glyphs, and 3,914 opcodes with none unimplemented — CD's
+  loader and this package's text stack in one run.
+* New harness commands: `--defs` (the adapter, section A.1) and `--xcheck` (the two walks, A.3), both
+  wired into `GFx3Text` and both used by `build/agentCB/defs_all.py`.
+
+## A.5 What this changes in the tables above
+
+Section 7's row for `GFxShapeBase` / `GFxConstShapeNoStyles` is unchanged in count but better in kind:
+the two deleted helpers were never retail functions, so they were never in the 966, and the
+`StateNewStyles` arm now cites `GFx_ReadFillStyles` (0xa429c0) and `GFx_ReadLineStyles` (0xa41270) for
+their no-style-owner behaviour. `GFxEditTextCharacterDef`'s row gains the adapter: retail's 0xa32df0
+is now ported rather than named as remaining, so `GFxEditTextCharacter` goes from 14 to 15 of 125.
+`agentCB_status.csv` goes from 242 rows to **248** (188 ported, 60 cited, and all 248 still ratio
+1.000). Diffed against the merged version, exactly six rows are new — `GFx_ReadLineStyles` (0xa41270)
+and `GFx_ReadFillStyles` (0xa429c0) as **ported**, and `GFxLoadProcess::ReadRgbaTag` (0xa22460),
+`GFxConstShapeWithStyles::Read` (0xa43610), `GFxFillStyle::Read` (0xa90290) and `GFxLineStyle::Read`
+(0xa907d0) as **cited**, the last two because they are CD's ports and this package only cites them as
+evidence — and exactly one row changes state: 0xa32df0, cited → **ported**, which is the adapter.
+
+**One correction to section 8's deviation list.** Deviation 1 said retail keeps the raw SWF bytes and
+decodes lazily while this decodes once at load. That is still true of *this* class, but it is now only
+half the picture: package CD's `GFxShapeRecord` also decodes eagerly, from the same retail function, so
+the tree has one convention rather than a deviation in one corner of it.

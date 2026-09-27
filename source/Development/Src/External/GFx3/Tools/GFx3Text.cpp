@@ -27,6 +27,7 @@
 #include "GFxGlyphCache.h"
 #include "GFxRasterizer.h"
 #include "GFxShape.h"
+#include "GFxCharacterDefs.h"
 #include "GFxFont.h"
 
 #include <stdio.h>
@@ -609,6 +610,211 @@ int CmdLayout(const char* path, const char* text, float sizePx, float boxWidthPx
 }
 
 // -------------------------------------------------------------------------------------------
+// --defs: the twelve-line adapter, end to end through package CD's loader.
+//
+// --run builds a text field straight from a DefineEditText body, which proves the field but not the
+// wiring. This goes the whole way instead: package CD's tag loaders build the movie's dictionary, and
+// every edit-text definition in it is asked for a character instance through
+// GFxEditTextCharacterDef::CreateCharacterInstance (retail 0xa32df0) - the adapter. Before the adapter
+// that slot returned a GFxGenericCharacter; the test is that every one now comes back an EditText that
+// lays out and produces glyphs.
+
+int CmdDefs(const char* assetPath, const char* fontlibPath, bool verbose)
+{
+    GFxTextResetFontManager();
+    GFxFontManager* mgr = GFxTextGetFontManager();
+    unsigned char* fontData = 0;
+    unsigned int fontSize = 0;
+    if (fontlibPath)
+    {
+        if (!LoadFile(fontlibPath, &fontData, &fontSize))
+            return 2;
+        char err[256];
+        const unsigned int n = GFxFontLoadFromPayload(mgr, fontData, fontSize, err, sizeof(err));
+        printf("  fontlib        %s: %u fonts\n", BaseName(fontlibPath), n);
+    }
+
+    unsigned char* data = 0;
+    unsigned int size = 0;
+    if (!LoadFile(assetPath, &data, &size))
+        return 2;
+
+    GFxMovieDataDef* def = new GFxMovieDataDef;
+    if (!def->Read(data, size))
+    {
+        printf("  read failed    %s\n", BaseName(assetPath));
+        delete def;
+        free(data);
+        return 2;
+    }
+    printf("  asset          %s  %u dictionary entries\n", BaseName(assetPath), def->GetDictSize());
+
+    unsigned int editTextDefs = 0, instances = 0, asEditText = 0, asGeneric = 0;
+    unsigned int laidOut = 0, withGlyphs = 0, totalGlyphs = 0, totalRaster = 0;
+    GFxGlyphRasterCache cache;
+    cache.Init(1024, 1024, 4, 64, 1);
+
+    for (unsigned int i = 0; i < def->GetDictSize(); ++i)
+    {
+        GFxCharacterDef* cdef = def->GetDictDef(i);
+        if (!cdef)
+            continue;
+        if (cdef->GetResourceTypeCode() != GFxResource::RT_EditTextDef)
+            continue;
+        ++editTextDefs;
+
+        GFxCharacter* ch = cdef->CreateCharacterInstance(0, cdef->Id, 0);
+        if (!ch)
+            continue;
+        ++instances;
+        const char* type = ch->GetCharacterTypeName();
+        if (strcmp(type, "EditText") == 0)
+        {
+            ++asEditText;
+            GFxEditTextCharacter* field = (GFxEditTextCharacter*)ch;
+            field->OnEventLoad();
+            GFxEditTextCharacter::GlyphOutput out;
+            field->ProduceGlyphs(&cache, &out);
+            if (out.Lines)
+                ++laidOut;
+            if (out.Rasterized)
+                ++withGlyphs;
+            totalGlyphs += out.Glyphs;
+            totalRaster += out.Rasterized;
+            if (verbose)
+                printf("    id %-5u %-9s lines %u  glyphs %u  raster %u  '%s'\n",
+                       cdef->Id.Id, type, out.Lines, out.Glyphs, out.Rasterized,
+                       field->GetTextValue());
+        }
+        else
+        {
+            ++asGeneric;
+            if (verbose)
+                printf("    id %-5u %-9s  NOT A TEXT FIELD\n", cdef->Id.Id, type);
+        }
+        ch->Release();
+    }
+
+    printf("  edit-text definitions in the dictionary   %u\n", editTextDefs);
+    printf("  character instances created               %u\n", instances);
+    printf("  came back an EditText (the adapter)       %u\n", asEditText);
+    printf("  came back something else                  %u\n", asGeneric);
+    printf("  of those, laid out                        %u\n", laidOut);
+    printf("  of those, produced glyph output           %u\n", withGlyphs);
+    printf("  glyph entries %u, rasterised %u\n", totalGlyphs, totalRaster);
+
+    delete def;
+    free(data);
+    if (fontData)
+        free(fontData);
+    // Two payloads in the cook carry no edit-text definition at all (HUDFX, GammaImage); that is
+    // nothing to prove rather than a failure, so it is a pass.
+    return (asEditText == editTextDefs && asGeneric == 0) ? 0 : 1;
+}
+
+// -------------------------------------------------------------------------------------------
+// --xcheck: the two record walks against each other.
+//
+// This package's GFxConstShapeNoStyles::Read and package CD's GFxShapeRecord::Read are the same retail
+// function (0xa42ab0) decompiled twice, on two different paths: mine reads glyph outlines out of a
+// DefineFont tag, CD's reads DefineShape/2/3/4 with their style arrays. Neither can replace the other
+// - CD's own GFxFontCharacterDef stores my class and my rasteriser consumes it - so rather than assert
+// they agree, this runs both over the identical byte range of every glyph in a payload and compares
+// the path and edge counts glyph by glyph. It also reports how many glyph records asked a no-style
+// shape to own style arrays, which is the arm the two deleted skip helpers used to guess at.
+
+int CmdXCheck(const char* path)
+{
+    unsigned char* data = 0;
+    unsigned int size = 0;
+    if (!LoadFile(path, &data, &size))
+        return 2;
+
+    GFxGfxFileInfo info;
+    if (!GFxGfxParseFile(data, size, info))
+    {
+        printf("  parse failed   %s\n", info.Error);
+        free(data);
+        return 2;
+    }
+    printf("  payload        %s  %u bytes\n", BaseName(path), size);
+
+    unsigned int fonts = 0, glyphs = 0, agree = 0, differ = 0, refused = 0, noRange = 0;
+    unsigned int minePaths = 0, mineEdges = 0, cdPaths = 0, cdEdges = 0;
+
+    GFxStream s(data, size);
+    s.SetPosition(info.FirstTagOffset);
+    while (s.Tell() < size)
+    {
+        unsigned int code = 0, tagEnd = 0;
+        if (!s.OpenTag(&code, &tagEnd))
+            break;
+        if (code == GFxTag_End)
+            break;
+        if (code == GFxTag_DefineFont || code == GFxTag_DefineFont2 || code == GFxTag_DefineFont3)
+        {
+            ++fonts;
+            s.ReadU16();                            // character id
+            GPtr<GFxFontData> font = new GFxFontData;
+            if (font->Read(&s, code, tagEnd))
+            {
+                const unsigned int shapeTag = (code == GFxTag_DefineFont)  ? GFxTag_DefineShape
+                                            : (code == GFxTag_DefineFont2) ? GFxTag_DefineShape2
+                                                                           : code;
+                for (unsigned int g = 0; g < font->GetGlyphShapeCount(); ++g)
+                {
+                    GPtr<GFxShapeBase> mine = font->GetGlyphShape(g, 0);
+                    if (!mine)
+                        continue;
+                    ++glyphs;
+                    unsigned int mp = mine->GetPathCount(), me = 0;
+                    for (unsigned int p = 0; p < mp; ++p)
+                        me += mine->GetPath(p).EdgeCount;
+                    minePaths += mp;
+                    mineEdges += me;
+                    refused += mine->StyleRecordsRefused;
+
+                    unsigned int gs = 0, ge = 0;
+                    if (!font->GetGlyphRange(g, &gs, &ge))
+                    {
+                        ++noRange;
+                        continue;
+                    }
+                    GFxStream s2(data, size);
+                    s2.SetPosition(gs);
+                    GFxShapeRecord rec;
+                    rec.Read(&s2, shapeTag, ge, 0);
+                    const unsigned int cp = rec.GetPathCount();
+                    const unsigned int ce = rec.GetEdgeCount();
+                    cdPaths += cp;
+                    cdEdges += ce;
+                    if (cp == mp && ce == me)
+                    {
+                        ++agree;
+                    }
+                    else
+                    {
+                        if (differ < 8)
+                            printf("    glyph %-4u mine %u paths / %u edges,  CD %u paths / %u edges\n",
+                                   g, mp, me, cp, ce);
+                        ++differ;
+                    }
+                }
+            }
+        }
+        s.CloseTag();
+    }
+
+    printf("  fonts          %u,  glyphs compared %u\n", fonts, glyphs);
+    printf("  mine           %u paths, %u edges\n", minePaths, mineEdges);
+    printf("  CD's walk      %u paths, %u edges\n", cdPaths, cdEdges);
+    printf("  agree          %u   differ %u   no range %u\n", agree, differ, noRange);
+    printf("  style arrays a no-style shape had to refuse: %u\n", refused);
+    free(data);
+    return differ ? 1 : 0;
+}
+
+// -------------------------------------------------------------------------------------------
 // --table
 
 struct Row { const char* Name; int RetailFns; int Done; const char* Note; };
@@ -697,6 +903,8 @@ int main(int argc, char** argv)
     const char* raster = 0;
     const char* run = 0;
     const char* layout = 0;
+    const char* xcheck = 0;
+    const char* defs = 0;
     float boxW = 300.0f, boxH = 100.0f;
     bool noWrap = false;
     const char* fontlib = 0;
@@ -712,6 +920,8 @@ int main(int argc, char** argv)
         else if (!strcmp(argv[i], "--raster") && i + 1 < argc)  raster = argv[++i];
         else if (!strcmp(argv[i], "--run") && i + 1 < argc)     run = argv[++i];
         else if (!strcmp(argv[i], "--layout") && i + 1 < argc)  layout = argv[++i];
+        else if (!strcmp(argv[i], "--xcheck") && i + 1 < argc)  xcheck = argv[++i];
+        else if (!strcmp(argv[i], "--defs") && i + 1 < argc)    defs = argv[++i];
         else if (!strcmp(argv[i], "--box") && i + 2 < argc)
         {
             boxW = (float)atof(argv[++i]);
@@ -731,7 +941,7 @@ int main(int argc, char** argv)
         }
     }
 
-    if (!fonts && !raster && !run && !layout && !table)
+    if (!fonts && !raster && !run && !layout && !xcheck && !defs && !table)
     {
         printf("GFx3Text - agent CB's text engine and glyph rasteriser harness\n"
                "  --fonts <payload.gfx> [--verbose]\n"
@@ -761,6 +971,16 @@ int main(int argc, char** argv)
     {
         printf("\n== layout ==\n");
         rc |= CmdLayout(layout, text, sizePx, boxW, boxH, !noWrap);
+    }
+    if (defs)
+    {
+        printf("\n== defs ==\n");
+        rc |= CmdDefs(defs, fontlib, verbose);
+    }
+    if (xcheck)
+    {
+        printf("\n== xcheck ==\n");
+        rc |= CmdXCheck(xcheck);
     }
     if (table)
     {

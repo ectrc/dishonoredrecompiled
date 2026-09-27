@@ -153,6 +153,18 @@ public:
     virtual unsigned int GetGlyphShapeCount() const { return Glyphs.GetSize(); }
     virtual bool  HasVectorOrRasterGlyphs() const;                       // 0xa58270
 
+    // The stream range each glyph's SHAPE record occupied, so a second reader can be run over the
+    // same bytes. Recorded by Read; used by the harness's --xcheck to compare this package's record
+    // walk with package CD's GFxShapeRecord over the identical input.
+    bool GetGlyphRange(unsigned int i, unsigned int* start, unsigned int* end) const
+    {
+        if (i >= GlyphRanges.GetSize())
+            return false;
+        *start = GlyphRanges[i].Start;
+        *end = GlyphRanges[i].End;
+        return true;
+    }
+
     unsigned int GetKerningPairCount() const { return Kerning.GetSize(); }
     // What the tag's u16 kerning count said, against what was actually read: they differ only when
     // the table ran past the tag, which is the case retail logs as "Corrupted file ... kerning table
@@ -168,11 +180,13 @@ public:
 
 private:
     struct CodeEntry { unsigned short Code; unsigned short GlyphIndex; };
+    struct GlyphRange { unsigned int Start, End; };
 
     GArray<GPtr<GFxShapeBase> > Glyphs;
     GArray<AdvanceEntry>        Advances;
     GArray<KerningPair>         Kerning;
     GArray<CodeEntry>           CodeTable;
+    GArray<GlyphRange>          GlyphRanges;
     // The two lookups retail keeps as hash sets (a GHashSet<KerningPair,float> at +60 and a
     // GHashSet<u16,u16> for the code table). Both matter: $TitleFont carries 5,000 kerning pairs and
     // 188 code entries, so a linear scan would cost up to 5,000 compares per character pair of every

@@ -16,7 +16,7 @@ void GFxShapeResetMaxFlattenDepth() { GFxShapeMaxFlattenDepth = 0; }
 // =============================================================================================
 
 GFxShapeBase::GFxShapeBase()
-    : ShapeCount(0), Flags(0), BoundValid(false)
+    : ShapeCount(0), StyleRecordsRefused(0), Flags(0), BoundValid(false)
 {
     // DISHONORED(port): 0xa41370 - the base constructor zeroes the cached bound and the flags.
 }
@@ -126,91 +126,55 @@ void GFxShapeBase::MakeCompoundShape(GCompoundShape* out, float tolerance) const
 // A DefineFont glyph's record has no style arrays; DefineShape and friends put them in front. The
 // dialect differences retail encodes in the tag type it passes down (GFxFontData::Read 0xa587d0
 // passes DefineShape for tag 10, DefineShape2 for tag 48 and the DefineFont3 code itself for 75):
-//   * tags >= DefineShape2 allow an extended (0xFF + u16) style count;
-//   * tags >= DefineShape3 carry RGBA rather than RGB fills;
-//   * the DefineFont3 code additionally means "coordinates are 20x".
-static bool GFxShapeTagHasAlpha(unsigned int tagType)
+//   * tags above DefineShape allow an extended (0xFF + u16) fill-style count;
+//   * `GFxLoadProcess::ReadRgbaTag` (0xa22460) reads RGBA when `tagType > 22` and RGB otherwise, so
+//     DefineShape and DefineShape2 fills are three bytes and DefineShape3/4 fills are four;
+//   * the DefineFont3 code additionally means "coordinates are 20x", which is
+//     `if (a3 == 75) Flags |= 2` in the retail record walk (0xa42ab0).
+//
+// ADDENDUM (agent CD's hand-over 2, re-verified against retail): what a *no-style* shape does with a
+// StateNewStyles record is not to walk the style arrays' wire format. Retail's record walk calls two
+// helpers, `GFx_ReadFillStyles` (2012 0xa429c0) and `GFx_ReadLineStyles` (0xa41270) - the names come
+// from their own error strings - and each of them:
+//
+//   * reads the count (a u8, promoted to a u16 when it is 0xFF: for fill styles only when
+//     `tagType > 2`, for line styles **unconditionally** - the two thresholds differ and both are in
+//     the decompiles);
+//   * then, **when there is no style owner, logs an error and reads nothing more**:
+//     "Error: GFx_ReadFillStyles, trying to read %d fillstyles into no-style shape";
+//   * and only with an owner reads each style through GFxFillStyle::Read (0xa90290) /
+//     GFxLineStyle::Read (0xa907d0), which package CD owns and which are the tree's only
+//     implementation of those two functions.
+//
+// The record walk then re-reads fillBits/lineBits from the position the helpers report. So that is
+// what happens here, and the two style-array walkers this file used to carry are gone: they were an
+// invention rather than a port, and they carried two genuine wire-format errors with them (the focal
+// gradient's focal point is read *after* the gradient records, not before, and DefineShape4's
+// miter-limit flag is 0x20, not 0x0800). agentCB.md's addendum has the detail.
+static bool GFxShapeTagHasExtendedFillCount(unsigned int tagType)
 {
-    return tagType == GFxTag_DefineShape3 || tagType == GFxTag_DefineShape4;
+    // GFx_ReadFillStyles 0xa429c0: `if (a3 > 2 && count == 255) count = ReadU16()`.
+    return tagType > GFxTag_DefineShape;
 }
 
-static bool GFxShapeTagHasExtendedCounts(unsigned int tagType)
+// DISHONORED(port): 0xa429c0 / 0xa41270 - GFx_ReadFillStyles and GFx_ReadLineStyles against a shape
+// with no style owner: consume the two counts and report them, which is all those bodies do in that
+// case before they log "trying to read %d fillstyles into no-style shape" and return. The with-owner
+// arm, which reads each style through GFxFillStyle::Read (0xa90290) / GFxLineStyle::Read (0xa907d0),
+// is package CD's GFxShapeCharacterDef and is deliberately not duplicated here.
+static void GFxReadStyleCountsNoOwner(GFxStream* s, unsigned int tagType,
+                                      unsigned int* outFills, unsigned int* outLines)
 {
-    return tagType >= GFxTag_DefineShape2;
-}
-
-// Skip one FILLSTYLE / LINESTYLE array. A glyph never has them, but a DefineShape does and the same
-// decoder serves both, exactly as retail's does (GFxConstShapeNoStyles::Read 0xa42ab0 reads them
-// into the two GArray<GFxFillStyle>/GArray<GFxLineStyle> out-parameters it is handed, or discards
-// them when they are null - which is the call the font reader makes).
-static void GFxSkipFillStyles(GFxStream* s, unsigned int tagType, unsigned int* outCount)
-{
-    unsigned int count = s->ReadU8();
-    if (count == 0xFF && GFxShapeTagHasExtendedCounts(tagType))
-        count = s->ReadU16();
-    for (unsigned int i = 0; i < count; ++i)
-    {
-        unsigned char type = s->ReadU8();
-        if (type == 0x00)
-        {
-            if (GFxShapeTagHasAlpha(tagType)) s->Skip(4); else s->Skip(3);
-        }
-        else if (type == 0x10 || type == 0x12 || type == 0x13)
-        {
-            GMatrix2D m;
-            s->ReadMatrix(&m);
-            if (type == 0x13)
-                s->ReadU16();                    // focal point, DefineShape4's focal gradient
-            unsigned char info = s->ReadU8();
-            unsigned int records = info & 0x0F;
-            for (unsigned int g = 0; g < records; ++g)
-            {
-                s->ReadU8();                     // ratio
-                if (GFxShapeTagHasAlpha(tagType)) s->Skip(4); else s->Skip(3);
-            }
-        }
-        else if (type >= 0x40 && type <= 0x43)
-        {
-            s->ReadU16();                        // bitmap character id
-            GMatrix2D m;
-            s->ReadMatrix(&m);
-        }
-    }
-    if (outCount)
-        *outCount = count;
-}
-
-static void GFxSkipLineStyles(GFxStream* s, unsigned int tagType, unsigned int* outCount)
-{
-    unsigned int count = s->ReadU8();
-    if (count == 0xFF && GFxShapeTagHasExtendedCounts(tagType))
-        count = s->ReadU16();
-    for (unsigned int i = 0; i < count; ++i)
-    {
-        s->ReadU16();                            // width
-        if (tagType == GFxTag_DefineShape4)
-        {
-            unsigned short flags = s->ReadU16();
-            if ((flags & 0x0800) != 0)           // HasMiterJoin
-                s->ReadU16();
-            if ((flags & 0x0008) != 0)           // HasFillFlag
-                GFxSkipFillStyles(s, tagType, 0);
-            else if (GFxShapeTagHasAlpha(tagType))
-                s->Skip(4);
-            else
-                s->Skip(3);
-        }
-        else if (GFxShapeTagHasAlpha(tagType))
-        {
-            s->Skip(4);
-        }
-        else
-        {
-            s->Skip(3);
-        }
-    }
-    if (outCount)
-        *outCount = count;
+    unsigned int fills = s->ReadU8();
+    if (fills == 0xFF && GFxShapeTagHasExtendedFillCount(tagType))
+        fills = s->ReadU16();
+    unsigned int lines = s->ReadU8();
+    if (lines == 0xFF)                       // unconditional in 0xa41270, unlike the fill count
+        lines = s->ReadU16();
+    if (outFills)
+        *outFills = fills;
+    if (outLines)
+        *outLines = lines;
 }
 
 bool GFxConstShapeNoStyles::Read(GFxStream* s, unsigned int tagType, unsigned int endPos)
@@ -220,6 +184,7 @@ bool GFxConstShapeNoStyles::Read(GFxStream* s, unsigned int tagType, unsigned in
     Paths.Clear();
     Edges.Clear();
     ShapeCount = 0;
+    StyleRecordsRefused = 0;
     Flags = 0;
     BoundValid = false;
 
@@ -229,14 +194,11 @@ bool GFxConstShapeNoStyles::Read(GFxStream* s, unsigned int tagType, unsigned in
     unsigned int fillBase = 0, lineBase = 0;
     unsigned int fillBits = 1, lineBits = 1;
 
-    if (tagType >= GFxTag_DefineShape && tagType <= GFxTag_DefineShape4 &&
-        tagType != GFxTag_DefineFont && tagType != GFxTag_DefineFont2 &&
-        tagType != GFxTag_DefineFont3)
-    {
-        // A real DefineShape*: the bound and the style arrays come first. A glyph record skips both,
-        // which is why the font reader passes the raw glyph offset as the stream position.
-    }
-
+    // The caller positions the stream at the record itself. A real DefineShape* carries its bound and
+    // its two style arrays in front of it, and reading those is GFxConstShapeWithStyles::Read
+    // (0xa43610) - package CD's GFxShapeCharacterDef - not this function's; the font reader
+    // (0xa587d0) positions us at the raw glyph offset, where the record starts immediately.
+    //
     // The SHAPE record itself: fillBits(4), lineBits(4), then records until a zero non-edge flag.
     s->Align();
     fillBits = s->ReadUBits(4);
@@ -288,8 +250,12 @@ bool GFxConstShapeNoStyles::Read(GFxStream* s, unsigned int tagType, unsigned in
             }
             if ((flags & 0x10) != 0)                // StateNewStyles
             {
-                // ReadNext (0xa3a7f0) resets the three current styles, accumulates the style bases
-                // by the counts of the arrays it walks past, and re-reads fillBits/lineBits.
+                // ReadNext (0xa3a7f0) resets the three current styles, accumulates the style bases by
+                // the counts the two style helpers report, and re-reads fillBits/lineBits. This class
+                // is the *no-style* shape, so the helpers behave as 0xa429c0 / 0xa41270 do with a null
+                // style owner: the counts are consumed, nothing else is, and a non-zero count is the
+                // error retail logs. A shape that really has styles is package CD's
+                // GFxShapeCharacterDef, whose GFxShapeRecord hands the arrays to a style owner.
                 if (pathOpen)
                 {
                     path.EdgeCount = Edges.GetSize() - path.EdgeStart;
@@ -299,8 +265,14 @@ bool GFxConstShapeNoStyles::Read(GFxStream* s, unsigned int tagType, unsigned in
                 }
                 fill0 = fill1 = line = 0;
                 unsigned int nf = 0, nl = 0;
-                GFxSkipFillStyles(s, tagType, &nf);
-                GFxSkipLineStyles(s, tagType, &nl);
+                GFxReadStyleCountsNoOwner(s, tagType, &nf, &nl);
+                if (nf || nl)
+                {
+                    // Retail logs and gives up on the styles here; the record walk still continues,
+                    // so the flag is recorded and the caller can report it rather than the stream
+                    // silently drifting.
+                    ++StyleRecordsRefused;
+                }
                 fillBase += nf;
                 lineBase += nl;
                 s->Align();

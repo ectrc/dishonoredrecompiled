@@ -12,6 +12,7 @@
 // Retail's classes, with the functions this unit ports named at their 2012 rvas:
 //   GFxShapeBase              30 fns; MakeCompoundShapeImpl<GFxSwfPathData> 0xa40490
 //   GFxConstShapeNoStyles     12 fns; Read 0xa42ab0 / 0xa43de0
+//   GFx_ReadFillStyles / GFx_ReadLineStyles  0xa429c0 / 0xa41270, the no-style-owner arm only
 //   GFxSwfPathData::PathsIterator  8 fns; PathsIterator 0xa3d110, ReadNext 0xa3a7f0,
 //                             AddForTessellation 0xa3fb50
 //   GFxSwfPathData::EdgesIterator  5 fns; GetEdge 0xa3b380, GetPlainEdge 0xa3b4f0
@@ -101,6 +102,11 @@ public:
     GArray<GFxShapePath> Paths;
     GArray<GFxShapeEdge> Edges;
     unsigned int ShapeCount;      // how many StateNewStyles groups the record carried
+    // How many of those groups declared style arrays this no-style shape cannot own. Retail logs
+    // "GFx_ReadFillStyles, trying to read %d fillstyles into no-style shape" (0xa429c0) and reads no
+    // further; counting it here is what lets the harness show the number is zero over the whole cook
+    // rather than assuming it.
+    unsigned int StyleRecordsRefused;
     unsigned char Flags;
 
 protected:
