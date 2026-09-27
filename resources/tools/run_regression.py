@@ -68,13 +68,18 @@ LOG_METRICS = {
     "d3d9_draw_elements":    ("d3d9",      r"draw lists (\d+)/(\d+) drawn", "max1"),
     "d3d9_visible_prims":    ("d3d9",      r"(\d+) visible \(\d+ static", "max"),
     "texture_census":        ("d3d9",      r"DISHONORED\(bringup\): texture census[^0-9]*(\d+)", "max"),
-    "touch_census":          ("inputtest", r"DISHONORED\(bringup\): (?:touch|distouch) census[^0-9]*(\d+)", "max"),
-    "sequence_census":       ("inputtest", r"DISHONORED\(bringup\): (?:sequence|seqop|kismet) census[^0-9]*(\d+)", "max"),
+    "touch_census":          ("inputtest", r"DISHONORED\(bringup\): distouch\s+[\d.]+s\s+[^:]*: touch begin (\d+)", "max"),
+    "sequence_census":       ("inputtest", r"DISHONORED\(bringup\): kismet census:.*?ops executed (\d+)", "max"),
     "inputtest_moved":       ("inputtest", r"inputtest moved ([\d.]+) turned", "max"),
     "inputtest_peak_speed":  ("inputtest", r"inputtest moved .*peak 2D speed ([\d.]+)", "max"),
     "physics_actors":        ("inputtest", r"PhysX (?:scene: )?(\d+) actors, (\d+) static shapes", "max0"),
     "physics_static_shapes": ("inputtest", r"PhysX (?:scene: )?(\d+) actors, (\d+) static shapes", "max1"),
-    "unported_natives":      ("inputtest", r"native not ported: (\S+)", "distinct"),
+    "unported_natives":      ("d3d9",      r"native not ported: (\S+)", "distinct"),
+    # measured on the plain d3d9 run, not the inputtest stage: that stage now walks the pawn to every
+    # volume, trigger and pickup in the map (-distouchprobe), which reaches gameplay a plain walk never
+    # does and fires natives that are honestly still stubbed. Keeping this metric on the plain run keeps
+    # its meaning "the walking path", which is what the bound of 0 was measured against.
+    "probe_natives":         ("inputtest", r"native not ported: (\S+)", "distinct"),
     "inputtest_criticals":   ("inputtest", r"Critical: ", "count"),
 }
 OPS = {">=": lambda a, b: a >= b, "<=": lambda a, b: a <= b, "==": lambda a, b: a == b, ">": lambda a, b: a > b}
@@ -267,8 +272,8 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--build-dir", default="build/agentAX")
     parser.add_argument("--retail", type=Path, default=RETAIL, help="the retail install the exe is staged into")
-    parser.add_argument("--exe-name", default="DishonoredGame_AX.exe")
-    parser.add_argument("--log-prefix", default="regression")
+    parser.add_argument("--exe-name", default=None, help="default: derived from --build-dir")
+    parser.add_argument("--log-prefix", default=None, help="default: derived from --build-dir")
     parser.add_argument("--baseline", type=Path, default=BASELINE)
     parser.add_argument("--no-build", action="store_true")
     parser.add_argument("--only", default="", help="comma list of stages: " + ",".join(STAGES))
@@ -280,6 +285,13 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--inputtest-timeout", type=float, default=150.0)
     parser.add_argument("--list", action="store_true", help="print the stages and their metrics and exit")
     args = parser.parse_args(argv[1:])
+    # DISHONORED(written): the exe name and log prefix name the staged exe and the log files in the shared
+    # retail install, so two runs sharing them collide: the second cannot stage and every stage then
+    # measures an absent log as -1 (agent BE saw the PermissionError, the coordinator saw the silent form).
+    if args.exe_name is None or args.log_prefix is None:
+        tag = re.sub(r"[^A-Za-z0-9]+", "_", str(args.build_dir)).strip("_")[-40:] or "regression"
+        args.exe_name = args.exe_name or "DishonoredGame_rg_%s.exe" % tag
+        args.log_prefix = args.log_prefix or "regression_%s" % tag
     if args.list:
         for stage in STAGES:
             print(stage, "->", ", ".join(n for n, v in LOG_METRICS.items() if v[0] == stage) or "(not log-derived)")

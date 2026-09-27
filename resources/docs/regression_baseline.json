@@ -18,7 +18,9 @@
   "_extra_args": {
     "d3d9": [],
     "inputtest": [
-      "-distouch"
+      "-distouch",
+      "-diskismet",
+      "-distouchprobe"
     ]
   },
   "coresmoke_passed": {
@@ -114,7 +116,7 @@
     "op": ">",
     "value": 0,
     "optional": true,
-    "note": "agent AS's -distouch census"
+    "note": "agent AS's -distouch census: touch begins. -distouchprobe walks the pawn to each volume, trigger and pickup after -inputtest finishes, because the first map's triggers are 20,000 units from the spawn and a plain walk touches nothing."
   },
   "sequence_census": {
     "op": ">",
@@ -144,8 +146,8 @@
   },
   "unported_natives": {
     "op": "<=",
-    "value": 4,
-    "note": "distinct natives without a body that actually fire on the walking path. At HEAD they are execGameEnding, execHandleHeldButtons, execLanded_Native and execTakeFallingDamage_Native - PHASE7.md's table names Dis_Zoom instead of the two Pawn ones, which do not fire. Agent AU takes them; lower this bound as they land"
+    "value": 0,
+    "note": "distinct natives without a body that actually fire on the walking path. 0 since agent BF ported the attributes system and the fall-damage chain; the bound is what stops one coming back unnoticed."
   },
   "inputtest_criticals": {
     "op": "==",
@@ -165,5 +167,10 @@
     "op": ">=",
     "value": 500,
     "note": "guard: 0 means the run never started and no other metric of this stage is trustworthy"
+  },
+  "probe_natives": {
+    "op": "<=",
+    "value": 12,
+    "note": "natives without a body reached only when -distouchprobe walks the pawn to every volume, trigger and pickup: 7 at HEAD. Gameplay a plain walk never reaches, so this is a ratchet to drive down, not a gate."
   }
 }
