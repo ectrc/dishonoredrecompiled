@@ -1955,6 +1955,16 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 			DrawShadowedString(Canvas, 48, 72, *FString::Printf(TEXT("%ux%u  %s"), Viewport->GetSizeX(), Viewport->GetSizeY(), GWorld ? *GWorld->GetMapName() : TEXT("no world")), Font, FLinearColor(1.f, 0.8f, 0.4f));
 		}
 	}
+
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+	// DISHONORED(bringup): package CC's renderer probe (-gfxdrawprobe, -gfxmovieprobe=Pkg.Movie).
+	// It does nothing without one of those switches, and it runs once, here, because this is the
+	// game thread with the RHI, a viewport and the cooked global shader map all up - which is where
+	// retail drives the UI from too (ADishonoredHUD::PostRender). GFxUI/Src/gfxuirenderer.cpp.
+	extern void DishonoredGFxRenderProbe(FViewport* Viewport);
+	Canvas->Flush();
+	DishonoredGFxRenderProbe(Viewport);
+#endif
 }
 
 void UGameViewportClient::Precache()
