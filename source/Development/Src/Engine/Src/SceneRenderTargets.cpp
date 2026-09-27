@@ -709,7 +709,9 @@ void FSceneRenderTargets::FinishRenderingSceneColor(UBOOL bKeepChanges, const FR
 
 	if(bKeepChanges)
 	{
-		ResolveSceneColor();
+		// DISHONORED(port): 2013 rva 0x4490b0 hands its FResolveParams straight to ResolveSceneColor (0x449160); the
+		// reference dropped the rect here, so every finish resolved the whole buffer.
+		ResolveSceneColor(ResolveRect);
 	}
 
 	#if !CONSOLE

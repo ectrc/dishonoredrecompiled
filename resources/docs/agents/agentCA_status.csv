@@ -1,0 +1,7 @@
+rva_2013,status,note
+0x5c1f70,port,"FD3D9DynamicRHI::CopyToResolveTarget: SetDepthStencilSurface(NULL) before the blit and RHISetColorWriteMask(CW_RGBA) before the draw were both missing; retail's entry test also requires a dedicated Texture2D"
+0x4490b0,port,"FSceneRenderTargets::FinishRenderingSceneColor now forwards its resolve rect to ResolveSceneColor as retail does; the reference dropped it"
+0x449160,retail,"FSceneRenderTargets::ResolveSceneColor: retail is CopyToResolveTarget(SceneColor.Surface, TRUE, ResolveParams) plus bSceneColorTextureIsRaw = 0, which this tree already matched"
+0x448ff0,retail,"FSceneRenderTargets::BeginRenderingSceneColor: retail is CopyFromResolveTarget when usage&4, then SetRenderTarget(SceneColor.Surface, SceneDepthZ.Surface); measured to bind correctly on this tree at every call"
+0x4370a0,port,"FSceneRenderer::RenderFog: retail's ResolveSceneColor / BeginRenderingSceneColor(0) / FinishRenderingSceneColor(1, view rect) pair is unconditional again; agent BD's -fogresolvetargets deviation retired"
+,bringup,"three file-scope ParseParam(appCmdLine()) switches (-fogresolvetargets, -nopostprocess, -referencefog) read an empty GCmdLine at static-initialisation time and were permanently FALSE; now function-local statics, the reference engine's own idiom"

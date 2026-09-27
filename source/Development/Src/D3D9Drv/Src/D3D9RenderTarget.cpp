@@ -28,9 +28,16 @@ void FD3D9DynamicRHI::CopyToResolveTarget(FSurfaceRHIParamRef SourceSurfaceRHI, 
 	// DISHONORED(build): MSVC 2022 C2445, FD3D9Texture2D* vs TRefCountPtr<FD3D9Texture2D> in a conditional is ambiguous; the reference relied on VS2010 picking the raw pointer
 	TRefCountPtr<FD3D9Texture2D> ResolveTarget2D = ResolveParams.ResolveTarget ? ResolveTargetParameter : SourceSurface->ResolveTargetTexture2D.GetReference();
 
+	// DISHONORED(port): 2013 rva 0x5c1f70 (2012 0x609380) tests `Texture2D && (Texture2D != ResolveTarget2D ||
+	// ResolveTargetTextureCube)`: retail's CreateTargetableSurface has no MSAA path at all, so a resolve-targetable
+	// surface always owns a dedicated Texture2D and retail never resolves one that does not. The reference engine can
+	// still hand out an MSAA surface with no dedicated texture, which only the StretchRect branch below can resolve,
+	// so that case is kept as a reference-only fallback.
+	const UBOOL bReferenceMultisampleSurface = !SourceSurface->Texture2D && (ResolveTarget2D || SourceSurface->ResolveTargetTextureCube);
 	if( REQUIRE_D3D_RESOLVE || 
-		 SourceSurface->Texture2D != ResolveTarget2D ||
-		 SourceSurface->ResolveTargetTextureCube )
+		 (SourceSurface->Texture2D && SourceSurface->Texture2D != ResolveTarget2D) ||
+		 (SourceSurface->Texture2D && SourceSurface->ResolveTargetTextureCube) ||
+		 bReferenceMultisampleSurface )
 	{
 		// surface can't be a part of both 2d/cube textures
 		check(!(SourceSurface->Texture2D && SourceSurface->TextureCube));
@@ -138,6 +145,9 @@ void FD3D9DynamicRHI::CopyToResolveTarget(FSurfaceRHIParamRef SourceSurfaceRHI, 
 
 			// Set the destination texture as the render target.
 			Direct3DDevice->SetRenderTarget(0,DestinationSurface);
+			// DISHONORED(port): 2013 rva 0x5c1f70 unbinds the depth-stencil surface before the blit, so the quad can
+			// never be rejected by the depth-stencil surface the caller left bound.
+			Direct3DDevice->SetDepthStencilSurface(NULL);
 			Direct3DDevice->SetRenderState(D3DRS_SRGBWRITEENABLE,FALSE);
 
 			// No alpha blending, no depth tests or writes, no stencil tests or writes, no backface culling.
@@ -145,6 +155,10 @@ void FD3D9DynamicRHI::CopyToResolveTarget(FSurfaceRHIParamRef SourceSurfaceRHI, 
 			RHISetDepthState(TStaticDepthState<FALSE,CF_Always>::GetRHI());
 			RHISetStencilState(TStaticStencilState<>::GetRHI());
 			RHISetRasterizerState(TStaticRasterizerState<FM_Solid,CM_None>::GetRHI());
+			// DISHONORED(port): 2013 rva 0x5c1f70 sets the colour write mask to RGBA here. Without it the resolve
+			// inherits the mask of the pass that just finished - a pass that wrote only RGB (the DisFog pass does)
+			// would resolve only RGB, and one that had colour writes off would resolve nothing at all.
+			RHISetColorWriteMask(CW_RGBA);
 
 			// Draw a quad using the generated vertices.
 			BatchedElements.AddTriangle(V00,V10,V11,&TempTexture,BLEND_Opaque);

@@ -1247,19 +1247,6 @@ UBOOL RenderQuarterDownsampledDepthAndFog(const FScene* Scene, const FViewInfo& 
 	DISHONORED(port): the DisFog pass (FSceneRenderer::RenderFog, 2013 rva 0x4370a0).
 -----------------------------------------------------------------------------*/
 
-/**
- * DISHONORED(bringup): -fogresolvetargets runs the fog pass with retail's render-target pair around it
- * (ResolveSceneColor, BeginRenderingSceneColor, FinishRenderingSceneColor; 2013 rva 0x4370a0). Measured on this tree
- * with a red RHIClear at four points of the pass: with the pair, neither the clear nor the fog reaches the screen;
- * without it - drawing into the target the caller already has bound - both do (mean per-pixel difference 27.96 of 765
- * over the same camera with -nopostprocess, 37 % of the image, agentBD.md). The difference is this tree's resolve handling, not the
- * pass: FD3D9DynamicRHI::CopyToResolveTarget (D3D9RenderTarget.cpp:24) leaves the *resolve destination* bound as the
- * render target and no pass re-binds the scene colour surface afterwards, so a pass that binds it again writes to a
- * surface nothing resolves again. Hand-over in agentBD.md; the switch is here so the next agent can re-measure in one
- * run once that is fixed.
- */
-static UBOOL GDisFogResolveTargets = ParseParam(appCmdLine(),TEXT("fogresolvetargets"));
-
 /** DISHONORED(bringup): per-pass draw counts for the census line in SceneRendering.cpp. */
 extern INT GDisCensusFogScene;
 extern INT GDisCensusFogLayers;
@@ -1505,17 +1492,12 @@ UBOOL FSceneRenderer::RenderFog(UINT DPGIndex)
 	SCOPED_DRAW_EVENT(EventFog)(DEC_SCENE_ITEMS,TEXT("DisFog"));
 
 	// DISHONORED(port): 2013 rva 0x4370a0 resolves scene colour first, so the fog pixel shader can sample it through
-	// FSceneTextureShaderParameters, and then renders into the scene colour surface. The resolve is kept; the
-	// surface switch is not (see GDisFogResolveTargets above): on this tree the resolve leaves the resolve
-	// destination - the texture the frame ends up being read from - bound, and that is where the pass must draw.
+	// FSceneTextureShaderParameters, and then renders into the scene colour surface.
 	if (!m_BloomNeedBlit)
 	{
 		GSceneRenderTargets.ResolveSceneColor();
 	}
-	if (GDisFogResolveTargets)
-	{
-		GSceneRenderTargets.BeginRenderingSceneColor(FALSE);
-	}
+	GSceneRenderTargets.BeginRenderingSceneColor(FALSE);
 
 	if (bHasInterior && InteriorCount > 0)
 	{
@@ -1526,7 +1508,6 @@ UBOOL FSceneRenderer::RenderFog(UINT DPGIndex)
 		RenderFogPass(1,ExteriorFogs,ExteriorCount,TRUE);
 	}
 
-	if (GDisFogResolveTargets)
 	{
 		const FViewInfo& View = Views(0);
 		GSceneRenderTargets.FinishRenderingSceneColor(TRUE,FResolveRect(View.RenderTargetX,View.RenderTargetY,View.RenderTargetX + View.RenderTargetSizeX,View.RenderTargetY + View.RenderTargetSizeY));
