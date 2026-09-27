@@ -4895,6 +4895,40 @@ void UStaticMeshComponent::GetStreamingTextureInfo(TArray<FStreamingTexturePrimi
 /* ==========================================================================================================
 	AStaticMeshCollectionActor
 ========================================================================================================== */
+/* === AActor interface === */
+// DISHONORED(port): 2013 rva 0x35f160 (2012 rva 0x381800, unstaticmesh.cpp:4045): the cooker merges many
+// StaticMeshActors into one collection, and the world transform of each merged mesh is the CachedParentToWorld that
+// Serialize reads back (component + 336), not the collection actor's own. The base implementation hands every
+// component the collection's LocalToWorld, which ConditionalAttach writes straight over the loaded matrix, so every
+// merged prop collapses onto the collection while individually placed geometry stays put. Non-static-mesh components
+// still get the actor transform, and retail passes bCollisionUpdate as FALSE to UpdateComponent unconditionally.
+void AStaticMeshCollectionActor::UpdateComponentsInternal( UBOOL bCollisionUpdate )
+{
+	// DISHONORED(bringup): -disnosmcaxform reproduces the defect on a fixed exe, for a matched before/after pair.
+	static INT NoCollectionTransform = -1;
+	if( NoCollectionTransform == -1 )
+	{
+		NoCollectionTransform = ParseParam( appCmdLine(), TEXT("disnosmcaxform") ) ? 1 : 0;
+	}
+	if( NoCollectionTransform == 1 )
+	{
+		Super::UpdateComponentsInternal( bCollisionUpdate );
+		return;
+	}
+
+	const FMatrix ActorToWorld = LocalToWorld();
+	for( INT ComponentIndex = 0; ComponentIndex < Components.Num(); ComponentIndex++ )
+	{
+		UActorComponent* Component = Components(ComponentIndex);
+		if( Component != NULL )
+		{
+			UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(Component);
+			Component->UpdateComponent( GWorld->Scene, this,
+				StaticMeshComponent != NULL ? StaticMeshComponent->CachedParentToWorld : ActorToWorld, FALSE );
+		}
+	}
+}
+
 /* === UObject interface === */
 /**
  * Serializes the LocalToWorld transforms for the StaticMeshComponents contained in this actor.

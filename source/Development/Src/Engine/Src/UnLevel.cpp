@@ -2312,3 +2312,208 @@ FPrimitiveSceneProxy* ULineBatchComponent::CreateSceneProxy()
 	return new FLineBatcherSceneProxy(this);
 }
 
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup): -displace, the placement census.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(bringup): -displace answers "which things are in the wrong place". Per level in GWorld->Levels it
+// reports the actor count, the bounding box of the actor locations, the bounding box of the attached primitive
+// components' composed world origins, and how many of those origins sit on top of their owner's own location - a
+// component whose per-instance transform was lost collapses onto its owner, and for a cooked
+// StaticMeshCollectionActor that means every merged prop lands on the collection. The first pass also dumps, for the
+// first few collections in each level, the actor's location/rotation/draw scale and each component's own
+// translation, rotation and scale against its CachedParentToWorld and its composed LocalToWorld, plus the reflected
+// offsets of those members next to the C++ ones (agent AQ's disbits pattern: a member that has moved shows up as a
+// reflected offset that disagrees with STRUCT_OFFSET).
+static UWorld*	GDisPlacementCensusWorld	= NULL;
+static DOUBLE	GDisPlacementCensusNext		= 0.0;
+static INT		GDisPlacementCensusRuns		= 0;
+
+static FString DisPlacementVector( const FVector& V )
+{
+	return FString::Printf( TEXT("(%.1f %.1f %.1f)"), V.X, V.Y, V.Z );
+}
+
+static FString DisPlacementBox( const FBox& Box, INT Count )
+{
+	if( !Box.IsValid || Count == 0 )
+	{
+		return TEXT("empty");
+	}
+	const FVector Extent = Box.GetExtent();
+	return FString::Printf( TEXT("%s..%s span (%.0f %.0f %.0f)"),
+		*DisPlacementVector(Box.Min), *DisPlacementVector(Box.Max), Extent.X*2.f, Extent.Y*2.f, Extent.Z*2.f );
+}
+
+void DishonoredPlacementCensus()
+{
+	static INT Enabled = -1;
+	if( Enabled == -1 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("displace") ) ? 1 : 0;
+	}
+	if( Enabled == 0 || GWorld == NULL )
+	{
+		return;
+	}
+
+	if( GDisPlacementCensusWorld != GWorld )
+	{
+		GDisPlacementCensusWorld	= GWorld;
+		GDisPlacementCensusNext		= 0.0;
+		GDisPlacementCensusRuns		= 0;
+
+		const TCHAR* Members[] = { TEXT("Translation"), TEXT("Rotation"), TEXT("Scale"), TEXT("Scale3D"), TEXT("CachedParentToWorld") };
+		const INT Cpp[] =
+		{
+			(INT)STRUCT_OFFSET(UPrimitiveComponent,Translation),
+			(INT)STRUCT_OFFSET(UPrimitiveComponent,Rotation),
+			(INT)STRUCT_OFFSET(UPrimitiveComponent,Scale),
+			(INT)STRUCT_OFFSET(UPrimitiveComponent,Scale3D),
+			(INT)STRUCT_OFFSET(UPrimitiveComponent,CachedParentToWorld)
+		};
+		FString Layout;
+		for( INT n = 0; n < ARRAY_COUNT(Members); n++ )
+		{
+			UProperty* Prop = FindField<UProperty>( UPrimitiveComponent::StaticClass(), Members[n] );
+			Layout += FString::Printf( TEXT("%s reflected %s c++ %d; "), Members[n],
+				Prop ? *FString::Printf(TEXT("%d"),Prop->Offset) : TEXT("NOTFOUND"), Cpp[n] );
+		}
+		debugf( TEXT("DISHONORED(bringup): displace layout: %sLocalToWorld c++ %d, sizeof(UStaticMeshComponent) %d"),
+			*Layout, (INT)STRUCT_OFFSET(UPrimitiveComponent,LocalToWorld), (INT)sizeof(UStaticMeshComponent) );
+	}
+
+	if( appSeconds() < GDisPlacementCensusNext )
+	{
+		return;
+	}
+	GDisPlacementCensusNext = appSeconds() + 10.0;
+	const UBOOL bDetail = (GDisPlacementCensusRuns++ == 0);
+
+	FBox	WorldActorBox(0), WorldCompBox(0);
+	INT		WorldActors = 0, WorldAttached = 0, WorldCollapsed = 0;
+
+	for( INT LevelIndex = 0; LevelIndex < GWorld->Levels.Num(); LevelIndex++ )
+	{
+		ULevel* Level = GWorld->Levels(LevelIndex);
+		if( Level == NULL )
+		{
+			continue;
+		}
+
+		FBox	ActorBox(0), CompBox(0), CollectionCompBox(0);
+		INT		NumActors = 0, NumPrims = 0, NumAttached = 0, NumCollapsed = 0;
+		INT		NumCollections = 0, NumCollectionComps = 0, NumCollectionCollapsed = 0, NumIdentityCached = 0;
+		INT		NumFar = 0;
+		INT		DetailedCollections = 0;
+
+		for( INT ActorIndex = 0; ActorIndex < Level->Actors.Num(); ActorIndex++ )
+		{
+			AActor* Actor = Level->Actors(ActorIndex);
+			if( Actor == NULL )
+			{
+				continue;
+			}
+			NumActors++;
+			ActorBox += Actor->Location;
+
+			const UBOOL bIsCollection = Actor->IsA(AStaticMeshCollectionActor::StaticClass());
+			if( bIsCollection )
+			{
+				NumCollections++;
+			}
+
+			const UBOOL bDumpThis = bDetail && bIsCollection && DetailedCollections < 2;
+			if( bDumpThis )
+			{
+				DetailedCollections++;
+				debugf( TEXT("DISHONORED(bringup): displace   actor %s (%s) in %s: loc %s rot (%d %d %d) drawscale %.3f drawscale3d %s components %d"),
+					*Actor->GetName(), *Actor->GetClass()->GetName(), *Level->GetOutermost()->GetName(),
+					*DisPlacementVector(Actor->Location), Actor->Rotation.Pitch, Actor->Rotation.Yaw, Actor->Rotation.Roll,
+					Actor->DrawScale, *DisPlacementVector(Actor->DrawScale3D), Actor->Components.Num() );
+			}
+
+			INT Dumped = 0;
+			for( INT ComponentIndex = 0; ComponentIndex < Actor->Components.Num(); ComponentIndex++ )
+			{
+				UPrimitiveComponent* Prim = Cast<UPrimitiveComponent>( Actor->Components(ComponentIndex) );
+				if( Prim == NULL )
+				{
+					continue;
+				}
+				NumPrims++;
+				if( bIsCollection )
+				{
+					NumCollectionComps++;
+					if( Prim->CachedParentToWorld.GetOrigin().IsNearlyZero() )
+					{
+						NumIdentityCached++;
+					}
+				}
+				if( !Prim->IsAttached() )
+				{
+					continue;
+				}
+				NumAttached++;
+				const FVector Origin = Prim->LocalToWorld.GetOrigin();
+				CompBox += Origin;
+				const UBOOL bCollapsed = (Origin - Actor->Location).SizeSquared() < 1.f;
+				if( bCollapsed )
+				{
+					NumCollapsed++;
+				}
+				if( bIsCollection )
+				{
+					CollectionCompBox += Origin;
+					if( bCollapsed )
+					{
+						NumCollectionCollapsed++;
+					}
+				}
+				if( Abs(Origin.X) > HALF_WORLD_MAX || Abs(Origin.Y) > HALF_WORLD_MAX || Abs(Origin.Z) > HALF_WORLD_MAX )
+				{
+					NumFar++;
+					if( bDetail && NumFar <= 4 )
+					{
+						debugf( TEXT("DISHONORED(bringup): displace far %s.%s (%s) owner %s (%s): ltw %s det %.4f"),
+							*Level->GetOutermost()->GetName(), *Prim->GetName(), *Prim->GetClass()->GetName(),
+							*Actor->GetName(), *Actor->GetClass()->GetName(), *DisPlacementVector(Origin),
+							Prim->LocalToWorldDeterminant );
+					}
+				}
+				if( bDumpThis && Dumped < 4 )
+				{
+					Dumped++;
+					debugf( TEXT("DISHONORED(bringup): displace     comp %s (%s): T %s R (%d %d %d) Scale %.3f Scale3D %s cached %s ltw %s abs t%d r%d s%d"),
+						*Prim->GetName(), *Prim->GetClass()->GetName(),
+						*DisPlacementVector(Prim->Translation), Prim->Rotation.Pitch, Prim->Rotation.Yaw, Prim->Rotation.Roll,
+						Prim->Scale, *DisPlacementVector(Prim->Scale3D),
+						*DisPlacementVector(Prim->CachedParentToWorld.GetOrigin()), *DisPlacementVector(Origin),
+						Prim->AbsoluteTranslation ? 1 : 0, Prim->AbsoluteRotation ? 1 : 0, Prim->AbsoluteScale ? 1 : 0 );
+				}
+			}
+		}
+
+		WorldActors		+= NumActors;
+		WorldAttached	+= NumAttached;
+		WorldCollapsed	+= NumCollapsed;
+		WorldActorBox	+= ActorBox;
+		WorldCompBox	+= CompBox;
+
+		debugf( TEXT("DISHONORED(bringup): displace level %s: actors %d loc %s | prims %d attached %d collapsed %d origins %s | collections %d comps %d collapsed %d identity-cached %d bounds %s"),
+			*Level->GetOutermost()->GetName(), NumActors, *DisPlacementBox(ActorBox,NumActors),
+			NumPrims, NumAttached, NumCollapsed, *DisPlacementBox(CompBox,NumAttached),
+			NumCollections, NumCollectionComps, NumCollectionCollapsed, NumIdentityCached,
+			*DisPlacementBox(CollectionCompBox,NumCollectionComps) );
+		if( NumFar > 0 )
+		{
+			debugf( TEXT("DISHONORED(bringup): displace level %s: %d of %d attached primitives sit outside HALF_WORLD_MAX"),
+				*Level->GetOutermost()->GetName(), NumFar, NumAttached );
+		}
+	}
+
+	debugf( TEXT("DISHONORED(bringup): displace world %s: levels %d actors %d loc %s | attached %d collapsed %d origins %s"),
+		*GWorld->GetOutermost()->GetName(), GWorld->Levels.Num(), WorldActors, *DisPlacementBox(WorldActorBox,WorldActors),
+		WorldAttached, WorldCollapsed, *DisPlacementBox(WorldCompBox,WorldAttached) );
+}
+

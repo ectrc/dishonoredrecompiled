@@ -2133,6 +2133,9 @@ static void AsyncLevelLoadCompletionCallback( UObject* LevelPackage, void* /*Unu
 void UWorld::UpdateLevelStreaming( FSceneViewFamily* ViewFamily )
 {
 	SCOPE_CYCLE_COUNTER(STAT_UpdateLevelStreamingTime);
+	// DISHONORED(bringup): -displace, the placement census (UnLevel.cpp); a no-op without the switch.
+	extern void DishonoredPlacementCensus();
+	DishonoredPlacementCensus();
 	// do nothing if level streaming is frozen
 	if (bIsLevelStreamingFrozen)
 	{

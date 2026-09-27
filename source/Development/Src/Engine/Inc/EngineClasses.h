@@ -12990,6 +12990,13 @@ public:
     DECLARE_CLASS(AStaticMeshCollectionActor,AStaticMeshActorBase,0|CLASS_Config,Engine)
     static const TCHAR* StaticConfigName() {return TEXT("Engine");}
 
+	/* === AActor interface === */
+	/**
+	 * Updates the components of this actor, handing each contained StaticMeshComponent its own serialized
+	 * CachedParentToWorld rather than the collection actor's transform.
+	 */
+	virtual void UpdateComponentsInternal( UBOOL bCollisionUpdate = FALSE );
+
 	/* === UObject interface === */
 	/**
 	 * Serializes the LocalToWorld transforms for the StaticMeshComponents contained in this actor.
