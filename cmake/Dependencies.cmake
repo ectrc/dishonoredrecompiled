@@ -93,6 +93,10 @@ include(cmake/Bink.cmake)
 # PhysXLoader.dll, behind DISHONORED_WITH_PHYSX (default ON when the headers are present).
 # Must come after Bink.cmake, which declares DISHONORED_RETAIL_DIR.
 include(cmake/PhysX.cmake)
+# Scaleform GFx 3.3: our own reconstruction of the API from the 2012 PDB plus the GFxUI
+# renderer/file/image seam, behind DISHONORED_WITH_GFX3 (default ON when the headers are
+# present). Nothing to import: GFx is statically linked into the retail exe.
+include(cmake/GFx.cmake)
 include(cmake/Steamworks.cmake)
 
 # Examples for Phase 4 (uncomment when the module that needs them exists):

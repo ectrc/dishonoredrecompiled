@@ -203,3 +203,619 @@
 //   0xba2000  _dynamic_initializer_for__FGFxPixelShader_32_::StaticType__
 //   0xba2040  _dynamic_initializer_for__FGFxPixelShader_33_::StaticType__
 //   ... 21 more, see resources/docs/symbols/functions.csv
+
+// ---------------------------------------------------------------------------------------------
+// DISHONORED(port): the bodies of the renderer seam. Declarations, slot numbers and 2013 rvas are
+// in gfxuirenderer.h. Every one of GRenderer's 54 slots, GTexture's 12 + 5 and GRenderTarget's
+// 7 + 3 is defined here, so the seam instantiates, links and can be handed to the runtime.
+//
+// The bodies are DISHONORED(bringup): they record the call in the seam census and return a neutral
+// value. That is deliberate and it is what package BB's acceptance asks for - the drawing itself is
+// 221 functions of RHI work against Dishonored's own shader set, which is package BD's material and
+// a later wave's. What this file buys now is that nothing on the GFx side can fail for want of an
+// implementation, and that a run can report exactly which slots the runtime reached.
+#include "gfxuirendererimpl.h"
+
+#include <string.h>
+#include <stdio.h>
+
+// ---------------------------------------------------------------------------------------------
+// The seam census.
+// ---------------------------------------------------------------------------------------------
+namespace
+{
+struct FGFxSeamEntry
+{
+    const char*  Name;
+    unsigned int Calls;
+};
+
+FGFxSeamEntry GSeamSlots[GFXUI_SEAM_MAX_SLOTS];
+unsigned int  GSeamSlotCount = 0;
+unsigned int  GSeamTotalCalls = 0;
+}
+
+void FGFxSeamNote(const char* Slot)
+{
+    ++GSeamTotalCalls;
+    for (unsigned int i = 0; i < GSeamSlotCount; ++i)
+    {
+        if (GSeamSlots[i].Name == Slot || strcmp(GSeamSlots[i].Name, Slot) == 0)
+        {
+            ++GSeamSlots[i].Calls;
+            return;
+        }
+    }
+    if (GSeamSlotCount < GFXUI_SEAM_MAX_SLOTS)
+    {
+        GSeamSlots[GSeamSlotCount].Name = Slot;
+        GSeamSlots[GSeamSlotCount].Calls = 1;
+        ++GSeamSlotCount;
+    }
+}
+
+unsigned int FGFxSeamCalls(const char* Slot)
+{
+    for (unsigned int i = 0; i < GSeamSlotCount; ++i)
+        if (strcmp(GSeamSlots[i].Name, Slot) == 0)
+            return GSeamSlots[i].Calls;
+    return 0;
+}
+
+unsigned int FGFxSeamSlotsTouched() { return GSeamSlotCount; }
+unsigned int FGFxSeamTotalCalls() { return GSeamTotalCalls; }
+
+void FGFxSeamReset()
+{
+    GSeamSlotCount = 0;
+    GSeamTotalCalls = 0;
+}
+
+unsigned int FGFxSeamCensus(char* Out, unsigned int Capacity)
+{
+    if (Out == 0 || Capacity == 0) return 0;
+    int n = _snprintf(Out, Capacity - 1,
+                      "DISHONORED(bringup): GFx seam census: %u slots touched, %u calls",
+                      GSeamSlotCount, GSeamTotalCalls);
+    if (n < 0) n = 0;
+    unsigned int used = (unsigned int)n;
+    for (unsigned int i = 0; i < GSeamSlotCount && used + 1 < Capacity; ++i)
+    {
+        int k = _snprintf(Out + used, Capacity - 1 - used, ", %s %u",
+                          GSeamSlots[i].Name, GSeamSlots[i].Calls);
+        if (k < 0) break;
+        used += (unsigned int)k;
+    }
+    Out[used < Capacity ? used : Capacity - 1] = 0;
+    return used;
+}
+
+// ---------------------------------------------------------------------------------------------
+// FGFxRendererImpl::ConvertFromUI - 2013 0x572c30, byte-identical to 2012 0x5b7710. The only real
+// port in this file: it is pure logic over two PDB layouts.
+// ---------------------------------------------------------------------------------------------
+void FGFxRendererImpl::ConvertFromUI(const GRenderer::FillTexture& In, FFillTextureInfo& Out)
+{
+    Out.Texture = 0;                        // set by the caller from In.pTexture's engine texture
+    Out.TextureMatrix = In.TextureMatrix;
+    Out.WrapMode = In.WrapMode;
+    Out.SampleMode = In.SampleMode;
+    Out.bUseMips = 0;
+    GFXUI_SEAM_TRACE("FGFxRendererImpl::ConvertFromUI");
+}
+
+// ---------------------------------------------------------------------------------------------
+// FGFxTexture
+// ---------------------------------------------------------------------------------------------
+FGFxTexture::FGFxTexture(GRenderer* InRenderer)
+    : Renderer(InRenderer), Texture(0), Texture2D(0), RenderTarget(0)
+{
+    GFXUI_SEAM_TRACE("FGFxTexture::FGFxTexture");
+}
+
+FGFxTexture::~FGFxTexture() { GFXUI_SEAM_TRACE("FGFxTexture::~FGFxTexture"); }
+
+bool FGFxTexture::InitTexture(GImageBase* Image, unsigned int Usage)
+{
+    (void)Image; (void)Usage;
+    GFXUI_SEAM_TRACE("FGFxTexture::InitTexture(GImageBase*)");
+    return false;
+}
+
+bool FGFxTexture::InitDynamicTexture(int Width, int Height, GImageBase::ImageFormat Format,
+                                     int Mipmaps, unsigned int Usage)
+{
+    (void)Width; (void)Height; (void)Format; (void)Mipmaps; (void)Usage;
+    GFXUI_SEAM_TRACE("FGFxTexture::InitDynamicTexture");
+    return false;
+}
+
+void FGFxTexture::Update(int Level, int NumRects, const GTexture::UpdateRect* Rects,
+                         const GImageBase* Image)
+{
+    (void)Level; (void)NumRects; (void)Rects; (void)Image;
+    GFXUI_SEAM_TRACE("FGFxTexture::Update");
+}
+
+int FGFxTexture::Map(int Level, int NumRects, GTexture::MapRect* Maps, int Flags)
+{
+    (void)Level; (void)NumRects; (void)Maps; (void)Flags;
+    GFXUI_SEAM_TRACE("FGFxTexture::Map");
+    return 0;
+}
+
+bool FGFxTexture::Unmap(int Level, int NumRects, GTexture::MapRect* Maps, int Flags)
+{
+    (void)Level; (void)NumRects; (void)Maps; (void)Flags;
+    GFXUI_SEAM_TRACE("FGFxTexture::Unmap");
+    return false;
+}
+
+GRenderer* FGFxTexture::GetRenderer() const { return Renderer; }
+
+bool FGFxTexture::IsDataValid() const
+{
+    // 2012 0x5bf620: retail returns whether the engine texture is resident.
+    return Texture != 0;
+}
+
+void* FGFxTexture::GetUserData() const { return 0; }
+void FGFxTexture::SetUserData(void* Data) { (void)Data; }
+
+void FGFxTexture::AddChangeHandler(GTexture::ChangeHandler* Handler)
+{
+    (void)Handler;
+    GFXUI_SEAM_TRACE("FGFxTexture::AddChangeHandler");
+}
+
+void FGFxTexture::RemoveChangeHandler(GTexture::ChangeHandler* Handler)
+{
+    (void)Handler;
+    GFXUI_SEAM_TRACE("FGFxTexture::RemoveChangeHandler");
+}
+
+bool FGFxTexture::InitTexture(UTexture* InTexture, bool bAsRenderTarget)
+{
+    // 2013 0x580810: the path the stripped-bitmap substitution takes - the tag-1009 export name is
+    // resolved to a package Texture2D and handed here (agentBB.md).
+    (void)bAsRenderTarget;
+    Texture = InTexture;
+    GFXUI_SEAM_TRACE("FGFxTexture::InitTexture(UTexture*)");
+    return InTexture != 0;
+}
+
+bool FGFxTexture::InitTextureFromFile(const char* FileName)
+{
+    (void)FileName;
+    GFXUI_SEAM_TRACE("FGFxTexture::InitTextureFromFile");
+    return false;
+}
+
+int FGFxTexture::IsYUVTexture() const { return 0; }
+
+void FGFxTexture::Bind(int Stage, FGFxPixelShaderInterface& Shader,
+                       GRenderer::BitmapWrapMode WrapMode,
+                       GRenderer::BitmapSampleMode SampleMode, bool bUseMips) const
+{
+    (void)Stage; (void)Shader; (void)WrapMode; (void)SampleMode; (void)bUseMips;
+    GFXUI_SEAM_TRACE("FGFxTexture::Bind");
+}
+
+void FGFxTexture::InternalTermGCState() { GFXUI_SEAM_TRACE("FGFxTexture::InternalTermGCState"); }
+
+// ---------------------------------------------------------------------------------------------
+// FGFxRenderTarget
+// ---------------------------------------------------------------------------------------------
+FGFxRenderTarget::FGFxRenderTarget(GRenderer* InRenderer)
+    : Renderer(InRenderer), Resource(0), TargetWidth(0), TargetHeight(0), IsTemp(false)
+{
+    GFXUI_SEAM_TRACE("FGFxRenderTarget::FGFxRenderTarget");
+}
+
+FGFxRenderTarget::~FGFxRenderTarget() { GFXUI_SEAM_TRACE("FGFxRenderTarget::~FGFxRenderTarget"); }
+
+bool FGFxRenderTarget::InitRenderTarget(GTexture* Color, GTexture* DepthStencil, GTexture* Resolve)
+{
+    (void)Color; (void)DepthStencil; (void)Resolve;
+    GFXUI_SEAM_TRACE("FGFxRenderTarget::InitRenderTarget(GTexture*)");
+    return false;
+}
+
+GRenderer* FGFxRenderTarget::GetRenderer() const { return Renderer; }
+void* FGFxRenderTarget::GetUserData() const { return 0; }
+void FGFxRenderTarget::SetUserData(void* Data) { (void)Data; }
+
+void FGFxRenderTarget::AddChangeHandler(GTexture::ChangeHandler* Handler) { (void)Handler; }
+void FGFxRenderTarget::RemoveChangeHandler(GTexture::ChangeHandler* Handler) { (void)Handler; }
+
+bool FGFxRenderTarget::InitRenderTarget(const FGFxRenderTargetResource& Native)
+{
+    (void)Native;
+    GFXUI_SEAM_TRACE("FGFxRenderTarget::InitRenderTarget(Native)");
+    return false;
+}
+
+bool FGFxRenderTarget::InitRenderTarget_RenderThread(GTexture* Color,
+                                                     FGFxRenderResources* Stencil,
+                                                     unsigned int Width, unsigned int Height)
+{
+    (void)Color; (void)Stencil;
+    TargetWidth = Width;
+    TargetHeight = Height;
+    GFXUI_SEAM_TRACE("FGFxRenderTarget::InitRenderTarget_RenderThread(GTexture*)");
+    return false;
+}
+
+bool FGFxRenderTarget::InitRenderTarget_RenderThread(const FGFxRenderTargetResource& Native)
+{
+    (void)Native;
+    GFXUI_SEAM_TRACE("FGFxRenderTarget::InitRenderTarget_RenderThread(Native)");
+    return false;
+}
+
+bool FGFxRenderTarget::AdjustBounds(float* Width, float* Height)
+{
+    // 2012 0x5b7cd0: clamp a requested temp-target size to the target this render target holds.
+    if (Width == 0 || Height == 0) return false;
+    if (TargetWidth == 0 || TargetHeight == 0) return false;
+    if (*Width > (float)TargetWidth) *Width = (float)TargetWidth;
+    if (*Height > (float)TargetHeight) *Height = (float)TargetHeight;
+    return true;
+}
+
+// ---------------------------------------------------------------------------------------------
+// FGFxRenderer - all 54 GRenderer slots.
+// ---------------------------------------------------------------------------------------------
+FGFxRenderer::FGFxRenderer()
+    : Viewport(0), RenderTarget(0), RenderMode(0), InverseGamma(1.0f),
+      UVPMatricesChanged(0), Is3DEnabled(0), CurRenderTarget(0), CurRenderTargetSet(0),
+      BlendMode(GRenderer::Blend_None), bAlphaComposite(0), MaxTempRTSize(0), StencilCounter(0)
+{
+    memset(&RenderStats, 0, sizeof(RenderStats));
+    GFXUI_SEAM_TRACE("FGFxRenderer::FGFxRenderer");
+}
+
+FGFxRenderer::~FGFxRenderer() { GFXUI_SEAM_TRACE("FGFxRenderer::~FGFxRenderer"); }
+
+void FGFxRenderer::ScopedEventCallback(const char* Name)
+{
+    (void)Name;
+    GFXUI_SEAM_TRACE("FGFxRenderer::ScopedEventCallback");
+}
+
+void FGFxRenderer::SaveCurrentRenderTargetContents()
+{
+    GFXUI_SEAM_TRACE("FGFxRenderer::SaveCurrentRenderTargetContents");
+}
+
+void FGFxRenderer::RestoreCurrentRenderTargetContents()
+{
+    GFXUI_SEAM_TRACE("FGFxRenderer::RestoreCurrentRenderTargetContents");
+}
+
+bool FGFxRenderer::GetRenderCaps(GRenderer::RenderCaps* Caps)
+{
+    // 2013 0x572e00. The values retail reports for the D3D9 RHI: every vertex and index format the
+    // player uses, every blend mode, and a 2048 maximum texture size. Reported for real because the
+    // runtime branches on them before it ever calls a drawing slot.
+    GFXUI_SEAM_TRACE("FGFxRenderer::GetRenderCaps");
+    if (Caps == 0) return false;
+    Caps->CapBits = GRenderer::Cap_Index16 | GRenderer::Cap_FillGouraud
+                  | GRenderer::Cap_FillGouraudTex | GRenderer::Cap_CxformAdd
+                  | GRenderer::Cap_NestedMasks | GRenderer::Cap_RenderTargets;
+    Caps->VertexFormats = GRenderer::Vertex_XY16i | GRenderer::Vertex_XY32f
+                        | GRenderer::Vertex_XY16iC32 | GRenderer::Vertex_XY16iCF32;
+    Caps->BlendModes = 0xFFFFFFFFu;
+    Caps->MaxTextureSize = 2048;
+    return true;
+}
+
+FGFxTexture* FGFxRenderer::CreateTexture()
+{
+    GFXUI_SEAM_TRACE("FGFxRenderer::CreateTexture");
+    return new FGFxTexture(this);
+}
+
+FGFxTexture* FGFxRenderer::CreateTextureYUV()
+{
+    GFXUI_SEAM_TRACE("FGFxRenderer::CreateTextureYUV");
+    return 0;
+}
+
+void FGFxRenderer::BeginFrame() { GFXUI_SEAM_TRACE("FGFxRenderer::BeginFrame"); }
+void FGFxRenderer::EndFrame() { GFXUI_SEAM_TRACE("FGFxRenderer::EndFrame"); }
+
+FGFxRenderTarget* FGFxRenderer::CreateRenderTarget()
+{
+    GFXUI_SEAM_TRACE("FGFxRenderer::CreateRenderTarget");
+    return new FGFxRenderTarget(this);
+}
+
+void FGFxRenderer::SetDisplayRenderTarget(GRenderTarget* Target, bool bSetState)
+{
+    (void)bSetState;
+    CurRenderTarget = (FGFxRenderTarget*)Target;
+    CurRenderTargetSet = Target != 0;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetDisplayRenderTarget");
+}
+
+void FGFxRenderer::PushRenderTarget(const GRect<float>& FrameRect, GRenderTarget* Target)
+{
+    (void)FrameRect; (void)Target;
+    GFXUI_SEAM_TRACE("FGFxRenderer::PushRenderTarget");
+}
+
+void FGFxRenderer::PopRenderTarget() { GFXUI_SEAM_TRACE("FGFxRenderer::PopRenderTarget"); }
+
+FGFxTexture* FGFxRenderer::PushTempRenderTarget(const GRect<float>& FrameRect, unsigned int Width,
+                                                unsigned int Height, bool bWantStencil)
+{
+    (void)FrameRect; (void)Width; (void)Height; (void)bWantStencil;
+    GFXUI_SEAM_TRACE("FGFxRenderer::PushTempRenderTarget");
+    return 0;
+}
+
+void FGFxRenderer::ReleaseTempRenderTargets(unsigned int KeepArea)
+{
+    (void)KeepArea;
+    GFXUI_SEAM_TRACE("FGFxRenderer::ReleaseTempRenderTargets");
+}
+
+void FGFxRenderer::BeginDisplay(GColor BackgroundColor, const GViewport& InViewport,
+                                float x0, float x1, float y0, float y1)
+{
+    // 2013 0x59dd90. The viewport matrix is the one piece of BeginDisplay that is pure arithmetic
+    // and that the player reads back through SetMatrix, so it is computed for real.
+    (void)BackgroundColor;
+    GFXUI_SEAM_TRACE("FGFxRenderer::BeginDisplay");
+    const float dx = (x1 - x0) != 0.0f ? (x1 - x0) : 1.0f;
+    const float dy = (y1 - y0) != 0.0f ? (y1 - y0) : 1.0f;
+    ViewportMatrix.SetIdentity();
+    ViewportMatrix.M_[0][0] = 2.0f / dx;
+    ViewportMatrix.M_[1][1] = -2.0f / dy;
+    ViewportMatrix.M_[0][2] = -1.0f - ViewportMatrix.M_[0][0] * x0;
+    ViewportMatrix.M_[1][2] = 1.0f - ViewportMatrix.M_[1][1] * y0;
+    CurrentMatrix = ViewportMatrix;
+    RenderMode = InViewport.Flags;
+}
+
+void FGFxRenderer::EndDisplay() { GFXUI_SEAM_TRACE("FGFxRenderer::EndDisplay"); }
+
+void FGFxRenderer::SetMatrix(const GMatrix2D& Matrix)
+{
+    CurrentMatrix = Matrix;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetMatrix");
+}
+
+void FGFxRenderer::SetUserMatrix(const GMatrix2D& Matrix)
+{
+    UserMatrix = Matrix;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetUserMatrix");
+}
+
+void FGFxRenderer::SetCxform(const GRenderer::Cxform& Cx)
+{
+    CurrentCxform = Cx;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetCxform");
+}
+
+void FGFxRenderer::PushBlendMode(GRenderer::BlendType Mode)
+{
+    BlendMode = Mode;
+    GFXUI_SEAM_TRACE("FGFxRenderer::PushBlendMode");
+}
+
+void FGFxRenderer::PopBlendMode() { GFXUI_SEAM_TRACE("FGFxRenderer::PopBlendMode"); }
+
+bool FGFxRenderer::PushUserData(GRenderer::UserData* Data)
+{
+    (void)Data;
+    GFXUI_SEAM_TRACE("FGFxRenderer::PushUserData");
+    return false;
+}
+
+void FGFxRenderer::PopUserData() { GFXUI_SEAM_TRACE("FGFxRenderer::PopUserData"); }
+
+void FGFxRenderer::SetPerspective3D(const GMatrix3D& Persp)
+{
+    ProjMatrix = Persp;
+    UVPMatricesChanged = 1;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetPerspective3D");
+}
+
+void FGFxRenderer::SetView3D(const GMatrix3D& View)
+{
+    ViewMatrix = View;
+    UVPMatricesChanged = 1;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetView3D");
+}
+
+void FGFxRenderer::SetWorld3D(const GMatrix3D* World)
+{
+    if (World) { WorldMatrix = *World; Is3DEnabled = 1; }
+    else { WorldMatrix.SetIdentity(); Is3DEnabled = 0; }
+    UVPMatricesChanged = 1;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetWorld3D");
+}
+
+void FGFxRenderer::MakeViewAndPersp3D(const GRect<float>& FrameRect, GMatrix3D& View,
+                                      GMatrix3D& Persp, float FovY, bool bInvertY)
+{
+    (void)FrameRect; (void)FovY; (void)bInvertY;
+    View.SetIdentity();
+    Persp.SetIdentity();
+    GFXUI_SEAM_TRACE("FGFxRenderer::MakeViewAndPersp3D");
+}
+
+void FGFxRenderer::SetStereoParams(GRenderer::StereoParams Params)
+{
+    S3DParams = Params;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetStereoParams");
+}
+
+void FGFxRenderer::SetStereoDisplay(GRenderer::StereoDisplay Display, bool bSet)
+{
+    (void)bSet;
+    S3DDisplay = Display;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetStereoDisplay");
+}
+
+void FGFxRenderer::SetVertexData(const void* Vertices, int NumVertices,
+                                 GRenderer::VertexFormat Format, GRenderer::CacheProvider* Cache)
+{
+    (void)Vertices; (void)NumVertices; (void)Format; (void)Cache;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetVertexData");
+}
+
+void FGFxRenderer::SetIndexData(const void* Indices, int NumIndices,
+                                GRenderer::IndexFormat Format, GRenderer::CacheProvider* Cache)
+{
+    (void)Indices; (void)NumIndices; (void)Format; (void)Cache;
+    GFXUI_SEAM_TRACE("FGFxRenderer::SetIndexData");
+}
+
+void FGFxRenderer::ReleaseCachedData(GRenderer::CachedData* Data, GRenderer::CachedDataType Type)
+{
+    (void)Data; (void)Type;
+    GFXUI_SEAM_TRACE("FGFxRenderer::ReleaseCachedData");
+}
+
+void FGFxRenderer::DrawIndexedTriList(int BaseVertexIndex, int MinVertexIndex, int NumVertices,
+                                      int StartIndex, int TriangleCount)
+{
+    (void)BaseVertexIndex; (void)MinVertexIndex; (void)NumVertices; (void)StartIndex;
+    RenderStats.Triangles += (unsigned int)(TriangleCount > 0 ? TriangleCount : 0);
+    ++RenderStats.Primitives;
+    GFXUI_SEAM_TRACE("FGFxRenderer::DrawIndexedTriList");
+}
+
+void FGFxRenderer::DrawLineStrip(int BaseVertexIndex, int LineCount)
+{
+    (void)BaseVertexIndex;
+    RenderStats.Lines += (unsigned int)(LineCount > 0 ? LineCount : 0);
+    ++RenderStats.Primitives;
+    GFXUI_SEAM_TRACE("FGFxRenderer::DrawLineStrip");
+}
+
+void FGFxRenderer::LineStyleDisable() { GFXUI_SEAM_TRACE("FGFxRenderer::LineStyleDisable"); }
+
+void FGFxRenderer::LineStyleColor(GColor Color)
+{
+    (void)Color;
+    GFXUI_SEAM_TRACE("FGFxRenderer::LineStyleColor");
+}
+
+void FGFxRenderer::FillStyleDisable() { GFXUI_SEAM_TRACE("FGFxRenderer::FillStyleDisable"); }
+
+void FGFxRenderer::FillStyleColor(GColor Color)
+{
+    (void)Color;
+    GFXUI_SEAM_TRACE("FGFxRenderer::FillStyleColor");
+}
+
+void FGFxRenderer::FillStyleBitmap(const GRenderer::FillTexture* Fill)
+{
+    FGFxRendererImpl::FFillTextureInfo Info;
+    if (Fill) FGFxRendererImpl::ConvertFromUI(*Fill, Info);
+    GFXUI_SEAM_TRACE("FGFxRenderer::FillStyleBitmap");
+}
+
+void FGFxRenderer::FillStyleGouraud(GRenderer::GouraudFillType Type,
+                                    const GRenderer::FillTexture* T0,
+                                    const GRenderer::FillTexture* T1,
+                                    const GRenderer::FillTexture* T2)
+{
+    (void)Type; (void)T0; (void)T1; (void)T2;
+    GFXUI_SEAM_TRACE("FGFxRenderer::FillStyleGouraud");
+}
+
+void FGFxRenderer::DrawBitmaps(GRenderer::BitmapDesc* Bitmaps, int ListSize, int StartIndex,
+                               int Count, const GTexture* InTexture, const GMatrix2D& Matrix,
+                               GRenderer::CacheProvider* Cache)
+{
+    (void)Bitmaps; (void)ListSize; (void)StartIndex; (void)InTexture; (void)Matrix; (void)Cache;
+    RenderStats.Primitives += (unsigned int)(Count > 0 ? Count : 0);
+    GFXUI_SEAM_TRACE("FGFxRenderer::DrawBitmaps");
+}
+
+void FGFxRenderer::DrawDistanceFieldBitmaps(GRenderer::BitmapDesc* Bitmaps, int ListSize,
+                                            int StartIndex, int Count, const GTexture* InTexture,
+                                            const GMatrix2D& Matrix,
+                                            const GRenderer::DistanceFieldParams& Params,
+                                            GRenderer::CacheProvider* Cache)
+{
+    (void)Bitmaps; (void)ListSize; (void)StartIndex; (void)InTexture; (void)Matrix; (void)Params;
+    (void)Cache;
+    RenderStats.Primitives += (unsigned int)(Count > 0 ? Count : 0);
+    GFXUI_SEAM_TRACE("FGFxRenderer::DrawDistanceFieldBitmaps");
+}
+
+void FGFxRenderer::BeginSubmitMask(GRenderer::SubmitMaskMode Mode)
+{
+    (void)Mode;
+    ++RenderStats.Masks;
+    GFXUI_SEAM_TRACE("FGFxRenderer::BeginSubmitMask");
+}
+
+void FGFxRenderer::EndSubmitMask() { GFXUI_SEAM_TRACE("FGFxRenderer::EndSubmitMask"); }
+void FGFxRenderer::DisableMask() { GFXUI_SEAM_TRACE("FGFxRenderer::DisableMask"); }
+
+unsigned int FGFxRenderer::CheckFilterSupport(const GRenderer::BlurFilterParams& Params)
+{
+    // 2012 0x5b7eb0: retail reports which filter passes the RHI can do. Nothing is supported until
+    // the filter shaders are ported (package BD), and the runtime falls back to no filter.
+    (void)Params;
+    GFXUI_SEAM_TRACE("FGFxRenderer::CheckFilterSupport");
+    return 0;
+}
+
+void FGFxRenderer::DrawBlurRect(GTexture* Source, const GRect<float>& Dest,
+                                const GRect<float>& Src, const GRenderer::BlurFilterParams& Params,
+                                bool bOnStack)
+{
+    (void)Source; (void)Dest; (void)Src; (void)Params; (void)bOnStack;
+    ++RenderStats.Filters;
+    GFXUI_SEAM_TRACE("FGFxRenderer::DrawBlurRect");
+}
+
+void FGFxRenderer::DrawColorMatrixRect(GTexture* Source, const GRect<float>& Dest,
+                                       const GRect<float>& Src, const float* Matrix, bool bOnStack)
+{
+    (void)Source; (void)Dest; (void)Src; (void)Matrix; (void)bOnStack;
+    ++RenderStats.Filters;
+    GFXUI_SEAM_TRACE("FGFxRenderer::DrawColorMatrixRect");
+}
+
+void FGFxRenderer::GetRenderStats(GRenderer::Stats* Stats, bool bReset)
+{
+    // 2012 0x5b7c90.
+    if (Stats) *Stats = RenderStats;
+    if (bReset) memset(&RenderStats, 0, sizeof(RenderStats));
+    GFXUI_SEAM_TRACE("FGFxRenderer::GetRenderStats");
+}
+
+void FGFxRenderer::GetStats(GStatBag* Bag, bool bReset)
+{
+    (void)Bag; (void)bReset;
+    GFXUI_SEAM_TRACE("FGFxRenderer::GetStats");
+}
+
+void FGFxRenderer::ReleaseResources()
+{
+    CurRenderTarget = 0;
+    CurRenderTargetSet = 0;
+    GFXUI_SEAM_TRACE("FGFxRenderer::ReleaseResources");
+}
+
+bool FGFxRenderer::AddEventHandler(GRendererEventHandler* Handler)
+{
+    (void)Handler;
+    GFXUI_SEAM_TRACE("FGFxRenderer::AddEventHandler");
+    return false;
+}
+
+void FGFxRenderer::RemoveEventHandler(GRendererEventHandler* Handler)
+{
+    (void)Handler;
+    GFXUI_SEAM_TRACE("FGFxRenderer::RemoveEventHandler");
+}

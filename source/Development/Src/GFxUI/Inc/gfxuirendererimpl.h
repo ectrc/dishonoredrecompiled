@@ -34,3 +34,90 @@
 //   0x5d5cf0  public: virtual void __thiscall FGFxUpdatableTexture::InitRHI(void)
 //   0x5d5e60  public: virtual void __thiscall FGFxUpdatableTexture::ReleaseRHI(void)
 //   0x5d5f50  public: virtual class FTextureResource * __thiscall UGFxUpdatableTexture::CreateResource(void)
+
+// ---------------------------------------------------------------------------------------------
+// DISHONORED(port): FGFxRendererImpl is the render-thread half of the seam. In retail it is a
+// namespace-like class holding the element stores the renderer hands to the RHI plus two
+// conversion helpers; 31 PDB functions are attributed to this header and 221 to gfxuirenderer.cpp
+// (the list above), almost all of them the FGFxPixelShader<N> / FGFxVertexShader<N> instantiations
+// that belong with package BD's shader work, not with the seam.
+//
+// What package BB reproduces here is the element-store contract, because that is the part
+// GRenderer's SetVertexData / SetIndexData / DrawBitmaps slots need in order to be callable at all:
+//   FGFxRendererImpl::FGFxRenderElementStoreBase   PDB sizeof 32, base GRendererNode, members
+//     @8 GAtomicInt<unsigned long> RefCount, @12 GRenderer::CachedData* CachedData,
+//     @16 ULONG ElementSize, @20 ULONG NumElements, @24 void* Elements, @28 bool AllocatedElements
+//   FGFxRendererImpl::FGFxVertexStore / FGFxIndexStore / FGFxBitmapDescStore   sizeof 36 each
+// 2012 rva of the one conversion helper that is pure logic: FGFxRendererImpl::ConvertFromUI
+// 0x5b7710 -> 2013 0x572c30 (byte-identical, ratio 1.000).
+#include "gfxuirenderer.h"
+
+class FGFxRendererImpl
+{
+public:
+    // The store GRenderer's vertex/index/bitmap-descriptor slots write into. Layout is the PDB's.
+    class FGFxRenderElementStoreBase : public GRendererNode
+    {
+    public:
+        GAtomicInt<unsigned long> RefCount;          // @8
+        GRenderer::CachedData*    CachedData;        // @12
+        unsigned long             ElementSize;       // @16
+        unsigned long             NumElements;       // @20
+        void*                     Elements;          // @24
+        bool                      AllocatedElements; // @28
+
+        FGFxRenderElementStoreBase()
+            : CachedData(0), ElementSize(0), NumElements(0), Elements(0),
+              AllocatedElements(false) {}
+
+        void AddRef() { ++RefCount; }
+        void Release() { if (--RefCount == 0) delete this; }
+        void SetElements(void* InElements, unsigned long InCount, unsigned long InSize)
+        {
+            Elements = InElements;
+            NumElements = InCount;
+            ElementSize = InSize;
+            AllocatedElements = false;
+        }
+    };
+
+    // The three instantiations retail uses, one per element kind (PDB sizeof 36 each: the base plus
+    // the format the store was filled with).
+    class FGFxVertexStore : public FGFxRenderElementStoreBase
+    {
+    public:
+        GRenderer::VertexFormat Format;
+        FGFxVertexStore() : Format(GRenderer::Vertex_None) {}
+    };
+    class FGFxIndexStore : public FGFxRenderElementStoreBase
+    {
+    public:
+        GRenderer::IndexFormat Format;
+        FGFxIndexStore() : Format(GRenderer::Index_None) {}
+    };
+    class FGFxBitmapDescStore : public FGFxRenderElementStoreBase
+    {
+    public:
+        GRenderer::BitmapDesc* Descs;
+        FGFxBitmapDescStore() : Descs(0) {}
+    };
+
+    // PDB sizeof 40: the render-thread copy of a GRenderer::FillTexture.
+    class FFillTextureInfo
+    {
+    public:
+        FTexture*                   Texture;       // @0
+        GMatrix2D                   TextureMatrix; // @4
+        GRenderer::BitmapWrapMode   WrapMode;      // @28
+        GRenderer::BitmapSampleMode SampleMode;    // @32
+        unsigned int                bUseMips;      // @36
+
+        FFillTextureInfo()
+            : Texture(0), WrapMode(GRenderer::Wrap_Repeat), SampleMode(GRenderer::Sample_Linear),
+              bUseMips(0) {}
+    };
+
+    // 2013 0x572c30: flatten a GRenderer::FillTexture into the render-thread copy. Pure logic, so
+    // this is a real port rather than a bringup stub - the only body in the seam that is.
+    static void ConvertFromUI(const GRenderer::FillTexture& In, FFillTextureInfo& Out);
+};

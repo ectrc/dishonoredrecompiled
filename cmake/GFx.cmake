@@ -1,0 +1,79 @@
+# Scaleform GFx 3.3.89 (Autodesk/Scaleform). Retail statically links the whole runtime: there is no
+# GFx DLL anywhere, not one of the 33 DLLs in Binaries\Win32 contains a single GFx symbol, and
+# libgfx + libgfx_ime are 5,635 functions and 1.13 MiB inside Dishonored.exe's own .text - 9.7 % of
+# it (resources/docs/gfx_decision.md 1). So route 1 of the PhysX/Steamworks method does not apply:
+# there is nothing to import and no import library to build.
+#
+# What this file builds instead is our own reconstruction of the API, read out of the 2012 Shipping
+# PDB with resources/tools/pdb/dia_types.py the same way cmake/PhysX.cmake's headers were read out
+# of PhysXCore.pdb. 5,235 of the 5,635 libgfx functions (92.9 %) are byte-identical between the 2012
+# QA build, which has a PDB, and the retail 2013 build, so the 2012 layouts ARE the retail layouts.
+# resources/docs/agents/agentBB.md.
+#
+# With DISHONORED_WITH_GFX3=ON:
+#   * source/Development/Src/External/GFx3 builds as the static library `gfx3`, whose single
+#     assertion translation unit (GFx3Layout.cpp) carries 171 sizeof and 380 offsetof checks against
+#     the PDB - if it compiles, the reconstruction agrees with the PDB byte for byte;
+#   * dishonored_apply_defines() sets DISHONORED_WITH_GFX3=1 on every target and links
+#     Dishonored::gfx3, which also carries the header directory. Every module gets it for the same
+#     reason Bink and PhysX do: GFxUI and DishonoredGame both name these types;
+#   * the four GFxUI seam units (gfxuirenderer.cpp, gfxuifile.cpp, gfxuiimageinfo.cpp,
+#     gfxuiallocator.cpp) come out of GFxUI's exclude list, so GRenderer's 54 slots, GTexture's 12,
+#     GRenderTarget's 7, GFxFileOpener's 4 and GFile's 19 are all implemented in the build.
+#
+# There is no runtime yet: package BC is porting the ActionScript machine and the player core onto
+# these headers, and GFx3RuntimeStubs.cpp holds a bringup body for each of the 57 non-pure virtuals
+# libgfx implements and we do not. Nothing in the game instantiates any of it, which is why turning
+# this on cannot change how the game runs.
+#
+# GFx3Dump is the acceptance harness and is EXCLUDE_FROM_ALL - build it by name:
+#   cmake --build <dir> --target GFx3Dump
+#   <dir>/Binaries/Win32/GFx3Dump.exe --slots
+#   <dir>/Binaries/Win32/GFx3Dump.exe --parse --verbose <payload>.gfx
+# Payloads come out of the cooked *_SF.upk packages with build/agentBB/extract_gfx.py.
+
+set(DISHONORED_GFX3_DIR "${CMAKE_SOURCE_DIR}/source/Development/Src/External/GFx3")
+if(EXISTS "${DISHONORED_GFX3_DIR}/GFx3.h")
+  set(_dishonored_gfx3_default ON)
+else()
+  set(_dishonored_gfx3_default OFF)
+endif()
+option(DISHONORED_WITH_GFX3 "Compile the reconstructed Scaleform GFx 3.3 API and the GFxUI renderer/file/image seam" ${_dishonored_gfx3_default})
+
+if(DISHONORED_WITH_GFX3)
+  add_library(gfx3 STATIC
+    "${DISHONORED_GFX3_DIR}/GFx3Layout.cpp"
+    "${DISHONORED_GFX3_DIR}/GFx3Support.cpp"
+    "${DISHONORED_GFX3_DIR}/GFx3RuntimeStubs.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxGfxFile.cpp")
+  target_include_directories(gfx3 PUBLIC "${DISHONORED_GFX3_DIR}")
+  target_compile_definitions(gfx3 PRIVATE _CRT_SECURE_NO_WARNINGS)
+  # UE3's 4-byte packing, the same option every module gets. The GFx headers push pack(8) of their
+  # own, because GFx itself was not built with /Zp4: GFxValue::DisplayInfo puts `bool Visible` at @48
+  # and the next `double Z` at @56, i.e. 8-byte alignment, and the struct is 232 bytes.
+  target_compile_options(gfx3 PRIVATE /Zp4)
+  set_target_properties(gfx3 PROPERTIES FOLDER "External")
+
+  add_library(Dishonored::gfx3 INTERFACE IMPORTED)
+  target_link_libraries(Dishonored::gfx3 INTERFACE gfx3)
+
+  # The acceptance harness: parses a cooked movie payload through our container parser and calls
+  # every slot of the seam through a base-class pointer. It links the seam units directly rather
+  # than the GFxUI module, which is the point - the seam needs no engine.
+  set(_gfx3_seam_dir "${CMAKE_SOURCE_DIR}/source/Development/Src/GFxUI")
+  add_executable(GFx3Dump EXCLUDE_FROM_ALL
+    "${DISHONORED_GFX3_DIR}/Tools/GFx3Dump.cpp"
+    "${_gfx3_seam_dir}/Src/gfxuirenderer.cpp"
+    "${_gfx3_seam_dir}/Src/gfxuifile.cpp"
+    "${_gfx3_seam_dir}/Src/gfxuiimageinfo.cpp"
+    "${_gfx3_seam_dir}/Src/gfxuiallocator.cpp")
+  target_include_directories(GFx3Dump PRIVATE "${_gfx3_seam_dir}/Inc")
+  target_compile_definitions(GFx3Dump PRIVATE _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(GFx3Dump PRIVATE /Zp4)
+  target_link_libraries(GFx3Dump PRIVATE gfx3)
+  set_target_properties(GFx3Dump PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
+    FOLDER "External")
+
+  message(STATUS "GFx: DISHONORED_WITH_GFX3=1, reconstructed GFx 3.3.89 API + the GFxUI seam")
+endif()

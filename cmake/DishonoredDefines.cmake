@@ -143,6 +143,16 @@ function(dishonored_apply_defines target)
   else()
     target_compile_definitions(${target} PRIVATE WITH_NOVODEX=0 WITH_PHYSX_COOKING=1)
   endif()
+  # Scaleform GFx 3.3 (cmake/GFx.cmake). DISHONORED_WITH_GFX3 goes on every target because GFxUI and
+  # DishonoredGame both name GFxValue/GFxMovieView/GRenderer, and the header directory comes with the
+  # target. It changes no engine layout and nothing instantiates the runtime yet, so a build with it
+  # on runs exactly as a build with it off (resources/docs/agents/agentBB.md).
+  if(DISHONORED_WITH_GFX3)
+    target_compile_definitions(${target} PRIVATE DISHONORED_WITH_GFX3=1)
+    target_link_libraries(${target} PUBLIC Dishonored::gfx3)
+  else()
+    target_compile_definitions(${target} PRIVATE DISHONORED_WITH_GFX3=0)
+  endif()
   # WITH_STEAMWORKS (above) changes FUniqueNetId's conversion guards in EngineClasses.h, so the switch
   # must be identical in every module; the import library and the header directory come with the target.
   if(DISHONORED_WITH_STEAMWORKS)
