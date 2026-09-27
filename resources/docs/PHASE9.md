@@ -165,6 +165,49 @@ Files: the DishonoredGame AI units, `DishonoredGameNativeStubs.ported.agentCG.tx
 | CF | CF | The save system | done | 2026-09-27 | commit d40e26c: all 51 real retail saves load and round-trip. BUILT_FROM_CHANGELIST was 334700, so every retail save was rejected by construction; it is 1274963 now |
 | CG | | The AI brain root | todo | | |
 
+## Wave result (coordinator, 2026-09-27)
+
+Seven packages merged: CA `c403e2f`, CB `54b57d4` and `4bb6772`, CF `d40e26c`, CD `683fa03`, CC `2da00d8`,
+CE `dec3fd4`, plus `8e61755` (a wave-6 measurement correction) and `42e9cbe` (the Cxform bridge).
+**Verified on a clean checkout of HEAD, not on the working tree: 642 of 642 targets build and link, and the
+regression harness gives 31 ok, 0 failed** (22 in the play stages, 9 in the verification stages) - 20,130
+d3d9 frames, 1,196 draws per frame, 6,506 draw elements, 457 visible primitives, the pawn walking 1,024.6 at
+peak speed 500.5, 895 PhysX actors, 2,314 layout types with 0 mismatching, CoreSmoke 99 of 99, and 0 critical
+errors in all three play stages.
+
+What this wave delivered:
+
+| | |
+|---|---|
+| the interface runtime | **complete and verified, and it draws the game's own art.** CC renders a 1280x720 first frame of `UI_Global.Global` with 40 of its 41 cooked bitmaps; CB rasterises 2,481 glyphs from the game's own fonts; CD makes every tag load and every import bind; all 22 cooked movies parse with 0 placeholders. It is deliberately not wired in: `DISHONORED_GFXUI_GFX3_RUNTIME` only flips in the commit that lets GFxUI call the runtime, which is wave 8 |
+| the real look | CE's post-process graph changes **99.2 % of pixels** against a 0.09 % noise floor - and found that the game's colour treatment is the depth-of-field node's LUT uber pass, not a material node, which redirects the next package |
+| milestone 6 | all 51 real retail saves load and round-trip. One number did it: `BUILT_FROM_CHANGELIST` was 334700 against retail's 1274963 |
+
+**Three findings that reach past their own packages.**
+
+1. **A file-scope `static UBOOL G... = ParseParam(appCmdLine(), ...)` in a static library is always FALSE**,
+   because static initialisers run before `WinMain` sets `GCmdLine`. Three bring-up switches had been dead
+   since they were written, and one of them had corrupted a published measurement: the wave-6 fog figure was
+   **8.4 % of pixels, not 37 %**. Agent CA found it by checking the switch rather than the renderer.
+2. **A generated header inherits its producer's spelling.** DIA reports array extents innermost-first, so
+   `GRenderer::Cxform` reached the tree transposed, and the ActionScript machine and the renderer disagreed
+   about all four colour channels inside the same 32 bytes - a movie's `_alpha` landed in green's add term.
+   Size and offset assertions cannot see this; only a second source for the declaration can.
+3. **Decompile the caller to find out which retail function you are actually porting.** CB's follow-up was
+   sent to fix three defects CD had reported in its code. Two were real, one was not - and both packages had
+   been auditing against `GFxFillStyle::Read` when the function in play was `GFx_ReadFillStyles` (`0xa429c0`).
+   The helpers were not a port with errors in them; they were an invention of a wire format retail does not
+   read on that path. Deleting them was then **checked rather than argued**: both record walks run over the
+   identical byte range of every glyph in the cook, 2,423 compared, 2,423 agreeing.
+
+**One process failure of mine, and it is the wave-6 failure wearing new clothes.** Merging CE, I staged
+`EngineArkaneClasses.h` because it sat in the same module - but every line of its diff belonged to agent CG,
+which was still running, and the two headers it began including are still stubs at HEAD. HEAD did not
+compile. In wave 6 I committed a *subset* of a generator's output; here I committed a *superset* of a
+package's files. The first merge-gate run did not catch it, because it measured the working tree and so
+blamed CG's own unfinished files. Backed out in `aedbdaa`. **The rule that catches both shapes: verify on a
+clean checkout of the commit, never on the working tree.** That is how this wave's result was measured.
+
 ## Rules for agents
 
 As `PHASE8.md`, and one addition from the user: **assume the best case for a 1:1 recreation**. Prefer the
