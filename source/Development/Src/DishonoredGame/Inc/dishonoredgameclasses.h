@@ -1831,6 +1831,7 @@ public:
     DECLARE_FUNCTION(execDisplayDebug_Native);
     DECLARE_CLASS(ADishonoredNPCPawn,ADisPossessablePawn,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("NPC");}
+#include "CppText/ADishonoredNPCPawn.h"
 };
 
 // DishonoredGame.DisExplosion: retail sizeof 624, reflected span 584..612 (2012 PDB sizeof 624)
@@ -11678,6 +11679,7 @@ public:
 
     DECLARE_CLASS(UDisTweaks_Attributes,UDisTweaksBase,0,DishonoredGame)
     DECLARE_WITHIN(UDisTweaksBase)
+#include "CppText/UDisTweaks_Attributes.h"
 };
 
 // DishonoredGame.DisTweaks_Pawn_Attributes: retail sizeof 1228, reflected span 140..1228 (2012 PDB sizeof 1228)

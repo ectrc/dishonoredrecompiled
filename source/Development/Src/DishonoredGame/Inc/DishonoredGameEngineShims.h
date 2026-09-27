@@ -9727,7 +9727,6 @@ class ADisEmitterCameraLensEffect_Looping;
 class ADisExplosion;
 class ADisFish;
 class ADisFleePointActor;
-class ADisFog;
 class ADisForbiddenZone;
 class ADisGadget_SpringRazorPlaced;
 class ADisGameCrowdAgentSkeletalRat;
@@ -10522,8 +10521,6 @@ class UDisFireProjectileInterface;
 class UDisFleeComponent;
 class UDisFleeConstraint;
 class UDisFleePointManager;
-class UDisFogComponent;
-class UDisFogDisplayComponent;
 class UDisGFxActionOpenMovie;
 class UDisGFxMoviePlayerBase;
 class UDisGFxMoviePlayerGamma;
@@ -11696,44 +11693,6 @@ class FDisDialogSelNotify
 {
 protected:
     virtual ~FDisDialogSelNotify() {}
-};
-
-struct DisFog_eventReplicatedEvent_Parms
-{
-    FName VarName;
-    DisFog_eventReplicatedEvent_Parms(EEventParm)
-    {
-    }
-};
-struct DisFog_eventPostBeginPlay_Parms
-{
-    DisFog_eventPostBeginPlay_Parms(EEventParm)
-    {
-    }
-};
-// Engine.DisFog: retail sizeof 608, reflected span 584..596 (new in 2013) [shim: Engine package]
-class ADisFog : public AInfo
-{
-public:
-    //## BEGIN PROPS DisFog
-    class UDisFogComponent* Component;
-    BITFIELD ShowRulerOnlyWhenSelected:1;
-    BITFIELD bEnabled:1;
-    class UDisFogDisplayComponent* mDisplay;
-    //## END PROPS DisFog
-
-    void eventReplicatedEvent(FName VarName)
-    {
-        DisFog_eventReplicatedEvent_Parms Parms(EC_EventParm);
-        Parms.VarName=VarName;
-        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_ReplicatedEvent),&Parms);
-    }
-    void eventPostBeginPlay()
-    {
-        DisFog_eventPostBeginPlay_Parms Parms(EC_EventParm);
-        ProcessEvent(FindFunctionChecked(DISHONOREDGAME_PostBeginPlay),&Parms);
-    }
-    DECLARE_CLASS(ADisFog,AInfo,0,Engine)
 };
 
 // GameFramework.GameCrowdSpawner.GameCrowdSpawnerSettings: retail SDK size 44 (2012 PDB 44) [shim: GameFramework package]
@@ -13432,50 +13391,6 @@ public:
     DECLARE_ABSTRACT_CLASS(UDisEngineTweaksBase,UObject,0,Engine)
 };
 
-// Engine.DisFogComponent: retail sizeof 156, reflected span 81..156 (2012 PDB sizeof 156) [shim: Engine package]
-class UDisFogComponent : public UActorComponent
-{
-public:
-    //## BEGIN PROPS DisFogComponent
-    BITFIELD bEnabled:1;
-    BITFIELD bCustomTransition:1;
-    BITFIELD bIsSun:1;
-    BITFIELD bInteriorFog:1;
-    BITFIELD bUseExponentialAttenuation:1;
-    BITFIELD m_IsExclusive:1;
-    BITFIELD m_UseWorldOrigin:1;
-    FLOAT fCustomTransitionHeight;
-    FLOAT SunPower;
-    FLOAT Opacity;
-    FColor LightColor;
-    FLOAT Height;
-    FLOAT Origin;
-    FLOAT NearPlane;
-    FLOAT FarPlane;
-    FLOAT NoFogPlane;
-    FLOAT HeightDensityFactor;
-    FLOAT FarPlaneForExponential;
-    FLOAT Density;
-    class UTexture2D* FogLUT;
-    TArrayNoInit<BYTE> m_RawLut;
-    FLOAT m_WorldOrigin;
-    //## END PROPS DisFogComponent
-
-    DECLARE_FUNCTION(execSetEnabled);
-    DECLARE_CLASS(UDisFogComponent,UActorComponent,0,Engine)
-};
-
-// Engine.DisFogDisplayComponent: retail sizeof 464, reflected span 452..456 (2012 PDB sizeof 464) [shim: Engine package]
-class UDisFogDisplayComponent : public UPrimitiveComponent
-{
-public:
-    //## BEGIN PROPS DisFogDisplayComponent
-    BITFIELD mShowRulerOnlyWhenSelected:1;
-    //## END PROPS DisFogDisplayComponent
-
-    DECLARE_CLASS(UDisFogDisplayComponent,UPrimitiveComponent,0,Engine)
-};
-
 // Engine.DisOnlineLeaderboards: retail sizeof 56, reflected span 56..56 (new in 2013) [shim: Engine package]
 class UDisOnlineLeaderboards : public UObject
 {
@@ -14648,7 +14563,6 @@ AUTOGENERATE_FUNCTION(APhysXEmitterSpawnable,-1,execTerm);
 AUTOGENERATE_FUNCTION(UArkAnimNodeBlendPose,-1,execSetActiveChild);
 AUTOGENERATE_FUNCTION(UArkAnimNodeLookAt,-1,execCheckAnimsUpToDate);
 AUTOGENERATE_FUNCTION(UArkProfileSettings,-1,execSetToDefaults);
-AUTOGENERATE_FUNCTION(UDisFogComponent,-1,execSetEnabled);
 AUTOGENERATE_FUNCTION(UUIDynamicFieldProvider,-1,execFindCollectionValueIndex);
 AUTOGENERATE_FUNCTION(UUIDynamicFieldProvider,-1,execGetCollectionValue);
 AUTOGENERATE_FUNCTION(UUIDynamicFieldProvider,-1,execClearCollectionValueArray);
@@ -14754,7 +14668,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	AArkDynamicPylon::StaticClass(); \
 	UDisEngineTweaksInterface::StaticClass(); \
 	ASpawner::StaticClass(); \
-	ADisFog::StaticClass(); \
 	AGenericPortal::StaticClass(); \
 	AInOutVolume::StaticClass(); \
 	ADynamicGameCrowdDestination::StaticClass(); \
@@ -14813,9 +14726,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UAudioPropagationInfo::StaticClass(); \
 	UDebugManager::StaticClass(); \
 	UDisEngineTweaksBase::StaticClass(); \
-	UDisFogComponent::StaticClass(); \
-	GNativeLookupFuncs.Set(FName("DisFogComponent"), GDishonoredGameUDisFogComponentNatives); \
-	UDisFogDisplayComponent::StaticClass(); \
 	UDisOnlineLeaderboards::StaticClass(); \
 	UGameCrowdSpawner::StaticClass(); \
 	UGameCrowd_ListOfAgents::StaticClass(); \
@@ -14899,12 +14809,6 @@ FNativeFunctionLookup GDishonoredGameUArkAnimNodeLookAtNatives[] =
 FNativeFunctionLookup GDishonoredGameUArkProfileSettingsNatives[] = 
 { 
 	MAP_NATIVE(UArkProfileSettings, execSetToDefaults)
-	{NULL, NULL}
-};
-
-FNativeFunctionLookup GDishonoredGameUDisFogComponentNatives[] = 
-{ 
-	MAP_NATIVE(UDisFogComponent, execSetEnabled)
 	{NULL, NULL}
 };
 
@@ -15029,9 +14933,6 @@ VERIFY_CLASS_OFFSET_NODIE(AArkDynamicPylon,ArkDynamicPylon,m_fCeilingHeight)
 VERIFY_CLASS_SIZE_NODIE(AArkDynamicPylon)
 VERIFY_CLASS_SIZE_NODIE(UDisEngineTweaksInterface)
 VERIFY_CLASS_SIZE_NODIE(ASpawner)
-VERIFY_CLASS_OFFSET_NODIE(ADisFog,DisFog,Component)
-VERIFY_CLASS_OFFSET_NODIE(ADisFog,DisFog,mDisplay)
-VERIFY_CLASS_SIZE_NODIE(ADisFog)
 VERIFY_CLASS_OFFSET_NODIE(AGenericPortal,GenericPortal,m_WidthDir)
 VERIFY_CLASS_OFFSET_NODIE(AGenericPortal,GenericPortal,m_fPortalMaskFadeDistance)
 VERIFY_CLASS_SIZE_NODIE(AGenericPortal)
@@ -15139,10 +15040,6 @@ VERIFY_CLASS_SIZE_NODIE(UAudioPropagationInfo)
 VERIFY_CLASS_OFFSET_NODIE(UDebugManager,DebugManager,FirstColoredMip)
 VERIFY_CLASS_SIZE_NODIE(UDebugManager)
 VERIFY_CLASS_SIZE_NODIE(UDisEngineTweaksBase)
-VERIFY_CLASS_OFFSET_NODIE(UDisFogComponent,DisFogComponent,fCustomTransitionHeight)
-VERIFY_CLASS_OFFSET_NODIE(UDisFogComponent,DisFogComponent,m_WorldOrigin)
-VERIFY_CLASS_SIZE_NODIE(UDisFogComponent)
-VERIFY_CLASS_SIZE_NODIE(UDisFogDisplayComponent)
 VERIFY_CLASS_SIZE_NODIE(UDisOnlineLeaderboards)
 VERIFY_CLASS_OFFSET_NODIE(UGameCrowdSpawner,GameCrowdSpawner,Settings)
 VERIFY_CLASS_OFFSET_NODIE(UGameCrowdSpawner,GameCrowdSpawner,m_pLightEnvironment)
