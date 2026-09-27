@@ -94,3 +94,267 @@ void UDisGFxMoviePlayerMainMenu::execOnLoginChange( FFrame& Stack, RESULT_DECL )
 }
 
 // ---- end of trivial natives ----
+
+/*-----------------------------------------------------------------------------
+	Agent BE (PHASE8.md package BE): the 12 remaining UDisGFxMoviePlayerMainMenu
+	natives, and PostStart - the function that actually opens the main menu.
+
+	Agent AW measured the whole C++ contribution of the New Game button as two calls
+	(gfx_decision.md 2.4): SetDifficulty, then one console command whose text is
+	UDisTweaks_GFxMoviePlayerMainMenu::m_NewGameCommand = "ce ChangeLvl_StartNewGame",
+	which is exactly what agent AF's -newgame already issues. Both are here, so the
+	button and the switch now go down the same path.
+-----------------------------------------------------------------------------*/
+
+#include "gfxui_gfx3.h"
+#include "dishonoredutilities.h"
+
+/** the movie view, or NULL when no movie is open */
+static GFxMovieView* DisMainMenuView( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	FGFxMovie* Movie = Menu->GetMovie();
+	return Movie ? Movie->pView.GetPtr() : NULL;
+}
+
+/** the main menu's own tweaks; retail takes GetTweaks_Derived and falls back to the class default object */
+static UDisTweaks_GFxMoviePlayerMainMenu* DisMainMenuTweaks()
+{
+	return (UDisTweaks_GFxMoviePlayerMainMenu*)UDisTweaks_GFxMoviePlayerMainMenu::StaticClass()->GetDefaultObject();
+}
+
+/** issue one console command on the local player controller, the way every menu command leaves C++ */
+static void DisMenuConsoleCommand( const FString& Command )
+{
+	if( Command.Len() == 0 )
+	{
+		return;
+	}
+	if( ADishonoredPlayerController::s_pInstance )
+	{
+		ADishonoredPlayerController::s_pInstance->ConsoleCommand( Command, TRUE );
+	}
+}
+
+/** _root.<name>_mc.<Method>() with no arguments - the shape every main-menu screen change has */
+static void DisInvokeOnMovieClip( GFxMovieView* View, const char* Path, const char* Method )
+{
+	if( View == NULL )
+	{
+		return;
+	}
+	GFxValue Clip;
+	if( View->GetVariable( &Clip, Path ) )
+	{
+		GFxValue Unused;
+		Clip.Invoke( Method, &Unused );
+		Unused.ReleaseManaged();
+	}
+	Clip.ReleaseManaged();
+}
+
+// DISHONORED(port): 2013 rva 0x7c1ff0 (agent AF; 2012 body 0x820080). The two calls, in retail's order.
+void UDisGFxMoviePlayerMainMenu::execOnNewGameConfirm( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_Difficulty);
+	P_FINISH;
+
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( GameInfo )
+	{
+		// DISHONORED(port): ADishonoredGameInfo::SetDifficulty writes this member; the setter itself is not
+		// declared in this tree, and the member is the whole of what it does.
+		GameInfo->m_Difficulty = (BYTE)_Difficulty;
+	}
+	m_bStartingNewGame = TRUE;
+	DisMenuConsoleCommand( DisMainMenuTweaks()->m_NewGameCommand );
+}
+
+// DISHONORED(port): 2013 rva 0x5f8190 exec. Clicking New Game only asks the question; the difficulty choice
+// and the confirmation come back as OnNewGameConfirm.
+void UDisGFxMoviePlayerMainMenu::execOnNewGameClicked( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	m_Screen = 3;
+	// DISHONORED(bringup): with a save present retail first raises the overwrite message box through
+	// UDisGlobalUIManager::ShowMessageBox, which is not declared in this tree; the asset's own confirm
+	// screen still calls OnNewGameConfirm.
+}
+
+// DISHONORED(port): 2013 rva 0x5f81d0 exec, new in 2013 (the 2012 build has only the exec temp). Continue is
+// "load the most recent save", which is the load path with the slot chosen for the player.
+void UDisGFxMoviePlayerMainMenu::execOnContinueClicked( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	m_bLoadingGame = TRUE;
+	// DISHONORED(bringup): the slot comes from UDishonoredEngine's save list (GetSaveGame / HasSaveGame,
+	// 2012 0x6425f0 / 0x642540), which this tree does not declare; see the note in
+	// disgfxmovieplayermenubase.cpp.
+}
+
+// DISHONORED(port): 2012 rva 0x829090 - one console command, m_QuitGameCommand of the menu-base tweaks
+void UDisGFxMoviePlayerMainMenu::execOnQuitGameConfirm( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	if( m_pMenuBaseTweaks )
+	{
+		DisMenuConsoleCommand( m_pMenuBaseTweaks->m_QuitGameCommand );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x820e00. Back from any screen to the start screen: cancel the trailer timer,
+// drop the message box, close mainMenu_mc if it is the screen we are on, then open startScreen_mc.
+// m_Screen 1 is the start screen, 3 is the main menu (the values the asset and FilterButtonInput share).
+void UDisGFxMoviePlayerMainMenu::execBackToStartScreen( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	if( m_MsgBoxID )
+	{
+		// DISHONORED(bringup): DisGetGlobalUIManager()->HideMessageBox(m_MsgBoxID) (2012 0x8aef20)
+		m_MsgBoxID = 0;
+	}
+	m_fTrailerTimer = 0.f;
+
+	if( m_Screen != 1 )
+	{
+		GFxMovieView* View = DisMainMenuView( this );
+		if( m_Screen == 3 )
+		{
+			DisInvokeOnMovieClip( View, "_root.mainMenu_mc", "Close" );
+		}
+		DisInvokeOnMovieClip( View, "_root.startScreen_mc", "Open" );
+	}
+	m_LoginStep = 1;
+	m_Screen = 1;
+}
+
+// DISHONORED(port): 2012 rva 0x806090 - the missions screen. The list itself is per-mission profile data.
+void UDisGFxMoviePlayerMainMenu::execOnMissionsClicked( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	m_bIsInMissionsMenu = TRUE;
+	// DISHONORED(bringup): retail builds the mission list from UArkProfileSettings::GetMissionData and the
+	// m_MissionStatsTweaks array and invokes _root.missions_mc.Open with it; UArkProfileSettings has no
+	// accessors in this tree.
+}
+
+// DISHONORED(port): 2012 rva 0x800b80 - picking a mission runs that mission's console command out of
+// m_DLCCommands, skipping the entries with no command
+void UDisGFxMoviePlayerMainMenu::execOnMissionSelected( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_MissionIdx);
+	P_FINISH;
+
+	if( !m_bIsInMissionsMenu )
+	{
+		return;
+	}
+	INT Selectable = 0;
+	for( INT Index = 0; Index < ARRAY_COUNT(m_DLCCommands); Index++ )
+	{
+		if( m_DLCCommands[Index].m_MissionNumber == 0 )
+		{
+			continue;
+		}
+		if( Selectable++ == _MissionIdx )
+		{
+			DisMenuConsoleCommand( m_DLCCommands[Index].m_Command );
+			return;
+		}
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x820100 - the per-mission stats screen is its own movie player, opened by
+// UDisGlobalUIManager once the matching UDisTweaks_MissionStats is found
+void UDisGFxMoviePlayerMainMenu::execOpenMissionStats( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_MissionIdx);
+	P_FINISH;
+	// DISHONORED(bringup): UArkProfileSettings::GetMissionData(_MissionIdx) picks the setup index, the
+	// matching UDisTweaks_MissionStats is looked up in the main-menu tweaks, and
+	// DisGetGlobalUIManager() opens UDisGFxMoviePlayerMissionStats with it. Neither accessor is declared.
+}
+
+// DISHONORED(port): 2012 rva 0x7f4b40 - the DLC screen; the enumeration is the platform's
+void UDisGFxMoviePlayerMainMenu::execOnDLCClicked( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	m_bListingDLCs = TRUE;
+	m_fDLCListingTimer = 0.f;
+	// DISHONORED(bringup): the list comes from UDisGlobalDLCManager / UDownloadableContentEnumerator
+	// (PC retail enumerates nothing), which is why this screen is empty on PC anyway.
+}
+
+// DISHONORED(port): 2013 rva 0x5f7fd0 exec - deleting downloadable content is the enumerator's job
+void UDisGFxMoviePlayerMainMenu::execDeleteDLC( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_DLCIdx);
+	P_FINISH;
+	m_bDeletingDLC = TRUE;
+	// DISHONORED(bringup): UDownloadableContentEnumerator::DeleteDLC (2012 0xea8a0) by name; the DLC manager
+	// is not wired up in this tree.
+}
+
+// DISHONORED(port): 2013 rva 0x5f1160 exec - "is the downloadable content on the hard disk"; on PC retail
+// answers from the DLC manager, and with none present the answer is no
+void UDisGFxMoviePlayerMainMenu::execReq_DLConHDD( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	// DISHONORED(bringup): UDisGlobalDLCManager's HDD query; not declared in this tree.
+}
+
+// DISHONORED(port): 2013 rva 0x5f80b0 exec - the DLC06 (Knife of Dunwall) progression carry-over, chosen
+// from the same list the missions screen shows
+void UDisGFxMoviePlayerMainMenu::execUseDLC06Progression( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_ListIdx);
+	P_FINISH;
+	// DISHONORED(bringup): retail copies the selected DLC06 save's story flags into the new game through
+	// UDishonoredEngine's save list; blocked on the same FDisSaveGame declaration.
+}
+
+/*-----------------------------------------------------------------------------
+	PostStart - what opens the menu. Agent AW's decompile of 2012 0x821e00 shows it
+	does nothing but drive ActionScript, and this is that, verbatim in shape: close or
+	open the start screen, then open mainMenu_mc with the four booleans the asset lays
+	the buttons out from.
+-----------------------------------------------------------------------------*/
+
+void DisMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	GFxMovieView* View = DisMainMenuView( Menu );
+	if( View == NULL )
+	{
+		return;
+	}
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	const UBOOL bSaveLoadEnabled = Engine && Engine->m_bSaveLoadEnabled;
+	// DISHONORED(bringup): bHasSaveGame is UDishonoredEngine::HasSaveGame over the slots >= 10 (2012
+	// 0x642540); with no save list declared it is FALSE, which is what the asset shows for a first run -
+	// Continue and Load greyed out, New Game live.
+	const UBOOL bHasSaveGame = FALSE;
+
+	if( Menu->m_Screen == 1 )
+	{
+		DisInvokeOnMovieClip( View, "_root.startScreen_mc", "Open" );
+		return;
+	}
+
+	DisInvokeOnMovieClip( View, "_root.startScreen_mc", "Close" );
+
+	GFxValue MainMenu;
+	if( View->GetVariable( &MainMenu, "_root.mainMenu_mc" ) )
+	{
+		AutoGFxValueArray( Args, 4 );
+		Args(0).SetBoolean( bHasSaveGame ? true : false );
+		Args(1).SetBoolean( bHasSaveGame ? true : false );
+		Args(2).SetBoolean( true );
+		Args(3).SetBoolean( bSaveLoadEnabled ? true : false );
+		GFxValue Unused;
+		MainMenu.Invoke( "Open", &Unused, Args, 4 );
+		Unused.ReleaseManaged();
+	}
+	MainMenu.ReleaseManaged();
+	// DISHONORED(bringup): retail then starts the map-image package loading through
+	// UDisGlobalUIManager::LoadTexturePackageAsync(m_MapLargeImagePackage); not declared in this tree.
+}

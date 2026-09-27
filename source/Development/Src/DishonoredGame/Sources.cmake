@@ -281,7 +281,6 @@ set(DishonoredGame_EXCLUDE
   Src/disgfxactionopenmovie.cpp
   Src/disgfxmovieplayerhud.cpp
   Src/disgfxmovieplayerjournal.cpp
-  Src/disgfxmovieplayermenubase.cpp
   Src/disgfxmovieplayernote.cpp
   Src/disgfxmovieplayerpausemenu.cpp
   Src/disgfxmovieplayerpowerwheel.cpp

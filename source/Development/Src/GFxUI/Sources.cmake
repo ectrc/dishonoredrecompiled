@@ -3,7 +3,11 @@
 # register the 17 native classes of the retail GFxUI.upk with the retail layout. The Epic GFx-4
 # glue (Scaleform*.cpp, Render/*) needs the Scaleform SDK (WITH_GFx=0) and the Arkane GFx-3 PDB
 # skeletons (gfxui*.cpp) are comment-only; both stay out until Phase 4 (resources/docs/middleware.md).
+# Agent BE (PHASE8.md package BE) ported Src/gfxuimovie.cpp (UGFxObject + UGFxMoviePlayer, 113 natives) and
+# added Src/gfxuinatives.cpp, Src/gfxuiexternalinterface.cpp and Src/gfxuigfx3absent.cpp, so those four
+# compile; the rest of the GFx-3 skeletons are agent BB's and stay excluded until that package lands.
 set(GFxUI_EXCLUDE
+  Src/gfxuishaders.cpp
   Src/GFxUI.cpp
   Src/Render/RHI_ConsoleMeshCache.cpp
   Src/Render/RHI_HAL.cpp
@@ -30,9 +34,22 @@ set(GFxUI_EXCLUDE
   Src/gfxuiimageinfo.cpp
   Src/gfxuiinteraction.cpp
   Src/gfxuilocalization.cpp
-  Src/gfxuimovie.cpp
   Src/gfxuirenderer.cpp
-  Src/gfxuishaders.cpp
 )
 set(GFxUI_NOT_IN_PDB
 )
+
+# Agent BB (package BB, PHASE8.md): with DISHONORED_WITH_GFX3 the four seam units come back into the
+# build. They implement the interfaces libgfx calls into and that nothing in this tree implemented -
+# GRenderer 54 slots, GTexture 12, GRenderTarget 7, GFxFileOpener 4, GFile 19, GFxImageLoader and
+# GFxImageCreator 1 each, GSysAllocPaged 5 - against the reconstructed headers in
+# source/Development/Src/External/GFx3. They include no engine header, so they cannot drag the module
+# into anything new, and nothing instantiates them yet. resources/docs/agents/agentBB.md.
+if(DISHONORED_WITH_GFX3)
+  list(REMOVE_ITEM GFxUI_EXCLUDE
+    Src/gfxuirenderer.cpp
+    Src/gfxuifile.cpp
+    Src/gfxuiimageinfo.cpp)
+else()
+  list(APPEND GFxUI_EXCLUDE Src/gfxuiallocator.cpp)
+endif()

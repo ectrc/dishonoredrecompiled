@@ -1,145 +1,2991 @@
-// GFxUI/src/gfxuimovie.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (141):
-//   0x5b6fb0  public: static void __cdecl UGFxMoviePlayer::InitializePrivateStaticClassUGFxMoviePlayer(void)
-//   0x5b6fd0  public: static void __cdecl UGFxFSCmdHandler::InitializePrivateStaticClassUGFxFSCmdHandler(void)
-//   0x5b6ff0  public: static void __cdecl UGFxRawData::InitializePrivateStaticClassUGFxRawData(void)
-//   0x5b7010  public: virtual void __thiscall UGFxMoviePlayer::Cleanup(void)
-//   0x5b7030  public: virtual void __thiscall UGFxMoviePlayer::FinishDestroy(void)
-//   0x5b7050  public: void __thiscall UGFxMoviePlayer::SetMovieCanReceiveFocus(unsigned int)
-//   0x5b7070  public: void __thiscall UGFxMoviePlayer::SetMovieCanReceiveInput(unsigned int)
-//   0x5b7090  public: virtual void __thiscall UGFxMoviePlayer::SetPause(unsigned int)
-//   0x5b70b0  public: virtual void __thiscall UGFxMoviePlayer::SetTimingMode(unsigned char)
-//   0x5b7100  public: virtual void __thiscall UGFxMoviePlayer::PostAdvance(float)
-//   0x5b71b0  public: virtual void __thiscall UGFxObject::BeginDestroy(void)
-//   0x5b71d0  GFxDisplayInfoToU
-//   0x5b7350  UDisplayInfoToGFx
-//   0x5b7440  public: struct FASDisplayInfo __thiscall UGFxObject::GetDisplayInfo(void)
-//   0x5b74b0  public: class FMatrix __thiscall UGFxObject::GetDisplayMatrix(void)
-//   0x5b7580  public: unsigned int __thiscall UGFxObject::GetPosition(float &, float &)
-//   0x5b75f0  public: void __thiscall UGFxObject::SetDisplayInfo(struct FASDisplayInfo)
-//   0x5b7650  public: void __thiscall UGFxObject::execSetDisplayMatrix(struct FFrame &, void * const)
-//   0x5b9cf0  public: static class UClass * __cdecl UGFxFSCmdHandler::GetPrivateStaticClassUGFxFSCmdHandler(wchar_t const *)
-//   0x5b9d80  public: void __thiscall UGFxMoviePlayer::SetViewport(int, int, int, int)
-//   0x5b9e30  public: virtual void __thiscall UGFxMoviePlayer::Advance(float)
-//   0x5b9e80  public: virtual void __thiscall UGFxObject::Clear(void)
-//   0x5b9eb0  public: void __thiscall UGFxObject::SetPosition(float, float)
-//   0x5b9f20  public: void __thiscall UGFxObject::execSetDisplayMatrix3D(struct FFrame &, void * const)
-//   0x5b9fc0  public: void __thiscall UGFxObject::SetVisible(unsigned int)
-//   0x5ba020  public: void __thiscall UGFxObject::SetElementObject(int, class UGFxObject *)
-//   0x5ba0d0  public: unsigned int __thiscall UGFxObject::GetElementBool(int)
-//   0x5ba1a0  public: float __thiscall UGFxObject::GetElementFloat(int)
-//   0x5ba260  public: void __thiscall UGFxObject::SetElementFloat(int, float)
-//   0x5ba2f0  public: void __thiscall UGFxObject::SetElementString(int, class FString const &)
-//   0x5ba3c0  public: void __thiscall UGFxObject::SetElementVisible(int, unsigned int)
-//   0x5ba4a0  public: void __thiscall UGFxObject::SetElementPosition(int, float, float)
-//   0x5ba580  public: void __thiscall UGFxObject::SetElementColorTransform(int, struct FASColorTransform)
-//   0x5ba680  public: struct FASDisplayInfo __thiscall UGFxObject::GetElementDisplayInfo(int)
-//   0x5ba770  public: class FMatrix __thiscall UGFxObject::GetElementDisplayMatrix(int)
-//   0x5ba8c0  public: void __thiscall UGFxObject::SetElementDisplayInfo(int, struct FASDisplayInfo)
-//   0x5ba990  public: void __thiscall UGFxObject::SetElementDisplayMatrix(int, class FMatrix const &)
-//   0x5baa80  public: void __thiscall UGFxObject::execSetElementDisplayMatrix(struct FFrame &, void * const)
-//   0x5c0520  public: static class UClass * __cdecl UGFxFSCmdHandler::StaticClassNoInline(void)
-//   0x5c0550  public: virtual struct FASValue __thiscall UGFxMoviePlayer::Invoke(class FString const &, class TArray<struct FASValue, class FDefaultAllocator> const &)
-//   0x5c0930  public: class UGFxObject * __thiscall UGFxMoviePlayer::CreateValueAddRef(void const *, class UClass *)
-//   0x5c0a00  public: virtual void __thiscall UGFxMoviePlayer::SetVariableObject(class FString const &, class UGFxObject *)
-//   0x5c0b70  public: virtual struct FASValue __thiscall UGFxMoviePlayer::GetVariable(class FString const &)
-//   0x5c0d30  public: virtual unsigned int __thiscall UGFxMoviePlayer::GetVariableBool(class FString const &)
-//   0x5c0e60  public: virtual float __thiscall UGFxMoviePlayer::GetVariableNumber(class FString const &)
-//   0x5c0f90  public: virtual class FString __thiscall UGFxMoviePlayer::GetVariableString(class FString const &)
-//   0x5c1180  public: virtual void __thiscall UGFxMoviePlayer::SetVariable(class FString const &, struct FASValue)
-//   0x5c1300  public: virtual void __thiscall UGFxMoviePlayer::SetVariableBool(class FString const &, unsigned int)
-//   0x5c1420  public: virtual void __thiscall UGFxMoviePlayer::SetVariableNumber(class FString const &, float)
-//   0x5c1540  public: virtual void __thiscall UGFxMoviePlayer::SetVariableString(class FString const &, class FString const &)
-//   0x5c1690  public: virtual unsigned int __thiscall UGFxMoviePlayer::SetVariableArray(class FString const &, int, class TArray<struct FASValue, class FDefaultAllocator> const &)
-//   0x5c1970  public: virtual unsigned int __thiscall UGFxMoviePlayer::SetVariableIntArray(class FString const &, int, class TArray<int, class FDefaultAllocator> const &)
-//   0x5c1aa0  public: virtual unsigned int __thiscall UGFxMoviePlayer::SetVariableFloatArray(class FString const &, int, class TArray<float, class FDefaultAllocator> const &)
-//   0x5c1bd0  public: virtual unsigned int __thiscall UGFxMoviePlayer::SetVariableStringArray(class FString const &, int, class TArray<class FString, class FDefaultAllocator> const &)
-//   0x5c1d80  public: struct FASValue __thiscall UGFxObject::Invoke(class FString const &, class TArray<struct FASValue, class FDefaultAllocator> const &)
-//   0x5c2210  public: void __thiscall UGFxObject::GotoAndPlay(class FString const &)
-//   0x5c22e0  public: void __thiscall UGFxObject::GotoAndStop(class FString const &)
-//   0x5c23b0  public: struct FASValue __thiscall UGFxObject::Get(class FString const &)
-//   0x5c25c0  public: unsigned int __thiscall UGFxObject::GetBool(class FString const &)
-//   0x5c2700  public: float __thiscall UGFxObject::GetFloat(class FString const &)
-//   0x5c2840  public: class FString __thiscall UGFxObject::GetString(class FString const &)
-//   0x5c2a50  public: class FString __thiscall UGFxObject::GetText(void)
-//   0x5c2bb0  public: void __thiscall UGFxObject::Set(class FString const &, struct FASValue)
-//   0x5c2d50  public: void __thiscall UGFxObject::SetObject(class FString const &, class UGFxObject *)
-//   0x5c2f40  public: void __thiscall UGFxObject::SetBool(class FString const &, unsigned int)
-//   0x5c3070  public: void __thiscall UGFxObject::SetFloat(class FString const &, float)
-//   0x5c31a0  public: struct FASValue __thiscall UGFxObject::GetElement(int)
-//   0x5c32f0  public: class FString __thiscall UGFxObject::GetElementString(int)
-//   0x5c3460  public: void __thiscall UGFxObject::SetElement(int, struct FASValue)
-//   0x5c3570  public: void __thiscall UGFxObject::SetElementBool(int, unsigned int)
-//   0x5c3600  public: struct FASValue __thiscall UGFxObject::GetElementMember(int, class FString const &)
-//   0x5c3830  public: unsigned int __thiscall UGFxObject::GetElementMemberBool(int, class FString const &)
-//   0x5c39c0  public: float __thiscall UGFxObject::GetElementMemberFloat(int, class FString const &)
-//   0x5c3b50  public: class FString __thiscall UGFxObject::GetElementMemberString(int, class FString const &)
-//   0x5c3d20  public: void __thiscall UGFxObject::SetElementMember(int, class FString const &, struct FASValue)
-//   0x5c3ee0  public: void __thiscall UGFxObject::SetElementMemberObject(int, class FString const &, class UGFxObject *)
-//   0x5c4030  public: void __thiscall UGFxObject::SetElementMemberBool(int, class FString const &, unsigned int)
-//   0x5c4190  public: void __thiscall UGFxObject::SetElementMemberFloat(int, class FString const &, float)
-//   0x5c42e0  public: void __thiscall UGFxObject::SetElementMemberString(int, class FString const &, class FString const &)
-//   0x5cb160  public: virtual void __thiscall FGFxSoundEventCallback::Call(struct GFxFunctionHandler::Params const &)
-//   0x5cb2c0  public: virtual unsigned int __thiscall UGFxMoviePlayer::GetVariableIntArray(class FString const &, int, class TArray<int, class FDefaultAllocator> &)
-//   0x5cb4a0  public: virtual unsigned int __thiscall UGFxMoviePlayer::GetVariableFloatArray(class FString const &, int, class TArray<float, class FDefaultAllocator> &)
-//   0x5cb680  public: void __thiscall FOutputToGfxPolicy::OnBeginFont(class FString const &)
-//   0x5cb730  public: void __thiscall FOutputToGfxPolicy::OnBeginColor(struct FLinearColor)
-//   0x5cb7c0  public: __thiscall FGFxDelegateCallback::FGFxDelegateCallback(struct FScriptDelegate const &)
-//   0x5cb840  public: virtual __thiscall FGFxDelegateCallback::~FGFxDelegateCallback(void)
-//   0x5cb8e0  public: void __thiscall UGFxObject::SetFunction(class FString const &, class UObject *, class FName)
-//   0x5cba60  public: void __thiscall UGFxObject::execActionScriptSetFunction(struct FFrame &, void * const)
-//   0x5cbc30  public: void __thiscall UGFxObject::execActionScriptSetFunctionOn(struct FFrame &, void * const)
-//   0x5cbe20  public: void __thiscall UGFxMoviePlayer::execActionScriptSetFunction(struct FFrame &, void * const)
-//   0x5cf480  public: virtual unsigned int __thiscall FGFxCLIKObjectOnLoadEventCallback::CallEventHandler(class FName const &, class FName const &, class UGFxObject *, class UGFxObject *)
-//   0x5cf550  public: virtual unsigned int __thiscall FGFxCLIKObjectOnUnloadEventCallback::CallEventHandler(class FName const &, class FName const &, class UGFxObject *, class UGFxObject *)
-//   0x5cf5b0  public: virtual unsigned int __thiscall UGFxMoviePlayer::Start(unsigned int)
-//   0x5cf600  public: virtual void __thiscall UGFxMoviePlayer::Close(unsigned int)
-//   0x5cf740  public: virtual unsigned int __thiscall UGFxMoviePlayer::SetExternalTexture(class FString const &, class UTexture *)
-//   0x5d35e0  public: static class UClass * __cdecl UGFxObject::GetPrivateStaticClassUGFxObject(wchar_t const *)
-//   0x5d3670  public: virtual unsigned int __thiscall UGFxMoviePlayer::GetVariableArray(class FString const &, int, class TArray<struct FASValue, class FDefaultAllocator> &)
-//   0x5d3930  public: virtual unsigned int __thiscall UGFxMoviePlayer::GetVariableStringArray(class FString const &, int, class TArray<class FString, class FDefaultAllocator> &)
-//   0x5d5040  public: static class UClass * __cdecl UGFxRawData::GetPrivateStaticClassUGFxRawData(wchar_t const *)
-//   0x5d50d0  public: static class UClass * __cdecl USwfMovie::GetPrivateStaticClassUSwfMovie(wchar_t const *)
-//   0x5d5160  public: static class UClass * __cdecl UFlashMovie::GetPrivateStaticClassUFlashMovie(wchar_t const *)
-//   0x5d51f0  public: void __thiscall UGFxObject::SetString(class FString const &, class FString const &, class UTranslationContext *)
-//   0x5d5380  public: void __thiscall UGFxObject::SetText(class FString const &, class UTranslationContext *)
-//   0x5d7310  public: static class UClass * __cdecl UGFxRawData::StaticClassNoInline(void)
-//   0x5d7340  public: static void __cdecl USwfMovie::InitializePrivateStaticClassUSwfMovie(void)
-//   0x5d90b0  public: static class UClass * __cdecl USwfMovie::StaticClassNoInline(void)
-//   0x5d90e0  public: static void __cdecl UFlashMovie::InitializePrivateStaticClassUFlashMovie(void)
-//   0x5d9100  public: void __thiscall UGFxMoviePlayer::AddCaptureKey(class FName)
-//   0x5d91a0  public: void __thiscall UGFxMoviePlayer::ClearFocusIgnoreKeys(void)
-//   0x5d91d0  public: void __thiscall UGFxMoviePlayer::AddFocusIgnoreKey(class FName)
-//   0x5dae80  public: static class UClass * __cdecl UFlashMovie::StaticClassNoInline(void)
-//   0x5daeb0  public: void __thiscall UGFxMoviePlayer::FlushPlayerInput(unsigned int)
-//   0x5deab0  public: __thiscall UGFxMoviePlayer::UGFxMoviePlayer(void)
-//   0x5deb80  public: virtual void __thiscall USwfMovie::PostLoad(void)
-//   0x5e1b60  public: static class UClass * __cdecl UGFxMoviePlayer::GetPrivateStaticClassUGFxMoviePlayer(wchar_t const *)
-//   0x5e30f0  public: static class UClass * __cdecl UGFxMoviePlayer::StaticClassNoInline(void)
-//   0x5e3120  public: static void __cdecl UGFxObject::InitializePrivateStaticClassUGFxObject(void)
-//   0x5e35c0  public: static class UClass * __cdecl UGFxObject::StaticClassNoInline(void)
-//   0x5e35f0  public: unsigned int __thiscall UGFxMoviePlayer::Load(class FString const &, unsigned int)
-//   0x5e3a30  public: virtual unsigned int __thiscall UGFxMoviePlayer::PreLoad(void)
-//   0x5e6800  public: virtual void __thiscall FGFxCLIKObjectEventCallback::Call(struct GFxFunctionHandler::Params const &)
-//   0x5e6aa0  public: virtual class UGFxObject * __thiscall UGFxMoviePlayer::GetVariableObject(class FString const &, class UClass *)
-//   0x5e6c20  public: virtual class UGFxObject * __thiscall UGFxMoviePlayer::CreateObject(class FString const &, class UClass *)
-//   0x5e6d70  public: virtual class UGFxObject * __thiscall UGFxMoviePlayer::CreateArray(void)
-//   0x5e6e30  public: class UGFxObject * __thiscall UGFxObject::GetObjectW(class FString const &, class UClass *)
-//   0x5e6fd0  public: class UGFxObject * __thiscall UGFxObject::CreateEmptyMovieClip(class FString const &, int, class UClass *)
-//   0x5e7150  public: class UGFxObject * __thiscall UGFxObject::AttachMovie(class FString const &, class FString const &, int, class UClass *)
-//   0x5e7370  public: class UGFxObject * __thiscall UGFxObject::GetElementObject(int, class UClass *)
-//   0x5e7470  public: class UGFxObject * __thiscall UGFxObject::GetElementMemberObject(int, class FString const &, class UClass *)
-//   0x5e7660  public: virtual void __thiscall FGFxDelegateCallback::Call(struct GFxFunctionHandler::Params const &)
-//   0x5e7870  void __cdecl ExecuteActionScript<class GPtr<class GFxMovieView>>(class GPtr<class GFxMovieView>, class UGFxMoviePlayer *, class GFxValue &, struct FFrame &, void * const, enum ActionScriptReturnSignature)
-//   0x5e7b30  void __cdecl ExecuteActionScript<class GFxValue *>(class GFxValue *, class UGFxMoviePlayer *, class GFxValue &, struct FFrame &, void * const, enum ActionScriptReturnSignature)
-//   0x5e8350  public: void __thiscall UGFxMoviePlayer::execActionScriptVoid(struct FFrame &, void * const)
-//   0x5e83f0  public: void __thiscall UGFxMoviePlayer::execActionScriptInt(struct FFrame &, void * const)
-//   0x5e8490  public: void __thiscall UGFxMoviePlayer::execActionScriptString(struct FFrame &, void * const)
-//   0x5e8530  public: void __thiscall UGFxMoviePlayer::execActionScriptObject(struct FFrame &, void * const)
-//   0x5e85d0  public: void __thiscall UGFxObject::execActionScriptVoid(struct FFrame &, void * const)
-//   0x5e8660  public: void __thiscall UGFxObject::execActionScriptFloat(struct FFrame &, void * const)
-//   0x5e8700  public: void __thiscall UGFxObject::execActionScriptString(struct FFrame &, void * const)
-//   0x5e87a0  public: void __thiscall UGFxObject::execActionScriptObject(struct FFrame &, void * const)
-//   0x5e8830  public: void __thiscall UGFxObject::execActionScriptArray(struct FFrame &, void * const)
+// GFxUI/Src/gfxuimovie.cpp - UGFxObject and UGFxMoviePlayer: the boundary UnrealScript crosses to reach
+// ActionScript. 113 of the module's 125 natives live here (64 UGFxObject + 49 UGFxMoviePlayer) together with
+// the C++ methods behind them. Ported by agent BE (PHASE8.md package BE) from the retail bodies; the 2012
+// PDB attributes all of them to
+// v:\dishonored\unrealengine3qatest\development\src\gfxui\src\gfxuimovie.cpp, so this is the file they
+// belong in.
+//
+// Provenance. Every exec wrapper is derived from the retail script signature in
+// resources/docs/types/script_classes_2013.json (property kind + Parm/OptionalParm/OutParm/ReturnParm
+// flags, which is what UnrealHeaderTool itself used), generated by build/agentBE/gen_execs.py and compared
+// against the reference GFx 4 GFxUI's own wrappers where it has one (98 of 113 matched exactly; the
+// differences are listed in resources/docs/agents/agentBE.md). Every C++ method body is the headless
+// decompile of the 2012 function whose rva is on its DISHONORED(port) tag.
+//
+// Two things that are NOT the reference's and would be silent corruption if taken from it:
+//   * Dishonored's ASType has no AS_Int, so AS_String is 3 and AS_Boolean is 4 (gfxui_gfx3.h);
+//   * GFx 3.3's GRenderer::Cxform is M_[4][2] with the multiply in column 0 and the add in column 1, where
+//     GFx 4's is M[2][4] (proved by UGFxObject::execGetColorTransform, 2012 0x5b91a0).
+//
+// There is no WITH_GFx / DISHONORED_WITH_GFX3 branch in this file on purpose. Without a runtime pMovie is
+// NULL and every wrapped GFxValue is VT_Undefined, so each body takes the same early-out retail takes for a
+// closed movie; only the GFx entry points have to exist at link time, and Src/gfxuigfx3absent.cpp supplies
+// them. That keeps one copy of the port instead of two.
+#include "GFxUI.h"
+#include "gfxui_gfx3.h"
+
+/*-----------------------------------------------------------------------------
+	Conversions between the script structs and the GFx types.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5b71d0 (GFxDisplayInfoToU)
+static void GFxDisplayInfoToU( FASDisplayInfo& Dest, const GFxValue::DisplayInfo& Src )
+{
+	Dest.X = Src.X;
+	Dest.Y = Src.Y;
+	Dest.Z = Src.Z;
+	Dest.Rotation = Src.Rotation;
+	Dest.XRotation = Src.XRotation;
+	Dest.YRotation = Src.YRotation;
+	Dest.XScale = Src.XScale;
+	Dest.YScale = Src.YScale;
+	Dest.ZScale = Src.ZScale;
+	Dest.Alpha = Src.Alpha;
+	Dest.Visible = Src.Visible ? TRUE : FALSE;
+	Dest.hasX = ( Src.VarsSet & GFxValue::DisplayInfo::V_x ) != 0;
+	Dest.hasY = ( Src.VarsSet & GFxValue::DisplayInfo::V_y ) != 0;
+	Dest.hasZ = ( Src.VarsSet & GFxValue::DisplayInfo::V_z ) != 0;
+	Dest.hasRotation = ( Src.VarsSet & GFxValue::DisplayInfo::V_rotation ) != 0;
+	Dest.hasXRotation = ( Src.VarsSet & GFxValue::DisplayInfo::V_xrotation ) != 0;
+	Dest.hasYRotation = ( Src.VarsSet & GFxValue::DisplayInfo::V_yrotation ) != 0;
+	Dest.hasXScale = ( Src.VarsSet & GFxValue::DisplayInfo::V_xscale ) != 0;
+	Dest.hasYScale = ( Src.VarsSet & GFxValue::DisplayInfo::V_yscale ) != 0;
+	Dest.hasZScale = ( Src.VarsSet & GFxValue::DisplayInfo::V_zscale ) != 0;
+	Dest.hasAlpha = ( Src.VarsSet & GFxValue::DisplayInfo::V_alpha ) != 0;
+	Dest.hasVisible = ( Src.VarsSet & GFxValue::DisplayInfo::V_visible ) != 0;
+}
+
+// DISHONORED(port): 2012 rva 0x5b7350 (UDisplayInfoToGFx). Only the fields the script struct marked as set
+// are assigned, because VarsSet is what tells GFx which members of the display object to touch.
+static void UDisplayInfoToGFx( GFxValue::DisplayInfo& Dest, const FASDisplayInfo& Src )
+{
+	if( Src.hasX )         { Dest.SetX( Src.X ); }
+	if( Src.hasY )         { Dest.SetY( Src.Y ); }
+	if( Src.hasZ )         { Dest.SetZ( Src.Z ); }
+	if( Src.hasRotation )  { Dest.SetRotation( Src.Rotation ); }
+	if( Src.hasXRotation ) { Dest.XRotation = Src.XRotation; Dest.VarsSet |= GFxValue::DisplayInfo::V_xrotation; }
+	if( Src.hasYRotation ) { Dest.YRotation = Src.YRotation; Dest.VarsSet |= GFxValue::DisplayInfo::V_yrotation; }
+	if( Src.hasXScale )    { Dest.SetXScale( Src.XScale ); }
+	if( Src.hasYScale )    { Dest.SetYScale( Src.YScale ); }
+	if( Src.hasZScale )    { Dest.SetZScale( Src.ZScale ); }
+	if( Src.hasAlpha )     { Dest.SetAlpha( Src.Alpha ); }
+	if( Src.hasVisible )   { Dest.SetVisible( Src.Visible ? true : false ); }
+}
+
+// DISHONORED(port): 2012 rva 0x5b74b0, inside UGFxObject::GetDisplayMatrix. GFx stores the 2D transform as
+// two rows (a b tx / c d ty) applied to a column vector; UE3's FMatrix multiplies a row vector, so the
+// GFx rows become FMatrix columns and the translation lands in M[3][*].
+static void GMatrix2DToFMatrix( FMatrix& Dest, const GMatrix2D& Src )
+{
+	Dest = FMatrix::Identity;
+	Dest.M[0][0] = Src.M_[0][0];
+	Dest.M[1][0] = Src.M_[0][1];
+	Dest.M[3][0] = Src.M_[0][2];
+	Dest.M[0][1] = Src.M_[1][0];
+	Dest.M[1][1] = Src.M_[1][1];
+	Dest.M[3][1] = Src.M_[1][2];
+}
+
+static void FMatrixToGMatrix2D( GMatrix2D& Dest, const FMatrix& Src )
+{
+	Dest.M_[0][0] = Src.M[0][0];
+	Dest.M_[0][1] = Src.M[1][0];
+	Dest.M_[0][2] = Src.M[3][0];
+	Dest.M_[1][0] = Src.M[0][1];
+	Dest.M_[1][1] = Src.M[1][1];
+	Dest.M_[1][2] = Src.M[3][1];
+}
+
+// GFx's GMatrix3D is column-major 4x4 against UE3's row-major, so the copy transposes.
+static void FMatrixToGMatrix3D( GMatrix3D& Dest, const FMatrix& Src )
+{
+	for( INT Row = 0; Row < 4; Row++ )
+	{
+		for( INT Col = 0; Col < 4; Col++ )
+		{
+			Dest.M_[Row][Col] = Src.M[Col][Row];
+		}
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b91a0 / 0x5b9320 (execGetColorTransform / execSetColorTransform): the
+// multiply is column 0 of GFx 3.3's M_[4][2], the add is column 1.
+static void GFxCxformToU( FASColorTransform& Dest, const GRenderer::Cxform& Src )
+{
+	Dest.Multiply.R = Src.M_[0][0];
+	Dest.Multiply.G = Src.M_[1][0];
+	Dest.Multiply.B = Src.M_[2][0];
+	Dest.Multiply.A = Src.M_[3][0];
+	Dest.Add.R = Src.M_[0][1];
+	Dest.Add.G = Src.M_[1][1];
+	Dest.Add.B = Src.M_[2][1];
+	Dest.Add.A = Src.M_[3][1];
+}
+
+static void UCxformToGFx( GRenderer::Cxform& Dest, const FASColorTransform& Src )
+{
+	Dest.M_[0][0] = Src.Multiply.R;
+	Dest.M_[1][0] = Src.Multiply.G;
+	Dest.M_[2][0] = Src.Multiply.B;
+	Dest.M_[3][0] = Src.Multiply.A;
+	Dest.M_[0][1] = Src.Add.R;
+	Dest.M_[1][1] = Src.Add.G;
+	Dest.M_[2][1] = Src.Add.B;
+	Dest.M_[3][1] = Src.Add.A;
+}
+
+// DISHONORED(port): the FASValue -> GFxValue switch of UGFxMoviePlayer::SetVariable (2012 rva 0x5c1180)
+void FGFxUIConvertASValueToGFx( GFxValue& Dest, const FASValue& Src )
+{
+	switch( Src.Type )
+	{
+	case AS_Null:    Dest.SetNull();                  break;
+	case AS_Number:  Dest.SetNumber( Src.N );         break;
+	case AS_String:  Dest.SetStringW( *Src.S );       break;
+	case AS_Boolean: Dest.SetBoolean( Src.B != 0 );   break;
+	default:         Dest.SetUndefined();             break;
+	}
+}
+
+// DISHONORED(port): the GFxValue -> FASValue switch of UGFxMoviePlayer::GetVariable (2012 rva 0x5c0b70)
+void FGFxUIConvertGFxToASValue( FASValue& Dest, const GFxValue& Src )
+{
+	switch( Src.GetType() )
+	{
+	case GFxValue::VT_Null:
+		Dest.Type = AS_Null;
+		break;
+	case GFxValue::VT_Boolean:
+		Dest.Type = AS_Boolean;
+		Dest.B = Src.GetBool() ? 1 : 0;
+		break;
+	case GFxValue::VT_Number:
+		Dest.Type = AS_Number;
+		Dest.N = Src.GetNumber();
+		break;
+	case GFxValue::VT_String:
+		Dest.Type = AS_String;
+		Dest.S = FString( FUTF8ToTCHAR( Src.GetString() ) );
+		break;
+	case GFxValue::VT_StringW:
+		Dest.Type = AS_String;
+		Dest.S = Src.GetStringW();
+		break;
+	default:
+		Dest.Type = AS_Undefined;
+		break;
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	FAutoGFxValueArray (2012 rva 0x5b6ac0 / 0x5bf4b0, gfxuiengine.h)
+-----------------------------------------------------------------------------*/
+
+FAutoGFxValueArray::FAutoGFxValueArray( UINT InCount, void* InMemory )
+	: pValues( (GFxValue*)InMemory )
+	, Count( InMemory ? InCount : 0 )
+{
+	for( UINT Index = 0; Index < Count; Index++ )
+	{
+		new( &pValues[Index] ) GFxValue();
+	}
+}
+
+FAutoGFxValueArray::~FAutoGFxValueArray()
+{
+	for( UINT Index = 0; Index < Count; Index++ )
+	{
+		pValues[Index].~GFxValue();
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxObject
+-----------------------------------------------------------------------------*/
+
+void UGFxObject::SetValue( const void* InValue )
+{
+	GFxValue* Dest = GetASValue();
+	const GFxValue* Src = (const GFxValue*)InValue;
+	Dest->ReleaseManaged();
+	*Dest = *Src;
+}
+
+// DISHONORED(port): 2012 rva 0x5b9e80
+void UGFxObject::Clear()
+{
+	checkAtCompileTime( sizeof(Value) >= sizeof(GFxValue), GFxObjectValueIsTooSmall );
+	GetASValue()->ReleaseManaged();
+	appMemzero( Value, sizeof(Value) );
+}
+
+// DISHONORED(port): 2012 rva 0x5b71b0
+void UGFxObject::BeginDestroy()
+{
+	Clear();
+	Super::BeginDestroy();
+}
+
+// DISHONORED(port): 2012 rva 0x5c1d80
+FASValue UGFxObject::Invoke( const FString& Member, const TArray<FASValue>& Args )
+{
+	FASValue Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		const UINT NumArgs = Args.Num();
+		AutoGFxValueArray( GArgs, NumArgs );
+		for( UINT Index = 0; Index < NumArgs; Index++ )
+		{
+			FGFxUIConvertASValueToGFx( GArgs(Index), Args(Index) );
+		}
+		GFxValue GResult;
+		if( v->Invoke( FTCHARToUTF8(*Member), &GResult, GArgs, NumArgs ) )
+		{
+			FGFxUIConvertGFxToASValue( Result, GResult );
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c2210
+void UGFxObject::GotoAndPlay( const FString& Frame )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		v->GotoAndPlay( FTCHARToUTF8(*Frame) );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c22e0
+void UGFxObject::GotoAndStop( const FString& Frame )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		v->GotoAndStop( FTCHARToUTF8(*Frame) );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b93f0, inlined in execGotoAndPlayI
+void UGFxObject::GotoAndPlayI( INT Frame )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		v->GotoAndPlayFrame( Frame );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b9460, inlined in execGotoAndStopI
+void UGFxObject::GotoAndStopI( INT Frame )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		v->GotoAndStopFrame( Frame );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c23b0
+FASValue UGFxObject::Get( const FString& Member )
+{
+	FASValue Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GResult;
+		if( v->GetMember( FTCHARToUTF8(*Member), &GResult ) )
+		{
+			FGFxUIConvertGFxToASValue( Result, GResult );
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c25c0
+UBOOL UGFxObject::GetBool( const FString& Member )
+{
+	UBOOL Result = FALSE;
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertBoolean );
+		if( v->GetMember( FTCHARToUTF8(*Member), &GResult ) && GResult.GetType() == GFxValue::VT_Boolean )
+		{
+			Result = GResult.GetBool() ? TRUE : FALSE;
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c2700
+FLOAT UGFxObject::GetFloat( const FString& Member )
+{
+	FLOAT Result = 0.f;
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertNumber );
+		if( v->GetMember( FTCHARToUTF8(*Member), &GResult ) && GResult.GetType() == GFxValue::VT_Number )
+		{
+			Result = GResult.GetNumber();
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c2840
+FString UGFxObject::GetString( const FString& Member )
+{
+	FString Result;
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertStringW );
+		if( v->GetMember( FTCHARToUTF8(*Member), &GResult ) )
+		{
+			if( GResult.GetType() == GFxValue::VT_StringW )
+			{
+				Result = GResult.GetStringW();
+			}
+			else if( GResult.GetType() == GFxValue::VT_String )
+			{
+				Result = FString( FUTF8ToTCHAR( GResult.GetString() ) );
+			}
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5e6e30 (the symbol is GetObjectW: windows.h rewrites GetObject on a UNICODE
+// build, in retail exactly as here)
+UGFxObject* UGFxObject::GetObject( const FString& Member, UClass* Type )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GResult;
+		if( v->GetMember( FTCHARToUTF8(*Member), &GResult ) && !GResult.IsUndefined() && !GResult.IsNull() )
+		{
+			UGFxMoviePlayer* Movie = CastChecked<UGFxMoviePlayer>( GetOuter() );
+			return Movie->CreateValue( &GResult, Type );
+		}
+		GResult.ReleaseManaged();
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x5c2bb0
+void UGFxObject::Set( const FString& Member, FASValue Arg )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GArg;
+		FGFxUIConvertASValueToGFx( GArg, Arg );
+		v->SetMember( FTCHARToUTF8(*Member), GArg );
+		GArg.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c2f40
+void UGFxObject::SetBool( const FString& Member, UBOOL B )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GArg;
+		GArg.SetBoolean( B ? true : false );
+		v->SetMember( FTCHARToUTF8(*Member), GArg );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c3070
+void UGFxObject::SetFloat( const FString& Member, FLOAT F )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GArg;
+		GArg.SetNumber( F );
+		v->SetMember( FTCHARToUTF8(*Member), GArg );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5d51f0. The translation context is the engine's localisation pass; with no
+// context the string goes through unchanged, which is what retail does when the parameter is None.
+void UGFxObject::SetString( const FString& Member, const FString& S, UTranslationContext* InContext )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		GFxValue GArg;
+		GArg.SetStringW( *S );
+		v->SetMember( FTCHARToUTF8(*Member), GArg );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c2d50
+void UGFxObject::SetObject( const FString& Member, UGFxObject* Value )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() )
+	{
+		if( Value )
+		{
+			v->SetMember( FTCHARToUTF8(*Member), *Value->GetASValue() );
+		}
+		else
+		{
+			GFxValue GArg;
+			GArg.SetNull();
+			v->SetMember( FTCHARToUTF8(*Member), GArg );
+		}
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c2a50
+FString UGFxObject::GetText()
+{
+	FString Result;
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue GResult;
+		if( v->GetText( &GResult ) )
+		{
+			if( GResult.GetType() == GFxValue::VT_StringW )
+			{
+				Result = GResult.GetStringW();
+			}
+			else if( GResult.GetType() == GFxValue::VT_String )
+			{
+				Result = FString( FUTF8ToTCHAR( GResult.GetString() ) );
+			}
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5d5380
+void UGFxObject::SetText( const FString& S, UTranslationContext* InContext )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		v->SetText( *S );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b7440
+FASDisplayInfo UGFxObject::GetDisplayInfo()
+{
+	FASDisplayInfo Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue::DisplayInfo Info;
+		v->GetDisplayInfo( &Info );
+		GFxDisplayInfoToU( Result, Info );
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5b75f0
+void UGFxObject::SetDisplayInfo( FASDisplayInfo D )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue::DisplayInfo Info;
+		UDisplayInfoToGFx( Info, D );
+		v->SetDisplayInfo( Info );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b74b0
+FMatrix UGFxObject::GetDisplayMatrix()
+{
+	FMatrix Result = FMatrix::Identity;
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GMatrix2D M2;
+		v->GetDisplayMatrix( &M2 );
+		GMatrix2DToFMatrix( Result, M2 );
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5b7650, inlined in execSetDisplayMatrix
+void UGFxObject::SetDisplayMatrix( const FMatrix& M )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GMatrix2D M2;
+		FMatrixToGMatrix2D( M2, M );
+		v->SetDisplayMatrix( M2 );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b9f20, inlined in execSetDisplayMatrix3D
+void UGFxObject::SetDisplayMatrix3D( const FMatrix& M )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GMatrix3D M3;
+		FMatrixToGMatrix3D( M3, M );
+		v->SetMatrix3D( M3 );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b91a0, inlined in execGetColorTransform
+FASColorTransform UGFxObject::GetColorTransform()
+{
+	FASColorTransform Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GRenderer::Cxform Cxform;
+		appMemzero( &Cxform, sizeof(Cxform) );
+		v->GetCxform( &Cxform );
+		GFxCxformToU( Result, Cxform );
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5b9320, inlined in execSetColorTransform
+void UGFxObject::SetColorTransform( FASColorTransform Cxform )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GRenderer::Cxform GCxform;
+		appMemzero( &GCxform, sizeof(GCxform) );
+		UCxformToGFx( GCxform, Cxform );
+		v->SetCxform( GCxform );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b7580
+UBOOL UGFxObject::GetPosition( FLOAT& X, FLOAT& Y )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue::DisplayInfo Info;
+		v->GetDisplayInfo( &Info );
+		X = Info.X;
+		Y = Info.Y;
+		return TRUE;
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x5b9eb0
+void UGFxObject::SetPosition( FLOAT X, FLOAT Y )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue::DisplayInfo Info;
+		Info.SetPosition( X, Y );
+		v->SetDisplayInfo( Info );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b9fc0
+void UGFxObject::SetVisible( UBOOL bVisible )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue::DisplayInfo Info;
+		Info.SetVisible( bVisible ? true : false );
+		v->SetDisplayInfo( Info );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5e6fd0
+UGFxObject* UGFxObject::CreateEmptyMovieClip( const FString& InstanceName, INT Depth, UClass* Type )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue GResult;
+		if( v->CreateEmptyMovieClip( &GResult, FTCHARToUTF8(*InstanceName), Depth ) )
+		{
+			UGFxMoviePlayer* Movie = CastChecked<UGFxMoviePlayer>( GetOuter() );
+			return Movie->CreateValue( &GResult, Type );
+		}
+		GResult.ReleaseManaged();
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x5e7150
+UGFxObject* UGFxObject::AttachMovie( const FString& SymbolName, const FString& InstanceName, INT Depth, UClass* Type )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsDisplayObject() )
+	{
+		GFxValue GResult;
+		if( v->AttachMovie( &GResult, FTCHARToUTF8(*SymbolName), FTCHARToUTF8(*InstanceName), Depth ) )
+		{
+			UGFxMoviePlayer* Movie = CastChecked<UGFxMoviePlayer>( GetOuter() );
+			return Movie->CreateValue( &GResult, Type );
+		}
+		GResult.ReleaseManaged();
+	}
+	return NULL;
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxObject: array elements
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5c31a0
+FASValue UGFxObject::GetElement( INT Index )
+{
+	FASValue Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GResult;
+		if( v->GetElement( Index, &GResult ) )
+		{
+			FGFxUIConvertGFxToASValue( Result, GResult );
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5ba0d0
+UBOOL UGFxObject::GetElementBool( INT Index )
+{
+	UBOOL Result = FALSE;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertBoolean );
+		if( v->GetElement( Index, &GResult ) )
+		{
+			Result = GResult.GetBool() ? TRUE : FALSE;
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5ba1a0
+FLOAT UGFxObject::GetElementFloat( INT Index )
+{
+	FLOAT Result = 0.f;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertNumber );
+		if( v->GetElement( Index, &GResult ) )
+		{
+			Result = GResult.GetNumber();
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c32f0
+FString UGFxObject::GetElementString( INT Index )
+{
+	FString Result;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertStringW );
+		if( v->GetElement( Index, &GResult ) )
+		{
+			if( GResult.GetType() == GFxValue::VT_StringW )
+			{
+				Result = GResult.GetStringW();
+			}
+			else if( GResult.GetType() == GFxValue::VT_String )
+			{
+				Result = FString( FUTF8ToTCHAR( GResult.GetString() ) );
+			}
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5e7370
+UGFxObject* UGFxObject::GetElementObject( INT Index, UClass* Type )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GResult;
+		if( v->GetElement( Index, &GResult ) && !GResult.IsUndefined() && !GResult.IsNull() )
+		{
+			UGFxMoviePlayer* Movie = CastChecked<UGFxMoviePlayer>( GetOuter() );
+			return Movie->CreateValue( &GResult, Type );
+		}
+		GResult.ReleaseManaged();
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x5c3460
+void UGFxObject::SetElement( INT Index, FASValue Arg )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GArg;
+		FGFxUIConvertASValueToGFx( GArg, Arg );
+		v->SetElement( Index, GArg );
+		GArg.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c3570
+void UGFxObject::SetElementBool( INT Index, UBOOL B )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GArg;
+		GArg.SetBoolean( B ? true : false );
+		v->SetElement( Index, GArg );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba260
+void UGFxObject::SetElementFloat( INT Index, FLOAT F )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GArg;
+		GArg.SetNumber( F );
+		v->SetElement( Index, GArg );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba2f0
+void UGFxObject::SetElementString( INT Index, const FString& S )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue GArg;
+		GArg.SetStringW( *S );
+		v->SetElement( Index, GArg );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba020
+void UGFxObject::SetElementObject( INT Index, UGFxObject* Value )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		if( Value )
+		{
+			v->SetElement( Index, *Value->GetASValue() );
+		}
+		else
+		{
+			GFxValue GArg;
+			GArg.SetNull();
+			v->SetElement( Index, GArg );
+		}
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba3c0
+void UGFxObject::SetElementVisible( INT Index, UBOOL bVisible )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GFxValue::DisplayInfo Info;
+			Info.SetVisible( bVisible ? true : false );
+			Element.SetDisplayInfo( Info );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba4a0
+void UGFxObject::SetElementPosition( INT Index, FLOAT X, FLOAT Y )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GFxValue::DisplayInfo Info;
+			Info.SetPosition( X, Y );
+			Element.SetDisplayInfo( Info );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba580
+void UGFxObject::SetElementColorTransform( INT Index, FASColorTransform Cxform )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GRenderer::Cxform GCxform;
+			appMemzero( &GCxform, sizeof(GCxform) );
+			UCxformToGFx( GCxform, Cxform );
+			Element.SetCxform( GCxform );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba680
+FASDisplayInfo UGFxObject::GetElementDisplayInfo( INT Index )
+{
+	FASDisplayInfo Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GFxValue::DisplayInfo Info;
+			Element.GetDisplayInfo( &Info );
+			GFxDisplayInfoToU( Result, Info );
+		}
+		Element.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5ba8c0
+void UGFxObject::SetElementDisplayInfo( INT Index, FASDisplayInfo D )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GFxValue::DisplayInfo Info;
+			UDisplayInfoToGFx( Info, D );
+			Element.SetDisplayInfo( Info );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5ba770
+FMatrix UGFxObject::GetElementDisplayMatrix( INT Index )
+{
+	FMatrix Result = FMatrix::Identity;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GMatrix2D M2;
+			Element.GetDisplayMatrix( &M2 );
+			GMatrix2DToFMatrix( Result, M2 );
+		}
+		Element.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5ba990
+void UGFxObject::SetElementDisplayMatrix( INT Index, const FMatrix& M )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsDisplayObject() )
+		{
+			GMatrix2D M2;
+			FMatrixToGMatrix2D( M2, M );
+			Element.SetDisplayMatrix( M2 );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxObject: members of array elements
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5c3600
+FASValue UGFxObject::GetElementMember( INT Index, const FString& Member )
+{
+	FASValue Result(EC_EventParm);
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GResult;
+			if( Element.GetMember( FTCHARToUTF8(*Member), &GResult ) )
+			{
+				FGFxUIConvertGFxToASValue( Result, GResult );
+			}
+			GResult.ReleaseManaged();
+		}
+		Element.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c3830
+UBOOL UGFxObject::GetElementMemberBool( INT Index, const FString& Member )
+{
+	UBOOL Result = FALSE;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GResult( GFxValue::VT_ConvertBoolean );
+			if( Element.GetMember( FTCHARToUTF8(*Member), &GResult ) )
+			{
+				Result = GResult.GetBool() ? TRUE : FALSE;
+			}
+			GResult.ReleaseManaged();
+		}
+		Element.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c39c0
+FLOAT UGFxObject::GetElementMemberFloat( INT Index, const FString& Member )
+{
+	FLOAT Result = 0.f;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GResult( GFxValue::VT_ConvertNumber );
+			if( Element.GetMember( FTCHARToUTF8(*Member), &GResult ) )
+			{
+				Result = GResult.GetNumber();
+			}
+			GResult.ReleaseManaged();
+		}
+		Element.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c3b50
+FString UGFxObject::GetElementMemberString( INT Index, const FString& Member )
+{
+	FString Result;
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GResult( GFxValue::VT_ConvertStringW );
+			if( Element.GetMember( FTCHARToUTF8(*Member), &GResult ) )
+			{
+				if( GResult.GetType() == GFxValue::VT_StringW )
+				{
+					Result = GResult.GetStringW();
+				}
+				else if( GResult.GetType() == GFxValue::VT_String )
+				{
+					Result = FString( FUTF8ToTCHAR( GResult.GetString() ) );
+				}
+			}
+			GResult.ReleaseManaged();
+		}
+		Element.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5e7470
+UGFxObject* UGFxObject::GetElementMemberObject( INT Index, const FString& Member, UClass* Type )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GResult;
+			if( Element.GetMember( FTCHARToUTF8(*Member), &GResult ) && !GResult.IsUndefined() && !GResult.IsNull() )
+			{
+				UGFxMoviePlayer* Movie = CastChecked<UGFxMoviePlayer>( GetOuter() );
+				Element.ReleaseManaged();
+				return Movie->CreateValue( &GResult, Type );
+			}
+			GResult.ReleaseManaged();
+		}
+		Element.ReleaseManaged();
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x5c3d20
+void UGFxObject::SetElementMember( INT Index, const FString& Member, FASValue Arg )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GArg;
+			FGFxUIConvertASValueToGFx( GArg, Arg );
+			Element.SetMember( FTCHARToUTF8(*Member), GArg );
+			GArg.ReleaseManaged();
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c4030
+void UGFxObject::SetElementMemberBool( INT Index, const FString& Member, UBOOL B )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GArg;
+			GArg.SetBoolean( B ? true : false );
+			Element.SetMember( FTCHARToUTF8(*Member), GArg );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c4190
+void UGFxObject::SetElementMemberFloat( INT Index, const FString& Member, FLOAT F )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GArg;
+			GArg.SetNumber( F );
+			Element.SetMember( FTCHARToUTF8(*Member), GArg );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c42e0
+void UGFxObject::SetElementMemberString( INT Index, const FString& Member, const FString& S )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			GFxValue GArg;
+			GArg.SetStringW( *S );
+			Element.SetMember( FTCHARToUTF8(*Member), GArg );
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c3ee0
+void UGFxObject::SetElementMemberObject( INT Index, const FString& Member, UGFxObject* Value )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsArray() )
+	{
+		GFxValue Element;
+		if( v->GetElement( Index, &Element ) && Element.IsObject() )
+		{
+			if( Value )
+			{
+				Element.SetMember( FTCHARToUTF8(*Member), *Value->GetASValue() );
+			}
+			else
+			{
+				GFxValue GArg;
+				GArg.SetNull();
+				Element.SetMember( FTCHARToUTF8(*Member), GArg );
+			}
+		}
+		Element.ReleaseManaged();
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxObject: the AS2 -> UnrealScript delegate bridge
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5cb8e0, the GFxFunctionHandler UGFxObject::SetFunction installs. Marshalling
+// is the same as FGFxExternalInterface::Callback's: convert each GFxValue into the UFunction's parameter,
+// ProcessEvent, convert the return value back, then destroy the parameters.
+class FGFxDelegateCallback : public GFxFunctionHandler
+{
+public:
+	FGFxDelegateCallback( const FScriptDelegate& InDelegate ) : Delegate( InDelegate ) {}
+
+	virtual void Call( const Params& InParams )
+	{
+		if( Delegate.Object && ( Delegate.Object->HasAnyFlags( RF_Unreachable ) || Delegate.Object->IsPendingKill() ) )
+		{
+			Delegate.Object = NULL;
+			Delegate.FunctionName = NAME_None;
+			return;
+		}
+
+		UGFxMoviePlayer* Movie = InParams.pMovie ? (UGFxMoviePlayer*)InParams.pMovie->GetUserData() : NULL;
+		if( Movie == NULL )
+		{
+			return;
+		}
+
+		UObject* Object = Delegate.Object ? Delegate.Object : Movie;
+		UFunction* Function = Object->FindFunction( Delegate.FunctionName );
+		if( Function == NULL )
+		{
+			return;
+		}
+
+		BYTE* Parms = (BYTE*)appAlloca( Function->ParmsSize );
+		appMemzero( Parms, Function->ParmsSize );
+
+		UINT ArgIndex = 0;
+		for( TFieldIterator<UProperty> It(Function); It && ArgIndex < InParams.ArgCount
+			&& ( It->PropertyFlags & (CPF_Parm|CPF_ReturnParm) ) == CPF_Parm; ++It, ++ArgIndex )
+		{
+			FGFxEngine::ConvertGFxToUProp( *It, Parms + It->Offset, InParams.pArgs[ArgIndex], Movie );
+		}
+
+		Object->ProcessEvent( Function, Parms );
+
+		UProperty* ReturnProperty = Function->GetReturnProperty();
+		if( ReturnProperty && InParams.pRetVal )
+		{
+			FGFxEngine::ConvertUPropToGFx( ReturnProperty, Parms + Function->ReturnValueOffset, *InParams.pRetVal, InParams.pMovie );
+		}
+
+		for( TFieldIterator<UProperty> It(Function); It && ( It->PropertyFlags & (CPF_Parm|CPF_ReturnParm) ) == CPF_Parm; ++It )
+		{
+			It->DestroyValue( Parms + It->Offset );
+		}
+	}
+
+private:
+	FScriptDelegate Delegate;
+};
+
+/** install one FGFxDelegateCallback as a member of the given AS2 object */
+static void GFxSetDelegateMember( UGFxMoviePlayer* MoviePlayer, GFxValue* Object, const FString& Member, const FScriptDelegate& Delegate )
+{
+	FGFxMovie* Movie = MoviePlayer ? MoviePlayer->GetMovie() : NULL;
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return;
+	}
+	GFxValue Function;
+	FGFxDelegateCallback* Callback = new FGFxDelegateCallback( Delegate );
+	Callback->AddRef();
+	Movie->pView->CreateFunction( &Function, Callback, NULL );
+	Object->SetMember( FTCHARToUTF8(*Member), Function );
+	Function.ReleaseManaged();
+	Callback->Release();
+}
+
+// DISHONORED(port): 2012 rva 0x5cb8e0
+void UGFxObject::SetFunction( const FString& Member, UObject* Context, FName FunctionName )
+{
+	GFxValue* v = GetASValue();
+	if( v->IsObject() && FunctionName != NAME_None && Context )
+	{
+		FScriptDelegate Delegate;
+		Delegate.Object = Context;
+		Delegate.FunctionName = FunctionName;
+		GFxSetDelegateMember( CastChecked<UGFxMoviePlayer>( GetOuter() ), v, Member, Delegate );
+	}
+}
+
+/** the delegate parameter of an ActionScriptSetFunction* call, read out of the caller's own local frame */
+static FScriptDelegate* GFxFindDelegateParm( FFrame& Stack )
+{
+	UFunction* Function = Cast<UFunction>( Stack.Node );
+	if( Function == NULL )
+	{
+		return NULL;
+	}
+	for( TFieldIterator<UDelegateProperty> It(Function); It && ( It->PropertyFlags & (CPF_Parm|CPF_ReturnParm) ) == CPF_Parm; ++It )
+	{
+		return (FScriptDelegate*)( Stack.Locals + It->Offset );
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x5cba60
+void UGFxObject::execActionScriptSetFunction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_FINISH;
+
+	GFxValue* v = GetASValue();
+	FScriptDelegate* Delegate = GFxFindDelegateParm( Stack );
+	if( v->IsObject() && Delegate && Delegate->FunctionName != NAME_None )
+	{
+		GFxSetDelegateMember( CastChecked<UGFxMoviePlayer>( GetOuter() ), v, Member, *Delegate );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5cbc30
+void UGFxObject::execActionScriptSetFunctionOn( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UGFxObject,Target);
+	P_GET_STR(Member);
+	P_FINISH;
+
+	FScriptDelegate* Delegate = GFxFindDelegateParm( Stack );
+	if( Target && Target->GetASValue()->IsObject() && Delegate && Delegate->FunctionName != NAME_None )
+	{
+		GFxSetDelegateMember( CastChecked<UGFxMoviePlayer>( GetOuter() ), Target->GetASValue(), Member, *Delegate );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5cbe20
+void UGFxMoviePlayer::execActionScriptSetFunction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UGFxObject,Object);
+	P_GET_STR(Member);
+	P_FINISH;
+
+	FScriptDelegate* Delegate = GFxFindDelegateParm( Stack );
+	if( Object && Object->GetASValue()->IsObject() && Delegate && Delegate->FunctionName != NAME_None )
+	{
+		GFxSetDelegateMember( this, Object->GetASValue(), Member, *Delegate );
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	The ActionScript* natives: call an AS2 method with the caller's own parameter
+	list, which is why they cannot be generated from a fixed signature.
+	DISHONORED(port): 2012 rvas 0x5e8350..0x5e8830 (UGFxMoviePlayer) and
+	0x5e85d0..0x5e8830 (UGFxObject); the shared body is inlined in each.
+-----------------------------------------------------------------------------*/
+
+enum EActionScriptReturn
+{
+	ASR_Void,
+	ASR_Value,
+};
+
+template<typename InvokerType>
+static void GFxExecuteActionScript( InvokerType Invoker, UGFxMoviePlayer* MoviePlayer, GFxValue& CallResult,
+	FFrame& Stack, RESULT_DECL, EActionScriptReturn ReturnKind )
+{
+	P_GET_STR(Path);
+	P_FINISH;
+
+	UFunction* Function = Cast<UFunction>( Stack.Node );
+	FGFxMovie* Movie = MoviePlayer ? MoviePlayer->GetMovie() : NULL;
+	if( Function == NULL || Invoker == NULL || Movie == NULL )
+	{
+		return;
+	}
+
+	UINT NumArgs = 0;
+	for( TFieldIterator<UProperty> It(Function); It && ( It->PropertyFlags & (CPF_Parm|CPF_ReturnParm) ) == CPF_Parm; ++It )
+	{
+		NumArgs++;
+	}
+
+	AutoGFxValueArray( GArgs, NumArgs );
+	UINT ArgIndex = 0;
+	for( TFieldIterator<UProperty> It(Function); It && ( It->PropertyFlags & (CPF_Parm|CPF_ReturnParm) ) == CPF_Parm; ++It, ++ArgIndex )
+	{
+		FGFxEngine::ConvertUPropToGFx( *It, Stack.Locals + It->Offset, GArgs(ArgIndex), Movie->pView.GetPtr() );
+	}
+
+	Invoker->Invoke( FTCHARToUTF8(*Path), &CallResult, GArgs, NumArgs );
+
+	if( ReturnKind == ASR_Value )
+	{
+		UProperty* ReturnProperty = Function->GetReturnProperty();
+		if( ReturnProperty )
+		{
+			FGFxEngine::ConvertGFxToUProp( ReturnProperty, (BYTE*)Result, CallResult, MoviePlayer );
+		}
+	}
+}
+
+void UGFxMoviePlayer::execActionScriptVoid( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult;
+	FGFxMovie* Movie = GetMovie();
+	GFxExecuteActionScript( Movie ? Movie->pView.GetPtr() : NULL, this, CallResult, Stack, Result, ASR_Void );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxMoviePlayer::execActionScriptInt( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult( GFxValue::VT_ConvertNumber );
+	FGFxMovie* Movie = GetMovie();
+	GFxExecuteActionScript( Movie ? Movie->pView.GetPtr() : NULL, this, CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxMoviePlayer::execActionScriptFloat( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult( GFxValue::VT_ConvertNumber );
+	FGFxMovie* Movie = GetMovie();
+	GFxExecuteActionScript( Movie ? Movie->pView.GetPtr() : NULL, this, CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxMoviePlayer::execActionScriptString( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult( GFxValue::VT_ConvertStringW );
+	FGFxMovie* Movie = GetMovie();
+	GFxExecuteActionScript( Movie ? Movie->pView.GetPtr() : NULL, this, CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxMoviePlayer::execActionScriptObject( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult;
+	FGFxMovie* Movie = GetMovie();
+	GFxExecuteActionScript( Movie ? Movie->pView.GetPtr() : NULL, this, CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxObject::execActionScriptVoid( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult;
+	GFxExecuteActionScript( GetASValue(), Cast<UGFxMoviePlayer>( GetOuter() ), CallResult, Stack, Result, ASR_Void );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxObject::execActionScriptInt( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult( GFxValue::VT_ConvertNumber );
+	GFxExecuteActionScript( GetASValue(), Cast<UGFxMoviePlayer>( GetOuter() ), CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxObject::execActionScriptFloat( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult( GFxValue::VT_ConvertNumber );
+	GFxExecuteActionScript( GetASValue(), Cast<UGFxMoviePlayer>( GetOuter() ), CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxObject::execActionScriptString( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult( GFxValue::VT_ConvertStringW );
+	GFxExecuteActionScript( GetASValue(), Cast<UGFxMoviePlayer>( GetOuter() ), CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+void UGFxObject::execActionScriptObject( FFrame& Stack, RESULT_DECL )
+{
+	GFxValue CallResult;
+	GFxExecuteActionScript( GetASValue(), Cast<UGFxMoviePlayer>( GetOuter() ), CallResult, Stack, Result, ASR_Value );
+	CallResult.ReleaseManaged();
+}
+
+// DISHONORED(port): 2012 rva 0x5e8830 - nine bytes: a tail call into execActionScriptObject
+void UGFxObject::execActionScriptArray( FFrame& Stack, RESULT_DECL )
+{
+	execActionScriptObject( Stack, Result );
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxObject: the generated exec wrappers
+-----------------------------------------------------------------------------*/
+
+void UGFxObject::execAttachMovie( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(symbolname);
+	P_GET_STR(instancename);
+	P_GET_INT_OPTX(Depth,-1);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = AttachMovie(symbolname,instancename,Depth,Type);
+}
+void UGFxObject::execCreateEmptyMovieClip( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(instancename);
+	P_GET_INT_OPTX(Depth,-1);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = CreateEmptyMovieClip(instancename,Depth,Type);
+}
+void UGFxObject::execGotoAndStopI( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(frame);
+	P_FINISH;
+	GotoAndStopI(frame);
+}
+void UGFxObject::execGotoAndStop( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(frame);
+	P_FINISH;
+	GotoAndStop(frame);
+}
+void UGFxObject::execGotoAndPlayI( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(frame);
+	P_FINISH;
+	GotoAndPlayI(frame);
+}
+void UGFxObject::execGotoAndPlay( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(frame);
+	P_FINISH;
+	GotoAndPlay(frame);
+}
+void UGFxObject::execInvoke( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_TARRAY(FASValue,args);
+	P_FINISH;
+	*(FASValue*)Result = Invoke(Member,args);
+}
+void UGFxObject::execSetElementMemberString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_GET_STR(S);
+	P_FINISH;
+	SetElementMemberString(Index,Member,S);
+}
+void UGFxObject::execSetElementMemberFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_GET_FLOAT(F);
+	P_FINISH;
+	SetElementMemberFloat(Index,Member,F);
+}
+void UGFxObject::execSetElementMemberBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_GET_UBOOL(B);
+	P_FINISH;
+	SetElementMemberBool(Index,Member,B);
+}
+void UGFxObject::execSetElementMemberObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_GET_OBJECT(UGFxObject,val);
+	P_FINISH;
+	SetElementMemberObject(Index,Member,val);
+}
+void UGFxObject::execSetElementMember( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_GET_STRUCT_INIT(FASValue,Arg);
+	P_FINISH;
+	SetElementMember(Index,Member,Arg);
+}
+void UGFxObject::execGetElementMemberString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_FINISH;
+	*(FString*)Result = GetElementMemberString(Index,Member);
+}
+void UGFxObject::execGetElementMemberFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_FINISH;
+	*(FLOAT*)Result = GetElementMemberFloat(Index,Member);
+}
+void UGFxObject::execGetElementMemberBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_FINISH;
+	*(UBOOL*)Result = GetElementMemberBool(Index,Member);
+}
+void UGFxObject::execGetElementMemberObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = GetElementMemberObject(Index,Member,Type);
+}
+void UGFxObject::execGetElementMember( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(Member);
+	P_FINISH;
+	*(FASValue*)Result = GetElementMember(Index,Member);
+}
+void UGFxObject::execSetElementColorTransform( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STRUCT_INIT(FASColorTransform,cxform);
+	P_FINISH;
+	SetElementColorTransform(Index,cxform);
+}
+void UGFxObject::execSetElementPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_FLOAT(X);
+	P_GET_FLOAT(Y);
+	P_FINISH;
+	SetElementPosition(Index,X,Y);
+}
+void UGFxObject::execSetElementVisible( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_UBOOL(Visible);
+	P_FINISH;
+	SetElementVisible(Index,Visible);
+}
+void UGFxObject::execSetElementDisplayMatrix( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STRUCT_INIT(FMatrix,M);
+	P_FINISH;
+	SetElementDisplayMatrix(Index,M);
+}
+void UGFxObject::execSetElementDisplayInfo( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STRUCT_INIT(FASDisplayInfo,D);
+	P_FINISH;
+	SetElementDisplayInfo(Index,D);
+}
+void UGFxObject::execGetElementDisplayMatrix( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_FINISH;
+	*(FMatrix*)Result = GetElementDisplayMatrix(Index);
+}
+void UGFxObject::execGetElementDisplayInfo( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_FINISH;
+	*(FASDisplayInfo*)Result = GetElementDisplayInfo(Index);
+}
+void UGFxObject::execSetElementString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STR(S);
+	P_FINISH;
+	SetElementString(Index,S);
+}
+void UGFxObject::execSetElementFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_FLOAT(F);
+	P_FINISH;
+	SetElementFloat(Index,F);
+}
+void UGFxObject::execSetElementBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_UBOOL(B);
+	P_FINISH;
+	SetElementBool(Index,B);
+}
+void UGFxObject::execSetElementObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_OBJECT(UGFxObject,val);
+	P_FINISH;
+	SetElementObject(Index,val);
+}
+void UGFxObject::execSetElement( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_STRUCT_INIT(FASValue,Arg);
+	P_FINISH;
+	SetElement(Index,Arg);
+}
+void UGFxObject::execGetElementString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_FINISH;
+	*(FString*)Result = GetElementString(Index);
+}
+void UGFxObject::execGetElementFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_FINISH;
+	*(FLOAT*)Result = GetElementFloat(Index);
+}
+void UGFxObject::execGetElementBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_FINISH;
+	*(UBOOL*)Result = GetElementBool(Index);
+}
+void UGFxObject::execGetElementObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = GetElementObject(Index,Type);
+}
+void UGFxObject::execGetElement( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Index);
+	P_FINISH;
+	*(FASValue*)Result = GetElement(Index);
+}
+void UGFxObject::execSetText( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Text);
+	P_GET_OBJECT_OPTX(UTranslationContext,InContext,NULL);
+	P_FINISH;
+	SetText(Text,InContext);
+}
+void UGFxObject::execGetText( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FString*)Result = GetText();
+}
+void UGFxObject::execSetVisible( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(Visible);
+	P_FINISH;
+	SetVisible(Visible);
+}
+void UGFxObject::execSetDisplayMatrix3D( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT(FMatrix,M);
+	P_FINISH;
+	SetDisplayMatrix3D(M);
+}
+void UGFxObject::execSetDisplayMatrix( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT(FMatrix,M);
+	P_FINISH;
+	SetDisplayMatrix(M);
+}
+void UGFxObject::execSetColorTransform( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT(FASColorTransform,cxform);
+	P_FINISH;
+	SetColorTransform(cxform);
+}
+void UGFxObject::execSetPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(X);
+	P_GET_FLOAT(Y);
+	P_FINISH;
+	SetPosition(X,Y);
+}
+void UGFxObject::execSetDisplayInfo( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT(FASDisplayInfo,D);
+	P_FINISH;
+	SetDisplayInfo(D);
+}
+void UGFxObject::execGetDisplayMatrix( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FMatrix*)Result = GetDisplayMatrix();
+}
+void UGFxObject::execGetColorTransform( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FASColorTransform*)Result = GetColorTransform();
+}
+void UGFxObject::execGetPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT_REF(X);
+	P_GET_FLOAT_REF(Y);
+	P_FINISH;
+	*(UBOOL*)Result = GetPosition(X,Y);
+}
+void UGFxObject::execGetDisplayInfo( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FASDisplayInfo*)Result = GetDisplayInfo();
+}
+void UGFxObject::execSetFunction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_OBJECT(UObject,context);
+	P_GET_NAME(fname);
+	P_FINISH;
+	SetFunction(Member,context,fname);
+}
+void UGFxObject::execSetObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_OBJECT(UGFxObject,val);
+	P_FINISH;
+	SetObject(Member,val);
+}
+void UGFxObject::execSetString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_STR(S);
+	P_GET_OBJECT_OPTX(UTranslationContext,InContext,NULL);
+	P_FINISH;
+	SetString(Member,S,InContext);
+}
+void UGFxObject::execSetFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_FLOAT(F);
+	P_FINISH;
+	SetFloat(Member,F);
+}
+void UGFxObject::execSetBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_UBOOL(B);
+	P_FINISH;
+	SetBool(Member,B);
+}
+void UGFxObject::execSet( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_STRUCT_INIT(FASValue,Arg);
+	P_FINISH;
+	Set(Member,Arg);
+}
+void UGFxObject::execGetObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = GetObject(Member,Type);
+}
+void UGFxObject::execGetString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_FINISH;
+	*(FString*)Result = GetString(Member);
+}
+void UGFxObject::execGetFloat( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_FINISH;
+	*(FLOAT*)Result = GetFloat(Member);
+}
+void UGFxObject::execGetBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_FINISH;
+	*(UBOOL*)Result = GetBool(Member);
+}
+void UGFxObject::execGet( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Member);
+	P_FINISH;
+	*(FASValue*)Result = Get(Member);
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxMoviePlayer: lifetime
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5b7010 - Cleanup is nothing but "close and unload if a movie is open"
+void UGFxMoviePlayer::Cleanup()
+{
+	if( GGFxEngine && pMovie )
+	{
+		Close( TRUE );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b7030
+void UGFxMoviePlayer::FinishDestroy()
+{
+	Cleanup();
+	Super::FinishDestroy();
+}
+
+// DISHONORED(port): 2012 rva 0x5e35f0. Without a runtime FGFxEngine::GetEngine() is NULL and the load fails
+// the way retail fails when the loader is not up, leaving bMovieIsOpen FALSE.
+UBOOL UGFxMoviePlayer::Load( const FString& Filename, UBOOL bInitFirstFrame )
+{
+	if( FGFxEngine::GetEngine() == NULL )
+	{
+		return FALSE;
+	}
+	if( pMovie )
+	{
+		Close( TRUE );
+	}
+	pMovie = GGFxEngine->LoadMovie( *Filename, bInitFirstFrame );
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL )
+	{
+		return FALSE;
+	}
+
+	Movie->bCanReceiveInput = bAllowInput ? TRUE : FALSE;
+	Movie->bCanReceiveFocus = bAllowFocus ? TRUE : FALSE;
+	Movie->pUMovie = this;
+	Movie->TimingMode = TimingMode;
+	Movie->pView->SetUserData( this );
+	if( ExternalInterface == NULL )
+	{
+		ExternalInterface = this;
+	}
+	for( INT Index = 0; Index < ExternalTextures.Num(); Index++ )
+	{
+		SetExternalTexture( ExternalTextures(Index).Resource, ExternalTextures(Index).Texture );
+	}
+
+	// the two key sets FGFxEngine::InputKey consults, keyed by FName index; retail allocates them here and
+	// they live as long as the movie does
+	if( CaptureKeys.Num() )
+	{
+		TSet<INT>* Keys = new TSet<INT>();
+		for( INT Index = 0; Index < CaptureKeys.Num(); Index++ )
+		{
+			Keys->Add( CaptureKeys(Index).GetIndex() );
+		}
+		pCaptureKeys = Keys;
+	}
+	if( FocusIgnoreKeys.Num() )
+	{
+		TSet<INT>* Keys = new TSet<INT>();
+		for( INT Index = 0; Index < FocusIgnoreKeys.Num(); Index++ )
+		{
+			Keys->Add( FocusIgnoreKeys(Index).GetIndex() );
+		}
+		pFocusIgnoreKeys = Keys;
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x5e3a30: PreLoad opens MovieInfo's own package path. Most of the retail
+// body's 1,044 bytes assemble that path from MovieInfo's outer chain and then install the CLIK load /
+// unload / sound callbacks, which are FGFxCLIKObject*EventCallback and belong to the runtime glue.
+UBOOL UGFxMoviePlayer::PreLoad()
+{
+	if( pMovie != NULL )
+	{
+		return TRUE;
+	}
+	if( MovieInfo == NULL || MovieInfo->GetOuter() == NULL || MovieInfo->GetOuter()->GetOuter() == NULL )
+	{
+		return FALSE;
+	}
+	// <package>.<group>.<name>, the shape FGFxEngine::GetPackagePath resolves
+	const FString FullName = MovieInfo->GetOutermost()->GetName() + TEXT(".")
+		+ MovieInfo->GetFullGroupName( TRUE ) + TEXT(".") + MovieInfo->GetName();
+	return Load( FullName, TRUE );
+	// DISHONORED(bringup): retail then installs FGFxCLIKObjectOnLoadEventCallback,
+	// FGFxCLIKObjectOnUnloadEventCallback and FGFxSoundEventCallback on the new view through
+	// GFxMovieView::CreateFunction; those three handlers are the runtime glue's (agent BB).
+}
+
+// DISHONORED(port): 2013 rva 0x58e820 (2012 0x5cf5b0): the C++ PreLoad, then FGFxEngine::StartScene with
+// the render texture and bPlay = !bStartPaused. StartScene returns void, so bMovieIsOpen is set whenever a
+// movie handle exists, which is what retail does.
+UBOOL UGFxMoviePlayer::Start( UBOOL bStartPaused )
+{
+	PreLoad();
+	if( pMovie == NULL || GGFxEngine == NULL )
+	{
+		return FALSE;
+	}
+	GGFxEngine->StartScene( GetMovie(), RenderTexture, TRUE, bStartPaused ? FALSE : TRUE );
+	bMovieIsOpen = TRUE;
+	return TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x5cf600
+void UGFxMoviePlayer::Close( UBOOL bUnload )
+{
+	if( GGFxEngine == NULL || pMovie == NULL )
+	{
+		return;
+	}
+	if( DataStoreSubscriber )
+	{
+		DataStoreSubscriber->ClearBoundDataStores();
+	}
+	if( !HasAnyFlags( RF_Unreachable ) )
+	{
+		eventOnClose();
+	}
+	// DISHONORED(bringup): retail also takes pMovie out of FGFxEngine::AllMovies here; that list is the
+	// engine glue's own bookkeeping, so CloseScene(pMovie, bUnload) is where agent BB's side removes it.
+	GGFxEngine->CloseScene( GetMovie(), bUnload );
+	bMovieIsOpen = FALSE;
+	if( !HasAnyFlags( RF_Unreachable ) )
+	{
+		eventConditionalClearPause();
+	}
+	if( bUnload )
+	{
+		// the UGFxObjects this movie created are outered to it and their GFxValues are dangling now
+		for( INT Index = 0; Index < ObjectValues.Num(); Index++ )
+		{
+			UGFxObject* Object = ObjectValues(Index);
+			if( Object && Object->GetOuter() == this )
+			{
+				Object->Clear();
+				ObjectValues.Remove( Index-- );
+			}
+		}
+		pMovie = NULL;
+		LocalPlayerOwnerIndex = 0;
+		DataStoreSubscriber = NULL;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b9e30. The frame-catch-up count is 2, and PostAdvance is called through
+// the vtable so the Dishonored menus' override runs.
+void UGFxMoviePlayer::Advance( FLOAT DeltaTime )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( GGFxEngine && Movie && Movie->pView.GetPtr() )
+	{
+		Movie->pView->Advance( DeltaTime, 2 );
+		PostAdvance( DeltaTime );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b7100 - the delegate first, then the deferred PostWidgetInit
+void UGFxMoviePlayer::PostAdvance( FLOAT DeltaTime )
+{
+	delegateOnPostAdvance( DeltaTime );
+	if( bWidgetsInitializedThisFrame )
+	{
+		eventPostWidgetInit();
+		bWidgetsInitializedThisFrame = FALSE;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b7090. Pausing a movie is OUR flag on FGFxMovie, not
+// GFxMovieView::SetPause: the engine simply stops advancing it, which is why a paused movie still draws.
+void UGFxMoviePlayer::SetPause( UBOOL bPausePlayback )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie )
+	{
+		Movie->fUpdate = bPausePlayback ? FALSE : TRUE;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b70b0. Changing the clock rebases LastTime on that clock, otherwise the
+// next Advance is handed the whole gap between the two time bases.
+void UGFxMoviePlayer::SetTimingMode( BYTE Mode )
+{
+	TimingMode = Mode;
+	FGFxMovie* Movie = GetMovie();
+	if( Movie )
+	{
+		Movie->TimingMode = Mode;
+		Movie->LastTime = ( Mode == TM_Real ) ? GCurrentTime : ( GWorld ? GWorld->GetTimeSeconds() : 0.0 );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5e4850. The insert priority really is the literal 2 in retail rather than
+// the new Priority: the member is recorded for the next Start and the movie is re-inserted into the mid
+// list. Left as retail has it; a change here would reorder the UI draw for real.
+void UGFxMoviePlayer::SetPriority( BYTE NewPriority )
+{
+	Priority = NewPriority;
+	if( pMovie )
+	{
+		FGFxEngine* Engine = FGFxEngine::GetEngine();
+		if( Engine )
+		{
+			Engine->InsertMovie( GetMovie(), 2 );
+		}
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxMoviePlayer: input and viewport
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5b7050
+void UGFxMoviePlayer::SetMovieCanReceiveFocus( UBOOL bCanReceiveFocus )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie )
+	{
+		Movie->bCanReceiveFocus = bCanReceiveFocus;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b7070
+void UGFxMoviePlayer::SetMovieCanReceiveInput( UBOOL bCanReceiveInput )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie )
+	{
+		Movie->bCanReceiveInput = bCanReceiveInput;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5d9100
+void UGFxMoviePlayer::AddCaptureKey( FName Key )
+{
+	CaptureKeys.AddUniqueItem( Key );
+}
+
+// DISHONORED(port): 2012 rva 0x5d9db0, inlined in execClearCaptureKeys
+void UGFxMoviePlayer::ClearCaptureKeys()
+{
+	CaptureKeys.Empty();
+}
+
+// DISHONORED(port): 2012 rva 0x5d91d0
+void UGFxMoviePlayer::AddFocusIgnoreKey( FName Key )
+{
+	FocusIgnoreKeys.AddUniqueItem( Key );
+}
+
+// DISHONORED(port): 2012 rva 0x5d91a0
+void UGFxMoviePlayer::ClearFocusIgnoreKeys()
+{
+	FocusIgnoreKeys.Empty();
+}
+
+// DISHONORED(port): 2012 rva 0x5daeb0. Passing the capture-key set means "flush only those"; NULL means
+// "flush everything", so a movie with no capture keys and bCaptureKeysOnly set flushes nothing at all.
+void UGFxMoviePlayer::FlushPlayerInput( UBOOL bCaptureKeysOnly )
+{
+	if( GGFxEngine == NULL )
+	{
+		return;
+	}
+	if( bCaptureKeysOnly )
+	{
+		if( pCaptureKeys )
+		{
+			GGFxEngine->FlushPlayerInput( (TSet<INT>*)pCaptureKeys );
+		}
+	}
+	else
+	{
+		GGFxEngine->FlushPlayerInput( NULL );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5b8f20, inlined in execGetGameViewportClient
+UGameViewportClient* UGFxMoviePlayer::GetGameViewportClient()
+{
+	ULocalPlayer* LocalPlayer = eventGetLP();
+	return LocalPlayer ? LocalPlayer->ViewportClient : NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x5b9d80. The existing viewport is read back first so the buffer size, the
+// scissor and the aspect ratio the renderer set survive; only the rectangle is replaced. fViewportSet then
+// stops FGFxEngine::ReevaluateSizes from overwriting it on the next resize.
+void UGFxMoviePlayer::SetViewport( INT X, INT Y, INT Width, INT Height )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( GGFxEngine == NULL || Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return;
+	}
+	GViewport Viewport;
+	Movie->pView->GetViewport( &Viewport );
+	Viewport.Left = X;
+	Viewport.Top = Y;
+	Viewport.Width = Width;
+	Viewport.Height = Height;
+	Movie->pView->SetViewport( Viewport );
+	Movie->fViewportSet = TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x5bdd70, inlined in execSetViewScaleMode
+void UGFxMoviePlayer::SetViewScaleMode( BYTE ScaleMode )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		Movie->pView->SetViewScaleMode( (GFxMovieView::ScaleModeType)ScaleMode );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5bdde0, inlined in execSetAlignment
+void UGFxMoviePlayer::SetAlignment( BYTE Align )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		Movie->pView->SetViewAlignment( (GFxMovieView::AlignType)Align );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5bde50, inlined in execGetVisibleFrameRect
+void UGFxMoviePlayer::GetVisibleFrameRect( FLOAT& MinX, FLOAT& MinY, FLOAT& MaxX, FLOAT& MaxY )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		Movie->pView->GetVisibleFrameRect( MinX, MinY, MaxX, MaxY );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5be030, inlined in execSetView3D
+void UGFxMoviePlayer::SetView3D( const FMatrix& MatView )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GMatrix3D M3;
+		FMatrixToGMatrix3D( M3, MatView );
+		Movie->pView->SetView3D( M3 );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5be100, inlined in execSetPerspective3D
+void UGFxMoviePlayer::SetPerspective3D( const FMatrix& MatPersp )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GMatrix3D M3;
+		FMatrixToGMatrix3D( M3, MatPersp );
+		Movie->pView->SetPerspective3D( M3 );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5cf740. The substitution itself is FGFxImageLoader's (agent BB); this side
+// only records the binding so the loader finds it when the movie asks for the resource.
+UBOOL UGFxMoviePlayer::SetExternalTexture( const FString& Resource, UTexture* Texture )
+{
+	for( INT Index = 0; Index < ExternalTextures.Num(); Index++ )
+	{
+		if( ExternalTextures(Index).Resource == Resource )
+		{
+			ExternalTextures(Index).Texture = Texture;
+			return TRUE;
+		}
+	}
+	const INT NewIndex = ExternalTextures.AddZeroed();
+	ExternalTextures(NewIndex).Resource = Resource;
+	ExternalTextures(NewIndex).Texture = Texture;
+	return TRUE;
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxMoviePlayer: values and variables
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5c0930. The new UGFxObject is outered to the movie player (UGFxObject is
+// declared within GFxMoviePlayer) and kept in ObjectValues so the GC sees it.
+UGFxObject* UGFxMoviePlayer::CreateValueAddRef( const void* InValue, UClass* Type )
+{
+	UGFxObject* Object = (UGFxObject*)StaticConstructObject( Type ? Type : UGFxObject::StaticClass(), this );
+	if( Object )
+	{
+		Object->SetValue( InValue );
+		ObjectValues.AddItem( Object );
+	}
+	return Object;
+}
+
+// DISHONORED(port): 2012 rva 0x5c0930, the non-AddRef form: the caller's value is consumed, so the managed
+// reference moves into the new object instead of being duplicated.
+UGFxObject* UGFxMoviePlayer::CreateValue( const void* InValue, UClass* Type )
+{
+	UGFxObject* Object = (UGFxObject*)StaticConstructObject( Type ? Type : UGFxObject::StaticClass(), this );
+	if( Object )
+	{
+		GFxValue* Dest = Object->GetASValue();
+		*Dest = *(const GFxValue*)InValue;
+		ObjectValues.AddItem( Object );
+	}
+	return Object;
+}
+
+// DISHONORED(port): 2012 rva 0x5c0550
+FASValue UGFxMoviePlayer::Invoke( const FString& Method, const TArray<FASValue>& Args )
+{
+	FASValue Result(EC_EventParm);
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return Result;
+	}
+	const UINT NumArgs = Args.Num();
+	AutoGFxValueArray( GArgs, NumArgs );
+	for( UINT Index = 0; Index < NumArgs; Index++ )
+	{
+		FGFxUIConvertASValueToGFx( GArgs(Index), Args(Index) );
+	}
+	GFxValue GResult;
+	if( Movie->pView->Invoke( FTCHARToUTF8(*Method), &GResult, GArgs, NumArgs ) )
+	{
+		FGFxUIConvertGFxToASValue( Result, GResult );
+	}
+	GResult.ReleaseManaged();
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5e6c20
+UGFxObject* UGFxMoviePlayer::CreateObject( const FString& ASClass, UClass* Type )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return NULL;
+	}
+	GFxValue GResult;
+	Movie->pView->CreateObject( &GResult, ASClass.Len() ? (const char*)FTCHARToUTF8(*ASClass) : NULL, NULL, 0 );
+	if( GResult.IsUndefined() )
+	{
+		return NULL;
+	}
+	return CreateValue( &GResult, Type );
+}
+
+// DISHONORED(port): 2012 rva 0x5e6d70
+UGFxObject* UGFxMoviePlayer::CreateArray()
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return NULL;
+	}
+	GFxValue GResult;
+	Movie->pView->CreateArray( &GResult );
+	if( GResult.IsUndefined() )
+	{
+		return NULL;
+	}
+	return CreateValue( &GResult, UGFxObject::StaticClass() );
+}
+
+// DISHONORED(port): 2012 rva 0x5c0b70
+FASValue UGFxMoviePlayer::GetVariable( const FString& Path )
+{
+	FASValue Result(EC_EventParm);
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return Result;
+	}
+	GFxValue GResult;
+	if( Movie->pView->GetVariable( &GResult, FTCHARToUTF8(*Path) ) )
+	{
+		FGFxUIConvertGFxToASValue( Result, GResult );
+	}
+	GResult.ReleaseManaged();
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c0d30
+UBOOL UGFxMoviePlayer::GetVariableBool( const FString& Path )
+{
+	UBOOL Result = FALSE;
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertBoolean );
+		if( Movie->pView->GetVariable( &GResult, FTCHARToUTF8(*Path) ) && GResult.GetType() == GFxValue::VT_Boolean )
+		{
+			Result = GResult.GetBool() ? TRUE : FALSE;
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c0e60
+FLOAT UGFxMoviePlayer::GetVariableNumber( const FString& Path )
+{
+	FLOAT Result = 0.f;
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertNumber );
+		if( Movie->pView->GetVariable( &GResult, FTCHARToUTF8(*Path) ) && GResult.GetType() == GFxValue::VT_Number )
+		{
+			Result = GResult.GetNumber();
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5c0f90
+FString UGFxMoviePlayer::GetVariableString( const FString& Path )
+{
+	FString Result;
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GFxValue GResult( GFxValue::VT_ConvertStringW );
+		if( Movie->pView->GetVariable( &GResult, FTCHARToUTF8(*Path) ) )
+		{
+			if( GResult.GetType() == GFxValue::VT_StringW )
+			{
+				Result = GResult.GetStringW();
+			}
+			else if( GResult.GetType() == GFxValue::VT_String )
+			{
+				Result = FString( FUTF8ToTCHAR( GResult.GetString() ) );
+			}
+		}
+		GResult.ReleaseManaged();
+	}
+	return Result;
+}
+
+// DISHONORED(port): 2012 rva 0x5e6aa0
+UGFxObject* UGFxMoviePlayer::GetVariableObject( const FString& Path, UClass* Type )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return NULL;
+	}
+	GFxValue GResult;
+	if( !Movie->pView->GetVariable( &GResult, FTCHARToUTF8(*Path) ) || GResult.IsUndefined() || GResult.IsNull() )
+	{
+		GResult.ReleaseManaged();
+		return NULL;
+	}
+	return CreateValue( &GResult, Type );
+}
+
+// DISHONORED(port): 2012 rva 0x5c1180. SV_Sticky is retail's: a variable set from C++ survives the
+// timeline recreating the object it lives on.
+void UGFxMoviePlayer::SetVariable( const FString& Path, FASValue Arg )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( GGFxEngine == NULL || Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return;
+	}
+	GFxValue GArg;
+	FGFxUIConvertASValueToGFx( GArg, Arg );
+	Movie->pView->SetVariable( FTCHARToUTF8(*Path), GArg, GFxMovie::SV_Sticky );
+	GArg.ReleaseManaged();
+}
+
+// DISHONORED(port): 2012 rva 0x5c1300
+void UGFxMoviePlayer::SetVariableBool( const FString& Path, UBOOL B )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GFxValue GArg;
+		GArg.SetBoolean( B ? true : false );
+		Movie->pView->SetVariable( FTCHARToUTF8(*Path), GArg, GFxMovie::SV_Sticky );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c1420
+void UGFxMoviePlayer::SetVariableNumber( const FString& Path, FLOAT F )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GFxValue GArg;
+		GArg.SetNumber( F );
+		Movie->pView->SetVariable( FTCHARToUTF8(*Path), GArg, GFxMovie::SV_Sticky );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c1540
+void UGFxMoviePlayer::SetVariableString( const FString& Path, const FString& S )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		GFxValue GArg;
+		GArg.SetStringW( *S );
+		Movie->pView->SetVariable( FTCHARToUTF8(*Path), GArg, GFxMovie::SV_Sticky );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5c0a00
+void UGFxMoviePlayer::SetVariableObject( const FString& Path, UGFxObject* Value )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie && Movie->pView.GetPtr() )
+	{
+		if( Value )
+		{
+			Movie->pView->SetVariable( FTCHARToUTF8(*Path), *Value->GetASValue(), GFxMovie::SV_Sticky );
+		}
+		else
+		{
+			GFxValue GArg;
+			GArg.SetNull();
+			Movie->pView->SetVariable( FTCHARToUTF8(*Path), GArg, GFxMovie::SV_Sticky );
+		}
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxMoviePlayer: array variables. GFx takes these in bulk through
+	GFxMovieView::Get/SetVariableArray with a SetArrayType tag, which is why
+	there is one body per element type rather than a loop of scalar calls.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5d3670
+UBOOL UGFxMoviePlayer::GetVariableArray( const FString& Path, INT Index, TArray<FASValue>& Out )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return FALSE;
+	}
+	const UINT Count = Out.Num();
+	if( Count == 0 )
+	{
+		return TRUE;
+	}
+	AutoGFxValueArray( GArgs, Count );
+	if( !Movie->pView->GetVariableArray( GFxMovie::SA_Value, FTCHARToUTF8(*Path), Index, GArgs.GetValues(), Count ) )
+	{
+		return FALSE;
+	}
+	for( UINT ArgIndex = 0; ArgIndex < Count; ArgIndex++ )
+	{
+		FGFxUIConvertGFxToASValue( Out(ArgIndex), GArgs(ArgIndex) );
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x5cb2c0
+UBOOL UGFxMoviePlayer::GetVariableIntArray( const FString& Path, INT Index, TArray<INT>& Out )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL || Out.Num() == 0 )
+	{
+		return Movie != NULL;
+	}
+	return Movie->pView->GetVariableArray( GFxMovie::SA_Int, FTCHARToUTF8(*Path), Index, Out.GetData(), Out.Num() );
+}
+
+// DISHONORED(port): 2012 rva 0x5cb4a0
+UBOOL UGFxMoviePlayer::GetVariableFloatArray( const FString& Path, INT Index, TArray<FLOAT>& Out )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL || Out.Num() == 0 )
+	{
+		return Movie != NULL;
+	}
+	return Movie->pView->GetVariableArray( GFxMovie::SA_Float, FTCHARToUTF8(*Path), Index, Out.GetData(), Out.Num() );
+}
+
+// DISHONORED(port): 2012 rva 0x5d3930
+UBOOL UGFxMoviePlayer::GetVariableStringArray( const FString& Path, INT Index, TArray<FString>& Out )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return FALSE;
+	}
+	const UINT Count = Out.Num();
+	if( Count == 0 )
+	{
+		return TRUE;
+	}
+	TArray<const TCHAR*> Strings;
+	Strings.AddZeroed( Count );
+	if( !Movie->pView->GetVariableArray( GFxMovie::SA_StringW, FTCHARToUTF8(*Path), Index, Strings.GetData(), Count ) )
+	{
+		return FALSE;
+	}
+	for( UINT StringIndex = 0; StringIndex < Count; StringIndex++ )
+	{
+		Out(StringIndex) = Strings(StringIndex) ? Strings(StringIndex) : TEXT("");
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x5c1690
+UBOOL UGFxMoviePlayer::SetVariableArray( const FString& Path, INT Index, const TArray<FASValue>& In )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return FALSE;
+	}
+	const UINT Count = In.Num();
+	AutoGFxValueArray( GArgs, Count );
+	for( UINT ArgIndex = 0; ArgIndex < Count; ArgIndex++ )
+	{
+		FGFxUIConvertASValueToGFx( GArgs(ArgIndex), In(ArgIndex) );
+	}
+	return Movie->pView->SetVariableArray( GFxMovie::SA_Value, FTCHARToUTF8(*Path), Index, GArgs.GetValues(), Count, GFxMovie::SV_Sticky );
+}
+
+// DISHONORED(port): 2012 rva 0x5c1970
+UBOOL UGFxMoviePlayer::SetVariableIntArray( const FString& Path, INT Index, const TArray<INT>& In )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return FALSE;
+	}
+	return Movie->pView->SetVariableArray( GFxMovie::SA_Int, FTCHARToUTF8(*Path), Index, In.GetData(), In.Num(), GFxMovie::SV_Sticky );
+}
+
+// DISHONORED(port): 2012 rva 0x5c1aa0
+UBOOL UGFxMoviePlayer::SetVariableFloatArray( const FString& Path, INT Index, const TArray<FLOAT>& In )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return FALSE;
+	}
+	return Movie->pView->SetVariableArray( GFxMovie::SA_Float, FTCHARToUTF8(*Path), Index, In.GetData(), In.Num(), GFxMovie::SV_Sticky );
+}
+
+// DISHONORED(port): 2012 rva 0x5c1bd0
+UBOOL UGFxMoviePlayer::SetVariableStringArray( const FString& Path, INT Index, const TArray<FString>& In )
+{
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return FALSE;
+	}
+	TArray<const TCHAR*> Strings;
+	Strings.Add( In.Num() );
+	for( INT StringIndex = 0; StringIndex < In.Num(); StringIndex++ )
+	{
+		Strings(StringIndex) = *In(StringIndex);
+	}
+	return Movie->pView->SetVariableArray( GFxMovie::SA_StringW, FTCHARToUTF8(*Path), Index, Strings.GetData(), Strings.Num(), GFxMovie::SV_Sticky );
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxMoviePlayer: widget bindings, data store, input filtering
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x5dd060, inlined in execSetWidgetPathBinding
+void UGFxMoviePlayer::SetWidgetPathBinding( UGFxObject* WidgetToBind, FName Path )
+{
+	if( Path == NAME_None )
+	{
+		return;
+	}
+	if( WidgetToBind )
+	{
+		WidgetPathBindings.Set( Path, WidgetToBind );
+	}
+	else
+	{
+		WidgetPathBindings.Remove( Path );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5dd210, gfxuidatastore.cpp:44. Retail spends 2,123 bytes here resolving every
+// binding's markup through UDataStoreClient - looking the data store up by name for this movie's local
+// player, splitting the markup into store and field, filling the binding's cell tags and building the UTF-8
+// model and control ids - and then refreshes the values. The resolver is Engine's UI data-store subsystem
+// (UDataStoreClient, FUIDataStoreBinding::ResolveMarkup), which this tree has not ported, so what is here is
+// the part that is ours: make sure a subscriber exists and drive it.
+void UGFxMoviePlayer::RefreshDataStoreBindings()
+{
+	if( DataStoreBindings.Num() == 0 )
+	{
+		return;
+	}
+	if( DataStoreSubscriber == NULL )
+	{
+		DataStoreSubscriber = ConstructObject<UGFxDataStoreSubscriber>( UGFxDataStoreSubscriber::StaticClass(), this );
+		DataStoreSubscriber->Movie = this;
+	}
+	// DISHONORED(bringup): the markup resolution above this line is Engine's UDataStoreClient path
+	DataStoreSubscriber->RefreshSubscriberValue( INDEX_NONE );
+}
+
+// DISHONORED(port): 2012 rva 0x5b6b30, gfxuidatastore.cpp:132
+void UGFxMoviePlayer::PublishDataStoreValues()
+{
+	if( DataStoreSubscriber )
+	{
+		DataStoreSubscriber->PublishValues();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5cd5c0. An AS2 method whose name begins with '_' is a data-store call, not
+// an ExternalInterface call: FGFxExternalInterface::Callback routes it here before looking for a UFunction.
+void UGFxMoviePlayer::ProcessDataStoreCall( const char* MethodName, const GFxValue* Args, INT ArgCount )
+{
+	if( DataStoreSubscriber == NULL || MethodName == NULL )
+	{
+		return;
+	}
+	const FString Method = FString( FUTF8ToTCHAR( MethodName ) );
+	if( Method == TEXT("_refresh") )
+	{
+		RefreshDataStoreBindings();
+	}
+	else if( Method == TEXT("_publish") )
+	{
+		PublishDataStoreValues();
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x5deb60 / 0x5deb40 - both are empty in the base class; the movie's own input
+// path is FGFxEngine::InputKey / InputAxis and the Dishonored menus override these.
+UBOOL UGFxMoviePlayer::FilterButtonInput( INT ControllerId, FName Key, BYTE Event, UBOOL& bHandled )
+{
+	return FALSE;
+}
+
+UBOOL UGFxMoviePlayer::FilterInputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime, UBOOL bGamepad, UBOOL& bHandled )
+{
+	return FALSE;
+}
+
+/*-----------------------------------------------------------------------------
+	UGFxMoviePlayer: the generated exec wrappers
+-----------------------------------------------------------------------------*/
+
+void UGFxMoviePlayer::execSetWidgetPathBinding( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UGFxObject,WidgetToBind);
+	P_GET_NAME(Path);
+	P_FINISH;
+	SetWidgetPathBinding(WidgetToBind,Path);
+}
+void UGFxMoviePlayer::execCreateArray( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UGFxObject**)Result = CreateArray();
+}
+void UGFxMoviePlayer::execCreateObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(ASClass);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = CreateObject(ASClass,Type);
+}
+void UGFxMoviePlayer::execInvoke( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(method);
+	P_GET_TARRAY(FASValue,args);
+	P_FINISH;
+	*(FASValue*)Result = Invoke(method,args);
+}
+void UGFxMoviePlayer::execSetVariableStringArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY(FString,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = SetVariableStringArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execSetVariableFloatArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY(FLOAT,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = SetVariableFloatArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execSetVariableIntArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY(INT,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = SetVariableIntArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execSetVariableArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY(FASValue,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = SetVariableArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execGetVariableStringArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY_REF(FString,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = GetVariableStringArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execGetVariableFloatArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY_REF(FLOAT,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = GetVariableFloatArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execGetVariableIntArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY_REF(INT,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = GetVariableIntArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execGetVariableArray( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_INT(Index);
+	P_GET_TARRAY_REF(FASValue,Arg);
+	P_FINISH;
+	*(UBOOL*)Result = GetVariableArray(Path,Index,Arg);
+}
+void UGFxMoviePlayer::execSetVariableObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_OBJECT(UGFxObject,Object);
+	P_FINISH;
+	SetVariableObject(Path,Object);
+}
+void UGFxMoviePlayer::execSetVariableString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_STR(S);
+	P_FINISH;
+	SetVariableString(Path,S);
+}
+void UGFxMoviePlayer::execSetVariableNumber( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_FLOAT(F);
+	P_FINISH;
+	SetVariableNumber(Path,F);
+}
+void UGFxMoviePlayer::execSetVariableBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_UBOOL(B);
+	P_FINISH;
+	SetVariableBool(Path,B);
+}
+void UGFxMoviePlayer::execSetVariable( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_STRUCT_INIT(FASValue,Arg);
+	P_FINISH;
+	SetVariable(Path,Arg);
+}
+void UGFxMoviePlayer::execGetVariableObject( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_GET_OBJECT_OPTX(UClass,Type,UGFxObject::StaticClass());
+	P_FINISH;
+	*(UGFxObject**)Result = GetVariableObject(Path,Type);
+}
+void UGFxMoviePlayer::execGetVariableString( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_FINISH;
+	*(FString*)Result = GetVariableString(Path);
+}
+void UGFxMoviePlayer::execGetVariableNumber( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_FINISH;
+	*(FLOAT*)Result = GetVariableNumber(Path);
+}
+void UGFxMoviePlayer::execGetVariableBool( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_FINISH;
+	*(UBOOL*)Result = GetVariableBool(Path);
+}
+void UGFxMoviePlayer::execGetVariable( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Path);
+	P_FINISH;
+	*(FASValue*)Result = GetVariable(Path);
+}
+void UGFxMoviePlayer::execFlushPlayerInput( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(capturekeysonly);
+	P_FINISH;
+	FlushPlayerInput(capturekeysonly);
+}
+void UGFxMoviePlayer::execClearFocusIgnoreKeys( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ClearFocusIgnoreKeys();
+}
+void UGFxMoviePlayer::execAddFocusIgnoreKey( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(Key);
+	P_FINISH;
+	AddFocusIgnoreKey(Key);
+}
+void UGFxMoviePlayer::execClearCaptureKeys( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	ClearCaptureKeys();
+}
+void UGFxMoviePlayer::execAddCaptureKey( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_NAME(Key);
+	P_FINISH;
+	AddCaptureKey(Key);
+}
+void UGFxMoviePlayer::execSetMovieCanReceiveInput( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bCanReceiveInput);
+	P_FINISH;
+	SetMovieCanReceiveInput(bCanReceiveInput);
+}
+void UGFxMoviePlayer::execSetMovieCanReceiveFocus( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bCanReceiveFocus);
+	P_FINISH;
+	SetMovieCanReceiveFocus(bCanReceiveFocus);
+}
+void UGFxMoviePlayer::execSetPerspective3D( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT_REF(FMatrix,matPersp);
+	P_FINISH;
+	SetPerspective3D(matPersp);
+}
+void UGFxMoviePlayer::execSetView3D( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT_INIT_REF(FMatrix,matView);
+	P_FINISH;
+	SetView3D(matView);
+}
+void UGFxMoviePlayer::execGetVisibleFrameRect( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT_REF(x0);
+	P_GET_FLOAT_REF(y0);
+	P_GET_FLOAT_REF(X1);
+	P_GET_FLOAT_REF(Y1);
+	P_FINISH;
+	GetVisibleFrameRect(x0,y0,X1,Y1);
+}
+void UGFxMoviePlayer::execSetAlignment( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_BYTE(A);
+	P_FINISH;
+	SetAlignment(A);
+}
+void UGFxMoviePlayer::execSetViewScaleMode( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_BYTE(SM);
+	P_FINISH;
+	SetViewScaleMode(SM);
+}
+void UGFxMoviePlayer::execSetViewport( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(X);
+	P_GET_INT(Y);
+	P_GET_INT(Width);
+	P_GET_INT(Height);
+	P_FINISH;
+	SetViewport(X,Y,Width,Height);
+}
+void UGFxMoviePlayer::execGetGameViewportClient( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UGameViewportClient**)Result = GetGameViewportClient();
+}
+void UGFxMoviePlayer::execSetPriority( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_BYTE(NewPriority);
+	P_FINISH;
+	SetPriority(NewPriority);
+}
+void UGFxMoviePlayer::execPublishDataStoreValues( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	PublishDataStoreValues();
+}
+void UGFxMoviePlayer::execRefreshDataStoreBindings( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	RefreshDataStoreBindings();
+}
+void UGFxMoviePlayer::execSetExternalTexture( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(Resource);
+	P_GET_OBJECT(UTexture,Texture);
+	P_FINISH;
+	*(UBOOL*)Result = SetExternalTexture(Resource,Texture);
+}
+void UGFxMoviePlayer::execSetTimingMode( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_BYTE(Mode);
+	P_FINISH;
+	SetTimingMode(Mode);
+}
+void UGFxMoviePlayer::execClose( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL_OPTX(Unload,TRUE);
+	P_FINISH;
+	Close(Unload);
+}
+void UGFxMoviePlayer::execSetPause( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL_OPTX(bPausePlayback,FALSE);
+	P_FINISH;
+	SetPause(bPausePlayback);
+}
+void UGFxMoviePlayer::execPostAdvance( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	PostAdvance(DeltaTime);
+}
+void UGFxMoviePlayer::execAdvance( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(Time);
+	P_FINISH;
+	Advance(Time);
+}
+void UGFxMoviePlayer::execStart( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL_OPTX(StartPaused,FALSE);
+	P_FINISH;
+	*(UBOOL*)Result = Start(StartPaused);
+}
+void UGFxMoviePlayer::execPreLoad( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = PreLoad();
+}

@@ -61,3 +61,130 @@ void UDisGFxMoviePlayerBase::execWidgetInitialized_Native( FFrame& Stack, RESULT
 }
 
 // ---- end of trivial natives ----
+
+/*-----------------------------------------------------------------------------
+	Agent BE (PHASE8.md package BE): the 8 remaining UDisGFxMoviePlayerBase natives.
+	These are the AS2 -> C++ boundary of every Dishonored menu screen, and they
+	arrive through FGFxExternalInterface::Callback (GFxUI/Src/gfxuiexternalinterface.cpp).
+	The three message-box ones are honest halves: the m_MsgBoxID bookkeeping is
+	this class's and is ported, and each names the UDisGlobalUIManager method
+	that is not declared in this tree yet.
+-----------------------------------------------------------------------------*/
+
+#include "gfxui_gfx3.h"
+
+// DISHONORED(port): 2012 rva 0x5f5750 exec / 0x7f5ce0 body. Focus is handed to the movie's own AS2 root
+// object, not to a widget: _root.UIBase.OnFocusGained(). Only while the movie is open.
+void UDisGFxMoviePlayerBase::execOnFocusGained( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_LocalPlayerIndex);
+	P_FINISH;
+
+	FGFxMovie* Movie = GetMovie();
+	if( !bMovieIsOpen || Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return;
+	}
+	GFxValue UIBase;
+	if( Movie->pView->GetVariable( &UIBase, "_root.UIBase" ) )
+	{
+		GFxValue Unused;
+		UIBase.Invoke( "OnFocusGained", &Unused );
+		Unused.ReleaseManaged();
+	}
+	UIBase.ReleaseManaged();
+}
+
+// DISHONORED(port): 2012 rva 0x7f4290 - the m_bCaptureAnalogInput bit, read back by UpdateAnalogInputForAS
+void UDisGFxMoviePlayerBase::execCaptureAnalogInput( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(_bCapture);
+	P_FINISH;
+	m_bCaptureAnalogInput = _bCapture ? TRUE : FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x7f42b0 - the negation of the m_bIsLoadingMoviePackage bit
+void UDisGFxMoviePlayerBase::execHasFinishedAsyncLoading( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = m_bIsLoadingMoviePackage ? FALSE : TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x80bb90. FormatText reads a text field's own string back out of the movie,
+// runs the interaction-key substitution over it and writes it back, which is how "[Use]" in a localised
+// string becomes the key the player actually has bound.
+void UDisGFxMoviePlayerBase::execFormatText( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(_rTextVarPath);
+	P_FINISH;
+
+	FGFxMovie* Movie = GetMovie();
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return;
+	}
+	GFxValue Text( GFxValue::VT_ConvertStringW );
+	if( Movie->pView->GetVariable( &Text, FTCHARToUTF8(*_rTextVarPath) ) && !Text.IsUndefined() )
+	{
+		FString Formatted = Text.GetType() == GFxValue::VT_StringW
+			? FString( Text.GetStringW() )
+			: FString( FUTF8ToTCHAR( Text.GetString() ) );
+		// DISHONORED(bringup): retail then substitutes the bound keys through FormatInteractionText
+		// (2012 0x8085b0), FormatGamepadKeyName (0x7f5f30) and FormatMouseKeyName (0x7f5fd0), all three of
+		// which read UArkProfileSettings' key bindings; that class is a shim with no accessors in this tree.
+		GFxValue Out;
+		Out.SetStringW( *Formatted );
+		Movie->pView->SetVariable( FTCHARToUTF8(*_rTextVarPath), Out, GFxMovie::SV_Sticky );
+	}
+	Text.ReleaseManaged();
+}
+
+// DISHONORED(port): 2012 rva 0x808490. The box itself belongs to UDisGlobalUIManager, which owns the one
+// message-box movie every screen shares; what belongs here is the id, because HideMessageBox and
+// AddMessageBoxTimer address the box by it and OnMessageBoxResult matches on it.
+void UDisGFxMoviePlayerBase::execShowMessageBox( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STR(_rMessage);
+	P_GET_STR(_rButton0);
+	P_GET_STR(_rButton1);
+	P_GET_STR(_rButton2);
+	P_FINISH;
+
+	FDisMsgBoxInfo Info(EC_EventParm);
+	Info.m_Message = _rMessage;
+	Info.m_Buttons[0] = _rButton0;
+	Info.m_Buttons[1] = _rButton1;
+	Info.m_Buttons[2] = _rButton2;
+	// DISHONORED(bringup): m_MsgBoxID = DisGetGlobalUIManager()->ShowMessageBox(Info) (2012 0x8aeee0), and
+	// retail also (re)registers this movie player for the FArkGameEvent the box answers with. Neither
+	// UDisGlobalUIManager::ShowMessageBox nor FArkGameEventDispatcher is declared in this tree.
+	m_MsgBoxID = 0;
+}
+
+// DISHONORED(port): 2012 rva 0x7f4310
+void UDisGFxMoviePlayerBase::execHideMessageBox( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	// DISHONORED(bringup): DisGetGlobalUIManager()->HideMessageBox(m_MsgBoxID) (2012 0x8aef20)
+	m_MsgBoxID = 0;
+}
+
+// DISHONORED(port): 2012 rva 0x7f42c0 - a duration of zero means ten seconds, which is retail's own default
+void UDisGFxMoviePlayerBase::execAddMessageBoxTimer( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(_fDuration);
+	P_FINISH;
+	const FLOAT Duration = _fDuration == 0.f ? 10.f : _fDuration;
+	// DISHONORED(bringup): DisGetGlobalUIManager()->AddMessageBoxTimer(m_MsgBoxID, Duration) (2012 0x8aef00)
+	(void)Duration;
+}
+
+// DISHONORED(port): 2012 rva 0x7fa1b0 - one string out of UDisGlobalUIManager::m_EquipmentIcons[_ItemIdx]
+void UDisGFxMoviePlayerBase::execReq_EquipmentIconImage( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_ItemIdx);
+	P_FINISH;
+	// DISHONORED(bringup): DisGetGlobalUIManager()->m_EquipmentIcons[_ItemIdx]; UDisGlobalUIManager has no
+	// reflected m_EquipmentIcons array in this tree's generated class.
+	*(FString*)Result = FString();
+}
