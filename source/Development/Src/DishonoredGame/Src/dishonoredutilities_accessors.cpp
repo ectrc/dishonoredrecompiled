@@ -152,3 +152,35 @@ UBOOL DisIsBendTimeFrozen()
 {
 	return FALSE;
 }
+
+// ---- agent CG ports (PHASE9 CG): the AI accessors ----
+
+// DISHONORED(port): 2013 rva 0x7c8b80 (2012 0x832240): the global AI manager is a sub-object of the game info, so it
+// exists as soon as the game info is spawned and goes away with it. The "unchecked" in the name is retail's: it answers
+// NULL before the game info exists rather than asserting, and every AI caller handles that.
+UDishonoredGlobalAIManager* DisGetGlobalAIManagerUnchecked()
+{
+	if( !GWorld )
+	{
+		return NULL;
+	}
+	ADishonoredGameInfo* GameInfo = Cast<ADishonoredGameInfo>( GWorld->GetGameInfo() );
+	return GameInfo ? GameInfo->m_pGlobalAIManager : NULL;
+}
+
+// DISHONORED(port): 2013 rva 0x7be6c0 (2012 0x823980): an actor that is exempt from bend time reads the real world
+// clock; everything else reads the bend-time clock. The AI's thought clock goes through here, which is why an NPC
+// inside a slowed bubble thinks more slowly rather than at the same rate.
+FLOAT DisGetAppropriateWorldTime( const AActor* const _pActor )
+{
+	if( !GWorld )
+	{
+		return 0.f;
+	}
+	if( _pActor && _pActor->m_bAlwaysOutOfBendTime )
+	{
+		return GWorld->GetTimeSeconds();
+	}
+	AWorldInfo* Info = GWorld->GetWorldInfo();
+	return Info ? Info->BendTimeSeconds : GWorld->GetTimeSeconds();
+}

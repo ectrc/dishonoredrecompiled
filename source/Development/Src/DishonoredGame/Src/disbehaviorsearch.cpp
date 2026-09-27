@@ -57,3 +57,74 @@
 //   0x743aa0  private: void __thiscall UDisBehaviorSearch::SetupFromSearchBegin(struct FAIStimStruct_SearchBegin const &)
 //   0x744790  private: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorSearch::GetFilterStimDelegate(enum EAIStimID)
 //   0x744fc0  private: virtual class DisDelegate<void, struct FAIStimStruct> __thiscall UDisBehaviorSearch::GetSetupFromStimDelegate(enum EAIStimID)
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6e4410 (2012 0x724840, exec 0x63f8a0): leaving the investigate sub-state resets the
+// reason to the enumeration's MAX sentinel (EDisAttentionChangeReasonType DACRT_MAX = 21), which is how retail spells
+// "no reason recorded".
+void UDisBehaviorSearch::execOnExitCallback_Investigate( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pNextState);
+	P_FINISH;
+	OnExitCallback_Investigate( _pThisState, _pNextState );
+}
+
+void UDisBehaviorSearch::OnExitCallback_Investigate( UDishonoredNativeState* _pThisState, UDishonoredNativeState* _pNextState )
+{
+	m_CurrentInvestigateReason = DACRT_MAX;
+}
+
+// DISHONORED(port): 2013 rva 0x6e4470 (2012 0x7248a0): standing during a search runs the cancel-investigate timer down
+// and leaves the sub-state when it expires. Retail does not clamp the timer, so it keeps going negative once it fired.
+void UDisBehaviorSearch::execTickCallback_Stand( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_FLOAT(_fDeltaSeconds);
+	P_FINISH;
+	TickCallback_Stand( _pThisState, _fDeltaSeconds );
+}
+
+void UDisBehaviorSearch::TickCallback_Stand( UDishonoredNativeState* _pThisState, FLOAT _fDeltaSeconds )
+{
+	m_fCancelInvestigateTimer -= _fDeltaSeconds;
+	if( m_fCancelInvestigateTimer <= 0.f )
+	{
+		_pThisState->RequestStateExit();
+	}
+}
+
+// ---- agent CG natives sweep, round 2 (PHASE9 CG) ----
+
+// DISHONORED(port): 2013 rva 0x6f4a20 (2012 0x72e670): the exec wrapper, over the C++ body below.
+void UDisBehaviorSearch::execOnExitCallback_TrackTarget( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pNextState);
+	P_FINISH;
+	OnExitCallback_TrackTarget( _pThisState, _pNextState );
+}
+
+// DISHONORED(port): 2013 rva 0x6f4a20 (2012 0x72e670)
+void UDisBehaviorSearch::OnExitCallback_TrackTarget( class UDishonoredNativeState* _pThisState, class UDishonoredNativeState* _pNextState )
+{
+	// Leaving the track-target state silences the distraction and bark sub-processes, and hands the search target on
+	// to whatever state comes next so it keeps looking in the same place.
+	UDisAISubProcess* Distractions = GetSubProcess( UDisAISubProcessDistractions::StaticClass() );
+	if( Distractions )
+	{
+		Distractions->DisableSubProcess_Internal( m_bIsPaused );
+	}
+	UDisAISubProcess* Barks = GetSubProcess( UDisAISubProcessGenericBark::StaticClass() );
+	if( Barks )
+	{
+		Barks->DisableSubProcess_Internal( m_bIsPaused );
+	}
+	if( _pNextState )
+	{
+		SetActionTargetProxy( m_AttentionTargetProxy );
+	}
+}

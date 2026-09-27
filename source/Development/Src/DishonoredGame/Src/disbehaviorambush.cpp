@@ -28,3 +28,21 @@
 //   0x73abc0  public: static class UClass * __cdecl UDisTweaks_AIBehavior_Ambush::StaticClassNoInline(void)
 //   0x73c4f0  public: virtual void __thiscall UDisBehaviorAmbush::RequestStateExitCallback_TakeActorPosition(class UDishonoredNativeState *)
 //   0x73c560  protected: virtual void __thiscall UDisBehaviorAmbush::OnBehaviorResume(void)
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6c1fe0 (2012 0x7224d0): the lie-in-wait sub-state asking to leave finishes the ambush;
+// the brain retires the behaviour on the flag rather than on the sub-state change.
+void UDisBehaviorAmbush::execRequestStateExitCallback_LieInWait( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_LieInWait( _pThisState );
+}
+
+void UDisBehaviorAmbush::RequestStateExitCallback_LieInWait( UDishonoredNativeState* _pThisState )
+{
+	m_bFinished = TRUE;
+}

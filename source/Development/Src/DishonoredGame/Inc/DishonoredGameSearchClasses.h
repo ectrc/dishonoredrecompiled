@@ -164,6 +164,7 @@ public:
     DECLARE_FUNCTION(execRequestStateExitCallback_Investigate);
     DECLARE_FUNCTION(execOnEnterCallback_Investigate);
     DECLARE_CLASS(UDisBehaviorSearch,UDisBehaviorAttentionBase,0,DishonoredGame)
+#include "CppText/UDisBehaviorSearch.h"
 };
 
 // DishonoredGame.DisBehaviorStationarySearch: retail sizeof 380, reflected span 176..380 (2012 PDB sizeof 380)

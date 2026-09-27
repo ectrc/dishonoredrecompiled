@@ -1,11 +1,18 @@
 // DishonoredGame/src/dishonoredaibrain_stealth.cpp
 // Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
 // build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (7):
-//   0x746380  public: void __thiscall UDishonoredAIBrain::SetSuspicionLevel(enum EDisAISuspicionLevel)
-//   0x746390  public: enum EDisAISuspicionLevel __thiscall UDishonoredAIBrain::GetSuspicionLevel(void)const
-//   0x7463a0  public: unsigned int __thiscall UDishonoredAIBrain::HasEngagedEnemy(void)const
-//   0x747c90  public: void __thiscall UDishonoredAIBrain::EscalateSuspicionLevel(void)
-//   0x74a600  public: enum EAIAwareness __thiscall UDishonoredAIBrain::GetAwarenessLevel(void)const
-//   0x74a6a0  public: unsigned int __thiscall UDishonoredAIBrain::IsAware(void)const
-//   0x758f90  private: void __thiscall UDishonoredAIBrain::TickBrain_Stealth(void)
+
+// ---- agent CG ports (PHASE9 CG): the brain's stealth pass ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x724340 (2012 0x758f90, 174 bytes): the stealth pass maintains the player's stealth
+// indicator for this brain - m_PlayerAttentiveInfo and the m_pNextPlayerAttentiveBrain chain the HUD walks - from the
+// brain's current attention on the player.
+// DISHONORED(bringup): the attention level it reads comes from UDisAIBrainProcessAttention, which is not ported, so the
+// indicator would be built from an attention that is always Unaware. Writing that would put a wrong value in front of
+// the HUD rather than none, so the pass is left as this documented no-op: m_PlayerAttentiveInfo keeps its zeroed
+// default, which the HUD reads as "no NPC is attentive to the player".
+void UDishonoredAIBrain::TickBrain_Stealth()
+{
+}

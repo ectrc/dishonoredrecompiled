@@ -56,3 +56,455 @@ void ADishonoredNPCController::execDisplayDebug_Native( FFrame& Stack, RESULT_DE
 }
 
 // ---- end of trivial natives ----
+
+// ---- agent CG ports (PHASE9 CG): the controller that owns the brain ----
+
+#include "disaicensus.h"
+#include "dishonoredutilities.h"
+#include "dishonoredutilities_ai.h"
+#include "disaisubstate.h"
+#include "aistimstruct.h"
+
+/** DISHONORED(port): 2013 rva 0xbaaa80's dynamic initialiser (2012 0xbaaa80): the name every AI brain object is
+    constructed with, so a brain is findable by name in a save game and in the object browser. */
+FName ADishonoredNPCController::s_DisAIBrainDefaultName( TEXT("DisAIBrain") );
+
+// DISHONORED(port): 2013 rva 0x74e0b0 (2012 0x7ad0b0): the controller's own component container gets the NPC vision
+// component, which is what the senses pass reads.
+// DISHONORED(bringup): FDisComponentVisionNPC is not ported (Engine/Inc/arkcomponentbase.h has the base, but
+// discomponentvisionnpc.cpp is a comment-only skeleton), so the container stays empty and m_pComponentVisionNPC is
+// NULL. Every reader of it in this package handles NULL, which is the path retail takes for a controller whose
+// container was never given one.
+void ADishonoredNPCController::PostBeginPlay()
+{
+	Super::PostBeginPlay();
+	m_pComponentVisionNPC = NULL;
+}
+
+// DISHONORED(port): 2013 rva 0x7549d0 (2012 0x7c8f40): the whole of "give this NPC a mind". The brain class comes from
+// the brain tweaks' GetSpawnedObjectClass, the object is constructed under the controller with the fixed brain name, and
+// InitBrain is handed the possessed pawn. A suspecting NPC additionally equips its melee weapon, which is why a guard
+// spawned suspicious already has a sword in hand. Finally the controller's components start.
+void ADishonoredNPCController::InitNPC( UDisTweaks_AIBrain* const _pAIBrainTweak, BYTE _SuspicionLevel )
+{
+	if( _pAIBrainTweak )
+	{
+		UClass* BrainClass = _pAIBrainTweak->GetSpawnedObjectClass( eDisTweaksSpawnType_InGame );
+		if( BrainClass )
+		{
+			m_pAIBrain = (UDishonoredAIBrain*)StaticConstructObject( BrainClass, this, s_DisAIBrainDefaultName );
+			m_pAIBrain->InitBrain( Cast<ADishonoredNPCPawn>( Pawn ), _pAIBrainTweak, _SuspicionLevel );
+		}
+	}
+
+	// DISHONORED(bringup): a suspecting NPC draws its melee weapon here, through
+	// UDishonoredInventory::FindEquippableItem (2013 rva 0x805cb0) and ADishonoredPawn::EquipItemByType (0x753260).
+	// Equipping is the half of the inventory agent AJ left unported because it needs UDisItemContext (agentAJ.md's third
+	// root), so a guard spawned suspicious has its brain and its suspicion level but no drawn sword. Nothing else in the
+	// AI depends on it.
+
+	if( m_ComponentContainer )
+	{
+		m_ComponentContainer->StartAllComponents();
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x754ac0 (2012 0x7c9030): a dead NPC's brain is terminated and its components stopped;
+// otherwise the brain ticks. Retail's dormancy test between the two is UDishonoredAIBrain::CanBeDormant, folded with
+// UDisBehaviorTriggerAlarm::CanBeDormant in both exes (see the note on that function in dishonoredaibrain.cpp).
+UBOOL ADishonoredNPCController::Tick( FLOAT _fDeltaTime, ELevelTick _TickType )
+{
+	if( Cast<ADishonoredNPCPawn>( Pawn ) != NULL )
+	{
+		if( IsDead() )
+		{
+			if( m_pAIBrain )
+			{
+				m_pAIBrain->TerminateBrain();
+			}
+			if( m_ComponentContainer )
+			{
+				m_ComponentContainer->StopAllComponents();
+			}
+		}
+		else if( m_pAIBrain && !m_pAIBrain->CanBeDormant() )
+		{
+			m_pAIBrain->TickBrain( _fDeltaTime );
+		}
+	}
+	return Super::Tick( _fDeltaTime, _TickType );
+}
+
+// DISHONORED(port): 2013 rva 0x74a900 (2012 0x7ab1b0)
+void ADishonoredNPCController::UnPossess()
+{
+	if( m_ComponentContainer )
+	{
+		m_ComponentContainer->StopAllComponents();
+	}
+	Super::UnPossess();
+}
+
+// DISHONORED(port): 2013 rva 0x74a850 (2012 0x7ab0f0): losing the components terminates the brain too, because the
+// brain's own container is a component of this one.
+void ADishonoredNPCController::ClearComponents()
+{
+	if( m_pAIBrain )
+	{
+		m_pAIBrain->TerminateBrain();
+	}
+	if( m_ComponentContainer )
+	{
+		m_ComponentContainer->RemoveAllComponents();
+		m_pComponentVisionNPC = NULL;
+	}
+	Super::ClearComponents();
+}
+
+// DISHONORED(port): 2013 rva 0x74e120 (2012 0x7ad180): no pawn counts as dead, which is what stops a controller whose
+// pawn was destroyed from ticking a brain that has nothing to drive.
+UBOOL ADishonoredNPCController::IsDead() const
+{
+	ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( Pawn );
+	if( !DisPawn )
+	{
+		return TRUE;
+	}
+	return DisIsPawnDead( DisPawn );
+}
+
+// DISHONORED(port): 2013 rva 0x74a840 (2012 0x7ab130)
+void ADishonoredNPCController::OnOtherActorTerminated( const AActor& _rActor )
+{
+	if( m_pAIBrain )
+	{
+		m_pAIBrain->OnOtherActorTerminated_AIBrain( _rActor );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x74e0d0 (2012 0x7ad130): where the AI is currently trying to go.
+// DISHONORED(bringup): the answer comes from the pawn's FArkComponentLocomotion active request
+// (GetRequestsCount / GetActiveRequestTargetedLocation, 2013 rvas 0x541b60 / 0x5464d0). Locomotion is the one AI root
+// this package does not own (see agentCG.md: it is ~40 KB and needs the nav-mesh runtime), so this answers the zero
+// vector, which is retail's own answer when there is no active move request.
+FVector ADishonoredNPCController::GetMoveTargetLocation() const
+{
+	return FVector( 0.f, 0.f, 0.f );
+}
+
+// DISHONORED(port): 2013 rva 0x74a860 (2012 0x7ab140) / 0x74a8a0 (0x7ab180): a Kismet GoTo or Shoot latent action is
+// told how it ended, and the remembered action is dropped so the same status cannot be delivered twice.
+// DISHONORED(bringup): UDisSeqAct_AIGoToActor::SetGoToStatus (2013 rva 0x79a520) is a Kismet sequence op that is not
+// ported; the action pointer is cleared, which is the half that stops the controller leaking it.
+void ADishonoredNPCController::SetGoToActionStatus( BYTE _Status, UDisSeqAct_AIGoToActor* _pExpectedAction )
+{
+	if( m_pLastGoToKismetAction && ( !_pExpectedAction || m_pLastGoToKismetAction == _pExpectedAction ) )
+	{
+		if( _Status )
+		{
+			m_pLastGoToKismetAction = NULL;
+		}
+	}
+}
+
+void ADishonoredNPCController::SetShootActionStatus( BYTE _Status )
+{
+	if( m_pLastShootKismetAction )
+	{
+		m_pLastShootKismetAction = NULL;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x74a7f0 (2012 0x7ab050) / 0x74a810 (0x7ab070): the two Kismet brain-flag ops hand
+// themselves to the brain.
+// DISHONORED(bringup): UDisSeqAct_AISetBrainFlags::ActivatedByBrain and
+// UDisSeqAct_AIGetBrainFlagValue::ActivatedByBrain (2013 rvas 0x797c80 / 0x797d40) are Kismet ops that are not ported.
+// The flags themselves are real - UDishonoredAIBrain::IsFlagSet / SetFlagTo work - so wiring these two up later is a
+// two-line change in the sequence ops rather than here.
+void ADishonoredNPCController::OnAISetBrainFlags( UDisSeqAct_AISetBrainFlags* _pAction )
+{
+}
+
+void ADishonoredNPCController::OnAIGetBrainFlags( UDisSeqAct_AIGetBrainFlagValue* _pAction )
+{
+}
+
+// DISHONORED(port): 2013 rva 0x74dfa0 (2012 0x7b05a0): a suspicion change is pushed into the brain and the pawn's body
+// intention follows it: a suspecting NPC equips its melee weapon and takes the EquippedPatrol stance, an unsuspecting
+// one takes Fighter or Civilian according to whether it is a fighter at all.
+void ADishonoredNPCController::OnAISetSuspicionLevel( UDisSeqAct_AISetSuspicionLevel* _pAction )
+{
+	if( !_pAction || !m_pAIBrain )
+	{
+		return;
+	}
+	const BYTE NewLevel = _pAction->m_SuspicionLevel;
+	if( m_pAIBrain->GetSuspicionLevel() == NewLevel )
+	{
+		return;
+	}
+	m_pAIBrain->SetSuspicionLevel( NewLevel );
+
+	ADishonoredNPCPawn* NPCPawn = Cast<ADishonoredNPCPawn>( Pawn );
+	if( !NPCPawn )
+	{
+		return;
+	}
+	if( NewLevel == DAISL_Suspecting )
+	{
+		NPCPawn->SetBodyIntention( DisBodyIntentionPriority_AIBehavior, eDisNPCBodyStance_EquippedPatrol, UDisWepMelee::StaticClass(), NULL );
+	}
+	else
+	{
+		const BYTE Stance = NPCPawn->IsAFighter() ? 1 : 0;
+		NPCPawn->SetBodyIntention( DisBodyIntentionPriority_AIBehavior, Stance, NULL, NULL );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x74e1e0 (2012 0x7b0840)
+void ADishonoredNPCController::OnAIProtectNeutralsOverride( UDisSeqAct_AIProtectNeutralsOverride* _pAction )
+{
+	if( m_pAIBrain && _pAction && _pAction->InputLinks.Num() > 0 )
+	{
+		m_pAIBrain->OverrideProtectNeutrals( _pAction->InputLinks(0).bHasImpulse );
+	}
+}
+
+// ---- agent CG natives sweep (PHASE9 CG) ----
+
+// DISHONORED(port): 2013 rva 0x74e800 (2012 0x7ad180): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execIsDead( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = IsDead();
+}
+
+// DISHONORED(port): 2013 rva 0x74aaf0 (2012 0x7ab090): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAISetSenses( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AISetSenses, _pAction);
+	P_FINISH;
+	OnAISetSenses( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x74aaf0 (2012 0x7ab090)
+void ADishonoredNPCController::OnAISetSenses( class UDisSeqAct_AISetSenses* _pAction )
+{
+	// Retail reads the action's three bits and pushes each into the brain's Kismet sense mask (DSMT_Kismet), so a
+	// Kismet-blinded NPC stays blind until another action clears it.
+	if( !m_pAIBrain || !_pAction )
+	{
+		return;
+	}
+	m_pAIBrain->SetDeafFlag( _pAction->m_bDeaf );
+	m_pAIBrain->SetBlindFlag( _pAction->m_bBlind );
+	m_pAIBrain->SetNumbFlag( _pAction->m_bNumb );
+}
+
+// DISHONORED(port): 2013 rva 0x7635f0 (2012 0x7bd0d0): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAIAmbush( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIAmbush, _pAction);
+	P_FINISH;
+	OnAIAmbush( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x7635f0 (2012 0x7bd0d0)
+void ADishonoredNPCController::OnAIAmbush( class UDisSeqAct_AIAmbush* _pAction )
+{
+	// Input link 0 is Start, link 1 is Abort. Starting needs an ambush point; the target is resolved through a
+	// controller when Kismet was given one, so that a designer can name either the pawn or its controller.
+	if( !_pAction || !m_pAIBrain )
+	{
+		return;
+	}
+	if( _pAction->InputLinks.Num() > 0 && _pAction->InputLinks(0).bHasImpulse )
+	{
+		if( !_pAction->m_pAmbushPoint )
+		{
+			return;
+		}
+		AActor* Target = _pAction->m_pAmbushTarget;
+		AController* AsController = Cast<AController>( Target );
+		if( AsController )
+		{
+			Target = AsController->Pawn;
+		}
+		FAIStimStruct_AmbushRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_AmbushRequest;
+		Stim.m_pAmbushPoint = _pAction->m_pAmbushPoint;
+		Stim.m_pAmbushTarget = Cast<ADishonoredPawn>( Target );
+		DisHandleAIStim_Internal< FAIStimStruct_AmbushRequest >( m_pAIBrain, Stim, this );
+	}
+	else if( _pAction->InputLinks.Num() > 1 && _pAction->InputLinks(1).bHasImpulse )
+	{
+		FAIStimStruct_AmbushAbortRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_AmbushAbortRequest;
+		DisHandleAIStim_Internal< FAIStimStruct_AmbushAbortRequest >( m_pAIBrain, Stim, this );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x763770 (2012 0x7bd250): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAIDoSearch( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIDoSearch, _pAction);
+	P_FINISH;
+	OnAIDoSearch( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x763770 (2012 0x7bd250)
+void ADishonoredNPCController::OnAIDoSearch( class UDisSeqAct_AIDoSearch* _pAction )
+{
+	// The Stop link only idles an NPC that is actually on a patrol search; the Start link escalates its suspicion
+	// first, which is what makes a Kismet-ordered search look like a suspicious one rather than a patrol.
+	if( !_pAction || !m_pAIBrain )
+	{
+		return;
+	}
+	if( _pAction->InputLinks.Num() > 1 && _pAction->InputLinks(1).bHasImpulse )
+	{
+		if( m_pAIBrain->IsBehaviorOnStack( UDisBehaviorPatrolSearch::StaticClass() ) )
+		{
+			FAIStimStruct_IdleRequest Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_IdleRequest;
+			DisHandleAIStim_Internal< FAIStimStruct_IdleRequest >( m_pAIBrain, Stim, this );
+		}
+		return;
+	}
+	m_pAIBrain->EscalateSuspicionLevel();
+	FAIStimStruct_PatrolSearchRequest Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_PatrolSearchRequest;
+	Stim.m_pStartingActor = _pAction->m_pSearchStart;
+	DisHandleAIStim_Internal< FAIStimStruct_PatrolSearchRequest >( m_pAIBrain, Stim, this );
+}
+
+// DISHONORED(port): 2013 rva 0x763bd0 (2012 0x7bd6b0): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAISetPatrol( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AISetPatrol, _pAction);
+	P_FINISH;
+	OnAISetPatrol( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x763bd0 (2012 0x7bd6b0)
+void ADishonoredNPCController::OnAISetPatrol( class UDisSeqAct_AISetPatrol* _pAction )
+{
+	// Start puts the NPC on patrol from the named actor; Stop idles it, but only if it is patrolling, so a Stop sent
+	// to a guard in combat does nothing.
+	if( !_pAction || !m_pAIBrain )
+	{
+		return;
+	}
+	if( _pAction->InputLinks.Num() > 0 && _pAction->InputLinks(0).bHasImpulse )
+	{
+		FAIStimStruct_PatrolRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_PatrolRequest;
+		Stim.m_pStartingActor = _pAction->m_pStartActor;
+		DisHandleAIStim_Internal< FAIStimStruct_PatrolRequest >( m_pAIBrain, Stim, this );
+	}
+	else if( m_pAIBrain->IsBehaviorOnStack( UDisBehaviorPatrol::StaticClass() ) )
+	{
+		FAIStimStruct_IdleRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_IdleRequest;
+		DisHandleAIStim_Internal< FAIStimStruct_IdleRequest >( m_pAIBrain, Stim, this );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x763fa0 (2012 0x7bda70): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAIRingAlarm( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIRingAlarm, _pAction);
+	P_FINISH;
+	OnAIRingAlarm( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x763fa0 (2012 0x7bda70)
+void ADishonoredNPCController::OnAIRingAlarm( class UDisSeqAct_AIRingAlarm* _pAction )
+{
+	// With no enemy named the player is the enemy, which is how a designer wires "raise the alarm about me" with one
+	// unconnected pin.
+	if( !m_pAIBrain || !_pAction )
+	{
+		return;
+	}
+	ADishonoredPawn* Enemy = Cast<ADishonoredPawn>( _pAction->m_pEnemy );
+	if( !Enemy )
+	{
+		Enemy = ADishonoredPlayerPawn::s_pInstance;
+	}
+	FAIStimStruct_ForceRingAlarm Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_ForceRingAlarm;
+	Stim.m_pEnemy = Enemy;
+	Stim.m_bUseEnemyLocOverride = _pAction->m_pEnemyLocOverride != NULL;
+	Stim.m_EnemyLocOverride = _pAction->m_pEnemyLocOverride ? _pAction->m_pEnemyLocOverride->Location : FVector( 0.f, 0.f, 0.f );
+	DisHandleAIStim_Internal< FAIStimStruct_ForceRingAlarm >( m_pAIBrain, Stim, this );
+}
+
+// DISHONORED(port): 2013 rva 0x763a80 (2012 0x7bd560): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAIGuard( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIGuard, _pAction);
+	P_FINISH;
+	OnAIGuard( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x763a80 (2012 0x7bd560)
+void ADishonoredNPCController::OnAIGuard( class UDisSeqAct_AIGuard* _pAction )
+{
+	// The home actor may be given as a controller, in which case the NPC guards that controller's pawn.
+	if( !_pAction || !m_pAIBrain )
+	{
+		return;
+	}
+	AActor* Home = _pAction->m_pHomeActor;
+	AController* AsController = Cast<AController>( Home );
+	if( AsController )
+	{
+		Home = AsController->Pawn;
+	}
+	if( _pAction->InputLinks.Num() > 0 && _pAction->InputLinks(0).bHasImpulse )
+	{
+		FAIStimStruct_GuardRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_GuardRequest;
+		Stim.m_pHomeActor = Home;
+		DisHandleAIStim_Internal< FAIStimStruct_GuardRequest >( m_pAIBrain, Stim, this );
+	}
+	else if( m_pAIBrain->IsBehaviorOnStack( UDisBehaviorGuard::StaticClass() ) )
+	{
+		FAIStimStruct_IdleRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_IdleRequest;
+		DisHandleAIStim_Internal< FAIStimStruct_IdleRequest >( m_pAIBrain, Stim, this );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x74e770 (2012 0x7b05a0): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAISetSuspicionLevel( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AISetSuspicionLevel, _pAction);
+	P_FINISH;
+	OnAISetSuspicionLevel( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x7521d0 (2012 0x7b0840): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAIProtectNeutralsOverride( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIProtectNeutralsOverride, _pAction);
+	P_FINISH;
+	OnAIProtectNeutralsOverride( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x74a810 (2012 0x7ab070): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAIGetBrainFlags( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIGetBrainFlagValue, _pAction);
+	P_FINISH;
+	OnAIGetBrainFlags( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x74a7f0 (2012 0x7ab050): the exec wrapper of the native, over the C++ body below.
+void ADishonoredNPCController::execOnAISetBrainFlags( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AISetBrainFlags, _pAction);
+	P_FINISH;
+	OnAISetBrainFlags( _pAction );
+}

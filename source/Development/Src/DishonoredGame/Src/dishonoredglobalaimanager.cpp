@@ -51,3 +51,89 @@ void UDishonoredGlobalAIManager::Serialize( FArchive& Ar )
 		}
 	}
 }
+
+// ---- agent CG ports (PHASE9 CG): the brain registry ----
+
+// DISHONORED(port): 2013 rva 0x861a90 (2012 0x8d1d50): the engaged-brain slots are sized from the tweaked maximum, the
+// corpse list is gathered, and the stim pool and the global blackboard are initialised. This is what
+// ADishonoredGameInfo::InitGlobalManagers calls, and until it runs no brain can allocate a stim.
+void UDishonoredGlobalAIManager::Init_GlobalAI()
+{
+	m_EngagedBrains.Empty( m_iMaxEngagedBrains );
+	m_EngagedBrains.AddZeroed( m_iMaxEngagedBrains );
+	m_iNumEngagedBrains = 0;
+	m_pThinkCandidate = NULL;
+
+	// DISHONORED(bringup): GatherAllDeadNPCs (2013 rva 0x861360) walks the world for corpses so a loaded game keeps its
+	// corpse budget; the corpse tracking half of this class is not ported (dishonoredglobalaimanager_corpse.cpp is a
+	// comment-only skeleton), so the corpse list starts empty, which is correct for a fresh level.
+
+	if( m_pStimManager )
+	{
+		m_pStimManager->InitStimManager( m_MaxAIStimSize_bytes, m_MaxNumAIStims );
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDishonoredGlobalAIManager::Init_GlobalAI has no UDisStimManager sub-object; no brain will be able to raise a stim") );
+	}
+
+	// DISHONORED(bringup): UDisAIBlackboard::InitBlackboard (2013 rva 0x736f90) needs the blackboard record classes,
+	// which agent AJ left unported (UDisAIBlackboard::Serialize carries the same note).
+	m_bInitialized = TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x847890 (2012 0x8b7d70): the new brain becomes the head of the intrusive list. Retail
+// only writes the new brain's next pointer when the list was non-empty, relying on it already being NULL; that is kept,
+// because a brain whose next pointer was stale would otherwise be silently re-linked.
+void UDishonoredGlobalAIManager::AddBrain( UDishonoredAIBrain* _pAddMe )
+{
+	if( !_pAddMe )
+	{
+		return;
+	}
+	if( m_pBrainList )
+	{
+		_pAddMe->m_pGlobalAI_NextBrain = m_pBrainList;
+	}
+	m_pBrainList = _pAddMe;
+}
+
+// DISHONORED(port): 2013 rva 0x857190 (2012 0x8c4a50): unlink and forget, then the corpse half is told. The removed
+// brain's own next pointer is always cleared, even when it was not on the list at all.
+void UDishonoredGlobalAIManager::RemoveBrain( UDishonoredAIBrain* _pRemoveMe )
+{
+	if( !_pRemoveMe )
+	{
+		return;
+	}
+	if( m_pBrainList == _pRemoveMe )
+	{
+		m_pBrainList = _pRemoveMe->m_pGlobalAI_NextBrain;
+	}
+	else
+	{
+		for( UDishonoredAIBrain* Brain = m_pBrainList; Brain; Brain = Brain->m_pGlobalAI_NextBrain )
+		{
+			if( Brain->m_pGlobalAI_NextBrain == _pRemoveMe )
+			{
+				Brain->m_pGlobalAI_NextBrain = _pRemoveMe->m_pGlobalAI_NextBrain;
+				break;
+			}
+		}
+	}
+	_pRemoveMe->m_pGlobalAI_NextBrain = NULL;
+	// DISHONORED(bringup): OnBrainRemoved_Corpse (2013 rva 0x851e20) closes retail's body; the corpse half of this
+	// class is not ported.
+}
+
+// DISHONORED(written): the census of agentCG.md counts the list rather than the world, so that a brain that exists but
+// whose pawn has gone is still seen.
+INT UDishonoredGlobalAIManager::GetNumBrains() const
+{
+	INT Count = 0;
+	for( UDishonoredAIBrain* Brain = m_pBrainList; Brain; Brain = Brain->m_pGlobalAI_NextBrain )
+	{
+		Count++;
+	}
+	return Count;
+}

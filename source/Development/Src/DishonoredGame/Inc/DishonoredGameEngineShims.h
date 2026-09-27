@@ -6203,17 +6203,6 @@ enum EParryTestMode
     op(EParryTestMode_Normal) \
     op(EParryTestMode_ParryEverything) \
     op(EParryTestMode_ParryNothing) 
-enum EPpNodeAAFxAaLumaType
-{
-    EPpAaFxAaLt_Compute     =0,
-    EPpAaFxAaLt_AsGreen     =1,
-    EPpAaFxAaLt_InAlpha     =2,
-    EPpAaFxAaLt_MAX         =3,
-};
-#define FOREACH_ENUM_EPPNODEAAFXAALUMATYPE(op) \
-    op(EPpAaFxAaLt_Compute) \
-    op(EPpAaFxAaLt_AsGreen) \
-    op(EPpAaFxAaLt_InAlpha) 
 enum EPullPlayerAnim
 {
     EPullPlayerAnim_In      =0,

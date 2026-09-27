@@ -13,3 +13,28 @@
 //   0x7ce4a0  public: void __thiscall ADishonoredNPCPawn::SetNPCRotation(enum EDisFaceToPriority, class FRotator const &, float, float, void * const, class FName)
 //   0x7ce540  public: void __thiscall ADishonoredNPCPawn::UnlockNPCRotation(enum EDisFaceToPriority)
 //   0x7d4d40  public: void __thiscall ADishonoredNPCPawn::Tick_Rotation(float)
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x76e960 (2012 0x7c95e0): retail's ADishonoredNPCPawn::SetDesiredRotation is an 8-byte
+// `mov eax,1 / ret 14h`. The class overrides the script-facing entry point and does NOT route it into the
+// rotation-intent system: an NPC's facing comes from m_NPCRotationIntent through the rotation tick, so a script or
+// Kismet request to set the desired rotation directly is accepted and then ignored. The 2013 body is the same eight
+// bytes as the 2012 one, so this is retail behaviour and not a stripped build.
+void ADishonoredNPCPawn::execSetDesiredRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT(FRotator, _TargetDesiredRotation);
+	P_GET_UBOOL(_bInLockDesiredRotation);
+	P_GET_UBOOL(_bInUnlockWhenReached);
+	P_GET_FLOAT(_InterpolationTime);
+	P_GET_UBOOL(_bResetRotationRate);
+	P_FINISH;
+	*(UBOOL*)Result = SetDesiredRotation( _TargetDesiredRotation, _bInLockDesiredRotation, _bInUnlockWhenReached, _InterpolationTime, _bResetRotationRate );
+}
+
+UBOOL ADishonoredNPCPawn::SetDesiredRotation( FRotator _TargetDesiredRotation, UBOOL _bInLockDesiredRotation, UBOOL _bInUnlockWhenReached, FLOAT _InterpolationTime, UBOOL _bResetRotationRate )
+{
+	return TRUE;
+}

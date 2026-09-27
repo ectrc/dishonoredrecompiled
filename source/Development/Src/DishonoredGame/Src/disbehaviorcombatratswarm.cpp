@@ -25,3 +25,58 @@
 //   0x75d8b0  public: virtual void __thiscall UDisBehaviorCombatRatSwarm::OnBehaviorStart(void)
 //   0x75dae0  public: virtual void __thiscall UDisBehaviorCombatRatSwarm::OnEnterCallback_Stand(class UDishonoredNativeState *, class UDishonoredNativeState *)
 //   0x75db20  public: virtual void __thiscall UDisBehaviorCombatRatSwarm::RefreshCallback_Stand(class UDisAISubState *, float)
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x700ac0 (2012 0x745cb0)
+void UDisBehaviorCombatRatSwarm::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_TakeActorPosition( _pThisState );
+}
+
+void UDisBehaviorCombatRatSwarm::RequestStateExitCallback_TakeActorPosition( UDishonoredNativeState* _pThisState )
+{
+	m_bIsFinished = TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x700ab0 (2012 0x745ca0): the target actor is cleared on the way out, not on the way in,
+// so a rat swarm that re-enters the sub-state picks a fresh target.
+void UDisBehaviorCombatRatSwarm::execOnExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	OnExitCallback_TakeActorPosition( _pThisState );
+}
+
+void UDisBehaviorCombatRatSwarm::OnExitCallback_TakeActorPosition( UDishonoredNativeState* _pThisState )
+{
+	m_pTargetActor = NULL;
+}
+
+// ---- agent CG natives sweep, round 2 (PHASE9 CG) ----
+
+// DISHONORED(port): 2013 rva 0x70ea50 (2012 0x75dae0): the exec wrapper, over the C++ body below.
+void UDisBehaviorCombatRatSwarm::execOnEnterCallback_Stand( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pLastState);
+	P_FINISH;
+	OnEnterCallback_Stand( _pThisState, _pLastState );
+}
+
+// DISHONORED(port): 2013 rva 0x70ea50 (2012 0x75dae0)
+void UDisBehaviorCombatRatSwarm::OnEnterCallback_Stand( class UDishonoredNativeState* _pThisState, class UDishonoredNativeState* _pLastState )
+{
+	// Standing restarts the group-setup clock from the tweaks, which is how a swarm of rats regroups before it
+	// charges again. The tweaks go through GetTweaks_Derived, never a base pointer.
+	UDisTweaks_AIBehavior_CombatRatSwarm* Tweaks = Cast<UDisTweaks_AIBehavior_CombatRatSwarm>( GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaks_AIBehavior_CombatRatSwarm*)UDisTweaks_AIBehavior_CombatRatSwarm::StaticClass()->GetDefaultObject();
+	}
+	m_fRemainingCombatGroupSetupTime = Tweaks->m_fMaxCombatGroupSetupTime;
+}

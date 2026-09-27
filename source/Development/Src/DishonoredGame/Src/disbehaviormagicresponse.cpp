@@ -26,3 +26,20 @@
 //   0x7413e0  public: virtual void __thiscall UDisBehaviorMagicResponse::OnBehaviorResume(void)
 //   0x741540  private: unsigned int __thiscall UDisBehaviorMagicResponse::FilterRotationReached(struct FAIStimStruct_RotationReached const &)
 //   0x743840  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorMagicResponse::GetFilterStimDelegate(enum EAIStimID)
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6e3dc0 (2012 0x723eb0)
+void UDisBehaviorMagicResponse::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_GenericAction( _pThisState );
+}
+
+void UDisBehaviorMagicResponse::RequestStateExitCallback_GenericAction( UDishonoredNativeState* _pThisState )
+{
+	m_bMagicResponseFinished = TRUE;
+}

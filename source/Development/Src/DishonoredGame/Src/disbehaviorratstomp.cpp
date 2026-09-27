@@ -24,3 +24,21 @@
 //   0x73edd0  private: virtual void __thiscall UDisBehaviorRatStomp::RefreshThoughts(float)
 //   0x73efa0  private: unsigned int __thiscall UDisBehaviorRatStomp::EvaluateDocileRatIsNear(struct FAIStimStruct_DocileRatIsNear const &)const
 //   0x742e90  private: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorRatStomp::GetEvaluateStimDelegate(enum EAIStimID)const
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6e40a0 (2012 0x723fe0, exec 0x63bf80): arriving at the rat is what the
+// take-actor-position sub-state reports by asking to leave, so the flag it sets is "reached", not "finished".
+void UDisBehaviorRatStomp::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_TakeActorPosition( _pThisState );
+}
+
+void UDisBehaviorRatStomp::RequestStateExitCallback_TakeActorPosition( UDishonoredNativeState* _pThisState )
+{
+	m_bRatReached = TRUE;
+}

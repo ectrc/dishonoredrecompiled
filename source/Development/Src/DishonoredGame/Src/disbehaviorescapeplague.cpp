@@ -39,3 +39,33 @@ void UDisBehaviorEscapePlague::execOnResetCallback_TakePosition( FFrame& Stack, 
 }
 
 // ---- end of trivial natives ----
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6e91a0 (2012 0x72b710): reaching the escape position finishes the behaviour and, if the
+// pawn's master FSM is still playing the plague upper-body animation (m_AnimChainToPlay 113), asks that state to leave
+// too, so the NPC does not keep coughing after it has escaped.
+void UDisBehaviorEscapePlague::execRequestStateExitCallback_TakePosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_TakePosition( _pThisState );
+}
+
+void UDisBehaviorEscapePlague::RequestStateExitCallback_TakePosition( UDishonoredNativeState* _pThisState )
+{
+	m_bFinished = TRUE;
+
+	ADishonoredNPCPawn* pOwningPawn = GetOwningPawn();
+	if( !pOwningPawn || !pOwningPawn->m_pNPCMasterFSM )
+	{
+		return;
+	}
+	UStateNPCUpperPlayAnim* pPlayAnim = Cast<UStateNPCUpperPlayAnim>( pOwningPawn->m_pNPCMasterFSM->GetCurrentlyActiveState() );
+	if( pPlayAnim && pPlayAnim->m_AnimChainToPlay == 113 )
+	{
+		pPlayAnim->RequestStateExit();
+	}
+}

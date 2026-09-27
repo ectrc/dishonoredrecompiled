@@ -9,6 +9,22 @@
 // (UDisTweaksBase::SkipFallback 2013 rva 0x87f3e0 and ApplyFallbackChain_Struct test it); the reference headers have no name for it
 #define CPF_DisTweakFallback DECLARE_UINT64(0x0000400000000000)
 
+// DISHONORED(written): agent CG. The AI cpptext bodies (UDishonoredAIBehavior, UDisAISubState, UDisAISubProcess,
+// UDisAIBrainProcess) declare stim-delegate accessors, so the delegate template and the types its instantiations name
+// have to be complete before the generated class headers. disdelegate.h is header-only and pulls in nothing.
+#include "disdelegate.h"
+struct FAIStimStruct;
+struct FDisAttentionProxyInfo;
+struct FDisAttentionChangeReason;
+struct FDisBodyIntention;
+struct FDisStimRef;
+class IDisAttentionTargetInterface;
+class IDisConvSpeakerInterface;
+class IDisDesiresInterface;
+class IDisRelationshipInterface;
+class FDisAIKnowledgeComponent;
+class FArkComponentLookat;
+
 class UDishonoredNativeState;
 class UDisTweaksBase;
 class ADishonoredSpawner;

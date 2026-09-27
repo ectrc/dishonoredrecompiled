@@ -31,3 +31,29 @@
 //   0x741d50  private: virtual void __thiscall UDisBehaviorShoot::SetupFromShootRequest(struct FAIStimStruct_ShootRequest const &)
 //   0x741e40  public: virtual void __thiscall UDisBehaviorShoot::TickCallback_Stand(class UDishonoredNativeState *, float)
 //   0x743060  private: virtual class DisDelegate<void, struct FAIStimStruct> __thiscall UDisBehaviorShoot::GetSetupFromStimDelegate(enum EAIStimID)
+
+// ---- agent CG natives sweep, round 2 (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6e7770 (2012 0x728e30): the exec wrapper, over the C++ body below.
+void UDisBehaviorShoot::execRequestStateExitCallback_FirePistol( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_FirePistol( _pThisState );
+}
+
+// DISHONORED(port): 2013 rva 0x6e7770 (2012 0x728e30)
+void UDisBehaviorShoot::RequestStateExitCallback_FirePistol( class UDishonoredNativeState* _pThisState )
+{
+	// The shot is over, so the Kismet Shoot action is told how it ended and the behaviour finishes.
+	// DISHONORED(bringup): retail reads the outcome out of the FirePistol sub-state's own status byte
+	// (UDisAISubStateFirePistol, unported - see agentCG.md's hand-over 1), so the action is always told the default
+	// outcome rather than "out of ammo" or "target lost".
+	if( m_pOwningBrain && m_pOwningBrain->GetOwningController() )
+	{
+		m_pOwningBrain->GetOwningController()->SetShootActionStatus( 0 );
+	}
+	m_bDone = TRUE;
+}

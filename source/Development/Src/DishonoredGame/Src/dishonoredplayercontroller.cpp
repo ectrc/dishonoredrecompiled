@@ -111,6 +111,7 @@
 
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
+#include "disaicensus.h"
 
 ADishonoredPlayerController* ADishonoredPlayerController::s_pInstance = NULL;
 
@@ -296,6 +297,7 @@ void ADishonoredPlayerController::execOnControllerChanged_Native( FFrame& Stack,
 // ---- agent AU ports (PHASE7 AU): HandleHeldButtons, Dis_Zoom, and the -dispickup census / -dispickupprobe ----
 
 #include "dishonoredutilities.h"
+#include "disaicensus.h"
 
 // DISHONORED(written): 2013 rva 0x6ba9a0 (2012 0x6f9b80): a paused world, and a single-stepped world that is currently
 // paused between steps, skip the whole held-button pass; both thumbsticks pressed together toggles the debug menu.
@@ -309,6 +311,12 @@ void ADishonoredPlayerController::HandleHeldButtons( FLOAT DeltaSeconds )
 	if( DisPickupCensusEnabled() )
 	{
 		DisPickupReport( GWorld, DeltaSeconds );
+	}
+	// DISHONORED(written): agent CG's -disai census hangs off the same per-frame script call as agent AU's -dispickup,
+	// so the AI census costs nothing when the switch is absent and no engine file is touched for it.
+	if( DisAICensusEnabled() )
+	{
+		DisAIReport( GWorld, DeltaSeconds );
 	}
 
 	AWorldInfo* Info = WorldInfo;

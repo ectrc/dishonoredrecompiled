@@ -8,3 +8,8 @@ public:
 	UDisTweaks_PlayerPawn* LoadDefaultPlayerTweaks( UBOOL bCampaign );
 	// DISHONORED(written): agent AU. GameEnding 2013 rva 0x5f9f60 (2012 0x63fb20), body in dishonoredgameinfo.cpp.
 	virtual void GameEnding();
+
+// ---- agent CG (PHASE9 CG): the global managers ----
+public:
+	virtual void PostBeginPlay();
+	void InitGlobalManagers();

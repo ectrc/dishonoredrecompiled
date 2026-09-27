@@ -378,10 +378,6 @@ void ADishonoredPawn::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execTakeDamage_Native);
 }
-void ADishonoredNPCPawn::execSetDesiredRotation( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execSetDesiredRotation);
-}
 void ADishonoredNPCPawn::execSetPushesRigidBodies( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execSetPushesRigidBodies);
@@ -398,10 +394,6 @@ void ADishonoredNPCPawn::execOnSetIgnoreDeath( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execOnSetIgnoreDeath);
 }
-void ADishonoredNPCPawn::execOnOverridePossess( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execOnOverridePossess);
-}
 void ADishonoredNPCPawn::execOnPlayMusicBox( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execOnPlayMusicBox);
@@ -409,10 +401,6 @@ void ADishonoredNPCPawn::execOnPlayMusicBox( FFrame& Stack, RESULT_DECL )
 void ADishonoredNPCPawn::execOnEquipItemType( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execOnEquipItemType);
-}
-void ADishonoredNPCPawn::execOnSpawnStealable( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execOnSpawnStealable);
 }
 void ADishonoredNPCPawn::execOnNPCDoTeleportSpell( FFrame& Stack, RESULT_DECL )
 {
@@ -433,10 +421,6 @@ void ADishonoredNPCPawn::execNPCTouchedDeepWater( FFrame& Stack, RESULT_DECL )
 void ADishonoredNPCPawn::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execTakeDamage_Native);
-}
-void ADishonoredNPCPawn::execTakeDamage( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execTakeDamage);
 }
 void ADishonoredNPCPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
 {
@@ -750,10 +734,6 @@ void ADishonoredPlayerPawn::execStartCrouch( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execStartCrouch);
 }
-void ADishonoredSpawner::execOnStartSpawn( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredSpawner, execOnStartSpawn);
-}
 void ADisDebugNPCController::execHandleWalking( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADisDebugNPCController, execHandleWalking);
@@ -850,25 +830,9 @@ void ADishonoredEmitterPool::execSpawnEmitter( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredEmitterPool, execSpawnEmitter);
 }
-void ADishonoredNPCController::execIsDead( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execIsDead);
-}
-void ADishonoredNPCController::execOnAIRingAlarm( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIRingAlarm);
-}
 void ADishonoredNPCController::execOnAIStartDistraction( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIStartDistraction);
-}
-void ADishonoredNPCController::execOnAIGetBrainFlags( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIGetBrainFlags);
-}
-void ADishonoredNPCController::execOnAISetBrainFlags( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAISetBrainFlags);
 }
 void ADishonoredNPCController::execOnAIPsychicAttention( FFrame& Stack, RESULT_DECL )
 {
@@ -878,41 +842,13 @@ void ADishonoredNPCController::execOnAIClearAttention( FFrame& Stack, RESULT_DEC
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIClearAttention);
 }
-void ADishonoredNPCController::execOnAISetSuspicionLevel( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAISetSuspicionLevel);
-}
-void ADishonoredNPCController::execOnAIProtectNeutralsOverride( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIProtectNeutralsOverride);
-}
 void ADishonoredNPCController::execOnAIShoot( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIShoot);
 }
-void ADishonoredNPCController::execOnAISetSenses( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAISetSenses);
-}
-void ADishonoredNPCController::execOnAISetPatrol( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAISetPatrol);
-}
-void ADishonoredNPCController::execOnAIGuard( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIGuard);
-}
 void ADishonoredNPCController::execOnAIGoToActor( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIGoToActor);
-}
-void ADishonoredNPCController::execOnAIDoSearch( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIDoSearch);
-}
-void ADishonoredNPCController::execOnAIAmbush( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIAmbush);
 }
 void ADishonoredNPCController::execGetMoveTargetLocation( FFrame& Stack, RESULT_DECL )
 {
@@ -930,14 +866,6 @@ void UDisBehaviorEscapeExplosion::execRequestStateExitCallback_GenericAction( FF
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorEscapeExplosion, execRequestStateExitCallback_GenericAction);
 }
-void UDisBehaviorEscapeExplosion::execThreatTerminatedCallback_Flee( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorEscapeExplosion, execThreatTerminatedCallback_Flee);
-}
-void UDisBehaviorEscapeExplosion::execRequestStateExitCallback_Flee( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorEscapeExplosion, execRequestStateExitCallback_Flee);
-}
 void UDisBehaviorEscapeExplosion::execRefreshCallback_Flee( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorEscapeExplosion, execRefreshCallback_Flee);
@@ -945,10 +873,6 @@ void UDisBehaviorEscapeExplosion::execRefreshCallback_Flee( FFrame& Stack, RESUL
 void UDisBehaviorEscapeExplosion::execOnEnterCallback_Flee( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorEscapeExplosion, execOnEnterCallback_Flee);
-}
-void UDisBehaviorEscapePlague::execRequestStateExitCallback_TakePosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorEscapePlague, execRequestStateExitCallback_TakePosition);
 }
 void UDisBehaviorEscapePlague::execRefreshCallback_TakePosition( FFrame& Stack, RESULT_DECL )
 {
@@ -1014,10 +938,6 @@ void UDisBehaviorInteract::execOnEnterCallback_TakePosition( FFrame& Stack, RESU
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorInteract, execOnEnterCallback_TakePosition);
 }
-void UDisBehaviorMagicResponse::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorMagicResponse, execRequestStateExitCallback_GenericAction);
-}
 void UDisBehaviorNotice::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorNotice, execRequestStateExitCallback_GenericAction);
@@ -1074,10 +994,6 @@ void UDisBehaviorPatrol::execTickCallback_TakeActorPosition( FFrame& Stack, RESU
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorPatrol, execTickCallback_TakeActorPosition);
 }
-void UDisBehaviorRatStomp::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorRatStomp, execRequestStateExitCallback_TakeActorPosition);
-}
 void UDisBehaviorReact::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorReact, execRequestStateExitCallback_GenericAction);
@@ -1094,10 +1010,6 @@ void UDisBehaviorWeep::execRequestStateExitCallback_DoWeaponManoeuver( FFrame& S
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorWeep, execRequestStateExitCallback_DoWeaponManoeuver);
 }
-void UDisBehaviorWeep::execRequestStateExitCallback_Stand( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorWeep, execRequestStateExitCallback_Stand);
-}
 void UDisBehaviorWeep::execTickCallback_Stand( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorWeep, execTickCallback_Stand);
@@ -1113,10 +1025,6 @@ void UDisBehaviorWeep::execRequestStateExitCallback_GenericAction( FFrame& Stack
 void UDisBehaviorWeep::execOnEnterCallback_GenericAction( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorWeep, execOnEnterCallback_GenericAction);
-}
-void UDisBehaviorWeep::execOnExitCallback_TakePosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorWeep, execOnExitCallback_TakePosition);
 }
 void UDisBehaviorWeep::execOnEnterCallback_TakePosition( FFrame& Stack, RESULT_DECL )
 {
@@ -1478,10 +1386,6 @@ void UDishonoredPlayerInput::execDis_SneakOrSlide( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredPlayerInput, execDis_SneakOrSlide);
 }
-void UDisBehaviorAmbush::execRequestStateExitCallback_LieInWait( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorAmbush, execRequestStateExitCallback_LieInWait);
-}
 void UDisBehaviorAmbush::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorAmbush, execRequestStateExitCallback_TakeActorPosition);
@@ -1522,14 +1426,6 @@ void UDisBehaviorCombatEliteGuard::execRefreshCallback_Stand( FFrame& Stack, RES
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatEliteGuard, execRefreshCallback_Stand);
 }
-void UDisBehaviorCombatRatSwarm::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatRatSwarm, execRequestStateExitCallback_TakeActorPosition);
-}
-void UDisBehaviorCombatRatSwarm::execOnExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatRatSwarm, execOnExitCallback_TakeActorPosition);
-}
 void UDisBehaviorCombatRatSwarm::execRefreshCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatRatSwarm, execRefreshCallback_TakeActorPosition);
@@ -1537,10 +1433,6 @@ void UDisBehaviorCombatRatSwarm::execRefreshCallback_TakeActorPosition( FFrame& 
 void UDisBehaviorCombatRatSwarm::execRefreshCallback_Stand( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatRatSwarm, execRefreshCallback_Stand);
-}
-void UDisBehaviorCombatRatSwarm::execOnEnterCallback_Stand( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatRatSwarm, execOnEnterCallback_Stand);
 }
 void UDisBehaviorCombatRatSwarmEliteGuard::execRefreshCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
 {
@@ -1614,10 +1506,6 @@ void UDisBehaviorShoot::execTickCallback_Stand( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorShoot, execTickCallback_Stand);
 }
-void UDisBehaviorShoot::execRequestStateExitCallback_FirePistol( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorShoot, execRequestStateExitCallback_FirePistol);
-}
 void UDisBehaviorTallBoyCombat::execRequestStateExitCallback_FindShootingPosition( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorTallBoyCombat, execRequestStateExitCallback_FindShootingPosition);
@@ -1657,14 +1545,6 @@ void UDisBehaviorCombatWolfhound::execRefreshCallback_WHShortDistance( FFrame& S
 void UDisBehaviorCombatWolfhound::execRefreshCallback_MeleeChase( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorCombatWolfhound, execRefreshCallback_MeleeChase);
-}
-void UDisBehaviorTriggerAlarm::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorTriggerAlarm, execRequestStateExitCallback_GenericAction);
-}
-void UDisBehaviorTriggerAlarm::execOnEnterCallback_GenericAction( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorTriggerAlarm, execOnEnterCallback_GenericAction);
 }
 void UDisBehaviorTriggerAlarm::execOnExitCallback_TakePosition( FFrame& Stack, RESULT_DECL )
 {
@@ -2506,10 +2386,6 @@ void UDisBehaviorSearch::execRequestStateExitCallback_Stand( FFrame& Stack, RESU
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execRequestStateExitCallback_Stand);
 }
-void UDisBehaviorSearch::execTickCallback_Stand( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execTickCallback_Stand);
-}
 void UDisBehaviorSearch::execOnEnterCallback_Stand( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execOnEnterCallback_Stand);
@@ -2526,17 +2402,9 @@ void UDisBehaviorSearch::execOnEnterCallback_GenericAction( FFrame& Stack, RESUL
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execOnEnterCallback_GenericAction);
 }
-void UDisBehaviorSearch::execOnExitCallback_TrackTarget( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execOnExitCallback_TrackTarget);
-}
 void UDisBehaviorSearch::execOnEnterCallback_TrackTarget( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execOnEnterCallback_TrackTarget);
-}
-void UDisBehaviorSearch::execOnExitCallback_Investigate( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorSearch, execOnExitCallback_Investigate);
 }
 void UDisBehaviorSearch::execRequestStateExitCallback_Investigate( FFrame& Stack, RESULT_DECL )
 {

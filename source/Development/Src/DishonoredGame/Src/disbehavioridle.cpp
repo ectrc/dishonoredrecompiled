@@ -1,18 +1,56 @@
 // DishonoredGame/src/disbehavioridle.cpp
 // Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
 // build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (14):
-//   0x723310  public: static void __cdecl UDisTweaks_AIBehavior_Idle::InitializePrivateStaticClassUDisTweaks_AIBehavior_Idle(void)
-//   0x723330  private: virtual unsigned char const * __thiscall UDisBehaviorIdle::BuildEvaluateStimMask(void)const
-//   0x723380  private: virtual unsigned char const * __thiscall UDisBehaviorIdle::BuildFilterStimMask(void)const
-//   0x7284f0  private: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorIdle::GetEvaluateStimDelegate(enum EAIStimID)const
-//   0x728530  private: virtual unsigned char const * __thiscall UDisBehaviorIdle::BuildBehaviorFilterStimMasks(unsigned char const * &, unsigned char const * &)const
-//   0x72b920  private: virtual void __thiscall UDisBehaviorIdle::TickBehavior(float)
-//   0x736550  public: static class UClass * __cdecl UDisBehaviorIdle::GetPrivateStaticClassUDisBehaviorIdle(wchar_t const *)
-//   0x738a40  public: static void __cdecl UDisBehaviorIdle::InitializePrivateStaticClassUDisBehaviorIdle(void)
-//   0x739f90  public: static class UClass * __cdecl UDisBehaviorIdle::StaticClassNoInline(void)
-//   0x739fc0  public: static class UClass * __cdecl UDisTweaks_AIBehavior_Idle::GetPrivateStaticClassUDisTweaks_AIBehavior_Idle(wchar_t const *)
-//   0x73ad70  public: static class UClass * __cdecl UDisTweaks_AIBehavior_Idle::StaticClassNoInline(void)
-//   0x741070  private: virtual void __thiscall UDisBehaviorIdle::OnBehaviorResume(void)
-//   0x7410c0  private: unsigned int __thiscall UDisBehaviorIdle::FilterTeleported(struct FAIStimStruct_Teleported const &)
-//   0x7436b0  private: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorIdle::GetFilterStimDelegate(enum EAIStimID)
+
+// ---- agent CG ports (PHASE9 CG): the idle behaviour's stim table ----
+//
+// This is the smallest complete example of how a behaviour is activated, and it is the one that matters most: it is the
+// behaviour every NPC falls back to, and the only one that answers the BrainInit stim UDishonoredAIBrain::InitBrain
+// raises. Without it a brain finishes initialising with 21 constructed behaviours and an empty active stack, which is
+// exactly what the -disai census reported before this file: "26 initialized, 0 activations".
+//
+// The pattern is retail's and every other UDisBehavior* subclass repeats it with a longer table:
+//   BuildEvaluateStimMask   a static byte per EAIStimID, bit 0 set for each id this behaviour evaluates. Built once,
+//                           shared by every instance of the class - retail guards it with a b_Initialized flag.
+//   GetEvaluateStimDelegate for each of those ids, the predicate the brain calls to ask "do you want to activate?".
+
+#include "DishonoredGame.h"
+#include "disdelegate.h"
+#include "aistimstruct.h"
+
+/** DISHONORED(port): the shared "yes" predicate retail calls s_DelegateReturnTrue. A behaviour that wants a stim
+    unconditionally hands this out instead of a bound method, which is why the idle behaviour needs no Evaluate* member
+    of its own. */
+static UBOOL DisStimAlwaysTrue( void* /*_pObject*/, const FAIStimStruct& /*_rStim*/ )
+{
+	return TRUE;
+}
+
+static const FDisStimPredicateDelegate GDisDelegateReturnTrue( NULL, &DisStimAlwaysTrue );
+
+// DISHONORED(port): 2013 rva 0x6e3900 (2012 0x723330): the mask is a static built once per class and shared, which is
+// why retail guards it with its own initialised flag rather than rebuilding it per behaviour.
+const BYTE* UDisBehaviorIdle::BuildEvaluateStimMask()
+{
+	static BYTE s_Mask[EAIStimID_MAX];
+	static UBOOL s_bInitialized = FALSE;
+	if( !s_bInitialized )
+	{
+		s_bInitialized = TRUE;
+		appMemzero( s_Mask, sizeof(s_Mask) );
+		s_Mask[EAIStimID_BrainInit] |= 1;
+		s_Mask[EAIStimID_IdleRequest] |= 1;
+	}
+	return s_Mask;
+}
+
+// DISHONORED(port): 2013 rva 0x6e6650 (2012 0x7284f0): the idle behaviour takes the brain-init and the idle-request stim
+// unconditionally and nothing else. Every other stim gets the null delegate, which the brain reads as "not interested".
+FDisStimPredicateDelegate UDisBehaviorIdle::GetEvaluateStimDelegate( BYTE _StimID )
+{
+	if( _StimID == EAIStimID_BrainInit || _StimID == EAIStimID_IdleRequest )
+	{
+		return GDisDelegateReturnTrue;
+	}
+	return FDisStimPredicateDelegate();
+}

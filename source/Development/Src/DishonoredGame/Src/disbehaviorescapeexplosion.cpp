@@ -32,3 +32,55 @@
 //   0x73cfe0  public: virtual void __thiscall UDisBehaviorEscapeExplosion::RequestStateExitCallback_GenericAction(class UDishonoredNativeState *)
 //   0x740c10  public: virtual void __thiscall UDisBehaviorEscapeExplosion::OnBehaviorStart(void)
 //   0x742af0  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorEscapeExplosion::GetEvaluateStimDelegate(enum EAIStimID)const
+
+// ---- agent CG ports (PHASE9 CG) ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x6e90d0 (2012 0x7303a0, exec 0x63b940): the flee sub-state asking to leave finishes the
+// behaviour, and the pawn's master FSM is pulled out of its escape-explosion state only when that is the state it is
+// logically in. Retail tests the LOGICAL state, not the active one, so a state stacked on top of it is left alone.
+void UDisBehaviorEscapeExplosion::execRequestStateExitCallback_Flee( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_Flee( _pThisState );
+}
+
+void UDisBehaviorEscapeExplosion::RequestStateExitCallback_Flee( UDishonoredNativeState* _pThisState )
+{
+	m_bFinished = TRUE;
+
+	if( !m_pOwningBrain || !m_pOwningBrain->m_pOwningPawn || !m_pOwningBrain->m_pOwningPawn->m_pNPCMasterFSM )
+	{
+		return;
+	}
+	UDishonoredNativeState* pLogicalState = m_pOwningBrain->m_pOwningPawn->m_pNPCMasterFSM->GetLogicalState();
+	if( pLogicalState && pLogicalState->IsA( UStateNPCEscapeExplosion::StaticClass() ) )
+	{
+		pLogicalState->RequestStateExit();
+	}
+}
+
+// ---- agent CG natives sweep, round 2 (PHASE9 CG) ----
+
+// DISHONORED(port): 2013 rva 0x6f1970 (2012 0x73cfa0): the exec wrapper, over the C++ body below.
+void UDisBehaviorEscapeExplosion::execThreatTerminatedCallback_Flee( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisAISubStateFlee, _pSubSate);
+	P_FINISH;
+	ThreatTerminatedCallback_Flee( _pSubSate );
+}
+
+// DISHONORED(port): 2013 rva 0x6f1970 (2012 0x73cfa0)
+void UDisBehaviorEscapeExplosion::ThreatTerminatedCallback_Flee( class UDisAISubStateFlee* _pSubSate )
+{
+	// The thing being fled from is gone, so the escape gets its full duration from the tweaks rather than ending at
+	// once - an NPC keeps running for a moment after the explosion stops existing.
+	UDisTweaks_AIBehavior_EscapeExplosion* Tweaks = Cast<UDisTweaks_AIBehavior_EscapeExplosion>( GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaks_AIBehavior_EscapeExplosion*)UDisTweaks_AIBehavior_EscapeExplosion::StaticClass()->GetDefaultObject();
+	}
+	m_fEscapeEndTimer = Tweaks->m_fEscapeEndTimer;
+}

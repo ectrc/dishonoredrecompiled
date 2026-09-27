@@ -1933,7 +1933,13 @@ class SdkWriter:
             head = "MS_ALIGN(4) " + head  # UStruct::Link gives every script struct MinAlignment >= 4; a byte-only struct must match in C++
         note = f"// {e['path']}: retail SDK size {size}" + (" (2012 PDB %d)" % self.d.pdb[it.name]["size"] if it.name in self.d.pdb else "") + (" [shim: %s package]" % e["package"] if it.shim else "")
         lines = self.flush_forwards() + [note, head, "{"] + members
-        lines += ["", "    /** Constructors */", f"    {it.name}() {{}}", f"    {it.name}(EEventParm)", "    {", f"        appMemzero(this, sizeof({it.name}));", "    }", "};", ""]
+        lines += ["", "    /** Constructors */", f"    {it.name}() {{}}", f"    {it.name}(EEventParm)", "    {", f"        appMemzero(this, sizeof({it.name}));", "    }"]
+        # DISHONORED(written): struct cpptext (agent CG). Same rule as the class and interface bodies above: a reflected
+        # struct with methods of its own declares them in Inc/CppText/<Struct>.h. FDisAttentionProxy is the first such
+        # struct (eighteen methods, 2013 rvas 0x74c8f0..0x750540, read by ~30 of the AI callback natives).
+        if (SDK_SOURCE / self.d.module / "Inc" / "CppText" / f"{it.name}.h").exists():
+            lines.append(f"#include \"CppText/{it.name}.h\"")
+        lines += ["};", ""]
         self.asserts.append((it.name, "", size))
         for m in self.layout.merge_interfaces(e["members"], it.script):
             if not m.get("bitfield") and not m["name"].startswith("VfTable_"):

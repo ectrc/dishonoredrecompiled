@@ -81,3 +81,47 @@ void UDisBehaviorTriggerAlarm::execRequestStateExitCallback_TakePosition( FFrame
 }
 
 // ---- end of trivial natives ----
+
+// ---- agent CG ports (PHASE9 CG): the TriggerAlarm sub-state callbacks whose retail bodies are self-contained ----
+
+#include "DishonoredGame.h"
+
+
+// DISHONORED(port): 2013 rva 0x6f6330 (2012 0x750650): leaving the generic action drops whatever the behaviour was
+// acting on, so the alarm's action target does not leak into the next sub-state.
+void UDisBehaviorTriggerAlarm::OnExitCallback_GenericAction( UDishonoredNativeState* _pThisState, UDishonoredNativeState* _pNextState )
+{
+	ClearActionTarget();
+}
+
+// DISHONORED(port): 2013 rva 0x6e4980 (2012 0x745260, exec 0x63c5d0): the generic action asking to leave IS the ring
+// animation finishing; the behaviour's tick reads the flag to advance m_RingAlarmStage.
+void UDisBehaviorTriggerAlarm::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_GenericAction( _pThisState );
+}
+
+void UDisBehaviorTriggerAlarm::RequestStateExitCallback_GenericAction( UDishonoredNativeState* _pThisState )
+{
+	m_bRingAnimFinished = TRUE;
+}
+
+// ---- agent CG natives sweep, round 2 (PHASE9 CG) ----
+
+// DISHONORED(port): 2013 rva 0x6f6320 (2012 0x750640): the exec wrapper, over the C++ body below.
+void UDisBehaviorTriggerAlarm::execOnEnterCallback_GenericAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pLastState);
+	P_FINISH;
+	OnEnterCallback_GenericAction( _pThisState, _pLastState );
+}
+
+// DISHONORED(port): 2013 rva 0x6f6320 (2012 0x750640)
+void UDisBehaviorTriggerAlarm::OnEnterCallback_GenericAction( class UDishonoredNativeState* _pThisState, class UDishonoredNativeState* _pLastState )
+{
+	// Entering the generic action means walking to the bell, so the bell becomes the action target.
+	SetActionTargetActor( m_pBellToHeadToward );
+}

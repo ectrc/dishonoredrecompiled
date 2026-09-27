@@ -338,6 +338,7 @@ public:
     DECLARE_FUNCTION(execRequestStateExitCallback_LieInWait);
     DECLARE_FUNCTION(execRequestStateExitCallback_TakeActorPosition);
     DECLARE_CLASS(UDisBehaviorAmbush,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorAmbush.h"
 };
 
 // DishonoredGame.DisBehaviorCombat: retail sizeof 300, reflected span 176..300 (2012 PDB sizeof 300)
@@ -432,6 +433,7 @@ public:
     DECLARE_FUNCTION(execRefreshCallback_Stand);
     DECLARE_FUNCTION(execOnEnterCallback_Stand);
     DECLARE_CLASS(UDisBehaviorCombatRatSwarm,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorCombatRatSwarm.h"
 };
 
 // DishonoredGame.DisBehaviorCombatRatSwarmEliteGuard: retail sizeof 204, reflected span 200..204 (2012 PDB sizeof 200)
@@ -535,6 +537,7 @@ public:
     DECLARE_FUNCTION(execTickCallback_Stand);
     DECLARE_FUNCTION(execRequestStateExitCallback_FirePistol);
     DECLARE_CLASS(UDisBehaviorShoot,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorShoot.h"
 };
 
 // DishonoredGame.DisBehaviorTallBoyCombat: retail sizeof 384, reflected span 300..384 (2012 PDB sizeof 384)

@@ -1,12 +1,127 @@
 // DishonoredGame/src/disactorfactorynpcpawn.cpp
 // Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
 // build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (8):
-//   0x7aafa0  public: static void __cdecl UDisActorFactoryNPCPawn::InitializePrivateStaticClassUDisActorFactoryNPCPawn(void)
-//   0x7ace80  public: virtual class AActor * __thiscall UDisActorFactoryNPCPawn::GetDefaultActor(void)
-//   0x7acec0  private: class ADishonoredNPCPawn * __thiscall UDisActorFactoryNPCPawn::CreateNPCPawn(class FVector const * const, class FRotator const * const, class USeqAct_ActorFactory const * const)
-//   0x7b01d0  public: unsigned int __thiscall UDisActorFactoryNPCPawn::IsEnoughRoomToSpawnDisPawn(class FVector const *, class USeqAct_ActorFactory const *)const
-//   0x7b0340  public: virtual unsigned int __thiscall UDisActorFactoryNPCPawn::CanCreateActor(class FString &, unsigned int)
-//   0x7b98f0  public: static class UClass * __cdecl UDisActorFactoryNPCPawn::GetPrivateStaticClassUDisActorFactoryNPCPawn(wchar_t const *)
-//   0x7bd0a0  public: static class UClass * __cdecl UDisActorFactoryNPCPawn::StaticClassNoInline(void)
-//   0x7bf130  public: virtual class AActor * __thiscall UDisActorFactoryNPCPawn::CreateActor(class FVector const * const, class FRotator const * const, class USeqAct_ActorFactory const * const)
+// PDB functions attributed to this file (9): CanCreateActor, CreateActor, CreateNPCPawn, GetDefaultActor,
+// IsEnoughRoomToSpawnDisPawn and the four class-registration helpers.
+
+// ---- agent CG ports (PHASE9 CG): the NPC actor factory ----
+//
+// The factory is a sub-object of ADishonoredSpawner and is the one place an ADishonoredNPCPawn is actually constructed.
+// It spawns through the NPC's own UDisTweaks_NPCPawn when it has one, which matters: UDisTweaksBase::SpawnActor (agent
+// AJ's port) passes an FSpawnActor_TweakObj init functor, so the pawn has its tweaks applied before PostBeginPlay rather
+// than after - the ordering agent AJ established in wave 4.
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+#include "disaicensus.h"
+
+// DISHONORED(port): 2013 rva 0x74a8c0 (2012 0x7ace80): the class default of the pawn class the spawner chose, falling
+// back to the factory's own configured class.
+AActor* UDisActorFactoryNPCPawn::GetDefaultActor()
+{
+	if( m_pNPCPawnClass )
+	{
+		return (AActor*)m_pNPCPawnClass->GetDefaultObject();
+	}
+	return Super::GetDefaultActor();
+}
+
+// DISHONORED(port): 2013 rva 0x74e470 (2012 0x7b0340): the editor's "can I drop one here" query.
+UBOOL UDisActorFactoryNPCPawn::CanCreateActor( FString& OutErrorMsg, UBOOL bFromAssetOnly )
+{
+	if( !m_pNPCPawnClass )
+	{
+		OutErrorMsg = TEXT("DisActorFactoryNPCPawn has no NPC pawn class");
+		return FALSE;
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x74e4b0 (2012 0x7acec0): a pawn whose class default is static or already deleted is never
+// spawned once play has begun; otherwise the tweaks spawn it (so the tweak chain runs before begin-play) or, with no
+// tweaks, UWorld::SpawnActor does. Retail then calls the script PostCreateActor event on the factory.
+ADishonoredNPCPawn* UDisActorFactoryNPCPawn::CreateNPCPawn( const FVector* const Location, const FRotator* const Rotation, const USeqAct_ActorFactory* const ActorFactoryData )
+{
+	AActor* DefaultActor = GetDefaultActor();
+	if( !DefaultActor )
+	{
+		return NULL;
+	}
+	if( GWorld && GWorld->HasBegunPlay() && ( DefaultActor->IsStatic() || DefaultActor->bNoDelete ) )
+	{
+		return NULL;
+	}
+
+	const FRotator NewRotation = Rotation ? *Rotation : DefaultActor->Rotation;
+	AActor* Spawned = NULL;
+	if( m_pNPCPawnTweaks )
+	{
+		Spawned = m_pNPCPawnTweaks->SpawnActor( eDisTweaksSpawnType_InGame, NAME_None, *Location, NewRotation, NULL, TRUE, FALSE, NULL, NULL, FALSE );
+	}
+	else if( GWorld )
+	{
+		Spawned = GWorld->SpawnActor( m_pNPCPawnClass, NAME_None, *Location, NewRotation, NULL, TRUE );
+	}
+
+	// DISHONORED(port): retail's tail. PostCreateActor is a script event on UActorFactory that the NPC factory
+	// overrides, and it is where a spawned NPC is possessed: Engine's Pawn.PostBeginPlay only self-possesses a pawn
+	// PLACED in the level ("pawns spawned during gameplay are not automatically possessed by a controller",
+	// Pawn.uc:2229). FindFunction rather than FindFunctionChecked, because the latter appErrors on a class that does not
+	// override it - agent AJ's hand-over 4.
+	if( Spawned )
+	{
+		UFunction* PostCreate = FindFunction( FName( TEXT("PostCreateActor"), FNAME_Find ) );
+		if( PostCreate )
+		{
+			eventPostCreateActor( Spawned, ActorFactoryData );
+		}
+		// A factory class that does not override the event simply has nothing to run here; retail's
+		// FindFunctionChecked would appError on it, which is agent AJ's hand-over 4.
+	}
+	return Cast<ADishonoredNPCPawn>( Spawned );
+}
+
+// DISHONORED(port): 2013 rva 0x75dbb0 (2012 0x7bf130): the UActorFactory entry point, and the place an NPC gets its
+// mind. It refuses when there is not enough room, creates the pawn, and then - in game, and only for a pawn that was
+// not spawned dead or straight to ragdoll - spawns an ADishonoredNPCController at the same place and possesses the pawn
+// with it. That possession is what ADishonoredSpawner::OnSpawned then finds and hands to
+// ADishonoredNPCController::InitNPC, which builds the brain. Engine's own Pawn.PostBeginPlay cannot do it: it
+// self-possesses only a pawn PLACED in the level ("pawns spawned during gameplay are not automatically possessed by a
+// controller", Pawn.uc:2229), and retail's APawn has no ControllerClass at all - it is a reference-only member in this
+// tree, which is the evidence that Arkane replaced that path with this one.
+AActor* UDisActorFactoryNPCPawn::CreateActor( const FVector* const Location, const FRotator* const Rotation, const USeqAct_ActorFactory* const ActorFactoryData )
+{
+	if( !m_pNPCPawnTweaks && !m_pNPCPawnClass )
+	{
+		return NULL;
+	}
+	// DISHONORED(bringup): IsEnoughRoomToSpawnDisPawn (2013 rva 0x758db0) traces a 36-unit box at the spawn point
+	// against the pawn trace flags and answers TRUE when the spot is BLOCKED (retail's call site reads
+	// `if( IsEnoughRoomToSpawnDisPawn(...) ) return NULL`, so the name is inverted with respect to its meaning). It is
+	// not ported: the trace flag constants it uses (8326 / 8351 depending on the Kismet action) are two of the
+	// FDisPrimTraceMask combinations agent AU's follow-up 2 says Engine/Inc/UnLevel.h still has no names for. A spawner
+	// whose spawn point is blocked therefore spawns anyway, where retail would have refused.
+
+	ADishonoredNPCPawn* Pawn = CreateNPCPawn( Location, Rotation, ActorFactoryData );
+	if( !Pawn || !GIsGame )
+	{
+		return Pawn;
+	}
+	if( Pawn->m_SpawnerInfo.m_bSpawnDead || Pawn->m_SpawnerInfo.m_bStraightToRagdoll )
+	{
+		return Pawn;
+	}
+
+	const FRotator NewRotation = Rotation ? *Rotation : Pawn->Rotation;
+	ADishonoredNPCController* NPCController = Cast<ADishonoredNPCController>(
+		GWorld->SpawnActor( ADishonoredNPCController::StaticClass(), NAME_None, *Location, NewRotation, NULL, TRUE ) );
+	if( NPCController )
+	{
+		NPCController->Possess( Pawn );
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDisActorFactoryNPCPawn::CreateActor could not spawn an ADishonoredNPCController for %s"), *Pawn->GetName() );
+	}
+	return Pawn;
+}

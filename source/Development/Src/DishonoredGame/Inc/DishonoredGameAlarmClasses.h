@@ -105,6 +105,7 @@ public:
     DECLARE_FUNCTION(execTickCallback_Stand);
     DECLARE_FUNCTION(execOnEnterCallback_Stand);
     DECLARE_CLASS(UDisBehaviorTriggerAlarm,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorTriggerAlarm.h"
 };
 
 // DishonoredGame.DisNotify_ActivateAlarm: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)

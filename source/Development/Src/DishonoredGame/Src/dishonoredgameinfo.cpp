@@ -184,3 +184,43 @@ void ADishonoredGameInfo::execGameEnding( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	GameEnding();
 }
+
+// ---- agent CG ports (PHASE9 CG): the global managers ----
+
+// DISHONORED(port): 2013 rva 0x5e9bd0 (2012 0x62f8b0): the twelve global managers are sub-objects of the game info and
+// this is where each is told to initialise. The AI brain package needs exactly one of them - the global AI manager,
+// whose Init_GlobalAI creates the stim pool every brain allocates its stims from.
+// DISHONORED(bringup): the other eleven are other packages': the post-process manager (agent BD/CE), the conversation
+// manager, the water volume manager, the global combat manager, the rat swarm manager, the music manager (agent AJ's
+// cheapest-next-batch note), the AI attention manager, the UI manager (agent AW/CB..CD), the population manager, the
+// DLC manager and the faction manager. Each is named here with its retail call so that adding one is a single line.
+void ADishonoredGameInfo::InitGlobalManagers()
+{
+	if( m_pGlobalAIManager )
+	{
+		m_pGlobalAIManager->Init_GlobalAI();
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredGameInfo::InitGlobalManagers has no m_pGlobalAIManager sub-object") );
+	}
+	// UDisPostProcessManager::Init( m_pPpManager )                    2013 rva 0x7a45b0
+	// UDisConvGlobalMan::InitGlobalConvMan( m_pConvGlobalMan )        2013 rva 0x8b2e80
+	// UDisWaterVolumeManager::Init( m_pWaterVolumeManager )           2013 rva 0x63ad30
+	// UDisGlobalCombatManager::Init_GlobalCombat( m_pGlobalCombatManager )   2013 rva 0x83f7b0
+	// UDisRatSwarmGlobalManager::Init( m_pRatSwarmGlobalManager )     2013 rva 0x64c6f0
+	// UDisGlobalMusicManager::Init_GlobalMusic( m_pGlobalMusicManager )      2013 rva 0x852a40's sibling
+	// UDisGlobalUIManager::Init( m_pGlobalUIManager )                 2013 rva 0x8b8d10
+	// m_pPopulationManager->Initialize()                              virtual
+	// UDisGlobalDLCManager::Initialize( m_pDLCManager )               2013 rva 0x8377c0
+	// UDisGlobalFactionManager::RebuildCaches( m_pGlobalFactionManager )     2013 rva 0x832a60
+}
+
+// DISHONORED(port): 2013 rva 0x6155d0 (2012 0x63fc10): the game info's begin-play, whose one job that this package
+// needs is InitGlobalManagers. Retail also reads the difficulty out of the profile and fires the match-start Kismet
+// events, both of which belong to other packages and are named rather than written.
+void ADishonoredGameInfo::PostBeginPlay()
+{
+	Super::PostBeginPlay();
+	InitGlobalManagers();
+}

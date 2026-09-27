@@ -164,3 +164,146 @@
 //   0x7c8770  private: virtual void __thiscall ADishonoredNPCPawn::PostBeginPlay(void)
 //   0x7c9230  protected: void __thiscall ADishonoredNPCPawn::OnStolen(void)
 //   0x7c93b0  public: virtual unsigned int __thiscall ADishonoredNPCPawn::AttemptInteract_Derived(class ADishonoredPawn *, unsigned int &)
+
+// ---- agent CG ports (PHASE9 CG): the accessors the brain reads every frame ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities_ai.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(port): 2013 rva 0x7704b0 (2012 0x7ae420) / 0x7704d0 (0x7ae440) / 0x7704f0 (0x7ae460): the live entry of
+// m_BodyIntention for each of the three aspects, selected by its own priority byte.
+BYTE ADishonoredNPCPawn::GetBodyStance() const
+{
+	return m_BodyIntention[m_CurrentBodyStancePriority].m_IntendedBodyStance;
+}
+
+UClass* ADishonoredNPCPawn::GetDesiredPrimaryItem() const
+{
+	return m_BodyIntention[m_CurrentPrimaryItemPriority].m_pDesiredPrimaryItemClass;
+}
+
+UClass* ADishonoredNPCPawn::GetDesiredSecondaryItem() const
+{
+	return m_BodyIntention[m_CurrentSecondaryItemPriority].m_pDesiredSecondaryItemClass;
+}
+
+// DISHONORED(port): 2013 rva 0x76e8c0 (2012 0x7c9560): one slot of m_BodyIntention is written and the three "current"
+// priority bytes are recomputed as the highest priority that has a non-default intent for each aspect.
+// DISHONORED(bringup): retail also asks the item contexts to equip or unequip towards the new intent
+// (UDisItemContext, agentAJ.md's third root, unported), and pushes the stance into the anim state component. The
+// intention itself is stored and read back correctly, which is what the AI and the census depend on.
+void ADishonoredNPCPawn::SetBodyIntention( BYTE _Priority, BYTE _BodyStance, UClass* _pPrimaryItemClass, UClass* _pSecondaryItemClass )
+{
+	if( _Priority >= ARRAY_COUNT(m_BodyIntention) )
+	{
+		return;
+	}
+	m_BodyIntention[_Priority].m_IntendedBodyStance = _BodyStance;
+	m_BodyIntention[_Priority].m_pDesiredPrimaryItemClass = _pPrimaryItemClass;
+	m_BodyIntention[_Priority].m_pDesiredSecondaryItemClass = _pSecondaryItemClass;
+
+	m_CurrentBodyStancePriority = 0;
+	m_CurrentPrimaryItemPriority = 0;
+	m_CurrentSecondaryItemPriority = 0;
+	for( INT Priority = ARRAY_COUNT(m_BodyIntention) - 1; Priority > 0; Priority-- )
+	{
+		if( m_CurrentBodyStancePriority == 0 && m_BodyIntention[Priority].m_IntendedBodyStance != 0 )
+		{
+			m_CurrentBodyStancePriority = Priority;
+		}
+		if( m_CurrentPrimaryItemPriority == 0 && m_BodyIntention[Priority].m_pDesiredPrimaryItemClass )
+		{
+			m_CurrentPrimaryItemPriority = Priority;
+		}
+		if( m_CurrentSecondaryItemPriority == 0 && m_BodyIntention[Priority].m_pDesiredSecondaryItemClass )
+		{
+			m_CurrentSecondaryItemPriority = Priority;
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x74b010 (2012 0x7ab570) / 0x74b020 (0x7ab580): the one-shot request the relationship
+// system raises and the brain consumes, so a relationship change is acted on exactly once.
+UBOOL ADishonoredNPCPawn::ShouldAIBeNotifiedOfRelationshipChange() const
+{
+	return m_bNotifyAIOfRelationshipChange != 0;
+}
+
+void ADishonoredNPCPawn::AcknowledgeRelationshipChangeHandledByAI()
+{
+	m_bNotifyAIOfRelationshipChange = FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x7599b0 (2012 0x7c0030): the pawn only admits to having a brain when it is alive, its
+// controller is an NPC controller and that brain has finished initialising. Every caller relies on that, which is why
+// a dying NPC stops answering AI queries one frame before its controller stops ticking.
+UDishonoredAIBrain* ADishonoredNPCPawn::GetAIBrain()
+{
+	ADishonoredNPCController* NPCController = Cast<ADishonoredNPCController>( Controller );
+	if( DisIsPawnDead( this ) || !NPCController || !NPCController->m_pAIBrain )
+	{
+		return NULL;
+	}
+	if( !NPCController->m_pAIBrain->IsBrainInitialized() )
+	{
+		return NULL;
+	}
+	return NPCController->m_pAIBrain;
+}
+
+// DISHONORED(port): the predicate ADishonoredNPCController::OnAISetSuspicionLevel reads to choose the unsuspecting
+// stance. Retail's own body tests the pawn's NPC tweaks; an NPC that has a melee or ranged loadout is a fighter.
+UBOOL ADishonoredNPCPawn::IsAFighter() const
+{
+	UDisTweaks_NPCPawn* NPCTweaks = Cast<UDisTweaks_NPCPawn>( ( (ADishonoredNPCPawn*)this )->GetTweaks_Derived() );
+	if( !NPCTweaks )
+	{
+		NPCTweaks = (UDisTweaks_NPCPawn*)UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject();
+	}
+	return NPCTweaks->m_pContentInventory_DefaultEquipType_Primary != NULL;
+}
+
+// ---- agent CG ports (PHASE9 CG): the damage entry point ----
+
+// DISHONORED(port): 2013 rva 0x783680 (2012 0x7c6d50): the NPC's own damage pass. Its whole observable job is to record
+// the shot in m_LastNPCDamageInfo, which is what the death chain, the kill-cam and the severed-limb code all read back;
+// the actual health change is APawn::TakeDamage's, below.
+// DISHONORED(bringup): four refinements of retail's body are not ported and are named rather than skipped silently:
+//   UDishonoredInventory::DamageInventoryItems (2013 rva 0x8064d0) - the equipped item takes its share of the damage;
+//   UDisTweaks_Vulnerability::IsImmuneToDamageType / IDisVulnerabilityInterface::IsObjectVulnerableToInstaDeath - the
+//     per-NPC vulnerability table, so every NPC is currently vulnerable to everything;
+//   IDisRatTargetInterface::DamageAttachedRats - a swarm riding the NPC takes the damage first;
+//   UDishonoredAIBrain::HandleIncomingDamage (2013 rva 0x723780) - the brain's reaction, which needs the attention
+//     process this package could not reach (see agentCG.md).
+// ADishonoredPawn::GetBoneRegionInfo (0x74d6e0) is the fifth: without it m_pDamageRegion stays NULL and a headshot
+// counts as a body shot.
+void ADishonoredNPCPawn::TakeDamage_Native( INT& _rDamage, AController* _pInstigatedBy, FVector _HitLocation, FVector& _rMomentum, UClass* _pDamageType, FTraceHitInfo _HitInfo, AActor* _pDamageCauser )
+{
+	m_LastNPCDamageInfo.m_pDamageCausingActor = _pDamageCauser;
+	m_LastNPCDamageInfo.m_pDamageType = _pDamageType;
+	m_LastNPCDamageInfo.m_DamageHitLocation = _HitLocation;
+	m_LastNPCDamageInfo.m_pDamageInstigator = DisGetPawnInstigator( _pInstigatedBy );
+	m_LastNPCDamageInfo.m_DamageHitInfo = _HitInfo;
+	m_LastNPCDamageInfo.m_DamageMomentum = _rMomentum;
+	m_LastNPCDamageInfo.m_iHealthBeforeDamage = Health;
+	m_LastNPCDamageInfo.m_iDamage = _rDamage;
+}
+
+// DISHONORED(port): 2013 rva 0x74a340's shape (2012 ADishonoredPawn::TakeDamage 0x7acae0): the script-facing native
+// reads its seven parameters, hands them to the virtual TakeDamage_Native so the game-specific pass can adjust the
+// damage and the momentum in place, and then lets APawn::TakeDamage apply what is left.
+void ADishonoredNPCPawn::execTakeDamage( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(Damage);
+	P_GET_OBJECT(AController, InstigatedBy);
+	P_GET_STRUCT(FVector, HitLocation);
+	P_GET_STRUCT(FVector, Momentum);
+	P_GET_OBJECT(UClass, DamageType);
+	P_GET_STRUCT_OPTX(FTraceHitInfo, HitInfo, FTraceHitInfo(EC_EventParm));
+	P_GET_OBJECT_OPTX(AActor, DamageCauser, NULL);
+	P_FINISH;
+
+	TakeDamage_Native( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+	APawn::TakeDamage( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+}
