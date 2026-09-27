@@ -18,3 +18,19 @@ public:
 	virtual void OnModifyAmmo( class UDisSeqAct_ModifyAmmo* Action );
 	virtual UBOOL ChooseAndTriggerDeathEvent_Native( UClass* DamageType );
 	virtual void PlayDying_Native( AController* Killer, UClass* DamageType, FVector HitLocation );
+	// ---- agent BF (PHASE8 BF): the attributes system and the fall natives ----
+	// Bodies in dishonoredpawn_attributes.cpp (GetAttributes 2013 rva 0x7497b0, PreBeginPlay_Attributes 0x762190,
+	// OnDifficultyChange 2012 0x794cd0), dishonoredpawn_body.cpp (TakeFallingDamage_Native 0x74dcc0 + its exec 0x5ec5f0)
+	// and dishonoredpawn.cpp (Landed_Native 0x74d120 + its exec 0x5ec7e0).
+	virtual UObject* GetUObjectInterfaceDisAttributesInterface() { return this; }
+	virtual class UDisAttributes& GetAttributes();
+	virtual void PreBeginPlay_Attributes();
+	/** Retail takes the FArkGameEvent that fired it; FArkGameEventDispatcher is unported, so it takes nothing. */
+	void OnDifficultyChange();
+
+	virtual INT TakeFallingDamage_Native( FVector HitNormal, class AActor* FloorActor );
+	virtual void Landed_Native( FVector HitNormal, class AActor* FloorActor );
+	/** 2013 rva 0x74a340; body in dishonoredpawn_health.cpp. */
+	virtual void TakeDamage( INT Damage, class AController* InstigatedBy, FVector HitLocation, FVector Momentum,
+	                         UClass* DamageType, struct FTraceHitInfo HitInfo = FTraceHitInfo(EC_EventParm),
+	                         class AActor* DamageCauser = NULL );

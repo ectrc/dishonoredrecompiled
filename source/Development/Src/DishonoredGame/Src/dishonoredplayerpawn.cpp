@@ -229,3 +229,41 @@ void ADishonoredPlayerPawn::execDisplayDebug_Native( FFrame& Stack, RESULT_DECL 
 }
 
 // ---- end of trivial natives ----
+
+// ---- agent BF ports (PHASE8 BF): the player's landing override ----
+
+// DISHONORED(written): 2013 rva 0x6b53a0 (2012 0x70eff0), 1,601 bytes, and the shape of it is five things:
+//  1. the big-fall branch: when the floor blocks a trace and -pFallState->m_fFall_Stun_Vel > Velocity.Z, request the
+//     m_Action_JumpLandBig fullbody action and use UDisContactType_JumpLand_Big;
+//  2. otherwise the small-land branch: pick m_Action_JumpLandSmall / _Ready / _Sneak / _LeftHand by the desired stance,
+//     the equipped item and IsSneaking, push it onto the upper and left-arm FSMs and invalidate the anim state;
+//  3. the contact: trace 1.5 cylinder heights under the feet and cross the chosen JumpLand contact type with the
+//     surface, recording m_fTimeOfLastLandedContact;
+//  4. the camera: UDishonoredCamera_PhysicalReact::OnImpact with the landing velocity unless the big-fall action already
+//     handled it, then clear the second FOV target;
+//  5. m_Debug_Player.m_LastJumpLandVel = Velocity.
+// DISHONORED(port): 1 to 4 all stand on subsystems that do not exist. m_pPlayerMasterFSM / m_pPlayerUpperFSM /
+// m_pPlayerLeftArmFSM are never created (ADishonoredPlayerController::PostBeginPlay does not call
+// UDishonoredNativeStateMachine::InitFSM - agent AJ's note) and every UStatePlayerMaster* / UStateSharedActionBase* unit
+// is still a comment-only skeleton; UDisTweaks_PlayerPawn_Actions' action structs, ADishonoredPawn::GetDishonoredCamera,
+// UDishonoredCamera_PhysicalReact and the whole contact system are unported too. Step 5 is ported for real, and the FSM
+// pointers are tested rather than assumed so this stays correct once those packages land.
+void ADishonoredPlayerPawn::Landed_Native( FVector HitNormal, AActor* FloorActor )
+{
+	if( UDisAttributes::IsCensusEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): disattrib land %s: Velocity %.1f %.1f %.1f, floor %s; land action, contact and camera react unported"),
+			*GetName(), Velocity.X, Velocity.Y, Velocity.Z, FloorActor ? *FloorActor->GetName() : TEXT("none") );
+	}
+	m_Debug_Player.m_LastJumpLandVel = Velocity;
+}
+
+// DISHONORED(written): the generated exec wrapper; ICF folded it onto ADishonoredPawn::execLanded_Native (2013 rva
+// 0x5ec7e0) because the code is identical - it dispatches through the virtual.
+void ADishonoredPlayerPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT(FVector, HitNormal);
+	P_GET_ACTOR(FloorActor);
+	P_FINISH;
+	Landed_Native( HitNormal, FloorActor );
+}

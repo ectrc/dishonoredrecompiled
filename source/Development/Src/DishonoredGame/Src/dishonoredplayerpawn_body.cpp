@@ -15,3 +15,31 @@
 //   0x7054a0  public: void __thiscall ADishonoredPlayerPawn::StartTatooGlow(void)
 //   0x705510  public: enum ADishonoredPlayerPawn::ESwimmingState __thiscall ADishonoredPlayerPawn::GetSwimmingState(void)const
 //   0x70bdf0  public: virtual class FVector __thiscall ADishonoredPlayerPawn::GetCameraPos(void)const
+
+#include "DishonoredGame.h"
+
+// ---- agent BF ports (PHASE8 BF): the player's fall-damage override ----
+
+// DISHONORED(written): 2013 rva 0x6a4fa0 (2012 0x6fe8b0): landing on a pawn costs the player nothing; anything else
+// falls through to ADishonoredPawn::TakeFallingDamage_Native. Retail's test is
+// FloorActor->m_ActorTypeFlags (BYTE @266) & 0x20, the bit both pawn kinds carry (an NPC is 34, the player 36).
+// DISHONORED(bringup): m_ActorTypeFlags is never written in this tree (agent AU follow-up 6), so the Cast<> that means
+// the same thing is used instead - as agent AU's ports do.
+INT ADishonoredPlayerPawn::TakeFallingDamage_Native( FVector HitNormal, AActor* FloorActor )
+{
+	if( Cast<ADishonoredPawn>( FloorActor ) )
+	{
+		return 0;
+	}
+	return ADishonoredPawn::TakeFallingDamage_Native( HitNormal, FloorActor );
+}
+
+// DISHONORED(written): the generated exec wrapper; ICF folded it onto ADishonoredPawn::execTakeFallingDamage_Native
+// (2013 rva 0x5ec5f0) because the code is identical - it dispatches through the virtual.
+void ADishonoredPlayerPawn::execTakeFallingDamage_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT(FVector, HitNormal);
+	P_GET_ACTOR(FloorActor);
+	P_FINISH;
+	*(INT*)Result = TakeFallingDamage_Native( HitNormal, FloorActor );
+}

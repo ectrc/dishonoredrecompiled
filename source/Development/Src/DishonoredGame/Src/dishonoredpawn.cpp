@@ -364,3 +364,36 @@ void ADishonoredPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	PlayDying_Native( Killer, DamageType, HitLocation );
 }
+
+// ---- agent BF ports (PHASE8 BF): the landing native ----
+
+// DISHONORED(written): 2013 rva 0x74d120 (2012 0x790dc0). The base pawn's landing is nothing but a contact: when
+// Velocity.Z is above +200 (0x74d134 compares against 200.0 and branches away when it is not greater - a landing that is
+// still moving upwards, i.e. the launch half of a jump) it traces 20 units under the cylinder for the surface it hit and
+// crosses UDisContactType_JumpLand with that surface's contact type.
+// DISHONORED(port): every piece of that is the contact system - DisGetPhysicalMaterial (trace flags 0x28DF),
+// DisConvertCheckResultToImpactInfo, UDisContactType_JumpLand / _Environment, DisGetContactSystem and
+// UDishonoredContactSystem::ApplyContact - and none of it is ported (agent AU's root 4). The native is ported as the
+// gate plus the named gap, so an NPC landing no longer warns that the native is missing and the one thing that is
+// missing is named exactly.
+void ADishonoredPawn::Landed_Native( FVector HitNormal, AActor* FloorActor )
+{
+	if( Velocity.Z <= 200.f )
+	{
+		return;
+	}
+	if( UDisAttributes::IsCensusEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): disattrib land %s: Velocity.Z %.1f, JumpLand contact not applied (contact system unported)"),
+			*GetName(), Velocity.Z );
+	}
+}
+
+// DISHONORED(written): 2013 rva 0x5ec7e0 (2012 0x633360), the generated exec wrapper.
+void ADishonoredPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT(FVector, HitNormal);
+	P_GET_ACTOR(FloorActor);
+	P_FINISH;
+	Landed_Native( HitNormal, FloorActor );
+}

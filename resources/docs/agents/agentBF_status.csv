@@ -1,0 +1,35 @@
+rva,status,note
+0x8864d0,written,UDisAttributes::GetAttributeValue (2012 0x8ef200) - the map read, recaching first
+0x889040,written,UDisAttributes::GetModifiedAttribute (2012 0x8f76d0) - find or create the entry
+0x8863f0,written,UDisAttributes::RecacheAttributeValue (2012 0x8ef0e0) - the three modifier types then the clamp
+0x889bc0,written,UDisAttributes::RefreshAttributes (2012 0x8f8020) - base values by difficulty then the range limits
+0x886530,written,UDisAttributes::TickAttributes (2012 0x8ef260) - modifier lifetimes; NULL test added
+0x87e0e0,written,UDisAttributes::HasModifier (2012 0x8e6ea0)
+0x87e140,written,UDisAttributes::GetModifierValue (2012 0x8e6f00)
+0x885280,written,UDisAttributes::RemoveModifier (2012 0x8ec440) - retail's emptiness test is on the wrong map; ported as written
+0x886a50,written,IDisAttributesInterface::GetAttributeValue (2012 0x8ef580)
+0x87e1c0,written,IDisAttributesInterface::HasAttributeModifier (2012 0x8e6f80)
+0x87e1e0,written,IDisAttributesInterface::GetAttributeModifierValue (2012 0x8e6fa0)
+0x8852f0,written,IDisAttributesInterface::RemoveAttributeModifier (2012 0x8ec4b0)
+0x889170,written,IDisAttributesInterface::AddAttributeModifier (2012 0x8f77d0)
+0x7497b0,written,ADishonoredPawn::GetAttributes (2012 0x78e8b0) - m_pAttributes @1916; lazy construct because PreBeginPlay is unported
+0x88aca0,written,UDisTweaks_Attributes::ConstructAttributes (2012 0x8f85f0)
+0x8f8130,written,UDisTweaks_Attributes::RefreshAttributesFromSource (2012 rva; unmatched in 2013) - TFieldIterator over its own reflected FDisAttribute properties
+0x762190,written,ADishonoredPawn::PreBeginPlay_Attributes (2012 0x79b730) - m_pAttributeTweaks[1] at UDisTweaks_Pawn @264
+0x794cd0,written,ADishonoredPawn::OnDifficultyChange (2012 rva) - no FArkGameEvent parameter; its dispatcher is unported
+0x74dcc0,written,ADishonoredPawn::TakeFallingDamage_Native (2012 0x7918e0) - the damage; the contact tail is the unported contact system
+0x5ec5f0,written,ADishonoredPawn::execTakeFallingDamage_Native (2012 0x633170)
+0x74d120,written,ADishonoredPawn::Landed_Native (2012 0x790dc0) - the Velocity.Z > 200 gate; the body is the unported contact system
+0x5ec7e0,written,ADishonoredPawn::execLanded_Native (2012 0x633360)
+0x6a4fa0,written,ADishonoredPlayerPawn::TakeFallingDamage_Native (2012 0x6fe8b0) - no fall damage from landing on a pawn
+0x6b53a0,written,ADishonoredPlayerPawn::Landed_Native (2012 0x70eff0) - m_LastJumpLandVel only; the FSM/camera/contact branches are unported
+0x8ef4d0,todo,operator<<(FArchive&+FDisModifiedAttribute&) (2012 rva) - save system (milestone 6)
+0x8f77b0,todo,UDisAttributes::GameLoad (2012 rva) - save system (milestone 6)
+0x8d9420,todo,FDisAttribute::PopulateWithLegacyValue (2012 rva) - only the ArLicenseeVer < 25 upgrade path
+0x8f0d30,todo,UDisTweaks_Attributes::Serialize (2012 rva) - only the ArLicenseeVer < 25 upgrade path
+0x794860,todo,ADishonoredPawn::ApplyAttributes (2012 rva) - needs IsCarryingCorpse and would overwrite the walking path's GroundSpeed
+0x794b10,todo,ADishonoredPawn::MaxSpeedModifier (2012 rva) - needs MaxSpeedModifier_Derived / IsSneaking / IsCarryingCorpse
+0x78e880,todo,ADishonoredPawn::Tick_Attributes (2012 rva) - its caller ADishonoredPawn::Tick (0x750720) is unported
+0x74a340,written,ADishonoredPawn::TakeDamage (2012 0x7acae0) - the entry the now-real fall damage lands through; TakeDamage_Native left as the named gap
+0x1c1640,written,ADishonoredPawn::execTakeDamage - AActor::execTakeDamage (ICF-folded in retail); the walking path's last warn-once line, which only appeared once the fall damage became non-zero
+0x75ccd0,todo,ADishonoredPawn::TakeDamage_Native (2012 0x7c5610) - vulnerabilities/immunities/minimum health/hit reactions/contact system

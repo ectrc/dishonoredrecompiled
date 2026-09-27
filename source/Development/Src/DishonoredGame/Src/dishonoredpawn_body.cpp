@@ -51,3 +51,75 @@
 //   0x7a4970  public: void __thiscall ADishonoredPawn::SetupHitRegions(void)
 //   0x7a4b70  public: virtual void __thiscall ADishonoredPawn::PostBeginPlay_Body(void)
 //   0x7a6360  public: virtual void __thiscall UDisSkeletalMeshComponent::PreComposeSkeleton(void)
+
+#include "DishonoredGame.h"
+
+// ---- agent BF ports (PHASE8 BF): the fall-damage native ----
+
+// DISHONORED(written): 2013 rva 0x74dcc0 (2012 0x7918e0). The fall speed is -Velocity.Z; the two thresholds are the
+// attributes Attribute_MaxSpeedBeforeFallingDamage and Attribute_MaxSpeedBeforeFallingDeath, sorted so the smaller is
+// the no-damage floor and the larger the lethal ceiling; the damage is HealthMax (an INT, @840) scaled by where the fall
+// speed sits between them. Below the floor the native returns 0 without touching anything.
+// This is the division agent AU warned about: with the attributes unset both thresholds are 0, every landing divides by
+// zero, the alpha clamps to 1 and the pawn takes HealthMax damage. The whole point of porting the attributes system
+// first is that these two reads now answer the cooked values.
+// DISHONORED(port): the tail is the contact system - DisGetPhysicalMaterial (trace flags 0x20DF) picks the surface the
+// pawn landed on, UDisContactType_BreakingBones_Player (m_ActorTypeFlags @266 == 36) or UDisContactType_BreakingBones is
+// crossed with it, and UDishonoredContactSystem::ApplyContact plays the result. None of UDisContactType_*,
+// FDisContactContext, DisGetPhysicalMaterial, DisConvertCheckResultToImpactInfo or DisGetContactSystem is ported (agent
+// AU's root 4), so the damage is returned without the impact effect. The damage itself - the observable half - is exact.
+INT ADishonoredPawn::TakeFallingDamage_Native( FVector HitNormal, AActor* FloorActor )
+{
+	// The attribute names are the member names of UDisTweaks_Pawn_Attributes with m_ replaced by Attribute_; the two
+	// strings are in the retail exe at 0xcd25e0 and 0xcd2658 and retail reads them through the DNAME_Attribute_* globals.
+	static const FName NAME_MaxSpeedBeforeFallingDamage( TEXT("Attribute_MaxSpeedBeforeFallingDamage") );
+	static const FName NAME_MaxSpeedBeforeFallingDeath( TEXT("Attribute_MaxSpeedBeforeFallingDeath") );
+	const FLOAT FallSpeed = -Velocity.Z;
+	const FLOAT FallDamageSpeed = GetAttributeValue( NAME_MaxSpeedBeforeFallingDamage );
+	const FLOAT FallDeathSpeed = GetAttributeValue( NAME_MaxSpeedBeforeFallingDeath );
+	const FLOAT FallMin = Min<FLOAT>( FallDamageSpeed, FallDeathSpeed );
+	const FLOAT FallMax = Max<FLOAT>( FallDamageSpeed, FallDeathSpeed );
+	if( FallSpeed <= FallMin )
+	{
+		if( UDisAttributes::IsCensusEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): disattrib fall %s: speed %.1f, no damage below %.1f (death at %.1f)"),
+				*GetName(), FallSpeed, FallMin, FallMax );
+		}
+		return 0;
+	}
+	if( FallMax <= FallMin )
+	{
+		// DISHONORED(bringup): retail divides by (FallMax - FallMin) unguarded, because its two thresholds always come from
+		// the cooked pawn attribute tweaks and always differ. Both being equal means the attribute set is missing or
+		// unauthored, and retail's arithmetic would then divide by zero, clamp the alpha to 1 and take HealthMax damage -
+		// i.e. kill the pawn on every landing. That is exactly why these two natives were left stubbed before this
+		// package; the degenerate case answers "no damage" and says so once.
+		static UBOOL bNamed = FALSE;
+		if( !bNamed )
+		{
+			bNamed = TRUE;
+			debugf( TEXT("DISHONORED(bringup): %s has no fall-damage thresholds (Attribute_MaxSpeedBeforeFallingDamage and _Death both %.1f): no fall damage"),
+				*GetName(), FallMin );
+		}
+		return 0;
+	}
+	const FLOAT Alpha = Clamp<FLOAT>( ( FallSpeed - FallMin ) / ( FallMax - FallMin ), 0.f, 1.f );
+	const INT DamageToTake = appTrunc( (FLOAT)HealthMax * Alpha );
+	if( UDisAttributes::IsCensusEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): disattrib fall %s: speed %.1f in [%.1f .. %.1f] alpha %.3f -> damage %i of health %i/%i"),
+			*GetName(), FallSpeed, FallMin, FallMax, Alpha, DamageToTake, Health, HealthMax );
+	}
+	return DamageToTake;
+}
+
+// DISHONORED(written): 2013 rva 0x5ec5f0 (2012 0x633170), the generated exec wrapper: a vector, an actor, then the
+// virtual. ADishonoredNPCPawn's and ADishonoredPlayerPawn's copies are the same code and were folded by ICF.
+void ADishonoredPawn::execTakeFallingDamage_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT(FVector, HitNormal);
+	P_GET_ACTOR(FloorActor);
+	P_FINISH;
+	*(INT*)Result = TakeFallingDamage_Native( HitNormal, FloorActor );
+}

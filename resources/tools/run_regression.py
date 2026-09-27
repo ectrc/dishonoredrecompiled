@@ -119,10 +119,13 @@ def aggregate(text: str, pattern: str, how: str):
     matches = list(re.finditer(pattern, text))
     if how == "count":
         return len(matches)
+    if how == "distinct":
+        # DISHONORED(written): agent BF. A distinct counter counts lines that only exist when something is wrong, so no
+        # match means zero, not "the log stopped carrying the metric". Before this, unported_natives reaching 0 read as
+        # the -1 regression sentinel and could never report the number the plan asks for.
+        return len({m.group(1) for m in matches})
     if not matches:
         return None
-    if how == "distinct":
-        return len({m.group(1) for m in matches})
     index = int(how[-1]) if how[-1].isdigit() else 0
     values = [float(m.group(index + 1)) for m in matches]
     value = values[-1] if how.startswith("last") else max(values)

@@ -1,0 +1,6 @@
+ADishonoredPawn::execLanded_Native
+ADishonoredPawn::execTakeFallingDamage_Native
+ADishonoredPlayerPawn::execLanded_Native
+ADishonoredPlayerPawn::execTakeFallingDamage_Native
+ADishonoredNPCPawn::execTakeFallingDamage_Native
+ADishonoredPawn::execTakeDamage

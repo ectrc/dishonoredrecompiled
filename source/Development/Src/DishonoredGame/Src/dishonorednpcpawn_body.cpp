@@ -46,3 +46,20 @@
 //   0x7c42c0  protected: virtual class UClass * __thiscall ADishonoredNPCPawn::ChooseFootfallContactType(void)const
 //   0x7c4320  protected: virtual unsigned int __thiscall ADishonoredNPCPawn::IsAutoFootfallEnabled(void)const
 //   0x7c94a0  public: virtual unsigned int __thiscall ADishonoredNPCPawn::IgnoreBlockingBy(class AActor const *)const
+
+#include "DishonoredGame.h"
+
+// ---- agent BF ports (PHASE8 BF) ----
+
+// DISHONORED(written): the generated exec wrapper of ADishonoredNPCPawn's own script declaration of
+// TakeFallingDamage_Native. The class has no C++ override - the 2012 PDB has no
+// ADishonoredNPCPawn::TakeFallingDamage_Native symbol - so the exec dispatches through the virtual to
+// ADishonoredPawn::TakeFallingDamage_Native (2013 rva 0x74dcc0), which is why ICF folded this wrapper onto
+// ADishonoredPawn::execTakeFallingDamage_Native (2013 rva 0x5ec5f0).
+void ADishonoredNPCPawn::execTakeFallingDamage_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_STRUCT(FVector, HitNormal);
+	P_GET_ACTOR(FloorActor);
+	P_FINISH;
+	*(INT*)Result = TakeFallingDamage_Native( HitNormal, FloorActor );
+}
