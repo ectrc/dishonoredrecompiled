@@ -616,7 +616,14 @@ void GaussianBlurFilterBuffer(
 		FVector2D OffsetAndWeight[MAX_FILTER_SAMPLES];
 
 		// compute 1D filtered samples 
-		NumSamples1D = Compute1DGaussianFilterKernel(EffectiveBlurRadius, OffsetAndWeight, (UINT)GSystemSettings.MaxFilterBlurSampleCount);
+		// DISHONORED(port): 2013 rva 0x45c3d0 (2012 0x485160). GSystemSettings.MaxFilterBlurSampleCount does not exist
+		// in retail - FSystemSettings has no such member, so it is a storage-less DISHONORED_SHIM_STATIC and reads 0, which
+		// made Compute1DGaussianFilterKernel return 0 samples and SetFilterShaders abort the render thread with
+		// `Invalid number of samples: 0`. Every Gaussian blur in the tree went through this line, so no pass that
+		// blurs could ever run; the depth-of-field node's far blur is the first content that reaches it. Retail
+		// passes no maximum (it clamps the kernel radius to 16 instead, `Min(KernelRadius / FilterDownsampleFactor,
+		// 16)`), so the MAX_FILTER_SAMPLES default is what retail gets.
+		NumSamples1D = Compute1DGaussianFilterKernel(EffectiveBlurRadius, OffsetAndWeight);
 
 		if(!TEST_PROFILEEXSTATE(0x40, View.Family->CurrentRealTime))
 		{

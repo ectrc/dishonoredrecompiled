@@ -115,6 +115,13 @@ extern void ArkPpColorBalanceApplyTo(const FArkPpColorBalanceParameters& Params,
 extern void ArkUberPpSetDefaultOnNoOverride(FArkUberPpParameters& Params);
 extern void ArkUberPpApplyTo(const FArkUberPpParameters& Params,FArkUberPpParameters& oResult,FLOAT iAlpha,UBOOL bDOFOnlyBlendAmount);
 
+/**
+ * DISHONORED(port): the two the settings path needs on top of those (2013 rvas 0x2a2e00, 0x2adb50). The
+ * bodies are in UnPlayer.cpp beside ULocalPlayer::UpdatePostProcessSettings, their only caller.
+ */
+extern void ArkUberPpForceDefault(FArkUberPpParameters& Params);
+extern void ArkPpConfigApplyTo(const FArkPpConfig& Config,FArkPpConfig& oResult,FLOAT iAlpha,UBOOL bDOFOnlyBlendAmount);
+
 /** DISHONORED(port): arkppnodes.cpp - the node-cache lookup and the viewport every node pass sets. */
 extern UBOOL ArkPpFindCachedProxy(FArkPpCreateProxyConfig& Config,UArkPpNode* Node,FArkPpNodeProxy*& OutProxy);
 extern void ArkPpSetNodeViewport(const FViewInfo& View,UINT SizeX,UINT SizeY);

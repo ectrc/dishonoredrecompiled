@@ -543,7 +543,6 @@ set(DishonoredGame_EXCLUDE
   Src/dispossessablepawn.cpp
   Src/dispossessionproxypawn.cpp
   Src/dispossessionvolume.cpp
-  Src/dispostprocesscontrollers.cpp
   Src/dispostprocessmanager.cpp
   Src/disprojectile_arrow.cpp
   Src/disprojectile_arrow_explosive.cpp

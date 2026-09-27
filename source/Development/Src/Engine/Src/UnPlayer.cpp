@@ -13,6 +13,8 @@
 #include "EngineAudioDeviceClasses.h"
 #include "EngineSoundClasses.h"
 #include "SceneRenderTargets.h"
+// DISHONORED(port): the FArkUberPpParameters helpers of the settings path (0x2b08b0 and its callees).
+#include "arkpp.h"
 
 // needed for adding components when typing "show paths" in game
 #include "EngineAIClasses.h"
@@ -3530,170 +3532,273 @@ void ULocalPlayer::RebuildPlayerPostProcessChain()
 }
 
 
+/*-----------------------------------------------------------------------------
+	The Arkane post-process settings path (ULocalPlayer::UpdatePostProcessSettings and its callees)
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): 2013 rva 0x2a2e00 - FArkUberPpParameters::ForceDefault, the neutral grade. Every group's override
+ * bit is cleared and every field is pinned: focus 10000, radius 500, no far blur, no colour balance, opacity 1,
+ * exposure 0, gamma 1, no grain, no brightness or contrast.
+ *
+ * DISHONORED(retail): retail clears only the first three bits of the HDR group here (`&= 0xFFFFFFF8`), leaving
+ * m_bOverrideGimpBrightness and m_bOverrideGimpContrast set if they were; SetDefaultOnNoOverride's else branch
+ * (0x2a2d20) has the same three-bit mask. Ported as retail has it, because the two bits decide what the next
+ * ApplyTo copies.
+ */
+void ArkUberPpForceDefault(FArkUberPpParameters& Params)
+{
+	Params.m_bOverrideDOFParameters = 0;
+	Params.m_DOFParameters.m_FocusDistance = 10000.0f;
+	Params.m_DOFParameters.m_InFocusRadius = 500.0f;
+	Params.m_DOFParameters.m_FarBlurAmount = 0.0f;
+	Params.m_DOFParameters.m_bOverrideFocusDistance = 0;
+	Params.m_DOFParameters.m_bOverrideInFocusRadius = 0;
+	Params.m_DOFParameters.m_bOverrideFarBlurAmount = 0;
+
+	Params.m_bOverrideCBParameters = 0;
+	ArkPpColorBalanceForceDefault(Params.m_CBParameters);
+
+	Params.m_bOverrideHDRParameters = 0;
+	Params.m_HDRParameters.m_bOverrideExposure = 0;
+	Params.m_HDRParameters.m_bOverrideGammaAdjustment = 0;
+	Params.m_HDRParameters.m_bOverrideFilmGrainNoise = 0;
+	Params.m_HDRParameters.m_Exposure = 0.0f;
+	Params.m_HDRParameters.m_GammaAdjustment = 1.0f;
+	Params.m_HDRParameters.m_FilmGrainNoise = 0.0f;
+	Params.m_HDRParameters.m_GimpBrightness = 0.0f;
+	Params.m_HDRParameters.m_GimpContrast = 0.0f;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x2adb50 - FArkPpConfig::ApplyTo. The destination's own groups are resolved first, then
+ * this config's uber parameters are blended in at iAlpha and the destination is marked overridden. The bloom group
+ * transfers as a bit and nothing else, which is retail's (see UpdatePostProcessSettings).
+ */
+void ArkPpConfigApplyTo(const FArkPpConfig& Config,FArkPpConfig& oResult,FLOAT iAlpha,UBOOL bDOFOnlyBlendAmount)
+{
+	if (oResult.m_bOverrideUberPpParameters)
+	{
+		ArkUberPpSetDefaultOnNoOverride(oResult.m_UberPpParameters);
+	}
+	else
+	{
+		ArkUberPpForceDefault(oResult.m_UberPpParameters);
+	}
+	if (Config.m_bOverrideUberPpParameters)
+	{
+		ArkUberPpApplyTo(Config.m_UberPpParameters, oResult.m_UberPpParameters, iAlpha, bDOFOnlyBlendAmount);
+		oResult.m_bOverrideUberPpParameters = 1;
+	}
+	if (Config.m_bOverrideBloomPpParameters)
+	{
+		oResult.m_bOverrideBloomPpParameters = 1;
+	}
+}
+
+/** DISHONORED(bringup): -noarkppsettings leaves m_CurrentArkPpSettings at its script defaults (the pair's switch). */
+static UBOOL ArkPpNoSettings()
+{
+	static UBOOL bNoSettings = ParseParam(appCmdLine(),TEXT("noarkppsettings"));
+	return bNoSettings;
+}
+
+/** DISHONORED(bringup): -arkppsettingsdbg reports the grade the content resolves to, and which feed each part is. */
+static UBOOL ArkPpSettingsDbg()
+{
+	static UBOOL bDbg = ParseParam(appCmdLine(),TEXT("arkppsettingsdbg"));
+	return bDbg;
+}
+
+/** DISHONORED(bringup): one FArkPpConfig as text, every value followed by its own override bit. */
+static FString ArkPpDescribeConfig(const FArkPpConfig& Config)
+{
+	const FArkUberPpParameters& U = Config.m_UberPpParameters;
+	const FArkPpColorBalanceParameters& CB = U.m_CBParameters;
+	const FArkPpHdrParameters& HDR = U.m_HDRParameters;
+	const FArkPpDofParameters& DOF = U.m_DOFParameters;
+	FString Text = FString::Printf(TEXT("uber %i (dof %i cb %i hdr %i) bloom %i enable %i scale %.3f"),
+		(INT)Config.m_bOverrideUberPpParameters, (INT)U.m_bOverrideDOFParameters, (INT)U.m_bOverrideCBParameters,
+		(INT)U.m_bOverrideHDRParameters, (INT)Config.m_bOverrideBloomPpParameters,
+		(INT)Config.m_PpBloomParameters.m_bEnable, Config.m_PpBloomParameters.m_Scale);
+	Text += FString::Printf(TEXT(" | shad (%.3f %.3f %.3f)/%i mid (%.3f %.3f %.3f)/%i high (%.3f %.3f %.3f)/%i"),
+		CB.m_CrMgYbShadTones.X, CB.m_CrMgYbShadTones.Y, CB.m_CrMgYbShadTones.Z, (INT)CB.m_bOverrideCrMgYbShadTones,
+		CB.m_CrMgYbMidTones.X, CB.m_CrMgYbMidTones.Y, CB.m_CrMgYbMidTones.Z, (INT)CB.m_bOverrideCrMgYbMidTones,
+		CB.m_CrMgYbHighTones.X, CB.m_CrMgYbHighTones.Y, CB.m_CrMgYbHighTones.Z, (INT)CB.m_bOverrideCrMgYbHighTones);
+	Text += FString::Printf(TEXT(" opacity %.3f/%i desat %.3f/%i %.3f/%i | exposure %.3f/%i gamma %.3f/%i grain %.3f/%i"),
+		CB.m_Opacity, (INT)CB.m_bOverrideOpacity,
+		CB.m_PreDesaturation, (INT)CB.m_bOverridePreDesaturation,
+		CB.m_PostDesaturation, (INT)CB.m_bOverridePostDesaturation,
+		HDR.m_Exposure, (INT)HDR.m_bOverrideExposure,
+		HDR.m_GammaAdjustment, (INT)HDR.m_bOverrideGammaAdjustment,
+		HDR.m_FilmGrainNoise, (INT)HDR.m_bOverrideFilmGrainNoise);
+	Text += FString::Printf(TEXT(" brightness %.3f/%i contrast %.3f/%i | focus %.1f/%i radius %.1f/%i far blur %.3f/%i"),
+		HDR.m_GimpBrightness, (INT)HDR.m_bOverrideGimpBrightness,
+		HDR.m_GimpContrast, (INT)HDR.m_bOverrideGimpContrast,
+		DOF.m_FocusDistance, (INT)DOF.m_bOverrideFocusDistance,
+		DOF.m_InFocusRadius, (INT)DOF.m_bOverrideInFocusRadius,
+		DOF.m_FarBlurAmount, (INT)DOF.m_bOverrideFarBlurAmount);
+	return Text;
+}
+
+/**
+ * DISHONORED(bringup): the settings census - the level's grade, the camera's alpha, the gameplay override and the
+ * resolved result, printed the first time and every time the resolved text changes, so a camera cut or a Kismet push
+ * shows up as its own line.
+ */
+static void ArkPpReportSettings(const FArkPpConfig& Level,FLOAT CameraAlpha,const FArkPpConfig& Override,
+	const FArkPpConfig& Current,UBOOL bOverrideActive,UBOOL bRecovering,FLOAT OverrideOpacity)
+{
+	static INT NumReported = 0;
+	static FString LastText;
+	const FString CurrentText = ArkPpDescribeConfig(Current);
+	if (NumReported >= 40 || (NumReported > 0 && CurrentText == LastText))
+	{
+		return;
+	}
+	LastText = CurrentText;
+	NumReported++;
+	const AWorldInfo* Info = GWorld ? GWorld->GetWorldInfo() : NULL;
+	debugf(TEXT("DISHONORED(bringup): ark pp settings %i (%s, frame %i): camera alpha %.3f, gameplay override %i, recovering %i, opacity %.3f"),
+		NumReported, Info ? *Info->GetOutermost()->GetName() : TEXT("none"), (INT)GFrameNumber,
+		CameraAlpha, (INT)bOverrideActive, (INT)bRecovering, OverrideOpacity);
+	debugf(TEXT("DISHONORED(bringup):   level    %s"), *ArkPpDescribeConfig(Level));
+	debugf(TEXT("DISHONORED(bringup):   override %s"), *ArkPpDescribeConfig(Override));
+	debugf(TEXT("DISHONORED(bringup):   current  %s"), *CurrentText);
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x24b0c0 - AWorldInfo::GetPostProcessSettings, the level's grade. It is the whole of the
+ * LEVEL feed: WorldInfo::m_ArkDefaultPpSettings copied out as one 132-byte struct. Two things retail does that the
+ * reference overload above does not: the view location is a parameter and is never read (retail has no post-process
+ * volume lookup at all - APostProcessVolume is reference-only here), and when the first streaming level is the
+ * persistent one the settings come from *that* level's WorldInfo, so a streamed sub-level cannot change the grade.
+ */
+UBOOL AWorldInfo::GetPostProcessSettings(const FVector& ViewLocation,FArkPpConfig& OutConfig)
+{
+	AWorldInfo* Info = this;
+	if (StreamingLevels.Num() > 0
+		&& StreamingLevels(0) != NULL
+		&& StreamingLevels(0)->LoadedLevel != NULL
+		&& StreamingLevels(0)->IsA(ULevelStreamingPersistent::StaticClass()))
+	{
+		Info = StreamingLevels(0)->LoadedLevel->GetWorldInfo();
+	}
+	OutConfig = Info->m_ArkDefaultPpSettings;
+	return TRUE;
+}
+
 /**
  * Updates the post-process settings for the player's view.
  *
- *	There are four separate post process feeds that are combined in order to produce the final applied post process settings.
- *	Level				- The level's default post process values and PostProcessVolumes in the level. This set of post process settings is really a target, and is interpolated in.
- *	Actor(Controller)	- Post process applied by the controller itself, which in most cases is the camera animation's post process values. 
- *						  The way in which this set of settings is applied is determined by the controller, which means it can potentially be destructive to any prior applied settings.
- *	Camera Override		- Post process applied by the camera at a higher priority than the controller post process. Used by matinee.
- *						  These settings are blended in over the prior settings.
- *	Gameplay Override	- Post process settings applied by gameplay code. These post process settings are also an interpolation target.
- *						  Furthermore, these settings are faded out in order to 'recover' from a gameplay override.
+ * DISHONORED(port): 2013 rva 0x2b08b0. Retail's body is short and fills one thing: m_CurrentArkPpSettings, the
+ * FArkPpConfig that CalcSceneView hands the view as FSceneView::m_ArkPpConfig and the only post-process settings
+ * retail's renderer reads. The four feeds are still the four the reference comment below describes, but every one of
+ * them carries an FArkPpConfig: retail's licensee branch has no FPostProcessSettings script struct at all - the name
+ * does not appear once in the retail SDK dump - so the reference body that stood here blended a structure nothing
+ * downstream reads and wrote nothing to m_CurrentArkPpSettings, which therefore kept its script defaults. That is why
+ * the level's, the camera's and Kismet's colour grade never reached the LUT the depth-of-field node bakes
+ * (agent DA, defect 1).
  *
- * @param ViewLocation - The player's current view location.
+ *   LEVEL             AWorldInfo::GetPostProcessSettings (0x24b0c0): WorldInfo::m_ArkDefaultPpSettings, copied whole.
+ *   ACTOR             APlayerController::ModifyPostProcessSettings, empty in the engine (retail folds the base with
+ *                     the other empty one-argument virtuals); ADishonoredPlayerController's override (0x6adeb0) adds
+ *                     the camera, water, health and dark-vision effects and is not ported - hand-over 1.
+ *   CAMERA OVERRIDE   ACamera::m_CamPostProcessSettings through FArkPpConfig::ApplyTo (0x2adb50), matinee's channel.
+ *   GAMEPLAY OVERRIDE m_ArkPpSettingsOverride with its recovery fade; script's LocalPlayer.OverridePostProcessSettings
+ *                     (an ArkPpConfig, and script rather than native in retail) is what Kismet pushes into it.
+ *
+ * @param ViewLocation - The player's current view location. Retail's GetPostProcessSettings takes it and never reads
+ *                       it: there is no post-process volume lookup anywhere in retail's settings path.
  */
 void ULocalPlayer::UpdatePostProcessSettings(const FVector& ViewLocation)
 {
 	const FLOAT CurrentWorldTime = GWorld->GetRealTimeSeconds();
-	
-	// Find the post-process settings for the view.
-	FPostProcessSettings NewSettings;
-	APostProcessVolume *NewVolume;
+
+	// DISHONORED(bringup): the switch of the measurement pair - m_CurrentArkPpSettings keeps its script defaults, which
+	// is exactly what this tree delivered to the renderer before this function was ported.
+	if (ArkPpNoSettings())
+	{
+		return;
+	}
 
 	//	LEVEL
-	NewVolume = GWorld->GetWorldInfo()->GetPostProcessSettings(ViewLocation, TRUE, NewSettings);
+	GWorld->GetWorldInfo()->GetPostProcessSettings(ViewLocation, m_CurrentArkPpSettings);
+	const FArkPpConfig LevelSettings = m_CurrentArkPpSettings;
 
-	bForceDefaultPostProcessChain = FALSE;
-	if (NewVolume && NewVolume->bOverrideWorldPostProcessChain)
-	{
-		bForceDefaultPostProcessChain = TRUE;
-	}
-	
-	
-	FString Map;
-	if (Actor)
-	{
-		Map = Actor->GetURLMap();
-	}
-
-	//This is a new map!
-	if (Map != LastMap)
-	{
-		if (bWantToResetToMapDefaultPP)
-		{
-			//Now set the interpolation durations to zero, so we will just go directly to the new settings
-			NewSettings.Bloom_InterpolationDuration = 0;
-			NewSettings.MotionBlur_InterpolationDuration = 0;
-			NewSettings.DOF_InterpolationDuration = 0;
-			NewSettings.Scene_InterpolationDuration = 0;
-			NewSettings.RimShader_InterpolationDuration = 0;
-			NewSettings.MobileColorGrading.TransitionTime = 0;
-			NewSettings.MobilePostProcess.Mobile_TransitionTime = 0;
-		}
-		bWantToResetToMapDefaultPP = !GWorld->GetWorldInfo()->bPersistPostProcessToNextLevel;
-		LastMap = Map;
-	}
-	// Update info for when a new volume goes into use
-	if( LevelPPInfo.LastVolumeUsed != NewVolume )
-	{
-		LevelPPInfo.LastVolumeUsed = NewVolume;
-		LevelPPInfo.BlendStartTime = CurrentWorldTime;
-	}
-	// Lerp the level settings. Use that to prime the CurrentPPInfo.
-	UpdatePPSetting(LevelPPInfo, NewSettings, CurrentWorldTime);
-	CurrentPPInfo.LastSettings = LevelPPInfo.LastSettings;
-	// END LEVEL
-	
 	//	ACTOR (CONTROLLER)
-	//	Give the controller an opportunity to do any modifications.
-	//	NOTE: Camera anims work through this channel
 	if (Actor != NULL)
 	{
-		Actor->ModifyPostProcessSettings(CurrentPPInfo.LastSettings);
+		Actor->ModifyPostProcessSettings(m_CurrentArkPpSettings);
 	}
-	//	END ACTOR (CONTROLLER)
 
-	//	CAMERA OVERRIDE
-	//	NOTE: Matinee works through this channel
-	if(Actor && Actor->PlayerCamera && Actor->PlayerCamera->CamOverridePostProcessAlpha > 0.f)
+	//	CAMERA OVERRIDE (matinee, and every DishonoredPlayerCamera post-process target)
+	FLOAT CameraAlpha = 0.0f;
+	if (Actor && Actor->PlayerCamera && Actor->PlayerCamera->CamOverridePostProcessAlpha > 0.f)
 	{
-		//Blend the currently computed level settings with the camera's settings at the camera's alpha level
-		Actor->PlayerCamera->CamPostProcessSettings.OverrideSettingsFor(CurrentPPInfo.LastSettings, Actor->PlayerCamera->CamOverridePostProcessAlpha);
+		CameraAlpha = Actor->PlayerCamera->CamOverridePostProcessAlpha;
+		ArkPpConfigApplyTo(Actor->PlayerCamera->m_CamPostProcessSettings, m_CurrentArkPpSettings, CameraAlpha, FALSE);
 	}
-	//	END CAMERA OVERRIDE
-	
+
 	// GAMEPLAY OVERRIDE
-	for (INT OverrideIdx=0; OverrideIdx<ActivePPOverrides.Num(); ++OverrideIdx)
+	if (bOverridePostProcessSettings || bRecoveryFromPostProcessOverride)
 	{
-		FPostProcessSettingsOverride& PPSO = ActivePPOverrides(OverrideIdx);
-
-		FLOAT const DeltaTime = GWorld->GetWorldInfo()->DeltaSeconds;
-		UBOOL bJustFinished = FALSE;
-
-		// update blends
-		if ( PPSO.TimeAlphaCurve.Points.Num() > 0 )
+		FLOAT Opacity = 1.f;
+		if (bRecoveryFromPostProcessOverride)
 		{
-			// Curve based blending
-			PPSO.CurrentBlendInTime += DeltaTime;
-			FLOAT const CurrentBlendWeight = PPSO.TimeAlphaCurve.Eval( PPSO.CurrentBlendInTime, 0.f );
-			PPSO.Settings.OverrideSettingsFor( CurrentPPInfo.LastSettings, CurrentBlendWeight );
-			if ( PPSO.CurrentBlendInTime >= PPSO.BlendInDuration )
+			if (!bOverridePostProcessSettings)
 			{
-				// this override is done, expire it
-				ActivePPOverrides.Remove(OverrideIdx, 1);
-				OverrideIdx--;
-			}
-		}
-		else
-		{
-			// Non curve blending uses blendIn/blendOut times
-
-			if (PPSO.bBlendingIn)
-			{
-				PPSO.CurrentBlendInTime += DeltaTime;
-				if (PPSO.CurrentBlendInTime > PPSO.BlendInDuration)
+				// The fade starts the frame the override is dropped; OverridePPEndTime <= 0 means it has not started.
+				if (OverridePPEndTime <= 0.f)
 				{
-					// done blending in!
-					PPSO.bBlendingIn = FALSE;
-					ClearPostProcessSettingsOverride( PPSO.BlendInDuration );
+					OverridePPEndTime = CurrentWorldTime + 1.f;
 				}
-			}
-			if (PPSO.bBlendingOut)
-			{
-				PPSO.CurrentBlendOutTime += DeltaTime;
-				if (PPSO.CurrentBlendOutTime > PPSO.BlendOutDuration)
-				{
-					// done!
-					bJustFinished = TRUE;
-				}
-			}
-
-			if (bJustFinished)
-			{
-				// this override is done, expire it
-				ActivePPOverrides.Remove(OverrideIdx, 1);
-				OverrideIdx--;
+				Opacity = 1.f - (CurrentWorldTime - OverridePPEndTime) / OverridePPRecoveryTime;
 			}
 			else
 			{
-				// calculate blend weight. calculating separately and taking the minimum handles overlapping blends nicely.
-				FLOAT const BlendInWeight = (PPSO.bBlendingIn) ? (PPSO.CurrentBlendInTime / PPSO.BlendInDuration) : 1.f;
-				FLOAT const BlendOutWeight = (PPSO.bBlendingOut) ? (1.f - PPSO.CurrentBlendOutTime / PPSO.BlendOutDuration) : 1.f;
-				FLOAT const CurrentBlendWeight = ::Min(BlendInWeight, BlendOutWeight);
-
-				if (CurrentBlendWeight > 0.f)
-				{
-					// interp into a copy so it's not destructive
-					FCurrentPostProcessVolumeInfo OverridePPInfo = CurrentPPInfo;
-					OverridePPInfo.BlendStartTime = PPSO.BlendStartTime;
-
-					// this will update all of the internal interpolations (e.g. Bloom_InterpolationDuration)
-					// and store the result into OverridePPInfo
-					UpdatePPSetting(OverridePPInfo, PPSO.Settings, CurrentWorldTime);
-					
-					PPSO.Settings.OverrideSettingsFor( CurrentPPInfo.LastSettings, CurrentBlendWeight );
-
-					// now blend that result into the real output PP settings using the current opacity
-					OverridePPInfo.LastSettings.OverrideSettingsFor(CurrentPPInfo.LastSettings, CurrentBlendWeight);
-				}
+				bRecoveryFromPostProcessOverride = FALSE;
 			}
 		}
+		OverridePPOpacity = Opacity;
+
+		// The override blends into a resolved base, so the groups the level does not override are pinned to neutral
+		// first: without this a group the override touches would blend against whatever the script default held.
+		if (m_CurrentArkPpSettings.m_bOverrideUberPpParameters)
+		{
+			ArkUberPpSetDefaultOnNoOverride(m_CurrentArkPpSettings.m_UberPpParameters);
+		}
+		else
+		{
+			ArkUberPpForceDefault(m_CurrentArkPpSettings.m_UberPpParameters);
+		}
+
+		if (m_ArkPpSettingsOverride.m_bOverrideUberPpParameters)
+		{
+			ArkUberPpApplyTo(m_ArkPpSettingsOverride.m_UberPpParameters, m_CurrentArkPpSettings.m_UberPpParameters,
+				Opacity, FALSE);
+			m_CurrentArkPpSettings.m_bOverrideUberPpParameters = 1;
+		}
+		// DISHONORED(retail): retail raises the destination's bloom override bit and copies no bloom field with it, so
+		// a gameplay override cannot change the bloom tint, threshold or scale - it can only mark the group overridden.
+		// Ported as retail has it; the FArkPpConfig::ApplyTo above does the same thing with the same one line.
+		if (m_ArkPpSettingsOverride.m_bOverrideBloomPpParameters)
+		{
+			m_CurrentArkPpSettings.m_bOverrideBloomPpParameters = 1;
+		}
+
+		if (bRecoveryFromPostProcessOverride
+			&& (OverridePPEndTime + OverridePPRecoveryTime - CurrentWorldTime) <= 0.f)
+		{
+			bRecoveryFromPostProcessOverride = FALSE;
+		}
 	}
-	// END GAMEPLAY OVERRIDE
-	
-	CurrentPPInfo.LastBlendTime = CurrentWorldTime;
+
+	if (ArkPpSettingsDbg())
+	{
+		ArkPpReportSettings(LevelSettings, CameraAlpha, m_ArkPpSettingsOverride, m_CurrentArkPpSettings,
+			bOverridePostProcessSettings, bRecoveryFromPostProcessOverride, OverridePPOpacity);
+	}
 }
 
 

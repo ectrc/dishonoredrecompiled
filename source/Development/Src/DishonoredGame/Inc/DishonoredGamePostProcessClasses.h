@@ -53,6 +53,7 @@ public:
     //## END PROPS DisBlindedPpController
 
     DECLARE_CLASS(UDisBlindedPpController,UArkPpNodeController,0,DishonoredGame)
+#include "CppText/UDisBlindedPpController.h"
 };
 
 // DishonoredGame.DisOpacityParameterPpController: retail sizeof 84, reflected span 56..84 (2012 PDB sizeof 84)
@@ -70,6 +71,7 @@ public:
     //## END PROPS DisOpacityParameterPpController
 
     DECLARE_CLASS(UDisOpacityParameterPpController,UArkPpNodeController,0,DishonoredGame)
+#include "CppText/UDisOpacityParameterPpController.h"
 };
 
 #undef DECLARE_CLASS

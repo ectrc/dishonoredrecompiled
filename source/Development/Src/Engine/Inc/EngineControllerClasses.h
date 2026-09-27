@@ -2769,6 +2769,10 @@ public:
 	 * @param PPSettings - the post processing settings to apply
 	 */
 	virtual void ModifyPostProcessSettings(FPostProcessSettings& PPSettings) const;
+	// DISHONORED(port): retail's ModifyPostProcessSettings takes an FArkPpConfig and its base body is empty
+	// (identical-code-folded with the other empty one-argument virtuals). ADishonoredPlayerController's
+	// override (2013 rva 0x6adeb0) is the powers' and the water's grade and is not ported yet.
+	virtual void ModifyPostProcessSettings(struct FArkPpConfig& Config) {}
 
 	// AActor interface.
 	INT* GetOptimizedRepList( BYTE* InDefault, FPropertyRetirement* Retire, INT* Ptr, UPackageMap* Map, UActorChannel* Channel );

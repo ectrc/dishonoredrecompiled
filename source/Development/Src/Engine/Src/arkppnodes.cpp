@@ -73,9 +73,11 @@ UBOOL UArkPpNode::IsShownInConfig(const FArkPpCreateProxyConfig& Config)
 	{
 		return TRUE;
 	}
-	// DISHONORED(bringup): the four controller classes are DishonoredGame's and unported, so the base answers what
-	// they answer at rest (FALSE, enginearkppclasses.h). -arkppcontrollersshown answers what they answer while their
-	// effect runs, which is how the material pass can be measured on the content's own nodes.
+	// DISHONORED(bringup): the two controllers that decide this answer for themselves are ported now
+	// (dispostprocesscontrollers.cpp) and the base answers retail's TRUE, so this is the content's own answer.
+	// -arkppcontrollersshown is agent CE's probe and forces every controller-driven node to draw; it is bring-up only
+	// and stays until the controllers' timers are driven, which needs ADishonoredPlayerController::
+	// ModifyPostProcessSettings (2013 rva 0x6adeb0) - nothing in this tree calls UArkPpNodeController::Tick yet.
 	static UBOOL bControllersShown = ParseParam(appCmdLine(),TEXT("arkppcontrollersshown"));
 	return bControllersShown || m_Controller->IsShown(this);
 }

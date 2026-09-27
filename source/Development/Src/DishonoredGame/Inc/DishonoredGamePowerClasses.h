@@ -315,6 +315,7 @@ public:
     //## END PROPS DisDarkVisionPpController
 
     DECLARE_CLASS(UDisDarkVisionPpController,UArkPpNodeController,0,DishonoredGame)
+#include "CppText/UDisDarkVisionPpController.h"
 };
 
 // DishonoredGame.DisSeqAct_OverridePossess: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)

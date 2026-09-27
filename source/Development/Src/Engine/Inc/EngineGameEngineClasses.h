@@ -1076,6 +1076,8 @@ public:
 	 * @return	If the settings came from a post process volume, the post process volume is returned.
 	 */
 	APostProcessVolume* GetPostProcessSettings(const FVector& ViewLocation,UBOOL bUseVolumes,FPostProcessSettings& OutPostProcessSettings);
+	// DISHONORED(port): 2013 rva 0x24b0c0 - retail's overload, the only one its renderer reads (UnPlayer.cpp).
+	UBOOL GetPostProcessSettings(const FVector& ViewLocation,struct FArkPpConfig& OutConfig);
 
 	/** Checks whether temporal AA is allowed. */
 	UBOOL GetAllowTemporalAA() const;

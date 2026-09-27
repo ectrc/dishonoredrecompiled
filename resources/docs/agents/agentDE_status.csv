@@ -1,0 +1,29 @@
+rva_2013,status,note
+0x2b08b0,ported,ULocalPlayer::UpdatePostProcessSettings - retail's body; fills m_CurrentArkPpSettings from the level the controller the camera and the gameplay override. The reference body it replaced blended FPostProcessSettings which retail has no script struct for and wrote nothing to the member the renderer reads (UnPlayer.cpp)
+0x24b0c0,ported,"AWorldInfo::GetPostProcessSettings(const FVector&,FArkPpConfig&) - the LEVEL feed: m_ArkDefaultPpSettings copied whole, from the persistent level's WorldInfo when StreamingLevels(0) is a ULevelStreamingPersistent. The view location is a parameter retail never reads; there is no volume lookup in retail's settings path (UnPlayer.cpp)"
+0x2adb50,ported,FArkPpConfig::ApplyTo - the CAMERA OVERRIDE channel; resolves the destination's groups then blends this config's uber parameters at iAlpha (UnPlayer.cpp ArkPpConfigApplyTo)
+0x2a2e00,ported,FArkUberPpParameters::ForceDefault - the neutral grade; retail clears only the first three HDR bits and leaves the two gimp override bits standing (UnPlayer.cpp ArkUberPpForceDefault)
+0x5ea9d0,ported,"UArkPpNodeController::IsShown base - retail returns TRUE (mov eax,1; retn 4, identical-code-folded with UObject::IsRefSaveable at vtable slot 74). Agent CE's stand-in answered FALSE because no subclass existed; both subclasses that override it are ported now (enginearkppclasses.h)"
+0x7e7ca0,ported,UDisOpacityParameterPpController::IsShown - m_bDoNotDisablePp || m_bIsOn || m_CurrentTime > 0 (dispostprocesscontrollers.cpp)
+0x7eaba0,ported,UDisOpacityParameterPpController::Tick - the fade; the rise is gated on m_bIsOn alone while IsShown also accepts m_bDoNotDisablePp (dispostprocesscontrollers.cpp)
+0x7eac10,ported,UDisOpacityParameterPpController::Update - its own copy of the node's material with the fade in one named vector parameter; no uber override (dispostprocesscontrollers.cpp)
+0x7e7c30,ported,UDisDarkVisionPpController::IsShown - m_bIsActive || m_bDebugIsActive || m_EyeLidTime > 0 || m_PowerTime > 0 (dispostprocesscontrollers.cpp)
+0x7eaab0,ported,UDisDarkVisionPpController::Tick - the eyelid closes first and only then does the power fade in; on the way out the power fades before the lid opens (dispostprocesscontrollers.cpp)
+0x7ee630,ported,UDisDarkVisionPpController::Update - eyelid material before the lid is shut then the power material; the only controller that pushes an uber override (static at weight 1 plus dynamic at m_PowerTime) (dispostprocesscontrollers.cpp)
+0x7e7b00,ported,UDisBlindedPpController::Tick - GBlindedT += DeltaTime; runs whether or not the effect is on (dispostprocesscontrollers.cpp)
+0x45c3d0,defect,"GaussianBlurFilterBuffer - the call site passed GSystemSettings.MaxFilterBlurSampleCount, a storage-less DISHONORED_SHIM_STATIC that reads 0, so Compute1DGaussianFilterKernel returned 0 samples and every Gaussian blur in the tree aborted the render thread. Retail has no such setting (it clamps the radius to 16). Fixed at the call site (SceneFilterRendering.cpp)"
+0x5249c0,edited,UArkPpNode::IsShownInConfig - comment only; agent CE's -arkppcontrollersshown is now a probe rather than a stand-in (arkppnodes.cpp)
+0x6adeb0,not ported,"ADishonoredPlayerController::ModifyPostProcessSettings - the ACTOR feed. 1,498 bytes: it caches ~30 graph nodes by name and calls ApplyCameraPostProcess, ApplyWaterPostProcessSettings, ApplyHealthEffectsPost, ApplyDarkVisionPostProcessSettings and two more on the config. The seam is in place (APlayerController::ModifyPostProcessSettings(FArkPpConfig&), retail's base is empty); this is hand-over 1"
+0x7ea620,not ported,UDisBlindedPpController::Update - builds its material at runtime and drives it from a 1D Perlin noise over GBlindedT; the node the content gives it is m_bShowInGame 0. Hand-over 3
+0x7fe690,not ported,UDisDarkVisionMeshRenderPpController::Render - a mesh pass with its own TSoulPartMeshDrawingPolicy<FSoulPartMeshPolicy> and shader types; no node in the shipped chain has this controller. Hand-over 3
+0x2d2a40,not ported,UPostProcessChain::CreateMutableMaterialInstanceOnNodes - each material node's own mutable instance; the three controllers' Update do the same thing per controller and are ported. Hand-over 3
+0x2a2d20,verified,FArkUberPpParameters::SetDefaultOnNoOverride - agent DA's; the settings path calls it and the inverted m_InFocusRadius test is confirmed against the retail decompile
+0x2acbc0,verified,FArkUberPpParameters::ApplyTo - agent DA's; the settings path and UDisDarkVisionPpController::Update both call it
+0x2a2980,verified,FArkPpColorBalanceParameters::SetDefaultOnNoOverride - agent DA's
+0x2a2a30,verified,FArkPpColorBalanceParameters::ForceDefault - agent DA's; called by ArkUberPpForceDefault
+0x2aca00,verified,FArkPpColorBalanceParameters::ApplyTo - agent DA's
+0x2b9ac0,verified,ULocalPlayer::RebuildPlayerPostProcessChain - unchanged; the chain the settings feed grades
+0x422e40,verified,"FSceneView constructor - FSceneView::m_ArkPpConfig points at m_CurrentArkPpSettings (UnPlayer.cpp:4245, agent BD); the member is what this package finally fills"
+0x493e40,verified,FViewInfo::FViewInfo - pushes m_ArkPpConfig->m_UberPpParameters onto the proxy config's override stack at weight 1 (SceneRendering.cpp:285); the path from the level's grade to the LUT
+0x522750,verified,FArkPpNodeDof::LutCreation - agent DA's; the LUT it bakes is no longer the identity ramp (build/agentDE/lut_tower.png)
+0x522210,verified,FArkPpNodeDof::Downsample - agent DA's; it only runs when m_FarBlurAmount > 0 and the level's grade is the first content that turns it on (0.300) - which is what exposed the sample-count defect

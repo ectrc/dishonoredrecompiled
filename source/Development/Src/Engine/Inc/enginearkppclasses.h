@@ -179,14 +179,17 @@ public:
 	virtual class UMaterialInterface* Update(const class UArkPpNodeMaterial* Node,UBOOL* bOutOverrideUber,FLOAT* OutWeight,struct FArkUberPpParameters* InOutParams) { return NULL; }
 	virtual void Update(const class UArkPpNode* Node,struct FArkUberPpParameters* InOutParams) {}
 	/**
-	 * DISHONORED(port): the real answers are the subclasses' and every one of them means 'is my effect running':
-	 * UDisOpacityParameterPpController::IsShown is `state bits set || m_CurrentTime > 0` (2012 rva 0x849540) and
-	 * UDisDarkVisionPpController::IsShown is `state bits set || m_EyeLidTime > 0 || m_PowerTime > 0` (0x8494e0), so a
-	 * controller at rest hides its node and the graph falls through to that node's surface target. None of the four
-	 * subclasses is ported (they are DishonoredGame's), so the base answers what they answer at rest: FALSE. Drawing
-	 * such a node with its default material instead is what put a closed eyelid over the whole frame.
+	 * DISHONORED(port): retail's base answers TRUE. Slot 74 of UArkPpNodeController's vtable is 2013 rva 0x5ea9d0
+	 * (2012 0x66a860),
+	 * whose whole body is `mov eax, 1; retn 4` (identical-code-folded with UObject::IsRefSaveable, which is why the
+	 * name in the vtable dump is that one). A controller only hides its node when it overrides this and says so, and
+	 * exactly two of the four subclasses do: UDisOpacityParameterPpController::IsShown is
+	 * `m_bDoNotDisablePp || m_bIsOn || m_CurrentTime > 0` (2013 rva 0x7e7ca0) and UDisDarkVisionPpController::IsShown
+	 * is `m_bIsActive || m_bDebugIsActive || m_EyeLidTime > 0 || m_PowerTime > 0` (0x7e7c30). Both are ported now
+	 * (dispostprocesscontrollers.cpp), which is what lets the base stop standing in for them: agent CE had to answer
+	 * FALSE here because nothing overrode it and the eyelid material's default is a closed eye over the whole frame.
 	 */
-	virtual UBOOL IsShown(const class UArkPpNode* Node) { return FALSE; }
+	virtual UBOOL IsShown(const class UArkPpNode* Node) { return TRUE; }
 	virtual UBOOL Tick(FLOAT DeltaTime,enum ELevelTick TickType) { return FALSE; }
 	virtual UBOOL Render(EPpNodeRenderStage Stage,const FScene* Scene,FViewInfo* View) { return FALSE; }
 
