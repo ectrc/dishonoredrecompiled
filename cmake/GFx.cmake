@@ -21,10 +21,10 @@
 #     gfxuiallocator.cpp) come out of GFxUI's exclude list, so GRenderer's 54 slots, GTexture's 12,
 #     GRenderTarget's 7, GFxFileOpener's 4 and GFile's 19 are all implemented in the build.
 #
-# There is no runtime yet: package BC is porting the ActionScript machine and the player core onto
-# these headers, and GFx3RuntimeStubs.cpp holds a bringup body for each of the 57 non-pure virtuals
-# libgfx implements and we do not. Nothing in the game instantiates any of it, which is why turning
-# this on cannot change how the game runs.
+# Package BC (resources/docs/agents/agentBC.md) has since put the ActionScript 2 machine and the player
+# on these headers: the value model and object interface, the display list, the sprite timeline, the
+# tag and character model and the bytecode interpreter, driven by the GFx3Run harness. Nothing in the
+# game instantiates any of it, which is why turning this on still cannot change how the game runs.
 #
 # GFx3Dump is the acceptance harness and is EXCLUDE_FROM_ALL - build it by name:
 #   cmake --build <dir> --target GFx3Dump
@@ -45,7 +45,19 @@ if(DISHONORED_WITH_GFX3)
     "${DISHONORED_GFX3_DIR}/GFx3Layout.cpp"
     "${DISHONORED_GFX3_DIR}/GFx3Support.cpp"
     "${DISHONORED_GFX3_DIR}/GFx3RuntimeStubs.cpp"
-    "${DISHONORED_GFX3_DIR}/GFxGfxFile.cpp")
+    "${DISHONORED_GFX3_DIR}/GFxGfxFile.cpp"
+    # The ActionScript 2 machine and the player, package BC (resources/docs/agents/agentBC.md).
+    # These units include no engine header either, so they do not change what the game compiles
+    # against; nothing in the engine instantiates GFxMovieRoot yet, so linking them in cannot change
+    # how the game runs.
+    "${DISHONORED_GFX3_DIR}/GFxAS2Value.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxAS2Object.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxAS2Runtime.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxAS2Interp.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxAS2Lib.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxPlayerData.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxPlayerSprite.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxPlayerRoot.cpp")
   target_include_directories(gfx3 PUBLIC "${DISHONORED_GFX3_DIR}")
   target_compile_definitions(gfx3 PRIVATE _CRT_SECURE_NO_WARNINGS)
   # UE3's 4-byte packing, the same option every module gets. The GFx headers push pack(8) of their
@@ -72,6 +84,19 @@ if(DISHONORED_WITH_GFX3)
   target_compile_options(GFx3Dump PRIVATE /Zp4)
   target_link_libraries(GFx3Dump PRIVATE gfx3)
   set_target_properties(GFx3Dump PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
+    FOLDER "External")
+
+  # Package BC's acceptance harness: it drives the AS2 machine from a cooked asset with no engine, no
+  # renderer and no game.
+  #   cmake --build <dir> --target GFx3Run
+  #   <dir>/Binaries/Win32/GFx3Run.exe --run <payload>.gfx --frames 5 --verbose
+  #   <dir>/Binaries/Win32/GFx3Run.exe --opcodes --classes
+  add_executable(GFx3Run EXCLUDE_FROM_ALL "${DISHONORED_GFX3_DIR}/Tools/GFx3Run.cpp")
+  target_compile_definitions(GFx3Run PRIVATE _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(GFx3Run PRIVATE /Zp4)
+  target_link_libraries(GFx3Run PRIVATE gfx3)
+  set_target_properties(GFx3Run PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
     FOLDER "External")
 
