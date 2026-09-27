@@ -179,14 +179,17 @@ public:
 	FGFxToUPropObjVisitor( UStructProperty* InStruct, BYTE* InAddress, UGFxMoviePlayer* InMovie )
 		: Struct( InStruct ), Address( InAddress ), Movie( InMovie ) {}
 
-	virtual void Visit( const char* Name, const GFxValue* Value )
+	// DISHONORED(port): the second parameter is `const GFxValue&` in the 2012 PDB, not a pointer -
+	// agent BB measured it (agentBB.md 2.4a) and the real declaration in External/GFx3/GFxValue.h
+	// follows the PDB, so this override does too.
+	virtual void Visit( const char* Name, const GFxValue& Value )
 	{
 		const FString MemberName = FString( FUTF8ToTCHAR( Name ) );
 		for( TFieldIterator<UProperty> It(Struct->Struct); It; ++It )
 		{
 			if( It->GetName() == MemberName )
 			{
-				FGFxEngine::ConvertGFxToUProp( *It, Address + It->Offset, *Value, Movie );
+				FGFxEngine::ConvertGFxToUProp( *It, Address + It->Offset, Value, Movie );
 				return;
 			}
 		}
@@ -429,6 +432,13 @@ void FGFxFSCommandHandler::Callback( GFxMovieView* pMovie, const char* Command, 
 // movie player under test and records the return value - so FGFxExternalInterface::Callback above can be
 // driven without a GFx runtime, which is the whole point: the layer between script and GFx is testable
 // before GFx exists. Every other slot of the 73-slot interface is unreachable in this test and says so.
+// DISHONORED(bringup, agent DC): this whole block - the GFxMovieView test double and the self-test
+// console command that drives it - is compiled out once the runtime is linked. It existed to make the
+// script<->AS2 boundary testable before a GFxMovieView existed; there is a real one now
+// (GFxMovieRoot, all 73 slots, agent BC) and the double's 73 stand-in signatures are its own rather
+// than the PDB's, so keeping it would mean maintaining a second declaration of the interface.
+#if !DISHONORED_GFXUI_GFX3_RUNTIME
+
 class FGFxCallbackTestMovieView : public GFxMovieView
 {
 public:
@@ -679,3 +689,5 @@ private:
 };
 
 static FGFxCallbackSelfTest GGFxCallbackSelfTest;
+
+#endif // !DISHONORED_GFXUI_GFX3_RUNTIME

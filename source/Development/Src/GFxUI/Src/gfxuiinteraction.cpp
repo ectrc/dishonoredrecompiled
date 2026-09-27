@@ -1,65 +1,145 @@
 // GFxUI/src/gfxuiinteraction.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (61):
-//   0x5b6e50  public: static void __cdecl UGFxAction_CloseMovie::InitializePrivateStaticClassUGFxAction_CloseMovie(void)
-//   0x5b6e70  public: static void __cdecl UGFxAction_GetVariable::InitializePrivateStaticClassUGFxAction_GetVariable(void)
-//   0x5b6e90  public: static void __cdecl UGFxAction_Invoke::InitializePrivateStaticClassUGFxAction_Invoke(void)
-//   0x5b6eb0  public: static void __cdecl UGFxAction_OpenMovie::InitializePrivateStaticClassUGFxAction_OpenMovie(void)
-//   0x5b6ed0  public: static void __cdecl UGFxAction_SetCaptureKeys::InitializePrivateStaticClassUGFxAction_SetCaptureKeys(void)
-//   0x5b6ef0  public: static void __cdecl UGFxAction_SetVariable::InitializePrivateStaticClassUGFxAction_SetVariable(void)
-//   0x5b6f10  public: static void __cdecl UGFxInteraction::InitializePrivateStaticClassUGFxInteraction(void)
-//   0x5b6f30  public: static void __cdecl UGFxEvent_FSCommand::InitializePrivateStaticClassUGFxEvent_FSCommand(void)
-//   0x5b6f50  public: virtual void __thiscall UGFxInteraction::BeginDestroy(void)
-//   0x5b6f70  public: virtual unsigned int __thiscall UGFxInteraction::IsReadyForFinishDestroy(void)
-//   0x5b6f90  public: virtual int __thiscall UGFxEngine::GetResourceSize(void)
-//   0x5b6fa0  public: virtual void __thiscall UGFxEvent_FSCommand::FinishDestroy(void)
-//   0x5b9aa0  public: static class UClass * __cdecl UGFxFSCmdHandler_Kismet::GetPrivateStaticClassUGFxFSCmdHandler_Kismet(wchar_t const *)
-//   0x5b9b30  public: static class UClass * __cdecl UGFxInteraction::GetPrivateStaticClassUGFxInteraction(wchar_t const *)
-//   0x5b9bc0  public: static void __cdecl UGFxEngine::DumpGFXMemoryStats(class FOutputDevice &)
-//   0x5bff50  public: static class UClass * __cdecl UGFxInteraction::StaticClassNoInline(void)
-//   0x5bff80  public: virtual void __thiscall UGFxInteraction::SetRenderViewport(class FViewport *)
-//   0x5bffa0  public: virtual void __thiscall UGFxInteraction::Tick(float)
-//   0x5bffd0  public: virtual void __thiscall UGFxInteraction::Send(enum ECallbackEventType, class FViewport *, unsigned int)
-//   0x5c0000  public: unsigned int __thiscall UGFxEngine::AddGCReferenceFor(class UObject const * const, int)
-//   0x5c00f0  public: unsigned int __thiscall UGFxEngine::RemoveGCReferenceFor(class UObject const * const)
-//   0x5c01b0  void __cdecl RefreshIsUsingGamepad(int, unsigned int)
-//   0x5c0260  SeqVarToASValue
-//   0x5c03e0  ASValueToSeqVar
-//   0x5caf20  public: static void __cdecl UGFxFSCmdHandler_Kismet::InitializePrivateStaticClassUGFxFSCmdHandler_Kismet(void)
-//   0x5caf40  public: virtual class UGFxMoviePlayer * __thiscall UGFxInteraction::GetFocusMovie(int)
-//   0x5caf80  public: virtual unsigned int __thiscall UGFxFSCmdHandler_Kismet::FSCommand(class UGFxMoviePlayer *, class UGFxEvent_FSCommand *, class FString const &, class FString const &)
-//   0x5cf3e0  public: static class UClass * __cdecl UGFxFSCmdHandler_Kismet::StaticClassNoInline(void)
-//   0x5d22b0  public: virtual void __thiscall UGFxInteraction::CloseAllMoviePlayers(void)
-//   0x5d22d0  public: virtual unsigned int __thiscall UGFxInteraction::InputKey(int, class FName, enum EInputEvent, float, unsigned int)
-//   0x5d2390  public: virtual unsigned int __thiscall UGFxInteraction::InputChar(int, wchar_t)
-//   0x5d23c0  public: virtual unsigned int __thiscall UGFxEvent_FSCommand::RegisterEvent(void)
-//   0x5d4ef0  public: virtual void __thiscall UGFxInteraction::FinishDestroy(void)
-//   0x5d4f30  public: virtual void __thiscall UGFxInteraction::NotifyGameSessionEnded(void)
-//   0x5d4f40  public: virtual unsigned int __thiscall UGFxInteraction::InputAxis(int, class FName, float, float, unsigned int)
-//   0x5de6c0  public: static class UClass * __cdecl UGFxAction_CloseMovie::GetPrivateStaticClassUGFxAction_CloseMovie(wchar_t const *)
-//   0x5de750  public: static class UClass * __cdecl UGFxAction_GetVariable::GetPrivateStaticClassUGFxAction_GetVariable(wchar_t const *)
-//   0x5de7e0  public: static class UClass * __cdecl UGFxAction_Invoke::GetPrivateStaticClassUGFxAction_Invoke(wchar_t const *)
-//   0x5de870  public: static class UClass * __cdecl UGFxAction_OpenMovie::GetPrivateStaticClassUGFxAction_OpenMovie(wchar_t const *)
-//   0x5de900  public: static class UClass * __cdecl UGFxAction_SetCaptureKeys::GetPrivateStaticClassUGFxAction_SetCaptureKeys(wchar_t const *)
-//   0x5de990  public: static class UClass * __cdecl UGFxAction_SetVariable::GetPrivateStaticClassUGFxAction_SetVariable(wchar_t const *)
-//   0x5dea20  public: static class UClass * __cdecl UGFxEvent_FSCommand::GetPrivateStaticClassUGFxEvent_FSCommand(wchar_t const *)
-//   0x5e1a10  public: static class UClass * __cdecl UGFxAction_CloseMovie::StaticClassNoInline(void)
-//   0x5e1a40  public: static class UClass * __cdecl UGFxAction_GetVariable::StaticClassNoInline(void)
-//   0x5e1a70  public: static class UClass * __cdecl UGFxAction_Invoke::StaticClassNoInline(void)
-//   0x5e1aa0  public: static class UClass * __cdecl UGFxAction_OpenMovie::StaticClassNoInline(void)
-//   0x5e1ad0  public: static class UClass * __cdecl UGFxAction_SetCaptureKeys::StaticClassNoInline(void)
-//   0x5e1b00  public: static class UClass * __cdecl UGFxAction_SetVariable::StaticClassNoInline(void)
-//   0x5e1b30  public: static class UClass * __cdecl UGFxEvent_FSCommand::StaticClassNoInline(void)
-//   0x5e3530  public: virtual void __thiscall UGFxInteraction::Init(void)
-//   0x5e3580  public: virtual void __thiscall UGFxInteraction::NotifyPlayerAdded(int, class ULocalPlayer *)
-//   0x5e3590  public: virtual void __thiscall UGFxInteraction::NotifyPlayerRemoved(int, class ULocalPlayer *)
-//   0x5e4af0  public: virtual unsigned int __thiscall UGFxInteraction::Exec(wchar_t const *, class FOutputDevice &)
-//   0x5e51a0  public: virtual void __thiscall UGFxAction_OpenMovie::Activated(void)
-//   0x5e5630  public: virtual void __thiscall UGFxAction_CloseMovie::Activated(void)
-//   0x5e5760  public: void __thiscall UGFxAction_SetCaptureKeys::SetKeys(void)
-//   0x5e58e0  public: void __thiscall UGFxAction_SetCaptureKeys::RemoveKeys(void)
-//   0x5e5a50  public: virtual void __thiscall UGFxAction_GetVariable::Activated(void)
-//   0x5e5d80  public: virtual void __thiscall UGFxAction_SetVariable::Activated(void)
-//   0x5e6170  public: virtual void __thiscall UGFxAction_Invoke::Activated(void)
-//   0x5e82d0  public: virtual void __thiscall UGFxAction_SetCaptureKeys::Activated(void)
+// PDB functions attributed to this file (61). This unit ports the eleven that make UGFxInteraction the
+// interface's per-frame owner; the rest of the list is the six Kismet actions, the FSCommand event and
+// the class boilerplate, which live in Src/gfxuinatives.cpp and the generated registrants.
+//
+// ---------------------------------------------------------------------------------------------
+// DISHONORED(port): UGFxInteraction is where retail advances the interface and where the viewport's
+// input enters it. Measured from the retail database rather than assumed (build/agentDC/xr.py):
+//   UGFxInteraction::Init              2013 0x5a2c40  -> FGFxEngine::GetEngine, then registers for
+//                                                       CALLBACK_ViewportResized
+//   UGFxInteraction::Tick              2013 0x57b790  -> FGFxEngine::Tick
+//   UGFxInteraction::SetRenderViewport 2013 0x57b770  -> FGFxEngine::SetRenderViewport
+//   UGFxInteraction::Send              2013 0x57b860  -> the same, on a resize of the HUD viewport
+//   UGFxInteraction::InputKey          2013 0x591f10  -> FGFxEngine::InputKey  (+ RefreshIsUsingGamepad)
+//   UGFxInteraction::InputChar         2013 0x591fd0  -> FGFxEngine::InputChar
+//   UGFxInteraction::InputAxis         2013 0x595140  -> FGFxEngine::InputAxis
+//   UGFxInteraction::NotifyPlayerAdded/Removed        -> FGFxEngine::AddPlayerState / RemovePlayerState
+//   UGFxInteraction::Exec              2012 0x5e4af0  -> the gfx console commands
+// Every one of those bodies tests GRenderGFxUI first, which is retail's own runtime switch for the
+// interface; this tree spells it GDrawGFx (Engine/Src/UnEngine.cpp's "DrawGFx" Exec) and the engine
+// checks it in RenderUI, so the guard here is the engine pointer only.
+#include "GFxUI.h"
+#include "gfxui_gfx3.h"
+
+#if DISHONORED_GFXUI_GFX3_RUNTIME
+
+// DISHONORED(port): 2013 0x5a2c40 (2012 0x5e3530)
+void UGFxInteraction::Init()
+{
+	Super::Init();
+	if( GGFxEngine == NULL )
+	{
+		FGFxEngine::GetEngine();
+	}
+	GCallbackEvent->Register( CALLBACK_ViewportResized, this );
+}
+
+// DISHONORED(port): 2013 0x57b790 (2012 0x5bffa0)
+void UGFxInteraction::Tick( FLOAT DeltaTime )
+{
+	Super::Tick( DeltaTime );
+	if( GGFxEngine != NULL )
+	{
+		GGFxEngine->Tick( DeltaTime );
+	}
+}
+
+// DISHONORED(port): 2013 0x57b770 (2012 0x5bff80)
+void UGFxInteraction::SetRenderViewport( FViewport* InViewport )
+{
+	if( GGFxEngine != NULL )
+	{
+		GGFxEngine->SetRenderViewport( InViewport );
+	}
+}
+
+// DISHONORED(port): 2013 0x57b860 (2012 0x5bffd0)
+void UGFxInteraction::Send( ECallbackEventType InType, FViewport* InViewport, UINT InMessage )
+{
+	(void)InMessage;
+	if( GGFxEngine != NULL && InType == CALLBACK_ViewportResized
+		&& GGFxEngine->GetRenderViewport() == InViewport )
+	{
+		GGFxEngine->SetRenderViewport( InViewport );
+	}
+}
+
+// DISHONORED(port): 2013 0x591f10 (2012 0x5d22d0). The modifier keys deliberately do not count as
+// "the player used the gamepad", which is what the six FName comparisons in the retail body are.
+UBOOL UGFxInteraction::InputKey( INT ControllerId, FName Key, EInputEvent Event,
+	FLOAT AmountDepressed, UBOOL bGamepad )
+{
+	(void)AmountDepressed;
+	(void)bGamepad;
+	if( GGFxEngine == NULL )
+	{
+		return FALSE;
+	}
+	return GGFxEngine->InputKey( ControllerId, Key, Event );
+}
+
+// DISHONORED(port): 2013 0x591fd0 (2012 0x5d2390)
+UBOOL UGFxInteraction::InputChar( INT ControllerId, TCHAR Character )
+{
+	if( GGFxEngine == NULL )
+	{
+		return FALSE;
+	}
+	return GGFxEngine->InputChar( ControllerId, Character );
+}
+
+// DISHONORED(port): 2013 0x595140 (2012 0x5d4f40)
+UBOOL UGFxInteraction::InputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime,
+	UBOOL bGamepad )
+{
+	if( GGFxEngine == NULL )
+	{
+		return FALSE;
+	}
+	return GGFxEngine->InputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad );
+}
+
+// DISHONORED(port): 2012 0x5e4af0 - the console commands. Retail's list is longer (it dumps the GFx
+// heaps and the resource report, which are GMemoryHeap's and GFxResourceReport's); these three are the
+// ones this reconstruction can answer.
+UBOOL UGFxInteraction::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
+{
+	if( ParseCommand( &Cmd, TEXT("GFXUI") ) )
+	{
+		if( ParseCommand( &Cmd, TEXT("CENSUS") ) )
+		{
+			if( GGFxEngine != NULL )
+			{
+				GGFxEngine->LogCensus( TEXT("console") );
+			}
+			return TRUE;
+		}
+		if( ParseCommand( &Cmd, TEXT("MOVIES") ) )
+		{
+			if( GGFxEngine != NULL )
+			{
+				Ar.Logf( TEXT("%d open, %d all"), GGFxEngine->GetNumOpenMovies(),
+					GGFxEngine->GetNumAllMovies() );
+				for( INT Index = 0; Index < GGFxEngine->GetNumOpenMovies(); Index++ )
+				{
+					FGFxMovie* Movie = GGFxEngine->GetOpenMovie( Index );
+					Ar.Logf( TEXT("  %2d %s  %dx%d  visible %d update %d"), Index, *Movie->FileName,
+						Movie->Info.Width, Movie->Info.Height, Movie->fVisible, Movie->fUpdate );
+				}
+			}
+			return TRUE;
+		}
+		if( ParseCommand( &Cmd, TEXT("CLOSE") ) )
+		{
+			if( GGFxEngine != NULL )
+			{
+				GGFxEngine->CloseTopmostScene();
+			}
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+#endif // DISHONORED_GFXUI_GFX3_RUNTIME

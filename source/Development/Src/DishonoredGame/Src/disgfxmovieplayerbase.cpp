@@ -188,3 +188,13 @@ void UDisGFxMoviePlayerBase::execReq_EquipmentIconImage( FFrame& Stack, RESULT_D
 	// reflected m_EquipmentIcons array in this tree's generated class.
 	*(FString*)Result = FString();
 }
+
+
+// DISHONORED(bringup, agent DC): the -gfxuimenu bring-up switch that opens a cooked menu movie through
+// the real path moved to GFxUI/Src/gfxuiengine.cpp (FGFxEngine's per-frame tick). It started here, as an
+// FTickableObject, and that does not run on a menu map: UWorld::Tick walks
+// FTickableObject::TickableObjects only when its TickType is not LEVELTICK_TimeOnly and the world is not
+// paused (Engine/Src/UnLevTic.cpp:3397), and a streamed-in menu map with no player controller ticks
+// time only. The engine's own per-frame call has no such condition. Why the switch exists at all is in
+// agentDC.md: UDisGlobalUIManager's config movie set does not name the main menu, the game's own
+// UnrealScript constructs it, and none of that chain runs in this build.

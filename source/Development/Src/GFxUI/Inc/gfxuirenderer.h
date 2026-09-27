@@ -59,15 +59,13 @@
 // External/GFx3 uses either name, so GFx3's copies are renamed for the duration of the include
 // rather than either generated header being hand-edited. Retire it when one of the two generators
 // stops emitting them.
-// And one class name, for the same reason and with one more consequence: GFxUI/Inc/gfxui_gfx3.h
-// declares its own GRefCountImplCore with AddRef/Release defined out of line in
-// gfxuigfx3absent.cpp, while External/GFx3/GTypes.h declares the PDB's with both inline. Any
-// unit that uses the GFx3 refcount chain therefore collides with that one at link time (two
-// LNK2005, measured). The two are the same 8 bytes and the same behaviour - two reconstructions
-// of one retail class - so GFx3's copy is renamed here, which keeps both worlds linkable. The
-// real fix is agent BE's own: DISHONORED_GFXUI_GFX3_RUNTIME=1 drops gfxuigfx3absent.cpp and the
-// duplicate with it, and that switch belongs to the commit that wires the runtime up.
-#define GRefCountImplCore GFx3RefCountImplCore
+// DISHONORED(bringup, agent DC): the GRefCountImplCore rename that used to be here is gone. It
+// existed because gfxui_gfx3.h declared its own copy with the bodies in gfxuigfx3absent.cpp; with
+// DISHONORED_GFXUI_GFX3_RUNTIME at 1 that file compiles to nothing and GTypes.h's is the only one.
+// The two enum renames below DO NOT retire with the switch, and agent CC's hand-over ("delete the
+// rename block when the switch flips") is half right: the collision they solve is between two
+// generators - GFxUIEngineShims.h from gen_classes_header.py --sdk and GFx3Enums.h from the 2012 PDB -
+// and neither has stopped emitting them. Deleting them breaks the build with or without the runtime.
 #define GFxRenderTextureMode GFx3RenderTextureMode
 #define GFxTimingMode GFx3TimingMode
 #define RTM_Opaque GFx3RTM_Opaque
@@ -78,7 +76,6 @@
 #define TM_Real GFx3TM_Real
 #define TM_MAX GFx3TM_MAX
 #include "GFx3.h"
-#undef GRefCountImplCore
 #undef GFxRenderTextureMode
 #undef GFxTimingMode
 #undef RTM_Opaque

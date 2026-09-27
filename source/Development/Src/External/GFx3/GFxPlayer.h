@@ -31,6 +31,28 @@ class GFxMovieRoot;
 class GFxSpriteDef;
 class GFxLoadProcess;
 struct GFxTagInfo;
+// DISHONORED(port): 2012 0xa5f9b0. The display half lives in GFxDisplay.{h,cpp}; everything here
+// needs is the forward declaration and the census the walk fills.
+class GFxDisplayContext;
+
+// What one Display() pass submitted. Retail counts into GRenderer::Stats and GFxRenderStats; this is
+// the per-movie half of the same thing and it is what the engine's census line reports.
+struct GFxDisplayStats
+{
+    unsigned int Characters;      // display objects visited
+    unsigned int Sprites;
+    unsigned int Shapes;
+    unsigned int TextFields;
+    unsigned int Buttons;
+    unsigned int Images;
+    unsigned int TriListDraws;
+    unsigned int Triangles;
+    unsigned int GlyphDraws;
+    unsigned int Glyphs;
+    unsigned int Masks;
+    unsigned int Invisible;
+    unsigned int NoGeometry;
+};
 
 // One twip is 1/20 of a pixel; every coordinate in a SWF/GFX tag stream is in twips.
 const float GFxTwipsToPixels = 0.05f;
@@ -286,6 +308,10 @@ public:
                                                   GFxMovieDefImpl* defImpl) = 0;
     virtual const char* GetDefTypeName() const = 0;
 
+    // DISHONORED(port): 2012 0xa3d7d0 - the definition-side draw. A definition with no geometry (a
+    // placeholder, a font, a morph shape) keeps the base body, which is what retail's base does too.
+    virtual void Display(GFxDisplayContext& ctx, GFxCharacter* ch);
+
     GFxResourceId Id;
 };
 
@@ -372,6 +398,9 @@ public:
     virtual void              OnEventUnload() {}
     virtual void              AdvanceFrame(bool bAdvance, float framePos)
                                   { (void)bAdvance; (void)framePos; }
+    // DISHONORED(port): 2012 0x9cfdd0 / 0x9faeb0 / 0xa2ed90. The base draws nothing, which is what a
+    // character with no definition is. Bodies in GFxDisplay.cpp.
+    virtual void              Display(GFxDisplayContext& ctx);
 
     const GMatrix2D& GetMatrix() const { return Matrix; }
     void SetMatrix(const GMatrix2D& m) { Matrix = m; }
@@ -432,6 +461,10 @@ public:
 
     unsigned int  GetCount() const { return Size; }
     GFxCharacter* GetAt(unsigned int i) const { return Entries[i].pChar; }
+
+    // DISHONORED(port): 2012 0x9d56c0. Depth-ascending, with an entry whose ClipDepth is non-zero
+    // acting as the stencil mask for every entry up to that depth. Body in GFxDisplay.cpp.
+    void Display(GFxDisplayContext& ctx);
 
 private:
     DisplayEntry* Entries;
@@ -509,6 +542,7 @@ public:
     virtual GFxCharacterDef* GetCharacterDef() const { return pDef; }
     virtual const char* GetCharacterTypeName() const;
     virtual GASObjectType GetObjectType() const;
+    virtual void Display(GFxDisplayContext& ctx);                     // 2012 0x9cfdd0
 
     GFxCharacterDef* pDef;
 };
@@ -529,6 +563,7 @@ public:
     virtual GFxSprite* ToSprite() { return this; }
 
     virtual void AdvanceFrame(bool bAdvance, float framePos);          // 2012 0x9f93f0
+    virtual void Display(GFxDisplayContext& ctx);                      // 2012 0x9faeb0
     void IncrementFrameAndCheckForLoop();                             // 2012 0x9f4500
     void ExecuteFrameTags(unsigned int frame, bool bWithActions = true); // 2012 0x9f60a0
     void ExecuteInitActionFrameTags(unsigned int frame);               // 2012 0x9f4640
@@ -644,6 +679,11 @@ public:
 
     const GFxGfxFileInfo& GetFileInfo() const { return FileInfo; }
 
+    // The url this payload was opened from. Every relative path inside it - an import, an external
+    // image - resolves against it, which is what GFxLoadStates carries in retail.
+    void        SetSourceUrl(const char* url);
+    const char* GetSourceUrl() const { return SourceUrl; }
+
     unsigned int GetVersion() const { return Version; }
     float        GetFrameRate() const { return FrameRate; }
     float        GetWidth() const { return WidthPixels; }
@@ -706,6 +746,7 @@ private:
 
     GFxGfxFileInfo FileInfo;
     ReadStats      Stats;
+    char           SourceUrl[256];
 };
 
 // GFxMovieDefImpl: the bound movie definition, i.e. the GFxMovieDef the engine holds. Its job in
@@ -758,10 +799,24 @@ public:
 
     GFxMovieDataDef* GetDataDef() const { return pDataDef; }
 
+    // DISHONORED(port): the state-bag chain. Retail's definition falls through to the GFxLoadStates
+    // clone it was bound with, whose parent is the loader (GFxLoadStates::CloneForImport 0xa240b0), so
+    // a movie instance reaches the render config, the log and the image loader the engine set on the
+    // loader. Without this link GetStateAddRef answers null and Display has no renderer.
+    void SetStateBagParent(GFxStateBag* parent) { pParentBag = parent; }
+    // The url the loader opened, which GetFileURL must answer with because it is what every relative
+    // path in the movie - an import, an external image - is resolved against.
+    void SetFileURL(const char* url);
+    // A definition shared out of the loader's cache must not be deleted with the def impl.
+    void SetOwnsDataDef(bool b) { bOwnsDataDef = b; }
+
 private:
     enum { MaxStates = 40 };
     GFxMovieDataDef* pDataDef;
     GFxState*        States[MaxStates];
+    GFxStateBag*     pParentBag;
+    char             FileUrl[256];
+    bool             bOwnsDataDef;
 };
 
 // GFxMovieRoot: the GFxMovieView the engine talks to, and the owner of everything AS2. Retail's is
@@ -895,10 +950,17 @@ public:
     };
     Census& GetCensus() { return Stats; }
 
+    // What the last Display() pass submitted; the engine's census line reports it.
+    const GFxDisplayStats& GetDisplayStats() const { return LastDisplayStats; }
+    GFxDisplayStats LastDisplayStats;
+
     void LogScriptError(const char* fmt, ...);
 
     // Set by the harness to narrate the three teardown steps; off in any other build.
     static bool bTraceTeardown;
+    // DISHONORED(bringup, agent DC): narrates the constructor, which is where the first in-game
+    // instantiation of the machine failed. Off unless the host sets it.
+    static bool bTraceConstruction;
 
 private:
     struct ActionEntry

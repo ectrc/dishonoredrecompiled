@@ -697,6 +697,18 @@ public:
     GAtomicInt<long> RefCount;
     GFxResourceLibBase* pLib;
 
+    // DISHONORED(bringup, agent DC): the refcount starts at ONE. GAtomicInt's default constructor
+    // writes 0 (GTypes.h) and retail's GFxResource constructor writes 1, exactly as agent CC measured
+    // for GTexture and GRenderTarget (agentCC.md 4.1, FGFxRenderer::CreateTexture 2012 0x5c47d0 writes
+    // RefCount.Value = 1 right after the vtable store). Without it the first GPtr that takes and drops a
+    // reference frees the object under its creator: FGFxEngine::LoadMovie assigned the movie definition
+    // to a GPtr (1) and dropped its own reference (0), the def impl was deleted, and CreateInstance ran
+    // on freed memory and jumped through a null vtable - the first in-game instantiation of the runtime,
+    // 0.19 s of work and then "Address = 0x0". GFxResource is the third of the three refcounted classes
+    // in this header whose default is wrong; the other two are GTexture and GRenderTarget and CC fixed
+    // them in the FGFx* constructors. This one has no engine-side constructor to fix it in.
+    GFxResource() : pLib(0) { RefCount = 1; }
+
     void AddRef() { ++RefCount; }
     void Release() { if (--RefCount == 0) delete this; }
     int GetRefCount() const { return (int)(long)RefCount; }
@@ -1325,6 +1337,23 @@ public:
 
     virtual ~GFxLoader() {} // vt[1]
     virtual bool CheckTagLoader(int a0) const; // vt[5]
+
+    // DISHONORED(port): the non-virtual API GFxLoader.h declares and the generator does not emit,
+    // because it emits virtuals only - agent BC named this as the one thing between the runtime and the
+    // engine (agentBC.md 6.6). The state-bag slots below override GFxStateBag's and add no vtable slot,
+    // so sizeof(GFxLoader) is still the PDB's 16 and GFx3Layout.cpp is unchanged. Bodies in
+    // GFxLoaderImpl.cpp. THE GENERATOR (build/agentBB_gen_gfx3.py) MUST BE TAUGHT THESE SIX LINES
+    // BEFORE IT IS RE-RUN, or a regeneration silently deletes the engine's entry points.
+    GFxLoader();                                                             // 2013 0x9b3d40
+    void Shutdown();
+    bool GetMovieInfo(const char* url, GFxMovieInfo* info, bool getTagCount = false,
+                      unsigned int loadFlags = 0);                           // 2013 0x9b3fe0
+    GFxMovieDef* CreateMovie(const char* url, unsigned int loadFlags = 0,
+                             unsigned int memoryArena = 0);                  // 2013 0x9b4030
+    virtual void SetState(GFxState::StateType t, GFxState* s);
+    virtual GFxState* GetStateAddRef(GFxState::StateType t) const;
+    virtual void GetStatesAddRef(GFxState** out, const GFxState::StateType* types,
+                                 unsigned int n) const;
 };
 
 class GFxLoaderImpl;

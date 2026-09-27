@@ -177,27 +177,9 @@ void FGFxUIConvertGFxToASValue( FASValue& Dest, const GFxValue& Src )
 	}
 }
 
-/*-----------------------------------------------------------------------------
-	FAutoGFxValueArray (2012 rva 0x5b6ac0 / 0x5bf4b0, gfxuiengine.h)
------------------------------------------------------------------------------*/
-
-FAutoGFxValueArray::FAutoGFxValueArray( UINT InCount, void* InMemory )
-	: pValues( (GFxValue*)InMemory )
-	, Count( InMemory ? InCount : 0 )
-{
-	for( UINT Index = 0; Index < Count; Index++ )
-	{
-		new( &pValues[Index] ) GFxValue();
-	}
-}
-
-FAutoGFxValueArray::~FAutoGFxValueArray()
-{
-	for( UINT Index = 0; Index < Count; Index++ )
-	{
-		pValues[Index].~GFxValue();
-	}
-}
+// DISHONORED(bringup, agent DC): FAutoGFxValueArray's two bodies (2012 0x5b6ac0 / 0x5bf4b0) are in
+// Src/gfxuiengine.cpp now, which is the unit the 2012 PDB attributes them to (gfxuiengine.h is where
+// they are declared). They lived here while there was no gfxuiengine.cpp to put them in.
 
 /*-----------------------------------------------------------------------------
 	UGFxObject
@@ -1909,13 +1891,27 @@ UBOOL UGFxMoviePlayer::PreLoad()
 	{
 		return TRUE;
 	}
-	if( MovieInfo == NULL || MovieInfo->GetOuter() == NULL || MovieInfo->GetOuter()->GetOuter() == NULL )
+	if( MovieInfo == NULL || MovieInfo->GetOuter() == NULL )
 	{
 		return FALSE;
 	}
-	// <package>.<group>.<name>, the shape FGFxEngine::GetPackagePath resolves
-	const FString FullName = MovieInfo->GetOutermost()->GetName() + TEXT(".")
-		+ MovieInfo->GetFullGroupName( TRUE ) + TEXT(".") + MovieInfo->GetName();
+	// DISHONORED(port, agent DC): retail branches on whether the movie sits in a *group*
+	// (MovieInfo->Outer->Outer in the decompile of 2012 0x5e3a30): with one it builds
+	// "<package>.<group>.<name>" and without one "<package>.<name>". This body had only the first arm
+	// and returned FALSE for a movie with no group - which is every UI movie in the retail cook. Found
+	// by opening UI_MainMenu.MainMenu: its outer is the package and the package's outer is null, so
+	// Start() answered FALSE and the interface had nothing to draw. The shape either way is what
+	// FGFxEngine::GetPackagePath resolves back.
+	FString FullName;
+	if( MovieInfo->GetOuter()->GetOuter() != NULL )
+	{
+		FullName = MovieInfo->GetOutermost()->GetName() + TEXT(".")
+			+ MovieInfo->GetFullGroupName( TRUE ) + TEXT(".") + MovieInfo->GetName();
+	}
+	else
+	{
+		FullName = MovieInfo->GetOutermost()->GetName() + TEXT(".") + MovieInfo->GetName();
+	}
 	return Load( FullName, TRUE );
 	// DISHONORED(bringup): retail then installs FGFxCLIKObjectOnLoadEventCallback,
 	// FGFxCLIKObjectOnUnloadEventCallback and FGFxSoundEventCallback on the new view through
@@ -2163,7 +2159,13 @@ void UGFxMoviePlayer::GetVisibleFrameRect( FLOAT& MinX, FLOAT& MinY, FLOAT& MaxX
 	FGFxMovie* Movie = GetMovie();
 	if( Movie && Movie->pView.GetPtr() )
 	{
-		Movie->pView->GetVisibleFrameRect( MinX, MinY, MaxX, MaxY );
+		// GFxMovieView::GetVisibleFrameRect returns the rect (vt[31] in the PDB); agent BE's stand-in
+		// took four out-references.
+		const GRect<float> Rect = Movie->pView->GetVisibleFrameRect();
+		MinX = Rect.Left;
+		MinY = Rect.Top;
+		MaxX = Rect.Right;
+		MaxY = Rect.Bottom;
 	}
 }
 

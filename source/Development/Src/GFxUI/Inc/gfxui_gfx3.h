@@ -39,14 +39,29 @@
 //          = 0x2000, and V_perspFOV / V_perspMatrix3D are the names of 0x800 / 0x1000;
 //   3. the engine-side seam below (FGFxMovie, FGFxEngine, the two Callbacks, FAutoGFxValueArray) moves into
 //      BB's Inc/gfxuiengine.h, which is where retail has it; it is still a comment-only skeleton today.
+// DISHONORED(bringup, agent DC, PHASE9.md package DC): the switch is ON whenever the reconstruction
+// is in the build. Agent BE's precondition was "something implements GFxValue::ObjectInterface and
+// GFxMovieView": agent BC implements all 25 ObjectInterface methods and all 73 GFxMovieView slots, so
+// the condition holds. Tying it to DISHONORED_WITH_GFX3 rather than to a cmake variable of its own is
+// deliberate and it is the safe shape: three DishonoredGame units include this header too
+// (disgfxmovieplayer{base,mainmenu,menubase}.cpp), and a per-target define could have given them a
+// different FGFxEngine from GFxUI's, which is an ODR violation that links.
 #ifndef DISHONORED_GFXUI_GFX3_RUNTIME
-	#define DISHONORED_GFXUI_GFX3_RUNTIME 0
+	#if DISHONORED_WITH_GFX3
+		#define DISHONORED_GFXUI_GFX3_RUNTIME 1
+	#else
+		#define DISHONORED_GFXUI_GFX3_RUNTIME 0
+	#endif
 #endif
 
 #if DISHONORED_GFXUI_GFX3_RUNTIME
 
-// agent BB's reconstruction; one umbrella header, include path from cmake/GFx.cmake
-#include "GFx3.h"
+// Agent BB's reconstruction, reached through gfxuirenderer.h rather than through GFx3.h directly. That
+// is not a style choice: gfxuirenderer.h is the one place that renames GFx3Enums.h's
+// GFxRenderTextureMode and GFxTimingMode, which the generated GFxUIEngineShims.h also declares, and
+// including GFx3.h from two places with only one of them renaming would redeclare those two enums in
+// whichever translation unit saw the plain include first. See the note there.
+#include "gfxuirenderer.h"
 
 #else // !DISHONORED_GFXUI_GFX3_RUNTIME
 
@@ -642,6 +657,8 @@ public:
 
 #if DISHONORED_GFXUI_GFX3_RUNTIME
 
+// FGFxMovie, FAutoGFxValueArray, FGFxEngine, GGFxEngine and the two Callbacks, in the file retail
+// declares them in. Ported by agent DC (PHASE9.md package DC).
 #include "gfxuiengine.h"
 
 #else // !DISHONORED_GFXUI_GFX3_RUNTIME

@@ -76,7 +76,15 @@ if(DISHONORED_WITH_GFX3)
     # retail loader tables, the shape/edit-text/static-text/button/image/font definitions, and the
     # import binding. They include no engine header either.
     "${DISHONORED_GFX3_DIR}/GFxCharacterDefs.cpp"
-    "${DISHONORED_GFX3_DIR}/GFxTagLoaders.cpp")
+    "${DISHONORED_GFX3_DIR}/GFxTagLoaders.cpp"
+    # The loader and the display half, package DC (resources/docs/agents/agentDC.md). GFxLoaderImpl.cpp
+    # is GFxLoader's non-virtual API - CreateMovie and GetMovieInfo, the two functions the engine opens
+    # a movie with, which agent BC named as the one thing between the runtime and the engine
+    # (agentBC.md 6.6) - plus the loader-side state bag and the synchronous bind. GFxDisplay.cpp is the
+    # display-list traversal, the shape tessellation and the glyph submission: the loop agent BC left
+    # empty, agent CB stopped one call short of and agent CC had nothing to be handed.
+    "${DISHONORED_GFX3_DIR}/GFxLoaderImpl.cpp"
+    "${DISHONORED_GFX3_DIR}/GFxDisplay.cpp")
   target_include_directories(gfx3 PUBLIC "${DISHONORED_GFX3_DIR}")
   target_compile_definitions(gfx3 PRIVATE _CRT_SECURE_NO_WARNINGS)
   # UE3's 4-byte packing, the same option every module gets. The GFx headers push pack(8) of their

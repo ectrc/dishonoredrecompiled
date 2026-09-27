@@ -315,6 +315,16 @@ public:
 
 class GStringLH : public GString {};
 
+// ---------------------------------------------------------------------------------------------
+// DISHONORED(bringup, agent DC): the log hook. This directory includes no engine header, so the AS2
+// machine's own diagnostics went to printf - which in a Windows GUI process goes nowhere, so the seven
+// script errors of the menu asset were invisible in the game while being visible in the harness. The
+// host installs a hook and every one of them reaches Launch.log. GFxLogHook stays null in the harness,
+// which keeps printf.
+typedef void (*GFxLogHookFn)(const char* text);
+extern GFxLogHookFn GFxLogHook;
+void GFxLogf(const char* fmt, ...);
+
 class GStringDH
 {
 public:

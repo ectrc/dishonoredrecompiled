@@ -822,18 +822,17 @@ extern void DishonoredLinkArkPpBlurShaderTypes();
 extern void DishonoredLinkArkPpDofShaderTypes();
 extern void DishonoredLinkArkPpKuwaShaderTypes();
 extern void DishonoredLinkArkPpAAShaderTypes();
-#if DISHONORED_WITH_GFXUI_SHADERS
-extern void DishonoredLinkGFxShaderTypes();
-#endif
+// DISHONORED(bringup, agent DC): agent BD's GFx shader link anchor is gone from this list. It existed
+// because nothing in GFxUI referenced gfxuishaders.cpp, so the 50 GFx shader types of the cooked global
+// cache would have been dropped by the linker; agent CC's GetUIPixelShaderInterface2_RenderThread now
+// pulls that unit in from gfxuirenderer.cpp, and the movie player reaches the renderer every frame, so
+// the unit is referenced for real. The four ark post-process anchors stay: nothing references those.
 void (*GDishonoredArkPostProcessLinkAnchors[])() =
 {
 	&DishonoredLinkArkPpBlurShaderTypes,
 	&DishonoredLinkArkPpDofShaderTypes,
 	&DishonoredLinkArkPpKuwaShaderTypes,
 	&DishonoredLinkArkPpAAShaderTypes,
-#if DISHONORED_WITH_GFXUI_SHADERS
-	&DishonoredLinkGFxShaderTypes,
-#endif
 };
 
 /** The fog vertex declaration resource type. */

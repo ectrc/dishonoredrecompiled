@@ -33,20 +33,26 @@ GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
       bInActionQueue(false), SessionFill(0)
 {
     memset(&Stats, 0, sizeof(Stats));
+    memset(&LastDisplayStats, 0, sizeof(LastDisplayStats));
     for (int i = 0; i < MaxStates; ++i)
         States[i] = 0;
 
     GFxMovieDataDef* dataDef = defImpl->GetDataDef();
+    if (bTraceConstruction) GFxLogf("DISHONORED(bringup): GFxMovieRoot: global context");
     pGC = new GASGlobalContext(this, dataDef->GetVersion());
+    if (bTraceConstruction) GFxLogf("DISHONORED(bringup): GFxMovieRoot: environment");
     Env.Init(pGC, 0);
 
     // _level0: the root movie clip. Its definition is the movie data def itself, which is why
     // GFxMovieDataDef is both a character def and a timeline.
     GFxResourceId rootId;
     rootId.Id = GFxResourceId::InvalidId;
+    if (bTraceConstruction) GFxLogf("DISHONORED(bringup): GFxMovieRoot: level0 sprite");
     pLevel0 = new GFxSprite(dataDef, dataDef, defImpl, 0, rootId, this);
+    if (bTraceConstruction) GFxLogf("DISHONORED(bringup): GFxMovieRoot: level0 name");
     pLevel0->SetName(pGC->GetBuiltin(GASbuiltin__level0));
     Env.SetTarget(pLevel0);
+    if (bTraceConstruction) GFxLogf("DISHONORED(bringup): GFxMovieRoot: viewport");
 
     Viewport.Left = 0;
     Viewport.Top = 0;
@@ -83,6 +89,7 @@ GFxMovieRoot::~GFxMovieRoot()
 }
 
 bool GFxMovieRoot::bTraceTeardown = false;
+bool GFxMovieRoot::bTraceConstruction = false;
 
 void GFxMovieRoot::LogScriptError(const char* fmt, ...)
 {
@@ -92,7 +99,7 @@ void GFxMovieRoot::LogScriptError(const char* fmt, ...)
     vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     ++Stats.ScriptErrors;
-    printf("DISHONORED(bringup): AS2 error: %s\n", buf);
+    GFxLogf("DISHONORED(bringup): AS2 error: %s", buf);
 }
 
 GASString GFxMovieRoot::CreateString(const char* s)
@@ -523,15 +530,9 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
     return FrameTime;
 }
 
-void GFxMovieRoot::Display()                                          // 2012 0xa07aa0
-{
-    // Drawing is the renderer seam's and the tessellator's, neither of which is this package: agent
-    // BB's FGFxRenderer has all 54 slots and agent BD owns the GFx shader families. The display list
-    // is walked here so a future renderer has the traversal already in the right order.
-    bDirty = false;
-}
-
-void GFxMovieRoot::DisplayPrePass() {}
+// DISHONORED(port): GFxMovieRoot::Display (2012 0xa07aa0) and DisplayPrePass (0xa08090) are in
+// GFxDisplay.cpp with the rest of the display half. Agent BC left them empty here and said so
+// (agentBC.md 6.9); the bodies moved rather than being duplicated.
 void GFxMovieRoot::SetPause(bool p) { bPaused = p; }
 bool GFxMovieRoot::IsPaused() const { return bPaused; }
 void GFxMovieRoot::SetBackgroundColor(const GColor c) { BackgroundColor = c; }

@@ -8,6 +8,25 @@
 #include "GFx3Gen.h"
 
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+// DISHONORED(bringup, agent DC): the log hook. See the note at GFxLogHook in GTypes.h - this directory
+// has no engine header, so a host that wants the AS2 machine's diagnostics installs a hook.
+GFxLogHookFn GFxLogHook = 0;
+
+void GFxLogf(const char* fmt, ...)
+{
+    char buf[1024];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    if (GFxLogHook)
+        GFxLogHook(buf);
+    else
+        printf("%s\n", buf);
+}
 
 // The Windows headers insist on the default 8-byte packing, and the engine compiles every unit with
 // UE3's /Zp4 (cmake/DishonoredDefines.cmake), so they go inside a pack(8) window - the same thing

@@ -59,6 +59,14 @@
 void GFxReadRgbaTag(GFxStream* s, GColor* out, unsigned int tagType);
 
 // ---------------------------------------------------------------------------------------------
+// The image-binding hook. A bitmap reference is resolved through the movie definition's
+// State_ImageLoader, which is an engine object (FGFxImageLoader, 2013 0x586020); routing it through a
+// function pointer the loader installs is what keeps this unit free of any engine header, which is the
+// property that lets the whole directory compile with no engine at all (agentBC.md 7).
+typedef GPtr<GImageInfoBase> (*GFxImageResolveFn)(class GFxMovieDataDef* dataDef, const char* name);
+extern GFxImageResolveFn GFxImageResolveHook;
+
+// ---------------------------------------------------------------------------------------------
 // The styles. GFxFillStyle::Read is 2012 0xa90290, GFxLineStyle::Read 0xa907d0 and
 // GFxGradientRecord::Read 0xa8dfc0.
 
@@ -224,6 +232,8 @@ public:
                                                   GFxMovieDefImpl* defImpl);
     virtual unsigned int GetResourceTypeCode() const { return GFxResource::RT_ShapeDef; }
     virtual const char* GetDefTypeName() const { return "Shape"; }
+    // DISHONORED(port): 2012 0xa3cf40 -> 0xa3bb80. Body in GFxDisplay.cpp.
+    virtual void Display(GFxDisplayContext& ctx, GFxCharacter* ch);
 
     void Read(GFxStream* s, unsigned int tagType, unsigned int endPos);  // 2012 0xa43610
 
@@ -388,6 +398,8 @@ public:
                                                   GFxMovieDefImpl* defImpl);
     virtual unsigned int GetResourceTypeCode() const { return GFxResource::RT_ButtonDef; }
     virtual const char* GetDefTypeName() const { return "Button"; }
+    // DISHONORED(port): 2012 0xa69000 GFxButtonCharacter::Display, up state only. GFxDisplay.cpp.
+    virtual void Display(GFxDisplayContext& ctx, GFxCharacter* ch);
 
     void Read(GFxStream* s, unsigned int tagType, unsigned int endPos); // 2012 0xa6a0c0
     void SetScale9Grid(const GRect<float>& r) { Scale9Grid = r; bHasScale9Grid = true; }
@@ -414,13 +426,26 @@ class GFxImageCharacterDef : public GFxCharacterDef
 public:
     GFxImageCharacterDef(unsigned int tagCode)
         : TagCode(tagCode), Format(0), TargetWidth(0), TargetHeight(0), BaseImageId(0),
-          bIsSubImage(false)
+          bIsSubImage(false), bResolveTried(false)
     { ExportName[0] = 0; FileName[0] = 0; }
 
     virtual GFxCharacter* CreateCharacterInstance(GFxASCharacter* parent, GFxResourceId id,
                                                   GFxMovieDefImpl* defImpl);
     virtual unsigned int GetResourceTypeCode() const { return GFxResource::RT_Image; }
     virtual const char* GetDefTypeName() const { return bIsSubImage ? "SubImage" : "Image"; }
+    virtual void Display(GFxDisplayContext& ctx, GFxCharacter* ch);
+
+    // The texture this reference resolves to, bound on first use through the movie definition's
+    // State_ImageLoader - FGFxImageLoader in the engine (2013 0x586020). Retail binds at load time in
+    // GFxImageFileResourceCreator (0xa22830); binding lazily costs one lookup on the first frame a
+    // bitmap is drawn and needs no bind pass. Stated in agentDC.md.
+    GTexture*   GetTexture(GRenderer* renderer, class GFxMovieDataDef* dataDef);
+    const char* GetResolveName() const;
+    // The texture's own pixel size, which the fill matrix has to be divided by. The cooked size is the
+    // tag's rounded up to a multiple of four (agentBB.md 3.3: HUD_I2 is 606x232 in the tag and 608x232
+    // in the texture), so it is asked of the resolved image rather than taken from the tag.
+    bool        GetImageSize(GRenderer* renderer, class GFxMovieDataDef* dataDef,
+                             unsigned int* outWidth, unsigned int* outHeight);
 
     unsigned int  TagCode;
     unsigned int  Format;                    // the u32 the loader masks with 0x9FFFF
@@ -430,6 +455,10 @@ public:
     bool          bIsSubImage;
     char          ExportName[128];
     char          FileName[192];
+
+private:
+    GPtr<GImageInfoBase> pImageInfo;
+    bool                 bResolveTried;
 };
 
 // ---------------------------------------------------------------------------------------------

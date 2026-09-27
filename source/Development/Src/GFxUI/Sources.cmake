@@ -51,6 +51,14 @@ if(DISHONORED_WITH_GFX3)
     Src/gfxuirenderer.cpp
     Src/gfxuifile.cpp
     Src/gfxuiimageinfo.cpp)
+  # Agent DC (PHASE9.md package DC): gfxuiengine.cpp is FGFxEngine - the object that owns the loader
+  # and the renderer, opens a movie out of a cooked USwfMovie, advances the open movies once a frame
+  # and draws them once a frame. gfxuiinteraction.cpp is UGFxInteraction, which is where retail's
+  # per-frame advance and input come from (measured, build/agentDC/xr.py). Both need the runtime, and
+  # DISHONORED_GFXUI_GFX3_RUNTIME follows DISHONORED_WITH_GFX3 in Inc/gfxui_gfx3.h.
+  list(REMOVE_ITEM GFxUI_EXCLUDE
+    Src/gfxuiengine.cpp
+    Src/gfxuiinteraction.cpp)
 else()
   list(APPEND GFxUI_EXCLUDE Src/gfxuiallocator.cpp)
 endif()

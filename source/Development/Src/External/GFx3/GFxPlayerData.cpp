@@ -651,6 +651,20 @@ void GFxMovieDataDef::NoteDefined(GFxCharacterDef* def)
     }
 }
 
+void GFxMovieDataDef::SetSourceUrl(const char* url)
+{
+    SourceUrl[0] = 0;
+    if (url == 0)
+        return;
+    unsigned int n = 0;
+    while (url[n] && n + 1 < sizeof(SourceUrl))
+    {
+        SourceUrl[n] = url[n];
+        ++n;
+    }
+    SourceUrl[n] = 0;
+}
+
 void GFxMovieDataDef::AddImport(const char* url, const char* symbol, unsigned int id)
 {
     if (ImportSize >= ImportCapacity)
@@ -795,15 +809,42 @@ bool GFxMovieDataDef::Read(const unsigned char* data, unsigned int size)
 // ---------------------------------------------------------------------------------------------
 // GFxMovieDefImpl
 
-GFxMovieDefImpl::GFxMovieDefImpl(GFxMovieDataDef* dataDef) : pDataDef(dataDef)
+GFxMovieDefImpl::GFxMovieDefImpl(GFxMovieDataDef* dataDef)
+    : pDataDef(dataDef), pParentBag(0), bOwnsDataDef(true)
 {
     for (int i = 0; i < MaxStates; ++i)
         States[i] = 0;
+    FileUrl[0] = 0;
 }
 
 GFxMovieDefImpl::~GFxMovieDefImpl()
 {
-    delete pDataDef;
+    // DISHONORED(port): a definition handed out of GFxLoaderImpl's cache is shared between every movie
+    // that imports it, so only a definition this impl created is deleted with it.
+    if (bOwnsDataDef)
+        delete pDataDef;
+    for (int i = 0; i < MaxStates; ++i)
+    {
+        if (States[i])
+            States[i]->Release();
+    }
+}
+
+void GFxMovieDefImpl::SetFileURL(const char* url)
+{
+    FileUrl[0] = 0;
+    if (url)
+    {
+        unsigned int n = 0;
+        while (url[n] && n + 1 < sizeof(FileUrl))
+        {
+            FileUrl[n] = url[n];
+            ++n;
+        }
+        FileUrl[n] = 0;
+    }
+    if (pDataDef)
+        pDataDef->SetSourceUrl(url);
 }
 
 unsigned int GFxMovieDefImpl::GetVersion() const { return pDataDef->GetVersion(); }
@@ -814,7 +855,10 @@ unsigned int GFxMovieDefImpl::GetFrameCount() const { return pDataDef->GetFrameC
 float GFxMovieDefImpl::GetFrameRate() const { return pDataDef->GetFrameRate(); }
 GRect<float> GFxMovieDefImpl::GetFrameRect() const { return pDataDef->GetFrameRect(); }
 unsigned int GFxMovieDefImpl::GetSWFFlags() const { return pDataDef->GetSWFFlags(); }
-const char* GFxMovieDefImpl::GetFileURL() const { return pDataDef->GetFileInfo().ExporterInfo.SWFName; }
+const char* GFxMovieDefImpl::GetFileURL() const
+{
+    return FileUrl[0] ? FileUrl : pDataDef->GetFileInfo().ExporterInfo.SWFName;
+}
 GFxResource* GFxMovieDefImpl::GetMovieDataResource() const { return pDataDef; }
 unsigned int GFxMovieDefImpl::GetResourceTypeCode() const { return GFxResource::RT_MovieDef; }
 
@@ -825,7 +869,13 @@ GFxResource* GFxMovieDefImpl::GetResource(const char* name) const
 
 GFxMovieView* GFxMovieDefImpl::CreateInstance(const GFxMovieDef::MemoryParams& params, bool bd)
 {                                                                     // 2012 0xa1b960
-    (void)params; (void)bd;
+    (void)params;
+    // DISHONORED(bringup): retail's bInitFirstFrame runs frame 1 inside CreateInstance, which is what
+    // makes GetVariable work before the first Advance (UGFxMoviePlayer::PostStart relies on it). It is
+    // not done here: the movie has no viewport yet at this point - FGFxEngine::StartScene sets it
+    // immediately after - and the engine's own Tick advances it on the next frame either way. The
+    // consequence is that a PostStart which reads an AS2 variable sees it one frame later.
+    (void)bd;
     return new GFxMovieRoot(this);
 }
 
@@ -846,8 +896,10 @@ void GFxMovieDefImpl::SetState(GFxState::StateType t, GFxState* s)
 
 GFxState* GFxMovieDefImpl::GetStateAddRef(GFxState::StateType t) const
 {
+    // DISHONORED(port): the chain. A state the definition does not carry is the loader's, which is
+    // what retail's GFxLoadStates parent link does.
     if ((unsigned int)t >= MaxStates || States[t] == 0)
-        return 0;
+        return pParentBag ? pParentBag->GetStateAddRef(t) : 0;
     States[t]->AddRef();
     return States[t];
 }

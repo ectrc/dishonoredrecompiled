@@ -66,6 +66,19 @@ INT			GGameScreenshotCounter = 0;
 /** Whether to tick and render the UI. */
 UBOOL		GTickAndRenderUI = TRUE;
 
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+// DISHONORED(port, agent DC, PHASE9.md package DC): the Engine -> GFxUI edge, and the only one in the
+// tree. Retail puts GFxUIClasses.h on Engine's include path under WITH_GFx and calls FGFxEngine
+// directly (UGameViewportClient::Draw, 2013 0x2c59a0, calls RenderUI twice and RenderTextures once);
+// the modules here are one-way, so the same three calls go through free functions defined in
+// GFxUI/Src/gfxuiengine.cpp. DISHONORED_WITH_GFXUI_SHADERS is the define that says the GFxUI module is
+// in this build - it is kept for exactly that and agent BD's shader link anchor is what retired.
+extern void DishonoredGFxSetRenderViewport( FViewport* Viewport );
+extern void DishonoredGFxTick( FLOAT DeltaTime );
+extern void DishonoredGFxRenderUI();
+extern void DishonoredGFxRenderTextures();
+#endif
+
 #if WITH_GFx
 /** Whether to render the Flash UI */
 UBOOL		GRenderScaleform = TRUE;
@@ -500,6 +513,20 @@ void UGameViewportClient::Tick( FLOAT DeltaTime )
 		UInteraction* Interaction = GlobalInteractions(i);
 		Interaction->Tick(DeltaTime);
 	}
+
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+	// DISHONORED(bringup, agent DC): retail advances the interface from UGFxInteraction::Tick (2013
+	// 0x57b790), and the interaction is one of the GlobalInteractions above - so in retail this call is
+	// the loop. It is made directly as well because the interaction is inserted by script
+	// (UGameViewportClient::SetCustomInteractionObject, and GlobalInteractions holds 3 entries in our
+	// runs with the player's own input not among them - see the note on InputKey below), so relying on
+	// the script list would make the whole interface depend on a chain this bring-up has already
+	// measured to be broken. FGFxEngine::Tick is idempotent for a movie whose clock has not moved.
+	if ( GTickAndRenderUI )
+	{
+		DishonoredGFxTick( DeltaTime );
+	}
+#endif
 }
 
 FString UGameViewportClient::ConsoleCommand(const FString& Command)
@@ -962,6 +989,11 @@ void UGameViewportClient::SetViewport( FViewport* InViewport )
 		ScaleformInteraction->SetRenderViewport(InViewport);
 	}
 #endif
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+	// DISHONORED(port, agent DC): 2013 0x57b770. This is what creates the engine on the first frame that
+	// has a viewport, sizes every open movie and initialises the HUD render target from it.
+	DishonoredGFxSetRenderViewport( InViewport );
+#endif
 }
 
 
@@ -1172,6 +1204,10 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 		GGFxEngine->RenderTextures();
 	}
 #endif // WITH_GFx
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+	// DISHONORED(port, agent DC): 2013 0x58e080, at the same point in Draw retail calls it.
+	DishonoredGFxRenderTextures();
+#endif
 
 	// Create a temporary canvas if there isn't already one.
 	UCanvas* CanvasObject = FindObject<UCanvas>(UObject::GetTransientPackage(),TEXT("CanvasObject"));
@@ -1757,6 +1793,19 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 				}
 #endif 
 #endif // WITH_GFx
+
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+				// DISHONORED(port, agent DC): 2013 0x58dd30, twice, at the point in Draw retail calls
+				// it - after the canvas is flushed and before the HUD's PostRender. Retail's first call
+				// passes the post-process flag and renders into scene colour; ours passes FALSE for both
+				// and draws to the viewport, because FSceneRenderTargets is private to the Engine module
+				// and this wave's ownership rules put SceneRendering out of reach. agentDC.md states the
+				// consequence.
+				if ( GTickAndRenderUI )
+				{
+					DishonoredGFxRenderUI();
+				}
+#endif
 
 				UBOOL bPostRenderSingle = TRUE;
 #if WITH_REALD

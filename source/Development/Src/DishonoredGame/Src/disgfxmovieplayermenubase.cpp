@@ -115,7 +115,9 @@ static void DisCreateGFxSetting( UDisGFxMoviePlayerMenuBase* Menu, const FDisSet
 	{
 		return;
 	}
-	View->CreateObject( OutSetting );
+	// GFxMovieView::CreateObject takes the class name and the constructor arguments (vt[13] in the
+	// PDB); an empty Object is what agent BE's one-argument stand-in meant.
+	View->CreateObject( OutSetting, "Object", NULL, 0 );
 	DisSetGFxNumber( *OutSetting, "Setting_Id", Setting.m_SettingID );
 	DisSetGFxString( *OutSetting, "Setting_Name", Setting.m_SettingNameOverride );
 	DisSetGFxBool( *OutSetting, "bDropList", Setting.m_bDropList );
@@ -136,7 +138,7 @@ static void DisCreateGFxSubCategory( UDisGFxMoviePlayerMenuBase* Menu, const FDi
 	{
 		return;
 	}
-	View->CreateObject( OutSubCategory );
+	View->CreateObject( OutSubCategory, "Object", NULL, 0 );
 	DisSetGFxString( *OutSubCategory, "SubCategory_Name", SubCategory.m_SubCategoryName );
 	DisSetGFxBool( *OutSubCategory, "KeyboardBindingMenu", SubCategory.m_bKeyboardBindingMenu );
 
@@ -162,7 +164,7 @@ static void DisCreateGFxCategory( UDisGFxMoviePlayerMenuBase* Menu, const FDisSe
 	{
 		return;
 	}
-	View->CreateObject( OutCategory );
+	View->CreateObject( OutCategory, "Object", NULL, 0 );
 	DisSetGFxString( *OutCategory, "Category_Name", Category.m_CategoryName );
 
 	GFxValue SubCategories;
@@ -329,7 +331,7 @@ static void DisFillLoadGameMenu( UDisGFxMoviePlayerMenuBase* Menu )
 		DisFindSaveImagePath( Menu, SaveGame, SaveImagePath, FALSE );
 
 		GFxValue Entry;
-		View->CreateObject( &Entry );
+		View->CreateObject( &Entry, "Object", NULL, 0 );
 		DisSetGFxString( Entry, "chapterName", SaveName );
 		DisSetGFxString( Entry, "saveDate", FormattedDate );
 		DisSetGFxString( Entry, "itemThumb", SaveImagePath );

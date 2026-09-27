@@ -391,6 +391,17 @@ public:
     {
         return IsDisplayObject() && pObjectInterface->GotoAndPlay(Value.pData, frame, true);
     }
+
+    // DISHONORED(bringup, agent DC): the five spellings the ported native layer of gfxuimovie.cpp and
+    // gfxuiexternalinterface.cpp uses. Agent BE wrote that layer against its own stand-in GFxValue in
+    // gfxui_gfx3.h, which named the same operations differently; these forward to the ones above rather
+    // than 40-odd call sites being rewritten, and none of them adds a member so sizeof(GFxValue) is
+    // still the PDB's 16 (GFx3Layout.cpp).
+    void ReleaseManaged() { if (IsManagedValue()) ReleaseManagedValue(); }
+    bool GetCxform(GRenderer::Cxform* cx) const { return GetColorTransform(cx); }
+    bool SetCxform(const GRenderer::Cxform& cx) { return SetColorTransform(cx); }
+    bool GotoAndPlayFrame(unsigned frame) { return GotoAndPlay(frame); }
+    bool GotoAndStopFrame(unsigned frame) { return GotoAndStop(frame); }
     bool AttachMovie(GFxValue* mc, const char* symbolName, const char* instanceName,
                      int depth = -1, const GFxValue* initArgs = 0)
     {

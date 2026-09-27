@@ -786,6 +786,103 @@ GFxCharacter* GFxImageCharacterDef::CreateCharacterInstance(GFxASCharacter* pare
     return new GFxGenericCharacter(this, parent, id, parent ? parent->GetMovieRoot() : 0);
 }
 
+// The Texture2D this reference names. The rule is agent CC's, measured over the whole cook
+// (agentCC.md 3): tag 1009's ExportName is empty for all but the handful of images the artist named,
+// and the rest are the TGA file name without its directory and without its extension
+// (Global_I2.tga -> Global_I2); a named one can carry the exporter's own suffix after a space
+// ("gl_msgBox_bkgd -nopack"), which is not part of the object name.
+const char* GFxImageCharacterDef::GetResolveName() const
+{
+    static char Name[192];
+    const char* src = ExportName[0] ? ExportName : FileName;
+    // the basename
+    unsigned int start = 0;
+    for (unsigned int i = 0; src[i]; ++i)
+    {
+        if (src[i] == '/' || src[i] == '\\')
+            start = i + 1;
+    }
+    unsigned int n = 0;
+    while (src[start + n] && n + 1 < sizeof(Name))
+    {
+        Name[n] = src[start + n];
+        ++n;
+    }
+    Name[n] = 0;
+    // the exporter's suffix, then the extension
+    for (unsigned int i = 0; Name[i]; ++i)
+    {
+        if (Name[i] == ' ')
+        {
+            Name[i] = 0;
+            break;
+        }
+    }
+    int dot = -1;
+    for (unsigned int i = 0; Name[i]; ++i)
+    {
+        if (Name[i] == '.')
+            dot = (int)i;
+    }
+    if (dot > 0)
+        Name[dot] = 0;
+    return Name;
+}
+
+bool GFxImageCharacterDef::GetImageSize(GRenderer* renderer, GFxMovieDataDef* dataDef,
+                                        unsigned int* outWidth, unsigned int* outHeight)
+{
+    if (bIsSubImage && dataDef)
+    {
+        GFxCharacterDef* base = dataDef->GetCharacterDefById(BaseImageId);
+        if (base != 0 && base != this && base->GetResourceTypeCode() == GFxResource::RT_Image)
+            return ((GFxImageCharacterDef*)base)->GetImageSize(renderer, dataDef, outWidth, outHeight);
+    }
+    GetTexture(renderer, dataDef);
+    if (pImageInfo.GetPtr() != 0 && pImageInfo->GetWidth() && pImageInfo->GetHeight())
+    {
+        *outWidth = pImageInfo->GetWidth();
+        *outHeight = pImageInfo->GetHeight();
+        return true;
+    }
+    if (TargetWidth && TargetHeight)
+    {
+        *outWidth = TargetWidth;
+        *outHeight = TargetHeight;
+        return true;
+    }
+    return false;
+}
+
+GTexture* GFxImageCharacterDef::GetTexture(GRenderer* renderer, GFxMovieDataDef* dataDef)
+{
+    // DISHONORED(port): the binding retail does in GFxImageFileResourceCreator (2012 0xa22830), taken
+    // lazily - see the note in GFxCharacterDefs.h. A tag-1008 sub-image resolves its base image and
+    // the caller uses SubRect; a tag-1009 image resolves itself.
+    if (renderer == 0)
+        return 0;
+    if (bIsSubImage && dataDef)
+    {
+        GFxCharacterDef* base = dataDef->GetCharacterDefById(BaseImageId);
+        if (base != 0 && base != this && base->GetResourceTypeCode() == GFxResource::RT_Image)
+            return ((GFxImageCharacterDef*)base)->GetTexture(renderer, dataDef);
+    }
+    if (pImageInfo.GetPtr() == 0 && !bResolveTried)
+    {
+        bResolveTried = true;
+        // The image loader is a state of the movie definition's bag, which falls through to the
+        // loader's (GFxMovieDefImpl::GetStateAddRef). The url is the image's name resolved against the
+        // movie's own url, which is what FGFxImageLoader::LoadImageW (2013 0x586020) then turns back
+        // into a package path.
+        if (GFxImageResolveHook != 0)
+            pImageInfo = GFxImageResolveHook(dataDef, GetResolveName());
+    }
+    return pImageInfo.GetPtr() ? pImageInfo->GetTexture(renderer) : 0;
+}
+
+// The hook the loader installs so this unit needs neither the loader header nor an engine header.
+GFxImageResolveFn GFxImageResolveHook = 0;
+
 // ---------------------------------------------------------------------------------------------
 // GFxFontCharacterDef (2012 0xa357d0 -> GFxFontData::Read 0xa587d0)
 //

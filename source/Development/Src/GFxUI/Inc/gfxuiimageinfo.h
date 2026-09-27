@@ -24,15 +24,33 @@
 class FGFxImageInfo : public GImageInfo
 {
 public:
-    GString FileName;   // @36
+    // DISHONORED(layout): retail's member is a GString at @36 and the class is 40 bytes. The
+    // reconstruction's GString (GTypes.h) is the PDB's 4-byte handle with no way to build one - nothing
+    // needed to write a GString until now - so the name is an FString here. It is the only member of
+    // this class that is not the PDB's and it is the reason sizeof(FGFxImageInfo) is not 40.
+    FString FileName;
 
-    FGFxImageInfo(const GString& InFileName, unsigned int InWidth,
+    FGFxImageInfo(const FString& InFileName, unsigned int InWidth,
                   unsigned int InHeight);                                  // 2013 0x585c00
 
     virtual ~FGFxImageInfo();                                              // vt[0]
+    // GImageInfoBase's two pure slots. GImageInfo does not override them in the reconstruction, so
+    // every concrete image info has to; retail's GImageInfo answers from the target size.
+    virtual unsigned int GetWidth() const;                                 // vt[1]
+    virtual unsigned int GetHeight() const;                                // vt[2]
     virtual GTexture* GetTexture(GRenderer* Renderer);                     // vt[3] 2013 0x58e540
     virtual bool Recreate(GRenderer* Renderer);                            // ChangeHandler slot 2
     virtual unsigned int GetExternalBytes() const;                         // vt[7] 2013 0x5750b0
+
+    // DISHONORED(port): the package Texture2D the url resolved to. Retail's image info holds the
+    // GTexture and FGFxImageLoader creates it eagerly (2013 0x586020 hands the texture to
+    // FGFxTexture::InitTexture(UTexture*), 2013 0x580810); holding the UTexture and binding on the
+    // first GetTexture is the same thing one frame later and it needs no renderer at load time.
+    void SetEngineTexture(UTexture* InTexture) { EngineTexture = InTexture; }
+    UTexture* GetEngineTexture() const { return EngineTexture; }
+
+private:
+    UTexture* EngineTexture;
 };
 
 class FGFxImageLoader : public GFxImageLoader

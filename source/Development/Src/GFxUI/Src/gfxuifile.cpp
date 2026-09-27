@@ -123,24 +123,7 @@ bool FGFxFile::Close()
 // which makes the runtime report a missing import rather than crash.
 FGFxFileOpener::~FGFxFileOpener() {}
 
-GFile* FGFxFileOpener::OpenFile(const char* Url, int Flags, int Mode)
-{
-    // 2013 0x58d780.
-    (void)Url; (void)Flags; (void)Mode;
-    GFXUI_SEAM_TRACE("FGFxFileOpener::OpenFile");
-    return 0;
-}
-
-__int64 FGFxFileOpener::GetFileModifyTime(const char* Url)
-{
-    // 2013 0x58d9a0. Cooked content never changes under us, so retail's answer of 0 stands.
-    (void)Url;
-    GFXUI_SEAM_TRACE("FGFxFileOpener::GetFileModifyTime");
-    return 0;
-}
-
-GFile* FGFxFileOpener::OpenFileEx(const char* Url, GFxLog* Log, int Flags, int Mode)
-{
-    (void)Log;
-    return OpenFile(Url, Flags, Mode);
-}
+// DISHONORED(port): FGFxFileOpener::OpenFile (2013 0x58d780), GetFileModifyTime (0x58d9a0) and
+// OpenFileEx are in Src/gfxuiengine.cpp, which is the file the 2012 PDB attributes them to
+// (gfxuiengine.cpp:251 and :303) and the only one that can reach UObject::StaticLoadObject. This unit
+// keeps FGFxFile, which needs no engine at all.

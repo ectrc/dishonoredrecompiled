@@ -93,6 +93,9 @@ public:
     virtual const char* GetCharacterTypeName() const { return "EditText"; }
     virtual GASObjectType GetObjectType() const { return Object_TextField; } // 0xa2cfe0 -> 13
     virtual void AdvanceFrame(bool bAdvance, float framePos);         // 0xa2e250
+    // DISHONORED(port): 0xa2ed90 -> GFxTextDocView::Display 0xaa04f0 -> GFxTextLineBuffer::Display
+    // 0xa45bf0. This is ProduceGlyphs' traversal with the DrawBitmaps submission put back.
+    virtual void Display(GFxDisplayContext& ctx);
     virtual void OnEventLoad();                                      // 0xa30cd0
 
     virtual bool GetMember(GASEnvironment* env, const GASString& name, GASValue* val);   // 0xa2f9f0

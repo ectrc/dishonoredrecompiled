@@ -17,9 +17,9 @@
 // real code.
 #include "gfxuiimageinfo.h"
 
-FGFxImageInfo::FGFxImageInfo(const GString& InFileName, unsigned int InWidth,
+FGFxImageInfo::FGFxImageInfo(const FString& InFileName, unsigned int InWidth,
                              unsigned int InHeight)
-    : FileName(InFileName)
+    : FileName(InFileName), EngineTexture(NULL)
 {
     // 2013 0x585c00. GImageInfo carries the target size; the texture arrives later, from the
     // engine texture the export name resolves to.
@@ -31,11 +31,26 @@ FGFxImageInfo::FGFxImageInfo(const GString& InFileName, unsigned int InWidth,
 
 FGFxImageInfo::~FGFxImageInfo() {}
 
+unsigned int FGFxImageInfo::GetWidth() const { return TargetWidth; }
+unsigned int FGFxImageInfo::GetHeight() const { return TargetHeight; }
+
 GTexture* FGFxImageInfo::GetTexture(GRenderer* Renderer)
 {
-    // 2013 0x58e540.
-    (void)Renderer;
+    // 2013 0x58e540. The texture is made once, out of the package Texture2D the url resolved to, and
+    // kept: FGFxTexture::InitTexture(UTexture*) is 2013 0x580810 and it is agent CC's.
     GFXUI_SEAM_TRACE("FGFxImageInfo::GetTexture");
+    if (pTexture.GetPtr() == NULL && EngineTexture != NULL && Renderer != NULL)
+    {
+        GTexture* Texture = Renderer->CreateTexture();
+        if (Texture != NULL)
+        {
+            if (((FGFxTexture*)Texture)->InitTexture(EngineTexture, false))
+            {
+                pTexture = Texture;
+            }
+            Texture->Release();
+        }
+    }
     return pTexture.GetPtr();
 }
 
@@ -43,7 +58,7 @@ bool FGFxImageInfo::Recreate(GRenderer* Renderer)
 {
     // 2013 0x575070: retail drops the texture so the next GetTexture rebuilds it.
     (void)Renderer;
-    pTexture.Clear();
+    pTexture = (GTexture*)NULL;
     GFXUI_SEAM_TRACE("FGFxImageInfo::Recreate");
     return true;
 }
@@ -56,22 +71,9 @@ unsigned int FGFxImageInfo::GetExternalBytes() const
 }
 
 FGFxImageLoader::~FGFxImageLoader() {}
-
-GImageInfoBase* FGFxImageLoader::LoadImageW(const char* Url)
-{
-    // 2013 0x586020.
-    (void)Url;
-    GFXUI_SEAM_TRACE("FGFxImageLoader::LoadImageW");
-    return 0;
-}
-
 FGFxImageCreator::~FGFxImageCreator() {}
 
-GImageInfoBase* FGFxImageCreator::CreateImage(const GFxImageCreateInfo& Info)
-{
-    // 2013 0x585d70. Info.pExportName is the tag-1009 ExportName; Info.Type says whether the
-    // runtime already has pixels (GFxImageCreateInfo::Input_Image) or only a file reference.
-    (void)Info;
-    GFXUI_SEAM_TRACE("FGFxImageCreator::CreateImage");
-    return 0;
-}
+// DISHONORED(port, agent DC): FGFxImageLoader::LoadImageW (2013 0x586020) and
+// FGFxImageCreator::CreateImage (0x585d70) are in Src/gfxuiengine.cpp, which is the unit the 2012 PDB
+// attributes them to (gfxuiengine.cpp:410 and :363) and the only one that can reach
+// UObject::StaticLoadObject. They were bringup stubs here while that unit did not compile.

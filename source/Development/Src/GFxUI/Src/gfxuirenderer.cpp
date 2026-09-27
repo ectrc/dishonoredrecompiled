@@ -2281,10 +2281,19 @@ void FGFxRenderer::InitUIBlendStackAndMiscRenderState_RenderingThread(
 
     RHISetDepthState(TStaticDepthState<FALSE,CF_Always>::GetRHI());
     RHISetRasterizerState(TStaticRasterizerState<FM_Solid,CM_None>::GetRHI());
+    // DISHONORED(bringup, agent DC): the cached stencil state is SET here, not released. This line
+    // read `CurStencilState.SafeRelease()`, and the consequence is a crash rather than a wrong pixel:
+    // CheckRenderTarget_RenderThread (2012 0x5d7c80, and this file's copy of it) re-asserts the state
+    // with `RHISetStencilState(CurStencilState)` on every render-target change, and
+    // FD3D9DynamicRHI::SetStencilState dereferences its argument with no null check (D3D9Commands.cpp,
+    // which is the reference engine's own body, so retail's does too). The first frame the game drew a
+    // movie through the real path took the null: "Rendering thread exception" at
+    // FD3D9DynamicRHI::SetStencilState+0x18, resolved against the link map. Retail cannot have a null
+    // there either, so the cached state must track the one just pushed - which is what this does.
     RHISetStencilState(TStaticStencilState<>::GetRHI());
+    CurStencilState = TStaticStencilState<>::GetRHI();
 
     *Params.StencilCounter = 0;
-    CurStencilState.SafeRelease();
 
     // DISHONORED(layout): the two gamma bits the movie player sets in GViewport::Flags above the
     // PDB's four - 0x1000 asks for no gamma correction at all and 0x2000 for the display gamma
@@ -2609,6 +2618,18 @@ void FGFxRenderer::DrawIndexedTriList_RenderThread(int BaseVertexIndex, int MinV
                                                         Enumerated);
     if (!IsValidRef(BoundShaderState.NativeBoundShaderState))
     {
+        // DISHONORED(bringup, agent DC): name the combination that failed. Silence here is what made
+        // 103 of a frame's 134 submitted draws vanish with nothing in the log.
+        static UBOOL bWarned[GFx_PS_Count] = { FALSE };
+        if (Enumerated.PixelShaderType < GFx_PS_Count && !bWarned[Enumerated.PixelShaderType])
+        {
+            bWarned[Enumerated.PixelShaderType] = TRUE;
+            debugf(NAME_Warning, TEXT("DISHONORED(bringup): GFx trilist draw dropped: no bound shader ")
+                   TEXT("state for pixel %d vertex %d decl %d (fill mode %d, vertex fmt %d)"),
+                   (INT)Enumerated.PixelShaderType, (INT)Enumerated.VertexShaderType,
+                   (INT)Enumerated.VertexDeclarationType, (INT)FillStyle.StyleMode,
+                   (INT)StyleContext.VertexFmt);
+        }
         return;
     }
 
@@ -3481,6 +3502,17 @@ void FGFxRenderer::CheckRenderTarget_RenderThread()
     const FSurfaceRHIRef& DepthSurface = CurRenderTarget->StencilBuffer
         ? CurRenderTarget->StencilBuffer->DepthSurface : Resource->DepthBuffer;
     RHISetRenderTarget(Resource->ColorBuffer, DepthSurface);
+    // DISHONORED(bringup, agent DC): the cached stencil state has to be valid before it is pushed.
+    // FD3D9DynamicRHI::SetStencilState dereferences its argument with no null check (the reference
+    // engine's own body, so retail's too), and the very first CheckRenderTarget of a frame runs from
+    // INSIDE InitUIBlendStackAndMiscRenderState_RenderingThread - before that function has a chance to
+    // set anything - so a freshly constructed renderer took the null and the render thread died at
+    // SetStencilState+0x18. Retail cannot reach it either; what keeps it out is not in the decompile of
+    // 0x5d7c80 or 0x5d7e10, so the guard is here and it is stated as such.
+    if (!IsValidRef(CurStencilState))
+    {
+        CurStencilState = TStaticStencilState<>::GetRHI();
+    }
     RHISetStencilState(CurStencilState);
 
     if (CurRenderTarget->Texture)
