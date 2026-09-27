@@ -76,7 +76,8 @@ As `PHASE9.md`. The additions this wave:
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
 | D0 | coordinator | This plan, the wave-7 fold, the baseline | doing | 2026-09-27 | |
-| DA | DA | The DOF node's LUT colour pass | doing | 2026-09-27 | CE's finding redirects it here |
+| DA | DA | The DOF node's LUT colour pass | done | 2026-09-27 | commit fdc6aec: the whole node, not just the LUT. The baked ramp is a clean identity cube because this content's grade is neutral - and that is the evidence, since the ported pass and the gamma copy it replaces land on the same image from two different code paths. Blacking the bake out turns the frame black (99.51 %), a real grade moves every pixel |
+| DE | DE | Make the content's own grade reach the renderer | doing | 2026-09-27 | DA's hand-over 1: ULocalPlayer::UpdatePostProcessSettings (0x2b08b0) writes nothing to m_CurrentArkPpSettings, so the level's, the volumes', the camera's and Kismet's grade never reaches the LUT. The eighth storage-less placeholder |
 | DB | DB | Arkane's bloom parts | doing | 2026-09-27 | costed by CE |
 | DC | DC | Flip the GFx runtime live and bring the menu up | doing | 2026-09-27 | the user's standing ask |
 | CG | CG | The AI brain root | doing | 2026-09-27 | carried over from wave 7 |
