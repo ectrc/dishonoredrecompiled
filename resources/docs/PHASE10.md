@@ -60,6 +60,51 @@ The three packages are independent by construction, so they run at once:
 
 - Audio, which stays where the user put it: `PLAN.md` Phase 10, polish.
 
+## Wave result (coordinator, 2026-09-27)
+
+Five packages merged, each gated by building a clean checkout of its own commit and running the harness
+there: CG `f13ad82`, DA `fdc6aec`, DB `b66b8bd`, DE `9b77df6`, DC `00e66eb`, plus `a42f4a3` (a measurement
+correction). **31 checks, 0 failures at HEAD.** Agent DF is still running and merges into wave 9.
+
+**The menu renders in the game.** That was the user's standing ask, and `build/agentDC/mainmenu.png` is the
+game's own gamma-calibration screen in Dishonored's own typeface, beside the chapter panel's cooked
+artwork - glyphs rasterised from the game's `DefineFont3` outlines, shapes tessellated from cooked
+`DefineShape` records, 182 display objects placed by the reconstructed ActionScript machine running 3,854
+opcodes with none unimplemented, drawn through the reconstructed renderer from `UGameViewportClient::Draw`.
+
+**An NPC exists and thinks**: 0 NPC pawns became 26, each with a controller, an initialised brain and a
+running sub-state machine, because the first mission map turns out to hold 41 spawners and no placed pawns.
+
+**The look is fed for the first time.** The colour treatment is the depth-of-field node's LUT pass, not a
+material node; the level's own grade reaches it now and moves 98.68 % of the frame; and the bloom parts
+draw.
+
+### What this wave taught, beyond its packages
+
+1. **Measure the map you mean.** Agent DA reported the content's grade as neutral and it was - of
+   `DishonoredGameFull_P`, the startup map, which one-shot probes latch onto. DE passed the map as the
+   command line's first token and found a real grade in the mission. Two careful agents, one blind spot.
+2. **`-apshot` captured a frame nobody chose.** The request is raised on the render thread and consumed on
+   the game thread, so the captured frame depends on frame rate and a costly pass moves it by itself - worth
+   73 mean over 71 % of pixels of pure camera ghosting. It had corrupted the wave-6 fog figure and the
+   wave-7 graph figure. `-apshottime` replaces it and its floor is byte-identical runs.
+3. **The placeholder pattern reached nine, and the ninth was the widest.**
+   `GSystemSettings.MaxFilterBlurSampleCount` was a storage-less shim reading 0, so *every Gaussian blur in
+   the tree* aborted the render thread - DA's downsample, DB's bloom blur and the reference chains alike.
+   Nothing had ever reached it until content did.
+4. **Two agents, one file, one commit.** `UnPlayer.cpp` was shared by DC and DE, and neither snapshot built
+   with the other's half. Merged by committing each package's block separately and building the union.
+
+### Coordinator errors this wave, both caught by the clean-checkout gate
+
+- Merging CE I staged `EngineArkaneClasses.h`, whose whole diff belonged to still-running CG; HEAD did not
+  compile (`aedbdaa`).
+- Merging CG I ran the generator without `--sources-cmake`, so 14 units were compiled out and HEAD linked
+  with 113 unresolved externals. Wave 6 was a subset of the generator's *output*; this was a subset of the
+  *generator*.
+- I also used `build/head_wt` as the gate worktree while agent DF had adopted it, checking commits out
+  underneath it. `build/gate_wt` is the coordinator's, and agents create their own.
+
 ## Rules for agents
 
 As `PHASE9.md`. The additions this wave:
@@ -84,8 +129,9 @@ As `PHASE9.md`. The additions this wave:
 |---|---|---|---|---|---|
 | D0 | coordinator | This plan, the wave-7 fold, the baseline | doing | 2026-09-27 | |
 | DA | DA | The DOF node's LUT colour pass | done | 2026-09-27 | commit fdc6aec: the whole node, not just the LUT. The baked ramp is a clean identity cube because this content's grade is neutral - and that is the evidence, since the ported pass and the gamma copy it replaces land on the same image from two different code paths. Blacking the bake out turns the frame black (99.51 %), a real grade moves every pixel |
-| DE | DE | Make the content's own grade reach the renderer | doing | 2026-09-27 | DA's hand-over 1: ULocalPlayer::UpdatePostProcessSettings (0x2b08b0) writes nothing to m_CurrentArkPpSettings, so the level's, the volumes', the camera's and Kismet's grade never reaches the LUT. The eighth storage-less placeholder |
-| DB | DB | Arkane's bloom parts | doing | 2026-09-27 | costed by CE |
-| DC | DC | Flip the GFx runtime live and bring the menu up | doing | 2026-09-27 | the user's standing ask |
+| DE | DE | Make the content's own grade reach the renderer | done | 2026-09-27 | commit 9b77df6: L_Tower_P's grade is not neutral after all - a cool green-blue lift, +0.2 EV, three times the film grain - and it moves 98.68 % of pixels, mean 29.49, against a byte-identical floor. DA had been measuring the startup map. Found the ninth placeholder too, and it was the widest yet: MaxFilterBlurSampleCount read 0, so **every Gaussian blur in the tree** aborted the render thread |
+| DB | DB | Arkane's bloom parts | done | 2026-09-27 | commit b66b8bd: the pub's attic windows and floor lantern bloom and nothing else, 3.7 % of pixels against a floor of exactly zero. Also found that -apshot captures a frame nobody chose, which had corrupted two published measurements |
+| DC | DC | Flip the GFx runtime live and bring the menu up | done | 2026-09-27 | commit 00e66eb: **the game's own menu renders in the game** - 182 display objects, 68 draws, 157 glyphs, 3,854 opcodes with 0 unimplemented, through the real renderer from UGameViewportClient::Draw. build/agentDC/mainmenu.png |
+| DG | DG | Make the menu operable and complete | doing | 2026-09-27 | DC's hand-over: input (GFxButtonCharacter + 0xa66a90), the background and logo on m_StartScreen, and GFxTranslator for the text |
 | CG | CG | The AI brain root | done | 2026-09-27 | commit f13ad82: 0 NPC pawns -> 26, each with a controller, an initialized brain, a behaviour and a running sub-state machine. The map has 41 spawners and no placed NPCs, which nobody had measured - that is why the AI root looked bottomless. Gate on a clean checkout: 31 ok, 0 failed, and the AI shows in the numbers (PhysX actors 895 -> 1,369, sequence ops 35,812 -> 87,380, probe_natives 7 -> 6) |
 | DF | DF | The 17 AI sub-state classes and their _Param structs | doing | 2026-09-27 | CG's named next package: where 35 of the 109 blocked natives live. Also the game-event dispatcher, which is ported but never instantiated |

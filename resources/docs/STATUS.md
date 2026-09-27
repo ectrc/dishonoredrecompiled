@@ -1,4 +1,4 @@
-# Project status — 2026-09-27 (wave 7: the interface runtime is complete and draws the game's own art, retail saves load, and the post-process graph renders)
+# Project status — 2026-09-27 (wave 8: **the game's own menu renders in the game**, an NPC exists and thinks, and the level's grade reaches the renderer)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE5.md` (waves 1–3,
 done — read each "Wave result"), `PHASE6.md` (wave 4, done), `PHASE7.md` (wave 5, done), `PHASE8.md`
@@ -38,7 +38,7 @@ has no data.
 | 4. D3D9 device, Bink movie, Scaleform menu | **done bar the menu**: the first mission map with all 8 sub-levels streamed in renders **20,370 frames under d3d9** windowed at 1280x720 over 90 s with **0 critical errors**, and 37,470 under the null RHI; the cooked caches load whole (127 global records, 2,580 material maps, 0 mismatches). The Scaleform main menu still waits on the GFx decision in `middleware.md`; long runs use `resourcesuild-release.cmd` |
 | 5. Mission map, player spawns, input | **done 2026-09-26**: the first mission map renders (20,370 frames, d3d9 windowed 1280x720, 90 s, 0 criticals) and the pawn stands on it in `PHYS_Walking` and walks (`-inputtest moved` 1030.1, peak speed 500.7, still walking at 115 s with all seven always-loaded sub-levels visible). Two defects found by playing it are the lead packages of wave 5 (`PHASE7.md`): textures are corrupt on large surfaces, and touch notifications never fire so triggers, volumes and pickups are inert |
 | 6. Save and load | **done 2026-09-27 (wave 7, agent CF)**: all 51 real retail saves load and round-trip byte-exactly. `BUILT_FROM_CHANGELIST` was 334700 against retail's 1274963, so every retail save had been rejected by construction. What remains is reading *inside* the level blobs, which needs the five `UObject` save virtuals — 105 `GameSave` and 108 `GameLoad` overrides, all or nothing, because each is written inline with no length prefix. That is what restores the player's transform on load |
-| Interface runtime (toward milestone 4's menu) | **reconstructed and verified, not yet wired in (wave 7)**: the GFx 3.3 API and engine seam (BB), the ActionScript machine (BC), the text engine and glyph rasteriser (CB), the renderer's drawing half (CC) and the tag loaders (CD). CC renders a 1280x720 first frame of `UI_Global.Global` with 40 of its 41 cooked bitmaps; CB rasterises 2,481 glyphs from the game's own fonts; every one of the 22 cooked movies parses with 0 placeholders. `DISHONORED_GFXUI_GFX3_RUNTIME` is still 0 — flipping it is wave 8 package DC |
+| Interface runtime (milestone 4's menu) | **done 2026-09-27 (wave 8, agent DC, commit `00e66eb`)**: `DISHONORED_GFXUI_GFX3_RUNTIME` is 1 and the game's own `UI_MainMenu.MainMenu` renders in the running game at 1280x720 under d3d9 — 182 display objects, 68 draws, 157 glyphs, 3,854 opcodes with 0 unimplemented, drawn through the reconstructed renderer from `UGameViewportClient::Draw`, not a probe (`build/agentDC/mainmenu.png`). Opt-in behind `-gfxuimenu`, because `UDisGlobalUIManager`'s config set does not name the main menu and the script that constructs it never runs. Still missing: the background and logo (`UDisGFxMoviePlayerMainMenu::PostStart`, which is the 7 script errors), the real strings (`GFxTranslator`), input, and retail's `GTessellator`. Wave 7 built what it draws with: **the GFx 3.3 runtime, reconstructed and verified in isolation (wave 7)**: the GFx 3.3 API and engine seam (BB), the ActionScript machine (BC), the text engine and glyph rasteriser (CB), the renderer's drawing half (CC) and the tag loaders (CD). CC renders a 1280x720 first frame of `UI_Global.Global` with 40 of its 41 cooked bitmaps; CB rasterises 2,481 glyphs from the game's own fonts; every one of the 22 cooked movies parses with 0 placeholders. `DISHONORED_GFXUI_GFX3_RUNTIME` is still 0 — flipping it is wave 8 package DC |
 
 | Area | State |
 |---|---|
@@ -57,12 +57,21 @@ has no data.
 
 ## Next
 
-Wave 8 is running (`PHASE10.md`): **DC** flips `DISHONORED_GFXUI_GFX3_RUNTIME` and brings the game's own menu
-up in the running game, **DA** ported the depth-of-field node's LUT uber pass — which is where the game's
-colour balance, exposure and gamma actually live, not in a material node — and **DB** ported Arkane's bloom
-parts (the pub's windows and lantern bloom, 3.7 % of pixels against a floor of exactly zero). **DE** is now
-making the content's own grade reach the renderer at all: `ULocalPlayer::UpdatePostProcessSettings` writes
-nothing to `m_CurrentArkPpSettings`, so no grade the content authors has ever reached the LUT. Agent CG (the AI brain root) carries over from wave 7. Held for the wave after: the five `UObject`
+Wave 8 is merged and gated at **31 checks, 0 failures** (`PHASE10.md` "Wave result"): CG `f13ad82`,
+DA `fdc6aec`, DB `b66b8bd`, DE `9b77df6`, DC `00e66eb`. The menu renders; 0 NPC pawns became 26, each with a
+controller, an initialised brain and a running sub-state machine; the colour treatment is ported and the
+level's own grade reaches it, moving 98.68 % of the frame; and Arkane's bloom parts draw.
+
+Wave 9 is running: **DF** (the 17 AI sub-state classes and the desires interface, where 35 of the 109 blocked
+natives live) and **DG** (menu input, the background and logo, and the real strings). Held behind them: the
+five `UObject` save virtuals, `ADishonoredPlayerController::ModifyPostProcessSettings` (which makes the
+powers visible), locomotion so the NPCs can walk, and retail's `GTessellator`.
+
+**Two measurement lessons are now standing rules.** Measure the map you mean — one-shot probes latch onto the
+startup map, which is why a real grade read as neutral for a whole package. And never use `-apshot`: it
+raises the screenshot request on the render thread while the game thread consumes it, so the captured frame
+depends on frame rate, which had corrupted two published figures. `-apshottime` replaces it, and its floor is
+byte-identical runs. Agent CG (the AI brain root) carries over from wave 7. Held for the wave after: the five `UObject`
 save virtuals, the AS2 garbage collector, and whatever DA hands over of the remaining DOF passes.
 
 Wave 7 is merged: `c403e2f` CA, `54b57d4` + `4bb6772` CB, `d40e26c` CF, `683fa03` CD, `2da00d8` CC,
