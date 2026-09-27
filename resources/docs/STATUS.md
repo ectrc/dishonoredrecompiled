@@ -1,4 +1,4 @@
-# Project status — 2026-09-26 (milestone 5 done: the world renders and the player walks in it)
+# Project status — 2026-09-27 (wave 6: the world assembles correctly, the fog renders, and the ActionScript machine runs the menu asset)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md` (done), `PHASE2.md`
 (done), `PHASE3.md` (wave 1, done), `PHASE4.md` (wave 2, done), `PHASE5.md` (wave 3, done — read its
@@ -53,6 +53,12 @@ has no data.
 | Tools | `resources/tools/sdk/` (`parse_codered_sdk.py`, `sdk_props.py`, `sdk_show.py`, `xcheck_sdk_layout.py`), `symbols/gen_layout_probe.py`, `gen_layout_asserts.py`, `gen_classes_header.py --sdk` (+ `Inc/CppText/<Class>.h` hook, `<Module>NativeStubs.ported.txt` skip list), `ida/decompile_funcs.py`, `build_and_smoke.py`, `stage_retail.py`, `build/head_wt_build.cmd` (clean-worktree verification), `resources/build-game.cmd` |
 
 ## Next
+
+Wave 6 is fully merged (`PHASE8.md` "Wave result"; harness 31 checks, 0 failures). Wave 7 is the text engine
+and glyph rasteriser, which is the one thing between the reconstructed interface runtime and a visible menu,
+the Arkane post-process graph now that its input chain is populated, the save system (milestone 6, also what
+the menu's load and continue entries need), and the scene-colour rebinding defect agent BD measured, which is
+tree-wide rather than a fog bug.
 
 Wave 5 is planned in `PHASE7.md`, built around the two defects the user found by running the game: **AR**
 textures, **AS** touch/triggers/volumes, then **AT** Kismet (which also fixes the menu teardown and the retail

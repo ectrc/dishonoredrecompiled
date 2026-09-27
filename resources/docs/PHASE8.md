@@ -174,13 +174,42 @@ Files: the DishonoredGame attributes units, `DishonoredGameNativeStubs.ported.ag
 
 | ID | Agent | Task | Status | Date | Notes |
 |---|---|---|---|---|---|
-| C9 | coordinator | Fold status, promote the three tools, baseline, this plan | todo | | |
-| BA | | The world in the right place | todo | | user-reported defect |
-| BB | | GFx runtime foundation: API and renderer seam | todo | | multi-wave project, wave 1 |
-| BC | | GFx runtime: the ActionScript machine | todo | | not expected to finish |
-| BD | | The real look: Arkane post-process and the missing shader families | todo | | |
-| BE | | GFxUI native layer: 208 natives and the movie players | todo | | |
-| BF | | The attributes system root | todo | | unblocks the last 2 path natives |
+| C9 | coordinator | Fold status, promote the tools, baseline, this plan | done | 2026-09-27 | plus four harness corrections (per-build run names, census patterns, metric split by stage) and two of my own merge errors, both regenerated-output-not-committed |
+| BA | BA | The world in the right place | done | 2026-09-27 | commit 28eb3cf: one missing virtual (2013 rva 0x35f160) left every merged prop on the origin; collapsed primitives 2,915 of 2,926 -> 405. The user's defect |
+| BB | BB | GFx runtime foundation: API and renderer seam | done | 2026-09-27 | commit 4db19d1: 166 types + 69 enums from the 2012 PDB, 1,247 assertions passing, all 73 seam slots verified by call, all 22 cooked movies parse. Fonts are glyph outlines, not textures: the rasteriser is unavoidable |
+| BC | BC | GFx runtime: the ActionScript machine | done | 2026-09-27 | commit 3f6ed0d: runs the real main menu asset (85 sprites, 170 display objects, 3,783 opcodes, none unimplemented); 94 of 98 opcodes, 10 of 28 class groups. Every interface asset runs its first frames |
+| BD | BD | The real look: Arkane post-process and the missing shader families | done | 2026-09-27 | commit ecf488e: undeclared shader types 136 -> 5, the Arkane fog renders (37 % of pixels changed, quantified), and the player post-process chain was empty: 0 -> 42 nodes |
+| BE | BE | GFxUI native layer: 208 natives and the movie players | done | 2026-09-27 | commit f2fbc4c: all 132 exec bodies ported, 27 menu natives, callback path proven by test. Found five header defects, one of which would have leaked every script reference |
+| BF | BF | The attributes system root | done | 2026-09-27 | commit 5fe3d3b: unported natives on the walking path 2 -> 0, the pawn survives the fall taking 70 of 100. The predicted trap did not exist: the refresh is reflection-driven |
+
+## Wave result (coordinator, 2026-09-27)
+
+All six packages merged: BA `28eb3cf`, BB `4db19d1`, BF `5fe3d3b`, BE `f2fbc4c`, BC `3f6ed0d`, BD `ecf488e`,
+plus the module regenerations and the harness corrections. **Regression harness: 31 checks, 0 failures**
+(22 in the play stages, 9 in the verification stages).
+
+The user's two asks are answered and the third is under way:
+
+| Ask | State |
+|---|---|
+| the map is disjointed | **fixed**: one missing virtual, and the world assembles correctly |
+| the full graphics | undeclared shader types 136 -> 5, the Arkane fog renders, and the post-process chain that feeds the rest is no longer empty. The graph itself is the next package |
+| the full menu | the runtime is real: the API is reconstructed and asserted, the engine seam is complete, every cooked movie parses, **and the machine runs the main menu's own asset**. What remains before anything is visible is the text engine |
+
+**The pattern of this wave, worth carrying forward:** four separate defects were a reference member or
+method kept as a storage-less placeholder or simply absent — the merged-prop transform, the player's
+post-process chain, the attribute refresh, and (wave 5) the draw-distance scale and the animation arrays.
+When something is inexplicably dead, empty or shared, look there first.
+
+**Two process failures of mine, both the same shape.** I regenerated the module headers while verifying and
+did not commit the result, twice, the second time by staging generated files individually. Each time the
+verification passed because the worktree held a regeneration the committed tree did not. The rule is now in
+the commits: after regenerating, commit every file the generator touched, never a subset. Agent BC caught
+the first on a clean checkout; the second failed the clean build immediately.
+
+Also corrected: the harness had been skipping two census counters since they were added (they matched
+wording the engine never logs), concurrent runs collided on shared file names, and a metric I extended
+began measuring two different things under one name.
 
 ## Rules for agents
 

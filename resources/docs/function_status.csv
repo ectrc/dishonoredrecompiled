@@ -613,7 +613,7 @@ rva,status,note
 0x5e4de0,written,UDisBehaviorSummonWolfHound::execOnExitCallback_GenericAction exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5e4de0; no matched 2012 rva; agent AC)
 0x5e4a20,written,UDisBehaviorSummonWolfHound::execRequestStateExitCallback_GenericAction exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5e4a20; no matched 2012 rva; agent AC)
 0x63fa20,written,UDisBehaviorTriggerAlarm::execOnExitCallback_GenericAction exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5e4f00; agent AC)
-0x5f5750,written,UDisBehaviorTriggerAlarm::execRequestStateExitCallback_TakePosition exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5f5750; no matched 2012 rva; agent AC)
+0x5f5750,ported,UDisGFxMoviePlayerBase::execOnFocusGained; disgfxmovieplayerbase.cpp (agent BE)
 0x5e5080,written,UDisDLC07CheatManager::execI_AM_DAUD exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5e5080; no matched 2012 rva; agent AC)
 0x5efc00,written,UDisDLC07CheatManager::execMaxItems exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5efc00; no matched 2012 rva; agent AC)
 0x5ee510,written,UDisDLC06CheatManager::execReportEndGameFiles exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5ee510; no matched 2012 rva; agent AC)
@@ -650,7 +650,7 @@ rva,status,note
 0x6377c0,written,UDishonoredCheatManager::execAIDebugHideout exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5f11e0; agent AC)
 0x647640,written,UDishonoredCheatManager::execAIDisableBehavior exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x600190; agent AC)
 0x6477a0,written,UDishonoredCheatManager::execAIDisableSubState exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x6002f0; agent AC)
-0x5f8190,written,UDishonoredCheatManager::execAIDontAttack exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5f8190; no matched 2012 rva; agent AC)
+0x5f8190,ported,UDisGFxMoviePlayerMainMenu::execOnNewGameClicked; disgfxmovieplayermainmenu.cpp (agent BE)
 0x637510,written,UDishonoredCheatManager::execAIDontRotate exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5f8210; agent AC)
 0x637290,written,UDishonoredCheatManager::execAIDumb exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5f0e10; agent AC)
 0x637c70,written,UDishonoredCheatManager::execAIDumbToAIs exec; the retail virtual behind it is empty/constant (trivial) (2013 rva 0x5f1610; agent AC)
@@ -930,7 +930,7 @@ rva,status,note
 0x1daa80,ported,APawn::execIsRagdoll -> IsRagdoll (body 0x382d00) (agent AE)
 0x1da990,ported,APawn::execGetNavigationHandle -> GetNavigationHandle (body 0x1ca5d0) (agent AE)
 0x1d4c40,ported,APawn::execIsValidTargetFor -> IsValidTargetFor (body 0x233610: FALSE in Shipping) (agent AE)
-0x1c1640,ported,AActor::execTakeDamage -> TakeDamage (body 0x1753f0): SeqEvent_TakeDamage HandleDamage over GeneratedEvents; shared by the Pawn/KActor/KAsset/SkeletalMeshActor/GameCrowdAgent execs (agent AE)
+0x1c1640,written,ADishonoredPawn::execTakeDamage - AActor::execTakeDamage (ICF-folded in retail); the walking path's last warn-once line
 0x1c1800,ported,AActor::execCheckHitInfo -> CheckHitInfo (body 0x16dd40): the component trace through LineCheck (TraceComponent 0x2ccfd0) (agent AE)
 0x1fcc40,ported,AActor::execFindEventsOfClass -> FindEventsOfClass (body 0x175310) (agent AE)
 0x1c03a0,ported,AActor::execVolumeBasedDestroy -> VolumeBasedDestroy (body 0x168420 = DestroyActor 0x252cf0) (agent AE)
@@ -1106,7 +1106,7 @@ rva,status,note
 0x57e580,ported,"ArkSettings::GetParameters: 2013 rva 0x53b730 (identical bytes): the function-static ArkSettingsParameters, built on first use"
 0x57e5e0,ported,"ArkSettings::ApplyCurrentSettings: 2013 rva 0x53b790 (identical bytes): Listener->ApplyGameSettings(GetParameters(), ASLI_ApplyCurrentValues)"
 0x57e3c0,ported,ArkSettingsParameters::ArkSettingsParameters: 2013 rva 0x53b450: a transient profile-settings object set to its defaults is read with the system-settings override. Retail constructs UArkProfileSettings; ours finds that class by name (it is still a DishonoredGame shim) and falls back to UOnlinePlayerStorage
-0x57a260,ported,"ArkSettingsParameters::Read: 2013 rva 0x539730: the 52 members read from the profile setting ids (65..130) through UOnlinePlayerStorage's GetProfileSettingValue{Float,Id,Int}; the fullscreen, vsync and speaker-configuration ids are written back from GSystemSettings under the override. The resolution comes from GSystemSettings directly (retail's static PCResolutionSettingProvider is not ported; after its Refresh it holds the same values). Struct layout: the 2012 PDB (208 bytes, 52 four-byte members) - the 2013 member order differs (the crowd manager reads m_bRatShadows at +192 there, +180 in 2012), which does not matter for a native struct we own on both sides"
+0x57a260,ported,UGFxObject::execSetElementObject; gfxuimovie.cpp (agent BE)
 0x3bbd00,ported,"UWorld::Init: 2013 rva 0x3945f0. The world now creates the audio system named by [DishonoredMods] AudioSystemClass (DishonoredGame.DishonoredAudioSystem), calls its Init through the first UAudioSystem virtual and logs DISHONORED(bringup): audio system <class>; the world info gets a UMapInfo of [DishonoredMods] MapInfoClass when the map brought none. Not ported: retail's FArkComponentManager allocation (@712, the component manager is not ported) and the Scene->UpdatePreviewSkyLightColor / precomputed-visibility tail, which our body already had"
 0x270000,ported,"UWorld::SpawnActor: 2013 rva 0x256990. Twelfth parameter FSpawnActorInitFunctor* (2012 PDB: one vtable pointer, sizeof 4), called on the new actor after its transform is set and before ConditionalForceUpdateComponents and the begin-play chain - the hook DishonoredGame's FSpawnActor_TweakObj::DoInit (2013 0x885650) needs to hand a spawned actor its tweak object before PostBeginPlay (agent AC follow-up 5, agent AJ's tweak work). The rest of the body is unchanged"
 0x26c950,ported,UWorld::DestroyActor: 2013 rva 0x252cf0. GEngine->NotifyActorDestroyed(ThisActor) after the owner is cleared and before the actor leaves the level list; UDishonoredEngine's override (2013 0x5fbd40) records the actor for the save game
@@ -1226,7 +1226,7 @@ rva,status,note
 0x4626a0,verified,"ProcessPrimitiveCulling<0> (2012 0x48b330): the per-primitive draw-distance cull is DistanceSquared > FPrimitiveSceneInfoCompact::MaxDrawDistanceSquared (+32), unscaled; +40 is the MassiveLOD distance. Our Min(MaxDrawDistanceSquared * Square(MaxDrawDistanceScale), MaxViewDistanceSquaredOverride) now drops the scale"
 0x462480,verified,"ProcessPrimitiveCulling<1> (2012 0x48b110): same test, inverted (DistanceSquared <= MaxDrawDistanceSquared at +32). No draw-distance scale anywhere in retail"
 0x113e10,verified,"UMaterialInstance::InitResources (2012 0x116a90): retail does the same StaticLoadObject(UMaterialInterface, ""engine-ini:Engine.Engine.DefaultMaterialName"", LOAD_None) when GEngine or GEngine->DefaultMaterial is not up yet, and Resources is 2 entries at +160. The 159 'Failed to load MaterialInterface EngineMaterials.DefaultMaterial' warnings are retail behaviour, not a fault: EngineMaterials is cooked into Startup.upk, which loads after Engine.upk's material instances"
-0x3715a0,verified,"AStaticMeshCollectionActor::Serialize (2012 0x392de0): the ported CachedParentToWorld run is correct; the collection actors' components do reach the scene (2,672 primitives / 2,721 static elements in L_Tower_P, 5,039 / 5,195 in L_Pub_Day_P)"
+0x3715a0,verified,"AStaticMeshCollectionActor::Serialize(FArchive&) - re-checked against the 2013 decompile while chasing this defect, no change needed. Reads one FMatrix per StaticMeshComponents entry into component+336 (a dummy for NULL entries), then Components = StaticMeshComponents and StaticMeshComponents.Empty(). The matrices it reads are what the missing UpdateComponentsInternal was throwing away. 2012 rva 0x392de0"
 0x129990,ported,"FDisPrimTraceMask::MatchesTraceFlags(const AActor*, DWORD) - THE fix for the falling pawn. Arkane replaced UPrimitiveComponent::BlockZeroExtent / BlockNonZeroExtent (retail SDK @280 masks 0x80/0x100, never written by any cooked package) with the 7-bit FDisPrimTraceMask m_CollisionTraceTypes @320, and every collision filter in the primitive octree calls this instead. Disassembly (build/agentAQ_decomp/dis_129990.txt): test 0x0F000000 first, then 0x08000000->bit6, 0x01000000->bit3, 0x04000000->bit5, 0x02000000->bit4; else 0x10000000->bit1, 0x20000000->bit2; else the tracing actor decides (not a pawn -> bit0, pawn that is not the player -> bit1, player -> bit2). Defined in Engine/Src/UnLevAct.cpp, declared in Engine/Inc/UnActorComponent.h"
 0x129000,ported,"FDisPrimTraceMask::SetAllMovementTrace(UBOOL) - sets bits 0..2 (Engine/Inc/UnActorComponent.h, inline). Decompile is a single masked store, bit-identical to the 2012 body 0x12d260"
 0x129030,ported,"FDisPrimTraceMask::SetAllGameplayTrace(UBOOL) - sets bits 3..6 (Engine/Inc/UnActorComponent.h, inline)"
@@ -1436,3 +1436,500 @@ rva,status,note
 0x769720,written,ADishonoredPawn::ApplyTweakChanges_Derived (2013 rva 0x769720): the -distweakanimtree gate agent AJ added is deleted; the tweaks' anim tree is applied unconditionally (agent AV)
 0x7200e0,not_ported,ADishonoredPlayerPawn::PreBeginPlay_AnimStates (2013 rva 0x6e2060): the retail driver that sets the pawn's first anim state from its tweaks; with UDisAnimStateComponent::SetAnimState (2013 0x6cc0d0) and ADishonoredPawn::PreBeginPlay (2012 0x78e220) this is the remaining link to real locomotion - hand-over to AU (agent AV)
 0x0,needed,"UMaterial::FinishDestroy (Engine/Src/Material.cpp:1925) deletes DefaultMaterialInstances[0..2] but the array is FDefaultMaterialInstance*[2] (retail/2012 PDB layout, EngineMaterialClasses.h:3949), so index 2 aliases the next member, INT EditorX, and `delete (FDefaultMaterialInstance*)EditorX` faults. 29 of the 471 cooked packages crash in the garbage-collect purge because of it (EBP chain UMaterial::FinishDestroy+0x56 <- IncrementalPurgeGarbage <- CollectGarbage, read at 0xfffffcfd = EditorX -771). Fix: loop to ARRAY_COUNT(DefaultMaterialInstances) as UMaterial::UMaterial already does for MaterialResources. Not AX's file - coordinator or the renderer package."
+0x35f160,ported,"AStaticMeshCollectionActor::UpdateComponentsInternal(UBOOL) - THE fix for the disjointed map. The cooker merges thousands of StaticMeshActors into collection actors and each merged mesh's world matrix is the CachedParentToWorld (UPrimitiveComponent @336) that Serialize reads after the actor data, not the component's Translation/Rotation/Scale3D, which stay identity. Retail overrides UpdateComponentsInternal to hand each UStaticMeshComponent that matrix (decompile: v8 = v6 + 84 dwords = +336; the ternary against AActor::LocalToWorld() covers non-static-mesh components; bCollisionUpdate ignored and passed on as FALSE). Without the override the base AActor::UpdateComponentsInternal passes the collection's LocalToWorld and ConditionalAttach -> SetParentToWorld overwrites the loaded matrix, collapsing every merged prop onto (0,0,0): 2,915 of 2,926 attached primitives in L_Tower_P, 5,417 of 5,423 in L_Pub_Day_P. Defined in Engine/Src/UnStaticMesh.cpp, declared in Engine/Classes/StaticMeshCollectionActor.uc and Engine/Inc/EngineClasses.h. Carries -disnosmcaxform, which reverts to Super:: so the defect reproduces on a fixed exe. 2012 rva 0x381800, unstaticmesh.cpp:4045"
+0x12aaf0,verified,"UPrimitiveComponent::SetTransformedToWorld() - checked against retail, no change needed. FScaleRotationTranslationMatrix(Scale * Scale3D, Rotation, Translation) * CachedParentToWorld in that order, AbsoluteTranslation zeroes row 3, AbsoluteScale normalises the three axes, AbsoluteRotation replaces each by its length on its own axis; masks 0x2000000/0x4000000/0x8000000 at @280 agree with the retail SDK. The composition was never the defect, its input was. 2012 rva 0x12ef80"
+0x12a090,verified,"UPrimitiveComponent::SetParentToWorld(const FMatrix&) - checked against retail, no change needed. The whole body is CachedParentToWorld = ParentToWorld, which is why an attach with the wrong parent transform destroys a collection actor's serialized matrices. 2012 rva 0x12e4b0"
+0x17f940,verified,"AActor::UpdateComponentsInternal(UBOOL) - checked against retail, no change needed. Passes LocalToWorld() to every component; correct for every actor except the two collection actors, which override it. 2012 rva 0x185fa0"
+0x17aaa0,verified,"UActorComponent::ConditionalAttach(FSceneInterface*, AActor*, const FMatrix&) - checked against retail, no change needed. Clears bNeedsReattach|bNeedsUpdateTransform, sets Scene and Owner, calls the virtual SetParentToWorld unconditionally, then Attach() if IsValidComponent(). 2012 rva 0x1838b0"
+0x17ab00,verified,"UActorComponent::UpdateComponent(FSceneInterface*, AActor*, const FMatrix&, UBOOL) - checked against retail, no change needed, with one signature note: retail takes a nullable const FMatrix* whose NULL means 'the owner's LocalToWorld, or FMatrix::Identity with no owner'; ours takes a reference and no caller in the tree can pass NULL. 2012 rva 0x183910"
+0x169750,verified,"UActorComponent::ConditionalUpdateTransform(const FMatrix&) - checked against retail, no change needed. 2012 rva 0x173400"
+0x16d7e0,verified,"AActor::LocalToWorld() const - the matrix is term for term identical to ours (GMath.TrigFLOAT lookups, DrawScale3D*DrawScale, PrePivot folded into row 3). Retail additionally caches it in CachedLocalToWorld behind an epsilon compare over CachedLocation/CachedRotation/CachedDrawScale3D/CachedPrePivot/CachedDrawScale and returns a reference; we recompute and return by value. Pure speed difference, a worthwhile follow-up. 2012 rva 0x1774d0"
+0x25e580,verified,"ULevel::IncrementalUpdateComponents(INT) - checked against retail, no change needed; ClearComponents() + ConditionalUpdateComponents() per actor with the early bail-out on collection actors. 2012 rva 0x276bf0"
+0xdf7374,verified,retail 2013 gfxVersion string: GFx 3.3.89. Fixes the runtime version the reconstruction targets (middleware.md 1)
+0x9b4030,verified,"retail 2013 GFxLoader::CreateMovie (2012 0x9baf70, byte-identical). GFxLoader declared in GFx3Gen.h: sizeof 16, base GFxStateBag, 6 vtable slots, CheckTagLoader at slot 5"
+0x9b3fe0,verified,"retail 2013 GFxLoader::GetMovieInfo (2012 0x9baf20, byte-identical). Its GFxMovieInfo out-parameter is declared at the PDB layout (sizeof 36, ExporterVersion @28 as a WORD) and the values the parser reads out of a cooked payload match it"
+0x58d510,ported,FGFxExternalInterface::Callback (2012 0x5e4880); gfxuiexternalinterface.cpp (agent BE)
+0x572c30,ported,"FGFxRendererImpl::ConvertFromUI (2012 0x5b7710, ratio 1.000) - the one seam body that is pure logic: flattens a GRenderer::FillTexture into the render-thread FFillTextureInfo. gfxuirenderer.cpp"
+0x572e00,ported,"FGFxRenderer::GetRenderCaps (2012 0x5b78e0) - reports the caps the player branches on before it calls any drawing slot. gfxuirenderer.cpp, real values"
+0x5a1f30,bringup,"FGFxRenderer::FGFxRenderer (2012 0x5e1bf0) - constructor; the 21 members of the retail 892-byte layout that are not RHI references are reproduced at their PDB offsets, the RHI ones are not (gfxuirenderer.h explains why)"
+0x5800d0,bringup,FGFxRenderer::CreateTexture (2012 0x5c47d0) - returns a real FGFxTexture; the texture has no engine resource until the image seam is live
+0x58f120,bringup,FGFxRenderer::CreateRenderTarget (2012 0x5cf8d0) - returns a real FGFxRenderTarget
+0x59dd90,bringup,FGFxRenderer::BeginDisplay (2012 0x5df080) - the viewport matrix is computed for real because the player reads it back through SetMatrix; nothing is drawn
+0x593c40,bringup,FGFxRenderer::EndDisplay (2012 0x5d3e40)
+0x58ac30,bringup,FGFxRenderer::SetMatrix (2012 0x5cca20) - stores CurrentMatrix
+0x599f90,bringup,FGFxRenderer::SetVertexData (2012 0x5d9ca0)
+0x599fc0,bringup,FGFxRenderer::SetIndexData (2012 0x5d9cd0)
+0x5a1620,bringup,FGFxRenderer::DrawIndexedTriList (2012 0x5e2160) - counts triangles into GRenderer::Stats so a run can prove the slot was reached
+0x5a18c0,bringup,FGFxRenderer::DrawBitmaps (2012 0x5e2400)
+0x59db10,bringup,FGFxRenderer::ReleaseResources (2012 0x5dec80)
+0x598780,bringup,FGFxTexture::InitTexture(GImageBase*) (2012 0x5d8300)
+0x580810,bringup,"FGFxTexture::InitTexture(UTexture*) (2012 0x5c4f10) - the entry point the tag-1009 external-image substitution lands on; records the engine texture, no RHI yet"
+0x5775b0,bringup,"FGFxTexture::Bind (2012 0x5bbed0) - needs the GFx pixel shaders, which are package BD's"
+0x58d240,ported,FGFxRenderTarget::FGFxRenderTarget (2012 0x5ce5b0) - constructor at the PDB layout (sizeof 36)
+0x577890,bringup,"FGFxRenderTarget::InitRenderTarget(GTexture*,GTexture*,GTexture*) (2012 0x5bc1b0)"
+0x58d2f0,bringup,FGFxRenderTarget::InitRenderTarget(NativeRenderTarget&) (2012 0x5ce660)
+0x587340,ported,"FGFxFile::FGFxFile (2012 0x5caeb0) - the memory-file constructor, including the 64-byte inline name buffer the PDB layout has"
+0x572210,ported,FGFxFile::Read (2012 0x5b6d20) - real: a bounded memcpy out of the caller's buffer
+0x5722a0,ported,"FGFxFile::Seek (2012 0x5b6db0) - real, all three origins"
+0x58d780,bringup,FGFxFileOpener::OpenFile (2012 0x5dda60) - resolving a url to a package's bytes needs UObject; package BE
+0x58d9a0,ported,"FGFxFileOpener::GetFileModifyTime (2012 0x5ddc80) - cooked content never changes under us, so retail's 0 stands"
+0x585c00,ported,"FGFxImageInfo::FGFxImageInfo (2012 0x5c9a70) - constructor at the PDB layout (sizeof 40, GString FileName @36)"
+0x58e540,bringup,FGFxImageInfo::GetTexture (2012 0x5cf330) - returns the cached GTexture; the substitution that fills it is package BE's
+0x575070,ported,FGFxImageInfo::Recreate (2012 0x5b9a40) - drops the texture so the next GetTexture rebuilds it
+0x5750b0,bringup,FGFxImageInfo::GetExternalBytes (2012 0x5b9a80) - reports 0 until the engine texture is attached
+0x586020,bringup,FGFxImageLoader::LoadImageW (2012 0x5c9e90) - the tag-1009 export name arrives here; needs UObject
+0x585d70,bringup,"FGFxImageCreator::CreateImage (2012 0x5c9be0) - same, from the GFxImageCreateInfo the runtime builds"
+0x574d90,ported,FGFxAllocator::Alloc (2012 0x5b98c0) - over the CRT rather than appMalloc so the seam links without the engine; keeps m_TotalAlloc/m_FrameAllocPeak
+0x574dc0,ported,FGFxAllocator::Free (2012 0x5b98f0)
+0x9a57f0,ported,"GASStringNode::Release(void) (2012 0x9acaf0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9a5810,ported,"GASNumberUtil::IsNaN(double) (2012 0x9acb10, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9a5850,ported,"GASNumberUtil::IsPOSITIVE_INFINITY(double) (2012 0x9acb50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9a58c0,deferred,"GASValue::SetUndefined(void) (2012 0x9acbc0, 2012->2013 ratio 1.000) - named as remaining in GFxAS2.h,GFxAS2Value.cpp"
+0x9a58d0,deferred,"GASValue::SetNull(void) (2012 0x9acbd0, 2012->2013 ratio 1.000) - named as remaining in GFxAS2.h,GFxAS2Value.cpp"
+0x9a58e0,deferred,"GASValue::SetString(class GASString const &) (2012 0x9acbe0, 2012->2013 ratio 1.000) - named as remaining in GFxAS2.h,GFxAS2Value.cpp"
+0x9a5900,deferred,"GASValue::SetNumber(double) (2012 0x9acc00, 2012->2013 ratio 1.000) - named as remaining in GFxAS2.h,GFxAS2Value.cpp"
+0x9a5920,deferred,"GASValue::SetBool(bool) (2012 0x9acc20, 2012->2013 ratio 1.000) - named as remaining in GFxAS2.h,GFxAS2Value.cpp"
+0x9a5a30,ported,"GFxValue::ObjectInterface::SetMatrix3D(void *, class GMatrix3D const &) (2012 0x9acd30, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a5d50,ported,"GFxValue::ObjectInterface::GotoAndPlay(void *, char const *, bool) (2012 0x9ad050, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a5dd0,ported,"GFxValue::ObjectInterface::GotoAndPlay(void *, unsigned int, bool) (2012 0x9ad0d0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a5e30,ported,"GFxValue::ObjectInterface::GetCxform(void *, class GRenderer::Cxform *)const (2012 0x9ad130, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a5e60,ported,"GFxValue::ObjectInterface::SetCxform(void *, class GRenderer::Cxform const &) (2012 0x9ad160, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a6020,ported,"GFxValue::DisplayInfo::Set(double, double, double, double, double, double, bool, double, double, double, double) (2012 0x9ad320, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a6290,ported,"GFxValue::ObjectInterface::SetMember(void *, char const *, class GFxValue const &, bool) (2012 0x9ad590, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a6350,ported,"GFxValue::ObjectInterface::GetArraySize(void *)const (2012 0x9ad650, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h,GFxPlayerRoot.cpp"
+0x9a6370,ported,"GFxValue::ObjectInterface::SetElement(void *, unsigned int, class GFxValue const &) (2012 0x9ad670, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a63c0,ported,"GFxValue::ObjectInterface::PushBack(void *, class GFxValue const &) (2012 0x9ad6c0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a6410,ported,"GFxValue::ObjectInterface::GetDisplayMatrix(void *, class GMatrix2D *)const (2012 0x9ad710, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a64a0,ported,"GFxValue::ObjectInterface::SetDisplayMatrix(void *, class GMatrix2D const &) (2012 0x9ad7a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a6600,ported,"GFxValue::ObjectInterface::GetDisplayInfo(void *, class GFxValue::DisplayInfo *)const (2012 0x9ad900, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a6820,ported,"GFxValue::ObjectInterface::SetDisplayInfo(void *, class GFxValue::DisplayInfo const &) (2012 0x9adb20, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a7390,ported,"GASObjectInterface::GetConstMemberRaw(class GASStringContext *, char const *, class GASValue *) (2012 0x9ae5e0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9a7680,ported,"GFxValue::ObjectInterface::ObjectAddRef(class GFxValue *, void *) (2012 0x9ae650, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a76f0,ported,"GFxValue::ObjectInterface::VisitMembers(void *, class GFxValue::ObjectInterface::ObjVisitor *, bool)const (2012 0x9ae6c0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a7d70,ported,"GFxValue::ObjectInterface::ObjectRelease(class GFxValue *, void *) (2012 0x9aed40, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp,Tools/GFx3Run.cpp"
+0x9a7f80,ported,"GASObject::Set__proto__(class GASStringContext *, class GASObject *) (2012 0x9aef50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9a8160,ported,"GASObject::DoesImplement(class GASEnvironment *, class GASObject const *)const (2012 0x9af130, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9a8170,ported,"GASFunctionObject::GetObjectType(void)const (2012 0x9af140, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h,GFxAS2Value.cpp"
+0x9a8200,ported,"GASObjectInterface::Get__constructor__(class GASStringContext *) (2012 0x9af1e0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp"
+0x9a8500,ported,"GFxMovieRoot::CreateString(class GFxValue *, char const *) (2012 0x9af4e0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9a8570,ported,"GFxMovieRoot::CreateArray(class GFxValue *) (2012 0x9af550, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9a85e0,ported,"GFxMovieRoot::CreateFunction(class GFxValue *, class GFxFunctionHandler *, void *) (2012 0x9af5c0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9a86c0,ported,"GFxValue::ObjectInterface::CreateEmptyMovieClip(void *, class GFxValue *, char const *, int) (2012 0x9af6a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a8850,ported,"GFxValue::ObjectInterface::AttachMovie(void *, class GFxValue *, char const *, char const *, int, class GFxValue const *) (2012 0x9af830, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a8bd0,ported,"GFxValue::ObjectInterface::Invoke(void *, class GFxValue *, char const *, class GFxValue const *, unsigned int, bool) (2012 0x9afbb0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a8dd0,ported,"GFxValue::ObjectInterface::SetText(void *, char const *, bool) (2012 0x9afdb0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a8f00,ported,"GFxValue::ObjectInterface::SetText(void *, wchar_t const *, bool) (2012 0x9afee0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a9030,ported,"GFxMovieRoot::CreateStringW(class GFxValue *, wchar_t const *) (2012 0x9b0010, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9a90c0,ported,"GFxMovieRoot::CreateObject(class GFxValue *, char const *, class GFxValue const *, unsigned int) (2012 0x9b00a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9a9470,ported,"GFxValue::ObjectInterface::GetMember(void *, char const *, class GFxValue *, bool)const (2012 0x9b0450, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Object.cpp,GFxAS2Object.h,GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9a95e0,ported,"GFxValue::ObjectInterface::GetElement(void *, unsigned int, class GFxValue *)const (2012 0x9b05c0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9a9660,ported,"GFxValue::ObjectInterface::GetText(void *, class GFxValue *, bool)const (2012 0x9b0640, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0x9b3eb0,ported,"GFxLoaderImpl::GetTagLoader(unsigned int, void (__stdcall **)(class GFxLoadProcess *, struct GFxTagInfo const &)) (2012 0x9badf0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa58140,ported,"GASMovieClipLoader::GetObjectType(void)const (2012 0x9c8770, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9bfe20,ported,"GASString::GetLength(void)const (2012 0x9c9580, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9bffd0,ported,"GASStringManager::AllocateStringNodes(void) (2012 0x9c9730, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9c00e0,ported,"GASStringManager::AllocTextBuffer(char const *, unsigned int) (2012 0x9c9840, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9c0140,ported,"GASStringManager::FreeStringNode(struct GASStringNode *) (2012 0x9c98a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c05c0,ported,"GASStringNode::ReleaseNode(void) (2012 0x9c9d20, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c06f0,ported,"GASStringManager::CreateStringNode(char const *, unsigned int) (2012 0x9c9e50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c07d0,ported,"GASStringManager::CreateStringNode(char const *) (2012 0x9c9f30, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c0d50,ported,"GASStringNode::ResolveLowercase_Impl(void) (2012 0x9ca4b0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c0e20,ported,"GASStringManager::GASStringManager(class GMemoryHeap *) (2012 0x9ca580, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c0ed0,ported,"GASStringManager::~GASStringManager(void) (2012 0x9ca630, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c1110,ported,"GASString::operator<(class GASString const &)const (2012 0x9ca870, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c1160,ported,"GASString::operator>(class GASString const &)const (2012 0x9ca8c0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c11e0,ported,"GASValue::IsFunction(void)const (2012 0x9ca940, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9c1200,ported,"GASValue::IsUndefined(void)const (2012 0x9ca960, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9c1220,ported,"GASValue::IsNumber(void)const (2012 0x9ca980, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9c1240,ported,"GASValue::IsPrimitive(void)const (2012 0x9ca9a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h"
+0x9c1510,ported,"GASValue::ToBool(class GASEnvironment const *)const (2012 0x9cac70, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c17f0,ported,"GASValue::DropRefs(void) (2012 0x9caf50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c2080,ported,"GASValue::SetAsCharacter(class GFxASCharacter *) (2012 0x9cb7e0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp,GFxPlayer.h"
+0x9c20d0,ported,"GASValue::SetAsFunction(class GASFunctionRefBase const &) (2012 0x9cb830, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c23b0,ported,"GASValue::ToObject(class GASEnvironment const *)const (2012 0x9cbb10, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c2500,ported,"GASValue::ToObjectInterface(class GASEnvironment const *)const (2012 0x9cbc60, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c25d0,ported,"GASValue::SetAsObject(class GASObject *) (2012 0x9cbd30, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c26f0,ported,"GASValue::ToStringImpl(class GASEnvironment *, int, bool)const (2012 0x9cbe50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Runtime.h,GFxAS2Value.cpp"
+0x9c2b40,ported,"GASValue::ToNumber(class GASEnvironment *)const (2012 0x9cc2a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c2da0,ported,"GASValue::ToInt32(class GASEnvironment *)const (2012 0x9cc500, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c2e90,ported,"GASValue::ToUInt32(class GASEnvironment *)const (2012 0x9cc5f0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c3010,ported,"GASValue::Div(class GASEnvironment *, class GASValue const &) (2012 0x9cc770, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c3120,ported,"GASValue::ToPrimitive(class GASEnvironment *, enum GASValue::Hint)const (2012 0x9cc880, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c3510,ported,"GASValue::Add(class GASEnvironment *, class GASValue const &) (2012 0x9ccc70, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c37e0,ported,"GASValue::IsEqual(class GASEnvironment *, class GASValue const &)const (2012 0x9ccf40, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c3cc0,ported,"GASValue::Compare(class GASEnvironment *, class GASValue const &, int)const (2012 0x9cd420, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9c4c40,deferred,"GFxCharacter::CreateMatrix3D(class GMatrix3DNewable * *) (2012 0x9ce370, 2012->2013 ratio 1.000) - named as remaining in GFxPlayerRoot.cpp"
+0x9c8290,ported,"GFxASCharacter::CreateCharacterHandle(void)const (2012 0x9d1a40, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9c8b30,ported,"GFxASCharacter::ExecuteEvent(class GFxEventId const &) (2012 0x9d22e0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cbc90,ported,"GFxDisplayList::GetLargestDepthInUse(void)const (2012 0x9d5430, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cbcb0,ported,"GFxDisplayList::GetCharacterByName(class GASStringContext *, class GASString const &) (2012 0x9d5450, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cbed0,ported,"GFxDisplayList::MarkAllEntriesForRemoval(unsigned int) (2012 0x9d5670, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cc2a0,ported,"GFxDisplayList::GetDisplayIndex(int) (2012 0x9d5a40, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cc2e0,ported,"GFxDisplayList::GetCharacterAtDepth(int, bool *) (2012 0x9d5a80, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cc410,ported,"GFxDisplayList::SwapDepths(int, int, unsigned int) (2012 0x9d5c10, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Lib.cpp"
+0x9cc630,ported,"GFxDisplayList::Clear(void) (2012 0x9d5e30, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerSprite.cpp"
+0x9cc7d0,ported,"GFxDisplayList::RemoveDisplayObject(int, class GFxResourceId) (2012 0x9d5fd0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cc870,ported,"GFxDisplayList::UnloadAll(void) (2012 0x9d6070, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerSprite.cpp"
+0x9cc8a0,ported,"GFxDisplayList::UnloadMarkedObjects(void) (2012 0x9d60a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cc8f0,ported,"GFxDisplayList::AddDisplayObject(class GFxCharPosInfo const &, class GFxCharacter *, unsigned long) (2012 0x9d60f0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cca50,ported,"GFxDisplayList::MoveDisplayObject(class GFxCharPosInfo const &) (2012 0x9d6250, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9ccb50,ported,"GFxDisplayList::ReplaceDisplayObject(class GFxCharPosInfo const &, class GFxCharacter *) (2012 0x9d6350, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9cd5d0,ported,"GASObjectInterface::SetConstMemberRaw(class GASStringContext *, char const *, class GASValue const &, class GASPropFlags const &) (2012 0x9d6dd0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d1090,ported,"GASObjectInterface::ToASCharacter(void) (2012 0x9da8d0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h,GFxPlayer.h"
+0x9d10b0,ported,"GASObjectInterface::ToASObject(void) (2012 0x9da8f0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9d10d0,ported,"GASObjectInterface::ToSprite(void) (2012 0x9da910, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9d10f0,ported,"GASObject::GetValue(void)const (2012 0x9da930, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9d1430,ported,"GASObjectInterface::FindOwner(class GASStringContext *, class GASString const &) (2012 0x9dac70, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d1470,ported,"GASObject::InstanceOf(class GASEnvironment *, class GASObject const *, bool)const (2012 0x9dacb0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp"
+0x9d1f90,ported,"GASObject::VisitMembers(class GASStringContext *, struct GASObjectInterface::MemberVisitor *, unsigned int, class GASObjectInterface const *)const (2012 0x9db7e0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d2420,ported,"GASObjectInterface::GASObjectInterface(void) (2012 0x9dbc70, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9d2450,ported,"GASObjectInterface::~GASObjectInterface(void) (2012 0x9dbc90, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9d24b0,ported,"GASObjectInterface::ToFunction(void) (2012 0x9dbcf0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9d2f00,ported,"GASObject::GASObject(class GASStringContext *) (2012 0x9dc740, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d2f70,ported,"GASObject::GASObject(class GASStringContext *, class GASObject *) (2012 0x9dc7b0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d3050,ported,"GASObject::GetMemberRaw(class GASStringContext *, class GASString const &, class GASValue *) (2012 0x9dc890, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d32f0,ported,"GASObject::HasMember(class GASStringContext *, class GASString const &, bool) (2012 0x9dcb30, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp"
+0x9d39e0,ported,"GASObject::DeleteMember(class GASStringContext *, class GASString const &) (2012 0x9dd280, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d3e20,ported,"GASObject::~GASObject(void) (2012 0x9dd6c0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d4580,ported,"GASObject::SetMember(class GASEnvironment *, class GASString const &, class GASValue const &, class GASPropFlags const &) (2012 0x9dde20, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d4920,ported,"GASObject::SetMemberRaw(class GASStringContext *, class GASString const &, class GASValue const &, class GASPropFlags const &) (2012 0x9de1c0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d4bb0,ported,"GASObject::SetMemberFlags(class GASStringContext *, class GASString const &, unsigned char) (2012 0x9de450, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp"
+0x9d52c0,ported,"GASString::Compare_CaseInsensitive_Resolved(class GASString const &)const (2012 0x9deb60, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d52f0,ported,"GASValue::TypesMatch(class GASValue const &)const (2012 0x9deb90, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d5360,ported,"GASValue::Sub(class GASEnvironment *, class GASValue const &) (2012 0x9dec00, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d53b0,ported,"GASValue::Mul(class GASEnvironment *, class GASValue const &) (2012 0x9dec50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d5400,ported,"GASValue::And(class GASEnvironment *, class GASValue const &) (2012 0x9deca0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d5440,ported,"GASValue::Or(class GASEnvironment *, class GASValue const &) (2012 0x9dece0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d5480,ported,"GASValue::Xor(class GASEnvironment *, class GASValue const &) (2012 0x9ded20, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d54c0,ported,"GASValue::Shl(class GASEnvironment *, class GASValue const &) (2012 0x9ded60, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d5500,ported,"GASValue::Asr(class GASEnvironment *, class GASValue const &) (2012 0x9deda0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d5540,ported,"GASValue::Lsr(class GASEnvironment *, class GASValue const &) (2012 0x9dede0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9d55e0,ported,"GASExecuteTag::ExecuteWithPriority(class GFxSprite *, enum GFxActionPriority::Priority) (2012 0x9dee80, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h"
+0x9d5e10,ported,"GASEnvironment::GetMovieRoot(void)const (2012 0x9df670, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9d5e20,ported,"GASEnvironment::IsPath(class GASString const &) (2012 0x9df680, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9d68d0,ported,"GASEnvironment::CheckGlobalAndLevels(struct GASEnvironment::GetVarParams const &)const (2012 0x9e0100, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp"
+0x9d6b40,ported,"GASEnvironment::GetTopLocalFrame(int)const (2012 0x9e0370, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9d6b60,ported,"GASEnvironment::ParsePath(class GASStringContext *, class GASString const &, class GASString *, class GASString *) (2012 0x9e0390, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9d6ff0,ported,"GASObjectInterface::SetConstMemberRaw(class GASStringContext *, char const *, class GASValue const &) (2012 0x9e0880, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0x9d7460,ported,"GASWithStackEntry::GASWithStackEntry(class GASObject *, int) (2012 0x9e0d40, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.h"
+0x9d7550,ported,"GASEnvironment::LocalRegisterPtr(unsigned int) (2012 0x9e0e30, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9d7590,ported,"GASEnvironment::FindTarget(class GASString const &, unsigned int)const (2012 0x9e0e70, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9d8070,ported,"GASDoAction::Read(class GFxLoadProcess *) (2012 0x9e18d0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9d8140,ported,"GASActionBuffer::GASActionBuffer(class GASStringContext *, class GASActionBufferData *) (2012 0x9e19a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp,GFxAS2Runtime.h"
+0x9da9f0,ported,"GASDoAction::Execute(class GFxSprite *) (2012 0x9e4240, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9daa60,ported,"GASDoAction::ExecuteWithPriority(class GFxSprite *, enum GFxActionPriority::Priority) (2012 0x9e42b0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9daae0,ported,"GASDoInitAction::Execute(class GFxSprite *) (2012 0x9e4330, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9dab50,ported,"GFx_DoActionLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0x9e43a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0x9dabd0,ported,"GFx_DoInitActionLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0x9e4420, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9dad40,ported,"GASActionBuffer::ProcessDeclDict(class GASStringContext *, unsigned int, unsigned int, class GFxActionLogger &) (2012 0x9e4590, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp,GFxAS2Runtime.h"
+0x9db0b0,ported,"GASEnvironment::LogScriptError(char const *, ...)const (2012 0x9e4900, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9db1e0,ported,"GASEnvironment::LogScriptWarning(char const *, ...)const (2012 0x9e4a30, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9db400,ported,"GASEnvironment::FindTargetByValue(class GASValue const &) (2012 0x9e4c50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9db500,ported,"GASEnvironment::PrimitiveToTempObject(int) (2012 0x9e4d50, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0x9dc0a0,ported,"GASExecutionContext::WaitForFrameOpCode(class GASActionBuffer *, int) (2012 0x9e58f0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9dc1c0,ported,"GASEnvironment::GetMember(class GASObjectInterface *, class GASString const &, class GASValue *) (2012 0x9e5a10, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9dc700,ported,"GASExecutionContext::StartDragOpCode(void) (2012 0x9e5ef0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9dc930,ported,"GASExecutionContext::CastObjectOpCode(void) (2012 0x9e6120, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9dcaa0,ported,"GASExecutionContext::ImplementsOpCode(void) (2012 0x9e6290, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9dccb0,ported,"GASExecutionContext::ExtendsOpCode(void) (2012 0x9e64a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9dceb0,ported,"GASExecutionContext::InstanceOfOpCode(void) (2012 0x9e66a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9dd3f0,ported,"GASEnvironment::FindLocal(class GASString const &)const (2012 0x9e6be0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9ddfa0,ported,"GASEnvironment::SetVariableRaw(class GASString const &, class GASValue const &, class GArrayLH_POD<class GASWithStackEntry, 323, struct GArrayDefaultPolicy> const *) (2012 0x9e7790, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9de090,ported,"GASEnvironment::CreateNewLocalFrame(void) (2012 0x9e7880, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9de870,ported,"GASExecutionContext::Function1OpCode(class GASActionBuffer *) (2012 0x9e8060, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9deca0,ported,"GASExecutionContext::Function2OpCode(class GASActionBuffer *) (2012 0x9e8490, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9df120,ported,"GASEnvironment::AddLocal(class GASString const &, class GASValue const &) (2012 0x9e8910, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9df180,ported,"GASEnvironment::DeclareLocal(class GASString const &) (2012 0x9e8970, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9df1d0,ported,"GASEnvironment::OperatorNew(class GASFunctionRef const &, int, int) (2012 0x9e89c0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9df960,ported,"GASEnvironment::SetLocal(class GASString const &, class GASValue const &) (2012 0x9e9150, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9df9b0,ported,"GASEnvironment::PrimitiveToTempObject(class GASValue const &) (2012 0x9e91a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h,GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9dfa80,ported,"GASEnvironment::GetVariableRaw(struct GASEnvironment::GetVarParams const &)const (2012 0x9e9270, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9e0570,ported,"GASEnvironment::GetVariable(class GASString const &, class GASValue *, class GArrayLH_POD<class GASWithStackEntry, 323, struct GArrayDefaultPolicy> const *, class GFxASCharacter * *, class GASValue *, unsigned int) (2012 0x9e9d60, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9e0870,ported,"GASEnvironment::SetVariable(class GASString const &, class GASValue const &, class GArrayLH_POD<class GASWithStackEntry, 323, struct GArrayDefaultPolicy> const *, bool) (2012 0x9ea060, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9e0e20,ported,"GASExecutionContext::SetTargetOpCode(void) (2012 0x9ea610, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9e0fb0,ported,"GASExecutionContext::EnumerateOpCode(int) (2012 0x9ea7a0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp"
+0x9e1110,ported,"GASActionBuffer::Execute(class GASEnvironment *, int, int, class GASValue *, class GArrayLH_POD<class GASWithStackEntry, 323, struct GArrayDefaultPolicy> const *, enum GASActionBuffer::ExecuteType) (2012 0x9ea900, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp,GFxAS2Runtime.h,Tools/GFx3Run.cpp"
+0x9e49c0,ported,"GASEnvironment::CheckExceptions(class GASActionBuffer *, int, int *, class GASValue *, class GArrayLH_POD<class GASWithStackEntry, 323, struct GArrayDefaultPolicy> const *, enum GASActionBuffer::ExecuteType) (2012 0x9ee1b0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.h"
+0x9e7270,ported,"GASActionBuffer::Execute(class GASEnvironment *) (2012 0x9f0a60, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Interp.cpp,GFxAS2Runtime.h"
+0x9e8600,ported,"GASEnvironment::AddLocalRegisters(unsigned int) (2012 0x9f1de0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9e8640,ported,"GASEnvironment::DropLocalRegisters(unsigned int) (2012 0x9f1e20, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9e9e30,ported,"GASString::operator==(char const *)const (2012 0x9f3660, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxAS2Value.cpp"
+0x9ea1b0,ported,"GFxSprite::ExecuteBuffer(class GASActionBuffer *) (2012 0x9f39f0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9eace0,ported,"GFxSprite::IncrementFrameAndCheckForLoop(void) (2012 0x9f4500, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9eae20,ported,"GFxSprite::ExecuteInitActionFrameTags(unsigned int) (2012 0x9f4640, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9eb080,ported,"GFxSprite::MoveDisplayObject(class GFxCharPosInfo const &) (2012 0x9f48a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9eb150,ported,"GFxSprite::RemoveDisplayObject(int, class GFxResourceId) (2012 0x9f4970, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9ec800,ported,"GFxSprite::ExecuteFrameTags(unsigned int) (2012 0x9f60a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9ec890,ported,"GFxSprite::GotoLabeledFrame(char const *, int) (2012 0x9f6130, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9eca60,ported,"GFxSprite::ReplaceDisplayObject(class GFxCharPosInfo const &, class GASString const &) (2012 0x9f6300, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9ecb10,ported,"GFxSprite::CallFrameActions(unsigned int) (2012 0x9f63b0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2.h,GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9ef2c0,ported,"GFxSprite::ExecuteFrame0Events(void) (2012 0x9f8ac0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9efbf0,ported,"GFxSprite::AdvanceFrame(bool, float) (2012 0x9f93f0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9f0a40,ported,"GFxSpriteDef::Read(class GFxLoadProcess *, class GFxResourceId) (2012 0x9fa170, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9f0ca0,ported,"GFxSpriteDef::InitEmptyClipDef(void) (2012 0x9fa3d0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerSprite.cpp"
+0x9f4cd0,ported,"GFxSpriteDef::GetLabeledFrame(char const *, unsigned int *, bool) (2012 0x9fe2d0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9f50d0,ported,"GASEnvironment::GASEnvironment(void) (2012 0x9fe6c0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9f5160,ported,"GASEnvironment::~GASEnvironment(void) (2012 0x9fe750, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Runtime.cpp,GFxAS2Runtime.h"
+0x9f5830,ported,"GFxSprite::AddDisplayObject(class GFxCharPosInfo const &, class GASString const &, class GArrayLH<class GFxSwfEvent *, 260, struct GArrayDefaultPolicy> const *, class GASObjectInterface const *, unsigned int, unsigned long, struct GFxCharacterCreateInfo *, class GFxASCharacter *) (2012 0x9fee10, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9f6db0,ported,"GFxSpriteDef::CreateCharacterInstance(class GFxASCharacter *, class GFxResourceId, class GFxMovieDefImpl *) (2012 0xa00390, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9f6e10,ported,"GFxSpriteDef::AddFrameName(class GString const &, class GFxLog *) (2012 0xa003f0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9f7cc0,ported,"GFxSprite::GotoFrame(unsigned int) (2012 0xa012a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerSprite.cpp"
+0x9f8110,ported,"GFxMovieRoot::GetCurrentFrame(void)const (2012 0xa016f0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9f8180,ported,"GFxMovieRoot::GotoFrame(unsigned int) (2012 0xa01760, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9f83f0,ported,"GFxPlaceObject::Unpack(struct GFxPlaceObjectBase::UnpackedData &) (2012 0xa019d0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0x9f87b0,ported,"GFxRemoveObject2::Execute(class GFxSprite *) (2012 0xa01d90, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0x9fb540,ported,"GFxMovieRoot::GotoLabeledFrame(char const *, int) (2012 0xa04ad0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9fe550,ported,"GFxMovieRoot::Display(void) (2012 0xa07aa0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0x9feb40,ported,"GFxMovieRoot::DisplayPrePass(void) (2012 0xa08090, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h"
+0x9ff580,ported,"GFxMovieRoot::CreateNewInstanceName(void) (2012 0xa08b50, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerSprite.cpp"
+0xa024e0,ported,"GFxPlaceObject2::UnpackBase(struct GFxPlaceObjectBase::UnpackedData &, unsigned char) (2012 0xa0bab0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa03e60,ported,"GFxPlaceObject2::Unpack(struct GFxPlaceObjectBase::UnpackedData &) (2012 0xa0d430, 2012->2013 ratio 0.890) - behaviour ported in GFxPlayer.h"
+0xa03e70,ported,"GFxPlaceObject2::ExecuteBase(class GFxSprite *, unsigned char) (2012 0xa0d440, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa06cf0,ported,"GFxMovieRoot::GetVisibleFrameRect(void)const (2012 0xa102a0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0xa08280,ported,"GFxMovieRoot::Advance(float, unsigned int) (2012 0xa11830, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerRoot.cpp"
+0xa107b0,ported,"GFxStream::CloseTag(void) (2012 0xa19de0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h"
+0xa110e0,ported,"GFxStream::OpenTag(struct GFxTagInfo *) (2012 0xa1a710, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h"
+0xa122e0,ported,"GFxMovieDefImpl::CreateInstance(struct GFxMovieDef::MemoryParams const &, bool) (2012 0xa1b960, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa12380,ported,"GFxMovieDefImpl::CreateInstance(class GFxMovieDef::MemoryContext *, bool) (2012 0xa1ba00, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa1d4c0,ported,"GASTextFieldObject::GetObjectType(void)const (2012 0xa26c80, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xa74410,ported,"GASObject::GetMember(class GASEnvironment *, class GASString const &, class GASValue *) (2012 0xa26fa0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.cpp,GFxAS2Object.h"
+0xa2b740,ported,"GFx_FrameLabelLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa351b0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2bf80,ported,"GFx_SpriteLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa35a00, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2c170,ported,"GFx_ExportLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa35bf0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2d250,ported,"GFx_SetBackgroundColorLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa36cd0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa2de90,ported,"GFx_PlaceObjectLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa37910, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2df30,ported,"GFx_PlaceObject2Loader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa379b0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h,GFxPlayerData.cpp"
+0xa2e040,ported,"GFx_PlaceObject3Loader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa37ac0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2e110,ported,"GFx_RemoveObjectLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa37b90, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2e180,ported,"GFx_RemoveObject2Loader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa37c00, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa2eb70,ported,"GFx_ImportLoader(class GFxLoadProcess *, struct GFxTagInfo const &) (2012 0xa385f0, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerData.cpp"
+0xa59bf0,deferred,"GASValue::SetInt(int) (2012 0xa65810, 2012->2013 ratio 1.000) - named as remaining in GFxAS2.h,GFxAS2Value.cpp"
+0xa5ad10,ported,"GFx_GenerateMouseButtonEvents(unsigned int, class GFxMouseState *, unsigned int) (2012 0xa66a90, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayerRoot.cpp"
+0xa60140,ported,"GASLoadVarsObject::GetObjectType(void)const (2012 0xa6a9f0, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xa66fd0,ported,"GASTextFormatObject::GetObjectType(void)const (2012 0xa71950, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xa6c230,ported,"GASDate::GetObjectType(void)const (2012 0xa76b80, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xa7a7f0,ported,"GASBitmapData::GetObjectType(void)const (2012 0xa84950, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xa0f5c0,ported,"GASDoAction::IsActionTag(void)const (2012 0xa89630, 2012->2013 ratio 1.000) - behaviour ported in GFxPlayer.h"
+0xa80340,ported,"GASKeyObject::GetObjectType(void)const (2012 0xa8a350, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xaa4280,ported,"GASStyleSheetObject::GetObjectType(void)const (2012 0xaadf20, 2012->2013 ratio 1.000) - behaviour ported in GFxAS2Object.h"
+0xb85120,written,"FGFxFilterPixelShader<FS2_*> 26 types declared (GFxUI/Src/gfxuishaders.cpp, 12 parameters, GFxFilterPixelShader/FBox*); all 26 cooked records load"
+0xb857a0,written,"FGFxPixelShader<GFx_PS_*> 17 types declared (4 textures + 12 constants, GFxPixelShader/Main_*); all 17 cooked records load"
+0xb85be0,written,"FGFxVertexShader<GFx_VS_*> 7 types declared (transform + 2 texture matrices, GFxVertexShader/Main*); all 7 cooked records load"
+0xb7f640,written,"TDisFogVertexShader<FDisFogPolicy<N,M>> 15 types (FogRendering.cpp, ScreenPositionScaleBias + ScreenToWorld, DisFogVertexShader/Main, 797/23)"
+0xb7fa00,written,"TDisFogPixelShader<FDisFogPolicy<N,M>> 15 types (scene textures + 8 layer constants + mask + bloom parts + 4 LUTs + sun, 20 parameters, 797/23)"
+0xb7f600,written,"FHeightFogMaskVertexShader (HeightFogVertexShader/MaskMain, 786/15)"
+0xb7fdc0,written,"FHeightFogMaskPixelShader< 0 > (HeightFogCubeMapPixelShader/MaskMain, 797/19; the cooked type name carries the spaces)"
+0xb80a10,written,"TFilterPixelShaderDepthInAlpha<1..16> 16 types (SceneFilterRendering.h, TFilterPixelShader<N> + FSceneTextureShaderParameters, MainDepthInAlpha, 786/1)"
+0xb82c30,written,"TArkPpBlurVertexShader/PixelShader 8 types (arkppnodeblur.cpp, 3 parameters each, ArkPpBlur/MainVS,MainPS, 786/1)"
+0xb82e50,written,"FArkPpDofDownsampleVS/PS, FArkPpDofUberVS, TArkPpDofUberPS<0/1,0/1>, FArkPpDofLutBlenderVS/PS 8 types (arkppnodedof.cpp, ArkPpDof, 786-789/1)"
+0xb83050,written,"TKuwaVertexShader/PixelShader<3,5> 4 types (arkppnodekuwa.cpp, ArkKuwa/MainVS,MainPS, 793/26)"
+0xb82930,written,"TFXAAPixelShader<Luma,Quality,ForSceneColor> 6 types, 11 parameters (arkppnodeaa.cpp, FXAAShader/FXAA_PixelMain, 786/24); 3 have no cooked PC shader, as in retail"
+0xb82ab0,written,"TMLAAEdgeDetectionPixelShader<0/1> and TMLAABlendPixelShader<0/1> (MLAAShader; the linear variants carry the inverse display gamma, the sRGB ones do not)"
+0xb826d0,written,"FBloomCompose/DownSample VS+PS and TBloomBlur VS+PS<5> 6 types (arkbloompartsrendering.cpp, ArkBloomPart*Shader, 786/23)"
+0x422340,written,FScene::AddDisFog: the render command and the sort by colour-lookup texture (Scene.cpp)
+0x41fa20,written,FScene::RemoveDisFog (Scene.cpp)
+0x421bc0,written,"FDisFogSceneInfo(const UDisFogComponent*) (SceneCore.cpp; origin from m_WorldOrigin when m_UseWorldOrigin, sun direction from the owner's rotation)"
+0xd5ef0,written,UDisFogComponent::Attach (disfogcomponent.cpp)
+0xd5f10,written,UDisFogComponent::UpdateTransform (disfogcomponent.cpp)
+0xd5f40,written,UDisFogComponent::Detach (disfogcomponent.cpp)
+0xdc9c0,written,UDisFogComponent::SetParentToWorld: only the height of the transform (disfogcomponent.cpp)
+0x1c8530,written,UDisFogComponent::execSetEnabled + SetEnabled (EngineDisFogClasses.h / disfogcomponent.cpp)
+0x4370a0,written,"FSceneRenderer::RenderFog: interior/exterior split, sun and exclusive layer first, 4-layer clamp, one pass each (FogRendering.cpp)"
+0x436d10,written,"FSceneRenderer::RenderFogPass: custom-transition cull, viewport/scissor, retail state block, LUT count, one full-screen triangle"
+0x4365f0,written,"FlushDisFogShader: the 15-policy shader map refs, LayerBaseOffset[Layers]+Luts, bound shader state and parameters"
+0x41c940,written,"TDisFogPixelShader::SetParameters: per-layer heights/planes/density/colour/opacity, custom-transition fade, LUT textures, sun direction, bloom parts, FDisPrecomputedFogSceneInfo"
+0x416590,written,TDisFogVertexShader::SetParameters: screen position scale/bias and the screen-to-world matrix
+0x41a3f0,written,"FCommonVertexDeclaration::InitRHI: the float2, float4 and float2+UV declarations (arkcommonvertexdeclaration.cpp)"
+0x410900,written,ArkGetCommonVertexDeclaration (arkcommonvertexdeclaration.cpp)
+0x2b9ac0,written,ULocalPlayer::RebuildPlayerPostProcessChain: duplicate the inserted chain whole instead of the reference's empty-chain-plus-Effects rebuild; the player's chain now carries the 42 graph nodes
+0x422e40,written,"FSceneView::m_ArkPpConfig (@28) declared and filled from ULocalPlayer::m_CurrentArkPpSettings (Scene.h, Scene.cpp, UnPlayer.cpp)"
+0x42c4e0,written,FSceneRenderTargets::BeginRenderingBloom (SceneRenderTargets.cpp)
+0x42c500,written,FSceneRenderTargets::FinishRenderingBloom (SceneRenderTargets.cpp)
+0x5251a0,todo,FSceneRenderer::RenderBloomParts: the bloom-part mesh pass needs FViewInfo::BloomPartPrimSet and the per-primitive relevance that fills it; the shaders and the two quarter-size targets are in place
+0x524ae0,todo,UArkPpNodeSceneColor::CreateSceneProxy and the rest of the FArkPp proxy family (FArkPpNodeProxy 12 bytes + 8 subclasses); the node classes are in DishonoredGame's shim header and have to move to Engine first
+0x493e40,todo,"FViewInfo::FViewInfo(const FSceneView*): builds the graph (m_GraphRoot->IsValid, FArkPpCreateProxyConfig, PushUberOverride, CreateSceneProxy, AddPostProcessProxy) - the entry point for the FArkPp port"
+0x433f80,todo,FSceneRenderer::RenderFogMaskStencil: the fog mask meshes that stop interior fog at a portal (the pass runs without a mask today)
+0x571710,ported,UGFxDataStoreSubscriber::execClearBoundDataStores; gfxuinatives.cpp (agent BE)
+0x583f60,ported,UGFxDataStoreSubscriber::execGetBoundDataStores; gfxuinatives.cpp (agent BE)
+0x57aa00,ported,UGFxDataStoreSubscriber::execGetDataStoreBinding; gfxuinatives.cpp (agent BE)
+0x571610,ported,UGFxDataStoreSubscriber::execNotifyDataStoreValueUpdated; gfxuinatives.cpp (agent BE)
+0x5715a0,ported,UGFxDataStoreSubscriber::execRefreshSubscriberValue; gfxuinatives.cpp (agent BE)
+0x584040,ported,UGFxDataStoreSubscriber::execSaveSubscriberValue; gfxuinatives.cpp (agent BE)
+0x57a930,ported,UGFxDataStoreSubscriber::execSetDataStoreBinding; gfxuinatives.cpp (agent BE)
+0x57a7b0,ported,UGFxFSCmdHandler_Kismet::execFSCommand; gfxuinatives.cpp (agent BE)
+0x5713e0,ported,UGFxInteraction::execCloseAllMoviePlayers; gfxuinatives.cpp (agent BE)
+0x570f50,ported,UGFxInteraction::execGetFocusMovie; gfxuinatives.cpp (agent BE)
+0x571000,ported,UGFxInteraction::execNotifyPlayerAdded; gfxuinatives.cpp (agent BE)
+0x571090,ported,UGFxInteraction::execNotifyPlayerRemoved; gfxuinatives.cpp (agent BE)
+0x58ebe0,ported,UGFxMoviePlayer::execActionScriptInt; gfxuimovie.cpp (agent BE)
+0x58ed20,ported,UGFxMoviePlayer::execActionScriptObject; gfxuimovie.cpp (agent BE)
+0x58a020,ported,UGFxMoviePlayer::execActionScriptSetFunction; gfxuimovie.cpp (agent BE)
+0x58ec80,ported,UGFxMoviePlayer::execActionScriptString; gfxuimovie.cpp (agent BE)
+0x58eb40,ported,UGFxMoviePlayer::execActionScriptVoid; gfxuimovie.cpp (agent BE)
+0x59cfe0,ported,UGFxMoviePlayer::execAddCaptureKey; gfxuimovie.cpp (agent BE)
+0x59d0a0,ported,UGFxMoviePlayer::execAddFocusIgnoreKey; gfxuimovie.cpp (agent BE)
+0x5711a0,ported,UGFxMoviePlayer::execAdvance; gfxuimovie.cpp (agent BE)
+0x59d050,ported,UGFxMoviePlayer::execClearCaptureKeys; gfxuimovie.cpp (agent BE)
+0x59d110,ported,UGFxMoviePlayer::execClearFocusIgnoreKeys; gfxuimovie.cpp (agent BE)
+0x571300,ported,UGFxMoviePlayer::execClose; gfxuimovie.cpp (agent BE)
+0x571480,ported,UGFxMoviePlayer::execCreateArray; gfxuimovie.cpp (agent BE)
+0x579f60,ported,UGFxMoviePlayer::execCreateObject; gfxuimovie.cpp (agent BE)
+0x59d160,ported,UGFxMoviePlayer::execFlushPlayerInput; gfxuimovie.cpp (agent BE)
+0x574440,ported,UGFxMoviePlayer::execGetGameViewportClient; gfxuimovie.cpp (agent BE)
+0x5823f0,ported,UGFxMoviePlayer::execGetVariable; gfxuimovie.cpp (agent BE)
+0x5903e0,ported,UGFxMoviePlayer::execGetVariableArray; gfxuimovie.cpp (agent BE)
+0x579910,ported,UGFxMoviePlayer::execGetVariableBool; gfxuimovie.cpp (agent BE)
+0x582740,ported,UGFxMoviePlayer::execGetVariableFloatArray; gfxuimovie.cpp (agent BE)
+0x582600,ported,UGFxMoviePlayer::execGetVariableIntArray; gfxuimovie.cpp (agent BE)
+0x5799c0,ported,UGFxMoviePlayer::execGetVariableNumber; gfxuimovie.cpp (agent BE)
+0x579b30,ported,UGFxMoviePlayer::execGetVariableObject; gfxuimovie.cpp (agent BE)
+0x579a70,ported,UGFxMoviePlayer::execGetVariableString; gfxuimovie.cpp (agent BE)
+0x590520,ported,UGFxMoviePlayer::execGetVariableStringArray; gfxuimovie.cpp (agent BE)
+0x579590,ported,UGFxMoviePlayer::execGetVisibleFrameRect; gfxuimovie.cpp (agent BE)
+0x590880,ported,UGFxMoviePlayer::execInvoke; gfxuimovie.cpp (agent BE)
+0x571210,ported,UGFxMoviePlayer::execPostAdvance; gfxuimovie.cpp (agent BE)
+0x579520,ported,UGFxMoviePlayer::execSetAlignment; gfxuimovie.cpp (agent BE)
+0x579310,ported,UGFxMoviePlayer::execSetExternalTexture; gfxuimovie.cpp (agent BE)
+0x574490,ported,UGFxMoviePlayer::execSetMovieCanReceiveFocus; gfxuimovie.cpp (agent BE)
+0x574500,ported,UGFxMoviePlayer::execSetMovieCanReceiveInput; gfxuimovie.cpp (agent BE)
+0x571280,ported,UGFxMoviePlayer::execSetPause; gfxuimovie.cpp (agent BE)
+0x579840,ported,UGFxMoviePlayer::execSetPerspective3D; gfxuimovie.cpp (agent BE)
+0x571420,ported,UGFxMoviePlayer::execSetPriority; gfxuimovie.cpp (agent BE)
+0x571380,ported,UGFxMoviePlayer::execSetTimingMode; gfxuimovie.cpp (agent BE)
+0x5824d0,ported,UGFxMoviePlayer::execSetVariable; gfxuimovie.cpp (agent BE)
+0x590660,ported,UGFxMoviePlayer::execSetVariableArray; gfxuimovie.cpp (agent BE)
+0x579c10,ported,UGFxMoviePlayer::execSetVariableBool; gfxuimovie.cpp (agent BE)
+0x582990,ported,UGFxMoviePlayer::execSetVariableFloatArray; gfxuimovie.cpp (agent BE)
+0x582880,ported,UGFxMoviePlayer::execSetVariableIntArray; gfxuimovie.cpp (agent BE)
+0x579ce0,ported,UGFxMoviePlayer::execSetVariableNumber; gfxuimovie.cpp (agent BE)
+0x579e90,ported,UGFxMoviePlayer::execSetVariableObject; gfxuimovie.cpp (agent BE)
+0x579db0,ported,UGFxMoviePlayer::execSetVariableString; gfxuimovie.cpp (agent BE)
+0x590770,ported,UGFxMoviePlayer::execSetVariableStringArray; gfxuimovie.cpp (agent BE)
+0x579770,ported,UGFxMoviePlayer::execSetView3D; gfxuimovie.cpp (agent BE)
+0x5794b0,ported,UGFxMoviePlayer::execSetViewScaleMode; gfxuimovie.cpp (agent BE)
+0x5793e0,ported,UGFxMoviePlayer::execSetViewport; gfxuimovie.cpp (agent BE)
+0x59d1f0,ported,UGFxMoviePlayer::execSetWidgetPathBinding; gfxuimovie.cpp (agent BE)
+0x571120,ported,UGFxMoviePlayer::execStart; gfxuimovie.cpp (agent BE)
+0x58f020,ported,UGFxObject::execActionScriptArray; gfxuimovie.cpp (agent BE)
+0x58ee50,ported,UGFxObject::execActionScriptFloat; gfxuimovie.cpp (agent BE)
+0x58ef90,ported,UGFxObject::execActionScriptObject; gfxuimovie.cpp (agent BE)
+0x589c60,ported,UGFxObject::execActionScriptSetFunction; gfxuimovie.cpp (agent BE)
+0x589e30,ported,UGFxObject::execActionScriptSetFunctionOn; gfxuimovie.cpp (agent BE)
+0x58eef0,ported,UGFxObject::execActionScriptString; gfxuimovie.cpp (agent BE)
+0x58edc0,ported,UGFxObject::execActionScriptVoid; gfxuimovie.cpp (agent BE)
+0x58c020,ported,UGFxObject::execAttachMovie; gfxuimovie.cpp (agent BE)
+0x58bf10,ported,UGFxObject::execCreateEmptyMovieClip; gfxuimovie.cpp (agent BE)
+0x582aa0,ported,UGFxObject::execGet; gfxuimovie.cpp (agent BE)
+0x582b80,ported,UGFxObject::execGetBool; gfxuimovie.cpp (agent BE)
+0x5746c0,ported,UGFxObject::execGetColorTransform; gfxuimovie.cpp (agent BE)
+0x574570,ported,UGFxObject::execGetDisplayInfo; gfxuimovie.cpp (agent BE)
+0x574770,ported,UGFxObject::execGetDisplayMatrix; gfxuimovie.cpp (agent BE)
+0x5831c0,ported,UGFxObject::execGetElement; gfxuimovie.cpp (agent BE)
+0x57a1a0,ported,UGFxObject::execGetElementBool; gfxuimovie.cpp (agent BE)
+0x57a440,ported,UGFxObject::execGetElementDisplayInfo; gfxuimovie.cpp (agent BE)
+0x57a4b0,ported,UGFxObject::execGetElementDisplayMatrix; gfxuimovie.cpp (agent BE)
+0x57a200,ported,UGFxObject::execGetElementFloat; gfxuimovie.cpp (agent BE)
+0x5834f0,ported,UGFxObject::execGetElementMember; gfxuimovie.cpp (agent BE)
+0x5835f0,ported,UGFxObject::execGetElementMemberBool; gfxuimovie.cpp (agent BE)
+0x5836c0,ported,UGFxObject::execGetElementMemberFloat; gfxuimovie.cpp (agent BE)
+0x58be10,ported,UGFxObject::execGetElementMemberObject; gfxuimovie.cpp (agent BE)
+0x583790,ported,UGFxObject::execGetElementMemberString; gfxuimovie.cpp (agent BE)
+0x58bd70,ported,UGFxObject::execGetElementObject; gfxuimovie.cpp (agent BE)
+0x583290,ported,UGFxObject::execGetElementString; gfxuimovie.cpp (agent BE)
+0x582c30,ported,UGFxObject::execGetFloat; gfxuimovie.cpp (agent BE)
+0x58bba0,ported,UGFxObject::execGetObject; gfxuimovie.cpp (agent BE)
+0x5745c0,ported,UGFxObject::execGetPosition; gfxuimovie.cpp (agent BE)
+0x582ce0,ported,UGFxObject::execGetString; gfxuimovie.cpp (agent BE)
+0x583130,ported,UGFxObject::execGetText; gfxuimovie.cpp (agent BE)
+0x583d90,ported,UGFxObject::execGotoAndPlay; gfxuimovie.cpp (agent BE)
+0x574910,ported,UGFxObject::execGotoAndPlayI; gfxuimovie.cpp (agent BE)
+0x583e30,ported,UGFxObject::execGotoAndStop; gfxuimovie.cpp (agent BE)
+0x574980,ported,UGFxObject::execGotoAndStopI; gfxuimovie.cpp (agent BE)
+0x5909a0,ported,UGFxObject::execInvoke; gfxuimovie.cpp (agent BE)
+0x582da0,ported,UGFxObject::execSet; gfxuimovie.cpp (agent BE)
+0x582ed0,ported,UGFxObject::execSetBool; gfxuimovie.cpp (agent BE)
+0x574840,ported,UGFxObject::execSetColorTransform; gfxuimovie.cpp (agent BE)
+0x5747d0,ported,UGFxObject::execSetDisplayInfo; gfxuimovie.cpp (agent BE)
+0x572b70,ported,UGFxObject::execSetDisplayMatrix; gfxuimovie.cpp (agent BE)
+0x575600,ported,UGFxObject::execSetDisplayMatrix3D; gfxuimovie.cpp (agent BE)
+0x583340,ported,UGFxObject::execSetElement; gfxuimovie.cpp (agent BE)
+0x583460,ported,UGFxObject::execSetElementBool; gfxuimovie.cpp (agent BE)
+0x57a720,ported,UGFxObject::execSetElementColorTransform; gfxuimovie.cpp (agent BE)
+0x57a540,ported,UGFxObject::execSetElementDisplayInfo; gfxuimovie.cpp (agent BE)
+0x576160,ported,UGFxObject::execSetElementDisplayMatrix; gfxuimovie.cpp (agent BE)
+0x57a2f0,ported,UGFxObject::execSetElementFloat; gfxuimovie.cpp (agent BE)
+0x583870,ported,UGFxObject::execSetElementMember; gfxuimovie.cpp (agent BE)
+0x583ab0,ported,UGFxObject::execSetElementMemberBool; gfxuimovie.cpp (agent BE)
+0x583ba0,ported,UGFxObject::execSetElementMemberFloat; gfxuimovie.cpp (agent BE)
+0x5839c0,ported,UGFxObject::execSetElementMemberObject; gfxuimovie.cpp (agent BE)
+0x583c90,ported,UGFxObject::execSetElementMemberString; gfxuimovie.cpp (agent BE)
+0x57a660,ported,UGFxObject::execSetElementPosition; gfxuimovie.cpp (agent BE)
+0x57a380,ported,UGFxObject::execSetElementString; gfxuimovie.cpp (agent BE)
+0x57a5d0,ported,UGFxObject::execSetElementVisible; gfxuimovie.cpp (agent BE)
+0x582fa0,ported,UGFxObject::execSetFloat; gfxuimovie.cpp (agent BE)
+0x58bc80,ported,UGFxObject::execSetFunction; gfxuimovie.cpp (agent BE)
+0x583070,ported,UGFxObject::execSetObject; gfxuimovie.cpp (agent BE)
+0x57a0a0,ported,UGFxObject::execSetPosition; gfxuimovie.cpp (agent BE)
+0x5975b0,ported,UGFxObject::execSetString; gfxuimovie.cpp (agent BE)
+0x5976b0,ported,UGFxObject::execSetText; gfxuimovie.cpp (agent BE)
+0x57a130,ported,UGFxObject::execSetVisible; gfxuimovie.cpp (agent BE)
+0x5f6b10,ported,UDisGFxMoviePlayerBase::execAddMessageBoxTimer; disgfxmovieplayerbase.cpp (agent BE)
+0x5f69a0,ported,UDisGFxMoviePlayerBase::execCaptureAnalogInput; disgfxmovieplayerbase.cpp (agent BE)
+0x600aa0,ported,UDisGFxMoviePlayerBase::execFormatText; disgfxmovieplayerbase.cpp (agent BE)
+0x5f6a10,ported,UDisGFxMoviePlayerBase::execHasFinishedAsyncLoading; disgfxmovieplayerbase.cpp (agent BE)
+0x5f6b70,ported,UDisGFxMoviePlayerBase::execHideMessageBox; disgfxmovieplayerbase.cpp (agent BE)
+0x600c90,ported,UDisGFxMoviePlayerBase::execReq_EquipmentIconImage; disgfxmovieplayerbase.cpp (agent BE)
+0x600b40,ported,UDisGFxMoviePlayerBase::execShowMessageBox; disgfxmovieplayerbase.cpp (agent BE)
+0x5f8070,ported,UDisGFxMoviePlayerMainMenu::execBackToStartScreen; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7fd0,ported,UDisGFxMoviePlayerMainMenu::execDeleteDLC; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f81d0,ported,UDisGFxMoviePlayerMainMenu::execOnContinueClicked; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7f90,ported,UDisGFxMoviePlayerMainMenu::execOnDLCClicked; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7e50,ported,UDisGFxMoviePlayerMainMenu::execOnMissionSelected; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7dd0,ported,UDisGFxMoviePlayerMainMenu::execOnMissionsClicked; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7d70,ported,UDisGFxMoviePlayerMainMenu::execOnNewGameConfirm; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f11e0,ported,UDisGFxMoviePlayerMainMenu::execOnQuitGameConfirm; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7eb0,ported,UDisGFxMoviePlayerMainMenu::execOpenMissionStats; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f1160,ported,UDisGFxMoviePlayerMainMenu::execReq_DLConHDD; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f80b0,ported,UDisGFxMoviePlayerMainMenu::execUseDLC06Progression; disgfxmovieplayermainmenu.cpp (agent BE)
+0x5f7a00,ported,UDisGFxMoviePlayerMenuBase::execOnDeleteSaveConfirm; disgfxmovieplayermenubase.cpp (agent BE)
+0x5f79a0,ported,UDisGFxMoviePlayerMenuBase::execOnLoadGameConfirm; disgfxmovieplayermenubase.cpp (agent BE)
+0x5f7c10,ported,UDisGFxMoviePlayerMenuBase::execOnResetOptions; disgfxmovieplayermenubase.cpp (agent BE)
+0x5f7aa0,ported,UDisGFxMoviePlayerMenuBase::execOnSaveGameListClosed; disgfxmovieplayermenubase.cpp (agent BE)
+0x5f7b80,ported,UDisGFxMoviePlayerMenuBase::execOnSettingChange; disgfxmovieplayermenubase.cpp (agent BE)
+0x5f7960,ported,UDisGFxMoviePlayerMenuBase::execReq_CanLoadGame; disgfxmovieplayermenubase.cpp (agent BE)
+0x5f7920,ported,UDisGFxMoviePlayerMenuBase::execReq_IsSaveLoadEnabled; disgfxmovieplayermenubase.cpp (agent BE)
+0x586450,ported,FGFxFSCommandHandler::Callback (2012 0x5e3190); gfxuiexternalinterface.cpp (agent BE)
+0x58c8f0,ported,FGFxEngine::ConvertUPropToGFx (2012 0x5e4080); gfxuiexternalinterface.cpp (agent BE)
+0x8864d0,written,UDisAttributes::GetAttributeValue (2012 0x8ef200) - the map read
+0x889040,written,UDisAttributes::GetModifiedAttribute (2012 0x8f76d0) - find or create the entry
+0x8863f0,written,UDisAttributes::RecacheAttributeValue (2012 0x8ef0e0) - the three modifier types then the clamp
+0x889bc0,written,UDisAttributes::RefreshAttributes (2012 0x8f8020) - base values by difficulty then the range limits
+0x886530,written,UDisAttributes::TickAttributes (2012 0x8ef260) - modifier lifetimes; NULL test added
+0x87e0e0,written,UDisAttributes::HasModifier (2012 0x8e6ea0)
+0x87e140,written,UDisAttributes::GetModifierValue (2012 0x8e6f00)
+0x885280,written,UDisAttributes::RemoveModifier (2012 0x8ec440) - retail's emptiness test is on the wrong map; ported as written
+0x886a50,written,IDisAttributesInterface::GetAttributeValue (2012 0x8ef580)
+0x87e1c0,written,IDisAttributesInterface::HasAttributeModifier (2012 0x8e6f80)
+0x87e1e0,written,IDisAttributesInterface::GetAttributeModifierValue (2012 0x8e6fa0)
+0x8852f0,written,IDisAttributesInterface::RemoveAttributeModifier (2012 0x8ec4b0)
+0x889170,written,IDisAttributesInterface::AddAttributeModifier (2012 0x8f77d0)
+0x7497b0,written,ADishonoredPawn::GetAttributes (2012 0x78e8b0) - m_pAttributes @1916; lazy construct because PreBeginPlay is unported
+0x88aca0,written,UDisTweaks_Attributes::ConstructAttributes (2012 0x8f85f0)
+0x8f8130,written,UDisTweaks_Attributes::RefreshAttributesFromSource (2012 rva; unmatched in 2013) - TFieldIterator over its own reflected FDisAttribute properties
+0x762190,written,ADishonoredPawn::PreBeginPlay_Attributes (2012 0x79b730) - m_pAttributeTweaks[1] at UDisTweaks_Pawn @264
+0x794cd0,written,ADishonoredPawn::OnDifficultyChange (2012 rva) - no FArkGameEvent parameter; its dispatcher is unported
+0x74dcc0,written,ADishonoredPawn::TakeFallingDamage_Native (2012 0x7918e0) - the damage; the contact tail is the unported contact system
+0x5ec5f0,written,ADishonoredPawn::execTakeFallingDamage_Native (2012 0x633170)
+0x74d120,written,ADishonoredPawn::Landed_Native (2012 0x790dc0) - the Velocity.Z > 200 gate; the body is the unported contact system
+0x5ec7e0,written,ADishonoredPawn::execLanded_Native (2012 0x633360)
+0x6a4fa0,written,ADishonoredPlayerPawn::TakeFallingDamage_Native (2012 0x6fe8b0) - no fall damage from landing on a pawn
+0x6b53a0,written,ADishonoredPlayerPawn::Landed_Native (2012 0x70eff0) - m_LastJumpLandVel only; the FSM/camera/contact branches are unported
+0x8ef4d0,todo,operator<<(FArchive&+FDisModifiedAttribute&) (2012 rva) - save system (milestone 6)
+0x8f77b0,todo,UDisAttributes::GameLoad (2012 rva) - save system (milestone 6)
+0x8d9420,todo,FDisAttribute::PopulateWithLegacyValue (2012 rva) - only the ArLicenseeVer < 25 upgrade path
+0x8f0d30,todo,UDisTweaks_Attributes::Serialize (2012 rva) - only the ArLicenseeVer < 25 upgrade path
+0x794860,todo,ADishonoredPawn::ApplyAttributes (2012 rva) - needs IsCarryingCorpse and would overwrite the walking path's GroundSpeed
+0x794b10,todo,ADishonoredPawn::MaxSpeedModifier (2012 rva) - needs MaxSpeedModifier_Derived / IsSneaking / IsCarryingCorpse
+0x78e880,todo,ADishonoredPawn::Tick_Attributes (2012 rva) - its caller ADishonoredPawn::Tick (0x750720) is unported
+0x74a340,written,ADishonoredPawn::TakeDamage (2012 0x7acae0) - the entry the now-real fall damage lands through; TakeDamage_Native left as the named gap
+0x75ccd0,todo,ADishonoredPawn::TakeDamage_Native (2012 0x7c5610) - vulnerabilities/immunities/minimum health/hit reactions/contact system
