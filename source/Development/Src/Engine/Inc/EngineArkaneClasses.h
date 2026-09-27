@@ -14,14 +14,6 @@
 #ifndef INCLUDED_ENGINE_ARKANE_CLASSES
 #define INCLUDED_ENGINE_ARKANE_CLASSES 1
 
-// DISHONORED(port): the two Arkane Engine-side subsystems these classes are built on, included here rather than from
-// Engine.h so that this header stays self-contained: FArkComponentBase (what UArkComponentContainer holds, and the type
-// its AddNewComponent<T> / GetFirstComponent<T> templates below need) and FArkGameEventDispatcher (the game-event
-// singleton every Dis actor and AI object registers with). Both are ahead of the pragma pack so their layouts are the
-// compiler's default, as retail's are.
-#include "arkcomponentbase.h"
-#include "arkgameeventdispatcher.h"
-
 #if SUPPORTS_PRAGMA_PACK
 #pragma pack (push,4)
 #endif
@@ -101,51 +93,11 @@ public:
 
 
     // DISHONORED(port): arkcomponentcontainer.cpp. 2013 rvas: Serialize 0x5364b0, BeginDestroy 0x538a80,
-    // AddReferencedObjects 0x536460, RemoveAllComponents 0x538990, AddNewComponentByID 0x534100,
-    // AddNewComponent_Internal 0x533f40, RemoveComponent 0x536290, StartAllComponents 0x5362e0,
-    // StopAllComponents 0x536310
+    // AddReferencedObjects 0x536460, RemoveAllComponents 0x538990
     virtual void Serialize( FArchive& Ar );
     virtual void BeginDestroy();
     virtual void AddReferencedObjects( TArray<UObject*>& ObjectArray );
     void RemoveAllComponents();
-    FArkComponentBase* AddNewComponentByID( INT _ID );
-    void RemoveComponent( FArkComponentBase* _pComponent );
-    void StartAllComponents();
-    void StopAllComponents();
-
-    // DISHONORED(port): 2013 rvas 0x70a870 / 0x710a50 (2012 0x748190 / 0x74e0d0), one instantiation per component type.
-    // Retail emits both from the generated component header (the 2012 PDB attributes every instantiation to
-    // enginecomponentclasses.h:62 and :91), which is why they live in this header rather than in the .cpp.
-    // AddNewComponent<T> heap-allocates a T, hands it to AddNewComponent_Internal and returns it; it does NOT start the
-    // component - StartAllComponents does that.
-    template< class ComponentType > ComponentType* AddNewComponent()
-    {
-        ComponentType* pNewComponent = new ComponentType;
-        AddNewComponent_Internal( pNewComponent );
-        return pNewComponent;
-    }
-
-    /** The first component of that type, optionally only when it has been started; NULL when there is none. */
-    template< class ComponentType > ComponentType* GetFirstComponent( UBOOL _bMustBeStarted ) const
-    {
-        for( INT i = 0; i < m_Components.Num(); ++i )
-        {
-            FArkComponentBase* pComponent = (FArkComponentBase*)m_Components(i);
-            if( _bMustBeStarted && !pComponent->m_bStarted )
-            {
-                continue;
-            }
-            if( pComponent->IsOfType( ComponentType::ARK_COMPONENT_TYPE ) )
-            {
-                return (ComponentType*)pComponent;
-            }
-        }
-        return NULL;
-    }
-
-private:
-    void AddNewComponent_Internal( FArkComponentBase* _pNewComponent );
-public:
     DECLARE_CLASS(UArkComponentContainer,UActorComponent,0,Engine)
 };
 
