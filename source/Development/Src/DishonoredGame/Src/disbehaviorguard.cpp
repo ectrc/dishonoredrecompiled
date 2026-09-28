@@ -29,3 +29,28 @@
 //   0x741020  private: unsigned int __thiscall UDisBehaviorGuard::FilterEndPossession(struct FAIStimStruct_EndPossession const &)
 //   0x741030  public: virtual void __thiscall UDisBehaviorGuard::RequestStateExitCallback_TakePosition(class UDishonoredNativeState *)
 //   0x743660  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorGuard::GetFilterStimDelegate(enum EAIStimID)
+
+#include "DishonoredGame.h"
+#include "disdesirestructs.h"
+#include "disaisubstate.h"
+
+/*-----------------------------------------------------------------------------
+	agent DF: the callback that needed FDisAISubStateStand_Param
+-----------------------------------------------------------------------------*/
+
+void UDisBehaviorGuard::execRequestStateExitCallback_TakePosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_TakePosition( _pThisState );
+}
+
+// DISHONORED(port): 2012 rva 0x741030: the guard has walked back to its post, so now it stands there - accurately, and
+// facing the way the post faces. The post is the BRAIN's home, not the behaviour's, which is how a guard sent somewhere by
+// Kismet still knows where it belongs.
+void UDisBehaviorGuard::RequestStateExitCallback_TakePosition( UDishonoredNativeState* _pThisState )
+{
+	FDisAISubStateStand_Param AISubStateParam( m_pOwningBrain->m_Home.m_Loc, m_pOwningBrain->m_Home.m_Rot,
+		TRUE, TRUE, FALSE, eDisNPCBodyStance_None );
+	RequestSubStateChange< UDisTweaks_AIBehavior_Guard, UDisTweaks_AISubState_Stand >( 1, AISubStateParam );
+}

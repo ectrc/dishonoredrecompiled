@@ -1,13 +1,39 @@
 // DishonoredGame/src/disaisubstatestareatunreachable.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (9):
-//   0x7658d0  private: virtual struct FDisLookAtRequest * __thiscall UDisAISubStateStareAtUnreachable::GetDesiresLookAtRequest(void)
-//   0x7658e0  private: virtual void __thiscall UDisAISubStateStareAtUnreachable::BeginSubState_Derived(void)
-//   0x775ba0  public: static class UClass * __cdecl UDisAISubStateStareAtUnreachable::GetPrivateStaticClassUDisAISubStateStareAtUnreachable(wchar_t const *)
-//   0x77bec0  public: static void __cdecl UDisAISubStateStareAtUnreachable::InitializePrivateStaticClassUDisAISubStateStareAtUnreachable(void)
-//   0x780400  public: static class UClass * __cdecl UDisAISubStateStareAtUnreachable::StaticClassNoInline(void)
-//   0x782140  public: __thiscall FDisAISubStateStareAtUnreachable_Param::FDisAISubStateStareAtUnreachable_Param(struct FDisAttentionProxy const &)
-//   0x7837f0  public: static class UClass * __cdecl UDisTweaks_AISubState_StareAtUnreachable::GetPrivateStaticClassUDisTweaks_AISubState_StareAtUnreachable(wchar_t const *)
-//   0x7846c0  public: static void __cdecl UDisTweaks_AISubState_StareAtUnreachable::InitializePrivateStaticClassUDisTweaks_AISubState_StareAtUnreachable(void)
-//   0x784fc0  public: static class UClass * __cdecl UDisTweaks_AISubState_StareAtUnreachable::StaticClassNoInline(void)
+// ---- agent DF ports (PHASE10 DF): UDisAISubStateStareAtUnreachable and its parameter ----
+
+#include "DishonoredGame.h"
+#include "disaisubstate.h"
+#include "disdesirestructs.h"
+#include "aistimstruct.h"
+#include "dishonoredutilities_ai.h"
+
+/*-----------------------------------------------------------------------------
+	FDisAISubStateStareAtUnreachable_Param
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x782140
+FDisAISubStateStareAtUnreachable_Param::FDisAISubStateStareAtUnreachable_Param( const FDisAttentionProxy& _rUnreachableProxy )
+	: FDisAISubState_Param( UDisAISubStateStareAtUnreachable::StaticClass() )
+	, m_UnreachableProxy( _rUnreachableProxy )
+{
+}
+
+// DISHONORED(port): 2012 rva 0x769490 (folded with FDisAISubStateMenace_Param::OnPending: both write one proxy at
+// sub-state offset 208)
+void FDisAISubStateStareAtUnreachable_Param::OnPending( UDishonoredNativeState* PendingState, UObject* ManagedObject )
+{
+	FDisAISubState_Param::OnPending( PendingState, ManagedObject );
+	( (UDisAISubStateStareAtUnreachable*)PendingState )->m_UnreachableProxy = m_UnreachableProxy;
+}
+
+/*-----------------------------------------------------------------------------
+	UDisAISubStateStareAtUnreachable
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x7658e0. The whole class: look at it with head and torso for as long as it takes, and face
+// it. There is no tick and no exit condition of its own - the behaviour's RefreshCallback decides when to give up.
+void UDisAISubStateStareAtUnreachable::BeginSubState_Derived()
+{
+	SetLookAtProxyDesire( m_UnreachableProxy, FDisLookAtInfluence::Torso, -1.f );
+	SetFaceToProxyDesire( m_UnreachableProxy, -100.f, FALSE );
+}

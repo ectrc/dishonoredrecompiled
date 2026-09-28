@@ -37,14 +37,8 @@
 
 #include "DishonoredGame.h"
 #include "disaicensus.h"
+#include "disdesirestructs.h"
 #include "disaisubstate.h"
-
-/** Declared in disaisubprocess.cpp: names an unreachable IDisDesiresInterface call once per site. */
-extern void DisAINoteDesiresGap( const TCHAR* Site );
-
-/** DISHONORED(written): as in disaisubprocess.cpp - the FArkGameEvent type for "an actor was terminated", literal 3 at
-    every retail call site. */
-static const INT GDisAIEvent_OtherActorTerminated = 3;
 
 /*-----------------------------------------------------------------------------
 	The six behaviour callbacks.
@@ -177,12 +171,14 @@ void UDisAISubState::InitSubState( UDishonoredAIBehavior* const OwningBehavior, 
 	m_pOwningBehavior = OwningBehavior;
 	m_pOwningBrain = OwningBehavior->m_pOwningBrain;
 
-	IDisDesiresInterface* Desires = GetDesires();
-	m_pDesires.SetObject( NULL );
-	m_pDesires.SetInterface( NULL );
-	if( Desires )
+	// DISHONORED(port): agent DF - the desires are cached as a script interface so the garbage collector can null them,
+	// and initialised immediately (which binds them to the pawn's components at this sub-state's own priority and leaves
+	// them paused).
+	IDisDesiresInterface* OwnDesires = GetDesires();
+	DisSetScriptInterface( m_pDesires, OwnDesires ? OwnDesires->GetUObjectInterfaceDisDesiresInterface() : NULL );
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubState::InitSubState") );
+		Desires->InitializeDesires();
 	}
 
 	if( GetTweaks_Derived() != SubStateTweaks )
@@ -210,14 +206,15 @@ UBOOL UDisAISubState::ArePreconditionsMet( FDisNativeStateParam& Params )
 void UDisAISubState::OnEnterState( UDishonoredNativeState* LastState )
 {
 	GDisAISubStateEnters++;
+	DisAINoteSubStateEnter( GetClass(), LastState ? LastState->GetClass() : NULL );
 	BeginSubState_Derived();
 
 	if( GetClass() != UDisAISubStateInit::StaticClass() )
 	{
 		m_bIsSubStatePaused = FALSE;
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDisAISubState::OnEnterState") );
+			Desires->ResumeDesires( m_BodyIntentionBeforeEnterState );
 		}
 		ResumeSubState_Derived();
 	}
@@ -247,9 +244,9 @@ void UDisAISubState::OnExitState( UDishonoredNativeState* NextState )
 	if( !m_bIsSubStatePaused )
 	{
 		m_bIsSubStatePaused = TRUE;
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDisAISubState::OnExitState") );
+			Desires->PauseDesires();
 		}
 		PauseSubState_Derived( bIsBeingTerminated );
 		if( !bIsBeingTerminated )
@@ -265,9 +262,18 @@ void UDisAISubState::OnExitState( UDishonoredNativeState* NextState )
 	}
 	m_ActionTargetProxy.ClearAttnProxy();
 
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	// DISHONORED(port): a sub-state leaving for good unbinds its desires from the components; one merely changing state
+	// only withdraws the orders, so the next state can re-issue its own against the same components.
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubState::OnExitState (finalize)") );
+		if( bIsBeingTerminated )
+		{
+			Desires->FinalizeDesires();
+		}
+		else
+		{
+			Desires->StopDesires();
+		}
 	}
 	EndSubState_Derived( bIsBeingTerminated );
 }
@@ -286,16 +292,16 @@ UBOOL UDisAISubState::OnResetState()
 		PawnExistingBodyIntention.m_pDesiredPrimaryItemClass = Pawn->GetDesiredPrimaryItem();
 		PawnExistingBodyIntention.m_pDesiredSecondaryItemClass = Pawn->GetDesiredSecondaryItem();
 
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDisAISubState::OnResetState (pause)") );
+			Desires->PauseDesires();
 		}
 		PauseSubState_Derived( FALSE );
 		m_pOwningBrain->ClearAllMinAttention( DMALT_AISubState );
 		ClearActionTargetProxy();
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDisAISubState::OnResetState (stop)") );
+			Desires->StopDesires();
 		}
 
 		delegateOnExitCallback( this, this );
@@ -304,9 +310,9 @@ UBOOL UDisAISubState::OnResetState()
 		BeginSubState_Derived();
 		delegateOnEnterCallback( this, this );
 
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDisAISubState::OnResetState (resume)") );
+			Desires->ResumeDesires( PawnExistingBodyIntention );
 		}
 		ResumeSubState_Derived();
 	}
@@ -320,9 +326,9 @@ void UDisAISubState::TickState( FLOAT DeltaSeconds )
 {
 	GDisAISubStateTicks++;
 	delegateTickCallback( this, DeltaSeconds );
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubState::TickState") );
+		Desires->TickDesires( DeltaSeconds );
 	}
 }
 
@@ -345,9 +351,9 @@ void UDisAISubState::RequestStateExit_Derived()
 void UDisAISubState::OnOwningBehaviorResume( const FDisBodyIntention& PreviousBodyIntention )
 {
 	m_bIsSubStatePaused = FALSE;
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubState::OnOwningBehaviorResume") );
+		Desires->ResumeDesires( PreviousBodyIntention );
 	}
 	ResumeSubState_Derived();
 }
@@ -361,9 +367,9 @@ void UDisAISubState::OnOwningBehaviorPause( UBOOL bIsBeingTerminated )
 
 	if( !bIsBeingTerminated )
 	{
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDisAISubState::OnOwningBehaviorPause") );
+			Desires->PauseDesires();
 		}
 		m_pOwningBrain->ClearAllMinAttention( DMALT_AISubState );
 	}
@@ -427,9 +433,12 @@ void UDisAISubState::BeginDestroy()
 // slot (+280), which UObject does not declare in this tree, so nothing calls it yet.
 void UDisAISubState::PostGameLoad_SubState()
 {
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() && m_pOwningBrain->IsBrainInitialized() )
+	if( m_pOwningBrain && m_pOwningBrain->IsBrainInitialized() )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubState::PostGameLoad") );
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
+		{
+			Desires->PostGameLoad_Desires();
+		}
 	}
 	m_pFilterStimMask = (FPointer)BuildFilterStimMask();
 }

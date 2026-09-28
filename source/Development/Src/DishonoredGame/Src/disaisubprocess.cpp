@@ -31,52 +31,32 @@
 
 #include "DishonoredGame.h"
 #include "disaicensus.h"
+#include "disdesirestructs.h"
 #include "disaisubstate.h"
 
 /*-----------------------------------------------------------------------------
 	The desires half.
 
-	DISHONORED(bringup): every transition of a sub-process and a sub-state also drives the owning object's
-	IDisDesiresInterface (InitializeDesires / ResumeDesires / PauseDesires / StopDesires / FinalizeDesires /
-	TickDesires / PostGameLoad_Desires, 2013 rvas 0x8ba1f0, 0x8adec0-region, 0x8ba360, 0x8b22d0, 0x8b3cb0,
-	0x8b7330-region and the loco/faceto/lookat desire setters beside them). The generated IDisDesiresInterface
-	(dishonoredgameclasses.h:9044) declares no methods at all and DishonoredGame/Src/disdesiresinterface.cpp is still a
-	comment-only skeleton, so those calls cannot be made yet.
-
-	This is provably dead code in the current build rather than a silent omission: m_pDesires is only ever filled for a
-	class whose GetDesires() override returns non-NULL, which is UDisAISubStateWithDesires / UDisAISubProcessWithDesires
-	(2012 GetDesires 0x78d280) and their subclasses, and not one of those is ported. The base GetDesires() returns NULL,
-	so every branch below is unreachable today. DisAINoteDesiresGap names the missing call once per site if a ported
-	WithDesires class ever makes one reachable, which is the point of keeping the test rather than deleting it.
+	DISHONORED(port): agent DF landed IDisDesiresInterface (Src/disdesiresinterface.cpp), so every transition of a
+	sub-process and a sub-state now drives the owning object's desires for real - InitializeDesires / ResumeDesires /
+	PauseDesires / StopDesires / FinalizeDesires / TickDesires / PostGameLoad_Desires, 2013 rvas 0x8ba1f0, 0x8bbf50,
+	0x8ba360, 0x8b22d0, 0x8b3cb0, 0x8bc080, 0x8bc0e0. Agent CG's DisAINoteDesiresGap placeholder is gone with them.
+	m_pDesires is filled only for a class whose GetDesires() override answers non-NULL, i.e. UDisAISubStateWithDesires /
+	UDisAISubProcessWithDesires / UDisAIBehaviorWithDesires and their subclasses; the base answers NULL, so a sub-state
+	with no desires of its own still takes none of these branches, exactly as retail.
 -----------------------------------------------------------------------------*/
-
-void DisAINoteDesiresGap( const TCHAR* Site )
-{
-	static TArray<FString> Noted;
-	const FString Key( Site );
-	if( Noted.FindItemIndex( Key ) == INDEX_NONE )
-	{
-		Noted.AddItem( Key );
-		debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s: IDisDesiresInterface is not ported (disdesiresinterface.cpp), the desires are not driven"), Site );
-	}
-}
-
-/** DISHONORED(written): the FArkGameEvent type the AI subscribes to when it holds an actor reference it must drop.
-    Retail passes the literal 3 at every one of these call sites; the dispatcher's 39 event types have no enumeration in
-    the tree yet (Engine/Inc/arkgameeventdispatcher.h). */
-static const INT GDisAIEvent_OtherActorTerminated = 3;
 
 // DISHONORED(port): 2013 rva 0x739320 (2012 0x7761b0): the sub-process is bound to its behaviour and the behaviour's
 // brain, given its tweaks through the tweak interface, and starts out enabled but not begun - the behaviour's first
 // resume is what calls BeginSubProcess.
 void UDisAISubProcess::InitSubProcess( UDishonoredAIBehavior* const OwningBehavior, UDisTweaks_AISubProcess* const SubProcessTweaks )
 {
-	IDisDesiresInterface* Desires = GetDesires();
-	m_pDesires.SetObject( NULL );
-	m_pDesires.SetInterface( NULL );
-	if( Desires )
+	// DISHONORED(port): agent DF, as UDisAISubState::InitSubState.
+	IDisDesiresInterface* OwnDesires = GetDesires();
+	DisSetScriptInterface( m_pDesires, OwnDesires ? OwnDesires->GetUObjectInterfaceDisDesiresInterface() : NULL );
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubProcess::InitSubProcess") );
+		Desires->InitializeDesires();
 	}
 
 	if( GetTweaks_Derived() != SubProcessTweaks )
@@ -99,9 +79,9 @@ void UDisAISubProcess::BeginSubProcess( const FDisBodyIntention& PreviousBodyInt
 {
 	m_bSubProcessHasBegun = TRUE;
 	GDisAISubProcessBegins++;
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubProcess::BeginSubProcess") );
+		Desires->ResumeDesires( PreviousBodyIntention );
 	}
 	BeginSubProcess_Derived();
 }
@@ -119,9 +99,17 @@ void UDisAISubProcess::EndSubProcess( UBOOL bIsBeingTerminated )
 	}
 	m_ActionTargetProxy.ClearAttnProxy();
 
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubProcess::EndSubProcess") );
+		if( bIsBeingTerminated )
+		{
+			Desires->FinalizeDesires();
+		}
+		else
+		{
+			Desires->PauseDesires();
+			Desires->StopDesires();
+		}
 	}
 	EndSubProcess_Derived( bIsBeingTerminated );
 }
@@ -130,9 +118,9 @@ void UDisAISubProcess::EndSubProcess( UBOOL bIsBeingTerminated )
 void UDisAISubProcess::TickSubProcess( FLOAT DeltaTime )
 {
 	TickSubProcess_Derived( DeltaTime );
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubProcess::TickSubProcess") );
+		Desires->TickDesires( DeltaTime );
 	}
 }
 
@@ -187,9 +175,9 @@ void UDisAISubProcess::OnOwningBehaviorResume( const FDisBodyIntention& Previous
 	}
 	m_bSubProcessHasBegun = TRUE;
 	GDisAISubProcessBegins++;
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubProcess::OnOwningBehaviorResume") );
+		Desires->ResumeDesires( PreviousBodyIntention );
 	}
 	BeginSubProcess_Derived();
 }
@@ -259,9 +247,12 @@ void UDisAISubProcess::BeginDestroy()
 // lands the slots. Named PostGameLoad_SubProcess so it cannot be mistaken for an override.
 void UDisAISubProcess::PostGameLoad_SubProcess()
 {
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() && m_pOwningBrain->IsBrainInitialized() )
+	if( m_pOwningBrain && m_pOwningBrain->IsBrainInitialized() )
 	{
-		DisAINoteDesiresGap( TEXT("UDisAISubProcess::PostGameLoad") );
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
+		{
+			Desires->PostGameLoad_Desires();
+		}
 	}
 	m_pFilterStimMask = (FPointer)BuildFilterStimMask();
 }

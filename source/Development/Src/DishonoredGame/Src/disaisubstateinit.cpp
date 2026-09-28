@@ -1,11 +1,28 @@
 // DishonoredGame/src/disaisubstateinit.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (7):
-//   0x773b40  public: static class UClass * __cdecl UDisAISubStateInit::GetPrivateStaticClassUDisAISubStateInit(wchar_t const *)
-//   0x775830  public: static void __cdecl UDisAISubStateInit::InitializePrivateStaticClassUDisAISubStateInit(void)
-//   0x777710  public: static class UClass * __cdecl UDisAISubStateInit::StaticClassNoInline(void)
-//   0x77bc60  public: __thiscall FDisAISubStateInit_Param::FDisAISubStateInit_Param(void)
-//   0x783470  public: static class UClass * __cdecl UDisTweaks_AISubState_Init::GetPrivateStaticClassUDisTweaks_AISubState_Init(wchar_t const *)
-//   0x784600  public: static void __cdecl UDisTweaks_AISubState_Init::InitializePrivateStaticClassUDisTweaks_AISubState_Init(void)
-//   0x784ea0  public: static class UClass * __cdecl UDisTweaks_AISubState_Init::StaticClassNoInline(void)
+// ---- agent DF ports (PHASE10 DF): the idle sub-state ----
+
+#include "DishonoredGame.h"
+#include "disaisubstate.h"
+#include "disdesirestructs.h"
+#include "aistimstruct.h"
+#include "dishonoredutilities_ai.h"
+
+/*-----------------------------------------------------------------------------
+	UDisAISubStateInit
+
+	DISHONORED(retail): the class has no body at all - no members, no overrides, not one function of its own in either
+	build. It exists to be the state a behaviour's machine sits in when the behaviour has nothing to do, and the base
+	UDisAISubState is written around that: OnEnterState, OnExitState and OnResetState all test `GetClass() !=
+	UDisAISubStateInit::StaticClass()` and skip the desires and the derived hooks for it (2013 rvas 0x705850, 0x724420,
+	0x724590), and UDisAISubStateMachine::OnOwningBehaviorResume / OnOwningBehaviorPause exempt it as well. So the idle
+	state is not a state that does nothing; it is the absence of a state, spelled as one.
+
+	Only its parameter has a body, and all that does is name the class.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): ctor 2012 rva 0x77bc60. The 2012 constructor stores FDisAISubState_Param's vtable rather than one of
+// its own, which is how the PDB shows that FDisAISubStateInit_Param adds no OnPending.
+FDisAISubStateInit_Param::FDisAISubStateInit_Param()
+	: FDisAISubState_Param( UDisAISubStateInit::StaticClass() )
+{
+}

@@ -24,6 +24,10 @@ class IDisDesiresInterface;
 class IDisRelationshipInterface;
 class FDisAIKnowledgeComponent;
 class FArkComponentLookat;
+// DISHONORED(written): agent DF. The desire layer's request structs name these two in their signatures; both are Engine
+// classes of the unported FArkComponentLocomotion package (agentCG.md hand-over 3).
+class FArkComponentFaceTo;
+class FArkComponentLocomotion;
 
 class UDishonoredNativeState;
 class UDisTweaksBase;

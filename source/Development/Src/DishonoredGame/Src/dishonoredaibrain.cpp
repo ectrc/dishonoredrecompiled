@@ -21,6 +21,7 @@
 
 #include "DishonoredGame.h"
 #include "disaicensus.h"
+#include "disdesirestructs.h"
 #include "dishonoredutilities.h"
 #include "dishonoredutilities_ai.h"
 #include "disaisubstate.h"
@@ -28,16 +29,8 @@
 #include "dishonoredutilities_ai.h"
 #include "aistimstruct.h"
 
-/** DISHONORED(port): what each concrete stim's own constructor does in retail: zero the struct and stamp its
-    EAIStimID, which is what DisNewStim then looks the stim's type info and dispatch table up by. The generated
-    EC_EventParm constructors zero m_StimID and no generated code sets it, so every raise site goes through here. */
-template< class T >
-static void DisRaiseStim( UDishonoredAIBrain* Brain, BYTE StimID, UObject* Source )
-{
-	T Stim( EC_EventParm );
-	Stim.m_StimID = StimID;
-	DisHandleAIStim_Internal< T >( Brain, Stim, Source );
-}
+/** DISHONORED(written): agent CG's DisRaiseStim<T> moved to Inc/aistimstruct.h beside DisHandleAIStim (agent DF), because
+    the desire layer raises four stims of its own and the EAIStimID stamp must have exactly one home. */
 
 /** DISHONORED(written): the guard retail inlines into FlushStimQueue (2013 rva 0x716eb0): a stim is serialized through
     an object-reference collector that flags any terminated or pending-kill actor it names, and a stim that names one is
@@ -341,9 +334,18 @@ void UDishonoredAIBrain::StopBehaviorInSlot( INT _Slot, UBOOL _bIsBeingTerminate
 	{
 		Behavior->m_pBehaviorFSM->OnOwningBehaviorStop( _bIsBeingTerminated );
 	}
-	if( Behavior->m_pDesires.GetObject() && Behavior->m_pDesires.GetInterface() )
+	// DISHONORED(port): agent DF. ProcessAllStims (2012 0x75b830) and ProcessOneStim (0x759e60) stop the desires;
+	// TerminateBrain (0x75ccc0) finalises them, which is the only difference between the three copies of this block.
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( Behavior->m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDishonoredAIBrain::StopBehaviorInSlot") );
+		if( _bIsBeingTerminated )
+		{
+			Desires->FinalizeDesires();
+		}
+		else
+		{
+			Desires->StopDesires();
+		}
 	}
 	Behavior->m_bHasStarted = FALSE;
 	m_ActiveBehaviorStack[_Slot] = NULL;
@@ -352,6 +354,40 @@ void UDishonoredAIBrain::StopBehaviorInSlot( INT _Slot, UBOOL _bIsBeingTerminate
 /*-----------------------------------------------------------------------------
 	Brain processes
 -----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): 2012 rva 0x749d10 (agent DF). The pawn's locomotion component is asked which of its own speeds the
+ * active move request is running at, and UDisTweaks_NPCPawn::m_LocomotionSpeedToTransitSpeed maps that index back to an
+ * ETransitSpeed. Read by UDisAISubStateTakePosition::RefreshSubState.
+ * DISHONORED(bringup): FArkComponentLocomotion::GetActiveRequestMaxSpeedIdx does not exist yet (agentCG.md hand-over 3),
+ * so there is no active request to read and the answer is Idle - which makes TakePosition use row 0 of
+ * m_fRotationStartDistance, the standing-still distance, rather than the walking or running one. The lookup below is the
+ * faithful half and needs only the component to become exact.
+ */
+BYTE UDishonoredAIBrain::GetCurrentDesiredTransitSpeed() const
+{
+	static UBOOL bNoted = FALSE;
+	if( !bNoted )
+	{
+		bNoted = TRUE;
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): FArkComponentLocomotion::GetActiveRequestMaxSpeedIdx is not ported; the brain reports ETransitSpeed_Idle") );
+	}
+	const INT ActiveRequestMaxSpeedIdx = INDEX_NONE;
+	if( ActiveRequestMaxSpeedIdx == INDEX_NONE )
+	{
+		return ETransitSpeed_Idle;
+	}
+	const UDisTweaks_NPCPawn* Tweaks = m_pOwningPawn ? Cast<UDisTweaks_NPCPawn>( m_pOwningPawn->GetTweaks_Derived() ) : NULL;
+	if( !Tweaks )
+	{
+		Tweaks = (const UDisTweaks_NPCPawn*)UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject();
+	}
+	if( ActiveRequestMaxSpeedIdx >= Tweaks->m_LocomotionSpeedToTransitSpeed.Num() )
+	{
+		return ETransitSpeed_Idle;
+	}
+	return (BYTE)Tweaks->m_LocomotionSpeedToTransitSpeed( ActiveRequestMaxSpeedIdx );
+}
 
 // DISHONORED(port): 2013 rva 0x70b710 (2012 0x749b60): an exact class match.
 UDisAIBrainProcess* UDishonoredAIBrain::GetBrainProcess( UClass* _pBrainProcessClass )

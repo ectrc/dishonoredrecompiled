@@ -188,6 +188,7 @@ public:
     //## END PROPS DisAISubStateCombatBase
 
     DECLARE_CLASS(UDisAISubStateCombatBase,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateCombatBase.h"
 };
 
 // DishonoredGame.DisAISubStateDoAttractSpell: retail sizeof 332, reflected span 208..332 (2012 PDB sizeof 332)
@@ -203,6 +204,7 @@ public:
     //## END PROPS DisAISubStateDoAttractSpell
 
     DECLARE_CLASS(UDisAISubStateDoAttractSpell,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateDoAttractSpell.h"
 };
 
 // DishonoredGame.DisAISubStateDoWeaponManoeuver: retail sizeof 236, reflected span 208..236 (2012 PDB sizeof 236)
@@ -216,6 +218,7 @@ public:
     //## END PROPS DisAISubStateDoWeaponManoeuver
 
     DECLARE_CLASS(UDisAISubStateDoWeaponManoeuver,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateDoWeaponManoeuver.h"
 };
 
 // DishonoredGame.DisAISubStateFindShootingPosition: retail sizeof 476, reflected span 208..476 (2012 PDB sizeof 476)
@@ -244,6 +247,7 @@ public:
     //## END PROPS DisAISubStateFindShootingPosition
 
     DECLARE_CLASS(UDisAISubStateFindShootingPosition,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateFindShootingPosition.h"
 };
 
 // DishonoredGame.DisAISubStateFirePistol: retail sizeof 536, reflected span 208..536 (2012 PDB sizeof 536)
@@ -273,6 +277,7 @@ public:
     //## END PROPS DisAISubStateFirePistol
 
     DECLARE_CLASS(UDisAISubStateFirePistol,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateFirePistol.h"
 };
 
 // DishonoredGame.DisAISubStateLieInWait: retail sizeof 400, reflected span 208..400 (2012 PDB sizeof 400)
@@ -291,6 +296,7 @@ public:
     //## END PROPS DisAISubStateLieInWait
 
     DECLARE_CLASS(UDisAISubStateLieInWait,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateLieInWait.h"
 };
 
 // DishonoredGame.DisAISubStateMeleeChase: retail sizeof 432, reflected span 225..432 (2012 PDB sizeof 432)
@@ -304,6 +310,7 @@ public:
     //## END PROPS DisAISubStateMeleeChase
 
     DECLARE_CLASS(UDisAISubStateMeleeChase,UDisAISubStateCombatBase,0,DishonoredGame)
+#include "CppText/UDisAISubStateMeleeChase.h"
 };
 
 // DishonoredGame.DisAISubStateMeleeEngage: retail sizeof 520, reflected span 225..520 (2012 PDB sizeof 520)
@@ -319,6 +326,7 @@ public:
     //## END PROPS DisAISubStateMeleeEngage
 
     DECLARE_CLASS(UDisAISubStateMeleeEngage,UDisAISubStateCombatBase,0,DishonoredGame)
+#include "CppText/UDisAISubStateMeleeEngage.h"
 };
 
 // DishonoredGame.DisBehaviorAmbush: retail sizeof 192, reflected span 160..192 (2012 PDB sizeof 192)
@@ -384,6 +392,7 @@ public:
     DECLARE_FUNCTION(execRequestStateExitCallback_DoPullSpell);
     DECLARE_FUNCTION(execRequestStateExitCallback_DoAttractSpell);
     DECLARE_CLASS(UDisBehaviorAssassinCombat,UDisBehaviorCombatMelee,0,DishonoredGame)
+#include "CppText/UDisBehaviorAssassinCombat.h"
 };
 
 // DishonoredGame.DisBehaviorCombatCityGuard: retail sizeof 304, reflected span 304..304 (2012 PDB sizeof 304)

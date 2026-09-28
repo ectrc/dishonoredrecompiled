@@ -61,9 +61,6 @@ public:
 // ---- agent CG (PHASE9 CG): the AI globals ----
 // Bodies in Src/dishonoredutilities_accessors.cpp, beside agent AU's twelve.
 class UDishonoredGlobalAIManager* DisGetGlobalAIManagerUnchecked();
-/** DISHONORED(bringup): names, once per call site, a place where retail drives the desires system (IDisDesiresInterface)
-    that this tree does not have. Defined in Src/disaisubprocess.cpp. */
-void DisAINoteDesiresGap( const TCHAR* Site );
 FLOAT DisGetAppropriateWorldTime( const class AActor* const _pActor );
 
 // ---- agent CG: DisIsPawnDead ----

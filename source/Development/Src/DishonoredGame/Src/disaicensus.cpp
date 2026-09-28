@@ -16,6 +16,7 @@
 
 #include "DishonoredGame.h"
 #include "disaicensus.h"
+#include "disdesirestructs.h"
 
 INT GDisAIBrainTicks = 0;
 INT GDisAIStimsEnqueued = 0;
@@ -94,6 +95,216 @@ static FDisAINPCTrack* DisAIFindTrack( ADishonoredNPCPawn* Pawn )
 	Track.TurnedTotal = 0;
 	const INT Added = GDisAIState.Tracks.AddItem( Track );
 	return &GDisAIState.Tracks(Added);
+}
+
+/*-----------------------------------------------------------------------------
+	agent DF: the sub-state and behaviour histograms
+-----------------------------------------------------------------------------*/
+
+INT GDisAISubStateTransitions = 0;
+
+struct FDisAIClassCount
+{
+	UClass* Class;
+	INT Count;
+};
+
+static TArray<FDisAIClassCount> GDisAISubStateCounts;
+static TArray<FDisAIClassCount> GDisAIBehaviorCounts;
+
+static void DisAIBump( TArray<FDisAIClassCount>& _rTable, UClass* _pClass )
+{
+	if( !_pClass )
+	{
+		return;
+	}
+	for( INT Idx = 0; Idx < _rTable.Num(); Idx++ )
+	{
+		if( _rTable(Idx).Class == _pClass )
+		{
+			_rTable(Idx).Count++;
+			return;
+		}
+	}
+	FDisAIClassCount Row;
+	Row.Class = _pClass;
+	Row.Count = 1;
+	_rTable.AddItem( Row );
+}
+
+/** Highest count first, so the line reads as "what the NPCs mostly do". */
+static FString DisAIFormatHistogram( const TArray<FDisAIClassCount>& _rTable )
+{
+	FString Out;
+	TArray<INT> Used;
+	for( INT Rank = 0; Rank < _rTable.Num(); Rank++ )
+	{
+		INT Best = INDEX_NONE;
+		for( INT Idx = 0; Idx < _rTable.Num(); Idx++ )
+		{
+			if( Used.FindItemIndex( Idx ) != INDEX_NONE )
+			{
+				continue;
+			}
+			if( Best == INDEX_NONE || _rTable(Idx).Count > _rTable(Best).Count )
+			{
+				Best = Idx;
+			}
+		}
+		if( Best == INDEX_NONE )
+		{
+			break;
+		}
+		Used.AddItem( Best );
+		Out += FString::Printf( TEXT("%s=%i "), *_rTable(Best).Class->GetName(), _rTable(Best).Count );
+	}
+	return Out;
+}
+
+void DisAINoteSubStateEnter( UClass* Entered, UClass* Left )
+{
+	if( !DisAICensusEnabled() )
+	{
+		return;
+	}
+	DisAIBump( GDisAISubStateCounts, Entered );
+	if( Entered && Left && Entered != Left )
+	{
+		GDisAISubStateTransitions++;
+	}
+}
+
+void DisAINoteBehaviorSlot0( UClass* Behavior )
+{
+	if( !DisAICensusEnabled() )
+	{
+		return;
+	}
+	DisAIBump( GDisAIBehaviorCounts, Behavior );
+}
+
+FString DisAISubStateHistogram()
+{
+	return DisAIFormatHistogram( GDisAISubStateCounts );
+}
+
+FString DisAIBehaviorHistogram()
+{
+	return DisAIFormatHistogram( GDisAIBehaviorCounts );
+}
+
+/**
+ * DISHONORED(bringup): agent DF. The slot table of one brain, printed once. A behaviour requests a sub-state BY SLOT, and
+ * the slot resolves through its own tweaks object's m_SubStateTweaks array - so an empty array means the request is
+ * refused and the NPC never leaves DisAISubStateInit no matter how many sub-states are ported. This says whether the
+ * array is there, how long it is, and which class each entry spawns.
+ */
+static void DisAIReportSlotTable( UDishonoredAIBrain* Brain )
+{
+	if( !Brain )
+	{
+		return;
+	}
+	debugf( TEXT("DISHONORED(bringup): disai slots: brain %s has %i behaviours"), *Brain->GetName(), Brain->m_BehaviorArray.Num() );
+	for( INT Idx = 0; Idx < Brain->m_BehaviorArray.Num(); Idx++ )
+	{
+		UDishonoredAIBehavior* Behavior = Brain->m_BehaviorArray(Idx);
+		if( !Behavior )
+		{
+			continue;
+		}
+		UDisTweaks_AIBehavior* Tweaks = (UDisTweaks_AIBehavior*)Behavior->GetTweaks_Derived();
+		FString Slots;
+		if( Tweaks )
+		{
+			for( INT Slot = 0; Slot < Tweaks->m_SubStateTweaks.Num(); Slot++ )
+			{
+				UDisTweaks_AISubState* SlotTweaks = Tweaks->m_SubStateTweaks(Slot);
+				UClass* SpawnClass = SlotTweaks ? SlotTweaks->GetSpawnedObjectClass( eDisTweaksSpawnType_InGame ) : NULL;
+				Slots += FString::Printf( TEXT("%i:%s->%s "), Slot,
+					SlotTweaks ? *SlotTweaks->GetClass()->GetName() : TEXT("none"),
+					SpawnClass ? *SpawnClass->GetName() : TEXT("none") );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): disai slots:   %s tweaks %s slots %i [%s] fsm states %i"),
+			*Behavior->GetClass()->GetName(),
+			Tweaks ? *Tweaks->GetClass()->GetName() : TEXT("NONE"),
+			Tweaks ? Tweaks->m_SubStateTweaks.Num() : -1,
+			*Slots,
+			Behavior->m_pBehaviorFSM ? Behavior->m_pBehaviorFSM->m_NativeStates.Num() : -1 );
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	agent DF: does the dispatcher the engine start-up path now creates actually deliver?
+
+	FArkGameEventDispatcher::CreateInstance had never been called in this tree (agentCG.md hand-over 4), so every path
+	through the dispatcher was dead code. Turning it on is one line; proving it works needs an event to go in and come out
+	again, which is what this does - including the deferral, by registering a second listener from inside the first, which
+	is the case the whole m_PendingRegistrations design exists for.
+-----------------------------------------------------------------------------*/
+
+class FDisAIArkEventProbe
+{
+public:
+	FDisAIArkEventProbe() : m_Received( 0 ), m_ReceivedDeferred( 0 ), m_ReentrantType( 0 ) {}
+
+	void OnEvent( const FArkGameEvent& _rEvent )
+	{
+		m_Received++;
+		// Register a second listener from inside a dispatch of the same type: the dispatcher must defer it rather than
+		// mutate the array it is walking.
+		FArkGameEventDispatcher* Dispatcher = FArkGameEventDispatcher::GetInstance();
+		if( Dispatcher && m_Received == 1 )
+		{
+			Dispatcher->RegisterToEvent( m_ReentrantType, this, &FDisAIArkEventProbe::OnDeferredEvent );
+		}
+	}
+
+	void OnDeferredEvent( const FArkGameEvent& _rEvent )
+	{
+		m_ReceivedDeferred++;
+	}
+
+	INT m_Received;
+	INT m_ReceivedDeferred;
+	INT m_ReentrantType;
+};
+
+/** The highest event type the retail tables are sized for, so the probe cannot collide with a real subscriber. */
+enum { DIS_AI_ARKEVENT_PROBE_TYPE = ARK_GAME_EVENT_TYPE_COUNT - 1 };
+
+static void DisAIArkEventSelfTest()
+{
+	FArkGameEventDispatcher* Dispatcher = FArkGameEventDispatcher::GetInstance();
+	if( !Dispatcher )
+	{
+		debugf( TEXT("DISHONORED(bringup): disai arkevents selftest: no instance - FArkGameEventDispatcher::CreateInstance was not called") );
+		return;
+	}
+
+	FDisAIArkEventProbe Probe;
+	Probe.m_ReentrantType = DIS_AI_ARKEVENT_PROBE_TYPE;
+	const INT EventType = DIS_AI_ARKEVENT_PROBE_TYPE;
+
+	Dispatcher->RegisterToEvent( EventType, &Probe, &FDisAIArkEventProbe::OnEvent );
+	Dispatcher->ProcessEvent( FArkGameEvent( EventType, NULL, NULL ) );
+	const INT AfterFirst = Probe.m_Received;
+	const INT DeferredAfterFirst = Probe.m_ReceivedDeferred;
+
+	// The second dispatch is where the deferred registration must have been applied.
+	Dispatcher->ProcessEvent( FArkGameEvent( EventType, NULL, NULL ) );
+	const INT AfterSecond = Probe.m_Received;
+	const INT DeferredAfterSecond = Probe.m_ReceivedDeferred;
+
+	Dispatcher->UnregisterToEvent( EventType, &Probe, &FDisAIArkEventProbe::OnEvent );
+	Dispatcher->UnregisterToEvent( EventType, &Probe, &FDisAIArkEventProbe::OnDeferredEvent );
+	Dispatcher->ProcessEvent( FArkGameEvent( EventType, NULL, NULL ) );
+
+	debugf( TEXT("DISHONORED(bringup): disai arkevents selftest: delivered %i/1 then %i/2, deferred registration delivered %i then %i, after unregister %i (expect 2 and 1)"),
+		AfterFirst, AfterSecond, DeferredAfterFirst, DeferredAfterSecond, Probe.m_Received );
+	const UBOOL bOk = ( AfterFirst == 1 && AfterSecond == 2 && DeferredAfterFirst == 0 && DeferredAfterSecond == 1 && Probe.m_Received == 2 );
+	debugf( TEXT("DISHONORED(bringup): disai arkevents selftest: %s"), bOk ? TEXT("ok - register, dispatch, defer and unregister all work") : TEXT("FAILED") );
 }
 
 /** The ten most common actor classes of the world, so an empty NPC census can be read. */
@@ -234,6 +445,49 @@ void DisAIReport( UWorld* World, FLOAT DeltaSeconds )
 		GDisAIBehaviorInits, GDisAIBehaviorActivations,
 		GDisAISubStateEnters, GDisAISubStateTicks, GDisAISubProcessBegins,
 		GDisAICallbacksFired, GDisAIMoveRequests );
+	// agent DF: what the machines actually did, which is the question agent CG's census could not answer while every
+	// sub-state was an empty class.
+	// agent DF: the slot table, once, as soon as there is a brain to read it from.
+	{
+		static UBOOL bReportedSlots = FALSE;
+		if( !bReportedSlots && BrainsInit > 0 )
+		{
+			bReportedSlots = TRUE;
+			for( FActorIterator It; It; ++It )
+			{
+				ADishonoredNPCPawn* SlotPawn = Cast<ADishonoredNPCPawn>( *It );
+				UDishonoredAIBrain* SlotBrain = SlotPawn ? SlotPawn->GetAIBrain() : NULL;
+				if( SlotBrain )
+				{
+					DisAIReportSlotTable( SlotBrain );
+					break;
+				}
+			}
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): disai substates: %i transitions; entered %s"),
+		GDisAISubStateTransitions, *DisAISubStateHistogram() );
+	debugf( TEXT("DISHONORED(bringup): disai slot0: %s"), *DisAIBehaviorHistogram() );
+	// agent DF: the Ark game-event dispatcher, created for the first time this wave (LaunchEngineLoop.cpp).
+	// agent DF: prove the dispatcher once, the first time the census runs.
+	{
+		static UBOOL bSelfTested = FALSE;
+		if( !bSelfTested )
+		{
+			bSelfTested = TRUE;
+			DisAIArkEventSelfTest();
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): disai arkevents: instance %s, %i global + %i per-object registrations, %i unregistrations, %i deferred, %i dispatches, %i callbacks invoked"),
+		FArkGameEventDispatcher::GetInstance() ? TEXT("yes") : TEXT("no"),
+		GArkGameEventRegistrations, GArkGameEventPerObjectRegistrations, GArkGameEventUnregistrations,
+		GArkGameEventDeferred, GArkGameEventDispatches, GArkGameEventCallbacksInvoked );
+	debugf( TEXT("DISHONORED(bringup): disai desires: %i set calls; faceto %i new %i update %i stop; loco %i/%i/%i; lookat %i/%i/%i; body intentions %i"),
+		GDisDesireSetCalls,
+		GDisDesireRequests[DisDesireStructs::DDK_FaceTo], GDisDesireUpdates[DisDesireStructs::DDK_FaceTo], GDisDesireStops[DisDesireStructs::DDK_FaceTo],
+		GDisDesireRequests[DisDesireStructs::DDK_Loco], GDisDesireUpdates[DisDesireStructs::DDK_Loco], GDisDesireStops[DisDesireStructs::DDK_Loco],
+		GDisDesireRequests[DisDesireStructs::DDK_LookAt], GDisDesireUpdates[DisDesireStructs::DDK_LookAt], GDisDesireStops[DisDesireStructs::DDK_LookAt],
+		GDisDesireBodyIntentions );
 	if( Thoughts.Len() )
 	{
 		debugf( TEXT("DISHONORED(bringup): disai thoughts: %s"), *Thoughts );

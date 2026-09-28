@@ -44,7 +44,7 @@ public:
 	UBOOL ArePreconditionsMet( struct FDisNativeStateParam& Params );
 	void OnOwningBehaviorResume( const FDisBodyIntention& PreviousBodyIntention );
 	void OnOwningBehaviorPause( UBOOL bIsBeingTerminated );
-	void OnOtherActorTerminatedEvent( const struct FArkGameEvent& Event );
+	void OnOtherActorTerminatedEvent( const class FArkGameEvent& Event );
 	void PostGameLoad_SubState();
 
 	/** The six delegate hooks. The suffix form takes the string the behaviour composes; the two that take the behaviour

@@ -163,6 +163,23 @@ public:
 	FArkGameEventCallback	m_Callback;
 };
 
+/**
+ * DISHONORED(bringup): agent DF's measurement of turning the dispatcher on. FArkGameEventDispatcher::CreateInstance was
+ * never called in this tree until this wave (agentCG.md hand-over 4), so GetInstance answered NULL and every AI
+ * subscription was either guarded out or - in agent CG's UDisAISubState::SetActionTargetProxy and its three siblings -
+ * an unguarded dereference of NULL that only never fired because no sub-state had a body to set an action target with.
+ * Landing the sub-states makes those paths live, so the instance is not optional for this package.
+ *
+ * The counters answer the question the brief asked: what actually happens once it is on. They cost two increments per
+ * registration and are reported by the -disai census.
+ */
+extern INT GArkGameEventRegistrations;
+extern INT GArkGameEventUnregistrations;
+extern INT GArkGameEventPerObjectRegistrations;
+extern INT GArkGameEventDispatches;
+extern INT GArkGameEventCallbacksInvoked;
+extern INT GArkGameEventDeferred;
+
 class FArkGameEventDispatcher
 {
 public:
@@ -187,10 +204,12 @@ public:
 		Callback.Set( _pObject, _pMethod );
 		if( IsBeingProcessed( _EventType ) )
 		{
+			GArkGameEventDeferred++;
 			m_PendingRegistrations.AddItem( FArkPendingEvent( _EventType, NULL, Callback ) );
 		}
 		else
 		{
+			GArkGameEventRegistrations++;
 			m_RegistrationTable[ _EventType ].AddItem( Callback );
 		}
 	}
@@ -222,6 +241,7 @@ public:
 			}
 			if( !IsBeingProcessed( _EventType ) )
 			{
+				GArkGameEventUnregistrations++;
 				Registrations.Remove( i, 1 );
 			}
 			else if( !IsUnregistrationPending( _EventType, NULL, Registrations(i) ) )
@@ -247,6 +267,7 @@ public:
 		}
 		else
 		{
+			GArkGameEventPerObjectRegistrations++;
 			m_PerObjectRegistrationTable[ _EventType ].Add( (PTRINT)_pSender, Callback );
 		}
 	}

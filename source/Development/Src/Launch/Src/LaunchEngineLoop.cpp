@@ -4,6 +4,7 @@
 =============================================================================*/
 
 #include "LaunchPrivate.h"
+#include "arkgameeventdispatcher.h"
 #include "UnConsoleSupportContainer.h"
 #include "Database.h"
 #include "ConsoleManager.h"
@@ -2650,6 +2651,13 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 
 	// Delete temporary files in cache.
 	appCleanFileCache();
+
+	// DISHONORED(port): 2013 rva 0x5e249d calls FArkGameEventDispatcher::CreateInstance (0x5572d0) exactly here -
+	// after appCleanFileCache and before the editor-token branch - and it is the ONLY call to it in the retail exe
+	// (one code xref). Until this line existed, FArkGameEventDispatcher::GetInstance answered NULL for the whole
+	// run, so every AI subscription to an Ark game event was either skipped with a note or an unguarded NULL
+	// dereference waiting for the first sub-state that set an action target (agentCG.md hand-over 4).
+	FArkGameEventDispatcher::CreateInstance();
 
 #if !CONSOLE
 	if( bHasEditorToken )

@@ -47,7 +47,9 @@ public:
 	virtual BYTE GetAwarenessLevel() const;
 	virtual UBOOL IsPlayerAllowedToPushMe() const;
 	virtual UBOOL CanBlockSoiree( FGuid _SoireeGuid, BYTE _Priority ) const { return FALSE; }
-	virtual class UObject* GetDesires() { return NULL; }
+	// DISHONORED(port): agent DF - the return type is the interface (retail: IDisDesiresInterface*); agent CG declared it
+	// as UObject* while IDisDesiresInterface had no methods to call. UDisAIBehaviorWithDesires overrides it with `this`.
+	virtual class IDisDesiresInterface* GetDesires() { return NULL; }
 	// DISHONORED(port): 2012 vtable +348, called by UDishonoredAIBrain::ProcessOneStim the moment a behaviour takes its
 	// slot. The base body is empty; every UDisBehavior* subclass uses it to request its first sub-state.
 	virtual void OnBehaviorStart() {}
@@ -71,3 +73,30 @@ public:
 	void SetActionTargetActor( class AActor* _pActor );
 	void SetActionTargetProxy( struct FDisAttentionProxy _ActionTarget );
 	void ClearActionTarget();
+
+	/*-------------------------------------------------------------------------
+		DISHONORED(port): agent DF. Requesting a sub-state, which is the one thing every UDisBehavior* subclass does and
+		the reason its callbacks exist. Retail spells both of these as member templates over the behaviour's own tweaks
+		class and the target sub-state's tweaks class, and the shipped exe therefore carries one instantiation per
+		(behaviour, sub-state) pair - 28 of RequestSubStateChange and 3 of AreSubstatePreconditionsMet, all 135 and 264
+		bytes (2012 rvas 0x740000 for <Idle, Stand> and 0x73fcb0 for <EnemyUnreachable, DoWeaponManoeuver>).
+
+		The slot index is the whole trick: a behaviour's tweaks carry an ARRAY of sub-state tweaks, one per slot, and the
+		slot the caller names selects both which sub-state object the machine changes to and which settings that
+		sub-state is given while it is in that slot. That is how one UDisAISubStateStand class behaves differently as a
+		guard's standing post and as a shooter's firing stance.
+
+		The bodies are in Inc/disaisubstate.h, after the generated classes: they need UDisAISubStateMachine and
+		UDisAISubState complete, and this cpptext is included inside UDishonoredAIBehavior, which the generator declares
+		before both.
+	-------------------------------------------------------------------------*/
+	template< class BehaviorTweaksType, class SubStateTweaksType >
+	void RequestSubStateChange( BYTE _SubStateArrayIndex, struct FDisNativeStateParam& _rAISubStateParam );
+
+	template< class BehaviorTweaksType, class SubStateTweaksType >
+	UBOOL AreSubstatePreconditionsMet( const BYTE _SubStateArrayIndex, struct FDisNativeStateParam& _rAISubStateParam ) const;
+
+	/** DISHONORED(port): 2012 rva 0x74c450 (agent DF). Rolls every sub-process's filter mask into the sub-processes mask
+	    and the complete mask, and every sub-state's into the complete mask only - so CallFilterAIStim can reject a stim
+	    that nothing anywhere under this behaviour cares about with one array lookup. */
+	void BuildInternalFilterStimMasks( BYTE* _pSubProcessesFilterStimMask, BYTE* _pCompleteFilterStimMask ) const;

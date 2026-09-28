@@ -85,6 +85,7 @@ public:
     //## END PROPS DisAISubStateWHCombatLongDistance
 
     DECLARE_CLASS(UDisAISubStateWHCombatLongDistance,UDisAISubStateCombatBase,0,DishonoredGame)
+#include "CppText/UDisAISubStateWHCombatLongDistance.h"
 };
 
 // DishonoredGame.DisAISubStateWHCombatShortDistance: retail sizeof 436, reflected span 225..436 (2012 PDB sizeof 436)
@@ -99,6 +100,7 @@ public:
     //## END PROPS DisAISubStateWHCombatShortDistance
 
     DECLARE_CLASS(UDisAISubStateWHCombatShortDistance,UDisAISubStateCombatBase,0,DishonoredGame)
+#include "CppText/UDisAISubStateWHCombatShortDistance.h"
 };
 
 // DishonoredGame.DisBehaviorCombatWolfhound: retail sizeof 308, reflected span 300..308 (2012 PDB sizeof 308)

@@ -299,6 +299,27 @@ void DisHandleAIStim( UDishonoredAIBrain* _pBrain, const T& _rStim, const UObjec
 	}
 }
 
+/** DISHONORED(port): what each concrete stim's own constructor does in retail (FAIStimStruct_BrainInit::FAIStimStruct_BrainInit,
+    2013 rva 0x7189e0, is the base constructor plus one store): zero the struct and stamp its EAIStimID, which is what
+    DisNewStim then looks the stim's type info and dispatch table up by. The generated EC_EventParm constructors zero
+    m_StimID and no generated code sets it, so every raise site goes through one of these two.
+    DISHONORED(written): agent CG wrote the _Internal form as a file static in dishonoredaibrain.cpp; agent DF moved it
+    here because the desire layer raises four of these stims from disdesiresinterface.cpp and a second copy would be a
+    second place for the id to go missing. The public form is the one retail's own callers use: it respects dormancy. */
+template< class T >
+T DisMakeStim( BYTE _StimID )
+{
+	T Stim( EC_EventParm );
+	Stim.m_StimID = _StimID;
+	return Stim;
+}
+
+template< class T >
+void DisRaiseStim( UDishonoredAIBrain* _pBrain, BYTE _StimID, UObject* _pSource )
+{
+	DisHandleAIStim_Internal< T >( _pBrain, DisMakeStim< T >( _StimID ), _pSource );
+}
+
 /** DISHONORED(port): 2013 rva 0x657100 (2012 0x6a0710) and 20 more folded instantiations: the static broadcast form.
     ONE stim object is created out of the global manager and every initialized brain in the list is handed the same
     pointer, so the stim is shared and its reference count is what keeps it alive for all of them. */

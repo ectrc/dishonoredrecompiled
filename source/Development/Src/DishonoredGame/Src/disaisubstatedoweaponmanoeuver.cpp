@@ -1,23 +1,113 @@
 // DishonoredGame/src/disaisubstatedoweaponmanoeuver.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (19):
-//   0x765320  public: virtual unsigned char const * __thiscall UDisAISubStateDoWeaponManoeuver::BuildFilterStimMask(void)const
-//   0x765340  public: unsigned int __thiscall UDisAISubStateDoWeaponManoeuver::FilterItemContext_End(struct FAIStimStruct_ItemContext_End const &)
-//   0x765370  public: virtual int * __thiscall ADisSpeaker_PA::GetHighlightFlags(void)
-//   0x7686e0  public: virtual void __thiscall FDisAISubStateDoWeaponManoeuver_Param::OnPending(class UDishonoredNativeState *, class UObject *)
-//   0x768720  public: virtual void __thiscall UDisAISubStateDoWeaponManoeuver::BeginSubState_Derived(void)
-//   0x768730  public: virtual void __thiscall UDisAISubStateDoWeaponManoeuver::EndSubState_Derived(unsigned int)
-//   0x768770  public: virtual void __thiscall UDisAISubStateDoWeaponManoeuver::PostGameLoad(enum ESaveLoadLocation)
-//   0x7687c0  public: virtual void __thiscall UDisAISubStateDoWeaponManoeuver::TickState(float)
-//   0x770b20  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisAISubStateDoWeaponManoeuver::GetFilterStimDelegate_SubState(enum EAIStimID)
-//   0x773630  public: static class UClass * __cdecl UDisAISubStateDoWeaponManoeuver::GetPrivateStaticClassUDisAISubStateDoWeaponManoeuver(wchar_t const *)
-//   0x77ba10  public: static void __cdecl UDisAISubStateDoWeaponManoeuver::InitializePrivateStaticClassUDisAISubStateDoWeaponManoeuver(void)
-//   0x7801d0  public: static class UClass * __cdecl UDisAISubStateDoWeaponManoeuver::StaticClassNoInline(void)
-//   0x781ab0  public: __thiscall FDisAISubStateDoWeaponManoeuver_Param::FDisAISubStateDoWeaponManoeuver_Param(void)
-//   0x783110  public: static class UClass * __cdecl UDisTweaks_AISubState_DoWeaponManoeuver::GetPrivateStaticClassUDisTweaks_AISubState_DoWeaponManoeuver(wchar_t const *)
-//   0x784540  public: static void __cdecl UDisTweaks_AISubState_DoWeaponManoeuver::InitializePrivateStaticClassUDisTweaks_AISubState_DoWeaponManoeuver(void)
-//   0x784cf0  public: static class UClass * __cdecl UDisTweaks_AISubState_DoWeaponManoeuver::StaticClassNoInline(void)
-//   0x7866f0  public: virtual unsigned int __thiscall UDisAISubStateDoWeaponManoeuver::ArePreconditionsMet_Derived(void)
-//   0x786860  public: virtual void __thiscall UDisAISubStateDoWeaponManoeuver::RefreshSubState(float)
-//   0x7869a0  public: virtual unsigned int __thiscall UDisAISubStateDoWeaponManoeuver::GetResumingBodyIntentionDesire(struct FDisBodyIntention const &, struct FDisBodyIntention &)const
+// ---- agent DF ports (PHASE10 DF): UDisAISubStateDoWeaponManoeuver and its parameter ----
+
+#include "DishonoredGame.h"
+#include "disaisubstate.h"
+#include "disdesirestructs.h"
+#include "aistimstruct.h"
+#include "dishonoredutilities_ai.h"
+
+/*-----------------------------------------------------------------------------
+	FDisAISubStateDoWeaponManoeuver_Param
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x781ab0. The cooldown flag is deliberately NOT set by the constructor: every retail call
+// site writes it after construction, which is how the same manoeuvre can be requested with and without the cooldown test.
+FDisAISubStateDoWeaponManoeuver_Param::FDisAISubStateDoWeaponManoeuver_Param()
+	: FDisAISubState_Param( UDisAISubStateDoWeaponManoeuver::StaticClass() )
+	, m_bCheckCooldownOnPrecondition( FALSE )
+{
+}
+
+// DISHONORED(port): 2012 rva 0x7686e0
+void FDisAISubStateDoWeaponManoeuver_Param::OnPending( UDishonoredNativeState* PendingState, UObject* ManagedObject )
+{
+	FDisAISubState_Param::OnPending( PendingState, ManagedObject );
+	( (UDisAISubStateDoWeaponManoeuver*)PendingState )->m_bPrecondition_CheckCooldown = m_bCheckCooldownOnPrecondition ? 1 : 0;
+}
+
+/*-----------------------------------------------------------------------------
+	UDisAISubStateDoWeaponManoeuver
+
+	The whole sub-state is a wrapper around one item context: start it, hold the stance while it runs, leave when it raises
+	ItemContext_End. The precondition is what stops a behaviour asking for a manoeuvre whose cooldown has not elapsed.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x765320: one stim, the end of its own item context.
+const BYTE* UDisAISubStateDoWeaponManoeuver::BuildFilterStimMask()
+{
+	static const BYTE StimIDs[] = { EAIStimID_ItemContext_End };
+	static FDisStimFilterMask s_Mask;
+	return s_Mask.Build( StimIDs, ARRAY_COUNT(StimIDs) );
+}
+
+FDisStimPredicateDelegate UDisAISubStateDoWeaponManoeuver::GetFilterStimDelegate_SubState( BYTE StimID )
+{
+	if( StimID == EAIStimID_ItemContext_End )
+	{
+		return DIS_BIND_STIM_PREDICATE( UDisAISubStateDoWeaponManoeuver, FAIStimStruct, FilterItemContext_End );
+	}
+	return FDisStimPredicateDelegate();
+}
+
+// DISHONORED(bringup): the whole body of this sub-state is UDisItemContext - agent AJ's third dependency root. Retail asks
+// the pawn's equipped weapon for the manoeuvre context, starts it, keeps m_pRunningContext, and waits for the
+// ItemContext_End stim. None of that exists, so the manoeuvre is refused and the state leaves on its next tick; the
+// precondition therefore also answers FALSE, which is retail's own answer for an NPC whose weapon has no manoeuvre.
+UBOOL UDisAISubStateDoWeaponManoeuver::ArePreconditionsMet_Derived()
+{
+	static UBOOL bNoted = FALSE;
+	if( !bNoted )
+	{
+		bNoted = TRUE;
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDisItemContext is not ported; a weapon manoeuvre's preconditions are never met") );
+	}
+	return FALSE;
+}
+
+void UDisAISubStateDoWeaponManoeuver::BeginSubState_Derived()
+{
+	m_pRunningContext = NULL;
+}
+
+void UDisAISubStateDoWeaponManoeuver::EndSubState_Derived( UBOOL bIsBeingTerminated )
+{
+	m_pRunningContext = NULL;
+}
+
+void UDisAISubStateDoWeaponManoeuver::TickState( FLOAT DeltaSeconds )
+{
+	Super::TickState( DeltaSeconds );
+	if( !m_pRunningContext )
+	{
+		RequestStateExit();
+	}
+}
+
+void UDisAISubStateDoWeaponManoeuver::RefreshSubState( const FLOAT TimeSinceLastThought )
+{
+	delegateRefreshCallback( this, TimeSinceLastThought );
+}
+
+// DISHONORED(port): 2012 rva 0x765350-region: the manoeuvre's own context has ended, so the state is done.
+UBOOL UDisAISubStateDoWeaponManoeuver::FilterItemContext_End( const FAIStimStruct& _rStim )
+{
+	m_pRunningContext = NULL;
+	RequestStateExit();
+	return FALSE;
+}
+
+// DISHONORED(port): a manoeuvring NPC keeps its weapon up while the context runs.
+UBOOL UDisAISubStateDoWeaponManoeuver::GetResumingBodyIntentionDesire( const FDisBodyIntention& _rPreviousBodyIntention, FDisBodyIntention& _rResumingBodyIntention ) const
+{
+	_rResumingBodyIntention.m_IntendedBodyStance = eDisNPCBodyStance_Equipped;
+	_rResumingBodyIntention.m_pDesiredPrimaryItemClass = UDisWepMelee::StaticClass();
+	_rResumingBodyIntention.m_pDesiredSecondaryItemClass = NULL;
+	return TRUE;
+}
+
+void UDisAISubStateDoWeaponManoeuver::PostGameLoad_DoWeaponManoeuver()
+{
+	PostGameLoad_SubState();
+	m_pRunningContext = NULL;
+}

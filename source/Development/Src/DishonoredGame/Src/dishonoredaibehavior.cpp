@@ -7,6 +7,7 @@
 
 #include "DishonoredGame.h"
 #include "disaicensus.h"
+#include "disdesirestructs.h"
 #include "dishonoredutilities.h"
 #include "dishonoredutilities_ai.h"
 #include "disaisubstate.h"
@@ -81,16 +82,10 @@ void UDishonoredAIBehavior::CallInitBehavior( UDishonoredAIBrain* const _pAIBrai
 	m_pOwningBrain = _pAIBrain;
 	m_pGlobalAIMan = DisGetGlobalAIManagerUnchecked();
 
-	UObject* DesiresObject = GetDesires();
-	m_pDesires = TScriptInterface<IDisDesiresInterface>();
-	if( DesiresObject )
+	// DISHONORED(port): agent DF - the behaviour's own desires, cached as a script interface so the collector can null them.
 	{
-		void* Interface = DesiresObject->GetInterfaceAddress( UDisDesiresInterface::StaticClass() );
-		if( Interface )
-		{
-			m_pDesires.SetObject( DesiresObject );
-			m_pDesires.SetInterface( Interface );
-		}
+		IDisDesiresInterface* OwnDesires = GetDesires();
+		DisSetScriptInterface( m_pDesires, OwnDesires ? OwnDesires->GetUObjectInterfaceDisDesiresInterface() : NULL );
 	}
 
 	m_DesignatedSlot = _pBehaviorTweaks->m_DesignatedSlot;
@@ -141,15 +136,23 @@ void UDishonoredAIBehavior::CallInitBehavior( UDishonoredAIBrain* const _pAIBrai
 		BehaviorStates.AddItem( SubState );
 	}
 
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	// DISHONORED(port): agent DF - the behaviour's own desires are cached and initialised after its sub-states are built,
+	// so a sub-state's InitializeDesires has already claimed the higher priority when the behaviour claims its own.
 	{
-		DisAINoteDesiresGap( TEXT("UDishonoredAIBehavior::CallInitBehavior") );
+		IDisDesiresInterface* OwnDesires = GetDesires();
+		DisSetScriptInterface( m_pDesires, OwnDesires ? OwnDesires->GetUObjectInterfaceDisDesiresInterface() : NULL );
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
+		{
+			Desires->InitializeDesires();
+		}
 	}
 
 	ADishonoredNPCPawn* OwningPawn = m_pOwningBrain ? m_pOwningBrain->GetOwningPawn() : NULL;
-	// The parameter carries the state class the machine is to enter: retail's FDisAISubStateInit_Param constructor sets
-	// it to UDisAISubStateInit, and without it InitFSM asks the machine to change to a NULL state class.
-	FDisAISubStateInit_Param AISubStateParam( UDisAISubStateInit::StaticClass() );
+	// The parameter carries the state class the machine is to enter: FDisAISubStateInit_Param's own constructor names
+	// UDisAISubStateInit (2012 rva 0x77bc60), and without it InitFSM asks the machine to change to a NULL state class,
+	// which is the defect agent CG traced here. Agent DF made the type a real struct with that constructor, so the class
+	// no longer has to be passed in at every call site.
+	FDisAISubStateInit_Param AISubStateParam;
 	if( OwningPawn )
 	{
 		AISubStateParam.m_BodyIntentionBeforeEnterState.m_IntendedBodyStance = OwningPawn->GetBodyStance();
@@ -209,9 +212,9 @@ void UDishonoredAIBehavior::CallTickBehavior( FLOAT _fDeltaSeconds )
 	if( !IsBehaviorFinished() )
 	{
 		TickBehavior( _fDeltaSeconds );
-		if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 		{
-			DisAINoteDesiresGap( TEXT("UDishonoredAIBehavior::CallTickBehavior") );
+			Desires->TickDesires( _fDeltaSeconds );
 		}
 	}
 	if( m_bForceFinishDueToDormancy )
@@ -275,9 +278,12 @@ void UDishonoredAIBehavior::CallOnBehaviorPause( UBOOL _bIsBeingTerminated )
 {
 	m_pBehaviorFSM->OnOwningBehaviorPause( _bIsBeingTerminated );
 	OnBehaviorPause( _bIsBeingTerminated );
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() && !_bIsBeingTerminated )
+	if( !_bIsBeingTerminated )
 	{
-		DisAINoteDesiresGap( TEXT("UDishonoredAIBehavior::CallOnBehaviorPause") );
+		if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
+		{
+			Desires->PauseDesires();
+		}
 	}
 	m_bIsPaused = TRUE;
 	for( INT Idx = 0; Idx < m_SubProcesses.Num(); Idx++ )
@@ -321,15 +327,16 @@ void UDishonoredAIBehavior::CallOnBehaviorResume( const FDisBodyIntention& _rPre
 		DisFireKismetEvent( Pawn, UDisSeqEvent_BehaviorStarted::StaticClass(), Pawn, Pawn, 0, FALSE );
 	}
 
-	if( m_pDesires.GetObject() && m_pDesires.GetInterface() )
+	if( IDisDesiresInterface* Desires = DisGetScriptInterface( m_pDesires ) )
 	{
-		DisAINoteDesiresGap( TEXT("UDishonoredAIBehavior::CallOnBehaviorResume") );
+		Desires->ResumeDesires( _rPreviousBodyIntention );
 	}
 	OnBehaviorResume();
 	m_pBehaviorFSM->OnOwningBehaviorResume( _rPreviousBodyIntention );
 	// DISHONORED(bringup): ADishonoredNPCPawn::UpdateAvoidableCollisionGroupFlags (2013 rva 0x759c50) closes retail's
 	// body; it needs UArkAvoidable, which is not ported.
 	GDisAIBehaviorActivations++;
+	DisAINoteBehaviorSlot0( GetClass() );
 }
 
 // DISHONORED(port): 2013 rva 0x6f0020 (2012 0x74f480): a behaviour that leaves the active stack drops its queued
@@ -592,4 +599,44 @@ void UDishonoredAIBehavior::OnOtherActorTerminatedEvent( const FArkGameEvent& _r
 void UDishonoredAIBehavior::BeginDestroy()
 {
 	Super::BeginDestroy();
+}
+
+// DISHONORED(port): 2012 rva 0x74c450 (agent DF). Two masks out of one walk: a sub-process's interest goes into both the
+// sub-processes mask and the complete mask, a sub-state's into the complete mask only. CallFilterAIStim then reads the
+// complete mask first and drops any stim nothing under this behaviour asked for, which is what keeps a 26-behaviour
+// brain cheap.
+void UDishonoredAIBehavior::BuildInternalFilterStimMasks( BYTE* _pSubProcessesFilterStimMask, BYTE* _pCompleteFilterStimMask ) const
+{
+	for( INT Idx = 0; Idx < m_SubProcesses.Num(); Idx++ )
+	{
+		UDisAISubProcess* SubProcess = m_SubProcesses(Idx);
+		const BYTE* SubProcessMask = SubProcess ? SubProcess->BuildFilterStimMask() : NULL;
+		if( !SubProcessMask )
+		{
+			continue;
+		}
+		for( INT StimID = 0; StimID < EAIStimID_MAX; StimID++ )
+		{
+			_pSubProcessesFilterStimMask[StimID] |= SubProcessMask[StimID];
+			_pCompleteFilterStimMask[StimID] |= SubProcessMask[StimID];
+		}
+	}
+
+	if( !m_pBehaviorFSM )
+	{
+		return;
+	}
+	for( INT Idx = 0; Idx < m_pBehaviorFSM->m_NativeStates.Num(); Idx++ )
+	{
+		UDisAISubState* SubState = Cast<UDisAISubState>( m_pBehaviorFSM->m_NativeStates(Idx) );
+		const BYTE* SubStateMask = SubState ? SubState->BuildFilterStimMask() : NULL;
+		if( !SubStateMask )
+		{
+			continue;
+		}
+		for( INT StimID = 0; StimID < EAIStimID_MAX; StimID++ )
+		{
+			_pCompleteFilterStimMask[StimID] |= SubStateMask[StimID];
+		}
+	}
 }

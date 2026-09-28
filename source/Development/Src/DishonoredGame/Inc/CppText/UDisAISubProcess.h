@@ -37,7 +37,7 @@ public:
 	void OnOwningBehaviorPause( UBOOL bIsBeingTerminated );
 	UBOOL IsSubProcessEnabled() const { return m_bIsSubProcessEnabled; }
 	FDisAttentionProxy GetSubProcessActionTargetProxy() const;
-	void OnOtherActorTerminatedEvent( const struct FArkGameEvent& Event );
+	void OnOtherActorTerminatedEvent( const class FArkGameEvent& Event );
 	void PostGameLoad_SubProcess();
 
 protected:

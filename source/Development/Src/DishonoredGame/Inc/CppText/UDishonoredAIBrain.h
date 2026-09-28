@@ -86,4 +86,9 @@ public:
 	UBOOL CanBeDormant() const;
 
 	// ---- agent CG: ClearAllMinAttention ----
+	/** DISHONORED(port): 2012 rva 0x749d10: what ETransitSpeed the pawn is actually moving at, i.e. the locomotion
+	    component's active request speed index mapped back through UDisTweaks_NPCPawn::m_LocomotionSpeedToTransitSpeed.
+	    Read by UDisAISubStateTakePosition::RefreshSubState to pick the right row of m_fRotationStartDistance. */
+	BYTE GetCurrentDesiredTransitSpeed() const;
+
 	void ClearAllMinAttention( BYTE _LimitType );

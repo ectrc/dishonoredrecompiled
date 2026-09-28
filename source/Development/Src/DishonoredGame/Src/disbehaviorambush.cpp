@@ -32,6 +32,8 @@
 // ---- agent CG ports (PHASE9 CG) ----
 
 #include "DishonoredGame.h"
+#include "disdesirestructs.h"
+#include "disaisubstate.h"
 
 // DISHONORED(port): 2013 rva 0x6c1fe0 (2012 0x7224d0): the lie-in-wait sub-state asking to leave finishes the ambush;
 // the brain retires the behaviour on the flag rather than on the sub-state change.
@@ -45,4 +47,27 @@ void UDisBehaviorAmbush::execRequestStateExitCallback_LieInWait( FFrame& Stack, 
 void UDisBehaviorAmbush::RequestStateExitCallback_LieInWait( UDishonoredNativeState* _pThisState )
 {
 	m_bFinished = TRUE;
+}
+
+/*-----------------------------------------------------------------------------
+	agent DF: the callback that needed FDisAISubStateLieInWait_Param
+-----------------------------------------------------------------------------*/
+
+void UDisBehaviorAmbush::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_TakeActorPosition( _pThisState );
+}
+
+// DISHONORED(port): 2012 rva 0x73c4f0. Having walked to the ambush point, lie in wait at it. This is the clearest single
+// example of the pair this package exists for: the callback builds an FDisAISubStateLieInWait_Param and hands it to slot 1,
+// and the sub-state that slot resolves to now has a body to run.
+void UDisBehaviorAmbush::RequestStateExitCallback_TakeActorPosition( UDishonoredNativeState* _pThisState )
+{
+	// DISHONORED(retail): the tweaks are fetched through the virtual getter and not read; the arguments are the
+	// behaviour's own members.
+	GetTweaks_Derived();
+	FDisAISubStateLieInWait_Param AISubStateParam( m_pAmbushPoint, FALSE, m_bLieInWaitIndefinitely != 0 );
+	RequestSubStateChange< UDisTweaks_AIBehavior_Ambush, UDisTweaks_AISubState_TakeActorPosition >( 1, AISubStateParam );
 }

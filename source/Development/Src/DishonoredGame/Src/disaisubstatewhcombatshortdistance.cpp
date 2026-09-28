@@ -1,14 +1,45 @@
 // DishonoredGame/src/disaisubstatewhcombatshortdistance.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (10):
-//   0x765cf0  private: virtual struct FDisBodyIntentionRequest * __thiscall UDisAISubStateWHCombatShortDistance::GetDesiresBodyIntentionRequest(void)
-//   0x771670  public: virtual void __thiscall UDisAISubStateWHCombatShortDistance::BeginSubState_Derived(void)
-//   0x7760f0  public: static class UClass * __cdecl UDisAISubStateWHCombatShortDistance::GetPrivateStaticClassUDisAISubStateWHCombatShortDistance(wchar_t const *)
-//   0x77c070  public: static void __cdecl UDisAISubStateWHCombatShortDistance::InitializePrivateStaticClassUDisAISubStateWHCombatShortDistance(void)
-//   0x780800  public: static class UClass * __cdecl UDisAISubStateWHCombatShortDistance::StaticClassNoInline(void)
-//   0x782920  public: __thiscall FDisAISubStateWHCombatShortDistance_Param::FDisAISubStateWHCombatShortDistance_Param(struct FDisAttentionProxy const &)
-//   0x783e10  public: static class UClass * __cdecl UDisTweaks_AISubState_WH_CombatShortDistance::GetPrivateStaticClassUDisTweaks_AISubState_WH_CombatShortDistance(wchar_t const *)
-//   0x7847f0  public: static void __cdecl UDisTweaks_AISubState_WH_CombatShortDistance::InitializePrivateStaticClassUDisTweaks_AISubState_WH_CombatShortDistance(void)
-//   0x7850e0  public: static class UClass * __cdecl UDisTweaks_AISubState_WH_CombatShortDistance::StaticClassNoInline(void)
-//   0x789190  public: virtual void __thiscall UDisAISubStateWHCombatShortDistance::RefreshSubState(float)
+// ---- agent DF ports (PHASE10 DF): UDisAISubStateWHCombatShortDistance and its parameter ----
+
+#include "DishonoredGame.h"
+#include "disaisubstate.h"
+#include "disdesirestructs.h"
+#include "aistimstruct.h"
+#include "dishonoredutilities_ai.h"
+
+/*-----------------------------------------------------------------------------
+	FDisAISubStateWHCombatShortDistance_Param
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x782920. A wolfhound has one stance, so the parameter forces Equipped rather than taking it.
+FDisAISubStateWHCombatShortDistance_Param::FDisAISubStateWHCombatShortDistance_Param( const FDisAttentionProxy& _rEnemyProxy )
+	: FDisAISubStateCombatBase_Param( _rEnemyProxy, eDisNPCBodyStance_Equipped )
+{
+	m_pStateClass = UDisAISubStateWHCombatShortDistance::StaticClass();
+}
+
+/*-----------------------------------------------------------------------------
+	UDisAISubStateWHCombatShortDistance
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x771670: the attack pattern is claimed with the "in formation" flag, which for a wolfhound
+// means "I am the one biting".
+void UDisAISubStateWHCombatShortDistance::BeginSubState_Derived()
+{
+	m_fRepositionTimer = -1.f;
+	CombatEngageAttackPattern();
+}
+
+// DISHONORED(port): 2012 rva 0x789190: re-claim the pattern and hold the bite position.
+// DISHONORED(bringup): the pattern and the engagement come from the combat manager (UDisGlobalCombatManager,
+// UDisBehaviorCombat), unported, so the hound closes on its enemy with no formation and never reports a rejected
+// engagement.
+void UDisAISubStateWHCombatShortDistance::RefreshSubState( const FLOAT TimeSinceLastThought )
+{
+	delegateRefreshCallback( this, TimeSinceLastThought );
+
+	FVector LookPosition;
+	const FVector BitePosition = DisComputeMeleePosition( m_EnemyProxy, LookPosition );
+	SetLocoLocationDesire( BitePosition, ETransitSpeed_Run, -1.f, 1.f, FALSE, FALSE );
+	SetLookAtLocationDesire( LookPosition, FDisLookAtInfluence::TorsoSpeedIndependent, -1.f );
+}

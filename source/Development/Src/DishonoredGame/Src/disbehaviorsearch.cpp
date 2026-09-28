@@ -61,6 +61,8 @@
 // ---- agent CG ports (PHASE9 CG) ----
 
 #include "DishonoredGame.h"
+#include "disdesirestructs.h"
+#include "disaisubstate.h"
 
 // DISHONORED(port): 2013 rva 0x6e4410 (2012 0x724840, exec 0x63f8a0): leaving the investigate sub-state resets the
 // reason to the enumeration's MAX sentinel (EDisAttentionChangeReasonType DACRT_MAX = 21), which is how retail spells
@@ -127,4 +129,49 @@ void UDisBehaviorSearch::OnExitCallback_TrackTarget( class UDishonoredNativeStat
 	{
 		SetActionTargetProxy( m_AttentionTargetProxy );
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	agent DF: the two callbacks the desire layer unblocked
+-----------------------------------------------------------------------------*/
+
+void UDisBehaviorSearch::execOnEnterCallback_GenericAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pLastState);
+	P_FINISH;
+	OnEnterCallback_GenericAction( _pThisState, _pLastState );
+}
+
+// DISHONORED(port): 2012 rva 0x724850: face what is being searched for while the search animation plays, and clear the
+// "target is unreachable" flag because this is a fresh look.
+void UDisBehaviorSearch::OnEnterCallback_GenericAction( UDishonoredNativeState* _pThisState, UDishonoredNativeState* _pLastState )
+{
+	// DISHONORED(retail): m_AttentionTargetProxy on the 2013-only UDisBehaviorAttentionBase; see UDisBehaviorNotice.
+	SetFaceToProxyDesire( m_AttentionTargetProxy, -100.f, FALSE );
+	m_bTargetIsUnreachable = FALSE;
+}
+
+void UDisBehaviorSearch::execOnExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pNextState);
+	P_FINISH;
+	OnExitCallback_GenericAction( _pThisState, _pNextState );
+}
+
+// DISHONORED(port): 2012 rva 0x73f770: the search animation is over, so the facing is released and the cooldown starts -
+// which is what stops an NPC playing the same search animation twice in a row.
+void UDisBehaviorSearch::OnExitCallback_GenericAction( UDishonoredNativeState* _pThisState, UDishonoredNativeState* _pNextState )
+{
+	if( _pNextState )
+	{
+		ClearFaceToDesire();
+	}
+	const UDisTweaks_AIBehavior_Search* Tweaks = Cast<UDisTweaks_AIBehavior_Search>( GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = (const UDisTweaks_AIBehavior_Search*)UDisTweaks_AIBehavior_Search::StaticClass()->GetDefaultObject();
+	}
+	m_fSearchAnimCooldownTimer = Tweaks->m_fSearchAnimCooldown;
 }

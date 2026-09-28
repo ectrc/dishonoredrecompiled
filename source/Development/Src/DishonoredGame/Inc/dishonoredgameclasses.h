@@ -958,6 +958,7 @@ protected:
     virtual ~IDisLookAtInterface() {}
 public:
     typedef UDisLookAtInterface UClassType;
+#include "CppText/IDisLookAtInterface.h"
 };
 
 // DishonoredGame.DisNoiseListenerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -6453,6 +6454,7 @@ struct FDisBodyIntentionRequest
     {
         appMemzero(this, sizeof(FDisBodyIntentionRequest));
     }
+#include "CppText/FDisBodyIntentionRequest.h"
 };
 
 // DishonoredGame.DishonoredNPCPawn.DisMaterialVariation: retail SDK size 8 (2012 PDB 8)
@@ -6723,6 +6725,7 @@ struct FDisDesireRequest
     {
         appMemzero(this, sizeof(FDisDesireRequest));
     }
+#include "CppText/FDisDesireRequest.h"
 };
 
 // DishonoredGame.DisGlobalFactionManager.DisDetermineRelationshipFactionMap: retail SDK size 60 (2012 PDB 60)
@@ -6876,6 +6879,7 @@ struct FDisFaceToRequest : public FDisDesireRequest
     {
         appMemzero(this, sizeof(FDisFaceToRequest));
     }
+#include "CppText/FDisFaceToRequest.h"
 };
 
 // DishonoredGame.DisGlobalFactionManager.DisFactionPair: retail SDK size 8 (2012 PDB 8)
@@ -7055,6 +7059,7 @@ struct FDisLocoRequest : public FDisDesireRequest
     {
         appMemzero(this, sizeof(FDisLocoRequest));
     }
+#include "CppText/FDisLocoRequest.h"
 };
 
 // DishonoredGame.DisDesireStructs.DisLookAtInfluence: retail SDK size 12 (2012 PDB 12)
@@ -7070,6 +7075,7 @@ struct FDisLookAtInfluence
     {
         appMemzero(this, sizeof(FDisLookAtInfluence));
     }
+#include "CppText/FDisLookAtInfluence.h"
 };
 
 // DishonoredGame.DisDesireStructs.DisLookAtRequest: retail SDK size 88 (2012 PDB 88)
@@ -7088,6 +7094,7 @@ struct FDisLookAtRequest : public FDisDesireRequest
     {
         appMemzero(this, sizeof(FDisLookAtRequest));
     }
+#include "CppText/FDisLookAtRequest.h"
 };
 
 // DishonoredGame.DishonoredAIBrain.DisMagicalIncidentStruct: retail SDK size 12 (2012 PDB 12)
@@ -9051,6 +9058,7 @@ protected:
     virtual ~IDisDesiresInterface() {}
 public:
     typedef UDisDesiresInterface UClassType;
+#include "CppText/IDisDesiresInterface.h"
 };
 
 // DishonoredGame.DisGoToFollowupInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -9112,6 +9120,7 @@ public:
     //## END PROPS DisAIBehaviorWithDesires
 
     DECLARE_ABSTRACT_CLASS(UDisAIBehaviorWithDesires,UDishonoredAIBehavior,0,DishonoredGame)
+#include "CppText/UDisAIBehaviorWithDesires.h"
 };
 
 // DishonoredGame.DisAIBlackboard: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
@@ -9290,6 +9299,7 @@ public:
     //## END PROPS DisAISubProcessWithDesires
 
     DECLARE_ABSTRACT_CLASS(UDisAISubProcessWithDesires,UDisAISubProcess,0,DishonoredGame)
+#include "CppText/UDisAISubProcessWithDesires.h"
 };
 
 // DishonoredGame.DisAISubProcessDistractions: retail sizeof 208, reflected span 108..208 (2012 PDB sizeof 208)
@@ -9565,6 +9575,7 @@ public:
     //## END PROPS DisAISubStateWithDesires
 
     DECLARE_ABSTRACT_CLASS(UDisAISubStateWithDesires,UDisAISubState,0,DishonoredGame)
+#include "CppText/UDisAISubStateWithDesires.h"
 };
 
 // DishonoredGame.DisAISubStateCower: retail sizeof 332, reflected span 208..332 (2012 PDB sizeof 332)
@@ -9579,6 +9590,7 @@ public:
     //## END PROPS DisAISubStateCower
 
     DECLARE_CLASS(UDisAISubStateCower,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateCower.h"
 };
 
 struct DisAISubStateFlee_eventThreatTerminatedCallback_Parms
@@ -9610,6 +9622,7 @@ public:
         ProcessDelegate(DISHONOREDGAME_ThreatTerminatedCallback,&__ThreatTerminatedCallback__Delegate,&Parms);
     }
     DECLARE_CLASS(UDisAISubStateFlee,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateFlee.h"
 };
 
 struct DisAISubStateFollow_eventNoMoreTargetCallback_Parms
@@ -9636,6 +9649,7 @@ public:
         ProcessDelegate(DISHONOREDGAME_NoMoreTargetCallback,&__NoMoreTargetCallback__Delegate,&Parms);
     }
     DECLARE_CLASS(UDisAISubStateFollow,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateFollow.h"
 };
 
 // DishonoredGame.DisAISubStateGenericAction: retail sizeof 224, reflected span 204..224 (2012 PDB sizeof 224)
@@ -9653,6 +9667,7 @@ public:
     //## END PROPS DisAISubStateGenericAction
 
     DECLARE_CLASS(UDisAISubStateGenericAction,UDisAISubState,0,DishonoredGame)
+#include "CppText/UDisAISubStateGenericAction.h"
 };
 
 // DishonoredGame.DisAISubStateInit: retail sizeof 204, reflected span 204..204 (2012 PDB sizeof 204)
@@ -9720,6 +9735,7 @@ public:
     //## END PROPS DisAISubStateMaintainDistance
 
     DECLARE_CLASS(UDisAISubStateMaintainDistance,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateMaintainDistance.h"
 };
 
 // DishonoredGame.DisAISubStateMenace: retail sizeof 332, reflected span 208..332 (2012 PDB sizeof 332)
@@ -9734,6 +9750,7 @@ public:
     //## END PROPS DisAISubStateMenace
 
     DECLARE_CLASS(UDisAISubStateMenace,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateMenace.h"
 };
 
 // DishonoredGame.DisAISubStateStand: retail sizeof 460, reflected span 208..460 (2012 PDB sizeof 460)
@@ -9757,6 +9774,7 @@ public:
     //## END PROPS DisAISubStateStand
 
     DECLARE_CLASS(UDisAISubStateStand,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateStand.h"
 };
 
 // DishonoredGame.DisAISubStateTakePosition: retail sizeof 512, reflected span 208..512 (2012 PDB sizeof 512)
@@ -9779,6 +9797,7 @@ public:
     //## END PROPS DisAISubStateTakePosition
 
     DECLARE_CLASS(UDisAISubStateTakePosition,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateTakePosition.h"
 };
 
 // DishonoredGame.DisAISubStateTakeActorPosition: retail sizeof 520, reflected span 512..520 (2012 PDB sizeof 520)
@@ -9791,6 +9810,7 @@ public:
     //## END PROPS DisAISubStateTakeActorPosition
 
     DECLARE_CLASS(UDisAISubStateTakeActorPosition,UDisAISubStateTakePosition,0,DishonoredGame)
+#include "CppText/UDisAISubStateTakeActorPosition.h"
 };
 
 // DishonoredGame.DisActorFactoryNPCPawn: retail sizeof 100, reflected span 88..100 (2012 PDB sizeof 100)
@@ -10245,6 +10265,7 @@ public:
     DECLARE_FUNCTION(execOnEnterCallback_Stand);
     DECLARE_FUNCTION(execRequestStateExitCallback_TakePosition);
     DECLARE_CLASS(UDisBehaviorGuard,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorGuard.h"
 };
 
 // DishonoredGame.DisBehaviorIdle: retail sizeof 244, reflected span 160..244 (2012 PDB sizeof 244)
@@ -10328,6 +10349,7 @@ public:
     DECLARE_FUNCTION(execOnExitCallback_Init);
     DECLARE_FUNCTION(execOnEnterCallback_Init);
     DECLARE_CLASS(UDisBehaviorNotice,UDisBehaviorAttentionBase,0,DishonoredGame)
+#include "CppText/UDisBehaviorNotice.h"
 };
 
 // DishonoredGame.DisBehaviorPanic: retail sizeof 400, reflected span 160..400 (2012 PDB sizeof 400)
@@ -10353,6 +10375,7 @@ public:
     DECLARE_FUNCTION(execRefreshCallback_GenericAction);
     DECLARE_FUNCTION(execOnEnterCallback_GenericAction);
     DECLARE_CLASS(UDisBehaviorPanic,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorPanic.h"
 };
 
 // DishonoredGame.DisBehaviorPatrol: retail sizeof 284, reflected span 160..284 (2012 PDB sizeof 284)

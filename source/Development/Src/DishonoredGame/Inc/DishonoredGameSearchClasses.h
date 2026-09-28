@@ -82,6 +82,7 @@ public:
     //## END PROPS DisAISubStateInvestigate
 
     DECLARE_CLASS(UDisAISubStateInvestigate,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateInvestigate.h"
 };
 
 // DishonoredGame.DisAISubStateStareAtUnreachable: retail sizeof 396, reflected span 208..396 (2012 PDB sizeof 396)
@@ -95,6 +96,7 @@ public:
     //## END PROPS DisAISubStateStareAtUnreachable
 
     DECLARE_CLASS(UDisAISubStateStareAtUnreachable,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateStareAtUnreachable.h"
 };
 
 // DishonoredGame.DisAISubStateTrackTarget: retail sizeof 428, reflected span 208..428 (2012 PDB sizeof 428)
@@ -113,6 +115,7 @@ public:
     //## END PROPS DisAISubStateTrackTarget
 
     DECLARE_CLASS(UDisAISubStateTrackTarget,UDisAISubStateWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubStateTrackTarget.h"
 };
 
 // DishonoredGame.DisBehaviorPatrolSearch: retail sizeof 304, reflected span 284..304 (2012 PDB sizeof 304)

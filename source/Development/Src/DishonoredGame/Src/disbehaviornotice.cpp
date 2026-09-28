@@ -26,3 +26,63 @@
 //   0x73dd50  private: virtual unsigned int __thiscall UDisBehaviorNotice::GetResumingBodyIntentionDesire(struct FDisBodyIntention const &, struct FDisBodyIntention &)const
 //   0x73ddb0  public: virtual void __thiscall UDisBehaviorNotice::RequestStateExitCallback_GenericAction(class UDishonoredNativeState *)
 //   0x742c30  private: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorNotice::GetFilterStimDelegate(enum EAIStimID)
+
+#include "DishonoredGame.h"
+#include "disdesirestructs.h"
+#include "disaisubstate.h"
+
+/*-----------------------------------------------------------------------------
+	agent DF: the three callbacks the desire layer and FDisAISubStateInit_Param unblocked
+-----------------------------------------------------------------------------*/
+
+void UDisBehaviorNotice::execOnEnterCallback_Init( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pLastState);
+	P_FINISH;
+	OnEnterCallback_Init( _pThisState, _pLastState );
+}
+
+// DISHONORED(port): 2012 rva 0x723a50: a procedural look-at on the noticed proxy with the look-target pattern - the head
+// and torso turn towards it without the NPC changing what it is doing.
+void UDisBehaviorNotice::OnEnterCallback_Init( UDishonoredNativeState* _pThisState, UDishonoredNativeState* _pLastState )
+{
+	// DISHONORED(retail): the proxy is UDisBehaviorAttentionBase::m_AttentionTargetProxy, not a member of this class.
+	// UDisBehaviorAttentionBase is NEW IN 2013 (the generated header says so, and the 2012 PDB has no such type): retail
+	// hoisted the per-behaviour attention proxy - 2012's UDisBehaviorNotice::m_NoticedProxy,
+	// UDisBehaviorSearch::m_SearchTargetProxy and UDisBehaviorCombat's m_EnemyProxy, all at offset 160 of their own class -
+	// into one member on a shared base. Porting the 2012 names would have added three members retail does not have.
+	SetLookAtProceduralProxyDesire( m_AttentionTargetProxy, DisLookAtProceduralPattern_LookTarget, FDisLookAtInfluence::Torso, -1.f );
+}
+
+void UDisBehaviorNotice::execOnExitCallback_Init( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_GET_OBJECT(UDishonoredNativeState, _pNextState);
+	P_FINISH;
+	OnExitCallback_Init( _pThisState, _pNextState );
+}
+
+// DISHONORED(port): 2012 rva 0x723a80: a real transition drops the look-at; a NULL next state is the machine being
+// destroyed, and the desire layer is being finalised anyway.
+void UDisBehaviorNotice::OnExitCallback_Init( UDishonoredNativeState* _pThisState, UDishonoredNativeState* _pNextState )
+{
+	if( _pNextState )
+	{
+		ClearLookAtDesire();
+	}
+}
+
+void UDisBehaviorNotice::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDishonoredNativeState, _pThisState);
+	P_FINISH;
+	RequestStateExitCallback_GenericAction( _pThisState );
+}
+
+// DISHONORED(port): 2012 rva 0x73ddb0: the notice animation is over, so go back to slot 0 - the idle state.
+void UDisBehaviorNotice::RequestStateExitCallback_GenericAction( UDishonoredNativeState* _pThisState )
+{
+	FDisAISubStateInit_Param Param;
+	RequestSubStateChange< UDisTweaks_AIBehavior_Notice, UDisTweaks_AISubState_Init >( 0, Param );
+}

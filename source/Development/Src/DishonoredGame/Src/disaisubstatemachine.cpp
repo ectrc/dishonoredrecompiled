@@ -102,7 +102,7 @@ void UDisAISubStateMachine::OnOwningBehaviorStop( UBOOL bIsBeingTerminated )
 		return;
 	}
 
-	FDisAISubState_Param AISubStateParam( UDisAISubStateInit::StaticClass() );
+	FDisAISubStateInit_Param AISubStateParam;
 	RequestStateChange( AISubStateParam, NULL, FALSE );
 
 	m_bIsInTheProcessOfResetting = TRUE;

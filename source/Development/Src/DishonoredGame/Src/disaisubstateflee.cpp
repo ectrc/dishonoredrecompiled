@@ -1,27 +1,187 @@
 // DishonoredGame/src/disaisubstateflee.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (23):
-//   0x765480  public: virtual unsigned char const * __thiscall UDisAISubStateFlee::BuildFilterStimMask(void)const
-//   0x7654b0  private: void __thiscall UDisAISubStateFlee::OnReachedFleePoint(void)
-//   0x768af0  public: virtual unsigned int __thiscall UDisTweaks_AISubState_Flee::EditConditionAskObj_IsConditionMet(class FEditPropertyChain *, wchar_t const *)
-//   0x768b70  public: virtual void __thiscall UDisAISubStateFlee::TickState(float)
-//   0x768c30  private: unsigned int __thiscall UDisAISubStateFlee::FilterDestinationReached(struct FAIStimStruct_DestinationReached const &)
-//   0x773770  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisAISubStateFlee::GetFilterStimDelegate_SubState(enum EAIStimID)
-//   0x7737a0  public: void __thiscall UDisAISubStateFlee::RegisterDelegate_ThreatTerminated(class UDishonoredAIBehavior * const)
-//   0x775780  public: static class UClass * __cdecl UDisAISubStateFlee::GetPrivateStaticClassUDisAISubStateFlee(wchar_t const *)
-//   0x77bb70  public: static void __cdecl UDisAISubStateFlee::InitializePrivateStaticClassUDisAISubStateFlee(void)
-//   0x7802b0  public: static class UClass * __cdecl UDisAISubStateFlee::StaticClassNoInline(void)
-//   0x781c80  public: __thiscall FDisAISubStateFlee_Param::FDisAISubStateFlee_Param(class AActor *, unsigned int)
-//   0x7832c0  public: static class UClass * __cdecl UDisTweaks_AISubState_Flee::GetPrivateStaticClassUDisTweaks_AISubState_Flee(wchar_t const *)
-//   0x7845a0  public: static void __cdecl UDisTweaks_AISubState_Flee::InitializePrivateStaticClassUDisTweaks_AISubState_Flee(void)
-//   0x784d80  public: static class UClass * __cdecl UDisTweaks_AISubState_Flee::StaticClassNoInline(void)
-//   0x787620  public: virtual void __thiscall UDisAISubStateFlee::RefreshSubState(float)
-//   0x7876d0  public: void __thiscall UDisAISubStateFlee::OnOtherActorTerminatedEvent(class FArkGameEvent const &)
-//   0x787780  public: virtual void __thiscall UDisAISubStateFlee::BeginDestroy(void)
-//   0x7877f0  private: unsigned int __thiscall UDisAISubStateFlee::FindNewFleeDestination(void)
-//   0x787b00  public: virtual unsigned int __thiscall UDisAISubStateFlee::GetPathGoals(class FVector const &, class TArray<class UNavMeshPathGoalEvaluator *, class FDefaultAllocator> &)const
-//   0x787c70  public: virtual unsigned int __thiscall UDisAISubStateFlee::GetPathConstraints(class FVector const &, unsigned int, class TArray<class UNavMeshPathConstraint *, class FDefaultAllocator> &)const
-//   0x78b440  public: void __thiscall UDisAISubStateFlee::SetThreat(class AActor *)
-//   0x78b4b0  public: virtual void __thiscall UDisAISubStateFlee::BeginSubState_Derived(void)
-//   0x78c810  public: virtual void __thiscall FDisAISubStateFlee_Param::OnPending(class UDishonoredNativeState *, class UObject *)
+// ---- agent DF ports (PHASE10 DF): UDisAISubStateFlee and its parameter ----
+
+#include "DishonoredGame.h"
+#include "disaisubstate.h"
+#include "disdesirestructs.h"
+#include "aistimstruct.h"
+#include "dishonoredutilities_ai.h"
+#include "dishonoredutilities.h"
+
+/*-----------------------------------------------------------------------------
+	FDisAISubStateFlee_Param
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x781c80
+FDisAISubStateFlee_Param::FDisAISubStateFlee_Param( AActor* _pThreat, UBOOL _bForReal )
+	: FDisAISubState_Param( UDisAISubStateFlee::StaticClass() )
+	, m_pThreat( _pThreat )
+	, m_bForReal( _bForReal )
+{
+}
+
+// DISHONORED(port): 2012 rva 0x78c810. The only OnPending of the 25 that calls a METHOD of its sub-state rather than writing
+// members, because setting the threat also moves the actor-termination subscription - see SetThreat.
+void FDisAISubStateFlee_Param::OnPending( UDishonoredNativeState* PendingState, UObject* ManagedObject )
+{
+	FDisAISubState_Param::OnPending( PendingState, ManagedObject );
+
+	UDisAISubStateFlee* Flee = (UDisAISubStateFlee*)PendingState;
+	Flee->SetThreat( m_pThreat );
+	Flee->m_bForReal = m_bForReal ? 1 : 0;
+}
+
+/*-----------------------------------------------------------------------------
+	UDisAISubStateFlee
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2012 rva 0x765480
+const BYTE* UDisAISubStateFlee::BuildFilterStimMask()
+{
+	static const BYTE StimIDs[] = { EAIStimID_DestinationReached };
+	static FDisStimFilterMask s_Mask;
+	return s_Mask.Build( StimIDs, ARRAY_COUNT(StimIDs) );
+}
+
+FDisStimPredicateDelegate UDisAISubStateFlee::GetFilterStimDelegate_SubState( BYTE StimID )
+{
+	if( StimID == EAIStimID_DestinationReached )
+	{
+		return DIS_BIND_STIM_PREDICATE( UDisAISubStateFlee, FAIStimStruct_DestinationReached, FilterDestinationReached );
+	}
+	return FDisStimPredicateDelegate();
+}
+
+// DISHONORED(port): 2012 rva 0x78b440: the threat is an actor the sub-state outlives, so changing it moves the termination
+// subscription with it. This is the reason FDisAISubStateFlee_Param::OnPending calls a method.
+void UDisAISubStateFlee::SetThreat( AActor* _pThreat )
+{
+	FArkGameEventDispatcher* Dispatcher = FArkGameEventDispatcher::GetInstance();
+	const INT EventType = GDisAIEvent_OtherActorTerminated;
+	if( m_pThreat && Dispatcher )
+	{
+		Dispatcher->UnregisterToEvent( EventType, this, &UDisAISubStateFlee::OnOtherActorTerminatedEvent );
+	}
+	m_pThreat = _pThreat;
+	if( m_pThreat && Dispatcher )
+	{
+		Dispatcher->RegisterToEvent( EventType, this, &UDisAISubStateFlee::OnOtherActorTerminatedEvent );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x773870: the eighth delegate, registered by the behaviour that uses it, same name
+// composition as the six base callbacks.
+void UDisAISubStateFlee::RegisterDelegate_ThreatTerminated( UDishonoredAIBehavior* const _pOwningBehavior )
+{
+	const FString FunctionName = FString( TEXT("ThreatTerminatedCallback") ) + m_StateSuffix.GetNameString();
+	const FName TargetFunction( *FunctionName, FNAME_Add, TRUE );
+	if( _pOwningBehavior && _pOwningBehavior->FindFunction( TargetFunction ) )
+	{
+		__ThreatTerminatedCallback__Delegate.Object = _pOwningBehavior;
+		__ThreatTerminatedCallback__Delegate.FunctionName = TargetFunction;
+	}
+	else
+	{
+		__ThreatTerminatedCallback__Delegate.Object = NULL;
+		__ThreatTerminatedCallback__Delegate.FunctionName = NAME_None;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x773820-region
+void UDisAISubStateFlee::OnOtherActorTerminatedEvent( const FArkGameEvent& _rEvent )
+{
+	if( _rEvent.m_pInstigator == m_pThreat )
+	{
+		SetThreat( NULL );
+		delegateThreatTerminatedCallback( this );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x78b4b0. A flee that cannot find anywhere to run raises a PathingFail stim against itself,
+// which is how the panic behaviour learns to make the NPC cower instead.
+// DISHONORED(bringup): FindNewFleeDestination is the nav-mesh half - retail asks UDisFleeComponent for a flee point and
+// then DisComputeNearestNavMeshLocFromLocation to put it on the mesh, neither ported (agentCG.md hand-over 3). So the
+// destination search always fails, the stim is raised, and the behaviour above takes its "nowhere to run" branch, which is
+// retail's own behaviour for a cornered civilian.
+UBOOL UDisAISubStateFlee::FindNewFleeDestination()
+{
+	static UBOOL bNoted = FALSE;
+	if( !bNoted )
+	{
+		bNoted = TRUE;
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDisFleeComponent and the nav-mesh point query are not ported; a fleeing NPC finds nowhere to run") );
+	}
+	return FALSE;
+}
+
+void UDisAISubStateFlee::BeginSubState_Derived()
+{
+	m_bFleeHasStartedMoving = FALSE;
+	if( !FindNewFleeDestination() )
+	{
+		FAIStimStruct_PathingFail Stim = DisMakeStim< FAIStimStruct_PathingFail >( EAIStimID_PathingFail );
+		Stim.m_pRequestOriginator = this;
+		DisHandleAIStim( m_pOwningBrain, Stim, this );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x768c30: arriving at a flee point tells the component so the next NPC does not pick the same
+// one, and ends the state.
+UBOOL UDisAISubStateFlee::FilterDestinationReached( const FAIStimStruct_DestinationReached& _rStim )
+{
+	const UBOOL bMine = ( _rStim.m_pRequestOriginator == this );
+	if( bMine )
+	{
+		if( m_bForReal && m_pCurrentFleeComponent )
+		{
+			// DISHONORED(bringup): UDisFleeComponent::OnReached, unported.
+		}
+		RequestStateExit();
+	}
+	return bMine;
+}
+
+void UDisAISubStateFlee::OnReachedFleePoint()
+{
+	RequestStateExit();
+}
+
+// DISHONORED(port): 2012 rva 0x768b70: the one place in the AI that watches the pawn's own velocity rather than a stim -
+// a flee that has started moving and then stopped has arrived, whatever the loco layer says.
+void UDisAISubStateFlee::TickState( FLOAT DeltaSeconds )
+{
+	Super::TickState( DeltaSeconds );
+
+	if( !m_bForReal )
+	{
+		return;
+	}
+	ADishonoredNPCPawn* Pawn = m_pOwningBrain ? m_pOwningBrain->m_pOwningPawn : NULL;
+	const UBOOL bMoving = Pawn ? ( Pawn->Velocity.SizeSquared() > KINDA_SMALL_NUMBER ) : FALSE;
+	if( m_bFleeHasStartedMoving )
+	{
+		if( !bMoving )
+		{
+			OnReachedFleePoint();
+		}
+	}
+	else
+	{
+		m_bFleeHasStartedMoving = bMoving;
+	}
+}
+
+void UDisAISubStateFlee::RefreshSubState( const FLOAT TimeSinceLastThought )
+{
+	delegateRefreshCallback( this, TimeSinceLastThought );
+}
+
+// DISHONORED(port): 2012 rva 0x773800-region
+void UDisAISubStateFlee::BeginDestroy()
+{
+	if( m_pThreat )
+	{
+		SetThreat( NULL );
+	}
+	Super::BeginDestroy();
+}

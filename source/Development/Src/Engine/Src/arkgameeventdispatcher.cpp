@@ -12,6 +12,15 @@
 
 FArkGameEventDispatcher* FArkGameEventDispatcher::s_pInstance = NULL;
 
+// DISHONORED(bringup): agent DF. See the note beside the declarations in arkgameeventdispatcher.h.
+INT GArkGameEventRegistrations = 0;
+INT GArkGameEventUnregistrations = 0;
+INT GArkGameEventPerObjectRegistrations = 0;
+INT GArkGameEventDispatches = 0;
+INT GArkGameEventCallbacksInvoked = 0;
+INT GArkGameEventDeferred = 0;
+
+
 // DISHONORED(port): 2013 rva 0x557230 (2012 0x5979f0): every table starts empty; the two fixed-size arrays are
 // default-constructed in place (retail's eh vector constructor iterator over 79 entries of 12 and 60 bytes).
 FArkGameEventDispatcher::FArkGameEventDispatcher()
@@ -42,11 +51,13 @@ void FArkGameEventDispatcher::ProcessEvent( const FArkGameEvent& _rEvent )
 		return;
 	}
 
+	GArkGameEventDispatches++;
 	m_EventTypeBeingProcessed.AddItem( EventType );
 
 	TArray< FArkGameEventCallback >& Registrations = m_RegistrationTable[ EventType ];
 	for( INT i = 0; i < Registrations.Num(); ++i )
 	{
+		GArkGameEventCallbacksInvoked++;
 		Registrations(i)( _rEvent );
 	}
 
@@ -54,6 +65,7 @@ void FArkGameEventDispatcher::ProcessEvent( const FArkGameEvent& _rEvent )
 	m_PerObjectRegistrationTable[ EventType ].MultiFind( (PTRINT)_rEvent.m_pInstigator, PerObjectRegistrations, FALSE );
 	for( INT i = 0; i < PerObjectRegistrations.Num(); ++i )
 	{
+		GArkGameEventCallbacksInvoked++;
 		PerObjectRegistrations(i)( _rEvent );
 	}
 
