@@ -190,14 +190,6 @@ enum EFaceFXRegOp
 	FXRO_Replace  = 2,  
 };
 
-/** The valid BoneVisibilityStates values; A bone is only visible if it is *exactly* 1 */
-enum EBoneVisibilityStatus
-{
-	BVS_HiddenByParent		= 0,	// Bone is hidden because it's parent is hidden
-	BVS_Visible				= 1,	// Bone is visible
-	BVS_ExplicitlyHidden	= 2,	// Bone is hidden directly
-};
-
 /** PhysicsBody options when bone is hiddne */
 enum EPhysBodyOp
 {
@@ -509,7 +501,6 @@ class USkeletalMeshComponent : public UMeshComponent
 	DISHONORED_SHIM_STATIC FPointer SoftBodyASVPlane;
 	DISHONORED_SHIM_STATIC BYTE AnimRotationOnly;
 	DISHONORED_SHIM_STATIC UAudioComponent* CachedFaceFXAudioComp;
-	DISHONORED_SHIM_STATIC TArrayNoInit <BYTE> BoneVisibilityStates;
 	DISHONORED_SHIM_STATIC TArrayNoInit <FName> MorphTargetsQueried;
 	DISHONORED_SHIM_STATIC BITFIELD bUseTickOptimization;
 	DISHONORED_SHIM_STATIC INT TickCount;
@@ -746,7 +737,6 @@ class USkeletalMeshComponent : public UMeshComponent
 	void UpdateFullAnimWeightBodiesFlag();
 
 	void RecalcRequiredBones(INT LODIndex);
-	void RebuildVisibilityArray();
 
 	void SetSkeletalMesh(USkeletalMesh* InSkelMesh, UBOOL bKeepSpaceBases = FALSE);
 	void SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset, UBOOL bForceReInit = FALSE);
@@ -1284,6 +1274,8 @@ public:
 
 	void HideBone( INT BoneIndex, EPhysBodyOp PhysBodyOption );
 	void UnHideBone( INT BoneIndex );
+	// DISHONORED(retail): retail 2013 hides a bone by terminating or disabling the physics bodies below it and
+	// keeps no visibility state, so nothing is ever hidden as far as a caller of this can tell (0x3bcdc0, 0x3b4250).
 	UBOOL IsBoneHidden( INT BoneIndex );
 
 	void HideBoneByName( FName BoneName, EPhysBodyOp PhysBodyOption);

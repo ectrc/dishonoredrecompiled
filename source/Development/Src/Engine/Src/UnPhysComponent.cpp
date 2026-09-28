@@ -4517,18 +4517,36 @@ void USkeletalMeshComponent::execRestoreSavedAnimSets( FFrame& Stack, RESULT_DEC
 }
 
 /** 
- *	Hides the specified bone.  Currently this just enforces a scale of 0 for the hidden bones. 
- *	@param	bTermBodiesBelow	Terminates physics for physics bodies below this bone in the hierarchy
+ *	Hides the specified bone: terminates or disables the physics bodies below it.
+ *	@param	PhysBodyOption	PBO_Term terminates those bodies, PBO_Disable turns their collision off
  */
+// DISHONORED(bringup): agentDP -- retail's bone hiding is a physics operation with no visibility state, so what a
+// later package needs to know is whether the content reaches it at all. One line the first time each entry point
+// is reached; -dpbones prints the running counts on every call.
+static void DisCountBoneHide(INT Which)
+{
+	static const TCHAR* Names[3] = { TEXT("HideBone"), TEXT("UnHideBone"), TEXT("IsBoneHidden") };
+	static INT Counts[3] = { 0, 0, 0 };
+	static INT bVerbose = -1;
+	if (bVerbose < 0)
+	{
+		bVerbose = ParseParam(appCmdLine(), TEXT("dpbones")) ? 1 : 0;
+	}
+	Counts[Which]++;
+	if (Counts[Which] == 1 || bVerbose)
+	{
+		debugf(NAME_Log, TEXT("dpbones: %s called, counts %d/%d/%d"), Names[Which], Counts[0], Counts[1], Counts[2]);
+	}
+}
+
+// DISHONORED(retail): 0x3bcdc0 (2012 0x3e2030) is the physics operation and nothing else. It does not scale the
+// bone to zero and it keeps no visibility state, so the reference lines that did -- the LocalAtoms scale,
+// BoneVisibilityStates, RebuildVisibilityArray, bRequiredBonesUpToDate -- are in neither shipped build.
 void USkeletalMeshComponent::HideBone( INT BoneIndex, EPhysBodyOp PhysBodyOption)
 {
+	DisCountBoneHide(0);
 	if ( BoneIndex != INDEX_NONE )
 	{
-		LocalAtoms( BoneIndex ).SetScale(0.0f);
-		BoneVisibilityStates( BoneIndex ) = BVS_ExplicitlyHidden;
-		RebuildVisibilityArray();
-		bRequiredBonesUpToDate = FALSE;
-
 		if( PhysBodyOption!=PBO_None && PhysicsAssetInstance )
 		{
 			FName HideBoneName = SkeletalMesh->RefSkeleton(BoneIndex).Name;
@@ -4549,20 +4567,13 @@ void USkeletalMeshComponent::HideBone( INT BoneIndex, EPhysBodyOp PhysBodyOption
 	}
 }
 
-/** Unhides the specified bone. */
+/** Unhides the specified bone: turns the collision of the physics bodies below it back on. */
+// DISHONORED(retail): 0x3b4250 (2012 0x3d59b0) is EnableCollisionBodiesBelow and nothing else.
 void USkeletalMeshComponent::UnHideBone( INT BoneIndex )
 {
+	DisCountBoneHide(1);
 	if ( BoneIndex != INDEX_NONE )
 	{
-		LocalAtoms( BoneIndex ).SetScale(1.0f);
-
-		//@TODO: If unhiding the child of a still hidden bone (coming in, BoneVisibilityStates(RefSkel(BoneIndex).ParentIndex) != BVS_Visible),
-		// should we be re-enabling collision bodies?
-		// Setting visible to true here is OK in either case as it will be reset to BVS_HiddenByParent in RecalcRequiredBones later if needed.
-		BoneVisibilityStates( BoneIndex ) = BVS_Visible;
-		RebuildVisibilityArray();
-		bRequiredBonesUpToDate = FALSE;
-
 		if( PhysicsAssetInstance )
 		{
 			FName HideBoneName = SkeletalMesh->RefSkeleton(BoneIndex).Name;
@@ -4577,13 +4588,13 @@ void USkeletalMeshComponent::UnHideBone( INT BoneIndex )
 	}
 }
 
-/** Determines if the specified bone is hidden. */
+/** Determines if the specified bone is hidden. Nothing ever is; see the note below. */
+// DISHONORED(retail): neither shipped build has IsBoneHidden, because neither keeps a state for it to read: a
+// hidden bone there is one whose physics bodies were terminated or disabled, which is not a property of a bone.
+// Its two callers are ParticleModules_Location.cpp, where retail's condition is the rest of the expression.
 UBOOL USkeletalMeshComponent::IsBoneHidden( INT BoneIndex )
 {
-	if ( BoneIndex != INDEX_NONE )
-	{
-		return BoneVisibilityStates( BoneIndex ) != BVS_Visible;
-	}
+	DisCountBoneHide(2);
 	return FALSE;
 }
 

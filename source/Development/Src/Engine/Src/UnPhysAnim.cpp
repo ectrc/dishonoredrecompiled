@@ -402,9 +402,10 @@ void USkeletalMeshComponent::UpdateRBJointMotors()
 			FName JointName = CS->JointName;
 			INT BoneIndex = SkeletalMesh->MatchRefBone(JointName);
 
-			// If we found this bone, and a visible bone that is not the root, and its joint is motorised in some way..
+			// If we found this bone, and it is not the root, and its joint is motorised in some way..
+			// DISHONORED(retail): 2012 UpdateRBJointMotors (rva 0x3cd660) gates on the bone index and the two drive
+			// bits only; there is no per-bone visibility state to test.
 			if( (BoneIndex != INDEX_NONE) && (BoneIndex != 0) &&
-				(BoneVisibilityStates(BoneIndex) == BVS_Visible) &&
 				(CI->bSwingPositionDrive || CI->bTwistPositionDrive) )
 			{
 				check(BoneIndex < LocalAtoms.Num());

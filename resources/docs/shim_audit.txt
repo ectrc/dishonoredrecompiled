@@ -1,0 +1,247 @@
+shim audit: 1098 DISHONORED_SHIM_STATIC declarations in 33 headers, 899 compiled units, 63 build macros
+
+A-fatal          68
+A-fatal?         12
+B-shared-write   303
+B-shared-write?  93
+C-dead-read      350
+C-dead-read?     51
+D-unused         221
+
+per header, unambiguous only (A / B / C / D):
+  UnSkeletalMesh.h                              28 /  44 / 101 /  13
+  EngineGameEngineClasses.h                      7 /  22 /  31 /  28
+  EngineClasses.h                                5 /  18 /  22 /  47
+  EngineControllerClasses.h                      5 /  13 /  12 /   9
+  GameFrameworkClasses.h                         4 /  18 /  37 /  41
+  EngineUserInterfaceClasses.h                   4 /   5 /   2 /   3
+  EngineAnimClasses.h                            2 /  20 /  21 /   9
+  EngineParticleClasses.h                        2 /  13 /  18 /   2
+  EngineCameraClasses.h                          2 /   1 /   2 /   6
+  UnWorld.h                                      2 /   1 /   1 /   2
+  UnLevel.h                                      2 /   1 /   1 /   0
+  UnStaticMesh.h                                 1 /   8 /   3 /   1
+  EnginePawnClasses.h                            1 /   7 /  12 /   5
+  EngineSequenceClasses.h                        1 /   6 /   6 /   4
+  EngineAIClasses.h                              1 /   5 /   9 /   1
+  EngineMeshClasses.h                            1 /   1 /   4 /   0
+  EngineMaterialClasses.h                        0 /  76 /  16 /  31
+  EngineInterpolationClasses.h                   0 /   9 /   9 /   0
+  SystemSettings.h                               0 /   5 /  14 /   8
+  EngineTextureClasses.h                         0 /   5 /   4 /   3
+  EngineLightClasses.h                           0 /   5 /   4 /   0
+  GameFrameworkCameraClasses.h                   0 /   5 /   3 /   0
+  EngineUIPrivateClasses.h                       0 /   4 /   4 /   4
+  PrimitiveComponent.h                           0 /   3 /   8 /   0
+  EnginePhysicsClasses.h                         0 /   3 /   3 /   0
+  Scene.h                                        0 /   2 /   0 /   0
+  UnActorComponent.h                             0 /   1 /   1 /   0
+  EngineLensFlareClasses.h                       0 /   1 /   0 /   0
+  EngineDecalClasses.h                           0 /   1 /   0 /   1
+  IpDrvClasses.h                                 0 /   0 /   2 /   0
+
+RANK A, unambiguous: a container shim that is indexed / size-compared / checked
+
+rank            score owner::name                                    type                       ret    rd    wr chk idx num first use
+A-fatal          3428 ANavigationPoint::PathList                     TArrayNoInit<class UReachS   0    97    10   0  55  41 source/Development/Src/Engine/Inc/EngineClasses.h:9615
+A-fatal          3297 USkeletalMesh::ClothWeldingMap                 TArray<INT>                  0    47     7   4   9  40 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2151
+A-fatal          3197 USkeletalMesh::ClothToGraphicsVertMap          TArray<INT>                  0    48     6   3   9  22 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:3959
+A-fatal          3126 USkeletalMeshComponent::ClothMeshPosData       TArray<FVector>              0    15     3   6   2  10 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2242
+A-fatal          3111 USkeletalMesh::OptimizationSettings            TArray<FSkeletalMeshOptimi   0    18    10   4   4   8 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:4013
+A-fatal          3111 UStaticMesh::OptimizationSettings              TArray<FStaticMeshOptimiza   0    18    10   4   4   8 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:4013
+A-fatal          3081 UGameEngine::SecondaryViewportFrames           TArray<FViewportFrame*>      0    10     2   3   3   7 source/Development/Src/Engine/Inc/EngineGameEngineClasses.h:2619
+A-fatal          3066 USkeletalMeshComponent::ClothMeshNormalData    TArray<FVector>              0     9     3   3   3   4 source/Development/Src/Engine/Src/UnNovodexSupport.cpp:892
+A-fatal          3060 USkeletalMesh::ClothWeldedIndices              TArray<INT>                  0     8     4   2   4   4 source/Development/Src/Engine/Src/UnPhysComponent.cpp:3638
+A-fatal          3057 UGameEngine::SecondaryViewportClients          TArray<class UScriptViewpo   0     5     2   3   1   4 source/Development/Src/Engine/Inc/EngineGameEngineClasses.h:2619
+A-fatal          3055 USkeletalMesh::ClothMesh                       TArray<FPointer>             0    12     5   2   3   3 source/Development/Src/Engine/Src/UnPhysComponent.cpp:149
+A-fatal          3053 USkeletalMeshComponent::ClothMeshWeldedPosData TArray<FVector>              0     6     2   3   1   3 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2252
+A-fatal          3052 USkeletalMeshComponent::ActiveCurveMorphs      TArrayNoInit<FActiveMorph>   0    13     4   0   9   3 source/Development/Src/Engine/Src/UnSkeletalComponent.cpp:187
+A-fatal          3052 USkeletalMesh::ClothMovementScale              TArray<FLOAT>                0    10     9   1   6   2 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1937
+A-fatal          3051 UAnimTree::RootMorphNodes                      TArrayNoInit<class UMorphN   0    13     1   0   8   4 source/Development/Src/Engine/Inc/EngineAnimClasses.h:3843
+A-fatal          3047 FMaterialReferenceList::AffectedPPChainMateria TArrayNoInit<struct FPostP   0    20     7   0  10   0 source/Development/Src/Engine/Src/UnInterpolation.cpp:10241
+A-fatal          3043 ACamera::ActiveAnims                           TArrayNoInit<class UCamera   0    10     3   0   5   4 source/Development/Src/Engine/Src/UnCamera.cpp:329
+A-fatal          3041 USkeletalMesh::ClothSpecialBones               TArray<FClothSpecialBoneIn   0    11     0   0   7   3 source/Development/Src/Engine/Src/UnPhysComponent.cpp:3802
+A-fatal          3037 UAnimTree::SavedPose                           TArrayNoInit<FBoneAtom>      0     5     9   1   2   2 source/Development/Src/Engine/Src/UnAnimTree.cpp:4332
+A-fatal          3037 UApexAsset::NamedReferences                    TArrayNoInit<class UApexAs   0     6     4   0   5   3 source/Development/Src/Engine/Src/NvApexGenericAsset.cpp:419
+A-fatal          3036 USkeletalMesh::CachedSoftBodyMeshes            TArray<FPointer>             0     6     2   1   2   3 source/Development/Src/Engine/Src/UnSkeletalMesh.cpp:2123
+A-fatal          3031 USkeletalMesh::SoftBodyTetraIndices            TArray<INT>                  0    10     4   1   4   0 source/Development/Src/Engine/Src/UnPhysSkelComponent.cpp:152
+A-fatal          3030 USkeletalMeshComponent::AnimTickRelevancyArray TArray<INT>                  0     5     4   0   3   3 source/Development/Src/DishonoredGame/Src/dishonoredanimnodetreeref_dynamic.cpp:189
+A-fatal          3030 USkeletalMesh::GraphicsIndexIsCloth            TArray<UBOOL>                0     4     5   0   6   1 source/Development/Src/Engine/Src/UnSkeletalRenderCPUSkin.cpp:853
+A-fatal          3029 USkeletalMeshComponent::AnimTickWeightsArray   TArray<FLOAT>                0     7     4   0   4   2 source/Development/Src/DishonoredGame/Src/dishonoredanimnodetreeref_dynamic.cpp:193
+A-fatal          3028 APlayerController::HearSoundActiveComponents   TArrayNoInit<class UAudioC   0     6     3   0   4   2 source/Development/Src/Engine/Src/UnScript.cpp:2142
+A-fatal          3028 UWorld::AnimTreePool                           TArray<class UAnimTree*>     ?     6     3   0   4   2 source/Development/Src/Engine/Src/UnAnimTree.cpp:4569
+A-fatal          3027 APlayerController::ConnectedPeers              TArrayNoInit<struct FConne   0     6     0   0   3   3 source/Development/Src/Engine/Src/UnController.cpp:2939
+A-fatal          3027 ULevel::CoverIndexPairs                        TArray<FCoverIndexPair>      0     6     3   0   2   3 source/Development/Src/Engine/Src/UnCover.cpp:727
+A-fatal          3026 UParticleSystemComponent::AttractorCollisionEv TArrayNoInit<struct FParti   0     6     2   0   2   3 source/Development/Src/Engine/Src/ParticleEmitterInstances.cpp:2374
+A-fatal          3025 UGameEngine::AnimTags                          TArrayNoInit<struct FAnimT   0     7     2   0   5   1 source/Development/Src/Engine/Inc/EngineAnimClasses.h:726
+A-fatal          3024 ULevel::CrossLevelCoverGuidRefs                TArray<FGuidPair>            0     6     3   0   1   3 source/Development/Src/Engine/Inc/UnLevel.h:1027
+A-fatal          3023 USkeletalMesh::ClothIndexBuffer                TArray<INT>                  0     6     7   0   1   2 source/Development/Src/Engine/Src/UnPhysComponent.cpp:3580
+A-fatal          3021 ULocalPlayer::ActivePPOverrides                TArrayNoInit<struct FPostP   0     4     3   0   2   2 source/Development/Src/Engine/Src/UnGame.cpp:2135
+A-fatal          3021 UInput::CurrentTouches                         TArrayNoInit<struct FTouch   0     7     1   0   4   1 source/Development/Src/Engine/Src/UnIn.cpp:281
+A-fatal          3021 USkeletalMeshComponent::ClothMeshWeldedNormalD TArray<FVector>              0     3     2   1   1   1 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2253
+A-fatal          3021 USkeletalMesh::ClothMeshScale                  TArray<FLOAT>                0     3     2   1   1   1 source/Development/Src/Engine/Src/UnSkeletalMesh.cpp:2121
+A-fatal          3021 USkeletalMesh::CachedSoftBodyMeshScales        TArray<FLOAT>                0     3     2   1   1   1 source/Development/Src/Engine/Src/UnSkeletalMesh.cpp:2124
+A-fatal          3021 AGameCrowdAgent::NearbyDynamics                TArrayNoInit<struct FNearb   0     6     2   0   2   2 source/Development/Src/GameFramework/Inc/GameFrameworkClasses.h:1326
+A-fatal          3017 APylon::VoxelFilterBounds                      TArrayNoInit<FKAggregateGe   0     3     3   0   1   2 source/Development/Src/Engine/Src/UnNavigationMesh.cpp:8518
+A-fatal          3017 USkeletalMeshComponent::AnimAlwaysTickArray    TArray<UAnimNode*>           0     8     0   0   1   2 source/Development/Src/Engine/Inc/EngineAnimClasses.h:3699
+A-fatal          3016 AScout::EdgePathColors                         TArrayNoInit<FColor>         0     4     0   0   3   1 source/Development/Src/Engine/Src/NavMeshRenderingComponent.cpp:191
+A-fatal          3015 UWorld::Observers                              TArray<FObserverInterface*   ?     2     3   0   2   1 source/Development/Src/Engine/Src/FluidSurfaceComponent.cpp:378
+A-fatal          3014 UParticleModuleCollision::ParticleAttractorCol TArrayNoInit<struct FParti   0     3     0   0   1   2 source/Development/Src/Engine/Src/ParticleModules_Collision.cpp:112
+A-fatal          3013 ACamera::FreeAnims                             TArrayNoInit<class UCamera   0     0     3   0   0   2 source/Development/Src/Engine/Src/UnCamera.cpp:324
+A-fatal          3013 AWorldInfo::MassiveLODOverrideVolumes          TArrayNoInit<class AMassiv   0     5     0   0   2   1 source/Development/Src/Engine/Src/UnEngine.cpp:8167
+A-fatal          3013 AWorldInfo::ReplicationViewers                 TArrayNoInit<struct FNetVi   0     4     0   0   2   1 source/Development/Src/Engine/Src/UnActor.cpp:504
+A-fatal          3013 USkeletalMesh::SoftBodySpecialBones            TArray<FSoftBodySpecialBon   0     4     0   0   2   1 source/Development/Src/Engine/Src/UnPhysSkelComponent.cpp:170
+A-fatal          3012 UInput::CachedInputEvents                      TArrayNoInit<class USeqEve   0     2     3   0   1   1 source/Development/Src/Engine/Src/UnIn.cpp:203
+A-fatal          3012 UInput::CachedAnalogInputEvents                TArrayNoInit<class USeqEve   0     2     3   0   1   1 source/Development/Src/Engine/Src/UnIn.cpp:241
+A-fatal          3012 UInput::CachedTouchInputEvents                 TArrayNoInit<class USeqEve   0     2     3   0   1   1 source/Development/Src/Engine/Src/UnIn.cpp:285
+A-fatal          3011 AWorldInfo::EnvironmentVolumes                 TArrayNoInit<class AEnviro   0     2     2   0   1   1 source/Development/Src/Engine/Src/UnActor.cpp:5162
+A-fatal          3011 UDownloadableContentManager::QueuedFullyLoadPa TArrayNoInit<FString>        0     2     2   0   1   1 source/Development/Src/Engine/Src/DownloadableContent.cpp:149
+A-fatal          3011 USkeletalMesh::ClothBones                      TArray<FName>                0     6     0   0   1   1 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:3959
+A-fatal          3010 APlayerController::HearSoundPoolComponents     TArrayNoInit<class UAudioC   0     3     1   0   1   1 source/Development/Src/Engine/Src/UnScript.cpp:2123
+A-fatal          3009 UNavMeshGoal_GenericFilterContainer::SeedLocat TArrayNoInit<FVector>        0     2     0   0   1   1 source/Development/Src/Engine/Src/UnNavigationConstraintsAndGoals.cpp:1263
+A-fatal          3009 APlayerController::VoicePacketFilter           TArrayNoInit<struct FUniqu   0     2     0   0   1   1 source/Development/Src/Engine/Src/UnController.cpp:2738
+A-fatal          3009 USeqAct_Interp::LinkedCover                    TArrayNoInit<class ACoverL   0     2     0   0   1   1 source/Development/Src/Engine/Src/UnInterpolation.cpp:2417
+A-fatal          3009 AGameCrowdAgent::AvoidOtherSampleList          TArrayNoInit<struct FAvoid   0     2     0   0   1   1 source/Development/Src/GameFramework/Src/GameCrowd.cpp:806
+A-fatal          3008 USkeletalMeshComponent::ClothMeshIndexData     TArray<INT>                  0     2     4   0   1   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:3394
+
+RANK B, unambiguous: written at runtime, so the store is shared process-wide
+
+rank            score owner::name                                    type                       ret    rd    wr chk idx num first use
+B-shared-write   2514 UPrimitiveComponent::ReplacementPrimitive      UPrimitiveComponent*         1     6    11   0   0   0 source/Development/Src/Core/Src/UnProp.cpp:2583
+B-shared-write   2505 UMaterial::bUsedWithFogVolumes                 BITFIELD                     1     6     2   0   0   0 source/Development/Src/Engine/Src/Material.cpp:388
+B-shared-write   2502 UMaterial::bUsedWithFracturedMeshes            BITFIELD                     1     3     1   0   0   0 source/Development/Src/Engine/Src/Material.cpp:375
+B-shared-write   2082 USkeletalMesh::SourceData                      FSkeletalMeshSourceData      0    53     6   5   0   0 source/Development/Src/Core/Inc/UnAsyncWork.h:716
+B-shared-write   2082 UStaticMesh::SourceData                        FStaticMeshSourceData        0    53     6   5   0   0 source/Development/Src/Core/Inc/UnAsyncWork.h:716
+B-shared-write   2077 USkeletalMeshComponent::ClothSim               FPointer                     0   110     2   2   0   0 source/Development/Src/Engine/Src/UnNovodexSupport.cpp:858
+B-shared-write   2057 AController::MoveTarget                        class AActor*                0    84    15   0   0   0 source/Development/Src/Engine/Src/UnController.cpp:150
+B-shared-write   2042 AController::CurrentPath                       class UReachSpec*            0    68     8   0   0   0 source/Development/Src/Engine/Inc/EngineControllerClasses.h:958
+B-shared-write   2041 USkeletalMesh::ClothWeldingDomain              INT                          0     7     8   3   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2257
+B-shared-write   2039 USeqAct_Interp::ReplicatedActor                class AMatineeActor*         0    34     2   2   0   0 source/Development/Src/Engine/Inc/EngineClasses.h:4147
+B-shared-write   2032 USkeletalMesh::NumFreeClothVerts               INT                          0    22     1   2   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2137
+B-shared-write   2027 AController::NextRoutePath                     class UReachSpec*            0    36     6   0   1   0 source/Development/Src/Engine/Src/UnController.cpp:159
+B-shared-write   2026 USkeletalMeshComponent::NumClothMeshVerts      INT                          0    11     1   2   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2241
+B-shared-write   2022 UPrimitiveComponentFactory::BlockZeroExtent    BITFIELD                     0    15     9   0   2   0 source/Development/Src/Engine/Inc/PrimitiveComponent.h:826
+B-shared-write   2022 UPrimitiveComponentFactory::BlockNonZeroExtent BITFIELD                     0    15     9   0   2   0 source/Development/Src/Engine/Inc/PrimitiveComponent.h:827
+B-shared-write   2022 USkeletalMeshComponent::SoftBodySim            FPointer                     0    20     2   1   0   0 source/Development/Src/Engine/Src/UnNovodexSupport.cpp:1005
+B-shared-write   2020 AController::MoveTimer                         FLOAT                        0    10    12   0   1   0 source/Development/Src/Engine/Src/UnController.cpp:287
+B-shared-write   2020 UMaterialInterface::MobileMaskTexture          class UTexture*              0    20     4   0   2   0 source/Development/Src/Core/Inc/UnNames.h:576
+B-shared-write   2020 USkeletalMesh::ClothThickness                  FLOAT                        0    18     2   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1209
+B-shared-write   2019 AWorldInfo::VisibleLayers                      FStringNoInit                0     6     5   0   2   1 source/Development/Src/Engine/Src/LevelUtils.cpp:416
+B-shared-write   2019 FSystemSettings::MotionBlurSkinning            INT                          ?     8     5   1   0   0 source/Development/Src/Engine/Inc/SystemSettings.h:399
+B-shared-write   2014 USkeletalMeshComponent::SkipRateForTickAnimNod INT                          0     3    13   0   0   0 source/Development/Src/Engine/Src/UnSkeletalComponent.cpp:1185
+B-shared-write   2013 UParticleModuleParameterDynamic::UpdateFlags   INT                          0    20     3   0   0   0 source/Development/Src/Engine/Src/ParticleModules_Parameter.cpp:112
+B-shared-write   2013 USkeletalMeshComponent::bUseSingleBodyPhysics  BITFIELD                     0    24     1   0   0   0 source/Development/Src/Engine/Src/UnNovodexSupport.cpp:151
+B-shared-write   2012 UAnimSet::bAnimRotationOnly                    BITFIELD                     0    20     2   0   0   0 source/Development/Src/Engine/Inc/AnimationCompression.h:18
+B-shared-write   2012 UTexture2DComposite::DestSizeX                 INT                          0    20     2   0   0   0 source/Development/Src/Engine/Src/Texture2DComposite.cpp:85
+B-shared-write   2011 UAnimNodeSequence::ActiveCameraAnimInstance    class UCameraAnimInst*       0    18     2   0   0   0 source/Development/Src/Engine/Src/UnAnimPlay.cpp:158
+B-shared-write   2011 AController::bAdjusting                        BITFIELD                     0    14     4   0   0   0 source/Development/Src/Engine/Src/UnController.cpp:1141
+B-shared-write   2011 APlayerController::RealViewTarget              class APlayerReplicationIn   0     5     9   0   0   0 source/Development/Src/Engine/Src/UnCamera.cpp:217
+B-shared-write   2011 UMaterialInterface::MobileBaseTexture          class UTexture*              0    12     5   0   0   0 source/Development/Src/Core/Inc/UnNames.h:558
+B-shared-write   2011 APawn::SerpentineDist                          FLOAT                        0    12     5   0   0   0 source/Development/Src/Engine/Src/UnPawn.cpp:604
+B-shared-write   2011 AGameCrowdAgent::CurrentBehavior               class UGameCrowdAgentBehav   0    21     1   0   0   0 source/Development/Src/GameFramework/Src/GameCrowd.cpp:297
+B-shared-write   2010 USkelControlLookAt::ControlBoneIndex           INT                          0    17     2   0   0   0 source/Development/Src/Engine/Src/UnInterpolation.cpp:13087
+B-shared-write   2010 AController::DestinationPosition               struct FBasedPosition        0     7     4   0   1   0 source/Development/Src/Engine/Src/UnController.cpp:1126
+B-shared-write   2010 APawn::DrivenVehicle                           class AVehicle*              0    14     3   0   0   0 source/Development/Src/Engine/Src/UnActor.cpp:563
+B-shared-write   2010 UTexture2DComposite::DestSizeY                 INT                          0    17     2   0   0   0 source/Development/Src/Engine/Src/Texture2DComposite.cpp:85
+B-shared-write   2010 UPrimitiveComponent::FogVolumeComponent        class UFogVolumeDensityCom   0     8     6   0   0   0 source/Development/Src/Engine/Inc/Scene.h:1491
+B-shared-write   2009 UAnimNode::LastUpdatedAnimMorphKeys            TArrayNoInit<FCurveKey>      0     0     9   0   0   0 source/Development/Src/Engine/Src/UnAnimPlay.cpp:773
+B-shared-write   2009 AController::bPreparingMove                    BITFIELD                     0     5     7   0   0   0 source/Development/Src/Engine/Src/UnController.cpp:962
+B-shared-write   2009 AWorldInfo::Pauser                             class APlayerReplicationIn   0     7     6   0   0   0 source/Development/Src/Engine/Src/DemoRecording.cpp:696
+B-shared-write   2009 UMaterialInterface::MobileEmissiveColorSource  BYTE                         0    11     4   0   0   0 source/Development/Src/Engine/Src/Material.cpp:1598
+B-shared-write   2009 UStaticMesh::VertexPositionVersionNumber       INT                          0     2     8   0   0   0 source/Development/Src/Engine/Src/UnActorFactory.cpp:214
+B-shared-write   2009 UStaticMeshComponent::VertexPositionVersionNum INT                          0     2     8   0   0   0 source/Development/Src/Engine/Src/UnActorFactory.cpp:214
+B-shared-write   2009 UGameThirdPersonCameraMode::CurrentViewportTyp BYTE                         0     4     7   0   0   0 source/Development/Src/GameFramework/Src/GameCamera.cpp:1404
+B-shared-write   2009 AGameCrowdAgent::PendingVelocity               FVector                      0     4     7   0   0   0 source/Development/Src/GameFramework/Src/GameCrowd.cpp:65
+B-shared-write   2008 ULocalPlayer::ViewState2                       FSceneViewStateInterface*    0     8     4   0   0   0 source/Development/Src/Engine/Src/SceneRendering.cpp:3815
+B-shared-write   2008 UMaterialInterface::MobileNormalTexture        class UTexture*              0     7     5   0   0   0 source/Development/Src/Core/Inc/UnNames.h:578
+B-shared-write   2008 UMaterialInterface::MobileEmissiveTexture      class UTexture*              0     8     4   0   0   0 source/Development/Src/Core/Inc/UnNames.h:566
+B-shared-write   2008 UStaticMesh::bRemoveDegenerates                BITFIELD                     0    14     1   0   0   0 source/Development/Src/Engine/Inc/UnStaticMesh.h:1065
+B-shared-write   2007 UAnimNodeSlot::bIsBeingUsedByInterpGroup       BITFIELD                     0     2     6   0   0   0 source/Development/Src/Engine/Src/UnAnimTree.cpp:7644
+B-shared-write   2007 UAnimTree::bRebuildAnimTickArray               BITFIELD                     0     3     6   0   0   0 source/Development/Src/Engine/Src/UnAnimTree.cpp:3774
+B-shared-write   2007 AController::LaneOffset                        FLOAT                        0     6     4   0   0   0 source/Development/Src/Engine/Inc/EngineControllerClasses.h:959
+B-shared-write   2007 AWorldInfo::CoverList                          class ACoverLink*            0     7     4   0   0   0 source/Development/Src/Engine/Src/UnLevel.cpp:1972
+B-shared-write   2007 FDirectorTrackCut::ShotNumber                  INT                          0     4     2   0   1   0 source/Development/Src/Engine/Src/UnInterpolation.cpp:8391
+B-shared-write   2007 UMaterialExpressionTextureSample::TextureObjec FExpressionInput             0    13     1   0   0   0 source/Development/Src/Engine/Src/MaterialExpressions.cpp:629
+B-shared-write   2007 UMaterialInterface::MobileEnvironmentTexture   class UTexture*              0     7     4   0   0   0 source/Development/Src/Core/Inc/UnNames.h:571
+B-shared-write   2007 UMaterialInterface::MobileDetailTexture        class UTexture*              0     7     4   0   0   0 source/Development/Src/Core/Inc/UnNames.h:562
+B-shared-write   2007 APawn::SerpentineDir                           FVector                      0     8     3   0   0   0 source/Development/Src/Engine/Src/UnController.cpp:2568
+B-shared-write   2007 APawn::SerpentineTime                          FLOAT                        0     3     6   0   0   0 source/Development/Src/Engine/Src/UnPawn.cpp:597
+B-shared-write   2007 AKActor::SlideSoundComponent                   class UAudioComponent*       0    12     1   0   0   0 source/Development/Src/Engine/Src/UnPhysActor.cpp:1086
+
+RANK C, unambiguous: read and never written -- permanently zero/empty
+
+rank            score owner::name                                    type                       ret    rd    wr chk idx num first use
+C-dead-read      1500 AWorldInfo::ProcBuildingRulesetOverride        class UProcBuildingRuleset   1     1     0   0   0   0 source/Development/Src/Engine/Src/ProcBuilding.cpp:587
+C-dead-read      1058 AController::PlayerReplicationInfo             class APlayerReplicationIn   0   117     0   0   0   0 source/Development/Src/Engine/Inc/EngineReplicationInfoClasses.h:242
+C-dead-read      1058 APawn::PlayerReplicationInfo                   class APlayerReplicationIn   0   117     0   0   0   0 source/Development/Src/Engine/Inc/EngineReplicationInfoClasses.h:242
+C-dead-read      1032 UDrawSphereComponent::bDrawOnlyIfSelected      BITFIELD                     0    16     0   0   8   0 source/Development/Src/Engine/Src/PrimitiveComponent.cpp:2557
+C-dead-read      1032 UDrawCylinderComponent::bDrawOnlyIfSelected    BITFIELD                     0    16     0   0   8   0 source/Development/Src/Engine/Src/PrimitiveComponent.cpp:2557
+C-dead-read      1032 UDrawBoxComponent::bDrawOnlyIfSelected         BITFIELD                     0    16     0   0   8   0 source/Development/Src/Engine/Src/PrimitiveComponent.cpp:2557
+C-dead-read      1032 UDrawCapsuleComponent::bDrawOnlyIfSelected     BITFIELD                     0    16     0   0   8   0 source/Development/Src/Engine/Src/PrimitiveComponent.cpp:2557
+C-dead-read      1023 UInstancedStaticMeshComponent::SelectedInstanc TBitArray<>                  0     4     0   0   2   3 source/Development/Src/Engine/Inc/EngineMeshClasses.h:1621
+C-dead-read      1016 APawn::OnLadder                                class ALadderVolume*         0    33     0   0   0   0 source/Development/Src/Engine/Src/UnNavigationPoint.cpp:1796
+C-dead-read      1015 FSystemSettings::bAllowSubsurfaceScattering    UBOOL                        ?    10     0   1   0   0 source/Development/Src/Engine/Src/SceneRendering.cpp:3315
+C-dead-read      1015 ULevel::PrecomputedVolumeDistanceField         FPrecomputedVolumeDistance   0    13     0   0   3   0 source/Development/Src/Engine/Inc/Scene.h:1440
+C-dead-read      1013 USkeletalMeshComponent::ClothAttachmentTearFac FLOAT                        0     8     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1198
+C-dead-read      1013 USkeletalMesh::ClothAttachmentTearFactor       FLOAT                        0     8     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1198
+C-dead-read      1012 AWorldInfo::PeerHostMigration                  struct FHostMigrationState   0    24     0   0   0   0 source/Development/Src/Engine/Src/UnController.cpp:2964
+C-dead-read      1012 USkeletalMesh::ClothFriction                   FLOAT                        0     6     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1203
+C-dead-read      1012 USkeletalMesh::ClothPressure                   FLOAT                        0     6     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1204
+C-dead-read      1012 USkeletalMesh::ClothCollisionResponseCoefficie FLOAT                        0     6     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1200
+C-dead-read      1012 USkeletalMesh::ClothAttachmentResponseCoeffici FLOAT                        0     6     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1197
+C-dead-read      1012 USkeletalMesh::ClothSleepLinearVelocity        FLOAT                        0     6     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1205
+C-dead-read      1012 USkeletalMesh::ClothTearFactor                 FLOAT                        0     6     0   0   3   0 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:1208
+C-dead-read      1011 UEngine::LandscapeHolePhysMaterial             class UPhysicalMaterial*     0     2     0   1   0   0 source/Development/Src/Engine/Src/LandscapeCollision.cpp:60
+C-dead-read      1011 UOnlineSubsystemCommonImpl::GameInterfaceImpl  class UOnlineGameInterface   0     2     0   1   0   0 source/Development/Src/IpDrv/Inc/UOnlineSubsystemCommonImpl.h:15
+C-dead-read      1010 USkeletalMesh::bEnableClothTearing             BITFIELD                     0    20     0   0   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2238
+C-dead-read      1009 UOnlineSubsystemCommonImpl::AuthInterfaceImpl  class UOnlineAuthInterface   0    18     0   0   0   0 source/Development/Src/IpDrv/Src/OnlineAuthInterfaceImpl.cpp:34
+C-dead-read      1008 AWorldInfo::MyFractureManager                  class AFractureManager*      0    16     0   0   0   0 source/Development/Src/Engine/Src/UnFracturedStaticMesh.cpp:2425
+C-dead-read      1008 USeqAct_Interp::ConstantCameraAnim             BYTE                         0     4     0   0   2   0 source/Development/Src/Engine/Src/UnInterpolation.cpp:1570
+C-dead-read      1006 UEngine::bUseRecastNavMesh                     BITFIELD                     0    13     0   0   0   0 source/Development/Src/Engine/Src/UnNavigationMesh.cpp:2000
+C-dead-read      1006 UParticleModuleSizeMultiplyVelocity::CapMaxSiz FVector                      0    12     0   0   0   0 source/Development/Src/Engine/Src/ParticleModules_Size.cpp:109
+C-dead-read      1006 UParticleModuleSizeMultiplyVelocity::CapMinSiz FVector                      0    12     0   0   0   0 source/Development/Src/Engine/Src/ParticleModules_Size.cpp:109
+C-dead-read      1006 AGameCrowdAgent::AvoidOtherRadius              FLOAT                        0    12     0   0   0   0 source/Development/Src/GameFramework/Src/GameCrowd.cpp:89
+C-dead-read      1005 APylon::NavMeshGenerator                       BYTE                         0    11     0   0   0   0 source/Development/Src/Engine/Src/UnNavigationMesh.cpp:5301
+C-dead-read      1005 APawn::Weapon                                  class AWeapon*               0    10     0   0   0   0 source/Development/Src/DishonoredGame/Inc/dishonoredgameclasses.h:11180
+C-dead-read      1004 USkeletalMesh::bClothMetal                     BITFIELD                     0     9     0   0   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:3311
+C-dead-read      1003 ULocalPlayer::CurrentPPInfo                    struct FCurrentPostProcess   0     6     0   0   0   0 source/Development/Src/Engine/Src/UnGame.cpp:2128
+C-dead-read      1003 ULocalPlayer::AspectRatioAxisConstraint        BYTE                         0     6     0   0   0   0 source/Development/Src/Engine/Src/UnPlayer.cpp:4249
+C-dead-read      1003 UMaterial::SubsurfaceInscatteringColor         FColorMaterialInput          0     6     0   0   0   0 source/Development/Src/Engine/Src/LandscapeRender.cpp:2057
+C-dead-read      1003 USkeletalMesh::bLimitClothToAnimMesh           BITFIELD                     0     6     0   0   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:2130
+C-dead-read      1003 USkeletalMesh::bEnableValidBounds              BITFIELD                     0     7     0   0   0   0 source/Development/Src/Engine/Src/UnPhysComponent.cpp:3764
+C-dead-read      1002 UNavigationHandle::bVisualPathDebugging        BITFIELD                     0     5     0   0   0   0 source/Development/Src/Engine/Src/UnNavigationConstraintsAndGoals.cpp:431
+C-dead-read      1002 UNavigationHandle::Breadcrumbs                 FVector                      0     5     0   0   0   0 source/Development/Src/Engine/Src/UnNavigationHandle.cpp:5877
+
+AMBIGUOUS (the identifier is also real storage elsewhere; read by hand)
+
+rank            score owner::name                                    type                       ret    rd    wr chk idx num first use
+A-fatal?         1572 UApexGenericAsset::Materials                   TArrayNoInit<class UMateri   0   218    54   4 118 103 source/Development/Src/DishonoredGame/Src/dishonorednpcpawn_body.cpp:121
+B-shared-write?   783 USeqAct_GetLocationAndRotation::Rotation       FVector                      0   976   507  12  56   0 source/Development/Src/Core/Inc/FBoneAtomStandard.h:22
+B-shared-write?   731 UMaterialExpression::Material                  class UMaterial*             0  1534   206   9  56   0 source/Development/Src/D3D9Drv/Src/D3D9Commands.cpp:549
+A-fatal?          635 UPostProcessChain::Effects                     TArrayNoInit<class UPostPr   0    44     5   0  16  12 source/Development/Src/DishonoredGame/Src/dishonoredplayercontroller.cpp:1108
+A-fatal?          635 AGameCrowdAgentSkeletal::Attachments           TArrayNoInit<struct FGameC   0    42     1   0  21  10 source/Development/Src/Engine/Inc/UnSkeletalMesh.h:309
+A-fatal?          632 UMaterialExpression::Outputs                   TArrayNoInit<FExpressionOu   0    65    12   0  21   5 source/Development/Src/Core/Inc/UnObjBas.h:2315
+A-fatal?          631 ULevel::CoverLinkRefs                          TArray<class ACoverLink*>    0    28    12   0  15  12 source/Development/Src/Engine/Inc/EngineClasses.h:11191
+A-fatal?          606 USkeletalMeshComponent::ActiveMorphs           TArrayNoInit<FActiveMorph>   0    56     8   0  10   8 source/Development/Src/Engine/Src/UnSequence.cpp:12089
+A-fatal?          577 UInterpTrackAnimControl::AnimSets              TArrayNoInit<class UAnimSe   0    58     9   0   8   3 source/Development/Src/DishonoredGame/Src/dishonoredpawn.cpp:171
+A-fatal?          575 USkeletalMeshComponent::AnimTickArray          TArray<UAnimNode*>           0    21     7   0   6   8 source/Development/Src/DishonoredGame/Src/dishonoredanimnodetreeref.cpp:79
+A-fatal?          546 USkeletalMesh::ClothingAssets                  TArray<class UApexClothing   0     7     3   0   5   5 source/Development/Src/Engine/Inc/EnginePhysicsClasses.h:917
+A-fatal?          525 ASkeletalMeshActor::InterpGroupList            TArrayNoInit<class UInterp   0     6     6   0   2   2 source/Development/Src/Engine/Inc/EngineAnimClasses.h:424
+A-fatal?          516 USkeletalMeshComponent::SoftBodyTetraPosData   TArray<FVector>              0     9     2   0   0   2 source/Development/Src/Engine/Src/UnPhysSkelComponent.cpp:51
+A-fatal?          514 UInterpData::InterpGroups                      TArrayNoInit<class UInterp   0     9     1   0   3   0 source/Development/Src/Engine/Inc/EngineInterpolationClasses.h:2659
+B-shared-write?   179 UMaterialExpressionFontSampleParameter::Group  FName                        0   459   111  21  43   0 source/Development/Src/Core/Inc/UnCorObj.h:31
+B-shared-write?   179 UMaterialExpressionParameter::Group            FName                        0   459   111  21  43   0 source/Development/Src/Core/Inc/UnCorObj.h:31
+B-shared-write?   179 UMaterialExpressionTextureSampleParameter::Gro FName                        0   459   111  21  43   0 source/Development/Src/Core/Inc/UnCorObj.h:31
+B-shared-write?    11 UMaterial::bAllowFog                           BITFIELD                     1     7     5   0   1   0 source/Development/Src/Engine/Inc/Mobile.h:763
+B-shared-write?   -45 UMaterialExpression::Function                  class UMaterialFunction*     0   447    41   8  37   0 source/Development/Src/Core/Inc/ScriptCallstackDecoder.h:15
+B-shared-write?  -326 FExpressionInput::OutputIndex                  INT                          0   287    28   0   1   0 source/Development/Src/Core/Src/SavePackage.cpp:1074
+B-shared-write?  -357 FDebugTextInfo::Font                           class UFont*                 0   231    15   1   1   0 source/Development/Src/Core/Inc/UnStats.h:2226
+B-shared-write?  -380 AGameCrowdDestination::Priority                FLOAT                        0   125    25   0  11   0 source/Development/Src/Core/Inc/UnIOBase.h:124
+B-shared-write?  -383 AGameCrowdAgent::LightEnvironment              class UDynamicLightEnviron   0   142    28   0   6   0 source/Development/Src/DishonoredGame/Src/dispickup_base.cpp:104
+B-shared-write?  -385 UAnimNodeSequence::EndTime                     FLOAT                        0   109    61   0   0   0 source/Development/Src/Core/Src/BestFitAllocator.cpp:1678
+B-shared-write?  -397 UWorld::DemoRecDriver                          class UDemoRecDriver*        ?    96     9   4   2   0 source/Development/Src/Engine/Inc/UnPenLev.h:23
+B-shared-write?  -405 UNavMeshPath_Toward::GoalActor                 class AActor*                0   182     4   0   0   0 source/Development/Src/Engine/Inc/APawn.h:38
+B-shared-write?  -436 FExpressionInput::InputName                    FString                      0    66     7   0   8   0 source/Development/Src/Engine/Inc/enginearkppclasses.h:17
+B-shared-write?  -446 UInterpTrackInstBoolProp::BitMask              INT                          0    59     9   1   2   0 source/Development/Src/Core/Inc/UnPropertyTag.h:54
+B-shared-write?  -453 UMaterialExpression::BorderColor               FColor                       0    51    16   0   2   0 source/Development/Src/D3D9Drv/Inc/D3D9State.h:17
+B-shared-write?  -458 UWorld::PeerNetDriver                          class UNetDriver*            ?    48    12   0   2   0 source/Development/Src/Engine/Inc/UnPenLev.h:24

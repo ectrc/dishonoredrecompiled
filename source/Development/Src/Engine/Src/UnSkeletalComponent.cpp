@@ -683,26 +683,6 @@ void USkeletalMeshComponent::UpdateTransform()
 			warnf(NAME_Warning, TEXT("Skeletal Mesh Morphs are not supported on mobile"));
 		}
 
-		if( BoneVisibilityStates.Num() == SpaceBases.Num() )
-		{
-			// for invisible bones, I'll still need to update the transform, so that rendering can use it for skinning
-			BYTE const * BoneVisibilityState = BoneVisibilityStates.GetData();
-			FBoneAtom * SpaceBase = SpaceBases.GetData();
-			for (INT BoneIndex=0; BoneIndex<BoneVisibilityStates.Num(); ++BoneIndex, ++BoneVisibilityState, ++SpaceBase)
-			{
-				if (*BoneVisibilityState!=BVS_Visible)
-				{
-					if (BoneIndex != 0 )
-					{
-						// since they're invisible, copy parent transform to itself and scale set to be 0
-						const INT ParentIndex = SkeletalMesh->RefSkeleton(BoneIndex).ParentIndex;
-						*SpaceBase = SpaceBases(ParentIndex);
-					}
-					SpaceBase->SetScale(ScalarZero);
-				}
-			}
-		}
-
 		MeshObject->Update(UseLOD,this,ActiveMorphs);  // send to rendering thread
 		MeshObject->bHasBeenUpdatedAtLeastOnce = TRUE;
 		
@@ -2481,7 +2461,6 @@ void USkeletalMeshComponent::ComposeSkeleton()
 
 	check( SkeletalMesh->RefSkeleton.Num() == LocalAtoms.Num() );
 	check( SkeletalMesh->RefSkeleton.Num() == SpaceBases.Num() );
-	check( SkeletalMesh->RefSkeleton.Num() == BoneVisibilityStates.Num() );
 
 	const UAnimTree* Tree = Cast<UAnimTree>(Animations);
 
@@ -3253,37 +3232,8 @@ static void MergeInByteArray(TArray<BYTE>& BaseArray, TArray<BYTE>& InsertArray)
 	}
 }
 
-void USkeletalMeshComponent::RebuildVisibilityArray()
-{
-	// If the BoneVisibilityStates array has a 0 for a parent bone, all children bones are meant to be hidden as well
-	// (as the concatenated matrix will have scale 0).  This code propagates explicitly hidden parents to children.
-
-	// On the first read of any cell of BoneVisibilityStates, BVS_HiddenByParent and BVS_Visible are treated as visible.
-	// If it starts out visible, the value written back will be BVS_Visible if the parent is visible; otherwise BVS_HiddenByParent.
-	// If it starts out hidden, the BVS_ExplicitlyHidden value stays in place
-
-	// The following code relies on a complete hierarchy sorted from parent to children
-	check(BoneVisibilityStates.Num() == SkeletalMesh->RefSkeleton.Num());
-	for (INT BoneId=0; BoneId < BoneVisibilityStates.Num(); ++BoneId)
-	{
-		BYTE VisState = BoneVisibilityStates(BoneId);
-
-		// if not exclusively hidden, consider if parent is hidden
-		if (VisState != BVS_ExplicitlyHidden)
-		{
-			// Check direct parent (only need to do one deep, since we have already processed the parent and written to BoneVisibilityStates previously)
-			const INT ParentIndex = SkeletalMesh->RefSkeleton(BoneId).ParentIndex;
-			if ((ParentIndex == 0) || (BoneVisibilityStates(ParentIndex) == BVS_Visible))
-			{
-				BoneVisibilityStates(BoneId) = BVS_Visible;
-			}
-			else
-			{
-				BoneVisibilityStates(BoneId) = BVS_HiddenByParent;
-			}
-		}
-	}
-}
+// DISHONORED(retail): USkeletalMeshComponent::RebuildVisibilityArray is not in retail 2013 (no such symbol in the
+// 2012 PDB either) because retail keeps no per-bone visibility state at all; see HideBone in UnPhysComponent.cpp.
 
 /** Recalculates the RequiredBones array in this SkeletalMeshComponent based on current SkeletalMesh, LOD and PhysicsAsset. */
 void USkeletalMeshComponent::RecalcRequiredBones(INT LODIndex)
@@ -3350,31 +3300,9 @@ void USkeletalMeshComponent::RecalcRequiredBones(INT LODIndex)
 		MergeInByteArray(RequiredBones, PerPolyCollisionBones);
 	}
 
-	// Purge invisible bones and their children
-	// this has to be done before mirror table check/phsysics body checks
-	// mirror table/phys body ones has to be calculated
-	{
-		check(BoneVisibilityStates.Num() == SkeletalMesh->RefSkeleton.Num());
-
-		INT VisibleBoneWriteIndex = 0;
-		for (INT i = 0; i < RequiredBones.Num(); ++i)
-		{
-			BYTE CurBoneIndex = RequiredBones(i);
-
-			// Current bone visible?
-			if (BoneVisibilityStates(CurBoneIndex) == BVS_Visible)
-			{
-				RequiredBones(VisibleBoneWriteIndex++) = CurBoneIndex;
-			}
-		}
-
-		// Remove any trailing junk in the RequiredBones array
-		const INT NumBonesHidden = RequiredBones.Num() - VisibleBoneWriteIndex;
-		if (NumBonesHidden > 0)
-		{
-			RequiredBones.Remove(VisibleBoneWriteIndex, NumBonesHidden);
-		}
-	}
+	// DISHONORED(retail): 2012 RecalcRequiredBones (rva 0x3536b0) has no purge of invisible bones -- it is the LOD
+	// copy, the mirror table, the physics asset bodies, the per-poly bones and EnsureParentsPresent, and nothing
+	// else. The reference purge asserted here against a store shared by every component in the process.
 
 	// Add in any bones that may be required when mirroring.
 	// JTODO: This is only required if there are mirroring nodes in the tree, but hard to know...
@@ -3857,18 +3785,9 @@ void USkeletalMeshComponent::UpdateSkelPose( FLOAT DeltaTime, UBOOL bTickFaceFX 
 			LocalAtoms.Add( SkeletalMesh->RefSkeleton.Num() );
 		}
 
-		if( BoneVisibilityStates.Num() != SkeletalMesh->RefSkeleton.Num())
-		{
-			BoneVisibilityStates.Empty( SkeletalMesh->RefSkeleton.Num() );
-			if( SkeletalMesh->RefSkeleton.Num() )
-			{
-				BoneVisibilityStates.Add( SkeletalMesh->RefSkeleton.Num() );
-				for (INT BoneIndex = 0; BoneIndex < SkeletalMesh->RefSkeleton.Num(); BoneIndex++)
-				{
-					BoneVisibilityStates( BoneIndex ) = BVS_Visible;
-				}
-			}
-		}
+		// DISHONORED(retail): 2012 UpdateSkelPoseBegin (rva 0x3737a0) allocates SpaceBases and LocalAtoms and no
+		// third array. The reference block sized BoneVisibilityStates here, and only when ParentAnimComponent was
+		// NULL, so a parent-animated component (an NPC's head mesh) never had one at all.
 	}
 
 	// Do nothing more if no bones in skeleton.
