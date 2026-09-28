@@ -625,6 +625,14 @@ UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName K
 
 	if( !bResult )
 	{
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+		// DISHONORED(bringup): the interface is offered the key before the pawn is, which is retail's order -
+		// UGFxInteraction sits ahead of the player's input in GlobalInteractions, so an open menu consumes what
+		// it handles. Neither is in the list here, so both are routed by hand; see the note above.
+		extern UBOOL DishonoredGFxInputKey( INT ControllerId, FName Key, EInputEvent Event );
+		bResult = DishonoredGFxInputKey( ControllerId, Key, EventType );
+		if( !bResult )
+#endif
 		bResult = DishonoredRouteInputToPlayers( this, Key, EventType, AmountDepressed, 0.f, bGamepad, FALSE, ControllerId );
 	}
 

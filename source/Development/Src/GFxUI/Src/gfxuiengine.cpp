@@ -1393,6 +1393,40 @@ void FGFxEngine::Tick( FLOAT DeltaTime )
 			}
 		}
 	}
+	// DISHONORED(bringup): focus is re-evaluated when the local player set changes. ReevaluateFocus()
+	// returns early while PlayerStates is empty and is otherwise only called on InsertMovie/CloseScene,
+	// so an interface opened before the local player exists never acquires focus - and with no focused
+	// movie, FGFxEngine::InputKey returns at its first line and every real key press is dropped. Retail
+	// has no such gap because the script InitInputSystem inserts a UGFxInteraction per player, the same
+	// insertion this tree already works around for the player's own input (Engine/Src/UnPlayer.cpp).
+	{
+		// The condition is "nothing holds focus while something could", not "the player set changed":
+		// the interface opens after the player appears, so a change-triggered re-evaluation runs too
+		// early and never again. This is self-correcting and stops as soon as focus is taken.
+		const INT PlayerCount = GEngine != NULL ? GEngine->GamePlayers.Num() : 0;
+		if( PlayerCount > 0 && OpenMovies.Num() > 0 && GetFocusedMovieFromControllerID( 0 ) == NULL )
+		{
+			ReevaluateFocus();
+		}
+		// Unconditional for the first ten seconds: the three numbers the condition above is built from,
+		// so a run states why focus is or is not held rather than leaving it to be narrowed by elimination.
+		{
+			static DOUBLE NextSay = 0.0;
+			if( GCurrentTime >= NextSay )
+			{
+				NextSay = GCurrentTime + 1.0;
+				static INT Said = 0;
+				if( Said < 10 )
+				{
+					Said++;
+					debugf( TEXT("DISHONORED(bringup): GFx UI focus: %d local player(s), %d player state(s), %d movie(s) open, focus %s"),
+						PlayerCount, PlayerStates.Num(), OpenMovies.Num(),
+						GetFocusedMovieFromControllerID( 0 ) != NULL ? TEXT("held") : TEXT("NONE") );
+				}
+			}
+		}
+	}
+
 	TickScriptedKeys();
 
 	// DISHONORED(bringup): -gfxuifreeze=<N> stops advancing every open movie after N advances. The display list
@@ -2200,6 +2234,65 @@ void DishonoredGFxRenderUI()
 		GGFxEngine->RenderUI( FALSE, SDPG_Foreground );
 		GGFxEngine->RenderUI( FALSE, SDPG_PostProcess );
 	}
+}
+
+// DISHONORED(bringup): the input half of the Engine -> GFxUI edge, 2013 0x591f10 / 0x591fd0. Retail reaches
+// FGFxEngine::InputKey through UGFxInteraction, which the script InitInputSystem inserts into
+// GlobalInteractions; that insertion does not happen here (the same gap that dropped the player's own input,
+// UnPlayer.cpp), so the viewport offers the key to the interface directly. Both return TRUE when the
+// interface consumed the event, which is what stops it reaching the pawn.
+UBOOL DishonoredGFxInputKey( INT ControllerId, FName Key, EInputEvent Event )
+{
+	// DISHONORED(bringup): one line, on the first key the viewport hands us, naming every link in the chain,
+	// because "0 key downs" is equally true of a missing route, an empty player-state list, an unfocused
+	// movie, a movie that cannot receive input, and a key the map does not carry.
+	static UBOOL bSaidSo = FALSE;
+	if( !bSaidSo )
+	{
+		bSaidSo = TRUE;
+		if( GGFxEngine == NULL )
+		{
+			debugf( TEXT("DISHONORED(bringup): GFx input probe: first key '%s' arrived but GGFxEngine is NULL"), *Key.ToString() );
+		}
+		else
+		{
+			FGFxMovie* Focus = GGFxEngine->GetFocusedMovieFromControllerID( ControllerId );
+			FGFxMovie* Top   = GGFxEngine->OpenMovies.Num() > 0 ? GGFxEngine->OpenMovies( GGFxEngine->OpenMovies.Num() - 1 ) : NULL;
+			debugf( TEXT("DISHONORED(bringup): GFx input probe: first key '%s' ctrl %d | GamePlayers %d | PlayerStates %d | OpenMovies %d | focus %s | top %s canFocus %d canInput %d"),
+				*Key.ToString(), ControllerId,
+				GEngine ? GEngine->GamePlayers.Num() : -1,
+				GGFxEngine->PlayerStates.Num(),
+				GGFxEngine->OpenMovies.Num(),
+				Focus != NULL ? TEXT("yes") : TEXT("NULL"),
+				Top != NULL ? TEXT("yes") : TEXT("NULL"),
+				Top != NULL ? (INT)Top->bCanReceiveFocus : -1,
+				Top != NULL ? (INT)Top->bCanReceiveInput : -1 );
+		}
+	}
+	if( GGFxEngine == NULL )
+	{
+		return FALSE;
+	}
+	if( GGFxEngine->InputKey( ControllerId, Key, Event ) )
+	{
+		return TRUE;
+	}
+	// DISHONORED(bringup): when no local player owns focus, offer the key to the topmost open movie - the
+	// same fallback agent DK's scripted key path already carries, in those words, and the reason that path
+	// worked while a real key press did nothing. Retail does not need it: the script InitInputSystem inserts
+	// a UGFxInteraction per local player and the focused movie is always resolved. Remove this once that
+	// insertion works.
+	if( GGFxEngine->GetFocusedMovieFromControllerID( ControllerId ) == NULL && GGFxEngine->OpenMovies.Num() > 0 )
+	{
+		FGFxMovie* Top = GGFxEngine->OpenMovies( GGFxEngine->OpenMovies.Num() - 1 );
+		return GGFxEngine->InputKey( ControllerId, Top, Key, Event );
+	}
+	return FALSE;
+}
+
+UBOOL DishonoredGFxInputChar( INT ControllerId, TCHAR Character )
+{
+	return GGFxEngine != NULL ? GGFxEngine->InputChar( ControllerId, Character ) : FALSE;
 }
 
 void DishonoredGFxRenderTextures()
