@@ -21,6 +21,7 @@ class UDisLocalPlayer* DisGetLocalPlayer();
 class UDishonoredAudioSystem* DisGetAudioSystem();
 class UArkPpNode* DisGetArkPpNode( const FName& EffectName );
 class UArkPpNodeMaterial* DisGetArkPpNodeMaterial( const FName& EffectName, UBOOL bMakeUnique );
+class UDisPostProcessManager* DisGetPpManager();
 
 // DISHONORED(written): agent AU (PHASE7 AU). The utilities the pickup collection path calls; 2013 rvas with the bodies.
 class UDisGFxMoviePlayerHUD* DisGetGFxHUD();                                                   // 0x7bf730
