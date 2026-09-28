@@ -230,13 +230,7 @@ private:
 	/** -gfxuikey=<drawnframe>:<KeyName>: deliver a press and a release through the real path */
 	void TickScriptedKeys();
 	void SetMovieSize(FGFxMovie* Movie);                                             // 2013 0x57b300
-public:
-	// DISHONORED(bringup): public because the Engine -> GFxUI input edge calls it directly when no local
-	// player owns focus (Engine/Src/UnPlayer.cpp -> DishonoredGFxInputKey). Retail reaches it through
-	// UGFxInteraction, which the script InitInputSystem inserts and this tree does not; it goes back to
-	// private when that insertion works.
 	UBOOL InputKey(INT ControllerId, FGFxMovie* pFocusMovie, FName ukey, EInputEvent uevent);// 2013 0x590fd0
-private:
 	UBOOL IsKeyCaptured(FName ukey);                                                 // 2013 0x5916b0
 
 	FGFxEngine& operator=(const FGFxEngine&);
@@ -256,16 +250,36 @@ private:
 	UBOOL                 bCensusLogged;
 	INT                   DrawnFrames;
 
+	// DISHONORED(port): the value of retail's key map, FGFxEngine::UGFxInput (InitKeyMap 2013
+	// 0x59f490). Key is a GFxKey::Code and MouseButton is -1; a mouse binding is the other way round -
+	// Key 0 and MouseButton 0..2 for a button or 3..4 for a wheel notch. Owner is the movie that took
+	// the press, so the release is routed to the same one even after the focus has moved.
+	struct FGFxInput
+	{
+		INT        Key;
+		INT        MouseButton;
+		FGFxMovie* Owner;
+
+		FGFxInput() : Key(0), MouseButton(-1), Owner(NULL) {}
+		explicit FGFxInput(INT InKey) : Key(InKey), MouseButton(-1), Owner(NULL) {}
+		FGFxInput(INT InKey, INT InMouseButton) : Key(InKey), MouseButton(InMouseButton), Owner(NULL) {}
+	};
+
 	// The Unreal key name -> GFx key code map InitKeyMap builds from [GFxUI.KeyMap] in DefaultInput.ini
 	// plus the always-present defaults. Retail keeps two maps, KeyCodes and KeyMap; the second is the
 	// one GetInputKey consults and the first is what Exec dumps.
-	TMap<NAME_INDEX, INT> KeyMap;
+	TMap<NAME_INDEX, FGFxInput> KeyMap;
 	TMap<INT, TArray<FName> > InitialPressedKeys;
 	FIntPoint             MousePos;
 };
 
 /** the process-wide GFx engine; created by FGFxEngine::GetEngine */
 extern FGFxEngine* GGFxEngine;
+
+/** the bring-up's stand-in for UDisGFxMoviePlayerGlobal::PreRender (2013 0x79eb90): attach the global
+    movie's own `mouseCursor` symbol and put it where the mouse is. Called from
+    UGameViewportClient::Draw, which is where retail calls it. */
+extern void DishonoredGFxUpdateMouseCursor( class FViewport* Viewport );
 
 /** -nogfxui turns the whole interface off for a run, read on first use (never as a file-scope static:
     a file-scope ParseParam in a static library runs before WinMain sets GCmdLine - PHASE9.md's rule and

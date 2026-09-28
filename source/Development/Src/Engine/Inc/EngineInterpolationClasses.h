@@ -99,6 +99,26 @@ enum EVisibilityTrackAction
     op(EVTA_Hide) \
     op(EVTA_Show) \
     op(EVTA_Toggle) 
+// DISHONORED(layout): Engine.InterpTrackSoireeControlKeyProperties' own enums, moved here with the
+// three SoireeControl classes out of DishonoredGameEngineShims.h
+enum ESoireeControlType
+{
+    ESCT_Loop               =0,
+    ESCT_Pause              =1,
+    ESCT_MAX                =2,
+};
+#define FOREACH_ENUM_ESOIREECONTROLTYPE(op) \
+    op(ESCT_Loop) \
+    op(ESCT_Pause) 
+enum ESoireeBreakMode
+{
+    ESBM_BreakAtNextLoop    =0,
+    ESBM_BreakImmediately   =1,
+    ESBM_MAX                =2,
+};
+#define FOREACH_ENUM_ESOIREEBREAKMODE(op) \
+    op(ESBM_BreakAtNextLoop) \
+    op(ESBM_BreakImmediately) 
 
 #endif // !INCLUDED_ENGINE_INTERPOLATION_ENUMS
 #endif // !NO_ENUMS
@@ -2137,6 +2157,16 @@ public:
 
 	/** Called when interpolation is done. Should not do anything else with this TrackInst after this. */
 	virtual void TermTrackInst(UInterpTrack* Track) {}
+
+	// DISHONORED(port): 2013 rva 0x215100 - the matinee that owns this instance, two Outers up
+	// (track inst -> group inst -> USeqAct_Interp).
+	class USeqAct_Interp* GetMatinee() const;
+
+	// DISHONORED(port): Arkane's per-track-instance hook, vtable slot 308 of the retail
+	// UInterpTrackInst. StepInterp asks every track instance whether the matinee has to hold at a
+	// position before it advances; the base answers no. Overridden by UInterpTrackInstSoireeControl
+	// (2013 0x500a40), UInterpTrackInstLocomotion (0x5006b0) and UInterpTrackInstDialog (0x8735c0).
+	virtual UBOOL NeedsSynchronizing( FLOAT CurPosition, FLOAT NewPosition, FLOAT& OutPosition, UBOOL bPreview ) { return FALSE; }
 };
 
 class UInterpTrackInstAnimControl : public UInterpTrackInst
@@ -2673,6 +2703,35 @@ struct FFaceToControlTrackKey
     }
 };
 
+// Engine.InterpTrackSoireeControl.SoireeControlTrackKey: retail SDK size 12 (2012 PDB 12)
+struct FSoireeControlTrackKey
+{
+    FLOAT StartTime;
+    FLOAT KeyLength;
+    class UInterpTrackSoireeControlKeyProperties* Properties;
+
+    /** Constructors */
+    FSoireeControlTrackKey() {}
+    FSoireeControlTrackKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FSoireeControlTrackKey));
+    }
+};
+
+// Engine.InterpTrackInstSoireeControl.SoireeControlKeyStatus: retail SDK size 8 (2012 PDB 8)
+struct FSoireeControlKeyStatus
+{
+    INT m_InputIndex;
+    BITFIELD m_bIsBroken:1;
+
+    /** Constructors */
+    FSoireeControlKeyStatus() {}
+    FSoireeControlKeyStatus(EEventParm)
+    {
+        appMemzero(this, sizeof(FSoireeControlKeyStatus));
+    }
+};
+
 // Engine.InterpTrackLookAt.LookAtControlTrackKey: retail SDK size 16 (2012 PDB 16)
 struct FLookAtControlTrackKey
 {
@@ -2952,6 +3011,72 @@ public:
 
     DECLARE_CLASS(UInterpTrackInstStretchAnimControl,UInterpTrackInst,0,Engine)
 };
+// Engine.InterpTrackSoireeControl: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136)
+class UInterpTrackSoireeControl : public UInterpTrack
+{
+public:
+    //## BEGIN PROPS InterpTrackSoireeControl
+    TArrayNoInit<FSoireeControlTrackKey> SoireeControlKeys;
+    //## END PROPS InterpTrackSoireeControl
+
+    DECLARE_CLASS(UInterpTrackSoireeControl,UInterpTrack,0,Engine)
+
+	// DISHONORED(port): interptracksoireecontrol.cpp. A Pause key has no length; a Loop key's length
+	// is the segment the matinee is rewound over. 2013 rvas 0x500920, 0x500870.
+	virtual FLOAT GetKeyframeLength( INT KeyIndex ) const;
+	virtual void GetTimeRange( FLOAT& StartTime, FLOAT& EndTime ) const;
+};
+
+// Engine.InterpTrackSoireeControlKeyProperties: retail sizeof 84, reflected span 56..84 (2012 PDB sizeof 84)
+class UInterpTrackSoireeControlKeyProperties : public UInterpTrackKeyProperties
+{
+public:
+    //## BEGIN PROPS InterpTrackSoireeControlKeyProperties
+    BYTE m_SoireeControlType;
+    BYTE m_BreakMode;
+    INT m_LoopCount;
+    INT m_PreviewLoopCount;
+    FLOAT m_PreviewPauseDuration;
+    FName m_PinName;
+    FLOAT m_BreakImmediatelyBlendOut;
+    //## END PROPS InterpTrackSoireeControlKeyProperties
+
+    DECLARE_CLASS(UInterpTrackSoireeControlKeyProperties,UInterpTrackKeyProperties,0,Engine)
+};
+
+// Engine.InterpTrackInstSoireeControl: retail sizeof 88, reflected span 64..88 (2012 PDB sizeof 88)
+class UInterpTrackInstSoireeControl : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstSoireeControl
+    TArrayNoInit<FSoireeControlKeyStatus> m_lKeysStatus;
+    INT m_iCurrentKeyIndex;
+    INT m_iCurrentLoopCount;
+    FLOAT m_fCurrentPauseDuration;
+    //## END PROPS InterpTrackInstSoireeControl
+
+    DECLARE_CLASS(UInterpTrackInstSoireeControl,UInterpTrackInst,0,Engine)
+
+	// DISHONORED(port): interptrackinstsoireecontrol.cpp. 2013 rvas: InitTrackInst 0x506b30,
+	// SoireeShouldLoop 0x500480, SoireeStartLoop 0x5005e0, NeedsSynchronizing 0x500a40.
+	virtual void InitTrackInst( UInterpTrack* Track );
+	virtual UBOOL NeedsSynchronizing( FLOAT CurPosition, FLOAT NewPosition, FLOAT& OutPosition, UBOOL bPreview );
+	UBOOL SoireeShouldLoop( FLOAT CurPosition, FLOAT NewPosition, UBOOL bPreview,
+	                        FLOAT& OutLoopStart, FLOAT& OutLoopEnd, FName& OutPinName, INT& OutLoopCount );
+	UBOOL SoireeStartLoop( FLOAT CurPosition, FLOAT NewPosition, FLOAT& OutLoopStart );
+};
+
+static_assert(sizeof(FSoireeControlTrackKey) == 12, "FSoireeControlTrackKey: retail sizeof 12");
+static_assert(sizeof(FSoireeControlKeyStatus) == 8, "FSoireeControlKeyStatus: retail sizeof 8");
+static_assert(STRUCT_OFFSET(FSoireeControlTrackKey, Properties) == 8, "FSoireeControlTrackKey::Properties: retail SDK @8");
+static_assert(sizeof(UInterpTrackSoireeControl) == 136, "UInterpTrackSoireeControl: retail sizeof 136");
+static_assert(sizeof(UInterpTrackSoireeControlKeyProperties) == 84, "UInterpTrackSoireeControlKeyProperties: retail sizeof 84");
+static_assert(sizeof(UInterpTrackInstSoireeControl) == 88, "UInterpTrackInstSoireeControl: retail sizeof 88");
+static_assert(STRUCT_OFFSET(UInterpTrackSoireeControl, SoireeControlKeys) == 124, "UInterpTrackSoireeControl::SoireeControlKeys: retail SDK @124");
+static_assert(STRUCT_OFFSET(UInterpTrackSoireeControlKeyProperties, m_PinName) == 72, "UInterpTrackSoireeControlKeyProperties::m_PinName: retail SDK @72");
+static_assert(STRUCT_OFFSET(UInterpTrackSoireeControlKeyProperties, m_BreakImmediatelyBlendOut) == 80, "UInterpTrackSoireeControlKeyProperties::m_BreakImmediatelyBlendOut: retail SDK @80");
+static_assert(STRUCT_OFFSET(UInterpTrackInstSoireeControl, m_lKeysStatus) == 64, "UInterpTrackInstSoireeControl::m_lKeysStatus: retail SDK @64");
+static_assert(STRUCT_OFFSET(UInterpTrackInstSoireeControl, m_fCurrentPauseDuration) == 84, "UInterpTrackInstSoireeControl::m_fCurrentPauseDuration: retail SDK @84");
 static_assert(sizeof(UMatineeData) == 144, "UMatineeData: retail sizeof 144");
 static_assert(sizeof(UInterpTrackKeyProperties) == 56, "UInterpTrackKeyProperties: retail sizeof 56");
 static_assert(sizeof(UInterpTrackFaceTo) == 156, "UInterpTrackFaceTo: retail sizeof 156");
@@ -3072,6 +3197,9 @@ static_assert(STRUCT_OFFSET(UInterpTrackLocomotionKeyProperties, m_EndSpeedIdxNa
 	UInterpTrackStretchAnimControl::StaticClass(); \
 	UInterpTrackStretchAnimKeyProperties::StaticClass(); \
 	UInterpTrackInstStretchAnimControl::StaticClass(); \
+	UInterpTrackSoireeControl::StaticClass(); \
+	UInterpTrackSoireeControlKeyProperties::StaticClass(); \
+	UInterpTrackInstSoireeControl::StaticClass(); \
 
 #endif // ENGINE_INTERPOLATION_NATIVE_DEFS
 

@@ -2195,6 +2195,20 @@ public:
 	/** Increment track forwards by given timestep and iterate over each track updating any properties. */
 	virtual void StepInterp(FLOAT DeltaTime, UBOOL bPreview=FALSE);
 
+	// DISHONORED(port): the SoireeControl loop. A key on a UInterpTrackSoireeControl defines a segment
+	// of the matinee's own clock that is played again until the Kismet pin the key names is impulsed;
+	// that is what holds the main menu's camera on the harbour until the player presses a key.
+	// UpdateInterpLoop carries bLooping's whole-sequence wrap as well and returns TRUE when a
+	// non-looping matinee has run off its end. 2013 rvas 0x2340f0, 0x218f80, 0x219090, 0x219190,
+	// 0x219250, 0x218c50.
+	UBOOL UpdateInterpLoop( FLOAT& NewPosition, UBOOL bPreview );
+	UBOOL SoireeShouldLoop( UBOOL bPreview, FLOAT NewPosition, FLOAT& OutLoopStart, FLOAT& OutLoopEnd,
+	                        FName& OutPinName, INT& OutLoopCount ) const;
+	UBOOL SoireeLoopShouldBackupTransforms( FLOAT NewPosition, FLOAT& OutLoopStart ) const;
+	void SoireeLoopBackupActorTransforms();
+	void SoireeLoopRestoreActorTransforms();
+	INT GetDistractionLoopOverride( FName LoopName ) const;
+
 	/** Move interpolation to new position and iterate over each track updating any properties. */
 	virtual void UpdateInterp(FLOAT NewPosition, UBOOL bPreview=FALSE, UBOOL bJump=FALSE, UBOOL OnlyAIGroup=FALSE);
 

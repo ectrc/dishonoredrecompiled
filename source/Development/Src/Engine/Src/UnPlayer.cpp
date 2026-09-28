@@ -76,6 +76,7 @@ UBOOL		GTickAndRenderUI = TRUE;
 extern void DishonoredGFxSetRenderViewport( FViewport* Viewport );
 extern void DishonoredGFxTick( FLOAT DeltaTime );
 extern void DishonoredGFxRenderUI();
+extern void DishonoredGFxUpdateMouseCursor( FViewport* Viewport );
 extern void DishonoredGFxRenderTextures();
 #endif
 
@@ -681,6 +682,15 @@ UBOOL UGameViewportClient::InputAxis(FViewport* Viewport,INT ControllerId,FName 
 
 	if( !bResult )
 	{
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+		// DISHONORED(bringup): the axis half of the same hand-route as InputKey above. The mouse axes are
+		// what give the interface a cursor position at all - FGFxEngine::InputAxis reads the position
+		// whole from the viewport and keeps it, and the mouse arm of FGFxEngine::InputKey sends the click
+		// there. It does NOT consume the event: retail's InputAxis returns the capture flag, and while
+		// nothing captures the mouse the pawn must still turn with it.
+		extern UBOOL DishonoredGFxInputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime, UBOOL bGamepad );
+		DishonoredGFxInputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad );
+#endif
 		bResult = DishonoredRouteInputToPlayers( this, Key, IE_Axis, Delta, DeltaTime, bGamepad, TRUE, ControllerId );
 	}
 
@@ -1811,6 +1821,10 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 				// consequence.
 				if ( GTickAndRenderUI )
 				{
+					// DISHONORED(port): UDishonoredViewportClient::Draw calls the global movie player's
+					// PreRender here (2013 0x5ea359 -> 0x79eb90), which is what puts the game's own mouse
+					// cursor where the mouse is. It has to run before the draw, not after.
+					DishonoredGFxUpdateMouseCursor( Viewport );
 					DishonoredGFxRenderUI();
 				}
 #endif

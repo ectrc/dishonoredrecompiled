@@ -6468,24 +6468,6 @@ enum ESeveredLimbParticleOrientation
 #define FOREACH_ENUM_ESEVEREDLIMBPARTICLEORIENTATION(op) \
     op(ESLPO_AlignWithLocation) \
     op(ESLPO_AlignWithHitDirection) 
-enum ESoireeBreakMode
-{
-    ESBM_BreakAtNextLoop    =0,
-    ESBM_BreakImmediately   =1,
-    ESBM_MAX                =2,
-};
-#define FOREACH_ENUM_ESOIREEBREAKMODE(op) \
-    op(ESBM_BreakAtNextLoop) \
-    op(ESBM_BreakImmediately) 
-enum ESoireeControlType
-{
-    ESCT_Loop               =0,
-    ESCT_Pause              =1,
-    ESCT_MAX                =2,
-};
-#define FOREACH_ENUM_ESOIREECONTROLTYPE(op) \
-    op(ESCT_Loop) \
-    op(ESCT_Pause) 
 enum ESoireeEvent
 {
     ESE_Start               =0,
@@ -11449,9 +11431,6 @@ class UInterpTrackDialogKeyProperties;
 class UInterpTrackInstAIControl;
 class UInterpTrackInstAttachment;
 class UInterpTrackInstDialog;
-class UInterpTrackInstSoireeControl;
-class UInterpTrackSoireeControl;
-class UInterpTrackSoireeControlKeyProperties;
 class UNaturalVoiceEnums;
 class UParticleModuleTypeDataDecal;
 class UParticleStaticMeshComponent;
@@ -12537,35 +12516,6 @@ struct FMultiMap_Mirror
     }
 };
 
-// Engine.InterpTrackInstSoireeControl.SoireeControlKeyStatus: retail SDK size 8 (2012 PDB 8) [shim: Engine package]
-struct FSoireeControlKeyStatus
-{
-    INT m_InputIndex;
-    BITFIELD m_bIsBroken:1;
-
-    /** Constructors */
-    FSoireeControlKeyStatus() {}
-    FSoireeControlKeyStatus(EEventParm)
-    {
-        appMemzero(this, sizeof(FSoireeControlKeyStatus));
-    }
-};
-
-// Engine.InterpTrackSoireeControl.SoireeControlTrackKey: retail SDK size 12 (2012 PDB 12) [shim: Engine package]
-struct FSoireeControlTrackKey
-{
-    FLOAT StartTime;
-    FLOAT KeyLength;
-    class UInterpTrackSoireeControlKeyProperties* Properties;
-
-    /** Constructors */
-    FSoireeControlTrackKey() {}
-    FSoireeControlTrackKey(EEventParm)
-    {
-        appMemzero(this, sizeof(FSoireeControlTrackKey));
-    }
-};
-
 // Engine.UIRoot.UIProviderScriptFieldValue: retail SDK size 84 (2012 PDB 84) [shim: Engine package]
 struct FUIProviderScriptFieldValue
 {
@@ -13300,48 +13250,6 @@ public:
     //## END PROPS InterpTrackInstAttachment
 
     DECLARE_CLASS(UInterpTrackInstAttachment,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackInstSoireeControl: retail sizeof 88, reflected span 64..88 (2012 PDB sizeof 88) [shim: Engine package]
-class UInterpTrackInstSoireeControl : public UInterpTrackInst
-{
-public:
-    //## BEGIN PROPS InterpTrackInstSoireeControl
-    TArrayNoInit<FSoireeControlKeyStatus> m_lKeysStatus;
-    INT m_iCurrentKeyIndex;
-    INT m_iCurrentLoopCount;
-    FLOAT m_fCurrentPauseDuration;
-    //## END PROPS InterpTrackInstSoireeControl
-
-    DECLARE_CLASS(UInterpTrackInstSoireeControl,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackSoireeControl: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136) [shim: Engine package]
-class UInterpTrackSoireeControl : public UInterpTrack
-{
-public:
-    //## BEGIN PROPS InterpTrackSoireeControl
-    TArrayNoInit<FSoireeControlTrackKey> SoireeControlKeys;
-    //## END PROPS InterpTrackSoireeControl
-
-    DECLARE_CLASS(UInterpTrackSoireeControl,UInterpTrack,0,Engine)
-};
-
-// Engine.InterpTrackSoireeControlKeyProperties: retail sizeof 84, reflected span 56..84 (2012 PDB sizeof 84) [shim: Engine package]
-class UInterpTrackSoireeControlKeyProperties : public UInterpTrackKeyProperties
-{
-public:
-    //## BEGIN PROPS InterpTrackSoireeControlKeyProperties
-    BYTE m_SoireeControlType;
-    BYTE m_BreakMode;
-    INT m_LoopCount;
-    INT m_PreviewLoopCount;
-    FLOAT m_PreviewPauseDuration;
-    FName m_PinName;
-    FLOAT m_BreakImmediatelyBlendOut;
-    //## END PROPS InterpTrackSoireeControlKeyProperties
-
-    DECLARE_CLASS(UInterpTrackSoireeControlKeyProperties,UInterpTrackKeyProperties,0,Engine)
 };
 
 // Engine.NaturalVoiceEnums: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
@@ -14401,9 +14309,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UInterpTrackAttachmentKeyProperties::StaticClass(); \
 	UInterpTrackInstAIControl::StaticClass(); \
 	UInterpTrackInstAttachment::StaticClass(); \
-	UInterpTrackInstSoireeControl::StaticClass(); \
-	UInterpTrackSoireeControl::StaticClass(); \
-	UInterpTrackSoireeControlKeyProperties::StaticClass(); \
 	UNaturalVoiceEnums::StaticClass(); \
 	UParticleModuleTypeDataDecal::StaticClass(); \
 	UParticleStaticMeshComponent::StaticClass(); \
@@ -14710,14 +14615,6 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAIControl)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LocationBackup)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAttachment)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstSoireeControl,InterpTrackInstSoireeControl,m_lKeysStatus)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstSoireeControl,InterpTrackInstSoireeControl,m_fCurrentPauseDuration)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstSoireeControl)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackSoireeControl,InterpTrackSoireeControl,SoireeControlKeys)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackSoireeControl)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackSoireeControlKeyProperties,InterpTrackSoireeControlKeyProperties,m_SoireeControlType)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackSoireeControlKeyProperties,InterpTrackSoireeControlKeyProperties,m_BreakImmediatelyBlendOut)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackSoireeControlKeyProperties)
 VERIFY_CLASS_SIZE_NODIE(UNaturalVoiceEnums)
 VERIFY_CLASS_OFFSET_NODIE(UParticleModuleTypeDataDecal,ParticleModuleTypeDataDecal,m_pDecalMaterial)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleTypeDataDecal)

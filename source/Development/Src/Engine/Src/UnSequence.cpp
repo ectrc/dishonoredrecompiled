@@ -3263,8 +3263,53 @@ struct FDishonoredKismetCensus
 		}
 	}
 
+	void DescribeSoiree( USeqAct_Interp* Interp )
+	{
+		FString Links;
+		for( INT LinkIdx = 0; LinkIdx < Interp->InputLinks.Num(); LinkIdx++ )
+		{
+			Links += FString::Printf( TEXT("%s%d:'%s'%s%s"), Links.Len() ? TEXT(" ") : TEXT(""),
+				LinkIdx, *Interp->InputLinks(LinkIdx).LinkDesc,
+				Interp->InputLinks(LinkIdx).bHasImpulse ? TEXT("+impulse") : TEXT(""),
+				LinkIdx < Interp->ActivatedLinks.Num() && Interp->ActivatedLinks(LinkIdx) ? TEXT("+activated") : TEXT("") );
+		}
+		debugf( TEXT("DISHONORED(bringup): soiree: %s inputs [%s]"), *Interp->GetName(), *Links );
+
+		for( INT InstIdx = 0; InstIdx < Interp->GroupInst.Num(); InstIdx++ )
+		{
+			UInterpGroupInst* Inst = Interp->GroupInst(InstIdx);
+			for( INT TrackIdx = 0; Inst != NULL && TrackIdx < Inst->TrackInst.Num(); TrackIdx++ )
+			{
+				UInterpTrackInstSoireeControl* SoireeInst = Cast<UInterpTrackInstSoireeControl>( Inst->TrackInst(TrackIdx) );
+				if( SoireeInst == NULL )
+				{
+					continue;
+				}
+				UInterpTrackSoireeControl* SoireeTrack = Cast<UInterpTrackSoireeControl>( SoireeInst->Track );
+				debugf( TEXT("DISHONORED(bringup): soiree: %s group '%s' trackinst: %d keys, current key %d, loop %d, pass %d"),
+					*Interp->GetName(), Inst->Group != NULL ? *Inst->Group->GroupName.ToString() : TEXT("NONE"),
+					SoireeTrack != NULL ? SoireeTrack->SoireeControlKeys.Num() : -1,
+					SoireeInst->m_iCurrentKeyIndex, SoireeInst->m_iCurrentLoopCount,
+					SoireeInst->Track != NULL ? (INT)SoireeInst->Track->TrackUpdatePass : -1 );
+				for( INT KeyIdx = 0; SoireeTrack != NULL && KeyIdx < SoireeTrack->SoireeControlKeys.Num(); KeyIdx++ )
+				{
+					const FSoireeControlTrackKey& Key = SoireeTrack->SoireeControlKeys(KeyIdx);
+					debugf( TEXT("DISHONORED(bringup): soiree:   key %d [%.2f..%.2f] type %d break %d loopcount %d pin '%s' -> input %d broken %d"),
+						KeyIdx, Key.StartTime, Key.StartTime + Key.KeyLength,
+						Key.Properties != NULL ? (INT)Key.Properties->m_SoireeControlType : -1,
+						Key.Properties != NULL ? (INT)Key.Properties->m_BreakMode : -1,
+						Key.Properties != NULL ? Key.Properties->m_LoopCount : -1,
+						Key.Properties != NULL ? *Key.Properties->m_PinName.ToString() : TEXT("NONE"),
+						KeyIdx < SoireeInst->m_lKeysStatus.Num() ? SoireeInst->m_lKeysStatus(KeyIdx).m_InputIndex : -1,
+						KeyIdx < SoireeInst->m_lKeysStatus.Num() ? (INT)SoireeInst->m_lKeysStatus(KeyIdx).m_bIsBroken : -1 );
+				}
+			}
+		}
+	}
+
 	void DescribeInterp( USeqAct_Interp* Interp )
 	{
+			DescribeSoiree( Interp );
 			UInterpData* Data = Interp->InterpData;
 			debugf( TEXT("DISHONORED(bringup): matinee inventory: %s data %s (%d groups, %d groupinst, playing %d, position %.2f, length %.2f, looping %d)"),
 				*Interp->GetName(), Data != NULL ? *Data->GetName() : TEXT("NONE"),
@@ -3336,6 +3381,27 @@ struct FDishonoredKismetCensus
 			}
 		}
 		debugf( TEXT("DISHONORED(bringup): matinee census: %d interps, playing: %s"), Interps.Num(), Playing.Len() ? *Playing : TEXT("none") );
+		for( INT Idx = 0; Idx < Interps.Num(); Idx++ )
+		{
+			USeqAct_Interp* Interp = Interps(Idx);
+			for( INT InstIdx = 0; Interp->bIsPlaying && InstIdx < Interp->GroupInst.Num(); InstIdx++ )
+			{
+				UInterpGroupInst* Inst = Interp->GroupInst(InstIdx);
+				for( INT TrackIdx = 0; Inst != NULL && TrackIdx < Inst->TrackInst.Num(); TrackIdx++ )
+				{
+					UInterpTrackInstSoireeControl* SoireeInst = Cast<UInterpTrackInstSoireeControl>( Inst->TrackInst(TrackIdx) );
+					if( SoireeInst == NULL )
+					{
+						continue;
+					}
+					debugf( TEXT("DISHONORED(bringup): soiree census: %s '%s' pos %.2f key %d loop %d broken %d"),
+						*Interp->GetName(), Inst->Group != NULL ? *Inst->Group->GroupName.ToString() : TEXT("NONE"),
+						Interp->Position, SoireeInst->m_iCurrentKeyIndex, SoireeInst->m_iCurrentLoopCount,
+						SoireeInst->m_iCurrentKeyIndex >= 0 && SoireeInst->m_iCurrentKeyIndex < SoireeInst->m_lKeysStatus.Num()
+							? (INT)SoireeInst->m_lKeysStatus(SoireeInst->m_iCurrentKeyIndex).m_bIsBroken : -1 );
+				}
+			}
+		}
 		for( INT Idx = 0; Idx < Interps.Num(); Idx++ )
 		{
 			if( Interps(Idx)->bIsPlaying && !DescribedPlaying.ContainsItem( Interps(Idx) ) )

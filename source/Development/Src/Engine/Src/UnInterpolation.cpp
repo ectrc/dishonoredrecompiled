@@ -1403,6 +1403,21 @@ void USeqAct_Interp::PublishLinkedVariableValues()
 // Returning true from here indicated we are done.
 UBOOL USeqAct_Interp::UpdateOp(FLOAT deltaTime)
 {
+	// DISHONORED(port): 2013 rva 0x239330. One entry per input link, set for good the first time
+	// that link is impulsed and never cleared, because the five known impulses below are consumed in
+	// the same call. The extra pins a SoireeControl track names are read from here:
+	// UInterpTrackInstSoireeControl::NeedsSynchronizing copies the entry into the key's status flag,
+	// and that flag is what releases the loop.
+	if( ActivatedLinks.Num() != InputLinks.Num() )
+	{
+		ActivatedLinks.Empty();
+		ActivatedLinks.AddZeroed( InputLinks.Num() );
+	}
+	for( INT LinkIndex = 0; LinkIndex < InputLinks.Num(); LinkIndex++ )
+	{
+		ActivatedLinks( LinkIndex ) |= InputLinks( LinkIndex ).bHasImpulse ? 1 : 0;
+	}
+
 	// First check inputs, to see if there is an input that might change direction etc.
 
 	// NOTE: We check for Pause events first, so that a playing sequence can be paused in the same
@@ -1639,6 +1654,229 @@ void USeqAct_Interp::ChangeDirection()
  *	@param	DeltaSeconds	Amount to step sequence on by.
  *	@param	bPreview		If we are previewing sequence (ie. viewing in editor without gameplay running)
  */
+// DISHONORED(port): 2013 rva 0x218c50 (2012 0x22fbb0). A Kismet-set override of a named loop's
+// count; -1 when the matinee has none for that pin.
+INT USeqAct_Interp::GetDistractionLoopOverride( FName LoopName ) const
+{
+	for( INT Index = 0; Index < m_OverrideDistractionLoop.Num(); Index++ )
+	{
+		if( m_OverrideDistractionLoop( Index ).LoopName == LoopName )
+		{
+			return m_OverrideDistractionLoop( Index ).LoopCount;
+		}
+	}
+	return INDEX_NONE;
+}
+
+// DISHONORED(port): 2013 rva 0x218f80 (2012 0x22ffa0). The first track instance that wants to loop
+// wins; a track whose update pass is not the first one is skipped, which is how retail keeps the
+// non-SoireeControl instances out of a non-virtual call.
+UBOOL USeqAct_Interp::SoireeShouldLoop( UBOOL bPreview, FLOAT NewPosition, FLOAT& OutLoopStart,
+                                        FLOAT& OutLoopEnd, FName& OutPinName, INT& OutLoopCount ) const
+{
+	for( INT GroupIndex = 0; GroupIndex < GroupInst.Num(); GroupIndex++ )
+	{
+		UInterpGroupInst* GrInst = GroupInst( GroupIndex );
+		for( INT TrackIndex = 0; TrackIndex < GrInst->TrackInst.Num(); TrackIndex++ )
+		{
+			UInterpTrackInstSoireeControl* SoireeInst =
+				Cast<UInterpTrackInstSoireeControl>( GrInst->TrackInst( TrackIndex ) );
+			if( SoireeInst == NULL || SoireeInst->Track->TrackUpdatePass != 0 )
+			{
+				continue;
+			}
+			if( SoireeInst->SoireeShouldLoop( Position, NewPosition, bPreview, OutLoopStart, OutLoopEnd,
+			                                  OutPinName, OutLoopCount ) )
+			{
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x219090 (2012 0x2300b0). The same walk, asking instead whether a key
+// the matinee has just crossed starts a new loop.
+UBOOL USeqAct_Interp::SoireeLoopShouldBackupTransforms( FLOAT NewPosition, FLOAT& OutLoopStart ) const
+{
+	for( INT GroupIndex = 0; GroupIndex < GroupInst.Num(); GroupIndex++ )
+	{
+		UInterpGroupInst* GrInst = GroupInst( GroupIndex );
+		for( INT TrackIndex = 0; TrackIndex < GrInst->TrackInst.Num(); TrackIndex++ )
+		{
+			UInterpTrackInstSoireeControl* SoireeInst =
+				Cast<UInterpTrackInstSoireeControl>( GrInst->TrackInst( TrackIndex ) );
+			if( SoireeInst == NULL || SoireeInst->Track->TrackUpdatePass != 0 )
+			{
+				continue;
+			}
+			if( SoireeInst->SoireeStartLoop( Position, NewPosition, OutLoopStart ) )
+			{
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x219190 (2012 0x2301b0). A group that asks for it keeps the actor's
+// transform at the moment the loop started, so every pass round the segment starts from the same
+// place instead of accumulating the move track's motion.
+void USeqAct_Interp::SoireeLoopBackupActorTransforms()
+{
+	for( INT GroupIndex = 0; GroupIndex < GroupInst.Num(); GroupIndex++ )
+	{
+		UInterpGroupInst* GrInst = GroupInst( GroupIndex );
+		if( !GrInst->Group->bBackupTransformOnLoop )
+		{
+			continue;
+		}
+		AActor* Actor = GrInst->GetGroupActor();
+		if( Actor != NULL )
+		{
+			GrInst->m_ActorSavedPosition = Actor->Location;
+			GrInst->m_ActorSavedRotation = Actor->Rotation;
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x219250 (2012 0x230270)
+void USeqAct_Interp::SoireeLoopRestoreActorTransforms()
+{
+	for( INT GroupIndex = 0; GroupIndex < GroupInst.Num(); GroupIndex++ )
+	{
+		UInterpGroupInst* GrInst = GroupInst( GroupIndex );
+		if( !GrInst->Group->bBackupTransformOnLoop )
+		{
+			continue;
+		}
+		AActor* Actor = GrInst->GetGroupActor();
+		if( Actor != NULL )
+		{
+			Actor->SetRotation( GrInst->m_ActorSavedRotation );
+			Actor->SetLocation( GrInst->m_ActorSavedPosition );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x2340f0 (2012 0x252920). Both wraps of the matinee's clock in one
+// function: bLooping's rewind to the start of the whole sequence, and a SoireeControl key's rewind
+// to the start of its own segment. TRUE means the matinee has run off its end and is not looping, so
+// the caller stops it.
+UBOOL USeqAct_Interp::UpdateInterpLoop( FLOAT& NewPosition, UBOOL bPreview )
+{
+	const FLOAT InterpLength = InterpData->GetInterpLength();
+	FLOAT LoopStart, LoopEnd, LoopStep;
+	UBOOL bOutOfRange;
+	if( bReversePlayback )
+	{
+		LoopStart = InterpLength;
+		LoopEnd = 0.f;
+		LoopStep = InterpLength;
+		bOutOfRange = NewPosition < 0.f;
+	}
+	else
+	{
+		LoopStart = 0.f;
+		LoopEnd = InterpLength;
+		LoopStep = -InterpLength;
+		bOutOfRange = NewPosition > InterpLength;
+	}
+
+	if( !bOutOfRange && SoireeLoopShouldBackupTransforms( NewPosition, LoopStart ) )
+	{
+		UpdateInterp( LoopStart, bPreview );
+		SoireeLoopBackupActorTransforms();
+	}
+
+	FName PinName = NAME_None;
+	INT LoopCount = INDEX_NONE;
+	UBOOL bSoireeLooped = FALSE;
+	if( SoireeShouldLoop( bPreview, NewPosition, LoopStart, LoopEnd, PinName, LoopCount ) )
+	{
+		LoopStep = LoopStart - LoopEnd;
+		bSoireeLooped = TRUE;
+	}
+
+	if( !bOutOfRange && !bSoireeLooped )
+	{
+		return FALSE;
+	}
+	if( !bLooping && !bSoireeLooped )
+	{
+		NewPosition = LoopEnd;
+		return TRUE;
+	}
+
+	// Play the last instant of the segment, then jump back to its start, then wrap the position by
+	// the segment's length so a frame long enough to cross it twice is not lost.
+	UpdateInterp( LoopEnd - 0.0001f, bPreview );
+	if( bSoireeLooped )
+	{
+		SoireeLoopRestoreActorTransforms();
+	}
+	else if( !bReversePlayback && bNoResetOnRewind )
+	{
+		ResetMovementInitialTransforms();
+	}
+	UpdateInterp( LoopStart, bPreview, TRUE );
+
+	if( bReversePlayback )
+	{
+		while( NewPosition < LoopEnd )
+		{
+			NewPosition += LoopStep;
+		}
+	}
+	else
+	{
+		while( NewPosition > LoopEnd )
+		{
+			NewPosition += LoopStep;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x2193e0 (2012 0x230400), a file-static in retail too - it has no name
+// in either PDB. Every track instance is asked whether the matinee has to hold at, or jump to, a
+// position of its own before the step is applied. UInterpTrackInstSoireeControl's answer is also
+// what refreshes its keys' broken flags from ActivatedLinks, so this walk is what makes a Kismet
+// impulse on a Soiree pin reach the loop.
+static UBOOL DishonoredInterpNeedsSynchronizing( USeqAct_Interp* Interp, FLOAT& NewPosition,
+                                                 UBOOL& bOutJumpedBack, UBOOL& bOutJumpedForward,
+                                                 UBOOL& bOutMoved, UBOOL bPreview )
+{
+	for( INT GroupIndex = 0; GroupIndex < Interp->GroupInst.Num(); GroupIndex++ )
+	{
+		UInterpGroupInst* GrInst = Interp->GroupInst( GroupIndex );
+		for( INT TrackIndex = 0; TrackIndex < GrInst->TrackInst.Num(); TrackIndex++ )
+		{
+			UInterpTrackInst* TrInst = GrInst->TrackInst( TrackIndex );
+			if( TrInst->Track == NULL || TrInst->Track->IsDisabled() )
+			{
+				continue;
+			}
+			FLOAT SyncPosition = NewPosition;
+			if( !TrInst->NeedsSynchronizing( Interp->Position, NewPosition, SyncPosition, bPreview ) )
+			{
+				continue;
+			}
+			if( Interp->Position - 0.0001f > SyncPosition )
+			{
+				bOutJumpedBack = TRUE;
+			}
+			else if( SyncPosition > NewPosition )
+			{
+				bOutJumpedForward = TRUE;
+			}
+			NewPosition = SyncPosition;
+			bOutMoved = TRUE;
+		}
+	}
+	return FALSE;
+}
+
 void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 {
 	// Do nothing if not playing.
@@ -1674,74 +1912,34 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 
 	if (!bSkipUpdate)
 	{
-		FLOAT NewPosition;
-		UBOOL bLooped = 0;
-		UBOOL bShouldStopPlaying = FALSE;
+		const FLOAT Step = DeltaSeconds * PlayRate;
+		FLOAT NewPosition = bReversePlayback ? Position - Step : Position + Step;
+		DeltaTime = Step;
+		// A SoireeControl key that breaks immediately writes its own blend-out time here, so the
+		// step starts from nothing.
+		BlendOutTimeOverride = 0.f;
 
-		// Playing forwards
-		if(!bReversePlayback)
+		UBOOL bJumpedBack = FALSE, bJumpedForward = FALSE, bMoved = FALSE;
+		m_bIsDelayed = DishonoredInterpNeedsSynchronizing( this, NewPosition, bJumpedBack, bJumpedForward,
+		                                                   bMoved, bPreview );
+		m_bIsSynchronizing = bMoved;
+
+		if( m_bIsDelayed )
 		{
-			NewPosition = Position + (DeltaSeconds * PlayRate);
-
-			if(NewPosition > InterpData->GetInterpLength())
-			{
-				// If looping, play to end, jump to start, and set target to somewhere near the beginning.
-				if(bLooping)
-				{
-					UpdateInterp(InterpData->GetInterpLength(), bPreview);
-
-					if(bNoResetOnRewind)
-					{
-						ResetMovementInitialTransforms();
-					}
-
-					UpdateInterp(0.f, bPreview, true);
-
-					while(NewPosition > InterpData->GetInterpLength())
-					{
-						NewPosition -= InterpData->GetInterpLength();
-					}
-
-					bLooped = true;
-				}
-				// If not looping, snap to end and stop playing.
-				else
-				{
-					NewPosition = InterpData->GetInterpLength();
-					bShouldStopPlaying = TRUE;
-				}
-			}
-		}
-		// Playing backwards.
-		else
-		{
-			NewPosition = Position - (DeltaSeconds * PlayRate);
-
-			if(NewPosition < 0.f)
-			{
-				// If looping, play to start, jump to end, and set target to somewhere near the end.
-				if(bLooping)
-				{
-					UpdateInterp(0.f, bPreview);
-					UpdateInterp(InterpData->GetInterpLength(), bPreview, true);
-
-					while(NewPosition < 0.f)
-					{
-						NewPosition += InterpData->GetInterpLength();
-					}
-
-					bLooped = true;
-				}
-				// If not looping, snap to start and stop playing.
-				else
-				{
-					NewPosition = 0.f;
-					bShouldStopPlaying = TRUE;
-				}
-			}
+			// A track instance is holding the matinee where it is; replay that instant and do not advance.
+			UpdateInterp( Position, bPreview, TRUE );
+			return;
 		}
 
-		UpdateInterp(NewPosition, bPreview);
+		// DISHONORED(bringup): a track instance that moved the position forward notifies every group's
+		// pawn (2013 rva 0x2195a0, unnamed in both PDBs: GetGroupActor, and if it is a pawn, its vtable
+		// slot 1220 with the group instance). No SoireeControl key reaches it and no pawn is in the
+		// menu's matinees, so it is left for the package that ports the pawn side of the matinee.
+		(void)bJumpedForward;
+
+		const UBOOL bShouldStopPlaying = UpdateInterpLoop( NewPosition, bPreview );
+
+		UpdateInterp(NewPosition, bPreview, bJumpedBack);
 
 		// We reached the end of the sequence (or the beginning, if playing backwards), so stop playback
 		// now.  Note that we do that *after* calling UpdateInterp so that tracks that test bIsPlaying
@@ -1752,23 +1950,6 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 		}
 
 		UpdateStreamingForCameraCuts(NewPosition, bPreview);
-
-		
-		if (ReplicatedActor != NULL)
-		{
-			// if we looped back to the start, notify the replicated actor so it can refresh any clients
-			if (bLooped)
-			{
-				ReplicatedActor->eventUpdate();
-			}
-			else
-			{
-				// otherwise, just update position without notifying it
-				// so that clients that join the game during movement will get the correct updated position
-				// but nothing will get replicated to other clients that should be simulating the movement
-				ReplicatedActor->Position = NewPosition;
-			}
-		}
 	}
 }
 

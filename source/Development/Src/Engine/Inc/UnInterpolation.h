@@ -241,6 +241,8 @@ public:
 #endif // WITH_EDITORONLY_DATA
     class UClass* TrackInstClass;
 	BYTE ActiveCondition;
+	// DISHONORED(layout): retail SDK @105 (ETrackUpdatePass), in this tree's padding before TrackTitle
+	BYTE TrackUpdatePass;
     FStringNoInit TrackTitle;
     BITFIELD bOnePerGroup:1;
     BITFIELD bDirGroupOnly:1;

@@ -1327,9 +1327,12 @@ void FGFxEngine::TickScriptedKeys()
 			continue;
 		}
 		FGFxMovie* UpMovie = GetFocusedMovieFromControllerID( 0 );
-		if( UpMovie == NULL && OpenMovies.Num() > 0 )
+		for( INT Top = OpenMovies.Num() - 1; UpMovie == NULL && Top >= 0; Top-- )
 		{
-			UpMovie = OpenMovies( OpenMovies.Num() - 1 );
+			if( OpenMovies( Top )->bCanReceiveFocus && OpenMovies( Top )->bCanReceiveInput )
+			{
+				UpMovie = OpenMovies( Top );
+			}
 		}
 		const UBOOL bUp = UpMovie != NULL && InputKey( 0, UpMovie, ReleaseKeys( Index ), IE_Released );
 		debugf( TEXT("DISHONORED(bringup): GFx UI: scripted key %s released on drawn frame %d -> %s"),
@@ -1351,10 +1354,13 @@ void FGFxEngine::TickScriptedKeys()
 		// FGFxEngine::InputKey(ControllerId, Movie, ...) the focused path calls one level down.
 		FGFxMovie* Movie = GetFocusedMovieFromControllerID( 0 );
 		const TCHAR* Route = TEXT("focused movie");
-		if( Movie == NULL && OpenMovies.Num() > 0 )
+		for( INT Top = OpenMovies.Num() - 1; Movie == NULL && Top >= 0; Top-- )
 		{
-			Movie = OpenMovies( OpenMovies.Num() - 1 );
-			Route = TEXT("topmost open movie (no local player owns focus)");
+			if( OpenMovies( Top )->bCanReceiveFocus && OpenMovies( Top )->bCanReceiveInput )
+			{
+				Movie = OpenMovies( Top );
+				Route = TEXT("topmost open movie that can take input (no local player owns focus)");
+			}
 		}
 		const UBOOL bPressed = Movie != NULL && InputKey( 0, Movie, KeyNames( Index ), IE_Pressed );
 		// DISHONORED(bringup, agent DK): the release is held back. A key queued and released in the
@@ -1880,17 +1886,29 @@ void FGFxEngine::InitKeyMap()
 	};
 	for( INT Index = 0; Index < ARRAY_COUNT(Defaults); Index++ )
 	{
-		KeyMap.Set( FName( Defaults[Index].Name ).GetIndex(), Defaults[Index].Code );
+		KeyMap.Set( FName( Defaults[Index].Name ).GetIndex(), FGFxInput( Defaults[Index].Code ) );
 	}
 	for( INT Letter = 0; Letter < 26; Letter++ )
 	{
 		TCHAR Name[2] = { (TCHAR)('A' + Letter), 0 };
-		KeyMap.Set( FName( Name ).GetIndex(), GFxKey::A + Letter );
+		KeyMap.Set( FName( Name ).GetIndex(), FGFxInput( GFxKey::A + Letter ) );
 	}
 	for( INT Digit = 0; Digit < 10; Digit++ )
 	{
 		TCHAR Name[2] = { (TCHAR)('0' + Digit), 0 };
-		KeyMap.Set( FName( Name ).GetIndex(), GFxKey::Num0 + Digit );
+		KeyMap.Set( FName( Name ).GetIndex(), FGFxInput( GFxKey::Num0 + Digit ) );
+	}
+	// The mouse, from retail's own five entries: no key code, a button index instead.
+	struct FGFxMouseDefault { const TCHAR* Name; INT Button; };
+	static const FGFxMouseDefault MouseDefaults[] =
+	{
+		{ TEXT("LeftMouseButton"), 0 }, { TEXT("RightMouseButton"), 1 },
+		{ TEXT("MiddleMouseButton"), 2 }, { TEXT("MouseScrollUp"), 4 },
+		{ TEXT("MouseScrollDown"), 3 },
+	};
+	for( INT Index = 0; Index < ARRAY_COUNT(MouseDefaults); Index++ )
+	{
+		KeyMap.Set( FName( MouseDefaults[Index].Name ).GetIndex(), FGFxInput( 0, MouseDefaults[Index].Button ) );
 	}
 }
 
@@ -1935,11 +1953,43 @@ UBOOL FGFxEngine::InputKey( INT ControllerId, FGFxMovie* pFocusMovie, FName ukey
 		return bHandled;
 	}
 
-	const INT* Code = KeyMap.Find( ukey.GetIndex() );
-	if( Code == NULL )
+	FGFxInput* Input = KeyMap.Find( ukey.GetIndex() );
+	if( Input == NULL )
 	{
 		return FALSE;
 	}
+	// DISHONORED(port): the mouse arm of 2013 0x590fd0. A binding with no key code is a mouse button or
+	// a wheel notch and becomes a GFxMouseEvent at the position InputAxis last read from the viewport.
+	if( Input->Key == 0 && Input->MouseButton >= 0 )
+	{
+		if( Input->MouseButton >= 3 )
+		{
+			if( uevent == IE_Released )
+			{
+				return FALSE;
+			}
+			GFxMouseEvent Wheel;
+			appMemzero( &Wheel, sizeof(Wheel) );
+			Wheel.Type = GFxEvent::MouseWheel;
+			Wheel.x = (FLOAT)MousePos.X;
+			Wheel.y = (FLOAT)MousePos.Y;
+			Wheel.ScrollDelta = (FLOAT)( 6 * Input->MouseButton - 21 );
+			return ( pFocusMovie->pView->HandleEvent( Wheel ) & GFxMovieView::HE_Handled ) != 0;
+		}
+		if( uevent != IE_Pressed && uevent != IE_Released )
+		{
+			return FALSE;
+		}
+		GFxMouseEvent Click;
+		appMemzero( &Click, sizeof(Click) );
+		Click.Type = ( uevent == IE_Released ) ? GFxEvent::MouseUp : GFxEvent::MouseDown;
+		Click.x = (FLOAT)MousePos.X;
+		Click.y = (FLOAT)MousePos.Y;
+		Click.Button = (UINT)Input->MouseButton;
+		Input->Owner = ( uevent == IE_Released ) ? NULL : pFocusMovie;
+		return ( pFocusMovie->pView->HandleEvent( Click ) & GFxMovieView::HE_Handled ) != 0;
+	}
+	const INT* Code = &Input->Key;
 	// DISHONORED(bringup): the event is built and delivered, and the runtime answers HE_NotHandled
 	// because GFxMovieRoot::HandleEvent needs the button and focus model - GFxButtonCharacter's 38
 	// functions plus GFx_GenerateMouseButtonEvents (2012 0xa66a90), which agent BC named as not in
@@ -1958,6 +2008,18 @@ UBOOL FGFxEngine::InputKey( INT ControllerId, FGFxMovie* pFocusMovie, FName ukey
 UBOOL FGFxEngine::InputKey( INT ControllerId, FName ukey, EInputEvent uevent )
 {
 	FGFxMovie* Focus = GetFocusedMovieFromControllerID( ControllerId );
+	// DISHONORED(bringup): when no local player owns focus, the key is offered to the topmost open
+	// movie instead. Retail does not need it: the script InitInputSystem inserts a UGFxInteraction
+	// per local player, so the focused movie is always resolved. Remove this once that insertion
+	// works. It lives here, not in the DishonoredGFxInputKey route, because the two-argument
+	// overload is private - as it is in the reference tree (Inc/ScaleformEngine.h:399).
+	for( INT Index = OpenMovies.Num() - 1; Focus == NULL && Index >= 0; Index-- )
+	{
+		if( OpenMovies( Index )->bCanReceiveFocus && OpenMovies( Index )->bCanReceiveInput )
+		{
+			Focus = OpenMovies( Index );
+		}
+	}
 	if( Focus != NULL && InputKey( ControllerId, Focus, ukey, uevent ) )
 	{
 		return TRUE;
@@ -1998,6 +2060,29 @@ UBOOL FGFxEngine::InputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT Del
 	if( Focus->pUMovie->FilterInputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad, bHandled ) )
 	{
 		return bHandled;
+	}
+	// DISHONORED(port): the non-gamepad arm of 2013 0x594cc0. The position is the viewport's own, not the
+	// axis delta - retail reads it whole from HudViewport->GetMousePos and takes the movie's viewport
+	// origin off it, which is what makes a mouse event land in movie pixels. It is kept in MousePos
+	// because that is what the mouse arm of InputKey sends a click at.
+	if( bGamepad || HudViewport == NULL )
+	{
+		return FALSE;
+	}
+	HudViewport->GetMousePos( MousePos );
+	GViewport MovieViewport;
+	Focus->pView->GetViewport( &MovieViewport );
+	MousePos.X -= MovieViewport.Left;
+	MousePos.Y -= MovieViewport.Top;
+
+	GFxMouseEvent Move;
+	appMemzero( &Move, sizeof(Move) );
+	Move.Type = GFxEvent::MouseMove;
+	Move.x = (FLOAT)MousePos.X;
+	Move.y = (FLOAT)MousePos.Y;
+	if( Focus->bCanReceiveInput )
+	{
+		Focus->pView->HandleEvent( Move );
 	}
 	return FALSE;
 }
@@ -2076,12 +2161,18 @@ void DishonoredGFxSetRenderViewport( FViewport* Viewport )
 // in it. `-gfxuimenuclass=<name>` picks the player class, so the Dishonored subclass is reachable
 // without this module depending on the game module; the default is the Dishonored main menu player when
 // that class is registered and UGFxMoviePlayer when it is not.
+static UBOOL DishonoredGFxOpenGlobalMovie();
+
 static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
 {
 	static INT State = -2;          // -2 unread, -1 off or done, 0 waiting, 1 open
 	static FLOAT Elapsed = 0.f;
 	static FString MoviePath;
 	static FString ClassName;
+	// DISHONORED(bringup): the global movie comes up after the menu and before the cursor can be drawn,
+	// because UI_Global.Global is the only cooked movie that carries the `mouseCursor` symbol. Retail's
+	// UDisGlobalUIManager keeps it open for the whole session; -gfxuinoglobal leaves it closed.
+	static UBOOL bWantGlobal = FALSE;
 
 	if( State == -2 )
 	{
@@ -2101,6 +2192,7 @@ static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
 			State = -1;
 		}
 		Parse( appCmdLine(), TEXT("gfxuimenuclass="), ClassName );
+		bWantGlobal = ( State == 0 ) && !ParseParam( appCmdLine(), TEXT("gfxuinoglobal") );
 	}
 	if( State != 0 )
 	{
@@ -2110,6 +2202,13 @@ static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
 	if( GWorld == NULL || GEngine == NULL || GEngine->GameViewport == NULL || Elapsed < 1.0f )
 	{
 		return;
+	}
+
+	// The global movie first: the menu's own library registrations have to be the last ones made.
+	if( bWantGlobal )
+	{
+		bWantGlobal = FALSE;
+		DishonoredGFxOpenGlobalMovie();
 	}
 
 	UClass* PlayerClass = NULL;
@@ -2218,6 +2317,197 @@ static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
 	State = bStarted ? 1 : -1;
 }
 
+// DISHONORED(bringup): the global movie, whose only job here is to hold the cursor. It is opened after
+// the menu so it draws over it, and it must not take the keyboard: the topmost open movie is what
+// FGFxEngine::InputKey falls back on while no local player owns focus, so a focusable global movie
+// would swallow every key the menu needs.
+static UBOOL DishonoredGFxOpenGlobalMovie()
+{
+	USwfMovie* Movie = NULL;
+	for( TObjectIterator<USwfMovie> It; It; ++It )
+	{
+		if( It->RawData.Num() > 0 && It->GetName() == TEXT("Global") )
+		{
+			Movie = *It;
+			break;
+		}
+	}
+	if( Movie == NULL )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): -gfxuimenu: no resident SwfMovie 'Global'; the mouse cursor has nowhere to live") );
+		return FALSE;
+	}
+
+	UClass* PlayerClass = FindObject<UClass>( ANY_PACKAGE, TEXT("DisGFxMoviePlayerGlobal") );
+	if( PlayerClass == NULL || !PlayerClass->IsChildOf( UGFxMoviePlayer::StaticClass() ) )
+	{
+		PlayerClass = UGFxMoviePlayer::StaticClass();
+	}
+	UGFxMoviePlayer* Player = ConstructObject<UGFxMoviePlayer>( PlayerClass,
+		UObject::GetTransientPackage(), TEXT("DisGFxAutoOpenGlobal") );
+	Player->AddToRoot();
+	Player->MovieInfo = Movie;
+	Player->bAllowFocus = FALSE;
+	Player->bAllowInput = FALSE;
+	Player->bCaptureInput = FALSE;
+	Player->bDisplayWithHudOff = TRUE;
+	Player->TimingMode = TM_Real;
+	Player->LocalPlayerOwnerIndex = 0;
+	// Drawn last whatever the open order: InsertMovieIntoList sorts the draw list by Priority, and the
+	// cursor has to be over everything.
+	Player->Priority = 255;
+	if( Player->ExternalInterface == NULL )
+	{
+		Player->ExternalInterface = Player;
+	}
+	const UBOOL bStarted = Player->Start( FALSE );
+	if( bStarted && Player->GetMovie() != NULL && Player->GetMovie()->pView.GetPtr() != NULL )
+	{
+		GFxValue Platform;
+		Platform.SetString( "PC" );
+		Player->GetMovie()->pView->SetVariable( "_global.PlatformName", Platform, GFxMovie::SV_Normal );
+	}
+	debugf( TEXT("DISHONORED(bringup): -gfxuimenu: %s %s through %s (the mouse cursor's movie)"),
+		bStarted ? TEXT("opened") : TEXT("FAILED to open"), *Movie->GetPathName(), *PlayerClass->GetName() );
+	return bStarted;
+}
+
+// DISHONORED(port): UDisGFxMoviePlayerBase::ComputeMovieSpaceInfo, 2013 rva 0x787860. The movie is laid
+// out at its authored size and the screen is letterboxed or pillarboxed around it; this is the map from
+// screen pixels to the movie's own, plus the empty space on the short axis.
+struct FDisMovieSpaceInfo
+{
+	FVector2D m_ScreenSize;
+	FVector2D m_MovieSize;
+	FLOAT     m_fScreenToMovieScaling;
+	FVector2D m_MovieSpaceSize;
+	FVector2D m_EmptySpace;
+};
+
+static void DishonoredComputeMovieSpaceInfo( FGFxMovie* Movie, INT ScreenX, INT ScreenY, FDisMovieSpaceInfo& Info )
+{
+	Info.m_ScreenSize = FVector2D( (FLOAT)ScreenX, (FLOAT)ScreenY );
+	Info.m_MovieSize = FVector2D( (FLOAT)Movie->Info.Width, (FLOAT)Movie->Info.Height );
+	if( Info.m_MovieSize.X / Info.m_MovieSize.Y <= Info.m_ScreenSize.X / Info.m_ScreenSize.Y )
+	{
+		Info.m_fScreenToMovieScaling = Info.m_MovieSize.Y / Info.m_ScreenSize.Y;
+		Info.m_MovieSpaceSize = FVector2D( Info.m_fScreenToMovieScaling * Info.m_ScreenSize.X, Info.m_MovieSize.Y );
+		Info.m_EmptySpace = FVector2D( ( Info.m_MovieSpaceSize.X - Info.m_MovieSize.X ) * 0.5f, 0.f );
+	}
+	else
+	{
+		Info.m_fScreenToMovieScaling = Info.m_MovieSize.X / Info.m_ScreenSize.X;
+		Info.m_MovieSpaceSize = FVector2D( Info.m_MovieSize.X, Info.m_fScreenToMovieScaling * Info.m_ScreenSize.Y );
+		Info.m_EmptySpace = FVector2D( 0.f, ( Info.m_MovieSpaceSize.Y - Info.m_MovieSize.Y ) * 0.5f );
+	}
+}
+
+void DishonoredGFxUpdateMouseCursor( FViewport* Viewport )
+{
+	// UDisGFxMoviePlayerGlobal::m_pMouseCursor (retail SDK @444): the attached clip, held across frames
+	// so the attach happens once and only the position is written per frame.
+	static GFxValue MouseCursor;
+
+	if( GGFxEngine == NULL || Viewport == NULL )
+	{
+		return;
+	}
+	FGFxMovie* Global = NULL;
+	for( INT Index = 0; Index < GGFxEngine->OpenMovies.Num(); Index++ )
+	{
+		FGFxMovie* Movie = GGFxEngine->OpenMovies( Index );
+		if( Movie->pUMovie != NULL && Movie->pUMovie->MovieInfo != NULL
+			&& Movie->pUMovie->MovieInfo->GetName() == TEXT("Global") )
+		{
+			Global = Movie;
+			break;
+		}
+	}
+	if( Global == NULL || Global->pView.GetPtr() == NULL )
+	{
+		// ConditionalHideMouseCursor's job, without a movie to do it in.
+		MouseCursor.SetUndefined();
+		return;
+	}
+
+	FIntPoint Mouse( 0, 0 );
+	Viewport->GetMousePos( Mouse );
+	FDisMovieSpaceInfo Info;
+	DishonoredComputeMovieSpaceInfo( Global, Viewport->GetSizeX(), Viewport->GetSizeY(), Info );
+	const FLOAT CursorX = Info.m_MovieSpaceSize.X * ( (FLOAT)Mouse.X / Info.m_ScreenSize.X ) - Info.m_EmptySpace.X;
+	const FLOAT CursorY = Info.m_MovieSpaceSize.Y * ( (FLOAT)Mouse.Y / Info.m_ScreenSize.Y ) - Info.m_EmptySpace.Y;
+
+	// ConditionalShowMouseCursor, 2013 0x78c790: _root.mouseCursor_mc.attachMovie("mouseCursor",
+	// "mouseCursorInst", mouseCursor_mc.getNextHighestDepth()).
+	if( !MouseCursor.IsDisplayObject() )
+	{
+		GFxValue Holder;
+		if( !Global->pView->GetVariable( &Holder, "_root.mouseCursor_mc" ) || !Holder.IsDisplayObject() )
+		{
+			static UBOOL bSaidSo = FALSE;
+			if( !bSaidSo )
+			{
+				bSaidSo = TRUE;
+				debugf( NAME_Warning, TEXT("DISHONORED(bringup): mouse cursor: _root.mouseCursor_mc is not a display object in %s"),
+					*Global->pUMovie->MovieInfo->GetPathName() );
+			}
+			return;
+		}
+		GFxValue Depth;
+		Holder.Invoke( "getNextHighestDepth", &Depth, NULL, 0 );
+		if( !Holder.AttachMovie( &MouseCursor, "mouseCursor", "mouseCursorInst",
+				Depth.IsNumber() ? (INT)Depth.GetNumber() : 1 ) )
+		{
+			static UBOOL bSaidSo = FALSE;
+			if( !bSaidSo )
+			{
+				bSaidSo = TRUE;
+				debugf( NAME_Warning, TEXT("DISHONORED(bringup): mouse cursor: attachMovie('mouseCursor') failed") );
+			}
+			return;
+		}
+		debugf( TEXT("DISHONORED(bringup): mouse cursor: attached 'mouseCursor' to _root.mouseCursor_mc at depth %d, movie %dx%d, screen %dx%d"),
+			Depth.IsNumber() ? (INT)Depth.GetNumber() : 1, (INT)Info.m_MovieSize.X, (INT)Info.m_MovieSize.Y,
+			(INT)Info.m_ScreenSize.X, (INT)Info.m_ScreenSize.Y );
+	}
+
+	// MoveMouseCursor, 2013 0x78c8c0: _x and _y only, everything else left as authored.
+	GFxValue::DisplayInfo Where;
+	Where.SetPosition( CursorX, CursorY );
+	MouseCursor.SetDisplayInfo( Where );
+
+	// DISHONORED(bringup): -dismousecursor, once a second. "No cursor on screen" is equally true of a
+	// clip that was never attached, one attached with nothing in it, one off-screen and one invisible.
+	static INT bProbe = -1;
+	if( bProbe < 0 )
+	{
+		bProbe = ParseParam( appCmdLine(), TEXT("dismousecursor") ) ? 1 : 0;
+	}
+	if( bProbe )
+	{
+		static DOUBLE NextSay = 0.0;
+		if( GCurrentTime >= NextSay )
+		{
+			NextSay = GCurrentTime + 1.0;
+			GFxValue W, H, Vis, Holder, HolderVis, HX, HY;
+			MouseCursor.GetMember( "_width", &W );
+			MouseCursor.GetMember( "_height", &H );
+			MouseCursor.GetMember( "_visible", &Vis );
+			Global->pView->GetVariable( &Holder, "_root.mouseCursor_mc" );
+			Holder.GetMember( "_visible", &HolderVis );
+			Holder.GetMember( "_x", &HX );
+			Holder.GetMember( "_y", &HY );
+			debugf( TEXT("DISHONORED(bringup): mouse cursor: screen %d,%d -> movie %.1f,%.1f | clip %dx%d visible %d | holder at %.1f,%.1f visible %d | movies open %d"),
+				Mouse.X, Mouse.Y, CursorX, CursorY,
+				W.IsNumber() ? (INT)W.GetNumber() : -1, H.IsNumber() ? (INT)H.GetNumber() : -1,
+				Vis.IsBool() ? (INT)Vis.GetBool() : -1,
+				HX.IsNumber() ? (FLOAT)HX.GetNumber() : -1.f, HY.IsNumber() ? (FLOAT)HY.GetNumber() : -1.f,
+				HolderVis.IsBool() ? (INT)HolderVis.GetBool() : -1,
+				GGFxEngine->OpenMovies.Num() );
+		}
+	}
+}
+
 void DishonoredGFxTick( FLOAT DeltaTime )
 {
 	if( GGFxEngine != NULL )
@@ -2273,21 +2563,14 @@ UBOOL DishonoredGFxInputKey( INT ControllerId, FName Key, EInputEvent Event )
 	{
 		return FALSE;
 	}
-	if( GGFxEngine->InputKey( ControllerId, Key, Event ) )
-	{
-		return TRUE;
-	}
-	// DISHONORED(bringup): when no local player owns focus, offer the key to the topmost open movie - the
-	// same fallback agent DK's scripted key path already carries, in those words, and the reason that path
-	// worked while a real key press did nothing. Retail does not need it: the script InitInputSystem inserts
-	// a UGFxInteraction per local player and the focused movie is always resolved. Remove this once that
-	// insertion works.
-	if( GGFxEngine->GetFocusedMovieFromControllerID( ControllerId ) == NULL && GGFxEngine->OpenMovies.Num() > 0 )
-	{
-		FGFxMovie* Top = GGFxEngine->OpenMovies( GGFxEngine->OpenMovies.Num() - 1 );
-		return GGFxEngine->InputKey( ControllerId, Top, Key, Event );
-	}
-	return FALSE;
+	return GGFxEngine->InputKey( ControllerId, Key, Event );
+}
+
+// DISHONORED(bringup): the axis half of the Engine -> GFxUI edge, 2013 0x594cc0. Same reason as the key
+// one: UGFxInteraction is not in GlobalInteractions here, so the viewport hands the axis over directly.
+UBOOL DishonoredGFxInputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime, UBOOL bGamepad )
+{
+	return GGFxEngine != NULL ? GGFxEngine->InputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad ) : FALSE;
 }
 
 UBOOL DishonoredGFxInputChar( INT ControllerId, TCHAR Character )
