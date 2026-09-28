@@ -247,6 +247,13 @@ void FGFxSeamNote(const char* Slot)
     ++GSeamTotalCalls;
     for (unsigned int i = 0; i < GSeamSlotCount; ++i)
     {
+        // DISHONORED(bringup): no rva - the seam census has no retail counterpart. The name may not be
+        // written yet: this counter is touched from the game thread and from the
+        // render thread, and FGFxSeamReset rewinds the count without clearing the slots.
+        if (GSeamSlots[i].Name == NULL)
+        {
+            continue;
+        }
         if (GSeamSlots[i].Name == Slot || appStrcmpANSI(GSeamSlots[i].Name, Slot) == 0)
         {
             ++GSeamSlots[i].Calls;

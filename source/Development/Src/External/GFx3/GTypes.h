@@ -21,6 +21,7 @@
 
 #include <stddef.h>
 #include <new>
+#include <intrin.h>
 
 #pragma pack(push, 8)
 
@@ -177,6 +178,21 @@ public:
     volatile T Value;
 };
 
+// DISHONORED(written): no rva of its own - GAtomicInt is inlined at every use in retail; the type's
+// anchor is this header's, 2013 0xdf7374. GAtomicInt is the name of the type, and the interlocked
+// increment is the whole point of it. These two operators read `++this->Value` / `--this->Value`,
+// which is a plain read-modify-write on a volatile long, and every reference count that crosses
+// the game/render thread boundary is one of these: GTexture, GRenderTarget and
+// FGFxRendererImpl's element stores are AddRef'd
+// on the game thread when a draw is enqueued and Released on the render thread when it executes
+// (FGFxDrawBitmapsInternal / FGFxRenderer::DrawBitmaps_RenderThread, SetUIRenderElementStore and its
+// transfer command). One lost increment takes the count to zero while an owner still holds the
+// pointer, the object is deleted, the heap hands the block back out, and the next virtual call on it
+// jumps into whatever overwrote the vptr. That is what killed the main menu on the render thread:
+// a wild call at FGFxTexture::Bind out of DrawBitmaps_RenderThread, between one and forty seconds
+// after the interface appeared, on the one GTexture the glyph atlas keeps alive for the whole run.
+// GAtomicValueBase stays {volatile T Value} - the PDB has no other member and interlocked operations
+// need none.
 template<class T>
 class GAtomicInt : public GAtomicValueBase<T>
 {
@@ -184,8 +200,16 @@ public:
     GAtomicInt() { this->Value = (T)0; }
     GAtomicInt(T v) { this->Value = v; }
     operator T() const { return this->Value; }
-    T operator++() { return ++this->Value; }
-    T operator--() { return --this->Value; }
+    T operator++()
+    {
+        static_assert(sizeof(T) == sizeof(long), "GAtomicInt is interlocked on 32-bit values only");
+        return (T)_InterlockedIncrement((volatile long*)&this->Value);
+    }
+    T operator--()
+    {
+        static_assert(sizeof(T) == sizeof(long), "GAtomicInt is interlocked on 32-bit values only");
+        return (T)_InterlockedDecrement((volatile long*)&this->Value);
+    }
 };
 
 // ---------------------------------------------------------------------------------------------

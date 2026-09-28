@@ -1,0 +1,12 @@
+rva_2013,status,note
+0x9f5830,ported,"GFxSprite::AddDisplayObject - the depth is read BEFORE the instance is created; a re-place of the character already sitting at that depth is a move and returns 0, which is retail's shape and removes the use-after-free that killed the menu"
+0x9cc8f0,ported,"GFxDisplayList::AddDisplayObject - never releases the character it is handed; the invented revive branch (release ch, return) is gone, so the three callers that use ch afterwards are safe"
+0x9eb080,verified,GFxSprite::MoveDisplayObject - the revive path's target; unchanged, now reached from AddDisplayObject
+0x9cc2e0,verified,GFxDisplayList::GetCharacterAtDepth - unchanged; the pre-create depth read uses it
+0x9f1780,verified,GFxSprite::Display - unchanged; the drawn census is identical before and after the fix
+0x5a18c0,verified,"FGFxRenderer::DrawBitmaps - unchanged; its render-thread half was where the second fault surfaced (a wild call through the freed glyph texture)"
+0x5775b0,verified,"FGFxTexture::Bind - unchanged; the virtual call (vt[15], DrawBitmaps_RenderThread+0x1E5) that jumped into a reused heap block"
+0x5800d0,verified,"FGFxRenderer::CreateTexture - unchanged; the one GTexture it makes for the glyph atlas is the object the lost refcount update deleted"
+n/a,written,"GAtomicInt<T>::operator++/-- (GTypes.h, inlined everywhere in retail so it has no rva of its own) - now _InterlockedIncrement/_InterlockedDecrement. Every reference count that crosses the game/render thread boundary is a GAtomicInt: GTexture, GRenderTarget and FGFxRendererImpl's element stores"
+n/a,written,"FGFxSeamNote (gfxuirenderer.cpp, a bring-up counter with no retail counterpart) - skips a slot whose name has not been written; the array is touched from both threads and FGFxSeamReset rewinds the count without clearing it"
+n/a,written,"-gfxuishot= and -gfxuikey= (gfxuiengine.cpp, bring-up switches with no retail counterpart) - both are comma lists and Core's Parse(...,FString&,bShouldStopOnComma=TRUE) truncated them at the first entry; both now pass FALSE"

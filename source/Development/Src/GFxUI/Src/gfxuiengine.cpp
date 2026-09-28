@@ -1162,7 +1162,9 @@ void FGFxEngine::TickScriptedKeys()
 	{
 		bParsed = TRUE;
 		FString Value;
-		if( Parse( appCmdLine(), TEXT("gfxuikey="), Value ) )
+		// DISHONORED(bringup): no rva - a bring-up switch. Parse stops at a comma unless told not to,
+		// and this switch IS a comma list.
+		if( Parse( appCmdLine(), TEXT("gfxuikey="), Value, FALSE ) )
 		{
 			while( Value.Len() )
 			{
@@ -1455,7 +1457,9 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 		{
 			bShotParsed = TRUE;
 			FString Value;
-			if( Parse( appCmdLine(), TEXT("gfxuishot="), Value ) )
+			// DISHONORED(bringup): no rva - a bring-up switch. Parse stops at a comma unless told not to,
+			// and this switch IS a comma list.
+			if( Parse( appCmdLine(), TEXT("gfxuishot="), Value, FALSE ) )
 			{
 				while( Value.Len() )
 				{

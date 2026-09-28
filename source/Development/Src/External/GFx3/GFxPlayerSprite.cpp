@@ -124,22 +124,20 @@ int GFxDisplayList::GetLargestDepthInUse() const                      // 2012 0x
     return Size ? Entries[Size - 1].pChar->GetDepth() : 0;
 }
 
-void GFxDisplayList::AddDisplayObject(const GFxCharPosInfo& pos, GFxCharacter* ch) // 0x9d60f0
+// DISHONORED(port): 2013 0x9cc8f0 (2012 0x9d60f0). A place onto an occupied depth replaces the
+// sitting entry. This list never releases the character it is handed and never returns without
+// taking it: retail's body does one AddRef, one InsertAt and one Release, so the caller's reference
+// always ends up owned by the list. The branch that used to sit here released `ch` and returned when
+// the sitting entry was marked for removal and carried the same character id - a revive - and every
+// one of the three callers goes on to use `ch` afterwards, so a revived place called virtuals on
+// freed memory. That is the crash that killed the main menu about two seconds in (a wild call at
+// GFxSprite::AddDisplayObject, `ch->IsASCharacter()`). The revive itself is retail's, but it belongs
+// where retail has it: GFxSprite::AddDisplayObject reads the depth before it creates anything.
+void GFxDisplayList::AddDisplayObject(const GFxCharPosInfo& pos, GFxCharacter* ch)
 {
     int i = FindDisplayIndex(pos.Depth);
     if (i < (int)Size && Entries[i].pChar->GetDepth() == pos.Depth)
     {
-        // A place onto an occupied depth replaces, unless the sitting entry was only marked for
-        // removal by the loop rebuild, in which case it is revived rather than replaced.
-        if (Entries[i].bMarkedForRemove)
-        {
-            Entries[i].bMarkedForRemove = false;
-            if (Entries[i].pChar->GetId().Id == ch->GetId().Id)
-            {
-                ch->Release();
-                return;
-            }
-        }
         Entries[i].pChar->Release();
         Entries[i].pChar = ch;
         Entries[i].bMarkedForRemove = false;
@@ -900,7 +898,8 @@ void GFxSprite::BindRegisteredClass(GFxSprite* child, const GASString& symbol)
     ctor->Invoke(call);
 }
 
-GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)   // 2012 0x9fee10
+// DISHONORED(port): 2013 0x9f5830 (2012 0x9fee10).
+GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)
 {
     GFxMovieDataDef* dataDef = GetOwnDataDef();
     GFxCharacterDef* def = dataDef ? dataDef->GetCharacterDefById(pos.CharacterId) : 0;
@@ -910,6 +909,28 @@ GFxCharacter* GFxSprite::AddDisplayObject(const GFxCharPosInfo& pos)   // 2012 0
             pMovieRoot->LogScriptError("PlaceObject: character %u is not in the dictionary",
                                        pos.CharacterId);
         return 0;
+    }
+    // Retail reads the depth before it creates anything: when the character already sitting there is
+    // this very character under this very name, the tag is a move of that instance and nothing is
+    // created at all - the function returns 0 after GFxSprite::MoveDisplayObject (2013 0x9eb080).
+    // That is what a timeline loop does on every frame it rebuilds, and creating a second instance
+    // there was what left the first one to be released underneath its own caller.
+    {
+        GFxCharacter* sitting = DisplayList.GetCharacterAtDepth(pos.Depth, 0);
+        if (sitting != 0 && sitting->GetId().Id == pos.CharacterId)
+        {
+            bool bSameName = true;
+            if (pos.HasName())
+            {
+                bSameName = sitting->IsASCharacter()
+                    && sitting->ToASCharacterDef()->GetName() == pos.Name;
+            }
+            if (bSameName)
+            {
+                MoveDisplayObject(pos);
+                return 0;
+            }
+        }
     }
     if (bTraceClassBinding)
     {
