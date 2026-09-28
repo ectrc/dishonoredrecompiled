@@ -21,7 +21,6 @@ class UDisLocalPlayer* DisGetLocalPlayer();
 class UDishonoredAudioSystem* DisGetAudioSystem();
 class UArkPpNode* DisGetArkPpNode( const FName& EffectName );
 class UArkPpNodeMaterial* DisGetArkPpNodeMaterial( const FName& EffectName, UBOOL bMakeUnique );
-class UDisPostProcessManager* DisGetPpManager();
 
 // DISHONORED(written): agent AU (PHASE7 AU). The utilities the pickup collection path calls; 2013 rvas with the bodies.
 class UDisGFxMoviePlayerHUD* DisGetGFxHUD();                                                   // 0x7bf730
@@ -92,3 +91,8 @@ void DisHideGoreSections( class USkeletalMeshComponent& _rMeshComponent );
 // component whose mesh material matches is overridden; the index form looks the reference material up first.
 void DisReplaceMatchingMaterialsInSkelMesh( class USkeletalMeshComponent* _pMeshComponent, const class UMaterialInterface* _pReferenceMaterial, class UMaterialInterface* _pMaterial );
 void DisReplaceMatchingMaterialsInSkelMesh( class USkeletalMeshComponent* _pMeshComponent, INT _MaterialIndex, class UMaterialInterface* _pMaterial );
+
+// DISHONORED(port): agent DN. 2013 rva 0x7baff0 (2012 0x8239b0, dishonoredutilities_accessors.cpp:528): a pawn's feet.
+// Retail takes the cylinder's *bounds*, not its Location and CollisionHeight, so a pawn whose cylinder has been moved
+// (a crouching or a possessed one) answers where its cylinder really is.
+const FVector DisGetPawnFeet( const class APawn* _pPawn );

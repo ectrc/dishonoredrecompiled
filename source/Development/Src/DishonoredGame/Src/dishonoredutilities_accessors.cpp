@@ -185,11 +185,14 @@ FLOAT DisGetAppropriateWorldTime( const AActor* const _pActor )
 	return Info ? Info->BendTimeSeconds : GWorld->GetTimeSeconds();
 }
 
-// DISHONORED(written): 2013 rva 0x7bf290 (2012 0x827090): ADishonoredGameInfo::m_pPpManager @984. Retail returns a
-// reference and, with no world or no game info, returns *(UDisPostProcessManager*)0x3D8 - a null dereference at the
-// caller. Every caller here tests for NULL instead.
-UDisPostProcessManager* DisGetPpManager()
+// DISHONORED(port): agent DN. 2013 rva 0x7baff0 (2012 0x8239b0, 91 bytes).
+const FVector DisGetPawnFeet( const APawn* _pPawn )
 {
-	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
-	return GameInfo ? GameInfo->m_pPpManager : NULL;
+	FVector Feet = _pPawn->Location;
+	if( _pPawn->CylinderComponent )
+	{
+		Feet = _pPawn->CylinderComponent->Bounds.Origin;
+		Feet.Z -= _pPawn->CylinderComponent->Bounds.BoxExtent.Z;
+	}
+	return Feet;
 }

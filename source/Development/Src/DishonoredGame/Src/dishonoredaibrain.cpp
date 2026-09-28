@@ -1151,3 +1151,20 @@ const FDisAttentionProxy& UDishonoredAIBrain::GetTopEnemyProxy( BYTE& _rOutTopEn
 void UDishonoredAIBrain::ClearAllMinAttention( BYTE _LimitType )
 {
 }
+
+
+// DISHONORED(port): agent DN. 2013 rva 0x700d40 (2012 0x749b20, 62 bytes): the current behaviour answers for the whole
+// brain, and the constraints are only asked for once the goals produced something - so a behaviour that refuses to supply
+// a goal stops the search rather than biasing an unbounded one.
+UBOOL UDishonoredAIBrain::GetPathGoalsAndConstraintsFromBehavior( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<UNavMeshPathGoalEvaluator*>& _rOutGoals, TArray<UNavMeshPathConstraint*>& _rOutConstraints ) const
+{
+	if( !m_pCurrentBehavior )
+	{
+		return FALSE;
+	}
+	if( !m_pCurrentBehavior->CallGetPathGoals( _rFinalDestination, _rOutGoals ) )
+	{
+		return FALSE;
+	}
+	return m_pCurrentBehavior->CallGetPathConstraints( _rFinalDestination, _bForReachability, _rOutConstraints );
+}

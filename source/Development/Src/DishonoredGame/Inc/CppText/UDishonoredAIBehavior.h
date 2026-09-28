@@ -100,3 +100,24 @@ public:
 	    and the complete mask, and every sub-state's into the complete mask only - so CallFilterAIStim can reject a stim
 	    that nothing anywhere under this behaviour cares about with one array lookup. */
 	void BuildInternalFilterStimMasks( BYTE* _pSubProcessesFilterStimMask, BYTE* _pCompleteFilterStimMask ) const;
+
+	/*-------------------------------------------------------------------------
+		agent DN: the goal evaluators and constraints the AI hands the nav mesh.
+
+		This is the second of agent CG's "four things and no more" the AI needs from the navigation-mesh runtime. The
+		behaviour gets first refusal, then the live sub-state, and the default pair is added only when BOTH of them said
+		yes - which is how a fleeing sub-state can replace "walk to this point" with "walk away from it" without the
+		behaviour above it knowing.
+	-------------------------------------------------------------------------*/
+public:
+	/** DISHONORED(port): 2013 rva 0x6eabc0 (2012 0x7489c0): UNavMeshGoal_At at the destination, out of the world info's
+	    evaluator cache, with bKeepPartial set so a blocked path still returns its best prefix. */
+	static void GetDefaultPathGoals( const FVector& _rFinalDestination, TArray<class UNavMeshPathGoalEvaluator*>& _rOutGoals );
+	/** DISHONORED(port): 2013 rva 0x6eaca0 (2012 0x748aa0): UNavMeshPath_Toward the destination. */
+	static void GetDefaultPathConstraints( const FVector& _rFinalDestination, TArray<class UNavMeshPathConstraint*>& _rOutConstraints );
+	/** DISHONORED(port): 2013 rva 0x6eac30 (2012 0x748a30) / 0x6ead10 (0x748b00). */
+	UBOOL CallGetPathGoals( const FVector& _rFinalDestination, TArray<class UNavMeshPathGoalEvaluator*>& _rOutGoals ) const;
+	UBOOL CallGetPathConstraints( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<class UNavMeshPathConstraint*>& _rOutConstraints ) const;
+	/** The base answers TRUE, i.e. "I have nothing to add, use the default". */
+	virtual UBOOL GetPathGoals( const FVector& _rFinalDestination, TArray<class UNavMeshPathGoalEvaluator*>& _rOutGoals ) const { return TRUE; }
+	virtual UBOOL GetPathConstraints( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<class UNavMeshPathConstraint*>& _rOutConstraints ) const { return TRUE; }

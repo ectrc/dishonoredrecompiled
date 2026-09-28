@@ -17,6 +17,8 @@
 #include "DishonoredGame.h"
 #include "disaicensus.h"
 #include "disdesirestructs.h"
+#include "arkcomponentlocomotion.h"
+#include "disaisubstate.h"
 
 INT GDisAIBrainTicks = 0;
 INT GDisAIStimsEnqueued = 0;
@@ -95,6 +97,37 @@ static FDisAINPCTrack* DisAIFindTrack( ADishonoredNPCPawn* Pawn )
 	Track.TurnedTotal = 0;
 	const INT Added = GDisAIState.Tracks.AddItem( Track );
 	return &GDisAIState.Tracks(Added);
+}
+
+/** agent DN: per-NPC total 2D distance since the census started, so "they moved" can be read per guard rather than as a
+    single sum. The tracker is agent CG's; this only formats it, sorted by distance, largest first. */
+static FString DisAIPerNPCMoved()
+{
+	TArray<INT> Order;
+	for( INT i = 0; i < GDisAIState.Tracks.Num(); ++i )
+	{
+		if( GDisAIState.Tracks( i ).MovedTotal >= 1.f )
+		{
+			Order.AddItem( i );
+		}
+	}
+	for( INT a = 0; a < Order.Num(); ++a )
+	{
+		for( INT b = a + 1; b < Order.Num(); ++b )
+		{
+			if( GDisAIState.Tracks( Order( b ) ).MovedTotal > GDisAIState.Tracks( Order( a ) ).MovedTotal )
+			{
+				const INT Tmp = Order( a ); Order( a ) = Order( b ); Order( b ) = Tmp;
+			}
+		}
+	}
+	FString Out = FString::Printf( TEXT("%i of %i NPCs moved:"), Order.Num(), GDisAIState.Tracks.Num() );
+	for( INT i = 0; i < Order.Num() && i < 12; ++i )
+	{
+		const FDisAINPCTrack& rTrack = GDisAIState.Tracks( Order( i ) );
+		Out += FString::Printf( TEXT(" %s=%.0f"), rTrack.Pawn ? *rTrack.Pawn->GetName() : TEXT("?"), rTrack.MovedTotal );
+	}
+	return Out;
 }
 
 /*-----------------------------------------------------------------------------
@@ -348,6 +381,377 @@ static FString DisAITopActorClasses()
 	return Out;
 }
 
+/*-----------------------------------------------------------------------------
+	agent DN: the navigation-mesh census.
+
+	The locomotion component's only entries into the nav mesh are static UNavigationHandle queries
+	(FArkComponentLocomotion::FindNearestLocationOnNavMesh 2013 rva 0x545660 calls GetAllPolysFromPos,
+	UpdateStartLocAndVerifyIfOnValidPoly 0x53ed10 calls GetPylonAndPolyFromPos) plus UNavigationHandle::FindPath for
+	the A*. So before porting any of it: is there a mesh, and is there a poly under each NPC's feet? Reported once,
+	the first time the census runs with a world that holds NPCs, because it walks every pylon.
+-----------------------------------------------------------------------------*/
+static void DisAINavMeshReport( UWorld* World )
+{
+	INT Pylons = 0, PylonsWithMesh = 0, PylonsEnabled = 0, Polys = 0, Verts = 0, Edges = 0;
+	for( FActorIterator It; It; ++It )
+	{
+		APylon* Pylon = Cast<APylon>( *It );
+		if( !Pylon )
+		{
+			continue;
+		}
+		Pylons++;
+		PylonsEnabled += Pylon->bDisabled ? 0 : 1;
+		UNavigationMeshBase* Mesh = Pylon->NavMeshPtr;
+		if( !Mesh )
+		{
+			continue;
+		}
+		PylonsWithMesh++;
+		Polys += Mesh->Polys.Num();
+		Verts += Mesh->Verts.Num();
+		Edges += Mesh->EdgePtrs.Num();
+	}
+	debugf( TEXT("DISHONORED(bringup): disai navmesh: %i pylons (%i enabled, %i with a mesh), %i polys, %i verts, %i edges"),
+		Pylons, PylonsEnabled, PylonsWithMesh, Polys, Verts, Edges );
+
+	INT Npcs = 0, OnMesh = 0, NearMesh = 0;
+	FString First;
+	for( FActorIterator It; It; ++It )
+	{
+		ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( *It );
+		if( !Pawn || Pawn->IsPendingKill() )
+		{
+			continue;
+		}
+		Npcs++;
+		FVector Ground = Pawn->Location;
+		if( Pawn->CylinderComponent )
+		{
+			Ground.Z -= Pawn->CylinderComponent->CollisionHeight;
+		}
+		APylon* FoundPylon = NULL;
+		FNavMeshPolyBase* FoundPoly = NULL;
+		if( UNavigationHandle::GetPylonAndPolyFromPos( Ground, 0.f, FoundPylon, FoundPoly ) )
+		{
+			OnMesh++;
+		}
+		else
+		{
+			TArray<FNavMeshPolyBase*> Near;
+			const FVector Extent( 150.f, 150.f, 150.f );
+			if( UNavigationHandle::GetAllPolysFromPos( Pawn->Location, Extent, Near, FALSE ) && Near.Num() > 0 )
+			{
+				NearMesh++;
+			}
+		}
+		if( !First.Len() )
+		{
+			First = FString::Printf( TEXT("%s at %s ground %s poly %s"),
+				*Pawn->GetName(), *Pawn->Location.ToString(), *Ground.ToString(),
+				FoundPoly ? TEXT("yes") : TEXT("no") );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): disai navmesh: %i NPCs, %i standing on a poly, %i with a poly within 150uu; first %s"),
+		Npcs, OnMesh, NearMesh, *First );
+}
+
+/*-----------------------------------------------------------------------------
+	agent DN: the locomotion census.
+-----------------------------------------------------------------------------*/
+
+/** The most recent path-finding error any component recorded, named rather than numbered. */
+static FString DisAILocoLastError()
+{
+	INT Best = INDEX_NONE;
+	for( FActorIterator It; It; ++It )
+	{
+		ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( *It );
+		FArkComponentLocomotion* pLoco = Pawn ? Pawn->GetComponentLocomotion() : NULL;
+		if( pLoco && pLoco->GetLastPathFindingError() != PATHERROR_MAX )
+		{
+			Best = pLoco->GetLastPathFindingError();
+			break;
+		}
+	}
+	if( Best == INDEX_NONE )
+	{
+		return FString( TEXT("none") );
+	}
+	static const TCHAR* Names[] = { TEXT("StartPolyNotFound"), TEXT("GoalPolyNotFound"), TEXT("AnchorPylonNotFound"),
+		TEXT("NoPathFound"), TEXT("ComputeValidFinalDestFail"), TEXT("GetNextMoveLocationFail"), TEXT("MoveTimeout") };
+	return ( Best >= 0 && Best < ARRAY_COUNT( Names ) ) ? FString( Names[Best] ) : FString::Printf( TEXT("%i"), Best );
+}
+
+/** Per-NPC locomotion state, for the thoughts line: how far this NPC's own component has taken it along its path. */
+FString DisAILocoThought( class ADishonoredNPCPawn* _pPawn )
+{
+	FArkComponentLocomotion* pLoco = _pPawn ? _pPawn->GetComponentLocomotion() : NULL;
+	if( !pLoco )
+	{
+		return FString( TEXT(" loco none") );
+	}
+	return FString::Printf( TEXT(" loco req %i path %i/%i%s"),
+		pLoco->GetRequestsCount(), pLoco->GetCurPathPointIdx(), pLoco->GetPathPoints().Num(),
+		pLoco->IsArrived() ? TEXT(" arrived") : TEXT("") );
+}
+
+/*-----------------------------------------------------------------------------
+	agent DN: -dislocowalk[=<seconds>] - give every NPC somewhere to go, once, and let the ported machinery take it there.
+-----------------------------------------------------------------------------*/
+
+static INT GDisLocoWalk = -1;
+static FLOAT GDisLocoWalkTime = 20.f;
+
+UBOOL DisAIWalkTestEnabled()
+{
+	if( GDisLocoWalk < 0 )
+	{
+		const TCHAR* Found = appStrfind( appCmdLine(), TEXT("-dislocowalk") );
+		GDisLocoWalk = Found ? 1 : 0;
+		if( Found && Found[12] == TEXT('=') )
+		{
+			GDisLocoWalkTime = appAtof( Found + 13 );
+		}
+	}
+	return GDisLocoWalk != 0;
+}
+
+/** The farthest poly centre within _fRadius of the pawn that the pawn can path to. */
+static UBOOL DisAIPickWalkTarget( ADishonoredNPCPawn* _pPawn, FLOAT _fRadius, FVector& _rOut )
+{
+	TArray<FNavMeshPolyBase*> Polys;
+	const FVector Extent( _fRadius, _fRadius, _fRadius );
+	if( !UNavigationHandle::GetAllPolysFromPos( _pPawn->Location, Extent, Polys, FALSE ) || Polys.Num() == 0 )
+	{
+		return FALSE;
+	}
+	// Where to send them: the farthest poly centre within the radius that is on the NPC's own level, give or take a
+	// storey. Measured alternative, kept as a finding rather than as code: picking the poly nearest the PLAYER instead
+	// sends every NPC to a poly 470 units below itself, because the player spawns at the foot of the tower - and the
+	// searches then fail with GoalPolyNotFound, because reaching another floor needs the stair edges the cooked mesh
+	// links through and the reference A* did not find them from those starts. Farthest-on-my-own-level produced 812 paths
+	// and 30,088 units of walking; nearest-to-the-player produced none.
+	FLOAT fBest = -1.f;
+	UBOOL bFound = FALSE;
+	for( INT i = 0; i < Polys.Num(); ++i )
+	{
+		const FVector Centre = Polys( i )->GetPolyCenter();
+		if( Abs( Centre.Z - _pPawn->Location.Z ) > 200.f )
+		{
+			continue;
+		}
+		const FLOAT fFromNPCSq = ( Centre - _pPawn->Location ).SizeSquared2D();
+		if( fFromNPCSq <= ( 200.f * 200.f ) )
+		{
+			continue;
+		}
+		if( !bFound || fFromNPCSq > fBest )
+		{
+			fBest = fFromNPCSq;
+			_rOut = Centre;
+			bFound = TRUE;
+		}
+	}
+	return bFound;
+}
+
+/**
+ * One order per NPC, through its own live sub-state's desire. The sub-state does not fight it: its own
+ * RefreshSubState issues its target once (agent DF measured 26 new / 0 update / 0 stop over 150 seconds) and
+ * FDisDesireRequest::GetRequestStatus then answers Unchanged, because the target it compares against is the one stored in
+ * the request - which is now the probe's.
+ */
+/** What the first pass asked of one NPC, so the second pass can re-state the same order at a different speed. */
+struct FDisAIWalkOrder
+{
+	ADishonoredNPCPawn*	Pawn;
+	ADishonoredNPCPawn*	ActorTarget;	// NULL for a location order
+	FVector				Location;
+};
+static TArray<FDisAIWalkOrder> GDisAIWalkOrders;
+
+/**
+ * agent DN: the second pass. The same order, at the RUN speed index instead of the walk one. Nothing about the target
+ * changes, so FDisDesireRequest::GetRequestStatus answers Unchanged for the target and FDisLocoRequest::SetParams then
+ * raises DTDRS_UpdateRequestNeeded because the speed index differs - which is the only thing that makes the desire layer
+ * take the update branch rather than stop-and-restart, and the only thing that reaches
+ * FArkRequestManager::UpdateRequestByIdx. It is what a behaviour escalating from a walk to a chase does.
+ */
+static void DisAIWalkTestUpdate()
+{
+	INT Updated = 0;
+	for( INT i = 0; i < GDisAIWalkOrders.Num(); ++i )
+	{
+		const FDisAIWalkOrder& rOrder = GDisAIWalkOrders( i );
+		ADishonoredNPCPawn* Pawn = rOrder.Pawn;
+		if( !Pawn || Pawn->IsPendingKill() )
+		{
+			continue;
+		}
+		ADishonoredNPCController* NPCController = Cast<ADishonoredNPCController>( Pawn->Controller );
+		UDishonoredAIBrain* Brain = NPCController ? NPCController->GetAIBrain() : NULL;
+		UDishonoredAIBehavior* Behavior = Brain ? Brain->GetCurrentBehavior() : NULL;
+		UDisAISubState* SubState = Behavior ? Behavior->GetCurrentSubState() : NULL;
+		IDisDesiresInterface* Desires = SubState ? SubState->GetDesires() : NULL;
+		FDisLocoRequest* LocoRequest = Desires ? Desires->GetDesiresLocoRequest() : NULL;
+		if( !LocoRequest )
+		{
+			continue;
+		}
+		if( rOrder.ActorTarget )
+		{
+			LocoRequest->RequestActorTarget( rOrder.ActorTarget, 2, -1.f, 1.f, TRUE, FALSE );
+		}
+		else
+		{
+			LocoRequest->RequestLocationTarget( rOrder.Location, 2, -1.f, 1.f, TRUE, FALSE );
+		}
+		Updated++;
+	}
+	debugf( TEXT("DISHONORED(bringup): disai locowalk: re-stated %i orders at the run speed index, which is what the update path is for"), Updated );
+}
+
+static void DisAIWalkTest( UWorld* World )
+{
+	GDisAIWalkOrders.Empty();
+	INT Asked = 0;
+	INT NoSubState = 0;
+	INT NoTarget = 0;
+	INT Followers = 0;
+	ADishonoredNPCPawn* pPrevAsked = NULL;
+	FString First;
+	for( FActorIterator It; It; ++It )
+	{
+		ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( *It );
+		if( !Pawn || Pawn->IsPendingKill() )
+		{
+			continue;
+		}
+		ADishonoredNPCController* NPCController = Cast<ADishonoredNPCController>( Pawn->Controller );
+		UDishonoredAIBrain* Brain = NPCController ? NPCController->GetAIBrain() : NULL;
+		UDishonoredAIBehavior* Behavior = Brain ? Brain->GetCurrentBehavior() : NULL;
+		UDisAISubState* SubState = Behavior ? Behavior->GetCurrentSubState() : NULL;
+		IDisDesiresInterface* Desires = SubState ? SubState->GetDesires() : NULL;
+		FDisLocoRequest* LocoRequest = Desires ? Desires->GetDesiresLocoRequest() : NULL;
+		if( !LocoRequest )
+		{
+			NoSubState++;
+			continue;
+		}
+		// Walk speed is index 1 of the config's speed names (index 0 is idle); the threshold is retail's own default of
+		// -1, i.e. "use the pawn's radius".
+		// Every fourth NPC is given the PREVIOUS one as an actor target rather than a location. That is not decoration: an
+		// actor target is re-resolved on every TickDesires, so as the target walks, FDisDesireRequest::GetRequestStatus
+		// answers UpdateRequestNeeded and the order goes down FArkComponentLocomotion::UpdateLocoToActor ->
+		// FArkRequestManager::UpdateRequestByIdx - the update half of the request queue, which a fixed destination never
+		// exercises. It is also what a guard following another guard asks for.
+		LocoRequest->m_bPaused = FALSE;
+		if( pPrevAsked && ( Asked % 4 ) == 3 )
+		{
+			LocoRequest->RequestActorTarget( pPrevAsked, 1, -1.f, 1.f, TRUE, FALSE );
+			FDisAIWalkOrder Order;
+			Order.Pawn = Pawn;
+			Order.ActorTarget = pPrevAsked;
+			Order.Location = FVector( 0.f, 0.f, 0.f );
+			GDisAIWalkOrders.AddItem( Order );
+			Followers++;
+			Asked++;
+			continue;
+		}
+		FVector Target( 0.f, 0.f, 0.f );
+		if( !DisAIPickWalkTarget( Pawn, 1500.f, Target ) )
+		{
+			NoTarget++;
+			continue;
+		}
+		LocoRequest->RequestLocationTarget( Target, 1, -1.f, 1.f, TRUE, FALSE );
+		FDisAIWalkOrder Order;
+		Order.Pawn = Pawn;
+		Order.ActorTarget = NULL;
+		Order.Location = Target;
+		GDisAIWalkOrders.AddItem( Order );
+		pPrevAsked = Pawn;
+		Asked++;
+		if( !First.Len() )
+		{
+			First = FString::Printf( TEXT("%s %s -> %s (%.0f uu)"), *Pawn->GetName(), *Pawn->Location.ToString(),
+				*Target.ToString(), ( Target - Pawn->Location ).Size2D() );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): disai locowalk: asked %i NPCs to walk, %i had no sub-state desire, %i had no reachable target; first %s"),
+		Asked, NoSubState, NoTarget, *First );
+	debugf( TEXT("DISHONORED(bringup): disai locowalk: %i of them were given another NPC as an actor target, which is what makes the queue's update path run"), Followers );
+
+	// -dislocowatch=<n>: put the camera behind NPC n so the walk is in front of it. This is a measurement switch in the
+	// same family as -apshottime: the player's own pawn is moved and pointed, and nothing about the NPC changes. Without
+	// it the player spawns at the water's edge of L_Tower_P looking at the boats, and no guard is in frame.
+	INT WatchIdx = -1;
+	{
+		const TCHAR* Found = appStrfind( appCmdLine(), TEXT("-dislocowatch") );
+		if( Found )
+		{
+			WatchIdx = ( Found[13] == TEXT('=') ) ? appAtoi( Found + 14 ) : 0;
+		}
+	}
+	if( WatchIdx >= 0 )
+	{
+		// By name, not by iteration order: -dislocowatch=13 means DishonoredNPCPawn_13, which is the one the -disai
+		// locomoved line says walked farthest, and iteration order is not that.
+		const FString WantedName = FString::Printf( TEXT("DishonoredNPCPawn_%i"), WatchIdx );
+		ADishonoredNPCPawn* Watched = NULL;
+		INT Seen = 0;
+		for( FActorIterator It; It; ++It )
+		{
+			ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( *It );
+			FArkComponentLocomotion* pLoco = Pawn ? Pawn->GetComponentLocomotion() : NULL;
+			if( !pLoco || pLoco->GetRequestsCount() <= 0 )
+			{
+				continue;
+			}
+			Seen++;
+			if( Pawn->GetName() == WantedName )
+			{
+				Watched = Pawn;
+				break;
+			}
+		}
+		APlayerController* PC = NULL;
+		for( AController* C = GWorld->GetFirstController(); C; C = C->NextController )
+		{
+			PC = Cast<APlayerController>( C );
+			if( PC && PC->Pawn )
+			{
+				break;
+			}
+			PC = NULL;
+		}
+		if( Watched && PC && PC->Pawn )
+		{
+			const FVector Facing = Watched->Rotation.Vector();
+			FVector CamLoc = Watched->Location - Facing * 420.f;
+			CamLoc.Z += 90.f;
+			GWorld->FarMoveActor( PC->Pawn, CamLoc, FALSE, TRUE, FALSE );
+			const FRotator Look = ( Watched->Location - PC->Pawn->Location ).Rotation();
+			PC->Pawn->SetRotation( Look );
+			PC->SetRotation( Look );
+			// The camera has to stay put, or a before-and-after pair ten world-seconds apart compares two different places
+			// rather than two positions of the same guard: the player's pawn is a walking pawn and it drifts. Physics off,
+			// world collision off, velocity zero - it becomes a tripod.
+			PC->Pawn->Velocity = FVector( 0.f, 0.f, 0.f );
+			PC->Pawn->Acceleration = FVector( 0.f, 0.f, 0.f );
+			PC->Pawn->bCollideWorld = FALSE;
+			PC->Pawn->setPhysics( PHYS_None );
+			debugf( TEXT("DISHONORED(bringup): disai locowatch: camera behind %s at %s looking %s (NPC at %s)"),
+				*Watched->GetName(), *PC->Pawn->Location.ToString(), *Look.Vector().ToString(), *Watched->Location.ToString() );
+		}
+		else
+		{
+			debugf( TEXT("DISHONORED(bringup): disai locowatch: no NPC %i (%i with a request) or no player pawn"), WatchIdx, Seen );
+		}
+	}
+}
+
 void DisAIReport( UWorld* World, FLOAT DeltaSeconds )
 {
 	if( !World || !World->GetWorldInfo() )
@@ -482,12 +886,98 @@ void DisAIReport( UWorld* World, FLOAT DeltaSeconds )
 		FArkGameEventDispatcher::GetInstance() ? TEXT("yes") : TEXT("no"),
 		GArkGameEventRegistrations, GArkGameEventPerObjectRegistrations, GArkGameEventUnregistrations,
 		GArkGameEventDeferred, GArkGameEventDispatches, GArkGameEventCallbacksInvoked );
+	// agent DN: -dislocowalk, once, after the brains have settled.
+	if( DisAIWalkTestEnabled() )
+	{
+		// -dislocoshot=<seconds after the order>: the screenshot is raised HERE, from the census, and not by
+		// -apshottime. Both end up setting the same two globals that UGameViewportClient::Draw consumes, but -apshottime
+		// keys on FSceneViewFamily::CurrentWorldTime, which is per-world and restarts at zero when the game travels - so
+		// on a slow machine it captures the startup map's boat ride instead of the tower, and which map you get depends on
+		// how loaded the machine is. Measured: the same command line captured the terrace once and the intro boat the next
+		// time. The census only ever runs on the world that holds the NPCs, so keying off it cannot pick the wrong map.
+		// This is the same lesson PHASE10 records as "measure the map you mean", arriving from a third direction.
+		static FLOAT ShotAt = -1.f;
+		static UBOOL bShot = FALSE;
+		if( ShotAt < 0.f )
+		{
+			const TCHAR* Found = appStrfind( appCmdLine(), TEXT("-dislocoshot") );
+			ShotAt = ( Found && Found[12] == TEXT('=') ) ? appAtof( Found + 13 ) : 0.f;
+		}
+		static UBOOL bWalked = FALSE;
+		static UBOOL bUpdated = FALSE;
+		if( !bWalked && Pawns > 0 && Now >= GDisLocoWalkTime )
+		{
+			bWalked = TRUE;
+			DisAIWalkTest( World );
+		}
+		else if( bWalked && !bUpdated && Now >= ( GDisLocoWalkTime + 10.f ) )
+		{
+			bUpdated = TRUE;
+			DisAIWalkTestUpdate();
+		}
+		if( bWalked && !bShot && ShotAt > 0.f && Now >= ( GDisLocoWalkTime + ShotAt ) )
+		{
+			extern UBOOL GScreenShotRequest;	// Engine/Src/UnPlayer.cpp
+			extern FString GScreenShotName;		// Engine/Src/UnPlayer.cpp
+			bShot = TRUE;
+			GScreenShotName = TEXT("dislocoshot");
+			GScreenShotRequest = TRUE;
+			debugf( TEXT("DISHONORED(bringup): disai locoshot: screenshot requested %.1f s after the order, world time %.3f, map %s"),
+				ShotAt, Now, *World->GetOutermost()->GetName() );
+		}
+	}
+	// agent DN: three NPCs in detail, every second. The five numbers that say what the component is doing: how many
+	// orders it holds, where along its path it is, what speed it wants and has, and how far it thinks it still has to go.
+	{
+		INT Shown = 0;
+		FString Detail;
+		for( FActorIterator It; It && Shown < 3; ++It )
+		{
+			ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( *It );
+			FArkComponentLocomotion* pLoco = Pawn ? Pawn->GetComponentLocomotion() : NULL;
+			if( !pLoco )
+			{
+				continue;
+			}
+			Shown++;
+			Detail += FString::Printf( TEXT("[%s req %i path %i/%i%s%s speed %.0f/%.0f dist %.0f loc %s]"),
+				*Pawn->GetName(), pLoco->GetRequestsCount(), pLoco->GetCurPathPointIdx(), pLoco->GetPathPoints().Num(),
+				pLoco->IsArrived() ? TEXT(" arrived") : TEXT(""),
+				pLoco->HasComputedPath() ? TEXT("") : TEXT(" nopath"),
+				pLoco->GetCurMoveSpeed(), pLoco->GetTargetMoveSpeed(), appSqrt( pLoco->GetSq2DDistToPathEnd() ),
+				*Pawn->Location.ToString() );
+		}
+		if( Detail.Len() )
+		{
+			debugf( TEXT("DISHONORED(bringup): disai locodetail: %s"), *Detail );
+		}
+	}
+	// agent DN: the nav-mesh census, once, as soon as there is an NPC to stand on it.
+	{
+		static UBOOL bReportedNavMesh = FALSE;
+		if( !bReportedNavMesh && Pawns > 0 )
+		{
+			bReportedNavMesh = TRUE;
+			DisAINavMeshReport( World );
+		}
+	}
 	debugf( TEXT("DISHONORED(bringup): disai desires: %i set calls; faceto %i new %i update %i stop; loco %i/%i/%i; lookat %i/%i/%i; body intentions %i"),
 		GDisDesireSetCalls,
 		GDisDesireRequests[DisDesireStructs::DDK_FaceTo], GDisDesireUpdates[DisDesireStructs::DDK_FaceTo], GDisDesireStops[DisDesireStructs::DDK_FaceTo],
 		GDisDesireRequests[DisDesireStructs::DDK_Loco], GDisDesireUpdates[DisDesireStructs::DDK_Loco], GDisDesireStops[DisDesireStructs::DDK_Loco],
 		GDisDesireRequests[DisDesireStructs::DDK_LookAt], GDisDesireUpdates[DisDesireStructs::DDK_LookAt], GDisDesireStops[DisDesireStructs::DDK_LookAt],
 		GDisDesireBodyIntentions );
+	// agent DN: what the locomotion component did with the orders the line above says were given. The two numbers that
+	// matter are "paths built" (the nav-mesh A* answered) and "uu moved" (the component translated a pawn); a non-zero
+	// request count with zero paths means the search failed, and a non-zero path count with zero movement means the
+	// dynamics did.
+	debugf( TEXT("DISHONORED(bringup): disai locomoved: %s"), *DisAIPerNPCMoved() );
+	debugf( TEXT("DISHONORED(bringup): disai loco: %i components; requests %i start %i update %i stop; paths %i built %i failed, %i path points; %i arrivals; %i MovePawn ticks, %.1f uu moved; %i teleports onto the mesh; last path error %s"),
+		GDisLocoComponents,
+		GDisLocoRequestsStarted, GDisLocoRequestsUpdated, GDisLocoRequestsStopped,
+		GDisLocoPathsBuilt, GDisLocoPathsFailed, GDisLocoPathPointsBuilt,
+		GDisLocoArrivals, GDisLocoMovePawnCalls, GDisLocoDistanceMoved, GDisLocoTeleports,
+		*DisAILocoLastError() );
 	if( Thoughts.Len() )
 	{
 		debugf( TEXT("DISHONORED(bringup): disai thoughts: %s"), *Thoughts );

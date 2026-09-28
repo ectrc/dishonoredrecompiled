@@ -92,3 +92,7 @@ public:
 	BYTE GetCurrentDesiredTransitSpeed() const;
 
 	void ClearAllMinAttention( BYTE _LimitType );
+
+	/** DISHONORED(port): agent DN. 2013 rva 0x700d40 (2012 0x749b20, 62 bytes): the current behaviour answers for the
+	    whole brain, and the constraints are only asked for when the goals produced something. */
+	UBOOL GetPathGoalsAndConstraintsFromBehavior( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<class UNavMeshPathGoalEvaluator*>& _rOutGoals, TArray<class UNavMeshPathConstraint*>& _rOutConstraints ) const;

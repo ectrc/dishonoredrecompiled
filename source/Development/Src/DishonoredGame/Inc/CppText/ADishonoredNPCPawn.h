@@ -40,3 +40,18 @@ public:
 	/** Retail has this private; it is public here because the census in the same unit reports what it built. */
 	class UStaticMeshComponent* CreateAccessoryStaticMeshComponent( BYTE _eAccessoryType );
 	class UStaticMeshComponent* GetAccessoryStaticMeshComponent( BYTE _eAccessoryType ) const;
+
+// ---- agent DN (PHASE10 DN): locomotion ----
+// Spawned 2013 rva 0x752270 (2012 0x7b0a60) creates the component from the NPC tweaks' UArkComponentLocomotionConfig and
+// starts it; physWalking 0x74e8a0 (0x7ad240) hands the frame to it instead of to APawn's walking physics;
+// SetupPathfindingParams 0x74ad20 (0x7ab3a0) and SetupPathGoalsAndConstraints 0x75e490 (0x7c2040) are the pawn's half of
+// the nav-mesh contract. Bodies in Src/dishonorednpcpawn_locomotion.cpp.
+public:
+	virtual void Spawned();
+	virtual void physWalking( FLOAT DeltaTime, INT Iterations );
+	class FArkComponentLocomotion* GetComponentLocomotion() const;
+	virtual UBOOL SetupPathGoalsAndConstraints( const FVector& _rFinalDestination, UBOOL _bForReachability );
+	UBOOL IsMoving() const;
+private:
+	virtual void SetupPathfindingParams( struct FNavMeshPathParams& _rOut_ParamCache );
+	void UpdateLocomotion();

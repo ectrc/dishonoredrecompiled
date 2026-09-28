@@ -52,3 +52,6 @@ FString DisAIBehaviorHistogram();
 
 /** Sub-state changes where the class actually changed, i.e. real transitions rather than re-entries. */
 extern INT GDisAISubStateTransitions;
+
+/** TRUE when -dislocowalk is on the command line (agent DN). */
+UBOOL DisAIWalkTestEnabled();

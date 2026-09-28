@@ -74,6 +74,33 @@ namespace DisDesireStructs
 	/** The order is withdrawn; counted, and the id is released. */
 	void ReleaseRequest( EDisDesireKind _Kind, const TCHAR* _pRetailEntryPoint );
 
+	/*-------------------------------------------------------------------------
+		agent DN: DisLocoSeam - the locomotion kind is no longer synthetic.
+
+		FArkComponentLocomotion exists now (Inc/arkcomponentlocomotion.h), so the three loco calls below reach it instead of
+		NoteComponentGap. The face-to and look-at kinds are unchanged and still counted only: FArkComponentFaceTo and
+		FArkComponentLookat are not ported.
+
+		These four are free functions rather than calls written inline in FDisLocoRequest because disdesirestructs.cpp is
+		where retail's component boundary is, and keeping it in one place is what let agent DF measure what was being asked
+		for. The counters stay: GDisDesireRequests[DDK_Loco] still counts orders given, and now every one of them is also a
+		real request in the component's queue.
+	-------------------------------------------------------------------------*/
+	/** Retail's FArkComponent*::m_bStarted test: is this request still in the component's queue? */
+	UBOOL IsLocoRequestStarted( FPointer _Component, INT _RequestID );
+	/** StartLocoToActor / StartLocoToLocation; answers the component's request id, or INDEX_NONE. */
+	INT StartLoco( FPointer _Component, class AActor* _pActorTarget, UBOOL _bUsingLocation, const FVector& _LocationTarget,
+		class UObject* _pAsker, BYTE _Priority, INT _MaxSpeedIndex, FLOAT _fEndLocationThreshold,
+		FLOAT _fMaxFunnelRadiusMultiplier, UBOOL _bAccurateStop, UBOOL _bSpeedIsLookAtDependent,
+		UBOOL _bFollow, FLOAT _fFollowAngle, FLOAT _fFollowDist );
+	/** UpdateLocoToActor / UpdateLocoToLocation on an existing id. */
+	UBOOL UpdateLoco( FPointer _Component, INT _RequestID, class AActor* _pActorTarget, UBOOL _bUsingLocation, const FVector& _LocationTarget,
+		class UObject* _pAsker, BYTE _Priority, INT _MaxSpeedIndex, FLOAT _fEndLocationThreshold,
+		FLOAT _fMaxFunnelRadiusMultiplier, UBOOL _bAccurateStop, UBOOL _bSpeedIsLookAtDependent,
+		UBOOL _bFollow, FLOAT _fFollowAngle, FLOAT _fFollowDist );
+	/** StopLoco. */
+	void StopLoco( FPointer _Component, INT _RequestID );
+
 	/** The order was changed rather than replaced. */
 	void UpdateRequest( EDisDesireKind _Kind, const TCHAR* _pRetailEntryPoint );
 

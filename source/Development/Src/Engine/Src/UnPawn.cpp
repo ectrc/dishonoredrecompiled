@@ -4199,6 +4199,47 @@ void APawn::InitNavigationHandle()
 	}
 }
 
+// DISHONORED(port): 2013 rva 0x1caf50 (2012 0x1e0580, uncontroller.cpp:3108): how far above an edge's own Z a pawn of
+// this size stands when it crosses it.
+FVector APawn::GetEdgeZAdjust( FNavMeshEdgeBase* Edge )
+{
+	return FVector( 0.f, 0.f, GetCylinderExtent().Z );
+}
+
+// DISHONORED(port): 2013 rva 0x1cafa0 (2012 0x1e05d0, uncontroller.cpp:3157, 173 bytes). This is the whole of
+// FNavMeshPathParams for a pawn, and every field of it is read by the A*:
+//   bAbleToSearch  the gate UNavigationHandle::FindPath tests before it does anything - retail sets it unconditionally
+//   SearchExtent   the pawn's own cylinder, so a corridor narrower than the pawn is not a path
+//   SearchStart    the pawn's feet
+//   bCanMantle     the pawn's own mantling bit
+//   MaxDropHeight  what the pawn survives dropping (a virtual on the pawn)
+//   MinWalkableZ   the pawn's WalkableFloorZ
+//   MaxHoverDistance  -1 for a flying pawn, 10 for a walking one
+// Leaving this empty left bAbleToSearch FALSE, so every FindPath on a pawn returned FALSE at its second line. That is the
+// thirteenth instance of this project's standing pattern: a fully authored system (the whole nav-mesh runtime, 28,000
+// lines of it, and a cooked mesh of 668 polys in L_Tower_P) doing nothing because one function that fills in its inputs
+// was a placeholder.
+void APawn::SetupPathfindingParams( FNavMeshPathParams& out_ParamCache )
+{
+	out_ParamCache.bAbleToSearch = TRUE;
+	// DISHONORED(bringup): FNavMeshPathParams::SearchLaneMultiplier is reference-only - retail's struct has no such
+	// member - and in this tree it is a DISHONORED_SHIM_STATIC, i.e. ONE FLOAT shared by every pawn in the process. It is
+	// read inside the A* (UnNavigationMesh.cpp:10752, the successor-edge lane offset), so leaving it unwritten means this
+	// pawn's search uses whatever the last controller or crowd agent left there. Every writer in the tree writes 0
+	// (AController::SetupPathfindingParams, ACrowdAgentBase's), and 0 is what "retail has no lanes" means, so it is
+	// written here too rather than inherited. Agent DP's shim audit is what prompted looking.
+	out_ParamCache.SearchLaneMultiplier = 0.f;
+	out_ParamCache.SearchExtent = GetCylinderExtent();
+	out_ParamCache.SearchStart = Location;
+	out_ParamCache.SearchStart.Z -= out_ParamCache.SearchExtent.Z;
+	out_ParamCache.bCanMantle = bCanMantle;
+	// DISHONORED(bringup): retail calls a pawn virtual at vtable +1080 for this; the tree has no such virtual, and the
+	// reference AController::GetMaxDropHeight answers Pawn->LedgeCheckThreshold, which is the same quantity.
+	out_ParamCache.MaxDropHeight = LedgeCheckThreshold;
+	out_ParamCache.MinWalkableZ = WalkableFloorZ;
+	out_ParamCache.MaxHoverDistance = bCanFly ? -1.f : 10.f;
+}
+
 // DISHONORED(port): 2013 APawn::IsValidTargetFor (exec 0x1d4c40, body 0x233610): retail Shipping returns FALSE
 UBOOL APawn::IsValidTargetFor( AController* C )
 {

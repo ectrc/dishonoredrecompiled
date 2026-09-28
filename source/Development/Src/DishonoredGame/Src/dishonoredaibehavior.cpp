@@ -640,3 +640,81 @@ void UDishonoredAIBehavior::BuildInternalFilterStimMasks( BYTE* _pSubProcessesFi
 		}
 	}
 }
+
+
+/*-----------------------------------------------------------------------------
+	agent DN: the goal evaluators and constraints the AI hands the navigation mesh.
+
+	Two objects, and both come out of AWorldInfo's recycling caches rather than being constructed - which matters, because
+	a path search runs every time a destination moves and UObject allocation in that loop is what the caches exist to
+	avoid. UNavMeshGoal_At says "stop when you reach this point"; UNavMeshPath_Toward biases every edge cost towards it.
+	Without a goal evaluator UNavigationHandle::GeneratePath visits the whole reachable mesh and answers nothing, which is
+	why CallGetPathGoals reports whether the array ended up non-empty and ADishonoredNPCPawn::SetupPathGoalsAndConstraints
+	refuses the search when it did not.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x6eabc0 (2012 0x7489c0, 97 bytes). bKeepPartial (the |= 1 at +92 in the decompile, which is
+// this class's only bitfield) is what makes a blocked path return its best prefix rather than nothing, and GoalDist is
+// cleared so "reached" means the poly, not a radius.
+void UDishonoredAIBehavior::GetDefaultPathGoals( const FVector& _rFinalDestination, TArray<UNavMeshPathGoalEvaluator*>& _rOutGoals )
+{
+	AWorldInfo* pWorldInfo = GWorld ? GWorld->GetWorldInfo() : NULL;
+	if( !pWorldInfo )
+	{
+		return;
+	}
+	UNavMeshGoal_At* pGoal = (UNavMeshGoal_At*)pWorldInfo->GetNavMeshPathGoalEvaluatorFromCache( UNavMeshGoal_At::StaticClass(), NULL );
+	if( !pGoal )
+	{
+		return;
+	}
+	pGoal->Goal = _rFinalDestination;
+	pGoal->GoalDist = 0.f;
+	pGoal->bKeepPartial = TRUE;
+	_rOutGoals.AddItem( pGoal );
+}
+
+// DISHONORED(port): 2013 rva 0x6eaca0 (2012 0x748aa0, 85 bytes)
+void UDishonoredAIBehavior::GetDefaultPathConstraints( const FVector& _rFinalDestination, TArray<UNavMeshPathConstraint*>& _rOutConstraints )
+{
+	AWorldInfo* pWorldInfo = GWorld ? GWorld->GetWorldInfo() : NULL;
+	if( !pWorldInfo )
+	{
+		return;
+	}
+	UNavMeshPath_Toward* pConstraint = (UNavMeshPath_Toward*)pWorldInfo->GetNavMeshPathConstraintFromCache( UNavMeshPath_Toward::StaticClass(), NULL );
+	if( !pConstraint )
+	{
+		return;
+	}
+	pConstraint->GoalPoint = _rFinalDestination;
+	_rOutConstraints.AddItem( pConstraint );
+}
+
+// DISHONORED(port): 2013 rva 0x6eac30 (2012 0x748a30, 97 bytes). The behaviour first, then the live sub-state, and the
+// default pair only when both returned TRUE - so either of them can replace the goal entirely by answering FALSE after
+// adding its own.
+UBOOL UDishonoredAIBehavior::CallGetPathGoals( const FVector& _rFinalDestination, TArray<UNavMeshPathGoalEvaluator*>& _rOutGoals ) const
+{
+	const UBOOL bBehaviorAllowsDefault = GetPathGoals( _rFinalDestination, _rOutGoals );
+	UDisAISubState* pCurrentAISubState = m_pBehaviorFSM ? m_pBehaviorFSM->GetCurrentAISubState() : NULL;
+	const UBOOL bSubStateAllowsDefault = pCurrentAISubState ? pCurrentAISubState->GetPathGoals( _rFinalDestination, _rOutGoals ) : TRUE;
+	if( bBehaviorAllowsDefault && bSubStateAllowsDefault )
+	{
+		GetDefaultPathGoals( _rFinalDestination, _rOutGoals );
+	}
+	return _rOutGoals.Num() > 0;
+}
+
+// DISHONORED(port): 2013 rva 0x6ead10 (2012 0x748b00, 110 bytes)
+UBOOL UDishonoredAIBehavior::CallGetPathConstraints( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<UNavMeshPathConstraint*>& _rOutConstraints ) const
+{
+	const UBOOL bBehaviorAllowsDefault = GetPathConstraints( _rFinalDestination, _bForReachability, _rOutConstraints );
+	UDisAISubState* pCurrentAISubState = m_pBehaviorFSM ? m_pBehaviorFSM->GetCurrentAISubState() : NULL;
+	const UBOOL bSubStateAllowsDefault = pCurrentAISubState ? pCurrentAISubState->GetPathConstraints( _rFinalDestination, _bForReachability, _rOutConstraints ) : TRUE;
+	if( bBehaviorAllowsDefault && bSubStateAllowsDefault )
+	{
+		GetDefaultPathConstraints( _rFinalDestination, _rOutConstraints );
+	}
+	return _rOutConstraints.Num() > 0;
+}

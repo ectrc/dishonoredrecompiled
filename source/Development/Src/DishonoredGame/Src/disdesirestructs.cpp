@@ -17,6 +17,7 @@
 
 #include "DishonoredGame.h"
 #include "disdesirestructs.h"
+#include "arkcomponentlocomotion.h"
 #include "disaisubstate.h"
 #include "dishonoredutilities_ai.h"
 
@@ -106,6 +107,135 @@ void DisDesireStructs::UpdateRequest( EDisDesireKind _Kind, const TCHAR* _pRetai
 {
 	GDisDesireUpdates[_Kind]++;
 	NoteComponentGap( _Kind, _pRetailEntryPoint );
+}
+
+/*-----------------------------------------------------------------------------
+	agent DN: the locomotion half of the boundary, now real.
+-----------------------------------------------------------------------------*/
+
+/**
+ * The event the component raises comes back here and is handed to whoever asked. Retail passes a pointer-to-member of the
+ * asker (FArkCpntLocoRequestCommonProps::m_LocoEventCallback, `void (__thiscall UObject::*)(int, EArkCpntLocoEvent)`,
+ * supplied by IDisDesiresInterface::GetDesiresLocoEventCallback); in the tree that accessor answers NULL on every class,
+ * so the asker is resolved as the interface it is and told directly - which is exactly what
+ * UDisAISubStateWithDesires::DesiresLocoEventCallback does with the pointer retail hands it.
+ */
+static void DisLocoEventTrampoline( UObject* _pCallbackOwner, const INT _RequestID, const BYTE _Event )
+{
+	if( !_pCallbackOwner )
+	{
+		return;
+	}
+	if( IDisDesiresInterface* Desires = InterfaceCast<IDisDesiresInterface>( _pCallbackOwner ) )
+	{
+		Desires->HandleLocoEvent( _Event );
+	}
+}
+
+UBOOL DisDesireStructs::IsLocoRequestStarted( FPointer _Component, INT _RequestID )
+{
+	FArkComponentLocomotion* pLoco = (FArkComponentLocomotion*)_Component;
+	if( !pLoco )
+	{
+		// DISHONORED(bringup): no component (a pawn whose tweaks name no locomotion config, which is retail's own case)
+		// keeps agent DF's contract: an order that was accepted stays live until it is withdrawn. Answering FALSE here is
+		// what produced 1,523,652 requests from 26 standing NPCs in 119 seconds.
+		return TRUE;
+	}
+	return pLoco->IsRequestStarted( _RequestID );
+}
+
+/** The parameter block both Start and Update build. Retail's FDisLocoRequest::DoRequest fills the same fields. */
+static void DisFillLocoCommonProps( FArkCpntLocoRequestCommonProps& _rOut, UObject* _pAsker, INT _MaxSpeedIndex,
+	FLOAT _fEndLocationThreshold, FLOAT _fMaxFunnelRadiusMultiplier, UBOOL _bAccurateStop, UBOOL _bSpeedIsLookAtDependent )
+{
+	_rOut.m_pCallbackOwner				= _pAsker;
+	_rOut.m_LocoEventCallback			= &DisLocoEventTrampoline;
+	_rOut.m_MaxSpeedIdx					= _MaxSpeedIndex;
+	_rOut.m_EndSpeedIdx					= 0;
+	_rOut.m_fEndLocationThreshold		= _fEndLocationThreshold;
+	_rOut.m_fMaxFunnelRadiusMultiplier	= _fMaxFunnelRadiusMultiplier;
+	_rOut.m_fSpeedMultiplier			= 1.f;
+	_rOut.m_fStopBeforeEndDist			= 0.f;
+	_rOut.m_bAccurateStop				= _bAccurateStop;
+	_rOut.m_bSpeedIsLookAtDependent		= _bSpeedIsLookAtDependent;
+}
+
+INT DisDesireStructs::StartLoco( FPointer _Component, AActor* _pActorTarget, UBOOL _bUsingLocation, const FVector& _LocationTarget,
+	UObject* _pAsker, BYTE _Priority, INT _MaxSpeedIndex, FLOAT _fEndLocationThreshold,
+	FLOAT _fMaxFunnelRadiusMultiplier, UBOOL _bAccurateStop, UBOOL _bSpeedIsLookAtDependent,
+	UBOOL _bFollow, FLOAT _fFollowAngle, FLOAT _fFollowDist )
+{
+	GDisDesireRequests[DDK_Loco]++;
+	FArkComponentLocomotion* pLoco = (FArkComponentLocomotion*)_Component;
+	if( !pLoco )
+	{
+		NoteComponentGap( DDK_Loco, TEXT("FArkComponentLocomotion::StartLoco (no component on this pawn)") );
+		return GDisDesireNextRequestID++;
+	}
+	const FName AskerName = _pAsker ? _pAsker->GetFName() : NAME_None;
+	if( _pActorTarget )
+	{
+		FArkCpntLocoGoToActorProp Prop;
+		DisFillLocoCommonProps( Prop.m_CommonProps, _pAsker, _MaxSpeedIndex, _fEndLocationThreshold, _fMaxFunnelRadiusMultiplier, _bAccurateStop, _bSpeedIsLookAtDependent );
+		Prop.m_ActorProps.m_pActor		= _pActorTarget;
+		Prop.m_ActorProps.m_bFollow		= _bFollow;
+		Prop.m_ActorProps.m_fFollowAngle= _fFollowAngle;
+		Prop.m_ActorProps.m_fFollowDist	= _fFollowDist;
+		return pLoco->StartLocoToActor( _pAsker, AskerName, (INT)_Priority, Prop );
+	}
+	if( _bUsingLocation )
+	{
+		FArkCpntLocoGoToLocationProp Prop;
+		DisFillLocoCommonProps( Prop.m_CommonProps, _pAsker, _MaxSpeedIndex, _fEndLocationThreshold, _fMaxFunnelRadiusMultiplier, _bAccurateStop, _bSpeedIsLookAtDependent );
+		Prop.m_LocationProps.m_Location.Set( _LocationTarget );
+		return pLoco->StartLocoToLocation( _pAsker, AskerName, (INT)_Priority, Prop );
+	}
+	return INDEX_NONE;
+}
+
+UBOOL DisDesireStructs::UpdateLoco( FPointer _Component, INT _RequestID, AActor* _pActorTarget, UBOOL _bUsingLocation, const FVector& _LocationTarget,
+	UObject* _pAsker, BYTE _Priority, INT _MaxSpeedIndex, FLOAT _fEndLocationThreshold,
+	FLOAT _fMaxFunnelRadiusMultiplier, UBOOL _bAccurateStop, UBOOL _bSpeedIsLookAtDependent,
+	UBOOL _bFollow, FLOAT _fFollowAngle, FLOAT _fFollowDist )
+{
+	GDisDesireUpdates[DDK_Loco]++;
+	FArkComponentLocomotion* pLoco = (FArkComponentLocomotion*)_Component;
+	if( !pLoco )
+	{
+		NoteComponentGap( DDK_Loco, TEXT("FArkComponentLocomotion::UpdateLoco (no component on this pawn)") );
+		return TRUE;
+	}
+	if( _pActorTarget )
+	{
+		FArkCpntLocoGoToActorProp Prop;
+		DisFillLocoCommonProps( Prop.m_CommonProps, _pAsker, _MaxSpeedIndex, _fEndLocationThreshold, _fMaxFunnelRadiusMultiplier, _bAccurateStop, _bSpeedIsLookAtDependent );
+		Prop.m_ActorProps.m_pActor		= _pActorTarget;
+		Prop.m_ActorProps.m_bFollow		= _bFollow;
+		Prop.m_ActorProps.m_fFollowAngle= _fFollowAngle;
+		Prop.m_ActorProps.m_fFollowDist	= _fFollowDist;
+		return pLoco->UpdateLocoToActor( _RequestID, Prop );
+	}
+	if( _bUsingLocation )
+	{
+		FArkCpntLocoGoToLocationProp Prop;
+		DisFillLocoCommonProps( Prop.m_CommonProps, _pAsker, _MaxSpeedIndex, _fEndLocationThreshold, _fMaxFunnelRadiusMultiplier, _bAccurateStop, _bSpeedIsLookAtDependent );
+		Prop.m_LocationProps.m_Location.Set( _LocationTarget );
+		return pLoco->UpdateLocoToLocation( _RequestID, Prop );
+	}
+	return FALSE;
+}
+
+void DisDesireStructs::StopLoco( FPointer _Component, INT _RequestID )
+{
+	GDisDesireStops[DDK_Loco]++;
+	FArkComponentLocomotion* pLoco = (FArkComponentLocomotion*)_Component;
+	if( !pLoco )
+	{
+		NoteComponentGap( DDK_Loco, TEXT("FArkComponentLocomotion::StopLoco (no component on this pawn)") );
+		return;
+	}
+	pLoco->StopLoco( _RequestID );
 }
 
 void DisDesireStructs::NoteComponentGap( EDisDesireKind _Kind, const TCHAR* _pRetailEntryPoint )
@@ -686,7 +816,7 @@ void FDisLocoRequest::ClearParams()
 
 void FDisLocoRequest::SyncRequest()
 {
-	if( m_RequestID != INDEX_NONE && !DisDesireStructs::IsComponentRequestStarted( m_pLocoComponent ) )
+	if( m_RequestID != INDEX_NONE && !DisDesireStructs::IsLocoRequestStarted( m_pLocoComponent, m_RequestID ) )
 	{
 		m_RequestID = INDEX_NONE;
 		ClearTarget();
@@ -835,7 +965,11 @@ void FDisLocoRequest::PauseRequest()
 // DISHONORED(port): 2013 rva 0x8a7f80 (2012 0x8f8fa0)
 void FDisLocoRequest::StopRequest()
 {
-	DisDesireStructs::ReleaseRequest( DisDesireStructs::DDK_Loco, TEXT("FArkComponentLocomotion::StopLoco") );
+	// DISHONORED(port): agent DN. The order reaches the real component now.
+	if( m_RequestID != INDEX_NONE )
+	{
+		DisDesireStructs::StopLoco( m_pLocoComponent, m_RequestID );
+	}
 	m_RequestID = INDEX_NONE;
 	m_DebugLastLocoEvent = 0;
 }
@@ -855,23 +989,21 @@ void FDisLocoRequest::DoRequest( EDisDesireRequestStatus _Status )
 		return;
 	}
 
-	const TCHAR* EntryPoint = NULL;
-	if( m_pActorTarget )
-	{
-		EntryPoint = ( _Status == DTDRS_UpdateRequestNeeded ) ? TEXT("FArkComponentLocomotion::UpdateLocoToActor") : TEXT("FArkComponentLocomotion::StartLocoToActor");
-	}
-	else if( m_bUsingLocation )
-	{
-		EntryPoint = ( _Status == DTDRS_UpdateRequestNeeded ) ? TEXT("FArkComponentLocomotion::UpdateLocoToLocation") : TEXT("FArkComponentLocomotion::StartLocoToLocation");
-	}
-	else
+	if( !m_pActorTarget && !m_bUsingLocation )
 	{
 		return;
 	}
 
+	// DISHONORED(port): agent DN. Retail's two component entry points, chosen by target kind, reached for real.
 	if( _Status == DTDRS_UpdateRequestNeeded )
 	{
-		DisDesireStructs::UpdateRequest( DisDesireStructs::DDK_Loco, EntryPoint );
+		if( !DisDesireStructs::UpdateLoco( m_pLocoComponent, m_RequestID, m_pActorTarget, m_bUsingLocation, m_LocationTarget,
+				m_pAsker, m_Priority, m_MaxSpeedIndex, m_fEndLocationThreshold, m_fMaxFunnelRadiusMultiplier,
+				m_bAccurateStop, m_bSpeedIsLookAtDependent, m_bFollow, m_fFollowAngle, m_fFollowDist ) )
+		{
+			// The component has forgotten the request (it was completed and removed): a new one is needed.
+			m_RequestID = INDEX_NONE;
+		}
 	}
 	else
 	{
@@ -879,7 +1011,9 @@ void FDisLocoRequest::DoRequest( EDisDesireRequestStatus _Status )
 		{
 			StopRequest();
 		}
-		m_RequestID = DisDesireStructs::AcceptRequest( DisDesireStructs::DDK_Loco, EntryPoint );
+		m_RequestID = DisDesireStructs::StartLoco( m_pLocoComponent, m_pActorTarget, m_bUsingLocation, m_LocationTarget,
+			m_pAsker, m_Priority, m_MaxSpeedIndex, m_fEndLocationThreshold, m_fMaxFunnelRadiusMultiplier,
+			m_bAccurateStop, m_bSpeedIsLookAtDependent, m_bFollow, m_fFollowAngle, m_fFollowDist );
 	}
 }
 

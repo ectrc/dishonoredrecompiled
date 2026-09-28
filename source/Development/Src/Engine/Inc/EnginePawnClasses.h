@@ -1120,8 +1120,17 @@ public:
     {
         ProcessEvent(FindFunctionChecked(ENGINE_NotifyPathChanged),NULL);
     }
-    virtual FVector GetEdgeZAdjust(FNavMeshEdgeBase* Edge) { return FVector(0.f,0.f,0.f); }  // DISHONORED: stub, port rva 0x1e0580
-    virtual void SetupPathfindingParams( FNavMeshPathParams& out_ParamCache ) {}  // DISHONORED: stub, port rva 0x1e05d0
+    // DISHONORED(port): agent DN. Both of these were inline stubs that did nothing, and SetupPathfindingParams doing
+    // nothing is what made every nav-mesh path search on a pawn fail before it started: UNavigationHandle::FindPath calls
+    // it through IInterface_NavigationHandle to fill CachedPathParams and then returns FALSE unless
+    // CachedPathParams.bAbleToSearch is set - which only this function sets. Bodies in Engine/Src/UnPawn.cpp.
+    // 2013 rvas 0x1caf50 (GetEdgeZAdjust) and 0x1cafa0 (SetupPathfindingParams).
+    virtual FVector GetEdgeZAdjust( FNavMeshEdgeBase* Edge );
+    // DISHONORED(layout): retail declares both of these const (2013 mangled names ?GetEdgeZAdjust@APawn@@UBE... and
+    // ?SetupPathfindingParams@APawn@@UBE...). The tree's IInterface_NavigationHandle declares them non-const, which is the
+    // reference engine's spelling, and making the interface const would touch every implementor (AController,
+    // ACrowdAgentBase, AGameCrowdAgent, APylon, ADishonoredGameInfo, ADisDLC07GravehoundSpawner). Named in agentDN.md.
+    virtual void SetupPathfindingParams( FNavMeshPathParams& out_ParamCache );
     virtual void InitForPathfinding() {}
     virtual UObject* GetUObjectInterfaceArkHealthInterface(){return this;}
     virtual INT ArkGetCurHealth() const { return 0; }  // DISHONORED: stub, port rva 0x18db60
