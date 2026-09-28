@@ -707,9 +707,32 @@ void UInterpData::Serialize( FArchive& Ar )
 	Super::Serialize( Ar );
 }
 
+// DISHONORED(port): 2013 rva 0x212940. Retail reads m_Data unguarded; a cooked InterpData always has one.
+FLOAT UInterpData::GetInterpLength() const
+{
+	return m_Data != NULL ? m_Data->m_RunData.InterpLength : 0.f;
+}
+
+// DISHONORED(port): 2013 rva 0x215000
+INT UInterpData::GetNbInterpGroups() const
+{
+	return m_Data != NULL ? m_Data->m_RunData.InterpGroups.Num() : 0;
+}
+
+// DISHONORED(port): UMatineeData::GetInterpGroup, 2013 rva 0x217f60
+UInterpGroup* UInterpData::GetInterpGroup( INT Index ) const
+{
+	return m_Data != NULL ? m_Data->GetInterpGroup( Index ) : NULL;
+}
+
+FLOAT UInterpData::GetPathBuildTime() const
+{
+	return m_Data != NULL ? m_Data->m_RunData.PathBuildTime : 0.f;
+}
+
 FString UInterpData::GetValueStr()
 {
-	return FString::Printf( TEXT("Matinee Data (%3.1fs)"), InterpLength );
+	return FString::Printf( TEXT("Matinee Data (%3.1fs)"), GetInterpLength() );
 }
 
 /** Search through all InterpGroups in this InterpData to find a group whose GroupName matches the given name. Returns NULL if not group found. */
@@ -717,9 +740,9 @@ INT UInterpData::FindGroupByName(FName InGroupName)
 {
 	if(InGroupName != NAME_None)
 	{
-		for(INT i=0; i<InterpGroups.Num(); i++)
+		for(INT i=0; i<GetNbInterpGroups(); i++)
 		{
-			const FName& GroupName = InterpGroups(i)->GroupName;
+			const FName& GroupName = GetInterpGroup(i)->GroupName;
 			if( GroupName == InGroupName )
 			{
 				return i;
@@ -733,9 +756,9 @@ INT UInterpData::FindGroupByName(FName InGroupName)
 /** Search through all InterpGroups in this InterpData to find a group whose GroupName matches the given name. Returns NULL if not group found. */
 INT UInterpData::FindGroupByName(const FString& InGroupName)
 {
-	for(INT i=0; i<InterpGroups.Num(); i++)
+	for(INT i=0; i<GetNbInterpGroups(); i++)
 	{
-		const FName& GroupName = InterpGroups(i)->GroupName;
+		const FName& GroupName = GetInterpGroup(i)->GroupName;
 		if( GroupName.ToString() == InGroupName )
 		{
 			return i;
@@ -748,9 +771,9 @@ INT UInterpData::FindGroupByName(const FString& InGroupName)
 /** Search through all groups to find all tracks of the given class. */
 void UInterpData::FindTracksByClass(UClass* TrackClass, TArray<UInterpTrack*>& OutputTracks)
 {
-	for(INT i=0; i<InterpGroups.Num(); i++)
+	for(INT i=0; i<GetNbInterpGroups(); i++)
 	{
-		UInterpGroup* Group = InterpGroups(i);
+		UInterpGroup* Group = GetInterpGroup(i);
 		Group->FindTracksByClass(TrackClass, OutputTracks);
 	}
 }
@@ -758,29 +781,17 @@ void UInterpData::FindTracksByClass(UClass* TrackClass, TArray<UInterpTrack*>& O
 /** Find a DirectorGroup in the data. Should only ever be 0 or 1 of these! */
 UInterpGroupDirector* UInterpData::FindDirectorGroup()
 {
+	// DISHONORED(port): the reference caches the director group in CachedDirectorGroup and only rescans
+	// outside the game. FRuntimeMatineeData has no such field, so the scan is the only path here.
 	UInterpGroupDirector* DirGroup = NULL;
-
-	// If not in game, recheck all the interp groups to ensure there's either zero or one
-	// director group and that it hasn't changed
-	if ( !GIsGame )
+	for( INT i = 0; i < GetNbInterpGroups(); i++ )
 	{
-		for(INT i=0; i<InterpGroups.Num(); i++)
+		UInterpGroupDirector* TestDirGroup = Cast<UInterpGroupDirector>( GetInterpGroup(i) );
+		if( TestDirGroup )
 		{
-			UInterpGroupDirector* TestDirGroup = Cast<UInterpGroupDirector>( InterpGroups(i) );
-			if(TestDirGroup)
-			{
-				check(!DirGroup); // Should only have 1 DirectorGroup at most!
-				DirGroup = TestDirGroup;
-			}
+			DirGroup = TestDirGroup;
 		}
 	}
-
-	// If in game, just use the cached director group, as it cannot have changed
-	else
-	{
-		DirGroup = CachedDirectorGroup;
-	}
-
 	return DirGroup;
 }
 
@@ -813,9 +824,9 @@ void UInterpData::UpdateBakeAndPruneStatus()
 	TMap<FString,UBOOL> UsedAnimSetNames;
 	TMap<FString,UBOOL> GroupAnimSetNames;
 	TArray<FString> FoundAnimSetNames;
-	for (INT GroupIdx = 0; GroupIdx < InterpGroups.Num(); GroupIdx++)
+	for (INT GroupIdx = 0; GroupIdx < GetNbInterpGroups(); GroupIdx++)
 	{
-		UInterpGroup* Group = InterpGroups(GroupIdx);
+		UInterpGroup* Group = GetInterpGroup(GroupIdx);
 		if (Group != NULL)
 		{
 			if (Group->GroupAnimSets.Num() > 0)
@@ -1203,19 +1214,19 @@ void USeqAct_Interp::UpdateConnectorsFromData()
 			const TCHAR* LinkDescription = *VariableLinks(i).LinkDesc;
 			const FName LinkGroupName( LinkDescription );
 			const INT GroupIndex = Data->FindGroupByName( LinkGroupName );
-			if( GroupIndex == INDEX_NONE || Data->InterpGroups(GroupIndex)->IsA(UInterpGroupDirector::StaticClass()) || Data->InterpGroups(GroupIndex)->bIsFolder )
+			if( GroupIndex == INDEX_NONE || Data->GetInterpGroup(GroupIndex)->IsA(UInterpGroupDirector::StaticClass()) || Data->GetInterpGroup(GroupIndex)->bIsFolder )
 			{
 				VariableLinks.Remove(i);
 			}
 		}
 
 		// Ensure there is a connector for each InterpGroup.
-		for(INT i=0; i<Data->InterpGroups.Num(); i++)
+		for(INT i=0; i<Data->GetNbInterpGroups(); i++)
 		{
 			// Ignore director groups and folders
-			if( !Data->InterpGroups(i)->IsA(UInterpGroupDirector::StaticClass()) && !Data->InterpGroups(i)->bIsFolder )
+			if( !Data->GetInterpGroup(i)->IsA(UInterpGroupDirector::StaticClass()) && !Data->GetInterpGroup(i)->bIsFolder )
 			{
-				FName GroupName = Data->InterpGroups(i)->GroupName;
+				FName GroupName = Data->GetInterpGroup(i)->GroupName;
 				if(FindConnectorIndex( GroupName.ToString(), LOC_VARIABLE ) == INDEX_NONE)
 				{
 					FSeqVarLink NewLink;
@@ -1223,7 +1234,7 @@ void USeqAct_Interp::UpdateConnectorsFromData()
 					NewLink.MinVars = 0;
 					NewLink.MaxVars = 255;
 					NewLink.ExpectedType = USeqVar_Object::StaticClass();
-					NewLink.LinkDesc = Data->InterpGroups(i)->GroupName.ToString();
+					NewLink.LinkDesc = Data->GetInterpGroup(i)->GroupName.ToString();
 
 					VariableLinks.AddItem(NewLink);
 				}
@@ -1333,7 +1344,8 @@ void USeqAct_Interp::Activated()
 						{
 							Actor->performPhysics(1.f);
 						}
-						Actor->eventInterpolationStarted(this, GrInst);
+						// DISHONORED(retail): retail's InitInterp (2013 rva 0x2342e0) notifies no actor and
+						// Engine.Actor has no InterpolationStarted in the retail script.
 					}
 					else
 					{
@@ -1364,10 +1376,8 @@ void USeqAct_Interp::NotifyActorsOfChange()
 	for (INT i = 0; i < LatentActors.Num(); i++)
 	{
 		AActor* Actor = LatentActors(i);
-		if (Actor != NULL && !Actor->IsPendingKill())
-		{
-			Actor->eventInterpolationChanged(this);
-		}
+		// DISHONORED(retail): Engine.Actor has no InterpolationChanged in the retail script.
+		(void)Actor;
 	}
 	if (ReplicatedActor != NULL)
 	{
@@ -1482,7 +1492,7 @@ void USeqAct_Interp::DeActivated()
 			}
 		}
 		// If we reached the end, fire off the 'Complete' output.
-		else if(Position > (InterpData->InterpLength - KINDA_SMALL_NUMBER))
+		else if(Position > (InterpData->GetInterpLength() - KINDA_SMALL_NUMBER))
 		{
 			if( !OutputLinks(0).bDisabled && !(OutputLinks(0).bDisabled && GIsEditor))
 			{
@@ -1498,8 +1508,8 @@ void USeqAct_Interp::DeActivated()
 		AActor* Actor = LatentActors(i);
 		if(Actor && !Actor->IsPendingKill())
 		{
+			// DISHONORED(retail): Engine.Actor has no InterpolationFinished in the retail script.
 			Actor->LatentActions.RemoveItem(this);
-			Actor->eventInterpolationFinished(this);
 		}
 	}
 	if (ReplicatedActor != NULL)
@@ -1636,10 +1646,10 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 		return;
 
 	// DISHONORED(bringup): a zero-length matinee makes the two looping wraps below
-	// (`while(NewPosition > InterpData->InterpLength)` and `while(NewPosition < 0.f)`) spin forever, which is where the world tick
+	// (`while(NewPosition > InterpData->GetInterpLength())` and `while(NewPosition < 0.f)`) spin forever, which is where the world tick
 	// stops after the main-menu map change (Dishonored_MainMenu's SeqAct_Interp_14). Arkane keeps the tracks in
 	// UMatineeData::m_Data and leaves UInterpData::InterpLength at 0 until that is ported (agent AF's finding B1, wave 5 item).
-	if(InterpData->InterpLength <= 0.f)
+	if(InterpData->GetInterpLength() <= 0.f)
 		return;
 
 	// do nothing if client side only and no affected Actors are recently visible
@@ -1673,12 +1683,12 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 		{
 			NewPosition = Position + (DeltaSeconds * PlayRate);
 
-			if(NewPosition > InterpData->InterpLength)
+			if(NewPosition > InterpData->GetInterpLength())
 			{
 				// If looping, play to end, jump to start, and set target to somewhere near the beginning.
 				if(bLooping)
 				{
-					UpdateInterp(InterpData->InterpLength, bPreview);
+					UpdateInterp(InterpData->GetInterpLength(), bPreview);
 
 					if(bNoResetOnRewind)
 					{
@@ -1687,9 +1697,9 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 
 					UpdateInterp(0.f, bPreview, true);
 
-					while(NewPosition > InterpData->InterpLength)
+					while(NewPosition > InterpData->GetInterpLength())
 					{
-						NewPosition -= InterpData->InterpLength;
+						NewPosition -= InterpData->GetInterpLength();
 					}
 
 					bLooped = true;
@@ -1697,7 +1707,7 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 				// If not looping, snap to end and stop playing.
 				else
 				{
-					NewPosition = InterpData->InterpLength;
+					NewPosition = InterpData->GetInterpLength();
 					bShouldStopPlaying = TRUE;
 				}
 			}
@@ -1713,11 +1723,11 @@ void USeqAct_Interp::StepInterp(FLOAT DeltaSeconds, UBOOL bPreview)
 				if(bLooping)
 				{
 					UpdateInterp(0.f, bPreview);
-					UpdateInterp(InterpData->InterpLength, bPreview, true);
+					UpdateInterp(InterpData->GetInterpLength(), bPreview, true);
 
 					while(NewPosition < 0.f)
 					{
-						NewPosition += InterpData->InterpLength;
+						NewPosition += InterpData->GetInterpLength();
 					}
 
 					bLooped = true;
@@ -1830,9 +1840,9 @@ UInterpGroupDirector* USeqAct_Interp::FindDirectorGroup()
 {
 	if(InterpData)
 	{
-		for(INT i=0; i<InterpData->InterpGroups.Num(); i++)
+		for(INT i=0; i<InterpData->GetNbInterpGroups(); i++)
 		{
-			UInterpGroup* Group = InterpData->InterpGroups(i);
+			UInterpGroup* Group = InterpData->GetInterpGroup(i);
 			UInterpGroupDirector* DirGroup = Cast<UInterpGroupDirector>(Group);
 			if (DirGroup)
 			{
@@ -1936,9 +1946,9 @@ void USeqAct_Interp::InitInterp()
 			}
 		}
 
-		for(INT i=0; i<InterpData->InterpGroups.Num(); i++)
+		for(INT i=0; i<InterpData->GetNbInterpGroups(); i++)
 		{
-			UInterpGroup* Group = InterpData->InterpGroups(i);
+			UInterpGroup* Group = InterpData->GetInterpGroup(i);
 
 			// If this is a DirectorGroup, we find a player controller and pass it in instead of looking to a variable.
 			UInterpGroupDirector* DirGroup = Cast<UInterpGroupDirector>(Group);
@@ -2049,7 +2059,7 @@ void USeqAct_Interp::SetupCameraCuts()
 			if ( GroupIndex != INDEX_NONE && ViewGroupInst )
 			{
 				// Find a valid move track for this cut.
-				UInterpGroup* Group = InterpData->InterpGroups(GroupIndex);
+				UInterpGroup* Group = InterpData->GetInterpGroup(GroupIndex);
 				for(INT TrackIndex=0; TrackIndex < Group->InterpTracks.Num(); TrackIndex++)
 				{
 					UInterpTrackMove* MoveTrack = Cast<UInterpTrackMove>(Group->InterpTracks(TrackIndex));
@@ -2110,9 +2120,9 @@ void USeqAct_Interp::AddPlayerToDirectorTracks(APlayerController* PC)
 	// if we aren't initialized (i.e. not currently running) then do nothing
 	if (PC != NULL && InterpData != NULL && GroupInst.Num() > 0 && GIsGame)
 	{
-		for (INT i = 0; i < InterpData->InterpGroups.Num(); i++)
+		for (INT i = 0; i < InterpData->GetNbInterpGroups(); i++)
 		{
-			UInterpGroupDirector* DirGroup = Cast<UInterpGroupDirector>(InterpData->InterpGroups(i));
+			UInterpGroupDirector* DirGroup = Cast<UInterpGroupDirector>(InterpData->GetInterpGroup(i));
 			if (DirGroup != NULL)
 			{
 				UBOOL bAlreadyHasGroup = FALSE;
@@ -2153,7 +2163,7 @@ void USeqAct_Interp::UpdateInterp(FLOAT NewPosition, UBOOL bPreview, UBOOL bJump
 		return;
 	}
 
-	NewPosition = Clamp(NewPosition, 0.f, InterpData->InterpLength);
+	NewPosition = Clamp(NewPosition, 0.f, InterpData->GetInterpLength());
 
 	// Initialize the "buckets" to sort group insts by Base depth. 
 	TArray< TArray<UInterpGroupInst*> > SortedGroupInsts;
@@ -2220,8 +2230,8 @@ void USeqAct_Interp::UpdateInterp(FLOAT NewPosition, UBOOL bPreview, UBOOL bJump
 
 	// check for any attached cover links that should be updated
 	if (bInterpForPathBuilding &&
-		Position <= InterpData->PathBuildTime &&
-		NewPosition > InterpData->PathBuildTime)
+		Position <= InterpData->GetPathBuildTime() &&
+		NewPosition > InterpData->GetPathBuildTime())
 	{
 		for (INT Idx = 0; Idx < LinkedCover.Num(); Idx++)
 		{
@@ -2246,9 +2256,9 @@ void USeqAct_Interp::UpdateInterp(FLOAT NewPosition, UBOOL bPreview, UBOOL bJump
 	{
 		// this is only to update preview meshes/stage mark groups for AI group
 		// since I need AIGroup and AIGroupInst to separate, I'll need to clear variabel after update
-		for ( INT I=0; I<InterpData->InterpGroups.Num(); ++I )
+		for ( INT I=0; I<InterpData->GetNbInterpGroups(); ++I )
 		{
-			UInterpGroupAI * AIGroup = Cast<UInterpGroupAI>(InterpData->InterpGroups(I));
+			UInterpGroupAI * AIGroup = Cast<UInterpGroupAI>(InterpData->GetInterpGroup(I));
 			if ( AIGroup )
 			{
 				if (AIGroup->bRecreatePreviewPawn)
@@ -2779,7 +2789,7 @@ void UInterpGroup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChanged
 	if (PropertyChangedEvent.Property->GetName() == TEXT("GroupAnimSets"))
 	{
 		// Update the interp data bake and prune list
-		UInterpData* InterpData = Cast<UInterpData>(GetOuter());
+		UInterpData* InterpData = GetInterpData();
 		if (InterpData != NULL)
 		{
 			InterpData->UpdateBakeAndPruneStatus();
@@ -2975,19 +2985,27 @@ void UInterpGroup::UpdateAnimWeights(FLOAT NewPosition, class UInterpGroupInst* 
 	UpdateAnimWeightsSlotInfos.Reset();
 }
 
+// DISHONORED(retail): 2013 has no UInterpGroup::GetInterpData; the walk is written here because the
+// reference reads Outer directly at nine sites and Arkane's object graph has one more level.
+UInterpData* UInterpGroup::GetInterpData() const
+{
+	UMatineeData* Data = Cast<UMatineeData>( GetOuter() );
+	return Data != NULL ? Cast<UInterpData>( Data->GetOuter() ) : Cast<UInterpData>( GetOuter() );
+}
+
 /** Ensure this group name is unique within this InterpData (its Outer). */
 void UInterpGroup::EnsureUniqueName()
 {
-	UInterpData* IData = CastChecked<UInterpData>( GetOuter() );
+	UInterpData* IData = GetInterpData();
 
 	FName NameBase = GroupName;
 	INT Suffix = 0;
 
 	// Test all other groups apart from this one to see if name is already in use
 	UBOOL bNameInUse = false;
-	for(INT i=0; i<IData->InterpGroups.Num(); i++)
+	for(INT i=0; i<IData->GetNbInterpGroups(); i++)
 	{
-		if( (IData->InterpGroups(i) != this) && (IData->InterpGroups(i)->GroupName == GroupName) )
+		if( (IData->GetInterpGroup(i) != this) && (IData->GetInterpGroup(i)->GroupName == GroupName) )
 		{
 			bNameInUse = true;
 		}
@@ -3001,9 +3019,9 @@ void UInterpGroup::EnsureUniqueName()
 		Suffix++;
 
 		bNameInUse = false;
-		for(INT i=0; i<IData->InterpGroups.Num(); i++)
+		for(INT i=0; i<IData->GetNbInterpGroups(); i++)
 		{
-			if( (IData->InterpGroups(i) != this) && (IData->InterpGroups(i)->GroupName == GroupName) )
+			if( (IData->GetInterpGroup(i) != this) && (IData->GetInterpGroup(i)->GroupName == GroupName) )
 			{
 				bNameInUse = true;
 			}
@@ -3056,9 +3074,9 @@ IMPLEMENT_CLASS(UInterpFilter);
 void UInterpFilter::FilterData(class USeqAct_Interp* InData)
 {
 	// Mark our custom filtered groups as visible
-	for( INT GroupIdx = 0; GroupIdx < InData->InterpData->InterpGroups.Num(); GroupIdx++)
+	for( INT GroupIdx = 0; GroupIdx < InData->InterpData->GetNbInterpGroups(); GroupIdx++)
 	{
-		UInterpGroup* CurGroup = InData->InterpData->InterpGroups( GroupIdx );
+		UInterpGroup* CurGroup = InData->InterpData->GetInterpGroup(GroupIdx);
 		CurGroup->bVisible = TRUE;
 
 		for( INT CurTrackIndex = 0; CurTrackIndex < CurGroup->InterpTracks.Num(); ++CurTrackIndex )
@@ -3082,9 +3100,9 @@ IMPLEMENT_CLASS(UInterpFilter_Classes);
 void UInterpFilter_Classes::FilterData(USeqAct_Interp* InData)
 {
 #if WITH_EDITORONLY_DATA
-	for(INT GroupIdx=0; GroupIdx<InData->InterpData->InterpGroups.Num(); GroupIdx++)
+	for(INT GroupIdx=0; GroupIdx<InData->InterpData->GetNbInterpGroups(); GroupIdx++)
 	{
-		UInterpGroup* Group = InData->InterpData->InterpGroups(GroupIdx);
+		UInterpGroup* Group = InData->InterpData->GetInterpGroup(GroupIdx);
 		UInterpGroupInst* GroupInst = InData->FindFirstGroupInst(Group);
 
 		UBOOL bIncludeThisGroup = TRUE;
@@ -6432,7 +6450,7 @@ void UInterpTrackToggle::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( ToggleInst->GetOuter() );
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = CastChecked<UInterpData>( Group->GetOuter() );
+	UInterpData* IData = Group->GetInterpData();
 
 
 
@@ -6518,7 +6536,7 @@ void UInterpTrackToggle::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst
 			MaxTime = NewPosition;
 
 			// Slight hack here.. if playing forwards and reaching the end of the sequence, force it over a little to ensure we fire events actually on the end of the sequence.
-			if( MaxTime == IData->InterpLength )
+			if( MaxTime == IData->GetInterpLength() )
 			{
 				MaxTime += (FLOAT)KINDA_SMALL_NUMBER;
 			}
@@ -7898,7 +7916,7 @@ void UInterpTrackEvent::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst,
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( EventInst->GetOuter() );
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = CastChecked<UInterpData>( Group->GetOuter() );
+	UInterpData* IData = Group->GetInterpData();
 
 	// We'll consider playing events in reverse if we're either actively playing in reverse or if
 	// we're in a paused state but forcing an update to an older position (scrubbing backwards in editor.)
@@ -7930,7 +7948,7 @@ void UInterpTrackEvent::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst,
 		MaxTime = NewPosition;
 
 		// Slight hack here.. if playing forwards and reaching the end of the sequence, force it over a little to ensure we fire events actually on the end of the sequence.
-		if(MaxTime == IData->InterpLength)
+		if(MaxTime == IData->GetInterpLength())
 		{
 			MaxTime += (FLOAT)KINDA_SMALL_NUMBER;
 		}
@@ -9798,7 +9816,7 @@ void UInterpTrackSound::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst,
 
 	// Apply master volume and pitch scale
 	{
-		UInterpData* IData = CastChecked<UInterpData>( Group->GetOuter() );
+		UInterpData* IData = Group->GetInterpData();
 		UInterpGroupDirector* DirGroup = IData->FindDirectorGroup();
 		if( DirGroup != NULL )
 		{
@@ -9834,11 +9852,11 @@ void UInterpTrackSound::PreviewUpdateTrack(FLOAT NewPosition, UInterpTrackInst* 
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpTrackInstSound* SoundInst = CastChecked<UInterpTrackInstSound>( TrInst );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = CastChecked<UInterpData>( Group->GetOuter() );
+	UInterpData* IData = Group->GetInterpData();
 
 	// If the new position for the track is past the end of the interp length, then the sound
 	// should stop, unless the user has specified to continue playing the sound past matinee's end
-	if ( NewPosition >= IData->InterpLength && !bContinueSoundOnMatineeEnd && SoundInst->PlayAudioComp && SoundInst->PlayAudioComp->IsPlaying() )
+	if ( NewPosition >= IData->GetInterpLength() && !bContinueSoundOnMatineeEnd && SoundInst->PlayAudioComp && SoundInst->PlayAudioComp->IsPlaying() )
 	{
 		SoundInst->PlayAudioComp->Stop();
 	}
@@ -11648,7 +11666,7 @@ void UInterpTrackVisibility::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* Tr
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( TrInst->GetOuter() );
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = CastChecked<UInterpData>( Group->GetOuter() );
+	UInterpData* IData = Group->GetInterpData();
 
 
 	// NOTE: We don't fire events when jumping forwards in Matinee preview since that would
@@ -11691,7 +11709,7 @@ void UInterpTrackVisibility::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* Tr
 		MaxTime = NewPosition;
 
 		// Slight hack here.. if playing forwards and reaching the end of the sequence, force it over a little to ensure we fire events actually on the end of the sequence.
-		if( MaxTime == IData->InterpLength )
+		if( MaxTime == IData->GetInterpLength() )
 		{
 			MaxTime += (FLOAT)KINDA_SMALL_NUMBER;
 		}

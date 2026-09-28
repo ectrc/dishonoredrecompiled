@@ -4735,6 +4735,12 @@ public:
     DISHONORED_SHIM_STATIC class UInterpGroupDirector* CachedDirectorGroup;
 
     DECLARE_CLASS(UInterpData,USequenceVariable,0,Engine)
+	// DISHONORED(port): Arkane's InterpData owns nothing but m_Data; the reference members above it are
+	// storage-less shims. These three are where the runtime reads the real payload from.
+	FLOAT GetInterpLength() const; // 2013 rva 0x212940
+	INT GetNbInterpGroups() const; // 2013 rva 0x215000
+	class UInterpGroup* GetInterpGroup( INT Index ) const; // 2013 rva 0x217f60 (UMatineeData::GetInterpGroup)
+	FLOAT GetPathBuildTime() const;
 	// UObject interface
 	/**
 	 * This function is being called after all objects referenced by this object have been serialized.

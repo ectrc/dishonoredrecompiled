@@ -206,8 +206,10 @@ extern void AutoGenerateNamesDishonoredGame();
 extern void AutoGenerateNamesAkAudio();
 #endif
 
+// DISHONORED(bringup): the GFxUI module is linked whenever DISHONORED_ENABLE_GFXUI is on, with or
+// without the Scaleform SDK, and AutoInitializeRegistrantsGFxUI below is already called unconditionally.
+extern void AutoGenerateNamesGFxUI();
 #if WITH_GFx
-	extern void AutoGenerateNamesGFxUI();
 	extern void AutoGenerateNamesGFxUIEditor();
 #endif // WITH_GFx
 
@@ -4376,9 +4378,9 @@ void InitializeRegistrantsAndRegisterNames()
 	AutoGenerateNamesCore();
 	AutoGenerateNamesEngine();
 	AutoGenerateNamesGameFramework();
-#if WITH_GFx
+	// DISHONORED(bringup): unconditional, as the registrant call is. Without it every GFXUI_* FName is
+	// None and the first ProcessEvent through one of them calls appErrorf.
 	AutoGenerateNamesGFxUI();
-#endif // WITH_GFx
 #if _WINDOWS && WITH_EDITOR
 	AutoGenerateNamesUnrealEd();
 	#if WITH_GFx

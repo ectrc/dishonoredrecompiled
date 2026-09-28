@@ -396,9 +396,16 @@ void FGFxExternalInterface::Callback( GFxMovieView* pMovie, const char* MethodNa
 // still shows up somewhere visible.
 void FGFxFSCommandHandler::Callback( GFxMovieView* pMovie, const char* Command, const char* Args )
 {
+	// DISHONORED(bringup): -gfxuifscmd, the fscommand routing census.
+	static UBOOL bTraceParsed = FALSE, bTrace = FALSE;
+	if( !bTraceParsed ) { bTraceParsed = TRUE; bTrace = ParseParam( appCmdLine(), TEXT("gfxuifscmd") ); }
 	if( Command == NULL )
 	{
 		return;
+	}
+	if( bTrace )
+	{
+		debugf( TEXT("DISHONORED(bringup): fscommand '%s' arg '%s' movie %p"), ANSI_TO_TCHAR(Command), Args ? ANSI_TO_TCHAR(Args) : TEXT(""), pMovie );
 	}
 	UGFxMoviePlayer* Movie = pMovie ? (UGFxMoviePlayer*)pMovie->GetUserData() : NULL;
 	if( Movie == NULL || GWorld == NULL )
@@ -418,6 +425,7 @@ void FGFxFSCommandHandler::Callback( GFxMovieView* pMovie, const char* Command, 
 	USequence* GameSequence = GWorld->GetGameSequence( NULL );
 	if( GameSequence == NULL )
 	{
+		if( bTrace ) { debugf( TEXT("DISHONORED(bringup): fscommand: no game sequence") ); }
 		return;
 	}
 	TArray<USequenceObject*> Events;
@@ -425,17 +433,37 @@ void FGFxFSCommandHandler::Callback( GFxMovieView* pMovie, const char* Command, 
 
 	const FString CommandString = FString( FUTF8ToTCHAR( Command ) );
 	const FString ArgString = FString( FUTF8ToTCHAR( Args ) );
+	INT NameMatches = 0, Routed = 0;
 	for( INT Index = 0; Index < Events.Num(); Index++ )
 	{
 		UGFxEvent_FSCommand* Event = Cast<UGFxEvent_FSCommand>( Events(Index) );
-		if( Event == NULL || Event->Movie != Movie->MovieInfo || Event->FSCommand != CommandString )
+		if( Event == NULL )
+		{
+			continue;
+		}
+		if( bTrace && Event->FSCommand == CommandString )
+		{
+			NameMatches++;
+			debugf( TEXT("DISHONORED(bringup): fscommand: node %s wants movie %s, this movie is %s, handler %s"),
+				*Event->GetPathName(),
+				Event->Movie ? *Event->Movie->GetPathName() : TEXT("NONE"),
+				Movie->MovieInfo ? *Movie->MovieInfo->GetPathName() : TEXT("NONE"),
+				Event->Handler ? *Event->Handler->GetClass()->GetName() : TEXT("NONE") );
+		}
+		if( Event->Movie != Movie->MovieInfo || Event->FSCommand != CommandString )
 		{
 			continue;
 		}
 		if( Event->Handler )
 		{
 			Event->Handler->eventFSCommand( Movie, Event, CommandString, ArgString );
+			Routed++;
 		}
+	}
+	if( bTrace )
+	{
+		debugf( TEXT("DISHONORED(bringup): fscommand '%s': %d nodes in the sequence, %d by name, %d routed"),
+			*CommandString, Events.Num(), NameMatches, Routed );
 	}
 }
 

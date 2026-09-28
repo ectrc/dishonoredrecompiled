@@ -2862,7 +2862,7 @@ UBOOL UEngine::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
 		for( TObjectIterator<UInterpGroup> It; It; ++It )
 		{
 			UInterpGroup* InterpGroup = *It;
-			UInterpData* OuterInterpData = Cast<UInterpData>(InterpGroup->GetOuter());
+			UInterpData* OuterInterpData = InterpGroup->GetInterpData();
 						// Iterate over all tracks to find anim control tracks and their anim sequences.
 			for( INT TrackIndex=0; TrackIndex<InterpGroup->InterpTracks.Num(); TrackIndex++ )
 			{

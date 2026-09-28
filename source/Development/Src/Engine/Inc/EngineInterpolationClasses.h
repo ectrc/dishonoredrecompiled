@@ -194,6 +194,9 @@ public:
     //## END PROPS InterpGroup
 
     DECLARE_CLASS(UInterpGroup,UObject,0,Engine)
+	// DISHONORED(retail): a group's Outer is the UMatineeData that holds it and the UInterpData is that
+	// data's own Outer - the cooked path is <InterpData>.<MatineeData>.<Group>.
+	class UInterpData* GetInterpData() const;
 	// UObject interface
 	virtual void PostLoad();
 

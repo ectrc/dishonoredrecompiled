@@ -235,6 +235,18 @@ GFxCharPosInfo::GFxCharPosInfo()
     for (int i = 0; i < 4; ++i) { ColorTransform.M_[i][0] = 1.f; ColorTransform.M_[i][1] = 0.f; }
 }
 
+// DISHONORED(bringup, agent DK): the filter census. One line per distinct (kind, instance name).
+static unsigned int GFxDK_FilterCounts[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+void GFxDK_NoteFilter(unsigned char kind, const char* name)
+{
+    static const char* Kinds[8] = { "DropShadow", "Blur", "Glow", "Bevel", "GradientGlow",
+                                    "Convolution", "ColorMatrix", "GradientBevel" };
+    if (kind < 8)
+        ++GFxDK_FilterCounts[kind];
+    GFxLogf("DISHONORED(bringup): PlaceObject3 filter: %s on '%s'",
+            kind < 8 ? Kinds[kind] : "unknown", (name && name[0]) ? name : "<unnamed>");
+}
+
 void GFxPlaceObject2Tag::Read(GFxStream* s, unsigned int tagCode)
 {
     // The flag bits and their order are GFxPlaceObject2::UnpackBase's (2012 0xa0bab0).
@@ -260,7 +272,30 @@ void GFxPlaceObject2Tag::Read(GFxStream* s, unsigned int tagCode)
         Pos.ClipDepth = s->ReadU16();
     if (bIsPlaceObject3)
     {
-        if (flags3 & 0x01) { /* filter list */ }
+        if (flags3 & 0x01)
+        {
+            // DISHONORED(port): GFx_LoadFilters (2012 0xa93b60) - a u8 count and that many records.
+            // The records are stepped over by their fixed sizes, as GFxButtonRecord::Read does, and
+            // counted per kind so the census can say what the cook asks for.
+            const unsigned int count = s->ReadU8();
+            for (unsigned int i = 0; i < count; ++i)
+            {
+                const unsigned char kind = s->ReadU8();
+                GFxDK_NoteFilter(kind, Pos.HasName() ? Pos.Name : "");
+                switch (kind)
+                {
+                case 0: s->Skip(23); break;                            // drop shadow
+                case 1: s->Skip(9);  break;                            // blur
+                case 2: s->Skip(15); break;                            // glow
+                case 3: s->Skip(27); break;                            // bevel
+                case 4: case 7: { const unsigned int n = s->ReadU8(); s->Skip(5u * n + 19u); break; }
+                case 5: { const unsigned int mx = s->ReadU8(); const unsigned int my = s->ReadU8();
+                          s->Skip(8u + 4u * mx * my + 1u); break; }
+                case 6: s->Skip(80); break;                            // colour matrix
+                default: i = count; break;
+                }
+            }
+        }
         if (flags3 & 0x02) Pos.BlendMode = s->ReadU8();
         if (flags3 & 0x04) s->ReadU8();
     }

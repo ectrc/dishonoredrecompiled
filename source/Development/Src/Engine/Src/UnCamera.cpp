@@ -244,118 +244,23 @@ UBOOL ACamera::PlayerControlled()
 }
 
 
+// DISHONORED(port): 2013 rva 0x1e5b40 (2012 0x1fb9f0). Retail's body is the modifier loop only - the
+// reference's camera-anim half (ActiveAnims / AnimCameraActor / InitTempCameraActor / ApplyAnimToCamera)
+// is not in it, and its unconditional AnimCameraActor write is a null dereference here because nothing
+// spawns that temporary actor.
 void ACamera::ApplyCameraModifiers(FLOAT DeltaTime, FTPOV& OutPOV)
 {
-	// Loop through each camera modifier
 	for( INT ModifierIdx = 0; ModifierIdx < ModifierList.Num(); ++ModifierIdx )
 	{
-		// Apply camera modification and output into DesiredCameraOffset/DesiredCameraRotation
-		if( ModifierList(ModifierIdx) != NULL &&
-			!ModifierList(ModifierIdx)->IsDisabled() )
+		if( ModifierList(ModifierIdx) != NULL && !ModifierList(ModifierIdx)->IsDisabled() )
 		{
-			// If ModifyCamera returns true, exit loop
-			// Allows high priority things to dictate if they are
-			// the last modifier to be applied
+			// a high-priority modifier can declare itself the last one applied
 			if( ModifierList(ModifierIdx)->ModifyCamera(this, DeltaTime, OutPOV) )
 			{
 				break;
 			}
 		}
 	}
-
-	// Now apply CameraAnims
-	// these essentially behave as the highest-pri modifier.
-
-	// apply each camera anim
-	for (INT Idx=0; Idx<ActiveAnims.Num(); ++Idx)
-	{
-		UCameraAnimInst* const AnimInst = ActiveAnims(Idx);
-
-		if (!AnimInst->bFinished)
-		{
-			// clear out animated camera actor
-			InitTempCameraActor(AnimCameraActor, AnimInst->CamAnim);
-
-			// evaluate the animation at the new time
-			AnimInst->AdvanceAnim(DeltaTime, FALSE);
-
-			if (!PCOwner->bBlockCameraAnimsFromOverridingPostProcess)
-			{
-				// store PP settings in the inst for later application
-				AnimInst->LastPPSettings = AnimCameraActor->CamOverridePostProcess;
-				AnimInst->LastPPSettingsAlpha = AnimCameraActor->CamOverridePostProcessAlpha;
-			}
-
-			// Add weighted properties to the accumulator actor
-			if (AnimInst->CurrentBlendWeight > 0.f)
-			{
-				ApplyAnimToCamera(AnimCameraActor, AnimInst, OutPOV);
-			}
-
-#if !FINAL_RELEASE
-			if (PCOwner->bDebugCameraAnims)
-			{
-				WorldInfo->AddOnScreenDebugMessage((QWORD)AnimInst, 1.0f, FColor(255,255,255), FString::Printf(TEXT("%s: CurrentBlendWeight: %f CurTime: %f"), *AnimInst->CamAnim->GetName(), AnimInst->CurrentBlendWeight, AnimInst->CurTime));
-
-				// debug information
-				if (AnimInst->LastCameraLoc.IsZero()==FALSE)
-				{
-					// draw persistent line
-					WorldInfo->DrawDebugLine(AnimInst->LastCameraLoc, OutPOV.Location, 0, 150, 0, TRUE);
-					WorldInfo->DrawDebugLine(OutPOV.Location, OutPOV.Location+OutPOV.Rotation.Vector()*10.f, 150, 150, 0, TRUE);
-
-					FVector BoxExtent(30, 30, 100);
-					if (PCOwner->Pawn)
-					{
-						if (PCOwner->Pawn->CylinderComponent)
-						{
-							BoxExtent = FVector(PCOwner->Pawn->CylinderComponent->CollisionRadius, PCOwner->Pawn->CylinderComponent->CollisionRadius, PCOwner->Pawn->CylinderComponent->CollisionHeight );
-						}
-
-						if (PCOwner->Pawn->Mesh)
-						{
-							// if not first time, draw small coordinate of the roation on the root location
-							FBoneAtom RootBA = PCOwner->Pawn->Mesh->GetBoneAtom(0);
-							FVector RootLocation = RootBA.GetOrigin()+FVector(0, 0, BoxExtent.Z);
-							FRotator RootRotation = RootBA.GetRotation().Rotator();
-							//WorldInfo->DrawDebugSphere(RootLocation, 10, 10, 150, 150, 150, TRUE);
-							WorldInfo->DrawDebugCoordinateSystem(RootLocation, RootRotation, 10,  TRUE);
-						}
-					}
-				}
-				else if (PCOwner->Pawn)
-				{
-					// initial location
-					FVector BoxExtent(30, 30, 100);
-					if (PCOwner->Pawn->CylinderComponent)
-					{
-						BoxExtent = FVector(PCOwner->Pawn->CylinderComponent->CollisionRadius, PCOwner->Pawn->CylinderComponent->CollisionRadius, PCOwner->Pawn->CylinderComponent->CollisionHeight );
-					}
-
-					WorldInfo->DrawDebugBox(PCOwner->Pawn->Location, BoxExtent, 255, 255, 0, TRUE);
-					WorldInfo->DrawDebugCoordinateSystem(PCOwner->Pawn->Location, PCOwner->Pawn->Rotation, 50,  TRUE);
-				}
-
-				AnimInst->LastCameraLoc = OutPOV.Location;
-			}
-#endif
-		}
-
-		// handle animations that have finished
-		if (AnimInst->bFinished && AnimInst->bAutoReleaseWhenFinished)
-		{
-			ReleaseCameraAnimInst(AnimInst);
-			Idx--;		// we removed this from the ActiveAnims array
-		}
-
-		// changes to this are good for a single update, so reset this to 1.f after processing
-		AnimInst->TransientScaleModifier = 1.f;
-	}
-
-	// need to zero this when we are done with it.  playing another animation
-	// will calc a new InitialTM for the move track instance based on these values.
-	AnimCameraActor->Location = FVector::ZeroVector;
-	AnimCameraActor->Rotation = FRotator::ZeroRotator;
 }
 
 void ACamera::ApplyAnimToCamera(class ACameraActor const* AnimatedCamActor, class UCameraAnimInst const* AnimInst, FTPOV& OutPOV)
@@ -1175,7 +1080,7 @@ UBOOL UCameraAnim::CreateFromInterpGroup(class UInterpGroup* SrcGroup, class USe
 #endif
 	
 	// copy length information
-	AnimLength = (Interp && Interp->InterpData) ? Interp->InterpData->InterpLength : 0.f;
+	AnimLength = (Interp && Interp->InterpData) ? Interp->InterpData->GetInterpLength() : 0.f;
 
 	UInterpGroupCamera* OldGroup = CameraInterpGroup;
 

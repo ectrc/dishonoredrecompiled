@@ -3080,6 +3080,9 @@ struct FDishonoredKismetCensus
 	DOUBLE				WorldStart;
 	INT					InventoryLevels;
 	UBOOL				bForceParsed;
+	UBOOL				bMatineeParsed;
+	UBOOL				bMatinee;
+	TArray<USeqAct_Interp*>	DescribedPlaying;
 	UBOOL				bForceDone;
 	FLOAT				ForceDelay;
 	TArray<FString>		ForcePatterns;
@@ -3119,6 +3122,7 @@ struct FDishonoredKismetCensus
 		NextReport		= WorldStart;
 		InventoryLevels	= -1;
 		bForceDone		= FALSE;
+		DescribedPlaying.Empty();
 		SequenceTicks = OpsExecuted = OpsActivated = OpsDeactivated = OpsLatent = OpsStillActive = 0;
 		OpsReActivated = OutputsFollowed = DelayedQueued = DelayedFired = StepCaps = 0;
 		EventsChecked = EventsFired = EventsQueued = EventsRegistered = ScriptFinds = 0;
@@ -3213,6 +3217,159 @@ struct FDishonoredKismetCensus
 				Nested++;
 				Collect( Sequence->NestedSequences(Idx), ClassCount, Notable, Objects, Nested );
 			}
+		}
+	}
+
+	/** DISHONORED(bringup): -dismatinee, the matinee and camera half of the census. */
+	UBOOL IsMatineeOn()
+	{
+		if( !bMatineeParsed )
+		{
+			bMatineeParsed = TRUE;
+			bMatinee = ParseParam( appCmdLine(), TEXT("dismatinee") );
+		}
+		return bMatinee;
+	}
+
+	void CollectInterps( USequence* Sequence, TArray<USeqAct_Interp*>& Interps )
+	{
+		if( Sequence == NULL )
+		{
+			return;
+		}
+		for( INT Idx = 0; Idx < Sequence->SequenceObjects.Num(); Idx++ )
+		{
+			USeqAct_Interp* Interp = Cast<USeqAct_Interp>( Sequence->SequenceObjects(Idx) );
+			if( Interp != NULL )
+			{
+				Interps.AddUniqueItem( Interp );
+			}
+		}
+		for( INT Idx = 0; Idx < Sequence->NestedSequences.Num(); Idx++ )
+		{
+			CollectInterps( Sequence->NestedSequences(Idx), Interps );
+		}
+	}
+
+	void GatherInterps( TArray<USeqAct_Interp*>& Interps )
+	{
+		for( INT LevelIdx = 0; LevelIdx < GWorld->Levels.Num(); LevelIdx++ )
+		{
+			ULevel* Level = GWorld->Levels(LevelIdx);
+			for( INT SeqIdx = 0; Level != NULL && SeqIdx < Level->GameSequences.Num(); SeqIdx++ )
+			{
+				CollectInterps( Level->GameSequences(SeqIdx), Interps );
+			}
+		}
+	}
+
+	void DescribeInterp( USeqAct_Interp* Interp )
+	{
+			UInterpData* Data = Interp->InterpData;
+			debugf( TEXT("DISHONORED(bringup): matinee inventory: %s data %s (%d groups, %d groupinst, playing %d, position %.2f, length %.2f, looping %d)"),
+				*Interp->GetName(), Data != NULL ? *Data->GetName() : TEXT("NONE"),
+				Data != NULL ? Data->GetNbInterpGroups() : 0, Interp->GroupInst.Num(),
+				(INT)Interp->bIsPlaying, Interp->Position, Data != NULL ? Data->GetInterpLength() : 0.f, (INT)Interp->bLooping );
+			for( INT GroupIdx = 0; Data != NULL && GroupIdx < Data->GetNbInterpGroups(); GroupIdx++ )
+			{
+				UInterpGroup* Group = Data->GetInterpGroup(GroupIdx);
+				if( Group == NULL )
+				{
+					continue;
+				}
+				FString Tracks;
+				for( INT TrackIdx = 0; TrackIdx < Group->InterpTracks.Num(); TrackIdx++ )
+				{
+					if( Group->InterpTracks(TrackIdx) != NULL )
+					{
+						Tracks += FString::Printf( TEXT("%s%s"), Tracks.Len() ? TEXT(" ") : TEXT(""), *Group->InterpTracks(TrackIdx)->GetClass()->GetName() );
+					}
+				}
+				FString Actors;
+				for( INT InstIdx = 0; InstIdx < Interp->GroupInst.Num(); InstIdx++ )
+				{
+					UInterpGroupInst* Inst = Interp->GroupInst(InstIdx);
+					if( Inst != NULL && Inst->Group == Group )
+					{
+						Actors += FString::Printf( TEXT("%s%s (%d trackinst)"), Actors.Len() ? TEXT(" ") : TEXT(""),
+							Inst->GetGroupActor() != NULL ? *Inst->GetGroupActor()->GetName() : TEXT("NONE"), Inst->TrackInst.Num() );
+					}
+				}
+				debugf( TEXT("DISHONORED(bringup): matinee inventory: %s group '%s' (%s%s): actors [%s], tracks [%s]"),
+					*Interp->GetName(), *Group->GroupName.ToString(), *Group->GetClass()->GetName(),
+					Group->IsA(UInterpGroupDirector::StaticClass()) ? TEXT(", DIRECTOR") : TEXT(""),
+					Actors.Len() ? *Actors : TEXT(""), Tracks.Len() ? *Tracks : TEXT("") );
+			}
+	}
+
+	void MatineeInventory()
+	{
+		if( !IsMatineeOn() )
+		{
+			return;
+		}
+		TArray<USeqAct_Interp*> Interps;
+		GatherInterps( Interps );
+		for( INT Idx = 0; Idx < Interps.Num(); Idx++ )
+		{
+			DescribeInterp( Interps(Idx) );
+		}
+		debugf( TEXT("DISHONORED(bringup): matinee inventory: %d SeqAct_Interp in %s"), Interps.Num(), *GWorld->GetOutermost()->GetName() );
+	}
+
+	void MatineeReport()
+	{
+		if( !IsMatineeOn() )
+		{
+			return;
+		}
+		TArray<USeqAct_Interp*> Interps;
+		GatherInterps( Interps );
+		FString Playing;
+		for( INT Idx = 0; Idx < Interps.Num(); Idx++ )
+		{
+			if( Interps(Idx)->bIsPlaying )
+			{
+				Playing += FString::Printf( TEXT("%s%s@%.2f/%.2f x%.2f"), Playing.Len() ? TEXT(", ") : TEXT(""),
+					*Interps(Idx)->GetName(), Interps(Idx)->Position,
+					Interps(Idx)->InterpData != NULL ? Interps(Idx)->InterpData->GetInterpLength() : 0.f, Interps(Idx)->PlayRate );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): matinee census: %d interps, playing: %s"), Interps.Num(), Playing.Len() ? *Playing : TEXT("none") );
+		for( INT Idx = 0; Idx < Interps.Num(); Idx++ )
+		{
+			if( Interps(Idx)->bIsPlaying && !DescribedPlaying.ContainsItem( Interps(Idx) ) )
+			{
+				DescribedPlaying.AddItem( Interps(Idx) );
+				DescribeInterp( Interps(Idx) );
+			}
+		}
+		for( AController* Controller = GWorld->GetFirstController(); Controller != NULL; Controller = Controller->NextController )
+		{
+			APlayerController* PC = Cast<APlayerController>( Controller );
+			if( PC == NULL )
+			{
+				continue;
+			}
+			AActor* ViewTarget = PC->GetViewTarget();
+			FVector CamLoc( 0.f, 0.f, 0.f );
+			FRotator CamRot( 0, 0, 0 );
+			PC->eventGetPlayerViewPoint( CamLoc, CamRot );
+			ACameraActor* CamActor = Cast<ACameraActor>( ViewTarget );
+			debugf( TEXT("DISHONORED(bringup): matinee census: camera FOV %.2f (actor FOV %.2f, aspect %.3f, constrain %d), viewport %dx%d"),
+				PC->PlayerCamera != NULL ? PC->PlayerCamera->CameraCache.POV.FOV : -1.f,
+				CamActor != NULL ? CamActor->FOVAngle : -1.f,
+				CamActor != NULL ? CamActor->AspectRatio : -1.f,
+				CamActor != NULL ? (INT)CamActor->bConstrainAspectRatio : -1,
+				GEngine != NULL && GEngine->GameViewport != NULL && GEngine->GameViewport->Viewport != NULL ? GEngine->GameViewport->Viewport->GetSizeX() : 0,
+				GEngine != NULL && GEngine->GameViewport != NULL && GEngine->GameViewport->Viewport != NULL ? GEngine->GameViewport->Viewport->GetSizeY() : 0 );
+			debugf( TEXT("DISHONORED(bringup): matinee census: %s viewtarget %s (%s) at %s, camera %s, POV %s rot %d %d %d"),
+				*PC->GetName(),
+				ViewTarget != NULL ? *ViewTarget->GetName() : TEXT("NONE"),
+				ViewTarget != NULL ? *ViewTarget->GetClass()->GetName() : TEXT("NONE"),
+				ViewTarget != NULL ? *ViewTarget->Location.ToString() : TEXT("-"),
+				PC->PlayerCamera != NULL ? *PC->PlayerCamera->GetClass()->GetName() : TEXT("NONE"),
+				*CamLoc.ToString(), CamRot.Pitch, CamRot.Yaw, CamRot.Roll );
 		}
 	}
 
@@ -3461,7 +3618,9 @@ struct FDishonoredKismetCensus
 		{
 			InventoryLevels = GWorld->Levels.Num();
 			Inventory();
+			MatineeInventory();
 		}
+		MatineeReport();
 		debugf( TEXT("DISHONORED(bringup): kismet census: %s %.1fs: sequence ticks %I64u, ops executed %I64u (activated %I64u, deactivated %I64u, latent %I64u, still-active %I64u, re-activated %I64u), outputs followed %I64u, delayed queued %I64u fired %I64u, step caps %I64u"),
 			*GWorld->GetOutermost()->GetName(), Now - WorldStart, SequenceTicks, OpsExecuted, OpsActivated,
 			OpsDeactivated, OpsLatent, OpsStillActive, OpsReActivated, OutputsFollowed, DelayedQueued, DelayedFired, StepCaps );

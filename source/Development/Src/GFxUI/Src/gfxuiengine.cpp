@@ -1266,6 +1266,9 @@ void FGFxEngine::TickScriptedKeys()
 {
 	static TArray<INT> KeyFrames;
 	static TArray<FName> KeyNames;
+	static TArray<INT> ReleaseFrames;
+	static TArray<FName> ReleaseKeys;
+	static INT KeyHoldFrames = 30;
 	static UBOOL bParsed = FALSE;
 	if( !bParsed )
 	{
@@ -1273,6 +1276,11 @@ void FGFxEngine::TickScriptedKeys()
 		FString Value;
 		// DISHONORED(bringup): no rva - a bring-up switch. Parse stops at a comma unless told not to,
 		// and this switch IS a comma list.
+		FString HoldValue;
+		if( Parse( appCmdLine(), TEXT("gfxuikeyhold="), HoldValue ) )
+		{
+			KeyHoldFrames = Max( 1, appAtoi( *HoldValue ) );
+		}
 		if( Parse( appCmdLine(), TEXT("gfxuikey="), Value, FALSE ) )
 		{
 			while( Value.Len() )
@@ -1311,6 +1319,21 @@ void FGFxEngine::TickScriptedKeys()
 		debugf( TEXT("DISHONORED(bringup): GFx UI: screenshot %s requested %d ticks after the key"),
 			*GScreenShotName, ShotAfterKey );
 	}
+	for( INT Index = 0; Index < ReleaseFrames.Num(); Index++ )
+	{
+		if( ReleaseFrames( Index ) != DrawnFrames )
+		{
+			continue;
+		}
+		FGFxMovie* UpMovie = GetFocusedMovieFromControllerID( 0 );
+		if( UpMovie == NULL && OpenMovies.Num() > 0 )
+		{
+			UpMovie = OpenMovies( OpenMovies.Num() - 1 );
+		}
+		const UBOOL bUp = UpMovie != NULL && InputKey( 0, UpMovie, ReleaseKeys( Index ), IE_Released );
+		debugf( TEXT("DISHONORED(bringup): GFx UI: scripted key %s released on drawn frame %d -> %s"),
+			*ReleaseKeys( Index ).ToString(), DrawnFrames, bUp ? TEXT("handled") : TEXT("not handled") );
+	}
 	for( INT Index = 0; Index < KeyFrames.Num(); Index++ )
 	{
 		if( KeyFrames( Index ) != DrawnFrames )
@@ -1333,12 +1356,15 @@ void FGFxEngine::TickScriptedKeys()
 			Route = TEXT("topmost open movie (no local player owns focus)");
 		}
 		const UBOOL bPressed = Movie != NULL && InputKey( 0, Movie, KeyNames( Index ), IE_Pressed );
-		const UBOOL bReleased = Movie != NULL && InputKey( 0, Movie, KeyNames( Index ), IE_Released );
+		// DISHONORED(bringup, agent DK): the release is held back. A key queued and released in the
+		// same tick is already up by the time GFxMovieRoot::ProcessInput notifies the AS2 listeners,
+		// and _common.UIBase.InputDelegate runs its body only while Key.isDown(code) is true.
+		ReleaseFrames.AddItem( DrawnFrames + KeyHoldFrames );
+		ReleaseKeys.AddItem( KeyNames( Index ) );
 		LogCensus( TEXT("after a scripted key") );
-		debugf( TEXT("DISHONORED(bringup): GFx UI: scripted key %s on drawn frame %d via %s -> pressed %s, released %s"),
+		debugf( TEXT("DISHONORED(bringup): GFx UI: scripted key %s on drawn frame %d via %s -> pressed %s, release queued for frame %d"),
 			*KeyNames( Index ).ToString(), DrawnFrames, Route,
-			bPressed ? TEXT("handled") : TEXT("not handled"),
-			bReleased ? TEXT("handled") : TEXT("not handled") );
+			bPressed ? TEXT("handled") : TEXT("not handled"), DrawnFrames + KeyHoldFrames );
 	}
 }
 
@@ -1359,6 +1385,10 @@ void FGFxEngine::Tick( FLOAT DeltaTime )
 			if( ParseParam( appCmdLine(), TEXT("gfxuiclasstrace") ) )
 			{
 				GFxSprite::bTraceClassBinding = true;
+			}
+			if( ParseParam( appCmdLine(), TEXT("gfxuidlcheck") ) )
+			{
+				GFxSprite::bCheckDisplayList = true;
 			}
 		}
 	}

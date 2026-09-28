@@ -627,6 +627,8 @@ public:
         chain still reaches MovieClip.prototype (if it does not, the clip loses attachMovie and its
         kin, which is a real content-versus-runtime disagreement rather than a missing method). */
     static bool bTraceClassBinding;
+    // DISHONORED(bringup, agent DK): -gfxuidlcheck, the display-list liveness check.
+    static bool bCheckDisplayList;
     /** off only for a comparison run; retail always binds (agentDG.md 4) */
     static bool bBindRegisteredClasses;
     void          MoveDisplayObject(const GFxCharPosInfo& pos);        // 2012 0x9f48a0

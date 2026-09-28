@@ -900,7 +900,7 @@ UMaterial* UInterpTrackNotify::GetTrackIcon() const
 void UInterpTrackDirector::DrawTrack( FCanvas* Canvas, UInterpGroup* Group, const FInterpTrackDrawParams& Params )
 {
 #if WITH_EDITORONLY_DATA
-	UInterpData* Data = CastChecked<UInterpData>(Group->GetOuter());
+	UInterpData* Data = Group->GetInterpData();
 
 	const UBOOL bHitTesting = Canvas->IsHitTesting();
 	const UBOOL bAllowBarSelection = bHitTesting && Params.bAllowKeyframeBarSelection;
@@ -1113,7 +1113,7 @@ void UInterpTrackAnimControl::ObjectDragged(FInterpEdInputData& InputData)
 void UInterpTrackAnimControl::DrawTrack( FCanvas* Canvas, UInterpGroup* Group, const FInterpTrackDrawParams& Params )
 {
 #if WITH_EDITORONLY_DATA
-	UInterpData* Data = CastChecked<UInterpData>(Group->GetOuter());
+	UInterpData* Data = Group->GetInterpData();
 
 	const UBOOL bHitTesting = Canvas->IsHitTesting();
 	const UBOOL bAllowBarSelection = bHitTesting && Params.bAllowKeyframeBarSelection;
@@ -1520,7 +1520,7 @@ UMaterial* UInterpTrackFaceFX::GetTrackIcon() const
 void UInterpTrackSound::DrawTrack( FCanvas* Canvas, UInterpGroup* Group, const FInterpTrackDrawParams& Params )
 {
 #if WITH_EDITORONLY_DATA
-	UInterpData* Data = CastChecked<UInterpData>(Group->GetOuter());
+	UInterpData* Data = Group->GetInterpData();
 
 	const UBOOL bHitTesting = Canvas->IsHitTesting();
 	const UBOOL bAllowBarSelection = bHitTesting && Params.bAllowKeyframeBarSelection;

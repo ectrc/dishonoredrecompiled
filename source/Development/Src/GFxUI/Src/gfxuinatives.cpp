@@ -94,6 +94,31 @@ void UGFxInteraction::execGetFocusMovie( FFrame& Stack, RESULT_DECL )
 }
 
 /*-----------------------------------------------------------------------------
+	UGFxEvent_FSCommand (gfxuiinteraction.cpp)
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x58e5f0 (2012 0x5d23c0, gfxuiinteraction.cpp:1049). The base registers
+// the event with its originator; on success the node builds the handler that FGFxFSCommandHandler::Callback
+// routes through. Without it Handler is NULL on every node of the level and no fscommand the asset raises
+// ever reaches the map's Kismet - which is what kept the menu map's camera matinees from being driven.
+UBOOL UGFxEvent_FSCommand::RegisterEvent()
+{
+	const UBOOL bRegistered = Super::RegisterEvent();
+	if( bRegistered )
+	{
+		Handler = ConstructObject<UGFxFSCmdHandler_Kismet>( UGFxFSCmdHandler_Kismet::StaticClass() );
+	}
+	return bRegistered;
+}
+
+// DISHONORED(port): 2013 rva 0x5724c0 (2012 0x5b6fa0, gfxuiinteraction.cpp:1040)
+void UGFxEvent_FSCommand::FinishDestroy()
+{
+	Handler = NULL;
+	Super::FinishDestroy();
+}
+
+/*-----------------------------------------------------------------------------
 	UGFxFSCmdHandler_Kismet (gfxuiinteraction.cpp)
 -----------------------------------------------------------------------------*/
 

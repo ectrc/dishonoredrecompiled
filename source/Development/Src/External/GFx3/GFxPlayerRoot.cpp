@@ -233,10 +233,14 @@ void GFxMovieRoot::PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target,
     ++ActionCount;
 }
 
-// DISHONORED(port, agent DG): 2012 0x9fee10's InsertEntry(queue, 1). GFxAP_User rather than
-// GFxAP_Init because this tree queues DoInitAction at GFxAP_Init and PushActionBuffer's insert is
-// stable, so an equal priority would keep the tag order - and the tag order is exactly what is
-// wrong: ten of the menu's screens are placed before the __Packages tag that registers their class.
+// DISHONORED(port, agent DG): 2012 0x9fee10's InsertEntry(queue, 1). Not GFxAP_Init, because this tree
+// queues DoInitAction at GFxAP_Init and PushActionBuffer's insert is stable, so an equal priority would
+// keep the tag order - and the tag order is exactly what is wrong: ten of the menu's screens are placed
+// before the __Packages tag that registers their class.
+// DISHONORED(bringup, agent DK): GFxAP_Lowest rather than GFxAP_User. A bound class's constructor runs
+// here, and _common.ClickableButton's constructor is `super(); _root.UIBase.AddControllerButtonInstance(this)`.
+// _root.UIBase is built by the root's own frame action, which is GFxAP_Frame, so at GFxAP_User every
+// timeline-placed CLIK button was constructed one drain too early and never registered itself.
 void GFxMovieRoot::QueueClassBinding(GFxSprite* target, const char* exportSymbol)
 {
     if (target == 0 || exportSymbol == 0)
@@ -247,14 +251,14 @@ void GFxMovieRoot::QueueClassBinding(GFxSprite* target, const char* exportSymbol
         Actions = (ActionEntry*)realloc(Actions, ActionCapacity * sizeof(ActionEntry));
     }
     unsigned int at = ActionCount;
-    while (at > 0 && Actions[at - 1].Priority > GFxAP_User)
+    while (at > 0 && Actions[at - 1].Priority > GFxAP_Lowest)
     {
         Actions[at] = Actions[at - 1];
         --at;
     }
     Actions[at].pBuffer = 0;
     Actions[at].pTarget = target;
-    Actions[at].Priority = GFxAP_User;
+    Actions[at].Priority = GFxAP_Lowest;
     Actions[at].Session = SessionFill;
     Actions[at].BindSymbol = exportSymbol;
     target->AddRef();
@@ -278,11 +282,31 @@ void GFxMovieRoot::DoActions()
     bInActionQueue = true;
     const unsigned int session = SessionFill;
     ++SessionFill;
+    // DISHONORED(bringup): the session is detached from the queue before it runs. PushActionBuffer and
+    // QueueClassBinding insert by priority, so an entry queued by a drained action shifts the entries
+    // behind it and an index walk over the live queue runs some of them a second time - which, for a
+    // class binding, releases its target twice.
+    unsigned int runCount = 0;
+    ActionEntry* run = 0;
     for (unsigned int i = 0; i < ActionCount; ++i)
+        if (Actions[i].Session == session)
+            ++runCount;
+    if (runCount != 0)
     {
-        if (Actions[i].Session != session)
-            continue;
-        ActionEntry e = Actions[i];
+        run = (ActionEntry*)malloc(runCount * sizeof(ActionEntry));
+        unsigned int at = 0, kept0 = 0;
+        for (unsigned int i = 0; i < ActionCount; ++i)
+        {
+            if (Actions[i].Session == session)
+                run[at++] = Actions[i];
+            else
+                Actions[kept0++] = Actions[i];
+        }
+        ActionCount = kept0;
+    }
+    for (unsigned int i = 0; i < runCount; ++i)
+    {
+        ActionEntry e = run[i];
         Env.SetTarget(e.pTarget ? e.pTarget : pLevel0);
         if (e.pBuffer == 0)
         {
@@ -301,13 +325,7 @@ void GFxMovieRoot::DoActions()
             Env.bThrowing = false;
         }
     }
-    // Remove the session that was just drained and keep whatever the drain queued behind, which is
-    // what AddToFreeList does at the end of both retail drains.
-    unsigned int kept = 0;
-    for (unsigned int i = 0; i < ActionCount; ++i)
-        if (Actions[i].Session != session)
-            Actions[kept++] = Actions[i];
-    ActionCount = kept;
+    free(run);
     bInActionQueue = false;
     Env.SetTarget(pLevel0);
 }

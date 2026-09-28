@@ -1,0 +1,20 @@
+rva_2013,status,note
+0x586450,verified,FGFxFSCommandHandler::Callback - already ported; decompiled to confirm the movie/name match and the unconditional eventFSCommand on Event+288
+0x58e5f0,ported,UGFxEvent_FSCommand::RegisterEvent - was ABSENT; Super::RegisterEvent then StaticConstructObject(UGFxFSCmdHandler_Kismet) into this+288. Without it Handler is NULL on all 38 nodes of the menu map
+0x5724c0,ported,UGFxEvent_FSCommand::FinishDestroy - clears Handler
+0x588340,verified,UGFxFSCmdHandler_Kismet::FSCommand - CheckActivate then GetStringVars("Argument"); the existing port matches
+0x212940,ported,UInterpData::GetInterpLength - *(float*)(m_Data+68); the reference member is a storage-less shim
+0x215000,ported,UInterpData::GetNbInterpGroups - m_Data ? m_Data->m_RunData.InterpGroups.Num() : 0
+0x217f60,ported,UMatineeData::GetInterpGroup - m_RunData.InterpGroups(Index); reached through a new UInterpData::GetInterpGroup forwarder
+0x214fa0,read,UInterpData::CreateData - constructs m_Data when absent; not needed at runtime, not ported
+0x2128f0,read,UInterpData::Serialize - confirms m_Data @148 and m_iMatineeDataVersion @152
+0x2342e0,read,USeqAct_Interp::InitInterp - builds the group instances and notifies NO actor; the evidence that Actor.InterpolationStarted is not retail's
+0x224100,read,USeqAct_Interp::TermInterp
+0x1e5b40,ported,ACamera::ApplyCameraModifiers - retail is the ModifierList loop only; the reference's camera-anim half dereferences an AnimCameraActor this tree never spawns
+0xa52f30,read,GFxKeyboardState::SetKeyDown - sets the bit AND queues the event; so Key.isDown is true inside onKeyDown in retail too, which is why a zero-length scripted key could not navigate
+0xa52fd0,read,GFxKeyboardState::NotifyListeners
+0xa93b60,port,GFx_LoadFilters record layout (2012 rva) - PlaceObject3's filter list is now parsed and counted instead of skipped
+0x7d28b0,read,the MISSIONS asterisk: Localize(DisGFxMoviePlayerMainMenu_Texts,t_Missions) then FString::operator+=(L"*") when any of the 10 m_DLCCommands is installed; writes _root.texts.t_Missions
+0x7c2070,read,the per-slot test behind that asterisk: GetDLCStatus(dlc)==2 and m_Command non-empty and m_CheckedClass non-null
+0x8465e0,read,UDisGlobalDLCManager::GetDLCStatus - forwards to UArkDLCManagementBridge::GetDLCStatus(GameEngine+1688)
+0x8464c0,read,UDisGlobalDLCManager::Initialize

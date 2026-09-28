@@ -205,6 +205,7 @@ public:
     //## END PROPS GFxEvent_FSCommand
 
     DECLARE_CLASS(UGFxEvent_FSCommand,USequenceEvent,0,GFxUI)
+#include "CppText/UGFxEvent_FSCommand.h"
 };
 
 struct GFxFSCmdHandler_Kismet_eventFSCommand_Parms

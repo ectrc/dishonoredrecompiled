@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <set>
 
 // ---------------------------------------------------------------------------------------------
 // GFxCharacterHandle
@@ -52,6 +53,32 @@ GFxDisplayList::~GFxDisplayList()
     free(Entries);
 }
 
+bool GFxSprite::bCheckDisplayList = false;
+static std::set<const void*>* GFxDK_LiveChars = 0;
+
+bool GFxDK_LiveCharsOn()
+{
+    return GFxSprite::bCheckDisplayList;
+}
+
+void GFxDK_LiveCharAdd(const GFxASCharacter* c)
+{
+    if (GFxDK_LiveChars == 0)
+        GFxDK_LiveChars = new std::set<const void*>();
+    GFxDK_LiveChars->insert((const void*)c);
+}
+
+void GFxDK_LiveCharRemove(const GFxASCharacter* c)
+{
+    if (GFxDK_LiveChars != 0)
+        GFxDK_LiveChars->erase((const void*)c);
+}
+
+bool GFxDK_LiveCharIs(const GFxCharacter* c)
+{
+    return GFxDK_LiveChars != 0 && GFxDK_LiveChars->find((const void*)c) != GFxDK_LiveChars->end();
+}
+
 void GFxDisplayList::InsertAt(unsigned int index, GFxCharacter* ch)
 {
     if (Size >= Capacity)
@@ -70,11 +97,18 @@ void GFxDisplayList::RemoveAt(unsigned int index)
 {
     if (index >= Size)
         return;
-    if (Entries[index].pChar)
-        Entries[index].pChar->Release();
+    // DISHONORED(bringup): detach before releasing. The destructor destroys this character's own
+    // children and each of those runs script, which reads display lists by name.
+    GFxCharacter* ch = Entries[index].pChar;
     for (unsigned int i = index; i + 1 < Size; ++i)
         Entries[i] = Entries[i + 1];
     --Size;
+    if (ch)
+    {
+        if (GFxDK_LiveCharsOn())
+            GFxLogf("DISHONORED(bringup): dlcheck: RemoveAt releases %p (index %u, size now %u)", (void*)ch, index, Size);
+        ch->Release();
+    }
 }
 
 int GFxDisplayList::FindDisplayIndex(int depth) const                 // 2012 0x9d5a40
@@ -104,11 +138,25 @@ GFxCharacter* GFxDisplayList::GetCharacterAtDepth(int depth, bool* outMarked) co
     return 0;
 }
 
+// DISHONORED(bringup, agent DK): -gfxuidlcheck. GFxASCharacter registers itself here and unregisters
+// in its destructor, so a display list entry that outlives its character can be named instead of
+// crashing on the next read of its GASString.
+bool GFxDK_LiveCharsOn();
+void GFxDK_LiveCharAdd(const GFxASCharacter* c);
+void GFxDK_LiveCharRemove(const GFxASCharacter* c);
+bool GFxDK_LiveCharIs(const GFxCharacter* c);
+
 GFxCharacter* GFxDisplayList::GetCharacterByName(GASStringContext* sc, const GASString& name) const
 {                                                                     // 2012 0x9d5450
     for (unsigned int i = 0; i < Size; ++i)
     {
         GFxCharacter* c = Entries[i].pChar;
+        if (GFxDK_LiveCharsOn() && c != 0 && !GFxDK_LiveCharIs(c))
+        {
+            GFxLogf("DISHONORED(bringup): dlcheck: entry %u of %u in a display list is a DESTROYED character %p (looking for '%s')",
+                    i, Size, (void*)c, name.ToCStr());
+            continue;
+        }
         if (c && c->IsASCharacter())
         {
             const GASString& n = c->ToASCharacterDef()->GetName();
@@ -138,9 +186,16 @@ void GFxDisplayList::AddDisplayObject(const GFxCharPosInfo& pos, GFxCharacter* c
     int i = FindDisplayIndex(pos.Depth);
     if (i < (int)Size && Entries[i].pChar->GetDepth() == pos.Depth)
     {
-        Entries[i].pChar->Release();
+        // DISHONORED(bringup): store before releasing, as in RemoveAt.
+        GFxCharacter* old = Entries[i].pChar;
         Entries[i].pChar = ch;
         Entries[i].bMarkedForRemove = false;
+        if (old)
+        {
+            if (GFxDK_LiveCharsOn())
+                GFxLogf("DISHONORED(bringup): dlcheck: AddDisplayObject replaces %p with %p at depth %d", (void*)old, (void*)ch, pos.Depth);
+            old->Release();
+        }
     }
     else
     {
@@ -175,9 +230,16 @@ void GFxDisplayList::ReplaceDisplayObject(const GFxCharPosInfo& pos, GFxCharacte
     int i = FindDisplayIndex(pos.Depth);
     if (i < (int)Size && Entries[i].pChar->GetDepth() == pos.Depth)
     {
-        Entries[i].pChar->Release();
+        // DISHONORED(bringup): store before releasing, as in RemoveAt.
+        GFxCharacter* old = Entries[i].pChar;
         Entries[i].pChar = ch;
         Entries[i].bMarkedForRemove = false;
+        if (old)
+        {
+            if (GFxDK_LiveCharsOn())
+                GFxLogf("DISHONORED(bringup): dlcheck: ReplaceDisplayObject replaces %p with %p at depth %d", (void*)old, (void*)ch, pos.Depth);
+            old->Release();
+        }
     }
     else
     {
@@ -195,8 +257,13 @@ void GFxDisplayList::RemoveDisplayObject(int depth, GFxResourceId id)   // 2012 
         return;
     if (id.Id != GFxResourceId::InvalidId && Entries[i].pChar->GetId().Id != id.Id)
         return;
-    Entries[i].pChar->OnEventUnload();
-    RemoveAt((unsigned int)i);
+    // DISHONORED(bringup): as UnloadMarkedObjects - the handler may have removed this entry already.
+    GFxCharacter* ch = Entries[i].pChar;
+    ch->AddRef();
+    ch->OnEventUnload();
+    if ((unsigned int)i < Size && Entries[i].pChar == ch)
+        RemoveAt((unsigned int)i);
+    ch->Release();
 }
 
 void GFxDisplayList::MarkAllEntriesForRemoval(unsigned int fromIndex)   // 2012 0x9d5670
@@ -205,22 +272,49 @@ void GFxDisplayList::MarkAllEntriesForRemoval(unsigned int fromIndex)   // 2012 
         Entries[i].bMarkedForRemove = true;
 }
 
+// DISHONORED(bringup): OnEventUnload runs the clip's own handler and that handler can remove further
+// entries, so the index is re-clamped every step and the character is kept alive across the call.
 void GFxDisplayList::UnloadMarkedObjects()                            // 2012 0x9d60a0
 {
-    for (unsigned int i = Size; i > 0; --i)
-        if (Entries[i - 1].bMarkedForRemove)
-        {
-            Entries[i - 1].pChar->OnEventUnload();
-            RemoveAt(i - 1);
-        }
+    unsigned int i = Size;
+    while (i > 0)
+    {
+        if (i > Size)
+            i = Size;
+        else
+            --i;
+        if (i >= Size || !Entries[i].bMarkedForRemove)
+            continue;
+        GFxCharacter* ch = Entries[i].pChar;
+        if (ch == 0)
+            continue;
+        ch->AddRef();
+        ch->OnEventUnload();
+        if (i < Size && Entries[i].pChar == ch)
+            RemoveAt(i);
+        ch->Release();
+    }
 }
 
 void GFxDisplayList::UnloadAll()                                      // 2012 0x9d6070
 {
-    for (unsigned int i = Size; i > 0; --i)
+    unsigned int i = Size;
+    while (i > 0)
     {
-        Entries[i - 1].pChar->OnEventUnload();
-        RemoveAt(i - 1);
+        if (i > Size)
+            i = Size;
+        else
+            --i;
+        if (i >= Size)
+            continue;
+        GFxCharacter* ch = Entries[i].pChar;
+        if (ch == 0)
+            continue;
+        ch->AddRef();
+        ch->OnEventUnload();
+        if (i < Size && Entries[i].pChar == ch)
+            RemoveAt(i);
+        ch->Release();
     }
 }
 
@@ -235,10 +329,31 @@ void GFxDisplayList::Clear()                                          // 2012 0x
 
 GFxASCharacter::GFxASCharacter(GFxASCharacter* parent, GFxResourceId id, GFxMovieRoot* root)
     : GFxCharacter(parent, id), pMovieRoot(root), pHandle(0), pASObject(0), pProto(0),
-      pGeomData(0) {}
+      pGeomData(0)
+{
+    if (GFxDK_LiveCharsOn())
+        GFxDK_LiveCharAdd(this);
+}
 
 GFxASCharacter::~GFxASCharacter()
 {
+    if (GFxDK_LiveCharsOn())
+    {
+        int listedAt = -1, listedOf = 0;
+        GFxSprite* parentSprite = GetParent() ? GetParent()->ToSprite() : 0;
+        if (parentSprite != 0)
+        {
+            const GFxDisplayList& dl = parentSprite->GetDisplayList();
+            listedOf = (int)dl.GetCount();
+            for (int k = 0; k < listedOf; ++k)
+                if (dl.GetAt((unsigned int)k) == (const GFxCharacter*)this)
+                    listedAt = k;
+        }
+        GFxLogf("DISHONORED(bringup): dlcheck: destroying %p name '%s' depth %d parent %p, parent list %d of %d%s",
+                (void*)this, Name.ToCStr(), GetDepth(), (void*)GetParent(), listedAt, listedOf,
+                listedAt >= 0 ? " STILL LISTED" : "");
+        GFxDK_LiveCharRemove(this);
+    }
     if (pHandle)
     {
         pHandle->ChangeCharacter(0);
@@ -950,9 +1065,24 @@ void GFxSprite::AdvanceFrame(bool bAdvance, float framePos)            // 2012 0
     }
 
     // Children advance after their parent, in depth order, which is the order retail's
-    // GFxDisplayList::AdvanceFrame walks.
-    for (unsigned int i = 0; i < DisplayList.GetCount(); ++i)
-        DisplayList.GetAt(i)->AdvanceFrame(bAdvance, framePos);
+    // GFxDisplayList::AdvanceFrame walks. DISHONORED(bringup): over a refcounted snapshot, because
+    // a child's onEnterFrame may remove a sibling and the entry owns the only reference.
+    const unsigned int childCount = DisplayList.GetCount();
+    if (childCount != 0)
+    {
+        GFxCharacter** children = (GFxCharacter**)malloc(childCount * sizeof(GFxCharacter*));
+        for (unsigned int i = 0; i < childCount; ++i)
+        {
+            children[i] = DisplayList.GetAt(i);
+            if (children[i])
+                children[i]->AddRef();
+        }
+        for (unsigned int i = 0; i < childCount; ++i)
+            children[i]->AdvanceFrame(bAdvance, framePos);
+        for (unsigned int i = 0; i < childCount; ++i)
+            children[i]->Release();
+        free(children);
+    }
 }
 
 void GFxSprite::GotoFrame(unsigned int frame)                         // 2012 0xa012a0
