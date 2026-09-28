@@ -307,3 +307,30 @@ void ADishonoredNPCPawn::execTakeDamage( FFrame& Stack, RESULT_DECL )
 	TakeDamage_Native( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
 	APawn::TakeDamage( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
 }
+
+// ---- agent DI ports (PHASE10 DI): the NPC's PostBeginPlay ----
+
+// DISHONORED(port): 2013 rva 0x76a610 (2012 0x7c8770). After the base pass has built the head mesh, the head is bound
+// to the body as its animation parent - that is what makes the two meshes move as one character - and the three
+// per-spawn counters are cleared.
+// DISHONORED(bringup): retail's remaining work needs subsystems that are not ported, each named here:
+//   FDisPhysicsUtil::DisCreatePawnChannel plus SetRBChannel / SetRBCollidesWithChannel and
+//     UPhysicsAssetInstance::SetFullAnimWeightBonesFixed - the pawn's rigid-body channel, which needs the Dishonored
+//     collision-channel allocator;
+//   the ammo copy out of the tweaks' m_Ammo and SpawnInventoryLoadout_Items / EquipItemByType / AttachEquippedItem -
+//     UDishonoredInventory and UDisItemContext, agent AJ's third root (the same gap CG recorded for the melee draw);
+//   FDisComponentPlague, added when the tweaks' m_bHasPlague bit is set;
+//   ADishonoredNPCPawn::RegisterAvoidable (2013 rva 0x7796b0) and the FArkGameEventDispatcher registration of OnLODChanged - the
+//     dispatcher has no instance in this tree (agent CG hand-over 4);
+//   FDisComponentLODManager::StartLOD (2013 rva 0x870a80), so the NPC never enters the LOD state machine.
+void ADishonoredNPCPawn::PostBeginPlay()
+{
+	Super::PostBeginPlay();
+	if( m_pHeadMesh )
+	{
+		m_pHeadMesh->SetParentAnimComponent( Mesh );
+	}
+	DesiredSpeed = 0.f;
+	m_iNumReactionDisableRequestsFromSoiree = 0;
+	m_iNumFakeDeathRequestsFromSoiree = 0;
+}

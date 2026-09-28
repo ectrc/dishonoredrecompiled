@@ -123,3 +123,63 @@ void ADishonoredPawn::execTakeFallingDamage_Native( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	*(INT*)Result = TakeFallingDamage_Native( HitNormal, FloorActor );
 }
+
+// ---- agent DI ports (PHASE10 DI): the body pass and the bone lookup the appearance path needs ----
+
+// DISHONORED(port): 2013 rva 0x76a130 (2012 0x7a4b70). The base body pass: the two eye skel controls out of the body
+// tweaks, and the cached-position pair every prediction query reads back.
+// DISHONORED(bringup): two parts of retail's body need unported subsystems and are named rather than skipped in
+// silence: ADishonoredPawn::SetupHitRegions (2013 rva 0x769f30; the per-region hit table, so a headshot
+// still counts as a body shot - the same gap agent CG recorded for GetBoneRegionInfo), and the m_Foot_Caches build-out,
+// which needs FDisFootCache::Init (2013 rva 0x750fe0) and the foot-placement component.
+void ADishonoredPawn::PostBeginPlay_Body()
+{
+	UDisTweaks_Pawn_Body* BodyTweaks = GetPawnTweaks()->m_pBodyTweaks;
+	if( Mesh && BodyTweaks )
+	{
+		if( BodyTweaks->m_EyeControl_Left != NAME_None )
+		{
+			m_pEyeControl_Left = Cast<USkelControlSingleBone>( Mesh->FindSkelControl( BodyTweaks->m_EyeControl_Left ) );
+		}
+		if( BodyTweaks->m_EyeControl_Right != NAME_None )
+		{
+			m_pEyeControl_Right = Cast<USkelControlSingleBone>( Mesh->FindSkelControl( BodyTweaks->m_EyeControl_Right ) );
+		}
+	}
+	m_fPredictionTimer = 0.f;
+	m_fPredictionConfidence = 0.f;
+	// retail reads UWorld::GetBendTimeSeconds(); this tree keeps the value on AWorldInfo (BendTimeSeconds @920)
+	AWorldInfo* Info = GWorld ? GWorld->GetWorldInfo() : NULL;
+	m_CurrentCachedPosition.m_CachedPositionTimeStamp = Info ? Info->BendTimeSeconds : 0.f;
+	m_CurrentCachedPosition.m_CachedPosition = CollisionComponent ? CollisionComponent->Bounds.Origin : Location;
+	m_CurrentCachedPosition.m_CachedVelocity = FVector(0.f,0.f,0.f);
+	m_LastCachedPosition = m_CurrentCachedPosition;
+}
+
+// DISHONORED(port): 2013 rva 0x757730 (2012 0x7956a0): a bone of the pawn's body mesh by name, as a world position
+// and/or a rotation. Both outputs are optional and a mesh that has no such bone leaves them untouched.
+// DISHONORED(bringup): the rotation branch needs ADishonoredPawn::PerformAngleOffsetFixup (2013 rva 0x757110; the body tweaks'
+// m_fBone_AngleOffset_* correction), which is not ported; it is left out and named, so a caller that asks for a
+// rotation gets the unfixed bone rotation. The position branch, which the appearance path uses, is complete.
+void ADishonoredPawn::GetBone_ByName( FName _BoneName, FVector* _pPos, FRotator* _pRotator ) const
+{
+	if( ( !_pPos && !_pRotator ) || !Mesh )
+	{
+		return;
+	}
+	const INT BoneIndex = Mesh->MatchRefBone( _BoneName );
+	if( BoneIndex == INDEX_NONE )
+	{
+		return;
+	}
+	const FMatrix BoneMatrix = Mesh->GetBoneMatrix( BoneIndex );
+	if( _pPos )
+	{
+		*_pPos = BoneMatrix.GetOrigin();
+	}
+	if( _pRotator )
+	{
+		*_pRotator = BoneMatrix.Rotator();
+		_pRotator->MakeShortestRoute();
+	}
+}

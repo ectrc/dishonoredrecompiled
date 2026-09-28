@@ -397,3 +397,26 @@ void ADishonoredPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	Landed_Native( HitNormal, FloorActor );
 }
+
+// ---- agent DI ports (PHASE10 DI): the PostBeginPlay chain ----
+
+// DISHONORED(port): 2013 rva 0x75bce0 (2012 0x7995f0). The pawn's own PostBeginPlay, which is what runs the six
+// per-aspect passes. Nothing in this tree overrode PostBeginPlay before, so APawn::PostBeginPlay ran and every one of
+// them was skipped - including PostBeginPlay_Body, which is where a Dishonored character gets its head.
+// DISHONORED(bringup): four of retail's passes and its two tails are named here rather than silently skipped, because
+// each needs a subsystem that is not ported:
+//   PostBeginPlay_Actions (vtable +1400) - the action/FSM set-up, which needs the pawn action classes;
+//   PostBeginPlay_Attachments (0x755ab0) - UDisTweaks_Attachments::SpawnAttachmentsAndAttachTo, unported, so a pawn
+//     whose tweaks carry attachments (holstered weapons, lanterns) gets none;
+//   PostBeginPlay_Inventory (vtable +1472) - UDishonoredInventory's build-out, agent AJ's third root;
+//   PostBeginPlay_Health, which retail inlines as Health = HealthMax = GetAttributeValue(Attribute_HealthMax): left
+//     out deliberately. GetAttributes() builds the set lazily from m_pAttributeTweaks[1] (agent BF), and a pawn whose
+//     tweak object is missing answers the class default, whose HealthMax is 0 - which would set every NPC's health to
+//     0 on spawn. Whoever finishes the attribute tweak chain should restore this line;
+//   PostBeginPlay_Combat (2013 rva 0x757cf0, vtable +1600) - the combat state;
+//   the UDishonoredMapInfo ambient-shadow copy into m_pLightEnvironment and InhibitPowersFor(0).
+void ADishonoredPawn::PostBeginPlay()
+{
+	Super::PostBeginPlay();
+	PostBeginPlay_Body();
+}

@@ -45,3 +45,49 @@ struct FDisPhysicsUtil
 {
 	static UBOOL PhysObjectShouldTraceCommon( const class AActor* PhysObject, DWORD TraceFlags );
 };
+
+// DISHONORED(written): agent DI (PHASE10 DI). The modular-character helpers of the NPC appearance path.
+//
+// DisChooseRandomMesh is a template in retail's own dishonoredutilities.h (line 661 of the PDB's copy); the two
+// instantiations the PDB attributes to this header are FDisBodyMesh (2012 rva 0x7b5300, retail's own inlined into
+// ADishonoredNPCPawn::PostBeginPlay_Body at 2013 rva 0x776390) and FDisPawnAccessoryMesh (2012 0x7b5420, 2013
+// 0x7764b0). It is a weighted draw over m_fRandomChance with the array index reported back, because the pawn stores
+// the index it drew (m_iRandomHeadMeshSel, m_RandomAccessoriesSel) so a save can restore the same appearance.
+template<class MeshType>
+const MeshType* DisChooseRandomMesh( const TArray<MeshType>& _rMeshes, INT& _rIndex )
+{
+	_rIndex = INDEX_NONE;
+	FLOAT fRandomChanceTotal = 0.f;
+	for( INT Idx = 0; Idx < _rMeshes.Num(); Idx++ )
+	{
+		fRandomChanceTotal += _rMeshes(Idx).m_fRandomChance;
+	}
+	// retail: rand() * (fRandomChanceTotal - 1e-8) * (1/32767), i.e. appFrand() scaled just inside the total, so the
+	// last entry still wins when every chance is authored and the sum lands exactly on the draw
+	const FLOAT fRandChance = appFrand() * ( fRandomChanceTotal - 0.00000001f );
+	FLOAT fRunningChance = 0.f;
+	for( INT Idx = 0; Idx < _rMeshes.Num(); Idx++ )
+	{
+		fRunningChance += _rMeshes(Idx).m_fRandomChance;
+		if( fRunningChance > fRandChance )
+		{
+			_rIndex = Idx;
+			return &_rMeshes(Idx);
+		}
+	}
+	if( _rMeshes.Num() == 0 )
+	{
+		return NULL;
+	}
+	_rIndex = 0;
+	return &_rMeshes(0);
+}
+
+// DISHONORED(written): agent DI. 2013 rva 0x7c7dd0 (2012 0x82ce70, dishonoredutilities.cpp:1657 neighbourhood): the
+// sections of a body or head mesh that only exist to be revealed when a limb is cut off are hidden at spawn.
+void DisHideGoreSections( class USkeletalMeshComponent& _rMeshComponent );
+
+// DISHONORED(written): agent DI. 2013 rva 0x7c8640 (2012 0x82d600) and 0x7cfb50 (2012 0x8321e0): every element of the
+// component whose mesh material matches is overridden; the index form looks the reference material up first.
+void DisReplaceMatchingMaterialsInSkelMesh( class USkeletalMeshComponent* _pMeshComponent, const class UMaterialInterface* _pReferenceMaterial, class UMaterialInterface* _pMaterial );
+void DisReplaceMatchingMaterialsInSkelMesh( class USkeletalMeshComponent* _pMeshComponent, INT _MaterialIndex, class UMaterialInterface* _pMaterial );

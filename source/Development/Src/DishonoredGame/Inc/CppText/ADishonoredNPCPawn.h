@@ -29,3 +29,14 @@ public:
 	virtual void TakeDamage_Native( INT& _rDamage, class AController* _pInstigatedBy, FVector _HitLocation, FVector& _rMomentum, class UClass* _pDamageType, struct FTraceHitInfo _HitInfo, class AActor* _pDamageCauser );
 	// ---- agent CG natives sweep, round 2 ----
 	virtual void OnSpawnStealable( class UDisSeqAct_SpawnStealable* _pAction );
+
+// ---- agent DI (PHASE10 DI): the modular character - body mesh plus head mesh plus accessories ----
+// PostBeginPlay 2013 rva 0x76a610 (2012 0x7c8770), PostBeginPlay_Body 0x77f8a0 (0x7bc180),
+// CreateAccessoryStaticMeshComponent 0x7706b0 (0x7ae5f0), GetAccessoryStaticMeshComponent 0x76e0f0 (0x7abc40).
+// Bodies in dishonorednpcpawn.cpp and dishonorednpcpawn_body.cpp.
+public:
+	virtual void PostBeginPlay();
+	virtual void PostBeginPlay_Body();
+	/** Retail has this private; it is public here because the census in the same unit reports what it built. */
+	class UStaticMeshComponent* CreateAccessoryStaticMeshComponent( BYTE _eAccessoryType );
+	class UStaticMeshComponent* GetAccessoryStaticMeshComponent( BYTE _eAccessoryType ) const;

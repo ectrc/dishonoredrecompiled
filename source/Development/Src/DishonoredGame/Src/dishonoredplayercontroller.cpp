@@ -112,6 +112,7 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "disaicensus.h"
+#include "disheadcensus.h"
 
 ADishonoredPlayerController* ADishonoredPlayerController::s_pInstance = NULL;
 
@@ -317,6 +318,16 @@ void ADishonoredPlayerController::HandleHeldButtons( FLOAT DeltaSeconds )
 	if( DisAICensusEnabled() )
 	{
 		DisAIReport( GWorld, DeltaSeconds );
+	}
+	// DISHONORED(written): agent DI's -dishead census rides the same call for the same reason: it costs nothing when the
+	// switch is absent and no engine file is touched for it.
+	if( DisHeadCensusEnabled() )
+	{
+		DisHeadReport( GWorld, DeltaSeconds );
+	}
+	if( DisHeadCamEnabled() )
+	{
+		DisHeadFrameOneNPC( this, GWorld );
 	}
 
 	AWorldInfo* Info = WorldInfo;

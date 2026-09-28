@@ -34,3 +34,12 @@ public:
 	virtual void TakeDamage( INT Damage, class AController* InstigatedBy, FVector HitLocation, FVector Momentum,
 	                         UClass* DamageType, struct FTraceHitInfo HitInfo = FTraceHitInfo(EC_EventParm),
 	                         class AActor* DamageCauser = NULL );
+
+	// ---- agent DI (PHASE10 DI): the PostBeginPlay chain that builds the modular character ----
+	// PostBeginPlay 2013 rva 0x75bce0 (2012 0x7995f0), PostBeginPlay_Body 0x76a130 (0x7a4b70), bodies in
+	// dishonoredpawn.cpp and dishonoredpawn_body.cpp. PostBeginPlay_Body is the virtual ADishonoredNPCPawn overrides
+	// to give itself a head mesh, and nothing in this tree called it before.
+	virtual void PostBeginPlay();
+	virtual void PostBeginPlay_Body();
+	/** 2013 rva 0x757730 (2012 0x7956a0); body in dishonoredpawn_body.cpp. */
+	void GetBone_ByName( FName _BoneName, FVector* _pPos, FRotator* _pRotator ) const;

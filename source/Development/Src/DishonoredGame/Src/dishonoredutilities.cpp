@@ -163,3 +163,71 @@ void DisAddUseMessage( const FString& Message )
 		debugf( TEXT("DISHONORED(bringup): dispickup use message: %s"), *Message );
 	}
 }
+
+// ---- agent DI ports (PHASE10 DI): the material and gore-section helpers of the appearance path ----
+
+// DISHONORED(port): 2013 rva 0x7c7dd0 (2012 0x82ce70). A Dishonored skeletal mesh carries one FBodyPart per material
+// index (USkeletalMesh::m_MaterialsToBodyParts): a part with a cut bone and m_bShowIfCut set is the stump that only
+// appears once that limb is severed, so at spawn it is hidden and every other section is shown. Material indices past
+// the end of the body-part array are always shown.
+// DISHONORED(bringup): retail batches the whole visibility array into one render command through
+// USkeletalMeshComponent::ShowMaterialSections (2013 rva 0x34ddf0), which this Engine tree does not declare; the
+// per-index USkeletalMeshComponent::ShowMaterialSection it does have has the same effect one section at a time.
+// Retail passes LODModels.Num() - 1 as the LOD index, so only the coarsest LOD is touched - kept as retail has it.
+void DisHideGoreSections( USkeletalMeshComponent& _rMeshComponent )
+{
+	USkeletalMesh* SkeletalMesh = _rMeshComponent.SkeletalMesh;
+	if( !SkeletalMesh )
+	{
+		return;
+	}
+	const INT NumMaterials = SkeletalMesh->Materials.Num();
+	const INT NumBodyParts = SkeletalMesh->m_MaterialsToBodyParts.Num();
+	const INT NumBoth = Min( NumBodyParts, NumMaterials );
+	const INT LODIndex = SkeletalMesh->LODModels.Num() - 1;
+	for( INT Idx = 0; Idx < NumMaterials; Idx++ )
+	{
+		UBOOL bShow = TRUE;
+		if( Idx < NumBoth )
+		{
+			const FBodyPart& BodyPart = SkeletalMesh->m_MaterialsToBodyParts(Idx);
+			const UBOOL bHasCutBone = ( BodyPart.m_CutBone != NAME_None );
+			bShow = !bHasCutBone || !BodyPart.m_bShowIfCut;
+		}
+		_rMeshComponent.ShowMaterialSection( Idx, bShow, LODIndex );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7c8640 (2012 0x82d600): the component's element is overridden wherever the mesh's own
+// material is the reference one, so one variation material can replace the same base material on several sections.
+void DisReplaceMatchingMaterialsInSkelMesh( USkeletalMeshComponent* _pMeshComponent, const UMaterialInterface* _pReferenceMaterial, UMaterialInterface* _pMaterial )
+{
+	if( !_pMeshComponent || !_pMeshComponent->SkeletalMesh )
+	{
+		return;
+	}
+	USkeletalMesh* SkeletalMesh = _pMeshComponent->SkeletalMesh;
+	for( INT Idx = 0; Idx < SkeletalMesh->Materials.Num(); Idx++ )
+	{
+		if( SkeletalMesh->Materials(Idx) == _pReferenceMaterial )
+		{
+			_pMeshComponent->SetMaterial( Idx, _pMaterial );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7cfb50 (2012 0x8321e0): the index form reads the mesh's own material at that index and
+// hands it to the reference form, which is what makes a variation apply to every section sharing that material.
+void DisReplaceMatchingMaterialsInSkelMesh( USkeletalMeshComponent* _pMeshComponent, INT _MaterialIndex, UMaterialInterface* _pMaterial )
+{
+	if( !_pMeshComponent || !_pMeshComponent->SkeletalMesh )
+	{
+		return;
+	}
+	USkeletalMesh* SkeletalMesh = _pMeshComponent->SkeletalMesh;
+	if( !SkeletalMesh->Materials.IsValidIndex( _MaterialIndex ) )
+	{
+		return;
+	}
+	DisReplaceMatchingMaterialsInSkelMesh( _pMeshComponent, SkeletalMesh->Materials(_MaterialIndex), _pMaterial );
+}

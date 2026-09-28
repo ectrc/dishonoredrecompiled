@@ -1,0 +1,28 @@
+rva_2013,status,note
+0x75bce0,ported-partial,ADishonoredPawn::PostBeginPlay (2012 0x7995f0) - nothing in the tree overrode it so APawn::PostBeginPlay ran and all six per-aspect passes were skipped; Super + PostBeginPlay_Body ported, the other five named as bringup at the site
+0x76a130,ported-partial,ADishonoredPawn::PostBeginPlay_Body (2012 0x7a4b70) - the eye skel controls and the cached-position pair; SetupHitRegions and the foot caches named as bringup
+0x757730,ported-partial,ADishonoredPawn::GetBone_ByName(FName FVector* FRotator*) (2012 0x7956a0) - the position branch is complete; the rotation branch lacks PerformAngleOffsetFixup 0x757110
+0x76a610,ported-partial,ADishonoredNPCPawn::PostBeginPlay (2012 0x7c8770) - Super + SetParentAnimComponent(m_pHeadMesh Mesh) + the three per-spawn counters; the RB channel the inventory loadout the plague component RegisterAvoidable the dispatcher registration and StartLOD named as bringup
+0x77f8a0,ported,ADishonoredNPCPawn::PostBeginPlay_Body (2012 0x7bc180) - THE DEFECT. Draws a head out of m_RandomHeadMeshes and sets it on m_pHeadMesh; body material variation; hat and mask accessories; the spine bender; the rotation and body intentions; m_fPossessCamZOffset
+0x776390,ported,DisChooseRandomMesh<FDisBodyMesh> (2012 0x7b5300) - template in dishonoredutilities.h; weighted draw that reports the index back so a save can restore the same appearance
+0x7764b0,ported,DisChooseRandomMesh<FDisPawnAccessoryMesh> (2012 0x7b5420) - same template
+0x7c7dd0,ported,DisHideGoreSections (2012 0x82ce70) - hides the sections whose FBodyPart has a cut bone and m_bShowIfCut
+0x7c8640,ported,DisReplaceMatchingMaterialsInSkelMesh(comp refMaterial newMaterial) (2012 0x82d600)
+0x7cfb50,ported,DisReplaceMatchingMaterialsInSkelMesh(comp index newMaterial) (2012 0x8321e0)
+0x776f80,ported-renamed,FDisMaterialsOverride::Set (2012 0x7b6ec0) - body is retail's; spelled DisMaterialsOverrideSet as a file-local function because the struct is generated and a member would need a new Inc/CppText struct header plus a module regeneration
+0x77b0d0,ported-renamed,FDisMeshMaterialVariationList::ApplyMaterialVariationToMesh (2012 0x7bbf50) - same; spelled DisApplyMaterialVariationToMesh
+0x7706b0,ported,ADishonoredNPCPawn::CreateAccessoryStaticMeshComponent (2012 0x7ae5f0) - the three bitfield writes decoded: @280 clear CollideActors/BlockActors/BlockRigidBody set bDisableAllRigidBody; @276 clear the four decal bits; m_CollisionTraceTypes @320 cleared
+0x76e0f0,ported,ADishonoredNPCPawn::GetAccessoryStaticMeshComponent (2012 0x7abc40)
+0x34ddf0,substituted,USkeletalMeshComponent::ShowMaterialSections - the Arkane batch form is not in this Engine tree; DisHideGoreSections calls the per-index ShowMaterialSection the tree does have, same effect one section at a time
+0x312b90,not-ported,USkeletalMeshComponent::SetFaceFXAsset - WITH_FACEFX is off in this build so the Engine tree has no SetFaceFXAsset; the head mesh's FaceFX asset is not pushed onto the body mesh and faces do not lip-sync
+0x755ab0,not-ported,ADishonoredPawn::PostBeginPlay_Attachments - needs UDisTweaks_Attachments::SpawnAttachmentsAndAttachTo; a pawn whose tweaks carry attachments gets none
+0x769f30,not-ported,ADishonoredPawn::SetupHitRegions - the per-region hit table; a headshot still counts as a body shot (same gap agent CG recorded for GetBoneRegionInfo)
+0x750fe0,not-ported,FDisFootCache::Init - the m_Foot_Caches build-out of PostBeginPlay_Body
+0x757110,not-ported,ADishonoredPawn::PerformAngleOffsetFixup - the body tweaks' m_fBone_AngleOffset_* correction used by GetBone_ByName's rotation branch
+0x757cf0,not-ported,ADishonoredPawn::PostBeginPlay_Combat
+0x7796b0,not-ported,ADishonoredNPCPawn::RegisterAvoidable
+0x870a80,not-ported,FDisComponentLODManager::StartLOD - the NPC never enters the LOD state machine
+0x77b280,not-ported,FDisMeshMaterialVariationList::RestoreMaterialVariationToMesh - only RestoreAppearance and OnNPCSetMaterials need it and neither is on the spawn path
+,written,-dishead census in dishonorednpcpawn_body.cpp: head component / attached / mesh set / with material / parentAnim / drawn per second over the spawned NPC population
+,written,-disheadcam[=seconds] framing switch: holds one spawned NPC in front of the player's own view point so a screenshot shows the head
+,written,-disnohead A/B switch: skips the one call that sets the head mesh so the before/after pair is a controlled change on one binary
