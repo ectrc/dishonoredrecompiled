@@ -325,6 +325,13 @@ void FGFxExternalInterface::Callback( GFxMovieView* pMovie, const char* MethodNa
 	UObject* Target = Movie->ExternalInterface;
 	if( Target == NULL || Target->IsPendingKill() || Target->HasAnyFlags( RF_Unreachable ) )
 	{
+		static UBOOL bWarnedNoTarget = FALSE;
+		if( !bWarnedNoTarget )
+		{
+			bWarnedNoTarget = TRUE;
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): ExternalInterface.call('%s'): the movie ")
+				TEXT("player has no ExternalInterface object"), ANSI_TO_TCHAR( MethodName ) );
+		}
 		return;
 	}
 
@@ -337,6 +344,15 @@ void FGFxExternalInterface::Callback( GFxMovieView* pMovie, const char* MethodNa
 	UFunction* Function = Target->FindFunction( MethodFName );
 	if( Function == NULL )
 	{
+		// DISHONORED(bringup): an interface that asks the game something and is answered by silence
+		// builds itself out of undefined; say which name had no function, once each.
+		static TArray<FName> Warned;
+		if( !Warned.ContainsItem( MethodFName ) )
+		{
+			Warned.AddItem( MethodFName );
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): ExternalInterface.call('%s'): %s has no ")
+				TEXT("such function"), *MethodNames, *Target->GetName() );
+		}
 		return;
 	}
 

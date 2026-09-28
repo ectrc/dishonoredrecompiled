@@ -517,6 +517,32 @@ UBOOL DisGFxMoviePlayerMainMenuFilterButtonInput( UDisGFxMoviePlayerMainMenu* Me
 }
 
 
+// DISHONORED(port): 2012 0x7fa4c0. The init call, which is the only one this bring-up makes: there
+// is no gamepad state to change later. Retail compares against the cached bit and early-outs; with
+// bInit set it always runs.
+static void DisGFxMoviePlayerUpdateGamepadUseForAS( UDisGFxMoviePlayerBase* Base )
+{
+	FGFxMovie* Movie = Base->GetMovie();
+	GFxMovieView* View = Movie ? Movie->pView.GetPtr() : NULL;
+	if( View == NULL )
+	{
+		return;
+	}
+	// IsUsingGamepad is a script virtual this build does not reach; the PC default is the mouse.
+	const UBOOL bUsingGamepad = FALSE;
+	GFxValue Flag;
+	Flag.SetBoolean( bUsingGamepad ? true : false );
+	View->SetMouseCursorCount( bUsingGamepad ? 0 : 1 );
+	View->SetVariable( "_global.bUsingGamepad", Flag, GFxMovie::SV_Sticky );
+
+	GFxValue UIBase;
+	if( View->GetVariable( &UIBase, "_root.UIBase" ) && UIBase.IsObject() )
+	{
+		GFxValue Result;
+		UIBase.Invoke( "UpdateControllerButtonsInstances", &Result, NULL, 0 );
+	}
+}
+
 /*-----------------------------------------------------------------------------
 	The seam. gfxuiengine.h says why these arrive as hooks rather than as the virtual overrides
 	retail has; the bodies and the call sites are retail's.
@@ -526,7 +552,19 @@ static void DisGFxMoviePlayerPreLoaded( UGFxMoviePlayer* Player )
 {
 	if( UDisGFxMoviePlayerBase* Base = Cast<UDisGFxMoviePlayerBase>( Player ) )
 	{
+		// DISHONORED(port): 2012 0x822820, the three calls retail makes after UGFxMoviePlayer::PreLoad,
+		// in retail's order. PlatformName is read by the content before anything else - the start
+		// screen chooses t_PressAnyKey or t_PressStart on it.
+		FGFxMovie* Movie = Base->GetMovie();
+		GFxMovieView* View = Movie ? Movie->pView.GetPtr() : NULL;
+		if( View != NULL )
+		{
+			GFxValue Platform;
+			Platform.SetStringW( TEXT("PC") );
+			View->SetVariable( "_global.PlatformName", Platform, GFxMovie::SV_Sticky );
+		}
 		DisGFxMoviePlayerInitTexts( Base );
+		DisGFxMoviePlayerUpdateGamepadUseForAS( Base );
 	}
 }
 

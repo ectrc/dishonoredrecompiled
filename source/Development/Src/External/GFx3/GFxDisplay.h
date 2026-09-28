@@ -97,6 +97,8 @@ extern bool GFxDisplayNoShapes;
 extern bool GFxDisplayNoText;
 extern bool GFxDisplayNoImages;
 extern bool GFxDisplayNoBeginDisplay;
+extern unsigned int GFxDisplayUntexturedFills;
+extern unsigned int GFxDisplayDrawTrace;
 // -gfxuifitfill: ignore the style's own matrix and stretch the texture across the shape's bounds. A
 // diagnostic for the fill-matrix convention, and the fallback when a style carries no usable matrix.
 extern bool GFxDisplayFitFill;
@@ -119,6 +121,11 @@ public:
     GRenderer*           pRenderer;
     GFxMovieRoot*        pRoot;
     GFxMovieDefImpl*     pDefImpl;
+    // DISHONORED(port): the dictionary a SHAPE's fill ids index, which is the movie the shape's
+    // definition was parsed out of and NOT the root's. GFxSprite::GetOwnDataDef keeps the same
+    // distinction for PlaceObject (GFxPlayer.h); a fill resolved against the wrong movie either
+    // finds nothing or finds a different picture, and the main menu imports five whole screens.
+    class GFxMovieDataDef* pDataDef;
     GFxGlyphRasterCache* pGlyphCache;
     GTexture*            pGlyphTexture;      // the atlas, uploaded on demand; owned by the cache glue
     GMatrix2D            Matrix;

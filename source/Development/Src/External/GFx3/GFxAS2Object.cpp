@@ -6,7 +6,7 @@
 // bodies also fix three behaviours that are easy to get wrong and that the class registrations in
 // the cook depend on:
 //   1. the lookup walks __proto__ and stops at the first owner that has the name;
-//   2. __proto__ and __constructor__ are not members - they are intercepted by name before the hash
+//   2. __proto__ and __resolve are not members - they are intercepted by name before the hash
 //      is ever consulted, on both the read and the write side;
 //   3. when the found member is a PROPERTY (type 9/10) the *owner* that was reached is the object the
 //      getter runs against, not the object the lookup started from.
@@ -227,7 +227,7 @@ void GASObject::Set__proto__(GASStringContext* sc, GASObject* proto)   // 2012 0
 bool GASObject::GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val)
 {                                                                     // 2012 0x9dc890
     const GASString& protoName = sc->GetBuiltin(GASbuiltin_proto);
-    const GASString& ctorName = sc->GetBuiltin(GASbuiltin_constructorUS);
+    const GASString& resolveName = sc->GetBuiltin(GASbuiltin_resolve);
 
     GASObject* obj = this;
     bool resolveSet = false;
@@ -242,7 +242,7 @@ bool GASObject::GetMemberRaw(GASStringContext* sc, const GASString& name, GASVal
             else val->SetUndefined();
             return true;
         }
-        if (name == ctorName)
+        if (name == resolveName)
         {
             if (obj->pResolveHandler) val->SetAsFunction(obj->pResolveHandler);
             else val->SetUndefined();
@@ -277,7 +277,7 @@ bool GASObject::SetMemberRaw(GASStringContext* sc, const GASString& name, const 
             Set__proto__(sc, val.ToObject(0));
         return true;
     }
-    if (name == sc->GetBuiltin(GASbuiltin_constructorUS))
+    if (name == sc->GetBuiltin(GASbuiltin_resolve))
     {
         if (!val.IsUnset())
         {
@@ -589,8 +589,13 @@ const GASValue& GASFnCall::Arg(int n) const
 }
 
 GASFunctionObject::GASFunctionObject(GASStringContext* sc, GASObject* proto)
-    : GASObject(sc, proto), pCFunction(0), pBuffer(0), StartPC(0), Length(0), Version(0),
-      RegisterCount(0), Flags(0), Args(0), NumArgs(0), pDeclTarget(0), pOwnerProto(0) {}
+    : GASObject(sc, proto), pCFunction(0), pNewObjectFunc(0), pBuffer(0), StartPC(0), Length(0),
+      Version(0), RegisterCount(0), Flags(0), Args(0), NumArgs(0), pDeclTarget(0), pOwnerProto(0) {}
+
+GASObject* GASFunctionObject::CreateNewObject(GASStringContext* sc, GASObject* proto) const
+{
+    return pNewObjectFunc ? pNewObjectFunc(sc, proto) : new GASObject(sc, proto);
+}
 
 GASFunctionObject::~GASFunctionObject()
 {

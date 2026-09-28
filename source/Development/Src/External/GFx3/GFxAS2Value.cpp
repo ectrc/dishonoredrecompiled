@@ -85,14 +85,23 @@ static GASStringNode** ChainNextOf(GASStringNode* n)
 
 GASStringManager::~GASStringManager()                                 // 2012 0x9ca630
 {
+    // DISHONORED(bringup): a node something still holds is LEAKED rather than freed. The action
+    // buffers of a movie definition keep their constant pool as GASStrings and the loader outlives
+    // the movie root, so those references are destroyed after this manager is gone; freeing the node
+    // here makes that a read of freed memory (GASStringNode::Release, which is where it faulted).
+    // The next execution of such a buffer rebuilds its dictionary from the live context, so a leaked
+    // node is never read again - it is a movie-sized leak per close, against a use-after-free.
     for (unsigned int i = 0; i < TableSize; ++i)
     {
         GASStringNode* n = Table[i];
         while (n)
         {
             GASStringNode* next = *ChainNextOf(n);
-            free((void*)n->pData);
-            free(n);
+            if (n->RefCount == 0)
+            {
+                free((void*)n->pData);
+                free(n);
+            }
             n = next;
         }
     }

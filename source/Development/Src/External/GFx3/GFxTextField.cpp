@@ -36,6 +36,7 @@ GFxTextFieldDesc::GFxTextFieldDesc()
     // DISHONORED(port): 0xa27200
     VariableName[0] = 0;
     InitialText[0] = 0;
+    FontName[0] = 0;
 }
 
 void GFxTextFieldDesc::InitEmptyTextDef()
@@ -176,11 +177,13 @@ void GFxEditTextCharacter::GetInitialFormats(GFxTextFormat* fmt, GFxTextParagrap
     GFxFontResource* res = 0;
     if (Desc.FontId && fonts)
     {
-        // Retail resolves the font id through the movie's resource binding. There is no import
-        // binding in this tree yet (agentBC.md 6.2), so a definition's font id cannot be resolved to
-        // an imported fontlib symbol and the first registered font stands in. That substitution is
-        // what makes the menu asset lay out at all today and it is reported as such by the harness.
-        if (fonts->GetFontCount())
+        // DISHONORED(port): 0xa27860 resolves the font id against the movie's resource binding. The
+        // name the definition's movie gives that id is carried in the descriptor; the manager
+        // matches it against both a DefineFont's own face name and the export symbol an
+        // ImportAssets2 bound it under, which is the pair retail's GFxFontLib entry holds.
+        if (Desc.FontName[0] != 0)
+            res = fonts->FindFontResource(Desc.FontName, 0);
+        if (res == 0 && fonts->GetFontCount())
             res = fonts->GetFontByIndex(0);
     }
     if (res)
@@ -370,6 +373,37 @@ void GFxEditTextCharacter::ProduceGlyphs(GFxGlyphRasterCache* cache, GlyphOutput
 // The AS2 member surface. Retail's GetMember is 4,401 bytes and SetMember 6,232; this is the subset
 // the cook's own content reads and writes, which the harness reports by name.
 
+GRect<float> GFxEditTextCharacter::GetBoundsTwips(const GMatrix2D& m) const
+{
+    // DISHONORED(port): 0xa2ed60 - the view rect through the matrix, and nothing else. The
+    // definition's own rect never enters into it, which is the whole difference for a field that
+    // was auto-sized or had its text replaced.
+    const GRect<float> r = const_cast<GFxEditTextCharacter*>(this)->Doc.GetViewRect();
+    if (r.Right <= r.Left && r.Bottom <= r.Top)
+        return GRect<float>(0.f, 0.f, 0.f, 0.f);
+    const float xs[4] = { r.Left, r.Right, r.Left, r.Right };
+    const float ys[4] = { r.Top, r.Top, r.Bottom, r.Bottom };
+    GRect<float> out(0.f, 0.f, 0.f, 0.f);
+    for (int i = 0; i < 4; ++i)
+    {
+        float x = xs[i], y = ys[i];
+        m.Transform(&x, &y);
+        if (i == 0)
+        {
+            out.Left = out.Right = x;
+            out.Top = out.Bottom = y;
+        }
+        else
+        {
+            if (x < out.Left) out.Left = x;
+            if (x > out.Right) out.Right = x;
+            if (y < out.Top) out.Top = y;
+            if (y > out.Bottom) out.Bottom = y;
+        }
+    }
+    return out;
+}
+
 bool GFxEditTextCharacter::GetMember(GASEnvironment* env, const GASString& name, GASValue* val)
 {
     // DISHONORED(port): 0xa2f9f0, the properties named below only.
@@ -498,7 +532,11 @@ bool GFxEditTextCharacter::SetMember(GASEnvironment* env, const GASString& name,
         GFxTextFormat fmt;
         const unsigned int rgb = (unsigned int)tmp.ToInt32(env) & 0x00FFFFFFu;
         fmt.SetColor(GColor(0xFF000000u | rgb));
-        Doc.SetDefaultTextAndParaFormat(fmt, Doc.GetStyledText().GetDefaultParagraphFormat());
+        // DISHONORED(port): the colour is merged into the document's own default, not substituted
+        // for it - the same rule 0xaa5400 applies to a run. Replacing it left the default with no
+        // font name and no size.
+        const GFxTextFormat merged = Doc.GetStyledText().GetDefaultTextFormat().Merge(fmt);
+        Doc.SetDefaultTextAndParaFormat(merged, Doc.GetStyledText().GetDefaultParagraphFormat());
         Doc.SetTextFormat(fmt, 0, Doc.GetStyledText().GetLength());
         bDirty = true;
         return true;

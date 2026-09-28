@@ -766,7 +766,14 @@ int main(int argc, char** argv)
         else if (strcmp(argv[i], "--opcodes") == 0) wantOpcodes = true;
         else if (strcmp(argv[i], "--classes") == 0) wantClasses = true;
         else if (strcmp(argv[i], "--optrace") == 0 && i + 1 < argc)
-            GFxAS2OpTraceFrom = (unsigned int)atoi(argv[++i]);
+        {
+            // <from>[:<count>] - the window, so a long drain can be read without printing all of it.
+            const char* spec = argv[++i];
+            GFxAS2OpTraceFrom = (unsigned int)atoi(spec);
+            const char* colon = strchr(spec, ':');
+            if (colon != 0)
+                GFxAS2OpTraceCount = (unsigned int)atoi(colon + 1);
+        }
         else if ((strcmp(argv[i], "--invoke") == 0 || strcmp(argv[i], "--key") == 0)
                  && i + 1 < argc && stepCount < 32)
         {

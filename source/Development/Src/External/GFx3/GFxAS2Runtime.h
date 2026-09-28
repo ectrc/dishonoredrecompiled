@@ -27,6 +27,12 @@ extern unsigned int GFxAS2OpBudget;
 extern unsigned int GFxAS2OpsThisBuffer;
 extern unsigned int GFxAS2OpTraceFrom;
 extern unsigned int GFxAS2OpTraceCount;
+extern int GFxAS2OpTraceLen;
+extern int GFxAS2OpTraceLo;
+extern int GFxAS2OpTraceHi;
+extern char GFxAS2WatchMember[64];
+bool GFxAS2WatchMatches(const char* name);
+extern int  GFxAS2WatchCount;
 
 // Runs a DefineFunction/DefineFunction2 body: binds `this`, the arguments, the preload registers and
 // the local frame, then re-enters GASActionBuffer::Execute at the function's own pc. Retail does this

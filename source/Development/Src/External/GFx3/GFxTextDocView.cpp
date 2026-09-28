@@ -697,6 +697,13 @@ void GFxTextDocView::Format()
     Flags &= ~(unsigned int)VF_NeedsFormat;
 }
 
+GRect<float>& GFxTextDocView::GetViewRect()
+{
+    if (Flags & VF_NeedsFormat)
+        Format();
+    return ViewRect;
+}
+
 float GFxTextDocView::GetTextWidth()
 {
     // DISHONORED(port): 0xa9f200 - formats first when the view is dirty, which is why every AS2

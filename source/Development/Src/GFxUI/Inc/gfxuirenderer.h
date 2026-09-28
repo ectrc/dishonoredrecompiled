@@ -139,6 +139,7 @@ struct FGFxDrawCensus
     unsigned int Lines;
     unsigned int Glyphs;
     unsigned int BoundShaderStates; // distinct bound shader states created (cache misses)
+    unsigned int UntexturedBitmapDraws; // bitmap fills with no RHI texture, dropped rather than drawn
 };
 extern FGFxDrawCensus GGFxDrawCensus;
 
@@ -449,6 +450,11 @@ public:
     GMatrix2D                                     CurrentMatrix;         // @108
     GMatrix2D                                     ViewportMatrix;        // @132
     GRenderer::Cxform                             CurrentCxform;         // @156
+    // DISHONORED(bringup): the GAME-thread mirror of CurrentCxform. CurrentCxform is written by
+    // a render command (2012 0x5c4b60), so it is the value the render thread has reached, not the
+    // value the game thread has just set - and FillStyleColor/FillStyleBitmap capture the latter
+    // at enqueue time. Appended after the reproduced members, so the layout above is unchanged.
+    GRenderer::Cxform                             CurrentCxformGameThread;
     FGFxViewportUserParams                        ViewRect;              // @188
     FLOAT                                         InverseGamma;          // @252
     FStencilStateRHIRef                           CurStencilState;       // @256

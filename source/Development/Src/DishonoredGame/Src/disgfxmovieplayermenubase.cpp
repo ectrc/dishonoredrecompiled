@@ -442,6 +442,28 @@ void UDisGFxMoviePlayerMenuBase::execReq_CanLoadGame( FFrame& Stack, RESULT_DECL
 	*(UBOOL*)Result = ( Engine && Engine->HasSaveGame( 0 ) ) ? TRUE : FALSE;
 }
 
+// DISHONORED(port): the Continue entry of the main menu bar. Retail's own reading of "can this player
+// continue" is in UDisGFxMoviePlayerMainMenu::PostStart (2012 0x821e00), which computes the four
+// booleans it hands to mainMenu_mc.Open as `!engine || UDishonoredEngine::HasSaveGame(engine, 0)` for
+// both Continue and Load - the same question Req_CanLoadGame answers. Without it the AS2 side got a
+// zeroed result from the unported-native handler and MainMenu.SetMenu built a menu with no entries at
+// all, so the bar came up empty.
+void UDisGFxMoviePlayerMenuBase::execReq_CanContinueGame( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	*(UBOOL*)Result = ( Engine == NULL || Engine->HasSaveGame( 0 ) ) ? TRUE : FALSE;
+}
+
+// DISHONORED(port): the Save entry of the pause menu's bar, the same pair of questions: saving is
+// offered when the engine allows save/load at all (0x62bb50).
+void UDisGFxMoviePlayerMenuBase::execReq_CanSaveGame( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	*(UBOOL*)Result = ( Engine && Engine->m_bSaveLoadEnabled ) ? TRUE : FALSE;
+}
+
 // DISHONORED(port): 2012 rva 0x5f7920 exec / 0x62bb50 body - the engine's own m_bSaveLoadEnabled bit, which
 // is what -newgame and the streamed menu teardown both key off
 void UDisGFxMoviePlayerMenuBase::execReq_IsSaveLoadEnabled( FFrame& Stack, RESULT_DECL )

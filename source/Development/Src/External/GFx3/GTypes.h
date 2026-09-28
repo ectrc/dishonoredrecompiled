@@ -565,6 +565,19 @@ public:
         float ny = M_[1][0] * (*x) + M_[1][1] * (*y) + M_[1][2];
         *x = nx; *y = ny;
     }
+    // DISHONORED(port): 2012 0x9b2530 / 0x9b2550 / 0x9b2570. The length of each axis and the angle
+    // of the x axis, which is how AS2's _xscale, _yscale and _rotation are read off a matrix.
+    double GetXScale() const { return sqrt((double)(M_[1][0] * M_[1][0] + M_[0][0] * M_[0][0])); }
+    double GetYScale() const { return sqrt((double)(M_[1][1] * M_[1][1] + M_[0][1] * M_[0][1])); }
+    double GetRotation() const { return atan2((double)M_[1][0], (double)M_[0][0]); }
+    bool IsValid() const
+    {
+        for (int r = 0; r < 2; ++r)
+            for (int c = 0; c < 3; ++c)
+                if (!(M_[r][c] == M_[r][c]) || M_[r][c] > 3.4e38f || M_[r][c] < -3.4e38f)
+                    return false;
+        return true;
+    }
 };
 
 class GMatrix3D

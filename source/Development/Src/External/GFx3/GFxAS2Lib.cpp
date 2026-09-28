@@ -189,6 +189,11 @@ void FunctionApply(const GASFnCall& fn)
 
 // --- Array ----------------------------------------------------------------------------------
 
+GASObject* ArrayNewObject(GASStringContext* sc, GASObject* proto)
+{
+    return new GASArrayObject(sc, proto);
+}
+
 void ArrayCtor(const GASFnCall& fn)
 {
     GASArrayObject* arr = ArrayOf(fn);
@@ -898,16 +903,76 @@ void GlobalGetTimer(const GASFnCall& fn)
     if (fn.pResult) fn.pResult->SetNumber((double)GFxAS2GetTimerMs());
 }
 
-// setInterval / setTimeout need the movie root's timer list, which arrives with the input and
-// advance path. They return a handle so the content's bookkeeping stays consistent.
-void GlobalSetInterval(const GASFnCall& fn)
+// DISHONORED(port): setInterval(fn, ms, ...) / setInterval(obj, "method", ms, ...), and setTimeout
+// with the same two forms. The timer list is the movie root's and it is serviced once per advance.
+static void GlobalSetIntervalImpl(const GASFnCall& fn, bool bTimeout)
 {
-    static int nextHandle = 1;
-    if (fn.pResult) fn.pResult->SetInt(nextHandle++);
+    if (fn.pResult) fn.pResult->SetInt(0);
+    GFxMovieRoot* root = fn.pEnv ? fn.pEnv->GetMovieRoot() : 0;
+    if (root == 0 || fn.GetNumArgs() < 2)
+        return;
+    GASValue target = fn.Arg(0);
+    GASString method;
+    int msIndex = 1;
+    if (fn.GetNumArgs() >= 3 && fn.Arg(1).IsString())
+    {
+        method = fn.Arg(1).GetString();
+        msIndex = 2;
+    }
+    const double ms = fn.Arg(msIndex).ToNumber(fn.pEnv);
+    GASValue extra[8];
+    int nextra = 0;
+    for (int i = msIndex + 1; i < fn.GetNumArgs() && nextra < 8; ++i)
+        extra[nextra++] = fn.Arg(i);
+    const int id = root->AddIntervalTimer(target, method, ms, extra, nextra, bTimeout);
+    if (fn.pResult) fn.pResult->SetInt(id);
+}
+
+void GlobalSetInterval(const GASFnCall& fn) { GlobalSetIntervalImpl(fn, false); }
+void GlobalSetTimeout(const GASFnCall& fn)  { GlobalSetIntervalImpl(fn, true); }
+
+// DISHONORED(port): flash.external.ExternalInterface.call(name, ...) - the AS2 side of
+// GFxExternalInterface (GFx3Gen.h vt[1]); the engine's implementation is FGFxExternalInterface::
+// Callback (2013 0x58d510). The main menu asks the game four questions through it and builds its
+// menu bar out of the answers.
+void ExternalInterfaceCall(const GASFnCall& fn)
+{
+    if (fn.pResult) fn.pResult->SetUndefined();
+    GFxMovieRoot* root = fn.pEnv ? fn.pEnv->GetMovieRoot() : 0;
+    if (root == 0 || fn.GetNumArgs() < 1)
+        return;
+    const GASString name = fn.Arg(0).ToString(fn.pEnv);
+    GFxValue args[8];
+    const int nargs = (fn.GetNumArgs() - 1) > 8 ? 8 : (fn.GetNumArgs() - 1);
+    for (int i = 0; i < nargs; ++i)
+        root->ASValue2GFxValue(fn.pEnv, fn.Arg(i + 1), &args[i]);
+    GFxValue result;
+    if (root->CallExternalInterface(name.ToCStr(), args, (unsigned int)nargs, &result) && fn.pResult)
+    {
+        GASValue out;
+        root->GFxValue2ASValue(result, &out);
+        *fn.pResult = out;
+    }
+}
+
+// DISHONORED(port): fscommand(command, argument) - GFxFSCommandHandler's AS2 entry point. The
+// interpreter's GetURL handles the `getURL("FSCommand:X")` spelling the cook actually uses.
+void GlobalFSCommand(const GASFnCall& fn)
+{
+    GFxMovieRoot* root = fn.pEnv ? fn.pEnv->GetMovieRoot() : 0;
+    if (root == 0 || fn.GetNumArgs() < 1)
+        return;
+    const GASString command = fn.Arg(0).ToString(fn.pEnv);
+    const GASString argument = fn.GetNumArgs() >= 2 ? fn.Arg(1).ToString(fn.pEnv)
+                                                    : fn.pEnv->GetSC()->CreateConstString("");
+    root->CallFSCommand(command.ToCStr(), argument.ToCStr());
 }
 
 void GlobalClearInterval(const GASFnCall& fn)
 {
+    GFxMovieRoot* root = fn.pEnv ? fn.pEnv->GetMovieRoot() : 0;
+    if (root != 0 && fn.GetNumArgs() >= 1)
+        root->ClearIntervalTimer(fn.Arg(0).ToInt32(fn.pEnv));
     if (fn.pResult) fn.pResult->SetUndefined();
 }
 
@@ -992,21 +1057,22 @@ void GASGlobalContext::InitStandardLibrary()
     AddMethod(Prototypes[Proto_MovieClip], this, "hitTest", MCHitTest);
 
     // The constructors, each with its prototype and each on _global.
-    struct ClassInstall { const char* Name; ProtoId Id; GASCFunctionPtr Ctor; };
+    struct ClassInstall { const char* Name; ProtoId Id; GASCFunctionPtr Ctor; GASNewObjectPtr New; };
     static const ClassInstall installs[] =
     {
-        { "Object",    Proto_Object,    ObjectCtor },
-        { "Function",  Proto_Function,  ObjectCtor },
-        { "Array",     Proto_Array,     ArrayCtor },
-        { "String",    Proto_String,    StringCtor },
-        { "Number",    Proto_Number,    NumberCtor },
-        { "Boolean",   Proto_Boolean,   BooleanCtor },
-        { "MovieClip", Proto_MovieClip, ObjectCtor },
-        { "Error",     Proto_Error,     ErrorCtor }
+        { "Object",    Proto_Object,    ObjectCtor,  0 },
+        { "Function",  Proto_Function,  ObjectCtor,  0 },
+        { "Array",     Proto_Array,     ArrayCtor,   ArrayNewObject },
+        { "String",    Proto_String,    StringCtor,  0 },
+        { "Number",    Proto_Number,    NumberCtor,  0 },
+        { "Boolean",   Proto_Boolean,   BooleanCtor, 0 },
+        { "MovieClip", Proto_MovieClip, ObjectCtor,  0 },
+        { "Error",     Proto_Error,     ErrorCtor,   0 }
     };
     for (int i = 0; i < (int)(sizeof(installs) / sizeof(installs[0])); ++i)
     {
         GASFunctionObject* ctor = NewCFunction(installs[i].Ctor);
+        ctor->pNewObjectFunc = installs[i].New;
         GASValue protoVal;
         protoVal.SetAsObject(Prototypes[installs[i].Id]);
         ctor->SetConstMemberRaw(&SC, "prototype", protoVal,
@@ -1089,9 +1155,27 @@ void GASGlobalContext::InitStandardLibrary()
     AddMethod(pGlobal, this, "isFinite", GlobalIsFinite);
     AddMethod(pGlobal, this, "getTimer", GlobalGetTimer);
     AddMethod(pGlobal, this, "setInterval", GlobalSetInterval);
-    AddMethod(pGlobal, this, "setTimeout", GlobalSetInterval);
+    AddMethod(pGlobal, this, "setTimeout", GlobalSetTimeout);
     AddMethod(pGlobal, this, "clearInterval", GlobalClearInterval);
     AddMethod(pGlobal, this, "clearTimeout", GlobalClearInterval);
+    AddMethod(pGlobal, this, "fscommand", GlobalFSCommand);
+
+    // flash.external.ExternalInterface, which is the only member of the `flash` package the cook's
+    // interfaces use. Built as plain objects, as the two AS2 namespaces Key and Mouse are.
+    {
+        GASObject* flash = new GASObject(&SC, Prototypes[Proto_Object]);
+        GASObject* external = new GASObject(&SC, Prototypes[Proto_Object]);
+        GASObject* extIface = new GASObject(&SC, Prototypes[Proto_Object]);
+        AddMethod(extIface, this, "call", ExternalInterfaceCall);
+        GASValue v;
+        v.SetAsObject(extIface);
+        external->SetConstMemberRaw(&SC, "ExternalInterface", v,
+                                    GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+        v.SetAsObject(external);
+        flash->SetConstMemberRaw(&SC, "external", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+        v.SetAsObject(flash);
+        pGlobal->SetConstMemberRaw(&SC, "flash", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+    }
 
     GASValue nanVal;
     nanVal.SetNumber(GFxAS2NaN());

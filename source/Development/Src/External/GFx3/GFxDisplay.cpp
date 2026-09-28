@@ -23,6 +23,16 @@ bool GFxDisplayNoShapes = false;
 bool GFxDisplayNoText = false;
 bool GFxDisplayNoImages = false;
 bool GFxDisplayNoBeginDisplay = false;
+// DISHONORED(bringup): style groups skipped because their image fill had no texture.
+unsigned int GFxDisplayUntexturedFills = 0;
+unsigned int GFxDisplayDrawTrace = 0;
+static char GFxDisplayLastFill[96] = "";
+static void GFxStrCopy(char* dst, unsigned int cap, const char* src)
+{
+    unsigned int i = 0;
+    for (; src != 0 && src[i] != 0 && i + 1 < cap; ++i) dst[i] = src[i];
+    dst[i] = 0;
+}
 bool GFxDisplayFitFill = false;
 
 void GFxDisplayMatrixAppend(GMatrix2D* out, const GMatrix2D& a, const GMatrix2D& b)
@@ -684,7 +694,7 @@ GTexture* GFxDisplayGetGlyphTexture(GRenderer* renderer)
 // GFxDisplayContext
 
 GFxDisplayContext::GFxDisplayContext()
-    : pRenderer(0), pRoot(0), pDefImpl(0), pGlyphCache(0), pGlyphTexture(0), MaskLevel(0)
+    : pRenderer(0), pRoot(0), pDefImpl(0), pDataDef(0), pGlyphCache(0), pGlyphTexture(0), MaskLevel(0)
 {
     Matrix.SetIdentity();
     GFxDisplayCxformIdentity(&Cx);
@@ -779,6 +789,17 @@ void GFxCharacter::Display(GFxDisplayContext& ctx)
     (void)ctx;
 }
 
+// DISHONORED(bringup): a subtree whose composed colour transform multiplies alpha by zero and adds
+// nothing is fully transparent, and it is not submitted. Retail draws it and the pixel shader's
+// Cxform makes every pixel transparent; in this tree the Cxform reaches FGFxFillStyle and the cooked
+// GFx_PS_CxformTexture shader does not honour it, so a clip at _alpha 0 was painted at full opacity.
+// The main menu keeps two whole SCREENS on its display list at _alpha 0 - the imported load-game and
+// options screens - so the whole interface was drawn under them.
+static bool GFxDisplayCxformIsTransparent(const GRenderer::Cxform& cx)
+{
+    return cx.M_[3][0] <= 0.0f && cx.M_[3][1] <= 0.5f;
+}
+
 void GFxSprite::Display(GFxDisplayContext& ctx)
 {
     // DISHONORED(port): 2012 0x9faeb0 (2013 0x9f1780). Invisible clips and clips with a zero alpha
@@ -794,7 +815,17 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     GMatrix2D savedMatrix;
     GRenderer::Cxform savedCx;
     ctx.PreDisplay(this, &savedMatrix, &savedCx);
+    if (GFxDisplayCxformIsTransparent(ctx.Cx))
+    {
+        ++ctx.Stats.Invisible;
+        ctx.PostDisplay(savedMatrix, savedCx);
+        return;
+    }
+    GFxMovieDataDef* savedDataDef = ctx.pDataDef;
+    if (GetOwnDataDef() != 0)
+        ctx.pDataDef = GetOwnDataDef();
     DisplayList.Display(ctx);
+    ctx.pDataDef = savedDataDef;
     ctx.PostDisplay(savedMatrix, savedCx);
 }
 
@@ -830,17 +861,17 @@ void GFxCharacterDef::Display(GFxDisplayContext& ctx, GFxCharacter* ch)
 
 // The fill style, applied to the renderer. 2012 0xa909a0 GFxFillStyle::Apply, with
 // GetFillTexture (0xa90950) for the bitmap and gradient arms.
-static void GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill,
+static bool GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill,
                                 GFxMovieDataDef* dataDef, GColor fallback,
                                 const GRect<int>* bounds)
 {
     GRenderer* r = ctx.pRenderer;
     if (r == 0)
-        return;
+        return false;
     if (fill == 0)
     {
         r->FillStyleColor(fallback);
-        return;
+        return true;
     }
     if (fill->IsImage())
     {
@@ -873,14 +904,16 @@ static void GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill
             // DISHONORED(bringup): the numbers the fill-matrix convention has to be derived from, for
             // the first few bitmap fills of a run.
             static unsigned int dumped = 0;
-            if (dumped < 6 && bounds != 0)
+            if (dumped < 24 && bounds != 0)
             {
                 ++dumped;
                 GFxLogf("DISHONORED(bringup): GFx fill %u: matrix [%g %g %g / %g %g %g] bounds "
-                        "[%d %d %d %d] image %ux%u",
+                        "[%d %d %d %d] image %ux%u '%s'%s",
                         dumped, fill->Matrix.M_[0][0], fill->Matrix.M_[0][1], fill->Matrix.M_[0][2],
                         fill->Matrix.M_[1][0], fill->Matrix.M_[1][1], fill->Matrix.M_[1][2],
-                        bounds->Left, bounds->Top, bounds->Right, bounds->Bottom, imgW, imgH);
+                        bounds->Left, bounds->Top, bounds->Right, bounds->Bottom, imgW, imgH,
+                        ((GFxImageCharacterDef*)def)->GetResolveName(),
+                        ((GFxImageCharacterDef*)def)->bIsSubImage ? " (sub)" : "");
             }
             if (GFxDisplayFitFill && bounds != 0
                 && bounds->Right > bounds->Left && bounds->Bottom > bounds->Top)
@@ -911,14 +944,21 @@ static void GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill
                              || fill->Type == GFxFill_ClippedImage)
                                 ? GRenderer::Sample_Linear : GRenderer::Sample_Point;
             r->FillStyleBitmap(&ft);
+            if (GFxDisplayDrawTrace != 0)
+            {
+                GFxStrCopy(GFxDisplayLastFill, sizeof(GFxDisplayLastFill),
+                           ((GFxImageCharacterDef*)def)->GetResolveName());
+            }
             ++ctx.Stats.Images;
-            return;
+            return true;
         }
-        // DISHONORED(bringup): an image fill whose texture did not resolve paints with the style's
-        // own colour rather than nothing, so a missing texture shows as a flat rectangle in the
-        // frame instead of a hole. Retail has no such case because the bind step fails the movie.
-        r->FillStyleColor(fill->Color);
-        return;
+        // DISHONORED(bringup): an image fill the renderer cannot texture draws NOTHING. The null
+        // bitmap id (0xFFFF) is 23 of the menu's 61 bitmap fills and it is what the vignette is made
+        // of; painting those with the style's flat colour laid seven opaque rectangles over the whole
+        // interface. Retail has no such case, because a fill it cannot resolve fails the bind.
+        r->FillStyleDisable();
+        ++GFxDisplayUntexturedFills;
+        return false;
     }
     if (fill->IsGradient())
     {
@@ -927,10 +967,16 @@ static void GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill
         // stands in, which keeps the shape's area and its rough colour. Named in agentDC.md.
         const unsigned int mid = fill->GradientCount ? fill->GradientCount / 2 : 0;
         r->FillStyleColor(fill->GradientCount ? fill->Gradient[mid].Color : fill->Color);
-        return;
+        return true;
     }
     r->FillStyleColor(fill->Color);
+    if (GFxDisplayDrawTrace != 0) GFxStrCopy(GFxDisplayLastFill, sizeof(GFxDisplayLastFill), "solid");
+    return true;
 }
+
+// DISHONORED(bringup): -gfxuidrawtrace logs every style group a frame submits, with the screen
+// rectangle it covers and the fill it was given. "Which draw is that rectangle" is otherwise a
+// question only a bisect can answer, and it took six runs the first time.
 
 // One mesh group, submitted. XY16i in twips with an ascending index list, which is the only geometry
 // shape the renderer's vertex declarations accept (see GetVertices in GFxDisplay.h).
@@ -940,6 +986,25 @@ static void GFxDisplaySubmitGroup(GFxDisplayContext& ctx, const GFxShapeMesh* me
     GRenderer* r = ctx.pRenderer;
     if (r == 0 || group.VertexCount < 3)
         return;
+    if (GFxDisplayDrawTrace != 0)
+    {
+        const short* v = mesh->GetVertices() + group.VertexStart * 2;
+        float x0 = 1e30f, y0 = 1e30f, x1 = -1e30f, y1 = -1e30f;
+        for (unsigned int i = 0; i < group.VertexCount; ++i)
+        {
+            float px = (float)v[i * 2], py = (float)v[i * 2 + 1];
+            ctx.Matrix.Transform(&px, &py);
+            px *= 0.05f; py *= 0.05f;
+            if (px < x0) x0 = px;
+            if (py < y0) y0 = py;
+            if (px > x1) x1 = px;
+            if (py > y1) y1 = py;
+        }
+        GFxLogf("DISHONORED(bringup): draw %u tris, box (%.0f,%.0f)-(%.0f,%.0f), alpha %.2f*x+%.0f, "
+                "fill %s", group.VertexCount / 3, x0 * 20.f, y0 * 20.f, x1 * 20.f, y1 * 20.f,
+                ctx.Cx.M_[3][0], ctx.Cx.M_[3][1], GFxDisplayLastFill);
+        --GFxDisplayDrawTrace;
+    }
     const unsigned short* indices = GFxDisplayGetLinearIndices(group.VertexCount);
     if (indices == 0)
         return;
@@ -966,7 +1031,8 @@ void GFxShapeCharacterDef::Display(GFxDisplayContext& ctx, GFxCharacter* ch)
         return;
     }
     ctx.ApplyToRenderer();
-    GFxMovieDataDef* dataDef = ctx.pDefImpl ? ctx.pDefImpl->GetDataDef() : 0;
+    GFxMovieDataDef* dataDef = ctx.pDataDef ? ctx.pDataDef
+                                            : (ctx.pDefImpl ? ctx.pDefImpl->GetDataDef() : 0);
     for (unsigned int g = 0; g < mesh->GetGroupCount(); ++g)
     {
         const GFxShapeMesh::Group& group = mesh->GetGroup(g);
@@ -977,8 +1043,14 @@ void GFxShapeCharacterDef::Display(GFxDisplayContext& ctx, GFxCharacter* ch)
         }
         else if (group.Style >= 0)
         {
-            GFxDisplayApplyFill(ctx, GetFillStyle((unsigned int)group.Style), dataDef,
-                                GColor(255, 255, 255, 255), &Bounds);
+            // A style group whose fill has no texture is NOT submitted: the renderer keeps the last
+            // fill it was given, so drawing it anyway paints the previous shape's bitmap over this
+            // one's area - which is how the vignette came to be painted with the DISHONORED logo.
+            if (!GFxDisplayApplyFill(ctx, GetFillStyle((unsigned int)group.Style), dataDef,
+                                     GColor(255, 255, 255, 255), &Bounds))
+            {
+                continue;
+            }
         }
         else
         {
@@ -994,7 +1066,8 @@ void GFxImageCharacterDef::Display(GFxDisplayContext& ctx, GFxCharacter* ch)
     // A bitmap placed directly on the timeline rather than through a shape's fill. gfxexport emits
     // both shapes and direct placements, so both paths exist.
     (void)ch;
-    GFxMovieDataDef* dataDef = ctx.pDefImpl ? ctx.pDefImpl->GetDataDef() : 0;
+    GFxMovieDataDef* dataDef = ctx.pDataDef ? ctx.pDataDef
+                                            : (ctx.pDefImpl ? ctx.pDefImpl->GetDataDef() : 0);
     GTexture* tex = GFxDisplayNoImages ? 0 : GetTexture(ctx.pRenderer, dataDef);
     if (tex == 0 || ctx.pRenderer == 0)
     {
@@ -1044,7 +1117,8 @@ void GFxButtonCharacterDef::Display(GFxDisplayContext& ctx, GFxCharacter* ch)
     // one state to show and it is the up state, which is what the menu's buttons look like at rest.
     (void)ch;
     ++ctx.Stats.Buttons;
-    GFxMovieDataDef* dataDef = ctx.pDefImpl ? ctx.pDefImpl->GetDataDef() : 0;
+    GFxMovieDataDef* dataDef = ctx.pDataDef ? ctx.pDataDef
+                                            : (ctx.pDefImpl ? ctx.pDefImpl->GetDataDef() : 0);
     if (dataDef == 0)
         return;
     for (unsigned int i = 0; i < RecordCount; ++i)
@@ -1081,6 +1155,8 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
         return;
     }
     ++ctx.Stats.TextFields;
+    if (TextValue[0] == 0 || strcmp(TextValue, "Text") == 0)
+        ++ctx.Stats.TextFieldsUnbound;
     if (GFxDisplayNoText)
         return;
 

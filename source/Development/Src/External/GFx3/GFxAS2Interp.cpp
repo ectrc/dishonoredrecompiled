@@ -26,6 +26,25 @@ unsigned int GFxAS2OpBudget = 1000000;
 unsigned int GFxAS2OpsThisBuffer = 0;
 unsigned int GFxAS2OpTraceFrom = 0;
 unsigned int GFxAS2OpTraceCount = 200;
+// DISHONORED(bringup): a trace window pinned to a BUFFER and a pc range rather than to the
+// opcode counter, which shifts between runs because it is reset per advance.
+int GFxAS2OpTraceLen = 0;
+int GFxAS2OpTraceLo = 0;
+int GFxAS2OpTraceHi = 0;
+char GFxAS2WatchMember[64] = "";
+
+// DISHONORED(bringup): a trailing '*' makes the watch a prefix, which is the only way to see a
+// member whose name the content builds - `_elementContainer["btn" + idx]` is one.
+bool GFxAS2WatchMatches(const char* name)
+{
+    if (GFxAS2WatchMember[0] == 0 || name == 0)
+        return false;
+    size_t n = strlen(GFxAS2WatchMember);
+    if (n > 0 && GFxAS2WatchMember[n - 1] == '*')
+        return strncmp(name, GFxAS2WatchMember, n - 1) == 0;
+    return strcmp(name, GFxAS2WatchMember) == 0;
+}
+int  GFxAS2WatchCount = 0;
 unsigned int GASActionBuffer::OpsUnimplemented = 0;
 unsigned int GASActionBuffer::OpCounts[256] = { 0 };
 
@@ -128,11 +147,13 @@ void GASActionBuffer::Execute(GASEnvironment* env)                     // 2012 0
 
 static void GFxAS2ExtendsOpCode(GASEnvironment* env)                  // 2012 0x9e64a0
 {
-    // ActionExtends (0x69). The stack is [superclass][subclass] with the subclass on top. AS2
+    // ActionExtends (0x69). DISHONORED(port): 2012 0x9e64a0. The stack is [subclass][superclass]
+    // with the SUPERCLASS on top - the decompile reads Top(0) for the prototype it copies and the
+    // constructor it records, and Top(1) for the function whose prototype it replaces. AS2
     // inheritance is: sub.prototype = { __proto__ : super.prototype, __constructor__ : super }.
     // This is the opcode every one of the 669 __Packages registrations in the cook ends up in.
-    GASValue subVal = env->Pop();
     GASValue superVal = env->Pop();
+    GASValue subVal = env->Pop();
     GASFunctionObject* sub = subVal.GetFunction();
     GASFunctionObject* super = superVal.GetFunction();
     if (sub == 0 || super == 0)
@@ -374,6 +395,13 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
     GASEnvironment* env = call.pEnv;
     GASStringContext* sc = env->GetSC();
     GFxASCharacter* savedTarget = env->GetTarget();
+    if (call.pFuncName != 0 && GFxAS2WatchMatches(call.pFuncName->ToCStr()) && GFxAS2WatchCount > 0)
+    {
+        --GFxAS2WatchCount;
+        GFxLogf("DISHONORED(bringup): watch INVOKE '%s' buffer %p pc %d len %d args %d depth %d op %u",
+                call.pFuncName->ToCStr(), (void*)fn->pBuffer, fn->StartPC, fn->Length, call.NArgs,
+                env->GetLocalFrameDepth(), GFxAS2OpsThisBuffer);
+    }
     if (fn->pDeclTarget)
         env->SetTarget(fn->pDeclTarget);
 
@@ -394,12 +422,20 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
     calleeVal.SetAsFunction(fn);
     argsArray->SetConstMemberRaw(sc, "callee", calleeVal);
 
+    // DISHONORED(port): 2012 0x9f2b40. A `super(...)` call arrives with the GASSuperObject as its
+    // `this`; the body must see the instance, so it is unwrapped here - and only here, because the
+    // super object itself is what the next `super` is derived from, below.
+    GASObjectInterface* pThisIface = call.pThis;
+    GASObjectInterface* pRealThis = pThisIface;
+    if (pThisIface != 0 && pThisIface->GetObjectType() == Object_Super)
+        pRealThis = ((GASSuperObject*)pThisIface->ToASObject())->pRealThis;
+
     GASValue thisVal;
-    if (call.pThis)
+    if (pRealThis)
     {
-        GFxASCharacter* ch = call.pThis->ToASCharacter();
+        GFxASCharacter* ch = pRealThis->ToASCharacter();
         if (ch) thisVal.SetAsCharacter(ch);
-        else thisVal.SetAsObject(call.pThis->ToASObject());
+        else thisVal.SetAsObject(pRealThis->ToASObject());
     }
 
     // `super`: the prototype one level above the prototype that DECLARES the running function, with
@@ -418,12 +454,15 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
     // `v57 = FindOwner(v54 + 16, sc, name)` - and builds the GASSuperObject from *that* prototype's
     // __proto__ and *that* prototype's __constructor__. That is what is ported here.
     GASValue superVal;
-    if (call.pThis)
+    if (pThisIface)
     {
-        GASObject* self = call.pThis->ToASObject();
+        // The chain is walked from the value the call carried - the super object when this is a
+        // `super(...)` - and never from the unwrapped instance; that is what keeps a three-deep
+        // class hierarchy moving one level per call instead of standing on the derived prototype.
+        GASObject* self = pThisIface->ToASObject();
         GASObject* proto = self ? self->Get__proto__() : 0;
-        if (proto == 0 && call.pThis->ToASCharacter())
-            proto = call.pThis->ToASCharacter()->pProto;
+        if (proto == 0 && pThisIface->ToASCharacter())
+            proto = pThisIface->ToASCharacter()->pProto;
         GASObject* declaring = proto;
         if (proto != 0 && call.pFuncName != 0)
         {
@@ -437,7 +476,7 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
             GASFunctionObject* superCtor = declaring->Get__constructor__(sc);
             if (superCtor == 0)
                 superCtor = superProto->Get__constructor__(sc);
-            GASSuperObject* so = new GASSuperObject(sc, superProto, call.pThis, superCtor);
+            GASSuperObject* so = new GASSuperObject(sc, superProto, pRealThis, superCtor);
             superVal.SetAsObject(so);
         }
     }
@@ -531,6 +570,23 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
 // ---------------------------------------------------------------------------------------------
 // Invoking whatever is on the stack, which four opcodes need (0x3D, 0x40, 0x52, 0x53).
 
+// DISHONORED(bringup): where the interpreter is, so a script error can say which buffer raised it.
+// Written once per opcode and read only when an error is logged, so the innermost Execute that is
+// running is always the one named.
+static int GFxAS2ErrPC = -1;
+static int GFxAS2ErrLen = 0;
+
+// DISHONORED(bringup): the same resolution the four invoking opcodes share - a constructor or method
+// can arrive as a function value or as an object whose ToFunction answers one (GASSuperObject, and
+// any GASObject a class was stored in).
+static GASFunctionObject* GFxAS2ResolveFunction(const GASValue& v)
+{
+    GASFunctionObject* fn = v.GetFunction();
+    if (fn == 0 && v.IsObject() && v.GetObject() != 0)
+        fn = v.GetObject()->ToFunction();
+    return fn;
+}
+
 static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
                                     GASObjectInterface* self, int nargs, GASValue* result,
                                     const GASString& name)
@@ -548,7 +604,8 @@ static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
         // Sprite" does not say which clip asked, and which clip it was is the answer to every one of
         // the seven script errors the menu's census reports (agentDG.md 2).
         GASString path = recvChar != 0 ? recvChar->GetTargetPath(env->GetSC()) : GASString();
-        env->LogScriptError("call of a value that is not a function: '%s' on %s %s", name.ToCStr(),
+        env->LogScriptError("call of a value that is not a function: '%s' at pc %d of a %d-byte "
+                            "buffer, on %s %s", name.ToCStr(), GFxAS2ErrPC, GFxAS2ErrLen,
                             recvChar != 0 ? recvChar->GetCharacterTypeName()
                                           : (self != 0 ? "an object" : "undefined"),
                             recvChar != 0 ? path.ToCStr() : "");
@@ -604,8 +661,10 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
         ++OpsExecuted;
         ++OpCounts[op];
         ++GFxAS2OpsThisBuffer;
-        if (GFxAS2OpTraceFrom != 0 && GFxAS2OpsThisBuffer >= GFxAS2OpTraceFrom
-            && GFxAS2OpsThisBuffer < GFxAS2OpTraceFrom + GFxAS2OpTraceCount)
+        if ((GFxAS2OpTraceFrom != 0 && GFxAS2OpsThisBuffer >= GFxAS2OpTraceFrom
+             && GFxAS2OpsThisBuffer < GFxAS2OpTraceFrom + GFxAS2OpTraceCount)
+            || (GFxAS2OpTraceLen != 0 && (int)Length == GFxAS2OpTraceLen
+                && pc >= GFxAS2OpTraceLo && pc <= GFxAS2OpTraceHi))
         {
             GFxLogf("DISHONORED(bringup): AS2 op %u: pc %4d %-16s stack %2u top '%s'",
                     GFxAS2OpsThisBuffer, pc, GFxAS2GetOpcodeName(op), env->GetStackSize(),
@@ -628,6 +687,8 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             break;
         }
 
+        GFxAS2ErrPC = pc;
+        GFxAS2ErrLen = (int)Length;
         GFxASCharacter* target = env->GetTarget();
         GFxSprite* sprite = target ? target->ToSprite() : 0;
 
@@ -821,7 +882,9 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
         case GASop_Trace:
         {
             GASString s = env->Pop().ToString(env);
-            printf("DISHONORED(bringup): AS2 trace: %s\n", s.ToCStr());
+            // DISHONORED(bringup): through the log hook, not stdout - the game has no console, and
+            // the content's own trace() is the only narration of what its classes do.
+            GFxLogf("DISHONORED(bringup): AS2 trace: %s", s.ToCStr());
             break;
         }
         case GASop_StartDragMovie:
@@ -950,16 +1013,25 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             int nargs = env->Pop().ToInt32(env);
             GASValue ctorVal;
             env->GetVariable(name, &ctorVal, WithStack, WithCount);
-            GASObject* obj = env->OperatorNew(ctorVal.GetFunction(), nargs, env->GetTopIndex());
+            GASFunctionObject* ctor = GFxAS2ResolveFunction(ctorVal);
+            if (ctor == 0)
+                env->LogScriptError("new: '%s' is not a constructor, at pc %d of a %d-byte buffer",
+                                    name.ToCStr(), GFxAS2ErrPC, GFxAS2ErrLen);
+            GASObject* obj = env->OperatorNew(ctor, nargs, env->GetTopIndex());
             env->Drop(nargs);
             GASValue out;
-            if (obj) out.SetAsObject(obj);
+            // OperatorNew returns one reference of its own; the value now owns the object.
+            if (obj) { out.SetAsObject(obj); obj->Release(); }
             env->Push(out);
             break;
         }
         case GASop_NewMethod:
         {
-            GASString name = env->Pop().ToString(env);
+            // DISHONORED(port): opcode 0x53, the same blank-name rule as 0x52 above.
+            GASValue nameVal = env->Pop();
+            const bool bNameIsBlank = nameVal.IsUndefined() || nameVal.IsNull()
+                || (nameVal.IsString() && nameVal.GetString().IsEmpty());
+            GASString name = bNameIsBlank ? sc->CreateConstString("") : nameVal.ToString(env);
             GASValue objVal = env->Pop();
             int nargs = env->Pop().ToInt32(env);
             GASObjectInterface* oi = objVal.ToObjectInterface(env);
@@ -968,10 +1040,20 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
                 ctorVal = objVal;
             else if (oi)
                 oi->GetMember(env, name, &ctorVal);
-            GASObject* obj = env->OperatorNew(ctorVal.GetFunction(), nargs, env->GetTopIndex());
+            GASFunctionObject* ctor = GFxAS2ResolveFunction(ctorVal);
+            if (ctor == 0)
+            {
+                GFxASCharacter* recvChar = oi ? oi->ToASCharacter() : 0;
+                GASString path = recvChar != 0 ? recvChar->GetTargetPath(env->GetSC()) : GASString();
+                env->LogScriptError("new: '%s' is not a constructor on %s, at pc %d of a %d-byte "
+                                    "buffer", name.ToCStr(),
+                                    path.IsEmpty() ? "an object" : path.ToCStr(),
+                                    GFxAS2ErrPC, GFxAS2ErrLen);
+            }
+            GASObject* obj = env->OperatorNew(ctor, nargs, env->GetTopIndex());
             env->Drop(nargs);
             GASValue out;
-            if (obj) out.SetAsObject(obj);
+            if (obj) { out.SetAsObject(obj); obj->Release(); }
             env->Push(out);
             break;
         }
@@ -1101,6 +1183,17 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             }
             else if (objVal.IsString() && name == env->GetBuiltin(GASbuiltin_length))
                 out.SetInt((int)objVal.GetString().GetSize());
+            // DISHONORED(bringup): -gfxuiwatch=<member> logs every read of one member name with the
+            // receiver and the answer. "Why is this property undefined" is otherwise a bisect.
+            if (GFxAS2WatchMatches(name.ToCStr()) && GFxAS2WatchCount > 0)
+            {
+                --GFxAS2WatchCount;
+                GFxASCharacter* rc = oi ? oi->ToASCharacter() : 0;
+                GFxLogf("DISHONORED(bringup): watch '%s' on %p %s -> type %d '%s' (pc %d of %d)",
+                        name.ToCStr(), (void*)oi,
+                        rc ? rc->GetTargetPath(sc).ToCStr() : (oi ? "an object" : "undefined"),
+                        (int)out.GetType(), out.ToString(env).ToCStr(), pc, (int)Length);
+            }
             env->Top() = out;
             break;
         }
@@ -1110,6 +1203,15 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             GASString name = env->Pop().ToString(env);
             GASValue objVal = env->Pop();
             GASObjectInterface* oi = objVal.ToObjectInterface(env);
+            if (GFxAS2WatchMatches(name.ToCStr()) && GFxAS2WatchCount > 0)
+            {
+                --GFxAS2WatchCount;
+                GFxASCharacter* rc = oi ? oi->ToASCharacter() : 0;
+                GFxLogf("DISHONORED(bringup): watch SET '%s' on %p %s = type %d '%s' (pc %d of %d)",
+                        name.ToCStr(), (void*)oi,
+                        rc ? rc->GetTargetPath(sc).ToCStr() : (oi ? "an object" : "undefined"),
+                        (int)v.GetType(), v.ToString(env).ToCStr(), pc, (int)Length);
+            }
             if (oi)
                 oi->SetMember(env, name, v, GASPropFlags());
             break;
@@ -1122,26 +1224,48 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             break;
         case GASop_CallMethod:
         {
-            GASString name = env->Pop().ToString(env);
+            // DISHONORED(port): 2012 GASActionBuffer::Execute 0x995ee0, opcode 0x52. The name is
+            // popped as a VALUE and only then coerced: an *undefined* name (not the string
+            // "undefined") means the object on the stack is itself the function to invoke. That is
+            // exactly how the AS2 compiler emits `super(...)` - push argc, push register 2, push
+            // undefined, CallMethod - so every class constructor in the cook stops on its first
+            // statement without it.
+            GASValue nameVal = env->Pop();
+            const bool bNameIsBlank = nameVal.IsUndefined() || nameVal.IsNull()
+                || (nameVal.IsString() && nameVal.GetString().IsEmpty());
+            GASString name = bNameIsBlank ? sc->CreateConstString("") : nameVal.ToString(env);
             GASValue objVal = env->Pop();
             int nargs = env->Pop().ToInt32(env);
             GASObjectInterface* oi = objVal.ToObjectInterface(env);
+            if (GFxAS2WatchMatches(name.ToCStr()) && GFxAS2WatchCount > 0)
+            {
+                --GFxAS2WatchCount;
+                GFxLogf("DISHONORED(bringup): watch CALL '%s' receiver type %d, interface %p "
+                        "(pc %d of %d)", name.ToCStr(), (int)objVal.GetType(), (void*)oi, pc,
+                        (int)Length);
+            }
             GASValue fnVal;
             GASObjectInterface* self = oi;
             if (name.IsEmpty())
             {
                 fnVal = objVal;
-                self = target;
+                // The receiver stays exactly what the stack carried: for `super(...)` that is the
+                // super object, which the invocation unwraps for `this` and keeps for `super`.
+                if (oi == 0)
+                    self = target;
             }
             else if (oi)
             {
                 oi->GetMember(env, name, &fnVal);
-                // super.method() runs against the instance, not against the super object.
-                if (oi->GetObjectType() == Object_Super)
-                    self = ((GASSuperObject*)oi->ToASObject())->pRealThis;
             }
             GASValue result;
             GFxAS2CallFunctionValue(env, fnVal, self, nargs, &result, name);
+            if (GFxAS2WatchMatches(name.ToCStr()) && GFxAS2WatchCount > 0)
+            {
+                --GFxAS2WatchCount;
+                GFxLogf("DISHONORED(bringup): watch RET '%s' -> type %d (pc %d of %d)",
+                        name.ToCStr(), (int)result.GetType(), pc, (int)Length);
+            }
             env->Drop(nargs);
             env->Push(result);
             break;
@@ -1344,11 +1468,29 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             // GetURL is how AS2 reaches the host: "FSCommand:" and "print:" prefixes go to the
             // FSCommand handler and everything else to the loader. The retail body (case 131 of
             // 0x9ea900) splits on exactly that strncmp against "FSCommand:". The handler side is
-            // agent BE's (FGFxFSCommandHandler::Callback, 2013 0x586450), so this records the call
-            // and does not invent a destination.
-            if (op == GASop_GetUrl2)
-                env->Drop(2);
-            ++OpsUnimplemented;
+            // agent BE's (FGFxFSCommandHandler::Callback, 2013 0x586450).
+            // DISHONORED(port): the split is now made and the handler called. Dishonored's menus use
+            // it for every screen change (TransitionHandler fires getURL("FSCommand:ToXxx")).
+            GASString url, target2;
+            if (op == GASop_GetUrl)
+            {
+                const char* u = (const char*)(Bytes + pc + 3);
+                url = sc->CreateString(u);
+                const char* w = u + strlen(u) + 1;
+                target2 = sc->CreateString(w);
+            }
+            else
+            {
+                target2 = env->Pop().ToString(env);
+                url = env->Pop().ToString(env);
+            }
+            const char* s = url.ToCStr();
+            if (s != 0 && (strncmp(s, "FSCommand:", 10) == 0 || strncmp(s, "fscommand:", 10) == 0))
+            {
+                GFxMovieRoot* root = env->GetMovieRoot();
+                if (root)
+                    root->CallFSCommand(s + 10, target2.ToCStr());
+            }
             break;
         }
         case GASop_DefineFunction:

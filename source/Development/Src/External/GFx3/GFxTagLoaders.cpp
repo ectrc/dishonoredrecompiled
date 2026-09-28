@@ -273,6 +273,9 @@ static void GFx_ImportLoader(GFxLoadProcess* p, const GFxTagInfo& info)         
         p->GetStream()->ReadString(symbol, sizeof(symbol));
         p->GetDataDef()->AddImport(url, symbol, id);
     }
+    // The init-action entry retail leaves behind for this tag (GFxInitImportActions): when the
+    // importing sprite reaches this frame, the imported movie's own init actions run on it.
+    p->AddInitActionTag(new GASImportInitActionsTag(p->GetDataDef(), url));
 }
 
 static void GFx_FrameLabelLoader(GFxLoadProcess* p, const GFxTagInfo& info)     // 2012 0xa351b0

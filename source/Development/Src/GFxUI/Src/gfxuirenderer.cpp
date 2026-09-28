@@ -292,13 +292,15 @@ unsigned int FGFxSeamCensus(char* Out, unsigned int Capacity)
     INT n = appSprintfANSI(Out,
                            "DISHONORED(bringup): GFx seam census: %u slots touched, %u calls, "
                            "%u draws (%u trilist, %u line, %u bitmap, %u background, %u filter), "
-                           "%u triangles, %u lines, %u glyphs, %u masks, %u bound shader states",
+                           "%u triangles, %u lines, %u glyphs, %u masks, %u bound shader states, "
+                           "%u untextured bitmap draws dropped",
                            GSeamSlotCount, GSeamTotalCalls, GGFxDrawCensus.Draws,
                            GGFxDrawCensus.TriListDraws, GGFxDrawCensus.LineDraws,
                            GGFxDrawCensus.BitmapDraws, GGFxDrawCensus.BackgroundDraws,
                            GGFxDrawCensus.FilterDraws, GGFxDrawCensus.Triangles,
                            GGFxDrawCensus.Lines, GGFxDrawCensus.Glyphs, GGFxDrawCensus.MaskPasses,
-                           GGFxDrawCensus.BoundShaderStates);
+                           GGFxDrawCensus.BoundShaderStates,
+                           GGFxDrawCensus.UntexturedBitmapDraws);
     if (n < 0) n = 0;
     unsigned int Used = (unsigned int)n;
     for (unsigned int i = 0; i < GSeamSlotCount && Used + 1 < Capacity; ++i)
@@ -1077,10 +1079,21 @@ void FGFxRenderTargetResource::InitDynamicRHI()
     // not on this module's include path, and nothing in this tree hands the seam an OwnerDepth yet -
     // the UI pass that would is the engine-side call site this package does not add. When it lands,
     // this is the one line to fill in.
+    //
+    // Until then the target allocates one of its own, because without ANY depth-stencil surface
+    // bound D3D9 drops every stencil operation, and the stencil is what a GFx mask is: the six mask
+    // passes the main menu's buttons submit had no effect at all and each button's highlight was
+    // drawn at the full width of its artwork instead of the width of its label.
     if (OwnerDepth != NULL)
     {
         debugf(NAME_Warning, TEXT("DISHONORED(bringup): FGFxRenderTargetResource: OwnerDepth set ")
-               TEXT("but the scene depth proxy is not reachable from GFxUI; no depth surface bound"));
+               TEXT("but the scene depth proxy is not reachable from GFxUI; a dedicated ")
+               TEXT("depth-stencil surface is used instead"));
+    }
+    if (SizeX > 0 && SizeY > 0)
+    {
+        DepthBuffer = RHICreateTargetableSurface(SizeX, SizeY, PF_DepthStencil, FTexture2DRHIRef(),
+                                                 TargetSurfCreate_Dedicated, TEXT("GFxUIDepthStencil"));
     }
     GFXUI_SEAM_TRACE("FGFxRenderTargetResource::InitDynamicRHI");
 }
@@ -1947,6 +1960,7 @@ FGFxRenderer::FGFxRenderer()
     CurrentMatrix.SetIdentity();
     ViewportMatrix.SetIdentity();
     FGFxCxformSetIdentity(CurrentCxform);
+    FGFxCxformSetIdentity(CurrentCxformGameThread);
     appMemzero(&ViewRect, sizeof(ViewRect));
     ViewMatrix.SetIdentity();
     ProjMatrix.SetIdentity();
@@ -2369,10 +2383,29 @@ void FGFxRenderer::EndDisplay_RenderThread()
     FillStyle.EndDisplay_RenderThread();
 }
 
+// DISHONORED(port): 2012 0x5c6750 / 0x5bd9e0 - FGFxRendererImpl::SetUITransformMatrix<T>. The value
+// is COPIED into a render command and the command writes it into the destination when it executes,
+// so the destination is render-thread state that advances in submission order. A plain store from the
+// game thread gives every draw of the frame the last transform the frame set.
+template<class T>
+static void FGFxSetUITransformMatrix(const T& Value, T& Dest)
+{
+    struct FGFxSetUITransformMatrixCommand : public FRenderCommand
+    {
+        T  SrcValue;
+        T* pDest;
+        FGFxSetUITransformMatrixCommand(const T& InValue, T* InDest)
+            : SrcValue(InValue), pDest(InDest) {}
+        virtual UINT Execute() { *pDest = SrcValue; return sizeof(*this); }
+        virtual const TCHAR* DescribeCommand() { return TEXT("FGFxSetUITransformMatrixCommand"); }
+    };
+    ENQUEUE_RENDER_COMMAND(FGFxSetUITransformMatrixCommand,(Value,&Dest));
+}
+
 void FGFxRenderer::SetMatrix(const GMatrix2D& Matrix)
 {
-    // 2012 0x5cca20 -> 2013 0x58ac30: a store, which is why it is not a render command.
-    CurrentMatrix = Matrix;
+    // 2012 0x5cca20 -> 2013 0x58ac30.
+    FGFxSetUITransformMatrix<GMatrix2D>(Matrix, CurrentMatrix);
     GFXUI_SEAM_TRACE("FGFxRenderer::SetMatrix");
 }
 
@@ -2384,7 +2417,9 @@ void FGFxRenderer::SetUserMatrix(const GMatrix2D& Matrix)
 
 void FGFxRenderer::SetCxform(const GRenderer::Cxform& Cx)
 {
-    CurrentCxform = Cx;
+    // 2012 0x5c4b60. The same command, with the colour transform's eight floats.
+    CurrentCxformGameThread = Cx;
+    FGFxSetUITransformMatrix<GRenderer::Cxform>(Cx, CurrentCxform);
     GFXUI_SEAM_TRACE("FGFxRenderer::SetCxform");
 }
 
@@ -2606,6 +2641,16 @@ void FGFxRenderer::DrawIndexedTriList_RenderThread(int BaseVertexIndex, int MinV
     {
         return;
     }
+    // DISHONORED(bringup): a bitmap fill whose texture has no RHI resource is NOT drawn. The style is
+    // applied by StaticApplyTexture_RenderThread, which returns without touching the sampler when the
+    // texture is null - so the draw would go out with whatever texture the PREVIOUS draw bound, and
+    // paint the last picture over this shape's area. That is how the main menu's vignette came to be
+    // painted with the DISHONORED logo stretched across each of its seven pieces.
+    if (FillStyle.StyleMode == GFx_SM_Bitmap && FillStyle.TexInfo.Texture == NULL)
+    {
+        ++GGFxDrawCensus.UntexturedBitmapDraws;
+        return;
+    }
     CheckRenderTarget_RenderThread();
 
     FGFxRendererImpl::FGFxVertexStore* LocalVertexStore = VertexStore;
@@ -2768,7 +2813,7 @@ void FGFxRenderer::LineStyleColor(GColor Color)
         virtual UINT Execute() { Style->SetStyleColor_RenderThread(Color); return sizeof(*this); }
         virtual const TCHAR* DescribeCommand() { return TEXT("FGFxLineStyleColorCommand"); }
     };
-    const GColor Transformed = FGFxCxformTransform(CurrentCxform, Color);
+    const GColor Transformed = FGFxCxformTransform(CurrentCxformGameThread, Color);
     ENQUEUE_RENDER_COMMAND(FGFxLineStyleColorCommand,((FGFxRenderStyle*)&LineStyle,Transformed));
 }
 
@@ -2790,7 +2835,7 @@ void FGFxRenderer::FillStyleColor(GColor Color)
         virtual UINT Execute() { Style->SetStyleColor_RenderThread(Color); return sizeof(*this); }
         virtual const TCHAR* DescribeCommand() { return TEXT("FGFxFillStyleColorCommand"); }
     };
-    const GColor Transformed = FGFxCxformTransform(CurrentCxform, Color);
+    const GColor Transformed = FGFxCxformTransform(CurrentCxformGameThread, Color);
     ENQUEUE_RENDER_COMMAND(FGFxFillStyleColorCommand,((FGFxRenderStyle*)&FillStyle,Transformed));
 }
 
@@ -2819,7 +2864,7 @@ void FGFxRenderer::FillStyleBitmap(const GRenderer::FillTexture* Fill)
         }
         virtual const TCHAR* DescribeCommand() { return TEXT("FGFxFillStyleBitmapCommand"); }
     };
-    ENQUEUE_RENDER_COMMAND(FGFxFillStyleBitmapCommand,(&FillStyle,NewTexInfo,CurrentCxform));
+    ENQUEUE_RENDER_COMMAND(FGFxFillStyleBitmapCommand,(&FillStyle,NewTexInfo,CurrentCxformGameThread));
 }
 
 // 2012 0x5ccdb0.
@@ -2863,7 +2908,7 @@ void FGFxRenderer::FillStyleGouraud(GRenderer::GouraudFillType Type,
         }
         virtual const TCHAR* DescribeCommand() { return TEXT("FGFxFillStyleGouraudCommand"); }
     };
-    ENQUEUE_RENDER_COMMAND(FGFxFillStyleGouraudCommand,(&FillStyle,Type,Info,bHas,CurrentCxform));
+    ENQUEUE_RENDER_COMMAND(FGFxFillStyleGouraudCommand,(&FillStyle,Type,Info,bHas,CurrentCxformGameThread));
 }
 
 // 2012 0x5e2400 -> 2013 0x5a18c0, and 0x5e2670 for the distance-field form: the descriptor list

@@ -78,6 +78,110 @@ UBOOL GFxUIIsDisabled()
 	return Cached != 0;
 }
 
+// DISHONORED(bringup): -gfxuidumpdl walks the display tree of every open movie once and logs it.
+static INT GFxUIDumpDisplayList()
+{
+	static INT Cached = -2;
+	if( Cached == -2 )
+	{
+		INT Frame = 0;
+		if( Parse( appCmdLine(), TEXT("gfxuidumpdl="), Frame ) )
+		{
+			Cached = Frame;
+		}
+		else
+		{
+			Cached = ParseParam( appCmdLine(), TEXT("gfxuidumpdl") ) ? 20 : -1;
+		}
+	}
+	return Cached;
+}
+
+static void FGFxDumpCharacter( GFxCharacter* Ch, const GMatrix2D& Parent, INT Indent )
+{
+	if( Ch == NULL || Indent > 12 )
+	{
+		return;
+	}
+	GMatrix2D World;
+	GFxDisplayMatrixAppend( &World, Parent, Ch->GetMatrix() );
+	const GRect<float> Bounds = Ch->GetBoundsTwips( World );
+	GFxASCharacter* AsChar = Ch->IsASCharacter() ? Ch->ToASCharacterDef() : NULL;
+	const char* Name = ( AsChar != NULL ) ? AsChar->GetName().ToCStr() : "";
+	debugf( TEXT("DISHONORED(bringup): dl %*s%s '%s' depth %d vis %d a %.0f  at (%.0f,%.0f) scale (%.2f,%.2f)")
+		TEXT("  box (%.0f,%.0f)-(%.0f,%.0f) skew (%.3f,%.3f) frame %d/%d clip %d"),
+		Indent * 2, TEXT(""), ANSI_TO_TCHAR(Ch->GetCharacterTypeName()), ANSI_TO_TCHAR(Name),
+		Ch->GetDepth(), Ch->GetVisible() ? 1 : 0,
+		Ch->GetCxform().M_[3][0] * 100.f + Ch->GetCxform().M_[3][1],
+		World.M_[0][2] * 0.05f, World.M_[1][2] * 0.05f, World.M_[0][0], World.M_[1][1],
+		Bounds.Left * 0.05f, Bounds.Top * 0.05f, Bounds.Right * 0.05f, Bounds.Bottom * 0.05f,
+		World.M_[0][1], World.M_[1][0],
+		Ch->IsASCharacter() && Ch->ToASCharacterDef()->ToSprite()
+			? (INT)Ch->ToASCharacterDef()->ToSprite()->GetCurrentFrame() : -1,
+		Ch->IsASCharacter() && Ch->ToASCharacterDef()->ToSprite()
+			? (INT)Ch->ToASCharacterDef()->ToSprite()->GetFrameCount() : -1,
+		Ch->GetClipDepth() );
+	GFxSprite* Sprite = Ch->IsASCharacter() ? Ch->ToASCharacterDef()->ToSprite() : NULL;
+	if( Sprite != NULL )
+	{
+		GFxDisplayList& List = Sprite->GetDisplayList();
+		for( unsigned int i = 0; i < List.GetCount(); ++i )
+		{
+			FGFxDumpCharacter( List.GetAt( i ), World, Indent + 1 );
+		}
+	}
+}
+
+// DISHONORED(bringup): -gfxuihide=<name>[,...] hides those children of _level0 every frame.
+static const TArray<FString>& GFxUIHiddenClips()
+{
+	static TArray<FString> Names;
+	static UBOOL bParsed = FALSE;
+	if( !bParsed )
+	{
+		bParsed = TRUE;
+		FString List;
+		if( Parse( appCmdLine(), TEXT("gfxuihide="), List, FALSE ) )
+		{
+			while( List.Len() > 0 )
+			{
+				const INT Comma = List.InStr( TEXT(",") );
+				Names.AddItem( Comma >= 0 ? List.Left( Comma ) : List );
+				List = Comma >= 0 ? List.Mid( Comma + 1 ) : FString();
+			}
+		}
+	}
+	return Names;
+}
+
+// The hide is by NAME anywhere in the tree, so a subtree of a screen can be bisected too.
+static void FGFxHideNamed( GFxSprite* Sprite, const TArray<FString>& Names, INT Depth )
+{
+	if( Sprite == NULL || Depth > 10 )
+	{
+		return;
+	}
+	GFxDisplayList& List = Sprite->GetDisplayList();
+	for( unsigned int i = 0; i < List.GetCount(); ++i )
+	{
+		GFxCharacter* Ch = List.GetAt( i );
+		GFxASCharacter* AsChar = ( Ch != NULL && Ch->IsASCharacter() ) ? Ch->ToASCharacterDef() : NULL;
+		if( AsChar == NULL )
+		{
+			continue;
+		}
+		const FString Name = ANSI_TO_TCHAR( AsChar->GetName().ToCStr() );
+		for( INT n = 0; n < Names.Num(); n++ )
+		{
+			if( Name == Names( n ) )
+			{
+				Ch->SetVisible( false );
+			}
+		}
+		FGFxHideNamed( AsChar->ToSprite(), Names, Depth + 1 );
+	}
+}
+
 /** -gfxuicensus: log the per-frame census once a second rather than once */
 static UBOOL GFxUICensusVerbose()
 {
@@ -357,6 +461,11 @@ GImageInfoBase* FGFxImageLoader::LoadImageW( const char* Url )
 	UTexture2D* Texture2D = Cast<UTexture2D>( Texture );
 	if( Texture2D != NULL )
 	{
+		// DISHONORED(bringup): the cooked format matters to the interface - an image with no alpha
+		// channel is drawn as an opaque rectangle over whatever is under it.
+		debugf( TEXT("DISHONORED(bringup): GFx image %s: %dx%d format %d LODGroup %d"),
+			*Filename, Texture2D->SizeX, Texture2D->SizeY, (INT)Texture2D->Format,
+			(INT)Texture2D->LODGroup );
 		FGFxImageInfo* Info = new FGFxImageInfo( Filename, Texture2D->SizeX, Texture2D->SizeY );
 		Info->SetEngineTexture( Texture2D );
 		return Info;
@@ -1434,6 +1543,7 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 			RenderCensus.GlyphDraws += Stats.GlyphDraws;
 			RenderCensus.Glyphs += Stats.Glyphs;
 			RenderCensus.Masks += Stats.Masks;
+			RenderCensus.TextFieldsUnbound += Stats.TextFieldsUnbound;
 		}
 	}
 
@@ -1441,6 +1551,94 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 	{
 		LogCensus( bCensusLogged ? TEXT("frame") : TEXT("first drawn frame") );
 		bCensusLogged = TRUE;
+	}
+
+	// DISHONORED(bringup): -gfxuidrawtrace=<drawn frame> logs one frame's style groups, at the frame
+	// asked for, so a settled interface can be read as well as a starting one.
+	{
+		static INT TraceFrame = -2;
+		static UBOOL bTraceDone = FALSE;
+		if( TraceFrame == -2 )
+		{
+			INT N = 0;
+			TraceFrame = Parse( appCmdLine(), TEXT("gfxuidrawtrace="), N ) ? N : -1;
+		}
+		if( !bTraceDone && TraceFrame >= 0 && DrawnFrames >= TraceFrame )
+		{
+			bTraceDone = TRUE;
+			GFxDisplayDrawTrace = 64;
+		}
+	}
+
+	{
+		static UBOOL bWatchParsed = FALSE;
+		if( !bWatchParsed )
+		{
+			bWatchParsed = TRUE;
+			FString Watch;
+			if( Parse( appCmdLine(), TEXT("gfxuiwatch="), Watch, FALSE ) )
+			{
+				appStrncpyANSI( GFxAS2WatchMember, TCHAR_TO_ANSI( *Watch ), 64 );
+				GFxAS2WatchCount = 4000;
+			}
+			// DISHONORED(bringup): -gfxuioptrace=<from>[:<count>] is GFx3Run's --optrace, in the
+			// game. An opcode that leaves no other mark - a branch taken on an underflowed stack -
+			// is only visible here.
+			FString Window;
+			if( Parse( appCmdLine(), TEXT("gfxuiopwindow="), Window, FALSE ) )
+			{
+				TArray<FString> Parts;
+				Window.ParseIntoArray( &Parts, TEXT(":"), TRUE );
+				if( Parts.Num() == 3 )
+				{
+					GFxAS2OpTraceLen = appAtoi( *Parts(0) );
+					GFxAS2OpTraceLo = appAtoi( *Parts(1) );
+					GFxAS2OpTraceHi = appAtoi( *Parts(2) );
+				}
+			}
+			FString Trace;
+			if( Parse( appCmdLine(), TEXT("gfxuioptrace="), Trace, FALSE ) )
+			{
+				const INT Colon = Trace.InStr( TEXT(":") );
+				GFxAS2OpTraceFrom = appAtoi( Colon >= 0 ? *Trace.Left( Colon ) : *Trace );
+				GFxAS2OpTraceCount = Colon >= 0 ? appAtoi( *Trace.Mid( Colon + 1 ) ) : 200;
+			}
+		}
+	}
+
+	const TArray<FString>& Hidden = GFxUIHiddenClips();
+	if( Hidden.Num() > 0 )
+	{
+		for( INT Index = 0; Index < DPGOpenMovies[DPG].Num(); Index++ )
+		{
+			GFxMovieRoot* Root = (GFxMovieRoot*)DPGOpenMovies[DPG]( Index )->pView.GetPtr();
+			GFxSprite* Level0 = Root ? Root->GetLevel0() : NULL;
+			if( Level0 == NULL )
+			{
+				continue;
+			}
+			FGFxHideNamed( Level0, Hidden, 0 );
+		}
+	}
+
+	static UBOOL bDumped = FALSE;
+	const INT DumpAtFrame = GFxUIDumpDisplayList();
+	if( !bDumped && DumpAtFrame >= 0 && DrawnFrames > DumpAtFrame )
+	{
+		bDumped = TRUE;
+		for( INT Index = 0; Index < DPGOpenMovies[DPG].Num(); Index++ )
+		{
+			GFxMovieRoot* Root = (GFxMovieRoot*)DPGOpenMovies[DPG]( Index )->pView.GetPtr();
+			if( Root == NULL || Root->GetLevel0() == NULL )
+			{
+				continue;
+			}
+			debugf( TEXT("DISHONORED(bringup): display tree of %s"),
+				*DPGOpenMovies[DPG]( Index )->FileName );
+			GMatrix2D Identity;
+			Identity.SetIdentity();
+			FGFxDumpCharacter( Root->GetLevel0(), Identity, 0 );
+		}
 	}
 
 	// DISHONORED(bringup): -gfxuishot=<N> asks the engine for one screenshot on the Nth frame the
@@ -1520,17 +1718,19 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 	// has to say which; these are the runtime's own counters.
 	const GFxInputCensus& Input = GFxInputGetCensus();
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): movies open %d [%s], drawn %d, display objects %d ")
-		TEXT("(%d sprites, %d shapes, %d text fields, %d bitmap fills), %d draws, %d triangles, ")
-		TEXT("%d glyph batches / %d glyphs, %d masks, atlas %d glyphs rasterised / %d missed; ")
-		TEXT("machine: %d frames advanced, %d sprites created, %d display objects placed, ")
-		TEXT("%d action buffers, %u opcodes (%u unimplemented), %d script errors"),
+		TEXT("(%d sprites, %d shapes, %d text fields [%d unbound], %d bitmap fills), %d draws, %d triangles, ")
+		TEXT("%d glyph batches / %d glyphs, %d masks, atlas %d packed / %d blank / %d failed"),
 		Reason, OpenMovies.Num(), *Movies, RenderCensus.Movies, RenderCensus.DisplayObjects,
-		RenderCensus.Sprites, RenderCensus.Shapes, RenderCensus.TextFields, RenderCensus.Images,
+		RenderCensus.Sprites, RenderCensus.Shapes, RenderCensus.TextFields,
+		RenderCensus.TextFieldsUnbound, RenderCensus.Images,
 		RenderCensus.Draws, RenderCensus.Triangles, RenderCensus.GlyphDraws, RenderCensus.Glyphs,
 		RenderCensus.Masks, Glyphs ? (INT)Glyphs->GetRasterizedCount() : 0,
-		Glyphs ? (INT)Glyphs->GetMissCount() : 0,
-		Frames, Sprites, Placed, Buffers, GASActionBuffer::OpsExecuted,
-		GASActionBuffer::OpsUnimplemented, ScriptErrors );
+		Glyphs ? (INT)Glyphs->GetEmptyCount() : 0, Glyphs ? (INT)Glyphs->GetFailedCount() : 0 );
+	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): machine: %d frames advanced, ")
+		TEXT("%d sprites created, %d display objects placed, %d action buffers, ")
+		TEXT("%u opcodes (%u unimplemented), %d script errors, %u untextured fills skipped"),
+		Reason, Frames, Sprites, Placed, Buffers, GASActionBuffer::OpsExecuted,
+		GASActionBuffer::OpsUnimplemented, ScriptErrors, ::GFxDisplayUntexturedFills );
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): input: %u events HE_Handled / %u HE_NotHandled, ")
 		TEXT("%u key downs, %u key ups, %u chars typed, %u mouse events, ")
 		TEXT("%u AS2 listeners registered, %u listener calls"),
@@ -1914,6 +2114,16 @@ static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
 	Player->bDisplayWithHudOff = TRUE;
 	Player->TimingMode = TM_Real;
 	Player->LocalPlayerOwnerIndex = 0;
+	// DISHONORED(bringup): the object ExternalInterface.call resolves its method names on. The script
+	// that constructs the main menu in retail sets it to the movie player itself, and every name the
+	// menu asks for - req_CanContinueGame, req_CanLoadGame, req_CanStartNewGame,
+	// req_IsSaveLoadEnabled, OnNewGameClicked and the rest - is a function of
+	// DisGFxMoviePlayerMainMenu. Without it FGFxExternalInterface::Callback has no target and the
+	// menu bar is built from four undefined answers.
+	if( Player->ExternalInterface == NULL )
+	{
+		Player->ExternalInterface = Player;
+	}
 
 	const UBOOL bStarted = Player->Start( FALSE );
 	// DISHONORED(port): _global.PlatformName before the first advance. The CLIK components in the shared

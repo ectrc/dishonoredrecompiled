@@ -25,3 +25,5 @@ UDisGFxMoviePlayerMenuBase::execOnSaveGameListClosed
 UDisGFxMoviePlayerMenuBase::execOnSettingChange
 UDisGFxMoviePlayerMenuBase::execReq_CanLoadGame
 UDisGFxMoviePlayerMenuBase::execReq_IsSaveLoadEnabled
+UDisGFxMoviePlayerMenuBase::execReq_CanContinueGame
+UDisGFxMoviePlayerMenuBase::execReq_CanSaveGame

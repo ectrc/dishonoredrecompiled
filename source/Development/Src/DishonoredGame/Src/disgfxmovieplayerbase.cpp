@@ -303,8 +303,14 @@ void DisGFxMoviePlayerInitTexts( UDisGFxMoviePlayerBase* Player )
 			break;
 		}
 	}
-	debugf( TEXT("DISHONORED(bringup): InitTexts: %s from %s, %d sections, %d strings"),
-		*Player->GetClass()->GetName(), *TextsFile, Sections, Keys );
+	// DISHONORED(bringup): read one key back through the same interface the content reads it with,
+	// so the line proves the strings are reachable and not merely written.
+	GFxValue Probe;
+	const UBOOL bProbe = View->GetVariable( &Probe, "_root.texts.t_PressAnyKey" );
+	debugf( TEXT("DISHONORED(bringup): InitTexts: %s from %s, %d sections, %d strings, ")
+		TEXT("_root.texts.t_PressAnyKey %s type %d"),
+		*Player->GetClass()->GetName(), *TextsFile, Sections, Keys,
+		bProbe ? TEXT("read back") : TEXT("NOT READABLE"), bProbe ? (INT)Probe.GetType() : -1 );
 }
 
 // DISHONORED(port): 2012 rva 0x7f45a0. The base filter: a movie that is closing eats everything, and

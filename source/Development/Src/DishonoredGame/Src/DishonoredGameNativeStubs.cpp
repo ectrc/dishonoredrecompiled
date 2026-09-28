@@ -1674,14 +1674,6 @@ void UDisGFxMoviePlayerMenuBase::execOnSaveGameClicked( FFrame& Stack, RESULT_DE
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execOnSaveGameClicked);
 }
-void UDisGFxMoviePlayerMenuBase::execReq_CanSaveGame( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execReq_CanSaveGame);
-}
-void UDisGFxMoviePlayerMenuBase::execReq_CanContinueGame( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execReq_CanContinueGame);
-}
 void UDisGFxMoviePlayerPauseMenu::execOnMenuClosed( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerPauseMenu, execOnMenuClosed);

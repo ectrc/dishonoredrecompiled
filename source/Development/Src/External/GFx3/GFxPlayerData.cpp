@@ -604,7 +604,57 @@ const char* GFxMovieDataDef::GetExportedName(unsigned int id) const
     for (unsigned int i = 0; i < ExportSize; ++i)
         if (Exports[i].Id == id)
             return Exports[i].Name;
+    // An IMPORTED character is exported by the movie it came from, and retail reads the name off the
+    // definition itself, so the import symbol is the same string Object.registerClass was keyed by.
+    for (unsigned int i = 0; i < ImportSize; ++i)
+        if (Imports[i].Id == id)
+            return Imports[i].Symbol;
     return 0;
+}
+
+GFxMovieDataDef* GFxMovieDataDef::FindImportSource(const char* url) const
+{
+    if (url == 0)
+        return 0;
+    for (unsigned int i = 0; i < ImportSize; ++i)
+        if (Imports[i].pSource != 0 && strcmp(Imports[i].Url, url) == 0)
+            return Imports[i].pSource;
+    return 0;
+}
+
+// 2012 0x9f46c0's body, one level down: every frame's init-action list of the imported movie, run
+// against the sprite that imported it.
+void GFxMovieDataDef::ExecuteInitActionsOn(GFxSprite* sprite)
+{
+    for (unsigned int frame = 0; frame < GetFrameCount(); ++frame)
+    {
+        const GFxTagList* list = GetInitActionList(frame);
+        if (list == 0)
+            continue;
+        for (unsigned int i = 0; i < list->GetSize(); ++i)
+            (*list)[i]->Execute(sprite);
+    }
+}
+
+GASImportInitActionsTag::GASImportInitActionsTag(GFxMovieDataDef* owner, const char* url)
+    : pOwner(owner)
+{
+    Url[0] = 0;
+    if (url != 0)
+    {
+        unsigned int n = 0;
+        while (url[n] != 0 && n + 1 < sizeof(Url)) { Url[n] = url[n]; ++n; }
+        Url[n] = 0;
+    }
+}
+
+void GASImportInitActionsTag::Execute(GFxSprite* sprite)
+{
+    if (pOwner == 0 || sprite == 0)
+        return;
+    GFxMovieDataDef* source = pOwner->FindImportSource(Url);
+    if (source != 0 && source != pOwner)
+        source->ExecuteInitActionsOn(sprite);
 }
 
 int GFxMovieDataDef::GetExportedId(const char* name) const
@@ -612,6 +662,11 @@ int GFxMovieDataDef::GetExportedId(const char* name) const
     for (unsigned int i = 0; i < ExportSize; ++i)
         if (strcmp(Exports[i].Name, name) == 0)
             return (int)Exports[i].Id;
+    // An imported symbol is in this movie's library under the name it was imported by, which is what
+    // attachMovie is given.
+    for (unsigned int i = 0; i < ImportSize; ++i)
+        if (Imports[i].bBound && strcmp(Imports[i].Symbol, name) == 0)
+            return (int)Imports[i].Id;
     return -1;
 }
 
@@ -619,6 +674,28 @@ GFxCharacterDef* GFxMovieDataDef::GetExportedCharacter(const char* name) const
 {
     int id = GetExportedId(name);
     return id < 0 ? 0 : GetCharacterDefById((unsigned int)id);
+}
+
+GFxCharacterDef* GFxMovieDataDef::FindExportedCharacter(const char* name, unsigned int depth) const
+{
+    GFxCharacterDef* def = GetExportedCharacter(name);
+    if (def != 0 || depth >= 8)
+        return def;
+    for (unsigned int i = 0; i < ImportSize; ++i)
+    {
+        GFxMovieDataDef* source = Imports[i].pSource;
+        if (source == 0 || source == this)
+            continue;
+        bool seen = false;
+        for (unsigned int j = 0; j < i && !seen; ++j)
+            seen = Imports[j].pSource == source;
+        if (seen)
+            continue;
+        def = source->FindExportedCharacter(name, depth + 1);
+        if (def != 0)
+            return def;
+    }
+    return 0;
 }
 
 GFxCharacter* GFxMovieDataDef::CreateCharacterInstance(GFxASCharacter* parent, GFxResourceId id,
@@ -688,6 +765,7 @@ void GFxMovieDataDef::AddImport(const char* url, const char* symbol, unsigned in
     strncpy(e.Symbol, symbol, sizeof(e.Symbol) - 1); e.Symbol[sizeof(e.Symbol) - 1] = 0;
     e.Id = id;
     e.bBound = false;
+    e.pSource = 0;
     ++Stats.Imports;
     // The dictionary slot is taken now and repointed at bind time, which is what retail's
     // GFxMovieDataDef::LoadTaskData::AddNewResourceHandle does inside GFx_ImportLoader: a handle with
@@ -744,6 +822,7 @@ unsigned int GFxMovieDataDef::BindImports(ImportResolver* resolver)
             break;
         }
         e.bBound = true;
+        e.pSource = source;
         ++bound;
         ++Stats.ImportsBound;
         NoteDefined(def);

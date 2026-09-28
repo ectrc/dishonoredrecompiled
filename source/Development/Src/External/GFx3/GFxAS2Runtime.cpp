@@ -271,14 +271,15 @@ void GASEnvironment::DropLocalRegisters(unsigned int count)           // 2012 0x
 
 GASValue* GASEnvironment::LocalRegisterPtr(unsigned int i)            // 2012 0x9e0e30
 {
-    // The DefineFunction2 window is the *tail* of the register array, so register 1 of the innermost
-    // function is the first of the block this call added.
-    if (RegisterCount == 0)
-        return GlobalRegisterPtr(i);
-    unsigned int base = 0;
-    if (i >= RegisterCount)
-        return GlobalRegisterPtr(i);
-    return &Registers[base + i];
+    // DISHONORED(port): 2012 0x9e0e30. The DefineFunction2 window is the *tail* of the register
+    // array and it is indexed BACKWARDS from the end - register 0 is the last slot, register 1 the
+    // one before it - which is what keeps a nested call's block clear of its caller's. Indexing
+    // from the front instead gave every callee the same slots as its caller.
+    if (i < RegisterCount)
+        return &Registers[RegisterCount - i - 1];
+    // Retail logs "Invalid local register %d" here; the four v1 global registers are this tree's
+    // equivalent of the caller-side choice real GFx makes at each StoreRegister site.
+    return GlobalRegisterPtr(i);
 }
 
 GASValue* GASEnvironment::GlobalRegisterPtr(unsigned int i)
@@ -447,17 +448,30 @@ bool GASEnvironment::GetVariable(const GASString& path, GASValue* out,
         if (ParsePath(self->GetSC(), path, &pathPart, &varPart))
         {
             GFxASCharacter* target = FindTarget(pathPart);
-            if (target == 0)
+            if (target != 0)
             {
-                out->SetUndefined();
-                return false;
+                if (varPart.IsEmpty())
+                {
+                    out->SetAsCharacter(target);
+                    return true;
+                }
+                return target->GetMember(self, varPart, out);
             }
-            if (varPart.IsEmpty())
+            // DISHONORED(port): 2012 0x9ea060/0x9e9d60 resolve the prefix to a VALUE and ask it for
+            // an object interface; a prefix that names an ordinary object is as good as one that
+            // names a clip.
+            if (!varPart.IsEmpty())
             {
-                out->SetAsCharacter(target);
-                return true;
+                GASValue container;
+                if (GetVariable(pathPart, &container, withStack, withCount))
+                {
+                    GASObjectInterface* oi = container.ToObjectInterface(self);
+                    if (oi != 0)
+                        return oi->GetMember(self, varPart, out);
+                }
             }
-            return target->GetMember(self, varPart, out);
+            out->SetUndefined();
+            return false;
         }
     }
     return GetVariableRaw(path, out, withStack, withCount);
@@ -489,9 +503,17 @@ bool GASEnvironment::SetVariable(const GASString& path, const GASValue& v,
         if (ParsePath(GetSC(), path, &pathPart, &varPart))
         {
             GFxASCharacter* target = FindTarget(pathPart);
-            if (target == 0)
-                return false;
-            return target->SetMember(this, varPart, v, GASPropFlags());
+            if (target != 0)
+                return target->SetMember(this, varPart, v, GASPropFlags());
+            // DISHONORED(port): 2012 0x9ea060, as above - the prefix may name an ordinary object.
+            GASValue container;
+            if (GetVariable(pathPart, &container, withStack, withCount))
+            {
+                GASObjectInterface* oi = container.ToObjectInterface(this);
+                if (oi != 0)
+                    return oi->SetMember(this, varPart, v, GASPropFlags());
+            }
+            return false;
         }
     }
     return SetVariableRaw(path, v, withStack, withCount);
@@ -510,7 +532,25 @@ GASObject* GASEnvironment::OperatorNew(GASFunctionObject* ctor, int nargs, int f
     if (proto == 0)
         proto = pGC->GetPrototype(GASGlobalContext::Proto_Object);
 
-    GASObject* obj = new GASObject(GetSC(), proto);
+    // DISHONORED(port): the object is made by the constructor the PROTOTYPE names, not always by
+    // the one the opcode named. `MyClass.prototype.__constructor__` is the class MyClass extends, so
+    // a subclass of Array is allocated as an array and only then run through its own constructor.
+    GASFunctionObject* maker = ctor;
+    if (proto != 0)
+    {
+        GASFunctionObject* protoCtor = proto->Get__constructor__(GetSC());
+        if (protoCtor != 0)
+            maker = protoCtor;
+    }
+    GASObject* obj = maker->CreateNewObject(GetSC(), proto);
+    if (obj == 0)
+        return 0;
+    // DISHONORED(bringup): the object is held for the whole of its own construction. GASObject
+    // starts at RefCount 0 and Release() frees at zero, so the first temporary GASValue inside the
+    // constructor - which every `this.x = y` makes, because ActionSetMember pops the receiver into
+    // one - would take the count to 1 and back to 0 and destroy the object under its own
+    // constructor. The caller releases this reference once it owns the value.
+    obj->AddRef();
     GASValue ctorVal;
     ctorVal.SetAsFunction(ctor);
     obj->SetMemberRaw(GetSC(), GetBuiltin(GASbuiltin_constructorUS), ctorVal, GASPropFlags(
@@ -519,9 +559,13 @@ GASObject* GASEnvironment::OperatorNew(GASFunctionObject* ctor, int nargs, int f
     GASValue result;
     GASFnCall call(&result, obj, this, nargs, firstArgBottom);
     ctor->Invoke(call);
-    // A constructor that returns an object replaces the new one, which is how the CLIK factories work.
-    if (result.IsObject())
-        return result.GetObject();
+    // DISHONORED(port): 2012 0x9e89c0 returns the object it MADE and never looks at the call's
+    // result - the GASFnCall's result slot is a local it destroys. AS2's `new` is not JavaScript's:
+    // a constructor cannot replace the instance. Honouring the result was an invention of this tree
+    // and it fired 25 times in one run of the main menu, because the result slot is not cleared
+    // between calls - so `_menu_mc.sel` was a different object from the one SelectionHandler's
+    // constructor had run on, its element id and container were never written, and the menu bar's
+    // six buttons never faded in.
     return obj;
 }
 
@@ -565,13 +609,15 @@ void GASEnvironment::LogScriptWarning(const char* fmt, ...) const     // 2012 0x
 static const char* GFxAS2BuiltinText[GASbuiltin_COUNT] =
 {
     "", "undefined", "null", "true", "false", "NaN", "Infinity", "-Infinity", "0",
-    "__proto__", "__constructor__", "prototype", "constructor", "toString", "valueOf", "length",
+    "__proto__", "__constructor__", "__resolve", "prototype", "constructor", "toString", "valueOf",
+    "length",
     "this", "super", "_global", "_root", "_parent", "_level0", "arguments", "callee", "caller",
     "apply", "call",
     "Object", "Array", "String", "Number", "Boolean", "Function", "Math", "MovieClip", "Error",
     "object", "movieclip", "function", "string", "number", "boolean",
     "onLoad", "onEnterFrame", "onUnload",
-    "_x", "_y", "_visible", "_alpha", "_name", "_target", "_currentframe", "_totalframes"
+    "_x", "_y", "_visible", "_alpha", "_name", "_target", "_currentframe", "_totalframes",
+    "_width", "_height", "_xscale", "_yscale", "_rotation"
 };
 
 GASGlobalContext::GASGlobalContext(GFxMovieRoot* root, unsigned int swfVersion)

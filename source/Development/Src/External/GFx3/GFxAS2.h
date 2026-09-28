@@ -141,7 +141,7 @@ private:
 
 // The builtin strings the interpreter and the class library compare against by identity. Retail
 // keeps them in GASStringBuiltinManager and GASGlobalContext reaches them through
-// GASStringContext; GASObject::GetMemberRaw reads __proto__ at context+320 and __constructor__ at
+// GASStringContext; GASObject::GetMemberRaw reads __proto__ at context+320 and __resolve at
 // context+336, which is this table by another name.
 enum GASBuiltinString
 {
@@ -155,7 +155,8 @@ enum GASBuiltinString
     GASbuiltin_minusInfinity,
     GASbuiltin_zero,
     GASbuiltin_proto,             // __proto__
-    GASbuiltin_constructorUS,     // __constructor__
+    GASbuiltin_constructorUS,     // __constructor__, an ordinary member
+    GASbuiltin_resolve,           // __resolve, the object's own resolve handler
     GASbuiltin_prototype,
     GASbuiltin_constructor,
     GASbuiltin_toString,
@@ -198,6 +199,11 @@ enum GASBuiltinString
     GASbuiltin__target,
     GASbuiltin__currentframe,
     GASbuiltin__totalframes,
+    GASbuiltin__width,
+    GASbuiltin__height,
+    GASbuiltin__xscale,
+    GASbuiltin__yscale,
+    GASbuiltin__rotation,
     GASbuiltin_COUNT
 };
 

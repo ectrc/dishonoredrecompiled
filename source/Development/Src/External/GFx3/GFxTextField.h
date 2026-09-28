@@ -63,6 +63,10 @@ struct GFxTextFieldDesc
 
     GRect<int> TextRectTwips;     // left, top, right, bottom
     unsigned int FontId;
+    // DISHONORED(port): the name the font id resolves to in the movie that owns the field - the
+    // DefineFont's own name when it is local, the ImportAssets2 symbol when it is imported. Empty
+    // when the movie could not be consulted, and the field then falls back as it did before.
+    char           FontName[96];
     float FontHeightTwips;
     GColor TextColor;
     unsigned int MaxLength;
@@ -91,6 +95,7 @@ public:
     virtual ~GFxEditTextCharacter();                                 // 0xa32980
 
     virtual const char* GetCharacterTypeName() const { return "EditText"; }
+    virtual GRect<float> GetBoundsTwips(const GMatrix2D& m) const;   // 0xa2ed60
     virtual GASObjectType GetObjectType() const { return Object_TextField; } // 0xa2cfe0 -> 13
     virtual void AdvanceFrame(bool bAdvance, float framePos);         // 0xa2e250
     // DISHONORED(port): 0xa2ed90 -> GFxTextDocView::Display 0xaa04f0 -> GFxTextLineBuffer::Display

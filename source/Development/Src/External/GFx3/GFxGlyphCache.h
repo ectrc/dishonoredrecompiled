@@ -113,7 +113,11 @@ public:
     unsigned int GetGlyphCount() const { return Glyphs.GetSize(); }
     unsigned int GetRasterizedCount() const { return Rasterized; }
     unsigned int GetMissCount() const { return Misses; }
+    // DISHONORED(bringup): Misses is the CACHE-miss count - one per distinct glyph, by
+    // construction, so it can never be zero while any text is drawn. What says whether a
+    // glyph reached the atlas is Rasterized + Empty against it; Failed is the difference.
     unsigned int GetEmptyCount() const { return Empty; }
+    unsigned int GetFailedCount() const { return Failed; }
 
 private:
     const GFxGlyphNode* rasterizeAndPack(const GFxGlyphParam& param);  // 0xa4f5d0
@@ -130,7 +134,7 @@ private:
     GCompoundShape        Compound;
 
     unsigned int TextureWidth, TextureHeight, MaxTextures, SlotHeight, Padding;
-    unsigned int Rasterized, Misses, Empty;
+    unsigned int Rasterized, Misses, Empty, Failed;
 };
 
 // ---------------------------------------------------------------------------------------------

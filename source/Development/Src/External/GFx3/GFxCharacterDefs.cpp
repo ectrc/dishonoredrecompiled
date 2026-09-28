@@ -642,10 +642,27 @@ GFxCharacter* GFxEditTextCharacterDef::CreateCharacterInstance(GFxASCharacter* p
     // body (0xa26190) that CB's descriptor was, so the copy is field for field and the flag word goes
     // across whole - CB's GFxTextFieldDesc::DefFlags and this class's Flags are the same bits at the
     // same values by construction.
-    (void)defImpl;
     GFxTextFieldDesc d;
     d.TextRectTwips    = TextRect;
     d.FontId           = FontId;
+    // DISHONORED(port): the font id is resolved here because this is the only step that has the
+    // movie the id belongs to. GetExportedName answers the movie's own ExportAssets first and its
+    // ImportAssets2 table second, which is where a UI movie's `$NormalFont` comes from.
+    d.FontName[0] = 0;
+    if (FontId != 0 && defImpl != 0 && defImpl->GetDataDef() != 0)
+    {
+        const char* fontName = defImpl->GetDataDef()->GetExportedName(FontId);
+        if (fontName != 0 && fontName[0] != 0)
+        {
+            unsigned int n = 0;
+            while (fontName[n] != 0 && n < sizeof(d.FontName) - 1)
+            {
+                d.FontName[n] = fontName[n];
+                ++n;
+            }
+            d.FontName[n] = 0;
+        }
+    }
     d.FontHeightTwips  = FontHeight;
     d.TextColor        = TextColor;
     d.MaxLength        = MaxLength;

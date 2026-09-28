@@ -174,7 +174,10 @@ void GFxTextParagraph::SetFormat(const GFxTextParagraphFormat& f)
 
 void GFxTextParagraph::SetTextFormat(const GFxTextFormat& f, unsigned int at, unsigned int len)
 {
-    // DISHONORED(port): 0xaa5400 - the range gets the interned format; overlapping runs are split.
+    // DISHONORED(port): 0xaa5400 - each run the range covers gets `existing.Merge(f)`, which is
+    // what the decompile does (GFxTextFormat::Merge feeding GFxTextAllocator::AllocateTextFormat),
+    // so only the fields `f` marks present override: a colour-only format leaves the font and the
+    // size where they were. Overlapping runs are split at the range's ends.
     if (!pAllocator || !len)
         return;
     if (at >= Text.GetSize())
@@ -182,36 +185,48 @@ void GFxTextParagraph::SetTextFormat(const GFxTextFormat& f, unsigned int at, un
     if (at + len > Text.GetSize())
         len = Text.GetSize() - at;
 
-    const GFxTextFormat* interned = pAllocator->AllocateTextFormat(f);
+    const unsigned int lo = at, hi = at + len;
+    unsigned int covered = 0;
     GArray<FormatRun> next;
     for (unsigned int i = 0; i < Runs.GetSize(); ++i)
     {
         const FormatRun& r = Runs[i];
         const unsigned int end = r.Index + r.Length;
-        if (end <= at || r.Index >= at + len)
+        if (end <= lo || r.Index >= hi)
         {
             next.PushBack(r);
             continue;
         }
-        if (r.Index < at)
+        if (r.Index < lo)
         {
             FormatRun head = r;
-            head.Length = at - r.Index;
+            head.Length = lo - r.Index;
             next.PushBack(head);
         }
-        if (end > at + len)
+        FormatRun mid;
+        mid.Index = r.Index > lo ? r.Index : lo;
+        mid.Length = (end < hi ? end : hi) - mid.Index;
+        const GFxTextFormat base = r.pFormat ? *r.pFormat : GFxTextFormat();
+        mid.pFormat = pAllocator->AllocateTextFormat(base.Merge(f));
+        next.PushBack(mid);
+        covered += mid.Length;
+        if (end > hi)
         {
             FormatRun tail = r;
-            tail.Index = at + len;
-            tail.Length = end - (at + len);
+            tail.Index = hi;
+            tail.Length = end - hi;
             next.PushBack(tail);
         }
     }
-    FormatRun mid;
-    mid.Index = at;
-    mid.Length = len;
-    mid.pFormat = interned;
-    next.PushBack(mid);
+    if (covered == 0)
+    {
+        // Nothing carried a format over that range yet, so the format itself is what it gets.
+        FormatRun mid;
+        mid.Index = lo;
+        mid.Length = len;
+        mid.pFormat = pAllocator->AllocateTextFormat(f);
+        next.PushBack(mid);
+    }
     GFxTextCopyArray(&Runs, next);
     normalizeRuns();
 }

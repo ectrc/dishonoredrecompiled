@@ -44,6 +44,9 @@ struct GFxDisplayStats
     unsigned int Sprites;
     unsigned int Shapes;
     unsigned int TextFields;
+    // DISHONORED(bringup): of those, the ones still showing the DefineEditText's own placeholder or
+    // nothing at all - the count that says whether the interface's strings are bound.
+    unsigned int TextFieldsUnbound;
     unsigned int Buttons;
     unsigned int Images;
     unsigned int TriListDraws;
@@ -240,6 +243,23 @@ public:
     virtual const char* GetTagName() const { return "DoInitAction"; }
 };
 
+// GFxInitImportActions (2012 0xa1c790 / ExecuteInContext 0xa1bd10 -> GFxSprite::
+// ExecuteImportedInitActions 0x9f46c0): the init-action entry an ImportAssets tag leaves behind, so
+// that the movie the symbols come from gets its own init actions run in the importing sprite. That
+// is how an imported screen arrives with its class and not only with its artwork.
+class GASImportInitActionsTag : public GASExecuteTag
+{
+public:
+    GASImportInitActionsTag(GFxMovieDataDef* owner, const char* url);
+
+    virtual void Execute(GFxSprite* sprite);
+    virtual const char* GetTagName() const { return "ImportInitActions"; }
+
+private:
+    GFxMovieDataDef* pOwner;
+    char             Url[192];
+};
+
 // ---------------------------------------------------------------------------------------------
 class GFxTagList
 {
@@ -283,6 +303,7 @@ public:
     void AddFrameLabel(const char* name, unsigned int frame);                     // 2012 0xa003f0
     void CommitFrameCount(unsigned int count) { FrameCount = count; }
     void GrowFrames(unsigned int need);
+    unsigned int GetLabelCount() const { return LabelCount; }
 
 protected:
     struct FrameLabel { char Name[96]; unsigned int Frame; };
@@ -513,6 +534,24 @@ public:
 
     virtual bool GetStandardMember(GASBuiltinString which, GASValue* out) const;
     virtual bool SetStandardMember(GASBuiltinString which, const GASValue& v);
+    // DISHONORED(port): GFxASCharacter::GeomDataType (2012, 88 bytes at character+152; the 3D tail
+    // is not reproduced). The five geometry properties AS2 can write are kept here, together with
+    // the matrix they were last consistent with, and every setter re-derives from THAT matrix, which
+    // is what makes `_width = w` idempotent and sizes a rotated clip along its own axes.
+    struct GeomDataType
+    {
+        int       X, Y;          // twips
+        double    XScale, YScale;  // per cent
+        double    Rotation;        // degrees
+        GMatrix2D Matrix;
+
+        GeomDataType() : X(0), Y(0), XScale(100.0), YScale(100.0), Rotation(0.0) {}
+    };
+
+    // 2012 0x9ceb10 / 0x9cf3b0 / 0x9cf410.
+    void GetGeomData(GeomDataType* out) const;
+    void SetGeomData(const GeomDataType& d);
+    void EnsureGeomDataCreated();
 
     // The AS-visible name, the handle GASValue stores, and the script object that carries whatever
     // the content assigned onto this clip.
@@ -530,6 +569,7 @@ public:
     GFxCharacterHandle* pHandle;
     GASObject*          pASObject;      // the member store; created lazily
     GASObject*          pProto;
+    GeomDataType*       pGeomData;      // retail character+152, made on the first geometry write
 
 protected:
     GASObject* EnsureASObject();
@@ -682,11 +722,16 @@ public:
 
     struct ImportEntry
     {
-        char         Url[192];
-        char         Symbol[160];
-        unsigned int Id;
-        bool         bBound;
+        char             Url[192];
+        char             Symbol[160];
+        unsigned int     Id;
+        bool             bBound;
+        GFxMovieDataDef* pSource;
     };
+    GFxMovieDataDef* FindImportSource(const char* url) const;
+    void             ExecuteInitActionsOn(GFxSprite* sprite);
+    // The symbol lookup attachMovie uses: this movie's exports, then every movie bound into it.
+    GFxCharacterDef* FindExportedCharacter(const char* name, unsigned int depth = 0) const;
     unsigned int       GetImportCount() const { return ImportSize; }
     const ImportEntry& GetImport(unsigned int i) const { return Imports[i]; }
     unsigned int       GetDictSize() const { return DictSize; }
@@ -940,6 +985,38 @@ public:
     // session GFxSprite::CallFrameActions opened, and DoActionsForSession drains it. That ordering
     // is why a class registered in frame 1 is visible to frame 1's own timeline actions.
     void PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target, GFxActionPriority prio);
+
+    // DISHONORED(port): the interval timers setInterval/setTimeout create. Retail keeps them on the
+    // movie root and services them once per advance; a timer whose function is given by name is
+    // resolved at fire time, which is what lets content replace a method between ticks.
+    struct GFxIntervalTimer
+    {
+        int                 Id;
+        bool                bActive;
+        bool                bTimeout;       // setTimeout: fires once
+        double              IntervalMs;
+        double              NextMs;
+        GASValue            Func;           // a function value, or the object when Method is set
+        GASString           Method;
+        GASValue            Args[8];
+        int                 NArgs;
+    };
+    int  AddIntervalTimer(const GASValue& funcOrObject, const GASString& method, double intervalMs,
+                          const GASValue* args, int nargs, bool bTimeout);
+    void ClearIntervalTimer(int id);
+    void ProcessIntervalTimers();
+
+    // ExternalInterface.call's answer: the callback writes it with SetExternalInterfaceRetVal and the
+    // AS2 side reads it back straight afterwards (2012 0x9b3160's contract).
+    GFxValue ExternalInterfaceRetVal;
+    bool     bHasExternalInterfaceRetVal;
+    bool     CallExternalInterface(const char* method, const GFxValue* args, unsigned int nargs,
+                                   GFxValue* result);
+    void     CallFSCommand(const char* command, const char* argument);
+    enum { MaxIntervals = 64 };
+    GFxIntervalTimer Intervals[MaxIntervals];
+    unsigned int     IntervalCount;
+    int              NextIntervalId;
     // The other kind of queue entry retail has: construct this clip as the AS2 class registered for
     // its library symbol. It is queued rather than run inline because the frame's own init actions
     // are what register the class (2012 0x9fee10's InsertEntry(queue, 1)).

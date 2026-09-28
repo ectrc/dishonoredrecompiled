@@ -207,6 +207,7 @@ public:
 		INT GlyphDraws;
 		INT Glyphs;
 		INT Masks;
+		INT TextFieldsUnbound;
 	};
 	const FRenderCensus& GetRenderCensus() const { return RenderCensus; }
 	void LogCensus(const TCHAR* Reason);

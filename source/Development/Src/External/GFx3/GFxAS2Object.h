@@ -248,6 +248,13 @@ public:
 
 typedef void (*GASCFunctionPtr)(const GASFnCall& fn);
 
+// DISHONORED(port): 2012 GASEnvironment::OperatorNew 0x9e89c0 makes the instance of `new F(...)` by
+// calling F's own CreateNewObject rather than by making a plain object, and logs
+// "%s::CreateNewObject returned NULL during creation of %s class instance." when it answers null.
+// This is what gives a built-in class its own storage: Array's makes a GASArrayObject, so `push`
+// and `length` reach the element array, and String's makes a boxed primitive.
+typedef GASObject* (*GASNewObjectPtr)(GASStringContext* sc, GASObject* proto);
+
 // GASFunctionObject covers both kinds of callable: a C++ function (the class library) and a
 // DefineFunction/DefineFunction2 body (the content). GetObjectType() is the measured 23.
 class GASFunctionObject : public GASObject
@@ -268,8 +275,13 @@ public:
 
     void Invoke(const GASFnCall& fn);
 
+    // 2012 0x9e89c0 calls this through the vtable slot at +60. Null makes a plain GASObject, which
+    // is what a content class's constructor gets.
+    GASObject* CreateNewObject(GASStringContext* sc, GASObject* proto) const;
+
     // The C++ form.
     GASCFunctionPtr pCFunction;
+    GASNewObjectPtr pNewObjectFunc;
 
     // The script form: a slice of an action buffer plus its declaration environment.
     GASActionBuffer* pBuffer;

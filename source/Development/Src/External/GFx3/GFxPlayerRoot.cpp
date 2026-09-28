@@ -30,7 +30,7 @@ GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
       bPaused(false), bVisible(true), bDirty(true), pUserData(0), TimeElapsed(0.f), FrameTime(0.f),
       MouseCursorCount(0), ControllerCount(1), bMovieFocused(true), Actions(0), ActionCount(0),
-      ActionCapacity(0), bInActionQueue(false), SessionFill(0)
+      ActionCapacity(0), bInActionQueue(false), SessionFill(0), IntervalCount(0), NextIntervalId(1), bHasExternalInterfaceRetVal(false)
 {
     for (unsigned int i = 0; i < MaxMice; ++i)
     {
@@ -111,6 +111,98 @@ void GFxMovieRoot::LogScriptError(const char* fmt, ...)
 GASString GFxMovieRoot::CreateString(const char* s)
 {
     return pGC->GetSC()->CreateString(s ? s : "");
+}
+
+// DISHONORED(port): the interval timers. setInterval(fn, ms, ...) and
+// setInterval(object, "method", ms, ...) are the two AS2 forms, setTimeout the fire-once variant.
+int GFxMovieRoot::AddIntervalTimer(const GASValue& funcOrObject, const GASString& method,
+                                   double intervalMs, const GASValue* args, int nargs,
+                                   bool bTimeout)
+{
+    if (intervalMs < 1.0)
+        intervalMs = 1.0;
+    int slot = -1;
+    for (unsigned int i = 0; i < IntervalCount; ++i)
+    {
+        if (!Intervals[i].bActive)
+        {
+            slot = (int)i;
+            break;
+        }
+    }
+    if (slot < 0)
+    {
+        if (IntervalCount >= MaxIntervals)
+            return 0;
+        slot = (int)IntervalCount++;
+    }
+    GFxIntervalTimer& t = Intervals[slot];
+    t.Id = NextIntervalId++;
+    t.bActive = true;
+    t.bTimeout = bTimeout;
+    t.IntervalMs = intervalMs;
+    t.NextMs = (double)GFxAS2GetTimerMs() + intervalMs;
+    t.Func = funcOrObject;
+    t.Method = method;
+    t.NArgs = nargs > 8 ? 8 : (nargs < 0 ? 0 : nargs);
+    for (int i = 0; i < t.NArgs; ++i)
+        t.Args[i] = args[i];
+    return t.Id;
+}
+
+void GFxMovieRoot::ClearIntervalTimer(int id)
+{
+    for (unsigned int i = 0; i < IntervalCount; ++i)
+    {
+        if (Intervals[i].bActive && Intervals[i].Id == id)
+        {
+            Intervals[i].bActive = false;
+            Intervals[i].Func.SetUndefined();
+            Intervals[i].Method = GASString();
+            for (int a = 0; a < 8; ++a)
+                Intervals[i].Args[a].SetUndefined();
+            Intervals[i].NArgs = 0;
+            return;
+        }
+    }
+}
+
+void GFxMovieRoot::ProcessIntervalTimers()
+{
+    const double now = (double)GFxAS2GetTimerMs();
+    for (unsigned int i = 0; i < IntervalCount; ++i)
+    {
+        GFxIntervalTimer t = Intervals[i];
+        if (!t.bActive || now < t.NextMs)
+            continue;
+        if (t.bTimeout)
+            Intervals[i].bActive = false;
+        else
+            Intervals[i].NextMs = now + t.IntervalMs;
+
+        GASObjectInterface* self = t.Func.ToObjectInterface(&Env);
+        GASValue fnVal = t.Func;
+        if (!t.Method.IsEmpty())
+        {
+            if (self == 0 || !self->GetMember(&Env, t.Method, &fnVal))
+                continue;
+        }
+        else
+        {
+            self = pLevel0;
+        }
+        GASFunctionObject* fn = fnVal.GetFunction();
+        if (fn == 0 && fnVal.IsObject() && fnVal.GetObject() != 0)
+            fn = fnVal.GetObject()->ToFunction();
+        if (fn == 0)
+            continue;
+        for (int a = t.NArgs - 1; a >= 0; --a)
+            Env.Push(t.Args[a]);
+        GASValue res;
+        GASFnCall call(&res, self, &Env, t.NArgs, Env.GetTopIndex());
+        fn->Invoke(call);
+        Env.Drop(t.NArgs);
+    }
 }
 
 // The action queue. GFxMovieRoot::ActionQueueType in retail is a priority-ordered queue with
@@ -545,6 +637,7 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
     GFxAS2OpsThisBuffer = 0;
 
     ProcessInput();
+    ProcessIntervalTimers();
 
     if (bPaused)
         return FrameTime;
@@ -605,7 +698,45 @@ bool GFxMovieRoot::HitTest(float x, float y, GFxMovieView::HitTestType t, unsign
 { (void)x; (void)y; (void)t; (void)c; return false; }
 bool GFxMovieRoot::HitTest3D(GPoint3<float>* p, float x, float y, unsigned int c)
 { (void)p; (void)x; (void)y; (void)c; return false; }
-void GFxMovieRoot::SetExternalInterfaceRetVal(const GFxValue& v) { (void)v; }
+void GFxMovieRoot::SetExternalInterfaceRetVal(const GFxValue& v)
+{
+    // 2012 0xa07840. The state's Callback has no return value; it answers through this.
+    ExternalInterfaceRetVal = v;
+    bHasExternalInterfaceRetVal = true;
+}
+
+// DISHONORED(port): the AS2 half of GFxExternalInterface (GFx3Gen.h vt[1]). The state lives on the
+// movie definition's bag, which falls through to the loader's, and the engine's implementation is
+// FGFxExternalInterface::Callback (2013 0x58d510).
+bool GFxMovieRoot::CallExternalInterface(const char* method, const GFxValue* args,
+                                         unsigned int nargs, GFxValue* result)
+{
+    if (pDefImpl == 0 || method == 0)
+        return false;
+    GFxState* state = pDefImpl->GetStateAddRef(GFxState::State_ExternalInterface);
+    if (state == 0)
+        return false;
+    ExternalInterfaceRetVal = GFxValue();
+    bHasExternalInterfaceRetVal = false;
+    ((GFxExternalInterface*)state)->Callback(this, method, args, nargs);
+    state->Release();
+    if (result != 0 && bHasExternalInterfaceRetVal)
+        *result = ExternalInterfaceRetVal;
+    return bHasExternalInterfaceRetVal;
+}
+
+// DISHONORED(port): GFxFSCommandHandler's AS2 half. `getURL("FSCommand:Name", "arg")` is how the
+// menus tell the game which screen they moved to (TransitionHandler fires one per transition).
+void GFxMovieRoot::CallFSCommand(const char* command, const char* argument)
+{
+    if (pDefImpl == 0 || command == 0)
+        return;
+    GFxState* state = pDefImpl->GetStateAddRef(GFxState::State_FSCommandHandler);
+    if (state == 0)
+        return;
+    ((GFxFSCommandHandler*)state)->Callback(this, command, argument ? argument : "");
+    state->Release();
+}
 void* GFxMovieRoot::GetUserData() const { return pUserData; }
 void GFxMovieRoot::SetUserData(void* d) { pUserData = d; }
 bool GFxMovieRoot::AttachDisplayCallback(const char* path, void* cb, void* userData)

@@ -234,7 +234,8 @@ void GFxDisplayList::Clear()                                          // 2012 0x
 // GFxASCharacter
 
 GFxASCharacter::GFxASCharacter(GFxASCharacter* parent, GFxResourceId id, GFxMovieRoot* root)
-    : GFxCharacter(parent, id), pMovieRoot(root), pHandle(0), pASObject(0), pProto(0) {}
+    : GFxCharacter(parent, id), pMovieRoot(root), pHandle(0), pASObject(0), pProto(0),
+      pGeomData(0) {}
 
 GFxASCharacter::~GFxASCharacter()
 {
@@ -244,6 +245,8 @@ GFxASCharacter::~GFxASCharacter()
         pHandle->Release();
         pHandle = 0;
     }
+    delete pGeomData;
+    pGeomData = 0;
 }
 
 GASObject* GFxASCharacter::EnsureASObject()
@@ -387,14 +390,187 @@ bool GFxASCharacter::GetStandardMember(GASBuiltinString which, GASValue* out) co
     }
 }
 
+// DISHONORED(port): 2012 GFxASCharacter_MatrixScaleAndRotate2x2 0x9cdf10. The 2x2 is rotated by
+// `rot` and then each column scaled; a factor at or below 1e-4 leaves the matrix alone, which is
+// retail's guard against a zero-size clip losing its orientation.
+static void GFxMatrixScaleAndRotate2x2(GMatrix2D* m, float sx, float sy, float rot)
+{
+    const float c = cosf(rot), s = sinf(rot);
+    const float a = m->M_[0][0], b = m->M_[0][1], d = m->M_[1][0], e = m->M_[1][1];
+    if (fabsf(sx) <= 0.0001f || fabsf(sy) <= 0.0001f)
+        return;
+    m->M_[0][0] = (a * c - d * s) * sx;
+    m->M_[0][1] = (b * c - e * s) * sy;
+    m->M_[1][0] = (a * s + d * c) * sx;
+    m->M_[1][1] = (s * b + c * e) * sy;
+}
+
+// DISHONORED(port): 0x9ceb10. The stored GeomData when there is one, otherwise the one the current
+// matrix implies - which is what a character that has never been written answers.
+void GFxASCharacter::GetGeomData(GeomDataType* out) const
+{
+    if (pGeomData)
+    {
+        *out = *pGeomData;
+        return;
+    }
+    out->X = (int)Matrix.M_[0][2];
+    out->Y = (int)Matrix.M_[1][2];
+    out->XScale = Matrix.GetXScale() * 100.0;
+    out->YScale = Matrix.GetYScale() * 100.0;
+    out->Rotation = Matrix.GetRotation() * 180.0 / 3.14159265358979323846;
+    out->Matrix = Matrix;
+}
+
+void GFxASCharacter::SetGeomData(const GeomDataType& d)               // 0x9cf3b0
+{
+    if (pGeomData == 0)
+        pGeomData = new GeomDataType;
+    *pGeomData = d;
+}
+
+void GFxASCharacter::EnsureGeomDataCreated()                         // 0x9cf410
+{
+    if (pGeomData == 0)
+    {
+        GeomDataType d;
+        GetGeomData(&d);
+        SetGeomData(d);
+    }
+}
+
+// The working matrix every geometry setter measures against: GeomData's own 2x2, with the
+// character's CURRENT translation. 0x9d3350 builds it five times, once per case.
+static GMatrix2D GFxCharacterGeomMatrix(const GFxASCharacter::GeomDataType& g, const GMatrix2D& live)
+{
+    GMatrix2D m = g.Matrix;
+    m.M_[0][2] = live.M_[0][2];
+    m.M_[1][2] = live.M_[1][2];
+    return m;
+}
+
 bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v)
 {
     switch (which)
     {
-    case GASbuiltin__x:       Matrix.M_[0][2] = (float)(v.GetNumber() * GFxPixelsToTwips); return true;
-    case GASbuiltin__y:       Matrix.M_[1][2] = (float)(v.GetNumber() * GFxPixelsToTwips); return true;
+    case GASbuiltin__x:
+    {
+        // DISHONORED(port): 0x9d3350 case 0 - the translation is quantised to whole twips and the
+        // same value is kept in GeomData, which is what `_x` reads back.
+        const double want = v.GetNumber();
+        if (v.IsUndefined() || want != want) return true;
+        EnsureGeomDataCreated();
+        pGeomData->X = (int)floor(want * GFxPixelsToTwips);
+        Matrix.M_[0][2] = (float)pGeomData->X;
+        return true;
+    }
+    case GASbuiltin__y:
+    {
+        const double want = v.GetNumber();
+        if (v.IsUndefined() || want != want) return true;
+        EnsureGeomDataCreated();
+        pGeomData->Y = (int)floor(want * GFxPixelsToTwips);
+        Matrix.M_[1][2] = (float)pGeomData->Y;
+        return true;
+    }
     case GASbuiltin__alpha:   ColorTransform.M_[3][0] = (float)(v.GetNumber() / 100.0); return true;
     case GASbuiltin__visible: bVisible = v.GetBool(); return true;
+    case GASbuiltin__width:
+    case GASbuiltin__height:
+    {
+        // DISHONORED(port): 0x9d3350 cases 8 and 9. The extent is measured through GeomData's own
+        // 2x2 with its rotation taken back out, so the answer is the size along the clip's OWN axes;
+        // the factor goes into GeomData's scale and the matrix is rebuilt from GeomData.
+        const double want = v.GetNumber();
+        if (v.IsUndefined() || want != want)
+            return true;
+        EnsureGeomDataCreated();
+        GeomDataType& g = *pGeomData;
+        GMatrix2D m = GFxCharacterGeomMatrix(g, Matrix);
+        const float deltaRot = (float)(g.Rotation * 3.14159265358979323846 / 180.0
+                                       - m.GetRotation());
+        GMatrix2D unrotated = m;
+        GFxMatrixScaleAndRotate2x2(&unrotated, 1.f, 1.f, deltaRot);
+        const GRect<float> b = GetBoundsTwips(unrotated);
+        const bool bWidth = (which == GASbuiltin__width);
+        const float extent = bWidth ? (b.Right - b.Left) : (b.Bottom - b.Top);
+        double scale = 0.0;
+        if (fabsf(extent) > 0.000001f)
+            scale = want * GFxPixelsToTwips / (double)extent;
+        const double axisScale = bWidth ? m.GetXScale() : m.GetYScale();
+        double stored = scale * axisScale * 100.0;
+        double divisor = axisScale;
+        if (axisScale == 0.0)
+        {
+            stored = 0.0;
+            divisor = 1.0;
+        }
+        if (bWidth) g.XScale = stored; else g.YScale = stored;
+        const float rot = (float)(g.Rotation * 3.14159265358979323846 / 180.0 - m.GetRotation());
+        const float sx = bWidth ? (float)fabs(stored / (100.0 * divisor))
+                                : (float)fabs(g.XScale / (m.GetXScale() * 100.0));
+        const float sy = bWidth ? (float)fabs(g.YScale / (m.GetYScale() * 100.0))
+                                : (float)fabs(stored / (divisor * 100.0));
+        GFxMatrixScaleAndRotate2x2(&m, sx, sy, rot);
+        g.XScale = fabs(g.XScale);
+        g.YScale = fabs(g.YScale);
+        if (m.IsValid())
+            Matrix = m;
+        return true;
+    }
+    case GASbuiltin__xscale:
+    case GASbuiltin__yscale:
+    {
+        // DISHONORED(port): 0x9d3350 cases 2 and 3. The percentage is stored and the matrix rebuilt
+        // from GeomData, so the two axes and the rotation stay independent of each other.
+        const double want = v.GetNumber();
+        if (v.IsUndefined() || want != want)
+            return true;
+        EnsureGeomDataCreated();
+        GeomDataType& g = *pGeomData;
+        GMatrix2D m = GFxCharacterGeomMatrix(g, Matrix);
+        const bool bX = (which == GASbuiltin__xscale);
+        const double axisScale = bX ? m.GetXScale() : m.GetYScale();
+        double stored = want;
+        double divisor = axisScale;
+        if (axisScale == 0.0 || want > 1.0e16)
+        {
+            stored = 0.0;
+            divisor = 1.0;
+        }
+        if (bX) g.XScale = want; else g.YScale = want;
+        const float rot = (float)(g.Rotation * 3.14159265358979323846 / 180.0 - m.GetRotation());
+        const float sx = bX ? (float)(stored / (100.0 * divisor))
+                            : (float)(g.XScale / (m.GetXScale() * 100.0));
+        const float sy = bX ? (float)(g.YScale / (m.GetYScale() * 100.0))
+                            : (float)(stored / (divisor * 100.0));
+        GFxMatrixScaleAndRotate2x2(&m, sx, sy, rot);
+        if (m.IsValid())
+            Matrix = m;
+        return true;
+    }
+    case GASbuiltin__rotation:
+    {
+        // DISHONORED(port): 0x9d3350 case 10. The angle is wrapped into (-180, 180], stored, and the
+        // matrix rebuilt from GeomData with both axis scales kept.
+        double want = v.GetNumber();
+        if (v.IsUndefined() || want != want)
+            return true;
+        EnsureGeomDataCreated();
+        GeomDataType& g = *pGeomData;
+        want = fmod(want, 360.0);
+        if (want > 180.0) want -= 360.0;
+        else if (want < -180.0) want += 360.0;
+        g.Rotation = want;
+        GMatrix2D m = GFxCharacterGeomMatrix(g, Matrix);
+        const float rot = (float)(want * 3.14159265358979323846 / 180.0 - m.GetRotation());
+        const float sy = (float)(g.YScale / (m.GetYScale() * 100.0));
+        const float sx = (float)(g.XScale / (m.GetXScale() * 100.0));
+        GFxMatrixScaleAndRotate2x2(&m, sx, sy, rot);
+        if (m.IsValid())
+            Matrix = m;
+        return true;
+    }
     default:                  return false;
     }
 }
@@ -458,6 +634,22 @@ bool GFxASCharacter::GetMemberRaw(GASStringContext* sc, const GASString& name, G
     }
     if (pASObject && pASObject->GetMemberRaw(sc, name, val))
         return true;
+    // DISHONORED(port): a named child of the display list is a member of its parent - that is how
+    // `_btnContainer_mc["btn" + i]` reaches the buttons the menu bar built, and how any AS2 code
+    // reaches a clip the timeline placed by name. GFxSprite::GetMember (2012 0x9fb540) resolves it
+    // through GFxDisplayList::GetCharacterByName (0x9d5450), which is already here.
+    {
+        GFxSprite* selfSprite = const_cast<GFxASCharacter*>(this)->ToSprite();
+        if (selfSprite != 0)
+        {
+            GFxCharacter* child = selfSprite->GetDisplayList().GetCharacterByName(sc, name);
+            if (child != 0 && child->IsASCharacter())
+            {
+                val->SetAsCharacter(child->ToASCharacterDef());
+                return true;
+            }
+        }
+    }
     if (pProto && pProto->GetMemberRaw(sc, name, val))
         return true;
     // The built-in prototype for this kind of character, last. Retail answers the MovieClip
@@ -480,9 +672,11 @@ bool GFxASCharacter::SetMemberRaw(GASStringContext* sc, const GASString& name, c
 {
     static const GASBuiltinString standard[] =
     {
-        GASbuiltin__x, GASbuiltin__y, GASbuiltin__alpha, GASbuiltin__visible
+        GASbuiltin__x, GASbuiltin__y, GASbuiltin__alpha, GASbuiltin__visible,
+        GASbuiltin__width, GASbuiltin__height, GASbuiltin__xscale, GASbuiltin__yscale,
+        GASbuiltin__rotation
     };
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 9; ++i)
         if (name == sc->GetBuiltin(standard[i]))
             return SetStandardMember(standard[i], val);
     if (name == sc->GetBuiltin(GASbuiltin_proto))
@@ -622,8 +816,13 @@ void GFxAS2SetDisplayProperty(GFxASCharacter* ch, int index, const GASValue& v, 
     {
     case 0:  ch->SetStandardMember(GASbuiltin__x, v); break;
     case 1:  ch->SetStandardMember(GASbuiltin__y, v); break;
+    case 2:  ch->SetStandardMember(GASbuiltin__xscale, v); break;
+    case 3:  ch->SetStandardMember(GASbuiltin__yscale, v); break;
     case 6:  ch->SetStandardMember(GASbuiltin__alpha, v); break;
     case 7:  ch->SetStandardMember(GASbuiltin__visible, v); break;
+    case 8:  ch->SetStandardMember(GASbuiltin__width, v); break;
+    case 9:  ch->SetStandardMember(GASbuiltin__height, v); break;
+    case 10: ch->SetStandardMember(GASbuiltin__rotation, v); break;
     case 13: ch->SetName(v.ToString(env)); break;
     default: break;
     }
@@ -799,7 +998,15 @@ bool GFxSprite::GotoLabeledFrame(const char* label, int offset)         // 2012 
     if (pTimelineDef == 0 || !pTimelineDef->GetLabeledFrame(label, &frame))
     {
         if (pMovieRoot)
-            pMovieRoot->LogScriptError("GotoLabeledFrame: no frame named '%s'", label);
+        {
+            // DISHONORED(bringup): naming the clip is the difference between "a label is missing"
+            // and "which asset is missing it"; the platform-switch clips of the shared library all
+            // ask for the same three names.
+            const GASString path = GetTargetPath(pMovieRoot->GetASContext()->GetSC());
+            pMovieRoot->LogScriptError("GotoLabeledFrame: no frame named '%s' on %s (%u labels)",
+                                       label, path.ToCStr(),
+                                       pTimelineDef ? pTimelineDef->GetLabelCount() : 0);
+        }
         return false;
     }
     int target = (int)frame + offset;
@@ -1054,11 +1261,16 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
                                   int depth)
 {
     GFxMovieDataDef* dataDef = GetOwnDataDef();
-    GFxCharacterDef* def = dataDef ? dataDef->GetExportedCharacter(symbolName.ToCStr()) : 0;
+    // DISHONORED(port): 2012 GFxMovieDefImpl::GetExportedResource 0xa1ede0, reached through
+    // GFxMovieRoot::FindExportedResource 0xa03180: this movie's own exports first, then every movie
+    // it imports, recursively, with the caller skipped so a cycle terminates.
+    GFxCharacterDef* def = dataDef ? dataDef->FindExportedCharacter(symbolName.ToCStr()) : 0;
     if (def == 0)
     {
         if (pMovieRoot)
-            pMovieRoot->LogScriptError("attachMovie: no exported symbol '%s'", symbolName.ToCStr());
+            pMovieRoot->LogScriptError("attachMovie: no exported symbol '%s' in '%s'",
+                                       symbolName.ToCStr(),
+                                       dataDef ? dataDef->GetSourceUrl() : "no data def");
         return 0;
     }
     GFxResourceId id = def->Id;
@@ -1071,11 +1283,6 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
     }
     child->SetName(instanceName);
 
-    // Object.registerClass binds an AS2 class to a library symbol; if one is registered for this
-    // symbol the clip is constructed as that class, which is what makes every CLIK widget in the
-    // cook behave like its script class rather than like a bare movie clip.
-    BindRegisteredClass(child, symbolName);
-
     GFxCharPosInfo pos;
     pos.Depth = depth;
     DisplayList.AddDisplayObject(pos, child);
@@ -1086,7 +1293,17 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
         v.SetAsCharacter(child);
         SetMemberRaw(pMovieRoot->GetASContext()->GetSC(), instanceName, v, GASPropFlags());
     }
+    // DISHONORED(port): the clip's own first frame runs BEFORE its class constructor, because the
+    // constructor reads the children that frame places. `_common.GenericMenu`'s does exactly that -
+    // `new SelectionHandler(this, "btn", n, {elementContainer: this._btnContainer_mc})` - and with
+    // the constructor first the container is undefined, so every later getSelectedElement answers
+    // undefined and the whole menu bar stays at alpha 0. The timeline path already has this order:
+    // AddDisplayObject places the children and queues the binding for the next drain.
     child->ExecuteFrame0Events();
+    // Object.registerClass binds an AS2 class to a library symbol; if one is registered for this
+    // symbol the clip is constructed as that class, which is what makes every CLIK widget in the
+    // cook behave like its script class rather than like a bare movie clip.
+    BindRegisteredClass(child, symbolName);
     return child;
 }
 

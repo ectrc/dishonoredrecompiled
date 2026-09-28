@@ -131,7 +131,7 @@ bool GFxGlyphRasterize(GFxFontResource* font, unsigned int glyphIndex, float fon
 
 GFxGlyphRasterCache::GFxGlyphRasterCache()
     : TextureWidth(0), TextureHeight(0), MaxTextures(0), SlotHeight(0), Padding(0),
-      Rasterized(0), Misses(0), Empty(0)
+      Rasterized(0), Misses(0), Empty(0), Failed(0)
 {
     // DISHONORED(port): 0xa4f290
     Init(1024, 1024, 4, 48, 1);
@@ -358,6 +358,7 @@ const GFxGlyphNode* GFxGlyphRasterCache::rasterizeAndPack(const GFxGlyphParam& p
                                       Padding, &img, &m, &Raster, &Compound);
     if (!ok)
     {
+        ++Failed;
         GFxImageFree(&img);
         return 0;
     }
@@ -381,6 +382,7 @@ const GFxGlyphNode* GFxGlyphRasterCache::rasterizeAndPack(const GFxGlyphParam& p
     unsigned int tex = 0, x = 0, y = 0;
     if (!allocateSlot((unsigned int)m.Width, (unsigned int)m.Height, &tex, &x, &y))
     {
+        ++Failed;
         GFxImageFree(&img);
         delete node;
         return 0;
