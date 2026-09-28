@@ -204,6 +204,7 @@ void GFxDisplayList::AddDisplayObject(const GFxCharPosInfo& pos, GFxCharacter* c
     ch->SetDepth(pos.Depth);
     if (pos.HasMatrix()) ch->SetMatrix(pos.Matrix);
     if (pos.HasCxform()) ch->SetCxform(pos.ColorTransform);
+    if (pos.FilterCount) ch->SetFilters(pos.pFilters, pos.FilterCount);
     ch->SetClipDepth(pos.ClipDepth);
     ch->SetRatio(pos.Ratio);
 }
@@ -221,6 +222,7 @@ void GFxDisplayList::MoveDisplayObject(const GFxCharPosInfo& pos)      // 2012 0
     }
     if (pos.HasMatrix()) ch->SetMatrix(pos.Matrix);
     if (pos.HasCxform()) ch->SetCxform(pos.ColorTransform);
+    if (pos.FilterCount) ch->SetFilters(pos.pFilters, pos.FilterCount);
     if (pos.PlaceFlags & GFxCharPosInfo::Place_HasRatio) ch->SetRatio(pos.Ratio);
     if (pos.PlaceFlags & GFxCharPosInfo::Place_HasClipDepth) ch->SetClipDepth(pos.ClipDepth);
 }
@@ -248,6 +250,7 @@ void GFxDisplayList::ReplaceDisplayObject(const GFxCharPosInfo& pos, GFxCharacte
     ch->SetDepth(pos.Depth);
     if (pos.HasMatrix()) ch->SetMatrix(pos.Matrix);
     if (pos.HasCxform()) ch->SetCxform(pos.ColorTransform);
+    if (pos.FilterCount) ch->SetFilters(pos.pFilters, pos.FilterCount);
 }
 
 void GFxDisplayList::RemoveDisplayObject(int depth, GFxResourceId id)   // 2012 0x9d5fd0

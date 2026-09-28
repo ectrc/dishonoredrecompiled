@@ -229,22 +229,295 @@ bool GFxStream::OpenTag(unsigned int* outCode, unsigned int* outEndPos)
 // GFxCharPosInfo and the execute tags
 
 GFxCharPosInfo::GFxCharPosInfo()
-    : PlaceFlags(0), Depth(0), CharacterId(0), Ratio(0.f), ClipDepth(0), BlendMode(0)
+    : PlaceFlags(0), Depth(0), CharacterId(0), Ratio(0.f), ClipDepth(0), BlendMode(0),
+      pFilters(0), FilterCount(0)
 {
     Name[0] = 0;
     for (int i = 0; i < 4; ++i) { ColorTransform.M_[i][0] = 1.f; ColorTransform.M_[i][1] = 0.f; }
 }
 
-// DISHONORED(bringup, agent DK): the filter census. One line per distinct (kind, instance name).
-static unsigned int GFxDK_FilterCounts[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-void GFxDK_NoteFilter(unsigned char kind, const char* name)
+// DISHONORED(bringup, agent DK, extended by DL): the filter census. Parsed is counted here, applied
+// in GFxCharacter::SetFilters' overrides, and the two are reported side by side so "the cook asked for
+// three and three were applied" is a measurement rather than a claim.
+static unsigned int GFxDL_FilterParsed[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static unsigned int GFxDL_FilterApplied[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+static unsigned int GFxDL_FilterPasses = 0;
+
+static const char* GFxDL_FilterKindName(unsigned char kind)
 {
     static const char* Kinds[8] = { "DropShadow", "Blur", "Glow", "Bevel", "GradientGlow",
                                     "Convolution", "ColorMatrix", "GradientBevel" };
+    return kind < 8 ? Kinds[kind] : "unknown";
+}
+
+const char* GFxFilterDesc::GetFilterTypeName() const
+{
+    return GFxDL_FilterKindName((unsigned char)GetFilterType());
+}
+
+// A descriptor is identified by its address: the tag that parsed it owns the array for the movie's
+// life, so the same filter delivered to the same field on a second pass of the timeline is the same
+// descriptor and must not be counted twice.
+static const GFxFilterDesc* GFxDL_AppliedDescs[64] = { 0 };
+static unsigned int GFxDL_AppliedDescCount = 0;
+static unsigned int GFxDL_FilterDeliveries = 0;
+
+void GFxDL_NoteFilterApplied(const GFxFilterDesc& desc, unsigned int passes, const char* target,
+                             const char* text)
+{
+    ++GFxDL_FilterDeliveries;
+    for (unsigned int i = 0; i < GFxDL_AppliedDescCount; ++i)
+    {
+        if (GFxDL_AppliedDescs[i] == &desc)
+            return;
+    }
+    if (GFxDL_AppliedDescCount < 64)
+        GFxDL_AppliedDescs[GFxDL_AppliedDescCount++] = &desc;
+    const unsigned int kind = desc.GetFilterType();
     if (kind < 8)
-        ++GFxDK_FilterCounts[kind];
+        ++GFxDL_FilterApplied[kind];
+    GFxDL_FilterPasses += passes;
+    float ox = 0.f, oy = 0.f;
+    desc.GetShadowOffset(&ox, &oy);
+    GFxLogf("DISHONORED(bringup): filter applied: %s on '%s' text '%s' blur %.2f x %.2f passes %u "
+            "angle %d distance %d offset %.2f,%.2f colour %08X strength %.2f",
+            desc.GetFilterTypeName(), target ? target : "?", text ? text : "",
+            desc.Params.BlurX, desc.Params.BlurY, desc.Params.Passes, (int)desc.Angle,
+            (int)desc.Distance, ox, oy, (unsigned int)desc.Params.Color.Raw, desc.Params.Strength);
+}
+
+void GFxDL_ReportFilterCensus()
+{
+    unsigned int parsed = 0, applied = 0;
+    for (unsigned int i = 0; i < 8; ++i)
+    {
+        parsed += GFxDL_FilterParsed[i];
+        applied += GFxDL_FilterApplied[i];
+    }
+    GFxLogf("GFx UI census (frame): filters %u parsed / %u applied / %u passes "
+            "(%u deliveries)", parsed, applied, GFxDL_FilterPasses, GFxDL_FilterDeliveries);
+    for (unsigned int i = 0; i < 8; ++i)
+    {
+        if (GFxDL_FilterParsed[i] || GFxDL_FilterApplied[i])
+            GFxLogf("GFx UI census (frame):   %s %u parsed / %u applied",
+                    GFxDL_FilterKindName((unsigned char)i), GFxDL_FilterParsed[i],
+                    GFxDL_FilterApplied[i]);
+    }
+}
+
+void GFxDK_NoteFilter(unsigned char kind, const char* name)
+{
+    if (kind < 8)
+        ++GFxDL_FilterParsed[kind];
     GFxLogf("DISHONORED(bringup): PlaceObject3 filter: %s on '%s'",
-            kind < 8 ? Kinds[kind] : "unknown", (name && name[0]) ? name : "<unnamed>");
+            GFxDL_FilterKindName(kind), (name && name[0]) ? name : "<unnamed>");
+}
+
+// DISHONORED(layout): the 156 bytes retail reads and writes. Params at +8 is what
+// GFxDisplayContext::EndFilters (0xa53d90) copies into a GRenderer::BlurFilterParams; the 20
+// colour-matrix floats fill +76..+155.
+static_assert(sizeof(GFxFilterDesc) == 156, "GFxFilterDesc is 156 bytes in retail");
+static_assert(offsetof(GFxFilterDesc, Angle) == 2, "GFxFilterDesc::Angle is at +2");
+static_assert(offsetof(GFxFilterDesc, Distance) == 4, "GFxFilterDesc::Distance is at +4");
+static_assert(offsetof(GFxFilterDesc, Params) == 8, "GFxFilterDesc::Params is at +8");
+static_assert(offsetof(GFxFilterDesc, ColorMatrix) == 76, "GFxFilterDesc::ColorMatrix is at +76");
+
+// DISHONORED(port): the default descriptor, 2013 0x9c5a10. Blur 5 by 5, one pass, strength 1.
+GFxFilterDesc::GFxFilterDesc()
+    : Filter(0), Pad0(0), Angle(0), Distance(0), Pad1(0)
+{
+    Params.Mode = 0;
+    Params.BlurX = 5.f;
+    Params.BlurY = 5.f;
+    Params.Passes = 1;
+    Params.Offset.x = 0.f;
+    Params.Offset.y = 0.f;
+    Params.Color = GColor(0u);
+    Params.Color2 = GColor(0u);
+    Params.Strength = 1.f;
+    for (int i = 0; i < 4; ++i)
+    {
+        for (int j = 0; j < 2; ++j)
+            Params.cxform.M_[i][j] = (j == 0) ? 1.f : 0.f;
+    }
+    for (int i = 0; i < 20; ++i)
+        ColorMatrix[i] = 0.f;
+    ColorMatrix[0] = ColorMatrix[5] = ColorMatrix[10] = ColorMatrix[15] = 1.f;
+}
+
+// DISHONORED(port): 2013 0xa536b0. Angle is in tenths of a degree, Distance in twips, and the 0.05 is
+// twips to pixels - so the offset is in pixels, which is what BlurFilterParams::Offset holds.
+void GFxFilterDesc::GetShadowOffset(float* outX, float* outY) const
+{
+    const float radians = (float)((double)Angle * 3.141592741012573 / 1800.0);
+    const float distance = (float)Distance;
+    if (outX) *outX = (float)cos(radians) * distance * 0.05000000074505806f;
+    if (outY) *outY = (float)sin(radians) * distance * 0.05000000074505806f;
+}
+
+// ---------------------------------------------------------------------------------------------
+// DISHONORED(port): GFx_LoadFilters, 2013 0xa89a90 (the GFxStreamContext instantiation the
+// PlaceObject3 path uses; 0xa89910 is the GFxStream one and the two bodies are the same walk). A u8
+// count, then that many records; the five kinds that produce a descriptor are read field for field
+// and the three that do not are stepped over by their own lengths, because the tag body is closed by
+// length and a wrong length would desynchronise the records after it.
+//
+// The conversions are retail's:
+//   * the blur, the angle and the distance are SWF FIXED (16.16), read as a u32 and multiplied by
+//     0x1p-16 = 0.0000152587890625;
+//   * the angle is then turned into tenths of a degree, fmod 3600 - `angle * 1800 / PI`;
+//   * the distance is turned into twips - `distance * 20`;
+//   * the strength is FIXED8 (8.8), a u16 times 0x1p-8 = 0.00390625;
+//   * the flag byte's low five bits are the pass count, 0x80 is InnerShadow, 0x40 Knockout and 0x20
+//     CompositeSource, and retail stores the last one *inverted* as Filter_HideObject.
+static float GFxReadFixed1616(GFxStream* s)
+{
+    return (float)((double)s->ReadU32() * 0.0000152587890625);
+}
+
+static float GFxReadFixed88(GFxStream* s)
+{
+    return (float)((double)s->ReadU16() * 0.00390625);
+}
+
+static void GFxReadFilterRgba(GFxStream* s, GColor* out)
+{
+    const unsigned char r = s->ReadU8();
+    const unsigned char g = s->ReadU8();
+    const unsigned char b = s->ReadU8();
+    const unsigned char a = s->ReadU8();
+    *out = GColor(r, g, b, a);
+}
+
+// The flag byte shared by the drop shadow, the glow and the bevel: it fills both the descriptor's own
+// high nibble and the BlurFilterParams mode word.
+static void GFxApplyFilterFlags(GFxFilterDesc* desc, unsigned char flags, unsigned int baseMode,
+                                unsigned int passMask)
+{
+    unsigned int mode = baseMode;
+    unsigned char descFlags = 0;
+    if (flags & 0x80) mode |= GRenderer::Filter_Inner;
+    if (flags & 0x40) { mode |= GRenderer::Filter_Knockout; descFlags |= GFxFilterDesc::DF_Knockout; }
+    if ((flags & 0x20) == 0)
+    {
+        mode |= GRenderer::Filter_HideObject;
+        descFlags |= GFxFilterDesc::DF_HideObject;
+    }
+    if ((flags & 0x0F) > 1)
+        descFlags |= GFxFilterDesc::DF_MultiPass;
+    desc->Filter = (unsigned char)((desc->Filter & GFxFilterDesc::DF_TypeMask) | descFlags);
+    desc->Params.Mode = mode;
+    desc->Params.Passes = flags & passMask;
+}
+
+unsigned int GFxLoadFilters(GFxStream* s, GFxFilterDesc* out, unsigned int maxOut, const char* name)
+{
+    const unsigned int recordCount = s->ReadU8();
+    unsigned int produced = 0;
+    for (unsigned int i = 0; i < recordCount; ++i)
+    {
+        const unsigned char kind = s->ReadU8();
+        GFxDK_NoteFilter(kind, name);
+        GFxFilterDesc desc;
+        desc.Filter = (unsigned char)(kind & GFxFilterDesc::DF_TypeMask);
+        desc.Params.BlurX = 0.f;
+        desc.Params.BlurY = 0.f;
+        desc.Params.Passes = 0;
+        desc.Params.Strength = 1.f;
+        bool bProduced = false;
+        switch (kind)
+        {
+        case GFxFilterDesc::FT_DropShadow:                             // 23 bytes
+        {
+            GFxReadFilterRgba(s, &desc.Params.Color);
+            desc.Params.BlurX = GFxReadFixed1616(s);
+            desc.Params.BlurY = GFxReadFixed1616(s);
+            const float angle = GFxReadFixed1616(s);
+            desc.Angle = (short)(int)fmod((double)angle * 1800.0 / 3.141592741012573, 3600.0);
+            desc.Distance = (short)(int)(GFxReadFixed1616(s) * 20.0f);
+            desc.Params.Strength = GFxReadFixed88(s);
+            GFxApplyFilterFlags(&desc, s->ReadU8(), GRenderer::Filter_Shadow, 0x1Fu);
+            desc.GetShadowOffset(&desc.Params.Offset.x, &desc.Params.Offset.y);
+            bProduced = true;
+            break;
+        }
+        case GFxFilterDesc::FT_Blur:                                   // 9 bytes
+        {
+            desc.Params.Mode = GRenderer::Filter_Blur;
+            desc.Params.BlurX = GFxReadFixed1616(s);
+            desc.Params.BlurY = GFxReadFixed1616(s);
+            desc.Params.Passes = (unsigned int)(s->ReadU8() >> 3);
+            if (desc.Params.Passes > 1)
+                desc.Filter |= GFxFilterDesc::DF_MultiPass;
+            bProduced = true;
+            break;
+        }
+        case GFxFilterDesc::FT_Glow:                                   // 15 bytes
+        {
+            GFxReadFilterRgba(s, &desc.Params.Color);
+            desc.Params.BlurX = GFxReadFixed1616(s);
+            desc.Params.BlurY = GFxReadFixed1616(s);
+            desc.Params.Strength = GFxReadFixed88(s);
+            // A glow is a shadow with no offset, which is why retail's mode word is Filter_Shadow.
+            GFxApplyFilterFlags(&desc, s->ReadU8(), GRenderer::Filter_Shadow, 0x1Fu);
+            bProduced = true;
+            break;
+        }
+        case GFxFilterDesc::FT_Bevel:                                  // 27 bytes
+        {
+            GFxReadFilterRgba(s, &desc.Params.Color);
+            GFxReadFilterRgba(s, &desc.Params.Color2);
+            desc.Params.BlurX = GFxReadFixed1616(s);
+            desc.Params.BlurY = GFxReadFixed1616(s);
+            const float angle = GFxReadFixed1616(s);
+            desc.Angle = (short)(int)fmod((double)angle * 1800.0 / 3.141592741012573, 3600.0);
+            desc.Distance = (short)(int)(GFxReadFixed1616(s) * 20.0f);
+            desc.Params.Strength = GFxReadFixed88(s);
+            // Retail's mode for a bevel is Filter_Shadow | Filter_Highlight and its pass count comes
+            // out of the low *four* bits, not five.
+            GFxApplyFilterFlags(&desc, s->ReadU8(),
+                                GRenderer::Filter_Shadow | GRenderer::Filter_Highlight, 0x0Fu);
+            desc.GetShadowOffset(&desc.Params.Offset.x, &desc.Params.Offset.y);
+            bProduced = true;
+            break;
+        }
+        case GFxFilterDesc::FT_ColorMatrix:                            // 20 FIXED 16.16 values
+        {
+            // The 20 values arrive in SWF's row order and retail scatters them into its own column
+            // order with this permutation, then divides the four translation terms by 255.
+            static const unsigned char Order[20] = { 0, 1, 2, 3, 16, 4, 5, 6, 7, 17,
+                                                     8, 9, 10, 11, 18, 12, 13, 14, 15, 19 };
+            for (unsigned int j = 0; j < 20; ++j)
+                desc.ColorMatrix[Order[j]] = GFxReadFixed1616(s);
+            for (unsigned int j = 16; j < 20; ++j)
+                desc.ColorMatrix[j] *= 0.003921568859368563f;
+            bProduced = true;
+            break;
+        }
+        case GFxFilterDesc::FT_GradientGlow:
+        case GFxFilterDesc::FT_GradientBevel:
+        {
+            const unsigned int n = s->ReadU8();
+            s->Skip(5u * n + 19u);
+            break;
+        }
+        case GFxFilterDesc::FT_Convolution:
+        {
+            const unsigned int mx = s->ReadU8();
+            const unsigned int my = s->ReadU8();
+            // DISHONORED(bringup): 4*X*Y + 13, not + 9 - Divisor, Bias, the matrix, DefaultColor and
+            // the flag byte. Agent DK's step-over was four bytes short here.
+            s->Skip(4u * mx * my + 13u);
+            break;
+        }
+        default:
+            // An unknown kind has no length, so the walk cannot continue past it. Retail stops too.
+            return produced;
+        }
+        if (bProduced && out != 0 && produced < maxOut)
+            out[produced++] = desc;
+    }
+    return produced;
 }
 
 void GFxPlaceObject2Tag::Read(GFxStream* s, unsigned int tagCode)
@@ -274,26 +547,17 @@ void GFxPlaceObject2Tag::Read(GFxStream* s, unsigned int tagCode)
     {
         if (flags3 & 0x01)
         {
-            // DISHONORED(port): GFx_LoadFilters (2012 0xa93b60) - a u8 count and that many records.
-            // The records are stepped over by their fixed sizes, as GFxButtonRecord::Read does, and
-            // counted per kind so the census can say what the cook asks for.
-            const unsigned int count = s->ReadU8();
-            for (unsigned int i = 0; i < count; ++i)
+            GFxFilterDesc built[GFxFilterDesc::MaxFilters];
+            const unsigned int produced = GFxLoadFilters(s, built, GFxFilterDesc::MaxFilters,
+                                                         Pos.HasName() ? Pos.Name : "");
+            if (produced != 0)
             {
-                const unsigned char kind = s->ReadU8();
-                GFxDK_NoteFilter(kind, Pos.HasName() ? Pos.Name : "");
-                switch (kind)
-                {
-                case 0: s->Skip(23); break;                            // drop shadow
-                case 1: s->Skip(9);  break;                            // blur
-                case 2: s->Skip(15); break;                            // glow
-                case 3: s->Skip(27); break;                            // bevel
-                case 4: case 7: { const unsigned int n = s->ReadU8(); s->Skip(5u * n + 19u); break; }
-                case 5: { const unsigned int mx = s->ReadU8(); const unsigned int my = s->ReadU8();
-                          s->Skip(8u + 4u * mx * my + 1u); break; }
-                case 6: s->Skip(80); break;                            // colour matrix
-                default: i = count; break;
-                }
+                delete[] pFilterList;
+                pFilterList = new GFxFilterDesc[produced];
+                for (unsigned int i = 0; i < produced; ++i)
+                    pFilterList[i] = built[i];
+                Pos.pFilters = pFilterList;
+                Pos.FilterCount = produced;
             }
         }
         if (flags3 & 0x02) Pos.BlendMode = s->ReadU8();

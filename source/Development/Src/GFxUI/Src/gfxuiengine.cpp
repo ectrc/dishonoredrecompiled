@@ -568,6 +568,7 @@ FGFxEngine::FGFxEngine()
 	GFxDisplayNoImages = ParseParam( appCmdLine(), TEXT("gfxuinoimages") ) ? true : false;
 	GFxDisplayNoBeginDisplay = ParseParam( appCmdLine(), TEXT("gfxuinodisplay") ) ? true : false;
 	GFxDisplayFitFill = ParseParam( appCmdLine(), TEXT("gfxuifitfill") ) ? true : false;
+	GFxDisplayNoTextShadow = ParseParam( appCmdLine(), TEXT("gfxuinotextshadow") ) ? true : false;
 
 	InitGFxLoaderCommon( Loader );
 
@@ -1572,6 +1573,7 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 			RenderCensus.Triangles += Stats.Triangles;
 			RenderCensus.GlyphDraws += Stats.GlyphDraws;
 			RenderCensus.Glyphs += Stats.Glyphs;
+			RenderCensus.ShadowGlyphs += Stats.ShadowGlyphs;
 			RenderCensus.Masks += Stats.Masks;
 			RenderCensus.TextFieldsUnbound += Stats.TextFieldsUnbound;
 		}
@@ -1749,11 +1751,13 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 	const GFxInputCensus& Input = GFxInputGetCensus();
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): movies open %d [%s], drawn %d, display objects %d ")
 		TEXT("(%d sprites, %d shapes, %d text fields [%d unbound], %d bitmap fills), %d draws, %d triangles, ")
-		TEXT("%d glyph batches / %d glyphs, %d masks, atlas %d packed / %d blank / %d failed"),
+		TEXT("%d glyph batches / %d glyphs / %d shadow glyphs, %d masks, ")
+		TEXT("atlas %d packed / %d blank / %d failed"),
 		Reason, OpenMovies.Num(), *Movies, RenderCensus.Movies, RenderCensus.DisplayObjects,
 		RenderCensus.Sprites, RenderCensus.Shapes, RenderCensus.TextFields,
 		RenderCensus.TextFieldsUnbound, RenderCensus.Images,
 		RenderCensus.Draws, RenderCensus.Triangles, RenderCensus.GlyphDraws, RenderCensus.Glyphs,
+		RenderCensus.ShadowGlyphs,
 		RenderCensus.Masks, Glyphs ? (INT)Glyphs->GetRasterizedCount() : 0,
 		Glyphs ? (INT)Glyphs->GetEmptyCount() : 0, Glyphs ? (INT)Glyphs->GetFailedCount() : 0 );
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): machine: %d frames advanced, ")
@@ -1766,6 +1770,12 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 		TEXT("%u AS2 listeners registered, %u listener calls"),
 		Reason, Input.EventsHandled, Input.EventsNotHandled, Input.KeyDowns, Input.KeyUps,
 		Input.CharsTyped, Input.MouseEvents, Input.ListenersAdded, Input.KeyListenerCalls );
+	// DISHONORED(bringup, agent DL): the filter half - what the cook asked for against what was
+	// applied, and the passes it cost. Written by the runtime so the two halves cannot disagree.
+	{
+		extern void GFxDL_ReportFilterCensus();
+		GFxDL_ReportFilterCensus();
+	}
 	appMemzero( &RenderCensus, sizeof(RenderCensus) );
 
 	// The renderer's own half of the same count, which is what says whether a draw the walk submitted

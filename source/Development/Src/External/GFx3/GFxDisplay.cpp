@@ -34,6 +34,7 @@ static void GFxStrCopy(char* dst, unsigned int cap, const char* src)
     dst[i] = 0;
 }
 bool GFxDisplayFitFill = false;
+bool GFxDisplayNoTextShadow = false;
 
 void GFxDisplayMatrixAppend(GMatrix2D* out, const GMatrix2D& a, const GMatrix2D& b)
 {
@@ -1171,22 +1172,40 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
     GFxTextLineBuffer& lines = GetDocView().GetLineBuffer();
     const GRect<float> viewRect = GetDocView().GetViewRect();
 
+    // DISHONORED(port): the field's filter list, folded into one GFxTextFilter by SetFilters
+    // (0xa275b0). A shadow is a whole extra batch of the same glyphs, rasterised blurred into their
+    // own atlas slots, drawn at the filter's twips offset in the filter's colour and drawn *first*.
+    const GFxTextFilter& filter = GetTextFilter();
+    const bool bShadow = filter.HasShadow() && !GFxDisplayNoTextShadow;
+
     // Rasterise every glyph of the field first, so the atlas is complete before it is uploaded: the
     // upload is one call per frame, not one per line.
     GRenderer::BitmapDesc descs[192];
     unsigned int descCount = 0;
-    struct PendingGlyph { unsigned int Line, Index; };
 
-    for (unsigned int pass = 0; pass < 2; ++pass)
+    // pass 0 fills the atlas, pass 1 submits the shadow, pass 2 the text. The atlas is uploaded once,
+    // between pass 0 and pass 1.
+    for (unsigned int pass = 0; pass < 3; ++pass)
     {
-        // pass 0 fills the atlas, pass 1 submits. Between them the atlas is uploaded once.
-        if (pass == 1)
+        const bool bShadowPass = (pass == 1);
+        if (bShadowPass && !bShadow)
+            continue;
+        if (pass == 1 || (pass == 2 && !bShadow))
         {
             ctx.pGlyphTexture = GFxDisplayGetGlyphTexture(ctx.pRenderer);
             if (ctx.pGlyphTexture == 0)
                 break;
             ctx.pRenderer->SetMatrix(ctx.Matrix);
             ctx.pRenderer->SetCxform(ctx.Cx);
+        }
+        if (pass == 2 && descCount)
+        {
+            // The shadow batch is closed before the first glyph of the text, so the two batches
+            // cannot interleave.
+            ctx.pRenderer->DrawBitmaps(descs, (int)descCount, 0, (int)descCount, ctx.pGlyphTexture,
+                                       ctx.Matrix, 0);
+            ++ctx.Stats.GlyphDraws;
+            descCount = 0;
         }
 
         GImage* atlas = cache->GetTextureCount() ? cache->GetTexture(0) : 0;
@@ -1229,7 +1248,31 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
                 const float sizePx = g.GetFontSize();
                 p.FontSize = (unsigned char)(sizePx < 1.0f ? 1.0f
                                              : (sizePx > 255.0f ? 255.0f : sizePx));
-                const GFxGlyphNode* node = cache->GetGlyph(p);
+                // pass 0 has to rasterise both variants, or the shadow's slot is missing from the
+                // atlas the frame it is first asked for.
+                const unsigned int variants = (pass == 0 && bShadow) ? 2u : 1u;
+                const GFxGlyphNode* node = 0;
+                for (unsigned int v = 0; v < variants; ++v)
+                {
+                    const bool bShadowVariant = bShadowPass || (pass == 0 && v == 1);
+                    GFxGlyphParam q = p;
+                    if (bShadowVariant)
+                    {
+                        q.Flags |= (unsigned char)GFxGlyphParam::GPF_Shadow;
+                        q.BlurX = filter.ShadowBlurX;
+                        q.BlurY = filter.ShadowBlurY;
+                        q.Strength = filter.ShadowStrength;
+                    }
+                    else
+                    {
+                        q.BlurX = filter.BlurX;
+                        q.BlurY = filter.BlurY;
+                        q.Strength = filter.BlurStrength;
+                    }
+                    if (q.BlurX != 0 || q.BlurY != 0)
+                        q.Flags |= (unsigned char)GFxGlyphParam::GPF_Blur;
+                    node = cache->GetGlyph(q);
+                }
                 if (node == 0 || node->Width == 0 || node->Height == 0)
                 {
                     pen += advance;
@@ -1245,8 +1288,18 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
                 // the view rect; the node's origin is in pixels relative to the pen with y upwards.
                 const float penX = viewRect.Left + (float)line->OffsetX + pen;
                 const float penY = viewRect.Top + (float)line->OffsetY + line->BaselineOffset;
-                const float left = penX + node->OriginX * GFxPixelsToTwips;
-                const float top = penY - node->OriginY * GFxPixelsToTwips;
+                float left = penX + node->OriginX * GFxPixelsToTwips;
+                float top = penY - node->OriginY * GFxPixelsToTwips;
+                if (bShadowPass)
+                {
+                    // GFxTextFilter::UpdateShadowOffset (0xa22f30) keeps the offset in twips, which
+                    // is the space these coordinates are in.
+                    left += (float)filter.ShadowOffsetX;
+                    top += (float)filter.ShadowOffsetY;
+                    colour = GColor(filter.ShadowColor.Channels.Red,
+                                    filter.ShadowColor.Channels.Green,
+                                    filter.ShadowColor.Channels.Blue, filter.ShadowAlpha);
+                }
                 descs[descCount].Coords.Left = left;
                 descs[descCount].Coords.Top = top;
                 descs[descCount].Coords.Right = left + node->Width * GFxPixelsToTwips;
@@ -1257,7 +1310,10 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
                 descs[descCount].TextureCoords.Bottom = (float)(node->Y + node->Height) / atlasH;
                 descs[descCount].Color = colour;
                 ++descCount;
-                ++ctx.Stats.Glyphs;
+                if (bShadowPass)
+                    ++ctx.Stats.ShadowGlyphs;
+                else
+                    ++ctx.Stats.Glyphs;
                 pen += advance;
 
                 if (descCount == 192)

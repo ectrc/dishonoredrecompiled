@@ -5,11 +5,110 @@
 #include <math.h>
 #include <string.h>
 
+// DISHONORED(port): the tables retail's stackBlur indexes by radius, read out of the retail image at
+// VAs 0x11FDFD8 (word) and 0x11FE1D8 (byte). mul[r] / 2^shr[r] is 1/(r+1)^2 to within a rounding step,
+// which is the stack blur's normalisation.
+static const unsigned short GFxStackBlurMul[32] = {
+    512, 512, 456, 512, 328, 456, 335, 512, 405, 328, 271, 456, 388, 335, 292, 512,
+    454, 405, 364, 328, 298, 271, 496, 456, 420, 388, 360, 335, 312, 292, 273, 512 };
+static const unsigned char GFxStackBlurShr[32] = {
+    9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17,
+    17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19 };
+
+// One axis of the stack blur, over a strided run of bytes. AGG's own loop: a ring of 2r+1 samples
+// whose front and back halves are summed separately, so each output costs one add and one subtract.
+static void GFxStackBlurAxis(unsigned char* base, unsigned int count, unsigned int stride,
+                             unsigned int radius, unsigned char* stack)
+{
+    const unsigned int div = 2 * radius + 1;
+    const unsigned int mul = GFxStackBlurMul[radius];
+    const unsigned int shr = GFxStackBlurShr[radius];
+    unsigned int sum = 0, sumIn = 0, sumOut = 0;
+
+    unsigned char pix = base[0];
+    for (unsigned int i = 0; i <= radius; ++i)
+    {
+        stack[i] = pix;
+        sum += (unsigned int)pix * (i + 1);
+        sumOut += pix;
+    }
+    for (unsigned int i = 1; i <= radius; ++i)
+    {
+        const unsigned int at = i < count ? i : count - 1;
+        const unsigned char p = base[at * stride];
+        stack[i + radius] = p;
+        sum += (unsigned int)p * (radius + 1 - i);
+        sumIn += p;
+    }
+
+    unsigned int sp = radius;
+    unsigned int xp = radius < count - 1 ? radius : count - 1;
+    for (unsigned int i = 0; i < count; ++i)
+    {
+        base[i * stride] = (unsigned char)((sum * mul) >> shr);
+        sum -= sumOut;
+        unsigned int stackStart = sp + div - radius;
+        if (stackStart >= div)
+            stackStart -= div;
+        sumOut -= stack[stackStart];
+        if (xp < count - 1)
+            ++xp;
+        const unsigned char p = base[xp * stride];
+        stack[stackStart] = p;
+        sumIn += p;
+        sum += sumIn;
+        if (++sp >= div)
+            sp = 0;
+        sumOut += stack[sp];
+        sumIn -= stack[sp];
+    }
+}
+
+void GFxGlyphStackBlur(GImage* img, unsigned int x, unsigned int y, unsigned int w, unsigned int h,
+                       unsigned int radiusX, unsigned int radiusY)
+{
+    if (img == 0 || img->pData == 0 || w == 0 || h == 0)
+        return;
+    if (radiusX > 15) radiusX = 15;
+    if (radiusY > 15) radiusY = 15;
+    unsigned char stack[64];
+    if (radiusX != 0 && w > 1)
+    {
+        for (unsigned int row = 0; row < h; ++row)
+            GFxStackBlurAxis(img->pData + (y + row) * img->Pitch + x, w, 1, radiusX, stack);
+    }
+    if (radiusY != 0 && h > 1)
+    {
+        for (unsigned int col = 0; col < w; ++col)
+            GFxStackBlurAxis(img->pData + y * img->Pitch + x + col, h, img->Pitch, radiusY, stack);
+    }
+}
+
+void GFxGlyphStrengthen(GImage* img, unsigned int x, unsigned int y, unsigned int w, unsigned int h,
+                        float strength, int bias)
+{
+    // DISHONORED(port): 0xa420c0. A strength of exactly 1 is retail's early-out.
+    if (img == 0 || img->pData == 0 || strength == 1.f)
+        return;
+    for (unsigned int row = 0; row < h; ++row)
+    {
+        unsigned char* p = img->pData + (y + row) * img->Pitch + x;
+        for (unsigned int i = 0; i < w; ++i)
+        {
+            int v = bias + (int)((float)((double)((int)p[i] - bias) * strength + 0.5));
+            if (v < 0) v = 0;
+            if (v > 255) v = 255;
+            p[i] = (unsigned char)v;
+        }
+    }
+}
+
 bool GFxGlyphParam::operator==(const GFxGlyphParam& o) const
 {
     // DISHONORED(port): 0x9bdbe0
     return pFont == o.pFont && GlyphIndex == o.GlyphIndex && FontSize == o.FontSize &&
-           Flags == o.Flags && BlurX == o.BlurX && BlurY == o.BlurY && Outline == o.Outline;
+           Flags == o.Flags && BlurX == o.BlurX && BlurY == o.BlurY && Outline == o.Outline &&
+           Strength == o.Strength;
 }
 
 // =============================================================================================
@@ -205,6 +304,7 @@ void GFxGlyphRasterCache::CalcGlyphParam(float scaleLimit, unsigned int fontSize
     out->FontSize = (unsigned char)fontSize;
     out->Flags = in.Flags;
     out->Outline = in.Outline;
+    out->Strength = in.Strength;
 
     *outSize16 = (unsigned short)(16 * fontSize);
     const float sizeF = (float)fontSize;
@@ -353,9 +453,20 @@ const GFxGlyphNode* GFxGlyphRasterCache::rasterizeAndPack(const GFxGlyphParam& p
     img.DataSize = 0;
     img.MipMapCount = 0;
 
+    // DISHONORED(port): 0xa45a70's box growth. The radius is the blur in whole pixels, rounded, and a
+    // blur that rounds to zero but is not zero still gets one pixel - `if (!v72) v72 = v9 != 0`.
+    unsigned int radiusX = (unsigned int)((float)param.BlurX * 0.0625f + 0.5f);
+    unsigned int radiusY = (unsigned int)((float)param.BlurY * 0.0625f + 0.5f);
+    if (radiusX == 0 && param.BlurX != 0) radiusX = 1;
+    if (radiusY == 0 && param.BlurY != 0) radiusY = 1;
+    // Retail grows the box by radiusX horizontally and radiusY vertically; this reconstruction's
+    // raster core takes one padding for both axes, so it takes the larger. Every filter in this cook
+    // has BlurX == BlurY, so the two are the same number here.
+    const unsigned int extra = radiusX > radiusY ? radiusX : radiusY;
+
     GFxGlyphRasterMetrics m;
     const bool ok = GFxGlyphRasterize(param.pFont, param.GlyphIndex, (float)param.FontSize,
-                                      Padding, &img, &m, &Raster, &Compound);
+                                      Padding + extra, &img, &m, &Raster, &Compound);
     if (!ok)
     {
         ++Failed;
@@ -377,6 +488,22 @@ const GFxGlyphNode* GFxGlyphRasterCache::rasterizeAndPack(const GFxGlyphParam& p
         Glyphs.PushBack(node);
         GFxImageFree(&img);
         return node;
+    }
+
+    // DISHONORED(port): the filter block of 0xa45a70, in retail's order - blur, then strengthen. The
+    // knock-out pair (makeKnockOutCopy 0xa42650 / knockOut 0xa42720) is not ported: no filter in this
+    // cook sets the Knockout bit, and a knock-out with nothing to knock out is a no-op.
+    if (radiusX != 0 || radiusY != 0)
+    {
+        GFxGlyphStackBlur(&img, 0, 0, (unsigned int)m.Width, (unsigned int)m.Height, radiusX,
+                          radiusY);
+    }
+    if (param.Strength != 16)
+    {
+        const float strength = (float)param.Strength * 0.0625f;
+        const int bias = (strength > 1.f && (radiusX != 0 || radiusY != 0)) ? 2 : 0;
+        GFxGlyphStrengthen(&img, 0, 0, (unsigned int)m.Width, (unsigned int)m.Height, strength,
+                           bias);
     }
 
     unsigned int tex = 0, x = 0, y = 0;

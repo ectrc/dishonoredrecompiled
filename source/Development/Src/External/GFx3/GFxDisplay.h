@@ -102,6 +102,9 @@ extern unsigned int GFxDisplayDrawTrace;
 // -gfxuifitfill: ignore the style's own matrix and stretch the texture across the shape's bounds. A
 // diagnostic for the fill-matrix convention, and the fallback when a style carries no usable matrix.
 extern bool GFxDisplayFitFill;
+// -gfxuinotextshadow: drop the text fields' shadow batch and change nothing else, so the before and
+// after come out of one binary differing by one switch.
+extern bool GFxDisplayNoTextShadow;
 
 // The per-definition mesh cache. Retail's is the GFxMeshCacheManager state
 // (GFxMeshCache, GFxRenderGen); this is one mesh per definition, built on first display and kept for

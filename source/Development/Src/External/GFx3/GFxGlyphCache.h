@@ -58,9 +58,15 @@ struct GFxGlyphParam
     unsigned char    BlurX;       // 1/16 px
     unsigned char    BlurY;       // 1/16 px
     unsigned char    Outline;
+    // DISHONORED(layout): retail keeps the strength in the byte after BlurY and reads it as
+    // `param[10] != 16` before calling strengthenImage (0xa45a70's tail); this reconstruction has
+    // Outline in that byte, so the strength is appended instead. The struct is a cache key and
+    // nothing serialises it, so the order costs nothing - but it is not retail's.
+    unsigned char    Strength;    // 1/16, so 16 is 1.0 and "leave the coverage alone"
 
     GFxGlyphParam()
-        : pFont(0), GlyphIndex(0), FontSize(0), Flags(0), BlurX(0), BlurY(0), Outline(0) {}
+        : pFont(0), GlyphIndex(0), FontSize(0), Flags(0), BlurX(0), BlurY(0), Outline(0),
+          Strength(16) {}
 
     bool operator==(const GFxGlyphParam& o) const;                 // 0x9bdbe0
 };
@@ -155,6 +161,15 @@ struct GFxGlyphRasterMetrics
 bool GFxGlyphRasterize(GFxFontResource* font, unsigned int glyphIndex, float fontSizePx,
                        unsigned int padding, GImage* out, GFxGlyphRasterMetrics* metrics,
                        GRasterizer* raster, GCompoundShape* compound);
+
+// DISHONORED(port): 2013 0xa43a50 - Anti-Grain Geometry's stack_blur_gray8 over an 8-bit alpha image,
+// with AGG's multiply/shift tables as they are stored in the retail image. Two separable passes, rows
+// then columns; a radius of zero on an axis skips that axis.
+void GFxGlyphStackBlur(GImage* img, unsigned int x, unsigned int y, unsigned int w, unsigned int h,
+                       unsigned int radiusX, unsigned int radiusY);
+// DISHONORED(port): 2013 0xa420c0 - `bias + (int)((p - bias) * strength + 0.5)`, clamped to a byte.
+void GFxGlyphStrengthen(GImage* img, unsigned int x, unsigned int y, unsigned int w, unsigned int h,
+                        float strength, int bias);
 
 #ifdef _MSC_VER
 #pragma pack(pop)

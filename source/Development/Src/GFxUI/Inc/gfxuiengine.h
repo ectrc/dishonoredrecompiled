@@ -206,6 +206,7 @@ public:
 		INT Triangles;
 		INT GlyphDraws;
 		INT Glyphs;
+		INT ShadowGlyphs;
 		INT Masks;
 		INT TextFieldsUnbound;
 	};

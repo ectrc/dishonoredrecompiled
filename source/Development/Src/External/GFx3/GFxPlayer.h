@@ -53,6 +53,9 @@ struct GFxDisplayStats
     unsigned int Triangles;
     unsigned int GlyphDraws;
     unsigned int Glyphs;
+    // DISHONORED(bringup): glyphs submitted by the filter's shadow batch. Separate from Glyphs so the
+    // census can say "the shadow is drawing" as a number.
+    unsigned int ShadowGlyphs;
     unsigned int Masks;
     unsigned int Invisible;
     unsigned int NoGeometry;
@@ -141,6 +144,72 @@ public:
     virtual const char* GetTagName() const = 0;
 };
 
+// ---------------------------------------------------------------------------------------------
+// GFxFilterDesc: one entry of a SWF filter list, as PlaceObject3 (tag 70) and DefineButton2 carry it.
+//
+// DISHONORED(layout): 156 bytes, and every offset is measured, not guessed:
+//   * the default ctor (2013 0x9c5a10) writes BlurX = BlurY = 5 at +12/+16, Passes = 1 at +20,
+//     Mode = 0 at +8, Strength = 1 at +40 and constructs a Cxform at +44;
+//   * GFxDisplayContext::EndFilters (2013 0xa53d90) copies +8..+40 and the 32 bytes at +44 into a
+//     GRenderer::BlurFilterParams in that order, which pins Params at +8 - Mode, BlurX, BlurY,
+//     Passes, Offset, Color, Color2, Strength, cxform, the same 68 bytes GFx3Layout.cpp asserts;
+//   * GFxDisplayContext::BeginFilters (0xa538f0) tests the byte at +35, which is Color's alpha;
+//   * GFxFilterDesc::GetShadowOffset (0xa536b0) reads shorts at +2 and +4 - the angle in tenths of a
+//     degree and the distance in twips - and GFxTextFilter::LoadFilterDesc (0xa89910) reads the same
+//     two plus the low nibble and high nibble of the byte at +0;
+//   * the 20 colour-matrix floats fill +76..+155 (GFx_LoadFilters' case 6).
+struct GFxFilterDesc
+{
+    // The SWF filter ids, which are the low nibble of Filter.
+    enum FilterType
+    {
+        FT_DropShadow    = 0,
+        FT_Blur          = 1,
+        FT_Glow          = 2,
+        FT_Bevel         = 3,
+        FT_GradientGlow  = 4,
+        FT_Convolution   = 5,
+        FT_ColorMatrix   = 6,
+        FT_GradientBevel = 7
+    };
+    // The high nibble, written by GFx_LoadFilters out of the record's own flag byte.
+    enum DescFlags
+    {
+        DF_TypeMask   = 0x0F,
+        DF_Knockout   = 0x20,   // the record's Knockout bit
+        DF_HideObject = 0x40,   // the record's CompositeSource bit, inverted
+        DF_MultiPass  = 0x80    // the record asked for more than one pass
+    };
+
+    // Retail's own cap: GFx_LoadFilters stops writing descriptors at four (0xa89a90).
+    enum { MaxFilters = 4 };
+
+    unsigned char Filter;                       // @0
+    unsigned char Pad0;                         // @1
+    short         Angle;                        // @2  tenths of a degree
+    short         Distance;                     // @4  twips
+    short         Pad1;                         // @6
+    GRenderer::BlurFilterParams Params;         // @8
+    float         ColorMatrix[20];              // @76
+
+    GFxFilterDesc();                                          // 2013 0x9c5a10
+    unsigned int GetFilterType() const { return Filter & DF_TypeMask; }
+    // 2013 0xa536b0: the angle and the distance turned into a pixel offset. Distance is in twips and
+    // the 0.05 is twips-to-pixels, so the offset is in pixels, which is the unit
+    // BlurFilterParams::Offset is in and the unit DrawBlurRect's shader scales by 1/texture size.
+    void GetShadowOffset(float* outX, float* outY) const;      // 2013 0xa536b0
+    const char* GetFilterTypeName() const;
+};
+
+// DISHONORED(port): GFx_LoadFilters, 2013 0xa89a90. Reads the u8 record count and that many records
+// out of the tag stream, writing up to `maxOut` descriptors and returning how many it produced;
+// `name` is the placed instance's name and is only used by the census line.
+unsigned int GFxLoadFilters(GFxStream* s, GFxFilterDesc* out, unsigned int maxOut, const char* name);
+// The census counters, filled by the parse and by SetFilters' overrides.
+void GFxDL_NoteFilterApplied(const GFxFilterDesc& desc, unsigned int passes,
+                             const char* target, const char* text);
+void GFxDL_ReportFilterCensus();
+
 // The unpacked PlaceObject2/3 record. The flag bits are read out of GFxPlaceObject2::UnpackBase
 // (2012 0xa0bab0): bit 0 Move, 1 HasCharacter, 2 HasMatrix, 3 HasCxform, 4 HasRatio, 5 HasName,
 // 6 HasClipDepth, 7 HasClipActions - and the 0x80 case is why that body starts the field walk at
@@ -169,6 +238,12 @@ public:
     int               ClipDepth;
     char              Name[128];
     unsigned int      BlendMode;
+    // DISHONORED(port): PlaceObject3's filter list. The array is owned by the tag that read it
+    // (GFxPlaceObject2Tag::pFilterList), never by this record, because a GFxCharPosInfo is built on
+    // the stack in half a dozen places and copied by value in none of them; the character copies what
+    // it needs out of the list inside SetFilters and keeps no pointer.
+    const GFxFilterDesc* pFilters;
+    unsigned int         FilterCount;
 
     GFxCharPosInfo();
 
@@ -187,8 +262,12 @@ class GFxPlaceObject2Tag : public GASExecuteTag
 public:
     GFxCharPosInfo Pos;
     bool           bIsPlaceObject3;
+    // Allocated by Read only when the record carries filters, which is three tags in the whole main
+    // menu; every other place tag pays one pointer.
+    GFxFilterDesc* pFilterList;
 
-    GFxPlaceObject2Tag() : bIsPlaceObject3(false) {}
+    GFxPlaceObject2Tag() : bIsPlaceObject3(false), pFilterList(0) {}
+    virtual ~GFxPlaceObject2Tag() { delete[] pFilterList; }
     void Read(GFxStream* s, unsigned int tagCode);
     virtual void Execute(GFxSprite* sprite);                          // via 2012 0xa0d440
     virtual const char* GetTagName() const { return bIsPlaceObject3 ? "PlaceObject3" : "PlaceObject2"; }
@@ -426,6 +505,11 @@ public:
     // DISHONORED(port): 2012 0x9cfdd0 / 0x9faeb0 / 0xa2ed90. The base draws nothing, which is what a
     // character with no definition is. Bodies in GFxDisplay.cpp.
     virtual void              Display(GFxDisplayContext& ctx);
+    /** the character's filter list, from the PlaceObject3 record that placed it. The base discards
+        it, which is retail's GFxCharacter::SetFilters (2013 0x9c6940) - a free and nothing else.
+        GFxEditTextCharacter overrides it (0xa275b0) and turns the list into a GFxTextFilter. */
+    virtual void              SetFilters(const GFxFilterDesc* filters, unsigned int count)
+                                  { (void)filters; (void)count; }
 
     const GMatrix2D& GetMatrix() const { return Matrix; }
     void SetMatrix(const GMatrix2D& m) { Matrix = m; }

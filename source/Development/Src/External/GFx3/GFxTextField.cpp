@@ -1,5 +1,7 @@
 // GFx 3.3 text fields - the DefineEditText definition and the character that lays it out.
 #include "GFxTextField.h"
+
+#include <math.h>
 #include "GFxAS2Runtime.h"
 
 #include <string.h>
@@ -372,6 +374,89 @@ void GFxEditTextCharacter::ProduceGlyphs(GFxGlyphRasterCache* cache, GlyphOutput
 // ---------------------------------------------------------------------------------------------
 // The AS2 member surface. Retail's GetMember is 4,401 bytes and SetMember 6,232; this is the subset
 // the cook's own content reads and writes, which the harness reports by name.
+
+// ---------------------------------------------------------------------------------------------
+// GFxTextFilter
+
+// DISHONORED(port): 2013 0xa24420. The defaults are a 45-degree shadow four pixels away, which is
+// what Flash's own filter panel starts at; nothing draws until LoadFilterDesc has put a colour in.
+GFxTextFilter::GFxTextFilter()
+    : BlurX(0), BlurY(0), BlurStrength(16), ShadowFlags(0x80), ShadowBlurX(64), ShadowBlurY(64),
+      ShadowStrength(16), ShadowAlpha(255), GlowSize(0), ShadowAngle(450), ShadowDistance(80),
+      ShadowOffsetX(57), ShadowOffsetY(57), ShadowColor(0u), GlowColor(0u)
+{
+}
+
+// DISHONORED(port): 2013 0xa24480.
+unsigned char GFxTextFilter::FloatToFixed44(float v)
+{
+    const unsigned int q = (unsigned int)(long long)(v * 16.0f + 0.5f);
+    return q >= 0xFF ? (unsigned char)0xFF : (unsigned char)q;
+}
+
+// DISHONORED(port): 2013 0xa22f30. Angle in tenths of a degree, distance in twips, offset in twips.
+void GFxTextFilter::UpdateShadowOffset()
+{
+    const float radians = (float)((double)ShadowAngle * 3.141592741012573 / 1800.0);
+    const float distance = (float)ShadowDistance;
+    ShadowOffsetX = (short)(int)((float)cos(radians) * distance);
+    ShadowOffsetY = (short)(int)((float)sin(radians) * distance);
+}
+
+// DISHONORED(port): 2013 0xa89910, branch for branch. A Blur record fills the blur fields; a
+// DropShadow or a Glow fills the shadow block, but only the *first* one does - once a colour and a
+// distance are set, a following Glow contributes its colour and its size and nothing else, which is
+// how retail keeps three filters on one field from fighting.
+void GFxTextFilter::LoadFilterDesc(const GFxFilterDesc& desc)
+{
+    const unsigned int kind = desc.GetFilterType();
+    if (kind == GFxFilterDesc::FT_Blur)
+    {
+        BlurX = FloatToFixed44(desc.Params.BlurX);
+        BlurY = FloatToFixed44(desc.Params.BlurY);
+        BlurStrength = FloatToFixed44(desc.Params.Strength);
+        return;
+    }
+    if (kind != GFxFilterDesc::FT_DropShadow && kind != GFxFilterDesc::FT_Glow)
+        return;
+    if (ShadowColor.Raw != 0 && ShadowDistance != 0)
+    {
+        if (kind == GFxFilterDesc::FT_Glow)
+        {
+            GlowColor = desc.Params.Color;
+            GlowSize = ShadowBlurY < ShadowBlurX ? ShadowBlurX : ShadowBlurY;
+        }
+        return;
+    }
+    ShadowFlags = (unsigned char)(desc.Filter & 0xF0);
+    ShadowBlurX = FloatToFixed44(desc.Params.BlurX);
+    ShadowBlurY = FloatToFixed44(desc.Params.BlurY);
+    ShadowStrength = FloatToFixed44(desc.Params.Strength);
+    ShadowAlpha = desc.Params.Color.Channels.Alpha;
+    ShadowAngle = desc.Angle;
+    ShadowDistance = desc.Distance;
+    ShadowOffsetX = 0;
+    ShadowOffsetY = 0;
+    ShadowColor = desc.Params.Color;
+    UpdateShadowOffset();
+}
+
+// DISHONORED(port): 2013 0xa275b0.
+void GFxEditTextCharacter::SetFilters(const GFxFilterDesc* filters, unsigned int count)
+{
+    GFxTextFilter built;
+    for (unsigned int i = 0; i < count; ++i)
+    {
+        built.LoadFilterDesc(filters[i]);
+        // The pass count is what the composite costs: a blurred glyph is rasterised once per pass.
+        unsigned int passes = filters[i].Params.Passes;
+        if (passes == 0)
+            passes = 1;
+        GFxDL_NoteFilterApplied(filters[i], passes, GetName().ToCStr(), TextValue);
+    }
+    Filter = built;
+    SetDirtyFlag();
+}
 
 GRect<float> GFxEditTextCharacter::GetBoundsTwips(const GMatrix2D& m) const
 {

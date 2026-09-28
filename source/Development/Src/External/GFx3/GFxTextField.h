@@ -87,6 +87,63 @@ bool GFxTextFieldReadDesc(GFxStream* s, unsigned int tagType, unsigned int tagEn
                           GFxTextFieldDesc* out);
 
 // ---------------------------------------------------------------------------------------------
+// GFxTextFilter: a whole SWF filter list folded into the handful of numbers a text field needs.
+//
+// DISHONORED(layout): 36 bytes including the eight-byte refcounted base retail derives it from
+// (GRefCountBaseNTS); the fields below are the 28 bytes after it and every offset is read out of the
+// ctor (2013 0xa24420), LoadFilterDesc (0xa89910), UpdateShadowOffset (0xa22f30) and
+// GFxTextFieldParam::LoadFromTextFilter (0xa809c0):
+//   +8  BlurX           fixed 4.4, so 16 is one pixel
+//   +9  BlurY           fixed 4.4
+//   +10 BlurStrength    fixed 4.4, default 16
+//   +11 ShadowFlags     the filter descriptor's own high nibble; default 0x80
+//   +12 ShadowBlurX     fixed 4.4, default 64
+//   +13 ShadowBlurY     fixed 4.4, default 64
+//   +14 ShadowStrength  fixed 4.4, default 16
+//   +15 ShadowAlpha     the shadow colour's alpha byte, default 255
+//   +16 GlowSize        max(ShadowBlurX, ShadowBlurY) when a glow followed a shadow; default 0
+//   +18 ShadowAngle     tenths of a degree, default 450
+//   +20 ShadowDistance  twips, default 80
+//   +22 ShadowOffsetX   twips, default 57
+//   +24 ShadowOffsetY   twips, default 57
+//   +28 ShadowColor     default 0
+//   +32 GlowColor       default 0
+// Retail's refcounted base is left out here: this tree holds one of these by value on the character,
+// because nothing else ever shares it.
+struct GFxTextFilter
+{
+    unsigned char  BlurX;
+    unsigned char  BlurY;
+    unsigned char  BlurStrength;
+    unsigned char  ShadowFlags;
+    unsigned char  ShadowBlurX;
+    unsigned char  ShadowBlurY;
+    unsigned char  ShadowStrength;
+    unsigned char  ShadowAlpha;
+    unsigned char  GlowSize;
+    short          ShadowAngle;
+    short          ShadowDistance;
+    short          ShadowOffsetX;
+    short          ShadowOffsetY;
+    GColor         ShadowColor;
+    GColor         GlowColor;
+
+    GFxTextFilter();                                              // 2013 0xa24420
+    static unsigned char FloatToFixed44(float v);                 // 2013 0xa24480
+    void UpdateShadowOffset();                                    // 2013 0xa22f30
+    void LoadFilterDesc(const GFxFilterDesc& desc);               // 2013 0xa89910
+
+    // Retail's own predicate, read out of GFxTextFieldParam::LoadFromTextFilter (0xa809c0): the
+    // shadow block is copied only when bit 0 of ShadowFlags is clear, and a shadow with no colour at
+    // all draws nothing.
+    bool HasShadow() const
+    {
+        return (ShadowFlags & 0x01) == 0 && ShadowAlpha != 0 && ShadowColor.Raw != 0;
+    }
+    bool HasBlur() const { return BlurX != 0 || BlurY != 0; }
+};
+
+// ---------------------------------------------------------------------------------------------
 class GFxEditTextCharacter : public GFxASCharacter
 {
 public:
@@ -102,6 +159,12 @@ public:
     // 0xa45bf0. This is ProduceGlyphs' traversal with the DrawBitmaps submission put back.
     virtual void Display(GFxDisplayContext& ctx);
     virtual void OnEventLoad();                                      // 0xa30cd0
+    // DISHONORED(port): 2013 0xa275b0. Every descriptor of the list is folded into one GFxTextFilter,
+    // which is what makes the text's drop shadow a second glyph batch rather than a blur of the
+    // subtree.
+    virtual void SetFilters(const GFxFilterDesc* filters, unsigned int count);
+
+    const GFxTextFilter& GetTextFilter() const { return Filter; }
 
     virtual bool GetMember(GASEnvironment* env, const GASString& name, GASValue* val);   // 0xa2f9f0
     virtual bool SetMember(GASEnvironment* env, const GASString& name, const GASValue& val,
@@ -140,6 +203,7 @@ private:
     GFxTextDocView           Doc;
     char  TextValue[512];
     bool  bDirty;
+    GFxTextFilter            Filter;
 };
 
 // ---------------------------------------------------------------------------------------------
