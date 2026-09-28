@@ -1,4 +1,4 @@
-# Project status — 2026-09-27 (wave 8: **the game's own menu renders in the game**, an NPC exists and thinks, and the level's grade reaches the renderer)
+# Project status — 2026-09-28 (the main menu matches the shipped game, is navigable, and the NPCs have heads)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE5.md` (waves 1–3,
 done — read each "Wave result"), `PHASE6.md` (wave 4, done), `PHASE7.md` (wave 5, done), `PHASE8.md`
