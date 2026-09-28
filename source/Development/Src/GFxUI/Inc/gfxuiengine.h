@@ -230,7 +230,13 @@ private:
 	/** -gfxuikey=<drawnframe>:<KeyName>: deliver a press and a release through the real path */
 	void TickScriptedKeys();
 	void SetMovieSize(FGFxMovie* Movie);                                             // 2013 0x57b300
+public:
+	// DISHONORED(bringup): public because the Engine -> GFxUI input edge calls it directly when no local
+	// player owns focus (Engine/Src/UnPlayer.cpp -> DishonoredGFxInputKey). Retail reaches it through
+	// UGFxInteraction, which the script InitInputSystem inserts and this tree does not; it goes back to
+	// private when that insertion works.
 	UBOOL InputKey(INT ControllerId, FGFxMovie* pFocusMovie, FName ukey, EInputEvent uevent);// 2013 0x590fd0
+private:
 	UBOOL IsKeyCaptured(FName ukey);                                                 // 2013 0x5916b0
 
 	FGFxEngine& operator=(const FGFxEngine&);
