@@ -478,10 +478,6 @@ void ADishonoredPlayerController::execDis_LeanWithAnalogStick_End( FFrame& Stack
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_LeanWithAnalogStick_End);
 }
-void ADishonoredPlayerController::execDisToggleSprint( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDisToggleSprint);
-}
 void ADishonoredPlayerController::execDis_SelectPower( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_SelectPower);

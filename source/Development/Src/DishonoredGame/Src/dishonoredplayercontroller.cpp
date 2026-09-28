@@ -1458,6 +1458,47 @@ void DisTallboyReport( UWorld* World, FLOAT DeltaSeconds )
 		}
 	}
 
+	// agentDO:tallboycam - -distallboycam=<seconds> puts the first tallboy that has its stilts in front of the
+	// player's own view point, because the two on L_Boyle_Ext_P stand far from the spawn anchor and a run that
+	// starts there never has one in shot. Same shape as agent DI's -disheadcam, and a tallboy is three metres tall,
+	// so the framing distance and drop are its own.
+	FLOAT CamTime = 0.0f;
+	if( Parse( appCmdLine(), TEXT("distallboycam="), CamTime ) && CamTime > 0.0f && Now >= CamTime
+		&& ADishonoredPlayerController::s_pInstance )
+	{
+		ADisTallboyNPCPawn* Target = NULL;
+		for( TObjectIterator<ADisTallboyNPCPawn> It; It; ++It )
+		{
+			if( It->IsTemplate() || It->IsPendingKill() )
+			{
+				continue;
+			}
+			if( !Target || ( It->m_pStiltsMesh && It->m_pStiltsMesh->SkeletalMesh ) )
+			{
+				Target = *It;
+			}
+			if( Target && Target->m_pStiltsMesh && Target->m_pStiltsMesh->SkeletalMesh )
+			{
+				break;
+			}
+		}
+		if( Target )
+		{
+			FVector CamLocation( 0.f, 0.f, 0.f );
+			FRotator CamRotation( 0, 0, 0 );
+			ADishonoredPlayerController::s_pInstance->GetPlayerViewPoint( CamLocation, CamRotation );
+			const FVector Forward = CamRotation.Vector();
+			const FVector Destination = CamLocation + Forward * 520.f - FVector( 0.f, 0.f, 150.f );
+			Target->Physics = PHYS_None;
+			Target->Velocity = FVector( 0.f, 0.f, 0.f );
+			World->FarMoveActor( Target, Destination, FALSE, TRUE );
+			FRotator Facing = ( CamLocation - Destination ).Rotation();
+			Facing.Pitch = 0;
+			Facing.Roll = 0;
+			Target->Rotation = Facing;
+		}
+	}
+
 	if( Now < GDisTallboyState.NextReportTime )
 	{
 		return;
@@ -1605,4 +1646,86 @@ void UArkAnimNodeLookAt::TickAnim( FLOAT DeltaSeconds )
 		DisSetNormalisedAim( Aim );
 	}
 	UAnimNodeSequence::TickAnim( DeltaSeconds );
+}
+
+// agentDO:togglesprint
+/*---------------------------------------------------------------------------
+	The sprint key, ported after the merge gate caught its native firing unbound (unported_natives 0 -> 1).
+
+	DISHONORED(port): 2013 rva 0x6af250 (2012 0x6f8690), 219 bytes. The tweaks decide whether the sprint key is a
+	toggle or a hold, and they decide it PER SOURCE: m_bUseSprintToggle for the keyboard and mouse,
+	m_bUseSprintToggle_GamePad for the pad. In toggle mode the key starts a sprint when the pawn is not sprinting and
+	stops one when it is - but only from the keyboard, because retail's pad branch has no stop. In hold mode the two
+	m_bSprintEnabled_* flags are simply set and the movement code reads them.
+
+	DISHONORED(retail): m_bHeldSprintCanceledSneak is cleared on every path out of this function, including the ones
+	that do nothing else, and m_bSprintEnabled_FromToggle is only ever cleared by the hold branch.
+---------------------------------------------------------------------------*/
+
+// agentDO:sprintdbg - -dissprintdbg says whether the sprint key reaches this at all, with what, and from where.
+// Read on first use, never in a file-scope static (agent CA's finding).
+static INT GDisSprintDbg = -1;
+INT GDisToggleSprintCalls = 0;
+
+static UBOOL DisSprintDbgEnabled()
+{
+	if( GDisSprintDbg < 0 )
+	{
+		GDisSprintDbg = ( appStrfind( appCmdLine(), TEXT("-dissprintdbg") ) != NULL ) ? 1 : 0;
+	}
+	return GDisSprintDbg != 0;
+}
+
+void ADishonoredPlayerController::DisToggleSprint( UBOOL bFromGamePad )
+{
+	GDisToggleSprintCalls++;
+	UDishonoredPlayerInput* DisInput = Cast<UDishonoredPlayerInput>( PlayerInput );
+	UDisTweaks_PlayerInput* Tweaks = DisInput ? Cast<UDisTweaks_PlayerInput>( DisInput->GetTweaks_Derived() ) : NULL;
+	if( !Tweaks )
+	{
+		// retail dereferences PlayerInput unchecked and falls back to the class default when the tweak object is absent
+		Tweaks = UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject<UDisTweaks_PlayerInput>();
+	}
+
+	const UBOOL bToggleMode = ( !bFromGamePad && Tweaks->m_bUseSprintToggle )
+		|| ( Tweaks->m_bUseSprintToggle_GamePad && bFromGamePad );
+	ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( Pawn );
+
+	if( bToggleMode )
+	{
+		if( DisPawn && !DisPawn->m_bSprinting )
+		{
+			m_bSprintEnabled_FromGamePad = bFromGamePad ? TRUE : FALSE;
+			m_bSprintEnabled_FromToggle = TRUE;
+			DisPawn->SetSprinting( TRUE );
+		}
+		else if( !bFromGamePad && DisPawn )
+		{
+			// retail has no matching stop for the pad: a pad toggle only ever starts a sprint
+			DisPawn->SetSprinting( FALSE );
+		}
+	}
+	else
+	{
+		m_bSprintEnabled_FromGamePad = bFromGamePad ? TRUE : FALSE;
+		m_bSprintEnabled_FromToggle = FALSE;
+	}
+	m_bHeldSprintCanceledSneak = FALSE;
+
+	if( DisSprintDbgEnabled() && GDisToggleSprintCalls <= 8 )
+	{
+		debugf( TEXT("DISHONORED(bringup): dissprint census: call %i, fromGamePad %i, toggleMode %i, pawn %s, sprinting %i, fromGamePadFlag %i, fromToggleFlag %i"),
+			GDisToggleSprintCalls, (INT)bFromGamePad, (INT)bToggleMode,
+			DisPawn ? *DisPawn->GetName() : TEXT("NULL"),
+			DisPawn ? (INT)DisPawn->m_bSprinting : -1,
+			(INT)m_bSprintEnabled_FromGamePad, (INT)m_bSprintEnabled_FromToggle );
+	}
+}
+
+/** DISHONORED(port): 2013 rva 0x5ee690 - one UBOOL parameter, no return. */
+void ADishonoredPlayerController::execDisToggleSprint( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bFromGamePad);
+	P_FINISH;
+	DisToggleSprint( bFromGamePad );
 }

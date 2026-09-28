@@ -54,3 +54,11 @@ public:
 	void ApplyWaterPostProcessSettings( FLOAT DeltaSeconds );
 	void ApplyDarkVisionPostProcessSettings( class ADishonoredPlayerPawn* PlayerPawn, FLOAT DeltaSeconds );
 	void ApplyPossessionPostProcessSettings( FLOAT DeltaSeconds );
+
+	/**
+	 * DISHONORED(port): agent DO follow-up. 2013 rva 0x6af250 (2012 0x6f8690), vtable +1380 - the sprint key's
+	 * toggle/hold split. The exec (2013 rva 0x5ee690) is the native the regression caught firing unbound.
+	 * NOTE the rvas: the stub's comment block and the note at dishonoredplayercontroller.cpp:105 carry the 2012
+	 * addresses (0x634cb0 / 0x6f8690); retail 2013's are 0x5ee690 and 0x6af250.
+	 */
+	virtual void DisToggleSprint( UBOOL bFromGamePad );

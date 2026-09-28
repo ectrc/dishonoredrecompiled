@@ -494,3 +494,119 @@ All seven are read on first use, never in a file-scope static (agent CA's findin
 | `build/agentDO/head_after.png` | **the accept shot for the head**: the same guard, same binary, head level and facing forward |
 | `build/agentDO/head_look.png` | the same guard with `-dislookatplayer`: head angled down at the player |
 | `build/agentDO/diff_head.png`, `diff_headlook.png`, `diff_after_floor.png`, `diff_darkvision_b.png`, `diff_darkvision_final.png` | the difference figures behind the tables |
+
+## 10. Follow-up after the merge (`a96b8e4`): the sprint native
+
+The merge gate read `unported_natives` **0 -> 1**, `ADishonoredPlayerController::execDisToggleSprint`. Ported, with
+its callee.
+
+### The addresses in the brief are the 2012 build's
+
+The stub's PDB comment block, the note at `dishonoredplayercontroller.cpp:105` and the follow-up brief all carry
+`0x634cb0` (exec) and `0x6f8690` (method). Those are **shipping 2012**. Retail 2013's are **`0x5ee690`** and
+**`0x6af250`**; `rva:0x634cb0` and `rva:0x6f8690` match no function start in the retail database at all.
+
+### What it does
+
+`DisToggleSprint(UBOOL bFromGamePad)` reads `UDisTweaks_PlayerInput` off `APlayerController::PlayerInput` @1124 and
+splits on the tweaks **per input source**: `m_bUseSprintToggle` (@140 mask 4) for keyboard and mouse,
+`m_bUseSprintToggle_GamePad` (mask 8) for the pad.
+
+* **toggle mode**: not sprinting -> set `m_bSprintEnabled_FromGamePad` (@1552 mask 128) and
+  `m_bSprintEnabled_FromToggle` (mask 256), then `Pawn->SetSprinting(TRUE)`; already sprinting -> stop, **but only
+  from the keyboard**. Retail's pad branch has no stop at all, so a pad toggle can start a sprint and never end one
+  through this function. Ported as retail has it.
+* **hold mode**: both flags are written from the argument (`FromToggle` cleared) and the movement code reads them.
+* **every path out** clears `m_bHeldSprintCanceledSneak` (mask 512), including the two that do nothing else.
+
+`ADishonoredPawn::SetSprinting` (2013 **`0x7497c0`**, 2012 `0x78e8c0`, 57 bytes) writes `m_bSprinting` (@1288 mask 2)
+unconditionally and calls `OnSprintChange_Derived` only on a change. Body in `dishonoredpawn_attributes.cpp`,
+retail's own unit, which is already in the build - no `Sources.cmake` change.
+
+**Bring-up gap named at the site**: `ADishonoredPlayerPawn::OnSprintChange_Derived` (2012 rva `0x70fc00`) is not
+ported, so the base's empty body runs and a sprint change reaches no animation or camera yet.
+
+### Question 1 — why the native is reached, and where retail calls it from
+
+**Retail calls `DisToggleSprint` from script and from nowhere else.** An xref of the retail database gives the
+method **three data references and no code references** - the three are vtable slots
+(`ADishonoredPlayerController` and its two subclasses) - and the exec two data references, the native map and the
+autogenerate table. There is no C++ caller in retail, and this package adds none. So a firing native means script
+called it, which is exactly retail's path.
+
+**It is not my package that reaches it.** Measured twice:
+
+* the pre-merge gate run of this package (`build/agentDO/regression1.txt`) read `unported_natives 0` **and**
+  `execDisToggleSprint` is absent from the six `probe_natives` of its inputtest stage, so it did not fire on either
+  stage;
+* on **HEAD `1924264`** with this port plus a `-dissprintdbg` counter, the d3d9 stage's exact command line
+  (`-startmap=L_Tower_P -startmapopen`, 90 s, 617 scene-census lines, `Initial startup` and `scene census` both
+  reached) calls `DisToggleSprint` **zero times**.
+
+The gate that failed ran `a96b8e4`, which is this package on top of agent DM's `ee2e413` ("the start camera waits
+for the key press"). That is the input-path change in the merge and the natural place for a script sprint call to
+become reachable; this package touches the post-process feed, two pawn appearance passes and one anim-node weight,
+none of which can make script call anything. Either way the native now has a body, so the ratchet holds whichever
+side reaches it.
+
+### Question 2 — agent DP's audit entry 2
+
+**`DisToggleSprint` and `SetSprinting` touch none of the four shared-store members.** They read
+`AController::Pawn` @584 and `APlayerController::PlayerInput` @1124 and write bitfield bits on
+`ADishonoredPlayerController` @1552 and `ADishonoredPawn` @1288. `MoveTarget`, `CurrentPath`, `NextRoutePath` and
+`MoveTimer` (`EngineControllerClasses.h:417-421`, all `DISHONORED_SHIM_STATIC`) are not referenced - confirmed by
+grep over the ported block. The audit's reading is right, and the retail SDK confirms the other half of it:
+retail's `AController` has `RouteCache` @736, `CurrentPathDir` @748 and `FailedMoveTarget` @776 and **none of those
+four**. Said here, not fixed here.
+
+### The gate
+
+`python resources/tools/run_regression.py --build-dir build/agentDO --no-build` on HEAD `1924264` plus this port:
+**31 ok, 0 failed, 0 skipped, 423 s** (`build/agentDO/regression2.txt`). **`unported_natives` 0**, `probe_natives`
+6, `d3d9_frames` **19,800**, `d3d9_criticals` 0, `inputtest_moved` **1030.5**, `inputtest_peak_speed` 500.4,
+`inputtest_criticals` 0, `sequence_census` 88,552, `physics_actors` 1,369. Builds: `build/agentDO_build16.log`
+(708 steps) and `build/agentDO_build17.log` (DishonoredGame, CoreSmoke, LayoutProbe), 0 errors.
+
+### The tallboy, now that all three maps run (agent DP's `1924264`)
+
+`L_Boyle_Ext_P` reaches 70 s, and both tallboy passes fire on real content:
+
+```
+distallboy census: 2 tallboy pawns (0 archetypes), stilts mesh set 2, attached light 0;
+  tweak objects 2 Pwn_Tallboy_Wood_SearchLight(stilts Skm_TallBoyStilts) Pwn_Tallboy_Wood(stilts Skm_TallBoyStilts)
+  | passes: ApplyTweakChanges 2, light spawns 0
+distallboy first DisTallboyNPCPawn_0: body Skm_TallBoyBody, stilts Skm_TallBoyStilts attached 1
+  parentAnim DisSkeletalMeshComponent_19, head NULL, light NULL
+```
+
+**2 of 2 tallboys have `Skm_TallBoyStilts` on `m_pStiltsMesh`, attached, bound to the body as their animation
+parent** - the same measurement agent DI used for the heads, and `ApplyTweakChanges 2` is the ported pass having run
+once per tallboy. `head NULL` is right: a tallboy's helmet is part of its body mesh, so `ADishonoredNPCPawn`'s head
+pass finds no head choice and drops the component.
+
+`-distallboycam=<seconds>` (agent DI's `-disheadcam` for a three-metre character: 520 uu in front of the view point,
+dropped 150) puts one in frame: `build/agentDO/tallboy_stilts.png`, the Boyle garden at night with the tallboy's
+twin stilt struts running from its body down to the gravel. The map is a dark exterior and the tallboy is backlit by
+the lanterns, so the **census is the proof and the shot is the corroboration**, not the other way round.
+
+`light spawns 0` is **not yet explained** and the census cannot tell the two candidates apart: either these two
+placed tallboys use the `Pwn_Tallboy_Wood` variant whose `m_pLightToSpawn` is NULL (in which case 0 is correct
+behaviour), or `PostBeginPlay_Body` did not run on them at all. One line in the census - printing the tweaks'
+`m_pLightToSpawn` and a counter for the pass itself, not just for a successful spawn - settles it, and it is the
+first thing to do when someone next opens the tallboy.
+
+### Files, and what the generated files need
+
+| File | Change |
+|---|---|
+| `DishonoredGame/Src/dishonoredplayercontroller.cpp` | `DisToggleSprint`, `execDisToggleSprint`, the `-dissprintdbg` counter |
+| `DishonoredGame/Src/dishonoredpawn_attributes.cpp` | `ADishonoredPawn::SetSprinting` |
+| `DishonoredGame/Inc/CppText/ADishonoredPlayerController.h` | the `DisToggleSprint` declaration |
+| `DishonoredGame/Inc/CppText/ADishonoredPawn.h` | `SetSprinting` and the empty `OnSprintChange_Derived` |
+| `DishonoredGame/DishonoredGameNativeStubs.ported.agentDO.txt` | new, one line, the generator's skip list |
+| `DishonoredGame/Src/DishonoredGameNativeStubs.cpp` | **generated**: the `execDisToggleSprint` stub removed |
+
+**The generated files need `python resources/tools/symbols/gen_classes_header.py DishonoredGame --sdk
+--module-header --sources-cmake`, and I have not run it.** The only generated file this follow-up touches is
+`DishonoredGameNativeStubs.cpp`, and the edit is exactly what the generator emits once
+`DishonoredGameNativeStubs.ported.agentDO.txt` exists.

@@ -43,3 +43,12 @@ public:
 	virtual void PostBeginPlay_Body();
 	/** 2013 rva 0x757730 (2012 0x7956a0); body in dishonoredpawn_body.cpp. */
 	void GetBone_ByName( FName _BoneName, FVector* _pPos, FRotator* _pRotator ) const;
+
+	/**
+	 * DISHONORED(port): agent DO follow-up. 2013 rva 0x7497c0 (2012 0x78e8c0) - m_bSprinting and the one notification
+	 * that goes with it; body in dishonoredpawn_attributes.cpp, retail's own unit for it.
+	 * DISHONORED(bringup): OnSprintChange_Derived is empty in the base. ADishonoredPlayerPawn overrides it
+	 * (2012 rva 0x70fc00) and that override is not ported, so a sprint change reaches no animation or camera yet.
+	 */
+	virtual void SetSprinting( UBOOL bSprinting );
+	virtual void OnSprintChange_Derived() {}

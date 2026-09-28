@@ -85,3 +85,18 @@ void ADishonoredPawn::OnDifficultyChange()
 // DISHONORED(port): MaxSpeedModifier (2012 rva 0x794b10) is an APawn virtual the engine's movement code calls every
 // frame. Its body needs MaxSpeedModifier_Derived, IsSneaking and IsCarryingCorpse, none of which are ported, and a
 // partial port would multiply the pawn's speed by 0 and stop it walking. Left out on purpose.
+
+// agentDO:setsprinting
+/**
+ * DISHONORED(port): 2013 rva 0x7497c0 (2012 0x78e8c0), 57 bytes. The flag is written unconditionally and the
+ * notification fires only on a change, which is what makes it safe to call every frame.
+ */
+void ADishonoredPawn::SetSprinting( UBOOL bSprinting )
+{
+	const UBOOL bWasSprinting = m_bSprinting ? TRUE : FALSE;
+	m_bSprinting = bSprinting ? TRUE : FALSE;
+	if( bWasSprinting != ( bSprinting ? TRUE : FALSE ) )
+	{
+		OnSprintChange_Derived();
+	}
+}
