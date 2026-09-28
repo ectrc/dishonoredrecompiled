@@ -1252,6 +1252,42 @@ void FGFxEngine::Tick( FLOAT DeltaTime )
 		}
 	}
 	TickScriptedKeys();
+
+	// DISHONORED(bringup): -gfxuifreeze=<N> stops advancing every open movie after N advances. The display list
+	// and the renderer are untouched, so the frame keeps drawing - the movie's clock simply stops. It exists
+	// because agent DG's open crash fires on a timeline loop about 80 movie frames in, which leaves too little
+	// time to look at the interface; freezing the timeline holds the menu on screen indefinitely. Remove this
+	// when that crash is fixed. Read on first use, never at static-initialisation time (GCmdLine is set in
+	// WinMain, which is what left three earlier bring-up switches permanently FALSE - agent CA, c403e2f).
+	{
+		static INT FreezeAfter = -2;
+		static INT Advances    = 0;
+		static UBOOL bSaidSo   = FALSE;
+		if( FreezeAfter == -2 )
+		{
+			FreezeAfter = -1;
+			INT Parsed = 0;
+			if( Parse( appCmdLine(), TEXT("gfxuifreeze="), Parsed ) && Parsed >= 0 )
+			{
+				FreezeAfter = Parsed;
+				debugf( TEXT("DISHONORED(bringup): GFx UI: the interface will stop advancing after %i advances and stay on screen"), FreezeAfter );
+			}
+		}
+		if( FreezeAfter >= 0 )
+		{
+			if( Advances >= FreezeAfter )
+			{
+				if( !bSaidSo )
+				{
+					bSaidSo = TRUE;
+					debugf( TEXT("DISHONORED(bringup): GFx UI: frozen after %i advances - the menu stays as it is"), Advances );
+				}
+				return;
+			}
+			Advances++;
+		}
+	}
+
 	const DOUBLE GameTime = GWorld ? GWorld->GetTimeSeconds() : 0.0;
 	const DOUBLE RealTime = GCurrentTime;
 
