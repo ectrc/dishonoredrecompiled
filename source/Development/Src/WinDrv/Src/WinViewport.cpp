@@ -4,6 +4,9 @@
 =============================================================================*/
 
 #include "WinDrvPrivate.h"
+
+// DISHONORED(bringup): defined below, used by Resize and the window creation above it.
+UBOOL DishonoredInputGrabDisabled();
 #include "EngineUserInterfaceClasses.h"
 #include "GameFramework.h"
 #include "..\..\Launch\Resources\resource.h"
@@ -186,7 +189,10 @@ FWindowsViewport::FWindowsViewport(UWindowsClient* InClient,FViewportClient* InV
 	Resize(InSizeX,InSizeY,InFullscreen,InPosX,InPosY);
 
 	// Set as active window.
-	::SetActiveWindow(Window);
+	if( !DishonoredInputGrabDisabled() )
+	{
+		::SetActiveWindow(Window);
+	}
 
 	// Set initial key state.
 	for(UINT KeyIndex = 0;KeyIndex < 256;KeyIndex++)
@@ -599,7 +605,7 @@ void FWindowsViewport::Resize(UINT NewSizeX,UINT NewSizeY,UBOOL NewFullscreen,IN
 	// Show the viewport.
 	if ( bShowWindow )
 	{
-		::ShowWindow( Window, SW_SHOW );
+		::ShowWindow( Window, DishonoredInputGrabDisabled() ? SW_SHOWNOACTIVATE : SW_SHOW );
 		::UpdateWindow( Window );
 	}
 
@@ -742,6 +748,33 @@ UBOOL FWindowsViewport::IsCursorVisible( ) const
 	return bIsVisible;
 }
 
+// DISHONORED(bringup): a scripted run must not take the user's mouse and keyboard. Everything that drives the game
+// from a script - build_and_smoke.py, run_regression.py, every agent's screenshot run - passes -unattended, and
+// resources/play.cmd never does, so -unattended is the signal that nobody is sitting at this window. Under it the
+// viewport does not capture the mouse, clip the cursor, hide the cursor, activate itself, acquire the DirectInput
+// mouse, or act on any key or mouse message that arrives. The window is still created, shown and rendered into, so
+// screenshots are unchanged, and -inputtest is unaffected because it calls FViewport::InputKey/InputAxis directly
+// rather than going through Windows messages (Engine/Src/UnPlayer.cpp:356).
+// -noinputgrab forces this on without -unattended; -inputgrab forces it off.
+// Read on first use, never at static-initialisation time: GCmdLine is set in WinMain, long after a file-scope
+// initialiser would run, which is what left three earlier bring-up switches permanently FALSE (agent CA, c403e2f).
+UBOOL DishonoredInputGrabDisabled()
+{
+	static INT Cached = -1;
+	if( Cached < 0 )
+	{
+		const TCHAR* Cmd = appCmdLine();
+		const UBOOL bForcedOn  = ParseParam( Cmd, TEXT("noinputgrab") );
+		const UBOOL bForcedOff = ParseParam( Cmd, TEXT("inputgrab") );
+		Cached = ( bForcedOn || ( ParseParam( Cmd, TEXT("unattended") ) && !bForcedOff ) ) ? 1 : 0;
+		if( Cached )
+		{
+			debugf( TEXT("DISHONORED(bringup): input grab disabled - this run will not capture the mouse, take focus or act on key presses") );
+		}
+	}
+	return Cached == 1;
+}
+
 void FWindowsViewport::ShowCursor( UBOOL bVisible)
 {
 	UBOOL bIsCursorVisible = IsCursorVisible();
@@ -756,7 +789,7 @@ void FWindowsViewport::ShowCursor( UBOOL bVisible)
 		PreCaptureMousePos.x = -1;
 		PreCaptureMousePos.y = -1;
 	}
-	else if ( !bVisible && bIsCursorVisible )
+	else if ( !bVisible && bIsCursorVisible && !DishonoredInputGrabDisabled() )
 	{
 		while ( ::ShowCursor(FALSE)>=0 );
 
@@ -771,6 +804,15 @@ void FWindowsViewport::CaptureMouse( UBOOL bCapture )
 {
 	HWND CaptureWindow = ::GetCapture();
 	UBOOL bIsMouseCaptured = (CaptureWindow == Window);
+	if( DishonoredInputGrabDisabled() )
+	{
+		bCapturingMouseInput = FALSE;
+		if( bIsMouseCaptured )
+		{
+			::ReleaseCapture();
+		}
+		return;
+	}
 	bCapturingMouseInput = bCapture;
 	if ( bCapture && !bIsMouseCaptured )
 	{
@@ -786,6 +828,12 @@ void FWindowsViewport::CaptureMouse( UBOOL bCapture )
 
 void FWindowsViewport::UpdateMouseLock( UBOOL bEnforceMouseLockRequestedFlag )
 {
+	if( DishonoredInputGrabDisabled() )
+	{
+		// Leave the cursor free of this window for the whole run.
+		::ClipCursor( NULL );
+		return;
+	}
 	// If we're the foreground window, let us decide whether the system cursor should be visible or not.
 	UBOOL bIsForeground = (::GetForegroundWindow() == Window);
 	UBOOL bIsSystemCursorVisible;
@@ -1795,6 +1843,24 @@ LONG FWindowsViewport::ViewportWndProc( UINT Message, WPARAM wParam, LPARAM lPar
 
 void FWindowsViewport::ProcessDeferredMessage(const FDeferredMessage& DeferredMessage)
 {
+	if( DishonoredInputGrabDisabled() )
+	{
+		switch( DeferredMessage.Message )
+		{
+		case WM_CHAR:       case WM_SYSCHAR:
+		case WM_KEYDOWN:    case WM_SYSKEYDOWN:
+		case WM_KEYUP:      case WM_SYSKEYUP:
+		case WM_MOUSEMOVE:  case WM_MOUSEWHEEL:
+		case WM_LBUTTONDOWN: case WM_LBUTTONUP: case WM_LBUTTONDBLCLK:
+		case WM_RBUTTONDOWN: case WM_RBUTTONUP: case WM_RBUTTONDBLCLK:
+		case WM_MBUTTONDOWN: case WM_MBUTTONUP: case WM_MBUTTONDBLCLK:
+		case WM_XBUTTONDOWN: case WM_XBUTTONUP: case WM_XBUTTONDBLCLK:
+			// Whatever the person at the keyboard is doing, it is not meant for this window.
+			return;
+		default:
+			break;
+		}
+	}
 	// Helper class to aid in sending callbacks, but still let each message return in their case statements
 	class FCallbackHelper
 	{

@@ -850,6 +850,14 @@ void UWindowsClient::ProcessInput( FLOAT DeltaTime )
 UBOOL UWindowsClient::PollMouseInput( )
 {
 	
+	extern UBOOL DishonoredInputGrabDisabled();
+	if( DishonoredInputGrabDisabled() )
+	{
+		// DISHONORED(bringup): do not read the user's mouse in a scripted run - see WinViewport.cpp. This also keeps
+		// the failure path below from running, which calls SetCooperativeLevel(GetForegroundWindow(), ...) and so
+		// reaches for whatever window the person is actually using.
+		return FALSE;
+	}
 	HRESULT PollResult = DirectInput8Mouse->Poll();
 	if ( FAILED(PollResult) )
 	{
