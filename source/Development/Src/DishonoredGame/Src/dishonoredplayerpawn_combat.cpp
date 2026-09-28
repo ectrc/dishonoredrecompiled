@@ -46,3 +46,41 @@
 //   0x712610  protected: void __thiscall ADishonoredPlayerPawn::RefreshCombatStatus(void)
 //   0x716c80  public: virtual void __thiscall ADishonoredPlayerPawn::Tick_Combat(float, enum ELevelTick)
 //   0x71a710  public: virtual void __thiscall ADishonoredPlayerPawn::PreBeginPlay_PlayerCombat(void)
+
+// agentDO:healthpp
+#include "DishonoredGame.h"
+#include "arkpp.h"
+
+/**
+ * DISHONORED(port): 2013 rva 0x6ac910 (2012 0x705e30) - the player's health effects reach the colour grade here. An
+ * entry contributes only while m_bApplyPostProcess is set and its blended weight is above 1e-8; the low-health red
+ * wash is one of these.
+ */
+void ADishonoredPlayerPawn::ApplyHealthEffectsPost( FArkPpConfig& Config )
+{
+	for( INT EffectIndex = 0; EffectIndex < m_HealthEffects.Num(); EffectIndex++ )
+	{
+		const FDisPlayerHealthEffect& Effect = m_HealthEffects(EffectIndex);
+		if( !Effect.m_bApplyPostProcess || Effect.m_fCurWeight <= 1e-8f )
+		{
+			continue;
+		}
+		if( Config.m_bOverrideUberPpParameters )
+		{
+			ArkUberPpSetDefaultOnNoOverride( Config.m_UberPpParameters );
+		}
+		else
+		{
+			ArkUberPpForceDefault( Config.m_UberPpParameters );
+		}
+		if( Effect.m_ArkPpSettings.m_bOverrideUberPpParameters )
+		{
+			ArkUberPpApplyTo( Effect.m_ArkPpSettings.m_UberPpParameters, Config.m_UberPpParameters, Effect.m_fCurWeight, FALSE );
+			Config.m_bOverrideUberPpParameters = TRUE;
+		}
+		if( Effect.m_ArkPpSettings.m_bOverrideBloomPpParameters )
+		{
+			Config.m_bOverrideBloomPpParameters = TRUE;
+		}
+	}
+}

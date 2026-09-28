@@ -41,3 +41,52 @@
 //   0x71bbc0  public: virtual void __thiscall ADishonoredPlayerCamera::PostBeginPlay(void)
 //   0x71bfd0  public: void __thiscall ADishonoredPlayerCamera::UseDefaultCamCollisionSize(void)
 //   0x721020  public: virtual void __thiscall ADishonoredPlayerCamera::ApplyDebugCam_Native(class APawn *, float, struct FTViewTarget &)
+
+// agentDO:camerapp
+#include "DishonoredGame.h"
+#include "arkpp.h"
+
+/**
+ * DISHONORED(port): 2013 rva 0x6ca780 (2012 0x70a1c0) - the camera's own post-process targets. Eight entries per
+ * target, each an FArkPpConfig with a current weight; every entry with weight above 0.0001 is blended into the
+ * config the view will carry.
+ *
+ * The SetDefaultOnNoOverride / ForceDefault pair before each blend is retail's and it is per entry, not per target:
+ * whichever of the two runs depends on the DESTINATION's override bit, so the first entry to blend decides how the
+ * rest of the group sees the neutral value. Ported as retail has it.
+ */
+void ADishonoredPlayerCamera::ApplyCameraPostProcess( FArkPpConfig& Config )
+{
+	for( INT TargetIndex = 0; TargetIndex < m_PostProcessTargets.Num(); TargetIndex++ )
+	{
+		FDisCamPostProcessTarget& Target = m_PostProcessTargets(TargetIndex);
+		for( INT EntryIndex = 0; EntryIndex < ARRAY_COUNT(Target.m_Entries); EntryIndex++ )
+		{
+			const FDisCamPostProcessEntry& Entry = Target.m_Entries[EntryIndex];
+			const FLOAT Weight = Entry.m_fCurWeight;
+			if( Weight <= 0.0001f )
+			{
+				continue;
+			}
+			if( Config.m_bOverrideUberPpParameters )
+			{
+				ArkUberPpSetDefaultOnNoOverride( Config.m_UberPpParameters );
+			}
+			else
+			{
+				ArkUberPpForceDefault( Config.m_UberPpParameters );
+			}
+			if( Entry.m_PpSettings.m_bOverrideUberPpParameters )
+			{
+				ArkUberPpApplyTo( Entry.m_PpSettings.m_UberPpParameters, Config.m_UberPpParameters, Weight, FALSE );
+				Config.m_bOverrideUberPpParameters = TRUE;
+			}
+			// DISHONORED(retail): as in UpdatePostProcessSettings and FArkPpConfig::ApplyTo, the bloom group is only
+			// ever marked overridden - no bloom value is copied with it.
+			if( Entry.m_PpSettings.m_bOverrideBloomPpParameters )
+			{
+				Config.m_bOverrideBloomPpParameters = TRUE;
+			}
+		}
+	}
+}

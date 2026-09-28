@@ -38,3 +38,19 @@ public:
 	virtual void Dis_Zoom();
 	void HandleHeldButtons_Context( FLOAT DeltaSeconds );
 	void HandleHeldButtons_Context_Interactables( FLOAT DeltaSeconds );
+
+	/**
+	 * DISHONORED(port): agent DO, the ACTOR feed of ULocalPlayer::UpdatePostProcessSettings and the channel that
+	 * carries the powers (agent DE hand-over 1).
+	 *   ModifyPostProcessSettings            2013 rva 0x6adeb0 (2012 0x6eb900), 1,498 bytes
+	 *   Tick                                 0x6b6e80 (2012 0x6ef510) - and this, not ModifyPostProcessSettings, is
+	 *                                        where retail ticks the post-process node controllers
+	 *   ApplyWaterPostProcessSettings        0x6a6750 (2012 0x6e2550)
+	 *   ApplyDarkVisionPostProcessSettings   0x6a68d0 (2012 0x6d6d40)
+	 *   ApplyPossessionPostProcessSettings   0x6a6c30 (2012 0x6e2880)
+	 */
+	virtual void ModifyPostProcessSettings( struct FArkPpConfig& Config );
+	virtual UBOOL Tick( FLOAT DeltaTime, enum ELevelTick TickType );
+	void ApplyWaterPostProcessSettings( FLOAT DeltaSeconds );
+	void ApplyDarkVisionPostProcessSettings( class ADishonoredPlayerPawn* PlayerPawn, FLOAT DeltaSeconds );
+	void ApplyPossessionPostProcessSettings( FLOAT DeltaSeconds );

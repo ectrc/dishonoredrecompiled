@@ -202,6 +202,7 @@ public:
     DECLARE_FUNCTION(execApplyDebugCam_Native);
     DECLARE_CLASS(ADishonoredPlayerCamera,ACamera,0|CLASS_Config|CLASS_Transient,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Camera");}
+#include "CppText/ADishonoredPlayerCamera.h"
 };
 
 // DishonoredGame.DishonoredCamera_BumpSmoother.DisBumpDetectInfo: retail SDK size 20 (2012 PDB 20)

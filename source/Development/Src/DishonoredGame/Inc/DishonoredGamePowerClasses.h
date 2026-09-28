@@ -214,6 +214,7 @@ public:
     //## END PROPS DisActivePowerComponent_DarkVision
 
     DECLARE_CLASS(UDisActivePowerComponent_DarkVision,UDishonoredActivePowerComponent,0,DishonoredGame)
+#include "CppText/UDisActivePowerComponent_DarkVision.h"
 };
 
 // DishonoredGame.DishonoredActivePowerComponent_Blink: retail sizeof 360, reflected span 144..360 (2012 PDB sizeof 360)

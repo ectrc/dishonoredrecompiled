@@ -12760,6 +12760,7 @@ public:
 
     DECLARE_FUNCTION(execCheckAnimsUpToDate);
     DECLARE_CLASS(UArkAnimNodeLookAt,UAnimNodeSequenceBlendBase,0,Engine)
+#include "CppText/UArkAnimNodeLookAt.h"
 };
 
 // Engine.ArkAnimNodeRat: retail sizeof 384, reflected span 221..380 (2012 PDB sizeof 384) [shim: Engine package]

@@ -3047,6 +3047,7 @@ public:
 
     DECLARE_FUNCTION(execPlayDying_Native);
     DECLARE_CLASS(ADisPossessionProxyPawn,ADisPossessablePawn,0|CLASS_Config,DishonoredGame)
+#include "CppText/ADisPossessionProxyPawn.h"
 };
 
 struct DisProjectileLauncher_eventBaseChange_Parms
@@ -3212,6 +3213,7 @@ public:
 
     DECLARE_FUNCTION(execTakeDamage_Native);
     DECLARE_CLASS(ADisTallboyNPCPawn,ADishonoredNPCPawn,0|CLASS_Config,DishonoredGame)
+#include "CppText/ADisTallboyNPCPawn.h"
 };
 
 // DishonoredGame.DisTravelSpawner: retail sizeof 1200, reflected span 1176..1188 (2012 PDB sizeof 1184)
@@ -13074,6 +13076,7 @@ public:
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
     virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisPostProcessManager::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_CLASS(UDisPostProcessManager,UObject,0,DishonoredGame)
+#include "CppText/UDisPostProcessManager.h"
 };
 
 // DishonoredGame.DisPowerMenu: retail sizeof 80, reflected span 56..80 (2012 PDB sizeof 80)

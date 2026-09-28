@@ -10,3 +10,10 @@ public:
 	// dishonoredplayerpawn.cpp (Landed_Native 0x6b53a0).
 	virtual INT TakeFallingDamage_Native( FVector HitNormal, class AActor* FloorActor );
 	virtual void Landed_Native( FVector HitNormal, class AActor* FloorActor );
+
+	/**
+	 * DISHONORED(port): agent DO. 2013 rva 0x6ac910 (2012 0x705e30) - the HEALTH half of the ACTOR feed: each
+	 * m_HealthEffects entry that applies post-process and carries weight blends its own FArkPpConfig in. Body in
+	 * dishonoredplayerpawn_combat.cpp, which is retail's unit for it.
+	 */
+	void ApplyHealthEffectsPost( struct FArkPpConfig& Config );

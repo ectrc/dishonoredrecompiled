@@ -1,0 +1,30 @@
+rva_2013,status,note
+0x6adeb0,ported,ADishonoredPlayerController::ModifyPostProcessSettings (2012 0x6eb900) - the ACTOR feed of the settings path; caches the 27 named post-process nodes on UDisPostProcessManager::m_PpBridge and raises m_bInitDone (the gate on every effect) then folds in the camera water health dark-vision and possession feeds
+0x6b6e80,ported,ADishonoredPlayerController::Tick (2012 0x6ef510) - THE ONLY CALLER of UArkPpNodeController::Tick in either executable; walks the first local player's post-process chain and ticks every node's controller. TickZoom named as bringup
+0x6a6750,ported-partial,ADishonoredPlayerController::ApplyWaterPostProcessSettings (2012 0x6e2550) - the underwater node's uber parameters restored from the bridge backup and the volume's override blended on plus StartEffect/StopEffect(Epp_Underwater); FSceneInterface::SetBelowWaterTranslucentSort and the UDisFogComponent block named as bringup (neither type exists in this tree)
+0x6a68d0,ported,ADishonoredPlayerController::ApplyDarkVisionPostProcessSettings (2012 0x6d6d40) - the power component's IsPpActive onto UDisDarkVisionPpController::m_bIsActive plus the Epp_DarkVision request; this is the whole visible path of dark vision
+0x6a6c30,ported,ADishonoredPlayerController::ApplyPossessionPostProcessSettings (2012 0x6e2880) - the four-stage machine on m_PossessionEffectSettings.m_Stage driving UDisPostProcessManager::m_PossessionParams
+0x6ca780,ported,ADishonoredPlayerCamera::ApplyCameraPostProcess (2012 0x70a1c0) - the camera's eight post-process entries per target blended into the view's FArkPpConfig
+0x6ac910,ported,ADishonoredPlayerPawn::ApplyHealthEffectsPost (2012 0x705e30) - the player's health effects blended into the view's FArkPpConfig
+0x7bf290,ported,DisGetPpManager (2012 0x827090) - ADishonoredGameInfo::m_pPpManager @984; retail returns a reference and faults with no game info so every caller here tests for NULL
+0x7e7da0,ported,UDisPostProcessManager::IsEffectRequired (2012 0x8495d0)
+0x7e7dc0,ported,UDisPostProcessManager::StartEffect (2012 0x8495f0)
+0x7e7df0,ported,UDisPostProcessManager::StopEffect (2012 0x849620)
+0x7e7000,ported,UDisActivePowerComponent_DarkVision::IsPpActive (2012 0x824900) - byte-identical in both builds
+0x77daa0,ported,ADisTallboyNPCPawn::ApplyTweakChanges_Derived (2012 0x7f2440) - THE STILTS: the only function that ever puts a USkeletalMesh on m_pStiltsMesh and binds it to the body. Agent DI's hand-over attributed the stilts to PostBeginPlay_Body
+0x781270,ported,ADisTallboyNPCPawn::PostBeginPlay_Body (2012 0x7f24d0) - the searchlight actor its light component the spotlight manager seed the particle system and the ambient sound. Retail 2013 puts PostAkEvent inside the restore guard where 2012 posts it unconditionally
+0x76eff0,ported,ADisTallboyNPCPawn::CreateLightParticleSystem (2012 0x7c99b0)
+0x840860,ported,FDisSpotlightManager::Init (2012 0x88b3b0) - spelled as the file-local DisSpotlightManagerInit because FDisSpotlightManager is a generated struct
+0x7e7910,ported-partial,ADisPossessionProxyPawn::PostBeginPlay_Body (2012 0x849220) - calls ADishonoredPawn::PostBeginPlay_Body not its own parent's NPC pass; SetIsVisible(FALSE) named as bringup (FDisComponentObservable has no declaration in this tree)
+0x5ea9d0,verified,UArkPpNodeController::IsShown base returns TRUE (agent DE defect 2) - retail slot is +300 in 2013 and +296 in 2012; the shift is one extra UObject virtual in retail
+0x6a6450,not-ported,ADishonoredPlayerController::UpdateSunBlindingEffect - pushes a bloom value into each AWorldInfo::m_SunMeshesAndMaterials entry's m_SunDynamicMIC through SetScalarParameterValue with a hardcoded retail FName index (1300 0) that does not exist in this tree's name table
+0x6a65e0,not-ported,ADishonoredPlayerController::ApplyAdrenalineProcessSettings - needs ADishonoredPlayerPawn's slow-motion predicate (0x6a21e0) and FDisZoneTracker::IsInZone
+0x6a6970,not-ported,ADishonoredPlayerController::ApplyMusicalOverseerPostProcessSettings - gated on ADishonoredPawn::ArePowersInhibited; needs a second tweaks class and the heart's proximity curve
+0x7ef9b0,not-ported,UDisPostProcessManager::ApplyKismetPostProcessSettings - driven by SetKismetPPParams which nothing in this tree calls
+0x7efca0,not-ported,UDisPostProcessManager::ApplyUIPostProcessSettings - driven by SetUIPPParams which nothing in this tree calls
+0x7f0c50,not-ported,UDisPostProcessManager::Tick (2012 0x857430 2548 bytes called from ADishonoredPlayerPawn::Tick) - the node visibility and material drive for underwater bend time blink adrenaline plague the knock-out and the two possession stages. Dark vision does not go through it
+0x552640,not-ported,FArkComponentLookat::OnComposeSkeleton and the 50 functions of arkcomponentlookat.cpp - head-look. Measured NOT to be the cause of the tilted head (see agentDO.md)
+0x8aa060,verified,FDisLookAtRequest::DoRequest is already ported and already counts the six FArkComponentLookat entry points; the AI census reads lookat 0 because no idle behaviour requests a look-at not because the request is missing
+0x5532e0,not-ported,UArkAnimNodeLookAt::UpdateNodeWeights (2012 rva; 3294 bytes) - THE TILTED HEAD. The only writer of the eighteen additive aim-pose weights the NPC anim tree's LookatBlender holds; unported the array keeps the cook's default entry 0 (ADD_Empty_AimHeadIdle_UpLeft) at weight 1.00 and every NPC's head is craned up-left 57 degrees at head_jnt and 33 at neck_jnt
+0x5672c0,stand-in,UArkAnimNodeLookAt::TickAnim (2012 rva) - a documented bring-up stand-in drives the same eighteen weights from a normalised aim by bilinear interpolation so the rest state is the Center pair; NOT retail's units and deleted when the node is ported. -nodislookataim turns it off
+0x6b6f1a,verified,ADishonoredPlayerController::Tick's controller loop found by scanning every mov/call through [reg+304] (retail) and [reg+300] (2012) across the whole .text of both executables; the scan validated first against the IsShown slot whose callers are known

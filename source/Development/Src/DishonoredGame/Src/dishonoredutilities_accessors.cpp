@@ -184,3 +184,12 @@ FLOAT DisGetAppropriateWorldTime( const AActor* const _pActor )
 	AWorldInfo* Info = GWorld->GetWorldInfo();
 	return Info ? Info->BendTimeSeconds : GWorld->GetTimeSeconds();
 }
+
+// DISHONORED(written): 2013 rva 0x7bf290 (2012 0x827090): ADishonoredGameInfo::m_pPpManager @984. Retail returns a
+// reference and, with no world or no game info, returns *(UDisPostProcessManager*)0x3D8 - a null dereference at the
+// caller. Every caller here tests for NULL instead.
+UDisPostProcessManager* DisGetPpManager()
+{
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	return GameInfo ? GameInfo->m_pPpManager : NULL;
+}
