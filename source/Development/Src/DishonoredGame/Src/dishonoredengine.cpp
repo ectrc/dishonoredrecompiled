@@ -1312,6 +1312,49 @@ void UDishonoredEngine::RestoreLoadedLevels()
 		{
 			warnf( TEXT("DisRestore: player pawn %s at %s rotation %s"),
 				*Pawn->GetName(), *Pawn->Location.ToString(), *Pawn->Rotation.ToString() );
+
+			// DISHONORED(written): agent EF - the saved session rather than the saved position. Health comes
+			// out of ADishonoredPawn::GameLoad, the mana triple out of ADishonoredPlayerPawn::GameLoad right
+			// after its Super call, and the inventory out of UDishonoredInventory::GameLoad plus the item
+			// objects the dictionary names.
+			ADishonoredPlayerPawn* pDisPawn = Cast<ADishonoredPlayerPawn>( Pawn );
+			if( pDisPawn != NULL )
+			{
+				warnf( TEXT("DisRestore: session: health %d (min scripted %d), mana %d of %d (regen %d, countdown %.3f), adrenaline %.3f"),
+					pDisPawn->Health, pDisPawn->m_MinimumScriptedHealth, pDisPawn->m_Mana, pDisPawn->m_ManaMax,
+					pDisPawn->m_ManaRegenAmount, pDisPawn->m_fManaRegenCountDown, pDisPawn->m_fAdrenaline );
+
+				UDishonoredInventory* pInventory = pDisPawn->m_pInventory;
+				if( pInventory != NULL )
+				{
+					FString Ammo;
+					for( INT AmmoIdx = 0; AmmoIdx < pInventory->m_AmmoInfo.Num(); AmmoIdx++ )
+					{
+						Ammo += FString::Printf( TEXT("%s%d"), ( AmmoIdx > 0 ) ? TEXT("/") : TEXT(""),
+							pInventory->m_AmmoInfo(AmmoIdx).m_AmmoCount );
+					}
+					warnf( TEXT("DisRestore: inventory %s: %d slot(s), %d ammo type(s) [%s], elixirs %d/%d, %d abstract item(s)"),
+						*pInventory->GetName(), pInventory->m_Slots.Num(), pInventory->m_AmmoInfo.Num(), *Ammo,
+						pInventory->m_ElixirCounts[0], pInventory->m_ElixirCounts[1], pInventory->m_AbstractItem.Num() );
+					for( INT SlotIdx = 0; SlotIdx < pInventory->m_Slots.Num(); SlotIdx++ )
+					{
+						const FPawnInventorySlot& rSlot = pInventory->m_Slots(SlotIdx);
+						warnf( TEXT("DisRestore:   slot %d: %s"), SlotIdx,
+							( rSlot.m_pItem != NULL ) ? *rSlot.m_pItem->GetName() : TEXT("(empty)") );
+					}
+				}
+				else
+				{
+					warnf( TEXT("DisRestore: inventory: none") );
+				}
+
+				warnf( TEXT("DisRestore: powers: %d active, %d upgrade(s) (%d backed up), %d key(s), darkness %d, %d charm(s)"),
+					( (TArray<UObject*>*)&pDisPawn->m_ActivePowers )->Num(), pDisPawn->m_Upgrades.Num(),
+					pDisPawn->m_Upgrades_Backup.Num(),
+					( pDisPawn->m_pKeyRing != NULL ) ? pDisPawn->m_pKeyRing->m_Keys.Num() : -1,
+					( pDisPawn->m_pDarknessManager != NULL ) ? pDisPawn->m_pDarknessManager->m_DarknessScore : -1,
+					pDisPawn->m_WhaleBoneCharms.Num() );
+			}
 		}
 	}
 }

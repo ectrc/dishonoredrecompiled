@@ -3033,6 +3033,7 @@ public:
     //## END PROPS DisPlayerAudioLogDummyActor
 
     DECLARE_CLASS(ADisPlayerAudioLogDummyActor,AActor,0,DishonoredGame)
+#include "CppText/ADisPlayerAudioLogDummyActor.h"
 };
 
 // DishonoredGame.DisPossessionProxyPawn: retail sizeof 2224, reflected span 2220..2224 (2012 PDB sizeof 2048)
@@ -12771,6 +12772,7 @@ public:
     //## END PROPS DisKeyRing
 
     DECLARE_CLASS(UDisKeyRing,UObject,0,DishonoredGame)
+#include "CppText/UDisKeyRing.h"
 };
 
 // DishonoredGame.DisLocalPlayer: retail sizeof 620, reflected span 612..620 (2012 PDB sizeof 616)

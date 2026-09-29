@@ -50,6 +50,7 @@ public:
     //## END PROPS DisDarknessManager
 
     DECLARE_CLASS(UDisDarknessManager,UObject,0,DishonoredGame)
+#include "CppText/UDisDarknessManager.h"
 };
 
 #undef DECLARE_CLASS

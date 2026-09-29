@@ -30,3 +30,10 @@ public:
 	virtual void OnAISetPatrol( class UDisSeqAct_AISetPatrol* _pAction );
 	virtual void OnAIRingAlarm( class UDisSeqAct_AIRingAlarm* _pAction );
 	virtual void OnAIGuard( class UDisSeqAct_AIGuard* _pAction );
+
+	// DISHONORED(port): agent EF (PHASE11 EF), 2013 rva 0x763570 (retail vtable slot 70; the 2012 body
+	// 0x7c91c0 has no match_2012_2013.csv row). GameSave (0x74e6b0) is not ported and not declared, for the
+	// reason agent ED gave: the writing half of the object layer does not exist here. Body in dissavegame.cpp.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }

@@ -57,3 +57,10 @@ public:
 	// begins with the AActor::GameLoad that brings the transform back. GameSave is not ported and not
 	// declared (the writing half of the object layer does not exist here). Body in dissavegame.cpp.
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+
+	// DISHONORED(port): agent EF (PHASE11 EF), 2013 rvas 0x7689c0 and 0x751a50 - the loadout
+	// UDishonoredInventory::GameLoad reads, applied as far as this tree can (the ammo, the abstract items and
+	// the elixir counts; the items half needs the item factory). Bodies in dissavegame.cpp, because retail's
+	// own unit, dishonoredpawn_inventory.cpp, is still an import_reference.py stub.
+	void SpawnInventoryLoadout( const struct FDisInventoryLoadout& _rLoadout, UBOOL _bIgnoreCapacity );
+	void SpawnInventoryLoadout_Ammo( const TArray<struct FDisInventoryAmmoEntry>& _rAmmo, UBOOL _bIgnoreCapacity );

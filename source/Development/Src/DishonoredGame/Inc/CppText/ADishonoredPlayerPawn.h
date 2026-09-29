@@ -29,3 +29,17 @@ public:
 	// DISHONORED(port): agent ED (PHASE11 ED), 2012 rva 0x6fa960 (dishonoredplayerpawn.cpp:1541), the body
 	// retail shares between this class, UDishonoredGlobalAIManager and UDisNPCTravelManager.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return Location == SLL_FILE; }
+
+	// DISHONORED(port): agent EF (PHASE11 EF) - the rest of GameLoad (2013 rva 0x6b8b60) past the Super call:
+	// the mana triple, the inventory, the dialog, the stealth vars, the two player FSMs' partial state, the
+	// adrenaline, the key ring, the darkness manager, the crouch, the two stat arrays, the 80 achievement
+	// trackers, the upgrades, ten whale-bone charm slots, the charms, the last-second location, the visibility
+	// component, the velocity, the climbable, the power-inhibited message and 43 tutorial-note bits.
+	// Bodies in dissavegame.cpp.
+protected:
+	void GameLoad_Inventory( FArchive& _rArchive, ESaveLoadLocation _Location );	// 2013 rva 0x6ad350
+	void GameLoad_Stealth( FArchive& _rArchive, ESaveLoadLocation _Location );	// 2013 rva 0x6d3950
+	/** retail reaches this through IDisConvSpeakerInterface::GameLoad_Dialog (0x897060); this tree's interface
+	    carries only its vptr, so it sits on the class that needs it, as agent EC did for the NPC pawn. */
+	void GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location );
+public:

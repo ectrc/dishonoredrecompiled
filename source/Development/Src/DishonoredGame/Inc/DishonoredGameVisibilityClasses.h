@@ -159,6 +159,7 @@ public:
     //## END PROPS DishonoredVisibilityComponent
 
     DECLARE_CLASS(UDishonoredVisibilityComponent,UActorComponent,0,DishonoredGame)
+#include "CppText/UDishonoredVisibilityComponent.h"
 };
 
 #undef DECLARE_CLASS

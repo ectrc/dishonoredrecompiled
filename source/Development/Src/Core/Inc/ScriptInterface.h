@@ -193,6 +193,30 @@ public:
 		Interface.SetObject(ObjectValue);
 		return Ar;
 	}
+
+	// DISHONORED(port): agent EF (PHASE11 EF), 2013 rva 0x7eb500 (2012 0x84ed20, byte-identical), retail's own
+	// Core/Inc/ScriptInterface.h:205. The save-archive form of the operator above: the cached interface address
+	// is not in the stream, so on load it is recomputed from the interface class. Retail instantiates this for
+	// IDisAttentionTargetInterface and ICF-folds every other instantiation onto it, which is why the PDB names
+	// only one. Used by UDishonoredActivePowerComponent_Possess::GameLoad.
+	void SerializeForSaveLoad( FArchive& Ar, UClass* InterfaceClass )
+	{
+		UObject* ObjectValue = GetObject();
+		Ar << ObjectValue;
+		if( Ar.IsLoading() )
+		{
+			if( ObjectValue != NULL )
+			{
+				SetObject( ObjectValue );
+				SetInterface( ObjectValue->GetInterfaceAddress( InterfaceClass ) );
+			}
+			else
+			{
+				SetObject( NULL );
+				SetInterface( NULL );
+			}
+		}
+	}
 };
 
 #endif

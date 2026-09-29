@@ -1595,10 +1595,22 @@ void UDishonoredInventory::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Loc
 	FDisInventoryLoadout InventoryLoadout(EC_EventParm);
 	UScriptStruct* pLoadoutStruct = _DishonoredGetScriptStruct<FDisInventoryLoadout>( TEXT("DisInventoryLoadout") );
 	pLoadoutStruct->SerializeBin( _rArchive, (BYTE*)&InventoryLoadout, 0 );
-	// DISHONORED(bringup): retail hands the loadout to ADishonoredPawn::SpawnInventoryLoadout (2012 rva
-	// 0x7c8bb0), which is one of dishonoredpawn_inventory.cpp's unported functions - the unit is a
-	// comment-only skeleton. The struct's bytes are read either way, so the stream stays in step; the items
-	// are not spawned.
+	// DISHONORED(port): agent EF (PHASE11 EF). Retail hands the loadout to
+	// ADishonoredPawn::SpawnInventoryLoadout( Loadout, TRUE ) - 2013 rva 0x7689c0, with the owner at
+	// m_pOwner (offset 220) and bIgnoreCapacity set. The ammo, the abstract items and the elixir counts are
+	// ported; the items half is not (see SpawnInventoryLoadout below).
+	if( m_pOwner == NULL )
+	{
+		// DISHONORED(bringup): retail sets m_pOwner in ADishonoredPawn::PreBeginPlay_Inventory (2013 rva
+		// 0x7c38a0), which this tree does not have, so nothing in this build had ever set it - and both
+		// SetElixirCount and AddElixir answer 0 without it. The component's outer IS the pawn (it is what the
+		// save's dictionary names it by: DishonoredPlayerPawn.pInventory), so that is the owner here.
+		m_pOwner = Cast<ADishonoredPawn>( GetOuter() );
+	}
+	if( m_pOwner != NULL )
+	{
+		m_pOwner->SpawnInventoryLoadout( InventoryLoadout, TRUE );
+	}
 
 	for( INT Usage = EDisEquipUsage_Primary; Usage < EDisEquipUsage_MAX; Usage++ )
 	{
@@ -2313,24 +2325,6 @@ void ADishonoredPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location
 	_rArchive << m_rBackupedRotation;
 }
 
-// DISHONORED(port): 2013 rva 0x6b8b60 (2012 0x711630), dishonoredplayerpawn.cpp:1646 - ported as far as the
-// Super call, which is where the transform lands. See the block comment above for the order.
-void ADishonoredPlayerPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
-{
-	SaveLoadTutorialTrackers( _rArchive );
-	DisSaveLoadObject( _rArchive, m_pCorpseDiscoveredTracker );
-	DisSaveLoadObject( _rArchive, m_pPursuitTracker );
-	GameLoad_Body( _rArchive, _Location );
-	_rArchive << *(UObject**)&m_pPowersComponent;
-
-	ADishonoredPawn::GameLoad( _rArchive, _Location );
-
-	// retail continues with the mana triple, GameLoad_Inventory, GameLoad_Dialog, GameLoad_Stealth, the two
-	// player FSMs' LoadPartialState, adrenaline, the key ring, the darkness manager, crouch, the stat arrays,
-	// fifty achievement trackers, the upgrades and their backup, ten whale-bone charm slots, the charms, the
-	// last-second location, the visibility component, the velocity, the climbable, the power-inhibited
-	// message and 33 tutorial-note bits. ADishonoredPawn::GameLoad above has already stopped the stream.
-}
 
 
 
@@ -2948,4 +2942,548 @@ void ADishonoredPlayerController::GameLoad( FArchive& _rArchive, ESaveLoadLocati
 	{
 		pHUD->SerializeForGameLoad( _rArchive, _Location );
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	DISHONORED: agent EF (PHASE11 EF) - the saved session, not just the saved position.
+
+	Agent EC left the object stream stopping 4,141 bytes into 619,631, at
+	DishonoredGameFull_P.TheWorld:PersistentLevel.DishonoredPlayerPawn.PowerBlink. That stop is inside
+	ADishonoredPawn::GameLoad's m_ActivePowers loop, which is the third thing the pawn reads, so the transform
+	and Health were already back; the inventory, the attributes that carry mana, and the whole of
+	ADishonoredPlayerPawn::GameLoad past its Super call were not.
+
+	This package is the five active-power component classes that loop names, the rest of the player pawn's own
+	body, and the three objects that body references by hand (the key ring, the darkness manager and the
+	visibility component).
+
+	Retail's save five are vtable slots 67..71 in the retail build - retail inserted one virtual ahead of them,
+	so GameSave is slot 69 and GameLoad slot 70 - while resources/docs/symbols/vtables.csv is the 2012 record
+	and numbers them 66..70. That shift is why every address below was resolved against retail's own vtable
+	(build/agentEF/dump_vt2013.py) rather than only through match_2012_2013.csv.
+
+	Three places where retail is not the 2012 build, and retail is what is ported:
+	  1. UDisActivePowerComponent_DarkVision has TWO bodies in retail (0x7e8b70 GameSave, 0x7f8620 GameLoad);
+	     the 2012 build folds both slots onto one (0x828730). The two read the same four values.
+	  2. UDisDarknessManager is the other way round: retail folds both slots onto one body (0x852ca0) where the
+	     2012 build has two (0x8c13a0 / 0x8c13d0).
+	  3. ADishonoredPlayerPawn::m_Upgrades is serialised through operator<<(FArchive&, TArray<UObject*>&)
+	     (retail 0x24c3f0, elements through the archive's own operator<<(UObject*&)). match_2012_2013.csv names
+	     that address TArray<float>, which it is not: TArray<T*> folds across every T and the matcher picked the
+	     wrong member of the fold. Reading it as floats would have desynchronised the stream at the first upgrade.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x6c94a0 - one key. Retail zeroes the element first on load, serialises the script
+// struct binary and untagged, then rebuilds its localised name (0x6c9130, which reads no stream bytes).
+FArchive& operator<<( FArchive& _rArchive, FDisKeyInfo& _rKey )
+{
+	if( _rArchive.IsLoading() )
+	{
+		// retail zeroes the 28 bytes RAW (seven DWORD stores), and it has to: TArray's own operator<< loads an
+		// element into placement-new'd, uninitialised memory, so assigning to the two FStrings would free a
+		// garbage pointer. That is a crash, and it is what Dishonored1.sav - which has a key in the ring -
+		// produced before this was raw.
+		appMemzero( &_rKey, sizeof(FDisKeyInfo) );
+	}
+	DisSerializeScriptStructBin( _rArchive, TEXT("DisKeyInfo"), (BYTE*)&_rKey );
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x6b3770 - one whale-bone charm, as its own script struct.
+FArchive& operator<<( FArchive& _rArchive, FDisCollectedWhaleBoneCharm& _rCharm )
+{
+	DisSerializeScriptStructBin( _rArchive, TEXT("DisCollectedWhaleBoneCharm"), (BYTE*)&_rCharm );
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x6b38d0 - one mission stat: the stat id as a raw byte, then its value and its cap.
+// Not a property walk: the three members are read by hand, which is why the byte is one byte and not four.
+FArchive& operator<<( FArchive& _rArchive, FDisMissionStatValue& _rStat )
+{
+	_rArchive.Serialize( &_rStat.m_Stat, sizeof(_rStat.m_Stat) );
+	_rArchive << _rStat.m_fValue;
+	_rArchive << _rStat.m_MaxValue;
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x7e70e0 (2012 0x8249e0, byte-identical, 24 bytes) - the whole body. Retail folds
+// GameSave and GameLoad onto it, and _Blink and _WindBlast inherit it; nothing unrelated shares the fold
+// (build/agentEF/folds.txt).
+void UDishonoredActivePowerComponent::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+}
+
+void UDishonoredActivePowerComponent::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	GameSave( _rArchive, _Location );
+}
+
+// DISHONORED(port): 2013 rva 0x7e7150 - the base's one INT, a packed byte carrying three of the class's four
+// bits (m_bWaitingForAnimNotify is not in the stream), and how long the power has been running.
+void UDishonoredActivePowerComponent_BendTime::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+
+	BYTE Bools = (BYTE)( ( m_bActive ? 0x01 : 0 )
+					   | ( m_bWokeUpProjectiles ? 0x02 : 0 )
+					   | ( m_bStartedDilationExit ? 0x04 : 0 ) );
+	_rArchive.Serialize( &Bools, sizeof(Bools) );
+
+	// DISHONORED(bringup): retail writes ADishonoredGameInfo::GetBendTimePowerRealTimeSeconds() - m_fTimeAtStart.
+	// There is no bend-time clock in this tree, so the elapsed time PostGameLoad keeps is written as it stands.
+	FLOAT ElapsedSeconds = m_fLoadedElapsedTime;
+	_rArchive << ElapsedSeconds;
+}
+
+// DISHONORED(port): 2013 rva 0x7f8980 (2012 0x846f10, byte-identical)
+void UDishonoredActivePowerComponent_BendTime::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+
+	BYTE Bools = 0;
+	_rArchive.Serialize( &Bools, sizeof(Bools) );
+	m_bActive              = ( Bools & 0x01 ) ? 1 : 0;
+	m_bWokeUpProjectiles   = ( Bools & 0x02 ) ? 1 : 0;
+	m_bStartedDilationExit = ( Bools & 0x04 ) ? 1 : 0;
+
+	_rArchive << m_fLoadedElapsedTime;
+
+	// DISHONORED(bringup): when the power was running retail re-reads its tweaks (GetSettings, 2013 rva
+	// 0x7f88a0) and re-enters the dilation (0x7f8810). Neither reads a stream byte.
+}
+
+// DISHONORED(port): 2013 rva 0x7e71d0 - what turns the saved elapsed time back into an absolute start time.
+void UDishonoredActivePowerComponent_BendTime::PostGameLoad( ESaveLoadLocation _Location )
+{
+	// DISHONORED(bringup): retail computes GetBendTimePowerRealTimeSeconds() - m_fLoadedElapsedTime. With no
+	// bend-time clock, the world clock AWorldInfo::GameLoad restored is the closest reading this tree has.
+	const FLOAT NowSeconds = ( GWorld != NULL && GWorld->GetWorldInfo() != NULL ) ? GWorld->GetWorldInfo()->TimeSeconds : 0.0f;
+	m_fTimeAtStart = NowSeconds - m_fLoadedElapsedTime;
+}
+
+// DISHONORED(port): 2013 rva 0x7e75e0
+void UDishonoredActivePowerComponent_DevouringSwarm::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+	_rArchive << m_RatSpawnerPowerLevel;
+	_rArchive << *(UObject**)&m_pSpawnPoint;
+	_rArchive << *(UObject**)&m_pRatSwarm;
+	_rArchive << m_fHitLocOffset;
+	_rArchive << m_fNavMeshSearchRadius;
+
+	BYTE Bools = (BYTE)( ( m_bRatSwarmPending ? 0x01 : 0 )
+					   | ( m_bRatSwarmActive ? 0x02 : 0 )
+					   | ( m_bRatSwarmNotified ? 0x04 : 0 ) );
+	_rArchive.Serialize( &Bools, sizeof(Bools) );
+
+	if( m_bRatSwarmPending )
+	{
+		// DISHONORED(bringup): retail writes UWorld::GetBendTimeSeconds() - m_fInitialBendTimeSeconds.
+		FLOAT ElapsedSeconds = m_fInitialBendTimeSeconds;
+		_rArchive << ElapsedSeconds;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7fe3c0. That address is retail's own vtable slot 70 and not a
+// match_2012_2013.csv row: the 2012 body (0x85dd90) is unmatched.
+void UDishonoredActivePowerComponent_DevouringSwarm::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+	_rArchive << m_RatSpawnerPowerLevel;
+	_rArchive << *(UObject**)&m_pSpawnPoint;
+	_rArchive << *(UObject**)&m_pRatSwarm;
+	_rArchive << m_fHitLocOffset;
+	_rArchive << m_fNavMeshSearchRadius;
+
+	BYTE Bools = 0;
+	_rArchive.Serialize( &Bools, sizeof(Bools) );
+	m_bRatSwarmPending  = ( Bools & 0x01 ) ? 1 : 0;
+	m_bRatSwarmActive   = ( Bools & 0x02 ) ? 1 : 0;
+	m_bRatSwarmNotified = ( Bools & 0x04 ) ? 1 : 0;
+
+	if( m_bRatSwarmPending )
+	{
+		FLOAT ElapsedSeconds = 0.0f;
+		_rArchive << ElapsedSeconds;
+		// DISHONORED(bringup): retail turns this back into an absolute bend-time stamp
+		// (UWorld::GetBendTimeSeconds() - ElapsedSeconds), sets m_bRatSwarmNotified, re-aims the spawn point at
+		// the owner and posts the swarm's two Ak events. None of that reads a stream byte.
+		m_fInitialBendTimeSeconds = ElapsedSeconds;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7edb00 (2012 0x8570f0). GameSave (0x7ed930) branches on m_PossessionStage and
+// takes its values from the possessed pawn rather than from these members; it writes the same bytes, and it is
+// not ported because the writing half of the object layer does not exist here.
+void UDishonoredActivePowerComponent_Possess::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+	m_PossessTarget.m_pPossessee.SerializeForSaveLoad( _rArchive, UDisPossessableInterface::StaticClass() );
+	_rArchive << m_fPossessionTimer;
+	_rArchive << *(UObject**)&m_pSavedRatPossesseeSpawner;
+	_rArchive << m_PossessTarget.m_PossesseeLoc;
+
+	BYTE bObstructed = 0;
+	_rArchive.Serialize( &bObstructed, sizeof(bObstructed) );
+	m_PossessTarget.m_bPossessableObstructed = ( bObstructed & 0x01 ) ? 1 : 0;
+
+	_rArchive.Serialize( &m_CurStatusMessage, sizeof(m_CurStatusMessage) );
+	_rArchive << m_StatusMessageTutorialIndex;
+}
+
+// DISHONORED(port): 2013 rvas 0x7e8b70 (GameSave) and 0x7f8620 (GameLoad) - two retail bodies over the same
+// four values, where the 2012 build has one. GameLoad then re-arms the power's post-process node and its sky
+// light when the power was running; that reads no stream byte and is not ported.
+void UDisActivePowerComponent_DarkVision::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_CurrentLevel;
+	_rArchive << m_fFadeInTimeRemaining;
+	_rArchive << m_fTimeRemaining;
+	_rArchive << m_fFadeOutTimeRemaining;
+}
+
+void UDisActivePowerComponent_DarkVision::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	GameSave( _rArchive, _Location );
+}
+
+// DISHONORED(port): 2013 rva 0x6dd250 (2012 0x7184e0, byte-identical)
+void UDisKeyRing::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_Keys;
+
+	INT bBackupIsValid = 0;
+	_rArchive << bBackupIsValid;
+	m_bBackupIsValid = ( bBackupIsValid & 1 ) ? 1 : 0;
+	if( m_bBackupIsValid )
+	{
+		_rArchive << m_Keys_Backup;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x852ca0 - one body for both slots in retail, two in the 2012 build.
+void UDisDarknessManager::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_DarknessScore;
+	_rArchive << m_DeedCounters;
+}
+
+void UDisDarknessManager::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	GameSave( _rArchive, _Location );
+}
+
+// DISHONORED(port): 2013 rva 0x6c1950 (2012 0x722070, byte-identical)
+void UDishonoredVisibilityComponent::SaveLoadCommon( FArchive& _rArchive )
+{
+	BYTE bWasInStealthMode = m_bPlayerWasInStealthMode ? 1 : 0;
+	_rArchive.Serialize( &bWasInStealthMode, sizeof(bWasInStealthMode) );
+	m_bPlayerWasInStealthMode = ( bWasInStealthMode & 0x01 ) ? 1 : 0;
+
+	_rArchive << m_fCurrentLightValue;
+	_rArchive << m_fCurrentLightValue_Normalized;
+	_rArchive << m_fCurrentSpeedValue;
+}
+
+// DISHONORED(port): 2013 rva 0x6c64d0 (2012 0x7270b0) - both slots, one body, in both builds.
+void UDishonoredVisibilityComponent::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	SaveLoadCommon( _rArchive );
+}
+
+void UDishonoredVisibilityComponent::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	SaveLoadCommon( _rArchive );
+}
+
+// DISHONORED(port): 2013 rva 0x6ad350 (2012 0x7067c0) - the equipped power component, the ranged weapon's ammo
+// type and the crossbow's charge count.
+void ADishonoredPlayerPawn::GameLoad_Inventory( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	UObject* pCurrentPower = NULL;
+	_rArchive << pCurrentPower;
+	// DISHONORED(bringup): retail hands it to UDisItemPowers::SetCurrentPower on the inventory's UDisItemPowers,
+	// found by class through UDishonoredInventory::FindItemByClass. Neither is ported, and neither reads bytes.
+
+	BYTE AmmoType = 0;
+	_rArchive.Serialize( &AmmoType, sizeof(AmmoType) );
+	// DISHONORED(bringup): retail sets it on the equipped UDishonoredWeapon_Ranged when it is below 12.
+
+	BYTE ChargeCount = 0;
+	_rArchive.Serialize( &ChargeCount, sizeof(ChargeCount) );
+	// DISHONORED(bringup): retail replays that many charge steps on the equipped item.
+}
+
+// DISHONORED(port): retail reaches this through IDisConvSpeakerInterface::GameLoad_Dialog (2013 rva 0x897060).
+// The player pawn declares neither GetConversationComponent_Derived nor GameLoad_Dialog_Derived - only
+// ADishonoredNPCPawn declares the first (2012 rva 0x7ac040) and nothing in either build declares the second - so
+// retail's branch for this class is the FDisConvSaveData one, through IDisConvSpeakerInterface::GetDialogSaveData
+// (0x88bc10), which for the player pawn is m_DialogSaveData.
+void ADishonoredPlayerPawn::GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	// retail: GetDialogSaveData (2013 rva 0x6a24c0, `return (BYTE*)this + 1440`, which off the interface
+	// sub-object at 1228 is m_DialogSaveData at 2668)
+	DisSerializeScriptStructBin( _rArchive, TEXT("DisConvSaveData"), (BYTE*)&m_DialogSaveData );
+
+	// then GameLoad_Dialog_Derived, the tail call of retail's IDisConvSpeakerInterface::GameLoad_Dialog. For
+	// this class it is 2013 rva 0x6b2fe0 and it reads only when the state came from a file.
+	if( _Location == SLL_FILE )
+	{
+		_rArchive << *(UObject**)&m_pAudioLogConvActor;
+		DisSerializeScriptStructBin( _rArchive, TEXT("DisConvSaveData"), (BYTE*)&m_DialogSaveData_Global );
+
+		const INT NumStoryFlags = DisReadStreamCount( _rArchive, TEXT("ADishonoredPlayerPawn::GameLoad_Dialog m_StoryFlagInstances") );
+		m_StoryFlagInstances.Empty( NumStoryFlags );
+		m_StoryFlagInstances.AddZeroed( NumStoryFlags );
+		for( INT FlagIdx = 0; FlagIdx < NumStoryFlags; FlagIdx++ )
+		{
+			DisSerializeScriptStructBin( _rArchive, TEXT("DisStoryFlagInstance"), (BYTE*)&m_StoryFlagInstances(FlagIdx) );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x6d3950 (2012 0x70d6a0) - the scripted visibility override and the two stealth
+// bits, which retail acts on by crouching and by carrying the stand/sneak timers forward.
+void ADishonoredPlayerPawn::GameLoad_Stealth( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << *(UObject**)&m_pScriptedPlayerVisSettings;
+
+	FDisPlayerStealthSaveVars StealthVars(EC_EventParm);
+	DisSerializeScriptStructBin( _rArchive, TEXT("DisPlayerStealthSaveVars"), (BYTE*)&StealthVars );
+
+	m_bSneakModeToggled = StealthVars.m_bSneakModeToggled ? 1 : 0;
+	// DISHONORED(bringup): retail also replays APawn::Crouch for m_bIsAutoCrouched, the sneak-height change for
+	// m_bSneakModeToggled, and the two timers each branch carries forward. None reads a stream byte.
+}
+
+// DISHONORED(port): 2013 rva 0x6b8b60 (2012 0x711630 - retail's body is 1105 bytes to 2012's 771, so this is
+// retail's order throughout), in full. Agent ED had ported it as far as the Super call.
+void ADishonoredPlayerPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	SaveLoadTutorialTrackers( _rArchive );
+	DisSaveLoadObject( _rArchive, m_pCorpseDiscoveredTracker );
+	DisSaveLoadObject( _rArchive, m_pPursuitTracker );
+	GameLoad_Body( _rArchive, _Location );
+	_rArchive << *(UObject**)&m_pPowersComponent;
+
+	ADishonoredPawn::GameLoad( _rArchive, _Location );
+
+	_rArchive << m_Mana;
+	_rArchive << m_ManaRegenAmount;
+	_rArchive << m_fManaRegenCountDown;
+
+	GameLoad_Inventory( _rArchive, _Location );
+	GameLoad_Dialog( _rArchive, _Location );
+	GameLoad_Stealth( _rArchive, _Location );
+
+	if( m_pPlayerMasterFSM != NULL )
+	{
+		m_pPlayerMasterFSM->LoadPartialState( _rArchive, _Location );
+	}
+	if( m_pPlayerUpperFSM != NULL )
+	{
+		m_pPlayerUpperFSM->LoadPartialState( _rArchive, _Location );
+	}
+
+	FLOAT Adrenaline = 0.0f;
+	_rArchive << Adrenaline;
+	_rArchive << m_fAdrenalineCooldown;
+	// DISHONORED(bringup): retail adds it through AddAdrenaline( Adrenaline, FALSE ) (2013 rva 0x6ac510), which
+	// clamps it against the tweaks and notifies the HUD. Not ported, so the value is put back directly.
+	m_fAdrenaline = Adrenaline;
+
+	_rArchive << *(UObject**)&m_pKeyRing;
+	_rArchive << *(UObject**)&m_pDarknessManager;
+
+	BYTE bCrouched = 0;
+	_rArchive.Serialize( &bCrouched, sizeof(bCrouched) );
+	if( bCrouched )
+	{
+		// DISHONORED(bringup): retail calls APawn::Crouch( FALSE ) (vtable slot 285) before setting the flag.
+		bWantsToCrouch = TRUE;
+	}
+
+	// retail reads one byte here and does nothing with it in this build
+	BYTE Unused = 0;
+	_rArchive.Serialize( &Unused, sizeof(Unused) );
+
+	_rArchive << m_StatValues;
+	_rArchive << m_MissionStatValues;
+
+	// The achievement trackers, each as its own script struct, then every streak time stamp turned from an
+	// absolute clock reading into an elapsed one. Retail's count is the array size for the save's version - 81 at
+	// >= 23, 71 at 22, 51 below - and it walks indices 1..Count-1, leaving element 0 out of the stream in every
+	// version. The tutorial-note bit count is the same three-way gate over m_TutorialNoteAlreadyDisplayed's 43.
+	const INT NumTrackers = ( _rArchive.Ver() >= 23 ) ? 81 : ( ( _rArchive.Ver() >= 22 ) ? 71 : 51 );
+	const INT NumTutorialNoteBits = ( _rArchive.Ver() >= 23 ) ? 43 : ( ( _rArchive.Ver() >= 22 ) ? 40 : 33 );
+	// DISHONORED(bringup): retail's clock here is UWorld::GetBendTimeSeconds(); this tree has no bend-time clock.
+	const FLOAT NowSeconds = ( GWorld != NULL && GWorld->GetWorldInfo() != NULL ) ? GWorld->GetWorldInfo()->TimeSeconds : 0.0f;
+	for( INT TrackerIdx = 1; TrackerIdx < NumTrackers && TrackerIdx < ARRAY_COUNT(m_AchievementTrackers); TrackerIdx++ )
+	{
+		FAchievementTracker& rTracker = m_AchievementTrackers[TrackerIdx];
+		DisSerializeScriptStructBin( _rArchive, TEXT("AchievementTracker"), (BYTE*)&rTracker );
+		for( INT ValueIdx = 0; ValueIdx < rTracker.m_StreakValues.Num(); ValueIdx++ )
+		{
+			FLOAT ElapsedSeconds = 0.0f;
+			_rArchive << ElapsedSeconds;
+			rTracker.m_StreakValues(ValueIdx).m_fTime = NowSeconds - ElapsedSeconds;
+		}
+	}
+
+	_rArchive << *(TArray<UObject*>*)&m_Upgrades;
+
+	INT bUpgradeBackupValid = 0;
+	_rArchive << bUpgradeBackupValid;
+	m_bIsUpgradeBackupValid = bUpgradeBackupValid ? 1 : 0;
+	if( m_bIsUpgradeBackupValid )
+	{
+		_rArchive << *(TArray<UObject*>*)&m_Upgrades_Backup;
+	}
+	// DISHONORED(bringup): retail then calls ApplyUpgrades() (2013 rva 0x6a8fd0) and re-applies the pistol's own
+	// upgrades to the equipped weapon. Neither reads a stream byte.
+
+	for( INT SlotIdx = 0; SlotIdx < ARRAY_COUNT(m_WhaleBoneCharmSlots); SlotIdx++ )
+	{
+		_rArchive << m_WhaleBoneCharmSlots[SlotIdx];
+	}
+	_rArchive << m_WhaleBoneCharms;
+	_rArchive << m_AvailableBoneCharmInfoIndexes;
+
+	_rArchive << m_LastSecondLocation;
+	_rArchive << *(UObject**)&m_pVisibilityComponent;
+	_rArchive << Velocity;
+	_rArchive << *(UObject**)&m_pClimbable;
+	_rArchive << m_PowerInhibitedMessageID;
+
+	for( INT BitBase = 0; BitBase < NumTutorialNoteBits; BitBase += 8 )
+	{
+		BYTE Bits = 0;
+		_rArchive.Serialize( &Bits, sizeof(Bits) );
+		for( INT BitIdx = 0; BitIdx < 8 && BitBase + BitIdx < NumTutorialNoteBits; BitIdx++ )
+		{
+			m_TutorialNoteAlreadyDisplayed[BitBase + BitIdx] = (BYTE)( ( Bits >> BitIdx ) & 1 );
+		}
+	}
+
+	// DISHONORED: retail's `Ar.Ver() < 20` tail (2013 rva 0x6aa5c0, new in retail) reads no stream bytes and a
+	// real retail save, which is version 24, never reaches it.
+}
+
+// DISHONORED(port): 2013 rva 0x644220 (2012 0x691f10) - AActor::GameLoad, the dialog, and one retail-only bit.
+// Retail reaches the dialog through IDisConvSpeakerInterface::GameLoad_Dialog (0x897060); this class's two
+// answers are resolved by name against retail's own vtable (the table at rva 0xd1a200 is the one whose slot 0
+// is the adjustor{584} thunk): GetConversationComponent_Derived is `return *(UDisConversationComponent**)
+// ((BYTE*)this + 8)`, i.e. m_pConvComponent at 592, and GameLoad_Dialog_Derived is the empty `ret 8` fold.
+void ADisPlayerAudioLogDummyActor::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( _rArchive, _Location );
+
+	if( m_pConvComponent != NULL && m_pConvComponent->IsAttached() )
+	{
+		m_pConvComponent->SerializeForGameLoad( _rArchive, _Location );
+	}
+	else
+	{
+		// retail's other branch is GetDialogSaveData (0x88bc10), which for this class is the component's own
+		// FDisConvSaveData at component offset 336 - so it needs the attached component just as much.
+		DisStopRestore( _rArchive, TEXT("ADisPlayerAudioLogDummyActor::GameLoad (retail IDisConvSpeakerInterface::GameLoad_Dialog, 2013 rva 0x897060): with no attached conversation component retail serialises the component's own FDisConvSaveData, which there is nothing to serialise into") );
+		return;
+	}
+
+	if( _rArchive.Ver() >= 22 )
+	{
+		BYTE bFinishedIntro = 0;
+		_rArchive.Serialize( &bFinishedIntro, sizeof(bFinishedIntro) );
+		m_bFinishedIntro = bFinishedIntro ? 1 : 0;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x644280
+void ADisPlayerAudioLogDummyActor::PostGameLoad( ESaveLoadLocation _Location )
+{
+	// DISHONORED(bringup): retail calls AActor::PostGameLoad( _Location ) first (2013 rva 0x189e00), which is
+	// not ported and reads no stream bytes.
+	if( _Location == SLL_FILE )
+	{
+		m_bInitializedComponent = 1;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x763570 - retail's own vtable slot 70, which match_2012_2013.csv does not carry
+// (the 2012 body 0x7c91c0 is unmatched). AActor::GameLoad, the possessed pawn, the brain and the two remembered
+// Kismet actions. Agent EC confirmed this body offset by offset and left it for this package.
+void ADishonoredNPCController::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( _rArchive, _Location );
+
+	_rArchive << *(UObject**)&Pawn;
+	// DISHONORED(bringup): retail then calls AController::Possess( Pawn ) (vtable slot 239) and
+	// UArkComponentContainer::StartAllComponents( m_ComponentContainer ). Neither reads a stream byte, and
+	// possessing here would re-run the whole controller bring-up on a pawn the restore has not finished with.
+
+	_rArchive << *(UObject**)&m_pAIBrain;
+	_rArchive << *(UObject**)&m_pLastGoToKismetAction;
+	if( _rArchive.Ver() >= 23 )
+	{
+		_rArchive << *(UObject**)&m_pLastShootKismetAction;
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): agent EF (PHASE11 EF) - the loadout UDishonoredInventory::GameLoad reads, applied.
+
+	Retail's unit for these is dishonoredpawn_inventory.cpp, which is still an import_reference.py stub here,
+	so they sit beside the body that calls them - as agent EC did for the pawn helpers. Move them when that
+	unit is written.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x751a50 (2012 0x7afe90) - every ammo type is cleared first, then the loadout's
+// entries are set, so a type the save does not mention ends at zero rather than at whatever the fresh session
+// gave it.
+void ADishonoredPawn::SpawnInventoryLoadout_Ammo( const TArray<FDisInventoryAmmoEntry>& _rAmmo, UBOOL _bIgnoreCapacity )
+{
+	if( m_pInventory == NULL )
+	{
+		return;
+	}
+	// DISHONORED(written): retail indexes m_AmmoInfo with the ammo type and does not bound it - its inventory
+	// always has eDisAmmoType_MAX entries from the class default. A tree with a partial class default would
+	// assert inside TArray::operator() instead, and that assert says nothing about which body was reading.
+	const INT NumAmmoSlots = Min<INT>( eDisAmmoType_MAX, m_pInventory->m_AmmoInfo.Num() );
+	for( INT AmmoType = 0; AmmoType < NumAmmoSlots; AmmoType++ )
+	{
+		m_pInventory->SetAmmo( (BYTE)AmmoType, 0, FALSE );
+	}
+	for( INT AmmoIdx = 0; AmmoIdx < _rAmmo.Num(); AmmoIdx++ )
+	{
+		if( _rAmmo(AmmoIdx).m_AmmoType < NumAmmoSlots )
+		{
+			m_pInventory->SetAmmo( _rAmmo(AmmoIdx).m_AmmoType, _rAmmo(AmmoIdx).m_AmmoAmount, _bIgnoreCapacity );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7689c0 (2012 0x7c8bb0). Retail's order is ammo, items, abstract items, the two
+// elixir counts, then the primary and secondary default equip types.
+void ADishonoredPawn::SpawnInventoryLoadout( const FDisInventoryLoadout& _rLoadout, UBOOL _bIgnoreCapacity )
+{
+	SpawnInventoryLoadout_Ammo( _rLoadout.m_Ammo, _bIgnoreCapacity );
+
+	// DISHONORED(bringup): SpawnInventoryLoadout_Items (2013 rva 0x7c8690) turns each UDisTweaks_InventoryItem
+	// into a live UDishonoredInventoryItem in a slot. It needs the item factory, which this tree does not have,
+	// so the loadout's items are read and counted and the inventory's slots stay empty.
+
+	if( m_pInventory != NULL )
+	{
+		m_pInventory->m_AbstractItem = _rLoadout.m_AbstractItems;
+		for( INT ElixirType = 0; ElixirType < 2; ElixirType++ )
+		{
+			m_pInventory->SetElixirCount( (BYTE)ElixirType, _rLoadout.m_ElixirCounts[ElixirType] );
+		}
+	}
+
+	// DISHONORED(bringup): retail then equips m_pDefaultEquipType_Primary and _Secondary through
+	// EquipItemByType (vtable slot 370), and gives a player pawn whose primary is DishonoredItemEmpty the
+	// sword as its re-equip item. Both need the item factory above.
 }

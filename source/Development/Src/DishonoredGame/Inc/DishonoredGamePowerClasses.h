@@ -196,6 +196,7 @@ public:
 
     DECLARE_ABSTRACT_CLASS(UDishonoredActivePowerComponent,UActorComponent,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Power");}
+#include "CppText/UDishonoredActivePowerComponent.h"
 };
 
 // DishonoredGame.DisActivePowerComponent_DarkVision: retail sizeof 184, reflected span 144..184 (2012 PDB sizeof 184)
@@ -350,6 +351,7 @@ public:
     //## END PROPS DishonoredActivePowerComponent_BendTime
 
     DECLARE_CLASS(UDishonoredActivePowerComponent_BendTime,UDishonoredActivePowerComponent,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredActivePowerComponent_BendTime.h"
 };
 
 // DishonoredGame.DishonoredActivePowerComponent_DevouringSwarm: retail sizeof 172, reflected span 144..172 (2012 PDB sizeof 172)
@@ -369,6 +371,7 @@ public:
     //## END PROPS DishonoredActivePowerComponent_DevouringSwarm
 
     DECLARE_CLASS(UDishonoredActivePowerComponent_DevouringSwarm,UDishonoredActivePowerComponent,0,DishonoredGame)
+#include "CppText/UDishonoredActivePowerComponent_DevouringSwarm.h"
 };
 
 // DishonoredGame.DishonoredActivePowerComponent_Possess: retail sizeof 220, reflected span 144..220 (2012 PDB sizeof 220)
@@ -399,6 +402,7 @@ public:
     //## END PROPS DishonoredActivePowerComponent_Possess
 
     DECLARE_CLASS(UDishonoredActivePowerComponent_Possess,UDishonoredActivePowerComponent,0,DishonoredGame)
+#include "CppText/UDishonoredActivePowerComponent_Possess.h"
 };
 
 // DishonoredGame.DishonoredActivePowerComponent_WindBlast: retail sizeof 208, reflected span 144..208 (2012 PDB sizeof 208)
