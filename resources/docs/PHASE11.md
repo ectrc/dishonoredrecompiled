@@ -109,6 +109,60 @@ which stays last where the user put it (`PLAN.md` Phase 10).
 - **Label the 2012 addresses.** A comment block in `DishonoredGame` is a 2012 inventory and does not
   say so; quoting it as retail produced three wrong addresses in briefs in a single day.
 
+
+## Wave 11 — the saved session, the modal, and two things the coordinator owes
+
+HEAD `79ead3d`, gated at 31 checks, 0 failures. The playable executable is staged and needs no command
+line (`resources/build-play.cmd`).
+
+### EF — the saved session (running)
+
+Agent EC restored the player's transform, verified to the float on two saves in two worlds. Everything
+past **byte 4,141 of 619,631** is still a fresh session: health, mana, inventory, powers. The stream
+stops at `DishonoredPlayerPawn.PowerBlink`, class `UDishonoredActivePowerComponent`, reached from
+`ADishonoredPawn::GameLoad`'s `m_ActivePowers` — so every pawn with a power reaches it. Then
+`URB_BodyInstance` (note retail's `GameLoad` is vtable **slot 70**, not 69) and the nine partial-state
+classes named in `dissavegame.cpp`.
+
+### EG — the modal (the user's screenshots)
+
+`resources/reference/menu/your_menu.png` against `real_menu.png`. With a modal up — QUIT GAME, or Enter
+from the brightness screen — **our whole screen goes near-black**: the scene, the menu and the modal's
+own content are all gone, leaving the cursor and a faint sliver. Retail keeps the scene behind a dim,
+and draws the torn bar, the question, and a YES/NO row with YES highlighted.
+
+**The cause is already measured, by two packages independently.** Agent DM: `tween__start`/`tweenEnd`
+fail while `tweenTo` resolves *in the same call from the same prototype* — 5 in a burst on the menu's
+movie and **971 on the global movie's, on the box's whole subtree, so its contents never leave alpha 0**.
+Agent EA confirmed `tweenEnd` is still absent (4 calls a run) after its own work. So the dim layer sits
+at full opacity while everything that belongs on top of it is still at zero alpha.
+
+DM ruled out the obvious theories by measurement rather than reasoning, and its hand-over 3 names the
+ten-line measurement that settles what remains: the two movies do **not** share a context
+(`GFxMovieRoot` makes its own `GASGlobalContext`), the class **is** installed in the failing movie, the
+assignment order does not match the failure set, and `ASSetPropFlags` removes nothing.
+
+This also fixes something DM reported separately: the menu bar takes ~30 s of wall clock to fade in,
+for the same reason.
+
+### Coordinator's own, between packages
+
+1. **Make `C4263` and `C4264` errors.** A hand-written override whose signature drifts becomes a silent
+   overload. That already cost a completely dead AI transition path that built green and passed every
+   check (agent DF), and the two warnings detect it exactly. Open since DF named it four waves ago,
+   deferred each time because agents were mid-build.
+2. **The two Shipping symbols**, so the executable's name can become literally true: `DishonoredStubs.cpp`
+   references `FStatGroupFactory` and `Engine`'s `UnGame.cpp` references `GIsPrepareMapChangeBroken`,
+   both outside their non-shipping guards. That configuration has never been built here.
+
+### Still queued after this
+
+Perspective support for the difficulty screen (`_z` is not a display property here); the options settings
+tree behind the `undefined` gamma label; the in-game HUD; the exit teardown fault; the shim deletion
+backlog (**1,053 of 1,098 placeholders are features retail does not have**, and nine of the last
+seventeen defects were instances of it); two generated-declaration hazards agent EC found, one a live
+GC hazard; and milestone 8's test suite. Audio stays last.
+
 ## Rules for agents
 
 As `PHASE10.md`, plus three earned this wave:
