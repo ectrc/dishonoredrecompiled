@@ -175,6 +175,19 @@ As `PHASE10.md`, plus three earned this wave:
   the interface's mouse position never left (0,0). Verify with real input.
 - **When your snapshot predates another package that touched the same file, do not copy whole files.**
   That reverted a merged function and broke HEAD this wave. Diff against the commit you branched from.
+- **Run the harness from the worktree's own copy, with an absolute build dir.** `--build-dir` pointing
+  at a worktree-configured directory can never pass the build stage: `resources/build-release.cmd`
+  does `cd /d "%~dp0.."` then `cmake -S .`, so it always configures the repo root, cmake refuses the
+  mismatched cache, and you get `build_*_exit 1` with `build_*_errors 0` - a failure that reads like
+  a broken build and is a path. Agent EJ lost two full runs to it.
+- **A fresh worktree has none of the layout stage's gitignored inputs** - `types.json`,
+  `retail_sdk_layout.json`, `script_classes_2012.json`, `script_classes_2013.json`, `all_types.h`.
+  Without them the three layout tools raise `FileNotFoundError` and the harness records **-1**
+  against every layout metric, which reads exactly like a layout regression in the package being
+  gated. Copy the five in; they are ignored there too, so `git status` stays clean.
+- **Read `d3d9_startup_seconds` before believing a d3d9 or inputtest failure.** The same executable
+  measured 3.34, **30.95** and 3.48 seconds across three runs on this machine; the 30.95 run reported
+  390 frames and 780.9 moved, and both would have been read as regressions.
 - **Never `git clean -x` a build worktree.** The reference data the gate reads - `retail_sdk_layout.json`,
   `vtables.csv`, `pdb_functions.csv` and six others - is gitignored, so `-x` deletes it and every layout
   check then fails with `-1`, "the tool printed no summary line". That looked exactly like a layout
