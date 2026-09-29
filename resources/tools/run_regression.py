@@ -99,9 +99,12 @@ class Report:
     def __init__(self):
         self.rows: list[tuple[str, str, object, str, object, str]] = []
 
-    def add(self, stage: str, name: str, measured, op: str, expected, note: str = "") -> None:
+    def add(self, stage: str, name: str, measured, op: str, expected, note: str = "",
+            fatal: bool = False) -> None:
+        # fatal: nothing was measured because the thing that measures it is absent - a missing
+        # executable, not a missing log line. That is a failure; a skipped stage is not a passed one.
         if measured is None:
-            status = "SKIP"
+            status = "FAIL" if fatal else "SKIP"
         elif expected is None:
             status = "ok"
         else:
@@ -173,7 +176,8 @@ def stage_build(args: argparse.Namespace, out_dir: Path, report: Report) -> None
 def stage_coresmoke(args: argparse.Namespace, out_dir: Path, report: Report, expect: dict) -> None:
     exe = REPO / args.build_dir / "Binaries" / "Win32" / "CoreSmoke.exe"
     if not exe.is_file():
-        report.add("coresmoke", "coresmoke_passed", None, ">=", expect.get("coresmoke_passed", {}).get("value"), f"missing {exe}")
+        report.add("coresmoke", "coresmoke_passed", None, ">=", expect.get("coresmoke_passed", {}).get("value"),
+                   f"missing {exe} - build the CoreSmoke target", fatal=True)
         return
     log = out_dir / "coresmoke.txt"
     run([str(exe)], log)
@@ -189,7 +193,8 @@ def stage_layout(args: argparse.Namespace, out_dir: Path, report: Report, expect
     exe = REPO / args.build_dir / "Binaries" / "Win32" / "LayoutProbe.exe"
     probe = REPO / args.build_dir / "layout_probe.txt"
     if not exe.is_file():
-        report.add("layout", "layout_types", None, "==", expect.get("layout_types", {}).get("value"), f"missing {exe}")
+        report.add("layout", "layout_types", None, "==", expect.get("layout_types", {}).get("value"),
+                   f"missing {exe} - build the LayoutProbe target", fatal=True)
         return
     # never through the shell: PowerShell's > writes a BOM and the probe parser would see it
     probe.write_bytes(subprocess.run([str(exe)], cwd=REPO, capture_output=True).stdout)
