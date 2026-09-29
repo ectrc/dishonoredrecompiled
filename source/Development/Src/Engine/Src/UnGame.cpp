@@ -2750,8 +2750,13 @@ UBOOL UGameEngine::PrepareMapChange(const TArray<FName>& LevelNames)
 			debugf(NAME_Warning, TEXT("PREPAREMAPCHANGE: %s"), *PendingMapChangeFailureDescription);
 
 			// tell user on screen!
+			// DISHONORED(bringup): the flag is defined under !FINAL_RELEASE (UnEngine.cpp), and it only drives
+			// an on-screen development warning, so the assignment carries the same guard. Without it the
+			// Shipping configuration does not link.
+#if !FINAL_RELEASE
 			extern UBOOL GIsPrepareMapChangeBroken;
 			GIsPrepareMapChangeBroken = TRUE;
+#endif
 
 			return FALSE;
 		}

@@ -149,4 +149,8 @@ UBOOL FUnitTestFramework::RunTestByName(const FString& InTestName, FUnitTestExec
 // declares STATGROUP_TexturePool and nothing in a PC game build references the allocator, so the
 // linker drops the object and FStatManager::Init asserts (check(Group) in FMemoryCounter, UnStats.cpp
 // 118) when it creates Texture2D.cpp's STAT_TexturePool_PackMipTailSavings. Pull the object in.
+// DISHONORED(bringup): only meaningful while STATS is compiled in. Shipping compiles the stat system
+// out entirely, so the symbol this names does not exist and there is no FStatManager::Init to assert.
+#if STATS
 #pragma comment(linker, "/include:?GroupFactory_STATGROUP_TexturePool@@3UFStatGroupFactory@@A")
+#endif
