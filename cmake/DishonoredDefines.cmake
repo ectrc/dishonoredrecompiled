@@ -97,6 +97,10 @@ set(DISHONORED_DEFINES_SHIPPING NDEBUG FINAL_RELEASE=1 SHIPPING_PC_GAME=1 NO_LOG
 
 option(DISHONORED_SHIPPING "Build with the Shipping switches (FINAL_RELEASE, SHIPPING_PC_GAME, NO_LOGGING)" OFF)
 option(DISHONORED_LAYOUT_CHECKS "Compile the PDB-derived static_assert layout checks" ON)
+# The playable build bakes its switches into the executable (Core/Src/UnMisc.cpp). Never set this for a
+# harness build: run_regression.py drives the game with exact command lines and its thresholds are
+# calibrated to them.
+option(DISHONORED_PLAY_DEFAULTS "Bake the play switches into the executable so it needs no command line" OFF)
 
 function(dishonored_apply_defines target)
   target_compile_definitions(${target} PRIVATE ${DISHONORED_DEFINES})
@@ -110,6 +114,9 @@ function(dishonored_apply_defines target)
     target_compile_definitions(${target} PRIVATE
       $<$<CONFIG:Debug>:${DISHONORED_DEFINES_DEBUG}>
       $<$<NOT:$<CONFIG:Debug>>:${DISHONORED_DEFINES_RELEASE}>)
+  endif()
+  if(DISHONORED_PLAY_DEFAULTS)
+    target_compile_definitions(${target} PRIVATE DISHONORED_PLAY_DEFAULTS=1)
   endif()
   if(DISHONORED_LAYOUT_CHECKS AND NOT DISHONORED_SHIPPING)
     target_compile_definitions(${target} PRIVATE DISHONORED_LAYOUT_CHECKS=1)

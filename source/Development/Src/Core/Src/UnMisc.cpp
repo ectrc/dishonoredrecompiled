@@ -5069,6 +5069,36 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 
 	appStrncpy( GCmdLine, InCmdLine, ARRAY_COUNT(GCmdLine) );
 
+#if DISHONORED_PLAY_DEFAULTS
+	// DISHONORED(bringup): the switches a playable run needs, appended here so the shipped executable
+	// can be launched with none. Each is added only when its token is absent, so anything on the real
+	// command line wins - `-startmap=L_Pub_Day_P` replaces the menu, `-fullscreen` replaces `-windowed`.
+	//
+	// This is compiled only into a build configured with DISHONORED_PLAY_DEFAULTS, and deliberately so:
+	// run_regression.py drives the game with exact command lines and its thresholds are calibrated to
+	// them, so baking -gfxuimenu into every harness run would open a movie in stages that have never
+	// had one and invalidate the baseline.
+	{
+		static const TCHAR* const PlayDefaults[][2] =
+		{
+			{ TEXT("nosteam"),          TEXT(" -nosteam") },
+			{ TEXT("skipnativepkgs"),   TEXT(" -skipnativepkgs=OnlineSubsystemPC") },
+			{ TEXT("gfxuimenu"),        TEXT(" -gfxuimenu") },
+			{ TEXT("nomovie"),          TEXT(" -nomovie") },
+			{ TEXT("startmap"),         TEXT(" -startmap=Dishonored_MainMenu -startmapopen") },
+			{ TEXT("windowed"),         TEXT(" -windowed") },
+			{ TEXT("ResX"),             TEXT(" -ResX=1600 -ResY=900") },
+		};
+		for( INT Index = 0; Index < ARRAY_COUNT(PlayDefaults); Index++ )
+		{
+			if( appStrfind( GCmdLine, PlayDefaults[Index][0] ) == NULL )
+			{
+				appStrncat( GCmdLine, PlayDefaults[Index][1], ARRAY_COUNT(GCmdLine) );
+			}
+		}
+	}
+#endif
+
 	// Avoiding potential exploits by not exposing command line overrides in the shipping games.
 #if !SHIPPING_PC_GAME && !CONSOLE
 	// 8192 is the maximum length of the command line on Windows XP.
