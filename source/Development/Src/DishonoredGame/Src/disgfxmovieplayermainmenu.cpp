@@ -167,6 +167,8 @@ void UDisGFxMoviePlayerMainMenu::execOnNewGameConfirm( FFrame& Stack, RESULT_DEC
 		GameInfo->m_Difficulty = (BYTE)_Difficulty;
 	}
 	m_bStartingNewGame = TRUE;
+	debugf( TEXT("DISHONORED(bringup): OnNewGameConfirm(difficulty %d): '%s'"), _Difficulty,
+		*DisMainMenuTweaks()->m_NewGameCommand );
 	DisMenuConsoleCommand( DisMainMenuTweaks()->m_NewGameCommand );
 }
 
@@ -204,6 +206,8 @@ void UDisGFxMoviePlayerMainMenu::execOnContinueClicked( FFrame& Stack, RESULT_DE
 void UDisGFxMoviePlayerMainMenu::execOnQuitGameConfirm( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
+	debugf( TEXT("DISHONORED(bringup): OnQuitGameConfirm: '%s'"),
+		m_pMenuBaseTweaks ? *m_pMenuBaseTweaks->m_QuitGameCommand : TEXT("<no menu-base tweaks>") );
 	if( m_pMenuBaseTweaks )
 	{
 		DisMenuConsoleCommand( m_pMenuBaseTweaks->m_QuitGameCommand );
@@ -219,8 +223,8 @@ void UDisGFxMoviePlayerMainMenu::execBackToStartScreen( FFrame& Stack, RESULT_DE
 
 	if( m_MsgBoxID )
 	{
-		// DISHONORED(bringup): DisGetGlobalUIManager()->HideMessageBox(m_MsgBoxID) (2012 0x8aef20)
-		m_MsgBoxID = 0;
+		// DISHONORED(port, agent EI): DisGetGlobalUIManager()->HideMessageBox(m_MsgBoxID), 2013 0x83dc50
+		HideMessageBox();
 	}
 	m_fTrailerTimer = 0.f;
 

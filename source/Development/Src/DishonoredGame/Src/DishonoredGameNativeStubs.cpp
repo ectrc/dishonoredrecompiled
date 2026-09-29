@@ -1850,10 +1850,6 @@ void UDisGFxMoviePlayerGamma::execOnGammaImageClosed( FFrame& Stack, RESULT_DECL
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerGamma, execOnGammaImageClosed);
 }
-void UDisGFxMoviePlayerGlobal::execOnMessageBoxConfirm( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerGlobal, execOnMessageBoxConfirm);
-}
 void UDisGFxMoviePlayerGlobal::execOnDLCInaccessbible( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerGlobal, execOnDLCInaccessbible);

@@ -53,3 +53,290 @@ void UDisGFxMoviePlayerGlobal::execOnLoginChange( FFrame& Stack, RESULT_DECL )
 }
 
 // ---- end of trivial natives ----
+
+/*-----------------------------------------------------------------------------
+	Agent EI (PHASE12 package EI): the message box, from the content's request to the player's answer.
+
+	The queue is retail's and so is its place: `TArray<FDisMsgBoxInfo>` and the id counter are file statics of
+	this unit (2013 .data rvas 0x106e660 / 0x106e664 for the array, 0xf3aff4 for the counter, whose initial value
+	is 1), not members of UDisGlobalUIManager. Every body below addresses them exactly as retail does.
+
+	The chain, both ways:
+	  AS2 _common.MessageBoxInvoke::InvokeMessageBox -> ExternalInterface 'ShowMessageBox'
+	    -> UDisGFxMoviePlayerBase::ShowMessageBox -> UDisGlobalUIManager::ShowMessageBox
+	    -> UDisGFxMoviePlayerGlobal::AddMessageBox -> ShowMessageBox -> the global movie's own ShowMessageBox
+	  the player answers -> AS2 _common.MessageBox::OnClosed -> ExternalInterface 'OnMessageBoxConfirm'
+	    -> UDisGFxMoviePlayerGlobal::OnMessageBoxConfirm -> FArkGameEvent(31, {id, button})
+	    -> UDisGFxMoviePlayerBase::OnMessageBoxResult -> the asking movie's _root.MessageBoxInvoke.OnMessageBoxClosed
+-----------------------------------------------------------------------------*/
+
+#include "gfxui_gfx3.h"
+#include "dishonoredutilities.h"
+#include "arkgameeventdispatcher.h"
+
+/** DISHONORED(port): 2013 .data rva 0x106e660 - the queue, ordered by descending priority; index 0 is the box on screen */
+static TArray<FDisMsgBoxInfo> GMessageBoxes;
+/** DISHONORED(port): 2013 .data rva 0xf3aff4, initial value 1, so that a m_MsgBoxID of 0 means "this movie has no box" */
+static INT GNextMessageBoxID = 1;
+
+/** the global movie's view, or NULL while it is not open */
+static GFxMovieView* DisGlobalMovieView( UDisGFxMoviePlayerGlobal* Player )
+{
+	FGFxMovie* Movie = Player != NULL ? Player->GetMovie() : NULL;
+	return Movie ? Movie->pView.GetPtr() : NULL;
+}
+
+// DISHONORED(bringup): the seam named in dishonoredutilities.h. Retail's is DisGetGlobalUIManager()->m_pGlobal.
+// The test is the view and not the pointer, because both candidates can be a movie player that owns no movie: the
+// class default object is a UDisGFxMoviePlayerGlobal too, and DisGetGameInfo()->m_pGlobalUIManager comes out of the
+// game info's default sub-objects with an m_pGlobal that nothing ever started.
+UDisGFxMoviePlayerGlobal* DisGetGlobalMoviePlayer()
+{
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager != NULL && DisGlobalMovieView( UIManager->m_pGlobal ) != NULL )
+	{
+		return UIManager->m_pGlobal;
+	}
+	for( TObjectIterator<UDisGFxMoviePlayerGlobal> It; It; ++It )
+	{
+		if( !It->HasAnyFlags( RF_ClassDefaultObject ) && DisGlobalMovieView( *It ) != NULL )
+		{
+			return *It;
+		}
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2013 rva 0x7946b0. The message and the three captions as GFxValue strings - a caption whose
+// string is empty stays an undefined GFxValue, which is how the two-button box gets two buttons - then one Invoke
+// on the global movie's own root ShowMessageBox, then SetMessageBoxTimer when the info carries a duration, then
+// the "a box is up" bit.
+void UDisGFxMoviePlayerGlobal::ShowMessageBox( const FDisMsgBoxInfo& _rInfo )
+{
+	if( m_bMsgBoxSet )
+	{
+		return;
+	}
+	GFxMovieView* View = DisGlobalMovieView( this );
+	if( View == NULL )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ShowMessageBox('%s'): the global movie is not open, ")
+			TEXT("so the box has nowhere to draw"), *_rInfo.m_Message );
+		return;
+	}
+
+	GFxValue Args[4];
+	Args[0].SetStringW( _rInfo.m_Message.Len() > 0 ? *_rInfo.m_Message : TEXT("") );
+	for( INT Index = 0; Index < 3; Index++ )
+	{
+		if( _rInfo.m_Buttons[Index].Len() > 0 )
+		{
+			Args[Index + 1].SetStringW( *_rInfo.m_Buttons[Index] );
+		}
+	}
+	GFxValue Result;
+	View->Invoke( "ShowMessageBox", &Result, Args, 4 );
+	if( _rInfo.m_fTimerDuration != 0.f )
+	{
+		GFxValue Duration;
+		Duration.SetNumber( _rInfo.m_fTimerDuration );
+		View->Invoke( "SetMessageBoxTimer", &Result, &Duration, 1 );
+		Duration.ReleaseManaged();
+	}
+	Result.ReleaseManaged();
+	for( INT Index = 0; Index < 4; Index++ )
+	{
+		Args[Index].ReleaseManaged();
+	}
+	m_bMsgBoxSet = TRUE;
+	debugf( TEXT("DISHONORED(bringup): message box %d up: '%s' [%s|%s|%s]"), _rInfo.m_ID, *_rInfo.m_Message,
+		*_rInfo.m_Buttons[0], *_rInfo.m_Buttons[1], *_rInfo.m_Buttons[2] );
+	// DISHONORED(bringup): retail then sets UEngine's "a login-change box is up" bit when the id is the manager's
+	// own m_MsgBoxID_LoginChange; none of the manager's well-known ids is raised in this tree - see
+	// OnMessageBoxConfirm.
+}
+
+// DISHONORED(port): 2013 rva 0x78c920
+void UDisGFxMoviePlayerGlobal::HideCurrentMessageBox()
+{
+	if( !m_bMsgBoxSet )
+	{
+		return;
+	}
+	GFxMovieView* View = DisGlobalMovieView( this );
+	if( View != NULL )
+	{
+		GFxValue Result;
+		View->Invoke( "HideMessageBox", &Result, NULL, 0 );
+		Result.ReleaseManaged();
+	}
+	m_bMsgBoxSet = FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x7aa0c0. The queue is ordered by descending priority: the new box goes in front of
+// the first entry of a lower priority, and displacing the head hides what is on screen first. The id comes off the
+// counter whatever the slot, and the box is raised only when it landed at the head.
+void UDisGFxMoviePlayerGlobal::AddMessageBox( const FDisMsgBoxInfo& _rInfo, INT& _rOutID, UINT _Priority )
+{
+	INT Slot = 0;
+	while( Slot < GMessageBoxes.Num() && (UINT)GMessageBoxes(Slot).m_nPriority >= _Priority )
+	{
+		Slot++;
+	}
+	INT Index;
+	if( Slot < GMessageBoxes.Num() )
+	{
+		if( Slot == 0 )
+		{
+			HideCurrentMessageBox();
+		}
+		GMessageBoxes.InsertItem( _rInfo, Slot );
+		Index = Slot;
+	}
+	else
+	{
+		Index = GMessageBoxes.AddItem( _rInfo );
+	}
+	GMessageBoxes(Index).m_ID = GNextMessageBoxID++;
+	GMessageBoxes(Index).m_nPriority = (INT)_Priority;
+	_rOutID = GMessageBoxes(Index).m_ID;
+	if( Index == 0 )
+	{
+		ShowMessageBox( GMessageBoxes(Index) );
+	}
+	UpdateMessageBoxAttributes( GMessageBoxes.Num() > 0 );
+}
+
+// DISHONORED(port): 2013 rva 0x7aa230. Dropping the box on screen puts the next one up in its place.
+void UDisGFxMoviePlayerGlobal::RemoveMessageBox( INT _ID )
+{
+	for( INT Index = 0; Index < GMessageBoxes.Num(); Index++ )
+	{
+		if( GMessageBoxes(Index).m_ID != _ID )
+		{
+			continue;
+		}
+		if( Index == 0 )
+		{
+			HideCurrentMessageBox();
+		}
+		GMessageBoxes.Remove( Index, 1 );
+		if( Index == 0 && GMessageBoxes.Num() > 0 )
+		{
+			ShowMessageBox( GMessageBoxes(0) );
+		}
+		UpdateMessageBoxAttributes( GMessageBoxes.Num() > 0 );
+		return;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x794400. The duration is written on the queued info so a box that is not on screen
+// yet still gets its timer when it comes up; the one on screen is told at once.
+void UDisGFxMoviePlayerGlobal::AddMessageBoxTimer( INT _ID, FLOAT _fDuration )
+{
+	for( INT Index = 0; Index < GMessageBoxes.Num(); Index++ )
+	{
+		if( GMessageBoxes(Index).m_ID != _ID )
+		{
+			continue;
+		}
+		GMessageBoxes(Index).m_fTimerDuration = _fDuration;
+		GFxMovieView* View = ( Index == 0 ) ? DisGlobalMovieView( this ) : NULL;
+		if( View != NULL )
+		{
+			GFxValue Duration;
+			Duration.SetNumber( _fDuration );
+			GFxValue Result;
+			View->Invoke( "SetMessageBoxTimer", &Result, &Duration, 1 );
+			Result.ReleaseManaged();
+			Duration.ReleaseManaged();
+		}
+		return;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7a5040. A box on screen blurs the game behind it, draws the black stripes and pauses
+// the HUD; no box shows the HUD again. The game itself is paused only when the main menu is not what is underneath.
+void UDisGFxMoviePlayerGlobal::UpdateMessageBoxAttributes( UBOOL _bMessageBoxUp )
+{
+	m_bBlurGameWhileActive = _bMessageBoxUp ? TRUE : FALSE;
+	m_bDrawBlackStripesWhileActive = _bMessageBoxUp ? TRUE : FALSE;
+	m_bShowHUDWhileActive = _bMessageBoxUp ? FALSE : TRUE;
+	m_bPauseHUDWhileActive = _bMessageBoxUp ? TRUE : FALSE;
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	bPauseGameWhileActive = ( _bMessageBoxUp && ( UIManager == NULL || UIManager->m_pMainMenu == NULL ) ) ? TRUE : FALSE;
+	// DISHONORED(bringup): retail then calls UIManager->OnMovieAttributesChanged(this) (2013 0x84cf80), which
+	// recomputes the blur and the stripes across the whole movie stack, and refreshes the UI scene client's input
+	// for this movie's local player (UUIRoot::GetSceneClient(), vtable +336). Neither is declared in this tree.
+	RefreshMessageBoxFocus();
+}
+
+// DISHONORED(port): 2013 rva 0x79ec60. The global movie takes focus and input exactly while something needs it - a
+// message box, or, while the save icon is up, any open Dishonored movie that loses focus while saving. This is what
+// puts the box's own keys in front of the menu underneath it: the box's APressed and BPressed are the GLOBAL
+// movie's _root.inputs, so without this the box draws and cannot be answered.
+void UDisGFxMoviePlayerGlobal::RefreshMessageBoxFocus()
+{
+	UBOOL bNeedsInput = GMessageBoxes.Num() > 0;
+	FGFxEngine* Engine = FGFxEngine::GetEngine();
+	if( m_bShowingSaveIcon && Engine != NULL )
+	{
+		for( INT Index = 0; Index < Engine->OpenMovies.Num(); Index++ )
+		{
+			UDisGFxMoviePlayerBase* Player = Cast<UDisGFxMoviePlayerBase>( Engine->OpenMovies(Index)->pUMovie );
+			if( Player != NULL && Player->m_bLoseFocusWhileSaving )
+			{
+				bNeedsInput = TRUE;
+			}
+		}
+	}
+	AllowFocus( bNeedsInput );
+	AllowInput( bNeedsInput, bNeedsInput );
+}
+
+// DISHONORED(port): 2013 rva 0x7abbd0. The head of the queue is the box that answered, so its id is taken before it
+// is popped. Retail then matches that id against the fourteen boxes UDisGlobalUIManager raises itself - the login
+// change, the controller and storage-device losses, the corrupt and missing saves, the DLC ones - and handles each
+// in place; anything else is a box a movie asked for and is answered with the game event.
+void UDisGFxMoviePlayerGlobal::OnMessageBoxConfirm( INT _SelectedIndex )
+{
+	if( GMessageBoxes.Num() == 0 )
+	{
+		return;
+	}
+	const INT ID = GMessageBoxes(0).m_ID;
+	GMessageBoxes.Remove( 0, 1 );
+	m_bMsgBoxSet = FALSE;
+	debugf( TEXT("DISHONORED(bringup): message box %d answered with button %d"), ID, _SelectedIndex );
+
+	// DISHONORED(bringup): the fourteen ids retail tests first (2013 .data rvas 0x106754c..0x1067590) are
+	// UDisGlobalUIManager's own m_MsgBoxID_LoginChange, m_MsgBoxID_ControllerDisconnected and their siblings.
+	// Nothing in this tree raises one, so every id that arrives here belongs to a movie and takes this arm.
+	FDisMsgBoxResult Params;
+	Params.m_ID = ID;
+	Params.m_SelectedIndex = _SelectedIndex;
+	FArkGameEventDispatcher* Dispatcher = FArkGameEventDispatcher::GetInstance();
+	if( Dispatcher != NULL )
+	{
+		Dispatcher->ProcessEvent( FArkGameEvent( DisGameEventType_MessageBoxResult, &Params, this ) );
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): OnMessageBoxConfirm(%d): no FArkGameEventDispatcher, so ")
+			TEXT("box %d has no listener to answer"), _SelectedIndex, ID );
+	}
+
+	if( GMessageBoxes.Num() > 0 && !m_bMsgBoxSet )
+	{
+		ShowMessageBox( GMessageBoxes(0) );
+	}
+	UpdateMessageBoxAttributes( GMessageBoxes.Num() > 0 );
+}
+
+// DISHONORED(port): 2013 rva 0x5f7300 - the exec of the call the box's own OnClosed makes
+void UDisGFxMoviePlayerGlobal::execOnMessageBoxConfirm( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_INT(_SelectedIndex);
+	P_FINISH;
+	OnMessageBoxConfirm( _SelectedIndex );
+}

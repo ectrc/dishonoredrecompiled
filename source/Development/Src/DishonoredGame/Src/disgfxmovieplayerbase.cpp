@@ -72,6 +72,8 @@ void UDisGFxMoviePlayerBase::execWidgetInitialized_Native( FFrame& Stack, RESULT
 -----------------------------------------------------------------------------*/
 
 #include "gfxui_gfx3.h"
+#include "dishonoredutilities.h"
+#include "arkgameeventdispatcher.h"
 
 // DISHONORED(port): 2012 rva 0x5f5750 exec / 0x7f5ce0 body. Focus is handed to the movie's own AS2 root
 // object, not to a widget: _root.UIBase.OnFocusGained(). Only while the movie is open.
@@ -139,30 +141,7 @@ void UDisGFxMoviePlayerBase::execFormatText( FFrame& Stack, RESULT_DECL )
 	Text.ReleaseManaged();
 }
 
-// The one movie the message box lives in. Retail reaches it through UDisGlobalUIManager's own
-// UDisGFxMoviePlayerGlobal pointer; the bring-up opens that movie under -gfxuimenu (agentDM.md 2.2)
-// and this finds it by the name of its cooked USwfMovie, which is the same movie in both cases.
-static GFxMovieView* DisFindGlobalMovieView()
-{
-	for( TObjectIterator<UGFxMoviePlayer> It; It; ++It )
-	{
-		UGFxMoviePlayer* Player = *It;
-		if( Player->MovieInfo == NULL || Player->MovieInfo->GetName() != TEXT("Global") )
-		{
-			continue;
-		}
-		FGFxMovie* Movie = Player->GetMovie();
-		if( Movie != NULL && Movie->pView.GetPtr() != NULL )
-		{
-			return Movie->pView.GetPtr();
-		}
-	}
-	return NULL;
-}
-
-// DISHONORED(port): 2012 rva 0x808490. The box itself belongs to UDisGlobalUIManager, which owns the one
-// message-box movie every screen shares; what belongs here is the id, because HideMessageBox and
-// AddMessageBoxTimer address the box by it and OnMessageBoxResult matches on it.
+// DISHONORED(port): 2013 rva 0x600b40 (2012 0x647c80) - the exec of the AS2 'ShowMessageBox' call
 void UDisGFxMoviePlayerBase::execShowMessageBox( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_STR(_rMessage);
@@ -170,59 +149,22 @@ void UDisGFxMoviePlayerBase::execShowMessageBox( FFrame& Stack, RESULT_DECL )
 	P_GET_STR(_rButton1);
 	P_GET_STR(_rButton2);
 	P_FINISH;
-
-	FDisMsgBoxInfo Info(EC_EventParm);
-	Info.m_Message = _rMessage;
-	Info.m_Buttons[0] = _rButton0;
-	Info.m_Buttons[1] = _rButton1;
-	Info.m_Buttons[2] = _rButton2;
-	// DISHONORED(port): the body retail reaches through DisGetGlobalUIManager()->ShowMessageBox is
-	// UDisGFxMoviePlayerGlobal::ShowMessageBox, 2013 0x7946b0: four GFxValue strings - the message and
-	// the three button captions, each empty when the array is short - and one
-	// pView->Invoke("ShowMessageBox", ...) on the GLOBAL movie's view, which is the movie that owns
-	// the box's art and its root-level ShowMessageBox function. The id bookkeeping above it is
-	// UDisGlobalUIManager's and that class is not declared in this tree.
-	m_MsgBoxID = 0;
-	GFxMovieView* GlobalView = DisFindGlobalMovieView();
-	if( GlobalView != NULL )
-	{
-		GFxValue Args[4];
-		Args[0].SetStringW( *Info.m_Message );
-		Args[1].SetStringW( *Info.m_Buttons[0] );
-		Args[2].SetStringW( *Info.m_Buttons[1] );
-		Args[3].SetStringW( *Info.m_Buttons[2] );
-		GFxValue Result;
-		GlobalView->Invoke( "ShowMessageBox", &Result, Args, 4 );
-		Result.ReleaseManaged();
-		for( INT Index = 0; Index < 4; Index++ )
-		{
-			Args[Index].ReleaseManaged();
-		}
-		m_MsgBoxID = 1;
-	}
-	else
-	{
-		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ShowMessageBox('%s'): the global movie is not ")
-			TEXT("open, so the box has nowhere to draw"), *Info.m_Message );
-	}
+	ShowMessageBox( _rMessage, _rButton0, _rButton1, _rButton2 );
 }
 
-// DISHONORED(port): 2012 rva 0x7f4310
+// DISHONORED(port): 2013 rva 0x5f6b70
 void UDisGFxMoviePlayerBase::execHideMessageBox( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
-	// DISHONORED(bringup): DisGetGlobalUIManager()->HideMessageBox(m_MsgBoxID) (2012 0x8aef20)
-	m_MsgBoxID = 0;
+	HideMessageBox();
 }
 
-// DISHONORED(port): 2012 rva 0x7f42c0 - a duration of zero means ten seconds, which is retail's own default
+// DISHONORED(port): 2013 rva 0x5f6b10
 void UDisGFxMoviePlayerBase::execAddMessageBoxTimer( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_FLOAT(_fDuration);
 	P_FINISH;
-	const FLOAT Duration = _fDuration == 0.f ? 10.f : _fDuration;
-	// DISHONORED(bringup): DisGetGlobalUIManager()->AddMessageBoxTimer(m_MsgBoxID, Duration) (2012 0x8aef00)
-	(void)Duration;
+	AddMessageBoxTimer( _fDuration );
 }
 
 // DISHONORED(port): 2012 rva 0x7fa1b0 - one string out of UDisGlobalUIManager::m_EquipmentIcons[_ItemIdx]
@@ -235,6 +177,168 @@ void UDisGFxMoviePlayerBase::execReq_EquipmentIconImage( FFrame& Stack, RESULT_D
 	*(FString*)Result = FString();
 }
 
+
+
+/*-----------------------------------------------------------------------------
+	Agent EI (PHASE12 package EI): the asking half of the message box - the id, the timer and the game event that
+	carries the player's answer back into the movie that asked.
+
+	Retail's UDisGFxMoviePlayerBase::ShowMessageBox (2013 0x7a4550) does three things and this does the same three:
+	it asks the global UI for a box, it keeps the id it is given, and it subscribes to
+	DisGameEventType_MessageBoxResult - unregister first, then register, so a movie that raises a second box is
+	still on the list exactly once. BeginDestroy (0x7a45c0) drops the subscription with the object.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x7a4550
+void UDisGFxMoviePlayerBase::ShowMessageBox( const FString& _rMessage, const FString& _rButton0,
+	const FString& _rButton1, const FString& _rButton2 )
+{
+	FDisMsgBoxInfo Info(EC_EventParm);
+	Info.m_Message = _rMessage;
+	Info.m_Buttons[0] = _rButton0;
+	Info.m_Buttons[1] = _rButton1;
+	Info.m_Buttons[2] = _rButton2;
+
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager != NULL )
+	{
+		m_MsgBoxID = UIManager->ShowMessageBox( Info, 0 );
+	}
+	else
+	{
+		// DISHONORED(bringup): no UDisGlobalUIManager is constructed on the -gfxuimenu path, so the manager's own
+		// one-line forwarder is taken here instead. DisGetGlobalMoviePlayer is the seam and the only one.
+		m_MsgBoxID = 0;
+		UDisGFxMoviePlayerGlobal* Global = DisGetGlobalMoviePlayer();
+		if( Global != NULL )
+		{
+			Global->AddMessageBox( Info, m_MsgBoxID, 0 );
+		}
+	}
+
+	FArkGameEventDispatcher* Dispatcher = FArkGameEventDispatcher::GetInstance();
+	if( Dispatcher != NULL )
+	{
+		const INT EventType = DisGameEventType_MessageBoxResult;
+		Dispatcher->UnregisterToEvent( EventType, this, &UDisGFxMoviePlayerBase::OnMessageBoxResult );
+		Dispatcher->RegisterToEvent( EventType, this, &UDisGFxMoviePlayerBase::OnMessageBoxResult );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x787780
+void UDisGFxMoviePlayerBase::HideMessageBox()
+{
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager != NULL )
+	{
+		UIManager->HideMessageBox( m_MsgBoxID );
+	}
+	else
+	{
+		UDisGFxMoviePlayerGlobal* Global = DisGetGlobalMoviePlayer();
+		if( Global != NULL )
+		{
+			Global->RemoveMessageBox( m_MsgBoxID );
+		}
+	}
+	m_MsgBoxID = 0;
+}
+
+// DISHONORED(port): 2013 rva 0x787730 - a duration of zero means ten seconds, which is retail's own default
+void UDisGFxMoviePlayerBase::AddMessageBoxTimer( FLOAT _fDuration )
+{
+	const FLOAT Duration = _fDuration == 0.f ? 10.f : _fDuration;
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager != NULL )
+	{
+		UIManager->AddMessageBoxTimer( m_MsgBoxID, Duration );
+	}
+	else
+	{
+		UDisGFxMoviePlayerGlobal* Global = DisGetGlobalMoviePlayer();
+		if( Global != NULL )
+		{
+			Global->AddMessageBoxTimer( m_MsgBoxID, Duration );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x793c70. The event carries the box's id and the button the player chose. Only the
+// movie whose id it is answers, the id is cleared before the content runs, and the content's own
+// _common.MessageBoxInvoke.OnMessageBoxClosed(<button>) calls back whatever callback InvokeMessageBox stored - for
+// the New Game confirmation that is NewGameMenu.OnNewGameConfirm, which closes the screen and then asks the game
+// for a mission through ExternalInterface 'OnNewGameConfirm'.
+void UDisGFxMoviePlayerBase::OnMessageBoxResult( const FArkGameEvent& _rEvent )
+{
+	const FDisMsgBoxResult* Result = (const FDisMsgBoxResult*)_rEvent.m_pEventParams;
+	if( Result == NULL || Result->m_ID != m_MsgBoxID )
+	{
+		return;
+	}
+	const UBOOL bWasOpen = bMovieIsOpen;
+	m_MsgBoxID = 0;
+	FGFxMovie* Movie = GetMovie();
+	if( !bWasOpen || Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return;
+	}
+	GFxValue Invoke;
+	const UBOOL bFound = Movie->pView->GetVariable( &Invoke, "_root.MessageBoxInvoke" );
+	debugf( TEXT("DISHONORED(bringup): message box %d result (button %d) delivered to %s: _root.MessageBoxInvoke %s"),
+		Result->m_ID, Result->m_SelectedIndex, *GetName(), bFound ? TEXT("found") : TEXT("MISSING") );
+	if( bFound )
+	{
+		GFxValue Selected;
+		Selected.SetNumber( (DOUBLE)Result->m_SelectedIndex );
+		GFxValue Unused;
+		Invoke.Invoke( "OnMessageBoxClosed", &Unused, &Selected, 1 );
+		Unused.ReleaseManaged();
+		Selected.ReleaseManaged();
+	}
+	Invoke.ReleaseManaged();
+}
+
+// DISHONORED(port): 2013 rva 0x7877b0. Gaining focus flushes what the player pressed while it did not have it, so
+// the key that raised the box is not delivered to the box as well.
+void UDisGFxMoviePlayerBase::AllowFocus( UBOOL _bAllow )
+{
+	if( bMovieIsOpen && !bAllowFocus && _bAllow )
+	{
+		FlushPlayerInput( FALSE );
+	}
+	bAllowFocus = _bAllow ? TRUE : FALSE;
+	SetMovieCanReceiveFocus( _bAllow );
+	if( bMovieIsOpen && FGFxEngine::GetEngine() != NULL )
+	{
+		FGFxEngine::GetEngine()->ReevaluateFocus();
+	}
+	// DISHONORED(bringup): retail also tells UIManager->OnMovieAttributesChanged (2013 0x84cf80), which is not
+	// declared in this tree.
+}
+
+// DISHONORED(port): 2013 rva 0x79e820
+void UDisGFxMoviePlayerBase::AllowInput( UBOOL _bAllowInput, UBOOL _bCaptureInput )
+{
+	if( bMovieIsOpen && !bCaptureInput && _bCaptureInput )
+	{
+		FlushPlayerInput( FALSE );
+	}
+	bAllowInput = _bAllowInput ? TRUE : FALSE;
+	bCaptureInput = _bCaptureInput ? TRUE : FALSE;
+	SetMovieCanReceiveInput( _bAllowInput );
+}
+
+// DISHONORED(port): 2013 rva 0x7a45c0 - the subscription must not outlive the object the dispatcher would call
+void UDisGFxMoviePlayerBase::BeginDestroy()
+{
+	Super::BeginDestroy();
+	FArkGameEventDispatcher* Dispatcher = FArkGameEventDispatcher::GetInstance();
+	if( Dispatcher != NULL )
+	{
+		const INT EventType = DisGameEventType_MessageBoxResult;
+		Dispatcher->UnregisterToEvent( EventType, this, &UDisGFxMoviePlayerBase::OnMessageBoxResult );
+	}
+}
 
 // DISHONORED(bringup, agent DC): the -gfxuimenu bring-up switch that opens a cooked menu movie through
 // the real path moved to GFxUI/Src/gfxuiengine.cpp (FGFxEngine's per-frame tick). It started here, as an

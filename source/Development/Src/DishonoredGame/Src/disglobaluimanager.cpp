@@ -28,3 +28,45 @@
 //   0x8cb300  public: unsigned int __thiscall UDisGlobalUIManager::LoadTexturePackageAsync(wchar_t const *)
 //   0x8cc8d0  public: static class UClass * __cdecl UDisGlobalUIManager::GetPrivateStaticClassUDisGlobalUIManager(wchar_t const *)
 //   0x8ceba0  public: static class UClass * __cdecl UDisGlobalUIManager::StaticClassNoInline(void)
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+/*-----------------------------------------------------------------------------
+	Agent EI (PHASE12 package EI): the three message-box entry points of the manager. All three are forwarders to
+	the one global movie player; the queue itself is a file static of disgfxmovieplayerglobal.cpp, which is where
+	retail keeps it too.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x83dc00. Retail passes the priority by value and reuses its own stack slot as the
+// out-id, which is why the body reads `AddMessageBox(Info, Priority, Priority); return Priority;`.
+INT UDisGlobalUIManager::ShowMessageBox( const FDisMsgBoxInfo& _rInfo, UINT _Priority )
+{
+	INT ID = 0;
+	UDisGFxMoviePlayerGlobal* Global = DisGetGlobalMoviePlayer();
+	if( Global != NULL )
+	{
+		Global->AddMessageBox( _rInfo, ID, _Priority );
+	}
+	return ID;
+}
+
+// DISHONORED(port): 2013 rva 0x83dc50
+void UDisGlobalUIManager::HideMessageBox( INT _ID )
+{
+	UDisGFxMoviePlayerGlobal* Global = DisGetGlobalMoviePlayer();
+	if( Global != NULL )
+	{
+		Global->RemoveMessageBox( _ID );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x83dc30
+void UDisGlobalUIManager::AddMessageBoxTimer( INT _ID, FLOAT _fDuration )
+{
+	UDisGFxMoviePlayerGlobal* Global = DisGetGlobalMoviePlayer();
+	if( Global != NULL )
+	{
+		Global->AddMessageBoxTimer( _ID, _fDuration );
+	}
+}

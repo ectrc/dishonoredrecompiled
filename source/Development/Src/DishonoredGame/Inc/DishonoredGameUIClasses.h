@@ -932,6 +932,7 @@ public:
     DECLARE_FUNCTION(execStart);
     DECLARE_FUNCTION(execPreLoad);
     DECLARE_ABSTRACT_CLASS(UDisGFxMoviePlayerBase,UGFxMoviePlayer,0,DishonoredGame)
+#include "CppText/UDisGFxMoviePlayerBase.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerHUD: retail sizeof 1448, reflected span 440..1448 (2012 PDB sizeof 1484)
@@ -1350,6 +1351,7 @@ public:
     DECLARE_FUNCTION(execOnControllerDisconnected);
     DECLARE_FUNCTION(execOnLoginChange);
     DECLARE_CLASS(UDisGFxMoviePlayerGlobal,UDisGFxMoviePlayerBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDisGFxMoviePlayerGlobal.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerHUDFX: retail sizeof 440, reflected span 440..440 (2012 PDB sizeof 424)

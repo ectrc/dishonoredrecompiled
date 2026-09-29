@@ -23,6 +23,25 @@ class UArkPpNode* DisGetArkPpNode( const FName& EffectName );
 class UArkPpNodeMaterial* DisGetArkPpNodeMaterial( const FName& EffectName, UBOOL bMakeUnique );
 class UDisPostProcessManager* DisGetPpManager();
 
+// DISHONORED(bringup): agent EI. Retail reaches the one message-box movie as DisGetGlobalUIManager()->m_pGlobal;
+// the -gfxuimenu bring-up constructs that movie player itself and no UDisGlobalUIManager is ever created, so this
+// answers with the manager's when there is one and with the open UDisGFxMoviePlayerGlobal otherwise.
+class UDisGFxMoviePlayerGlobal* DisGetGlobalMoviePlayer();
+
+// DISHONORED(port): agent EI. The parameter block of DisGameEventType_MessageBoxResult: retail's
+// UDisGFxMoviePlayerGlobal::OnMessageBoxConfirm (2013 0x7abbd0) builds the two words on its own stack as
+// { the box's id, the button the player chose } and UDisGFxMoviePlayerBase::OnMessageBoxResult (0x793c70) reads
+// them straight back out of FArkGameEvent::m_pEventParams. It is native-only, so neither PDB names the struct.
+struct FDisMsgBoxResult
+{
+	INT m_ID;
+	INT m_SelectedIndex;
+};
+
+/** DISHONORED(port): agent EI. The event id OnMessageBoxConfirm raises and every UDisGFxMoviePlayerBase listens for;
+    the literal 31 at 2013 0x7abbd0, 0x7a4550 and 0x7a45c0. */
+enum { DisGameEventType_MessageBoxResult = 31 };
+
 // DISHONORED(written): agent AU (PHASE7 AU). The utilities the pickup collection path calls; 2013 rvas with the bodies.
 class UDisGFxMoviePlayerHUD* DisGetGFxHUD();                                                   // 0x7bf730
 UBOOL DisIsBendTimeOn();                                                                       // 0x7bf2c0
