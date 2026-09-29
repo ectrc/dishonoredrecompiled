@@ -1015,6 +1015,9 @@ void GASGlobalContext::InitStandardLibrary()
 
     // Object and Function first, because every other prototype chains to Object.prototype and every
     // constructor is a Function. Retail's GASGlobalContext does the same ordering.
+    if (GFxAS2MemberWriteDiag > 0)
+        GFxLogf("DISHONORED(bringup): GCBIRTH gc %p strings %p version %u root %p",
+                (void*)this, (void*)&Strings, SC.Version, (void*)pMovieRoot);
     Prototypes[Proto_Object] = new GASObject(&SC, 0);
     Prototypes[Proto_Function] = new GASObject(&SC, Prototypes[Proto_Object]);
     Prototypes[Proto_Array] = new GASObject(&SC, Prototypes[Proto_Object]);

@@ -69,8 +69,10 @@ unsigned int GASStringManager::HashOf(const char* str, unsigned int len)
     return h;
 }
 
+static unsigned int GASStringManagerNextSerial = 1;
+
 GASStringManager::GASStringManager()                                  // 2012 0x9ca580
-    : Table(0), TableSize(0), Count(0)
+    : Table(0), TableSize(0), Count(0), Serial(GASStringManagerNextSerial++)
 {
     TableSize = 1024;
     Table = (GASStringNode**)calloc(TableSize, sizeof(GASStringNode*));

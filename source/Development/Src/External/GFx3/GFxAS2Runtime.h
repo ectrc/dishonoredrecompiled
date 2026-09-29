@@ -33,6 +33,11 @@ extern int GFxAS2OpTraceHi;
 extern char GFxAS2WatchMember[64];
 bool GFxAS2WatchMatches(const char* name);
 extern int  GFxAS2WatchCount;
+// Agent EG: how many more unresolved method calls to report in full, with the receiver's whole
+// resolution chain, and how many more member writes to report with the string manager that interned
+// the name. Both are -gfxuitweendiag; the second is filtered by GFxAS2WatchMatches.
+extern int GFxAS2NotAFunctionDiag;
+extern int GFxAS2MemberWriteDiag;
 
 // Runs a DefineFunction/DefineFunction2 body: binds `this`, the arguments, the preload registers and
 // the local frame, then re-enters GASActionBuffer::Execute at the function's own pc. Retail does this
@@ -171,7 +176,16 @@ enum GASPushType
 };
 
 // GASActionBuffer wraps one DoAction/DoInitAction/DefineFunction body plus the constant pool that
-// ActionConstantPool (0x88) fills. ProcessDeclDict (2012 0x9e4590) is the pool reader.
+// ActionConstantPool (0x88) fills. ProcessDeclDict (2013 0x9dad40) is the pool reader.
+//
+// DISHONORED(port, 2013 0x9d8140 / 0x9da9f0 / 0x9daae0): retail splits this in two. The bytecode is
+// a refcounted GASActionBufferData owned by the tag in the movie's shared GFxMovieDataDef; the
+// constant pool lives in a GASActionBuffer that GASDoAction::Execute builds fresh, out of the
+// executing movie root's own GASStringContext, for every execution. Interned GASStrings belong to
+// one GASStringManager and compare by node pointer, so a pool shared by two movie roots hands the
+// second one names the first one interned and every member lookup out of that buffer misses. This
+// tree keeps the bytecode and the pool in one object, so the pool is kept once PER STRING MANAGER
+// instead, with retail's once-only guard (this+28, -1 until the first ActionConstantPool) per pool.
 class GASActionBuffer
 {
 public:
@@ -184,9 +198,9 @@ public:
     int  GetLength() const { return (int)Length; }
     bool IsNull() const { return Length == 0; }
 
-    void ProcessDeclDict(GASStringContext* sc, unsigned int start, unsigned int end); // 0x9e4590
-    const GASString& GetConstant(unsigned int i) const;
-    unsigned int     GetConstantCount() const { return DictCount; }
+    void ProcessDeclDict(GASStringContext* sc, unsigned int start, unsigned int end); // 0x9dad40
+    const GASString& GetConstant(GASStringContext* sc, unsigned int i) const;
+    unsigned int     GetConstantCount(GASStringContext* sc) const;
 
     // The interpreter. `retval` is written by ActionReturn; `execType` distinguishes a normal
     // buffer from a function body, which is the last parameter of the retail signature
@@ -205,9 +219,22 @@ public:
     static void ResetCounters();
 
 private:
+    // One constant pool per string manager, named by that manager's serial. ProcessedAt is retail's
+    // this+28: the pc of the ActionConstantPool that filled this pool, -1 while it is empty.
+    struct DeclDict
+    {
+        unsigned int Serial;
+        int          ProcessedAt;
+        GASString*   Strings;
+        unsigned int Count;
+    };
+
+    DeclDict* FindDict(GASStringContext* sc) const;
+    DeclDict* OpenDict(GASStringContext* sc);
+
     unsigned char* Bytes;
     unsigned int   Length;
-    GASString*     Dict;
+    DeclDict*      Dicts;
     unsigned int   DictCount;
 };
 

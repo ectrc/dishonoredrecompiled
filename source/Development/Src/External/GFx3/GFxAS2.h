@@ -130,10 +130,18 @@ public:
 
     unsigned int GetNodeCount() const { return Count; }
 
+    // DISHONORED(port, 2013 0x9d8140): interning is per manager, so a GASString made by one manager
+    // never compares equal to the same characters made by another - GASString::operator== is a node
+    // pointer compare, as retail's is. Anything that caches interned strings across movies has to
+    // say which manager made them, and an address cannot: a manager freed with a movie can be
+    // allocated again at the same address. The serial is monotonic for the process.
+    unsigned int GetSerial() const { return Serial; }
+
 private:
     GASStringNode** Table;
     unsigned int    TableSize;
     unsigned int    Count;
+    unsigned int    Serial;
 
     void Rehash();
     GASStringNode* Find(const char* str, unsigned int len, unsigned int hash) const;

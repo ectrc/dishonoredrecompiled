@@ -2530,6 +2530,24 @@ static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
 
 	if( State == -2 )
 	{
+		// DISHONORED(bringup): -gfxuitweendiag=<n> reports the first n unresolved method calls with
+		// the receiver's whole resolution chain, and every write of a tween member with the string
+		// manager that made its name (agent EA's hand-over 3). It is read here rather than in the
+		// draw path because a movie's initialisation actions run before the first drawn frame.
+		INT Diag = 0;
+		if( Parse( appCmdLine(), TEXT("gfxuitweendiag="), Diag ) )
+		{
+			GFxAS2NotAFunctionDiag = Diag;
+		}
+		else if( ParseParam( appCmdLine(), TEXT("gfxuitweendiag") ) )
+		{
+			GFxAS2NotAFunctionDiag = 24;
+		}
+		GFxAS2MemberWriteDiag = GFxAS2NotAFunctionDiag > 0 ? 120 : 0;
+		if( GFxAS2MemberWriteDiag > 0 && GFxAS2WatchMember[0] == 0 )
+		{
+			appStrncpyANSI( GFxAS2WatchMember, "tween*", 64 );
+		}
 		FString Value;
 		if( Parse( appCmdLine(), TEXT("gfxuimenu="), Value ) )
 		{

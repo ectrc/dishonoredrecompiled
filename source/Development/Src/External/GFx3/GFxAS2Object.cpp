@@ -224,6 +224,18 @@ void GASObject::Set__proto__(GASStringContext* sc, GASObject* proto)   // 2012 0
     pProto = proto;
 }
 
+const void* GASObject::DishonoredFindMemberByText(const char* name, unsigned int* outHash) const
+{
+    for (unsigned int i = 0; i < TableSize; ++i)
+        for (MemberNode* n = Table[i]; n; n = n->pNext)
+            if (strcmp(n->Name.ToCStr(), name) == 0)
+            {
+                if (outHash) *outHash = n->Name.GetHash();
+                return (const void*)n->Name.pNode;
+            }
+    return 0;
+}
+
 bool GASObject::GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val)
 {                                                                     // 2012 0x9dc890
     const GASString& protoName = sc->GetBuiltin(GASbuiltin_proto);
@@ -287,6 +299,16 @@ bool GASObject::SetMemberRaw(GASStringContext* sc, const GASString& name, const 
             pResolveHandler = f;
         }
         return true;
+    }
+    // DISHONORED(bringup): which object a member was written to, and which string manager interned
+    // the name it was written under. Two managers writing one object is what made `tween__start`
+    // present by text and absent by identity on MovieClip.prototype (agentEG.md 2).
+    if (GFxAS2MemberWriteDiag > 0 && GFxAS2WatchMatches(name.ToCStr()))
+    {
+        --GFxAS2MemberWriteDiag;
+        GFxLogf("DISHONORED(bringup): MEMBERSET '%s' node %p hash %08x on object %p strings %p",
+                name.ToCStr(), (void*)name.pNode, name.GetHash(), (void*)this,
+                sc ? (void*)sc->pStrings : 0);
     }
     MemberNode* n = FindNode(sc, name);
     if (n)

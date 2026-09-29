@@ -84,12 +84,14 @@ const unsigned char* GFxAS2GetRetailOpcodes()
 // GASActionBuffer
 
 GASActionBuffer::GASActionBuffer()                                    // 2012 0x9e19a0
-    : Bytes(0), Length(0), Dict(0), DictCount(0) {}
+    : Bytes(0), Length(0), Dicts(0), DictCount(0) {}
 
 GASActionBuffer::~GASActionBuffer()
 {
     free(Bytes);
-    delete[] Dict;
+    for (unsigned int i = 0; i < DictCount; ++i)
+        delete[] Dicts[i].Strings;
+    free(Dicts);
 }
 
 void GASActionBuffer::SetBytes(const unsigned char* bytes, unsigned int length)
@@ -104,37 +106,73 @@ void GASActionBuffer::SetBytes(const unsigned char* bytes, unsigned int length)
     }
 }
 
+GASActionBuffer::DeclDict* GASActionBuffer::FindDict(GASStringContext* sc) const
+{
+    const unsigned int serial = (sc != 0 && sc->pStrings != 0) ? sc->pStrings->GetSerial() : 0;
+    for (unsigned int i = 0; i < DictCount; ++i)
+        if (Dicts[i].Serial == serial)
+            return &Dicts[i];
+    return 0;
+}
+
+GASActionBuffer::DeclDict* GASActionBuffer::OpenDict(GASStringContext* sc)
+{
+    DeclDict* d = FindDict(sc);
+    if (d != 0)
+        return d;
+    DeclDict* grown = (DeclDict*)realloc(Dicts, (DictCount + 1) * sizeof(DeclDict));
+    if (grown == 0)
+        return 0;
+    Dicts = grown;
+    d = &Dicts[DictCount++];
+    d->Serial = (sc != 0 && sc->pStrings != 0) ? sc->pStrings->GetSerial() : 0;
+    d->ProcessedAt = -1;
+    d->Strings = 0;
+    d->Count = 0;
+    return d;
+}
+
 void GASActionBuffer::ProcessDeclDict(GASStringContext* sc, unsigned int start, unsigned int end)
-{                                                                     // 2012 0x9e4590
+{                                                                     // 2013 0x9dad40
     // ActionConstantPool's body is u16 count then that many NUL-terminated strings. Every string
     // goes through the interner, which is what makes the later identity comparisons in
-    // GASObject::GetMemberRaw work at all.
+    // GASObject::GetMemberRaw work at all - and the interner is one movie's, which is why the pool
+    // is kept per string manager and never rebuilt once filled (retail's this+28 guard).
     if (start + 3 > Length)
         return;
+    DeclDict* d = OpenDict(sc);
+    if (d == 0 || d->ProcessedAt != -1)
+        return;
+    d->ProcessedAt = (int)start;
     unsigned int pc = start + 3;
     if (pc + 2 > Length)
         return;
     unsigned int count = Bytes[pc] | ((unsigned int)Bytes[pc + 1] << 8);
     pc += 2;
-    delete[] Dict;
-    Dict = count ? new GASString[count] : 0;
-    DictCount = 0;
+    d->Strings = count ? new GASString[count] : 0;
     for (unsigned int i = 0; i < count && pc < end && pc < Length; ++i)
     {
         const char* s = (const char*)(Bytes + pc);
         unsigned int len = 0;
         while (pc + len < Length && Bytes[pc + len] != 0)
             ++len;
-        Dict[i] = sc->CreateString(s, len);
-        ++DictCount;
+        d->Strings[i] = sc->CreateString(s, len);
+        ++d->Count;
         pc += len + 1;
     }
 }
 
-const GASString& GASActionBuffer::GetConstant(unsigned int i) const
+const GASString& GASActionBuffer::GetConstant(GASStringContext* sc, unsigned int i) const
 {
     static const GASString empty;
-    return i < DictCount ? Dict[i] : empty;
+    const DeclDict* d = FindDict(sc);
+    return (d != 0 && i < d->Count) ? d->Strings[i] : empty;
+}
+
+unsigned int GASActionBuffer::GetConstantCount(GASStringContext* sc) const
+{
+    const DeclDict* d = FindDict(sc);
+    return d != 0 ? d->Count : 0;
 }
 
 void GASActionBuffer::Execute(GASEnvironment* env)                     // 2012 0x9f0a60
@@ -587,6 +625,69 @@ static GASFunctionObject* GFxAS2ResolveFunction(const GASValue& v)
     return fn;
 }
 
+// DISHONORED(bringup): -gfxuitweendiag=<n> reports the first n unresolved method calls in full.
+int GFxAS2NotAFunctionDiag = 0;
+int GFxAS2MemberWriteDiag = 0;
+
+static void GFxAS2DiagOneObject(const char* what, GASObject* obj, GASStringContext* sc,
+                                const GASString& name)
+{
+    if (obj == 0)
+    {
+        GFxLogf("DISHONORED(bringup):   %-18s (none)", what);
+        return;
+    }
+    unsigned int textHash = 0;
+    const void* textNode = obj->DishonoredFindMemberByText(name.ToCStr(), &textHash);
+    GFxLogf("DISHONORED(bringup):   %-18s %p members %3u  identity %s  text %s node %p hash %08x",
+            what, (void*)obj, obj->GetMemberCount(),
+            obj->DishonoredHasMemberByIdentity(sc, name) ? "YES" : "no ",
+            textNode ? "YES" : "no ", textNode, textHash);
+}
+
+static void GFxAS2DiagChain(const char* what, GASObject* obj, GASStringContext* sc,
+                            const GASString& name)
+{
+    char label[64];
+    for (int depth = 0; obj != 0 && depth < 8; ++depth, obj = obj->Get__proto__())
+    {
+        _snprintf(label, sizeof(label), "%s+%d", what, depth);
+        label[sizeof(label) - 1] = 0;
+        GFxAS2DiagOneObject(label, obj, sc, name);
+    }
+}
+
+static void GFxAS2DiagNotAFunction(GASEnvironment* env, GASObjectInterface* self,
+                                   const GASString& name)
+{
+    GASStringContext* sc = env->GetSC();
+    GFxASCharacter* ch = self ? self->ToASCharacter() : 0;
+    GFxMovieRoot* root = ch ? ch->GetMovieRoot() : env->GetMovieRoot();
+    GFxMovieDefImpl* def = root ? root->GetMovieDefImpl() : 0;
+    GFxLogf("DISHONORED(bringup): NOTAFN '%s' node %p hash %08x size %u | strings %p | "
+            "version %u caseless %d | root %p def '%s' | env gc %p root %p",
+            name.ToCStr(), (void*)name.pNode, name.GetHash(), name.GetSize(),
+            (void*)sc->pStrings, sc->Version, sc->IsCaseInsensitive() ? 1 : 0,
+            (void*)root, def && def->GetFileURL() ? def->GetFileURL() : "?",
+            (void*)env->GetGC(), (void*)env->GetMovieRoot());
+    if (ch != 0)
+    {
+        GASGlobalContext* gc = ch->GetMovieRoot() ? ch->GetMovieRoot()->GetASContext() : 0;
+        GFxLogf("DISHONORED(bringup):   receiver %p '%s' gc %p strings %p",
+                (void*)ch, ch->GetTargetPath(sc).ToCStr(), (void*)gc,
+                gc ? (void*)gc->GetStringManager() : 0);
+        GFxAS2DiagChain("pASObject", ch->pASObject, sc, name);
+        GFxAS2DiagChain("pProto", ch->pProto, sc, name);
+        if (gc != 0)
+            GFxAS2DiagChain("MovieClip.proto", gc->GetPrototype(GASGlobalContext::Proto_MovieClip),
+                            sc, name);
+    }
+    else if (self != 0 && self->ToASObject() != 0)
+    {
+        GFxAS2DiagChain("object", self->ToASObject(), sc, name);
+    }
+}
+
 static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
                                     GASObjectInterface* self, int nargs, GASValue* result,
                                     const GASString& name)
@@ -609,6 +710,11 @@ static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
                             recvChar != 0 ? recvChar->GetCharacterTypeName()
                                           : (self != 0 ? "an object" : "undefined"),
                             recvChar != 0 ? path.ToCStr() : "");
+        if (GFxAS2NotAFunctionDiag > 0)
+        {
+            --GFxAS2NotAFunctionDiag;
+            GFxAS2DiagNotAFunction(env, self, name);
+        }
         result->SetUndefined();
         return;
     }
@@ -1414,11 +1520,11 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
                     break;
                 }
                 case GASpush_Constant8:
-                    v.SetString(GetConstant(Bytes[p]));
+                    v.SetString(GetConstant(sc, Bytes[p]));
                     p += 1;
                     break;
                 case GASpush_Constant16:
-                    v.SetString(GetConstant(GFxAS2ReadU16(Bytes + p)));
+                    v.SetString(GetConstant(sc, GFxAS2ReadU16(Bytes + p)));
                     p += 2;
                     break;
                 default:

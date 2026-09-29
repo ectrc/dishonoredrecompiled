@@ -235,10 +235,10 @@ public:
 
     // `rect` is in twips and is the *text* rect; the view rect is it inset by 40 twips a side.
     void SetViewRect(const GRect<float>& rect);                      // 0xa9a1e0
-    // DISHONORED(port): 0xa9f2c0 formats the document when the view is dirty before it answers,
-    // exactly as GetTextWidth and GetTextHeight do, so an auto-sized field reports its grown rect
-    // on the first read after the flag is set.
-    GRect<float>& GetViewRect();                                     // 0xa9f2c0
+    // DISHONORED(port): 2013 0xa95270 formats the document when the view is dirty before it
+    // answers, exactly as GetTextWidth and GetTextHeight do, so an auto-sized field reports its
+    // grown rect on the first read after the flag is set. (Was cited as 2012 0xa9f2c0.)
+    GRect<float>& GetViewRect();                                     // 0xa95270
     const GRect<float>& GetTextRect() const { return TextRect; }
 
     void SetWordWrap()   { Flags |= VF_WordWrap;  Flags |= VF_NeedsFormat; }   // 0xa98f40

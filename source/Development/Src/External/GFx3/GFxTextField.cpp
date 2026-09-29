@@ -36,7 +36,8 @@ GFxTextFieldDesc::GFxTextFieldDesc()
       MaxLength(0), LeftMarginTwips(0.0f), RightMarginTwips(0.0f), IndentTwips(0.0f),
       LeadingTwips(0.0f), Flags(0), Align(0)
 {
-    // DISHONORED(port): 0xa27200
+    // DISHONORED(port): 2013 0xa1d900, GFxEditTextCharacterDef's constructor. (Was cited as
+    // 2012 0xa27200, which is not a function start in retail.)
     VariableName[0] = 0;
     InitialText[0] = 0;
     FontName[0] = 0;

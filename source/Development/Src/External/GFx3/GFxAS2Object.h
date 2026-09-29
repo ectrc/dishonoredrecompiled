@@ -149,6 +149,14 @@ public:
     unsigned int GetMemberCount() const { return MemberCount; }
     void         ReleaseAllMembers();
 
+    // DISHONORED(bringup): the member store read two ways, which is the whole of agent EA's
+    // hand-over 3. FindNode is an interned-pointer compare; this asks the same question by text, so
+    // a name that is present under a second node for the same characters says so instead of
+    // reading as absent.
+    bool DishonoredHasMemberByIdentity(GASStringContext* sc, const GASString& name) const
+        { return FindNode(sc, name) != 0; }
+    const void* DishonoredFindMemberByText(const char* name, unsigned int* outHash) const;
+
     // Called on every object of a movie before any of them is deleted. Without it the second pass of
     // GASObjectCollector::FreeAll walks into a freed sibling through pProto, because an AS2 class and
     // its prototype point at each other.
