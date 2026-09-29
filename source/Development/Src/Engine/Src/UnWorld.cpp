@@ -2855,7 +2855,12 @@ void UWorld::SetGameInfo(const FURL& InURL)
 	}
 
 	debugf( NAME_Log, TEXT("Game class is '%s'"), *GameClass->GetName() );
-	Info->Game = (AGameInfo*)SpawnActor( GameClass );
+	// DISHONORED(port): 2013 rva 0x38bfa0 tail. Retail passes the game class's own FName as the actor name
+	// (UObject::Name @40 read as two DWORDs into SpawnActor's InName), so the game info actor is called
+	// DishonoredGameInfo and not DishonoredGameInfo_0 - which is the name every real save's object
+	// dictionary records for it, and for the twelve global managers' outer. AGameInfo::SpawnPlayerController
+	// (0x2d13a0) does the same thing for the player controller.
+	Info->Game = (AGameInfo*)SpawnActor( GameClass, GameClass->GetFName() );
 	check(Info->Game!=NULL);
 }
 

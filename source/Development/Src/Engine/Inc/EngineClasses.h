@@ -19588,6 +19588,17 @@ struct FArkPpConfig
     struct FArkPpBloomParameters m_PpBloomParameters;
 };
 
+// DISHONORED(port): 2013 rvas 0x7e7fe0 / 0x7e8060 / 0x7e8170 / 0x7e8220. Retail defines these four inline in
+// engineclasses.h (2012 PDB engineclasses.h:9433/9513/9633/9731); here they are declared and defined in
+// UnPlayer.cpp, which already holds this tree's other FArkUberPpParameters helpers, because an inline
+// definition in a header this widely included costs the Engine link (see STATUS.md "Known pitfalls").
+// Each writes one packed byte of its override bits, then its floats. UDisPostProcessManager::GameLoad is
+// what reaches them, through m_KismetPPParams.
+FArchive& operator<<( FArchive& Ar, struct FArkPpDofParameters& P );
+FArchive& operator<<( FArchive& Ar, struct FArkPpColorBalanceParameters& P );
+FArchive& operator<<( FArchive& Ar, struct FArkPpHdrParameters& P );
+FArchive& operator<<( FArchive& Ar, struct FArkUberPpParameters& P );
+
 // DISHONORED(layout): 2012 PDB ULocalPlayer (612 bytes) has the single base UPlayer (ControllerId @92): no FObserverInterface
 // vptr (UWorld::Observers is gone too). AddObserver/RemoveObserver are kept as no-ops for UnPlayer.cpp.
 class ULocalPlayer : public UPlayer

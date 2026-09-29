@@ -1792,6 +1792,15 @@ void UObjectProperty::InstanceValue( BYTE* DestAddress, BYTE* SrcAddress, UObjec
 					NewObjName = MakeUniqueObjectName(DestOwnerObject, Cls, NewObjName);
 				}
 			}
+			// DISHONORED(port): 2013 rva 0x95bb0 (2012 0x92ac0). Instancing a subobject template onto a live
+			// object keeps the template's name unless the source already belongs to this owner, which is what
+			// makes DishonoredGameInfo.pGlobalUIManager and the other eleven global managers the same name in
+			// every session - and so the names a real save's object dictionary records for them. The
+			// reference branch left NAME_None here, which named them DisGlobalUIManager_0 instead.
+			else if ( SrcObject->GetOuter() != DestOwnerObject )
+			{
+				NewObjName = SrcObject->GetFName();
+			}
 
 			CurrentValue = *((UObject**)DestAddress) = StaticConstructObject( Cls, DestOwnerObject, NewObjName, NewObjFlags, SrcObject, GError, SubobjectRoot, InstanceGraph ); 
 

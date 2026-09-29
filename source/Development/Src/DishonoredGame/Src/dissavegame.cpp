@@ -755,8 +755,16 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 		}
 	}
 
-	// DISHONORED(bringup): retail then force-loads the inventory class's seek-free package when the save is
-	// a file state, so that the pickups the dictionary is about to name resolve. It reads no stream bytes.
+	// DISHONORED(port): 2013 rva 0x613070. Retail force-loads the player-item seek-free package when the
+	// state is a file state, so that the pickups the dictionary is about to name resolve. It reads no stream
+	// bytes. bLoadedSeekfree then forces a collection at the end of the restore.
+	UBOOL bLoadedSeekfree = FALSE;
+	if( GUseSeekFreeLoading && _Location == SLL_FILE )
+	{
+		UDishonoredInventory* pInventoryDefaults = UDishonoredInventory::StaticClass()->GetDefaultObject<UDishonoredInventory>();
+		UObject::LoadPackage( NULL, *pInventoryDefaults->m_PlayerItem_SF_Package, LOAD_None );
+		bLoadedSeekfree = TRUE;
+	}
 
 	m_Objects.Empty( _NumObjects );
 	m_RecordClasses.Empty( _NumObjects );
@@ -886,10 +894,34 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 				else if( pClass != NULL && pOuter->GetOutermost() != UObject::GetTransientPackage()
 					&& !pOuter->IsInA( UWorld::StaticClass() ) )
 				{
-					// DISHONORED(bringup): retail loads the owning package (its _SF variant under seek-free
-					// loading) and looks again. This build already has the cooked packages of the map it
-					// opened resident, so the lookup above is the one that matters; a miss is counted.
-					GSaveLoadCensus.m_NotFound++;
+					// DISHONORED(port): 2013 rva 0x613070. The object lives in a content package this session
+					// has not opened, and retail loads it before giving up. Under seek-free loading that means
+					// the package's _SF variant; the retry then either finds the object or, for a tweaks class
+					// whose package really is absent and when no actors are being spawned, marks the record
+					// INVALID_OBJECT so that operator<< can tell "absent" from "not looked for".
+					if( GUseSeekFreeLoading )
+					{
+						const FString SeekFreePackage = pOuter->GetOutermost()->GetName() + TEXT("_SF");
+						if( UObject::LoadPackage( NULL, *SeekFreePackage, LOAD_SeekFree ) != NULL
+							|| bSpawnActors
+							|| !pClass->IsChildOf( UDisTweaksBase::StaticClass() ) )
+						{
+							pObject = UObject::StaticFindObjectFast( pClass, pOuter, ObjectName );
+							bLoadedSeekfree = TRUE;
+						}
+						else
+						{
+							pObject = INVALID_OBJECT;
+						}
+					}
+					else
+					{
+						pObject = UObject::StaticLoadObject( pClass, pOuter, *ObjectName.ToString(), NULL, LOAD_None, NULL );
+					}
+					if( pObject == NULL )
+					{
+						GSaveLoadCensus.m_NotFound++;
+					}
 				}
 				else
 				{
@@ -943,6 +975,13 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 		{
 			InitializeSequencePostLoad( pGameSequence );
 		}
+	}
+
+	// DISHONORED(port): 2013 rva 0x613070 tail. Everything the dictionary pulled in on demand is a candidate
+	// for collection the moment the restore is over.
+	if( bLoadedSeekfree && GWorld != NULL && GWorld->GetWorldInfo() != NULL )
+	{
+		GWorld->GetWorldInfo()->ForceGarbageCollection( TRUE );
 	}
 }
 
@@ -1894,3 +1933,402 @@ void ADishonoredPlayerPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Lo
 // 0x6b8770) are NOT ported and NOT declared. The writing half of the object layer does not exist in this
 // tree, so nothing would call them, and a half-written pair is worse than none: it would look like the
 // format and not be it.
+
+/*-----------------------------------------------------------------------------
+	DISHONORED: agent EB (PHASE11 EB) - the eight override bodies between the head of a real save's object
+	stream and the player pawn.
+
+	Agent ED left the frontier measured: with the three object trees now constructed (the game info actor's
+	name in UWorld::SetGameInfo, and instanced sub-object and component names in UObjectProperty::InstanceValue
+	and FObjectInstancingGraph::GetInstancedComponent), every record of Dishonored0.sav's persistent level up
+	to record 162 resolves, and what remains is the GameLoad bodies themselves.
+
+	Placement: retail has each of these in its own .cpp (dishonoredgameinfo.cpp, dishonoredspawner.cpp,
+	disnpctravelmanager.cpp, disglobaluimanager.cpp, disgfxmovieplayerhud.cpp,
+	disgfxmovieplayerpowerwheel.cpp, dispostprocessmanager.cpp, dishonoredplayercontroller.cpp). They are here
+	instead, next to agent ED's UDishonoredPowersComponent::GameLoad and for the same reason: those eight files
+	are still import_reference.py stubs with no includes and no bodies, and one save-layer file that can be
+	read end to end is worth more during bring-up than eight one-function files. Every body names its own
+	retail address and retail source file.
+
+	Three places where retail 2013 is NOT what the 2012 build does, and retail is what is ported:
+	  * ADishonoredGameInfo::GameLoad has no difficulty byte in retail (2012 read one and dispatched an
+	    ArkGameEvent when it changed);
+	  * ADishonoredPlayerController::GameLoad reads TWO FNames in retail, m_PlayerTravelLocationName and
+	    m_PlayerTravelOriginLevelName (2012 read only the first);
+	  * FDisTutorialInfo grew from 40 to 64 bytes: retail's three locexpression strings replace 2012's one
+	    message string.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x5fa3f0 (2012 0x640020), dishonoredgameinfo.cpp:1584. AActor::GameLoad, the
+// faction manager, and then - only for a file state - the live bend-time channels, the travel manager, the
+// NPC id counter, the mission number, the chapter tag, the two chapter targets, three more managers and one
+// flag. The channel loop is what retail replays through BendTime; m_bExclusive is FBendTimeChannelInfo's
+// offset-52 bit 0.
+void ADishonoredGameInfo::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( _rArchive, _Location );
+	_rArchive << *(UObject**)&m_pGlobalFactionManager;
+	if( _Location != SLL_FILE )
+	{
+		return;
+	}
+
+	INT NumChannelsToLoad = 0;
+	_rArchive.ByteOrderSerialize( &NumChannelsToLoad, sizeof(NumChannelsToLoad) );
+	for( INT ChannelCount = 0; ChannelCount < NumChannelsToLoad; ChannelCount++ )
+	{
+		INT ChannelIdx = 0;
+		FLOAT fTargetWorldTimeDilation = 0.f;
+		FLOAT fTargetPlayerTimeDilation = 0.f;
+		FLOAT fTargetPlayerTimeDilation_Input = 0.f;
+		BYTE EffectType = 0;
+		BYTE bExclusive = 0;
+		_rArchive.ByteOrderSerialize( &ChannelIdx, sizeof(ChannelIdx) );
+		_rArchive.ByteOrderSerialize( &fTargetWorldTimeDilation, sizeof(fTargetWorldTimeDilation) );
+		_rArchive.ByteOrderSerialize( &fTargetPlayerTimeDilation, sizeof(fTargetPlayerTimeDilation) );
+		_rArchive.ByteOrderSerialize( &fTargetPlayerTimeDilation_Input, sizeof(fTargetPlayerTimeDilation_Input) );
+		_rArchive.Serialize( &EffectType, sizeof(EffectType) );
+		_rArchive.Serialize( &bExclusive, sizeof(bExclusive) );
+		// DISHONORED(bringup): retail calls ADishonoredGameInfo::BendTime( ChannelIdx, fTargetWorldTimeDilation,
+		// fTargetPlayerTimeDilation, fTargetPlayerTimeDilation_Input, 0.f, EffectType ) here (2013 rva
+		// 0x5fa0d0). This tree has no BendTime, so the saved channel is read but not resumed; the stream stays
+		// in step either way, which is what the object layer needs.
+		if( bExclusive && ChannelIdx >= 0 && ChannelIdx < ARRAY_COUNT(m_BendTimeInfo) )
+		{
+			m_BendTimeInfo[ChannelIdx].m_bExclusive = 1;
+		}
+	}
+
+	_rArchive << *(UObject**)&m_pNPCTravelManager;
+	_rArchive.ByteOrderSerialize( &m_NextNPCID, sizeof(m_NextNPCID) );
+	_rArchive.ByteOrderSerialize( &m_CurrentMissionNum, sizeof(m_CurrentMissionNum) );
+	_rArchive << m_CurrentChapterTag;
+	for( INT TargetIdx = 0; TargetIdx < ARRAY_COUNT(m_CurrentChapterTargets); TargetIdx++ )
+	{
+		_rArchive << m_CurrentChapterTargets[TargetIdx].m_PortraitPath;
+		_rArchive.Serialize( &m_CurrentChapterTargets[TargetIdx].m_State, sizeof(BYTE) );
+	}
+	_rArchive << *(UObject**)&m_pGlobalAIManager;
+	_rArchive << *(UObject**)&m_pGlobalUIManager;
+	_rArchive << *(UObject**)&m_pPpManager;
+
+	BYTE bIsInPlaytestMode = 0;
+	_rArchive.Serialize( &bIsInPlaytestMode, sizeof(bIsInPlaytestMode) );
+	m_bIsInPlaytestMode = bIsInPlaytestMode ? 1 : 0;
+}
+
+// DISHONORED(port): 2013 rva 0x65ec30 (2012 0x6a1350), dishonoredspawner.cpp:1444. The spawned pawns, the
+// pending-spawn ring and the retry state. Retail re-reads every pending spawn into the SAME slot -
+// m_PendingSpawns[m_FirstPendingSpawn] - because the loop body never advances the pointer; that is retail's
+// behaviour and the byte count depends on it, so it is kept.
+void ADishonoredSpawner::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	// DISHONORED(bringup): retail unregisters from ArkGameEvent 3 here and re-registers at the end when
+	// pending spawns remain. ADishonoredSpawner::OnOtherActorTerminatedEvent does not exist in this tree, so
+	// neither call is made. Neither touches the stream.
+	AActor::GameLoad( _rArchive, _Location );
+	_rArchive << m_SpawnedPawns;
+	if( m_SpawnedPawns.Num() > 0 && m_pStealablePickup != NULL )
+	{
+		// DISHONORED(bringup): retail sets bit 0x10000000 of the pickup's AActor flag word at offset 292 here.
+		// It reads no stream bytes.
+	}
+	_rArchive.ByteOrderSerialize( &m_FirstPendingSpawn, sizeof(m_FirstPendingSpawn) );
+	_rArchive.ByteOrderSerialize( &m_NumPendingSpawns, sizeof(m_NumPendingSpawns) );
+	if( m_NumPendingSpawns > 0 )
+	{
+		// retail indexes m_PendingSpawns[m_FirstPendingSpawn] unchecked; the index is clamped rather than the
+		// loop skipped, because skipping would consume none of these bytes and desynchronise the stream
+		const INT SpawnSlot = Clamp<INT>( m_FirstPendingSpawn, 0, ARRAY_COUNT(m_PendingSpawns) - 1 );
+		UScriptStruct* pStruct = _DishonoredGetScriptStruct<FDisSpawnInfo>( TEXT("DisSpawnInfo") );
+		for( INT SpawnIdx = 0; SpawnIdx < m_NumPendingSpawns; SpawnIdx++ )
+		{
+			pStruct->SerializeBin( _rArchive, (BYTE*)&m_PendingSpawns[SpawnSlot], 0 );
+		}
+	}
+	_rArchive.ByteOrderSerialize( &m_NumRetryAttempts, sizeof(m_NumRetryAttempts) );
+	_rArchive.ByteOrderSerialize( &m_fRetryTimer, sizeof(m_fRetryTimer) );
+	_rArchive.ByteOrderSerialize( &m_fTimeSinceLastSpawn, sizeof(m_fTimeSinceLastSpawn) );
+}
+
+// DISHONORED(port): the element half of 2013 rva 0x6d3260 (2012 0x7019d0), the
+// TArray<FDisMaterialIndexReplacement> serializer that FDisNPCTravelInfo's two appearance overrides go
+// through. Retail generates this into dishonoredgameanimclasses.h; this tree's struct lives in
+// dishonoredgameclasses.h, which the generator does not give a CppText hook, so it is here next to its one
+// caller.
+FArchive& operator<<( FArchive& _rArchive, FDisMaterialIndexReplacement& _rReplacement )
+{
+	_rArchive.ByteOrderSerialize( &_rReplacement.m_MaterialIndex, sizeof(_rReplacement.m_MaterialIndex) );
+	_rArchive.ByteOrderSerialize( &_rReplacement.m_VariationIndex, sizeof(_rReplacement.m_VariationIndex) );
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x6df9f0 (2012 0x71b700), disnpctravelmanager.cpp:1804. One travelling NPC's
+// whole restored identity: where it came from, what it looks like, its health, its relationships, and where
+// it is going. m_bReturningHome and m_bAwaitingArrival are the two bits of the offset-228 word.
+void DisNPCTravelInfoGameLoad( FArchive& _rArchive, FDisNPCTravelInfo& _rInfo )
+{
+	UScriptStruct* pPairStruct = _DishonoredGetScriptStruct<FDisRelationshipPair>( TEXT("DisRelationshipPair") );
+
+	_rArchive.ByteOrderSerialize( &_rInfo.m_TripID, sizeof(_rInfo.m_TripID) );
+	_rArchive << _rInfo.m_HomeLevelName;
+	_rArchive << _rInfo.m_NPCPawnTweaksName;
+	_rArchive << _rInfo.m_MeshMaterialVariations.m_MaterialIndexReplacements;
+	_rArchive.ByteOrderSerialize( &_rInfo.m_HeadMeshIndex, sizeof(_rInfo.m_HeadMeshIndex) );
+	_rArchive << _rInfo.m_HeadMeshMaterialVariations.m_MaterialIndexReplacements;
+	for( INT AccessoryIdx = 0; AccessoryIdx < ARRAY_COUNT(_rInfo.m_AccessoryIndexes); AccessoryIdx++ )
+	{
+		_rArchive.ByteOrderSerialize( &_rInfo.m_AccessoryIndexes[AccessoryIdx], sizeof(INT) );
+	}
+	_rArchive.ByteOrderSerialize( &_rInfo.m_Health, sizeof(_rInfo.m_Health) );
+	_rArchive.ByteOrderSerialize( &_rInfo.m_MinScriptedHealth, sizeof(_rInfo.m_MinScriptedHealth) );
+	pPairStruct->SerializeBin( _rArchive, (BYTE*)&_rInfo.m_PlayerRelationship, 0 );
+
+	INT NumNPCRelationships = 0;
+	_rArchive.ByteOrderSerialize( &NumNPCRelationships, sizeof(NumNPCRelationships) );
+	_rInfo.m_NPCRelationships.Empty( NumNPCRelationships );
+	for( INT RelIdx = 0; RelIdx < NumNPCRelationships; RelIdx++ )
+	{
+		INT NPCID = 0;
+		_rArchive.ByteOrderSerialize( &NPCID, sizeof(NPCID) );
+		FDisRelationshipPair& rPair = _rInfo.m_NPCRelationships.Set( NPCID, FDisRelationshipPair(EC_EventParm) );
+		rPair.m_RelationshipTo = 3;
+		rPair.m_RelationshipFrom = 3;
+		pPairStruct->SerializeBin( _rArchive, (BYTE*)&rPair, 0 );
+	}
+
+	INT NumFactionRelationships = 0;
+	_rArchive.ByteOrderSerialize( &NumFactionRelationships, sizeof(NumFactionRelationships) );
+	_rInfo.m_FactionRelationships.Empty( NumFactionRelationships );
+	for( INT FactionIdx = 0; FactionIdx < NumFactionRelationships; FactionIdx++ )
+	{
+		FName FactionName = NAME_None;
+		_rArchive << FactionName;
+		FDisRelationshipPair& rPair = _rInfo.m_FactionRelationships.Set( FactionName, FDisRelationshipPair(EC_EventParm) );
+		rPair.m_RelationshipTo = 3;
+		rPair.m_RelationshipFrom = 3;
+		pPairStruct->SerializeBin( _rArchive, (BYTE*)&rPair, 0 );
+	}
+
+	_rArchive << _rInfo.m_VisitingLevelName;
+	BYTE Bits = 0;
+	_rArchive.Serialize( &Bits, sizeof(Bits) );
+	_rInfo.m_bReturningHome	 = ( Bits & 1 ) ? 1 : 0;
+	_rInfo.m_bAwaitingArrival = ( Bits & 2 ) ? 1 : 0;
+	_rArchive << *(UObject**)&_rInfo.m_pSpawner;
+	_rArchive.ByteOrderSerialize( &_rInfo.m_fTimeToSpawn, sizeof(_rInfo.m_fTimeToSpawn) );
+	_rArchive << *(UObject**)&_rInfo.m_pNPCPawn;
+}
+
+// DISHONORED(port): 2013 rva 0x6e28a0 (2012 0x720c20), disnpctravelmanager.cpp:705. The level the manager is
+// on, the arrival spawners keyed by level name, and one FDisNPCTravelInfo per travelling NPC keyed by its id.
+void UDisNPCTravelManager::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << *(UObject**)&m_pCurrentLevel;
+	_rArchive << m_CurrentLevelName;
+
+	INT ArrivalSpawnerCount = 0;
+	_rArchive.ByteOrderSerialize( &ArrivalSpawnerCount, sizeof(ArrivalSpawnerCount) );
+	m_ArrivalSpawners.Empty( ArrivalSpawnerCount );
+	for( INT SpawnerIdx = 0; SpawnerIdx < ArrivalSpawnerCount; SpawnerIdx++ )
+	{
+		FName LevelName = NAME_None;
+		_rArchive << LevelName;
+		TArray<ADisTravelSpawner*>& rSpawners = m_ArrivalSpawners.Set( LevelName, TArray<ADisTravelSpawner*>() );
+		_rArchive << rSpawners;
+	}
+
+	INT TravelingNPCCount = 0;
+	_rArchive.ByteOrderSerialize( &TravelingNPCCount, sizeof(TravelingNPCCount) );
+	m_TravelingNPCs.Empty( TravelingNPCCount );
+	for( INT TravelIdx = 0; TravelIdx < TravelingNPCCount; TravelIdx++ )
+	{
+		INT NPCID = 0;
+		_rArchive.ByteOrderSerialize( &NPCID, sizeof(NPCID) );
+		FDisNPCTravelInfo& rInfo = m_TravelingNPCs.Set( NPCID, FDisNPCTravelInfo(EC_EventParm) );
+		DisNPCTravelInfoGameLoad( _rArchive, rInfo );
+	}
+
+	_rArchive.ByteOrderSerialize( &m_NextTripID, sizeof(m_NextTripID) );
+}
+
+// DISHONORED(port): 2013 rva 0x856f70 (2012 0x8c4830), disglobaluimanager.cpp:142. Two movie players, the
+// upgrades whose notification has already been shown, and m_bFirstVisitToStore (the offset-772 word's bit 1).
+void UDisGlobalUIManager::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << *(UObject**)&m_pHUD;
+	_rArchive << *(UObject**)&m_pPowerWheel;
+	_rArchive << m_UpgradesAlreadyDisplayed;
+	BYTE bFirstVisitToStore = 0;
+	_rArchive.Serialize( &bFirstVisitToStore, sizeof(bFirstVisitToStore) );
+	m_bFirstVisitToStore = bFirstVisitToStore ? 1 : 0;
+}
+
+// DISHONORED(port): 2013 rva 0x7a5740 (2012 0x809140), disgfxmovieplayerhud.cpp:631. One tutorial on the
+// HUD's stack. The four display bits travel as one packed byte; the note parameters are created from the note
+// type on load and then serialise themselves.
+FArchive& operator<<( FArchive& _rArchive, FDisTutorialInfo& _rInfo )
+{
+	_rArchive.ByteOrderSerialize( &_rInfo.m_ID, sizeof(_rInfo.m_ID) );
+	_rArchive.Serialize( &_rInfo.m_Type, sizeof(_rInfo.m_Type) );
+	_rArchive.ByteOrderSerialize( &_rInfo.m_fTimeLeft, sizeof(_rInfo.m_fTimeLeft) );
+
+	BYTE Bits = (BYTE)( ( _rInfo.m_bShowInWindow ? 1 : 0 )
+					  | ( _rInfo.m_bShowOnce ? 2 : 0 )
+					  | ( _rInfo.m_bForceDisplay ? 4 : 0 )
+					  | ( _rInfo.m_bGamepad ? 8 : 0 ) );
+	_rArchive.Serialize( &Bits, sizeof(Bits) );
+	if( !_rArchive.IsSaving() )
+	{
+		_rInfo.m_bShowInWindow	= ( Bits & 1 ) ? 1 : 0;
+		_rInfo.m_bShowOnce		= ( Bits & 2 ) ? 1 : 0;
+		_rInfo.m_bForceDisplay	= ( Bits & 4 ) ? 1 : 0;
+		_rInfo.m_bGamepad		= ( Bits & 8 ) ? 1 : 0;
+	}
+
+	_rArchive << _rInfo.m_MessageLocFile;
+	_rArchive << _rInfo.m_MessageLocSection;
+	_rArchive << _rInfo.m_MessageLocKey;
+	_rArchive.Serialize( &_rInfo.m_NoteType, sizeof(_rInfo.m_NoteType) );
+
+	// DISHONORED(bringup): retail calls FDisNoteParams::CreateNoteParams( m_NoteType ) (2012 rva 0x805080)
+	// and then the created object's virtual Serialize. That factory makes an FDisGenericNoteParams for note
+	// type 1, whose Serialize is two FStrings (2012 0x66fb50), an FDisMapParams for types 2 and 3, whose
+	// Serialize is one BYTE (2012 0x669a20), and nothing at all otherwise. Neither struct exists in this
+	// tree, so the bytes are read in place here and m_pNoteParams is left NULL - the stream stays exact and
+	// the note is simply not reconstructible yet.
+	if( _rInfo.m_NoteType == 1 )
+	{
+		FString NoteTitle;
+		FString NoteText;
+		_rArchive << NoteTitle;
+		_rArchive << NoteText;
+	}
+	else if( _rInfo.m_NoteType == 2 || _rInfo.m_NoteType == 3 )
+	{
+		BYTE Map = 0;
+		_rArchive.Serialize( &Map, sizeof(Map) );
+	}
+
+	_rArchive.Serialize( &_rInfo.m_JournalTab, sizeof(_rInfo.m_JournalTab) );
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x7ac2e0 (2012 0x80c0f0), disgfxmovieplayerhud.cpp:933. Two packed bit pairs
+// around the tutorial stack: m_bHasNewBoneCharm and m_bSystemicTutorialsEnabled first (offset-508 bits 7 and
+// 10), then the two adrenaline-kill tutorial flags (bits 12 and 13).
+void UDisGFxMoviePlayerHUD::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	INT TutorialStackSize = 0;
+	BYTE Bits = 0;
+	_rArchive.Serialize( &Bits, sizeof(Bits) );
+	m_bHasNewBoneCharm			= ( Bits & 1 ) ? 1 : 0;
+	m_bSystemicTutorialsEnabled	= ( Bits & 2 ) ? 1 : 0;
+
+	_rArchive.ByteOrderSerialize( &TutorialStackSize, sizeof(TutorialStackSize) );
+	_rArchive.ByteOrderSerialize( &m_NextTutorialID, sizeof(m_NextTutorialID) );
+	_rArchive.ByteOrderSerialize( &m_NumRunesPickedUp, sizeof(m_NumRunesPickedUp) );
+
+	BYTE AdrenalineBits = 0;
+	_rArchive.Serialize( &AdrenalineBits, sizeof(AdrenalineBits) );
+	m_bAdrenalineKill1TutoDisplayed = ( AdrenalineBits & 1 ) ? 1 : 0;
+	m_bAdrenalineKill2TutoDisplayed = ( AdrenalineBits & 2 ) ? 1 : 0;
+
+	m_TutorialStack.Reset( 0 );
+	for( INT TutorialIdx = 0; TutorialIdx < TutorialStackSize; TutorialIdx++ )
+	{
+		m_TutorialStack.AddItem( FDisTutorialInfo(EC_EventParm) );
+		_rArchive << m_TutorialStack(TutorialIdx);
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7b9e50 (2012 0x822c10), disgfxmovieplayerpowerwheel.cpp:479. The four gamepad
+// shortcut slots, the ten keyboard ones, and the assignment flags.
+void UDisGFxMoviePlayerPowerWheel::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	for( INT PadIdx = 0; PadIdx < ARRAY_COUNT(m_GamepadShortcuts); PadIdx++ )
+	{
+		_rArchive.Serialize( &m_GamepadShortcuts[PadIdx], sizeof(BYTE) );
+	}
+	for( INT KeyIdx = 0; KeyIdx < ARRAY_COUNT(m_KeyboardShortcuts); KeyIdx++ )
+	{
+		_rArchive.Serialize( &m_KeyboardShortcuts[KeyIdx], sizeof(BYTE) );
+	}
+	_rArchive.ByteOrderSerialize( &m_ShortcutPlayerAssignFlags, sizeof(m_ShortcutPlayerAssignFlags) );
+}
+
+// DISHONORED(port): 2013 rva 0x7eb2c0, dispostprocessmanager.cpp:1097 (2012 0x84c5a0; the diff tool has no
+// match for this pair, so the retail address was resolved by hand - it is the 444-byte function two past
+// UDisPostProcessManager::TickPossession at 0x7eae00, and its offsets 360/444/465/468..544/548 are exactly
+// m_RequiredEffects, m_EffectStates, m_PCAntialiasingType, the thirteen colour floats, the seven timers and
+// m_KismetPPParams in retail_sdk_layout.json). Twenty of the twenty-one effect slots travel; the last three
+// are cleared afterwards because a restored session must not resume them.
+void UDisPostProcessManager::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	for( INT EffectIdx = 0; EffectIdx < 20; EffectIdx++ )
+	{
+		_rArchive.ByteOrderSerialize( &m_RequiredEffects[EffectIdx], sizeof(INT) );
+		_rArchive.Serialize( &m_EffectStates[EffectIdx], sizeof(BYTE) );
+	}
+	m_RequiredEffects[18] = 0;
+	m_EffectStates[18] = 0;
+
+	_rArchive.ByteOrderSerialize( &m_BendTimeIntensity, sizeof(m_BendTimeIntensity) );
+	FLinearColor* pColours[3] = { &m_BlinkParams, &m_AdrenalineParams, &m_PossessionParams };
+	for( INT ColourIdx = 0; ColourIdx < 3; ColourIdx++ )
+	{
+		_rArchive.ByteOrderSerialize( &pColours[ColourIdx]->R, sizeof(FLOAT) );
+		_rArchive.ByteOrderSerialize( &pColours[ColourIdx]->G, sizeof(FLOAT) );
+		_rArchive.ByteOrderSerialize( &pColours[ColourIdx]->B, sizeof(FLOAT) );
+		_rArchive.ByteOrderSerialize( &pColours[ColourIdx]->A, sizeof(FLOAT) );
+	}
+	_rArchive.Serialize( &m_PCAntialiasingType, sizeof(m_PCAntialiasingType) );
+	_rArchive.ByteOrderSerialize( &m_KnockOutTimer, sizeof(m_KnockOutTimer) );
+	_rArchive.ByteOrderSerialize( &m_ZoomLensStateTime, sizeof(m_ZoomLensStateTime) );
+	_rArchive.ByteOrderSerialize( &m_PossessionStateTime, sizeof(m_PossessionStateTime) );
+	_rArchive.ByteOrderSerialize( &m_KismetStateDuration, sizeof(m_KismetStateDuration) );
+	_rArchive.ByteOrderSerialize( &m_KismetPPFadeOutTime, sizeof(m_KismetPPFadeOutTime) );
+	_rArchive.ByteOrderSerialize( &m_KismetPPFadeInTime, sizeof(m_KismetPPFadeInTime) );
+	_rArchive.ByteOrderSerialize( &m_KismetPPWeight, sizeof(m_KismetPPWeight) );
+	_rArchive << m_KismetPPParams;
+
+	m_RequiredEffects[20] = 0;
+	m_EffectStates[20] = 0;
+	m_RequiredEffects[19] = 0;
+	m_EffectStates[19] = 0;
+}
+
+// DISHONORED(port): 2013 rva 0x5fa6f0 (2012 0x640330), dishonoredhud.cpp:102. One INT of designer-forced show
+// flags, of which retail keeps bits 0..3 and 8 and preserves the rest. 2012 kept a different set (0x00000fef
+// preserved), which is why this is the retail body and not that one.
+void ADishonoredHUD::SerializeForGameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	INT DesignerForcedFlags = 0;
+	_rArchive.ByteOrderSerialize( &DesignerForcedFlags, sizeof(DesignerForcedFlags) );
+	m_ShowFlags[4] = ( DesignerForcedFlags & 0x10f ) | ( m_ShowFlags[4] & ~0x10f );
+}
+
+// DISHONORED(port): 2013 rva 0x6a31e0 (2012 0x6d7170), dishonoredplayercontroller.cpp:3548. AActor::GameLoad,
+// the two travel names, the objectives component, m_bDisableStealthShroud (the offset-1552 word's bit 15),
+// m_InputEnableMask[7], and then the HUD's own show flags. Retail reads two FNames here; the 2012 build read
+// one, which is the only place this body differs between them.
+void ADishonoredPlayerController::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( _rArchive, _Location );
+	_rArchive << m_PlayerTravelLocationName;
+	_rArchive << m_PlayerTravelOriginLevelName;
+	_rArchive << *(UObject**)&m_pObjectivesComponent;
+
+	BYTE bDisableStealthShroud = 0;
+	_rArchive.Serialize( &bDisableStealthShroud, sizeof(bDisableStealthShroud) );
+	m_bDisableStealthShroud = bDisableStealthShroud ? 1 : 0;
+
+	_rArchive.ByteOrderSerialize( &m_InputEnableMask[7], sizeof(INT) );
+
+	ADishonoredHUD* pHUD = Cast<ADishonoredHUD>( myHUD );
+	if( pHUD != NULL )
+	{
+		pHUD->SerializeForGameLoad( _rArchive, _Location );
+	}
+}

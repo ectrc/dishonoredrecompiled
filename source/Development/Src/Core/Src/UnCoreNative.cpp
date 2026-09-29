@@ -1669,6 +1669,21 @@ UComponent* FObjectInstancingGraph::GetInstancedComponent( UComponent* SourceCom
 							// here we're creating a nested component inside a CDO - always use template names in this case
 							ComponentName = SourceComponent->GetFName();
 						}
+						// DISHONORED(port): 2013 rva 0x961b0 (2012 0x930c0). Outside the archetype and UCC-make
+						// paths retail also names the instance after its template, and renames whatever already
+						// holds that name under the same outer out of the way first. That is what keeps
+						// DishonoredPlayerPawn.PowersComp and DishonoredPlayerController.DisObjComp - and every
+						// other instanced component - at the same name in every session, which is the name a
+						// real save's object dictionary records. The reference branch left NAME_None here.
+						else
+						{
+							ComponentName = SourceComponent->GetFName();
+							UObject* Existing = UObject::StaticFindObjectFast( SourceComponent->GetClass(), ComponentOuter, ComponentName );
+							if ( Existing != NULL )
+							{
+								Existing->Rename( NULL, ComponentOuter, REN_ForceNoResetLoaders|REN_DoNotDirty );
+							}
+						}
 
 						// Build the flags to use for new component.
 						EObjectFlags NewComponentFlags = ComponentOuter->GetMaskedFlags(RF_PropagateToSubObjects);

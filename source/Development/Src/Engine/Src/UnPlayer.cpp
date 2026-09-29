@@ -5594,3 +5594,100 @@ void APlayerController::LogOutBugItAIGoToLogFile( const FString& InScreenShotDes
 }
 
 
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): the Ark post-process parameter groups' save serializers.
+
+	Retail has these inline in engineclasses.h; they are here for the reason the declaration next to
+	FArkPpConfig gives. Each one packs its override bits into a single byte - low bit first, in declaration
+	order - and then serialises its floats in declaration order. The read side masks the byte back onto the
+	bitfield word, which is what fixes the bit count: 3 for the depth of field, 6 for the colour balance,
+	5 for the HDR group and 3 for the uber group itself.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x7e7fe0 (2012 0x84a1c0)
+FArchive& operator<<( FArchive& Ar, FArkPpDofParameters& P )
+{
+	BYTE Bits = (BYTE)( ( P.m_bOverrideFocusDistance ? 1 : 0 )
+					  | ( P.m_bOverrideInFocusRadius ? 2 : 0 )
+					  | ( P.m_bOverrideFarBlurAmount ? 4 : 0 ) );
+	Ar.Serialize( &Bits, sizeof(Bits) );
+	P.m_bOverrideFocusDistance	= ( Bits & 1 ) ? 1 : 0;
+	P.m_bOverrideInFocusRadius	= ( Bits & 2 ) ? 1 : 0;
+	P.m_bOverrideFarBlurAmount	= ( Bits & 4 ) ? 1 : 0;
+	Ar.ByteOrderSerialize( &P.m_FocusDistance, sizeof(P.m_FocusDistance) );
+	Ar.ByteOrderSerialize( &P.m_InFocusRadius, sizeof(P.m_InFocusRadius) );
+	Ar.ByteOrderSerialize( &P.m_FarBlurAmount, sizeof(P.m_FarBlurAmount) );
+	return Ar;
+}
+
+// DISHONORED(port): 2013 rva 0x7e8060 (2012 0x84a240)
+FArchive& operator<<( FArchive& Ar, FArkPpColorBalanceParameters& P )
+{
+	BYTE Bits = (BYTE)( ( P.m_bOverrideCrMgYbShadTones ? 0x01 : 0 )
+					  | ( P.m_bOverrideCrMgYbMidTones ? 0x02 : 0 )
+					  | ( P.m_bOverrideCrMgYbHighTones ? 0x04 : 0 )
+					  | ( P.m_bOverrideOpacity ? 0x08 : 0 )
+					  | ( P.m_bOverridePreDesaturation ? 0x10 : 0 )
+					  | ( P.m_bOverridePostDesaturation ? 0x20 : 0 ) );
+	Ar.Serialize( &Bits, sizeof(Bits) );
+	P.m_bOverrideCrMgYbShadTones	= ( Bits & 0x01 ) ? 1 : 0;
+	P.m_bOverrideCrMgYbMidTones		= ( Bits & 0x02 ) ? 1 : 0;
+	P.m_bOverrideCrMgYbHighTones	= ( Bits & 0x04 ) ? 1 : 0;
+	P.m_bOverrideOpacity			= ( Bits & 0x08 ) ? 1 : 0;
+	P.m_bOverridePreDesaturation	= ( Bits & 0x10 ) ? 1 : 0;
+	P.m_bOverridePostDesaturation	= ( Bits & 0x20 ) ? 1 : 0;
+	Ar.ByteOrderSerialize( &P.m_CrMgYbShadTones.X, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbShadTones.Y, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbShadTones.Z, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbMidTones.X, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbMidTones.Y, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbMidTones.Z, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbHighTones.X, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbHighTones.Y, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_CrMgYbHighTones.Z, sizeof(FLOAT) );
+	Ar.ByteOrderSerialize( &P.m_Opacity, sizeof(P.m_Opacity) );
+	Ar.ByteOrderSerialize( &P.m_PreDesaturation, sizeof(P.m_PreDesaturation) );
+	Ar.ByteOrderSerialize( &P.m_PostDesaturation, sizeof(P.m_PostDesaturation) );
+	return Ar;
+}
+
+// DISHONORED(port): 2013 rva 0x7e8170 (2012 0x84a350). Five bits, and the read side's mask is 0x1f - the
+// packing expression in both builds emits a sixth shift whose source is the fourth bit again, which the mask
+// discards.
+FArchive& operator<<( FArchive& Ar, FArkPpHdrParameters& P )
+{
+	BYTE Bits = (BYTE)( ( P.m_bOverrideExposure ? 0x01 : 0 )
+					  | ( P.m_bOverrideGammaAdjustment ? 0x02 : 0 )
+					  | ( P.m_bOverrideFilmGrainNoise ? 0x04 : 0 )
+					  | ( P.m_bOverrideGimpBrightness ? 0x08 : 0 )
+					  | ( P.m_bOverrideGimpContrast ? 0x10 : 0 ) );
+	Ar.Serialize( &Bits, sizeof(Bits) );
+	P.m_bOverrideExposure			= ( Bits & 0x01 ) ? 1 : 0;
+	P.m_bOverrideGammaAdjustment	= ( Bits & 0x02 ) ? 1 : 0;
+	P.m_bOverrideFilmGrainNoise		= ( Bits & 0x04 ) ? 1 : 0;
+	P.m_bOverrideGimpBrightness		= ( Bits & 0x08 ) ? 1 : 0;
+	P.m_bOverrideGimpContrast		= ( Bits & 0x10 ) ? 1 : 0;
+	Ar.ByteOrderSerialize( &P.m_Exposure, sizeof(P.m_Exposure) );
+	Ar.ByteOrderSerialize( &P.m_GammaAdjustment, sizeof(P.m_GammaAdjustment) );
+	Ar.ByteOrderSerialize( &P.m_FilmGrainNoise, sizeof(P.m_FilmGrainNoise) );
+	Ar.ByteOrderSerialize( &P.m_GimpBrightness, sizeof(P.m_GimpBrightness) );
+	Ar.ByteOrderSerialize( &P.m_GimpContrast, sizeof(P.m_GimpContrast) );
+	return Ar;
+}
+
+// DISHONORED(port): 2013 rva 0x7e8220 (2012 0x84a400)
+FArchive& operator<<( FArchive& Ar, FArkUberPpParameters& P )
+{
+	BYTE Bits = (BYTE)( ( P.m_bOverrideDOFParameters ? 1 : 0 )
+					  | ( P.m_bOverrideCBParameters ? 2 : 0 )
+					  | ( P.m_bOverrideHDRParameters ? 4 : 0 ) );
+	Ar.Serialize( &Bits, sizeof(Bits) );
+	P.m_bOverrideDOFParameters	= ( Bits & 1 ) ? 1 : 0;
+	P.m_bOverrideCBParameters	= ( Bits & 2 ) ? 1 : 0;
+	P.m_bOverrideHDRParameters	= ( Bits & 4 ) ? 1 : 0;
+	Ar << P.m_DOFParameters;
+	Ar << P.m_CBParameters;
+	Ar << P.m_HDRParameters;
+	return Ar;
+}

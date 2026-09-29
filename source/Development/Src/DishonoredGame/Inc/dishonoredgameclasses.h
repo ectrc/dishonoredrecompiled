@@ -12859,6 +12859,7 @@ public:
 
     DECLARE_CLASS(UDisNPCTravelManager,UObject,0,DishonoredGame)
     DECLARE_WITHIN(ADishonoredGameInfo)
+#include "CppText/UDisNPCTravelManager.h"
 };
 
 // DishonoredGame.DisNativeStateMachine_PlayerAction: retail sizeof 196, reflected span 188..196 (2012 PDB sizeof 196)

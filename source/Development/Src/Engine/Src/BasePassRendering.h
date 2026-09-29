@@ -47,7 +47,8 @@ protected:
 	{
 		LightMapPolicyType::VertexParametersType::Bind(Initializer.ParameterMap);
 		MaterialParameters.Bind(Initializer.ParameterMap);
-		HeightFogParameters.Bind(Initializer.ParameterMap);
+		// DISHONORED(port): 2013 rva 0x424c10. No height fog parameters on the base pass vertex shader - see
+		// the note on Serialize below; the fog reaches the frame through the pixel shader.
 		FogVolumeParameters.Bind(Initializer.ParameterMap);
 	}
 
@@ -95,7 +96,11 @@ public:
 		VertexFactoryParameters.Set(this,VertexFactory,View);
 		FMaterialRenderContext MaterialRenderContext(MaterialRenderProxy, InMaterialResource, View.Family->CurrentWorldTime, View.Family->CurrentRealTime, &View);
 		MaterialParameters.Set(this,MaterialRenderContext);
-		HeightFogParameters.SetVertexShader(VertexFactory, MaterialRenderProxy, MaterialRenderContext.Material, &View, bAllowGlobalFog, this);
+		// DISHONORED(port): 2013 rva 0x424c10 has no height fog parameters here. The reference call this
+		// replaced asserted on the first scene render of any cooked map under d3d9 in a Debug build
+		// (FogRendering.cpp:97 -> ShaderManager.h:267, checkSlow(Parameter.IsInitialized())): Serialize never
+		// wrote this block, so a cache-loaded shader never had it bound, and only Bind sets bInitialized. In
+		// Release it wrote 0 bytes, because an unbound FShaderParameter has NumBytes 0.
 	}
 
 	void SetFogVolumeParameters(
@@ -121,9 +126,6 @@ public:
 
 private:
 	FMaterialVertexShaderParameters MaterialParameters;
-
-	/** The parameters needed to calculate the fog contribution from height fog layers. */
-	FHeightFogShaderParameters HeightFogParameters;
 
 	/** The parameters needed to calculate the fog contribution from an intersecting fog volume. */
 	typename FogDensityPolicyType::ShaderParametersType FogVolumeParameters;

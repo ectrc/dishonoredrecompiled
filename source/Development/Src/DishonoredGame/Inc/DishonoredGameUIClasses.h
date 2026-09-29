@@ -1015,6 +1015,7 @@ public:
     virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisGFxMoviePlayerHUD::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_FUNCTION(execOnPlayerChoiceConfirm);
     DECLARE_CLASS(UDisGFxMoviePlayerHUD,UDisGFxMoviePlayerBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDisGFxMoviePlayerHUD.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerMenuBase: retail sizeof 504, reflected span 440..504 (2012 PDB sizeof 476)
@@ -1430,6 +1431,7 @@ public:
     DECLARE_FUNCTION(execConsumeHealthPotion);
     DECLARE_FUNCTION(execOnSelectionChanged);
     DECLARE_CLASS(UDisGFxMoviePlayerPowerWheel,UDisGFxMoviePlayerBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDisGFxMoviePlayerPowerWheel.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerStore: retail sizeof 472, reflected span 440..472 (2012 PDB sizeof 452)
@@ -1494,6 +1496,7 @@ public:
     virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisGlobalUIManager::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_CLASS(UDisGlobalUIManager,UObject,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("UI");}
+#include "CppText/UDisGlobalUIManager.h"
 };
 
 // DishonoredGame.DisSeqAct_EnableSystemicTutorials: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
