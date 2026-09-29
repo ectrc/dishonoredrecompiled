@@ -672,6 +672,12 @@ public:
 		SetPixelShaderValue(GetPixelShader(),mLayerOpacities,Opacities);
 		SetPixelShaderValue(GetPixelShader(),mSunDirection,SunDirection);
 
+		// DISHONORED(bringup, agent EE): agent DB's defect 4 reads "FDisFogPixelShader binds MaskTexture and never
+		// sets it", and retail's SetParameters (2013 rva 0x41c940) does not set it either. This counts the cooked
+		// permutations whose MaskTexture sampler is actually bound, which is what decides whether there is anything to
+		// fix: a parameter the cook never bound is a dead name in the shader source, not a missing producer.
+		GDisCensusFogMaskTextureBound = mMaskTextureParameter.IsBound() ? 1 : 0;
+
 		if (mBloomParts.IsBound())
 		{
 			// DISHONORED(port): the bloom parts render target, or black when RenderBloomParts drew nothing this frame.
@@ -1372,10 +1378,21 @@ UBOOL FSceneRenderer::RenderFogPass(UINT Type,const FDisFogSceneInfo* const* Dis
 	RHISetViewParameters(View);
 	RHISetScissorRect(TRUE,View.RenderTargetX,View.RenderTargetY,View.RenderTargetX + View.RenderTargetSizeX,View.RenderTargetY + View.RenderTargetSizeY);
 
-	// DISHONORED(bringup): the fog mask stencil (2013 rva 0x433f80) draws the fog mask meshes of the level into
-	// stencil so interior fog stops at a portal. Not ported: without it every layer covers the whole view, which is
-	// what a level with no mask meshes does anyway.
+	// DISHONORED(bringup): FSceneRenderer::RenderFogMaskStencil (2013 rva 0x433f80, 9,806 bytes) is what makes
+	// bHasMask TRUE, and it writes STENCIL ONLY: it clears stencil to (the listener cell's interior flag == Type),
+	// sets TStaticStencilState<TRUE,CF_Always,...,SO_Replace,...> with reference 0 or 1 and
+	// RHISetColorWriteEnable(FALSE), and draws the portal quads of the audio cell the view origin is in. So interior
+	// fog covers the cell and is punched out at each portal, or the other way round outside it. It does NOT fill the
+	// fog-mask render target: no colour is written at all (agentDB.md defect 4 attributed the MaskTexture sampler to
+	// this function; the measurement below is what settles it).
+	// It is not ported because its only input is the audio cell graph: retail calls
+	// GWorld->m_pAudioSystem->GetCellAtPoint(View.ViewOrigin, GetCurrentCachedCell()) and then walks that cell's
+	// AGenericPortal list, and UDishonoredAudioSystem::GetCellAtPoint (2013 rva 0x792d10, DishonoredGame) is a
+	// hand-over, not this package's file. With no cell retail keeps its default interior flag of 1, which masks
+	// interior fog out of the whole view and lets exterior fog cover it - so porting the pass with the cell lookup
+	// missing would change the frame for the wrong reason. See agents/agentEE.md 4.
 	const UBOOL bHasMask = FALSE;
+	GDisCensusFogMaskStencilDraws = 0;
 
 	// DISHONORED(port): 2013 rva 0x436d10 sets the states in this order and ends with an opaque blend: the fog pixel
 	// shader samples scene colour itself (FSceneTextureShaderParameters) and writes the composited result, so the

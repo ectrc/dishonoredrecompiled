@@ -64,16 +64,24 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
+#include "SceneRenderTargets.h"
+#include "arkcommonvertexdeclaration.h"
 #include "arkpp.h"
+#include "arkppnodeaa.h"
 
 /**
- * DISHONORED(port): the shader types of Arkane's anti-aliasing node (UArkPpNodeAA / FArkPpNodeAAProxy), which runs
- * either FXAA (RenderFxaa, 2013 rva 0x5210b0) or MLAA in three passes (edge detection, line length, blend colour;
- * 0x521570 / 0x521990 / 0x521ee0). 2013 rva 0xb828f0 ff., sources FXAAShader and MLAAShader.
+ * DISHONORED(port): the shader types and the passes of Arkane's anti-aliasing node (UArkPpNodeAA /
+ * FArkPpNodeAAProxy), which runs either MLAA in three passes (edge detection, line length, blend colour;
+ * 2013 rva 0x520880 / 0x520ca0 / 0x5211f0, driver 0x521720) or FXAA in one (RenderFxaa, 0x5203c0).
+ * 2013 rva 0xb828f0 ff., sources FXAAShader and MLAAShader.
  *
- * FMLAAVertexShader, FFXAAVertexShader and FMLAAComputeLineLengthPixelShader are Arkane's too, but this tree declares
- * them in PostProcessAA.cpp (agent AH gave them the retail layout there) and they already load; only the types with
- * no declaration at all are here.
+ * DISHONORED(retail, agent EE): the four pass addresses this comment used to carry (0x5210b0, 0x521570, 0x521990,
+ * 0x521ee0) were the 2012 build's with one nibble changed, and 0x521990 happens to be retail's RenderMotionBlur.
+ * The retail addresses above are resolved against retail2013_named.i64 and the 2012/2013 match table.
+ *
+ * FMLAAVertexShader, FFXAAVertexShader and FMLAAComputeLineLengthPixelShader are Arkane's too and retail declares
+ * them here; this tree inherited them in PostProcessAA.cpp, so they now live in arkppnodeaa.h, which both units
+ * include, and their SetParameters bodies are below - which is where retail's are.
  */
 
 /**
@@ -125,6 +133,49 @@ public:
 		Ar << m_ConsoleParamsParameter;
 		Ar << m_Console360ConstDirParameter;
 		return bShaderHasOutdatedParameters;
+	}
+
+	/**
+	 * DISHONORED(port): 2013 rva 0x518480 (2012 0x5587a0). The six FXAA tuning constants are literals in retail, not
+	 * content: quality (0.75, 0.166, 0.0833), console (8, 0.125, 0.05, 0) and the console direction (1, -1, 0.25,
+	 * -0.25); the three frame-option vectors are +-0.5, +-2 and 8 / -4 texels of the *scene colour buffer*, not of the
+	 * node's surface. The two exposure-biased scene colour samplers of the layout are never set: they are the Xbox 360
+	 * path.
+	 */
+	void SetParameters(const FArkPpFxAaParameters& iParams)
+	{
+		const FPixelShaderRHIParamRef Shader = GetPixelShader();
+
+		SetPixelShaderValue(Shader,m_LuminanceEquationParameter,
+			FVector4(iParams.mLumEquation.X,iParams.mLumEquation.Y,iParams.mLumEquation.Z,0.0f));
+
+		const FRenderTarget* RenderTarget = iParams.mView->Family->RenderTarget;
+		SetPixelShaderValue(Shader,m_InverseDisplayGammaParameter,1.0f / RenderTarget->GetDisplayGamma());
+
+		if (iParams.mbUseSceneColorLdr)
+		{
+			// DISHONORED(retail): retail reads RenderTargets[15] here, which is its own LDR scene colour slot. Every
+			// call site of every pass sets mbUseSceneColorLdr FALSE, so this branch never runs in the shipped game.
+			SetTextureParameterDirectly(Shader,m_SceneColorTextureParameter,
+				TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),
+				GSceneRenderTargets.GetSceneColorLDRTexture());
+		}
+		else
+		{
+			SetTextureParameter(Shader,m_SceneColorTextureParameter,&iParams.mSceneColor);
+		}
+
+		const FLOAT OOBufferX = 1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeX();
+		const FLOAT OOBufferY = 1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeY();
+		SetPixelShaderValue(Shader,m_ConsoleRcpFrameOptParameter,
+			FVector4(-0.5f * OOBufferX,-0.5f * OOBufferY,0.5f * OOBufferX,0.5f * OOBufferY));
+		SetPixelShaderValue(Shader,m_ConsoleRcpFrameOpt2Parameter,
+			FVector4(-2.0f * OOBufferX,-2.0f * OOBufferY,2.0f * OOBufferX,2.0f * OOBufferY));
+		SetPixelShaderValue(Shader,m_Console360RcpFrameOpt2Parameter,
+			FVector4(8.0f * OOBufferX,8.0f * OOBufferY,-4.0f * OOBufferX,-4.0f * OOBufferY));
+		SetPixelShaderValue(Shader,m_QualityParamsParameter,FVector4(0.75f,0.166f,0.0833f,0.0f));
+		SetPixelShaderValue(Shader,m_ConsoleParamsParameter,FVector4(8.0f,0.125f,0.05f,0.0f));
+		SetPixelShaderValue(Shader,m_Console360ConstDirParameter,FVector4(1.0f,-1.0f,0.25f,-0.25f));
 	}
 
 private:
@@ -183,6 +234,26 @@ public:
 		return bShaderHasOutdatedParameters;
 	}
 
+	/**
+	 * DISHONORED(port): 2012 rva 0x555760 (linear) / 0x5558b0 (sRGB); the match table has no 2013 address for either,
+	 * their retail bodies are identical bar the display gamma. RTSize is the *scene colour buffer*'s reciprocal size,
+	 * and the edge threshold rides in the luminance equation's W as its reciprocal.
+	 */
+	void SetParameters(const FArkPpMlaaParameters& iParams)
+	{
+		const FPixelShaderRHIParamRef Shader = GetPixelShader();
+		SetPixelShaderValue(Shader,mRTSizeParameter,
+			FVector4(1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeX(),1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeY(),0.0f,0.0f));
+		SetPixelShaderValue(Shader,mLuminanceEquationParameter,
+			FVector4(iParams.mLumEquation.X,iParams.mLumEquation.Y,iParams.mLumEquation.Z,1.0f / iParams.mEdgeThresold));
+		if (bSRGB == 0)
+		{
+			const FRenderTarget* RenderTarget = iParams.mView->Family->RenderTarget;
+			SetPixelShaderValue(Shader,mInverseDisplayGammaParameter,1.0f / RenderTarget->GetDisplayGamma());
+		}
+		SetTextureParameter(Shader,mSceneTextureParameters,&iParams.mSceneColor);
+	}
+
 private:
 	FShaderResourceParameter mSceneTextureParameters;
 	FShaderParameter mRTSizeParameter;
@@ -234,6 +305,28 @@ public:
 		return bShaderHasOutdatedParameters;
 	}
 
+	/**
+	 * DISHONORED(port): 2012 rva 0x558ba0 (linear) / 0x558dc0 (sRGB). The same three constants as the edge pass plus
+	 * the edge count target the second pass wrote, point-sampled and clamped.
+	 */
+	void SetParameters(const FArkPpMlaaParameters& iParams)
+	{
+		const FPixelShaderRHIParamRef Shader = GetPixelShader();
+		SetPixelShaderValue(Shader,mRTSizeParameter,
+			FVector4(1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeX(),1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeY(),0.0f,0.0f));
+		SetPixelShaderValue(Shader,mLuminanceEquationParameter,
+			FVector4(iParams.mLumEquation.X,iParams.mLumEquation.Y,iParams.mLumEquation.Z,1.0f / iParams.mEdgeThresold));
+		if (bSRGB == 0)
+		{
+			const FRenderTarget* RenderTarget = iParams.mView->Family->RenderTarget;
+			SetPixelShaderValue(Shader,mInverseDisplayGammaParameter,1.0f / RenderTarget->GetDisplayGamma());
+		}
+		SetTextureParameterDirectly(Shader,mEdgeCountTextureParameter,
+			TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),
+			GSceneRenderTargets.GetRenderTargetTexture(MLAAEdgeCount));
+		SetTextureParameter(Shader,mSceneTextureParameters,&iParams.mSceneColor);
+	}
+
 private:
 	FShaderResourceParameter mSceneTextureParameters;
 	FShaderResourceParameter mEdgeCountTextureParameter;
@@ -271,9 +364,90 @@ IMPLEMENT_SHADER_TYPE_NAMED(template<>,FMLAABlend_SRGB_PixelShaderType,TEXT("FML
 	RenderFxaa 0x5610b0, RenderMlaa 0x5623f0 with its three passes 0x561570 / 0x561990 / 0x561ee0)
 -----------------------------------------------------------------------------*/
 
+/** DISHONORED(bringup): one line per shader type whose cooked record is missing, so a pass that cannot run says so. */
+static void ReportMissingArkPpAAShader(const TCHAR* Name)
+{
+	static UBOOL bReported = FALSE;
+	if (!bReported)
+	{
+		bReported = TRUE;
+		warnf(TEXT("DISHONORED(bringup): dishonored aa: no cooked shader for %s, the pass is skipped"),Name);
+	}
+}
+
+/** DISHONORED(bringup): the antialiasing node's share of the post-process census (arkppnodes.cpp holds the rest). */
+INT GDisCensusArkPpAADraws = 0;
+
+/** DISHONORED(bringup): -noarkppaa leaves both antialiasing passes out; the switch of this package's pair. */
+static UBOOL DishonoredNoArkPpAA()
+{
+	// a file-scope static ParseParam in a static library runs before WinMain sets GCmdLine (agent CA): read on first use
+	static UBOOL bNo = ParseParam(appCmdLine(),TEXT("noarkppaa"));
+	return bNo;
+}
+
+/** DISHONORED(bringup): -arkppaadbg reports the resolved type and configuration once and the first passes. */
+static UBOOL DishonoredArkPpAADbg()
+{
+	static UBOOL bDbg = ParseParam(appCmdLine(),TEXT("arkppaadbg"));
+	return bDbg;
+}
+
+/** DISHONORED(bringup): -arkppaafxaa forces the FXAA branch, -arkppaamlaa the MLAA one, whatever the node asks for. */
+static UBOOL DishonoredForceFxaa()
+{
+	static UBOOL bForce = ParseParam(appCmdLine(),TEXT("arkppaafxaa"));
+	return bForce;
+}
+
+static UBOOL DishonoredForceMlaa()
+{
+	static UBOOL bForce = ParseParam(appCmdLine(),TEXT("arkppaamlaa"));
+	return bForce;
+}
+
 /**
- * DISHONORED(port): the antialiasing node's proxy: the graph shape, the configuration and the surface delegation are
- * retail's. DISHONORED(bringup): the FXAA and MLAA passes themselves are not ported - see Render.
+ * DISHONORED(port): 2013 rva 0x51fe10 ff. - FArkPpNodeAAProxy::FlushShader<PS> / FlushMlaaEdgeShader<PS>
+ * (2012 0x560170 / 0x560250 / 0x560330 and 0x560410 / 0x5604f0 / 0x5605d0 / 0x5606b0): look the pixel shader up, set
+ * the bound shader state against the common float2 declaration, then hand the pass argument to the pixel shader. Each
+ * instantiation owns its own static bound shader state, exactly as retail's function-local statics do.
+ */
+template<typename PixelShaderType>
+static UBOOL FlushFxAaShader(TShaderMapRef<FFXAAVertexShader>& iVS,const FArkPpFxAaParameters& iParams,const TCHAR* Name)
+{
+	TShaderMapRef<PixelShaderType> PixelShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	if (!*PixelShader)
+	{
+		ReportMissingArkPpAAShader(Name);
+		return FALSE;
+	}
+	static FGlobalBoundShaderState BoundShaderState;
+	SetGlobalBoundShaderState(BoundShaderState,ArkGetCommonVertexDeclaration(ARK_COMMON_VD_FLOAT2),
+		*iVS,*PixelShader,sizeof(FVector2D));
+	(*PixelShader)->SetParameters(iParams);
+	return TRUE;
+}
+
+template<typename PixelShaderType>
+static UBOOL FlushMlaaShader(TShaderMapRef<FMLAAVertexShader>& iVS,const FArkPpMlaaParameters& iParams,const TCHAR* Name)
+{
+	TShaderMapRef<PixelShaderType> PixelShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	if (!*PixelShader)
+	{
+		ReportMissingArkPpAAShader(Name);
+		return FALSE;
+	}
+	static FGlobalBoundShaderState BoundShaderState;
+	SetGlobalBoundShaderState(BoundShaderState,ArkGetCommonVertexDeclaration(ARK_COMMON_VD_FLOAT2),
+		*iVS,*PixelShader,sizeof(FVector2D));
+	(*PixelShader)->SetParameters(iParams);
+	return TRUE;
+}
+
+/**
+ * DISHONORED(port): the antialiasing node's proxy: the graph shape, the configuration, the surface delegation and both
+ * antialiasing passes are retail's (ctor 2013 rva 0x50afe0, Render 0x5218d0, RenderFxaa 0x5203c0, RenderMlaa 0x521720
+ * and its three passes 0x520880 / 0x520ca0 / 0x5211f0).
  */
 class FArkPpNodeAAProxy : public FArkPpNodeProxy
 {
@@ -288,14 +462,9 @@ public:
 	}
 
 	/**
-	 * DISHONORED(port): 2013 rva 0x5218d0 (2012 0x5625d0) - retail renders the input with m_bForceToDestination cleared and then draws
-	 * MLAA (m_Type 1: edge detection, line length, blend) or FXAA (m_Type 2); any other type only renders the input,
-	 * with the bit cleared as well.
-	 * DISHONORED(bringup): neither antialiasing pass is ported. The input is rendered with the unchanged config, so an
-	 * AA node that ends the graph - which is where retail puts it - still puts the image on the destination surface,
-	 * aliased. The ten shader types load (agentBD.md 1); the passes need FFXAAVertexShader::SetParameters (0x54e7b0),
-	 * TFXAAPixelShader::SetParameters, FMLAAVertexShader::SetParameters (0x54e900) and the three MLAA pixel shaders'
-	 * (0x555760 / 0x5558b0 / 0x558ba0 / 0x558dc0), plus the MLAAEdgeMask and MLAAEdgeCount targets.
+	 * DISHONORED(port): 2013 rva 0x5218d0 (2012 0x5625d0) - retail renders the input with m_bForceToDestination cleared
+	 * and then draws MLAA (m_Type 1) or FXAA (m_Type 2); any other type only renders the input, with the bit *kept*,
+	 * so the input owns the destination instead.
 	 */
 	virtual UBOOL Render(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
 	{
@@ -304,9 +473,71 @@ public:
 			return FALSE;
 		}
 		m_bDone = TRUE;
-		GDisCensusArkPpSkipped++;
-		return m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
+		if (!m_InProxy)
+		{
+			// retail dereferences m_InProxy with no check; an AA node with no surface target would take it down
+			GDisCensusArkPpSkipped++;
+			return FALSE;
+		}
+
+		BYTE Type = m_Type;
+		if (DishonoredForceFxaa())
+		{
+			Type = EPpAa_Fxaa;
+		}
+		else if (DishonoredForceMlaa())
+		{
+			Type = EPpAa_Mlaa;
+		}
+		if (DishonoredNoArkPpAA())
+		{
+			GDisCensusArkPpSkipped++;
+			return m_InProxy->Render(Scene,View,Config);
+		}
+		if (Type != EPpAa_Mlaa && Type != EPpAa_Fxaa)
+		{
+			GDisCensusArkPpSkipped++;
+			return m_InProxy->Render(Scene,View,Config);
+		}
+
+		if (DishonoredArkPpAADbg())
+		{
+			static UBOOL bReported = FALSE;
+			if (!bReported)
+			{
+				bReported = TRUE;
+				debugf(TEXT("DISHONORED(bringup): dishonored aa node: type %u (%s), luma source %u, lum equation (%.3f %.3f %.3f), mlaa threshold %.4f, iType_AntiAlias %u, destination %s"),
+					(UINT)Type,Type == EPpAa_Mlaa ? TEXT("MLAA") : TEXT("FXAA"),(UINT)m_FxAaConfig.m_Luma,
+					m_FxAaConfig.m_LuminanceEquation.X,m_FxAaConfig.m_LuminanceEquation.Y,m_FxAaConfig.m_LuminanceEquation.Z,
+					m_MlAaConfig.m_EdgeDetectionThresold,(UINT)GSystemSettings.iType_AntiAlias,
+					Config.m_bForceToDestination ? TEXT("back buffer") : TEXT("own surface"));
+				const FTexture2DRHIRef InputTexture = m_InProxy->GetTexture(View);
+				debugf(TEXT("DISHONORED(bringup): dishonored aa input: %ux%u, texture is %s, surface is %s"),
+					m_InProxy->GetSurfaceSizeX(),m_InProxy->GetSurfaceSizeY(),
+					InputTexture == GSceneRenderTargets.GetSceneColorTexture() ? TEXT("SceneColor")
+						: (InputTexture == GSceneRenderTargets.GetSceneColorLDRTexture() ? TEXT("SceneColorLDR") : TEXT("some other target")),
+					m_InProxy->GetSurface(View) == GSceneRenderTargets.GetSceneColorSurface() ? TEXT("SceneColor")
+						: (m_InProxy->GetSurface(View) == GSceneRenderTargets.GetSceneColorLDRSurface() ? TEXT("SceneColorLDR") : TEXT("some other target")));
+			}
+		}
+
+		m_InProxy->Render(Scene,View,FArkPpRenderConfig(FALSE));
+		if (Type == EPpAa_Mlaa)
+		{
+			RenderMlaa(Scene,View,Config);
+		}
+		else
+		{
+			RenderFxaa(Scene,View,Config);
+		}
+		return TRUE;
 	}
+
+	UBOOL RenderFxaa(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config);
+	UBOOL RenderMlaa(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config);
+	void RenderMlaaEdgeDetectingPass(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config,UBOOL bInSRGBSpace);
+	void RenderMlaaComputeEdgeLengthPass(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config,UBOOL bInSRGBSpace);
+	void RenderMlaaBlendColorPass(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config,UBOOL bInSRGBSpace);
 
 	/** DISHONORED(port): 2013 rva 0x50b0b0 (2012 0x54b8d0) / 0x54b900 / 0x54b930 / 0x54b940 - everything is the input's. */
 	virtual const FSurfaceRHIRef GetSurface(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetSurface(View) : FSurfaceRHIRef(); }
@@ -315,11 +546,320 @@ public:
 	virtual UINT GetSurfaceSizeY() { return m_InProxy ? m_InProxy->GetSurfaceSizeY() : 0; }
 
 private:
+	/** The surface the node draws into: the back buffer when this node ends the graph and the view is not upscaled. */
+	const FSurfaceRHIRef Destination(const FViewInfo& View,FArkPpRenderConfig Config)
+	{
+		if (!Config.m_bForceToDestination || GSystemSettings.NeedsUpscale())
+		{
+			return GetSurface(View);
+		}
+		return GSceneRenderTargets.GetBackBuffer();
+	}
+
+	/** The pass argument both shaders read: the node input's texture and size and the view's rectangle inside it. */
+	void FillCommon(FViewInfo& View,UINT& OutSizeX,UINT& OutSizeY,FVector4& OutViewport,FTexture& OutSource,ESamplerFilter Filter)
+	{
+		OutSource.TextureRHI = m_InProxy->GetTexture(View);
+		OutSource.SamplerStateRHI = Filter == SF_Point
+			? TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI()
+			: TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI();
+		OutSizeX = m_InProxy->GetSurfaceSizeX();
+		OutSizeY = m_InProxy->GetSurfaceSizeY();
+
+		const UINT BufferSizeX = GSceneRenderTargets.GetBufferSizeX();
+		const UINT BufferSizeY = GSceneRenderTargets.GetBufferSizeY();
+		const UINT MinX = OutSizeX * View.RenderTargetX / BufferSizeX;
+		const UINT MinY = OutSizeY * View.RenderTargetY / BufferSizeY;
+		const UINT MaxX = OutSizeX * (View.RenderTargetX + View.RenderTargetSizeX) / BufferSizeX;
+		const UINT MaxY = OutSizeY * (View.RenderTargetY + View.RenderTargetSizeY) / BufferSizeY;
+		RHISetViewport(MinX,MinY,0.0f,MaxX,MaxY,1.0f);
+		OutViewport = FVector4((FLOAT)MinX,(FLOAT)MinY,(FLOAT)MaxX,(FLOAT)MaxY);
+	}
+
 	TRefCountPtr<FArkPpNodeProxy> m_InProxy;
 	BYTE m_Type;
 	FFxAaConfig m_FxAaConfig;
 	FMlAaConfig m_MlAaConfig;
 };
+
+/**
+ * DISHONORED(port): 2013 rva 0x5203c0 (2012 0x5610b0). One full-screen triangle of the node's input through the FXAA
+ * pixel shader the configuration's luma source picks: 0 computes the luminance, 1 reads the green channel, 2 the alpha.
+ * The quality preset is always 1 and the _ForSceneColor variants are never chosen, which is why they have no cooked
+ * shader. The colour write mask is set after the shaders and before the draw, as retail does.
+ */
+UBOOL FArkPpNodeAAProxy::RenderFxaa(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+{
+	SCOPED_DRAW_EVENT(EventFxaa)(DEC_SCENE_ITEMS,TEXT("FxAa"));
+
+	const FSurfaceRHIRef iSurface = Destination(View,Config);
+	if (!IsValidRef(iSurface))
+	{
+		return TRUE;
+	}
+	RHISetRenderTarget(iSurface,FSurfaceRHIRef());
+
+	FArkPpFxAaParameters Params;
+	Params.mLumEquation = m_FxAaConfig.m_LuminanceEquation;
+	Params.mView = &View;
+	Params.mbUseSceneColorLdr = FALSE;
+	FillCommon(View,Params.mSizeX,Params.mSizeY,Params.m_Viewport,Params.mSceneColor,SF_Bilinear);
+
+	TShaderMapRef<FFXAAVertexShader> VertexShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	if (!*VertexShader)
+	{
+		ReportMissingArkPpAAShader(TEXT("FFXAAVertexShader"));
+		return FALSE;
+	}
+	(*VertexShader)->SetParameters(Params);
+
+	// DISHONORED(retail): retail looks each pixel shader up with a bare TShaderMapRef, which appErrorfs on a missing
+	// record; a post-process type with no cooked shader would take the render thread down, so the pass reports and skips
+	switch (m_FxAaConfig.m_Luma)
+	{
+	case 2: // the luma is in scene colour's alpha
+		if (!FlushFxAaShader<FFXAAPixelShader_LumaInAlpha_SRGBColorType>(VertexShader,Params,TEXT("FFXAAPixelShader_LumaInAlpha_SRGBColor")))
+		{
+			return FALSE;
+		}
+		break;
+	case 1: // the luma is the green channel
+		if (!FlushFxAaShader<FFXAAPixelShader_LumaAsGreen_SRGBColorType>(VertexShader,Params,TEXT("FFXAAPixelShader_LumaAsGreen_SRGBColor")))
+		{
+			return FALSE;
+		}
+		break;
+	default:
+		if (!FlushFxAaShader<FFXAAPixelShader_ComputeLuma_SRGBColorType>(VertexShader,Params,TEXT("FFXAAPixelShader_ComputeLuma_SRGBColor")))
+		{
+			return FALSE;
+		}
+		break;
+	}
+
+	RHISetColorWriteMask(CW_RGBA);
+	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
+	RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
+	GDisCensusArkPpDraws++;
+	GDisCensusArkPpAADraws++;
+	return TRUE;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x521720 (2012 0x5623f0). MLAA falls back to FXAA when the system settings forbid it,
+ * then sets the three states once for the whole technique and runs the three passes with the view's LDR flag as the
+ * source colour space.
+ */
+UBOOL FArkPpNodeAAProxy::RenderMlaa(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+{
+	// DISHONORED(retail): the 2012 build opens with `if (!GSystemSettings.RenderThreadSettings.bAllowMLAA) return
+	// RenderFxaa(...)`. Retail 2013 has no such test (0x521720 goes straight to the three passes) because 2013 dropped
+	// bAllowMLAA from FSystemSettingsData for iType_AntiAlias @128, which picks the node's m_Type instead. Ported as
+	// retail 2013 has it, which also keeps the pass off RenderThreadSettings - a structure nothing in this tree writes.
+	SCOPED_DRAW_EVENT(EventMlaa)(DEC_SCENE_ITEMS,TEXT("MLAA"));
+
+	RHISetDepthState(TStaticDepthState<FALSE,CF_Always>::GetRHI());
+	RHISetRasterizerState(TStaticRasterizerState<FM_Solid,CM_None>::GetRHI());
+	RHISetBlendState(TStaticBlendState<>::GetRHI());
+
+	// DISHONORED(bringup): -arkppaaclearmasks clears both MLAA targets first. Retail clears neither; this is the pair
+	// that says whether unwritten target memory is what a run-to-run difference in the blended frame comes from.
+	static UBOOL bClearMasks = ParseParam(appCmdLine(),TEXT("arkppaaclearmasks"));
+	if (bClearMasks)
+	{
+		RHISetRenderTarget(GSceneRenderTargets.GetRenderTargetSurface(MLAAEdgeMask),FSurfaceRHIRef());
+		RHIClear(TRUE,FLinearColor::Black,FALSE,0.0f,FALSE,0);
+		RHISetRenderTarget(GSceneRenderTargets.GetRenderTargetSurface(MLAAEdgeCount),FSurfaceRHIRef());
+		RHIClear(TRUE,FLinearColor::Black,FALSE,0.0f,FALSE,0);
+	}
+
+	const UBOOL bInSRGBSpace = View.bUseLDRSceneColor != 0;
+	RenderMlaaEdgeDetectingPass(Scene,View,Config,bInSRGBSpace);
+	RenderMlaaComputeEdgeLengthPass(Scene,View,Config,bInSRGBSpace);
+	RenderMlaaBlendColorPass(Scene,View,Config,bInSRGBSpace);
+
+	RHISetColorWriteMask(CW_RGBA);
+	return TRUE;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x520880 (2012 0x561570). The separating lines go into the full-size MLAAEdgeMask target,
+ * red channel only, from a point-sampled read of the node's input.
+ */
+void FArkPpNodeAAProxy::RenderMlaaEdgeDetectingPass(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config,UBOOL bInSRGBSpace)
+{
+	SCOPED_DRAW_EVENT(EventEdge)(DEC_SCENE_ITEMS,TEXT("EdgeDetectingPass"));
+
+	const FSurfaceRHIRef& iSurface = GSceneRenderTargets.GetRenderTargetSurface(MLAAEdgeMask);
+	if (!IsValidRef(iSurface))
+	{
+		return;
+	}
+	RHISetRenderTarget(iSurface,FSurfaceRHIRef());
+
+	FArkPpMlaaParameters Params;
+	Params.mLumEquation = m_MlAaConfig.m_LuminanceEquation;
+	Params.mEdgeThresold = m_MlAaConfig.m_EdgeDetectionThresold;
+	Params.mView = &View;
+	Params.mbUseSceneColorLdr = FALSE;
+	FillCommon(View,Params.mSizeX,Params.mSizeY,Params.m_Viewport,Params.mSceneColor,SF_Point);
+
+	TShaderMapRef<FMLAAVertexShader> VertexShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	if (!*VertexShader)
+	{
+		ReportMissingArkPpAAShader(TEXT("FMLAAVertexShader"));
+		return;
+	}
+	if (bInSRGBSpace)
+	{
+		if (!FlushMlaaShader<FMLAAEdgeDetection_SRGB_PixelShaderType>(VertexShader,Params,TEXT("FMLAAEdgeDetection_SRGB_PixelShader")))
+		{
+			return;
+		}
+	}
+	else
+	{
+		if (!FlushMlaaShader<FMLAAEdgeDetection_Linear_PixelShaderType>(VertexShader,Params,TEXT("FMLAAEdgeDetection_Linear_PixelShader")))
+		{
+			return;
+		}
+	}
+	(*VertexShader)->SetParameters(Params);
+
+	RHISetColorWriteMask(CW_RED);
+	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
+	RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
+	GDisCensusArkPpDraws++;
+	GDisCensusArkPpAADraws++;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x520ca0 (2012 0x520ca0's 2012 original 0x561990). The line lengths go into MLAAEdgeCount,
+ * red and green, from the edge mask the first pass wrote. This pass sets its pixel shader's two parameters itself
+ * rather than through a SetParameters of its own, which is how retail has it.
+ */
+void FArkPpNodeAAProxy::RenderMlaaComputeEdgeLengthPass(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config,UBOOL bInSRGBSpace)
+{
+	SCOPED_DRAW_EVENT(EventLength)(DEC_SCENE_ITEMS,TEXT("EdgeLengthPass"));
+
+	const FSurfaceRHIRef& iSurface = GSceneRenderTargets.GetRenderTargetSurface(MLAAEdgeCount);
+	if (!IsValidRef(iSurface))
+	{
+		return;
+	}
+	RHISetRenderTarget(iSurface,FSurfaceRHIRef());
+
+	FArkPpMlaaParameters Params;
+	Params.mLumEquation = m_MlAaConfig.m_LuminanceEquation;
+	Params.mEdgeThresold = m_MlAaConfig.m_EdgeDetectionThresold;
+	Params.mView = &View;
+	Params.mbUseSceneColorLdr = FALSE;
+	FillCommon(View,Params.mSizeX,Params.mSizeY,Params.m_Viewport,Params.mSceneColor,SF_Point);
+
+	TShaderMapRef<FMLAAVertexShader> VertexShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	TShaderMapRef<FMLAAComputeLineLengthPixelShader> PixelShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	if (!*VertexShader || !*PixelShader)
+	{
+		ReportMissingArkPpAAShader(TEXT("FMLAAComputeLineLengthPixelShader"));
+		return;
+	}
+	static FGlobalBoundShaderState MlaaLengthBS;
+	SetGlobalBoundShaderState(MlaaLengthBS,ArkGetCommonVertexDeclaration(ARK_COMMON_VD_FLOAT2),
+		*VertexShader,*PixelShader,sizeof(FVector2D));
+
+	SetPixelShaderValue((*PixelShader)->GetPixelShader(),(*PixelShader)->MLAAParameter,
+		FVector4(1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeX(),1.0f / (FLOAT)GSceneRenderTargets.GetBufferSizeY(),0.0f,0.0f));
+	SetTextureParameterDirectly((*PixelShader)->GetPixelShader(),(*PixelShader)->EdgeMaskTextureParameter,
+		TStaticSamplerState<SF_Point,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI(),
+		GSceneRenderTargets.GetRenderTargetTexture(MLAAEdgeMask));
+	(*VertexShader)->SetParameters(Params);
+
+	RHISetColorWriteMask(CW_RED | CW_GREEN);
+	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
+	RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
+	GDisCensusArkPpDraws++;
+	GDisCensusArkPpAADraws++;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x5211f0 (2012 0x561ee0). The blend writes the antialiased colour into the node's
+ * destination - the back buffer when the node ends the graph - RGB only, so scene colour's alpha (which is depth on
+ * this renderer) survives.
+ */
+void FArkPpNodeAAProxy::RenderMlaaBlendColorPass(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config,UBOOL bInSRGBSpace)
+{
+	SCOPED_DRAW_EVENT(EventBlend)(DEC_SCENE_ITEMS,TEXT("BlendColorPass"));
+
+	const FSurfaceRHIRef iSurface = Destination(View,Config);
+	if (!IsValidRef(iSurface))
+	{
+		return;
+	}
+	RHISetRenderTarget(iSurface,FSurfaceRHIRef());
+
+	FArkPpMlaaParameters Params;
+	Params.mLumEquation = m_MlAaConfig.m_LuminanceEquation;
+	Params.mEdgeThresold = m_MlAaConfig.m_EdgeDetectionThresold;
+	Params.mView = &View;
+	Params.mbUseSceneColorLdr = FALSE;
+	FillCommon(View,Params.mSizeX,Params.mSizeY,Params.m_Viewport,Params.mSceneColor,SF_Point);
+
+	TShaderMapRef<FMLAAVertexShader> VertexShader(GetGlobalShaderMap(GRHIShaderPlatform));
+	if (!*VertexShader)
+	{
+		ReportMissingArkPpAAShader(TEXT("FMLAAVertexShader"));
+		return;
+	}
+	if (bInSRGBSpace)
+	{
+		if (!FlushMlaaShader<FMLAABlend_SRGB_PixelShaderType>(VertexShader,Params,TEXT("FMLAABlend_SRGB_PixelShader")))
+		{
+			return;
+		}
+	}
+	else
+	{
+		if (!FlushMlaaShader<FMLAABlend_Linear_PixelShaderType>(VertexShader,Params,TEXT("FMLAABlend_Linear_PixelShader")))
+		{
+			return;
+		}
+	}
+	RHISetColorWriteMask(CW_RGB);
+	(*VertexShader)->SetParameters(Params);
+
+	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
+	RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
+	GDisCensusArkPpDraws++;
+	GDisCensusArkPpAADraws++;
+}
+
+/** DISHONORED(port): 2013 rva 0x50e090 (2012 0x54e7b0) - the reciprocal source size and the view rectangle in it. */
+void FFXAAVertexShader::SetParameters(const FArkPpFxAaParameters& iParams)
+{
+	const FVertexShaderRHIParamRef Shader = GetVertexShader();
+	const FLOAT OOSizeX = 1.0f / (FLOAT)iParams.mSizeX;
+	const FLOAT OOSizeY = 1.0f / (FLOAT)iParams.mSizeY;
+	SetVertexShaderValue(Shader,fxaaQualityRcpFrameParameter,FVector2D(OOSizeX,OOSizeY));
+	SetVertexShaderValue(Shader,TexCoordScaleBiasParameter,FVector4(
+		(iParams.m_Viewport.Z - iParams.m_Viewport.X) * OOSizeX,
+		(iParams.m_Viewport.W - iParams.m_Viewport.Y) * OOSizeY,
+		iParams.m_Viewport.X * OOSizeX,
+		iParams.m_Viewport.Y * OOSizeY));
+}
+
+/** DISHONORED(port): 2013 rva 0x50e170 (2012 0x54e900) - the same pair as the FXAA vertex shader's. */
+void FMLAAVertexShader::SetParameters(const FArkPpMlaaParameters& iParams)
+{
+	const FVertexShaderRHIParamRef Shader = GetVertexShader();
+	const FLOAT OOSizeX = 1.0f / (FLOAT)iParams.mSizeX;
+	const FLOAT OOSizeY = 1.0f / (FLOAT)iParams.mSizeY;
+	SetVertexShaderValue(Shader,InvTextureSizeParameter,FVector2D(OOSizeX,OOSizeY));
+	SetVertexShaderValue(Shader,TexCoordScaleBiasParameter,FVector4(
+		(iParams.m_Viewport.Z - iParams.m_Viewport.X) * OOSizeX,
+		(iParams.m_Viewport.W - iParams.m_Viewport.Y) * OOSizeY,
+		iParams.m_Viewport.X * OOSizeX,
+		iParams.m_Viewport.Y * OOSizeY));
+}
 
 /** DISHONORED(port): 2013 rva 0x524220 (2012 0x565120). */
 UBOOL UArkPpNodeAA::IsValid(FArkPpIsValidData& Cache)

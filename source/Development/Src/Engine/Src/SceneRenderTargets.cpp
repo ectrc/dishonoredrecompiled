@@ -2378,13 +2378,19 @@ void FSceneRenderTargets::InitDynamicRHI()
 				QuarterSizeX,QuarterSizeY,PF_FloatRGBA,RenderTargets[ArkDofQuarter].Texture,0,TEXT("ArkDofQuarter"));
 		}
 
-		if(GSystemSettings.bAllowPostprocessMLAA)
+		// DISHONORED(port): 2013 rva 0x451080 creates both MLAA targets with no MLAA-specific test at all - full buffer
+		// size, EPixelFormat 22 (PF_R16F) for the edge mask and 16 (PF_G16R16F) for the edge count. The reference gate
+		// this replaces was GSystemSettings.bAllowPostprocessMLAA, which is a DISHONORED_SHIM_STATIC (retail's
+		// FSystemSettingsData has iType_AntiAlias @128 in its place), so it read FALSE and neither target was ever
+		// created - and MLAA is what the shipped post-process chain's AA node asks for (m_Type 1).
 		{
 			// on console we only support FXAA which doesn't require the rendertargets we only need for MLAA
 #if !CONSOLE
 			EPixelFormat EdgeMaskFormat;
 			EPixelFormat EdgeCountFormat;
 
+			// DISHONORED(retail): retail names PF_R16F for the mask on every platform; the SM5 PF_G8 choice is the
+			// reference engine's and this branch is unreachable here (GRHIShaderPlatform is SP_PCD3D_SM3).
 			if (GRHIShaderPlatform == SP_PCD3D_SM5)
 			{
 				EdgeMaskFormat = PF_G8;

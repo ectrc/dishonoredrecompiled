@@ -991,6 +991,18 @@ struct FPrimitiveViewRelevance
 	BITFIELD bNeedsPreRenderView : 1;
 	/** The primitive has one or more soft masked elements. */
 	BITFIELD bSoftMaskedRelevance : 1;
+	/**
+	 * The primitive draws in the soul-rendering (dark vision) pass.
+	 * DISHONORED(layout): 2012 PDB FPrimitiveViewRelevance bit 23, immediately after bSoftMaskedRelevance (bit 22) and
+	 * read as mRaw & 0x800000 by ProcessVisible (2013 rva 0x45f060), which appends the primitive to
+	 * FViewInfo::m_VisibleSoulPrimitives with no DPG split. Placed where retail has it relative to
+	 * bSoftMaskedRelevance; the absolute bit cannot match for the reasons given at bBloomPartRelevance above.
+	 * DISHONORED(bringup): nothing sets it yet. Retail sets it from the scene proxy's own soul material
+	 * (FStaticMeshSceneProxy::m_SoulMaterial and the skeletal proxy's, fed by UMeshComponent::SetSoulMaterial
+	 * 2013 rva 0x12b270 / USkeletalMeshComponent's 0x314610 / UStaticMeshComponent's 0x35afe0), and the only thing in
+	 * the cook that calls those is UDisActivePowerComponent_DarkVision (DishonoredGame). See agents/agentEE.md 5.
+	 */
+	BITFIELD iSoulRenderingRelevance : 1;
 	/** The translucent elements should render DoF blur factor to the DoF blur buffer */
 	BITFIELD bTranslucencyDoFRelevance : 1;
 	/** The primitive has one or more elements that have SeparateTranslucency. */
@@ -1030,6 +1042,7 @@ struct FPrimitiveViewRelevance
 		bForceDirectionalLightsDynamic(FALSE),
 		bNeedsPreRenderView(FALSE),
 		bSoftMaskedRelevance(FALSE),
+		iSoulRenderingRelevance(FALSE),
 		bTranslucencyDoFRelevance(FALSE),
 		bSeparateTranslucencyRelevance(FALSE),
 		bInitializedThisFrame(FALSE)
@@ -1062,6 +1075,7 @@ struct FPrimitiveViewRelevance
 		bForceDirectionalLightsDynamic |= B.bForceDirectionalLightsDynamic != 0;
 		bNeedsPreRenderView |= B.bNeedsPreRenderView != 0;
 		bSoftMaskedRelevance |= B.bSoftMaskedRelevance != 0;
+		iSoulRenderingRelevance |= B.iSoulRenderingRelevance;
 		bTranslucencyDoFRelevance |= B.bTranslucencyDoFRelevance != 0;
 		bSeparateTranslucencyRelevance |= B.bSeparateTranslucencyRelevance != 0;
 		bInitializedThisFrame |= B.bInitializedThisFrame;

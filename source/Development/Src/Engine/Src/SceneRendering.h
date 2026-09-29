@@ -506,6 +506,18 @@ public:
 	 * DISHONORED(layout): 2012 PDB FViewInfo::BloomPartPrimSet @1856, straight after DistortionPrimSet @1808.
 	 */
 	FArkBloomPartPrimSet BloomPartPrimSet[SDPG_MAX_SceneRender];
+
+	/**
+	 * The primitives of this view that draw in the soul-rendering (dark vision) pass.
+	 * DISHONORED(layout): 2012 PDB FViewInfo::m_VisibleSoulPrimitives @1460, one
+	 * TArray<FPrimitiveSceneInfo*,SceneRenderingAllocator>; ProcessVisible (2013 rva 0x45f060) appends to it from
+	 * relevance bit 23 with no DPG split, unlike BloomPartPrimSet above.
+	 * DISHONORED(bringup): the pass that draws this set is UDisDarkVisionMeshRenderPpController::Render (2013 rva
+	 * 0x7fe690) in DishonoredGame, not in Engine, and no node of the shipped chain carries that controller
+	 * (agents/agentDE.md 5). Nothing sets the relevance bit yet either - see Scene.h. The census reports the set's size
+	 * every frame so it cannot be mistaken for working.
+	 */
+	TArray<const FPrimitiveSceneInfo*,SceneRenderingAllocator> m_VisibleSoulPrimitives;
 	
 	/** A map from light ID to a boolean visibility value. */
 	TArray<FVisibleLightViewInfo,SceneRenderingAllocator> VisibleLightInfos;

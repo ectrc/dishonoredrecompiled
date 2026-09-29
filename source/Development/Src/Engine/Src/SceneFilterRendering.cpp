@@ -598,8 +598,19 @@ void GaussianBlurFilterBuffer(
 	// The effect blur scale is specified in pixel widths at a reference resolution of 1280x?.
 	const FLOAT ResolutionFraction = ViewSizeX / 1280.0f;
 
-	FLOAT EffectiveBlurRadius =  KernelRadius / FilterDownsampleFactor * ResolutionFraction;
+	// DISHONORED(port): 2013 rva 0x45c3d0 (2012 0x485160, build/agentEE/decomp12). Retail's own
+	// GaussianBlurFilterBuffer is `void (UINT SizeX, UINT SizeY, FLOAT KernelRadius, FLOAT KernelScale, UINT
+	// FilterColorIndex, FVector2D SampleMaskMin, FVector2D SampleMaskMax)` - it derives this function's ViewSizeX as
+	// SizeX * FilterDownsampleFactor, which is what every reference caller passes it anyway, and clamps the
+	// downsampled radius to 16 before scaling:
+	//     Min(KernelRadius / FilterDownsampleFactor, 16) * (SizeX * FilterDownsampleFactor / 1280)
+	// The clamp is the one term this tree was missing (agentDA.md 5 / agentDE.md hand-over 2, verified in
+	// build/agentDE/gauss12.asm).
+	FLOAT EffectiveBlurRadius = Min<FLOAT>(KernelRadius / FilterDownsampleFactor,16.0f) * ResolutionFraction;
 
+	// DISHONORED(retail): retail has neither this early-out nor the single-pass branch below (its two
+	// ApplyGaussianBlurStep calls are unconditional, 2012 0x485160) and no maximum sample count. Both are kept: they
+	// are the reference engine's and they only fire where retail would have drawn an all-but-identity kernel.
 	if(EffectiveBlurRadius <= 0.1f)
 	{
 		// optimization: no blur needed

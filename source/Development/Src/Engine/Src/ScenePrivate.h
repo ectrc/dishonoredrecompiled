@@ -55,6 +55,12 @@ extern INT GDisCensusBloomPartRelevant;          // ProcessVisible: the relevanc
 extern INT GDisCensusBloomPartSetPrims[4];       // primitives in each of FViewInfo::BloomPartPrimSet (SDPG_MAX_SceneRender)
 extern INT GDisCensusBloomPartPrims;             // primitives of the DPG FSceneRenderer::RenderBloomParts runs at
 extern INT GDisCensusBloomPartDraws;             // draws that pass issued (mesh draws + downsample + 2 blurs + compose)
+// DISHONORED(bringup, agent EE): the soul-part set and the fog mask, the other two halves of the same census line
+extern INT GDisCensusSoulPartRelevant;           // ProcessVisible: the relevance carried the soul-rendering bit (23)
+extern INT GDisCensusSoulPartPrims;              // primitives in FViewInfo::m_VisibleSoulPrimitives
+extern INT GDisCensusSoulPartDraws;              // draws the soul-part pass issued
+extern INT GDisCensusFogMaskStencilDraws;        // portal quads FSceneRenderer::RenderFogMaskStencil drew into stencil
+extern INT GDisCensusFogMaskTextureBound;        // cooked DisFog permutations whose MaskTexture sampler is actually bound
 
 /** max DPG for scene rendering */
 enum { SDPG_MAX_SceneRender = SDPG_PostProcess };

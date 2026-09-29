@@ -30,7 +30,32 @@
 #include "EnginePrivate.h"
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
+#include "SceneRenderTargets.h"
+#include "arkcommonvertexdeclaration.h"
 #include "arkpp.h"
+
+/**
+ * DISHONORED(layout): 2012 PDB FArkPpKuwaParameters (112 bytes, 16-byte aligned). retail's m_Viewport is an FBox2D,
+ * which Dishonored's branch redefines as one `FVector4 m_MinX_MinY_MaxX_MaxY`; this tree's FBox2D is UE3's
+ * Min/Max/bIsValid one, so the member is the FVector4 itself, components (MinX, MinY, MaxX, MaxY).
+ */
+struct FArkPpKuwaParameters
+{
+	UINT mSizeX;
+	UINT mSizeY;
+	FLOAT mStrength;
+	FVector4 m_Viewport;
+	FTexture mSceneColor;
+	const FSceneView* mView;
+
+	FArkPpKuwaParameters()
+		: mSizeX(0)
+		, mSizeY(0)
+		, mStrength(0.0f)
+		, m_Viewport(0.0f,0.0f,0.0f,0.0f)
+		, mView(NULL)
+	{}
+};
 
 /**
  * DISHONORED(port): the shader types of Arkane's Kuwahara painterly filter node (UArkPpNodeKuwa /
@@ -66,6 +91,20 @@ public:
 		return bShaderHasOutdatedParameters;
 	}
 
+	/** DISHONORED(port): 2013 rva 0x5155e0 (2012 0x5555e0) - (1/w, 1/h, strength, 0) and the view rectangle in the source. */
+	void SetParameters(const FArkPpKuwaParameters& iParams)
+	{
+		const FVertexShaderRHIParamRef Shader = GetVertexShader();
+		const FLOAT OOSizeX = 1.0f / (FLOAT)iParams.mSizeX;
+		const FLOAT OOSizeY = 1.0f / (FLOAT)iParams.mSizeY;
+		SetVertexShaderValue(Shader,m_OORTSizeParameter,FVector4(OOSizeX,OOSizeY,iParams.mStrength,0.0f));
+		SetVertexShaderValue(Shader,m_ViewportScaleBiasParameter,FVector4(
+			(iParams.m_Viewport.Z - iParams.m_Viewport.X) * OOSizeX,
+			(iParams.m_Viewport.W - iParams.m_Viewport.Y) * OOSizeY,
+			iParams.m_Viewport.X * OOSizeX,
+			iParams.m_Viewport.Y * OOSizeY));
+	}
+
 private:
 	FShaderParameter m_OORTSizeParameter;
 	FShaderParameter m_ViewportScaleBiasParameter;
@@ -97,6 +136,12 @@ public:
 		return bShaderHasOutdatedParameters;
 	}
 
+	/** DISHONORED(port): 2013 rva 0x50dab0 (2012 0x54dab0) - the source colour and nothing else. */
+	void SetParameters(const FArkPpKuwaParameters& iParams)
+	{
+		SetTextureParameter(GetPixelShader(),m_SrcColor,&iParams.mSceneColor);
+	}
+
 private:
 	FShaderResourceParameter m_SrcColor;
 };
@@ -115,9 +160,32 @@ IMPLEMENT_SHADER_TYPE_NAMED(template<>,FKuwaPixelShader3Type,TEXT("FKuwaPixelSha
 	UArkPpNodeKuwa / FArkPpNodeKuwaProxy (2012 PDB 28 bytes; ctor 0x54bac0, Render 0x5646b0, RenderKuwa 0x564150)
 -----------------------------------------------------------------------------*/
 
+/** DISHONORED(bringup): the Kuwahara node's share of the post-process census. */
+INT GDisCensusArkPpKuwaDraws = 0;
+
+
+/** DISHONORED(bringup): -noarkppkuwa leaves the filter out; the switch of this node's pair. */
+static UBOOL DishonoredNoArkPpKuwa()
+{
+	// a file-scope static ParseParam in a static library runs before WinMain sets GCmdLine (agent CA): read on first use
+	static UBOOL bNo = ParseParam(appCmdLine(),TEXT("noarkppkuwa"));
+	return bNo;
+}
+
+/** DISHONORED(bringup): one line when a cooked Kuwahara shader is missing, so a pass that cannot run says so. */
+static void ReportMissingArkPpKuwaShader(const TCHAR* Name)
+{
+	static UBOOL bReported = FALSE;
+	if (!bReported)
+	{
+		bReported = TRUE;
+		warnf(TEXT("DISHONORED(bringup): dishonored kuwa: no cooked shader for %s, the pass is skipped"),Name);
+	}
+}
+
 /**
- * DISHONORED(port): the Kuwahara filter node's proxy: the graph shape and the surface delegation are retail's.
- * DISHONORED(bringup): the filter pass itself is not ported - see Render.
+ * DISHONORED(port): the Kuwahara filter node's proxy: the graph shape, the surface delegation and the filter pass are
+ * retail's (ctor 2013 rva 0x50b230, Render 0x5238c0, RenderKuwa 0x523350).
  */
 class FArkPpNodeKuwaProxy : public FArkPpNodeProxy
 {
@@ -132,12 +200,8 @@ public:
 	}
 
 	/**
-	 * DISHONORED(port): 2013 rva 0x5238c0 (2012 0x5646b0) - retail renders the source colour and the target with m_bForceToDestination
-	 * cleared and then draws the filter (RenderKuwa, 0x564150) with TKuwa{Vertex,Pixel}Shader<3|5>.
-	 * DISHONORED(bringup): the filter pass is not ported. The source colour is rendered with the unchanged config, so
-	 * the image still reaches the destination - unfiltered. The four shader types load (agentBD.md 1); the pass needs
-	 * TKuwaVertexShader::SetParameters (0x5555e0) and TKuwaPixelShader::SetParameters (0x54dab0) with
-	 * FArkPpKuwaParameters (2012 PDB 112 bytes).
+	 * DISHONORED(port): 2013 rva 0x5238c0 (2012 0x5646b0) - retail renders the source colour *and* the surface target
+	 * with m_bForceToDestination cleared and then draws the filter (RenderKuwa, 0x523350).
 	 */
 	virtual UBOOL Render(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
 	{
@@ -146,14 +210,24 @@ public:
 			return FALSE;
 		}
 		m_bDone = TRUE;
-		GDisCensusArkPpSkipped++;
-		UBOOL bDirty = m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
-		if (m_TargetProxy)
+		if (DishonoredNoArkPpKuwa() || !m_InProxy || !m_TargetProxy)
 		{
-			bDirty |= m_TargetProxy->Render(Scene,View,FArkPpRenderConfig(FALSE));
+			// retail dereferences both proxies with no check
+			GDisCensusArkPpSkipped++;
+			UBOOL bDirty = m_InProxy ? m_InProxy->Render(Scene,View,Config) : FALSE;
+			if (m_TargetProxy)
+			{
+				bDirty |= m_TargetProxy->Render(Scene,View,FArkPpRenderConfig(FALSE));
+			}
+			return bDirty;
 		}
-		return bDirty;
+		m_InProxy->Render(Scene,View,FArkPpRenderConfig(FALSE));
+		m_TargetProxy->Render(Scene,View,FArkPpRenderConfig(FALSE));
+		RenderKuwa(Scene,View,Config);
+		return TRUE;
 	}
+
+	UBOOL RenderKuwa(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config);
 
 	/** DISHONORED(port): 2013 rva 0x50e9d0 (2012 0x54f120) / 0x54f130 - everything is the source colour's. */
 	virtual const FSurfaceRHIRef GetSurface(const FViewInfo& View) { return m_InProxy ? m_InProxy->GetSurface(View) : FSurfaceRHIRef(); }
@@ -167,6 +241,88 @@ private:
 	INT m_Type;
 	FLOAT mStrength;
 };
+
+/**
+ * DISHONORED(port): 2013 rva 0x523350 (2012 0x564150). One full-screen triangle through the Kuwahara pair the node's
+ * kernel picks: m_Type 1 takes the radius-3 shaders and anything else the radius-5 ones. Two details are retail's own:
+ * the source texture and its size come from the *input* proxy while the viewport comes from the *surface target*
+ * proxy's size, and the pass sets no depth, rasterizer or blend state of its own - it inherits whatever the node above
+ * it left set.
+ */
+UBOOL FArkPpNodeKuwaProxy::RenderKuwa(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
+{
+	SCOPED_DRAW_EVENT(EventKuwa)(DEC_SCENE_ITEMS,TEXT("Kuwa"));
+
+	FSurfaceRHIRef iSurface;
+	if (!Config.m_bForceToDestination || GSystemSettings.NeedsUpscale())
+	{
+		iSurface = GetSurface(View);
+	}
+	else
+	{
+		iSurface = GSceneRenderTargets.GetBackBuffer();
+	}
+	if (!IsValidRef(iSurface))
+	{
+		return TRUE;
+	}
+	RHISetRenderTarget(iSurface,FSurfaceRHIRef());
+
+	FArkPpKuwaParameters Params;
+	Params.mStrength = mStrength;
+	Params.mView = &View;
+	Params.mSceneColor.TextureRHI = m_InProxy->GetTexture(View);
+	Params.mSceneColor.SamplerStateRHI = TStaticSamplerState<SF_Bilinear,AM_Clamp,AM_Clamp,AM_Clamp>::GetRHI();
+	Params.mSizeX = m_TargetProxy->GetSurfaceSizeX();
+	Params.mSizeY = m_TargetProxy->GetSurfaceSizeY();
+
+	const UINT BufferSizeX = GSceneRenderTargets.GetBufferSizeX();
+	const UINT BufferSizeY = GSceneRenderTargets.GetBufferSizeY();
+	const UINT MinX = Params.mSizeX * View.RenderTargetX / BufferSizeX;
+	const UINT MinY = Params.mSizeY * View.RenderTargetY / BufferSizeY;
+	const UINT MaxX = Params.mSizeX * (View.RenderTargetX + View.RenderTargetSizeX) / BufferSizeX;
+	const UINT MaxY = Params.mSizeY * (View.RenderTargetY + View.RenderTargetSizeY) / BufferSizeY;
+	RHISetViewport(MinX,MinY,0.0f,MaxX,MaxY,1.0f);
+	Params.m_Viewport = FVector4((FLOAT)MinX,(FLOAT)MinY,(FLOAT)MaxX,(FLOAT)MaxY);
+
+	if (m_Type == 1)
+	{
+		TShaderMapRef<FKuwaVertexShader3Type> VertexShader(GetGlobalShaderMap(GRHIShaderPlatform));
+		TShaderMapRef<FKuwaPixelShader3Type> PixelShader(GetGlobalShaderMap(GRHIShaderPlatform));
+		if (!*VertexShader || !*PixelShader)
+		{
+			ReportMissingArkPpKuwaShader(TEXT("FKuwaVertexShader3 / FKuwaPixelShader3"));
+			return FALSE;
+		}
+		static FGlobalBoundShaderState Kuwa3BS;
+		SetGlobalBoundShaderState(Kuwa3BS,ArkGetCommonVertexDeclaration(ARK_COMMON_VD_FLOAT2),
+			*VertexShader,*PixelShader,sizeof(FVector2D));
+		(*VertexShader)->SetParameters(Params);
+		(*PixelShader)->SetParameters(Params);
+	}
+	else
+	{
+		TShaderMapRef<FKuwaVertexShader5Type> VertexShader(GetGlobalShaderMap(GRHIShaderPlatform));
+		TShaderMapRef<FKuwaPixelShader5Type> PixelShader(GetGlobalShaderMap(GRHIShaderPlatform));
+		if (!*VertexShader || !*PixelShader)
+		{
+			ReportMissingArkPpKuwaShader(TEXT("FKuwaVertexShader5 / FKuwaPixelShader5"));
+			return FALSE;
+		}
+		static FGlobalBoundShaderState Kuwa5BS;
+		SetGlobalBoundShaderState(Kuwa5BS,ArkGetCommonVertexDeclaration(ARK_COMMON_VD_FLOAT2),
+			*VertexShader,*PixelShader,sizeof(FVector2D));
+		(*VertexShader)->SetParameters(Params);
+		(*PixelShader)->SetParameters(Params);
+	}
+
+	RHISetColorWriteMask(CW_RGBA);
+	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
+	RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
+	GDisCensusArkPpDraws++;
+	GDisCensusArkPpKuwaDraws++;
+	return TRUE;
+}
 
 /** DISHONORED(port): 2013 rva 0x524710 (2012 0x565610). */
 UBOOL UArkPpNodeKuwa::IsValid(FArkPpIsValidData& Cache)

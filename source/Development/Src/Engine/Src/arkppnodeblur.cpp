@@ -36,6 +36,9 @@
 #include "SceneFilterRendering.h"
 #include "arkpp.h"
 
+/** DISHONORED(bringup, agent EE): the motion-blur node's share of the post-process census. */
+INT GDisCensusArkPpBlurDraws = 0;
+
 /**
  * DISHONORED(port): the shader types of Arkane's post-process blur node (UArkPpNodeBlur / FArkPpNodeBlurProxy).
  * One vertex and one pixel shader templated on the kind of blur; three cooked vertex shaders and five cooked pixel

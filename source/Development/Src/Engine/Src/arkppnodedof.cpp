@@ -45,6 +45,9 @@
 #include "arkcommonvertexdeclaration.h"
 #include "arkpp.h"
 
+/** DISHONORED(bringup, agent EE): the depth-of-field node's share of the post-process census. */
+INT GDisCensusArkPpDofDraws = 0;
+
 /**
  * DISHONORED(port): the shader types of Arkane's depth-of-field node (UArkPpNodeDof / FArkPpNodeDofProxy), which is
  * also where the colour treatment happens: the uber pixel shader applies focus, the linear-to-gamma ramp and the film
@@ -893,10 +896,8 @@ private:
  * Blend reads mLowResColor back out of FilterColor, so the "low resolution colour" is really a blurred full-size
  * buffer fed from a half-size downsample.
  *
- * DISHONORED(bringup): retail's GaussianBlurFilterBuffer takes an absolute kernel radius; the reference engine's,
- * which is what this tree has, scales the radius by ViewSizeX/1280 and takes a sample-mask pair. The node's own width
- * is passed as the view width and the mask is the no-clamping pair. The pass only runs when the far blur amount is
- * above zero, which the content's own chain leaves at zero.
+ * DISHONORED(port, agent EE): the blur call is retail's exactly now; the deviation this comment used to describe is
+ * closed. It runs every frame on the shipped chain, whose m_FarBlurAmount is 0.300 in L_Tower_P (agentDE.md 1).
  */
 UBOOL FArkPpNodeDofProxy::Downsample(const FScene* Scene,FViewInfo& View,FArkPpRenderConfig Config)
 {
@@ -944,10 +945,30 @@ UBOOL FArkPpNodeDofProxy::Downsample(const FScene* Scene,FViewInfo& View,FArkPpR
 		RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
 		RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
 		GDisCensusArkPpDraws++;
+		GDisCensusArkPpDofDraws++;
 	}
 
-	GaussianBlurFilterBuffer(View,(FLOAT)GetSurfaceSizeX(),GetSurfaceSizeX(),GetSurfaceSizeY(),7.0f,1.0f,
-		SRTI_FilterColor0,FVector2D(-1.0f,-1.0f),FVector2D(2.0f,2.0f));
+	// DISHONORED(port, agent EE): retail's call is `GaussianBlurFilterBuffer(GetSurfaceSizeX(), GetSurfaceSizeY(),
+	// 7.0f, 1.0f, 0, FVector2D(0,0), FVector2D(1,1))` (2012 0x5634ac..0x563503 disassembled in
+	// build/agentEE/downsample12.asm). Retail derives this function's ViewSizeX as SizeX * FilterDownsampleFactor, so
+	// passing GetSurfaceSizeX() alone made the kernel FilterDownsampleFactor times too narrow; and retail's sample mask
+	// is the (0,0)..(1,1) pair, not the (-1,-1)..(2,2) no-clamping pair. Both are closed here - agentDA.md 5's one
+	// documented deviation, on a path the level's own m_FarBlurAmount 0.300 reaches every frame.
+	// DISHONORED(bringup): -arkppdofgaussold restores the arguments this call had before the deviation was closed, so
+	// the correction has a pair from one binary. Drop it with the rest of the graph's bring-up lines.
+	static UBOOL bGaussOld = ParseParam(appCmdLine(),TEXT("arkppdofgaussold"));
+	if (bGaussOld)
+	{
+		GaussianBlurFilterBuffer(View,(FLOAT)GetSurfaceSizeX(),GetSurfaceSizeX(),GetSurfaceSizeY(),7.0f,1.0f,
+			SRTI_FilterColor0,FVector2D(-1.0f,-1.0f),FVector2D(2.0f,2.0f));
+	}
+	else
+	{
+		GaussianBlurFilterBuffer(View,
+			(FLOAT)(GetSurfaceSizeX() * GSceneRenderTargets.GetFilterDownsampleFactor()),
+			GetSurfaceSizeX(),GetSurfaceSizeY(),7.0f,1.0f,
+			SRTI_FilterColor0,FVector2D(0.0f,0.0f),FVector2D(1.0f,1.0f));
+	}
 	return TRUE;
 }
 
@@ -994,6 +1015,7 @@ UBOOL FArkPpNodeDofProxy::LutCreation(const FLinearColor& iOverlay)
 	// retail resolves this one with bKeepOriginalSurface FALSE, unlike every other pass of the node
 	RHICopyToResolveTarget(GDofRamp.mRamp3DSurface,FALSE,FResolveParams());
 	GDisCensusArkPpDraws++;
+	GDisCensusArkPpDofDraws++;
 
 	// DISHONORED(bringup): -arkppdoflut writes the baked ramp out once so the colour ramp can be inspected.
 	static UBOOL bDumpLut = ParseParam(appCmdLine(),TEXT("arkppdoflut"));
@@ -1128,6 +1150,7 @@ UBOOL FArkPpNodeDofProxy::Blend(const FScene* Scene,FViewInfo& View,FArkPpRender
 	RHIDrawPrimitiveUP(PT_TriangleList,1,ArkFullScreenTriangleFloat2Vertices,sizeof(FVector2D));
 	RHICopyToResolveTarget(iSurface,TRUE,FResolveParams());
 	GDisCensusArkPpDraws++;
+	GDisCensusArkPpDofDraws++;
 
 	if (ArkPpDofDbg())
 	{

@@ -7,53 +7,14 @@
 #include "ScenePrivate.h"
 #include "SceneFilterRendering.h"
 #include "PostProcessAA.h"
+// DISHONORED(port, agent EE): FMLAAVertexShader, FMLAAComputeLineLengthPixelShader and FFXAAVertexShader moved into
+// arkppnodeaa.h so that Arkane's own antialiasing node (which is where retail declares all three) can bind them; the
+// three IMPLEMENT_SHADER_TYPE lines below stay here, which is where the cooked records are already found.
+#include "arkppnodeaa.h"
 
 extern TGlobalResource<FFilterVertexDeclaration> GFilterVertexDeclaration;
 
 const FPostProcessAA* FPostProcessAA::DeferredObject = 0;
-
-/*-----------------------------------------------------------------------------
-	FMLAAVertexShader
------------------------------------------------------------------------------*/
-class FMLAAVertexShader : public FGlobalShader
-{
-	DECLARE_SHADER_TYPE(FMLAAVertexShader,Global);
-public:
-
-	static UBOOL ShouldCache(EShaderPlatform Platform)
-	{
-		return IsPCPlatform(Platform);
-	}
-
-	/** Default constructor. */
-	FMLAAVertexShader() {}
-
-	/** Initialization constructor. */
-	FMLAAVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
-		FGlobalShader(Initializer)
-	{
-		InvTextureSizeParameter.Bind(Initializer.ParameterMap, TEXT("InvTextureSize"), TRUE);
-		TexCoordScaleBiasParameter.Bind(Initializer.ParameterMap, TEXT("TexCoordScaleBias"), TRUE);
-	}
-
-	/**
-	 * Serializer
-	 * DISHONORED(layout): the cooked FMLAAVertexShader is Arkane's (arkppnodeaa.cpp, FArkPpNodeAAProxy): two parameters
-	 * (2013 rva 0x50e170 SetParameters: (1/w, 1/h) @108 and (scale.xy, offset.xy) of the source rectangle @114; Serialize
-	 * 0x411fe0). The names are not recoverable from the shipping exe. The reference MLAA pass that binds this type is
-	 * never run (FSceneRenderer::RenderFinish); the Arkane AA node comes with the FArkPp graph.
-	 */
-	virtual UBOOL Serialize(FArchive& Ar)
-	{
-		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
-		Ar << InvTextureSizeParameter;
-		Ar << TexCoordScaleBiasParameter;
-		return bShaderHasOutdatedParameters;
-	}
-
-	FShaderParameter InvTextureSizeParameter;
-	FShaderParameter TexCoordScaleBiasParameter;
-};
 
 /*-----------------------------------------------------------------------------
 	FSRGBMLAAEdgeDetectionPixelShader
@@ -90,44 +51,6 @@ public:
 
 	FSceneTextureShaderParameters SceneTextureParameters;
 	FShaderParameter MLAAParameter;	
-private:
-};
-
-/*-----------------------------------------------------------------------------
-	FMLAAComputeLineLengthPixelShader
------------------------------------------------------------------------------*/
-class FMLAAComputeLineLengthPixelShader : public FGlobalShader
-{
-	DECLARE_SHADER_TYPE(FMLAAComputeLineLengthPixelShader,Global);
-public:
-
-	static UBOOL ShouldCache(EShaderPlatform Platform)
-	{
-		return IsPCPlatform(Platform);
-	}
-
-	/** Default constructor. */
-	FMLAAComputeLineLengthPixelShader() {}
-
-	/** Initialization constructor. */
-	FMLAAComputeLineLengthPixelShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
-		FGlobalShader(Initializer)
-	{
-		EdgeMaskTextureParameter.Bind(Initializer.ParameterMap, TEXT("EdgeMaskTexture"), TRUE);
-		MLAAParameter.Bind(Initializer.ParameterMap,TEXT("gParam"),TRUE);		
-	}
-
-	/** Serializer */
-	virtual UBOOL Serialize(FArchive& Ar)
-	{
-		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
-		Ar << EdgeMaskTextureParameter;
-		Ar << MLAAParameter;
-		return bShaderHasOutdatedParameters;
-	}
-
-	FShaderResourceParameter EdgeMaskTextureParameter;
-	FShaderParameter MLAAParameter;
 private:
 };
 
@@ -170,47 +93,6 @@ public:
 	FShaderResourceParameter EdgeCountTextureParameter;
 	FShaderParameter MLAAParameter;	
 private:
-};
-
-/*-----------------------------------------------------------------------------
-	FFXAAVertexShader
------------------------------------------------------------------------------*/
-class FFXAAVertexShader : public FGlobalShader
-{
-	DECLARE_SHADER_TYPE(FFXAAVertexShader,Global);
-public:
-
-	static UBOOL ShouldCache(EShaderPlatform Platform)
-	{
-		return TRUE;
-	}
-
-	/** Default constructor. */
-	FFXAAVertexShader() {}
-
-	/** Initialization constructor. */
-	FFXAAVertexShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer):
-		FGlobalShader(Initializer)
-	{
-		fxaaQualityRcpFrameParameter.Bind(Initializer.ParameterMap, TEXT("fxaaQualityRcpFrame"), TRUE);
-		TexCoordScaleBiasParameter.Bind(Initializer.ParameterMap, TEXT("TexCoordScaleBias"), TRUE);
-	}
-
-	/**
-	 * Serializer
-	 * DISHONORED(layout): the cooked FFXAAVertexShader is Arkane's (arkppnodeaa.cpp): two parameters (2013 rva 0x50e090
-	 * SetParameters: (1/w, 1/h) @108 and the source rectangle scale/offset @114), same shape as FMLAAVertexShader above.
-	 */
-	virtual UBOOL Serialize(FArchive& Ar)
-	{
-		UBOOL bShaderHasOutdatedParameters = FShader::Serialize(Ar);
-		Ar << fxaaQualityRcpFrameParameter;
-		Ar << TexCoordScaleBiasParameter;
-		return bShaderHasOutdatedParameters;
-	}
-
-	FShaderParameter fxaaQualityRcpFrameParameter;
-	FShaderParameter TexCoordScaleBiasParameter;
 };
 
 /*-----------------------------------------------------------------------------

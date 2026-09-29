@@ -1699,6 +1699,7 @@ void FSceneRenderer::InitViews()
 	// DISHONORED(bringup): scene census, per-frame counters
 	GDisCensusFrameProcessed = 0;
 	GDisCensusBloomPartRelevant = 0;	// DISHONORED(bringup): counted by ProcessVisible below
+	GDisCensusSoulPartRelevant = 0;
 	GDisCensusFrameDistanceCulled = 0;
 	GDisCensusFrameFrustumCulled = 0;
 	GDisCensusFrameOccluded = 0;
@@ -3459,6 +3460,11 @@ UBOOL FSceneRenderer::RenderPostProcessEffects(UINT DPGIndex, UBOOL bAffectLight
 			GDisCensusArkPpDraws = 0;
 			GDisCensusArkPpMaterialDraws = 0;
 			GDisCensusArkPpSkipped = 0;
+			// DISHONORED(bringup, agent EE): the per-node draw counters of the census line
+			GDisCensusArkPpDofDraws = 0;
+			GDisCensusArkPpAADraws = 0;
+			GDisCensusArkPpBlurDraws = 0;
+			GDisCensusArkPpKuwaDraws = 0;
 			RHISetViewParameters(View);
 			// retail widens the pixel shader's constant allocation for the graph and restores it afterwards
 			RHISetShaderRegisterAllocation(24,104);
@@ -4070,6 +4076,20 @@ UBOOL FSceneRenderer::ProcessVisible(
 #endif
 			}
 		}
+	}
+
+	// DISHONORED(port): 2013 rva 0x45f060 ProcessVisible - the soul set is one flat list, filled from relevance bit 23
+	// with no DPG split (the bloom-part sets above are per DPG). Retail appends to FViewInfo::m_VisibleSoulPrimitives @1460.
+	if( ViewRelevance.iSoulRenderingRelevance )
+	{
+		GDisCensusSoulPartRelevant++;
+		View.m_VisibleSoulPrimitives.AddItem(CompactPrimitiveSceneInfo.PrimitiveSceneInfo);
+#if WITH_REALD
+		if (bDoStereo)
+		{
+			View2->m_VisibleSoulPrimitives.AddItem(CompactPrimitiveSceneInfo.PrimitiveSceneInfo);
+		}
+#endif
 	}
 
 	if( ViewRelevance.bTranslucentRelevance )
@@ -4865,6 +4885,12 @@ INT GDisCensusBloomPartRelevant = 0;	// primitives whose relevance carried the b
 INT GDisCensusBloomPartSetPrims[SDPG_MAX_SceneRender] = { 0, 0, 0, 0 };	// primitives in each of the four sets
 INT GDisCensusBloomPartPrims = 0;	// bloom-part primitives found for the view
 INT GDisCensusBloomPartDraws = 0;	// draws of the bloom parts pass (mesh draws + downsample + blur + compose)
+// DISHONORED(bringup, agent EE): the soul-part set and the fog mask
+INT GDisCensusSoulPartRelevant = 0;
+INT GDisCensusSoulPartPrims = 0;
+INT GDisCensusSoulPartDraws = 0;
+INT GDisCensusFogMaskStencilDraws = 0;
+INT GDisCensusFogMaskTextureBound = 0;
 INT GDisCensusArkPpNodes = 0;		// FArkPp graph nodes rendered
 INT GDisCensusArkPpDraws = 0;		// draws of the FArkPp graph
 INT GDisCensusArkPpMaterialDraws = 0;	// material-node tiles drawn (the colour treatment)
@@ -4932,6 +4958,8 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 			if (NumCensusFrames == 0 || (NumCensusFrames % 30) == 0)
 			{
 				const INT StaticVisible = SceneRenderer->Views.Num() ? SceneRenderer->Views(0).NumVisibleStaticMeshElements : 0;
+				// DISHONORED(bringup, agent EE): the soul set's size, read where it still exists
+				GDisCensusSoulPartPrims = SceneRenderer->Views.Num() ? SceneRenderer->Views(0).m_VisibleSoulPrimitives.Num() : 0;
 				debugf(TEXT("DISHONORED(bringup): scene census: scene %i prims (%i no proxy), %i static elements (%i prims with none), base pass adds %i (%i blend-skipped); frame: %i processed, %i dist-culled, %i frustum-culled, %i occluded, %i visible (%i static, %i dynamic, %i no relevance), %i static elements visible, draw lists %i/%i drawn"),
 					GDisCensusPrimAdded, GDisCensusPrimNoProxy, GDisCensusStaticElements, GDisCensusPrimNoStaticElements,
 					GDisCensusBasePassAdded, GDisCensusBasePassBlendSkipped,
@@ -4940,13 +4968,17 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
 					GDisCensusFrameDynamicRelevant, GDisCensusFrameNoRelevance, StaticVisible,
 					GDisCensusFrameDrawListDrawn, GDisCensusFrameDrawListVisited);
 
-				// DISHONORED(bringup): the post-process chain, counted per pass (packages BD and CE).
-				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes; bloom parts %i relevant, sets %i/%i/%i/%i, %i prims, %i draws; FArkPp %i nodes rendered, %i draws (%i material tiles), %i passes not ported"),
+				// DISHONORED(bringup): the post-process chain, counted per pass (packages BD, CE and EE).
+				debugf(TEXT("DISHONORED(bringup): post-process census: DisFog %i layers in scene, %i drawn in %i passes (mask stencil %i draws, MaskTexture bound %i); bloom parts %i relevant, sets %i/%i/%i/%i, %i prims, %i draws; soul parts %i relevant, %i prims, %i draws; FArkPp %i nodes rendered, %i draws (%i material tiles, dof %i, aa %i, blur %i, kuwa %i), %i passes not ported"),
 					GDisCensusFogScene, GDisCensusFogLayers, GDisCensusFogDraws,
+					GDisCensusFogMaskStencilDraws, GDisCensusFogMaskTextureBound,
 					GDisCensusBloomPartRelevant,
 					GDisCensusBloomPartSetPrims[0], GDisCensusBloomPartSetPrims[1], GDisCensusBloomPartSetPrims[2], GDisCensusBloomPartSetPrims[3],
 					GDisCensusBloomPartPrims, GDisCensusBloomPartDraws,
-					GDisCensusArkPpNodes, GDisCensusArkPpDraws, GDisCensusArkPpMaterialDraws, GDisCensusArkPpSkipped);
+					GDisCensusSoulPartRelevant, GDisCensusSoulPartPrims, GDisCensusSoulPartDraws,
+					GDisCensusArkPpNodes, GDisCensusArkPpDraws, GDisCensusArkPpMaterialDraws,
+					GDisCensusArkPpDofDraws, GDisCensusArkPpAADraws, GDisCensusArkPpBlurDraws, GDisCensusArkPpKuwaDraws,
+					GDisCensusArkPpSkipped);
 			}
 			NumCensusFrames++;
 

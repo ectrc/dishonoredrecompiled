@@ -132,4 +132,10 @@ extern INT GDisCensusArkPpDraws;
 extern INT GDisCensusArkPpMaterialDraws;
 extern INT GDisCensusArkPpSkipped;
 
+/** DISHONORED(bringup): the filter nodes' own draws (arkppnode{aa,blur,kuwa}.cpp), so the census names each pass. */
+extern INT GDisCensusArkPpAADraws;
+extern INT GDisCensusArkPpBlurDraws;
+extern INT GDisCensusArkPpKuwaDraws;
+extern INT GDisCensusArkPpDofDraws;
+
 #endif // _INC_ARKPP
