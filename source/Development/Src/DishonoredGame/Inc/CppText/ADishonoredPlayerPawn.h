@@ -17,3 +17,15 @@ public:
 	 * dishonoredplayerpawn_combat.cpp, which is retail's unit for it.
 	 */
 	void ApplyHealthEffectsPost( struct FArkPpConfig& Config );
+
+	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rva 0x6b8b60 - ported as far as the Super call, which
+	// is where the transform lands. Bodies in dissavegame.cpp.
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	void SaveLoadTutorialTrackers( FArchive& _rArchive ) const;	// 2012 rva 0x6fa970
+protected:
+	void GameLoad_Body( FArchive& _rArchive, ESaveLoadLocation _Location );	// 2012 rva 0x6fe820
+public:
+
+	// DISHONORED(port): agent ED (PHASE11 ED), 2012 rva 0x6fa960 (dishonoredplayerpawn.cpp:1541), the body
+	// retail shares between this class, UDishonoredGlobalAIManager and UDisNPCTravelManager.
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return Location == SLL_FILE; }

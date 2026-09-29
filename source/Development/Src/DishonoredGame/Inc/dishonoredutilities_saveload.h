@@ -316,6 +316,7 @@ namespace DisSaveLoad
 		INT		m_UnportedClasses;		// objects reached whose class has no GameLoad of its own
 		INT		m_NullObjects;			// object-data indices that resolved to no live object
 		INT		m_UntrustedSkips;		// objects skipped whose IsSaveable answer this tree cannot vouch for
+		INT		m_PartialBodies;		// bodies ported only part of the way, which stop the stream where they end
 		INT		m_PostGameLoad;
 		UBOOL	m_bDesynchronised;
 
@@ -354,6 +355,8 @@ namespace DisSaveLoad
 
 		virtual FArchive& operator<<( FName& _rName );				// 2013 rva 0x5fe780
 		virtual FArchive& operator<<( UObject*& _rpObject );			// 2013 rva 0x60c930
+		/** DISHONORED(written): after an abort, reads return zeros and the stream is not touched again */
+		virtual void Serialize( void* _pData, INT _Count );
 
 		void NotifyPostGameLoad();									// 2013 rva 0x60bbc0
 
@@ -403,6 +406,11 @@ class ULevel* DisGetCurrentLevel();
 /** DISHONORED(written): the current installed-content mask retail writes into the save header, from
     UGameEngine::DLCManagementBridge (2013 rva 0xb7aa0 over the bridge's per-entry state bytes) */
 INT DisGetInstalledContentMask();
+
+/** DISHONORED(port): 2013 rva 0x7e6cc0 (2012 0x8245c0), dishonoredutilities_saveload.cpp - every script
+    property of the object's own class, binary and untagged. Most of the small GameSave/GameLoad bodies are
+    nothing but this. */
+void DisSaveLoadObject( FArchive& _rArchive, class UObject* _pObject );
 
 /** DISHONORED(written): -savetest - reads every save in the directory through the ported container and, with
     -savetestwrite, writes one back out and re-reads it. Defined in dishonoredengine.cpp. */

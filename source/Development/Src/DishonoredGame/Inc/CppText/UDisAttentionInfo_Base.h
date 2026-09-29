@@ -1,9 +1,7 @@
-// UDisAIBlackboard cpptext: included inside the generated class body (DishonoredGameClasses.h).
-// DISHONORED(written): Serialize 2013 rva 0x72ffc0 (2012 0x792c30), disaiblackboard.cpp
+// UDisAttentionInfo_Base cpptext: included inside the generated class body.
 public:
-	virtual void Serialize( FArchive& Ar );
-
-	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x730060 / 0x7350d0. Body in dissavegame.cpp.
+	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rva 0x88af60 - retail folds GameLoad onto it. The
+	// most numerous of the eleven: 837 of them in one real save. Body in dissavegame.cpp.
 	virtual void GameSave( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 

@@ -2002,6 +2002,7 @@ public:
 
     DECLARE_CLASS(UDisDialogTree_InGameBind,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+#include "CppText/UDisDialogTree_InGameBind.h"
 };
 
 // DishonoredGame.DisDialogTree_OneShot: retail sizeof 372, reflected span 369..372 (2012 PDB sizeof 364)

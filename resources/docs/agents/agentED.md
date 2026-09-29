@@ -382,3 +382,194 @@ in `build/agentED/handover_table.txt`; the eleven that matter first are section 
    one member *had* changed shape between the builds and is worth adding to the audit:
    `FDisTaskTargetsSaveData::m_pTask` (2012) is `m_TaskID` in retail, and `UDishonoredTask_Base::GetTargets`
    has no declaration here at all.
+
+## 11. Continuation (merged HEAD `6723640`): across the frontier, and what actually stops the restore
+
+The brief for this continuation was section 5's accept 1: a real retail save putting the player back where it
+says. The frontier measured there — "eleven unported override classes before the player pawn at dictionary
+record 162" — was followed, and it turned out to be **an undercount of my own making**. Correcting it is the
+main result of this continuation, because it changes what the remaining work is.
+
+### 11.1 The correction: 190 classes were invisible to the vtable census
+
+`build/agentED/gen_classlists.py` and `frontier.py` both read `resources/docs/symbols/vtables.csv` and skipped
+every row whose class name contains `{for `. MSVC emits **one vftable per base of a multiply-inheriting
+class**, and the demangler names each of them `X{for <base>}` — the primary one, the one that carries UObject's
+slots, included. So every class with more than one base was dropped: `ADishonoredGameInfo`,
+`ADishonoredPlayerPawn`, `ADishonoredPawn`, `UDisAttentionInfo_Base`, `UDisNPCTravelManager` and about 185
+others. The generator now collapses the variants and keeps the one that has slot 68, which takes the
+entry-class list from **372 to 562** — the untrusted-skip gate was blind to 190 classes, and the frontier table
+was missing every multiply-inheriting class on it.
+
+With that fixed, `build/agentED/frontier2.py` gives the real picture for `Dishonored0.sav`'s persistent level:
+**60 override bodies are reached in the level state, 25 now ported and 35 not, and 8 of the missing ones are
+reached before the player pawn**:
+
+| order | class | 2013 `GameSave` / `GameLoad` | 2012 bytes | objects | note |
+|---|---|---|---|---|---|
+| 12 | `ADishonoredGameInfo` | `0x5fa210` / `0x5fa3f0` | 487 + 538 | 1 | **the stream stops here** |
+| 43 | `ADishonoredSpawner` | `0x659380` / `0x65ec30` | 188 + 300 | 41 | |
+| 133 | `UDisNPCTravelManager` | `0x6e0290` / `0x6e28a0` | 711 + 587 | 1 | |
+| 140 | `UDisGlobalUIManager` | `0x856f10` / `0x856f70` | 93 + 104 | 1 | |
+| 142 | `UDisGFxMoviePlayerHUD` | `0x7a5a90` / `0x7ac2e0` | 247 + 434 | 1 | **agent EA owns the movie players** |
+| 144 | `UDisGFxMoviePlayerPowerWheel` | — / `0x7b9e50` | 133 | 1 | **agent EA** |
+| 146 | `UDisPostProcessManager` | (no 2013 match) | 401 + 418 | 1 | |
+| 148 | `ADishonoredPlayerController` | `0x6a3140` / `0x6a31e0` | 133 + 147 | 1 | |
+
+Two of the eight are the `DishonoredGame` movie players, which are agent EA's for this wave, so the frontier
+cannot be crossed without either EA's area or EA's agreement. That is stated rather than trespassed on.
+
+### 11.2 What was ported, and the frontier moving
+
+Fourteen more classes, each verified by the census advancing:
+
+| class | what |
+|---|---|
+| `UDishonoredMapInfo` | 2013 `0x611780` / `0x60ba70`: the per-squad live counts, then one object reference and the objective task targets |
+| `UDisGlobalFactionManager` + `FDisRelationshipOverrideInfo` | `0x85f8c0` / `0x863d80` and `0x8598b0` / `0x8599f0`: a counted list of factions, each with two counted lists of (object, relationship) pairs |
+| `UDishonoredInventory` | `0x8169e0` / `0x816bc0`: the loadout struct, the re-equip item and type per slot, the backup loadout |
+| `UDisAttributes` + `operator<<(FDisModifiedAttribute)` + `operator<<(FDisAttributeModifier)` | the modified-attribute map; the struct serializer is 2012 `0x8ef4d0` and is **not** a member walk (three floats, one packed byte, and the modifier map only when non-empty; `m_fCachedModifiedValue` is never in the stream) |
+| `UDisDialogTree_InGameBind` | `0x8923d0` / `0x89d5b0`: the object's properties, then the active running instance as a script struct |
+| `UDisAttentionInfo_Base` | `0x88af60`: the object's own properties. 871 of them in one save — the most numerous class in the set |
+| `UDishonoredGlobalAIManager` | `0x841480`: the attention tag and the global blackboard reference |
+| `UDisAIBlackboard` | `0x730060` / `0x7350d0`: the properties and a counted record list |
+| `UDishonoredObjectivesComponent`, `UDishonoredObjective`, `UDishonoredTask_Base` | the objective tree, including both real `IsSaveable` bodies |
+| `UDishonoredPowersComponent` | `0x6d3a60` / `0x6d3c40`: a BYTE count then (FName, level+1) pairs, the stored levels and one inhibit flag |
+| `ADishonoredPlayerPawn` (`GameLoad` only) | `0x6b8b60`, as far as the Super call, with `SaveLoadTutorialTrackers` (2012 `0x6fa970`) and `GameLoad_Body` (2012 `0x6fe820`) |
+| `ADishonoredPawn` (`GameLoad` only) | 2012 `0x79b360`, **only as far as `AActor::GameLoad`**, which is where the transform lands; it then stops the stream and says so |
+
+Plus nine `IsSaveable` declarations taken from slot 67 — nine inline `return TRUE` bodies and, for
+`UDishonoredGlobalAIManager` and `ADishonoredPlayerPawn`, the real one at 2012 `0x6fa960`,
+`return Location == SLL_FILE`, which retail shares with `UDisNPCTravelManager`.
+
+The census moved as the loop predicted:
+
+```
+before:  data 1 restored, 26/619631 bytes; 1 unported    -> stopped at DishonoredMapInfo
+after:   data 2 restored, 28/619631 bytes; 1 unresolved  -> stopped at dictionary index 12
+```
+
+Two objects restored — `AWorldInfo` and `UDishonoredMapInfo` — with every byte accounted for. 28 bytes is the
+whole of the stream to that point: 2 for the deleted-actor count, 2 for the object index, 8 for
+`AActor::GameLoad`, 12 for the world clocks, 2 for `MyMapInfo`, 2 for the map info's own object reference.
+Checked against the raw bytes with `build/agentED/head_bytes.py`, not inferred from the decompiler.
+
+### 11.3 What actually stops the restore, and it is not the override count
+
+The stream now stops at **dictionary record 12 because the object is not there**:
+
+```
+Warning, DisSaveLoad: stopping the level restore at dictionary index 12, which resolved to no live object in
+this session: retail wrote that object's state inline with no length prefix, so its bytes cannot be skipped.
+2 objects were restored first.
+```
+
+`-disdictdebug=170` names every record, and this is the shape of it:
+
+```
+DisDict  12: class DishonoredGameInfo             name DishonoredGameInfo         outer 6   -> NOT FOUND
+DisDict 133: class DisNPCTravelManager            name pNPCTravelManager          outer 12  -> NOT FOUND
+DisDict 140: class DisGlobalUIManager             name pGlobalUIManager           outer 12  -> NOT FOUND
+DisDict 142: class DisGFxMoviePlayerHUD           name pHUD                       outer 140 -> NOT FOUND
+DisDict 144: class DisGFxMoviePlayerPowerWheel    name pPowerWheel                outer 140 -> NOT FOUND
+DisDict 146: class DisPostProcessManager          name pPpManager                 outer 12  -> NOT FOUND
+DisDict 148: class DishonoredPlayerController     name DishonoredPlayerController outer 6   -> ...PersistentLevel.DishonoredPlayerController
+DisDict 150: class DishonoredObjectivesComponent  name DisObjComp                 outer 148 -> NOT FOUND
+DisDict 162: class DishonoredPlayerPawn           name DishonoredPlayerPawn       outer 6   -> ...PersistentLevel.DishonoredPlayerPawn
+DisDict 164: class DishonoredPowersComponent      name PowersComp                 outer 162 -> NOT FOUND
+```
+
+**The player pawn and the player controller both resolve.** What does not exist in this build is:
+
+1. **no `ADishonoredGameInfo` actor named `DishonoredGameInfo` in the persistent level** — retail's name is
+   bare, not `_0`, so retail named it explicitly rather than letting `MakeUniqueObjectName` number it. Five of
+   the eight frontier classes are its sub-objects (`pNPCTravelManager`, `pGlobalUIManager`, `pHUD`,
+   `pPowerWheel`, `pPpManager`), so they cannot resolve either, whatever their `GameLoad` does;
+2. **no `DisObjComp` on the player controller** (`UDishonoredObjectivesComponent`, outer 148);
+3. **no `PowersComp` on the player pawn** (`UDishonoredPowersComponent`, outer 162).
+
+So what stands between this tree and milestone 7 is no longer the override count. It is that **the game does
+not construct the object trees a real save names**: the game info actor and two per-actor components. Porting
+more `GameLoad` bodies cannot help until those objects exist, because the stream stops on the object, not on
+the body. That is a different package from this one: it belongs with whoever owns `ADishonoredGameInfo`'s
+construction and the component instancing, not with the save layer.
+
+The last two bodies are ready for the day those objects appear. `ADishonoredPawn::GameLoad` calls
+`AActor::GameLoad` first and the pawn's `Location` and `Rotation` come straight out of it, so the moment the
+stream reaches record 162 the transform lands with no further porting; the diagnostic it prints when it stops
+names the restored transform, which is the measurement accept 1 asks for.
+
+### 11.4 Two more things this continuation had to find out
+
+* **`-noscenerender` is how the restore can be run at all.** On the startup map `DishonoredGameFull_P`,
+  `UWorld::Tick` runs **exactly twice** under the null RHI — measured, `-disrestoredelay=2` fires and
+  `-disrestoredelay=3` never does — so no sub-level streaming can finish; and under d3d9 the first scene render
+  asserts in `FHeightFogShaderParameters::Set` -> `SetShaderValue` (`Parameter.IsInitialized()`,
+  `FogRendering.cpp:97`), which is agent EE's file and pre-existing at this HEAD. The regression's d3d9 stage
+  never sees it because it runs `-startmapopen L_Tower_P` instead. `--rhi d3d9 ... -noscenerender` ticks
+  normally and brings the sub-levels up: `DisRestore: the world is up (3 streaming level(s), all visible 1)`.
+  Every number in this section comes from that path. This also matters for the map info: retail's
+  `DishonoredGetMapInfo()` reads the *streaming persistent* world info (2012 rva `0x827020`), so with no
+  sub-levels up the branch inside `UDishonoredMapInfo::GameLoad` does not match what the save recorded.
+* **A ported body must go quiet after an abort.** The three gates stop `operator<<(UObject*&)`, but a body
+  already entered keeps reading plain data; `UDishonoredMapInfo::GameLoad` read a garbage count that way and
+  died allocating a 16 MB `FString`. `FLevelLoader::Serialize` now returns zeros without touching the stream
+  once `m_bAborted` is set, so every ported body finishes on zeros and the level state is discarded. The byte
+  count deliberately stays on `Tell()`: the proxy's own `Serialize` recurses to cross its buffer boundary, so a
+  counter in an override double-counts — it once reported 10,217 bytes for a 26-byte read.
+
+### 11.5 The coordinator's two follow-ups
+
+1. **`DisMission8.sav`'s `L_Pub_Assault_P` level state** cannot be restored yet, for the same reason and not a
+   new one: `FGameState::LoadLevel` matches a level state to a *loaded* level, and the objects that state names
+   live in `L_Pub_Craftsman`'s `Main_Sequence`, which no run of this build has resident. Getting it resident
+   needs either the mission travel (`-startmapopen` replaces the persistent map, so the save's
+   `DishonoredGameFull_P` state then matches nothing) or the `STREAMMAP` path, which asserts in the fog code
+   above. It is still the cheapest complete proof available, and it is now blocked on world state rather than
+   on the override set.
+2. **The writing half** stays out, as agreed. With 25 of 112 override classes and three object trees the game
+   does not build, a saved file would not be honest.
+
+### 11.6 Verification of the continuation
+
+* The frontier moving, on the real path: `build/agentED/agentED_ns.log` (the census above) and
+  `build/agentED/agentED_dd.log` (the 170-record dictionary dump).
+* The dictionary halves are unchanged and still exact: 11321/11324 records and 91844/91844 bytes, now with
+  2260 of 11321 records resolving instead of 2259 (the extra one is the map info's own reference).
+* The offline model still decodes all 51 saves: 146 level states OK, 0 BAD.
+* Regression **31 ok, 0 failed** on `build/agentED_release`, and a clean release build of all three targets,
+  0 errors.
+* Everything built from `build/agentED_wt`, now detached at the merged `6723640`, with only this package's own
+  files synced in (`build/agentED_sync.py`).
+
+### 11.7 Hand-overs from the continuation
+
+1. **Coordinator, at merge.** The same regeneration as before and more of it: this continuation adds
+   `Inc/CppText` hooks for `UDishonoredMapInfo`, `UDisGlobalFactionManager`, `UDishonoredInventory`,
+   `UDisAttributes`, `UDisDialogTree_InGameBind`, `UDisAttentionInfo_Base`, `UDishonoredGlobalAIManager`,
+   `UDisAIBlackboard`, `UDishonoredObjectivesComponent`, `UDishonoredObjective`, `UDishonoredTask_Base`,
+   `UDishonoredPowersComponent`, `ADishonoredPawn`, `ADishonoredPlayerPawn`, `FDisRelationshipOverrideInfo`,
+   `FDisModifiedAttribute` and `FDisAttributeModifier`, so
+   `gen_classes_header.py DishonoredGame --sdk --module-header --sources-cmake` must run at merge. The
+   `#include "CppText/<Class>.h"` lines are in the generated headers by hand for now — that is exactly what the
+   generator emits, at the same place — and every touched file is listed in `build/agentED_sync.py`.
+2. **The next package is not the save layer.** It is whoever can make the game construct
+   `DishonoredGameFull_P.<level>.DishonoredGameInfo` (bare, not `_0`), `DishonoredPlayerController.DisObjComp`
+   and `DishonoredPlayerPawn.PowersComp`. Section 11.3 has the evidence; `-disdictdebug=<n>` reproduces it in
+   one run and will say when they appear.
+3. **Agent EA, or whoever follows them.** `UDisGFxMoviePlayerHUD::GameLoad` (2013 `0x7ac2e0`, 434 bytes) and
+   `UDisGFxMoviePlayerPowerWheel::GameLoad` (`0x7b9e50`, 133) are two of the eight bodies before the player
+   pawn and they are in the movie players. Both classes are save entry points (their vtable slot 67 is the
+   inline `return TRUE` fold).
+4. **Agent EE.** `FHeightFogShaderParameters::Set` asserts `Parameter.IsInitialized()` on the first scene
+   render of `DishonoredGameFull_P` under d3d9 (`FogRendering.cpp:97`, reached from
+   `TBasePassVertexShader<FNoLightMapPolicy,FNoDensityPolicy>::SetParameters`). The regression never sees it
+   because its d3d9 stage opens `L_Tower_P` instead. The full stack is in `build/agentED/agentED_d2.log`.
+5. **Whoever audits the tooling.** Any script that reads `resources/docs/symbols/vtables.csv` and filters out
+   `{for ` is silently ignoring every multiply-inheriting class — 190 of them here, including all the pawns and
+   the game info. `build/agentED/gen_classlists.py`'s `base_name` collapse is the fix, and it is worth grepping
+   the other tools for the same filter.
+6. **One inference to check when someone has better evidence.**
+   `operator<<(FArchive&, FDisAttributeModifier&)` is inline in retail with no PDB symbol; its three fields in
+   declaration order are inferred. It is the only inference in this continuation, and if it is wrong the census
+   desynchronises at the first attribute that carries a modifier, which is detectable rather than silent.

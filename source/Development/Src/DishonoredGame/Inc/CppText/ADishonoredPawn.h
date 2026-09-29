@@ -52,3 +52,9 @@ public:
 	 */
 	virtual void SetSprinting( UBOOL bSprinting );
 	virtual void OnSprintChange_Derived() {}
+
+	// DISHONORED(port): agent ED (PHASE11 ED), 2012 rva 0x79b360 - ported only as far as AActor::GameLoad,
+	// which is where the player's transform comes back; it then stops the stream and says so. GameSave is
+	// not ported and not declared (the writing half of the object layer does not exist here). Body in
+	// dissavegame.cpp.
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );

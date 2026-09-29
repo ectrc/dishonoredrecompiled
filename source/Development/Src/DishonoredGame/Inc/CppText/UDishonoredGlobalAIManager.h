@@ -13,3 +13,12 @@ public:
 	void RemoveBrain( class UDishonoredAIBrain* _pRemoveMe );
 	class UDisStimManager* GetStimManager() const { return m_pStimManager; }
 	INT GetNumBrains() const;
+
+	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rva 0x841480 - retail folds GameSave onto it.
+	// Body in dissavegame.cpp. Its blackboard reference is how UDisAIBlackboard enters the stream.
+	virtual void GameSave( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+
+	// DISHONORED(port): agent ED (PHASE11 ED), 2012 rva 0x6fa960 (dishonoredplayerpawn.cpp:1541), the body
+	// retail shares between this class, UDishonoredGlobalAIManager and UDisNPCTravelManager.
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return Location == SLL_FILE; }

@@ -1,9 +1,7 @@
-// UDisAIBlackboard cpptext: included inside the generated class body (DishonoredGameClasses.h).
-// DISHONORED(written): Serialize 2013 rva 0x72ffc0 (2012 0x792c30), disaiblackboard.cpp
+// UDishonoredObjectivesComponent cpptext: included inside the generated class body.
 public:
-	virtual void Serialize( FArchive& Ar );
-
-	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x730060 / 0x7350d0. Body in dissavegame.cpp.
+	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rva 0x72b8c0 - retail folds GameLoad onto it.
+	// Body in dissavegame.cpp; the objective list is what pulls every objective into the stream.
 	virtual void GameSave( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 

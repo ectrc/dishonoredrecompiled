@@ -9990,6 +9990,7 @@ public:
     //## END PROPS DisAttentionInfo_Base
 
     DECLARE_ABSTRACT_CLASS(UDisAttentionInfo_Base,UObject,0,DishonoredGame)
+#include "CppText/UDisAttentionInfo_Base.h"
 };
 
 // DishonoredGame.DisAttentionInfo_Complex: retail sizeof 1644, reflected span 140..1644 (2012 PDB sizeof 1644)
@@ -12709,6 +12710,7 @@ public:
     //## END PROPS DisGlobalFactionManager
 
     DECLARE_CLASS(UDisGlobalFactionManager,UObject,0,DishonoredGame)
+#include "CppText/UDisGlobalFactionManager.h"
 };
 
 // DishonoredGame.DisHeartTargetTracker: retail sizeof 80, reflected span 64..80 (2012 PDB sizeof 80)
@@ -16486,6 +16488,7 @@ public:
     //## END PROPS DishonoredMapInfo
 
     DECLARE_CLASS(UDishonoredMapInfo,UMapInfo,0,DishonoredGame)
+#include "CppText/UDishonoredMapInfo.h"
 };
 
 // DishonoredGame.DishonoredNoteComponent: retail sizeof 464, reflected span 452..456 (2012 PDB sizeof 464)
@@ -16556,6 +16559,7 @@ public:
 
     DECLARE_CLASS(UDishonoredPowersComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Player");}
+#include "CppText/UDishonoredPowersComponent.h"
 };
 
 // DishonoredGame.DishonoredSearchCrumbsComponent: retail sizeof 212, reflected span 81..212 (2012 PDB sizeof 212)

@@ -52,6 +52,7 @@ MS_ALIGN(4) struct FDisRelationshipOverrideInfo
     {
         appMemzero(this, sizeof(FDisRelationshipOverrideInfo));
     }
+#include "CppText/FDisRelationshipOverrideInfo.h"
 };
 
 // DishonoredGame.DisGlobalEnums.DisZoneTracker: retail SDK size 12 (2012 PDB 12)

@@ -321,6 +321,7 @@ public:
     //## END PROPS DishonoredObjective
 
     DECLARE_CLASS(UDishonoredObjective,UObject,0,DishonoredGame)
+#include "CppText/UDishonoredObjective.h"
 };
 
 // DishonoredGame.DishonoredObjectivesComponent: retail sizeof 112, reflected span 81..112 (2012 PDB sizeof 108)
@@ -334,6 +335,7 @@ public:
     //## END PROPS DishonoredObjectivesComponent
 
     DECLARE_CLASS(UDishonoredObjectivesComponent,UActorComponent,0,DishonoredGame)
+#include "CppText/UDishonoredObjectivesComponent.h"
 };
 
 // DishonoredGame.DishonoredTask_Base: retail sizeof 124, reflected span 56..124 (2012 PDB sizeof 112)
@@ -357,6 +359,7 @@ public:
     //## END PROPS DishonoredTask_Base
 
     DECLARE_ABSTRACT_CLASS(UDishonoredTask_Base,UObject,0,DishonoredGame)
+#include "CppText/UDishonoredTask_Base.h"
 };
 
 // DishonoredGame.DishonoredTask_Custom: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 124)

@@ -90,6 +90,7 @@ struct FDisAttributeModifier
     {
         appMemzero(this, sizeof(FDisAttributeModifier));
     }
+#include "CppText/FDisAttributeModifier.h"
 };
 
 // DishonoredGame.DisAttributes.DisAttribute_RangeLimits: retail SDK size 20 (2012 PDB 20)
@@ -125,6 +126,7 @@ struct FDisModifiedAttribute
     {
         appMemzero(this, sizeof(FDisModifiedAttribute));
     }
+#include "CppText/FDisModifiedAttribute.h"
 };
 
 // DishonoredGame.DisAttributes: retail sizeof 128, reflected span 56..128 (2012 PDB sizeof 128)

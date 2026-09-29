@@ -1,9 +1,7 @@
-// UDisAIBlackboard cpptext: included inside the generated class body (DishonoredGameClasses.h).
-// DISHONORED(written): Serialize 2013 rva 0x72ffc0 (2012 0x792c30), disaiblackboard.cpp
+// UDishonoredMapInfo cpptext: included inside the generated class body.
 public:
-	virtual void Serialize( FArchive& Ar );
-
-	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x730060 / 0x7350d0. Body in dissavegame.cpp.
+	// DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x611780 / 0x60ba70. Body in dissavegame.cpp
+	// (retail has it in dishonoredmapinfo.cpp). The per-squad live counts and the objective task targets.
 	virtual void GameSave( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 
