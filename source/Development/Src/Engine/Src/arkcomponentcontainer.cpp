@@ -32,6 +32,17 @@ void UArkComponentContainer::AddNewComponent_Internal( FArkComponentBase* _pNewC
 	}
 }
 
+/** DISHONORED(written): agent EJ. The DishonoredGame stop hook (DisStopRestore) lives in
+    DishonoredGame/Inc/dishonoredutilities_saveload.h, which Engine cannot include. FArchive::SetError() is
+    what an Engine-side body has instead: DisSaveLoad::FLevelLoader::Serialize turns it into the same abort, so
+    reads return zeros, the census reports STREAM ABORTED, and this warning is the reason. */
+static void DisStopArkRestore( FArchive& _rArchive, INT _ComponentID )
+{
+	warnf( NAME_Warning, TEXT("DisSaveLoad: stopping the level restore inside UArkComponentContainer::GameLoad (2013 rva 0x534220): the save names component type %d, which no FArkComponentCreatorRegister in this tree claims, so the component's own bytes cannot be read."),
+		_ComponentID );
+	_rArchive.SetError();
+}
+
 // DISHONORED(port): 2013 rva 0x534100 (2012 0x5759a0): the creator table is searched for the id (retail scans the whole
 // table and keeps the last match rather than breaking out), the component is created through the creator function, given
 // the container's owner and appended. This is the path UArkComponentContainer::GameLoad rebuilds a saved component on.
@@ -203,3 +214,32 @@ void UArkComponentContainer::BeginDestroy()
 	Note that GameLoad ADDS to whatever is already in m_Components rather than clearing it first, and that it trusts the
 	id, which is the reason AddNewComponentByID has to cope with an id that has no creator.
 -----------------------------------------------------------------------------*/
+// DISHONORED(port): 2013 rva 0x534220 (2012 0x575ab0, byte-identical), retail vtable slot 70. A count, and per
+// component its type id followed by the component's own Serialize - so the container rebuilds the exact set of
+// components the save was written with, in the saved order, rather than serialising into whatever this session
+// happens to have constructed.
+//
+// GameSave (0x536530) is the mirror: m_Components.Num(), then GetType() and Serialize per component.
+//
+// DISHONORED(bringup): retail calls the new component's Serialize with no NULL test, because every id in a save
+// it wrote has a creator registered. A tree whose component registry is incomplete would crash there, and the
+// crash would say nothing about which body was reading; the stream stops with its own name instead, because the
+// component's bytes cannot be read without the component.
+void UArkComponentContainer::GameLoad( FArchive& Ar, ESaveLoadLocation Location )
+{
+	INT NumComponents = 0;
+	Ar << NumComponents;
+	for( INT ComponentIdx = 0; ComponentIdx < NumComponents; ComponentIdx++ )
+	{
+		INT ComponentID = 0;
+		Ar << ComponentID;
+
+		FArkComponentBase* pComponent = AddNewComponentByID( ComponentID );
+		if( !pComponent )
+		{
+			DisStopArkRestore( Ar, ComponentID );
+			return;
+		}
+		pComponent->Serialize( Ar );
+	}
+}

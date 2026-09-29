@@ -20,3 +20,8 @@ public:
 private:
 	void* AllocateBlock_Common( void* _pWhere, INT _StimSize_bytes );
 	UBOOL IsInPool( const void* _pBlock ) const;
+public:
+	// DISHONORED(port): agent EJ (PHASE12 EJ) - 2013 rva 0x704f60 (2012 0x767ba0). The one thing
+	// UDishonoredAIBrain::GameLoad needed that this tree did not have. SaveStim (0x724a00) stays out with the
+	// rest of the writing half. Body in Src/disstimmanager.cpp.
+	void LoadStim( FArchive& _rArchive, const struct FAIStimStruct*& _rpOutStim );

@@ -112,6 +112,14 @@ public:
     void RemoveComponent( FArkComponentBase* _pComponent );
     void StartAllComponents();
     void StopAllComponents();
+    // DISHONORED(port): agent EJ (PHASE12 EJ) - the DisSaveLoad pair's loading half. GameLoad 2013 rva
+    // 0x534220, retail vtable slot 70 (vftable rva 0xca3f28); GameSave (0x536530, slot 69) is not ported, for
+    // agent ED's reason - the writing half of the object layer does not exist here. IsSaveable is declared
+    // because retail's slot 68 for this class folds onto UObject::IsRefSaveable's body (0x5ea9d0, return TRUE)
+    // - slot 67 is IsRefSaveable itself - so a FALSE from this tree would be the absence of an override and
+    // not retail's answer.
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
 
     // DISHONORED(port): 2013 rvas 0x70a870 / 0x710a50 (2012 0x748190 / 0x74e0d0), one instantiation per component type.
     // Retail emits both from the generated component header (the 2012 PDB attributes every instantiation to

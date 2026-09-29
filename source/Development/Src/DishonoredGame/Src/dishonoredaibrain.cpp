@@ -28,6 +28,7 @@
 #include "aistimstruct.h"
 #include "dishonoredutilities_ai.h"
 #include "aistimstruct.h"
+#include "dishonoredutilities_saveload.h"
 
 /** DISHONORED(written): agent CG's DisRaiseStim<T> moved to Inc/aistimstruct.h beside DisHandleAIStim (agent DF), because
     the desire layer raises four stims of its own and the EAIStimID stamp must have exactly one home. */
@@ -1167,4 +1168,88 @@ UBOOL UDishonoredAIBrain::GetPathGoalsAndConstraintsFromBehavior( const FVector&
 		return FALSE;
 	}
 	return m_pCurrentBehavior->CallGetPathConstraints( _rFinalDestination, _bForReachability, _rOutConstraints );
+}
+/*-----------------------------------------------------------------------------
+	DisSaveLoad. DISHONORED(port): agent EJ (PHASE12 EJ). The brain is the class the object stream stopped on
+	at the end of agent EF's package (record 716 of Dishonored0.sav's persistent level, byte 23827 of 619631).
+
+	GameSave (2013 rva 0x717290, retail vtable slot 69) is not ported, for agent ED's reason: the writing half
+	of the object layer does not exist here. Its retail body is the mirror of the loading one - the properties,
+	the stim count, and per queued stim SaveStim plus the delay timer.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x7256a0, retail's own vtable slot 70 (vftable rva 0xd33ce0); the 2012 body
+// 0x74d790 has no match_2012_2013.csv row, so the address comes from retail's table and not the matcher.
+// The brain's own script properties, then its pending stim queue: a count, and per entry the stim itself
+// through UDisStimManager::LoadStim and the FDisStimRef delay timer beside it.
+void UDishonoredAIBrain::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	if( _rArchive.Ver() >= 22 )
+	{
+		DisSaveLoadObject( _rArchive, this );
+	}
+	else
+	{
+		// DISHONORED(bringup): retail's pre-22 branch is a different walk (0x7e8910, given the object, the
+		// address of m_SenseMasksByType and a flag) and reads a different number of bytes. Every save this
+		// project has is version 24; reading a version 21 save through the >= 22 branch would desynchronise
+		// the whole level, so it stops with its own name instead.
+		DisStopRestore( _rArchive, FString::Printf( TEXT("UDishonoredAIBrain::GameLoad (2013 rva 0x7256a0): the save is version %d and retail's pre-22 property walk (0x7e8910) is not ported"), _rArchive.Ver() ) );
+		return;
+	}
+
+	const INT NumQueuedStims = DisReadStreamCount( _rArchive, TEXT("UDishonoredAIBrain::GameLoad (2013 rva 0x7256a0) m_StimQueue") );
+	for( INT StimIdx = 0; StimIdx < NumQueuedStims; StimIdx++ )
+	{
+		if( m_pStimManager == NULL )
+		{
+			// retail dereferences m_pStimManager with no test: the brain that wrote the save had one, and
+			// m_pStimManager is in the property walk above. With no manager the stim's bytes cannot be read
+			// at all, so the stream stops rather than skipping them.
+			DisStopRestore( _rArchive, TEXT("UDishonoredAIBrain::GameLoad (2013 rva 0x7256a0): the save has queued stims and this brain has no UDisStimManager to read them into") );
+			return;
+		}
+
+		const FAIStimStruct* pStim = NULL;
+		m_pStimManager->LoadStim( _rArchive, pStim );
+
+		FLOAT DelayTimer = 0.f;
+		_rArchive << DelayTimer;
+
+		if( pStim == NULL )
+		{
+			// LoadStim has already stopped the stream and said why; adding a NULL to the queue would only
+			// crash the first FlushStimQueue after it.
+			return;
+		}
+
+		FDisStimRef& rRef = m_StimQueue( m_StimQueue.Add( 1 ) );
+		DisStimRefInit( rRef, pStim, DelayTimer );
+	}
+
+	// DISHONORED(bringup): past the stream, retail re-registers an initialised brain: AddBrain on the global
+	// AI manager, the two FArkGameEventDispatcher subscriptions (the brain's own terminate event and the
+	// owning pawn's), and one avoidance-group refresh on the pawn (0x759d50). None reads a stream byte, and
+	// AddBrain on a brain the restore has not finished with would put a half-built brain on the manager's
+	// tick list, so they are read past rather than called.
+}
+
+// DISHONORED(port): 2013 rva 0x711c20, retail vtable slot 71. Reads no stream byte: it is the post-load
+// fix-up of state the save could not carry.
+// DISHONORED(bringup): retail does four things here and this port does one of them, the one whose pieces
+// exist. Not called: FDisMonitorNPCAttention::Starting and FDisAIMonitorReaction::Init on the two monitor
+// components m_pBrainComponentContainer holds (found by type through 0x7109c0 / 0x710930, types 214 and 211),
+// and FDisLookAtRequest::PostGameLoad against the owning pawn's FArkComponentLookat (pawn offset 3440), which
+// this tree has no accessor for. The brain-process loop is ported because each process's filter stim mask is
+// a raw pointer into per-class static data that no save can carry, so without it every ported process would
+// filter nothing.
+void UDishonoredAIBrain::PostGameLoad( ESaveLoadLocation _Location )
+{
+	for( INT ProcessIdx = 0; ProcessIdx < m_BrainProcesses.Num(); ProcessIdx++ )
+	{
+		if( m_BrainProcesses(ProcessIdx) != NULL )
+		{
+			m_BrainProcesses(ProcessIdx)->PostGameLoad_BrainProcess();
+		}
+	}
 }

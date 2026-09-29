@@ -32,6 +32,7 @@
 //   0x6ad300  public: static class UClass * __cdecl UDishonoredNativeStateMachine::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "dishonoredutilities_saveload.h"
 
 // DISHONORED(written): FDisNativeFSMRejectedInfo(UClass*, UClass*, eDisNativeFSMRejectReason) 2012 rva 0x6927d0 (inlined into the
 // 2013 callers): stamped with the world's real time, one rejection
@@ -421,4 +422,20 @@ void UDishonoredNativeStateMachine::DebugStoreRejectedStateInfo( const FDisNativ
 		}
 	}
 	m_Debug_FailedStates.AddItem( Info );
+}
+/*-----------------------------------------------------------------------------
+	DisSaveLoad. DISHONORED(port): agent EJ (PHASE12 EJ). LoadPartialState (0x672670) is in dissavegame.cpp,
+	where agent ED put it; this is the machine's own GameLoad, which is a different slot and a different body.
+
+	GameSave is the UDisAttentionInfo_Base::GameSave fold (0x88af60) at slot 69 and is not ported.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x67a9e0 (2012 0x6a9360, byte-identical), retail vtable slot 70. One read - the
+// machine's own script properties, which is where m_NativeStates, m_pCurrentStateID and m_pManagedObject come
+// from - and then the class-to-state map is rebuilt from the restored m_NativeStates, because the map is a
+// TMap of raw pointers that the save does not carry.
+void UDishonoredNativeStateMachine::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+	BuildNativeStateMap();
 }

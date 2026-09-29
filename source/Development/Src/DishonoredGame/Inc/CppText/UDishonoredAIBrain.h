@@ -96,3 +96,12 @@ public:
 	/** DISHONORED(port): agent DN. 2013 rva 0x700d40 (2012 0x749b20, 62 bytes): the current behaviour answers for the
 	    whole brain, and the constraints are only asked for when the goals produced something. */
 	UBOOL GetPathGoalsAndConstraintsFromBehavior( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<class UNavMeshPathGoalEvaluator*>& _rOutGoals, TArray<class UNavMeshPathConstraint*>& _rOutConstraints ) const;
+// DISHONORED(port): agent EJ (PHASE12 EJ) - the DisSaveLoad pair. GameLoad 2013 rva 0x7256a0 and PostGameLoad
+// 0x711c20, retail vtable slots 70 and 71; GameSave (0x717290, slot 69) is not ported. Bodies in
+// Src/dishonoredaibrain.cpp. IsSaveable is declared because retail's slot 68 for this
+// class is the fold onto UObject::IsRefSaveable's body (0x5ea9d0, return TRUE) - slot 67 is IsRefSaveable
+// itself - so a FALSE from this tree would be the absence of an override rather than retail's answer.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual void PostGameLoad( ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }

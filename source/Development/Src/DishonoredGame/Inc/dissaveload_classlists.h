@@ -578,13 +578,18 @@ static const TCHAR* GDisRetailSaveEntryClasses[] =
 	TEXT("WorldInfo"),
 };
 
-/** the 47 classes with a GameSave or GameLoad body of their own that agent ED ported */
+/** the 55 classes with a GameSave or GameLoad body of their own that agent ED ported */
 static const TCHAR* GDisPortedGameLoadClasses[] =
 {
 	TEXT("Actor"),
+	TEXT("ArkComponentContainer"),
 	TEXT("DisAIBlackboard"),
+	TEXT("DisAIBrainProcess"),
+	TEXT("DisAISubProcess"),
+	TEXT("DisAISubState"),
 	TEXT("DisActivePowerComponent_DarkVision"),
 	TEXT("DisAttentionInfo_Base"),
+	TEXT("DisAttentionInfo_Complex"),
 	TEXT("DisAttributes"),
 	TEXT("DisDarknessManager"),
 	TEXT("DisDialogTree_InGameBind"),
@@ -596,6 +601,8 @@ static const TCHAR* GDisPortedGameLoadClasses[] =
 	TEXT("DisNPCTravelManager"),
 	TEXT("DisPlayerAudioLogDummyActor"),
 	TEXT("DisPostProcessManager"),
+	TEXT("DishonoredAIBehavior"),
+	TEXT("DishonoredAIBrain"),
 	TEXT("DishonoredActivePowerComponent"),
 	TEXT("DishonoredActivePowerComponent_BendTime"),
 	TEXT("DishonoredActivePowerComponent_DevouringSwarm"),
@@ -606,6 +613,7 @@ static const TCHAR* GDisPortedGameLoadClasses[] =
 	TEXT("DishonoredMapInfo"),
 	TEXT("DishonoredNPCController"),
 	TEXT("DishonoredNPCPawn"),
+	TEXT("DishonoredNativeStateMachine"),
 	TEXT("DishonoredObjective"),
 	TEXT("DishonoredObjectivesComponent"),
 	TEXT("DishonoredPawn"),
@@ -630,18 +638,13 @@ static const TCHAR* GDisPortedGameLoadClasses[] =
 	TEXT("WorldInfo"),
 };
 
-/** the 65 that are NOT ported. Reaching one of these in a save stops the level restore. */
+/** the 57 that are NOT ported. Reaching one of these in a save stops the level restore. */
 static const TCHAR* GDisUnportedGameLoadClasses[] =
 {
 	TEXT("AkAmbientSound"),
-	TEXT("ArkComponentContainer"),
 	TEXT("ArkDynamicPylon"),
-	TEXT("DisAIBrainProcess"),
-	TEXT("DisAISubProcess"),
-	TEXT("DisAISubState"),
 	TEXT("DisAbstractItemPickupNote"),
 	TEXT("DisAlarmBell"),
-	TEXT("DisAttentionInfo_Complex"),
 	TEXT("DisAudioLogPlayer"),
 	TEXT("DisClimbable"),
 	TEXT("DisConvGlobalMan"),
@@ -684,13 +687,10 @@ static const TCHAR* GDisUnportedGameLoadClasses[] =
 	TEXT("DisWhaleBoneCharm"),
 	TEXT("DisWhaleOilBattery"),
 	TEXT("DisWhaleOilReceptacle"),
-	TEXT("DishonoredAIBehavior"),
-	TEXT("DishonoredAIBrain"),
 	TEXT("DishonoredBreakable"),
 	TEXT("DishonoredBreakableNavBlock"),
 	TEXT("DishonoredCheatManager"),
 	TEXT("DishonoredKAsset"),
-	TEXT("DishonoredNativeStateMachine"),
 	TEXT("DishonoredRoute"),
 	TEXT("DishonoredUsableObject"),
 	TEXT("GameCrowdSpawner"),
@@ -700,13 +700,18 @@ static const TCHAR* GDisUnportedGameLoadClasses[] =
 	TEXT("SeqAct_Interp"),
 };
 
-/** the 42 classes whose IsSaveable agent ED declared: for these, and only these, a FALSE from
+/** the 50 classes whose IsSaveable agent ED declared: for these, and only these, a FALSE from
  *  this tree is retail's own answer rather than a missing override. Several are conditional. */
 static const TCHAR* GDisPortedIsSaveableClasses[] =
 {
+	TEXT("ArkComponentContainer"),
 	TEXT("DisAIBlackboard"),
+	TEXT("DisAIBrainProcess"),
+	TEXT("DisAISubProcess"),
+	TEXT("DisAISubState"),
 	TEXT("DisActivePowerComponent_DarkVision"),
 	TEXT("DisAttentionInfo_Base"),
+	TEXT("DisAttentionInfo_Complex"),
 	TEXT("DisAttributes"),
 	TEXT("DisDarknessManager"),
 	TEXT("DisDialogTree_InGameBind"),
@@ -718,6 +723,8 @@ static const TCHAR* GDisPortedIsSaveableClasses[] =
 	TEXT("DisNPCTravelManager"),
 	TEXT("DisPlayerAudioLogDummyActor"),
 	TEXT("DisPostProcessManager"),
+	TEXT("DishonoredAIBehavior"),
+	TEXT("DishonoredAIBrain"),
 	TEXT("DishonoredActivePowerComponent"),
 	TEXT("DishonoredActivePowerComponent_BendTime"),
 	TEXT("DishonoredActivePowerComponent_DevouringSwarm"),
@@ -728,6 +735,7 @@ static const TCHAR* GDisPortedIsSaveableClasses[] =
 	TEXT("DishonoredMapInfo"),
 	TEXT("DishonoredNPCController"),
 	TEXT("DishonoredNPCPawn"),
+	TEXT("DishonoredNativeStateMachine"),
 	TEXT("DishonoredObjective"),
 	TEXT("DishonoredObjectivesComponent"),
 	TEXT("DishonoredPlayerController"),

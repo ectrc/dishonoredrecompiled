@@ -12,6 +12,7 @@
 #include "dishonoredutilities_ai.h"
 #include "disaisubstate.h"
 #include "aistimstruct.h"
+#include "dishonoredutilities_saveload.h"
 
 /*-----------------------------------------------------------------------------
 	Construction and tweaks
@@ -717,4 +718,45 @@ UBOOL UDishonoredAIBehavior::CallGetPathConstraints( const FVector& _rFinalDesti
 		GetDefaultPathConstraints( _rFinalDestination, _rOutConstraints );
 	}
 	return _rOutConstraints.Num() > 0;
+}
+/*-----------------------------------------------------------------------------
+	DisSaveLoad. DISHONORED(port): agent EJ (PHASE12 EJ).
+
+	GameSave is retail's UDisAttentionInfo_Base::GameSave (0x88af60) reached through the behaviour's slot 69 -
+	one of the ICF folds agent EC declared - and is not ported, for agent ED's reason.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x6f6f80 (2012 0x750de0, byte-identical), retail vtable slot 70. One read: the
+// behaviour's own script properties.
+// DISHONORED(bringup): retail unregisters and re-registers the other-actor-terminated event around that read,
+// because the read can change the three things the registration is keyed on (m_OnResumeDialog's initiator,
+// m_ActionTargetProxy's actor reference and m_pActionTargetActor). Neither call reads a stream byte.
+void UDishonoredAIBehavior::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+// DISHONORED(port): 2013 rva 0x6e8250, retail vtable slot 71. Reads no stream byte: the four stim masks are
+// raw pointers into per-class static data that no save can carry, so they are rebuilt exactly as
+// InitBehaviorFromTweaks builds them.
+// DISHONORED(bringup): retail's last statement is vtable slot 92 (offset 368) called with !m_bHasStarted and
+// m_bIsPaused - the derived post-load hook, whose base body is the do-nothing fold at 0x128ad0. No behaviour
+// class in this tree overrides it, so calling it would be calling that fold.
+void UDishonoredAIBehavior::PostGameLoad( ESaveLoadLocation _Location )
+{
+	if( m_pOwningBrain != NULL && m_pOwningBrain->IsBrainInitialized() )
+	{
+		if( IDisDesiresInterface* pDesires = DisGetScriptInterface( m_pDesires ) )
+		{
+			pDesires->PostGameLoad_Desires();
+		}
+	}
+
+	m_pEvaluateStimMask = (FPointer)BuildEvaluateStimMask();
+	const BYTE* pSubProcessesMask = NULL;
+	const BYTE* pCompleteMask = NULL;
+	m_pFilterStimMask = (FPointer)BuildBehaviorFilterStimMasks( pSubProcessesMask, pCompleteMask );
+	m_pSubProcessesFilterStimMask = (FPointer)pSubProcessesMask;
+	m_pCompleteFilterStimMask = (FPointer)pCompleteMask;
+	m_pShouldFinishWhileDormantStimMask = (FPointer)BuildShouldFinishWhileDormantStimMask();
 }

@@ -1025,6 +1025,16 @@ FLevelLoader::~FLevelLoader()
 // calls itself recursively to cross its buffer boundary, so a counter in an override double-counts.
 void FLevelLoader::Serialize( void* _pData, INT _Count )
 {
+	// DISHONORED(written): agent EJ - the same stop, asked for from Engine. A ported body in Engine cannot
+	// reach DisStopRestore, which lives in DishonoredGame; it calls FArchive::SetError() and says why itself
+	// (UArkComponentContainer::GameLoad is the first such body). Picking the flag up here is what makes an
+	// Engine-side stop and a DishonoredGame-side stop the same stop, so the census still reports the abort.
+	if( !m_bAborted && ArIsError )
+	{
+		GSaveLoadCensus.m_PartialBodies++;
+		GSaveLoadCensus.m_bDesynchronised = TRUE;
+		m_bAborted = TRUE;
+	}
 	// DISHONORED(written): agent EC - and it must not read past the end either. The object-data loop only
 	// stops on a terminating index 0, so a stream that has lost its place can run off the end, and
 	// FArchiveLoadCompressedProxy asserts there (CurrentIndex+Count<=CompressedData.Num()) with nothing said
@@ -2035,10 +2045,10 @@ void ADishonoredPlayerPawn::GameLoad_Body( FArchive& _rArchive, ESaveLoadLocatio
 	     which the 2012 class does not have.
 -----------------------------------------------------------------------------*/
 
-// DISHONORED(written): a ported body that reaches a branch this tree does not have must stop the stream
-// rather than read on: the object data carries no length prefix, so under-reading misreads every object
-// after it. The archive a GameLoad is handed during a restore is always the FLevelLoader.
-static void DisStopRestore( FArchive& _rArchive, const FString& _rWhere )
+// DISHONORED(written): declared in dishonoredutilities_saveload.h, beside DisSaveLoadObject: the AI
+// stack's own units (agent EJ) call it too. The archive a GameLoad is handed during a restore is always
+// the FLevelLoader.
+void DisStopRestore( FArchive& _rArchive, const FString& _rWhere )
 {
 	DisSaveLoad::GSaveLoadCensus.m_PartialBodies++;
 	if( !DisSaveLoad::GSaveLoadCensus.m_bDesynchronised )
@@ -2067,7 +2077,7 @@ static void DisSerializeScriptStructBin( FArchive& _rArchive, const TCHAR* _pStr
 // override set can, and a crash there says nothing about which body lost its place. Reading counts through
 // this makes the first symptom of a desynchronised stream the named stop the object layer already contracts
 // for. The bound is the dictionary's own WORD index space.
-static INT DisReadStreamCount( FArchive& _rArchive, const TCHAR* _pWhere )
+INT DisReadStreamCount( FArchive& _rArchive, const TCHAR* _pWhere )
 {
 	INT Count = 0;
 	_rArchive << Count;
@@ -3427,6 +3437,37 @@ void ADishonoredNPCController::GameLoad( FArchive& _rArchive, ESaveLoadLocation 
 	if( _rArchive.Ver() >= 23 )
 	{
 		_rArchive << *(UObject**)&m_pLastShootKismetAction;
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	record 732: UDisAttentionInfo_Complex. DISHONORED(port): agent EJ (PHASE12 EJ).
+
+	Its retail unit disattentioninfo_complex.cpp is an import_reference.py skeleton on DishonoredGame_EXCLUDE,
+	so the body is here rather than there. GameSave (2013 rva 0x74ff00, retail vtable slot 69) is not ported.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x74ff80 (2012 0x793830), retail vtable slot 70 (vftable rva 0xd40618). The
+// attention info's own script properties, and then - conditionally - the 21 pending attention changes.
+//
+// The condition is the load-bearing part and it is read from data the property walk has just restored:
+// m_PendingAttentionChangeAmount is an array of 21 five-byte {FLOAT m_fByAmount, BYTE m_ToThreshold} structs
+// and is reflected, so it comes back first; m_PendingAttentionChange is the 21 forty-four-byte structs beside
+// it and is NOT in the property walk. Retail writes a pending change only for a slot whose amount is set, and
+// reads it back on exactly the same test, so the number of bytes here depends on the values just read. A
+// property walk that got m_PendingAttentionChangeAmount wrong would therefore read the wrong number of
+// FDisAttentionPendingChange structs, and the stream would not stop - it would drift.
+void UDisAttentionInfo_Complex::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+
+	for( INT SlotIdx = 0; SlotIdx < ARRAY_COUNT(m_PendingAttentionChange); SlotIdx++ )
+	{
+		const FDisAttentionPendingChangeAmount& rAmount = m_PendingAttentionChangeAmount[SlotIdx];
+		if( rAmount.m_fByAmount != 0.f || rAmount.m_ToThreshold != 0 )
+		{
+			DisSerializeScriptStructBin( _rArchive, TEXT("DisAttentionPendingChange"), (BYTE*)&m_PendingAttentionChange[SlotIdx] );
+		}
 	}
 }
 

@@ -39,6 +39,8 @@
 #include "disaicensus.h"
 #include "disdesirestructs.h"
 #include "disaisubstate.h"
+#include "dishonoredutilities_saveload.h"
+#include "dishonoredutilities_saveload_ai.h"
 
 /*-----------------------------------------------------------------------------
 	The six behaviour callbacks.
@@ -455,23 +457,6 @@ void FDisAISubState_Param::OnPending( UDishonoredNativeState* PendingState, UObj
 	SubState->m_BodyIntentionBeforeEnterState = m_BodyIntentionBeforeEnterState;
 }
 
-/*-----------------------------------------------------------------------------
-	DISHONORED(bringup): GameSave / GameLoad (2013 rvas 0x710620 / 0x7126c0, 2012 0x7734b0 / 0x7734e0) are not ported, for
-	the same reason as UDisAISubProcess's: DisSaveLoadObject and DisSaveAISubTweakReference /
-	DisLoadAISubTweakReference (2013 0x7312a0 / 0x731310) are unported, and the DisSaveLoad vtable slots do not exist.
-	The retail bodies, so landing them is a transcription:
-
-	  GameSave( FArchive& Ar, ESaveLoadLocation Location )
-	      DisSaveLoadObject( Ar, this );
-	      DisSaveAISubTweakReference<UDisTweaks_AISubState, UDisTweaks_AIBehavior>( Ar, m_pSubStateTweaks,
-	          &UDisTweaks_AIBehavior::m_SubStateTweak );
-
-	  GameLoad( FArchive& Ar, ESaveLoadLocation Location )
-	      DisSaveLoadObject( Ar, this );
-	      DisLoadAISubTweakReference<UDisTweaks_AISubState, UDisTweaks_AIBehavior>( Ar, m_pSubStateTweaks,
-	          &UDisTweaks_AIBehavior::m_SubStateTweak );
------------------------------------------------------------------------------*/
-
 // ---- agent CG: the tweak-interface pair, defined here rather than in the cpptext ----
 // DISHONORED(port): 2013 rva 0x7059f0 (2012 0x16f40) and its folded getter; see the note in disaisubprocess.cpp.
 UDisTweaksBase* UDisAISubState::GetTweaks_Derived()
@@ -482,4 +467,24 @@ UDisTweaksBase* UDisAISubState::GetTweaks_Derived()
 void UDisAISubState::SetTweaks_Derived( UDisTweaksBase* Tweaks )
 {
 	m_pSubStateTweaks = (UDisTweaks_AISubState*)Tweaks;
+}
+// DISHONORED(port): 2013 rva 0x7126c0 (2012 0x7734e0), retail vtable slot 70 - the slot is proved by every
+// derived sub-state's own vftable (UDisAISubStateCower, _Init, _CombatBase and fifteen more all carry
+// 0x710620 / 0x7126c0 / 0x705e10 at slots 69 / 70 / 71). The state's own script properties, then which of the
+// owning behaviour tweaks' sub-state tweaks it runs on.
+// DISHONORED(bringup): retail then re-registers the other-actor-terminated event when m_ActionTargetProxy
+// still holds an actor reference. It reads no stream byte; it is left out because the event dispatcher's
+// state during a restore is the restore's own business and this package does not own it.
+void UDisAISubState::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+	DisLoadAISubTweakReference< UDisTweaks_AISubState, UDisTweaks_AIBehavior >( _rArchive, m_pSubStateTweaks,
+		&UDisTweaks_AIBehavior::m_SubStateTweaks );
+}
+
+// DISHONORED(port): 2013 rva 0x705e10, retail vtable slot 71. Reads no stream byte; the whole body is agent
+// CG's PostGameLoad_SubState, which is now reachable.
+void UDisAISubState::PostGameLoad( ESaveLoadLocation _Location )
+{
+	PostGameLoad_SubState();
 }

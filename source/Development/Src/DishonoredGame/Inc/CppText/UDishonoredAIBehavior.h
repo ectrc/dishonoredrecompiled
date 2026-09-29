@@ -121,3 +121,10 @@ public:
 	/** The base answers TRUE, i.e. "I have nothing to add, use the default". */
 	virtual UBOOL GetPathGoals( const FVector& _rFinalDestination, TArray<class UNavMeshPathGoalEvaluator*>& _rOutGoals ) const { return TRUE; }
 	virtual UBOOL GetPathConstraints( const FVector& _rFinalDestination, UBOOL _bForReachability, TArray<class UNavMeshPathConstraint*>& _rOutConstraints ) const { return TRUE; }
+// DISHONORED(port): agent EJ (PHASE12 EJ) - GameLoad 2013 rva 0x6f6f80 and PostGameLoad 0x6e8250, retail
+// vtable slots 70 and 71. Slot 69 is the UDisAttentionInfo_Base::GameSave fold (0x88af60) and is not ported.
+// Bodies in Src/dishonoredaibehavior.cpp.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual void PostGameLoad( ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }

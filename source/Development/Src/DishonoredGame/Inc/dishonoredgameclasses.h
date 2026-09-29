@@ -10029,6 +10029,7 @@ public:
     //## END PROPS DisAttentionInfo_Complex
 
     DECLARE_CLASS(UDisAttentionInfo_Complex,UDisAttentionInfo_Base,0,DishonoredGame)
+#include "CppText/UDisAttentionInfo_Complex.h"
 };
 
 // DishonoredGame.DisAttentionInfo_Simple: retail sizeof 160, reflected span 140..160 (2012 PDB sizeof 160)

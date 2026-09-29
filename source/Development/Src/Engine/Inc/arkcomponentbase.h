@@ -104,7 +104,16 @@ public:
 	virtual INT GetType() const { return ArkCpntType_AnimPlayer; }
 	virtual FName GetName() const { return NAME_None; }
 	virtual void ManageReferences( FGCHelper* _pHelper ) {}
-	virtual void Serialize( FArchive& _rArchive ) {}
+	/** DISHONORED(port): agent EJ (PHASE12 EJ), 2013 rva 0x532e20 (2012 0x5747b0, byte-identical). It was an
+	    empty stub here, which is a stream format and not a no-op: it is the body every component that does not
+	    override slot 5 uses (FArkComponentLocomotion and FDisMonitorNPCAttention among them), and
+	    UArkComponentContainer::GameLoad calls it once per saved component. Three values, in this order. */
+	virtual void Serialize( FArchive& _rArchive )
+	{
+		_rArchive << *(UObject**)&m_pOwner;
+		_rArchive << m_bStarted;
+		_rArchive << m_bPendingStop;
+	}
 	virtual DWORD GetMemoryFootprint() const { return sizeof( FArkComponentBase ); }
 	virtual void Starting() {}
 	virtual void Stopping() {}

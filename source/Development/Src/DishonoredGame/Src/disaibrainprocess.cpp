@@ -12,6 +12,8 @@
 
 #include "DishonoredGame.h"
 #include "aistimstruct.h"
+#include "dishonoredutilities_saveload.h"
+#include "dishonoredutilities_saveload_ai.h"
 
 // DISHONORED(port): 2013 rva 0x789580-shaped accessor pair (2012: the 7-byte getter and the 16-byte setter). The
 // process's own tweaks pointer is m_pBrainProcessTweaks; every subclass inherits it, so unlike the pickup tweaks that
@@ -92,4 +94,18 @@ UBOOL UDisAIBrainProcess::FilterAIStim_BrainProcess( const FAIStimStruct& _rStim
 	}
 	const FDisStimPredicateDelegate Filter = GetFilterStimDelegate_BrainProcess( _rStim.m_StimID );
 	return Filter.IsBound() ? Filter( _rStim ) : FALSE;
+}
+/*-----------------------------------------------------------------------------
+	DisSaveLoad. DISHONORED(port): agent EJ (PHASE12 EJ). GameSave (2013 rva 0x736290, retail vtable slot 69)
+	is not ported, for agent ED's reason - the writing half of the object layer does not exist here. It is the
+	mirror of the body below: the properties, then DisSaveAISubTweakReference (0x7312a0).
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x7362c0 (2012 0x798830, byte-identical), retail vtable slot 70. Two reads: the
+// process's own script properties, then which of the owning brain tweaks' brain-process tweaks it runs on.
+void UDisAIBrainProcess::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+	DisLoadAISubTweakReference< UDisTweaks_AIBrainProcess, UDisTweaks_AIBrain >( _rArchive, m_pBrainProcessTweaks,
+		&UDisTweaks_AIBrain::m_BrainProcessTweaks );
 }

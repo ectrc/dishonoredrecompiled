@@ -42,3 +42,9 @@ public:
 
 protected:
 	void SetActionTargetProxy( FDisAttentionProxy ActionTarget );
+// DISHONORED(port): agent EJ (PHASE12 EJ) - GameLoad 2013 rva 0x73d580 and PostGameLoad 0x72ae40, retail
+// vtable slots 70 and 71; GameSave (0x734d80, slot 69) is not ported. Bodies in Src/disaisubprocess.cpp.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual void PostGameLoad( ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }

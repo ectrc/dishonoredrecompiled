@@ -428,6 +428,19 @@ INT DisGetInstalledContentMask();
     nothing but this. */
 void DisSaveLoadObject( FArchive& _rArchive, class UObject* _pObject );
 
+/** DISHONORED(written): agent ED's stop hook, moved here by agent EJ because six of the AI stack's own retail
+    units now need it. A ported body that reaches a branch this tree does not have must stop the stream rather
+    than read on: the object data carries no length prefix, so under-reading misreads every object after it.
+    Retail has nothing like it - retail cannot be missing a branch. Defined in dissavegame.cpp. */
+void DisStopRestore( FArchive& _rArchive, const FString& _rWhere );
+
+/** DISHONORED(written): agent ED's guarded element-count read, moved here by agent EJ beside DisStopRestore.
+    Retail hands a count straight to TArray::Empty / AddZeroed, which asserts Count>=0; retail cannot reach
+    that assert because its stream is always in step, and a tree with a partial override set can. Reading
+    counts through this makes the first symptom of a desynchronised stream the named stop the object layer
+    already contracts for. The bound is the dictionary's own WORD index space. Defined in dissavegame.cpp. */
+INT DisReadStreamCount( FArchive& _rArchive, const TCHAR* _pWhere );
+
 /** DISHONORED(written): -savetest - reads every save in the directory through the ported container and, with
     -savetestwrite, writes one back out and re-reads it. Defined in dishonoredengine.cpp. */
 void DisSaveGameSelfTest();

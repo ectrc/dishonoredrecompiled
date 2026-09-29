@@ -284,6 +284,12 @@ public:
 	FORCEINLINE UBOOL IsPersistent()						const	{return ArIsPersistent;}
 	FORCEINLINE UBOOL IsError()								const	{return ArIsError;}
 	FORCEINLINE UBOOL IsCriticalError()						const	{return ArIsCriticalError;}
+	/** DISHONORED(written): agent EJ (PHASE12 EJ). ArIsError is protected and every setter of it so far has
+	    been a derived archive writing its own member. A ported DisSaveLoad body outside DishonoredGame has no
+	    other way to stop the level restore - DisStopRestore lives in DishonoredGame/Inc - so it raises the
+	    archive's own error flag and DisSaveLoad::FLevelLoader::Serialize turns that into the same abort.
+	    UArkComponentContainer::GameLoad (Engine/Src/arkcomponentcontainer.cpp) is the first such body. */
+	FORCEINLINE void SetError()										{ArIsError = TRUE;}
 	FORCEINLINE UBOOL ContainsCookedData()					const	{return ArContainsCookedData;}
 	FORCEINLINE UBOOL ForEdit()								const	{return ArForEdit;}
 	FORCEINLINE UBOOL ForClient()							const	{return ArForClient;}

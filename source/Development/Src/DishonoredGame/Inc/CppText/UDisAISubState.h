@@ -13,7 +13,7 @@
 public:
 	// DISHONORED(port): the tweak-interface pair, 2012 vtable UDisAISubState{for IDisTweaksInterface} slots 4 and 5
 	// (GetTweaks_Derived folded onto UDistributionFloatUniformCurve::GetNumKeys 0x9bd380, SetTweaks_Derived named at
-	// 0x16f40 / 2013 0x7059f0; both are a single load/store at interface+0xC, i.e. object+76 = m_pSubStateTweaks).
+	// 2012 0x16f40 / 2013 0x7059f0; both are a single load/store at interface+0xC, i.e. object+76 = m_pSubStateTweaks).
 	// Same reason as UDisAISubProcess's: without it a sub-state reads the all-zero class default of its tweaks class.
 	// DISHONORED(retail): UDisAISubStateInit re-overrides both back to NULL and a no-op (its own interface vtable slots 4
 	// and 5 are the folded return-0 and empty bodies), because the idle sub-state has no tweaks object of its own.
@@ -60,3 +60,9 @@ protected:
 	virtual void RequestStateExit_Derived();
 	void SetActionTargetProxy( FDisAttentionProxy ActionTarget );
 	void ClearActionTargetProxy();
+// DISHONORED(port): agent EJ (PHASE12 EJ) - GameLoad 2013 rva 0x7126c0 and PostGameLoad 0x705e10, retail
+// vtable slots 70 and 71; GameSave (0x710620, slot 69) is not ported. Bodies in Src/disaisubstate.cpp.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual void PostGameLoad( ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }

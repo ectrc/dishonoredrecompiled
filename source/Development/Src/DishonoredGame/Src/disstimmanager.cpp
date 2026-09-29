@@ -15,6 +15,8 @@
 //   0x777080  public: void __thiscall UDisStimManager::TermStimManager(void)
 
 #include "DishonoredGame.h"
+#include "aistimstruct.h"	// the stim type registry and the dispatch table LoadStim reconstructs through
+#include "dishonoredutilities_saveload.h"	// DisStopRestore, for the one branch retail cannot reach
 
 /**
  * DISHONORED(layout): 2012 PDB FDisStimHeader, 8 bytes. It is what a FREE block holds in its first eight bytes; a live
@@ -176,25 +178,89 @@ INT UDisStimManager::GetResourceSize()
 }
 
 /*-----------------------------------------------------------------------------
-	DISHONORED(bringup): SaveStim / LoadStim (2012 rvas 0x767b20 / 0x767ba0) are NOT ported. Both need three things that do
-	not exist in the tree: FAIStimStruct with its GetScriptStruct() virtual (Src/aistimstruct.cpp is still a comment-only
-	skeleton), the static stim registry FAIStimStruct::g_StimTypeInfos (per stim id: m_StimSize_bytes and m_pCreatorFn,
-	which is how a loaded stim is reconstructed), and the DisSaveLoad ESaveLoadLocation plumbing. The retail bodies are:
+	DISHONORED(port): agent EJ (PHASE12 EJ) - LoadStim, the one thing UDishonoredAIBrain::GameLoad needs that
+	this tree did not have. SaveStim (2013 rva 0x724a00, 2012 0x767b20) stays out for agent ED's reason: the
+	writing half of the DisSaveLoad object layer does not exist here. Its retail body, so that the pair reads
+	as one format:
 
 	  SaveStim( FArchive& Ar, const FAIStimStruct* pStim )
 	      INT StimTypeID = pStim->m_StimID;        Ar << StimTypeID;
-	      INT BlockIndex = IsInPool(pStim) ? (pStim - m_pStimData) / m_MaxStimSize_bytes : INDEX_NONE;
+	      INT BlockIndex = IsInPool(pStim) ? ((BYTE*)pStim - (BYTE*)m_pStimData) / m_MaxStimSize_bytes : INDEX_NONE;
 	      Ar << BlockIndex;
-	      pStim->GetScriptStruct()->SerializeTaggedProperties( Ar, pStim, NULL );   // UStruct vtable +308
-
-	  LoadStim( FArchive& Ar, const FAIStimStruct*& pOutStim )
-	      INT StimTypeID = INDEX_NONE; Ar << StimTypeID;
-	      INT BlockIndex = INDEX_NONE; Ar << BlockIndex;
-	      the block the save names is looked up in the pool and, only when it is still ON THE FREE LIST, taken out of it
-	      with the same unlink AllocateBlock_Common does (or heap-allocated from g_StimTypeInfos[StimTypeID].m_StimSize_bytes
-	      when there is no block), then g_StimTypeInfos[StimTypeID].m_pCreatorFn constructs the stim in place and its
-	      script struct reads the properties back.
-
-	Note that a stim whose block is no longer free is skipped, so a save reloaded into a pool that already holds live stims
-	drops them rather than overwriting - retail behaviour worth keeping when this lands.
+	      pStim->GetScriptStruct()->SerializeBin( Ar, (BYTE*)pStim, 0 );
 -----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x704f60 (2012 0x767ba0). Three things in the stream: the stim's type id, the
+// index of the pool block it lived in when the save was written, and then the stim's own script properties,
+// binary and untagged.
+//
+// The block index is a hint and not a promise. Retail looks the named block up in THIS session's pool and
+// uses it only while it is still on the free list; a block that is not free (or a pool whose free list is
+// empty) is left alone and the properties are read into whatever is already there, through that object's own
+// script struct. On a level restore the pool is freshly initialised and every block is free, which is the
+// only path a save file exercises.
+//
+// DISHONORED(bringup): two deviations, both named because neither reads a stream byte.
+//   1. m_pVTable. Retail keeps its dispatch table in the object, so the placement-new the creator does
+//      installs it; this port keeps it beside the object (see aistimstruct.h) and therefore has to set it,
+//      exactly as DisNewStim does.
+//   2. m_pStimManager. It is a reflected member of FAIStimStruct with no CPF_Transient, so it is in the
+//      binary walk below and the save carries it - which is why retail does not assign it here. It is
+//      assigned anyway when the walk left it NULL, because a pooled stim whose manager is NULL never returns
+//      its block to the pool (DisStimRefRelease's own rule).
+void UDisStimManager::LoadStim( FArchive& _rArchive, const FAIStimStruct*& _rpOutStim )
+{
+	INT StimTypeID = INDEX_NONE;
+	_rArchive << StimTypeID;
+	INT BlockIndex = INDEX_NONE;
+	_rArchive << BlockIndex;
+
+	FAIStimStruct* pStim = NULL;
+	if( BlockIndex >= 0 )
+	{
+		pStim = (FAIStimStruct*)( (BYTE*)m_pStimData + BlockIndex * m_MaxStimSize_bytes );
+
+		FDisStimHeader* pFreeBlock = (FDisStimHeader*)m_pFirstFreeBlock;
+		while( pFreeBlock != NULL && (void*)pFreeBlock != (void*)pStim )
+		{
+			pFreeBlock = pFreeBlock->m_pNextFreeBlock;
+		}
+
+		if( pFreeBlock != NULL )
+		{
+			const FAIStimTypeInfo* pTypeInfo = DisGetStimTypeInfo( (BYTE)StimTypeID );
+			if( pTypeInfo == NULL || pTypeInfo->m_pCreatorFn == NULL )
+			{
+				// DISHONORED(written): retail indexes g_StimTypeInfos with the saved id and does not check it.
+				// A tree whose stim table is incomplete would construct through a NULL creator here, and the
+				// crash would say nothing about which body was reading; the properties are still read below,
+				// into the block as it stands, so the stream stays in step either way.
+				debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDisStimManager::LoadStim: the save names stim type %d, which this tree has no table row for"), StimTypeID );
+			}
+			else
+			{
+				pStim = pTypeInfo->m_pCreatorFn( AllocateBlock_Common( pStim, pTypeInfo->m_StimSize_bytes ) );
+				DisStimSetVTable( pStim, pTypeInfo->m_pVTable );
+			}
+		}
+	}
+
+	const UScriptStruct* pStruct = ( pStim != NULL ) ? DisStimGetScriptStruct( pStim ) : NULL;
+	if( pStruct == NULL )
+	{
+		// retail dereferences the block from here on with no test at all; with no block, no table row and no
+		// script struct there is nothing to read the properties into, and reading none of them would leave the
+		// stream one stim short.
+		DisStopRestore( _rArchive, FString::Printf( TEXT("UDisStimManager::LoadStim (2013 rva 0x704f60): the save names stim type %d in pool block %d, and this session cannot reconstruct it"), StimTypeID, BlockIndex ) );
+		_rpOutStim = NULL;
+		return;
+	}
+
+	pStruct->SerializeBin( _rArchive, (BYTE*)pStim, 0 );
+
+	if( pStim->m_pStimManager == NULL )
+	{
+		pStim->m_pStimManager = this;
+	}
+	_rpOutStim = pStim;
+}

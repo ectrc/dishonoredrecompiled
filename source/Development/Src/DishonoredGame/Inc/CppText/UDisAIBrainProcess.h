@@ -25,3 +25,8 @@ protected:
 	virtual void OnDifficultyChange_AIBrainProcess_Derived() {}
 	virtual const BYTE* BuildFilterStimMask() { return NULL; }
 	virtual FDisStimPredicateDelegate GetFilterStimDelegate_BrainProcess( BYTE _StimID ) { return FDisStimPredicateDelegate(); }
+// DISHONORED(port): agent EJ (PHASE12 EJ) - GameLoad, 2013 rva 0x7362c0, retail vtable slot 70. GameSave
+// (0x736290, slot 69) is not ported. Body in Src/disaibrainprocess.cpp.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }

@@ -33,6 +33,8 @@
 #include "disaicensus.h"
 #include "disdesirestructs.h"
 #include "disaisubstate.h"
+#include "dishonoredutilities_saveload.h"
+#include "dishonoredutilities_saveload_ai.h"
 
 /*-----------------------------------------------------------------------------
 	The desires half.
@@ -257,24 +259,6 @@ void UDisAISubProcess::PostGameLoad_SubProcess()
 	m_pFilterStimMask = (FPointer)BuildFilterStimMask();
 }
 
-/*-----------------------------------------------------------------------------
-	DISHONORED(bringup): GameSave / GameLoad (2013 rvas 0x734d80 / 0x73d580, 2012 0x774840 / 0x774870) are not ported.
-	Both are one call plus one template call and both of those are unported: DisSaveLoadObject
-	(dishonoredutilities_saveload.cpp) and DisSaveAISubTweakReference / DisLoadAISubTweakReference (2013 rvas 0x7312a0 /
-	0x731310), which write a sub-tweak as an index into the owning behaviour tweak's sub-process tweak array rather than
-	as an object reference. The retail bodies are two lines each and are recorded so landing them is a transcription:
-
-	  GameSave( FArchive& Ar, ESaveLoadLocation Location )
-	      DisSaveLoadObject( Ar, this );
-	      DisSaveAISubTweakReference<UDisTweaks_AISubProcess, UDisTweaks_AIBehavior>( Ar, m_pSubProcessTweaks,
-	          &UDisTweaks_AIBehavior::m_SubProcessTweak );   // the member-array offset retail passes as the third argument
-
-	  GameLoad( FArchive& Ar, ESaveLoadLocation Location )
-	      DisSaveLoadObject( Ar, this );
-	      DisLoadAISubTweakReference<UDisTweaks_AISubProcess, UDisTweaks_AIBehavior>( Ar, m_pSubProcessTweaks,
-	          &UDisTweaks_AIBehavior::m_SubProcessTweak );
------------------------------------------------------------------------------*/
-
 // ---- agent CG: the tweak-interface pair, defined here rather than in the cpptext ----
 // DISHONORED(port): 2012 vtable UDisAISubProcess{IDisTweaksInterface} slots 4 and 5. They are one load and one store at
 // m_pSubProcessTweaks. The bodies live in the unit because inside the generated class body UDisTweaks_AISubProcess is
@@ -287,4 +271,21 @@ UDisTweaksBase* UDisAISubProcess::GetTweaks_Derived()
 void UDisAISubProcess::SetTweaks_Derived( UDisTweaksBase* Tweaks )
 {
 	m_pSubProcessTweaks = (UDisTweaks_AISubProcess*)Tweaks;
+}
+// DISHONORED(port): 2013 rva 0x73d580 (2012 0x774870), retail vtable slot 70 (vftable rva 0xd39468). The
+// process's own script properties, then which of the owning behaviour tweaks' sub-process tweaks it runs on.
+// DISHONORED(bringup): as UDisAISubState::GameLoad, retail's tail re-registers the other-actor-terminated
+// event and reads no stream byte.
+void UDisAISubProcess::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+	DisLoadAISubTweakReference< UDisTweaks_AISubProcess, UDisTweaks_AIBehavior >( _rArchive, m_pSubProcessTweaks,
+		&UDisTweaks_AIBehavior::m_SubProcessTweaks );
+}
+
+// DISHONORED(port): 2013 rva 0x72ae40, retail vtable slot 71. Reads no stream byte; the whole body is agent
+// CG's PostGameLoad_SubProcess, which is now reachable.
+void UDisAISubProcess::PostGameLoad( ESaveLoadLocation _Location )
+{
+	PostGameLoad_SubProcess();
 }

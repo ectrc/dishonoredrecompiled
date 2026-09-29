@@ -34,3 +34,9 @@ private:
 	void ClearPendingState();
 	void DebugStoreRejectedStateInfo( const FDisNativeFSMRejectedInfo& Info );
 	friend class UDishonoredNativeState;
+// DISHONORED(port): agent EJ (PHASE12 EJ) - GameLoad, 2013 rva 0x67a9e0, retail vtable slot 70. Slot 69 is the
+// UDisAttentionInfo_Base::GameSave fold and is not ported. Body in Src/dishonorednativestatemachine.cpp. Not
+// to be confused with LoadPartialState above, which is a different slot and a different body.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
