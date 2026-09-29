@@ -175,3 +175,47 @@ As `PHASE10.md`, plus three earned this wave:
   the interface's mouse position never left (0,0). Verify with real input.
 - **When your snapshot predates another package that touched the same file, do not copy whole files.**
   That reverted a merged function and broke HEAD this wave. Diff against the commit you branched from.
+- **Never `git clean -x` a build worktree.** The reference data the gate reads - `retail_sdk_layout.json`,
+  `vtables.csv`, `pdb_functions.csv` and six others - is gitignored, so `-x` deletes it and every layout
+  check then fails with `-1`, "the tool printed no summary line". That looked exactly like a layout
+  regression from the package being gated and was the coordinator's own command. `git clean -fd`.
+
+## Wave 12
+
+Wave 11 closed with the saved session at 305 objects and the modal drawing correctly. What is left is
+the gap between a menu that looks right and a game you can start: the mouse is dead, and YES does
+nothing. Both are on the first screen a player sees.
+
+### EH — the mouse
+
+The oldest open defect in this tree, and the one the user reported first. A pointer over QUIT GAME
+draws the game's own cursor on it (`build/agentEG/eg6_t01600004.png`), so the position and the hit test
+reach the entry — and the selection still does not move and the click does nothing. Keyboard works.
+So this is `GFx_GenerateMouseButtonEvents` and `GFxButtonCharacter`'s state machine, not the cursor.
+Named by DM and EG independently; EG put it high and it belongs first.
+
+### EI — making YES do something
+
+`UDisGlobalUIManager`. YES on the quit modal does not quit, and YES on the New Game confirmation does
+not start a mission — so the whole front end is currently a display. EA's hand-over 4: the id, the
+timer and the `FArkGameEvent`. This is the package that turns the menu into a way into the game.
+
+### EJ — the saved session, continued
+
+EF left the stream at `UDishonoredAIBrain`, retail `0x7256a0`, vtable slot 70, with 305 objects and
+23,827 of 619,631 bytes restored. Then the nine partial-state classes in `dissavegame.cpp`. EF's own
+lesson applies directly here: when a body's last statement is a virtual call, resolve that slot in
+retail before believing the body is finished.
+
+### EK — the in-game HUD
+
+Nothing draws over the world yet. Queued for four waves behind the front end; the front end is now
+close enough that the HUD is the next thing a player would notice.
+
+### Still queued after this
+
+Retail blurs the scene behind a modal and this tree does not (EG's hand-over 2, EE's post-process
+family — everything else about the modal matches). Perspective support for the difficulty screen; the
+options settings tree behind the `undefined` gamma label; the exit teardown fault; the shim deletion
+backlog; two generated-declaration hazards EC found, one a live GC hazard; milestone 8's test suite;
+load-aware regression bounds for `d3d9_frames` and `inputtest_moved`. Audio stays last.
