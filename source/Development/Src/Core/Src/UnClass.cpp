@@ -523,6 +523,10 @@ LinkStart:
  * @param	Ar				the archive to use for serialization
  * @param	Data			pointer to the location of the beginning of the struct's property data
  */
+/** DISHONORED(written): agent EC (PHASE11 EC) - -dispropertytrace, defined in UnObj.cpp beside the other
+    half of the same diagnostic. */
+extern UBOOL DisPropertyTraceEnabled();
+
 void UStruct::SerializeBinProperty( UProperty* Property, FArchive& Ar, BYTE* Data ) const
 {
 	if( Property->ShouldSerializeValue(Ar) )
@@ -552,8 +556,18 @@ void UStruct::SerializeBin( FArchive& Ar, BYTE* Data, INT MaxReadBytes ) const
 	}
 	else
 	{
+		// DISHONORED(written): agent EC (PHASE11 EC) - -dispropertytrace, the same diagnostic
+		// UObject::SerializeScriptPropertiesBin carries, so that a struct's and a whole object's binary walk
+		// can be followed byte by byte too. The switch is read on first use (DisPropertyTraceEnabled).
+		const UBOOL bTrace = Ar.IsDisSaveLoad() && DisPropertyTraceEnabled();
 		for (UProperty* Property = PropertyLink; Property != NULL; Property = Property->PropertyLinkNext)
 		{
+			if( bTrace )
+			{
+				debugf( TEXT("DisBin  byte %6d %s.%s (%s)%s"), Ar.Tell(),
+					*Property->GetOwnerStruct()->GetName(), *Property->GetName(), *Property->GetClass()->GetName(),
+					Property->ShouldSerializeValue( Ar ) ? TEXT("") : TEXT(" skipped") );
+			}
 			SerializeBinProperty(Property, Ar, Data);
 		}
 	}

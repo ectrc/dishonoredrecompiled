@@ -367,9 +367,12 @@ class UProperty : public UField
 	UBOOL ShouldSerializeValue( FArchive& Ar ) const
 	{
 		UBOOL Skip = FALSE;
-		if( (PropertyFlags & (CPF_Native|CPF_Transient|CPF_DuplicateTransient|CPF_ArchetypeProperty|CPF_NonTransactional|CPF_Deprecated|CPF_DevelopmentAssets)) != 0 )
+		if( (PropertyFlags & (CPF_Native|CPF_Transient|CPF_DuplicateTransient|CPF_ArchetypeProperty|CPF_NonTransactional|CPF_Deprecated|CPF_DevelopmentAssets|CPF_DisNoSaveGame)) != 0 )
 		{
 			Skip =	((PropertyFlags & CPF_Native) != 0)
+				// DISHONORED(port): 2013 rva 0x2fd0 - retail's last disjunct, the one this tree lacked. Without
+				// it every DisSaveLoad binary property walk reads properties retail never wrote.
+				||	((PropertyFlags & CPF_DisNoSaveGame) != 0 && Ar.IsDisSaveLoad())
 				||	((PropertyFlags & CPF_Transient) != 0 && Ar.IsPersistent() && !Ar.IsSerializingDefaults() )
 				||	((PropertyFlags & CPF_DuplicateTransient) != 0 && (Ar.GetPortFlags() & PPF_Duplicate) != 0)
 				||  (IsEditorOnlyProperty() && Ar.IsFilterEditorOnly() )

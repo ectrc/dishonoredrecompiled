@@ -299,6 +299,12 @@ enum EClassCastFlag
 
 #define CPF_CrossLevelPassive		DECLARE_UINT64(0x0000100000000000)		// property can point across levels, and will be serialized properly, but assumes it's target exists in-game (non-editor)
 #define CPF_CrossLevelActive		DECLARE_UINT64(0x0000200000000000)		// property can point across levels, and will be serialized properly, and will be updated when the target is streamed in/out
+// DISHONORED(layout): Arkane addition, read by UProperty::ShouldSerializeValue (2013 rva 0x2fd0) as
+// `(PropertyFlags & this) == 0 || !Ar.IsDisSaveLoad()`: the property is left out of the DisSaveLoad binary
+// property walk. The cooked packages set it on hundreds of properties - nineteen of USequenceOp's and
+// USequenceEvent's twenty-six among them - and it is what makes an object's save-game footprint smaller than
+// its package footprint. The name is ours: property flags are #defines, so no PDB or package names them.
+#define CPF_DisNoSaveGame			DECLARE_UINT64(0x0002000000000000)		// property is not written to a save game (Arkane)
 
 
 /** @name Combinations flags */

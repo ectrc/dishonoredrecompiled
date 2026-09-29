@@ -516,7 +516,10 @@ void FSaveLoadCensus::Log( const TCHAR* _Tag ) const
 		m_DictObjects, m_DictExpected, m_DictResolved, m_DictBytesRead, m_DictBytesExpected,
 		m_ObjectsRestored, m_ObjectsSkipped, m_DataBytesRead, m_DataBytesExpected,
 		m_Spawned, m_NotFound, m_UnportedClasses, m_NullObjects, m_UntrustedSkips, m_PartialBodies, m_PostGameLoad,
-		m_bDesynchronised ? TEXT("STREAM ABORTED") : TEXT("in step") );
+		// DISHONORED(written): agent EC - the object-data loop ends when a top-level index reads 0, so a
+		// stream that quietly lost its place can terminate early. "in step" means it consumed every byte.
+		m_bDesynchronised ? TEXT("STREAM ABORTED")
+			: ( m_DataBytesRead == m_DataBytesExpected ? TEXT("in step") : TEXT("STREAM ENDED EARLY") ) );
 }
 
 // DISHONORED(written): the uncompressed length of one of the save's compressed blobs. Each blob is a
@@ -653,20 +656,34 @@ static UBOOL DisIsSaveableAnswerTrusted( UClass* _pClass, FString& _rOutClass )
 		return *pCached != 0;
 	}
 
-	UBOOL bTrusted = TRUE;
+	// DISHONORED(written): agent EC - the whole chain is searched for a ported IsSaveable BEFORE the entry
+	// list is consulted. Every subclass of a class that declares IsSaveable is itself a retail entry class,
+	// because it inherits that vtable slot; stopping at the first entry class therefore called a class
+	// untrusted whose answer its own base really does give. UDishonoredTask_Custom is the case that showed
+	// it: UDishonoredTask_Base::IsSaveable is declared and conditional (SLL_FILE and inside an objectives
+	// component), and the template tasks in Tower_Objectives are meant to be skipped.
+	UBOOL bTrusted = FALSE;
 	FString Blocker;
 	for( UClass* pWalk = _pClass; pWalk != NULL; pWalk = pWalk->GetSuperClass() )
 	{
-		const FString Name = pWalk->GetName();
-		if( DisNameInList( Name, GDisPortedIsSaveableClasses, ARRAY_COUNT(GDisPortedIsSaveableClasses) ) )
+		if( DisNameInList( pWalk->GetName(), GDisPortedIsSaveableClasses, ARRAY_COUNT(GDisPortedIsSaveableClasses) ) )
 		{
+			bTrusted = TRUE;
 			break;
 		}
-		if( DisNameInList( Name, GDisRetailSaveEntryClasses, ARRAY_COUNT(GDisRetailSaveEntryClasses) ) )
+	}
+	if( !bTrusted )
+	{
+		bTrusted = TRUE;
+		for( UClass* pWalk = _pClass; pWalk != NULL; pWalk = pWalk->GetSuperClass() )
 		{
-			bTrusted = FALSE;
-			Blocker = Name;
-			break;
+			const FString Name = pWalk->GetName();
+			if( DisNameInList( Name, GDisRetailSaveEntryClasses, ARRAY_COUNT(GDisRetailSaveEntryClasses) ) )
+			{
+				bTrusted = FALSE;
+				Blocker = Name;
+				break;
+			}
 		}
 	}
 	Trusted.Set( _pClass, bTrusted ? 1 : 0 );
@@ -730,13 +747,22 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 ,	m_rStringDictionary( _rStringDictionary )
 ,	m_Location( _Location )
 ,	m_bAborted( FALSE )
+,	m_DataSize( GetUncompressedSize( _rCompressedObjectData ) )
 ,	m_DebugRecords( 0 )
+,	m_DebugStreamObjects( 0 )
+,	m_DebugStreamSeen( 0 )
 ,	m_NumResolved( 0 )
 {
 	Parse( appCmdLine(), TEXT("disdictdebug="), m_DebugRecords );
+	Parse( appCmdLine(), TEXT("disstreamdebug="), m_DebugStreamObjects );
 	ArIsPersistent		= FALSE;
 	ArIsDisSaveLoad		= TRUE;
 	ArVer				= _SaveVersion;
+	// DISHONORED(port): 2013 rva 0x613070 - retail ORs PPF_ForceBinarySerialization into its own port flags
+	// and into the dictionary loader's. It is the first disjunct of UByteProperty::SerializeItem (0x30830):
+	// without it an enum ByteProperty is read BY NAME, four bytes through the string dictionary, where retail
+	// wrote one raw byte - and every ported body that walks script properties binary reads such bytes.
+	ArPortFlags		   |= PPF_ForceBinarySerialization;
 
 	// the actors the save recorded as destroyed, read from the head of the object-data stream
 	WORD NumDeletedActors = 0;
@@ -779,6 +805,7 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 		FArchiveLoadCompressedProxy ObjectDictionaryLoader( _rCompressedObjectDictionary,
 			(ECompressionFlags)(COMPRESS_ZLIB|COMPRESS_BiasSpeed), 0x10000 );
 		ObjectDictionaryLoader.SetVer( _SaveVersion );
+		ObjectDictionaryLoader.SetPortFlags( ObjectDictionaryLoader.GetPortFlags() | PPF_ForceBinarySerialization );
 
 		UBOOL bReadUnsharedObjects = _bReadUnshared;
 		while( TRUE )
@@ -881,17 +908,7 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 				{
 					pObject = UObject::CreatePackage( pOuter, *ObjectName.ToString() );
 				}
-				else if( pOuter == NULL )
-				{
-					// nothing to look inside: remember the reference so operator<< can resolve it later
-					FObjectRef Ref;
-					Ref.m_pClass		= pClass;
-					Ref.m_OuterIndex	= OuterIndex;
-					Ref.m_Name			= ObjectName;
-					m_NotFoundObjects.Set( (WORD)m_Objects.Num(), Ref );
-					GSaveLoadCensus.m_NotFound++;
-				}
-				else if( pClass != NULL && pOuter->GetOutermost() != UObject::GetTransientPackage()
+				else if( pOuter != NULL && pClass != NULL && pOuter->GetOutermost() != UObject::GetTransientPackage()
 					&& !pOuter->IsInA( UWorld::StaticClass() ) )
 				{
 					// DISHONORED(port): 2013 rva 0x613070. The object lives in a content package this session
@@ -925,6 +942,18 @@ FLevelLoader::FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>&
 				}
 				else
 				{
+					// DISHONORED(port): 2013 rva 0x613070, the branch that falls through to
+					// m_NotFoundObjects.Add. Retail remembers every record it did not retry through the package
+					// loader - the outer is NULL, or transient, or inside a UWorld - because its class, outer and
+					// name are all known and operator<<(UObject*&) can construct it the moment the data stream
+					// names it. Agent EC: agent ED's port took this branch only for a NULL outer, so a
+					// runtime-generated Kismet event duplicate inside a resolved sequence (AActor::GeneratedEvents;
+					// records 40 and 47 of Dishonored0.sav) resolved to nothing and stopped the restore.
+					FObjectRef Ref;
+					Ref.m_pClass		= pClass;
+					Ref.m_OuterIndex	= OuterIndex;
+					Ref.m_Name			= ObjectName;
+					m_NotFoundObjects.Set( (WORD)m_Objects.Num(), Ref );
 					GSaveLoadCensus.m_NotFound++;
 				}
 			}
@@ -996,6 +1025,21 @@ FLevelLoader::~FLevelLoader()
 // calls itself recursively to cross its buffer boundary, so a counter in an override double-counts.
 void FLevelLoader::Serialize( void* _pData, INT _Count )
 {
+	// DISHONORED(written): agent EC - and it must not read past the end either. The object-data loop only
+	// stops on a terminating index 0, so a stream that has lost its place can run off the end, and
+	// FArchiveLoadCompressedProxy asserts there (CurrentIndex+Count<=CompressedData.Num()) with nothing said
+	// about which body was reading. Retail cannot reach it: its stream is always in step.
+	if( !m_bAborted && Tell() + _Count > m_DataSize )
+	{
+		GSaveLoadCensus.m_PartialBodies++;
+		if( !GSaveLoadCensus.m_bDesynchronised )
+		{
+			GSaveLoadCensus.m_bDesynchronised = TRUE;
+			warnf( NAME_Warning, TEXT("DisSaveLoad: stopping the level restore at byte %d of %d: a read of %d bytes would run off the end of the object data, so the stream had already lost its place. %d objects were restored first."),
+				Tell(), m_DataSize, _Count, GSaveLoadCensus.m_ObjectsRestored );
+		}
+		m_bAborted = TRUE;
+	}
 	if( m_bAborted )
 	{
 		appMemzero( _pData, _Count );
@@ -1009,6 +1053,46 @@ FArchive& FLevelLoader::operator<<( FName& _rName )
 {
 	m_rStringDictionary.LoadFName( *this, _rName );
 	return *this;
+}
+
+// DISHONORED(written): agent EC. Retail's operator<<(UObject*&) (2013 rva 0x60c930) looks a remembered
+// record up with StaticFindObjectFast and, failing that, constructs it from the class, outer and name the
+// record carries - and it takes the outer straight out of m_Objects, because in the session that wrote the
+// save every record's outer was resident. Here a record's outer can be another record this session does not
+// have (Dishonored0.sav's DisConversation_InGameData_Base_147 inside DisDialogTree_InGameBind_57: both are
+// built by playing), so the outer is resolved the same way, one level up. StaticConstructObject with no outer
+// is a hard error - "Object is not packaged" - which says nothing about which record it was, so a record
+// whose outer cannot be resolved at all returns NULL and the caller stops the restore by name.
+UObject* FLevelLoader::ResolveRecord( WORD _Index )
+{
+	if( _Index == 0 || _Index >= m_Objects.Num() )
+	{
+		return NULL;
+	}
+	if( m_Objects(_Index) != NULL )
+	{
+		return m_Objects(_Index);
+	}
+	const FObjectRef* pFound = m_NotFoundObjects.Find( _Index );
+	if( pFound == NULL || pFound->m_pClass == NULL )
+	{
+		return NULL;
+	}
+	const FObjectRef Ref = *pFound;
+	m_NotFoundObjects.Remove( _Index );
+
+	UObject* pOuter = ResolveRecord( Ref.m_OuterIndex );
+	if( pOuter == NULL && Ref.m_OuterIndex != 0 )
+	{
+		return NULL;
+	}
+	UObject* pObject = UObject::StaticFindObjectFast( Ref.m_pClass, pOuter, Ref.m_Name );
+	if( pObject == NULL && pOuter != NULL )
+	{
+		pObject = UObject::StaticConstructObject( Ref.m_pClass, pOuter, Ref.m_Name );
+	}
+	m_Objects(_Index) = pObject;
+	return pObject;
 }
 
 // DISHONORED(port): 2013 rva 0x60c930 (2012 0x653700). A WORD dictionary index; the top bit means the
@@ -1036,24 +1120,13 @@ FArchive& FLevelLoader::operator<<( UObject*& _rpObject )
 		return *this;
 	}
 
-	FObjectRef* pRef = m_NotFoundObjects.Find( ObjIndex );
-	if( pRef != NULL )
+	_rpObject = ResolveRecord( ObjIndex );
+
+	if( m_DebugStreamObjects > 0 && ++m_DebugStreamSeen <= m_DebugStreamObjects )
 	{
-		UObject* pOuter = ( pRef->m_OuterIndex < m_Objects.Num() ) ? m_Objects(pRef->m_OuterIndex) : NULL;
-		_rpObject = UObject::StaticFindObjectFast( pRef->m_pClass, pOuter, pRef->m_Name );
-		if( _rpObject == NULL && pRef->m_pClass != NULL )
-		{
-			_rpObject = UObject::StaticConstructObject( pRef->m_pClass, pOuter, pRef->m_Name );
-		}
-		if( ObjIndex < m_Objects.Num() )
-		{
-			m_Objects(ObjIndex) = _rpObject;
-		}
-		m_NotFoundObjects.Remove( ObjIndex );
-	}
-	else
-	{
-		_rpObject = ( ObjIndex < m_Objects.Num() ) ? m_Objects(ObjIndex) : NULL;
+		warnf( TEXT("DisStream %5d: byte %6d ref %5d%s -> %s"), m_DebugStreamSeen, Tell(), (INT)ObjIndex,
+			bDeferred ? TEXT(" (unshared)") : TEXT(""),
+			_rpObject != NULL ? *_rpObject->GetPathName() : TEXT("<not in this session>") );
 	}
 
 	if( bDeferred )
@@ -1100,26 +1173,24 @@ FArchive& FLevelLoader::operator<<( UObject*& _rpObject )
 	if( ShouldLoadObject( _rpObject ) )
 	{
 		m_LoadedObjects.Add( _rpObject );
-		_rpObject->GameLoad( *this, m_Location );
 		GSaveLoadCensus.m_ObjectsRestored++;
+		_rpObject->GameLoad( *this, m_Location );
 		return *this;
 	}
 
-	// not saveable here - but is that retail's answer or a missing IsSaveable? If retail treats the class as
-	// an entry point and this tree has no IsSaveable of its own anywhere in the chain, the object's bytes are
-	// in the stream and skipping it loses everything after it.
+	// not saveable here - but is that retail's answer or a missing IsSaveable? When retail treats the class
+	// as an entry point and this tree declares none in that chain, retail's answer is the inline `return
+	// TRUE` its linker folded onto UObject::IsRefSaveable, which is why those 59 have no PDB symbol. So the
+	// object's state IS in the stream, and the right thing is to read it, not to stop: the gate that decides
+	// whether it CAN be read is the GameLoad one above. Agent EC: agent ED stopped here instead, which is
+	// what a tree with fourteen override bodies should do and what a tree with thirty-eight should not.
 	FString EntryClass;
 	if( !m_LoadedObjects.Contains( _rpObject ) && !DisIsSaveableAnswerTrusted( _rpObject->GetClass(), EntryClass ) )
 	{
 		GSaveLoadCensus.m_UntrustedSkips++;
-		if( !GSaveLoadCensus.m_bDesynchronised )
-		{
-			GSaveLoadCensus.m_bDesynchronised = TRUE;
-			warnf( NAME_Warning, TEXT("DisSaveLoad: stopping the level restore at '%s': retail treats %s as a save entry point (its IsSaveable is one of the 59 inline `return TRUE` bodies its linker folded away) and this tree declares none in that chain, so its state is in the stream and cannot be skipped. %d objects were restored first."),
-				*_rpObject->GetPathName(), *EntryClass, GSaveLoadCensus.m_ObjectsRestored );
-		}
-		m_bAborted = TRUE;
-		_rpObject = NULL;
+		m_LoadedObjects.Add( _rpObject );
+		GSaveLoadCensus.m_ObjectsRestored++;
+		_rpObject->GameLoad( *this, m_Location );
 		return *this;
 	}
 
@@ -1684,6 +1755,15 @@ void UDishonoredGlobalAIManager::GameLoad( FArchive& _rArchive, ESaveLoadLocatio
 {
 	_rArchive << m_iCurrentAttentionTag;
 	_rArchive << *(UObject**)&m_pAIGlobalBlackBoard;
+	// DISHONORED(port): agent EC - retail's tail (2013 rva 0x841480), which agent ED's port did not have. One
+	// byte, and a real save is version 24, so it is always there; without it the object stream desynchronised
+	// one byte after the global blackboard, which is record 138 of Dishonored0.sav.
+	if( _rArchive.Ver() >= 23 )
+	{
+		BYTE bIgnoreIdealMaximumCount = m_bIgnoreIdealMaximumCount ? 1 : 0;
+		_rArchive.Serialize( &bIgnoreIdealMaximumCount, sizeof(bIgnoreIdealMaximumCount) );
+		m_bIgnoreIdealMaximumCount = ( bIgnoreIdealMaximumCount & 0x01 ) ? 1 : 0;
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -1735,11 +1815,16 @@ void UDisAIBlackboard::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Locatio
 void UDishonoredObjectivesComponent::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
 {
 	_rArchive << m_Objectives;
+	_rArchive << m_LastTaskID;
 }
 
 void UDishonoredObjectivesComponent::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
 {
 	_rArchive << m_Objectives;
+	// DISHONORED(port): agent EC - 2013 rva 0x6d4fe0, which retail folds GameSave and GameLoad onto and which
+	// is 42 bytes to 2012's 23 (0x72f800, and unmatched in match_2012_2013.csv, as the task's pair is). The
+	// counter after the objective list is m_LastTaskID.
+	_rArchive << m_LastTaskID;
 }
 
 // DISHONORED(port): 2013 rva 0x6d0b50 (2012 0x735e80), dishonoredobjective.cpp - an objective is saved only
@@ -1775,12 +1860,19 @@ void UDishonoredObjective::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Loc
 	_rArchive << m_Tasks;
 	_rArchive.Serialize( &m_ObjectiveState, sizeof(m_ObjectiveState) );
 
+	// DISHONORED(port): agent EC - retail packs FIVE bits here, `2 * Bools & 0x3E`, so the byte's bits 0..4
+	// land on masks 2, 4, 8, 16 and 32 and m_bInitiallyHidden (mask 1) is not in the stream at all.
 	BYTE Bools = 0;
 	_rArchive.Serialize( &Bools, sizeof(Bools) );
 	m_bOptional						= ( Bools & 0x01 ) ? 1 : 0;
 	m_bCompleteWhenAllTasksComplete	= ( Bools & 0x02 ) ? 1 : 0;
-	m_bIsHidden						= ( Bools & 0x04 ) ? 1 : 0;
-	m_bShowHUDMarkers				= ( Bools & 0x08 ) ? 1 : 0;
+	m_bHUDMarkersInitiallyHidden	= ( Bools & 0x04 ) ? 1 : 0;
+	m_bIsHidden						= ( Bools & 0x08 ) ? 1 : 0;
+	m_bShowHUDMarkers				= ( Bools & 0x10 ) ? 1 : 0;
+
+	// DISHONORED(port): agent EC - retail's last read, which agent ED's port did not have. Dishonored0.sav's
+	// only objective records it as Tower_Objectives.TowerEmpress_Report.
+	_rArchive << m_TemplateObjectiveName;
 }
 
 // DISHONORED(port): 2013 rva 0x6cc250 (2012 0x735eb0), dishonoredtask_base.cpp - a task is in a file save
@@ -1790,16 +1882,31 @@ UBOOL UDishonoredTask_Base::IsSaveable( ESaveLoadLocation Location ) const
 	return Location == SLL_FILE && IsInA( UDishonoredObjectivesComponent::StaticClass() );
 }
 
-// DISHONORED(port): 2012 rva 0x727060 (no 2013 match; retail folds GameSave onto it) - every script property
-// of the task, down to UObject, which is what SerializeScriptPropertiesBin's stop class means here.
+// DISHONORED(port): agent EC - 2013 rvas 0x6c1820 (GameSave) and 0x6c1870 (GameLoad), which are NOT the
+// 2012 bodies. 2012's 0x727060 is 42 bytes and nothing but the property walk, and it has no entry in
+// match_2012_2013.csv; retail's are 80 and 86, and they were found as the only two unnamed retail callers of
+// UObject::SerializeScriptPropertiesBin (the whole exe has five). Retail re-reads m_TemplateTaskName after
+// the walk has already read it as a NameProperty - the same FName twice in a row in the stream - and then,
+// behind `Ar.Ver() >= 21`, the two localised strings the walk leaves out because they carry
+// CPF_DisNoSaveGame. That is the 43 bytes between a task and its objective's own template name.
 void UDishonoredTask_Base::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
 {
 	SerializeScriptPropertiesBin( _rArchive, UObject::StaticClass() );
+	_rArchive << m_TemplateTaskName;
+	// retail's save side has no version gate: it always writes both
+	_rArchive << m_Description;
+	_rArchive << m_Status;
 }
 
 void UDishonoredTask_Base::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
 {
 	SerializeScriptPropertiesBin( _rArchive, UObject::StaticClass() );
+	_rArchive << m_TemplateTaskName;
+	if( _rArchive.Ver() >= 21 )
+	{
+		_rArchive << m_Description;
+		_rArchive << m_Status;
+	}
 }
 
 /*-----------------------------------------------------------------------------
@@ -1893,21 +2000,317 @@ void ADishonoredPlayerPawn::GameLoad_Body( FArchive& _rArchive, ESaveLoadLocatio
 	_rArchive << m_fAirCapacity;
 }
 
-// DISHONORED(port): 2012 rva 0x79b360 (dishonoredpawn.cpp:640), PORTED ONLY AS FAR AS THE TRANSFORM.
-// AActor::GameLoad is the first thing retail does here, which is where the player's Location and Rotation
-// come back. What follows it in retail - Health, the active-power list, the attachments and the latent
-// interactables - is not ported, so the stream stops here rather than misread the rest of the level state.
-void ADishonoredPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
-{
-	AActor::GameLoad( _rArchive, _Location );
+/*-----------------------------------------------------------------------------
+	DISHONORED: agent EC (PHASE11 EC) - the two pawn bodies in full.
 
+	Agent EB left the object stream stopping at dictionary record 21, which is Lady Emily: the loader spawns
+	her from Twk_Pawn_LadyEmily.Pwn_LadyEmily_TowerEmpress and retail then reads her state with
+	ADishonoredNPCPawn::GameLoad (2013 rva 0x76d3f0), whose first non-trivial call is
+	ADishonoredPawn::GameLoad (2013 rva 0x75c0a0) - the body agent ED had ported only as far as
+	AActor::GameLoad. Those two and the helpers below are the whole distance between record 21 and the player
+	pawn at record 162: every other override class the dictionary names before 162 is already ported
+	(build/agentEC/frontier3_dish0.txt enumerates all 170 records).
+
+	Where the 2012 build is not retail, retail is what is ported. Three places in this package:
+	  1. ADishonoredPawn::GameLoad gains, in retail, m_AssociatedActors behind `Ar.Ver() >= 17`, the prune of
+	     m_LatentInteractables, one packed byte of two retail-only bits, the two backup matrices and the
+	     backup position and rotation. The 2012 body (0x79b360) stops at m_PersonalRelationships.
+	  2. ADishonoredNPCPawn::GameLoad gains m_MovableLimbs behind `>= 23`, m_InitialPossessedRot behind
+	     `>= 18`, m_pStealable / m_pDroppedStealable, a `>= 22` block (one bit, m_pMarkedForVanishAction and
+	     its timer) and a `>= 23` block (m_LastNPCDamageInfo and m_bShadowKilled). A real retail save is
+	     version 24, so every gate fires.
+	  3. its packed byte carries four bits in retail and three in 2012: the fourth is m_bNotifiedFakeDeath,
+	     which the 2012 class does not have.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(written): a ported body that reaches a branch this tree does not have must stop the stream
+// rather than read on: the object data carries no length prefix, so under-reading misreads every object
+// after it. The archive a GameLoad is handed during a restore is always the FLevelLoader.
+static void DisStopRestore( FArchive& _rArchive, const FString& _rWhere )
+{
 	DisSaveLoad::GSaveLoadCensus.m_PartialBodies++;
 	if( !DisSaveLoad::GSaveLoadCensus.m_bDesynchronised )
 	{
 		DisSaveLoad::GSaveLoadCensus.m_bDesynchronised = TRUE;
-		warnf( NAME_Warning, TEXT("DisSaveLoad: stopping the level restore inside ADishonoredPawn::GameLoad (2012 rva 0x79b360), which agent ED ported only as far as AActor::GameLoad. '%s' is restored to %s rotation %s; the Health, active powers, attachments and latent interactables retail reads next are not ported, so the rest of the stream cannot be read."),
-			*GetPathName(), *Location.ToString(), *Rotation.ToString() );
+		warnf( NAME_Warning, TEXT("DisSaveLoad: stopping the level restore inside %s: the object stream carries no length prefix, so reading on would misread every object after it. %d objects were restored first."),
+			*_rWhere, DisSaveLoad::GSaveLoadCensus.m_ObjectsRestored );
 	}
+	if( _rArchive.IsLoading() && _rArchive.IsDisSaveLoad() )
+	{
+		( (DisSaveLoad::FLevelLoader&)_rArchive ).Abort();
+	}
+}
+
+// DISHONORED(port): retail's DishonoredGetScriptStruct<T>( TEXT("<name>") ) - 2013 rvas 0x74f330
+// (DisSpawnerInfo), 0x74f3c0 (DisSleepDamageInfo) and 0x74f450 (DisNPCDamageInfo) are one per call site,
+// each a once-only StaticFindObjectChecked<UScriptStruct> cached in a file static - then UStruct::SerializeBin.
+static void DisSerializeScriptStructBin( FArchive& _rArchive, const TCHAR* _pStructName, BYTE* _pData )
+{
+	UScriptStruct* pStruct = FindObjectChecked<UScriptStruct>( ANY_PACKAGE, _pStructName );
+	pStruct->SerializeBin( _rArchive, _pData, 0 );
+}
+
+// DISHONORED(written): retail hands an element count straight to TArray::Empty / AddZeroed, which asserts
+// Count>=0. Retail cannot reach that assert, because its stream is always in step; a tree with a partial
+// override set can, and a crash there says nothing about which body lost its place. Reading counts through
+// this makes the first symptom of a desynchronised stream the named stop the object layer already contracts
+// for. The bound is the dictionary's own WORD index space.
+static INT DisReadStreamCount( FArchive& _rArchive, const TCHAR* _pWhere )
+{
+	INT Count = 0;
+	_rArchive << Count;
+	if( Count < 0 || Count > 65535 )
+	{
+		DisStopRestore( _rArchive, FString::Printf( TEXT("%s: the stream gave an element count of %d, so the bytes before it did not line up"), _pWhere, Count ) );
+		return 0;
+	}
+	return Count;
+}
+
+// DISHONORED(port): 2013 rva 0x76fd50 (2012 0x7adcc0) - one material override slot. A custom material the
+// game made at run time cannot be named in a save, so retail writes such a UMaterialInstanceConstant as its
+// Parent plus a flag and rebuilds the instance in the transient package on load.
+FArchive& operator<<( FArchive& _rArchive, FDisMaterialReplacement& _rReplacement )
+{
+	_rArchive << *(UObject**)&_rReplacement.m_pDefaultMaterial;
+	if( _rArchive.IsSaving() )
+	{
+		UMaterialInstanceConstant* pTransientInstance = Cast<UMaterialInstanceConstant>( _rReplacement.m_pCustomMaterial );
+		if( pTransientInstance != NULL && pTransientInstance->GetOutermost() != UObject::GetTransientPackage() )
+		{
+			pTransientInstance = NULL;
+		}
+		BYTE bTransientInstance = ( pTransientInstance != NULL ) ? 1 : 0;
+		_rArchive.Serialize( &bTransientInstance, sizeof(bTransientInstance) );
+		if( bTransientInstance )
+		{
+			_rArchive << *(UObject**)&pTransientInstance->Parent;
+		}
+		else
+		{
+			_rArchive << *(UObject**)&_rReplacement.m_pCustomMaterial;
+		}
+	}
+	else
+	{
+		BYTE bTransientInstance = 0;
+		_rArchive.Serialize( &bTransientInstance, sizeof(bTransientInstance) );
+		UObject* pParent = NULL;
+		_rArchive << pParent;
+		if( bTransientInstance )
+		{
+			UMaterialInstanceConstant* pInstance = (UMaterialInstanceConstant*)UObject::StaticConstructObject(
+				UMaterialInstanceConstant::StaticClass(), UObject::GetTransientPackage() );
+			pInstance->SetParent( (UMaterialInterface*)pParent );
+			_rReplacement.m_pCustomMaterial = pInstance;
+		}
+		else
+		{
+			_rReplacement.m_pCustomMaterial = (UMaterialInterface*)pParent;
+		}
+	}
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x770770 (2012 0x7ae7b0) - the death record. Neither m_DamageSourceLocation nor
+// m_NameOfDeadNPC is in the stream, and the four bits come last as one packed byte.
+FArchive& operator<<( FArchive& _rArchive, FDisNPCDeathInfo& _rInfo )
+{
+	_rArchive << *(UObject**)&_rInfo.m_pCulprit;
+	_rArchive << *(UObject**)&_rInfo.m_pCauseOfDeath;
+	_rArchive << *(UObject**)&_rInfo.m_pDamageCausingActor;
+	_rArchive.Serialize( &_rInfo.m_Awareness, sizeof(_rInfo.m_Awareness) );
+	_rArchive << *(UObject**)&_rInfo.m_pInstigator;
+
+	if( _rArchive.IsLoading() )
+	{
+		BYTE Bools = 0;
+		_rArchive.Serialize( &Bools, sizeof(Bools) );
+		_rInfo.m_bCorpseHandled           = ( Bools & 0x01 ) ? 1 : 0;
+		_rInfo.m_bIgnoreForCorpseCleanup  = ( Bools & 0x02 ) ? 1 : 0;
+		_rInfo.m_bWasSpawnedDead          = ( Bools & 0x04 ) ? 1 : 0;
+		_rInfo.m_bIgnoreDeath             = ( Bools & 0x08 ) ? 1 : 0;
+	}
+	else
+	{
+		BYTE Bools = (BYTE)( ( _rInfo.m_bCorpseHandled ? 0x01 : 0 )
+						   | ( _rInfo.m_bIgnoreForCorpseCleanup ? 0x02 : 0 )
+						   | ( _rInfo.m_bWasSpawnedDead ? 0x04 : 0 )
+						   | ( _rInfo.m_bIgnoreDeath ? 0x08 : 0 ) );
+		_rArchive.Serialize( &Bools, sizeof(Bools) );
+	}
+	return _rArchive;
+}
+
+// DISHONORED(port): 2013 rva 0x7ec790 (2012 0x82f4c0) - a BYTE count, then one URB_BodyInstance::GameLoad
+// per rigid body of the mesh's physics asset instance.
+// DISHONORED(bringup): URB_BodyInstance::GameSave / GameLoad (2012 0x3ca2f0 / 0x3c0f00) are not ported, so
+// a save taken with a ragdolled NPC stops here instead of reading bodies it cannot decode.
+static void DisLoadPhysicsAssetInstanceBodies( USkeletalMeshComponent* _pMesh, FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	BYTE NumBodies = 0;
+	_rArchive.Serialize( &NumBodies, sizeof(NumBodies) );
+	if( NumBodies > 0 )
+	{
+		DisStopRestore( _rArchive, FString::Printf( TEXT("DisLoadPhysicsAssetInstanceBodies (2013 rva 0x7ec790), which has %d rigid-body states to read and no URB_BodyInstance::GameLoad in this tree"), (INT)NumBodies ) );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x672670 (2012 0x6a3be0) - the state the machine was in, by class, then that
+// state's own LoadPartialState. Retail dereferences the looked-up state with no NULL check, because the
+// state it names was registered in the session that wrote the save.
+/** DISHONORED(written): the nine state classes whose partial state is in the stream. Retail declares
+    LoadPartialState on eight (2012 rvas: UStatePlayerMasterFalling 0x696340, UStatePlayerMasterLeaning
+    0x6a41c0, UStatePlayerMasterClimb 0x6a6120, UStatePlayerMasterHolePeeking 0x6a63c0,
+    UStateNPCInstigatedMasterAction 0x6b4ec0, UStatePlayerGrabMovable 0x6b96e0,
+    UStateNPCMasterActionImmolate 0x6ba900, UStatePlayerCarryCorpseIdle 0x6c7990) and a ninth,
+    UStatePlayerMasterPossess, has a SavePartialState (0x6afb40) whose matching Load the PDB does not list,
+    so it must be ICF-folded onto one of the others. UDishonoredNativeState's own body is empty, so every
+    other state reads no bytes at all - which is why a state this tree has not registered is not by itself a
+    reason to stop. None of the nine is ported. */
+static const TCHAR* GDisPartialStateReaders[] =
+{
+	TEXT("StatePlayerMasterFalling"),
+	TEXT("StatePlayerMasterLeaning"),
+	TEXT("StatePlayerMasterClimb"),
+	TEXT("StatePlayerMasterHolePeeking"),
+	TEXT("StatePlayerMasterPossess"),
+	TEXT("StatePlayerGrabMovable"),
+	TEXT("StatePlayerCarryCorpseIdle"),
+	TEXT("StateNPCInstigatedMasterAction"),
+	TEXT("StateNPCMasterActionImmolate"),
+};
+
+void UDishonoredNativeStateMachine::LoadPartialState( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	UClass* pStateID = NULL;
+	_rArchive << *(UObject**)&pStateID;
+	UDishonoredNativeState** ppState = m_NativeStateMap.Find( pStateID );
+	m_pPartiallyLoadedState = ( ppState != NULL ) ? *ppState : NULL;
+
+	for( UClass* pClass = pStateID; pClass != NULL; pClass = pClass->GetSuperClass() )
+	{
+		if( DisSaveLoad::DisNameInList( pClass->GetName(), GDisPartialStateReaders, ARRAY_COUNT(GDisPartialStateReaders) ) )
+		{
+			DisStopRestore( _rArchive, FString::Printf( TEXT("UDishonoredNativeStateMachine::LoadPartialState (2013 rva 0x672670): the save names state '%s', whose own LoadPartialState is one of retail's nine real bodies and is not ported"),
+				*pStateID->GetName() ) );
+			return;
+		}
+	}
+
+	if( m_pPartiallyLoadedState != NULL )
+	{
+		m_pPartiallyLoadedState->LoadPartialState( this, m_pManagedObject, _rArchive, _Location );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x896600 (2012 0x8dab60) - the component's own script properties, then which
+// of the bound dialog tree's two running instances was live.
+void UDisConversationComponent::SerializeForGameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+
+	INT RunningInstanceIdx = -1;
+	UDisDialogTree_InGameBind* pOwningBind = NULL;
+	_rArchive << RunningInstanceIdx;
+	_rArchive << *(UObject**)&pOwningBind;
+	if( RunningInstanceIdx == -1 || pOwningBind == NULL )
+	{
+		m_pDialogRunningInst = NULL;
+	}
+	else
+	{
+		m_pDialogRunningInst = &pOwningBind->m_RunningInstances[RunningInstanceIdx];
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x75c0a0 (2012 0x79b360, dishonoredpawn.cpp:640), in full. AActor::GameLoad is
+// the first thing retail does, which is where Location and Rotation come back.
+void ADishonoredPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( _rArchive, _Location );
+
+	_rArchive << Health;
+
+	// DISHONORED(layout): m_ActivePowers is reflected as an ArrayProperty of ComponentProperty
+	// (DishonoredActivePowerComponent), so the live array is a TArray of object pointers; the generated
+	// declaration is BYTE[12] because the CodeRed dump did not type the inner property. Same twelve bytes.
+	TArray<UObject*>& ActivePowers = *(TArray<UObject*>*)&m_ActivePowers;
+	const INT NumActivePowers = DisReadStreamCount( _rArchive, TEXT("ADishonoredPawn::GameLoad m_ActivePowers") );
+	ActivePowers.Empty();
+	for( INT PowerIdx = 0; PowerIdx < NumActivePowers; PowerIdx++ )
+	{
+		UObject* pActivePower = NULL;
+		_rArchive << pActivePower;
+		ActivePowers.AddItem( pActivePower );
+	}
+
+	const INT NumAttachments = DisReadStreamCount( _rArchive, TEXT("ADishonoredPawn::GameLoad m_Attachments") );
+	m_Attachments.Empty( NumAttachments );
+	m_Attachments.AddZeroed( NumAttachments );
+	for( INT AttachmentIdx = 0; AttachmentIdx < NumAttachments; AttachmentIdx++ )
+	{
+		_rArchive << *(UObject**)&m_Attachments(AttachmentIdx);
+	}
+
+	_rArchive << *(UObject**)&m_pInventory;
+
+	if( _rArchive.Ver() >= 17 )
+	{
+		const INT NumAssociatedActors = DisReadStreamCount( _rArchive, TEXT("ADishonoredPawn::GameLoad m_AssociatedActors") );
+		m_AssociatedActors.Empty( NumAssociatedActors );
+		m_AssociatedActors.AddZeroed( NumAssociatedActors );
+		for( INT AssociatedIdx = 0; AssociatedIdx < NumAssociatedActors; AssociatedIdx++ )
+		{
+			_rArchive << *(UObject**)&m_AssociatedActors(AssociatedIdx);
+		}
+	}
+
+	// DISHONORED(layout): the reflected property is an ArrayProperty of InterfaceProperty, so the live
+	// array's stride is 8 - the object and its cached interface address - and that is what the garbage
+	// collector walks. The generated declaration types the element as a bare pointer because that is how
+	// the CodeRed dump prints an interface array; the 2012 PDB spells it
+	// TArrayNoInit<TScriptInterface<IDisInteractableInterface> >. Read through the reflected stride.
+	TArray<FScriptInterface>& LatentInteractables = *(TArray<FScriptInterface>*)&m_LatentInteractables;
+	const INT NumLatentInteractables = DisReadStreamCount( _rArchive, TEXT("ADishonoredPawn::GameLoad m_LatentInteractables") );
+	// retail appends without emptying first, and the byte count depends on the count it read, not on the array
+	LatentInteractables.AddZeroed( NumLatentInteractables );
+	for( INT LatentIdx = 0; LatentIdx < NumLatentInteractables; LatentIdx++ )
+	{
+		UObject* pInteractable = LatentInteractables(LatentIdx).GetObject();
+		_rArchive << pInteractable;
+		if( _rArchive.IsLoading() )
+		{
+			LatentInteractables(LatentIdx).SetObject( pInteractable );
+			LatentInteractables(LatentIdx).SetInterface( pInteractable != NULL
+				? pInteractable->GetInterfaceAddress( UDisInteractableInterface::StaticClass() ) : NULL );
+		}
+	}
+	for( INT LatentIdx = 0; LatentIdx < LatentInteractables.Num(); )
+	{
+		if( LatentInteractables(LatentIdx).GetObject() != NULL && LatentInteractables(LatentIdx).GetInterface() != NULL )
+		{
+			LatentIdx++;
+		}
+		else
+		{
+			LatentInteractables.Remove( LatentIdx, 1 );
+		}
+	}
+
+	_rArchive << *(UObject**)&m_pAttributes;
+	_rArchive << m_MinimumScriptedHealth;
+	m_PersonalRelationships.GameLoad( _rArchive, _Location );
+
+	BYTE Bools = 0;
+	_rArchive.Serialize( &Bools, sizeof(Bools) );
+	m_bIsControlledByAMatinee   = ( Bools & 0x01 ) ? 1 : 0;
+	m_bSpecialRootMotionExtract = ( Bools & 0x02 ) ? 1 : 0;
+
+	_rArchive << m_BackupedLocalToWorld;
+	_rArchive << m_BackupedMeshLocalToWorld;
+	_rArchive << m_vBackupedPosition;
+	_rArchive << m_rBackupedRotation;
 }
 
 // DISHONORED(port): 2013 rva 0x6b8b60 (2012 0x711630), dishonoredplayerpawn.cpp:1646 - ported as far as the
@@ -1929,6 +2332,220 @@ void ADishonoredPlayerPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Lo
 	// message and 33 tutorial-note bits. ADishonoredPawn::GameLoad above has already stopped the stream.
 }
 
+
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): agent EC (PHASE11 EC) - the three roots of UDisAttentionInfo_Base::GameLoad's ICF fold.
+
+	Retail's linker folds eighteen classes' GameSave and GameLoad onto one body, the object's own script
+	properties binary and untagged (2012 rva 0x630910). Sixteen of the eighteen do not inherit
+	UDisAttentionInfo_Base here, so the class list called their body ported while this tree's dispatch landed on
+	UObject::GameLoad and read nothing. build/agentEC/folds.txt is the whole-tree check.
+-----------------------------------------------------------------------------*/
+
+void UDisConv_Node_InGameData::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+void UDisConv_Node_InGameData::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+void UDisHideoutComponent::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+void UDisHideoutComponent::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+void UDisSteeringInfluence::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+void UDisSteeringInfluence::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	DisSaveLoadObject( _rArchive, this );
+}
+
+/*-----------------------------------------------------------------------------
+	ADishonoredNPCPawn, dictionary record 21 of a real save and the stream's stopping point since agent EB.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): retail folds this into IDisConvSpeakerInterface::GameLoad_Dialog (2013 rva 0x897060),
+// which reaches the speaker through two interface slots. This tree's IDisConvSpeakerInterface carries only
+// its vptr, so the body sits on the one class that needs it, with retail's two answers for that class
+// resolved by name: GetConversationComponent_Derived (2012 0x7ac040) returns m_pConvComponent, and
+// ADishonoredNPCPawn has no GameLoad_Dialog_Derived at all, so the tail of retail's body reads nothing.
+void ADishonoredNPCPawn::GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	if( m_pConvComponent != NULL && m_pConvComponent->IsAttached() )
+	{
+		m_pConvComponent->SerializeForGameLoad( _rArchive, _Location );
+	}
+	else
+	{
+		DisStopRestore( _rArchive, TEXT("ADishonoredNPCPawn::GameLoad_Dialog (retail IDisConvSpeakerInterface::GameLoad_Dialog, 2013 rva 0x897060): with no attached conversation component retail serialises an FDisConvSaveData through IDisConvSpeakerInterface::GetDialogSaveData, which this tree does not have") );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x771340 - the possession references. 2012 has the two object references
+// inline in GameLoad and no m_InitialPossessedRot.
+void ADishonoredNPCPawn::GameLoad_Possession( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << *(UObject**)&m_pScriptOverridePossessableTweaks;
+	_rArchive << *(UObject**)&m_pScriptOverrideExitPointActor;
+	if( _rArchive.Ver() >= 18 )
+	{
+		_rArchive << m_InitialPossessedRot;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x76d3f0 (2012 0x7c7c40, dishonorednpcpawn.cpp:2370)
+void ADishonoredNPCPawn::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	_rArchive << m_iRandomHeadMeshSel;
+	_rArchive << m_HeadMeshMaterialsOverride.m_MaterialReplacements;
+	_rArchive << m_BodyMeshMaterialsOverride.m_MaterialReplacements;
+	for( INT AccessoryIdx = 0; AccessoryIdx < 2; AccessoryIdx++ )
+	{
+		_rArchive << m_RandomAccessoriesSel[AccessoryIdx];
+	}
+
+	if( _rArchive.Ver() >= 23 )
+	{
+		// retail reserves the count and then appends, so the array is not emptied first
+		const INT NumMovableLimbs = DisReadStreamCount( _rArchive, TEXT("ADishonoredNPCPawn::GameLoad m_MovableLimbs") );
+		for( INT LimbIdx = 0; LimbIdx < NumMovableLimbs; LimbIdx++ )
+		{
+			UObject* pMovableLimb = NULL;
+			_rArchive << pMovableLimb;
+			m_MovableLimbs.AddItem( (AActor*)pMovableLimb );
+		}
+	}
+
+	// DISHONORED(bringup): retail calls ADishonoredNPCPawn::RestoreAppearance( m_iRandomHeadMeshSel,
+	// m_HeadMeshMaterialsOverride, m_BodyMeshMaterialsOverride, m_RandomAccessoriesSel,
+	// m_AccessoryComponents ) here (2013 rva 0x7834c0, 2012 0x7be670), which puts the restored head mesh,
+	// material overrides and accessories back on the components. It reads no stream bytes.
+
+	_rArchive << m_fLastTeleportTime;
+
+	ADishonoredPawn::GameLoad( _rArchive, _Location );
+
+	_rArchive << m_NPCID;
+	_rArchive << m_TripID;
+	_rArchive << m_NPCDeathInfo;
+	DisSerializeScriptStructBin( _rArchive, TEXT("DisSpawnerInfo"), (BYTE*)&m_SpawnerInfo );
+
+	BYTE bIsAsleep = 0;
+	_rArchive.Serialize( &bIsAsleep, sizeof(bIsAsleep) );
+	m_PostGameLoadParams.m_bIsAsleep = ( bIsAsleep & 0x01 ) ? 1 : 0;
+
+	if( Health > 0 )
+	{
+		if( m_SpawnerInfo.m_bSpawnDead || m_SpawnerInfo.m_bTreatAsKnockedOut )
+		{
+			// DISHONORED(bringup): retail calls StartRagdolling( TRUE ) and, when the byte is set,
+			// IDisRatTargetInterface::SwitchToEatenMesh. Neither reads stream bytes.
+			BYTE bEatenByRats = 0;
+			_rArchive.Serialize( &bEatenByRats, sizeof(bEatenByRats) );
+			DisLoadPhysicsAssetInstanceBodies( Mesh, _rArchive, _Location );
+		}
+		else
+		{
+			_rArchive << *(UObject**)&m_pDistraction;
+			_rArchive << *(UObject**)&m_PostGameLoadParams.m_fHeldMovable;
+		}
+	}
+	else
+	{
+		// DISHONORED(bringup): retail calls StartRagdolling( TRUE ) and then SeverLimb (2013 rva 0x76cc10)
+		// once per joint name, with a zeroed FDisSeveredLimbRequest. Neither reads stream bytes.
+		TArray<FName> SeveredLimbJoints;
+		_rArchive << SeveredLimbJoints;
+		BYTE bEatenByRats = 0;
+		_rArchive.Serialize( &bEatenByRats, sizeof(bEatenByRats) );
+		DisLoadPhysicsAssetInstanceBodies( Mesh, _rArchive, _Location );
+		_rArchive << m_PostGameLoadParams.m_fVisibilityAsCorpse;
+	}
+
+	if( m_pNPCMasterFSM != NULL )
+	{
+		m_pNPCMasterFSM->LoadPartialState( _rArchive, _Location );
+	}
+	else
+	{
+		DisStopRestore( _rArchive, TEXT("ADishonoredNPCPawn::GameLoad (2013 rva 0x76d3f0): m_pNPCMasterFSM is NULL, and retail reads the machine's partial state here unconditionally") );
+	}
+
+	if( m_SpawnerInfo.m_pFactionTweakOverride != NULL )
+	{
+		m_pCurFactionTweak = m_SpawnerInfo.m_pFactionTweakOverride;
+	}
+	if( m_SpawnerInfo.m_pStoryGroupTweakOverride != NULL )
+	{
+		m_pCurStoryGroupTweak = m_SpawnerInfo.m_pStoryGroupTweakOverride;
+	}
+
+	BYTE Bools = 0;
+	_rArchive.Serialize( &Bools, sizeof(Bools) );
+	m_bIsDramaAssassinationHandled  = ( Bools & 0x01 ) ? 1 : 0;
+	m_bNotifyAIOfRelationshipChange = ( Bools & 0x02 ) ? 1 : 0;
+	m_bDisableTeleportOnNavmesh     = ( Bools & 0x04 ) ? 1 : 0;
+	// retail-only: 2012 packs three bits here and has no m_bNotifiedFakeDeath
+	m_bNotifiedFakeDeath            = ( Bools & 0x08 ) ? 1 : 0;
+
+	GameLoad_Dialog( _rArchive, _Location );
+	GameLoad_Possession( _rArchive, _Location );
+
+	_rArchive << m_fTimeBeforeSleep;
+	if( m_fTimeBeforeSleep > 0.f )
+	{
+		DisSerializeScriptStructBin( _rArchive, TEXT("DisSleepDamageInfo"), (BYTE*)&m_LastSleepDamageInfo );
+	}
+
+	// DISHONORED(bringup): retail reads one BYTE here if and only if
+	// UArkComponentContainer::GetFirstComponent<FDisComponentPlague>( m_ComponentContainer ) finds a plague
+	// component, and clears the component when the byte is not set. FDisComponentPlague is an
+	// import_reference.py stub in this tree (discomponentplague.h has the retail addresses and no body), so
+	// no NPC has one and the byte is never in our half of the stream. Retail's writer is symmetric with its
+	// reader, so this only matters for a save taken with a plagued NPC - a weeper - resident.
+
+	_rArchive << *(UObject**)&m_pStealable;
+	_rArchive << *(UObject**)&m_pDroppedStealable;
+
+	if( _rArchive.Ver() >= 22 )
+	{
+		BYTE bExpectingPutpocket = 0;
+		_rArchive.Serialize( &bExpectingPutpocket, sizeof(bExpectingPutpocket) );
+		m_bExpectingPutpocket = ( bExpectingPutpocket & 0x01 ) ? 1 : 0;
+		_rArchive << *(UObject**)&m_pMarkedForVanishAction;
+		if( m_pMarkedForVanishAction != NULL )
+		{
+			_rArchive << m_fMarkedForVanishTimer;
+		}
+	}
+
+	if( _rArchive.Ver() >= 23 )
+	{
+		DisSerializeScriptStructBin( _rArchive, TEXT("DisNPCDamageInfo"), (BYTE*)&m_LastNPCDamageInfo );
+		BYTE bShadowKilled = 0;
+		_rArchive.Serialize( &bShadowKilled, sizeof(bShadowKilled) );
+		m_PostGameLoadParams.m_bShadowKilled = ( bShadowKilled & 0x01 ) ? 1 : 0;
+	}
+}
+
+// DISHONORED: ADishonoredNPCPawn::GameSave (2013 rva 0x764540, 2012 0x7bdb70) is NOT ported and NOT
+// declared, for the reason the pawn's is not: the writing half of the object layer does not exist here.
+// ADishonoredNPCPawn::PostGameLoad (2013 rva 0x75e290, 2012 0x7b0fc0) is also not ported - it reads no
+// stream bytes, so the empty UObject body is safe; what it costs is that a restored corpse does not enter
+// StateNPCMasterDead_Limp and a restored NPC does not re-grab the movable it was holding.
 // DISHONORED: ADishonoredPawn::GameSave (2012 rva 0x799760) and ADishonoredPlayerPawn::GameSave (2013
 // 0x6b8770) are NOT ported and NOT declared. The writing half of the object layer does not exist in this
 // tree, so nothing would call them, and a half-written pair is worse than none: it would look like the

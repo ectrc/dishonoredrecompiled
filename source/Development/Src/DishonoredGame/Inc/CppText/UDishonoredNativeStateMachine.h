@@ -26,6 +26,9 @@ public:
 	const UClass* GetPendingStateID() const;
 	UDishonoredNativeState* FindState( UClass* StateID ) const;
 	UObject* GetManagedObject() const { return m_pManagedObject; }
+	/** DISHONORED(port): agent EC (PHASE11 EC), 2013 rva 0x672670 (2012 0x6a3be0); body in dissavegame.cpp.
+	    GameSave / GameLoad (slots 68 and 69) and SavePartialState are not ported. */
+	void LoadPartialState( FArchive& _rArchive, ESaveLoadLocation _Location );
 private:
 	void DemandStateChange( UDishonoredNativeState* DemandingState, FDisNativeStateParam& Param );
 	void ClearPendingState();

@@ -61,6 +61,7 @@ public:
 
     DECLARE_CLASS(UDisSteeringInfluence,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("AILocomotion");}
+#include "CppText/UDisSteeringInfluence.h"
 };
 
 // DishonoredGame.DisSteeringInfluence_Combat: retail sizeof 144, reflected span 120..144 (2012 PDB sizeof 144)

@@ -13390,6 +13390,23 @@ void USeqEvent_TakeDamage::execIsValidDamageType( FFrame& Stack, RESULT_DECL )
 	whole Kismet tree in the stream.
 -----------------------------------------------------------------------------*/
 
+/** DISHONORED(port): the clock USequenceEvent's save pair measures ActivationTime against (2013 rvas
+    0x2e7680 and 0x2e7720, which call UWorld::GetTimeSeconds or UWorld::GetBendTimeSeconds). This tree has
+    no UWorld::GetBendTimeSeconds; AWorldInfo::BendTimeSeconds is what retail's returns. */
+static FLOAT DisEventClockSeconds( UBOOL bOutOfBendTime )
+{
+	if( GWorld == NULL )
+	{
+		return 0.f;
+	}
+	if( bOutOfBendTime )
+	{
+		return GWorld->GetTimeSeconds();
+	}
+	AWorldInfo* pWorldInfo = GWorld->GetWorldInfo();
+	return pWorldInfo != NULL ? pWorldInfo->BendTimeSeconds : 0.f;
+}
+
 // DISHONORED(port): 2013 rva 0x2cf930 (2012 0x2ea910) - the persistent level's own sequence is not saved
 // per level state; every other sequence object is, and in SLL_FILE even that one is.
 UBOOL USequenceObject::IsSaveable( ESaveLoadLocation _Location ) const
@@ -13547,14 +13564,25 @@ void USequenceEvent::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
 	}
 	Ar << pObjectArchetype;
 
+	FLOAT RelativeActivationTime = ActivationTime - DisEventClockSeconds( m_bAlwaysOutOfBendTime );
+	Ar << RelativeActivationTime;
+
 	USequenceOp::GameSave( Ar, _Location );
 }
 
-// DISHONORED(port): 2013 rva 0x2e7720 (2012 0x318e60)
+// DISHONORED(port): 2013 rva 0x2e7720 (2012 0x318e60). Agent EC: the FLOAT after the archetype reference is
+// the activation time relative to the clock the event runs on, so that a restored event keeps its re-trigger
+// delay in a session whose clock started again. Agent ED's port did not have it, and those four bytes
+// desynchronised the object stream at the first sequence event in it.
 void USequenceEvent::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
 {
 	UObject* pObjectArchetype = NULL;
 	Ar << pObjectArchetype;
+
+	FLOAT RelativeActivationTime = 0.f;
+	Ar << RelativeActivationTime;
+	ActivationTime = DisEventClockSeconds( m_bAlwaysOutOfBendTime ) + RelativeActivationTime;
+
 	if( pObjectArchetype != NULL && pObjectArchetype != GetArchetype() )
 	{
 		SetArchetype( pObjectArchetype, TRUE );

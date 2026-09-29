@@ -360,6 +360,10 @@ namespace DisSaveLoad
 
 		void NotifyPostGameLoad();									// 2013 rva 0x60bbc0
 
+		/** DISHONORED(written): a ported body that reaches a branch this tree does not have stops the stream
+		    through this rather than reading on. Retail has nothing like it: retail cannot be missing a branch. */
+		void Abort() { m_bAborted = TRUE; }
+
 		/** a dictionary record whose object was not in memory when the dictionary was read */
 		struct FObjectRef
 		{
@@ -372,6 +376,9 @@ namespace DisSaveLoad
 
 	private:
 		UBOOL ShouldLoadObject( UObject* _pObject );				// 2013 rva 0x607b30
+		/** DISHONORED(written): one dictionary record's object, constructing it and its outers from what the
+		    record remembers when this session does not have them. Retail reads m_Objects directly. */
+		UObject* ResolveRecord( WORD _Index );
 		/** DISHONORED(written): add one dictionary record to the three parallel arrays */
 		void AddRecord( UObject* _pObject, UClass* _pRecordClass, UBOOL _bIsClass );
 
@@ -392,6 +399,15 @@ namespace DisSaveLoad
 		UBOOL					m_bAborted;
 		/** DISHONORED(written): -disdictdebug=<n> logs the first n dictionary records and how each resolved */
 		INT						m_DebugRecords;
+		/** DISHONORED(written): the uncompressed length of the object-data blob. Retail never needs it: its
+		    stream is always in step, so the terminating index 0 arrives before the end. A tree with a partial
+		    override set can run off the end instead, and FArchiveLoadCompressedProxy asserts there. */
+		INT						m_DataSize;
+		/** DISHONORED(written): -disstreamdebug=<n> logs the first n object references the data stream reads,
+		    each with the byte offset it was read at and how it resolved. The gap between two lines is the
+		    previous object's body, which is what says where a partial override set lost step. */
+		INT						m_DebugStreamObjects;
+		INT						m_DebugStreamSeen;
 	};
 
 } // namespace DisSaveLoad

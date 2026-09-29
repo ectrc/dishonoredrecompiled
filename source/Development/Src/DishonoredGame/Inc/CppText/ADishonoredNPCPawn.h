@@ -55,3 +55,18 @@ public:
 private:
 	virtual void SetupPathfindingParams( struct FNavMeshPathParams& _rOut_ParamCache );
 	void UpdateLocomotion();
+
+// ---- agent EC (PHASE11 EC): the save body the object stream stops on ----
+// GameLoad 2013 rva 0x76d3f0 (2012 0x7c7c40); IsSaveable 0x74aa80 (2012 0x7ab370, byte-identical between the
+// builds); GameLoad_Possession 0x771340. GameLoad_Dialog is this class's half of retail's
+// IDisConvSpeakerInterface::GameLoad_Dialog (0x897060), which this tree's method-less interface cannot carry.
+// Bodies in dissavegame.cpp, with the other ported override bodies.
+public:
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const
+	{
+		return Location == SLL_FILE || bKillDuringLevelTransition;
+	}
+private:
+	void GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location );
+	void GameLoad_Possession( FArchive& _rArchive, ESaveLoadLocation _Location );

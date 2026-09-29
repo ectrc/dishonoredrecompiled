@@ -22,7 +22,10 @@ public:
 	virtual void OnPawnShutDown( const ADishonoredPawn& Pawn ) {}
 	virtual void OnPreCommitMapChange() {}
 	virtual void SavePartialState( UDishonoredNativeStateMachine* StateMachine, FArchive& Ar ) {}
-	virtual void LoadPartialState( UDishonoredNativeStateMachine* StateMachine, UObject* ManagedObject, FArchive& Ar ) {}
+	/** DISHONORED(port): agent EC (PHASE11 EC) - retail's signature takes the location as well
+	    (UStateNPCInstigatedMasterAction::LoadPartialState, 2012 rva 0x6b4ec0), and
+	    UDishonoredNativeStateMachine::LoadPartialState is the only caller. */
+	virtual void LoadPartialState( UDishonoredNativeStateMachine* StateMachine, UObject* ManagedObject, FArchive& Ar, ESaveLoadLocation Location ) {}
 	virtual void PostLoadPartialState( UDishonoredNativeStateMachine* StateMachine, UObject* ManagedObject ) {}
 	virtual void OnOtherActorTerminated( const AActor& Actor ) {}
 protected:

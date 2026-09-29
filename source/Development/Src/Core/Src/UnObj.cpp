@@ -1842,10 +1842,31 @@ void UObject::SerializeScriptProperties( FArchive& Ar, UObject* DiffObject/*=NUL
  * @param	Ar						the archive to use for serialization
  * @param	ExcludingBaseClass		properties owned by this class (and its bases) are not serialized
  */
+/** DISHONORED(written): agent EC (PHASE11 EC). -dispropertytrace names every property this walk reads and
+    the byte offset it was read at, which is the only way to see where a partial DisSaveLoad override set
+    loses its place: most of the ported GameLoad bodies are nothing but this walk. Read on first use, never
+    at file scope - a file-scope ParseParam in a static library runs before WinMain sets GCmdLine. */
+UBOOL DisPropertyTraceEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("dispropertytrace") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
 void UObject::SerializeScriptPropertiesBin( FArchive& Ar, UClass* ExcludingBaseClass )
 {
+	const UBOOL bTrace = Ar.IsDisSaveLoad() && DisPropertyTraceEnabled();
 	for( UProperty* Property = GetClass()->PropertyLink; Property != NULL && Property->GetOwnerClass() != ExcludingBaseClass; Property = Property->PropertyLinkNext )
 	{
+		if( bTrace )
+		{
+			debugf( TEXT("DisProp byte %6d %s.%s (%s)%s"), Ar.Tell(),
+				*Property->GetOwnerClass()->GetName(), *Property->GetName(), *Property->GetClass()->GetName(),
+				Property->ShouldSerializeValue( Ar ) ? TEXT("") : TEXT(" skipped") );
+		}
 		GetClass()->SerializeBinProperty( Property, Ar, (BYTE*)this );
 	}
 }

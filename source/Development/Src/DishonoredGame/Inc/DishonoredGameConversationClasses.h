@@ -1060,6 +1060,7 @@ public:
 
     DECLARE_ABSTRACT_CLASS(UDisConv_Node_InGameData,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+#include "CppText/UDisConv_Node_InGameData.h"
 };
 
 // DishonoredGame.DisConv_Blurb_InGameData: retail sizeof 180, reflected span 60..180 (2012 PDB sizeof 180)
@@ -1918,6 +1919,7 @@ public:
 
     DECLARE_CLASS(UDisConversationComponent,UActorComponent,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+#include "CppText/UDisConversationComponent.h"
 };
 
 // DishonoredGame.DisConversation_InGameData_Base: retail sizeof 76, reflected span 60..73 (2012 PDB sizeof 76)

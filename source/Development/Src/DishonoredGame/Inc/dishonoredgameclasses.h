@@ -12736,6 +12736,7 @@ public:
     //## END PROPS DisHideoutComponent
 
     DECLARE_ABSTRACT_CLASS(UDisHideoutComponent,UObject,0,DishonoredGame)
+#include "CppText/UDisHideoutComponent.h"
 };
 
 // DishonoredGame.DisHideoutComponent_Usable: retail sizeof 76, reflected span 76..76 (2012 PDB sizeof 76)
