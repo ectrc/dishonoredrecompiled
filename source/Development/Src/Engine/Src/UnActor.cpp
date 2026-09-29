@@ -5726,3 +5726,235 @@ void ULocalPlayer::execZeroOverridePPDeltaSettings( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
 }
+
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: the actor half of the save-game object layer.
+
+	DISHONORED(port): agent ED (PHASE11 ED). AActor::GameSave / GameLoad (2013 rvas 0x1750e0 / 0x18ad70) are
+	the base pair every actor override chains to, and they are where a save records where the player is: the
+	six floats below are the actor's Location and Rotation.
+
+	The five virtuals' UObject base is in Core/Inc/UnObjBas.h. AActor does not override IsSaveable, so a bare
+	actor is not an entry point; its subclasses that are saveable say so themselves (ATrigger, ATargetPoint,
+	AEmitter, AKActor, ALight, AInterpActor, ASceneCaptureActor here, and ~90 DishonoredGame classes that are
+	not ported yet - resources/docs/agents/agentED.md has the list).
+
+	Every bitfield below was resolved against the 2012 PDB's AActor bit offsets (resources/docs/types/
+	types.json), not guessed from the decompiler's byte masks.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x1750e0 (2012 0x17e9f0)
+void AActor::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	const INT NumGeneratedEvents = GeneratedEvents.Num();
+
+	// one packed byte of the five flags retail keeps out of the property stream
+	BYTE Bools = 0;
+	if( m_bOutOfBendTime )					Bools |= 0x01;	// 2012: DWORD @296 sign bit
+	if( bHidden )							Bools |= 0x02;	// 2012: byte @288 bit 1
+	if( m_bShutDown )						Bools |= 0x04;	// 2012: byte @300 bit 7
+	if( ReplicatedCollisionType != 9 )		Bools |= 0x08;	// COLLIDE_Default is 9 in Arkane's ECollisionType
+	if( NumGeneratedEvents > 0 )			Bools |= 0x10;
+	Ar.Serialize( &Bools, sizeof(Bools) );
+
+	if( NumGeneratedEvents > 0 )
+	{
+		BYTE NumEvents = (BYTE)NumGeneratedEvents;
+		Ar.Serialize( &NumEvents, sizeof(NumEvents) );
+		for( BYTE EventIdx = 0; EventIdx < NumEvents; EventIdx++ )
+		{
+			Ar << GeneratedEvents(EventIdx);
+		}
+	}
+
+	// a shut-down actor writes nothing else: GameLoad calls its script ShutDown and stops there too
+	if( m_bShutDown )
+	{
+		return;
+	}
+
+	if( !bStatic && bMovable && ( !m_bSpawned || m_bPersistsAcrossLevelTransition ) )
+	{
+		Ar << Location;
+		Ar << Rotation;
+	}
+
+	Ar << Base;
+	if( Base != NULL && !Base->bDeleteMe && !Base->HasAnyFlags(RF_PendingKill) && Base->IsRefSaveable( _Location ) )
+	{
+		Ar << BaseSkelComponent;
+		if( BaseSkelComponent != NULL )
+		{
+			Ar << BaseBoneName;
+		}
+		BYTE bSavedHardAttach = bHardAttach ? 1 : 0;
+		Ar.Serialize( &bSavedHardAttach, sizeof(bSavedHardAttach) );
+		Ar << RelativeLocation;
+		Ar << RelativeRotation;
+	}
+
+	Ar.Serialize( &CollisionType, sizeof(CollisionType) );
+	Ar << LifeSpan;
+}
+
+// DISHONORED(port): 2013 rva 0x18ad70 (2012 0x196610)
+void AActor::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	BYTE Bools = 0;
+	Ar.Serialize( &Bools, sizeof(Bools) );
+
+	m_bOutOfBendTime				= ( Bools & 0x01 ) ? 1 : 0;
+	const UBOOL bSavedHidden		= ( Bools & 0x02 ) != 0;
+	const UBOOL bSavedShutDown		= ( Bools & 0x04 ) != 0;
+	const UBOOL bForceSetCollisionType = ( Bools & 0x08 ) != 0;
+
+	if( ( Bools & 0x10 ) != 0 )
+	{
+		BYTE NumEvents = 0;
+		Ar.Serialize( &NumEvents, sizeof(NumEvents) );
+		// AddZeroed, not Add: the loop below can stop half way when the stream aborts at an override this
+		// tree does not have, and the garbage collector walks this reflected array next
+		GeneratedEvents.Empty( NumEvents );
+		GeneratedEvents.AddZeroed( NumEvents );
+		for( BYTE EventIdx = 0; EventIdx < NumEvents; EventIdx++ )
+		{
+			Ar << GeneratedEvents(EventIdx);
+		}
+	}
+
+	if( bSavedShutDown )
+	{
+		// the save was taken after this actor had been shut down: run the script ShutDown and read no more
+		ProcessEvent( FindFunctionChecked( ENGINE_ShutDown ), NULL );
+		return;
+	}
+
+	if( (UBOOL)bHidden != bSavedHidden )
+	{
+		bHidden = bSavedHidden ? 1 : 0;
+		bNetDirty = TRUE;
+		MarkComponentsAsDirty( FALSE );
+	}
+
+	if( !bStatic && bMovable && ( !m_bSpawned || m_bPersistsAcrossLevelTransition ) )
+	{
+		FVector ActorLocation( 0.f, 0.f, 0.f );
+		FRotator ActorRotation( 0, 0, 0 );
+		Ar << ActorLocation;
+		Ar << ActorRotation;
+		if( Location != ActorLocation || Rotation != ActorRotation )
+		{
+			Location = ActorLocation;
+			Rotation = ActorRotation;
+			ForceUpdateComponents( GWorld->InTick, TRUE );
+			if( bCollideActors )
+			{
+				FindTouchingActors();
+			}
+			SetZone( FALSE, FALSE );
+		}
+	}
+
+	AActor*					pSavedBase				= NULL;
+	USkeletalMeshComponent*	pSavedBaseSkelComponent	= NULL;
+	FName					SavedBaseBoneName		= NAME_None;
+	FVector					SavedRelativeLocation	= FVector(0.f,0.f,0.f);
+	FRotator				SavedRelativeRotation	= FRotator(0,0,0);
+	UBOOL					bSavedHardAttach		= FALSE;
+
+	Ar << pSavedBase;
+	if( pSavedBase != NULL )
+	{
+		Ar << pSavedBaseSkelComponent;
+		if( pSavedBaseSkelComponent != NULL )
+		{
+			Ar << SavedBaseBoneName;
+		}
+		BYTE HardAttachByte = 0;
+		Ar.Serialize( &HardAttachByte, sizeof(HardAttachByte) );
+		bSavedHardAttach = ( HardAttachByte != 0 );
+		Ar << SavedRelativeLocation;
+		Ar << SavedRelativeRotation;
+	}
+
+	// retail detaches first, then re-attaches, so the relative transform below is the authority
+	SetBase( NULL, FVector(0.f,0.f,1.f), TRUE, NULL, NAME_None );
+	SetHardAttach( FALSE );
+	SetBase( pSavedBase, FVector(0.f,0.f,1.f), TRUE, pSavedBaseSkelComponent, SavedBaseBoneName );
+	SetHardAttach( bSavedHardAttach );
+	RelativeLocation = SavedRelativeLocation;
+	RelativeRotation = SavedRelativeRotation;
+
+	BYTE NewCollType = 0;
+	Ar.Serialize( &NewCollType, sizeof(NewCollType) );
+	if( bForceSetCollisionType || NewCollType != CollisionType )
+	{
+		SetCollisionType( NewCollType );
+	}
+	Ar << LifeSpan;
+}
+
+/*-----------------------------------------------------------------------------
+	ATrigger and ATargetPoint share one pair of bodies, which retail's linker folds together (both classes'
+	vtable slot 68 is ATrigger::GameSave and slot 69 is ATargetPoint::GameLoad). Neither chains to AActor:
+	they write the base link and one transform and nothing else.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x1691d0 (2012 0x1729f0)
+static void DisSaveActorBaseAndTransform( AActor* _pActor, FArchive& Ar )
+{
+	Ar << _pActor->Base;
+	if( _pActor->Base != NULL )
+	{
+		Ar << _pActor->BaseSkelComponent;
+		Ar << _pActor->BaseBoneName;
+		Ar << _pActor->RelativeLocation;
+		Ar << _pActor->RelativeRotation;
+	}
+	else
+	{
+		Ar << _pActor->Location;
+		Ar << _pActor->Rotation;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x1692a0 (2012 0x172ac0)
+static void DisLoadActorBaseAndTransform( AActor* _pActor, FArchive& Ar )
+{
+	AActor* pSavedBase = NULL;
+	Ar << pSavedBase;
+	if( pSavedBase != NULL )
+	{
+		USkeletalMeshComponent* pSavedBaseSkelComponent = NULL;
+		FName SavedBaseBoneName = NAME_None;
+		Ar << pSavedBaseSkelComponent;
+		Ar << SavedBaseBoneName;
+		_pActor->bHardAttach = TRUE;
+		_pActor->SetBase( pSavedBase, FVector(0.f,0.f,1.f), TRUE, pSavedBaseSkelComponent, SavedBaseBoneName );
+		Ar << _pActor->RelativeLocation;
+		Ar << _pActor->RelativeRotation;
+	}
+	else
+	{
+		Ar << _pActor->Location;
+		Ar << _pActor->Rotation;
+		_pActor->SetBase( NULL, FVector(0.f,0.f,1.f), TRUE, NULL, NAME_None );
+	}
+}
+
+void ATrigger::GameSave( FArchive& Ar, ESaveLoadLocation _Location )		{ DisSaveActorBaseAndTransform( this, Ar ); }
+void ATrigger::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )		{ DisLoadActorBaseAndTransform( this, Ar ); }
+void ATargetPoint::GameSave( FArchive& Ar, ESaveLoadLocation _Location )	{ DisSaveActorBaseAndTransform( this, Ar ); }
+void ATargetPoint::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )	{ DisLoadActorBaseAndTransform( this, Ar ); }
+
+// DISHONORED(port): 2013 rva 0x18c160 (2012 0x197f70) - the save side is AActor's; on load the rigid body
+// is pushed to where the actor now is, because a mover's physics state is not in the stream.
+void AInterpActor::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( Ar, _Location );
+
+	// DISHONORED(bringup): retail then pushes the rigid body to the actor's restored transform
+	// (nActor->setGlobalPosition / setGlobalOrientationQuat). That needs the Novodex headers, which this
+	// translation unit does not include; it consumes no stream bytes, so leaving it out cannot
+	// desynchronise the save - a restored mover is simply not re-synced with PhysX until it next moves.
+}

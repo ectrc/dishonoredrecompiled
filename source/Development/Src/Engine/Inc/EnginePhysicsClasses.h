@@ -126,6 +126,11 @@ public:
     FVector InitialLocation;
     FRotator InitialRotation;
     //## END PROPS KActor
+
+    // DISHONORED(port): 2013 rvas 0x382e50 / 0x385e10 / 0x382e40. unphysactor.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const;
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).

@@ -2232,3 +2232,70 @@ void ARB_CylindricalForceActor::TickSpecial(FLOAT DeltaSeconds)
 		}
 	}
 }
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: AKActor. DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x382e40 / 0x382e50 / 0x385e10.
+	Six floats of rigid-body velocity on top of the actor pair; a mission save carries ~400 of them.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x382e40 (2012 0x3a4380) - an actor the game spawned is not saved as a KActor:
+// the dictionary spawns it again from its tweaks and the transform it recorded there.
+UBOOL AKActor::IsSaveable( ESaveLoadLocation _Location ) const
+{
+	return !m_bSpawned;
+}
+
+// DISHONORED(port): 2013 rva 0x382e50 (2012 0x3a4390)
+void AKActor::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameSave( Ar, _Location );
+
+	FVector LinearVelocity( 0.f, 0.f, 0.f );
+	FVector AngularVelocity( 0.f, 0.f, 0.f );
+	if( CollisionComponent != NULL && CollisionComponent->BodyInstance != NULL )
+	{
+		LinearVelocity  = CollisionComponent->BodyInstance->GetUnrealWorldVelocity();
+		AngularVelocity = CollisionComponent->BodyInstance->GetUnrealWorldAngularVelocity();
+	}
+	Ar << LinearVelocity;
+	Ar << AngularVelocity;
+}
+
+// DISHONORED(port): 2013 rva 0x385e10 (2012 0x3a6ef0)
+void AKActor::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( Ar, _Location );
+
+	FVector LinearVelocity( 0.f, 0.f, 0.f );
+	FVector AngularVelocity( 0.f, 0.f, 0.f );
+	Ar << LinearVelocity;
+	Ar << AngularVelocity;
+
+#if WITH_NOVODEX
+	if( CollisionComponent != NULL && CollisionComponent->BodyInstance != NULL )
+	{
+		NxActor* nActor = CollisionComponent->BodyInstance->GetNxActor();
+		if( nActor != NULL )
+		{
+			nActor->setGlobalPosition( U2NPosition( Location ) );
+			nActor->setGlobalOrientationQuat( U2NQuaternion( Rotation.Quaternion() ) );
+			if( !nActor->readBodyFlag( NX_BF_KINEMATIC ) )
+			{
+				nActor->setLinearVelocity( U2NPosition( LinearVelocity ) );
+				nActor->setAngularVelocity( NxVec3( AngularVelocity.X, AngularVelocity.Y, AngularVelocity.Z ) );
+				if( LinearVelocity.IsNearlyZero() && AngularVelocity.IsNearlyZero() )
+				{
+					nActor->putToSleep();
+				}
+				else
+				{
+					nActor->wakeUp();
+				}
+			}
+			if( Physics == PHYS_RigidBody )
+			{
+				SyncActorToRBPhysics();
+			}
+		}
+	}
+#endif // WITH_NOVODEX
+}

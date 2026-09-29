@@ -3082,8 +3082,15 @@ void UWorld::ProcessLevelStreamingVolumes(FVector* OverrideViewLocation)
  * All child actors are ticked after their owners have been ticked.
  */
 FLOAT HACK_DelayAfterSkip = 0.0f;
+// DISHONORED(bringup): agent ED - see UnWorld.h. DishonoredGame points this at the save-game restore.
+void (*GDisEngineTickHook)() = NULL;
+
 void UWorld::Tick( ELevelTick TickType, FLOAT DeltaSeconds )
 {
+	if( GDisEngineTickHook != NULL )
+	{
+		GDisEngineTickHook();
+	}
 #if PS3
 	// These are for an automated system to detect whether the PS3 has crashed or not.
 	static DWORD PS3ProgressCounter = 0;

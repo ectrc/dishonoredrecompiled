@@ -67,6 +67,9 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "dishonoredutilities_saveload.h"
+#include "dissaveload_classlists.h"	// DISHONORED(written): agent ED - the ported/unported override lists
+
+void DisSaveLoadArmRestore();	// DISHONORED(written): agent ED, at the foot of this file
 #include <sys/stat.h>
 
 // DISHONORED(written): chapters 16..25 (DLC06/DLC07 missions) never publish a chaos level, like chapter 0 (2013 rvas 0x5ecf90,
@@ -141,6 +144,9 @@ void UDishonoredEngine::Init()
 	{
 		Dis_Load( LoadSlot );
 	}
+	// DISHONORED(written): agent ED - -disrestoreslot=<slot> defers the load to the per-world-tick hook, so
+	// that the map is open and its sub-levels are visible before the object layer runs (retail's SLC_PostLoad)
+	DisSaveLoadArmRestore();
 }
 
 // DISHONORED(written): 2013 rva 0x5fbdc0 (2012 0x6427d0): case-insensitive search of m_MapConfig by map name
@@ -1206,4 +1212,149 @@ void DisSaveGameSelfTest()
 	}
 	warnf( TEXT("DisSaveTest list census: %d rows, %d shown in the load list, %d resolved a map config, HasSaveGame(0) %d, next auto slot %d, next user slot %d"),
 		NumRows, NumListed, NumWithMapConfig, Engine->HasSaveGame( 0 ), Engine->GetNextAutoSaveSlot(), Engine->GetNextUserSaveSlot() );
+}
+
+/*-----------------------------------------------------------------------------
+	SLC_PostLoad: the per-level restore
+
+	DISHONORED(port): agent ED (PHASE11 ED). Retail does this in UDishonoredEngine::ProcessSaveLoadCmd's
+	SLC_PostLoad arm (2013 rva 0x6162d0): once the travel to m_RootLevelName has finished and the sub-levels
+	the save flagged are visible, every ULevel in the world is handed to FGameState::LoadLevel, which finds
+	the matching level state and restores the objects inside it. The state machine itself is not ported and
+	UDishonoredEngine has no Tick in this tree, so the restore is driven from Engine's per-world-tick hook
+	(GDisEngineTickHook, Engine/Inc/UnWorld.h) and armed by -disrestoreslot=<slot>.
+
+	What it measures is the point of the package: DisSaveLoad::GSaveLoadCensus counts the objects in each
+	level state's dictionary against the state's own m_NumObjects, and the bytes taken out of each blob
+	against the blob's uncompressed length. Those two numbers are what prove the stream stayed in step,
+	because the object data carries no length prefixes.
+-----------------------------------------------------------------------------*/
+
+/** DISHONORED(written): -disrestoreslot=<slot>, armed in Init and consumed once by the tick hook */
+static INT GDisRestoreSlot = -1;
+static INT GDisRestoreDelayFrames = 0;
+static UBOOL GDisRestoreDone = FALSE;
+
+/** DISHONORED(written): restore every level state the world has a level for. This is SLC_PostLoad's inner
+    half; the travel half is the map the engine already opened. */
+void UDishonoredEngine::RestoreLoadedLevels()
+{
+	DisSaveLoad::FGameState* State = (DisSaveLoad::FGameState*)m_pGameState;
+	if( State == NULL || GWorld == NULL )
+	{
+		return;
+	}
+
+	DisSaveLoad::GSaveLoadCensus.Reset();
+
+	TArray<ULevel*> Levels;
+	if( GWorld->PersistentLevel != NULL )
+	{
+		Levels.AddItem( GWorld->PersistentLevel );
+	}
+	AWorldInfo* Info = GWorld->GetWorldInfo();
+	for( INT StreamIdx = 0; Info != NULL && StreamIdx < Info->StreamingLevels.Num(); StreamIdx++ )
+	{
+		ULevelStreaming* Streaming = Info->StreamingLevels(StreamIdx);
+		if( Streaming != NULL && Streaming->LoadedLevel != NULL )
+		{
+			Levels.AddUniqueItem( Streaming->LoadedLevel );
+		}
+	}
+
+	INT Matched = 0;
+	INT Unmatched = 0;
+	warnf( TEXT("DisRestore: %d level state(s) in the save, %d level(s) in the world"),
+		State->NumLevelStates(), Levels.Num() );
+	for( INT StateIdx = 0; StateIdx < State->NumLevelStates(); StateIdx++ )
+	{
+		const DisSaveLoad::FLevelState& LS = State->GetLevelState( StateIdx );
+		warnf( TEXT("DisRestore:   state %d: level %s package %s location %d objects %d/%d shared %d/%d dict %d bytes data %d bytes"),
+			StateIdx, *LS.m_LevelName.ToString(), *LS.m_PackageName.ToString(), (INT)LS.m_Location,
+			(INT)LS.m_NumSavedObjects, (INT)LS.m_NumObjects,
+			(INT)LS.m_NumSavedSharedObjects, (INT)LS.m_NumSharedObjects,
+			DisSaveLoad::GetUncompressedSize( LS.m_CompressedObjectDictionary ),
+			DisSaveLoad::GetUncompressedSize( LS.m_CompressedObjectData ) );
+	}
+	for( INT LevelIdx = 0; LevelIdx < Levels.Num(); LevelIdx++ )
+	{
+		const FName LevelName = DisGetLevelName( Levels(LevelIdx) );
+		if( State->findLevelIndex( LevelName ) == INDEX_NONE )
+		{
+			Unmatched++;
+			continue;
+		}
+		warnf( TEXT("DisRestore: restoring level %s"), *LevelName.ToString() );
+		State->LoadLevel( Levels(LevelIdx) );
+		Matched++;
+	}
+	warnf( TEXT("DisRestore: %d level(s) restored, %d level(s) in the world with no state in this save, %d state(s) left over"),
+		Matched, Unmatched, State->NumLevelStates() );
+	DisSaveLoad::GSaveLoadCensus.Log( TEXT("restore") );
+
+	// where the player ended up, which is what the whole object layer is for
+	for( APawn* Pawn = GWorld->GetFirstPawn(); Pawn != NULL; Pawn = Pawn->NextPawn )
+	{
+		if( Pawn->Controller != NULL && Pawn->Controller->IsA( APlayerController::StaticClass() ) )
+		{
+			warnf( TEXT("DisRestore: player pawn %s at %s rotation %s"),
+				*Pawn->GetName(), *Pawn->Location.ToString(), *Pawn->Rotation.ToString() );
+		}
+	}
+}
+
+// DISHONORED(written): the tick hook. It waits for the streaming levels the map always loads to be visible
+// (or for -disrestoredelay= frames, whichever comes first) so that the objects the dictionary names are
+// actually in memory, then restores once.
+static void DisSaveLoadRestoreTick()
+{
+	if( GDisRestoreDone || GDisRestoreSlot < 0 || GWorld == NULL )
+	{
+		return;
+	}
+	GDisRestoreDelayFrames--;
+	AWorldInfo* Info = GWorld->GetWorldInfo();
+	UBOOL bAllVisible = ( Info != NULL && Info->StreamingLevels.Num() > 0 );
+	for( INT StreamIdx = 0; Info != NULL && StreamIdx < Info->StreamingLevels.Num(); StreamIdx++ )
+	{
+		ULevelStreaming* Streaming = Info->StreamingLevels(StreamIdx);
+		if( Streaming != NULL && Streaming->bShouldBeLoaded && ( Streaming->LoadedLevel == NULL || !Streaming->bIsVisible ) )
+		{
+			bAllVisible = FALSE;
+			break;
+		}
+	}
+	if( !bAllVisible && GDisRestoreDelayFrames > 0 )
+	{
+		return;
+	}
+	GDisRestoreDone = TRUE;
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	if( Engine == NULL )
+	{
+		return;
+	}
+	warnf( TEXT("DisRestore: armed slot %d; the world is up (%d streaming level(s), all visible %d) - loading and restoring"),
+		GDisRestoreSlot, Info != NULL ? Info->StreamingLevels.Num() : 0, (INT)bAllVisible );
+	warnf( TEXT("DisRestore: retail has %d save entry classes and %d GameSave/GameLoad override classes; this tree ports %d of them"),
+		(INT)ARRAY_COUNT(GDisRetailSaveEntryClasses),
+		(INT)ARRAY_COUNT(GDisPortedGameLoadClasses) + (INT)ARRAY_COUNT(GDisUnportedGameLoadClasses),
+		(INT)ARRAY_COUNT(GDisPortedGameLoadClasses) );
+	Engine->Dis_Load( GDisRestoreSlot );
+	Engine->RestoreLoadedLevels();
+}
+
+/** DISHONORED(written): called from UDishonoredEngine::Init */
+void DisSaveLoadArmRestore()
+{
+	INT Slot = -1;
+	if( !Parse( appCmdLine(), TEXT("disrestoreslot="), Slot ) )
+	{
+		return;
+	}
+	GDisRestoreSlot = Slot;
+	GDisRestoreDelayFrames = 900;
+	Parse( appCmdLine(), TEXT("disrestoredelay="), GDisRestoreDelayFrames );
+	GDisEngineTickHook = DisSaveLoadRestoreTick;
+	warnf( TEXT("DisRestore: -disrestoreslot=%d armed (delay %d frames)"), GDisRestoreSlot, GDisRestoreDelayFrames );
 }

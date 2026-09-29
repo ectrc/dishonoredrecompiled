@@ -57,6 +57,11 @@ public:
     SCRIPT_ALIGN;
     //## END PROPS Light
 
+    // DISHONORED(port): 2013 rvas 0x2433e0 / 0x243420 / 0x2433b0. unlight.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const;
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+
     DECLARE_CLASS(ALight,AActor,0,Engine)
 public:
 	// AActor interface.

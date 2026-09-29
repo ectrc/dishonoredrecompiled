@@ -1,0 +1,263 @@
+rva,status,note
+"(inline, no symbol)",costed,"59 classes declare IsSaveable inline as `return TRUE`, all ICF-folded onto UObject::IsRefSaveable's body at 2012 0x66a860, so the PDB names only 11 of retail's 70 IsSaveable overrides. vtables.csv slot 67 is the complete record; dissaveload_classlists.h is generated from it"
+0x2e73b0,not ported,USeqAct_Interp::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 272 bytes
+0x2e74d0,not ported,USeqAct_Interp::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 9 bytes
+"0x300150 (2012, no 2013 match)",not ported,USeqAct_Interp::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 261 bytes
+0x39e7f0,not ported,URB_BodyInstance::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 431 bytes
+0x3a8620,not ported,URB_BodyInstance::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 250 bytes
+0x509320,not ported,ANavMeshBlockToggleable::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 53 bytes
+0x509360,not ported,ANavMeshBlockToggleable::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 60 bytes
+0x533370,not ported,AArkDynamicPylon::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 53 bytes
+0x5333b0,not ported,AArkDynamicPylon::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 60 bytes
+0x534220,not ported,UArkComponentContainer::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 81 bytes
+0x536530,not ported,UArkComponentContainer::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 103 bytes
+0x562590,not ported,UGameCrowdSpawner::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 365 bytes
+0x568ab0,not ported,UGameCrowdSpawner::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 784 bytes
+0x5ae8a0,not ported,USeqAct_AkPostEvent::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 54 bytes
+0x5ae9a0,not ported,AAkAmbientSound::IsSaveable; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 27 bytes
+0x5ae9c0,not ported,AAkAmbientSound::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 72 bytes
+0x5aea10,not ported,AAkAmbientSound::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 70 bytes
+0x5eb250,not ported,ADisFish::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 34 bytes
+0x5fa210,not ported,ADishonoredGameInfo::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 487 bytes
+0x5fa3f0,not ported,ADishonoredGameInfo::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 538 bytes
+0x5fabc0,not ported,ADisFish::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 50 bytes
+0x602920,not ported,DisSaveLoad::FGameState::SaveGameState - stands on FLevelSaver
+0x607740,not ported,ADishonoredGameInfo::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 111 bytes
+0x607ac0,not ported,DisSaveLoad::FLevelSaver::ShouldSaveObject
+0x6095a0,not ported,UDishonoredEngine::DoSaveGame
+0x609d70,not ported,DisSaveLoad::FLevelSaver::SerializeLevel
+0x60ba70,not ported,UDishonoredMapInfo::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 316 bytes
+0x611780,not ported,UDishonoredMapInfo::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 791 bytes
+0x611b30,not ported,DisSaveLoad::FLevelSaver::operator<<(FName&)
+0x611b80,not ported,DisSaveLoad::FLevelSaver::GetObjectIndex - the writing side of the dictionary; its record format is ported into the loader and written down in agentED.md section 3
+0x612190,not ported,DisSaveLoad::FLevelSaver::operator<<(UObject*&)
+0x613cb0,not ported,DisSaveLoad::FGameState::SaveLevel - stands on FLevelSaver
+0x615730,not ported,"DisSaveLoad::FLevelSaver::FLevelSaver - the writing half, deliberately left out rather than left half-right with 14 of 112 override classes (agentED.md section 6)"
+0x6162d0,not ported,UDishonoredEngine::ProcessSaveLoadCmd - the state machine. Its SLC_PostLoad inner arm is ported as UDishonoredEngine::RestoreLoadedLevels and driven from GDisEngineTickHook
+0x618150,not ported,ADisDefenceTower::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 117 bytes
+0x618ca0,not ported,ADisSkeletalBreakable::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 131 bytes
+0x618f20,not ported,ADisTriggerAbstractItem::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 55 bytes
+0x618f60,not ported,ADisTriggerAbstractItem::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 66 bytes
+0x619130,not ported,ADisTripwire::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 60 bytes
+0x6193a0,not ported,ADisWallOfLight::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 84 bytes
+0x61a610,not ported,ADisDoor::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 101 bytes
+0x61c480,not ported,ADishonoredBreakable::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 105 bytes
+0x61c5b0,not ported,ADishonoredBreakableNavBlock::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 53 bytes
+0x61ca00,not ported,ADisProjectileLauncher::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 68 bytes
+0x61d0f0,not ported,ADisWatchTower::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 199 bytes
+0x61d7a0,not ported,ADisPickup_Base::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 87 bytes
+0x61de00,not ported,ADisStatPickup::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x61e020,not ported,ADisWhaleBoneCharm::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x620a20,not ported,ADishonoredBreakable::IsSaveable; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 66 bytes
+0x621350,not ported,ADishonoredKAsset::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 122 bytes
+0x6213d0,not ported,ADishonoredKAsset::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 134 bytes
+0x622020,not ported,ADisAbstractItemPickupNote::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 53 bytes
+0x622d30,not ported,ADisAlarmBell::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 210 bytes
+0x622e20,not ported,ADisAlarmBell::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 210 bytes
+0x6231b0,not ported,ADisClimbable::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 61 bytes
+0x625320,not ported,ADisDefenceTower::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 219 bytes
+0x626c70,not ported,ADishonoredBreakable::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 778 bytes
+0x6274f0,not ported,ADishonoredBreakableNavBlock::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 60 bytes
+0x628bf0,not ported,ADisTripwire::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 245 bytes
+0x62ae30,not ported,ADisPickup_Base::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 201 bytes
+0x62af70,not ported,ADisPickup_Base::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 25 bytes
+0x62b640,not ported,ADisStatPickup::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x62bbb0,not ported,ADisAlarmBell::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 129 bytes
+0x62c500,not ported,ADisClimbable::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 77 bytes
+0x62db10,not ported,ADisDoor::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 189 bytes
+0x630aa0,not ported,ADisSkeletalBreakable::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 334 bytes
+0x631a00,not ported,ADisAbstractItemPickupNote::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 64 bytes
+0x634350,not ported,ADisProjectileLauncher::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 66 bytes
+0x635470,not ported,ADisWatchTower::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 215 bytes
+0x6434c0,not ported,ADisRatSpawner::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 55 bytes
+0x643500,not ported,ADisRatSpawner::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 62 bytes
+0x643890,not ported,ADishonoredRoute::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 88 bytes
+0x6438f0,not ported,ADishonoredRoute::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 88 bytes
+0x643c80,not ported,ADisAudioLogPlayer::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x643cb0,not ported,ADisAudioLogPlayer::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x6441d0,not ported,ADisDialogInanimateDummy::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x644220,not ported,ADisPlayerAudioLogDummyActor::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x644ac0,not ported,ADisRiverKrustBodyPart::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 131 bytes
+0x644b50,not ported,ADisRiverKrustBodyPart::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 131 bytes
+0x644be0,not ported,ADisRiverKrustBodyPart::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 60 bytes
+0x6457b0,not ported,ADishonoredUsableObject::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 272 bytes
+0x64d8f0,not ported,ADisRiverKrust::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 1078 bytes
+0x654a40,not ported,ADisMovableLimb::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 1847 bytes
+0x655180,not ported,ADisMovableLimb::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 1882 bytes
+0x6561a0,not ported,ADisRiverKrust::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 1380 bytes
+0x657840,not ported,ADishonoredUsableObject::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 740 bytes
+0x659380,not ported,ADishonoredSpawner::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 188 bytes
+0x65d110,not ported,ADisRiverKrust::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 88 bytes
+0x65ec30,not ported,ADishonoredSpawner::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 300 bytes
+"0x66acd0 (2012, no 2013 match)",not ported,ADisAudioLogPlayer::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 70 bytes
+0x67a9e0,not ported,UDishonoredNativeStateMachine::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 31 bytes
+"0x67e070 (2012, no 2013 match)",not ported,ADisWallOfLight::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 421 bytes
+"0x691b80 (2012, no 2013 match)",not ported,ADisDialogInanimateDummy::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 20 bytes
+"0x691f40 (2012, no 2013 match)",not ported,ADisPlayerAudioLogDummyActor::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 20 bytes
+0x6a3140,not ported,ADishonoredPlayerController::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 133 bytes
+0x6a31e0,not ported,ADishonoredPlayerController::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 147 bytes
+0x6b8770,not ported,ADishonoredPlayerPawn::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 802 bytes
+0x6b8b60,not ported,ADishonoredPlayerPawn::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 773 bytes
+0x6bfcc0,not ported,UDisNPCTravelManager::IsSaveable; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 16 bytes
+0x6c64d0,not ported,UDishonoredVisibilityComponent::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 16 bytes
+0x6cc250,not ported,UDishonoredTask_Base::IsSaveable; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 60 bytes
+0x6d0b50,not ported,UDishonoredObjective::IsSaveable; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 34 bytes
+0x6d3a60,not ported,UDishonoredPowersComponent::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 475 bytes
+0x6d3c40,not ported,UDishonoredPowersComponent::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 144 bytes
+0x6d4cd0,not ported,UDishonoredObjective::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 118 bytes
+0x6d4d60,not ported,UDishonoredObjective::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 108 bytes
+0x6dd200,not ported,UDisKeyRing::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 70 bytes
+0x6dd250,not ported,UDisKeyRing::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 80 bytes
+0x6e0290,not ported,UDisNPCTravelManager::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 711 bytes
+0x6e28a0,not ported,UDisNPCTravelManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 587 bytes
+0x6e8250,not ported,UDishonoredAIBehavior::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 140 bytes
+0x6f6f80,not ported,UDishonoredAIBehavior::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 162 bytes
+0x705e10,not ported,UDisAISubState::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 70 bytes
+0x7061a0,not ported,UDisAISubStateDoWeaponManoeuver::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 80 bytes
+0x710620,not ported,UDisAISubState::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x711c20,not ported,UDishonoredAIBrain::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 124 bytes
+0x7126c0,not ported,UDisAISubState::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x717290,not ported,UDishonoredAIBrain::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 509 bytes
+"0x727060 (2012, no 2013 match)",not ported,UDishonoredTask_Base::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x72ae40,not ported,UDisAISubProcess::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 64 bytes
+0x72b0f0,not ported,UDisAISubProcessDistractions::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 87 bytes
+"0x72f800 (2012, no 2013 match)",not ported,UDishonoredObjectivesComponent::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 23 bytes
+0x730060,not ported,UDisAIBlackboard::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 210 bytes
+0x734d80,not ported,UDisAISubProcess::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x7350d0,not ported,UDisAIBlackboard::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 207 bytes
+0x736290,not ported,UDisAIBrainProcess::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x7362c0,not ported,UDisAIBrainProcess::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x73d580,not ported,UDisAISubProcess::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 41 bytes
+0x74aa80,not ported,ADishonoredNPCPawn::IsSaveable; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 33 bytes
+"0x74d790 (2012, no 2013 match)",not ported,UDishonoredAIBrain::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 174 bytes
+0x74e6b0,not ported,ADishonoredNPCController::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 93 bytes
+0x74ff00,not ported,UDisAttentionInfo_Complex::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 121 bytes
+0x74ff80,not ported,UDisAttentionInfo_Complex::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 121 bytes
+0x755be0,not ported,ADishonoredPawn::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 609 bytes
+0x75e290,not ported,ADishonoredNPCPawn::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 326 bytes
+0x764540,not ported,ADishonoredNPCPawn::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 701 bytes
+"0x768e20 (2012, no 2013 match)",not ported,UDisAISubStateGenericAction::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 77 bytes
+0x771790,not ported,UDisNPCDistractionComponent::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 80 bytes
+0x772270,not ported,UDishonoredCheatManager::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 1120 bytes
+0x7726e0,not ported,UDishonoredCheatManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 766 bytes
+0x774c20,not ported,ADisTallboyNPCPawn::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 325 bytes
+0x77ee70,not ported,ADisTallboyNPCPawn::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 354 bytes
+0x77efe0,not ported,ADisTallboyNPCPawn::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 105 bytes
+0x786710,not ported,UDisSeqAct_NPCTrackTarget::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 69 bytes
+0x7874a0,not ported,ADisSoundCaptureBox::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 58 bytes
+0x78abd0,not ported,UDisSeqAct_SetRatSwarmCustomBehavior::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 64 bytes
+0x78c160,not ported,ADisSoundCaptureBox::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 58 bytes
+0x79afb0,not ported,UDisSeqAct_SetRainEmitter::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 33 bytes
+"0x79b360 (2012, no 2013 match)",not ported,ADishonoredPawn::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 964 bytes
+0x7a5a90,not ported,UDisGFxMoviePlayerHUD::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 247 bytes
+0x7a8000,not ported,UDisSeqAct_NPCTrackTarget::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 128 bytes
+0x7ac2e0,not ported,UDisGFxMoviePlayerHUD::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 434 bytes
+0x7b9830,not ported,UDisSeqAct_SetRatSwarmCustomBehavior::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 80 bytes
+0x7b9e50,not ported,UDisGFxMoviePlayerPowerWheel::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 133 bytes
+"0x7c7c40 (2012, no 2013 match)",not ported,ADishonoredNPCPawn::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 1013 bytes
+"0x7c91c0 (2012, no 2013 match)",not ported,ADishonoredNPCController::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 102 bytes
+0x7e70e0,not ported,UDishonoredActivePowerComponent::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 24 bytes
+0x7e7150,not ported,UDishonoredActivePowerComponent_BendTime::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 142 bytes
+0x7e75e0,not ported,UDishonoredActivePowerComponent_DevouringSwarm::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 200 bytes
+0x7e8b70,not ported,UDisActivePowerComponent_DarkVision::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 80 bytes
+0x7ed930,not ported,UDishonoredActivePowerComponent_Possess::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 457 bytes
+0x7edb00,not ported,UDishonoredActivePowerComponent_Possess::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 215 bytes
+0x7f8980,not ported,UDishonoredActivePowerComponent_BendTime::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 132 bytes
+0x7fb8e0,not ported,UDishonoredActivePowerComponent_Possess::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 106 bytes
+0x8169e0,not ported,UDishonoredInventory::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 529 bytes
+0x816bc0,not ported,UDishonoredInventory::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 379 bytes
+0x81d690,not ported,ADisGrenade::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 22 bytes
+0x8218a0,not ported,ADisGadget_SpringRazorPlaced::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 87 bytes
+0x821900,not ported,ADisGadget_SpringRazorPlaced::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 77 bytes
+0x821e60,not ported,ADisGrenade::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 90 bytes
+0x821ed0,not ported,ADisGrenade::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 127 bytes
+"0x828870 (2012, no 2013 match)",not ported,UDishonoredActivePowerComponent_BendTime::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 51 bytes
+0x83ef50,not ported,UDisGrenadeComponent::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 149 bytes
+0x83eff0,not ported,UDisGrenadeComponent::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 158 bytes
+0x83f810,not ported,ADisProjectile::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 33 bytes
+0x841480,not ported,UDishonoredGlobalAIManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 48 bytes
+0x843990,not ported,ADisProjectile::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 441 bytes
+0x844680,not ported,ADisProjectile_Arrow::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 219 bytes
+0x8447e0,not ported,ADisProjectile_Arrow_Flare::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 58 bytes
+0x844920,not ported,ADisProjectile_GrenadeBase::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 90 bytes
+0x8449c0,not ported,ADisProjectile_StickyGrenade::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 53 bytes
+0x844a60,not ported,ADisProjectile_ThrownObject::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 85 bytes
+0x84adf0,not ported,ADisProjectile::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 448 bytes
+0x84b260,not ported,ADisProjectile_Arrow::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 183 bytes
+0x84b3e0,not ported,ADisProjectile_Arrow_Flare::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 58 bytes
+0x84b5b0,not ported,ADisProjectile_ThrownObject::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 85 bytes
+"0x84c400 (2012, no 2013 match)",not ported,UDisPostProcessManager::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 401 bytes
+"0x84c5a0 (2012, no 2013 match)",not ported,UDisPostProcessManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 418 bytes
+0x850b90,not ported,ADisProjectile_Arrow::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 149 bytes
+0x852ca0,not ported,UDisDarknessManager::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x856f10,not ported,UDisGlobalUIManager::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 93 bytes
+0x856f70,not ported,UDisGlobalUIManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 104 bytes
+0x85a6a0,not ported,ADisProjectile_GrenadeBase::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 127 bytes
+0x85a720,not ported,ADisProjectile_StickyGrenade::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 64 bytes
+"0x85dd90 (2012, no 2013 match)",not ported,UDishonoredActivePowerComponent_DevouringSwarm::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 247 bytes
+0x85f8c0,not ported,UDisGlobalFactionManager::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 276 bytes
+0x863d80,not ported,UDisGlobalFactionManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 379 bytes
+0x865010,not ported,ADisGameCrowdDynamicSpawnPoint::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x865040,not ported,ADisGameCrowdDynamicSpawnPoint::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+0x868d70,not ported,ADisRatSwarm::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 179 bytes
+0x869540,not ported,ADisWhaleOilBattery::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 207 bytes
+0x877960,not ported,ADisWhaleOilReceptacle::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 58 bytes
+0x8779a0,not ported,ADisWhaleOilReceptacle::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 368 bytes
+0x87ca60,not ported,ADisRatSwarm::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 208 bytes
+0x87d070,not ported,UDisRatSwarmSpawner::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 112 bytes
+0x881b10,not ported,UDisRatSwarmSpawner::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 593 bytes
+0x882090,not ported,ADisWhaleOilBattery::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 233 bytes
+0x88af60,not ported,UDisAttentionInfo_Base::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 20 bytes
+0x88d0d0,not ported,UDisConversation_InGameData::PostGameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 175 bytes
+0x8923d0,not ported,UDisDialogTree_InGameBind::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 71 bytes
+0x897ec0,not ported,ADisForbiddenZone::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 55 bytes
+0x897f30,not ported,ADisForbiddenZone::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 55 bytes
+0x89d5b0,not ported,UDisDialogTree_InGameBind::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 183 bytes
+0x8a06c0,not ported,UDisConvGlobalMan::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 269 bytes
+0x8a07b0,not ported,UDisConvGlobalMan::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 234 bytes
+0x8a94e0,not ported,UDisConv_Soiree_InGameData::GameSave; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 96 bytes
+0x8a9540,not ported,UDisConv_Soiree_InGameData::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 115 bytes
+"0x8c13d0 (2012, no 2013 match)",not ported,UDisDarknessManager::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 94 bytes
+0x8e8f70,not ported,ADisWhaleBoneCharm::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 42 bytes
+"0x8e9590 (2012, no 2013 match)",not ported,UDisRatSwarmSpawner::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 369 bytes
+"0x8f77b0 (2012, no 2013 match)",not ported,UDisAttributes::GameLoad; reaching it stops the level restore and names it (dissaveload_classlists.h). 2012 body 23 bytes
+"(inline, no symbol)",ported,"UObject::IsSaveable / GameSave / GameLoad / PostGameLoad, vtable slots 67..70; Core/Inc/UnObjBas.h. IsSaveable returns FALSE (ICF fold 2012 0xa6cca0), the other three are empty (folds 0xa26ea0 and 0xc8750)"
+0x1691d0,ported,ATrigger::GameSave; Engine/Src/UnActor.cpp (agent ED)
+0x1692a0,ported,ATargetPoint::GameLoad; Engine/Src/UnActor.cpp (agent ED)
+0x1750e0,ported,AActor::GameSave; Engine/Src/UnActor.cpp (agent ED)
+0x18ad70,ported,AActor::GameLoad; Engine/Src/UnActor.cpp (agent ED)
+0x18c160,ported,AInterpActor::GameLoad; Engine/Src/UnActor.cpp (agent ED)
+0x2433b0,ported,ALight::IsSaveable; Engine/Src/UnLight.cpp (agent ED)
+0x2433e0,ported,ALight::GameSave; Engine/Src/UnLight.cpp (agent ED)
+0x243420,ported,ALight::GameLoad; Engine/Src/UnLight.cpp (agent ED)
+0x2cbf00,ported,ASceneCaptureActor::GameSave; Engine/Src/UnSceneCapture.cpp (agent ED)
+0x2cbf40,ported,ASceneCaptureActor::GameLoad; Engine/Src/UnSceneCapture.cpp (agent ED)
+0x2cf930,ported,USequenceObject::IsSaveable; Engine/Src/UnSequence.cpp (agent ED)
+0x2d1eb0,ported,USequence::IsSaveable; Engine/Src/UnSequence.cpp (agent ED)
+0x2dce80,ported,USequenceObject::GameSave; Engine/Src/UnSequence.cpp (agent ED)
+0x2dd050,ported,USequenceOp::GameSave; Engine/Src/UnSequence.cpp (agent ED)
+0x2dd1e0,ported,USequenceOp::GameLoad; Engine/Src/UnSequence.cpp (agent ED)
+0x2e7220,ported,USequence::GameLoad; Engine/Src/UnSequence.cpp (agent ED)
+0x2e7280,ported,USeqAct_Latent::GameLoad; Engine/Src/UnSequence.cpp (agent ED)
+0x2e7680,ported,USequenceEvent::GameSave; Engine/Src/UnSequence.cpp (agent ED)
+0x2e7720,ported,USequenceEvent::GameLoad; Engine/Src/UnSequence.cpp (agent ED)
+0x2efa00,ported,USequence::GameSave; Engine/Src/UnSequence.cpp (agent ED)
+0x382e40,ported,AKActor::IsSaveable; Engine/Src/UnPhysActor.cpp (agent ED)
+0x382e50,ported,AKActor::GameSave; Engine/Src/UnPhysActor.cpp (agent ED)
+0x3846c0,ported,AWorldInfo::GameSave; Engine/Src/UnWorld.cpp (agent ED)
+0x384730,ported,AWorldInfo::GameLoad; Engine/Src/UnWorld.cpp (agent ED)
+0x385e10,ported,AKActor::GameLoad; Engine/Src/UnPhysActor.cpp (agent ED)
+0x3b1050,ported,"ULevelStreamingAlwaysLoaded::IsSubLevelUnshared (2012 rva; vtable slot 74); EngineClasses.h, !m_bConsiderForPartialSaves"
+0x49d450,ported,AEmitter::GameSave; Engine/Src/UnParticleComponents.cpp (agent ED)
+0x4bc190,ported,AEmitter::GameLoad; Engine/Src/UnParticleComponents.cpp (agent ED)
+0x5ea500,ported,"DisSaveLoad::IsSubLevelUnshared; now reads ULevelStreaming::IsSubLevelUnshared (vtable slot 74), which agent ED added to EngineClasses.h"
+0x5ea9d0,ported,"UObject::IsRefSaveable; Core/Inc/UnObjBas.h, vtable slot 66, returns TRUE"
+0x5fe780,ported,DisSaveLoad::FLevelLoader::operator<<(FName&); dissavegame.cpp
+0x5fe820,ported,DisSaveLoad::FGameState::ContainsObjectState; dissavegame.cpp
+0x602760,ported,DisSaveLoad::InitializeSequencePostLoad; dissavegame.cpp
+0x607b30,ported,DisSaveLoad::FLevelLoader::ShouldLoadObject; dissavegame.cpp
+0x60bbc0,ported,DisSaveLoad::FLevelLoader::NotifyPostGameLoad; dissavegame.cpp
+0x60c930,ported,DisSaveLoad::FLevelLoader::operator<<(UObject*&); dissavegame.cpp - plus the two abort gates that make a partial override set safe
+0x613070,ported,"DisSaveLoad::FLevelLoader::FLevelLoader; dissavegame.cpp - the dictionary pass and the object-data pass. Deviation: the record shape is read from the record, not from the live object (agentED.md section 3)"
+0x613db0,ported,DisSaveLoad::FGameState::LoadLevel; dissavegame.cpp
+0x785f30,ported,UDisSeqAct_AutoSave::PostGameLoad; DishonoredGame/Src/dissavegame.cpp (agent ED)

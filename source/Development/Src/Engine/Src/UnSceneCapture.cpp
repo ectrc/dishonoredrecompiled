@@ -2380,3 +2380,27 @@ void FSceneCaptureProxy::Render(FSceneCaptureProbe* CaptureProbe,UBOOL bFlushRen
 		FlushRenderingCommands();
 	}
 }
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: ASceneCaptureActor. DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x2cbf00 / 0x2cbf40.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x2cbf00 (2012 0x2e6fe0)
+void ASceneCaptureActor::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameSave( Ar, _Location );
+	BYTE bWasEnabled = ( SceneCapture != NULL && SceneCapture->bEnabled ) ? 1 : 0;
+	Ar.Serialize( &bWasEnabled, sizeof(bWasEnabled) );
+}
+
+// DISHONORED(port): 2013 rva 0x2cbf40 (2012 0x2e7020)
+void ASceneCaptureActor::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( Ar, _Location );
+	BYTE bWasEnabled = 0;
+	Ar.Serialize( &bWasEnabled, sizeof(bWasEnabled) );
+	if( SceneCapture != NULL && (UBOOL)SceneCapture->bEnabled != (UBOOL)(bWasEnabled != 0) )
+	{
+		SceneCapture->bEnabled = bWasEnabled ? 1 : 0;
+		SceneCapture->BeginDeferredReattach();
+	}
+}

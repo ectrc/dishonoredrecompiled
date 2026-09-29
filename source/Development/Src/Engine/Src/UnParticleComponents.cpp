@@ -7725,3 +7725,39 @@ void AEmitterCameraLensEffectBase::UpdateLocation(const FVector& CamLoc, const F
 	// the camera.
 	ConditionalUpdateComponents();
 }
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: AEmitter. DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x49d450 / 0x4bc190.
+	One byte: whether the particle system was running. A mission save carries ~500 of them.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x49d450 (2012 0x4c1570)
+void AEmitter::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameSave( Ar, _Location );
+	BYTE bWasActive = bCurrentlyActive ? 1 : 0;
+	Ar.Serialize( &bWasActive, sizeof(bWasActive) );
+}
+
+// DISHONORED(port): 2013 rva 0x4bc190 (2012 0x4ded70)
+void AEmitter::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( Ar, _Location );
+	BYTE bWasActive = 0;
+	Ar.Serialize( &bWasActive, sizeof(bWasActive) );
+
+	if( !bCurrentlyActive && bWasActive )
+	{
+		if( ParticleSystemComponent != NULL )
+		{
+			ParticleSystemComponent->ActivateSystem( FALSE );
+		}
+	}
+	else if( bCurrentlyActive && !bWasActive )
+	{
+		if( ParticleSystemComponent != NULL )
+		{
+			ParticleSystemComponent->DeactivateSystem();
+		}
+	}
+	bCurrentlyActive = bWasActive ? 1 : 0;
+}

@@ -129,6 +129,12 @@ public:
 #endif // WITH_EDITORONLY_DATA
     //## END PROPS SequenceObject
 
+    // DISHONORED(port): 2013 rvas 0x2dce80 (GameSave, which retail's linker folds with GameLoad because the
+    // two bodies are identical) and 0x2cf930 (IsSaveable). unsequence.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const;
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+
     void ScriptLog(const FString& LogText,UBOOL bWarning=TRUE);
     class AWorldInfo* GetWorldInfo();
     DECLARE_FUNCTION(execScriptLog)
@@ -647,6 +653,10 @@ protected:
 public:
     //## END PROPS SequenceOp
 
+    // DISHONORED(port): 2013 rvas 0x2dd050 / 0x2dd1e0. unsequence.cpp.
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+
     UBOOL HasLinkedOps(UBOOL bConsiderInputLinks=FALSE) const;
     void GetLinkedObjects(TArray<class USequenceObject*>& out_Objects,class UClass* ObjectType=NULL,UBOOL bRecurse=FALSE);
     UBOOL ActivateOutputLink(INT OutputIdx);
@@ -924,6 +934,11 @@ public:
     INT DefaultViewY;
     FLOAT DefaultViewZoom;
     //## END PROPS Sequence
+
+    // DISHONORED(port): 2013 rvas 0x2efa00 / 0x2e7220 / 0x2d1eb0. unsequence.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const;
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
@@ -1756,6 +1771,9 @@ public:
     TArrayNoInit<class AActor*> LatentActors;
     BITFIELD bAborted:1;
     //## END PROPS SeqAct_Latent
+
+    // DISHONORED(port): 2013 rva 0x2e7280 - GameLoad only; the save side is USequenceOp's. unsequence.cpp.
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
@@ -2117,6 +2135,10 @@ public:
     class AMatineeVolume* m_pLinkedVolume;  // DISHONORED(layout): retail SDK @512, 2012 PDB @512
     FPointer m_ConversationNodePointer;  // DISHONORED(layout): retail SDK @516, 2012 PDB @516
     //## END PROPS SeqAct_Interp
+
+    // DISHONORED: USeqAct_Interp's three save virtuals (2013 rvas 0x2e73b0 / 0x2e74d0 / 0x2ea1c0) are not
+    // ported: they need UInterpGroupInst::SaveData / LoadData, two more Arkane additions. Without them a
+    // matinee in a save falls back to USeqAct_Latent's pair, which reads fewer bytes than retail wrote.
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
@@ -4200,6 +4222,10 @@ public:
     BYTE Priority;
     INT MaxWidth;
     //## END PROPS SequenceEvent
+
+    // DISHONORED(port): 2013 rvas 0x2e7680 / 0x2e7720. unsequence.cpp.
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
 
     DECLARE_FUNCTION(execCheckActivate);
     void eventToggled()

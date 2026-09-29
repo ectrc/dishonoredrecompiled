@@ -662,6 +662,11 @@ public:
     class UAudioPropagationInfo* m_pAudioPropagationInfo;  // DISHONORED(layout): 2012 PDB @1892
     INT m_RatPoolSize;  // DISHONORED(layout): 2012 PDB @1896
     //## END PROPS WorldInfo
+
+    // DISHONORED(port): 2013 rvas 0x3846c0 / 0x384730. unworld.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).

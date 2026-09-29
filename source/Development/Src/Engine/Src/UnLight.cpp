@@ -630,3 +630,34 @@ IMPLEMENT_CLASS(AStaticLightCollectionActor);
 
 
 
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: ALight. DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x2433b0 / 0x2433e0 / 0x243420.
+	A light is an entry point only when it can move or be toggled, which is why a whole mission map's
+	lighting costs about twenty objects in a save rather than hundreds.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x2433b0 (2012 0x25d560)
+UBOOL ALight::IsSaveable( ESaveLoadLocation _Location ) const
+{
+	return bMovable || IsToggleable();
+}
+
+// DISHONORED(port): 2013 rva 0x2433e0 (2012 0x25d590)
+void ALight::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameSave( Ar, _Location );
+	BYTE bWasEnabled = ( LightComponent != NULL && LightComponent->bEnabled ) ? 1 : 0;
+	Ar.Serialize( &bWasEnabled, sizeof(bWasEnabled) );
+}
+
+// DISHONORED(port): 2013 rva 0x243420 (2012 0x25d5d0)
+void ALight::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( Ar, _Location );
+	BYTE bWasEnabled = 0;
+	Ar.Serialize( &bWasEnabled, sizeof(bWasEnabled) );
+	if( LightComponent != NULL )
+	{
+		LightComponent->SetEnabled( bWasEnabled != 0 );
+	}
+}

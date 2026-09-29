@@ -37,3 +37,7 @@ public:
 	void DeleteSaveGame( INT _Slot );											// 2013 rva 0x5fbc80
 	INT GetNextAutoSaveSlot();													// 2013 rva 0x60b050
 	INT GetNextUserSaveSlot() const;											// 2013 rva 0x5fb930
+
+	// DISHONORED(port): agent ED (PHASE11 ED) - the inner half of ProcessSaveLoadCmd's SLC_PostLoad arm
+	// (2013 rva 0x6162d0): hand every ULevel in the world to FGameState::LoadLevel and log the census.
+	void RestoreLoadedLevels();

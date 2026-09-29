@@ -7,6 +7,7 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
+#include "LevelUtils.h"	// DISHONORED(port): FLevelUtils::FindStreamingLevel, for USequence::IsSaveable
 #include "EngineSequenceClasses.h"
 #include "UnLinkedObjDrawUtils.h"
 #include "EngineMaterialClasses.h"
@@ -13374,3 +13375,212 @@ void USeqEvent_TakeDamage::execIsValidDamageType( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	*(UBOOL*)Result = IsValidDamageType( InDamageType );
 }
+
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: the Kismet half of the save-game object layer.
+
+	DISHONORED(port): agent ED (PHASE11 ED). Arkane's save layer writes each saved object as a WORD
+	dictionary index followed by that object's own GameSave, inline and with no length prefix
+	(DisSaveLoad::FLevelSaver::operator<<(UObject*&), 2013 rva 0x612190), so these bodies *are* the stream
+	format for every Kismet object in a save. Sequence objects are the bulk of one: a mission save's
+	persistent level carries between three and six thousand of them.
+
+	The UObject base of all five virtuals is in Core/Inc/UnObjBas.h; IsSaveable is FALSE there, so a class
+	is only an entry point once it says otherwise, and USequenceObject::IsSaveable below is what puts the
+	whole Kismet tree in the stream.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x2cf930 (2012 0x2ea910) - the persistent level's own sequence is not saved
+// per level state; every other sequence object is, and in SLL_FILE even that one is.
+UBOOL USequenceObject::IsSaveable( ESaveLoadLocation _Location ) const
+{
+	if( _Location == SLL_FILE )
+	{
+		return TRUE;
+	}
+	return ParentSequence != ( GWorld != NULL && GWorld->PersistentLevel != NULL ? GWorld->PersistentLevel->GetGameSequence() : NULL );
+}
+
+// DISHONORED(port): 2013 rva 0x2dce80 (2012 0x313680) - the script properties this class adds on top of
+// USequenceObject, binary and untagged. Retail's linker folds GameSave and GameLoad together here because
+// SerializeBinProperty reads and writes through the same path, so the two bodies are identical code.
+void USequenceObject::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	SerializeScriptPropertiesBin( Ar, USequenceObject::StaticClass() );
+}
+
+void USequenceObject::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	SerializeScriptPropertiesBin( Ar, USequenceObject::StaticClass() );
+}
+
+// DISHONORED(port): 2013 rva 0x2dd050 (2012 0x3136b0) - the properties, then one BYTE per output link
+// (bHasImpulse) and one per input link (bHasImpulse + ActivateDelay), each count written as a BYTE first.
+void USequenceOp::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	SerializeScriptPropertiesBin( Ar, USequenceObject::StaticClass() );
+
+	BYTE NumOutputLinks = (BYTE)OutputLinks.Num();
+	Ar.Serialize( &NumOutputLinks, sizeof(NumOutputLinks) );
+	for( INT LinkIdx = 0; LinkIdx < NumOutputLinks; LinkIdx++ )
+	{
+		BYTE bHasImpulse = OutputLinks(LinkIdx).bHasImpulse ? 1 : 0;
+		Ar.Serialize( &bHasImpulse, sizeof(bHasImpulse) );
+	}
+
+	BYTE NumInputLinks = (BYTE)InputLinks.Num();
+	Ar.Serialize( &NumInputLinks, sizeof(NumInputLinks) );
+	for( INT LinkIdx = 0; LinkIdx < NumInputLinks; LinkIdx++ )
+	{
+		// retail packs QueuedActivations and bHasImpulse into one byte: 0 means no impulse, N means an
+		// impulse with N-1 activations queued behind it (FSeqOpInputLink @12 and @16, 2012 PDB)
+		BYTE Impulse = (BYTE)( InputLinks(LinkIdx).QueuedActivations + ( InputLinks(LinkIdx).bHasImpulse ? 1 : 0 ) );
+		Ar.Serialize( &Impulse, sizeof(Impulse) );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x2dd1e0 (2012 0x313840). Before reading, the variable links' cached
+// UProperty pointers are refreshed, because the properties come back by name.
+void USequenceOp::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	SerializeScriptPropertiesBin( Ar, USequenceObject::StaticClass() );
+
+	for( INT LinkIdx = 0; LinkIdx < VariableLinks.Num(); LinkIdx++ )
+	{
+		FSeqVarLink& VarLink = VariableLinks(LinkIdx);
+		if( VarLink.LinkedVariables.Num() > 0 && VarLink.PropertyName != NAME_None && VarLink.CachedProperty == NULL )
+		{
+			VarLink.CachedProperty = FindField<UProperty>( GetClass(), VarLink.PropertyName );
+		}
+	}
+
+	BYTE NumOutputLinks = 0;
+	Ar.Serialize( &NumOutputLinks, sizeof(NumOutputLinks) );
+	for( INT LinkIdx = 0; LinkIdx < NumOutputLinks; LinkIdx++ )
+	{
+		BYTE Impulse = 0;
+		Ar.Serialize( &Impulse, sizeof(Impulse) );
+		if( LinkIdx < OutputLinks.Num() )
+		{
+			OutputLinks(LinkIdx).bHasImpulse = ( Impulse & 1 );
+		}
+	}
+
+	BYTE NumInputLinks = 0;
+	Ar.Serialize( &NumInputLinks, sizeof(NumInputLinks) );
+	for( INT LinkIdx = 0; LinkIdx < NumInputLinks; LinkIdx++ )
+	{
+		BYTE Impulse = 0;
+		Ar.Serialize( &Impulse, sizeof(Impulse) );
+		if( LinkIdx < InputLinks.Num() )
+		{
+			InputLinks(LinkIdx).bHasImpulse = ( Impulse != 0 );
+			InputLinks(LinkIdx).QueuedActivations = Impulse ? (INT)Impulse - 1 : 0;
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x2d1eb0 (2012 0x2ec9e0)
+UBOOL USequence::IsSaveable( ESaveLoadLocation _Location ) const
+{
+	if( _Location == SLL_MEMORY_PARTIAL )
+	{
+		ULevelStreaming* StreamingLevel = FLevelUtils::FindStreamingLevel( const_cast<ULevel*>(GetTypedOuter<ULevel>()) );
+		return StreamingLevel != NULL && !StreamingLevel->IsSubLevelUnshared();
+	}
+	if( _Location == SLL_MEMORY_COMPLETE )
+	{
+		return this != ( GWorld != NULL && GWorld->PersistentLevel != NULL ? GWorld->PersistentLevel->GetGameSequence() : NULL );
+	}
+	return _Location == SLL_FILE;
+}
+
+// DISHONORED(port): 2013 rva 0x2efa00 (2012 0x328360) - the op's own state, then every sequence object of
+// this sequence except a nested sequence that is its level's own game sequence, then a NULL terminator.
+void USequence::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	USequenceOp::GameSave( Ar, _Location );
+
+	const INT NumSeqObjects = SequenceObjects.Num();
+	for( INT ObjIdx = 0; ObjIdx < NumSeqObjects; ObjIdx++ )
+	{
+		USequenceObject* pSeqObj = SequenceObjects(ObjIdx);
+		USequence* pNested = Cast<USequence>(pSeqObj);
+		if( pNested != NULL )
+		{
+			ULevel* pLevel = pSeqObj->GetTypedOuter<ULevel>();
+			if( pLevel != NULL && pLevel->GetGameSequence() == pSeqObj )
+			{
+				continue;
+			}
+		}
+		Ar << pSeqObj;
+	}
+
+	USequenceObject* pTerminator = NULL;
+	Ar << pTerminator;
+}
+
+// DISHONORED(port): 2013 rva 0x2e7220 (2012 0x318b60)
+void USequence::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	USequenceOp::GameLoad( Ar, _Location );
+
+	USequenceObject* pSeqObj = NULL;
+	Ar << pSeqObj;
+	while( pSeqObj != NULL )
+	{
+		SequenceObjects.AddUniqueItem( pSeqObj );
+		pSeqObj->ParentSequence = this;
+		Ar << pSeqObj;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x2e7680 (2012 0x318e10) - the archetype goes first, so that GameLoad can
+// re-archetype the event before its properties are read.
+void USequenceEvent::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	UObject* pObjectArchetype = GetArchetype();
+	if( pObjectArchetype != NULL && pObjectArchetype->HasAnyFlags(RF_ClassDefaultObject) )
+	{
+		pObjectArchetype = NULL;
+	}
+	Ar << pObjectArchetype;
+
+	USequenceOp::GameSave( Ar, _Location );
+}
+
+// DISHONORED(port): 2013 rva 0x2e7720 (2012 0x318e60)
+void USequenceEvent::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	UObject* pObjectArchetype = NULL;
+	Ar << pObjectArchetype;
+	if( pObjectArchetype != NULL && pObjectArchetype != GetArchetype() )
+	{
+		SetArchetype( pObjectArchetype, TRUE );
+	}
+
+	USequenceOp::GameLoad( Ar, _Location );
+}
+
+// DISHONORED(port): 2013 rva 0x2e7280 (2012 0x318bc0) - no bytes of its own: the latent actors come back
+// through the properties, and each one is re-registered with this action. The save side is USequenceOp's.
+void USeqAct_Latent::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	USequenceOp::GameLoad( Ar, _Location );
+
+	for( INT ActorIdx = 0; ActorIdx < LatentActors.Num(); ActorIdx++ )
+	{
+		AActor* pLatentActor = LatentActors(ActorIdx);
+		if( pLatentActor != NULL )
+		{
+			pLatentActor->LatentActions.AddItem( this );
+		}
+	}
+}
+
+// DISHONORED: USeqAct_Interp::GameSave / GameLoad / PostGameLoad (2013 rvas 0x2e73b0 / 0x2e74d0 /
+// 0x2ea1c0) are NOT ported. They flatten the matinee's UInterpGroupInst state into the reflected
+// m_SavedGroupInstData byte array through UInterpGroupInst::SaveData / LoadData, which are two more Arkane
+// additions this tree does not have. A mission save's persistent level carries ~170 of them, so this is the
+// first thing to add after this package; see resources/docs/agents/agentED.md.

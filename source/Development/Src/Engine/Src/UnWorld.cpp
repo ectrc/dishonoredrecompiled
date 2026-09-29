@@ -6856,3 +6856,34 @@ AWorldAttractorIter AWorldInfo::GetAttractorIter()
 {
 	return AWorldAttractorIter(WorldAttractors);
 }
+/*-----------------------------------------------------------------------------
+	DisSaveLoad: AWorldInfo. DISHONORED(port): agent ED (PHASE11 ED), 2013 rvas 0x3846c0 / 0x384730.
+	One of the two objects every save carries (the persistent level's and, when it is a memory state, the
+	streamed level's): the clocks and the map info.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x3846c0 (2012 0x3a5a40)
+void AWorldInfo::GameSave( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameSave( Ar, _Location );
+	if( _Location == SLL_FILE )
+	{
+		Ar << TimeSeconds;
+		Ar << RealTimeSeconds;
+		Ar << AudioTimeSeconds;
+	}
+	Ar << MyMapInfo;
+}
+
+// DISHONORED(port): 2013 rva 0x384730 (2012 0x3a5ab0)
+void AWorldInfo::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( Ar, _Location );
+	if( _Location == SLL_FILE )
+	{
+		Ar << TimeSeconds;
+		Ar << RealTimeSeconds;
+		Ar << AudioTimeSeconds;
+	}
+	Ar << MyMapInfo;
+}

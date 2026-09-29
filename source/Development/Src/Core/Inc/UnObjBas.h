@@ -92,6 +92,20 @@ enum EGotoState
 	GOTOSTATE_Preempted		= 2,
 };
 
+//
+// DISHONORED(layout): 2013 rva 0x5ea9d0 - Arkane's save-game location, PDB enum ESaveLoadLocation (type 511
+// of resources/docs/types/all_types.h). Declared in Core because UObject's five save virtuals take it.
+//   SLL_MEMORY_PARTIAL   a sub-level state kept in memory that shares its streaming object with others
+//   SLL_MEMORY_COMPLETE  a whole level state kept in memory (a hub the player can walk back into)
+//   SLL_FILE             the state written to the .sav file
+//
+enum ESaveLoadLocation
+{
+	SLL_MEMORY_PARTIAL		= 0,
+	SLL_MEMORY_COMPLETE		= 1,
+	SLL_FILE				= 2,
+};
+
 /**
  * Flags describing a class.
  */
@@ -2831,6 +2845,25 @@ public:
 	void PopState(struct FFrame& Stack, UBOOL bPopAll=FALSE);
 
 	virtual UBOOL Get_bDebug() { return FALSE; }
+
+	// DISHONORED(port): 2013 rvas 0x5ea9d0 (IsRefSaveable) and, for the other four, the ICF folds named in
+	// resources/docs/symbols/vtables.csv slots 67..70 of UObject. Arkane's DisSaveLoad object layer: every
+	// saved object is written by FLevelSaver::operator<<(UObject*&) as a WORD dictionary index followed by
+	// this object's own GameSave, inline and with no length prefix, so the bodies are the stream format.
+
+	/** 2013 rva 0x5ea9d0 (vtable slot 66) - may a *reference* to this object go in the object dictionary */
+	virtual UBOOL IsRefSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+	/** vtable slot 67 - does this object carry save state of its own. FALSE on UObject: an object is only an
+	    entry point when its class says so, which 59 classes do with an inline `return TRUE` (all ICF-folded
+	    onto UObject::IsRefSaveable's body at 2012 0x66a860) and 11 more with a real body. */
+	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return FALSE; }
+	/** vtable slot 68 - write this object's state; empty on UObject (2012 fold 0xa26ea0) */
+	virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location ) {}
+	/** vtable slot 69 - read it back; empty on UObject (the same fold) */
+	virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location ) {}
+	/** vtable slot 70 - called on every loaded object once the whole level state is in; empty on UObject
+	    (2012 fold 0xc8750, one argument) */
+	virtual void PostGameLoad( ESaveLoadLocation Location ) {}
 
 	// delegates
 	// DELEGATE_IS_SET returns true if the delegate has a FunctionName assigned and the object which will execute the delegate is not marked as pending kill

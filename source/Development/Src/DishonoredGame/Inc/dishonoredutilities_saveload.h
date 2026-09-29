@@ -19,13 +19,8 @@
 //     TArray<BYTE> CompressedObjectDictionary
 //     TArray<BYTE> CompressedObjectData
 
-// DISHONORED(layout): 2012 PDB enum ESaveLoadLocation (4 bytes). Not reflected, so it is C++ only.
-enum ESaveLoadLocation
-{
-	SLL_MEMORY_PARTIAL	= 0,
-	SLL_MEMORY_COMPLETE	= 1,
-	SLL_FILE			= 2,
-};
+// DISHONORED(layout): 2012 PDB enum ESaveLoadLocation (4 bytes). Moved to Core/Inc/UnObjBas.h by agent ED,
+// because UObject's five save virtuals take it (vtable slots 66..70); it is not reflected, so it is C++ only.
 
 // DISHONORED(port): 2013 rva 0x614020 (DisSaveLoad::FGameState::Load's version gate). A save older than 15 or
 // newer than 24 is refused; 258971 is the changelist below which the version INT is not in the file at all.
@@ -247,6 +242,15 @@ namespace DisSaveLoad
 		/** 2013 rva 0x5ea560 (2012 0x6300f0) - the header-only read the save lister uses */
 		static UBOOL LoadMapName( FArchive& _rArchive, FString& _rMapName );
 
+		// DISHONORED: FGameState::SaveLevel (2013 rva 0x613cb0) and SaveGameState (0x602920) are the writing
+		// half and are NOT ported: they stand on FLevelSaver, whose object pass needs every GameSave override,
+		// and writing a save with 14 of retail's 112 override classes would produce a file that looks valid and
+		// is not. Both are decompiled in build/agentED/dec2012/; see resources/docs/agents/agentED.md.
+		/** 2013 rva 0x613db0 (2012 0x659b50) - restores the level state whose name matches, then discards it */
+		void LoadLevel( ULevel* _pLevel );
+		/** 2013 rva 0x5fe820 (2012 0x644280) - is this object covered by a level state we still hold */
+		UBOOL ContainsObjectState( UObject* _pObject ) const;
+
 		INT findLevelIndex( const FName& _rLevelName ) const;		// 2013 rva 0x5fe7a0
 		void discardLevelState( INT _Index );						// 2013 rva 0x6122c0
 		void DiscardLevelState( const FName& _rLevelName );			// 2013 rva 0x613f10
@@ -282,6 +286,110 @@ namespace DisSaveLoad
 
 	/** DISHONORED(port): 2013 rva 0x5ea500 - a sub-level whose streaming object is not shared between save slots */
 	UBOOL IsSubLevelUnshared( const ULevel* _pLevel );
+
+	/** DISHONORED(bringup): the dictionary's spawn-on-load records name a DisTweaks object and a transform;
+	    retail spawns through UDisTweaksBase::SpawnActor(eDisTweaksSpawnType_InGame, ...). This spawns the
+	    tweaks' m_pSpawnedObjectClass and hands it the tweaks, which is the part the transform needs. */
+	class AActor* DisSpawnActorFromTweaks( class UDisTweaksBase* _pTweaks, const FVector& _rLocation, const FRotator& _rRotation );
+
+	/** DISHONORED(port): 2013 rva 0x602760 (2012 0x649130) - re-links a loaded level's Kismet sequence */
+	void InitializeSequencePostLoad( USequence* _pSequence );
+
+	/** DISHONORED(written): the object layer's own census, so a load can be measured rather than believed.
+	    Every counter is cumulative over the level states of one FGameState::Load, and m_BytesExpected is the
+	    uncompressed length of the level's CompressedObjectData, which is what proves the stream stayed in
+	    step: a desynchronised read stops early or runs off the end, and either way the two differ. */
+	struct FSaveLoadCensus
+	{
+		INT		m_NumLevels;
+		INT		m_DictObjects;			// records read out of the object dictionaries
+		INT		m_DictExpected;			// the sum of the level states' m_NumObjects
+		INT		m_DictBytesRead;
+		INT		m_DictBytesExpected;
+		INT		m_ObjectsRestored;		// objects whose GameLoad ran
+		INT		m_ObjectsSkipped;		// indices read whose object was NULL or not loadable
+		INT		m_DataBytesRead;
+		INT		m_DataBytesExpected;
+		INT		m_Spawned;				// actors spawned by the dictionary
+		INT		m_NotFound;				// dictionary records whose object could not be resolved
+		INT		m_DictResolved;			// dictionary records that did resolve to a live object
+		INT		m_UnportedClasses;		// objects reached whose class has no GameLoad of its own
+		INT		m_NullObjects;			// object-data indices that resolved to no live object
+		INT		m_UntrustedSkips;		// objects skipped whose IsSaveable answer this tree cannot vouch for
+		INT		m_PostGameLoad;
+		UBOOL	m_bDesynchronised;
+
+		FSaveLoadCensus() { Reset(); }
+		void Reset() { appMemzero( this, sizeof(FSaveLoadCensus) ); }
+		void Log( const TCHAR* _Tag ) const;
+	};
+
+	/** DISHONORED(written): the live census of the last FGameState level restore */
+	extern FSaveLoadCensus GSaveLoadCensus;
+
+	/** DISHONORED(written): the uncompressed length of one of the save's compressed blobs, read out of the
+	    FArchive::SerializeCompressed block summaries (PACKAGE_FILE_TAG, chunk size, summary, chunk infos).
+	    This is the "bytes expected" half of the census. */
+	INT GetUncompressedSize( const TArray<BYTE>& _rCompressed );
+
+	// DISHONORED: DisSaveLoad::FLevelSaver (2013 rva 0x615730) is NOT ported. It is the writing half of
+	// the object layer: its constructor registers the dictionary seeds, walks the level's actors and its
+	// Kismet sequence through operator<<(UObject*&), and writes each object's GameSave inline. With 14 of
+	// retail's 112 override classes in this tree it would write a save that looks valid and is not, so it
+	// is left out rather than left half-right. The 2012 decompiles are in build/agentED/dec2012/ and the
+	// flag offsets its level selection needs are resolved in resources/docs/agents/agentED.md.
+
+	/** DISHONORED(port): 2013 rva 0x613070 (2012 0x658d80) - reads one level's objects back. As with the
+	    saver, the constructor is the pass: it destroys the save's deleted actors, rebuilds the object table
+	    from the dictionary (spawning the actors the dictionary says to spawn), then walks the object data
+	    through operator<<(UObject*&) until the terminating index 0. */
+	class FLevelLoader : public FArchiveLoadCompressedProxy
+	{
+	public:
+		FLevelLoader( FStringDictionary& _rStringDictionary, TArray<BYTE>& _rCompressedObjectData,
+					  TArray<BYTE>& _rCompressedObjectDictionary, ULevel* _pLevel, const FName& _rPackageName,
+					  ESaveLoadLocation _Location, WORD _NumObjects, WORD _NumSavedObjects,
+					  UBOOL _bReadUnshared, INT _SaveVersion );
+		virtual ~FLevelLoader();
+
+		virtual FArchive& operator<<( FName& _rName );				// 2013 rva 0x5fe780
+		virtual FArchive& operator<<( UObject*& _rpObject );			// 2013 rva 0x60c930
+
+		void NotifyPostGameLoad();									// 2013 rva 0x60bbc0
+
+		/** a dictionary record whose object was not in memory when the dictionary was read */
+		struct FObjectRef
+		{
+			UClass*	m_pClass;
+			WORD	m_OuterIndex;
+			FName	m_Name;
+
+			FObjectRef() : m_pClass(NULL), m_OuterIndex(0), m_Name(NAME_None) {}
+		};
+
+	private:
+		UBOOL ShouldLoadObject( UObject* _pObject );				// 2013 rva 0x607b30
+		/** DISHONORED(written): add one dictionary record to the three parallel arrays */
+		void AddRecord( UObject* _pObject, UClass* _pRecordClass, UBOOL _bIsClass );
+
+		FStringDictionary&		m_rStringDictionary;
+		TArray<UObject*>		m_Objects;
+		/** DISHONORED(written): parallel to m_Objects - the class each dictionary record declared, and whether
+		    the record was a UClass. The record's shape is read from these rather than from the live object,
+		    so a lookup that misses cannot change how many bytes the next record is. */
+		TArray<UClass*>			m_RecordClasses;
+		TArray<UBOOL>			m_RecordIsClass;
+		/** DISHONORED(written): how many dictionary records resolved to a live object */
+		INT						m_NumResolved;
+		TMap<WORD,FObjectRef>	m_NotFoundObjects;
+		TSet<UObject*>			m_LoadedObjects;
+		ESaveLoadLocation		m_Location;
+		/** DISHONORED(written): set when an object is reached whose GameLoad this tree has not ported. The
+		    stream carries no length prefix, so the only safe thing left is to stop. */
+		UBOOL					m_bAborted;
+		/** DISHONORED(written): -disdictdebug=<n> logs the first n dictionary records and how each resolved */
+		INT						m_DebugRecords;
+	};
 
 } // namespace DisSaveLoad
 

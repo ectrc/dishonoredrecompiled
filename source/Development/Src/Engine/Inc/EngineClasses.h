@@ -2505,6 +2505,10 @@ public:
     TArrayNoInit<class USequenceEvent*> GeneratedEvents;
     TArrayNoInit<class USeqAct_Latent*> LatentActions;
     //## END PROPS Actor
+
+    // DISHONORED(port): 2013 rvas 0x1750e0 / 0x18ad70 - the base pair of the whole object layer. unactor.cpp.
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
@@ -6050,6 +6054,10 @@ public:
     FLOAT MaxZVelocity;
     FLOAT StayOpenTime;
     //## END PROPS InterpActor
+
+    // DISHONORED(port): 2013 rva 0x18c160 - GameLoad only. unactor.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(port): 2013 InterpActor.SetShadowParentOnAllAttachedComponents is native (exec 0x1c26e0, body 0x174cd0; agent AE)
     using AActor::SetShadowParentOnAllAttachedComponents;
     virtual void SetShadowParentOnAllAttachedComponents();
@@ -6099,6 +6107,11 @@ public:
     BITFIELD bCurrentlyActive:1;
     SCRIPT_ALIGN;
     //## END PROPS Emitter
+
+    // DISHONORED(port): 2013 rvas 0x49d450 / 0x4bc190. unparticlecomponents.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
 
     DECLARE_FUNCTION(execSetTemplate);
     void eventSetTemplate(class UParticleSystem* NewTemplate,UBOOL bDestroyOnFinish=FALSE)
@@ -12241,6 +12254,11 @@ public:
     INT SpawnRefCount;
     //## END PROPS TargetPoint
 
+    // DISHONORED(port): 2013 rvas 0x1691d0 / 0x1692a0 - the same folded pair as ATrigger. unactor.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+
     DECLARE_CLASS(ATargetPoint,AKeypoint,0,Engine)
 	/** Increment the number of spawning systems referencing this target point */
 	void IncrementSpawnRef();
@@ -12705,6 +12723,11 @@ public:
     class USceneCaptureComponent* SceneCapture;
     //## END PROPS SceneCaptureActor
 
+    // DISHONORED(port): 2013 rvas 0x2cbf00 / 0x2cbf40. unscenecapture.cpp.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+
     DECLARE_ABSTRACT_CLASS(ASceneCaptureActor,AActor,0,Engine)
 	/** 
 	* Update any components used by this actor
@@ -13044,6 +13067,13 @@ public:
     BITFIELD bRecentlyTriggered:1;
     FLOAT AITriggerDelay;
     //## END PROPS Trigger
+
+    // DISHONORED(port): 2013 rvas 0x1691d0 / 0x1692a0. unactor.cpp. ATrigger and ATargetPoint share one
+    // pair of bodies, which retail's linker folds: both classes' vtable slot 68 is ATrigger::GameSave and
+    // slot 69 is ATargetPoint::GameLoad.
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+    virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
 
     DECLARE_CLASS(ATrigger,AActor,0,Engine)
 #if WITH_EDITOR
@@ -18184,6 +18214,13 @@ public:
 	 */
 	virtual UBOOL ShouldBeVisible( const FVector& ViewLocation );
 
+	// DISHONORED(port): 2013 vtable slot 74 - is this sub-level's state private to one save slot. The base
+	// returns TRUE (the 2012 fold is USequence::IsStandalone, `return 1`); ULevelStreamingAlwaysLoaded is
+	// the only class that overrides it, from the reflected m_bConsiderForPartialSaves bit (2012 rva
+	// 0x3b1050, `return (flags@160 & 2) == 0`). DisSaveLoad::IsSubLevelUnshared and USequence::IsSaveable
+	// are what read it.
+	virtual UBOOL IsSubLevelUnshared() const { return TRUE; }
+
 	/** Get a bounding box around the streaming volumes associated with this LevelStreaming object */
 	FBox GetStreamingVolumeBounds();
 
@@ -18212,6 +18249,9 @@ public:
 	* @return TRUE
 	*/
 	virtual UBOOL ShouldBeLoaded( const FVector& ViewLocation );
+
+	// DISHONORED(port): 2013 vtable slot 74 (2012 rva 0x3b1050)
+	virtual UBOOL IsSubLevelUnshared() const { return !m_bConsiderForPartialSaves; }
 };
 
 class ULevelStreamingDistance : public ULevelStreaming

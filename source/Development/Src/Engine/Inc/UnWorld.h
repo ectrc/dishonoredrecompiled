@@ -1006,3 +1006,12 @@ public:
 };
 /** global travel handler */
 extern FSeamlessTravelHandler GSeamlessTravelHandler;
+
+/**
+ * DISHONORED(bringup): agent ED (PHASE11 ED). A per-world-tick hook DishonoredGame installs, so that the
+ * save-game restore can run where retail runs it - UDishonoredEngine::ProcessSaveLoadCmd's SLC_PostLoad
+ * (2013 rva 0x6162d0), once the travel has finished and the sub-levels are visible. That state machine is
+ * not ported and UDishonoredEngine has no Tick here, so the restore needs a place in the frame; NULL by
+ * default and called from UWorld::Tick.
+ */
+extern void (*GDisEngineTickHook)();
