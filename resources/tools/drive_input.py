@@ -220,6 +220,9 @@ def main():
     steps = []
     i = 0
     while i < len(argv):
+        if argv[i] in ("-h", "--help"):
+            print(__doc__)
+            return 0
         if argv[i] == "--log":
             log_name = argv[i + 1]; i += 2; continue
         if argv[i] == "--mark":
