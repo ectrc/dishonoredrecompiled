@@ -14,6 +14,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 
 add_compile_options(/W4 /permissive- /Zc:__cplusplus /fp:precise /EHsc /utf-8 /MP)
+# C4263: a member function does not override any base virtual. C4264: no override available, the base
+# virtual is hidden. In a tree built from decompiles these are not style warnings - a hand-written
+# override whose signature drifts silently becomes an overload, the build stays green, and the feature
+# is dead. That is exactly how UDisBehaviorIdle::OnBehaviorResume took an argument its base does not,
+# leaving the whole AI transition path unreachable while every check passed (agent DF): MSVC emitted
+# both warnings and they were lost in /W4's noise. Errors, so the next one cannot be.
+add_compile_options(/we4263 /we4264)
 # /Zp4 (4-byte struct packing, UnrealBuildTool VCToolChain.cs) is applied per engine target in
 # dishonored_apply_defines(); globally it breaks third-party code (libpng) and the Windows SDK asserts.
 # WIN32_LEAN_AND_MEAN / NOMINMAX are set by WinDrv/Inc/MinWindows.h; defining them here too
