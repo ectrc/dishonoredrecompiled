@@ -325,6 +325,22 @@ and `middleware.md`.
    105, 108 and 11 times. It is all or nothing: each object's `GameSave` is written inline with no length
    prefix, so one missing override desynchronises every object after it. That is the half that carries
    transforms, so the player's position on load waits on it.
+
+   **The other half landed 2026-09-29** (agents ED, EB, EC). The object dictionary decodes exactly -
+   11,321 of 11,324 records and every byte consumed, on all 146 level states of all 51 real saves -
+   and a real retail save now restores the player's transform: `Dishonored0.sav` puts the pawn at
+   X=9826.257 Y=23064.211 Z=2412.241, matching the vector at byte 4041 of its own data blob to the
+   float, cross-checked on a second save in a second world. The restore travels to the world the save
+   names first, as retail does, and the state is playable - 600 s of ticking, 111,840 frames, 0
+   criticals, world clock within half a second.
+
+   What is still not restored is everything past byte 4,141 of 619,631: health, mana, inventory and
+   powers. The next object in the stream is the player's `PowerBlink` component. So a load puts you in
+   the right place in the right world at the right time; it does not yet give you the saved session.
+   Three findings made that possible and are worth keeping: `CPF_DisNoSaveGame`, an Arkane property
+   flag that makes retail skip hundreds of properties in a save archive; `PPF_ForceBinarySerialization`,
+   without which every enum byte was read by name; and the fact that an ICF-folded `GameLoad` body can
+   be listed as ported while dispatch never reaches it.
 7. Full campaign; then DLC05/06/07 (needs Phase 7).
 8. Test suite: golden-log diffs (milestones 2–5), package load-all, save load-all, scripted
    flythrough on two maps to catch physics/animation drift.
