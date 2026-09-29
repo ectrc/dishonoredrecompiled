@@ -1045,6 +1045,16 @@ public:
 
     unsigned int GetButtons() const { return CurButtons; }
     unsigned int GetPrevButtons() const { return PrevButtons; }
+    /** Flag_Updated, retail's `state+32 & 0x10`: this mouse has had at least one queue entry, so its
+        stored position is a real position and not the origin. ProcessInput's per-frame arm skips a
+        mouse that has never been updated, which is what keeps a movie nobody has pointed at from
+        hit-testing (0,0) every frame. */
+    bool  IsUpdated() const { return (Flags & Flag_Updated) != 0; }
+    /** retail's `*(DWORD*)(state+16) = *(DWORD*)(state+12)` at the head of ProcessInput's per-frame
+        arm: no queue entry arrived for this mouse, so the buttons did not change, and the half of
+        UpdateState that would have said so has to be done anyway or every frame would re-report the
+        last press as a fresh one. */
+    void  CarryButtons() { PrevButtons = CurButtons; }
     unsigned int GetChangedButtons() const { return CurButtons ^ PrevButtons; }
     bool  IsInside() const { return (Flags & Flag_Inside) != 0; }
     void  SetInside(bool inside)
@@ -1491,9 +1501,12 @@ public:
         { return i < MaxMice ? &MouseStates[i] : 0; }
     GFxKeyboardState* GetKeyboardState(unsigned int index);           // 2012 0x9cd8b0
     void SetKeyboardListener(GFxKeyboardState::IListener* l);         // 2012 0xa01730
-    void ProcessInput();                                              // 2012 0xa10d80
+    void ProcessInput();                                              // 2013 0xa077d0 (2012 0xa10d80)
     void ProcessKeyboard(const GFxInputEventsQueue::QueueEntry& e);   // 2012 0xa0cfa0
-    void ProcessMouse(const GFxInputEventsQueue::QueueEntry& e);      // 2012 0xa0e900
+    /** 2013 0xa05330 (2012 0xa0e900). `processedMice` is retail's third parameter: the bit of every
+        mouse index a queue entry spoke for this pass, which is what tells ProcessInput's per-frame
+        arm which mice still need one. */
+    void ProcessMouse(const GFxInputEventsQueue::QueueEntry& e, unsigned int* processedMice);
     // The movie's own pixel rectangle that maps onto the viewport: what BeginDisplay is given and
     // what a viewport-space mouse position is mapped back through. Retail keeps it as four floats on
     // the movie root (this+36..39 in the decompile of 0xa07aa0) and recomputes it in SetViewport.
@@ -1531,6 +1544,11 @@ private:
     bool                      bPaused;
     bool                      bVisible;
     bool                      bDirty;
+    /** retail's bit 0x80 of the movie root's flag word at +9316: set at the tail of
+        GFxMovieRoot::Advance (2013 0xa088d8), read and cleared by ProcessInput (0xa0797c). It means
+        "the display list has advanced since the last input pass", and it is what arms the per-frame
+        regeneration of the mouse's button events. */
+    bool                      bMouseStateDirty;
     void*                     pUserData;
     float                     TimeElapsed;
     float                     FrameTime;

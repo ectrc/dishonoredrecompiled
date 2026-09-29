@@ -28,7 +28,8 @@
 GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
     : pDefImpl(defImpl), pGC(0), pLevel0(0), ObjInterface(this), ScaleMode(GFxMovieView::SM_ShowAll),
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
-      bPaused(false), bVisible(true), bDirty(true), pUserData(0), TimeElapsed(0.f), FrameTime(0.f),
+      bPaused(false), bVisible(true), bDirty(true), bMouseStateDirty(false), pUserData(0),
+      TimeElapsed(0.f), FrameTime(0.f),
       MouseCursorCount(0), ControllerCount(1), bMovieFocused(true), Actions(0), ActionCount(0),
       ActionCapacity(0), bInActionQueue(false), SessionFill(0), IntervalCount(0), NextIntervalId(1), bHasExternalInterfaceRetVal(false)
 {
@@ -695,6 +696,10 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
         }
         ++Stats.FramesAdvanced;
     }
+    // 2013 0xa088d8, at the tail of the advance and AFTER the ProcessInput call at 0xa087dd: the
+    // next input pass is the one that re-asks what is under each pointer. One frame behind the
+    // display is retail's own phase and not a rounding of it.
+    bMouseStateDirty = true;
     bDirty = true;
     return FrameTime;
 }

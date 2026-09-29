@@ -926,14 +926,48 @@ void GFxMovieRoot::ProcessKeyboard(const GFxInputEventsQueue::QueueEntry& entry)
     // is not what makes them operable and it is not reconstructed here. agentDG.md deviation 3.
 }
 
-void GFxMovieRoot::ProcessInput()                                     // 2012 0xa10d80
+// DISHONORED(port, agent EH): 2013 0xa077d0 (2012 0xa10d80). The queue drain is the first half; the
+// second half is the one this tree did not have, and it is what makes the mouse answer a display list
+// that changed under a pointer that did not move.
+//
+// Retail's body, after the drain:
+//
+//     if ( (this[9316] & 0x80) != 0 && (processed & allMice) != allMice )
+//         for ( i = 0; i < MouseCursorCount; ++i )
+//             if ( !(processed & (1 << i)) && (state[i].Flags & 0x10) )
+//             {
+//                 state[i].PrevButtons = state[i].CurButtons;
+//                 top = GetTopMostEntity((state[i].X, state[i].Y), i, false, 0);  // 0x9fabf0
+//                 state[i].SetTopmostEntity(top);                                  // 0x9fc460
+//                 GFxMovieRoot::CheckMouseCursorType(this, i, top);
+//                 GFx_GenerateMouseButtonEvents(i, &state[i], ...);                // 0xa5ad10
+//             }
+//     this[9316] &= ~0x80;
+//
+// and bit 0x80 is set once per GFxMovieRoot::Advance (0xa088d8), after this function has run. So the
+// hit test is re-asked once a frame from the STORED pointer position, and rollOver / rollOut follow
+// the content rather than the hand.
+//
+// Measured, same driver, same schedule, two binaries (build/agentEH/pk2_before_log.txt against
+// pk2_after_log.txt): the pointer is parked on QUIT GAME while the start screen is still up and is
+// never touched again, and the menu bar then animates in under it. Without this arm the interface
+// asks what is under the pointer 45 times, ALL of them before the bar exists, resolves 0 targets and
+// dispatches 0 rollOver. With it: 9006 hit tests, 7399 resolved, and the four rollOver retail
+// dispatches as the four entries sweep under the cursor.
+//
+// What it does NOT fix, so that nobody reads it as the cure: an entry the pointer is ALREADY resting
+// on cannot take the selection back after the keyboard moved the selection off it, because
+// topmost == active and retail's last block is `if (!CurButtons && topmost != active)`. That is
+// retail's behaviour too - agentEH.md 6.
+void GFxMovieRoot::ProcessInput()
 {
     if (pGC == 0)
         return;
+    unsigned int processedMice = 0;
     while (const GFxInputEventsQueue::QueueEntry* e = InputQueue.GetEntry())
     {
         if (e->EntryKind == GFxInputEventsQueue::QueueEntry::Mouse)
-            ProcessMouse(*e);
+            ProcessMouse(*e, &processedMice);
         else
             ProcessKeyboard(*e);
         // A handler can queue more work (a clip that moves its selection and then calls gotoAndStop
@@ -942,6 +976,35 @@ void GFxMovieRoot::ProcessInput()                                     // 2012 0x
         DrainActionSessions();
     }
     InputQueue.Clear();
+
+    const unsigned int mice = MouseCursorCount < (unsigned int)MaxMice ? MouseCursorCount
+                                                                       : (unsigned int)MaxMice;
+    const unsigned int allMice = mice != 0 ? ((1u << mice) - 1u) : 0u;
+    if (bMouseStateDirty && (processedMice & allMice) != allMice)
+    {
+        for (unsigned int i = 0; i < mice; ++i)
+        {
+            if ((processedMice & (1u << i)) != 0)
+                continue;
+            GFxMouseState* state = GetMouseStateStruct(i);
+            if (state == 0 || !state->IsUpdated())
+                continue;
+            state->CarryButtons();
+            GPoint<float> pt(state->GetX(), state->GetY());
+            GFxASCharacter* topmost = GetTopMostEntity(pt, i, false, 0);
+            if (topmost != 0)
+                topmost->AddRef();
+            state->SetTopmostEntity(topmost);
+            // Retail's GFxMovieRoot::CheckMouseCursorType goes here. It is the hand cursor, and
+            // Dishonored's cursor is a movie clip the global movie attaches (agentDQ.md deviation 1
+            // and hand-over 3), so it is left out rather than faked.
+            GFx_GenerateMouseButtonEvents((unsigned char)i, state, 1);
+            if (topmost != 0)
+                topmost->Release();
+            DrainActionSessions();
+        }
+    }
+    bMouseStateDirty = false;
 }
 
 // DISHONORED(port): 2013 0xa05330 (2012 0xa0e900). The whole body now, in retail's order: fold the
@@ -950,9 +1013,14 @@ void GFxMovieRoot::ProcessInput()                                     // 2012 0x
 // 0xa66a90 - the address the briefs carry) turn the change into rollOver / rollOut / press / release /
 // dragOver / dragOut. Until the middle three existed a delivered click had no notion of what it was
 // over, which is agentDG.md deviation 4 and agentDM.md hand-over 2.
-void GFxMovieRoot::ProcessMouse(const GFxInputEventsQueue::QueueEntry& entry)
+void GFxMovieRoot::ProcessMouse(const GFxInputEventsQueue::QueueEntry& entry,
+                               unsigned int* processedMice)
 {
     const GFxInputEventsQueue::MouseEntry& m = entry.MouseData;
+    // Retail's first line, `*a4 |= 1 << entry[16]`: this mouse has had its events generated from a
+    // real queue entry this pass, so ProcessInput's per-frame arm must not generate them again.
+    if (processedMice != 0)
+        *processedMice |= 1u << m.MouseIndex;
     if (m.MouseIndex < MaxMice)
     {
         MouseX[m.MouseIndex] = m.x;
