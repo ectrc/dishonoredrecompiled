@@ -232,3 +232,73 @@ family — everything else about the modal matches). Perspective support for the
 options settings tree behind the `undefined` gamma label; the exit teardown fault; the shim deletion
 backlog; two generated-declaration hazards EC found, one a live GC hazard; milestone 8's test suite;
 load-aware regression bounds for `d3d9_frames` and `inputtest_moved`. Audio stays last.
+
+## Wave 13
+
+Wave 12 ended with the front end working as a front end: the mouse re-resolves under a stationary
+pointer, YES starts the mission and YES quits, the HUD opens and binds all 31 of its clips and feeds
+itself from the live pawn, and the saved session restores 502 objects. Three things now stand between
+that and a game a person can play, and each is one package.
+
+### EL — Corvo in the Tower
+
+`UDisSeqAct_SetPlayerTravelDestination::Activated`, retail **`0x78a0a0`**, whose unit
+`Src/dishonoredkismet.cpp` is still in `DishonoredGame_EXCLUDE`. Agent EI measured the whole New Game
+path end to end - the map change commits 0.65 s after the key, the Tower's fog actors and its intro
+music bank load, the scene censuses 5017 primitives - and **the frame is still black, because the pawn
+is never moved into the streamed level and the camera stays at the menu world's spawn**. EI confirmed
+the same on the untouched HEAD executable, so it is one unported function and not a regression.
+
+This is the single highest-value function in the tree right now: it is what turns everything the last
+three waves built into a picture of the game.
+
+### EM — the two gaps that keep the HUD invisible
+
+Agent EK's hand-overs 1 and 2, both measured, neither worked around:
+
+1. **Every bitmap fill in the HUD is an atlas sub-image and this tree cannot texture one** - nine
+   distinct `fill NOT TEXTURED ... type 0x41 def SubImage`. `GFxImageCharacterDef::GetTexture` has the
+   sub-image branch, but the `BaseImageId` it resolves is 0 (no def) or 5 (not `RT_Image`) for the
+   failing fills; only 1 and 2 resolve.
+2. **The stencil mask path clips away what survives** - 6 mask passes a frame, a valid depth-stencil
+   bound, nothing reaching the frame. With the three mask entry points no-oped the HUD geometry
+   appears at exactly the computed position. The control is the same map with `-gfxuimenu`, where
+   `UI_Global`'s cursor draws fine - and that movie has 0 masks.
+
+`External/GFx3` and `GFxUI`. Sequence this against anything else touching the GFx runtime.
+
+### EN — the Ark component layer
+
+Agent EJ's hand-over 1, and it is bounded by measurement rather than by guess: **sixteen of retail's
+nineteen component types read exactly `FArkComponentBase::Serialize`**, which EJ ported, so for those
+the work is the class and not the serializer. Only `FDisAIKnowledgeComponent` (`0x7039f0`),
+`FDisAIMonitorPawnReachability` (`0x73b010`) and `FDisAIMonitorReaction` (`0x73b1a0`) read more - and
+type 211 is the third of those, so it leads and cannot be deferred.
+`build/agentEJ/comp_serialize.py` regenerates that table from retail live, so re-run it rather than
+trusting the snapshot. After this gate `Dishonored0.sav` has **nine** missing bodies left, all under
+170 bytes, listed with addresses in agent EJ's report section 4. `Dishonored1.sav` is then a
+transcription: `URB_BodyInstance::GameLoad` is 58 bytes per rigid body, 18 bodies.
+
+### EO — the options screen, and the key that closes it
+
+Two faults with one cause each, both already resolved to an instruction:
+
+1. **The rest of `UOnlinePlayerStorage::Read` is still on the 2012 profile ids.** Agent EK fixed the
+   eleven HUD show flags (2013 uses 87..101 where we had 85..98) and found mouse sensitivity, gamma,
+   volumes and subtitles all still two off, with the cooked profile dump that resolves every id. This
+   is very likely the **`undefined` brightness label and the dead slider the user reported**.
+2. **CLIK's `B` has no PC key binding.** Agent EH: a real click opens the Options screen, `BPressed`
+   arrives, no `TransitionTo (MainMenuScreen)` follows, and the player is stuck. Agent EI: Escape and
+   Backspace were both measured against a message box and neither answers it. EI judges these the same
+   missing binding in `_common.InputsHandler` - one measurement, not a package, and this package
+   should settle it either way.
+
+### Still queued after this
+
+Retail blurs the scene behind a modal and we do not (post-process). Perspective for the difficulty
+screen. `UDisGlobalUIManager::Init` (`0x8b8d10`) and the rest of the manager, with
+`DisGetGlobalMoviePlayer()` as the bring-up seam to delete. `execOnFocusLost` (`0x78c3d0`, three
+lines) is still a stub and now fires every time a box takes focus. NO on the New Game box (its own
+selection list). The exit teardown fault. The shim deletion backlog. Milestone 8's test suite.
+Whether the save's level state matches the maps agent EK tried, which is why it could not reproduce
+agent EF's restored mana. Audio stays last.
