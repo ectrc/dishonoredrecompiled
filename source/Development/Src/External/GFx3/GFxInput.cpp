@@ -6,6 +6,7 @@
 #include "GFxAS2Runtime.h"
 
 #include <string.h>
+#include <stdio.h>
 
 // ---------------------------------------------------------------------------------------------
 // GFxKeyboardState
@@ -943,11 +944,12 @@ void GFxMovieRoot::ProcessInput()                                     // 2012 0x
     InputQueue.Clear();
 }
 
-// DISHONORED(port): 2012 0xa0e900 reduced to the part the menus use. The full body tracks the
-// topmost entity per mouse index, generates rollOver / rollOut / press / release through
-// GFx_GenerateMouseButtonEvents (0xa66a90) and drives GFxButtonCharacter's state machine. What is
-// here is the Mouse broadcaster's four notifications plus the position, which is what a CLIK
-// listener reads; the button state machine is agentDG.md deviation 4.
+// DISHONORED(port): 2013 0xa05330 (2012 0xa0e900). The whole body now, in retail's order: fold the
+// entry into the per-mouse state, resolve the topmost entity under the pointer, remember it, broadcast
+// the Mouse class's notifications, and let GFx_GenerateMouseButtonEvents (2013 0xa5ad10, 2012
+// 0xa66a90 - the address the briefs carry) turn the change into rollOver / rollOut / press / release /
+// dragOver / dragOut. Until the middle three existed a delivered click had no notion of what it was
+// over, which is agentDG.md deviation 4 and agentDM.md hand-over 2.
 void GFxMovieRoot::ProcessMouse(const GFxInputEventsQueue::QueueEntry& entry)
 {
     const GFxInputEventsQueue::MouseEntry& m = entry.MouseData;
@@ -959,6 +961,24 @@ void GFxMovieRoot::ProcessMouse(const GFxInputEventsQueue::QueueEntry& entry)
             MouseButtons[m.MouseIndex] |= m.Buttons;
         else
             MouseButtons[m.MouseIndex] &= ~m.Buttons;
+    }
+    GFxMouseState* state = GetMouseStateStruct(m.MouseIndex);
+    GFxASCharacter* topmost = 0;
+    if (GFxMouseTrace)
+    {
+        printf("DISHONORED(bringup): ProcessMouse idx %u at (%.1f,%.1f) px buttons %u changed %u "
+               "wheel %d state %p level0 %p\n",
+               m.MouseIndex, m.x * 0.05f, m.y * 0.05f, m.Buttons, m.ChangedButtons, m.ScrollDelta,
+               (void*)state, (void*)GetLevel0());
+    }
+    if (state != 0)
+    {
+        state->UpdateState(entry);
+        GPoint<float> pt(m.x, m.y);
+        topmost = GetTopMostEntity(pt, m.MouseIndex, false, 0);
+        if (topmost != 0)
+            topmost->AddRef();
+        state->SetTopmostEntity(topmost);
     }
     GASValue arg;
     arg.SetInt((int)m.MouseIndex);
@@ -977,6 +997,15 @@ void GFxMovieRoot::ProcessMouse(const GFxInputEventsQueue::QueueEntry& entry)
     {
         GFxInputBroadcastMouse(&Env, "onMouseMove", &arg, 1);
     }
+    if (state != 0)
+    {
+        // Retail's last line. `buttonCount` is 1 unless the global context's extended-clip-event flag
+        // is set, which this cook does not set (ProcessMouse's own
+        // `*(pGC + 684) - 1 != 0 ? 1 : 16`).
+        GFx_GenerateMouseButtonEvents((unsigned char)m.MouseIndex, state, 1);
+    }
+    if (topmost != 0)
+        topmost->Release();
 }
 
 void GFxMovieRoot::NotifyMouseState(float x, float y, unsigned int buttons, unsigned int index)

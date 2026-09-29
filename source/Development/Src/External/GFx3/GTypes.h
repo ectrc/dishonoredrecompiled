@@ -578,6 +578,48 @@ public:
                     return false;
         return true;
     }
+    // DISHONORED(port): 2013 0x9ab4b0. A singular matrix answers identity with the translation
+    // negated, which is retail's own arm and is what keeps a zero-scaled clip from producing
+    // infinities in the hit test rather than simply missing.
+    void SetInverse(const GMatrix2D& m)
+    {
+        const float det = m.M_[0][0] * m.M_[1][1] - m.M_[1][0] * m.M_[0][1];
+        if (det == 0.f)
+        {
+            SetIdentity();
+            M_[0][2] = -m.M_[0][2];
+            M_[1][2] = -m.M_[1][2];
+            return;
+        }
+        const float r = 1.f / det;
+        M_[0][0] = r * m.M_[1][1];
+        M_[1][1] = r * m.M_[0][0];
+        M_[0][1] = -m.M_[0][1] * r;
+        M_[1][0] = r * -m.M_[1][0];
+        M_[0][2] = -(m.M_[1][2] * M_[0][1] + m.M_[0][2] * M_[0][0]);
+        M_[1][2] = -(m.M_[1][2] * M_[1][1] + m.M_[0][2] * M_[1][0]);
+    }
+    // DISHONORED(port): 2013 0x9ab5d0. this = this * m, i.e. m applies first.
+    GMatrix2D& Prepend(const GMatrix2D& m)
+    {
+        const float a = M_[0][0], b = M_[0][1], c = M_[0][2];
+        const float d = M_[1][0], e = M_[1][1], f = M_[1][2];
+        M_[0][0] = m.M_[0][0] * a + m.M_[1][0] * b;
+        M_[1][0] = m.M_[0][0] * d + m.M_[1][0] * e;
+        M_[0][1] = m.M_[0][1] * a + b * m.M_[1][1];
+        M_[1][1] = m.M_[0][1] * d + e * m.M_[1][1];
+        M_[0][2] = b * m.M_[1][2] + a * m.M_[0][2] + c;
+        M_[1][2] = e * m.M_[1][2] + d * m.M_[0][2] + f;
+        return *this;
+    }
+    // DISHONORED(port): 2013 0x9ab750. The point in the space this matrix maps FROM.
+    void TransformByInverse(GPoint<float>* out, const GPoint<float>& p) const
+    {
+        GMatrix2D inv;
+        inv.SetInverse(*this);
+        out->x = p.x * inv.M_[0][0] + p.y * inv.M_[0][1] + inv.M_[0][2];
+        out->y = p.y * inv.M_[1][1] + p.x * inv.M_[1][0] + inv.M_[1][2];
+    }
 };
 
 class GMatrix3D

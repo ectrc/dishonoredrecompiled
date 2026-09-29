@@ -790,10 +790,33 @@ void MCGetDepth(const GASFnCall& fn)
     if (fn.pResult) fn.pResult->SetInt(s ? s->GetDepth() : 0);
 }
 
+// MovieClip.hitTest(x, y [, shapeFlag]) and MovieClip.hitTest(target). The point form is in STAGE
+// pixels, which is why `_common.SelectionHandler::RightClick` passes `_xmouse` / `_ymouse`.
 void MCHitTest(const GASFnCall& fn)
 {
-    // Hit testing needs shape geometry, which arrives with the tessellator.
-    if (fn.pResult) fn.pResult->SetBool(false);
+    GFxSprite* s = ThisSprite(fn);
+    bool hit = false;
+    if (s != 0 && fn.GetNumArgs() >= 2)
+    {
+        const float x = (float)fn.Arg(0).ToNumber(fn.pEnv);
+        const float y = (float)fn.Arg(1).ToNumber(fn.pEnv);
+        const bool shape = fn.GetNumArgs() >= 3 ? fn.Arg(2).ToBool(fn.pEnv) : false;
+        hit = GFxHitTestClipAtStagePoint(s, x, y, shape);
+    }
+    else if (s != 0 && fn.GetNumArgs() == 1)
+    {
+        // The target form: do the two clips' bounds overlap, in stage space.
+        GASObjectInterface* oi = fn.Arg(0).ToObjectInterface(fn.pEnv);
+        GFxSprite* os = oi ? oi->ToSprite() : 0;
+        if (os != 0)
+        {
+            GMatrix2D identity;
+            const GRect<float> a = s->GetBoundsTwips(identity);
+            const GRect<float> b = os->GetBoundsTwips(identity);
+            hit = !(a.Right < b.Left || b.Right < a.Left || a.Bottom < b.Top || b.Bottom < a.Top);
+        }
+    }
+    if (fn.pResult) fn.pResult->SetBool(hit);
 }
 
 // --- free functions -------------------------------------------------------------------------

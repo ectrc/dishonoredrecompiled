@@ -97,6 +97,162 @@ static INT GFxUIDumpDisplayList()
 	return Cached;
 }
 
+// DISHONORED(bringup, agent DQ): -dismouse. Read on first use.
+static UBOOL GFxUIMouseTraceOn()
+{
+	static INT Cached = -1;
+	if( Cached < 0 )
+	{
+		Cached = ParseParam( appCmdLine(), TEXT("dismouse") ) ? 1 : 0;
+		GFxMouseTrace = ( Cached != 0 );
+	}
+	return Cached != 0;
+}
+
+// -gfxuibar: the menu bar's own state, which is what "the hover highlight breaks" is a statement
+// about. Read on first use.
+static UBOOL GFxUIBarCensusOn()
+{
+	static INT Cached = -1;
+	if( Cached < 0 )
+	{
+		Cached = ParseParam( appCmdLine(), TEXT("gfxuibar") ) ? 1 : 0;
+	}
+	return Cached != 0;
+}
+
+// -gfxuishotonhover[=<N>]: a screenshot N drawn frames after the selected entry changes. -1 when off.
+static INT GFxUIShotOnHover()
+{
+	static INT Cached = -2;
+	if( Cached == -2 )
+	{
+		FString Value;
+		if( Parse( appCmdLine(), TEXT("gfxuishotonhover="), Value ) )
+		{
+			Cached = appAtoi( *Value );
+		}
+		else
+		{
+			Cached = ParseParam( appCmdLine(), TEXT("gfxuishotonhover") ) ? 8 : -1;
+		}
+	}
+	return Cached;
+}
+
+static GFxSprite* FGFxFindNamed( GFxSprite* Sprite, const TCHAR* Name, INT Depth )
+{
+	if( Sprite == NULL || Depth > 10 )
+	{
+		return NULL;
+	}
+	GFxDisplayList& List = Sprite->GetDisplayList();
+	for( unsigned int i = 0; i < List.GetCount(); ++i )
+	{
+		GFxCharacter* Ch = List.GetAt( i );
+		GFxASCharacter* AsChar = ( Ch != NULL && Ch->IsASCharacter() ) ? Ch->ToASCharacterDef() : NULL;
+		GFxSprite* Child = ( AsChar != NULL ) ? AsChar->ToSprite() : NULL;
+		if( Child == NULL )
+		{
+			continue;
+		}
+		if( appStricmp( ANSI_TO_TCHAR( Child->GetName().ToCStr() ), Name ) == 0 )
+		{
+			return Child;
+		}
+		GFxSprite* Found = FGFxFindNamed( Child, Name, Depth + 1 );
+		if( Found != NULL )
+		{
+			return Found;
+		}
+	}
+	return NULL;
+}
+
+/** the bar's own selected index, read from the content: `_common.SelectionHandler._curSelection` on
+    the MainMenuButtonBar's `sel`. -3 when the path is not there. */
+static INT FGFxBarSelection( FGFxMovie* Movie )
+{
+	if( Movie == NULL || Movie->pView.GetPtr() == NULL )
+	{
+		return -3;
+	}
+	GFxValue Value;
+	if( !Movie->pView->GetVariable( &Value, "_root.mainMenu_mc._menu_mc.sel._curSelection" )
+		|| !Value.IsNumber() )
+	{
+		return -3;
+	}
+	return (INT)Value.GetNumber();
+}
+
+/** one line per menu-bar entry: the numbers that decide whether the white background is where it
+    should be. Returns the index of the entry whose background is brightest, or -1. */
+static INT FGFxBarCensus( GFxSprite* Level0, UBOOL bLog )
+{
+	GFxSprite* Container = FGFxFindNamed( Level0, TEXT("_btnContainer_mc"), 0 );
+	if( Container == NULL )
+	{
+		// -2 means "this movie has no menu bar" and is NOT "nothing is selected": the global movie is
+		// open beside the menu (agentDM.md 2.2) and answering -1 for it made the selection look as if
+		// it changed on every frame.
+		return -2;
+	}
+	INT Selected = -1;
+	FLOAT BestAlpha = 50.f;
+	GFxDisplayList& List = Container->GetDisplayList();
+	for( unsigned int i = 0; i < List.GetCount(); ++i )
+	{
+		GFxCharacter* Ch = List.GetAt( i );
+		GFxASCharacter* AsChar = ( Ch != NULL && Ch->IsASCharacter() ) ? Ch->ToASCharacterDef() : NULL;
+		GFxSprite* Btn = ( AsChar != NULL ) ? AsChar->ToSprite() : NULL;
+		if( Btn == NULL )
+		{
+			continue;
+		}
+		const FString Name = ANSI_TO_TCHAR( Btn->GetName().ToCStr() );
+		if( Name.Left( 3 ) != TEXT("btn") )
+		{
+			continue;
+		}
+		GFxSprite* Bkgd = FGFxFindNamed( Btn, TEXT("_bkgdOver_mc"), 0 );
+		GFxSprite* Mask = FGFxFindNamed( Btn, TEXT("_maskBkgdOver_mc"), 0 );
+		GFxSprite* Glow = FGFxFindNamed( Btn, TEXT("_txtGlow_mc"), 0 );
+		GMatrix2D Identity;
+		Identity.SetIdentity();
+		const GRect<float> BtnBox = Btn->GetBoundsTwips( Identity );
+		const GRect<float> MaskBox = ( Mask != NULL ) ? Mask->GetBoundsTwips( Identity )
+		                                             : GRect<float>( 0.f, 0.f, 0.f, 0.f );
+		const FLOAT BkgdAlpha = ( Bkgd != NULL )
+			? ( Bkgd->GetCxform().M_[3][0] * 100.f + Bkgd->GetCxform().M_[3][1] ) : -1.f;
+		const FLOAT GlowAlpha = ( Glow != NULL )
+			? ( Glow->GetCxform().M_[3][0] * 100.f + Glow->GetCxform().M_[3][1] ) : -1.f;
+		if( BkgdAlpha > BestAlpha )
+		{
+			BestAlpha = BkgdAlpha;
+			Selected = (INT)i;
+		}
+		if( bLog )
+		{
+			debugf( TEXT("DISHONORED(bringup): bar %s frame %d/%d scale (%.3f,%.3f) w %.0f ")
+				TEXT("| bkgdOver a %.0f frame %d vis %d w %.0f | mask clip %d w %.0f vis %d ")
+				TEXT("| txtGlow a %.0f"),
+				*Name, (INT)Btn->GetCurrentFrame(), (INT)Btn->GetFrameCount(),
+				Btn->GetMatrix().M_[0][0], Btn->GetMatrix().M_[1][1],
+				( BtnBox.Right - BtnBox.Left ) * 0.05f,
+				BkgdAlpha, ( Bkgd != NULL ) ? (INT)Bkgd->GetCurrentFrame() : -1,
+				( Bkgd != NULL && Bkgd->GetVisible() ) ? 1 : 0,
+				( Bkgd != NULL ) ? ( Bkgd->GetBoundsTwips( Identity ).Right
+					- Bkgd->GetBoundsTwips( Identity ).Left ) * 0.05f : 0.f,
+				( Mask != NULL ) ? Mask->GetClipDepth() : -1,
+				( MaskBox.Right - MaskBox.Left ) * 0.05f,
+				( Mask != NULL && Mask->GetVisible() ) ? 1 : 0,
+				GlowAlpha );
+		}
+	}
+	return Selected;
+}
+
 static void FGFxDumpCharacter( GFxCharacter* Ch, const GMatrix2D& Parent, INT Indent )
 {
 	if( Ch == NULL || Indent > 12 )
@@ -1156,6 +1312,26 @@ FGFxMovie* FGFxEngine::GetFocusedMovieFromControllerID( INT ControllerId )
 	return NULL;
 }
 
+// DISHONORED(bringup, agent DQ): the focused movie, or - when no local player owns focus - the topmost
+// open movie that can take focus AND input. Retail does not need the second half: the script
+// InitInputSystem inserts a UGFxInteraction per local player, so the focused movie is always resolved.
+// Agent DM wrote this fallback inside FGFxEngine::InputKey, and the consequence was measured here: the
+// AXIS path still asked GetFocusedMovieFromControllerID and answered NULL on 867 of 868 mouse events,
+// so the interface's mouse position never left (0, 0). One function now, all three entry points.
+// Goes with UDisGlobalUIManager and the script insertion (agentDM.md deviation 10).
+FGFxMovie* FGFxEngine::GetInputMovieFromControllerID( INT ControllerId )
+{
+	FGFxMovie* Movie = GetFocusedMovieFromControllerID( ControllerId );
+	for( INT Index = OpenMovies.Num() - 1; Movie == NULL && Index >= 0; Index-- )
+	{
+		if( OpenMovies( Index )->bCanReceiveFocus && OpenMovies( Index )->bCanReceiveInput )
+		{
+			Movie = OpenMovies( Index );
+		}
+	}
+	return Movie;
+}
+
 // DISHONORED(port): 2013 0x586b60 (2012 0x5ca660). The topmost movie that can take focus wins, per
 // local player, and the movies whose focus changed get the script events. Retail's body is 2,068 bytes
 // because it also walks the owner-only case and the controller focus groups.
@@ -1693,6 +1869,66 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 		}
 	}
 
+	// DISHONORED(bringup, agent DQ): the bar census and the hover screenshot. Both key off the entry
+	// whose white background is opaque, which is the one observable that "the highlight" means.
+	if( GFxUIMouseTraceOn() || GFxUIBarCensusOn() || GFxUIShotOnHover() >= 0 )
+	{
+		static INT LastSelected = -2;
+		static DOUBLE LastBarLog = 0.0;
+		static INT ShotSerial = 0;
+		static INT ShotAtFrame = -1;
+		for( INT Index = 0; Index < DPGOpenMovies[DPG].Num(); Index++ )
+		{
+			GFxMovieRoot* Root = (GFxMovieRoot*)DPGOpenMovies[DPG]( Index )->pView.GetPtr();
+			GFxSprite* Level0 = Root ? Root->GetLevel0() : NULL;
+			if( Level0 == NULL )
+			{
+				continue;
+			}
+			const DOUBLE Now = appSeconds();
+			const UBOOL bTick = GFxUIBarCensusOn() && ( Now - LastBarLog > 1.0 );
+			const INT Painted = FGFxBarCensus( Level0, bTick );
+			if( bTick )
+			{
+				LastBarLog = Now;
+			}
+			if( Painted == -2 )
+			{
+				continue;
+			}
+			// The content's own number, not the brightest background: during a crossfade both are over
+			// half and the heuristic reported four changes for one pointer move.
+			const INT Content = FGFxBarSelection( DPGOpenMovies[DPG]( Index ) );
+			const INT Selected = ( Content != -3 ) ? Content : Painted;
+			if( Selected != LastSelected )
+			{
+				if( LastSelected != -2 && GFxUIBarCensusOn() )
+				{
+					debugf( TEXT("DISHONORED(bringup): bar selection %d -> %d on drawn frame %d ")
+						TEXT("(brightest background %d)"),
+						LastSelected, Selected, DrawnFrames, Painted );
+					FGFxBarCensus( Level0, TRUE );
+					LastBarLog = Now;
+				}
+				LastSelected = Selected;
+				if( GFxUIShotOnHover() >= 0 && Selected >= 0 )
+				{
+					ShotAtFrame = DrawnFrames + GFxUIShotOnHover();
+				}
+			}
+			if( ShotAtFrame >= 0 && DrawnFrames >= ShotAtFrame )
+			{
+				ShotAtFrame = -1;
+				GScreenShotName = FString::Printf( TEXT("dqhover%d_sel%d"), ++ShotSerial, LastSelected );
+				GScreenShotRequest = TRUE;
+				debugf( TEXT("DISHONORED(bringup): GFx UI: hover screenshot %s requested on drawn frame %d"),
+					*GScreenShotName, DrawnFrames );
+				// The numbers that go with the picture, so a screenshot is never the only evidence.
+				FGFxBarCensus( Level0, TRUE );
+			}
+		}
+	}
+
 	static UBOOL bDumped = FALSE;
 	const INT DumpAtFrame = GFxUIDumpDisplayList();
 	if( !bDumped && DumpAtFrame >= 0 && DrawnFrames > DumpAtFrame )
@@ -1810,6 +2046,17 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 		TEXT("%u AS2 listeners registered, %u listener calls"),
 		Reason, Input.EventsHandled, Input.EventsNotHandled, Input.KeyDowns, Input.KeyUps,
 		Input.CharsTyped, Input.MouseEvents, Input.ListenersAdded, Input.KeyListenerCalls );
+	// DISHONORED(bringup, agent DQ): the mouse half. A delivered event, a resolved target and an
+	// invoked handler are three different things and this is where a run has to say which happened.
+	{
+		const GFxMouseCensus& Mouse = GFxMouseGetCensus();
+		debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): mouse: %u hit tests / %u targets resolved ")
+			TEXT("(%u shape walks, %u button hits, %u sprite hits), %u rollOver / %u rollOut, ")
+			TEXT("%u press / %u release, %u handlers invoked"),
+			Reason, Mouse.HitTests, Mouse.TargetsResolved, Mouse.ShapeTests, Mouse.ButtonHits,
+			Mouse.SpriteHits, Mouse.RollOvers, Mouse.RollOuts, Mouse.Presses, Mouse.Releases,
+			Mouse.HandlersInvoked );
+	}
 	// DISHONORED(bringup, agent DL): the filter half - what the cook asked for against what was
 	// applied, and the passes it cost. Written by the runtime so the two halves cannot disagree.
 	{
@@ -2007,19 +2254,7 @@ UBOOL FGFxEngine::InputKey( INT ControllerId, FGFxMovie* pFocusMovie, FName ukey
 // DISHONORED(port): 2013 0x591470 (2012 0x5d1e40)
 UBOOL FGFxEngine::InputKey( INT ControllerId, FName ukey, EInputEvent uevent )
 {
-	FGFxMovie* Focus = GetFocusedMovieFromControllerID( ControllerId );
-	// DISHONORED(bringup): when no local player owns focus, the key is offered to the topmost open
-	// movie instead. Retail does not need it: the script InitInputSystem inserts a UGFxInteraction
-	// per local player, so the focused movie is always resolved. Remove this once that insertion
-	// works. It lives here, not in the DishonoredGFxInputKey route, because the two-argument
-	// overload is private - as it is in the reference tree (Inc/ScaleformEngine.h:399).
-	for( INT Index = OpenMovies.Num() - 1; Focus == NULL && Index >= 0; Index-- )
-	{
-		if( OpenMovies( Index )->bCanReceiveFocus && OpenMovies( Index )->bCanReceiveInput )
-		{
-			Focus = OpenMovies( Index );
-		}
-	}
+	FGFxMovie* Focus = GetInputMovieFromControllerID( ControllerId );
 	if( Focus != NULL && InputKey( ControllerId, Focus, ukey, uevent ) )
 	{
 		return TRUE;
@@ -2032,7 +2267,7 @@ UBOOL FGFxEngine::InputKey( INT ControllerId, FName ukey, EInputEvent uevent )
 // DISHONORED(port): 2013 0x5917c0 (2012 0x5d20a0)
 UBOOL FGFxEngine::InputChar( INT ControllerId, TCHAR Character )
 {
-	FGFxMovie* Focus = GetFocusedMovieFromControllerID( ControllerId );
+	FGFxMovie* Focus = GetInputMovieFromControllerID( ControllerId );
 	if( Focus == NULL || Focus->pUMovie == NULL || !Focus->bCanReceiveInput )
 	{
 		return FALSE;
@@ -2051,14 +2286,33 @@ UBOOL FGFxEngine::InputChar( INT ControllerId, TCHAR Character )
 // UpdateKeyEmulation configures and which is not reconstructed.
 UBOOL FGFxEngine::InputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime, UBOOL bGamepad )
 {
-	FGFxMovie* Focus = GetFocusedMovieFromControllerID( ControllerId );
+	// DISHONORED(bringup, agent DQ): the axis probe. Six numbers, once a second under -dismouse.
+	static INT Calls = 0, NoFocus = 0, Filtered = 0, GamepadOrNoViewport = 0, Delivered = 0;
+	static DOUBLE LastLog = 0.0;
+	++Calls;
+	if( GFxMouseTrace )
+	{
+		const DOUBLE Now = appSeconds();
+		if( Now - LastLog > 1.0 )
+		{
+			LastLog = Now;
+			debugf( TEXT("DISHONORED(bringup): axis probe: %d calls, %d no focus, %d filtered, ")
+				TEXT("%d gamepad/no viewport, %d delivered; last key '%s' delta %.2f gamepad %d, ")
+				TEXT("HudViewport %p"),
+				Calls, NoFocus, Filtered, GamepadOrNoViewport, Delivered, *Key.ToString(), Delta,
+				bGamepad ? 1 : 0, HudViewport );
+		}
+	}
+	FGFxMovie* Focus = GetInputMovieFromControllerID( ControllerId );
 	if( Focus == NULL || Focus->pUMovie == NULL || !Focus->bCanReceiveInput )
 	{
+		++NoFocus;
 		return FALSE;
 	}
 	UBOOL bHandled = FALSE;
 	if( Focus->pUMovie->FilterInputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad, bHandled ) )
 	{
+		++Filtered;
 		return bHandled;
 	}
 	// DISHONORED(port): the non-gamepad arm of 2013 0x594cc0. The position is the viewport's own, not the
@@ -2067,8 +2321,10 @@ UBOOL FGFxEngine::InputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT Del
 	// because that is what the mouse arm of InputKey sends a click at.
 	if( bGamepad || HudViewport == NULL )
 	{
+		++GamepadOrNoViewport;
 		return FALSE;
 	}
+	++Delivered;
 	HudViewport->GetMousePos( MousePos );
 	GViewport MovieViewport;
 	Focus->pView->GetViewport( &MovieViewport );

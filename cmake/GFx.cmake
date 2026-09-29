@@ -59,6 +59,9 @@ if(DISHONORED_WITH_GFX3)
     "${DISHONORED_GFX3_DIR}/GFxPlayerData.cpp"
     "${DISHONORED_GFX3_DIR}/GFxPlayerSprite.cpp"
     "${DISHONORED_GFX3_DIR}/GFxPlayerRoot.cpp"
+    # The mouse's half of the player, package DQ (resources/docs/agents/agentDQ.md): which display
+    # object is under the pointer, and the seven button events that follow from it changing.
+    "${DISHONORED_GFX3_DIR}/GFxHitTest.cpp"
     # The text engine and the glyph rasteriser, package CB (resources/docs/agents/agentCB.md).
     # Agent BB proved the game fonts are DefineFont3 glyph outlines with no font-texture tag
     # anywhere in the cook, so a rasteriser has to exist for any character of text to appear.

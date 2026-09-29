@@ -168,6 +168,9 @@ public:
 	// --- focus and size ---
 	INT GetLocalPlayerIndexFromControllerID(INT ControllerId, UINT bFailIfMissing = 0);// 2013 0x57b4f0
 	FGFxMovie* GetFocusedMovieFromControllerID(INT ControllerId);                    // 2013 0x57b580
+	/** DISHONORED(bringup, agent DQ): the focused movie, or the topmost open movie that can take focus
+	    and input when no local player owns focus. Every input entry point goes through this. */
+	FGFxMovie* GetInputMovieFromControllerID( INT ControllerId );
 	FGFxMovie* GetFocusMovie(INT ControllerId) { return GetFocusedMovieFromControllerID(ControllerId); }
 	void ReevaluateFocus();                                                         // 2013 0x586b60
 	void ReevaluateSizes();                                                         // 2013 0x586b00

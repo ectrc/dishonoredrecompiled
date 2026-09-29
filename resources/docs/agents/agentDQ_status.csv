@@ -1,0 +1,57 @@
+rva_2013,status,note
+0xa05330,ported,GFxMovieRoot::ProcessMouse - the whole body; was the Mouse broadcaster and the position only
+0xa5ad10,ported,GFx_GenerateMouseButtonEvents - press/release/releaseOutside/dragOver/dragOut/rollOver/rollOut (2012 0xa66a90 is the address the briefs carry)
+0x9fabf0,ported,GFxMovieRoot::GetTopMostEntity - the level walk; the topmost-level-characters array and the 3D normalisation are not reproduced
+0x9f0e80,ported,GFxSprite::GetTopMostMouseEntity - the 2D arm
+0x9f2320,ported,GFxSprite::PointTestLocal - the 2D arm
+0x9f0d70,ported,GFxSprite::CalcDisplayListHitTestMaskArray
+0x9ecc70,ported,GFxSprite::ActsAsButton
+0x9ec260,ported,GASMovieClipObject::ActsAsButton - by member name rather than by retail's per-object handler bitmask
+0x9eb2e0,ported,GFxSprite::HasEventHandler
+0x9c4980,ported,GFxGenericCharacter::PointTestLocal
+0x9c55a0,ported,GFxGenericCharacter::GetTopMostMouseEntity - the 2D arm
+0xa5c310,ported,GFxButtonCharacter::PointTestLocal - the hitTest-state records
+0xa5c490,ported,GFxButtonCharacter::GetTopMostMouseEntity - the hitTest-state records
+0xa23d60,ported,GFxEditTextCharacter::PointTestLocal
+0xa23990,ported,GFxEditTextCharacter::GetTopMostMouseEntity
+0xa3a3a0,ported,GFxShapeCharacterDef::DefPointTestLocal
+0xa39fc0,ported,GFxShapeBase::DefPointTestLocalImpl - bounds then winding then the per-character cache
+0xa38890,ported,GFxShapeBase::PointInShape - the fill half; the stroker half is deviation 4
+0xa32490,ported,GMath2D::CheckCurveIntersection
+0xa30920,ported,GMath2D::CheckMonoCurveIntersection
+0x9c4540,ported,GFxCharacter::CheckLastHitResult
+0x9c4580,ported,GFxCharacter::SetLastHitResult
+0x9c8b30,ported,GFxASCharacter::ExecuteEvent(GFxEventId) - the member-handler arm; the ClipActions arm is deviation 5
+0x9d6030,ported,GFxEventId::GetFunctionName
+0x9d5e80,ported,GFxEventId::GetFunctionNameBuiltinType - the table read out of the image and inlined as a switch
+0x9c4000,ported,GFxEventId::GFxEventId
+0x9fb950,ported,GFxMouseState::UpdateState
+0x9fc460,ported,GFxMouseState::SetTopmostEntity
+0x9fc510,ported,GFxMouseState::IsTopmostEntityChanged
+0xa25e10,ported,GFxMouseState::GetTopmostEntity
+0xa5acb0,ported,GFxMouseState::GetActiveEntity
+0x9c4170,ported,GFxMovieRoot::GetMouseState - the per-index state struct
+0x9ab4b0,ported,GMatrix2D::SetInverse - including the singular arm
+0x9ab5d0,ported,GMatrix2D::Prepend
+0x9ab750,ported,GMatrix2D::TransformByInverse
+0x9cca50,ported,GFxDisplayList::MoveDisplayObject - the accept-anim-moves guard; FAULT 2
+0x9c5cd0,ported,GFxASCharacter::SetAcceptAnimMoves - EnsureGeomDataCreated then the flag
+0x9cb580,ported,GFxASCharacter::GetAcceptAnimMoves
+0x9c9bf0,ported,GFxASCharacter::SetStandardMember - the nine SetAcceptAnimMoves(false) calls only; the rest was agent DJ's
+0x594cc0,bringup,FGFxEngine::InputAxis - the focus fallback; 867 of 868 axis events returned at the first line
+0x591470,ported,FGFxEngine::InputKey - the fallback moved out into GetInputMovieFromControllerID
+0x57b580,unchanged,FGFxEngine::GetFocusedMovieFromControllerID - GetInputMovieFromControllerID wraps it
+0x9c53e0,unchanged,GFxASCharacter::GetGeomData - retail returns the record verbatim; the accept-anim-moves guard is why that is safe
+0xa04490,absent,GFxMovieRoot::ChangeMouseCursorType - the hand cursor; the Dishonored cursor is a movie clip
+0x9ed080,absent,GFxSprite::GetCursorType - useHandCursor
+0xa5c250,absent,GFxButtonCharacter::GetCursorType
+0xa23d10,absent,GFxEditTextCharacter::GetCursorType
+0x9ea2c0,absent,GFxSprite::GetMask - MovieClip.setMask; this tree masks by clipDepth only
+0x9ec030,absent,GFxSprite::GetHitArea - MovieClip.hitArea
+0xa83e10,absent,GFxDrawingContext::DefPointTestLocal - the AS2 drawing API has no geometry in this tree
+0xa80c60,absent,GFxStaticTextCharacterDef::DefPointTestLocal - no DefineText survives this cook
+0xaa7b20,absent,GFxMorphCharacterDef::DefPointTestLocal
+0x9c7a50,absent,GFxASCharacter::HasClipEventHandler - no ClipActions store; the main menu authors none
+0x9c7b10,absent,GFxASCharacter::InvokeClipEventHandlers
+0xa5d770,absent,GFxButtonCharacter::SetStandardMember - the button state machine's half
+0xa65310,absent,GASMouseCtorFunction::GetTopMostEntity - Mouse.getTopMostEntity; TopMostParams::bTestAll exists for it

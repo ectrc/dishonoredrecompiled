@@ -34,13 +34,26 @@ GFxCharacterHandle::GFxCharacterHandle(const GASString& name, GFxASCharacter* pa
 // GFxCharacter
 
 GFxCharacter::GFxCharacter(GFxASCharacter* parent, GFxResourceId id)
-    : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true)
+    : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true),
+      RollOverCnt(0), bAcceptAnimMoves(true), pWeakProxy(0), LastHitX(0.f), LastHitY(0.f),
+      bHasLastHit(false), bLastHit(false)
 {
     Id = id;
     for (int i = 0; i < 4; ++i) { ColorTransform.M_[i][0] = 1.f; ColorTransform.M_[i][1] = 0.f; }
 }
 
-GFxCharacter::~GFxCharacter() {}
+GFxCharacter::~GFxCharacter()
+{
+    // The weak proxy outlives the character by design - GFxMouseState holds it so that a clip removed
+    // between two mouse events reads as "no entity" rather than as a stale one - so the object pointer
+    // is cleared and the character's own reference dropped.
+    if (pWeakProxy != 0)
+    {
+        pWeakProxy->pObject = 0;
+        pWeakProxy->Release();
+        pWeakProxy = 0;
+    }
+}
 
 // ---------------------------------------------------------------------------------------------
 // GFxDisplayList
@@ -220,6 +233,16 @@ void GFxDisplayList::MoveDisplayObject(const GFxCharPosInfo& pos)      // 2012 0
         int i = FindDisplayIndex(pos.Depth);
         if (i < (int)Size) Entries[i].bMarkedForRemove = false;
     }
+    // DISHONORED(port): 2013 0x9cca50. A character whose transform script has written is no longer
+    // moved by its own timeline; retail returns here having touched nothing. Without this the 84
+    // frames of a menu button's roll-over animation re-applied the authored matrix under the script's
+    // feet every frame, and the next `_xscale` or `_width` write compounded on top of it - measured as
+    // a 2.5x entry and widths creeping 256 -> 300 px (agentDQ.md 2).
+    // DISHONORED(bringup): retail guards the guard with the slot-28 virtual (GetContinueAnimation),
+    // which a re-placed character sets so the timeline may adopt it again. Nothing in this tree sets
+    // it, so the conservative arm - always respect AcceptAnimMoves - is the one reproduced.
+    if (!ch->GetAcceptAnimMoves())
+        return;
     if (pos.HasMatrix()) ch->SetMatrix(pos.Matrix);
     if (pos.HasCxform()) ch->SetCxform(pos.ColorTransform);
     if (pos.FilterCount) ch->SetFilters(pos.pFilters, pos.FilterCount);
@@ -547,6 +570,14 @@ void GFxASCharacter::SetGeomData(const GeomDataType& d)               // 0x9cf3b
     *pGeomData = d;
 }
 
+// DISHONORED(port): 2013 0x9c5cd0. Snapshot the geometry before the record becomes the authority.
+void GFxASCharacter::SetAcceptAnimMoves(bool accept)
+{
+    if (!accept)
+        EnsureGeomDataCreated();
+    bAcceptAnimMoves = accept;
+}
+
 void GFxASCharacter::EnsureGeomDataCreated()                         // 0x9cf410
 {
     if (pGeomData == 0)
@@ -577,7 +608,8 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
         // same value is kept in GeomData, which is what `_x` reads back.
         const double want = v.GetNumber();
         if (v.IsUndefined() || want != want) return true;
-        EnsureGeomDataCreated();
+        // 2013 0x9c9bf0 case 0's `SetAcceptAnimMoves(false)`: from here the timeline stops moving it.
+        SetAcceptAnimMoves(false);
         pGeomData->X = (int)floor(want * GFxPixelsToTwips);
         Matrix.M_[0][2] = (float)pGeomData->X;
         return true;
@@ -586,12 +618,17 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
     {
         const double want = v.GetNumber();
         if (v.IsUndefined() || want != want) return true;
-        EnsureGeomDataCreated();
+        SetAcceptAnimMoves(false);                                    // 0x9c9bf0 case 1
         pGeomData->Y = (int)floor(want * GFxPixelsToTwips);
         Matrix.M_[1][2] = (float)pGeomData->Y;
         return true;
     }
-    case GASbuiltin__alpha:   ColorTransform.M_[3][0] = (float)(v.GetNumber() / 100.0); return true;
+    case GASbuiltin__alpha:
+        // 0x9c9bf0 case 6 clears accept-anim-moves too, which is what keeps a timeline fade from
+        // fighting a scripted one.
+        ColorTransform.M_[3][0] = (float)(v.GetNumber() / 100.0);
+        SetAcceptAnimMoves(false);
+        return true;
     case GASbuiltin__visible: bVisible = v.GetBool(); return true;
     case GASbuiltin__width:
     case GASbuiltin__height:
@@ -602,7 +639,7 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
         const double want = v.GetNumber();
         if (v.IsUndefined() || want != want)
             return true;
-        EnsureGeomDataCreated();
+        SetAcceptAnimMoves(false);                                    // 0x9c9bf0 cases 8 and 9
         GeomDataType& g = *pGeomData;
         GMatrix2D m = GFxCharacterGeomMatrix(g, Matrix);
         const float deltaRot = (float)(g.Rotation * 3.14159265358979323846 / 180.0
@@ -644,7 +681,7 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
         const double want = v.GetNumber();
         if (v.IsUndefined() || want != want)
             return true;
-        EnsureGeomDataCreated();
+        SetAcceptAnimMoves(false);                                    // 0x9c9bf0 cases 2 and 3
         GeomDataType& g = *pGeomData;
         GMatrix2D m = GFxCharacterGeomMatrix(g, Matrix);
         const bool bX = (which == GASbuiltin__xscale);
@@ -674,7 +711,7 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
         double want = v.GetNumber();
         if (v.IsUndefined() || want != want)
             return true;
-        EnsureGeomDataCreated();
+        SetAcceptAnimMoves(false);                                    // 0x9c9bf0 case 10
         GeomDataType& g = *pGeomData;
         want = fmod(want, 360.0);
         if (want > 180.0) want -= 360.0;

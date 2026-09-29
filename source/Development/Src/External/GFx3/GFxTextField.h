@@ -163,6 +163,13 @@ public:
     // which is what makes the text's drop shadow a second glyph batch rather than a blur of the
     // subtree.
     virtual void SetFilters(const GFxFilterDesc* filters, unsigned int count);
+    // DISHONORED(port): 2013 0xa23d60 / 0xa23990. A text field's hit area is its formatted view
+    // rectangle, and a field that is neither selectable nor carrying a mouse handler passes the
+    // question up to the nearest ancestor clip that acts as a button - which is what keeps a menu
+    // entry's label from stealing the entry's own rollover.
+    virtual bool PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMask) const;
+    virtual GFxASCharacter* GetTopMostMouseEntity(const GPoint<float>& pt,
+                                                 const TopMostParams& params);
 
     const GFxTextFilter& GetTextFilter() const { return Filter; }
 

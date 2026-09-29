@@ -396,6 +396,81 @@ protected:
     unsigned int LabelCapacity;
 };
 
+// ---------------------------------------------------------------------------------------------
+// GFxEventId (2013 ctor 0x9c4000). The identity of one clip event: the SWF ClipActionRecord bit, plus
+// the four bytes the handler is called with. The bit order is the SWF spec's and retail's own table
+// agrees with it - GFxEventId::GetFunctionNameBuiltinType (0x9d5e80) is log2(Id) into a 0x23-entry
+// table, and the seven button events 0x400..0x10000 map to a contiguous run of builtin names
+// 91..97 in exactly this order, which is what settles rollOver = 0x2000 and rollOut = 0x4000.
+class GFxEventId
+{
+public:
+    enum IdCode
+    {
+        Event_Invalid         = 0x00000,
+        Event_Load            = 0x00001,
+        Event_EnterFrame      = 0x00002,
+        Event_Unload          = 0x00004,
+        Event_MouseMove       = 0x00008,
+        Event_MouseDown       = 0x00010,
+        Event_MouseUp         = 0x00020,
+        Event_KeyDown         = 0x00040,
+        Event_KeyUp           = 0x00080,
+        Event_Data            = 0x00100,
+        Event_Initialize      = 0x00200,
+        Event_Press           = 0x00400,
+        Event_Release         = 0x00800,
+        Event_ReleaseOutside  = 0x01000,
+        Event_RollOver        = 0x02000,
+        Event_RollOut         = 0x04000,
+        Event_DragOver        = 0x08000,
+        Event_DragOut         = 0x10000,
+        Event_KeyPress        = 0x20000,
+        Event_Construct       = 0x40000,
+        // The mouse-index-1 variants retail carries for a second pointer. Retail gives them five
+        // builtin names of their own (121..125); nothing in this cook has a second mouse.
+        Event_Press_1         = 0x080000,
+        Event_Release_1       = 0x100000,
+        Event_ReleaseOutside_1= 0x200000,
+        Event_DragOver_1      = 0x400000,
+        Event_DragOut_1       = 0x800000
+    };
+
+    GFxEventId()
+        : Id(Event_Invalid), WcharCode(0), KeyCode(0), AsciiCode(0), KeyboardIndex(0),
+          RollOverCnt(0), Pad(0) {}
+    explicit GFxEventId(unsigned int id)
+        : Id(id), WcharCode(0), KeyCode(0), AsciiCode(0), KeyboardIndex(0), RollOverCnt(0), Pad(0) {}
+
+    /** the handler member the event looks for on the character. 2013 GetFunctionName 0x9d6030,
+        which is this table read through the string manager's builtin array. */
+    const char* GetFunctionName() const;
+
+    unsigned int  Id;
+    unsigned int  WcharCode;
+    short         KeyCode;
+    unsigned char AsciiCode;       // the mouse index on a mouse event (retail +10)
+    unsigned char KeyboardIndex;   // the controller index (retail +11)
+    unsigned char RollOverCnt;     // retail +12; the character's own +169 counter at the time
+    unsigned char Pad;
+};
+
+// GWeakPtrProxy. GFxMouseState holds the topmost, previous and active entity by WEAK pointer -
+// GRefCountWeakSupportImpl::CreateWeakProxy in GFx_GenerateMouseButtonEvents and SetTopmostEntity -
+// so a clip removed between two mouse events degrades to null instead of dangling. Four refcount
+// defects in this tree have been in that family (agentDH.md), so the indirection is reproduced
+// rather than replaced with a strong reference.
+class GFxWeakProxy
+{
+public:
+    explicit GFxWeakProxy(void* o) : RefCount(1), pObject(o) {}
+    void AddRef() { ++RefCount; }
+    void Release() { if (--RefCount <= 0) delete this; }
+
+    int   RefCount;
+    void* pObject;
+};
+
 // A character definition: the immutable, shared description an instance is created from.
 // GetResourceTypeCode returns GFxResource::RT_SpriteDef and friends, which is the one virtual of
 // GFxResource this hierarchy overrides for real.
@@ -412,6 +487,12 @@ public:
     // DISHONORED(port): 2012 0xa3d7d0 - the definition-side draw. A definition with no geometry (a
     // placeholder, a font, a morph shape) keeps the base body, which is what retail's base does too.
     virtual void Display(GFxDisplayContext& ctx, GFxCharacter* ch);
+    /** the definition-side point test, in the definition's own coordinates. The base answers FALSE,
+        which is retail's base too; only the geometry-bearing definitions override it
+        (GFxShapeCharacterDef 0xa3a3a0, GFxStaticTextCharacterDef 0xa80c60,
+        GFxMorphCharacterDef 0xaa7b20). `testShape` FALSE is a bounds-only test. */
+    virtual bool DefPointTestLocal(const GPoint<float>& pt, bool testShape,
+                                  const GFxCharacter* inst) const;
 
     GFxResourceId Id;
 };
@@ -485,6 +566,28 @@ public:
 class GFxCharacter
 {
 public:
+    /** what GFxMovieRoot::GetTopMostEntity (2013 0x9fabf0) fills and every GetTopMostMouseEntity
+        override reads: the root, the character to pretend is not there, the controller index, and
+        TestAll - which makes the walk answer the topmost character of ANY kind rather than only one
+        that acts as a button. `Mouse.getTopMostEntity` passes TestAll TRUE. */
+    struct TopMostParams
+    {
+        GFxMovieRoot*         pRoot;
+        const GFxASCharacter* pIgnoreMC;
+        unsigned int          ControllerIdx;
+        bool                  bTestAll;
+
+        TopMostParams() : pRoot(0), pIgnoreMC(0), ControllerIdx(0), bTestAll(false) {}
+        TopMostParams(GFxMovieRoot* root, const GFxASCharacter* ignore, unsigned int ctrl,
+                      bool testAll)
+            : pRoot(root), pIgnoreMC(ignore), ControllerIdx(ctrl), bTestAll(testAll) {}
+    };
+
+    /** the bits of retail's `hitTestMask` argument. HitTest_Shapes is bit 0 ("test the geometry, not
+        only the bounds") and HitTest_ShapesNoInvisible adds bit 1 ("skip an invisible child"), which
+        is exactly how GFxMovieView::HitTestType 0..3 is passed down. */
+    enum HitTestMask { HitTest_TestShape = 0x1, HitTest_SkipInvisible = 0x2 };
+
     GFxCharacter(GFxASCharacter* parent, GFxResourceId id);
     virtual ~GFxCharacter();
 
@@ -510,6 +613,32 @@ public:
         GFxEditTextCharacter overrides it (0xa275b0) and turns the list into a GFxTextFilter. */
     virtual void              SetFilters(const GFxFilterDesc* filters, unsigned int count)
                                   { (void)filters; (void)count; }
+    /** is the point (in THIS character's own space) inside the character. 2013 GFxSprite 0x9f2320,
+        GFxEditTextCharacter 0xa23d60, GFxButtonCharacter 0xa5c310, GFxGenericCharacter 0x9c4980. */
+    virtual bool              PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMask) const;
+    /** the topmost character under the point that the mouse should be talking to, or null. The point
+        is in the PARENT's space, as retail's is: every override transforms it by its own matrix's
+        inverse first. 2013 GFxSprite 0x9f0e80, GFxGenericCharacter 0x9c55a0,
+        GFxEditTextCharacter 0xa23990, GFxButtonCharacter 0xa5c490. */
+    virtual GFxASCharacter*   GetTopMostMouseEntity(const GPoint<float>& pt,
+                                                    const TopMostParams& params);
+    /** retail 0x9c4540 / 0x9c4580: one cached shape-test result per character, so the same point
+        asked twice in one mouse event costs one winding walk. The cache is keyed on the point. */
+    bool CheckLastHitResult(float x, float y) const
+        { return bHasLastHit && LastHitX == x && LastHitY == y; }
+    void SetLastHitResult(float x, float y, bool hit) const
+        { LastHitX = x; LastHitY = y; bHasLastHit = true; bLastHit = hit; }
+    bool GetLastHitResult() const { return bLastHit; }
+    /** the weak reference GFxMouseState holds this character by (GRefCountWeakSupportImpl::
+        CreateWeakProxy). Made on first use and cleared by ~GFxCharacter. */
+    GFxWeakProxy* CreateWeakProxy();
+    /** DISHONORED(port): 2013 GetAcceptAnimMoves 0x9cb580 / SetAcceptAnimMoves 0x9c5cd0. FALSE means
+        the timeline must stop moving this character, because script has written its transform -
+        Flash's own rule, and the reason a GeomData record can be a cache at all. Cleared from
+        GFxASCharacter::SetStandardMember's nine geometry cases and read by
+        GFxDisplayList::MoveDisplayObject (0x9cca50), which touches nothing when it is FALSE. */
+    virtual bool GetAcceptAnimMoves() const { return bAcceptAnimMoves; }
+    virtual void SetAcceptAnimMoves(bool accept) { bAcceptAnimMoves = accept; }
 
     const GMatrix2D& GetMatrix() const { return Matrix; }
     void SetMatrix(const GMatrix2D& m) { Matrix = m; }
@@ -535,6 +664,15 @@ public:
     int               ClipDepth;
     float             Ratio;
     bool              bVisible;
+    /** retail character+169: how many times the mouse is currently over this entity. The button
+        events carry it so the content can tell a re-entry from a first entry. */
+    unsigned char     RollOverCnt;
+    /** retail character+160 bit 0x1000. TRUE until script writes a transform property. */
+    bool              bAcceptAnimMoves;
+    GFxWeakProxy*     pWeakProxy;
+    mutable float     LastHitX, LastHitY;
+    mutable bool      bHasLastHit;
+    mutable bool      bLastHit;
 };
 
 // GFxDisplayList. Depth-sorted, and the four mutators are the four retail functions: AddDisplayObject
@@ -636,6 +774,9 @@ public:
     void GetGeomData(GeomDataType* out) const;
     void SetGeomData(const GeomDataType& d);
     void EnsureGeomDataCreated();
+    /** 2013 0x9c5cd0. Clearing it snapshots the geometry first, which is what makes the record the
+        authority from that moment on. */
+    virtual void SetAcceptAnimMoves(bool accept);
 
     // The AS-visible name, the handle GASValue stores, and the script object that carries whatever
     // the content assigned onto this clip.
@@ -647,6 +788,14 @@ public:
     GFxMovieRoot*       GetMovieRoot() const { return pMovieRoot; }
 
     void ExecuteEvent(GASBuiltinString eventName);                    // via 2012 0x9d22e0
+    /** DISHONORED(port): 2013 GFxASCharacter::ExecuteEvent 0x9c8b30. Look the event's handler member
+        up by the name GFxEventId::GetFunctionName gives and invoke it on this character. Retail also
+        runs the PlaceObject2 ClipActions handlers first (HasClipEventHandler 0x9c7a50,
+        InvokeClipEventHandlers 0x9c7b10); this tree does not store a ClipActions list, so a clip
+        event authored on the timeline rather than assigned from script is not reached - measured, the
+        main menu authors none. Retail invokes with no arguments unless the global context's
+        extended-clip-event flag is set (`pGC+684 == 1`), which this cook does not set. */
+    bool ExecuteEvent(const GFxEventId& id);
 
     GFxMovieRoot*       pMovieRoot;
     GASString           Name;
@@ -671,8 +820,43 @@ public:
     virtual const char* GetCharacterTypeName() const;
     virtual GASObjectType GetObjectType() const;
     virtual void Display(GFxDisplayContext& ctx);                     // 2012 0x9cfdd0
+    virtual bool PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMask) const;  // 0x9c4980
+    virtual GFxASCharacter* GetTopMostMouseEntity(const GPoint<float>& pt,
+                                                  const TopMostParams& params);             // 0x9c55a0
 
     GFxCharacterDef* pDef;
+};
+
+// GFxButtonCharacter: what a DefineButton2 instance is. This tree made a GFxGenericCharacter, and a
+// generic character answers its DEFINITION's point test - which a button definition has none of, so
+// every button in the game was invisible to the mouse. Measured, the main menu's single DefineButton2
+// (char 100) carries a record whose state flags are 0x08, hitTest alone, referencing shape char 99,
+// and `btn` is the instance every menu entry's onRollOver / onRelease is assigned to. So the button
+// model is not optional for the mouse, however true it is that the KEYBOARD goes through the AS2 Key
+// broadcaster (agentDG.md 2).
+//
+// What is ported is the pair that makes the mouse see it: PointTestLocal (2013 0xa5c310) and
+// GetTopMostMouseEntity (0xa5c490), both of which walk the definition's hitTest-state records. The
+// state machine that swaps the up / over / down record sets, and the DefineButton2 condition-action
+// blocks, are still the 38-function package and are still not here; this cook's button has no
+// condition actions at all (measured: 0 bytes of them) and its over and down states are the same
+// record as its up state.
+class GFxButtonCharacter : public GFxGenericCharacter
+{
+public:
+    GFxButtonCharacter(GFxCharacterDef* def, GFxASCharacter* parent, GFxResourceId id,
+                       GFxMovieRoot* root)
+        : GFxGenericCharacter(def, parent, id, root) {}
+
+    virtual const char* GetCharacterTypeName() const { return "Button"; }
+    /** the union of the records' bounds through each record's matrix. The base asks
+        GFxCharacterDefGetBoundsTwips, which answers an empty rectangle for a button definition - and
+        an empty rectangle is what made `btn._width = <label width>` a no-op, because the geometry
+        setters derive the scale from the bounds. */
+    virtual GRect<float> GetBoundsTwips(const GMatrix2D& m) const;
+    virtual bool PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMask) const;
+    virtual GFxASCharacter* GetTopMostMouseEntity(const GPoint<float>& pt,
+                                                  const TopMostParams& params);
 };
 
 // GFxSprite: a movie clip. The timeline state is the four members every decompile touches -
@@ -735,6 +919,21 @@ public:
     virtual bool SetStandardMember(GASBuiltinString which, const GASValue& v);
     virtual bool GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val);
 
+    virtual bool PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMask) const;  // 0x9f2320
+    virtual GFxASCharacter* GetTopMostMouseEntity(const GPoint<float>& pt,
+                                                  const TopMostParams& params);             // 0x9f0e80
+    /** 2013 0x9ecc70 -> GASMovieClipObject::ActsAsButton 0x9ec260: a clip the mouse can talk to,
+        which is one that has any of the seven button handlers on itself or anywhere up its prototype
+        chain. That is what makes a plain sprite a mouse entity without a DefineButton2. */
+    bool ActsAsButton() const;
+    /** 2013 0x9eb2e0: does this clip have a handler for that event, by member name. */
+    bool HasEventHandler(const GFxEventId& id) const;
+    /** 2013 0x9f0d70. One byte per display-list entry: whether the point passes the clipDepth mask
+        that covers that entry. An entry with a non-zero ClipDepth masks every entry after it up to
+        that depth, which is the same rule GFxDisplayList::Display draws with. */
+    void CalcDisplayListHitTestMaskArray(unsigned char* out, unsigned int outCount,
+                                         const GPoint<float>& pt, bool testShape) const;
+
     // GetOwnDataDef is the dictionary a PlaceObject inside this sprite's own timeline resolves
     // against, and it is NOT the root movie's. An imported symbol is a sprite whose timeline was
     // authored in another file, so its child ids index that file's dictionary; retail keeps the
@@ -756,6 +955,95 @@ private:
     bool           bHasLooped;
     bool           bFrame0Executed;
 };
+
+// ---------------------------------------------------------------------------------------------
+// GFxMouseState: per-mouse-index state, and the whole of what the button-event generator works from.
+// Retail's is 36 bytes inline on the movie root (the `36 * index + 2340` of ProcessMouse's decompile):
+// three weak entity slots, the current and previous button masks, the position, and a flag byte whose
+// bits are read out of the four bodies below - bit 0 "the topmost slot is deliberately empty",
+// bit 1 the same for the previous slot, bit 2 "the pointer is inside the active entity", bit 3 "the
+// position moved", bit 4 "this state has been updated at least once".
+//   UpdateState             2013 0x9fb950
+//   SetTopmostEntity        2013 0x9fc460
+//   IsTopmostEntityChanged  2013 0x9fc510
+//   GetTopmostEntity        2013 0xa25e10
+//   GetActiveEntity         2013 0xa5acb0
+class GFxMouseState
+{
+public:
+    enum Flags
+    {
+        Flag_TopmostNull  = 0x01,
+        Flag_PrevNull     = 0x02,
+        Flag_Inside       = 0x04,
+        Flag_PosMoved     = 0x08,
+        Flag_Updated      = 0x10
+    };
+
+    GFxMouseState();
+    ~GFxMouseState();
+
+    void UpdateState(const GFxInputEventsQueue::QueueEntry& e);
+    void SetTopmostEntity(GFxASCharacter* ch);
+    bool IsTopmostEntityChanged() const;
+    GFxASCharacter* GetTopmostEntity() const;
+    GFxASCharacter* GetActiveEntity() const;
+    void SetActiveEntity(GFxASCharacter* ch);
+
+    unsigned int GetButtons() const { return CurButtons; }
+    unsigned int GetPrevButtons() const { return PrevButtons; }
+    unsigned int GetChangedButtons() const { return CurButtons ^ PrevButtons; }
+    bool  IsInside() const { return (Flags & Flag_Inside) != 0; }
+    void  SetInside(bool inside)
+        { Flags = (unsigned char)(inside ? (Flags | Flag_Inside) : (Flags & ~Flag_Inside)); }
+    float GetX() const { return X; }
+    float GetY() const { return Y; }
+
+private:
+    static void Assign(GFxWeakProxy** slot, GFxASCharacter* ch, unsigned char* flags,
+                       unsigned char nullBit);
+    static GFxASCharacter* Resolve(GFxWeakProxy** slot);
+
+    GFxWeakProxy* pTopmost;
+    GFxWeakProxy* pPrevTopmost;
+    GFxWeakProxy* pActive;
+    unsigned int  CurButtons;
+    unsigned int  PrevButtons;
+    float         X, Y;
+    int           ScrollDelta;
+    unsigned char Flags;
+};
+
+/** the mouse half of the census: what a delivered event actually did. Reset with the rest of the
+    per-frame census; the engine's -dismouse line prints it. */
+struct GFxMouseCensus
+{
+    unsigned int HitTests;         // GetTopMostEntity calls
+    unsigned int TargetsResolved;  // ... that found a character
+    unsigned int ShapeTests;       // shape winding walks
+    unsigned int ButtonHits;       // a DefineButton2 hitTest record answered yes
+    unsigned int SpriteHits;       // a sprite that acts as a button answered yes
+    unsigned int RollOvers;
+    unsigned int RollOuts;
+    unsigned int Presses;
+    unsigned int Releases;
+    unsigned int HandlersInvoked;  // a handler member was found AND called
+};
+GFxMouseCensus& GFxMouseGetCensus();
+/** MovieClip.hitTest(x, y): the STAGE-pixel point form, which is what the content passes `_xmouse` to.
+    GFxHitTest.cpp. */
+bool GFxHitTestClipAtStagePoint(GFxSprite* sprite, float stageX, float stageY, bool testShape);
+void GFxMouseResetCensus();
+/** -dismouse: narrate each dispatched mouse event with the target's path. */
+extern bool GFxMouseTrace;
+
+/** DISHONORED(port): 2013 0xa5ad10 (the brief and agentDM.md carry 0xa66a90, which is the 2012
+    address of the same function). Turns the change in a mouse state into the seven button events:
+    press, release, releaseOutside, dragOver, dragOut and the rollOver / rollOut pair. `buttonCount`
+    is how many button bits to scan - 1 in the ordinary single-mouse case, which is what
+    ProcessMouse passes when the global context's extended-clip-event flag is clear. */
+void GFx_GenerateMouseButtonEvents(unsigned char controllerIdx, GFxMouseState* state,
+                                   unsigned int buttonCount);
 
 // ---------------------------------------------------------------------------------------------
 // GFxMovieDataDef: one parsed GFX payload. It is both the root timeline and the character
@@ -1140,6 +1428,14 @@ public:
 
     // --- the input half (GFxInput.cpp) ---
     enum { MaxKeyboards = 4, MaxMice = 4 };
+    /** DISHONORED(port): 2013 0x9fabf0. The topmost mouse entity of the whole movie: the level walk,
+        from the top level down, asking each level's sprite. Retail walks a second array first (the
+        "topmost level characters" at movieroot+9320, which nothing in this cook registers into) and
+        also stores the normalised point for the 3D path; neither is reproduced. */
+    GFxASCharacter* GetTopMostEntity(const GPoint<float>& pt, unsigned int mouseIndex,
+                                     bool testAll, const GFxASCharacter* ignore);
+    GFxMouseState* GetMouseStateStruct(unsigned int i)
+        { return i < MaxMice ? &MouseStates[i] : 0; }
     GFxKeyboardState* GetKeyboardState(unsigned int index);           // 2012 0x9cd8b0
     void SetKeyboardListener(GFxKeyboardState::IListener* l);         // 2012 0xa01730
     void ProcessInput();                                              // 2012 0xa10d80
@@ -1193,6 +1489,7 @@ private:
     float                     MouseX[MaxMice];
     float                     MouseY[MaxMice];
     unsigned int              MouseButtons[MaxMice];
+    GFxMouseState             MouseStates[MaxMice];
     GFxState*                 States[MaxStates];
 
     ActionEntry* Actions;

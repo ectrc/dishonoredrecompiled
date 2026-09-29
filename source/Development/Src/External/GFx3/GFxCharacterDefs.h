@@ -234,6 +234,10 @@ public:
     virtual const char* GetDefTypeName() const { return "Shape"; }
     // DISHONORED(port): 2012 0xa3cf40 -> 0xa3bb80. Body in GFxDisplay.cpp.
     virtual void Display(GFxDisplayContext& ctx, GFxCharacter* ch);
+    // DISHONORED(port): 2013 0xa3a3a0 -> GFxShapeBase::DefPointTestLocalImpl 0xa39fc0 ->
+    // PointInShape 0xa38890. Body in GFxHitTest.cpp.
+    virtual bool DefPointTestLocal(const GPoint<float>& pt, bool testShape,
+                                  const GFxCharacter* inst) const;
 
     void Read(GFxStream* s, unsigned int tagType, unsigned int endPos);  // 2012 0xa43610
 
@@ -361,9 +365,11 @@ public:
 
 // ---------------------------------------------------------------------------------------------
 // GFxButtonCharacterDef (2012 Read 0xa6a0c0, GFxButtonRecord::Read 0xa69bb0, SetScale9Grid
-// 0xa35150). The button's own state machine (GFxButtonCharacter, 38 retail functions, and
-// GFx_GenerateMouseButtonEvents 0xa66a90) needs the mouse path and is not in this package: the
-// definition is complete, the instance is a display object with the up-state records placed.
+// 0xa35150). The instance is a GFxButtonCharacter (GFxPlayer.h) whose two hit-test virtuals walk the
+// hitTest-state records - agent DQ - and whose state machine, which would swap the up / over / down
+// record sets, is still the rest of the 38-function package. This cook's one button has its up, over
+// and down states on the SAME record and no condition actions at all, so what is missing is not
+// reachable from the main menu.
 
 // The bounds of a definition in twips, or an empty rectangle when it has none. GFxCharacterDefs.cpp.
 GRect<int> GFxCharacterDefGetBoundsTwips(const GFxCharacterDef* def);

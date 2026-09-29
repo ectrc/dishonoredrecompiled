@@ -812,8 +812,12 @@ GFxCharacter* GFxButtonCharacterDef::CreateCharacterInstance(GFxASCharacter* par
                                                              GFxResourceId id,
                                                              GFxMovieDefImpl* defImpl)
 {
+    // DISHONORED(port, agent DQ): a GFxButtonCharacter, not a GFxGenericCharacter. A generic character
+    // answers its DEFINITION's point test and a button definition has none, so with a generic instance
+    // the button - which is the hit area of every Dishonored menu entry - could not be found under the
+    // pointer at all.
     (void)defImpl;
-    return new GFxGenericCharacter(this, parent, id, parent ? parent->GetMovieRoot() : 0);
+    return new GFxButtonCharacter(this, parent, id, parent ? parent->GetMovieRoot() : 0);
 }
 
 // ---------------------------------------------------------------------------------------------
