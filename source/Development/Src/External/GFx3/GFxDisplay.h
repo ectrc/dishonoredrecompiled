@@ -111,6 +111,10 @@ extern bool GFxDisplayNoTextShadow;
 // the definition's life, which is what makes the second frame free.
 GFxShapeMesh* GFxDisplayGetShapeMesh(GFxShapeCharacterDef* def);
 void          GFxDisplayReleaseShapeMeshes();
+// DISHONORED(written, agent EA): the cache is keyed on the definition pointer and built once, which
+// is right for a definition a tag loader parsed and wrong for one the AS2 drawing API is still
+// writing into. Dropping the entry is what makes a second lineTo draw the second line.
+void          GFxDisplayInvalidateShapeMesh(GFxShapeCharacterDef* def);
 
 // ---------------------------------------------------------------------------------------------
 // GFxDisplayContext: everything a character needs to draw itself. Retail's carries the state bag, the
@@ -152,6 +156,13 @@ void GFxDisplayCxformConcat(GRenderer::Cxform* out, const GRenderer::Cxform& out
 // shape's twips, so the texture matrix the renderer wants - position to 0..1 - is its inverse scaled by
 // the image size.
 bool GFxDisplayMatrixInvert(GMatrix2D* out, const GMatrix2D& m);
+// DISHONORED(port, agent EA): the character's transform all the way up to the stage, which is what
+// _xmouse has to invert. Retail composes the same product in GFxCharacter::GetWorldMatrix.
+GMatrix2D GFxCharacterWorldMatrix(const class GFxCharacter* ch);
+// DISHONORED(port, agent EA): the AS2 TextField prototype, which is where getTextFormat lives.
+// Retail's is GASTextFieldProto (2013 0xa21120); an EditText character is not a sprite and does not
+// reach MovieClip.prototype, so its methods need a prototype of their own. GFxDrawing.cpp owns it.
+class GASObject* GFxDrawingTextFieldProto();
 GColor GFxDisplayApplyCxform(const GRenderer::Cxform& cx, GColor c);
 
 // The process-wide glyph cache the text fields rasterise into, and its atlas upload. Retail hangs the

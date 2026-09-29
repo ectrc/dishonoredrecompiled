@@ -139,6 +139,27 @@ void UDisGFxMoviePlayerBase::execFormatText( FFrame& Stack, RESULT_DECL )
 	Text.ReleaseManaged();
 }
 
+// The one movie the message box lives in. Retail reaches it through UDisGlobalUIManager's own
+// UDisGFxMoviePlayerGlobal pointer; the bring-up opens that movie under -gfxuimenu (agentDM.md 2.2)
+// and this finds it by the name of its cooked USwfMovie, which is the same movie in both cases.
+static GFxMovieView* DisFindGlobalMovieView()
+{
+	for( TObjectIterator<UGFxMoviePlayer> It; It; ++It )
+	{
+		UGFxMoviePlayer* Player = *It;
+		if( Player->MovieInfo == NULL || Player->MovieInfo->GetName() != TEXT("Global") )
+		{
+			continue;
+		}
+		FGFxMovie* Movie = Player->GetMovie();
+		if( Movie != NULL && Movie->pView.GetPtr() != NULL )
+		{
+			return Movie->pView.GetPtr();
+		}
+	}
+	return NULL;
+}
+
 // DISHONORED(port): 2012 rva 0x808490. The box itself belongs to UDisGlobalUIManager, which owns the one
 // message-box movie every screen shares; what belongs here is the id, because HideMessageBox and
 // AddMessageBoxTimer address the box by it and OnMessageBoxResult matches on it.
@@ -155,10 +176,35 @@ void UDisGFxMoviePlayerBase::execShowMessageBox( FFrame& Stack, RESULT_DECL )
 	Info.m_Buttons[0] = _rButton0;
 	Info.m_Buttons[1] = _rButton1;
 	Info.m_Buttons[2] = _rButton2;
-	// DISHONORED(bringup): m_MsgBoxID = DisGetGlobalUIManager()->ShowMessageBox(Info) (2012 0x8aeee0), and
-	// retail also (re)registers this movie player for the FArkGameEvent the box answers with. Neither
-	// UDisGlobalUIManager::ShowMessageBox nor FArkGameEventDispatcher is declared in this tree.
+	// DISHONORED(port): the body retail reaches through DisGetGlobalUIManager()->ShowMessageBox is
+	// UDisGFxMoviePlayerGlobal::ShowMessageBox, 2013 0x7946b0: four GFxValue strings - the message and
+	// the three button captions, each empty when the array is short - and one
+	// pView->Invoke("ShowMessageBox", ...) on the GLOBAL movie's view, which is the movie that owns
+	// the box's art and its root-level ShowMessageBox function. The id bookkeeping above it is
+	// UDisGlobalUIManager's and that class is not declared in this tree.
 	m_MsgBoxID = 0;
+	GFxMovieView* GlobalView = DisFindGlobalMovieView();
+	if( GlobalView != NULL )
+	{
+		GFxValue Args[4];
+		Args[0].SetStringW( *Info.m_Message );
+		Args[1].SetStringW( *Info.m_Buttons[0] );
+		Args[2].SetStringW( *Info.m_Buttons[1] );
+		Args[3].SetStringW( *Info.m_Buttons[2] );
+		GFxValue Result;
+		GlobalView->Invoke( "ShowMessageBox", &Result, Args, 4 );
+		Result.ReleaseManaged();
+		for( INT Index = 0; Index < 4; Index++ )
+		{
+			Args[Index].ReleaseManaged();
+		}
+		m_MsgBoxID = 1;
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ShowMessageBox('%s'): the global movie is not ")
+			TEXT("open, so the box has nowhere to draw"), *Info.m_Message );
+	}
 }
 
 // DISHONORED(port): 2012 rva 0x7f4310

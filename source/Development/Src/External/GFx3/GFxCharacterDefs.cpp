@@ -842,7 +842,12 @@ GFxCharacter* GFxImageCharacterDef::CreateCharacterInstance(GFxASCharacter* pare
 const char* GFxImageCharacterDef::GetResolveName() const
 {
     static char Name[192];
-    const char* src = ExportName[0] ? ExportName : FileName;
+    // DISHONORED(port, agent EA): the FILE name. It is what FGFxImageLoader::LoadImageW (2013
+    // 0x586020) turns into a package path, and it is the only one of the two that is always a cooked
+    // texture: the exporter renames a movie's own packed images to `<Movie>_I<hex>` and leaves the
+    // artist's name on an image marked `-nopack`, while the export name is the ExportAssets symbol
+    // `attachMovie` and `BitmapData.loadBitmap` look a symbol up by. Measured, both ways round.
+    const char* src = FileName[0] ? FileName : ExportName;
     // the basename
     unsigned int start = 0;
     for (unsigned int i = 0; src[i]; ++i)
@@ -857,15 +862,10 @@ const char* GFxImageCharacterDef::GetResolveName() const
         ++n;
     }
     Name[n] = 0;
-    // the exporter's suffix, then the extension
-    for (unsigned int i = 0; Name[i]; ++i)
-    {
-        if (Name[i] == ' ')
-        {
-            Name[i] = 0;
-            break;
-        }
-    }
+    // DISHONORED(port, agent EA): the extension, and ONLY the extension. The exporter's `-nopack`
+    // suffix is part of the cooked texture's name - the package holds an object literally called
+    // `m_nGame_bkgdMenu -nopack` - and cutting the name at its first space asked for a texture that
+    // does not exist. Listed out of the running game; see the patch script's docstring.
     int dot = -1;
     for (unsigned int i = 0; Name[i]; ++i)
     {

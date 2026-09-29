@@ -513,6 +513,13 @@ bool GFxSprite::PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMas
         return false;
     if ((hitTestMask & HitTest_SkipInvisible) != 0 && !GetVisible())
         return false;
+    // DISHONORED(port, agent EA): the clip's own drawing first, because it is drawn first.
+    if (((GFxSprite*)this)->HasDrawing()
+        && ((GFxSprite*)this)->GetDrawing()->PointTestLocal(
+               pt, (hitTestMask & HitTest_TestShape) != 0, this))
+    {
+        return true;
+    }
     GFxDisplayList& list = ((GFxSprite*)this)->GetDisplayList();
     const unsigned int n = list.GetCount();
     if (n == 0)

@@ -16,6 +16,7 @@
 // DISHONORED(port): see GFxAS2.h.
 #include "GFxPlayer.h"
 #include "GFxCharacterDefs.h"
+#include "GFxDisplay.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -486,6 +487,36 @@ GRect<float> GFxSprite::GetBoundsTwips(const GMatrix2D& m) const
 {
     GRect<float> out(0.f, 0.f, 0.f, 0.f);
     bool bAny = false;
+    // DISHONORED(port, agent EA): the clip's own drawing counts. Retail's bound walk starts from
+    // GFxDrawingContext::ComputeBound (2013 0xa83cd0) for exactly this reason.
+    if (pDrawing != 0)
+    {
+        const GRect<int> d = ((GFxSprite*)this)->GetDrawing()->ComputeBound();
+        if (d.Right > d.Left && d.Bottom > d.Top)
+        {
+            GPoint<float> corners[4];
+            const float bx[2] = { (float)d.Left, (float)d.Right };
+            const float by[2] = { (float)d.Top, (float)d.Bottom };
+            for (int cx = 0; cx < 2; ++cx)
+            {
+                for (int cy = 0; cy < 2; ++cy)
+                {
+                    corners[cx * 2 + cy].x = m.M_[0][0] * bx[cx] + m.M_[0][1] * by[cy] + m.M_[0][2];
+                    corners[cx * 2 + cy].y = m.M_[1][0] * bx[cx] + m.M_[1][1] * by[cy] + m.M_[1][2];
+                }
+            }
+            out.Left = out.Right = corners[0].x;
+            out.Top = out.Bottom = corners[0].y;
+            for (int c = 1; c < 4; ++c)
+            {
+                if (corners[c].x < out.Left)   out.Left = corners[c].x;
+                if (corners[c].x > out.Right)  out.Right = corners[c].x;
+                if (corners[c].y < out.Top)    out.Top = corners[c].y;
+                if (corners[c].y > out.Bottom) out.Bottom = corners[c].y;
+            }
+            bAny = true;
+        }
+    }
     for (unsigned int i = 0; i < DisplayList.GetCount(); ++i)
     {
         GFxCharacter* ch = DisplayList.GetAt(i);
@@ -755,6 +786,13 @@ bool GFxASCharacter::GetMemberRaw(GASStringContext* sc, const GASString& name, G
             else if (strcmp(n, "_rotation") == 0) propIndex = 10;
             else if (strcmp(n, "_xscale") == 0)   propIndex = 2;
             else if (strcmp(n, "_yscale") == 0)   propIndex = 3;
+            // DISHONORED(port, agent EA): `clip._xmouse` in source compiles to a GetMember, not to
+            // ActionGetProperty, so the two names have to be answered here as well.
+            else if (strcmp(n, "_xmouse") == 0)   propIndex = 20;
+            else if (strcmp(n, "_ymouse") == 0)   propIndex = 21;
+            else if (strcmp(n, "_currentframe") == 0) propIndex = 4;
+            else if (strcmp(n, "_totalframes") == 0)  propIndex = 5;
+            else if (strcmp(n, "_framesloaded") == 0) propIndex = 12;
             if (propIndex >= 0)
             {
                 GFxAS2GetDisplayProperty(const_cast<GFxASCharacter*>(this), propIndex, val);
@@ -961,6 +999,36 @@ void GFxAS2GetDisplayProperty(GFxASCharacter* ch, int index, GASValue* out)
     case 11: out->SetString(ch->GetTargetPath(ch->GetMovieRoot()->GetASContext()->GetSC())); break;
     case 12: out->SetInt(sp ? (int)sp->GetFrameCount() : 0); break;
     case 13: ch->GetStandardMember(GASbuiltin__name, out); break;
+    case 20:
+    case 21:
+    {
+        // DISHONORED(port, agent EA): _xmouse / _ymouse, the pointer in THIS clip's own space. The
+        // movie root keeps the pointer in stage pixels (GFxMouseState::GetX/GetY, filled by
+        // GFxMovieRoot::ProcessMouse 2013 0xa05330); retail's GFxASCharacter::GetStandardMember
+        // arms transform it by the inverse of the character's world matrix and snap the result to a
+        // twip, which is why a clip under a scaled parent reads its own local pixels.
+        double result = 0.0;
+        GFxMovieRoot* root = ch->GetMovieRoot();
+        if (root)
+        {
+            float mx = 0.f, my = 0.f;
+            unsigned int buttons = 0;
+            root->GetMouseState(0, &mx, &my, &buttons);
+            GMatrix2D world = GFxCharacterWorldMatrix(ch);
+            GMatrix2D inverse;
+            if (GFxDisplayMatrixInvert(&inverse, world))
+            {
+                const float sx = mx * GFxPixelsToTwips;
+                const float sy = my * GFxPixelsToTwips;
+                const float lx = inverse.M_[0][0] * sx + inverse.M_[0][1] * sy + inverse.M_[0][2];
+                const float ly = inverse.M_[1][0] * sx + inverse.M_[1][1] * sy + inverse.M_[1][2];
+                result = (double)((index == 20 ? (float)(int)lx : (float)(int)ly)
+                                  * GFxTwipsToPixels);
+            }
+        }
+        out->SetNumber(result);
+        break;
+    }
     default: out->SetUndefined(); break;
     }
 }
@@ -989,7 +1057,7 @@ void GFxAS2SetDisplayProperty(GFxASCharacter* ch, int index, const GASValue& v, 
 GFxSprite::GFxSprite(GFxTimelineDef* def, GFxCharacterDef* charDef, GFxMovieDefImpl* defImpl,
                      GFxASCharacter* parent, GFxResourceId id, GFxMovieRoot* root)
     : GFxASCharacter(parent, id, root), pTimelineDef(def), pCharDef(charDef), pDefImpl(defImpl),
-      CurrentFrame(0), InitActionsExecuted(0), InitActionsSize(0), bPlaying(true),
+      CurrentFrame(0), InitActionsExecuted(0), InitActionsSize(0), pDrawing(0), bPlaying(true),
       bHasLooped(false), bFrame0Executed(false)
 {
     unsigned int frames = def ? def->GetFrameCount() : 1;
@@ -1005,6 +1073,14 @@ GFxSprite::GFxSprite(GFxTimelineDef* def, GFxCharacterDef* charDef, GFxMovieDefI
 GFxSprite::~GFxSprite()
 {
     free(InitActionsExecuted);
+    delete pDrawing;
+}
+
+GFxDrawingContext* GFxSprite::GetDrawing()
+{
+    if (pDrawing == 0)
+        pDrawing = new GFxDrawingContext();
+    return pDrawing;
 }
 
 void GFxSprite::ExecuteInitActionFrameTags(unsigned int frame)         // 2012 0x9f4640

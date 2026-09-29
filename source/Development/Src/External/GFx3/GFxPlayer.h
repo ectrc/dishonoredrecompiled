@@ -862,6 +862,54 @@ public:
 // GFxSprite: a movie clip. The timeline state is the four members every decompile touches -
 // CurrentFrame (sprite+216 in retail), the play state, the per-frame init-action flags and the
 // display list (sprite+196).
+// ---------------------------------------------------------------------------------------------
+// GFxDrawingContext: what MovieClip's drawing API writes into, one per clip that ever draws.
+//
+// DISHONORED(port, agent EA): retail's (ctor 2013 0xa83950) packs the contour into a GFxPathPacker
+// over a GFxShapeWithStyles; this builds the same GFxShapeCharacterDef the tag loader builds from a
+// DefineShape record, so the existing tessellator, fill styles, mask pass, Display and
+// DefPointTestLocal draw and hit-test it unchanged. GFxDrawing.cpp states the deviation in full.
+class GFxDrawingContext
+{
+public:
+    GFxDrawingContext();                                               // 2013 0xa83950
+    ~GFxDrawingContext();
+
+    void Clear();                                                      // 2013 0xa836c0
+    void MoveTo(float x, float y);                                     // 2013 0xa83620
+    void LineTo(float x, float y);                                     // 2013 0xa83650
+    void CurveTo(float cx, float cy, float ax, float ay);              // 2013 0xa83680
+    void SetFill(GColor c);                                            // 2013 0xa83b80
+    void SetBitmapFill(class GFxImageCharacterDef* image, const GMatrix2D& m,
+                       bool repeat, bool smooth);                      // 2013 0xa83be0
+    void SetNoFill();
+    void SetLineStyle(float width, GColor c);                          // 2013 0xa839c0
+    void SetNoLine();                                                  // 2013 0xa83600
+    bool AcquirePath(bool newShape);                                   // 2013 0xa83c40
+    bool IsEmpty() const;
+    GRect<int> ComputeBound();                                         // 2013 0xa83cd0
+    void Display(class GFxDisplayContext& ctx, GFxCharacter* ch);      // 2013 0xa83cf0
+    bool PointTestLocal(const GPoint<float>& pt, bool testShape,
+                        const GFxCharacter* inst);                     // 2013 0xa83e10
+
+private:
+    void Reset();
+    void OpenPath();
+
+    class GFxShapeCharacterDef* pShape;
+    class GFxShapePathCD*       pOpenPath;
+    unsigned int Fill0, Fill1, Line;
+    int  StartX, StartY, PenX, PenY;
+    bool bNewShape;
+
+    GFxDrawingContext(const GFxDrawingContext&);
+    GFxDrawingContext& operator=(const GFxDrawingContext&);
+};
+
+// The AS2 half: MovieClip's drawing methods, flash.display.BitmapData with loadBitmap,
+// flash.geom.Matrix, TextField.getTextFormat and TextFormat.getTextExtent. GFxDrawing.cpp.
+void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movieClipProto);
+
 class GFxSprite : public GFxASCharacter
 {
 public:
@@ -915,6 +963,10 @@ public:
     GFxDisplayList&  GetDisplayList() { return DisplayList; }
     GFxMovieDefImpl* GetDefImpl() const { return pDefImpl; }
 
+    /** the clip's own drawing, created on first use as retail's is (the sprite's +456 word) */
+    bool               HasDrawing() const { return pDrawing != 0; }
+    GFxDrawingContext* GetDrawing();
+
     virtual bool GetStandardMember(GASBuiltinString which, GASValue* out) const;
     virtual bool SetStandardMember(GASBuiltinString which, const GASValue& v);
     virtual bool GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val);
@@ -951,6 +1003,7 @@ private:
     unsigned int   CurrentFrame;
     unsigned char* InitActionsExecuted;
     unsigned int   InitActionsSize;
+    GFxDrawingContext* pDrawing;
     bool           bPlaying;
     bool           bHasLooped;
     bool           bFrame0Executed;

@@ -1216,4 +1216,10 @@ void GASGlobalContext::InitStandardLibrary()
     // with - the Dishonored menus register with Key.addListener and read Key.getCode() from their
     // own onKeyDown, which is how a selection moves. GFxInput.cpp.
     GFxInputInstall(this, pGlobal);
+
+    // DISHONORED(port, agent EA): the MovieClip drawing API, flash.display.BitmapData's loadBitmap,
+    // flash.geom.Matrix, TextField.getTextFormat and TextFormat.getTextExtent - the 70 unresolved
+    // calls one run of the New Game flow makes. GFxDrawing.cpp. It runs after the `flash` object
+    // above exists, because BitmapData and Matrix are installed into it.
+    GFxDrawingInstall(this, pGlobal, Prototypes[Proto_MovieClip]);
 }

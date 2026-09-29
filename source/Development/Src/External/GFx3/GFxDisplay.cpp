@@ -69,6 +69,19 @@ bool GFxDisplayMatrixInvert(GMatrix2D* out, const GMatrix2D& m)
     return true;
 }
 
+GMatrix2D GFxCharacterWorldMatrix(const GFxCharacter* ch)
+{
+    GMatrix2D world;
+    world.SetIdentity();
+    for (const GFxCharacter* p = ch; p != 0; p = p->GetParent())
+    {
+        GMatrix2D composed;
+        GFxDisplayMatrixAppend(&composed, p->GetMatrix(), world);
+        world = composed;
+    }
+    return world;
+}
+
 void GFxDisplayCxformConcat(GRenderer::Cxform* out, const GRenderer::Cxform& outer,
                             const GRenderer::Cxform& inner)
 {
@@ -597,6 +610,20 @@ GFxShapeMesh* GFxDisplayGetShapeMesh(GFxShapeCharacterDef* def)
     return mesh;
 }
 
+void GFxDisplayInvalidateShapeMesh(GFxShapeCharacterDef* def)
+{
+    for (unsigned int i = 0; i < GMeshCacheCount; ++i)
+    {
+        if (GMeshCache[i].pDef == def)
+        {
+            delete GMeshCache[i].pMesh;
+            GMeshCache[i] = GMeshCache[GMeshCacheCount - 1];
+            --GMeshCacheCount;
+            return;
+        }
+    }
+}
+
 void GFxDisplayReleaseShapeMeshes()
 {
     for (unsigned int i = 0; i < GMeshCacheCount; ++i)
@@ -825,6 +852,11 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     GFxMovieDataDef* savedDataDef = ctx.pDataDef;
     if (GetOwnDataDef() != 0)
         ctx.pDataDef = GetOwnDataDef();
+    // DISHONORED(port, agent EA): 2013 GFxSprite::Display draws the clip's own drawing context - what
+    // AS2's moveTo/lineTo/beginFill wrote - BELOW its display list, which is Flash's rule: a shape
+    // drawn from script sits under every child the timeline placed.
+    if (pDrawing != 0)
+        pDrawing->Display(ctx, this);
     DisplayList.Display(ctx);
     ctx.pDataDef = savedDataDef;
     ctx.PostDisplay(savedMatrix, savedCx);
@@ -877,8 +909,15 @@ static bool GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill
     if (fill->IsImage())
     {
         GTexture* tex = 0;
-        GFxCharacterDef* def = (dataDef && !GFxDisplayNoImages)
-                                   ? dataDef->GetCharacterDefById(fill->ImageId) : 0;
+        // DISHONORED(written, agent EA): a run-time fill from AS2's beginBitmapFill carries the
+        // definition itself (GFxFillStyle::pDirectImage), because its BitmapData was resolved out of
+        // an imported movie's export table and has no id in this dictionary.
+        GFxCharacterDef* def = GFxDisplayNoImages ? 0 : (GFxCharacterDef*)fill->pDirectImage;
+        if (def == 0)
+        {
+            def = (dataDef && !GFxDisplayNoImages)
+                      ? dataDef->GetCharacterDefById(fill->ImageId) : 0;
+        }
         if (def && def->GetResourceTypeCode() == GFxResource::RT_Image)
             tex = ((GFxImageCharacterDef*)def)->GetTexture(ctx.pRenderer, dataDef);
         if (tex)
@@ -957,6 +996,29 @@ static bool GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill
         // bitmap id (0xFFFF) is 23 of the menu's 61 bitmap fills and it is what the vignette is made
         // of; painting those with the style's flat colour laid seven opaque rectangles over the whole
         // interface. Retail has no such case, because a fill it cannot resolve fails the bind.
+        // DISHONORED(bringup, agent EA): which picture. A counter says a fill drew nothing; a name
+        // says whether the image is absent from the cook, unresolvable through the loader, or a
+        // sub-image of an atlas whose base failed. One line per distinct id.
+        {
+            static unsigned int Reported[32];
+            static unsigned int ReportedCount = 0;
+            bool seen = false;
+            for (unsigned int i = 0; i < ReportedCount && !seen; ++i)
+                seen = Reported[i] == fill->ImageId;
+            if (!seen && ReportedCount < 32)
+            {
+                Reported[ReportedCount++] = fill->ImageId;
+                GFxLogf("DISHONORED(bringup): GFx fill NOT TEXTURED: image id %u '%s' "
+                        "(export '%s' file '%s') type 0x%x def %s bounds [%d %d %d %d]",
+                        fill->ImageId,
+                        def ? ((GFxImageCharacterDef*)def)->GetResolveName() : "<no def>",
+                        def ? ((GFxImageCharacterDef*)def)->ExportName : "",
+                        def ? ((GFxImageCharacterDef*)def)->FileName : "",
+                        (unsigned int)fill->Type, def ? def->GetDefTypeName() : "<none>",
+                        bounds ? bounds->Left : 0, bounds ? bounds->Top : 0,
+                        bounds ? bounds->Right : 0, bounds ? bounds->Bottom : 0);
+            }
+        }
         r->FillStyleDisable();
         ++GFxDisplayUntexturedFills;
         return false;

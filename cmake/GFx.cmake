@@ -88,7 +88,12 @@ if(DISHONORED_WITH_GFX3)
     # display-list traversal, the shape tessellation and the glyph submission: the loop agent BC left
     # empty, agent CB stopped one call short of and agent CC had nothing to be handed.
     "${DISHONORED_GFX3_DIR}/GFxLoaderImpl.cpp"
-    "${DISHONORED_GFX3_DIR}/GFxDisplay.cpp")
+    "${DISHONORED_GFX3_DIR}/GFxDisplay.cpp"
+    # The ActionScript built-in surface the New Game flow calls, package EA
+    # (resources/docs/agents/agentEA.md): MovieClip's drawing API on a run-time GFxShapeCharacterDef,
+    # flash.display.BitmapData with loadBitmap, flash.geom.Matrix, TextField.getTextFormat and
+    # TextFormat.getTextExtent. No engine header, as the rest of this directory has none.
+    "${DISHONORED_GFX3_DIR}/GFxDrawing.cpp")
   target_include_directories(gfx3 PUBLIC "${DISHONORED_GFX3_DIR}")
   target_compile_definitions(gfx3 PRIVATE _CRT_SECURE_NO_WARNINGS)
   # UE3's 4-byte packing, the same option every module gets. The GFx headers push pack(8) of their

@@ -633,6 +633,31 @@ GImageInfoBase* FGFxImageLoader::LoadImageW( const char* Url )
 		Info->SetEngineTexture( RenderTarget );
 		return Info;
 	}
+	// DISHONORED(bringup, agent EA): an image that resolves to no texture is the whole of "the bar
+	// has no background", and the name it asked for says nothing about what the package holds. List
+	// the textures of the package it looked in, once per run.
+	{
+		static UBOOL bListed = FALSE;
+		if( !bListed )
+		{
+			bListed = TRUE;
+			const INT Dot = Filename.InStr( TEXT(".") );
+			const FString PackageName = Dot > 0 ? Filename.Left( Dot ) : Filename;
+			debugf( TEXT("DISHONORED(bringup): GFx image '%s' resolved to no texture; the textures of ")
+				TEXT("package '%s' are:"), *Filename, *PackageName );
+			INT Listed = 0;
+			for( TObjectIterator<UTexture> It; It && Listed < 200; ++It )
+			{
+				UObject* Outermost = It->GetOutermost();
+				if( Outermost != NULL && Outermost->GetName() == PackageName )
+				{
+					++Listed;
+					debugf( TEXT("DISHONORED(bringup):   %s"), *It->GetPathName() );
+				}
+			}
+			debugf( TEXT("DISHONORED(bringup): %d texture(s) in '%s'"), Listed, *PackageName );
+		}
+	}
 	return NULL;
 }
 
@@ -1988,6 +2013,79 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 				GScreenShotRequest = TRUE;
 				debugf( TEXT("DISHONORED(bringup): GFx UI: screenshot %s requested on drawn frame %d"),
 					*GScreenShotName, DrawnFrames );
+			}
+		}
+
+		// DISHONORED(bringup, agent EA): -gfxuishotat=<sec>[,<sec>...]. A drawn-frame index is not the
+		// same instant twice: the interface draws 11 batches on the start screen and 62 on the New Game
+		// screen, and the machine's load moves the startup by tens of seconds (agentDM.md 7). Seconds
+		// since the FIRST drawn frame is the clock the driver's own schedule uses, so the two agree.
+		static TArray<FLOAT> ShotTimes;
+		static TArray<FLOAT> DumpTimes;
+		static DOUBLE FirstDrawnSeconds = 0.0;
+		static UBOOL bTimesParsed = FALSE;
+		if( !bTimesParsed )
+		{
+			bTimesParsed = TRUE;
+			FString Value;
+			if( Parse( appCmdLine(), TEXT("gfxuishotat="), Value, FALSE ) )
+			{
+				while( Value.Len() )
+				{
+					const INT Comma = Value.InStr( TEXT(",") );
+					ShotTimes.AddItem( appAtof( *( Comma >= 0 ? Value.Left( Comma ) : Value ) ) );
+					Value = Comma >= 0 ? Value.Mid( Comma + 1 ) : FString();
+				}
+			}
+			if( Parse( appCmdLine(), TEXT("gfxuidumpdlat="), Value, FALSE ) )
+			{
+				while( Value.Len() )
+				{
+					const INT Comma = Value.InStr( TEXT(",") );
+					DumpTimes.AddItem( appAtof( *( Comma >= 0 ? Value.Left( Comma ) : Value ) ) );
+					Value = Comma >= 0 ? Value.Mid( Comma + 1 ) : FString();
+				}
+			}
+		}
+		if( ShotTimes.Num() || DumpTimes.Num() )
+		{
+			if( FirstDrawnSeconds == 0.0 )
+			{
+				FirstDrawnSeconds = appSeconds();
+			}
+			const FLOAT Elapsed = (FLOAT)( appSeconds() - FirstDrawnSeconds );
+			for( INT Index = 0; Index < ShotTimes.Num(); Index++ )
+			{
+				if( ShotTimes( Index ) >= 0.0f && Elapsed >= ShotTimes( Index ) )
+				{
+					GScreenShotName = FString::Printf( TEXT("%s_t%03d"), *ShotName,
+						appRound( ShotTimes( Index ) ) );
+					GScreenShotRequest = TRUE;
+					debugf( TEXT("DISHONORED(bringup): GFx UI: screenshot %s requested at %.2f s ")
+						TEXT("(drawn frame %d)"), *GScreenShotName, Elapsed, DrawnFrames );
+					ShotTimes( Index ) = -1.0f;
+				}
+			}
+			for( INT Index = 0; Index < DumpTimes.Num(); Index++ )
+			{
+				if( DumpTimes( Index ) >= 0.0f && Elapsed >= DumpTimes( Index ) )
+				{
+					DumpTimes( Index ) = -1.0f;
+					for( INT Movie = 0; Movie < DPGOpenMovies[DPG].Num(); Movie++ )
+					{
+						GFxMovieRoot* Root = (GFxMovieRoot*)DPGOpenMovies[DPG]( Movie )->pView.GetPtr();
+						if( Root == NULL || Root->GetLevel0() == NULL )
+						{
+							continue;
+						}
+						debugf( TEXT("DISHONORED(bringup): display tree of %s at %.2f s ")
+							TEXT("(drawn frame %d)"),
+							*DPGOpenMovies[DPG]( Movie )->FileName, Elapsed, DrawnFrames );
+						GMatrix2D Identity;
+						Identity.SetIdentity();
+						FGFxDumpCharacter( Root->GetLevel0(), Identity, 0 );
+					}
+				}
 			}
 		}
 	}

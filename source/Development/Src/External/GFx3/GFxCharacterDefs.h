@@ -104,7 +104,7 @@ public:
 
     GFxFillStyle()
         : Type(GFxFill_Solid), Flags(0), GradientCount(0), FocalPoint(0.f),
-          ImageId(GFxResourceId::InvalidId) {}
+          ImageId(GFxResourceId::InvalidId), pDirectImage(0) {}
 
     void Read(GFxStream* s, unsigned int tagType);                     // 2012 0xa90290
 
@@ -119,6 +119,12 @@ public:
     float             FocalPoint;            // type 0x13 only
     unsigned int      ImageId;               // the 0x40 group
     GMatrix2D         Matrix;                // gradient and image fills
+    // DISHONORED(written, agent EA): the image a RUN-TIME fill names. A SWF fill names its image by
+    // dictionary id and the display walk resolves it against the movie the shape was parsed from;
+    // an AS2 beginBitmapFill is given a BitmapData that loadBitmap resolved out of an imported
+    // movie's export table, so there is no id in this dictionary to name it by. Null for every fill
+    // a tag builds, which is all of them but the drawing API's.
+    class GFxImageCharacterDef* pDirectImage;
 };
 
 class GFxLineStyle
@@ -209,8 +215,12 @@ public:
     bool             bTwentyTimesScale;      // DefineFont3: the glyph EM square is 1024 * 20 units
     bool             bCorrupt;
 
-private:
+    // DISHONORED(written, agent EA): public, because the AS2 drawing API appends contours to this
+    // same record at run time (GFxDrawing.cpp). It takes ownership and drops an empty contour, which
+    // is what the record walk already relied on.
     void AddPath(GFxShapePathCD* p);
+
+private:
     GFxShapeRecord(const GFxShapeRecord&);
     GFxShapeRecord& operator=(const GFxShapeRecord&);
 };

@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include "GFxAS2Runtime.h"
+#include "GFxDisplay.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -560,6 +561,18 @@ bool GFxEditTextCharacter::GetMember(GASEnvironment* env, const GASString& name,
         if (pMovieRoot)
             val->SetString(pMovieRoot->CreateString(s));
         return true;
+    }
+    // DISHONORED(port, agent EA): the AS2 TextField prototype - getTextFormat and whatever else
+    // this cook asks a field for. Retail resolves it through GASTextFieldObject's own prototype
+    // chain (GASTextFieldProto 2013 0xa21120); the field has no AS2 object of its own here, so the
+    // prototype is consulted directly, in the same place the chain would have been.
+    {
+        GASObject* proto = GFxDrawingTextFieldProto();
+        if (proto != 0 && pMovieRoot != 0
+            && proto->GetMemberRaw(pMovieRoot->GetASContext()->GetSC(), name, val))
+        {
+            return true;
+        }
     }
     return GFxASCharacter::GetMember(env, name, val);
 }

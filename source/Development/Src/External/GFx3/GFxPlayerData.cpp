@@ -956,6 +956,19 @@ void GASImportInitActionsTag::Execute(GFxSprite* sprite)
         source->ExecuteInitActionsOn(sprite);
 }
 
+static bool GFxExportNameEqualNoCase(const char* a, const char* b)
+{
+    for (; *a && *b; ++a, ++b)
+    {
+        char ca = *a, cb = *b;
+        if (ca >= 'A' && ca <= 'Z') ca = (char)(ca - 'A' + 'a');
+        if (cb >= 'A' && cb <= 'Z') cb = (char)(cb - 'A' + 'a');
+        if (ca != cb)
+            return false;
+    }
+    return *a == 0 && *b == 0;
+}
+
 int GFxMovieDataDef::GetExportedId(const char* name) const
 {
     for (unsigned int i = 0; i < ExportSize; ++i)
@@ -965,6 +978,18 @@ int GFxMovieDataDef::GetExportedId(const char* name) const
     // attachMovie is given.
     for (unsigned int i = 0; i < ImportSize; ++i)
         if (Imports[i].bBound && strcmp(Imports[i].Symbol, name) == 0)
+            return (int)Imports[i].Id;
+    // DISHONORED(port, agent EA): then without the capitalisation. MEASURED: _common.EmbedImg asks
+    // flash.display.BitmapData for 'X360_DPad_Up -nopack' and the shared library exports
+    // 'X360_Dpad_Up -nopack' - the content disagrees with itself about one letter, in its own asset.
+    // GFx resolves a symbol case-insensitively for a movie authored below SWF 7, which every movie in
+    // this cook is; GASStringNode carries a pre-resolved lower-case node for exactly that rule. The
+    // exact match above is still tried first, so nothing that resolves today changes.
+    for (unsigned int i = 0; i < ExportSize; ++i)
+        if (GFxExportNameEqualNoCase(Exports[i].Name, name))
+            return (int)Exports[i].Id;
+    for (unsigned int i = 0; i < ImportSize; ++i)
+        if (Imports[i].bBound && GFxExportNameEqualNoCase(Imports[i].Symbol, name))
             return (int)Imports[i].Id;
     return -1;
 }
