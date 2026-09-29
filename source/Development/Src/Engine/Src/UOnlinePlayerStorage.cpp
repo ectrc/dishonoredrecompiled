@@ -470,7 +470,13 @@ UBOOL UOnlinePlayerStorage::GetProfileSettingValueId(INT ProfileSettingId,INT& V
 				if (Setting.ProfileSetting.PropertyId == ProfileSettingId)
 				{
 					// If this is ID mapped, then read the ID
-					if (MetaData.MappingType == PVMT_IdMapped)
+					// DISHONORED(port): agent EK. Retail's body (2013 rva 0x4f36b0) accepts mapping type
+					// 3 OR 4 here, not 3 alone: `if ( v12 != 3 && v12 != 4 ) return 0;`. Dishonored's
+					// ArkProfileSettings gives every boolean option a mapping type of 4, one past stock
+					// UE3's PVMT_MAX, and all eleven of the HUD's show flags are such options - so with
+					// the stock test they are unreadable and the whole HUD settings block stays zero.
+					// Measured: build/agentEK/r3_log.txt, profile ids 88..98, `type 4 values 2 raw 1`.
+					if (MetaData.MappingType == PVMT_IdMapped || MetaData.MappingType == PVMT_MAX)
 					{
 						Setting.ProfileSetting.Data.GetData(ValueId);
 

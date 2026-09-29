@@ -28,6 +28,7 @@
 //   0x655f20  public: static class UClass * __cdecl ADishonoredHUD::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "dishonoredutilities.h"
 
 // DISHONORED(written): 2013 rva 0x605f10 (2012 0x64b610). The first call is GEngine->RenderDebugMenu(Canvas) (UEngine vtable +388),
 // which UDishonoredEngine leaves at the empty base body (2013 rva 0x1cb0c0): the debug menu is compiled out.
@@ -122,3 +123,157 @@ void ADishonoredHUD::execShowDebugInfo_Native( FFrame& Stack, RESULT_DECL )
 }
 
 // ---- end of trivial natives ----
+
+/*-----------------------------------------------------------------------------
+	Agent EK (PHASE11 EK): the HUD actor's own half of the in-game interface.
+
+	ADishonoredHUD owns the six show-flag masks every HUD element is gated on and the
+	player-info display timer that hides the health and mana gauges again when the HUD is in
+	its contextual mode. UDisGFxMoviePlayerHUD reads both every frame
+	(Tick_PlayerStatus / PreAdvance), so nothing in the movie can appear until these run.
+-----------------------------------------------------------------------------*/
+
+/** the show-flag word every mask level starts at. PostBeginPlay writes it into all six. */
+#define DIS_HUD_ELEMENTS_ALL 0x7FEF
+/** what RequestPlayerInfoDisplay(TRUE) and ADishonoredHUD::Tick raise on mask level 3 */
+#define DIS_HUD_ELEMENTS_PLAYERINFO 0x7FAF
+/** what UpdatePlayerInfoDisplay leaves on mask level 3 once the timer has run out */
+#define DIS_HUD_ELEMENTS_NOPLAYERINFO 0x7FA1
+
+// DISHONORED(port): 2013 rva 0x5fa6b0 (2012 0x6402f0). Every mask level starts with every element on
+// and the player-info timer starts at its full duration.
+void ADishonoredHUD::PostBeginPlay()
+{
+	Super::PostBeginPlay();
+	for( INT MaskLevel = 0; MaskLevel < ARRAY_COUNT(m_ShowFlags); MaskLevel++ )
+	{
+		m_ShowFlags[MaskLevel] |= DIS_HUD_ELEMENTS_ALL;
+	}
+	m_fPlayerInfoDisplayTimer = m_fPlayerInfoDisplayDuration;
+}
+
+// DISHONORED(port): 2013 rva 0x5ea0a0 (2012 0x62fce0)
+void ADishonoredHUD::EnableHUDElements( BYTE _MaskLevel, INT _Elements )
+{
+	m_ShowFlags[_MaskLevel] |= _Elements;
+}
+
+// DISHONORED(port): 2013 rva 0x5ea0c0 (2012 0x62fd00)
+void ADishonoredHUD::DisableHUDElements( BYTE _MaskLevel, INT _Elements )
+{
+	m_ShowFlags[_MaskLevel] &= ~_Elements;
+}
+
+// DISHONORED(port): 2013 rva 0x5ea0e0 (2012 0x62fd20)
+UBOOL ADishonoredHUD::IsHUDElementEnabled( BYTE _MaskLevel, INT _Elements ) const
+{
+	return ( m_ShowFlags[_MaskLevel] & _Elements ) != 0;
+}
+
+// DISHONORED(port): 2013 rva 0x5ea100 (2012 0x62fd40): on at every one of the six levels
+UBOOL ADishonoredHUD::IsHUDElementEnabledByAll( INT _Elements ) const
+{
+	for( INT MaskLevel = 0; MaskLevel < ARRAY_COUNT(m_ShowFlags); MaskLevel++ )
+	{
+		if( ( m_ShowFlags[MaskLevel] & _Elements ) == 0 )
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x5ea130 (2012 0x62fd70): on at any one of the six levels
+UBOOL ADishonoredHUD::IsHUDElementEnabledOnce( INT _Elements ) const
+{
+	for( INT MaskLevel = 0; MaskLevel < ARRAY_COUNT(m_ShowFlags); MaskLevel++ )
+	{
+		if( ( m_ShowFlags[MaskLevel] & _Elements ) != 0 )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x5ea160 (2012 0x62fda0). Asking for the player info back raises mask
+// level 3 only when the timer had already expired, and always rearms the timer; asking for it to go
+// leaves the timer just above zero so the next UpdatePlayerInfoDisplay takes it down.
+void ADishonoredHUD::RequestPlayerInfoDisplay( UBOOL _bShow )
+{
+	if( _bShow )
+	{
+		if( m_fPlayerInfoDisplayTimer <= 0.f )
+		{
+			m_ShowFlags[3] |= DIS_HUD_ELEMENTS_PLAYERINFO;
+		}
+		m_fPlayerInfoDisplayTimer = m_fPlayerInfoDisplayDuration;
+	}
+	else if( m_fPlayerInfoDisplayTimer > 0.0001f )
+	{
+		m_fPlayerInfoDisplayTimer = 0.0001f;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x5ea1b0 (2012 0x62fdf0). Retail runs the countdown only when the timer
+// is still positive AND some mask level still has element 0x10 on, or when _bHide forces it.
+void ADishonoredHUD::UpdatePlayerInfoDisplay( FLOAT _fDeltaTime, UBOOL _bHide )
+{
+	UBOOL bRun = _bHide;
+	if( m_fPlayerInfoDisplayTimer > 0.f )
+	{
+		for( INT MaskLevel = 0; MaskLevel < ARRAY_COUNT(m_ShowFlags); MaskLevel++ )
+		{
+			if( ( m_ShowFlags[MaskLevel] & 0x10 ) != 0 )
+			{
+				bRun = TRUE;
+				break;
+			}
+		}
+	}
+	if( !bRun )
+	{
+		return;
+	}
+	m_fPlayerInfoDisplayTimer -= _fDeltaTime;
+	if( m_fPlayerInfoDisplayTimer <= 0.f || _bHide )
+	{
+		m_ShowFlags[3] = ( m_ShowFlags[3] & 0xFFFF8050 ) | DIS_HUD_ELEMENTS_NOPLAYERINFO;
+		m_fPlayerInfoDisplayTimer = 0.f;
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x601e70 (2012 0x6487e0). The one line that decides whether the player
+// info is on screen at all: with the HUD set to always-on, or while the power wheel is up, mask
+// level 3 is raised and the timer rearmed; otherwise the timer runs down and takes it away.
+UBOOL ADishonoredHUD::Tick( FLOAT DeltaSeconds, enum ELevelTick TickType )
+{
+	const UBOOL bResult = Super::Tick( DeltaSeconds, TickType );
+
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	UDisGFxMoviePlayerHUD* HUDMovie = UIManager ? UIManager->m_pHUD : NULL;
+	UDisGFxMoviePlayerPowerWheel* PowerWheel = UIManager ? UIManager->m_pPowerWheel : NULL;
+	const UBOOL bHUDNotOff = HUDMovie != NULL && HUDMovie->m_Settings.m_HUDVisibility != 0;
+	// DISHONORED(bringup): UDisGFxMoviePlayerPowerWheel::IsActive (2013 0x7b9ee0) is
+	// `m_bWheelIsOpen && (Mask & m_Mode)`; the power wheel movie is not opened in this build, so
+	// both fields are zero and the second half of retail's test is inert.
+	const UBOOL bPowerWheelActive = PowerWheel != NULL && PowerWheel->m_bWheelIsOpen
+		&& ( ( ( bHUDNotOff ? 2 : 0 ) | 1 ) & PowerWheel->m_Mode ) != 0;
+	if( ( HUDMovie != NULL && HUDMovie->ShouldAlwaysShowPlayerInfo() ) || bPowerWheelActive )
+	{
+		if( m_fPlayerInfoDisplayTimer <= 0.f )
+		{
+			m_ShowFlags[3] |= DIS_HUD_ELEMENTS_PLAYERINFO;
+		}
+		m_fPlayerInfoDisplayTimer = m_fPlayerInfoDisplayDuration;
+	}
+	else
+	{
+		UpdatePlayerInfoDisplay( DeltaSeconds, !bHUDNotOff );
+	}
+
+	// DISHONORED(bringup): retail then runs TickHUD_Powers (2013 0x5fd880), the ramp that drives
+	// m_pCachedPostMIC's intensity parameter while a power is charging. It is the power
+	// post-process's own feed, not the interface's, and package DO owns that path.
+	return bResult;
+}

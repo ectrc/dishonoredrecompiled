@@ -388,6 +388,9 @@ void DisMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
 
 /** the two bodies of disgfxmovieplayerbase.cpp this unit's seam installs */
 void DisGFxMoviePlayerInitTexts( UDisGFxMoviePlayerBase* Player );
+// agent EK (PHASE11 EK): the HUD's two seam bodies, disgfxmovieplayerhud.cpp
+void DisGFxMoviePlayerHUDPostStart( UDisGFxMoviePlayerHUD* HUD );
+void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime );
 UBOOL DisGFxMoviePlayerFilterButtonInput( UDisGFxMoviePlayerBase* Player, INT ControllerId,
 	FName Key, BYTE Event, UBOOL& bHandled );
 
@@ -577,6 +580,11 @@ static void DisGFxMoviePlayerStarted( UGFxMoviePlayer* Player )
 	{
 		DisGFxMoviePlayerMainMenuPostStart( Menu );
 	}
+	// agent EK: UDisGFxMoviePlayerHUD::PostStart, retail vtable slot 117 (2013 rva 0x795650)
+	else if( UDisGFxMoviePlayerHUD* HUD = Cast<UDisGFxMoviePlayerHUD>( Player ) )
+	{
+		DisGFxMoviePlayerHUDPostStart( HUD );
+	}
 }
 
 static void DisGFxMoviePlayerPreAdvance( UGFxMoviePlayer* Player, FLOAT DeltaTime )
@@ -584,6 +592,11 @@ static void DisGFxMoviePlayerPreAdvance( UGFxMoviePlayer* Player, FLOAT DeltaTim
 	if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Player ) )
 	{
 		DisGFxMoviePlayerMainMenuPreAdvance( Menu, DeltaTime );
+	}
+	// agent EK: UDisGFxMoviePlayerHUD::PreAdvance, retail vtable slot 119 (2013 rva 0x7b2280)
+	else if( UDisGFxMoviePlayerHUD* HUD = Cast<UDisGFxMoviePlayerHUD>( Player ) )
+	{
+		DisGFxMoviePlayerHUDPreAdvance( HUD, DeltaTime );
 	}
 }
 

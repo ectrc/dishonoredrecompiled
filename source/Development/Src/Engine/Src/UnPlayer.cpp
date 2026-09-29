@@ -16,6 +16,9 @@
 // DISHONORED(port): the FArkUberPpParameters helpers of the settings path (0x2b08b0 and its callees).
 #include "arkpp.h"
 
+// DISHONORED(bringup, agent EK): installed by DishonoredGame (disgfxmovieplayerhud.cpp); see Engine/Inc/UnWorld.h
+void (*GDisPlayerPreRenderHook)( UCanvas* Canvas ) = NULL;
+
 // needed for adding components when typing "show paths" in game
 #include "EngineAIClasses.h"
 
@@ -1395,6 +1398,8 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 
 					// PreRender the player's view.
 					if( Player->Actor->FindFunction( FName(TEXT("PreRender"), FNAME_Find) ) ) { Player->Actor->eventPreRender(CanvasObject); } // DISHONORED(retail): PreRender is not a 2013 event
+					// DISHONORED(bringup, agent EK): and the native one retail has instead - ADishonoredPlayerController::PreRender, 2013 rva 0x6a0c50
+					if( GDisPlayerPreRenderHook != NULL ) { GDisPlayerPreRenderHook( CanvasObject ); }
 
 					Canvas->PopTransform();
 

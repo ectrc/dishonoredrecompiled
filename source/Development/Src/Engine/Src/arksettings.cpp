@@ -79,20 +79,28 @@ void ArkSettingsParameters::Read( UOnlinePlayerStorage* Settings, UBOOL bOverrid
 	Settings->GetProfileSettingValueInt( 80, m_GamepadAutoAimStrength );
 	Settings->GetProfileSettingValueId( 81, Value ); m_bGamepadFriction = Value == 1;
 	Settings->GetProfileSettingValueInt( 82, m_GamepadFrictionStrength );
-	Settings->GetProfileSettingValueId( 85, m_HUDVisibility );
-	Settings->GetProfileSettingValueId( 86, Value ); m_bShowObjectivePopups = Value == 1;
-	Settings->GetProfileSettingValueId( 87, Value ); m_bShowTutorialNotifications = Value == 1;
-	Settings->GetProfileSettingValueId( 88, Value ); m_bShowInteractions = Value == 1;
-	Settings->GetProfileSettingValueId( 89, Value ); m_bShowHighlight = Value == 1;
-	Settings->GetProfileSettingValueId( 90, Value ); m_bShowPickupLog = Value == 1;
-	Settings->GetProfileSettingValueId( 91, Value ); m_bShowContextualIcons = Value == 1;
-	Settings->GetProfileSettingValueId( 92, Value ); m_bShowPlayerStance = Value == 1;
-	Settings->GetProfileSettingValueId( 93, Value ); m_bShowGrenadeMarkers = Value == 1;
-	Settings->GetProfileSettingValueId( 94, Value ); m_bShowAwarenessMarkers = Value == 1;
-	Settings->GetProfileSettingValueId( 95, Value ); m_bShowHeartTargetMarkers = Value == 1;
-	Settings->GetProfileSettingValueId( 96, m_CrosshairStyle );
-	Settings->GetProfileSettingValueId( 97, Value ); m_bCrosshairMovement = Value == 1;
-	Settings->GetProfileSettingValueInt( 98, m_CrosshairOpacity );
+	// DISHONORED(port): agent EK. This block is retail 2013's own id run, read off
+	// ArkSettingsParameters::Read (2013 rva 0x539730): 87 is the HUD visibility, 88..98 are ELEVEN show
+	// flags, and 99/100/101 are the crosshair's style, movement and opacity. The ids below it are still
+	// the 2012 build's (the two lists are offset by two), which is why 101 is read twice here - as the
+	// crosshair opacity, which is what retail reads it as, and again as m_bAutoUseManaElixir, which is
+	// what the 2012 list calls it. Measured against the cooked profile's own mapping table:
+	// build/agentEK/r3_log.txt.
+	Settings->GetProfileSettingValueId( 87, m_HUDVisibility );
+	Settings->GetProfileSettingValueId( 88, Value ); m_bShowObjectivePopups = Value == 1;
+	Settings->GetProfileSettingValueId( 89, Value ); m_bShowTutorialNotifications = Value == 1;
+	Settings->GetProfileSettingValueId( 90, Value ); m_bShowInteractions = Value == 1;
+	Settings->GetProfileSettingValueId( 91, Value ); m_bShowHighlight = Value == 1;
+	Settings->GetProfileSettingValueId( 92, Value ); m_bShowPickupLog = Value == 1;
+	Settings->GetProfileSettingValueId( 93, Value ); m_bShowContextualIcons = Value == 1;
+	Settings->GetProfileSettingValueId( 94, Value ); m_bShowPlayerStance = Value == 1;
+	Settings->GetProfileSettingValueId( 95, Value ); m_bShowObjectiveMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 96, Value ); m_bShowGrenadeMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 97, Value ); m_bShowAwarenessMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 98, Value ); m_bShowHeartTargetMarkers = Value == 1;
+	Settings->GetProfileSettingValueId( 99, m_CrosshairStyle );
+	Settings->GetProfileSettingValueId( 100, Value ); m_bCrosshairMovement = Value == 1;
+	Settings->GetProfileSettingValueInt( 101, m_CrosshairOpacity );
 	Settings->GetProfileSettingValueId( 101, Value ); m_bAutoUseManaElixir = Value == 1;
 	Settings->GetProfileSettingValueId( 102, m_KillCamMode );
 	Settings->GetProfileSettingValueId( 104, Value ); m_bAutoSaveInMenu = Value == 1;

@@ -38,6 +38,14 @@ public:
 	UBOOL m_bShowPickupLog;
 	UBOOL m_bShowContextualIcons;
 	UBOOL m_bShowPlayerStance;
+	// DISHONORED(written): agent EK. Retail 2013's ArkSettingsParameters has ELEVEN HUD show flags,
+	// not ten: UDisGFxMoviePlayerHUD::ApplyGameSettings (2013 rva 0x7af370) copies members 17..27 into
+	// FDisHUDSettings' eleven bits and then reads member 28 as m_CrosshairStyle, and
+	// ArkSettingsParameters::Read (2013 rva 0x539730) fills 17..27 from profile setting ids 88..98 and
+	// 28..30 from 99..101. Without this member every field from m_CrosshairStyle on is one slot early
+	// and the struct is 208 bytes where retail's is 212. This tree's Read is written against the 2012
+	// build's id list (85..98), which has no id for this flag, so it is left at its zero initialiser here.
+	UBOOL m_bShowObjectiveMarkers;
 	UBOOL m_bShowGrenadeMarkers;
 	UBOOL m_bShowAwarenessMarkers;
 	UBOOL m_bShowHeartTargetMarkers;

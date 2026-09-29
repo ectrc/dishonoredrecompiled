@@ -1015,3 +1015,10 @@ extern FSeamlessTravelHandler GSeamlessTravelHandler;
  * default and called from UWorld::Tick.
  */
 extern void (*GDisEngineTickHook)();
+
+/** DISHONORED(bringup, agent EK): ADishonoredPlayerController::PreRender (2013 rva 0x6a0c50).
+    UGameViewportClient::Draw calls it once a frame with the canvas the view is being drawn into, and
+    the HUD movie's whole layout pass hangs off it. PreRender is a native virtual in retail and not a
+    script event, so the Engine cannot reach it by name; the game module installs its body here, the
+    same way GDisEngineTickHook above is installed. */
+extern void (*GDisPlayerPreRenderHook)( class UCanvas* Canvas );
