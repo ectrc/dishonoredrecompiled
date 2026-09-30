@@ -1761,7 +1761,7 @@ GFxSprite* GFxSprite::CreateEmptyMovieClip(const GASString& name, int depth)
 }
 
 GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& instanceName,
-                                  int depth)
+                                  int depth, GASObject* initObj)
 {
     GFxMovieDataDef* dataDef = GetOwnDataDef();
     // DISHONORED(port): 2012 GFxMovieDefImpl::GetExportedResource 0xa1ede0, reached through
@@ -1804,6 +1804,35 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
     // undefined and the whole menu bar stays at alpha 0. The timeline path already has this order:
     // AddDisplayObject places the children and queues the binding for the next drain.
     child->ExecuteFrame0Events();
+    // DISHONORED(port, agent FC): attachMovie's init object is copied onto the clip HERE, BEFORE the
+    // registered class constructor. Retail's own order is the four action-queue entries
+    // GFxSprite::AddDisplayObject (2012 0x9fee10) makes for a script-created clip with a registered
+    // class: priority 1 `__proto__` (2012 0x9fb170, GFxASCharacter::SetProtoToPrototypeOf), then at
+    // priority 3, in insertion order, the onConstruct event (id 0x40000), then the init object's
+    // members (2012 0x9f61b0, `GFx_InitObjectMembers`'s InitVisitor), then the class function itself
+    // as an entry of type 3 (the FindRegisteredClass that opens that arm is 2012 0x9ff3ce). The
+    // queue drains priority 0 upward (ActionQueueIterator::getNext 2012 0xa0cbe0) and FIFO within a
+    // priority (ActionQueueType::InsertEntry 2012 0xa09440), so the constructor runs LAST of the four.
+    // With the copy after the constructor instead, every class that snapshots its own position reads
+    // the unpositioned clip: `_common.HelpBar` ends up with `_props = {_x:0,_y:0}` and the footer
+    // prompt bar tweens to (0, 0) instead of (1184, 651), `_common.ItemsList` keeps `_defPosX = 0`
+    // where the options list's init object says -450, and `GammaMc` loses its own `_y = 555` to the
+    // init object's 360 (agent EY, agentEY.md 6; agent FC, agentFC.md 2).
+    if (initObj != 0 && pMovieRoot != 0)
+    {
+        struct Copier : public GASObjectInterface::MemberVisitor
+        {
+            GFxSprite* pTo;
+            GASEnvironment* pEnv;
+            virtual void Visit(const GASString& name, const GASValue& val, unsigned char)
+            {
+                pTo->SetMember(pEnv, name, val, GASPropFlags());
+            }
+        } copier;
+        copier.pTo = child;
+        copier.pEnv = pMovieRoot->GetASEnvironment();
+        initObj->VisitMembers(pMovieRoot->GetASContext()->GetSC(), &copier, 0, initObj);
+    }
     // Object.registerClass binds an AS2 class to a library symbol; if one is registered for this
     // symbol the clip is constructed as that class, which is what makes every CLIK widget in the
     // cook behave like its script class rather than like a bare movie clip.

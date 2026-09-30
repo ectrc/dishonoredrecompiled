@@ -996,7 +996,11 @@ public:
     void          RemoveDisplayObject(int depth, GFxResourceId id);    // 2012 0x9f4970
 
     GFxSprite* CreateEmptyMovieClip(const GASString& name, int depth);
-    GFxSprite* AttachMovie(const GASString& symbolName, const GASString& instanceName, int depth);
+    /** initObj is attachMovie's fourth argument: its members land on the new clip before the clip's
+        registered class constructor runs, which is the only order in which a constructor that
+        snapshots `this._x` reads the position the caller asked for. */
+    GFxSprite* AttachMovie(const GASString& symbolName, const GASString& instanceName, int depth,
+                           GASObject* initObj = 0);
 
     unsigned int GetCurrentFrame() const { return CurrentFrame; }
     unsigned int GetFrameCount() const { return pTimelineDef ? pTimelineDef->GetFrameCount() : 1; }

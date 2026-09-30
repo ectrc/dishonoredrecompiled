@@ -737,29 +737,15 @@ void MCAttachMovie(const GASFnCall& fn)
 {
     GFxSprite* s = ThisSprite(fn);
     if (s == 0 || fn.GetNumArgs() < 3) return;
+    // DISHONORED(port, agent FC): retail's own attachMovie (2012 0x9ff990, the handler the AS2
+    // MovieClip method table names for "attachMovie") reads its fourth argument with
+    // GASValue::ToObjectInterface and hands it to GFxSprite::AddDisplayObject, which is what places
+    // the init object's members ahead of the registered class constructor. Passing it down rather
+    // than copying it here is that shape, and the ordering it buys is what puts the footer prompt
+    // bar, the options list and the gamma marks where the asset asks for them (agentFC.md 2).
+    GASObject* init = fn.GetNumArgs() >= 4 ? fn.Arg(3).ToObject(fn.pEnv) : 0;
     GFxSprite* child = s->AttachMovie(fn.Arg(0).ToString(fn.pEnv), fn.Arg(1).ToString(fn.pEnv),
-                                      fn.Arg(2).ToInt32(fn.pEnv));
-    if (child && fn.GetNumArgs() >= 4)
-    {
-        // The init object's members are copied onto the new clip before its first frame runs, which
-        // is how the CLIK widgets are configured.
-        GASObject* init = fn.Arg(3).ToObject(fn.pEnv);
-        if (init)
-        {
-            struct Copier : public GASObjectInterface::MemberVisitor
-            {
-                GFxSprite* pTo;
-                GASEnvironment* pEnv;
-                virtual void Visit(const GASString& name, const GASValue& val, unsigned char f)
-                {
-                    pTo->SetMember(pEnv, name, val, GASPropFlags());
-                }
-            } copier;
-            copier.pTo = child;
-            copier.pEnv = fn.pEnv;
-            init->VisitMembers(fn.pEnv->GetSC(), &copier, 0, init);
-        }
-    }
+                                      fn.Arg(2).ToInt32(fn.pEnv), init);
     if (fn.pResult) fn.pResult->SetAsCharacter(child);
 }
 
