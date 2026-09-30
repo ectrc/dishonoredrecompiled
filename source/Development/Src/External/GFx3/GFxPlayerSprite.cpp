@@ -36,7 +36,8 @@ GFxCharacterHandle::GFxCharacterHandle(const GASString& name, GFxASCharacter* pa
 
 GFxCharacter::GFxCharacter(GFxASCharacter* parent, GFxResourceId id)
     : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true),
-      RollOverCnt(0), bAcceptAnimMoves(true), pWeakProxy(0), LastHitX(0.f), LastHitY(0.f),
+      RollOverCnt(0), bAcceptAnimMoves(true), pWeakProxy(0), pMatrix3D(0), pPerspective3D(0),
+      pView3D(0), PerspectiveFOV(0.f), LastHitX(0.f), LastHitY(0.f),
       bHasLastHit(false), bLastHit(false)
 {
     Id = id;
@@ -53,6 +54,142 @@ GFxCharacter::~GFxCharacter()
         pWeakProxy->pObject = 0;
         pWeakProxy->Release();
         pWeakProxy = 0;
+    }
+    delete pMatrix3D;
+    delete pPerspective3D;
+    delete pView3D;
+}
+
+// --- the 3D display properties ---------------------------------------------------------------
+// Retail's GFxCharacter 3D accessors, one for one. The inheriting arms are the reason a movie can
+// set `_perspfov` once on the stage and have every clip under it project the same way.
+
+GFxMovieRoot* GFxCharacter::GetCharacterMovieRoot() const
+{
+    const GFxCharacter* ch = this;
+    while (ch != 0)
+    {
+        GFxASCharacter* as = const_cast<GFxCharacter*>(ch)->ToASCharacterDef();
+        if (as != 0 && as->GetMovieRoot() != 0)
+            return as->GetMovieRoot();
+        ch = ch->pParent;
+    }
+    return 0;
+}
+
+bool GFxCharacter::Is3D(bool bInherit) const                           // 2013 0x9c4300
+{
+    const GFxCharacter* ch = this;
+    while (ch->pMatrix3D == 0)
+    {
+        if (!bInherit || ch->pParent == 0)
+            return false;
+        ch = ch->pParent;
+    }
+    return true;
+}
+
+void GFxCharacter::CreateMatrix3D(GMatrix3D** slot)                    // 2013 0x9c4c40
+{
+    GMatrix3D** target = (slot != 0) ? slot : &pMatrix3D;
+    if (*target == 0)
+        *target = new GMatrix3D();
+}
+
+void GFxCharacter::SetMatrix3D(const GMatrix3D& m)                     // 2013 0x9a5970
+{
+    CreateMatrix3D(0);
+    *pMatrix3D = m;
+}
+
+void GFxCharacter::SetPerspective3D(const GMatrix3D& m)                // 2013 0x9a5990
+{
+    CreateMatrix3D(&pPerspective3D);
+    *pPerspective3D = m;
+}
+
+void GFxCharacter::SetView3D(const GMatrix3D& m)                       // 2013 0x9a59b0
+{
+    CreateMatrix3D(&pView3D);
+    *pView3D = m;
+}
+
+const GMatrix3D* GFxCharacter::GetPerspective3D(bool bInherit) const   // 2013 0x9c4410
+{
+    const GFxCharacter* ch = this;
+    while (ch->pPerspective3D == 0 && bInherit)
+    {
+        if (ch->pParent == 0)
+        {
+            GFxMovieRoot* root = GetCharacterMovieRoot();
+            return root ? root->GetPerspective3D() : 0;
+        }
+        ch = ch->pParent;
+    }
+    return ch->pPerspective3D;
+}
+
+const GMatrix3D* GFxCharacter::GetView3D(bool bInherit) const          // 2013 0x9c4460
+{
+    const GFxCharacter* ch = this;
+    while (ch->pView3D == 0 && bInherit)
+    {
+        if (ch->pParent == 0)
+        {
+            GFxMovieRoot* root = GetCharacterMovieRoot();
+            return root ? root->GetView3D() : 0;
+        }
+        ch = ch->pParent;
+    }
+    return ch->pView3D;
+}
+
+float GFxCharacter::GetPerspectiveFOV(bool bInherit) const             // 2013 0x9c4190
+{
+    const GFxCharacter* ch = this;
+    while (ch->PerspectiveFOV == 0.f && bInherit)
+    {
+        if (ch->pParent == 0)
+        {
+            GFxMovieRoot* root = GetCharacterMovieRoot();
+            return root ? root->GetPerspectiveFOV() : ch->PerspectiveFOV;
+        }
+        ch = ch->pParent;
+    }
+    return ch->PerspectiveFOV;
+}
+
+void GFxCharacter::SetPerspectiveFOV(float fov)                        // 2013 0x9c5a50
+{
+    GFxMovieRoot* root = GetCharacterMovieRoot();
+    if (PerspectiveFOV == fov || root == 0 || root->GetRenderer() == 0)
+        return;
+    PerspectiveFOV = fov;
+    GMatrix3D view, persp;
+    root->GetRenderer()->MakeViewAndPersp3D(root->GetVisibleFrameRect(), view, persp,
+                                            PerspectiveFOV, false);
+    SetPerspective3D(persp);
+    SetView3D(view);
+}
+
+GMatrix3D GFxCharacter::GetLocalMatrix3D() const                       // 2013 0x9c4330
+{
+    GMatrix3D out;
+    out.MultiplyMatrix(pMatrix3D ? *pMatrix3D : GMatrix3D::GetIdentity(), GMatrix3D(Matrix));
+    return out;
+}
+
+void GFxCharacter::GetWorldMatrix3D(GMatrix3D* out) const              // 2013 0x9c4390
+{
+    if (pParent != 0)
+    {
+        GMatrix3D parentWorld;
+        pParent->GetWorldMatrix3D(&parentWorld);
+        out->MultiplyMatrix(GetLocalMatrix3D(), parentWorld);
+    }
+    else
+    {
+        *out = GetLocalMatrix3D();
     }
 }
 
@@ -761,6 +898,49 @@ bool GFxASCharacter::SetStandardMember(GASBuiltinString which, const GASValue& v
     }
 }
 
+// Retail gates every one of the six 3D display properties on GASGlobalContext's `gfxExtensions`
+// byte being 1 (GFxASCharacter::SetMember 0x9c9270 reads it before each of cases 108..113, and
+// GASGlobalObject::SetMember 0x9d72d0 is what sets it and publishes `_global.gfxVersion` = "3.3.89"
+// alongside). A movie that never opts in keeps Flash's own property set exactly.
+static bool GFxAS2ExtensionsEnabled(const GFxASCharacter* ch)
+{
+    GFxMovieRoot* root = ch->GetMovieRoot();
+    return root != 0 && root->GetASContext() != 0 && root->GetASContext()->AreGFxExtensionsEnabled();
+}
+
+// DISHONORED(port): 2013 GFxValue_UpdateTransform 0x9a5b70. The four 3D geometry values become one
+// matrix, in retail's own order and in GMatrix3D's row-vector convention: scale the z axis by
+// `_zscale`, rotate about x, then about y, then translate along z by `_z`. Retail stores the result
+// unconditionally, so writing `_z = 0` on a flat clip still makes it a 3D character - which is what
+// puts the whole subtree under it on the projected path, and is what the menu relies on.
+void GFxASCharacter::UpdateMatrix3D()
+{
+    if (pGeomData == 0)
+        return;
+    const GeomDataType& g = *pGeomData;
+    GMatrix3D scale;
+    scale.M_[2][2] = (float)(g.ZScale / 100.0);
+    GMatrix3D rotX, rotY, translate;
+    rotX.RotateX((float)(g.XRotation * 3.14159265358979323846 / 180.0));
+    rotY.RotateY((float)(g.YRotation * 3.14159265358979323846 / 180.0));
+    // `_z` goes in unconverted, exactly as retail's 0x9a5b70 writes it: it is a depth in the
+    // character's OWN coordinate space, which is twips, and not in pixels like `_x` and `_y`.
+    // Measured, because it is the one thing here that is easy to get wrong by twenty: the main menu's
+    // inner logo clip tweens `_z` to -650 and its button 0 to -715. Read as pixels against the stage's
+    // 1229-pixel focal length that is a 2.1x magnification, which is what the first build of this
+    // package drew (the logo filled the frame). Read as twips it is 32 and 36 pixels of depth - a two
+    // to three per cent pop, which is the "shift a bit in 3D" the fault report describes.
+    translate.M_[3][2] = (float)g.Z;
+    GMatrix3D acc, tmp;
+    acc.MultiplyMatrix(scale, rotX);
+    tmp = acc;
+    acc.MultiplyMatrix(tmp, rotY);
+    tmp = acc;
+    acc.MultiplyMatrix(tmp, translate);
+    if (acc.IsValid())
+        SetMatrix3D(acc);
+}
+
 bool GFxASCharacter::GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val)
 {
     // The display properties are checked by name before the member store, because a timeline can
@@ -797,6 +977,28 @@ bool GFxASCharacter::GetMemberRaw(GASStringContext* sc, const GASString& name, G
             {
                 GFxAS2GetDisplayProperty(const_cast<GFxASCharacter*>(this), propIndex, val);
                 return true;
+            }
+            // The six Scaleform extensions (member table 108..113, retail 0x13b38c8). They are
+            // answered out of the geometry record rather than the member store, which is what makes
+            // `_utils.SaveMovieClipProperties` read back what the last write put there.
+            if (GFxAS2ExtensionsEnabled(this))
+            {
+                if (strcmp(n, "_z") == 0 || strcmp(n, "_zscale") == 0
+                    || strcmp(n, "_xrotation") == 0 || strcmp(n, "_yrotation") == 0)
+                {
+                    GeomDataType g;
+                    const_cast<GFxASCharacter*>(this)->GetGeomData(&g);
+                    if (strcmp(n, "_z") == 0)              val->SetNumber(g.Z);
+                    else if (strcmp(n, "_zscale") == 0)    val->SetNumber(g.ZScale);
+                    else if (strcmp(n, "_xrotation") == 0) val->SetNumber(g.XRotation);
+                    else                                   val->SetNumber(g.YRotation);
+                    return true;
+                }
+                if (strcmp(n, "_perspfov") == 0)
+                {
+                    val->SetNumber((double)GetPerspectiveFOV(true));
+                    return true;
+                }
             }
         }
     }
@@ -872,6 +1074,60 @@ bool GFxASCharacter::SetMemberRaw(GASStringContext* sc, const GASString& name, c
     for (int i = 0; i < 9; ++i)
         if (name == sc->GetBuiltin(standard[i]))
             return SetStandardMember(standard[i], val);
+    // DISHONORED(port): 2013 GFxASCharacter::SetMember 0x9c9270 cases 108..113 - Scaleform's own six
+    // 3D display properties. Retail gates all six on `_global.gfxExtensions`, and the main menu's
+    // ActionScript sets that flag before it uses them (Dishonored_MainMenu.MainMenu.gfx's
+    // `AnimatedBackground` class), so the gate is part of the feature and not a nicety.
+    {
+        const char* n = name.ToCStr();
+        if (n != 0 && n[0] == '_' && GFxAS2ExtensionsEnabled(this))
+        {
+            const bool bZ = strcmp(n, "_z") == 0;
+            const bool bZScale = strcmp(n, "_zscale") == 0;
+            const bool bXRot = strcmp(n, "_xrotation") == 0;
+            const bool bYRot = strcmp(n, "_yrotation") == 0;
+            if (bZ || bZScale || bXRot || bYRot)
+            {
+                double want = val.GetNumber();
+                if (val.IsUndefined() || want != want)
+                    return true;
+                if (bZ && (want > 1.0e300 || want < -1.0e300))
+                    want = 0.0;
+                if (bZScale && (want > 1.0e300 || want < -1.0e300))
+                    return true;
+                EnsureGeomDataCreated();
+                if (bXRot || bYRot)
+                {
+                    want = fmod(want, 360.0);
+                    if (want > 180.0) want -= 360.0;
+                    else if (want < -180.0) want += 360.0;
+                }
+                if (bZ)           pGeomData->Z = want;
+                else if (bZScale) pGeomData->ZScale = want;
+                else if (bXRot)   pGeomData->XRotation = want;
+                else              pGeomData->YRotation = want;
+                UpdateMatrix3D();
+                ++GFxDisplay3DWrites;
+                if (GFxDisplay3DDiag > 0)
+                {
+                    --GFxDisplay3DDiag;
+                    GASString path = GetTargetPath(sc);
+                    GFxLogf("DISHONORED(bringup): GFx 3D write %s%s = %.4f (z %.3f zscale %.3f "
+                            "xrot %.3f yrot %.3f)", path.ToCStr(), n, want, pGeomData->Z,
+                            pGeomData->ZScale, pGeomData->XRotation, pGeomData->YRotation);
+                }
+                return true;
+            }
+            if (strcmp(n, "_perspfov") == 0)
+            {
+                const double want = val.GetNumber();
+                if (val.IsUndefined() || want != want)
+                    return true;
+                SetPerspectiveFOV((want > 1.0e300 || want < -1.0e300) ? 0.f : (float)want);
+                return true;
+            }
+        }
+    }
     if (name == sc->GetBuiltin(GASbuiltin_proto))
     {
         Set__proto__(sc, val.GetObject());

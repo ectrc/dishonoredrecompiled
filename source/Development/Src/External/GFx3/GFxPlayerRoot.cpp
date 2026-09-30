@@ -26,7 +26,8 @@
 // ---------------------------------------------------------------------------------------------
 
 GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
-    : pDefImpl(defImpl), pGC(0), pLevel0(0), ObjInterface(this), ScaleMode(GFxMovieView::SM_ShowAll),
+    : pDefImpl(defImpl), pGC(0), pLevel0(0), ObjInterface(this),
+      pPerspective3D(0), pView3D(0), PerspectiveFOV(55.f), ScaleMode(GFxMovieView::SM_ShowAll),
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
       bPaused(false), bVisible(true), bDirty(true), bMouseStateDirty(false), pUserData(0),
       TimeElapsed(0.f), FrameTime(0.f),
@@ -78,6 +79,8 @@ GFxMovieRoot::~GFxMovieRoot()
     // then the states. An AS2 object outliving its character is fine - the handle degrades to null -
     // but a character outliving the string manager is not.
     free(Actions);
+    delete pPerspective3D;
+    delete pView3D;
     if (bTraceTeardown) printf("  [teardown] characters\n");
     if (pLevel0)
     {
@@ -632,8 +635,53 @@ GRect<float> GFxMovieRoot::GetVisibleFrameRect() const                 // 2012 0
     return GRect<float>(x0, y0, x1, y1);
 }
 
-void GFxMovieRoot::SetPerspective3D(const GMatrix3D& m) {}
-void GFxMovieRoot::SetView3D(const GMatrix3D& m) {}
+// DISHONORED(port): 2013 0xa06df0 / 0xa06e60. The stage's own matrices, allocated on first write.
+// Retail then walks every level and calls GFxCharacter::CreateMatrix3D on it, which is what makes the
+// levels themselves 3D so the new stage perspective reaches them; the same call is here.
+void GFxMovieRoot::SetPerspective3D(const GMatrix3D& m)
+{
+    if (pPerspective3D == 0)
+        pPerspective3D = new GMatrix3D();
+    *pPerspective3D = m;
+    if (pLevel0 != 0)
+        pLevel0->CreateMatrix3D(0);
+}
+
+void GFxMovieRoot::SetView3D(const GMatrix3D& m)
+{
+    if (pView3D == 0)
+        pView3D = new GMatrix3D();
+    *pView3D = m;
+    if (pLevel0 != 0)
+        pLevel0->CreateMatrix3D(0);
+}
+
+// DISHONORED(port): 2013 0xa06c40. Changing the stage's field of view rebuilds the perspective it
+// already has; before anything has asked for one there is nothing to rebuild, which is retail's own
+// early-out and is why the default 55 degrees costs nothing on a movie that never goes 3D.
+void GFxMovieRoot::SetPerspectiveFOV(float fov)
+{
+    const bool bHadPerspective = pPerspective3D != 0;
+    PerspectiveFOV = fov;
+    GRenderer* renderer = GetRenderer();
+    if (!bHadPerspective || renderer == 0)
+        return;
+    GMatrix3D view;
+    renderer->MakeViewAndPersp3D(GetVisibleFrameRect(), view, *pPerspective3D, PerspectiveFOV, false);
+}
+
+GRenderer* GFxMovieRoot::GetRenderer() const
+{
+    GRenderer* renderer = 0;
+    GFxState* s = GetStateAddRef(GFxState::State_RenderConfig);
+    if (s != 0)
+    {
+        renderer = ((GFxRenderConfig*)s)->pRenderer.GetPtr();
+        s->Release();
+    }
+    return renderer;
+}
+
 GRect<float> GFxMovieRoot::GetSafeRect() const { return pDefImpl->GetFrameRect(); }
 void GFxMovieRoot::SetSafeRect(const GRect<float>& r) {}
 

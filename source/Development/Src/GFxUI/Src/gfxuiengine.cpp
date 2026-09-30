@@ -750,6 +750,16 @@ FGFxEngine::FGFxEngine()
 	GFxDisplayNoBeginDisplay = ParseParam( appCmdLine(), TEXT("gfxuinodisplay") ) ? true : false;
 	GFxDisplayFitFill = ParseParam( appCmdLine(), TEXT("gfxuifitfill") ) ? true : false;
 	GFxDisplayNoTextShadow = ParseParam( appCmdLine(), TEXT("gfxuinotextshadow") ) ? true : false;
+	GFxDisplay3DFlat = ParseParam( appCmdLine(), TEXT("gfxui3dflat") ) ? true : false;
+	// DISHONORED(bringup, agent FA): -gfxui3ddiag=<n> reports the first n writes of a 3D display
+	// property with the clip's target path and the value, and the per-frame count of characters the
+	// display walk drew through the projected path. That pair is the measurement for "the menu moves":
+	// one frame's screenshot cannot show a motion, and the numbers can.
+	{
+		INT N = 0;
+		GFxDisplay3DDiag = Parse( appCmdLine(), TEXT("gfxui3ddiag="), N ) ? N : 0;
+		GFxDisplay3DMatrixDiag = Min( GFxDisplay3DDiag, 8 );
+	}
 
 	InitGFxLoaderCommon( Loader );
 
@@ -2163,6 +2173,12 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 		extern void GFxDL_ReportFilterCensus();
 		GFxDL_ReportFilterCensus();
 	}
+	// DISHONORED(bringup, agent FA): the 3D half. The first number is how many characters the LAST
+	// display pass drew through the perspective path, the second how many times the run's ActionScript
+	// has written one of the 3D display properties.
+	debugf( TEXT("DISHONORED(bringup): GFx 3D census: %u characters projected, %u property writes"),
+		::GFxDisplay3DCharacters, ::GFxDisplay3DWrites );
+	::GFxDisplay3DCharacters = 0;
 	appMemzero( &RenderCensus, sizeof(RenderCensus) );
 
 	// The renderer's own half of the same count, which is what says whether a draw the walk submitted

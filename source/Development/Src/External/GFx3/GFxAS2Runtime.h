@@ -402,6 +402,14 @@ public:
 
     GASObject* GetGlobalObject() const { return pGlobal; }
 
+    /** DISHONORED(port): retail's GASGlobalContext+684, written by `_global.gfxExtensions = <bool>`
+        (GASGlobalObject::SetMember 2013 0x9d72d0, which writes 1 for true and 2 for false and
+        publishes `_global.gfxVersion` = "3.3.89" while it is on). It is the gate on Scaleform's own
+        additions to the AS2 surface - the six 3D display properties, `noInvisibleAdvance` and
+        `continueAnimation` - so a movie that never sets it behaves exactly like Flash. */
+    bool AreGFxExtensionsEnabled() const { return bGFxExtensions; }
+    void SetGFxExtensionsEnabled(bool bEnabled) { bGFxExtensions = bEnabled; }
+
     // The class library. Each entry is the prototype object every instance of that class chains to.
     enum ProtoId
     {
@@ -436,6 +444,7 @@ private:
     GASObjectCollector Collector;
     GASString          Builtins[GASbuiltin_COUNT];
     GASObject*         pGlobal;
+    bool               bGFxExtensions;
     GASObject*         Prototypes[Proto_COUNT];
     GASFunctionObject* Constructors[Proto_COUNT];
 

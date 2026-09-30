@@ -2560,15 +2560,51 @@ void FGFxRenderer::SetWorld3D(const GMatrix3D* World)
     ENQUEUE_RENDER_COMMAND(FGFxSetWorld3DCommand,(this,World ? *World : Identity,World != NULL));
 }
 
-// DISHONORED(bringup): GRenderer's own body, which lives in libgfx and is not in this tree's
-// decompiles. Only the 3D display path calls it, and GFxCharacter::SetMatrix3D returns false today
-// (agentBC.md 6.9), so nothing reaches it.
-void FGFxRenderer::MakeViewAndPersp3D(const GRect<float>& /*FrameRect*/, GMatrix3D& View,
-                                      GMatrix3D& Persp, float /*FovY*/, bool /*bInvertY*/)
+// The body is GRenderer's own (2013 0x9b08c0), so it lives with the rest of the reconstructed runtime
+// in GFx3RuntimeStubs.cpp and this override only names it. Retail has no FGFxRenderer override at all;
+// keeping the slot and forwarding is the same behaviour with the vtable this tree already asserts.
+void FGFxRenderer::MakeViewAndPersp3D(const GRect<float>& FrameRect, GMatrix3D& View,
+                                      GMatrix3D& Persp, float FovY, bool bInvertY)
 {
-    View.SetIdentity();
-    Persp.SetIdentity();
     GFXUI_SEAM_TRACE("FGFxRenderer::MakeViewAndPersp3D");
+    GRenderer::MakeViewAndPersp3D(FrameRect, View, Persp, FovY, bInvertY);
+}
+
+// 2013 0x9b0a70. A viewport matrix says where a rectangle of movie pixels lands in clip space, so it
+// can be read backwards into that rectangle: the two lines below invert the mapping. The first pair
+// of matrices is the render target's own and is divided out; the second is the display's and is
+// applied. The field of view is recovered from the perspective's own first element.
+void FGFxRenderer::Adjust3DMatrixForRT(GMatrix3D& InOutMatrix, const GMatrix3D& Persp,
+                                       const GMatrix2D& TargetViewportMatrix,
+                                       const GMatrix2D& DisplayViewportMatrix)
+{
+    const FLOAT FovDegrees = (FLOAT)(2.0 * atan(1.0 / (DOUBLE)Persp.M_[0][0])
+                                     * 180.0 / 3.14159265358979323846);
+    GMatrix3D View, Proj, Scratch;
+
+    FLOAT Left = (TargetViewportMatrix.M_[0][2] + 1.f) / TargetViewportMatrix.M_[0][0];
+    FLOAT Top = -((TargetViewportMatrix.M_[1][2] - 1.f) / TargetViewportMatrix.M_[1][1]);
+    GRect<FLOAT> Rect(Left, Top, Left + 2.f / TargetViewportMatrix.M_[0][0],
+                      Top - 2.f / TargetViewportMatrix.M_[1][1]);
+    MakeViewAndPersp3D(Rect, View, Proj, FovDegrees, false);
+    Scratch.SetInverse(Proj);
+    Proj = Scratch;
+    Scratch = InOutMatrix;
+    InOutMatrix.MultiplyMatrix(Scratch, Proj);
+    Scratch.SetInverse(View);
+    View = Scratch;
+    Scratch = InOutMatrix;
+    InOutMatrix.MultiplyMatrix(Scratch, View);
+
+    Left = -((DisplayViewportMatrix.M_[0][2] + 1.f) / DisplayViewportMatrix.M_[0][0]);
+    Top = -((DisplayViewportMatrix.M_[1][2] - 1.f) / DisplayViewportMatrix.M_[1][1]);
+    Rect = GRect<FLOAT>(Left, Top, Left + 2.f / DisplayViewportMatrix.M_[0][0],
+                        Top - 2.f / DisplayViewportMatrix.M_[1][1]);
+    MakeViewAndPersp3D(Rect, View, Proj, FovDegrees, false);
+    Scratch = InOutMatrix;
+    InOutMatrix.MultiplyMatrix(Scratch, View);
+    Scratch = InOutMatrix;
+    InOutMatrix.MultiplyMatrix(Scratch, Proj);
 }
 
 void FGFxRenderer::SetStereoParams(GRenderer::StereoParams Params)
@@ -3614,17 +3650,56 @@ void FGFxRenderer::ApplyUITransform_RenderThread(const GMatrix2D& InViewportMatr
         return;
     }
 
-    // DISHONORED(bringup): the 3D branch composes the object matrix with the world matrix and then
-    // with the cached view-projection, rebuilding the latter when UVPMatricesChanged is set. Nothing
-    // reaches it yet (GFxCharacter::SetMatrix3D returns false, agentBC.md 6.9), and retail's
-    // GRenderer::Adjust3DMatrixForRT - the render-target correction inside it - is a libgfx body
-    // this tree does not have.
+    // The 3D branch, 2013 0x576630. The viewport matrix is NOT used: the view and perspective
+    // MakeViewAndPersp3D built already map the movie's own pixels onto clip space, and composing the
+    // viewport matrix as well would apply that mapping twice. What is composed is the object's 2D
+    // transform, then the world matrix the display context pushed, then the cached view-projection.
+    GMatrix3D Combined3D;
+    Combined3D.MultiplyMatrix(GMatrix3D(TransformMatrix), WorldMatrix);
     if (UVPMatricesChanged)
     {
         UVPMatricesChanged = 0;
-        UVPMatrix = ProjMatrix;
+        const GMatrix3D View = ViewMatrix;
+        UVPMatrix.MultiplyMatrix(View, ProjMatrix);
+        // Retail corrects for a pushed render target, whose own viewport matrix differs from the
+        // display's (GRenderer::Adjust3DMatrixForRT, 0x9b0a70); the correction is only applied while
+        // the render-target stack is non-empty, which the menu path never is.
+        if (RenderTargetStack.GetSize() != 0)
+        {
+            Adjust3DMatrixForRT(UVPMatrix, ProjMatrix, RenderTargetStack[0].ViewMatrix,
+                                InViewportMatrix);
+        }
     }
-    const FMatrix NativeMatrix = FGFxMatrix2DToNative(TransformMatrix);
+    const GMatrix3D Object3D = Combined3D;
+    Combined3D.MultiplyMatrix(Object3D, UVPMatrix);
+    // -gfxui3ddiag: the two paths side by side for the same object transform. A character whose own 3D
+    // matrix is the identity must come out of the 3D branch exactly where the 2D branch would have put
+    // it, and this is the line that says whether it does.
+    {
+        extern int GFxDisplay3DMatrixDiag;
+        if (GFxDisplay3DMatrixDiag > 0)
+        {
+            --GFxDisplay3DMatrixDiag;
+            GMatrix2D Flat = InViewportMatrix;
+            FGFxMatrix2DPrepend(Flat, TransformMatrix);
+            const FMatrix Native2D = FGFxMatrix2DToNative(Flat);
+            debugf(TEXT("DISHONORED(bringup): GFx 3D matrix: 2D [%.6f %.6f %.6f | %.6f %.6f %.6f] ")
+                TEXT("3D [%.6f %.6f %.6f %.6f | %.6f %.6f %.6f %.6f | %.6f %.6f %.6f %.6f]"),
+                Native2D.M[0][0], Native2D.M[1][0], Native2D.M[3][0],
+                Native2D.M[0][1], Native2D.M[1][1], Native2D.M[3][1],
+                Combined3D.M_[0][0], Combined3D.M_[1][0], Combined3D.M_[3][0], Combined3D.M_[3][3],
+                Combined3D.M_[0][1], Combined3D.M_[1][1], Combined3D.M_[3][1], Combined3D.M_[2][3],
+                WorldMatrix.M_[0][0], WorldMatrix.M_[1][1], WorldMatrix.M_[2][2], WorldMatrix.M_[3][2]);
+        }
+    }
+    FMatrix NativeMatrix;
+    for (INT Row = 0; Row < 4; Row++)
+    {
+        for (INT Col = 0; Col < 4; Col++)
+        {
+            NativeMatrix.M[Row][Col] = Combined3D.M_[Row][Col];
+        }
+    }
     VertexShader.SetParameterTransform(VertexShader.GetNativeShader()->GetVertexShader(),
                                       NativeMatrix);
 }

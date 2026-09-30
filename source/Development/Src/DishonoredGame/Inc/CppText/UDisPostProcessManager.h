@@ -18,6 +18,17 @@ public:
 	}
 	void StopEffect( BYTE Effect ) { m_RequiredEffects[Effect] = 0; }
 
+// ---- agent FA (PHASE12 FA): the interface's own post-process channel ----
+public:
+	// DISHONORED(port): 2013 rva 0x7e7ee0 (2012 0x849700). The parameters, the weight they reach and the two
+	// fade times, copied whole; the state machine below is what walks the weight between 0 and it.
+	void SetUIPPParams( const FArkUberPpParameters& _rParameters, FLOAT _fWeight, FLOAT _fFadeInTime,
+						FLOAT _fFadeOutTime );
+	// DISHONORED(port): 2013 rva 0x7efca0 (2012 0x8511a0). Called once per frame from
+	// ADishonoredPlayerController::ModifyPostProcessSettings with the frame's config; blends m_UIPPParams into it
+	// at whatever weight the fade has reached. This is the whole of "retail blurs the scene behind a modal".
+	void ApplyUIPostProcessSettings( struct FArkPpConfig& _rConfig, FLOAT _fDeltaTime );
+
 // ---- agent EB (PHASE11 EB): the object layer's GameLoad ----
 public:
 	// DISHONORED(port): agent EB, 2013 rva 0x7eb2c0. Body in dissavegame.cpp.

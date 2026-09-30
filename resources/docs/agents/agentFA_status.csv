@@ -1,0 +1,28 @@
+item,state,evidence
+GMatrix3D full class (ctor from GMatrix2D / IsValid / MultiplyMatrix / RotateX / RotateY / PerspectiveFocalLengthLH+RH / ViewLH+RH / SetInverse+Cofactor),ported,External/GFx3/GTypes.h from 2013 0x9ac010 0x9ac060 0x9ac280 0x9ac6a0 0x9ac720 0x9ac800 0x9ac7a0 0x9aca90 0x9ac860 0x9abf40 0x9abdb0
+GMatrix3D::SetFrom2DWithDepth,deviation,"this tree's chain ends in a twips-to-pixels scale that retail's does not; without the depth scale the menu drew at 2.5x and skewed"
+GFxASCharacter::GeomDataType 3D tail (Z ZScale XRotation YRotation),ported,External/GFx3/GFxPlayer.h from 2013 0x9c9270 cases 108-111
+GFxASCharacter::UpdateMatrix3D,ported,External/GFx3/GFxPlayerSprite.cpp from 2013 GFxValue_UpdateTransform 0x9a5b70
+GFxCharacter 3D members and accessors (Is3D CreateMatrix3D SetMatrix3D SetPerspective3D SetView3D GetPerspective3D GetView3D GetPerspectiveFOV SetPerspectiveFOV GetLocalMatrix3D GetWorldMatrix3D),ported,External/GFx3/GFxPlayerSprite.cpp from 2013 0x9c4300 0x9c4c40 0x9a5970 0x9a5990 0x9a59b0 0x9c4410 0x9c4460 0x9c4190 0x9c5a50 0x9c4330 0x9c4390
+_z _zscale _xrotation _yrotation set and get,ported,External/GFx3/GFxPlayerSprite.cpp; member table ids 108/109/110/111 read out of GFxASCharacter::MemberTable at 0x13b38c8
+_perspfov set and get,ported,same; no cooked movie in this install uses it (0 occurrences across 22 .gfx payloads)
+_matrix3d (member id 112),not ported,"0 occurrences across all 22 cooked .gfx payloads; the AS2 array-to-GMatrix3D arm of 0x9c9270 case 112 is the only one left"
+_global.gfxExtensions gate (GASGlobalObject),ported,External/GFx3/GFxAS2Lib.cpp from 2013 0x9d72d0; measured live: 'GFx _global.gfxExtensions = 1' at 4.99 s of every menu run
+GFxMovieRoot perspective/view/FOV and Setup3DDisplay,ported,External/GFx3/GFxPlayerRoot.cpp + GFxDisplay.cpp from 2013 0xa06df0 0xa06e60 0xa06c40 0x9f93b0; default FOV 55 read out of the constructor 0xa064c0
+GFxDisplayContext 3D arm (PreDisplay / PostDisplay),ported,External/GFx3/GFxDisplay.cpp from 2013 0xa53400 and 0xa53630
+GRenderer::MakeViewAndPersp3D,ported,External/GFx3/GFx3Support.cpp from 2013 0x9b08c0; the generated stub in GFx3RuntimeStubs.cpp removed
+FGFxRenderer::Adjust3DMatrixForRT,ported,GFxUI/Src/gfxuirenderer.cpp from 2013 0x9b0a70; declared on FGFxRenderer because GFx3Gen.h is generated and does not carry it
+FGFxRenderer::ApplyUITransform_RenderThread 3D branch,ported,GFxUI/Src/gfxuirenderer.cpp from 2013 0x576630
+-gfxui3ddiag diagnostic and the 3D census line,added,GFxUI/Src/gfxuiengine.cpp; 'GFx 3D census: N characters projected, M property writes'
+UDisPostProcessManager::SetUIPPParams,ported,DishonoredGame/Src/dispostprocessmanager.cpp from 2013 0x7e7ee0 (2012 0x849700)
+UDisPostProcessManager::ApplyUIPostProcessSettings,ported,DishonoredGame/Src/dispostprocessmanager.cpp from 2013 0x7efca0 (2012 0x8511a0)
+UDisGlobalUIManager::OnMovieAttributesChanged,ported,DishonoredGame/Src/disglobaluimanager.cpp from 2013 0x84cf80
+UDisGlobalUIManager::RefreshGlobalUIState,partial,"only the blur term; the stripes, HUD, input mask and cursor terms of 2013 0x847070 (2012 0x8b75e0) are named at the site and not ported"
+ApplyUIPostProcessSettings call site,ported,DishonoredGame/Src/dishonoredplayercontroller.cpp ModifyPostProcessSettings
+UDisPostProcessManager::ApplyKismetPostProcessSettings,not ported,2013 0x7ef9b0; named at the same site
+clean full release build (LAYOUT_CHECKS ON),done,"twice - build/clean on e2d7e5d+FA and build/clean2 on the rebased tree, both deleted first: 0 errors, 0 C4263, 0 C4264, exe linked"
+run_regression 37 ok,done,"37 ok 0 failed 0 skipped in 520 s on the rebased tree, worktree copy, absolute build dir, built inside the harness; build/agentFA/fa_regression2.log"
+rebase onto agent EX 8a04f5f,done,"EX's six files merged into the worktree; GFxDisplay.cpp and gfxuirenderer.cpp merged by hand hunk by hunk; git diff --stat 8a04f5f lists only this package's 20 files"
+before/after main menu,done,"logo extent 1116 px on 8a04f5f, 1116 px with -gfxui3dflat, 1141 px with the feature: ratio 1.0224"
+modal blur on screen,done,"build/agentFA/fa_modal_before_after_8a04f5f.png: HEAD sharp, FA blurred, same world time 60 s, both on 8a04f5f"
+difficulty screen second case,done,"build/agentFA/fa_difficulty_before_after_8a04f5f.png: four flat rows at HEAD, four rows at their own depths with the feature"

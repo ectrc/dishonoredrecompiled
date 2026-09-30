@@ -1005,13 +1005,54 @@ void ErrorCtor(const GASFnCall& fn)
         fn.pThis->SetConstMemberRaw(fn.pEnv->GetSC(), "message", fn.Arg(0));
 }
 
+// DISHONORED(port): 2013 GASGlobalObject, whose SetMember (0x9d72d0) is the only way Scaleform's
+// extensions are turned on. Writing `_global.gfxExtensions = true` sets the context's flag and
+// publishes `_global.gfxVersion` = "3.3.89"; writing false clears the flag and deletes the version
+// member. The value itself is then stored as UNSET, which is retail's own last step, so reading the
+// member back gives undefined rather than the boolean.
+class GASGlobalObject : public GASObject
+{
+public:
+    GASGlobalObject(GASStringContext* sc, GASGlobalContext* gc) : GASObject(sc), pContext(gc) {}
+
+    virtual bool SetMember(GASEnvironment* env, const GASString& name, const GASValue& val,
+                           const GASPropFlags& flags)
+    {
+        GASStringContext* sc = env->GetSC();
+        if (strcmp(name.ToCStr(), "gfxExtensions") == 0)
+        {
+            const bool bEnabled = val.ToBool(env);
+            pContext->SetGFxExtensionsEnabled(bEnabled);
+            GFxLogf("DISHONORED(bringup): GFx _global.gfxExtensions = %d (gfxVersion 3.3.89)",
+                    bEnabled ? 1 : 0);
+            if (bEnabled)
+            {
+                GASValue version;
+                version.SetString(sc->CreateString("3.3.89"));
+                SetConstMemberRaw(sc, "gfxVersion", version);
+            }
+            else
+            {
+                DeleteMember(sc, sc->CreateString("gfxVersion"));
+            }
+            GASValue unset;
+            unset.SetUnset();
+            return GASObject::SetMember(env, name, unset, flags);
+        }
+        return GASObject::SetMember(env, name, val, flags);
+    }
+
+private:
+    GASGlobalContext* pContext;
+};
+
 } // namespace
 
 // ---------------------------------------------------------------------------------------------
 
 void GASGlobalContext::InitStandardLibrary()
 {
-    pGlobal = new GASObject(&SC);
+    pGlobal = new GASGlobalObject(&SC, this);
 
     // Object and Function first, because every other prototype chains to Object.prototype and every
     // constructor is a Function. Retail's GASGlobalContext does the same ordering.

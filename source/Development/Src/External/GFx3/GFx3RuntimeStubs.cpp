@@ -42,7 +42,7 @@ void GRenderer::EndFrame() { }   // vt[8]
 void GRenderer::ReleaseTempRenderTargets(unsigned int a0) { }   // vt[14]
 bool GRenderer::PushUserData(GRenderer::UserData* a0) { return false; }   // vt[22]
 void GRenderer::PopUserData() { }   // vt[23]
-void GRenderer::MakeViewAndPersp3D(const GRect<float>& a0, GMatrix3D& a1, GMatrix3D& a2, float a3, bool a4) { }   // vt[27]
+// vt[27] GRenderer::MakeViewAndPersp3D: the real body is in GFx3Support.cpp (agent FA).
 void GRenderer::SetStereoParams(GRenderer::StereoParams a0) { }   // vt[28]
 void GRenderer::SetStereoDisplay(GRenderer::StereoDisplay a0, bool a1) { }   // vt[29]
 void GRenderer::DrawDistanceFieldBitmaps(GRenderer::BitmapDesc* a0, int a1, int a2, int a3, const GTexture* a4, const GMatrix2D& a5, const GRenderer::DistanceFieldParams& a6, GRenderer::CacheProvider* a7) { }   // vt[42]

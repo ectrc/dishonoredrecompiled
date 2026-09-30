@@ -642,6 +642,25 @@ public:
 
     const GMatrix2D& GetMatrix() const { return Matrix; }
     void SetMatrix(const GMatrix2D& m) { Matrix = m; }
+    // --- the 3D display properties -----------------------------------------------------------
+    // Retail keeps three optional 4x4s and a field of view on every character (GFxCharacter+92,
+    // +96, +100, +104) and allocates each on first write, which is why a movie that never touches
+    // `_z` costs nothing. `bInherit` walks up to the parent and then to the movie root, which is how
+    // one perspective set on the stage serves every clip under it.
+    bool Is3D(bool bInherit) const;                                   // 2013 0x9c4300
+    void CreateMatrix3D(GMatrix3D** slot);                            // 2013 0x9c4c40
+    void SetMatrix3D(const GMatrix3D& m);                             // 2013 0x9a5970
+    void SetPerspective3D(const GMatrix3D& m);                        // 2013 0x9a5990
+    void SetView3D(const GMatrix3D& m);                               // 2013 0x9a59b0
+    const GMatrix3D* GetPerspective3D(bool bInherit) const;           // 2013 0x9c4410
+    const GMatrix3D* GetView3D(bool bInherit) const;                  // 2013 0x9c4460
+    float GetPerspectiveFOV(bool bInherit) const;                     // 2013 0x9c4190
+    void  SetPerspectiveFOV(float fov);                               // 2013 0x9c5a50
+    GMatrix3D GetLocalMatrix3D() const;                               // 2013 0x9c4330
+    void      GetWorldMatrix3D(GMatrix3D* out) const;                 // 2013 0x9c4390
+    /** the movie root this character belongs to: its own if it is a script character, otherwise its
+        parent's. Retail reaches it through GFxCharacter's vtable slot at +84. */
+    GFxMovieRoot* GetCharacterMovieRoot() const;
     const GRenderer::Cxform& GetCxform() const { return ColorTransform; }
     void SetCxform(const GRenderer::Cxform& c) { ColorTransform = c; }
     int  GetDepth() const { return Depth; }
@@ -670,6 +689,13 @@ public:
     /** retail character+160 bit 0x1000. TRUE until script writes a transform property. */
     bool              bAcceptAnimMoves;
     GFxWeakProxy*     pWeakProxy;
+    /** retail character+92 / +96 / +100 / +104: the local 3D transform, the perspective and view
+        matrices this character overrides its parent's with, and its own field of view. All three
+        pointers are null until something writes a 3D property. */
+    GMatrix3D*        pMatrix3D;
+    GMatrix3D*        pPerspective3D;
+    GMatrix3D*        pView3D;
+    float             PerspectiveFOV;
     mutable float     LastHitX, LastHitY;
     mutable bool      bHasLastHit;
     mutable bool      bLastHit;
@@ -756,24 +782,36 @@ public:
 
     virtual bool GetStandardMember(GASBuiltinString which, GASValue* out) const;
     virtual bool SetStandardMember(GASBuiltinString which, const GASValue& v);
-    // DISHONORED(port): GFxASCharacter::GeomDataType (2012, 88 bytes at character+152; the 3D tail
-    // is not reproduced). The five geometry properties AS2 can write are kept here, together with
-    // the matrix they were last consistent with, and every setter re-derives from THAT matrix, which
-    // is what makes `_width = w` idempotent and sizes a rotated clip along its own axes.
+    // DISHONORED(port): GFxASCharacter::GeomDataType, retail 88 bytes at character+152. The five 2D
+    // geometry properties AS2 can write are kept here, together with the matrix they were last
+    // consistent with, and every setter re-derives from THAT matrix, which is what makes
+    // `_width = w` idempotent and sizes a rotated clip along its own axes. The four doubles after the
+    // matrix are the 3D tail, at retail's own offsets 56 / 64 / 72 / 80 - `_z`, `_zscale` (per cent),
+    // `_xrotation` and `_yrotation` (degrees), read out of GFxASCharacter::SetMember 0x9c9270 cases
+    // 108..111 and consumed by UpdateMatrix3D.
     struct GeomDataType
     {
         int       X, Y;          // twips
         double    XScale, YScale;  // per cent
         double    Rotation;        // degrees
         GMatrix2D Matrix;
+        double    Z;
+        double    ZScale;          // per cent
+        double    XRotation, YRotation;  // degrees
 
-        GeomDataType() : X(0), Y(0), XScale(100.0), YScale(100.0), Rotation(0.0) {}
+        GeomDataType()
+            : X(0), Y(0), XScale(100.0), YScale(100.0), Rotation(0.0),
+              Z(0.0), ZScale(100.0), XRotation(0.0), YRotation(0.0) {}
     };
 
     // 2012 0x9ceb10 / 0x9cf3b0 / 0x9cf410.
     void GetGeomData(GeomDataType* out) const;
     void SetGeomData(const GeomDataType& d);
     void EnsureGeomDataCreated();
+    /** DISHONORED(port): 2013 GFxValue_UpdateTransform 0x9a5b70, the one place the four 3D geometry
+        values become a matrix. Scale(1,1,_zscale/100) * RotateX(_xrotation) * RotateY(_yrotation) *
+        Translate(0,0,_z), in that order and in GMatrix3D's row-vector convention. */
+    void UpdateMatrix3D();
     /** 2013 0x9c5cd0. Clearing it snapshots the geometry first, which is what makes the record the
         authority from that moment on. */
     virtual void SetAcceptAnimMoves(bool accept);
@@ -1411,6 +1449,19 @@ public:
     virtual void GetStatesAddRef(GFxState** out, const GFxState::StateType* types,
                                  unsigned int count) const;
 
+    // --- the 3D stage --------------------------------------------------------------------------
+    /** DISHONORED(port): 2013 GFxMovieRoot::Setup3DDisplay 0x9f93b0, called once per frame from
+        Display. The stage's view and perspective matrices are built from the visible frame rect and
+        the stage's field of view the first time anything asks for them, handed to the renderer, and
+        left on the display context as the default every 3D character inherits. */
+    void Setup3DDisplay(GFxDisplayContext& ctx);
+    const GMatrix3D* GetPerspective3D() const { return pPerspective3D; }
+    const GMatrix3D* GetView3D() const { return pView3D; }
+    float GetPerspectiveFOV() const { return PerspectiveFOV; }
+    void  SetPerspectiveFOV(float fov);                               // 2013 0xa06c40
+    /** the renderer the state bag's render config holds, or null before one is installed. */
+    GRenderer* GetRenderer() const;
+
     // --- the runtime's own surface ---
     GASGlobalContext* GetASContext() const { return pGC; }
     GASEnvironment*   GetASEnvironment() { return &Env; }
@@ -1537,6 +1588,12 @@ private:
     GFxSprite*                pLevel0;
     GFxValue::ObjectInterface ObjInterface;
     GViewport                 Viewport;
+    /** retail movieroot+200 / +204 / +236: the stage's perspective and view matrices, built on
+        demand, and its field of view - 55 degrees out of the constructor (2013 0xa064c0's last
+        instruction, `__real@425c0000`), not a guess. */
+    GMatrix3D*                pPerspective3D;
+    GMatrix3D*                pView3D;
+    float                     PerspectiveFOV;
     GFxMovieView::ScaleModeType ScaleMode;
     GFxMovieView::AlignType   Alignment;
     GColor                    BackgroundColor;

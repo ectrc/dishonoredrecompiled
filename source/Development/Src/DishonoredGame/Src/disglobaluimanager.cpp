@@ -31,6 +31,7 @@
 
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
+#include "gfxui_gfx3.h"
 
 /*-----------------------------------------------------------------------------
 	Agent EI (PHASE12 package EI): the three message-box entry points of the manager. All three are forwarders to
@@ -86,4 +87,81 @@ void UDisGlobalUIManager::ApplyGameSettings( const ArkSettingsParameters* Parame
 	m_bEnableAutoSaveInMenus = Parameters->m_bAutoSaveInMenu ? TRUE : FALSE;
 	m_bEnableTutorials = ( Parameters->m_bShowTutorialNotifications && !bDLC05 ) ? TRUE : FALSE;
 	m_bEnableBaseTutorials = ( m_bEnableTutorials && !bDLC06 ) ? TRUE : FALSE;
+}
+
+/*-----------------------------------------------------------------------------
+	Agent FA (PHASE12 package FA): the blur behind a modal.
+
+	The chain the coordinator's brief calls "the game's post-process family", read end to end out of retail:
+	UDisGFxMoviePlayerGlobal::UpdateMessageBoxAttributes (2013 0x7a5040, already ported) sets
+	m_bBlurGameWhileActive on the global movie and then calls OnMovieAttributesChanged, which is the piece
+	that was missing. It ORs that one bit across every open Dishonored movie and hands the answer to the
+	post-process manager as Epp_UberUI, whose parameters are the m_pBlurTweaks asset's - a depth of field
+	with no in-focus radius, which is what puts the whole scene behind the box out of focus.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x84cf80. Retail's gate is the movie's own "is open" bit, because a movie whose
+// attributes change while it is closed contributes nothing to the stack.
+void UDisGlobalUIManager::OnMovieAttributesChanged( UDisGFxMoviePlayerBase* _pMovie )
+{
+	if( _pMovie != NULL && _pMovie->bMovieIsOpen )
+	{
+		RefreshGlobalUIState();
+	}
+}
+
+// DISHONORED(port, partial): 2013 rva 0x847070 (2012 0x8b75e0, private). Retail's body recomputes five things from the same walk - the
+// blur, the black stripes, the HUD's visibility and pause, the controller input mask and the mouse cursor -
+// and each has its own consumer. Only the blur is ported here; the other four are one bit each of the same
+// word (m_bDrawBlackStripesWhileActive, m_bShowHUDWhileActive, m_bPauseHUDWhileActive, m_bAllowMouseCursor)
+// and none of their consumers exists in this tree yet. Retail also seeds the accumulator from the manager's
+// own movie set before the walk; that term is not reproduced, and every movie it would have covered is in
+// the walk below anyway.
+void UDisGlobalUIManager::RefreshGlobalUIState()
+{
+	FGFxEngine* Engine = FGFxEngine::GetEngine();
+	if( Engine == NULL )
+	{
+		return;
+	}
+	UBOOL bBlurGame = FALSE;
+	for( INT Index = 0; Index < Engine->OpenMovies.Num(); Index++ )
+	{
+		UDisGFxMoviePlayerBase* Player = Cast<UDisGFxMoviePlayerBase>( Engine->OpenMovies( Index )->pUMovie );
+		if( Player != NULL && Player->m_bBlurGameWhileActive )
+		{
+			bBlurGame = TRUE;
+		}
+	}
+	UDisPostProcessManager* PpManager = DisGetPpManager();
+	if( PpManager == NULL )
+	{
+		return;
+	}
+	const UBOOL bRunning = PpManager->IsEffectRequired( Epp_UberUI );
+	if( bBlurGame )
+	{
+		if( !bRunning )
+		{
+			if( m_pBlurTweaks == NULL )
+			{
+				debugf( TEXT("DISHONORED(bringup): UI blur asked for and UDisGlobalUIManager::m_pBlurTweaks is NULL - ")
+					TEXT("the [DishonoredGame.DisGlobalUIManager] m_pBlurTweaks entry of DefaultUI.ini names the asset") );
+				return;
+			}
+			PpManager->SetUIPPParams( m_pBlurTweaks->m_Parameters, m_pBlurTweaks->m_fWeight,
+									  m_pBlurTweaks->m_fFadeInTime, m_pBlurTweaks->m_fFadeOutTime );
+			PpManager->StartEffect( Epp_UberUI, TRUE );
+			debugf( TEXT("DISHONORED(bringup): UI blur census: started, weight %.3f fade %.3f/%.3f, DOF focus %.1f ")
+				TEXT("radius %.1f far %.3f"), m_pBlurTweaks->m_fWeight, m_pBlurTweaks->m_fFadeInTime,
+				m_pBlurTweaks->m_fFadeOutTime, m_pBlurTweaks->m_Parameters.m_DOFParameters.m_FocusDistance,
+				m_pBlurTweaks->m_Parameters.m_DOFParameters.m_InFocusRadius,
+				m_pBlurTweaks->m_Parameters.m_DOFParameters.m_FarBlurAmount );
+		}
+	}
+	else if( bRunning )
+	{
+		PpManager->StopEffect( Epp_UberUI );
+		debugf( TEXT("DISHONORED(bringup): UI blur census: stopped") );
+	}
 }

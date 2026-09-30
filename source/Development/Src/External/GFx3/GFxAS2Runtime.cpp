@@ -621,7 +621,8 @@ static const char* GFxAS2BuiltinText[GASbuiltin_COUNT] =
 };
 
 GASGlobalContext::GASGlobalContext(GFxMovieRoot* root, unsigned int swfVersion)
-    : pMovieRoot(root), pGlobal(0), Classes(0), ClassCount(0), ClassCapacity(0)
+    : pMovieRoot(root), pGlobal(0), bGFxExtensions(false), Classes(0), ClassCount(0),
+      ClassCapacity(0)
 {
     SC.pStrings = &Strings;
     SC.pContext = this;

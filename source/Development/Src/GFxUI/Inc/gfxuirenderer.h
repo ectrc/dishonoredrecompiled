@@ -514,6 +514,14 @@ public:
     virtual void SetWorld3D(const GMatrix3D* World);                                       // vt[26] 2012 0x5bb910
     virtual void MakeViewAndPersp3D(const GRect<float>& FrameRect, GMatrix3D& View,
                                     GMatrix3D& Persp, float FovY, bool bInvertY);          // vt[27] GRenderer's own in retail
+    /** DISHONORED(deviation, agent FA): retail's is GRenderer::Adjust3DMatrixForRT (2013 0x9b0a70),
+        a non-virtual of the base. GFx3Gen.h is generated from the 2012 PDB and does not carry it, so
+        it lives here instead - the only caller is ApplyUITransform_RenderThread below and the
+        behaviour is the same. It undoes the render target's own projection and applies the
+        display's, so a 3D subtree drawn into a pushed target lands where it would have on screen. */
+    void Adjust3DMatrixForRT(GMatrix3D& InOutMatrix, const GMatrix3D& Persp,
+                             const GMatrix2D& TargetViewportMatrix,
+                             const GMatrix2D& DisplayViewportMatrix);
     virtual void SetStereoParams(GRenderer::StereoParams Params);                          // vt[28] GRenderer's own in retail
     virtual void SetStereoDisplay(GRenderer::StereoDisplay Display, bool bSet);            // vt[29] GRenderer's own in retail
     virtual void SetVertexData(const void* Vertices, int NumVertices,

@@ -25,6 +25,7 @@
 //   0x85d1c0  public: static class UClass * __cdecl UDisTweaks_PostProcess::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "arkpp.h"
 
 // DISHONORED(port): agent EQ, 2013 rva 0x7e7e30 (2012 0x849660). The anti-aliasing option lands in three
 // places: the manager's own m_PCAntialiasingType, GSystemSettings.iType_AntiAlias - which is an ini key, so
@@ -50,4 +51,120 @@ void UDisPostProcessManager::ApplyGameSettings( const ArkSettingsParameters* Par
 	{
 		m_PpBridge.m_PpNodeAA->m_Type = m_PCAntialiasingType;
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	Agent FA (PHASE12 package FA): the interface's own post-process channel.
+
+	This is what "retail blurs the scene behind a modal" is made of, end to end:
+	  UDisGFxMoviePlayerGlobal::UpdateMessageBoxAttributes sets m_bBlurGameWhileActive on the global movie,
+	  UDisGlobalUIManager::OnMovieAttributesChanged walks every open movie and ORs that bit,
+	  and when it is set it copies m_pBlurTweaks's uber parameters here and starts Epp_UberUI.
+	The blur itself is the uber post-process's depth of field: the tweaks asset's m_Parameters carry an
+	m_DOFParameters group, and blending it in at weight 1 is what puts the whole scene out of focus.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x7e7ee0 (2012 0x849700).
+void UDisPostProcessManager::SetUIPPParams( const FArkUberPpParameters& _rParameters, FLOAT _fWeight,
+											FLOAT _fFadeInTime, FLOAT _fFadeOutTime )
+{
+	m_UIPPParams = _rParameters;
+	m_UIPPWeight = _fWeight;
+	m_UIPPFadeInTime = _fFadeInTime;
+	m_UIPPFadeOutTime = _fFadeOutTime;
+}
+
+// DISHONORED(port): 2013 rva 0x7efca0 (2012 0x8511a0). A four-state fade - 0 off, 1 fading in, 2 full,
+// 3 fading out - driven by m_UIStateDuration, with m_RequiredEffects[Epp_UberUI] as the request. The two
+// cancel arms (1 while no longer wanted, 3 while wanted again) re-enter the opposite fade at the weight
+// already reached rather than at its start, which is what keeps a box that is dismissed and raised again
+// from snapping.
+void UDisPostProcessManager::ApplyUIPostProcessSettings( FArkPpConfig& _rConfig, FLOAT _fDeltaTime )
+{
+	BYTE& State = m_EffectStates[Epp_UberUI];
+	const INT Required = m_RequiredEffects[Epp_UberUI];
+	if( State == 0 && Required != 1 )
+	{
+		return;
+	}
+	m_UIStateDuration += _fDeltaTime;
+	FArkUberPpParameters& Dest = _rConfig.m_UberPpParameters;
+	if( Required == 1 )
+	{
+		switch( State )
+		{
+		case 0:
+			if( Abs( m_UIPPFadeInTime ) >= 1.0e-8f )
+			{
+				State = 1;
+				m_UIStateDuration = 0.f;
+			}
+			else
+			{
+				State = 2;
+				ArkUberPpApplyTo( m_UIPPParams, Dest, m_UIPPWeight, TRUE );
+			}
+			return;
+		case 1:
+			if( m_UIStateDuration < m_UIPPFadeInTime )
+			{
+				const FLOAT Alpha = Min( m_UIStateDuration / m_UIPPFadeInTime, 1.f );
+				ArkUberPpApplyTo( m_UIPPParams, Dest, m_UIPPWeight * Alpha, TRUE );
+				return;
+			}
+			State = 2;
+			break;
+		case 3:
+			if( Abs( m_UIPPFadeInTime ) >= 1.0e-8f )
+			{
+				const FLOAT Alpha = Min( m_UIStateDuration / m_UIPPFadeOutTime, 1.f );
+				State = 1;
+				const FLOAT Weight = ( 1.f - Alpha ) * m_UIPPWeight;
+				m_UIStateDuration = ( m_UIPPWeight != 0.f ) ? ( Weight / m_UIPPWeight ) * m_UIPPFadeInTime : 0.f;
+				ArkUberPpApplyTo( m_UIPPParams, Dest, Weight, TRUE );
+				return;
+			}
+			State = 2;
+			break;
+		default:
+			break;
+		}
+		ArkUberPpApplyTo( m_UIPPParams, Dest, m_UIPPWeight, TRUE );
+		return;
+	}
+	if( State == 2 )
+	{
+		if( Abs( m_UIPPFadeOutTime ) >= 1.0e-8f )
+		{
+			State = 3;
+			m_UIStateDuration = 0.f;
+			ArkUberPpApplyTo( m_UIPPParams, Dest, m_UIPPWeight, TRUE );
+		}
+		else
+		{
+			State = 0;
+		}
+		return;
+	}
+	if( State == 1 )
+	{
+		if( Abs( m_UIPPFadeOutTime ) < 1.0e-8f )
+		{
+			State = 0;
+			return;
+		}
+		const FLOAT InAlpha = Min( m_UIStateDuration / m_UIPPFadeInTime, 1.f );
+		State = 3;
+		m_UIStateDuration = InAlpha * m_UIPPFadeOutTime;
+		const FLOAT OutAlpha = Min( m_UIStateDuration / m_UIPPFadeOutTime, 1.f );
+		ArkUberPpApplyTo( m_UIPPParams, Dest, ( 1.f - OutAlpha ) * m_UIPPWeight, TRUE );
+		return;
+	}
+	if( m_UIStateDuration >= m_UIPPFadeOutTime )
+	{
+		State = 0;
+		return;
+	}
+	const FLOAT Alpha = Min( m_UIStateDuration / m_UIPPFadeOutTime, 1.f );
+	ArkUberPpApplyTo( m_UIPPParams, Dest, ( 1.f - Alpha ) * m_UIPPWeight, TRUE );
 }

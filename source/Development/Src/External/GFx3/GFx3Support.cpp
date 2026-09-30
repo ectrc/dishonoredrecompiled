@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <math.h>
 
 // DISHONORED(bringup, agent DC): the log hook. See the note at GFxLogHook in GTypes.h - this directory
 // has no engine header, so a host that wants the AS2 machine's diagnostics installs a hook.
@@ -79,4 +80,36 @@ template<>
 bool GFxLogBase<GFxLog>::IsVerboseActionErrors() const
 {
     return false;
+}
+
+// DISHONORED(port, agent FA): 2013 0x9b08c0 GRenderer::MakeViewAndPersp3D, the one place a stage
+// rectangle and a field of view become the pair of matrices the 3D display path projects through.
+// The eye sits one focal length in front of the middle of the rectangle looking at it, so the pair
+// maps the rectangle onto clip space exactly as the 2D viewport matrix does - which is what lets a
+// clip with an identity 3D matrix draw in the same pixels it drew in before.
+void GRenderer::MakeViewAndPersp3D(const GRect<float>& FrameRect, GMatrix3D& View, GMatrix3D& Persp,
+                                   float FovYDegrees, bool bInvertY)
+{
+    const float Height = (float)fabs(FrameRect.Bottom - FrameRect.Top);
+    const float Width = (float)fabs(FrameRect.Right - FrameRect.Left);
+    const float CenterX = (FrameRect.Right + FrameRect.Left) * 0.5f;
+    const float CenterY = (FrameRect.Bottom + FrameRect.Top) * 0.5f;
+    const float Focal = (Width * 0.5f) / (float)tan(0.5 * (double)FovYDegrees
+                                                    * 3.14159265358979323846 / 180.0);
+    float EyeZ = -Focal;
+    if (EyeZ < -100000.f)
+        EyeZ = -100000.f;
+    const GPoint3<float> Eye(CenterX, CenterY, EyeZ);
+    const GPoint3<float> At(CenterX, CenterY, 0.f);
+    const GPoint3<float> Up(0.f, bInvertY ? 1.f : -1.f, 0.f);
+    if (bInvertY)
+    {
+        View.ViewLH(Eye, At, Up);
+        Persp.PerspectiveFocalLengthLH(Focal, Width, Height, 1.f, 100000.f);
+    }
+    else
+    {
+        View.ViewRH(Eye, At, Up);
+        Persp.PerspectiveFocalLengthRH(Focal, Width, Height, 1.f, 100000.f);
+    }
 }

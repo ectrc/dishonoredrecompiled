@@ -828,8 +828,18 @@ void ADishonoredPlayerController::ModifyPostProcessSettings( FArkPpConfig& Confi
 		ApplyDarkVisionPostProcessSettings( PlayerPawn, DeltaSeconds );
 		// DISHONORED(bringup): ApplyMusicalOverseerPostProcessSettings (0x6a6970) goes here.
 	}
-	// DISHONORED(bringup): UDisPostProcessManager::ApplyKismetPostProcessSettings (0x7ef9b0) and
-	// ApplyUIPostProcessSettings (0x7efca0) go here, in that order.
+	// DISHONORED(bringup): UDisPostProcessManager::ApplyKismetPostProcessSettings (0x7ef9b0) goes here, before
+	// the UI one.
+	// DISHONORED(port, agent FA): 0x7efca0 - the interface's own channel, which is what blurs the scene behind a
+	// message box. It runs on the real frame delta rather than the paused one, because a box that pauses the game
+	// must still be able to fade its blur in.
+	{
+		UDisPostProcessManager* PpManager = DisGetPpManager();
+		if( PpManager != NULL )
+		{
+			PpManager->ApplyUIPostProcessSettings( Config, GWorld->GetDeltaSeconds() );
+		}
+	}
 	ApplyPossessionPostProcessSettings( DeltaSeconds );
 }
 

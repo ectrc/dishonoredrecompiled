@@ -265,9 +265,13 @@ void UDisGFxMoviePlayerGlobal::UpdateMessageBoxAttributes( UBOOL _bMessageBoxUp 
 	m_bPauseHUDWhileActive = _bMessageBoxUp ? TRUE : FALSE;
 	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
 	bPauseGameWhileActive = ( _bMessageBoxUp && ( UIManager == NULL || UIManager->m_pMainMenu == NULL ) ) ? TRUE : FALSE;
-	// DISHONORED(bringup): retail then calls UIManager->OnMovieAttributesChanged(this) (2013 0x84cf80), which
-	// recomputes the blur and the stripes across the whole movie stack, and refreshes the UI scene client's input
-	// for this movie's local player (UUIRoot::GetSceneClient(), vtable +336). Neither is declared in this tree.
+	// DISHONORED(port, agent FA): retail's next call, 2013 0x84cf80, which recomputes the blur across the whole
+	// movie stack. Retail then also refreshes the UI scene client's input for this movie's local player
+	// (UUIRoot::GetSceneClient(), vtable +336); that one is still not declared in this tree.
+	if( UIManager != NULL )
+	{
+		UIManager->OnMovieAttributesChanged( this );
+	}
 	RefreshMessageBoxFocus();
 }
 

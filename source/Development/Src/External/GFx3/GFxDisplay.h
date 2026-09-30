@@ -109,6 +109,20 @@ extern bool GFxDisplayFitFill;
 // -gfxuinotextshadow: drop the text fields' shadow batch and change nothing else, so the before and
 // after come out of one binary differing by one switch.
 extern bool GFxDisplayNoTextShadow;
+// -gfxui3ddiag=<n>: how many more 3D display-property writes to report, with the clip's target path
+// and the value. Counting down to zero is what bounds a diagnostic that would otherwise be per-frame.
+extern int GFxDisplay3DDiag;
+// The same switch's budget for the renderer's own matrix comparison, which is a separate count because
+// the property writes would otherwise spend it all before the first frame is drawn.
+extern int GFxDisplay3DMatrixDiag;
+// How many characters the last Display() pass drew through the projected path, and how many 3D
+// property writes the run has seen. Both are reported on the per-frame census line.
+extern unsigned int GFxDisplay3DCharacters;
+extern unsigned int GFxDisplay3DWrites;
+// -gfxui3dflat: take the projected path but with every character's own 3D matrix forced to the identity.
+// The picture must then be the one the 2D path drew, which is how the projection plumbing is told apart
+// from what the ActionScript's _z and rotations mean.
+extern bool GFxDisplay3DFlat;
 
 // The per-definition mesh cache. Retail's is the GFxMeshCacheManager state
 // (GFxMeshCache, GFxRenderGen); this is one mesh per definition, built on first display and kept for
@@ -141,6 +155,15 @@ public:
     GTexture*            pGlyphTexture;      // the atlas, uploaded on demand; owned by the cache glue
     GMatrix2D            Matrix;
     GRenderer::Cxform    Cx;
+    // --- the 3D arm ----------------------------------------------------------------------------
+    // Retail's GFxDisplayContext carries a world matrix, a perspective, a view and one byte that says
+    // whether the subtree being drawn is in 3D (2013 0xa53400's this+8 / +12 / +16 / +20). Once the
+    // byte is set the 2D matrix stops accumulating: everything below goes through Matrix3D, which is
+    // why a `_z` on the logo moves every glyph in it rather than only its own geometry.
+    GMatrix3D            Matrix3D;
+    bool                 bIs3D;
+    const GMatrix3D*     pView3D;
+    const GMatrix3D*     pPersp3D;
     unsigned int         MaskLevel;
     // Retail's GFxDisplayContext+148, incremented by PushAndDrawMask (2013 0xa53340) for exactly as
     // long as the mask character's own Display runs and read by GFxDisplayList::Display (0x9cbf20),
@@ -154,9 +177,23 @@ public:
     unsigned int         MaskDrawDepth;
     GFxDisplayStats      Stats;
 
+    // What one character's PreDisplay saves and its PostDisplay puts back. Retail's is
+    // GFxDisplayContextTransforms, five pointers and a byte on the caller's stack (GFxSprite::Display
+    // 0x9f1780 builds one); this holds the values rather than pointers to them, because this tree's
+    // context owns its matrices instead of pointing at the caller's.
+    struct SavedTransform
+    {
+        GMatrix2D         Matrix;
+        GRenderer::Cxform Cx;
+        GMatrix3D         Matrix3D;
+        const GMatrix3D*  pView3D;
+        const GMatrix3D*  pPersp3D;
+        bool              bIs3D;
+    };
+
     // 0xa5f5d0 / 0xa5f800: push and pop one character's transform and colour transform.
-    void PreDisplay(const GFxCharacter* ch, GMatrix2D* savedMatrix, GRenderer::Cxform* savedCx);
-    void PostDisplay(const GMatrix2D& savedMatrix, const GRenderer::Cxform& savedCx);
+    void PreDisplay(const GFxCharacter* ch, SavedTransform* saved);
+    void PostDisplay(const SavedTransform& saved);
 
     void ApplyToRenderer();
 };

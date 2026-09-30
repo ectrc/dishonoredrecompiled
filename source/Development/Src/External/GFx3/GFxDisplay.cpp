@@ -37,6 +37,11 @@ static void GFxStrCopy(char* dst, unsigned int cap, const char* src)
 }
 bool GFxDisplayFitFill = false;
 bool GFxDisplayNoTextShadow = false;
+int GFxDisplay3DDiag = 0;
+int GFxDisplay3DMatrixDiag = 0;
+unsigned int GFxDisplay3DCharacters = 0;
+unsigned int GFxDisplay3DWrites = 0;
+bool GFxDisplay3DFlat = false;
 
 void GFxDisplayMatrixAppend(GMatrix2D* out, const GMatrix2D& a, const GMatrix2D& b)
 {
@@ -724,29 +729,104 @@ GTexture* GFxDisplayGetGlyphTexture(GRenderer* renderer)
 // GFxDisplayContext
 
 GFxDisplayContext::GFxDisplayContext()
-    : pRenderer(0), pRoot(0), pDefImpl(0), pDataDef(0), pGlyphCache(0), pGlyphTexture(0), MaskLevel(0),
-      MaskDrawDepth(0)
+    : pRenderer(0), pRoot(0), pDefImpl(0), pDataDef(0), pGlyphCache(0), pGlyphTexture(0),
+      bIs3D(false), pView3D(0), pPersp3D(0), MaskLevel(0), MaskDrawDepth(0)
 {
     Matrix.SetIdentity();
     GFxDisplayCxformIdentity(&Cx);
     memset(&Stats, 0, sizeof(Stats));
 }
 
-void GFxDisplayContext::PreDisplay(const GFxCharacter* ch, GMatrix2D* savedMatrix,
-                                   GRenderer::Cxform* savedCx)
+void GFxDisplayContext::PreDisplay(const GFxCharacter* ch, SavedTransform* saved)
 {
-    // DISHONORED(port): 2012 0xa5f5d0.
-    *savedMatrix = Matrix;
-    *savedCx = Cx;
-    GFxDisplayMatrixAppend(&Matrix, *savedMatrix, ch->GetMatrix());
-    GFxDisplayCxformConcat(&Cx, *savedCx, ch->GetCxform());
+    // DISHONORED(port): 2013 0xa53400.
+    saved->Matrix = Matrix;
+    saved->Cx = Cx;
+    saved->Matrix3D = Matrix3D;
+    saved->pView3D = pView3D;
+    saved->pPersp3D = pPersp3D;
+    saved->bIs3D = bIs3D;
+    // The 2D transform keeps accumulating only while the subtree is still flat; from the character
+    // that first carries a 3D matrix downwards it stays where it was and the 3D matrix takes over.
+    if (!bIs3D)
+        GFxDisplayMatrixAppend(&Matrix, saved->Matrix, ch->GetMatrix());
+    GFxDisplayCxformConcat(&Cx, saved->Cx, ch->GetCxform());
+
+    if (!bIs3D && !ch->Is3D(false))
+        return;
+
+    GMatrix3D local = (ch->pMatrix3D && !GFxDisplay3DFlat) ? *ch->pMatrix3D
+                                                            : GMatrix3D::GetIdentity();
+    GMatrix3D flat, composed;
+    if (!bIs3D)
+    {
+        // Entering 3D: the 2D transform composed so far becomes the first factor, and from here the
+        // renderer is handed a world matrix and an identity 2D one.
+        flat.SetFrom2DWithDepth(Matrix);
+        composed.MultiplyMatrix(local, flat);
+        local = composed;
+        bIs3D = true;
+        Matrix.SetIdentity();
+    }
+    else
+    {
+        flat.SetFrom2DWithDepth(ch->GetMatrix());
+        composed.MultiplyMatrix(local, flat);
+        local = composed;
+    }
+    ++GFxDisplay3DCharacters;
+    Matrix3D.MultiplyMatrix(local, saved->Matrix3D);
+    if (GFxDisplay3DMatrixDiag > 0)
+    {
+        --GFxDisplay3DMatrixDiag;
+        GFxASCharacter* as = const_cast<GFxCharacter*>(ch)->ToASCharacterDef();
+        GASString path = (as && pRoot) ? as->GetTargetPath(pRoot->GetASContext()->GetSC())
+                                       : GASString();
+        GFxLogf("DISHONORED(bringup): GFx 3D world %s: local[%.5f %.5f %.5f | t %.2f %.2f %.2f] "
+                "world[%.5f %.5f %.5f | t %.2f %.2f %.2f] entering %d",
+                path.ToCStr() ? path.ToCStr() : "?",
+                local.M_[0][0], local.M_[1][1], local.M_[2][2],
+                local.M_[3][0], local.M_[3][1], local.M_[3][2],
+                Matrix3D.M_[0][0], Matrix3D.M_[1][1], Matrix3D.M_[2][2],
+                Matrix3D.M_[3][0], Matrix3D.M_[3][1], Matrix3D.M_[3][2],
+                saved->bIs3D ? 0 : 1);
+    }
+    if (pRenderer != 0)
+        pRenderer->SetWorld3D(&Matrix3D);
+    // A character may override the stage's projection for its own subtree; a mask is drawn with the
+    // projection already in force, which is retail's `MaskLevel == 0` guard.
+    if (ch->GetView3D(false) != 0)
+        pView3D = ch->GetView3D(false);
+    if (ch->GetPerspective3D(false) != 0)
+        pPersp3D = ch->GetPerspective3D(false);
+    if (pRenderer != 0 && MaskLevel == 0)
+    {
+        if (pView3D != 0)
+            pRenderer->SetView3D(*pView3D);
+        if (pPersp3D != 0)
+            pRenderer->SetPerspective3D(*pPersp3D);
+    }
 }
 
-void GFxDisplayContext::PostDisplay(const GMatrix2D& savedMatrix, const GRenderer::Cxform& savedCx)
+void GFxDisplayContext::PostDisplay(const SavedTransform& saved)
 {
-    // DISHONORED(port): 2012 0xa5f800.
-    Matrix = savedMatrix;
-    Cx = savedCx;
+    // DISHONORED(port): 2013 0xa53630. The world matrix is put back first - to the SAVED one, which
+    // is null-equivalent at the top and is what turns the renderer's 3D path off again.
+    if (bIs3D && pRenderer != 0)
+        pRenderer->SetWorld3D(saved.bIs3D ? &saved.Matrix3D : 0);
+    if (pRenderer != 0 && MaskLevel == 0)
+    {
+        if (saved.pView3D != 0)
+            pRenderer->SetView3D(*saved.pView3D);
+        if (saved.pPersp3D != 0)
+            pRenderer->SetPerspective3D(*saved.pPersp3D);
+    }
+    Matrix = saved.Matrix;
+    Cx = saved.Cx;
+    Matrix3D = saved.Matrix3D;
+    pView3D = saved.pView3D;
+    pPersp3D = saved.pPersp3D;
+    bIs3D = saved.bIs3D;
 }
 
 void GFxDisplayContext::ApplyToRenderer()
@@ -864,9 +944,8 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     }
     ++ctx.Stats.Sprites;
 
-    GMatrix2D savedMatrix;
-    GRenderer::Cxform savedCx;
-    ctx.PreDisplay(this, &savedMatrix, &savedCx);
+    GFxDisplayContext::SavedTransform saved;
+    ctx.PreDisplay(this, &saved);
     // The alpha early-out is this reconstruction's, not retail's, and it must not reach a mask: the
     // mask pass has colour writes off, so what the shape's alpha would have produced is irrelevant,
     // while NOT submitting it leaves the stencil empty and hides everything the mask covers. A mask
@@ -874,7 +953,7 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     if (ctx.MaskDrawDepth == 0 && GFxDisplayCxformIsTransparent(ctx.Cx))
     {
         ++ctx.Stats.Invisible;
-        ctx.PostDisplay(savedMatrix, savedCx);
+        ctx.PostDisplay(saved);
         return;
     }
     GFxMovieDataDef* savedDataDef = ctx.pDataDef;
@@ -887,7 +966,7 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
         pDrawing->Display(ctx, this);
     DisplayList.Display(ctx);
     ctx.pDataDef = savedDataDef;
-    ctx.PostDisplay(savedMatrix, savedCx);
+    ctx.PostDisplay(saved);
 }
 
 void GFxGenericCharacter::Display(GFxDisplayContext& ctx)
@@ -904,11 +983,10 @@ void GFxGenericCharacter::Display(GFxDisplayContext& ctx)
         ++ctx.Stats.NoGeometry;
         return;
     }
-    GMatrix2D savedMatrix;
-    GRenderer::Cxform savedCx;
-    ctx.PreDisplay(this, &savedMatrix, &savedCx);
+    GFxDisplayContext::SavedTransform saved;
+    ctx.PreDisplay(this, &saved);
     pDef->Display(ctx, this);
-    ctx.PostDisplay(savedMatrix, savedCx);
+    ctx.PostDisplay(saved);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1265,9 +1343,8 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
     if (GFxDisplayNoText)
         return;
 
-    GMatrix2D savedMatrix;
-    GRenderer::Cxform savedCx;
-    ctx.PreDisplay(this, &savedMatrix, &savedCx);
+    GFxDisplayContext::SavedTransform saved;
+    ctx.PreDisplay(this, &saved);
 
     if (IsDirty())
         AdvanceFrame(false, 0.0f);
@@ -1438,7 +1515,36 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
         ++ctx.Stats.GlyphDraws;
     }
 
-    ctx.PostDisplay(savedMatrix, savedCx);
+    ctx.PostDisplay(saved);
+}
+
+// DISHONORED(port): 2013 0x9f93b0. One call per frame, before the levels are drawn: build the stage's
+// view and perspective if either is missing, hand both to the renderer, and leave them on the context
+// as the pair every 3D character inherits when it does not carry one of its own.
+void GFxMovieRoot::Setup3DDisplay(GFxDisplayContext& ctx)
+{
+    GRenderer* renderer = ctx.pRenderer;
+    if (renderer == 0)
+        return;
+    if (pView3D == 0 || pPerspective3D == 0)
+    {
+        GMatrix3D view, persp;
+        renderer->MakeViewAndPersp3D(GetVisibleFrameRect(), view, persp, PerspectiveFOV, false);
+        if (pView3D == 0)
+        {
+            pView3D = new GMatrix3D();
+            *pView3D = view;
+        }
+        if (pPerspective3D == 0)
+        {
+            pPerspective3D = new GMatrix3D();
+            *pPerspective3D = persp;
+        }
+    }
+    ctx.pView3D = pView3D;
+    renderer->SetView3D(*pView3D);
+    ctx.pPersp3D = pPerspective3D;
+    renderer->SetPerspective3D(*pPerspective3D);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1515,6 +1621,9 @@ void GFxMovieRoot::Display()
 
     if (!GFxDisplayNoBeginDisplay)
         renderer->BeginDisplay(background, Viewport, x0, x1, y0, y1);
+    // 2013 0x9fe550 calls Setup3DDisplay here, between BeginDisplay and the level walk, so that the
+    // stage's view and perspective are on the renderer before any character can inherit them.
+    Setup3DDisplay(ctx);
     ctx.pRenderer->SetCxform(ctx.Cx);
     pLevel0->Display(ctx);
     if (!GFxDisplayNoBeginDisplay)

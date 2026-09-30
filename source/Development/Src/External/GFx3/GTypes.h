@@ -20,6 +20,7 @@
 #define INC_GFX3_GTYPES_H
 
 #include <stddef.h>
+#include <math.h>
 #include <new>
 #include <intrin.h>
 
@@ -622,17 +623,187 @@ public:
     }
 };
 
+// GMatrix3D - float M_[4][4]. The convention is ROW-VECTOR (a point is a row, `p * M`, and the
+// translation lives in row 3), and that is read out of retail rather than assumed: GMatrix3D's
+// conversion from GMatrix2D (2013 0x9ac010) puts the 2D matrix's translation column M_[0][2] /
+// M_[1][2] into M_[3][0] / M_[3][1], and PerspectiveFocalLengthLH (0x9ac800) writes the w-producing
+// 1 into M_[2][3]. GMatrix2D is the other way round (`M * p`, translation in column 2), so the
+// conversion below is a transpose and not a copy.
 class GMatrix3D
 {
 public:
     float M_[4][4];
 
     GMatrix3D() { SetIdentity(); }
+    // DISHONORED(port): 2013 0x9ac010.
+    explicit GMatrix3D(const GMatrix2D& m)
+    {
+        M_[0][0] = m.M_[0][0]; M_[0][1] = m.M_[1][0]; M_[0][2] = 0.f; M_[0][3] = 0.f;
+        M_[1][0] = m.M_[0][1]; M_[1][1] = m.M_[1][1]; M_[1][2] = 0.f; M_[1][3] = 0.f;
+        M_[2][0] = 0.f;        M_[2][1] = 0.f;        M_[2][2] = 1.f; M_[2][3] = 0.f;
+        M_[3][0] = m.M_[0][2]; M_[3][1] = m.M_[1][2]; M_[3][2] = 0.f; M_[3][3] = 1.f;
+    }
     void SetIdentity()
     {
         for (int r = 0; r < 4; ++r)
             for (int c = 0; c < 4; ++c)
                 M_[r][c] = (r == c) ? 1.f : 0.f;
+    }
+    // DISHONORED(deviation, agent FA): the same conversion with the depth axis scaled by the 2D
+    // matrix's own uniform scale instead of left at 1. Retail's body leaves it at 1 because retail's
+    // whole display chain and its perspective are in one unit (twips); this tree's chain ends in the
+    // twips-to-pixels scale at the root (GFxDisplay.cpp's "Coordinate convention" note) while the
+    // perspective is built from the frame rect in pixels, so a z left unscaled would be twenty times
+    // too deep and a five-degree y rotation would swing a clip through the camera. Measured: with the
+    // literal body the main menu's logo drew at about 2.5x and skewed (fa_apshottime00001.png).
+    void SetFrom2DWithDepth(const GMatrix2D& m)
+    {
+        *this = GMatrix3D(m);
+        M_[2][2] = (float)((m.GetXScale() + m.GetYScale()) * 0.5);
+    }
+    // DISHONORED(port): 2013 0x9ac060. Every element finite and inside the float range; a matrix that
+    // fails this is discarded rather than stored, which is what keeps one NaN out of the display list.
+    bool IsValid() const
+    {
+        for (int r = 0; r < 4; ++r)
+            for (int c = 0; c < 4; ++c)
+                if (!(M_[r][c] >= -3.402823466e38f && M_[r][c] <= 3.402823466e38f))
+                    return false;
+        return true;
+    }
+    // DISHONORED(port): 2013 0x9ac280. this = a * b, row-major, so `a` applies first to a row vector.
+    // Written out rather than looped because the aliasing matters: every caller in retail passes a
+    // copy of the destination as `a` or `b`.
+    void MultiplyMatrix(const GMatrix3D& a, const GMatrix3D& b)
+    {
+        for (int r = 0; r < 4; ++r)
+            for (int c = 0; c < 4; ++c)
+                M_[r][c] = a.M_[r][0] * b.M_[0][c] + a.M_[r][1] * b.M_[1][c]
+                         + a.M_[r][2] * b.M_[2][c] + a.M_[r][3] * b.M_[3][c];
+    }
+    void RotateX(float radians)                                        // 2013 0x9ac6a0
+    {
+        const float c = (float)cos(radians), s = (float)sin(radians);
+        SetIdentity();
+        M_[1][1] = c;  M_[1][2] = s;
+        M_[2][1] = -s; M_[2][2] = c;
+    }
+    void RotateY(float radians)                                        // 2013 0x9ac720
+    {
+        const float c = (float)cos(radians), s = (float)sin(radians);
+        SetIdentity();
+        M_[0][0] = c; M_[0][2] = -s;
+        M_[2][0] = s; M_[2][2] = c;
+    }
+    // DISHONORED(port): 2013 0x9ac800 / 0x9ac7a0. Focal length rather than a field of view, because
+    // that is what MakeViewAndPersp3D has in hand: the eye sits one focal length from the stage plane.
+    void PerspectiveFocalLengthLH(float focal, float w, float h, float zn, float zf)
+    {
+        Zero();
+        M_[0][0] = (focal + focal) / w;
+        M_[1][1] = (focal + focal) / h;
+        M_[2][2] = zf / (zf - zn);
+        M_[2][3] = 1.f;
+        M_[3][2] = -zn * zf / (zf - zn);
+    }
+    void PerspectiveFocalLengthRH(float focal, float w, float h, float zn, float zf)
+    {
+        Zero();
+        M_[0][0] = (focal + focal) / w;
+        M_[1][1] = (focal + focal) / h;
+        M_[2][2] = zf / (zn - zf);
+        M_[2][3] = -1.f;
+        M_[3][2] = zn * zf / (zn - zf);
+    }
+    void ViewLH(const GPoint3<float>& eye, const GPoint3<float>& at, const GPoint3<float>& up)
+    {
+        BuildView(eye, at, up, true);                                  // 2013 0x9aca90
+    }
+    void ViewRH(const GPoint3<float>& eye, const GPoint3<float>& at, const GPoint3<float>& up)
+    {
+        BuildView(eye, at, up, false);                                 // 2013 0x9ac860
+    }
+    // DISHONORED(port): 2013 0x9abf40 with 0x9abdb0 - the adjugate over the determinant, spelled as
+    // retail spells it (a cofactor per element). Only the render-target correction needs it.
+    void SetInverse(const GMatrix3D& m)
+    {
+        float cof[4][4];
+        for (int r = 0; r < 4; ++r)
+            for (int c = 0; c < 4; ++c)
+                cof[r][c] = m.Cofactor(r, c);
+        const float det = m.M_[0][0] * cof[0][0] + m.M_[0][1] * cof[0][1]
+                        + m.M_[0][2] * cof[0][2] + m.M_[0][3] * cof[0][3];
+        if (det == 0.f)
+        {
+            SetIdentity();
+            return;
+        }
+        const float inv = 1.f / det;
+        for (int r = 0; r < 4; ++r)
+            for (int c = 0; c < 4; ++c)
+                M_[r][c] = cof[c][r] * inv;
+    }
+    static const GMatrix3D& GetIdentity()
+    {
+        static const GMatrix3D identity;
+        return identity;
+    }
+
+private:
+    void Zero()
+    {
+        for (int r = 0; r < 4; ++r)
+            for (int c = 0; c < 4; ++c)
+                M_[r][c] = 0.f;
+    }
+    float Cofactor(int row, int col) const                             // 2013 0x9abdb0
+    {
+        float m3[3][3];
+        int dr = 0;
+        for (int r = 0; r < 4; ++r)
+        {
+            if (r == row)
+                continue;
+            int dc = 0;
+            for (int c = 0; c < 4; ++c)
+            {
+                if (c == col)
+                    continue;
+                m3[dr][dc++] = M_[r][c];
+            }
+            ++dr;
+        }
+        const float minor = m3[0][0] * (m3[1][1] * m3[2][2] - m3[1][2] * m3[2][1])
+                          - m3[0][1] * (m3[1][0] * m3[2][2] - m3[1][2] * m3[2][0])
+                          + m3[0][2] * (m3[1][0] * m3[2][1] - m3[1][1] * m3[2][0]);
+        return ((row + col) & 1) ? -minor : minor;
+    }
+    // The two view builders differ in one thing only - which way the z axis points - so retail's two
+    // bodies are the same arithmetic with `at - eye` and `eye - at` swapped.
+    void BuildView(const GPoint3<float>& eye, const GPoint3<float>& at, const GPoint3<float>& up,
+                   bool bLeftHanded)
+    {
+        Zero();
+        float zx = bLeftHanded ? (at.x - eye.x) : (eye.x - at.x);
+        float zy = bLeftHanded ? (at.y - eye.y) : (eye.y - at.y);
+        float zz = bLeftHanded ? (at.z - eye.z) : (eye.z - at.z);
+        const float zlen = (float)sqrt((double)(zx * zx + zy * zy + zz * zz));
+        zx /= zlen; zy /= zlen; zz /= zlen;
+        float xx = up.y * zz - up.z * zy;
+        float xy = up.z * zx - zz * up.x;
+        float xz = zy * up.x - zx * up.y;
+        const float xlen = (float)sqrt((double)(xx * xx + xy * xy + xz * xz));
+        xx /= xlen; xy /= xlen; xz /= xlen;
+        const float yx = zy * xz - zz * xy;
+        const float yy = zz * xx - zx * xz;
+        const float yz = zx * xy - zy * xx;
+        M_[0][0] = xx; M_[1][0] = xy; M_[2][0] = xz;
+        M_[3][0] = -(xx * eye.x + xy * eye.y + xz * eye.z);
+        M_[0][1] = yx; M_[1][1] = yy; M_[2][1] = yz;
+        M_[3][1] = -(yx * eye.x + yy * eye.y + yz * eye.z);
+        M_[0][2] = zx; M_[1][2] = zy; M_[2][2] = zz;
+        M_[3][2] = -(zx * eye.x + zy * eye.y + zz * eye.z);
+        M_[3][3] = 1.f;
     }
 };
 

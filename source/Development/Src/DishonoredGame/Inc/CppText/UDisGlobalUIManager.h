@@ -20,6 +20,15 @@ public:
 	// DISHONORED(port): agent EI, 2013 rva 0x83dc30
 	void AddMessageBoxTimer( INT _ID, FLOAT _fDuration );
 
+// ---- agent FA (PHASE12 FA): the blur behind a modal ----
+public:
+	// DISHONORED(port): 2013 rva 0x84cf80. An open movie whose attributes changed re-reads the whole stack.
+	void OnMovieAttributesChanged( class UDisGFxMoviePlayerBase* _pMovie );
+	// DISHONORED(port, partial): 2013 rva 0x847070 (2012 0x8b75e0, where the PDB names it) is the whole of it - the blur, the
+	// black stripes, the HUD, the controller input mask and the mouse cursor. Only the blur half is ported;
+	// the others are named at the site. Body in disglobaluimanager.cpp.
+	void RefreshGlobalUIState();
+
 // ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
 public:
 	// DISHONORED(port): 2013 rva 0x841250 (new in 2013; the 2012 body at 0x8aef30 is 35 bytes against 152).
