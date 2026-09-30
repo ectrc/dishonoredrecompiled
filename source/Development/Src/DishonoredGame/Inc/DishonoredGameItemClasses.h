@@ -889,8 +889,8 @@ public:
     //## END PROPS DisItemContext_AimAssistAttack
 
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisItemContext_AimAssistAttack::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_CLASS(UDisItemContext_AimAssistAttack,UDisItemContext,0,DishonoredGame)
+#include "CppText/UDisItemContext_AimAssistAttack.h"
 };
 
 // DishonoredGame.DisTweaks_ItemContext: retail sizeof 176, reflected span 140..176 (2012 PDB sizeof 176)

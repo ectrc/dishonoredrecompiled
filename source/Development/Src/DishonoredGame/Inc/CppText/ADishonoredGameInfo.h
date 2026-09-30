@@ -23,3 +23,11 @@ public:
 	// are ICF-folded onto UObject::IsRefSaveable's, which is why the PDB names only the 11 with a body of
 	// their own. vtables.csv slot 67 is the record.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+// ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
+public:
+	// DISHONORED(port): 2013 rva 0x5e9db0 (new in 2013 - DishonoredGameInfo only implements the interface in
+	// 2013's script package), and the SetDifficulty (0x5e9f60, retail vtable +1052) it is a call to. Bodies in
+	// dishonoredgameinfo.cpp.
+	virtual void SetDifficulty( BYTE NewDifficulty );
+	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );

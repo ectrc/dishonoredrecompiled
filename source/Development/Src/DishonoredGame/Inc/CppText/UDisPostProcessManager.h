@@ -27,3 +27,8 @@ public:
 	// are ICF-folded onto UObject::IsRefSaveable's, which is why the PDB names only the 11 with a body of
 	// their own. vtables.csv slot 67 is the record.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+// ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
+public:
+	// DISHONORED(port): 2013 rva 0x7e7e30 (2012 0x849660). Body in dispostprocessmanager.cpp.
+	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );

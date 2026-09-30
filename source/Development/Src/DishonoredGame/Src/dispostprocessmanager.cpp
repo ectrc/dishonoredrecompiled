@@ -23,3 +23,31 @@
 //   0x857430  public: void __thiscall UDisPostProcessManager::Tick(float)
 //   0x85c540  public: static class UClass * __cdecl UDisTweaks_PostProcess::GetPrivateStaticClassUDisTweaks_PostProcess(wchar_t const *)
 //   0x85d1c0  public: static class UClass * __cdecl UDisTweaks_PostProcess::StaticClassNoInline(void)
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): agent EQ, 2013 rva 0x7e7e30 (2012 0x849660). The anti-aliasing option lands in three
+// places: the manager's own m_PCAntialiasingType, GSystemSettings.iType_AntiAlias - which is an ini key, so
+// this is the one option on the screen that writes itself to DishonoredEngine.ini - and, if the post-process
+// graph has been built, the m_Type of the graph's AA node (m_PpBridge.m_PpNodeAA @324 of the object, the node's
+// m_Type @104). An unrecognised value leaves the first two alone and still republishes to the node, which is
+// retail's own control flow (its default arm jumps past the global assignment only).
+void UDisPostProcessManager::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	UBOOL bKnownMode = TRUE;
+	switch( Parameters->m_AntiAliasingMode )
+	{
+	case 0:		m_PCAntialiasingType = 0; break;
+	case 1:		m_PCAntialiasingType = 1; break;
+	case 2:		m_PCAntialiasingType = 2; break;
+	default:	bKnownMode = FALSE; break;
+	}
+	if( bKnownMode )
+	{
+		GSystemSettings.iType_AntiAlias = m_PCAntialiasingType;
+	}
+	if( m_PpBridge.m_PpNodeAA != NULL )
+	{
+		m_PpBridge.m_PpNodeAA->m_Type = m_PCAntialiasingType;
+	}
+}

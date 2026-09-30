@@ -139,3 +139,35 @@ void UDishonoredPlayerInput::execDis_Jump_ButtonDown( FFrame& Stack, RESULT_DECL
 	P_FINISH;
 	Dis_Jump_ButtonDown();
 }
+
+// DISHONORED(port): agent EQ, 2013 rva 0x6bd610 (2012 0x6f8e10, byte-identical - this body did not change
+// between the builds). Two halves. The first is the binding half and retail runs it only for
+// ASLI_ApplyCurrentValues and ASLI_ValidatedByUser (retail's test is `if (!Reason || Reason == 3)`): it
+// translates the gamepad scheme setting, rebuilds Bindings out of BaseBindings and the two binding sets, and
+// then hands the five movement/use keys to the GFx engine so the menus can draw their glyphs. The second half
+// is unconditional and is the eleven values the input code reads - the two pad sensitivities, the three
+// invert/friction/auto-aim bits per device, the two friction strengths, the mouse sensitivity modifier, and
+// UPlayerInput::bEnableMouseSmoothing, which is bit 11 of the bitfield at +284.
+// DISHONORED(bringup): the binding half is BuildBindings(), the stand-in agent DO wrote for retail's
+// ReadPCBindingsFromProfile (0x6b8240) / TranslateBaseBindings (0x6baa80) / InitGameActionBindings (0x6bac10)
+// chain, plus retail's FGFxEngine call for the five glyph keys, which this tree's GFxUI has no equivalent for.
+void UDishonoredPlayerInput::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	if( Reason == ASLI_ApplyCurrentValues || Reason == ASLI_ValidatedByUser )
+	{
+		BuildBindings();
+	}
+
+	m_fGamepadLookXSensitivitySettings = (FLOAT)Parameters->m_GamepadLookXSensitivity * 0.01f;
+	m_fGamepadLookYSensitivitySettings = (FLOAT)Parameters->m_GamepadLookYSensitivity * 0.01f;
+	m_bGamepadInvertYAxisSettings = Parameters->m_bGamepadInvertY ? TRUE : FALSE;
+	m_bGamepadUseFrictionSettings = Parameters->m_bGamepadFriction ? TRUE : FALSE;
+	m_bGamepadUseAutoAimSettings = Parameters->m_bGamepadAutoAim ? TRUE : FALSE;
+	m_fGamepadFrictionStrengthSettings = (FLOAT)Parameters->m_GamepadFrictionStrength * 0.01f;
+	m_fMouseSensitivityModifierSetting = Parameters->m_fMouseSensitivity;
+	m_bMouseInvertYAxisSettings = Parameters->m_bMouseInvertY ? TRUE : FALSE;
+	m_bMouseUseFrictionSettings = Parameters->m_bMouseFriction ? TRUE : FALSE;
+	m_fMouseFrictionStrengthSettings = (FLOAT)Parameters->m_MouseFrictionStrength * 0.01f;
+	m_bMouseUseAutoAimSettings = Parameters->m_bMouseAutoAim ? TRUE : FALSE;
+	bEnableMouseSmoothing = Parameters->m_bMouseSmoothing ? TRUE : FALSE;
+}

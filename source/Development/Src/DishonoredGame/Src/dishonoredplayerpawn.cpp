@@ -325,3 +325,10 @@ void ADishonoredPlayerPawn::SetStoryFlag( const FName& _rStoryFlagSetPath, const
 	}
 	pInstance->m_bCurValue = _bValue ? 1 : 0;
 }
+
+// DISHONORED(port): agent EQ, 2013 rva 0x6a1a80 (2012 0x6fac40) - thirty-one bytes, one bit. Bit 16 of the
+// bitfield at +2208 is m_bCameraRelativeClimbing, counting the seventeen flags the retail SDK declares before it.
+void ADishonoredPlayerPawn::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	m_bCameraRelativeClimbing = Parameters->m_bCameraRelativeClimbing ? TRUE : FALSE;
+}

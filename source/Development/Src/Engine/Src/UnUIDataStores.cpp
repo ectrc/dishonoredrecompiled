@@ -17,24 +17,9 @@
 // UOnlineSubsystemSteamworks::ReadProfileSettings (2013 rva 0x5ad8f0) fires. Agent AM.
 void UUIDataProvider_OnlinePlayerStorage::OnReadStorageComplete_Native()
 {
-	// DISHONORED(bringup): -arksettings gates the listener notification. Applying the settings is what
-	// retail does, but every DishonoredGame listener's ApplyGameSettings is still a generated
-	// IArkSettingsListenerInterface shim that appErrorfs (ADishonoredPlayerController,
-	// ADishonoredPlayerPawn, ADishonoredPlayerCamera, ADishonoredGameInfo, UDisPostProcessManager,
-	// UDishonoredPlayerInput, UDisGFxMoviePlayerHUD, UDisItemContext_AimAssistAttack, ...), so the first
-	// listener would kill the run. Switch it on once those are ported (hand-over in
-	// resources/docs/agents/agentAM.md).
-	if ( !ParseParam( appCmdLine(), TEXT("ARKSETTINGS") ) )
-	{
-		static UBOOL bWarned = FALSE;
-		if ( !bWarned )
-		{
-			bWarned = TRUE;
-			debugf( TEXT("DISHONORED(bringup): OnReadStorageComplete_Native: settings not applied to listeners (-arksettings to try)") );
-		}
-		return;
-	}
-
+	// DISHONORED(port): agent EQ. Agent AM gated this behind -arksettings because every DishonoredGame
+	// listener's ApplyGameSettings was still a generated appErrorf shim; all of them are ported now, so the
+	// profile read publishes to the listeners as retail's does.
 	TArray<TScriptInterface<IArkSettingsListenerInterface> > Listeners;
 	ArkSettings::FindListeners( Listeners );
 	ArkSettings::OnSettingsChanged( Profile, Listeners, ArkSettings::ECR_ReadFromStorage );

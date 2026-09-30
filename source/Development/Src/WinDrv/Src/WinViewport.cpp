@@ -2666,3 +2666,57 @@ void FWindowsViewport::OnMouseButtonUp( UINT Message, WPARAM wParam )
 		ViewportClient->InputKey(this,0,Key,IE_Released);
 	}
 }
+
+//
+//	FWindowsViewport::ApplyGameSettings
+//
+// DISHONORED(port): agent EQ, 2013 rva 0x5c3210 (2012 0x60aa40). This is where the four graphics options that
+// are not profile values land, and it is the only place in the settings republish that persists anything without
+// a Steam client: Resize() ends in GSystemSettings.SetResolution(), which writes ResX/ResY/bFullscreen to
+// GEngineIni. Retail resizes only for ASLI_ValidatedByUser - the reason UDisGFxMoviePlayerMenuBase::OnLeaveOptions
+// publishes - and only when one of the four differs from what is in force. The GSystemSettings members were
+// identified by their offsets from GSystemSettings itself (2013 rva 0x1042f20; FSystemSettings has a vfptr, so a
+// member at FSystemSettingsData offset N is at N+4): +128 TextureForcedLODBias, +120
+// SkeletalLODDistanceFactorMultiplier, +76 bAllowLightShafts, +80 bAllowRatsShadow. That last pair is also the
+// measurement that settles agent EO's open judgement about ArkSettingsParameters member 46: retail writes it into
+// bAllowLightShafts, so it is m_bLightShaftEnable and not the 2012 PDB's m_PostProcessQuality.
+// DISHONORED(bringup): retail's 2013 Resize takes a fifth parameter, the vsync flag, which this tree's
+// FWindowsViewport::Resize (five parameters, the last two the window position) does not have; the flag is put
+// into GSystemSettings directly instead. Retail also passes its own stored window position where this passes the
+// -1/-1 default, which re-centres a windowed viewport it resizes.
+void FWindowsViewport::ApplyGameSettings(const ArkSettingsParameters* Parameters, IArkSettingsListenerInterface::EChangeReason Reason)
+{
+	if( GIsEditor )
+	{
+		return;
+	}
+
+	if( Reason == IArkSettingsListenerInterface::ASLI_ValidatedByUser )
+	{
+		const UBOOL bWantsFullscreen = Parameters->m_bFullscreen != 0;
+		if( (IsFullscreen() != 0) != (bWantsFullscreen != 0)
+			|| GSystemSettings.ResX != Parameters->m_ResX
+			|| GSystemSettings.ResY != Parameters->m_ResY
+			|| ( GSystemSettings.bUseVSync != 0 ) != ( Parameters->m_bVSync != 0 ) )
+		{
+			GSystemSettings.bUseVSync = Parameters->m_bVSync ? TRUE : FALSE;
+			Resize( Parameters->m_ResX, Parameters->m_ResY, bWantsFullscreen );
+		}
+	}
+
+	switch( Parameters->m_TextureDetails )
+	{
+	case 0:		GSystemSettings.TextureForcedLODBias = 2; break;
+	case 1:		GSystemSettings.TextureForcedLODBias = 1; break;
+	case 2:		GSystemSettings.TextureForcedLODBias = 0; break;
+	default:	break;
+	}
+	switch( Parameters->m_ModelDetails )
+	{
+	case 0:		GSystemSettings.SkeletalLODDistanceFactorMultiplier = 1; break;
+	case 1:		GSystemSettings.SkeletalLODDistanceFactorMultiplier = 0; break;
+	default:	break;
+	}
+	GSystemSettings.bAllowLightShafts = Parameters->m_bLightShaftEnable != 0;
+	GSystemSettings.bAllowRatsShadow = Parameters->m_bRatShadows != 0;
+}

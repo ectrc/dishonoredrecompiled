@@ -3,3 +3,8 @@
 // dishonoredplayercamera.cpp.
 public:
 	void ApplyCameraPostProcess( struct FArkPpConfig& Config );
+
+// ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
+public:
+	// DISHONORED(port): 2013 rva 0x6c01f0 (2012 0x6fbf40). Body in dishonoredplayercamera.cpp.
+	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );

@@ -90,3 +90,16 @@ void ADishonoredPlayerCamera::ApplyCameraPostProcess( FArkPpConfig& Config )
 		}
 	}
 }
+
+// DISHONORED(port): agent EQ, 2013 rva 0x6c01f0 (2012 0x6fbf40). Four writes and no reason test: the field of
+// view setting becomes both the camera's own default and ACamera::DefaultFOV, and the head-bob setting becomes
+// both the bob and the roll amplitude. Retail's `this` is the IArkSettingsListenerInterface subobject at +1040,
+// which is why the decompile writes +340 (m_fDefaultFOVSettings @1380) and -444 (ACamera::DefaultFOV @596).
+void ADishonoredPlayerCamera::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	const FLOAT FieldOfView = (FLOAT)Parameters->m_FOV;
+	m_fDefaultFOVSettings = FieldOfView;
+	DefaultFOV = FieldOfView;
+	m_RollAmount = Parameters->m_fHeadBobAmount;
+	m_BobAmount = Parameters->m_fHeadBobAmount;
+}

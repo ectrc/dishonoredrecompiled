@@ -35,3 +35,8 @@ protected:
 	void UpdateHealthGauge( const struct FDisPlayerStatus_Health& _rHealth );        // 2013 rva 0x797d40
 	void UpdateManaGauge( const struct FDisPlayerStatus_Mana& _rMana );              // 2013 rva 0x797f80
 	void UpdateEquipmentInfo( const struct FDisPlayerStatus_Equipment& _rEquipment ); // 2013 rva 0x7981f0
+
+// ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
+public:
+	// DISHONORED(port): 2013 rva 0x7af370 (2012 0x811620). Body in disgfxmovieplayerhud.cpp.
+	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );

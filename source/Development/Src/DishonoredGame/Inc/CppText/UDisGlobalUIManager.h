@@ -19,3 +19,9 @@ public:
 	void HideMessageBox( INT _ID );
 	// DISHONORED(port): agent EI, 2013 rva 0x83dc30
 	void AddMessageBoxTimer( INT _ID, FLOAT _fDuration );
+
+// ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
+public:
+	// DISHONORED(port): 2013 rva 0x841250 (new in 2013; the 2012 body at 0x8aef30 is 35 bytes against 152).
+	// Body in disglobaluimanager.cpp.
+	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );

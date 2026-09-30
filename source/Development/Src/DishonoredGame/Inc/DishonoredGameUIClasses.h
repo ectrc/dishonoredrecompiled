@@ -1013,7 +1013,6 @@ public:
     //## END PROPS DisGFxMoviePlayerHUD
 
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisGFxMoviePlayerHUD::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_FUNCTION(execOnPlayerChoiceConfirm);
     DECLARE_CLASS(UDisGFxMoviePlayerHUD,UDisGFxMoviePlayerBase,0|CLASS_Config,DishonoredGame)
 #include "CppText/UDisGFxMoviePlayerHUD.h"
@@ -1495,7 +1494,6 @@ public:
     //## END PROPS DisGlobalUIManager
 
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisGlobalUIManager::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_CLASS(UDisGlobalUIManager,UObject,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("UI");}
 #include "CppText/UDisGlobalUIManager.h"

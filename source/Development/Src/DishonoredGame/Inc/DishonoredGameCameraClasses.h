@@ -198,7 +198,6 @@ public:
     //## END PROPS DishonoredPlayerCamera
 
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredPlayerCamera::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_FUNCTION(execApplyDebugCam_Native);
     DECLARE_CLASS(ADishonoredPlayerCamera,ACamera,0|CLASS_Config|CLASS_Transient,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Camera");}

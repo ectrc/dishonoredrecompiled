@@ -4,7 +4,7 @@
 // members) and the ArkSettings statics the listeners use (IArkSettingsListenerInterface, UnClient.h). 2013 rvas:
 // ArkSettings::GetParameters 0x53b730, ApplyCurrentSettings 0x53b790, ArkSettingsParameters::ArkSettingsParameters 0x53b450,
 // ArkSettingsParameters::Read 0x539730 (2012 0x57e580 / 0x57e5e0 / 0x57e3c0 / 0x57a260).
-// The rest of the 2012 unit (FindListeners, OnSettingsChanged, ResetSettings, SaveSettings, the setting providers) is not ported.
+// The rest of the 2012 unit (ResetSettings, ResetAllSettings) is not ported.
 //
 // PDB functions attributed to this file (1):
 //   0x574dd0  public: virtual __thiscall ArkSettings::SettingProvider::~SettingProvider(void)
@@ -99,8 +99,33 @@ public:
 		ECR_ValidatedByUser = 2,
 	};
 
+	// DISHONORED(port): agent EQ. The seven-slot vtable of the provider a setting with no value mappings of its
+	// own is read and written through. Resolved out of the two 2013 vtables it has - the base's at 0xca3f08
+	// (match_2012_2013.csv names it ??_7InvalidDynamicSettingProvider@@6B@) and PCResolutionSettingProvider's at
+	// 0xca44f4 - slot for slot: the base's five non-destructor bodies are all ICF folds onto an empty or a
+	// zero-returning function, and PCResolutionSettingProvider overrides six of them. The two accessors the
+	// options screen uses are slot 2 (+8, GetCurrentValueIndex: retail 0x57b5f0 is `return this[4]`) and slot 4
+	// (+16, SetCurrentValueIndex: retail folds it onto ADisSkeletalBreakable::SetTweaks_Derived, `this[4] = v`);
+	// OnSettingChange (0x7cb870) calls exactly those two, CreateGFxSetting (0x7db5f0) calls slot 1 and slot 2,
+	// and ArkSettingsParameters::Read calls slot 5 and slot 3. Nothing calls the destructor except the atexit
+	// the two function-statics register.
+	class SettingProvider
+	{
+	public:
+		virtual ~SettingProvider() {}
+		virtual void GetDynamicValueNames( TArray<FString>& OutNames ) {}
+		virtual INT GetCurrentValueIndex() { return 0; }
+		virtual INT GetInnerValue( INT ValueIndex, INT Component ) { return 0; }
+		virtual void SetCurrentValueIndex( INT ValueIndex ) {}
+		virtual void ReadFromSystemSettings() {}
+		virtual void Refresh() {}
+	};
+
 	static ArkSettingsParameters& GetParameters();
 	static void ApplyCurrentSettings( IArkSettingsListenerInterface* Listener );
 	static void FindListeners( TArray<TScriptInterface<IArkSettingsListenerInterface> >& OutListeners );
 	static void OnSettingsChanged( UOnlinePlayerStorage* Settings, TArray<TScriptInterface<IArkSettingsListenerInterface> >& Listeners, EChangeReason Reason );
+	static SettingProvider& GetSettingProvider( INT SettingID );
+	static void SaveSettings( class APlayerController* PC );
+	static void UpdateSettingsFromSystemSettings( class APlayerController* PC );
 };

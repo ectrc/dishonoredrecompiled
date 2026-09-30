@@ -224,3 +224,29 @@ void ADishonoredGameInfo::PostBeginPlay()
 	Super::PostBeginPlay();
 	InitGlobalManagers();
 }
+
+// DISHONORED(port): agent EQ, 2013 rva 0x5e9f60 (2012 0x62fba0, byte-identical), retail vtable +1052 - and it is
+// the slot ApplyGameSettings calls, which is how the body below was identified.
+// DISHONORED(bringup): retail then dispatches game event 9 with the old and the new difficulty through
+// FArkGameEventDispatcher::GetInstance(), which is unported in this tree (the same gap CppText/ADishonoredPawn.h
+// records), so nothing that listens for a difficulty change is told about one.
+void ADishonoredGameInfo::SetDifficulty( BYTE NewDifficulty )
+{
+	if( NewDifficulty == m_Difficulty )
+	{
+		return;
+	}
+	m_Difficulty = NewDifficulty;
+}
+
+// DISHONORED(port): agent EQ, 2013 rva 0x5e9db0 - thirty-seven bytes, and new in 2013: 2012's
+// DishonoredGameInfo does not implement Engine.ArkSettingsListenerInterface at all (script_classes_2012.json
+// lists only Engine.Interface_NavigationHandle for it, script_classes_2013.json lists both), which is why
+// match_2012_2013.csv marks this body `new` and the 2012 PDB has no name for it. Retail's whole body is the
+// virtual call to SetDifficulty with the campaign difficulty; ADisDLC06GameInfo overrides it (0x8bf190) with
+// exactly the same body reading m_DifficultyDLC06 instead, which is the second, independent confirmation that
+// ArkSettingsParameters has both members and that they sit at +132 and +136.
+void ADishonoredGameInfo::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	SetDifficulty( (BYTE)Parameters->m_Difficulty );
+}

@@ -777,7 +777,6 @@ public:
         ProcessEvent(FindFunctionChecked(DISHONOREDGAME_GameEnding),&Parms);
     }
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     virtual UObject* GetUObjectInterfaceInterface_NavigationHandle() { return this; }  // DISHONORED(port): IInterface_NavigationHandle interface glue
     virtual FVector GetEdgeZAdjust(struct FNavMeshEdgeBase* Edge) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::GetEdgeZAdjust")); return {}; }  // DISHONORED(port): IInterface_NavigationHandle pure virtual
     virtual void SetupPathfindingParams( struct FNavMeshPathParams& out_ParamCache ) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredGameInfo::SetupPathfindingParams")); }  // DISHONORED(port): IInterface_NavigationHandle pure virtual
@@ -2049,7 +2048,6 @@ public:
         ProcessEvent(FindFunctionChecked(DISHONOREDGAME_ReceivedPlayer),&Parms);
     }
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredPlayerController::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_FUNCTION(execOnControllerChanged_Native);
     DECLARE_FUNCTION(execCalcPlayerSwimAccelRate);
     DECLARE_FUNCTION(execGetProfileSettings);
@@ -2580,7 +2578,6 @@ public:
         _rfOut_YPos=Parms._rfOut_YPos;
     }
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("ADishonoredPlayerPawn::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_FUNCTION(execOnDestroy_Native);
     DECLARE_FUNCTION(execNativePostRenderFor);
     DECLARE_FUNCTION(execOnPlayerResurrect);
@@ -13082,7 +13079,6 @@ public:
     //## END PROPS DisPostProcessManager
 
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDisPostProcessManager::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_CLASS(UDisPostProcessManager,UObject,0,DishonoredGame)
 #include "CppText/UDisPostProcessManager.h"
 };
@@ -16543,7 +16539,6 @@ public:
     //## END PROPS DishonoredPlayerInput
 
     virtual UObject* GetUObjectInterfaceArkSettingsListenerInterface() { return this; }  // DISHONORED(port): IArkSettingsListenerInterface interface glue
-    virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason) { appErrorf(TEXT("DishonoredGame native not ported: %s"), TEXT("UDishonoredPlayerInput::ApplyGameSettings")); }  // DISHONORED(port): IArkSettingsListenerInterface pure virtual
     DECLARE_FUNCTION(execGetFOVScale);
     DECLARE_FUNCTION(execDis_PlayerChoice_RequestSkip_Released);
     DECLARE_FUNCTION(execDis_PlayerChoice_RequestSkip);

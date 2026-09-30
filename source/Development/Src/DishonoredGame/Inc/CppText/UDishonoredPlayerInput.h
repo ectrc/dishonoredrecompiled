@@ -9,3 +9,8 @@ public:
 	// TranslateBindingSet 0x6afe50
 	void AddBindingSet( const TArrayNoInit<FKeyBind>& Set );
 	void BuildBindings();
+
+// ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
+public:
+	// DISHONORED(port): 2013 rva 0x6bd610 (2012 0x6f8e10, byte-identical). Body in dishonoredplayerinput.cpp.
+	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );

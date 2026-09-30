@@ -1634,10 +1634,6 @@ void UDisGFxMoviePlayerMenuBase::execOnApplyVideoSettings( FFrame& Stack, RESULT
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execOnApplyVideoSettings);
 }
-void UDisGFxMoviePlayerMenuBase::execReq_VideoSettingsScreen( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execReq_VideoSettingsScreen);
-}
 void UDisGFxMoviePlayerMenuBase::execReq_GamepadMappingScreen( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execReq_GamepadMappingScreen);

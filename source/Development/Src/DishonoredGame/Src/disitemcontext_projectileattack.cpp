@@ -22,3 +22,18 @@
 //   0x8809b0  public: static class UClass * __cdecl UDisTweaks_ProjectileAttack::GetPrivateStaticClassUDisTweaks_ProjectileAttack(wchar_t const *)
 //   0x884d70  public: static void __cdecl UDisTweaks_ProjectileAttack::InitializePrivateStaticClassUDisTweaks_ProjectileAttack(void)
 //   0x8855d0  public: static class UClass * __cdecl UDisTweaks_ProjectileAttack::StaticClassNoInline(void)
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): agent EQ, 2013 rva 0x7ffc10 (2012 0x862260) - the base's five writes spelled out again plus
+// the kill-cam mode. Retail does not chain to the base: it is a separate 97-byte body with the same five stores
+// and one more, so it is written the same way here.
+void UDisItemContext_ProjectileAttack::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	m_bGamepadUseAutoAimSettings = Parameters->m_bGamepadAutoAim ? TRUE : FALSE;
+	m_fGamepadAutoAimStrengthSettings = (FLOAT)Parameters->m_GamepadAutoAimStrength * 0.01f;
+	m_bMouseUseAutoAimSettings = Parameters->m_bMouseAutoAim ? TRUE : FALSE;
+	m_fMouseAutoAimStrengthSettings = (FLOAT)Parameters->m_MouseAutoAimStrength * 0.01f;
+	m_bAutoUseManaElixirSettings = Parameters->m_bAutoUseManaElixir ? TRUE : FALSE;
+	m_KillCamSettings = (BYTE)Parameters->m_KillCamMode;
+}

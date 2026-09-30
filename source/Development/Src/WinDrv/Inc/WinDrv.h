@@ -170,6 +170,10 @@ class UWindowsClient : public UClient
 	/**
 	 * Defers a message received by a viewport until a predetermined point in the frame.
 	 */
+	// DISHONORED(port): agent EQ, 2013 rva 0x5c4040 (2012 0x60b7d0). The IArkSettingsListenerInterface
+	// override UClient declares as an empty body: it hands the parameters to every attached viewport.
+	virtual void ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason);
+
 	void DeferMessage(FWindowsViewport* Viewport,UINT Message,WPARAM wParam,LPARAM lParam);
 
 	/** Processes window messages that have been deferred. */
@@ -310,6 +314,10 @@ public:
 	// FViewportFrame interface.
 	virtual FViewport* GetViewport()			{ return this; }
 	virtual void	Resize(UINT NewSizeX,UINT NewSizeY,UBOOL NewFullscreen,INT InPosX = -1, INT InPosY = -1);
+
+	// DISHONORED(port): agent EQ, 2013 rva 0x5c3210 (2012 0x60aa40). The graphics half of the settings
+	// republish: everything the options screen can change that is not a profile value but a GSystemSettings one.
+	void	ApplyGameSettings(const ArkSettingsParameters* Parameters, IArkSettingsListenerInterface::EChangeReason Reason);
 
 	// FWindowsViewport interface.
 	void			Destroy();

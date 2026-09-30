@@ -70,3 +70,20 @@ void UDisGlobalUIManager::AddMessageBoxTimer( INT _ID, FLOAT _fDuration )
 		Global->AddMessageBoxTimer( _ID, _fDuration );
 	}
 }
+
+// DISHONORED(port): agent EQ, 2013 rva 0x841250. New in 2013 in everything but name: the 2012 body at 0x8aef30
+// is 35 bytes and this one is 152, because 2013 added the two DLC tests. m_bEnableTutorials is off in the
+// Dunwall City Trials whatever the player set, and m_bEnableBaseTutorials is off in the DLC06 campaign as well -
+// retail reads both off GetOuter(), which for the global UI manager is the game info that constructed it.
+// The two Cast<> targets are the only two ADishonoredGameInfo subclasses 2013's script package has
+// (DisDLC05GameInfo, DisDLC06GameInfo); the DLC06 one is identified by its static class's
+// InitializePrivateStaticClass (0x8bf170) sitting sixteen bytes before ADisDLC06GameInfo::ApplyGameSettings
+// (0x8bf190), the body that applies m_DifficultyDLC06.
+void UDisGlobalUIManager::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	const UBOOL bDLC05 = Cast<ADisDLC05GameInfo>( GetOuter() ) != NULL;
+	const UBOOL bDLC06 = Cast<ADisDLC06GameInfo>( GetOuter() ) != NULL;
+	m_bEnableAutoSaveInMenus = Parameters->m_bAutoSaveInMenu ? TRUE : FALSE;
+	m_bEnableTutorials = ( Parameters->m_bShowTutorialNotifications && !bDLC05 ) ? TRUE : FALSE;
+	m_bEnableBaseTutorials = ( m_bEnableTutorials && !bDLC06 ) ? TRUE : FALSE;
+}

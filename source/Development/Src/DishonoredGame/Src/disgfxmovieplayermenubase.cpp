@@ -286,10 +286,25 @@ static void DisCreateGFxSetting( UDisGFxMoviePlayerMenuBase* Menu, const FDisSet
 				}
 				else
 				{
-					// DISHONORED(bringup): retail asks ArkSettings::GetSettingProvider (2013 rva 0x5396a0) for
-					// the dynamic value list and the current index; the only provider is
-					// PCResolutionSettingProvider and it is not ported, so the resolution row still has no
-					// value. Every other row is id-mapped through the cooked profile.
+					// DISHONORED(port): agent EQ. A setting with no value mappings of its own takes its list and
+					// its current row from ArkSettings::GetSettingProvider (2013 rva 0x5396a0). Id 115,
+					// PSI_GraphicsPC_Resolution, is the only one: the provider is PCResolutionSettingProvider and
+					// the list is the display modes at or above 800x600, formatted "%4d x %4d".
+					ArkSettings::SettingProvider& Provider = ArkSettings::GetSettingProvider( Setting.m_SettingID );
+					TArray<FString> DynamicNames;
+					Provider.GetDynamicValueNames( DynamicNames );
+					for( INT ValueIdx = 0; ValueIdx < DynamicNames.Num(); ValueIdx++ )
+					{
+						GFxValue Label;
+						Label.SetStringW( *DynamicNames(ValueIdx) );
+						MappingNames.PushBack( Label );
+						Label.ReleaseManaged();
+					}
+					DisSetGFxNumber( *OutSetting, "Setting_Value", Provider.GetCurrentValueIndex() );
+					warnf( TEXT("DisCreateGFxSetting: dynamic row id %d (%s): %d values, current %d (%s)"),
+						Setting.m_SettingID, *DisEnumTypeToString( Setting.m_SettingID, TEXT("Engine.OnlineProfileSettings.EProfileSettingID") ),
+						DynamicNames.Num(), Provider.GetCurrentValueIndex(),
+						DynamicNames.IsValidIndex( Provider.GetCurrentValueIndex() ) ? *DynamicNames(Provider.GetCurrentValueIndex()) : TEXT("none") );
 				}
 				OutSetting->SetMember( "Mapping_Names", MappingNames );
 			}
@@ -606,38 +621,14 @@ void DisFillOptionsMenu( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSe
 		Settings ? *Settings->GetPathName() : TEXT("NULL"), Menu->m_bInitialShowObjectiveMarkers ? 1 : 0 );
 }
 
-// DISHONORED(bringup): agent EO. Retail hands the reread parameters to every listener
-// ArkSettings::FindListeners collects (2013 rva 0x53b7e0). Nine DishonoredGame listeners still carry the
-// generated appErrorf ApplyGameSettings - ADishonoredPlayerCamera, ADishonoredGameInfo,
-// ADishonoredPlayerController, ADishonoredPlayerPawn, UDisPostProcessManager, UDishonoredPlayerInput,
-// UDisItemContext_AimAssistAttack, UDisGFxMoviePlayerHUD, UDisGlobalUIManager - so the full loop aborts the
-// game on the first slider move: measured, build/agentEO/afterE_log.txt, `appError called: DishonoredGame
-// native not ported: UDisPostProcessManager::ApplyGameSettings`. -arksettings is the switch
-// UnUIDataStores.cpp already gates its own OnSettingsChanged call on, and it runs the retail loop. Without it
-// the parameters are reread exactly as retail rereads them and handed to UEngine alone, which is the listener
-// that carries the gamma to the client and the subtitle mode to the engine.
+// DISHONORED(port): agent EQ. Agent EO gated retail's republish loop behind -arksettings because nine
+// DishonoredGame listeners still carried the generated appErrorf ApplyGameSettings and the first slider move
+// aborted the game (build/agentEO/afterE_log.txt: `appError called: DishonoredGame native not ported:
+// UDisPostProcessManager::ApplyGameSettings`). All nine are ported now, so the gate is gone and every setting
+// change goes straight down retail's own path (2013 rva 0x53b7e0).
 static void DisRepublishSettings( UOnlinePlayerStorage* Settings, TArray<TScriptInterface<IArkSettingsListenerInterface> >& Listeners, ArkSettings::EChangeReason Reason )
 {
-	if( ParseParam( appCmdLine(), TEXT("ARKSETTINGS") ) )
-	{
-		ArkSettings::OnSettingsChanged( Settings, Listeners, Reason );
-		return;
-	}
-	ArkSettingsParameters& Parameters = ArkSettings::GetParameters();
-	Parameters.Read( Settings, Reason == ArkSettings::ECR_ReadFromStorage );
-	if( GEngine )
-	{
-		IArkSettingsListenerInterface::EChangeReason ListenerReason = IArkSettingsListenerInterface::ASLI_ReadProfileFromStorage;
-		if( Reason == ArkSettings::ECR_ModifiedByUser )
-		{
-			ListenerReason = IArkSettingsListenerInterface::ASLI_ModifiedByUser;
-		}
-		else if( Reason == ArkSettings::ECR_ValidatedByUser )
-		{
-			ListenerReason = IArkSettingsListenerInterface::ASLI_ValidatedByUser;
-		}
-		GEngine->ApplyGameSettings( &Parameters, ListenerReason );
-	}
+	ArkSettings::OnSettingsChanged( Settings, Listeners, Reason );
 }
 
 // DISHONORED(port): agent EO. Retail fills the options tree once, out of
@@ -906,18 +897,27 @@ void UDisGFxMoviePlayerMenuBase::execOnSettingChange( FFrame& Stack, RESULT_DECL
 
 	case PVMT_IdMapped:
 	case PVMT_MAX:
-		if( MetaData.ValueMappings.IsValidIndex( Rounded ) )
+		if( MetaData.ValueMappings.Num() > 0 )
 		{
-			const INT NewId = MetaData.ValueMappings(Rounded).Id;
-			INT OldId = -1;
-			Settings->GetProfileSettingValueId( _SettingID, OldId );
-			Settings->SetProfileSettingValueId( _SettingID, NewId );
-			bChanged = NewId != OldId;
+			if( MetaData.ValueMappings.IsValidIndex( Rounded ) )
+			{
+				const INT NewId = MetaData.ValueMappings(Rounded).Id;
+				INT OldId = -1;
+				Settings->GetProfileSettingValueId( _SettingID, OldId );
+				Settings->SetProfileSettingValueId( _SettingID, NewId );
+				bChanged = NewId != OldId;
+			}
 		}
 		else
 		{
-			// DISHONORED(bringup): retail moves the setting provider's own index here
-			// (ArkSettings::GetSettingProvider, 2013 rva 0x5396a0); no provider is ported.
+			// DISHONORED(port): agent EQ. The dynamic arm: the row the player picked becomes the provider's own
+			// current index (ArkSettings::GetSettingProvider, 2013 rva 0x5396a0, slots 2 and 4). Nothing is
+			// written into the profile - the resolution lives in the provider and in GSystemSettings, which is
+			// why ArkSettingsParameters::Read takes it from the provider when it is not overriding.
+			ArkSettings::SettingProvider& Provider = ArkSettings::GetSettingProvider( _SettingID );
+			const INT OldIndex = Provider.GetCurrentValueIndex();
+			Provider.SetCurrentValueIndex( Rounded );
+			bChanged = Rounded != OldIndex;
 		}
 		break;
 
@@ -956,9 +956,9 @@ void UDisGFxMoviePlayerMenuBase::execOnLeaveOptions( FFrame& Stack, RESULT_DECL 
 		return;
 	}
 	DisRepublishSettings( Settings, DisMenuSettingsListeners( this ), ArkSettings::ECR_ValidatedByUser );
-	// DISHONORED(bringup): retail then calls ArkSettings::SaveSettings (2013 rva 0x5334e0), which drives the
-	// profile write through the online subsystem's WriteProfileSettings event; nothing persists the profile in
-	// this tree, so the new values live only for this session.
+	// DISHONORED(port): agent EQ. ArkSettings::SaveSettings (2013 rva 0x5334e0) is retail's next call and it is
+	// ported; what it can reach without a Steam client is recorded in resources/docs/agents/agentEQ.md.
+	ArkSettings::SaveSettings( ADishonoredPlayerController::s_pInstance );
 	m_bOptionsChanged = FALSE;
 	m_bLeavingOptions = TRUE;
 
@@ -972,6 +972,49 @@ void UDisGFxMoviePlayerMenuBase::execOnLeaveOptions( FFrame& Stack, RESULT_DECL 
 		// markers already on screen keep their old state until the level reloads.
 		m_bInitialShowObjectiveMarkers = bShowObjectiveMarkers;
 	}
+}
+
+// DISHONORED(port): agent EQ, 2013 rva 0x7dc260 (2012 0x810590, Req_VideoSettingsScreen). The video sub-screen
+// the GRAPHICS category's own row opens, and the only place the resolution row exists: three settings built by
+// hand - 116 PSI_GraphicsPC_FullScreen, 117 PSI_GraphicsPC_VSync, 115 PSI_GraphicsPC_Resolution, in that order -
+// and handed to _root.optionsMenu_mc.FillVideoSettings. The resolution alone gets m_bDropList (retail sets bit 4
+// of the flag byte when the id is 115), because it is the one row with a list of its own rather than two states.
+// This is where ArkSettings::GetSettingProvider is reached: FillSettingsCategoryList never carries id 115, so
+// without this native the provider is never asked and the row does not exist at all.
+void UDisGFxMoviePlayerMenuBase::execReq_VideoSettingsScreen( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+
+	GFxMovieView* View = DisMenuView( this );
+	if( View == NULL )
+	{
+		return;
+	}
+	static const INT VideoSettingIDs[3] = { 116, 117, 115 };
+	GFxValue Settings;
+	View->CreateArray( &Settings );
+	for( INT Index = 0; Index < ARRAY_COUNT(VideoSettingIDs); Index++ )
+	{
+		FDisSetting Setting(EC_EventParm);
+		Setting.m_SettingID = VideoSettingIDs[Index];
+		Setting.m_bDropList = ( VideoSettingIDs[Index] == 115 );
+		GFxValue Row;
+		DisCreateGFxSetting( this, Setting, &Row );
+		Settings.PushBack( Row );
+		Row.ReleaseManaged();
+	}
+	GFxValue Options;
+	const UBOOL bFound = View->GetVariable( &Options, "_root.optionsMenu_mc" );
+	if( bFound )
+	{
+		GFxValue Unused;
+		Options.Invoke( "FillVideoSettings", &Unused, &Settings, 1 );
+		Unused.ReleaseManaged();
+	}
+	warnf( TEXT("DisReq_VideoSettingsScreen: 3 rows -> _root.optionsMenu_mc.FillVideoSettings %s"),
+		bFound ? TEXT("ok") : TEXT("NOT FOUND") );
+	Options.ReleaseManaged();
+	Settings.ReleaseManaged();
 }
 
 // DISHONORED(port): 2013 rva 0x7e6b80 (2012 0x820070) - eight bytes: FillOptionsMenu(TRUE). TRUE is what offers

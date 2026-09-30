@@ -183,8 +183,6 @@
 
 void DisGFxMoviePlayerHUDPostStart( class UDisGFxMoviePlayerHUD* HUD );
 void DisGFxMoviePlayerHUDPreAdvance( class UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime );
-void DisGFxMoviePlayerHUDApplyGameSettings( class UDisGFxMoviePlayerHUD* HUD,
-	const class ArkSettingsParameters* Parameters );
 
 /* The 32 clip handles PostStart binds live in m_pMovieClips, indexed by retail's own
    EDisHUDMovieClip (DishonoredGameEngineShims.h): DHMC_PlayerStatus is masterHUD_mc, DHMC_Cinematic
@@ -1098,7 +1096,7 @@ void DisGFxMoviePlayerHUDPostStart( UDisGFxMoviePlayerHUD* HUD )
 		HUD->m_fLocationDiscoveryVerticalAlignment = (FLOAT)A.GetY() / Space.m_ScreenSize.Y;
 	}
 
-	DisGFxMoviePlayerHUDApplyGameSettings( HUD, &ArkSettings::GetParameters() );
+	ArkSettings::ApplyCurrentSettings( HUD );
 
 	debugf( TEXT("DISHONORED(bringup): HUD census: %d/%d clips bound, %d missing, movie %.0fx%.0f, ")
 		TEXT("screen %.0fx%.0f, movie space %.0fx%.0f, empty %.1f/%.1f, scale %.4f, visibility %d"),
@@ -1108,13 +1106,18 @@ void DisGFxMoviePlayerHUDPostStart( UDisGFxMoviePlayerHUD* HUD )
 		(INT)HUD->m_Settings.m_HUDVisibility );
 }
 
-// DISHONORED(port): 2013 rva 0x7af370 (2012 0x811620), the IArkSettingsListenerInterface override.
-// DISHONORED(bringup): retail reaches it as a virtual; declaring the override here would mean adding
-// it to CppText/UDisGFxMoviePlayerHUD.h and regenerating DishonoredGameUIClasses.h, which is agent
-// DG's deviation 5 exactly (GFxUI/Inc/gfxuiengine.h), so it is called directly at the one retail call
-// site instead - the ArkSettings::ApplyCurrentSettings at the end of PostStart.
-void DisGFxMoviePlayerHUDApplyGameSettings( UDisGFxMoviePlayerHUD* HUD, const ArkSettingsParameters* Parameters )
+// DISHONORED(port): 2013 rva 0x7af370 (2012 0x811620), the IArkSettingsListenerInterface override. Agent EQ
+// made it the virtual retail has - the declaration is in CppText/UDisGFxMoviePlayerHUD.h and the one call site
+// is retail's own ArkSettings::ApplyCurrentSettings at the end of PostStart - and added retail's reason test:
+// the whole body is skipped for ASLI_ModifiedByUser, so moving a slider does not disturb the HUD and only
+// leaving the options screen (ASLI_ValidatedByUser) or a profile read does.
+void UDisGFxMoviePlayerHUD::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
 {
+	if( Reason == ASLI_ModifiedByUser )
+	{
+		return;
+	}
+	UDisGFxMoviePlayerHUD* HUD = this;
 	const UBOOL bWasHighlight = HUD->m_Settings.m_bShowHighlight != 0;
 
 	HUD->m_Settings.m_HUDVisibility = (BYTE)Clamp<INT>( Parameters->m_HUDVisibility, 0, 2 );

@@ -1729,3 +1729,12 @@ void ADishonoredPlayerController::execDisToggleSprint( FFrame& Stack, RESULT_DEC
 	P_FINISH;
 	DisToggleSprint( bFromGamePad );
 }
+
+// DISHONORED(port): agent EQ. Retail's body is empty, in both builds: the 2012 interface vtable
+// (ADishonoredPlayerController{for IArkSettingsListenerInterface} @0xd16598, slot 1) and the 2013 one
+// (0xd18730 +4) both point at a three-byte `ret 8` that /OPT:ICF shares with every other empty
+// two-argument virtual - the PDB happens to name that fold UGameViewportClient::SetOnlyUseControllerTiltInput.
+// The controller's own copies of the settings are written by UDishonoredPlayerInput::ApplyGameSettings.
+void ADishonoredPlayerController::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+}

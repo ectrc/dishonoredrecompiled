@@ -456,6 +456,7 @@ public:
 
     DECLARE_CLASS(UDisItemContext_ProjectileAttack,UDisItemContext_AimAssistAttack,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("WeaponRanged");}
+#include "CppText/UDisItemContext_ProjectileAttack.h"
 };
 
 // DishonoredGame.DisTweaks_Projectile: retail sizeof 228, reflected span 148..228 (2012 PDB sizeof 216)

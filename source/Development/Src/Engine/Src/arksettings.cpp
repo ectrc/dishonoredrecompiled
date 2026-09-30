@@ -31,9 +31,114 @@
 //   0x57eb60  public: static void __cdecl ArkSettings::ResetAllSettings(class APlayerController *)
 
 #include "EnginePrivate.h"
+// DISHONORED(written): agent EQ. SaveSettings and UpdateSettingsFromSystemSettings reach the profile through
+// APlayerController::OnlinePlayerData, whose type and its ProfileProvider are declared in the UI private
+// header, exactly as UnUIDataStores.cpp includes it.
+#include "EngineUserInterfaceClasses.h"
+#include "EngineUIPrivateClasses.h"
 
 // DISHONORED(port): Engine.ArkSettingsListenerInterface, 2013 GetPrivateStaticClass rva 0x533b00 / StaticClassNoInline 0x576b30 (native_class_sizes.csv: 56 bytes, flags 0x10004001)
 IMPLEMENT_CLASS(UArkSettingsListenerInterface);
+
+// DISHONORED(port): agent EQ. PCResolutionSettingProvider, the one provider retail has a subclass for
+// (vftable 2013 rva 0xca44f4; GetInnerValue 0x537260, ReadFromSystemSettings 0x537350, the destructor 0x537400,
+// GetDynamicValueNames 0x537460, Refresh 0x537520). Retail keeps it in this unit with no declaration in a
+// header, which is why the PDB attributes only its vtable and its five bodies here. m_Resolutions is the
+// TArray<FScreenResolutionRHI> the RHI fills and m_CurrentIndex the row the options list shows.
+class PCResolutionSettingProvider : public ArkSettings::SettingProvider
+{
+public:
+	FScreenResolutionArray m_Resolutions;
+	INT m_CurrentIndex;
+
+	PCResolutionSettingProvider() : m_CurrentIndex( 0 ) {}
+
+	// DISHONORED(port): 2013 rva 0x537460. "%4d x %4d" is retail's own format string, spaces and all.
+	virtual void GetDynamicValueNames( TArray<FString>& OutNames )
+	{
+		for( INT Index = 0; Index < m_Resolutions.Num(); Index++ )
+		{
+			OutNames.AddItem( FString::Printf( TEXT("%4d x %4d"), m_Resolutions(Index).Width, m_Resolutions(Index).Height ) );
+		}
+	}
+
+	virtual INT GetCurrentValueIndex() { return m_CurrentIndex; }
+	virtual void SetCurrentValueIndex( INT ValueIndex ) { m_CurrentIndex = ValueIndex; }
+
+	// DISHONORED(port): 2013 rva 0x537260. Component 0 is the width, 1 the height, 2 the refresh rate.
+	virtual INT GetInnerValue( INT ValueIndex, INT Component )
+	{
+		if( !m_Resolutions.IsValidIndex( ValueIndex ) )
+		{
+			return 0;
+		}
+		const FScreenResolutionRHI& Resolution = m_Resolutions(ValueIndex);
+		switch( Component )
+		{
+		case 0:		return (INT)Resolution.Width;
+		case 1:		return (INT)Resolution.Height;
+		case 2:		return (INT)Resolution.RefreshRate;
+		default:	return 0;
+		}
+	}
+
+	// DISHONORED(port): 2013 rva 0x537350. The row whose width and height are the ones in force, or the first row.
+	virtual void ReadFromSystemSettings()
+	{
+		m_CurrentIndex = -1;
+		for( INT Index = 0; Index < m_Resolutions.Num(); Index++ )
+		{
+			if( (INT)m_Resolutions(Index).Width == GSystemSettings.ResX && (INT)m_Resolutions(Index).Height == GSystemSettings.ResY )
+			{
+				m_CurrentIndex = Index;
+			}
+		}
+		if( m_CurrentIndex == -1 )
+		{
+			m_CurrentIndex = 0;
+		}
+	}
+
+	// DISHONORED(port): 2013 rva 0x537520. Retail empties the array, asks the RHI for the modes with the refresh
+	// rate ignored, and then walks the result backwards dropping everything below 800x600.
+	virtual void Refresh()
+	{
+		m_Resolutions.Empty();
+		if( RHIGetAvailableResolutions( m_Resolutions, TRUE ) )
+		{
+			for( INT Index = m_Resolutions.Num() - 1; Index >= 0; Index-- )
+			{
+				if( m_Resolutions(Index).Width < 800 || m_Resolutions(Index).Height < 600 )
+				{
+					m_Resolutions.Remove( Index, 1 );
+				}
+			}
+		}
+	}
+};
+
+// DISHONORED(port): agent EQ. The provider every other setting gets. Retail's type name is
+// InvalidDynamicSettingProvider (match_2012_2013.csv, vftable 2013 rva 0xca3f08); it adds nothing, which is
+// why all six of its slots are ICF folds onto the base's.
+class InvalidDynamicSettingProvider : public ArkSettings::SettingProvider
+{
+};
+
+// DISHONORED(port): 2013 rva 0x5396a0 (2012 0x57a1d0). Two function-statics, and the resolution one is
+// Refresh()ed on every call - which is what keeps the mode list current after a display change. Retail
+// inlines this whole body into ArkSettingsParameters::Read as well, which is how the same static is reached
+// from two places.
+ArkSettings::SettingProvider& ArkSettings::GetSettingProvider( INT SettingID )
+{
+	if( SettingID == 115 )
+	{
+		static PCResolutionSettingProvider ResolutionProvider;
+		ResolutionProvider.Refresh();
+		return ResolutionProvider;
+	}
+	static InvalidDynamicSettingProvider InvalidProvider;
+	return InvalidProvider;
+}
 
 // DISHONORED(port): 2013 rva 0x53b450 (2012 0x57e3c0, arksettingsparameters.cpp:14): a transient UArkProfileSettings set to its defaults
 // is read with the system-settings override. UArkProfileSettings is an Engine class the DishonoredGame module still declares (shim), so
@@ -147,8 +252,42 @@ void ArkSettingsParameters::Read( UOnlinePlayerStorage* Settings, UBOOL bOverrid
 	Settings->GetRangedProfileSettingValueFloat( 108, m_fHeadBobAmount );
 	Settings->GetProfileSettingValueId( 109, Value ); m_bCameraRelativeClimbing = Value == 1;
 	Settings->GetRangedProfileSettingValueFloat( 112, m_fGamma );
-	m_ResX = GSystemSettings.ResX;
-	m_ResY = GSystemSettings.ResY;
+	// DISHONORED(port): agent EQ. Retail's resolution arm, which is where the inlined GetSettingProvider(115)
+	// sits: with the system-settings override the provider is told to look the current mode up and the
+	// parameters take GSystemSettings' own width and height; without it they take the width and height of the
+	// row the provider currently points at, which is the row the options list last wrote.
+	{
+		ArkSettings::SettingProvider& Provider = ArkSettings::GetSettingProvider( 115 );
+		if( bOverrideStorageSettingsWithSystemSettings )
+		{
+			Provider.ReadFromSystemSettings();
+			m_ResX = GSystemSettings.ResX;
+			m_ResY = GSystemSettings.ResY;
+			// DISHONORED(bringup): agent EQ's census, once per run. The resolution row's whole content - the
+			// value list the options screen shows and the row it points at - is this provider, so one line
+			// here is the record that it produces both, on retail's own path and with nothing forced.
+			static UBOOL bResolutionCensus = FALSE;
+			if( !bResolutionCensus )
+			{
+				bResolutionCensus = TRUE;
+				TArray<FString> Names;
+				Provider.GetDynamicValueNames( Names );
+				FString List;
+				for( INT Index = 0; Index < Names.Num(); Index++ )
+				{
+					List += ( Index ? TEXT(", ") : TEXT("") );
+					List += Names(Index);
+				}
+				debugf( TEXT("ArkSettings::GetSettingProvider(115): %d modes, current %d, [%s]"),
+					Names.Num(), Provider.GetCurrentValueIndex(), *List );
+			}
+		}
+		else
+		{
+			m_ResX = Provider.GetInnerValue( Provider.GetCurrentValueIndex(), 0 );
+			m_ResY = Provider.GetInnerValue( Provider.GetCurrentValueIndex(), 1 );
+		}
+	}
 	Settings->GetProfileSettingValueId( 116, Value );
 	if( bOverrideStorageSettingsWithSystemSettings )
 	{
@@ -242,16 +381,60 @@ void ArkSettings::OnSettingsChanged( UOnlinePlayerStorage* Settings, TArray<TScr
 	ArkSettingsParameters& Parameters = GetParameters();
 	Parameters.Read( Settings, ListenerReason == IArkSettingsListenerInterface::ASLI_ReadProfileFromStorage );
 
+	INT Published = 0;
 	for ( INT Index = 0; Index < Listeners.Num(); Index++ )
 	{
 		IArkSettingsListenerInterface* Listener = (IArkSettingsListenerInterface*)Listeners( Index ).GetInterface();
 		if ( Listener != NULL )
 		{
 			Listener->ApplyGameSettings( &Parameters, ListenerReason );
+			Published++;
 		}
 	}
+	// DISHONORED(bringup): agent EQ's census. The loop has no early exit, so a line here is the record that
+	// every listener the caller collected was published to and that none of them aborted the run.
+	debugf( TEXT("ArkSettings::OnSettingsChanged: reason %d -> %d/%d listeners, gamma %.4f, res %dx%d, AA %d"),
+		(INT)ListenerReason, Published, Listeners.Num(), Parameters.m_fGamma,
+		Parameters.m_ResX, Parameters.m_ResY, Parameters.m_AntiAliasingMode );
 
 	// DISHONORED(bringup): retail ends with GEnableForceFeedback = Parameters.m_bGamepadVibration; that
 	// global does not exist in this tree (WinDrv drives force feedback through UForceFeedbackManager).
 }
 
+// DISHONORED(port): 2013 rva 0x53b7b0 (2012 0x57e600, byte-identical): the shared parameters are reread out of
+// the controller's own profile object with the system-settings override on.
+void ArkSettings::UpdateSettingsFromSystemSettings( APlayerController* PC )
+{
+	UUIDataStore_OnlinePlayerData* PlayerData = PC ? PC->OnlinePlayerData : NULL;
+	UUIDataProvider_OnlineProfileSettings* Provider = PlayerData ? PlayerData->ProfileProvider : NULL;
+	if( Provider == NULL || Provider->Profile == NULL )
+	{
+		return;
+	}
+	GetParameters().Read( Provider->Profile, TRUE );
+}
+
+// DISHONORED(port): 2013 rva 0x5334e0 (2012 0x574e20). Sixty-six bytes: the profile write is one script event,
+// UIDataStore_OnlinePlayerData.SaveProfileData, raised on the controller's own data store with its four-byte
+// bool return as the parameter block. Retail dereferences PC and PC->OnlinePlayerData unconditionally.
+// DISHONORED(bringup): what that event reaches is the online subsystem's WriteProfileSettings, and in retail
+// and here alike the whole of UOnlineSubsystemSteamworks::WriteProfileSettings sits behind
+// IsSteamClientAvailable() - so with -nosteam this call raises the event, the event finds no Steam client and
+// nothing is written. Measured and explained in resources/docs/agents/agentEQ.md section 5.
+void ArkSettings::SaveSettings( APlayerController* PC )
+{
+	UUIDataStore_OnlinePlayerData* PlayerData = PC ? PC->OnlinePlayerData : NULL;
+	if( PlayerData == NULL )
+	{
+		return;
+	}
+	UFunction* SaveProfileData = PlayerData->FindFunction( FName(TEXT("SaveProfileData")) );
+	if( SaveProfileData == NULL )
+	{
+		warnf( TEXT("ArkSettings::SaveSettings: %s has no SaveProfileData event"), *PlayerData->GetClass()->GetName() );
+		return;
+	}
+	UBOOL bSaved = FALSE;
+	PlayerData->ProcessEvent( SaveProfileData, &bSaved );
+	debugf( TEXT("ArkSettings::SaveSettings: SaveProfileData -> %d"), bSaved ? 1 : 0 );
+}

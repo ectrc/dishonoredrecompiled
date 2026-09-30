@@ -1577,3 +1577,14 @@ LPDIRECTINPUTDEVICE8		UWindowsClient::DirectInput8Mouse;
 TArray<FJoystickInfo>		UWindowsClient::Joysticks;
 HANDLE						UWindowsClient::KeyboardHookThread;
 DWORD						UWindowsClient::KeyboardHookThreadId;
+
+// DISHONORED(port): agent EQ, 2013 rva 0x5c4040 (2012 0x60b7d0) - ninety-nine bytes, and all of them the loop.
+// UEngine::ApplyGameSettings (2013 rva 0x1d87b0) hands the parameters to Client->ApplyGameSettings and this is
+// what UClient's empty body should have been.
+void UWindowsClient::ApplyGameSettings(const ArkSettingsParameters* Parameters, EChangeReason Reason)
+{
+	for( INT ViewportIndex = 0; ViewportIndex < Viewports.Num(); ViewportIndex++ )
+	{
+		Viewports(ViewportIndex)->ApplyGameSettings( Parameters, Reason );
+	}
+}
