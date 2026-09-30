@@ -270,6 +270,9 @@ public:
     const GFxTextFormat& GetDefaultTextFormat() const
         { return Text.GetDefaultTextFormat(); }
 
+    const GFxTextParagraphFormat& GetDefaultParagraphFormat() const
+        { return Text.GetDefaultParagraphFormat(); }
+
     // Measured by Format() and what the harness reports.
     unsigned int GetGlyphsLaidOut() const { return GlyphsLaidOut; }
     unsigned int GetGlyphsWithoutShape() const { return GlyphsWithoutShape; }

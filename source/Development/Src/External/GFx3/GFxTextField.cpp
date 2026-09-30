@@ -170,26 +170,152 @@ GFxEditTextCharacter::~GFxEditTextCharacter()
     // DISHONORED(port): 0xa32980
 }
 
+// -gfxuinohtmlface, parsed in GFxUI/Src/gfxuiengine.cpp. See GFxTextField.h.
+bool GFxTextNoHtmlFace = false;
+
+// DISHONORED(bringup): every DefineEditText field's font, once per distinct outcome, plus a running
+// census of the routes. This is the path the menu's text actually takes - GFxTextDocView::FindFont
+// only ever sees a format that already has a handle, which is why a trace there measured no
+// fallbacks on screens that are visibly wrong.
+static unsigned int GFxFieldFontTotal = 0;
+static unsigned int GFxFieldFontByFace = 0;
+static unsigned int GFxFieldFontById = 0;
+static unsigned int GFxFieldFontFallback = 0;
+static unsigned int GFxFieldFontNone = 0;
+
+static void GFxEditTextNoteFontResolution(unsigned int fontId, const char* wanted,
+                                          GFxFontResource* got, const char* route, const char* text)
+{
+    ++GFxFieldFontTotal;
+    if (strcmp(route, "html face") == 0)            ++GFxFieldFontByFace;
+    else if (strcmp(route, "by name") == 0)         ++GFxFieldFontById;
+    else if (strncmp(route, "FALLBACK", 8) == 0)    ++GFxFieldFontFallback;
+    else                                            ++GFxFieldFontNone;
+
+    static char Seen[128][224];
+    static unsigned int SeenCount = 0;
+    char sample[40];
+    unsigned int n = 0;
+    for (; text && text[n] && n < sizeof(sample) - 1; ++n)
+        sample[n] = (text[n] >= 32 && text[n] < 127) ? text[n] : '.';
+    sample[n] = 0;
+    char line[224];
+    _snprintf(line, sizeof(line), "id %u '%s' -> '%s' (%s) text '%s'", fontId,
+              wanted ? wanted : "", (got && got->GetName()) ? got->GetName() : "<none>", route, sample);
+    line[sizeof(line) - 1] = 0;
+    for (unsigned int i = 0; i < SeenCount; ++i)
+        if (strcmp(Seen[i], line) == 0)
+            return;
+    if (SeenCount < 128)
+    {
+        strncpy(Seen[SeenCount], line, sizeof(Seen[0]) - 1);
+        Seen[SeenCount][sizeof(Seen[0]) - 1] = 0;
+        ++SeenCount;
+    }
+    GFxLogf("DISHONORED(bringup): GFx field font: %s", line);
+    GFxLogf("DISHONORED(bringup): text field font census: %u fields, %u by html face, %u by font id, "
+            "%u fell back to font 0, %u with no font",
+            GFxFieldFontTotal, GFxFieldFontByFace, GFxFieldFontById, GFxFieldFontFallback,
+            GFxFieldFontNone);
+}
+
+// The first `<font face="...">` of an HTML string, which is what a cooked Dishonored text field
+// carries. Retail applies it in GFxStyledText::ParseHtmlImpl (2013 rva 0xa9d870, 6,268 bytes; the
+// 2012 rva the rest of this file cites for it is 0xaa7630); that parser is not ported
+// (SetTextValue strips the markup), so the one attribute that decides which of the two menu fonts a
+// field gets is read here instead. Returns false when the string has no <font face>.
+static bool GFxHtmlFirstFontFace(const char* html, char* out, unsigned int outSize)
+{
+    if (!html || !out || outSize == 0)
+        return false;
+    out[0] = 0;
+    for (unsigned int i = 0; html[i]; ++i)
+    {
+        if (html[i] != '<')
+            continue;
+        unsigned int t = i + 1;
+        while (html[t] == ' ')
+            ++t;
+        if (!((html[t] == 'f' || html[t] == 'F') && (html[t + 1] == 'o' || html[t + 1] == 'O') &&
+              (html[t + 2] == 'n' || html[t + 2] == 'N') && (html[t + 3] == 't' || html[t + 3] == 'T')))
+            continue;
+        // inside this tag, up to '>', find face=" ... "
+        for (unsigned int a = t + 4; html[a] && html[a] != '>'; ++a)
+        {
+            if (!((html[a] == 'f' || html[a] == 'F') && (html[a + 1] == 'a' || html[a + 1] == 'A') &&
+                  (html[a + 2] == 'c' || html[a + 2] == 'C') && (html[a + 3] == 'e' || html[a + 3] == 'E')))
+                continue;
+            unsigned int v = a + 4;
+            while (html[v] == ' ')
+                ++v;
+            if (html[v] != '=')
+                continue;
+            ++v;
+            while (html[v] == ' ')
+                ++v;
+            const char quote = (html[v] == '"' || html[v] == '\'') ? html[v] : 0;
+            if (quote)
+                ++v;
+            unsigned int n = 0;
+            while (html[v] && n + 1 < outSize &&
+                   (quote ? html[v] != quote : (html[v] != ' ' && html[v] != '>')))
+                out[n++] = html[v++];
+            out[n] = 0;
+            return n != 0;
+        }
+    }
+    return false;
+}
+
 void GFxEditTextCharacter::GetInitialFormats(GFxTextFormat* fmt, GFxTextParagraphFormat* pfmt)
 {
-    // DISHONORED(port): 0xa27860 - the default values first, then the definition's font, size,
-    // colour, alignment and layout on top.
+    // DISHONORED(port): 2012 rva 0xa27860, 2013 rva 0xa1df60 - the default values first, then the
+    // definition's font, size, colour, alignment and layout on top.
     fmt->InitByDefaultValues();
     pfmt->InitByDefaultValues();
 
     GFxFontManager* fonts = GFxTextGetFontManager();
     GFxFontResource* res = 0;
-    if (Desc.FontId && fonts)
+    const char* route = "no font id";
+
+    // The HTML face comes first, because it is what retail's parser applies to the run and it is the
+    // only source that is right for every field: the DefineEditText font id resolves through the
+    // movie's export table, which answers nothing for some ids in the cook and an unrelated symbol
+    // for others (measured: id 220 and id 10 give no name at all, id 4 gives
+    // "m_nGame_bkgdMenu -nopack"). Every one of those fields then took the font-0 fallback, which is
+    // ChaletComprime-CologneEighty - and that is exactly the "wrong font" on the header of every
+    // screen whose header asks for $TitleFont.
+    char face[96];
+    if (fonts && !GFxTextNoHtmlFace && Desc.HasFlag(GFxTextFieldDesc::ETF_Html) &&
+        GFxHtmlFirstFontFace(Desc.InitialText, face, sizeof(face)))
     {
-        // DISHONORED(port): 0xa27860 resolves the font id against the movie's resource binding. The
-        // name the definition's movie gives that id is carried in the descriptor; the manager
-        // matches it against both a DefineFont's own face name and the export symbol an
-        // ImportAssets2 bound it under, which is the pair retail's GFxFontLib entry holds.
-        if (Desc.FontName[0] != 0)
-            res = fonts->FindFontResource(Desc.FontName, 0);
-        if (res == 0 && fonts->GetFontCount())
-            res = fonts->GetFontByIndex(0);
+        res = fonts->FindFontResource(face, 0);
+        route = res ? "html face" : "html face not registered";
     }
+
+    if (res == 0 && Desc.FontId && fonts)
+    {
+        // DISHONORED(port): 2012 0xa27860 / 2013 0xa1df60 resolves the font id against the movie's
+        // resource binding. The name the definition's movie gives that id is carried in the
+        // descriptor; the manager matches it against both a DefineFont's own face name and the
+        // export symbol an ImportAssets2 bound it under, which is the pair retail's GFxFontLib
+        // entry holds.
+        if (Desc.FontName[0] != 0)
+        {
+            res = fonts->FindFontResource(Desc.FontName, 0);
+            route = res ? "by name" : "name not registered";
+        }
+        else
+        {
+            route = "no font name for the id";
+        }
+        if (res == 0 && fonts->GetFontCount())
+        {
+            res = fonts->GetFontByIndex(0);
+            route = (Desc.FontName[0] != 0) ? "FALLBACK after name miss" : "FALLBACK, no name";
+        }
+    }
+    GFxEditTextNoteFontResolution(Desc.FontId, Desc.FontName, res, route, Desc.InitialText);
     if (res)
     {
         fmt->SetFontName(res->GetName());
@@ -244,8 +370,9 @@ void GFxEditTextCharacter::SetInitialFormatsAsDefault()
 
 void GFxEditTextCharacter::SetTextValue(const char* s, bool html, bool notifyVariable)
 {
-    // DISHONORED(port): 0xa32e50 (1,529 bytes). The HTML branch runs GFxStyledText::ParseHtmlImpl
-    // (0xaa7630), which is not ported - the markup is stripped instead and the report says so.
+    // DISHONORED(port): 2012 rva 0xa32e50, 2013 rva 0xa293e0 (1,529 bytes). The HTML branch runs
+    // GFxStyledText::ParseHtmlImpl (2012 0xaa7630 / 2013 0xa9d870), which is not ported - the markup
+    // is stripped instead and the report says so.
     (void)notifyVariable;
     if (!s)
         s = "";
@@ -279,6 +406,36 @@ void GFxEditTextCharacter::SetTextValue(const char* s, bool html, bool notifyVar
             TextValue[i] = s[i];
     }
     TextValue[i] = 0;
+
+    // The markup is gone, but the `<font face>` in it still decides the font, so it is applied to the
+    // default format here as well as at load: a field whose text is replaced from UnrealScript gets a
+    // fresh HTML string and retail's parser would re-read the face from it.
+    if (html)
+    {
+        char face[96];
+        GFxFontManager* fonts = GFxTextGetFontManager();
+        if (fonts && !GFxTextNoHtmlFace && GFxHtmlFirstFontFace(s, face, sizeof(face)))
+        {
+            GFxFontResource* res = fonts->FindFontResource(face, 0);
+            const GFxTextFormat& current = Doc.GetDefaultTextFormat();
+            if (res && res->GetName() &&
+                (current.GetFontList() == 0 || strcmp(current.GetFontList(), res->GetName()) != 0))
+            {
+                GFxTextFormat fmt = current;
+                fmt.SetFontName(res->GetName());
+                if (!Desc.HasFlag(GFxTextFieldDesc::ETF_UseDeviceFont) &&
+                    (res->GetFontFlags() & GFxFont::FF_DeviceFont) == 0)
+                {
+                    GPtr<GFxFontHandle> h = new GFxFontHandle(fonts, res, res->GetName());
+                    fmt.SetFontHandle(h.GetPtr());
+                }
+                // the paragraph format is copied out first: the setter merges its argument into
+                // the member, and passing the member itself would alias it
+                const GFxTextParagraphFormat pfmt = Doc.GetDefaultParagraphFormat();
+                Doc.SetDefaultTextAndParaFormat(fmt, pfmt);
+            }
+        }
+    }
 
     Doc.SetText(TextValue);
     bDirty = true;

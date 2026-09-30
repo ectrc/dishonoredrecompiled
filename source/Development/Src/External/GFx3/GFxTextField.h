@@ -86,6 +86,12 @@ struct GFxTextFieldDesc
 bool GFxTextFieldReadDesc(GFxStream* s, unsigned int tagType, unsigned int tagEnd,
                           GFxTextFieldDesc* out);
 
+// -gfxuinohtmlface: resolve a field's font from the DefineEditText font id only, as the tree did
+// before the HTML face was read. It exists so the before and the after of that change can be
+// measured with one binary; the census line reports which route every field took.
+extern bool GFxTextNoHtmlFace;
+
+
 // ---------------------------------------------------------------------------------------------
 // GFxTextFilter: a whole SWF filter list folded into the handful of numbers a text field needs.
 //

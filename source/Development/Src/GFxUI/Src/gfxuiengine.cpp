@@ -750,6 +750,10 @@ FGFxEngine::FGFxEngine()
 	GFxDisplayNoBeginDisplay = ParseParam( appCmdLine(), TEXT("gfxuinodisplay") ) ? true : false;
 	GFxDisplayFitFill = ParseParam( appCmdLine(), TEXT("gfxuifitfill") ) ? true : false;
 	GFxDisplayNoTextShadow = ParseParam( appCmdLine(), TEXT("gfxuinotextshadow") ) ? true : false;
+	// DISHONORED(bringup, agent FB): -gfxuinohtmlface takes a text field's font from the
+	// DefineEditText font id alone, as the tree did before the HTML <font face> was read. One binary
+	// then measures both sides of that change; the "text field font census" line reports the routes.
+	GFxTextNoHtmlFace = ParseParam( appCmdLine(), TEXT("gfxuinohtmlface") ) ? true : false;
 	GFxDisplay3DFlat = ParseParam( appCmdLine(), TEXT("gfxui3dflat") ) ? true : false;
 	// DISHONORED(bringup, agent FA): -gfxui3ddiag=<n> reports the first n writes of a 3D display
 	// property with the clip's target path and the value, and the per-frame count of characters the
