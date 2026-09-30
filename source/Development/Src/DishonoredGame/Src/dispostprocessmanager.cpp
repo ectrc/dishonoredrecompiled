@@ -168,3 +168,119 @@ void UDisPostProcessManager::ApplyUIPostProcessSettings( FArkPpConfig& _rConfig,
 	const FLOAT Alpha = Min( m_UIStateDuration / m_UIPPFadeOutTime, 1.f );
 	ArkUberPpApplyTo( m_UIPPParams, Dest, ( 1.f - Alpha ) * m_UIPPWeight, TRUE );
 }
+
+/*-----------------------------------------------------------------------------
+	Agent FE (PHASE13 package FE): the level's own post-process channel.
+
+	The menu is a level, and the brightness and bloom over it are a Kismet action in that level:
+	DisSeqAct_UberPostProcess::Activated hands its FArkUberPpParameters to SetKismetPPParams and asks for
+	Epp_UberKismet; this blends them into the frame's config at whatever weight the fade has reached.
+	Retail's body is the twin of the UI channel FA ported, on the effect one index below it, with one
+	difference that matters: ArkUberPpApplyTo's last argument is FALSE here and TRUE there.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x7e7e90 (2012 0x8496b0). qmemcpy of the 96-byte parameter block into
+// m_KismetPPParams @548, then weight @544, fade in @540, fade out @536 - the argument order is
+// (parameters, weight, fadeIn, fadeOut) and retail writes them in the reverse of that order.
+void UDisPostProcessManager::SetKismetPPParams( const FArkUberPpParameters& _rParameters, FLOAT _fWeight,
+												FLOAT _fFadeInTime, FLOAT _fFadeOutTime )
+{
+	m_KismetPPParams = _rParameters;
+	m_KismetPPWeight = _fWeight;
+	m_KismetPPFadeInTime = _fFadeInTime;
+	m_KismetPPFadeOutTime = _fFadeOutTime;
+}
+
+// DISHONORED(port): 2013 rva 0x7ef9b0 (2012 0x850ef0), 746 bytes. m_EffectStates[Epp_UberKismet] @462 is the
+// state, m_RequiredEffects[Epp_UberKismet] @432 the request and m_KismetStateDuration @532 the clock; the two
+// cancel arms re-enter the opposite fade at the weight already reached rather than at its start.
+void UDisPostProcessManager::ApplyKismetPostProcessSettings( FArkPpConfig& _rConfig, FLOAT _fDeltaTime )
+{
+	BYTE& State = m_EffectStates[Epp_UberKismet];
+	const INT Required = m_RequiredEffects[Epp_UberKismet];
+	if( State == 0 && Required != 1 )
+	{
+		return;
+	}
+	m_KismetStateDuration += _fDeltaTime;
+	FArkUberPpParameters& Dest = _rConfig.m_UberPpParameters;
+	if( Required == 1 )
+	{
+		switch( State )
+		{
+		case 0:
+			if( Abs( m_KismetPPFadeInTime ) >= 1.0e-8f )
+			{
+				State = 1;
+				m_KismetStateDuration = 0.f;
+			}
+			else
+			{
+				State = 2;
+				ArkUberPpApplyTo( m_KismetPPParams, Dest, m_KismetPPWeight, FALSE );
+			}
+			return;
+		case 1:
+			if( m_KismetStateDuration < m_KismetPPFadeInTime )
+			{
+				const FLOAT Alpha = Min( m_KismetStateDuration / m_KismetPPFadeInTime, 1.f );
+				ArkUberPpApplyTo( m_KismetPPParams, Dest, m_KismetPPWeight * Alpha, FALSE );
+				return;
+			}
+			State = 2;
+			break;
+		case 3:
+			if( Abs( m_KismetPPFadeInTime ) >= 1.0e-8f )
+			{
+				const FLOAT Alpha = Min( m_KismetStateDuration / m_KismetPPFadeOutTime, 1.f );
+				State = 1;
+				const FLOAT Weight = ( 1.f - Alpha ) * m_KismetPPWeight;
+				m_KismetStateDuration = ( m_KismetPPWeight != 0.f )
+					? ( Weight / m_KismetPPWeight ) * m_KismetPPFadeInTime : 0.f;
+				ArkUberPpApplyTo( m_KismetPPParams, Dest, Weight, FALSE );
+				return;
+			}
+			State = 2;
+			break;
+		default:
+			break;
+		}
+		ArkUberPpApplyTo( m_KismetPPParams, Dest, m_KismetPPWeight, FALSE );
+		return;
+	}
+	if( State == 2 )
+	{
+		if( Abs( m_KismetPPFadeOutTime ) >= 1.0e-8f )
+		{
+			State = 3;
+			m_KismetStateDuration = 0.f;
+			ArkUberPpApplyTo( m_KismetPPParams, Dest, m_KismetPPWeight, FALSE );
+		}
+		else
+		{
+			State = 0;
+		}
+		return;
+	}
+	if( State == 1 )
+	{
+		if( Abs( m_KismetPPFadeOutTime ) < 1.0e-8f )
+		{
+			State = 0;
+			return;
+		}
+		const FLOAT InAlpha = Min( m_KismetStateDuration / m_KismetPPFadeInTime, 1.f );
+		State = 3;
+		m_KismetStateDuration = InAlpha * m_KismetPPFadeOutTime;
+		const FLOAT OutAlpha = Min( m_KismetStateDuration / m_KismetPPFadeOutTime, 1.f );
+		ArkUberPpApplyTo( m_KismetPPParams, Dest, ( 1.f - OutAlpha ) * m_KismetPPWeight, FALSE );
+		return;
+	}
+	if( m_KismetStateDuration >= m_KismetPPFadeOutTime )
+	{
+		State = 0;
+		return;
+	}
+	const FLOAT Alpha = Min( m_KismetStateDuration / m_KismetPPFadeOutTime, 1.f );
+	ArkUberPpApplyTo( m_KismetPPParams, Dest, ( 1.f - Alpha ) * m_KismetPPWeight, FALSE );
+}

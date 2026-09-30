@@ -116,6 +116,7 @@
 #include "dispowercensus.h"
 #include "arkpp.h"
 #include "enginearkppclasses.h"
+#include "gfxui_gfx3.h"
 
 ADishonoredPlayerController* ADishonoredPlayerController::s_pInstance = NULL;
 
@@ -679,6 +680,239 @@ UBOOL DisModifyPpSuppressed()
 	return GDisModifyPpOff != 0;
 }
 
+
+/*-----------------------------------------------------------------------------
+	Agent FE (PHASE13 package FE): -fediag, the menu world's camera and the level's Kismet.
+
+	Everything this package decides is decided off this census: which FOV the world camera is using
+	and where that number comes from, which post-process channels are live, and what the level's
+	Kismet holds. It costs nothing when the switch is absent.
+-----------------------------------------------------------------------------*/
+
+static INT GDisFEDiag = -1;
+
+UBOOL DisFEDiagEnabled()
+{
+	if( GDisFEDiag < 0 )
+	{
+		GDisFEDiag = ( appStrfind( appCmdLine(), TEXT("-fediag") ) != NULL ) ? 1 : 0;
+	}
+	return GDisFEDiag != 0;
+}
+
+static void DisFEWalkSequence( USequence* Seq, INT Depth, INT& OutOps, INT& OutInteresting )
+{
+	if( Seq == NULL )
+	{
+		return;
+	}
+	for( INT Index = 0; Index < Seq->SequenceObjects.Num(); Index++ )
+	{
+		USequenceObject* Obj = Seq->SequenceObjects( Index );
+		if( Obj == NULL )
+		{
+			continue;
+		}
+		OutOps++;
+		const FString ClassName = Obj->GetClass()->GetName();
+		const UBOOL bInteresting = ClassName.InStr( TEXT("PostProcess") ) >= 0
+			|| ClassName.InStr( TEXT("Interp") ) >= 0
+			|| ClassName.InStr( TEXT("Cinematic") ) >= 0
+			|| ClassName.InStr( TEXT("Camera") ) >= 0
+			|| ClassName.InStr( TEXT("Fade") ) >= 0
+			|| Cast<USequenceCondition>( Obj ) != NULL;
+		if( bInteresting )
+		{
+			OutInteresting++;
+			debugf( TEXT("DISHONORED(bringup): fediag kismet: %s %s (depth %d)"), *ClassName, *Obj->GetPathName(), Depth );
+		}
+		USequence* Sub = Cast<USequence>( Obj );
+		if( Sub != NULL && Depth < 8 )
+		{
+			DisFEWalkSequence( Sub, Depth + 1, OutOps, OutInteresting );
+		}
+	}
+}
+
+void DisFEReport( ADishonoredPlayerController* PC )
+{
+	static FLOAT NextAt = 0.f;
+	static INT Line = 0;
+	static INT LevelsSeen = 0;
+	if( GWorld == NULL || PC == NULL )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	if( Now < NextAt )
+	{
+		return;
+	}
+	NextAt = Now + 2.f;
+	Line++;
+
+	ACamera* Cam = PC->PlayerCamera;
+	AActor* VT = Cam ? Cam->ViewTarget.Target : NULL;
+	if( Cam )
+	{
+		debugf( TEXT("DISHONORED(bringup): fediag view %d: POV loc %.1f/%.1f/%.1f rot %d/%d/%d, pawn loc %.1f/%.1f/%.1f rot %d/%d/%d, PC rot %d/%d/%d"),
+			Line, Cam->CameraCache.POV.Location.X, Cam->CameraCache.POV.Location.Y, Cam->CameraCache.POV.Location.Z,
+			Cam->CameraCache.POV.Rotation.Pitch, Cam->CameraCache.POV.Rotation.Yaw, Cam->CameraCache.POV.Rotation.Roll,
+			PC->Pawn ? PC->Pawn->Location.X : 0.f, PC->Pawn ? PC->Pawn->Location.Y : 0.f, PC->Pawn ? PC->Pawn->Location.Z : 0.f,
+			PC->Pawn ? PC->Pawn->Rotation.Pitch : 0, PC->Pawn ? PC->Pawn->Rotation.Yaw : 0, PC->Pawn ? PC->Pawn->Rotation.Roll : 0,
+			PC->Rotation.Pitch, PC->Rotation.Yaw, PC->Rotation.Roll );
+	}
+	for( TObjectIterator<USeqAct_Interp> It; It; ++It )
+	{
+		USeqAct_Interp* Interp = *It;
+		if( !Interp->bIsPlaying && Interp->Position <= 0.f )
+		{
+			continue;
+		}
+		UInterpGroupDirector* DirGroup = Interp->FindDirectorGroup();
+		FString Groups;
+		for( INT GroupIndex = 0; GroupIndex < Interp->GroupInst.Num() && GroupIndex < 8; GroupIndex++ )
+		{
+			UInterpGroupInst* GI = Interp->GroupInst( GroupIndex );
+			Groups += FString::Printf( TEXT("%s=>%s "),
+				( GI && GI->Group ) ? *GI->Group->GroupName.ToString() : TEXT("?"),
+				( GI && GI->GetGroupActor() ) ? *GI->GetGroupActor()->GetName() : TEXT("none") );
+		}
+		static TArray<USeqAct_Interp*> Dumped;
+		if( Dumped.FindItemIndex( Interp ) == INDEX_NONE )
+		{
+			Dumped.AddItem( Interp );
+			for( INT GroupIndex = 0; GroupIndex < Interp->GroupInst.Num(); GroupIndex++ )
+			{
+				UInterpGroupInst* GI = Interp->GroupInst( GroupIndex );
+				if( GI == NULL || GI->Group == NULL )
+				{
+					continue;
+				}
+				for( INT TrackIndex = 0; TrackIndex < GI->Group->InterpTracks.Num(); TrackIndex++ )
+				{
+					UInterpTrack* Track = GI->Group->InterpTracks( TrackIndex );
+					if( Track == NULL )
+					{
+						continue;
+					}
+					UInterpTrackFloatProp* FloatProp = Cast<UInterpTrackFloatProp>( Track );
+					UInterpTrackInstFloatProp* FloatInst = ( TrackIndex < GI->TrackInst.Num() )
+						? Cast<UInterpTrackInstFloatProp>( GI->TrackInst( TrackIndex ) ) : NULL;
+					debugf( TEXT("DISHONORED(bringup): fediag track: %s group %s track %d %s prop '%s' bound %d keys %d"),
+						*Interp->GetName(), *GI->Group->GroupName.ToString(), TrackIndex,
+						*Track->GetClass()->GetName(),
+						FloatProp ? *FloatProp->PropertyName.ToString() : TEXT("-"),
+						FloatInst ? ( FloatInst->FloatProp != NULL ? 1 : 0 ) : -1,
+						FloatProp ? FloatProp->FloatTrack.Points.Num() : -1 );
+				}
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): fediag interp %d: %s playing %d pos %.2f/%.2f groups %d [%s] director %s"),
+			Line, *Interp->GetName(), (INT)Interp->bIsPlaying, Interp->Position,
+			Interp->InterpData ? Interp->InterpData->InterpLength : -1.f,
+			Interp->GroupInst.Num(), *Groups,
+			DirGroup ? *DirGroup->GroupName.ToString() : TEXT("NONE") );
+	}
+	debugf( TEXT("DISHONORED(bringup): fediag camera %d: t %.2f map %s, camera %s, viewTarget %s (%s), ")
+		TEXT("POV.FOV %.3f, camDefaultFOV %.3f, bLockedFOV %d LockedFOV %.3f, GetFOVAngle %.3f, ")
+		TEXT("pcFOVAngle %.3f pcDefaultFOV %.3f, constrain %d ratio %.4f, style %s, pawn %s"),
+		Line, Now, *GWorld->GetMapName(),
+		Cam ? *Cam->GetClass()->GetName() : TEXT("NULL"),
+		VT ? *VT->GetName() : TEXT("NULL"), VT ? *VT->GetClass()->GetName() : TEXT("-"),
+		Cam ? Cam->CameraCache.POV.FOV : -1.f, Cam ? Cam->DefaultFOV : -1.f,
+		Cam ? (INT)Cam->bLockedFOV : -1, Cam ? Cam->LockedFOV : -1.f,
+		PC->GetFOVAngle(), PC->FOVAngle, PC->DefaultFOV,
+		Cam ? (INT)Cam->bConstrainAspectRatio : -1, Cam ? Cam->ConstrainedAspectRatio : -1.f,
+		Cam ? *Cam->CameraStyle.ToString() : TEXT("-"),
+		PC->Pawn ? *PC->Pawn->GetName() : TEXT("NULL") );
+
+	ADishonoredPlayerCamera* DisCamLive = Cast<ADishonoredPlayerCamera>( Cam );
+	if( Line <= 3 )
+	{
+		INT CamActors = 0;
+		for( TObjectIterator<ACameraActor> It; It; ++It )
+		{
+			ACameraActor* CA = *It;
+			CamActors++;
+			if( CamActors <= 32 )
+			{
+				debugf( TEXT("DISHONORED(bringup): fediag cameraactor %d: %s FOVAngle %.3f aspect %.4f constrain %d ")
+					TEXT("camOverridePP %d alpha %.3f loc %.1f/%.1f/%.1f"),
+					Line, *CA->GetPathName(), CA->FOVAngle, CA->AspectRatio, (INT)CA->bConstrainAspectRatio,
+					(INT)CA->bCamOverridePostProcess, CA->CamOverridePostProcessAlpha,
+					CA->Location.X, CA->Location.Y, CA->Location.Z );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): fediag cameraactor %d: %d in all"), Line, CamActors );
+		ACameraActor* CamDefault = (ACameraActor*)ACameraActor::StaticClass()->GetDefaultObject();
+		ADishonoredPlayerCamera* PlayerCamDefault =
+			(ADishonoredPlayerCamera*)ADishonoredPlayerCamera::StaticClass()->GetDefaultObject();
+		debugf( TEXT("DISHONORED(bringup): fediag defaults %d: CameraActor CDO FOVAngle %.3f aspect %.4f constrain %d; ")
+			TEXT("DishonoredPlayerCamera CDO DefaultFOV %.3f m_fDefaultFOVSettings %.3f; live m_fCurFOV %.3f m_fDefaultFOVSettings %.3f"),
+			Line, CamDefault->FOVAngle, CamDefault->AspectRatio, (INT)CamDefault->bConstrainAspectRatio,
+			PlayerCamDefault->DefaultFOV, PlayerCamDefault->m_fDefaultFOVSettings,
+			DisCamLive ? DisCamLive->m_fCurFOV : -1.f, DisCamLive ? DisCamLive->m_fDefaultFOVSettings : -1.f );
+		FGFxEngine* GfxEngine = FGFxEngine::GetEngine();
+		if( GfxEngine != NULL )
+		{
+			for( INT MovieIndex = 0; MovieIndex < GfxEngine->OpenMovies.Num(); MovieIndex++ )
+			{
+				UGFxMoviePlayer* Player = GfxEngine->OpenMovies( MovieIndex )->pUMovie;
+				debugf( TEXT("DISHONORED(bringup): fediag movie %d: %s open %d bCloseOnLevelChange %d"),
+					Line, Player ? *Player->GetClass()->GetName() : TEXT("NULL"),
+					Player ? (INT)Player->bMovieIsOpen : -1, Player ? (INT)Player->bCloseOnLevelChange : -1 );
+			}
+		}
+	}
+
+	UDisPostProcessManager* PpManager = DisGetPpManager();
+	if( PpManager )
+	{
+		FString Required;
+		for( INT Effect = 0; Effect < 21; Effect++ )
+		{
+			if( PpManager->m_RequiredEffects[Effect] != 0 || PpManager->m_EffectStates[Effect] != 0 )
+			{
+				Required += FString::Printf( TEXT("%d:req%d/state%d "), Effect,
+					PpManager->m_RequiredEffects[Effect], (INT)PpManager->m_EffectStates[Effect] );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): fediag pp %d: bridgeInit %d, effects [%s], kismet weight %.3f fade %.3f/%.3f"),
+			Line, (INT)PpManager->m_PpBridge.m_bInitDone, *Required,
+			PpManager->m_KismetPPWeight, PpManager->m_KismetPPFadeInTime, PpManager->m_KismetPPFadeOutTime );
+	}
+
+	if( GWorld->Levels.Num() != LevelsSeen )
+	{
+		LevelsSeen = GWorld->Levels.Num();
+		INT Ops = 0, Interesting = 0;
+		for( INT Index = 0; Index < GWorld->Levels.Num(); Index++ )
+		{
+			ULevel* Level = GWorld->Levels( Index );
+			if( Level == NULL )
+			{
+				continue;
+			}
+			debugf( TEXT("DISHONORED(bringup): fediag level %d: %s, %d actors, %d sequences"),
+				Line, *Level->GetOutermost()->GetName(), Level->Actors.Num(), Level->GameSequences.Num() );
+			for( INT SeqIndex = 0; SeqIndex < Level->GameSequences.Num(); SeqIndex++ )
+			{
+				DisFEWalkSequence( Level->GameSequences( SeqIndex ), 0, Ops, Interesting );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): fediag kismet %d: %d levels, %d sequence objects, %d of interest"),
+			Line, GWorld->Levels.Num(), Ops, Interesting );
+	}
+
+	ADishonoredHUD* HUD = Cast<ADishonoredHUD>( PC->myHUD );
+	debugf( TEXT("DISHONORED(bringup): fediag hud %d: myHUD %s, showFlags %04x/%04x/%04x/%04x/%04x/%04x, bCinematicMode %d"),
+		Line, PC->myHUD ? *PC->myHUD->GetClass()->GetName() : TEXT("NULL"),
+		HUD ? HUD->m_ShowFlags[0] : -1, HUD ? HUD->m_ShowFlags[1] : -1, HUD ? HUD->m_ShowFlags[2] : -1,
+		HUD ? HUD->m_ShowFlags[3] : -1, HUD ? HUD->m_ShowFlags[4] : -1, HUD ? HUD->m_ShowFlags[5] : -1,
+		(INT)PC->bCinematicMode );
+}
+
 /**
  * DISHONORED(port): 2013 rva 0x6b6e80 (2012 0x6ef510) - and this is the ONLY caller of UArkPpNodeController::Tick in
  * either executable. It walks the first local player's post-process chain and ticks every node's controller with the
@@ -708,6 +942,10 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 		}
 	}
 
+	if( DisFEDiagEnabled() )
+	{
+		DisFEReport( this );
+	}
 	if( DisPowerCensusEnabled() )
 	{
 		DisPowerReport( GWorld, DeltaTime );
@@ -828,8 +1066,15 @@ void ADishonoredPlayerController::ModifyPostProcessSettings( FArkPpConfig& Confi
 		ApplyDarkVisionPostProcessSettings( PlayerPawn, DeltaSeconds );
 		// DISHONORED(bringup): ApplyMusicalOverseerPostProcessSettings (0x6a6970) goes here.
 	}
-	// DISHONORED(bringup): UDisPostProcessManager::ApplyKismetPostProcessSettings (0x7ef9b0) goes here, before
-	// the UI one.
+	// DISHONORED(port, agent FE): 0x7ef9b0 - the level's own channel, which is what a Kismet
+	// DisSeqAct_UberPostProcess reaches the frame with. It runs before the UI one, as retail has it.
+	{
+		UDisPostProcessManager* KismetPpManager = DisGetPpManager();
+		if( KismetPpManager != NULL )
+		{
+			KismetPpManager->ApplyKismetPostProcessSettings( Config, DeltaSeconds );
+		}
+	}
 	// DISHONORED(port, agent FA): 0x7efca0 - the interface's own channel, which is what blurs the scene behind a
 	// message box. It runs on the real frame delta rather than the paused one, because a box that pauses the game
 	// must still be able to fade its blur in.

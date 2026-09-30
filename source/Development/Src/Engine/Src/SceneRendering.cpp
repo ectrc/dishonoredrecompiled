@@ -5100,24 +5100,43 @@ static void RenderViewFamily_RenderThread( FSceneRenderer* SceneRenderer )
  */
 static void DishonoredTimedScreenShot(const FSceneViewFamily* ViewFamily)
 {
-	static FLOAT ShotTime = -1.0f;
-	static UBOOL bRequested = FALSE;
-	if (ShotTime < 0.0f)
+	// DISHONORED(bringup, agent FE): the list form -apshottime=30,90,150 captures one frame per mark in one
+	// run, which is what a before/after of a transition needs, and -apshotname=<tag> names the files. The
+	// screenshot directory is shared by every agent and "apshottime00000.bmp" is not a name a run can claim:
+	// one package already read another's frame out of it. A tag makes the file claimable by name.
+	static TArray<FLOAT> ShotTimes;
+	static INT NextShot = -1;
+	static FString Tag;
+	if (NextShot < 0)
 	{
-		ShotTime = 0.0f;
-		if (!Parse(appCmdLine(), TEXT("apshottime="), ShotTime) || ShotTime <= 0.0f)
+		NextShot = 0;
+		FString TimeList;
+		if (Parse(appCmdLine(), TEXT("apshottime="), TimeList, FALSE))
 		{
-			ShotTime = 0.0f;
+			TArray<FString> Parts;
+			TimeList.ParseIntoArray(&Parts, TEXT(","), TRUE);
+			for (INT Index = 0; Index < Parts.Num(); Index++)
+			{
+				const FLOAT Mark = appAtof(*Parts(Index));
+				if (Mark > 0.0f)
+				{
+					ShotTimes.AddItem(Mark);
+				}
+			}
+		}
+		if (!Parse(appCmdLine(), TEXT("apshotname="), Tag))
+		{
+			Tag = TEXT("");
 		}
 	}
-	if (ShotTime > 0.0f && !bRequested && ViewFamily && ViewFamily->CurrentWorldTime >= ShotTime)
+	if (NextShot < ShotTimes.Num() && ViewFamily && ViewFamily->CurrentWorldTime >= ShotTimes(NextShot))
 	{
 		extern UBOOL GScreenShotRequest;	// UnPlayer.cpp
 		extern FString GScreenShotName;		// UnPlayer.cpp - the file name, "ScreenShot" when empty
-		bRequested = TRUE;
-		debugf(TEXT("DISHONORED(bringup): -apshottime: screenshot of the frame at world time %.3f"), ViewFamily->CurrentWorldTime);
-		// the retail screenshot directory is shared by every agent's runs, so this one gets a name of its own
-		GScreenShotName = TEXT("apshottime");
+		debugf(TEXT("DISHONORED(bringup): -apshottime: screenshot %d of %d, mark %.3f, frame at world time %.3f, name '%s'"),
+			NextShot + 1, ShotTimes.Num(), ShotTimes(NextShot), ViewFamily->CurrentWorldTime, *Tag);
+		NextShot++;
+		GScreenShotName = Tag.Len() > 0 ? FString::Printf(TEXT("apshottime_%s"), *Tag) : FString(TEXT("apshottime"));
 		GScreenShotRequest = TRUE;
 	}
 }

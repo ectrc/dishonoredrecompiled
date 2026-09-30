@@ -29,6 +29,16 @@ public:
 	// at whatever weight the fade has reached. This is the whole of "retail blurs the scene behind a modal".
 	void ApplyUIPostProcessSettings( struct FArkPpConfig& _rConfig, FLOAT _fDeltaTime );
 
+// ---- agent FE (PHASE13 FE): the Kismet channel, the twin of the UI one ----
+public:
+	// DISHONORED(port): 2013 rva 0x7e7e90 (2012 0x8496b0). DisSeqAct_UberPostProcess hands its own
+	// FArkUberPpParameters, weight and fade times here; the state machine below walks the weight.
+	void SetKismetPPParams( const FArkUberPpParameters& _rParameters, FLOAT _fWeight, FLOAT _fFadeInTime,
+							FLOAT _fFadeOutTime );
+	// DISHONORED(port): 2013 rva 0x7ef9b0 (2012 0x850ef0). The same four-state fade as the UI channel on
+	// Epp_UberKismet, but ArkUberPpApplyTo's last argument is FALSE where the UI one passes TRUE.
+	void ApplyKismetPostProcessSettings( struct FArkPpConfig& _rConfig, FLOAT _fDeltaTime );
+
 // ---- agent EB (PHASE11 EB): the object layer's GameLoad ----
 public:
 	// DISHONORED(port): agent EB, 2013 rva 0x7eb2c0. Body in dissavegame.cpp.

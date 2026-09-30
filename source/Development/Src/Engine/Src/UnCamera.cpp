@@ -1340,6 +1340,24 @@ void ACamera::UpdateViewTarget( FTViewTarget& OutVT, FLOAT DeltaTime )
 	{
 		CamActor->eventGetActorEyesViewPoint( OutVT.POV.Location, OutVT.POV.Rotation );
 		OutVT.POV.FOV = CamActor->FOVAngle;
+		// DISHONORED(bringup, agent FE): -fefov=<degrees> forces a CameraActor view target's FOV. It is the
+		// bisect that answers "is the menu framed wrong because of the field of view or because of where the
+		// camera is": a wrong FOV is a pure zoom about the screen centre and one sweep of this settles it.
+		{
+			static FLOAT ForcedFOV = -1.0f;
+			if( ForcedFOV < 0.0f )
+			{
+				ForcedFOV = 0.0f;
+				if( !Parse( appCmdLine(), TEXT("fefov="), ForcedFOV ) || ForcedFOV <= 0.0f )
+				{
+					ForcedFOV = 0.0f;
+				}
+			}
+			if( ForcedFOV > 0.0f )
+			{
+				OutVT.POV.FOV = ForcedFOV;
+			}
+		}
 		OutVT.AspectRatio = CamActor->AspectRatio;
 		CamOverridePostProcessAlpha = CamActor->CamOverridePostProcessAlpha;
 		m_CamPostProcessSettings = CamActor->m_CamOverridePostProcess;

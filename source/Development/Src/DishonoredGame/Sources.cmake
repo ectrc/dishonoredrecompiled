@@ -538,7 +538,6 @@ set(DishonoredGame_EXCLUDE
   Src/disseqact_attachpickup.cpp
   Src/disseqact_autosave.cpp
   Src/disseqact_backupandclearinventory.cpp
-  Src/disseqact_bendtime.cpp
   Src/disseqact_bodyshadowkill.cpp
   Src/disseqact_cleanupbodies.cpp
   Src/disseqact_clearplayervissettings.cpp

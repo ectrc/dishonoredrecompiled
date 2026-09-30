@@ -1469,6 +1469,7 @@ public:
     //## END PROPS DisSeqAct_UberPostProcess
 
     DECLARE_CLASS(UDisSeqAct_UberPostProcess,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_UberPostProcess.h"
 };
 
 // DishonoredGame.DisSeqAct_WallofLightControl: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)

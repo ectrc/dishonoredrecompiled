@@ -2820,6 +2820,11 @@ UBOOL UGameEngine::IsReadyForMapChange()
 	return IsPreparingMapChange() && (LevelsToLoadForPendingMapChange.Num() == LoadedLevelsForPendingMapChange.Num());
 }
 
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+// DISHONORED(bringup, agent FE): the sixth Engine -> GFxUI call, defined in GFxUI/Src/gfxuiengine.cpp
+extern void DishonoredGFxNotifyGameSessionEnded();
+#endif
+
 /**
  * Commit map change if requested and map change is pending. Called every frame.
  */
@@ -2924,6 +2929,15 @@ UBOOL UGameEngine::CommitMapChange()
                 GWorld->GetGameInfo()->eventPreCommitMapChange(PreviousMapName, NextMapName);
             }
 		}
+
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+		// DISHONORED(bringup, agent FE): the menu's movie survives into the level otherwise, and its
+		// _root.vignette_mc with it. FGFxEngine::NotifyGameSessionEnded closes every movie whose
+		// bCloseOnLevelChange is set, which is the mechanism the reference engine leaves for exactly this
+		// moment; nothing in this tree had ever called it. The Engine -> GFxUI edge follows the pattern
+		// UnPlayer.cpp established for the other five calls.
+		DishonoredGFxNotifyGameSessionEnded();
+#endif
 
 		// on the client, check if we already loaded pending levels to be made visible due to e.g. the PackageMap
 		FPendingStreamingLevelHolder LevelHolder;
