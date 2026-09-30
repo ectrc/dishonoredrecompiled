@@ -212,8 +212,6 @@ struct FApexModuleDestructibleSettings
     INT MaxChunkIslandCount;
     INT MaxRrbActorCount;
     FLOAT MaxChunkSeparationLOD;
-    DISHONORED_SHIM_STATIC INT MaxShapeCount;
-    DISHONORED_SHIM_STATIC BITFIELD bOverrideMaxChunkSeparationLOD;
 
     /** Constructors */
     FApexModuleDestructibleSettings() {}
@@ -313,15 +311,6 @@ struct FLightmassWorldInfoSettings
 	BITFIELD bVisualizeAmbientOcclusion:1;
 
 	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-	DISHONORED_SHIM_STATIC BITFIELD bEnableAdvancedEnvironmentColor;
-	DISHONORED_SHIM_STATIC FColor EnvironmentSunColor;
-	DISHONORED_SHIM_STATIC FLOAT EnvironmentSunIntensity;
-	DISHONORED_SHIM_STATIC FLOAT EnvironmentLightTerminatorAngle;
-	DISHONORED_SHIM_STATIC FVector EnvironmentLightDirection;
-	DISHONORED_SHIM_STATIC BITFIELD bEnableImageReflectionShadowing;
-	DISHONORED_SHIM_STATIC BITFIELD bCompressShadowmap;
     SCRIPT_ALIGN;
     SCRIPT_ALIGN;
 
@@ -672,13 +661,10 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC struct FPostProcessSettings DefaultPostProcessSettings;
     DISHONORED_SHIM_STATIC BITFIELD bUseGammaCorrection;
-    DISHONORED_SHIM_STATIC BITFIELD bSuspendAI;
     DISHONORED_SHIM_STATIC BITFIELD bMinimizeBSPSections;
-    DISHONORED_SHIM_STATIC BITFIELD bNoMobileMapWarnings;
     DISHONORED_SHIM_STATIC BITFIELD bInteractiveMode;
     DISHONORED_SHIM_STATIC BITFIELD bPhysicsIgnoreDeltaTime;
     DISHONORED_SHIM_STATIC BITFIELD bAllowTemporalAA;
-    DISHONORED_SHIM_STATIC BITFIELD bHaveActiveCrowd;
     DISHONORED_SHIM_STATIC BITFIELD bAllowHostMigration;
     DISHONORED_SHIM_STATIC BITFIELD bGameplayFramePause;
     DISHONORED_SHIM_STATIC class APostProcessVolume* HighestPriorityPostProcessVolume;
@@ -688,28 +674,20 @@ public:
     DISHONORED_SHIM_STATIC TArrayNoInit<class AMassiveLODOverrideVolume*> MassiveLODOverrideVolumes;
     DISHONORED_SHIM_STATIC TArrayNoInit<class AEnvironmentVolume*> EnvironmentVolumes;
     DISHONORED_SHIM_STATIC class APlayerReplicationInfo* Pauser;
-    DISHONORED_SHIM_STATIC FStringNoInit VisibleGroups_DEPRECATED;
     DISHONORED_SHIM_STATIC FStringNoInit VisibleLayers;
-    DISHONORED_SHIM_STATIC BYTE PreferredLightmapType;
-    DISHONORED_SHIM_STATIC BYTE LevelLightingQuality;
     DISHONORED_SHIM_STATIC class ACoverLink* CoverList;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FNetViewer> ReplicationViewers;
     DISHONORED_SHIM_STATIC class UClass* DefaultGameType;
     DISHONORED_SHIM_STATIC class UAudioComponent* MusicComp;
     DISHONORED_SHIM_STATIC struct FMusicTrackStruct CurrentMusicTrack;
     DISHONORED_SHIM_STATIC struct FMusicTrackStruct ReplicatedMusicTrack;
-    DISHONORED_SHIM_STATIC FStringNoInit FractureManagerClassPath;
     DISHONORED_SHIM_STATIC class AFractureManager* MyFractureManager;
     DISHONORED_SHIM_STATIC class UProcBuildingRuleset* ProcBuildingRulesetOverride;
     DISHONORED_SHIM_STATIC INT SkelMeshCompTickTagCount;
-    DISHONORED_SHIM_STATIC FLOAT ApexDestructionLODResourceValue;
-    DISHONORED_SHIM_STATIC FLOAT ApexClothingLODResourceValue;
     DISHONORED_SHIM_STATIC TArrayNoInit<class AWorldAttractor*> WorldAttractors;
     DISHONORED_SHIM_STATIC class UTexture2D* ImageReflectionEnvironmentTexture;
     DISHONORED_SHIM_STATIC FLinearColor ImageReflectionEnvironmentColor;
     DISHONORED_SHIM_STATIC FLOAT ImageReflectionEnvironmentRotation;
-    DISHONORED_SHIM_STATIC class UDEPRECATED_LightmassLevelSettings* LMLevelSettings_DEPRECATED;
-    DISHONORED_SHIM_STATIC TMap< FGuid, class ULandscapeInfo* > LandscapeInfoMap;
     DISHONORED_SHIM_STATIC class ACrowdPopulationManagerBase* PopulationManager;
     DISHONORED_SHIM_STATIC struct FHostMigrationState PeerHostMigration;
     DISHONORED_SHIM_STATIC FLOAT HostMigrationTimeout;
@@ -1700,8 +1678,6 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC class UMaterial* MobileEmulationMasterMaterial;
-    DISHONORED_SHIM_STATIC FStringNoInit MobileEmulationMasterMaterialName;
     DISHONORED_SHIM_STATIC BITFIELD bScreenshotRequested;
     DISHONORED_SHIM_STATIC BITFIELD bCheckForMultiplePawnsSpawnedInAFrame;
     DISHONORED_SHIM_STATIC BITFIELD bUseRecastNavMesh;
@@ -1709,15 +1685,9 @@ public:
     DISHONORED_SHIM_STATIC BITFIELD bStartWithMatineeCapture;
     DISHONORED_SHIM_STATIC BITFIELD bCompressMatineeCapture;
     DISHONORED_SHIM_STATIC BITFIELD bLockReadOnlyLevels;
-    DISHONORED_SHIM_STATIC INT ImageReflectionTextureSize;
     DISHONORED_SHIM_STATIC class UPhysicalMaterial* LandscapeHolePhysMaterial;
-    DISHONORED_SHIM_STATIC FStringNoInit LandscapeHolePhysMaterialName;
-    DISHONORED_SHIM_STATIC class UApexDestructibleDamageParameters* ApexDamageParams;
-    DISHONORED_SHIM_STATIC FStringNoInit ApexDamageParamsName;
     DISHONORED_SHIM_STATIC class UTexture2D* ScreenDoorNoiseTexture;
-    DISHONORED_SHIM_STATIC FStringNoInit ScreenDoorNoiseTextureName;
     DISHONORED_SHIM_STATIC class UTexture2D* ImageGrainNoiseTexture;
-    DISHONORED_SHIM_STATIC FStringNoInit ImageGrainNoiseTextureName;
     DISHONORED_SHIM_STATIC class USoundNodeWave* DefaultSound;
     DISHONORED_SHIM_STATIC FStringNoInit DefaultSoundName;
     DISHONORED_SHIM_STATIC INT NumPawnsAllowedToBeSpawnedInAFrame;

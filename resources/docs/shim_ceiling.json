@@ -1,0 +1,10 @@
+{
+  "class-absent": 0,
+  "retail-has": 5,
+  "retail-lacks": 737,
+  "retail-lacks-1src": 0,
+  "retail-lacks-span": 24,
+  "schema": "retail-lacks|retail-lacks-span|retail-lacks-1src|retail-has|class-absent|unproven",
+  "total": 887,
+  "unproven": 121
+}

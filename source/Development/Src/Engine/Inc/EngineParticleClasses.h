@@ -7206,10 +7206,6 @@ public:
     class FPhysXParticleSystem* PSys;
     //## END PROPS PhysXParticleSystem
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC FLOAT StaticFrictionWithStaticShapes;
-    DISHONORED_SHIM_STATIC FLOAT StaticFrictionWithDynamicShapes;
 
     DECLARE_CLASS(UPhysXParticleSystem,UObject,0,Engine)
     virtual void FinishDestroy();

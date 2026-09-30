@@ -408,7 +408,6 @@ public:
     DISHONORED_SHIM_STATIC BITFIELD bAdjusting;
     DISHONORED_SHIM_STATIC BITFIELD bPreparingMove;
     DISHONORED_SHIM_STATIC BITFIELD bForceStrafe;
-    DISHONORED_SHIM_STATIC BITFIELD bEarlyOutOfSighTestsForSameType;
     DISHONORED_SHIM_STATIC BITFIELD bPreciseDestination;
     DISHONORED_SHIM_STATIC BITFIELD bUsingPathLanes;
     DISHONORED_SHIM_STATIC class UClass* NavigationHandleClass;
@@ -1141,7 +1140,6 @@ struct FDebugTextInfo
     SCRIPT_ALIGN;
     DISHONORED_SHIM_STATIC BITFIELD bKeepAttachedToActor;
     // DISHONORED(layout): retail SDK span 0..56 (2012 PDB 56): OrigActorLocation and Font are reference-only (storage-less shims)
-    DISHONORED_SHIM_STATIC FVector OrigActorLocation;
     DISHONORED_SHIM_STATIC class UFont* Font;
 
     /** Constructors */
@@ -1856,21 +1854,14 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bCameraCut;
     DISHONORED_SHIM_STATIC BITFIELD bInteractiveMode;
-    DISHONORED_SHIM_STATIC BITFIELD bShowKismetDrawText;
     DISHONORED_SHIM_STATIC BITFIELD bDebugCameraAnims;
-    DISHONORED_SHIM_STATIC BITFIELD bBlockCameraAnimsFromOverridingPostProcess;
     DISHONORED_SHIM_STATIC BITFIELD bLogHearSoundOverflow;
     DISHONORED_SHIM_STATIC class APlayerReplicationInfo* RealViewTarget;
     DISHONORED_SHIM_STATIC class AHUD* mySecondaryHUD;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> VoiceMuteList;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> GameplayVoiceMuteList;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> VoicePacketFilter;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FConnectedPeerInfo> ConnectedPeers;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FUniqueNetId> BestNextHostPeers;
-    DISHONORED_SHIM_STATIC class UOnlineGameSearch* MigratedSearchToJoin;
     DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> VoiceInterface;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FInputMatchRequest> InputRequests;
-    DISHONORED_SHIM_STATIC class ACoverReplicator* MyCoverReplicator;
     DISHONORED_SHIM_STATIC class UNetConnection* PendingSwapConnection;
     DISHONORED_SHIM_STATIC INT MaxConcurrentHearSounds;
     DISHONORED_SHIM_STATIC TArrayNoInit<class UAudioComponent*> HearSoundActiveComponents;

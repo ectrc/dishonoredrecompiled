@@ -73,10 +73,6 @@ public:
     class AActor* Winner;
     //## END PROPS GameReplicationInfo
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC TArrayNoInit<class APlayerReplicationInfo*> PRIArray;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class APlayerReplicationInfo*> InactivePRIArray;
 
     virtual UBOOL OnSameTeam(class AActor* A,class AActor* B);
     DECLARE_FUNCTION(execOnSameTeam)

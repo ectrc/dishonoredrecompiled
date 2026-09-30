@@ -1100,22 +1100,17 @@ public:
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC class UGameCrowdGroup* MyGroup;
-    DISHONORED_SHIM_STATIC FVector PreferredVelocity;
     DISHONORED_SHIM_STATIC FVector PendingVelocity;
-    DISHONORED_SHIM_STATIC class AGameCrowdDestination* BehaviorDestination;
     DISHONORED_SHIM_STATIC FLOAT InterpZTranslation;
     DISHONORED_SHIM_STATIC class UDynamicLightEnvironmentComponent* LightEnvironment;
     DISHONORED_SHIM_STATIC INT ConformTraceFrameCount;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FNearbyDynamicItem> NearbyDynamics;
     DISHONORED_SHIM_STATIC BITFIELD bCheckForObstacles;
-    DISHONORED_SHIM_STATIC BITFIELD bUseNavMeshPathing;
-    DISHONORED_SHIM_STATIC BITFIELD bWantsSeePlayerNotification;
     DISHONORED_SHIM_STATIC BITFIELD bHitObstacle;
     DISHONORED_SHIM_STATIC BITFIELD bBadHitNormal;
     DISHONORED_SHIM_STATIC BITFIELD bPotentialEncounter;
     DISHONORED_SHIM_STATIC BITFIELD bIsPanicked;
     DISHONORED_SHIM_STATIC BITFIELD bWantsGroupIdle;
-    DISHONORED_SHIM_STATIC BITFIELD bHasNotifiedSpawner;
     DISHONORED_SHIM_STATIC BITFIELD bPaused;
     DISHONORED_SHIM_STATIC BYTE ConformType;
     DISHONORED_SHIM_STATIC FLOAT ConformTraceDist;
@@ -1140,33 +1135,14 @@ public:
     DISHONORED_SHIM_STATIC FVector LastKnownGoodPosition;
     DISHONORED_SHIM_STATIC INT ObstacleCheckCount;
     DISHONORED_SHIM_STATIC FLOAT MaxWalkingSpeed;
-    DISHONORED_SHIM_STATIC FLOAT MaxRunningSpeed;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FRecentInteraction> RecentInteractions;
     DISHONORED_SHIM_STATIC FLOAT BeaconMaxDist;
-    DISHONORED_SHIM_STATIC FVector BeaconOffset;
-    DISHONORED_SHIM_STATIC class UTexture2D* BeaconTexture;
-    DISHONORED_SHIM_STATIC FLinearColor BeaconColor;
     DISHONORED_SHIM_STATIC class USoundCue* AmbientSoundCue;
-    DISHONORED_SHIM_STATIC class UAudioComponent* AmbientSoundComponent;
     DISHONORED_SHIM_STATIC class UGameCrowdAgentBehavior* CurrentBehavior;
     DISHONORED_SHIM_STATIC FLOAT CurrentBehaviorActivationTime;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> EncounterAgentBehaviors;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> SeePlayerBehaviors;
-    DISHONORED_SHIM_STATIC FLOAT MaxSeePlayerDistSq;
-    DISHONORED_SHIM_STATIC FLOAT SeePlayerInterval;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> SpawnBehaviors;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> UneasyBehaviors;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> AlertBehaviors;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> PanicBehaviors;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> RandomBehaviors;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> TakeDamageBehaviors;
-    DISHONORED_SHIM_STATIC FLOAT RandomBehaviorInterval;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> GroupWaitingBehaviors;
-    DISHONORED_SHIM_STATIC FLOAT DesiredGroupRadius;
     DISHONORED_SHIM_STATIC FLOAT DesiredGroupRadiusSq;
-    DISHONORED_SHIM_STATIC FVector SpawnOffset;
     DISHONORED_SHIM_STATIC FColor DebugAgentColor;
-    DISHONORED_SHIM_STATIC class AGameCrowdDestination* DebugSpawnDest;
 
     virtual FVector GetCollisionExtent();
     virtual UBOOL IsPanicked();
@@ -1425,26 +1401,19 @@ public:
     DISHONORED_SHIM_STATIC class UAnimNodeBlend* SpeedBlendNode;
     DISHONORED_SHIM_STATIC class UAnimNodeSlot* FullBodySlot;
     DISHONORED_SHIM_STATIC class UAnimNodeSequence* ActionSeqNode;
-    DISHONORED_SHIM_STATIC class UAnimNodeSequence* WalkSeqNode;
-    DISHONORED_SHIM_STATIC class UAnimNodeSequence* RunSeqNode;
     DISHONORED_SHIM_STATIC class UAnimTree* AgentTree;
-    DISHONORED_SHIM_STATIC TArrayNoInit<FName> WalkAnimNames;
-    DISHONORED_SHIM_STATIC TArrayNoInit<FName> RunAnimNames;
     DISHONORED_SHIM_STATIC FLOAT SpeedBlendStart;
     DISHONORED_SHIM_STATIC FLOAT SpeedBlendEnd;
     DISHONORED_SHIM_STATIC FLOAT AnimVelRate;
     DISHONORED_SHIM_STATIC FLOAT MaxSpeedBlendChangeSpeed;
     DISHONORED_SHIM_STATIC FName MoveSyncGroupName;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FGameCrowdAttachmentList> Attachments;
-    DISHONORED_SHIM_STATIC FLOAT MaxTargetAcquireTime;
     DISHONORED_SHIM_STATIC BITFIELD bUseRootMotionVelocity;
     DISHONORED_SHIM_STATIC BITFIELD bAllowSkeletonUpdateChangeBasedOnTickResult;
     DISHONORED_SHIM_STATIC BITFIELD bTickWhenNotVisible;
     DISHONORED_SHIM_STATIC BITFIELD bIsPlayingDeathAnimation;
     DISHONORED_SHIM_STATIC BITFIELD bIsPlayingImportantAnimation;
-    DISHONORED_SHIM_STATIC BITFIELD bAnimateThisTick;
     DISHONORED_SHIM_STATIC FLOAT NotVisibleDisableTickTime;
-    DISHONORED_SHIM_STATIC FLOAT MaxAnimationDistance;
     DISHONORED_SHIM_STATIC FLOAT MaxAnimationDistanceSq;
 
     virtual void PlayDeath(FVector KillMomentum);
@@ -1687,16 +1656,8 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bAvoidWhenPanicked;
-    DISHONORED_SHIM_STATIC BITFIELD bSkipBehaviorIfPanicked;
-    DISHONORED_SHIM_STATIC BITFIELD bAllowCloudSpawning;
-    DISHONORED_SHIM_STATIC BITFIELD bAllowVisibleSpawning;
-    DISHONORED_SHIM_STATIC BITFIELD bCanSpawnHereNow;
-    DISHONORED_SHIM_STATIC BITFIELD bHasNavigationMesh;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FBehaviorEntry> ReachedBehaviors;
     DISHONORED_SHIM_STATIC FLOAT Priority;
     DISHONORED_SHIM_STATIC FLOAT LastSpawnTime;
-    DISHONORED_SHIM_STATIC class AGameCrowdPopulationManager* MyPopMgr;
 
     // DISHONORED(port): 2013 natives (agent AE): ReachedDestination exec 0x557a40 / body 0x5678f0, PickNewDestinationFor 0x557aa0 / 0x5613b0, AllowableDestinationFor (exec folded) / 0x561820,
     // IncrementCustomerCount 0x55e5c0, DecrementCustomerCount 0x561af0
@@ -1781,9 +1742,6 @@ public:
     FLOAT AverageReactionTime;
     //## END PROPS GameCrowdDestinationQueuePoint
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC class UClass* QueueBehaviorClass;
 
     // DISHONORED(port): 2013 natives (agent AE): ActuallyAdvance body 0x56abb0; HasSpace 0x55a1c0, AddCustomer 0x55a180, AdvanceCustomerTo 0x55a130 are C++ in 2013
     void ActuallyAdvance();
@@ -2090,7 +2048,6 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bWarnCrowdMembers;
     DISHONORED_SHIM_STATIC BITFIELD bDebugCrowdAwareness;
-    DISHONORED_SHIM_STATIC FName CurrentSoundMode;
 
     virtual INT GetUIPlayerIndex();
     void ShowLoadingMovie(UBOOL bShowMovie,UBOOL bPauseAfterHide=FALSE,FLOAT PauseDuration=0,FLOAT KeepPlayingDuration=0,UBOOL bOverridePreviousDelays=FALSE);
@@ -3968,7 +3925,6 @@ VERIFY_CLASS_OFFSET_NODIE(UGameCheatManager,GameCheatManager,DebugCameraControll
 VERIFY_CLASS_OFFSET_NODIE(UGameCheatManager,GameCheatManager,DebugCameraControllerClassName)
 VERIFY_CLASS_SIZE_NODIE(UGameCheatManager)
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdAgent,GameCrowdAgent,MyGroup)
-VERIFY_CLASS_OFFSET_NODIE(AGameCrowdAgent,GameCrowdAgent,DebugSpawnDest)
 VERIFY_CLASS_SIZE_NODIE(AGameCrowdAgent)
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdAgentSkeletal,GameCrowdAgentSkeletal,SkeletalMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdAgentSkeletal,GameCrowdAgentSkeletal,MaxAnimationDistanceSq)
@@ -3997,10 +3953,8 @@ VERIFY_CLASS_OFFSET_NODIE(AGameCrowdBehaviorPoint,GameCrowdBehaviorPoint,RadiusO
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdBehaviorPoint,GameCrowdBehaviorPoint,Initiator)
 VERIFY_CLASS_SIZE_NODIE(AGameCrowdBehaviorPoint)
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdDestination,GameCrowdDestination,NextDestinations)
-VERIFY_CLASS_OFFSET_NODIE(AGameCrowdDestination,GameCrowdDestination,MyPopMgr)
 VERIFY_CLASS_SIZE_NODIE(AGameCrowdDestination)
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdDestinationQueuePoint,GameCrowdDestinationQueuePoint,NextQueuePosition)
-VERIFY_CLASS_OFFSET_NODIE(AGameCrowdDestinationQueuePoint,GameCrowdDestinationQueuePoint,QueueBehaviorClass)
 VERIFY_CLASS_SIZE_NODIE(AGameCrowdDestinationQueuePoint)
 VERIFY_CLASS_SIZE_NODIE(UGameCrowdPopulationManager)
 VERIFY_CLASS_OFFSET_NODIE(AGameCrowdReplicationActor,GameCrowdReplicationActor,Spawner)
@@ -4016,7 +3970,6 @@ VERIFY_CLASS_OFFSET_NODIE(AGameExplosionActor,GameExplosionActor,ExplosionDirect
 VERIFY_CLASS_SIZE_NODIE(AGameExplosionActor)
 VERIFY_CLASS_SIZE_NODIE(AGamePawn)
 VERIFY_CLASS_OFFSET_NODIE(AGamePlayerController,GamePlayerController,AgentAwareRadius)
-VERIFY_CLASS_OFFSET_NODIE(AGamePlayerController,GamePlayerController,CurrentSoundMode)
 VERIFY_CLASS_SIZE_NODIE(AGamePlayerController)
 VERIFY_CLASS_SIZE_NODIE(UGameTypes)
 VERIFY_CLASS_OFFSET_NODIE(AMobileHUD,MobileHUD,JoystickBackground)

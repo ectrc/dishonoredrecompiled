@@ -189,7 +189,6 @@ public:
 	// DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
 	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
 	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-	DISHONORED_SHIM_STATIC class UDEPRECATED_SaveGameSummary* SaveGameSummary_DEPRECATED;
 	DISHONORED_SHIM_STATIC class UDemoRecDriver* DemoRecDriver;
 	DISHONORED_SHIM_STATIC class UNetDriver* PeerNetDriver;
 	DISHONORED_SHIM_STATIC class UNetDriver* RedirectNetDriver;

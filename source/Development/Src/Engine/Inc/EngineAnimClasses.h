@@ -1624,10 +1624,6 @@ public:
     FName BoneName;
     //## END PROPS AnimNotify_PlayParticleEffect
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC class UParticleSystem* PSNonExtremeContentTemplate;
-    DISHONORED_SHIM_STATIC FName BoneSocketModuleActorName;
 
     DECLARE_CLASS(UAnimNotify_PlayParticleEffect,UAnimNotify,0,Engine)
 	// AnimNotify interface.
@@ -3714,12 +3710,6 @@ public:
     DISHONORED_SHIM_STATIC TArrayNoInit<FBoneAtom> SavedPose;
     DISHONORED_SHIM_STATIC INT MorphConnDrawY;
     DISHONORED_SHIM_STATIC FLOAT PreviewPlayRate;
-    DISHONORED_SHIM_STATIC class USkeletalMesh* PreviewSkelMesh_DEPRECATED;
-    DISHONORED_SHIM_STATIC class USkeletalMesh* SocketSkelMesh_DEPRECATED;
-    DISHONORED_SHIM_STATIC class UStaticMesh* SocketStaticMesh_DEPRECATED;
-    DISHONORED_SHIM_STATIC FName SocketName_DEPRECATED;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class UAnimSet*> PreviewAnimSets_DEPRECATED;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class UMorphTargetSet*> PreviewMorphSets_DEPRECATED;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FPreviewSkelMeshStruct> PreviewMeshList;
     DISHONORED_SHIM_STATIC INT PreviewMeshIndex;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FPreviewSocketStruct> PreviewSocketList;
@@ -3731,7 +3721,6 @@ public:
     DISHONORED_SHIM_STATIC FRotator PreviewCamRot;
     DISHONORED_SHIM_STATIC FVector PreviewFloorPos;
     DISHONORED_SHIM_STATIC INT PreviewFloorYaw;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class UAnimNodeFrame*> AnimNodeFrames;
 
     class USkelControlBase* FindSkelControl(FName InControlName);
     class UMorphNodeBase* FindMorphNode(FName InNodeName);
@@ -5526,7 +5515,6 @@ VERIFY_CLASS_SIZE_NODIE(UAnimNotify_ForceField)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_Kismet,AnimNotify_Kismet,NotifyName)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_Kismet)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_PlayParticleEffect,AnimNotify_PlayParticleEffect,PSTemplate)
-VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_PlayParticleEffect,AnimNotify_PlayParticleEffect,BoneSocketModuleActorName)
 VERIFY_CLASS_SIZE_NODIE(UAnimNotify_PlayParticleEffect)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_Rumble,AnimNotify_Rumble,PredefinedWaveForm)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNotify_Rumble,AnimNotify_Rumble,EffectRadius)

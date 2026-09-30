@@ -386,10 +386,6 @@ public:
 	// draw-distance test scales by it (ProcessVisible 2013 rva 0x45f060, ProcessPrimitiveCulling<0> 0x4626a0). As a
 	// storage-less shim it read 0, which zeroed every AdjustedMaxDrawDistanceSquared and left the static draw lists
 	// with nothing visible to draw.
-	/** Whether to use D3D11 when it's available.						*/
-	DISHONORED_SHIM_STATIC UBOOL	bAllowD3D11;
-	/** Whether to use OpenGL when it's available.						*/
-	DISHONORED_SHIM_STATIC UBOOL	bAllowOpenGL;
 	/** Whether to allow sub-surface scattering to render.				*/
 	DISHONORED_SHIM_STATIC UBOOL	bAllowSubsurfaceScattering;
 	/** Whether to allow image reflections to render.					*/
@@ -398,8 +394,6 @@ public:
 	DISHONORED_SHIM_STATIC UBOOL	bAllowImageReflectionShadowing;
 	/** State of the console variable MotionBlurSkinning.				*/
 	DISHONORED_SHIM_STATIC INT		MotionBlurSkinning;
-	/** Global tessellation factor multiplier */
-	DISHONORED_SHIM_STATIC FLOAT	TessellationAdaptivePixelsPerTriangle;
 	/** Whether to use high-precision GBuffers. */
 	DISHONORED_SHIM_STATIC UBOOL	bHighPrecisionGBuffers;
 	/** Whether to keep separate translucency (for better Depth of Field), experimental */
@@ -412,10 +406,6 @@ public:
 	DISHONORED_SHIM_STATIC INT		MaxFilterBlurSampleCount;
 	/** Whether to use safe and conservative shadow frustum creation that wastes some shadowmap space. */
 	DISHONORED_SHIM_STATIC UBOOL	bUseConservativeShadowBounds;
-	/** Higher values make the per object soft shadow comparison sharper, lower values make the transition softer. */
-	DISHONORED_SHIM_STATIC FLOAT	PerObjectShadowTransition;
-	/** Higher values make the per scene soft shadow comparison sharper, lower values make the transition softer. */
-	DISHONORED_SHIM_STATIC FLOAT	PerSceneShadowTransition;
 	/** Minimum camera FOV for CSM, this is used to prevent shadow shimmering when animating the FOV lower than the min, for example when zooming */
 	DISHONORED_SHIM_STATIC FLOAT	CSMMinimumFOV;
 	/** The FOV will be rounded by this factor for the purposes of CSM, which turns shadow shimmering into discrete jumps */

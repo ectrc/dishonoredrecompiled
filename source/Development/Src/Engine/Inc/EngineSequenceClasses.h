@@ -940,9 +940,6 @@ public:
     virtual void GameSave( FArchive& Ar, ESaveLoadLocation Location );
     virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC TArrayNoInit<class USequenceOp*> DelayedLatentOps;
 
     void SetEnabled(UBOOL bInEnabled);
     DECLARE_FUNCTION(execFindSeqObjectsByClass);
@@ -1775,9 +1772,6 @@ public:
     // DISHONORED(port): 2013 rva 0x2e7280 - GameLoad only; the save side is USequenceOp's. unsequence.cpp.
     virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC FLOAT LatentActivationTime;
 
     virtual void AbortFor(class AActor* latentActor);
     DECLARE_FUNCTION(execAbortFor)
@@ -4771,8 +4765,6 @@ public:
     DISHONORED_SHIM_STATIC FLOAT EdSectionStart;
     DISHONORED_SHIM_STATIC FLOAT EdSectionEnd;
     DISHONORED_SHIM_STATIC BITFIELD bShouldBakeAndPrune;
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FAnimSetBakeAndPruneStatus> BakeAndPruneStatus;
-    DISHONORED_SHIM_STATIC class UInterpGroupDirector* CachedDirectorGroup;
 
     DECLARE_CLASS(UInterpData,USequenceVariable,0,Engine)
 	// DISHONORED(port): Arkane's InterpData owns nothing but m_Data; the reference members above it are
@@ -5922,7 +5914,6 @@ VERIFY_CLASS_SIZE_NODIE(USeqEvent_Used)
 VERIFY_CLASS_OFFSET_NODIE(USequenceVariable,SequenceVariable,VarName)
 VERIFY_CLASS_SIZE_NODIE(USequenceVariable)
 VERIFY_CLASS_OFFSET_NODIE(UInterpData,InterpData,InterpLength)
-VERIFY_CLASS_OFFSET_NODIE(UInterpData,InterpData,CachedDirectorGroup)
 VERIFY_CLASS_SIZE_NODIE(UInterpData)
 VERIFY_CLASS_OFFSET_NODIE(USeqVar_Bool,SeqVar_Bool,bValue)
 VERIFY_CLASS_SIZE_NODIE(USeqVar_Bool)

@@ -2515,13 +2515,10 @@ public:
     DISHONORED_SHIM_STATIC BITFIELD bSkipAttachedMoves;
     DISHONORED_SHIM_STATIC BITFIELD bProjectileMoveSingleBlocking;
     DISHONORED_SHIM_STATIC BITFIELD bForceOctreeMNFilter;
-    DISHONORED_SHIM_STATIC BITFIELD bHiddenEdGroup_DEPRECATED;
     DISHONORED_SHIM_STATIC BITFIELD bHiddenEdLayer;
     DISHONORED_SHIM_STATIC BITFIELD bHiddenEdScene;
-    DISHONORED_SHIM_STATIC BITFIELD bDebugEffectIsRelevant;
     DISHONORED_SHIM_STATIC INT SkelMeshCompTickTag;
     DISHONORED_SHIM_STATIC FName Layer;
-    DISHONORED_SHIM_STATIC FName Group_DEPRECATED;
 
     virtual void ForceUpdateComponents(UBOOL bCollisionUpdate=FALSE,UBOOL bTransformOnly=TRUE);
     virtual FString ConsoleCommand(const FString& Command,UBOOL bWriteToLog=TRUE);
@@ -5158,9 +5155,6 @@ public:
     class APhysicsVolume* NextPhysicsVolume;
     //## END PROPS PhysicsVolume
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bNoInventory;
 
     virtual FLOAT GetGravityZ();
     virtual FVector GetZoneVelocityForActor(class AActor* TheActor);
@@ -6063,16 +6057,6 @@ public:
     virtual void SetShadowParentOnAllAttachedComponents();
     DECLARE_FUNCTION(execSetShadowParentOnAllAttachedComponents);
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bDestroyProjectilesOnEncroach;
-    DISHONORED_SHIM_STATIC class USoundCue* OpenSound;
-    DISHONORED_SHIM_STATIC class USoundCue* OpeningAmbientSound;
-    DISHONORED_SHIM_STATIC class USoundCue* OpenedSound;
-    DISHONORED_SHIM_STATIC class USoundCue* CloseSound;
-    DISHONORED_SHIM_STATIC class USoundCue* ClosingAmbientSound;
-    DISHONORED_SHIM_STATIC class USoundCue* ClosedSound;
-    DISHONORED_SHIM_STATIC class UAudioComponent* AmbientSoundComponent;
 
     DECLARE_CLASS(AInterpActor,ADynamicSMActor,0,Engine)
 	UBOOL ShouldTrace(UPrimitiveComponent* Primitive, AActor *SourceActor, DWORD TraceFlags);
@@ -6797,8 +6781,6 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bShowDirectorInfoDebug;
     DISHONORED_SHIM_STATIC BITFIELD bShowDirectorInfoHUD;
-    DISHONORED_SHIM_STATIC BITFIELD bRenderFullScreen;
-    DISHONORED_SHIM_STATIC BITFIELD bScaleCanvasForCinematicMode;
 
     void Draw3DLine(FVector Start,FVector End,FColor LineColor);
     void Draw2DLine(INT X1,INT Y1,INT X2,INT Y2,FColor LineColor);
@@ -8618,12 +8600,6 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> GameInterface;
     DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> VoiceInterface;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> NewsInterface;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> PartyChatInterface;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> TitleFileCacheInterface;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> UserCloudInterface;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> SharedCloudInterface;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> SocialInterface;
     DISHONORED_SHIM_STATIC TScriptInterface<class IOnlineAuthInterface> AuthInterface;
 
     virtual UBOOL Init();
@@ -9085,9 +9061,6 @@ public:
     INT CameraIdx;  // DISHONORED(layout): retail SDK @764, 2012 PDB @764
     //## END PROPS AutoTestManager
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bExitOnCyclesComplete;
 
     virtual void BeginSentinelRun(const FString& TaskDescription,const FString& TaskParameter,const FString& TagDesc);
     virtual void AddSentinelPerTimePeriodStats(const FVector InLocation,const FRotator InRotation);
@@ -9897,11 +9870,8 @@ public:
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bPylonInHighLevelPath;
-    DISHONORED_SHIM_STATIC BITFIELD bUseRecast;
     DISHONORED_SHIM_STATIC BITFIELD bAllowRecastGenerator;
     DISHONORED_SHIM_STATIC BITFIELD bSolidObstaclesInGame;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class AActor*> OnBuild_DisableCollisionForThese;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class AActor*> OnBuild_EnableCollisionForThese;
     DISHONORED_SHIM_STATIC FLOAT MaxPolyHeight_Optional;
     DISHONORED_SHIM_STATIC BYTE NavMeshGenerator;
     DISHONORED_SHIM_STATIC TArrayNoInit<FKAggregateGeom> VoxelFilterBounds;
@@ -11623,18 +11593,9 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bDelayedStart;
     DISHONORED_SHIM_STATIC BITFIELD bIsStandbyCheckingOn;
-    DISHONORED_SHIM_STATIC class UClass* SecondaryHUDType;
-    DISHONORED_SHIM_STATIC class UClass* AccessControlClass;
-    DISHONORED_SHIM_STATIC class AAccessControl* AccessControl;
-    DISHONORED_SHIM_STATIC class UClass* PlayerReplicationInfoClass;
     DISHONORED_SHIM_STATIC class ACrowdPopulationManagerBase* PopulationManager;
-    DISHONORED_SHIM_STATIC class UClass* PopulationManagerClass;
-    DISHONORED_SHIM_STATIC TArrayNoInit<class APlayerReplicationInfo*> InactivePRIArray;
     DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> GameInterface;
-    DISHONORED_SHIM_STATIC class ACoverReplicator* CoverReplicatorBase;
-    DISHONORED_SHIM_STATIC class UClass* OnlineGameSettingsClass;
     DISHONORED_SHIM_STATIC FLOAT JoinInProgressStandbyWaitTime;
     DISHONORED_SHIM_STATIC class UMaterial* StreamingPauseIcon;
     DISHONORED_SHIM_STATIC INT AnimTreePoolSize;
@@ -12503,7 +12464,6 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bBestStart;
     DISHONORED_SHIM_STATIC INT Score;
     DISHONORED_SHIM_STATIC INT SelectionIndex;
 
@@ -12932,13 +12892,6 @@ public:
     BITFIELD bDisableAutoBaseOnProcBuilding:1;
     //## END PROPS StaticMeshActor
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bProxy;
-    DISHONORED_SHIM_STATIC BITFIELD bHiddenByProxy;
-    DISHONORED_SHIM_STATIC BITFIELD OldCastShadow;
-    DISHONORED_SHIM_STATIC BITFIELD OldAcceptsLights;
-    DISHONORED_SHIM_STATIC BYTE OldCollisionType;
 
     DECLARE_CLASS(AStaticMeshActor,AStaticMeshActorBase,0,Engine)
 	/**
@@ -13892,7 +13845,6 @@ public:
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC FStringNoInit NewActorClassName;
-    DISHONORED_SHIM_STATIC BITFIELD bShowInEditorQuickMenu;
 
     void eventPostCreateActor(class AActor* NewActor,const class USeqAct_ActorFactory* ActorFactoryData=NULL)
     {
@@ -14505,9 +14457,6 @@ public:
     FRotator Rotation;
     //## END PROPS BookMark
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC TArrayNoInit<FString> HiddenLevels;
 
     DECLARE_CLASS(UBookMark,UObject,0,Engine)
     NO_DEFAULT_CONSTRUCTOR(UBookMark)
@@ -15025,10 +14974,6 @@ public:
     FLOAT FracturedMeshDamage;
     //## END PROPS DamageType
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC FLOAT VehicleDamageScaling;
-    DISHONORED_SHIM_STATIC FLOAT VehicleMomentumScaling;
 
     DECLARE_ABSTRACT_CLASS(UDamageType,UObject,0,Engine)
     NO_DEFAULT_CONSTRUCTOR(UDamageType)
@@ -17968,9 +17913,6 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bRequestEmsFileList;
-    DISHONORED_SHIM_STATIC INT MaxCachedFileAge;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IInterface> TitleFileCacheInterface;
     DISHONORED_SHIM_STATIC TArrayNoInit<FScriptDelegate> ReadTitleFileCompleteDelegates;
     DISHONORED_SHIM_STATIC FScriptDelegate __OnAllTitleFilesCompleted__Delegate;
 
@@ -19647,7 +19589,6 @@ public:
     DISHONORED_SHIM_STATIC struct FCurrentPostProcessVolumeInfo LevelPPInfo;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FPostProcessSettingsOverride> ActivePPOverrides;
     DISHONORED_SHIM_STATIC BYTE AspectRatioAxisConstraint;
-    DISHONORED_SHIM_STATIC TScriptInterface<class IOnlineAuthInterface> CachedAuthInt;
 
     UBOOL SpawnPlayActor(const FString& URL,FString& OutError);
     void SendSplitJoin();
@@ -23428,7 +23369,6 @@ VERIFY_CLASS_OFFSET_NODIE(ADynamicSMActor,DynamicSMActor,StaticMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(ADynamicSMActor,DynamicSMActor,ReplicatedMeshScale3D)
 VERIFY_CLASS_SIZE_NODIE(ADynamicSMActor)
 VERIFY_CLASS_OFFSET_NODIE(AInterpActor,InterpActor,MyMarker)
-VERIFY_CLASS_OFFSET_NODIE(AInterpActor,InterpActor,AmbientSoundComponent)
 VERIFY_CLASS_SIZE_NODIE(AInterpActor)
 VERIFY_CLASS_OFFSET_NODIE(AEmitter,Emitter,ParticleSystemComponent)
 VERIFY_CLASS_OFFSET_NODIE(AEmitter,Emitter,LightEnvironment)
@@ -23556,7 +23496,6 @@ VERIFY_CLASS_SIZE_NODIE(APortalTeleporter)
 VERIFY_CLASS_SIZE_NODIE(AStaticMeshActorBase)
 VERIFY_CLASS_OFFSET_NODIE(AStaticMeshActor,StaticMeshActor,StaticMeshComponent)
 #if WITH_EDITORONLY_DATA
-VERIFY_CLASS_OFFSET_NODIE(AStaticMeshActor,StaticMeshActor,OldCollisionType)
 #endif
 VERIFY_CLASS_SIZE_NODIE(AStaticMeshActor)
 VERIFY_CLASS_OFFSET_NODIE(AStaticMeshCollectionActor,StaticMeshCollectionActor,StaticMeshComponents)
@@ -23796,7 +23735,6 @@ VERIFY_CLASS_SIZE_NODIE(UActorFactoryTrigger)
 VERIFY_CLASS_OFFSET_NODIE(UActorFactoryVehicle,ActorFactoryVehicle,VehicleClass)
 VERIFY_CLASS_SIZE_NODIE(UActorFactoryVehicle)
 VERIFY_CLASS_OFFSET_NODIE(UBookMark,BookMark,Location)
-VERIFY_CLASS_OFFSET_NODIE(UBookMark,BookMark,HiddenLevels)
 VERIFY_CLASS_SIZE_NODIE(UBookMark)
 VERIFY_CLASS_OFFSET_NODIE(UBookMark2D,BookMark2D,Zoom2D)
 VERIFY_CLASS_OFFSET_NODIE(UBookMark2D,BookMark2D,Location)

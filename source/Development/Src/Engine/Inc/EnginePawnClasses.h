@@ -499,7 +499,6 @@ public:
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bScriptTickSpecial;
-    DISHONORED_SHIM_STATIC BITFIELD bNoWeaponFiring;
     DISHONORED_SHIM_STATIC BITFIELD bPathfindsAsVehicle;
     DISHONORED_SHIM_STATIC BITFIELD bPrevBypassSimulatedClientPhysics;
     DISHONORED_SHIM_STATIC BITFIELD bUsedByMatinee;
@@ -512,18 +511,14 @@ public:
     DISHONORED_SHIM_STATIC FVector SerpentineDir;
     DISHONORED_SHIM_STATIC FLOAT SerpentineDist;
     DISHONORED_SHIM_STATIC FLOAT SerpentineTime;
-    DISHONORED_SHIM_STATIC FLOAT KismetDeathDelayTime;
     DISHONORED_SHIM_STATIC class UClass* ControllerClass;
     DISHONORED_SHIM_STATIC class APlayerReplicationInfo* PlayerReplicationInfo;
     DISHONORED_SHIM_STATIC class ALadderVolume* OnLadder;
     DISHONORED_SHIM_STATIC class AVehicle* DrivenVehicle;
     DISHONORED_SHIM_STATIC FLOAT VehicleCheckRadius;
-    DISHONORED_SHIM_STATIC class UClass* InventoryManagerClass;
     DISHONORED_SHIM_STATIC class AInventoryManager* InvManager;
     DISHONORED_SHIM_STATIC class AWeapon* Weapon;
     DISHONORED_SHIM_STATIC FVector FlashLocation;
-    DISHONORED_SHIM_STATIC FVector LastFiringFlashLocation;
-    DISHONORED_SHIM_STATIC INT ShotCount;
     DISHONORED_SHIM_STATIC class UAudioComponent* FacialAudioComp;
 
     UBOOL PickWallAdjust(FVector WallHitNormal,class AActor* HitActor);

@@ -627,11 +627,8 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC TIndirectArray<FTexture2DMipMap> CachedATITCMips;
     DISHONORED_SHIM_STATIC TIndirectArray<FTexture2DMipMap> CachedETCMips;
-    DISHONORED_SHIM_STATIC INT CachedFlashMipsMaxResolution;
     DISHONORED_SHIM_STATIC FTextureMipBulkData CachedFlashMips;
-    DISHONORED_SHIM_STATIC BITFIELD bIsEditorOnly;
     DISHONORED_SHIM_STATIC BITFIELD bIsCompositingSource;
-    DISHONORED_SHIM_STATIC BITFIELD bHasBeenPaintedInEditor;
     DISHONORED_SHIM_STATIC INT MipsToRemoveOnCompress;
 
     void SetForceMipLevelsToBeResident(FLOAT Seconds,INT CinematicTextureGroups=0);

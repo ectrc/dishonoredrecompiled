@@ -327,7 +327,6 @@ public:
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bIsExternalUIOpen;
-    DISHONORED_SHIM_STATIC BITFIELD bNeedsDeferredRefresh;
 
     // DISHONORED(port): retail's own native (vtable slot 87 = +348, 2013 rva 0x3e1660; exec thunk
     // 0x5efc80 takes no parameters). Body in Engine/Src/arksettings.cpp. Agent AM.
@@ -868,9 +867,6 @@ public:
     class UUIDynamicFieldProvider* RegistryDataProvider;  // DISHONORED(layout): retail SDK @116, 2012 PDB @116
     //## END PROPS UIDataStore_Registry
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
-    // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
-    // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC TArrayNoInit<struct FRegistryKeyValuePair> RegistryData;
 
     void eventSetData(const FString& Key,const FString& Value)
     {
@@ -1156,12 +1152,10 @@ public:
     DISHONORED_SHIM_STATIC class UClass* ProfileProviderClass;
     DISHONORED_SHIM_STATIC FStringNoInit StorageProviderClassName;
     DISHONORED_SHIM_STATIC class UClass* StorageProviderClass;
-    DISHONORED_SHIM_STATIC class UUIDataProvider_OnlineFriendMessages* FriendMessagesProvider;
     DISHONORED_SHIM_STATIC FStringNoInit FriendMessagesProviderClassName;
     DISHONORED_SHIM_STATIC class UClass* FriendMessagesProviderClass;
     DISHONORED_SHIM_STATIC FStringNoInit PartyChatProviderClassName;
     DISHONORED_SHIM_STATIC class UClass* PartyChatProviderClass;
-    DISHONORED_SHIM_STATIC class UUIDataProvider_OnlinePartyChatList* PartyChatProvider;
 
     class UOnlinePlayerStorage* eventGetCachedPlayerStorage(INT ControllerId)
     {
@@ -2229,14 +2223,12 @@ VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_MenuItems,UIDataStore_MenuItems,DynamicPr
 VERIFY_CLASS_SIZE_NODIE(UUIDataStore_MenuItems)
 VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_GameState,UIDataStore_GameState,__OnRefreshDataFieldValue__Delegate)
 VERIFY_CLASS_SIZE_NODIE(UUIDataStore_GameState)
-VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_Registry,UIDataStore_Registry,RegistryData)
 VERIFY_CLASS_SIZE_NODIE(UUIDataStore_Registry)
 VERIFY_CLASS_SIZE_NODIE(UUIDataStore_Remote)
 VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_OnlineGameSearch,UIDataStore_OnlineGameSearch,SearchResultsName)
 VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_OnlineGameSearch,UIDataStore_OnlineGameSearch,ActiveSearchIndex)
 VERIFY_CLASS_SIZE_NODIE(UUIDataStore_OnlineGameSearch)
 VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_OnlinePlayerData,UIDataStore_OnlinePlayerData,FriendsProvider)
-VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_OnlinePlayerData,UIDataStore_OnlinePlayerData,PartyChatProvider)
 VERIFY_CLASS_SIZE_NODIE(UUIDataStore_OnlinePlayerData)
 VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_OnlineStats,UIDataStore_OnlineStats,StatsReadClasses)
 VERIFY_CLASS_OFFSET_NODIE(UUIDataStore_OnlineStats,UIDataStore_OnlineStats,PlayerInterface)

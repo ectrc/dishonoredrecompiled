@@ -1224,7 +1224,6 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC FNavMeshPolyBase* BestUnfinishedPathPoint;
     DISHONORED_SHIM_STATIC BITFIELD bVisualPathDebugging;
-    DISHONORED_SHIM_STATIC BITFIELD bDebug_Breadcrumbs;
     DISHONORED_SHIM_STATIC FVector Breadcrumbs[10];
     DISHONORED_SHIM_STATIC INT BreadCrumbMostRecentIdx;
     DISHONORED_SHIM_STATIC FLOAT BreadCrumbDistanceInterval;

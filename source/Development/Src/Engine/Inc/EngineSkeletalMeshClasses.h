@@ -63,7 +63,6 @@ public:
     DISHONORED_SHIM_STATIC class USkeletalMesh* PreviewSkelMesh;
     DISHONORED_SHIM_STATIC class USkeletalMeshComponent* PreviewSkelComp;
     DISHONORED_SHIM_STATIC class UStaticMesh* PreviewStaticMesh;
-    DISHONORED_SHIM_STATIC class UParticleSystem* PreviewParticleSystem;
 
     DECLARE_CLASS(USkeletalMeshSocket,UObject,0,Engine)
 	/** Utility that returns the current matrix for this socket. Returns false if socket was not valid (bone not found etc) */
@@ -345,9 +344,6 @@ VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,MinDistan
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,LastClothLocation)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,ApexClothingRBChannel)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,ApexClothingRBCollideWithChannels)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,ApexClothingCollisionRBChannel)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,WindVelocity)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,WindVelocityBlendTime)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,SoftBodySim)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,SoftBodySceneIndex)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,SoftBodyTetraPosData)
@@ -372,7 +368,6 @@ VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,RootMotio
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,AnimRotationOnly)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,FaceFXBlendMode)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,FaceFXActorInstance)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,CachedFaceFXAudioComp)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,BoneVisibilityStates)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,LocalToWorldBoneAtom)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMeshComponent,SkeletalMeshComponent,ProgressiveDrawingFraction)
@@ -387,7 +382,6 @@ VERIFY_CLASS_SIZE_NODIE(USkeletalMeshComponent)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,Bounds)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,Materials)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,ClothingAssets)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,ClothingLodMap)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,Origin)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,RotOrigin)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,RefSkeleton)
@@ -467,7 +461,6 @@ VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyTetraIndices)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyTetraLinks)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,CachedSoftBodyMeshes)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,CachedSoftBodyMeshScales)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyBones)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodySpecialBones)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyVolumeStiffness)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyStretchingStiffness)
@@ -480,8 +473,6 @@ VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyRelativeGridSpacing
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodySleepLinearVelocity)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyAttachmentResponse)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyCollisionResponse)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyDetailLevel)
-VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodySubdivisionLevel)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyAttachmentThreshold)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,SoftBodyAttachmentTearFactor)
 VERIFY_CLASS_OFFSET_NODIE(USkeletalMesh,SkeletalMesh,GraphicsIndexIsCloth)

@@ -235,10 +235,6 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC INT EditorX_DEPRECATED;
-    DISHONORED_SHIM_STATIC INT EditorY_DEPRECATED;
-    DISHONORED_SHIM_STATIC BITFIELD bShowInputs;
-    DISHONORED_SHIM_STATIC BITFIELD bShowOutputs;
     DISHONORED_SHIM_STATIC class UMaterial* Material;
     DISHONORED_SHIM_STATIC class UMaterialFunction* Function;
     DISHONORED_SHIM_STATIC FColor BorderColor;
@@ -3204,8 +3200,6 @@ public:
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bHasQualitySwitch;
-    DISHONORED_SHIM_STATIC BITFIELD bAutoFlattenMobile;
-    DISHONORED_SHIM_STATIC BITFIELD bAutoFlattenMobileNormalTexture;
     DISHONORED_SHIM_STATIC BITFIELD bMobileAllowFog;
     DISHONORED_SHIM_STATIC BITFIELD bGenerateSubUV;
     DISHONORED_SHIM_STATIC BITFIELD bUseMobileSpecular;
@@ -3222,9 +3216,7 @@ public:
     DISHONORED_SHIM_STATIC BITFIELD bMaskTextureTransformed;
     DISHONORED_SHIM_STATIC BITFIELD bDetailTextureTransformed;
     DISHONORED_SHIM_STATIC BITFIELD bUseMobileWaveVertexMovement;
-    DISHONORED_SHIM_STATIC BITFIELD bMobileEnableBounceLight;
     DISHONORED_SHIM_STATIC BITFIELD bUseMobileLandscapeMonochromeLayerBlending;
-    DISHONORED_SHIM_STATIC FColor FlattenBackgroundColor;
     DISHONORED_SHIM_STATIC class UTexture* MobileBaseTexture;
     DISHONORED_SHIM_STATIC class UTexture* FlattenedTexture_DEPRECATED;
     DISHONORED_SHIM_STATIC BYTE MobileBaseTextureTexCoordsSource;
@@ -3241,7 +3233,6 @@ public:
     DISHONORED_SHIM_STATIC BYTE MobileTextureBlendFactorSource;
     DISHONORED_SHIM_STATIC BYTE MobileColorMultiplySource;
     DISHONORED_SHIM_STATIC class UTexture* MobileNormalTexture;
-    DISHONORED_SHIM_STATIC FLOAT SubUVFrameRate;
     DISHONORED_SHIM_STATIC INT SubUVFrameCountAlongAxes;
     DISHONORED_SHIM_STATIC FLOAT SubUVFrameSize;
     DISHONORED_SHIM_STATIC FLinearColor MobileSpecularColor;
@@ -3263,46 +3254,24 @@ public:
     DISHONORED_SHIM_STATIC class UTexture* MobileDetailTexture;
     DISHONORED_SHIM_STATIC class UTexture* MobileDetailTexture2;
     DISHONORED_SHIM_STATIC class UTexture* MobileDetailTexture3;
-    DISHONORED_SHIM_STATIC FLinearColor DefaultUniformColor_DEPRECATED;
     DISHONORED_SHIM_STATIC FLinearColor MobileDefaultUniformColor;
-    DISHONORED_SHIM_STATIC FLOAT TransformCenterX_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileTransformCenterX;
-    DISHONORED_SHIM_STATIC FLOAT TransformCenterY_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileTransformCenterY;
-    DISHONORED_SHIM_STATIC FLOAT PannerSpeedX_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobilePannerSpeedX;
-    DISHONORED_SHIM_STATIC FLOAT PannerSpeedY_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobilePannerSpeedY;
-    DISHONORED_SHIM_STATIC FLOAT RotateSpeed_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileRotateSpeed;
-    DISHONORED_SHIM_STATIC FLOAT FixedScaleX_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileFixedScaleX;
-    DISHONORED_SHIM_STATIC FLOAT FixedScaleY_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileFixedScaleY;
-    DISHONORED_SHIM_STATIC FLOAT SineScaleX_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileSineScaleX;
-    DISHONORED_SHIM_STATIC FLOAT SineScaleY_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileSineScaleY;
-    DISHONORED_SHIM_STATIC FLOAT SineScaleFrequencyMultipler_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileSineScaleFrequencyMultipler;
-    DISHONORED_SHIM_STATIC FLOAT FixedOffsetX_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileFixedOffsetX;
-    DISHONORED_SHIM_STATIC FLOAT FixedOffsetY_DEPRECATED;
     DISHONORED_SHIM_STATIC FLOAT MobileFixedOffsetY;
     DISHONORED_SHIM_STATIC FLOAT MobileTangentVertexFrequencyMultiplier;
     DISHONORED_SHIM_STATIC FLOAT MobileVerticalFrequencyMultiplier;
     DISHONORED_SHIM_STATIC FLOAT MobileMaxVertexMovementAmplitude;
     DISHONORED_SHIM_STATIC FLOAT MobileSwayFrequencyMultiplier;
     DISHONORED_SHIM_STATIC FLOAT MobileSwayMaxAngle;
-    DISHONORED_SHIM_STATIC FVector MobileDirectionalLightDirection;
-    DISHONORED_SHIM_STATIC FLOAT MobileDirectionalLightBrightness;
-    DISHONORED_SHIM_STATIC FColor MobileDirectionalLightColor;
-    DISHONORED_SHIM_STATIC FVector MobileBounceLightDirection;
-    DISHONORED_SHIM_STATIC FLOAT MobileBounceLightBrightness;
-    DISHONORED_SHIM_STATIC FColor MobileBounceLightColor;
-    DISHONORED_SHIM_STATIC FLOAT MobileSkyLightBrightness;
-    DISHONORED_SHIM_STATIC FColor MobileSkyLightColor;
-    DISHONORED_SHIM_STATIC FName MobileLandscapeLayerNames[4];
     DISHONORED_SHIM_STATIC FColor MobileLandscapeMonochomeLayerColors[4];
 
     virtual UBOOL GetParameterDesc(FName ParameterName,FString& OutDesc);
@@ -5542,7 +5511,6 @@ FNativeFunctionLookup GEngineUMaterialInstanceTimeVaryingNatives[] =
 #endif // STATIC_LINKING_MOJO
 
 #ifdef VERIFY_CLASS_SIZES
-VERIFY_CLASS_OFFSET_NODIE(UMaterialExpression,MaterialExpression,EditorX_DEPRECATED)
 VERIFY_CLASS_OFFSET_NODIE(UMaterialExpression,MaterialExpression,Outputs)
 VERIFY_CLASS_SIZE_NODIE(UMaterialExpression)
 VERIFY_CLASS_OFFSET_NODIE(UMaterialExpressionAbs,MaterialExpressionAbs,Input)

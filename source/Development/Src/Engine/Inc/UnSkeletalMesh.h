@@ -478,11 +478,8 @@ class USkeletalMeshComponent : public UMeshComponent
 	DISHONORED_SHIM_STATIC FVector LastClothLocation;
 	DISHONORED_SHIM_STATIC BYTE ApexClothingRBChannel;
 	DISHONORED_SHIM_STATIC FRBCollisionChannelContainer ApexClothingRBCollideWithChannels;
-	DISHONORED_SHIM_STATIC BYTE ApexClothingCollisionRBChannel;
 	DISHONORED_SHIM_STATIC BITFIELD bAutoFreezeApexClothingWhenNotRendered;
 	DISHONORED_SHIM_STATIC BITFIELD bLocalSpaceWind;
-	DISHONORED_SHIM_STATIC FVector WindVelocity;
-	DISHONORED_SHIM_STATIC FLOAT WindVelocityBlendTime;
 	DISHONORED_SHIM_STATIC BITFIELD bSkipInitClothing;
 	DISHONORED_SHIM_STATIC FPointer SoftBodySim;
 	DISHONORED_SHIM_STATIC INT SoftBodySceneIndex;
@@ -500,7 +497,6 @@ class USkeletalMeshComponent : public UMeshComponent
 	DISHONORED_SHIM_STATIC FRBCollisionChannelContainer SoftBodyRBCollideWithChannels;
 	DISHONORED_SHIM_STATIC FPointer SoftBodyASVPlane;
 	DISHONORED_SHIM_STATIC BYTE AnimRotationOnly;
-	DISHONORED_SHIM_STATIC UAudioComponent* CachedFaceFXAudioComp;
 	DISHONORED_SHIM_STATIC TArrayNoInit <FName> MorphTargetsQueried;
 	DISHONORED_SHIM_STATIC BITFIELD bUseTickOptimization;
 	DISHONORED_SHIM_STATIC INT TickCount;
@@ -3639,7 +3635,6 @@ class USkeletalMesh : public UObject
 	// inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
 	// and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
 	DISHONORED_SHIM_STATIC TArray<class UApexClothingAsset *> ClothingAssets;
-	DISHONORED_SHIM_STATIC TArray<FApexClothingAssetInfo> ClothingLodMap;
 	DISHONORED_SHIM_STATIC FSkeletalMeshSourceData SourceData;
 	DISHONORED_SHIM_STATIC TArray<FSkeletalMeshOptimizationSettings> OptimizationSettings;
 	DISHONORED_SHIM_STATIC BITFIELD bHasBeenSimplified;
@@ -3705,7 +3700,6 @@ class USkeletalMesh : public UObject
 	DISHONORED_SHIM_STATIC TArray<FSoftBodyTetraLink> SoftBodyTetraLinks;
 	DISHONORED_SHIM_STATIC TArray<FPointer> CachedSoftBodyMeshes;
 	DISHONORED_SHIM_STATIC TArray<FLOAT> CachedSoftBodyMeshScales;
-	DISHONORED_SHIM_STATIC TArray<FName> SoftBodyBones;
 	DISHONORED_SHIM_STATIC TArray<FSoftBodySpecialBoneInfo> SoftBodySpecialBones;
 	DISHONORED_SHIM_STATIC FLOAT SoftBodyVolumeStiffness;
 	DISHONORED_SHIM_STATIC FLOAT SoftBodyStretchingStiffness;
@@ -3719,8 +3713,6 @@ class USkeletalMesh : public UObject
 	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodySelfCollision;
 	DISHONORED_SHIM_STATIC FLOAT SoftBodyAttachmentResponse;
 	DISHONORED_SHIM_STATIC FLOAT SoftBodyCollisionResponse;
-	DISHONORED_SHIM_STATIC FLOAT SoftBodyDetailLevel;
-	DISHONORED_SHIM_STATIC INT SoftBodySubdivisionLevel;
 	DISHONORED_SHIM_STATIC BITFIELD bSoftBodyIsoSurface;
 	DISHONORED_SHIM_STATIC BITFIELD bEnableSoftBodyDamping;
 	DISHONORED_SHIM_STATIC BITFIELD bUseSoftBodyCOMDamping;

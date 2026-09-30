@@ -175,12 +175,7 @@ public:
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
     DISHONORED_SHIM_STATIC BITFIELD bFadeAudio;
     DISHONORED_SHIM_STATIC BITFIELD bForceDisableTemporalAA;
-    DISHONORED_SHIM_STATIC BITFIELD bUseClientSideCameraUpdates;
-    DISHONORED_SHIM_STATIC BITFIELD bDebugClientSideCamera;
-    DISHONORED_SHIM_STATIC BITFIELD bShouldSendClientSideCameraUpdate;
-    DISHONORED_SHIM_STATIC struct FPostProcessSettings CamPostProcessSettings;
     DISHONORED_SHIM_STATIC struct FRenderingPerformanceOverrides RenderingOverrides;
-    DISHONORED_SHIM_STATIC class UCameraAnimInst* AnimInstPool[8];
     DISHONORED_SHIM_STATIC TArrayNoInit<class UCameraAnimInst*> ActiveAnims;
     DISHONORED_SHIM_STATIC TArrayNoInit<class UCameraAnimInst*> FreeAnims;
     DISHONORED_SHIM_STATIC class ADynamicCameraActor* AnimCameraActor;
@@ -314,7 +309,6 @@ public:
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
-    DISHONORED_SHIM_STATIC BITFIELD bCamOverridePostProcess_DEPRECATED;
     DISHONORED_SHIM_STATIC struct FPostProcessSettings CamOverridePostProcess;
 
     DECLARE_CLASS(ACameraActor,AActor,0,Engine)
