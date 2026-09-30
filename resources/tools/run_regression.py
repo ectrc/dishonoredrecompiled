@@ -52,6 +52,36 @@ LOGS = RETAIL / "DishonoredGame" / "Logs"
 BASELINE = REPO / "resources" / "docs" / "regression_baseline.json"
 SDK_DELTA = REPO / "resources" / "docs" / "types" / "retail_sdk_delta.md"
 STAGES = ["build", "coresmoke", "layout", "nullrhi", "d3d9", "inputtest"]
+
+# Throughput metrics: what the game got through in a fixed wall-clock window, so they measure the
+# machine as much as the build. Every one of them has failed here on an unchanged binary while
+# another agent was running its own game, and every one cleared on a re-run when the machine was
+# quiet: d3d9_frames read 510, 900 and 990 against a bound of 1000 and then 2040-2370 minutes later;
+# inputtest_moved read 662.2 and then 1074.5 on the SAME binary (agents EM, ES, EQ and the
+# coordinator, all in one wave). A stage whose only failures are in this set is therefore re-run once
+# before it is believed, and both numbers are printed - the re-run is the verdict, the first attempt
+# stays visible. A real regression fails both times; this only removes the false alarm, and --no-load-retry
+# turns it off when you want the raw single measurement.
+#
+# The bounds themselves are deliberately not relaxed. They are cliff detectors - d3d9_frames catches a
+# render loop that stopped, inputtest_moved catches a pawn that cannot walk - and a bound loose enough
+# never to trip under load would not catch the cliff either.
+LOAD_SENSITIVE = {
+    "d3d9_frames", "d3d9_draws_per_frame", "d3d9_visible_prims",
+    "inputtest_moved", "inputtest_peak_speed",
+}
+
+
+def load_sensitive_failures(report: "Report", mark: int) -> list[tuple[str, object]]:
+    """The rows this stage just added that failed, when ALL of its failures are load-sensitive.
+
+    If anything outside the set failed too, the stage has a real problem and re-running it would only
+    hide the load-sensitive half of a genuine failure, so this returns nothing.
+    """
+    fails = [(n, m) for _, n, m, _, _, st in report.rows[mark:] if st == "FAIL"]
+    if not fails or any(n not in LOAD_SENSITIVE for n, _ in fails):
+        return []
+    return fails
 MAP = "L_Tower_P"
 RENDER_ARGS = "-windowed -ResX=1280 -ResY=720 -nomovie"
 
@@ -288,6 +318,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--nullrhi-timeout", type=float, default=180.0)
     parser.add_argument("--d3d9-timeout", type=float, default=90.0)
     parser.add_argument("--inputtest-timeout", type=float, default=150.0)
+    parser.add_argument("--no-load-retry", action="store_true",
+                        help="do not re-run a stage whose only failures are load-sensitive (see LOAD_SENSITIVE)")
     parser.add_argument("--list", action="store_true", help="print the stages and their metrics and exit")
     args = parser.parse_args(argv[1:])
     # DISHONORED(written): the exe name and log prefix name the staged exe and the log files in the shared
@@ -313,8 +345,8 @@ def main(argv: list[str]) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     report = Report()
     started = time.time()
-    for stage in wanted:
-        print(f"[{stage}]", flush=True)
+
+    def run_stage(stage: str) -> None:
         if stage == "build":
             stage_build(args, out_dir, report)
         elif stage == "coresmoke":
@@ -327,6 +359,20 @@ def main(argv: list[str]) -> int:
             stage_d3d9(args, out_dir, report, expect)
         elif stage == "inputtest":
             stage_inputtest(args, out_dir, report, expect)
+
+    for stage in wanted:
+        print(f"[{stage}]", flush=True)
+        mark = len(report.rows)
+        run_stage(stage)
+        failed = load_sensitive_failures(report, mark)
+        if failed and not args.no_load_retry:
+            first = ", ".join(f"{n}={v}" for n, v in failed)
+            print(f"  RETRY {stage}: {first} - load-sensitive, re-running the stage once (§ LOAD_SENSITIVE)",
+                  flush=True)
+            del report.rows[mark:]
+            run_stage(stage)
+            print(f"  (first attempt of {stage} measured {first}; the numbers above are the re-run)",
+                  flush=True)
 
     summary = out_dir / "summary.txt"
     summary.write_text("".join(f"{s[5]}\t{s[0]}\t{s[1]}\t{s[2]}\t{s[3]}\t{s[4]}\n" for s in report.rows), encoding="utf-8")
