@@ -1601,6 +1601,19 @@ void USeqAct_Interp::Play(UBOOL OnlyAIGroup)
 	bPaused = false;
 }
 
+// DISHONORED(port): 2013 rvas 0x212a40 and 0x212a50 (2012 0x22a970 / 0x22a980), in full - retail's own two
+// lines. m_ConversationNodePointer is the soiree node whose matinee this is, and it is not a reflected object
+// pointer: it is an FPointer at offset 516, so nothing collects it and nothing serialises it as a property.
+const UObject* USeqAct_Interp::GetConversationNodePointer() const
+{
+	return (const UObject*)m_ConversationNodePointer;
+}
+
+void USeqAct_Interp::SetConversationNode( const UObject* ConversationNode )
+{
+	m_ConversationNodePointer = (void*)ConversationNode;
+}
+
 void USeqAct_Interp::Stop()
 {
 	// Re-enable the radio filter

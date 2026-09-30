@@ -13607,8 +13607,19 @@ void USeqAct_Latent::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
 	}
 }
 
-// DISHONORED: USeqAct_Interp::GameSave / GameLoad / PostGameLoad (2013 rvas 0x2e73b0 / 0x2e74d0 /
-// 0x2ea1c0) are NOT ported. They flatten the matinee's UInterpGroupInst state into the reflected
-// m_SavedGroupInstData byte array through UInterpGroupInst::SaveData / LoadData, which are two more Arkane
-// additions this tree does not have. A mission save's persistent level carries ~170 of them, so this is the
-// first thing to add after this package; see resources/docs/agents/agentED.md.
+// DISHONORED(port): 2013 rva 0x2e74d0 (2012 0x318e00, unsequence.cpp:11620), in full. Nine bytes in retail
+// and a tail jmp: USeqAct_Interp::GameLoad reads exactly what its Super reads and nothing else. The stream
+// format of a matinee is USequenceOp's properties plus USeqAct_Latent's relink, and the per-track state comes
+// back out of the reflected m_SavedGroupInstData in PostGameLoad rather than off the wire.
+void USeqAct_Interp::GameLoad( FArchive& Ar, ESaveLoadLocation _Location )
+{
+	USeqAct_Latent::GameLoad( Ar, _Location );
+}
+
+// DISHONORED: USeqAct_Interp::GameSave (2013 rva 0x2e73b0, vftable slot 69) and PostGameLoad (2013 rva
+// 0x2e74e0, slot 71 - NOT 0x2ea1c0, which is inside USequenceOp::ConvertObjectInternal in 2013) are still
+// NOT ported. Both stand on UInterpGroupInst::SaveData / LoadData (2013 0x2dceb0 / 0x2dcf80), two Arkane
+// additions this tree does not have: GameSave flattens every group instance into m_SavedGroupInstData with an
+// FMemoryWriter before calling Super, and PostGameLoad reads that byte array back with an FMemoryReader,
+// applies it only when the saved group count matches this session's, and empties it. Neither touches the save
+// stream, so their absence cannot desynchronise it - a matinee that was mid-playback comes back stopped.

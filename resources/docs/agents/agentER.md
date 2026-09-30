@@ -549,7 +549,41 @@ content-identical.
 **Total: 11 files** — 3 new, 8 edited, of which 3 are generated and should be regenerated rather than copied
 (`build/agentER_sync.py` prints the list and the count).
 `build/agentER_sync.py` is the authoritative list, worktree → main, and `--apply` copies in that direction only.
-Nothing is committed and nothing is staged.
+**I committed nothing and staged nothing.**
+
+### 10.1 Main moved under this package, and three of the eleven files now collide
+
+This worktree is detached at `2d08c15`. While it was working, five commits landed on `main`
+(`cd04626` the shim backlog, `e372f88` `rva_sweep.py`, `84e35f4` the settings republish, `e845cd5` the
+regression harness, `89aefaf` agent EP's patrol). `git diff --name-only 2d08c15..HEAD` is 96 files and three of
+them are files this package also changes. **`--apply` must not be run blind.**
+
+1. **`DishonoredGame/Inc/CppText/ADishonoredRoute.h` — agent EP created the same new file.** EP's version
+   declares the patrol route's own interface (`PostBeginPlay`, `Tick`, `Adopt`, `CanAdopt`, …). Mine declares
+   `GameSave`/`GameLoad` and nothing else. **The merge appends my two declarations and my `DISHONORED(port)`
+   banner to EP's file; it must not overwrite it.** `agentER_sync.py` reports this file as `differs` and copying
+   it would lose EP's whole port.
+2. **`Engine/Inc/EngineSequenceClasses.h` — `cd04626` removed `DISHONORED_SHIM_STATIC` members**, including two
+   inside `UInterpData`'s shim block immediately above where this package inserts `UInterpData::IsSaveable`, and
+   it deleted `VERIFY_CLASS_OFFSET_NODIE(UInterpData,InterpData,CachedDirectorGroup)`. Textual conflict in the
+   same region; the resolution is to take `cd04626`'s deletions and add this package's four insertions
+   (the two `USeqAct_Interp` accessor declarations, `USeqAct_Interp::GameLoad`, and the two `IsSaveable`
+   overrides).
+3. **`DishonoredGame/Inc/dishonoredgameclasses.h`** — generated, and EP's cpptext include for `ADishonoredRoute`
+   is already in main's copy. Regenerating in main after the merge produces both include lines and is the only
+   correct resolution; do not copy the worktree's copy.
+
+The other eight files are untouched by those five commits and copy cleanly. **The whole package was built,
+measured and regression-tested against `2d08c15`, not against `89aefaf`**, so the census numbers in section 5
+are this package against agent EN's tree and nothing else — which is what makes them comparable to EN's — and
+the coordinator should re-run `run_regression.py` after the merge.
+
+### 10.2 One thing another agent did to this package's files
+
+`89aefaf` (agent EP) **committed `resources/docs/agents/agentER.md` and `agentER_status.csv`** along with its own
+work — they were on disk when it staged, and they are now tracked at that commit. This package committed nothing
+itself. It is worth saying because the brief tells every agent in this wave not to commit, and a `git add -A`
+from one worktree picks up every other agent's untracked deliverables.
 
 ## 11. Verification
 

@@ -376,6 +376,14 @@ public:
 #endif // WITH_EDITORONLY_DATA
     //## END PROPS SequenceFrame
 
+    /** DISHONORED(port): agent ER (PHASE14 ER), vftable slot 68 of the 2013 image's own ??_7USequenceFrame
+        table is the return-FALSE ICF fold (2013 0x233610, 2012 0x66cca0), not USequenceObject::IsSaveable
+        (2013 0x2cf930): retail turns the whole save off for a Kismet comment frame. Without this override
+        Dishonored0.sav's SequenceFrame_154 read 27 bytes of properties retail never wrote, and because the
+        WORD that lost its place had the high bit set it was taken for an unshared reference and the object
+        loop ended quietly - the reason a restore can say STREAM ENDED EARLY instead of naming a class. */
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return FALSE; }
+
     DECLARE_CLASS(USequenceFrame,USequenceObject,0,Engine)
 #if WITH_EDITOR
 	/** Draws the box part of the comment (including handle) */
@@ -2130,9 +2138,10 @@ public:
     FPointer m_ConversationNodePointer;  // DISHONORED(layout): retail SDK @516, 2012 PDB @516
     //## END PROPS SeqAct_Interp
 
-    // DISHONORED: USeqAct_Interp's three save virtuals (2013 rvas 0x2e73b0 / 0x2e74d0 / 0x2ea1c0) are not
-    // ported: they need UInterpGroupInst::SaveData / LoadData, two more Arkane additions. Without them a
-    // matinee in a save falls back to USeqAct_Latent's pair, which reads fewer bytes than retail wrote.
+    // DISHONORED(port): agent ER (PHASE14 ER). USeqAct_Interp's save five are vftable slots 67..71 of the
+    // 2013 image's own ??_7USeqAct_Interp table: 69 GameSave 0x2e73b0, 70 GameLoad 0x2e74d0, 71 PostGameLoad
+    // 0x2e74e0. GameLoad is ported (UnSequence.cpp); GameSave and PostGameLoad are not, and neither reads the
+    // save stream - see the note beside the body.
     // DISHONORED(layout): reference-only members absent from the 2012 PDB. Kept as storage-less C++17
     // inline statics (DISHONORED_SHIM_STATIC, Engine.h) so unported reference code still compiles; they are not part of the object layout
     // and the module port has to remove their uses (resources/docs/agents/agentM.md lists them).
@@ -2148,6 +2157,11 @@ public:
     void SetPosition(FLOAT NewPosition,UBOOL bJump=FALSE);
     void Stop();
     void AddPlayerToDirectorTracks(class APlayerController* PC);
+    /** DISHONORED(port): agent ER (PHASE14 ER), 2013 rvas 0x212a40 / 0x212a50 (2012 0x22a970 / 0x22a980,
+        uninterpolation.cpp:3322 and :3327). The two accessors of m_ConversationNodePointer at retail offset
+        516; UDisConv_Soiree_InGameData::GameLoad is the only caller of the setter in a restore. */
+    const UObject* GetConversationNodePointer() const;
+    void SetConversationNode(const UObject* ConversationNode);
     DECLARE_FUNCTION(execSetPosition)
     {
         P_GET_FLOAT(NewPosition);
@@ -2177,6 +2191,10 @@ public:
 	 */
 	virtual void Serialize(FArchive& Ar);
 	virtual void PostLoad();  // DISHONORED(port): 2013 rva 0x218cd0
+
+	/** DISHONORED(port): agent ER (PHASE14 ER), 2013 rva 0x2e74d0 (2012 0x318e00, unsequence.cpp:11620) -
+	    vftable slot 70. Retail's body is a tail jmp to USeqAct_Latent's, so it reads no bytes of its own. */
+	virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
 
 	// USequenceAction interface
 
@@ -4765,6 +4783,12 @@ public:
     DISHONORED_SHIM_STATIC FLOAT EdSectionStart;
     DISHONORED_SHIM_STATIC FLOAT EdSectionEnd;
     DISHONORED_SHIM_STATIC BITFIELD bShouldBakeAndPrune;
+
+    /** DISHONORED(port): agent ER (PHASE14 ER), vftable slot 68 of the 2013 image's own ??_7UInterpData table
+        is the return-FALSE ICF fold (2013 0x233610), while USequenceVariable's is USequenceObject::IsSaveable
+        (0x2cf930): matinee data is asset data and retail keeps it out of the save entirely. The only other
+        class in retail that turns this slot off against a saveable ancestor is USequenceFrame. */
+    virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return FALSE; }
 
     DECLARE_CLASS(UInterpData,USequenceVariable,0,Engine)
 	// DISHONORED(port): Arkane's InterpData owns nothing but m_Data; the reference members above it are

@@ -23,3 +23,8 @@ public:
 
 	/** The route the patrol manager keeps after this one in its single-linked list. */
 	class ADishonoredRoute** GetNextRoutePtr() { return &m_pNextRoute; }
+
+	// DISHONORED(port): agent ER, 2013 rvas 0x643890 / 0x6438f0 - five bytes past AActor's: whether the
+	// route is active, and how long it has been neglected. Bodies in dissavegame.cpp.
+	virtual void GameSave( FArchive& _rArchive, ESaveLoadLocation _Location );
+	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );

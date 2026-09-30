@@ -1758,6 +1758,7 @@ public:
     //## END PROPS DisConv_Soiree_InGameData
 
     DECLARE_CLASS(UDisConv_Soiree_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+#include "CppText/UDisConv_Soiree_InGameData.h"
 };
 
 // DishonoredGame.DisConv_SpawnerBranch: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)

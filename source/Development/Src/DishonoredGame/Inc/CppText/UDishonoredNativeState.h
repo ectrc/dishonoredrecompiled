@@ -21,7 +21,11 @@ public:
 	virtual void OnAnimNotify( const struct FAnimPlayerNotificationParams* Params ) {}
 	virtual void OnPawnShutDown( const ADishonoredPawn& Pawn ) {}
 	virtual void OnPreCommitMapChange() {}
-	virtual void SavePartialState( UDishonoredNativeStateMachine* StateMachine, FArchive& Ar ) {}
+	/** DISHONORED(port): agent ER (PHASE14 ER) - retail's signature takes the location as well, on this
+	    slot exactly as on LoadPartialState below. Every SavePartialState the PDB names has three
+	    parameters (UStateNPCInstigatedMasterAction::SavePartialState, 2013 rva 0x664c40); the two-parameter
+	    declaration this replaces would have hidden the override rather than overriding it (C4264). */
+	virtual void SavePartialState( UDishonoredNativeStateMachine* StateMachine, FArchive& Ar, ESaveLoadLocation Location ) {}
 	/** DISHONORED(port): agent EC (PHASE11 EC) - retail's signature takes the location as well
 	    (UStateNPCInstigatedMasterAction::LoadPartialState, 2012 rva 0x6b4ec0), and
 	    UDishonoredNativeStateMachine::LoadPartialState is the only caller. */

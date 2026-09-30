@@ -11900,6 +11900,7 @@ public:
     //## END PROPS StateNPCInstigatedMasterAction
 
     DECLARE_CLASS(UStateNPCInstigatedMasterAction,UStateNPCMasterAction,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStateNPCInstigatedMasterAction.h"
 };
 
 // DishonoredGame.DisTweaks_AISubState: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)

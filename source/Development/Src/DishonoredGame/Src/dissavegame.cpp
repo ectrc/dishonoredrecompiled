@@ -2245,15 +2245,16 @@ static void DisLoadPhysicsAssetInstanceBodies( USkeletalMeshComponent* _pMesh, F
 // DISHONORED(port): 2013 rva 0x672670 (2012 0x6a3be0) - the state the machine was in, by class, then that
 // state's own LoadPartialState. Retail dereferences the looked-up state with no NULL check, because the
 // state it names was registered in the session that wrote the save.
-/** DISHONORED(written): the nine state classes whose partial state is in the stream. Retail declares
-    LoadPartialState on eight (2012 rvas: UStatePlayerMasterFalling 0x696340, UStatePlayerMasterLeaning
-    0x6a41c0, UStatePlayerMasterClimb 0x6a6120, UStatePlayerMasterHolePeeking 0x6a63c0,
-    UStateNPCInstigatedMasterAction 0x6b4ec0, UStatePlayerGrabMovable 0x6b96e0,
-    UStateNPCMasterActionImmolate 0x6ba900, UStatePlayerCarryCorpseIdle 0x6c7990) and a ninth,
-    UStatePlayerMasterPossess, has a SavePartialState (0x6afb40) whose matching Load the PDB does not list,
-    so it must be ICF-folded onto one of the others. UDishonoredNativeState's own body is empty, so every
-    other state reads no bytes at all - which is why a state this tree has not registered is not by itself a
-    reason to stop. None of the nine is ported. */
+/** DISHONORED(written): the state classes whose partial state is in the stream and whose LoadPartialState
+    this tree has NOT written. Retail declares LoadPartialState on eight (2013 rvas: UStatePlayerMasterFalling
+    0x663260, UStatePlayerMasterLeaning 0x66eb60, UStatePlayerMasterClimb 0x675960,
+    UStatePlayerMasterHolePeeking 0x675da0, UStateNPCInstigatedMasterAction 0x664c60, UStatePlayerGrabMovable
+    0x669980, UStateNPCMasterActionImmolate 0x66a9a0, UStatePlayerCarryCorpseIdle 0x677a10) and a ninth,
+    UStatePlayerMasterPossess, has a SavePartialState (2012 0x6afb40) whose matching Load the PDB does not
+    list, so it must be ICF-folded onto one of the others. UDishonoredNativeState's own body is empty, so
+    every other state reads no bytes at all - which is why a state this tree has not registered is not by
+    itself a reason to stop.
+    DISHONORED(port): agent ER (PHASE14 ER) removed UStateNPCInstigatedMasterAction, whose body is below. */
 static const TCHAR* GDisPartialStateReaders[] =
 {
 	TEXT("StatePlayerMasterFalling"),
@@ -2263,9 +2264,23 @@ static const TCHAR* GDisPartialStateReaders[] =
 	TEXT("StatePlayerMasterPossess"),
 	TEXT("StatePlayerGrabMovable"),
 	TEXT("StatePlayerCarryCorpseIdle"),
-	TEXT("StateNPCInstigatedMasterAction"),
 	TEXT("StateNPCMasterActionImmolate"),
 };
+
+// DISHONORED(port): 2013 rvas 0x664c40 / 0x664c60 (2012 0x6b4ea0 / 0x6b4ec0), in full. The partial state of
+// an instigated NPC action is the instigator and nothing else: retail's whole body is one FArchive slot-6
+// call on m_pInstigator, at offset 100 of a 104-byte class. Nine state classes inherit this pair, including
+// UStateNPCMasterDead_Limp, which has no LoadPartialState of its own in either the 2012 PDB or the 2013
+// image - its primary vftable holds these two, at slot 88/89 in the 2013 image and 87/88 in vtables.csv.
+void UStateNPCInstigatedMasterAction::SavePartialState( UDishonoredNativeStateMachine* StateMachine, FArchive& Ar, ESaveLoadLocation Location )
+{
+	Ar << *(UObject**)&m_pInstigator;
+}
+
+void UStateNPCInstigatedMasterAction::LoadPartialState( UDishonoredNativeStateMachine* StateMachine, UObject* ManagedObject, FArchive& Ar, ESaveLoadLocation Location )
+{
+	Ar << *(UObject**)&m_pInstigator;
+}
 
 void UDishonoredNativeStateMachine::LoadPartialState( FArchive& _rArchive, ESaveLoadLocation _Location )
 {
@@ -2284,9 +2299,31 @@ void UDishonoredNativeStateMachine::LoadPartialState( FArchive& _rArchive, ESave
 		}
 	}
 
-	if( m_pPartiallyLoadedState != NULL )
+	// DISHONORED(written): agent ER (PHASE14 ER). Retail dereferences the looked-up state with no NULL check
+	// because the session that wrote the save had it registered. Here m_NativeStateMap is EMPTY for every NPC
+	// master FSM - nothing in this tree calls InitFSM on ADishonoredNPCPawn::m_pNPCMasterFSM yet - so the
+	// lookup always fails, and reading nothing is not a no-op: UStateNPCInstigatedMasterAction's body reads a
+	// two-byte object reference and every byte after it belongs to something else. The bytes are read through
+	// a scratch instance of the named class instead, which cannot be the class default object (the value
+	// would be inherited by every state constructed afterwards) and is kept alive because the archive may
+	// store an object pointer in it. One per state class the stream names, at most nine.
+	UDishonoredNativeState* pReader = m_pPartiallyLoadedState;
+	if( pReader == NULL && pStateID != NULL && pStateID->IsChildOf( UDishonoredNativeState::StaticClass() ) )
 	{
-		m_pPartiallyLoadedState->LoadPartialState( this, m_pManagedObject, _rArchive, _Location );
+		static TMap<UClass*,UDishonoredNativeState*> ScratchStates;
+		UDishonoredNativeState** ppScratch = ScratchStates.Find( pStateID );
+		if( ppScratch == NULL )
+		{
+			UDishonoredNativeState* pScratch = (UDishonoredNativeState*)UObject::StaticConstructObject(
+				pStateID, UObject::GetTransientPackage(), NAME_None, RF_Transient );
+			pScratch->AddToRoot();
+			ppScratch = &ScratchStates.Set( pStateID, pScratch );
+		}
+		pReader = *ppScratch;
+	}
+	if( pReader != NULL )
+	{
+		pReader->LoadPartialState( this, m_pManagedObject, _rArchive, _Location );
 	}
 }
 
@@ -2419,6 +2456,70 @@ void UDisConv_Node_InGameData::GameSave( FArchive& _rArchive, ESaveLoadLocation 
 void UDisConv_Node_InGameData::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
 {
 	DisSaveLoadObject( _rArchive, this );
+}
+
+// DISHONORED(port): 2013 rvas 0x8a94e0 / 0x8a9540 (2012 0x8f9cb0 / 0x8f9d10), in full. A soiree node's
+// in-game data carries the matinee that plays it, and what retail saves about that matinee is which running
+// instance of which dialog-tree binding was driving it - by the binding as an object reference and the
+// binding's own active-instance index, not by a pointer. Retail reaches the properties through
+// UDisAttentionInfo_Base::GameSave (2013 0x88af60), which is the DisSaveLoadObject walk this class's Super
+// already is: the two are one ICF fold, so Super:: is retail's own instruction here.
+void UDisConv_Soiree_InGameData::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	UDisConv_Node_InGameData::GameSave( _rArchive, _Location );
+
+	INT RunningInstanceIdx = -1;
+	UDisDialogTree_InGameBind* pOwningBind = NULL;
+	const FDisDialogRunningInstance* pRunningInst = ( m_PlayingMatinee != NULL )
+		? (const FDisDialogRunningInstance*)m_PlayingMatinee->m_pDialogTree_RunningInst
+		: NULL;
+	if( pRunningInst != NULL )
+	{
+		pOwningBind = pRunningInst->m_pTreeGameBinding;
+		RunningInstanceIdx = pOwningBind->m_iActiveRunningInstance;
+	}
+	_rArchive << *(UObject**)&pOwningBind;
+	_rArchive << RunningInstanceIdx;
+}
+
+void UDisConv_Soiree_InGameData::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	UDisConv_Node_InGameData::GameLoad( _rArchive, _Location );
+
+	INT RunningInstanceIdx = -1;
+	UDisDialogTree_InGameBind* pOwningBind = NULL;
+	_rArchive << *(UObject**)&pOwningBind;
+	_rArchive << RunningInstanceIdx;
+	if( m_PlayingMatinee != NULL && pOwningBind != NULL && RunningInstanceIdx != -1 )
+	{
+		m_PlayingMatinee->m_pDialogTree_RunningInst = &pOwningBind->m_RunningInstances[RunningInstanceIdx];
+		m_PlayingMatinee->SetConversationNode( m_PlayingNode );
+	}
+}
+
+// DISHONORED(port): 2013 rvas 0x643890 / 0x6438f0 (2012 0x6918b0 / 0x691910), in full. A patrol route keeps
+// two things across a save: whether it is active and how far its neglect timer has run. Retail packs the flag
+// into one byte through FArchive::Serialize (vtable slot 1) and reads the timer with ByteOrderSerialize, so
+// the record is five bytes on top of AActor's. m_NumNPCAdopters at 656 is NOT in the stream: the adopters
+// re-register themselves.
+void ADishonoredRoute::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameSave( _rArchive, _Location );
+
+	BYTE bIsActive = m_bIsActive ? 1 : 0;
+	_rArchive.Serialize( &bIsActive, sizeof(bIsActive) );
+	m_bIsActive = ( bIsActive & 0x01 ) ? 1 : 0;
+	_rArchive.ByteOrderSerialize( &m_NeglectTimer, sizeof(m_NeglectTimer) );
+}
+
+void ADishonoredRoute::GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location )
+{
+	AActor::GameLoad( _rArchive, _Location );
+
+	BYTE bIsActive = m_bIsActive ? 1 : 0;
+	_rArchive.Serialize( &bIsActive, sizeof(bIsActive) );
+	m_bIsActive = ( bIsActive & 0x01 ) ? 1 : 0;
+	_rArchive.ByteOrderSerialize( &m_NeglectTimer, sizeof(m_NeglectTimer) );
 }
 
 void UDisHideoutComponent::GameSave( FArchive& _rArchive, ESaveLoadLocation _Location )
