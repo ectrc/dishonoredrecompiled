@@ -63,9 +63,13 @@ through NEW GAME, the difficulty screen and the brightness screen, then YES on t
    issues `ce ChangeLvl_StartNewGame` and **nothing follows** — no `SetPlayerTravelDestination`, no map
    change (`Logs/Launch720b.log:3770`). Agent EL measured the same path completing at difficulty 1 in
    its own worktree, so this is either a regression or a condition nobody has isolated. `PHASE12.md` EZ.
-3. **Exit teardown faults.** A clean shutdown (`Exit: Game engine shut down`, `Exit: Windows client shut
-   down`) is followed by a critical error with thirteen unsymbolised frames. Every quit ends this way;
-   killing the process does not.
+3. **The menu exhausts the address space in about three and a half minutes.** `appError called: Ran
+   out of virtual memory` at **217.73 s**, one frame after a normal `scene rendered (46890 so far)`
+   census, with the game still on the main menu - a 32-bit process running out of its 2 GB. Agent EZ
+   corrected this entry: there is **no exit teardown fault**, the user's log has no `Exit:` line at
+   all, and the "thirteen unsymbolised frames" I recorded here are not frames - decoded as UTF-16 they
+   are the error message itself, so the stack walker had been handed a text buffer. Open it as "what
+   allocates per frame at the menu", and do not start from those addresses.
 4. Two **Windows Defender Firewall prompts** raised by agent executables sit over the game window and
    have stolen the foreground from measured runs in three waves. The user has to answer or cancel them.
 

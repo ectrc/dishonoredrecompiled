@@ -142,9 +142,14 @@ Note also the AS2 error 200 ms later in the same log: `call of a value that is n
 once; nobody measured the second entry. The likely shapes are a movie or clip removed on close and not
 recreated, or a state flag left set — but measure it.
 
-**3. The exit teardown fault**, if you have room. Every quit ends with a critical error **after**
-`Exit: Game engine shut down` and `Exit: Windows client shut down`, with thirteen unsymbolised frames.
-Killing the process avoids it. This is on the queue from earlier waves; take it only after 1 and 2.
+**3. ~~The exit teardown fault~~ - wrong, and agent EZ settled it while declining the item.** There is
+no teardown fault. The critical error in the user's log is `Ran out of virtual memory` at **217.73 s
+with the game still rendering the menu**, one frame after a normal render census: a 32-bit process
+exhausting its 2 GB address space after three and a half minutes on the main menu. It is also *why*
+the user crashed - New Game did nothing, so they waited. The thirteen "unsymbolised frames" decode as
+UTF-16 to the error message itself, so the stack walker was handed a text buffer and anyone starting
+from those addresses is chasing text. **This should be opened as "what allocates per frame at the
+menu", as its own package.**
 
 ### FA — the menu in three dimensions, and the blur behind a modal
 
