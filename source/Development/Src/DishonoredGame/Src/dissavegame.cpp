@@ -1350,10 +1350,35 @@ ULevel* DisFindLevelFromName( const FName& _rLevelName )
 	return NULL;
 }
 
-// DISHONORED(port): 2013 rva 0x7ef0c0 (2012 0x82f1c0)
+// DISHONORED(port): agent EL, 2013 rva 0x7ec3d0 (2012 0x82f1c0), 275 bytes.
+//
+// CORRECTION (agent EL): this was `GWorld->CurrentLevel` with the 2013 rva given as 0x7ef0c0. Both are wrong.
+// 0x7ef0c0 is inside UDisPostProcessManager::TickMaskOn; the function matched to 2012 0x82f1c0 is 0x7ec3d0, and
+// it is 275 bytes, not two. `GWorld->CurrentLevel` also cannot be what retail means: outside the editor it IS
+// PersistentLevel (UnLevAct.cpp:371 asserts exactly that), so DisGetCurrentLevel would answer
+// DishonoredGameFull_P for every mission and UDisSeqAct_GotoPlayerTravelDestination, whose whole test is
+// "am I in a different level from the one the destination was set in", could never fire. What retail returns is
+// the MISSION's own persistent level: StreamingLevels(0), and only when a map change has made it a
+// ULevelStreamingPersistent. Measured: l_tower_p after the New Game map change, Dishonored_MainMenu before it.
 ULevel* DisGetCurrentLevel()
 {
-	return GWorld ? GWorld->CurrentLevel : NULL;
+	// retail reads GWorld->m_pWorldInfo without a test; this tree calls DisGetCurrentLevel from paths that run
+	// before the world info exists, so it is tested here.
+	AWorldInfo* pWorldInfo = GWorld ? GWorld->m_pWorldInfo : NULL;
+	if( pWorldInfo == NULL || pWorldInfo->StreamingLevels.Num() <= 0 )
+	{
+		return NULL;
+	}
+	ULevelStreaming* pStreaming = pWorldInfo->StreamingLevels(0);
+	if( pStreaming == NULL || pStreaming->LoadedLevel == NULL )
+	{
+		return NULL;
+	}
+	if( !pStreaming->IsA( ULevelStreamingPersistent::StaticClass() ) )
+	{
+		return NULL;
+	}
+	return pStreaming->LoadedLevel;
 }
 
 // DISHONORED(port): agent ED (PHASE11 ED), 2013 rva 0x785f30 (2012 0x7cb460). Retail has this in

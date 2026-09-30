@@ -2290,6 +2290,7 @@ struct FDisStoryFlagInstance
     {
         appMemzero(this, sizeof(FDisStoryFlagInstance));
     }
+#include "CppText/FDisStoryFlagInstance.h"
 };
 
 // DishonoredGame.DishonoredPlayerPawn.PlayerDebugVars: retail SDK size 16 (2012 PDB 16)
@@ -13263,6 +13264,7 @@ public:
     //## END PROPS DisStoryFlagSet
 
     DECLARE_CLASS(UDisStoryFlagSet,UObject,0,DishonoredGame)
+#include "CppText/UDisStoryFlagSet.h"
 };
 
 // DishonoredGame.DisTallboyLightComponent: retail sizeof 84, reflected span 81..84 (2012 PDB sizeof 84)

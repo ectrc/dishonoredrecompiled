@@ -43,3 +43,12 @@ protected:
 	    carries only its vptr, so it sits on the class that needs it, as agent EC did for the NPC pawn. */
 	void GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location );
 public:
+
+	// ---- agent EL (PHASE12 EL): the story-flag store the Tower's arrival chain reads and the menu's
+	// GoToTowerEmpress sequence writes. Bodies in dishonoredplayerpawn.cpp. ----
+	// DISHONORED(port): agent EL, 2013 rvas 0x6b1370 / 0x6b1430 (the UDisStoryFlagSet overloads, which resolve the
+	// set to its path name) and 0x6a8c30 / 0x6a8cc0 (the FName overloads, which are the store itself).
+	UBOOL CheckStoryFlag( const class UDisStoryFlagSet* _pStoryFlagSet, const FGuid& _rGUID ) const;
+	void SetStoryFlag( const class UDisStoryFlagSet* _pStoryFlagSet, const FGuid& _rGUID, UBOOL _bValue );
+	UBOOL CheckStoryFlag( const FName& _rStoryFlagSetPath, const FGuid& _rGUID ) const;
+	void SetStoryFlag( const FName& _rStoryFlagSetPath, const FGuid& _rGUID, UBOOL _bValue );

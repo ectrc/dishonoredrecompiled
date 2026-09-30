@@ -774,6 +774,7 @@ public:
     //## END PROPS DisSeqAct_GotoPlayerTravelDestination
 
     DECLARE_CLASS(UDisSeqAct_GotoPlayerTravelDestination,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_GotoPlayerTravelDestination.h"
 };
 
 // DishonoredGame.DisSeqAct_Highlight: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
@@ -1245,6 +1246,7 @@ public:
     //## END PROPS DisSeqAct_SetPlayerTravelDestination
 
     DECLARE_CLASS(UDisSeqAct_SetPlayerTravelDestination,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetPlayerTravelDestination.h"
 };
 
 // DishonoredGame.DisSeqAct_SetPlayerVisSettings: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
@@ -1299,6 +1301,7 @@ public:
     //## END PROPS DisSeqAct_SetStoryFlag
 
     DECLARE_CLASS(UDisSeqAct_SetStoryFlag,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetStoryFlag.h"
 };
 
 // DishonoredGame.DisSeqAct_SeverLimb: retail sizeof 268, reflected span 248..268 (2012 PDB sizeof 268)
@@ -1510,6 +1513,7 @@ public:
     //## END PROPS DisSeqCond_CheckStoryFlag
 
     DECLARE_CLASS(UDisSeqCond_CheckStoryFlag,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_CheckStoryFlag.h"
 };
 
 // DishonoredGame.DisSeqCond_CompareBoolExtended: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
@@ -1578,6 +1582,7 @@ public:
     //## END PROPS DisSeqCond_IsSentinel
 
     DECLARE_CLASS(UDisSeqCond_IsSentinel,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_IsSentinel.h"
 };
 
 // DishonoredGame.DisSeqCond_PawnIsPossessed: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)

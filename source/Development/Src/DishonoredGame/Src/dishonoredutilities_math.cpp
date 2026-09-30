@@ -42,3 +42,34 @@
 //   0x83d6b0  unsigned int __cdecl DisLineProbe_Masked(class AActor const *, class TArray<class AActor const *, class FDefaultAllocator> const &, struct FDisLineProbeResult &, class FVector const &, class FVector const &, int, int, int, class FVector, unsigned int)
 //   0x83d710  unsigned int __cdecl DisLineProbeMulti_Masked(class AActor const *, struct TMemStackArray<struct FDisLineProbeResult> &, class FVector const &, class FVector const &, int, int, int, class FVector, unsigned int)
 //   0x83d7d0  unsigned int __cdecl DisLineProbeMulti_Masked(class AActor const *, class TArray<class AActor const *, class FDefaultAllocator> const &, struct TMemStackArray<struct FDisLineProbeResult> &, class FVector const &, class FVector const &, int, int, int, class FVector, unsigned int)
+
+// ---- agent EL (PHASE12 EL): one of this unit's 40 functions ----
+// DisTeleportPlayer is the whole of what the New Game path needs out of this file; the other 39 are still
+// only the attribution list above.
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities_math.h"
+
+// DISHONORED(port): agent EL, 2013 rva 0x7bf830 (2012 0x827590)
+UBOOL DisTeleportPlayer( const FVector& _rLocation, const FRotator& _rRotation )
+{
+	ADishonoredPlayerController* pPlayerController = ADishonoredPlayerController::s_pInstance;
+	if( pPlayerController == NULL )
+	{
+		return FALSE;
+	}
+	if( pPlayerController->Pawn == NULL
+		|| !GWorld->FarMoveActor( pPlayerController->Pawn, _rLocation ) )
+	{
+		return FALSE;
+	}
+	pPlayerController->SetRotation( _rRotation );
+	// DISHONORED(port): retail ends with this->OnTeleport_Native(NULL) - the ADishonoredPlayerController
+	// vtable's +1272 slot, 2013 rva 0x6a5f40. That override is not declared in this tree (only its script
+	// thunk execOnTeleport_Native, a DISHONORED_NATIVE_STUB), and its body is camera bookkeeping:
+	// ADishonoredPlayerCamera::OnTeleport (2013 0x6ca370) sets a flag and forwards to each influence group,
+	// then the player pawn's m_LastSecondLocation is reset. dishonoredplayercamera.cpp is still a skeleton,
+	// so the call is left out rather than half-ported; the move and the rotation, which are what put the
+	// player in the level, are here.
+	return TRUE;
+}

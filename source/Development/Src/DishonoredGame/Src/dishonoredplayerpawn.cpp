@@ -267,3 +267,61 @@ void ADishonoredPlayerPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
 	P_FINISH;
 	Landed_Native( HitNormal, FloorActor );
 }
+
+// ---- agent EL (PHASE12 EL): the story-flag store ----
+//
+// A story flag is a GUID declared by a UDisStoryFlagSet asset and a boolean recorded on the player pawn.
+// m_StoryFlagInstances is CPF_Transient, so a fresh game starts with every flag false and the value only
+// exists once something has written it. The Tower's arrival chain stands on exactly this: the menu's
+// GoToTowerEmpress sequence sets a flag, and L_Tower_Script's DisSeqCond_CheckStoryFlag reads it.
+
+// DISHONORED(port): agent EL, 2013 rva 0x6b1370 (2012 0x70b470). Retail calls FindStoryFlag_ByGUID and
+// discards the result on this overload (only the setter acts on it); the call is kept because it is in the
+// binary and it is free.
+UBOOL ADishonoredPlayerPawn::CheckStoryFlag( const UDisStoryFlagSet* _pStoryFlagSet, const FGuid& _rGUID ) const
+{
+	_pStoryFlagSet->FindStoryFlag_ByGUID( _rGUID );
+	return CheckStoryFlag( FName( *_pStoryFlagSet->GetPathName() ), _rGUID );
+}
+
+// DISHONORED(port): agent EL, 2013 rva 0x6b1430 (2012 0x70b4f0). A GUID the set does not declare is not written.
+void ADishonoredPlayerPawn::SetStoryFlag( const UDisStoryFlagSet* _pStoryFlagSet, const FGuid& _rGUID, UBOOL _bValue )
+{
+	if( _pStoryFlagSet->FindStoryFlag_ByGUID( _rGUID ) )
+	{
+		SetStoryFlag( FName( *_pStoryFlagSet->GetPathName() ), _rGUID, _bValue );
+	}
+}
+
+// DISHONORED(port): agent EL, 2013 rva 0x6a8c30 (2012 0x702f20)
+UBOOL ADishonoredPlayerPawn::CheckStoryFlag( const FName& _rStoryFlagSetPath, const FGuid& _rGUID ) const
+{
+	for( INT InstanceIndex = 0; InstanceIndex < m_StoryFlagInstances.Num(); InstanceIndex++ )
+	{
+		if( m_StoryFlagInstances(InstanceIndex).CheckStoryFlagValue( _rStoryFlagSetPath, _rGUID ) )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): agent EL, 2013 rva 0x6a8cc0 (2012 0x702fa0)
+void ADishonoredPlayerPawn::SetStoryFlag( const FName& _rStoryFlagSetPath, const FGuid& _rGUID, UBOOL _bValue )
+{
+	FDisStoryFlagInstance* pInstance = NULL;
+	for( INT InstanceIndex = 0; InstanceIndex < m_StoryFlagInstances.Num(); InstanceIndex++ )
+	{
+		if( m_StoryFlagInstances(InstanceIndex).MatchesStoryFlagInstance( _rStoryFlagSetPath, _rGUID ) )
+		{
+			pInstance = &m_StoryFlagInstances(InstanceIndex);
+			break;
+		}
+	}
+	if( pInstance == NULL )
+	{
+		pInstance = &m_StoryFlagInstances( m_StoryFlagInstances.AddZeroed() );
+		pInstance->BuildStoryFlagInstance( _rStoryFlagSetPath, _rGUID );
+	}
+	pInstance->m_bCurValue = _bValue ? 1 : 0;
+}

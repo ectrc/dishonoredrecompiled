@@ -203,3 +203,84 @@
 //   0x7ed3f0  public: static void __cdecl UDisSeqAct_PlayMusicBox::InitializePrivateStaticClassUDisSeqAct_PlayMusicBox(void)
 //   0x7ed410  public: static class UClass * __cdecl UDisSeqAct_AIStartDistraction::StaticClassNoInline(void)
 //   ... 82 more, see resources/docs/symbols/functions.csv
+
+// ---- agent EL (PHASE12 EL): the two travel-destination actions, and nothing else in this unit ----
+//
+// This unit is 282 attributed functions and 281 of them are still absent. What is here is the pair the
+// front end's New Game path runs: the Kismet sequence the console event `ChangeLvl_StartNewGame` fires
+// records where the player should come out (UDisSeqAct_SetPlayerTravelDestination), and the level the
+// map change brings up places him there (UDisSeqAct_GotoPlayerTravelDestination). Without the pair the
+// map change completes and the pawn stays at the menu world's spawn, which is a black frame.
+//
+// Addresses: both `Activated` overrides are unmatched in match_2012_2013.csv, so each was read out of its
+// class's 2013 vtable at the Activated slot +372 and then confirmed by its body. See the two
+// Inc/CppText/UDisSeqAct_*PlayerTravelDestination.h headers for how, including the one place
+// match_2012_2013.csv is wrong about UDisSeqAct_GotoPlayerTravelDestination.
+
+#include "DishonoredGame.h"
+#include "EngineUtils.h"					// FActorIterator
+#include "dishonoredutilities_math.h"		// DisTeleportPlayer
+#include "dishonoredutilities_saveload.h"	// DisGetCurrentLevel
+
+// DISHONORED(port): agent EL, 2013 rva 0x78a0a0 (vtable 0xd4ebe8 slot +372; 2012 0x7cd970).
+void UDisSeqAct_SetPlayerTravelDestination::Activated()
+{
+	ADishonoredPlayerController* pPlayerController = ADishonoredPlayerController::s_pInstance;
+	if( pPlayerController )
+	{
+		pPlayerController->m_PlayerTravelLocationName = m_Tag;
+		// retail inlines UObject::GetFName() here rather than calling DisGetLevelName, which also
+		// null-checks the outermost; the difference is unobservable because a ULevel always has one.
+		ULevel* pCurrentLevel = DisGetCurrentLevel();
+		pPlayerController->m_PlayerTravelOriginLevelName = pCurrentLevel
+			? pCurrentLevel->GetOutermost()->GetFName()
+			: FName( NAME_None );
+		debugf( TEXT("DISHONORED(port): SetPlayerTravelDestination: destination '%s' from level '%s'"),
+			*pPlayerController->m_PlayerTravelLocationName.ToString(),
+			*pPlayerController->m_PlayerTravelOriginLevelName.ToString() );
+	}
+	USequenceAction::Activated();
+}
+
+// DISHONORED(port): agent EL, 2013 rva 0x79a940 (vtable 0xd4e738 slot +372; 2012 0x7d6230).
+void UDisSeqAct_GotoPlayerTravelDestination::Activated()
+{
+	ADishonoredPlayerController* pPlayerController = ADishonoredPlayerController::s_pInstance;
+	if( pPlayerController && pPlayerController->Pawn )
+	{
+		ULevel* pCurrentLevel = DisGetCurrentLevel();
+		const FName CurrentLevelName = pCurrentLevel
+			? pCurrentLevel->GetOutermost()->GetFName()
+			: FName( NAME_None );
+		// The origin test is what makes this action idempotent: it fires on every level startup, and only
+		// the run in a level OTHER than the one the destination was set in moves the player.
+		if( pPlayerController->m_PlayerTravelOriginLevelName != CurrentLevelName
+			&& pPlayerController->m_PlayerTravelLocationName != NAME_None
+			&& GWorld->m_pWorldInfo )
+		{
+			for( FActorIterator It; It; ++It )
+			{
+				ANavigationPoint* pPoint = Cast<ANavigationPoint>( *It );
+				if( pPoint && pPoint->Tag == pPlayerController->m_PlayerTravelLocationName )
+				{
+					const FRotator Rotation = m_bUseDestinationTargetRotation
+						? pPoint->Rotation
+						: pPlayerController->Rotation;
+					const UBOOL bMoved = DisTeleportPlayer( pPoint->Location, Rotation );
+					pPlayerController->m_PlayerTravelLocationName = FName( NAME_None );
+					debugf( TEXT("DISHONORED(port): GotoPlayerTravelDestination: '%s' -> %s at %s (moved %d)"),
+						*CurrentLevelName.ToString(), *pPoint->GetName(),
+						*pPoint->Location.ToString(), bMoved );
+					break;
+				}
+			}
+		}
+		// DISHONORED(port): retail dereferences ADishonoredPlayerPawn::s_pInstance here without a test, and
+		// the New Game path reaches this action before anything guarantees it; the test is this tree's.
+		if( ADishonoredPlayerPawn::s_pInstance )
+		{
+			ADishonoredPlayerPawn::s_pInstance->m_PreviousTravelLocation = pPlayerController->Pawn->Location;
+		}
+	}
+	USequenceAction::Activated();
+}
