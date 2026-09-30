@@ -1606,14 +1606,6 @@ void UDisGFxMoviePlayerMenuBase::execDisplayStorageDeviceSelection( FFrame& Stac
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execDisplayStorageDeviceSelection);
 }
-void UDisGFxMoviePlayerMenuBase::execCloseGammaImage( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execCloseGammaImage);
-}
-void UDisGFxMoviePlayerMenuBase::execOpenGammaImage( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execOpenGammaImage);
-}
 void UDisGFxMoviePlayerMenuBase::execOnApplyVideoSettings( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execOnApplyVideoSettings);
@@ -1809,10 +1801,6 @@ void UDisGFxMoviePlayerJournal::execReq_ObjectivesList( FFrame& Stack, RESULT_DE
 void UDisGFxMoviePlayerJournal::execReq_FlashingTabsBitfield( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerJournal, execReq_FlashingTabsBitfield);
-}
-void UDisGFxMoviePlayerGamma::execOnGammaImageClosed( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerGamma, execOnGammaImageClosed);
 }
 void UDisGFxMoviePlayerGlobal::execOnDLCInaccessbible( FFrame& Stack, RESULT_DECL )
 {

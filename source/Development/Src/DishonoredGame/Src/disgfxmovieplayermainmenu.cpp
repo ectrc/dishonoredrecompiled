@@ -483,9 +483,164 @@ void DisGFxMoviePlayerMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
 
 }
 
+// Agent EY: -disclipdiag=<AS2 path>[;<path>...] prints one clip's display properties, the `props` object
+// the menu's opening tweens read their destination out of, and every member the clip carries with its
+// value, once a second until each path has reported twice.
+//
+// Every layout fault this wave chased is invisible from C++ and obvious from here. The menu places its
+// clips by reading our own getters back into a plain object and tweening to it - the New Game portrait's
+// is {_x, _y, _z:-450, _xscale, _yscale, _rotation, _xrotation, _yrotation, _alpha} - so which quantity
+// the runtime answers wrong is only observable on the AS2 side. What this found: _x/_y/_xscale/_yscale/
+// _rotation/_alpha all round-trip, _z is not a display property at all and _xrotation/_yrotation read
+// back undefined; the options list sits at _x = 0 with _defPosX = 0 where its attachMovie init object
+// says -450, which is what puts the whole value column off the right edge of the screen; and each row's
+// value widget is attached, visible and holds the right text.
+static UBOOL DisReportOneClip( GFxMovieView* View, const FString& Path );
+
+static void DisReportClipDiag( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	static INT Budget = -1;
+	static DOUBLE NextReport = 0.0;
+	static FString Path;
+	if( Budget < 0 )
+	{
+		Budget = Parse( appCmdLine(), TEXT("disclipdiag="), Path ) && Path.Len() > 0 ? 1 : 0;
+	}
+	if( Budget == 0 || appSeconds() < NextReport )
+	{
+		return;
+	}
+	GFxMovieView* View = DisMainMenuView( Menu );
+	if( View == NULL )
+	{
+		return;
+	}
+	// Several paths, ';' separated, so one run can walk down a tree. The budget is per path and only
+	// spent when that path resolves, because a clip the screen creates on its way up does not exist
+	// when the one above it does.
+	static TArray<FString> Paths;
+	static TArray<INT> Left;
+	if( Paths.Num() == 0 )
+	{
+		Path.ParseIntoArray( &Paths, TEXT(";"), TRUE );
+		Left.AddZeroed( Paths.Num() );
+		for( INT Index = 0; Index < Left.Num(); Index++ )
+		{
+			Left(Index) = 2;
+		}
+	}
+	INT Remaining = 0;
+	for( INT PathIdx = 0; PathIdx < Paths.Num(); PathIdx++ )
+	{
+		if( Left(PathIdx) > 0 && DisReportOneClip( View, Paths(PathIdx) ) )
+		{
+			Left(PathIdx)--;
+		}
+		Remaining += Left(PathIdx);
+	}
+	NextReport = appSeconds() + 1.0;
+	if( Remaining == 0 )
+	{
+		Budget = 0;
+	}
+}
+
+static UBOOL DisReportOneClip( GFxMovieView* View, const FString& Path )
+{
+	GFxValue Clip;
+	if( !View->GetVariable( &Clip, TCHAR_TO_ANSI( *Path ) ) )
+	{
+		Clip.ReleaseManaged();
+		return FALSE;
+	}
+	static const char* const Names[] = { "_x", "_y", "_z", "_xscale", "_yscale", "_rotation",
+		"_xrotation", "_yrotation", "_alpha", "_visible", "_width", "_height", "text", "htmlText",
+		"textWidth", "textHeight", "embedFonts", "_font" };
+	FString Live, Props;
+	GFxValue PropsObject;
+	const UBOOL bHasProps = Clip.GetMember( "props", &PropsObject );
+	for( INT NameIdx = 0; NameIdx < ARRAY_COUNT(Names); NameIdx++ )
+	{
+		GFxValue Member;
+		if( Clip.GetMember( Names[NameIdx], &Member ) )
+		{
+			Live += Member.IsNumber() ? FString::Printf( TEXT(" %s=%g"), ANSI_TO_TCHAR( Names[NameIdx] ), Member.GetNumber() )
+				: ( Member.IsStringW() ? FString::Printf( TEXT(" %s='%s'"), ANSI_TO_TCHAR( Names[NameIdx] ), Member.GetStringW() )
+				: ( Member.IsString() ? FString::Printf( TEXT(" %s='%s'"), ANSI_TO_TCHAR( Names[NameIdx] ), ANSI_TO_TCHAR( Member.GetString() ) )
+				: FString::Printf( TEXT(" %s=%s"), ANSI_TO_TCHAR( Names[NameIdx] ),
+					Member.IsBool() ? ( Member.GetBool() ? TEXT("true") : TEXT("false") ) : TEXT("undefined") ) ) );
+		}
+		Member.ReleaseManaged();
+		GFxValue Prop;
+		if( bHasProps && PropsObject.GetMember( Names[NameIdx], &Prop ) )
+		{
+			Props += Prop.IsNumber() ? FString::Printf( TEXT(" %s=%g"), ANSI_TO_TCHAR( Names[NameIdx] ), Prop.GetNumber() )
+				: FString::Printf( TEXT(" %s=undefined"), ANSI_TO_TCHAR( Names[NameIdx] ) );
+		}
+		Prop.ReleaseManaged();
+	}
+	// the clip's own members, which is the only way to walk down a tree whose child names the asset
+	// builds at run time (the options list names its rows _itemPrefix + index)
+	struct FNameLister : public GFxValue::ObjectInterface::ObjVisitor
+	{
+		FString Names;
+		INT Count;
+		FNameLister() : Count(0) {}
+		virtual void Visit( const char* Name, const GFxValue& Value )
+		{
+			Count++;
+			if( Count > 40 )
+			{
+				return;
+			}
+			FString Text;
+			if( Value.IsArray() )
+			{
+				Text = FString::Printf( TEXT("[%d:"), Value.GetArraySize() );
+				for( UINT ElemIdx = 0; ElemIdx < Value.GetArraySize() && ElemIdx < 6; ElemIdx++ )
+				{
+					GFxValue Element;
+					Value.GetElement( ElemIdx, &Element );
+					Text += Element.IsStringW() ? FString::Printf( TEXT(" '%s'"), Element.GetStringW() )
+						: ( Element.IsString() ? FString::Printf( TEXT(" '%s'"), ANSI_TO_TCHAR( Element.GetString() ) )
+							: ( Element.IsNumber() ? FString::Printf( TEXT(" %g"), Element.GetNumber() ) : FString(TEXT(" ?")) ) );
+					Element.ReleaseManaged();
+				}
+				Text += TEXT("]");
+			}
+			else if( Value.IsStringW() )
+			{
+				Text = FString::Printf( TEXT("'%s'"), Value.GetStringW() );
+			}
+			else if( Value.IsString() )
+			{
+				Text = FString::Printf( TEXT("'%s'"), ANSI_TO_TCHAR( Value.GetString() ) );
+			}
+			else if( Value.IsNumber() )
+			{
+				Text = FString::Printf( TEXT("%g"), Value.GetNumber() );
+			}
+			else if( Value.IsBool() )
+			{
+				Text = Value.GetBool() ? TEXT("true") : TEXT("false");
+			}
+			Names += Text.Len() > 0 ? FString::Printf( TEXT(" %s=%s"), ANSI_TO_TCHAR( Name ), *Text )
+				: FString::Printf( TEXT(" %s"), ANSI_TO_TCHAR( Name ) );
+		}
+	} Lister;
+	Clip.VisitMembers( &Lister );
+	warnf( TEXT("DisReportClipDiag %s: live%s | props %s | %d members:%s"), *Path, *Live,
+		bHasProps ? ( Props.Len() > 0 ? *Props : TEXT("(empty object)") ) : TEXT("absent"),
+		Lister.Count, *Lister.Names );
+	PropsObject.ReleaseManaged();
+	Clip.ReleaseManaged();
+	return TRUE;
+}
+
 // DISHONORED(port): 2012 rva 0x822280
 void DisGFxMoviePlayerMainMenuPreAdvance( UDisGFxMoviePlayerMainMenu* Menu, FLOAT DeltaTime )
 {
+	DisReportClipDiag( Menu );
 	// DISHONORED(port): agent EO - retail's own site is UDisGFxMoviePlayerMenuBase::PostFirstAdvance
 	// (2013 rva 0x7e6970), which this tree's movie-player base does not have; see DisFillOptionsMenuOnce.
 	extern void DisFillOptionsMenuOnce( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSettings );

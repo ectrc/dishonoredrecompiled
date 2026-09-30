@@ -1,0 +1,3 @@
+UDisGFxMoviePlayerMenuBase::execOpenGammaImage
+UDisGFxMoviePlayerMenuBase::execCloseGammaImage
+UDisGFxMoviePlayerGamma::execOnGammaImageClosed

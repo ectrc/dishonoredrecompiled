@@ -81,6 +81,9 @@ static GFxMovieView* DisMenuView( UDisGFxMoviePlayerMenuBase* Menu )
 	return Movie ? Movie->pView.GetPtr() : NULL;
 }
 
+/** agent EY, defined at the foot of this file beside the gamma screen it also reports for */
+static void DisReportHelpBar( UDisGFxMoviePlayerMenuBase* Menu, const TCHAR* Where );
+
 /** set one string member on an AS2 object */
 static void DisSetGFxString( GFxValue& Object, const char* Member, const FString& Value )
 {
@@ -174,6 +177,23 @@ static UBOOL DisSettingIsKeyBinding( INT SettingID )
 	return SettingID >= 29 && SettingID <= 64;
 }
 
+/** -disoptionsdiag=<n>: read the first n option rows back out of AS2 after they are built (agent EY) */
+static INT GDisOptionsRowDiag = -1;
+
+/** the row census's own budget, read once from the command line */
+static void DisInitOptionsRowDiag()
+{
+	if( GDisOptionsRowDiag < 0 )
+	{
+		INT Budget = 0;
+		if( !Parse( appCmdLine(), TEXT("disoptionsdiag="), Budget ) )
+		{
+			Budget = ParseParam( appCmdLine(), TEXT("disoptionsdiag") ) ? 12 : 0;
+		}
+		GDisOptionsRowDiag = Budget;
+	}
+}
+
 // DISHONORED(port): 2013 rva 0x7db5f0 (2012 0x80f920, CreateGFxSetting). One AS2 object per row of an options
 // page. The member names are the contract with the cooked asset: Setting_Id, Setting_Name, Mapping_Type,
 // Setting_Value, Setting_Minimum, Setting_Maximum, Setting_Increment, Mapping_Names, and exactly ONE of the five
@@ -192,6 +212,7 @@ static void DisCreateGFxSetting( UDisGFxMoviePlayerMenuBase* Menu, const FDisSet
 		return;
 	}
 	UArkProfileSettings* Settings = DisMenuProfileSettings();
+	DisInitOptionsRowDiag();
 
 	// GFxMovieView::CreateObject takes the class name and the constructor arguments (vt[13] in the
 	// PDB); an empty Object is what agent BE's one-argument stand-in meant.
@@ -274,8 +295,13 @@ static void DisCreateGFxSetting( UDisGFxMoviePlayerMenuBase* Menu, const FDisSet
 						{
 							continue;
 						}
+						// GFxValue::SetStringW stores the pointer and copies nothing, so the FString has to
+						// outlive the PushBack: written as one expression the temporary dies at the
+						// semicolon and the array is filled with freed memory, which is what put garbage
+						// in every drop-list row of the options screen (agent EY).
+						const FString ValueLabel = DisSettingValueLabel( Mapping.Name );
 						GFxValue Label;
-						Label.SetStringW( *DisSettingValueLabel( Mapping.Name ) );
+						Label.SetStringW( *ValueLabel );
 						MappingNames.PushBack( Label );
 						if( CurrentId == Mapping.Id )
 						{
@@ -314,6 +340,66 @@ static void DisCreateGFxSetting( UDisGFxMoviePlayerMenuBase* Menu, const FDisSet
 			break;
 		}
 		MappingNames.ReleaseManaged();
+	}
+
+	// Agent EY: -disoptionsdiag reads every member back off the AS2 object that was just built and prints
+	// it, through the same ObjectInterface the asset reads it with, one call after it was written. It is
+	// what found the lifetime bug above: the row objects looked right from C++ and carried freed memory
+	// on the AS2 side. Anything else about the value column is measured from the other end - the row
+	// widgets are attached, visible and carry the right text, and the list that holds them is 450 stage
+	// pixels to the right of where the asset puts it (agentEY.md 4.2).
+	if( GDisOptionsRowDiag > 0 )
+	{
+		GDisOptionsRowDiag--;
+		FString Members;
+		static const char* const Names[] = { "Setting_Id", "Setting_Name", "Mapping_Type", "Setting_Value",
+			"Setting_Minimum", "Setting_Maximum", "Setting_Increment", "Mapping_Names",
+			"GamepadBindingMenu", "VideoSettings", "GammaMenu", "DeviceSelectionMenu", "bDropList" };
+		for( INT NameIdx = 0; NameIdx < ARRAY_COUNT(Names); NameIdx++ )
+		{
+			GFxValue Member;
+			if( !OutSetting->GetMember( Names[NameIdx], &Member ) )
+			{
+				continue;
+			}
+			FString Text;
+			if( Member.IsArray() )
+			{
+				Text = FString::Printf( TEXT("[%d:"), Member.GetArraySize() );
+				for( UINT ElemIdx = 0; ElemIdx < Member.GetArraySize(); ElemIdx++ )
+				{
+					GFxValue Element;
+					Member.GetElement( ElemIdx, &Element );
+					Text += FString::Printf( TEXT(" '%s'"), Element.IsStringW() ? Element.GetStringW()
+						: ( Element.IsString() ? ANSI_TO_TCHAR( Element.GetString() ) : TEXT("?") ) );
+					Element.ReleaseManaged();
+				}
+				Text += TEXT("]");
+			}
+			else if( Member.IsStringW() )
+			{
+				Text = FString::Printf( TEXT("'%s'"), Member.GetStringW() );
+			}
+			else if( Member.IsString() )
+			{
+				Text = FString::Printf( TEXT("'%s'"), ANSI_TO_TCHAR( Member.GetString() ) );
+			}
+			else if( Member.IsNumber() )
+			{
+				Text = FString::Printf( TEXT("%g"), Member.GetNumber() );
+			}
+			else if( Member.IsBool() )
+			{
+				Text = Member.GetBool() ? TEXT("true") : TEXT("false");
+			}
+			else
+			{
+				Text = TEXT("<undefined>");
+			}
+			Members += FString::Printf( TEXT(" %s=%s"), ANSI_TO_TCHAR( Names[NameIdx] ), *Text );
+			Member.ReleaseManaged();
+		}
+		warnf( TEXT("DisCreateGFxSetting: row%s"), *Members );
 	}
 
 	// retail sets exactly one of these, in this order, and always to true
@@ -598,6 +684,7 @@ void DisFillOptionsMenu( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSe
 	ArkSettings::FindListeners( DisMenuSettingsListeners( Menu ) );
 	DisFillSettingsCategoryList( Menu, bAllowRestartSettings, Menu->m_SettingsCategoryList );
 	DisShowSettingsCategoryList( Menu );
+	DisReportHelpBar( Menu, TEXT("options screen") );
 
 	INT ShowObjectiveMarkers = 0;
 	if( Settings )
@@ -1105,6 +1192,13 @@ void UDisGFxMoviePlayerMenuBase::execReq_CanLoadGame( FFrame& Stack, RESULT_DECL
 	// DISHONORED(port): agent CF - the whole body of retail's Req_CanLoadGame (2013 rva 0x7c25e0, reached
 	// through the exec at 0x5f7960) is "is there an engine and does it have any save at all"
 	*(UBOOL*)Result = ( Engine && Engine->HasSaveGame( 0 ) ) ? TRUE : FALSE;
+	// Agent EY: the menu bar draws CONTINUE and LOAD only when these two answers are TRUE, and the asset
+	// asks for them by name rather than believing the four booleans mainMenu_mc.Open was opened with. The
+	// census says which of the three conditions decided it - save/load disabled, an empty list, or a list
+	// the asset simply did not ask about - so a shorter bar is not read as a layout defect.
+	warnf( TEXT("Req_CanLoadGame: engine %s, save/load enabled %d, saves %d -> %d (save dir %s)"),
+		Engine ? TEXT("yes") : TEXT("NULL"), ( Engine && Engine->m_bSaveLoadEnabled ) ? 1 : 0,
+		Engine ? Engine->GetNumSaveGames() : -1, *(UBOOL*)Result ? 1 : 0, *DisGetSaveGameDir() );
 }
 
 // DISHONORED(port): the Continue entry of the main menu bar. Retail's own reading of "can this player
@@ -1191,4 +1285,290 @@ void DisRefreshLoadGameMenu( UDisGFxMoviePlayerMenuBase* Menu )
 void DisRefreshSettingsCategoryList( UDisGFxMoviePlayerMenuBase* Menu )
 {
 	DisShowSettingsCategoryList( Menu );
+}
+
+/*-----------------------------------------------------------------------------
+	UDisGFxMoviePlayerGamma - the brightness screen's five reference symbols. Agent EY.
+
+	The brightness screen is drawn by the main menu movie; the five Outsider marks under its slider
+	are NOT. They are a second movie, UI_Gamma.GammaImage, opened on top by a movie player of its own
+	and fed the five alpha values the player is meant to calibrate against. Agent EO's hand-over 2
+	named the whole of this as absent: OpenGammaImage and CloseGammaImage were DISHONORED_NATIVE_STUB,
+	m_pGammaMenu was never constructed, the package was never loaded and m_BrightnessValues was never
+	filled, so the screen said "adjust brightness until you can barely see the darkest symbol" with no
+	symbol on it.
+
+	The retail chain, and what each piece is here:
+
+	  0x822980 OpenGammaImage    construct m_pGammaMenu on first use, then OpenGammaMenu
+	  0x81daf0 OpenGammaMenu     no movie yet -> LoadMoviePackageAsync(NULL); movie -> Start, Advance,
+	                             then _root.gamma_mc.SetGammaImages([m_BrightnessValues])
+	  0x81dcf0 OnCompleteMoviePackageLoading   the async completion, which calls OpenGammaMenu again
+	  0x801340 CloseGammaImage   m_pGammaMenu->CloseGammaMenu()
+	  0x7f72c0 CloseGammaMenu    open -> _root.gamma_mc.Close(); still loading -> flush, then closed
+	  0x7f73d0 OnGammaImageClosed  Close(TRUE) and Outer->m_pGammaMenu = NULL
+
+	Two deviations, both stated rather than hidden:
+
+	  * The package load is synchronous. Retail's shipping arm queues UObject::LoadPackageAsync with
+	    StaticOnCompleteMoviePackageLoading as the callback and comes back through
+	    OnCompleteMoviePackageLoading; UDisGFxMoviePlayerBase has neither function in this tree, and
+	    retail's own GIsEditor arm of LoadMoviePackageAsync is the synchronous load used here.
+	  * The movie path is measured, not read off a tweak object. Retail takes it from the player's
+	    UDisTweaks_GFxMoviePlayerBase (m_MoviePackageName at +144, m_MovieName at +156), and no tweak
+	    object in this build names the gamma movie - DisUI.ini's movie set does not carry it. The path
+	    below is what the cook actually wrote: UI_Gamma_SF.upk's export table has exactly one SwfMovie,
+	    UI_Gamma_SF.UI_Gamma.GammaImage, beside its two Texture2Ds GammaImage_I2 and GammaImage_I5.
+-----------------------------------------------------------------------------*/
+
+/** the five alphas the calibration marks are drawn at, [DishonoredGame.DisGFxMoviePlayerGamma] of
+    DefaultUI.ini: 0.998, 0.99, 0.95, 0.90, 0.80. The class is CLASS_Config in retail and the array is
+    a config property; nothing in this tree runs UObject::LoadConfig over these generated classes, so
+    the section is read here, by the same key spelling the ini uses. */
+static void DisLoadBrightnessValues( UDisGFxMoviePlayerGamma* Gamma )
+{
+	if( Gamma->m_BrightnessValues.Num() > 0 )
+	{
+		return;
+	}
+	for( INT Index = 0; ; Index++ )
+	{
+		FLOAT Value = 0.f;
+		if( !GConfig->GetFloat( TEXT("DishonoredGame.DisGFxMoviePlayerGamma"),
+			*FString::Printf( TEXT("m_BrightnessValues[%d]"), Index ), Value, GUIIni ) )
+		{
+			break;
+		}
+		Gamma->m_BrightnessValues.AddItem( Value );
+	}
+	if( Gamma->m_BrightnessValues.Num() == 0 )
+	{
+		warnf( TEXT("DisLoadBrightnessValues: [DishonoredGame.DisGFxMoviePlayerGamma] has no m_BrightnessValues in %s"), GUIIni );
+	}
+}
+
+/** the one USwfMovie of UI_Gamma_SF, loaded on demand. Retail reaches the same object through
+    LoadMoviePackageAsync's package load plus StaticFindObject on the movie path. */
+static USwfMovie* DisFindGammaMovie()
+{
+	const TCHAR* const MoviePath = TEXT("UI_Gamma.GammaImage");
+	USwfMovie* Movie = FindObject<USwfMovie>( ANY_PACKAGE, TEXT("GammaImage") );
+	if( Movie == NULL )
+	{
+		UObject::LoadPackage( NULL, GUseSeekFreeLoading ? TEXT("UI_Gamma_SF") : TEXT("UI_Gamma"), LOAD_NoWarn | LOAD_Quiet );
+		Movie = LoadObject<USwfMovie>( NULL, MoviePath, NULL, LOAD_NoWarn | LOAD_Quiet, NULL );
+		if( Movie == NULL )
+		{
+			Movie = FindObject<USwfMovie>( ANY_PACKAGE, TEXT("GammaImage") );
+		}
+	}
+	if( Movie == NULL || Movie->RawData.Num() == 0 )
+	{
+		warnf( TEXT("DisFindGammaMovie: no SwfMovie '%s' after loading UI_Gamma_SF"), MoviePath );
+		return NULL;
+	}
+	return Movie;
+}
+
+// DISHONORED(port): 2012 rva 0x81daf0 (OpenGammaMenu). The array handed to SetGammaImages is
+// m_BrightnessValues element for element, as numbers.
+static void DisOpenGammaMenu( UDisGFxMoviePlayerGamma* Gamma )
+{
+	if( Gamma->MovieInfo == NULL )
+	{
+		USwfMovie* Movie = DisFindGammaMovie();
+		if( Movie == NULL )
+		{
+			return;
+		}
+		Gamma->MovieInfo = Movie;
+		Movie->AddToRoot();
+	}
+
+	if( !Gamma->bMovieIsOpen )
+	{
+		// The gamma movie must not take the keyboard: the topmost open movie that can receive input is
+		// what FGFxEngine falls back on while no local player owns focus, so a focusable second movie
+		// over the menu would swallow the arrow keys the brightness slider is driven with. Retail's own
+		// player has the same three bits clear. Priority puts it over the menu and under the cursor's
+		// Global movie, which is 255.
+		Gamma->bAllowFocus = FALSE;
+		Gamma->bAllowInput = FALSE;
+		Gamma->bCaptureInput = FALSE;
+		Gamma->bDisplayWithHudOff = TRUE;
+		Gamma->TimingMode = TM_Real;
+		Gamma->LocalPlayerOwnerIndex = 0;
+		Gamma->Priority = 128;
+		if( Gamma->ExternalInterface == NULL )
+		{
+			Gamma->ExternalInterface = Gamma;
+		}
+		if( !Gamma->Start( FALSE ) )
+		{
+			warnf( TEXT("DisOpenGammaMenu: %s would not start"), *Gamma->MovieInfo->GetPathName() );
+			return;
+		}
+		Gamma->Advance( 0.f );
+		// the CLIK components in the shared library switch their glyph frames on this, and the menu's
+		// own opener sets the same variable for the same reason
+		FGFxMovie* Started = Gamma->GetMovie();
+		if( Started != NULL && Started->pView.GetPtr() != NULL )
+		{
+			GFxValue Platform;
+			Platform.SetString( "PC" );
+			Started->pView->SetVariable( "_global.PlatformName", Platform, GFxMovie::SV_Normal );
+		}
+	}
+
+	FGFxMovie* Movie = Gamma->GetMovie();
+	GFxMovieView* View = Movie ? Movie->pView.GetPtr() : NULL;
+	if( View == NULL )
+	{
+		return;
+	}
+
+	DisLoadBrightnessValues( Gamma );
+
+	GFxValue Values;
+	View->CreateArray( &Values );
+	for( INT Index = 0; Index < Gamma->m_BrightnessValues.Num(); Index++ )
+	{
+		GFxValue Number;
+		Number.SetNumber( Gamma->m_BrightnessValues(Index) );
+		Values.PushBack( Number );
+		Number.ReleaseManaged();
+	}
+
+	GFxValue GammaClip;
+	const UBOOL bFound = View->GetVariable( &GammaClip, "_root.gamma_mc" );
+	if( bFound )
+	{
+		GFxValue Unused;
+		GammaClip.Invoke( "SetGammaImages", &Unused, &Values, 1 );
+		Unused.ReleaseManaged();
+	}
+	warnf( TEXT("DisOpenGammaMenu: %s open, %d brightness values -> _root.gamma_mc.SetGammaImages %s"),
+		*Gamma->MovieInfo->GetPathName(), Gamma->m_BrightnessValues.Num(), bFound ? TEXT("ok") : TEXT("NOT FOUND") );
+	GammaClip.ReleaseManaged();
+	Values.ReleaseManaged();
+}
+
+// DISHONORED(port): 2012 rva 0x7f73d0 (OnGammaImageClosed). The asset's close animation has finished:
+// the movie is unloaded and the owner's pointer cleared, so the next open builds a fresh player.
+static void DisOnGammaImageClosed( UDisGFxMoviePlayerGamma* Gamma )
+{
+	if( Gamma->bMovieIsOpen )
+	{
+		Gamma->Close( TRUE );
+	}
+	UDisGFxMoviePlayerMenuBase* Owner = Cast<UDisGFxMoviePlayerMenuBase>( Gamma->GetOuter() );
+	if( Owner != NULL )
+	{
+		Owner->m_pGammaMenu = NULL;
+	}
+	Gamma->RemoveFromRoot();
+}
+
+// DISHONORED(port): 2012 rva 0x7f72c0 (CloseGammaMenu). The asset plays its own close animation and
+// calls back into OnGammaImageClosed; the loading arm cannot be reached here because the package load
+// above is synchronous, so a close before the movie is up closes it directly.
+static void DisCloseGammaMenu( UDisGFxMoviePlayerGamma* Gamma )
+{
+	FGFxMovie* Movie = Gamma->bMovieIsOpen ? Gamma->GetMovie() : NULL;
+	GFxMovieView* View = Movie ? Movie->pView.GetPtr() : NULL;
+	if( View != NULL )
+	{
+		GFxValue GammaClip;
+		if( View->GetVariable( &GammaClip, "_root.gamma_mc" ) )
+		{
+			GFxValue Unused;
+			GammaClip.Invoke( "Close", &Unused, NULL, 0 );
+			Unused.ReleaseManaged();
+		}
+		GammaClip.ReleaseManaged();
+	}
+	else
+	{
+		DisOnGammaImageClosed( Gamma );
+	}
+}
+
+/** Agent EY: the footer prompt bar, read back off the menu movie.
+
+    Retail draws ACCEPT / BACK on the New Game and brightness screens and RESTORE SETTINGS / BACK on
+    Options; this build draws nothing there. The bar is entirely asset-side - _common.UIBase.InitHelpBar
+    builds a constant list of {btn, txt} pairs out of _root.texts.t_Validate / t_Back / t_RestoreSettings
+    and attaches the library symbol lib_dynamicHelpBar as _root.help at (1184, 651) of the 1280x720 stage
+    - so the only thing C++ can do about it is say which half is missing. This prints the clip's own
+    state: whether the attach produced a clip at all, where it is, and whether it is visible. */
+static void DisReportHelpBar( UDisGFxMoviePlayerMenuBase* Menu, const TCHAR* Where )
+{
+	GFxMovieView* View = DisMenuView( Menu );
+	if( View == NULL )
+	{
+		return;
+	}
+	GFxValue Help;
+	if( !View->GetVariable( &Help, "_root.help" ) )
+	{
+		warnf( TEXT("DisReportHelpBar(%s): _root.help NOT FOUND - attachMovie('lib_dynamicHelpBar') produced nothing"), Where );
+		Help.ReleaseManaged();
+		return;
+	}
+	FString State;
+	static const char* const Names[] = { "_x", "_y", "_alpha", "_visible", "_width", "_height" };
+	for( INT NameIdx = 0; NameIdx < ARRAY_COUNT(Names); NameIdx++ )
+	{
+		GFxValue Member;
+		if( Help.GetMember( Names[NameIdx], &Member ) )
+		{
+			State += Member.IsNumber() ? FString::Printf( TEXT(" %s=%g"), ANSI_TO_TCHAR( Names[NameIdx] ), Member.GetNumber() )
+				: FString::Printf( TEXT(" %s=%s"), ANSI_TO_TCHAR( Names[NameIdx] ),
+					Member.IsBool() ? ( Member.GetBool() ? TEXT("true") : TEXT("false") ) : TEXT("?") );
+		}
+		Member.ReleaseManaged();
+	}
+	GFxValue List;
+	const UBOOL bHasList = Help.GetMember( "_helpList", &List );
+	GFxValue Content;
+	const UBOOL bHasContent = Help.GetMember( "_helpContent_mc", &Content );
+	warnf( TEXT("DisReportHelpBar(%s): _root.help%s, _helpList %s, _helpContent_mc %s"), Where, *State,
+		bHasList ? ( List.IsArray() ? *FString::Printf( TEXT("array of %d"), List.GetArraySize() ) : TEXT("not an array") ) : TEXT("absent"),
+		bHasContent ? TEXT("present") : TEXT("absent") );
+	List.ReleaseManaged();
+	Content.ReleaseManaged();
+	Help.ReleaseManaged();
+}
+
+// DISHONORED(port): 2012 rva 0x63d7a0 exec / 0x822980 body (OpenGammaImage). The brightness screen
+// calls this by name through ExternalInterface as it opens.
+void UDisGFxMoviePlayerMenuBase::execOpenGammaImage( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	if( m_pGammaMenu == NULL )
+	{
+		m_pGammaMenu = ConstructObject<UDisGFxMoviePlayerGamma>( UDisGFxMoviePlayerGamma::StaticClass(), this );
+		m_pGammaMenu->AddToRoot();
+	}
+	DisOpenGammaMenu( m_pGammaMenu );
+	DisReportHelpBar( this, TEXT("brightness screen") );
+}
+
+// DISHONORED(port): 2012 rva 0x801340 (CloseGammaImage)
+void UDisGFxMoviePlayerMenuBase::execCloseGammaImage( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	if( m_pGammaMenu != NULL )
+	{
+		DisCloseGammaMenu( m_pGammaMenu );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x7f73d0 body - the asset tells C++ its close animation has finished. The
+// exec thunk has no PDB name of its own: only execOpenGammaImage (0x63d7a0) is named, the other two
+// are identical `P_FINISH; forward` bodies and the linker folded them.
+void UDisGFxMoviePlayerGamma::execOnGammaImageClosed( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	DisOnGammaImageClosed( this );
 }
