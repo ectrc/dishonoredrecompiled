@@ -359,3 +359,87 @@ save. `UDisGFxMoviePlayerGamma` has no implementation file at all. The message b
 unported `USequenceCondition`s, which agent EL showed kill a Kismet chain silently. Three of
 `UI_HUD`'s eight atlases are never drawn. `execOnFocusLost`. Milestone 8's test suite. Audio stays
 last.
+
+## Wave 15
+
+Wave 14 put a guard on a patrol route, made the settings republish without aborting, took the save
+stream to **86.7%**, and cut the shim count by a fifth. Three of the four packages corrected a
+premise of their own brief and two corrected a truth source - that is now every wave, so assume the
+same here.
+
+### ET — perception, and the reaction
+
+Agent EP delivered the patrol and then **specified** this instead of half-porting it:
+`build/agentEP/spec/vision_spec.md` (1,026 lines - full member layout of `FDisComponentVision`,
+`VisionNPC` and `Observable` with per-name evidence, every vtable slot, the cone algebra) and
+`build/agentEP/spec2/creation_spec.md` (both creation sites, which policy each `Starting` registers
+with, and the fact that only tick phases 0/1/2/5 are live - 3 and 4 are dead). 180 decompiles sit in
+`build/agentEP/dec2013/`.
+
+The reaction has **exactly one door**: `FAIStimStruct_TargetSighted` has a single consumer in the
+whole image, `UDisAIBrainProcessAttention::FilterTargetSighted`, 61 functions and 5,507 bytes.
+
+And EP corrected the tree's own account of how this works: **vision is never ticked from the brain.**
+`dishonoredaibrain_senses.cpp` claims retail's `TickBrain_Senses` asks the vision component what it
+can see; the real body (2013 `0x717880`) is two inhibitor masks, `CheckForImportantKismetEvents`, a
+player-proximity attention pass and one look-at tick. Vision is an Ark component on
+`FArkComponentManager`'s time-sliced policy.
+
+Deliver: **a guard notices Corvo and reacts.**
+
+### EU — the guard finishes its patrol
+
+Three separate measured blockers, all localised by agent EP rather than guessed:
+
+1. **The patrol stops at its first point.** `DisDesireStructs::StartLoco` is called exactly 26 times
+   in 266 s - once per NPC, for Idle's `Stand` - while four patrol sub-states hold a live destination
+   with the loco component bound, `m_bDesired` set and `m_bPaused` clear. EP eliminated the two
+   obvious causes by measurement; the next instrument is one counter per `EDisDesireRequestStatus` in
+   `GetRequestStatus`.
+2. **Three of four route destinations are off the loaded 668-poly navmesh** (`GoalPolyNotFound`) -
+   a streaming bound, not an AI one.
+3. **`ADishonoredNPCPawn::m_pNPCMasterFSM`'s `m_NativeStateMap` is empty**, because nothing in this
+   tree calls `InitFSM`. Agent ER had to route a save read through a transient scratch instance to
+   work around it and named this as the clean fix.
+
+### EV — the last 82,423 bytes, and two guards
+
+`Dishonored0.sav`'s remaining loss is **two bytes wide**, inside `AActor::GameLoad` (retail
+`sub_58AD70`, 1,286 bytes) reached through `AInterpActor::GameLoad` (2013 `0x18c160`, which reads
+nothing of its own). Compare ours to retail's read for read. Agent ER's evidence that it is a
+position loss and not a missing tail: of 29,951 resolved references, index 30375 is the **only** one
+outside the 11,324 records, and none before it had the unshared bit set.
+
+Then **the two guards in `FLevelLoader::operator<<`** ER asked for: a deferred index must be inside
+the record count, and must only be accepted when the level state declares unshared objects. Without
+them a misread WORD with bit 15 set ends the object loop silently - `STREAM ENDED EARLY`, `0
+unported`, no class named - which is exactly how `USequenceFrame::IsSaveable` hid for five packages.
+That is the difference between a four-hour hunt and one log line.
+
+Then `Dishonored1.sav`, which is at 21,081 of 294,961, and the named unported overrides ER handed
+over with every offset and mask already resolved.
+
+### EW — the five layout defects, and the next 266 shims
+
+Agent ES found **five members where retail has per-instance storage and this tree has a
+process-wide `inline static`** - the opposite of a placeholder, and live wrongness:
+`UMaterial::bAllowFog`, `bUsedWithFogVolumes`, `bUsedWithFracturedMeshes` (bits 3, 12 and 16 of the
+dword at **752**), `UPrimitiveComponent::ReplacementPrimitive` (**196**) and
+`AWorldInfo::ProcBuildingRulesetOverride` (**1244**). Every offset is bracketed in the binary against
+a neighbour whose own name matches the SDK dump. ES did not fix them because three sit in headers
+other packages were editing.
+
+Then the **266 provable, unambiguous shims with at most one using file and at most two uses**, ranked
+in `agentES_status.csv`. Uses concentrate: `GameCrowd.cpp` 41, `UnPhysComponent.cpp` 25,
+`UnPhysSkelComponent.cpp` 17, `UnInterpolation.cpp` 15. `resources/tools/shim_ratchet.py` holds the
+ceiling at 887 and will not let it rise.
+
+### Still queued after this
+
+The options tab cannot be reached from the keyboard, so the graphics settings are unreachable without
+a mouse: `FGFxEngine::InitKeyMap` ignores `[GFxUI.KeyMap]` and `GFxKey::Code` has no `GAMEPAD_*`
+codes. The video sub-screen and its resolution row. The modal's background blur. The "Dunwall Tower"
+title card (`0x7998a0`). The camera is not told it was teleported. Story flags are transient and the
+player pawn's save virtuals are unported. `UDisGFxMoviePlayerGamma` has no implementation file. A
+census of unported `USequenceCondition`s, which kill a Kismet chain silently. Three of `UI_HUD`'s
+eight atlases are never drawn. Milestone 8's test suite. Audio stays last.
