@@ -388,6 +388,36 @@ void SetupWindowsEnvironment( void )
 	// all crt validation should trigger the callback
 	_set_invalid_parameter_handler(InvalidParameterHandler);
 
+	// DISHONORED(bringup, agent EX): declare the process DPI-aware before any window exists.
+	// Retail's own binary declares nothing - no <dpiAware> manifest and no SetProcessDPIAware import -
+	// and on a scaled display the retail install is made sharp instead by a per-executable
+	// HIGHDPIAWARE compatibility layer under HKCU\...\AppCompatFlags\Layers. Every agent stages its
+	// own executable under a new name, which has no such entry, so DWM bitmap-scales our window:
+	// measured on this machine (LOGPIXELSX 96, HORZRES 6144, DESKTOPHORZRES 7680, i.e. 125%), a window
+	// asked for with -ResX=1280 -ResY=720 has a physical client of 1600x900 and every frame the game
+	// renders is magnified 1.25x with a bilinear filter before it is shown. That magnification - not
+	// the stage mapping, the tessellator or the glyph cache - is what "the same assets at a lower
+	// resolution in the same window size" is. Declaring awareness here gets the same 1:1 window the
+	// compatibility layer gives retail, without depending on a registry entry per executable name.
+	if( HMODULE User32 = GetModuleHandleW( L"user32.dll" ) )
+	{
+		typedef BOOL (WINAPI *FSetProcessDpiAwarenessContext)( HANDLE );
+		typedef BOOL (WINAPI *FSetProcessDPIAware)( void );
+		// -4 is DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2; SetProcessDPIAware is the fallback on
+		// anything before Windows 10 1703, where the context form does not exist.
+		FSetProcessDpiAwarenessContext SetContext =
+			(FSetProcessDpiAwarenessContext)GetProcAddress( User32, "SetProcessDpiAwarenessContext" );
+		if( SetContext == NULL || !SetContext( (HANDLE)-4 ) )
+		{
+			FSetProcessDPIAware SetAware =
+				(FSetProcessDPIAware)GetProcAddress( User32, "SetProcessDPIAware" );
+			if( SetAware != NULL )
+			{
+				SetAware();
+			}
+		}
+	}
+
 #ifdef _DEBUG
 	// Disable the message box for assertions and just write to debugout instead
 	_CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_DEBUG );

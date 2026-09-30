@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 // GTypes.h's GArray has a destructor and no copy constructor, so copying one by value shallow-copies
 // its buffer and both copies free it. Every place this file needs a copy goes through this instead.
@@ -582,6 +583,32 @@ void GFxTextDocView::SetDefaultTextAndParaFormat(const GFxTextFormat& f,
     Flags |= VF_NeedsFormat;
 }
 
+// DISHONORED(bringup, agent EX): every distinct (requested font list -> resolved font, by which
+// route) pair a run produces, once each. "Which font does this field actually get, and from where"
+// is the direct reading of a wrong-font report, and it is otherwise only answerable by a bisect.
+// "FALLBACK" is the interesting line: it means the field asked for a font nothing could supply and
+// got font 0 instead.
+static void GFxTextDocViewNoteFontResolution(const char* requested, GFxFontResource* resolved,
+                                             const char* route)
+{
+    static char Seen[64][160];
+    static unsigned int SeenCount = 0;
+    char line[160];
+    const char* got = (resolved && resolved->GetName()) ? resolved->GetName() : "<none>";
+    _snprintf(line, sizeof(line), "'%s' -> '%s' (%s)", requested ? requested : "", got, route);
+    line[sizeof(line) - 1] = 0;
+    for (unsigned int i = 0; i < SeenCount; ++i)
+        if (strcmp(Seen[i], line) == 0)
+            return;
+    if (SeenCount < 64)
+    {
+        strncpy(Seen[SeenCount], line, sizeof(Seen[0]) - 1);
+        Seen[SeenCount][sizeof(Seen[0]) - 1] = 0;
+        ++SeenCount;
+    }
+    GFxLogf("DISHONORED(bringup): GFx font resolved: %s", line);
+}
+
 GFxFontResource* GFxTextDocView::FindFont(const GFxTextFormat* fmt)
 {
     // DISHONORED(port): 0xa9ccf0. Retail's order is: the format's already-resolved handle, then the
@@ -592,9 +619,15 @@ GFxFontResource* GFxTextDocView::FindFont(const GFxTextFormat* fmt)
         return 0;
     GFxFontHandle* h = fmt->GetFontHandle();
     if (h && h->GetFontResource())
+    {
+        GFxTextDocViewNoteFontResolution(fmt->GetFontList(), h->GetFontResource(), "handle");
         return h->GetFontResource();
+    }
     if (!pFontManager)
+    {
+        GFxTextDocViewNoteFontResolution(fmt->GetFontList(), 0, "no font manager");
         return 0;
+    }
 
     const char* list = fmt->GetFontList();
     const unsigned int style = fmt->GetFontStyleFlags();
@@ -612,7 +645,10 @@ GFxFontResource* GFxTextDocView::FindFont(const GFxTextFormat* fmt)
         {
             GFxFontResource* r = pFontManager->FindFontResource(name, style);
             if (r)
+            {
+                GFxTextDocViewNoteFontResolution(fmt->GetFontList(), r, "font manager");
                 return r;
+            }
         }
         if (list[at] == ',')
             ++at;
@@ -622,7 +658,12 @@ GFxFontResource* GFxTextDocView::FindFont(const GFxTextFormat* fmt)
     // Retail falls back to the *first* registered font rather than to nothing, because a null font
     // would make the line have no height at all.
     if (pFontManager->GetFontCount())
-        return pFontManager->GetFontByIndex(0);
+    {
+        GFxFontResource* r = pFontManager->GetFontByIndex(0);
+        GFxTextDocViewNoteFontResolution(fmt->GetFontList(), r, "FALLBACK");
+        return r;
+    }
+    GFxTextDocViewNoteFontResolution(fmt->GetFontList(), 0, "NONE");
     return 0;
 }
 

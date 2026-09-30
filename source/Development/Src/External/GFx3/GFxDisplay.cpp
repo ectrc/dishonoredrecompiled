@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <math.h>
 
 // ---------------------------------------------------------------------------------------------
@@ -1487,6 +1488,30 @@ void GFxMovieRoot::Display()
 
     GColor background = BackgroundColor;
     background.SetAlpha((GUByte)(BackgroundAlpha * 255.0f + 0.5f));
+
+    // DISHONORED(bringup, agent EX): the stage-to-viewport mapping, logged whenever it changes, so
+    // "the movie is magnified" is a measurement rather than an inference. It was measured correct -
+    // stage 1280x720, SM_ShowAll, viewport 1280x720, visible 0,0..1280,720, root matrix identity -
+    // which is what ruled the stage out as the cause of wave 16's blur.
+    {
+        static char GFxEXMapLast[512] = {0};
+        char line[512];
+        const GMatrix2D& rootMatrix = pLevel0->GetMatrix();
+        _snprintf(line, sizeof(line),
+                  "movie %gx%g scaleMode %d align %d viewport buf %dx%d rect %d,%d %dx%d "
+                  "visible %g,%g..%g,%g root [%g %g %g / %g %g %g]",
+                  pDefImpl ? pDefImpl->GetWidth() : -1.f, pDefImpl ? pDefImpl->GetHeight() : -1.f,
+                  (int)ScaleMode, (int)Alignment,
+                  Viewport.BufferWidth, Viewport.BufferHeight, Viewport.Left, Viewport.Top,
+                  Viewport.Width, Viewport.Height, x0, y0, x1, y1,
+                  rootMatrix.M_[0][0], rootMatrix.M_[0][1], rootMatrix.M_[0][2],
+                  rootMatrix.M_[1][0], rootMatrix.M_[1][1], rootMatrix.M_[1][2]);
+        if (strcmp(line, GFxEXMapLast) != 0)
+        {
+            GFxStrCopy(GFxEXMapLast, sizeof(GFxEXMapLast), line);
+            GFxLogf("DISHONORED(bringup): GFx stage map: %s", line);
+        }
+    }
 
     if (!GFxDisplayNoBeginDisplay)
         renderer->BeginDisplay(background, Viewport, x0, x1, y0, y1);

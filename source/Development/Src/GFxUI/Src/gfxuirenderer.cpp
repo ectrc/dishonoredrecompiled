@@ -638,9 +638,19 @@ void ApplyUIBlendMode_RenderThread(UINT bAlphaComposite, GRenderer::BlendType Ne
     }
 }
 
-// 2012 0x5babe0. Vertex element types 9 / 2 / 7 are VET_Short2 / VET_Float2 / VET_Color and usages
-// 0 / 1 / 7 are VEU_Position / VEU_TextureCoordinate / VEU_Color, which is what the retail
-// initialisers hold.
+// 2013 0x5762c0 (2012 0x5babe0), decompiled: the retail initialisers hold element types 9 / 2 / 7
+// and usages 0 / 1 / 7, and every colour element in all four cases is type 7.
+// EVertexElementType (RHI.h, and retail's own enum in resources/docs/types/all_types.h, which
+// agrees) is VET_UByte4N = 7 and VET_Color = 8, so the colour element is **VET_UByte4N**: this
+// file's own comment used to name 7 as VET_Color and the code below followed the name instead of
+// the number. The two are not interchangeable. VET_Color is D3DDECLTYPE_D3DCOLOR, which expands
+// an ARGB DWORD to (R,G,B,A); VET_UByte4N is D3DDECLTYPE_UBYTE4N, which expands the four bytes in
+// memory order. GColor is {Blue, Green, Red, Alpha} in memory (retail's own GColor::Rgb32 in
+// all_types.h), and the cooked GFx pixel shaders this build loads out of retail's
+// GlobalShaderCache-PC-D3D-SM3.bin expect that byte order. Measured with a probe that forced every
+// glyph vertex to GColor(255,0,0,255): under VET_Color the glyphs came out pure blue, and
+// PRESS ANY KEY drew (214,242,227) against retail's (227,242,214) - red and blue exchanged, on a
+// colour the display list submitted as (227,242,214).
 FVertexDeclarationRHIRef GetUIVertexDecl_RenderThread(EGFxVertexDeclarationType DeclType,
                                                       DWORD* OutStrides)
 {
@@ -654,18 +664,18 @@ FVertexDeclarationRHIRef GetUIVertexDecl_RenderThread(EGFxVertexDeclarationType 
     case GFx_VD_Glyph:
         Elements.AddItem(FVertexElement(0,0,VET_Float2,VEU_Position,0));
         Elements.AddItem(FVertexElement(0,8,VET_Float2,VEU_TextureCoordinate,0));
-        Elements.AddItem(FVertexElement(0,16,VET_Color,VEU_Color,0));
+        Elements.AddItem(FVertexElement(0,16,VET_UByte4N,VEU_Color,0));
         *OutStrides = 20;
         break;
     case GFx_VD_XY16iC32:
         Elements.AddItem(FVertexElement(0,0,VET_Short2,VEU_Position,0));
-        Elements.AddItem(FVertexElement(0,4,VET_Color,VEU_Color,0));
+        Elements.AddItem(FVertexElement(0,4,VET_UByte4N,VEU_Color,0));
         *OutStrides = 8;
         break;
     case GFx_VD_XY16iCF32:
         Elements.AddItem(FVertexElement(0,0,VET_Short2,VEU_Position,0));
-        Elements.AddItem(FVertexElement(0,4,VET_Color,VEU_Color,0));
-        Elements.AddItem(FVertexElement(0,8,VET_Color,VEU_Color,1));
+        Elements.AddItem(FVertexElement(0,4,VET_UByte4N,VEU_Color,0));
+        Elements.AddItem(FVertexElement(0,8,VET_UByte4N,VEU_Color,1));
         *OutStrides = 12;
         break;
     default:
