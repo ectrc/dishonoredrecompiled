@@ -100,7 +100,13 @@ def main() -> int:
     lo = min(min(starts13), min(starts12) if starts12 else min(starts13))
     hi = max(e for _, e, _ in spans13)
     rows = []
-    for path in sorted(Path(args.path).rglob("*")):
+    # A relative --path is resolved against the repo, not the shell's directory: the rows below are
+    # reported as paths relative to REPO, so a bare `--path source/...` used to rglob correctly and
+    # then die in relative_to (agent ES, which worked around it by always passing an absolute path).
+    root = Path(args.path)
+    if not root.is_absolute():
+        root = (REPO / root).resolve()
+    for path in sorted(root.rglob("*")):
         if path.suffix.lower() not in (".cpp", ".h", ".inl"):
             continue
         try:
