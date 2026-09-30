@@ -688,6 +688,12 @@ public:
     unsigned char     RollOverCnt;
     /** retail character+160 bit 0x1000. TRUE until script writes a transform property. */
     bool              bAcceptAnimMoves;
+    // TRUE only for a character attachMovie/createEmptyMovieClip/duplicateMovieClip made. Flash and
+    // GFx refuse removeMovieClip on anything else; retail tells the two apart by depth, because a
+    // script-created clip sits at its AS depth + 16384, above every timeline depth. This tree's
+    // attachMovie does not yet apply that offset (GASop_DuplicateClip subtracts it instead of
+    // adding it), so the fact is recorded rather than inferred from the depth.
+    bool              bScriptCreated;
     GFxWeakProxy*     pWeakProxy;
     /** retail character+92 / +96 / +100 / +104: the local 3D transform, the perspective and view
         matrices this character overrides its parent's with, and its own field of view. All three

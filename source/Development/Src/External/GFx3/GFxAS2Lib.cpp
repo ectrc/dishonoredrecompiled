@@ -763,10 +763,17 @@ void MCAttachMovie(const GASFnCall& fn)
     if (fn.pResult) fn.pResult->SetAsCharacter(child);
 }
 
+// DISHONORED(port): removeMovieClip removes only what a script created. Flash and GFx both refuse it
+// on a clip the timeline placed; retail's own test is the depth, because attachMovie puts a clip at
+// its AS depth + 16384, above every timeline depth. Without the test the menu's own teardown takes
+// _root.optionsMenu_mc - one of the root's own timeline clips - off the root's display list on the
+// way out of Options, nothing ever puts it back, and the second entry draws an empty screen while
+// every call the root makes on its stale reference fails (agent EZ: build/agentEZ/o12_log.txt lists
+// the ten children the root has left, optionsMenu_mc not among them).
 void MCRemoveMovieClip(const GASFnCall& fn)
 {
     GFxSprite* s = ThisSprite(fn);
-    if (s == 0 || s->GetParent() == 0) return;
+    if (s == 0 || s->GetParent() == 0 || !s->bScriptCreated) return;
     GFxSprite* parent = s->GetParent()->ToSprite();
     if (parent) parent->RemoveDisplayObject(s->GetDepth(), s->GetId());
 }

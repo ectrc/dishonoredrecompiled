@@ -36,7 +36,7 @@ GFxCharacterHandle::GFxCharacterHandle(const GASString& name, GFxASCharacter* pa
 
 GFxCharacter::GFxCharacter(GFxASCharacter* parent, GFxResourceId id)
     : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true),
-      RollOverCnt(0), bAcceptAnimMoves(true), pWeakProxy(0), pMatrix3D(0), pPerspective3D(0),
+      RollOverCnt(0), bAcceptAnimMoves(true), bScriptCreated(false), pWeakProxy(0), pMatrix3D(0), pPerspective3D(0),
       pView3D(0), PerspectiveFOV(0.f), LastHitX(0.f), LastHitY(0.f),
       bHasLastHit(false), bLastHit(false)
 {
@@ -1745,6 +1745,7 @@ GFxSprite* GFxSprite::CreateEmptyMovieClip(const GASString& name, int depth)
     GFxResourceId id;
     id.Id = GFxResourceId::InvalidId;
     GFxSprite* child = new GFxSprite(emptyDef, emptyDef, pDefImpl, this, id, pMovieRoot);
+    child->bScriptCreated = true;
     child->SetName(name);
     GFxCharPosInfo pos;
     pos.Depth = depth;
@@ -1783,6 +1784,7 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
         if (ch) ch->Release();
         return 0;
     }
+    child->bScriptCreated = true;
     child->SetName(instanceName);
 
     GFxCharPosInfo pos;

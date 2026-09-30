@@ -5072,7 +5072,17 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 #if DISHONORED_PLAY_DEFAULTS
 	// DISHONORED(bringup): the switches a playable run needs, appended here so the shipped executable
 	// can be launched with none. Each is added only when its token is absent, so anything on the real
-	// command line wins - `-startmap=L_Pub_Day_P` replaces the menu, `-fullscreen` replaces `-windowed`.
+	// command line wins - `-startmap=L_Pub_Day_P` opens a map directly, `-fullscreen` replaces `-windowed`.
+	//
+	// There is deliberately NO startmap default. The one this table used to carry,
+	// `-startmap=Dishonored_MainMenu -startmapopen`, made UGameEngine::Exec run `OPEN Dishonored_MainMenu`
+	// four seconds in, which replaces the world DishonoredGameFull_P loaded. The menu still draws, but
+	// DishonoredGameFull_P.Main_Sequence goes with the world, and that sequence owns every one of the 53
+	// SeqEvent_Console nodes - including ChangeLvl_StartNewGame, the console event OnNewGameConfirm
+	// raises. Measured on the shipped configuration: `ce ChangeLvl_StartNewGame` is issued and
+	// USequence::FindSeqObjectsByClass(SeqEvent_Console) answers 0 objects, so New Game does nothing at
+	// all (agent EZ, build/agentEZ/b1_log.txt:2322). DishonoredGameFull_P's own Kismet commits the map
+	// change into Dishonored_MainMenu by itself, which is retail's shape and leaves the hub sequence alive.
 	//
 	// This is compiled only into a build configured with DISHONORED_PLAY_DEFAULTS, and deliberately so:
 	// run_regression.py drives the game with exact command lines and its thresholds are calibrated to
@@ -5085,7 +5095,6 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 			{ TEXT("skipnativepkgs"),   TEXT(" -skipnativepkgs=OnlineSubsystemPC") },
 			{ TEXT("gfxuimenu"),        TEXT(" -gfxuimenu") },
 			{ TEXT("nomovie"),          TEXT(" -nomovie") },
-			{ TEXT("startmap"),         TEXT(" -startmap=Dishonored_MainMenu -startmapopen") },
 			{ TEXT("windowed"),         TEXT(" -windowed") },
 			{ TEXT("ResX"),             TEXT(" -ResX=1600 -ResY=900") },
 		};
