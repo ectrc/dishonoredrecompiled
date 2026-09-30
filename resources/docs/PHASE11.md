@@ -302,3 +302,60 @@ lines) is still a stub and now fires every time a box takes focus. NO on the New
 selection list). The exit teardown fault. The shim deletion backlog. Milestone 8's test suite.
 Whether the save's level state matches the maps agent EK tried, which is why it could not reproduce
 agent EF's restored mana. Audio stays last.
+
+## Wave 14
+
+Wave 13 delivered the thing the last five waves were for: **from the main menu, five key presses put
+Corvo on the boat landing at Dunwall Tower, with the HUD drawn and the brightness screen working.**
+What is left between that and a mission you can play is the world reacting to you.
+
+Every package in wave 13 corrected at least one premise of its own brief, and two corrected a truth
+source. Assume this brief is wrong somewhere too, and say where.
+
+### EP — the guards
+
+Nothing in the Tower reacts. The AI stack restores from a save (agents EJ, EN: 1,111 objects) and the
+locomotion system works (agent DP found `SetupPathfindingParams` was an empty stub, so every path
+search failed before it began), but no NPC has yet been seen to notice the player, walk a patrol, or
+speak. Bring one guard to life in `L_Tower_P`: perception, a patrol, and a reaction to being seen.
+Agent EN's hand-over names what the components still lack - `Starting`/`Stopping` are unported on all
+three AI components, `PreAsyncWorkTick` is an empty body on all three, and `FArkComponentManager`
+does not exist.
+
+### EQ — the settings that abort
+
+Agent EO gated retail's settings republish behind `-arksettings` because the first slider move
+reached an unported `UDisPostProcessManager::ApplyGameSettings` and **the game aborted**. Nine
+`appErrorf` bodies in DishonoredGame still carry that shape. Until they exist the options screen
+applies only what `UEngine` applies, and a player who opens Options and moves anything in a build
+with that switch on loses the session. Also here: `ArkSettings::SaveSettings`, so a setting survives
+the session, and `PCResolutionSettingProvider`, the one row with no value.
+
+### ER — the conversation gate
+
+Agent EN's frontier: `Dishonored0.sav` now stops at `UDisConv_Soiree_InGameData::GameLoad`
+(`0x8a9540`), record 1814, with its full 115-byte disassembly already in EN's report section 4.1, so
+this needs no game run to start. It needs `USeqAct_Interp::SetConversationNode` and
+`USeqAct_Interp+0x1D4`, neither of which exists - that is the conversation system, and the Tower's
+opening is a conversation, so this is on the path to the first mission twice over. `Dishonored1.sav`
+stops at `UStateNPCMasterDead_Limp::LoadPartialState`, a missing leaf under a ported body, which is
+the cheaper of the two and should be taken first.
+
+### ES — the shim backlog, at last
+
+**1,053 of this tree's 1,098 shim placeholders are features retail does not have**, and nine of the
+last seventeen defects were instances of something being invented that retail does not do. This has
+been queued for six waves behind things that looked more urgent. Agent EN's second finding makes it
+cheaper than it was: `Sources.cmake` is an **exclude list** holding 818 comment-only skeleton units,
+and a unit taken off it still needs `ARKCOMPONENT_LINK_TYPE`-style external linkage or the linker
+drops it whole. Delete what retail does not have, and write down what the 818 are.
+
+### Still queued after this
+
+Retail blurs the scene behind a modal and we do not. `UDisSeqAct_ShowLocationDiscovery::Activated`
+(`0x7998a0`), the "Dunwall Tower" title card. The camera is not told it was teleported. Story flags
+are transient and `ADishonoredPlayerPawn::GameSave/GameLoad` are unported, so they do not survive a
+save. `UDisGFxMoviePlayerGamma` has no implementation file at all. The message box's `B`. A census of
+unported `USequenceCondition`s, which agent EL showed kill a Kismet chain silently. Three of
+`UI_HUD`'s eight atlases are never drawn. `execOnFocusLost`. Milestone 8's test suite. Audio stays
+last.
