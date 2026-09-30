@@ -1,8 +1,9 @@
 #pragma once
 // Engine/inc/arksettings.h
-// DISHONORED(written): ArkSettingsParameters (2012 PDB, 208 bytes, 52 four-byte members) and the ArkSettings statics the listeners
-// use (IArkSettingsListenerInterface, UnClient.h). 2013 rvas: ArkSettings::GetParameters 0x53b730, ApplyCurrentSettings 0x53b790,
-// ArkSettingsParameters::ArkSettingsParameters 0x53b450, ArkSettingsParameters::Read 0x539730 (2012 0x57e580 / 0x57e5e0 / 0x57e3c0 / 0x57a260).
+// DISHONORED(written): ArkSettingsParameters (retail 2013, 220 bytes, 55 four-byte members; the 2012 PDB type is 208 bytes / 52
+// members) and the ArkSettings statics the listeners use (IArkSettingsListenerInterface, UnClient.h). 2013 rvas:
+// ArkSettings::GetParameters 0x53b730, ApplyCurrentSettings 0x53b790, ArkSettingsParameters::ArkSettingsParameters 0x53b450,
+// ArkSettingsParameters::Read 0x539730 (2012 0x57e580 / 0x57e5e0 / 0x57e3c0 / 0x57a260).
 // The rest of the 2012 unit (FindListeners, OnSettingsChanged, ResetSettings, SaveSettings, the setting providers) is not ported.
 //
 // PDB functions attributed to this file (1):
@@ -38,13 +39,10 @@ public:
 	UBOOL m_bShowPickupLog;
 	UBOOL m_bShowContextualIcons;
 	UBOOL m_bShowPlayerStance;
-	// DISHONORED(written): agent EK. Retail 2013's ArkSettingsParameters has ELEVEN HUD show flags,
-	// not ten: UDisGFxMoviePlayerHUD::ApplyGameSettings (2013 rva 0x7af370) copies members 17..27 into
-	// FDisHUDSettings' eleven bits and then reads member 28 as m_CrosshairStyle, and
-	// ArkSettingsParameters::Read (2013 rva 0x539730) fills 17..27 from profile setting ids 88..98 and
-	// 28..30 from 99..101. Without this member every field from m_CrosshairStyle on is one slot early
-	// and the struct is 208 bytes where retail's is 212. This tree's Read is written against the 2012
-	// build's id list (85..98), which has no id for this flag, so it is left at its zero initialiser here.
+	// DISHONORED(written): agent EK, confirmed by agent EO. Retail 2013 has ELEVEN HUD show flags, not
+	// ten: UDisGFxMoviePlayerHUD::ApplyGameSettings (2013 rva 0x7af370) copies members 17..27 into
+	// FDisHUDSettings' eleven bits, and 2013's EProfileSettingID adds PSI_HUD_bShowObjectiveMarkers as
+	// id 95, between PSI_HUD_bShowPlayerStance (94) and PSI_HUD_bShowGrenadeMarkers (96).
 	UBOOL m_bShowObjectiveMarkers;
 	UBOOL m_bShowGrenadeMarkers;
 	UBOOL m_bShowAwarenessMarkers;
@@ -54,6 +52,12 @@ public:
 	INT m_CrosshairOpacity;
 	UBOOL m_bAutoUseManaElixir;
 	INT m_KillCamMode;
+	// DISHONORED(written): agent EO. Two members retail 2013 has and the 2012 PDB type does not, both
+	// read by Read (2013 rva 0x539730) into slots 33 and 34, ahead of m_bAutoSaveInMenu: 2013's
+	// EProfileSettingID adds PSI_Gameplay_Difficulty at id 106 and PSI_DLC06_Difficulty at id 152.
+	// Without them every member from m_bAutoSaveInMenu on is two slots early.
+	INT m_Difficulty;
+	INT m_DifficultyDLC06;
 	UBOOL m_bAutoSaveInMenu;
 	FLOAT m_fHeadBobAmount;
 	UBOOL m_bCameraRelativeClimbing;
@@ -65,7 +69,10 @@ public:
 	INT m_FOV;
 	INT m_TextureDetails;
 	INT m_ModelDetails;
-	INT m_PostProcessQuality;
+	// DISHONORED(written): agent EO. 2013 removed PSI_GraphicsPC_PostProcessQuality (and the
+	// EPostProcessQuality enum with it) and put PSI_GraphicsPC_LightShaftEnable in its place at id 121,
+	// which Read narrows to a boolean; the 2012 PDB type calls this slot INT m_PostProcessQuality.
+	UBOOL m_bLightShaftEnable;
 	INT m_AntiAliasingMode;
 	UBOOL m_bRatShadows;
 	INT m_GlobalVolume;

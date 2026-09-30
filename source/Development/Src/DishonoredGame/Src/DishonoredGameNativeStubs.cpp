@@ -1618,10 +1618,6 @@ void UDisGFxMoviePlayerHUD::execOnPlayerChoiceConfirm( FFrame& Stack, RESULT_DEC
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerHUD, execOnPlayerChoiceConfirm);
 }
-void UDisGFxMoviePlayerMenuBase::execOnLeaveOptions( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execOnLeaveOptions);
-}
 void UDisGFxMoviePlayerMenuBase::execDisplayStorageDeviceSelection( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMenuBase, execDisplayStorageDeviceSelection);
@@ -1698,14 +1694,6 @@ void UDisGFxMoviePlayerPauseMenu::execOnTutorialsClicked( FFrame& Stack, RESULT_
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerPauseMenu, execOnTutorialsClicked);
 }
-void UDisGFxMoviePlayerPauseMenu::execOnLeaveOptions( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerPauseMenu, execOnLeaveOptions);
-}
-void UDisGFxMoviePlayerPauseMenu::execOnOptionsClicked( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerPauseMenu, execOnOptionsClicked);
-}
 void UDisGFxMoviePlayerPauseMenu::execOnResumeGameClicked( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerPauseMenu, execOnResumeGameClicked);
@@ -1713,10 +1701,6 @@ void UDisGFxMoviePlayerPauseMenu::execOnResumeGameClicked( FFrame& Stack, RESULT
 void UDisGFxMoviePlayerPauseMenu::execHasFinishedSaveLoad( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerPauseMenu, execHasFinishedSaveLoad);
-}
-void UDisGFxMoviePlayerMainMenu::execOnOptionsClicked( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerMainMenu, execOnOptionsClicked);
 }
 void UDisGFxMoviePlayerMainMenu::execReq_SaveSlotInfos( FFrame& Stack, RESULT_DECL )
 {

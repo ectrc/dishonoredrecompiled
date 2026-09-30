@@ -50,42 +50,65 @@ ArkSettingsParameters::ArkSettingsParameters()
 	Read( Defaults, TRUE );
 }
 
-// DISHONORED(port): 2013 rva 0x539730 (2012 0x57a260, arksettingsparameters.cpp:21): the profile setting ids of UArkProfileSettings read
-// through UOnlinePlayerStorage (GetProfileSettingValueFloat +380, GetProfileSettingValueId +328, GetProfileSettingValueInt +384,
-// SetProfileSettingValueId +344). The resolution comes from the static PCResolutionSettingProvider (not ported): with the override it is
-// GSystemSettings like retail, without it retail asks the provider's current value, which is GSystemSettings as well after Refresh().
+// DISHONORED(port): 2013 rva 0x539730 (2012 0x57a260, arksettingsparameters.cpp:21). Every id below is
+// retail 2013's own, read off the decompile and named from 2013's Engine.OnlineProfileSettings.EProfileSettingID
+// (155 values; the 2012 enum has 133 and renumbers 80 of them, so no 2012 id carries over). The accessors are
+// retail's too, resolved by hand out of the 2013 UArkProfileSettings vtable at 0xca3d58: +332
+// GetProfileSettingValueId (0x4f36b0), +348 SetProfileSettingValueId (0x4f3ac0), +376
+// SetRangedProfileSettingValueInt (0x4f75d0), +384 GetRangedProfileSettingValueFloat (0x4f77e0), +388
+// GetRangedProfileSettingValueInt (0x4f7860). Every slider and volume is a PVMT_Ranged mapping, which the plain
+// GetProfileSettingValueInt/Float reject outright, so reading them through the ranged accessors is what makes
+// them readable at all - the gamma among them. The resolution comes from the static PCResolutionSettingProvider
+// (not ported): with the override it is GSystemSettings like retail, without it retail asks the provider's
+// current value, which is GSystemSettings as well after Refresh().
 void ArkSettingsParameters::Read( UOnlinePlayerStorage* Settings, UBOOL bOverrideStorageSettingsWithSystemSettings )
 {
 	INT Value = 0;
-	Settings->GetProfileSettingValueFloat( 65, m_fMouseSensitivity );
-	Settings->GetProfileSettingValueId( 66, Value ); m_bMouseSmoothing = Value == 1;
-	Settings->GetProfileSettingValueId( 67, Value ); m_bMouseInvertY = Value == 1;
-	Settings->GetProfileSettingValueId( 68, Value ); m_bMouseAutoAim = Value == 1;
-	Settings->GetProfileSettingValueInt( 69, m_MouseAutoAimStrength );
-	Settings->GetProfileSettingValueId( 70, Value ); m_bMouseFriction = Value == 1;
-	Settings->GetProfileSettingValueInt( 71, m_MouseFrictionStrength );
-	Settings->GetProfileSettingValueId( 74, m_GamepadBindingSet );
-	Settings->GetProfileSettingValueId( 75, Value ); m_bGamepadVibration = Value == 1;
-	Settings->GetProfileSettingValueInt( 76, m_GamepadLookXSensitivity );
-	Settings->GetProfileSettingValueInt( 77, m_GamepadLookYSensitivity );
-	Settings->GetProfileSettingValueId( 78, Value ); m_bGamepadInvertY = Value == 1;
+	Settings->GetRangedProfileSettingValueFloat( 67, m_fMouseSensitivity );
+	Settings->GetProfileSettingValueId( 68, Value ); m_bMouseSmoothing = Value == 1;
+	Settings->GetProfileSettingValueId( 69, Value ); m_bMouseInvertY = Value == 1;
+	Settings->GetProfileSettingValueId( 70, Value ); m_bMouseAutoAim = Value == 1;
+	Settings->GetRangedProfileSettingValueInt( 71, m_MouseAutoAimStrength );
+	Settings->GetProfileSettingValueId( 72, Value ); m_bMouseFriction = Value == 1;
+	Settings->GetRangedProfileSettingValueInt( 73, m_MouseFrictionStrength );
+	Settings->GetProfileSettingValueId( 76, m_GamepadBindingSet );
+	Settings->GetProfileSettingValueId( 77, Value ); m_bGamepadVibration = Value == 1;
+	// DISHONORED(port): both pad look sensitivities fall back to the Live-standard PSI_ControllerSensitivity
+	// (id 13), whose low/medium/high ids land on 0/20/60 here, and the resolved value is written back so the
+	// fallback is taken once.
+	Settings->GetRangedProfileSettingValueInt( 78, m_GamepadLookXSensitivity );
+	if( m_GamepadLookXSensitivity == -1 )
+	{
+		Settings->GetProfileSettingValueId( 13, Value );
+		m_GamepadLookXSensitivity = Value == 1 ? 0 : ( Value == 2 ? 60 : 20 );
+		Settings->SetRangedProfileSettingValueInt( 78, m_GamepadLookXSensitivity );
+	}
+	Settings->GetRangedProfileSettingValueInt( 79, m_GamepadLookYSensitivity );
+	if( m_GamepadLookYSensitivity == -1 )
+	{
+		Settings->GetProfileSettingValueId( 13, Value );
+		m_GamepadLookYSensitivity = Value == 1 ? 0 : ( Value == 2 ? 60 : 20 );
+		Settings->SetRangedProfileSettingValueInt( 79, m_GamepadLookYSensitivity );
+	}
+	Settings->GetProfileSettingValueId( 80, Value );
+	m_bGamepadInvertY = Value == 1;
 	if( Value == -1 )
 	{
 		Settings->GetProfileSettingValueId( 2, Value );
 		m_bGamepadInvertY = Value == 1;
-		Settings->SetProfileSettingValueId( 78, m_bGamepadInvertY );
+		Settings->SetProfileSettingValueId( 80, m_bGamepadInvertY );
 	}
-	Settings->GetProfileSettingValueId( 79, Value ); m_bGamepadAutoAim = Value == 1;
-	Settings->GetProfileSettingValueInt( 80, m_GamepadAutoAimStrength );
-	Settings->GetProfileSettingValueId( 81, Value ); m_bGamepadFriction = Value == 1;
-	Settings->GetProfileSettingValueInt( 82, m_GamepadFrictionStrength );
-	// DISHONORED(port): agent EK. This block is retail 2013's own id run, read off
-	// ArkSettingsParameters::Read (2013 rva 0x539730): 87 is the HUD visibility, 88..98 are ELEVEN show
-	// flags, and 99/100/101 are the crosshair's style, movement and opacity. The ids below it are still
-	// the 2012 build's (the two lists are offset by two), which is why 101 is read twice here - as the
-	// crosshair opacity, which is what retail reads it as, and again as m_bAutoUseManaElixir, which is
-	// what the 2012 list calls it. Measured against the cooked profile's own mapping table:
-	// build/agentEK/r3_log.txt.
+	Settings->GetProfileSettingValueId( 81, Value );
+	m_bGamepadAutoAim = Value == 1;
+	if( Value == -1 )
+	{
+		Settings->GetProfileSettingValueId( 16, Value );
+		m_bGamepadAutoAim = Value == 1;
+		Settings->SetProfileSettingValueId( 81, m_bGamepadAutoAim );
+	}
+	Settings->GetRangedProfileSettingValueInt( 82, m_GamepadAutoAimStrength );
+	Settings->GetProfileSettingValueId( 83, Value ); m_bGamepadFriction = Value == 1;
+	Settings->GetRangedProfileSettingValueInt( 84, m_GamepadFrictionStrength );
 	Settings->GetProfileSettingValueId( 87, m_HUDVisibility );
 	Settings->GetProfileSettingValueId( 88, Value ); m_bShowObjectivePopups = Value == 1;
 	Settings->GetProfileSettingValueId( 89, Value ); m_bShowTutorialNotifications = Value == 1;
@@ -100,45 +123,72 @@ void ArkSettingsParameters::Read( UOnlinePlayerStorage* Settings, UBOOL bOverrid
 	Settings->GetProfileSettingValueId( 98, Value ); m_bShowHeartTargetMarkers = Value == 1;
 	Settings->GetProfileSettingValueId( 99, m_CrosshairStyle );
 	Settings->GetProfileSettingValueId( 100, Value ); m_bCrosshairMovement = Value == 1;
-	Settings->GetProfileSettingValueInt( 101, m_CrosshairOpacity );
-	Settings->GetProfileSettingValueId( 101, Value ); m_bAutoUseManaElixir = Value == 1;
-	Settings->GetProfileSettingValueId( 102, m_KillCamMode );
-	Settings->GetProfileSettingValueId( 104, Value ); m_bAutoSaveInMenu = Value == 1;
-	Settings->GetProfileSettingValueFloat( 105, m_fHeadBobAmount );
-	Settings->GetProfileSettingValueId( 106, Value ); m_bCameraRelativeClimbing = Value == 1;
-	Settings->GetProfileSettingValueFloat( 109, m_fGamma );
+	Settings->GetRangedProfileSettingValueInt( 101, m_CrosshairOpacity );
+	Settings->GetProfileSettingValueId( 104, Value ); m_bAutoUseManaElixir = Value == 1;
+	Settings->GetProfileSettingValueId( 105, m_KillCamMode );
+	// DISHONORED(port): the campaign difficulty falls back to the Live-standard PSI_GameDifficulty (id 12),
+	// whose three ids map onto EDifficulty_Easy/Normal/Hard (0/1/2), and the DLC06 difficulty falls back to the
+	// campaign's own clamped to EDifficulty_Hard. EDifficulty and ESubtitlesMode are ArkProfileSettings script
+	// enums that only the DishonoredGame shim header declares, so the Engine spells their values out.
+	Settings->GetProfileSettingValueId( 106, m_Difficulty );
+	if( m_Difficulty == -1 )
+	{
+		Settings->GetProfileSettingValueId( 12, Value );
+		m_Difficulty = Value == 1 ? 0 : ( Value == 2 ? 2 : 1 );
+		Settings->SetProfileSettingValueId( 106, m_Difficulty );
+	}
+	Settings->GetProfileSettingValueId( 152, m_DifficultyDLC06 );
+	if( m_DifficultyDLC06 == -1 )
+	{
+		m_DifficultyDLC06 = Min<INT>( m_Difficulty, 2 );
+		Settings->SetProfileSettingValueId( 152, m_DifficultyDLC06 );
+	}
+	Settings->GetProfileSettingValueId( 107, Value ); m_bAutoSaveInMenu = Value == 1;
+	Settings->GetRangedProfileSettingValueFloat( 108, m_fHeadBobAmount );
+	Settings->GetProfileSettingValueId( 109, Value ); m_bCameraRelativeClimbing = Value == 1;
+	Settings->GetRangedProfileSettingValueFloat( 112, m_fGamma );
 	m_ResX = GSystemSettings.ResX;
 	m_ResY = GSystemSettings.ResY;
-	Settings->GetProfileSettingValueId( 113, Value );
+	Settings->GetProfileSettingValueId( 116, Value );
 	if( bOverrideStorageSettingsWithSystemSettings )
 	{
 		Value = GSystemSettings.bFullscreen != 0;
-		Settings->SetProfileSettingValueId( 113, Value );
+		Settings->SetProfileSettingValueId( 116, Value );
 	}
 	m_bFullscreen = Value == 1;
-	Settings->GetProfileSettingValueId( 114, Value );
+	Settings->GetProfileSettingValueId( 117, Value );
 	if( bOverrideStorageSettingsWithSystemSettings )
 	{
 		Value = GSystemSettings.bUseVSync != 0;
-		Settings->SetProfileSettingValueId( 114, Value );
+		Settings->SetProfileSettingValueId( 117, Value );
 	}
 	m_bVSync = Value == 1;
-	Settings->GetProfileSettingValueInt( 115, m_FOV );
-	Settings->GetProfileSettingValueId( 116, m_TextureDetails );
-	Settings->GetProfileSettingValueId( 117, m_ModelDetails );
-	Settings->GetProfileSettingValueId( 118, m_PostProcessQuality );
-	Settings->GetProfileSettingValueId( 119, m_AntiAliasingMode );
-	Settings->GetProfileSettingValueId( 120, Value ); m_bRatShadows = Value == 1;
-	Settings->GetProfileSettingValueInt( 123, m_GlobalVolume );
-	Settings->GetProfileSettingValueInt( 124, m_MusicVolume );
-	Settings->GetProfileSettingValueInt( 125, m_SFXVolume );
-	Settings->GetProfileSettingValueInt( 126, m_VoicesVolume );
-	Settings->GetProfileSettingValueId( 127, m_SubtitlesMode );
-	Settings->GetProfileSettingValueId( 130, Value );
+	Settings->GetRangedProfileSettingValueInt( 118, m_FOV );
+	Settings->GetProfileSettingValueId( 119, m_TextureDetails );
+	Settings->GetProfileSettingValueId( 120, m_ModelDetails );
+	Settings->GetProfileSettingValueId( 121, Value ); m_bLightShaftEnable = Value == 1;
+	Settings->GetProfileSettingValueId( 122, m_AntiAliasingMode );
+	Settings->GetProfileSettingValueId( 123, Value ); m_bRatShadows = Value == 1;
+	Settings->GetRangedProfileSettingValueInt( 126, m_GlobalVolume );
+	Settings->GetRangedProfileSettingValueInt( 127, m_MusicVolume );
+	Settings->GetRangedProfileSettingValueInt( 128, m_SFXVolume );
+	Settings->GetRangedProfileSettingValueInt( 129, m_VoicesVolume );
+	// DISHONORED(port): an unset subtitle mode defaults to SubtitlesMode_All (2) for the four languages
+	// Dishonored ships without localised speech, and to SubtitlesMode_Off (0) for the rest.
+	Settings->GetProfileSettingValueId( 130, m_SubtitlesMode );
+	if( m_SubtitlesMode == -1 )
+	{
+		const FString Language = appGetLanguageExt();
+		m_SubtitlesMode = ( Language == TEXT("RUS") || Language == TEXT("CZE") || Language == TEXT("HUN") || Language == TEXT("POL") )
+			? 2
+			: 0;
+		Settings->SetProfileSettingValueId( 130, m_SubtitlesMode );
+	}
+	Settings->GetProfileSettingValueId( 133, Value );
 	if( bOverrideStorageSettingsWithSystemSettings )
 	{
 		Value = GSystemSettings.SpeakerConfiguration;
-		Settings->SetProfileSettingValueId( 130, Value );
+		Settings->SetProfileSettingValueId( 133, Value );
 	}
 	m_SpeakerConfiguration = Value;
 }

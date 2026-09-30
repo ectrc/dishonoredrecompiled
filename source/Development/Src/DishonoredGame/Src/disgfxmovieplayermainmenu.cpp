@@ -480,11 +480,17 @@ void DisGFxMoviePlayerMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
 		Menu->m_LoginStep = 8;
 		Menu->m_Screen = 3;
 	}
+
 }
 
 // DISHONORED(port): 2012 rva 0x822280
 void DisGFxMoviePlayerMainMenuPreAdvance( UDisGFxMoviePlayerMainMenu* Menu, FLOAT DeltaTime )
 {
+	// DISHONORED(port): agent EO - retail's own site is UDisGFxMoviePlayerMenuBase::PostFirstAdvance
+	// (2013 rva 0x7e6970), which this tree's movie-player base does not have; see DisFillOptionsMenuOnce.
+	extern void DisFillOptionsMenuOnce( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSettings );
+	DisFillOptionsMenuOnce( Menu, TRUE );
+
 	if( Menu->m_LoginStep != 7 )
 	{
 		return;

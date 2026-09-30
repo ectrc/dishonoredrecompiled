@@ -231,3 +231,14 @@ void DisReplaceMatchingMaterialsInSkelMesh( USkeletalMeshComponent* _pMeshCompon
 	}
 	DisReplaceMatchingMaterialsInSkelMesh( _pMeshComponent, SkeletalMesh->Materials(_MaterialIndex), _pMaterial );
 }
+
+// DISHONORED(port): agent EO. 2012 rva 0x82cd60
+FString DisEnumTypeToString( INT _Value, const TCHAR* _EnumPath )
+{
+	UEnum* Enum = FindObject<UEnum>( NULL, _EnumPath );
+	if( Enum == NULL || _Value < 0 || _Value >= Enum->NumEnums() )
+	{
+		return FString();
+	}
+	return Enum->GetEnum( _Value ).ToString();
+}

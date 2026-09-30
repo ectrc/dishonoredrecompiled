@@ -116,3 +116,8 @@ void DisReplaceMatchingMaterialsInSkelMesh( class USkeletalMeshComponent* _pMesh
 // Retail takes the cylinder's *bounds*, not its Location and CollisionHeight, so a pawn whose cylinder has been moved
 // (a crouching or a possessed one) answers where its cylinder really is.
 const FVector DisGetPawnFeet( const class APawn* _pPawn );
+
+// DISHONORED(port): agent EO. 2012 rva 0x82cd60: the name of one value of a script enum, looked up by the enum's
+// full object path. The options screen turns a profile setting id into its EProfileSettingID name this way and
+// then localises that name.
+FString DisEnumTypeToString( INT _Value, const TCHAR* _EnumPath );

@@ -191,7 +191,10 @@ UBOOL UOnlinePlayerStorage::IsProfileSettingIdMapped(INT ProfileSettingId)
 		// If this is the ID we are looking for
 		if (MetaData.Id == ProfileSettingId)
 		{
-			return MetaData.MappingType == PVMT_IdMapped;
+			// DISHONORED(port): agent EO. Retail's body (2013 rva 0x4f31a0) is
+			// `return type == 3 || type == 4;` - the same 3-or-4 test GetProfileSettingValueId
+			// (0x4f36b0) makes, because Dishonored gives every boolean option mapping type 4.
+			return MetaData.MappingType == PVMT_IdMapped || MetaData.MappingType == PVMT_MAX;
 		}
 	}
 	return FALSE;
@@ -635,8 +638,12 @@ UBOOL UOnlinePlayerStorage::SetProfileSettingValueId(INT ProfileSettingId,INT Va
 				FOnlineProfileSetting& Setting = ProfileSettings(Index2);
 				if (Setting.ProfileSetting.PropertyId == ProfileSettingId)
 				{
-					// If this is a raw value, then read it
-					if (MetaData.MappingType == PVMT_IdMapped)
+					// DISHONORED(port): agent EO. Retail's body (2013 rva 0x4f3ac0) accepts mapping type 3
+					// OR 4 here, exactly like the getter at 0x4f36b0. Without the 4 every write-back of a
+					// boolean option fails - including the four Read (0x539730) makes for the pad's invert-Y
+					// and auto-aim and for the fullscreen and vsync overrides, and every boolean row of the
+					// options screen.
+					if (MetaData.MappingType == PVMT_IdMapped || MetaData.MappingType == PVMT_MAX)
 					{
 						Setting.ProfileSetting.Data.SetData(Value);
 						return TRUE;

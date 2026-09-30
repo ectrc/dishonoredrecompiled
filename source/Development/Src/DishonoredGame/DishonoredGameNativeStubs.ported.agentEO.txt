@@ -1,0 +1,4 @@
+UDisGFxMoviePlayerMenuBase::execOnLeaveOptions
+UDisGFxMoviePlayerPauseMenu::execOnLeaveOptions
+UDisGFxMoviePlayerPauseMenu::execOnOptionsClicked
+UDisGFxMoviePlayerMainMenu::execOnOptionsClicked
