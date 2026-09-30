@@ -11,7 +11,10 @@
 //              the ten most common actor classes instead, so "the AI does nothing" can be told apart from "there is
 //              nobody to do it".
 // -disaiprobe  after the census has settled, build one NPC brain per second the way ADishonoredNPCController::InitNPC
-//              (2013 rva 0x7549d0) does, on an NPC pawn that has a controller but no brain, and report the result.
+//              (2013 rva 0x7632e0) does, on an NPC pawn that has a controller but no brain, and report the result.
+//              DISHONORED(port): agent EP corrected 0x7549d0 -> 0x7632e0 here. 0x7549d0 is not a function start in
+//              2013 - it is inside UDisStimManager::NewStim<FAIStimStruct_IdleRequest> - and rva_sweep.py passes it as
+//              ok-2013-mid, which is why build/agentEP/addr_audit.py resolves every citation by NAME as well.
 //              This is the stand-in for ADishonoredSpawner, which is not in this package (see agentCG.md).
 
 #include "DishonoredGame.h"
@@ -752,6 +755,310 @@ static void DisAIWalkTest( UWorld* World )
 	}
 }
 
+/*-----------------------------------------------------------------------------
+	agent EP: the stim table, the patrol data and the sighting table.
+
+	Three questions this file could not answer before, each of which separates "the system is missing" from "the data
+	never asked for it":
+
+	  * which stims were raised at all. UDishonoredAIBrain::ProcessOneStim drops a stim no behaviour's evaluate mask
+	    covers without a log line, so an absent behaviour and an absent stim look identical from outside.
+	  * what patrol data the level carries. A patrol needs an ADishonoredRoute registered with the map info's
+	    UDisPatrolManager and a spawner that asks for one; if the level has none of either, porting UDisBehaviorPatrol
+	    changes nothing and the measurement has to say so.
+	  * what any vision component saw. Counted from FDisComponentVisionNPC::VisionStatusChanged, i.e. from the one
+	    place retail turns a cone-and-line-of-sight test into a fact about an actor.
+-----------------------------------------------------------------------------*/
+
+static INT GDisAIStimCounts[256] = { 0 };
+static INT GDisAIStimTotal = 0;
+
+void DisAINoteStim( BYTE _StimID )
+{
+	if( !DisAICensusEnabled() )
+	{
+		return;
+	}
+	GDisAIStimCounts[_StimID]++;
+	GDisAIStimTotal++;
+}
+
+FString DisAIStimHistogram()
+{
+	// The enum is loaded from the script package, so a name is available once the class hierarchy is up; the numeric id
+	// is the fallback rather than an omission, because an unnamed id still answers "was it raised".
+	static UEnum* StimEnum = NULL;
+	static UBOOL bLookedUp = FALSE;
+	if( !bLookedUp )
+	{
+		bLookedUp = TRUE;
+		StimEnum = FindObject<UEnum>( ANY_PACKAGE, TEXT("EAIStimID") );
+	}
+	FString Out;
+	for( INT Id = 0; Id < 256; Id++ )
+	{
+		if( GDisAIStimCounts[Id] == 0 )
+		{
+			continue;
+		}
+		FString Name = StimEnum ? StimEnum->GetEnum( Id ).ToString() : FString::Printf( TEXT("%i"), Id );
+		Out += FString::Printf( TEXT("%s(%i)=%i "), *Name, Id, GDisAIStimCounts[Id] );
+	}
+	return Out.Len() ? Out : FString( TEXT("none") );
+}
+
+struct FDisAISighting
+{
+	FString Seer;
+	FString Seen;
+	INT Starts;
+	INT Stops;
+};
+static TArray<FDisAISighting> GDisAISightings;
+static INT GDisAISightingStarts = 0;
+static INT GDisAISightingStops = 0;
+
+void DisAINoteSighting( const AActor* _pSeer, const AActor* _pSeen, UBOOL _bStart )
+{
+	if( _bStart )
+	{
+		GDisAISightingStarts++;
+	}
+	else
+	{
+		GDisAISightingStops++;
+	}
+	if( !DisAICensusEnabled() )
+	{
+		return;
+	}
+	const FString Seer = _pSeer ? _pSeer->GetName() : FString( TEXT("none") );
+	const FString Seen = _pSeen ? _pSeen->GetName() : FString( TEXT("none") );
+	for( INT Idx = 0; Idx < GDisAISightings.Num(); Idx++ )
+	{
+		if( GDisAISightings(Idx).Seer == Seer && GDisAISightings(Idx).Seen == Seen )
+		{
+			if( _bStart )
+			{
+				GDisAISightings(Idx).Starts++;
+			}
+			else
+			{
+				GDisAISightings(Idx).Stops++;
+			}
+			return;
+		}
+	}
+	if( GDisAISightings.Num() >= 32 )
+	{
+		return;
+	}
+	const INT New = GDisAISightings.Add();
+	GDisAISightings(New).Seer = Seer;
+	GDisAISightings(New).Seen = Seen;
+	GDisAISightings(New).Starts = _bStart ? 1 : 0;
+	GDisAISightings(New).Stops = _bStart ? 0 : 1;
+}
+
+FString DisAISightingReport()
+{
+	FString Out = FString::Printf( TEXT("%i started, %i stopped; "), GDisAISightingStarts, GDisAISightingStops );
+	for( INT Idx = 0; Idx < GDisAISightings.Num(); Idx++ )
+	{
+		Out += FString::Printf( TEXT("[%s saw %s %i/%i]"), *GDisAISightings(Idx).Seer, *GDisAISightings(Idx).Seen,
+			GDisAISightings(Idx).Starts, GDisAISightings(Idx).Stops );
+	}
+	return Out;
+}
+
+/** agent EP: what each patrolling brain is actually holding. The four numbers that separate "the behaviour never
+    activated" from "it activated and could not find a route" from "it found one and the sub-state machine refused". */
+FString DisAIPatrolState( UWorld* World )
+{
+	FString Out;
+	INT Shown = 0;
+	for( FActorIterator It; It && Shown < 8; ++It )
+	{
+		ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( *It );
+		UDishonoredAIBrain* Brain = Pawn ? Pawn->GetAIBrain() : NULL;
+		if( !Brain )
+		{
+			continue;
+		}
+		UDisBehaviorPatrol* Patrol = NULL;
+		for( INT Slot = 0; Slot < ARRAY_COUNT(Brain->m_ActiveBehaviorStack); Slot++ )
+		{
+			UDisBehaviorPatrol* Candidate = Cast<UDisBehaviorPatrol>( Brain->m_ActiveBehaviorStack[Slot] );
+			if( Candidate )
+			{
+				Patrol = Candidate;
+			}
+		}
+		if( !Patrol )
+		{
+			continue;
+		}
+		Shown++;
+		UDisPatrolManager* PatrolManager = NULL;
+		if( World && World->GetWorldInfo() )
+		{
+			UDishonoredMapInfo* MapInfo = Cast<UDishonoredMapInfo>( World->GetWorldInfo()->GetMapInfo() );
+			PatrolManager = MapInfo ? MapInfo->m_pPatrolManager : NULL;
+		}
+		UBOOL bAnyCanAdopt = FALSE;
+		FLOAT NearestRouteDist = -1.f;
+		ADishonoredRoute* Nearest = NULL;
+		if( PatrolManager )
+		{
+			for( ADishonoredRoute* Route = PatrolManager->m_pRouteList; Route; Route = Route->m_pNextRoute )
+			{
+				const FLOAT Dist = ( Pawn->Location - Route->Location ).Size();
+				if( NearestRouteDist < 0.f || Dist < NearestRouteDist )
+				{
+					NearestRouteDist = Dist;
+					Nearest = Route;
+				}
+				if( Route->CanAdopt( Pawn, FALSE ) )
+				{
+					bAnyCanAdopt = TRUE;
+				}
+			}
+		}
+		// Which of CanAdopt's five tests refuses the nearest route. Written out because "canadopt 0" is the answer to
+		// the wrong question: the five tests fail for completely different reasons and only one of them is a defect.
+		if( Nearest )
+		{
+			INT NullPoints = 0;
+			for( INT Idx = 0; Idx < Nearest->RouteList.Num(); Idx++ )
+			{
+				if( !Nearest->RouteList(Idx).Actor )
+				{
+					NullPoints++;
+				}
+			}
+			Out += FString::Printf( TEXT("{nearest %s active %i points %i null %i squad '%s' pawnsquad '%s' squadok %i cap %i/%i range %.0f/%.0f}"),
+				*Nearest->GetName(), (INT)Nearest->m_bIsActive, Nearest->RouteList.Num(), NullPoints,
+				Nearest->m_SupportedSquads.Num() ? *Nearest->m_SupportedSquads(0).m_SquadName.ToString() : TEXT("<none>"),
+				*Pawn->m_SpawnerInfo.m_Squad.ToString(),
+				(INT)IDisSquadInterface::IsSquadSupported( Nearest->m_SupportedSquads, Pawn->m_SpawnerInfo.m_Squad ),
+				Nearest->m_NumNPCAdopters, Nearest->m_Capacity,
+				NearestRouteDist, Nearest->m_AdoptionRange );
+		}
+		// The sub-state's own exit condition, because "the guard arrived and stopped there" and "the guard arrived and
+		// walked on" differ by exactly these three flags (UDisAISubStateTakePosition::TickState).
+		UDisAISubStateTakePosition* TakePos = Cast<UDisAISubStateTakePosition>( Patrol->GetCurrentSubState() );
+		if( TakePos )
+		{
+			// m_pLocoComponent is the one that separates the two candidate causes: a request whose component pointer is
+			// NULL was never bound, which means IDisDesiresInterface::InitializeDesires early-returned on
+			// GetDesiresOwningPawn() for this sub-state - and a request that was never bound was also never paused, so it
+			// still carries m_RequestID 0 where every bound one carries INDEX_NONE.
+			UDisAISubState* IdleStand = NULL;
+			for( INT Slot = 0; Slot < ARRAY_COUNT(Brain->m_ActiveBehaviorStack); Slot++ )
+			{
+				UDishonoredAIBehavior* Other = Brain->m_ActiveBehaviorStack[Slot];
+				UDisAISubStateTakePosition* OtherTakePos = Other ? Cast<UDisAISubStateTakePosition>( Other->GetCurrentSubState() ) : NULL;
+				if( Other && Other != Patrol && OtherTakePos )
+				{
+					IdleStand = OtherTakePos;
+				}
+			}
+			Out += FString::Printf( TEXT("(destreached %i rotreached %i rotfocus %i stoptype %i rottarget %i; loco desired %i paused %i id %i cpnt %i dest %s; otherstate %s cpnt %i id %i)"),
+				(INT)TakePos->m_bDestinationReached, (INT)TakePos->m_bRotationReached, (INT)TakePos->m_bRotationFocusSet,
+				(INT)TakePos->m_StopType, (INT)TakePos->m_eTakePosRotationTarget,
+				(INT)TakePos->m_LocoRequest.m_bDesired, (INT)TakePos->m_LocoRequest.m_bPaused,
+				TakePos->m_LocoRequest.m_RequestID,
+				TakePos->m_LocoRequest.m_pLocoComponent ? 1 : 0,
+				*TakePos->m_lrDestination.m_Loc.ToString(),
+				IdleStand ? *IdleStand->GetClass()->GetName() : TEXT("none"),
+				( IdleStand && ((UDisAISubStateTakePosition*)IdleStand)->m_LocoRequest.m_pLocoComponent ) ? 1 : 0,
+				IdleStand ? ((UDisAISubStateTakePosition*)IdleStand)->m_LocoRequest.m_RequestID : -999 );
+		}
+		FArkComponentLocomotion* pLoco = Pawn->GetComponentLocomotion();
+		Out += FString::Printf( TEXT("<loco req %i path %i/%i%s%s speed %.0f/%.0f dist %.0f>"),
+			pLoco ? pLoco->GetRequestsCount() : -1,
+			pLoco ? pLoco->GetCurPathPointIdx() : -1,
+			pLoco ? pLoco->GetPathPoints().Num() : -1,
+			( pLoco && pLoco->IsArrived() ) ? TEXT(" arrived") : TEXT(""),
+			( pLoco && !pLoco->HasComputedPath() ) ? TEXT(" nopath") : TEXT(""),
+			pLoco ? pLoco->GetCurMoveSpeed() : -1.f, pLoco ? pLoco->GetTargetMoveSpeed() : -1.f,
+			pLoco ? appSqrt( pLoco->GetSq2DDistToPathEnd() ) : -1.f );
+		Out += FString::Printf( TEXT("[%s %s route %s idx %i/%i rep %i dir %i guard %s substate %i/%s nearestroute %.0f canadopt %i]"),
+			*Pawn->GetName(), *Patrol->GetClass()->GetName(),
+			Patrol->m_pCurrentRoute ? *Patrol->m_pCurrentRoute->GetName() : TEXT("none"),
+			Patrol->m_CurrentIndex, Patrol->m_StartingIndex, Patrol->m_Repetitions, (INT)Patrol->m_RouteDirection,
+			Patrol->m_pCurrentGuardPoint ? *Patrol->m_pCurrentGuardPoint->GetName() : TEXT("none"),
+			Patrol->GetActiveSubStateIndex(),
+			Patrol->GetCurrentSubState() ? *Patrol->GetCurrentSubState()->GetClass()->GetName() : TEXT("none"),
+			NearestRouteDist, (INT)bAnyCanAdopt );
+	}
+	return Out.Len() ? Out : FString( TEXT("no patrolling brain") );
+}
+
+void DisAIPatrolReport( UWorld* World )
+{
+	UDishonoredMapInfo* MapInfo = World && World->GetWorldInfo() ? Cast<UDishonoredMapInfo>( World->GetWorldInfo()->GetMapInfo() ) : NULL;
+	UDisPatrolManager* PatrolManager = MapInfo ? MapInfo->m_pPatrolManager : NULL;
+	INT Routes = 0;
+	INT ActiveRoutes = 0;
+	INT RoutePoints = 0;
+	INT NavPoints = 0;
+	INT GuardPoints = 0;
+	FString RouteDetail;
+	for( FActorIterator It; It; ++It )
+	{
+		if( Cast<ADishonoredNavPoint>( *It ) )
+		{
+			NavPoints++;
+			if( ((ADishonoredNavPoint*)*It)->m_bGuardForever || ((ADishonoredNavPoint*)*It)->m_fGuardDuration > 0.f )
+			{
+				GuardPoints++;
+			}
+		}
+		ADishonoredRoute* Route = Cast<ADishonoredRoute>( *It );
+		if( !Route )
+		{
+			continue;
+		}
+		Routes++;
+		if( Route->m_bIsActive )
+		{
+			ActiveRoutes++;
+		}
+		RoutePoints += Route->RouteList.Num();
+		if( Routes <= 6 )
+		{
+			RouteDetail += FString::Printf( TEXT("[%s type %i %i points active %i cap %i range %.0f squads %i]"),
+				*Route->GetName(), (INT)Route->RouteType, Route->RouteList.Num(), (INT)Route->m_bIsActive,
+				Route->m_Capacity, Route->m_AdoptionRange, Route->m_SupportedSquads.Num() );
+		}
+	}
+	INT Spawners = 0;
+	INT PatrolSpawners = 0;
+	for( FActorIterator It; It; ++It )
+	{
+		ADishonoredSpawner* Spawner = Cast<ADishonoredSpawner>( *It );
+		if( !Spawner )
+		{
+			continue;
+		}
+		Spawners++;
+		if( Spawner->m_bPatrolUponStartup )
+		{
+			PatrolSpawners++;
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): disai patrol: map info %s, patrol manager %s (route list %s); %i routes (%i active, %i points), %i nav points (%i guard); %i spawners, %i ask for a patrol"),
+		MapInfo ? TEXT("yes") : TEXT("no"),
+		PatrolManager ? TEXT("yes") : TEXT("no"),
+		( PatrolManager && PatrolManager->m_pRouteList ) ? *PatrolManager->m_pRouteList->GetName() : TEXT("empty"),
+		Routes, ActiveRoutes, RoutePoints, NavPoints, GuardPoints, Spawners, PatrolSpawners );
+	if( RouteDetail.Len() )
+	{
+		debugf( TEXT("DISHONORED(bringup): disai routes: %s"), *RouteDetail );
+	}
+}
+
 void DisAIReport( UWorld* World, FLOAT DeltaSeconds )
 {
 	if( !World || !World->GetWorldInfo() )
@@ -872,6 +1179,18 @@ void DisAIReport( UWorld* World, FLOAT DeltaSeconds )
 	debugf( TEXT("DISHONORED(bringup): disai substates: %i transitions; entered %s"),
 		GDisAISubStateTransitions, *DisAISubStateHistogram() );
 	debugf( TEXT("DISHONORED(bringup): disai slot0: %s"), *DisAIBehaviorHistogram() );
+	// agent EP: every stim any brain was offered, and the level's patrol data once.
+	debugf( TEXT("DISHONORED(bringup): disai stims: %i offered; %s"), GDisAIStimTotal, *DisAIStimHistogram() );
+	debugf( TEXT("DISHONORED(bringup): disai sightings: %s"), *DisAISightingReport() );
+	debugf( TEXT("DISHONORED(bringup): disai patrolstate: %s"), *DisAIPatrolState( World ) );
+	{
+		static UBOOL bReportedPatrol = FALSE;
+		if( !bReportedPatrol && Pawns > 0 )
+		{
+			bReportedPatrol = TRUE;
+			DisAIPatrolReport( World );
+		}
+	}
 	// agent DF: the Ark game-event dispatcher, created for the first time this wave (LaunchEngineLoop.cpp).
 	// agent DF: prove the dispatcher once, the first time the census runs.
 	{

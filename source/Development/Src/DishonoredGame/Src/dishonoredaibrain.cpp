@@ -566,7 +566,8 @@ void UDishonoredAIBrain::InitBrain( ADishonoredNPCPawn* const _pNPCPawn, UDisTwe
 		m_pStimManager = m_pGlobalAIManager->GetStimManager();
 	}
 
-	// DISHONORED(bringup): FDisLookAtRequest::Initialize (2013 rva 0x74f180) wires m_LookAtRequest to the pawn's
+	// DISHONORED(bringup): FDisLookAtRequest::Initialize (2013 rva 0x8b2400; agent EP corrected 0x74f180, which is not a
+	// 2013 function start) wires m_LookAtRequest to the pawn's
 	// FArkComponentLookat at priority DisLookAtPriority_EnemyAttention (15). FArkComponentLookat is not ported
 	// (Engine/Inc/arkcomponentlookat.h is a skeleton), so the head-look request is never issued.
 
@@ -616,7 +617,8 @@ void UDishonoredAIBrain::InitBrain( ADishonoredNPCPawn* const _pNPCPawn, UDisTwe
 	TickBrain( 0.f );
 
 	// DISHONORED(bringup): retail then registers OnDifficultyChange on global event 9 and OnPushedByAvoidable on the
-	// pawn's object event 1 with FArkGameEventDispatcher (2013 rva 0x557160 GetInstance). The dispatcher is ported in
+	// pawn's object event 1 with FArkGameEventDispatcher (2013 rva 0x54df00 GetInstance; agent EP corrected 0x557160,
+	// which is not a 2013 function start). The dispatcher is ported in
 	// this same package (Engine/Src/arkgameeventdispatcher.cpp); both registrations are agent CG hand-over 1.
 }
 
@@ -836,6 +838,7 @@ void UDishonoredAIBrain::EnqueueStim( FAIStimStruct* _pAddMe )
 	{
 		return;
 	}
+	DisAINoteStim( _pAddMe->m_StimID );
 	TArray<UBOOL> bShouldDiscardExistingStim;
 	bShouldDiscardExistingStim.AddZeroed( m_StimQueue.Num() );
 	UBOOL bShouldEnqueueStim = TRUE;

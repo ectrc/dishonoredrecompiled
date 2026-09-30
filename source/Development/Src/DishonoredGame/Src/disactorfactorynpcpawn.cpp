@@ -56,7 +56,12 @@ ADishonoredNPCPawn* UDisActorFactoryNPCPawn::CreateNPCPawn( const FVector* const
 	AActor* Spawned = NULL;
 	if( m_pNPCPawnTweaks )
 	{
-		Spawned = m_pNPCPawnTweaks->SpawnActor( eDisTweaksSpawnType_InGame, NAME_None, *Location, NewRotation, NULL, TRUE, FALSE, NULL, NULL, FALSE );
+		// DISHONORED(port): agent EP - retail 2013 (0x74e4b0) calls SpawnActor_WithSpawner and NOT the base
+		// UDisTweaksBase::SpawnActor, which is how the pawn's FDisSpawnerInfo gets filled (FSpawnNPCPawn_TweakObj::DoInit).
+		// Two other differences of retail's call that this now matches: bNoCollisionFail is the spawner's own
+		// m_bSpawnDead rather than a constant TRUE, and the factory's m_pSpawner is handed through.
+		Spawned = m_pNPCPawnTweaks->SpawnActor_WithSpawner( eDisTweaksSpawnType_InGame, m_pSpawner, NAME_None,
+			*Location, NewRotation, NULL, ( m_pSpawner && m_pSpawner->m_bSpawnDead ) ? TRUE : FALSE, FALSE, NULL, NULL, FALSE );
 	}
 	else if( GWorld )
 	{
@@ -107,7 +112,13 @@ AActor* UDisActorFactoryNPCPawn::CreateActor( const FVector* const Location, con
 	{
 		return Pawn;
 	}
-	if( Pawn->m_SpawnerInfo.m_bSpawnDead || Pawn->m_SpawnerInfo.m_bStraightToRagdoll )
+	// DISHONORED(port): agent EP - retail 2013 tests m_bSpawnDead and **m_bTreatAsKnockedOut** here (0x75dbb0:
+	// `(pawn+3280 & 1) == 0 && (pawn+3296 & 1) == 0`, and 0x6590e0 the same pair), not m_bStraightToRagdoll. The two
+	// live in the same bitfield word - m_bSpawnDead is bit 0 of FDisSpawnerInfo+76 and m_bStraightToRagdoll bit 1 - which
+	// is how they were confused. It was invisible while nothing filled FDisSpawnerInfo; the moment
+	// FSpawnNPCPawn_TweakObj::DoInit did, m_bStraightToRagdoll was TRUE for every NPC with no dead-pose animation (which
+	// is all of them) and the census read "26 NPC pawns, 0 controllers".
+	if( Pawn->m_SpawnerInfo.m_bSpawnDead || Pawn->m_SpawnerInfo.m_bTreatAsKnockedOut )
 	{
 		return Pawn;
 	}

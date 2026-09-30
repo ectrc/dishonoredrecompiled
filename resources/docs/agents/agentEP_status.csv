@@ -1,0 +1,89 @@
+kind,rva_2013,rva_2012,symbol,state,where,note
+patrol_behaviour,0x6fa6e0,0x741850,UDisBehaviorPatrol::OnBehaviorStart,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,a jump to ResetPatrol in both builds
+patrol_behaviour,0x6fa6f0,0x741860,UDisBehaviorPatrol::OnBehaviorStop,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,gives the route back so another NPC can adopt it
+patrol_behaviour,0x6f3960,0x73e800,UDisBehaviorPatrol::ResetPatrol,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,starting actor -> slot 0; else a route; else stand where you are
+patrol_behaviour,0x6f3750,0x73e5f0,UDisBehaviorPatrol::ChooseNewRoute,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,adopts a route and walks to the joined point (slot 1)
+patrol_behaviour,0x6fa730,0x7418a0,UDisBehaviorPatrol::FindNextPoint,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,one step; flips direction; counts repetitions against m_PatrolAttentionSpan
+patrol_behaviour,0x6ec9e0,0x72bed0,UDisBehaviorPatrol::OnNewRouteChosen,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,UObject vtable slot 110; a bring-up no-op because UDisAISubProcessAmbientBarks is a skeleton; match_2012_2013.csv mis-names it ScheduleRouteSwitchBark
+patrol_behaviour,0x6f3870,0x73e710,UDisBehaviorPatrol::SetGuardPoint,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,StartWatchingPoints is unported so the m_fGuardDuration fallback is always taken
+patrol_behaviour,0x6fa8e0,0x741a50,UDisBehaviorPatrol::TickGuarding,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,the clock at a guard post
+patrol_behaviour,0x6fd350,0x742c70,UDisBehaviorPatrol::OnReachedDestination,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,fires DisSeqEvent_PatrolPointReached then guards or moves on; unnamed in 2013
+patrol_behaviour,0x6fd430,0x742d50,UDisBehaviorPatrol::RequestStateExitCallback_TakeActorPosition,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,arrival; slot 0 consumes m_pStartingActor
+patrol_behaviour,0x6f3a50,0x73e8f0,UDisBehaviorPatrol::TickCallback_TakeActorPosition,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,the destination or the route going away restarts the patrol
+patrol_behaviour,0x6fd500,0x742e20,UDisBehaviorPatrol::TickCallback_Stand,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,slot 2 guards; slot 3 keeps asking for a route
+patrol_behaviour,0x6ec970,0x72be60,UDisBehaviorPatrol::OnEnterCallback_Stand,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,the InduceAmbientAnim half is a bring-up note; the sub-process is a skeleton
+patrol_behaviour,0x6e3f60,0x723ca0,UDisBehaviorPatrol::OnBehaviorPause,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,empty body: FDisComponentAnimPlayer is not ported
+patrol_behaviour,0x6f36c0,0x73e560,UDisBehaviorPatrol::OnBehaviorResume,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,the patrol look-at pattern (index 0) and the ambient-anim sub-process
+patrol_behaviour,0x6ef140,0x730e00,UDisBehaviorPatrol::GetEvaluateStimDelegate,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,stim id 71 only
+patrol_behaviour,0x6fea40,0x743a70,UDisBehaviorPatrol::GetFilterStimDelegate,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,stim id 71 only
+patrol_behaviour,0x6e99f0,0x72be30,UDisBehaviorPatrol::GetSetupFromStimDelegate,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,stim id 71 only
+patrol_behaviour,0x6f3db0,0x73ec30,UDisBehaviorPatrol::FilterPatrolRequest,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,re-points a patrol that is already running and swallows the stim
+patrol_behaviour,0x6e3fa0,0x724180,UDisBehaviorPatrol::SetupFromPatrolRequest,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,reached through the folded delegate thunk 0x6e55f0; unnamed in 2013
+patrol_behaviour,0x6e99b0,0x72bf00,UDisBehaviorPatrol::EvaluatePatrolRequest,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,ICF-folded with UDisBehaviorPatrolSearch::EvaluatePatrolSearchRequest
+patrol_behaviour,,0x723300,UDisBehaviorPatrol::BuildEvaluateStimMask,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,folded in both builds; content fixed by GetEvaluateStimDelegate ({PatrolRequest})
+patrol_behaviour,,,UDisBehaviorPatrol::BuildFilterStimMask,ported,DishonoredGame/Src/disbehaviorpatrol.cpp,folded; content {PatrolRequest}
+patrol_behaviour,0x6f3af0,0x73e990,UDisBehaviorPatrol::OnPostGameLoad,not ported,DishonoredGame/Src/disbehaviorpatrol.cpp,UDishonoredAIBehavior has no such virtual in this tree; adding one would move the AI save vtable
+patrol_search,0x6ef220,0x730e30,UDisBehaviorPatrolSearch::GetEvaluateStimDelegate,ported,DishonoredGame/Src/disbehaviorpatrolsearch.cpp,stim id 72; without it the subclass stole id 71 from its base
+patrol_search,0x6fd5e0,0x742e60,UDisBehaviorPatrolSearch::GetFilterStimDelegate,ported,DishonoredGame/Src/disbehaviorpatrolsearch.cpp,stim id 72
+patrol_search,0x6e9ae0,0x72bf40,UDisBehaviorPatrolSearch::GetSetupFromStimDelegate,ported,DishonoredGame/Src/disbehaviorpatrolsearch.cpp,stim id 72
+patrol_search,0x6e99b0,0x72bf00,UDisBehaviorPatrolSearch::EvaluatePatrolSearchRequest,ported,DishonoredGame/Src/disbehaviorpatrolsearch.cpp,the map has at least one registered route
+patrol_search,0x6eca30,0x72e300,UDisBehaviorPatrolSearch::InitBehavior,not ported,DishonoredGame/Src/disbehaviorpatrolsearch.cpp,UDisAISubProcessPersonalSpace::SetAmbientActionManagement is a skeleton
+patrol_search,0x6f3c00,0x73ea80,UDisBehaviorPatrolSearch::OnBehaviorResume,not ported,DishonoredGame/Src/disbehaviorpatrolsearch.cpp,DisBreakOutOfCasualConversations and UDisAISubProcessGenericBark are skeletons
+patrol_manager,0x847d10,0x8b8240,UDisPatrolManager::RegisterPatrolRoute,ported,DishonoredGame/Src/dispatrolmanager.cpp,push onto the head of the single-linked list
+patrol_manager,0x847d40,0x8b8270,UDisPatrolManager::UnRegisterPatrolRoute,ported,DishonoredGame/Src/dispatrolmanager.cpp,safe to call three times for one route
+patrol_manager,0x83df20,0x8af1b0,UDisPatrolManager::HasPatrolRoutes,ported,DishonoredGame/Src/dispatrolmanager.cpp,the whole of EvaluatePatrolRequest
+patrol_manager,0x841590,0x8b1210,UDisPatrolManager::AdoptNewRoute,ported,DishonoredGame/Src/dispatrolmanager.cpp,nearest NEGLECTED route wins outright; nearest un-neglected only if the NPC holds none
+route,0x64bb50,0x697bb0,ADishonoredRoute::PostBeginPlay,ported,DishonoredGame/Src/dishonoredroute.cpp,registers with the map info's patrol manager and starts the neglect clock expired
+route,0x64bbb0,0x697c10,ADishonoredRoute::PostScriptDestroyed,ported,DishonoredGame/Src/dishonoredroute.cpp,unregisters
+route,0x64bbf0,0x697c50,ADishonoredRoute::BeginDestroy,ported,DishonoredGame/Src/dishonoredroute.cpp,unregisters
+route,0x64bc30,0x697c90,ADishonoredRoute::MarkComponentsAsPendingKill,ported,DishonoredGame/Src/dishonoredroute.cpp,unregisters
+route,0x6437f0,0x691810,ADishonoredRoute::Tick,ported,DishonoredGame/Src/dishonoredroute.cpp,the neglect clock runs only with no adopter
+route,0x643830,0x691850,ADishonoredRoute::Adopt,ported,DishonoredGame/Src/dishonoredroute.cpp,
+route,0x643850,0x691870,ADishonoredRoute::RemoveAdoption,ported,DishonoredGame/Src/dishonoredroute.cpp,retail does not clamp at zero and neither does this
+route,0x643860,0x691880,ADishonoredRoute::IsNeglected,ported,DishonoredGame/Src/dishonoredroute.cpp,
+route,0x643880,0x6918a0,ADishonoredRoute::IsRouteActive,ported,DishonoredGame/Src/dishonoredroute.cpp,
+route,0x64bc70,0x697cd0,ADishonoredRoute::CanAdopt,ported,DishonoredGame/Src/dishonoredroute.cpp,2013 takes a second arg (the L_Isl_LowChaos_P adoption-range exception); unnamed in 2013
+route,0x64be30,0x697e00,ADishonoredRoute::GetClosestPoint,ported,DishonoredGame/Src/dishonoredroute.cpp,
+route,0x647130,0x6943d0,ADishonoredRoute::ResolveRouteIndex,ported,DishonoredGame/Src/dishonoredroute.cpp,ERT_Linear completes; ERT_Loop reverses; ERT_Circle wraps
+route,0x64c080,0x698050,ADishonoredRoute::MoveOntoRoutePath,ported,DishonoredGame/Src/dishonoredroute.cpp,where to join; prefers the point after the nearest when already closer to it
+route,0x64bf40,0x697f10,ADishonoredRoute::OnToggle,ported,DishonoredGame/Src/dishonoredroute.cpp,link 0 on; link 1 off; anything else flips
+route,0x64c000,0x697fd0,ADishonoredRoute::HandleSquadNameChange,ported,DishonoredGame/Src/dishonoredroute.cpp,
+route,0x643890,0x6918b0,ADishonoredRoute::GameSave,not ported,DishonoredGame/Src/dishonoredroute.cpp,the writing half of the object layer does not exist here (agent ED's reason)
+route,0x6438f0,0x691910,ADishonoredRoute::GameLoad,not ported,DishonoredGame/Src/dishonoredroute.cpp,would need this class on the save class list; a restored route keeps its defaults
+navpoint,0x64bab0,0x697b10,ADishonoredNavPoint::IsGuardPoint,ported,DishonoredGame/Src/dishonorednavpoint.cpp,an EMPTY watch-point entry makes the whole test FALSE
+squad,0x5fe910,0x644490,IDisSquadInterface::IsSquadSupported,ported,DishonoredGame/Src/dissquadinterface.cpp,empty filter accepts everybody; there is no NAME_None wildcard
+random,0x840790,0x88b310,FDisNonRepeatINTRandomHelper::GetNonRepeatingRandomValue,ported,DishonoredGame/Src/disglobalenums_utilities.cpp,rand() * range * 1/32768; no repeat only when range > 1
+watchpoints,0x72b860,0x78f0b0,UDisAISubProcessWatchPoints::IsWatchingPoints,ported,DishonoredGame/Src/disaisubprocesswatchpoints.cpp,always FALSE in practice because nothing assigns m_pWatchPointContainer
+watchpoints,0x7289b0,0x78d250,UDisAISubProcessWatchPoints::HasWatchCycled,ported,DishonoredGame/Src/disaisubprocesswatchpoints.cpp,
+watchpoints,0x728980,0x78d220,UDisAISubProcessWatchPoints::StopWatchingPoints,ported,DishonoredGame/Src/disaisubprocesswatchpoints.cpp,
+watchpoints,0x73a9d0,0x79a8b0,UDisAISubProcessWatchPoints::StartWatchingPoints,not ported,DishonoredGame/Src/disaisubprocesswatchpoints.cpp,needs ADisGuardWatchPoint::GetWatchDuration; unnamed in 2013
+watchpoints,0x73aaf0,0x79a9d0,UDisAISubProcessWatchPoints::IncrementWatchPoint,not ported,DishonoredGame/Src/disaisubprocesswatchpoints.cpp,
+watchpoints,0x73e440,0x79bc00,UDisAISubProcessWatchPoints::TickSubProcess_Derived,not ported,DishonoredGame/Src/disaisubprocesswatchpoints.cpp,the look-at sweep across a post's watch points
+spawner_info,0x8856a0,0x8ec550,FSpawnNPCPawn_TweakObj::DoInit,ported,DishonoredGame/Src/distweaksbase.cpp,all fifteen FDisSpawnerInfo members from the spawner; the corpse block is a bring-up note
+spawner_info,0x771bc0,0x7cc540,UDisTweaks_NPCPawn::SpawnActor_WithSpawner,ported,DishonoredGame/Src/distweaks_npcpawn.cpp,the spawn that carries the spawner to that DoInit
+spawner_info,0x75dbb0,0x7bf130,UDisActorFactoryNPCPawn::CreateActor,corrected,DishonoredGame/Src/disactorfactorynpcpawn.cpp,possession guard was m_bStraightToRagdoll; retail tests m_bTreatAsKnockedOut
+spawner_info,0x74e4b0,0x7acec0,UDisActorFactoryNPCPawn::CreateNPCPawn,corrected,DishonoredGame/Src/disactorfactorynpcpawn.cpp,now takes retail's SpawnActor_WithSpawner path with bNoCollisionFail = m_bSpawnDead
+spawner_info,0x6590e0,0x6a1010,ADishonoredSpawner::OnSpawned,corrected,DishonoredGame/Src/dishonoredspawner.cpp,same guard corrected to m_bTreatAsKnockedOut
+address_fix,0x7632e0,,ADishonoredNPCController::InitNPC,corrected,DishonoredGame/Src/disaicensus.cpp,was cited as 0x7549d0 which is not a 2013 function start
+address_fix,0x54df00,,FArkGameEventDispatcher::GetInstance,corrected,DishonoredGame/Src/dishonoredaibrain.cpp,was cited as 0x557160
+address_fix,0x8b2400,,FDisLookAtRequest::Initialize,corrected,DishonoredGame/Src/dishonoredaibrain.cpp,was cited as 0x74f180
+address_fix,0x851570,,UDisAINoiseManager::RegisterListener,corrected,DishonoredGame/Src/dishonoredspawner.cpp,was cited as 0x7431e0
+senses_finding,0x717880,0x7562d0,UDishonoredAIBrain::TickBrain_Senses,measured,DishonoredGame/Src/dishonoredaibrain_senses.cpp,retail's body has NOTHING to do with the vision component; see agentEP.md section 2
+vision,0x8788e0,0x8c63e0,FDisComponentVision::TimeSlicedTick,handed over,build/agentEP/spec/vision_spec.md,the time-sliced cone-and-LOS loop; the whole of perception hangs off it
+vision,0x8754c0,0x8c2ec0,FDisComponentVision::FindObservablesInVisionCone,handed over,build/agentEP/spec/vision_spec.md,walks the component manager's observable policy list at UWorld+712
+vision,0x878fc0,0x8c6ad0,FDisComponentVisionNPC::TimeSlicedTick,handed over,build/agentEP/spec/vision_spec.md,
+vision,0x864500,0x8afc70,FDisComponentVisionNPC::VisionStatusChanged,handed over,build/agentEP/spec/vision_spec.md,the hinge: Start/StopSeeingVisibleThing on the controller
+vision,0x887790,0x8d11e0,FDisComponentVisionNPC::Starting_Derived,handed over,build/agentEP/spec/vision_spec.md,
+vision,0x8676a0,0x8b4bb0,FDisComponentVisionNPC::UpdateVisionConeMatrix,handed over,build/agentEP/spec/vision_spec.md,3082 bytes in 2013; needs ArkRemoveRoll which is also a skeleton
+vision,0x7f1580,,DisIsPointInVisionCone,handed over,build/agentEP/spec/vision_spec.md,inner cone first then outer; EyePos is unused
+vision,0x7ec910,,DisIsDirInVisionCone,handed over,build/agentEP/spec/vision_spec.md,the elliptical cone test; wide-cone branch is a complementary blind cone
+vision,0x866830,,FDisVisionConeSettings_Cone::Precompute,handed over,build/agentEP/spec/vision_spec.md,24 floats; 4 in 20 precomputed
+observable,0x870b20,,FDisComponentObservable::FDisComponentObservable,handed over,build/agentEP/spec/vision_spec.md,80 bytes; added by ADishonoredPawn::PreBeginPlay_NativeComponents (0x755a10)
+observable,0x877fc0,,FDisComponentObservable::GetVisiblePoints_Pawn,handed over,build/agentEP/spec/vision_spec.md,1381 bytes; the points a seer LOS-checks against a pawn
+observable,0x86a2f0,,FDisComponentObservable::Starting,handed over,build/agentEP/spec2/creation_spec.md,registers with the observable policy (manager+0x70) AND the pre-async-work policy (manager+0)
+component_manager,0x53a5e0,0x57afa0,FArkComponentManager::FArkComponentManager,handed over,build/agentEP/spec2/creation_spec.md,180 bytes; six 28-byte policies; created by UWorld::Init 0x3945f0
+component_manager,0x53a6b0,0x57b070,FArkComponentManager::Tick,handed over,build/agentEP/spec2/creation_spec.md,phases 0/1/2/5 only; 3 and 4 are dead in retail 2013
+component_manager,0x536e70,0x578120,FArkComponentTimeSlicedTickPolicy::Tick,handed over,build/agentEP/spec2/creation_spec.md,0.9 ms budget; only caller is manager Tick case 1; unnamed in 2013
+attention,0x723040,0x758070,UDishonoredAIBrain::HandleTargetSighted,handed over,build/agentEP/spec/vision_spec.md,raises FAIStimStruct_TargetSighted (id not in any behaviour's mask)
+attention,0x7415f0,0x7a9720,UDisAIBrainProcessAttention::FilterTargetSighted,handed over,resources/docs/agents/agentEP.md,the ONLY consumer of TargetSighted; folded thunk to 0x73f3f0
+attention,0x7464b0,0x7aa770,UDisAIBrainProcessAttention::TickBrainProcess_Derived,handed over,resources/docs/agents/agentEP.md,61 named functions and 5507 bytes stand behind any behavioural reaction

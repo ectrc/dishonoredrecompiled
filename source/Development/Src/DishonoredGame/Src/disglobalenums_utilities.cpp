@@ -1,19 +1,28 @@
 // DishonoredGame/src/disglobalenums_utilities.cpp
 // Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
 // build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (15):
-//   0x887df0  public: __thiscall FDisRollingAverage::FDisRollingAverage(void)
-//   0x887e10  public: void __thiscall FDisRollingAverage::AddValue(float)
-//   0x887e60  public: void __thiscall FDisNonRepeatINTRandomHelper::Reset(void)
-//   0x887e70  public: static unsigned char __cdecl UDisGlobalEnums::SelectionTypeToPowerWheelItem(unsigned char, unsigned char)
-//   0x887f10  public: static void __cdecl UDisGlobalEnums::PowerWheelItemToSelectionType(unsigned char, unsigned char *, unsigned char *)
-//   0x888050  public: static unsigned int __cdecl UDisGlobalEnums::PowerWheelItemIsPower(unsigned char)
-//   0x88b310  public: int __thiscall FDisNonRepeatINTRandomHelper::GetNonRepeatingRandomValue(int)
-//   0x88ffb0  public: static void __cdecl UDisGlobalEnums::GetLocalizedUISelectionName(unsigned char, class FString &)
-//   0x890090  public: static void __cdecl UDisGlobalEnums::GetLocalizedPowerDescription(unsigned char, class FString &, class FString &, class FString &)
-//   0x8902c0  public: static void __cdecl UDisGlobalEnums::GetLocalizedPowerShortDescription(unsigned char, class FString &, class FString &)
-//   0x890470  public: static void __cdecl UDisGlobalEnums::GetLocalizedElixirDescription(unsigned char, class FString &)
-//   0x8905a0  public: static void __cdecl UDisGlobalEnums::GetLocalizedAmmoName(unsigned char, class FString &)
-//   0x890680  public: static void __cdecl UDisGlobalEnums::GetLocalizedAmmoDescription(unsigned char, class FString &)
-//   0x8907b0  public: static void __cdecl UDisGlobalEnums::GetLocalizedHeartShortDescription(class FString &)
-//   0x890830  public: static void __cdecl UDisGlobalEnums::GetLocalizedSpringRazorShortDescription(class FString &)
+
+// ---- agent EP ports (PHASE14 EP): the one helper the patrol route's random mode needs ----
+
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x840790 (2012 0x88b310): a value in [0,_Range) that is not the one returned last time.
+// Retail's own expression, kept exactly: rand() * _Range * (1/32768), truncated - so it is appRand()'s 15-bit range and
+// not appRandHelper, and a _Range of 1 keeps returning 0 because the no-repeat step only runs when _Range > 1.
+INT FDisNonRepeatINTRandomHelper::GetNonRepeatingRandomValue( INT _Range )
+{
+	INT Value = 0;
+	if( _Range > 0 )
+	{
+		Value = (INT)( (FLOAT)appRand() * (FLOAT)_Range * 0.000030517578f );
+	}
+	if( _Range > 1 )
+	{
+		if( Value == m_iLastReturnedValue )
+		{
+			Value = ( Value + 1 ) % _Range;
+		}
+		m_iLastReturnedValue = Value;
+	}
+	return Value;
+}

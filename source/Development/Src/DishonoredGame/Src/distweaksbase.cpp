@@ -101,11 +101,63 @@ void FSpawnActor_TweakObj::DoInit( AActor* Actor )
 	}
 }
 
-// DISHONORED(written): 2012 rva 0x8ec550 (the NPC spawner path, not reached by the map load): retail stores m_pSpawner in the
-// NPC pawn's native spawner member before the tweaks are applied; that member is not in the retail SDK dump (native-only
-// region), so only the tweaks are applied here (DISHONORED(bringup))
+/*-----------------------------------------------------------------------------
+	agent EP (PHASE14 EP): the spawner's settings reaching the pawn.
+
+	The comment this body replaced said the spawner member "is not in the retail SDK dump (native-only region), so only
+	the tweaks are applied here". That premise is wrong and it cost this package a measurement to find: the member is
+	ADishonoredNPCPawn::m_SpawnerInfo, it IS in the SDK dump (offset 3204, an FDisSpawnerInfo of 104 bytes, and
+	DishonoredGameLayouts.h has asserted its offset all along), and retail 2013 0x8856a0 writes ALL FIFTEEN of its
+	members from the spawner. Nothing else in this tree writes any of them, so before this body:
+
+	  * m_Squad was NAME_None on every NPC, which makes ADishonoredRoute::CanAdopt refuse every route in L_Tower_P
+	    (measured: "squad 'GuardsB' pawnsquad 'None' squadok 0" on a route 143 uu away with range 500) - so no NPC could
+	    ever patrol however much of UDisBehaviorPatrol was ported;
+	  * m_Position was the origin, and UDishonoredAIBrain::InitBrain assigns m_Home from it - so every guard's post, the
+	    thing UDisBehaviorGuard walks back to, was (0,0,0);
+	  * m_bPatrolUponStartup, m_bSpawnDead, m_bStraightToRagdoll, m_bTreatAsKnockedOut and m_bCapableOfFleeing were all
+	    FALSE, and the faction and story-group overrides NULL.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x8856a0 (2012 0x8ec550, 702 bytes): every spawner setting an NPC has to carry with it,
+// copied into the pawn before PostBeginPlay so the brain, the routes and the save all see it.
 void FSpawnNPCPawn_TweakObj::DoInit( AActor* Actor )
 {
+	ADishonoredNPCPawn* Pawn = Cast<ADishonoredNPCPawn>( Actor );
+	if( Pawn && m_pSpawner )
+	{
+		FDisSpawnerInfo& Info = Pawn->m_SpawnerInfo;
+
+		// DISHONORED(bringup): retail's first block runs when the spawner says spawn-dead or treat-as-knocked-out: four
+		// calls on ADishonoredNPCPawn + 2340 (2013 rvas 0x76e240, 0x76e250, and 0x76e210 / 0x76e1a0 for the
+		// already-handled case), which are the corpse path rather than the spawn path. Not ported; a spawner marked
+		// "spawn dead" produces a live NPC, which is what it already did before this body existed.
+
+		Info.m_pDialogVoiceData = m_pSpawner->m_pDialogVoiceData;
+		Info.m_DialogOneShots = m_pSpawner->m_DialogOneShots;
+		Info.m_Squad = m_pSpawner->m_Squad;
+		Info.m_bCapableOfFleeing = m_pSpawner->m_bCapableOfFleeing ? TRUE : FALSE;
+		Info.m_TetherVolumes = m_pSpawner->m_TetherVolumes;
+		Info.m_bPatrolUponStartup = m_pSpawner->m_bPatrolUponStartup ? TRUE : FALSE;
+		Info.m_pFactionTweakOverride = m_pSpawner->m_pFactionTweakOverride;
+		Info.m_pStoryGroupTweakOverride = m_pSpawner->m_pStoryGroupTweakOverride;
+		// The NPC's home is the SPAWNER's transform, not the pawn's: a guard sent away by Kismet walks back to where its
+		// spawner stands.
+		Info.m_Position.m_Loc = m_pSpawner->Location;
+		Info.m_Position.m_Rot = m_pSpawner->Rotation;
+		// Spawned dead with no pose animation means there is nothing to pose it with, so it goes straight to ragdoll.
+		Info.m_bStraightToRagdoll = ( !m_pSpawner->m_pDeadPoseAnimSet || m_pSpawner->m_DeadPoseAnimName == NAME_None ) ? TRUE : FALSE;
+		Info.m_pDeadPoseAnimSet = m_pSpawner->m_pDeadPoseAnimSet;
+		Info.m_DeadPoseAnimName = m_pSpawner->m_DeadPoseAnimName;
+		Info.m_bTreatAsKnockedOut = m_pSpawner->m_bTreatAsKnockedOut ? TRUE : FALSE;
+		// Retail guards this one on the low byte of the spawner's bitfield being non-negative, i.e. on
+		// m_bTreatAsKnockedOut (bit 7) being clear: a spawner that wants an unconscious NPC does not also want a dead one.
+		if( !m_pSpawner->m_bTreatAsKnockedOut )
+		{
+			Info.m_bSpawnDead = m_pSpawner->m_bSpawnDead ? TRUE : FALSE;
+		}
+		Info.m_DEBUG_SpawnerName = FName( *m_pSpawner->GetPathName( GWorld ) );
+	}
 	FSpawnActor_TweakObj::DoInit( Actor );
 }
 

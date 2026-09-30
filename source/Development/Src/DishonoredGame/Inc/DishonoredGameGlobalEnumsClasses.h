@@ -240,6 +240,7 @@ struct FDisNonRepeatINTRandomHelper
     {
         appMemzero(this, sizeof(FDisNonRepeatINTRandomHelper));
     }
+#include "CppText/FDisNonRepeatINTRandomHelper.h"
 };
 
 // DishonoredGame.DisGlobalEnums.DisRollingAverage: retail SDK size 48 (2012 PDB 48)

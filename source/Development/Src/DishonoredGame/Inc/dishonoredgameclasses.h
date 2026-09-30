@@ -2729,6 +2729,7 @@ protected:
     virtual ~IDisSquadInterface() {}
 public:
     typedef UDisSquadInterface UClassType;
+#include "CppText/IDisSquadInterface.h"
 };
 
 // DishonoredGame.DishonoredSpawner: retail sizeof 1184, reflected span 584..1176 (2012 PDB sizeof 1184)
@@ -3739,6 +3740,7 @@ public:
     //## END PROPS DishonoredNavPoint
 
     DECLARE_CLASS(ADishonoredNavPoint,ANavigationPoint,0,DishonoredGame)
+#include "CppText/ADishonoredNavPoint.h"
 };
 
 struct DishonoredNote_eventPostRenderFor_Parms
@@ -3834,6 +3836,7 @@ public:
     DECLARE_FUNCTION(execResolveRouteIndex);
     DECLARE_FUNCTION(execOnToggle);
     DECLARE_CLASS(ADishonoredRoute,ARoute,0,DishonoredGame)
+#include "CppText/ADishonoredRoute.h"
 };
 
 // DishonoredGame.DishonoredScout: retail sizeof 1312, reflected span 1308..1308 (2012 PDB sizeof 1312)
@@ -9429,6 +9432,7 @@ public:
     //## END PROPS DisAISubProcessWatchPoints
 
     DECLARE_CLASS(UDisAISubProcessWatchPoints,UDisAISubProcessWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubProcessWatchPoints.h"
 };
 
 // DishonoredGame.DisAISubProcessWolfHoundCount: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 112)
@@ -10403,6 +10407,7 @@ public:
     DECLARE_FUNCTION(execRequestStateExitCallback_TakeActorPosition);
     DECLARE_FUNCTION(execTickCallback_TakeActorPosition);
     DECLARE_CLASS(UDisBehaviorPatrol,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorPatrol.h"
 };
 
 // DishonoredGame.DisBehaviorRatStomp: retail sizeof 376, reflected span 160..376 (2012 PDB sizeof 376)
@@ -11476,6 +11481,7 @@ public:
     //## END PROPS DisTweaks_NPCPawn
 
     DECLARE_CLASS(UDisTweaks_NPCPawn,UDisTweaks_Pawn,0,DishonoredGame)
+#include "CppText/UDisTweaks_NPCPawn.h"
 };
 
 // DishonoredGame.DisTweaks_ActivePowerBase: retail sizeof 348, reflected span 140..348 (2012 PDB sizeof 348)
@@ -13034,6 +13040,7 @@ public:
     //## END PROPS DisPatrolManager
 
     DECLARE_CLASS(UDisPatrolManager,UObject,0,DishonoredGame)
+#include "CppText/UDisPatrolManager.h"
 };
 
 // DishonoredGame.DisPerfectBlockTracker: retail sizeof 80, reflected span 64..80 (2012 PDB sizeof 80)

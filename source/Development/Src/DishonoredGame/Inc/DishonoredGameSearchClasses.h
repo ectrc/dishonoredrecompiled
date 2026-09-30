@@ -128,6 +128,7 @@ public:
 
     DECLARE_FUNCTION(execOnEnterCallback_Stand);
     DECLARE_CLASS(UDisBehaviorPatrolSearch,UDisBehaviorPatrol,0,DishonoredGame)
+#include "CppText/UDisBehaviorPatrolSearch.h"
 };
 
 // DishonoredGame.DisBehaviorSearch: retail sizeof 492, reflected span 176..492 (2012 PDB sizeof 492)

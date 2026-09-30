@@ -54,7 +54,8 @@ static UDisTweaks_NPCPawn* DisSpawnerTweaksOrDefault( ADishonoredSpawner* Spawne
 // immediately when m_bSpawnOnBeginPlay is set, hides its stealable pickup when it does not, and starts its spawn clock
 // at FLT_MAX so the first spawn is never delayed.
 // DISHONORED(bringup): the help-request noise listener (m_bSpawnOnHearHelpRequest -> UDisAINoiseManager::RegisterListener,
-// 2013 rva 0x7431e0) needs the AI noise manager, which is not ported; a spawner that waits for a cry for help therefore
+// 2013 rva 0x851570; agent EP corrected 0x7431e0, which is not a 2013 function start) needs the AI noise manager, which
+// is not ported; a spawner that waits for a cry for help therefore
 // never hears one. Also not done: registering in ADishonoredGameInfo's spawner list, because that member is reached
 // through an offset the SDK dump does not name.
 void ADishonoredSpawner::PostBeginPlay()
@@ -255,7 +256,13 @@ void ADishonoredSpawner::OnSpawned( ADishonoredNPCPawn* _pPawn )
 	{
 		return;
 	}
-	if( _pPawn->m_SpawnerInfo.m_bSpawnDead || _pPawn->m_SpawnerInfo.m_bStraightToRagdoll )
+	// DISHONORED(port): agent EP - retail 2013 tests m_bSpawnDead and **m_bTreatAsKnockedOut** here (0x75dbb0:
+	// `(pawn+3280 & 1) == 0 && (pawn+3296 & 1) == 0`, and 0x6590e0 the same pair), not m_bStraightToRagdoll. The two
+	// live in the same bitfield word - m_bSpawnDead is bit 0 of FDisSpawnerInfo+76 and m_bStraightToRagdoll bit 1 - which
+	// is how they were confused. It was invisible while nothing filled FDisSpawnerInfo; the moment
+	// FSpawnNPCPawn_TweakObj::DoInit did, m_bStraightToRagdoll was TRUE for every NPC with no dead-pose animation (which
+	// is all of them) and the census read "26 NPC pawns, 0 controllers".
+	if( _pPawn->m_SpawnerInfo.m_bSpawnDead || _pPawn->m_SpawnerInfo.m_bTreatAsKnockedOut )
 	{
 		return;
 	}

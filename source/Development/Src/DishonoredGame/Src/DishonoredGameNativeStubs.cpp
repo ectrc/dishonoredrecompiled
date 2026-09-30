@@ -954,22 +954,6 @@ void UDisBehaviorPanic::execOnEnterCallback_GenericAction( FFrame& Stack, RESULT
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorPanic, execOnEnterCallback_GenericAction);
 }
-void UDisBehaviorPatrol::execTickCallback_Stand( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorPatrol, execTickCallback_Stand);
-}
-void UDisBehaviorPatrol::execOnEnterCallback_Stand( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorPatrol, execOnEnterCallback_Stand);
-}
-void UDisBehaviorPatrol::execRequestStateExitCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorPatrol, execRequestStateExitCallback_TakeActorPosition);
-}
-void UDisBehaviorPatrol::execTickCallback_TakeActorPosition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorPatrol, execTickCallback_TakeActorPosition);
-}
 void UDisBehaviorReact::execRequestStateExitCallback_GenericAction( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisBehaviorReact, execRequestStateExitCallback_GenericAction);

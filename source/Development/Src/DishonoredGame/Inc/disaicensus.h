@@ -55,3 +55,32 @@ extern INT GDisAISubStateTransitions;
 
 /** TRUE when -dislocowalk is on the command line (agent DN). */
 UBOOL DisAIWalkTestEnabled();
+
+/*-----------------------------------------------------------------------------
+	agent EP's extension: what the NPC PERCEIVES and where it is asked to WALK.
+
+	Agent DF's tables say which behaviours and sub-states ran. They cannot say why one never ran, because the brain
+	drops a stim no behaviour asked for without a word (UDishonoredAIBrain::ProcessOneStim). The stim histogram is the
+	missing half: every stim EnqueueStim ever saw, by EAIStimID, so "DisBehaviorPatrol never activated" separates into
+	"the patrol request was never raised" and "it was raised and nothing wanted it".
+-----------------------------------------------------------------------------*/
+
+/** Called from UDishonoredAIBrain::EnqueueStim for every stim offered to any brain. */
+void DisAINoteStim( BYTE _StimID );
+
+/** The stim table, formatted for the census line, EAIStimID names where the enum is loaded. */
+FString DisAIStimHistogram();
+
+/** Once, as soon as the level has NPCs: the patrol data the level actually carries - routes, their points, the patrol
+    manager the map info holds and the spawners that ask for a patrol. */
+void DisAIPatrolReport( UWorld* World );
+
+/** Called from FDisComponentVisionNPC when a vision component starts seeing or stops seeing something. */
+void DisAINoteSighting( const class AActor* _pSeer, const class AActor* _pSeen, UBOOL _bStart );
+
+/** The sighting table, formatted for the census line. */
+FString DisAISightingReport();
+
+/** Once a second: what every patrolling brain holds - its route, index, direction, guard post and live sub-state - plus
+    the distance to the nearest route and whether any route would accept it. */
+FString DisAIPatrolState( UWorld* World );
