@@ -162,10 +162,19 @@ static void GFx_DefineSubImageLoader(GFxLoadProcess* p, const GFxTagInfo& info) 
 {
     // Six u16s and nothing else: the sub-image id, the atlas it comes from, and the rectangle in
     // pixels that GFxSubImageResource's constructor (0xa22750) takes as a GRect<int>.
+    //
+    // The second u16 is the atlas's INDEX, not a character id, and retail turns it into a resource id
+    // by adding the packed-image type bits: 2013 0xa2cf50 writes `ImageIndex | 0x90000` into
+    // GFxSubImageResourceInfo's base-id field. That is the same id space
+    // GFx_DefineExternalImageLoader2 (2013 0xa2c790) registers an atlas under - it masks its u32 id
+    // with 0x9FFFF, and tag 1009's atlas entries carry flags 9 in the high half, so atlas index 5 is
+    // id 0x90005. Reading the index bare asked the dictionary for character 5, which in UI_HUD is an
+    // unrelated shape: of the movie's 184 sub-images every one whose atlas index was not 1 or 2 drew
+    // nothing, and the ones that were drew the movie's two -nopack bitmaps instead of their own.
     GFxImageCharacterDef* def = new GFxImageCharacterDef(info.TagType);
     const unsigned int id = p->ReadU16();
     def->bIsSubImage = true;
-    def->BaseImageId = p->ReadU16();
+    def->BaseImageId = p->ReadU16() | 0x90000u;
     const int x0 = (int)p->ReadU16();
     const int y0 = (int)p->ReadU16();
     const int x1 = (int)p->ReadU16();

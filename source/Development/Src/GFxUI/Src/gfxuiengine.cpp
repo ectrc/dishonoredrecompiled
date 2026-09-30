@@ -2136,9 +2136,11 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 		Glyphs ? (INT)Glyphs->GetEmptyCount() : 0, Glyphs ? (INT)Glyphs->GetFailedCount() : 0 );
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): machine: %d frames advanced, ")
 		TEXT("%d sprites created, %d display objects placed, %d action buffers, ")
-		TEXT("%u opcodes (%u unimplemented), %d script errors, %u untextured fills skipped"),
+		TEXT("%u opcodes (%u unimplemented), %d script errors, %u untextured fills skipped, ")
+		TEXT("%u empty masks"),
 		Reason, Frames, Sprites, Placed, Buffers, GASActionBuffer::OpsExecuted,
-		GASActionBuffer::OpsUnimplemented, ScriptErrors, ::GFxDisplayUntexturedFills );
+		GASActionBuffer::OpsUnimplemented, ScriptErrors, ::GFxDisplayUntexturedFills,
+		::GFxDisplayEmptyMasks );
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): input: %u events HE_Handled / %u HE_NotHandled, ")
 		TEXT("%u key downs, %u key ups, %u chars typed, %u mouse events, ")
 		TEXT("%u AS2 listeners registered, %u listener calls"),

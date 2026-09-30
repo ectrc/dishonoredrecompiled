@@ -465,6 +465,13 @@ public:
     // in the texture), so it is asked of the resolved image rather than taken from the tag.
     bool        GetImageSize(GRenderer* renderer, class GFxMovieDataDef* dataDef,
                              unsigned int* outWidth, unsigned int* outHeight);
+    // The map from this reference's OWN pixel space - 0..TargetWidth by 0..TargetHeight, which is what
+    // a bitmap fill's style matrix is authored against - into the UV space of the texture GetTexture
+    // answers with. For a tag-1009 image the two spaces differ only by the size. For a tag-1008
+    // sub-image the texture is the whole atlas, so the rectangle's origin has to be added as well:
+    // without it every packed fill samples the sheet's top-left corner instead of its own rectangle.
+    bool        BuildPixelToUVMatrix(GRenderer* renderer, class GFxMovieDataDef* dataDef,
+                                     GMatrix2D* out);
 
     unsigned int  TagCode;
     unsigned int  Format;                    // the u32 the loader masks with 0x9FFFF

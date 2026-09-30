@@ -99,6 +99,10 @@ extern bool GFxDisplayNoImages;
 extern bool GFxDisplayNoBeginDisplay;
 extern unsigned int GFxDisplayUntexturedFills;
 extern unsigned int GFxDisplayDrawTrace;
+// Masks whose shape submitted no triangle at all. A mask that draws nothing does not clip nothing - it
+// clips EVERYTHING, because the stencil stays at the cleared value and EndSubmitMask tests for the
+// written one. Counted so the frame census can say so.
+extern unsigned int GFxDisplayEmptyMasks;
 // -gfxuifitfill: ignore the style's own matrix and stretch the texture across the shape's bounds. A
 // diagnostic for the fill-matrix convention, and the fallback when a style carries no usable matrix.
 extern bool GFxDisplayFitFill;
@@ -138,6 +142,16 @@ public:
     GMatrix2D            Matrix;
     GRenderer::Cxform    Cx;
     unsigned int         MaskLevel;
+    // Retail's GFxDisplayContext+148, incremented by PushAndDrawMask (2013 0xa53340) for exactly as
+    // long as the mask character's own Display runs and read by GFxDisplayList::Display (0x9cbf20),
+    // where a clip that carries a ClipDepth is drawn as ordinary content rather than opening a nested
+    // mask while this is non-zero. (Retail reads it a second time, to keep the deferred mask flush
+    // that walks its mask stack from re-entering itself; that flush is not ported here.) It does one
+    // more job, because this reconstruction has one early-out retail does not (GFxSprite::Display
+    // 0x9f1780 has no alpha test at all): a mask shape is drawn with colour writes OFF, so its alpha
+    // decides nothing, and skipping it because the alpha is zero leaves the stencil empty and the
+    // EndSubmitMask test then rejects every pixel of the masked content.
+    unsigned int         MaskDrawDepth;
     GFxDisplayStats      Stats;
 
     // 0xa5f5d0 / 0xa5f800: push and pop one character's transform and colour transform.

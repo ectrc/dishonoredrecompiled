@@ -26,6 +26,7 @@ bool GFxDisplayNoBeginDisplay = false;
 // DISHONORED(bringup): style groups skipped because their image fill had no texture.
 unsigned int GFxDisplayUntexturedFills = 0;
 unsigned int GFxDisplayDrawTrace = 0;
+unsigned int GFxDisplayEmptyMasks = 0;
 static char GFxDisplayLastFill[96] = "";
 static void GFxStrCopy(char* dst, unsigned int cap, const char* src)
 {
@@ -722,7 +723,8 @@ GTexture* GFxDisplayGetGlyphTexture(GRenderer* renderer)
 // GFxDisplayContext
 
 GFxDisplayContext::GFxDisplayContext()
-    : pRenderer(0), pRoot(0), pDefImpl(0), pDataDef(0), pGlyphCache(0), pGlyphTexture(0), MaskLevel(0)
+    : pRenderer(0), pRoot(0), pDefImpl(0), pDataDef(0), pGlyphCache(0), pGlyphTexture(0), MaskLevel(0),
+      MaskDrawDepth(0)
 {
     Matrix.SetIdentity();
     GFxDisplayCxformIdentity(&Cx);
@@ -779,7 +781,10 @@ void GFxDisplayList::Display(GFxDisplayContext& ctx)
                 --ctx.MaskLevel;
         }
 
-        if (ch->GetClipDepth() > 0 && !bMaskActive)
+        // Retail's own condition, 0x9cbf20: `if (!ClipDepth || ctx->MaskDrawDepth) draw as content;
+        // else PushAndDrawMask`. A clip that carries a ClipDepth while a mask is being drawn is part of
+        // THAT mask's shape, not the start of a nested one.
+        if (ch->GetClipDepth() > 0 && !bMaskActive && ctx.MaskDrawDepth == 0)
         {
             // 2012 0xa5f510 GFxDisplayContext::PushAndDrawMask: clear the stencil, draw the mask
             // shape with colour writes off, then switch the test to "equal to the counter".
@@ -787,8 +792,26 @@ void GFxDisplayList::Display(GFxDisplayContext& ctx)
             {
                 ctx.pRenderer->BeginSubmitMask(ctx.MaskLevel ? GRenderer::Mask_Increment
                                                              : GRenderer::Mask_Clear);
+                ++ctx.MaskDrawDepth;
+                const unsigned int trisBefore = ctx.Stats.Triangles;
                 ch->Display(ctx);
+                const unsigned int trisDrawn = ctx.Stats.Triangles - trisBefore;
+                --ctx.MaskDrawDepth;
                 ctx.pRenderer->EndSubmitMask();
+                // DISHONORED(bringup): a mask that submitted NO triangle leaves the stencil empty, and
+                // everything up to its clip depth is then rejected by EndSubmitMask's `== counter` test.
+                // That is not a wrong pixel, it is the whole movie missing, so it is counted and named.
+                if (trisDrawn == 0)
+                {
+                    ++GFxDisplayEmptyMasks;
+                    if (GFxDisplayEmptyMasks <= 8)
+                    {
+                        GFxLogf("DISHONORED(bringup): GFx mask submitted NO geometry: depth %d clipDepth "
+                                "%d visible %d alpha %.2f*x+%.0f - everything it masks is now rejected",
+                                ch->GetDepth(), ch->GetClipDepth(), ch->GetVisible() ? 1 : 0,
+                                ctx.Cx.M_[3][0], ctx.Cx.M_[3][1]);
+                    }
+                }
             }
             ++ctx.MaskLevel;
             ++ctx.Stats.Masks;
@@ -843,7 +866,11 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     GMatrix2D savedMatrix;
     GRenderer::Cxform savedCx;
     ctx.PreDisplay(this, &savedMatrix, &savedCx);
-    if (GFxDisplayCxformIsTransparent(ctx.Cx))
+    // The alpha early-out is this reconstruction's, not retail's, and it must not reach a mask: the
+    // mask pass has colour writes off, so what the shape's alpha would have produced is irrelevant,
+    // while NOT submitting it leaves the stencil empty and hides everything the mask covers. A mask
+    // layer being invisible is Flash's own convention, so this is the common case and not a corner.
+    if (ctx.MaskDrawDepth == 0 && GFxDisplayCxformIsTransparent(ctx.Cx))
     {
         ++ctx.Stats.Invisible;
         ctx.PostDisplay(savedMatrix, savedCx);
@@ -970,11 +997,13 @@ static bool GFxDisplayApplyFill(GFxDisplayContext& ctx, const GFxFillStyle* fill
             {
                 GMatrix2D inverse;
                 GFxDisplayMatrixInvert(&inverse, fill->Matrix);
-                GMatrix2D scale;
-                scale.SetIdentity();
-                scale.M_[0][0] = imgW ? 1.0f / (float)imgW : 1.0f;
-                scale.M_[1][1] = imgH ? 1.0f / (float)imgH : 1.0f;
-                GFxDisplayMatrixAppend(&ft.TextureMatrix, scale, inverse);
+                // The inverse lands in the image's own pixel space; BuildPixelToUVMatrix is what turns
+                // that into the resolved texture's UVs, and for an atlas sub-image it is the only
+                // thing that carries the rectangle's origin.
+                GMatrix2D toUV;
+                if (!((GFxImageCharacterDef*)def)->BuildPixelToUVMatrix(ctx.pRenderer, dataDef, &toUV))
+                    toUV.SetIdentity();
+                GFxDisplayMatrixAppend(&ft.TextureMatrix, toUV, inverse);
             }
             ft.WrapMode = (fill->Type == GFxFill_TiledImage || fill->Type == GFxFill_TiledSmoothImage)
                               ? GRenderer::Wrap_Repeat : GRenderer::Wrap_Clamp;
@@ -1143,9 +1172,21 @@ void GFxImageCharacterDef::Display(GFxDisplayContext& ctx, GFxCharacter* ch)
     const float h = (float)(TargetHeight ? TargetHeight : 1) * GFxPixelsToTwips;
     GRenderer::FillTexture ft;
     ft.pTexture = tex;
-    ft.TextureMatrix.SetIdentity();
-    ft.TextureMatrix.M_[0][0] = 1.0f / (w != 0.0f ? w : 1.0f);
-    ft.TextureMatrix.M_[1][1] = 1.0f / (h != 0.0f ? h : 1.0f);
+    // The quad below is this reference's own pixel size in twips, so the UV map is the twips-to-pixels
+    // divide composed with the pixel-to-UV map - which for an atlas sub-image is the whole of the
+    // difference between drawing this rectangle and drawing the sheet's top-left corner.
+    GMatrix2D twipsToPixels;
+    twipsToPixels.SetIdentity();
+    twipsToPixels.M_[0][0] = 1.0f / GFxPixelsToTwips;
+    twipsToPixels.M_[1][1] = 1.0f / GFxPixelsToTwips;
+    GMatrix2D pixelsToUV;
+    if (!BuildPixelToUVMatrix(ctx.pRenderer, dataDef, &pixelsToUV))
+    {
+        pixelsToUV.SetIdentity();
+        pixelsToUV.M_[0][0] = TargetWidth ? 1.0f / (float)TargetWidth : 1.0f;
+        pixelsToUV.M_[1][1] = TargetHeight ? 1.0f / (float)TargetHeight : 1.0f;
+    }
+    GFxDisplayMatrixAppend(&ft.TextureMatrix, pixelsToUV, twipsToPixels);
     ft.WrapMode = GRenderer::Wrap_Clamp;
     ft.SampleMode = GRenderer::Sample_Linear;
 

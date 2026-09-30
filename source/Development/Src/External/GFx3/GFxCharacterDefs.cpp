@@ -928,6 +928,30 @@ GTexture* GFxImageCharacterDef::GetTexture(GRenderer* renderer, GFxMovieDataDef*
     return pImageInfo.GetPtr() ? pImageInfo->GetTexture(renderer) : 0;
 }
 
+bool GFxImageCharacterDef::BuildPixelToUVMatrix(GRenderer* renderer, GFxMovieDataDef* dataDef,
+                                                GMatrix2D* out)
+{
+    // GetImageSize already answers with the resolved texture's size, and for a sub-image that is the
+    // atlas's, because it forwards to the base image - so the divisor is the sheet and the offset is
+    // the rectangle inside it. That split is retail's, and it is why GetImageSize forwards: a sub-image
+    // is a GSubImageInfo, whose GetWidth (2013 0x9b6410) and GetHeight (0x9b6420) forward to the BASE
+    // image and so answer the sheet's size, while GetRect (0x9b6440) answers the rectangle. The base
+    // class's GetRect (0x585d00) is (0, 0, GetWidth(), GetHeight()), so one expression covers both:
+    // uv = (GetRect().TopLeft + pixel) / GetWidth().
+    unsigned int texW = 0, texH = 0;
+    if (!GetImageSize(renderer, dataDef, &texW, &texH) || texW == 0 || texH == 0)
+        return false;
+    out->SetIdentity();
+    out->M_[0][0] = 1.f / (float)texW;
+    out->M_[1][1] = 1.f / (float)texH;
+    if (bIsSubImage)
+    {
+        out->M_[0][2] = (float)SubRect.Left / (float)texW;
+        out->M_[1][2] = (float)SubRect.Top / (float)texH;
+    }
+    return true;
+}
+
 // The hook the loader installs so this unit needs neither the loader header nor an engine header.
 GFxImageResolveFn GFxImageResolveHook = 0;
 
