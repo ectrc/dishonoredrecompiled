@@ -524,9 +524,11 @@ static void DisReportClipDiag( UDisGFxMoviePlayerMainMenu* Menu )
 	{
 		Path.ParseIntoArray( &Paths, TEXT(";"), TRUE );
 		Left.AddZeroed( Paths.Num() );
+		// agent FD raised this from 2: a live property like _xmouse has to be sampled while the
+		// pointer is somewhere known, and two reports land before the driver has moved it there.
 		for( INT Index = 0; Index < Left.Num(); Index++ )
 		{
-			Left(Index) = 2;
+			Left(Index) = 40;
 		}
 	}
 	INT Remaining = 0;
@@ -553,9 +555,12 @@ static UBOOL DisReportOneClip( GFxMovieView* View, const FString& Path )
 		Clip.ReleaseManaged();
 		return FALSE;
 	}
+	// _xmouse / _ymouse are here for agent FD: P_Slider computes its ratio from _xmouse against its
+	// own track width, so the pointer in the clip's own space is the quantity the slider's mouse path
+	// turns on and it is not readable any other way.
 	static const char* const Names[] = { "_x", "_y", "_z", "_xscale", "_yscale", "_rotation",
 		"_xrotation", "_yrotation", "_alpha", "_visible", "_width", "_height", "text", "htmlText",
-		"textWidth", "textHeight", "embedFonts", "_font" };
+		"textWidth", "textHeight", "embedFonts", "_font", "_xmouse", "_ymouse" };
 	FString Live, Props;
 	GFxValue PropsObject;
 	const UBOOL bHasProps = Clip.GetMember( "props", &PropsObject );

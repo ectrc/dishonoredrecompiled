@@ -578,6 +578,339 @@ void MatrixScale(const GASFnCall& fn)
     ObjSetNumber(o, sc, "ty", ObjNumber(o, sc, "ty", 0.0) * sy);
 }
 
+// GASMatrixObject, 2013 GetMatrix 0xa71830. Retail's stores a GMatrix2D; this one keeps the six
+// named members the drawing API already reads off a Matrix (beginBitmapFill, above) and carries only
+// retail's object type, which is what GASTransformObject::SetMember's `matrix` branch tests.
+class GASMatrixObject : public GASObject
+{
+public:
+    GASMatrixObject(GASStringContext* sc, GASObject* proto) : GASObject(sc, proto) {}
+    virtual GASObjectType GetObjectType() const { return Object_Matrix; }
+};
+
+GASObject* GMatrixProto = 0;
+GASObject* GColorTransformProto = 0;
+
+// flash.geom.ColorTransform and flash.geom.Transform, package FD. Retail's two classes, read out of
+// retail2013_named.i64 by this package:
+//
+//   GASColorTransformObject      GetMember 0xa76dd0  SetMember 0xa77060  GetObjectType 0xa77340
+//                               ctor 0xa77be0  proto ctor 0xa77e50  Concat 0xa77850
+//                               ToString 0xa77430
+//   GASColorTransformCtorFunction GlobalCtor 0xa77c30  CreateNewObject 0xa77d60
+//                               Register 0xa782c0  registry AddBuiltinClassRegistry<16> 0x9e6030
+//   GASTransformObject           GetMember 0xa70500  SetMember 0xa70a20  SetTarget 0xa700b0
+//                               ctor 0xa703d0  proto ctor 0xa71200
+//   GASTransformCtorFunction     GlobalCtor 0xa70c90  CreateNewObject 0xa70d60
+//                               Register 0xa714a0  registry AddBuiltinClassRegistry<12> 0x9e5d30
+//
+// What the cook needs them for: `_common.SetColorTransform` (GammaImage.as2.txt:5258,
+// MainMenu.as2.txt:13599) is `new flash.geom.Transform(targetMc)` plus four cached
+// `flash.geom.ColorTransform`s, and `_trans.colorTransform = <one of them>` is the only way any of
+// this cook's content tints a clip. Without the two classes every such assignment is five
+// `not a constructor` errors and the clip draws untinted: the brightness screen's five Outsider
+// marks all at full brightness (GammaImage.as2.txt:4758, one per mark) and MainMenuButton's four
+// frame lines at full brightness where retail has them at SetColor_Custom(0.2, 0.2, 0.2, 1)
+// (MainMenu.as2.txt:1515..1743).
+//
+// GASColorTransformObject's eight floats are a GRenderer::Cxform embedded at object+52, channel-major
+// with the multiply in column 0 and the offset in column 1 - the same class and the same layout the
+// renderer already takes - so `colorTransform` hands it straight to GFxCharacter::SetCxform.
+class GASColorTransformObject : public GASObject
+{
+public:
+    GASColorTransformObject(GASStringContext* sc, GASObject* proto)
+        : GASObject(sc, proto)
+    {
+        for (int i = 0; i < 4; ++i) { Cx.M_[i][0] = 1.f; Cx.M_[i][1] = 0.f; }
+    }
+
+    virtual GASObjectType GetObjectType() const { return Object_ColorTransform; }
+    virtual bool GetMember(GASEnvironment* env, const GASString& name, GASValue* val);
+    virtual bool SetMember(GASEnvironment* env, const GASString& name, const GASValue& val,
+                           const GASPropFlags& flags);
+
+    GRenderer::Cxform Cx;
+
+    // 0xa76dd0 and 0xa77060 dispatch on the name and index M_ by channel; the two tables are the
+    // same eight names in the same order, so one lookup serves both.
+    static bool FindChannel(const char* name, int* channel, int* column)
+    {
+        static const struct { const char* Name; int Channel; int Column; } names[8] = {
+            { "redMultiplier",   0, 0 }, { "greenMultiplier", 1, 0 },
+            { "blueMultiplier",  2, 0 }, { "alphaMultiplier", 3, 0 },
+            { "redOffset",       0, 1 }, { "greenOffset",     1, 1 },
+            { "blueOffset",      2, 1 }, { "alphaOffset",     3, 1 } };
+        for (int i = 0; i < 8; ++i)
+            if (strcmp(name, names[i].Name) == 0)
+            {
+                *channel = names[i].Channel;
+                *column = names[i].Column;
+                return true;
+            }
+        return false;
+    }
+};
+
+bool GASColorTransformObject::GetMember(GASEnvironment* env, const GASString& name, GASValue* val)
+{                                                                     // 2013 0xa76dd0
+    int channel = 0, column = 0;
+    if (FindChannel(name.ToCStr(), &channel, &column))
+    {
+        val->SetNumber((double)Cx.M_[channel][column]);
+        return true;
+    }
+    if (strcmp(name.ToCStr(), "rgb") == 0)
+    {
+        // retail packs the three OFFSETS, truncated to a byte each, as 0xRRGGBB
+        const unsigned int r = (unsigned int)(unsigned char)(int)Cx.M_[0][1];
+        const unsigned int g = (unsigned int)(unsigned char)(int)Cx.M_[1][1];
+        const unsigned int b = (unsigned int)(unsigned char)(int)Cx.M_[2][1];
+        val->SetNumber((double)((r << 16) | (g << 8) | b));
+        return true;
+    }
+    return GASObject::GetMember(env, name, val);
+}
+
+bool GASColorTransformObject::SetMember(GASEnvironment* env, const GASString& name,
+                                        const GASValue& val, const GASPropFlags& flags)
+{                                                                     // 2013 0xa77060
+    int channel = 0, column = 0;
+    if (FindChannel(name.ToCStr(), &channel, &column))
+    {
+        Cx.M_[channel][column] = (float)val.ToNumber(env);
+        return true;
+    }
+    if (strcmp(name.ToCStr(), "rgb") == 0)
+    {
+        // `rgb` zeroes the three colour multipliers and writes the byte lanes into the offsets; a
+        // value that is not a number leaves all three offsets at zero (the IsNaN branch of 0xa77060)
+        Cx.M_[0][0] = 0.f; Cx.M_[1][0] = 0.f; Cx.M_[2][0] = 0.f;
+        unsigned int packed = 0;
+        const double n = val.ToNumber(env);
+        if (!(n != n))
+            packed = (unsigned int)(long long)n;
+        Cx.M_[0][1] = (float)((packed >> 16) & 0xFF);
+        Cx.M_[1][1] = (float)((packed >> 8) & 0xFF);
+        Cx.M_[2][1] = (float)(packed & 0xFF);
+        return true;
+    }
+    return GASObject::SetMember(env, name, val, flags);
+}
+
+// GASTransformObject. Retail holds the movie root at object+36 and a GFxCharacterHandle at +40 and
+// resolves the character again on every access (0xa70500, 0xa70a20), so a Transform whose clip has
+// been removed degrades to doing nothing instead of writing through a dangling pointer.
+class GASTransformObject : public GASObject
+{
+public:
+    GASTransformObject(GASStringContext* sc, GASObject* proto)
+        : GASObject(sc, proto), pRoot(0), pTargetHandle(0) {}
+    virtual ~GASTransformObject()
+    {
+        if (pTargetHandle) { pTargetHandle->Release(); pTargetHandle = 0; }
+    }
+
+    virtual GASObjectType GetObjectType() const { return Object_Transform; }
+    virtual bool GetMember(GASEnvironment* env, const GASString& name, GASValue* val);
+    virtual bool SetMember(GASEnvironment* env, const GASString& name, const GASValue& val,
+                           const GASPropFlags& flags);
+
+    void SetTarget(GFxASCharacter* ch)                                // 2013 0xa700b0
+    {
+        if (pTargetHandle) { pTargetHandle->Release(); pTargetHandle = 0; }
+        pRoot = ch ? ch->GetMovieRoot() : 0;
+        if (ch)
+        {
+            pTargetHandle = ch->CreateCharacterHandle();
+            if (pTargetHandle) pTargetHandle->AddRef();
+        }
+    }
+
+    GFxASCharacter* ResolveTarget() const
+    {
+        return pRoot != 0 && pTargetHandle != 0 ? pTargetHandle->ResolveCharacter(pRoot) : 0;
+    }
+
+    GFxMovieRoot*       pRoot;
+    GFxCharacterHandle* pTargetHandle;
+};
+
+bool GASTransformObject::GetMember(GASEnvironment* env, const GASString& name, GASValue* val)
+{                                                                     // 2013 0xa70500
+    GFxASCharacter* ch = ResolveTarget();
+    if (ch != 0 && strcmp(name.ToCStr(), "colorTransform") == 0)
+    {
+        GASGlobalContext* gc = env->GetGC();
+        GASColorTransformObject* o = new GASColorTransformObject(
+            gc->GetSC(), GColorTransformProto);
+        o->Cx = ch->GetCxform();
+        val->SetAsObject(o);
+        return true;
+    }
+    if (ch != 0 && strcmp(name.ToCStr(), "matrix") == 0)
+    {
+        GASGlobalContext* gc = env->GetGC();
+        GASObject* o = new GASMatrixObject(gc->GetSC(), GMatrixProto);
+        GASStringContext* sc = gc->GetSC();
+        const GMatrix2D& m = ch->GetMatrix();
+        ObjSetNumber(o, sc, "a", (double)m.M_[0][0]);
+        ObjSetNumber(o, sc, "b", (double)m.M_[1][0]);
+        ObjSetNumber(o, sc, "c", (double)m.M_[0][1]);
+        ObjSetNumber(o, sc, "d", (double)m.M_[1][1]);
+        ObjSetNumber(o, sc, "tx", (double)m.M_[0][2] * (1.0 / GFxPixelsToTwips));
+        ObjSetNumber(o, sc, "ty", (double)m.M_[1][2] * (1.0 / GFxPixelsToTwips));
+        val->SetAsObject(o);
+        return true;
+    }
+    return GASObject::GetMember(env, name, val);
+}
+
+bool GASTransformObject::SetMember(GASEnvironment* env, const GASString& name, const GASValue& val,
+                                   const GASPropFlags& flags)
+{                                                                     // 2013 0xa70a20
+    const char* n = name.ToCStr();
+    // pixelBounds is read-only in retail and swallowed rather than stored
+    if (strcmp(n, "pixelBounds") == 0)
+        return true;
+    const bool bColor = strcmp(n, "colorTransform") == 0;
+    const bool bMatrix = !bColor && strcmp(n, "matrix") == 0;
+    if (!bColor && !bMatrix)
+        return GASObject::SetMember(env, name, val, flags);
+    GFxASCharacter* ch = ResolveTarget();
+    GASObject* src = val.ToObject(env);
+    if (ch == 0 || src == 0)
+        return true;
+    if (bColor && src->GetObjectType() == Object_ColorTransform)
+    {
+        ch->SetCxform(((GASColorTransformObject*)src)->Cx);
+        // without this the next PlaceObject2 on the clip's own timeline puts the authored cxform
+        // back, which is what retail's vtbl+32 call with FALSE prevents
+        ch->SetAcceptAnimMoves(false);
+    }
+    else if (bMatrix && src->GetObjectType() == Object_Matrix)
+    {
+        GASStringContext* sc = env->GetGC()->GetSC();
+        GMatrix2D m;
+        m.M_[0][0] = (float)ObjNumber(src, sc, "a", 1.0);
+        m.M_[1][0] = (float)ObjNumber(src, sc, "b", 0.0);
+        m.M_[0][1] = (float)ObjNumber(src, sc, "c", 0.0);
+        m.M_[1][1] = (float)ObjNumber(src, sc, "d", 1.0);
+        m.M_[0][2] = (float)(ObjNumber(src, sc, "tx", 0.0) * GFxPixelsToTwips);
+        m.M_[1][2] = (float)(ObjNumber(src, sc, "ty", 0.0) * GFxPixelsToTwips);
+        ch->SetMatrix(m);
+        GFxASCharacter::GeomDataType geom;
+        ch->GetGeomData(&geom);
+        geom.X = (int)m.M_[0][2];
+        geom.Y = (int)m.M_[1][2];
+        geom.XScale = m.GetXScale() * 100.0;
+        geom.YScale = m.GetYScale() * 100.0;
+        geom.Rotation = m.GetRotation() * 57.29577951308232;
+        ch->SetGeomData(geom);
+    }
+    return true;
+}
+
+// Install one flash.geom class: the prototype on the constructor, the constructor on the prototype,
+// and the constructor under flash.geom.<name> and unqualified, which is what `import flash.geom.*`
+// compiles to.
+//
+// DISHONORED(bringup, agent FD): `prototype.__constructor__ = ctor` is NOT decoration. GASEnvironment
+// ::OperatorNew makes the instance with the constructor the PROTOTYPE names, not the one the opcode
+// named, so that a subclass of Array is allocated as an array. A prototype that names none falls
+// through its own __proto__ to Object.prototype, whose __constructor__ is Object - and `new
+// ColorTransform(...)` then gets a plain GASObject, its ctor's object-type guard fails, and the
+// construction silently does nothing. Measured: the object reaching TransformCtor had object type 6,
+// not 20, and the brightness screen's five marks stayed untinted with no error logged anywhere.
+// GFxAS2Lib.cpp's own eight built-in classes set it for the same reason.
+static void GeomInstall(GASStringContext* sc, GASObject* global, GASObject* geom, const char* name,
+                        GASObject* proto, GASFunctionObject* ctor)
+{
+    GASValue v;
+    v.SetAsObject(proto);
+    ctor->SetConstMemberRaw(sc, "prototype", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+    GASValue ctorVal;
+    ctorVal.SetAsFunction(ctor);
+    proto->SetMemberRaw(sc, sc->GetBuiltin(GASbuiltin_constructorUS), ctorVal,
+                        GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+    if (geom)
+        geom->SetConstMemberRaw(sc, name, ctorVal, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+    global->SetConstMemberRaw(sc, name, ctorVal, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+}
+
+GASObject* MatrixNewObject(GASStringContext* sc, GASObject* proto)
+{
+    return new GASMatrixObject(sc, proto);
+}
+
+GASObject* ColorTransformNewObject(GASStringContext* sc, GASObject* proto)
+{                                                                     // 2013 0xa77d60
+    return new GASColorTransformObject(sc, proto);
+}
+
+GASObject* TransformNewObject(GASStringContext* sc, GASObject* proto)
+{                                                                     // 2013 0xa70d60
+    return new GASTransformObject(sc, proto);
+}
+
+// 2013 0xa77c30. Retail applies the arguments only when there are eight of them and otherwise leaves
+// the identity GRenderer::Cxform::Cxform() put there by CreateNewObject; the argument order is
+// Flash's (redMultiplier, greenMultiplier, blueMultiplier, alphaMultiplier, redOffset, greenOffset,
+// blueOffset, alphaOffset), which the body spells as +52/+60/+68/+76 then +56/+64/+72/+80.
+void ColorTransformCtor(const GASFnCall& fn)
+{
+    GASObject* self = fn.pThis ? fn.pThis->ToASObject() : 0;
+    if (self == 0 || fn.pEnv == 0 || self->GetObjectType() != Object_ColorTransform)
+        return;
+    if (fn.GetNumArgs() <= 7)
+        return;
+    GRenderer::Cxform& cx = ((GASColorTransformObject*)self)->Cx;
+    for (int channel = 0; channel < 4; ++channel)
+    {
+        cx.M_[channel][0] = (float)fn.Arg(channel).ToNumber(fn.pEnv);
+        cx.M_[channel][1] = (float)fn.Arg(channel + 4).ToNumber(fn.pEnv);
+    }
+}
+
+// 2013 0xa70c90. The single argument is a movie clip, resolved by GASEnvironment::FindTargetByValue,
+// and a Transform whose argument names no clip stays undefined.
+void TransformCtor(const GASFnCall& fn)
+{
+    GASObject* self = fn.pThis ? fn.pThis->ToASObject() : 0;
+    if (self == 0 || fn.pEnv == 0 || self->GetObjectType() != Object_Transform)
+        return;
+    if (fn.GetNumArgs() < 1)
+        return;
+    GFxASCharacter* target = fn.pEnv->FindTargetByValue(fn.Arg(0));
+    if (target == 0)
+    {
+        fn.pEnv->LogScriptError("new Transform: '%s' names no movie clip",
+                                fn.Arg(0).ToString(fn.pEnv).ToCStr());
+        return;
+    }
+    ((GASTransformObject*)self)->SetTarget(target);
+}
+
+// ColorTransform.concat(second) - 2013 0xa77850. Flash's order: `this` is applied after `second`, so
+// the multipliers multiply and this object's offsets are scaled by second's multipliers.
+void ColorTransformConcat(const GASFnCall& fn)
+{
+    GASObject* self = fn.pThis ? fn.pThis->ToASObject() : 0;
+    if (self == 0 || fn.pEnv == 0 || self->GetObjectType() != Object_ColorTransform
+        || fn.GetNumArgs() < 1)
+        return;
+    GASObject* other = fn.Arg(0).ToObject(fn.pEnv);
+    if (other == 0 || other->GetObjectType() != Object_ColorTransform)
+        return;
+    GRenderer::Cxform& a = ((GASColorTransformObject*)self)->Cx;
+    const GRenderer::Cxform& b = ((GASColorTransformObject*)other)->Cx;
+    for (int channel = 0; channel < 4; ++channel)
+    {
+        a.M_[channel][1] = a.M_[channel][1] * b.M_[channel][0] + b.M_[channel][1];
+        a.M_[channel][0] = a.M_[channel][0] * b.M_[channel][0];
+    }
+}
+
 void EmptyCtor(const GASFnCall& fn)
 {
     (void)fn;
@@ -721,33 +1054,55 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
                                   GASPropFlags(GASPropFlags::PropFlag_DontEnum));
     }
 
+    // flash.geom, all three classes on one `geom` object. Each is also installed unqualified, which
+    // is what `import flash.geom.*` compiles to, and each carries retail's own CreateNewObject so
+    // that `new` allocates the class's own storage rather than a plain object.
     {
-        GASObject* matrixProto = new GASObject(sc, gc->GetPrototype(GASGlobalContext::Proto_Object));
-        GASValue v;
-        v.SetAsFunction(gc->NewCFunction(MatrixIdentity));
-        matrixProto->SetConstMemberRaw(sc, "identity", v,
-                                       GASPropFlags(GASPropFlags::PropFlag_DontEnum));
-        v.SetAsFunction(gc->NewCFunction(MatrixTranslate));
-        matrixProto->SetConstMemberRaw(sc, "translate", v,
-                                       GASPropFlags(GASPropFlags::PropFlag_DontEnum));
-        v.SetAsFunction(gc->NewCFunction(MatrixScale));
-        matrixProto->SetConstMemberRaw(sc, "scale", v,
-                                       GASPropFlags(GASPropFlags::PropFlag_DontEnum));
-        GASFunctionObject* ctor = gc->NewCFunction(MatrixCtor);
-        v.SetAsObject(matrixProto);
-        ctor->SetConstMemberRaw(sc, "prototype", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
-        GASValue ctorVal;
-        ctorVal.SetAsFunction(ctor);
+        GASObject* geom = 0;
         if (flash)
         {
-            GASObject* geom = new GASObject(sc, gc->GetPrototype(GASGlobalContext::Proto_Object));
-            geom->SetConstMemberRaw(sc, "Matrix", ctorVal,
-                                    GASPropFlags(GASPropFlags::PropFlag_DontEnum));
-            v.SetAsObject(geom);
-            flash->SetConstMemberRaw(sc, "geom", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+            geom = new GASObject(sc, gc->GetPrototype(GASGlobalContext::Proto_Object));
+            GASValue geomVal;
+            geomVal.SetAsObject(geom);
+            flash->SetConstMemberRaw(sc, "geom", geomVal,
+                                     GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         }
-        global->SetConstMemberRaw(sc, "Matrix", ctorVal,
-                                  GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+        {
+            GASObject* proto = new GASObject(sc, gc->GetPrototype(GASGlobalContext::Proto_Object));
+            GASValue v;
+            v.SetAsFunction(gc->NewCFunction(MatrixIdentity));
+            proto->SetConstMemberRaw(sc, "identity", v,
+                                     GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+            v.SetAsFunction(gc->NewCFunction(MatrixTranslate));
+            proto->SetConstMemberRaw(sc, "translate", v,
+                                     GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+            v.SetAsFunction(gc->NewCFunction(MatrixScale));
+            proto->SetConstMemberRaw(sc, "scale", v,
+                                     GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+            GASFunctionObject* ctor = gc->NewCFunction(MatrixCtor);
+            ctor->pNewObjectFunc = MatrixNewObject;
+            GeomInstall(sc, global, geom, "Matrix", proto, ctor);
+            GMatrixProto = proto;
+        }
+
+        {
+            GASObject* proto = new GASObject(sc, gc->GetPrototype(GASGlobalContext::Proto_Object));
+            GASValue v;
+            v.SetAsFunction(gc->NewCFunction(ColorTransformConcat));
+            proto->SetConstMemberRaw(sc, "concat", v,
+                                     GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+            GASFunctionObject* ctor = gc->NewCFunction(ColorTransformCtor);
+            ctor->pNewObjectFunc = ColorTransformNewObject;
+            GeomInstall(sc, global, geom, "ColorTransform", proto, ctor);
+            GColorTransformProto = proto;
+        }
+
+        {
+            GASObject* proto = new GASObject(sc, gc->GetPrototype(GASGlobalContext::Proto_Object));
+            GASFunctionObject* ctor = gc->NewCFunction(TransformCtor);
+            ctor->pNewObjectFunc = TransformNewObject;
+            GeomInstall(sc, global, geom, "Transform", proto, ctor);
+        }
     }
 
     // TextFormat, for the object getTextFormat answers with. getTextExtent is the only method the

@@ -40,6 +40,12 @@ enum GASObjectType
     Object_MovieClipObject  = 11,   // interpolated
     Object_Stage            = 12,   // interpolated
     Object_TextField        = 13,   // measured, GASTextFieldObject 2012 0xa26c80
+    Object_Matrix           = 15,   // measured, the `== 15` guard in GASTransformObject::SetMember
+                                    // 2013 0xa70a20 before GASMatrixObject::GetMatrix
+    Object_ColorTransform   = 18,   // measured, the `== 18` guard in GASColorTransformCtorFunction
+                                    // ::GlobalCtor 2013 0xa77c30 and in SetMember 0xa70a20
+    Object_Transform        = 20,   // measured, the `== 20` guard in GASTransformCtorFunction
+                                    // ::GlobalCtor 2013 0xa70c90
     Object_Key              = 22,   // measured, GASKeyObject 2012 0xa8a350
     Object_Function         = 23,   // measured, GASFunctionObject 2012 0x9af140
     Object_MovieClipLoader  = 25,   // measured, 2012 0x9c8770

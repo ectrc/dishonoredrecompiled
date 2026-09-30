@@ -1263,6 +1263,21 @@ void GFxAS2GetDisplayProperty(GFxASCharacter* ch, int index, GASValue* out)
         // GFxMovieRoot::ProcessMouse 2013 0xa05330); retail's GFxASCharacter::GetStandardMember
         // arms transform it by the inverse of the character's world matrix and snap the result to a
         // twip, which is why a clip under a scaled parent reads its own local pixels.
+        //
+        // DISHONORED(bringup, agent FD): the stage point goes in as PIXELS. The world matrix this
+        // inverts is the product of every GetMatrix() up to and including the root sprite's, and the
+        // root's carries the viewport's twips-to-pixels scale - so the product maps local TWIPS to
+        // stage PIXELS and its inverse takes stage pixels to local twips, which is the one place the
+        // trailing GFxTwipsToPixels then belongs. Converting the stage point to twips first made the
+        // inverse scale it by 20 a second time: measured on the brightness screen's slider, whose
+        // stage origin is x 637, `_xmouse` read 9603 with the pointer at stage x 512 and 13443 at
+        // 704, where the answers are -125 and +67 - both exactly 20 * stage_x - 637. That is the
+        // whole of "clicking anywhere with a mouse sets the slider to its maximum":
+        // _common.P_Slider's GetIndexFromPosition clamps its argument to +/- (_trackW - _thumbW) / 2
+        // = +/- 128.95 and divides, so any pointer past stage x 39 gives ratio 1 and the brightness
+        // widget answers _maxValue, 5. _root._xmouse - which is what the content hands
+        // MovieClip.hitTest, whose point form takes stage pixels - was 20x too large for the same
+        // reason.
         double result = 0.0;
         GFxMovieRoot* root = ch->GetMovieRoot();
         if (root)
@@ -1274,10 +1289,8 @@ void GFxAS2GetDisplayProperty(GFxASCharacter* ch, int index, GASValue* out)
             GMatrix2D inverse;
             if (GFxDisplayMatrixInvert(&inverse, world))
             {
-                const float sx = mx * GFxPixelsToTwips;
-                const float sy = my * GFxPixelsToTwips;
-                const float lx = inverse.M_[0][0] * sx + inverse.M_[0][1] * sy + inverse.M_[0][2];
-                const float ly = inverse.M_[1][0] * sx + inverse.M_[1][1] * sy + inverse.M_[1][2];
+                const float lx = inverse.M_[0][0] * mx + inverse.M_[0][1] * my + inverse.M_[0][2];
+                const float ly = inverse.M_[1][0] * mx + inverse.M_[1][1] * my + inverse.M_[1][2];
                 result = (double)((index == 20 ? (float)(int)lx : (float)(int)ly)
                                   * GFxTwipsToPixels);
             }
