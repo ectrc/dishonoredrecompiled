@@ -89,6 +89,31 @@ public:
 			, m_pArchive( InArchive )
 		{}
 
+		/**
+		 * DISHONORED(port): agent EN (PHASE13 EN). 2013 rvas 0x532de0 (UObject*) and 0x533900 (AActor*): the one thing a
+		 * component does with the helper. With the object array it hands the reference to the collector and answers the
+		 * pointer unchanged; with the archive it serializes the reference through FArchive slot 6,
+		 * operator<<(UObject*&) (offset 24 - agent EJ settled the slot order), and answers what the archive left
+		 * behind, which is how a component's object reference survives a UArkComponentContainer::Serialize.
+		 * DISHONORED(written): retail has two private overloads, one per pointer type; they differ only in that the
+		 * AActor* one uses UObject::_AddReferencedObjectNullable, a retail-only private static that this tree does not
+		 * have. One template covers both call shapes, and the collector's job here - keeping the referent reachable -
+		 * is what AddReferencedObject does in either overload.
+		 */
+		template< class ObjectType > ObjectType* manageReference( ObjectType* _pObject )
+		{
+			UObject* pObject = _pObject;
+			if( m_pObjectArray )
+			{
+				UObject::AddReferencedObject( *m_pObjectArray, pObject );
+			}
+			else if( m_pArchive )
+			{
+				*m_pArchive << pObject;
+			}
+			return static_cast<ObjectType*>( pObject );
+		}
+
 		TArray<UObject*>*	m_pObjectArray;
 		FArchive*			m_pArchive;
 	};
@@ -180,6 +205,32 @@ public:
 
 /** Pairs with ARKCOMPONENT_DECLARE_TYPE: put one in the component's .cpp so a saved component can be recreated by id. */
 #define ARKCOMPONENT_IMPLEMENT_TYPE( ComponentClass )									\
-	static FArkComponentCreatorRegister ComponentClass##_CreatorRegister(				\
+	FArkComponentCreatorRegister ComponentClass##_CreatorRegister(						\
 		ComponentClass::ARK_COMPONENT_TYPE,												\
 		&FArkComponentCreatorRegister::CreatorFn< ComponentClass > );
+
+/**
+ * DISHONORED(written): agent EN (PHASE13 EN). One of these per component, in a unit the link already pulls in, is what
+ * names the registrant above so the linker keeps it.
+ *
+ * Why it is needed, measured in three runs (build/agentEN/agentEN_final16.log and build/agentEN/build*.log):
+ *  1. Sources.cmake's <Module>_EXCLUDE list keeps every comment-only skeleton unit out of the build, and the three
+ *     monitor components' units were on it. Regenerating it with gen_classes_header.py --sources-cmake took them off
+ *     (827 skeleton units -> 824) and they compiled.
+ *  2. They still did not reach the image. This tree builds each module as a STATIC library and MSVC's linker takes a
+ *     library member only to resolve an undefined symbol; a dynamic initializer is not a symbol reference, so a
+ *     component unit nothing else calls into is dropped and its type never reaches the creator table.
+ *     UArkComponentContainer::AddNewComponentByID reported "no component type is registered for id 211" with the
+ *     object file sitting in DishonoredGameModule.lib, and `DisCpntType_AIMonitorReaction` occurred zero times in the
+ *     exe while `ArkCpntType_Locomotion` (whose unit is reached from dishonorednpcpawn_locomotion.cpp) occurred once.
+ *     Retail does not have the problem, because UnrealBuildTool hands the linker the module's .obj files directly.
+ *  3. The pointer must have EXTERNAL linkage. Written `static FArkComponentCreatorRegister* const`, which is what a
+ *     pointer at namespace scope wants to be, the compiler drops an unreferenced internal-linkage constant before the
+ *     linker ever sees it and nothing changed. Without const it is a definition the compiler has to emit, its
+ *     relocation names the registrant, and the library member comes in with it. It costs one pointer of .data and no
+ *     code: the initializer is constant, so there is no second dynamic initializer.
+ */
+#define ARKCOMPONENT_LINK_TYPE( ComponentClass )										\
+	extern FArkComponentCreatorRegister ComponentClass##_CreatorRegister;				\
+	FArkComponentCreatorRegister* ComponentClass##_CreatorRegisterLink =					\
+		&ComponentClass##_CreatorRegister;

@@ -1259,6 +1259,72 @@ UBOOL URB_BodyInstance::IsValidBodyInstance()
 	return Retval;
 }
 
+/*
+	DISHONORED(port): agent EN (PHASE13 EN). 2013 rva 0x39e7f0 (2012 0x3c0f00), retail vtable slot 70. The rigid-body
+	state of one body of a ragdolled actor's physics asset instance. Retail's body, from its own disassembly:
+
+	  BYTE bHasBody;   Ar.Serialize( &bHasBody, 1 );               [FArchive vtable+4]
+	  if( bHasBody )
+	  {
+	      FBoneAtom BoneAtom;   Ar << BoneAtom;                     32 bytes - two FVector4s, see below
+	      FLOAT LinVel[3];      three ByteOrderSerialize( , 4 )
+	      FLOAT AngVel[3];      three ByteOrderSerialize( , 4 )
+	      BYTE  Flags = 0;      Ar.Serialize( &Flags, 1 );
+	      ... then PhysX, which reads no stream byte: two bits of Flags into the bitfield at offset 104,
+	          NxActor setGlobalPosition + setGlobalOrientationQuat, and, unless the actor is kinematic,
+	          setLinearVelocity / setAngularVelocity followed by putToSleep when both are nearly zero and
+	          wakeUp( 0.4f ) when they are not ...
+	  }
+
+	Fifty-eight bytes per rigid body. The FBoneAtom is the vectorized one and our Core/Inc/FBoneAtomVectorized.h
+	serialiser writes exactly what retail's does - retail's GameSave (0x3a8620) builds the atom from this object's own
+	FQuat at offset 160 (m_CurrentRotation) and FVector at 176 (m_CurrentPosition) with W forced to 1, i.e. two
+	16-byte registers and no scale, which is `Ar << *(FVector4*)&Rotation; Ar << *(FVector4*)&TranslationScale;`.
+	ENABLE_VECTORIZED_FBONEATOM is on in this tree (Core/Inc/UnMath.h:6547), so FBoneAtom IS that type here.
+
+	DISHONORED(bringup): the PhysX tail is NOT applied. Three reasons, in order of weight:
+	  * placing eighteen rigid bodies and waking or sleeping them during a level restore is a change to the physics
+	    scene, and this package has no measurement of what that does to it - the regression's d3d9 and inputtest
+	    stages both count physics actors;
+	  * the two Flags bits go into the bitfield at offset 104, which holds five one-bit members in this tree
+	    (m_bFrozen, m_bWakeUpWhenUnfrozen, m_bIgnoreNextWakeupEvent, m_bIsPending, m_bSeveredLimb) and retail's
+	    masks 0x1000/0x2000/0x4000 cannot be matched to names from the disassembly alone;
+	  * what retail's GameSave reads for those 32 bytes is m_CurrentRotation and m_CurrentPosition, so writing them
+	    back is the part of the restore that is evidenced rather than guessed, and it is what this body does.
+	The velocities and the flag byte are read and not stored, because the members they would go into
+	(m_RealLinearVelocity / m_RealAngularVelocity) are not the ones retail's GameSave reads from - GameSave asks
+	PhysX through GetUnrealWorldVelocity / GetUnrealWorldAngularVelocity - so storing them there would be a guess.
+	Every byte is read either way, which is what keeps the object stream in step.
+*/
+UBOOL URB_BodyInstance::SerializeSavedState( FArchive& Ar, FBoneAtom& OutBoneAtom, FVector& OutLinearVelocity, FVector& OutAngularVelocity, BYTE& OutFlags )
+{
+	BYTE bHasBody = 0;
+	Ar.Serialize( &bHasBody, sizeof(bHasBody) );
+	if( !bHasBody )
+	{
+		return FALSE;
+	}
+
+	Ar << OutBoneAtom;
+	Ar << OutLinearVelocity.X << OutLinearVelocity.Y << OutLinearVelocity.Z;
+	Ar << OutAngularVelocity.X << OutAngularVelocity.Y << OutAngularVelocity.Z;
+	Ar.Serialize( &OutFlags, sizeof(OutFlags) );
+	return TRUE;
+}
+
+void URB_BodyInstance::GameLoad( FArchive& Ar, ESaveLoadLocation Location )
+{
+	FBoneAtom BoneAtom;
+	FVector LinearVelocity( 0.f, 0.f, 0.f );
+	FVector AngularVelocity( 0.f, 0.f, 0.f );
+	BYTE Flags = 0;
+	if( SerializeSavedState( Ar, BoneAtom, LinearVelocity, AngularVelocity, Flags ) )
+	{
+		m_CurrentRotation = BoneAtom.GetRotation();
+		m_CurrentPosition = BoneAtom.GetTranslation();
+	}
+}
+
 FMatrix URB_BodyInstance::GetUnrealWorldTM()
 {
 #if WITH_NOVODEX

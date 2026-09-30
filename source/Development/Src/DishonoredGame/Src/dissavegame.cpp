@@ -2190,16 +2190,55 @@ FArchive& operator<<( FArchive& _rArchive, FDisNPCDeathInfo& _rInfo )
 }
 
 // DISHONORED(port): 2013 rva 0x7ec790 (2012 0x82f4c0) - a BYTE count, then one URB_BodyInstance::GameLoad
-// per rigid body of the mesh's physics asset instance.
-// DISHONORED(bringup): URB_BodyInstance::GameSave / GameLoad (2012 0x3ca2f0 / 0x3c0f00) are not ported, so
-// a save taken with a ragdolled NPC stops here instead of reading bodies it cannot decode.
+// per rigid body of the mesh's physics asset instance. Retail indexes
+// _pMesh->PhysicsAssetInstance->Bodies (the decompile's *(mesh+500) then the array at +64/+68) and calls each body's
+// vtable slot 70, and the count it read is what bounds the loop rather than the array's own length.
+// DISHONORED(port): agent EN (PHASE13 EN) - URB_BodyInstance::GameLoad (2013 0x39e7f0) is now ported, in retail's own
+// unit Engine/Src/UnPhysAsset.cpp, which reads 58 bytes per body. GameSave (0x3a8620) is not, for agent ED's reason.
+// DISHONORED(bringup): retail dereferences PhysicsAssetInstance and indexes Bodies with no test, because the session
+// that wrote the save had both. This one does not: measured on Dishonored1.sav (build/agentEN/agentEN_final17.log of
+// the first run with this body), the mesh's PhysicsAssetInstance is still NULL at the point the restore reads its
+// eighteen body states - the articulated instance is created later than the level restore. The byte count of a saved
+// body state does not depend on the body, only on its leading bHasBody, so the state is read through
+// URB_BodyInstance::SerializeSavedState either way and only the assignment to the body is skipped. That is what keeps
+// the object stream in step; what it costs is stated in resources/docs/agents/agentEN.md.
 static void DisLoadPhysicsAssetInstanceBodies( USkeletalMeshComponent* _pMesh, FArchive& _rArchive, ESaveLoadLocation _Location )
 {
 	BYTE NumBodies = 0;
 	_rArchive.Serialize( &NumBodies, sizeof(NumBodies) );
-	if( NumBodies > 0 )
+	if( NumBodies == 0 )
 	{
-		DisStopRestore( _rArchive, FString::Printf( TEXT("DisLoadPhysicsAssetInstanceBodies (2013 rva 0x7ec790), which has %d rigid-body states to read and no URB_BodyInstance::GameLoad in this tree"), (INT)NumBodies ) );
+		return;
+	}
+
+	UPhysicsAssetInstance* pAssetInstance = _pMesh->PhysicsAssetInstance;
+	const INT NumLiveBodies = pAssetInstance != NULL ? pAssetInstance->Bodies.Num() : 0;
+	if( NumLiveBodies < (INT)NumBodies )
+	{
+		static UBOOL bSaidSo = FALSE;
+		if( !bSaidSo )
+		{
+			bSaidSo = TRUE;
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): DisLoadPhysicsAssetInstanceBodies: the save has %d rigid-body states and this session's physics asset instance has %d bodies, so the states are read and not applied"),
+				(INT)NumBodies, NumLiveBodies );
+		}
+	}
+
+	for( INT BodyIdx = 0; BodyIdx < (INT)NumBodies; BodyIdx++ )
+	{
+		URB_BodyInstance* pBody = BodyIdx < NumLiveBodies ? pAssetInstance->Bodies( BodyIdx ) : NULL;
+		if( pBody != NULL )
+		{
+			pBody->GameLoad( _rArchive, _Location );
+		}
+		else
+		{
+			FBoneAtom BoneAtom;
+			FVector LinearVelocity( 0.f, 0.f, 0.f );
+			FVector AngularVelocity( 0.f, 0.f, 0.f );
+			BYTE Flags = 0;
+			URB_BodyInstance::SerializeSavedState( _rArchive, BoneAtom, LinearVelocity, AngularVelocity, Flags );
+		}
 	}
 }
 

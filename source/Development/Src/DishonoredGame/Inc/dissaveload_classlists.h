@@ -578,7 +578,7 @@ static const TCHAR* GDisRetailSaveEntryClasses[] =
 	TEXT("WorldInfo"),
 };
 
-/** the 55 classes with a GameSave or GameLoad body of their own that agent ED ported */
+/** the 56 classes with a GameSave or GameLoad body of their own that agent ED ported */
 static const TCHAR* GDisPortedGameLoadClasses[] =
 {
 	TEXT("Actor"),
@@ -627,6 +627,7 @@ static const TCHAR* GDisPortedGameLoadClasses[] =
 	TEXT("InterpActor"),
 	TEXT("KActor"),
 	TEXT("Light"),
+	TEXT("RB_BodyInstance"),
 	TEXT("SceneCaptureActor"),
 	TEXT("SeqAct_Latent"),
 	TEXT("Sequence"),
@@ -638,7 +639,7 @@ static const TCHAR* GDisPortedGameLoadClasses[] =
 	TEXT("WorldInfo"),
 };
 
-/** the 57 that are NOT ported. Reaching one of these in a save stops the level restore. */
+/** the 56 that are NOT ported. Reaching one of these in a save stops the level restore. */
 static const TCHAR* GDisUnportedGameLoadClasses[] =
 {
 	TEXT("AkAmbientSound"),
@@ -695,7 +696,6 @@ static const TCHAR* GDisUnportedGameLoadClasses[] =
 	TEXT("DishonoredUsableObject"),
 	TEXT("GameCrowdSpawner"),
 	TEXT("NavMeshBlockToggleable"),
-	TEXT("RB_BodyInstance"),
 	TEXT("SeqAct_AkPostEvent"),
 	TEXT("SeqAct_Interp"),
 };

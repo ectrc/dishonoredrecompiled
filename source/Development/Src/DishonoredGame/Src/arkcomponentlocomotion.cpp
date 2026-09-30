@@ -14,6 +14,15 @@
 
 ARKCOMPONENT_IMPLEMENT_TYPE( FArkComponentLocomotion )
 
+// DISHONORED(written): agent EN (PHASE13 EN). This unit is one the link always pulls in - the locomotion component's
+// PreAsyncWorkTick is called from dishonorednpcpawn_locomotion.cpp - so it is where the module's other component
+// registrants are named. A static-library member holding nothing but a registrant is never linked and its type never
+// reaches the creator table; ARKCOMPONENT_LINK_TYPE in Engine/Inc/arkcomponentbase.h records how that was measured.
+// The registrants themselves stay in their own components' units, which is where retail has them.
+ARKCOMPONENT_LINK_TYPE( FDisAIKnowledgeComponent )			// DisCpntType_AIKnowledge, 210
+ARKCOMPONENT_LINK_TYPE( FDisAIMonitorReaction )				// DisCpntType_AIMonitorReaction, 211
+ARKCOMPONENT_LINK_TYPE( FDisAIMonitorPawnReachability )		// DisCpntType_AIMonitorPawnReachability, 208
+
 TArray<FArkComponentLocomotion::FLocoCpntSharedProps>	FArkComponentLocomotion::ms_LocoCpntSharedProps;
 INT														FArkComponentLocomotion::ms_ComponentCount = 0;
 INT														FArkComponentLocomotion::ms_TickCountBeforePath = 0;

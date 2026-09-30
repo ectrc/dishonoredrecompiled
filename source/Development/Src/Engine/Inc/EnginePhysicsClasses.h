@@ -1429,6 +1429,14 @@ public:
     FVector m_RealAngularVelocity;  // DISHONORED(layout): retail SDK @204, 2012 PDB @204
     //## END PROPS RB_BodyInstance
 
+    // DISHONORED(port): agent EN (PHASE13 EN) - 2013 rva 0x39e7f0 (2012 0x3c0f00), retail vtable slot 70; the
+    // rigid-body state of a ragdolled actor, and the whole distance between Dishonored1.sav's 18 bodies and the rest
+    // of its object stream. GameSave (0x3a8620, slot 69) is not ported, for agent ED's reason. Body in UnPhysAsset.cpp.
+    virtual void GameLoad( FArchive& Ar, ESaveLoadLocation Location );
+    /** The 58 bytes of retail's body, on their own. Answers whether the save recorded a body at all; when it did not,
+        the four outputs are untouched and one byte was read. DisLoadPhysicsAssetInstanceBodies needs it without an
+        object, because the mesh's physics asset instance does not exist yet at the point the restore reads it. */
+    static UBOOL SerializeSavedState( FArchive& Ar, FBoneAtom& OutBoneAtom, FVector& OutLinearVelocity, FVector& OutAngularVelocity, BYTE& OutFlags );
     FLOAT GetBodyMass();
     void SetFixed(UBOOL bNewFixed);
     UBOOL IsFixed();

@@ -170,6 +170,21 @@ public:
 	virtual const FArkComponentBase* GetComponentBase() const = 0;
 };
 
+/**
+ * DISHONORED(port): agent EN (PHASE13 EN). The second PreAsyncWork policy, the one FArkComponentManager ticks just
+ * before the procedural-animation pass. It adds no method of its own: retail's
+ * IArkComponentPreAsyncWorkJustBeforeProceduralAnim vftable (2013 rva 0xc1bda4) is exactly two __purecall entries, and
+ * every component that implements it carries PreAsyncWorkTick at slot 0 and GetComponentBase at slot 1 in the vftable
+ * of its subobject - FDisAIMonitorReaction 0xd3a354, FDisAIMonitorPawnReachability 0xd3a2d8,
+ * FDisAIKnowledgeComponent 0xd328f4. The distinct type is what lets the manager keep a second list,
+ * FArkComponentPolicy<IArkComponentPreAsyncWorkJustBeforeProceduralAnim,1> - whose DoneTicking is 2012 rva 0x578c50
+ * and 2013 rva 0x537ed0, the second of those from match_2012_2013.csv (ratio 0.786, by neighbours) because the 2013
+ * build has no name for it.
+ */
+class IArkComponentPreAsyncWorkJustBeforeProceduralAnim : public IArkComponentPreAsyncWork
+{
+};
+
 /*-----------------------------------------------------------------------------
 	FArkComponentLocomotion
 -----------------------------------------------------------------------------*/

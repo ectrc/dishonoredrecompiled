@@ -1,0 +1,67 @@
+kind,rva_2013,rva_2012,symbol,state,where,note
+component_class,0x72bce0,0x78f330,FDisAIMonitorReaction::IsOfType,ported,DishonoredGame/Inc/disaimonitorreaction.h,ARKCOMPONENT_DECLARE_TYPE emits it; id 211
+component_class,0x72bd00,0x78f350,FDisAIMonitorReaction::GetType,ported,DishonoredGame/Inc/disaimonitorreaction.h,returns 0xD3
+component_class,0x72bd10,0x78f360,FDisAIMonitorReaction::GetInternalName,ported,DishonoredGame/Inc/disaimonitorreaction.h,the FName is DisCpntType_AIMonitorReaction
+component_class,0x72bd80,0x78f3d0,FDisAIMonitorReaction::GetName,ported,DishonoredGame/Inc/disaimonitorreaction.h,
+component_class,0x72bc90,0x78f2e0,FDisAIMonitorReaction::FDisAIMonitorReaction,ported,DishonoredGame/Src/disaimonitorreaction.cpp,sizeof 64; the ten response-logic slots zeroed
+component_serialize,0x73b1a0,0x79aec0,FDisAIMonitorReaction::Serialize,ported,DishonoredGame/Src/disaimonitorreaction.cpp,base 10 bytes + one INT = 14; the policy-membership INT is read and discarded
+component_class,0x72be30,0x78f480,FDisAIMonitorReaction::ManageReferences,ported,DishonoredGame/Src/disaimonitorreaction.cpp,one UObject reference
+component_class,0x728b20,0x78d4a0,FDisAIMonitorReaction::GetMemoryFootprint,ported,DishonoredGame/Inc/disaimonitorreaction.h,ICF fold with FDisAIMonitorPawnReachability's; GetAllocatedSize() + sizeof
+component_class,0x728b70,0x78d4e0,FDisAIMonitorReaction::PreAsyncWorkTick,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,empty body; ticks the ten FResponseLogic_Base which do not exist here
+component_class,0x728b30,0x78d4a0,FDisAIMonitorReaction::GetAllocatedSize,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,the base returns 0 and every logic slot is NULL here so the number is identical
+component_class,0x728af0,0x78d470,FDisAIMonitorReaction::DeleteLogicForAllResponseID,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,needs FResponseLogic_Base complete
+component_class,0x72fa40,0x792600,FDisAIMonitorReaction::CreateLogicForResponseID,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,a switch over the ten response ids; needs the fourteen logic classes
+component_class,0x735040,0x7974a0,FDisAIMonitorReaction::Init,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,walks response ids 0..9 against UDisTweaks_AIBrain_Reaction
+component_class,0x72bdb0,0x78f400,FDisAIMonitorReaction::Starting,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,registers with the component manager JustBeforeProceduralAnim policy; no manager here
+component_class,0x72bde0,0x78f430,FDisAIMonitorReaction::Stopping,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,unregisters and deletes the logics
+component_class,0x73b130,0x79ae50,FDisAIMonitorReaction::DoFilterStim,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,
+component_class,0x73eab0,0x79c150,FDisAIMonitorReaction::CoS_OnTransgression,not_ported,DishonoredGame/Src/disaimonitorreaction.cpp,2013 unnamed (sub_B3EAB0); matched from 2012 by match_2012_2013.csv ratio 0.684
+creator,0x5eb950,0x631ca0,FArkComponentCreatorRegister::CreatorFn<FDisAIMonitorReaction>,ported,DishonoredGame/Src/disaimonitorreaction.cpp,ARKCOMPONENT_IMPLEMENT_TYPE
+component_class,0x7038f0,0x7473f0,FDisAIKnowledgeComponent::IsOfType,ported,DishonoredGame/Inc/disaiknowledgecomponent.h,id 210
+component_class,0x703910,0x747410,FDisAIKnowledgeComponent::GetType,ported,DishonoredGame/Inc/disaiknowledgecomponent.h,returns 0xD2
+component_class,0x703920,0x747420,FDisAIKnowledgeComponent::GetInternalName,ported,DishonoredGame/Inc/disaiknowledgecomponent.h,the FName is DisCpntType_AIKnowledge
+component_class,0x703990,0x747490,FDisAIKnowledgeComponent::GetName,ported,DishonoredGame/Inc/disaiknowledgecomponent.h,
+component_class,0x7038c0,,FDisAIKnowledgeComponent::FDisAIKnowledgeComponent,ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,sizeof 28; m_pOwningBrain zeroed where retail leaves it uninitialised
+component_serialize,0x7039f0,0x7474f0,FDisAIKnowledgeComponent::Serialize,ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,base 10 bytes + two 2-byte references = 14 plus any nested GameLoad
+component_class,0x7039b0,,FDisAIKnowledgeComponent::ManageReferences,ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,two UObject references
+component_class,0x700b80,,FDisAIKnowledgeComponent::GetMemoryFootprint,ported,DishonoredGame/Inc/disaiknowledgecomponent.h,GetAllocatedSize() + 0x1C
+component_class,0x7169e0,,FDisAIKnowledgeComponent::Starting,not_ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,constructs and roots a UDisAIBlackboard and subscribes to game event 0x12
+component_class,0x716a80,,FDisAIKnowledgeComponent::Stopping,not_ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,the mirror of Starting
+component_class,0x714820,,FDisAIKnowledgeComponent::OnAnyPawnShutdown,not_ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,needs the blackboard record classes
+creator,0x5eb870,0x631bc0,FArkComponentCreatorRegister::CreatorFn<FDisAIKnowledgeComponent>,ported,DishonoredGame/Src/disaiknowledgecomponent.cpp,ARKCOMPONENT_IMPLEMENT_TYPE
+component_class,0x72bb40,0x78f190,FDisAIMonitorPawnReachability::IsOfType,ported,DishonoredGame/Inc/disaimonitoractorreachability.h,id 208
+component_class,0x72bb60,0x78f1b0,FDisAIMonitorPawnReachability::GetType,ported,DishonoredGame/Inc/disaimonitoractorreachability.h,returns 0xD0
+component_class,0x72bb70,0x78f1c0,FDisAIMonitorPawnReachability::GetInternalName,ported,DishonoredGame/Inc/disaimonitoractorreachability.h,the FName is DisCpntType_AIMonitorPawnReachability
+component_class,0x72bbe0,0x78f230,FDisAIMonitorPawnReachability::GetName,ported,DishonoredGame/Inc/disaimonitoractorreachability.h,
+component_class,0x72bad0,,FDisAIMonitorPawnReachability::FDisAIMonitorPawnReachability,ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,sizeof 64; eleven DWORDs member for member
+component_serialize,0x73b010,0x79ad30,FDisAIMonitorPawnReachability::Serialize,ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,base 10 bytes + 44 = 54; the longest of the nineteen
+component_class,0x72bc50,,FDisAIMonitorPawnReachability::ManageReferences,ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,one UObject and one AActor reference
+component_class,0x728b20,,FDisAIMonitorPawnReachability::GetMemoryFootprint,ported,DishonoredGame/Inc/disaimonitoractorreachability.h,GetAllocatedSize() + 0x40
+component_class,0x7480a0,0x7a5470,FDisAIMonitorPawnReachability::PreAsyncWorkTick,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,empty body; the reachability check and its three stim raisers
+component_class,0x72bc00,,FDisAIMonitorPawnReachability::Starting,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,policy registration and the timer reset
+component_class,0x747570,,FDisAIMonitorPawnReachability::Stopping,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x746580,0x7a3e80,FDisAIMonitorPawnReachability the reachability check,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,2013 unnamed (sub_B46580); writes m_LastNavMeshCheckLocation
+component_class,0x728a90,0x78d410,FDisAIMonitorPawnReachability::DoReachabilityCheck_OnNavmesh,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x73e740,0x79bec0,FDisAIMonitorPawnReachability::DoReachabilityCheck_PathFind,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x73e7f0,0x79bf70,FDisAIMonitorPawnReachability::OnBecomeReachable,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x73e890,0x79c010,FDisAIMonitorPawnReachability::OnBecomeUnReachable,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x73e930,0x79c0b0,FDisAIMonitorPawnReachability::OnUnReachabilityChange,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x73e9d0,0x7a0530,FDisAIMonitorPawnReachability::OnHideoutEvent,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x745310,,FDisAIMonitorPawnReachability::GetActualHideoutThePlayerIsIn,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x745460,0x7a1c80,FDisAIMonitorPawnReachability::GetKnownHideoutThePlayerIsIn,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x746360,0x7a3620,FDisAIMonitorPawnReachability::GetPawnKnownReachability,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x746480,0x7a3740,FDisAIMonitorPawnReachability::KnowPlayerIsWithinHideOut,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x746780,0x7a4050,FDisAIMonitorPawnReachability::IsPawnReachableBy,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x747c10,,FDisAIMonitorPawnReachability::UpdateCachedReachability,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+component_class,0x7481e0,0x7a55b0,FDisAIMonitorPawnReachability::ResetWithNewMonitoredPawn,not_ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,
+creator,0x5eb8e0,0x631c30,FArkComponentCreatorRegister::CreatorFn<FDisAIMonitorPawnReachability>,ported,DishonoredGame/Src/disaimonitoractorreachability.cpp,ARKCOMPONENT_IMPLEMENT_TYPE
+helper,0x532de0,,FArkComponentBase::FGCHelper::manageReference(UObject*),ported,Engine/Inc/arkcomponentbase.h,one template for retail two overloads
+helper,0x533900,,FArkComponentBase::FGCHelper::manageReference(AActor*),ported,Engine/Inc/arkcomponentbase.h,same template; retail uses _AddReferencedObjectNullable which this tree lacks
+save_body,0x39e7f0,0x3c0f00,URB_BodyInstance::GameLoad,ported,Engine/Src/UnPhysAsset.cpp,slot 70; 58 bytes per body; the PhysX tail is not applied
+save_body,0x3a8620,0x3ca2f0,URB_BodyInstance::GameSave,not_ported,Engine/Src/UnPhysAsset.cpp,the writing half of the object layer does not exist here
+save_helper,0x7ec790,0x82f4c0,DisLoadPhysicsAssetInstanceBodies,ported,DishonoredGame/Src/dissavegame.cpp,the BYTE count and the per-body loop; reads the states when the asset instance is absent
+accessor,0x711ce0,0x74fc90,UDishonoredAIBrain::GetKnowledge,ported,DishonoredGame/Src/dishonoredaibrain.cpp,GetFirstComponent<FDisAIKnowledgeComponent>(TRUE); answered NULL before this package
+interface,0xc1bda4,,IArkComponentPreAsyncWorkJustBeforeProceduralAnim,ported,DishonoredGame/Inc/arkcomponentlocomotion.h,vftable rva; two __purecall entries so it adds no method of its own
+policy,0x537ed0,0x578c50,FArkComponentPolicy<...JustBeforeProceduralAnim>::DoneTicking,not_ported,,2013 unnamed (sub_937ED0); cited only as evidence that the second policy list exists
+frontier,0x8a9540,0x8f9d10,UDisConv_Soiree_InGameData::GameLoad,not_ported,,the new stopping point of Dishonored0.sav; the base walk then a 2-byte reference and an INT
+frontier,0x672670,0x6a3be0,UDishonoredNativeStateMachine::LoadPartialState,ported,,the new stopping point of Dishonored1.sav is the state it names: StateNPCMasterDead_Limp

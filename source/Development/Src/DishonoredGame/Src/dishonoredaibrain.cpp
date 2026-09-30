@@ -29,6 +29,7 @@
 #include "dishonoredutilities_ai.h"
 #include "aistimstruct.h"
 #include "dishonoredutilities_saveload.h"
+#include "disaiknowledgecomponent.h"
 
 /** DISHONORED(written): agent CG's DisRaiseStim<T> moved to Inc/aistimstruct.h beside DisHandleAIStim (agent DF), because
     the desire layer raises four stims of its own and the EAIStimID stamp must have exactly one home. */
@@ -1105,12 +1106,16 @@ UBOOL UDishonoredAIBrain::CanBeDormant() const
 	return FALSE;
 }
 
-// DISHONORED(port): 2013 rva 0x711ce0 (2012 0x74fc90): the knowledge component of the brain's container.
-// DISHONORED(bringup): FDisAIKnowledgeComponent is unported, so the container never holds one and this answers NULL,
-// which is the same path retail takes for a brain whose container has not been given one.
+// DISHONORED(port): 2013 rva 0x711ce0 (2012 0x74fc90): the knowledge component of the brain's container. The whole
+// retail body is one call, GetFirstComponent<FDisAIKnowledgeComponent>( TRUE ) on m_pBrainComponentContainer (which the
+// decompile reads as *((DWORD*)this+120), i.e. offset 480 - DishonoredGameLayouts.h asserts the same).
+// DISHONORED(port): agent EN (PHASE13 EN) landed FDisAIKnowledgeComponent (Ark component type 210), so this answers the
+// component the container actually holds instead of NULL.
+// DISHONORED(written): retail returns a reference and dereferences the container with no test; a brain whose container
+// has not been created yet answers NULL here rather than reading through it.
 FDisAIKnowledgeComponent* UDishonoredAIBrain::GetKnowledge() const
 {
-	return NULL;
+	return m_pBrainComponentContainer ? m_pBrainComponentContainer->GetFirstComponent<FDisAIKnowledgeComponent>( TRUE ) : NULL;
 }
 
 /*-----------------------------------------------------------------------------
