@@ -341,7 +341,27 @@ and `middleware.md`.
    flag that makes retail skip hundreds of properties in a save archive; `PPF_ForceBinarySerialization`,
    without which every enum byte was read by name; and the fact that an ICF-folded `GameLoad` body can
    be listed as ported while dispatch never reaches it.
-7. Full campaign; then DLC05/06/07 (needs Phase 7).
+   **Milestone 6 is met as far as the object stream goes, 2026-09-30** (agents EF, EJ, EN, ER):
+   `Dishonored0.sav` restores **6,569 objects and 537,208 of 619,631 stream bytes - 86.7 %** - with
+   `PostGameLoad` 6,569 and zero unported or partial bodies. Health, mana, the inventory, the ammo
+   counts, the elixirs, four keys, the darkness score, the whole AI stack behind the brain and the Ark
+   component layer all come back, each value verified against the save file's own raw bytes rather than
+   against our reader. What remains is 82,423 bytes that are two bytes wide, inside `AActor::GameLoad`.
+
+   The finding worth keeping from that run of packages: **a wrong `IsSaveable` ends the object loop
+   silently**. `USequenceFrame::IsSaveable` is a return-FALSE fold in retail; we inherited TRUE and read
+   27 bytes that were not there, and because the first misplaced WORD had bit 15 set the loader took it
+   for an unshared sub-level reference and stopped - `STREAM ENDED EARLY`, `0 unported`, no class named.
+   Five consecutive packages each reported an honest-looking frontier that was not one. Two guards in
+   `FLevelLoader::operator<<` would turn that into one log line and are still unwritten.
+
+7. Full campaign; then DLC05/06/07 (needs Phase 7). **The game now starts from its own menu**
+   (2026-09-30, agents EI and EL): five key presses from the main menu commit the map change and put
+   Corvo on the boat landing at Dunwall Tower, with the HUD drawn and a guard walking a patrol route.
+   That is the first end-to-end path from the shipped executable into playable content. Two things
+   block calling any of it "campaign": the menu does not yet look like retail's (nine measured fidelity
+   faults, `resources/docs/PHASE12.md`), and on the shipped build New Game currently issues
+   `ce ChangeLvl_StartNewGame` and nothing follows.
 8. Test suite: golden-log diffs (milestones 2–5), package load-all, save load-all, scripted
    flythrough on two maps to catch physics/animation drift.
 
@@ -419,14 +439,28 @@ milestone. Do not spend a wave on it until the game plays.
 * **Scaleform (10.4 %) and Wwise (4 %)** have no source anywhere; their Phase 4 decision gates
   GFxUI and AkAudio.
 
-## 6. Next concrete steps (2026-09-25, wave 3 landed)
+## 6. Next concrete steps (2026-09-30, waves 9-14 landed, wave 15 paused)
 
-1. Finish wave 4: package AF (milestone 5 evidence) and its `ADishonoredPlayerPawn::execPlayDying_Native`.
-2. Wave 5, from the follow-ups in `PHASE6.md` "Wave result": Arkane anim nodes (the tweak anim tree is gated
-   behind `-distweakanimtree` until they exist), the 275 DishonoredGame stubs behind the AI brain /
-   sub-process / item-context classes, the Arkane and GFx post-process shader families, a Release or
-   `FMallocBinned` build for long d3d9 runs, the ~100 remaining Engine/GameFramework shim classes, the
-   retail nav-mesh runtime, and the whole-tree Edge path.
-3. Load-all test over all 471 `.upk` / every `.pck` (milestone 3 exit check), now that `-loadall` exists.
-4. Phase 4: obtain PhysX 2.8.4 / Wwise 2012.1 / Steamworks 1.18 SDKs (the last 3 unported natives on the
-   path are Steamworks `Read*`); decide Scaleform (`middleware.md`).
+The state of play is in `resources/docs/STATUS.md`; the wave trackers are `PHASE11.md` (waves 9-15) and
+`PHASE12.md` (wave 16). HEAD is `e70f8c4`.
+
+1. **Wave 16, the menu (`PHASE12.md`), before anything else** - the user's instruction, from seven
+   side-by-side comparisons in `resources/reference/menu/`. Nine faults: everything drawn at a lower
+   effective resolution, wrong fonts, wrong colours, Options unreachable the second time, the Corvo
+   portrait misplaced, the New Game background over-enlarged, the brightness symbols and slider, no blur
+   behind a modal, and no 3D shift on the menu elements. Plus the two the user hit while playing: New
+   Game not starting the mission from the shipped build, and the exit teardown fault.
+2. **Wave 15, paused mid-flight**, its four worktrees intact (`build/agent{ET,EU,EV,EW}_wt`): perception
+   and the reaction (specified in 1,026 lines by agent EP, one consumer of
+   `FAIStimStruct_TargetSighted` in the whole image); the patrol's three remaining blockers; the last
+   82,423 bytes of the save plus the two `FLevelLoader` guards; and the five members where retail has
+   per-instance storage and we have a process-wide `inline static`.
+3. **Milestone 8's test suite**, which is the only Phase 6 milestone with nothing against it. The
+   regression harness is 37 checks and is not that suite.
+4. The standing queue in `PHASE11.md`: the options tab is unreachable from the keyboard, the video
+   sub-screen and its resolution row, the "Dunwall Tower" title card, the camera not being told it was
+   teleported, story flags not surviving a save, `UDisGFxMoviePlayerGamma` having no implementation file
+   at all, a census of unported `USequenceCondition`s, and three of `UI_HUD`'s eight atlases never being
+   drawn.
+
+Audio stays last (Phase 10), by the user's standing instruction.

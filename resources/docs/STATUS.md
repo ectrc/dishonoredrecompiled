@@ -1,10 +1,9 @@
-# Project status — 2026-09-28 (the main menu matches the shipped game, is navigable, and the NPCs have heads)
+# Project status — 2026-09-30 (the game starts from its own menu; the menu does not yet look like retail's)
 
-Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE5.md` (waves 1–3,
-done — read each "Wave result"), `PHASE6.md` (wave 4, done), `PHASE7.md` (wave 5, done), `PHASE8.md`
-(wave 6, done), `PHASE9.md` (wave 7, done), **`PHASE10.md` (wave 8, current)**. Decisions and fixes:
-`porting_notes.md`. Per-function status: `progress.md` + `function_status.csv`. Agent reports:
-`agents/agent<A..CG>.md`.
+Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
+done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16, current)**.
+Decisions and fixes: `porting_notes.md`. Per-function status: `progress.md` + `function_status.csv`.
+Agent reports: `agents/agent<A..EW>.md`.
 
 ## Incident 2026-09-25 (read before running anything)
 
@@ -18,121 +17,178 @@ junction (`resources/tools/unlink_junctions.py` removes links only); each agent 
 
 ## Target
 
-**Retail 2013 build** (`Dishonored_Latest2026`, engine 9411, DLC05–07) is what we rebuild. The 2012
+**Retail 2013 build** (`Dishonored_Latest2026`, engine 9411, CL 1274963, DLC05–07) is what we rebuild. The 2012
 symbolized build is a helping hand only: names, types, decompiles. Retail truth in hand:
 native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package member lists
 (`types/script_classes_2013.json`, 3,043 classes), runtime member offsets of every reflected member
-(`types/retail_sdk_layout.json` from the CodeRed dump `Dishonored_DumpedSDK_Retail`, `sdk_dump.md`),
-and a named retail IDA database (`idb/retail2013_named.i64`, 82.8 % of the 2012 names propagated;
-mangled names, e.g. `?Possess@AController@@UAEXPAVAPawn@@@Z`; addresses are VAs, image base 0x400000).
-Every layout assert and cross-check uses the retail numbers first and the 2012 PDB only where retail
-has no data.
+(`types/retail_sdk_layout.json` from the CodeRed dump, `sdk_dump.md`), and a named retail IDA database
+(`idb/retail2013_named.i64`; mangled names; addresses are VAs, image base 0x400000).
 
-## Where we are (HEAD after the wave-3 commits 43343f6 … 63758d5 + docs)
+**The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
+
+## Where we are (HEAD `e70f8c4`)
+
+**The game starts from its own main menu and puts you in the first mission.** Launch the staged
+`Binaries\Win32\DishonoredGame-Win64-Shipping.exe` with no arguments: Space past the start screen, Enter
+through NEW GAME, the difficulty screen and the brightness screen, then YES on the confirmation.
 
 | Milestone (PLAN.md Phase 6) | State |
 |---|---|
 | 1. Core+Engine+Launch compile and link | done (wave 1) |
-| 2. `Init: Object subsystem initialized` | done (wave 1/2), null RHI and d3d9 |
-| 3. Load `Core.upk` … `Startup.upk`, `GEngine->Init()` | **done (wave 3 X/Z)**: retail seek-free path, `Startup.upk` 63,718 objects, `Initializing Engine...`, `LoadMap: DishonoredGameFull_P`, `Bringing World … up for play`, `Finished loading level`, `Initial startup: 5.2s`; the tick loop runs (null RHI, `--skip-native OnlineSubsystemPC`) |
-| 4. D3D9 device, Bink movie, Scaleform menu | **done bar the menu**: the first mission map with all 8 sub-levels streamed in renders **20,370 frames under d3d9** windowed at 1280x720 over 90 s with **0 critical errors**, and 37,470 under the null RHI; the cooked caches load whole (127 global records, 2,580 material maps, 0 mismatches). The Scaleform main menu still waits on the GFx decision in `middleware.md`; long runs use `resourcesuild-release.cmd` |
-| 5. Mission map, player spawns, input | **done 2026-09-26**: the first mission map renders (20,370 frames, d3d9 windowed 1280x720, 90 s, 0 criticals) and the pawn stands on it in `PHYS_Walking` and walks (`-inputtest moved` 1030.1, peak speed 500.7, still walking at 115 s with all seven always-loaded sub-levels visible). Two defects found by playing it are the lead packages of wave 5 (`PHASE7.md`): textures are corrupt on large surfaces, and touch notifications never fire so triggers, volumes and pickups are inert |
-| 6. Save and load | **done 2026-09-27 (wave 7, agent CF)**: all 51 real retail saves load and round-trip byte-exactly. `BUILT_FROM_CHANGELIST` was 334700 against retail's 1274963, so every retail save had been rejected by construction. What remains is reading *inside* the level blobs, which needs the five `UObject` save virtuals — 105 `GameSave` and 108 `GameLoad` overrides, all or nothing, because each is written inline with no length prefix. That is what restores the player's transform on load |
-| Interface runtime (milestone 4's menu) | **done 2026-09-27 (wave 8, agent DC, commit `00e66eb`)**: `DISHONORED_GFXUI_GFX3_RUNTIME` is 1 and the game's own `UI_MainMenu.MainMenu` renders in the running game at 1280x720 under d3d9 — 182 display objects, 68 draws, 157 glyphs, 3,854 opcodes with 0 unimplemented, drawn through the reconstructed renderer from `UGameViewportClient::Draw`, not a probe (`build/agentDC/mainmenu.png`). Opt-in behind `-gfxuimenu`, because `UDisGlobalUIManager`'s config set does not name the main menu and the script that constructs it never runs. Still missing: the background and logo (`UDisGFxMoviePlayerMainMenu::PostStart`, which is the 7 script errors), the real strings (`GFxTranslator`), input, and retail's `GTessellator`. Wave 7 built what it draws with: **the GFx 3.3 runtime, reconstructed and verified in isolation (wave 7)**: the GFx 3.3 API and engine seam (BB), the ActionScript machine (BC), the text engine and glyph rasteriser (CB), the renderer's drawing half (CC) and the tag loaders (CD). CC renders a 1280x720 first frame of `UI_Global.Global` with 40 of its 41 cooked bitmaps; CB rasterises 2,481 glyphs from the game's own fonts; every one of the 22 cooked movies parses with 0 placeholders. `DISHONORED_GFXUI_GFX3_RUNTIME` is still 0 — flipping it is wave 8 package DC |
+| 2. `Init: Object subsystem initialized` | done (wave 1/2) |
+| 3. Packages load, `GEngine->Init()` | done (wave 3) |
+| 4. D3D9 device, Scaleform menu | done (wave 8 DC flipped the runtime; waves 9–14 made it work) |
+| 5. Mission map, player spawns, input | done (wave 4/5) |
+| 6. Save and load | **86.7 % of the object stream** (wave 14 ER): `Dishonored0.sav` restores 6,569 objects and 537,208 of 619,631 bytes, `PostGameLoad` 6,569, 0 unported and 0 partial bodies. `Dishonored1.sav` 183 objects, 21,081 of 294,961 |
+| 7. Full campaign | not met |
+| 8. Test suite | not met — the regression harness is 37 checks, but milestone 8's suite is not written |
 
 | Area | State |
 |---|---|
-| Modules building | Core, Engine, GameFramework, IpDrv, WinDrv, D3D9Drv, Launch (real) and, with `DISHONORED_ENABLE_{GFXUI,AKAUDIO,OSS,DISHONOREDGAME}=ON`, GFxUI, AkAudio, OnlineSubsystemSteamworks (no-Steam path), DishonoredGameModule (289 natives ported, 685 warn-once stubs). `resources\build-game.cmd [target]` configures + builds `build\game` with every option on. 764 units, 0 errors |
-| Runs | `python resources/tools/build_and_smoke.py --build-dir build/game --no-build --exe-name DishonoredGame_C.exe --log-name coord.log --ini-dir build/coord_config --rhi null --milestone "Initializing Engine..." --expect "Finished loading level" --expect "Initial startup" --skip-native OnlineSubsystemPC` passes; `--rhi d3d9 --extra-args "-windowed -ResX=1280 -ResY=720 -nomovie"` reaches the material load and stops (above) |
-| Natives | Script natives without a C++ body bind to `UObject::execDishonoredUnboundNative` (consumes parameters, zeroes the result, warns once; `-strictnatives` aborts): ~140 Engine/GameFramework ones remain (`agents/agentZ.md` list); generated module stubs use `DISHONORED_NATIVE_STUB`. Still stubbed on the map path: `Camera.UpdateCamera`, `HUD.DisplayConsoleMessages`, `DownloadableContentManager.*DLC*`, `Pawn.Died`, `Camera.ClearCameraLensEffects`, `InterpActor.SetShadowParentOnAllAttachedComponents`, OSS `Read*` |
-| Animation | ACF_EdgeAnim (113,232 of 113,242 cooked sequences) decodes through the ported per-sequence evaluator (`Engine/Src/EdgeAnimEvaluate.cpp`, bit-exact on 2,743 sequences); `-edgerefpose` restores the reference-pose gate; the whole-tree Edge path (blend tree evaluation) is not ported (`edgeanim.md`) |
-| Layouts vs retail | `xcheck_sdk_layout.py build/game/layout_probe.txt`: 2,314 types, **0 rows**; `gen_layout_probe.py compare`: 2,341 types, 0 contract mismatches; `verify_phase2.py retail` 2/2; DishonoredGame 12,502 layout asserts, 0 pending |
-| Engine convergence | 143 functions of the startup assets checked against 2013 (87 identical, 49 ported, 5 written; `serialization_delta_engine.md`); `progress.md` Engine 60 ported / 30 written / 87 verified |
-| Renderer | `renderer.md`: D3D9 RHI, cooked global shader cache (VER_MIN_SHADER 786, SF_Pixel = 1); material shader caches (786/23, 798/23 gates) and 143 Arkane shader types not declared; under the null RHI the scene render is skipped (`RenderViewFamily_RenderThread`) because the global cache lacks e.g. `FDownsampleSceneDepthPixelShader` |
-| Audio | **deferred to Phase 10 as polish** (the user's call, 2026-09-26): the silent backend loads the real banks and resolves the real event ids, which is all bring-up needs. Do not open an audio package until the game plays |
-| Middleware, ours | **PhysX 2.8.4, Steamworks and Wwise 2012.1 bindings are written by us** from the shipped DLLs and their PDBs, no vendor SDK downloaded and nothing redistributed: `source/Development/Src/External/{PhysX284,SteamworksFlat,Wwise2012}`, `cmake/{PhysX,Steamworks,Wwise}.cmake`, stub-DLL import libraries as for Bink. `WITH_NOVODEX=1` (scene created, convex meshes cooked, 235 rigid bodies in the streamed levels), `WITH_STEAMWORKS=1` (the last 3 unported natives ported), Wwise with a silent backend (65 file packages, 39 banks, 463 of 468 events resolved; real audio needs the licensed SDK, which is then one cmake switch). Still off: `WITH_GFx` (Scaleform decision), `WITH_FACEFX`, `WITH_APEX` (retail never linked it), `WITH_OGGVORBIS` |
-| Middleware (`middleware.md`) | GFx 3.3.89, Wwise 2012.1 (bank v65), FaceFX 1.7.3.1, PhysX 2.8.4, Bink 1.9p (import lib in use), steam_api 1.30.50.46, libcurl 7.77.0; SDKs the user must obtain |
-| Versions pinned | `UnObjVer.cpp`: engine 9411, package 801, licensee 30, cooked content 133. `UnNames.h`: 499 hardcoded names + 69 reference-only |
-| Tools | `resources/tools/sdk/` (`parse_codered_sdk.py`, `sdk_props.py`, `sdk_show.py`, `xcheck_sdk_layout.py`), `symbols/gen_layout_probe.py`, `gen_layout_asserts.py`, `gen_classes_header.py --sdk` (+ `Inc/CppText/<Class>.h` hook, `<Module>NativeStubs.ported.txt` skip list), `ida/decompile_funcs.py`, `build_and_smoke.py`, `stage_retail.py`, `build/head_wt_build.cmd` (clean-worktree verification), `resources/build-game.cmd` |
+| Front end | The menu draws, the mouse hovers and clicks, YES quits, Options opens and Escape leaves it, the brightness screen reads a real value and its slider moves the gamma. **It does not yet look like retail's** — nine fidelity faults are the current wave, `PHASE12.md` |
+| In-game HUD | Health and mana vials and the stance icon draw and read the live pawn (waves 13 EK, 13 EM). Three of `UI_HUD`'s eight atlases are never drawn |
+| AI | A guard adopts a patrol route and starts walking it (wave 14 EP): 8 patrol behaviours, all six routes registered, squads correct, 4 routes adopted. It stops at its first point — three measured blockers, wave 15 EU |
+| Save | above. Remaining 82,423 bytes of `Dishonored0.sav` are two bytes wide inside `AActor::GameLoad` |
+| Shims | **887** (wave 14 ES, from 1,098), held by `resources/tools/shim_ratchet.py`. Of the original 1,098: 966 provable absences, 121 undecidable from any truth source, **5 members retail actually has** (live defects, wave 15 EW) |
+| `Sources.cmake` | an **exclude list**: 806 comment-only skeleton units whose code never compiles. A **port queue**, not a deletion backlog — 813 of the 818 inventoried are alive in retail. Inventory: `agents/agentES_exclude_inventory.csv`, 875 rows |
+| Regression | `resources/tools/run_regression.py`, **37 checks** when built inside the harness (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
+| Audio | **deferred to Phase 10 as polish** (the user's call): the silent backend loads the real banks and resolves the real event ids. Do not open an audio package until the game plays |
+
+## Open defects the user has seen
+
+1. **The menu's fidelity** — nine faults against the seven reference comparisons in
+   `resources/reference/menu/{first..seventh}.png`. This is wave 16, `PHASE12.md`, and it is the whole
+   current wave.
+2. **New Game does not start the mission from the shipped build.** `OnNewGameConfirm(difficulty 3)`
+   issues `ce ChangeLvl_StartNewGame` and **nothing follows** — no `SetPlayerTravelDestination`, no map
+   change (`Logs/Launch720b.log:3770`). Agent EL measured the same path completing at difficulty 1 in
+   its own worktree, so this is either a regression or a condition nobody has isolated. `PHASE12.md` EZ.
+3. **Exit teardown faults.** A clean shutdown (`Exit: Game engine shut down`, `Exit: Windows client shut
+   down`) is followed by a critical error with thirteen unsymbolised frames. Every quit ends this way;
+   killing the process does not.
+4. Two **Windows Defender Firewall prompts** raised by agent executables sit over the game window and
+   have stolen the foreground from measured runs in three waves. The user has to answer or cancel them.
+
+## Waves 9–15
+
+`PHASE11.md` is the tracker. Merged and gated, each at 37/37 on a clean checkout of its own commit:
+
+| | |
+|---|---|
+| `48115da` EH | the mouse re-resolves the topmost entity once a frame — a second caller of `GFx_GenerateMouseButtonEvents` we never had |
+| `772434e` EJ | the AI stack behind the brain: 502 objects restored |
+| `bdb9c26` EK | the HUD opens, binds 31 of 31 clips and feeds itself from the live pawn |
+| `223e5e2` EI | YES starts the mission and YES quits |
+| `41cf1c0` EL | Corvo stands in Dunwall Tower, reached from the menu by five key presses |
+| `bbcfd86` EM | the HUD is on screen: an atlas index was being read as a character id |
+| `d42ccdc` EO | the brightness screen has a label, a value and a slider that moves; B leaves Options |
+| `4e92b19` EN | the Ark component layer: 1,111 objects restored |
+| `cd04626` ES | the shim backlog 1,098 → 887, the exclude inventory, the ratchet |
+| `84e35f4` EQ | the settings republish runs: nine bodies, a tenth listener, no abort |
+| `89aefaf` EP | a guard walks a patrol in the Tower |
+| `f2963c0` ER | 86.7 % of the save stream |
+
+Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five layout defects) was
+**stopped by the user before any of it landed**. Its four worktrees still hold partial work:
+`build/agent{ET,EU,EV,EW}_wt`. `PHASE11.md` has the wave-15 plan as written.
 
 ## Next
 
-Wave 8 is merged and gated at **31 checks, 0 failures** (`PHASE10.md` "Wave result"): CG `f13ad82`,
-DA `fdc6aec`, DB `b66b8bd`, DE `9b77df6`, DC `00e66eb`. The menu renders; 0 NPC pawns became 26, each with a
-controller, an initialised brain and a running sub-state machine; the colour treatment is ported and the
-level's own grade reaches it, moving 98.68 % of the frame; and Arkane's bloom parts draw.
-
-Wave 9 is running: **DF** (the 17 AI sub-state classes and the desires interface, where 35 of the 109 blocked
-natives live) and **DG** (menu input, the background and logo, and the real strings). Held behind them: the
-five `UObject` save virtuals, `ADishonoredPlayerController::ModifyPostProcessSettings` (which makes the
-powers visible), locomotion so the NPCs can walk, and retail's `GTessellator`.
-
-**Two measurement lessons are now standing rules.** Measure the map you mean — one-shot probes latch onto the
-startup map, which is why a real grade read as neutral for a whole package. And never use `-apshot`: it
-raises the screenshot request on the render thread while the game thread consumes it, so the captured frame
-depends on frame rate, which had corrupted two published figures. `-apshottime` replaces it, and its floor is
-byte-identical runs. Agent CG (the AI brain root) carries over from wave 7. Held for the wave after: the five `UObject`
-save virtuals, the AS2 garbage collector, and whatever DA hands over of the remaining DOF passes.
-
-Wave 7 is merged: `c403e2f` CA, `54b57d4` + `4bb6772` CB, `d40e26c` CF, `683fa03` CD, `2da00d8` CC,
-`dec3fd4` CE, plus `8e61755` (a wave-6 measurement correction) and `42e9cbe` (the Cxform bridge).
-`PHASE9.md` has the tracker. Two findings reach past their own packages: **three bring-up switches had been
-permanently off** since they were written, because a file-scope `static UBOOL G... = ParseParam(appCmdLine(),
-...)` in a static library runs before `WinMain` sets `GCmdLine` — one of them had corrupted a published
-measurement (the wave-6 fog figure was 8.4 % of pixels, not 37 %); and **`GRenderer::Cxform` had reached the
-tree transposed** from the generator, so the ActionScript machine and the renderer disagreed about all four
-colour channels in the same 32 bytes.
-
-Wave 5 is planned in `PHASE7.md`, built around the two defects the user found by running the game: **AR**
-textures, **AS** touch/triggers/volumes, then **AT** Kismet (which also fixes the menu teardown and the retail
-New Game route), **AU** the DishonoredGame AI-brain foundation and pickups, **AV** the Arkane animation nodes,
-**AW** the Scaleform decision, **AX** the load-all sweep and a regression harness. Audio stays out (Phase 10).
-
-Wave 4 is fully merged (`PHASE6.md` tracker and "Wave result" have the numbers and the commits `571bd0e`,
-`8af9425`, `03f5335`, `f8bad4f`, `ad3f9ae`, `f8dfe78`, `6e9d1ad`, `f184f60` plus the bridge commit). With
-`-noscenerender` the merged tree reaches the map change and keeps ticking with no critical error; with the
-scene renderer on it asserts at ~7 s on a mesh batch whose index range exceeds its index buffer, which is the
-next blocker. Then wave 5 from the follow-ups in `PHASE6.md`: Arkane anim
-nodes (the tweak anim tree is gated behind `-distweakanimtree` until they exist), the 275 DishonoredGame stubs
-behind the AI brain / sub-process / item-context classes (triage in `agents/agentAJ.md`), the Arkane and GFx
-post-process shader families, a Release or `FMallocBinned` build for long d3d9 runs, `UShaderCache` 132 -> 128,
-the ~100 remaining Engine/GameFramework shim classes, the retail nav-mesh runtime, and the whole-tree Edge
-path. Also the load-all test over all 471 `.upk` (milestone 3 exit check), now that AD's `-loadall` exists,
-Phase 4 is done: the PhysX, Steamworks and Wwise bindings are ours, written from the shipped DLLs and
-their PDBs, so nothing there waits on a download. What is left of the middleware is Scaleform GFx, which
-gates the main menu (`middleware.md`), and **audio, which is deliberately last — PLAN.md Phase 10, polish**.
+**Wave 16 (`PHASE12.md`) is the menu, and the user has asked for it before anything else.** Wave 15's
+four packages are paused, not cancelled.
 
 ## Known pitfalls
 
-- `/Zc:alignedNew-` is required (set in `CMakeLists.txt`): UE3 overrides the global `operator new`/`delete` but
-  not C++17's aligned overloads, so over-aligned render types placement-newed into the engine heap were freed
-  through the CRT's aligned free and the process aborted during skeletal mesh cleanup.
-- A serializer that writes a member back unconditionally corrupts it, because `Serialize` is also walked by the
-  GC's reference collector (that is what destroyed every skeletal mesh's triangle count; see `agents/agentAO.md`).
-- MSVC lays a run of consecutive virtual overloads out in **reverse** declaration order. Any hand-written
-  interface binding must be checked against the real vtable, not against declaration order.
-- Smoke runs need `-forcelogflush` (`"--extra-args=-forcelogflush"`, the `=` form: argparse eats a bare
-  `-switch`), otherwise the log truncates mid-line and a milestone that did happen never reaches the file.
-- After a power cut, a build directory can fail every link with an access violation and a truncated exe: those
-  are corrupted compiler PDBs (`C1051: obsolete format`). Delete the `*.pdb` inside that build directory only.
-  A power cut can also zero-fill source files — scan before trusting a diff (one Engine source and a set of
-  regenerable decompiles were zeroed on 2026-09-26).
-- The Engine link is close to its limit (Engine.lib ~1.19 GB). Reference-only shims in widely included headers
-  must be plain `static` with one definition in a `.cpp`, never inline static: as inline statics six of them
-  added 77 MB of per-TU ctor/dtor/atexit and type info and broke the link.
-- Never use the FModel MCP tools (`mcp__fmodel__*`): UE4-only, useless on these UE3 packages, and the user has forbidden them.
-- Never open one IDA database from two processes; agents copy `retail2013_named.i64` (`retail2013_<agent>.i64`).
-  The coordinator's copy is `retail2013_coord.i64` (idalib MCP session); names are MSVC-mangled, look them up as
-  `?Name@Class@@...`; `lookup_funcs` on a VA (rva + 0x400000).
+### The truth sources
+
+- **`resources/docs/symbols/vtables.csv` is the 2012 table.** 2013's is shifted for some classes — by
+  four slots for `UArkProfileSettings` (agent EO), by one for `UStateNPCMasterDead_Limp` (ER). Pin the
+  slot per class.
+- **`match_2012_2013.csv` propagates wrong vtables.** A 27-byte `InternalConstructor` matches many
+  others, the wrong match wins the global-table vote, and the result is a real function at a real
+  address belonging to a different class (agent EL). **Pin a vtable a second way before reading a body
+  out of it.**
+- **The 2013 database itself mislabels functions** — at least `0x612f00` (EQ) and four the tree had
+  copied (EP). `retail_sdk_layout.json` is missing `ADishonoredNPCPawn` outright while listing 25
+  siblings, and `script_classes_2013.json` omits the Core intrinsics (ES).
+- **`rva_sweep.py` is necessary but not sufficient.** It passes any address that lands inside *some*
+  2013 function. Six mislabels were found in one wave only by a by-name audit with `ida_funcs.get_func`.
+  Resolve every cited address by hand as well.
+- Retail's save five are vtable slots **67..71**: `IsRefSaveable` 67, `IsSaveable` 68, `GameSave` 69,
+  `GameLoad` 70 — but see the per-class shift above. `FArchive::operator<<(UObject*&)` is slot **6**.
+
+### Defects that hide
+
+- **An unported `USequenceCondition` kills every Kismet chain it sits on, silently**: it does not
+  auto-activate its output links, so the chain ends with no log line and no warning. An unported plain
+  `USequenceAction` passes through via `DeActivated` (agent EL).
+- **A wrong `IsSaveable` ends the save's object loop quietly.** A misread WORD with bit 15 set is taken
+  for an unshared sub-level reference — `STREAM ENDED EARLY`, `0 unported`, no class named. That is how
+  one wrong override hid from five consecutive packages (ER). The two guards ER asked for in
+  `FLevelLoader::operator<<` are still unwritten.
+- **A value that is NULL never appears in the stream log at all**, because `operator<<` returns before
+  its debug print on index 0 (ER). Absence from the log is not absence from the file.
+- `DISHONORED_SHIM_STATIC` expands to **`inline static`** — shared process-wide, not per-instance. That
+  one misreading caused about seventeen defects, **five members retail actually has** are currently
+  declared this way, and 108 writes to such a member happen from inside a constructor (ES).
+- **C4263 and C4264 are errors** (`CMakeLists.txt`): a drifted override signature becomes a silent
+  overload, which already cost a completely dead AI transition path that built green.
+
+### Build and link
+
+- **`Sources.cmake` is an exclude list**, and taking a unit off it is not enough: each module is a
+  static library, MSVC takes a member only to resolve an undefined symbol, and a dynamic initializer is
+  not one, so a unit nothing calls into is dropped whole. A registrant must be named from a unit the
+  link always pulls in, with **external** linkage — written `static ... * const` the compiler drops it
+  before the linker sees it (agent EN).
+- `gen_classes_header.py <Module> --sdk --module-header --sources-cmake` — **all three flags**. A run
+  without `--sources-cmake` once cost 113 unresolved externals.
+- `/Zc:alignedNew-` is required: UE3 overrides the global `operator new`/`delete` but not C++17's
+  aligned overloads.
+- A serializer that writes a member back unconditionally corrupts it, because `Serialize` is also
+  walked by the GC's reference collector.
+- MSVC lays a run of consecutive virtual overloads out in **reverse** declaration order.
+- The Engine link is close to its limit. Reference-only shims in widely included headers must be plain
+  `static` with one definition in a `.cpp`.
+- A `DECLARE_FUNCTION(execX)` in the generated `*Classes.h` has no trailing semicolon when an inline
+  body follows; insert new declarations before such a line, never between it and its `{`.
+
+### Running and measuring
+
+- **Never `git clean -x` a build worktree.** Nine gitignored reference files live there
+  (`retail_sdk_layout.json`, `vtables.csv`, `pdb_functions.csv` and six more) and without them every
+  layout check fails with `-1`, "the tool printed no summary line" — which reads exactly like a layout
+  regression in the package being gated. `git clean -fd`.
+- **A fresh worktree has none of the layout stage's five gitignored inputs** (`resources/docs/types/{all_types.h,
+  retail_sdk_layout.json, script_classes_2012.json, script_classes_2013.json, types.json}`). Copy them in
+  or every layout metric records `-1`.
+- **Run the harness from the worktree's own copy with an absolute build dir.** `build-release.cmd` does
+  `cd /d "%~dp0.."` then `cmake -S .`, so it always configures the repo root; a worktree `--build-dir`
+  gives `build_*_exit 1` with `build_*_errors 0`, which reads like a broken build and is a path.
+- **Throughput metrics measure the machine.** `d3d9_frames` has read 510, 900 and 990 against a bound of
+  1000 and then 2040–2370 minutes later; `inputtest_moved` read 662.2 and then 1074.5 on the same
+  binary. The harness now re-runs a stage whose failures are **all** load-sensitive and prints both
+  numbers; `--no-load-retry` turns that off. Read `d3d9_startup_seconds` first — 3.4 s quiet, 141.9 s
+  under another agent's build.
+- `L_Tower_P` streams eight levels, and when they arrive late the pawn falls out of the world and the
+  "walk" becomes `-distouchprobe`'s teleports (agent EM).
+- **Real input**: use the shared `resources/tools/drive_input.py` and pass `--exe <image name>` — every
+  agent's window is titled "Dishonored Game" and a run was once driven against another agent's window
+  and read as completely dead. Use `hover`/`hoverclick`, not `move`/`click`: a `move` is one DirectInput
+  delta and a single delta is droppable, which made a working mouse look dead for a whole wave.
+- **Read the driver's own log before believing a real-input measurement.** Every wrong conclusion above
+  was visible in it at the time.
+- Prefer `-apshottime=<seconds>` for screenshots: it captures inside the process on the game thread, so
+  an overlapping window cannot corrupt it. Never use `-apshot`.
+- `stage_retail.py` re-copies whatever the build dir holds, so a staged "HEAD" exe stops being HEAD the
+  moment a run is launched without `--no-stage`.
+- `appStrfind` only matches at a non-alphanumeric boundary, so `-nostartmap` does **not** suppress the
+  play defaults' startmap; `-startmap=` does.
+- Smoke runs need `-forcelogflush` (the `"--extra-args=-forcelogflush"` form).
+- Never use the FModel MCP tools (`mcp__fmodel__*`): UE4-only and the user has forbidden them.
+- Never open one IDA database from two processes; agents copy `retail2013_named.i64`.
 - The Bash tool collapses `\\` and `\n` in heredocs: write patch scripts with the Write tool. Sources are CRLF.
-- CMake `file(GLOB)` is `CONFIGURE_DEPENDS`; new files need a reconfigure. `cmd` splits `-DX=Y` script
-  arguments at `=`: put cmake flags inside the `.cmd` or in an environment variable. PowerShell `>` writes a BOM:
-  write probe output from bash (`LayoutProbe.exe > build/game/layout_probe.txt`).
-- Parallel agent builds race on the shared FetchContent `external/*-build` (pnglibconf.h): snapshot builds with
-  their own external dirs until the per-build FetchContent package (wave 4) lands.
-- Junctions: see the incident above. `git worktree remove`, `rm -rf` and `Remove-Item -Recurse` may follow them.
-- The shared working tree is edited by every agent at once; verify merges on the clean `build/head_wt` worktree
-  (`git -C build/head_wt checkout --detach main`, `build/head_wt_build.cmd DishonoredGame` with `LAYOUT_CHECKS=ON`
-  and `EXTRA_CMAKE` holding the module options), never on the working tree. Never `git add -A`.
-- A `DECLARE_FUNCTION(execX)` in the generated `*Classes.h` has no trailing semicolon when an inline body follows;
-  insert new declarations (with `;`) before such a line, never between it and its `{`.
+- **Never `git add -A` while another agent's untracked files sit in the tree** — that swept one package's
+  report into another package's commit (ER caught it). Stage explicit paths.
+- Agents work **only** in their own worktree, and a sync script runs **worktree → main**, the merge
+  direction. One that ran the other way would silently overwrite an agent's work at the next merge.
