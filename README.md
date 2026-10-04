@@ -16,6 +16,60 @@ Start with [PLAN.md](PLAN.md) for the overall strategy and phases, then
 [resources/docs/PHASE1.md](resources/docs/PHASE1.md) for the current task tracker. Symbol exports live in
 `resources/docs/symbols/` and `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
 
+## Running it
+
+The playable build is one command. From the repo root, in any shell:
+
+```
+resourcesuild-play.cmd
+```
+
+That configures and builds a Release x86 binary with every module on and stages it into the retail
+tree as:
+
+```
+D:\RecompileDishonored\Dishonored_Latest2026\Binaries\Win32\DishonoredGame-Win64-Shipping.exe
+```
+
+**Run it with no arguments and it comes up on the main menu.** `appInit` appends the switches a
+playable run needs when they are absent (`Core/Src/UnMisc.cpp`, `DISHONORED_PLAY_DEFAULTS`):
+`-gfxuimenu -nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed -ResX=1600 -ResY=900`.
+
+From the menu: **Space** past the start screen, then **Enter** through NEW GAME, the difficulty screen
+(Up/Down to choose) and the brightness screen, then **YES** on the confirmation. That commits the map
+change and puts Corvo on the boat landing at Dunwall Tower.
+
+Anything you pass yourself wins over the defaults, so
+
+```
+DishonoredGame-Win64-Shipping.exe -startmap=L_Pub_Day_P
+```
+
+opens that map directly instead of the menu, and `-ResX=2560 -ResY=1440` overrides the window size.
+
+`resourcesuild-play.cmd shipping` adds `FINAL_RELEASE` / `SHIPPING_PC_GAME` / `NO_LOGGING`.
+
+**The name is a name, not a description**: the executable is 32-bit, like the retail game. The
+middleware it links against — PhysX 2.8.4, Bink, Wwise 2012, Scaleform 3.3 — ships only as 32-bit
+DLLs in the retail tree, and the layout `static_assert`s that keep this a faithful recompilation are
+written against retail's 32-bit offsets under `/Zp4`.
+
+Logs land in `Dishonored_Latest2026\DishonoredGame\Logs\Launch.log`; pass `-LOG=<name>.log` to
+separate a run, and `-forcelogflush` if you need the tail of a run that is still going.
+
+### Other builds
+
+| | |
+|---|---|
+| `resourcesuild-game.cmd [target]` | the development build, every option on, into `build\game` |
+| `resourcesuild-release.cmd [target]` | the Release build the regression harness uses |
+| `python resources	oolsun_regression.py --build-dir build/<dir>` | the 37-check regression gate |
+
+## State of play
+
+`resources/docs/STATUS.md` is the thing to read when resuming: what works, what does not, and the
+pitfalls that cost a wave each to learn.
+
 All generated with claude code.
 
 <img width="3202" height="941" alt="image" src="https://github.com/user-attachments/assets/3928471b-3744-4573-9abc-5a31e8596e6d" />
