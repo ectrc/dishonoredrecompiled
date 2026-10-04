@@ -21,7 +21,7 @@ Start with [PLAN.md](PLAN.md) for the overall strategy and phases, then
 The playable build is one command. From the repo root, in any shell:
 
 ```
-resourcesuild-play.cmd
+resources\build-play.cmd
 ```
 
 That configures and builds a Release x86 binary with every module on and stages it into the retail
@@ -47,7 +47,7 @@ DishonoredGame-Win64-Shipping.exe -startmap=L_Pub_Day_P
 
 opens that map directly instead of the menu, and `-ResX=2560 -ResY=1440` overrides the window size.
 
-`resourcesuild-play.cmd shipping` adds `FINAL_RELEASE` / `SHIPPING_PC_GAME` / `NO_LOGGING`.
+`resources\build-play.cmd shipping` adds `FINAL_RELEASE` / `SHIPPING_PC_GAME` / `NO_LOGGING`.
 
 **The name is a name, not a description**: the executable is 32-bit, like the retail game. The
 middleware it links against — PhysX 2.8.4, Bink, Wwise 2012, Scaleform 3.3 — ships only as 32-bit
@@ -61,9 +61,9 @@ separate a run, and `-forcelogflush` if you need the tail of a run that is still
 
 | | |
 |---|---|
-| `resourcesuild-game.cmd [target]` | the development build, every option on, into `build\game` |
-| `resourcesuild-release.cmd [target]` | the Release build the regression harness uses |
-| `python resources	oolsun_regression.py --build-dir build/<dir>` | the 37-check regression gate |
+| `resources\build-game.cmd [target]` | the development build, every option on, into `build\game` |
+| `resources\build-release.cmd [target]` | the Release build the regression harness uses |
+| `python resources\tools\run_regression.py --build-dir build/<dir>` | the 37-check regression gate |
 
 ## State of play
 
