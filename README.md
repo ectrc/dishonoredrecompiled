@@ -13,3 +13,5 @@ outside the repo.
 Start with [PLAN.md](PLAN.md) for the overall strategy and phases, then
 [resources/docs/PHASE1.md](resources/docs/PHASE1.md) for the current task tracker. Symbol exports live in
 `resources/docs/symbols/` and `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
+
+All generated with claude code.
