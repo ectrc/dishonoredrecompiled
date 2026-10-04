@@ -24,11 +24,11 @@ The playable build is one command. From the repo root, in any shell:
 resources\build-play.cmd
 ```
 
-That configures and builds a Release x86 binary with every module on and stages it into the retail
-tree as:
+That configures and builds a Release x86 binary with every module on and stages it into your retail
+install, beside the game's own executable:
 
 ```
-D:\RecompileDishonored\Dishonored_Latest2026\Binaries\Win32\DishonoredGame-Win64-Shipping.exe
+<retail install>\Binaries\Win32\DishonoredGame-Win64-Shipping.exe
 ```
 
 **Run it with no arguments and it comes up on the main menu.** `appInit` appends the switches a
@@ -54,8 +54,12 @@ middleware it links against — PhysX 2.8.4, Bink, Wwise 2012, Scaleform 3.3 —
 DLLs in the retail tree, and the layout `static_assert`s that keep this a faithful recompilation are
 written against retail's 32-bit offsets under `/Zp4`.
 
-Logs land in `Dishonored_Latest2026\DishonoredGame\Logs\Launch.log`; pass `-LOG=<name>.log` to
-separate a run, and `-forcelogflush` if you need the tail of a run that is still going.
+Logs land in `<retail install>\DishonoredGame\Logs\Launch.log`; pass `-LOG=<name>.log` to separate a
+run, and `-forcelogflush` if you need the tail of a run that is still going.
+
+The build scripts and the tools read the retail install, the 2012 QA build and the reference engine
+tree from paths set in `cmake/` and `resources/tools/`; point those at your own copies. Nothing in
+this repository ships game binaries, PDBs, content or IDA databases.
 
 ### Other builds
 
@@ -69,6 +73,43 @@ separate a run, and `-forcelogflush` if you need the tail of a run that is still
 
 `resources/docs/STATUS.md` is the thing to read when resuming: what works, what does not, and the
 pitfalls that cost a wave each to learn.
+
+## References and credits
+
+**The reference engine source**
+
+- [CodeRedModding/UnrealEngine3](https://github.com/CodeRedModding/UnrealEngine3) — the UE3 build
+  10897 tree this is rebuilt from, a very close engine build to Dishonored's 9014/9411. Without it
+  there is no project. See `resources/docs/engine_reference.md`.
+- [CodeRed-Generator](https://github.com/CodeRedModding/CodeRed-Generator) — produced the retail SDK
+  dump (`DishonoredSDK 1.4`) that gives the runtime offset of every reflected member, which is what
+  the 2,314 layout `static_assert`s are written against. See `resources/docs/sdk_dump.md`.
+
+**Tools**
+
+- [IDA Pro and the Hex-Rays decompiler](https://hex-rays.com/) — the disassembly and decompiles both
+  builds are read with.
+- [Diaphora](https://github.com/joxeankoret/diaphora) — binary diffing between the 2012 and 2013
+  builds.
+- [dismod](https://github.com/ectrc/dismod) — hooks the running retail game, which is how several
+  findings here were checked against the real thing rather than against a disassembly. See
+  `resources/docs/dismod_harness.md`.
+
+**Third-party code this build fetches**
+
+- [zlib](https://github.com/madler/zlib) · [libpng](https://github.com/pnggroup/libpng) ·
+  [nvapi](https://github.com/NVIDIA/nvapi) · [lzokay](https://github.com/jackoalan/lzokay)
+
+**Middleware the game links**
+
+PhysX 2.8.4, Scaleform GFx 3.3, Wwise 2012.1, Bink, FaceFX, Steamworks and libcurl. **No vendor SDK is
+downloaded and nothing is redistributed**: the bindings in `source/Development/Src/External/` were
+written from the DLLs that ship with the game and their exported symbols. See
+`resources/docs/middleware.md`.
+
+Dishonored is © Bethesda Softworks / Arkane Studios. This is an independent reimplementation for
+study; it ships no game code, assets or binaries, and it needs your own legally obtained copy of the
+game to run.
 
 All generated with claude code.
 
