@@ -1,9 +1,10 @@
-# Project status — 2026-09-30 (the game starts from its own menu; the menu does not yet look like retail's)
+# Project status — 2026-10-04 (the game starts from its own menu; the interface is most of the way to retail's)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
-done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16, current)**.
-Decisions and fixes: `porting_notes.md`. Per-function status: `progress.md` + `function_status.csv`.
-Agent reports: `agents/agent<A..EW>.md`.
+done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
+**`PHASE13.md` (wave 17, done)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FE>.md`. The retail
+instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
 
@@ -56,22 +57,62 @@ through NEW GAME, the difficulty screen and the brightness screen, then YES on t
 
 ## Open defects the user has seen
 
-1. **The menu's fidelity** — nine faults against the seven reference comparisons in
-   `resources/reference/menu/{first..seventh}.png`. This is wave 16, `PHASE12.md`, and it is the whole
-   current wave.
-2. **New Game does not start the mission from the shipped build.** `OnNewGameConfirm(difficulty 3)`
-   issues `ce ChangeLvl_StartNewGame` and **nothing follows** — no `SetPlayerTravelDestination`, no map
-   change (`Logs/Launch720b.log:3770`). Agent EL measured the same path completing at difficulty 1 in
-   its own worktree, so this is either a regression or a condition nobody has isolated. `PHASE12.md` EZ.
-3. **The menu exhausts the address space in about three and a half minutes.** `appError called: Ran
+Waves 16 and 17 closed most of the interface list. What the user has reported and is **still open**:
+
+1. **The difficulty portrait moves on Normal/Hard/Very Hard.** Not the `attachMovie` fault — agent FC
+   measured it identical to the last digit before and after that fix, and showed our EASY beside our
+   VERY HARD with the rest of the clip, the rows and the title not moving at all. It is
+   `portrait_mc.gotoAndStop(idx+1)` on a four-frame clip: a **sprite-timeline fault**, one click to
+   reproduce, with the rest of the screen as its own control. Needs a tag-level dump of those frames.
+2. **The menu's framing.** Our FOV is **right** — agent FB captured retail's live value as **90.0**,
+   post-`UpdateViewTarget`. Our *camera* is in the wrong place: there are eleven identically named
+   `CameraActor`s in that level, all at `FOVAngle 90`, and only one is the view target. Retail's exact
+   transform is published in `build/agentFB/retail/camera.md`. Agent FE's earlier 61 ± 2° image fit was
+   absorbing the wrong camera's position into the FOV.
+3. **No letterbox bars in the opening cutscene.** Named end to end by agent FE: four bodies and a
+   switch (`execSetCinematicMode_Native`, `execPreSetCinematicMode_Native`, `Tick_Cinematic`, and the
+   HUD mask bit `0x10`). It stopped because `execSetCinematicMode_Native` reads **nine** booleans off
+   the script stack where stock UE3 reads six, nothing in this tree names them, and a wrong count
+   corrupts the stack.
+4. **The menu's brightness and haze.** Not Kismet post-process — FE walked 1,858 sequence objects
+   across all four loaded levels and found none. Our menu already draws 2 fog layers and 24 bloom parts
+   with `0 passes not ported`, so the difference is **parameters**; retail's whole graph with all 42
+   nodes is captured in `build/agentFB/retail/postprocess.md`.
+5. **The menu consumes key events and the selection does not move** on the brightness and difficulty
+   screens. Keys reach the movie and are handled (13 events, 13 listener calls) but no mouse events
+   arrive and the probe reports `focus NULL | canFocus 0 | canInput 0` (agent FB).
+6. **Text clarity** is better but not perfect, and **nobody has measured it** — no claim either way.
+   `GTessellator` is still unported; agent EX ruled it out only for the DPI magnification fault.
+7. **The menu exhausts the address space in about three and a half minutes.** `appError called: Ran
    out of virtual memory` at **217.73 s**, one frame after a normal `scene rendered (46890 so far)`
    census, with the game still on the main menu - a 32-bit process running out of its 2 GB. Agent EZ
    corrected this entry: there is **no exit teardown fault**, the user's log has no `Exit:` line at
    all, and the "thirteen unsymbolised frames" I recorded here are not frames - decoded as UTF-16 they
    are the error message itself, so the stack walker had been handed a text buffer. Open it as "what
    allocates per frame at the menu", and do not start from those addresses.
-4. Two **Windows Defender Firewall prompts** raised by agent executables sit over the game window and
-   have stolen the foreground from measured runs in three waves. The user has to answer or cancel them.
+8. **Eleven "Windows Security Alert" prompts** raised by agent executables sit over the game window.
+   They have cost measured runs in four waves and **no mouse measurement is possible while one holds
+   the foreground** — agent FD proved they had briefly gone, which is the only reason it could diagnose
+   the slider click at all. The user has to answer or cancel them; no agent clicks through one.
+
+## Waves 16–17 — the interface
+
+`PHASE12.md` and `PHASE13.md`. Merged and gated, each at 37/37 on a clean checkout of its own commit:
+
+| | |
+|---|---|
+| `8a04f5f` EX | the window was 1.25x, not the stage: the process is now DPI-aware. And one enum - `VET_Color` where retail holds `VET_UByte4N` - was swapping red and blue on every GFx vertex |
+| `a677a21` FA | the six GFx 3.3 3D display properties, gated on `_global.gfxExtensions`, at retail's 55° FOV; and the modal's background blur, which is the uber post-process's depth of field |
+| `8901d85` EZ | New Game starts the mission - the play-defaults `-startmap` had `LoadMap`-replaced the world owning all 53 `SeqEvent_Console` nodes - and Options survives a second visit |
+| `31bc42c` EY | the brightness screen's five marks exist; the option rows' labels were freed memory |
+| `3c7b90d` FC | `attachMovie`'s init object now runs before the class function: the options offset, the ACCEPT/BACK bar and the gamma marks' position |
+| `1a34f1c` FD | the five marks are tinted (`flash.geom.ColorTransform` was never installed); and `_xmouse` was **20x too large** - twips where the inverse wanted pixels, which is why any click set the slider to maximum |
+| `b540be6` FE | the menu movie is closed on map change, so its vignette no longer survives into the level |
+| `6fa1676` FB | the headers were never a font problem: the HTML `<font face>` attribute was being thrown away. Plus the dismod harness and the retail captures |
+
+**The instrument that changed how this works**: `dismod_harness.md`. Agent FC checked a fix against the
+running retail game rather than a disassembly, and agent FB's live capture overturned an image-fit
+measurement that would have sent the next wave chasing a camera FOV that was never wrong.
 
 ## Waves 9–15
 

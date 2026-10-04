@@ -1,6 +1,9 @@
 # Dishonored Recompilation
 
-Not fully complete yet, will pick this up next month
+**It boots to its own main menu and plays into the first mission.** From the shipped executable: NEW
+GAME, a difficulty, the brightness screen, YES — and Corvo is standing on the boat landing at Dunwall
+Tower, with the HUD drawn and a guard walking a patrol route. The interface is most of the way to
+matching retail's; what is still wrong is listed in `resources/docs/STATUS.md`.
 
 Functional (non-matching) rebuild of Dishonored's Win32 native executable, targeting the **retail
 2013 build** (`Dishonored.exe`, engine 9411, DLC05–07): its layouts, serialization and behavior are
@@ -12,9 +15,27 @@ the target) and the symbolized 2012 QA build (`../Dishonored_Debug2012`, the hel
 names and decompiles). Game binaries, PDBs, content, IDA databases and the reference tree stay
 outside the repo.
 
-Start with [PLAN.md](PLAN.md) for the overall strategy and phases, then
-[resources/docs/PHASE1.md](resources/docs/PHASE1.md) for the current task tracker. Symbol exports live in
-`resources/docs/symbols/` and `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
+Start with [resources/docs/STATUS.md](resources/docs/STATUS.md) — what works, what does not, and the
+pitfalls that cost a wave each to learn. [PLAN.md](PLAN.md) has the overall strategy and phases;
+`resources/docs/PHASE1.md`–`PHASE13.md` are the per-wave trackers, and `resources/docs/agents/` holds
+every package's own report and measurements. Symbol exports live in `resources/docs/symbols/` and
+`resources/docs/types/`; scripts that produce them are under `resources/tools/`.
+
+## Where it is
+
+| | |
+|---|---|
+| Engine, renderer, script VM | up; the first mission map renders under D3D9 and the pawn walks it |
+| Main menu | draws, navigates by mouse and keyboard, and starts the game |
+| In-game HUD | health and mana vials and the stance icon, fed from the live pawn |
+| AI | a guard adopts a patrol route and walks it |
+| Save/load | all 51 retail saves load; **86.7 %** of `Dishonored0.sav`'s object stream restores |
+| Audio | deliberately last — the silent backend loads the real banks and resolves the real events |
+| Full campaign | not yet |
+
+Every merge is gated on a clean checkout of its own commit by a 37-check regression harness
+(`resources/tools/run_regression.py`): build, layout `static_assert`s against retail's offsets, a null-RHI
+smoke, a D3D9 render census and a scripted input run.
 
 ## Running it
 
@@ -107,9 +128,19 @@ downloaded and nothing is redistributed**: the bindings in `source/Development/S
 written from the DLLs that ship with the game and their exported symbols. See
 `resources/docs/middleware.md`.
 
-Dishonored is © Bethesda Softworks / Arkane Studios. This is an independent reimplementation for
-study; it ships no game code, assets or binaries, and it needs your own legally obtained copy of the
-game to run.
+## Licence
+
+**[GNU Affero General Public License v3.0](LICENSE)** — the strongest copyleft there is. If you build
+on this, your work has to be open source too, under the same licence, including over a network: AGPL
+section 13 means that if you let people use a modified version remotely, they are entitled to its
+source. That is deliberate. This exists so the work is shared, not enclosed.
+
+In short: use it, change it, ship it — but ship the source with it.
+
+The licence covers **this repository's code**. It cannot and does not grant you anything over
+Dishonored itself: the game is © Bethesda Softworks / Arkane Studios, this is an independent
+reimplementation for study, it ships no game code, assets, binaries or PDBs, and it needs your own
+legally obtained copy of the game to run.
 
 All generated with claude code.
 
