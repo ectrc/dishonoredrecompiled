@@ -1,9 +1,9 @@
-# Project status — 2026-10-04 (the game starts from its own menu; the interface is most of the way to retail's)
+# Project status — 2026-10-11 (the opening scene is populated and the bars draw; the menu had been closing itself)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FE>.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md` (wave 18, three of four landed)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FI>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,11 +27,17 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `e70f8c4`)
+## Where we are (HEAD `9f1a449`)
 
-**The game starts from its own main menu and puts you in the first mission.** Launch the staged
-`Binaries\Win32\DishonoredGame-Win64-Shipping.exe` with no arguments: Space past the start screen, Enter
-through NEW GAME, the difficulty screen and the brightness screen, then YES on the confirmation.
+**The game starts from its own main menu and puts you in the first mission, with the opening scene's
+pawns on the boat and the letterbox bars drawn.** Launch the staged
+`Binaries\Win32\DishonoredGame-Win64-Shipping.exe` with no arguments: Space past the start screen, then
+NEW GAME, the difficulty screen and the brightness screen, then YES on the confirmation.
+
+**Between `b540be6` (wave 17 FE) and `8027ab6` (wave 18 FI) that was not true**: the front end closed
+its own menu one second after opening it, so New Game was unreachable. It passed 37/37 anyway — see
+"The gate's blind spot" under Known pitfalls. **Enter does not activate a main-menu row** either
+(defect 5); Space does, and `-finewgame` drives past it.
 
 | Milestone (PLAN.md Phase 6) | State |
 |---|---|
@@ -59,28 +65,35 @@ through NEW GAME, the difficulty screen and the brightness screen, then YES on t
 
 Waves 16 and 17 closed most of the interface list. What the user has reported and is **still open**:
 
-1. **The difficulty portrait moves on Normal/Hard/Very Hard.** Not the `attachMovie` fault — agent FC
-   measured it identical to the last digit before and after that fix, and showed our EASY beside our
-   VERY HARD with the rest of the clip, the rows and the title not moving at all. It is
-   `portrait_mc.gotoAndStop(idx+1)` on a four-frame clip: a **sprite-timeline fault**, one click to
-   reproduce, with the rest of the screen as its own control. Needs a tag-level dump of those frames.
+1. **The opening cutscene's own matinee does not run.** Specified by agent FI rather than guessed at:
+   seven matinees *are* live in `l_tower_p` and every one is set dressing with **`director NONE`** —
+   rats, planks, a whale, the whaleboat — and five frames 45–110 s apart differ by a mean 2.0/255.
+   Three named gaps: **`UInterpGroupPlayer`/`UInterpGroupInstPlayer` entirely unported *and*
+   `USeqAct_Interp::InitInterp` has no branch that would build one**; **`ADishonoredNPCPawn::MAT_*`**,
+   the whole matinee-AI contract, ~40 functions with zero bodies; and **`UpdateTrack` missing on every
+   Dishonored-added `UInterpTrack`**. Alongside it, **twelve of fourteen
+   `UDisSeqCond_*::Activated` are missing** and two of the fourteen already fire on this mission's
+   path, all twelve 2013 addresses hand-resolved — **the skeleton comments carry 2012 rvas**.
 2. **The menu's framing.** Our FOV is **right** — agent FB captured retail's live value as **90.0**,
    post-`UpdateViewTarget`. Our *camera* is in the wrong place: there are eleven identically named
    `CameraActor`s in that level, all at `FOVAngle 90`, and only one is the view target. Retail's exact
    transform is published in `build/agentFB/retail/camera.md`. Agent FE's earlier 61 ± 2° image fit was
    absorbing the wrong camera's position into the FOV.
-3. **No letterbox bars in the opening cutscene.** Named end to end by agent FE: four bodies and a
-   switch (`execSetCinematicMode_Native`, `execPreSetCinematicMode_Native`, `Tick_Cinematic`, and the
-   HUD mask bit `0x10`). It stopped because `execSetCinematicMode_Native` reads **nine** booleans off
-   the script stack where stock UE3 reads six, nothing in this tree names them, and a wrong count
-   corrupts the stack.
+3. ~~No letterbox bars in the opening cutscene.~~ **Closed by wave 18 FI (`8027ab6`)**, along with
+   the missing pawns. FE's blocker was not one: nine booleans, no optional tenth — the "tenth" is
+   `P_FINISH`'s `EX_DebugInfo` (`0x41`) tail — and `retail_sdk_layout.json` names all nine. The
+   remaining cinematic gap is defect 1, the matinee itself.
 4. **The menu's brightness and haze.** Not Kismet post-process — FE walked 1,858 sequence objects
    across all four loaded levels and found none. Our menu already draws 2 fog layers and 24 bloom parts
    with `0 passes not ported`, so the difference is **parameters**; retail's whole graph with all 42
    nodes is captured in `build/agentFB/retail/postprocess.md`.
 5. **The menu consumes key events and the selection does not move** on the brightness and difficulty
    screens. Keys reach the movie and are handled (13 events, 13 listener calls) but no mouse events
-   arrive and the probe reports `focus NULL | canFocus 0 | canInput 0` (agent FB).
+   arrive and the probe reports `focus NULL | canFocus 0 | canInput 0` (agent FB). **And Enter does
+   not activate a main-menu row at all** — agent FI measured SPACE working and running
+   `TransitionTo(MainMenuScreen)` while four Enters produced **no AS2 trace whatsoever**. This is the
+   keyboard path the README tells the user to use; `-finewgame[=<secs>]` is the instrument that gets
+   past it.
 6. **Text clarity** is better but not perfect, and **nobody has measured it** — no claim either way.
    `GTessellator` is still unported; agent EX ruled it out only for the DPI magnification fault.
 7. **The menu exhausts the address space in about three and a half minutes.** `appError called: Ran
@@ -90,10 +103,36 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    all, and the "thirteen unsymbolised frames" I recorded here are not frames - decoded as UTF-16 they
    are the error message itself, so the stack walker had been handed a text buffer. Open it as "what
    allocates per frame at the menu", and do not start from those addresses.
-8. **Eleven "Windows Security Alert" prompts** raised by agent executables sit over the game window.
-   They have cost measured runs in four waves and **no mouse measurement is possible while one holds
-   the foreground** — agent FD proved they had briefly gone, which is the only reason it could diagnose
-   the slider click at all. The user has to answer or cancel them; no agent clicks through one.
+8. **"Windows Security Alert" prompts** raised by agent executables sit over the game window — eleven
+   seen in wave 17, five enumerated by agent FH in wave 18, holding the desktop foreground plus
+   another agent's game. They have now cost measured runs in **five** waves and **no mouse
+   measurement is possible while one holds the foreground**: all four of FH's real clicks went into
+   them. Agent FD proved they had briefly gone, which is the only reason it could diagnose the slider
+   click at all. **The user has to answer or cancel them; no agent clicks through one.** The
+   workaround that has twice been better than waiting is to drive the asset's own code path directly,
+   keyed to world time so a step and an `-apshottime` mark mean the same instant on both builds
+   (`-disdifficulty`, `-finewgame`).
+
+9. **The window comes up 1008x567 with `-ResX=1600 -ResY=900`** on eight of ten runs and 1600x900 on
+   two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run). **Read a
+   capture's actual size; never assume it.**
+
+## Wave 18 — the ActionScript library, the portrait, and getting into the game
+
+`PHASE14.md`. Three of four landed, each gated at 37/37 on a clean checkout of its own commit; **FG
+(the options panel and the modal's HTML text) is still running.**
+
+| | |
+|---|---|
+| `63c2539` FF | `MovieClip.setMask` was never registered: the options list drew four of twelve rows over the tabs above it. Ported end to end, plus retail's AS depth bias (+0x4000) pinned three independent ways |
+| `f72f9f5` FH | the difficulty portrait lands. A `PlaceObject2` carrying `Move|HasCharacter` is a **replace**, and retail's `ReplaceDisplayObject` inherits the transform it replaces for every field the tag omits — ours left it at identity. **+127, +194 off retail → +1, +0** |
+| `8027ab6` FI | the opening scene is populated and the letterbox bars draw. And the menu stops closing itself — see the gate's blind spot below |
+
+**Three things from this wave worth carrying forward.** `MovieClip.setMask` had been noticed missing
+by three separate packages and left each time because it never blocked them; the replace-inheritance
+fault covers **17 tags across the six cooked movies**, not just the portrait; and every one of the
+three packages corrected at least three premises of its own brief, including two this file had
+recorded as fact.
 
 ## Waves 16–17 — the interface
 
@@ -139,8 +178,31 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 16 (`PHASE12.md`) is the menu, and the user has asked for it before anything else.** Wave 15's
-four packages are paused, not cancelled.
+**The user's standing instruction is "get the UI as perfect to the original as possible", so the
+interface list closes before anything else.** Wave 15's four packages (ET perception, EU the patrol's
+blockers, EV the last 82 KB of the save, EW the five layout defects) stay paused, not cancelled.
+
+Open, in the order the evidence supports:
+
+1. **FG's half of wave 18** — the options panel's extent, fault 2 if it can be reproduced,
+   `ParseHtmlImpl` and `?CATEGORY?`.
+2. **The options list's class binding.** Agent FF's largest single finding: **127
+   `SetWidgetFocus`/`RemoveWidgetFocus` "on undefined"** from `OptionsLine`/`OptionsList`, and
+   `tweenTo` and `UpdateSettings` failing the same way — none of the three is a built-in, so the
+   fault is a `registerClass` / prototype-binding gap, not a library gap.
+3. **The matinee** (defect 1), which is now specified down to three named gaps.
+4. **A New Game check in the regression harness**, per the blind spot below.
+5. The menu camera's transform (defect 2) and its post-process parameters (defect 4), both already
+   captured out of retail in `build/agentFB/retail/`.
+
+**Used and absent in the AS2 library**, from FF's survey — evidence, not a checklist, and thirteen of
+the fifteen classes previously listed are referenced **nowhere** in any cooked movie:
+`MovieClipLoader` (4 `new`; Missions, gamepad mapping, save thumbnails, `EquipmentIcon`),
+`TextField.setImageSubstitutions` (6 sites, the inline `$A$` button glyphs, pairs with
+`ParseHtmlImpl`), `Selection.disableFocusKeys` (6 sites, one property write). Separately: the 19
+`X360_*` `loadBitmap` failures are `_common.EmbedImg`'s PC branch falling through into the Xenon
+block, and those images are exports of `lib.gfx` — **image exports are not resolving across the
+import**.
 
 ## Known pitfalls
 
@@ -178,6 +240,24 @@ four packages are paused, not cancelled.
   declared this way, and 108 writes to such a member happen from inside a constructor (ES).
 - **C4263 and C4264 are errors** (`CMakeLists.txt`): a drifted override signature becomes a silent
   overload, which already cost a completely dead AI transition path that built green.
+- **The gate's blind spot: nothing in the harness presses New Game.** Every stage drives a map
+  directly with `-startmap`, so the menu → mission handover the README advertises is never exercised.
+  Wave 17's `b540be6` closed the front end's own menu one second after it opened — making New Game
+  unreachable — and **passed 37/37 on a clean checkout of its own commit.** Agent FI caught it a wave
+  later, while looking for something else. A check that boots with no arguments and reaches the
+  mission is wave 19's first item. Until it exists, **a 37/37 gate does not mean the game is
+  playable**; launch it.
+- **`rva_sweep.py` passes a VA silently.** Agent FH wrote `0xdf0a00` where it meant `0x9f0a00` (the
+  image base is `0x400000`) and the sweep reported nothing — the by-hand pass caught it. An address
+  resolved without subtracting the base lands mid-function in an unrelated class, which is a
+  convincing-looking wrong answer rather than an obvious failure.
+- **A unit taken off `Sources.cmake` can compile, link green, and not be in the executable.**
+  `IMPLEMENT_CLASS`'s vtable is a folded COMDAT, not a reference into the unit, so MSVC drops the
+  object and the symptom is a virtual that will not dispatch (agent FI). It needs an
+  external-linkage anchor.
+- **A screenshot claimed by "arrived after my launch" can belong to another package.** Agent FF's
+  first Options run claimed **nine** bitmaps belonging to FH and FI. `-apshotname=<tag>` plus a glob
+  of that tag is the only reliable claim, and it matters most when four packages share one machine.
 
 ### Build and link
 
