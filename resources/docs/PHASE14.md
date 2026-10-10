@@ -286,3 +286,79 @@ Correct is `0x9f0a00`.
 **STATUS defect 8 is worse than recorded and is now costing work, not just measurement.** All four of
 this package's real clicks went into **five** `rundll32` "Windows Security Alert" windows holding the
 desktop foreground. No dialog was clicked, dismissed or minimised. Third wave running.
+
+### FI — merged `8027ab6`, gated 37 ok / 0 failed / 0 skipped
+
+16 changed files + 1 new header, five of them outside `DishonoredGame`; nothing in `External/GFx3`
+or `GFxUI`, so no overlap with FF, FG or FH.
+
+**First, a regression at HEAD that no brief could have named. At `18f36a3` the main menu closed
+itself one second after it opened, so New Game was unreachable.** Agent FE's
+`DishonoredGFxNotifyGameSessionEnded()` in `CommitMapChange` fired on the **front end's own**
+streaming commit — `DishonoredGameFull_P` → `Dishonored_MainMenu` — rather than on the commit that
+ends a session. Measured twice: the movie opens at 22.44 s, the commit lands at 23.24 s, and the next
+line reports `0 movie(s) open`. Retail does not decide it there at all — the reference engine raises
+it from `UWorld::CleanupWorld(bSessionEnded)`, and that site is load-bearing: without it a movie open
+across a `LoadMap` leaks the world (`World ... not cleaned up by garbage collection`, measured). Both
+halves are now in their retail places.
+
+**This is the gate's first known blind spot.** FE's change passed 37/37 on its own commit because
+every harness stage drives a map directly with `-startmap`; **no check presses New Game**, so nothing
+in the harness exercises the menu → mission handover that the README advertises. Worth a check.
+
+**Fault 5: the boat scene is populated and the bars draw.**
+`build/agentFI/fi_fault5_before_after_retail.png` is the user's own half of `5.png`, this package, and
+retail's half: same boat, two NPCs on it, letterbox bars top and bottom.
+
+**Three premises of this plan corrected.**
+
+- **"The pawns are not placed" is half wrong.** `l_tower_p` already holds **26 `ADishonoredNPCPawn`
+  plus the player** at HEAD as well as here, every one with a controller and a skeletal mesh, none
+  hidden, six drawn — 17,000–25,000 units away up at the Tower, which is why none was visible. What
+  was missing is the two the opening scene spawns, from `DisSeqAct_StartSpawn_1`. The fault was
+  `ADishonoredSpawner::OnStartSpawn` being passed a **zeroed** `FDisSpawnInfo` where retail fills the
+  requester and copies `m_bSpawnEvenIfVisible` — and that bit is what made `DoSpawnNow`'s
+  player-proximity gate **silently refuse every spawn in a scene the player is standing in**.
+  27 → 29 pawns, 7 → 8 drawn, within two seconds of the action running.
+- **"The matinee does not start" is wrong as stated — it STALLS.** The map's Kismet stopped on a
+  latent `SeqAct_AkPostEvent` that can never complete, because **`AK::SoundEngine::RenderAudio()` has
+  no caller in this tree**: `UGameEngine::Tick` reaches audio through `UClient::GetAudioDevice` and
+  `UWindowsClient` never builds one, so no `AK_EndOfEvent` is delivered and `UpdateOp`'s `Signal`
+  never reaches 0. Fixed at retail's own call site (the last instruction of
+  `UDisHonoredAudioSystem::Update` `0x7b3520`, the only non-Wwise xref to `0x913670`). Identical
+  command lines: HEAD 6 ops active with `SeqAct_AkPostEvent_0` latent for ever, this package 5 and
+  the stall gone. On the New Game route `L_Tower_Script` runs 47 of 1,629 ops with
+  `SOIREE_Empress_Regent` and `SOIREE_Emily` live.
+- **FE's blocker was not a blocker, and the dismod run this plan insisted on was not needed.**
+  `execSetCinematicMode_Native` reads **nine** booleans and **no optional tenth** — the "tenth" is
+  `P_FINISH`'s `EX_DebugInfo` (`0x41`) tail — and **`retail_sdk_layout.json` names all nine**
+  (`params_size 36`, every one `CPF_Parm`, not one `CPF_OptionalParm`).
+
+**Still not right, and specified the way FE specified the bars.** The opening cutscene's own matinee
+does not run. Seven matinees *are* live in `l_tower_p` and every one is set dressing with
+**`director NONE`** — rats, planks, a whale, the whaleboat; five frames 45–110 s apart differ by a
+mean 2.0/255. Three named gaps: **`UInterpGroupPlayer`/`UInterpGroupInstPlayer` entirely unported
+*and* `USeqAct_Interp::InitInterp` has no branch that would build one**;
+**`ADishonoredNPCPawn::MAT_*`** — the whole matinee-AI contract, ~40 functions, zero bodies; and
+**`UpdateTrack` missing on every Dishonored-added `UInterpTrack`**. Plus a sweep: **twelve of
+fourteen `UDisSeqCond_*::Activated` are missing** and two of the fourteen already fire on this
+mission's path, all twelve 2013 addresses hand-resolved — **the skeleton comments carry 2012 rvas**,
+which is a trap. That is the next wave's shape.
+
+**Also measured, and not this package**: the menu's **Enter key does not activate a main-menu row**.
+SPACE works and runs `TransitionTo(MainMenuScreen)`; the four Enters produce **no AS2 trace at all**.
+STATUS open defect 5 — and it is the keyboard path the README tells the user to use.
+
+**`Sources.cmake` takes one unit off the exclude list and it needed a link anchor**, measured the
+hard way: it compiled, the exe linked green, and the object was not in the executable, because
+`IMPLEMENT_CLASS`'s vtable is a folded COMDAT rather than a reference into the unit. It looked
+exactly like a virtual that would not dispatch.
+
+**Two edits sit in generated headers that a regeneration would drop**: one `CppText` include (the
+mechanism the generator preserves) and three inline virtuals on `IDisSpawnRequesterInterface`.
+
+**One caveat stated plainly rather than papered over**: HEAD cannot reach the mission from the menu
+at all, so the level-content A/B on an identical command line is `-startmap=l_tower_p -startmapopen`,
+a valid control for the audio stall but one that reaches the opening scene on neither executable
+(both read 46/1670). The scene itself is measured on the New Game route, which only this package can
+run.
