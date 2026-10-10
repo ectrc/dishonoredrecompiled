@@ -183,3 +183,54 @@ rather than guessing the count. `resources/docs/dismod_harness.md` has the loop;
 - **Assume this plan is wrong somewhere and say where, with the measurement.** In waves 16 and 17
   every single package corrected a premise of its own brief, and two overturned a conclusion the
   coordinator had already written down.
+
+## Outcome
+
+### FF — merged `63c2539`, gated 37 ok / 0 failed / 0 skipped
+
+Nine files, all in `External/GFx3`. No regeneration, `Sources.cmake` unchanged.
+
+**Landed.** `MovieClip.setMask` end to end — the AS2 thunk (2012 `0x9f5320`), storage
+(`GFxSprite::SetMask` `0x9f4c20`), the render pass (`PreDrawMask` `0xa5f2f0` / `PushAndDrawMask`
+`0xa5f510` / `PopMask` `0xa5f5a0`, pushed with the **mask's own parent's** world matrix) and the hit
+test (`PointTestLocal` `0x9fba50`). The AS depth bias at every AS boundary and both
+`GFxValue::ObjectInterface` entry points, confirmed three ways (disassembly, FB's live retail
+capture, a census on our own build); `GASop_DuplicateClip` was wrong twice and now clones;
+**agent EZ's `bScriptCreated` is gone**. `stopDrag` with the drag state it needs.
+`GFxCharacterHandle::ResolveCharacter`'s real body. `__constructor__` on `BitmapData`/`TextFormat`.
+
+**Fault 1b — FIXED and measured.** Options → CONTROLS → KEYBOARD MAPPING, same schedule both
+builds: HEAD draws 4 of 12 list rows outside the mask, over the GENERAL tab and the sub-tab bar;
+this build draws 8 and none outside (`build/agentFF/mask_band.png`).
+
+**Four premises of the brief above are wrong**, each corrected with a measurement:
+
+- **Item 6 is wrong in whole.** The `"PC"` branch *is* taken and is the right branch — the error
+  text naming `'PC'` is itself proof that `_global.PlatformName == "PC"` — and it succeeds on all
+  seventeen `ControllerButtonIcon` symbols. The receiver is a different clip: six lib sprites carry
+  a 66-byte frame-0 `DoAction` decoding to `stop(); this.gotoAndStop(_global.PlatformName);` on
+  clips with no platform labels. **An asset bug retail shares. Nothing to fix.** The lines now name
+  the labels so no one spends another package here.
+- **Item 2 is one method, not three.** `tweenTo` is assigned by `gfx.motion.Tween`'s own
+  constructor; `UpdateSettings` is movie-defined on `VideoSettings`/`OptionsScreen`. Both fail the
+  way the **127 `SetWidgetFocus`/`RemoveWidgetFocus` on undefined** do — a `registerClass` /
+  prototype-binding fault in the options list. **FG's, and the largest AS2 failure left.**
+- **Item 3 is latent with zero symptom**: `BitmapData` is only the static `loadBitmap` (281 calls,
+  no `new`), and `new TextFormat` appears nowhere.
+- **Fault 1's "missing arrow chrome" is not a fault** — the `<` `>` arrows draw on both builds. The
+  panel's extent is identical on both and stays open. **Fault 2 did not reproduce on either build**
+  in four matched runs, including over the column the user's pointer is on.
+
+**The survey, as evidence.** Thirteen of the fifteen classes listed above are referenced **nowhere**
+in any of the six movies; installing them would repeat ES's 1,053-placeholder mistake. Used and
+absent, for the next wave: `MovieClipLoader` (4 `new` — Missions, gamepad mapping, save thumbnails,
+`EquipmentIcon`), `TextField.setImageSubstitutions` (6 sites, pairs with FG's `ParseHtmlImpl`),
+`Selection.disableFocusKeys` (6 sites, one property write, deliberately not installed). Separately:
+the 19 `X360_*` `loadBitmap` failures are `_common.EmbedImg`'s PC branch falling through into the
+Xenon block, and those images are exports of `lib.gfx` — **image exports are not resolving across
+the import**. Real, separate.
+
+**Instrument defect, everyone's problem.** FD's runner claims a capture by "arrived after my
+launch". That is no longer sufficient: FF's first Options run claimed **nine** bitmaps belonging to
+FH and FI. **`-apshotname=<tag>` is the only reliable claim.** FG, FH and FI were told, and told to
+re-check anything already concluded from a shot claimed by arrival time.
