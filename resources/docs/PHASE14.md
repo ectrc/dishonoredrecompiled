@@ -234,3 +234,55 @@ the import**. Real, separate.
 launch". That is no longer sufficient: FF's first Options run claimed **nine** bitmaps belonging to
 FH and FI. **`-apshotname=<tag>` is the only reliable claim.** FG, FH and FI were told, and told to
 re-check anything already concluded from a shot claimed by arrival time.
+
+### FH — merged `f72f9f5`, gated 37 ok / 0 failed / 0 skipped
+
+Three source files, 150 added lines, 0 removed. No regeneration, no header, `Sources.cmake`
+unchanged. Rebased onto FF's `63c2539` mid-run with every number retaken there.
+
+**Fault 4 is FIXED, and the cause was none of the three functions this brief named.**
+`portrait_mc` is a four-frame sprite: frame 1 places its artwork **with** a matrix of (−160, −246) px;
+frames 2, 3 and 4 each carry `Move|HasCharacter` and **no matrix at all**. That pair of flags is a
+**replace**, and retail's `GFxDisplayList::ReplaceDisplayObject` (2013 `0x9ccb50`, 2012 `0x9d6350`)
+**inherits the outgoing instance's transform for every field the tag does not carry**. Ours left the
+replacement at identity, so every difficulty but EASY drew at the clip origin.
+
+Live display list on `63c2539`: frames 2/3/4 `(0.00, 0.00)` → `(-160.00, -246.00)`, frame 1
+unchanged. In pixels against retail: ours-before **+127, +194**; ours-after **+1, +0**. Nothing else
+moved — difficulty rows dx 0 dy 0, ACCEPT/BACK bar dx 0 dy 0, title dx +1 dy 0
+(`build/agentFH/sbs_hard.png`).
+
+**This reaches past the portrait.** Across all six cooked movies: **37 replace tags, 35 with no
+matrix, 17 inheriting a non-identity transform** — three are the portrait, fourteen are `lib.swf`'s
+controller-icon clips (which this corrects), two are in the unreachable pause menu. Sprites 51 and
+125, the only other multi-state clips in the main menu, inherit identity and cannot move.
+
+**Three premises corrected.** All three of FC's suspects are innocent — `GotoFrame` is reached and
+correct, `IncrementFrameAndCheckForLoop` is only called from `AdvanceFrame` and a `gotoAndStop` never
+reaches it, and `AddDisplayObject`'s early-out is in a function these tags never enter (the trace
+shows every one logging `-> replace`). FC's "+140 / +255 and smaller" is really **+160 / +246 and
+twelve px wider** (332x492 vs 320x492); what read as smaller is the bottom third falling off a 720-px
+stage. FC's "bounds are not recomputed on a frame change" was never a defect: `_width` reads 320 on
+frame 1 and 332 on frames 2–4 **on both builds**.
+
+**Two reusable instruments.** `build/agentFH/tagdump.py` decodes `PlaceObject/2/3` and
+`RemoveObject/2` per frame with flags named, character ids resolved to definitions and bounds, and
+matrices in twips and pixels — cross-checked against two independent live measurements before
+anything was concluded from it (it reproduces FC's `_corvo_mc (-640.65, -150.95)` and FB's dismod
+capture of **retail** at `_menu_mc (-426.50, -25.95) rot −4°`). And
+`-disdifficulty=<worldTime>:<idx>`, which calls the body of the asset's own `SetPortrait`, keyed to
+world time so a step and an `-apshottime` mark mean the same instant on both builds.
+
+**Two findings left unfixed and recorded.** `portrait_mc` advances one frame on its own before its
+`stop` lands, on both builds, because each frame's `stop` is queued and drained after the next
+`AdvanceFrame` — harmless today, a real ordering difference from retail. And the window came up
+**1008x567** with `-ResX=1600 -ResY=900` on **eight of ten runs** and 1600x900 on two, same switches,
+same isolated ini dir: **read a capture's size, never assume it.**
+
+**`rva_sweep` demonstrated insufficient, not merely asserted so**: the `UnpackedData` constructor
+was first written as `0xdf0a00`, its **VA**, and swept **silently**. The by-hand pass caught it.
+Correct is `0x9f0a00`.
+
+**STATUS defect 8 is worse than recorded and is now costing work, not just measurement.** All four of
+this package's real clicks went into **five** `rundll32` "Windows Security Alert" windows holding the
+desktop foreground. No dialog was clicked, dismissed or minimised. Third wave running.
