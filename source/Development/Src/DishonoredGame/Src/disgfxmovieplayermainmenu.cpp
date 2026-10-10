@@ -642,10 +642,81 @@ static UBOOL DisReportOneClip( GFxMovieView* View, const FString& Path )
 	return TRUE;
 }
 
+// Agent FH: -disdifficulty=<t>:<idx>[;<t>:<idx>...] calls the New Game screen's own SetPortrait at
+// world time <t> for difficulty <idx>, 0..3. SetPortrait is one line in the asset -
+// `this._corvo_mc.portrait_mc.gotoAndStop(idx + 1)` (MainMenu.as2.txt:1711-1762) - so invoking it is
+// the same code path a click on the row takes, minus the click.
+//
+// It exists because the only other way to change that frame is a real click on the row and **five
+// "Windows Security Alert" dialogs hold the desktop foreground** (STATUS "Open defects" 8): the
+// driver's own log for this package's first run shows `foreground 0x1407f8` against a game window
+// of 0xa0814 on all four clicks, every one of them delivered to a dialog. Keyboard input still
+// arrives, but the arrow keys do not move this screen's selection (STATUS 5). Driving the one call
+// also makes a strictly better control than a click: between two marks **nothing on the screen
+// changes but the portrait's frame**, not even the selected row.
+static void DisDriveDifficulty( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	static INT Budget = -1;
+	static FString Spec;
+	static TArray<FString> Steps;
+	if( Budget < 0 )
+	{
+		Budget = Parse( appCmdLine(), TEXT("disdifficulty="), Spec ) && Spec.Len() > 0 ? 1 : 0;
+		if( Budget > 0 )
+		{
+			Spec.ParseIntoArray( &Steps, TEXT(";"), TRUE );
+		}
+	}
+	if( Budget == 0 || Steps.Num() == 0 || GWorld == NULL )
+	{
+		return;
+	}
+	GFxMovieView* View = DisMainMenuView( Menu );
+	if( View == NULL )
+	{
+		return;
+	}
+	// World time, which is the clock -apshottime's marks are tested against
+	// (SceneRendering.cpp, ViewFamily->CurrentWorldTime), so a step and a capture mark mean the
+	// same instant in both builds whatever the frame rate is.
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	while( Steps.Num() > 0 )
+	{
+		FString When, Which;
+		if( !Steps(0).Split( TEXT(":"), &When, &Which ) || appAtof( *When ) > Now )
+		{
+			break;
+		}
+		const INT Index = appAtoi( *Which );
+		GFxValue Arg;
+		Arg.SetNumber( (DOUBLE)( Index + 1 ) );
+		GFxValue Result;
+		const UBOOL bOk = View->Invoke( "_root.newGame_mc._corvo_mc.portrait_mc.gotoAndStop",
+			&Result, &Arg, 1 );
+		if( !bOk )
+		{
+			// The screen is not up yet: hold the step rather than spend it, so a schedule written
+			// against world time still runs in order if the menu is late.
+			static FLOAT LastWarn = -100.0f;
+			if( Now - LastWarn > 1.0f )
+			{
+				LastWarn = Now;
+				warnf( TEXT("DisDriveDifficulty: t=%.2f difficulty %d waiting for portrait_mc"),
+					Now, Index );
+			}
+			break;
+		}
+		warnf( TEXT("DisDriveDifficulty: t=%.2f difficulty %d -> gotoAndStop(%d) ok"),
+			Now, Index, Index + 1 );
+		Steps.Remove( 0 );
+	}
+}
+
 // DISHONORED(port): 2012 rva 0x822280
 void DisGFxMoviePlayerMainMenuPreAdvance( UDisGFxMoviePlayerMainMenu* Menu, FLOAT DeltaTime )
 {
 	DisReportClipDiag( Menu );
+	DisDriveDifficulty( Menu );
 	// DISHONORED(port): agent EO - retail's own site is UDisGFxMoviePlayerMenuBase::PostFirstAdvance
 	// (2013 rva 0x7e6970), which this tree's movie-player base does not have; see DisFillOptionsMenuOnce.
 	extern void DisFillOptionsMenuOnce( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSettings );

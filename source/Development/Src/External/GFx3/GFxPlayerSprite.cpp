@@ -428,9 +428,32 @@ void GFxDisplayList::MoveDisplayObject(const GFxCharPosInfo& pos)      // 2012 0
     if (pos.PlaceFlags & GFxCharPosInfo::Place_HasClipDepth) ch->SetClipDepth(pos.ClipDepth);
 }
 
+// DISHONORED(port): 2013 0x9ccb50 (2012 0x9d6350). A PlaceObject2 carrying BOTH the move flag and a
+// character id replaces the instance sitting at that depth, and **the replacement inherits the
+// outgoing instance's transform for every field the tag does not itself carry**. Retail's body reads
+// that inheritance out of the old character before it lets go of it:
+//
+//     src = (flags & HasCxform) ? &pos.ColorTransform : &old->Cxform;   // 32 bytes, UnpackedData+12
+//     src = (flags & HasMatrix) ? &pos.Matrix         : &old->Matrix;   // 6 floats, UnpackedData+44
+//     blend = (flags & HasBlendMode) ? pos.BlendMode  : old->GetBlendMode();
+//     new->Ratio = pos.Ratio;  new->ClipDepth = pos.ClipDepth;
+//
+// (The field offsets are not guessed: GFxPlaceObjectBase::UnpackedData::UnpackedData, 2013 0x9f0a00
+// (2012 0x9fa130), constructs a GRenderer::Cxform at +12 and calls GMatrix2D::SetIdentity at +44,
+// which is what fixes which of the two conditional copies is the matrix - they are easy to read the
+// wrong way round, and this package read them the wrong way round first.)
+//
+// Dropping the inheritance is what threw the New Game difficulty portrait down and to the right.
+// `portrait_mc` is a four-frame sprite whose frame 1 places its artwork with a matrix of
+// (-160, -246) px and whose frames 2, 3 and 4 each carry `Move|HasCharacter` and **no matrix at
+// all**, so every difficulty but EASY drew its picture at the clip origin instead, +160 px right and
+// +246 px down of where the artwork belongs.
 void GFxDisplayList::ReplaceDisplayObject(const GFxCharPosInfo& pos, GFxCharacter* ch) // 0x9d6350
 {
     int i = FindDisplayIndex(pos.Depth);
+    bool bInherit = false;
+    GMatrix2D inheritedMatrix;
+    GRenderer::Cxform inheritedCxform;
     if (i < (int)Size && Entries[i].pChar->GetDepth() == pos.Depth)
     {
         // DISHONORED(bringup): store before releasing, as in RemoveAt.
@@ -439,6 +462,9 @@ void GFxDisplayList::ReplaceDisplayObject(const GFxCharPosInfo& pos, GFxCharacte
         Entries[i].bMarkedForRemove = false;
         if (old)
         {
+            bInherit = true;
+            inheritedMatrix = old->GetMatrix();
+            inheritedCxform = old->GetCxform();
             if (GFxDK_LiveCharsOn())
                 GFxLogf("DISHONORED(bringup): dlcheck: ReplaceDisplayObject replaces %p with %p at depth %d", (void*)old, (void*)ch, pos.Depth);
             old->Release();
@@ -450,7 +476,13 @@ void GFxDisplayList::ReplaceDisplayObject(const GFxCharPosInfo& pos, GFxCharacte
     }
     ch->SetDepth(pos.Depth);
     if (pos.HasMatrix()) ch->SetMatrix(pos.Matrix);
+    else if (bInherit) ch->SetMatrix(inheritedMatrix);
     if (pos.HasCxform()) ch->SetCxform(pos.ColorTransform);
+    else if (bInherit) ch->SetCxform(inheritedCxform);
+    // Retail writes both of these from the record unconditionally, which for a tag that carries
+    // neither is the record's own default - 0 and 0, the same values a fresh character has.
+    ch->SetRatio(pos.Ratio);
+    ch->SetClipDepth(pos.ClipDepth);
     if (pos.FilterCount) ch->SetFilters(pos.pFilters, pos.FilterCount);
 }
 

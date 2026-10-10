@@ -567,6 +567,34 @@ void GFxPlaceObject2Tag::Read(GFxStream* s, unsigned int tagCode)
     // wave. The tag body is closed by length, so skipping them costs nothing downstream.
 }
 
+// DISHONORED(bringup, agent FH): the placement trace, on when DIS_GFX_PLACETRACE is set in the
+// environment to anything but 0. A sprite frame's display list is invisible from ActionScript - a
+// shape is not a MovieClip, so -disclipdiag cannot address one - and the quantity that moves the
+// New Game portrait is the matrix of the shape at depth 1 of a four-frame clip. This prints the tag,
+// its flags, the clip it lands on and the matrix the character carries once the tag has run, which
+// is that quantity read back off the live display list.
+// The value is a target-path substring, because the menu's own 280-frame background clip runs two
+// place tags a frame forever and an unfiltered trace is a hundred thousand lines of it; "1" traces
+// everything.
+static const char* GFxDK_PlaceTraceFilter()
+{
+    static const char* filter = 0;
+    static bool bRead = false;
+    if (!bRead)
+    {
+        bRead = true;
+        const char* env = getenv("DIS_GFX_PLACETRACE");
+        if (env != 0 && env[0] != 0 && env[0] != '0')
+            filter = (env[0] == '1' && env[1] == 0) ? "" : env;
+    }
+    return filter;
+}
+
+bool GFxDK_PlaceTraceOn()
+{
+    return GFxDK_PlaceTraceFilter() != 0;
+}
+
 void GFxPlaceObject2Tag::Execute(GFxSprite* sprite)                   // via 2012 0xa0d440
 {
     if (sprite == 0)
@@ -581,6 +609,25 @@ void GFxPlaceObject2Tag::Execute(GFxSprite* sprite)                   // via 201
         sprite->MoveDisplayObject(Pos);
     else if (hasChar && isMove)
         sprite->ReplaceDisplayObject(Pos);
+    if (GFxDK_PlaceTraceOn() && sprite->GetMovieRoot() != 0)
+    {
+        const GASString path = sprite->GetTargetPath(sprite->GetMovieRoot()->GetASContext()->GetSC());
+        const char* filter = GFxDK_PlaceTraceFilter();
+        if (filter[0] != 0 && strstr(path.ToCStr(), filter) == 0)
+            return;
+        const GFxCharacter* at = sprite->GetDisplayList().GetCharacterAtDepth(Pos.Depth, 0);
+        GMatrix2D m;
+        if (at != 0)
+            m = at->GetMatrix();
+        GFxLogf("DISHONORED(bringup): placetrace: %s frame %u depth %d char %u flags 0x%02X%s%s%s -> %s"
+                " matrix [%.4f %.4f %.1f ; %.4f %.4f %.1f] px (%.2f, %.2f)",
+                path.ToCStr(), sprite->GetCurrentFrame() + 1, Pos.Depth, Pos.CharacterId,
+                Pos.PlaceFlags, isMove ? " Move" : "", hasChar ? " HasCharacter" : "",
+                Pos.HasMatrix() ? " HasMatrix" : " noMatrix",
+                hasChar ? (isMove ? "replace" : "place") : (isMove ? "move" : "nothing"),
+                m.M_[0][0], m.M_[0][1], m.M_[0][2], m.M_[1][0], m.M_[1][1], m.M_[1][2],
+                m.M_[0][2] / 20.0f, m.M_[1][2] / 20.0f);
+    }
 }
 
 void GFxRemoveObject2Tag::Read(GFxStream* s, unsigned int tagCode)
