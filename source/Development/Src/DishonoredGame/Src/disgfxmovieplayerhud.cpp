@@ -479,6 +479,44 @@ void UDisGFxMoviePlayerHUD::Tick_PlayerState( INT _ShowFlags )
 	m_PlayerState = State;
 }
 
+/**
+ * DISHONORED(port): 2013 rva 0x7960e0 (358 bytes). The letterbox bars. Element 0x10 is the one bit
+ * ADishonoredPlayerController::SetCinematicMode_Native turns on that the non-cinematic set does not carry,
+ * IsHUDElementEnabledOnce answers "on at any of the six mask levels", and the movie's own
+ * _root.blackStripes_mc.SetBlackStripes( bShow, TRUE ) draws them. m_bCinematicMode (this+508 bit 0x40000)
+ * is the edge latch, so the method is invoked only when the bit changes - retail's body is that `if` and
+ * nothing else.
+ *
+ * The clip is Clips[DHMC_Cinematic]: retail reads the GFxValue at m_pMovieClips + 448, DHMC_Cinematic is 28
+ * and a GFxValue is 16 bytes. SetBlackStripes is in the cooked movie (two occurrences in
+ * UI_HUD_SF.UI_HUD.HUD.gfx).
+ */
+void UDisGFxMoviePlayerHUD::Tick_Cinematic()
+{
+	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	ADishonoredHUD* HUDActor = PC ? Cast<ADishonoredHUD>( PC->myHUD ) : NULL;
+	if( HUDActor == NULL || m_pMovieClips == NULL )
+	{
+		return;
+	}
+	const UBOOL bStripes = HUDActor->IsHUDElementEnabledOnce( 0x10 );
+	if( bStripes == ( m_bCinematicMode != 0 ) )
+	{
+		return;
+	}
+	GFxValue Args[2];
+	Args[0].SetBoolean( bStripes != 0 );
+	Args[1].SetBoolean( TRUE );
+	GFxValue Result;
+	const UBOOL bInvoked = DisHUDClips( this )[DHMC_Cinematic].Invoke( "SetBlackStripes", &Result, Args, 2 );
+	Result.ReleaseManaged();
+	Args[0].ReleaseManaged();
+	Args[1].ReleaseManaged();
+	m_bCinematicMode = bStripes ? TRUE : FALSE;
+	debugf( TEXT("DISHONORED(bringup): HUD: SetBlackStripes(%d) %s"), (INT)bStripes,
+		bInvoked ? TEXT("ok") : TEXT("NOT FOUND") );
+}
+
 /** DISHONORED(port): the equipment half of Tick_PlayerStatus (2013 rva 0x79f6e0), split out so the
     tick body reads as retail's three status blocks. */
 static void DisHUDBuildEquipmentStatus( ADishonoredPawn* Pawn, ADishonoredPlayerPawn* PlayerPawn,
@@ -1173,11 +1211,12 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 
 	HUD->Tick_PlayerStatus( ShowFlags );
 	HUD->Tick_PlayerState( ShowFlags );
+	HUD->Tick_Cinematic();
 
 	// DISHONORED(bringup): retail then runs Tick_Stealth (2013 0x796050), the interaction probe's five
 	// checks, Tick_Interaction (0x78d3b0), Tick_Tutorials (0x7afa60), Tick_ObjectivePopup (0x7afe70),
-	// Tick_Markers (0x7b00c0), Tick_Subtitles (0x79fe20) and Tick_Cinematic (0x7960e0). None of the
-	// eight is ported by this package.
+	// Tick_Markers (0x7b00c0) and Tick_Subtitles (0x79fe20). Seven of the eight are still unported;
+	// Tick_Cinematic (0x7960e0) is ported above by agent FI and runs here.
 }
 
 /*-----------------------------------------------------------------------------
@@ -1289,6 +1328,16 @@ static UBOOL DisHUDBringUp()
 	{
 		State = ParseParam( appCmdLine(), TEXT("dishud") ) ? 0 : -1;
 	}
+	if( State == 1 )
+	{
+		// DISHONORED(bringup, agent FI): re-arm when the movie this opened has been closed under it
+		UDisGlobalUIManager* OpenManager = DisGetGlobalUIManager();
+		if( OpenManager != NULL && OpenManager->m_pHUD != NULL && OpenManager->m_pHUD->bMovieIsOpen )
+		{
+			return TRUE;
+		}
+		State = 0;
+	}
 	if( State != 0 )
 	{
 		return State == 1;
@@ -1307,8 +1356,17 @@ static UBOOL DisHUDBringUp()
 	}
 	if( UIManager->m_pHUD != NULL )
 	{
-		State = 1;
-		return TRUE;
+		if( UIManager->m_pHUD->bMovieIsOpen )
+		{
+			State = 1;
+			return TRUE;
+		}
+		// DISHONORED(bringup, agent FI): the map change into the mission closes every movie whose
+		// bCloseOnLevelChange is set, the HUD's included (UnGame.cpp, CommitMapChange), so the one opened on
+		// the front end does not survive into the level. Retail reopens it from
+		// UDisGlobalUIManager::RefreshGlobalUIState (2012 0x8b75e0), which is unported; this bring-up does
+		// the same thing by letting the switch arm itself again for the new world.
+		UIManager->m_pHUD = NULL;
 	}
 
 	const FString HUDMoviePath = UIManager->m_DefaultUI.m_HUDMoviePath.Len() > 0

@@ -2881,6 +2881,9 @@ public:
  * @return	TRUE if successful, FALSE if there were errors (use GetMapChangeFailureDescription 
  *			for error description)
  */
+// DISHONORED(bringup, agent FI): AkAudio points this at its audio frame. See UnWorld.h.
+void (*GDisAudioFrameHook)() = NULL;
+
 UBOOL UGameEngine::CommitMapChange()
 {
 	if (!IsPreparingMapChange())
@@ -2904,6 +2907,19 @@ UBOOL UGameEngine::CommitMapChange()
 		DumpMemoryChart();
 		ResetMemoryChart();
 #endif // DO_CHARTING
+
+		// DISHONORED(bringup, agent FI): TRUE when a level this engine already committed as the persistent
+		// one is being replaced, which is the only commit that leaves a world the player was in. See the
+		// GFx close below.
+		UBOOL bReplacingCommittedWorld = FALSE;
+		for (INT LevelIndex = 0; LevelIndex < GWorld->GetWorldInfo()->StreamingLevels.Num(); LevelIndex++)
+		{
+			if (Cast<ULevelStreamingPersistent>(GWorld->GetWorldInfo()->StreamingLevels(LevelIndex)) != NULL)
+			{
+				bReplacingCommittedWorld = TRUE;
+				break;
+			}
+		}
 
 		// tell the game we are about to switch levels
         if (GWorld->GetGameInfo())
@@ -2936,7 +2952,23 @@ UBOOL UGameEngine::CommitMapChange()
 		// bCloseOnLevelChange is set, which is the mechanism the reference engine leaves for exactly this
 		// moment; nothing in this tree had ever called it. The Engine -> GFxUI edge follows the pattern
 		// UnPlayer.cpp established for the other five calls.
-		DishonoredGFxNotifyGameSessionEnded();
+		//
+		// DISHONORED(bringup, agent FI): and it has to be the SECOND commit, not the first. The front end
+		// reaches its own menu through this same function - DishonoredGameFull_P's Kismet commits the map
+		// change into Dishonored_MainMenu about a second after -gfxuimenu opens UI_MainMenu - so closing
+		// unconditionally here closed the main menu one second after it appeared and left the game with
+		// `0 movie(s) open` and no way to press New Game (measured twice: FIH1.log:788 opens the movie at
+		// 22.44, :862 commits at 23.24, :865 reports 0 movies; FIH2.log:790/:865/:868 the same 1.5 s apart).
+		// The commit that ends a session is the one that REPLACES a level this engine had already committed
+		// as persistent - New Game, l_tower_p over Dishonored_MainMenu - and the ULevelStreamingPersistent
+		// the previous commit left behind is what tells the two apart. Retail does not decide it here at
+		// all: the reference engine raises this from UWorld::CleanupWorld(bSessionEnded) (UnWorld.cpp:3058)
+		// and Dishonored's own menu movie is closed by UDisGlobalUIManager::RefreshGlobalUIState
+		// (2012 0x8b75e0), which is unported.
+		if( bReplacingCommittedWorld )
+		{
+			DishonoredGFxNotifyGameSessionEnded();
+		}
 #endif
 
 		// on the client, check if we already loaded pending levels to be made visible due to e.g. the PackageMap
@@ -3842,6 +3874,13 @@ void UGameEngine::Tick( FLOAT DeltaSeconds )
 	{
 		// allow gameplay frame pauses not cut out the audio
 		Client->GetAudioDevice()->Update( !GWorld->IsPaused() || (GWorld->GetWorldInfo() && GWorld->GetWorldInfo()->bGameplayFramePause) );
+	}
+
+	// DISHONORED(bringup, agent FI): and the audio frame when there is no UClient audio device to carry it,
+	// which in this tree is always. See GDisAudioFrameHook in UnWorld.h.
+	if( GDisAudioFrameHook != NULL )
+	{
+		GDisAudioFrameHook();
 	}
 
 	// Did we start measuring the loading movie and there's no movie playing anymore?

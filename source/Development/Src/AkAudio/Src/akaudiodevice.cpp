@@ -321,7 +321,39 @@ void UAkAudioDevice::Update( UBOOL bGameTicking )
 	{
 		GWorld->m_pAudioSystem->Update( this, &m_GameObjects );
 	}
+	// DISHONORED(port, agent FI): the audio frame. Retail issues it from the tail of
+	// UDishonoredAudioSystem::Update (2013 rva 0x7b3520: the call at 0x7b4783 is the last instruction of
+	// that body and the only xref to AK::SoundEngine::RenderAudio 0x913670 outside Wwise itself), and the
+	// 4,734-byte body is unported here, so the one line of it the game cannot run without is issued from
+	// its immediate caller instead. Without an audio frame no AK_EndOfEvent is ever delivered and every
+	// latent SeqAct_AkPostEvent blocks its Kismet chain for ever.
+	AK::SoundEngine::RenderAudio();
 }
+
+/**
+ * DISHONORED(bringup, agent FI): the audio frame's way in. UGameEngine::Tick reaches UAkAudioDevice::Update
+ * through UClient::GetAudioDevice, and UWindowsClient never builds an audio device in this tree
+ * (WinClient.cpp:353 wants GEngine->bUseSound and a configured AudioDeviceClass, and there is neither), so
+ * Update is called by nothing at all. GDisAudioFrameHook (Engine/Inc/UnWorld.h) is the seam that gets the
+ * frame back, in the same place UGameEngine::Tick would have called the device.
+ */
+static void DishonoredAkAudioFrame()
+{
+	if( GBringupAkAudioDevice != NULL && UAkAudioDevice::m_bSoundEngineInitialized )
+	{
+		GBringupAkAudioDevice->Update( TRUE );
+	}
+}
+
+/** installs the audio frame seam; a file-scope constructor that writes one zero-initialised pointer in
+    another translation unit and reads nothing, the same shape as FDisHUDPreRenderSeam. */
+static struct FDisAkAudioFrameSeam
+{
+	FDisAkAudioFrameSeam()
+	{
+		GDisAudioFrameHook = &DishonoredAkAudioFrame;
+	}
+} GDisAkAudioFrameSeam;
 
 /*-----------------------------------------------------------------------------
 	Listener and positions

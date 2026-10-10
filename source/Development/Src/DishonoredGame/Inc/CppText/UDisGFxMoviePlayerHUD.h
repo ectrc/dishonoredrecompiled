@@ -32,6 +32,7 @@ protected:
 	void PreRender_Layout( class UCanvas* _pCanvas );                   // 2013 rva 0x796250
 	void Tick_PlayerStatus( INT _ShowFlags );                           // 2013 rva 0x79f6e0
 	void Tick_PlayerState( INT _ShowFlags );                            // 2013 rva 0x795ed0
+	void Tick_Cinematic();                                              // 2013 rva 0x7960e0
 	void UpdateHealthGauge( const struct FDisPlayerStatus_Health& _rHealth );        // 2013 rva 0x797d40
 	void UpdateManaGauge( const struct FDisPlayerStatus_Mana& _rMana );              // 2013 rva 0x797f80
 	void UpdateEquipmentInfo( const struct FDisPlayerStatus_Equipment& _rEquipment ); // 2013 rva 0x7981f0

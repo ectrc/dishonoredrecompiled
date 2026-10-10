@@ -1021,3 +1021,12 @@ extern void (*GDisEngineTickHook)();
     script event, so the Engine cannot reach it by name; the game module installs its body here, the
     same way GDisEngineTickHook above is installed. */
 extern void (*GDisPlayerPreRenderHook)( class UCanvas* Canvas );
+
+/** DISHONORED(bringup, agent FI): the audio frame. Retail runs AK::SoundEngine::RenderAudio() from the tail
+    of UDishonoredAudioSystem::Update (2013 rva 0x7b3520), which UGameEngine::Tick reaches through
+    Client->GetAudioDevice()->Update. UWindowsClient::AudioDevice is NULL in this tree (WinClient.cpp:353
+    only builds one when GEngine->bUseSound and an AudioDeviceClass are both set, and neither is), so that
+    whole chain is dead and no audio frame ever happens - which means AK_EndOfEvent is never delivered and
+    every latent SeqAct_AkPostEvent blocks its Kismet chain for ever. AkAudio installs its audio frame here,
+    the same way GDisEngineTickHook above is installed, so the Engine keeps no link dependency on it. */
+extern void (*GDisAudioFrameHook)();

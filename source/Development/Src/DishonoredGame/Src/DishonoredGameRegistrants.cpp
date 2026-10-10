@@ -2332,3 +2332,11 @@ IMPLEMENT_CLASS(UDisSeqAct_OpenCraftsmanStore);
 IMPLEMENT_CLASS(ADisStealthVolume);
 IMPLEMENT_CLASS(UDisTweaks_PlayerVisibility);
 IMPLEMENT_CLASS(UDishonoredVisibilityComponent);
+
+// DISHONORED(bringup, agent FI): force the link of Src/disseqact_startspawn.cpp; see the note on the
+// anchor's definition.
+extern void DishonoredLinkDisSeqActStartSpawn();
+void (*GDishonoredFILinkAnchors[])() =
+{
+	&DishonoredLinkDisSeqActStartSpawn,
+};

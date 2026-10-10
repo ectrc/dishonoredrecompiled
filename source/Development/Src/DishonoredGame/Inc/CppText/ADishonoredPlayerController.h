@@ -79,3 +79,20 @@ public:
 	// (0xd18730 +4) both point at an ICF-folded three-byte `ret 8` (2013 rva 0x128ad0, which the PDB names
 	// UGameViewportClient::SetOnlyUseControllerTiltInput).
 	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );
+
+// ---- agent FI (PHASE14 FI): the cinematic switch behind the letterbox bars ----
+public:
+	/**
+	 * DISHONORED(port): agent FI. SeqAct_ToggleCinematicMode raises PlayerController.SetCinematicMode, whose
+	 * script body ends in these two natives; both were DISHONORED_NATIVE_STUBs, so the whole cinematic
+	 * presentation - the bars, the hidden player, the save lock - did nothing.
+	 *   PreSetCinematicMode_Native  2013 rva 0x6a33a0 (49 bytes, vtable +1408), exec 0x5ee960, 2 parameters
+	 *   SetCinematicMode_Native     2013 rva 0x6af150 (252 bytes, vtable +1412), exec 0x5eea00, 9 parameters
+	 * The parameter count and the names are retail_sdk_layout.json's
+	 * (DishonoredGame.DishonoredPlayerController.SetCinematicMode_Native, params_size 36, nine CPF_Parm bits,
+	 * none optional) and they match the nine Stack.Step calls of the exec one for one.
+	 */
+	virtual void PreSetCinematicMode_Native( UBOOL bNewInCinematicMode, UBOOL bHidePlayer );
+	virtual void SetCinematicMode_Native( UBOOL bInCinematicMode, UBOOL bWasInCinematicMode, UBOOL bHidePlayer,
+		UBOOL bHideHUD, UBOOL bAffectsMovement, UBOOL bAffectsTurning, UBOOL bAffectsButtons,
+		UBOOL bHideLetterbox, UBOOL bAllowProjectilesAndExplosions );

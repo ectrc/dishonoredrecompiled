@@ -3125,6 +3125,19 @@ void UWorld::CleanupWorld(UBOOL bSessionEnded)
 
 	if (bSessionEnded)
 	{
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+		// DISHONORED(port, agent FI): this is the reference engine's own place for it, and nothing in this
+		// tree reached it. GameViewportClient.GameSessionEnded (GameViewportClient.uc:815) walks
+		// GlobalInteractions calling NotifyGameSessionEnded, GFxInteraction.uc:34 declares that native and
+		// FGFxEngine::NotifyGameSessionEnded closes every movie whose bCloseOnLevelChange is set - but no
+		// GFxInteraction is ever registered in GlobalInteractions here, so the script half is a no-op and
+		// the C++ half had no caller at all. Without it a movie opened before a LoadMap keeps its
+		// references into the dying world and the next collection fails with "World ... not cleaned up by
+		// garbage collection"; measured on -startmapopen the moment the front end stopped closing its
+		// movies at its own streaming commit (build/agentFI/FIF6.log:1705).
+		extern void DishonoredGFxNotifyGameSessionEnded();
+		DishonoredGFxNotifyGameSessionEnded();
+#endif
 		if (GEngine != NULL && GEngine->GameViewport != NULL)
 		{
 			GEngine->GameViewport->eventGameSessionEnded();

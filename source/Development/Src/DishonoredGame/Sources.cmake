@@ -585,7 +585,6 @@ set(DishonoredGame_EXCLUDE
   Src/disseqact_settaskhidden.cpp
   Src/disseqact_settaskstate.cpp
   Src/disseqact_spawncameralenseffect.cpp
-  Src/disseqact_startspawn.cpp
   Src/disseqact_taskaction.cpp
   Src/disseqact_togglehudelement.cpp
   Src/disseqact_triggerexplosion.cpp

@@ -450,14 +450,6 @@ void ADishonoredPlayerController::execProcessViewRotation( FFrame& Stack, RESULT
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execProcessViewRotation);
 }
-void ADishonoredPlayerController::execSetCinematicMode_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execSetCinematicMode_Native);
-}
-void ADishonoredPlayerController::execPreSetCinematicMode_Native( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execPreSetCinematicMode_Native);
-}
 void ADishonoredPlayerController::execToggleScreenConfig( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execToggleScreenConfig);

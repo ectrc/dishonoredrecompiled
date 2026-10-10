@@ -1369,6 +1369,8 @@ public:
     INT m_FailedCount;
     //## END PROPS DisSeqAct_StartSpawn
 
+#include "CppText/UDisSeqAct_StartSpawn.h"
+
     DECLARE_CLASS(UDisSeqAct_StartSpawn,UDisSeqAct_Latent,0,DishonoredGame)
 };
 

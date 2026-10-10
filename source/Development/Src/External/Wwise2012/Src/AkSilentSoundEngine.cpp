@@ -341,6 +341,14 @@ namespace AK
 			{
 				e.GlobalCallbacks[ i ]( false );
 			}
+			// DISHONORED(bringup, agent FI): a silent event has no duration, so every voice posted since the
+			// last audio frame ends on this one. Without it AK_EndOfEvent never arrives and anything latent
+			// on a sound waits for ever: USeqAct_AkPostEvent::UpdateOp returns Signal == 0 and Signal is only
+			// decremented by AkCallback (akaudioclasses.cpp:48), so l_tower_p's Kismet stopped at op 25 of
+			// 1670 on SeqAct_AkPostEvent_0 and the mission's opening sequence was never entered (agent AT).
+			// The deviation from retail is only in the WAIT: retail resumes when the sound really finishes,
+			// we resume on the next audio frame. Nothing here plays a sound either way.
+			AkSilent::EndAllPlaying( AK_INVALID_GAME_OBJECT );
 			return AK_Success;
 		}
 

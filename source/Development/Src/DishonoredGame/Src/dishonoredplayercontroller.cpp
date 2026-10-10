@@ -913,6 +913,139 @@ void DisFEReport( ADishonoredPlayerController* PC )
 		(INT)PC->bCinematicMode );
 }
 
+/** the element set SetCinematicMode_Native switches off on entry and back on on exit (retail literal 32687) */
+#define DIS_HUD_ELEMENTS_NOTINCINEMATIC 0x7FAF
+/** the element set it switches on on entry (retail literal 24592) */
+#define DIS_HUD_ELEMENTS_CINEMATIC 0x6010
+/** the one bit in the cinematic set that is not in the other one: the letterbox bars (retail literal 16) */
+#define DIS_HUD_ELEMENT_LETTERBOX 0x0010
+
+/*-----------------------------------------------------------------------------
+	Agent FI (PHASE14 package FI): -finewgame and -fidiag.
+
+	-finewgame[=<seconds>] issues the main menu's own New Game command from the game thread once the world
+	clock passes <seconds> (default 20). It is the second half of UDisGFxMoviePlayerMainMenu::OnNewGameConfirm
+	(2013 rva 0x7c1ff0) and nothing else: the same `ce ChangeLvl_StartNewGame` through the same
+	ADishonoredPlayerController::ConsoleCommand, so DishonoredGameFull_P's hub sequence runs the identical
+	SetPlayerTravelDestination -> CommitMapChange -> GotoPlayerTravelDestination it runs for a click. It
+	exists because the menu's Enter key does not activate a main-menu row in this tree (STATUS open defect 5,
+	measured again here: SPACE reaches the movie and runs TransitionTo(MainMenuScreen), the four Enters that
+	follow produce no AS2 trace at all), and that fault belongs to the front end, not to this package.
+
+	-fidiag reports what is in the level: every pawn with the three things that decide whether it is on
+	screen, every spawner, and the cinematic state. Twice a second, nothing when the switch is absent.
+-----------------------------------------------------------------------------*/
+
+static INT GDisFIDiag = -1;
+
+UBOOL DisFIDiagEnabled()
+{
+	if( GDisFIDiag < 0 )
+	{
+		GDisFIDiag = ( appStrfind( appCmdLine(), TEXT("-fidiag") ) != NULL ) ? 1 : 0;
+	}
+	return GDisFIDiag != 0;
+}
+
+void DisFIAutoNewGame( ADishonoredPlayerController* PC )
+{
+	static INT State = -1;      // -1 unread, 0 armed, 1 done or off
+	static FLOAT At = 20.f;
+	if( State < 0 )
+	{
+		State = 1;
+		if( ParseParam( appCmdLine(), TEXT("finewgame") ) )
+		{
+			State = 0;
+		}
+		if( Parse( appCmdLine(), TEXT("finewgame="), At ) )
+		{
+			State = 0;
+		}
+	}
+	if( State != 0 || PC == NULL || GWorld == NULL || GWorld->GetTimeSeconds() < At )
+	{
+		return;
+	}
+	State = 1;
+	const FString Command = TEXT("ce ChangeLvl_StartNewGame");
+	debugf( TEXT("DISHONORED(bringup): -finewgame at world time %.2f on map %s: '%s'"),
+		GWorld->GetTimeSeconds(), *GWorld->GetMapName(), *Command );
+	PC->ConsoleCommand( Command, TRUE );
+}
+
+void DisFIReport( ADishonoredPlayerController* PC )
+{
+	static FLOAT NextAt = 0.f;
+	static INT Line = 0;
+	if( GWorld == NULL || PC == NULL )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	if( Now < NextAt )
+	{
+		return;
+	}
+	NextAt = Now + 2.f;
+	Line++;
+
+	const FVector ViewPoint = PC->PlayerCamera ? PC->PlayerCamera->CameraCache.POV.Location : PC->Location;
+	INT Pawns = 0, Visible = 0, WithController = 0, WithMesh = 0, Hidden = 0, Printed = 0;
+	for( TObjectIterator<APawn> It; It; ++It )
+	{
+		APawn* Pawn = *It;
+		if( Pawn->IsTemplate() || Pawn->bDeleteMe )
+		{
+			continue;
+		}
+		Pawns++;
+		USkeletalMeshComponent* Mesh = Pawn->Mesh;
+		const UBOOL bDrawn = Mesh != NULL && Mesh->LastRenderTime > Now - 1.f;
+		if( bDrawn )
+		{
+			Visible++;
+		}
+		if( Pawn->Controller != NULL )
+		{
+			WithController++;
+		}
+		if( Mesh != NULL && Mesh->SkeletalMesh != NULL )
+		{
+			WithMesh++;
+		}
+		if( Pawn->bHidden )
+		{
+			Hidden++;
+		}
+		if( Printed < 16 )
+		{
+			Printed++;
+			debugf( TEXT("DISHONORED(bringup): fidiag pawn %d: %s %s loc %.0f/%.0f/%.0f dist %.0f hidden %d ")
+				TEXT("mesh %s hiddenGame %d lastRender %.2f controller %s health %d physics %d"),
+				Line, *Pawn->GetClass()->GetName(), *Pawn->GetName(),
+				Pawn->Location.X, Pawn->Location.Y, Pawn->Location.Z,
+				(Pawn->Location - ViewPoint).Size(), (INT)Pawn->bHidden,
+				( Mesh != NULL && Mesh->SkeletalMesh != NULL ) ? *Mesh->SkeletalMesh->GetName() : TEXT("NONE"),
+				Mesh ? (INT)Mesh->HiddenGame : -1, Mesh ? Mesh->LastRenderTime : -1.f,
+				Pawn->Controller ? *Pawn->Controller->GetName() : TEXT("NONE"),
+				(INT)Pawn->Health, (INT)Pawn->Physics );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): fidiag pawns %d: t %.2f map %s, %d pawns, %d with a controller, ")
+		TEXT("%d with a skeletal mesh, %d bHidden, %d drawn in the last second"),
+		Line, Now, *GWorld->GetMapName(), Pawns, WithController, WithMesh, Hidden, Visible );
+
+	ADishonoredHUD* HUD = Cast<ADishonoredHUD>( PC->myHUD );
+	debugf( TEXT("DISHONORED(bringup): fidiag cinematic %d: bCinematicMode %d, masks %04x/%04x/%04x/%04x/%04x/%04x, ")
+		TEXT("letterbox bit on at %s, ignoreInput %d allowProjectiles %d"),
+		Line, (INT)PC->bCinematicMode,
+		HUD ? HUD->m_ShowFlags[0] : -1, HUD ? HUD->m_ShowFlags[1] : -1, HUD ? HUD->m_ShowFlags[2] : -1,
+		HUD ? HUD->m_ShowFlags[3] : -1, HUD ? HUD->m_ShowFlags[4] : -1, HUD ? HUD->m_ShowFlags[5] : -1,
+		( HUD && HUD->IsHUDElementEnabledOnce( DIS_HUD_ELEMENT_LETTERBOX ) ) ? TEXT("some level") : TEXT("no level"),
+		(INT)PC->m_bInputIgnoreInput_Cinematic, (INT)PC->m_bAllowProjectilesAndExplosionsInCinematicMode );
+}
+
 /**
  * DISHONORED(port): 2013 rva 0x6b6e80 (2012 0x6ef510) - and this is the ONLY caller of UArkPpNodeController::Tick in
  * either executable. It walks the first local player's post-process chain and ticks every node's controller with the
@@ -945,6 +1078,11 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	if( DisFEDiagEnabled() )
 	{
 		DisFEReport( this );
+	}
+	DisFIAutoNewGame( this );
+	if( DisFIDiagEnabled() )
+	{
+		DisFIReport( this );
 	}
 	if( DisPowerCensusEnabled() )
 	{
@@ -1992,4 +2130,127 @@ void ADishonoredPlayerController::execDisToggleSprint( FFrame& Stack, RESULT_DEC
 // The controller's own copies of the settings are written by UDishonoredPlayerInput::ApplyGameSettings.
 void ADishonoredPlayerController::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
 {
+}
+
+/*-----------------------------------------------------------------------------
+	Agent FI (PHASE14 package FI): the cinematic switch, and the letterbox bars.
+
+	SeqAct_ToggleCinematicMode raises PlayerController.SetCinematicMode; its script body calls these two
+	natives, and both were DISHONORED_NATIVE_STUBs, so bCinematicMode read 1 while nothing downstream of it
+	ever happened. SetCinematicMode_Native draws nothing itself - everything it does is to
+	ADishonoredHUD::m_ShowFlags[eDisHUDMaskLevel_Cinematic], and the one bit in the cinematic set that is
+	not in the normal one is 0x10, which UDisGFxMoviePlayerHUD::Tick_Cinematic turns into
+	_root.blackStripes_mc.SetBlackStripes (agent FE named the chain; disgfxmovieplayerhud.cpp has the clip).
+
+	The parameter list is retail_sdk_layout.json's and not a guess: the SDK dump gives
+	DishonoredGame.DishonoredPlayerController.SetCinematicMode_Native nine CPF_Parm bitfields at 0..32
+	(params_size 36) and none of them CPF_OptionalParm, and the exec at 0x5eea00 makes exactly nine
+	Stack.Step calls before its P_FINISH. The "optional tenth" the brief warned about is the P_FINISH
+	itself: `if( *Stack.Code == 65 )` is EX_DebugInfo (0x41), the script-debugger tail every exec in this
+	executable carries, not a parameter.
+-----------------------------------------------------------------------------*/
+
+/**
+ * DISHONORED(port): 2013 rva 0x6a33a0 (49 bytes, vtable +1408). Entering cinematic mode hides the player
+ * pawn only when asked; leaving it always shows it again.
+ */
+void ADishonoredPlayerController::PreSetCinematicMode_Native( UBOOL bNewInCinematicMode, UBOOL bHidePlayer )
+{
+	ADishonoredPlayerPawn* PlayerPawn = ADishonoredPlayerPawn::s_pInstance;
+	if( PlayerPawn == NULL )
+	{
+		return;
+	}
+	if( bNewInCinematicMode )
+	{
+		if( bHidePlayer )
+		{
+			PlayerPawn->SetHidden( TRUE );
+		}
+	}
+	else
+	{
+		PlayerPawn->SetHidden( FALSE );
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x6af150 (252 bytes, vtable +1412).
+ *
+ * The address is the one agent FE warned about - match_2012_2013.csv matched it at 0.630 "neighbours" - so
+ * it is pinned by its body instead: it is the only function in the executable that calls
+ * ADishonoredHUD::DisableHUDElements, ADishonoredHUD::EnableHUDElements, DisPushDisableSave,
+ * DisPopDisableSave and DisGetGlobalProjectileManager. Its two bitfield writes land on this+1552 bit
+ * 0x1000 and bit 0x20000, which retail_sdk_layout.json names m_bInputIgnoreInput_Cinematic and
+ * m_bAllowProjectilesAndExplosionsInCinematicMode, and its HUD pointer is this+984, which is myHUD.
+ *
+ * Two retail calls have nothing to call here and are left out, both marked:
+ *   DisPushDisableSave / DisPopDisableSave (0x7ec770 / 0x7ec7a0) - the save lock, unported
+ *   DisGetGlobalProjectileManager (0x82dc30 region) + the manager's destroy-all (0x8410b0) - unported
+ */
+void ADishonoredPlayerController::SetCinematicMode_Native( UBOOL bInCinematicMode, UBOOL bWasInCinematicMode,
+	UBOOL /*bHidePlayer*/, UBOOL /*bHideHUD*/, UBOOL /*bAffectsMovement*/, UBOOL /*bAffectsTurning*/,
+	UBOOL bAffectsButtons, UBOOL bHideLetterbox, UBOOL bAllowProjectilesAndExplosions )
+{
+	m_bInputIgnoreInput_Cinematic = ( bInCinematicMode && bAffectsButtons ) ? TRUE : FALSE;
+
+	if( bInCinematicMode )
+	{
+		if( !bWasInCinematicMode )
+		{
+			// DISHONORED(bringup): retail's DisPushDisableSave( eDisDisableSaveType_Cinematic ) here, and the
+			// projectile manager's destroy-all when projectiles are not allowed. Neither is ported.
+			m_bAllowProjectilesAndExplosionsInCinematicMode = bAllowProjectilesAndExplosions ? TRUE : FALSE;
+		}
+	}
+	else if( bWasInCinematicMode )
+	{
+		// DISHONORED(bringup): retail's DisPopDisableSave( eDisDisableSaveType_Cinematic, 1.0f )
+	}
+
+	ADishonoredHUD* HUD = Cast<ADishonoredHUD>( myHUD );
+	if( HUD == NULL )
+	{
+		return;
+	}
+	if( bInCinematicMode )
+	{
+		HUD->DisableHUDElements( eDisHUDMaskLevel_Cinematic, DIS_HUD_ELEMENTS_NOTINCINEMATIC );
+		HUD->EnableHUDElements( eDisHUDMaskLevel_Cinematic, DIS_HUD_ELEMENTS_CINEMATIC );
+		if( bHideLetterbox )
+		{
+			HUD->DisableHUDElements( eDisHUDMaskLevel_Cinematic, DIS_HUD_ELEMENT_LETTERBOX );
+		}
+	}
+	else
+	{
+		HUD->DisableHUDElements( eDisHUDMaskLevel_Cinematic, DIS_HUD_ELEMENTS_CINEMATIC );
+		HUD->EnableHUDElements( eDisHUDMaskLevel_Cinematic, DIS_HUD_ELEMENTS_NOTINCINEMATIC );
+	}
+}
+
+/** DISHONORED(port): 2013 rva 0x5ee960 - two UBOOL parameters, no return, dispatched through vtable +1408. */
+void ADishonoredPlayerController::execPreSetCinematicMode_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bNewInCinematicMode);
+	P_GET_UBOOL(bHidePlayer);
+	P_FINISH;
+	PreSetCinematicMode_Native( bNewInCinematicMode, bHidePlayer );
+}
+
+/** DISHONORED(port): 2013 rva 0x5eea00 - nine UBOOL parameters, no return, dispatched through vtable +1412. */
+void ADishonoredPlayerController::execSetCinematicMode_Native( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bInCinematicMode);
+	P_GET_UBOOL(bWasInCinematicMode);
+	P_GET_UBOOL(bHidePlayer);
+	P_GET_UBOOL(bHideHUD);
+	P_GET_UBOOL(bAffectsMovement);
+	P_GET_UBOOL(bAffectsTurning);
+	P_GET_UBOOL(bAffectsButtons);
+	P_GET_UBOOL(bHideLetterbox);
+	P_GET_UBOOL(bAllowProjectilesAndExplosions);
+	P_FINISH;
+	SetCinematicMode_Native( bInCinematicMode, bWasInCinematicMode, bHidePlayer, bHideHUD, bAffectsMovement,
+		bAffectsTurning, bAffectsButtons, bHideLetterbox, bAllowProjectilesAndExplosions );
 }

@@ -232,6 +232,19 @@ BYTE ADishonoredSpawner::DoSpawnNow( const FDisSpawnInfo& _rSpawnInfo )
 
 	OnSpawned( Pawn );
 
+	// DISHONORED(port, agent FI): and the requester is told, which is how a latent Kismet spawn finishes.
+	// Retail does it here, immediately after OnSpawned: `if( *(DWORD*)a3 ) { v29 = *(DWORD*)(a3+4);
+	// if( v29 ) (*(vtable+12))(v29, newPawn); }` at 0x65e790 - the object half of the TScriptInterface gates
+	// it and the interface half is the receiver.
+	if( _rSpawnInfo.m_pSpawnRequester.GetObject() != NULL )
+	{
+		IDisSpawnRequesterInterface* Requester = (IDisSpawnRequesterInterface*)_rSpawnInfo.m_pSpawnRequester.GetInterface();
+		if( Requester != NULL )
+		{
+			Requester->OnPawnSpawned( Pawn );
+		}
+	}
+
 	if( m_pStealablePickup )
 	{
 		m_pStealablePickup->Attach( Pawn, Pawn->Mesh );
@@ -326,9 +339,22 @@ UBOOL ADishonoredSpawner::Tick( FLOAT _fDeltaTime, ELevelTick _TickType )
 }
 
 // DISHONORED(port): 2013 rva 0x65c150 (2012 0x6a36e0): the Kismet StartSpawn action queues one spawn.
+// DISHONORED(port, agent FI): and the spawn info the action fills in. The zeroed struct this used to pass
+// dropped both halves of retail's body (0x65c150, 147 bytes, 2012 match ratio 1.000): the action is the
+// TScriptInterface requester (object = the action, interface = the action + 264, which is where its
+// IDisSpawnRequesterInterface subobject sits - the same +264 the adjusted `this` of OnPawnSpawned proves),
+// and bit 0 of the action's bitfield word at +268, m_bSpawnEvenIfVisible, is copied into the spawn info's
+// own bit 0. The second one is load-bearing: without it DoSpawnNow's player-proximity gate refuses every
+// spawn the Kismet asks for near the player, which is every actor in an opening scene the player is standing
+// in the middle of, and the refusal is silent.
 void ADishonoredSpawner::OnStartSpawn( UDisSeqAct_StartSpawn* _pAction )
 {
 	FDisSpawnInfo SpawnInfo( EC_EventParm );
+	if( _pAction != NULL )
+	{
+		SpawnInfo.m_pSpawnRequester = TScriptInterface<IDisSpawnRequesterInterface>( _pAction );
+		SpawnInfo.m_bSpawnEvenIfVisible = _pAction->m_bSpawnEvenIfVisible;
+	}
 	SpawnOnePawn( &SpawnInfo );
 }
 
