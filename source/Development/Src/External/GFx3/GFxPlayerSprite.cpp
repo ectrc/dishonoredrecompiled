@@ -36,7 +36,8 @@ GFxCharacterHandle::GFxCharacterHandle(const GASString& name, GFxASCharacter* pa
 
 GFxCharacter::GFxCharacter(GFxASCharacter* parent, GFxResourceId id)
     : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true),
-      RollOverCnt(0), bAcceptAnimMoves(true), bScriptCreated(false), pWeakProxy(0), pMatrix3D(0), pPerspective3D(0),
+      RollOverCnt(0), bAcceptAnimMoves(true), pWeakProxy(0), pMaskCharacter(0), pMaskOwner(0),
+      pMatrix3D(0), pPerspective3D(0),
       pView3D(0), PerspectiveFOV(0.f), LastHitX(0.f), LastHitY(0.f),
       bHasLastHit(false), bLastHit(false)
 {
@@ -55,9 +56,48 @@ GFxCharacter::~GFxCharacter()
         pWeakProxy->Release();
         pWeakProxy = 0;
     }
+    SetMask(0);
+    // Defensive only: the owner holds the mask's reference, so a mask cannot outlive its owner.
+    if (pMaskOwner != 0 && pMaskOwner->pMaskCharacter == this)
+        pMaskOwner->pMaskCharacter = 0;
     delete pMatrix3D;
     delete pPerspective3D;
     delete pView3D;
+}
+
+// 2012 GFxSprite::SetMask 0x9f4c20, reached from the AS2 thunk 0x9f5320. Retail keeps ONE pointer
+// (GFxSprite+0x1CC) for the two roles and discriminates on the UsedAsMask flag (GFxASCharacter+0xA0
+// bit 0x8000), so a clip is either masked or a mask and never both, and the body spends most of its
+// length unlinking whichever role conflicts. With a pointer for each role the exclusion has to be
+// spelled out, which is what the two unlink arms below are. The reference down is strong (retail
+// AddRefs on store and Releases on replace); the back-pointer up is not.
+void GFxCharacter::SetMask(GFxCharacter* mask)
+{
+    if (mask == this)
+        mask = 0;
+    if (pMaskOwner != 0)
+    {
+        GFxCharacter* owner = pMaskOwner;
+        pMaskOwner = 0;
+        if (owner->pMaskCharacter == this)
+            owner->SetMask(0);
+    }
+    if (pMaskCharacter != 0)
+    {
+        if (pMaskCharacter->pMaskOwner == this)
+            pMaskCharacter->pMaskOwner = 0;
+        pMaskCharacter->Release();
+        pMaskCharacter = 0;
+    }
+    if (mask == 0)
+        return;
+    mask->SetMask(0);
+    mask->AddRef();
+    pMaskCharacter = mask;
+    mask->pMaskOwner = this;
+    // Retail zeroes the masked clip's ClipDepth here: a scripted mask and a PlaceObject clip-depth
+    // mask cannot both apply to one character.
+    ClipDepth = 0;
 }
 
 // --- the 3D display properties ---------------------------------------------------------------
@@ -499,8 +539,61 @@ GFxASCharacter::GFxASCharacter(GFxASCharacter* parent, GFxResourceId id, GFxMovi
         GFxDK_LiveCharAdd(this);
 }
 
+// 2012 GFxASCharacter::DoMouseDrag 0x9cfa00 and GFxMovieRoot::DragState::InitCenterDelta 0xa037c0.
+// Both work in twips, which is the unit MouseX / MouseY are kept in, and write `_x` / `_y` in pixels.
+void GFxMovieRoot::InitDragCenterDelta(bool lockCenter)
+{
+    Drag.bLockCenter = lockCenter;
+    Drag.CenterDeltaX = 0.f;
+    Drag.CenterDeltaY = 0.f;
+    if (lockCenter || Drag.pCharacter == 0)
+        return;
+    GPoint<float> mouse;
+    mouse.x = MouseX[0];
+    mouse.y = MouseY[0];
+    GPoint<float> local = mouse;
+    if (Drag.pCharacter->GetParent() != 0)
+        GFxCharacterWorldMatrix(Drag.pCharacter->GetParent()).TransformByInverse(&local, mouse);
+    Drag.CenterDeltaX = Drag.pCharacter->GetMatrix().M_[0][2] - local.x;
+    Drag.CenterDeltaY = Drag.pCharacter->GetMatrix().M_[1][2] - local.y;
+}
+
+void GFxASCharacter::DoMouseDrag()
+{
+    if (pMovieRoot == 0 || pMovieRoot->GetDragState().pCharacter != this)
+        return;
+    const GFxMovieRoot::DragState& st = pMovieRoot->GetDragState();
+    GPoint<float> mouse;
+    float mx = 0.f, my = 0.f;
+    pMovieRoot->GetMouseState(0, &mx, &my, 0);
+    mouse.x = mx;
+    mouse.y = my;
+    GPoint<float> p = mouse;
+    if (GetParent() != 0)
+        GFxCharacterWorldMatrix(GetParent()).TransformByInverse(&p, mouse);
+    p.x += st.CenterDeltaX;
+    p.y += st.CenterDeltaY;
+    if (st.bBound)
+    {
+        if (p.x < st.BoundLeft) p.x = st.BoundLeft;
+        if (p.x > st.BoundRight) p.x = st.BoundRight;
+        if (p.y < st.BoundTop) p.y = st.BoundTop;
+        if (p.y > st.BoundBottom) p.y = st.BoundBottom;
+    }
+    SetAcceptAnimMoves(false);
+    GASValue v;
+    v.SetNumber((double)p.x * GFxTwipsToPixels);
+    SetStandardMember(GASbuiltin__x, v);
+    v.SetNumber((double)p.y * GFxTwipsToPixels);
+    SetStandardMember(GASbuiltin__y, v);
+}
+
 GFxASCharacter::~GFxASCharacter()
 {
+    // Retail's DragState.pCharacter is a raw pointer with no owner; a clip destroyed mid-drag would
+    // leave it dangling, so the drag is cancelled here. That guard is this reconstruction's.
+    if (pMovieRoot != 0 && pMovieRoot->GetDragState().pCharacter == this)
+        pMovieRoot->GetDragState().pCharacter = 0;
     if (GFxDK_LiveCharsOn())
     {
         int listedAt = -1, listedOf = 0;
@@ -541,7 +634,13 @@ GASObject* GFxASCharacter::EnsureASObject()
 GFxCharacterHandle* GFxASCharacter::CreateCharacterHandle()            // 2012 0x9d1a40
 {
     if (pHandle == 0)
+    {
         pHandle = new GFxCharacterHandle(Name, pParent, this);
+        // Retail's handle constructor (2012 0x9d17b0) interns the absolute path at the same time as
+        // the name, because that is what re-resolution looks the character up by.
+        if (pMovieRoot != 0 && pMovieRoot->GetASContext() != 0)
+            pHandle->NamePath = GetTargetPath(pMovieRoot->GetASContext()->GetSC());
+    }
     return pHandle;
 }
 
@@ -549,7 +648,25 @@ void GFxASCharacter::SetName(const GASString& n)
 {
     Name = n;
     if (pHandle)
+    {
+        // GFxCharacterHandle::ChangeName, 2012 0x9d18a0: the path is rebuilt with the name, or a
+        // renamed clip would keep re-resolving to the path it used to sit at.
         pHandle->Name = n;
+        if (pMovieRoot != 0 && pMovieRoot->GetASContext() != 0)
+            pHandle->NamePath = GetTargetPath(pMovieRoot->GetASContext()->GetSC());
+    }
+}
+
+GFxASCharacter* GFxCharacterHandle::ResolveCharacter(GFxMovieRoot* root) const
+{                                                                      // 2012 0x9cdd60
+    if (pCharacter != 0)
+        return pCharacter;
+    // GFxMovieRoot::FindTarget (2012 0xa014c0): _level0's own AS environment, and nothing when the
+    // path is empty or the level has gone.
+    if (root == 0 || NamePath.ToCStr() == 0 || NamePath.ToCStr()[0] == 0)
+        return 0;
+    GASEnvironment* env = root->GetASEnvironment();
+    return env != 0 ? env->FindTarget(NamePath) : 0;
 }
 
 GASString GFxASCharacter::GetTargetPath(GASStringContext* sc) const
@@ -1518,9 +1635,18 @@ bool GFxSprite::GotoLabeledFrame(const char* label, int offset)         // 2012 
             // and "which asset is missing it"; the platform-switch clips of the shared library all
             // ask for the same three names.
             const GASString path = GetTargetPath(pMovieRoot->GetASContext()->GetSC());
-            pMovieRoot->LogScriptError("GotoLabeledFrame: no frame named '%s' on %s (%u labels)",
-                                       label, path.ToCStr(),
-                                       pTimelineDef ? pTimelineDef->GetLabelCount() : 0);
+            char have[256];
+            have[0] = 0;
+            const unsigned int labelCount = pTimelineDef ? pTimelineDef->GetLabelCount() : 0;
+            for (unsigned int i = 0; i < labelCount; ++i)
+            {
+                const char* n = pTimelineDef->GetLabelName(i);
+                if (strlen(have) + strlen(n) + 2 >= sizeof(have)) break;
+                if (have[0] != 0) strcat(have, ",");
+                strcat(have, n);
+            }
+            pMovieRoot->LogScriptError("GotoLabeledFrame: no frame named '%s' on %s (%u labels: %s)",
+                                       label, path.ToCStr(), labelCount, have);
         }
         return false;
     }
@@ -1758,7 +1884,6 @@ GFxSprite* GFxSprite::CreateEmptyMovieClip(const GASString& name, int depth)
     GFxResourceId id;
     id.Id = GFxResourceId::InvalidId;
     GFxSprite* child = new GFxSprite(emptyDef, emptyDef, pDefImpl, this, id, pMovieRoot);
-    child->bScriptCreated = true;
     child->SetName(name);
     GFxCharPosInfo pos;
     pos.Depth = depth;
@@ -1797,7 +1922,6 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
         if (ch) ch->Release();
         return 0;
     }
-    child->bScriptCreated = true;
     child->SetName(instanceName);
 
     GFxCharPosInfo pos;
@@ -1851,6 +1975,38 @@ GFxSprite* GFxSprite::AttachMovie(const GASString& symbolName, const GASString& 
     // cook behave like its script class rather than like a bare movie clip.
     BindRegisteredClass(child, symbolName);
     return child;
+}
+
+GFxSprite* GFxSprite::CloneDisplayObject(const GASString& newName, int depth)
+{
+    GFxSprite* parent = pParent ? pParent->ToSprite() : 0;
+    if (parent == 0 || pCharDef == 0)
+        return 0;
+    GFxCharacter* ch = pCharDef->CreateCharacterInstance(parent, Id, pDefImpl);
+    GFxSprite* clone = (ch && ch->IsASCharacter()) ? ch->ToASCharacterDef()->ToSprite() : 0;
+    if (clone == 0)
+    {
+        if (ch) ch->Release();
+        return 0;
+    }
+    clone->SetName(newName);
+    clone->SetMatrix(GetMatrix());
+    clone->SetCxform(GetCxform());
+    clone->SetRatio(GetRatio());
+    clone->SetClipDepth(GetClipDepth());
+    clone->SetVisible(GetVisible());
+    GFxCharPosInfo pos;
+    pos.Depth = depth;
+    parent->GetDisplayList().AddDisplayObject(pos, clone);
+    if (pMovieRoot)
+    {
+        ++pMovieRoot->GetCensus().DisplayObjectsPlaced;
+        GASValue v;
+        v.SetAsCharacter(clone);
+        parent->SetMemberRaw(pMovieRoot->GetASContext()->GetSC(), newName, v, GASPropFlags());
+    }
+    clone->ExecuteFrame0Events();
+    return clone;
 }
 
 bool GFxSprite::GetStandardMember(GASBuiltinString which, GASValue* out) const

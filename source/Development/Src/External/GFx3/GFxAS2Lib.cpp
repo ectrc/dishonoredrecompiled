@@ -17,6 +17,7 @@
 #include "GFxAS2Runtime.h"
 #include "GFxPlayer.h"
 #include "GFxInput.h"
+#include "GFxDisplay.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -729,7 +730,7 @@ void MCCreateEmptyMovieClip(const GASFnCall& fn)
     GFxSprite* s = ThisSprite(fn);
     if (s == 0 || fn.GetNumArgs() < 2) return;
     GFxSprite* child = s->CreateEmptyMovieClip(fn.Arg(0).ToString(fn.pEnv),
-                                               fn.Arg(1).ToInt32(fn.pEnv));
+                                               fn.Arg(1).ToInt32(fn.pEnv) + GFxASDepthBias);
     if (fn.pResult) fn.pResult->SetAsCharacter(child);
 }
 
@@ -744,24 +745,124 @@ void MCAttachMovie(const GASFnCall& fn)
     // than copying it here is that shape, and the ordering it buys is what puts the footer prompt
     // bar, the options list and the gamma marks where the asset asks for them (agentFC.md 2).
     GASObject* init = fn.GetNumArgs() >= 4 ? fn.Arg(3).ToObject(fn.pEnv) : 0;
+    // Retail's own guard, 0x9ffb55, applied to the already-biased depth and compared UNSIGNED: the
+    // accepted range is 0 .. 0x7EFFFFFD, so an AS depth below -0x4000 wraps and is refused with the
+    // biased number in the message.
+    const int depth = fn.Arg(2).ToInt32(fn.pEnv) + GFxASDepthBias;
+    if ((unsigned int)depth > 0x7EFFFFFDu)
+    {
+        fn.pEnv->LogScriptError("attachMovie(\"%s\") failed - depth (%d) must be >= 0",
+                                fn.Arg(0).ToString(fn.pEnv).ToCStr(), depth);
+        return;
+    }
     GFxSprite* child = s->AttachMovie(fn.Arg(0).ToString(fn.pEnv), fn.Arg(1).ToString(fn.pEnv),
-                                      fn.Arg(2).ToInt32(fn.pEnv), init);
+                                      depth, init);
     if (fn.pResult) fn.pResult->SetAsCharacter(child);
 }
 
 // DISHONORED(port): removeMovieClip removes only what a script created. Flash and GFx both refuse it
-// on a clip the timeline placed; retail's own test is the depth, because attachMovie puts a clip at
-// its AS depth + 16384, above every timeline depth. Without the test the menu's own teardown takes
-// _root.optionsMenu_mc - one of the root's own timeline clips - off the root's display list on the
-// way out of Options, nothing ever puts it back, and the second entry draws an empty screen while
-// every call the root makes on its stale reference fails (agent EZ: build/agentEZ/o12_log.txt lists
-// the ten children the root has left, optionsMenu_mc not among them).
+// on a clip the timeline placed; retail's own test is the depth (2012 0x9f6c00), because everything
+// script creates sits at its AS depth + GFxASDepthBias, above every depth a PlaceObject tag can name.
+// Without the test the menu's own teardown takes _root.optionsMenu_mc - one of the root's own timeline
+// clips - off the root's display list on the way out of Options, nothing ever puts it back, and the
+// second entry draws an empty screen while every call the root makes on its stale reference fails
+// (agent EZ: build/agentEZ/o12_log.txt lists the ten children the root has left, optionsMenu_mc not
+// among them). Agent EZ had to spell that test as a bScriptCreated flag because the bias was not
+// applied anywhere; with the bias in place the depth is the test, as it is in retail, and the flag is
+// gone.
 void MCRemoveMovieClip(const GASFnCall& fn)
 {
     GFxSprite* s = ThisSprite(fn);
-    if (s == 0 || s->GetParent() == 0 || !s->bScriptCreated) return;
+    if (s == 0) return;
+    if (s->GetDepth() < GFxASDepthBias)
+    {
+        fn.pEnv->LogScriptError("%s.removeMovieClip() failed - depth must be >= 0",
+                                s->GetName().ToCStr());
+        return;
+    }
+    if (s->GetParent() == 0) return;
     GFxSprite* parent = s->GetParent()->ToSprite();
     if (parent) parent->RemoveDisplayObject(s->GetDepth(), s->GetId());
+}
+
+// 2012 0x9f5320. One argument, and ANYTHING that is not a live MovieClip - null, undefined, a plain
+// object, a TextField, a dead character handle - clears the mask rather than being refused: the
+// handler's only two arms are SetMask(sprite) and SetMask(0), and it logs nothing either way. The
+// result is set to undefined before anything else and is never anything else. With no argument at all
+// the mask is left alone.
+void MCSetMask(const GASFnCall& fn)
+{
+    if (fn.pResult) fn.pResult->SetUndefined();
+    GFxSprite* s = ThisSprite(fn);
+    if (s == 0 || fn.GetNumArgs() < 1) return;
+    GASObjectInterface* oi = fn.Arg(0).ToObjectInterface(fn.pEnv);
+    GFxSprite* mask = oi ? oi->ToSprite() : 0;
+    s->SetMask(mask);
+    // Bounded narration: which clip is masked by which, and the mask's extent in stage pixels. A
+    // setMask that lands on the wrong clip, or whose mask has no geometry, looks exactly like a
+    // setMask that was never called, and the two are told apart only by these numbers.
+    static unsigned int traced = 0;
+    if (traced < 12 && s->GetMovieRoot() != 0)
+    {
+        ++traced;
+        GASStringContext* sc = s->GetMovieRoot()->GetASContext()->GetSC();
+        GRect<float> b;
+        b.Left = b.Top = b.Right = b.Bottom = 0.f;
+        if (mask != 0)
+            b = mask->GetBoundsTwips(GFxCharacterWorldMatrix(mask));
+        GFxLogf("DISHONORED(bringup): AS2 setMask: %s masked by %s, mask stage bounds "
+                "%.1f,%.1f..%.1f,%.1f px",
+                s->GetTargetPath(sc).ToCStr(),
+                mask ? mask->GetTargetPath(sc).ToCStr() : "(cleared)",
+                b.Left * GFxTwipsToPixels, b.Top * GFxTwipsToPixels,
+                b.Right * GFxTwipsToPixels, b.Bottom * GFxTwipsToPixels);
+    }
+}
+
+// 2012 0x9f9a70. startDrag([lockCenter [, left, top, right, bottom]]): the bounds arm needs all five
+// arguments, is in pixels on the way in and twips on the way out, and normalises left/right and
+// top/bottom rather than trusting their order.
+void MCStartDrag(const GASFnCall& fn)
+{
+    GFxSprite* s = ThisSprite(fn);
+    if (s == 0 || s->GetMovieRoot() == 0) return;
+    GFxMovieRoot::DragState& st = s->GetMovieRoot()->GetDragState();
+    st.pCharacter = s;
+    st.bBound = false;
+    const bool lockCenter = fn.GetNumArgs() >= 1 ? fn.Arg(0).ToBool(fn.pEnv) : false;
+    if (fn.GetNumArgs() >= 5)
+    {
+        const float l = (float)(fn.Arg(1).ToNumber(fn.pEnv) * GFxPixelsToTwips);
+        const float t = (float)(fn.Arg(2).ToNumber(fn.pEnv) * GFxPixelsToTwips);
+        const float r = (float)(fn.Arg(3).ToNumber(fn.pEnv) * GFxPixelsToTwips);
+        const float b = (float)(fn.Arg(4).ToNumber(fn.pEnv) * GFxPixelsToTwips);
+        st.bBound = true;
+        st.BoundLeft = l < r ? l : r;
+        st.BoundRight = l < r ? r : l;
+        st.BoundTop = t < b ? t : b;
+        st.BoundBottom = t < b ? b : t;
+    }
+    s->GetMovieRoot()->InitDragCenterDelta(lockCenter);
+}
+
+// 2012 0x9f9c50. It clears exactly one field - the dragged character - and does not check that the
+// clip it was called on is the one being dragged, which is AS2's own behaviour: any clip's stopDrag
+// cancels the movie's single drag.
+void MCStopDrag(const GASFnCall& fn)
+{
+    GFxSprite* s = ThisSprite(fn);
+    if (s == 0 || s->GetMovieRoot() == 0) return;
+    s->GetMovieRoot()->GetDragState().pCharacter = 0;
+}
+
+// 2012 0x9f5210. No depth range check and no warning at all, unlike attachMovie's.
+void MCDuplicateMovieClip(const GASFnCall& fn)
+{
+    GFxSprite* s = ThisSprite(fn);
+    if (s == 0 || fn.GetNumArgs() < 2) return;
+    GFxSprite* clone = s->CloneDisplayObject(fn.Arg(0).ToString(fn.pEnv),
+                                             fn.Arg(1).ToInt32(fn.pEnv) + GFxASDepthBias);
+    if (fn.pResult) fn.pResult->SetAsCharacter(clone);
 }
 
 void MCSwapDepths(const GASFnCall& fn)
@@ -770,17 +871,23 @@ void MCSwapDepths(const GASFnCall& fn)
     if (fn.pResult) fn.pResult->SetUndefined();
 }
 
+// 2012 0x9f5510: max(0, largest - 0x3FFF), i.e. one above the largest AS depth in use and never
+// negative, so a container holding only timeline children answers 0 and the first script child lands
+// at GFxASDepthBias exactly.
 void MCGetNextHighestDepth(const GASFnCall& fn)
 {
     GFxSprite* s = ThisSprite(fn);
-    if (fn.pResult)
-        fn.pResult->SetInt(s ? s->GetDisplayList().GetLargestDepthInUse() + 1 : 0);
+    if (fn.pResult == 0) return;
+    const int next = s ? s->GetDisplayList().GetLargestDepthInUse() - (GFxASDepthBias - 1) : 0;
+    fn.pResult->SetInt(next > 0 ? next : 0);
 }
 
+// 2012 0x9cde60: internal - 0x4000, unclamped, which is why retail reports a timeline clip's depth as
+// a negative number.
 void MCGetDepth(const GASFnCall& fn)
 {
     GFxSprite* s = ThisSprite(fn);
-    if (fn.pResult) fn.pResult->SetInt(s ? s->GetDepth() : 0);
+    if (fn.pResult) fn.pResult->SetInt(s ? s->GetDepth() - GFxASDepthBias : 0);
 }
 
 // MovieClip.hitTest(x, y [, shapeFlag]) and MovieClip.hitTest(target). The point form is in STAGE
@@ -1115,6 +1222,10 @@ void GASGlobalContext::InitStandardLibrary()
     AddMethod(Prototypes[Proto_MovieClip], this, "getDepth", MCGetDepth);
     AddMethod(Prototypes[Proto_MovieClip], this, "getNextHighestDepth", MCGetNextHighestDepth);
     AddMethod(Prototypes[Proto_MovieClip], this, "hitTest", MCHitTest);
+    AddMethod(Prototypes[Proto_MovieClip], this, "setMask", MCSetMask);
+    AddMethod(Prototypes[Proto_MovieClip], this, "startDrag", MCStartDrag);
+    AddMethod(Prototypes[Proto_MovieClip], this, "stopDrag", MCStopDrag);
+    AddMethod(Prototypes[Proto_MovieClip], this, "duplicateMovieClip", MCDuplicateMovieClip);
 
     // The constructors, each with its prototype and each on _global.
     struct ClassInstall { const char* Name; ProtoId Id; GASCFunctionPtr Ctor; GASNewObjectPtr New; };

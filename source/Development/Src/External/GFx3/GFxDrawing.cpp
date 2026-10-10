@@ -1040,6 +1040,13 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
         ctor->SetConstMemberRaw(sc, "loadBitmap", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         GASValue ctorVal;
         ctorVal.SetAsFunction(ctor);
+        // DISHONORED(bringup, agent FF): the prototype's __constructor__, for the reason spelled out
+        // above GeomInstall. Without it OperatorNew takes Object.prototype's constructor as the maker
+        // of `new BitmapData(w, h)`, so the instance is whatever Object allocates and any object-type
+        // guard a BitmapData method carries fails silently. The three flash.geom classes and
+        // GFxAS2Lib.cpp's eight built-ins all set it; these two were the only prototypes that did not.
+        bitmapProto->SetMemberRaw(sc, sc->GetBuiltin(GASbuiltin_constructorUS), ctorVal,
+                                  GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         if (flash)
         {
             GASObject* display = new GASObject(sc,
@@ -1119,6 +1126,8 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
         ctor->SetConstMemberRaw(sc, "prototype", v, GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         GASValue ctorVal;
         ctorVal.SetAsFunction(ctor);
+        proto->SetMemberRaw(sc, sc->GetBuiltin(GASbuiltin_constructorUS), ctorVal,
+                            GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         global->SetConstMemberRaw(sc, "TextFormat", ctorVal,
                                   GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         GTextFormatProto = proto;

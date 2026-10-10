@@ -733,6 +733,7 @@ GFxDisplayContext::GFxDisplayContext()
       bIs3D(false), pView3D(0), pPersp3D(0), MaskLevel(0), MaskDrawDepth(0)
 {
     Matrix.SetIdentity();
+    StageMatrix.SetIdentity();
     GFxDisplayCxformIdentity(&Cx);
     memset(&Stats, 0, sizeof(Stats));
 }
@@ -932,12 +933,74 @@ static bool GFxDisplayCxformIsTransparent(const GRenderer::Cxform& cx)
     return cx.M_[3][0] <= 0.0f && cx.M_[3][1] <= 0.5f;
 }
 
+// DISHONORED(port, agent FF): submit a MovieClip.setMask mask and leave the stencil test armed, or
+// answer false when there is nothing to submit. The mask is drawn with its own chain of parents - the
+// stage transform plus the mask's parents' matrices - because setMask takes a clip from anywhere in
+// the tree, and the masked clip's accumulated transform has nothing to do with it. The colour
+// transform is reset to the identity for the same reason the ClipDepth path needs
+// MaskDrawDepth: colour writes are off, so the mask's own alpha must not be allowed to decide
+// whether its geometry is submitted at all.
+static bool GFxDisplayPushScriptedMask(GFxDisplayContext& ctx, GFxCharacter* mask)
+{
+    if (mask == 0 || ctx.pRenderer == 0 || ctx.MaskDrawDepth != 0)
+        return false;
+    GFxDisplayContext::SavedTransform saved;
+    saved.Matrix = ctx.Matrix;
+    saved.Cx = ctx.Cx;
+    saved.Matrix3D = ctx.Matrix3D;
+    saved.pView3D = ctx.pView3D;
+    saved.pPersp3D = ctx.pPersp3D;
+    saved.bIs3D = ctx.bIs3D;
+
+    if (mask->GetParent() != 0)
+        GFxDisplayMatrixAppend(&ctx.Matrix, ctx.StageMatrix,
+                               GFxCharacterWorldMatrix(mask->GetParent()));
+    else
+        ctx.Matrix = ctx.StageMatrix;
+    GFxDisplayCxformIdentity(&ctx.Cx);
+    ctx.bIs3D = false;
+
+    ctx.pRenderer->BeginSubmitMask(ctx.MaskLevel ? GRenderer::Mask_Increment
+                                                 : GRenderer::Mask_Clear);
+    ++ctx.MaskDrawDepth;
+    const unsigned int trisBefore = ctx.Stats.Triangles;
+    mask->Display(ctx);
+    const unsigned int trisDrawn = ctx.Stats.Triangles - trisBefore;
+    --ctx.MaskDrawDepth;
+    ctx.pRenderer->EndSubmitMask();
+    if (trisDrawn == 0)
+    {
+        ++GFxDisplayEmptyMasks;
+        if (GFxDisplayEmptyMasks <= 8)
+            GFxLogf("DISHONORED(bringup): GFx setMask mask submitted NO geometry - everything it "
+                    "masks is now rejected");
+    }
+    ++ctx.MaskLevel;
+    ++ctx.Stats.Masks;
+
+    ctx.Matrix = saved.Matrix;
+    ctx.Cx = saved.Cx;
+    ctx.Matrix3D = saved.Matrix3D;
+    ctx.pView3D = saved.pView3D;
+    ctx.pPersp3D = saved.pPersp3D;
+    ctx.bIs3D = saved.bIs3D;
+    ctx.ApplyToRenderer();
+    return true;
+}
+
 void GFxSprite::Display(GFxDisplayContext& ctx)
 {
     // DISHONORED(port): 2012 0x9faeb0 (2013 0x9f1780). Invisible clips and clips with a zero alpha
     // multiply are skipped before the transform is composed, which is what retail's early-out does.
     ++ctx.Stats.Characters;
-    if (!GetVisible())
+    // DISHONORED(port, agent FF): retail's own early-out is `if ((Flags & 3) != 1 && (Flags & 0x8000)
+    // == 0) return`, i.e. invisible AND not serving as somebody's mask (2012 0x9faeb0 at its head).
+    // A clip handed to setMask is therefore drawn even when it is invisible - which it almost always
+    // is, because GFx does NOT hide a mask from ordinary rendering and the content has to - and the
+    // mask pass has colour writes off, so being invisible must not stop its geometry reaching the
+    // stencil. Submitting nothing leaves the stencil empty and EndSubmitMask's `== counter` test then
+    // rejects every pixel the mask covers, which is the whole masked subtree missing.
+    if (!GetVisible() && pMaskOwner == 0)
     {
         ++ctx.Stats.Invisible;
         return;
@@ -962,9 +1025,20 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     // DISHONORED(port, agent EA): 2013 GFxSprite::Display draws the clip's own drawing context - what
     // AS2's moveTo/lineTo/beginFill wrote - BELOW its display list, which is Flash's rule: a shape
     // drawn from script sits under every child the timeline placed.
+    // 2012 0x9faeb0's own self-healing arm: a mask that is no longer this clip's mask - because the
+    // clip it masks was changed, or because it was unloaded - is dropped rather than drawn.
+    if (pMaskCharacter != 0 && pMaskCharacter->GetMaskOwner() != this)
+        SetMask(0);
+    const bool bMaskPushed = GFxDisplayPushScriptedMask(ctx, pMaskCharacter);
     if (pDrawing != 0)
         pDrawing->Display(ctx, this);
     DisplayList.Display(ctx);
+    if (bMaskPushed)
+    {
+        ctx.pRenderer->DisableMask();
+        if (ctx.MaskLevel)
+            --ctx.MaskLevel;
+    }
     ctx.pDataDef = savedDataDef;
     ctx.PostDisplay(saved);
 }
@@ -1581,6 +1655,7 @@ void GFxMovieRoot::Display()
     ctx.Matrix.SetIdentity();
     ctx.Matrix.M_[0][0] = GFxTwipsToPixels;
     ctx.Matrix.M_[1][1] = GFxTwipsToPixels;
+    ctx.StageMatrix = ctx.Matrix;
     GFxDisplayCxformIdentity(&ctx.Cx);
 
     // The visible frame rect, in the movie's own pixels: what BeginDisplay's x0..y1 are. Retail keeps

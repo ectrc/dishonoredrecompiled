@@ -38,6 +38,7 @@
 //   GFx_GenerateMouseButtonEvents              2013 0xa5ad10
 #include "GFxPlayer.h"
 #include "GFxCharacterDefs.h"
+#include "GFxDisplay.h"
 #include "GFxTextField.h"
 #include "GFxAS2Object.h"
 
@@ -513,6 +514,22 @@ bool GFxSprite::PointTestLocal(const GPoint<float>& pt, unsigned char hitTestMas
         return false;
     if ((hitTestMask & HitTest_SkipInvisible) != 0 && !GetVisible())
         return false;
+    // DISHONORED(port, agent FF): a MovieClip.setMask mask rejects the whole sprite for a point
+    // outside it. Retail's own expression, out of 2012 0x9fba50: the point is carried from this
+    // sprite's space into the MASK's space - inverse(mask world) * this world - and the mask is asked
+    // about it; a miss ends the test here. That is the half of setMask the mouse sees, and it is why
+    // a row scrolled out from under a list's mask stops answering the pointer as well as stopping
+    // being drawn.
+    if (pMaskCharacter != 0 && pMaskCharacter->GetMaskOwner() == this)
+    {
+        GMatrix2D toMask;
+        toMask.SetInverse(GFxCharacterWorldMatrix(pMaskCharacter));
+        toMask.Prepend(GFxCharacterWorldMatrix(this));
+        GPoint<float> inMask = pt;
+        toMask.Transform(&inMask.x, &inMask.y);
+        if (!pMaskCharacter->PointTestLocal(inMask, hitTestMask))
+            return false;
+    }
     // DISHONORED(port, agent EA): the clip's own drawing first, because it is drawn first.
     if (((GFxSprite*)this)->HasDrawing()
         && ((GFxSprite*)this)->GetDrawing()->PointTestLocal(

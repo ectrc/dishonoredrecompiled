@@ -154,6 +154,12 @@ public:
     GFxGlyphRasterCache* pGlyphCache;
     GTexture*            pGlyphTexture;      // the atlas, uploaded on demand; owned by the cache glue
     GMatrix2D            Matrix;
+    // DISHONORED(port, agent FF): the stage transform alone - twips to the movie's own pixel frame -
+    // as GFxMovieRoot::Display installs it, kept so that a scripted mask can be drawn with ITS own
+    // world transform instead of the masked clip's. Matrix has the masked clip's whole chain
+    // accumulated into it by the time the mask has to be submitted, and a mask set with
+    // MovieClip.setMask is not under the clip it masks, so the chain cannot be reused.
+    GMatrix2D            StageMatrix;
     GRenderer::Cxform    Cx;
     // --- the 3D arm ----------------------------------------------------------------------------
     // Retail's GFxDisplayContext carries a world matrix, a perspective, a view and one byte that says

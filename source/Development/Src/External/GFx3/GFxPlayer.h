@@ -383,6 +383,12 @@ public:
     void CommitFrameCount(unsigned int count) { FrameCount = count; }
     void GrowFrames(unsigned int need);
     unsigned int GetLabelCount() const { return LabelCount; }
+    /** the i'th label's name, for the diagnostic that says which labels a clip DOES have: "no frame
+        named 'PC' (3 labels)" names the fault but not the clip, and the two candidate causes -
+        a receiver that is the wrong clip, and a label table this tree parsed short - are told apart
+        only by the names. */
+    const char*  GetLabelName(unsigned int i) const
+        { return i < LabelCount ? Labels[i].Name : ""; }
 
 protected:
     struct FrameLabel { char Name[96]; unsigned int Frame; };
@@ -552,15 +558,34 @@ public:
     void AddRef() { ++RefCount; }
     void Release() { if (--RefCount <= 0) delete this; }
 
-    GFxASCharacter* ResolveCharacter(GFxMovieRoot* root) const { (void)root; return pCharacter; }
+    /** 2012 0x9cdd60: the live pointer when there is one, and otherwise the character the handle's
+        ABSOLUTE path resolves to now, against _level0's own environment - not against the parent the
+        handle was made under, and with no caching of either answer. A handle outlives the character
+        it was made for, so a GFxValue a C++ caller is still holding, or an AS2 value the content
+        kept, re-finds the clip that has taken that path rather than reading as undefined. Null when
+        nothing is there. */
+    GFxASCharacter* ResolveCharacter(GFxMovieRoot* root) const;
     void ChangeCharacter(GFxASCharacter* ch) { pCharacter = ch; }
     const GASString& GetName() const { return Name; }
 
     int             RefCount;
     GASString       Name;
+    /** retail handle+0x0C: the absolute dotted path, interned at construction. */
+    GASString       NamePath;
     GFxASCharacter* pParent;
     GFxASCharacter* pCharacter;
 };
+
+// DISHONORED(port, agent FF): the bias between an ActionScript depth and a display-list depth. Retail
+// places everything script creates at its AS depth + 0x4000, which is above every depth a PlaceObject
+// tag can name, and reports a depth back to script as internal - 0x4000 - so a timeline clip answers a
+// negative number. attachMovie 2012 0x9ff990, duplicateMovieClip 0x9f5210, getDepth 0x9cde60,
+// getNextHighestDepth 0x9f5510 (max(0, largest - 0x3FFF)), removeMovieClip 0x9f6c00 (>= 0x4000 is the
+// test for "script made this"). Agent FB's capture of the running retail game confirms it from the
+// other end: build/agentFB/retail/displaylist.log has mainMenu_mc at -16383 and optionsMenu_mc at
+// -16290 (timeline, internal 1 and 94) beside `help` at 0 and vignette_mc at +1 (script-created,
+// internal 16384 and 16385).
+enum { GFxASDepthBias = 16384 };
 
 // GFxCharacter: the display-list citizen. Matrix, colour transform, depth, ratio, parent, def.
 class GFxCharacter
@@ -669,6 +694,16 @@ public:
     void SetRatio(float r) { Ratio = r; }
     int  GetClipDepth() const { return ClipDepth; }
     void SetClipDepth(int d) { ClipDepth = d; }
+    /** MovieClip.setMask, 2012 0x9f5320. A scripted mask is not a display-list ClipDepth: the clip
+        serving as the mask can live anywhere in the tree, it is drawn with its OWN world transform
+        rather than with the masked clip's, it masks exactly one character instead of a depth range,
+        and it stops being drawn as ordinary content for as long as it serves - which is why content
+        can leave it fully opaque and never see it. The reference down is strong and the back-pointer
+        up is raw; the back-pointer is safe because the owner holds the only thing keeping the mask
+        alive and so cannot be outlived by it. */
+    void SetMask(GFxCharacter* mask);
+    GFxCharacter* GetMask() const { return pMaskCharacter; }
+    GFxCharacter* GetMaskOwner() const { return pMaskOwner; }
     GFxResourceId GetId() const { return Id; }
     GFxASCharacter* GetParent() const { return pParent; }
     bool GetVisible() const { return bVisible; }
@@ -688,13 +723,9 @@ public:
     unsigned char     RollOverCnt;
     /** retail character+160 bit 0x1000. TRUE until script writes a transform property. */
     bool              bAcceptAnimMoves;
-    // TRUE only for a character attachMovie/createEmptyMovieClip/duplicateMovieClip made. Flash and
-    // GFx refuse removeMovieClip on anything else; retail tells the two apart by depth, because a
-    // script-created clip sits at its AS depth + 16384, above every timeline depth. This tree's
-    // attachMovie does not yet apply that offset (GASop_DuplicateClip subtracts it instead of
-    // adding it), so the fact is recorded rather than inferred from the depth.
-    bool              bScriptCreated;
     GFxWeakProxy*     pWeakProxy;
+    GFxCharacter*     pMaskCharacter;
+    GFxCharacter*     pMaskOwner;
     /** retail character+92 / +96 / +100 / +104: the local 3D transform, the perspective and view
         matrices this character overrides its parent's with, and its own field of view. All three
         pointers are null until something writes a 3D property. */
@@ -830,6 +861,12 @@ public:
     void                SetName(const GASString& n);
     GASString           GetTargetPath(GASStringContext* sc) const;
     GFxMovieRoot*       GetMovieRoot() const { return pMovieRoot; }
+
+    /** 2012 GFxASCharacter::DoMouseDrag 0x9cfa00: the per-advance half of startDrag. The pointer is
+        carried into this character's PARENT's space, offset by the centre delta, clamped to the
+        bounds if startDrag was given five arguments, and written to `_x` / `_y`. The first thing it
+        does is check that this character is the one the movie root says is being dragged. */
+    void DoMouseDrag();
 
     void ExecuteEvent(GASBuiltinString eventName);                    // via 2012 0x9d22e0
     /** DISHONORED(port): 2013 GFxASCharacter::ExecuteEvent 0x9c8b30. Look the event's handler member
@@ -1001,6 +1038,12 @@ public:
         snapshots `this._x` reads the position the caller asked for. */
     GFxSprite* AttachMovie(const GASString& symbolName, const GASString& instanceName, int depth,
                            GASObject* initObj = 0);
+    /** duplicateMovieClip: a second instance of THIS clip's own definition, beside it in its own
+        parent's display list at `depth`, carrying its transform, colour transform and visibility.
+        Retail's AS2 handler is 2012 0x9f5210 and the GASop_CloneSprite opcode lands in the same
+        place. The clone is a fresh instance of the definition, so its timeline starts at frame 0 -
+        Flash's own rule - and not at the source's current frame. */
+    GFxSprite* CloneDisplayObject(const GASString& newName, int depth);
 
     unsigned int GetCurrentFrame() const { return CurrentFrame; }
     unsigned int GetFrameCount() const { return pTimelineDef ? pTimelineDef->GetFrameCount() : 1; }
@@ -1580,6 +1623,26 @@ public:
     // instantiation of the machine failed. Off unless the host sets it.
     static bool bTraceConstruction;
 
+    /** MovieClip.startDrag / stopDrag. Retail keeps one of these per movie root, embedded at
+        GFxMovieRoot+0x23D4, and copies it whole through GetDragState / SetDragState (2012 0x9cf7b0 /
+        0x9e1260). pCharacter is the entire gate: stopDrag (2012 0x9f9c50) clears that one field and
+        leaves the bounds, the lock flag and the centre delta stale, which is harmless because
+        DoMouseDrag's first test is `this == DragState.pCharacter`. The bounds and the centre delta
+        are twips, which is what MouseX / MouseY are in; `_x` and `_y` are written in pixels. */
+    struct DragState
+    {
+        GFxASCharacter* pCharacter;
+        bool  bLockCenter;
+        bool  bBound;
+        float BoundLeft, BoundTop, BoundRight, BoundBottom;
+        float CenterDeltaX, CenterDeltaY;
+    };
+    DragState& GetDragState() { return Drag; }
+    /** 2012 GFxMovieRoot::DragState::InitCenterDelta 0xa037c0: with bLockCenter the clip's origin
+        goes to the pointer, without it the offset between the two at the moment of the press is
+        kept, so the clip does not jump under the hand. */
+    void InitDragCenterDelta(bool lockCenter);
+
 private:
     struct ActionEntry
     {
@@ -1629,6 +1692,7 @@ private:
     unsigned int              MouseButtons[MaxMice];
     GFxMouseState             MouseStates[MaxMice];
     GFxState*                 States[MaxStates];
+    DragState                 Drag;
 
     ActionEntry* Actions;
     unsigned int ActionCount;

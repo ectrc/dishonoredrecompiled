@@ -40,6 +40,7 @@ GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
         MouseY[i] = 0.f;
         MouseButtons[i] = 0;
     }
+    memset(&Drag, 0, sizeof(Drag));
     memset(&Stats, 0, sizeof(Stats));
     memset(&LastDisplayStats, 0, sizeof(LastDisplayStats));
     for (int i = 0; i < MaxStates; ++i)
@@ -705,6 +706,11 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
 
     ProcessInput();
     ProcessIntervalTimers();
+    // 2012 0x9cfa00's caller: retail reaches DoMouseDrag through the optimized play list, which is
+    // what startDrag's ModifyOptimizedPlayListLocal puts the dragged clip on. One root-level test per
+    // advance is the same work and does not need the play list.
+    if (Drag.pCharacter != 0)
+        Drag.pCharacter->DoMouseDrag();
 
     if (bPaused)
         return FrameTime;
@@ -1395,8 +1401,11 @@ bool GFxValue::ObjectInterface::CreateEmptyMovieClip(void* obj, GFxValue* mc,
     GFxSprite* sp = oi ? oi->ToSprite() : 0;
     if (sp == 0)
         return false;
-    if (depth < 0)
-        depth = sp->GetDisplayList().GetLargestDepthInUse() + 1;
+    // DISHONORED(port, agent FF): the depth an UnrealScript caller passes is an AS depth, in the same
+    // space getNextHighestDepth answers in - FGFxEngine's mouse cursor reads one from the AS2 method
+    // and hands it straight to this one - so it carries GFxASDepthBias. The negative sentinel is this
+    // interface's own "put it on top" and is already a display-list depth.
+    depth = depth < 0 ? sp->GetDisplayList().GetLargestDepthInUse() + 1 : depth + GFxASDepthBias;
     GFxSprite* child = sp->CreateEmptyMovieClip(root->CreateString(instanceName), depth);
     if (child == 0)
         return false;
@@ -1415,8 +1424,7 @@ bool GFxValue::ObjectInterface::AttachMovie(void* obj, GFxValue* mc, const char*
     GFxSprite* sp = oi ? oi->ToSprite() : 0;
     if (sp == 0)
         return false;
-    if (depth < 0)
-        depth = sp->GetDisplayList().GetLargestDepthInUse() + 1;
+    depth = depth < 0 ? sp->GetDisplayList().GetLargestDepthInUse() + 1 : depth + GFxASDepthBias;
     GFxSprite* child = sp->AttachMovie(root->CreateString(symbolName),
                                        root->CreateString(instanceName), depth);
     if (child == 0)

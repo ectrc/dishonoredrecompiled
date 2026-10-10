@@ -966,19 +966,27 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
         }
         case GASop_DuplicateClip:
         {
-            int depth = env->Pop().ToInt32(env) - 16384;
+            // DISHONORED(port, agent FF): the depth is an AS depth, so it is biased UP by
+            // GFxASDepthBias, not down - and the clone is an instance of the source's own definition,
+            // not an empty clip. Both halves were wrong here: `- 16384` put every cloned clip 16384
+            // below its parent's timeline children, where GFxDisplayList::Display draws it first and
+            // anything with a ClipDepth masks it out entirely.
+            int depth = env->Pop().ToInt32(env) + GFxASDepthBias;
             GASString newName = env->Pop().ToString(env);
             GASString path = env->Pop().ToString(env);
             GFxASCharacter* src = env->FindTarget(path);
-            if (src && sprite)
-                sprite->CreateEmptyMovieClip(newName, depth);
+            GFxSprite* srcSprite = src ? src->ToSprite() : 0;
+            if (srcSprite)
+                srcSprite->CloneDisplayObject(newName, depth);
             break;
         }
         case GASop_RemoveClip:
         {
             GASString path = env->Pop().ToString(env);
             GFxASCharacter* t = env->FindTarget(path);
-            if (t && t->GetParent())
+            // The same "script made this" test the method form carries (2012 0x9f6c00): the opcode
+            // and the method are one handler in retail, and a timeline clip must survive it.
+            if (t && t->GetParent() && t->GetDepth() >= GFxASDepthBias)
             {
                 GFxSprite* ps = t->GetParent()->ToSprite();
                 if (ps) ps->RemoveDisplayObject(t->GetDepth(), t->GetId());
