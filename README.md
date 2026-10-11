@@ -2,8 +2,9 @@
 
 **It boots to its own main menu and plays into the first mission.** From the shipped executable: NEW
 GAME, a difficulty, the brightness screen, YES — and Corvo is standing on the boat landing at Dunwall
-Tower, with the HUD drawn and a guard walking a patrol route. The interface is most of the way to
-matching retail's; what is still wrong is listed in `resources/docs/STATUS.md`.
+Tower, with the opening scene's two NPCs on the boat, the cinematic letterbox bars drawn, the HUD up
+and a guard walking a patrol route. The interface is most of the way to matching retail's; what is
+still wrong is listed in `resources/docs/STATUS.md`.
 
 Functional (non-matching) rebuild of Dishonored's Win32 native executable, targeting the **retail
 2013 build** (`Dishonored.exe`, engine 9411, DLC05–07): its layouts, serialization and behavior are
@@ -17,7 +18,7 @@ outside the repo.
 
 Start with [resources/docs/STATUS.md](resources/docs/STATUS.md) — what works, what does not, and the
 pitfalls that cost a wave each to learn. [PLAN.md](PLAN.md) has the overall strategy and phases;
-`resources/docs/PHASE1.md`–`PHASE13.md` are the per-wave trackers, and `resources/docs/agents/` holds
+`resources/docs/PHASE1.md`–`PHASE14.md` are the per-wave trackers, and `resources/docs/agents/` holds
 every package's own report and measurements. Symbol exports live in `resources/docs/symbols/` and
 `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
 
@@ -26,7 +27,8 @@ every package's own report and measurements. Symbol exports live in `resources/d
 | | |
 |---|---|
 | Engine, renderer, script VM | up; the first mission map renders under D3D9 and the pawn walks it |
-| Main menu | draws, navigates by mouse and keyboard, and starts the game |
+| Main menu | draws, navigates by mouse and keyboard, and starts the game. Its modal text, option rows, difficulty portrait and scrolling lists are measured against retail's |
+| Opening scene | the pawns are placed and the letterbox bars draw; **the matinee itself does not run yet** |
 | In-game HUD | health and mana vials and the stance icon, fed from the live pawn |
 | AI | a guard adopts a patrol route and walks it |
 | Save/load | all 51 retail saves load; **86.7 %** of `Dishonored0.sav`'s object stream restores |
@@ -56,9 +58,12 @@ install, beside the game's own executable:
 playable run needs when they are absent (`Core/Src/UnMisc.cpp`, `DISHONORED_PLAY_DEFAULTS`):
 `-gfxuimenu -nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed -ResX=1600 -ResY=900`.
 
-From the menu: **Space** past the start screen, then **Enter** through NEW GAME, the difficulty screen
-(Up/Down to choose) and the brightness screen, then **YES** on the confirmation. That commits the map
-change and puts Corvo on the boat landing at Dunwall Tower.
+From the menu: **Space** past the start screen, then NEW GAME, the difficulty screen (Up/Down to
+choose) and the brightness screen, then **YES** on the confirmation. That commits the map change and
+puts Corvo on the boat landing at Dunwall Tower.
+
+**Use the mouse to activate a row.** Enter does not yet activate a main-menu entry — Space does, and
+the keys work once a screen is open. That is open defect 5 in `STATUS.md`.
 
 Anything you pass yourself wins over the defaults, so
 

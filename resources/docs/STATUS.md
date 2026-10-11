@@ -1,8 +1,8 @@
-# Project status — 2026-10-11 (the opening scene is populated and the bars draw; the menu had been closing itself)
+# Project status — 2026-10-11 (wave 18 complete: the opening scene plays, and four of the five faults are measured against retail)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md` (wave 18, three of four landed)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md` (wave 18, done)**. Decisions and fixes: `porting_notes.md`. Per-function status:
 `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FI>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `9f1a449`)
+## Where we are (HEAD `21db165`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -119,20 +119,35 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
 
 ## Wave 18 — the ActionScript library, the portrait, and getting into the game
 
-`PHASE14.md`. Three of four landed, each gated at 37/37 on a clean checkout of its own commit; **FG
-(the options panel and the modal's HTML text) is still running.**
+`PHASE14.md`. **Four of four merged and gated**, each 37/37 on a clean checkout of its own commit:
 
 | | |
 |---|---|
 | `63c2539` FF | `MovieClip.setMask` was never registered: the options list drew four of twelve rows over the tabs above it. Ported end to end, plus retail's AS depth bias (+0x4000) pinned three independent ways |
 | `f72f9f5` FH | the difficulty portrait lands. A `PlaceObject2` carrying `Move|HasCharacter` is a **replace**, and retail's `ReplaceDisplayObject` inherits the transform it replaces for every field the tag omits — ours left it at identity. **+127, +194 off retail → +1, +0** |
 | `8027ab6` FI | the opening scene is populated and the letterbox bars draw. And the menu stops closing itself — see the gate's blind spot below |
+| `c702a38` FG | the modal's text: the section-sign token was truncated from `C2 A7` to `A7` by a wide-to-narrow copy, so it could never match, and the same AS loop applies its colour. `ParseHtmlImpl` ported. Plus fault 2 — **one row at a time, the row the pointer just left**, because `MarkAllEntriesForRemoval` marked every entry where retail tests the depth |
 
-**Three things from this wave worth carrying forward.** `MovieClip.setMask` had been noticed missing
-by three separate packages and left each time because it never blocked them; the replace-inheritance
-fault covers **17 tags across the six cooked movies**, not just the portrait; and every one of the
-three packages corrected at least three premises of its own brief, including two this file had
-recorded as fact.
+**Four of the user's five faults are closed with side-by-side measurements against retail.** Fault
+1's panel **does not reproduce**: nine scanline measurements give steps with no consistent sign and
+the two background scenes differ by far more than the quantity in dispute, so FG withdrew it rather
+than pick a side. Its one real component — `maskContent` being rendered — was fixed by FF.
+
+**Five things from this wave worth carrying forward.**
+
+- `MovieClip.setMask` had been noticed missing by **three** separate packages and left each time
+  because it never blocked them.
+- **Two of the wave's four root causes only work because another package's fix landed first**: FG's
+  depth test is a no-op without FF's depth bias.
+- **The wave's one semantic collision would have survived a three-way textual merge** and was caught
+  by a build: FF deleted `bScriptCreated`, which FG's first fix used.
+- **Two packages corrected each other.** FF could not reproduce fault 2; FG showed why (the pointer
+  must *leave* the row). FG's reading of FF's 127 `SetWidgetFocus` errors — mostly a normal AS2
+  no-op this runtime logs as an error — replaced FF's.
+- **Every package corrected at least three premises of its own brief**, and between them they
+  overturned two things this file had recorded as fact: the "PC" frame errors are an asset bug retail
+  shares, and `execSetCinematicMode_Native`'s nine booleans are named in `retail_sdk_layout.json`,
+  so the dismod run the plan insisted on was never needed.
 
 ## Waves 16–17 — the interface
 
@@ -184,12 +199,11 @@ blockers, EV the last 82 KB of the save, EW the five layout defects) stay paused
 
 Open, in the order the evidence supports:
 
-1. **FG's half of wave 18** — the options panel's extent, fault 2 if it can be reproduced,
-   `ParseHtmlImpl` and `?CATEGORY?`.
-2. **The options list's class binding.** Agent FF's largest single finding: **127
-   `SetWidgetFocus`/`RemoveWidgetFocus` "on undefined"** from `OptionsLine`/`OptionsList`, and
-   `tweenTo` and `UpdateSettings` failing the same way — none of the three is a built-in, so the
-   fault is a `registerClass` / prototype-binding gap, not a library gap.
+1. **`UpdateSettings`** — the one genuine missing prototype method of the three FF raised, and it
+   does not occur on any screen FG's driver reaches, so it needs a screen nobody has driven yet.
+   **Not** the 127 `SetWidgetFocus` errors: FG showed those are `_curWidget_mc` undefined on the
+   first selection, a normal AS2 no-op this runtime logs as an error, with every options symbol
+   tracing healthy to `MovieClip.prototype`.
 3. **The matinee** (defect 1), which is now specified down to three named gaps.
 4. **A New Game check in the regression harness**, per the blind spot below.
 5. The menu camera's transform (defect 2) and its post-process parameters (defect 4), both already
