@@ -35,7 +35,7 @@ cmake -S . -B %BUILD_DIR% -G Ninja -DCMAKE_BUILD_TYPE=Release ^
   -DDISHONORED_REAL_LAUNCH=ON -DDISHONORED_ENABLE_GFXUI=ON -DDISHONORED_ENABLE_AKAUDIO=ON ^
   -DDISHONORED_ENABLE_OSS=ON -DDISHONORED_ENABLE_DISHONOREDGAME=ON ^
   -DDISHONORED_PLAY_DEFAULTS=ON -DDISHONORED_SHIPPING=%SHIPPING% || exit /b 1
-cmake --build %BUILD_DIR% --target DishonoredGame -- -k 0 || exit /b 1
+python resources\tools\build_queued.py --build-dir %BUILD_DIR% --target DishonoredGame || exit /b 1
 
 python resources\tools\stage_retail.py --build-dir %BUILD_DIR% --exe-name DishonoredGame-Win64-Shipping.exe || exit /b 1
 

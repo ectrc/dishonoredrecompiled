@@ -207,6 +207,16 @@ This package owns `External/GFx3`.
 
 ## Rules for agents
 
+- **Every build goes through `resources/tools/build_queued.py`. Never call `cmake --build` or `ninja`
+  directly — not in your own helper scripts either.** The user asked for this after four agents
+  building at once pinned all sixteen cores: the wrapper takes a machine-wide lock so builds run one
+  at a time (a waiter prints a line every 30 s naming whose build it is waiting on), and it pins the
+  build to **half the cores by affinity mask** with `-j 8` and below-normal priority — a hard cap that
+  cl.exe inherits, verified by reading the mask back from the OS. `build-release.cmd`,
+  `build-play.cmd`, `build-game.cmd`, `run_regression.py`'s in-harness build and `verify_phase2.py`
+  all already use it, so going through those is enough. **A build that waits is not a build that
+  hung**: look for the `build_queued: waiting for another build` line before concluding anything.
+  Expect your clean full build to take longer than last wave's did.
 - **Capture in-process only, with your own `-apshotname` tag.**
 - Work **only** in your own worktree. Your sync script runs **worktree → main**, **flags rather than
   copies** anything changed in main since your base, and **names every function you touch per file**.

@@ -37,7 +37,10 @@ def read_csv(path: Path) -> list[dict]:
 
 
 def build(preset: str, target: str) -> tuple[bool, str]:
-    cmd = f'call "{VSDEVCMD}" -arch=x86 -host_arch=x64 -no_logo && cd /d "{REPO}" && cmake --preset {preset} && cmake --build build\\{preset} --target {target}'
+    # The build half goes through build_queued.py so it waits for any other build on the machine and takes
+    # at most half the cores; this runs inside run_regression.py, where four agents' gates can overlap.
+    cmd = (f'call "{VSDEVCMD}" -arch=x86 -host_arch=x64 -no_logo && cd /d "{REPO}" && cmake --preset {preset} && '
+           f'python resources\\tools\\build_queued.py --build-dir build\\{preset} --target {target}')
     r = subprocess.run(["cmd", "/c", cmd], capture_output=True, text=True, errors="replace")
     errors = [l for l in r.stdout.splitlines() + r.stderr.splitlines() if " error C" in l or "error LNK" in l or "CMake Error" in l]
     return r.returncode == 0, errors[0][:200] if errors else f"exit {r.returncode}"

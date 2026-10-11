@@ -67,7 +67,7 @@ listeners (`98e22d4`).
 | Save | above. Remaining 82,423 bytes of `Dishonored0.sav` are two bytes wide inside `AActor::GameLoad` |
 | Shims | **887** (wave 14 ES, from 1,098), held by `resources/tools/shim_ratchet.py`. Of the original 1,098: 966 provable absences, 121 undecidable from any truth source, **5 members retail actually has** (live defects, wave 15 EW) |
 | `Sources.cmake` | an **exclude list**: 806 comment-only skeleton units whose code never compiles. A **port queue**, not a deletion backlog — 813 of the 818 inventoried are alive in retail. Inventory: `agents/agentES_exclude_inventory.csv`, 875 rows |
-| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`) (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
+| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`). **Every build on this machine goes through `resources/tools/build_queued.py`**: one build at a time behind a machine-wide lock, pinned to half the cores by affinity, `-j 8`, below-normal priority - the user's request after four agents building at once pinned all sixteen (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
 | Audio | **deferred to Phase 10 as polish** (the user's call): the silent backend loads the real banks and resolves the real event ids. Do not open an audio package until the game plays |
 
 ## The gate is RED, deliberately
@@ -361,6 +361,16 @@ then the user's re-entrant mouse path, then the VM stringifying a `MovieClip` as
   (FH's `0xdf0a00`, FL's eight), the sweep is a lint, not a gate.
 
 ### Build and link
+
+- **Builds queue; a waiting build is not a hung build.** `build_queued.py` holds a machine-wide lock
+  (`%LOCALAPPDATA%\Temp\dishonored_build.lock`, owner pid inside; a dead owner's lock is removed
+  automatically) and prints `build_queued: waiting for another build to finish (<owner>)` every 30 s.
+  It also pins the build to **half the logical cores by affinity mask** and `-j 8`, and prints the
+  mask it read back from the OS - `affinity mask 0xff = 8 of 16 cores` - so a cap that silently failed
+  to apply is visible. (The first version printed "8 of 16 cores" while running on all sixteen: ctypes
+  guessed the pseudo-handle's type and `SetProcessAffinityMask` failed on an invalid HANDLE. Typed
+  argtypes and a read-back fixed it.) `DISHONORED_BUILD_CPU_PERCENT=100` lifts the cap,
+  `DISHONORED_BUILD_NOLOCK=1` skips the queue. **Never call `cmake --build` or `ninja` directly.**
 
 - **`Sources.cmake` is an exclude list**, and taking a unit off it is not enough: each module is a
   static library, MSVC takes a member only to resolve an undefined symbol, and a dynamic initializer is

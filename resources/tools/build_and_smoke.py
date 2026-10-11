@@ -51,7 +51,11 @@ GAME_ARGS = ["-log", "-nosteam", "-unattended"]
 
 
 def build(build_dir: Path, log: Path) -> bool:
-    cmd = f'call "{VSDEVCMD}" -arch=x86 -host_arch=x64 -no_logo && cmake --build "{build_dir}" --target DishonoredGame -- -k 0'
+    # Through build_queued.py, so a harness build waits for any other build on the machine and takes at
+    # most half the cores. Four agents building at once used to pin all sixteen.
+    queued = REPO / "resources" / "tools" / "build_queued.py"
+    cmd = (f'call "{VSDEVCMD}" -arch=x86 -host_arch=x64 -no_logo && '
+           f'python "{queued}" --build-dir "{build_dir}" --target DishonoredGame')
     with log.open("w", encoding="utf-8") as out:
         rc = subprocess.run(["cmd", "/c", cmd], stdout=out, stderr=subprocess.STDOUT, cwd=REPO).returncode
     text = log.read_text(encoding="utf-8", errors="replace")

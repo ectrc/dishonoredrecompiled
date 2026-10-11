@@ -143,7 +143,7 @@ def write_build_cmd(letter: str, target: Path) -> Path:
         'if "%TARGET%"=="" set TARGET=DishonoredGame',
         f'call "{vsdevcmd}" -arch=x86 -host_arch=x64 -no_logo || exit /b 1',
         f'cmake -S "{target}" -B "{build_dir}" {CMAKE_OPTIONS} || exit /b 1',
-        f'cmake --build "{build_dir}" --target %TARGET% -- -k 0',
+        f'python "{target}\\resources\\tools\\build_queued.py" --build-dir "{build_dir}" --target %TARGET%',
         "",
     ])
     cmd.write_text(text, encoding="ascii")

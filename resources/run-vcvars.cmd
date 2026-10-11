@@ -11,4 +11,4 @@ call %VSDEVCMD% -arch=x86 -host_arch=x64 -no_logo || exit /b 1
 cd /d "%~dp0.."
 cmake --preset %PRESET% || exit /b 1
 if /i "%2"=="configure" exit /b 0
-cmake --build --preset %PRESET%
+python resources\tools\build_queued.py --build-dir build\%PRESET%
