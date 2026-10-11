@@ -104,30 +104,63 @@ the crash; if you need that function fixed to proceed, say so and wait rather th
 FK's instruments: `-fkdiag`, `-fkdiagat=<secs>`, `-fknoplayergroup` (the control). Its report §9 is
 the specification; read it in full before starting.
 
-### FP — one owner for the HUD, and the second letterbox
+### FP — the HUD on every screen, one owner for the HUD, and the second letterbox
 
-Wave 19 flipped `-dishud` after proving retail opens the HUD **unconditionally** from
-`ADishonoredGameInfo::PostBeginPlay` → `InitGlobalManagers` → `UDisGlobalUIManager::Init` →
-`StartHUD`. The flip alone crashed the menu in 2 of 3 runs, because **retail has one owner for every
-movie player and this tree has two racing bring-ups** (`DisHUDBringUp`, `DisGFxAutoOpenMenu`). Agent
-FM latched one behind the other as a guard and named the real fix:
+**The user's newest report, and it is a wave-19 regression in effect: the health bars are on every
+screen, including the menu.** Wave 19 flipped `-dishud` after proving retail opens the HUD movie
+**unconditionally** — which is right — but retail then *hides* it on every screen that asks for that,
+and the hiding is unported. Retail's `UDisGlobalUIManager::RefreshGlobalUIState` (2013 rva
+`0x847070`, 901 bytes; 2012 `0x8b75e0`) recomputes on every movie-stack change:
 
-1. **Port `UDisGlobalUIManager::Init`** (2013 rva `0x85fdb0`, 1428 bytes; 2012 `0x8c45d0`) and
+```
+bShowHUD  = !(GWorld->PersistentWorldInfo->m_bNeverDisplayHUD)        // AWorldInfo+752, mask 0x400
+for each open UDisGFxMoviePlayerBase m:
+    bBlurGame         |= m->m_bBlurGameWhileActive                  // +380 bit 1
+    bDrawBlackStripes |= m->m_bDrawBlackStripesWhileActive          // bit 2
+    bShowHUD          &= m->m_bShowHUDWhileActive                   // bit 8   <- AND, not OR
+    bPauseHUD         |= m->m_bPauseHUDWhileActive                  // bit 0x10
+m_pHUD->pMovie->fVisible = bShowHUD;   m_pHUD->pMovie->fUpdate = !bPauseHUD;
+m_pHudFX->pMovie->fVisible = 1;        m_pHudFX->pMovie->fUpdate = !(bPauseHUD | bBlurGameSeed);
+m_pGlobal->m_bRequestBlackStripes = bDrawBlackStripes;  m_pGlobal->m_bMouseCursorAllowed = bAllowMouseCursor;
+EnableControllerInput(0x7FFFF, !bBlockInput, DisInputMaskLevel_BlockedUI);
+```
+
+**Ours (`disglobaluimanager.cpp:120`) has only the blur arm.** Agent FA ported that; nothing else in
+the function exists. So the HUD is opened (now) and never hidden. Before wave 19 the missing arm had no
+symptom because the movie that it hides was behind a switch — **a feature that was measured only in an
+instrumented run had a regression hiding behind it too.** Agent FM's helper decoded the whole
+function against `retail_sdk_layout.json`, member by member, in `agentFM.md`.
+
+**This is first**, because it is what the user sees, and it is small: port the rest of
+`RefreshGlobalUIState`, confirm with `-apshottime` that the menu, the difficulty screen and the
+brightness screen have **no HUD** and the mission does, and check **who calls it** — retail reaches it
+from `OnMovieStackChanged` (a 5-byte `jmp` thunk, 2013 `0x84cf70`) and `OnMovieAttributesChanged`,
+so it must actually run when a movie opens or closes here. One input you cannot read from any ini:
+**`m_bShowHUDWhileActive`'s default on each movie player lives in cooked script defaults.** The menu
+movies must have it FALSE and the HUD's own player TRUE (the seed is AND-ed across every open movie,
+the HUD's own player included); if the cooked defaults do not reach our objects, the expression is
+wrong regardless of the port. **Read them out of the cook, or out of retail with dismod, before
+concluding anything else is wrong.**
+
+Then the ownership, which is why the HUD was behind a switch in the first place. The flip alone
+crashed the menu in 2 of 3 runs, because **retail has one owner for every movie player and this tree
+has two racing bring-ups** (`DisHUDBringUp`, `DisGFxAutoOpenMenu`). Agent FM latched one behind the
+other as a guard and named the real fix:
+
+2. **Port `UDisGlobalUIManager::Init`** (2013 rva `0x85fdb0`, 1428 bytes; 2012 `0x8c45d0`) and
    `FindCurrentMovieSet` (2012 `0x8c0020`; 2013 `sub_C51970`, **medium confidence** — inferred from
    call position only, pin it), and **delete both bring-ups**. FM's helper left the member layout
    (`m_pGlobal` 724, `m_pHUD` 732, …) and the config section (`[DishonoredGame.DisGlobalUIManager]`,
    `m_DefaultUI`, `m_DLCUI`) in `agentFM.md`. Note **`FDisUIMovieSet` changed shape between builds** —
    2012 is 60 bytes keyed on `m_MapName`, 2013 is 160 bytes keyed on `m_MapFilter` with per-slot
    class-name overrides.
-2. **The `UI_Global` letterbox.** The bars exist in **two** movies: `UI_HUD`'s (driven by
+3. **The `UI_Global` letterbox.** The bars exist in **two** movies: `UI_HUD`'s (driven by
    `Tick_Cinematic`, two `SetBlackStripes` arguments — ported) and `UI_Global`'s (driven by
    `UDisGFxMoviePlayerGlobal::PreAdvance`, 2013 rva `0x7aa610`, 1241 bytes, **one** argument —
    **absent**). The global one is what lets a UI screen letterbox while the HUD is hidden, and it is
    what `m_bDrawBlackStripesWhileActive` across open movies feeds.
-3. **`m_bShowHUDWhileActive`'s default** lives in cooked script defaults, not in any ini. Its
-   visibility expression is AND-ed across every open movie including the HUD's own player, so a
-   FALSE default makes an open HUD invisible. Read it out of the cook before concluding anything
-   else is wrong.
+4. `m_bShowHUDWhileActive`'s default is covered under item 1; if item 1 found it wrong in the cooked
+   defaults, that finding belongs here with the fix.
 
 ### FQ — the unload list, then the guard, then the mouse
 
