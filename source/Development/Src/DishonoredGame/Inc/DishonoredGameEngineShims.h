@@ -13108,6 +13108,7 @@ public:
     //## END PROPS InterpGroupInstPlayer
 
     DECLARE_CLASS(UInterpGroupInstPlayer,UInterpGroupInst,0,Engine)
+#include "CppText/UInterpGroupInstPlayer.h"
 };
 
 // Engine.InterpGroupPlayer: retail sizeof 128, reflected span 112..128 (2012 PDB sizeof 128) [shim: Engine package]
@@ -13126,6 +13127,7 @@ public:
     //## END PROPS InterpGroupPlayer
 
     DECLARE_CLASS(UInterpGroupPlayer,UInterpGroup,0,Engine)
+#include "CppText/UInterpGroupPlayer.h"
 };
 
 // Engine.InterpTrackAIControl: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136) [shim: Engine package]

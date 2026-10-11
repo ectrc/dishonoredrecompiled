@@ -1529,6 +1529,7 @@ public:
     //## END PROPS DisSeqCond_CompareBoolExtended
 
     DECLARE_CLASS(UDisSeqCond_CompareBoolExtended,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_CompareBoolExtended.h"
 };
 
 // DishonoredGame.DisSeqCond_CompareTweaks: retail sizeof 232, reflected span 224..232 (2012 PDB sizeof 232)
@@ -1541,6 +1542,7 @@ public:
     //## END PROPS DisSeqCond_CompareTweaks
 
     DECLARE_CLASS(UDisSeqCond_CompareTweaks,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_CompareTweaks.h"
 };
 
 // DishonoredGame.DisSeqCond_InStoryGroup: retail sizeof 248, reflected span 224..248 (2012 PDB sizeof 248)

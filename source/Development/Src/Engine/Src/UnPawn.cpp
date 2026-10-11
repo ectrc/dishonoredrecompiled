@@ -3363,7 +3363,12 @@ void APawn::UpdateAnimSetList()
 	}
 
 	// Script event after the list is built.
-	eventAnimSetListUpdated();
+	// DISHONORED(bringup): agent FK. Same reason as RestoreAnimSetsToDefault above: this is
+	// FindFunctionChecked and Dishonored's script Pawn does not declare AnimSetListUpdated.
+	if( FindFunction( ENGINE_AnimSetListUpdated ) != NULL )
+	{
+		eventAnimSetListUpdated();
+	}
 }
 
 /** Build AnimSet list, called by UpdateAnimSetList() */
@@ -3386,7 +3391,13 @@ void APawn::BuildAnimSetList()
 	}
 
 	// Let script also add animsets.
-	eventBuildScriptAnimSetList();
+	// DISHONORED(bringup): agent FK. Same reason as RestoreAnimSetsToDefault: FindFunctionChecked, and
+	// Dishonored's script Pawn does not declare BuildScriptAnimSetList. Nothing is lost by skipping it
+	// here - the sets a matinee needs were just added from InterpGroupList above.
+	if( FindFunction( ENGINE_BuildScriptAnimSetList ) != NULL )
+	{
+		eventBuildScriptAnimSetList();
+	}
 }
 
 /** 
@@ -3409,7 +3420,14 @@ void APawn::RestoreAnimSetsToDefault()
 {
 	// In Matinee we don't have script access, so do it in native code.
 	// But otherwise, prefer Script.
-	if( (GIsEditor && !GIsGame) || !eventRestoreAnimSetsToDefault() )
+	// DISHONORED(bringup): agent FK. eventRestoreAnimSetsToDefault() is FindFunctionChecked, and
+	// Dishonored's script Pawn does not declare RestoreAnimSetsToDefault, so on a Dishonored pawn the
+	// reference call is not a no-op - it is appError and it takes the process with it the moment a
+	// matinee with an anim-control track binds that pawn (build/agentFK/FK8.log). The native branch
+	// below is what retail does in every case; this only decides whether to ask script first.
+	if( (GIsEditor && !GIsGame)
+		|| FindFunction( ENGINE_RestoreAnimSetsToDefault ) == NULL
+		|| !eventRestoreAnimSetsToDefault() )
 	{
 		if( Mesh )
 		{

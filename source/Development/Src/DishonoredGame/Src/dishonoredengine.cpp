@@ -70,6 +70,7 @@
 #include "dissaveload_classlists.h"	// DISHONORED(written): agent ED - the ported/unported override lists
 
 void DisSaveLoadArmRestore();	// DISHONORED(written): agent ED, at the foot of this file
+void DisFKInstallInterpHooks();	// DISHONORED(bringup): agent FK, Src/interpgroupplayer.cpp - the InitInterp player-group branch
 #include <sys/stat.h>
 
 // DISHONORED(written): chapters 16..25 (DLC06/DLC07 missions) never publish a chaos level, like chapter 0 (2013 rvas 0x5ecf90,
@@ -147,6 +148,7 @@ void UDishonoredEngine::Init()
 	// DISHONORED(written): agent ED - -disrestoreslot=<slot> defers the load to the per-world-tick hook, so
 	// that the map is open and its sub-levels are visible before the object layer runs (retail's SLC_PostLoad)
 	DisSaveLoadArmRestore();
+	DisFKInstallInterpHooks();
 }
 
 // DISHONORED(written): 2013 rva 0x5fbdc0 (2012 0x6427d0): case-insensitive search of m_MapConfig by map name

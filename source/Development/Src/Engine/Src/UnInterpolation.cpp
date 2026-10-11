@@ -19,6 +19,61 @@
 #include "EngineDecalClasses.h"
 #include "AVIWriter.h"
 
+/** DISHONORED(bringup, agent FK): the player-group branch of InitInterp, installed by DishonoredGame.
+    Declared in Engine/Inc/UnWorld.h; see USeqAct_Interp::InitInterp below. */
+UBOOL (*GDisInterpPlayerGroupHook)( USeqAct_Interp* Seq, UInterpGroup* Group ) = NULL;
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup): agent FK. The anim-control handshake between a matinee group and its actor.
+
+	The reference engine raises the SCRIPT event BeginAnimControl / FinishAnimControl on the group actor,
+	through eventBeginAnimControl's FindFunctionChecked. Dishonored's script Actor has no such function,
+	so that call does not fail softly: it raises
+	    appError: Failed to find function BeginAnimControl in <class> <actor>
+	and takes the process with it. Measured twice, on two different group actors, the moment a Dishonored
+	cutscene is made to initialise (build/agentFK/FK5.log:5247 on a DishonoredSpawner for an AI group,
+	FK6.log on the DishonoredPlayerPawn for a player group).
+
+	Retail does not use the script event at all. UInterpGroupInst::InitGroupInst (2012 rva 0x231210) calls
+	the NATIVE virtual AActor::MAT_BeginAnimControl( Group ), and TermGroupInst its MAT_FinishAnimControl.
+	In this tree that native lives on APawn, not on AActor (EnginePawnClasses.h:534-535), and the
+	reference actors the ambient matinees already drive - ASkeletalMeshActorMAT and friends - do have the
+	script function and are working through it today. So the script path is kept where the function
+	exists and the native is used where it does not, which is strictly safer than retail's single path
+	and does not change any actor that works now. Porting MAT_BeginAnimControl onto AActor is retail's
+	own shape and is left to the package that ports the MAT_* contract.
+-----------------------------------------------------------------------------*/
+static void DisMatBeginAnimControl( AActor* GroupActor, UInterpGroup* Group )
+{
+	if( GroupActor->FindFunction( ENGINE_BeginAnimControl ) != NULL )
+	{
+		GroupActor->eventBeginAnimControl( Group );
+		return;
+	}
+	APawn* GroupPawn = Cast<APawn>( GroupActor );
+	if( GroupPawn != NULL )
+	{
+		GroupPawn->MAT_BeginAnimControl( Group );
+		return;
+	}
+	debugf( NAME_Warning, TEXT("matinee group '%s' has an anim-control track and its actor %s %s has neither the script function BeginAnimControl nor APawn::MAT_BeginAnimControl; the group's animation will not play"),
+		*Group->GroupName.ToString(), *GroupActor->GetClass()->GetName(), *GroupActor->GetName() );
+}
+
+static void DisMatFinishAnimControl( AActor* GroupActor, UInterpGroup* Group )
+{
+	if( GroupActor->FindFunction( ENGINE_FinishAnimControl ) != NULL )
+	{
+		GroupActor->eventFinishAnimControl( Group );
+		return;
+	}
+	APawn* GroupPawn = Cast<APawn>( GroupActor );
+	if( GroupPawn != NULL )
+	{
+		GroupPawn->MAT_FinishAnimControl( Group );
+	}
+}
+
 #if WITH_FACEFX
 using namespace OC3Ent;
 using namespace Face;
@@ -2192,6 +2247,16 @@ void USeqAct_Interp::InitInterp()
 					NewGroupInstDir->InitGroupInst(DirGroup, NULL);
 				}
 			}
+			// DISHONORED(bringup): agent FK. Retail's InitInterp (2012 rva 0x25ad70) tests
+			// Cast<UInterpGroupPlayer> here, between the director branch and the AI/plain ones, and
+			// builds a UInterpGroupInstPlayer bound to the local player's pawn. Both classes live in
+			// DishonoredGame, so the branch is installed through GDisInterpPlayerGroupHook
+			// (Engine/Inc/UnWorld.h); without the game module this is a no-op and a player group falls
+			// through to the plain UInterpGroupInst it used to get.
+			else if( GDisInterpPlayerGroupHook != NULL && (*GDisInterpPlayerGroupHook)( this, Group ) )
+			{
+				// the hook instanced the group and added it to GroupInst
+			}
 			else
 			{
 				// Folder groups don't get variables
@@ -3498,6 +3563,10 @@ void UInterpGroupInst::InitGroupInst(UInterpGroup* InGroup, AActor* InGroupActor
 
 	// If we have an anim control track, do startup for that.
 	UBOOL bHasAnimTrack = Group->HasAnimControlTrack();
+	// DISHONORED(bringup): agent FK. Retail caches the answer on the instance - 2012 rva 0x231210 writes
+	// bit 0 of this+108 - and nothing in this tree wrote m_bHasAnimControlTrack or m_pGroupPawn at all.
+	m_bHasAnimControlTrack = bHasAnimTrack ? 1 : 0;
+	m_pGroupPawn = GetPawn( InGroupActor );
 	if (GroupActor != NULL && !GroupActor->IsPendingKill())
 	{
 		// If in the editor and we haven't started playing, this should be Matinee! Bit yuck...
@@ -3508,8 +3577,7 @@ void UInterpGroupInst::InitGroupInst(UInterpGroup* InGroup, AActor* InGroupActor
 		}
 		else if (bHasAnimTrack)
 		{
-			// If in game - call script function that notifies us to that.
-			GroupActor->eventBeginAnimControl( Group );
+			DisMatBeginAnimControl( GroupActor, Group );
 		}
 	}
 }
@@ -3538,8 +3606,7 @@ void UInterpGroupInst::TermGroupInst(UBOOL bDeleteTrackInst)
 		// Only call eventFinishAnimControl in the game if we have an anim track.
 		else if(bHasAnimTrack)
 		{
-			// If in game - call script function to say we've finish with the anim control.
-			GroupActor->eventFinishAnimControl(Group);
+			DisMatFinishAnimControl( GroupActor, Group );
 		}
 	}
 

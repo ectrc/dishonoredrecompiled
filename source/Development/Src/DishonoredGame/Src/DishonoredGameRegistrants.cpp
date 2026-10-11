@@ -2340,3 +2340,14 @@ void (*GDishonoredFILinkAnchors[])() =
 {
 	&DishonoredLinkDisSeqActStartSpawn,
 };
+
+// DISHONORED(bringup, agent FK): force the link of the two UDisSeqCond_* units this package took off
+// the exclude list. Without an external-linkage reference MSVC drops the object out of the static
+// library and Activated never dispatches, which looks exactly like an unported condition.
+extern void DishonoredLinkDisSeqCondCompareTweaks();
+extern void DishonoredLinkDisSeqCondCompareBoolExtended();
+void (*GDishonoredFKLinkAnchors[])() =
+{
+	&DishonoredLinkDisSeqCondCompareTweaks,
+	&DishonoredLinkDisSeqCondCompareBoolExtended,
+};

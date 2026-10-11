@@ -591,8 +591,6 @@ set(DishonoredGame_EXCLUDE
   Src/disseqact_updatecustomtask.cpp
   Src/disseqact_updatetasktarget.cpp
   Src/disseqact_watchtower.cpp
-  Src/disseqcond_compareboolextended.cpp
-  Src/disseqcond_comparetweaks.cpp
   Src/disseqcond_hasobjective.cpp
   Src/disseqcond_instorygroup.cpp
   Src/disseqcond_isdlcunlocked.cpp

@@ -1030,3 +1030,13 @@ extern void (*GDisPlayerPreRenderHook)( class UCanvas* Canvas );
     every latent SeqAct_AkPostEvent blocks its Kismet chain for ever. AkAudio installs its audio frame here,
     the same way GDisEngineTickHook above is installed, so the Engine keeps no link dependency on it. */
 extern void (*GDisAudioFrameHook)();
+
+/** DISHONORED(bringup, agent FK): the player group of a matinee. Retail's USeqAct_Interp::InitInterp
+    (2012 rva 0x25ad70) has a fourth branch this tree's does not - Cast<UInterpGroupPlayer> ahead of the
+    AI and plain ones - and it builds a UInterpGroupInstPlayer bound to
+    GetALocalPlayerController()->Pawn. Both classes are declared in DishonoredGame (they are shims of
+    Engine-package classes the Engine header generation left out: DishonoredGameEngineShims.h), so
+    UnInterpolation.cpp cannot name them. The game module installs the branch here, the same way
+    GDisEngineTickHook above is installed; InitInterp calls it in retail's position and falls through to
+    its own branches when it returns FALSE. NULL by default, so the Engine alone behaves as before. */
+extern UBOOL (*GDisInterpPlayerGroupHook)( class USeqAct_Interp* Seq, class UInterpGroup* Group );

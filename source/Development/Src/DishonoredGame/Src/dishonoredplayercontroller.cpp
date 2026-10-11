@@ -114,6 +114,7 @@
 #include "disaicensus.h"
 #include "disheadcensus.h"
 #include "dispowercensus.h"
+#include "fkmatineediag.h"
 #include "arkpp.h"
 #include "enginearkppclasses.h"
 #include "gfxui_gfx3.h"
@@ -1083,6 +1084,11 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	if( DisFIDiagEnabled() )
 	{
 		DisFIReport( this );
+	}
+	// agent FK (PHASE15 FK): -fkdiag, the level's matinee data as the package loaded it
+	if( DisFKDiagEnabled() )
+	{
+		DisFKReport( this );
 	}
 	if( DisPowerCensusEnabled() )
 	{
