@@ -558,9 +558,12 @@ static UBOOL DisReportOneClip( GFxMovieView* View, const FString& Path )
 	// _xmouse / _ymouse are here for agent FD: P_Slider computes its ratio from _xmouse against its
 	// own track width, so the pointer in the clip's own space is the quantity the slider's mouse path
 	// turns on and it is not readable any other way.
+	// _currentframe / _totalframes are agent FG's: a widget that empties when the list focuses it is
+	// a sprite whose playhead has moved, and the frame number is the only quantity that says so.
 	static const char* const Names[] = { "_x", "_y", "_z", "_xscale", "_yscale", "_rotation",
 		"_xrotation", "_yrotation", "_alpha", "_visible", "_width", "_height", "text", "htmlText",
-		"textWidth", "textHeight", "embedFonts", "_font", "_xmouse", "_ymouse" };
+		"textWidth", "textHeight", "embedFonts", "_font", "_xmouse", "_ymouse",
+		"_currentframe", "_totalframes" };
 	FString Live, Props;
 	GFxValue PropsObject;
 	const UBOOL bHasProps = Clip.GetMember( "props", &PropsObject );

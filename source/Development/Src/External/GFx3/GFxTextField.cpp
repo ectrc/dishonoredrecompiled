@@ -267,6 +267,30 @@ static bool GFxHtmlFirstFontFace(const char* html, char* out, unsigned int outSi
     return false;
 }
 
+// DISHONORED(bringup, agent FG): how much of the markup the ported parser accepted, so a tag the
+// cook uses and this port does not know about shows up in the log instead of silently losing its
+// formatting. `ok` is false when a tag was unbalanced, unterminated or unrecognised.
+static unsigned int GFxHtmlFieldsParsed = 0;
+static unsigned int GFxHtmlFieldsRejected = 0;
+static unsigned int GFxHtmlImageTagsDropped = 0;
+
+static void GFxEditTextNoteHtmlParse(bool ok, unsigned int imagesDropped, const char* html)
+{
+    ++GFxHtmlFieldsParsed;
+    GFxHtmlImageTagsDropped += imagesDropped;
+    if (ok)
+        return;
+    ++GFxHtmlFieldsRejected;
+    char sample[80];
+    unsigned int n = 0;
+    for (; html && html[n] && n < sizeof(sample) - 1; ++n)
+        sample[n] = (html[n] >= 32 && html[n] < 127) ? html[n] : '.';
+    sample[n] = 0;
+    GFxLogf("DISHONORED(bringup): GFx html census: %u fields parsed, %u with markup this port does "
+            "not know, %u <img> dropped; first unknown in '%s'",
+            GFxHtmlFieldsParsed, GFxHtmlFieldsRejected, GFxHtmlImageTagsDropped, sample);
+}
+
 void GFxEditTextCharacter::GetInitialFormats(GFxTextFormat* fmt, GFxTextParagraphFormat* pfmt)
 {
     // DISHONORED(port): 2012 rva 0xa27860, 2013 rva 0xa1df60 - the default values first, then the
@@ -371,73 +395,70 @@ void GFxEditTextCharacter::SetInitialFormatsAsDefault()
 void GFxEditTextCharacter::SetTextValue(const char* s, bool html, bool notifyVariable)
 {
     // DISHONORED(port): 2012 rva 0xa32e50, 2013 rva 0xa293e0 (1,529 bytes). The HTML branch runs
-    // GFxStyledText::ParseHtmlImpl (2012 0xaa7630 / 2013 0xa9d870), which is not ported - the markup
-    // is stripped instead and the report says so.
+    // GFxStyledText::ParseHtmlImpl (2012 0xaa7630 / 2013 0xa9d870), which agent FG ported into
+    // GFxStyledText::ParseHtml - so the markup now becomes format runs instead of being stripped.
     (void)notifyVariable;
     if (!s)
         s = "";
-    unsigned int i = 0;
-    if (html)
+
+    if (!html)
     {
-        // The stand-in for the HTML parser: drop the tags, keep the text, decode the four entities
-        // the cook uses. Documented as a stub at the site.
-        bool inTag = false;
-        for (unsigned int j = 0; s[j] && i < sizeof(TextValue) - 1; ++j)
-        {
-            const char c = s[j];
-            if (c == '<') { inTag = true; continue; }
-            if (c == '>') { inTag = false; continue; }
-            if (inTag)
-                continue;
-            if (c == '&')
-            {
-                if (strncmp(s + j, "&amp;", 5) == 0)      { TextValue[i++] = '&'; j += 4; continue; }
-                if (strncmp(s + j, "&lt;", 4) == 0)       { TextValue[i++] = '<'; j += 3; continue; }
-                if (strncmp(s + j, "&gt;", 4) == 0)       { TextValue[i++] = '>'; j += 3; continue; }
-                if (strncmp(s + j, "&quot;", 6) == 0)     { TextValue[i++] = '"'; j += 5; continue; }
-                if (strncmp(s + j, "&nbsp;", 6) == 0)     { TextValue[i++] = ' '; j += 5; continue; }
-            }
-            TextValue[i++] = c;
-        }
-    }
-    else
-    {
+        unsigned int i = 0;
         for (; s[i] && i < sizeof(TextValue) - 1; ++i)
             TextValue[i] = s[i];
+        TextValue[i] = 0;
+        Doc.SetText(TextValue);
+        bDirty = true;
+        return;
     }
-    TextValue[i] = 0;
 
-    // The markup is gone, but the `<font face>` in it still decides the font, so it is applied to the
-    // default format here as well as at load: a field whose text is replaced from UnrealScript gets a
-    // fresh HTML string and retail's parser would re-read the face from it.
-    if (html)
+    // The `<font face>` of the first run still decides the *default* format, because a field whose
+    // text is replaced from UnrealScript has to answer with the right font for any run the markup
+    // leaves unstyled. The parser applies the same face per run; this is the fallback, and it is
+    // agent FB's measurement that the face is the only reliable source for a cooked field.
+    char face[96];
+    GFxFontManager* fonts = GFxTextGetFontManager();
+    if (fonts && !GFxTextNoHtmlFace && GFxHtmlFirstFontFace(s, face, sizeof(face)))
     {
-        char face[96];
-        GFxFontManager* fonts = GFxTextGetFontManager();
-        if (fonts && !GFxTextNoHtmlFace && GFxHtmlFirstFontFace(s, face, sizeof(face)))
+        GFxFontResource* res = fonts->FindFontResource(face, 0);
+        const GFxTextFormat& current = Doc.GetDefaultTextFormat();
+        if (res && res->GetName() &&
+            (current.GetFontList() == 0 || strcmp(current.GetFontList(), res->GetName()) != 0))
         {
-            GFxFontResource* res = fonts->FindFontResource(face, 0);
-            const GFxTextFormat& current = Doc.GetDefaultTextFormat();
-            if (res && res->GetName() &&
-                (current.GetFontList() == 0 || strcmp(current.GetFontList(), res->GetName()) != 0))
+            GFxTextFormat fmt = current;
+            fmt.SetFontName(res->GetName());
+            if (!Desc.HasFlag(GFxTextFieldDesc::ETF_UseDeviceFont) &&
+                (res->GetFontFlags() & GFxFont::FF_DeviceFont) == 0)
             {
-                GFxTextFormat fmt = current;
-                fmt.SetFontName(res->GetName());
-                if (!Desc.HasFlag(GFxTextFieldDesc::ETF_UseDeviceFont) &&
-                    (res->GetFontFlags() & GFxFont::FF_DeviceFont) == 0)
-                {
-                    GPtr<GFxFontHandle> h = new GFxFontHandle(fonts, res, res->GetName());
-                    fmt.SetFontHandle(h.GetPtr());
-                }
-                // the paragraph format is copied out first: the setter merges its argument into
-                // the member, and passing the member itself would alias it
-                const GFxTextParagraphFormat pfmt = Doc.GetDefaultParagraphFormat();
-                Doc.SetDefaultTextAndParaFormat(fmt, pfmt);
+                GPtr<GFxFontHandle> h = new GFxFontHandle(fonts, res, res->GetName());
+                fmt.SetFontHandle(h.GetPtr());
             }
+            // the paragraph format is copied out first: the setter merges its argument into
+            // the member, and passing the member itself would alias it
+            const GFxTextParagraphFormat pfmt = Doc.GetDefaultParagraphFormat();
+            Doc.SetDefaultTextAndParaFormat(fmt, pfmt);
         }
     }
 
-    Doc.SetText(TextValue);
+    GArray<wchar_t> wide;
+    GFxTextUtf8ToWide(s, (unsigned int)strlen(s), &wide);
+    GFxStyledText& doc = Doc.GetStyledText();
+    // the two defaults are copied out first: ParseHtml assigns to the document's own members, and
+    // passing those members' addresses straight in would alias them.
+    const GFxTextFormat deffmt = Doc.GetDefaultTextFormat();
+    const GFxTextParagraphFormat defpfmt = Doc.GetDefaultParagraphFormat();
+    const bool parsed = doc.ParseHtml(wide.GetSize() ? &wide[0] : L"", wide.GetSize(),
+                                      &deffmt, &defpfmt,
+                                      Desc.HasFlag(GFxTextFieldDesc::ETF_UseDeviceFont) ? 0 : fonts);
+    GFxEditTextNoteHtmlParse(parsed, doc.GetImageTagsDropped(), s);
+
+    // `text` still answers the markup-free string, which is what the variable binding and the AS2
+    // getter read, so it is taken back out of the document the parser just built.
+    GArray<wchar_t> plain;
+    doc.GetText(&plain);
+    GFxTextWideToUtf8(plain.GetSize() ? &plain[0] : L"", plain.GetSize(), TextValue,
+                      sizeof(TextValue));
+    Doc.ForceReformat();
     bDirty = true;
 }
 

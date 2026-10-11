@@ -502,10 +502,38 @@ void GFxDisplayList::RemoveDisplayObject(int depth, GFxResourceId id)   // 2012 
     ch->Release();
 }
 
-void GFxDisplayList::MarkAllEntriesForRemoval(unsigned int fromIndex)   // 2012 0x9d5670
+// DISHONORED(port, agent FG): 2012 rva 0x9d5670, 2013 rva 0x9cbed0. Retail's body is
+//
+//     for (i = 0; i < Size; i++)
+//         if (Entries[i].pChar->Depth <= 0x3FFF && Entries[i].pChar->CreateFrame > fromFrame)
+//             Entries[i].pChar->Flags |= 0x40;
+//
+// and the argument is a FRAME, not an index: GFxSprite::GotoFrame (2013 rva 0x9f7cc0) passes
+// `target - 1` on the rewind path and GFxSprite::IncrementFrameAndCheckForLoop (0x9eace0) passes 0.
+// This port marked every entry unconditionally, and the depth test is the half that matters: a
+// clip attachMovie or createEmptyMovieClip made sits at its AS depth + 0x4000, above every timeline
+// depth, so retail's sweep never touches it - while ours unloaded it the first time its parent row
+// rewound its timeline. That is what empties an options row's value widget the moment the list
+// focuses and unfocuses it (the user's `2.png`).
+//
+// Agent FF's depth convention (63c2539) is what makes the depth test do the work: every clip
+// attachMovie, createEmptyMovieClip and duplicateMovieClip create now sits at its AS depth +
+// GFxASDepthBias. Before that commit the test would have been a no-op, which is why this was
+// measured against a build carrying both.
+//
+// The CreateFrame half is NOT reproduced: GFxCharacter in this tree carries no create frame. It
+// costs nothing here, because both callers go on to replay the frames up to the target and every
+// character those frames place is re-placed - and GFxDisplayList::AddDisplayObject clears the mark.
+void GFxDisplayList::MarkAllEntriesForRemoval(unsigned int fromFrame)   // 2012 0x9d5670
 {
-    for (unsigned int i = fromIndex; i < Size; ++i)
+    (void)fromFrame;
+    for (unsigned int i = 0; i < Size; ++i)
+    {
+        const GFxCharacter* ch = Entries[i].pChar;
+        if (ch == 0 || ch->GetDepth() >= GFxASDepthBias)
+            continue;
         Entries[i].bMarkedForRemove = true;
+    }
 }
 
 // DISHONORED(bringup): OnEventUnload runs the clip's own handler and that handler can remove further
@@ -1642,7 +1670,8 @@ void GFxSprite::GotoFrame(unsigned int frame)                         // 2012 0x
     // not accumulate children.
     if (frame < from)
     {
-        DisplayList.MarkAllEntriesForRemoval(0);
+        // retail passes the frame before the target, not 0: GFxSprite::GotoFrame 2013 rva 0x9f7cc0.
+        DisplayList.MarkAllEntriesForRemoval(frame ? frame - 1 : 0);
         for (unsigned int f = 0; f < frame; ++f)
             ExecuteFrameTags(f, false);
         ExecuteFrameTags(frame, true);

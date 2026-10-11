@@ -759,7 +759,7 @@ public:
     void MoveDisplayObject(const GFxCharPosInfo& pos);
     void ReplaceDisplayObject(const GFxCharPosInfo& pos, GFxCharacter* ch);
     void RemoveDisplayObject(int depth, GFxResourceId id);
-    void MarkAllEntriesForRemoval(unsigned int fromIndex);
+    void MarkAllEntriesForRemoval(unsigned int fromFrame);
     void UnloadMarkedObjects();
     void UnloadAll();
     void Clear();

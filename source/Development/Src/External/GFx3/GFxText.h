@@ -303,6 +303,16 @@ public:
 
     GFxTextAllocator* GetAllocator() const { return pAllocator; }                     // 0xa9b480
 
+    // DISHONORED(port): GFxStyledText::ParseHtmlImpl<wchar_t> (2013 rva 0xa9d870, 0x187c =
+    // 6,268 bytes; 2012 rva 0xaa7630), whose tokeniser is GFxSGMLParser<wchar_t>::GetNext
+    // (2013 rva 0xa988b0). Retail's signature carries an HTMLImageTagInfo array and a
+    // GFxTextStyleManager; neither is ported, so `<img>` is dropped and the CSS style manager has no
+    // say. `fonts` is a deviation and is stated at the definition.
+    bool ParseHtml(const wchar_t* text, unsigned int len, const GFxTextFormat* defFmt,
+                   const GFxTextParagraphFormat* defPFmt, GFxFontManager* fonts);
+
+    unsigned int GetImageTagsDropped() const { return ImageTagsDropped; }
+
 private:
     void reindex();
 
@@ -310,12 +320,23 @@ private:
     GArray<GFxTextParagraph*>  Paragraphs;
     GFxTextFormat              DefaultTextFormat;
     GFxTextParagraphFormat     DefaultParagraphFormat;
+    unsigned int               ImageTagsDropped;
 };
 
 // Widen a UTF-8 / Latin-1 byte string. Retail goes through GFxWStringBuffer and the UTF-8 decoder of
 // GUTF8Util; this decodes the same two cases (a plain byte and a 2/3-byte UTF-8 sequence), which is
 // all the cook's content uses.
 unsigned int GFxTextUtf8ToWide(const char* s, unsigned int bytes, GArray<wchar_t>* out);
+
+// The inverse, and the one retail uses at every wide-string boundary: GString::operator=(const
+// wchar_t*) (2013 rva 0x9b5390, 2012 rva 0x9bc2d0) sizes the buffer with GUTF8Util::GetEncodeStringSize
+// (2013 rva 0x9e7e80) and fills it with GUTF8Util::EncodeString (2013 rva 0x9e7f40), so every
+// narrow GFx string - GASString included - is UTF-8. Writes at most `outBytes` including the
+// terminator, never splits a
+// sequence, and returns the bytes written without it. `len` counts wide characters;
+// GFxTextWideNulTerminated says "to the first NUL", which is what retail's -1 length means.
+const unsigned int GFxTextWideNulTerminated = 0xFFFFFFFFu;
+unsigned int GFxTextWideToUtf8(const wchar_t* s, unsigned int len, char* out, unsigned int outBytes);
 
 #ifdef _MSC_VER
 #pragma pack(pop)

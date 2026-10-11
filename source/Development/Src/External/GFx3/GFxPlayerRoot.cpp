@@ -17,6 +17,7 @@
 //      0x9b0450). GetPropertyValue then runs the getter against that.
 // DISHONORED(port): see GFxAS2.h.
 #include "GFxPlayer.h"
+#include "GFxText.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -387,13 +388,14 @@ void GFxMovieRoot::CreateString(GFxValue* v, const char* s)            // 2012 0
 
 void GFxMovieRoot::CreateStringW(GFxValue* v, const wchar_t* s)         // 2012 0x9b0010
 {
-    // A wide string is narrowed for now: the runtime has no wide string manager yet, and the text
-    // engine that needs one is the next wave's (agentBB.md 3.4).
-    char buf[1024];
-    unsigned int n = 0;
-    if (s)
-        while (s[n] && n < sizeof(buf) - 1) { buf[n] = (char)s[n]; ++n; }
-    buf[n] = 0;
+    // Retail interns the wide string as UTF-8: GASStringManager::CreateStringNode(const wchar_t*)
+    // (2013 rva 0x9c0800) builds a GString from it and GString::operator=(const wchar_t*)
+    // (2013 rva 0x9b5390) fills that with GUTF8Util::EncodeString (2013 rva 0x9e7f40). Narrowing a
+    // character to one byte instead
+    // is what stopped the options menu's AS2 from ever finding the localised "§CATEGORY§"
+    // token, whose SWF constant-pool spelling is the two UTF-8 bytes C2 A7 (agent FG).
+    char buf[2048];
+    GFxTextWideToUtf8(s, GFxTextWideNulTerminated, buf, sizeof(buf));
     v->SetString(CreateString(buf).ToCStr());
 }
 
@@ -964,11 +966,11 @@ void GFxMovieRoot::GFxValue2ASValue(const GFxValue& in, GASValue* out)
     case GFxValue::VT_String:        out->SetString(CreateString(in.GetString())); break;
     case GFxValue::VT_StringW:
     {
-        char buf[1024];
+        // UTF-8, as GString::operator=(const wchar_t*) (2013 rva 0x9b5390) encodes it - see
+        // CreateStringW above.
+        char buf[2048];
         const wchar_t* w = in.GetStringW();
-        unsigned int n = 0;
-        if (w) while (w[n] && n < sizeof(buf) - 1) { buf[n] = (char)w[n]; ++n; }
-        buf[n] = 0;
+        GFxTextWideToUtf8(w, GFxTextWideNulTerminated, buf, sizeof(buf));
         out->SetString(CreateString(buf));
         break;
     }
@@ -1273,10 +1275,7 @@ bool GFxValue::ObjectInterface::SetText(void* obj, const char* text, bool html) 
 bool GFxValue::ObjectInterface::SetText(void* obj, const wchar_t* text, bool html) // 2012 0x9afee0
 {
     char buf[2048];
-    unsigned int n = 0;
-    if (text)
-        while (text[n] && n < sizeof(buf) - 1) { buf[n] = (char)text[n]; ++n; }
-    buf[n] = 0;
+    GFxTextWideToUtf8(text, GFxTextWideNulTerminated, buf, sizeof(buf));
     return SetText(obj, buf, html);
 }
 
