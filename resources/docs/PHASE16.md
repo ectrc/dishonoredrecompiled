@@ -11,15 +11,46 @@ raises. That is fixed. What is left is that **the opening cutscene is never acti
 0` across a whole new-game route), and that is now the only *known* blocker to the thing the user
 asked for.
 
-## THE CAPTURE RULE — unchanged, and the dialogs are gone
+## THE INPUT RULE — new this wave, from the user, and absolute
 
-Take every screenshot **inside the game process** with `-apshottime=<seconds>` and
-**`-apshotname=<your tag>`**, then glob your own tag. Never a desktop or window capture.
+**Nothing you run may move the user's real mouse, press their real keys, or take window focus.** The
+user works on this machine while you run, and agents driving the game with real input kept stealing
+the foreground from them. `resources/tools/drive_input.py` (SendInput + SetForegroundWindow) is
+**retired and refuses to run**. Do not reimplement it. Do not call `SendInput`, `SetCursorPos`,
+`SetForegroundWindow`, `AttachThreadInput`, `BringWindowToTop` or `SetFocus` from any script, and do
+not click through any dialog.
 
-**Real mouse input works again.** The "Windows Security Alert" prompts were ours — three dev-only
-listeners bound a port on every launch — and `98e22d4` made them opt-in. `grep -c FocusLost <log>`
-is still the validity flag; a concurrent agent's game taking the foreground kills the menu
-permanently, and that run should be discarded rather than averaged in.
+**Drive the game through `resources/tools/game_input.py` instead:**
+
+```
+python resources/tools/game_input.py launch --exe <exe> --log <name>.log --tag <xx> [-- more game args]
+python resources/tools/game_input.py --cmd-file <printed path> hover 0.419 0.216 wait 1 shot tabs click key Enter
+```
+
+`launch` starts the game with `-inputcmd=<file> -unattended -apshotname=<tag>`. Under `-inputcmd` the
+engine **forces the no-grab mode**: the window is shown `SW_SHOWNOACTIVATE`, never calls
+`SetActiveWindow`, never captures or clips the cursor, and ignores every real key and mouse message.
+Commands are injected **inside the process, after DirectInput**, through the same
+`UGameViewportClient::InputKey/InputAxis` entry points real input uses, and
+`FWindowsViewport::GetMousePos` returns the scripted pointer so Scaleform follows it. Coordinates are
+**fractions of the viewport** (0..1), so the window's pixel size does not matter. The game logs every
+command as `DISHONORED(inputcmd): t=<world time> <command>` and `... idle` when done — **correlate
+against those, not against sleeps.** `shot TAG` writes `apshottime_<TAG>NNNNN.bmp` into
+`DishonoredGame/Screenshots/Win32Console/`.
+
+Verified before this wave resumed: the foreground HWND is identical before, during and after a
+scripted run; a scripted click advanced the start screen (`TransitionTo (MainMenuScreen)`,
+`OnMouseUp`); a scripted `key Escape` was delivered; a script executes exactly once.
+
+**`-finewgame`, `-disdifficulty`, `-fmmenu`, `-fkdiag` and the other in-process instruments remain
+fine** — they never touched real input. Launch everything with `-unattended` at minimum.
+
+## THE CAPTURE RULE — unchanged
+
+Take every screenshot **inside the game process** with `-apshottime=<seconds>` or `game_input.py`'s
+`shot TAG`, with **your own tag**, then glob your own tag. Never a desktop or window capture.
+`grep -c FocusLost <log>` is still a validity flag, though with no run ever taking focus it should now
+read 0 everywhere.
 
 Still true: the desktop resolution flaps between 1024x768 and 6144x1728, so **read every capture's
 real size off the file**, and **a pixel coordinate off a capture is not a pixel coordinate for the

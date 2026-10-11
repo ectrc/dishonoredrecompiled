@@ -505,9 +505,238 @@ static void DishonoredTickInputTest( UGameViewportClient* Client, FLOAT DeltaTim
 	State = -2;
 }
 
+// DISHONORED(bringup): -inputcmd=<file> - scripted input that never touches the user's mouse, keyboard or
+// window focus. The user asked for this after agents driving the game with SendInput and
+// SetForegroundWindow (resources/tools/drive_input.py, now refused) kept stealing the foreground from
+// whatever they were doing.
+//
+// Everything is injected INSIDE the process, after DirectInput, through the same two viewport entry
+// points UWindowsClient::ProcessInput and -inputtest use: UGameViewportClient::InputKey / InputAxis.
+// The one place the engine reads the real cursor - FWindowsViewport::GetMousePos, which is where
+// FGFxEngine::InputAxis and the Scaleform cursor get the pointer from - returns the synthetic
+// position instead while this is active (GDisSyntheticMouse, read in WinViewport.cpp). And
+// -inputcmd forces DishonoredInputGrabDisabled() on, so the window is shown with SW_SHOWNOACTIVATE,
+// never calls SetActiveWindow, never captures or clips the cursor and ignores every key and mouse
+// message. The run cannot take focus and cannot see the user's input.
+//
+// The file is polled every tick, consumed (truncated) once read, so a driver appends commands while the
+// game runs or writes a whole script before launch. One command per line, '#' comments:
+//   move X Y        pointer to (X,Y) as fractions of the viewport (0..1); fires MouseX/MouseY deltas
+//   movepx X Y      the same in client pixels
+//   hover X Y       move, then wait 0.25 s so the UI sees the pointer rest there
+//   down|up [left|right|middle]
+//   click [X Y]     (move,) wait 0.1, down, wait 0.08, up
+//   key NAME [press|down|up]   InputKey by FName - Enter, SpaceBar, Escape, Up, W ...; press = down, next tick up
+//   wait SECS
+//   shot TAG        -apshottime's writer: apshottime_<TAG>*.bmp via GScreenShotRequest
+//   log TEXT        a marker line in the log
+//   quit            appRequestExit(0)
+// Every command logs "DISHONORED(inputcmd): t=<world time> <command>" when it runs, and "idle" when
+// the queue drains, so a driver can correlate against -apshottime marks and AS2 traces.
+UBOOL		GDisSyntheticMouse = FALSE;
+FIntPoint	GDisSyntheticMousePos( 0, 0 );
+
+static void DishonoredTickInputScript( UGameViewportClient* Client, FLOAT DeltaTime )
+{
+	static INT State = -1;              // -1 unparsed, -2 off, 0 running
+	static FString CmdFile;
+	static TArray<FString> Queue;
+	static FLOAT WaitLeft = 0.f;
+	static FLOAT PollLeft = 0.f;
+	static UBOOL bHadWork = FALSE;
+	static UBOOL bIdleLogged = TRUE;
+	static FName PendingRelease = NAME_None;
+
+	if( State == -1 )
+	{
+		State = Parse( appCmdLine(), TEXT("inputcmd="), CmdFile ) && CmdFile.Len() > 0 ? 0 : -2;
+		if( State == 0 )
+		{
+			GDisSyntheticMouse = TRUE;
+			debugf( TEXT("DISHONORED(inputcmd): scripted input from '%s'; the real mouse, keyboard and focus are never touched"), *CmdFile );
+		}
+	}
+	if( State == -2 || Client->Viewport == NULL )
+	{
+		return;
+	}
+	FViewport* Viewport = Client->Viewport;
+	if( GDisSyntheticMousePos.X == 0 && GDisSyntheticMousePos.Y == 0 && Viewport->GetSizeX() > 0 )
+	{
+		GDisSyntheticMousePos = FIntPoint( Viewport->GetSizeX() / 2, Viewport->GetSizeY() / 2 );
+	}
+
+	// A press is two events on two ticks, like a real key: the release queued by `key NAME press`.
+	if( PendingRelease != NAME_None )
+	{
+		Client->InputKey( Viewport, 0, PendingRelease, IE_Released, 0.f, FALSE );
+		PendingRelease = NAME_None;
+	}
+
+	// Poll the file four times a second and consume what is there.
+	PollLeft -= DeltaTime;
+	if( PollLeft <= 0.f )
+	{
+		PollLeft = 0.25f;
+		FString Text;
+		if( GFileManager->FileSize( *CmdFile ) > 0 && appLoadFileToString( Text, *CmdFile ) && Text.Len() > 0 )
+		{
+			// Consume by deleting: appSaveStringToFile with an empty string writes nothing and leaves the
+			// file as it was, which re-queued the same script every poll in the first test run. The
+			// driver (resources/tools/game_input.py) opens for append, which recreates the file.
+			GFileManager->Delete( *CmdFile, 0, 1 );
+			TArray<FString> Lines;
+			Text.ParseIntoArray( &Lines, TEXT("\n"), TRUE );
+			for( INT i = 0; i < Lines.Num(); i++ )
+			{
+				FString L = Lines(i).Trim().TrimTrailing();
+				if( L.Len() > 0 && !L.StartsWith( TEXT("#") ) )
+				{
+					Queue.AddItem( L );
+					bHadWork = TRUE;
+					bIdleLogged = FALSE;
+				}
+			}
+		}
+	}
+
+	if( WaitLeft > 0.f )
+	{
+		WaitLeft -= DeltaTime;
+		return;
+	}
+
+	const FLOAT WorldTime = ( GWorld && GWorld->GetWorldInfo() ) ? GWorld->GetWorldInfo()->TimeSeconds : 0.f;
+
+	// One command per tick: each one is an input event and the UI should see them on separate frames.
+	if( Queue.Num() == 0 )
+	{
+		if( bHadWork && !bIdleLogged )
+		{
+			debugf( TEXT("DISHONORED(inputcmd): t=%.3f idle"), WorldTime );
+			bIdleLogged = TRUE;
+		}
+		return;
+	}
+	FString Cmd = Queue(0);
+	Queue.Remove( 0 );
+	debugf( TEXT("DISHONORED(inputcmd): t=%.3f %s"), WorldTime, *Cmd );
+
+	TArray<FString> Tok;
+	Cmd.ParseIntoArrayWS( &Tok );
+	if( Tok.Num() == 0 )
+	{
+		return;
+	}
+	const FString Op = Tok(0).ToLower();
+	const INT SizeX = Max( 1, (INT)Viewport->GetSizeX() );
+	const INT SizeY = Max( 1, (INT)Viewport->GetSizeY() );
+
+	// Shared by move / movepx / hover / click: set the synthetic position and fire the deltas the engine
+	// and Scaleform both read movement from.
+	struct FMove
+	{
+		static void To( UGameViewportClient* C, FViewport* V, INT X, INT Y, FLOAT Dt )
+		{
+			const INT DX = X - GDisSyntheticMousePos.X;
+			const INT DY = Y - GDisSyntheticMousePos.Y;
+			GDisSyntheticMousePos = FIntPoint( Clamp( X, 0, (INT)V->GetSizeX() - 1 ), Clamp( Y, 0, (INT)V->GetSizeY() - 1 ) );
+			if( DX != 0 ) C->InputAxis( V, 0, KEY_MouseX, (FLOAT)DX, Dt, FALSE );
+			if( DY != 0 ) C->InputAxis( V, 0, KEY_MouseY, (FLOAT)-DY, Dt, FALSE );
+			// A move with no delta still has to reach Scaleform (a click at a position after a wait):
+			if( DX == 0 && DY == 0 ) C->InputAxis( V, 0, KEY_MouseX, 0.f, Dt, FALSE );
+		}
+	};
+	struct FButton
+	{
+		static FName Of( const TArray<FString>& T, INT Index )
+		{
+			if( T.Num() > Index )
+			{
+				const FString B = T(Index).ToLower();
+				if( B == TEXT("right") )  return KEY_RightMouseButton;
+				if( B == TEXT("middle") ) return KEY_MiddleMouseButton;
+			}
+			return KEY_LeftMouseButton;
+		}
+	};
+
+	if( ( Op == TEXT("move") || Op == TEXT("hover") ) && Tok.Num() >= 3 )
+	{
+		const FLOAT FX = appAtof( *Tok(1) ), FY = appAtof( *Tok(2) );
+		FMove::To( Client, Viewport, appRound( FX * SizeX ), appRound( FY * SizeY ), DeltaTime );
+		if( Op == TEXT("hover") ) WaitLeft = 0.25f;
+	}
+	else if( Op == TEXT("movepx") && Tok.Num() >= 3 )
+	{
+		FMove::To( Client, Viewport, appAtoi( *Tok(1) ), appAtoi( *Tok(2) ), DeltaTime );
+	}
+	else if( Op == TEXT("down") )
+	{
+		Client->InputKey( Viewport, 0, FButton::Of( Tok, 1 ), IE_Pressed, 1.f, FALSE );
+	}
+	else if( Op == TEXT("up") )
+	{
+		Client->InputKey( Viewport, 0, FButton::Of( Tok, 1 ), IE_Released, 0.f, FALSE );
+	}
+	else if( Op == TEXT("click") )
+	{
+		// Expanded into the queue head so each half lands on its own frame, like a real click.
+		INT At = 0;
+		if( Tok.Num() >= 3 )
+		{
+			Queue.InsertItem( FString::Printf( TEXT("move %s %s"), *Tok(1), *Tok(2) ), At++ );
+		}
+		Queue.InsertItem( FString( TEXT("wait 0.1") ), At++ );
+		Queue.InsertItem( FString( TEXT("down") ),     At++ );
+		Queue.InsertItem( FString( TEXT("wait 0.08") ), At++ );
+		Queue.InsertItem( FString( TEXT("up") ),       At++ );
+	}
+	else if( Op == TEXT("key") && Tok.Num() >= 2 )
+	{
+		const FName Key( *Tok(1) );
+		const FString How = Tok.Num() >= 3 ? Tok(2).ToLower() : FString( TEXT("press") );
+		if( How == TEXT("down") )
+		{
+			Client->InputKey( Viewport, 0, Key, IE_Pressed, 1.f, FALSE );
+		}
+		else if( How == TEXT("up") )
+		{
+			Client->InputKey( Viewport, 0, Key, IE_Released, 0.f, FALSE );
+		}
+		else
+		{
+			Client->InputKey( Viewport, 0, Key, IE_Pressed, 1.f, FALSE );
+			PendingRelease = Key;
+		}
+	}
+	else if( Op == TEXT("wait") && Tok.Num() >= 2 )
+	{
+		WaitLeft = appAtof( *Tok(1) );
+	}
+	else if( Op == TEXT("shot") )
+	{
+		GScreenShotName = Tok.Num() >= 2 ? FString::Printf( TEXT("apshottime_%s"), *Tok(1) ) : FString( TEXT("apshottime_inputcmd") );
+		GScreenShotRequest = TRUE;
+	}
+	else if( Op == TEXT("log") )
+	{
+		// already logged above with the command text
+	}
+	else if( Op == TEXT("quit") )
+	{
+		appRequestExit( 0 );
+	}
+	else
+	{
+		debugf( TEXT("DISHONORED(inputcmd): unknown command '%s' ignored"), *Cmd );
+	}
+}
+
 void UGameViewportClient::Tick( FLOAT DeltaTime )
 {
 	DishonoredTickInputTest( this, DeltaTime );
+	DishonoredTickInputScript( this, DeltaTime );
 	// first call the unrealscript tick
 	eventTick(DeltaTime);
 

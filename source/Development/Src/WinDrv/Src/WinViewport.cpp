@@ -764,8 +764,12 @@ UBOOL DishonoredInputGrabDisabled()
 	if( Cached < 0 )
 	{
 		const TCHAR* Cmd = appCmdLine();
-		const UBOOL bForcedOn  = ParseParam( Cmd, TEXT("noinputgrab") );
-		const UBOOL bForcedOff = ParseParam( Cmd, TEXT("inputgrab") );
+		// -inputcmd=<file> (scripted input, Engine/Src/UnPlayer.cpp) forces this on and cannot be overridden:
+		// a scripted run must never activate the window, capture the cursor or read the user's mouse.
+		FString ScriptFile;
+		const UBOOL bScripted  = Parse( Cmd, TEXT("inputcmd="), ScriptFile ) && ScriptFile.Len() > 0;
+		const UBOOL bForcedOn  = ParseParam( Cmd, TEXT("noinputgrab") ) || bScripted;
+		const UBOOL bForcedOff = ParseParam( Cmd, TEXT("inputgrab") ) && !bScripted;
 		Cached = ( bForcedOn || ( ParseParam( Cmd, TEXT("unattended") ) && !bForcedOff ) ) ? 1 : 0;
 		if( Cached )
 		{
@@ -1081,6 +1085,17 @@ INT FWindowsViewport::GetMouseY()
 
 void FWindowsViewport::GetMousePos( FIntPoint& MousePosition )
 {
+	// DISHONORED(bringup): under -inputcmd the pointer is the scripted one, not the user's. This is the one
+	// place the engine reads the real cursor - FGFxEngine::InputAxis and the Scaleform cursor both come
+	// through here - so returning the synthetic position is what keeps a scripted run off the user's
+	// mouse entirely (Engine/Src/UnPlayer.cpp, DishonoredTickInputScript).
+	extern UBOOL GDisSyntheticMouse;
+	extern FIntPoint GDisSyntheticMousePos;
+	if( GDisSyntheticMouse )
+	{
+		MousePosition = GDisSyntheticMousePos;
+		return;
+	}
 	POINT P;
 	::GetCursorPos( &P );
 	::ScreenToClient( Window, &P );

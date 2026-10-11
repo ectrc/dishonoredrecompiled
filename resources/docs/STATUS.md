@@ -391,6 +391,20 @@ then the user's re-entrant mouse path, then the VM stringifying a `MovieClip` as
 
 ### Running and measuring
 
+- **Never touch the user's real mouse, keyboard or window focus.** The user works on this machine
+  while waves run, and agents driving the game with `SendInput` + `SetForegroundWindow`
+  (`drive_input.py`, now retired and refusing to run) kept stealing the foreground from them. Drive
+  the game through **`resources/tools/game_input.py`**: `launch` starts it with `-inputcmd=<file>`,
+  which forces the no-grab mode (`SW_SHOWNOACTIVATE`, no `SetActiveWindow`, no capture or clip, every
+  real key and mouse message ignored); then `hover X Y`, `click`, `key Enter`, `wait S`, `shot TAG`,
+  as fractions of the viewport. Input is injected inside the process after DirectInput through
+  `UGameViewportClient::InputKey/InputAxis`, and `FWindowsViewport::GetMousePos` returns the scripted
+  pointer so Scaleform follows it. The game logs `DISHONORED(inputcmd): t=<world time> <command>` and
+  `idle` - correlate against those. Verified: the foreground HWND is unchanged across a scripted run,
+  a scripted click advanced the start screen, a scripted key was delivered, and a script runs exactly
+  once. (The first version re-ran the script every poll because `appSaveStringToFile("")` writes
+  nothing; the file is now consumed by deletion.)
+
 - **Never `git clean -x` a build worktree.** Nine gitignored reference files live there
   (`retail_sdk_layout.json`, `vtables.csv`, `pdb_functions.csv` and six more) and without them every
   layout check fails with `-1`, "the tool printed no summary line" — which reads exactly like a layout

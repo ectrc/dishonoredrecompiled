@@ -214,6 +214,16 @@ def activate(hwnd):
 
 
 def main():
+    # The user's instruction: nothing may move their real mouse, press their real keys or take the
+    # foreground. Everything below does exactly that (SendInput, SetForegroundWindow, AttachThreadInput),
+    # so this tool is retired. Launch the game with -inputcmd=<file> and drive it through
+    # resources/tools/game_input.py, which injects inside the process after DirectInput and never
+    # activates the window. There is no override flag on purpose.
+    sys.stderr.write(
+        "drive_input.py is retired: it moves the user's real mouse and steals the foreground.\n"
+        "Use:  python resources/tools/game_input.py launch --exe <exe> --log <name> --tag <tag>\n"
+        "      python resources/tools/game_input.py --cmd-file <file> hover X Y click key Enter shot TAG ...\n")
+    return 2
     argv = sys.argv[1:]
     log_name = "EH.log"
     mark = MARK
