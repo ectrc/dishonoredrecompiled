@@ -622,14 +622,34 @@ GASObject* GASFunctionObject::CreateNewObject(GASStringContext* sc, GASObject* p
 GASFunctionObject::~GASFunctionObject()
 {
     delete[] Args;
+    if (pDeclTarget)
+        pDeclTarget->Release();
 }
 
 void GASFunctionObject::PrepareForCollection()
 {
+    if (pDeclTarget)
+        pDeclTarget->Release();
     pDeclTarget = 0;
     pOwnerProto = 0;
     pBuffer = 0;
     GASObject::PrepareForCollection();
+}
+
+// 2012 0x9f28f0's tail: the declaring clip's handle, made on demand, with a reference.
+void GASFunctionObject::SetDeclTarget(GFxASCharacter* target)
+{
+    GFxCharacterHandle* h = target ? target->CreateCharacterHandle() : 0;
+    if (h)
+        h->AddRef();
+    if (pDeclTarget)
+        pDeclTarget->Release();
+    pDeclTarget = h;
+}
+
+GFxASCharacter* GASFunctionObject::ResolveDeclTarget(GFxMovieRoot* root) const
+{
+    return pDeclTarget ? pDeclTarget->ResolveCharacter(root) : 0;
 }
 
 void GASFunctionObject::Invoke(const GASFnCall& fn)

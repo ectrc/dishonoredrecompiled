@@ -32,7 +32,7 @@ GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
       bPaused(false), bVisible(true), bDirty(true), bMouseStateDirty(false), pUserData(0),
       TimeElapsed(0.f), FrameTime(0.f),
-      MouseCursorCount(0), ControllerCount(1), bMovieFocused(true), Actions(0), ActionCount(0),
+      MouseCursorCount(0), ControllerCount(1), bMovieFocused(true), pUnloadListHead(0), Actions(0), ActionCount(0),
       ActionCapacity(0), bInActionQueue(false), SessionFill(0), IntervalCount(0), NextIntervalId(1), bHasExternalInterfaceRetVal(false)
 {
     for (unsigned int i = 0; i < MaxMice; ++i)
@@ -93,11 +93,27 @@ GFxMovieRoot::~GFxMovieRoot()
     delete pPerspective3D;
     delete pView3D;
     if (bTraceTeardown) printf("  [teardown] characters\n");
+    // DISHONORED(port, agent FQ): retail's destructor (2012 0xa12700 / 2013 0xa09150, 0x5e4 in
+    // both; the loop at +0x24c) walks the unload list and releases without a second OnEventUnload,
+    // after GFxSprite::ClearDisplayList (2012 0x9f4420) has unloaded every level's subtree. Here:
+    // whatever was queued by the last advance goes first, the root sprite's teardown links more
+    // (its display list's Clear unloads the subtree), and those are released after it the way
+    // retail's loop does.
+    ProcessUnloadQueue();
     if (pLevel0)
     {
         pLevel0->Release();
         pLevel0 = 0;
     }
+    for (GFxASCharacter* ch = pUnloadListHead; ch != 0;)
+    {
+        GFxASCharacter* next = ch->pNextUnloaded;
+        ch->pNextUnloaded = 0;
+        ch->bInUnloadList = false;
+        ch->Release();
+        ch = next;
+    }
+    pUnloadListHead = 0;
     if (bTraceTeardown) printf("  [teardown] AS2 graph\n");
     Env.ReleaseAll();
     delete pGC;
@@ -107,6 +123,52 @@ GFxMovieRoot::~GFxMovieRoot()
         if (States[i])
             States[i]->Release();
     if (bTraceTeardown) printf("  [teardown] movie root gone\n");
+}
+
+// DISHONORED(port, agent FQ): 2012 GFxSprite::ExecuteEvent 0x9f4a10 + 0xb9: `[esi+0x8c] =
+// [root+0x27fc]; [root+0x27fc] = esi; inc [esi+4]`. A push onto a singly linked list, with a
+// reference - the one reference that keeps an unloaded clip addressable until the advance ends.
+void GFxMovieRoot::AddToUnloadList(GFxASCharacter* ch)
+{
+    if (ch == 0 || ch->bInUnloadList)
+        return;
+    ch->pNextUnloaded = pUnloadListHead;
+    pUnloadListHead = ch;
+    ch->bInUnloadList = true;
+    ch->AddRef();
+    ++Stats.UnloadsQueued;
+}
+
+// DISHONORED(port, agent FQ): 2012 0xa01690 / 2013 0x9f80b0, 0x55 bytes in both: for each listed
+// character, unlink, OnEventUnload (vtable+0x88, idempotent on a clip whose bit is already up),
+// tell the parent (vtable+0x90 on [ch+0x20]; nothing here needs telling), Release. Called after
+// each DoActions in Advance. The second counter is the measurement: a character whose reference
+// count is down to the list's own is one that, without the list, had been freed while something
+// in the advance - the drag state, a queued buffer's target, a function's declaring clip, the
+// environment's target - could still name it.
+void GFxMovieRoot::ProcessUnloadQueue()
+{
+    GFxASCharacter* ch = pUnloadListHead;
+    pUnloadListHead = 0;
+    while (ch != 0)
+    {
+        GFxASCharacter* next = ch->pNextUnloaded;
+        ch->pNextUnloaded = 0;
+        ch->bInUnloadList = false;
+        if (ch->RefCount == 1)
+        {
+            ++Stats.UnloadsHeldAlone;
+            if (Stats.UnloadsHeldAlone <= 8)
+                GFxLogf("DISHONORED(bringup): unload list: %s held alone until the end of the "
+                        "advance (%u so far of %u queued)",
+                        ch->GetCharacterHandle() ? ch->GetCharacterHandle()->NamePath.ToCStr()
+                                                 : ch->GetName().ToCStr(),
+                        Stats.UnloadsHeldAlone, Stats.UnloadsQueued);
+        }
+        ch->OnEventUnload();
+        ch->Release();
+        ch = next;
+    }
 }
 
 bool GFxMovieRoot::bTraceTeardown = false;
@@ -343,7 +405,12 @@ void GFxMovieRoot::DoActions()
         // entry that, without the AddRef, would have been drained through a freed GFxSprite. It is
         // counted whether or not the entry then runs, because it measures the defect directly
         // rather than waiting for the heap to make it fatal.
-        if (e.pTarget != 0 && e.pTarget->RefCount == 1)
+        // DISHONORED(agent FQ): the unload list now holds one more reference on an unloaded
+        // target until the end of the advance, so "the queue's reference is the last" reads as 2
+        // while the list has it. The instrument keeps its meaning: without the queue's own
+        // reference the entry would still have drained through a character the list was about to
+        // free at the end of this very advance.
+        if (e.pTarget != 0 && e.pTarget->RefCount == (e.pTarget->bInUnloadList ? 2 : 1))
         {
             ++Stats.ActionsDroppedDangling;
             if (Stats.ActionsDroppedDangling <= 16)
@@ -789,10 +856,14 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
         // content-level ping-pong (frame 1 goes to 2, frame 2 goes to 1) from hanging the player
         // instead of merely animating.
         (void)bFirst;
+        // DISHONORED(port, agent FQ): retail follows every DoActions in Advance with
+        // ProcessUnloadQueue (2012 0xa11bba / 0xa11e3e / 0xa11ef0), which is where the clips the
+        // frame's script removed are finally let go of.
         if (bFirst)
         {
             pLevel0->ExecuteFrame0Events();
             DrainActionSessions();
+            ProcessUnloadQueue();
         }
         else
         {
@@ -803,12 +874,14 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
                 TimeElapsed -= FrameTime;
                 pLevel0->AdvanceFrame(true, 0.f);
                 DrainActionSessions();
+                ProcessUnloadQueue();
                 ++steps;
             }
             if (steps == 0)
             {
                 pLevel0->AdvanceFrame(false, 0.f);
                 DrainActionSessions();
+                ProcessUnloadQueue();
             }
         }
         ++Stats.FramesAdvanced;

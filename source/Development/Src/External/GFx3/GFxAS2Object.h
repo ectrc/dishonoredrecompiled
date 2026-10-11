@@ -306,7 +306,16 @@ public:
     unsigned short   Flags;            // the DefineFunction2 preload/suppress bits
     ArgSpec*         Args;
     unsigned int     NumArgs;
-    GFxASCharacter*  pDeclTarget;      // the timeline the declaration was made on
+    /** DISHONORED(port, agent FQ): the timeline the declaration was made on, held the way retail
+        holds it - as a GFxCharacterHandle (GASAsFunctionObject+56, taken with a reference in the
+        constructor 2012 0x9f28f0 / 2013 0x9e90b0, size 0x101) and resolved at every invocation
+        (GetEnvironment 2012 0x9f1ab0 / 2013 0x9e82d0, 0x6b: GFxCharacterHandle::ResolveCharacter).
+        It was a raw GFxASCharacter* here, which is why agent FJ could not write retail's unloaded
+        test over it: the handle's pCharacter is zeroed by the clip's unload (and by its
+        destructor), so resolving it never touches freed memory. */
+    GFxCharacterHandle* pDeclTarget;
+    void            SetDeclTarget(GFxASCharacter* target);
+    GFxASCharacter* ResolveDeclTarget(GFxMovieRoot* root) const;
     GASObject*       pOwnerProto;      // the prototype the function was installed on, for `super`
 
     enum FunctionFlags

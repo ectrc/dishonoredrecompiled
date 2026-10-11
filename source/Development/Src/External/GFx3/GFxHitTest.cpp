@@ -571,10 +571,39 @@ GFxASCharacter* GFxSprite::GetTopMostMouseEntity(const GPoint<float>& pt,
                GFxMouseTraceDepth * 2, "", Name.ToCStr(), GetDepth(), GetClipDepth(),
                GetVisible() ? 1 : 0, pt.x * 0.05f, pt.y * 0.05f);
     }
-    if (GetClipDepth() != 0 || !GetVisible() || params.pIgnoreMC == this)
+    // DISHONORED(port, agent FQ): retail's first test also refuses a sprite that is itself serving
+    // as a scripted mask (the IsUsedAsMask virtual at vtable+180, 2012 0x9fa5b0+0x4b); a mask is
+    // not content the pointer can land on.
+    if (GetClipDepth() != 0 || !GetVisible() || params.pIgnoreMC == this || GetMaskOwner() != 0)
         return 0;
     GPoint<float> local;
     Matrix.TransformByInverse(&local, pt);
+
+    // DISHONORED(port, agent FQ): 2012 0x9fa5b0+0x14b (2013 0x9f0e80, 0x428 in both): after the
+    // local-point transform and BEFORE the display list is walked, the sprite's own MovieClip.setMask
+    // mask is asked about the point - `GetMask()`, carried into the mask's space by
+    // inverse(mask world) * this world, `PointTestLocal(pt, 1)` on the mask, and a miss answers no
+    // entity at all. Agent FF ported this arm into PointTestLocal (MovieClip.hitTest's path) but not
+    // here, the path the mouse takes - so a list scrolled to its end left its masked-out rows
+    // hit-testable above the mask, and every click on the Options sub-tabs and main tabs landed on
+    // `_options_mc._list_mc.widget5.btn` / `widget2.btn` instead ("Click (5) in SelectionHandler",
+    // `APressed` on undefined) once the scroll bar had been dragged. Measured in build/agentFQ/b2.
+    if (pMaskCharacter != 0 && pMaskCharacter->GetMaskOwner() == this
+        && !pMaskCharacter->IsUnloaded())
+    {
+        GMatrix2D toMask;
+        toMask.SetInverse(GFxCharacterWorldMatrix(pMaskCharacter));
+        toMask.Prepend(GFxCharacterWorldMatrix(this));
+        GPoint<float> inMask = local;
+        toMask.Transform(&inMask.x, &inMask.y);
+        if (!pMaskCharacter->PointTestLocal(inMask, HitTest_TestShape))
+        {
+            if (GFxMouseTrace)
+                printf("DISHONORED(bringup): hit %*ssprite '%s': point outside its setMask mask\n",
+                       GFxMouseTraceDepth * 2, "", Name.ToCStr());
+            return 0;
+        }
+    }
 
     GFxDisplayList& list = GetDisplayList();
     const unsigned int n = list.GetCount();

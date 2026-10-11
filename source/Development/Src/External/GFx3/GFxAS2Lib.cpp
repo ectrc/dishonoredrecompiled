@@ -69,20 +69,47 @@ void ObjectCtor(const GASFnCall& fn)
     if (fn.pResult) fn.pResult->SetUndefined();
 }
 
+// DISHONORED(port, agent FQ): retail GASObjectProto::ToString 2012 0x9dab80 / 2013 0x9d1340 (0xcc
+// in both): a Function answers "[type Function]", a character (object types 2..5) answers
+// GASValue::GetCharacterNamePath of itself, everything else "[object Object]". This is the
+// toString every MovieClip reaches through its prototype chain, so it is what `"" + clip` and
+// trace(clip) print: `_level0.optionsMenu_mc._tabs_mc`, not `undefined`.
 void ObjectToString(const GASFnCall& fn)
 {
-    if (fn.pResult)
-        fn.pResult->SetString(fn.pEnv->CreateString("[object Object]"));
+    if (fn.pResult == 0)
+        return;
+    GFxASCharacter* ch = fn.pThis ? fn.pThis->ToASCharacter() : 0;
+    if (ch != 0)
+    {
+        GASValue self;
+        self.SetAsCharacter(ch);
+        fn.pResult->SetString(self.GetCharacterNamePath(fn.pEnv));
+        return;
+    }
+    if (fn.pThis != 0 && fn.pThis->GetObjectType() == Object_Function)
+    {
+        fn.pResult->SetString(fn.pEnv->CreateString("[type Function]"));
+        return;
+    }
+    fn.pResult->SetString(fn.pEnv->CreateString("[object Object]"));
 }
 
+// DISHONORED(port, agent FQ): retail GASObjectProto::ValueOf 2012 0x9dac50 / 2013 0x9d1410 (0x11):
+// `GASValue::SetAsObjectInterface(result, this)` - the receiver itself, whatever kind it is. A
+// clip's valueOf is the clip; it used to be undefined here because the clip's AS object had not
+// been made yet, and ToString took that undefined for the answer.
 void ObjectValueOf(const GASFnCall& fn)
 {
-    if (fn.pResult && fn.pThis)
-    {
-        GASObject* o = fn.pThis->ToASObject();
-        if (o) fn.pResult->SetAsObject(o);
-        else fn.pResult->SetUndefined();
-    }
+    if (fn.pResult == 0 || fn.pThis == 0)
+        return;
+    if (GFxASCharacter* ch = fn.pThis->ToASCharacter())
+        fn.pResult->SetAsCharacter(ch);
+    else if (GASFunctionObject* f = fn.pThis->ToFunction())
+        fn.pResult->SetAsFunction(f);
+    else if (GASObject* o = fn.pThis->ToASObject())
+        fn.pResult->SetAsObject(o);
+    else
+        fn.pResult->SetUndefined();
 }
 
 void ObjectHasOwnProperty(const GASFnCall& fn)

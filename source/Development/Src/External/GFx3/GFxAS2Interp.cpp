@@ -355,7 +355,7 @@ static int GFxAS2Function1OpCode(GASActionBuffer* buf, GASEnvironment* env, int 
     fn->pBuffer = buf;
     fn->StartPC = nextPC;
     fn->Length = (int)codeSize;
-    fn->pDeclTarget = target;
+    fn->SetDeclTarget(target);
 
     // Every function gets its own prototype object with a __constructor__ back-pointer, which is
     // what makes `new f()` and `f.prototype.x = ...` work on a plain DefineFunction.
@@ -407,7 +407,7 @@ static int GFxAS2Function2OpCode(GASActionBuffer* buf, GASEnvironment* env, int 
     fn->pBuffer = buf;
     fn->StartPC = nextPC;
     fn->Length = (int)codeSize;
-    fn->pDeclTarget = target;
+    fn->SetDeclTarget(target);
 
     GASObject* proto = new GASObject(sc, env->GetGC()->GetPrototype(GASGlobalContext::Proto_Object));
     GASValue ctorVal;
@@ -440,8 +440,31 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
                 call.pFuncName->ToCStr(), (void*)fn->pBuffer, fn->StartPC, fn->Length, call.NArgs,
                 env->GetLocalFrameDepth(), GFxAS2OpsThisBuffer);
     }
-    if (fn->pDeclTarget)
-        env->SetTarget(fn->pDeclTarget);
+    // DISHONORED(port, agent FQ): retail GASAsFunctionObject::Invoke (2012 0x9f3540 / 2013
+    // 0x9e9d10, 0x11f in both): `env = GetEnvironment(call)` resolves the declaring clip's handle
+    // and takes that clip's environment, or the caller's when the handle resolves to nothing; then
+    // `if (env->Target->Flags76 & 0x10) env = call.pEnv` - a declaring clip that is unloaded hands
+    // the body to the caller's environment. This tree has one environment per movie, so "the
+    // caller's environment" is the target the caller left in it: nothing is set.
+    GFxASCharacter* declTarget = fn->ResolveDeclTarget(env->GetMovieRoot());
+    if (declTarget != 0 && !declTarget->IsUnloaded())
+        env->SetTarget(declTarget);
+    else if (fn->pDeclTarget != 0)
+    {
+        GFxMovieRoot* root = env->GetMovieRoot();
+        if (root != 0)
+        {
+            ++root->GetCensus().DeclTargetFallbacks;
+            if (root->GetCensus().DeclTargetFallbacks <= 8)
+                GFxLogf("DISHONORED(bringup): AS2 invoke: '%s' was declared on %s, which is %s - "
+                        "running in the caller's environment on %s (%u so far)",
+                        call.pFuncName ? call.pFuncName->ToCStr() : "(anonymous)",
+                        fn->pDeclTarget->NamePath.ToCStr(),
+                        declTarget ? "unloaded" : "gone",
+                        savedTarget ? savedTarget->GetTargetPath(sc).ToCStr() : "nothing",
+                        root->GetCensus().DeclTargetFallbacks);
+        }
+    }
 
     if (!env->CreateNewLocalFrame())
     {
@@ -690,7 +713,7 @@ static void GFxAS2DiagNotAFunction(GASEnvironment* env, GASObjectInterface* self
 
 static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
                                     GASObjectInterface* self, int nargs, GASValue* result,
-                                    const GASString& name)
+                                    const GASString& name, const GASValue* recvVal)
 {
     GASFunctionObject* fn = fnVal.GetFunction();
     if (fn == 0 && fnVal.IsObject())
@@ -705,11 +728,30 @@ static void GFxAS2CallFunctionValue(GASEnvironment* env, const GASValue& fnVal,
         // Sprite" does not say which clip asked, and which clip it was is the answer to every one of
         // the seven script errors the menu's census reports (agentDG.md 2).
         GASString path = recvChar != 0 ? recvChar->GetTargetPath(env->GetSC()) : GASString();
+        // DISHONORED(agent FQ): "on undefined" used to cover two different receivers - a value
+        // that is undefined, and a CHARACTER value whose handle no longer resolves to a clip (the
+        // clip was removed; retail's handle is detached at unload and so is this tree's now). The
+        // second is named with the path the handle was made under, because that is the clip the
+        // content meant.
+        const char* recvKind = "undefined";
+        const char* recvPath = "";
+        if (recvChar != 0)
+        {
+            recvKind = recvChar->GetCharacterTypeName();
+            recvPath = path.ToCStr();
+        }
+        else if (self != 0)
+            recvKind = "an object";
+        else if (recvVal != 0 && recvVal->IsCharacter())
+        {
+            recvKind = "a removed clip";
+            recvPath = recvVal->GetCharacterHandleNamePath();
+        }
+        else if (recvVal != 0 && recvVal->IsNull())
+            recvKind = "null";
         env->LogScriptError("call of a value that is not a function: '%s' at pc %d of a %d-byte "
                             "buffer, on %s %s", name.ToCStr(), GFxAS2ErrPC, GFxAS2ErrLen,
-                            recvChar != 0 ? recvChar->GetCharacterTypeName()
-                                          : (self != 0 ? "an object" : "undefined"),
-                            recvChar != 0 ? path.ToCStr() : "");
+                            recvKind, recvPath);
         if (GFxAS2NotAFunctionDiag > 0)
         {
             --GFxAS2NotAFunctionDiag;
@@ -1109,7 +1151,7 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             env->GetVariable(name, &fnVal, WithStack, WithCount);
             GASValue result;
             GASObjectInterface* self = target;
-            GFxAS2CallFunctionValue(env, fnVal, self, nargs, &result, name);
+            GFxAS2CallFunctionValue(env, fnVal, self, nargs, &result, name, 0);
             env->Drop(nargs);
             env->Push(result);
             break;
@@ -1373,7 +1415,7 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
                 oi->GetMember(env, name, &fnVal);
             }
             GASValue result;
-            GFxAS2CallFunctionValue(env, fnVal, self, nargs, &result, name);
+            GFxAS2CallFunctionValue(env, fnVal, self, nargs, &result, name, &objVal);
             if (GFxAS2WatchMatches(name.ToCStr()) && GFxAS2WatchCount > 0)
             {
                 --GFxAS2WatchCount;

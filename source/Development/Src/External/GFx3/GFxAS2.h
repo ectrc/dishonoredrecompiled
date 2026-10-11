@@ -319,6 +319,13 @@ public:
     int                 ToInt32(GASEnvironment* env) const;           // 2012 0x9cc500
     unsigned int        ToUInt32(GASEnvironment* env) const;          // 2012 0x9cc5f0
     GASString           ToString(GASEnvironment* env) const;          // 2012 0x9cbe50
+    /** DISHONORED(port, agent FQ): 2012 GASValue::GetCharacterNamePath 0x9cab10 / 2013 0x9c13b0
+        (0x38 in both): the handle's interned absolute path when the handle still resolves to a
+        clip, the empty string otherwise. What a MovieClip stringifies to. */
+    GASString           GetCharacterNamePath(GASEnvironment* env) const;
+    /** the path the character handle was made under, whether or not it still resolves; "" for a
+        value that is not a character. For error text only. */
+    const char*         GetCharacterHandleNamePath() const;
     GASObjectInterface* ToObjectInterface(GASEnvironment* env) const; // 2012 0x9cbc60
     GASObject*          ToObject(GASEnvironment* env) const;          // 2012 0x9cbb10
     GASString           Typeof(GASEnvironment* env) const;

@@ -611,7 +611,7 @@ void GFxDisplayList::Clear()                                          // 2012 0x
 
 GFxASCharacter::GFxASCharacter(GFxASCharacter* parent, GFxResourceId id, GFxMovieRoot* root)
     : GFxCharacter(parent, id), pMovieRoot(root), pHandle(0), pASObject(0), pProto(0),
-      pGeomData(0)
+      pGeomData(0), pNextUnloaded(0), bInUnloadList(false)
 {
     if (GFxDK_LiveCharsOn())
         GFxDK_LiveCharAdd(this);
@@ -664,6 +664,26 @@ void GFxASCharacter::DoMouseDrag()
     SetStandardMember(GASbuiltin__x, v);
     v.SetNumber((double)p.y * GFxTwipsToPixels);
     SetStandardMember(GASbuiltin__y, v);
+}
+
+// DISHONORED(port, agent FQ): 2012 0x9cf980 / 2013 0x9c61d0, then the GFxCharacter base 2012
+// 0x9ce800 / 2013 0x9c50d0. Retail's order: raise the unloading flag, leave the play list, clear
+// the movie root's drag character if it is this one (root+0x23d4, the first DragState word), send
+// Event_Unload if the unloaded bit is clear and raise the bit, reset the focus, detach the handle.
+// The play list and the focus have no counterpart here; the rest is in retail's order. The
+// dispatch runs content, and that content may remove other clips - every caller already holds a
+// reference across this call for that reason (GFxDisplayList::UnloadMarkedObjects and friends).
+void GFxASCharacter::OnEventUnload()
+{
+    if (pMovieRoot != 0 && pMovieRoot->GetDragState().pCharacter == this)
+        pMovieRoot->GetDragState().pCharacter = 0;
+    if (!bUnloaded)
+    {
+        ExecuteEvent(GFxEventId(GFxEventId::Event_Unload));
+        bUnloaded = true;
+    }
+    if (pHandle)
+        pHandle->ChangeCharacter(0);
 }
 
 GFxASCharacter::~GFxASCharacter()
@@ -1536,8 +1556,15 @@ GFxSprite::GFxSprite(GFxTimelineDef* def, GFxCharacterDef* charDef, GFxMovieDefI
 
 void GFxSprite::OnEventUnload()                                       // 2012 0x9fdc80
 {
-    bUnloaded = true;
+    // Retail: flag 0x100, drop the hit area, dirty the root's play list, Clear the subtree, then
+    // the base. The base is where the bit goes up (in GFxSprite::ExecuteEvent's Event_Unload arm,
+    // 2012 0x9f4a10+0xb9), and the same arm is what links the sprite onto the movie root's unload
+    // list with a reference - so the link is made exactly once, on the call that raised the bit.
     DisplayList.Clear();
+    const bool bFirstUnload = !bUnloaded;
+    GFxASCharacter::OnEventUnload();
+    if (bFirstUnload && pMovieRoot != 0)
+        pMovieRoot->AddToUnloadList(this);
 }
 
 GFxSprite::~GFxSprite()

@@ -498,18 +498,35 @@ GASString GASValue::ToString(GASEnvironment* env) const                // 2012 0
     case OBJECT:
     case CHARACTER:
     {
-        // The retail body calls the object's own toString() when it has one, and falls back to
-        // [type Object] / the character's target path otherwise. It also guards against recursion
-        // with a depth counter that gives up at 255 (0x9cbe50: `if (v18 >= 0xFFu)`).
-        GASValue prim;
-        if (ToPrimitiveInto(env, &prim) && !prim.IsObjectOrCharacter())
-            return prim.ToString(env);
-        if (T == CHARACTER)
+        // DISHONORED(port, agent FQ): retail GASValue::ToStringImpl 0x9cbe50 / 2013 0x9c26f0
+        // (0x391 in both), cases 6 and 7: look up `toString` on the object interface - and ONLY
+        // toString; valueOf is ToPrimitive's business (0x9cc880) and is never consulted here -
+        // and when it is a function, invoke it and stringify whatever it returned, under the
+        // 255-deep recursion guard. With no toString function: an OBJECT with a text value answers
+        // that, a CHARACTER answers its name path, anything else "[object Object]". This body
+        // used to go through ToPrimitiveInto, i.e. valueOf first, and Object.prototype.valueOf on
+        // a clip answered undefined - which is how every `trace("..." + this)` in the menu printed
+        // `undefined` for a live MovieClip (the user's `OnTabSelected (1, r)  / undefined`).
+        GASObjectInterface* oi = ToObjectInterface(env);
+        GASValue fnVal;
+        if (oi != 0 && oi->GetMember(env, env->GetBuiltin(GASbuiltin_toString), &fnVal)
+            && fnVal.GetFunction() != 0)
         {
-            GFxASCharacter* ch = GetCharacter();
-            if (ch)
-                return ch->GetTargetPath(sc);
+            ++env->ToStringDepth;
+            struct DepthGuard { GASEnvironment* e; ~DepthGuard() { --e->ToStringDepth; } } guard = { env };
+            GASValue result;
+            GASFnCall call(&result, oi, env, 0, env->GetTopIndex());
+            fnVal.GetFunction()->Invoke(call);
+            return result.ToString(env);
         }
+        if (T == OBJECT && V.pObject != 0)
+        {
+            const GASValue text = V.pObject->GetValue();
+            if (!text.IsUndefined() && !text.IsObjectOrCharacter())
+                return text.ToString(env);
+        }
+        if (T == CHARACTER)
+            return GetCharacterNamePath(env);
         return sc->CreateString("[object Object]");
     }
     case FUNCTION:
@@ -604,6 +621,27 @@ int GASValue::PrototypeForPrimitive() const
     }
 }
 
+GASString GASValue::GetCharacterNamePath(GASEnvironment* env) const    // 2012 0x9cab10
+{
+    GASStringContext* sc = env->GetSC();
+    GFxMovieRoot* root = env->GetMovieRoot();
+    if (T != CHARACTER || V.pCharHandle == 0 || V.pCharHandle->ResolveCharacter(root) == 0)
+        return sc->GetBuiltin(GASbuiltin_empty);
+    // Retail answers handle+0x0C, the path interned when the handle was made (and rewritten by
+    // SetName); a clip whose parent has already let go of it still prints where it lived.
+    const GASString& path = V.pCharHandle->NamePath;
+    if (path.ToCStr() != 0 && path.ToCStr()[0] != 0)
+        return path;
+    return V.pCharHandle->ResolveCharacter(root)->GetTargetPath(sc);
+}
+
+const char* GASValue::GetCharacterHandleNamePath() const
+{
+    if (T != CHARACTER || V.pCharHandle == 0 || V.pCharHandle->NamePath.ToCStr() == 0)
+        return "";
+    return V.pCharHandle->NamePath.ToCStr();
+}
+
 bool GASValue::ToPrimitiveInto(GASEnvironment* env, GASValue* out) const   // 2012 0x9cc880
 {
     GASObjectInterface* oi = ToObjectInterface(env);
@@ -612,8 +650,8 @@ bool GASValue::ToPrimitiveInto(GASEnvironment* env, GASValue* out) const   // 20
         *out = *this;
         return !IsObjectOrCharacter();
     }
-    // The retail guard, same limit: an object whose valueOf or toString returns an object would
-    // otherwise recurse for ever, and one asset in the cook (UI_Shop) does exactly that.
+    // The retail guard, same limit: an object whose valueOf returns an object would otherwise
+    // recurse for ever, and one asset in the cook (UI_Shop) does exactly that.
     if (env->ToStringDepth >= 255)
     {
         *out = *this;
@@ -621,28 +659,28 @@ bool GASValue::ToPrimitiveInto(GASEnvironment* env, GASValue* out) const   // 20
     }
     ++env->ToStringDepth;
     struct DepthGuard { GASEnvironment* e; ~DepthGuard() { --e->ToStringDepth; } } guard = { env };
-    // valueOf first, then toString: the order GASValue::ToPrimitive takes with Hint_Number, which is
-    // the hint every arithmetic caller passes.
-    static const GASBuiltinString order[2] = { GASbuiltin_valueOf, GASbuiltin_toString };
-    for (int i = 0; i < 2; ++i)
+    // DISHONORED(port, agent FQ): retail GASValue::ToPrimitive (2012 0x9cc880 / 2013 0x9c3120,
+    // 0x2c7 in both) consults `valueOf` and nothing else, and hands back whatever it returned -
+    // an object included, which is what Object.prototype.valueOf answers for a clip and what
+    // makes `clip + 1` NaN rather than a string. Without a valueOf function: a character answers
+    // its name path, a boxed primitive its text, anything else its ToString. The toString pass
+    // this body used to make second is not retail's and is gone.
+    GASValue fnVal;
+    if (oi->GetMember(env, env->GetBuiltin(GASbuiltin_valueOf), &fnVal) && fnVal.GetFunction() != 0)
     {
-        GASValue fnVal;
-        if (!oi->GetMember(env, env->GetBuiltin(order[i]), &fnVal))
-            continue;
-        GASFunctionObject* fn = fnVal.GetFunction();
-        if (fn == 0)
-            continue;
         GASValue result;
         GASFnCall call(&result, oi, env, 0, env->GetTopIndex());
-        fn->Invoke(call);
-        if (!result.IsObjectOrCharacter())
-        {
-            *out = result;
-            return true;
-        }
+        fnVal.GetFunction()->Invoke(call);
+        *out = result;
+        return !result.IsObjectOrCharacter();
     }
-    *out = *this;
-    return false;
+    if (T == CHARACTER)
+    {
+        out->SetString(GetCharacterNamePath(env));
+        return true;
+    }
+    out->SetString(ToString(env));
+    return true;
 }
 
 // The arithmetic. Every one of these is its own retail function and the rva says which; the shape is

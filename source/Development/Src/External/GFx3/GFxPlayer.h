@@ -890,12 +890,30 @@ public:
         extended-clip-event flag is set (`pGC+684 == 1`), which this cook does not set. */
     bool ExecuteEvent(const GFxEventId& id);
 
+    /** DISHONORED(port, agent FQ): 2012 GFxASCharacter::OnEventUnload 0x9cf980 (size 0x53) / 2013
+        0x9c61d0 (0x53), which ends in GFxCharacter::OnEventUnload 0x9ce800 / 2013 0x9c50d0 (0x74).
+        Retail's base body is: if the unloaded bit (character+0x76 & 0x10) is clear, send
+        Event_Unload through the ExecuteEvent virtual and THEN raise the bit; GFxASCharacter's adds
+        the play-list removal, the focus reset, the drag-state clear and `pHandle->pCharacter = 0`
+        - the handle is detached at unload time, not at destruction, so a GASValue or a function's
+        declaration target that still names the clip re-resolves by path from this moment and finds
+        the clip that has taken that path (or nothing), never the unloaded one. That last line is
+        what makes retail's pDeclTarget guard safe. The onUnload dispatch is ported here as well. */
+    virtual void OnEventUnload();                                      // 2012 0x9cf980
+
     GFxMovieRoot*       pMovieRoot;
     GASString           Name;
     GFxCharacterHandle* pHandle;
     GASObject*          pASObject;      // the member store; created lazily
     GASObject*          pProto;
     GeomDataType*       pGeomData;      // retail character+152, made on the first geometry write
+    /** retail sprite+0x8c: the link of the movie root's unload list (GFxMovieRoot+0x27fc). Written
+        by GFxSprite::ExecuteEvent's Event_Unload arm (2012 0x9f4a10+0xb9), walked and cleared by
+        GFxMovieRoot::ProcessUnloadQueue (2012 0xa01690). */
+    GFxASCharacter*     pNextUnloaded;
+    /** this tree's own: TRUE while the movie root's unload list holds its reference on this
+        character, so the action-queue instrument can tell that reference from the queue's. */
+    bool                bInUnloadList;
 
 protected:
     GASObject* EnsureASObject();
@@ -1022,7 +1040,10 @@ public:
         link there - so this body is read out of the 2012 one. Retail's body raises the unload
         flags, drops the hit area, dirties the movie root's optimized-advance list and then calls
         GFxDisplayList::Clear, which is what carries the unload down into the subtree. The hit area
-        is not reproduced (this tree has no hitArea slot) and neither is the script dispatch. */
+        is not reproduced (this tree has no hitArea slot).
+        DISHONORED(port, agent FQ): then the base, which dispatches onUnload and raises the bit, and
+        then the link onto the movie root's unload list that retail's GFxSprite::ExecuteEvent
+        (2012 0x9f4a10 / 2013 0x9eb1f0, 0xe7 in both) makes in its Event_Unload arm. */
     virtual void OnEventUnload();                                      // 2012 0x9fdc80
     virtual void Display(GFxDisplayContext& ctx);                      // 2012 0x9faeb0
     void IncrementFrameAndCheckForLoop();                             // 2012 0x9f4500
@@ -1585,6 +1606,21 @@ public:
     void DoActions();
     unsigned int GetQueuedActionCount() const { return ActionCount; }
 
+    /** DISHONORED(port, agent FQ): the movie root's unload list, retail GFxMovieRoot+0x27fc.
+        GFxSprite::ExecuteEvent's Event_Unload arm (2012 0x9f4a10+0xb9) links every sprite that
+        has just been unloaded onto it with an explicit `inc [esi+4]` - a reference - and
+        ProcessUnloadQueue (2012 0xa01690 / 2013 0x9f80b0, 0x55 in both) walks it after every
+        DoActions in Advance (2012 0xa11bba, 0xa11e3e, 0xa11ef0 inside 0xa11830; 2013 0xa0860a,
+        0xa0888e, 0xa08940 inside 0xa08280, 0x7a0 in both), calling OnEventUnload once more and
+        releasing. The list is
+        what makes any raw GFxASCharacter* safe for the rest of the advance in retail: a clip the
+        display list has let go of is still addressable until the advance's end, which is what
+        DragState::pCharacter, the action queue's target and every GASEnvironment target rely on.
+        Retail's walk also tells the parent (vtable slot 36) that a child has gone; this tree keeps
+        nothing per parent that would need the call. */
+    void AddToUnloadList(GFxASCharacter* ch);
+    void ProcessUnloadQueue();                                        // 2012 0xa01690
+
     GASString CreateString(const char* s);
     void      ASValue2GFxValue(GASEnvironment* env, const GASValue& in, GFxValue* out);
     void      GFxValue2ASValue(const GFxValue& in, GASValue* out);
@@ -1608,6 +1644,13 @@ public:
         /** of those, the ones where the queue's own reference was the last: without it the target
             had already been freed and the drain would have run on dead memory. */
         unsigned int ActionsDroppedDangling;
+        /** DISHONORED(agent FQ): sprites the unload list held across an advance, and how many of
+            them it was the last holder of - i.e. the number of freed-while-named clips retail's
+            list prevents. And the script functions whose declaring clip was gone or unloaded at
+            invocation, which is the count of times the pDeclTarget guard fired. */
+        unsigned int UnloadsQueued;
+        unsigned int UnloadsHeldAlone;
+        unsigned int DeclTargetFallbacks;
         unsigned int FramesAdvanced;
         unsigned int ClassesRegistered;
         unsigned int ScriptErrors;
@@ -1720,6 +1763,7 @@ private:
     GFxMouseState             MouseStates[MaxMice];
     GFxState*                 States[MaxStates];
     DragState                 Drag;
+    GFxASCharacter*           pUnloadListHead;                        // retail +0x27fc
 
     ActionEntry* Actions;
     unsigned int ActionCount;
