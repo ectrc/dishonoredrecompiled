@@ -25,6 +25,11 @@ Stages, in order
   nullrhi     the milestone run (null RHI, `Initializing Engine...` -> `Finished loading level`)
   d3d9        the rendered run of the first mission map (windowed 1280x720), frames and scene census
   inputtest   the same map with -inputtest -distrace: the distance the pawn walks, physics scene counts
+  newgame     NO -startmap: -playdefaults boots the shipped configuration, the game's own main menu comes
+              up, -fmmenu reports how long it stays open and -finewgame issues the menu's own New Game
+              command; asserts the mission is reached (l_tower_p) and the opening scene is populated
+  options     NO -startmap either: -fmdrive opens Options off that menu and switches tabs on the user's
+              own schedule, and asserts the process is still alive afterwards with no new AS2 errors
 Every game run goes through build_and_smoke.py with -forcelogflush and this agent's own --log-name /
 --ini-dir / --exe-name, so it never collides with another agent's run.
 
@@ -51,7 +56,22 @@ RETAIL = Path(r"D:\RecompileDishonored\Dishonored_Latest2026")
 LOGS = RETAIL / "DishonoredGame" / "Logs"
 BASELINE = REPO / "resources" / "docs" / "regression_baseline.json"
 SDK_DELTA = REPO / "resources" / "docs" / "types" / "retail_sdk_delta.md"
-STAGES = ["build", "coresmoke", "layout", "nullrhi", "d3d9", "inputtest"]
+STAGES = ["build", "coresmoke", "layout", "nullrhi", "d3d9", "inputtest", "newgame", "options"]
+
+# DISHONORED(written): agent FM. Every stage above `newgame` drives a map directly with -startmap, so
+# nothing in this harness ever pressed New Game or opened Options, and two user-visible regressions went
+# through a green gate because of it: wave 17's b540be6 closed the front end's own main menu one second
+# after it opened - New Game unreachable from the shipped executable - and passed 37 ok / 0 failed on a
+# clean checkout of its own commit, and the Options crash this wave exists for was not seen either.
+# `newgame` and `options` boot the configuration the user plays: no -startmap, the play-defaults table
+# from Core/Src/UnMisc.cpp turned on with -playdefaults, and the game's own menu on screen.
+#
+# A hard crash was invisible to this harness for a second reason as well. The three `*_criticals` metrics
+# matched the literal `Critical: `, which is what appError logs through NAME_Critical; an access
+# violation reaches the log through the structured-exception handler as `=== Critical error: ===`
+# (UnMisc.cpp:1289, UnOutputDevices.cpp:756) and carries no `Critical: ` line at all. The user's crash log
+# has `Critical: ` zero times. CRITICAL_RE matches both forms, which is why every *_criticals metric uses it.
+CRITICAL_RE = r"Critical error:|Critical: "
 
 # Throughput metrics: what the game got through in a fixed wall-clock window, so they measure the
 # machine as much as the build. Every one of them has failed here on an unchanged binary while
@@ -66,9 +86,18 @@ STAGES = ["build", "coresmoke", "layout", "nullrhi", "d3d9", "inputtest"]
 # The bounds themselves are deliberately not relaxed. They are cliff detectors - d3d9_frames catches a
 # render loop that stopped, inputtest_moved catches a pawn that cannot walk - and a bound loose enough
 # never to trip under load would not catch the cliff either.
+#
+# DISHONORED(written): agent FM. The two menu stages are in the set for a different reason than
+# throughput: they are driven on the WORLD clock (-finewgame, -fmdrive, -apshottime all key off
+# GWorld->GetTimeSeconds()) but killed on the WALL clock by build_and_smoke.py's --timeout, and
+# d3d9_startup_seconds has read 3.4 s quiet and 141.9 s under another agent's build. A machine busy
+# enough to spend two minutes in startup does not reach world time 22 inside the window, which is a
+# measurement of the machine and not of the build. A real break fails both attempts.
 LOAD_SENSITIVE = {
     "d3d9_frames", "d3d9_draws_per_frame", "d3d9_visible_prims",
     "inputtest_moved", "inputtest_peak_speed",
+    "newgame_on_mission", "newgame_pawns", "newgame_menu_open_seconds",
+    "options_steps", "options_alive",
 }
 
 
@@ -84,15 +113,41 @@ def load_sensitive_failures(report: "Report", mark: int) -> list[tuple[str, obje
     return fails
 MAP = "L_Tower_P"
 RENDER_ARGS = "-windowed -ResX=1280 -ResY=720 -nomovie"
+# DISHONORED(written): agent FM. -nodishud keeps the in-game HUD movie out of the three stages whose
+# bounds were calibrated with no movie open. The shipped executable now opens it by default, because
+# retail opens it unconditionally out of UDisGlobalUIManager::Init and _root.blackStripes_mc lives in
+# it (disgfxmovieplayerhud.cpp). The HUD-open path is covered by the `newgame` stage, which passes
+# -playdefaults and no -nodishud, so nothing is lost by suppressing it here and three tight thresholds
+# - d3d9_frames, d3d9_draws_per_frame, texture_census - keep meaning what they were measured against.
+NO_HUD = "-nodishud"
+
+# DISHONORED(written): agent FM. The `options` stage schedule, read step for step off the user's own
+# crash log (D:/RecompileDishonored/Dishonored_Latest2026/DishonoredGame/Logs/play_live.log). What that
+# log shows is NOT what the plan assumed. Two OnTabSelected in one frame and InitScrollBar twice are
+# both NORMAL in this build - they happen at 17.47, 21.64 and 31.98 with no crash. The step the process
+# did not survive is a change of the TOP-LEVEL tab made AFTER a sub tab had been opened: at 33.46 the
+# sub-tab row was already up (`_subTabs_mc._tabs_mc._bOpened = true`) and the new category had a
+# different number of sub-categories (`_subCategoriesList.length : 3` where the first selection saw 2),
+# so _options_mc is re-attached under a mask that is still installed on the old _list_mc. Hence the
+# order here: the screen, a sub tab (which builds the scroll bar and installs the mask), then the
+# top-level tab change. The times are world time and generous: nothing before 8 s has a menu at all.
+OPTIONS_SCRIPT = ";".join([
+    "8:start",
+    "14:fill",
+    "15:invoke=_root.mainMenu_mc.Close()",
+    "16:invoke=_root.optionsMenu_mc.SetMenu()",
+    "20:invoke=_root.optionsMenu_mc._subTabs_mc._tabs_mc.OnTabSelected(1)",
+    "24:invoke=_root.optionsMenu_mc._tabs_mc.OnTabClicked(1)",
+])
 
 # name -> (stage, regex, group count, aggregator). "count" counts matching lines, "distinct" counts distinct
 # first groups, everything else aggregates the numeric groups of the matching lines.
 LOG_METRICS = {
     "startup_seconds":       ("nullrhi",   r"Initial startup: ([\d.]+)s", "last"),
-    "nullrhi_criticals":     ("nullrhi",   r"Critical: ", "count"),
+    "nullrhi_criticals":     ("nullrhi",   CRITICAL_RE, "count"),
     "nullrhi_level_seconds": ("nullrhi",   r"Finished loading level: ([\d.]+)", "last"),
     "d3d9_startup_seconds":  ("d3d9",      r"Initial startup: ([\d.]+)s", "last"),
-    "d3d9_criticals":        ("d3d9",      r"Critical: ", "count"),
+    "d3d9_criticals":        ("d3d9",      CRITICAL_RE, "count"),
     "d3d9_frames":           ("d3d9",      r"scene rendered \((\d+) so far", "max"),
     "d3d9_draws_per_frame":  ("d3d9",      r"draw lists (\d+)/(\d+) drawn", "max0"),
     "d3d9_draw_elements":    ("d3d9",      r"draw lists (\d+)/(\d+) drawn", "max1"),
@@ -110,7 +165,28 @@ LOG_METRICS = {
     # does and fires natives that are honestly still stubbed. Keeping this metric on the plain run keeps
     # its meaning "the walking path", which is what the bound of 0 was measured against.
     "probe_natives":         ("inputtest", r"native not ported: (\S+)", "distinct"),
-    "inputtest_criticals":   ("inputtest", r"Critical: ", "count"),
+    "inputtest_criticals":   ("inputtest", CRITICAL_RE, "count"),
+    # DISHONORED(written): agent FM - the New Game stage. Three independent things have to hold, and they
+    # fail separately:
+    #   newgame_menu_open_seconds  the LAST world time at which the front end's own main-menu movie was
+    #       still open (-fmmenu reports it twice a second). This is the one that catches b540be6: that
+    #       commit closed the menu about a second after it opened, and -finewgame would not have noticed
+    #       because it issues `ce ChangeLvl_StartNewGame` from the game thread without touching the menu.
+    #   newgame_on_mission         lines of -fidiag's census that name l_tower_p: the hub sequence's
+    #       SetPlayerTravelDestination -> CommitMapChange -> GotoPlayerTravelDestination actually landed.
+    #   newgame_pawns              the opening scene is populated once it lands (agent FI measured 29).
+    "newgame_menu_open_seconds": ("newgame", r"fmmenu \d+: t ([\d.]+) movie 1", "max"),
+    "newgame_on_mission":        ("newgame", r"fidiag pawns \d+: t [\d.]+ map l_tower_p", "count"),
+    "newgame_pawns":             ("newgame", r"fidiag pawns \d+: t [\d.]+ map l_tower_p, (\d+) pawns", "max"),
+    "newgame_criticals":         ("newgame", CRITICAL_RE, "count"),
+    # DISHONORED(written): agent FM - the Options stage. options_alive is the aliveness assertion and it is
+    # written so that a DEAD process FAILS rather than SKIPS: the baseline requires it, so when the line is
+    # absent measure() records -1 (see `unparsable`). A metric declared `optional` would have skipped on a
+    # crash, which is the shape of the hole this stage exists to close.
+    "options_steps":             ("options", r"fmdrive step \d+/\d+ t=[\d.]+ \S+ ok", "count"),
+    "options_alive":             ("options", r"fmdrive alive: t ([\d.]+)", "max"),
+    "options_as2_errors":        ("options", r"DISHONORED\(bringup\): AS2 error:", "count"),
+    "options_criticals":         ("options", CRITICAL_RE, "count"),
 }
 OPS = {">=": lambda a, b: a >= b, "<=": lambda a, b: a <= b, "==": lambda a, b: a == b, ">": lambda a, b: a > b}
 
@@ -271,23 +347,64 @@ def smoke(args: argparse.Namespace, out_dir: Path, stage: str, extra: str, timeo
 
 
 def stage_nullrhi(args: argparse.Namespace, out_dir: Path, report: Report, expect: dict) -> None:
-    log = smoke(args, out_dir, "nullrhi", f"-startmap={MAP} -startmapopen", args.nullrhi_timeout,
+    log = smoke(args, out_dir, "nullrhi", f"-startmap={MAP} -startmapopen {NO_HUD}", args.nullrhi_timeout,
                 "Initializing Engine...", ["Initial startup", "Finished loading level"])
     measure("nullrhi", log, report, expect)
 
 
 def stage_d3d9(args: argparse.Namespace, out_dir: Path, report: Report, expect: dict) -> None:
-    extra = f"-startmap={MAP} -startmapopen {RENDER_ARGS} " + " ".join(expect.get("_extra_args", {}).get("d3d9", []))
+    extra = f"-startmap={MAP} -startmapopen {RENDER_ARGS} {NO_HUD} " + " ".join(expect.get("_extra_args", {}).get("d3d9", []))
     log = smoke(args, out_dir, "d3d9", extra, args.d3d9_timeout, "Initializing Engine...", ["Initial startup", "scene census"])
     measure("d3d9", log, report, expect)
 
 
 def stage_inputtest(args: argparse.Namespace, out_dir: Path, report: Report, expect: dict) -> None:
-    extra = (f"-startmap={MAP} -startmapopen -inputtest -distrace {RENDER_ARGS} "
+    extra = (f"-startmap={MAP} -startmapopen -inputtest -distrace {RENDER_ARGS} {NO_HUD} "
              + " ".join(expect.get("_extra_args", {}).get("inputtest", [])))
     log = smoke(args, out_dir, "inputtest", extra, args.inputtest_timeout, "Initializing Engine...",
                 ["Initial startup", "inputtest moved"])
     measure("inputtest", log, report, expect)
+
+
+def stage_newgame(args: argparse.Namespace, out_dir: Path, report: Report, expect: dict) -> None:
+    """New Game from the game's own main menu, the way the user launches it: NO -startmap.
+
+    -playdefaults turns on the table the shipped executable compiles in (Core/Src/UnMisc.cpp, appInit), so
+    this stage's command line is the user's command line plus the log/ini isolation every harness run has
+    and plus the two instruments. The other five stages never see -playdefaults, which is what keeps their
+    calibrated thresholds meaning what they meant: no -gfxuimenu, no movie, in a stage that never had one.
+    """
+    extra = (f"-playdefaults -finewgame={args.newgame_at} -fidiag -fmmenu -fmdrive={args.newgame_script} "
+             + " ".join(expect.get("_extra_args", {}).get("newgame", [])))
+    log = smoke(args, out_dir, "newgame", extra, args.newgame_timeout, "Initializing Engine...",
+                ["Initial startup", "fidiag pawns"])
+    measure("newgame", log, report, expect)
+
+
+def stage_options(args: argparse.Namespace, out_dir: Path, report: Report, expect: dict) -> None:
+    """Open Options off the main menu and switch tabs the way the user's crash log shows.
+
+    The schedule is the user's own, read off play_live.log: the Options screen, then a SUB tab (which is
+    what builds the scroll bar and installs the mask on _options_mc._list_mc), then a change of the
+    TOP-LEVEL tab, which is the step the process did not survive - 0.15 s after the second InitScrollBar
+    and the setMask on a _list_mc whose owner the tab change had just re-attached.
+
+    READ THIS BEFORE TRUSTING IT TO COVER THAT CRASH: it does not, and agent FM measured why rather than
+    shipping a check that quietly passes. The AS2 trace this produces is identical to the user's, down to
+    `InitScrollBar (385.699066162109, ...)` twice and `mask stage bounds 170.0,214.6..1151.7,666.2 px` -
+    the frame the process died on - and the process lives. The difference is the ENTRY POINT: the user's
+    tab switch was dispatched from inside GFx's own mouse handling (`AS2 trace: OnMouseUp (0, undefined)`
+    is the line before it, same hundredth of a second), re-entrant with respect to the runtime's advance
+    and display state, where GFxMovieView::Invoke enters ActionScript at a clean point between advances.
+    Invoking TabsHandler::OnTabClicked, the button's own handler, is not close enough either. What this
+    stage IS: the Options screen built through the screen's own entry point, every AS2 path on it
+    exercised, the error count watched, and the process asserted alive afterwards.
+    """
+    extra = (f"-playdefaults -fmdrive={args.options_script} -fmmenu "
+             + " ".join(expect.get("_extra_args", {}).get("options", [])))
+    log = smoke(args, out_dir, "options", extra, args.options_timeout, "Initializing Engine...",
+                ["Initial startup", "fmdrive alive"])
+    measure("options", log, report, expect)
 
 
 def update_baseline(report: Report, expect: dict, path: Path) -> None:
@@ -318,6 +435,17 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--nullrhi-timeout", type=float, default=180.0)
     parser.add_argument("--d3d9-timeout", type=float, default=90.0)
     parser.add_argument("--inputtest-timeout", type=float, default=150.0)
+    # DISHONORED(written): agent FM. These two stages boot through the front end and then wait on the WORLD
+    # clock, so their wall-clock budget has to cover a loaded machine's startup (d3d9_startup_seconds has
+    # read 141.9 s) plus the schedule plus the map change. They are the two longest stages in the harness.
+    parser.add_argument("--newgame-timeout", type=float, default=300.0)
+    parser.add_argument("--newgame-at", type=float, default=22.0,
+                        help="world time at which -finewgame issues `ce ChangeLvl_StartNewGame`")
+    parser.add_argument("--newgame-script", default="8:start",
+                        help="-fmdrive schedule for the newgame stage: dismiss the start screen so the menu proper opens")
+    parser.add_argument("--options-timeout", type=float, default=240.0)
+    parser.add_argument("--options-script", default=OPTIONS_SCRIPT,
+                        help="-fmdrive schedule for the options stage: <worldtime>:<step>[;...]")
     parser.add_argument("--no-load-retry", action="store_true",
                         help="do not re-run a stage whose only failures are load-sensitive (see LOAD_SENSITIVE)")
     parser.add_argument("--list", action="store_true", help="print the stages and their metrics and exit")
@@ -359,6 +487,10 @@ def main(argv: list[str]) -> int:
             stage_d3d9(args, out_dir, report, expect)
         elif stage == "inputtest":
             stage_inputtest(args, out_dir, report, expect)
+        elif stage == "newgame":
+            stage_newgame(args, out_dir, report, expect)
+        elif stage == "options":
+            stage_options(args, out_dir, report, expect)
 
     for stage in wanted:
         print(f"[{stage}]", flush=True)

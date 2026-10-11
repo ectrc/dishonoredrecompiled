@@ -13,7 +13,8 @@
     "The three optional census metrics are the counters wave 5's packages AR (textures), AS (touches) and AT",
     "(sequence ops) add. The contract is what agent AP's scene census already does: one DISHONORED(bringup) line",
     "reading '<thing> census: <N> ...' whose first integer is the headline count. Flip optional to false once the",
-    "line is in HEAD, so the counter can never be dropped again without failing this run."
+    "line is in HEAD, so the counter can never be dropped again without failing this run.",
+    "Agent FM, wave 19, added the newgame and options stages and their ten rows. They are the first two stages that do NOT pass -startmap: they boot the configuration the user plays (-playdefaults turns on the Core/Src/UnMisc.cpp table the shipped executable compiles in) and drive the game's own menu. Their bounds are cliff detectors in the same sense as the rest: newgame_menu_open_seconds >= 10 is what catches a front end that closes its own menu (wave 17's b540be6 closed it after about one second and passed 37/37), and options_alive is the one row written so that a DEAD process FAILS rather than skips - the baseline requires it, so an absent line scores -1."
   ],
   "_extra_args": {
     "d3d9": [],
@@ -21,7 +22,9 @@
       "-distouch",
       "-diskismet",
       "-distouchprobe"
-    ]
+    ],
+    "newgame": [],
+    "options": []
   },
   "coresmoke_passed": {
     "op": ">=",
@@ -172,5 +175,54 @@
     "op": "<=",
     "value": 12,
     "note": "natives without a body reached only when -distouchprobe walks the pawn to every volume, trigger and pickup: 7 at HEAD. Gameplay a plain walk never reaches, so this is a ratchet to drive down, not a gate."
+  },
+  "newgame_log_lines": {
+    "op": ">=",
+    "value": 2000,
+    "note": "guard: the run reached the menu at all. A boot through the front end logs far more than a -startmap run"
+  },
+  "newgame_menu_open_seconds": {
+    "op": ">=",
+    "value": 10.0,
+    "note": "last world time at which the front end's own menu movie was still open (-fmmenu). b540be6 would read about 1"
+  },
+  "newgame_on_mission": {
+    "op": ">=",
+    "value": 1,
+    "note": "-fidiag census lines naming l_tower_p: New Game's hub sequence actually committed the map change"
+  },
+  "newgame_pawns": {
+    "op": ">=",
+    "value": 10,
+    "note": "pawns in the opening scene once it lands; agent FI measured 29. The bound catches an empty scene, not a count"
+  },
+  "newgame_criticals": {
+    "op": "==",
+    "value": 0
+  },
+  "options_log_lines": {
+    "op": ">=",
+    "value": 2000,
+    "note": "guard, as newgame_log_lines"
+  },
+  "options_steps": {
+    "op": ">=",
+    "value": 6,
+    "note": "every step of OPTIONS_SCRIPT resolved. A step whose AS2 path stopped existing logs NOT FOUND and is not counted"
+  },
+  "options_alive": {
+    "op": ">=",
+    "value": 26.0,
+    "note": "world time of the last `fmoptions alive` heartbeat. The user's crash killed the process 0.15 s after the last tab switch, so a dead process cannot reach this"
+  },
+  "options_as2_errors": {
+    "op": "<=",
+    "value": 41,
+    "note": "measured 41 on two consecutive runs with the HUD open and 39 with -nodishud, identical run to run. Tight on purpose: the brief's assertion is that the error count has not RISEN, and a bound with slack in it would not notice a new error class appearing on the Options screen"
+  },
+  "options_criticals": {
+    "op": "==",
+    "value": 0,
+    "note": "matches `=== Critical error: ===` as well as `Critical: ` - the user's crash log has the first and not the second"
   }
 }

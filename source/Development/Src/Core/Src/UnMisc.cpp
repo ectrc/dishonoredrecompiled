@@ -5069,7 +5069,6 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 
 	appStrncpy( GCmdLine, InCmdLine, ARRAY_COUNT(GCmdLine) );
 
-#if DISHONORED_PLAY_DEFAULTS
 	// DISHONORED(bringup): the switches a playable run needs, appended here so the shipped executable
 	// can be launched with none. Each is added only when its token is absent, so anything on the real
 	// command line wins - `-startmap=L_Pub_Day_P` opens a map directly, `-fullscreen` replaces `-windowed`.
@@ -5084,10 +5083,24 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 	// all (agent EZ, build/agentEZ/b1_log.txt:2322). DishonoredGameFull_P's own Kismet commits the map
 	// change into Dishonored_MainMenu by itself, which is retail's shape and leaves the hub sequence alive.
 	//
-	// This is compiled only into a build configured with DISHONORED_PLAY_DEFAULTS, and deliberately so:
+	// This is ON BY DEFAULT only in a build configured with DISHONORED_PLAY_DEFAULTS, and deliberately so:
 	// run_regression.py drives the game with exact command lines and its thresholds are calibrated to
 	// them, so baking -gfxuimenu into every harness run would open a movie in stages that have never
 	// had one and invalidate the baseline.
+	//
+	// DISHONORED(bringup, agent FM): and `-playdefaults` turns the same table on in a build that was NOT
+	// configured with it, which is how the regression harness drives the configuration the user plays
+	// without a second full build and without touching the five calibrated stages. The table is the same
+	// code either way, so a regression in the table itself is caught too; the only difference between the
+	// shipped executable's command line and the harness's is the `-playdefaults` token that enables it.
+	// It is read off GCmdLine rather than appCmdLine() because this runs before appCmdLine() is valid.
+	// Two harness stages depend on this: `newgame` and `options` (see run_regression.py).
+#if DISHONORED_PLAY_DEFAULTS
+	const UBOOL bPlayDefaults = TRUE;
+#else
+	const UBOOL bPlayDefaults = appStrfind( GCmdLine, TEXT("playdefaults") ) != NULL;
+#endif
+	if( bPlayDefaults )
 	{
 		static const TCHAR* const PlayDefaults[][2] =
 		{
@@ -5106,7 +5119,6 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 			}
 		}
 	}
-#endif
 
 	// Avoiding potential exploits by not exposing command line overrides in the shipping games.
 #if !SHIPPING_PC_GAME && !CONSOLE

@@ -1230,8 +1230,82 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 	UDisGFxMoviePlayerBase::LoadMoviePackage (2013 rva 0x7a3fd0) loads them, and call StartHUD.
 	Everything from StartHUD onwards is the real path.
 
-	It is behind -dishud so the regression harness's command lines, whose thresholds are calibrated
-	without a movie open, are unchanged - the same reason -gfxuimenu is a switch (Core/Src/UnMisc.cpp).
+	It WAS behind -dishud so the regression harness's command lines, whose thresholds are calibrated
+	without a movie open, were unchanged - the same reason -gfxuimenu is a switch (Core/Src/UnMisc.cpp).
+	That default is now the other way round, and the harness opts out with -nodishud. Agent FM, wave 19:
+
+	**Retail has no gate.** ADishonoredGameInfo::PostBeginPlay (2013 rva 0x6155d0, 348 bytes) ->
+	InitGlobalManagers (0x5e9bd0, 148 bytes) -> UDisGlobalUIManager::Init (0x85fdb0, 1428 bytes, 2012
+	0x8c45d0) calls UDisGFxMoviePlayerHUD::StartHUD (0x78cd00, 61 bytes) unconditionally, on every map
+	including the menu map - the retail ini names DefaultGame=DishonoredGame.DishonoredGameInfo for
+	everything and has no separate menu GameInfo. **Unconditional end to end**, resolved by hand in the 2013
+	database: each link has exactly ONE code caller (the call sites are 0x6156be -> InitGlobalManagers,
+	0x5e9c38 -> Init, 0x86031b -> StartHUD); InitGlobalManagers has zero conditional branches; Init's only
+	real branch is a `Cast<>` on this->Outer that chooses the challenge-mode extra movies (pBrief,
+	pResultsMenu) over the campaign one (pMissionStats) and whose two arms CONVERGE at 0x860303, which
+	post-dominates both, three instructions before the StartHUD call; every other branch in Init's 1428
+	bytes is a TArray bounds assert. There is no GIsGame reference, no game-state enum, no menu or cinematic
+	flag and no player, controller or pawn check anywhere on the chain. One level below, inside
+	UDisGFxMoviePlayerBase::Start (vtable slot +0x128), there is exactly one early-out and it is movie state
+	rather than game state: bit 0 of the player's +0xC4, "already open".
+
+	The HUD movie is therefore ALWAYS open in retail; what varies is the visibility RefreshGlobalUIState
+	(0x847070, 901 bytes, 2012 0x8b75e0) recomputes as
+	   !PersistentWorldInfo.m_bNeverDisplayHUD && AND-over-every-open-player( m_bShowHUDWhileActive )
+	alongside the UberUI blur, the controller input mask and two bits on m_pGlobal. Its world-state read is
+	GWorld->[+0x2C4]->[+0x2F0] bit 10, inverted. Two things the comment above got wrong:
+	RefreshGlobalUIState opens and closes NOTHING, and it is not unported - 0x847070 is
+	disglobaluimanager.cpp:113, where agent FA ported the blur arm of exactly this walk and wrote down the
+	other four bits by name.
+
+	Resolution notes, because only ONE of these seven addresses carries a symbol in the 2013 database:
+	  * 0x84cf70 IS named, `UDisGlobalUIManager::OnMovieStackChanged`, and its five bytes are
+	    `E9 FB A0 FF FF` = `jmp 0x847070`. That thunk is the hard anchor for 0x847070, and it is the same
+	    shape as the named 2012 pair (0x8bc570 jumps to 0x8b75e0). 0x84cf80, the next function, is the named
+	    `OnMovieAttributesChanged`, and it also calls 0x847070.
+	  * 0x85fdb0 is pinned by what it builds: FName("pHUD") with UDisGFxMoviePlayerHUD's static class into
+	    this+0x2DC, then pPowerWheel +0x2E0, pJournal +0x2E4, pNote +0x2E8, pPauseMenu +0x2EC - and the
+	    named DisGetGlobalUIManager (0x7bf700) returns GWorld->GetGameInfo()->[+0x41C], which is the same
+	    field InitGlobalManagers loads into ecx before the call.
+	  * 0x78cd00 is pinned as a member of UDisGFxMoviePlayerHUD by its call site: `ecx = [uiMgr+0x2DC]`, the
+	    player Init had just constructed under FName("pHUD").
+	  * 0x6155d0 is pinned by its tail `call AGameInfo::PostBeginPlay` (the Super:: call of an override) and
+	    by its data xref at 0x10dba48, inside ADishonoredGameInfo's primary vtable, slot +0x210.
+	  * 0x5e9bd0 is pinned by its named callees: UDisPostProcessManager::Init, UDisWaterVolumeManager::Init,
+	    UDisGlobalCombatManager::Init_GlobalCombat, UDisRatSwarmGlobalManager::Init,
+	    UDisGlobalMusicManager::Init_GlobalMusic, then [this+0x41C]->Init, then a tail jmp to
+	    UDisGlobalFactionManager::RebuildCaches.
+	  * the three 2012 rvas quoted here (0x8b75e0, 0x8bc570, 0x8c45d0) come from this file's own
+	    PDB-attributed skeleton list and disglobaluimanager.cpp; they were not re-read out of the 2012
+	    database for this package.
+
+	So the shipped build SHOULD open the HUD and the harness should suppress it, not the reverse:
+	 1. It is what retail does, and a user launching the executable with no arguments is the configuration
+	    this project is rebuilding. _root.blackStripes_mc lives in this movie, so with the switch defaulting
+	    off a finished feature - the letterbox bars, wave 18 - was invisible to every person who played it.
+	 2. The five calibrated stages (nullrhi, d3d9, inputtest) have cliff-detector bounds measured with no
+	    movie open: d3d9_frames against 1000, draws per frame, the texture census. Opening a movie in them
+	    moves all three and buys nothing, because the HUD path is covered by the stage that boots the
+	    shipped configuration - run_regression.py's `newgame`, which passes no -nodishud.
+	 3. -nodishud cannot be matched by ParseParam looking for "dishud": appStrfind only matches at a
+	    non-alphanumeric boundary and the character before "dishud" in "-nodishud" is 'o'.
+
+	Three things this bring-up still does NOT do, all read out of retail and none of them in this package:
+	  * retail has ONE owner for every movie player and this tree has two racing bring-ups. See the
+	    sequencing guard in DisHUDBringUp and what it was measured against.
+	  * the letterbox bars exist in TWO movies. UI_HUD's are Tick_Cinematic's, off HUD element 16, with a
+	    two-argument SetBlackStripes - that is the one this tree has. UI_Global has its own, driven by
+	    m_bDrawBlackStripesWhileActive accumulated across the open movies, with a ONE-argument
+	    SetBlackStripes, out of what is almost certainly UDisGFxMoviePlayerGlobal::PreAdvance - 2013 rva
+	    0x7aa610, 1241 bytes, pinned only as far as "a virtual of UDisGFxMoviePlayerGlobal at vtable slot
+	    +0x1DC, whose base-class entry is a ret-only stub"; the name itself is not provable from the 2013
+	    database, whose neighbouring slots are the named UpdateAnalogInputForAS, UpdateGamepadUseForAS and
+	    IsUsingGamepad. That path is absent,
+	    and UDisGFxMoviePlayerGlobal::OnMessageBoxUp (disgfxmovieplayerglobal.cpp:263) is the only writer of
+	    m_bDrawBlackStripesWhileActive in this tree.
+	  * m_bShowHUDWhileActive's default on the HUD player comes from cooked script defaults, not from any
+	    ini. If this tree's default is FALSE the movie opens and draws nothing, which looks exactly like a
+	    HUD that never appeared.
 -----------------------------------------------------------------------------*/
 
 /** DISHONORED(port): the package/object split of UDisGFxMoviePlayerBase::LoadMoviePackage, 2013 rva
@@ -1319,14 +1393,16 @@ static UDisGlobalUIManager* DisHUDGetOrCreateUIManager()
 	return GameInfo->m_pGlobalUIManager;
 }
 
-/** -dishud: open the HUD once a world, a viewport and a player pawn exist. Returns TRUE once the
-    movie is up, so the caller stops asking. */
+/** Open the HUD once a world, a viewport and a player pawn exist, the way retail's
+    UDisGlobalUIManager::Init does with no gate at all. Returns TRUE once the movie is up, so the caller
+    stops asking. -nodishud suppresses it, which is what the five calibrated regression stages pass;
+    -dishud is still accepted and now means nothing, so every existing command line keeps working. */
 static UBOOL DisHUDBringUp()
 {
 	static INT State = -2;      // -2 unread, -1 off or done, 0 waiting, 1 open
 	if( State == -2 )
 	{
-		State = ParseParam( appCmdLine(), TEXT("dishud") ) ? 0 : -1;
+		State = ParseParam( appCmdLine(), TEXT("nodishud") ) ? -1 : 0;
 	}
 	if( State == 1 )
 	{
@@ -1347,6 +1423,32 @@ static UBOOL DisHUDBringUp()
 		|| ADishonoredPlayerPawn::s_pInstance == NULL )
 	{
 		return FALSE;
+	}
+	// DISHONORED(bringup, agent FM): wait for the front end's own bring-up before opening this one.
+	// Retail has ONE owner for every movie player - UDisGlobalUIManager::Init walks the config movie set
+	// and constructs them in its order - and this tree has two independent state machines instead,
+	// -gfxuimenu's in gfxuiengine.cpp and this one. Letting them overlap is not merely untidy: with the
+	// HUD opening first, two of three measured runs died inside the menu's own open with
+	// `Assertion failed: !Obj->HasAnyFlags(RF_Unreachable|RF_AsyncLoading)` (UnObj.cpp:7979, the replace
+	// branch of StaticAllocateObject), 0.02 s after `-gfxuimenu: opened UI_Global.Global`. Sequencing them
+	// is what retail's single Init does for free. The real fix is to port UDisGlobalUIManager::Init
+	// (2013 rva 0x85fdb0, 2012 0x8c45d0) and delete both bring-ups.
+	//
+	// The wait is LATCHED, and that matters: the map change into the mission closes the menu movie
+	// (UnGame.cpp CommitMapChange, bCloseOnLevelChange), so an unlatched test would hold the HUD shut
+	// for the whole game and the letterbox bars would never draw - measured, fm_bars1: bCinematicMode 1
+	// with the letterbox element 0x10 set in the mask and SetBlackStripes invoked zero times, because
+	// the HUD had opened once on the menu map and could not reopen for l_tower_p.
+	static UBOOL bFrontEndSettled = FALSE;
+	if( !bFrontEndSettled && ParseParam( appCmdLine(), TEXT("gfxuimenu") ) )
+	{
+		UGFxMoviePlayer* AutoMenu = FindObject<UGFxMoviePlayer>( UObject::GetTransientPackage(),
+			TEXT("DisGFxAutoOpenMenu") );
+		if( AutoMenu == NULL || !AutoMenu->bMovieIsOpen )
+		{
+			return FALSE;
+		}
+		bFrontEndSettled = TRUE;
 	}
 
 	UDisGlobalUIManager* UIManager = DisHUDGetOrCreateUIManager();

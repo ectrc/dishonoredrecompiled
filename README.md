@@ -93,7 +93,7 @@ this repository ships game binaries, PDBs, content or IDA databases.
 |---|---|
 | `resources\build-game.cmd [target]` | the development build, every option on, into `build\game` |
 | `resources\build-release.cmd [target]` | the Release build the regression harness uses |
-| `python resources\tools\run_regression.py --build-dir build/<dir>` | the 37-check regression gate |
+| `python resources\tools\run_regression.py --build-dir build/<dir>` | the 47-check regression gate |
 
 ## State of play
 

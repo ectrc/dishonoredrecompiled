@@ -715,11 +715,217 @@ static void DisDriveDifficulty( UDisGFxMoviePlayerMainMenu* Menu )
 	}
 }
 
+/*-----------------------------------------------------------------------------
+	Agent FM (PHASE15 package FM): -fmmenu and -fmdrive, the two instruments the regression harness's
+	`newgame` and `options` stages are built on.
+
+	They exist because every stage of run_regression.py before them drove a map directly with -startmap,
+	so nothing in the harness ever pressed New Game or opened Options, and two user-visible regressions
+	went through a green 37/37 gate: wave 17's b540be6 closed the front end's own main menu one second
+	after it opened, and the Options crash the user hit on c702a38.
+
+	-fmmenu reports, twice a second, the one fact a gate needs about the front end and cannot get any
+	other way: whether the menu movie is still open, and which screen it is on. It is deliberately NOT
+	derived from -finewgame, which issues `ce ChangeLvl_StartNewGame` from the game thread without
+	touching the menu at all - so -finewgame alone would have passed on b540be6 too.
+
+	-fmdrive=<worldtime>:<step>[;<worldtime>:<step>...] runs a schedule on the world clock, which is the
+	same clock -apshottime's marks and -finewgame's trigger are tested against, so a step and a capture
+	mean the same instant however fast the frame rate is. Steps:
+
+	  start                 dismiss the start screen the way a key press does, through this file's own
+	                        DisGFxMoviePlayerMainMenuFilterButtonInput with SpaceBar - the menu's real
+	                        path, and the one the README tells the user to use (Enter does not work,
+	                        STATUS open defect 5)
+	  fill                  DisFillOptionsMenu( Menu, TRUE ), which is the whole body of retail's
+	                        UDisGFxMoviePlayerMainMenu::OnOptionsClicked (2013 rva 0x7e6b80)
+	  invoke=<path>         `<path>()` through GFxMovieView::Invoke
+	  invoke=<path>(a,b,..) the same with arguments; an argument that parses as a number is passed as a
+	                        number and everything else as a string, so `OnTabSelected(1,r)` is (1, "r")
+
+	A step that resolves logs `ok` and a step that does not logs `NOT FOUND`, and the harness counts only
+	the `ok` lines against a bound equal to the number of steps in the schedule - so a path that stops
+	resolving fails the check instead of quietly passing it. Once every step has run, the driver prints
+	an `alive` heartbeat twice a second: that line is the Options check's assertion, because a process
+	that died cannot print it and the harness scores a required metric whose line is absent as -1.
+-----------------------------------------------------------------------------*/
+
+UBOOL DisGFxMoviePlayerMainMenuFilterButtonInput( UDisGFxMoviePlayerMainMenu* Menu, INT ControllerId,
+	FName Key, BYTE Event, UBOOL& bHandled );
+
+static void DisFMReportMenu( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	static INT Enabled = -1;
+	static FLOAT NextAt = 0.f;
+	static INT Line = 0;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("fmmenu") ) ? 1 : 0;
+	}
+	if( Enabled == 0 || GWorld == NULL )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	if( Now < NextAt )
+	{
+		return;
+	}
+	NextAt = Now + 0.5f;
+	Line++;
+	// m_Screen: 1 = the start screen, 2 = in transit, 3 = the menu proper (DisGFxMoviePlayerMainMenuPostStart)
+	debugf( TEXT("DISHONORED(bringup): fmmenu %d: t %.2f movie %d screen %d loginStep %d map %s"),
+		Line, Now, Menu->bMovieIsOpen ? 1 : 0, (INT)Menu->m_Screen, (INT)Menu->m_LoginStep,
+		*GWorld->GetMapName() );
+}
+
+/** one argument of an `invoke=` step: a number when the whole token is numeric, a string otherwise */
+static void DisFMSetArg( GFxValue& Out, const FString& Token )
+{
+	UBOOL bNumeric = Token.Len() > 0;
+	for( INT Index = 0; Index < Token.Len(); Index++ )
+	{
+		const TCHAR Ch = Token[Index];
+		const UBOOL bSign = ( Ch == TEXT('-') || Ch == TEXT('+') ) && Index == 0;
+		if( !appIsDigit( Ch ) && Ch != TEXT('.') && !bSign )
+		{
+			bNumeric = FALSE;
+			break;
+		}
+	}
+	if( bNumeric )
+	{
+		Out.SetNumber( (DOUBLE)appAtof( *Token ) );
+	}
+	else
+	{
+		Out.SetStringW( *Token );
+	}
+}
+
+/** `<path>(<args>)` -> GFxMovieView::Invoke. Returns FALSE when the path does not resolve. */
+static UBOOL DisFMInvokeStep( UDisGFxMoviePlayerMainMenu* Menu, const FString& Spec )
+{
+	GFxMovieView* View = DisMainMenuView( Menu );
+	if( View == NULL )
+	{
+		return FALSE;
+	}
+	FString Path = Spec;
+	TArray<FString> ArgTokens;
+	const INT Open = Spec.InStr( TEXT("(") );
+	if( Open >= 0 )
+	{
+		Path = Spec.Left( Open );
+		FString Inside = Spec.Mid( Open + 1 );
+		const INT Close = Inside.InStr( TEXT(")") );
+		if( Close >= 0 )
+		{
+			Inside = Inside.Left( Close );
+		}
+		if( Inside.Len() > 0 )
+		{
+			Inside.ParseIntoArray( &ArgTokens, TEXT(","), FALSE );
+		}
+	}
+	// A fixed array, not a TArray: GFxValue has a destructor that releases a managed value and UE3's
+	// TArray::Add hands back raw uninitialised memory, so the first ChangeType would release garbage.
+	// SetStringW stores the pointer rather than a copy, which is why ArgTokens outlives the Invoke.
+	GFxValue Args[4];
+	const INT NumArgs = Min<INT>( ArgTokens.Num(), ARRAY_COUNT(Args) );
+	for( INT Index = 0; Index < NumArgs; Index++ )
+	{
+		DisFMSetArg( Args[Index], ArgTokens(Index) );
+	}
+	GFxValue Result;
+	return View->Invoke( TCHAR_TO_ANSI( *Path ), &Result, NumArgs > 0 ? Args : NULL, NumArgs ) ? TRUE : FALSE;
+}
+
+static UBOOL DisFMRunStep( UDisGFxMoviePlayerMainMenu* Menu, const FString& Step )
+{
+	if( Step == TEXT("start") )
+	{
+		UBOOL bHandled = FALSE;
+		DisGFxMoviePlayerMainMenuFilterButtonInput( Menu, 0, FName( TEXT("SpaceBar") ), IE_Pressed, bHandled );
+		return bHandled;
+	}
+	if( Step == TEXT("fill") )
+	{
+		extern void DisFillOptionsMenu( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSettings );
+		DisFillOptionsMenu( Menu, TRUE );
+		return TRUE;
+	}
+	if( Step.StartsWith( TEXT("invoke=") ) )
+	{
+		return DisFMInvokeStep( Menu, Step.Mid( appStrlen( TEXT("invoke=") ) ) );
+	}
+	warnf( TEXT("DISHONORED(bringup): fmdrive: unknown step '%s'"), *Step );
+	return FALSE;
+}
+
+static void DisFMDriveMenu( UDisGFxMoviePlayerMainMenu* Menu )
+{
+	static INT Enabled = -1;
+	static TArray<FString> Steps;
+	static INT Total = 0;
+	static INT Done = 0;
+	static FLOAT LastStepAt = -1.f;
+	static FLOAT NextAliveAt = 0.f;
+	if( Enabled < 0 )
+	{
+		FString Spec;
+		Enabled = Parse( appCmdLine(), TEXT("fmdrive="), Spec ) && Spec.Len() > 0 ? 1 : 0;
+		if( Enabled > 0 )
+		{
+			Spec.ParseIntoArray( &Steps, TEXT(";"), TRUE );
+			Total = Steps.Num();
+		}
+	}
+	if( Enabled == 0 || GWorld == NULL )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	while( Steps.Num() > 0 )
+	{
+		FString When, What;
+		if( !Steps(0).Split( TEXT(":"), &When, &What ) )
+		{
+			warnf( TEXT("DISHONORED(bringup): fmdrive: step '%s' is not <worldtime>:<step>"), *Steps(0) );
+			Steps.Remove( 0 );
+			Done++;
+			continue;
+		}
+		if( appAtof( *When ) > Now )
+		{
+			break;
+		}
+		const UBOOL bOk = DisFMRunStep( Menu, What );
+		Done++;
+		LastStepAt = Now;
+		debugf( TEXT("DISHONORED(bringup): fmdrive step %d/%d t=%.2f %s %s"),
+			Done, Total, Now, *What, bOk ? TEXT("ok") : TEXT("NOT FOUND") );
+		Steps.Remove( 0 );
+	}
+	if( Steps.Num() > 0 || Now < NextAliveAt )
+	{
+		return;
+	}
+	NextAliveAt = Now + 0.5f;
+	// The aliveness assertion: the schedule has run to the end and the process is still advancing the
+	// movie. The Options crash killed it 0.15 s after the last tab switch, so this line is what the
+	// `options` stage measures - an absent line is scored -1, not skipped.
+	debugf( TEXT("DISHONORED(bringup): fmdrive alive: t %.2f after %d/%d steps, last step at %.2f"),
+		Now, Done, Total, LastStepAt );
+}
+
 // DISHONORED(port): 2012 rva 0x822280
 void DisGFxMoviePlayerMainMenuPreAdvance( UDisGFxMoviePlayerMainMenu* Menu, FLOAT DeltaTime )
 {
 	DisReportClipDiag( Menu );
 	DisDriveDifficulty( Menu );
+	DisFMReportMenu( Menu );
+	DisFMDriveMenu( Menu );
 	// DISHONORED(port): agent EO - retail's own site is UDisGFxMoviePlayerMenuBase::PostFirstAdvance
 	// (2013 rva 0x7e6970), which this tree's movie-player base does not have; see DisFillOptionsMenuOnce.
 	extern void DisFillOptionsMenuOnce( UDisGFxMoviePlayerMenuBase* Menu, UBOOL bAllowRestartSettings );
