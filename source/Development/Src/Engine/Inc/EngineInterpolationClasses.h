@@ -214,9 +214,12 @@ public:
     //## END PROPS InterpGroup
 
     DECLARE_CLASS(UInterpGroup,UObject,0,Engine)
-	// DISHONORED(retail): a group's Outer is the UMatineeData that holds it and the UInterpData is that
-	// data's own Outer - the cooked path is <InterpData>.<MatineeData>.<Group>.
+	// DISHONORED(retail): a group's Outer is the UMatineeData that holds it. For an inline matinee that
+	// data's Outer is the UInterpData (<InterpData>.<MatineeData>.<Group>); for a shared matinee asset it
+	// is a UPackage (<Package>.<MatineeData>.<Group>), so GetInterpData() may be NULL and the runtime
+	// reads the data through GetMatineeData() as retail does (agent FN).
 	class UInterpData* GetInterpData() const;
+	class UMatineeData* GetMatineeData() const;
 	// UObject interface
 	virtual void PostLoad();
 
@@ -2809,6 +2812,7 @@ public:
     virtual void Serialize( FArchive& Ar );
     INT FindGroupByName( FName InGroupName );
     class UInterpGroup* GetInterpGroup( INT Index ) const;
+    class UInterpGroupDirector* FindDirectorGroup() const;
     DECLARE_CLASS(UMatineeData,UObject,0|CLASS_NoExport,Engine)
 };
 

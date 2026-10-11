@@ -7976,7 +7976,12 @@ UObject* UObject::StaticAllocateObject
 		// Replace an existing object without affecting the original's address or index.
 		check(!Ptr || Ptr==Obj);
 		check(!GIsAsyncLoading);
-		check(!Obj->HasAnyFlags(RF_Unreachable|RF_AsyncLoading));
+		// DISHONORED(bringup): agent FN. Agent FK saw this fire once in ten front-end boots, 0.02 s after
+		// -gfxuimenu opened UI_Global.Global, with no usable stack; name the object so the next instance
+		// says which replace raced the async load.
+		checkf(!Obj->HasAnyFlags(RF_Unreachable|RF_AsyncLoading), TEXT("StaticAllocateObject replace: %s (flags 0x%016I64x) is %s; new class %s, outer %s"),
+			*Obj->GetFullName(), Obj->GetFlags(), Obj->HasAnyFlags(RF_AsyncLoading) ? TEXT("RF_AsyncLoading") : TEXT("RF_Unreachable"),
+			*InClass->GetName(), InOuter ? *InOuter->GetPathName() : TEXT("NULL"));
 		debugfSlow( NAME_DevReplace, TEXT("Replacing %s"), *Obj->GetName() );
 
 		// Can only replace if class is identical.

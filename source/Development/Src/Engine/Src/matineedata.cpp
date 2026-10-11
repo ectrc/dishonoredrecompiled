@@ -51,3 +51,19 @@ UInterpGroup* UMatineeData::GetInterpGroup( INT Index ) const
 {
 	return m_RunData.InterpGroups(Index);
 }
+
+// DISHONORED(port): agent FN. The scan UInterpData::FindDirectorGroup does, on the data itself, so a track
+// inside a shared matinee asset (no UInterpData above it) can find its director group.
+UInterpGroupDirector* UMatineeData::FindDirectorGroup() const
+{
+	UInterpGroupDirector* DirGroup = NULL;
+	for( INT i = 0; i < m_RunData.InterpGroups.Num(); i++ )
+	{
+		UInterpGroupDirector* TestDirGroup = Cast<UInterpGroupDirector>( m_RunData.InterpGroups(i) );
+		if( TestDirGroup )
+		{
+			DirGroup = TestDirGroup;
+		}
+	}
+	return DirGroup;
+}

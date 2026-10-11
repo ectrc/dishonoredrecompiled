@@ -2166,6 +2166,32 @@ AActor * USeqAct_Interp::FindGroupLinkedVariable(INT Index, const TArray<UObject
 }
 
 // For each Actor connected to a particular group, create an instance.
+// DISHONORED(port): agent FN. Retail's InitInterp (2012 rva 0x25ad70) runs this free function (2012 rva
+// 0x23a680, 537 bytes) over the group's object variables before instancing: a second variable pointing at
+// an actor already in the list is dropped, so the same actor linked twice to one group does not reach
+// FindGroupLinkedVariable and its "an Actor may only be connected to one Group!" warning.
+static void FilterObjectDuplicate( TArray<UObject**>& ObjectVars )
+{
+	TArray<UObject*> ReferencedObjects;
+	TArray<INT> IndicesToRemove;
+	for( INT Index = 0; Index < ObjectVars.Num(); Index++ )
+	{
+		UObject* Object = ObjectVars(Index) != NULL ? *ObjectVars(Index) : NULL;
+		if( ReferencedObjects.FindItemIndex( Object ) == INDEX_NONE )
+		{
+			ReferencedObjects.AddUniqueItem( Object );
+		}
+		else
+		{
+			IndicesToRemove.AddItem( Index );
+		}
+	}
+	for( INT RemoveIndex = IndicesToRemove.Num() - 1; RemoveIndex >= 0; RemoveIndex-- )
+	{
+		ObjectVars.Remove( IndicesToRemove(RemoveIndex) );
+	}
+}
+
 void USeqAct_Interp::InitInterp()
 {
 	// if groupinst still exists, that means it hasn't been propertly terminated, so terminate it
@@ -2265,6 +2291,7 @@ void USeqAct_Interp::InitInterp()
 					TArray<UObject**> ObjectVars;
 					GetObjectVars(ObjectVars, *Group->GroupName.ToString());
 					GetNamedObjVars(ObjectVars, *Group->GroupName.ToString());
+					FilterObjectDuplicate(ObjectVars);
 
 					for(INT j=0; j<ObjectVars.Num() || j==0; j++)
 					{
@@ -3244,27 +3271,40 @@ void UInterpGroup::UpdateAnimWeights(FLOAT NewPosition, class UInterpGroupInst* 
 	UpdateAnimWeightsSlotInfos.Reset();
 }
 
-// DISHONORED(retail): 2013 has no UInterpGroup::GetInterpData; the walk is written here because the
-// reference reads Outer directly at nine sites and Arkane's object graph has one more level.
+// DISHONORED(retail): 2013 has no UInterpGroup::GetInterpData. A group's Outer is always the UMatineeData
+// that holds it, and retail's track code reads that Outer directly (UInterpTrackVisibility::UpdateTrack,
+// 2013 rva 0x21f680: `Group->Outer + 68` is m_RunData.InterpLength). The MatineeData's own Outer is NOT
+// always a UInterpData: a shared matinee asset (L_Tower_Script's `Tower_BalconyBoat.Tower_BalconyBoat`,
+// `Tower_Daud.Tower_Daud`, `DistractionSoiree.TableCleaning`, ...) is cooked as a forced export under a
+// UPackage, and only the inline per-action matinees (`InterpData_N.MatineeData_0`) sit under their
+// InterpData. Agent FN: the walk below returned NULL for every asset matinee, and the four tracks that
+// then read the InterpLength through it were the wave-20 red row (inputtest_criticals). The runtime now
+// goes through GetMatineeData(); this stays for the editor callers and is allowed to return NULL.
 UInterpData* UInterpGroup::GetInterpData() const
 {
 	UMatineeData* Data = Cast<UMatineeData>( GetOuter() );
 	return Data != NULL ? Cast<UInterpData>( Data->GetOuter() ) : Cast<UInterpData>( GetOuter() );
 }
 
+// DISHONORED(retail): agent FN. Retail's shape - the Outer, checked, nothing further up.
+UMatineeData* UInterpGroup::GetMatineeData() const
+{
+	return CastChecked<UMatineeData>( GetOuter() );
+}
+
 /** Ensure this group name is unique within this InterpData (its Outer). */
 void UInterpGroup::EnsureUniqueName()
 {
-	UInterpData* IData = GetInterpData();
+	UMatineeData* MData = GetMatineeData();
 
 	FName NameBase = GroupName;
 	INT Suffix = 0;
 
 	// Test all other groups apart from this one to see if name is already in use
 	UBOOL bNameInUse = false;
-	for(INT i=0; i<IData->GetNbInterpGroups(); i++)
+	for(INT i=0; i<MData->m_RunData.InterpGroups.Num(); i++)
 	{
-		if( (IData->GetInterpGroup(i) != this) && (IData->GetInterpGroup(i)->GroupName == GroupName) )
+		if( (MData->m_RunData.InterpGroups(i) != this) && (MData->m_RunData.InterpGroups(i)->GroupName == GroupName) )
 		{
 			bNameInUse = true;
 		}
@@ -3278,9 +3318,9 @@ void UInterpGroup::EnsureUniqueName()
 		Suffix++;
 
 		bNameInUse = false;
-		for(INT i=0; i<IData->GetNbInterpGroups(); i++)
+		for(INT i=0; i<MData->m_RunData.InterpGroups.Num(); i++)
 		{
-			if( (IData->GetInterpGroup(i) != this) && (IData->GetInterpGroup(i)->GroupName == GroupName) )
+			if( (MData->m_RunData.InterpGroups(i) != this) && (MData->m_RunData.InterpGroups(i)->GroupName == GroupName) )
 			{
 				bNameInUse = true;
 			}
@@ -6711,7 +6751,7 @@ void UInterpTrackToggle::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( ToggleInst->GetOuter() );
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = Group->GetInterpData();
+	UMatineeData* MData = Group->GetMatineeData();
 
 
 
@@ -6797,7 +6837,7 @@ void UInterpTrackToggle::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst
 			MaxTime = NewPosition;
 
 			// Slight hack here.. if playing forwards and reaching the end of the sequence, force it over a little to ensure we fire events actually on the end of the sequence.
-			if( MaxTime == IData->GetInterpLength() )
+			if( MaxTime == MData->m_RunData.InterpLength )
 			{
 				MaxTime += (FLOAT)KINDA_SMALL_NUMBER;
 			}
@@ -8177,7 +8217,7 @@ void UInterpTrackEvent::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst,
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( EventInst->GetOuter() );
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = Group->GetInterpData();
+	UMatineeData* MData = Group->GetMatineeData();
 
 	// We'll consider playing events in reverse if we're either actively playing in reverse or if
 	// we're in a paused state but forcing an update to an older position (scrubbing backwards in editor.)
@@ -8209,7 +8249,7 @@ void UInterpTrackEvent::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst,
 		MaxTime = NewPosition;
 
 		// Slight hack here.. if playing forwards and reaching the end of the sequence, force it over a little to ensure we fire events actually on the end of the sequence.
-		if(MaxTime == IData->GetInterpLength())
+		if(MaxTime == MData->m_RunData.InterpLength)
 		{
 			MaxTime += (FLOAT)KINDA_SMALL_NUMBER;
 		}
@@ -10077,8 +10117,8 @@ void UInterpTrackSound::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst,
 
 	// Apply master volume and pitch scale
 	{
-		UInterpData* IData = Group->GetInterpData();
-		UInterpGroupDirector* DirGroup = IData->FindDirectorGroup();
+		UMatineeData* MData = Group->GetMatineeData();
+		UInterpGroupDirector* DirGroup = MData->FindDirectorGroup();
 		if( DirGroup != NULL )
 		{
 			UInterpTrackAudioMaster* AudioMasterTrack = DirGroup->GetAudioMasterTrack();
@@ -10113,11 +10153,11 @@ void UInterpTrackSound::PreviewUpdateTrack(FLOAT NewPosition, UInterpTrackInst* 
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpTrackInstSound* SoundInst = CastChecked<UInterpTrackInstSound>( TrInst );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = Group->GetInterpData();
+	UMatineeData* MData = Group->GetMatineeData();
 
 	// If the new position for the track is past the end of the interp length, then the sound
 	// should stop, unless the user has specified to continue playing the sound past matinee's end
-	if ( NewPosition >= IData->GetInterpLength() && !bContinueSoundOnMatineeEnd && SoundInst->PlayAudioComp && SoundInst->PlayAudioComp->IsPlaying() )
+	if ( NewPosition >= MData->m_RunData.InterpLength && !bContinueSoundOnMatineeEnd && SoundInst->PlayAudioComp && SoundInst->PlayAudioComp->IsPlaying() )
 	{
 		SoundInst->PlayAudioComp->Stop();
 	}
@@ -11927,7 +11967,7 @@ void UInterpTrackVisibility::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* Tr
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( TrInst->GetOuter() );
 	USeqAct_Interp* Seq = CastChecked<USeqAct_Interp>( GrInst->GetOuter() );
 	UInterpGroup* Group = CastChecked<UInterpGroup>( GetOuter() );
-	UInterpData* IData = Group->GetInterpData();
+	UMatineeData* MData = Group->GetMatineeData();
 
 
 	// NOTE: We don't fire events when jumping forwards in Matinee preview since that would
@@ -11970,7 +12010,7 @@ void UInterpTrackVisibility::UpdateTrack(FLOAT NewPosition, UInterpTrackInst* Tr
 		MaxTime = NewPosition;
 
 		// Slight hack here.. if playing forwards and reaching the end of the sequence, force it over a little to ensure we fire events actually on the end of the sequence.
-		if( MaxTime == IData->GetInterpLength() )
+		if( MaxTime == MData->m_RunData.InterpLength )
 		{
 			MaxTime += (FLOAT)KINDA_SMALL_NUMBER;
 		}
@@ -12769,7 +12809,26 @@ void UInterpGroupInstAI::InitGroupInst(UInterpGroup* InGroup, AActor* InGroupAct
 	{
 		//debugf(TEXT("Name of marker (%s), Location(%s)"), *AIGroup->StageMarkActor->GetName(), *AIGroup->StageMarkActor->Location.ToString());
 		// need to move first because otherwise, InitialTM in Movetrack might change due to losing base or not. 
-		PawnActor->eventMAT_BeginAIGroup(StageMarkActor->Location, StageMarkActor->Rotation);
+		// DISHONORED(bringup): agent FN. MAT_BeginAIGroup is an engine SCRIPT event Dishonored's script never
+		// declares, and eventMAT_BeginAIGroup is FindFunctionChecked: the first AI group to bind a real pawn
+		// (DishonoredNPCPawn_26, once UDisSeqVar_SpawnerPawn resolved to the spawned pawn) appError'd here.
+		// Retail (UInterpGroupInstAI::InitPawn, 2013 rva 0x22bbc0) calls the NATIVE
+		// ADishonoredNPCPawn::MAT_BeginAIGroup(UInterpGroupInstAI*) (2013 rva 0x765080) and the anim-set
+		// setup - package FO's MAT contract. Until that exists the script path is taken only when it exists.
+		if( PawnActor->FindFunction( ENGINE_MAT_BeginAIGroup ) != NULL )
+		{
+			PawnActor->eventMAT_BeginAIGroup(StageMarkActor->Location, StageMarkActor->Rotation);
+		}
+		else
+		{
+			static UBOOL bWarned = FALSE;
+			if( !bWarned )
+			{
+				bWarned = TRUE;
+				debugf( NAME_Warning, TEXT("matinee AI group '%s': %s has no script MAT_BeginAIGroup and the native ADishonoredNPCPawn::MAT_BeginAIGroup is not ported; the pawn is not moved to its stage mark (package FO)"),
+					*InGroup->GroupName.ToString(), *PawnActor->GetName() );
+			}
+		}
 	}
 }
 
@@ -12807,7 +12866,7 @@ void UInterpGroupInstAI::TermGroupInst(UBOOL bDeleteTrackInst)
 {
 	APawn * PawnActor = GetPawn(GetGroupActor());
 
-	if (PawnActor)
+	if (PawnActor && PawnActor->FindFunction( ENGINE_MAT_FinishAIGroup ) != NULL)
 	{
 		PawnActor->eventMAT_FinishAIGroup();
 	}

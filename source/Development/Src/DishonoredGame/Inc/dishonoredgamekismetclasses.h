@@ -2224,6 +2224,8 @@ public:
     TArrayNoInit<class UObject*> m_pSpawnedPawns;
     //## END PROPS DisSeqVar_SpawnerPawn
 
+#include "CppText/UDisSeqVar_SpawnerPawn.h"
+
     DECLARE_FUNCTION(execGetObjectValue);
     DECLARE_CLASS(UDisSeqVar_SpawnerPawn,USeqVar_Object,0,DishonoredGame)
 };

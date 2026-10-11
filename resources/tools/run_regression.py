@@ -439,7 +439,12 @@ def main(argv: list[str]) -> int:
     # clock, so their wall-clock budget has to cover a loaded machine's startup (d3d9_startup_seconds has
     # read 141.9 s) plus the schedule plus the map change. They are the two longest stages in the harness.
     parser.add_argument("--newgame-timeout", type=float, default=300.0)
-    parser.add_argument("--newgame-at", type=float, default=22.0,
+    # DISHONORED(written): agent FN. -finewgame runs on the WORLD clock, which starts before the first map
+    # loads, so this value has to exceed the front end's own map load on a loaded machine: agent FK
+    # measured LoadMap beginning at 27.6 s under another agent's build, and -finewgame=22 then issued
+    # `ce ChangeLvl_StartNewGame` into the async load and asserted in StaticAllocateObject (FK2.log:838).
+    # 50 passed in six of FK's runs; the stage's 300 s wall budget covers it.
+    parser.add_argument("--newgame-at", type=float, default=50.0,
                         help="world time at which -finewgame issues `ce ChangeLvl_StartNewGame`")
     parser.add_argument("--newgame-script", default="8:start",
                         help="-fmdrive schedule for the newgame stage: dismiss the start screen so the menu proper opens")

@@ -615,7 +615,6 @@ set(DishonoredGame_EXCLUDE
   Src/disseqvar_playerpawn.cpp
   Src/disseqvar_playerrawvisibility.cpp
   Src/disseqvar_playerspeedfraction.cpp
-  Src/disseqvar_spawnerpawn.cpp
   Src/disseqvar_task.cpp
   Src/disserializableobject_base.cpp
   Src/disseveredlimbinfo.cpp

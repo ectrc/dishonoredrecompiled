@@ -1566,10 +1566,6 @@ void UDisSeqVar_PlayerPawn::execGetObjectValue( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisSeqVar_PlayerPawn, execGetObjectValue);
 }
-void UDisSeqVar_SpawnerPawn::execGetObjectValue( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisSeqVar_SpawnerPawn, execGetObjectValue);
-}
 void UDisGFxMoviePlayerBase::execOnFocusLost( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execOnFocusLost);
