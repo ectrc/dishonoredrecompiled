@@ -103,15 +103,19 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    all, and the "thirteen unsymbolised frames" I recorded here are not frames - decoded as UTF-16 they
    are the error message itself, so the stack walker had been handed a text buffer. Open it as "what
    allocates per frame at the menu", and do not start from those addresses.
-8. **"Windows Security Alert" prompts** raised by agent executables sit over the game window — eleven
-   seen in wave 17, five enumerated by agent FH in wave 18, holding the desktop foreground plus
-   another agent's game. They have now cost measured runs in **five** waves and **no mouse
-   measurement is possible while one holds the foreground**: all four of FH's real clicks went into
-   them. Agent FD proved they had briefly gone, which is the only reason it could diagnose the slider
-   click at all. **The user has to answer or cancel them; no agent clicks through one.** The
-   workaround that has twice been better than waiting is to drive the asset's own code path directly,
-   keyed to world time so a step and an `-apshottime` mark mean the same instant on both builds
-   (`-disdifficulty`, `-finewgame`).
+8. ~~"Windows Security Alert" prompts hold the foreground and no mouse measurement is possible.~~
+   **CLOSED by `98e22d4` + `28cf7ec`.** The cause was ours: three dev-only listeners bound a port on
+   every launch, so Windows raised a firewall prompt each time — `FDebugServer` (a TCP `listen(16)`
+   plus UDP 13650), `FListenPropagator` (UDP 9989) and `FStatNotifyProvider_UDP` (13000/13002, and it
+   was enabled by **the retail install's own `DishonoredEngine.ini`**, which retail's shipping build
+   ignores because `STATS` is compiled out there). All three are now opt-in — `-debugchannel`,
+   `-objectpropagation`, `-UDPStats`. Retail is built `SHIPPING_PC_GAME` and has none of them, so
+   off is closer to the shipped game. Measured with `netstat` against the running process: three
+   bound sockets before, **none** after. Agent FJ then confirmed the effect: `grep -c FocusLost` is
+   **0** across eight runs and about **80 clicks all landed**. It cost five waves of mouse
+   measurement before anyone asked *why* the prompts appeared. Useful coordinates it left: Options
+   main tabs at **y = 0.216**, x = **0.259** GENERAL / **0.419** CONTROLS / **0.581** GRAPHICS /
+   **0.741** AUDIO, selected tab rising to y ≈ 0.138.
 
 9. **The window comes up 1008x567 with `-ResX=1600 -ResY=900`** on eight of ten runs and 1600x900 on
    two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run). **Read a
@@ -272,6 +276,28 @@ import**.
 - **A screenshot claimed by "arrived after my launch" can belong to another package.** Agent FF's
   first Options run claimed **nine** bitmaps belonging to FH and FI. `-apshotname=<tag>` plus a glob
   of that tag is the only reliable claim, and it matters most when four packages share one machine.
+- **A crash address cannot be decoded by subtracting `0x400000`.** The executable is
+  `/DYNAMICBASE`, so the load address is randomised per boot: agent FJ's `0x1cc148a - 0x400000`
+  landed 644 KB past the end of the image. Windows caches an image's ASLR base per boot, so
+  `CreateProcessW(CREATE_SUSPENDED)` on the same unmodified file plus `NtQueryInformationProcess`
+  and `PEB->ImageBaseAddress` recovers the base that a crash from the same boot session used
+  (3 of 3 launches identical). Then resolve the RVA against the build's `.map`, checking its PE
+  timestamp against the exe.
+- **There are minidumps in `DishonoredGame/Logs/` and nobody had opened one.** `unreal-v9411-*.dmp`
+  is written by the same handler that prints the useless two-line stack. FJ's confirmed every number
+  it had predicted and handed over the dangling object with its page captured. **Open the dump
+  before rebuilding anything.** The printed stack is useless only because no PDB sits beside the
+  staged exe, and `CaptureStackTraceHelper` writes `BackTrace[n] = AddrPC` even when `StackWalk64`
+  fails - **which is why one failed walk prints as two identical frames**, and why a two-frame stack
+  means the walker failed rather than that the fault is one frame deep.
+- **Making something optional means auditing everything that assumed it existed.** `98e22d4` made
+  the debug channel opt-in; the reference engine's shutdown writes `GDebugChannel->Destroy()`
+  unconditionally and got away with it only because the object was always constructed. Every exit
+  faulted until `28cf7ec`.
+- **A pixel coordinate off a capture is not a pixel coordinate for the input driver.** In one of
+  FJ's runs `drive_input.py` reported a 1280x720 client while `-apshottime` wrote a 1600x900 bitmap
+  **on the same command line** - a consequence of the desktop resolution flapping. Read both, and
+  scale.
 
 ### Build and link
 

@@ -242,3 +242,95 @@ Report the new total; it will not be 37.
    in both databases.
 5. `resources/docs/agents/agent<XX>.md` and `agent<XX>_status.csv`, written **inside the worktree**.
 6. A `build/agent<XX>_sync.py` naming every file and, for shared files, every function.
+
+## Outcome
+
+### FJ — merged `562f047`, gated 37 ok / 0 failed / 0 skipped
+
+Three files, all in `External/GFx3`. Fast-forwarded onto `98e22d4` mid-run.
+
+**The crash was a dangling target in the action queue.** `GFxMovieRoot::ActionEntry::pTarget` was a
+**raw** `GFxSprite*`. Retail holds the character in a `GPtr` at `entry+8` (released by
+`ActionQueueType::AddToFreeList`, 2012 `0xa0cb40` / 2013 `0xa03570`) and `ActionEntry::Execute`
+(2012 `0xa024d0` / 2013 `0x9f8ed0`) **refuses outright to run an entry whose character is unloaded**:
+`if (pCharacter && !(pCharacter[118] & 0x10)) switch (Type)`. `QueueClassBinding` already took a
+reference; `PushActionBuffer` did not. A tab switch attaches `o_OptionsList_withTabs`, `_list_mc` and
+`lib_scrollBar`, queues their frame-0 buffers, and destroys them later **in the same frame**, so the
+drain ran `Env.SetTarget(freed)` and then `Execute`.
+
+The faulting function: `0x1cc148a` = **`GASActionBuffer::Execute + 0x2DA`** (map VA `0x13111b0`,
+`GFxAS2Interp.cpp.obj`), at `call dword ptr [eax+0x40]` where `eax = *(target + 0x80)` —
+`env->GetTarget()->ToSprite()` on a dead target.
+
+**The unload had to reach the subtree or retail's test is dead.** `GFxCharacter::OnEventUnload` was
+`{}` and `GFxDisplayList::Clear` was a bare release loop, so only the clip a script named was ever
+marked — and **the first build of the fix reported zero drops across 18 tab switches.** `Clear` now
+does retail's two missing passes (2012 `0x9d5e30` / 2013 `0x9cc630`, `0x97` in both: `OnEventUnload`
+and `pParent = 0` per entry, then the release sweep) and `GFxSprite::OnEventUnload` (2012
+`0x9fdc80`) calls it. The script dispatch is still not ported — only the flag and the propagation.
+
+**Measured deterministically rather than by hoping the crash stays away.** An entry whose target's
+`RefCount` is down to the queue's own reference is one that would otherwise have been freed.
+18 main-tab selections: GENERAL 5 → **0**, **CONTROLS 5 → 15, exactly three each**, GRAPHICS 4 → 0,
+AUDIO 4 → 0. `OnTabSelected (1, r)` is the selection the user's process died on, and **three** is the
+number of freed character blocks chained in the dump.
+
+**There was a minidump of the user's crash on disk that nobody had opened** —
+`DishonoredGame/Logs/unreal-v9411-2026.10.11-14.36.05.dmp`, written by the same handler that printed
+the two useless lines. It confirms every number predicted before it was opened (base `0xdb0000`, eip
+rva `0xf1148a`, `0xc0000005` read of `0x40`, `eax = 0`) and hands over the dangling target at
+`0x31286120` with its page captured. **Open the dump before rebuilding anything.** The printed stack
+is useless only because there is no PDB beside the staged exe, and `CaptureStackTraceHelper` writes
+`BackTrace[n] = AddrPC` even when `StackWalk64` fails — which is why one failed walk prints as two
+identical frames.
+
+**Six premises of this plan corrected.**
+
+- **"Decode the address first … subtract the image base" cannot work.** The exe is `/DYNAMICBASE`;
+  `0x1cc148a − 0x400000` lands 644 KB past the end of a `0x181d000`-byte image. FJ recovered the real
+  base **without a debugger**: Windows caches an image's ASLR base per boot, so
+  `CreateProcessW(CREATE_SUSPENDED)` on the same unmodified file plus `NtQueryInformationProcess` and
+  `PEB->ImageBaseAddress` gave `0xdb0000`, identical on 3 of 3 launches, in the user's own boot
+  session.
+- **The log shape quoted in §1 is not a crash signature.** Two `InitScrollBar`, the
+  `removeMovieClip … on undefined` and the `setMask` line are **every** CONTROLS selection — twice in
+  the user's own log *before* the crash (21.64 s, 31.98 s) and 17 more times across three HEAD runs
+  that did not crash.
+- **All four of the open candidates are in the wrong file.** The fault is in the AS2 interpreter's
+  opcode preamble, reached from the action-queue drain. `MaskLevel`, stencil nesting, the
+  `>= GFxASDepthBias` test and `CloneDisplayObject` are not on the path, and the crash is in
+  **`Advance`, not `Display`** — no `scene rendered` line between 33.51 and the fault.
+- **"Get a real stack (a debugger, or a crash handler that walks properly)"** — neither was needed.
+- `removeMovieClip`'s `>= 0x4000` guard is not involved: that AS2 error is a **method-resolution**
+  failure, so nothing is removed by it. The clip actually destroyed is `_options_mc`, by `SetList`.
+- **The one acceptance item not met as written**, stated rather than papered over: the scripted
+  reproduction could not be built. Three HEAD runs, same driver, no focus loss, 17 CONTROLS
+  selections and ~51 dangling drains produced **zero deaths** — the fatality needs the freed block
+  reused within a few hundred microseconds, and no page-heap tooling exists on this machine
+  (`gflags` is not installed). So the before/after is on the **defect**, measured, not on the
+  symptom.
+
+**Found and left, named rather than touched.** `GASFunctionObject::pDeclTarget` is the other raw
+character pointer reaching the same instruction (`GFxAS2Interp.cpp:443`); retail guards it with the
+same bit in `GASAsFunctionObject::Invoke` (2012 `0x9f3540` / 2013 `0x9e9d10`), falling back to the
+caller's env. **FJ deliberately did not write that guard**, because reading
+`pDeclTarget->IsUnloaded()` dereferences exactly the pointer it protects against. The prerequisite is
+**retail's movie-root unload list, which is unported**: `GFxSprite::ExecuteEvent` (2012 `0x9f4a10` +
+`0xb9`) links every unloaded sprite onto a list at `movieroot+0x27fc` with an explicit
+`inc [esi+4]`, and that is what makes any raw `GFxASCharacter*` safe for the rest of an advance in
+retail — including `DragState::pCharacter`, which retail also copies as a bare dword with no
+`AddRef`, exactly as we do. **Port the unload list, then the `pDeclTarget` guard, in that order.**
+
+**And a regression in `98e22d4` that FJ found in an unrelated dump.** Making `FDebugServer`'s
+construction opt-in left the shutdown path dereferencing a null pointer: the reference engine writes
+`GDebugChannel->Destroy()` unconditionally and gets away with it only because the object is always
+constructed. Every exit after `98e22d4` faulted at `FDebugServer::Destroy + 0x2a`, `0xc0000005` read
+of `0x8`. Fixed in **`28cf7ec`** and verified: launch, close, `Exit: Exiting.`, no new minidump.
+**Making something optional means auditing everything that assumed it existed.**
+
+**STATUS open defect 8 is closed on FJ's evidence.** After `98e22d4`, `grep -c FocusLost` is **0**
+across all eight of its runs and about **80 clicks all landed**. Options main tabs are at
+**y = 0.216**, x = **0.259** GENERAL / **0.419** CONTROLS / **0.581** GRAPHICS / **0.741** AUDIO,
+with the selected tab rising to y ≈ 0.138. One caveat: in one run `drive_input.py` reported a
+**1280x720** client while `-apshottime` wrote a **1600x900** bitmap on the same command line — **a
+pixel coordinate off a capture is not a pixel coordinate for the driver.**
