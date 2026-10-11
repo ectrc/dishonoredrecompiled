@@ -334,3 +334,164 @@ across all eight of its runs and about **80 clicks all landed**. Options main ta
 with the selected tab rising to y ≈ 0.138. One caveat: in one run `drive_input.py` reported a
 **1280x720** client while `-apshottime` wrote a **1600x900** bitmap on the same command line — **a
 pixel coordinate off a capture is not a pixel coordinate for the driver.**
+
+### FL — merged `ee2313f`, gated 37 ok / 0 failed / 0 skipped
+
+Four source files, three in `DishonoredGame` and one in `Engine`. Nothing in `UnInterpolation.cpp`,
+the `UInterpTrack` family or `External/GFx3`. (Gated on the pre-FM harness, so that run could not
+have seen a hard crash in a stage — see FM below.)
+
+**Fault 4's answer is the "neither — it is a third thing" outcome the brief asked for.** The cause is
+**`UArkAnimNodeLookAt`**, not `FArkComponentLookat` and not the notifies. Two missing functions:
+**`InitAnim`** (2013 rva `0x5138d0`), whose first act in retail is to zero all eighteen pose weights
+so the cook's default (entry 0, `ADD_Empty_AimHeadIdle_UpLeft`, weight 1.00) never survives into
+play; and **`GetBoneAtoms`** (indexed `0x51b420`, four-arg `0x51bc80`), which fills every atom with
+`FBoneAtom::Identity` — the **additive** identity — when a set's total weight is zero.
+
+**The pairing is the finding worth carrying forward: zeroing `InitAnim` alone would have made it
+worse.** Stock `UAnimNodeSequenceBlendBase::GetBoneAtoms` answers weights that do not sum to 1 with
+`check(FALSE)` + `FillWithRefPose`, and **a reference pose applied as an additive delta is not the
+identity.** The two land together or not at all.
+
+Measured with a new `-flheaddiag`, because `-dislookat` could not answer the question: the four NPC
+pawns **nearest the camera** (not the first by iteration), with **two** deltas per bone —
+`LocalAtoms` vs the bind pose (the tree's output) and `SpaceBases` vs the reference pose composed
+down the same chain (what the renderer uses). **That distinction is the whole diagnosis.** Before, on
+the two pawns the user sees: `neck_jnt l34/c32; head_jnt l60/c84; head_end_jnt l0/c84`, spine inside
+2°, `nonzero: 4:ADD_Empty_AimHeadIdle_Center=1.00`. After: `neck_jnt l0/c1; head_jnt l1/c0`,
+`nonzero: all zero`. `FArkComponentLookat` is **still 100 % absent** and the heads are level.
+
+**Six premises of this plan corrected.**
+
+- "51 functions and not one is written" is true as a statement, **false as a cause**.
+- **The 396 `Found bad AnimNotify` errors are not ours.** 5,637 notifies load, 396 (7.0 %) arrive
+  outered to another `AnimSequence` exactly as the cooked file's own `FObjectExport::OuterIndex` says,
+  and **396 of 396 are repaired by stock UE3's `Rename` in `UAnimSequence::PostLoad`**, byte-identical
+  to the reference engine. The objects are **shared** — export 16799 is listed by both
+  `AnimSequence_4` and `_15`, and a shared notify can only be outered to one of them. Asset artefact,
+  retail shares it, already repaired, and a notify fires out of the `Notifies` array regardless of
+  its Outer.
+- **There is no look-at skel control on these pawns at all**: `NPC_Human_at`'s five lists are
+  `SpineBender`, two `SkelControlSingleBone` on the eyes, and two `FootPlacement`.
+- Agent DO's note that `OnComposeSkeleton` overrides `head_jnt` is wrong (it is the **eyes**, clamped
+  against `MIN/MAX_EYE_YAW`/`PITCH`), and DO's conclusion that the grid centre is retail's rest state
+  is wrong — measured as a pair, `UpLeft` at 1.00 gives head l62/c84 and the centre at 1.00 gives
+  l60/c84. **The centre is a pose, not a rest state.** Both corrected in the tree.
+- "A standing guard may be a cheaper control" would have measured **the wrong pawn** — `-dislookat`
+  already reported a guard as healthy at 2° from bind. The affected pawns are the two the opening
+  scene spawns, last by iteration order.
+
+Eight functions ported, all hand-resolved in both databases. **One deliberate divergence, named in
+the source**: retail's indexed `GetBoneAtoms` is virtual; here it is a private non-virtual
+`GetBoneAtomsForSet`, because a second virtual overload overriding no base virtual is **C4263**, an
+error in this tree. Plus three `IsValidIndex` guards where retail would let `Array.h`'s assert fire,
+which for a player is a crash.
+
+**Said plainly rather than claimed: the node is NOT proven to turn a head by the right amount.** The
+head and torso grids are deltas from a shared base that `ComputeHeadAndTorsoAim` drives together, and
+`-flaimx/-flaimy` drives the head grid alone, which retail never does — so those runs prove the two
+branches agree and nothing about magnitude. **Nothing can until `FArkComponentLookat` exists**, whose
+51 functions are inventoried with 2013 rvas in the report, with the trap recorded: when `m_pConfig`
+becomes non-NULL, `UpdateNodeWeights` fed a raw (0,0) puts **1.00 on the grid centre**, worth 60° of
+head.
+
+**`rva_sweep.py` passed eight VAs silently** when written beside their own RVAs (`0x9138d0`
+classified `ok-2013`) — the same failure recorded for FH's `0xdf0a00`, in the other direction.
+
+Left for someone else: **`UDisSkelControl_SpineBender`** (9 functions, 0 written,
+`CalculateNewBoneTransforms` 2012 `0x6daf30`) is live on every NPC at `spine_0_jnt` with
+`ControlStrength` 1.00 and is a **silent no-op** today.
+
+### FM — merged `cd5fadd`, gated 46 ok / 1 failed / 0 skipped, and the one red row is real
+
+Six source and tool files plus the baseline and 25 evidence files.
+
+**The headline is not the new checks. The gate could not see a crash at all.** The three
+`*_criticals` metrics matched the literal **`Critical: `** — what `appError` logs through
+`NAME_Critical`. An access violation **never produces that line**; it reaches the log through the
+structured-exception handler as **`=== Critical error: ===`**. The user's crash log contains
+`Critical: ` **zero** times. So for every wave this harness has run, **a hard crash inside a stage
+was invisible to it**, and every "37 ok, 0 failed" was worth less than it was reported to be. The
+coordinator confirmed this independently in its own `gate_rel` inputtest log: `=== Critical error:`
+once, `Critical: ` zero. `CRITICAL_RE` now matches both forms.
+
+**With the pattern widened, a real crash surfaced on the first run and it is still failing.** At
+**45.85 s of a 150 s budget**, `-distouchprobe` walks the pawn onto `DisTrigger_9`, which fires
+`SOIREE_Guards.SeqEvent_Touch_0`, which runs `DisSeqAct_StartSpawn_0`, and **the spawn kills the
+process**. Every metric that stage measures is emitted at 45.67 s, **which is exactly why it could
+pass**. Not FM's: that stage passes `-nodishud` and never sees `-playdefaults`, and the identical
+line is in agent FJ's gate run, agent FI's run and the coordinator's own gate run of HEAD.
+Intermittent — FG's and FH's logs have none. Nine of the ten stack frames resolve thousands of bytes
+past a public symbol and should not be believed; the one credible frame is
+**`UArkComponentContainer::AddNewComponent_Internal+0x2d`**.
+
+**The bound stays at `== 0`.** FM left it there and said relaxing it to `<= 1` was the coordinator's
+call; the coordinator declined, because that one line would make the board green and hide the next
+crash too. **The gate is red until this is triaged, and triaging it is wave 20's first item.**
+
+**The new total is 47**, ten new rows, five per stage: `newgame_log_lines`,
+`newgame_menu_open_seconds`, `newgame_on_mission`, `newgame_pawns`, `newgame_criticals`,
+`options_log_lines`, `options_steps`, `options_alive`, `options_as2_errors`, `options_criticals`.
+**Every package's expectation becomes 47.**
+
+**New Game stage**: `-playdefaults` turns the `DISHONORED_PLAY_DEFAULTS` table on in a build not
+configured with it (one `#if` moved in `appInit`), so the stage's command line is the user's plus the
+usual isolation with **no `-startmap`**, and the other five stages never see it. Measured: menu movie
+open to world 21.6 at `screen 3 loginStep 8`, New Game fires, 136 `l_tower_p` census lines, **29
+pawns**, 0 criticals.
+
+**Options stage**: it reproduces the user's AS2 sequence **exactly** — same traces, `InitScrollBar
+(385.699066162109, …)` twice, `mask stage bounds 170.0,214.6..1151.7,666.2 px`, the frame the process
+died on — **and the process lives. Six runs, 0 criticals.** So it does **not** fail on `c702a38`, and
+FM said so rather than shipping a check that looks like it tests the crash.
+
+**`-dishud` is flipped and the user's fault 2 is closed.** Retail has **no gate**: `PostBeginPlay`
+(2013 rva `0x6155d0`) → `InitGlobalManagers` (`0x5e9bd0`, **zero conditional branches**) →
+`UDisGlobalUIManager::Init` (`0x85fdb0`) → `StartHUD` (`0x78cd00`), unconditional end to end, with
+Init's only real branch a `Cast<>` picking challenge-mode movies whose arms converge three
+instructions before the `StartHUD` call. The hard anchor is the **named** `OnMovieStackChanged` at
+`0x84cf70`, five bytes `E9 FB A0 FF FF` = `jmp 0x847070`. The shipped build now opens the HUD,
+`-nodishud` suppresses it, and the harness passes `-nodishud` in nullrhi/d3d9/inputtest — **no
+calibrated threshold moved**, confirmed by the full run.
+
+**The flip alone crashed the menu**: 2 of 3 runs died with
+`Assertion failed: !Obj->HasAnyFlags(RF_Unreachable|RF_AsyncLoading)` 0.02 s after opening
+`UI_Global.Global`, because **retail has one owner for every movie player and this tree has two
+racing bring-ups**. `DisHUDBringUp` now waits, **latched**, for `DisGFxAutoOpenMenu` to be open —
+latched because an unlatched wait holds the HUD shut for the whole game after the map change, which
+was measured. With the guard, 0 of 3 crashed, and a play-defaults New Game logs
+**`HUD: SetBlackStripes(1) ok`**. **The real fix is to port `UDisGlobalUIManager::Init` and delete
+both bring-ups.** Note: every run without `-nodishud` now has the HUD movie open.
+
+**Five premises of this plan corrected.**
+
+- **`c702a38`'s code IS HEAD's code** — the diff outside `resources/docs/` and `README.md` is empty,
+  so no second worktree was needed.
+- **`-finewgame` alone would NOT have caught `b540be6`**, the regression this package exists to stop
+  recurring: it issues the console command from the game thread **without touching the menu**. Hence
+  `-fmmenu` and `newgame_menu_open_seconds` — the last world time the menu movie was still open,
+  which reads ~1 on `b540be6` against a bound of 10. **That is the row that actually closes the blind
+  spot.**
+- "Two `OnTabSelected` in one frame, `InitScrollBar` twice" is **not** the anomaly — normal in this
+  build at 17.47, 21.64 and 31.98 with no crash. Agent FJ reached the same conclusion independently.
+- **The user did not launch with no arguments**: `play_live.log:7` is `-LOG= -forcelogflush` plus the
+  six appended defaults. The coordinator wrote otherwise in this plan. The crash is exactly
+  reproducible.
+- **`RefreshGlobalUIState` is not unported** — it is `disglobaluimanager.cpp:113` with the blur arm
+  ported by agent FA, and **it opens and closes nothing**.
+
+**For FJ, with a measurement**: the difference between a reproduction that lives and the user's crash
+is **the entry point**, and it is in the log. `AS2 trace: OnMouseUp (0, undefined)` is the line
+immediately before the fatal `OnTabSelected`, so the user's switch was dispatched **from inside GFx's
+own mouse handling**, re-entrant with the runtime's advance/display state, where `GFxMovieView::Invoke`
+enters at a clean point. Invoking `TabsHandler::OnTabClicked` is still not enough. **That is this
+plan's own first candidate — `ctx.MaskLevel` across a re-entrant `Display` — with evidence in its
+favour.** The user also **dragged the scroll bar to the bottom** before the fatal switch
+(`OnLifterPressed` → `ratioScroll` 0.623 → 0.999964), which FM could not drive because
+`_options_mc.MoveTo_End()` resolves NOT FOUND.
+
+Also recorded: **`rva_sweep.py` does not scan banner `/* … */` comment blocks**, so six of FM's seven
+addresses were invisible to a clean sweep; `TArray<GFxValue>` is unsafe (destructor plus
+uninitialised `TArray::Add`); the letterbox exists in **two** movies with different `SetBlackStripes`
+arities and the `UI_Global` one (`0x7aa610`) is **absent**; and `m_bShowHUDWhileActive`'s default
+lives in cooked script defaults, which would make an open HUD invisible.

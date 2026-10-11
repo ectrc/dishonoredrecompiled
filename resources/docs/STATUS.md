@@ -58,8 +58,32 @@ its own menu one second after opening it, so New Game was unreachable. It passed
 | Save | above. Remaining 82,423 bytes of `Dishonored0.sav` are two bytes wide inside `AActor::GameLoad` |
 | Shims | **887** (wave 14 ES, from 1,098), held by `resources/tools/shim_ratchet.py`. Of the original 1,098: 966 provable absences, 121 undecidable from any truth source, **5 members retail actually has** (live defects, wave 15 EW) |
 | `Sources.cmake` | an **exclude list**: 806 comment-only skeleton units whose code never compiles. A **port queue**, not a deletion backlog — 813 of the 818 inventoried are alive in retail. Inventory: `agents/agentES_exclude_inventory.csv`, 875 rows |
-| Regression | `resources/tools/run_regression.py`, **37 checks** when built inside the harness (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
+| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`) (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
 | Audio | **deferred to Phase 10 as polish** (the user's call): the silent backend loads the real banks and resolves the real event ids. Do not open an audio package until the game plays |
+
+## The gate is RED, deliberately
+
+`run_regression.py` is **47 checks** since `cd5fadd` (wave 19 FM), and HEAD reports **46 ok, 1
+failed**. The failing row is `inputtest_criticals == 1` and **it is a real crash, not a flaky
+threshold**:
+
+> At **45.85 s of a 150 s budget**, `-distouchprobe` walks the pawn onto `DisTrigger_9`, which fires
+> `SOIREE_Guards.SeqEvent_Touch_0`, which runs `DisSeqAct_StartSpawn_0`, and **the spawn kills the
+> process.** Every metric that stage measures is emitted at 45.67 s, which is exactly why it used to
+> pass. The one credible stack frame is `UArkComponentContainer::AddNewComponent_Internal+0x2d`; nine
+> of the ten others resolve thousands of bytes past a public symbol and should not be believed.
+
+It is **pre-existing and intermittent** — the identical line is in agent FJ's, agent FI's and the
+coordinator's own gate runs of HEAD, and absent from FG's and FH's. **Do not relax the bound to
+`<= 1` to get a green board**: that one line would hide the next crash as well. **Triaging this is
+wave 20's first item.**
+
+**Why nobody saw it before:** the three `*_criticals` metrics matched the literal `Critical: `, which
+is what `appError` logs through `NAME_Critical`. An access violation **never produces that line** —
+it arrives as `=== Critical error: ===` from the structured-exception handler. So **a hard crash
+inside a stage was invisible to this harness for every wave up to 19**, and every "37 ok, 0 failed"
+in the tables below was worth less than it says. Confirmed twice over: the user's crash log has
+`Critical: ` zero times, and so does the coordinator's own passing gate log that contains a crash.
 
 ## Open defects the user has seen
 
@@ -79,10 +103,20 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    `CameraActor`s in that level, all at `FOVAngle 90`, and only one is the view target. Retail's exact
    transform is published in `build/agentFB/retail/camera.md`. Agent FE's earlier 61 ± 2° image fit was
    absorbing the wrong camera's position into the FOV.
-3. ~~No letterbox bars in the opening cutscene.~~ **Closed by wave 18 FI (`8027ab6`)**, along with
-   the missing pawns. FE's blocker was not one: nine booleans, no optional tenth — the "tenth" is
-   `P_FINISH`'s `EX_DebugInfo` (`0x41`) tail — and `retail_sdk_layout.json` names all nine. The
-   remaining cinematic gap is defect 1, the matinee itself.
+3. ~~No letterbox bars in the opening cutscene.~~ **Closed twice.** Wave 18 FI (`8027ab6`) ported
+   the bodies; the user then reported the bars still absent, because `_root.blackStripes_mc` lives in
+   the HUD movie and **the HUD movie was behind `-dishud`, which was not in the play defaults** — so
+   FI's work was real and invisible to anyone launching the game normally. Wave 19 FM (`cd5fadd`)
+   flipped it after proving retail has **no gate at all** on opening the HUD, and a play-defaults New
+   Game now logs `HUD: SetBlackStripes(1) ok`. FE's original blocker was never one: nine booleans, no
+   optional tenth — the "tenth" is `P_FINISH`'s `EX_DebugInfo` (`0x41`) tail — and
+   `retail_sdk_layout.json` names all nine. **The lesson is the one that recurs: a feature measured
+   only in an instrumented run is not a feature the user has.** The remaining cinematic gap is
+   defect 1, the matinee itself.
+   Still open underneath it: the letterbox exists in **two** movies with different `SetBlackStripes`
+   arities and the `UI_Global` one (2013 rva `0x7aa610`) is **absent**; and the HUD is opened by two
+   racing bring-ups where retail has one owner — `DisHUDBringUp` is latched behind the menu as a
+   guard, and the real fix is to port `UDisGlobalUIManager::Init` and delete both.
 4. **The menu's brightness and haze.** Not Kismet post-process — FE walked 1,858 sequence objects
    across all four loaded levels and found none. Our menu already draws 2 fog layers and 24 bloom parts
    with `0 passes not ported`, so the difference is **parameters**; retail's whole graph with all 42
@@ -298,6 +332,18 @@ import**.
   FJ's runs `drive_input.py` reported a 1280x720 client while `-apshottime` wrote a 1600x900 bitmap
   **on the same command line** - a consequence of the desktop resolution flapping. Read both, and
   scale.
+- **A check can be green because its pattern never matches anything.** The gate's three crash
+  detectors looked for `Critical: `; an access violation logs `=== Critical error: ===` and no
+  `Critical: ` line at all, so **the harness could not see a hard crash for nineteen waves**. When a
+  metric has never once fired, that is evidence about the metric, not about the code. Ask what a
+  failing run of it would look like, and make one.
+- **A feature measured only in an instrumented run is not a feature the user has.** The letterbox
+  bars were ported, measured and reported as working while being unreachable from the shipped command
+  line, because the movie that owns them sat behind `-dishud`. Check a claim against **the way the
+  user launches the game**, not only against the switches a package happened to pass.
+- **`rva_sweep.py` does not scan banner `/* ... */` comment blocks.** Six of agent FM's seven
+  addresses were invisible to a clean sweep. Between this, the VA-for-RVA miss in both directions
+  (FH's `0xdf0a00`, FL's eight), the sweep is a lint, not a gate.
 
 ### Build and link
 
