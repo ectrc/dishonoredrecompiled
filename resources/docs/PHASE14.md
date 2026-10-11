@@ -362,3 +362,101 @@ at all, so the level-content A/B on an identical command line is `-startmap=l_to
 a valid control for the audio stall but one that reaches the opening scene on neither executable
 (both read 46/1670). The scene itself is measured on the New Game route, which only this package can
 run.
+
+### FG — merged `c702a38`, gated 37 ok / 0 failed / 0 skipped
+
+Seven files, plus the two documents. Rebased twice while running (`18f36a3` → `63c2539` → `f72f9f5`)
+with every acceptance number retaken on the last. No regeneration, `Sources.cmake` unchanged.
+
+**Fault 3 is fixed and its two halves were ONE bug, in a place neither half of this brief named.**
+The token is **`§CATEGORY§`** (U+00A7), not `?CATEGORY?`, and it is substituted **in ActionScript**,
+not C++ — `_common.ConvertVariableTags.Convert`, whose same loop substitutes the token **and** wraps
+it in `_blueColorTag = "<font color=\"#B1C0D7\">"`. It failed at `indexOf`, on an encoding mismatch:
+
+| | bytes for `§` |
+|---|---|
+| the SWF constant pool | `C2 A7` — UTF-8 |
+| the localisation → `GFxValue::SetStringW` | `U+00A7` |
+| what our `GFxValue2ASValue` made of it | **`A7`** — `buf[n] = (char)w[n]` |
+
+Retail encodes UTF-8 at that boundary, resolved by hand through `GFxMovieRoot::CreateStringW`
+(`0x9a9030`) → `GASStringManager::CreateStringNode` (`0x9c0800`) → `GString::operator=(const
+wchar_t*)` (`0x9b5390`) → `GUTF8Util::GetEncodeStringSize`/`EncodeString` (`0x9e7e80`/`0x9e7f40`).
+Three truncating sites now encode UTF-8. The colour then needed the parser, so
+**`GFxStyledText::ParseHtmlImpl<wchar_t>` (2013 `0xa9d870`, 6,268 bytes) is ported** and
+`SetTextValue` calls it instead of stripping tags; the tag set comes from a census of the six cooked
+movies plus the localisation, and the new unknown-markup census line **never fired on any run**.
+
+Against retail at 1600x900: retail's coloured run is RGB **(177,192,215)** — the asset's own
+`#B1C0D7` — B−R **+38.0** against −12.8 on the rest of the line; ours is **(171.0,185.6,207.7)**,
+B−R **+36.7** against −12.1, starting **within 2 px** of retail's x. Untouched HEAD has **no coloured
+run at all**. `build/agentFG/sbs_modal.png`.
+
+**Fault 2 is root-caused and fixed, and it is not what this brief said.** Not a shared container
+hidden, not six at once: **one row at a time, the row the pointer just left**, accumulating until the
+column looks empty. The value widget is `attachMovie`'d; the row (`o_options_line`, 32 frames, `out`
+at 16) sits at `_currentframe 22` after a hover, so the next `gotoAndPlay("over")` is a **backward**
+goto. Retail's `GFxDisplayList::MarkAllEntriesForRemoval` (2013 `0x9cbed0`, decompiled whole) marks
+an entry only when `depth <= 0x3FFF && CreateFrame > fromFrame`; **ours marked every entry**, so the
+rewind's sweep unloaded the attached widget. The argument is also a **frame, not an index** —
+`GFxSprite::GotoFrame` (`0x9f7cc0`) passes `target-1` where ours passed 0. Both corrected, with the
+depth test written as retail's `>= GFxASDepthBias`, **which only does any work because FF's depth
+bias landed first**.
+
+Identical schedule (six hovers down the label column, then park away), runs with `FocusLost != 0`
+discarded: on `63c2539` untouched 1 of 1 valid run reproduced it, 3 of 6 widgets gone; with FG 0 of
+2. On `f72f9f5` untouched 1 of 2 reproduced it, **4 of 6 gone**; with FG 0 of 2.
+**Why FF could not reproduce it: the pointer must *leave* each row.** A hover that stays put keeps
+the row focused, so it never rewinds. Both packages were right about what each measured.
+
+**Fault 1's premise does not reproduce, and FG claims nothing.** At a matched 1600x900 our pale panel
+and retail's sit in the same place and read the same strength; nine scanline measurements give steps
+of −106..+55 (ours) and −122..+67 (retail) with **no consistent sign**, and the two background scenes
+differ by far more than the quantity in dispute — the comparison **cannot** resolve it. What is real:
+`maskContent` (sprite 22's only timeline child, one `DefineShape3`, `#E3F2D6` at **alpha 24/255**,
+scaled to 957×385) was being **rendered** before FF's `setMask` took it out of the content pass.
+On the arrows, FG's claim and FF's are different claims rather than a contradiction — FF compared our
+HEAD to its own build, FG compared ours to **retail**, where the focused row carries a bold pair
+against our faint default one. Handed to FH's family, not claimed. **1b: no scrolled capture, none
+claimed** — it moved to FF with the fix.
+
+**FF's 127 `SetWidgetFocus` hand-over, corrected downward.** Both `RemoveWidgetFocus` sites in
+`__Packages.OptionsList` are `this._curWidget_mc.RemoveWidgetFocus()` with `_curWidget_mc`
+**undefined on the first selection** — a normal AS2 no-op that this runtime logs as an error — and
+`-gfxuiclasstrace` reports **every** options symbol healthy, each reaching `MovieClip.prototype`.
+**`UpdateSettings` "on Sprite" is the one genuine missing prototype method**, and it did not occur on
+any screen FG's driver reaches. **The next package starts there, not from the 127.**
+
+**One simplification stated plainly**: the `CreateFrame` half of retail's condition is not
+reproduced, because `GFxCharacter` in this tree carries no create frame. It costs nothing here —
+both callers replay the frames up to the target, every character those frames place is re-placed, and
+`AddDisplayObject` clears the mark.
+
+**The one semantic collision in this wave was real and a build caught it.** FF deleted
+`GFxCharacter::bScriptCreated`, which FG's first `MarkAllEntriesForRemoval` used. **A three-way
+textual merge would have applied clean and been wrong.** It is now retail's own depth test.
+
+**Three machine facts.** The **desktop resolution flaps between 1024×768 and 6144×1728**, so the same
+`-ResX=1600 -ResY=900` yields 1008×567 or 1600×900 — read every capture's size off the file. **A
+concurrent agent's game steals the foreground and kills the menu**: one `execOnFocusLost` and the
+movie never draws again, which makes `grep -c FocusLost` a clean validity flag (2 of 9 hover runs
+discarded rather than averaged). And **`git apply` run from a non-repo subdirectory inside the repo
+silently applies nothing and exits 0** — it cost one 20-minute build whose "FG+FF combination" was
+plain HEAD. Use `patch -p1 -d <dir>`.
+
+## Wave result
+
+**Four of four merged and gated, each 37 ok / 0 failed / 0 skipped on a clean checkout of its own
+commit**: FF `63c2539`, FH `f72f9f5`, FI `8027ab6`, FG `c702a38`.
+
+Of the user's five faults: **1b, 2, 3, 4 and 5 are fixed with side-by-side measurements against
+retail**; **fault 1's panel does not reproduce** and is withdrawn rather than claimed either way, with
+its one real component (`maskContent` rendering) fixed by FF. The arrows and fault 1's chrome were
+**not** a fault in the terms the brief used.
+
+**Every package corrected at least three premises of its own brief**, and between them they overturned
+two things this repository had recorded as fact: that the "PC" frame errors were ours to fix (they are
+an asset bug retail shares), and that `execSetCinematicMode_Native`'s boolean count was unknowable
+without dismod (`retail_sdk_layout.json` names all nine). Two packages also corrected each other —
+FF could not reproduce fault 2 and FG showed why, and FG's reading of the 127 `SetWidgetFocus` errors
+replaced FF's.
