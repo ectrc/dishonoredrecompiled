@@ -3944,9 +3944,18 @@ void FEngineLoop::Exit()
 
 	// shutdown debug communications
 #if !FINAL_RELEASE && !SHIPPING_PC_GAME && WITH_UE3_NETWORKING
-	GDebugChannel->Destroy();
-	delete GDebugChannel;
-	GDebugChannel = NULL;
+	// DISHONORED(bringup): null-checked, because the construction above is now opt-in. The
+	// reference engine dereferences this unconditionally and gets away with it only because
+	// GDebugChannel is always constructed; with `-debugchannel` absent it is NULL, and exit then
+	// faults inside FDebugServer::Destroy reading its own Clients array off a null this. Found by
+	// agent FJ in a minidump - 0xc0000005 read of 0x8 at FDebugServer::Destroy + 0x2a - while
+	// looking for something else entirely.
+	if( GDebugChannel != NULL )
+	{
+		GDebugChannel->Destroy();
+		delete GDebugChannel;
+		GDebugChannel = NULL;
+	}
 #endif
 
 	MALLOC_PROFILER( GEngine->Exec( TEXT( "MPROF STOP" ) ); )
