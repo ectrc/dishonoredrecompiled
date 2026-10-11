@@ -2570,10 +2570,25 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 	// @todo iphone keyboard: Remove the iPhone FINAL_RELEASE override once we have an on-screen keyboard
 #if !NGP // @todo ngp 940: Investigate this again with SDK 940
 #if (!FINAL_RELEASE || FINAL_RELEASE_DEBUGCONSOLE) && !SHIPPING_PC_GAME && WITH_UE3_NETWORKING
-	GDebugChannel = new FDebugServer();
+	// DISHONORED(bringup): opt-in rather than opt-out. FDebugServer::Init binds a TCP socket to
+	// INADDR_ANY and calls listen(16), then binds a broadcast-enabled UDP socket to the same port
+	// number, so every launch of this executable makes Windows raise a "Windows Security Alert"
+	// firewall prompt. Those prompts hold the desktop foreground, which has cost measured runs in
+	// five waves: no mouse measurement is possible while one is up, agent FH's four real clicks all
+	// went into them, and agent EY could not measure the mouse path at all. The channel exists only
+	// to mirror log text to UnrealConsole (its whole use in this tree is GDebugChannel->SendText in
+	// UnVcWin32.cpp and the Tick in UnEngine.cpp), and nothing here reads from it.
+	//
+	// Retail is built with SHIPPING_PC_GAME and therefore has no debug server at all, so defaulting
+	// it off is closer to the shipped game than leaving it on. `-debugchannel` restores it, and the
+	// engine's own `-debugconsoleport=-1` still works as a second way to suppress it.
+	if( ParseParam( appCmdLine(), TEXT("debugchannel") ) )
+	{
+		GDebugChannel = new FDebugServer();
 #if !DEDICATED_SERVER
-	GDebugChannel->Init();
+		GDebugChannel->Init();
 #endif	//DEDICATED_SERVER
+	}
 #endif
 #endif
 
@@ -3242,7 +3257,14 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 #if !FINAL_RELEASE
 	#if WITH_UE3_NETWORKING
 			// regular clients can listen for propagation requests
-			FObjectPropagator::SetPropagator(&ListenPropagator);
+			// DISHONORED(bringup): opt-in, for the reason given at the FDebugServer construction
+			// above - FListenPropagator::Connect binds a UDP socket to PROPAGATION_PORT (9989), so
+			// installing it raises a second Windows firewall prompt on every launch. It exists to
+			// receive live object edits from a running UnrealEd, which this project does not have.
+			if( ParseParam( appCmdLine(), TEXT("objectpropagation") ) )
+			{
+				FObjectPropagator::SetPropagator(&ListenPropagator);
+			}
 	#endif	//#if WITH_UE3_NETWORKING
 #endif
 		}

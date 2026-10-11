@@ -15,6 +15,21 @@
  */
 UBOOL FStatNotifyProvider_UDP::Init(void)
 {
+	// DISHONORED(bringup): opt-in, for the reason given where FDebugServer is constructed in
+	// LaunchEngineLoop.cpp - this binds a UDP listener (13000) and a second traffic socket (13002),
+	// so it raises a Windows firewall prompt on every launch, and those prompts hold the desktop
+	// foreground and have cost measured runs in five waves.
+	//
+	// The retail install's own DishonoredEngine.ini carries `StatsNotifyProvider_UDP=true` under
+	// [StatNotifyProviders], which is what enables this. Retail's shipping build has STATS compiled
+	// out and so never acts on that line; ours does, which is the whole difference. `-UDPStats` -
+	// the provider's own command-line token, already honoured by FStatNotifyProvider's constructor -
+	// turns it back on.
+	if( !ParseParam( appCmdLine(), TEXT("UDPStats") ) )
+	{
+		return FALSE;
+	}
+
 	INT ListenPort = 13000;
 	// Read the port that is to be used for listening for client broadcasts
 	GConfig->GetInt(TEXT("StatNotifyProviders.StatNotifyProvider_UDP"),
