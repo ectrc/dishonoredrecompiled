@@ -355,3 +355,61 @@ lines, and FO's merge is diagnostics only, so this is non-deterministic and not 
 recorded as such rather than attributed to machine load. **The row stays red; `15695d8` is to be
 re-gated on a quiet machine.** A pawn that can die ten seconds into a map with nothing in the log is a
 defect in its own right.
+
+### FQ — merged `e14b934`; FQ's own gate 46 / 1 (the known row)
+
+Ten files, all in `External/GFx3`. Every address resolved by hand in both databases with matching
+sizes; `rva_sweep` over GFx3 728 citations, 0 mislabelled, 0 unknown.
+
+**The movie-root unload list is in.** `GFxSprite::OnEventUnload` links the sprite onto
+`GFxMovieRoot::pUnloadListHead` with a reference on the call that raises its unloaded bit (retail
+`GFxSprite::ExecuteEvent` 2012 `0x9f4a10+0xb9` / 2013 `0x9eb1f0`); `ProcessUnloadQueue` (2013
+`0x9f80b0`) walks and releases it after each of `Advance`'s three drains; the destructor sweeps it. A
+new `GFxASCharacter::OnEventUnload` (2013 `0x9c61d0`) clears the drag, dispatches `onUnload`, raises
+the bit and calls `pHandle->ChangeCharacter(0)`. Measured: the list is the last holder of a clip 8
+times in the first 10 s of the menu.
+
+**The user's exact crash path, driven end to end through GFx's own mouse handler with
+`game_input.py`** — lifter dragged to `ratioScroll 0.999964105364522`, the user's value, sub-tab
+toggles, CONTROLS, giving `OnMouseUp (0, undefined)` then `OnTabSelected (1, r)` inside the mouse
+dispatch — **three cycles × two runs, 0 criticals, clean exit.** Not claimed as "fixed"; it is the
+path that killed the user, run to completion. `ctx.MaskLevel` across a re-entrant `Display` stays
+unmeasured: nothing on this path reaches `Display` re-entrantly, and scripted events come from
+`UGameViewportClient::Tick`, not the Win32 pump.
+
+**Found on the way, user-visible on HEAD with a real mouse: after a scroll, every click on the tabs
+landed on a masked-out list row.** `GFxSprite::GetTopMostMouseEntity` never tested the sprite's
+`setMask` mask; retail does so **first thing** (2013 `0x9f0e80`). Ported; hit tests at the tab points
+went from `widget5.btn`/`widget2.btn` to `tab0.btn`/`tab1.btn`, 100 %. **This, not `MoveTo_End`, is
+why FM could not complete the user's path.**
+
+**A `MovieClip` stringified as `undefined`** because `ToString` fell through `valueOf` to
+`Object.prototype.valueOf`, which answered undefined for a clip. Retail's `ToStringImpl`,
+`GASObjectProto::ToString`/`ValueOf`, `GetCharacterNamePath` and `ToPrimitive` ported (2013
+`0x9c26f0`, `0x9d1340`, `0x9d1410`, `0x9c13b0`, `0x9c3120`). **Re-attribution, correcting this plan:
+the "on undefined" error text never came from stringification** — it is literally `self == 0` — but
+the receiver is now *named*, and on the user's path **10 of 104 "on undefined" change meaning**: 8
+are on a removed clip (`…_options_mc.scrollBar`, FJ's `removeMovieClip`, a no-op in retail too), 2
+are on null, **94 are genuine**.
+
+**Six premises of this plan corrected.** (1) The `pDeclTarget` guard **never depended on the list**:
+retail's `GASAsFunctionObject` holds the declaring clip as a `GFxCharacterHandle` whose `pCharacter`
+is zeroed at unload — FJ's hand-over and this plan both had it wrong; ported as a handle with retail's
+unloaded fallback (`Invoke` 2013 `0x9e9d10`), 0 fallbacks fired. (2) "Drive with a real mouse" —
+forbidden mid-package, and FQ's first eight real-input runs went into a window launched with
+`-unattended`, which disables input grab; only the log said so. (3) "On undefined" is unrelated to
+stringification. (4) The user's path could not be completed on HEAD because of the mask hit test, not
+`MoveTo_End`. (5) **`UpdateSettings` is not a defect**: the receiver is `NewGameMenu extends
+_common.GenericMenu` and `MainMenu.gfx` carries no `UpdateSettings` string — undefined in retail's
+cook too. That closes the last of agent FF's three "missing methods": all three were never library
+gaps. (6) FQ's own: its first "control" was a `sed` of the build script that missed the `cd` line, so
+runs c1–c8 measured the package; every control number is from the true export, c9.
+
+**Found and left**: `ProcessUnloadQueue`'s parent notification (vtable +0x90) not reproduced;
+`GetHitArea` arm absent; `DragState::pCharacter` stays bare, as retail's is — the list is what makes
+it safe. `TArray<GFxValue>`: nothing left; FM had already fixed its site.
+
+All five `options_*` rows green; `options_as2_errors` 41 = bound — the stringification fix changes
+the **text** of the errors, not their count.
+
+**Gate on main: 46 ok / 1 failed / 0 skipped (1361 s)** - `inputtest_criticals` the known row; `unported_natives` green, so the pawn death in FO's gate was non-deterministic.
