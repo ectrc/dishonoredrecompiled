@@ -413,3 +413,57 @@ All five `options_*` rows green; `options_as2_errors` 41 = bound — the stringi
 the **text** of the errors, not their count.
 
 **Gate on main: 46 ok / 1 failed / 0 skipped (1361 s)** - `inputtest_criticals` the known row; `unported_natives` green, so the pawn death in FO's gate was non-deterministic.
+
+### FN — merged `191ef85`; FN's own gate **47 ok / 0 failed / 0 skipped**
+
+Thirteen files. `inputtest_criticals` **1 → 0**, with **6 of 6** further inputtest runs clean on the
+same binary against **10 of 10** crashes before (nine minidumps from four packages' executables plus
+FN's own control run of the untouched HEAD gate exe). The `newgame` stage passes at the new
+`--newgame-at 50` (`newgame_menu_open_seconds 49.7`, `newgame_pawns 29`).
+
+**The fault, from the dumps, not from a guess.** `UInterpTrackVisibility::UpdateTrack+0xd5`,
+`mov eax,[esi+0x94]` with `esi == 0`; `+0x94` is `UInterpData::m_Data`. `IData` came from
+**`UInterpGroup::GetInterpData()`, a walk this tree invented** (group → Outer `UMatineeData` → Outer,
+cast to `UInterpData`). The dying matinee, `Main_Sequence.SeqAct_Interp_3` ("Boat"), uses the
+**shared asset `Tower_BalconyBoat.Tower_BalconyBoat`**, a MatineeData under a `UPackage`, so the cast
+is NULL. `L_Tower_Script.upk`'s export table (read with a new LZO-aware package reader): **51 of the
+level's 81 MatineeData are such assets** — `Tower_EmpressRegent`, `Tower_IntroOnBoat`, `Tower_Daud`
+among them — and only the 30 inline ones, the set dressing that already played, survive the walk.
+Retail (`UpdateTrack` 2013 `0x21f680`, 601 B; `Event` `0x21d4f0`; `Toggle` `0x21c820`) reads
+**`Group->Outer + 68` = `UMatineeData::m_RunData.InterpLength`** and never touches a `UInterpData`.
+
+**"Intermittent" was wrong.** Deterministic on every build containing agent FI's spawn port
+(`8027ab6`). The two "absent" gate runs, FG's and FH's, were worktrees based **before** that commit —
+no `StartSpawn` line, `SeqAct_Interp_3` never activated. **FI made the crash reachable one wave before
+FM made the harness able to see one.**
+
+**A second fault with the same trigger.** `an Actor may only be connected to one Group!
+[DishonoredSpawner_N]` came from **`UDisSeqVar_SpawnerPawn::GetObjectRef`** (2013 `0x7a2f30`) being a
+comment-only skeleton, so `USeqVar_Object::GetObjectRef` returned **the spawner itself**. Ported with
+`GetObjectValue`/`GetValueStr`/`execGetObjectValue`, the unit off the exclude list with an anchor.
+Retail's `UInterpGroupInstAI::InitGroupInst` (2013 `0x2304f0`) **does not swap actors and was never
+the fault** — FO read it independently and agrees.
+
+**What the first green gate taught, for FO.** With both fixed, the AI group bound the spawned
+`DishonoredNPCPawn_26` and `InitGroupInst` hit **`eventMAT_BeginAIGroup`** — `FindFunctionChecked` on
+an engine script event Dishonored's script never declares → `appError`. **Same class as FK's
+`BeginAnimControl`.** Guarded with `FindFunction` + one warning; retail's shape is `InitPawn` (2013
+`0x22bbc0`) → native **`ADishonoredNPCPawn::MAT_BeginAIGroup`** (`0x765080`, 720 B) plus the anim-set
+call — FO's. Every green run logs the warning, and **the Boat matinee now plays to 150 s with the
+spawned Elite guard as its AI actor** (`SeqAct_Interp_3` active in 89 census lines, 0 "one Group").
+
+Also: `UnObj.cpp`'s `StaticAllocateObject` replace-branch `check` → `checkf` naming object, flags,
+class and outer, because FK's `PrepareMapChange` assertion is **1 of 10** on disk (not 2), fired
+0.02 s after `UI_Global` opened, attribution timing-only — **owner FP**. `--newgame-at` 22 → 50.
+
+**Seven premises of this plan corrected.** The "credible frame"
+`UArkComponentContainer::AddNewComponent_Internal+0x2d` **is not in the crash at all**; "intermittent"
+was build-dependent and deterministic; two faults, one trigger; `InitGroupInst` does nothing with
+spawners; **no ASLR recovery was needed — the minidump's module list carries the base**, and FJ's
+`0xdb0000` was FJ's own file (FJ's gate exe loaded at `0x490000`, HEAD's at `0xa60000`), **which
+corrects the pitfall FJ wrote into STATUS**; the `PrepareMapChange` assertion is 1 of 10; FK's
+`DishonoredSpawner_12` and the gate's `_11` are different matinees with the same unported variable.
+
+Tools left in `build/agentFN/tools/`: `mdmp.py` (minidump parser), `upk.py` + `lzo.py` (cooked-package
+reader), `ida_q.py` (direct idalib runner, used because the MCP's four workers were held by other
+packages all session). No real input anywhere; every run through the harness with `-unattended`.
