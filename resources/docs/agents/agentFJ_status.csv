@@ -1,0 +1,43 @@
+metric,value,note
+base_commit,98e22d4,"17a7c32 at hand-out; merged 98e22d4 (the firewall fix) mid-package on the coordinator's instruction"
+worktree,build/agentFJ_wt,"own worktree, nothing written into the main checkout outside build/"
+files_touched,3,"all three in External/GFx3"
+crash_va_reported,0x1cc148a,"from the user's play_live.log, 33.77 s"
+crash_runtime_image_base,0xdb0000,"read from the PEB of a CREATE_SUSPENDED launch of the same unmodified file, same boot session; 3 of 3 launches identical"
+crash_rva,0xf1148a,"0x1cc148a - 0xdb0000"
+crash_map_va,0x131148a,"0xf1148a + 0x400000, DishonoredGame-Win64-Shipping.map timestamp 6acb90bd = the exe's"
+crash_function,GASActionBuffer::Execute(GASEnvironment*&comma; int&comma; int&comma; GASValue*&comma; ExecuteType),"map VA 0x13111b0 size 0x40a8, gfx3:GFxAS2Interp.cpp.obj"
+crash_offset,0x2da,"call dword ptr [eax+0x40] where eax = *(target+0x80): env->GetTarget()->ToSprite()"
+crash_cause,dangling GFxSprite* in the action queue,"GFxMovieRoot::ActionEntry::pTarget was a raw pointer"
+head_tab_switches_no_crash,17,"headham1: the brief's whole log shape reproduced with no crash - it is not a crash signature"
+dangling_entries_per_CONTROLS_tab,3,"relham2, measured: 3 entries per OnTabSelected(1, r), 0 on tabs 0/2/3"
+dangling_entries_run_total,15,"relham2, 5 CONTROLS selections x 3"
+unloaded_entries_dropped_run_total,16,relham2
+minidump,unreal-v9411-2026.10.11-14.36.05.dmp,"the user's crash; module base 0xdb0000, eip rva 0xf1148a, exception 0xc0000005 READ of 0x40, eax 0"
+dangling_target_address,0x31286120,"on the allocator free list (first word 0x31286040, one 0xE0 stride below), Depth +0x48 = 0x4000 = GFxASDepthBias"
+regression,37 ok / 0 failed / 0 skipped,"767 s, worktree's own copy, build dir build/agentFJ_wt/build/agentFJ_gate, built inside the harness"
+clean_build,0 errors / 0 C4263 / 0 C4264,"build/agentFJ_clean deleted first, DISHONORED_LAYOUT_CHECKS=ON, DishonoredGame + CoreSmoke + LayoutProbe"
+options_capture_mean_diff,1.56,"/255, HEAD vs this package, in-process -apshottime=60 -apshotname=fj, 1600x900"
+other_agents_crash_seen,FDebugServer::Destroy+0x2a,"unrelated: dump 15:17:56 from DishonoredGame-Win64-Shipping.exe, rva 0xc67fca, READ of 0x8 - not this package, relayed to the coordinator"
+rva_sweep_citations,698,"External/GFx3, 0 MISLABELLED-2012, 0 UNKNOWN-CLAIMED-2013"
+retail_2012_image,DishonoredGame-Shipping.exe,"identified by hand: the MovieClip method table pair at .rdata rva 0xdb3660 is {\"setMask\"&comma; 0x9f5320}; Dishonored.exe is the 2013 image"
+retail_ActionEntry_Execute_2012,0xa024d0,size 0x75
+retail_ActionEntry_Execute_2013,0x9f8ed0,size 0x75
+retail_AddToFreeList_2012,0xa0cb40,size 0x92
+retail_AddToFreeList_2013,0xa03570,size 0x92
+retail_DoActionsForSession_2012,0xa0d9e0,size 0x74
+retail_DoActionsForSession_2013,0xa04410,size 0x74
+retail_CallFrameActions_2012,0x9f63b0,size 0xef
+retail_CallFrameActions_2013,0x9ecb10,size 0xef
+retail_GFxCharacter_OnEventUnload_2012,0x9ce800,size 0x74
+retail_GFxCharacter_OnEventUnload_2013,0x9c50d0,size 0x74
+retail_GFxSprite_OnEventUnload_2012,0x9fdc80,size 0x59
+retail_GFxSprite_ExecuteEvent_2012,0x9f4a10,size 0xe7
+retail_GFxSprite_ExecuteEvent_2013,0x9eb1f0,size 0xe7
+retail_GFxDisplayList_Clear_2012,0x9d5e30,size 0x97
+retail_GFxDisplayList_Clear_2013,0x9cc630,size 0x97
+retail_GFxSprite_OnEventUnload_2013,none,"no distinct symbol in the 2013 image; GFxCharacter 0x9c50d0 and GFxASCharacter 0x9c61d0 do survive"
+retail_GRefCountNTSImpl_Release_2012,0x9b2160,size 0x14
+retail_GRefCountNTSImpl_Release_2013,0x9ab1c0,size 0x14
+retail_GASAsFunctionObject_Invoke_2012,0x9f3540 size 0x11f,"the second reader of the unloaded bit; left alone, named in the report"
+retail_GASAsFunctionObject_Invoke_2013,0x9e9d10,size 0x11f

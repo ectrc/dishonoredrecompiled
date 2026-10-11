@@ -36,6 +36,7 @@ GFxCharacterHandle::GFxCharacterHandle(const GASString& name, GFxASCharacter* pa
 
 GFxCharacter::GFxCharacter(GFxASCharacter* parent, GFxResourceId id)
     : RefCount(1), pParent(parent), Depth(0), ClipDepth(0), Ratio(0.f), bVisible(true),
+      bUnloaded(false),
       RollOverCnt(0), bAcceptAnimMoves(true), pWeakProxy(0), pMaskCharacter(0), pMaskOwner(0),
       pMatrix3D(0), pPerspective3D(0),
       pView3D(0), PerspectiveFOV(0.f), LastHitX(0.f), LastHitY(0.f),
@@ -582,8 +583,25 @@ void GFxDisplayList::UnloadAll()                                      // 2012 0x
     }
 }
 
+// DISHONORED(port, agent FJ): 2012 0x9d5e30 / 2013 0x9cc630, size 0x97 in both. Retail's body is
+// three passes and the
+// first two were missing here: every entry's OnEventUnload is called (virtual slot 34, the one at
+// vtable+136 in the decompile), every entry's parent pointer is zeroed, and only then is the whole
+// array released in one sweep. That first pass is how an unload reaches a whole SUBTREE - a clip
+// removed by script marks itself, its Clear marks its children, theirs marks the grandchildren -
+// and without it only the one clip script named was ever marked. The second pass matters on its
+// own: a child that something else still holds used to be left with a pointer to the parent that
+// was about to be freed.
 void GFxDisplayList::Clear()                                          // 2012 0x9d5e30
 {
+    for (unsigned int i = 0; i < Size; ++i)
+    {
+        GFxCharacter* ch = Entries[i].pChar;
+        if (ch == 0)
+            continue;
+        ch->OnEventUnload();
+        ch->pParent = 0;
+    }
     for (unsigned int i = Size; i > 0; --i)
         RemoveAt(i - 1);
 }
@@ -1514,6 +1532,12 @@ GFxSprite::GFxSprite(GFxTimelineDef* def, GFxCharacterDef* charDef, GFxMovieDefI
         pProto = root->GetASContext()->GetPrototype(GASGlobalContext::Proto_MovieClip);
         ++root->GetCensus().SpritesCreated;
     }
+}
+
+void GFxSprite::OnEventUnload()                                       // 2012 0x9fdc80
+{
+    bUnloaded = true;
+    DisplayList.Clear();
 }
 
 GFxSprite::~GFxSprite()

@@ -80,7 +80,16 @@ GFxMovieRoot::~GFxMovieRoot()
     // first (its destructors release handles and members), then the AS2 graph in one collection pass,
     // then the states. An AS2 object outliving its character is fine - the handle degrades to null -
     // but a character outliving the string manager is not.
+    // DISHONORED(fix, agent FJ): an entry still queued when the movie closes holds a reference to
+    // its target, so the queue is emptied before it is freed - retail's ActionQueueType destructor
+    // walks its six priority lists through ReleaseEntry (2012 0xa0cb40) for the same reason. This
+    // runs before pLevel0 is released, so the tree is still whole while the references go.
+    for (unsigned int i = 0; i < ActionCount; ++i)
+        if (Actions[i].pTarget != 0)
+            Actions[i].pTarget->Release();
+    ActionCount = 0;
     free(Actions);
+    Actions = 0;
     delete pPerspective3D;
     delete pView3D;
     if (bTraceTeardown) printf("  [teardown] characters\n");
@@ -215,6 +224,16 @@ void GFxMovieRoot::ProcessIntervalTimers()
 // sessions; a DoAction tag pushes and DoActionsForSession drains. The priority matters: an init
 // action (GFxAP_Init) must run before the frame actions (GFxAP_Frame) of the same frame, which is
 // what makes a __Packages class visible to the code that instantiates it.
+//
+// DISHONORED(fix, agent FJ): the target is a STRONG reference, as retail's is. Retail's queue entry
+// holds the character in a GPtr at entry+8 - 2012 GFxActionQueue::ReleaseEntry (0xa0cb40) releases
+// entry+0xc and entry+8 through GRefCountImpl::Release (0x9b2160) before recycling the entry into
+// the free list - and GFxActionQueueEntry::Execute (0xa024d0) then refuses to run an entry whose
+// character has been unloaded. Both halves were missing here: this slot was a raw pointer and the
+// drain ran whatever it found. A tab switch on the Options screen rebuilds `_options_mc._list_mc`,
+// GFxDisplayList::UnloadMarkedObjects drops the last reference to the old rows, and the next drain
+// called GASActionBuffer::Execute with env->Target pointing at freed memory - the crash the user
+// reported, faulting on `env->GetTarget()->ToSprite()` one instruction into the opcode preamble.
 void GFxMovieRoot::PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target,
                                     GFxActionPriority prio)
 {
@@ -236,6 +255,8 @@ void GFxMovieRoot::PushActionBuffer(GASActionBuffer* buffer, GFxSprite* target,
     Actions[at].Priority = prio;
     Actions[at].Session = SessionFill;
     Actions[at].BindSymbol = 0;
+    if (target != 0)
+        target->AddRef();
     ++ActionCount;
 }
 
@@ -313,23 +334,63 @@ void GFxMovieRoot::DoActions()
     for (unsigned int i = 0; i < runCount; ++i)
     {
         ActionEntry e = run[i];
+        // Retail's own first test, GFxActionQueueEntry::Execute (2012 0xa024d0): no character, or a
+        // character whose unloaded bit is set, and the entry is dropped before the type switch. A
+        // clip that left the display list between the push and the drain must not run its script,
+        // and the reference the entry holds is what keeps it addressable until here.
+        // The measurement, before the test: the reference this entry holds is the one that was
+        // missing, so an entry whose target's reference count is down to that one reference is an
+        // entry that, without the AddRef, would have been drained through a freed GFxSprite. It is
+        // counted whether or not the entry then runs, because it measures the defect directly
+        // rather than waiting for the heap to make it fatal.
+        if (e.pTarget != 0 && e.pTarget->RefCount == 1)
+        {
+            ++Stats.ActionsDroppedDangling;
+            if (Stats.ActionsDroppedDangling <= 16)
+            {
+                GFxLogf("DISHONORED(bringup): AS2 action queue: %s queued on %s is held by the "
+                        "queue alone - unloaded %d - without the queue's own reference this entry "
+                        "would have drained through a freed character (%u so far)",
+                        e.pBuffer != 0 ? "an action buffer" : "a class binding",
+                        e.pTarget->GetTargetPath(Env.GetSC()).ToCStr(),
+                        e.pTarget->IsUnloaded() ? 1 : 0, Stats.ActionsDroppedDangling);
+            }
+        }
+        if (e.pTarget != 0 && e.pTarget->IsUnloaded())
+        {
+            ++Stats.ActionsDroppedUnloaded;
+            if (Stats.ActionsDroppedUnloaded <= 16)
+            {
+                GFxLogf("DISHONORED(bringup): AS2 action queue: dropped %s queued on %s - its "
+                        "target was unloaded before the drain (%u dropped)",
+                        e.pBuffer != 0 ? "an action buffer" : "a class binding",
+                        e.pTarget->GetTargetPath(Env.GetSC()).ToCStr(),
+                        Stats.ActionsDroppedUnloaded);
+            }
+            e.pTarget->Release();
+            continue;
+        }
         Env.SetTarget(e.pTarget ? e.pTarget : pLevel0);
         if (e.pBuffer == 0)
         {
             if (e.BindSymbol != 0)
                 GFxSprite::BindRegisteredClass(e.pTarget, CreateString(e.BindSymbol));
-            if (e.pTarget)
-                e.pTarget->Release();
-            Env.SetTarget(pLevel0);
-            continue;
         }
-        e.pBuffer->Execute(&Env);
-        ++Stats.ActionBuffersRun;
-        if (Env.bThrowing)
+        else
         {
-            LogScriptError("uncaught exception from an action buffer");
-            Env.bThrowing = false;
+            e.pBuffer->Execute(&Env);
+            ++Stats.ActionBuffersRun;
+            if (Env.bThrowing)
+            {
+                LogScriptError("uncaught exception from an action buffer");
+                Env.bThrowing = false;
+            }
         }
+        // The target leaves the environment before the reference goes, so that the release that
+        // destroys it cannot leave env->Target pointing at it for even one statement.
+        Env.SetTarget(pLevel0);
+        if (e.pTarget != 0)
+            e.pTarget->Release();
     }
     free(run);
     bInActionQueue = false;

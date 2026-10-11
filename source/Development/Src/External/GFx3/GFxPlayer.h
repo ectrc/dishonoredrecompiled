@@ -627,7 +627,16 @@ public:
         rectangle; a sprite unions its display list. 2012 0x9d2ab0 / GFxSprite's own override. */
     virtual GRect<float>      GetBoundsTwips(const GMatrix2D& m) const;
     virtual void              OnEventLoad() {}
-    virtual void              OnEventUnload() {}
+    /** DISHONORED(port, agent FJ): retail raises the character's `unloaded` bit - bit 0x10 of the
+        flag word at character+0x76 - inside the unload dispatch itself, and the whole 2012 image
+        writes that bit in exactly two places: 0x9ce86a, one instruction after GFxASCharacter's
+        Event_Unload send, and 0x9f4ac9, one instruction after GFxSprite's. From then on the bit is
+        what tells anything holding the character across a frame boundary that its script must not
+        run again - see GFxMovieRoot::DoActions. The unload dispatch to content is not ported here;
+        the bit is, because without it a queued action buffer runs on a clip the tab switch has
+        already taken out of the display list. */
+    virtual void              OnEventUnload() { bUnloaded = true; }
+    bool IsUnloaded() const { return bUnloaded; }
     virtual void              AdvanceFrame(bool bAdvance, float framePos)
                                   { (void)bAdvance; (void)framePos; }
     // DISHONORED(port): 2012 0x9cfdd0 / 0x9faeb0 / 0xa2ed90. The base draws nothing, which is what a
@@ -718,6 +727,9 @@ public:
     int               ClipDepth;
     float             Ratio;
     bool              bVisible;
+    /** retail character+0x76 bit 0x10: the character's unload event has been sent and it is on its
+        way out of the tree. Set by OnEventUnload, never cleared - retail's is not cleared either. */
+    bool              bUnloaded;
     /** retail character+169: how many times the mouse is currently over this entity. The button
         events carry it so the content can tell a re-entry from a first entry. */
     unsigned char     RollOverCnt;
@@ -1005,6 +1017,13 @@ public:
     virtual GFxSprite* ToSprite() { return this; }
 
     virtual void AdvanceFrame(bool bAdvance, float framePos);          // 2012 0x9f93f0
+    /** DISHONORED(port, agent FJ): 2012 0x9fdc80, size 0x59. The 2013 image carries no distinct
+        symbol for it - only GFxCharacter's (0x9c50d0) and GFxASCharacter's (0x9c61d0) survive the
+        link there - so this body is read out of the 2012 one. Retail's body raises the unload
+        flags, drops the hit area, dirties the movie root's optimized-advance list and then calls
+        GFxDisplayList::Clear, which is what carries the unload down into the subtree. The hit area
+        is not reproduced (this tree has no hitArea slot) and neither is the script dispatch. */
+    virtual void OnEventUnload();                                      // 2012 0x9fdc80
     virtual void Display(GFxDisplayContext& ctx);                      // 2012 0x9faeb0
     void IncrementFrameAndCheckForLoop();                             // 2012 0x9f4500
     void ExecuteFrameTags(unsigned int frame, bool bWithActions = true); // 2012 0x9f60a0
@@ -1581,6 +1600,14 @@ public:
         unsigned int DisplayObjectsMoved;
         unsigned int DisplayObjectsRemoved;
         unsigned int ActionBuffersRun;
+        /** DISHONORED(agent FJ): entries the drain refused because their target had been unloaded
+            since the push. Retail refuses the same entries in GFxActionQueueEntry::Execute
+            (2012 0xa024d0) and does not count them; this counter is the evidence that the Options
+            tab switch queues them at all. */
+        unsigned int ActionsDroppedUnloaded;
+        /** of those, the ones where the queue's own reference was the last: without it the target
+            had already been freed and the drain would have run on dead memory. */
+        unsigned int ActionsDroppedDangling;
         unsigned int FramesAdvanced;
         unsigned int ClassesRegistered;
         unsigned int ScriptErrors;
