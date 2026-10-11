@@ -13,6 +13,11 @@ public:
 public:
 	virtual void PostBeginPlay();
 	void InitGlobalManagers();
+	// DISHONORED(port, partial): agent FP. The two map-change virtuals of AGameInfo (2012 vtable slots 246 / 247),
+	// 2013 rvas 0x605c50 (689 bytes, 2012 0x661260) and 0x607370 (961 bytes, 2012 0x65f400). Only the UI manager's
+	// share is written; the rest is named at the site. Bodies in dishonoredgameinfo.cpp.
+	virtual void PreCommitMapChange( const FString& PreviousMapName, const FString& NextMapName );
+	virtual void PostCommitMapChange();
 
 // ---- agent EB (PHASE11 EB): the object layer's GameLoad ----
 public:
