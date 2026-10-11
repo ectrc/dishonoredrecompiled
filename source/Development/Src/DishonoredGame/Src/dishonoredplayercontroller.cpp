@@ -1092,6 +1092,10 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	{
 		DisLookAtReport( GWorld, DeltaTime );
 	}
+	if( DisFLHeadDiagEnabled() )
+	{
+		DisFLHeadReport( GWorld, this );
+	}
 	if( DisTallboyCensusEnabled() )
 	{
 		DisTallboyReport( GWorld, DeltaTime );
@@ -1778,6 +1782,239 @@ void DisLookAtReport( UWorld* World, FLOAT DeltaSeconds )
 	}
 }
 
+// agentFL:headdiag
+/*---------------------------------------------------------------------------
+	-flheaddiag: the head pose of the pawns the camera can actually SEE, which is the measurement agent DO's
+	-dislookat does not make. -dislookat reports the first ADishonoredNPCPawn with both meshes, and in l_tower_p
+	that is one of the twenty-odd pawns nobody is looking at; the two the user sees are the two the opening
+	scene spawns.
+
+	For each of the nearest pawns it prints, per bone, BOTH deltas, because they separate the two halves of the
+	pipeline and need opposite fixes:
+
+	  * local  - LocalAtoms(i) against RefSkeleton(i).BonePos, in degrees. This is the ANIMATION TREE's output.
+	  * comp   - SpaceBases(i) against the reference pose composed down the same chain, in degrees. This is what
+	             the renderer uses, and it includes everything the tree does NOT do: the skel controllers and
+	             USkeletalMeshComponent::ComposeSkeleton.
+
+	A bone whose comp delta is large while its local delta is ~0 was moved after the tree. A bone whose local
+	delta is large was moved by the tree. A bone whose local delta is ~0 and whose comp delta is ~0 while its
+	CHILD's comp delta is large has a child that is not the parent's fault.
+---------------------------------------------------------------------------*/
+
+static INT GDisFLHeadDiag = -1;
+
+UBOOL DisFLHeadDiagEnabled()
+{
+	if( GDisFLHeadDiag < 0 )
+	{
+		GDisFLHeadDiag = ( appStrfind( appCmdLine(), TEXT("-flheaddiag") ) != NULL ) ? 1 : 0;
+	}
+	return GDisFLHeadDiag != 0;
+}
+
+static FLOAT DisFLQuatDegrees( const FQuat& A, const FQuat& B )
+{
+	FLOAT Dot = A | B;
+	if( Dot < 0.f )
+	{
+		Dot = -Dot;
+	}
+	Dot = Clamp( Dot, -1.f, 1.f );
+	return 2.f * appAcos( Dot ) * 180.f / PI;
+}
+
+/** The reference pose composed down the hierarchy, so a SpaceBases rotation has something to be compared with. */
+static void DisFLRefSpaceBases( USkeletalMesh* Mesh, TArray<FBoneAtom>& Out )
+{
+	Out.Empty();
+	if( !Mesh )
+	{
+		return;
+	}
+	Out.Add( Mesh->RefSkeleton.Num() );
+	for( INT BoneIndex = 0; BoneIndex < Mesh->RefSkeleton.Num(); BoneIndex++ )
+	{
+		const FMeshBone& Bone = Mesh->RefSkeleton(BoneIndex);
+		const FBoneAtom Local( Bone.BonePos.Orientation, Bone.BonePos.Position );
+		Out(BoneIndex) = ( BoneIndex == 0 ) ? Local : ( Local * Out(Bone.ParentIndex) );
+	}
+}
+
+static void DisFLReportMeshBones( const TCHAR* Label, const TCHAR* PawnName, USkeletalMeshComponent* Component )
+{
+	if( !Component || !Component->SkeletalMesh )
+	{
+		debugf( TEXT("DISHONORED(bringup): flhead %s %s: no component/mesh"), PawnName, Label );
+		return;
+	}
+	USkeletalMesh* Mesh = Component->SkeletalMesh;
+	TArray<FBoneAtom> RefSpace;
+	DisFLRefSpaceBases( Mesh, RefSpace );
+
+	FString Line;
+	const INT Last = Min<INT>( Mesh->RefSkeleton.Num(), 14 );
+	for( INT BoneIndex = 0; BoneIndex < Last; BoneIndex++ )
+	{
+		const FQuat Bind = Mesh->RefSkeleton(BoneIndex).BonePos.Orientation;
+		const FLOAT LocalDeg = Component->LocalAtoms.IsValidIndex(BoneIndex)
+			? DisFLQuatDegrees( Component->LocalAtoms(BoneIndex).GetRotation(), Bind ) : -1.f;
+		const FLOAT CompDeg = ( Component->SpaceBases.IsValidIndex(BoneIndex) && RefSpace.IsValidIndex(BoneIndex) )
+			? DisFLQuatDegrees( Component->SpaceBases(BoneIndex).GetRotation(), RefSpace(BoneIndex).GetRotation() ) : -1.f;
+		Line += FString::Printf( TEXT("%s l%.0f/c%.0f; "), *Mesh->RefSkeleton(BoneIndex).Name.ToString(), LocalDeg, CompDeg );
+	}
+	debugf( TEXT("DISHONORED(bringup): flhead %s %s %s: bones %i required %i refpose %i parentAnim %s parentBoneMap %i | %s"),
+		PawnName, Label, *Mesh->GetName(), Mesh->RefSkeleton.Num(), Component->RequiredBones.Num(),
+		(INT)Component->bForceRefpose,
+		Component->ParentAnimComponent ? *Component->ParentAnimComponent->GetName() : TEXT("NULL"),
+		Component->ParentBoneMap.Num(), *Line );
+}
+
+static void DisFLReportPawn( ADishonoredNPCPawn* NPCPawn, FLOAT Distance, FLOAT Now )
+{
+	const FString PawnName = NPCPawn->GetName();
+	USkeletalMeshComponent* Body = NPCPawn->Mesh;
+	debugf( TEXT("DISHONORED(bringup): flhead %s (%s) dist %.0f lastRender %.2f (now %.2f) hidden %i"),
+		*PawnName, *NPCPawn->GetClass()->GetName(), Distance,
+		Body ? Body->LastRenderTime : -1.f, Now, (INT)NPCPawn->bHidden );
+	DisFLReportMeshBones( TEXT("body"), *PawnName, Body );
+	DisFLReportMeshBones( TEXT("head"), *PawnName, NPCPawn->m_pHeadMesh );
+
+	UAnimTree* Tree = Body ? Cast<UAnimTree>( Body->Animations ) : NULL;
+	if( !Tree )
+	{
+		debugf( TEXT("DISHONORED(bringup): flhead %s tree: %s"), *PawnName,
+			Body && Body->Animations ? *Body->Animations->GetClass()->GetName() : TEXT("NULL") );
+		return;
+	}
+	FString Controls;
+	for( INT ListIndex = 0; ListIndex < Tree->SkelControlLists.Num(); ListIndex++ )
+	{
+		const FSkelControlListHead& Head = Tree->SkelControlLists(ListIndex);
+		Controls += FString::Printf( TEXT("%s:"), *Head.BoneName.ToString() );
+		INT Depth = 0;
+		for( USkelControlBase* Control = Head.ControlHead; Control && Depth < 8; Control = Control->NextControl, Depth++ )
+		{
+			Controls += FString::Printf( TEXT("%s(s%.2f b%.2f on%i)"), *Control->GetClass()->GetName(),
+				Control->ControlStrength, Control->BlendInTime, (INT)(Control->ControlStrength > 0.f) );
+		}
+		Controls += TEXT("; ");
+	}
+	debugf( TEXT("DISHONORED(bringup): flhead %s controls: %s"), *PawnName, *Controls );
+
+	TArray<UAnimNode*> Nodes;
+	Tree->GetNodes( Nodes );
+	FString Seqs;
+	for( INT NodeIndex = 0; NodeIndex < Nodes.Num(); NodeIndex++ )
+	{
+		UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>( Nodes(NodeIndex) );
+		if( Seq && Seq->NodeTotalWeight > 0.01f )
+		{
+			Seqs += FString::Printf( TEXT("%s=%s(w%.2f t%.2f add%i)%s; "), *Seq->NodeName.ToString(),
+				*Seq->AnimSeqName.ToString(), Seq->NodeTotalWeight, Seq->CurrentTime,
+				Seq->AnimSeq ? (INT)Seq->AnimSeq->bIsAdditive : -1,
+				Seq->AnimSeq ? TEXT("") : TEXT("[NO AnimSeq]") );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): flhead %s seqs: %s"), *PawnName, Seqs.Len() ? *Seqs : TEXT("none") );
+
+	for( INT NodeIndex = 0; NodeIndex < Nodes.Num(); NodeIndex++ )
+	{
+		UArkAnimNodeLookAt* LookAt = Cast<UArkAnimNodeLookAt>( Nodes(NodeIndex) );
+		if( !LookAt )
+		{
+			continue;
+		}
+		FString Entries;
+		for( INT AnimIndex = 0; AnimIndex < LookAt->Anims.Num(); AnimIndex++ )
+		{
+			if( LookAt->Anims(AnimIndex).Weight > 0.001f )
+			{
+				Entries += FString::Printf( TEXT("%i:%s=%.2f "), AnimIndex,
+					*LookAt->Anims(AnimIndex).AnimInfo.AnimSeqName.ToString(), LookAt->Anims(AnimIndex).Weight );
+			}
+		}
+		debugf( TEXT("DISHONORED(bringup): flhead %s lookatnode %s w%.2f aim(%.2f,%.2f) blended(%.2f,%.2f) config %s mode %i head %.2f torso %.2f deadzone %.2f | nonzero: %s"),
+			*PawnName, *LookAt->NodeName.ToString(), LookAt->NodeTotalWeight,
+			LookAt->m_Aim.X, LookAt->m_Aim.Y, LookAt->m_CurrentBlendedAim.X, LookAt->m_CurrentBlendedAim.Y,
+			LookAt->m_pConfig ? TEXT("set") : TEXT("NULL"),
+			LookAt->m_LookAtMode, LookAt->m_fUseHeadRange, LookAt->m_fUseTorsoRange, LookAt->m_fUseTorsoDeadZone,
+			Entries.Len() ? *Entries : TEXT("all zero") );
+	}
+}
+
+void DisFLHeadReport( UWorld* World, ADishonoredPlayerController* ViewPC )
+{
+	static UWorld* LastWorld = NULL;
+	static FLOAT NextAt = 0.f;
+	if( !World )
+	{
+		return;
+	}
+	if( LastWorld != World )
+	{
+		LastWorld = World;
+		NextAt = 0.f;
+	}
+	const FLOAT Now = World->GetTimeSeconds();
+	if( Now < NextAt )
+	{
+		return;
+	}
+	NextAt = Now + 3.f;
+
+	FVector ViewPoint( 0.f, 0.f, 0.f );
+	if( ViewPC )
+	{
+		ViewPoint = ViewPC->PlayerCamera ? ViewPC->PlayerCamera->CameraCache.POV.Location : ViewPC->Location;
+	}
+
+	// the nearest four NPC pawns to the view point - in l_tower_p the two the opening scene spawns are the two
+	// closest to the camera, and they are the two the user is looking at
+	ADishonoredNPCPawn* Best[4] = { NULL, NULL, NULL, NULL };
+	FLOAT BestDist[4] = { BIG_NUMBER, BIG_NUMBER, BIG_NUMBER, BIG_NUMBER };
+	INT Total = 0;
+	for( FActorIterator It; It; ++It )
+	{
+		ADishonoredNPCPawn* NPCPawn = Cast<ADishonoredNPCPawn>( *It );
+		if( !NPCPawn || NPCPawn->IsPendingKill() || !NPCPawn->Mesh )
+		{
+			continue;
+		}
+		Total++;
+		const FLOAT Distance = ( NPCPawn->Location - ViewPoint ).Size();
+		for( INT Slot = 0; Slot < 4; Slot++ )
+		{
+			if( Distance < BestDist[Slot] )
+			{
+				for( INT Shift = 3; Shift > Slot; Shift-- )
+				{
+					Best[Shift] = Best[Shift-1];
+					BestDist[Shift] = BestDist[Shift-1];
+				}
+				Best[Slot] = NPCPawn;
+				BestDist[Slot] = Distance;
+				break;
+			}
+		}
+	}
+	extern INT GDisAnimNotifiesSeen;
+	extern INT GDisAnimNotifiesBad;
+	extern INT GDisAnimNotifiesRepaired;
+	debugf( TEXT("DISHONORED(bringup): flnotify totals: %i AnimNotify objects loaded, %i arrived outered to another AnimSequence, %i repaired by PostLoad"),
+		GDisAnimNotifiesSeen, GDisAnimNotifiesBad, GDisAnimNotifiesRepaired );
+	debugf( TEXT("DISHONORED(bringup): flhead census: t %.2f map %s, %i NPC pawns, view %.0f,%.0f,%.0f"),
+		Now, *World->GetMapName(), Total, ViewPoint.X, ViewPoint.Y, ViewPoint.Z );
+	for( INT Slot = 0; Slot < 4; Slot++ )
+	{
+		if( Best[Slot] )
+		{
+			DisFLReportPawn( Best[Slot], BestDist[Slot], Now );
+		}
+	}
+}
+
+
 // agentDO:tallboyprobe
 /*---------------------------------------------------------------------------
 	-distallboy: the tallboy is the only ADishonoredNPCPawn subclass with an appearance pass of its own, and the
@@ -1955,17 +2192,64 @@ void DisTallboyReport( UWorld* World, FLOAT DeltaSeconds )
 	}
 }
 
-// agentDO:lookataim
+// agentFL:lookatnode
 /*---------------------------------------------------------------------------
-	The head-aim blend node's rest state. See Inc/CppText/UArkAnimNodeLookAt.h for what is measured, what retail
-	does and why this is a stand-in rather than a port. The bodies live here, beside the -dislookat census that
-	found the defect, because UArkAnimNodeLookAt is declared in DishonoredGameEngineShims.h and Engine cannot see
-	it; their real home is Engine/Src/arkanimnodelookat.cpp once the node is ported into Engine.
+	UArkAnimNodeLookAt - the head- and torso-aim blender, ported.
+
+	WHAT WAS MEASURED (agent FL, -flheaddiag, l_tower_p reached from the menu by -finewgame):
+
+	  flhead DishonoredNPCPawn_27 body Skm_EliteGuard_Body: ... spine_3_jnt l0/c2; Torso_jnt l0/c2;
+	                                    neck_jnt l34/c32; head_jnt l60/c84; head_end_jnt l0/c84;
+	  flhead DishonoredNPCPawn_27 lookatnode LookatBlender w1.00 aim(0.00,0.00) config NULL
+	                                    | nonzero: 4:ADD_Empty_AimHeadIdle_Center=1.00
+
+	l = the bone's LocalAtoms rotation against its own bind pose, c = its SpaceBases rotation against the
+	reference pose composed down the same chain, both in degrees. The whole spine is within 2 degrees and
+	the head is 84 degrees back: the craning is the ANIMATION TREE's own output at neck_jnt and head_jnt,
+	not a skel controller and not the head mesh (whose own bones read 0/0 on every bone, and which the
+	renderer does not use - it takes its matrices from the body through ParentBoneMap).
+
+	The source is this node. It holds eighteen ADDITIVE poses, two sets of nine on a 3x3 aim grid (head
+	0..8, torso 9..17, index = column*3 + row, column 0 left / 1 centre / 2 right, row 0 up / 1 centre /
+	2 down - read out of UpdateNodeWeights, 2013 0x512bf0). With one of them at weight 1.00 the additive
+	blend above it applies that pose in full, and BOTH the cook's default (entry 0, ..._UpLeft) and the
+	grid centre (entry 4, ..._Center) are +34 degrees at neck_jnt and +60 at head_jnt. Measured as a pair:
+	-nodislookataim (cook's weights, entry 0 at 1.00) gives neck l34 head l62; the stand-in's centre pose
+	gives neck l34 head l60. The centre of the grid is NOT the rest state.
+
+	RETAIL'S rest state is all eighteen weights at ZERO, and it gets there two ways, both of them here:
+
+	  * InitAnim (2013 0x5138d0, 2012 0x567330) zeroes every Anims(i).Weight the moment the tree is built,
+	    so the cook's defaults never survive into play.
+	  * TickAnim (2013 0x526320, 2012 0x5672c0) does nothing at all - not even UAnimNodeSequence::TickAnim -
+	    unless m_pConfig is set AND its m_LookAtModes array is non-empty. m_pConfig is written by
+	    FArkComponentLookat::Starting, which is unported, so in this build the node never recomputes a
+	    weight and the zeroes stand.
+
+	and the zeroes only mean "contribute nothing" because GetBoneAtoms is overridden: with a set's total
+	weight at zero retail fills the atoms with FBoneAtom::Identity (2013 0x51b420), which is the ADDITIVE
+	identity. Stock UAnimNodeSequenceBlendBase::GetBoneAtoms would FillWithRefPose instead, and a reference
+	pose applied as an additive delta is not identity - so zeroing the weights WITHOUT this override makes
+	the pose worse, not better. The two land together or not at all.
+
+	FArkComponentLookat (fifty-one functions) is still absent and this fix does not need it: it is what
+	puts a NON-zero aim on the node, and an idle NPC in retail has none.
+
+	NOT PORTED, and named rather than stubbed (see agentFL.md for the full inventory):
+	  * the m_fLookAtModeBlendingRemainingTime > 0 branch of the four-argument GetBoneAtoms - the crossfade
+	    between two look-at modes, which runs the second node in m_LookAtModeBlendingNode and needs
+	    SetLookAtMode and HandleBlendingBetweenLookatNodes.
+	  * ComputeHeadAndTorsoAim / BlendInfos / HandleProceduralLookatInAnimTreeEd / GetMaxAim - all of them
+	    read m_pConfig, which is NULL until FArkComponentLookat::Starting exists.
+	  * the editor half of AutoInitConfigInAnimTreeEd (FDynInterpFVector2D::Init).
+	  * BeginDestroy, which deletes the two BlendInfos allocations; both are NULL without a config.
 ---------------------------------------------------------------------------*/
 
 static INT GDisLookAtAimOff = -1;
 static INT GDisLookAtPlayer = -1;
 
+/** -nodislookataim: the A leg of the measurement pair - leave the cook's eighteen weights exactly as they
+    were loaded, which is entry 0 (..._UpLeft) at 1.00 and the head craned up and to the left. */
 UBOOL DisLookAtAimStandInEnabled()
 {
 	if( GDisLookAtAimOff < 0 )
@@ -1973,6 +2257,33 @@ UBOOL DisLookAtAimStandInEnabled()
 		GDisLookAtAimOff = ( appStrfind( appCmdLine(), TEXT("-nodislookataim") ) != NULL ) ? 1 : 0;
 	}
 	return GDisLookAtAimOff == 0;
+}
+
+/** -dislookatplayer: drive m_Aim at the player and run retail's own UpdateNodeWeights with it. The only
+    thing in this build that reaches the weighted branch of GetBoneAtoms, so it is how that branch is
+    tested; FArkComponentLookat::UpdateHeadAndTorso (2013 0x553050) is what will drive it for real. */
+/** agentFL -flaimx=<f> -flaimy=<f>: force the head grid's normalised aim, each in [-1,1]. -1 when the
+    command line has not been read yet, 0 when neither switch is present. UE3's Parse(FString&) stops on a
+    comma, so the pair cannot be one switch. */
+static INT GDisLookAtForcedAim = -1;
+static FVector2D GDisLookAtForcedAimValue( 0.f, 0.f );
+
+static void DisLookAtReadForcedAim()
+{
+	if( GDisLookAtForcedAim >= 0 )
+	{
+		return;
+	}
+	GDisLookAtForcedAim = 0;
+	FLOAT X = 0.f;
+	FLOAT Y = 0.f;
+	const UBOOL bHasX = Parse( appCmdLine(), TEXT("flaimx="), X );
+	const UBOOL bHasY = Parse( appCmdLine(), TEXT("flaimy="), Y );
+	if( bHasX || bHasY )
+	{
+		GDisLookAtForcedAimValue = FVector2D( X, Y );
+		GDisLookAtForcedAim = 1;
+	}
 }
 
 UBOOL DisLookAtPlayerEnabled()
@@ -1985,60 +2296,378 @@ UBOOL DisLookAtPlayerEnabled()
 }
 
 /**
- * The eighteen weights from a normalised aim. The grid is column-major in the cooked array: for each of the two
- * sets (head 0..8, torso 9..17) the columns are left, centre, right and the rows within a column are up, centre,
- * down. A bilinear weight over the four cells the aim falls between reproduces the shape of retail's own mapping
- * without its ranges; at (0,0) it is exactly the Center pose, which is the rest state the node is authored around.
+ * DISHONORED(port): 2013 rva 0x5138d0 (2012 0x567330), 189 bytes.
+ *
+ * Retail's first act on this node is to zero every pose weight, which is why an NPC that has never been
+ * handed a look-at request contributes an additive identity instead of whichever corner of the aim grid
+ * the cook happened to leave at 1.00.
  */
-void UArkAnimNodeLookAt::DisSetNormalisedAim( const FVector2D& NormalisedAim )
+void UArkAnimNodeLookAt::InitAnim( USkeletalMeshComponent* MeshComp, UAnimNodeBlendBase* Parent )
 {
-	if( Anims.Num() < 9 )
-	{
-		return;
-	}
-	const FLOAT Col = Clamp( NormalisedAim.X, -1.f, 1.f ) + 1.f;   // 0 left .. 2 right
-	const FLOAT Row = 1.f - Clamp( NormalisedAim.Y, -1.f, 1.f );   // 0 up   .. 2 down
-	const INT Col0 = Clamp( appTrunc(Col), 0, 1 );
-	const INT Row0 = Clamp( appTrunc(Row), 0, 1 );
-	const FLOAT ColFrac = Col - (FLOAT)Col0;
-	const FLOAT RowFrac = Row - (FLOAT)Row0;
+	Super::InitAnim( MeshComp, Parent );
 
-	for( INT AnimIndex = 0; AnimIndex < Anims.Num(); AnimIndex++ )
+	if( DisLookAtAimStandInEnabled() )
 	{
-		Anims(AnimIndex).Weight = 0.f;
-	}
-	const FLOAT CellWeights[4] = { (1.f - ColFrac) * (1.f - RowFrac), (1.f - ColFrac) * RowFrac,
-	                               ColFrac * (1.f - RowFrac),         ColFrac * RowFrac };
-	const INT CellIndices[4] = { (Col0 + 0) * 3 + (Row0 + 0), (Col0 + 0) * 3 + (Row0 + 1),
-	                             (Col0 + 1) * 3 + (Row0 + 0), (Col0 + 1) * 3 + (Row0 + 1) };
-	for( INT Cell = 0; Cell < 4; Cell++ )
-	{
-		if( Anims.IsValidIndex( CellIndices[Cell] ) )
+		for( INT AnimIndex = 0; AnimIndex < Anims.Num(); AnimIndex++ )
 		{
-			Anims( CellIndices[Cell] ).Weight += CellWeights[Cell];
+			Anims(AnimIndex).Weight = 0.f;
+		}
+	}
+
+	if( !m_LookAtModeBlendingNode )
+	{
+		m_LookAtModeBlendingNode = ConstructObject<UArkAnimNodeLookAt>( UArkAnimNodeLookAt::StaticClass(),
+			UObject::GetTransientPackage() );
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x513990 (2012 0x553fc0), 124 bytes. The nine weights of one
+ * set; SetIndex 0 is the head grid, 1 the torso grid.
+ */
+FLOAT UArkAnimNodeLookAt::GetAnimInfoTotalWeight( INT SetIndex )
+{
+	FLOAT Total = 0.f;
+	for( INT AnimIndex = 9 * SetIndex; AnimIndex < 9 * SetIndex + 9; AnimIndex++ )
+	{
+		// DISHONORED(divergence): retail indexes unguarded and lets Array.h's bounds assert fire on a node
+		// authored with fewer than eighteen poses. That is a crash for the player, so a short array reads
+		// as an empty set here and the set contributes the additive identity. Every node measured in
+		// l_tower_p has exactly eighteen.
+		if( Anims.IsValidIndex(AnimIndex) )
+		{
+			Total += Anims(AnimIndex).Weight;
+		}
+	}
+	return Total;
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x50a0b0 (2012 0x54a940), 62 bytes. Retail compares before it
+ * writes; the comparison has no side effect but it is what the function is.
+ */
+void UArkAnimNodeLookAt::SetAim( const FVector2D& NewAim )
+{
+	if( m_Aim.X != NewAim.X || m_Aim.Y != NewAim.Y )
+	{
+		m_Aim = NewAim;
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x50a720 (2012 0x54afb0), 200 bytes.
+ *
+ * Editor-only: GIsEditor && !GIsGame. In the game it is reached on every tick and does nothing, which is
+ * why TickAnim can call it unconditionally. The editor branch copies m_pPreviewLookatConfig into m_pConfig
+ * and seeds m_Cursor through FDynInterpFVector2D::Init((-PI,-PI/2),(PI,PI/2),(100,100),100,7,PI/2) - that
+ * half is NOT written here, because FDynInterpFVector2D is unported and AnimTree Ed is not shipped.
+ */
+void UArkAnimNodeLookAt::AutoInitConfigInAnimTreeEd()
+{
+	if( GIsEditor && !GIsGame && !m_pConfig )
+	{
+		// DISHONORED(bringup): retail's editor branch, not written - see the comment above.
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x512bf0 (2012 0x5532e0), 3,294 bytes.
+ *
+ * The aim grid. Aim[0] is the head's normalised aim and Aim[1] the torso's, both in [-1,1]; for each set
+ * the four cells the aim falls between take the bilinear weights and the other five are zeroed. Index is
+ * column*3 + row with column = 1 + sign(X) and row = 1 - sign(Y), so (0,0) is index 4 at weight 1 - the
+ * grid CENTRE, which is a pose, not the rest state. Retail reaches this only through TickAnim's config
+ * branch; the rest state is the zeroes InitAnim leaves.
+ *
+ * This replaces agent DO's bilinear stand-in (same grid, arrived at by inspection); the mapping below is
+ * read off the decompile branch by branch and the four quadrants are retail's own. Retail interleaves
+ * the four weighted writes with the five zeroing ones; this zeroes the set and then writes the four,
+ * which is the same result because the four cells and the five are disjoint in every quadrant.
+ */
+void UArkAnimNodeLookAt::UpdateNodeWeights( const FVector2D* Aim )
+{
+	for( INT SetIndex = 0; SetIndex < 2; SetIndex++ )
+	{
+		const FLOAT X = Aim[SetIndex].X;
+		const FLOAT Y = Aim[SetIndex].Y;
+		const INT Base = 9 * SetIndex;
+
+		INT   Cell[4];
+		FLOAT Weight[4];
+		if( X >= 0.f )
+		{
+			if( Y >= 0.f )
+			{
+				Cell[0] = Base + 4; Weight[0] = (1.f - X) * (1.f - Y);
+				Cell[1] = Base + 7; Weight[1] = X * (1.f - Y);
+				Cell[2] = Base + 3; Weight[2] = (1.f - X) * Y;
+				Cell[3] = Base + 6; Weight[3] = X * Y;
+			}
+			else
+			{
+				Cell[0] = Base + 5; Weight[0] = (1.f - X) * -Y;
+				Cell[1] = Base + 8; Weight[1] = X * -Y;
+				Cell[2] = Base + 4; Weight[2] = (1.f - X) * (1.f + Y);
+				Cell[3] = Base + 7; Weight[3] = X * (1.f + Y);
+			}
+		}
+		else
+		{
+			if( Y >= 0.f )
+			{
+				Cell[0] = Base + 1; Weight[0] = -X * (1.f - Y);
+				Cell[1] = Base + 4; Weight[1] = (1.f + X) * (1.f - Y);
+				Cell[2] = Base + 0; Weight[2] = -X * Y;
+				Cell[3] = Base + 3; Weight[3] = (1.f + X) * Y;
+			}
+			else
+			{
+				Cell[0] = Base + 2; Weight[0] = -X * -Y;
+				Cell[1] = Base + 5; Weight[1] = (1.f + X) * -Y;
+				Cell[2] = Base + 1; Weight[2] = -X * (1.f + Y);
+				Cell[3] = Base + 4; Weight[3] = (1.f + X) * (1.f + Y);
+			}
+		}
+
+		for( INT AnimIndex = Base; AnimIndex < Base + 9; AnimIndex++ )
+		{
+			if( Anims.IsValidIndex(AnimIndex) )
+			{
+				Anims(AnimIndex).Weight = 0.f;
+			}
+		}
+		for( INT Corner = 0; Corner < 4; Corner++ )
+		{
+			if( Anims.IsValidIndex(Cell[Corner]) )
+			{
+				Anims(Cell[Corner]).Weight = Weight[Corner];
+			}
 		}
 	}
 }
 
+/**
+ * DISHONORED(port): 2013 rva 0x51b420 (2012 0x55bab0), 2,141 bytes.
+ *
+ * One set of nine additive poses. Retail declares this virtual and nothing overrides it; it is private
+ * here because a second virtual GetBoneAtoms overload that overrides nothing is C4263, which this tree
+ * treats as an error. Its only caller is the four-argument GetBoneAtoms below, as in retail.
+ *
+ * The branch this build reaches is the second one: with the set's total weight at zero every atom becomes
+ * FBoneAtom::Identity, the additive identity.
+ */
+void UArkAnimNodeLookAt::GetBoneAtomsForSet( INT SetIndex, FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones, FBoneAtom& RootMotionDelta, INT& bHasRootMotion, FCurveKeyArray& CurveKeys )
+{
+	if( Anims.Num() == 0 )
+	{
+		RootMotionDelta.SetIdentity();
+		bHasRootMotion = 0;
+		FillWithRefPose( Atoms, DesiredBones, SkelComponent->SkeletalMesh->RefSkeleton );
+		return;
+	}
+
+	if( GetAnimInfoTotalWeight(SetIndex) <= ZERO_ANIMWEIGHT_THRESH )
+	{
+		// retail does not return here: it falls through, finds no contributing pose and leaves the
+		// identity fill in place.
+		RootMotionDelta = FBoneAtom::Identity;
+		for( INT AtomIndex = 0; AtomIndex < Atoms.Num(); AtomIndex++ )
+		{
+			Atoms(AtomIndex) = FBoneAtom::Identity;
+		}
+	}
+
+	const INT FirstAnim = 9 * SetIndex;
+	const INT EndAnim = FirstAnim + 9;
+	INT LastAnimIndex = INDEX_NONE;
+	for( INT AnimIndex = FirstAnim; AnimIndex < EndAnim; AnimIndex++ )
+	{
+		if( !Anims.IsValidIndex(AnimIndex) )
+		{
+			continue;   // see the divergence note on GetAnimInfoTotalWeight
+		}
+		if( Anims(AnimIndex).Weight > ZERO_ANIMWEIGHT_THRESH )
+		{
+			if( Anims(AnimIndex).Weight >= (1.f - ZERO_ANIMWEIGHT_THRESH) )
+			{
+				GetAnimationPose( Anims(AnimIndex).AnimInfo.AnimSeq, Anims(AnimIndex).AnimInfo.AnimLinkupIndex,
+					Atoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+				SaveCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() );
+				return;
+			}
+			LastAnimIndex = AnimIndex;
+		}
+	}
+	if( LastAnimIndex == INDEX_NONE )
+	{
+		return;
+	}
+
+	FBoneAtomArray ChildAtoms;
+	FCurveKeyArray ChildCurveKeys;
+	FBoneAtom ExtractedRootMotion;
+	UBOOL bNoChildrenYet = TRUE;
+	for( INT AnimIndex = FirstAnim; AnimIndex <= LastAnimIndex; AnimIndex++ )
+	{
+		if( !Anims.IsValidIndex(AnimIndex) || Anims(AnimIndex).Weight <= ZERO_ANIMWEIGHT_THRESH )
+		{
+			continue;
+		}
+		const ScalarRegister VAnimWeight( Anims(AnimIndex).Weight );
+		if( ChildAtoms.Num() == 0 )
+		{
+			ChildAtoms.Add( SkelComponent->SkeletalMesh->RefSkeleton.Num() );
+		}
+		GetAnimationPose( Anims(AnimIndex).AnimInfo.AnimSeq, Anims(AnimIndex).AnimInfo.AnimLinkupIndex,
+			ChildAtoms, DesiredBones, ExtractedRootMotion, bHasRootMotion, ChildCurveKeys );
+
+		if( bHasRootMotion )
+		{
+			if( bNoChildrenYet )
+			{
+				RootMotionDelta = ExtractedRootMotion * VAnimWeight;
+			}
+			else
+			{
+				RootMotionDelta.AccumulateWithShortestRotation( ExtractedRootMotion, VAnimWeight );
+			}
+			if( AnimIndex == LastAnimIndex )
+			{
+				RootMotionDelta.NormalizeRotation();
+			}
+		}
+
+		for( INT BoneSlot = 0; BoneSlot < DesiredBones.Num(); BoneSlot++ )
+		{
+			const INT BoneIndex = DesiredBones(BoneSlot);
+			if( bNoChildrenYet )
+			{
+				Atoms(BoneIndex) = ChildAtoms(BoneIndex) * VAnimWeight;
+			}
+			else
+			{
+				Atoms(BoneIndex).AccumulateWithShortestRotation( ChildAtoms(BoneIndex), VAnimWeight );
+			}
+			if( AnimIndex == LastAnimIndex )
+			{
+				Atoms(BoneIndex).NormalizeRotation();
+			}
+		}
+		bNoChildrenYet = FALSE;
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x51bc80 (2012 0x55c310), 3,213 bytes. The 2013 database leaves
+ * it unnamed; it is the function immediately after the indexed overload (0x51b420 + 0x85d = 0x51bc7d) and
+ * match_2012_2013.csv maps 2012 0x55c310 to it by vtable with ratio 0.829 - both checks agree, and the
+ * body's two calls through vtable slot 127 with arguments 0 and 1 are the indexed overload above.
+ *
+ * The head set and the torso set are evaluated separately and then composed onto the identity, each
+ * blended toward the identity by its own alpha. With m_fLookAtModeBlendingRemainingTime at or below zero -
+ * the only case this build reaches, because nothing changes the look-at mode - both alphas are 1.
+ */
+void UArkAnimNodeLookAt::GetBoneAtoms( FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones, FBoneAtom& RootMotionDelta, INT& bHasRootMotion, FCurveKeyArray& CurveKeys )
+{
+	if( GetCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() ) )
+	{
+		return;
+	}
+	if( Anims.Num() == 0 )
+	{
+		RootMotionDelta.SetIdentity();
+		bHasRootMotion = 0;
+		FillWithRefPose( Atoms, DesiredBones, SkelComponent->SkeletalMesh->RefSkeleton );
+		return;
+	}
+
+	const INT NumAtoms = SkelComponent->SkeletalMesh->RefSkeleton.Num();
+	FBoneAtomArray HeadAtoms;
+	FBoneAtomArray TorsoAtoms;
+	HeadAtoms.Add( NumAtoms );
+	TorsoAtoms.Add( NumAtoms );
+	GetBoneAtomsForSet( 0, HeadAtoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+	GetBoneAtomsForSet( 1, TorsoAtoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+
+	if( m_fLookAtModeBlendingRemainingTime > 0.f )
+	{
+		// DISHONORED(bringup): retail crossfades to m_LookAtModeBlendingNode here, on a smoothstep of
+		// 1 - 2*m_fLookAtModeBlendingRemainingTime, calling that node's own GetBoneAtoms through vtable
+		// slot 90. Nothing in this build changes the look-at mode, so the time is never set and this
+		// branch is not written; SetLookAtMode (2013 0x50c410) and HandleBlendingBetweenLookatNodes
+		// (2013 0x50c650) are the two functions that would make it reachable.
+	}
+
+	const FLOAT HeadAlpha = 1.f;
+	const FLOAT TorsoAlpha = 1.f;
+	for( INT BoneSlot = 0; BoneSlot < DesiredBones.Num(); BoneSlot++ )
+	{
+		const INT BoneIndex = DesiredBones(BoneSlot);
+		Atoms(BoneIndex) = FBoneAtom::Identity;
+
+		FBoneAtom Scaled;
+		Scaled.Blend( FBoneAtom::Identity, HeadAtoms(BoneIndex), HeadAlpha );
+		Atoms(BoneIndex).Accumulate( Scaled );
+
+		Scaled.Blend( FBoneAtom::Identity, TorsoAtoms(BoneIndex), TorsoAlpha );
+		Atoms(BoneIndex).Accumulate( Scaled );
+	}
+	SaveCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() );
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x526320 (2012 0x5672c0), 111 bytes.
+ *
+ * The whole body is behind "m_pConfig is set and its m_LookAtModes array is non-empty" - m_LookAtModes is
+ * at offset 92 of UArkComponentLookatConfig and retail tests the Num word at 96. Nothing here runs,
+ * including UAnimNodeSequence::TickAnim, while the config is NULL, and FArkComponentLookat::Starting is
+ * the only thing that sets it. This is why zeroing the weights in InitAnim is enough: nothing writes one
+ * back until the component exists.
+ */
 void UArkAnimNodeLookAt::TickAnim( FLOAT DeltaSeconds )
 {
-	if( DisLookAtAimStandInEnabled() )
+	AutoInitConfigInAnimTreeEd();
+	DisLookAtReadForcedAim();
+
+	UArkComponentLookatConfig* Config = (UArkComponentLookatConfig*)m_pConfig;
+	if( Config && Config->m_LookAtModes.Num() )
 	{
-		FVector2D Aim( 0.f, 0.f );
-		if( DisLookAtPlayerEnabled() && SkelComponent && SkelComponent->GetOwner() && ADishonoredPlayerPawn::s_pInstance )
+		// DISHONORED(bringup): retail runs HandleProceduralLookatInAnimTreeEd (2013 0x526000), then
+		// ComputeHeadAndTorsoAim (2013 0x5176f0) + UpdateNodeWeights when
+		// HandleBlendingBetweenLookatNodes (2013 0x50c650) returns TRUE or the node flag at UAnimNode+92
+		// bit 1 is set, and finally UAnimNodeSequence::TickAnim. The first three all read m_pConfig's
+		// BlendInfos, which FArkComponentLookat::Starting builds; none of that is ported, so this branch
+		// is UNREACHABLE in this build - m_pConfig is NULL on every NPC, measured. It is left named
+		// rather than filled with stubs, and UpdateNodeWeights below is retail's own.
+		UAnimNodeSequence::TickAnim( DeltaSeconds );
+	}
+	else if( GDisLookAtForcedAim > 0 || DisLookAtPlayerEnabled() )
+	{
+		// agentFL:lookatplayer - not retail. The only path in this build that puts a non-zero weight on
+		// the grid, so the weighted branch of GetBoneAtomsForSet is exercised by a measured run rather
+		// than installed untested. One grid step is a quarter turn, which is what the corner poses are.
+		FVector2D Aim[2];
+		Aim[0] = FVector2D( 0.f, 0.f );
+		if( GDisLookAtForcedAim > 0 )
+		{
+			// agentFL:forcedaim - -flaim=X,Y pins the head grid, so the SHORTCUT branch of
+			// GetBoneAtomsForSet (one cell at weight 1) and its ACCUMULATE branch (two or four cells)
+			// can be compared on the same pose. Without it the accumulate branch ships untested.
+			Aim[0] = GDisLookAtForcedAimValue;
+		}
+		else if( SkelComponent && SkelComponent->GetOwner() && ADishonoredPlayerPawn::s_pInstance )
 		{
 			AActor* Owner = SkelComponent->GetOwner();
 			const FVector ToTarget = ADishonoredPlayerPawn::s_pInstance->Location - ( Owner->Location + FVector(0, 0, 60.f) );
-			const FRotator ToTargetRotation = ToTarget.Rotation();
-			const FRotator Relative = ( ToTargetRotation - Owner->Rotation ).GetNormalized();
-			// one grid step is a quarter turn of the head, which is what the authored corner poses are
-			Aim.X = Clamp( (FLOAT)Relative.Yaw / 16384.f, -1.f, 1.f );
-			Aim.Y = Clamp( (FLOAT)Relative.Pitch / 16384.f, -1.f, 1.f );
+			const FRotator Relative = ( ToTarget.Rotation() - Owner->Rotation ).GetNormalized();
+			Aim[0].X = Clamp( (FLOAT)Relative.Yaw / 16384.f, -1.f, 1.f );
+			Aim[0].Y = Clamp( (FLOAT)Relative.Pitch / 16384.f, -1.f, 1.f );
 		}
-		m_Aim = Aim;
-		DisSetNormalisedAim( Aim );
+		Aim[1] = FVector2D( 0.f, 0.f );
+		SetAim( Aim[0] );
+		UpdateNodeWeights( Aim );
+		UAnimNodeSequence::TickAnim( DeltaSeconds );
 	}
-	UAnimNodeSequence::TickAnim( DeltaSeconds );
 }
 
 // agentDO:togglesprint

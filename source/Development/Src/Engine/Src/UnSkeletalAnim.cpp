@@ -318,6 +318,26 @@ void UAnimSequence::PreSave()
 #endif // WITH_EDITORONLY_DATA
 }
 
+// agentFL:notifyowner
+/*---------------------------------------------------------------------------
+	How many AnimNotify objects this engine loads, how many arrive outered to an AnimSequence other than the
+	one that lists them, and how many the stock UE3 repair in PostLoad puts right. Read by the -flnotify
+	census. The switch is read on FIRST USE, never in a file-scope initialiser (agent CA's rule).
+---------------------------------------------------------------------------*/
+INT GDisAnimNotifiesSeen = 0;
+INT GDisAnimNotifiesBad = 0;
+INT GDisAnimNotifiesRepaired = 0;
+
+UBOOL DisAnimNotifyOwnerDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-flnotify") ) != NULL ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
 void UAnimSequence::PostLoad()
 {
 	UBOOL bMarkDirty = FALSE;
@@ -440,11 +460,35 @@ void UAnimSequence::PostLoad()
 		FAnimNotifyEvent& CurrNotify = Notifies(NotifyIdx);
 		if (CurrNotify.Notify != NULL)
 		{
+			// agentFL:notifyowner - every notify this engine loads is counted here, and -flnotify prints the
+			// LINKERs own answer for a bad one: the OuterIndex the cooked export table holds. If the FILE says
+			// AnimSequence_1 while the array that lists the notify belongs to AnimSequence_4, the ownership is
+			// authored that way and this loader is faithful. Nothing below changes: the Rename is stock UE3.
+			GDisAnimNotifiesSeen++;
 			if (CurrNotify.Notify->GetOuter() != this)
 			{
+				GDisAnimNotifiesBad++;
 				warnf(NAME_Error, TEXT("*** Found bad AnimNotify in %s : %s"), 
 					*(GetPathName()), *(CurrNotify.Notify->GetFullName()));
+				if (DisAnimNotifyOwnerDiagEnabled())
+				{
+					ULinkerLoad* NotifyLinker = CurrNotify.Notify->GetLinker();
+					const INT NotifyExport = CurrNotify.Notify->GetLinkerIndex();
+					INT FileOuterIndex = MAXINT;
+					FString FileOuterName = TEXT("<no linker>");
+					if (NotifyLinker != NULL && NotifyLinker->ExportMap.IsValidIndex(NotifyExport))
+					{
+						FileOuterIndex = NotifyLinker->ExportMap(NotifyExport).OuterIndex;
+						FileOuterName = (FileOuterIndex > 0 && NotifyLinker->ExportMap.IsValidIndex(FileOuterIndex - 1))
+							? NotifyLinker->GetExportFullName(FileOuterIndex - 1)
+							: FString::Printf(TEXT("<index %i>"), FileOuterIndex);
+					}
+					debugf(TEXT("DISHONORED(bringup): flnotify %s[%i] %s: notify export %i, this export %i, file OuterIndex %i -> %s"),
+						*GetPathName(), NotifyIdx, *CurrNotify.Notify->GetName(),
+						NotifyExport, GetLinkerIndex(), FileOuterIndex, *FileOuterName);
+				}
 				CurrNotify.Notify->Rename(NULL, this, REN_ForceNoResetLoaders|REN_DoNotDirty);
+				GDisAnimNotifiesRepaired += (CurrNotify.Notify->GetOuter() == this) ? 1 : 0;
 			}
 		}
 	}

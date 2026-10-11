@@ -39,3 +39,8 @@ void DisTallboyReport( class UWorld* World, FLOAT DeltaSeconds );
     NPC's head at the player. Both read on first use. */
 UBOOL DisLookAtAimStandInEnabled();
 UBOOL DisLookAtPlayerEnabled();
+
+/** agentFL -flheaddiag: the head pose of the NPC pawns nearest the camera, local AND component-space
+    delta per bone, so the animation trees output and what the renderer uses are separable. */
+UBOOL DisFLHeadDiagEnabled();
+void DisFLHeadReport( class UWorld* World, class ADishonoredPlayerController* ViewPC );
