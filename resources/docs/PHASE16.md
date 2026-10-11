@@ -286,3 +286,72 @@ This package owns `External/GFx3`.
 4. Every address cited resolved by hand with its function start and size in both databases.
 5. `resources/docs/agents/agent<XX>.md` and `agent<XX>_status.csv`, written **inside the worktree**.
 6. `build/agent<XX>_sync.py`, naming every file and every function.
+
+## Outcome
+
+### FO — merged `15695d8`; gate on main **45 ok / 2 failed** (see below); FO's own gate 46 / 1
+
+Two files plus the two documents; one new diagnostic unit (`fokismetupstream.cpp`) and one line in
+FK's `fkmatineediag.cpp`. **Nothing behavioural, deliberately.** `UnInterpolation.cpp`, the
+`UInterpGroupInst*` family and every generated header untouched.
+
+**The opening cutscene is not started by Kismet.** `SOIREE_Empress_Regent.SeqAct_Interp_12` has five
+inputs with **zero links**, 20 of 21 outputs wired to remote events, and **exactly one referencer in
+the whole process** (an `FArchiveFindCulprit` scan of every UObject): its owning sequence's
+`SequenceObjects`. There is no chain for an unported condition to kill. **This plan's premise was
+wrong in kind, not degree.**
+
+Retail starts it from the **conversation system**: `UDisSeqAct_DialogInputs::Activated` (2013
+`0x79bf00`) → `IDisConvSpeakerInterface::FireDialogHook` (`0x8a7360`) →
+`UDisConversationComponent::FireDialogHook[Now]` → `UDisDialogTree_InGameBind::FireDialogHook`
+(`0x8a5150`) / `EvaluateDialogHook` (`0x8a4690`) → `FDisDialogRunningInstance::StartInstance`
+(`0x88bda0`) → `UDisConv_Soiree::PlayNode_Derived` (`0x8a7a60`) → `PlayNodeMatinee` →
+**`FindMatinee` (`0x8b5de0`: `TObjectIterator<USeqAct_Interp>`, `Interp->m_MatineeGUID` at +472 ==
+node's `m_SoireeGUID`)** → **`USeqAct_Interp::StartFromDialog` (`0x215020`: `ForceActivateInput(0)`,
+`Position = 0`)**. **Proved in data** with the new `-fosoiree`: 31 `UDisConv_Soiree` nodes load with
+`l_tower_p`, **all 31 match a `USeqAct_Interp` by GUID**; `SeqAct_Interp_12` is
+`DisDialogOneShot_0.DisDialogTree_OneShot_0.DisConversation_8.DisConv_Soiree_1`. The mission's whole
+scripted-scene layer — 13 Empress/Regent, 7 Campbell/Sokolov, 6 Emily, 3 Guards, Boat, Workers — is
+driven by **ten `DisDialogOneShot` actors**.
+
+**The first link already fires on our route and dies at once**: `-diskismet` counts
+`DisSeqAct_DialogInputs x1` every run — `SOIREE_Boat.DisSeqAct_DialogInputs_10`, input `Intro`,
+one-shot `DisDialogOneShot_8`, whose node names the boat ride. Its native `Activated` is a
+comment-only skeleton, so `USequenceAction::Activated` passes the impulse through and the scene layer
+stays dark all the way to the Empress.
+
+**Size of the port: 66 conversation/dialog units on `DishonoredGame/Sources.cmake`'s exclude list,
+~60 KB / 179 non-boilerplate retail functions** (`UDisDialogTree` 21 KB, `UDisConversationComponent`
+10 KB), ~10 KB on the direct path, specified in call order in `agentFO.md` §9. **Wave 21 is a
+dialog-system wave.**
+
+**Not reached, specified.** The `UpdateTrackInst` seam is **not a single virtual**: retail's
+`UInterpGroupInst::UpdateGroupInst` (2012 `0x25b4e0`, 858 B) is **five passes on
+`UInterpTrack::TrackUpdatePass`** (a byte this tree already declares at +105) with a 0.1 s re-step of
+passes 2–3 plus `FArkComponentLocomotion::MovePawn` in skip mode. `StretchAnimControl` (`0x543f40`)
+is self-contained at ~4.2 KB and goes first. **A gap no brief named**: retail
+`APawn::MAT_SetAnimPosition` calls **`UArkAnimNodeStack::MAT_SetAnimPosition`** (2012 `0x576570`,
+536 B); ours calls `UAnimNodeSlot`'s, and `UArkAnimNodeStack` here has **zero bodies** — without it
+the seam animates nothing on any Dishonored pawn. The `MAT_*` player five are read; the player FSM
+(`UStatePlayerMasterSoiree`, `FDisSoireeControlState::EnterSoireeMode` 2012 `0x69a4b0`) is the
+prerequisite.
+
+**FN coordination**: `UInterpGroupInstAI::InitGroupInst` (2013 `0x2304f0`) read in full — **no actor
+swap**; a NULL actor is bound lazily every frame by `UpdateGroupInst` via
+`FindUnusedGroupLinkedVariable`. Consistent with FN's `UDisSeqVar_SpawnerPawn` finding. FN's
+`UInterpData`-walk crash is the next thing to fire once the dialog path is ported, because
+`Tower_EmpressRegent` is a shared asset.
+
+**Five premises corrected**: no Kismet upstream exists; **`m_pMatineeBlender` and
+`UInterpGroup::HasMoveTrack` both exist here** (`dishonoredgameclasses.h:2481`,
+`UnInterpolation.cpp:3164`), contrary to this plan; the seam is a pass loop; `InitGroupInst` was never
+the spawner fault; and "the only known blocker" had three more behind it.
+
+**The gate on main read 45 ok / 2 failed.** `inputtest_criticals 1` is the known FN row. The second,
+`unported_natives 1`, is **`ADishonoredPlayerPawn::execPlayDying_Native` at 10.5 s of the d3d9 stage —
+the player pawn died ten seconds into the map.** FO's own gate of the same code had **zero** such
+lines, and FO's merge is diagnostics only, so this is non-deterministic and not FO's. The log shows
+**no fall, no damage, no late streaming line** before the death, so the cause is **unknown** and is
+recorded as such rather than attributed to machine load. **The row stays red; `15695d8` is to be
+re-gated on a quiet machine.** A pawn that can die ten seconds into a map with nothing in the log is a
+defect in its own right.
