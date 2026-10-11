@@ -283,6 +283,8 @@ extern FGFxEngine* GGFxEngine;
     movie's own `mouseCursor` symbol and put it where the mouse is. Called from
     UGameViewportClient::Draw, which is where retail calls it. */
 extern void DishonoredGFxUpdateMouseCursor( class FViewport* Viewport );
+/** agent FP: drops the cached cursor clip when the movie it lives in closes (UDisGFxMoviePlayerGlobal::ConditionalHideMouseCursor's job) */
+extern void DishonoredGFxReleaseMouseCursor( struct FGFxMovie* Movie );
 
 /** -nogfxui turns the whole interface off for a run, read on first use (never as a file-scope static:
     a file-scope ParseParam in a static library runs before WinMain sets GCmdLine - PHASE9.md's rule and
@@ -317,10 +319,16 @@ typedef void (*FGFxMoviePlayerTickHook)( class UGFxMoviePlayer* Player, FLOAT De
 typedef UBOOL (*FGFxMoviePlayerInputHook)( class UGFxMoviePlayer* Player, INT ControllerId,
                                            FName Key, BYTE Event, UBOOL& bHandled );
 
+/** agent FP: at the head of UGFxMoviePlayer::Start, before PreLoad: the prologue of
+    UDisGFxMoviePlayerBase::PreLoad (2012 0x822820) that resolves the tweaks and the movie to load */
+extern FGFxMoviePlayerHook     GGFxMoviePlayerPreLoadHook;
 /** after UGFxMoviePlayer::PreLoad succeeded, before Start's StartScene: InitTexts */
 extern FGFxMoviePlayerHook     GGFxMoviePlayerPreLoadedHook;
 /** after StartScene: OnMovieStackChanged, then PostStart */
 extern FGFxMoviePlayerHook     GGFxMoviePlayerStartedHook;
+/** agent FP: after UGFxMoviePlayer::Close, whatever it did: the tail of UDisGFxMoviePlayerBase::Close
+    (2013 rva 0x793a90), which is UDisGlobalUIManager::OnMovieStackChanged */
+extern FGFxMoviePlayerHook     GGFxMoviePlayerClosedHook;
 /** at the head of UGFxMoviePlayer::Advance: PreAdvance */
 extern FGFxMoviePlayerTickHook GGFxMoviePlayerPreAdvanceHook;
 /** UDisGFxMoviePlayerBase::FilterButtonInput and its two overrides */

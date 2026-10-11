@@ -2889,3 +2889,18 @@ void ADishonoredPlayerController::execSetCinematicMode_Native( FFrame& Stack, RE
 	SetCinematicMode_Native( bInCinematicMode, bWasInCinematicMode, bHidePlayer, bHideHUD, bAffectsMovement,
 		bAffectsTurning, bAffectsButtons, bHideLetterbox, bAllowProjectilesAndExplosions );
 }
+
+// DISHONORED(port): agent FP, 2013 rva 0x6a0b00 (2012 0x6d1340, byte-identical): one bit set or cleared in the mask
+// of the given level. The levels are DisInputMaskLevel (DishonoredGameEngineShims.h), eleven of them, which is the
+// array's size.
+void ADishonoredPlayerController::EnableControllerInput( INT _Mask, UBOOL _bEnable, DisInputMaskLevel _Level )
+{
+	if( _bEnable )
+	{
+		m_InputEnableMask[_Level] |= _Mask;
+	}
+	else
+	{
+		m_InputEnableMask[_Level] &= ~_Mask;
+	}
+}

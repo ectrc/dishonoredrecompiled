@@ -22,3 +22,8 @@ protected:
 	void UpdateMessageBoxAttributes( UBOOL _bMessageBoxUp );
 	// DISHONORED(port): agent EI, 2013 rva 0x79ec60 - the focus and input this movie needs while a box is up
 	void RefreshMessageBoxFocus();
+
+	// ---- agent FP (PHASE16 FP): UI_Global's own letterbox ----
+	// DISHONORED(port): the stripes arm of UDisGFxMoviePlayerGlobal::PreAdvance (2013 rva 0x7aa610, retail vtable
+	// +476), which arrives through the GFxUI PreAdvance seam like the HUD's. Body in disgfxmovieplayerglobal.cpp.
+	friend void DisGFxMoviePlayerGlobalPreAdvance( class UDisGFxMoviePlayerGlobal* Global, FLOAT DeltaTime );

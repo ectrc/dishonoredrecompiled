@@ -65,6 +65,7 @@ public:
         return Parms.ReturnValue;
     }
     DECLARE_CLASS(UGFxAction_CloseMovie,USequenceAction,0,GFxUI)
+#include "CppText/UGFxAction_CloseMovie.h"
 };
 
 struct GFxAction_GetVariable_eventIsValidLevelSequenceObject_Parms
@@ -154,6 +155,7 @@ public:
         return Parms.ReturnValue;
     }
     DECLARE_ABSTRACT_CLASS(UGFxAction_OpenMovie,USequenceAction,0,GFxUI)
+#include "CppText/UGFxAction_OpenMovie.h"
 };
 
 // GFxUI.GFxAction_SetCaptureKeys: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)

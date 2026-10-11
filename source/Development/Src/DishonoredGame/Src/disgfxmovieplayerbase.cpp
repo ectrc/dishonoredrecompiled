@@ -109,7 +109,96 @@ void UDisGFxMoviePlayerBase::execCaptureAnalogInput( FFrame& Stack, RESULT_DECL 
 void UDisGFxMoviePlayerBase::execHasFinishedAsyncLoading( FFrame& Stack, RESULT_DECL )
 {
 	P_FINISH;
-	*(UBOOL*)Result = m_bIsLoadingMoviePackage ? FALSE : TRUE;
+	*(UBOOL*)Result = HasFinishedAsyncLoading();
+}
+
+// DISHONORED(port): agent FP. The four script natives DisGFxMoviePlayerBase redeclares over GFxMoviePlayer's
+// (`native function bool Start(optional bool)` and its three siblings) were DISHONORED_NATIVE_STUBs, which is why
+// the Kismet open of the main menu answered FALSE: UGFxAction_OpenMovie::Activated reaches the player through
+// eventStart, and the script's own Start bound to a stub that consumed the parameter and zeroed the result.
+// Neither symbol table names a body for them - they are the same four lines as UGFxMoviePlayer's execStart /
+// execClose / execAdvance / execPreLoad (gfxuimovie.cpp) and fold onto them - so these are those bodies, through
+// the virtuals, which is all the retail ones can be.
+void UDisGFxMoviePlayerBase::execStart( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL_OPTX(_bStartPaused,FALSE);
+	P_FINISH;
+	*(UBOOL*)Result = Start( _bStartPaused );
+}
+
+void UDisGFxMoviePlayerBase::execClose( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL_OPTX(_bUnload,TRUE);
+	P_FINISH;
+	Close( _bUnload );
+}
+
+void UDisGFxMoviePlayerBase::execAdvance( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(_fTime);
+	P_FINISH;
+	Advance( _fTime );
+}
+
+void UDisGFxMoviePlayerBase::execPreLoad( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(UBOOL*)Result = PreLoad();
+}
+
+// DISHONORED(port): agent FP, 2013 rva 0x7a3fd0 (2012 0x81d0c0). Nothing to do while a movie is already held or a
+// package is streaming in. Without a path the tweaks name the package and the movie. Retail brackets LoadPackage with
+// the streaming manager's BlockTillAllRequestsFinished and CancelPendingTextureStreaming, which this tree's streaming
+// manager does not expose; the movie is then found by its path, rooted, and the path remembered so Close(TRUE) can
+// release it (m_bReleaseMoviePackageOnClose).
+UBOOL UDisGFxMoviePlayerBase::LoadMoviePackage( const TCHAR* _pMoviePath )
+{
+	if( MovieInfo != NULL || m_bIsLoadingMoviePackage )
+	{
+		return FALSE;
+	}
+	UDisTweaks_GFxMoviePlayerBase* Tweaks = m_pTweaks != NULL ? m_pTweaks
+		: (UDisTweaks_GFxMoviePlayerBase*)UDisTweaks_GFxMoviePlayerBase::StaticClass()->GetDefaultObject();
+	FString MoviePath;
+	FString PackageName;
+	if( _pMoviePath != NULL && *_pMoviePath != 0 )
+	{
+		MoviePath = _pMoviePath;
+		const INT Dot = MoviePath.InStr( TEXT(".") );
+		PackageName = Dot >= 0 ? MoviePath.Left( Dot ) : MoviePath;
+	}
+	else
+	{
+		MoviePath = Tweaks->m_MoviePackageName + TEXT(".") + Tweaks->m_MovieName;
+		PackageName = Tweaks->m_MoviePackageName;
+	}
+	FString FileName = PackageName;
+	if( GUseSeekFreeLoading )
+	{
+		FileName += TEXT("_SF");
+	}
+	FString Unused;
+	if( !GPackageFileCache->FindPackageFile( *FileName, NULL, Unused ) )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s::LoadMoviePackage: no package file %s for %s"),
+			*GetClass()->GetName(), *FileName, *MoviePath );
+		return FALSE;
+	}
+	if( UObject::LoadPackage( NULL, *FileName, LOAD_None ) == NULL )
+	{
+		return FALSE;
+	}
+	USwfMovie* Movie = FindObject<USwfMovie>( NULL, *MoviePath );
+	if( Movie == NULL )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s::LoadMoviePackage: %s loaded and holds no SwfMovie %s"),
+			*GetClass()->GetName(), *FileName, *MoviePath );
+		return FALSE;
+	}
+	MovieInfo = Movie;
+	Movie->AddToRoot();
+	m_DynamicallyLoadedMoviePath = MoviePath;
+	return TRUE;
 }
 
 // DISHONORED(port): 2012 rva 0x80bb90. FormatText reads a text field's own string back out of the movie,

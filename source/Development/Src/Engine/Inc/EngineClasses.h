@@ -11879,6 +11879,11 @@ public:
     {
         ProcessEvent(FindFunctionChecked(ENGINE_GameEnding),NULL);
     }
+    // DISHONORED(written): agent FP. In 2013 the two map-change notifications are C++ virtuals of AGameInfo (2012
+    // vtable slots 246 and 247, where ADishonoredGameInfo's 0x661260 / 0x65f400 sit), not the script events the
+    // reference engine's CommitMapChange raises; UnGame.cpp calls these at the same two places.
+    virtual void PreCommitMapChange( const FString& PreviousMapName, const FString& NextMapName ) {}
+    virtual void PostCommitMapChange() {}
     DECLARE_CLASS(AGameInfo,AInfo,0|CLASS_Config,Engine)
     static const TCHAR* StaticConfigName() {return TEXT("Game");}
 

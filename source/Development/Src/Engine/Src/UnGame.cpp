@@ -2944,6 +2944,9 @@ UBOOL UGameEngine::CommitMapChange()
             {
                 GWorld->GetGameInfo()->eventPreCommitMapChange(PreviousMapName, NextMapName);
             }
+            // DISHONORED(port, agent FP): 2013's notification is the C++ virtual (AGameInfo vtable slot 246);
+            // ADishonoredGameInfo's closes the HUD and tells the global and menu movies the map is going.
+            GWorld->GetGameInfo()->PreCommitMapChange(PreviousMapName, NextMapName);
 		}
 
 #if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
@@ -3231,6 +3234,8 @@ UBOOL UGameEngine::CommitMapChange()
             {
                 GWorld->GetGameInfo()->eventPostCommitMapChange();
             }
+            // DISHONORED(port, agent FP): the C++ virtual (AGameInfo vtable slot 247); ADishonoredGameInfo's reopens the HUD.
+            GWorld->GetGameInfo()->PostCommitMapChange();
 		}
 
 #if WITH_FACEFX

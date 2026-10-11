@@ -1812,7 +1812,12 @@ void FGFxEngine::RenderUI( UBOOL bRenderToSceneColor, INT DPG )
 		FGFxMovie* Movie = DPGOpenMovies[DPG]( Index );
 		const UBOOL bDisplayWithHudOff = Movie->pUMovie != NULL
 			&& Movie->pUMovie->bDisplayWithHudOff;
-		if( ( Movie->fVisible && bHudEnabled ) || bDisplayWithHudOff )
+		// DISHONORED(port, agent FP): retail's test (2013 rva 0x58dd30, FGFxEngine::RenderUI) is fVisible
+		// FIRST, then the HUD-enabled bit or bDisplayWithHudOff. This line used to read
+		// `(fVisible && bHudEnabled) || bDisplayWithHudOff`, which drew a bDisplayWithHudOff movie with
+		// fVisible FALSE - and the in-game HUD is such a movie, so UDisGlobalUIManager::RefreshGlobalUIState
+		// clearing its fVisible on the menu did nothing.
+		if( Movie->fVisible && ( bHudEnabled || bDisplayWithHudOff ) )
 		{
 			Movie->pView->Display();
 
@@ -2522,248 +2527,40 @@ void DishonoredGFxSetRenderViewport( FViewport* Viewport )
 	}
 }
 
-// DISHONORED(bringup, agent DC): -gfxuimenu[=<Package>.<Movie>] opens one cooked movie through the real
-// path the moment a world and a viewport are up. It exists because of a measured gap upstream of every
-// GFx package: in retail the main menu is created by UDisGlobalUIManager from its config movie set, and
-// the DisUI.ini set names the HUD, the power wheel, the journal, the note, the pause menu and the
-// mission stats but NOT the main menu, which the game's own UnrealScript constructs. A run at
-// -startmap=Dishonored_MainMenu streams the menu map in, renders 34,650 frames and never constructs a
-// UGFxMoviePlayer, so the interface had nothing to draw.
-//
-// What this does is exactly what the script would: find the movie player class by name, point its
-// MovieInfo at the cooked USwfMovie and call Start(). Everything after that is the real path -
-// UGFxMoviePlayer::Load -> FGFxEngine::LoadMovie -> GFxLoader::CreateMovie ->
-// GFxMovieDefImpl::CreateInstance -> StartScene -> Tick/Advance -> RenderUI/Display - with no shortcut
-// in it. `-gfxuimenuclass=<name>` picks the player class, so the Dishonored subclass is reachable
-// without this module depending on the game module; the default is the Dishonored main menu player when
-// that class is registered and UGFxMoviePlayer when it is not.
-static UBOOL DishonoredGFxOpenGlobalMovie();
-
-static void DishonoredGFxAutoOpen( FLOAT DeltaTime )
+// DISHONORED(bringup, agent FP): agent DC's -gfxuimenu bring-up lived here (DishonoredGFxAutoOpen and
+// DishonoredGFxOpenGlobalMovie), the second of the two movie-player owners this tree had where retail has
+// one. It is gone. Retail opens the main menu from the menu map's own Kismet - Dishonored_MainMenu's
+// Main_Sequence.DisGFxActionOpenMovie_0, through UGFxAction_OpenMovie::Activated in ScaleformInteraction.cpp
+// - and UDisGlobalUIManager::Init (2013 rva 0x85fdb0, disglobaluimanager.cpp) opens the global movie and the
+// HUD from ADishonoredGameInfo::PostBeginPlay; both run in this tree now. -gfxuimenu, -gfxuimenu=<movie>,
+// -gfxuimenuclass= and -gfxuinoglobal are still accepted and mean nothing, so no command line in the tree or
+// in the play-defaults table breaks. The one thing the bring-up also did that still has to happen is reading
+// -gfxuitweendiag=<n>, which reports the first n unresolved method calls with the receiver's whole resolution
+// chain, and every write of a tween member with the string manager that made its name (agent EA's hand-over
+// 3). It is read here rather than in the draw path because a movie's initialisation actions run before the
+// first drawn frame.
+static void DishonoredGFxReadTweenDiagSwitch()
 {
-	static INT State = -2;          // -2 unread, -1 off or done, 0 waiting, 1 open
-	static FLOAT Elapsed = 0.f;
-	static FString MoviePath;
-	static FString ClassName;
-	// DISHONORED(bringup): the global movie comes up after the menu and before the cursor can be drawn,
-	// because UI_Global.Global is the only cooked movie that carries the `mouseCursor` symbol. Retail's
-	// UDisGlobalUIManager keeps it open for the whole session; -gfxuinoglobal leaves it closed.
-	static UBOOL bWantGlobal = FALSE;
-
-	if( State == -2 )
-	{
-		// DISHONORED(bringup): -gfxuitweendiag=<n> reports the first n unresolved method calls with
-		// the receiver's whole resolution chain, and every write of a tween member with the string
-		// manager that made its name (agent EA's hand-over 3). It is read here rather than in the
-		// draw path because a movie's initialisation actions run before the first drawn frame.
-		INT Diag = 0;
-		if( Parse( appCmdLine(), TEXT("gfxuitweendiag="), Diag ) )
-		{
-			GFxAS2NotAFunctionDiag = Diag;
-		}
-		else if( ParseParam( appCmdLine(), TEXT("gfxuitweendiag") ) )
-		{
-			GFxAS2NotAFunctionDiag = 24;
-		}
-		GFxAS2MemberWriteDiag = GFxAS2NotAFunctionDiag > 0 ? 120 : 0;
-		if( GFxAS2MemberWriteDiag > 0 && GFxAS2WatchMember[0] == 0 )
-		{
-			appStrncpyANSI( GFxAS2WatchMember, "tween*", 64 );
-		}
-		FString Value;
-		if( Parse( appCmdLine(), TEXT("gfxuimenu="), Value ) )
-		{
-			MoviePath = Value;
-			State = 0;
-		}
-		else if( ParseParam( appCmdLine(), TEXT("gfxuimenu") ) )
-		{
-			MoviePath = TEXT("Dishonored_MainMenu.MainMenu");
-			State = 0;
-		}
-		else
-		{
-			State = -1;
-		}
-		Parse( appCmdLine(), TEXT("gfxuimenuclass="), ClassName );
-		bWantGlobal = ( State == 0 ) && !ParseParam( appCmdLine(), TEXT("gfxuinoglobal") );
-	}
-	if( State != 0 )
+	static UBOOL bRead = FALSE;
+	if( bRead )
 	{
 		return;
 	}
-	Elapsed += DeltaTime;
-	if( GWorld == NULL || GEngine == NULL || GEngine->GameViewport == NULL || Elapsed < 1.0f )
+	bRead = TRUE;
+	INT Diag = 0;
+	if( Parse( appCmdLine(), TEXT("gfxuitweendiag="), Diag ) )
 	{
-		return;
+		GFxAS2NotAFunctionDiag = Diag;
 	}
-
-	// The global movie first: the menu's own library registrations have to be the last ones made.
-	if( bWantGlobal )
+	else if( ParseParam( appCmdLine(), TEXT("gfxuitweendiag") ) )
 	{
-		bWantGlobal = FALSE;
-		DishonoredGFxOpenGlobalMovie();
+		GFxAS2NotAFunctionDiag = 24;
 	}
-
-	UClass* PlayerClass = NULL;
-	if( ClassName.Len() )
+	GFxAS2MemberWriteDiag = GFxAS2NotAFunctionDiag > 0 ? 120 : 0;
+	if( GFxAS2MemberWriteDiag > 0 && GFxAS2WatchMember[0] == 0 )
 	{
-		PlayerClass = FindObject<UClass>( ANY_PACKAGE, *ClassName );
+		appStrncpyANSI( GFxAS2WatchMember, "tween*", 64 );
 	}
-	if( PlayerClass == NULL )
-	{
-		PlayerClass = FindObject<UClass>( ANY_PACKAGE, TEXT("DisGFxMoviePlayerMainMenu") );
-	}
-	if( PlayerClass == NULL || !PlayerClass->IsChildOf( UGFxMoviePlayer::StaticClass() ) )
-	{
-		PlayerClass = UGFxMoviePlayer::StaticClass();
-	}
-
-	USwfMovie* Movie = LoadObject<USwfMovie>( NULL, *MoviePath, NULL, LOAD_NoWarn, NULL );
-	if( Movie == NULL )
-	{
-		const INT Dot = MoviePath.InStr( TEXT(".") );
-		if( Dot > 0 )
-		{
-			Movie = LoadObject<USwfMovie>( NULL,
-				*( MoviePath.Left( Dot ) + TEXT("_SF") + MoviePath.Mid( Dot ) ), NULL, LOAD_NoWarn, NULL );
-		}
-	}
-	if( Movie == NULL )
-	{
-		// The cook puts a UI movie inside a group, so the object path carries it
-		// (Dishonored_MainMenu.UI_MainMenu.MainMenu). Under seek-free loading LoadObject will not pull a
-		// package in on demand either, so the last resort is the movie that is already resident and whose
-		// path ends with the name asked for. Every resident movie is logged, which is what makes the next
-		// run's switch exact.
-		const INT LastDot = MoviePath.InStr( TEXT("."), TRUE );
-		const FString WantName = LastDot >= 0 ? MoviePath.Mid( LastDot + 1 ) : MoviePath;
-		for( TObjectIterator<USwfMovie> It; It; ++It )
-		{
-			if( It->RawData.Num() == 0 )
-			{
-				continue;
-			}
-			const FString Path = It->GetPathName();
-			debugf( TEXT("DISHONORED(bringup): -gfxuimenu: resident movie %s (%d bytes)"), *Path,
-				It->RawData.Num() );
-			if( Movie == NULL && It->GetName() == WantName )
-			{
-				Movie = *It;
-			}
-		}
-	}
-	if( Movie == NULL )
-	{
-		// Keep waiting: the movie's package streams in with the map and a loaded machine can take
-		// twenty seconds to get there. Reported once a second so a run says what it is waiting for.
-		static FLOAT LastComplaint = 0.f;
-		if( Elapsed - LastComplaint > 1.f )
-		{
-			LastComplaint = Elapsed;
-			debugf( NAME_Warning, TEXT("DISHONORED(bringup): -gfxuimenu: no SwfMovie '%s' yet (%.1fs)"),
-				*MoviePath, Elapsed );
-		}
-		if( Elapsed > 120.f )
-		{
-			State = -1;
-		}
-		return;
-	}
-
-	UGFxMoviePlayer* Player = ConstructObject<UGFxMoviePlayer>( PlayerClass,
-		UObject::GetTransientPackage(), TEXT("DisGFxAutoOpenMenu") );
-	Player->AddToRoot();
-	Player->MovieInfo = Movie;
-	Player->bAllowFocus = TRUE;
-	Player->bAllowInput = TRUE;
-	Player->bCaptureInput = TRUE;
-	Player->bDisplayWithHudOff = TRUE;
-	Player->TimingMode = TM_Real;
-	Player->LocalPlayerOwnerIndex = 0;
-	// DISHONORED(bringup): the object ExternalInterface.call resolves its method names on. The script
-	// that constructs the main menu in retail sets it to the movie player itself, and every name the
-	// menu asks for - req_CanContinueGame, req_CanLoadGame, req_CanStartNewGame,
-	// req_IsSaveLoadEnabled, OnNewGameClicked and the rest - is a function of
-	// DisGFxMoviePlayerMainMenu. Without it FGFxExternalInterface::Callback has no target and the
-	// menu bar is built from four undefined answers.
-	if( Player->ExternalInterface == NULL )
-	{
-		Player->ExternalInterface = Player;
-	}
-
-	const UBOOL bStarted = Player->Start( FALSE );
-	// DISHONORED(port): _global.PlatformName before the first advance. The CLIK components in the shared
-	// lib movie switch their button-glyph frames with `this.gotoAndStop(_global.PlatformName)`, and with
-	// the variable undefined they ask for a frame label that does not exist on every pass - which agent
-	// CD measured as a re-queue of the very DoAction that called gotoAndStop (agentCD.md 3.2). The
-	// harness sets it with --platform; this is the engine doing the same thing.
-	if( bStarted && Player->GetMovie() != NULL && Player->GetMovie()->pView.GetPtr() != NULL )
-	{
-		GFxValue Platform;
-		Platform.SetString( "PC" );
-		Player->GetMovie()->pView->SetVariable( "_global.PlatformName", Platform,
-			GFxMovie::SV_Normal );
-	}
-	debugf( TEXT("DISHONORED(bringup): -gfxuimenu: %s %s through %s (movie %s)"),
-		bStarted ? TEXT("opened") : TEXT("FAILED to open"), *Movie->GetPathName(),
-		*PlayerClass->GetName(), Player->bMovieIsOpen ? TEXT("open") : TEXT("closed") );
-	State = bStarted ? 1 : -1;
-}
-
-// DISHONORED(bringup): the global movie, whose only job here is to hold the cursor. It is opened after
-// the menu so it draws over it, and it must not take the keyboard: the topmost open movie is what
-// FGFxEngine::InputKey falls back on while no local player owns focus, so a focusable global movie
-// would swallow every key the menu needs.
-static UBOOL DishonoredGFxOpenGlobalMovie()
-{
-	USwfMovie* Movie = NULL;
-	for( TObjectIterator<USwfMovie> It; It; ++It )
-	{
-		if( It->RawData.Num() > 0 && It->GetName() == TEXT("Global") )
-		{
-			Movie = *It;
-			break;
-		}
-	}
-	if( Movie == NULL )
-	{
-		debugf( NAME_Warning, TEXT("DISHONORED(bringup): -gfxuimenu: no resident SwfMovie 'Global'; the mouse cursor has nowhere to live") );
-		return FALSE;
-	}
-
-	UClass* PlayerClass = FindObject<UClass>( ANY_PACKAGE, TEXT("DisGFxMoviePlayerGlobal") );
-	if( PlayerClass == NULL || !PlayerClass->IsChildOf( UGFxMoviePlayer::StaticClass() ) )
-	{
-		PlayerClass = UGFxMoviePlayer::StaticClass();
-	}
-	UGFxMoviePlayer* Player = ConstructObject<UGFxMoviePlayer>( PlayerClass,
-		UObject::GetTransientPackage(), TEXT("DisGFxAutoOpenGlobal") );
-	Player->AddToRoot();
-	Player->MovieInfo = Movie;
-	Player->bAllowFocus = FALSE;
-	Player->bAllowInput = FALSE;
-	Player->bCaptureInput = FALSE;
-	Player->bDisplayWithHudOff = TRUE;
-	Player->TimingMode = TM_Real;
-	Player->LocalPlayerOwnerIndex = 0;
-	// Drawn last whatever the open order: InsertMovieIntoList sorts the draw list by Priority, and the
-	// cursor has to be over everything.
-	Player->Priority = 255;
-	if( Player->ExternalInterface == NULL )
-	{
-		Player->ExternalInterface = Player;
-	}
-	const UBOOL bStarted = Player->Start( FALSE );
-	if( bStarted && Player->GetMovie() != NULL && Player->GetMovie()->pView.GetPtr() != NULL )
-	{
-		GFxValue Platform;
-		Platform.SetString( "PC" );
-		Player->GetMovie()->pView->SetVariable( "_global.PlatformName", Platform, GFxMovie::SV_Normal );
-	}
-	debugf( TEXT("DISHONORED(bringup): -gfxuimenu: %s %s through %s (the mouse cursor's movie)"),
-		bStarted ? TEXT("opened") : TEXT("FAILED to open"), *Movie->GetPathName(), *PlayerClass->GetName() );
-	return bStarted;
 }
 
 // DISHONORED(port): UDisGFxMoviePlayerBase::ComputeMovieSpaceInfo, 2013 rva 0x787860. The movie is laid
@@ -2796,11 +2593,29 @@ static void DishonoredComputeMovieSpaceInfo( FGFxMovie* Movie, INT ScreenX, INT 
 	}
 }
 
+// UDisGFxMoviePlayerGlobal::m_pMouseCursor (retail SDK @444): the attached clip, held across frames so the
+// attach happens once and only the position is written per frame - and the movie it was attached in, because
+// the handle is only good for that movie's life. DISHONORED(port, agent FP): retail drops the clip in
+// UDisGFxMoviePlayerGlobal::ConditionalHideMouseCursor (2013 rva 0x7945b0, 2012 0x7fa780; reached from its PreClose and
+// PreCommitMapChange); here the global movie is closed and reopened across every map change since the UI
+// manager owns it, and a handle kept across that reopen pointed into the released view: FindTarget +0x43,
+// deterministic, two seconds into l_tower_p from -finewgame (fp_ng1..ng4.log). UGFxMoviePlayer::Close calls
+// DishonoredGFxReleaseMouseCursor before the view goes, which is the PreClose shape.
+static GFxValue   GDisMouseCursor;
+static FGFxMovie* GDisMouseCursorMovie = NULL;
+
+void DishonoredGFxReleaseMouseCursor( FGFxMovie* Movie )
+{
+	if( Movie != NULL && Movie == GDisMouseCursorMovie )
+	{
+		GDisMouseCursor.SetUndefined();
+		GDisMouseCursorMovie = NULL;
+	}
+}
+
 void DishonoredGFxUpdateMouseCursor( FViewport* Viewport )
 {
-	// UDisGFxMoviePlayerGlobal::m_pMouseCursor (retail SDK @444): the attached clip, held across frames
-	// so the attach happens once and only the position is written per frame.
-	static GFxValue MouseCursor;
+	GFxValue& MouseCursor = GDisMouseCursor;
 
 	if( GGFxEngine == NULL || Viewport == NULL )
 	{
@@ -2819,9 +2634,19 @@ void DishonoredGFxUpdateMouseCursor( FViewport* Viewport )
 	}
 	if( Global == NULL || Global->pView.GetPtr() == NULL )
 	{
-		// ConditionalHideMouseCursor's job, without a movie to do it in.
-		MouseCursor.SetUndefined();
+		// ConditionalHideMouseCursor's job, without a movie to do it in. The handle has already been dropped by
+		// DishonoredGFxReleaseMouseCursor if its movie closed; this covers a movie that never attached.
+		if( GDisMouseCursorMovie == NULL )
+		{
+			MouseCursor.SetUndefined();
+		}
 		return;
+	}
+	if( GDisMouseCursorMovie != Global )
+	{
+		// a different (reopened) global movie: the old handle is void and must not be touched through its view
+		MouseCursor.SetUndefined();
+		GDisMouseCursorMovie = NULL;
 	}
 
 	FIntPoint Mouse( 0, 0 );
@@ -2860,6 +2685,7 @@ void DishonoredGFxUpdateMouseCursor( FViewport* Viewport )
 			}
 			return;
 		}
+		GDisMouseCursorMovie = Global;
 		debugf( TEXT("DISHONORED(bringup): mouse cursor: attached 'mouseCursor' to _root.mouseCursor_mc at depth %d, movie %dx%d, screen %dx%d"),
 			Depth.IsNumber() ? (INT)Depth.GetNumber() : 1, (INT)Info.m_MovieSize.X, (INT)Info.m_MovieSize.Y,
 			(INT)Info.m_ScreenSize.X, (INT)Info.m_ScreenSize.Y );
@@ -2906,7 +2732,7 @@ void DishonoredGFxTick( FLOAT DeltaTime )
 {
 	if( GGFxEngine != NULL )
 	{
-		DishonoredGFxAutoOpen( DeltaTime );
+		DishonoredGFxReadTweenDiagSwitch();
 		GGFxEngine->Tick( DeltaTime );
 	}
 }

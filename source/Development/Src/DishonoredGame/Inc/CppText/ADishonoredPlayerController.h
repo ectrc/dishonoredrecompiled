@@ -92,6 +92,10 @@ public:
 	 * (DishonoredGame.DishonoredPlayerController.SetCinematicMode_Native, params_size 36, nine CPF_Parm bits,
 	 * none optional) and they match the nine Stack.Step calls of the exec one for one.
 	 */
+	// DISHONORED(port): agent FP, 2013 rva 0x6a0b00 (2012 0x6d1340, same bytes): sets or clears _Mask in
+	// m_InputEnableMask[_Level]. UDisGlobalUIManager::RefreshGlobalUIState drives DisInputMaskLevel_BlockedUI with it.
+	// Body in dishonoredplayercontroller.cpp.
+	void EnableControllerInput( INT _Mask, UBOOL _bEnable, DisInputMaskLevel _Level );
 	virtual void PreSetCinematicMode_Native( UBOOL bNewInCinematicMode, UBOOL bHidePlayer );
 	virtual void SetCinematicMode_Native( UBOOL bInCinematicMode, UBOOL bWasInCinematicMode, UBOOL bHidePlayer,
 		UBOOL bHideHUD, UBOOL bAffectsMovement, UBOOL bAffectsTurning, UBOOL bAffectsButtons,

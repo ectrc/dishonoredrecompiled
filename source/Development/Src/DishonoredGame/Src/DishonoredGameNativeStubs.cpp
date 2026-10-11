@@ -1570,22 +1570,6 @@ void UDisGFxMoviePlayerBase::execOnFocusLost( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execOnFocusLost);
 }
-void UDisGFxMoviePlayerBase::execAdvance( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execAdvance);
-}
-void UDisGFxMoviePlayerBase::execClose( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execClose);
-}
-void UDisGFxMoviePlayerBase::execStart( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execStart);
-}
-void UDisGFxMoviePlayerBase::execPreLoad( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerBase, execPreLoad);
-}
 void UDisGFxMoviePlayerHUD::execOnPlayerChoiceConfirm( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisGFxMoviePlayerHUD, execOnPlayerChoiceConfirm);

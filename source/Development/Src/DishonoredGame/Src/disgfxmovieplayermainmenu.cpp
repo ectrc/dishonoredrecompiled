@@ -395,6 +395,7 @@ void DisGFxMoviePlayerInitTexts( UDisGFxMoviePlayerBase* Player );
 // agent EK (PHASE11 EK): the HUD's two seam bodies, disgfxmovieplayerhud.cpp
 void DisGFxMoviePlayerHUDPostStart( UDisGFxMoviePlayerHUD* HUD );
 void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime );
+void DisGFxMoviePlayerGlobalPreAdvance( UDisGFxMoviePlayerGlobal* Global, FLOAT DeltaTime );
 UBOOL DisGFxMoviePlayerFilterButtonInput( UDisGFxMoviePlayerBase* Player, INT ControllerId,
 	FName Key, BYTE Event, UBOOL& bHandled );
 
@@ -449,6 +450,12 @@ static void DisMainMenuCloseScreen( UDisGFxMoviePlayerMainMenu* Menu, BYTE Scree
 // DISHONORED(port): 2012 rva 0x821e00
 void DisGFxMoviePlayerMainMenuPostStart( UDisGFxMoviePlayerMainMenu* Menu )
 {
+	// agent FP: retail's first line - the manager learns which movie is the main menu here, and forgets it in
+	// PreClose (2012 0x7f7030, the Closed seam below). Retail reads it unchecked; the manager always exists there.
+	if( UDisGlobalUIManager* UIManager = DisGetGlobalUIManager() )
+	{
+		UIManager->m_pMainMenu = Menu;
+	}
 	Menu->m_LoginStep = 0;
 	Menu->m_Screen = 0;
 	Menu->m_DelegatesControllerId = -1;
@@ -1021,11 +1028,40 @@ static void DisGFxMoviePlayerPreLoaded( UGFxMoviePlayer* Player )
 	}
 }
 
+static void DisGFxMoviePlayerPreLoading( UGFxMoviePlayer* Player )
+{
+	UDisGFxMoviePlayerBase* Base = Cast<UDisGFxMoviePlayerBase>( Player );
+	if( Base == NULL )
+	{
+		return;
+	}
+	// DISHONORED(port, agent FP): the prologue of UDisGFxMoviePlayerBase::PreLoad (2012 0x822820). A movie opened by
+	// the Kismet action takes the action's tweaks; then, with no movie set, the tweaks' own movie, or the package and
+	// movie they name. This is how the manager's pGlobal, whose Init never touches MovieInfo, gets UI_Global.Global.
+	UDisGFxActionOpenMovie* Action = Cast<UDisGFxActionOpenMovie>( Base->GetOuter() );
+	if( Base->m_pTweaks == NULL && Action != NULL && Action->m_pTweaks != NULL )
+	{
+		Base->m_pTweaks = Action->m_pTweaks;
+	}
+	if( Base->MovieInfo == NULL && Base->m_pTweaks != NULL )
+	{
+		Base->MovieInfo = Base->m_pTweaks->m_pMovieInfo;
+		if( Base->MovieInfo == NULL && Base->m_pTweaks->m_MoviePackageName.Len() > 0 && Base->m_pTweaks->m_MovieName.Len() > 0 )
+		{
+			Base->LoadMoviePackage( NULL );
+		}
+	}
+}
+
 static void DisGFxMoviePlayerStarted( UGFxMoviePlayer* Player )
 {
-	// DISHONORED(bringup): UDisGlobalUIManager::OnMovieStackChanged (the movie stack's focus and
-	// pause bookkeeping) runs between the two in retail; UDisGlobalUIManager has no movie stack in
-	// this build because nothing but the bring-up switch opens a movie.
+	// DISHONORED(port, agent FP): UDisGFxMoviePlayerBase::Start (2013 rva 0x7a3f40, 2012 0x7f4200) tells the manager
+	// the stack changed before the player's own PostStart, for every Dishonored movie.
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager != NULL && Cast<UDisGFxMoviePlayerBase>( Player ) != NULL )
+	{
+		UIManager->OnMovieStackChanged();
+	}
 	if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Player ) )
 	{
 		DisGFxMoviePlayerMainMenuPostStart( Menu );
@@ -1037,8 +1073,35 @@ static void DisGFxMoviePlayerStarted( UGFxMoviePlayer* Player )
 	}
 }
 
+static void DisGFxMoviePlayerClosed( UGFxMoviePlayer* Player )
+{
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager == NULL || Cast<UDisGFxMoviePlayerBase>( Player ) == NULL )
+	{
+		return;
+	}
+	// DISHONORED(port, agent FP): UDisGFxMoviePlayerMainMenu::PreClose (2012 0x7f7030) forgets the menu on the
+	// manager; the tail of UDisGFxMoviePlayerBase::Close (2013 rva 0x793a90) is OnMovieStackChanged.
+	if( UIManager->m_pMainMenu == Player )
+	{
+		UIManager->m_pMainMenu = NULL;
+	}
+	UIManager->OnMovieStackChanged();
+}
+
 static void DisGFxMoviePlayerPreAdvance( UGFxMoviePlayer* Player, FLOAT DeltaTime )
 {
+	// agent FP: -fpadvdiag names every movie advance, so a crash inside one is attributable from the log
+	static INT AdvDiag = -1;
+	if( AdvDiag < 0 )
+	{
+		AdvDiag = ParseParam( appCmdLine(), TEXT("fpadvdiag") ) ? 1 : 0;
+	}
+	if( AdvDiag )
+	{
+		debugf( TEXT("DISHONORED(bringup): fpadvdiag advance %s %s open %d"), *Player->GetClass()->GetName(),
+			*Player->GetName(), Player->bMovieIsOpen ? 1 : 0 );
+	}
 	if( UDisGFxMoviePlayerMainMenu* Menu = Cast<UDisGFxMoviePlayerMainMenu>( Player ) )
 	{
 		DisGFxMoviePlayerMainMenuPreAdvance( Menu, DeltaTime );
@@ -1047,6 +1110,11 @@ static void DisGFxMoviePlayerPreAdvance( UGFxMoviePlayer* Player, FLOAT DeltaTim
 	else if( UDisGFxMoviePlayerHUD* HUD = Cast<UDisGFxMoviePlayerHUD>( Player ) )
 	{
 		DisGFxMoviePlayerHUDPreAdvance( HUD, DeltaTime );
+	}
+	// agent FP: UDisGFxMoviePlayerGlobal::PreAdvance (2013 rva 0x7aa610), UI_Global's own letterbox
+	else if( UDisGFxMoviePlayerGlobal* Global = Cast<UDisGFxMoviePlayerGlobal>( Player ) )
+	{
+		DisGFxMoviePlayerGlobalPreAdvance( Global, DeltaTime );
 	}
 }
 
@@ -1075,8 +1143,10 @@ static struct FDisGFxMoviePlayerSeam
 {
 	FDisGFxMoviePlayerSeam()
 	{
+		GGFxMoviePlayerPreLoadHook = &DisGFxMoviePlayerPreLoading;
 		GGFxMoviePlayerPreLoadedHook = &DisGFxMoviePlayerPreLoaded;
 		GGFxMoviePlayerStartedHook = &DisGFxMoviePlayerStarted;
+		GGFxMoviePlayerClosedHook = &DisGFxMoviePlayerClosed;
 		GGFxMoviePlayerPreAdvanceHook = &DisGFxMoviePlayerPreAdvance;
 		GGFxMoviePlayerFilterButtonHook = &DisGFxMoviePlayerFilterButton;
 	}

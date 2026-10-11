@@ -24,10 +24,37 @@ public:
 public:
 	// DISHONORED(port): 2013 rva 0x84cf80. An open movie whose attributes changed re-reads the whole stack.
 	void OnMovieAttributesChanged( class UDisGFxMoviePlayerBase* _pMovie );
-	// DISHONORED(port, partial): 2013 rva 0x847070 (2012 0x8b75e0, where the PDB names it) is the whole of it - the blur, the
-	// black stripes, the HUD, the controller input mask and the mouse cursor. Only the blur half is ported;
-	// the others are named at the site. Body in disglobaluimanager.cpp.
+	// DISHONORED(port): 2013 rva 0x847070 (2012 0x8b75e0, where the PDB names it): the blur, the black stripes, the
+	// HUD's visibility and pause, the controller input mask and the mouse cursor, recomputed from the open movie
+	// stack. Agent FA ported the blur arm, agent FP the rest. Body in disglobaluimanager.cpp.
 	void RefreshGlobalUIState();
+
+// ---- agent FP (PHASE16 FP): one owner for every movie player ----
+public:
+	// DISHONORED(port): 2013 rva 0x84cf70 (2012 0x8bc570), a jmp thunk onto RefreshGlobalUIState. Reached from
+	// UDisGFxMoviePlayerBase::Start, Close and LoadMoviePackageAsync.
+	void OnMovieStackChanged();
+	// DISHONORED(port): 2013 rva 0x85fdb0 (2012 0x8c45d0), 1428 bytes. Constructs pHUD, pPowerWheel, pJournal, pNote,
+	// pPauseMenu and pMissionStats (or pBrief and pResultsMenu under a challenge game info) from the current movie
+	// set, then starts the global movie and the HUD. Called from ADishonoredGameInfo::InitGlobalManagers.
+	void Init();
+	// DISHONORED(port): 2013 rva 0x841120 (301 bytes; 2012 0x8aed60) and 0x83daa0 (29 bytes; 2012 0x8aedc0), reached
+	// from ADishonoredGameInfo's two map-change virtuals. The map change closes every movie with
+	// bCloseOnLevelChange; these close the HUD and the menu before it and reopen the global movie and the HUD after.
+	void PreCommitMapChange();
+	void PostCommitMapChange();
+private:
+	// DISHONORED(port): 2013 rva 0x851970 (2012 0x8c0020). 2013's: the default set, then every non-empty field of
+	// the first DLC set whose m_MapFilter is a substring of the persistent map's name.
+	void FindCurrentMovieSet( struct FDisUIMovieSet& _rMovieSet ) const;
+	// DISHONORED(port): 2013 rva 0x846e70, the body Init calls six or seven times: the class by config name or the
+	// default, the object under this manager, its tweaks out of the SF tweaks package, and its movie.
+	class UDisGFxMoviePlayerBase* CreateMoviePlayer( UClass* _pDefaultClass, const TCHAR* _pName, const FString& _rClassName,
+		const FString& _rMoviePath, UBOOL _bLoadMovieNow, UBOOL _bOverrideTweaks );
+	// DISHONORED(port): 2013 rva 0x846d00: the seek-free package of SF tweaks the movie set names, into m_pSFTweaksPackage
+	void LoadSFTweaksPackage( const FString& _rPackageName );
+	// DISHONORED(port): 2013 rva 0x85dbb0: m_pItemSmallIconPackage and the DLC icon-package suffix
+	void InitItemIconPackages( UBOOL _bHasDLCItemIconPackages, const FString& _rMapFilter );
 
 // ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
 public:

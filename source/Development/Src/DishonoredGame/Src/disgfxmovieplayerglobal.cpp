@@ -86,25 +86,13 @@ static GFxMovieView* DisGlobalMovieView( UDisGFxMoviePlayerGlobal* Player )
 	return Movie ? Movie->pView.GetPtr() : NULL;
 }
 
-// DISHONORED(bringup): the seam named in dishonoredutilities.h. Retail's is DisGetGlobalUIManager()->m_pGlobal.
-// The test is the view and not the pointer, because both candidates can be a movie player that owns no movie: the
-// class default object is a UDisGFxMoviePlayerGlobal too, and DisGetGameInfo()->m_pGlobalUIManager comes out of the
-// game info's default sub-objects with an m_pGlobal that nothing ever started.
+// DISHONORED(written): the accessor named in dishonoredutilities.h. Retail's is DisGetGlobalUIManager()->m_pGlobal,
+// unchecked; since agent FP the manager's own pGlobal is the one movie player of this class that opens (agent EI's
+// object-iterator fallback covered the -gfxuimenu bring-up's copy, which no longer exists).
 UDisGFxMoviePlayerGlobal* DisGetGlobalMoviePlayer()
 {
 	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
-	if( UIManager != NULL && DisGlobalMovieView( UIManager->m_pGlobal ) != NULL )
-	{
-		return UIManager->m_pGlobal;
-	}
-	for( TObjectIterator<UDisGFxMoviePlayerGlobal> It; It; ++It )
-	{
-		if( !It->HasAnyFlags( RF_ClassDefaultObject ) && DisGlobalMovieView( *It ) != NULL )
-		{
-			return *It;
-		}
-	}
-	return NULL;
+	return UIManager != NULL ? UIManager->m_pGlobal : NULL;
 }
 
 // DISHONORED(port): 2013 rva 0x7946b0. The message and the three captions as GFxValue strings - a caption whose
@@ -343,4 +331,54 @@ void UDisGFxMoviePlayerGlobal::execOnMessageBoxConfirm( FFrame& Stack, RESULT_DE
 	P_GET_INT(_SelectedIndex);
 	P_FINISH;
 	OnMessageBoxConfirm( _SelectedIndex );
+}
+
+/*-----------------------------------------------------------------------------
+	Agent FP (PHASE16 FP): UI_Global's own letterbox.
+
+	The bars exist in two movies. UI_HUD's are Tick_Cinematic's (disgfxmovieplayerhud.cpp), off HUD element
+	0x10, two SetBlackStripes arguments. UI_Global's are this one's, so a UI screen can letterbox while the
+	HUD is hidden: UDisGFxMoviePlayerGlobal::PreAdvance (2013 rva 0x7aa610, 1241 bytes, retail vtable +476;
+	the base's entry is a ret-only stub) decides
+	   bWant = m_bRequestBlackStripes || PlayerCamera->bConstrainAspectRatio || ( HUD cinematic && triple screen )
+	and when that differs from m_bHasBlackStripes invokes _root.blackStripes_mc.SetBlackStripes( bWant ) with
+	ONE argument. m_bRequestBlackStripes is what RefreshGlobalUIState ORs m_bDrawBlackStripesWhileActive into
+	across the open movies. The 1241 bytes also hold the triple-screen stripe geometry (_s0_mc / _s1_mc
+	widths out of ComputeMovieSpaceInfo, gated on the HUD's m_bTripleScreenMode or this movie's
+	m_bTripleScreenCinematicMode) and the two save-icon timers (m_ProfileSaveState / m_GameSaveState
+	through 0x7a4d30 and 0x7a4ed0); neither runs on a PC with one screen and no save in flight, and
+	neither is ported here.
+-----------------------------------------------------------------------------*/
+
+void DisGFxMoviePlayerGlobalPreAdvance( UDisGFxMoviePlayerGlobal* Global, FLOAT DeltaTime )
+{
+	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	const UBOOL bCameraStripes = PC != NULL && PC->PlayerCamera != NULL && PC->PlayerCamera->bConstrainAspectRatio;
+	UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD();
+	const UBOOL bTripleScreenCinematic = HUD != NULL && HUD->m_bCinematicMode && HUD->m_bTripleScreenMode;
+	const UBOOL bWant = Global->m_bRequestBlackStripes || bCameraStripes || bTripleScreenCinematic;
+	if( bWant == ( Global->m_bHasBlackStripes != 0 ) )
+	{
+		return;
+	}
+	GFxMovieView* View = DisGlobalMovieView( Global );
+	if( View == NULL )
+	{
+		return;
+	}
+	GFxValue Stripes;
+	UBOOL bInvoked = FALSE;
+	if( View->GetVariable( &Stripes, "_root.blackStripes_mc" ) && Stripes.IsObject() )
+	{
+		GFxValue Arg;
+		Arg.SetBoolean( bWant != 0 );
+		GFxValue Result;
+		bInvoked = Stripes.Invoke( "SetBlackStripes", &Result, &Arg, 1 );
+		Result.ReleaseManaged();
+		Arg.ReleaseManaged();
+	}
+	Stripes.ReleaseManaged();
+	Global->m_bHasBlackStripes = bWant ? TRUE : FALSE;
+	debugf( TEXT("DISHONORED(bringup): Global: SetBlackStripes(%d) %s (request %d camera %d)"), bWant ? 1 : 0,
+		bInvoked ? TEXT("ok") : TEXT("NOT FOUND"), Global->m_bRequestBlackStripes ? 1 : 0, bCameraStripes ? 1 : 0 );
 }

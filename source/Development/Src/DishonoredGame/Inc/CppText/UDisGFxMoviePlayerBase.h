@@ -18,3 +18,13 @@ public:
 	void AllowInput( UBOOL _bAllowInput, UBOOL _bCaptureInput );
 	// DISHONORED(port): agent EI, 2013 rva 0x7a45c0 - drops the message-box subscription with the object
 	virtual void BeginDestroy();
+
+// ---- agent FP (PHASE16 FP): the movie package, loaded synchronously ----
+public:
+	// DISHONORED(port): 2013 rva 0x7a3fd0 (2012 0x81d0c0). The path, or the tweaks' package and movie name when
+	// none is given; the package through GPackageFileCache and LoadPackage with the seek-free suffix; the
+	// SwfMovie into MovieInfo, rooted, and its path into m_DynamicallyLoadedMoviePath. Body in
+	// disgfxmovieplayerbase.cpp.
+	UBOOL LoadMoviePackage( const TCHAR* _pMoviePath );
+	// DISHONORED(port): 2013 rva 0x787720 (2012 0x7f42b0), retail vtable +436: the negation of m_bIsLoadingMoviePackage
+	UBOOL HasFinishedAsyncLoading() const { return m_bIsLoadingMoviePackage ? FALSE : TRUE; }

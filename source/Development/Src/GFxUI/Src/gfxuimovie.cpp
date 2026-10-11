@@ -1923,6 +1923,13 @@ UBOOL UGFxMoviePlayer::PreLoad()
 // movie handle exists, which is what retail does.
 UBOOL UGFxMoviePlayer::Start( UBOOL bStartPaused )
 {
+	// DISHONORED(port, agent FP): UDisGFxMoviePlayerBase::PreLoad (2012 0x822820) begins by taking its
+	// tweaks off the Kismet action that opened it and the movie to load off those tweaks, before the
+	// engine's PreLoad runs; same seam as the other hooks.
+	if( GGFxMoviePlayerPreLoadHook != NULL )
+	{
+		GGFxMoviePlayerPreLoadHook( this );
+	}
 	PreLoad();
 	if( pMovie == NULL || GGFxEngine == NULL )
 	{
@@ -1951,41 +1958,50 @@ UBOOL UGFxMoviePlayer::Start( UBOOL bStartPaused )
 // DISHONORED(port): 2012 rva 0x5cf600
 void UGFxMoviePlayer::Close( UBOOL bUnload )
 {
-	if( GGFxEngine == NULL || pMovie == NULL )
+	if( GGFxEngine != NULL && pMovie != NULL )
 	{
-		return;
-	}
-	if( DataStoreSubscriber )
-	{
-		DataStoreSubscriber->ClearBoundDataStores();
-	}
-	if( !HasAnyFlags( RF_Unreachable ) )
-	{
-		eventOnClose();
-	}
-	// DISHONORED(bringup): retail also takes pMovie out of FGFxEngine::AllMovies here; that list is the
-	// engine glue's own bookkeeping, so CloseScene(pMovie, bUnload) is where agent BB's side removes it.
-	GGFxEngine->CloseScene( GetMovie(), bUnload );
-	bMovieIsOpen = FALSE;
-	if( !HasAnyFlags( RF_Unreachable ) )
-	{
-		eventConditionalClearPause();
-	}
-	if( bUnload )
-	{
-		// the UGFxObjects this movie created are outered to it and their GFxValues are dangling now
-		for( INT Index = 0; Index < ObjectValues.Num(); Index++ )
+		if( DataStoreSubscriber )
 		{
-			UGFxObject* Object = ObjectValues(Index);
-			if( Object && Object->GetOuter() == this )
-			{
-				Object->Clear();
-				ObjectValues.Remove( Index-- );
-			}
+			DataStoreSubscriber->ClearBoundDataStores();
 		}
-		pMovie = NULL;
-		LocalPlayerOwnerIndex = 0;
-		DataStoreSubscriber = NULL;
+		if( !HasAnyFlags( RF_Unreachable ) )
+		{
+			eventOnClose();
+		}
+		// DISHONORED(port, agent FP): the one handle this glue keeps into a movie across frames, the global
+		// movie's cursor clip, is dropped before the view goes - UDisGFxMoviePlayerGlobal::PreClose's
+		// ConditionalHideMouseCursor by shape.
+		DishonoredGFxReleaseMouseCursor( GetMovie() );
+		// DISHONORED(bringup): retail also takes pMovie out of FGFxEngine::AllMovies here; that list is the
+		// engine glue's own bookkeeping, so CloseScene(pMovie, bUnload) is where agent BB's side removes it.
+		GGFxEngine->CloseScene( GetMovie(), bUnload );
+		bMovieIsOpen = FALSE;
+		if( !HasAnyFlags( RF_Unreachable ) )
+		{
+			eventConditionalClearPause();
+		}
+		if( bUnload )
+		{
+			// the UGFxObjects this movie created are outered to it and their GFxValues are dangling now
+			for( INT Index = 0; Index < ObjectValues.Num(); Index++ )
+			{
+				UGFxObject* Object = ObjectValues(Index);
+				if( Object && Object->GetOuter() == this )
+				{
+					Object->Clear();
+					ObjectValues.Remove( Index-- );
+				}
+			}
+			pMovie = NULL;
+			LocalPlayerOwnerIndex = 0;
+			DataStoreSubscriber = NULL;
+		}
+	}
+	// DISHONORED(port, agent FP): UDisGFxMoviePlayerBase::Close (2013 rva 0x793a90, 2012 0x7fa080) ends with
+	// UDisGlobalUIManager::OnMovieStackChanged whether or not a movie was open to close.
+	if( GGFxMoviePlayerClosedHook != NULL )
+	{
+		GGFxMoviePlayerClosedHook( this );
 	}
 }
 
@@ -2694,8 +2710,10 @@ void UGFxMoviePlayer::ProcessDataStoreCall( const char* MethodName, const GFxVal
 // path is FGFxEngine::InputKey / InputAxis and the Dishonored menus override these.
 // DISHONORED(port, agent DG): the retail base's own body is `return FALSE` (2012 0x5deb60); what
 // answers is UDisGFxMoviePlayerBase::FilterButtonInput (0x7f45a0) and the two overrides below it.
+FGFxMoviePlayerHook      GGFxMoviePlayerPreLoadHook = NULL;
 FGFxMoviePlayerHook      GGFxMoviePlayerPreLoadedHook = NULL;
 FGFxMoviePlayerHook      GGFxMoviePlayerStartedHook = NULL;
+FGFxMoviePlayerHook      GGFxMoviePlayerClosedHook = NULL;
 FGFxMoviePlayerTickHook  GGFxMoviePlayerPreAdvanceHook = NULL;
 FGFxMoviePlayerInputHook GGFxMoviePlayerFilterButtonHook = NULL;
 

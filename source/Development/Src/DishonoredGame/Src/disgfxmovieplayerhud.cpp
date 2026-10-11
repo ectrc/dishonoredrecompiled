@@ -174,10 +174,9 @@
 	(0x79f6e0) for the numbers, and ADishonoredPlayerController::PreRender (0x6a0c50) -> PreRender
 	(0x7a5840) -> PreRender_Layout (0x796250) for where they sit.
 
-	Everything below the bring-up section is that chain, body for body. The bring-up itself stands in
-	for UDisGlobalUIManager, which is not this package: it does for the HUD exactly what
-	RefreshGlobalUIState does - construct the two movie players, point them at the cooked movies the
-	config movie set names, and call StartHUD - and nothing else that class does.
+	Everything below is that chain, body for body. The HUD is constructed and started by
+	UDisGlobalUIManager::Init (disglobaluimanager.cpp, agent FP); the bring-up that used to stand in for it
+	here is gone, and the banner above DisPlayerControllerPreRender says why.
 -----------------------------------------------------------------------------*/
 
 
@@ -1220,328 +1219,28 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 }
 
 /*-----------------------------------------------------------------------------
-	The bring-up: what UDisGlobalUIManager does for the HUD and nothing else.
+	Who opens the HUD: UDisGlobalUIManager::Init, and nobody else. Agent FP, wave 20.
 
-	Retail's UDisGlobalUIManager::Init (2012 0x8c45d0) constructs one movie player per entry of the
-	config movie set and RefreshGlobalUIState (2012 0x8b75e0) opens and closes them as the game moves
-	between the menu and a level; UDisGlobalUIManager is not this package. What is reproduced here is
-	only the HUD's share of that: find the movie set's HUD path, construct UDisGFxMoviePlayerHUD and
-	UDisGFxMoviePlayerHUDFX, load the cooked packages the way
-	UDisGFxMoviePlayerBase::LoadMoviePackage (2013 rva 0x7a3fd0) loads them, and call StartHUD.
-	Everything from StartHUD onwards is the real path.
+	Until wave 20 this file carried DisHUDBringUp, a second owner for the HUD movie player that constructed
+	UDisGFxMoviePlayerHUD and UDisGFxMoviePlayerHUDFX itself and raced the -gfxuimenu bring-up in
+	GFxUI/Src/gfxuiengine.cpp (agent FM: 2 of 3 runs dead in the menu's own open until one was latched behind
+	the other). Both are gone. Retail's chain, resolved by hand by agent FM in the 2013 database and
+	unconditional end to end: ADishonoredGameInfo::PostBeginPlay (2013 rva 0x6155d0) -> InitGlobalManagers
+	(0x5e9bd0, call site 0x5e9c38) -> UDisGlobalUIManager::Init (0x85fdb0, 1428 bytes, 2012 0x8c45d0) ->
+	UDisGFxMoviePlayerHUD::StartHUD (0x78cd00, call site 0x86031b). Init is ported in disglobaluimanager.cpp:
+	it constructs pHUD under the manager from the config movie set (DefaultUI.ini,
+	[DishonoredGame.DisGlobalUIManager]), the effects player comes with it as the HUD class's own pHudFX
+	default sub-object, and the cooked class defaults carry the flags the bring-up used to set by hand
+	(bAllowFocus, bAllowInput, bCaptureInput, bDisplayWithHudOff; Init logs them).
 
-	It WAS behind -dishud so the regression harness's command lines, whose thresholds are calibrated
-	without a movie open, were unchanged - the same reason -gfxuimenu is a switch (Core/Src/UnMisc.cpp).
-	That default is now the other way round, and the harness opts out with -nodishud. Agent FM, wave 19:
-
-	**Retail has no gate.** ADishonoredGameInfo::PostBeginPlay (2013 rva 0x6155d0, 348 bytes) ->
-	InitGlobalManagers (0x5e9bd0, 148 bytes) -> UDisGlobalUIManager::Init (0x85fdb0, 1428 bytes, 2012
-	0x8c45d0) calls UDisGFxMoviePlayerHUD::StartHUD (0x78cd00, 61 bytes) unconditionally, on every map
-	including the menu map - the retail ini names DefaultGame=DishonoredGame.DishonoredGameInfo for
-	everything and has no separate menu GameInfo. **Unconditional end to end**, resolved by hand in the 2013
-	database: each link has exactly ONE code caller (the call sites are 0x6156be -> InitGlobalManagers,
-	0x5e9c38 -> Init, 0x86031b -> StartHUD); InitGlobalManagers has zero conditional branches; Init's only
-	real branch is a `Cast<>` on this->Outer that chooses the challenge-mode extra movies (pBrief,
-	pResultsMenu) over the campaign one (pMissionStats) and whose two arms CONVERGE at 0x860303, which
-	post-dominates both, three instructions before the StartHUD call; every other branch in Init's 1428
-	bytes is a TArray bounds assert. There is no GIsGame reference, no game-state enum, no menu or cinematic
-	flag and no player, controller or pawn check anywhere on the chain. One level below, inside
-	UDisGFxMoviePlayerBase::Start (vtable slot +0x128), there is exactly one early-out and it is movie state
-	rather than game state: bit 0 of the player's +0xC4, "already open".
-
-	The HUD movie is therefore ALWAYS open in retail; what varies is the visibility RefreshGlobalUIState
-	(0x847070, 901 bytes, 2012 0x8b75e0) recomputes as
+	The HUD movie is therefore open on every map, the menu map included. What hides it there is
+	UDisGlobalUIManager::RefreshGlobalUIState (0x847070), which recomputes pMovie->fVisible as
 	   !PersistentWorldInfo.m_bNeverDisplayHUD && AND-over-every-open-player( m_bShowHUDWhileActive )
-	alongside the UberUI blur, the controller input mask and two bits on m_pGlobal. Its world-state read is
-	GWorld->[+0x2C4]->[+0x2F0] bit 10, inverted. Two things the comment above got wrong:
-	RefreshGlobalUIState opens and closes NOTHING, and it is not unported - 0x847070 is
-	disglobaluimanager.cpp:113, where agent FA ported the blur arm of exactly this walk and wrote down the
-	other four bits by name.
+	on every movie stack change, and FGFxEngine::RenderUI, which tests fVisible before anything else.
 
-	Resolution notes, because only ONE of these seven addresses carries a symbol in the 2013 database:
-	  * 0x84cf70 IS named, `UDisGlobalUIManager::OnMovieStackChanged`, and its five bytes are
-	    `E9 FB A0 FF FF` = `jmp 0x847070`. That thunk is the hard anchor for 0x847070, and it is the same
-	    shape as the named 2012 pair (0x8bc570 jumps to 0x8b75e0). 0x84cf80, the next function, is the named
-	    `OnMovieAttributesChanged`, and it also calls 0x847070.
-	  * 0x85fdb0 is pinned by what it builds: FName("pHUD") with UDisGFxMoviePlayerHUD's static class into
-	    this+0x2DC, then pPowerWheel +0x2E0, pJournal +0x2E4, pNote +0x2E8, pPauseMenu +0x2EC - and the
-	    named DisGetGlobalUIManager (0x7bf700) returns GWorld->GetGameInfo()->[+0x41C], which is the same
-	    field InitGlobalManagers loads into ecx before the call.
-	  * 0x78cd00 is pinned as a member of UDisGFxMoviePlayerHUD by its call site: `ecx = [uiMgr+0x2DC]`, the
-	    player Init had just constructed under FName("pHUD").
-	  * 0x6155d0 is pinned by its tail `call AGameInfo::PostBeginPlay` (the Super:: call of an override) and
-	    by its data xref at 0x10dba48, inside ADishonoredGameInfo's primary vtable, slot +0x210.
-	  * 0x5e9bd0 is pinned by its named callees: UDisPostProcessManager::Init, UDisWaterVolumeManager::Init,
-	    UDisGlobalCombatManager::Init_GlobalCombat, UDisRatSwarmGlobalManager::Init,
-	    UDisGlobalMusicManager::Init_GlobalMusic, then [this+0x41C]->Init, then a tail jmp to
-	    UDisGlobalFactionManager::RebuildCaches.
-	  * the three 2012 rvas quoted here (0x8b75e0, 0x8bc570, 0x8c45d0) come from this file's own
-	    PDB-attributed skeleton list and disglobaluimanager.cpp; they were not re-read out of the 2012
-	    database for this package.
-
-	So the shipped build SHOULD open the HUD and the harness should suppress it, not the reverse:
-	 1. It is what retail does, and a user launching the executable with no arguments is the configuration
-	    this project is rebuilding. _root.blackStripes_mc lives in this movie, so with the switch defaulting
-	    off a finished feature - the letterbox bars, wave 18 - was invisible to every person who played it.
-	 2. The five calibrated stages (nullrhi, d3d9, inputtest) have cliff-detector bounds measured with no
-	    movie open: d3d9_frames against 1000, draws per frame, the texture census. Opening a movie in them
-	    moves all three and buys nothing, because the HUD path is covered by the stage that boots the
-	    shipped configuration - run_regression.py's `newgame`, which passes no -nodishud.
-	 3. -nodishud cannot be matched by ParseParam looking for "dishud": appStrfind only matches at a
-	    non-alphanumeric boundary and the character before "dishud" in "-nodishud" is 'o'.
-
-	Three things this bring-up still does NOT do, all read out of retail and none of them in this package:
-	  * retail has ONE owner for every movie player and this tree has two racing bring-ups. See the
-	    sequencing guard in DisHUDBringUp and what it was measured against.
-	  * the letterbox bars exist in TWO movies. UI_HUD's are Tick_Cinematic's, off HUD element 16, with a
-	    two-argument SetBlackStripes - that is the one this tree has. UI_Global has its own, driven by
-	    m_bDrawBlackStripesWhileActive accumulated across the open movies, with a ONE-argument
-	    SetBlackStripes, out of what is almost certainly UDisGFxMoviePlayerGlobal::PreAdvance - 2013 rva
-	    0x7aa610, 1241 bytes, pinned only as far as "a virtual of UDisGFxMoviePlayerGlobal at vtable slot
-	    +0x1DC, whose base-class entry is a ret-only stub"; the name itself is not provable from the 2013
-	    database, whose neighbouring slots are the named UpdateAnalogInputForAS, UpdateGamepadUseForAS and
-	    IsUsingGamepad. That path is absent,
-	    and UDisGFxMoviePlayerGlobal::OnMessageBoxUp (disgfxmovieplayerglobal.cpp:263) is the only writer of
-	    m_bDrawBlackStripesWhileActive in this tree.
-	  * m_bShowHUDWhileActive's default on the HUD player comes from cooked script defaults, not from any
-	    ini. If this tree's default is FALSE the movie opens and draws nothing, which looks exactly like a
-	    HUD that never appeared.
+	-nodishud is still the regression harness's switch: the three calibrated stages pass it, and Init leaves
+	the global movie and the HUD closed when it is on. -dishud is accepted and means nothing.
 -----------------------------------------------------------------------------*/
-
-/** DISHONORED(port): the package/object split of UDisGFxMoviePlayerBase::LoadMoviePackage, 2013 rva
-    0x7a3fd0: the file name gets the seek-free suffix, the object path does not. */
-static USwfMovie* DisHUDLoadMovie( const FString& MoviePath )
-{
-	const INT Dot = MoviePath.InStr( TEXT(".") );
-	FString PackageName = Dot > 0 ? MoviePath.Left( Dot ) : MoviePath;
-	if( GUseSeekFreeLoading )
-	{
-		PackageName += TEXT("_SF");
-	}
-	FString Unused;
-	if( GPackageFileCache->FindPackageFile( *PackageName, NULL, Unused ) )
-	{
-		UObject::LoadPackage( NULL, *PackageName, LOAD_None );
-	}
-	if( USwfMovie* Movie = FindObject<USwfMovie>( ANY_PACKAGE, *MoviePath ) )
-	{
-		return Movie;
-	}
-	// The cook can put the movie inside a group, so the object path carries one more level than the
-	// config does. Every resident SwfMovie is logged once, which is what makes a wrong path visible.
-	const INT LastDot = MoviePath.InStr( TEXT("."), TRUE );
-	const FString WantName = LastDot >= 0 ? MoviePath.Mid( LastDot + 1 ) : MoviePath;
-	USwfMovie* Found = NULL;
-	for( TObjectIterator<USwfMovie> It; It; ++It )
-	{
-		if( It->RawData.Num() == 0 )
-		{
-			continue;
-		}
-		debugf( TEXT("DISHONORED(bringup): HUD: resident movie %s (%d bytes)"), *It->GetPathName(),
-			It->RawData.Num() );
-		if( Found == NULL && It->GetName() == WantName )
-		{
-			Found = *It;
-		}
-	}
-	return Found;
-}
-
-static UGFxMoviePlayer* DisHUDConstructPlayer( UClass* PlayerClass, const TCHAR* Name, USwfMovie* Movie )
-{
-	UGFxMoviePlayer* Player = ConstructObject<UGFxMoviePlayer>( PlayerClass,
-		UObject::GetTransientPackage(), FName( Name ) );
-	Player->AddToRoot();
-	Player->MovieInfo = Movie;
-	// Retail's HUD is not focusable and takes no input: it is drawn over the game and the game keeps
-	// the keyboard. bDisplayWithHudOff is what keeps it drawn while the engine's own HUD flag is off.
-	Player->bAllowFocus = FALSE;
-	Player->bAllowInput = FALSE;
-	Player->bCaptureInput = FALSE;
-	Player->bDisplayWithHudOff = TRUE;
-	Player->TimingMode = TM_Game;
-	Player->LocalPlayerOwnerIndex = 0;
-	if( Player->ExternalInterface == NULL )
-	{
-		Player->ExternalInterface = Player;
-	}
-	return Player;
-}
-
-/** the one thing UDisGlobalUIManager owns that this package needs: the manager object itself, so
-    DisGetGFxHUD() (2013 rva 0x7bf730, dishonoredutilities_accessors.cpp) answers and every body that
-    reaches the HUD through it - here and in ADishonoredHUD::Tick - is retail's own lookup. */
-static UDisGlobalUIManager* DisHUDGetOrCreateUIManager()
-{
-	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
-	if( UIManager != NULL )
-	{
-		return UIManager;
-	}
-	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
-	if( GameInfo == NULL )
-	{
-		return NULL;
-	}
-	// DISHONORED(bringup): retail constructs this in ADishonoredGameInfo's own start-up and calls
-	// UDisGlobalUIManager::Init (2012 0x8c45d0) on it. Neither is ported; the object itself is a
-	// config class, so its movie set comes from DisUI.ini exactly as retail's does.
-	GameInfo->m_pGlobalUIManager = ConstructObject<UDisGlobalUIManager>(
-		UDisGlobalUIManager::StaticClass(), UObject::GetTransientPackage(), TEXT("DisGlobalUIManager") );
-	GameInfo->m_pGlobalUIManager->AddToRoot();
-	return GameInfo->m_pGlobalUIManager;
-}
-
-/** Open the HUD once a world, a viewport and a player pawn exist, the way retail's
-    UDisGlobalUIManager::Init does with no gate at all. Returns TRUE once the movie is up, so the caller
-    stops asking. -nodishud suppresses it, which is what the five calibrated regression stages pass;
-    -dishud is still accepted and now means nothing, so every existing command line keeps working. */
-static UBOOL DisHUDBringUp()
-{
-	static INT State = -2;      // -2 unread, -1 off or done, 0 waiting, 1 open
-	if( State == -2 )
-	{
-		State = ParseParam( appCmdLine(), TEXT("nodishud") ) ? -1 : 0;
-	}
-	if( State == 1 )
-	{
-		// DISHONORED(bringup, agent FI): re-arm when the movie this opened has been closed under it
-		UDisGlobalUIManager* OpenManager = DisGetGlobalUIManager();
-		if( OpenManager != NULL && OpenManager->m_pHUD != NULL && OpenManager->m_pHUD->bMovieIsOpen )
-		{
-			return TRUE;
-		}
-		State = 0;
-	}
-	if( State != 0 )
-	{
-		return State == 1;
-	}
-	if( GWorld == NULL || GEngine == NULL || GEngine->GameViewport == NULL
-		|| ADishonoredPlayerController::s_pInstance == NULL
-		|| ADishonoredPlayerPawn::s_pInstance == NULL )
-	{
-		return FALSE;
-	}
-	// DISHONORED(bringup, agent FM): wait for the front end's own bring-up before opening this one.
-	// Retail has ONE owner for every movie player - UDisGlobalUIManager::Init walks the config movie set
-	// and constructs them in its order - and this tree has two independent state machines instead,
-	// -gfxuimenu's in gfxuiengine.cpp and this one. Letting them overlap is not merely untidy: with the
-	// HUD opening first, two of three measured runs died inside the menu's own open with
-	// `Assertion failed: !Obj->HasAnyFlags(RF_Unreachable|RF_AsyncLoading)` (UnObj.cpp:7979, the replace
-	// branch of StaticAllocateObject), 0.02 s after `-gfxuimenu: opened UI_Global.Global`. Sequencing them
-	// is what retail's single Init does for free. The real fix is to port UDisGlobalUIManager::Init
-	// (2013 rva 0x85fdb0, 2012 0x8c45d0) and delete both bring-ups.
-	//
-	// The wait is LATCHED, and that matters: the map change into the mission closes the menu movie
-	// (UnGame.cpp CommitMapChange, bCloseOnLevelChange), so an unlatched test would hold the HUD shut
-	// for the whole game and the letterbox bars would never draw - measured, fm_bars1: bCinematicMode 1
-	// with the letterbox element 0x10 set in the mask and SetBlackStripes invoked zero times, because
-	// the HUD had opened once on the menu map and could not reopen for l_tower_p.
-	static UBOOL bFrontEndSettled = FALSE;
-	if( !bFrontEndSettled && ParseParam( appCmdLine(), TEXT("gfxuimenu") ) )
-	{
-		UGFxMoviePlayer* AutoMenu = FindObject<UGFxMoviePlayer>( UObject::GetTransientPackage(),
-			TEXT("DisGFxAutoOpenMenu") );
-		if( AutoMenu == NULL || !AutoMenu->bMovieIsOpen )
-		{
-			return FALSE;
-		}
-		bFrontEndSettled = TRUE;
-	}
-
-	UDisGlobalUIManager* UIManager = DisHUDGetOrCreateUIManager();
-	if( UIManager == NULL )
-	{
-		return FALSE;
-	}
-	if( UIManager->m_pHUD != NULL )
-	{
-		if( UIManager->m_pHUD->bMovieIsOpen )
-		{
-			State = 1;
-			return TRUE;
-		}
-		// DISHONORED(bringup, agent FI): the map change into the mission closes every movie whose
-		// bCloseOnLevelChange is set, the HUD's included (UnGame.cpp, CommitMapChange), so the one opened on
-		// the front end does not survive into the level. Retail reopens it from
-		// UDisGlobalUIManager::RefreshGlobalUIState (2012 0x8b75e0), which is unported; this bring-up does
-		// the same thing by letting the switch arm itself again for the new world.
-		UIManager->m_pHUD = NULL;
-	}
-
-	const FString HUDMoviePath = UIManager->m_DefaultUI.m_HUDMoviePath.Len() > 0
-		? UIManager->m_DefaultUI.m_HUDMoviePath : FString( TEXT("UI_HUD.HUD") );
-	USwfMovie* HUDMovie = DisHUDLoadMovie( HUDMoviePath );
-	if( HUDMovie == NULL )
-	{
-		static UBOOL bComplained = FALSE;
-		if( !bComplained )
-		{
-			bComplained = TRUE;
-			debugf( NAME_Warning, TEXT("DISHONORED(bringup): HUD: no SwfMovie '%s'"), *HUDMoviePath );
-		}
-		return FALSE;
-	}
-
-	UClass* HUDClass = UIManager->m_DefaultUI.m_HUDClassName.Len() > 0
-		? FindObject<UClass>( ANY_PACKAGE, *UIManager->m_DefaultUI.m_HUDClassName ) : NULL;
-	if( HUDClass == NULL || !HUDClass->IsChildOf( UDisGFxMoviePlayerHUD::StaticClass() ) )
-	{
-		HUDClass = UDisGFxMoviePlayerHUD::StaticClass();
-	}
-	UDisGFxMoviePlayerHUD* HUD = (UDisGFxMoviePlayerHUD*)DisHUDConstructPlayer( HUDClass,
-		TEXT("DisGFxMoviePlayerHUD"), HUDMovie );
-
-	// DISHONORED(bringup): retail's movie players are handed their tweaks out of the SF tweaks
-	// package the movie set names (m_SFTweaksPackageName, "Twk_UI"), through IDisTweaksInterface.
-	// Nothing in this build loads that package, so the tweak values come from the class default
-	// object - which is the same fallback UDisGFxMoviePlayerBase::LoadMoviePackage itself uses when
-	// GetTweaks_Derived answers null (2013 rva 0x7a3fd0).
-	if( HUD->m_pTweaks == NULL )
-	{
-		HUD->m_pTweaks = (UDisTweaks_GFxMoviePlayerBase*)UDisTweaks_GFxMoviePlayerHUD::StaticClass()->GetDefaultObject();
-	}
-	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)HUD->m_pTweaks;
-
-	// the effects movie, whose eight clips PostStart binds
-	USwfMovie* FXMovie = Tweaks ? Tweaks->m_pFXMovieInfo : NULL;
-	if( FXMovie == NULL )
-	{
-		FXMovie = DisHUDLoadMovie( TEXT("UI_HUDFX.HUDFX") );
-	}
-	if( FXMovie != NULL )
-	{
-		HUD->m_pHudFX = (UDisGFxMoviePlayerHUDFX*)DisHUDConstructPlayer(
-			UDisGFxMoviePlayerHUDFX::StaticClass(), TEXT("DisGFxMoviePlayerHUDFX"), FXMovie );
-		if( HUD->m_pHudFX->m_pTweaks == NULL )
-		{
-			HUD->m_pHudFX->m_pTweaks = HUD->m_pTweaks;
-		}
-		if( Tweaks != NULL && Tweaks->m_pFXMovieInfo == NULL )
-		{
-			Tweaks->m_pFXMovieInfo = FXMovie;
-		}
-	}
-
-	UIManager->m_pHUD = HUD;
-	HUD->StartHUD();
-	debugf( TEXT("DISHONORED(bringup): HUD: %s %s through %s (fx %s), tweaks %s safe area %.3f, ")
-		TEXT("low health %d low mana %d"),
-		HUD->bMovieIsOpen ? TEXT("opened") : TEXT("FAILED to open"), *HUDMovie->GetPathName(),
-		*HUDClass->GetName(), FXMovie ? *FXMovie->GetPathName() : TEXT("none"),
-		Tweaks ? *Tweaks->GetName() : TEXT("none"), Tweaks ? Tweaks->m_fSafeAreaRatio_PC : 0.f,
-		Tweaks ? Tweaks->m_LowHealthThreshold : 0, Tweaks ? Tweaks->m_LowManaThreshold : 0 );
-	if( !HUD->bMovieIsOpen )
-	{
-		UIManager->m_pHUD = NULL;
-		State = -1;
-		return FALSE;
-	}
-	State = 1;
-	return TRUE;
-}
 
 // DISHONORED(port): ADishonoredPlayerController::PreRender, 2013 rva 0x6a0c50. Four instructions in
 // retail: the UI manager, its HUD, the movie's open bit, and the HUD's PreRender.
@@ -1551,10 +1250,6 @@ static UBOOL DisHUDBringUp()
 // the same function-pointer seam GDisEngineTickHook already uses (Engine/Inc/UnWorld.h).
 static void DisPlayerControllerPreRender( UCanvas* Canvas )
 {
-	if( !DisHUDBringUp() )
-	{
-		return;
-	}
 	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
 	if( UIManager != NULL && UIManager->m_pHUD != NULL && UIManager->m_pHUD->bMovieIsOpen )
 	{

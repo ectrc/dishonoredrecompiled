@@ -210,10 +210,48 @@ void ADishonoredGameInfo::InitGlobalManagers()
 	// UDisGlobalCombatManager::Init_GlobalCombat( m_pGlobalCombatManager )   2013 rva 0x83f7b0
 	// UDisRatSwarmGlobalManager::Init( m_pRatSwarmGlobalManager )     2013 rva 0x64c6f0
 	// UDisGlobalMusicManager::Init_GlobalMusic( m_pGlobalMusicManager )      2013 rva 0x852a40's sibling
-	// UDisGlobalUIManager::Init( m_pGlobalUIManager )                 2013 rva 0x8b8d10
+	// DISHONORED(port, agent FP): UDisGlobalUIManager::Init is 2013 rva 0x85fdb0 (2012 0x8c45d0), called from this
+	// function's 0x5e9c38 on every map with no condition - the comment above used to say 0x8b8d10, which is not a
+	// function start in either database. The manager is the game info's pGlobalUIManager default sub-object; it
+	// constructs and opens the HUD and the global movie, which is why there is no other owner for them in this tree.
+	if( m_pGlobalUIManager )
+	{
+		m_pGlobalUIManager->Init();
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredGameInfo::InitGlobalManagers has no m_pGlobalUIManager sub-object") );
+	}
 	// m_pPopulationManager->Initialize()                              virtual
 	// UDisGlobalDLCManager::Initialize( m_pDLCManager )               2013 rva 0x8377c0
 	// UDisGlobalFactionManager::RebuildCaches( m_pGlobalFactionManager )     2013 rva 0x832a60
+}
+
+// DISHONORED(port, partial): agent FP, 2013 rva 0x605c50 (2012 0x661260). Retail, in order: the viewport's tilt input
+// off, ADishonoredPlayerPawn::OnPreCommitMapChange, UDishonoredEngine::PreCommitMapChange (vtable +400), the faction
+// manager's ClearAllRelationOverrides and the pawn's, Term_GlobalMusic, the audio system's CleanUp, the global AI
+// manager's PreCommitMapChange, the attention manager's, THIS (the UI manager's), the population manager's
+// (vtable +304), the post-process manager's StopEffect(18), the eleven bend-time channels reset to the class defaults,
+// the time dilation of every actor re-applied, and three arrays emptied. Only the UI manager's share is written
+// here; it is the one that closes the HUD before the world it draws over goes away.
+void ADishonoredGameInfo::PreCommitMapChange( const FString& PreviousMapName, const FString& NextMapName )
+{
+	if( m_pGlobalUIManager )
+	{
+		m_pGlobalUIManager->PreCommitMapChange();
+	}
+}
+
+// DISHONORED(port, partial): agent FP, 2013 rva 0x607370 (2012 0x65f400). Retail: the faction manager's
+// RebuildCaches, the pawn's ClearVisAndMantleSettings, UDishonoredEngine::PostCommitMapChange and the rich-presence
+// chaos, Init_GlobalMusic, the attention manager's PostCommitMapChange, THIS, and the heart gadget's
+// OnPostCommitMapChange. Only the UI manager's share is written here: it reopens the HUD on the new map.
+void ADishonoredGameInfo::PostCommitMapChange()
+{
+	if( m_pGlobalUIManager )
+	{
+		m_pGlobalUIManager->PostCommitMapChange();
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x6155d0 (2012 0x63fc10): the game info's begin-play, whose one job that this package
