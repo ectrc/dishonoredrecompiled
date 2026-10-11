@@ -495,3 +495,101 @@ addresses were invisible to a clean sweep; `TArray<GFxValue>` is unsafe (destruc
 uninitialised `TArray::Add`); the letterbox exists in **two** movies with different `SetBlackStripes`
 arities and the `UI_Global` one (`0x7aa610`) is **absent**; and `m_bShowHUDWhileActive`'s default
 lives in cooked script defaults, which would make an open HUD invisible.
+
+### FK — merged `af98872`, gated 46 ok / 1 failed / 0 skipped (the known row)
+
+Twenty files. Two units off `Sources.cmake` with external-linkage anchors verified in the map and in a
+run. No header regeneration. Rebased onto `ee2313f` then `cd5fadd`; FL's 703 lines and FK's six
+coexist in `dishonoredplayercontroller.cpp`.
+
+**A Dishonored cutscene matinee with a director group and a player group now initialises and plays,
+with the player's pawn bound to its player group and blended to its stage mark.** Before/after on one
+binary with `-fknoplayergroup` as the control: `SOIREE_Empress_Regent.SeqAct_Interp_26` forced, the
+`PlayerGroup` instances as **`InterpGroupInstPlayer` on `DishonoredPlayerPawn`** where the control gives
+a bare `InterpGroupInst` with no actor; the pawn moves **595.8 units** to its mark, `blendTime 0.20`.
+
+**What was actually stopping every Dishonored cutscene was none of this plan's three named gaps.**
+`UInterpGroupInst::InitGroupInst` raised the **script** event `BeginAnimControl`. `eventBeginAnimControl`
+is `FindFunctionChecked`, Dishonored's script `Actor`/`Pawn` do not declare it, and **retail does not
+use the script path at all** — retail's `InitGroupInst` (2012 `0x231210`, read in full) calls the native
+`AActor::MAT_BeginAnimControl`. So **the first Dishonored cutscene to reach `InitGroupInst` killed the
+process, every time**, on the first group with an anim-control track — every AI group and every player
+group in the game. Three successive `appError`s, one per measured run: `BeginAnimControl` →
+`RestoreAnimSetsToDefault` → `BuildScriptAnimSetList` → none. Four edits close it.
+
+**Five premises of this plan corrected.**
+
+- **"All seven matinees are set dressing with `director NONE`"** was true of the seven that *run*, and
+  it hid the level: `l_tower_p` holds **91 `SeqAct_Interp`, 396 groups, 694 tracks, 4 director
+  groups, 6 player groups, 99 AI groups.** The opening cutscene is
+  `L_Tower_Script…SOIREE_Empress_Regent.SeqAct_Interp_12` — 38 groups, eight `InterpGroupAI`, a
+  `PlayerGroup`, a `DirGroup` — and its **activation count is 0 across a whole new-game route.**
+- **"The player group first"** was the wrong order and cost most of the budget. The cutscene is never
+  activated, and when forced it died on the anim-control handshake before any group finished
+  instancing. The player group is third.
+- **"`UpdateTrack` is missing on every Dishonored `UInterpTrack`"** is wrong for six of nine. Only
+  `AIControl`, `Attachment`, `DisAllowPlayerLook` use `UpdateTrack`. `FaceTo`, `Locomotion`,
+  `StretchAnimControl`, `Dialog` use **`UInterpTrackInst*::UpdateTrackInst(FLOAT, UBOOL)` — a virtual
+  that exists nowhere in this tree** — and `LookAt` a static. The gap is a missing **seam**, and
+  `StretchAnimControl` is **267 of 694 tracks** and on all six player groups.
+- **"`MAT_*`, about forty"** is 22 on `NPCPawn`, 8 on `ADishonoredPawn`, 5 on `ADishonoredPlayerPawn`,
+  6 on preview classes. The player group needs the player five, and `MAT_BeginPlayerGroup` requests a
+  state change into `UStatePlayerMasterSoiree`, an **excluded unit**. `m_pMatineeBlender` and
+  `UInterpGroup::HasMoveTrack` do not exist here at all.
+- **"Twelve of fourteen conditions missing, not cosmetic"**: count right, consequence wrong here. Two
+  have no `.cpp`; **eight of the remaining ten are blocked on a helper in another excluded unit**. And
+  `DisSeqCond_CompareTweaks`, the one FI said fires on this mission, fires 6× and **the link it takes
+  has `0 connections` every time** — `ops ever activated` stayed at FI's exact 65/1670 and 47/1629.
+  The missing body was killing nothing here.
+
+Also: `UInterpGroupInst::UpdateGroupInst` and `UInterpGroup::NeedWaitToStart` do not exist in this
+tree, so the blend is ported onto `UInterpGroupPlayer::UpdateGroup`. And **`-finewgame=<secs>` is on
+the world clock, which starts before the first map loads** — under load `LoadMap` began at 27.6 s, so
+`-finewgame=22` fired into an async load and asserted in `StaticAllocateObject`. The harness's
+`--newgame-at` should go up (→ FN).
+
+**Ported**: `UInterpGroupPlayer::{NeedWaitToStart, UpdateGroup}`,
+`UInterpGroupInstPlayer::{InitGroupInst, TermGroupInst, GetStageMarkPosition, BlendPlayerToMark}` —
+all nine retail functions **identical in size in both executables**, three deliberately not ported
+(two are `jmp`s to the base, `HasActor` is byte-identical to the base's inline). The `InitInterp`
+player-group branch via `GDisInterpPlayerGroupHook`. `UDisSeqCond_CompareTweaks::Activated` +
+`ExtractTweak`, `UDisSeqCond_CompareBoolExtended::Activated`. `-fkdiag` / `-fkdiagat` /
+`-fknoplayergroup`.
+
+**The red row, with FK's control.** Three measurements on the `inputtest` stage: this package 1, this
+package with `-fknoplayergroup` 1, **and a clean rebuild of `cd5fadd` with none of FK's changes also
+1** — same world time, same preceding lines. The trigger is a pawn from `DisSeqAct_StartSpawn_0` one
+frame earlier, with **`an Actor may only be connected to one Group! [DishonoredSpawner_11]`** on the
+line before — the same spawner-as-group-actor problem as hand-over item 2. → FN.
+
+**Not reached, specified in `agentFK.md` §9**, in order: what activates `SeqAct_Interp_12` (**now the
+only known blocker to the user-visible cutscene**); `UInterpGroupInstAI::InitGroupInst` with a
+spawner group actor; the `UpdateTrackInst` seam plus nine track bodies; `AActor::MAT_SetPhysics` /
+`BackupCollisionType`, `MAT_BeginAnimControl` as an `AActor` virtual; the `MAT_*` contract (blocked
+on the player FSM); `NeedWaitToStart`'s caller, the eight blocked conditions and their ten leaf
+helpers, two DLC conditions, `InitInterp`'s three retail differences; and an **intermittent assertion
+on the front end's own `PrepareMapChange`**, 2 of 10 runs, undiagnosed.
+
+Three condition rvas are **flagged as not independently pinned** (match-table neighbours, differing
+sizes). Four `#include "CppText/*.h"` lines in generated bodies and the `GDishonoredFKLinkAnchors`
+block are flagged as what a regeneration would drop.
+
+## Wave result
+
+**Four of four merged**: FJ `562f047` (37/37), FL `ee2313f` (37/37, pre-FM harness), FM `cd5fadd`
+(46/47), FK `af98872` (46/47). Plus the coordinator's `98e22d4` (the listeners) and `28cf7ec` (its own
+regression from that).
+
+**Of the user's four reports**: the Options crash is fixed at the defect (FJ) though the user's exact
+re-entrant path is not reproduced (→ FQ); the **black bars draw from the shipped command line** (FM);
+the **heads are level** (FL), magnitude unproven until `FArkComponentLookat` exists; and the cutscene
+**initialises and plays when forced** (FK) but **is never activated** on the real route (→ FO).
+
+**What the wave found that nobody briefed**: the gate could not see a crash for nineteen waves; there
+were minidumps on disk for every one of them; the firewall prompts that cost five waves were three of
+our own listeners; the exit faulted after the listeners were removed; the bars were ported and
+unreachable for a whole wave; and the thing killing every cutscene was a script event retail never
+raises. **Every one of the four packages found its cause somewhere the plan had not pointed.** FJ
+corrected six premises, FL six, FK five, FM five.
+
+The gate is **red on purpose** at 46/47 — see `STATUS.md` — and wave 20 (`PHASE16.md`) starts there.

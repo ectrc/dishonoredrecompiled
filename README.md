@@ -18,7 +18,7 @@ outside the repo.
 
 Start with [resources/docs/STATUS.md](resources/docs/STATUS.md) — what works, what does not, and the
 pitfalls that cost a wave each to learn. [PLAN.md](PLAN.md) has the overall strategy and phases;
-`resources/docs/PHASE1.md`–`PHASE14.md` are the per-wave trackers, and `resources/docs/agents/` holds
+`resources/docs/PHASE1.md`–`PHASE16.md` are the per-wave trackers, and `resources/docs/agents/` holds
 every package's own report and measurements. Symbol exports live in `resources/docs/symbols/` and
 `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
 
@@ -28,16 +28,19 @@ every package's own report and measurements. Symbol exports live in `resources/d
 |---|---|
 | Engine, renderer, script VM | up; the first mission map renders under D3D9 and the pawn walks it |
 | Main menu | draws, navigates by mouse and keyboard, and starts the game. Its modal text, option rows, difficulty portrait and scrolling lists are measured against retail's |
-| Opening scene | the pawns are placed and the letterbox bars draw; **the matinee itself does not run yet** |
+| Opening scene | the pawns are placed, their heads are level, the letterbox bars draw, and a cutscene matinee plays when forced; **nothing activates the opening cutscene on the real route yet** |
 | In-game HUD | health and mana vials and the stance icon, fed from the live pawn |
 | AI | a guard adopts a patrol route and walks it |
 | Save/load | all 51 retail saves load; **86.7 %** of `Dishonored0.sav`'s object stream restores |
 | Audio | deliberately last — the silent backend loads the real banks and resolves the real events |
 | Full campaign | not yet |
 
-Every merge is gated on a clean checkout of its own commit by a 37-check regression harness
+Every merge is gated on a clean checkout of its own commit by a 47-check regression harness
 (`resources/tools/run_regression.py`): build, layout `static_assert`s against retail's offsets, a null-RHI
-smoke, a D3D9 render census and a scripted input run.
+smoke, a D3D9 render census, a scripted input run, a New Game from the menu and an Options tab sweep.
+**It is currently red on purpose** — 46 of 47 — over a real intermittent crash in the spawn path that
+it could not see until wave 19; `resources/docs/STATUS.md` has the details and the reason the bound is
+not being relaxed.
 
 ## Running it
 

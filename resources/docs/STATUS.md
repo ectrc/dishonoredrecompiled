@@ -1,9 +1,9 @@
-# Project status — 2026-10-11 (wave 18 complete: the opening scene plays, and four of the five faults are measured against retail)
+# Project status — 2026-10-11 (wave 19 complete; the gate is red on purpose; a cutscene matinee plays when forced and is never activated)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md` (wave 18, done)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FI>.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md` (wave 20, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FM>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `21db165`)
+## Where we are (HEAD `af98872`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -38,6 +38,15 @@ NEW GAME, the difficulty screen and the brightness screen, then YES on the confi
 its own menu one second after opening it, so New Game was unreachable. It passed 37/37 anyway — see
 "The gate's blind spot" under Known pitfalls. **Enter does not activate a main-menu row** either
 (defect 5); Space does, and `-finewgame` drives past it.
+
+**As of wave 19**: the Options screen no longer crashes on a tab switch (a raw pointer in the action
+queue, FJ); the NPCs' heads are level (`UArkAnimNodeLookAt`, FL); the letterbox bars draw from the
+shipped command line (FM, after proving retail has no gate on the HUD); and **a Dishonored cutscene
+matinee initialises and plays when forced** (FK) — the first one to reach `InitGroupInst` had been
+killing the process every time on a script event retail never raises. **The opening cutscene is still
+not played on the real route, because nothing activates it** (`activations 0`), and that is wave 20's
+package FO. Also: real mouse input works again — the firewall prompts were three of our own
+listeners (`98e22d4`).
 
 | Milestone (PLAN.md Phase 6) | State |
 |---|---|
@@ -155,6 +164,21 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run). **Read a
    capture's actual size; never assume it.**
 
+## Wave 19 — the crash, the cutscene, the heads, and the gate that missed both
+
+`PHASE15.md`. Four of four merged:
+
+| | gate | |
+|---|---|---|
+| `562f047` FJ | 37/37 | the Options crash: `ActionEntry::pTarget` was a raw pointer where retail holds a `GPtr` and refuses to run an unloaded entry. Found the minidump nobody had opened; recovered the ASLR base without a debugger |
+| `98e22d4`, `28cf7ec` | — | the firewall prompts were three of our own listeners, now opt-in; and the exit fault that removing them exposed |
+| `ee2313f` FL | 37/37 | the heads: `UArkAnimNodeLookAt::InitAnim` + `GetBoneAtoms` — neither candidate in the brief. The 396 AnimNotify errors are an asset artefact stock UE3 already repairs |
+| `cd5fadd` FM | **46/47** | **the gate could not see a crash for nineteen waves**; the New Game and Options stages; `-dishud` flipped after proving retail has no gate; the bars draw |
+| `af98872` FK | **46/47** | a cutscene matinee plays when forced; every Dishonored cutscene had been dying on a script `BeginAnimControl` retail never raises; `l_tower_p` has 91 matinees, not 7 |
+
+**Every package found its cause somewhere the plan had not pointed.** FJ corrected six premises of
+its brief, FL six, FK five, FM five. The `46/47` is the pre-existing spawn crash, above.
+
 ## Wave 18 — the ActionScript library, the portrait, and getting into the game
 
 `PHASE14.md`. **Four of four merged and gated**, each 37/37 on a clean checkout of its own commit:
@@ -231,30 +255,21 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**The user's standing instruction is "get the UI as perfect to the original as possible", so the
-interface list closes before anything else.** Wave 15's four packages (ET perception, EU the patrol's
-blockers, EV the last 82 KB of the save, EW the five layout defects) stay paused, not cancelled.
+**Wave 20 is `PHASE16.md`**, four packages: **FN** the red row (the spawn crash, with FK's lead that
+the spawner is being used as a matinee group actor) and the harness's `--newgame-at`; **FO** what
+activates `SOIREE_Empress_Regent.SeqAct_Interp_12`, then the `UpdateTrackInst` seam, then the `MAT_*`
+contract; **FP** one owner for the HUD (`UDisGlobalUIManager::Init`, delete both bring-ups) and the
+absent `UI_Global` letterbox; **FQ** retail's movie-root unload list, then the `pDeclTarget` guard,
+then the user's re-entrant mouse path, then the VM stringifying a `MovieClip` as `undefined`.
 
-Open, in the order the evidence supports:
+**Deferred and said so**: `FArkComponentLookat` (51 functions, inventoried) and
+`UDisSkelControl_SpineBender` to wave 21, after the cutscene activates; the rest of the UI list
+(Enter on the main menu, the menu camera and haze, text clarity, the 2 GB exhaustion); and **wave 15**
+(ET, EU, EV, EW), still paused behind the user's standing instruction that the interface comes first.
 
-1. **`UpdateSettings`** — the one genuine missing prototype method of the three FF raised, and it
-   does not occur on any screen FG's driver reaches, so it needs a screen nobody has driven yet.
-   **Not** the 127 `SetWidgetFocus` errors: FG showed those are `_curWidget_mc` undefined on the
-   first selection, a normal AS2 no-op this runtime logs as an error, with every options symbol
-   tracing healthy to `MovieClip.prototype`.
-3. **The matinee** (defect 1), which is now specified down to three named gaps.
-4. **A New Game check in the regression harness**, per the blind spot below.
-5. The menu camera's transform (defect 2) and its post-process parameters (defect 4), both already
-   captured out of retail in `build/agentFB/retail/`.
-
-**Used and absent in the AS2 library**, from FF's survey — evidence, not a checklist, and thirteen of
-the fifteen classes previously listed are referenced **nowhere** in any cooked movie:
-`MovieClipLoader` (4 `new`; Missions, gamepad mapping, save thumbnails, `EquipmentIcon`),
-`TextField.setImageSubstitutions` (6 sites, the inline `$A$` button glyphs, pairs with
-`ParseHtmlImpl`), `Selection.disableFocusKeys` (6 sites, one property write). Separately: the 19
-`X360_*` `loadBitmap` failures are `_common.EmbedImg`'s PC branch falling through into the Xenon
-block, and those images are exports of `lib.gfx` — **image exports are not resolving across the
-import**.
+**Used and absent in the AS2 library**, from FF's survey — evidence, not a checklist:
+`MovieClipLoader` (4 `new`), `TextField.setImageSubstitutions` (6 sites), `Selection.disableFocusKeys`
+(6 sites). Image exports are not resolving across the `lib.gfx` import (the 19 `X360_*` failures).
 
 ## Known pitfalls
 
