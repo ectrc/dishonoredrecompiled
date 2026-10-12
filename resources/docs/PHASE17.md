@@ -314,3 +314,56 @@ reference instances and the first seam call crashed on it — **minidump opened*
 and the build fails loudly (§6.10).**
 
 **Gate on main for `d24f1bf`: 47 ok / 0 failed / 0 skipped (2145 s, one load-sensitive retry of `d3d9_frames` with sixteen compilers running).**
+
+### FR — merged `2ff7daa` (+ `d1f282c`); FR's own gate 46 / 1, the one row decided below
+
+Seventy-nine files, 32 units; the sync script's own cross-check against the worktree's changed files
+reports none unlisted. Addresses hand-resolved in both databases; decompiles in `build/agentFR/`.
+
+**The boat ride starts on its own — the first Dishonored scripted scene to do so.** On `-finewgame=50`
+with no input, three runs in a row: `SOIREE_Boat.DisSeqAct_DialogInputs_10 "Intro"` → hook →
+component → `DisDialogTree_InGameBind` → running instance → `DisConversation_3.DisConv_Soiree_1` →
+`USeqAct_Interp::StartFromDialog` → **`SOIREE_Boat.SeqAct_Interp_1` 0 → 1 activations, plays 94.23 s
+and ends through the node**; its Completed reaches `Boat_LiftedUp` and `SOIREE_Workers.SeqAct_Interp_3`
+goes 0 → 1. Control `build/head_rel`: both 0. Captures in-process: the control at the starting pier,
+this build **inside the water-lock hall at the end of the ride**. No Critical, no minidump. What
+animates during the ride is FS's runtime (AI groups bind, 0 `MAT_BeginAIGroup` warnings; the player
+`MAT_*` warn once each; the boat moves by its Move track, skeletal props do not animate).
+
+**The Empress does not start, and it is not the conversation system.** `SeqAct_Interp_12` stays at 0 at
+330 s. `-foupstream` over all ten `SOIREE_Empress_Regent` `DialogInputs`: their entries are
+`SeqEvent_RemoteEvent_34 (enabled 0) → Gate_14 → DialogInputs_8`, `RemoteEvent_86/87 → Gate_1 →
+DialogInputs_1`, and **`DisSeqAct_AIGoToActor_13 "Success (Last)" → DialogInputs_25 "3Days_Forced"`** —
+the captain at the dock. Between the lock and the Empress retail needs **the player to walk up through
+the captain and guard scenes**; unattended nothing walks, and the AI-goto/trigger half is another
+package. Retail-only questions recorded as not taken.
+
+**Ported**: `IDisConvSpeakerInterface` (30-slot CppText), `IDisConvOneShotOwnerInterface`,
+`ADisDialogOneShot`, `UDisDialogVoiceData`, `UDisDialogTree` (table-driven `InitHookInfo`, **126** rows
+from 2013 `0x88d820`), `UDisDialogTree_InGameBind` + `FDisDialogRunningInstance`,
+`UDisConversationComponent` (2013 shape), **`UDisConvGlobalMan`** (queue, 13 fire groups, ticked from a
+new `ADishonoredGameInfo::Tick`), `UDisConversation`/`_InGameData`, `UDisConv_Node`/`_Soiree`
+(`FindMatinee` by GUID, `TickNodeMatinee`), the hooks, speakers, actions, conditions, save data,
+`UDisSeqAct_DialogInputs::Activated`, `StartFromDialog`/`ClearDialogConvNode`, `-frdiag`. CSV: **135
+ported / 13 partial / 148 inventoried / 68 editor-only.**
+
+**Where the brief was wrong**: the direct path is **~45 KB, not 10**; `DialogInputs::Activated` fired
+with a NULL target because **`ADishonoredSpawner::OnSpawned` never raised `DisSeqEvent_Spawned`** —
+retail does (2012 `0x6a1010`) — `FireSpawnedKismetEvent` added; 2013 moved `FireDialogHook`'s refire
+checks (the plan's addresses were 2012 shapes); the recorded `0x8b2e80` is a `TArray` helper; 126 hook
+rows not 122; `UDisConversation`'s flag bits shifted; retail `UDisDialogTree::PostLoad` calls
+`InitNode(NULL,0,0)` — `m_iConvNodeIndex` is not serialized, and without it every node had no in-game
+data; a relative `--cmd-file` is never read (the game's cwd differs) — **`game_input.py` should
+absolutise it.**
+
+**The one red row and the decision.** FR's gate: `unported_natives 2` —
+`ADishonoredPawn::execOnSetDisposition` and `ADishonoredNPCController::execOnAIGoToActor` now fire at
+7 s because the faithful Spawned event reaches the spawner's Kismet. They need the AI go-to package and
+the relationship-override API (`OnSetDispositionHelper` 858 B, `FDisRelationshipOverrideInfo`,
+`UDisGlobalFactionManager::ClearIndividualCache`, four unnamed `UDisTweaks_Faction` functions), all
+bodiless; rvas in `agentFR.md` §8. **Coordinator's decision (`d1f282c`): the bound moves to 2 with
+both natives named in the baseline, a third distinct native is a regression, and porting the two is
+wave 22's first item.** Reverting the Spawned event would put the boat back to 0 activations; holding
+the first self-starting cutscene behind two other packages was the worse trade.
+
+**Gate on main for `d1f282c` (FR + the named baseline): 47 ok / 0 failed / 0 skipped (1317 s)** - `unported_natives 2 (wanted <= 2)`, both named.
