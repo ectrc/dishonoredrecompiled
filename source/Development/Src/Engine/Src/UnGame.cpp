@@ -259,6 +259,19 @@ void UGameEngine::Init()
 		{
 			GSystemSettings.bFullscreen = TRUE;
 		}
+		// DISHONORED(bringup): a scripted or unattended run can never be fullscreen, whatever the ini or the
+		// command line says. The user works on this machine while agents run; one run launched without
+		// -windowed fell back to the ini's fullscreen setting and took the whole display. This is the
+		// startup half; FWindowsViewport::Resize refuses the runtime half (Alt+Enter, Options -> Graphics,
+		// a SetRes exec) under the same condition.
+		{
+			extern UBOOL DishonoredInputGrabDisabled();
+			if( GSystemSettings.bFullscreen && DishonoredInputGrabDisabled() )
+			{
+				debugf( TEXT("DISHONORED(bringup): fullscreen refused - this is an unattended or scripted run (-unattended / -inputcmd / -noinputgrab); forcing windowed") );
+				GSystemSettings.bFullscreen = FALSE;
+			}
+		}
 
 		if (ParseParam(appCmdLine(),TEXT("Portrait")))
 		{

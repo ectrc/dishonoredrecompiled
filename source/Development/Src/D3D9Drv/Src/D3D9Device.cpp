@@ -637,6 +637,23 @@ void FD3D9DynamicRHI::UpdateD3DDeviceFromViewports()
 					| D3DCREATE_DISABLE_DRIVER_MANAGEMENT
 					;
 
+				// DISHONORED(bringup): the Direct3D 9 runtime brings the focus window to the foreground when the
+				// device first touches it - measured as a WA_ACTIVE (non-click) activation of the game window at
+				// exactly the first rendered frame, 7.17 s into a scripted run, after every activation call of our
+				// own had been removed from that path. D3DCREATE_NOWINDOWCHANGES is the documented way to stop it.
+				// Only in an unattended or scripted run: retail does not pass it and a real player's window should
+				// behave as retail's does.
+				{
+					extern UBOOL DishonoredInputGrabDisabled();
+					if( DishonoredInputGrabDisabled() )
+					{
+						CreationFlags |= D3DCREATE_NOWINDOWCHANGES;
+						// Log category, not Init: the retail ini carries Suppress=Init, which swallowed this line's
+						// first version and left the question of whether the flag applied unanswerable from a log.
+						debugf( TEXT("DISHONORED(bringup): D3DCREATE_NOWINDOWCHANGES set for a scripted run (creation flags 0x%08x)"), CreationFlags );
+					}
+				}
+
 				// when running debug D3D runtime and not -onethread, add D3DCREATE_MULTITHREADED
 #if !SHIPPING_PC_GAME
 				{

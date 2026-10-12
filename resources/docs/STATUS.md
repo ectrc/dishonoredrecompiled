@@ -421,6 +421,28 @@ script ever moves the real mouse, presses real keys or takes focus - `game_input
 
 ### Running and measuring
 
+- **The no-grab mode is only as good as its last activation path.** It showed the window
+  `SW_SHOWNOACTIVATE` and still took the user's foreground three times over: the splash screen
+  (`SW_SHOW`, t=3 s), the `SetWindowPos` in `FWindowsViewport::Resize` on the first map load (no
+  `SWP_NOACTIVATE`, t=33 s), and the gamepad poll gated on `HasFocus()` alone, so once the window had
+  focus the user's connected controller drove the run (agent FU's Options stage was quit by
+  `XboxTypeS_DPad_Left`). All closed under `DishonoredInputGrabDisabled()`, plus
+  `D3DCREATE_NOWINDOWCHANGES` on the D3D9 device. **Measure focus by sampling `GetForegroundWindow`
+  every few seconds for the whole run, not once** - the first two verification runs passed because
+  they looked at the wrong moments. After the fix: 0 of 50 samples over three runs.
+- **One residual, measured and named as unexplained**: `WM_ACTIVATE` now logs every activation with
+  its cause, and each scripted run records one `WA_ACTIVE` (non-click) at the first rendered frame -
+  with `-nosplash`, with the D3D flag confirmed applied, with nothing in the log at that instant. It
+  never coincides with a foreground change, so it is thread-local activation (a `SetActiveWindow` or
+  `SetFocus` on our own thread), which does not take the user's focus. Source not yet found.
+
+- **A launch without `-windowed` goes fullscreen, because the retail ini says so.** One wave-21 run
+  took the user's whole display. Every launch passes `-windowed`; `game_input.py launch` adds it. The
+  engine now refuses fullscreen outright under `-unattended`, `-inputcmd` or `-noinputgrab` - at
+  startup in `UGameEngine::Init` (`UnGame.cpp`) and on every runtime resize in
+  `FWindowsViewport::Resize` (Alt+Enter, Options -> Graphics, `SetRes`) - and logs
+  `fullscreen refused`. Never drive the display-mode option in a scripted run.
+
 - **Never touch the user's real mouse, keyboard or window focus.** The user works on this machine
   while waves run, and agents driving the game with `SendInput` + `SetForegroundWindow`
   (`drive_input.py`, now retired and refusing to run) kept stealing the foreground from them. Drive

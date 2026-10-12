@@ -315,7 +315,11 @@ DWORD WINAPI StartSplashScreenThread( LPVOID unused )
 
 		if (GSplashScreenWnd)
 		{
-			ShowWindow(GSplashScreenWnd, SW_SHOW); 
+			// DISHONORED(bringup): the splash is the first window this process shows, and SW_SHOW activates it.
+			// Sampled every 3 s, a scripted run took the user's foreground at t=3 s - this call - before the
+			// game window existed. Shown without activation in an unattended or scripted run.
+			extern UBOOL DishonoredInputGrabDisabled();
+			ShowWindow(GSplashScreenWnd, DishonoredInputGrabDisabled() ? SW_SHOWNOACTIVATE : SW_SHOW);
 			UpdateWindow(GSplashScreenWnd); 
 		 
 			MSG message;

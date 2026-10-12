@@ -112,7 +112,10 @@ def launch(args: argparse.Namespace, extra: list[str]) -> int:
         raise SystemExit(f"game_input: exe not found: {exe}")
     cmd_file = Path(args.cmd_file) if args.cmd_file else Path(tempfile.gettempdir()) / f"inputcmd_{args.tag or 'run'}_{os.getpid()}.txt"
     cmd_file.write_text("", encoding="ascii")
-    game_args = [f"-inputcmd={cmd_file}", "-unattended", "-forcelogflush"]
+    # -windowed always: without it the ini decides, and the retail ini says fullscreen. One launch
+    # without it took the user's whole display. The engine also refuses fullscreen under -inputcmd
+    # (UnGame.cpp, FWindowsViewport::Resize), so this is belt and braces.
+    game_args = [f"-inputcmd={cmd_file}", "-unattended", "-windowed", "-forcelogflush"]
     if args.log:
         game_args.append(f"-LOG={args.log}")
     if args.tag:

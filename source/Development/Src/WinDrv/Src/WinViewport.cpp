@@ -326,6 +326,16 @@ void FWindowsViewport::Resize(UINT NewSizeX,UINT NewSizeY,UBOOL NewFullscreen,IN
 {
 	UBOOL bSaveResolutionSettings = TRUE;
 
+	// DISHONORED(bringup): the runtime half of the fullscreen refusal (UnGame.cpp has the startup half).
+	// Every path that can make this window fullscreen - Alt+Enter, Options -> Graphics, a SetRes exec,
+	// the ini on a later resize - comes through here, and an unattended or scripted run must never take
+	// the user's display. Forced windowed, and said so in the log.
+	if( NewFullscreen && DishonoredInputGrabDisabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): fullscreen refused in Resize - unattended or scripted run; staying windowed") );
+		NewFullscreen = FALSE;
+	}
+
 	if( bPerformingSize )
 	{
 		debugf(NAME_Error,TEXT("bPerformingSize == 1, FWindowsViewport::Resize"));
@@ -623,6 +633,14 @@ void FWindowsViewport::UpdateWindow( UBOOL NewFullscreen, DWORD WindowStyle, INT
 	// contain extra bits, such as WS_CLIPSIBLINGS. At least this check will catch the four cases above.
 	// Also, SWP_NOSENDCHANGING must not be set.
 	UINT Flags = /*SWP_NOSENDCHANGING |*/ SWP_NOZORDER;
+	// DISHONORED(bringup): SetWindowPos without SWP_NOACTIVATE activates the window, and Resize runs on
+	// every map load. That is how a run launched with SW_SHOWNOACTIVATE still took the user's foreground
+	// about 30 s in: sampled every 3 s, the foreground stayed on the user's window until the first map
+	// change and then became this window. The no-grab mode must hold for the whole run, not the first frame.
+	if( DishonoredInputGrabDisabled() )
+	{
+		Flags |= SWP_NOACTIVATE;
+	}
 	if ( (CurrentWindowStyle & WindowStyle) != WindowStyle )
 	{
 		SetWindowLong(Window, GWL_STYLE, WindowStyle);
@@ -1159,7 +1177,7 @@ void FWindowsViewport::ProcessInput( FLOAT DeltaTime )
 	if (appIsPanoramaGuideOpen())
 	{
 		// Also pause any waveforms being played
-		if ((bCapturingJoystickInput || ViewportClient->RequiresUncapturedAxisInput()) && HasFocus() )
+		if ((bCapturingJoystickInput || ViewportClient->RequiresUncapturedAxisInput()) && HasFocus() && !DishonoredInputGrabDisabled() )
 		{
 			XINPUT_VIBRATION Feedback = {0};
 			for (INT JoystickIndex = 0; JoystickIndex < UWindowsClient::Joysticks.Num(); JoystickIndex++)
@@ -1172,7 +1190,11 @@ void FWindowsViewport::ProcessInput( FLOAT DeltaTime )
 	}
 #endif
 
-	if( Client->bAllowJoystickInput && HasFocus() && (bCapturingJoystickInput || ViewportClient->RequiresUncapturedAxisInput()) )
+	// DISHONORED(bringup): no gamepad in an unattended or scripted run, explicitly rather than by way of
+	// HasFocus(). The user's connected controller drove agent FU's runs - XboxTypeS_DPad_Left reached
+	// QUIT GAME 15 s into an Options stage - because the window had taken focus through the splash and
+	// resize paths fixed alongside this. The user asked for gamepad input to be off in these runs outright.
+	if( Client->bAllowJoystickInput && HasFocus() && !DishonoredInputGrabDisabled() && (bCapturingJoystickInput || ViewportClient->RequiresUncapturedAxisInput()) )
 	{
 		for(INT JoystickIndex = 0;JoystickIndex < UWindowsClient::Joysticks.Num();JoystickIndex++)
 		{
@@ -1816,7 +1838,8 @@ LONG FWindowsViewport::ViewportWndProc( UINT Message, WPARAM wParam, LPARAM lPar
 			case SC_RESTORE:
 				if( IsIconic(Window) )
 				{
-					::ShowWindow(Window,SW_RESTORE);
+					// DISHONORED(bringup): restore without activating in a scripted run; SW_RESTORE activates.
+					::ShowWindow(Window, DishonoredInputGrabDisabled() ? SW_SHOWNOACTIVATE : SW_RESTORE);
 					return 0;
 				}
 		}
@@ -1917,6 +1940,16 @@ void FWindowsViewport::ProcessDeferredMessage(const FDeferredMessage& DeferredMe
 		break;
 
 	case WM_ACTIVATE:
+		// DISHONORED(bringup): in a scripted run the window must never be activated by the game itself. Log
+		// every activation with WHO did it - WA_CLICKACTIVE is the user's mouse, WA_ACTIVE is programmatic
+		// (ours, or another process handing focus over) - so a foreground change seen from outside can be
+		// attributed rather than guessed at.
+		if( DishonoredInputGrabDisabled() && LOWORD(wParam) != WA_INACTIVE )
+		{
+			debugf( TEXT("DISHONORED(bringup): window activated at %.2f s by %s (minimized %d)"), appSeconds() - GStartTime,
+				LOWORD(wParam) == WA_CLICKACTIVE ? TEXT("a mouse click (WA_CLICKACTIVE)") : TEXT("a non-click activation (WA_ACTIVE)"),
+				(INT)HIWORD(wParam) );
+		}
 		switch (LOWORD(wParam))
 		{
 			case WA_ACTIVE:
@@ -2624,7 +2657,12 @@ void FWindowsViewport::OnMouseButtonDown( UINT Message, WPARAM wParam )
 		// @todo: This will cause a WM_SETFOCUS message to be sent to our viewport window, however that
 		//        message will be deferred until the next tick!  That means that the input handler for
 		//        the mouse button will potentially be executed before WM_SETFOCUS is handled.
-		::SetFocus( Window );
+		// DISHONORED(bringup): never in a scripted run - a real mouse message should not reach here under the
+		// no-grab mode at all, and if one does it must not take the user's focus.
+		if( !DishonoredInputGrabDisabled() )
+		{
+			::SetFocus( Window );
+		}
 
 		ViewportClient->InputKey(this,0,Key,IE_Pressed);
 	}

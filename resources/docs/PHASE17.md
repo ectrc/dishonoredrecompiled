@@ -15,7 +15,15 @@ So wave 21 is a dialog-system wave. Behind it, in FO's and FN's hand-overs, are 
 scene needs once it starts: the track seam that moves pawns, the anim node retail actually drives, and
 the AI contract that hands a pawn to the scene.
 
-## THE TWO RULES — from the user, both absolute
+## THE THREE RULES — from the user, all absolute
+
+**Fullscreen.** A run from this wave went fullscreen on the user's display. **Every game launch passes
+`-windowed`.** `game_input.py launch` adds it; any other launch — the harness, your own runner,
+`-startmap`/`-finewgame` by hand — carries it on the command line. The retail ini defaults to
+fullscreen, so a launch without it takes the whole screen. The engine now also **refuses fullscreen**
+under `-unattended`, `-inputcmd` or `-noinputgrab`, at startup (`UnGame.cpp`) and on every runtime
+resize (`FWindowsViewport::Resize` — Alt+Enter, Options → Graphics, `SetRes`), logging
+`fullscreen refused`. **Do not drive the display-mode option in any run.**
 
 **Input.** Nothing you run may move the user's real mouse, press their real keys, or take window
 focus. Drive the game only through `resources/tools/game_input.py` (`launch`, then `hover X Y`,
