@@ -200,3 +200,105 @@ captures at matching world times.
 4. Every address cited resolved by hand, both databases.
 5. `resources/docs/agents/agent<XX>.md` + `agent<XX>_status.csv` inside the worktree;
    `build/agent<XX>_sync.py` naming every file and function, self-checked against the diff.
+
+## Outcome
+
+### FX — merged `90d490e`; FX's own gate 47 ok / 0 failed / 0 skipped
+
+Twenty files; sync self-checked against `git diff --name-only f14326b` + untracked: exact.
+
+**Two real bitfield faults in the whole tree, both on `USkeletalMeshComponent`, both read on the path every
+skeletal mesh takes.** `resources/tools/bitfield_audit.py` compares every `BITFIELD x:1` run (153 headers, 1,232
+classes and script structs, 1,297 DWORD units) against the cooked class's masks. Eight units reported: five are
+reference-engine `_DEPRECATED` renames at the same bit, one is a native struct whose cooked mirror retail's own
+C++ does not follow (allow-listed with the measurement in `resources/docs/types/bitfield_audit_allow.txt`), and
+two were real — C++ `bPauseAnims` sat on retail's `m_bDisableFaceFx` and shifted `m_bSkipUpdate` /
+`bEnableLineCheckWithBounds` one bit up; `bUpdateComposeSkeletonPasses` / `bValidTemporarySavedAnimSets` read two
+2013 bools this tree never declared on the component. Fixed in `UnSkeletalMesh.h`. **The audit is the gate's
+third `verify_phase2` row** (`verify_phase2_total` 2 → 3; reads `mismatches=0 read=0 missing=3 allowed=1`).
+
+**A regeneration diffs clean**: `gen_classes_header.py --sdk --module-header --sources-cmake` writes 100 files
+byte-identical to the tree. It learned four waves of hand-edits through its own mechanisms (interface CppText,
+`<Module>Native.h`, a class declared elsewhere is not a shim, link anchors from `DishonoredLink<X>()`
+definitions, ported natives detected from exec bodies, hand-maintained `Sources.cmake` left alone, LF output).
+
+**Premise corrected**: Engine headers are reference-engine files the generator never writes, so FP/FS/FT's
+Engine edits could never be dropped by a regeneration; the real drift was smaller and in the `--sdk` modules.
+
+### FW — merged `0e45ea1`; FW's own gate 47 ok / 0 failed / 0 skipped (2780 s)
+
+Eleven files; sync exact; `EngineAnimClasses.h` hand-merged over FX's two lines (different region; Engine
+headers are not generated, so FW's C++-only MAT declarations are safe).
+
+**The props animate.** `ASkeletalMeshActorMAT` had no in-game anim-control path. Ported `PostInitAnimTree` (2012
+`0x349d60`) → `CacheAnimNodes` (`0x343ee0` / 2013 `0x321e90`), `MAT_BeginAnimControl` (`0x343eb0` / `0x321e60`),
+`MAT_FinishAnimControl` (`0x33e210` / `0x31ba30`), `UpdateAnimSetList` (`0x365540`) + `BuildAnimSetList` on the
+MAT's own `InterpGroupList`. Control: 8 `no BeginAnimControl` warnings; FW1: 0, the boat, the rats and `MAT_0`
+driven by `MatineeStackNode` at weight 1.
+
+**The player stops 750 units short of the dock, and it is the boat matinee.** Rides the boat and the lift,
+turns, walks, and stops dead at X 9994.4 / Y 23144 on every heading, five runs to the unit; left is water. The
+ride boat ends at 9773, 23112; `Boat_Arrive` swaps in the moored collision boat (handlers found, 0 missing) and
+that boat stands at 10305, 22565 — at the dock. The Boat group's Move track in the lift matinee
+(`SOIREE_Workers.SeqAct_Interp_3` / `SOIREE_Boat.SeqAct_Interp_3`) ends short. **Measured, not fixed — wave 23's
+first item.**
+
+**Everything after the entries works** (`-fwteleport`): `DisTrigger_8` → guards' `SOIREE_Guards.SeqAct_Interp_3`
+0 → 1; `DisTrigger_16` → `SOIREE_Empress_Regent.SeqAct_Interp_0` 0 → 1, finished at 16.06,
+`Soiree_EmpressAndRegent_GoEmily` raised. After it the screen stays faded to black (director/fade — FK/FZ side).
+
+**The chain** (`-fwdialogmap`): `SeqAct_Interp_12` is conversation 8 "Empress Death" — the assassination, the
+LAST of nine Empress scenes, not the door. Route: lift → dock → `DisTrigger_8` (guards) → captain
+(`AIGoToActor_3` at `Soiree_BoatRide_Completed`, FV, or `Use`) → `DisTrigger_16` → `Use` on the Empress
+(`DDH_PLAYER_USED` → `DialogOutputs 'Give_Letter'`, **not ported**) → GiveLetter → ReadLetter → Regent
+Interrupted → Holding Emily → teleporters → Empress Death.
+
+**Premises corrected (eight rows in agentFW.md §2)**: Interp_12 is the end not the door; the guard scene is a
+player touch; FS did not put `MAT_*` on `AActor`; FO's `-foupstream=A,B` never worked (`Parse()` stops at the
+first comma — fixed); FR's `'Boat Start'` does fire at t 56.70; the player is never held during the ride (FZ);
+the window was 1920x1080 with the user at the machine, so pixel turns scale to the capture.
+
+### FY — merged `69bc81f`; FY's own gate 47 ok / 0 failed / 0 skipped (1625 s)
+
+Sixteen files; sync self-checked against `git diff --name-only f14326b` + untracked: exact.
+
+**The AS2 machine frees its objects (STATUS defect 7).** `GASRefCountCollector` in `External/GFx3`
+is retail's `GRefCountCollector<323>` — Bacon-Rajan over the counts: `Collect` 2013 `0xda78b0`,
+`Release` `0xda7b50`, `AdvanceFrame` `0xdd81a0` (at the tail of `GFxMovieRoot::Advance`), the five
+functors as inlined in `GASObject::ForEachChild_GC<F>`, `ExecuteForEachChild_GC`/`Finalize_GC` on
+Object, Array, Super, Primitive, Function and `GASValue`. Two documented deviations: the free at zero is
+deferred to a kill list run at the tail of each advance (the interpreter holds raw `GASObject*` across
+statements), and every newborn goes on that list (retail's creator holds a `GPtr`; ours start at 0).
+**Measured on the idle menu**: control `68058 live / 68058 created` at 30 s → `1604634 / 1604634` at
+325 s, private bytes **+0.77 MB/s**; this build **`4990 live / 1638260 created / 1633270 freed`** at
+325 s, private bytes **712.7 → 712.2 MB — flat**, clean exit. Options drive: `5555 live / 865663
+created`, 723 → 717 MB, flat. The census line now reads `live / created / freed (in cycles,
+collections)`. One fault of FY's own found by its first run (a crash at 95 s — the sprite constructor
+assigned `pProto` raw and the new `Release` zeroed it): minidump opened, fixed.
+
+**The brightness keys were never broken — the brief's and STATUS's premise is wrong.** `LeftPressed` on
+the gamma slider → `DisOnSettingChange … 2.1` → `gamma 2.1`; the thumb moves 461..492 → 456..487 →
+452..483 on two Lefts and back on Right. FU's two captures bracketed Left+Right+Up+Down, which nets to
+zero. Nothing to fix.
+
+**The window activation is ours, and named.** A thread-local `WH_CBT` hook under the no-grab mode logs
+`HCBT_ACTIVATE`/`HCBT_SETFOCUS` with a frame walk **and a raw stack scan** resolved to module+rva.
+Every scripted run: one `HCBT_SETFOCUS` at the first frame, no `HCBT_ACTIVATE`, foreground unchanged.
+The frame walk dies at `FEngineLoop::Tick+0x576`; the raw scan names **`appShowGameWindow+0x10a` under
+`UGameEngine::Tick+0x16b6`** — `Core/Src/UnVcWin32.cpp`, `SetWindowPlacement(SW_SHOWNORMAL)` at the
+first game tick. Fix: `SW_SHOWNOACTIVATE` under `DishonoredInputGrabDisabled()`, one line, **not
+verified in a build by FY** (both builds spent before the scan named the caller) — the gate on
+`69bc81f` is its first compile, and the coordinator verifies the activation line is gone with a
+scripted run on the gate exe. The hook stays in.
+
+**Five premises corrected**: the slider moves (a net-zero key pair was measured); the missing half
+was the creator's reference as well as the cycle collector; the caller is `SetWindowPlacement`, which
+neither `SetActiveWindow` nor `SetFocus` by name would have found and a frame walk cannot see; the
+2 GB is per movie advance (16.7 objects per advance), not per render frame; the two-build limit cost
+the Core line its compile.
+
+**Coordinator's fix after FY's gate**: `69bc81f` failed its gate 43/47 — `Core.lib(UnVcWin32.cpp.obj) : error
+LNK2019: unresolved external symbol DishonoredInputGrabDisabled` in `CoreSmoke.exe`, which links Core alone.
+The function used only Core APIs, so its definition moved from `WinDrv/Src/WinViewport.cpp` to
+`Core/Src/UnVcWin32.cpp` (declaration kept in WinDrv). The two-build rule is what left this line uncompiled;
+a Core change needs a `CoreSmoke` link before hand-back.

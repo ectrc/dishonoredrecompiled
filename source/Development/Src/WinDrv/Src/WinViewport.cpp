@@ -876,36 +876,8 @@ UBOOL FWindowsViewport::IsCursorVisible( ) const
 	return bIsVisible;
 }
 
-// DISHONORED(bringup): a scripted run must not take the user's mouse and keyboard. Everything that drives the game
-// from a script - build_and_smoke.py, run_regression.py, every agent's screenshot run - passes -unattended, and
-// resources/play.cmd never does, so -unattended is the signal that nobody is sitting at this window. Under it the
-// viewport does not capture the mouse, clip the cursor, hide the cursor, activate itself, acquire the DirectInput
-// mouse, or act on any key or mouse message that arrives. The window is still created, shown and rendered into, so
-// screenshots are unchanged, and -inputtest is unaffected because it calls FViewport::InputKey/InputAxis directly
-// rather than going through Windows messages (Engine/Src/UnPlayer.cpp:356).
-// -noinputgrab forces this on without -unattended; -inputgrab forces it off.
-// Read on first use, never at static-initialisation time: GCmdLine is set in WinMain, long after a file-scope
-// initialiser would run, which is what left three earlier bring-up switches permanently FALSE (agent CA, c403e2f).
-UBOOL DishonoredInputGrabDisabled()
-{
-	static INT Cached = -1;
-	if( Cached < 0 )
-	{
-		const TCHAR* Cmd = appCmdLine();
-		// -inputcmd=<file> (scripted input, Engine/Src/UnPlayer.cpp) forces this on and cannot be overridden:
-		// a scripted run must never activate the window, capture the cursor or read the user's mouse.
-		FString ScriptFile;
-		const UBOOL bScripted  = Parse( Cmd, TEXT("inputcmd="), ScriptFile ) && ScriptFile.Len() > 0;
-		const UBOOL bForcedOn  = ParseParam( Cmd, TEXT("noinputgrab") ) || bScripted;
-		const UBOOL bForcedOff = ParseParam( Cmd, TEXT("inputgrab") ) && !bScripted;
-		Cached = ( bForcedOn || ( ParseParam( Cmd, TEXT("unattended") ) && !bForcedOff ) ) ? 1 : 0;
-		if( Cached )
-		{
-			debugf( TEXT("DISHONORED(bringup): input grab disabled - this run will not capture the mouse, take focus or act on key presses") );
-		}
-	}
-	return Cached == 1;
-}
+// DISHONORED(bringup): DishonoredInputGrabDisabled() is defined in Core/Src/UnVcWin32.cpp (moved there by the
+// coordinator after agent FY: appShowGameWindow in Core calls it and CoreSmoke links Core alone). Declared at the top.
 
 void FWindowsViewport::ShowCursor( UBOOL bVisible)
 {
