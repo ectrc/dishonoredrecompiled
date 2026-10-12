@@ -110,6 +110,114 @@ void DestroyIME( HWND Window )
 }
 #endif
 
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup, agent FY): who activates the window in a scripted run.
+	Every scripted run logs one WA_ACTIVE at the first rendered frame with nothing of ours in the log at
+	that instant (STATUS, "One residual"). A WH_CBT hook on this thread sees HCBT_ACTIVATE / HCBT_SETFOCUS
+	BEFORE the activation happens, with the caller still on the stack, so the module and return address
+	that asked for it can be written down. Thread-local, installed only under the no-grab mode, removed
+	with the viewport. It changes nothing: every notification is passed on with CallNextHookEx.
+-----------------------------------------------------------------------------*/
+static HHOOK GDishonoredActivationHook = NULL;
+static INT   GDishonoredActivationHookReports = 0;
+
+static FString DishonoredDescribeCaller( const void* Address )
+{
+	MEMORY_BASIC_INFORMATION Info;
+	appMemzero( &Info, sizeof(Info) );
+	if( Address == NULL || ::VirtualQuery( Address, &Info, sizeof(Info) ) == 0 || Info.AllocationBase == NULL )
+	{
+		return FString::Printf( TEXT("%p"), Address );
+	}
+	TCHAR ModulePath[MAX_PATH];
+	ModulePath[0] = 0;
+	::GetModuleFileName( (HMODULE)Info.AllocationBase, ModulePath, MAX_PATH );
+	const TCHAR* BaseName = appStrrchr( ModulePath, TEXT('\\') );
+	BaseName = BaseName ? BaseName + 1 : ModulePath;
+	return FString::Printf( TEXT("%s+0x%x"), BaseName, (DWORD)( (const BYTE*)Address - (const BYTE*)Info.AllocationBase ) );
+}
+
+static LRESULT CALLBACK DishonoredActivationHookProc( INT Code, WPARAM wParam, LPARAM lParam )
+{
+	if( ( Code == HCBT_ACTIVATE || Code == HCBT_SETFOCUS ) && GDishonoredActivationHookReports < 16 )
+	{
+		GDishonoredActivationHookReports++;
+		const HWND Target = (HWND)wParam;
+		TCHAR ClassName[64];
+		ClassName[0] = 0;
+		::GetClassName( Target, ClassName, 64 );
+		TCHAR Title[64];
+		Title[0] = 0;
+		::GetWindowText( Target, Title, 64 );
+		FString Cause;
+		if( Code == HCBT_ACTIVATE && lParam != 0 )
+		{
+			const CBTACTIVATESTRUCT* Activate = (const CBTACTIVATESTRUCT*)lParam;
+			Cause = FString::Printf( TEXT("HCBT_ACTIVATE %s, previously active %p"), Activate->fMouse ? TEXT("by mouse") : TEXT("not by mouse"), Activate->hWndActive );
+		}
+		else
+		{
+			Cause = Code == HCBT_ACTIVATE ? TEXT("HCBT_ACTIVATE") : FString::Printf( TEXT("HCBT_SETFOCUS, losing focus %p"), (HWND)lParam );
+		}
+		QWORD BackTrace[24];
+		appMemzero( BackTrace, sizeof(BackTrace) );
+		appCaptureStackBackTrace( BackTrace, 24 );
+		FString Stack;
+		for( INT Index = 0; Index < 24 && BackTrace[Index] != 0; Index++ )
+		{
+			Stack += FString( Index ? TEXT(" < ") : TEXT("") ) + DishonoredDescribeCaller( (const void*)(SIZE_T)BackTrace[Index] );
+		}
+		debugf( TEXT("DISHONORED(bringup): activation hook at %.2f s: %s of %p class '%s' title '%s' (foreground %p, thread %u); stack %s"),
+			appSeconds() - GStartTime, *Cause, Target, ClassName, Title, ::GetForegroundWindow(), ::GetCurrentThreadId(), *Stack );
+		// The frame walk above loses every frame between the kernel's hook callback and the message
+		// pump (fy_r1: hook < USER32 < ntdll < FEngineLoop::Tick+0x576), so the raw stack is scanned
+		// for return addresses into executable image pages as well; a caller with no frame pointer is
+		// still on the stack even when StackWalk64 cannot chain to it.
+		FString Scan;
+		INT Found = 0;
+		const BYTE* Top = (const BYTE*)&Code;
+		const BYTE* Base = (const BYTE*)((NT_TIB*)NtCurrentTeb())->StackBase;
+		if( Base > Top + 16384 )
+		{
+			Base = Top + 16384;
+		}
+		for( const BYTE* Slot = Top; Slot + sizeof(DWORD) <= Base && Found < 40; Slot += sizeof(DWORD) )
+		{
+			const void* Candidate = (const void*)*(const DWORD*)Slot;
+			MEMORY_BASIC_INFORMATION Info;
+			appMemzero( &Info, sizeof(Info) );
+			if( Candidate == NULL || ::VirtualQuery( Candidate, &Info, sizeof(Info) ) == 0 || Info.Type != MEM_IMAGE
+				|| ( Info.Protect & ( PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY ) ) == 0 )
+			{
+				continue;
+			}
+			Scan += FString( Found ? TEXT(" ") : TEXT("") ) + DishonoredDescribeCaller( Candidate );
+			Found++;
+		}
+		debugf( TEXT("DISHONORED(bringup): activation hook stack scan (%d code addresses in the top %d bytes): %s"), Found, (INT)( Base - Top ), *Scan );
+	}
+	return ::CallNextHookEx( GDishonoredActivationHook, Code, wParam, lParam );
+}
+
+static void DishonoredInstallActivationHook()
+{
+	if( GDishonoredActivationHook == NULL && DishonoredInputGrabDisabled() )
+	{
+		GDishonoredActivationHook = ::SetWindowsHookEx( WH_CBT, DishonoredActivationHookProc, NULL, ::GetCurrentThreadId() );
+		debugf( TEXT("DISHONORED(bringup): activation hook %s on thread %u"), GDishonoredActivationHook ? TEXT("installed") : TEXT("NOT installed"), ::GetCurrentThreadId() );
+	}
+}
+
+static void DishonoredRemoveActivationHook()
+{
+	if( GDishonoredActivationHook != NULL )
+	{
+		::UnhookWindowsHookEx( GDishonoredActivationHook );
+		GDishonoredActivationHook = NULL;
+	}
+}
+
 //
 //	FWindowsViewport::FWindowsViewport
 //
@@ -186,6 +294,7 @@ FWindowsViewport::FWindowsViewport(UWindowsClient* InClient,FViewportClient* InV
 	PreFullscreenWindowRect.top = InPosY;
 
 	// Creates the viewport window.
+	DishonoredInstallActivationHook();
 	Resize(InSizeX,InSizeY,InFullscreen,InPosX,InPosY);
 
 	// Set as active window.
@@ -267,6 +376,7 @@ FWindowsViewport::FWindowsViewport(UWindowsClient* InClient,FViewportClient* InV
 
 FWindowsViewport::~FWindowsViewport()
 {
+	DishonoredRemoveActivationHook();
 	if (Client != NULL)
 	{
 		// Remove any deferred messages corresponding to this viewport

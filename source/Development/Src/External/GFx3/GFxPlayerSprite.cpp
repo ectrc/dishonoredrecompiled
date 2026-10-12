@@ -715,6 +715,10 @@ GFxASCharacter::~GFxASCharacter()
         pHandle->Release();
         pHandle = 0;
     }
+    // The character's own references (retail: the GPtr<GASObject> at GFxASCharacter+128 and the
+    // prototype pointer the ASMovieClipObj carries); released here, the collector frees them.
+    if (pASObject) { pASObject->Release(); pASObject = 0; }
+    if (pProto) { pProto->Release(); pProto = 0; }
     delete pGeomData;
     pGeomData = 0;
 }
@@ -725,6 +729,7 @@ GASObject* GFxASCharacter::EnsureASObject()
     {
         GASGlobalContext* gc = pMovieRoot->GetASContext();
         pASObject = new GASObject(gc->GetSC(), pProto);
+        pASObject->AddRef();
     }
     return pASObject;
 }
@@ -896,6 +901,8 @@ GRect<float> GFxSprite::GetBoundsTwips(const GMatrix2D& m) const
 
 void GFxASCharacter::Set__proto__(GASStringContext* sc, GASObject* proto)
 {
+    if (proto) proto->AddRef();
+    if (pProto) pProto->Release();
     pProto = proto;
     if (pASObject)
         pASObject->Set__proto__(sc, proto);
@@ -1550,6 +1557,10 @@ GFxSprite::GFxSprite(GFxTimelineDef* def, GFxCharacterDef* charDef, GFxMovieDefI
     if (root)
     {
         pProto = root->GetASContext()->GetPrototype(GASGlobalContext::Proto_MovieClip);
+        // The character's reference on its prototype, released by ~GFxASCharacter. Without it the
+        // first sprite to die took MovieClip.prototype's count to zero (fy_r1: the collector freed it,
+        // and the next lookup through the chain read a double where __resolve had been).
+        if (pProto) pProto->AddRef();
         ++root->GetCensus().SpritesCreated;
     }
 }

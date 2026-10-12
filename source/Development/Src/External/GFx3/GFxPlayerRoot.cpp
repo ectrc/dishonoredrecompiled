@@ -27,7 +27,7 @@
 // ---------------------------------------------------------------------------------------------
 
 GFxMovieRoot::GFxMovieRoot(GFxMovieDefImpl* defImpl)
-    : pDefImpl(defImpl), pGC(0), pLevel0(0), ObjInterface(this),
+    : pDefImpl(defImpl), pGC(0), GCFrameCnt(0), GCLastCollectionFrame(0), pLevel0(0), ObjInterface(this),
       pPerspective3D(0), pView3D(0), PerspectiveFOV(55.f), ScaleMode(GFxMovieView::SM_ShowAll),
       Alignment(GFxMovieView::Align_Center), BackgroundColor(0), BackgroundAlpha(1.f),
       bPaused(false), bVisible(true), bDirty(true), bMouseStateDirty(false), pUserData(0),
@@ -885,6 +885,11 @@ float GFxMovieRoot::Advance(float deltaT, unsigned int frameCatchUp)   // 2012 0
             }
         }
         ++Stats.FramesAdvanced;
+        // 2013 0xe088f0, the last thing retail's Advance does after the frame loop and its drains:
+        // the AS2 collector's frame, with the movie's two counter words. The value stack and the
+        // local frames are empty here, which is what makes it the one safe moment to collect.
+        if (pGC)
+            pGC->GetCollector()->AdvanceFrame(&GCFrameCnt, &GCLastCollectionFrame);
     }
     // 2013 0xa088d8, at the tail of the advance and AFTER the ProcessInput call at 0xa087dd: the
     // next input pass is the one that re-asks what is under each pointer. One frame behind the
@@ -967,7 +972,11 @@ void GFxMovieRoot::SetControllerCount(unsigned int n) { ControllerCount = n; }
 unsigned int GFxMovieRoot::GetControllerCount() const { return ControllerCount; }
 void GFxMovieRoot::GetStats(GStatBag* bag, bool reset) {}
 GMemoryHeap* GFxMovieRoot::GetHeap() const { return 0; }
-void GFxMovieRoot::ForceCollectGarbage() {}
+void GFxMovieRoot::ForceCollectGarbage()                             // 2013 0xdf9b70
+{
+    if (pGC)
+        pGC->GetCollector()->ForceCollect();
+}
 
 GPoint<float> GFxMovieRoot::TranslateToScreen(const GPoint<float>& p, GMatrix2D m)
 {

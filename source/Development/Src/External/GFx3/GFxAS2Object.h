@@ -17,7 +17,7 @@
 
 #pragma pack(push, 8)
 
-class GASObjectCollector;
+class GASRefCountCollector;
 
 // GASObjectInterface::ObjectType. The nine values marked `measured` are read out of the 6-byte
 // retail bodies that return them (build/agentBC/dec3); the two spans are read out of
@@ -127,9 +127,12 @@ public:
     GASObject(GASStringContext* sc, GASObject* proto);                // 2012 0x9dc7b0
     virtual ~GASObject();                                             // 2012 0x9dd6c0
 
+    // GRefCountBaseGC<323>::AddRef / Release (2013 0xda7b50, 2012 0x9aeb20): the collectable
+    // reference count, with the Bacon-Rajan colouring the collector works on. See
+    // GASRefCountCollector below for what Release does at zero and at non-zero.
     void AddRef() { ++RefCount; }
-    void Release() { if (--RefCount <= 0) OnZeroRef(); }
-    int  GetRefCount() const { return RefCount; }
+    void Release();
+    unsigned int GetRefCount() const { return RefCount; }
 
     virtual GASObjectType GetObjectType() const { return Object_Object; }
 
@@ -163,17 +166,31 @@ public:
         { return FindNode(sc, name) != 0; }
     const void* DishonoredFindMemberByText(const char* name, unsigned int* outHash) const;
 
-    // Called on every object of a movie before any of them is deleted. Without it the second pass of
-    // GASObjectCollector::FreeAll walks into a freed sibling through pProto, because an AS2 class and
-    // its prototype point at each other.
-    virtual void PrepareForCollection();
+    // The two GRefCountBaseGC<323> virtuals, retail's slots 0 and 1 of the collectable's own vtable
+    // (GASObject::ExecuteForEachChild_GC 2013 0xdd24d0, GASObject::Finalize_GC 2013 0xdd3970 /
+    // 2012 0x9dd210). ExecuteForEachChild_GC hands every collectable this object references -
+    // the member values, __proto__, __resolve - to GASRefCountCollector::VisitChild under the
+    // operation; Finalize_GC drops those references WITHOUT releasing them, which is what the
+    // collector needs when it frees a whole cycle whose counts it has already accounted for
+    // (retail's ~GHashSetBase<..., GHashsetNodeEntry_GC<...>> in Finalize_GC does exactly that).
+    // Strings and character handles are not collectable and are still released by the destructor.
+    enum GCColor { GC_Black = 0, GC_Gray = 1, GC_White = 2, GC_Purple = 3 };
+    virtual void ExecuteForEachChild_GC(int op) const;
+    virtual void Finalize_GC();
 
-    // Every object created for one movie is chained here so the movie root can free the whole graph
-    // at teardown. Retail has a real mark-and-sweep collector (GASRefCountCollector, the 323 heap
-    // id all over the demangled names); this is the teardown half of it and nothing else, which is
-    // enough for a harness that loads, runs frames and exits, and is honest about being less.
-    GASObject*          pCollectorNext;
-    GASObjectCollector* pCollector;
+    // Retail's GRefCountBaseGC<323> header (object+4 pRCC, +8 RefCount in the low 28 bits with the
+    // colour at bits 28..30 and the buffered bit at 31, +12 RootIndex; the +4 word doubles as the
+    // kill-list link once the object is on it). Spelled out as fields here.
+    GASRefCountCollector* pCollector;
+    GASObject*            pCollectorNext;    // the all-objects list the census and teardown walk
+    GASObject*            pCollectorPrev;
+    GASObject*            pKillNext;
+    unsigned int          RefCount;
+    int                   RootIndex;
+    unsigned char         Color;
+    bool                  bBuffered;         // in the collector's root buffer
+    bool                  bInKillList;
+    bool                  bCycleGarbage;     // on the kill list as part of a dead cycle: free without releasing
 
 protected:
     struct MemberNode
@@ -188,13 +205,11 @@ protected:
     unsigned int       MemberCount;
     GASObject*         pProto;
     GASFunctionObject* pResolveHandler;
-    int                RefCount;
     bool               bDestroying;
 
     MemberNode* FindNode(GASStringContext* sc, const GASString& name) const;
     MemberNode* AddNode(const GASString& name);
     void        Rehash();
-    void        OnZeroRef();
 };
 
 // GASArrayObject. Retail's is 30 functions in GASArrayObject.obj plus 99 in the prototype; the
@@ -215,7 +230,8 @@ public:
     virtual bool HasMember(GASStringContext* sc, const GASString& name, bool inherited);
     virtual void VisitMembers(GASStringContext* sc, MemberVisitor* visitor, unsigned int flags,
                               const GASObjectInterface* instance) const;
-    virtual void PrepareForCollection();
+    virtual void ExecuteForEachChild_GC(int op) const;               // 2013 0xdcd650
+    virtual void Finalize_GC();                                       // 2013 0xdce510
 
     unsigned int GetSize() const { return Size; }
     void         Resize(unsigned int n);
@@ -285,7 +301,7 @@ public:
 
     virtual GASObjectType GetObjectType() const { return Object_Function; }
     virtual GASFunctionObject* ToFunction() { return this; }
-    virtual void PrepareForCollection();
+    virtual void Finalize_GC();                                       // 2013 0xde9290 (GASAsFunctionObject)
 
     void Invoke(const GASFnCall& fn);
 
@@ -340,7 +356,8 @@ public:
 
     virtual GASObjectType GetObjectType() const { return Type; }
     virtual GASValue GetValue() const { return Primitive; }
-    virtual void PrepareForCollection() { Primitive.SetUndefined(); GASObject::PrepareForCollection(); }
+    virtual void ExecuteForEachChild_GC(int op) const;
+    virtual void Finalize_GC();
 
     GASValue      Primitive;
     GASObjectType Type;
@@ -358,29 +375,109 @@ public:
     virtual GASObjectType GetObjectType() const { return Object_Super; }
     virtual bool GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val);
     virtual GASFunctionObject* ToFunction() { return pConstructor; }
-    virtual void PrepareForCollection();
+    virtual void ExecuteForEachChild_GC(int op) const;               // 2013 0xdd8e40
+    virtual void Finalize_GC();                                       // 2013 0xdd8bb0
 
     GASObjectInterface* pRealThis;
     GASFunctionObject*  pConstructor;
 };
 
-// The teardown half of retail's garbage collector; see GASObject::pCollector.
-class GASObjectCollector
+// GASRefCountCollector: retail's AS2 garbage collector, GRefCountCollector<323> under the name the
+// GASGlobalContext hands out (GASGlobalContext::GetGC 2013 0xdd6800). It is Bacon & Rajan's
+// synchronous cycle collection over the reference counts: a Release that leaves a count above
+// zero colours the object purple and buffers it as a root (0xda7b50), and Collect (2013 0xda78b0 /
+// 2012 0x9ae880) runs MarkInCycle (trial deletion: every edge out of a purple root's subgraph is
+// subtracted and the subgraph goes gray), Scan (a gray object with a count left is live - ScanInUse
+// restores its subgraph's counts and paints it black - and one with none is white) and
+// CollectGarbage (the white ones go to the kill list), then frees the kill list through
+// Finalize_GC. The frame-rate policy is GASRefCountCollector::AdvanceFrame (2013 0xdd81a0 / 2012
+// 0x9e1a00): collect when the root buffer has outgrown an adaptive bound that SetParams (0xdd6130)
+// seeds at 1000, called once at the tail of GFxMovieRoot::Advance (0xe08280, at 0xe088f0).
+//
+// Two things here are this tree's and are said so in the bodies: (1) a zero count does not free
+// the object inside Release the way retail's does - it goes on the kill list and is freed when the
+// list next runs, at the tail of the advance, with its count re-read first, so a C++ frame of this
+// reconstruction that still names the object through a raw pointer finds it rather than freed
+// memory; (2) every new object is put on that same list at birth, because retail's creator holds a
+// GPtr that this tree's `new GASObject(...)` sites do not, so an object nothing ever stored dies
+// at the end of the frame instead of at the movie's close.
+class GASRefCountCollector
 {
 public:
-    GASObjectCollector() : pHead(0), Count(0), Created(0) {}
-    ~GASObjectCollector() { FreeAll(); }
+    // GRefCountBaseGC<323>::OperationGC, the argument of ExecuteForEachChild_GC: the values retail's
+    // Collect and functors pass (0xda78b0 passes 1, 2/4 and 3; Release passes 0).
+    enum OperationGC
+    {
+        Op_Release        = 0,
+        Op_MarkInCycle    = 1,
+        Op_ScanInUse      = 2,
+        Op_CollectGarbage = 3,
+        Op_Scan           = 4
+    };
 
-    void Add(GASObject* obj);
+    // GRefCountCollector<323>::Stats, the two words Collect fills: roots walked, objects freed.
+    struct Stats
+    {
+        unsigned int RootsProcessed;
+        unsigned int ObjectsFreed;
+    };
+
+    GASRefCountCollector();                                           // 2013 0xddb610
+    ~GASRefCountCollector();
+
+    void SetParams(unsigned int framesBetweenCollections, unsigned int maxRootCount); // 2013 0xdd6130
+    void AdvanceFrame(unsigned int* frameCnt, unsigned int* lastCollectionFrame);    // 2013 0xdd81a0
+    void ForceCollect();                                              // 2013 0xdd82e0
+    void ForceEmergencyCollect();                                     // 2013 0xdd8330
+    bool Collect(Stats* stats);                                       // 2013 0xda78b0
+
+    // Teardown: frees every object still registered, counts or no counts. Retail reaches the same
+    // end through ~GASGlobalContext releasing its last holders and ForceCollect in ~GFxMovieRoot
+    // (0xe09150 at +0x2fc); this tree frees the list outright because its holders are not all counted.
     void FreeAll();
+
+    // The object side: registration at construction, the root buffer, the kill list.
+    void Register(GASObject* obj);
+    void AddRoot(GASObject* obj);
+    void AddToKillList(GASObject* obj, bool bCycleGarbage);
+    unsigned int ExecuteKillList();
+    static void VisitChild(GASObject* child, int op);
 
     unsigned int GetLiveCount() const { return Count; }
     unsigned int GetCreatedCount() const { return Created; }
+    unsigned int GetFreedByCountCount() const { return FreedByCount; }
+    unsigned int GetFreedInCycleCount() const { return FreedInCycle; }
+    unsigned int GetCollectionCount() const { return Collections; }
+    unsigned int GetRootCount() const { return RootCount; }
+    unsigned int GetMaxRootCount() const { return MaxRootCount; }
 
 private:
+    void Free(GASObject* obj);
+
     GASObject*   pHead;
     unsigned int Count;
     unsigned int Created;
+    unsigned int FreedByCount;
+    unsigned int FreedInCycle;
+    unsigned int Collections;
+
+    GASObject**  Roots;                 // retail: GArrayPagedBase<GRefCountBaseGC<323>*,10,5> at +20
+    unsigned int RootCount;
+    unsigned int RootCapacity;
+    GASObject*   pKillList;             // retail +28
+    bool         bCollecting;           // retail +32 bit 0
+
+    // The AdvanceFrame policy words, in the order retail's constructor zeroes them (+36..+72).
+    unsigned int FrameCnt;              // +36
+    unsigned int MaxRootCount;          // +40, 1000
+    unsigned int PeakRootCount;         // +44
+    unsigned int LastRootCount;         // +48
+    unsigned int LastCollectedRoots;    // +52
+    unsigned int LastPeakRootCount;     // +56
+    unsigned int TotalFramesCount;      // +60
+    unsigned int LastCollectionFrameNum;// +64
+    unsigned int PresetMaxRootCount;    // +68, 1000
+    unsigned int MaxFramesBetweenCollections; // +72, 0
 };
 
 #pragma pack(pop)

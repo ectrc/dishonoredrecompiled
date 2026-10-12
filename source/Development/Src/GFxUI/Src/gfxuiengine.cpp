@@ -2125,10 +2125,10 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 	// What the machine ran on the advance half, so one line answers "what did the interface do this
 	// frame" end to end: the movies, the display objects, the submitted geometry and the opcodes.
 	INT Sprites = 0, Placed = 0, Buffers = 0, Frames = 0, ScriptErrors = 0;
-	// DISHONORED(bringup, agent FU): the AS2 object graph, live and ever created, summed over the open movies. The
-	// reconstruction's GASObjectCollector is the teardown half of retail's collector only, so an object the content
-	// makes every frame (the menu's tweens do) stays until its movie closes; this pair is how a run says so.
-	UINT ASObjectsLive = 0, ASObjectsCreated = 0;
+	// DISHONORED(bringup, agent FU): the AS2 object graph, live and ever created, summed over the open movies.
+	// Agent FY: plus what GASRefCountCollector freed - by count, in cycles - and how many collections ran, so a
+	// run can say that live stays well below created rather than equal to it.
+	UINT ASObjectsLive = 0, ASObjectsCreated = 0, ASObjectsFreed = 0, ASObjectsFreedInCycles = 0, ASCollections = 0;
 	for( INT Index = 0; Index < OpenMovies.Num(); Index++ )
 	{
 		GFxMovieRoot* Root = (GFxMovieRoot*)OpenMovies( Index )->pView.GetPtr();
@@ -2139,6 +2139,10 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 			{
 				ASObjectsLive += Root->GetASContext()->GetCollector()->GetLiveCount();
 				ASObjectsCreated += Root->GetASContext()->GetCollector()->GetCreatedCount();
+				ASObjectsFreed += Root->GetASContext()->GetCollector()->GetFreedByCountCount()
+					+ Root->GetASContext()->GetCollector()->GetFreedInCycleCount();
+				ASObjectsFreedInCycles += Root->GetASContext()->GetCollector()->GetFreedInCycleCount();
+				ASCollections += Root->GetASContext()->GetCollector()->GetCollectionCount();
 			}
 			Sprites += C.SpritesCreated;
 			Placed += C.DisplayObjectsPlaced;
@@ -2165,10 +2169,11 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): machine: %d frames advanced, ")
 		TEXT("%d sprites created, %d display objects placed, %d action buffers, ")
 		TEXT("%u opcodes (%u unimplemented), %d script errors, %u untextured fills skipped, ")
-		TEXT("%u empty masks, AS2 objects %u live / %u created"),
+		TEXT("%u empty masks, AS2 objects %u live / %u created / %u freed (%u in cycles, %u collections)"),
 		Reason, Frames, Sprites, Placed, Buffers, GASActionBuffer::OpsExecuted,
 		GASActionBuffer::OpsUnimplemented, ScriptErrors, ::GFxDisplayUntexturedFills,
-		::GFxDisplayEmptyMasks, ASObjectsLive, ASObjectsCreated );
+		::GFxDisplayEmptyMasks, ASObjectsLive, ASObjectsCreated, ASObjectsFreed, ASObjectsFreedInCycles,
+		ASCollections );
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): input: %u events HE_Handled / %u HE_NotHandled, ")
 		TEXT("%u key downs, %u key ups, %u chars typed, %u mouse events, ")
 		TEXT("%u AS2 listeners registered, %u listener calls"),

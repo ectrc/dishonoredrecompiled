@@ -353,6 +353,13 @@ public:
 
     void DropRefs();                                                  // 2012 0x9caf50
 
+    // The collector's two visits of a value (2013 GASValue::ForEachChild_GC<F> 0xdc1700 / 0xdc1690
+    // / 0xdc1780 / 0xdc18c0 / 0xdc18f0 and GASValue::Finalize_GC 0xdc1fd0): an OBJECT (6), a
+    // FUNCTION (8) or a PROPERTY's getter and setter (9) are collectable children; Finalize_GC
+    // forgets such a child without releasing it, and releases anything else as DropRefs would.
+    void ForEachChild_GC(int op) const;
+    void Finalize_GC();
+
     // GASValue::ToPrimitive (2012 0x9cc880): valueOf() then toString(), which is what every
     // arithmetic operator on an object goes through.
     bool ToPrimitiveInto(GASEnvironment* env, GASValue* out) const;

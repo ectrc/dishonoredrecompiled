@@ -396,7 +396,7 @@ public:
     GASStringManager* GetStringManager() { return &Strings; }
     GASStringContext* GetSC() { return &SC; }
     GFxMovieRoot*     GetMovieRoot() const { return pMovieRoot; }
-    GASObjectCollector* GetCollector() { return &Collector; }
+    GASRefCountCollector* GetCollector() { return &Collector; }          // GASGlobalContext::GetGC 2013 0xdd6800
 
     const GASString& GetBuiltin(GASBuiltinString which) const { return Builtins[which]; }
 
@@ -441,7 +441,7 @@ private:
     GFxMovieRoot*      pMovieRoot;
     GASStringManager   Strings;
     GASStringContext   SC;
-    GASObjectCollector Collector;
+    GASRefCountCollector Collector;
     GASString          Builtins[GASbuiltin_COUNT];
     GASObject*         pGlobal;
     bool               bGFxExtensions;

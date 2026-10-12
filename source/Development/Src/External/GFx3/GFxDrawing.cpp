@@ -1090,6 +1090,7 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
             ctor->pNewObjectFunc = MatrixNewObject;
             GeomInstall(sc, global, geom, "Matrix", proto, ctor);
             GMatrixProto = proto;
+            proto->AddRef();
         }
 
         {
@@ -1102,6 +1103,7 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
             ctor->pNewObjectFunc = ColorTransformNewObject;
             GeomInstall(sc, global, geom, "ColorTransform", proto, ctor);
             GColorTransformProto = proto;
+            proto->AddRef();
         }
 
         {
@@ -1131,6 +1133,7 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
         global->SetConstMemberRaw(sc, "TextFormat", ctorVal,
                                   GASPropFlags(GASPropFlags::PropFlag_DontEnum));
         GTextFormatProto = proto;
+        proto->AddRef();
     }
 
     // The TextField prototype, which is what an EditText character's member lookup falls through to
@@ -1141,7 +1144,12 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
         v.SetAsFunction(gc->NewCFunction(TextFieldGetTextFormat));
         proto->SetConstMemberRaw(sc, "getTextFormat", v,
                                  GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+        // Nothing in the AS2 graph names this prototype (GFxEditTextCharacter::GetMember reads it
+        // through this pointer), so without a reference of its own the collector would free it at the
+        // end of the first frame. The four file-scope prototypes take one each; they are not released,
+        // because the movie's teardown frees them with everything else it made.
         GTextFieldProto = proto;
+        proto->AddRef();
     }
 }
 

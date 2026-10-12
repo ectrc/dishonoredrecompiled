@@ -1727,6 +1727,10 @@ private:
 
     GFxMovieDefImpl*          pDefImpl;
     GASGlobalContext*         pGC;
+    /** retail GFxMovieRoot+24 / +28: this movie's frame count and last-collection stamp as
+        GASRefCountCollector::AdvanceFrame keeps them (2013 0xe088f0 passes their addresses). */
+    unsigned int              GCFrameCnt;
+    unsigned int              GCLastCollectionFrame;
     GASEnvironment            Env;
     GFxSprite*                pLevel0;
     GFxValue::ObjectInterface ObjInterface;

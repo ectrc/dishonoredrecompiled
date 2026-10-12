@@ -634,6 +634,15 @@ GASGlobalContext::GASGlobalContext(GFxMovieRoot* root, unsigned int swfVersion)
     }
     InitBuiltinStrings();
     InitStandardLibrary();
+    // The context's own references on what it keeps by raw pointer: retail's are GPtrs
+    // (GASGlobalContext+8 pGlobal, the prototype and constructor GPtrs behind GetPrototype /
+    // GetConstructor). Without them the collector would free _global at the end of the first frame.
+    if (pGlobal) pGlobal->AddRef();
+    for (int i = 0; i < Proto_COUNT; ++i)
+    {
+        if (Prototypes[i]) Prototypes[i]->AddRef();
+        if (Constructors[i]) Constructors[i]->AddRef();
+    }
 }
 
 GASGlobalContext::~GASGlobalContext()
@@ -673,9 +682,12 @@ GASFunctionObject* GASGlobalContext::NewFunction()
 
 void GASGlobalContext::RegisterClass(const GASString& symbol, GASFunctionObject* ctor)
 {
+    // The registry's reference, as retail's GHash<GASString, GPtr<GASFunctionObject>> holds one.
+    if (ctor) ctor->AddRef();
     for (unsigned int i = 0; i < ClassCount; ++i)
         if (Classes[i].Symbol == symbol)
         {
+            if (Classes[i].pCtor) Classes[i].pCtor->Release();
             Classes[i].pCtor = ctor;
             return;
         }

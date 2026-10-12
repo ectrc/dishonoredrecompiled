@@ -19,30 +19,369 @@
 #include <stdio.h>
 
 // ---------------------------------------------------------------------------------------------
-// GASObjectCollector - the teardown half of retail's GASRefCountCollector.
+// GASRefCountCollector - GRefCountCollector<323>, the AS2 cycle collector. The algorithm and its
+// policy words are read out of 2013 0xda78b0 (Collect), 0xda7b50 (Release), 0xda77c0
+// (GRefCountBaseGC::CollectGarbage), 0xdd81a0 (AdvanceFrame), 0xdd82e0 / 0xdd8330 (ForceCollect /
+// ForceEmergencyCollect), 0xdd6130 (SetParams), 0xddb610 (the constructor) and the five
+// GASObject::ForEachChild_GC<...Functor> instantiations 0xdd19d0 / 0xdd1af0 / 0xdd1c00 / 0xdd2100
+// / 0xdd2200, whose functors are inlined there and transcribed in VisitChild.
 
-void GASObjectCollector::Add(GASObject* obj)
+GASRefCountCollector::GASRefCountCollector()                           // 2013 0xddb610
+    : pHead(0), Count(0), Created(0), FreedByCount(0), FreedInCycle(0), Collections(0),
+      Roots(0), RootCount(0), RootCapacity(0), pKillList(0), bCollecting(false),
+      FrameCnt(0), MaxRootCount(1000), PeakRootCount(0), LastRootCount(0), LastCollectedRoots(0),
+      LastPeakRootCount(0), TotalFramesCount(0), LastCollectionFrameNum(0),
+      PresetMaxRootCount(1000), MaxFramesBetweenCollections(0)
 {
-    obj->pCollectorNext = pHead;
+}
+
+GASRefCountCollector::~GASRefCountCollector()
+{
+    FreeAll();
+    free(Roots);
+}
+
+void GASRefCountCollector::SetParams(unsigned int framesBetweenCollections, unsigned int maxRootCount)
+{                                                                     // 2013 0xdd6130
+    MaxFramesBetweenCollections = framesBetweenCollections != ~0u ? framesBetweenCollections : 0;
+    if (maxRootCount == ~0u)
+        maxRootCount = 1000;
+    PresetMaxRootCount = maxRootCount;
+    MaxRootCount = maxRootCount;
+}
+
+void GASRefCountCollector::Register(GASObject* obj)
+{
     obj->pCollector = this;
+    obj->pCollectorPrev = 0;
+    obj->pCollectorNext = pHead;
+    if (pHead)
+        pHead->pCollectorPrev = obj;
     pHead = obj;
     ++Count;
     ++Created;
+    // DISHONORED(port): retail's GASObject constructor (2013 0xdd2ea0) starts the count at 1 for
+    // the GPtr its creator holds; this tree's creators hold raw pointers and start it at 0, so the
+    // newborn is a kill-list candidate until something stores it - see the class comment.
+    AddToKillList(obj, false);
 }
 
-void GASObjectCollector::FreeAll()
+void GASRefCountCollector::AddRoot(GASObject* obj)                     // 0xda7b50's buffering arm
 {
-    // Two passes, because an object's destructor releases members that point at other objects in
-    // this same list: first drop every reference so no destructor can reach a freed sibling, then
-    // free. The first pass has to clear __proto__ as well as the member hash, because an AS2 class
-    // and its prototype always point at each other.
+    if (RootCount >= RootCapacity)
+    {
+        unsigned int cap = RootCapacity ? RootCapacity * 2 : 1024;
+        GASObject** next = (GASObject**)realloc(Roots, cap * sizeof(GASObject*));
+        if (next == 0)
+            return;
+        Roots = next;
+        RootCapacity = cap;
+    }
+    obj->bBuffered = true;
+    obj->RootIndex = (int)RootCount;
+    Roots[RootCount++] = obj;
+}
+
+void GASRefCountCollector::AddToKillList(GASObject* obj, bool bCycleGarbage)
+{
+    if (bCycleGarbage)
+        obj->bCycleGarbage = true;
+    if (obj->bInKillList)
+        return;
+    obj->bInKillList = true;
+    obj->pKillNext = pKillList;
+    pKillList = obj;
+}
+
+// 0xda78b0's kill loop (Finalize_GC, then the heap's Free), with this tree's two readings of the
+// entry: a cycle member is freed outright - its edges were subtracted by MarkInCycle and
+// Finalize_GC does not release them again - and a zero-count candidate is freed only if its count
+// is still zero, after its children are released the way 0xda7b50 releases them (op 0) on the way
+// to zero. A candidate whose count came back is left alone.
+unsigned int GASRefCountCollector::ExecuteKillList()
+{
+    unsigned int freed = 0;
+    while (pKillList)
+    {
+        GASObject* o = pKillList;
+        pKillList = o->pKillNext;
+        o->pKillNext = 0;
+        o->bInKillList = false;
+        if (o->bCycleGarbage)
+        {
+            ++FreedInCycle;
+            Free(o);
+            ++freed;
+        }
+        else if (o->RefCount == 0)
+        {
+            o->ExecuteForEachChild_GC(Op_Release);
+            ++FreedByCount;
+            Free(o);
+            ++freed;
+        }
+    }
+    return freed;
+}
+
+void GASRefCountCollector::Free(GASObject* obj)
+{
+    if (obj->bBuffered && obj->RootIndex >= 0 && (unsigned int)obj->RootIndex < RootCount
+        && Roots[obj->RootIndex] == obj)
+        Roots[obj->RootIndex] = 0;
+    obj->bBuffered = false;
+    obj->RootIndex = -1;
+    if (obj->pCollectorPrev)
+        obj->pCollectorPrev->pCollectorNext = obj->pCollectorNext;
+    else
+        pHead = obj->pCollectorNext;
+    if (obj->pCollectorNext)
+        obj->pCollectorNext->pCollectorPrev = obj->pCollectorPrev;
+    obj->pCollectorNext = obj->pCollectorPrev = 0;
+    obj->pCollector = 0;
+    --Count;
+    obj->Finalize_GC();
+    delete obj;
+}
+
+// The functors of GRefCountBaseGC<323>, as inlined into GASObject::ForEachChild_GC<F> and
+// GASValue::ForEachChild_GC<F> (2013 0xdc1700 MarkInCycle, 0xdc1690 ScanInUse, 0xdc1780 Scan,
+// 0xdc18f0 CollectGarbage -> 0xda77c0, 0xdc18c0 Release).
+void GASRefCountCollector::VisitChild(GASObject* child, int op)
+{
+    if (child == 0)
+        return;
+    switch (op)
+    {
+    case Op_Release:
+        child->Release();
+        break;
+    case Op_MarkInCycle:
+        if (child->RefCount)
+            --child->RefCount;
+        if (child->Color != GASObject::GC_Gray)
+        {
+            child->Color = GASObject::GC_Gray;
+            child->ExecuteForEachChild_GC(Op_MarkInCycle);
+        }
+        break;
+    case Op_ScanInUse:
+        ++child->RefCount;
+        if (child->Color != GASObject::GC_Black)
+        {
+            child->Color = GASObject::GC_Black;
+            child->ExecuteForEachChild_GC(Op_ScanInUse);
+        }
+        break;
+    case Op_Scan:
+        if (child->Color == GASObject::GC_Gray)
+        {
+            if (child->RefCount)
+            {
+                child->Color = GASObject::GC_Black;
+                child->ExecuteForEachChild_GC(Op_ScanInUse);
+            }
+            else
+            {
+                child->Color = GASObject::GC_White;
+                child->ExecuteForEachChild_GC(Op_Scan);
+            }
+        }
+        break;
+    case Op_CollectGarbage:                                           // 2013 0xda77c0
+        if (child->Color == GASObject::GC_White && !child->bBuffered)
+        {
+            child->Color = GASObject::GC_Black;
+            child->ExecuteForEachChild_GC(Op_CollectGarbage);
+            if (!child->bCycleGarbage && child->pCollector)
+                child->pCollector->AddToKillList(child, true);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+bool GASRefCountCollector::Collect(Stats* stats)                      // 2013 0xda78b0
+{
+    if (bCollecting)
+    {
+        if (stats) { stats->RootsProcessed = 0; stats->ObjectsFreed = 0; }
+        return false;
+    }
+    bCollecting = true;
+    ++Collections;
+    unsigned int total = 0, freed = 0;
+    for (;;)
+    {
+        // This tree's: the zero-count candidates go first, so that no object the root walk meets is
+        // still holding edges on behalf of a count that has already reached zero.
+        freed += ExecuteKillList();
+        unsigned int n = RootCount;
+        if (n == 0)
+            break;
+        total += n;
+        // MarkRoots: a purple root goes gray and its subgraph is trial-deleted; a root that was
+        // re-coloured since it was buffered just leaves the buffer.
+        unsigned int w = 0;
+        for (unsigned int i = 0; i < n; ++i)
+        {
+            GASObject* o = Roots[i];
+            if (o == 0)
+                continue;
+            if (o->Color == GASObject::GC_Purple)
+            {
+                o->Color = GASObject::GC_Gray;
+                o->ExecuteForEachChild_GC(Op_MarkInCycle);
+            }
+            else
+            {
+                o->bBuffered = false;
+                o->RootIndex = -1;
+            }
+            Roots[w++] = o;
+        }
+        RootCount = w;
+        // ScanRoots.
+        for (unsigned int j = 0; j < w; ++j)
+        {
+            GASObject* o = Roots[j];
+            if (o == 0 || o->Color != GASObject::GC_Gray)
+                continue;
+            if (o->RefCount)
+            {
+                o->Color = GASObject::GC_Black;
+                o->ExecuteForEachChild_GC(Op_ScanInUse);
+            }
+            else
+            {
+                o->Color = GASObject::GC_White;
+                o->ExecuteForEachChild_GC(Op_Scan);
+            }
+        }
+        // CollectRoots.
+        for (unsigned int k = 0; k < w; ++k)
+        {
+            GASObject* o = Roots[k];
+            if (o == 0)
+                continue;
+            o->bBuffered = false;
+            o->RootIndex = -1;
+            if (o->Color == GASObject::GC_White)
+            {
+                o->Color = GASObject::GC_Black;
+                o->ExecuteForEachChild_GC(Op_CollectGarbage);
+                if (!o->bCycleGarbage)
+                    AddToKillList(o, true);
+            }
+        }
+        RootCount = 0;
+        freed += ExecuteKillList();
+    }
+    bCollecting = false;
+    if (stats)
+    {
+        stats->RootsProcessed = total;
+        stats->ObjectsFreed = freed < total ? freed : total;
+    }
+    return true;
+}
+
+// 2013 0xdd81a0. frameCnt and lastCollectionFrame are the caller's two words (GFxMovieRoot+24 /
+// +28), because retail shares one collector between the movies of a memory context and each movie
+// keeps its own view of the frame count; here there is one movie per collector and the dance is
+// kept as written.
+void GASRefCountCollector::AdvanceFrame(unsigned int* frameCnt, unsigned int* lastCollectionFrame)
+{
+    // This tree's: the frees retail does inside Release, batched to the tail of the advance.
+    ExecuteKillList();
+    if (*lastCollectionFrame != LastCollectionFrameNum)
+    {
+        *lastCollectionFrame = LastCollectionFrameNum;
+        *frameCnt = 1;
+        return;
+    }
+    if (*frameCnt < FrameCnt)
+    {
+        ++*frameCnt;
+        return;
+    }
+    ++TotalFramesCount;
+    ++FrameCnt;
+    unsigned int roots = RootCount;
+    if (roots > PeakRootCount)
+        PeakRootCount = roots;
+    if ((PresetMaxRootCount != 0 && roots > MaxRootCount)
+        || (MaxFramesBetweenCollections != 0 && FrameCnt >= MaxFramesBetweenCollections
+            && roots > PresetMaxRootCount))
+    {
+        Stats st = { 0, 0 };
+        Collect(&st);
+        if (st.ObjectsFreed > PresetMaxRootCount)
+        {
+            PeakRootCount = roots;
+            MaxRootCount = PresetMaxRootCount;
+        }
+        unsigned int remaining = roots - st.ObjectsFreed;
+        if (remaining < MaxRootCount)
+            remaining = MaxRootCount;
+        MaxRootCount = remaining;
+        unsigned int seventy = (unsigned int)((double)remaining * 0.7);
+        if (PeakRootCount < seventy)
+            MaxRootCount = seventy;
+        LastCollectionFrameNum = TotalFramesCount;
+        FrameCnt = 0;
+        LastPeakRootCount = PeakRootCount;
+        LastCollectedRoots = st.ObjectsFreed;
+    }
+    LastRootCount = roots;
+    *frameCnt = FrameCnt;
+    *lastCollectionFrame = LastCollectionFrameNum;
+}
+
+void GASRefCountCollector::ForceCollect()                             // 2013 0xdd82e0
+{
+    unsigned int roots = RootCount;
+    Stats st = { 0, 0 };
+    Collect(&st);
+    FrameCnt = 0;
+    LastRootCount = roots;
+    if (roots > PeakRootCount)
+        PeakRootCount = roots;
+}
+
+void GASRefCountCollector::ForceEmergencyCollect()                    // 2013 0xdd8330
+{
+    ForceCollect();
+    if (!bCollecting && RootCount == 0)
+    {
+        free(Roots);
+        Roots = 0;
+        RootCapacity = 0;
+    }
+    PeakRootCount = 0;
+    MaxRootCount = PresetMaxRootCount;
+}
+
+void GASRefCountCollector::FreeAll()
+{
+    pKillList = 0;
+    RootCount = 0;
+    // Two passes, as before this collector existed: first every object lets go of what it names,
+    // then every object is deleted, so no destructor reaches a freed sibling. Finalize_GC detaches
+    // without releasing, which is what a list that is being freed whole needs.
     for (GASObject* o = pHead; o; o = o->pCollectorNext)
-        o->PrepareForCollection();
+    {
+        o->bInKillList = false;
+        o->bBuffered = false;
+        o->Finalize_GC();
+    }
     GASObject* o = pHead;
     while (o)
     {
         GASObject* next = o->pCollectorNext;
         o->pCollector = 0;
+        o->pCollectorNext = o->pCollectorPrev = 0;
         delete o;
         o = next;
     }
@@ -98,20 +437,45 @@ GASObjectInterface* GASObjectInterface::FindOwner(GASStringContext* sc, const GA
 // GASObject
 
 GASObject::GASObject(GASStringContext* sc)                            // 2012 0x9dc740
-    : pCollectorNext(0), pCollector(0), Table(0), TableSize(0), MemberCount(0), pProto(0),
-      pResolveHandler(0), RefCount(0), bDestroying(false)
+    : pCollector(0), pCollectorNext(0), pCollectorPrev(0), pKillNext(0), RefCount(0), RootIndex(-1),
+      Color(GC_Black), bBuffered(false), bInKillList(false), bCycleGarbage(false),
+      Table(0), TableSize(0), MemberCount(0), pProto(0), pResolveHandler(0), bDestroying(false)
 {
     if (sc && sc->pContext)
-        sc->pContext->GetCollector()->Add(this);
+        sc->pContext->GetCollector()->Register(this);
 }
 
 GASObject::GASObject(GASStringContext* sc, GASObject* proto)           // 2012 0x9dc7b0
-    : pCollectorNext(0), pCollector(0), Table(0), TableSize(0), MemberCount(0), pProto(proto),
-      pResolveHandler(0), RefCount(0), bDestroying(false)
+    : pCollector(0), pCollectorNext(0), pCollectorPrev(0), pKillNext(0), RefCount(0), RootIndex(-1),
+      Color(GC_Black), bBuffered(false), bInKillList(false), bCycleGarbage(false),
+      Table(0), TableSize(0), MemberCount(0), pProto(proto), pResolveHandler(0), bDestroying(false)
 {
     if (pProto) pProto->AddRef();
     if (sc && sc->pContext)
-        sc->pContext->GetCollector()->Add(this);
+        sc->pContext->GetCollector()->Register(this);
+}
+
+// GRefCountBaseGC<323>::Release, 2013 0xda7b50 / 2012 0x9aeb20. A count already at zero is left
+// alone (the body's first test); a count that reaches zero releases the children and frees; a
+// count that stays above zero makes the object a purple root candidate, buffered once. The free at
+// zero is deferred to the kill list here - GASRefCountCollector's class comment says why.
+void GASObject::Release()
+{
+    if (RefCount == 0)
+        return;
+    --RefCount;
+    if (RefCount == 0)
+    {
+        if (pCollector)
+            pCollector->AddToKillList(this, false);
+        return;
+    }
+    if (Color != GC_Purple)
+    {
+        Color = GC_Purple;
+        if (!bBuffered && pCollector)
+            pCollector->AddRoot(this);
+    }
 }
 
 GASObject::~GASObject()                                               // 2012 0x9dd6c0
@@ -141,21 +505,28 @@ void GASObject::ReleaseAllMembers()
     MemberCount = 0;
 }
 
-void GASObject::PrepareForCollection()
+// 2013 0xdd19d0 (and its four siblings): the member hash's values, the __resolve function ref at
+// object+32 (GASFunctionRefBase::ForEachChild_GC), the watchpoints this tree has none of, then
+// __proto__ (object+24) last - in that order.
+void GASObject::ExecuteForEachChild_GC(int op) const
 {
-    ReleaseAllMembers();
-    if (pProto) { pProto->Release(); pProto = 0; }
-    if (pResolveHandler) { pResolveHandler->Release(); pResolveHandler = 0; }
+    for (unsigned int i = 0; i < TableSize; ++i)
+        for (MemberNode* n = Table[i]; n; n = n->pNext)
+            n->Member.Value.ForEachChild_GC(op);
+    GASRefCountCollector::VisitChild(pResolveHandler, op);
+    GASRefCountCollector::VisitChild(pProto, op);
 }
 
-void GASObject::OnZeroRef()
+// 2013 0xdd3970 / 2012 0x9dd210: the member hash is destroyed through its _GC node entry type,
+// which drops the values without releasing them; the names (strings) are released as always.
+void GASObject::Finalize_GC()
 {
-    // Nothing: every object is owned by the movie's GASObjectCollector and freed at teardown.
-    // AS2 object graphs are full of cycles (a class's prototype names its constructor and the
-    // constructor names its prototype, which is what every one of the 669 __Packages registrations
-    // builds), so a plain refcount cannot free them and retail uses a real mark-and-sweep. This is
-    // the honest bringup answer: correct lifetime within a movie, no leak across movies, and no
-    // collection during a frame. resources/docs/agents/agentBC.md names it as remaining work.
+    for (unsigned int i = 0; i < TableSize; ++i)
+        for (MemberNode* n = Table[i]; n; n = n->pNext)
+            n->Member.Value.Finalize_GC();
+    ReleaseAllMembers();
+    pProto = 0;
+    pResolveHandler = 0;
 }
 
 void GASObject::Rehash()
@@ -464,10 +835,19 @@ GASArrayObject::~GASArrayObject()
     delete[] Elements;
 }
 
-void GASArrayObject::PrepareForCollection()
+void GASArrayObject::ExecuteForEachChild_GC(int op) const             // 2013 0xdcd650
 {
+    for (unsigned int i = 0; i < Size; ++i)
+        Elements[i].ForEachChild_GC(op);
+    GASObject::ExecuteForEachChild_GC(op);
+}
+
+void GASArrayObject::Finalize_GC()                                    // 2013 0xdce510
+{
+    for (unsigned int i = 0; i < Size; ++i)
+        Elements[i].Finalize_GC();
     Resize(0);
-    GASObject::PrepareForCollection();
+    GASObject::Finalize_GC();
 }
 
 int GASArrayObject::ParseIndex(const GASString& name)
@@ -626,14 +1006,28 @@ GASFunctionObject::~GASFunctionObject()
         pDeclTarget->Release();
 }
 
-void GASFunctionObject::PrepareForCollection()
+// 2013 0xde9290: the declaring clip's handle is not collectable and is released as always
+// (GASAsFunctionObject+56); the local frame retail's closures capture does not exist here.
+void GASFunctionObject::Finalize_GC()
 {
     if (pDeclTarget)
         pDeclTarget->Release();
     pDeclTarget = 0;
     pOwnerProto = 0;
     pBuffer = 0;
-    GASObject::PrepareForCollection();
+    GASObject::Finalize_GC();
+}
+
+void GASPrimitiveObject::ExecuteForEachChild_GC(int op) const
+{
+    Primitive.ForEachChild_GC(op);
+    GASObject::ExecuteForEachChild_GC(op);
+}
+
+void GASPrimitiveObject::Finalize_GC()
+{
+    Primitive.Finalize_GC();
+    GASObject::Finalize_GC();
 }
 
 // 2012 0x9f28f0's tail: the declaring clip's handle, made on demand, with a reference.
@@ -674,11 +1068,17 @@ GASSuperObject::GASSuperObject(GASStringContext* sc, GASObject* proto, GASObject
     if (pConstructor) pConstructor->AddRef();
 }
 
-void GASSuperObject::PrepareForCollection()
+void GASSuperObject::ExecuteForEachChild_GC(int op) const             // 2013 0xdd8e40
+{
+    GASRefCountCollector::VisitChild(pConstructor, op);
+    GASObject::ExecuteForEachChild_GC(op);
+}
+
+void GASSuperObject::Finalize_GC()                                    // 2013 0xdd8bb0
 {
     pRealThis = 0;
-    if (pConstructor) { pConstructor->Release(); pConstructor = 0; }
-    GASObject::PrepareForCollection();
+    pConstructor = 0;
+    GASObject::Finalize_GC();
 }
 
 bool GASSuperObject::GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val)

@@ -268,6 +268,43 @@ void GASValue::DropRefs()                                             // 2012 0x
     T = UNDEFINED;
 }
 
+void GASValue::ForEachChild_GC(int op) const
+{
+    switch (T)
+    {
+    case OBJECT:
+        GASRefCountCollector::VisitChild(V.pObject, op);
+        break;
+    case FUNCTION:
+    case RESOLVE_HANDLER:
+        GASRefCountCollector::VisitChild(V.pFunction, op);
+        break;
+    case PROPERTY:
+        GASRefCountCollector::VisitChild(V.Prop.pGetter, op);
+        GASRefCountCollector::VisitChild(V.Prop.pSetter, op);
+        break;
+    default:
+        break;
+    }
+}
+
+void GASValue::Finalize_GC()                                          // 2013 0xdc1fd0
+{
+    switch (T)
+    {
+    case OBJECT:
+    case FUNCTION:
+    case RESOLVE_HANDLER:
+    case PROPERTY:
+        V.NValue = 0.0;
+        T = UNDEFINED;
+        break;
+    default:
+        DropRefs();
+        break;
+    }
+}
+
 void GASValue::Assign(const GASValue& src)
 {
     if (this == &src)

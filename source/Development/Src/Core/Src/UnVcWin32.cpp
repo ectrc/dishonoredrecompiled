@@ -1881,7 +1881,12 @@ void appShowGameWindow()
 		Placement.length					= sizeof(WINDOWPLACEMENT);
 		GetWindowPlacement(GGameWindow, &Placement);
 		Placement.flags						= 0;
-		Placement.showCmd					= SW_SHOWNORMAL;	// Restores the minimized window (SW_SHOW won't do that)
+		// DISHONORED(bringup, agent FY): this is the one WA_ACTIVE every scripted run recorded at its first frame
+		// (STATUS, "One residual"): SW_SHOWNORMAL through SetWindowPlacement activates the window on its own thread
+		// - the WH_CBT hook in WinViewport.cpp caught the HCBT_SETFOCUS with appShowGameWindow+0x10a under
+		// UGameEngine::Tick on the stack (fy_b1.log). SW_SHOWNOACTIVATE restores a minimized window too, without.
+		extern UBOOL DishonoredInputGrabDisabled();
+		Placement.showCmd					= DishonoredInputGrabDisabled() ? SW_SHOWNOACTIVATE : SW_SHOWNORMAL;	// Restores the minimized window (SW_SHOW won't do that)
 		Placement.rcNormalPosition.left		= PosX;
 		Placement.rcNormalPosition.right	= PosX + GGameWindowWidth;
 		Placement.rcNormalPosition.top		= PosY;

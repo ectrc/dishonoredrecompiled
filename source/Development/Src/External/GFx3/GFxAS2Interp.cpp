@@ -428,6 +428,44 @@ static int GFxAS2Function2OpCode(GASActionBuffer* buf, GASEnvironment* env, int 
     return nextPC + (int)codeSize;
 }
 
+// DISHONORED(bringup, agent FY): the primitive-valued own members of a watched call's receiver, so
+// that a -gfxuiwatch=<method> run says what the method read, not only that it ran. Bounded.
+namespace
+{
+struct GFxAS2WatchThisVisitor : public GASObjectInterface::MemberVisitor
+{
+    GASEnvironment* pEnv;
+    char*           pOut;
+    size_t          Room;
+    unsigned int    Shown;
+    GFxAS2WatchThisVisitor(GASEnvironment* env, char* out, size_t room)
+        : pEnv(env), pOut(out), Room(room), Shown(0) { pOut[0] = 0; }
+    virtual void Visit(const GASString& name, const GASValue& val, unsigned char)
+    {
+        if (Shown >= 24 || Room < 48)
+            return;
+        char piece[160];
+        switch (val.GetType())
+        {
+        case GASValue::NUMBER:
+        case GASValue::INT:     snprintf(piece, sizeof(piece), " %s=%g", name.ToCStr(), val.GetNumber()); break;
+        case GASValue::BOOLEAN: snprintf(piece, sizeof(piece), " %s=%s", name.ToCStr(), val.GetBool() ? "true" : "false"); break;
+        case GASValue::STRING:  snprintf(piece, sizeof(piece), " %s='%.40s'", name.ToCStr(), val.GetStringCStr()); break;
+        case GASValue::UNDEFINED:
+        case GASValue::UNSET:   snprintf(piece, sizeof(piece), " %s=undefined", name.ToCStr()); break;
+        case GASValue::NULLTYPE:snprintf(piece, sizeof(piece), " %s=null", name.ToCStr()); break;
+        default: return;
+        }
+        size_t n = strlen(piece);
+        if (n + 1 > Room)
+            return;
+        strcat(pOut, piece);
+        Room -= n;
+        ++Shown;
+    }
+};
+}
+
 void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
 {
     GASEnvironment* env = call.pEnv;
@@ -439,6 +477,16 @@ void GFxAS2InvokeScriptFunction(GASFunctionObject* fn, const GASFnCall& call)
         GFxLogf("DISHONORED(bringup): watch INVOKE '%s' buffer %p pc %d len %d args %d depth %d op %u",
                 call.pFuncName->ToCStr(), (void*)fn->pBuffer, fn->StartPC, fn->Length, call.NArgs,
                 env->GetLocalFrameDepth(), GFxAS2OpsThisBuffer);
+        if (call.pThis != 0)
+        {
+            char members[1536];
+            GFxAS2WatchThisVisitor visitor(env, members, sizeof(members));
+            call.pThis->VisitMembers(sc, &visitor, GASObjectInterface::VisitMember_DontEnum, call.pThis);
+            GFxASCharacter* asChar = call.pThis->ToASCharacter();
+            GFxLogf("DISHONORED(bringup): watch INVOKE '%s' this=%s own members:%s",
+                    call.pFuncName->ToCStr(),
+                    asChar ? asChar->GetTargetPath(sc).ToCStr() : "(object)", members);
+        }
     }
     // DISHONORED(port, agent FQ): retail GASAsFunctionObject::Invoke (2012 0x9f3540 / 2013
     // 0x9e9d10, 0x11f in both): `env = GetEnvironment(call)` resolves the declaring clip's handle
