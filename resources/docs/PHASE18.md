@@ -345,3 +345,42 @@ functions" were 2 `FDisRelationshipOverrideInfo` + 2 `UDisGlobalFactionManager`;
 not `0x79a520`; `GetCurrentTransitSpeed` `0x779430` not `0x779850`; `UDisBehaviorGoTo_Base::IsBehaviorFinished`
 is ICF-folded onto `UDisBehaviorShoot`'s; `EAIStimID_GoToRequest` is 41 (2012) / 42 (2013) and the 2013 DB
 mislabels its ctor; the go-to pawn is `_25` here vs FR's `_24`.
+
+### GA — merged `ad4a35d`; GA's own gate 47 ok / 0 failed / 0 skipped (4441 s)
+
+Twenty files, 0 flagged against `02eb527` (GA rebased before hand-back); `bitfield_audit` 0; regeneration clean.
+
+**The guards ride the boat (the user's "other 2 guards on the boat just float").** Control: Elite `NPCPawn_27` and
+captain `_26` stay at the spawn, `base none`, for all 94 s of `SOIREE_Boat.SeqAct_Interp_1` while the player rides
+off on `SkeletalMeshActorMAT_2`. This build: both `base SkeletalMeshActorMAT_2` within 6 s and ride to the lock
+beside the player; 11 of 28 NPCs based vs 1. The cause was the floor sweep of retail's `FullMovePawn` (2012
+`0x580ae0` +0x6a0 `SetBase(Hit.Actor, Hit.Normal, 1)`; +0x8a0 no floor → `PHYS_Falling`) that DN's `MoveActor`
+port left out. FV's `UpdateFloorAndBase` kept; GA added the start-penetrating re-test (a plain sweep lifted the
+Elite 30 u/frame) and the no-floor fall (Elite falls 47 units onto the deck at 69 s, lands, is based).
+
+**Locomotion track ported** (ten `UInterpTrackInstLocomotion` bodies + helpers): Dock Worker B walks 850 units at
+123 u/s to `TargetPoint_57` — body plays `Empty_Idle` (slides) because the walk animation is
+`UArkAnimNodeLocomotion`'s, a comment-only skeleton → **wave 23**. Root motion was never the issue (`rmd 0.00`
+in 3,000 lines; `ProcessRootMotion` present). **`FArkComponentMeshOffset` ported whole** (13/13, 136 B asserted,
+created in new `ADishonoredPawn::PreBeginPlay` → `ADishonoredNPCPawn::PreBeginPlay_NativeComponents`): 11 of 28
+NPCs stood 1–17 units above their floor and now have the mesh translated onto it.
+
+**Premises corrected (six, agentGA.md §1)**: "`MovePawn` 2012 `0x503c30`" is the 2013
+`UInterpTrackInstLocomotion::UpdateTrackInst`; `ChangeAnimStateMotionModes` is `0x78e550` (46 B — FS's two fields
+were retail); `Tick_Body` has no motion branch; the floaters are an unbased pawn on a moving boat + spawn hovers +
+a walker without a walk animation; the boat is `SkeletalMeshActorMAT_2` not `InterpActor_18`; FV's "`MovePawn`
+never reached for a matinee pawn" is wrong — `MAT_SetCollision` forces `PHYS_Walking` every frame. Retail's
+`FindValidLocation`/`MoveAttachedActors` snap must NOT be a plain Z move (it made a path query answer "arrived").
+**Gate on `ad4a35d` (main)**: 46 ok / 1 failed — `unported_natives 1`: `ADishonoredPlayerPawn::execPlayDying_Native`
+fired at 10.16 s of the d3d9 stage (the player died 3 s after spawning in `l_tower_p`, right before the first NPC
+spawned). Re-run of the stage on the same exe five times: **0 deaths in 5**; GA's own gate on the identical tree: 0.
+**1 in 7**, and `execPlayDying_Native` has never appeared in any of the 89 earlier d3d9 logs — new with wave 22,
+intermittent, cause not recoverable (the harness overwrote the log before it was read). Not GA's `PHYS_Falling`
+tail: `FArkComponentLocomotion::m_pPawnOwner` is `Cast<ADishonoredNPCPawn>`, the player never runs it; GA's
+`ADishonoredPawn::PreBeginPlay` → `StartAllComponents` is a no-op for the player (only NPC files add components).
+Candidates: FV's `ADishonoredPawn::Tick` (new body on the player too), FV's `UpdateFloorAndBase` (NPC-only too),
+or load-order (the player is possessed about 1.2 s before the PhysX scene has the level's static shapes in every
+run). **Open defect, wave 23 GE item 3**: the unported-native stub must log its parameters for `PlayDying_Native`
+(killer, damage type, hit location) so the next occurrence names itself. Main is treated as green: the other 46
+rows passed, and the one row is a 1-in-7 the same tree passed six times.
+
