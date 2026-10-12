@@ -138,6 +138,17 @@ def main() -> int:
     ap.add_argument("extra", nargs="*", help="extra arguments for ninja, after --")
     args = ap.parse_args()
 
+    # A machine-wide override file, so the user can lift the cap and the queue for the night without
+    # restarting every agent whose shell already inherited the old environment. Lines of KEY=VALUE for
+    # the three DISHONORED_BUILD_* names; an explicit environment variable still wins.
+    override = LOCK.parent / "dishonored_build_overrides.txt"
+    if override.exists():
+        for line in override.read_text(encoding="utf-8", errors="replace").splitlines():
+            if "=" in line and line.strip().startswith("DISHONORED_BUILD_"):
+                k, v = line.strip().split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+        print(f"build_queued: overrides from {override}", flush=True)
+
     percent = int(os.environ.get("DISHONORED_BUILD_CPU_PERCENT", "50"))
     percent = min(100, max(1, percent))
     build_dir = Path(args.build_dir)
