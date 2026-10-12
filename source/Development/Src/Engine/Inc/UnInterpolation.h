@@ -244,13 +244,29 @@ public:
 	// DISHONORED(layout): retail SDK @105 (ETrackUpdatePass), in this tree's padding before TrackTitle
 	BYTE TrackUpdatePass;
     FStringNoInit TrackTitle;
+	// DISHONORED(layout): agent FS. The reflected bools of Engine.InterpTrack are loaded from the cooked
+	// script class with RETAIL's bit masks (retail_sdk_layout.json, +120): 0x1 bOnePerGroup, 0x2 bDirGroupOnly,
+	// 0x4 bAIGroupOnly, 0x8 bPlayerGroupOnly, 0x10 bDisableTrack, 0x20 bIsAnimControlTrack, 0x40 bIsAIControlTrack,
+	// 0x80 bIsMoveControlTrack, 0x100 bSubTrackOnly, 0x200 m_bIsAUInterpTrackAnimControl,
+	// 0x400 m_bIsAUInterpTrackStretchAnimControl, 0x800 m_bIsAUInterpTrackDialog, 0x1000 bVisible,
+	// 0x2000 bIsSelected, 0x4000 bIsRecording, 0x8000 bIsCollapsed. The reference order declared here before
+	// (bDisableTrack at 0x4, bIsAnimControlTrack at 0x8) made C++ read bAIGroupOnly as "disabled" and
+	// bPlayerGroupOnly as "anim control": every StretchAnimControl group answered HasAnimControlTrack() FALSE,
+	// so its pawn never received the matinee's anim sets or weights (FS4.log). Same DWORD, same size.
     BITFIELD bOnePerGroup:1;
     BITFIELD bDirGroupOnly:1;
+	BITFIELD bAIGroupOnly:1;
+	BITFIELD bPlayerGroupOnly:1;
 private:
 	BITFIELD bDisableTrack:1;
 public:
 	BITFIELD bIsAnimControlTrack:1;
+	BITFIELD bIsAIControlTrack:1;
+	BITFIELD bIsMoveControlTrack:1;
 	BITFIELD bSubTrackOnly:1;
+	BITFIELD m_bIsAUInterpTrackAnimControl:1;
+	BITFIELD m_bIsAUInterpTrackStretchAnimControl:1;
+	BITFIELD m_bIsAUInterpTrackDialog:1;
 	BITFIELD bVisible:1;
 	BITFIELD bIsSelected:1;
 	BITFIELD bIsRecording:1;

@@ -5400,6 +5400,13 @@ void USkeletalMeshComponent::InitAnimTree(UBOOL bForceReInit)
 			INITANIM_CUSTOM(NAME_PostInitAnimTree);
 			Owner->eventPostInitAnimTree(this);
 		}
+		// DISHONORED(port): agent FS. Retail's notification is the NATIVE virtual AActor::PostInitAnimTree
+		// (APawn 2012 0x2dd5c0 re-caches its UArkAnimNodeStack matinee slots in it); the script event
+		// above is the reference engine's and stays for the actors that have it.
+		if( Tree != NULL && Owner != NULL )
+		{
+			Owner->PostInitAnimTree(this);
+		}
 
 		bAnimTreeInitialised = TRUE;
 

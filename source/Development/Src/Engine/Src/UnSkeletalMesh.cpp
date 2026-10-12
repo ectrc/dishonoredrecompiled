@@ -2955,12 +2955,13 @@ void ASkeletalMeshActorMAT::PreviewBeginAnimControl(UInterpGroup* InInterpGroup)
 	SlotNodes.Empty();
 	if( SkeletalMeshComponent->Animations )
 	{
+		// DISHONORED(port): agent FS. Retail's SlotNodes hold UArkAnimNodeStack (ASkeletalMeshActorMAT::CacheAnimNodes 2012 rva 0x343ee0)
 		TArray<UAnimNode*> Nodes;
-		SkeletalMeshComponent->Animations->GetNodesByClass(Nodes, UAnimNodeSlot::StaticClass());
+		SkeletalMeshComponent->Animations->GetNodesByClass(Nodes, UArkAnimNodeStack::StaticClass());
 
 		for(INT i=0; i<Nodes.Num(); i++)
 		{
-			UAnimNodeSlot* SlotNode = Cast<UAnimNodeSlot>(Nodes(i));
+			UArkAnimNodeStack* SlotNode = Cast<UArkAnimNodeStack>(Nodes(i));
 			if( SlotNode )
 			{
 				SlotNodes.AddItem(SlotNode);
@@ -3041,13 +3042,11 @@ void ASkeletalMeshActorMAT::PreviewFinishAnimControl(UInterpGroup* InInterpGroup
 
 	for(INT SlotIdx=0; SlotIdx<SlotNodes.Num(); SlotIdx++)
 	{
-		UAnimNodeSlot* SlotNode = SlotNodes(SlotIdx);
+		UArkAnimNodeStack* SlotNode = SlotNodes(SlotIdx);
 		if( SlotNode )
-		{	
+		{
 			SlotNode->MAT_SetAnimWeights(SlotNodeInfo);
-			//unset root motion
-			SlotNode->SetRootBoneAxisOption(RBA_Default, RBA_Default, RBA_Default);
-			SlotNode->bIsBeingUsedByInterpGroup = FALSE;
+			SlotNode->MAT_FinishAnimControl();
 		}
 	}
 
@@ -3149,12 +3148,13 @@ void ASkeletalMeshActorMAT::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex
 	SkeletalMeshComponent->LastRenderTime = GWorld->GetTimeSeconds();
 
 	// Forward animation positions to slots. They will forward to relevant channels.
+	// DISHONORED(port): agent FS. The slots are UArkAnimNodeStack (retail 2012 rva 0x33e340).
 	for(INT i=0; i<SlotNodes.Num(); i++)
 	{
-		UAnimNodeSlot* SlotNode = SlotNodes(i);
+		UArkAnimNodeStack* SlotNode = SlotNodes(i);
 		if( SlotNode && SlotNode->NodeName == SlotName )
-		{	
-			// Verify if skeletalmesh can work with given animation		
+		{
+			// Verify if skeletalmesh can work with given animation
 			if ( VerifyAnimationMatchSkeletalMesh(SkeletalMeshComponent) == FALSE)
 			{
 				return;
@@ -3217,15 +3217,10 @@ void ASkeletalMeshActorMAT::MAT_SetAnimWeights(const TArray<FAnimSlotInfo>& Slot
 
 		for(INT SlotIdx=0; SlotIdx<SlotNodes.Num(); SlotIdx++)
 		{
-			UAnimNodeSlot* SlotNode = SlotNodes(SlotIdx);
+			UArkAnimNodeStack* SlotNode = SlotNodes(SlotIdx);
 			if( SlotNode && SlotNode->NodeName == SlotInfo.SlotName )
-			{	
-				SlotNode->MAT_SetAnimWeights(SlotInfo);
-				SlotNode->bIsBeingUsedByInterpGroup = TRUE;
-			}
-			else
 			{
-				SlotNode->bIsBeingUsedByInterpGroup = FALSE;
+				SlotNode->MAT_SetAnimWeights(SlotInfo);
 			}
 		}
 	}

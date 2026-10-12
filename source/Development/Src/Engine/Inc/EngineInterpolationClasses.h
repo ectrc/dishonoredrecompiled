@@ -394,6 +394,15 @@ public:
 	 */
 	virtual void TermGroupInst(UBOOL bDeleteTrackInst);
 
+	// DISHONORED(port): agent FS. The pawn half of retail's group instance (2012 rvas 0x22a9c0
+	// GetGroupPawn, 0x22ac60 SetActorRootMotion; SetActorCollision / SetMeshTranslationMode are empty
+	// here and UInterpGroupInstAI's, 0x22ac30 / 0x22e1f0). The StretchAnimControl track instance calls
+	// the three setters every update and UpdateGroup hands the collected root-motion mode to the actor.
+	virtual class APawn* GetGroupPawn() const;
+	virtual void SetActorCollision( UBOOL bDisableCollision ) {}
+	virtual void SetMeshTranslationMode( BYTE MeshTranslationMode ) {}
+	void SetActorRootMotion( BYTE MatRootMotionMode );
+
 	/** Force any actors attached to this group's actor to update their position using their relative location/rotation. */
 	void UpdateAttachedActors();
 
@@ -474,11 +483,19 @@ public:
 	 */
 	virtual void TermGroupInst(UBOOL bDeleteTrackInst);
 
-	/** 
-	 *  Update Physics state if it includes Movement Track 
+	/**
+	 *  Update Physics state if it includes Movement Track
 	 *  Or terminate if bInit = FALSE
-	 */ 
+	 */
 	void UpdatePhysics(UBOOL bInit);
+
+	// DISHONORED(port): agent FS. Retail 2013 0x22bbc0 (2012 0x240e10): the pawn's half of
+	// InitGroupInst - MAT_SetForceInventory, MAT_BeginAIGroup and the Gesture/Posture/Distraction/Face
+	// anim-set list. The two setters collect what the StretchAnimControl keys ask for during a frame
+	// (2012 0x22ac30, 0x22e1f0) and UInterpGroupAI::UpdateGroup hands them to the pawn afterwards.
+	void InitPawn();
+	virtual void SetActorCollision( UBOOL bInDisableCollision );
+	virtual void SetMeshTranslationMode( BYTE MeshTranslationMode );
 };
 
 class UInterpGroupInstCamera : public UInterpGroupInst
@@ -2170,6 +2187,14 @@ public:
 	// position before it advances; the base answers no. Overridden by UInterpTrackInstSoireeControl
 	// (2013 0x500a40), UInterpTrackInstLocomotion (0x5006b0) and UInterpTrackInstDialog (0x8735c0).
 	virtual UBOOL NeedsSynchronizing( FLOAT CurPosition, FLOAT NewPosition, FLOAT& OutPosition, UBOOL bPreview ) { return FALSE; }
+
+	// DISHONORED(port): agent FS. Retail's per-frame seam, vtable slot 74 of UInterpTrackInst: the group
+	// instance's five-pass loop (UInterpGroupInst::UpdateGroupInst, 2012 0x25b4e0, here
+	// UInterpGroup::UpdateGroup) calls this on every enabled, non-recording instance whose track's
+	// TrackUpdatePass is the current pass. The base (2013 0x212570, 36 B) is Track->UpdateTrack; the
+	// Dishonored instances that drive themselves - StretchAnimControl (2012 0x543f40), Locomotion
+	// (0x542630), FaceTo (0x53eb90), Dialog (0x8ec050) - override it.
+	virtual void UpdateTrackInst( FLOAT NewPosition, UBOOL bJump );
 };
 
 class UInterpTrackInstAnimControl : public UInterpTrackInst
@@ -2767,6 +2792,43 @@ struct FLocomotionControlTrackKey
 };
 
 // Engine.InterpTrackStretchAnimControl.StretchAnimControlTrackKey: retail SDK size 56 (2012 PDB 56)
+// DISHONORED(port): agent FS. The three enums the StretchAnimControl keys carry as bytes (2012 PDB
+// types.json: EMatRootMotionMode, EMatMeshTranslationMode, ESoireeMarkers). UInterpTrack::TrackUpdatePass
+// is ETrackUpdatePass: SoireeControl 0, Generic 1, Locomotion 2, Attachment 3, FaceFx 4.
+enum EMatRootMotionMode
+{
+    MRMM_Disable            =0,
+    MRMM_Translate          =1,
+    MRMM_Accel              =2,
+    MRMM_MAX                =3,
+};
+enum EMatMeshTranslationMode
+{
+    EMMTM_NoChange          =0,
+    EMMTM_DisableConservative=1,
+    EMMTM_DisableReset      =2,
+    EMMTM_MAX               =3,
+};
+enum ESoireeMarkers
+{
+    SMK_Accent              =0,
+    SMK_Apex                =1,
+    SMK_Loop                =2,
+    SMK_End                 =3,
+    SMK_In                  =4,
+    SMK_Out                 =5,
+    SMK_MAX                 =6,
+};
+enum ETrackUpdatePass
+{
+    ETUP_SoireeControl      =0,
+    ETUP_Generic            =1,
+    ETUP_Locomotion         =2,
+    ETUP_Attachment         =3,
+    ETUP_FaceFx             =4,
+    ETUP_MAX                =5,
+};
+
 struct FStretchAnimControlTrackKey
 {
     FLOAT StartTime;
@@ -2981,6 +3043,27 @@ public:
 
     // DISHONORED(port): interptrackstretchanimcontrol.cpp, PostLoad 2013 rva 0x504b10
     virtual void PostLoad();
+
+    // DISHONORED(port): agent FS. 2012 rvas: GetTimeRange 0x540170, GetKeyframeTime 0x5403a0,
+    // GetKeyframeLength 0x5431a0, GetTrackEndTime 0x543930, FindAnimSequenceFromName 0x540410,
+    // GetAnimName 0x540620, GetAnimStartOffset 0x5406a0, GetAnimCollisionStatus 0x540710,
+    // GetAnimRootMotionMode 0x540780, GetAnimMeshTranslationMode 0x5407f0, GetMarkerFromNotify 0x5430b0,
+    // GetWeightForTime 0x543f10, CalcChannelIndex 0x549690. The key array is the track's data; the
+    // instance's UpdateTrackInst reads it through these.
+    virtual INT GetNumKeyframes() const { return AnimSeqs.Num(); }
+    virtual void GetTimeRange( FLOAT& StartTime, FLOAT& EndTime ) const;
+    virtual FLOAT GetKeyframeTime( INT KeyIndex ) const;
+    virtual FLOAT GetKeyframeLength( INT KeyIndex ) const;
+    virtual FLOAT GetTrackEndTime() const;
+    class UAnimSequence* FindAnimSequenceFromName( const class UInterpGroupInst* GroupInst, FName InName ) const;
+    FName GetAnimName( INT KeyIndex ) const;
+    FLOAT GetAnimStartOffset( INT KeyIndex ) const;
+    UBOOL GetAnimCollisionStatus( INT KeyIndex ) const;
+    BYTE GetAnimRootMotionMode( INT KeyIndex ) const;
+    BYTE GetAnimMeshTranslationMode( INT KeyIndex ) const;
+    BYTE GetMarkerFromNotify( const class UAnimNotify* Notify ) const;
+    FLOAT GetWeightForTime( FLOAT InTime );
+    INT CalcChannelIndex();
     DECLARE_CLASS(UInterpTrackStretchAnimControl,UInterpTrackFloatBase,0,Engine)
 };
 
@@ -3014,6 +3097,14 @@ public:
     //## END PROPS InterpTrackInstStretchAnimControl
 
     DECLARE_CLASS(UInterpTrackInstStretchAnimControl,UInterpTrackInst,0,Engine)
+
+    // DISHONORED(port): agent FS. 2012 rvas: InitTrackInst 0x549ac0, UpdateTrackInst 0x543f40,
+    // GetAnimForTime 0x543a00, ConditionallyReversePosition 0x540860. Bodies in interptrackstretchanimcontrol.cpp.
+    virtual void InitTrackInst( UInterpTrack* InTrack );
+    virtual void UpdateTrackInst( FLOAT NewPosition, UBOOL bJump );
+protected:
+    UBOOL GetAnimForTime( FLOAT InTime, INT& OutKeyIndex, FLOAT& OutPosition, FLOAT& OutLoopStartPosition, FLOAT& OutLoopDuration ) const;
+    FLOAT ConditionallyReversePosition( const FStretchAnimControlTrackKey& SeqKey, const class UAnimSequence* Seq, FLOAT InPosition ) const;
 };
 // Engine.InterpTrackSoireeControl: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136)
 class UInterpTrackSoireeControl : public UInterpTrack

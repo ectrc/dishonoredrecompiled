@@ -334,3 +334,197 @@ void ADishonoredNPCPawn::PostBeginPlay()
 	m_iNumReactionDisableRequestsFromSoiree = 0;
 	m_iNumFakeDeathRequestsFromSoiree = 0;
 }
+
+/*-----------------------------------------------------------------------------
+	Agent FS (PHASE17 package FS): the matinee contract, the AI-group half.
+
+	UInterpGroupInstAI::InitPawn (Engine) calls MAT_SetForceInventory and MAT_BeginAIGroup when a scene
+	binds this pawn, UInterpGroupAI::UpdateGroup calls MAT_SetCollision / MAT_SetMeshTranslationMode
+	every frame with what the StretchAnimControl keys asked for, and TermGroupInst calls MAT_FinishAIGroup.
+
+	MAT_BeginAIGroup (2012 rva 0x7c0570, 696 B) and MAT_FinishAIGroup (0x7c0830, 478 B) are ported
+	AS FAR AS THEIR HELPERS EXIST. What retail does and this tree cannot yet:
+	  - FDisComponentLODManager::StartLOD( group, name, eLRP_Soiree, request, -1 ) / StopAllLODByAsker,
+	    and FArkComponentMeshOffset::ForceInstantSnapMesh when the LOD manager has the offset off
+	    (no LOD manager, no mesh-offset component here);
+	  - UpdateNodeSlot(), and m_pBlendPoseNode->BlendNow( 0.2, TRUE ) when m_MatineeControllersInfos is
+	    empty (neither member exists here);
+	  - MatineeControllerAdd( Seq, Seq->m_AIBehaviorPriority, Seq->m_bIsBlocking ) / MatineeControllerRemove,
+	    and the FAIStimStruct_Soiree( MatineeGuid, ESE_Start/ESE_Stop, priority, blocking ) stim handed to
+	    the brain through UDishonoredAIBrain::HandleAIStim_Internal (the brain's stim handler is unported);
+	  - FArkComponentLookat::StartLookForward( group, name, UInterpTrackLookAt::GetGameLookatPriority(
+	    AIGroup->LookatRequestsPriority ), 0.5, -1 ) on LockRequests, StopAllLookAtFromAsker and the
+	    m_iMatineeLookAtRequestID stop on finish (package FT's component);
+	  - MAT_BlendOut( group ) on finish (0x7ad5e0, the NPC's blend-out through m_pMatineeBlender);
+	  - bDisableJiggleBones -> Mesh->m_bDontUpdateKinematic (retail USkeletalMeshComponent @776 bit 0,
+	    not declared on this tree's component);
+	  - ApplyLocomotionModifier() on finish, replaced by m_bLocoModifierNeedsApplication = TRUE.
+	What IS retail's here: the master FSM exit request, the reaction-disable count from bDisableHitReact,
+	the locomotion component's steering / fall / modifier switches, the collision and physics choice, the
+	body-intention reset at Soiree priority, the force-inventory flag and the flags' bits.
+-----------------------------------------------------------------------------*/
+
+#include "arkcomponentlocomotion.h"
+#include "dishonoredutilities_ai.h"
+
+// 2012 rva 0x7bac70 (554 B): SlotNodes emptied and re-collected from the mesh's tree - every
+// UArkAnimNodeStack whose CanBeUsedByMatinee is set, an unnamed one taking the editor ini's
+// MatineePreview/DefaultAnimSlotName. A mesh without a tree gets its AnimTreeTemplate instanced first
+// (or a bare UAnimNodeSequence when it has none).
+void ADishonoredNPCPawn::UpdateNodeSlot()
+{
+	if( Mesh == NULL )
+	{
+		return;
+	}
+	SlotNodes.Empty();
+	if( Mesh->Animations == NULL )
+	{
+		if( Mesh->AnimTreeTemplate != NULL )
+		{
+			Mesh->SetAnimTreeTemplate( Mesh->AnimTreeTemplate );
+		}
+		else
+		{
+			Mesh->DeleteAnimTree();
+			Mesh->Animations = ConstructObject<UAnimNodeSequence>( UAnimNodeSequence::StaticClass() );
+			if( Mesh->Animations != NULL )
+			{
+				Mesh->InitAnimTree( TRUE );
+			}
+		}
+	}
+	if( Mesh->AnimTreeTemplate == NULL || Mesh->Animations == NULL )
+	{
+		return;
+	}
+	TArray<UAnimNode*> Nodes;
+	Mesh->Animations->GetNodesByClass( Nodes, UArkAnimNodeStack::StaticClass() );
+	for( INT NodeIndex = 0; NodeIndex < Nodes.Num(); NodeIndex++ )
+	{
+		UArkAnimNodeStack* Stack = (UArkAnimNodeStack*)Nodes(NodeIndex);
+		if( !Stack->CanBeUsedByMatinee )
+		{
+			continue;
+		}
+		SlotNodes.AddUniqueItem( Stack );
+		if( Stack->NodeName == NAME_None )
+		{
+			Stack->NodeName = FName( *GConfig->GetStr( TEXT("MatineePreview"), TEXT("DefaultAnimSlotName"), GEditorIni ) );
+		}
+	}
+}
+
+// 2012 rva 0x7c0570
+void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
+{
+	UInterpGroupAI* AIGroup = ( GroupInst != NULL ) ? GroupInst->AIGroup : NULL;
+	UpdateNodeSlot();
+
+	if( !DisIsPawnDead( this ) && m_pNPCMasterFSM != NULL )
+	{
+		UDishonoredNativeState* Pending = m_pNPCMasterFSM->GetPendingState();
+		UDishonoredNativeState* Current = m_pNPCMasterFSM->GetCurrentlyActiveState();
+		if( Pending != NULL && Pending != Current )
+		{
+			Pending->RequestStateExit();
+		}
+		if( Current != NULL )
+		{
+			Current->RequestStateExit();
+		}
+	}
+
+	if( AIGroup != NULL && AIGroup->bDisableHitReact )
+	{
+		m_iNumReactionDisableRequestsFromSoiree++;
+	}
+
+	FArkComponentLocomotion* Loco = GetComponentLocomotion();
+	if( Loco != NULL )
+	{
+		Loco->DisableSteering();
+		Loco->AllowToFall( TRUE );
+		Loco->SetModifier( 0 );
+	}
+}
+
+// 2012 rva 0x7c0830
+void ADishonoredNPCPawn::MAT_FinishAIGroup( UInterpGroupInstAI* GroupInst )
+{
+	UInterpGroupAI* AIGroup = ( GroupInst != NULL ) ? GroupInst->AIGroup : NULL;
+
+	MAT_SetCollision( FALSE, FALSE );
+	MAT_SetRootMotionMode( MRMM_Disable );
+	MAT_EnableMeshTranslation();
+	m_bOverrideReactionDisableFromSoiree = 0;
+	SetBodyIntention( DisBodyIntentionPriority_Soiree, eDisNPCBodyStance_None, NULL, NULL );
+
+	FArkComponentLocomotion* Loco = GetComponentLocomotion();
+	if( Loco != NULL )
+	{
+		Loco->EnableSteering();
+		Loco->AllowToFall( FALSE );
+		m_bLocoModifierNeedsApplication = 1;
+	}
+
+	if( AIGroup != NULL && AIGroup->bDisableHitReact )
+	{
+		m_iNumReactionDisableRequestsFromSoiree--;
+	}
+	MAT_StopRootMotion();
+	m_bDisableCollisionForSoiree = 0;
+}
+
+// 2012 rva 0x7ab5c0 (30 B): bit 21 of the flag word at +2180 is m_bShouldForceBodyIntention (2012 PDB)
+void ADishonoredNPCPawn::MAT_SetForceInventory( UBOOL bShouldForceEmptyHand )
+{
+	m_bShouldForceBodyIntention = bShouldForceEmptyHand ? 1 : 0;
+}
+
+// 2012 rva 0x7ab7a0 (252 B). Retail also disables while FDisComponentRetargeting::m_bIsRetargeting
+// (no such component here). PHYS_RigidBody is left alone: a ragdolled pawn stays one.
+void ADishonoredNPCPawn::MAT_SetCollision( UBOOL bDisableCollisionForSoiree, UBOOL bHaveMoveTrack )
+{
+	m_bDisableCollisionForSoiree = bDisableCollisionForSoiree ? 1 : 0;
+	if( m_bDisableCollisionForSoiree )
+	{
+		if( Physics != PHYS_None )
+		{
+			setPhysics( PHYS_None );
+		}
+	}
+	else if( bHaveMoveTrack )
+	{
+		if( Physics != PHYS_Interpolating )
+		{
+			setPhysics( PHYS_Interpolating );
+		}
+	}
+	else if( Physics != PHYS_RigidBody )
+	{
+		setPhysics( PHYS_Walking );
+	}
+}
+
+// 2012 rva 0x7ab6e0 (46 B) and 0x7ab720 (33 B): both yield to the retargeting component in retail
+void ADishonoredNPCPawn::MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode )
+{
+	ADishonoredPawn::MAT_SetMeshTranslationMode( MatMeshTranslationMode );
+}
+
+void ADishonoredNPCPawn::MAT_DisableMeshTranslation( UBOOL bReset )
+{
+	ADishonoredPawn::MAT_DisableMeshTranslation( bReset );
+}
+
+// 2012 rvas 0x7ab8a0 (13 B), 0x7ab710 (15 B)
+UBOOL ADishonoredNPCPawn::MAT_IsCollisionDisable() const
+{
+	return m_bDisableCollisionForSoiree;
+}
+
+UBOOL ADishonoredNPCPawn::MAT_PermitLODPause() const
+{
+	return !m_bRenderedByPlayer;
+}

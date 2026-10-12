@@ -12796,16 +12796,9 @@ public:
     DECLARE_CLASS(UArkAnimNodeRat,UAnimNodeBlendBase,0,Engine)
 };
 
-// Engine.ArkAnimNodeStack: retail sizeof 240, reflected span 221..228 (2012 PDB sizeof 240) [shim: Engine package]
-class UArkAnimNodeStack : public UAnimNodeBlendBase
-{
-public:
-    //## BEGIN PROPS ArkAnimNodeStack
-    BITFIELD CanBeUsedByMatinee:1;
-    //## END PROPS ArkAnimNodeStack
-
-    DECLARE_CLASS(UArkAnimNodeStack,UAnimNodeBlendBase,0,Engine)
-};
+// Engine.ArkAnimNodeStack: DISHONORED(port, agent FS): declared in Engine/Inc/EngineAnimClasses.h now (APawn::SlotNodes
+// is TArray<UArkAnimNodeStack*> in retail and UnPawn.cpp has to see the class); IMPLEMENT_CLASS moved to
+// Engine/Src/arkanimnodestack.cpp. A regeneration of this header must leave the class out (carry into the generator).
 
 // Engine.ArkAvoidable: retail sizeof 124, reflected span 56..124 (2012 PDB sizeof 124) [shim: Engine package]
 class UArkAvoidable : public UObject

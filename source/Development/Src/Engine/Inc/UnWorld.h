@@ -1040,3 +1040,11 @@ extern void (*GDisAudioFrameHook)();
     GDisEngineTickHook above is installed; InitInterp calls it in retail's position and falls through to
     its own branches when it returns FALSE. NULL by default, so the Engine alone behaves as before. */
 extern UBOOL (*GDisInterpPlayerGroupHook)( class USeqAct_Interp* Seq, class UInterpGroup* Group );
+
+/** DISHONORED(port): agent FS. Retail's UInterpGroupInst::UpdateGroupInst (2012 rva 0x25b4e0) re-steps
+    passes 2 and 3 in 0.1 s increments while a matinee is being skipped and moves the pawn between the
+    steps through FArkComponentLocomotion (DisableInertia / MovePawn + PreAsyncWorkTick / EnableInertia)
+    and FArkComponentFaceTo::PreAsyncWorkTick. Both components live in DishonoredGame, so the pass loop in
+    UInterpGroup::UpdateGroup calls this with Phase 0 before the re-step, 1 per step (Step is the step
+    length) and 2 after it. NULL by default: the Engine alone re-steps the tracks and leaves the pawn. */
+extern void (*GDisInterpSkipStepHook)( class APawn* Pawn, INT Phase, FLOAT Step );

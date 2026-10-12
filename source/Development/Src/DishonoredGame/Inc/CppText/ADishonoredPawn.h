@@ -64,3 +64,18 @@ public:
 	// own unit, dishonoredpawn_inventory.cpp, is still an import_reference.py stub.
 	void SpawnInventoryLoadout( const struct FDisInventoryLoadout& _rLoadout, UBOOL _bIgnoreCapacity );
 	void SpawnInventoryLoadout_Ammo( const TArray<struct FDisInventoryAmmoEntry>& _rAmmo, UBOOL _bIgnoreCapacity );
+
+// ---- agent FS (PHASE17 FS): the matinee (MAT_*) contract, ADishonoredPawn's eight ----
+// 2012 rvas: MAT_SetAnimPosition 0x791070, MAT_SetRootMotionMode 0x7910e0, MAT_SetMeshTranslationMode 0x791190,
+// MAT_DisableMeshTranslation 0x791130, MAT_EnableMeshTranslation 0x791170, MAT_RootMotionEnabled 0x78e4d0,
+// MAT_StopRootMotion 0x78e500 (MAT_OnDestroyPreviewPawn 0x79ed70 is editor-only). Bodies in dishonoredpawn.cpp.
+// The bases are AActor's / APawn's (EngineClasses.h, EnginePawnClasses.h); the StretchAnimControl track and
+// UInterpGroup::UpdateGroup call them on the group actor.
+public:
+	virtual void MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion );
+	virtual void MAT_SetRootMotionMode( BYTE MatRootMotionMode );
+	virtual void MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode );
+	virtual void MAT_DisableMeshTranslation( UBOOL bReset );
+	void MAT_EnableMeshTranslation();
+	virtual UBOOL MAT_RootMotionEnabled() const;
+	void MAT_StopRootMotion();

@@ -31,6 +31,7 @@
 
 #include "DishonoredGame.h"
 #include "fkmatineediag.h"
+#include "arkcomponentlocomotion.h"
 
 /** UInterpGroupPlayer's bitfield word is one DWORD; these are the three bits these bodies read. */
 static void DisFKWarnOnce( const TCHAR* What )
@@ -383,8 +384,40 @@ static UBOOL DisFKInitPlayerGroup( USeqAct_Interp* Seq, UInterpGroup* Group )
 	return TRUE;
 }
 
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): agent FS. The pawn step of a skipped matinee (UInterpGroup::UpdateGroup's re-step
+	of the Locomotion and Attachment passes, retail UInterpGroupInst::UpdateGroupInst 2012 rva 0x25b4e0):
+	retail takes the pawn's FArkComponentLocomotion and FArkComponentFaceTo, DisableInertia() before the
+	steps, MovePawn( step, FALSE ) + Loco->PreAsyncWorkTick( step ) + FaceTo->PreAsyncWorkTick( step ) per
+	step while the pawn walks, EnableInertia() after. FArkComponentLocomotion::MovePawn (2012 0x584ca0,
+	160 B: the navmesh-constrained translation) and FArkComponentFaceTo have no body in this tree, so a
+	skipped scene re-steps its tracks and ticks the locomotion component without moving the pawn.
+-----------------------------------------------------------------------------*/
+static void DisFSSkipStep( APawn* Pawn, INT Phase, FLOAT Step )
+{
+	FArkComponentLocomotion* Loco = FArkComponentLocomotion::GetLocomotionComponent( Pawn );
+	if( Loco == NULL )
+	{
+		return;
+	}
+	switch( Phase )
+	{
+	case 0:
+		Loco->DisableInertia();
+		break;
+	case 1:
+		Loco->PreAsyncWorkTick( Step );
+		break;
+	default:
+		Loco->EnableInertia();
+		break;
+	}
+}
+
 void DisFKInstallInterpHooks()
 {
+	GDisInterpSkipStepHook = &DisFSSkipStep;
+
 	// -fknoplayergroup is the control for this package's own before/after: it leaves the hook NULL, so
 	// one binary gives both readings and the comparison cannot be a different build of something else.
 	if( ParseParam( appCmdLine(), TEXT("fknoplayergroup") ) )

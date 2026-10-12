@@ -23,6 +23,20 @@
     Declared in Engine/Inc/UnWorld.h; see USeqAct_Interp::InitInterp below. */
 UBOOL (*GDisInterpPlayerGroupHook)( USeqAct_Interp* Seq, UInterpGroup* Group ) = NULL;
 
+/** DISHONORED(port, agent FS): the skip-mode pawn step of UInterpGroup::UpdateGroup, installed by DishonoredGame. UnWorld.h. */
+void (*GDisInterpSkipStepHook)( APawn* Pawn, INT Phase, FLOAT Step ) = NULL;
+
+/** -fkdiag (agent FK's switch): the AI group's pawn is reported once a second from UInterpGroupAI::UpdateGroup. */
+static UBOOL DisFSInterpDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-fkdiag") ) != NULL ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
 /*-----------------------------------------------------------------------------
 	DISHONORED(bringup): agent FK. The anim-control handshake between a matinee group and its actor.
 
@@ -3085,68 +3099,142 @@ void UInterpGroup::PostEditChangeProperty(FPropertyChangedEvent& PropertyChanged
 }
 
 /** Iterate over all InterpTracks in this InterpGroup, doing any actions to bring the state to the specified time. */
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): agent FS (PHASE17 package FS). The per-frame group update is retail's
+	UInterpGroupInst::UpdateGroupInst (2012 rva 0x25b4e0, 858 B; 2013 0x22fed0), carried here on the
+	group as this tree's seam has always been (agent FK put the player blend on it for the same reason).
+
+	Retail runs FIVE passes keyed on UInterpTrack::TrackUpdatePass (ETrackUpdatePass: SoireeControl 0,
+	Generic 1, Locomotion 2, Attachment 3, FaceFx 4) and calls the INSTANCE's virtual UpdateTrackInst
+	(vtable slot 74) on every enabled, non-recording instance of the current pass, which is how the
+	Dishonored instances that drive themselves - StretchAnimControl, Locomotion, FaceTo, Dialog - get
+	their frame; the base UpdateTrackInst is Track->UpdateTrack. The reference engine's two passes
+	(everything, then FaceFX) were this loop with the pass byte read off the class instead of the data.
+
+	While the matinee is being skipped (m_bSkipping) the Locomotion and Attachment passes are left out
+	of the normal loop and re-stepped afterwards in 0.1 s increments from the old position to the new
+	one, the pawn being moved between steps through its locomotion component so a skipped scene ends
+	with the pawn where the scene would have walked it (GDisInterpSkipStepHook, UnWorld.h). Then the
+	anim weights, and the root-motion mode the StretchAnimControl keys collected goes to the actor.
+-----------------------------------------------------------------------------*/
 void UInterpGroup::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UBOOL bPreview, UBOOL bJump)
 {
 	check( InterpTracks.Num() == GrInst->TrackInst.Num() );
 
-	// Update animation state of Actor.
+	USeqAct_Interp* Seq = Cast<USeqAct_Interp>( GrInst->GetOuter() );
+	const UBOOL bHasAnimTrack = HasAnimControlTrack();
+	APawn* GroupPawn = GrInst->GetGroupPawn();
+	GrInst->m_CurrentRootMotionMode = MRMM_Disable;
+
 #if WITH_EDITORONLY_DATA
 	// if in editor and preview and anim control exists, let them update weight before update track
-	if ( GIsEditor && bPreview && HasAnimControlTrack() )
+	if ( GIsEditor && bPreview && bHasAnimTrack )
 	{
 		UpdateAnimWeights(NewPosition, GrInst, bPreview, bJump);
 	}
 #endif
-	// We'll make sure to always update FaceFX tracks last, if we have any, since those will modify the skeletal
-	// pose of the actor which can easily be blown away by VectorProperty tracks (DrawScale3D, etc) which force
-	// an update of the actor's entire component set.
-	for( INT CurUpdatePass = 1; CurUpdatePass <= 2; ++CurUpdatePass )
+
+	const UBOOL bSkipping = ( Seq != NULL && Seq->m_bSkipping );
+	for( INT Pass = 0; Pass < ETUP_MAX; Pass++ )
 	{
-		UBOOL bAnyFaceFXTracks = FALSE;
-		for(INT i=0; i<InterpTracks.Num(); i++)
+		if( bSkipping && ( Pass == ETUP_Locomotion || Pass == ETUP_Attachment ) )
+		{
+			continue;
+		}
+		for( INT i = 0; i < InterpTracks.Num(); i++ )
 		{
 			UInterpTrack* Track = InterpTracks(i);
 			UInterpTrackInst* TrInst = GrInst->TrackInst(i);
-
-			//Tracks that are disabled or are presently recording should NOT be updated
-			if ( Track->IsDisabled() || Track->bIsRecording)
+			if( Track->IsDisabled() || Track->bIsRecording || Track->TrackUpdatePass != Pass )
 			{
 				continue;
 			}
-
-			// Check to see if this is a FaceFX track; we'll always process those later.
-			UInterpTrackFaceFX* FaceFXTrack = Cast< UInterpTrackFaceFX >( Track );
-			if( FaceFXTrack != NULL )
+			if( bPreview )
 			{
-				bAnyFaceFXTracks = TRUE;
+				Track->ConditionalPreviewUpdateTrack( NewPosition, TrInst );
 			}
-
-			// Process FaceFX tracks on the second pass, all other tracks on the first pass
-			if( ( CurUpdatePass == 2 ) == ( FaceFXTrack != NULL ) )
+			else
 			{
-				if(bPreview)
-				{
-					Track->ConditionalPreviewUpdateTrack(NewPosition, TrInst);
-				}
-				else
-				{
-					Track->ConditionalUpdateTrack(NewPosition, TrInst, bJump);
-				}
+				TrInst->UpdateTrackInst( NewPosition, bJump );
 			}
-		}
-
-		if( !bAnyFaceFXTracks )
-		{
-			// No FaceFX tracks found during first pass, so no need for more iteration!
-			break;
 		}
 	}
 
-	// Update animation state of Actor.
-	UpdateAnimWeights(NewPosition, GrInst, bPreview, bJump);
+	if( bSkipping )
+	{
+		// retail leaves the player's own pawn alone here (m_ActorTypeFlags == 36 is the player pawn)
+		APawn* StepPawn = ( GroupPawn != NULL && !GroupPawn->IsHumanControlled() ) ? GroupPawn : NULL;
+		if( StepPawn != NULL && GDisInterpSkipStepHook != NULL )
+		{
+			(*GDisInterpSkipStepHook)( StepPawn, 0, 0.f );
+		}
+		FLOAT PreviousPos = Seq->Position;
+		FLOAT Pos = PreviousPos + 0.1f;
+		UBOOL bEndReached = FALSE;
+		while( NewPosition >= Pos )
+		{
+			const FLOAT Step = Pos - PreviousPos;
+			const FLOAT SavedDeltaTime = Seq->DeltaTime;
+			Seq->DeltaTime = Step;
+			UBOOL bStepped = FALSE;
+			if( !bPreview )
+			{
+				for( INT Pass = ETUP_Locomotion; Pass <= ETUP_Attachment; Pass++ )
+				{
+					for( INT i = 0; i < InterpTracks.Num(); i++ )
+					{
+						UInterpTrack* Track = InterpTracks(i);
+						if( Track->TrackUpdatePass == Pass && !Track->IsDisabled() && !Track->bIsRecording )
+						{
+							GrInst->TrackInst(i)->UpdateTrackInst( Pos, FALSE );
+							bStepped = TRUE;
+						}
+					}
+				}
+			}
+			if( StepPawn != NULL && bStepped && StepPawn->Physics == PHYS_Walking && GDisInterpSkipStepHook != NULL )
+			{
+				(*GDisInterpSkipStepHook)( StepPawn, 1, Step );
+			}
+			Seq->DeltaTime = SavedDeltaTime;
+			PreviousPos = Pos;
+			if( !bEndReached && Pos + 0.1f > NewPosition )
+			{
+				// the last step lands exactly on the new position
+				bEndReached = TRUE;
+				Pos = NewPosition - 0.1f;
+			}
+			Pos += 0.1f;
+		}
+		if( StepPawn != NULL && GDisInterpSkipStepHook != NULL )
+		{
+			(*GDisInterpSkipStepHook)( StepPawn, 2, 0.f );
+		}
+	}
+
+	if( bHasAnimTrack )
+	{
+		UpdateAnimWeights(NewPosition, GrInst, bPreview, bJump);
+		AActor* Actor = GrInst->GetGroupActor();
+		if( Actor != NULL )
+		{
+			Actor->MAT_SetRootMotionMode( GrInst->m_CurrentRootMotionMode );
+		}
+	}
+	else if( DisFSInterpDiagEnabled() && GrInst->IsA( UInterpGroupInstAI::StaticClass() ) )
+	{
+		static TMap<const UObject*, FLOAT> LastReportAt;
+		const FLOAT Now = GWorld->GetTimeSeconds();
+		FLOAT* Last = LastReportAt.Find( GrInst );
+		if( Last == NULL || Now - *Last >= 5.f )
+		{
+			LastReportAt.Set( GrInst, Now );
+			debugf( TEXT("DISHONORED(bringup): fkdiag aipawn group '%s' has NO anim-control track (bIsAnimControlTrack unset on all %d tracks): the weights are never sent"), *GroupName.ToString(), InterpTracks.Num() );
+		}
+	}
 
 	// Update stuff attached to bones (if group has anim control).
-	if( bPreview && HasAnimControlTrack() )
+	if( bPreview && bHasAnimTrack )
 	{
 		GrInst->UpdateAttachedActors();
 	}
@@ -3246,6 +3334,21 @@ void UInterpGroup::UpdateAnimWeights(FLOAT NewPosition, class UInterpGroupInst* 
 			}
 
 			AddSlotInfo(UpdateAnimWeightsSlotInfos, AnimTrack->SlotName, TrackWeight);
+		}
+
+		// DISHONORED(port): agent FS. Retail's UpdateAnimWeights (2012 rva 0x256000) also weighs every
+		// enabled StretchAnimControl track on its slot - its weight is the track's float curve.
+		UInterpTrackStretchAnimControl* StretchTrack = Cast<UInterpTrackStretchAnimControl>(Track);
+		if( StretchTrack && !StretchTrack->IsDisabled() )
+		{
+			const FLOAT TrackWeight = StretchTrack->GetWeightForTime(NewPosition);
+			if ( StretchTrack->SlotName != NAME_None )
+			{
+				TotalSlotNodeAnimWeight += TrackWeight;
+				UsingSlotNode = TRUE;
+				SlotNodeNameUsed = StretchTrack->SlotName;
+			}
+			AddSlotInfo(UpdateAnimWeightsSlotInfos, StretchTrack->SlotName, TrackWeight);
 		}
 	}
 
@@ -3546,9 +3649,29 @@ AActor* UInterpGroupInst::GetGroupActor()
 	{
 		return NULL;
 	}
-	else 
+	else
 	{
 		return GroupActor;
+	}
+}
+
+// DISHONORED(port): agent FS. 2012 rva 0x22a9c0 (19 B): the pawn InitGroupInst cached, NULL once it is dying.
+APawn* UInterpGroupInst::GetGroupPawn() const
+{
+	if( m_pGroupPawn == NULL || m_pGroupPawn->bDeleteMe )
+	{
+		return NULL;
+	}
+	return m_pGroupPawn;
+}
+
+// DISHONORED(port): agent FS. 2012 rva 0x22ac60 (17 B): a key asking for root motion wins the frame;
+// UpdateGroup resets the mode before the pass loop and hands the result to the actor after it.
+void UInterpGroupInst::SetActorRootMotion( BYTE MatRootMotionMode )
+{
+	if( MatRootMotionMode != MRMM_Disable )
+	{
+		m_CurrentRootMotionMode = MatRootMotionMode;
 	}
 }
 
@@ -3598,6 +3721,9 @@ void UInterpGroupInst::InitGroupInst(UInterpGroup* InGroup, AActor* InGroupActor
 		UInterpTrackInst* TrInst = ConstructObject<UInterpTrackInst>( Track->TrackInstClass, this, NAME_None, RF_Transactional );
 		TrackInst.AddItem(TrInst);
 
+		// DISHONORED(port): agent FS. The instance knows its track before anything runs on it (retail
+		// UInterpTrackInst::Track @56), whether or not its InitTrackInst override writes it.
+		TrInst->Track = Track;
 		TrInst->InitTrackInst( Track );
 	}
 
@@ -4081,6 +4207,14 @@ AActor* UInterpTrackInst::GetGroupActor()
 	return GrInst->GetGroupActor();
 }
 
+// DISHONORED(port): agent FS. 2013 rva 0x212570 (36 B), the base of the per-frame seam: a track
+// instance that does not drive itself hands the frame to its track. Through ConditionalUpdateTrack
+// rather than UpdateTrack so the reference engine's gore ActiveCondition keeps being honoured.
+void UInterpTrackInst::UpdateTrackInst( FLOAT NewPosition, UBOOL bJump )
+{
+	Track->ConditionalUpdateTrack( NewPosition, this, bJump );
+}
+
 /** Initialise this Track instance. Called in-game before doing any interpolation. */
 void UInterpTrackInst::InitTrackInst(UInterpTrack* Track)
 {
@@ -4088,6 +4222,11 @@ void UInterpTrackInst::InitTrackInst(UInterpTrack* Track)
 	// so it doesn't modify it's defaults which may be used elsewhere
 	// Note: Each inst needs to perform this check when it's created, but the group is responsible for it's destruction
 	check( Track );
+	// DISHONORED(port): agent FS. UInterpTrackInst::Track (retail @56) is Arkane's: the Dishonored
+	// instances set it in their own InitTrackInst (SoireeControl, StretchAnimControl), the reference
+	// instances only chain here, and the seam's base UpdateTrackInst dispatches through it - the first
+	// Move/Visibility instance to reach UpdateGroup read a NULL Track (FS1.log, minidump 03.58.50).
+	this->Track = Track;
 	UInterpGroupInst* GrInst = CastChecked<UInterpGroupInst>( GetOuter() );
 	if ( !GrInst->HasPPS() )		// If we haven't already overridden the settings
 	{
@@ -12803,32 +12942,93 @@ void UInterpGroupInstAI::InitGroupInst(UInterpGroup* InGroup, AActor* InGroupAct
 	// otherwise, tracks are not instantiated
 	UpdatePhysics(TRUE);
 
-	APawn * PawnActor = GetPawn(InGroupActor);
-
-	if (PawnActor && StageMarkActor)
+	// DISHONORED(port): agent FS. Retail's InitGroupInst (2013 rva 0x2304f0, 196 B) after the base: the
+	// two flags from the instanced tracks' bIsAIControlTrack / bIsMoveControlTrack (UInterpTrack+120
+	// masks 0x40 / 0x80), then InitPawn, then UpdatePhysics. The reference engine's script event
+	// MAT_BeginAIGroup (FN's FindFunction guard sat here) is gone: Dishonored's pawn has the native
+	// contract, APawn::MAT_BeginAIGroup, and the stage mark is the group's business.
+	bHaveLocomotion = 0;
+	bHaveMoveTrack = 0;
+	for( INT TrackIndex = 0; TrackIndex < TrackInst.Num(); TrackIndex++ )
 	{
-		//debugf(TEXT("Name of marker (%s), Location(%s)"), *AIGroup->StageMarkActor->GetName(), *AIGroup->StageMarkActor->Location.ToString());
-		// need to move first because otherwise, InitialTM in Movetrack might change due to losing base or not. 
-		// DISHONORED(bringup): agent FN. MAT_BeginAIGroup is an engine SCRIPT event Dishonored's script never
-		// declares, and eventMAT_BeginAIGroup is FindFunctionChecked: the first AI group to bind a real pawn
-		// (DishonoredNPCPawn_26, once UDisSeqVar_SpawnerPawn resolved to the spawned pawn) appError'd here.
-		// Retail (UInterpGroupInstAI::InitPawn, 2013 rva 0x22bbc0) calls the NATIVE
-		// ADishonoredNPCPawn::MAT_BeginAIGroup(UInterpGroupInstAI*) (2013 rva 0x765080) and the anim-set
-		// setup - package FO's MAT contract. Until that exists the script path is taken only when it exists.
-		if( PawnActor->FindFunction( ENGINE_MAT_BeginAIGroup ) != NULL )
+		UInterpTrack* InstTrack = ( TrackInst(TrackIndex) != NULL ) ? TrackInst(TrackIndex)->Track : NULL;
+		if( InstTrack == NULL )
 		{
-			PawnActor->eventMAT_BeginAIGroup(StageMarkActor->Location, StageMarkActor->Rotation);
+			continue;
 		}
-		else
+		if( InstTrack->bIsMoveControlTrack )
 		{
-			static UBOOL bWarned = FALSE;
-			if( !bWarned )
-			{
-				bWarned = TRUE;
-				debugf( NAME_Warning, TEXT("matinee AI group '%s': %s has no script MAT_BeginAIGroup and the native ADishonoredNPCPawn::MAT_BeginAIGroup is not ported; the pawn is not moved to its stage mark (package FO)"),
-					*InGroup->GroupName.ToString(), *PawnActor->GetName() );
-			}
+			bHaveMoveTrack = 1;
 		}
+		if( InstTrack->bIsAIControlTrack )
+		{
+			bHaveLocomotion = 1;
+		}
+	}
+	InitPawn();
+}
+
+// DISHONORED(port): agent FS. 2013 rva 0x22bbc0 (373 B; 2012 0x240e10): the pawn's half of the group
+// binding. MAT_SetForceInventory with the matinee's m_bForcesUndrawBeforePlaying, MAT_BeginAIGroup, and
+// the pawn's own anim sets whose names contain Gesture / Posture / Distraction / Face go on the instance
+// (the group in the editor) for FindAnimSequenceFromName to search after the group's own sets.
+void UInterpGroupInstAI::InitPawn()
+{
+	APawn* Pawn = Cast<APawn>( GetGroupActor() );
+	if( Pawn == NULL )
+	{
+		return;
+	}
+	USeqAct_Interp* Seq = Cast<USeqAct_Interp>( GetOuter() );
+	Pawn->MAT_SetForceInventory( Seq != NULL && Seq->m_bForcesUndrawBeforePlaying );
+	Pawn->MAT_BeginAIGroup( this );
+
+	TArray<FString> Filters;
+	Filters.AddItem( FString( TEXT("Gesture") ) );
+	Filters.AddItem( FString( TEXT("Posture") ) );
+	Filters.AddItem( FString( TEXT("Distraction") ) );
+	Filters.AddItem( FString( TEXT("Face") ) );
+	if( GIsGame )
+	{
+		Pawn->GetBuildAnimSetList( Filters, GroupAnimSetsPawn );
+	}
+	else
+	{
+		Pawn->GetBuildAnimSetList( Filters, Group->GroupAnimSetsPawn );
+	}
+
+	if( DisFSInterpDiagEnabled() )
+	{
+		INT StacksInTree = 0;
+		if( Pawn->Mesh != NULL && Pawn->Mesh->Animations != NULL )
+		{
+			TArray<UAnimNode*> Nodes;
+			Pawn->Mesh->Animations->GetNodesByClass( Nodes, UArkAnimNodeStack::StaticClass() );
+			StacksInTree = Nodes.Num();
+		}
+		debugf( TEXT("DISHONORED(bringup): fkdiag aipawn %s group '%s': bound %s at %.0f/%.0f/%.0f physics %d base %s, %d pawn anim set(s), %d slot node(s) of %d stack(s) in the tree, haveMove %d haveLoco %d"),
+			( Seq != NULL ) ? *Seq->GetName() : TEXT("?"), *Group->GroupName.ToString(), *Pawn->GetName(),
+			Pawn->Location.X, Pawn->Location.Y, Pawn->Location.Z, (INT)Pawn->Physics, ( Pawn->Base != NULL ) ? *Pawn->Base->GetName() : TEXT("none"),
+			GIsGame ? GroupAnimSetsPawn.Num() : Group->GroupAnimSetsPawn.Num(), Pawn->SlotNodes.Num(), StacksInTree, (INT)bHaveMoveTrack, (INT)bHaveLocomotion );
+	}
+}
+
+// DISHONORED(port): agent FS. 2012 rvas 0x22ac30 (23 B) and 0x22e1f0 (37 B): what the StretchAnimControl
+// keys ask for is collected over the frame - a disable sticks, the most restrictive translation mode
+// wins - and UInterpGroupAI::UpdateGroup hands both to the pawn after the pass loop.
+void UInterpGroupInstAI::SetActorCollision( UBOOL bInDisableCollision )
+{
+	if( bInDisableCollision )
+	{
+		bDisableCollision = 1;
+	}
+}
+
+void UInterpGroupInstAI::SetMeshTranslationMode( BYTE MeshTranslationMode )
+{
+	if( m_MeshTranslationMode < MeshTranslationMode )
+	{
+		m_MeshTranslationMode = MeshTranslationMode;
 	}
 }
 
@@ -12864,19 +13064,31 @@ void UInterpGroupInstAI::UpdatePreviewPawnFromSeqVarCharacter(UInterpGroup* InGr
 */
 void UInterpGroupInstAI::TermGroupInst(UBOOL bDeleteTrackInst)
 {
-	APawn * PawnActor = GetPawn(GetGroupActor());
-
-	if (PawnActor && PawnActor->FindFunction( ENGINE_MAT_FinishAIGroup ) != NULL)
+	// DISHONORED(port): agent FS. Retail 2012 rva 0x244840 (153 B): once only; the native
+	// MAT_FinishAIGroup on the cached pawn (the reference engine's script event is gone, see
+	// InitGroupInst), the physics back, both pawn anim-set lists emptied, the base, then the flag.
+	if( bAlreadyTerminated )
 	{
-		PawnActor->eventMAT_FinishAIGroup();
+		return;
+	}
+	APawn* PawnActor = GetGroupPawn();
+	if( PawnActor != NULL )
+	{
+		PawnActor->MAT_FinishAIGroup( this );
 	}
 
 	// revert physics
 	UpdatePhysics(FALSE);
+	GroupAnimSetsPawn.Empty();
+	if( Group != NULL )
+	{
+		Group->GroupAnimSetsPawn.Empty();
+	}
 
 	DestroyPreviewPawn();
 
 	Super::TermGroupInst( bDeleteTrackInst );
+	bAlreadyTerminated = 1;
 }
 
 /** 
@@ -13069,7 +13281,57 @@ void UInterpGroupAI::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UB
 	}
 #endif
 
+	// DISHONORED(port): agent FS. Retail's UInterpGroupInstAI::UpdateGroupInst (2012 rva 0x25bfd0,
+	// 309 B) around the base: the per-frame collectors are reset (bDisableCollision, bHaveLocomotion,
+	// m_MeshTranslationMode), the LookAt tracks are stepped (UInterpTrackLookAt::StaticUpdateTracks,
+	// package FT's, not called here), the five passes run, then the pawn gets what the keys asked for:
+	// MAT_SetCollision( bDisableCollision, bHaveMoveTrack ) and MAT_SetMeshTranslationMode.
+	AIGrInst->bDisableCollision = 0;
+	AIGrInst->bHaveLocomotion = 0;
+	AIGrInst->m_MeshTranslationMode = EMMTM_NoChange;
+
 	Super::UpdateGroup( NewPosition, GrInst, bPreview, bJump );
+
+	APawn* Pawn = Cast<APawn>( GrInst->GetGroupActor() );
+	if( Pawn != NULL )
+	{
+		Pawn->MAT_SetCollision( AIGrInst->bDisableCollision, AIGrInst->bHaveMoveTrack );
+		Pawn->MAT_SetMeshTranslationMode( AIGrInst->m_MeshTranslationMode );
+
+		if( DisFSInterpDiagEnabled() && !bPreview )
+		{
+			// once a second per instance: where the AI group's pawn is and what its first matinee slot plays
+			static TMap<const UObject*, FLOAT> LastReportAt;
+			const FLOAT Now = GWorld->GetTimeSeconds();
+			FLOAT* Last = LastReportAt.Find( GrInst );
+			if( Last == NULL || Now - *Last >= 1.f )
+			{
+				LastReportAt.Set( GrInst, Now );
+				FString SlotState( TEXT("no stack") );
+				for( INT SlotIndex = 0; SlotIndex < Pawn->SlotNodes.Num(); SlotIndex++ )
+				{
+					UArkAnimNodeStack* Stack = Pawn->SlotNodes(SlotIndex);
+					if( Stack == NULL || Stack->Children.Num() < 2 )
+					{
+						continue;
+					}
+					SlotState = FString::Printf( TEXT("stack %s w0 %.2f"), *Stack->NodeName.ToString(), Stack->Children(0).Weight );
+					for( INT ChildIndex = 1; ChildIndex < Stack->Children.Num(); ChildIndex++ )
+					{
+						UAnimNodeSequence* SeqNode = Cast<UAnimNodeSequence>( Stack->Children(ChildIndex).Anim );
+						SlotState += FString::Printf( TEXT(" | ch%d w %.2f %s t %.2f"), ChildIndex - 1, Stack->Children(ChildIndex).Weight,
+							( SeqNode != NULL ) ? *SeqNode->AnimSeqName.ToString() : TEXT("-"), ( SeqNode != NULL ) ? SeqNode->CurrentTime : 0.f );
+					}
+					break;
+				}
+				const USeqAct_Interp* Seq = Cast<USeqAct_Interp>( GrInst->GetOuter() );
+				debugf( TEXT("DISHONORED(bringup): fkdiag aipawn %s group '%s' pos %.2f: %s at %.0f/%.0f/%.0f physics %d base %s vel %.0f, %s"),
+					( Seq != NULL ) ? *Seq->GetName() : TEXT("?"), *GroupName.ToString(), NewPosition, *Pawn->GetName(),
+					Pawn->Location.X, Pawn->Location.Y, Pawn->Location.Z, (INT)Pawn->Physics, ( Pawn->Base != NULL ) ? *Pawn->Base->GetName() : TEXT("none"),
+					Pawn->Velocity.Size(), *SlotState );
+			}
+		}
+	}
 }
 
 /*-----------------------------------------------------------------------------

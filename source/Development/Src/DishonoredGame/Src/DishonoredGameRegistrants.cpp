@@ -459,7 +459,7 @@ IMPLEMENT_CLASS(UArkAnimNodeBlendPose);
 IMPLEMENT_CLASS(UArkAnimNodeLocomotion);
 IMPLEMENT_CLASS(UArkAnimNodeLookAt);
 IMPLEMENT_CLASS(UArkAnimNodeRat);
-IMPLEMENT_CLASS(UArkAnimNodeStack);
+// UArkAnimNodeStack: Engine/Src/arkanimnodestack.cpp since agent FS (the class is declared in EngineAnimClasses.h)
 IMPLEMENT_CLASS(UArkAvoidable);
 IMPLEMENT_CLASS(UArkBinkOverlayManager);
 IMPLEMENT_CLASS(UArkComponentLocomotionConfig);

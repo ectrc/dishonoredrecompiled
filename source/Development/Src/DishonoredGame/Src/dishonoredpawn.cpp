@@ -420,3 +420,106 @@ void ADishonoredPawn::PostBeginPlay()
 	Super::PostBeginPlay();
 	PostBeginPlay_Body();
 }
+
+/*-----------------------------------------------------------------------------
+	Agent FS (PHASE17 package FS): the matinee contract, ADishonoredPawn's half.
+
+	Retail's root-motion switches go through ADishonoredPawn::StartRootMotionMode / StopRootMotionMode
+	(2012 rvas 0x78e4b0 / 0x78e4c0), which are ChangeAnimStateMotionModes( mode, RMRM_RotateActor ) on
+	the pawn's anim-state machine - not ported (ADishonoredPlayerPawn 0x6fae70, AMatineePreviewPlayerPawn
+	0x78e550). DEVIATION: the modes are written straight onto the mesh here, which is what the anim
+	state would end up doing to it; MAT_RootMotionEnabled reads them back the way retail does.
+	The mesh-translation trio is FArkComponentMeshOffset's (GetMeshOffsetComponent / EnableByFlags(2) /
+	DisableByFlags(2) and SetMeshTranslation( ZeroVector, 0 )) and that component has no body in this
+	tree: the three are no-ops that say so once.
+-----------------------------------------------------------------------------*/
+
+static void DisFSWarnOnce( const TCHAR* What )
+{
+	static TArray<FString> Said;
+	const FString Key( What );
+	if( Said.FindItemIndex( Key ) != INDEX_NONE )
+	{
+		return;
+	}
+	Said.AddItem( Key );
+	debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s needs FArkComponentMeshOffset, which has no body in this tree; the matinee continues without the mesh offset"), What );
+}
+
+// 2012 rva 0x791070 (103 B)
+void ADishonoredPawn::MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion )
+{
+	Super::MAT_SetAnimPosition( SlotName, ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion );
+	if( bEnableRootMotion && InAnimSeqName == NAME_None && MAT_RootMotionEnabled() )
+	{
+		MAT_StopRootMotion();
+	}
+}
+
+// 2012 rva 0x7910e0 (71 B)
+void ADishonoredPawn::MAT_SetRootMotionMode( BYTE MatRootMotionMode )
+{
+	if( Mesh == NULL )
+	{
+		return;
+	}
+	switch( MatRootMotionMode )
+	{
+	case MRMM_Translate:
+		Mesh->RootMotionMode = RMM_Translate;
+		Mesh->RootMotionRotationMode = RMRM_RotateActor;
+		break;
+	case MRMM_Accel:
+		Mesh->RootMotionMode = RMM_Accel;
+		Mesh->RootMotionRotationMode = RMRM_RotateActor;
+		break;
+	default:
+		MAT_StopRootMotion();
+		break;
+	}
+}
+
+// 2012 rva 0x791190 (81 B)
+void ADishonoredPawn::MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode )
+{
+	switch( MatMeshTranslationMode )
+	{
+	case EMMTM_DisableConservative:
+		MAT_DisableMeshTranslation( FALSE );
+		break;
+	case EMMTM_DisableReset:
+		MAT_DisableMeshTranslation( TRUE );
+		break;
+	default:
+		MAT_EnableMeshTranslation();
+		break;
+	}
+}
+
+// 2012 rva 0x791130 (57 B): SetMeshTranslation( ZeroVector, 0 ) when resetting, then the offset component off
+void ADishonoredPawn::MAT_DisableMeshTranslation( UBOOL bReset )
+{
+	DisFSWarnOnce( TEXT("ADishonoredPawn::MAT_DisableMeshTranslation") );
+}
+
+// 2012 rva 0x791170 (25 B): the offset component back on
+void ADishonoredPawn::MAT_EnableMeshTranslation()
+{
+	DisFSWarnOnce( TEXT("ADishonoredPawn::MAT_EnableMeshTranslation") );
+}
+
+// 2012 rva 0x78e4d0 (33 B): the mesh is in a root-motion mode (Translate or Accel)
+UBOOL ADishonoredPawn::MAT_RootMotionEnabled() const
+{
+	return Mesh != NULL && ( Mesh->RootMotionMode == RMM_Translate || Mesh->RootMotionMode == RMM_Accel );
+}
+
+// 2012 rva 0x78e500 (10 B): StopRootMotionMode, i.e. ChangeAnimStateMotionModes( RMM_Velocity, RMRM_RotateActor )
+void ADishonoredPawn::MAT_StopRootMotion()
+{
+	if( Mesh != NULL && MAT_RootMotionEnabled() )
+	{
+		Mesh->RootMotionMode = RMM_Velocity;
+		Mesh->RootMotionRotationMode = RMRM_RotateActor;
+	}
+}

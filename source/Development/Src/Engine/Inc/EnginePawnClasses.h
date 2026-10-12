@@ -480,7 +480,7 @@ public:
     class URB_BodyInstance* PhysicsPushBody;
     struct FRBCollisionChannelContainer PushBoxCollisionChannel;  // DISHONORED(layout): retail 2013 only, SDK dump @1048 (script_delta_2012_2013.md: Pawn members_added)
     INT FailedLandingCount;
-    TArrayNoInit<class UAnimNodeSlot*> SlotNodes;
+    TArrayNoInit<class UArkAnimNodeStack*> SlotNodes;  // DISHONORED(port): agent FS. retail SDK @1056: TArray<UArkAnimNodeStack*>, not UAnimNodeSlot
     TArrayNoInit<class UInterpGroup*> InterpGroupList;
     class UMaterialInstanceConstant* MIC_PawnMat;
     class UMaterialInstanceConstant* MIC_PawnHair;
@@ -538,6 +538,19 @@ public:
     virtual void MAT_SetMorphWeight(FName MorphNodeName,FLOAT MorphWeight);
     virtual void MAT_SetSkelControlScale(FName SkelControlName,FLOAT Scale);
     virtual void MAT_SetSkelControlStrength(FName SkelControlName,FLOAT ControlStrength);
+    // DISHONORED(port): agent FS. The matinee AI-group contract retail declares as APawn virtuals and
+    // the Dishonored pawns override (ADishonoredNPCPawn 2012 0x7c0570 MAT_BeginAIGroup, 0x7c0830
+    // MAT_FinishAIGroup, 0x7ab5c0 MAT_SetForceInventory, 0x7ab7a0 MAT_SetCollision, 0x7ab6e0
+    // MAT_SetMeshTranslationMode; MAT_SetAnimPosition and MAT_SetRootMotionMode are AActor's). The bases are empty;
+    // UInterpGroupInstAI::InitPawn / UpdateGroupInst / TermGroupInst and the StretchAnimControl
+    // track call them. GetBuildAnimSetList is APawn's own (2012 0x2dd380). Bodies in UnPawn.cpp.
+    virtual void GetBuildAnimSetList(const TArray<FString>& FilterStrings,TArray<class UAnimSet*>& OutAnimSets) const;
+    virtual void PostInitAnimTree(class USkeletalMeshComponent* SkelComp);
+    virtual void MAT_SetForceInventory(UBOOL bShouldForceEmptyHand) {}
+    virtual void MAT_BeginAIGroup(class UInterpGroupInstAI* GroupInst) {}
+    virtual void MAT_FinishAIGroup(class UInterpGroupInstAI* GroupInst) {}
+    virtual void MAT_SetCollision(UBOOL bDisableCollisionForSoiree,UBOOL bHaveMoveTrack) {}
+    virtual void MAT_SetMeshTranslationMode(BYTE MeshTranslationMode) {}
     virtual UBOOL IsAliveAndWell() const;
     virtual FVector AdjustDestination(class AActor* GoalActor,FVector Dest=FVector(EC_EventParm));
     UBOOL ValidAnchor();

@@ -4287,6 +4287,17 @@ public:
 	/** Called by Matinee when we close it after we have been controlling animation on this Actor. */
 	virtual void PreviewFinishAnimControl(class UInterpGroup* InInterpGroup) {}
 
+	// DISHONORED(port): agent FS. Retail declares the in-game matinee animation entry points on AActor
+	// (APawn 2012 0x2d0880 and ASkeletalMeshActorMAT 0x33e340 override MAT_SetAnimPosition;
+	// ADishonoredPawn 0x7910e0 and ASkeletalMeshActorMAT 0x3318f0 override MAT_SetRootMotionMode), and
+	// the StretchAnimControl track instance and UInterpGroup::UpdateGroup call them on the group actor.
+	virtual void MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion) {}
+	virtual void MAT_SetRootMotionMode(BYTE MatRootMotionMode) {}
+	// DISHONORED(port): agent FS. Retail's native notification from USkeletalMeshComponent::InitAnimTree
+	// (the retail Actor script has no PostInitAnimTree event); APawn (2012 0x2dd5c0) caches its
+	// UArkAnimNodeStack slots in it, ADishonoredNPCPawn (0x7ad200) adds its FDisComponentAnimPlayer.
+	virtual void PostInitAnimTree(class USkeletalMeshComponent* SkelComp) {}
+
 	/** Function used to control FaceFX animation in the editor (Matinee). */
 	virtual void PreviewUpdateFaceFX(UBOOL bForceAnim, const FString& GroupName, const FString& SeqName, FLOAT InPosition) {}
 

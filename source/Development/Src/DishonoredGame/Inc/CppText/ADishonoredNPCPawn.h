@@ -70,3 +70,22 @@ public:
 private:
 	void GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location );
 	void GameLoad_Possession( FArchive& _rArchive, ESaveLoadLocation _Location );
+
+// ---- agent FS (PHASE17 FS): the matinee (MAT_*) contract, the AI-group half ----
+// 2012 rvas: MAT_BeginAIGroup 0x7c0570, MAT_FinishAIGroup 0x7c0830, MAT_SetForceInventory 0x7ab5c0,
+// MAT_SetCollision 0x7ab7a0, MAT_SetMeshTranslationMode 0x7ab6e0, MAT_DisableMeshTranslation 0x7ab720,
+// MAT_IsCollisionDisable 0x7ab8a0, MAT_PermitLODPause 0x7ab710. Bodies in dishonorednpcpawn.cpp; the bases
+// are APawn's (EnginePawnClasses.h) and UInterpGroupInstAI calls them. The other fourteen NPC MAT_* are
+// inventoried in resources/docs/agents/agentFS.md.
+public:
+	virtual void MAT_BeginAIGroup( class UInterpGroupInstAI* GroupInst );
+	virtual void MAT_FinishAIGroup( class UInterpGroupInstAI* GroupInst );
+	virtual void MAT_SetForceInventory( UBOOL bShouldForceEmptyHand );
+	virtual void MAT_SetCollision( UBOOL bDisableCollisionForSoiree, UBOOL bHaveMoveTrack );
+	virtual void MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode );
+	virtual void MAT_DisableMeshTranslation( UBOOL bReset );
+	UBOOL MAT_IsCollisionDisable() const;
+	UBOOL MAT_PermitLODPause() const;
+protected:
+	// agent FS: 2012 rva 0x7bac70, the first thing MAT_BeginAIGroup does - the matinee slots re-collected
+	virtual void UpdateNodeSlot();

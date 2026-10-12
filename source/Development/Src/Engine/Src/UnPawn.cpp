@@ -257,14 +257,31 @@ UBOOL APawn::ShouldTrace(UPrimitiveComponent* Primitive,AActor *SourceActor, DWO
 /** Save off commonly used nodes so the tree doesn't need to be iterated over often */
 void APawn::CacheAnimNodes()
 {
-	// DISHONORED(retail): the tick array is the mesh's anim tree's (UnAnimTree.h)
-	TArray<UAnimNode*>& DisTickArray = DisAnimTickArray(Mesh);
-	for (INT i = 0; i < DisTickArray.Num(); i++)
+	// DISHONORED(port): agent FS. Retail 2012 rva 0x2d6770 (460 B): every UArkAnimNodeStack of the
+	// tree - Arkane's matinee slot, not UAnimNodeSlot - into SlotNodes, which MAT_SetAnimPosition walks.
+	if( Mesh == NULL || Mesh->Animations == NULL )
 	{
-		if (DisTickArray(i)->IsA(UAnimNodeSlot::StaticClass()))
+		return;
+	}
+	TArray<UAnimNode*> Nodes;
+	Mesh->Animations->GetNodes( Nodes );
+	for( INT NodeIndex = 0; NodeIndex < Nodes.Num(); NodeIndex++ )
+	{
+		if( Nodes(NodeIndex) != NULL && Nodes(NodeIndex)->IsA( UArkAnimNodeStack::StaticClass() ) )
 		{
-			SlotNodes.AddItem(Cast<UAnimNodeSlot>(DisTickArray(i)));
+			SlotNodes.AddItem( (UArkAnimNodeStack*)Nodes(NodeIndex) );
 		}
+	}
+}
+
+// DISHONORED(port): agent FS. Retail 2012 rva 0x2dd5c0 (79 B): the pawn's own mesh got its anim tree,
+// so the matinee slots are collected again. Called natively from USkeletalMeshComponent::InitAnimTree.
+void APawn::PostInitAnimTree( USkeletalMeshComponent* SkelComp )
+{
+	if( SkelComp == Mesh )
+	{
+		SlotNodes.Empty();
+		CacheAnimNodes();
 	}
 }
 
@@ -3473,17 +3490,17 @@ void APawn::PreviewBeginAnimControl(UInterpGroup* InInterpGroup)
 	if( Mesh->AnimTreeTemplate && Mesh->Animations )
 	{
 		TArray<UAnimNode*> Nodes;
-		Mesh->Animations->GetNodesByClass(Nodes, UAnimNodeSlot::StaticClass());
+		Mesh->Animations->GetNodesByClass(Nodes, UArkAnimNodeStack::StaticClass());
 
 		for(INT i=0; i<Nodes.Num(); i++)
 		{
-			UAnimNodeSlot* SlotNode = Cast<UAnimNodeSlot>(Nodes(i));
+			UArkAnimNodeStack* SlotNode = Cast<UArkAnimNodeStack>(Nodes(i));
 			if( SlotNode )
 			{
 				SlotNodes.AddItem(SlotNode);
 				if (SlotNode->NodeName == NAME_None)
 				{
-					// this is only for preview, so I'm setting default animslot name for it. 
+					// this is only for preview, so I'm setting default animslot name for it.
 					SlotNode->NodeName = FName(*GConfig->GetStr(TEXT("MatineePreview"), TEXT("DefaultAnimSlotName"), GEditorIni));
 				}
 			}
@@ -3552,20 +3569,18 @@ void APawn::PreviewFinishAnimControl(UInterpGroup* InInterpGroup)
 /** End AnimControl. Release required AnimSets */
 void APawn::MAT_FinishAnimControl(UInterpGroup* InInterpGroup)
 {
-	// Clear references to AnimSets which were added.
+	// DISHONORED(port): agent FS. Retail 2012 rva 0x2d6940 (169 B): every stack's channels to weight 0
+	// and its sequences released from the matinee (UArkAnimNodeStack::MAT_FinishAnimControl).
 	FAnimSlotInfo SlotNodeInfo;
-	// clear the weight
 	SlotNodeInfo.ChannelWeights.AddItem(0.0f);
 
 	for(INT SlotIdx=0; SlotIdx<SlotNodes.Num(); SlotIdx++)
 	{
-		UAnimNodeSlot* SlotNode = SlotNodes(SlotIdx);
+		UArkAnimNodeStack* SlotNode = SlotNodes(SlotIdx);
 		if( SlotNode )
-		{	
+		{
 			SlotNode->MAT_SetAnimWeights(SlotNodeInfo);
-			//unset root motion
-			SlotNode->SetRootBoneAxisOption(RBA_Default, RBA_Default, RBA_Default);
-			SlotNode->bIsBeingUsedByInterpGroup = FALSE;
+			SlotNode->MAT_FinishAnimControl();
 		}
 	}
 
@@ -3650,12 +3665,13 @@ void APawn::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSe
 		Mesh->LastRenderTime = GWorld->GetTimeSeconds();
 	}
 
-	// Forward animation positions to slots. They will forward to relevant channels.
+	// DISHONORED(port): agent FS. Retail 2012 rva 0x2d0880 (166 B): the stacks named by the slot take
+	// the position (UArkAnimNodeStack::MAT_SetAnimPosition, 0x576570).
 	for(INT i=0; i<SlotNodes.Num(); i++)
 	{
-		UAnimNodeSlot* SlotNode = SlotNodes(i);
+		UArkAnimNodeStack* SlotNode = SlotNodes(i);
 		if( SlotNode && SlotNode->NodeName == SlotName )
-		{	
+		{
 			SlotNode->MAT_SetAnimPosition(ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
 		}
 	}
@@ -3685,22 +3701,47 @@ void APawn::MAT_SetAnimWeights(const TArray<FAnimSlotInfo>& SlotInfos)
 
 #endif
 
-	// Forward channel weights to relevant slot(s)
+	// DISHONORED(port): agent FS. Retail 2012 rva 0x2d0930 (226 B): the stacks named by each slot take
+	// its channel weights (UArkAnimNodeStack::MAT_SetAnimWeights, 0x576790).
 	for(INT SlotInfoIdx=0; SlotInfoIdx<SlotInfos.Num(); SlotInfoIdx++)
 	{
 		const FAnimSlotInfo& SlotInfo = SlotInfos(SlotInfoIdx);
 
 		for(INT SlotIdx=0; SlotIdx<SlotNodes.Num(); SlotIdx++)
 		{
-			UAnimNodeSlot* SlotNode = SlotNodes(SlotIdx);
+			UArkAnimNodeStack* SlotNode = SlotNodes(SlotIdx);
 			if( SlotNode && SlotNode->NodeName == SlotInfo.SlotName )
-			{	
-				SlotNode->MAT_SetAnimWeights(SlotInfo);
-				SlotNode->bIsBeingUsedByInterpGroup = TRUE;
-			}
-			else
 			{
-				SlotNode->bIsBeingUsedByInterpGroup = FALSE;
+				SlotNode->MAT_SetAnimWeights(SlotInfo);
+			}
+		}
+	}
+}
+
+// DISHONORED(port): agent FS. Retail 2012 rva 0x2dd380 (563 B): the mesh's own anim sets whose name
+// contains one of the filter strings, in the mesh's order. UInterpGroupInstAI::InitPawn asks for
+// Gesture / Posture / Distraction / Face and FindAnimSequenceFromName searches the result after the
+// group's own sets.
+void APawn::GetBuildAnimSetList(const TArray<FString>& FilterStrings, TArray<UAnimSet*>& OutAnimSets) const
+{
+	if( Mesh == NULL )
+	{
+		return;
+	}
+	for( INT SetIndex = 0; SetIndex < Mesh->AnimSets.Num(); SetIndex++ )
+	{
+		UAnimSet* AnimSet = Mesh->AnimSets(SetIndex);
+		if( AnimSet == NULL )
+		{
+			continue;
+		}
+		const FString AnimSetName = AnimSet->GetName();
+		for( INT FilterIndex = 0; FilterIndex < FilterStrings.Num(); FilterIndex++ )
+		{
+			if( AnimSetName.InStr( FilterStrings(FilterIndex) ) != INDEX_NONE )
+			{
+				OutAnimSets.AddItem( AnimSet );
+				break;
 			}
 		}
 	}
