@@ -259,3 +259,58 @@ holds for brightness only; the 2 GB is the AS2 heap, not the renderer; `build/he
 when the package needed a control.
 
 **Gate on main for `14cad0f` (FU on top of `e60c5c6`): 47 ok / 0 failed / 0 skipped (2545 s).** The 37/41 FU measured on its own was the controller, not the code.
+
+### FS — merged `d24f1bf`; FS's own gate **47 ok / 0 failed / 0 skipped** (2,654 s)
+
+Twenty-one files; sync list checked against `git diff --name-only d7d083a` + untracked, every file in
+the copy list or named as merged-from-main.
+
+**Do pawns move and animate through the Boat scene? Half, measured.** Control `build/head_rel`
+(`FSBASE3.log`) vs this (`FS5.log`) on the inputtest route: the spawned Elite guard's
+`MatineeStackNode` now plays **`BoatDriver_SC_Tower_Idle` at weight 1.00**, sequence time advancing and
+looping for the whole 58 s scene; on the control nothing drove it. The rats animate too. **He does not
+move**: `base none`, `vel 0`, position constant while the boat sails off on its Move track — retail
+carries him by **basing him on the boat**, and our spawned pawn has no Base (spawner/basing path, spec
+§6.1). The Boat matinee has no player group; the player groups are on the soirée matinees FR's dialog
+system starts, so the player half was not measurable this wave.
+
+**The finding in nobody's brief, and the biggest: `UInterpTrack`'s bitfield was read in the wrong
+order.** `UnInterpolation.h` declared it in the reference engine's order, but a native class keeps the
+bit masks **serialized from the cooked script class** (`UStruct::Link`, `SavedBitMask`), so C++
+`bDisableTrack` read retail's `bAIGroupOnly` and `bIsAnimControlTrack` read `bPlayerGroupOnly`. Every
+non-player `StretchAnimControl` group said "no anim-control track" (`FS4.log`): no anim sets, no
+weights. Re-declared in retail's order with the seven missing bits. **Every other NOEXPORT class
+declared in reference order can carry the same fault — a scripted audit is specified in `agentFS.md`
+§6.2 and is wave 22's.**
+
+**Ported, in FO's order.** The five-pass `TrackUpdatePass` loop in `UInterpGroup::UpdateGroup` (retail
+`UpdateGroupInst` 2012 `0x25b4e0`, 2013 `0x22fed0`), new virtual `UInterpTrackInst::UpdateTrackInst`,
+the 0.1 s skip-mode re-step, `UpdateAnimWeights` for Stretch tracks, `GetGroupPawn` /
+`SetActorRootMotion` / `SetActorCollision` / `SetMeshTranslationMode`. **The whole `StretchAnimControl`
+runtime, 18 functions** (`UpdateTrackInst` `0x543f40`, `GetAnimForTime` `0x543a00` — the soirée-marker
+stretching and looping). **`UArkAnimNodeStack`'s five bodies, moved into the Engine** because retail's
+`APawn::SlotNodes` is `TArray<UArkAnimNodeStack*>` where this tree had `UAnimNodeSlot*` and the array
+was empty on every Dishonored pawn; `CacheAnimNodes`, `MAT_SetAnimPosition/Weights/FinishAnimControl`,
+`PostInitAnimTree`, `UpdateNodeSlot`. `UInterpGroupInstAI::InitPawn` (2013 `0x22bbc0`) replacing FN's
+guard; the `MAT_*` contract as virtuals with **16 Dishonored pawn bodies** — `MAT_BeginAIGroup` /
+`MAT_FinishAIGroup` partial, eleven callees absent (LOD manager, mesh offset, blend-pose node,
+`MatineeControllerAdd`, the soirée AI stimulus, look-at).
+
+**Not reached, specified**: the pawn's Base on the boat; `Locomotion`, `FaceTo` (component 0 bodies),
+`Dialog` (FR), `LookAt` (FT, call site marked); the other fourteen NPC `MAT_*` and the player five; the
+2013 refinements of the seam; the stack's child-0 weight (a flagged deviation).
+
+**Six premises corrected**: the bitfield; the stack's "zero bodies" was a third of the hole (wrong
+`SlotNodes` type, nothing caching the slots); **the Boat matinee does not start on `-finewgame=50`**
+(control `activations 0` at 60/155 s) — only `-distouchprobe`'s teleports fire `StartSpawn`; "vtable
+slot 74" is 2012's, 2013's seam is slot 76 (`0x505c70`); `MAT_BeginAIGroup` cannot yet be "the native
+call" — a third of its body exists; `UInterpTrackInst::Track` (Arkane's +56) was never set by the
+reference instances and the first seam call crashed on it — **minidump opened**, fixed.
+
+**Rules**: all runs through `game_input.py`, FocusLost 0, no retail exe. **One run went fullscreen —
+`FSBASE1`, the first control run, before the rule existed**; every launch after passes `-windowed`.
+**Three generated headers hand-edited and the `UArkAnimNodeStack` shim block removed from
+`DishonoredGameEngineShims.h` — the generator must learn this or a regeneration reintroduces the class
+and the build fails loudly (§6.10).**
+
+**Gate on main for `d24f1bf`: 47 ok / 0 failed / 0 skipped (2145 s, one load-sensitive retry of `d3d9_frames` with sixteen compilers running).**
