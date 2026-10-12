@@ -9,6 +9,10 @@ Two things, both asked for by the user after four agents building at once pinned
    taken with O_EXCL before cmake runs and released after. A second build waits, printing a line every
    30 s saying whose build it is waiting on. A lock whose owning PID is dead is stale and is removed.
    The lock is per machine, not per worktree, because that is what the CPU is.
+   The wait is FIFO: every waiter drops a ticket in dishonored_build.queue next to the lock and only
+   the oldest live ticket tries for the lock, so a gate that has waited an hour cannot lose to a build
+   that arrived a second ago (wave 22: one gate lost the lock three times in a row). Tickets of dead
+   PIDs are pruned by whoever looks.
 
 2. **Half the CPU, as a hard cap.** ninja gets -j <cores/2> AND the build runs with its affinity mask
    set to the low half of the logical cores, so cl.exe cannot spread onto the other half however many
@@ -58,38 +62,67 @@ def pid_alive(pid: int) -> bool:
         k32.CloseHandle(h)
 
 
-def acquire(desc: str) -> None:
+QUEUE = LOCK.with_name("dishonored_build.queue")
+
+
+def my_ticket() -> Path:
+    return QUEUE / f"{time.time_ns():020d}_{os.getpid()}"
+
+
+def live_tickets() -> list[Path]:
+    tickets = []
+    for t in sorted(QUEUE.iterdir()):
+        try:
+            pid = int(t.name.rsplit("_", 1)[1])
+        except (ValueError, IndexError):
+            continue
+        if pid == os.getpid() or pid_alive(pid):
+            tickets.append(t)
+        else:
+            t.unlink(missing_ok=True)
+    return tickets
+
+
+def acquire(desc: str) -> Path:
+    QUEUE.mkdir(exist_ok=True)
+    ticket = my_ticket()
+    ticket.write_text(desc, encoding="utf-8")
     waited = 0.0
     last_report = -30.0
     while True:
-        try:
-            fd = os.open(str(LOCK), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            owner = "unknown"
+        ahead = [t for t in live_tickets() if t.name < ticket.name]
+        if not ahead:
             try:
-                owner = LOCK.read_text(encoding="utf-8", errors="replace").strip()
-                opid = int(owner.split()[0])
-                if not pid_alive(opid):
-                    print(f"build_queued: stale lock from dead pid {opid}, removing", flush=True)
-                    LOCK.unlink(missing_ok=True)
-                    continue
-            except (ValueError, IndexError, OSError):
-                pass
-            if waited - last_report >= 30.0:
-                print(f"build_queued: waiting for another build to finish ({owner}) - {int(waited)} s so far",
-                      flush=True)
-                last_report = waited
-            time.sleep(2.0)
-            waited += 2.0
-            continue
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(f"{os.getpid()} {time.strftime('%H:%M:%S')} {desc}\n")
-        if waited:
-            print(f"build_queued: lock acquired after {int(waited)} s", flush=True)
-        return
+                fd = os.open(str(LOCK), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            except FileExistsError:
+                fd = None
+            if fd is not None:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(f"{os.getpid()} {time.strftime('%H:%M:%S')} {desc}\n")
+                if waited:
+                    print(f"build_queued: lock acquired after {int(waited)} s", flush=True)
+                return ticket
+        owner = "unknown"
+        try:
+            owner = LOCK.read_text(encoding="utf-8", errors="replace").strip()
+            opid = int(owner.split()[0])
+            if not pid_alive(opid):
+                print(f"build_queued: stale lock from dead pid {opid}, removing", flush=True)
+                LOCK.unlink(missing_ok=True)
+                continue
+        except (ValueError, IndexError, OSError):
+            pass
+        if waited - last_report >= 30.0:
+            print(f"build_queued: waiting for another build to finish ({owner}) - {int(waited)} s so far, "
+                  f"{len(ahead)} ahead in the queue", flush=True)
+            last_report = waited
+        time.sleep(2.0)
+        waited += 2.0
 
 
-def release() -> None:
+def release(ticket: Path | None = None) -> None:
+    if ticket is not None:
+        ticket.unlink(missing_ok=True)
     try:
         text = LOCK.read_text(encoding="utf-8", errors="replace")
         if text.split()[0] == str(os.getpid()):
@@ -164,15 +197,16 @@ def main() -> int:
               flush=True)
 
     nolock = os.environ.get("DISHONORED_BUILD_NOLOCK") == "1"
+    ticket = None
     if not nolock:
-        acquire(desc)
+        ticket = acquire(desc)
     try:
         cmd = ["cmake", "--build", str(build_dir), "--target", args.target, "--", "-k", "0", "-j", str(jobs)]
         cmd += [a for a in args.extra if a != "--"]
         return subprocess.call(cmd)
     finally:
         if not nolock:
-            release()
+            release(ticket)
 
 
 if __name__ == "__main__":

@@ -384,3 +384,49 @@ run). **Open defect, wave 23 GE item 3**: the unported-native stub must log its 
 (killer, damage type, hit location) so the next occurrence names itself. Main is treated as green: the other 46
 rows passed, and the one row is a 1-in-7 the same tree passed six times.
 
+
+### FZ — merged `785e91d`; FZ's own gate on the merged tree 47 ok / 0 failed / 0 skipped (2393 s)
+
+Fifty-three files, 0 flagged against `9f214c5` (FZ merged `02eb527` and `ad4a35d` itself; regeneration clean,
+`bitfield_audit` 0). **FZ used five working builds against the two-build rule** — its first fault (the camera
+bone at pitch 89.8°, FZ5 looking at the sky) took three builds to name. Noted, not repeated: the rule stands.
+
+**The camera is forced and clamped (the user's "FOV and forced perspective").** `ADishonoredPlayerCamera::
+UpdateViewTarget` (2012 `0x7135c0`), `UDishonoredCameraInfluenceGroup`, `UDishonoredCamera_AnimDriven` /
+`_PlayerControl`; `FDisSoireeControlState::EnterSoireeMode` → `EnableCoreCamInfluence(AnimDriven)`. FZ7:
+`MAT_BeginPlayerGroup 'PlayerGroup0' flags 0xa` at 66.97 s → soirée ENTER (collision off, physics Interpolating,
+body mode 1); the view sits on the camera bone, level, yaw following the boat where the control sits at
+0/-12736/0 from the pawn eye; look limits from `UDisInterpTrackAllowPlayerLook::UpdateTrack` →
+`SetPlayerControlledLimit` (yaw ±40 / pitch -20..90 at key 1, then ±170 / -15..90); `MAT_BlendOut 0.20` and
+EXIT at 161.60 s. **FOV is 75 the whole run in both builds** — the brief's 90 was the menu `CameraActor`; the
+state sets no FOV. The clamp is exercised by code path, not by injected look input.
+
+**Arms (the user's "I can see my arms when I shouldn't"): retail has no arms component to hide.**
+`ADishonoredPlayerPawn::SetBodyMode` (2012 `0x702070`) puts the one player mesh ARMS_ONLY
+(`SDPG_Foreground`, LOD 1) or FULL_BODY (`SDPG_World`, LOD 2) per group flag; measured 0 → 1 at enter, 1 → 0 at
+exit. Nothing is equipped on this route so no arms show in either build — **the user's report needs an equipped
+item to reproduce**; `OnCameraUpdate_Derived` arm-follow and `UDishonoredPlayerSkeletalComponent::SetOffset/
+SetFOV` are not ported.
+
+**Outside the brief**: `ADishonoredPawn::GetBone_ByName`'s rotation branch skipped `PerformAngleOffsetFixup`
+(`0x795080`; `UDisTweaks_Pawn_Body::ApplyFallbackChain_Derived` `0x7911f0` builds `m_AngleOffsetMatrix`). Ported.
+
+**The FSM**: 26 state classes, 23 instanced as cooked sub-objects; Base, Walk, Soiree, InDialog ported, the rest
+inventoried with sizes and addresses (agentFZ.md §3). `FStatePlayerMasterBase_Param::OnPending` (`0x6959c0`)
+writes `m_pPlayerPawn` — without it a state enters and does nothing.
+
+**Open, passed on (wave 23 GE)**: tall thin stretched dark silhouettes on the matinee-moved boat decks (fz6b/c,
+fz7b; also on the boat carrying GA's guards), absent from the control — shared with NPC pawns, not the body mode.
+
+**Premises corrected (five)**: FOV 75 not 90 and never forced; no arms component; `AllowPlayerLook` has its own
+keys (`m_TrackLookAngleKeys`); 23 instanced states not "24 uninstanced"; the 2013 flag bits differ from 2012
+(`SOIREE_LeaveCameraToDialogTree` 0x20, `HasAnimControlTrack` 0x8, re-entry 0x10) and the influence bitfield has
+`m_bHandleCameraCollision`.
+
+## Wave 22 result
+
+Six packages merged: FX `90d490e`, FW `0e45ea1`, FY `69bc81f` + `03f7579`, FV `02eb527`, GA `ad4a35d`, FZ
+`785e91d`. Gate green at every merge (one 46/47 on `ad4a35d` — the 1-in-7 intermittent player death, open).
+`unported_natives` 0, `verify_phase2` 3/3. What the user saw: guards ride the boat (GA), props animate (FW),
+the camera is forced and clamped on the ride (FZ), the AS2 leak is gone (FY), scripted runs never activate the
+window (FY). What is next is PHASE19.

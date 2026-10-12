@@ -119,9 +119,24 @@ reached (`MAT_SetCollision` forces `PHYS_Walking`), so the component's own state
    player in a capture pair; the `bad AnimNotify` lines are gone; the death is either reproduced and named, or
    20 clean d3d9 runs are on record.
 
-### GF — FZ's residue
+### GF — FZ's residue: the arms with an item equipped, and the stretched silhouettes
 
-Filled in by the coordinator from FZ's hand-back (see PHASE18 outcome).
+FZ (PHASE18 outcome) found no arms component — `ADishonoredPlayerPawn::SetBodyMode` (2012 `0x702070`) is the
+mechanism and it switches 0 → 1 → 0 correctly — but **nothing was equipped on the harness route**, so the user's
+"arms when I shouldn't see them" was never reproduced; `OnCameraUpdate_Derived`'s arm-follow and
+`UDishonoredPlayerSkeletalComponent::SetOffset/SetFOV` are unported. Also: tall, thin, stretched dark
+silhouettes on NPC pawns standing on a matinee-moved boat (captures fz6b/c, fz7b; the guards' boat too), absent
+from the control. GC owns the anim stack; this package owns the player side.
+
+1. Equip the sword/hand before the ride (`-fzdiag` + the inventory path; `HasNothingEquipped`) and measure the
+   arms through enter/exit of the soirée state against the control; port `OnCameraUpdate_Derived`'s arm-follow
+   and the player skeletal component's `SetOffset/SetFOV` (2012 names at the rvas, 2013 checked).
+2. The player's `Tick_Begin` / `PreBeginPlay_Actions` dispatch that FZ stood in for: port the real ones if the
+   arms path needs them; otherwise name what is still a stand-in.
+3. The silhouettes, player side: if GC shows they are the anim stack's, leave them to GC; if they are the mesh
+   translation or `SetBodyMode`'s LOD/depth-group switch on a based pawn, fix here.
+4. **Acceptance**: capture pairs (control vs this build) with an item equipped: arms hidden during the ride,
+   back after; the silhouettes named or gone.
 
 ## Rules for agents
 
