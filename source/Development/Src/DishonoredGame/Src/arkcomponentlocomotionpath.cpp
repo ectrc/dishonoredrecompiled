@@ -262,6 +262,12 @@ UBOOL FArkComponentLocomotion::UpdatePathFindingEdges( const FVector& _StartLoca
 	{
 		m_LastPFError = (INT)pNavHandle->LastPathError;
 		GDisLocoPathsFailed++;
+		if( DisGCLocoDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): gadiag pathfail %s: FindPath from %s to %s failed, error %d, anchor %s, dist %.0f"),
+				*m_pPawnOwner->GetName(), *_StartLocation.ToString(), *_EndLocation.ToString(), (INT)pNavHandle->LastPathError,
+				pNavHandle->AnchorPoly ? TEXT("set") : TEXT("none"), ( _EndLocation - _StartLocation ).Size() );
+		}
 		return FALSE;
 	}
 
@@ -535,6 +541,11 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 		const FLOAT fMaxDuration = m_pConfig ? m_pConfig->m_fMaxDurationToReturnOnNavMesh : 0.f;
 		if( !bFound || m_fTryToReturnOnNavMeshDuration > fMaxDuration )
 		{
+			if( DisGCLocoDiagEnabled() )
+			{
+				debugf( TEXT("DISHONORED(bringup): gadiag pathfail %s: no start poly at %s (nearest %s found %d, %.2f s of %.2f), destination %s"),
+					*m_pPawnOwner->GetName(), *StartOnGround.ToString(), *m_NearestLocationOnNavMesh.ToString(), (INT)bFound, m_fTryToReturnOnNavMeshDuration, fMaxDuration, *Destination.ToString() );
+			}
 			m_CurReqWorkData.m_bPathfindAlreadyFailed = TRUE;
 			m_LastPFError = PATHERROR_STARTPOLYNOTFOUND;
 			NotifyActiveRequest( CPNT_LOCO_EVENT_PATHFINDING_FAILED );

@@ -108,6 +108,43 @@ void DisFWReport( APlayerController* PC )
 			Now, *Target->GetName(), *Target->GetClass()->GetName(), *Dest.ToString(), (INT)bMoved, *Pawn->Location.ToString(), Pawn->Touching.Num(), (INT)Pawn->Touching.ContainsItem( Target ) );
 	}
 
+	// -gcview=X,Y,Z,Yaw@seconds[,...] (agent GC): at that world time the pawn is placed at X,Y,Z and the controller and pawn
+	// are turned to Yaw, so a capture can be taken of an NPC the route's camera never reaches (Dock Worker B walks on the
+	// dock 3,300 units above the boat the player is still riding at 125 s). Measurement only; nothing else changes.
+	static TArray<FString> Views;
+	static INT ViewsParsed = -1;
+	if( ViewsParsed < 0 )
+	{
+		ViewsParsed = 0;
+		FString Value;
+		if( Parse( appCmdLine(), TEXT("gcview="), Value, FALSE ) )
+		{
+			Value.ParseIntoArray( &Views, TEXT(";"), TRUE );
+		}
+	}
+	for( INT i = 0; i < Views.Num(); i++ )
+	{
+		const INT At = Views(i).InStr( TEXT("@") );
+		if( At == INDEX_NONE || appAtof( *Views(i).Mid( At + 1 ) ) > Now )
+		{
+			continue;
+		}
+		TArray<FString> Parts;
+		Views(i).Left( At ).ParseIntoArray( &Parts, TEXT(","), TRUE );
+		Views.Remove( i-- );
+		if( Parts.Num() < 4 )
+		{
+			continue;
+		}
+		const FVector Dest( appAtof( *Parts(0) ), appAtof( *Parts(1) ), appAtof( *Parts(2) ) );
+		const FRotator Rot( 0, appAtoi( *Parts(3) ), 0 );
+		const UBOOL bMoved = GWorld->FarMoveActor( Pawn, Dest, FALSE, TRUE, FALSE );
+		PC->SetRotation( Rot );
+		Pawn->SetRotation( Rot );
+		debugf( TEXT("DISHONORED(bringup): gcview t=%.2f -> %s yaw %d: moved %d, pawn now at %s rot %s, controller rot %s"),
+			Now, *Dest.ToString(), Rot.Yaw, (INT)bMoved, *Pawn->Location.ToString(), *Pawn->Rotation.ToString(), *PC->Rotation.ToString() );
+	}
+
 	// -fwnear: every five seconds, the colliding actors within 600 units, so a stop can be read against what is there
 	static FLOAT NearAt = 0.f;
 	if( ParseParam( appCmdLine(), TEXT("fwnear") ) && Now >= NearAt )

@@ -293,9 +293,9 @@ UBOOL FArkComponentLocomotion::IsConfigValid( const UArkComponentLocomotionConfi
 // DISHONORED(port): 2013 rva 0x543060 (2012 0x584010). The config is only taken when it validates against the pawn; then
 // the anim node is looked up and initialised, the face-to component is created and initialised from the same config, and
 // the modifier is (re)applied so the acceleration pair is in force from the first tick.
-// DISHONORED(bringup): UArkAnimNodeLocomotion and FArkComponentFaceTo are unported, so m_bCanManageAnim stays FALSE and
-// m_pFaceToCpnt stays NULL. Both are read defensively everywhere below, which is a path retail itself has - an NPC whose
-// anim tree has no locomotion node runs with m_bCanManageAnim FALSE.
+// DISHONORED(bringup): FArkComponentFaceTo is unported, so m_pFaceToCpnt stays NULL and is read defensively everywhere
+// below. The anim node is agent GC's port: m_bCanManageAnim is TRUE when the pawn's anim tree has a LocoBlender, which
+// retail reads as "this NPC's walk is animated by the node" (an NPC whose tree has none runs with it FALSE, as in retail).
 UBOOL FArkComponentLocomotion::SetConfig( const UArkComponentLocomotionConfig* const _pConfig )
 {
 	m_pPawnOwner = Cast<ADishonoredNPCPawn>( m_pOwner );
@@ -304,8 +304,12 @@ UBOOL FArkComponentLocomotion::SetConfig( const UArkComponentLocomotionConfig* c
 		return FALSE;
 	}
 	m_pConfig = _pConfig;
-	m_pAnimNodeLoco = NULL;
-	m_bCanManageAnim = FALSE;
+	m_pAnimNodeLoco = UArkAnimNodeLocomotion::GetAnimNodeLocomotion( m_pPawnOwner );
+	m_bCanManageAnim = ( m_pAnimNodeLoco != NULL ) ? TRUE : FALSE;
+	if( m_bCanManageAnim )
+	{
+		m_pAnimNodeLoco->Initialize( m_pConfig );
+	}
 	SetModifier( m_CurModifierIdx );
 	return TRUE;
 }
@@ -319,7 +323,8 @@ FArkComponentLocomotion* FArkComponentLocomotion::GetLocomotionComponent( const 
 
 // DISHONORED(port): 2013 rva 0x541b70 (2012 0x582b40, 702 bytes): the modifier selects the acceleration pair and the
 // speed multiplier, and retail then asks the anim node to blend into that modifier's transition animation.
-// DISHONORED(bringup): the transition blend is the anim-node half; the acceleration pair is what the dynamics read.
+// The acceleration pair is what the dynamics read; the node's modifier (retail's tail, 2012 0x582df2) is what picks the
+// animation set, and the node itself plays the config's transition animation when the modifier changes (HandleTransition).
 void FArkComponentLocomotion::SetModifier( INT _ModifierIdx )
 {
 	if( !m_pConfig || _ModifierIdx < 0 || _ModifierIdx >= m_pConfig->m_Modifiers.Num() )
@@ -331,6 +336,10 @@ void FArkComponentLocomotion::SetModifier( INT _ModifierIdx )
 	m_fCurAcceleration = rModifier.m_fAcceleration;
 	m_fCurDeceleration = rModifier.m_fDeceleration;
 	m_fCurAdaptedAccel = rModifier.m_fAcceleration;
+	if( m_bCanManageAnim )
+	{
+		m_pAnimNodeLoco->SetModifier( m_CurModifierIdx );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x53f9b0 (2012 0x580990): the dictionary is indexed by (modifier * speed count + speed), and
@@ -342,11 +351,9 @@ const FArkCpntLocoSpeedModeProp& FArkComponentLocomotion::GetSpeedMode( INT _Spe
 	return m_pConfig->m_SpeedModePropDictionary( m_pConfig->m_SpeedModes( FlatIdx ) );
 }
 
-// DISHONORED(port): 2013 rva 0x53e9c0 (2012 0x57fc80): retail forwards to
-// UArkComponentLocomotionConfig::GetForwardSpeedOfSpeedMode with the flattened index.
-// DISHONORED(bringup): that config method is not ported. The forward speed of a speed mode is the speed its first move
-// animation plays at (FArkCpntLocoMoveAnimProp::m_fAnimSpeed), which is the value the dynamics compare against
-// m_fCurMoveSpeed; a mode with no move animation is speed zero, which is how the "Idle" mode reads.
+// DISHONORED(port): 2013 rva 0x53e9c0 (2012 0x57fc80): forwards to UArkComponentLocomotionConfig::GetForwardSpeedOfSpeedMode
+// (agent GC's port, arkanimnodelocomotion.cpp: the forward direction animation's foot speed) with the flattened index.
+// Agent DN's stand-in took the fastest of the mode's animations; the two agree on every single-direction mode.
 FLOAT FArkComponentLocomotion::GetForwardSpeedOfSpeedMode( INT _SpeedIdx, INT _ModifierIdx ) const
 {
 	if( !m_pConfig || _SpeedIdx < 0 || _SpeedIdx >= m_pConfig->m_SpeedNames.Num() )
@@ -358,13 +365,7 @@ FLOAT FArkComponentLocomotion::GetForwardSpeedOfSpeedMode( INT _SpeedIdx, INT _M
 	{
 		return 0.f;
 	}
-	const FArkCpntLocoSpeedModeProp& rMode = GetSpeedMode( _SpeedIdx, ModifierIdx );
-	FLOAT fBest = 0.f;
-	for( INT i = 0; i < rMode.m_MoveAnimProps.Num(); ++i )
-	{
-		fBest = Max( fBest, rMode.m_MoveAnimProps( i ).m_fAnimSpeed );
-	}
-	return fBest;
+	return m_pConfig->GetForwardSpeedOfSpeedMode( _SpeedIdx, ModifierIdx );
 }
 
 // DISHONORED(port): 2013 rva 0x541b00 (2012 0x582ad0): the modifier's speed multiplier times the look-at one.
@@ -378,10 +379,36 @@ FLOAT FArkComponentLocomotion::GetFinalSpeedMultiplier() const
 	return ( fMultiplier != 0.f ) ? fMultiplier : 1.f;
 }
 
-// DISHONORED(port): 2013 rva 0x53f090 (2012 0x5802a0): retail asks the anim node which speed mode is actually on screen.
-// DISHONORED(bringup): with no anim node the honest answer is retail's own fall-through, 0 (the idle mode).
+// DISHONORED(port): 2013 rva 0x53f090 (2012 0x5802a0, 206 bytes): the speed mode actually on screen - the turn's while only
+// a turn animation plays, else the speed slot over half the weight in the node's most relevant modifier slot, else 0.
 INT FArkComponentLocomotion::ComputeMostRelevantSpeedIdx() const
 {
+	if( !m_pConfig || m_bPendingStop || !m_pPawnOwner || m_pPawnOwner->bDeleteMe || !m_bCanManageAnim )
+	{
+		return 0;
+	}
+	const INT SpeedNames = m_pConfig->m_SpeedNames.Num();
+	if( m_pAnimNodeLoco->IsPlayingOnlySpecificAnim() )
+	{
+		if( m_pAnimNodeLoco->GetTypeOfCurSpecificAnim() == ANIM_NODE_LOCO_SPECIFIC_ANIM_TURN )
+		{
+			return m_TurnProps.m_SpeedModeIdx % SpeedNames;
+		}
+		return 0;
+	}
+	const FAnimNodeLocoModifierSlot* pSlot = m_pAnimNodeLoco->GetMostRelevantModifierSlot();
+	if( !m_pAnimNodeLoco->bRelevant || !pSlot || pSlot->m_Modifier == -1 )
+	{
+		return 0;
+	}
+	for( INT SpeedSlotIdx = 0; SpeedSlotIdx < 2; ++SpeedSlotIdx )
+	{
+		const FAnimNodeLocoSpeedSlot& rSpeedSlot = pSlot->m_SpeedSlots[SpeedSlotIdx];
+		if( rSpeedSlot.m_SpeedModeIdx != -1 && rSpeedSlot.m_fWeight >= 0.5f )
+		{
+			return rSpeedSlot.m_SpeedModeIdx % SpeedNames;
+		}
+	}
 	return 0;
 }
 
@@ -424,6 +451,25 @@ UBOOL FArkComponentLocomotion::IsDisabled() const
 void FArkComponentLocomotion::OnEnable()
 {
 	m_bForcePathComputation = TRUE;
+	if( m_bCanManageAnim )
+	{
+		m_pAnimNodeLoco->SetSpeed( 0.f, m_bInertiaDisabled );
+		m_pAnimNodeLoco->SetSpeedMultiplier( m_fLookatSpeedMultiplier );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x53dea0 (2012 0x57eff0, 69 bytes): the anim node is told the pawn's real scaled speed (zero
+// smoothing when inertia is off) and the look-at speed multiplier. Retail's PreAsyncWorkTick passes it |Velocity.XY
+// normalised x m_fRealScaledSpeed|, which is m_fRealScaledSpeed whenever the pawn moves at all and 0 when it does not.
+// The node's strafe angle is FArkComponentFaceTo's to set (2012 0x57af4e), not this component's: unported, so a walking
+// NPC always plays his forward animation, which is right for a pawn whose body follows his path (ComputeDynamic's yaw).
+void FArkComponentLocomotion::UpdateAnimNode( INT _ModifierIdx, FLOAT _fSpeed )
+{
+	if( m_bCanManageAnim )
+	{
+		m_pAnimNodeLoco->SetSpeed( _fSpeed, m_bInertiaDisabled );
+		m_pAnimNodeLoco->SetSpeedMultiplier( m_fLookatSpeedMultiplier );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x5461f0 (2012 0x586ef0): the three root-motion state machines are reset.
@@ -469,6 +515,10 @@ void FArkComponentLocomotion::HandleTeleport()
 	m_CurMoveYaw = -200000;
 	m_TargetMoveYaw = -200000;
 	m_RootState = CPNT_LOCO_ROOT_STATE_NONE;
+	if( m_bCanManageAnim )
+	{
+		m_pAnimNodeLoco->AbortSpecificAnimRequest( TRUE );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x53dde0 (2012 0x57ef30)
@@ -568,7 +618,26 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 
 	ComputeDynamic( _fTimeStep );
 
+	// DISHONORED(port): retail's step 10 (2012 0x58d9af..0x58dae2): the pawn's planar velocity direction scaled by
+	// m_fRealScaledSpeed, its length handed to the node. UpdateFaceTo / UpdateLookat stay out (their components are not here).
+	const FVector PlanarVelocity( m_pPawnOwner->Velocity.X, m_pPawnOwner->Velocity.Y, 0.f );
+	const FVector RealVelocity = PlanarVelocity.SafeNormal() * m_fRealScaledSpeed;
+	UpdateAnimNode( m_CurModifierIdx, RealVelocity.Size2D() );
+
 	m_MostRelevantSpeedIdx = ComputeMostRelevantSpeedIdx();
+
+	if( m_bCanManageAnim && DisGCLocoDiagEnabled() )
+	{
+		static TMap<const UObject*, FLOAT> LastReportAt;
+		const FLOAT Now = GWorld->GetTimeSeconds();
+		FLOAT* Last = LastReportAt.Find( m_pPawnOwner );
+		if( !Last || Now - *Last >= 1.f )
+		{
+			LastReportAt.Set( m_pPawnOwner, Now );
+			debugf( TEXT("DISHONORED(bringup): gadiag loconode %s vel %.1f realscaled %.1f curmove %.1f mostrelevant %d: %s"),
+				*m_pPawnOwner->GetName(), m_pPawnOwner->Velocity.Size2D(), m_fRealScaledSpeed, m_fCurMoveSpeed, m_MostRelevantSpeedIdx, *m_pAnimNodeLoco->DescribeForDiag() );
+		}
+	}
 }
 
 /*-----------------------------------------------------------------------------

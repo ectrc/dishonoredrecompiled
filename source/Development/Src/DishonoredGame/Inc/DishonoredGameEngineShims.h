@@ -12726,6 +12726,7 @@ public:
     //## END PROPS ArkAnimNodeLocomotion
 
     DECLARE_CLASS(UArkAnimNodeLocomotion,UAnimNodeBlendBase,0,Engine)
+#include "CppText/UArkAnimNodeLocomotion.h"
 };
 
 // Engine.ArkAnimNodeLookAt: retail sizeof 480, reflected span 288..472 (2012 PDB sizeof 480) [shim: Engine package]
@@ -12896,6 +12897,7 @@ public:
     //## END PROPS ArkComponentLocomotionConfig
 
     DECLARE_CLASS(UArkComponentLocomotionConfig,UObject,0,Engine)
+#include "CppText/UArkComponentLocomotionConfig.h"
 };
 
 // Engine.ArkComponentLookatConfig: retail sizeof 120, reflected span 56..120 (2012 PDB sizeof 120) [shim: Engine package]

@@ -35,6 +35,9 @@ class FArkComponentFaceTo;
 class FArkComponentLookat;
 class FArkComponentMeshOffset;
 class UArkAnimNodeLocomotion;
+
+/** -gadiag / -gcdiag: the locomotion anim node's state once a second per pawn (arkanimnodelocomotion.cpp). */
+UBOOL DisGCLocoDiagEnabled();
 class UArkAvoidable;
 class UArkComponentLocomotionConfig;
 struct FNavMeshEdgeBase;
@@ -342,6 +345,7 @@ private:
 
 	void OnEnable();												// 2013 0x53def0
 	void OnDisable();												// 2013 0x5461f0
+	void UpdateAnimNode( INT _ModifierIdx, FLOAT _fSpeed );			// 2013 0x53dea0
 	void UpdateLocoRequest( INT _RequestIdx, const FLocoRequestData& _rRequest );	// 2013 0x545160
 	void ResetCurRequestWorkData();									// 2013 0x5451b0
 	void NotifyActiveRequest( BYTE _Event );
