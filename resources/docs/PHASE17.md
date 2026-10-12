@@ -25,6 +25,13 @@ under `-unattended`, `-inputcmd` or `-noinputgrab`, at startup (`UnGame.cpp`) an
 resize (`FWindowsViewport::Resize` — Alt+Enter, Options → Graphics, `SetRes`), logging
 `fullscreen refused`. **Do not drive the display-mode option in any run.**
 
+**The retail game.** Do not launch the real `Dishonored.exe` (a dismod run) while the user is at the
+machine. It is the one executable we cannot patch: it uses the user's own display settings and
+activates its own window, and a 15-second probe is 15 seconds of the user's foreground. Agent FT ran
+one on a line in its brief — that line was wrong and is withdrawn. Use agent FB's existing retail
+captures in `build/agentFB/retail/` and the shared control; write any measurement that genuinely
+needs retail into your report as *not taken* and why, so it can be run when the machine is free.
+
 **Input.** Nothing you run may move the user's real mouse, press their real keys, or take window
 focus. Drive the game only through `resources/tools/game_input.py` (`launch`, then `hover X Y`,
 `click`, `key NAME`, `wait S`, `shot TAG`, fractions of the viewport). `drive_input.py` is retired and
