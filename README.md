@@ -1,10 +1,15 @@
 # Dishonored Recompilation
 
-**It boots to its own main menu and plays into the first mission.** From the shipped executable: NEW
-GAME, a difficulty, the brightness screen, YES — and Corvo is standing on the boat landing at Dunwall
-Tower, with the opening scene's two NPCs on the boat, the cinematic letterbox bars drawn, the HUD up
-and a guard walking a patrol route. The interface is most of the way to matching retail's; what is
-still wrong is listed in `resources/docs/STATUS.md`.
+**It boots to its own main menu, plays into the first mission, and the first cutscene plays.** From
+the shipped executable: NEW GAME, a difficulty, the brightness screen, YES — and Corvo is on the boat
+at Dunwall Tower with its two NPCs aboard, the letterbox bars drawn, the HUD up, and about a minute in
+**the boat ride starts on its own**, through the game's real conversation system, and carries him up
+to the water-lock. The interface is most of the way to matching retail's; what is still wrong is
+listed in `resources/docs/STATUS.md`.
+
+[![The first cutscene playing in the recompiled build](https://img.youtube.com/vi/OjsDzG64K9w/maxresdefault.jpg)](https://www.youtube.com/watch?v=OjsDzG64K9w)
+
+*Video: the opening boat ride running in the recompiled build.*
 
 Functional (non-matching) rebuild of Dishonored's Win32 native executable, targeting the **retail
 2013 build** (`Dishonored.exe`, engine 9411, DLC05–07): its layouts, serialization and behavior are
@@ -158,10 +163,3 @@ reimplementation for study, it ships no game code, assets, binaries or PDBs, and
 legally obtained copy of the game to run.
 
 All generated with claude code.
-
-<img width="3202" height="941" alt="image" src="https://github.com/user-attachments/assets/3928471b-3744-4573-9abc-5a31e8596e6d" />
-<img width="3204" height="936" alt="image" src="https://github.com/user-attachments/assets/6ba9858a-c7b2-4e73-bbf0-e84c296631cb" />
-<img width="3218" height="944" alt="image" src="https://github.com/user-attachments/assets/c13eacaa-b430-43e3-a9fb-3507cc14346a" />
-<img width="3205" height="934" alt="image" src="https://github.com/user-attachments/assets/428f5a65-a2fc-406a-9906-26d577982b61" />
-<img width="3214" height="937" alt="image" src="https://github.com/user-attachments/assets/6524153a-08a6-42ab-b2ae-89df491f320d" />
-<img width="1621" height="965" alt="image" src="https://github.com/user-attachments/assets/27976b10-fc5c-44df-bb07-78607ff69bbb" />
