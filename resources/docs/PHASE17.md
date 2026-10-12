@@ -194,3 +194,68 @@ The small UI package, because the user's standing instruction is still the inter
 5. `resources/docs/agents/agent<XX>.md` and `agent<XX>_status.csv`, written **inside the worktree**.
 6. `build/agent<XX>_sync.py`, naming every file and every function — **checked against `git diff
    --name-only <base>` before hand-back.**
+
+## Outcome
+
+### Coordinator — `e60c5c6`: a scripted run can no longer go fullscreen, take the foreground, or read the gamepad
+
+Three faults the user hit while this wave ran on the machine they were using, all closed under the one
+condition `DishonoredInputGrabDisabled()`, all measured before and after.
+
+- **Fullscreen.** `game_input.py launch` did not pass `-windowed`; the retail ini says `Fullscreen=True`,
+  so an agent's plain release build took the display. The launcher adds `-windowed`; the engine refuses
+  fullscreen in `UGameEngine::Init` and on every `FWindowsViewport::Resize`, logging `fullscreen
+  refused`. Verified on the ini-fullscreen path at 5.5 s.
+- **Focus.** The no-grab mode showed the window `SW_SHOWNOACTIVATE` and lost three times over, found
+  by **sampling the foreground every 3 s**: the splash (`SW_SHOW`, t=3 s), the `SetWindowPos` in
+  `Resize` on the first map load (no `SWP_NOACTIVATE`, t=33 s), and an agent's run taking it from ours
+  3 s later. Fixed: splash `SW_SHOWNOACTIVATE`, `SWP_NOACTIVATE` in `Resize`, no-activate `SC_RESTORE`,
+  no `SetFocus` on a mouse message, `D3DCREATE_NOWINDOWCHANGES` on the D3D9 device. **After: 0 of 50
+  foreground samples across three 60–90 s runs were the game**, with the user browsing throughout.
+- **Gamepad.** The joystick poll in `ProcessInput` was gated on `HasFocus()` alone; once the window
+  had focus, the user's controller drove the run (FU's Options stage quit at 15 s by
+  `XboxTypeS_DPad_Left` → QUIT GAME). Poll and force-feedback now also gated on the scripted-run
+  condition. **0 `XboxTypeS_` keys in 60 s with the controller attached.**
+- **Residual, named as unexplained**: `WM_ACTIVATE` now logs every activation with its cause, and each
+  run still records one `WA_ACTIVE` at the first rendered frame — with `-nosplash`, with the D3D flag
+  confirmed applied (`0x00000952`), with nothing in the log at that instant. It never coincides with a
+  foreground change: thread-local activation, which does not take the user's focus. Source not found.
+
+### FU — merged `14cad0f`; FU's own gate 37/4 of 41 (a live gamepad — see `e60c5c6`), re-gated below
+
+Eighteen files; sync list checked against `git diff --name-only d7d083a` + untracked: identical.
+
+**The mouse cursor is gone from the mission, in retail's shape.** `UDisGFxMoviePlayerGlobal::PreRender`
+(2013 `0x79eb90`), `ConditionalShowMouseCursor` (`0x78c790`), `ConditionalHideMouseCursor` (`0x7945b0`),
+`MoveMouseCursor` (`0x78c8c0`), 2013's `PostStart`/`PreClose`/`PreCommitMapChange`,
+`ComputeMovieSpaceInfo` (`0x787860`); `m_pMouseCursor` at +444; `UDishonoredViewportClient::Draw` calls
+`PreRender` then the engine's `Draw` (retail `0x5ea330`). GFxUI's cursor glue deleted; one seam
+`GGFxMoviePlayerPreCloseHook`. **Where FP's premise was wrong**: `m_bMouseCursorAllowed` read 0 on the
+**menu** too — retail's `RefreshGlobalUIState` reads `FGFxEngine+40`, the per-player **FocusMovies**
+array (`ReevaluateFocus` `0x586b60`), not `OpenMovies(0)`, which `InsertMovieIntoList` (`0x585350`)
+keeps lowest-priority-first. "One seam" was two. Menu now `allowed 1 | clip attached`, mission
+`allowed 0 NOT attached`.
+
+**Enter was never broken — STATUS defect 5 does not reproduce.** Through `game_input.py` on HEAD,
+`key Enter` on NEW GAME → `APressed () called` → `TransitionTo (NewGameScreen)`; `Down` moves
+NORMAL→HARD; `Escape` → `BPressed`. Agent FI's four silent Enters were measured with the retired
+`drive_input.py` against the `-gfxuimenu` bring-up movie (`canInput 0`) that FP has since replaced.
+**Still open, brightness only**: Left/Right/Up/Down reach the movie — the gamma widget's own
+`LeftPressed` is invoked — and the slider does not move (marker x 596..782 before and after).
+
+**The inert `-gfxuimenu`** removed from `DISHONORED_PLAY_DEFAULTS`; README, `build-play.cmd`'s header
+(which also still claimed `-startmap=Dishonored_MainMenu`), `dismod_harness.md` and a harness comment
+corrected.
+
+**The 2 GB: the AS2 machine never frees an object.** Private bytes +0.63 MB/s on the idle menu, flat
+with `-nogfxui`; the new census reads `AS2 objects 66471 live / 66471 created` at 30 s and
+`644869 / 644869` at 150 s — ~4,800 objects/s, **live always equal to created**, because
+`GASObjectCollector` (`GFxAS2Object.h:171`) is the teardown half of retail's `GASRefCountCollector`
+only. At the user's 216 fps that is 2 GB in 217 s. **GFx3 runtime work; next wave.**
+
+**Where the brief was wrong**: defect 5 does not reproduce; FP's cursor bit was wrong, not just
+unreadable; 2013's `PostStart`/`PreClose` differ from the 2012 skeleton comments; "Up/Down consumed"
+holds for brightness only; the 2 GB is the AS2 heap, not the renderer; `build/head_rel` was not built
+when the package needed a control.
+
+**Gate on main for `14cad0f` (FU on top of `e60c5c6`): 47 ok / 0 failed / 0 skipped (2545 s).** The 37/41 FU measured on its own was the controller, not the code.
