@@ -1,9 +1,9 @@
-# Project status — 2026-10-12 (wave 21 complete: the boat ride starts on its own, heads aim, the gate is 47/47; the Empress waits for the player to walk)
+# Project status — 2026-10-12 (wave 22 complete: guards ride the boat, props animate, the camera is forced on the ride, the AS2 leak is gone; wave 23 walks the player to the dock)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md` (wave 22, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FU>.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md` (wave 23, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GA>.md`, `agentFZ.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `c1c4945`)
+## Where we are (HEAD `785e91d` + the FIFO queue `62f3682`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -38,6 +38,24 @@ NEW GAME, the difficulty screen and the brightness screen, then YES on the confi
 its own menu one second after opening it, so New Game was unreachable. It passed 37/37 anyway — see
 "The gate's blind spot" under Known pitfalls. **Enter does not activate a main-menu row** either
 (defect 5); Space does, and `-finewgame` drives past it.
+
+**As of wave 22**: the boat ride is a scene, not a slideshow. **The two guards ride the boat with the
+player** (GA: retail's `FullMovePawn` floor sweep bases them on `SkeletalMeshActorMAT_2`; 11 of 28 NPCs
+based vs 1), **the props animate** (FW: the `ASkeletalMeshActorMAT` anim-control path; the boat and the
+rats), **the camera is forced onto the camera bone and the look is clamped through the ride, the body
+switches to arms-only and back** (FZ: the soirée player state, `UpdateViewTarget`, the influences; FOV is
+75 in retail too - the brief's 90 was the menu camera), **the AS2 machine frees its objects** (FY:
+`GASRefCountCollector`, private bytes flat on the menu where the control grew 0.77 MB/s), **a scripted
+run never activates the window** (FY: `appShowGameWindow`'s `SW_SHOWNORMAL`, verified 0 activation
+lines), **both named natives have bodies and `unported_natives` is 0** (FV: the AI go-to chain and the
+relationship-override API; the Dishonored pawn tick, which had no body at all), the **bitfield audit is
+the gate's third `verify_phase2` row** and **a regeneration diffs byte-identical** (FX: two real
+`USkeletalMeshComponent` bitfield faults fixed). **What the player still cannot do**: leave the boat -
+it ends 750 units short of the dock (FW, the matinee's Move track; wave 23 GB); a walking NPC slides
+(GA: `UArkAnimNodeLocomotion` is a skeleton; GC); a go-to never arrives (FV: `HandleArrival` never
+runs; GD); `Use` does nothing (GD); the screen stays black after the first Empress scene (GE). Wave 23
+is `PHASE19.md`. **Process**: the build queue is FIFO since `62f3682` (a gate lost the lock three times
+in a row to builds that arrived later); the two-build rule stands (FZ used five).
 
 **As of wave 21**: **the boat ride starts and plays on its own** - the conversation system's direct
 path is ported (`DialogInputs` → hook → soirée node → matinee by GUID), the first Dishonored scripted
@@ -77,13 +95,14 @@ listeners (`98e22d4`).
 | Save | above. Remaining 82,423 bytes of `Dishonored0.sav` are two bytes wide inside `AActor::GameLoad` |
 | Shims | **887** (wave 14 ES, from 1,098), held by `resources/tools/shim_ratchet.py`. Of the original 1,098: 966 provable absences, 121 undecidable from any truth source, **5 members retail actually has** (live defects, wave 15 EW) |
 | `Sources.cmake` | an **exclude list**: 806 comment-only skeleton units whose code never compiles. A **port queue**, not a deletion backlog — 813 of the 818 inventoried are alive in retail. Inventory: `agents/agentES_exclude_inventory.csv`, 875 rows |
-| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`); `unported_natives` sits at a **named bound of 2** since wave 21 FR (two bodiless natives the faithful Spawned event reaches - wave 22 FV returns it to 0). **Every build on this machine goes through `resources/tools/build_queued.py`**: one build at a time behind a machine-wide lock, pinned to half the cores by affinity, `-j 8`, below-normal priority - the user's request after four agents building at once pinned all sixteen (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
+| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`); `unported_natives` **0 ≤ 0** again since wave 22 FV; `verify_phase2` **3 rows** since FX (the bitfield audit). **Every build on this machine goes through `resources/tools/build_queued.py`**: one build at a time behind a machine-wide **FIFO** lock (`62f3682`), pinned to half the cores by affinity, `-j 8`, below-normal priority - the user's request after four agents building at once pinned all sixteen (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
 | Audio | **deferred to Phase 10 as polish** (the user's call): the silent backend loads the real banks and resolves the real event ids. Do not open an audio package until the game plays |
 
 ## The gate is GREEN - 47 of 47 - and how it got there
 
-`run_regression.py` is **47 checks**. HEAD `191ef85` reads **47 ok, 0 failed, 0 skipped** on a clean
-checkout, and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
+`run_regression.py` is **47 checks**. Every wave-22 merge read **47 ok, 0 failed, 0 skipped** on a clean
+checkout of its own commit (`90d490e`, `0e45ea1`, `03f7579`, `02eb527`, `785e91d` on FZ's merged tree; `ad4a35d`
+read 46 - see defect 12), and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
 crash detectors match the structured-exception banner as well as `Critical: `, so a hard crash inside a
 stage is now a red row rather than an invisible one.
 
@@ -98,14 +117,23 @@ all faulting at the same instruction. **Do not relax a gate bound to get green; 
 waiting for.**
 
 **Hard rule that follows**: every *_criticals row reads 0 or the merge waits. A pawn death 10 s into
-the d3d9 stage with nothing in the log before it (seen once, in FO's gate on `15695d8`, absent on the
-next three gates) is recorded as unexplained in `PHASE16.md` rather than attributed to load.
+the d3d9 stage with nothing in the log before it (seen once in FO's gate on `15695d8`, wave 20, and once
+in GA's on `ad4a35d`, wave 22; absent on every other gate - defect 12) is recorded as unexplained rather
+than attributed to load.
 
 ## Open defects the user has seen
 
 Waves 16 and 17 closed most of the interface list. What the user has reported and is **still open**:
 
-1. **The opening cutscene is started by the conversation system, and none of it exists here.**
+1. **The Empress scene needs the player to walk there, and the boat stops 750 units short of the dock.**
+   Wave 21 FR ported the conversation system's direct path (the boat ride starts on its own); wave 22 FW
+   mapped the whole chain (`agentFW.md` §3: lift → dock → `DisTrigger_8` guards → captain via go-to or
+   `Use` → `DisTrigger_16` 'Empress & Regent' → `Use` on the Empress → ... → `Empress Death`, which is
+   the LAST of nine scenes, not the door) and proved everything after the entries works when teleported
+   to. What stops the walk is the ride boat's matinee ending at 9773,23112 while the moored collision boat
+   stands at 10305,22565 (wave 23 GB); then the captain's go-to must arrive (GD) and `Use` must exist
+   (GD). The earlier text follows for the record.
+   **The opening cutscene is started by the conversation system, and none of it existed here (wave 20).**
    Agent FO proved `SOIREE_Empress_Regent.SeqAct_Interp_12` has **zero input links and one referencer**
    - there is no Kismet chain. Retail starts it from a dialog tree: `DisSeqAct_DialogInputs` →
    `FireDialogHook` → `UDisConv_Soiree::PlayNode_Derived` → `FindMatinee` **by GUID** →
@@ -144,13 +172,19 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    `game_input.py` on HEAD, `key Enter` on NEW GAME → `APressed` → `TransitionTo (NewGameScreen)`; Down
    moves the difficulty; Escape goes back. Agent FI's four silent Enters were measured with the retired
    real-input tool against the `-gfxuimenu` bring-up movie (`canInput 0`) that FP has since replaced.
-   The README carried the wrong instruction for three waves. **What is still true, and narrower**: on the
-   **brightness** screen Left/Right/Up/Down reach the gamma widget's own `LeftPressed` and the slider does
-   not move (marker x 596..782 before and after). Wave 22 FY.
+   The README carried the wrong instruction for three waves. ~~**What is still true, and narrower**: on the
+   brightness screen Left/Right/Up/Down reach the gamma widget's own `LeftPressed` and the slider does
+   not move.~~ **Never true either - closed by wave 22 FY**: `LeftPressed` → `DisOnSettingChange 2.1` →
+   `gamma 2.1`, the thumb moves 461..492 → 456..487 → 452..483 on two Lefts and back on Right; FU's two
+   captures bracketed Left+Right+Up+Down, which nets to zero.
 6. **Text clarity** is better but not perfect, and **nobody has measured it** — no claim either way.
    `GTessellator` is still unported; agent EX ruled it out only for the DPI magnification fault.
-7. **The menu exhausts the address space in about three and a half minutes - because the AS2 machine never
-   frees an object.** Wave 21 FU: private bytes +0.63 MB/s on the idle menu, flat with `-nogfxui`; the GFx
+7. ~~**The menu exhausts the address space in about three and a half minutes - because the AS2 machine never
+   frees an object.**~~ **CLOSED by wave 22 FY (`69bc81f`)**: `GASRefCountCollector` is retail's
+   `GRefCountCollector<323>`, Bacon-Rajan over the counts, plus the creator's reference retail's `GPtr` held.
+   Measured on the idle menu: control `1,604,634 live / 1,604,634 created` at 325 s and +0.77 MB/s; this
+   build `4,990 live / 1,638,260 created / 1,633,270 freed`, private bytes 712.7 → 712.2 MB, flat. The
+   earlier text follows for the record. Wave 21 FU: private bytes +0.63 MB/s on the idle menu, flat with `-nogfxui`; the GFx
    census reads `AS2 objects 66471 live / 66471 created` at 30 s and `644869 / 644869` at 150 s - ~4,800
    objects/s, **live always equal to created**, because `GASObjectCollector` (`GFxAS2Object.h:171`) is the
    teardown half of retail's `GASRefCountCollector` only. At the user's 216 fps that is 2 GB in 217 s.
@@ -176,8 +210,46 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    **0.741** AUDIO, selected tab rising to y ≈ 0.138.
 
 9. **The window comes up 1008x567 with `-ResX=1600 -ResY=900`** on eight of ten runs and 1600x900 on
-   two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run). **Read a
-   capture's actual size; never assume it.**
+   two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run); 1920x1080 with the
+   user at the machine (FW, FZ). **Read a capture's actual size; never assume it.**
+10. **"The other two guards on the boat just float" - CLOSED by wave 22 GA (`ad4a35d`)**: the guards were
+    unbased pawns on a moving boat; retail's `FullMovePawn` floor sweep (2012 `0x580ae0`) bases them and
+    they ride to the lock beside the player. What remains of the user's report: **a walking NPC slides**
+    - Dock Worker B walks 850 units at 123 u/s with `Empty_Idle` playing because `UArkAnimNodeLocomotion`
+    is a comment-only skeleton (wave 23 GC); and standing NPCs hovered 1-17 units above their floor until
+    GA's `FArkComponentMeshOffset` put the mesh on it.
+11. **"The FOV and forced perspective is broken" / "I can see my arms when I shouldn't"** - wave 22 FZ:
+    the camera IS forced onto the camera bone and the look IS clamped on the ride now (`agentFZ.md` §4);
+    the FOV is 75 in retail too and never changes on this route. Arms: retail has no arms component -
+    `ADishonoredPlayerPawn::SetBodyMode` switches the one mesh ARMS_ONLY ↔ FULL_BODY, measured 0 → 1 → 0;
+    **nothing is equipped on the harness route, so the arms report is not reproduced yet** (wave 23 GF
+    equips the sword and measures).
+12. **The player dies 3 s after spawning in the d3d9 stage, once in seven runs** (`ad4a35d`; also once
+    in wave 20 on `15695d8`). `ADishonoredPlayerPawn::execPlayDying_Native` fires at ~10 s, nothing in
+    the log before it; the same tree passed six times. Not GA's `PHYS_Falling` tail (the locomotion
+    component is NPC-only). Wave 23 GE makes the stub log the killer and damage type and loops the stage.
+13. **Tall, thin, stretched dark silhouettes** on NPC pawns standing on a matinee-moved boat (FZ's
+    captures fz6b/c, fz7b), absent from the control. Shared with NPC pawns, so not the player's body
+    mode; the anim stack or the mesh translation (wave 23 GC / GF).
+
+## Wave 22 — walking to the Empress, the two natives, the bitfield audit, the AS2 leak, the soirée state
+
+Six packages, all merged and gated (`PHASE18.md` has each outcome; `agents/agentFV.md`, `agentFW.md`,
+`agentFX.md`, `agentFY.md`, `agentFZ.md`, `agentGA.md`).
+
+| Package | Commit | What landed | Where the brief was wrong |
+|---|---|---|---|
+| FV | `02eb527` | `execOnAIGoToActor` + the go-to behaviour (45 functions), `execOnSetDisposition` + the relationship-override API, `ADishonoredPawn::Tick`/`ADishonoredNPCPawn::Tick` (had NO body), `UpdateFloorAndBase`; `unported_natives` 0 | the tick bodies did not exist; three addresses wrong; `IsBehaviorFinished` ICF-folded |
+| FW | `0e45ea1` | `ASkeletalMeshActorMAT` anim control (props animate); the Empress chain mapped end to end; `-fwteleport`, `-fwdialogmap`; FO's `-foupstream` comma bug | `Interp_12` is the END of the Empress sequence; the guard scene is a player touch; the boat stops 750 uu short |
+| FX | `90d490e` | `bitfield_audit.py` in the gate (2 real faults on `USkeletalMeshComponent`); the generator regenerates 100 files byte-identical | Engine headers are never generated, so FP/FS/FT's edits could not be dropped |
+| FY | `69bc81f`, `03f7579` | `GASRefCountCollector` (the 2 GB leak); the WH_CBT hook that named `appShowGameWindow` as the activation; `SW_SHOWNOACTIVATE` (verified) | the brightness slider was never broken; Core cannot call WinDrv (`CoreSmoke` LNK2019 - the coordinator moved the function) |
+| GA | `ad4a35d` | the guards ride the boat (`FullMovePawn` floor sweep); `UInterpTrackInstLocomotion`; `FArkComponentMeshOffset`; `ChangeAnimStateMotionModes` and the MAT_ root-motion/mesh-translation bodies | the floaters were unbased pawns, not root-motion anims; "`MovePawn` never reached for a matinee pawn" is wrong |
+| FZ | `785e91d` | the player master FSM (Base/Walk/Soiree/InDialog; 23 states inventoried), `UpdateViewTarget` + influences, `SetBodyMode`, `GetBone_ByName`'s angle fixup | FOV 75 not 90, never forced; no arms component; five builds against the two-build rule |
+
+Coordinator's lessons: run the generator and the bitfield audit on every merge (two of FV's hand edits
+were regenerated away cleanly); a Core change needs a `CoreSmoke` link before hand-back; the build lock
+had to become FIFO; the harness overwrites a stage's log on re-run - copy a red run's log aside before
+re-running.
 
 ## Wave 21 — the conversation system, the track seam, the look-at, the cursor
 
@@ -304,23 +376,24 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 22 is `PHASE18.md`, and its spine is the player walking to the Empress.** FV: the two named
-natives (`OnSetDisposition`, `OnAIGoToActor`) and the AI go-to that moves an NPC to a mark, the pawn's
-Base on the boat, and the NPC tick that drives the look-at (`Tick_Body`, `ChooseLookAt`,
-`Tick_SpineBending`); returns `unported_natives` to 0. FW: the Empress's entry chain mapped and driven
-end to end with `game_input.py` walking the player from the water-lock; the `SkeletalMeshActorMAT`
-props. FX: FS's NOEXPORT bitfield audit across every native class, and teaching the generator the
-hand-edits of four waves. FY: retail's `GASRefCountCollector` for the 2 GB leak, the brightness-screen
-keys, the residual thread-local `WA_ACTIVE`.
+**Wave 23 is `PHASE19.md`; its spine is 1 → 3 → 4 of its list: the player walks off the boat, the captain
+walks to him, `Use` on him, and the Empress scene starts without a teleport.** GB: the boat matinee's
+end position (750 units short). GC: `UArkAnimNodeLocomotion` so a walking NPC's legs move; Worker A's
+path failures. GD: the go-to arrives (`HandleArrival` / `ComputeDynamic`'s `STOP_END`), and `Use`
+(`DDH_PLAYER_USED → 'Give_Letter'`). GE: the fade back from black after the first Empress scene, the
+head-track sub-processes and `DisNotify_NPCDisableLookAt`, and the intermittent player death named.
+GF: the arms with the sword equipped, `OnCameraUpdate_Derived`, the stretched silhouettes. All five are
+running on `785e91d` / `62f3682`.
 
-**Deferred and said so**: the retail dismod measurements withdrawn this wave (look-at magnitude, the
-Enter key path, the mask/scroll geometry) - permitted overnight with `-windowed`, otherwise when the
-machine is free; the rest of the UI list (menu camera, haze, text clarity); **wave 15**.
+**Deferred and said so**: the rest of the UI list (menu camera, haze, text clarity); the retail dismod
+measurements (no retail launch while the user is at the machine); faction tables behind
+`DetermineRelationship`; **wave 15**; audio.
 
 **Process, from the user, all absolute**: `-windowed` on every launch; input only through
-`game_input.py`; builds only through `build_queued.py` (two per package); no retail launches while the
-user is at the machine. The overnight override (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`)
-lifts the CPU cap and the queue; delete it to restore daytime behaviour.
+`game_input.py`; builds only through `build_queued.py` (FIFO, half the cores, two per package); no retail
+launches while the user is at the machine. The overnight override (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`)
+lifts the CPU cap and the queue; delete it to restore daytime behaviour. **Never hand-edit a generated
+header**: `Inc/CppText/<Class>.h` and `DishonoredLink<X>()` anchors; the coordinator regenerates on merge.
 
 ## Known pitfalls
 

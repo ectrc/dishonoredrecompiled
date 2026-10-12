@@ -374,8 +374,9 @@ never reached for a matinee pawn" is wrong — `MAT_SetCollision` forces `PHYS_W
 **Gate on `ad4a35d` (main)**: 46 ok / 1 failed — `unported_natives 1`: `ADishonoredPlayerPawn::execPlayDying_Native`
 fired at 10.16 s of the d3d9 stage (the player died 3 s after spawning in `l_tower_p`, right before the first NPC
 spawned). Re-run of the stage on the same exe five times: **0 deaths in 5**; GA's own gate on the identical tree: 0.
-**1 in 7**, and `execPlayDying_Native` has never appeared in any of the 89 earlier d3d9 logs — new with wave 22,
-intermittent, cause not recoverable (the harness overwrote the log before it was read). Not GA's `PHYS_Falling`
+**1 in 7**; `execPlayDying_Native` appears in none of the 89 surviving d3d9 logs, but STATUS records the same
+death once before - FO's gate on `15695d8`, wave 20 - so it predates wave 22; intermittent, cause not recoverable
+(the harness overwrote the log before it was read). Not GA's `PHYS_Falling`
 tail: `FArkComponentLocomotion::m_pPawnOwner` is `Cast<ADishonoredNPCPawn>`, the player never runs it; GA's
 `ADishonoredPawn::PreBeginPlay` → `StartAllComponents` is a no-op for the player (only NPC files add components).
 Candidates: FV's `ADishonoredPawn::Tick` (new body on the player too), FV's `UpdateFloorAndBase` (NPC-only too),

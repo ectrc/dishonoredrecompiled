@@ -109,8 +109,8 @@ reached (`MAT_SetCollision` forces `PHYS_Walking`), so the component's own state
    reaches `Notify_EndRange`. Port the three sub-processes enough for a guard to look at the player when
    he walks past (`-flheaddiag`).
 3. **The intermittent player death** (PHASE18, GA outcome): on `ad4a35d` the player died 3 s after spawning in the
-   d3d9 stage once in seven runs — `ADishonoredPlayerPawn::execPlayDying_Native` fired, never seen in 89 earlier
-   d3d9 logs. First: make the generated unported-native stub log its consumed parameters for this native (killer,
+   d3d9 stage once in seven runs — `ADishonoredPlayerPawn::execPlayDying_Native` fired; seen once before, in FO's gate
+   on `15695d8` (wave 20), so it predates FV/GA. First: make the generated unported-native stub log its consumed parameters for this native (killer,
    damage type, hit location) and make `ADishonoredPawn::Died`/`TakeDamage` log the damage event under a switch,
    so the next occurrence names itself; then run the d3d9 stage in a loop (90 s each) until it reproduces or 20
    runs pass. Suspects: FV's new `ADishonoredPawn::Tick` body on the player, fall damage from a spawn before the

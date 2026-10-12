@@ -23,7 +23,7 @@ outside the repo.
 
 Start with [resources/docs/STATUS.md](resources/docs/STATUS.md) — what works, what does not, and the
 pitfalls that cost a wave each to learn. [PLAN.md](PLAN.md) has the overall strategy and phases;
-`resources/docs/PHASE1.md`–`PHASE18.md` are the per-wave trackers, and `resources/docs/agents/` holds
+`resources/docs/PHASE1.md`–`PHASE19.md` are the per-wave trackers, and `resources/docs/agents/` holds
 every package's own report and measurements. Symbol exports live in `resources/docs/symbols/` and
 `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
 
