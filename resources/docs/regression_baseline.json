@@ -149,8 +149,8 @@
   },
   "unported_natives": {
     "op": "<=",
-    "value": 0,
-    "note": "distinct natives without a body that actually fire on the walking path. 0 since agent BF ported the attributes system and the fall-damage chain; the bound is what stops one coming back unnoticed."
+    "value": 2,
+    "note": "distinct natives without a body that actually fire on the walking path. 0 since agent BF ported the attributes system and the fall-damage chain; the bound is what stops one coming back unnoticed. 2 since wave 21 FR: ADishonoredSpawner::OnSpawned now raises DisSeqEvent_Spawned as retail does (2012 0x6a1010), which is what lets the boat ride start, and the spawner's Kismet then reaches ADishonoredPawn::execOnSetDisposition and ADishonoredNPCController::execOnAIGoToActor, both bodiless - they need the AI go-to package and the relationship-override API (agentFR.md s8). Named here so they are noticed, not hidden; porting them is wave 22's first item and the bound goes back to 0 with it. A THIRD distinct native is a regression."
   },
   "inputtest_criticals": {
     "op": "==",
