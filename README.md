@@ -18,7 +18,7 @@ outside the repo.
 
 Start with [resources/docs/STATUS.md](resources/docs/STATUS.md) — what works, what does not, and the
 pitfalls that cost a wave each to learn. [PLAN.md](PLAN.md) has the overall strategy and phases;
-`resources/docs/PHASE1.md`–`PHASE16.md` are the per-wave trackers, and `resources/docs/agents/` holds
+`resources/docs/PHASE1.md`–`PHASE18.md` are the per-wave trackers, and `resources/docs/agents/` holds
 every package's own report and measurements. Symbol exports live in `resources/docs/symbols/` and
 `resources/docs/types/`; scripts that produce them are under `resources/tools/`.
 
@@ -28,7 +28,7 @@ every package's own report and measurements. Symbol exports live in `resources/d
 |---|---|
 | Engine, renderer, script VM | up; the first mission map renders under D3D9 and the pawn walks it |
 | Main menu | draws, navigates by mouse and keyboard, and starts the game. Its modal text, option rows, difficulty portrait and scrolling lists are measured against retail's |
-| Opening scene | the pawns are placed, their heads are level, the HUD and letterbox bars appear exactly where retail shows them, and the matinee runtime plays a cutscene to the end; **the opening cutscene itself is started by the conversation system, which is the next wave** |
+| Opening scene | **the boat ride starts and plays on its own** - the conversation system's direct path is in - with the guard aboard animating and heads that aim; HUD, letterbox and cursor where retail puts them. **The Empress scene does not start yet: retail needs the player to walk up through two scenes first, and that walk is the current wave** |
 | In-game HUD | health and mana vials and the stance icon, fed from the live pawn |
 | AI | a guard adopts a patrol route and walks it |
 | Save/load | all 51 retail saves load; **86.7 %** of `Dishonored0.sav`'s object stream restores |

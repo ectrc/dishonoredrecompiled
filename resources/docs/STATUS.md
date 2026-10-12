@@ -1,9 +1,9 @@
-# Project status — 2026-10-12 (wave 20 complete: the gate is green at 47/47, the HUD is hidden where retail hides it, and the cutscene is a dialog-system port away)
+# Project status — 2026-10-12 (wave 21 complete: the boat ride starts on its own, heads aim, the gate is 47/47; the Empress waits for the player to walk)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md` (wave 21, next)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FQ>.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md` (wave 22, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FU>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `c9ac0f1`)
+## Where we are (HEAD `c1c4945`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -38,6 +38,16 @@ NEW GAME, the difficulty screen and the brightness screen, then YES on the confi
 its own menu one second after opening it, so New Game was unreachable. It passed 37/37 anyway — see
 "The gate's blind spot" under Known pitfalls. **Enter does not activate a main-menu row** either
 (defect 5); Space does, and `-finewgame` drives past it.
+
+**As of wave 21**: **the boat ride starts and plays on its own** - the conversation system's direct
+path is ported (`DialogInputs` → hook → soirée node → matinee by GUID), the first Dishonored scripted
+scene to start without being forced; the guard aboard animates through it (the five-pass track seam,
+the anim stack retail drives); NPC heads aim where asked, 1:1; the mouse cursor is gone from the
+mission; and the gate is **47 of 47**. **The Empress scene does not start**, and the reason is exact:
+its ten entry points sit behind gates and an AI go-to - retail needs the player to **walk** up through
+the captain and guard scenes, and unattended nothing walks. That is wave 22's spine (`PHASE18.md`).
+Three rules were written mid-wave because agents cost the user their evening: **no fullscreen, no
+focus or gamepad, no retail launches at the machine** - all enforced in the engine for a scripted run.
 
 **As of wave 19**: the Options screen no longer crashes on a tab switch (a raw pointer in the action
 queue, FJ); the NPCs' heads are level (`UArkAnimNodeLookAt`, FL); the letterbox bars draw from the
@@ -67,7 +77,7 @@ listeners (`98e22d4`).
 | Save | above. Remaining 82,423 bytes of `Dishonored0.sav` are two bytes wide inside `AActor::GameLoad` |
 | Shims | **887** (wave 14 ES, from 1,098), held by `resources/tools/shim_ratchet.py`. Of the original 1,098: 966 provable absences, 121 undecidable from any truth source, **5 members retail actually has** (live defects, wave 15 EW) |
 | `Sources.cmake` | an **exclude list**: 806 comment-only skeleton units whose code never compiles. A **port queue**, not a deletion backlog — 813 of the 818 inventoried are alive in retail. Inventory: `agents/agentES_exclude_inventory.csv`, 875 rows |
-| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`). **Every build on this machine goes through `resources/tools/build_queued.py`**: one build at a time behind a machine-wide lock, pinned to half the cores by affinity, `-j 8`, below-normal priority - the user's request after four agents building at once pinned all sixteen (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
+| Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`); `unported_natives` sits at a **named bound of 2** since wave 21 FR (two bodiless natives the faithful Spawned event reaches - wave 22 FV returns it to 0). **Every build on this machine goes through `resources/tools/build_queued.py`**: one build at a time behind a machine-wide lock, pinned to half the cores by affinity, `-j 8`, below-normal priority - the user's request after four agents building at once pinned all sixteen (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
 | Audio | **deferred to Phase 10 as polish** (the user's call): the silent backend loads the real banks and resolves the real event ids. Do not open an audio package until the game plays |
 
 ## The gate is GREEN - 47 of 47 - and how it got there
@@ -130,16 +140,21 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
    across all four loaded levels and found none. Our menu already draws 2 fog layers and 24 bloom parts
    with `0 passes not ported`, so the difference is **parameters**; retail's whole graph with all 42
    nodes is captured in `build/agentFB/retail/postprocess.md`.
-5. **The menu consumes key events and the selection does not move** on the brightness and difficulty
-   screens. Keys reach the movie and are handled (13 events, 13 listener calls) but no mouse events
-   arrive and the probe reports `focus NULL | canFocus 0 | canInput 0` (agent FB). **And Enter does
-   not activate a main-menu row at all** — agent FI measured SPACE working and running
-   `TransitionTo(MainMenuScreen)` while four Enters produced **no AS2 trace whatsoever**. This is the
-   keyboard path the README tells the user to use; `-finewgame[=<secs>]` is the instrument that gets
-   past it.
+5. ~~Enter does not activate a main-menu row.~~ **Never true - closed by wave 21 FU.** Through
+   `game_input.py` on HEAD, `key Enter` on NEW GAME → `APressed` → `TransitionTo (NewGameScreen)`; Down
+   moves the difficulty; Escape goes back. Agent FI's four silent Enters were measured with the retired
+   real-input tool against the `-gfxuimenu` bring-up movie (`canInput 0`) that FP has since replaced.
+   The README carried the wrong instruction for three waves. **What is still true, and narrower**: on the
+   **brightness** screen Left/Right/Up/Down reach the gamma widget's own `LeftPressed` and the slider does
+   not move (marker x 596..782 before and after). Wave 22 FY.
 6. **Text clarity** is better but not perfect, and **nobody has measured it** — no claim either way.
    `GTessellator` is still unported; agent EX ruled it out only for the DPI magnification fault.
-7. **The menu exhausts the address space in about three and a half minutes.** `appError called: Ran
+7. **The menu exhausts the address space in about three and a half minutes - because the AS2 machine never
+   frees an object.** Wave 21 FU: private bytes +0.63 MB/s on the idle menu, flat with `-nogfxui`; the GFx
+   census reads `AS2 objects 66471 live / 66471 created` at 30 s and `644869 / 644869` at 150 s - ~4,800
+   objects/s, **live always equal to created**, because `GASObjectCollector` (`GFxAS2Object.h:171`) is the
+   teardown half of retail's `GASRefCountCollector` only. At the user's 216 fps that is 2 GB in 217 s.
+   Wave 22 FY ports the collector. The earlier text of this entry follows for the record. `appError called: Ran
    out of virtual memory` at **217.73 s**, one frame after a normal `scene rendered (46890 so far)`
    census, with the game still on the main menu - a 32-bit process running out of its 2 GB. Agent EZ
    corrected this entry: there is **no exit teardown fault**, the user's log has no `Exit:` line at
@@ -163,6 +178,23 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
 9. **The window comes up 1008x567 with `-ResX=1600 -ResY=900`** on eight of ten runs and 1600x900 on
    two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run). **Read a
    capture's actual size; never assume it.**
+
+## Wave 21 — the conversation system, the track seam, the look-at, the cursor
+
+`PHASE17.md`. Five of five merged, each 47/47 on a clean checkout of main; four coordinator commits
+the user asked for mid-wave.
+
+| | gate | |
+|---|---|---|
+| `e60c5c6` | — | **no fullscreen, no focus theft, no gamepad in a scripted run** - splash, resize, D3D9 `NOWINDOWCHANGES`, joystick poll; measured by sampling the foreground every 3 s |
+| `14cad0f` FU | 47/47 | the cursor leaves the mission in retail's shape; **Enter was never broken**; the 2 GB is the AS2 heap |
+| `d24f1bf` FS | 47/47 | the five-pass track seam, 18 `StretchAnimControl` functions, `UArkAnimNodeStack` in the Engine; **`UInterpTrack`'s bitfield was read in the wrong order** - every NOEXPORT class may share it |
+| `2ff7daa` FR | 47/47 (`d1f282c`) | **the boat ride starts on its own**: 32 dialog units, 135 functions; the Empress needs the player to walk |
+| `c1c4945` FT | 47/47 | `FArkComponentLookat` 36/51, heads aim 1:1; **every NPC bone was at scale 2.0** - retail PC evaluates skeletons through EdgeAnim, not `GetBoneAtoms` |
+
+**Found in nobody's brief**: the bitfield order (FS), EdgeAnim (FT), the spawner never raising
+`DisSeqEvent_Spawned` (FR), the cursor bit reading the wrong movie (FU), the AS2 leak (FU).
+FR corrected nine premises, FT seven, FS six, FU six.
 
 ## Wave 20 — the red row, the cutscene's activation, one owner for the HUD, the unload list
 
@@ -272,21 +304,23 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 21 is the dialog system**, because that is what starts every scripted scene in the game and the
-user has asked for the opening cutscene twice. Agent FO's `agentFO.md` §9 is the specification, in
-call order: `UDisSeqAct_DialogInputs::Activated`, the conversation component, the dialog tree,
-`UDisConv_Soiree`, `FindMatinee`, `StartFromDialog` - ~10 KB on the direct path out of ~60 KB. With
-it: the `UpdateTrackInst` five-pass seam with `StretchAnimControl` first, `UArkAnimNodeStack`, and the
-`MAT_*` contract behind the player FSM. `FArkComponentLookat` (51 functions, inventoried) and
-`UDisSkelControl_SpineBender` ride along, because a scene's pawns are meant to look at things.
+**Wave 22 is `PHASE18.md`, and its spine is the player walking to the Empress.** FV: the two named
+natives (`OnSetDisposition`, `OnAIGoToActor`) and the AI go-to that moves an NPC to a mark, the pawn's
+Base on the boat, and the NPC tick that drives the look-at (`Tick_Body`, `ChooseLookAt`,
+`Tick_SpineBending`); returns `unported_natives` to 0. FW: the Empress's entry chain mapped and driven
+end to end with `game_input.py` walking the player from the water-lock; the `SkeletalMeshActorMAT`
+props. FX: FS's NOEXPORT bitfield audit across every native class, and teaching the generator the
+hand-edits of four waves. FY: retail's `GASRefCountCollector` for the 2 GB leak, the brightness-screen
+keys, the residual thread-local `WA_ACTIVE`.
 
-Also open: the mouse cursor drawn in the mission (one seam); the play-defaults table still appends the
-inert `-gfxuimenu`; the pawn that died 10 s into a d3d9 stage once with nothing in the log; the rest
-of the UI list (Enter on the main menu, the menu camera and haze, text clarity, the 2 GB exhaustion);
-and **wave 15** (ET, EU, EV, EW), still paused.
+**Deferred and said so**: the retail dismod measurements withdrawn this wave (look-at magnitude, the
+Enter key path, the mask/scroll geometry) - permitted overnight with `-windowed`, otherwise when the
+machine is free; the rest of the UI list (menu camera, haze, text clarity); **wave 15**.
 
-**Process, from the user, both absolute**: every build goes through `build_queued.py`; no agent or
-script ever moves the real mouse, presses real keys or takes focus - `game_input.py` only.
+**Process, from the user, all absolute**: `-windowed` on every launch; input only through
+`game_input.py`; builds only through `build_queued.py` (two per package); no retail launches while the
+user is at the machine. The overnight override (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`)
+lifts the CPU cap and the queue; delete it to restore daytime behaviour.
 
 ## Known pitfalls
 
@@ -378,6 +412,18 @@ script ever moves the real mouse, presses real keys or takes focus - `game_input
   (FH's `0xdf0a00`, FL's eight), the sweep is a lint, not a gate.
 
 ### Build and link
+
+- **A native class's bitfield must be declared in the COOKED class's order, not the reference
+  engine's.** `UStruct::Link` takes the bit masks from the serialized script class (`SavedBitMask`),
+  so a C++ bitfield declared in a different order reads the wrong bits silently: `UInterpTrack`'s
+  `bDisableTrack` read retail's `bAIGroupOnly`, and every non-player anim group said "no anim-control
+  track" for twenty waves (agent FS). Every NOEXPORT class declared in reference order can carry the
+  same fault - wave 22 FX audits them against `retail_sdk_layout.json`.
+- **Retail PC does not evaluate skeletons through `GetBoneAtoms`.** It goes through `GEdgeAnimManager`
+  (EdgeAnim jobs), whose leaf masks the bones a channel does not define. Our stock
+  `UAnimNodeBlendBase::GetBoneAtoms` sums children, which put every NPC bone at scale 2.0 the moment a
+  blink channel reached weight 1 (agent FT). `UArkAnimNodeStack::GetBoneAtoms` is the one deliberate
+  non-retail function standing in for that masking; it goes if the Edge path is ever ported.
 
 - **An agent's sync script lists what it remembered touching, not what it touched.** Agent FP's
   `agentFP_sync.py` carried 22 files and missed `Inc/CppText/ADishonoredGameInfo.h`, where the two

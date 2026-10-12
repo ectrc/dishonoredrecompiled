@@ -367,3 +367,87 @@ wave 22's first item.** Reverting the Spawned event would put the boat back to 0
 the first self-starting cutscene behind two other packages was the worse trade.
 
 **Gate on main for `d1f282c` (FR + the named baseline): 47 ok / 0 failed / 0 skipped (1317 s)** - `unported_natives 2 (wanted <= 2)`, both named.
+
+### FT — merged `c1c4945`; FT's own gate **47 ok / 0 failed / 0 skipped** (1311 s)
+
+Twenty-two files (15 changed, 7 new); every file differing from main HEAD confirmed on the sync list.
+
+**`FArkComponentLookat` exists and runs.** Created on every NPC in `ADishonoredNPCPawn::Spawned`,
+configured from `UDisTweaks_NPCPawn::m_pComponentLookatConfig`; `Starting()` finds `camera_jnt`,
+`head_jnt`, both eyes, the eye controls, the blink blender, the look-at blender and the spine bender
+on every pawn. `FDisLookAtRequest` now calls the six retail `Start*` entry points, `StopLookAt` and
+`GetTimeLeft` on the real component instead of counting a desire it could not execute.
+
+**Heads aim 1:1.** FL's two-delta diagnostic against `build/head_rel`: scene pawns at rest sit in
+retail's two-centre state, `head_jnt` l1/c1 vs the control's l2/c2 — level, and **FL's 60° trap does
+not bite**. A civilian given the AI's procedural patrol look-at: **requested 17.8° → composed 17°;
+26.8° → 26°**; the control reads 3° and never moves. The retail magnitude comparison was withdrawn
+(no retail launches while the user is at the machine) and is recorded as not taken.
+
+**The big finding, from an unexplained frame — a coat drawn over the boat view, a canopy over the
+guards: every NPC bone's local scale was 2.000**, 2^depth at the fingers, bounds radius ~12,000. The
+look-at's `UpdateBlink` fades the Blink channel of `BlinkBlender` to weight 1 over a Source already at
+weight 1; Blink is a non-additive eyelid-only anim, and this tree's stock
+`UAnimNodeBlendBase::GetBoneAtoms` **sums** its children — two full poses, scale 1 + 1. Retail writes
+the same weights, but **retail PC never evaluates skeletons through `GetBoneAtoms`**:
+`UpdateSkelPoseBegin/UpdateSkelPose/End` (2013 `0x754510`/`0x754f1b`/`0x747239`) go through
+`GEdgeAnimManager`, and the only reader of `m_bDontUseRefPoseOnNonDefinedBones` in either binary is
+`BuildEdgeAnimTreeLeaf` (2013 `0x59871f`) — the Edge leaf masks bones a channel does not define.
+Two Engine functions: **`UAnimNodeBlendBase::ChildrenHasChanged`** (retail's last vtable slot, 2012
+`0x19f260`, called at the end of `UAnimNodeSequence::SetAnim`; this tree's `SetAnim` lacked it), and
+**`UArkAnimNodeStack::GetBoneAtoms` — NOT a retail function**, the one deliberate deviation,
+documented: Source is the base, each channel lerped over it on the bones its sequence defines,
+additive channels accumulating. After: zero `flhead SUSPECT` lines on both routes, frames normal,
+heads still turn.
+
+**Ported**: `FArkComponentLookat` 36/51 bodies (the rest macros and the request template);
+`UArkAnimNodeLookAt`'s config half (`SetConfig`, `CheckAnimsUpToDate` — **the anim selector, not editor
+code** — `ComputeHeadAndTorsoAim`, `BlendInfos`, `HandleBlendingBetweenLookatNodes`, the config
+branch of `TickAnim`, the `GetBoneAtoms` crossfade); `UArkComponentLookatConfig::Init/
+UpdateProceduralLookAt`; `UDisSkelControl_SpineBender` (6 bodies, off the exclude list — **still a
+no-op in effect**: its driver `Tick_SpineBending` is under the unported `ADishonoredPawn::Tick_Body`).
+Inventoried with rvas: the component manager, the NPC Tick's `SetLookAtMode(ChooseLookAt())`,
+`Tick_SpineBending` + helpers, `DisNotify_NPCDisableLookAt` (needs `Notify_EndRange` in the Engine
+first), `FArkComponentFaceTo`, the track and `MAT_` callers.
+
+**Where the brief was wrong**: FL's trap did not bite; `CheckAnimsUpToDate` is the pose selector;
+`OnComposeSkeleton` is eyes-only and only while FaceFX plays (compiled out here);
+`DisNotify_NPCDisableLookAt` cannot land without `Notify_EndRange`; `SetConfig` is the ICF-folded
+`OverwriteExactRotation` at 2012 `0x58df40`; `Starting`/`Stopping` are 2013 `0x556660`/`0x556a00`
+by vtable; the retail comparison was withdrawn. FT's dismod probe files remain in the user's dismod
+repository (`src/mods/ftlookat.*`), inert unless `DISMOD_FTLOOKAT=1`.
+
+## Wave result
+
+**Five of five merged, each gated 47 ok / 0 failed / 0 skipped on a clean checkout of main**
+(FU re-gated on top of the coordinator's guards; FR with one named row). Plus four coordinator commits
+the user asked for during the wave: `e60c5c6` (no fullscreen, no focus theft, no gamepad in a scripted
+run), `edea361` (the overnight build override), `4258e09` (no retail launches at the machine),
+`080b322` (absolute command-file path).
+
+| | | gate |
+|---|---|---|
+| `14cad0f` FU | the cursor leaves the mission; Enter was never broken; the 2 GB is the AS2 heap | 47/47 |
+| `d24f1bf` FS | the five-pass track seam; `UArkAnimNodeStack`; **`UInterpTrack`'s bitfield read in the wrong order** | 47/47 |
+| `2ff7daa` FR | **the boat ride starts on its own** — the conversation system's direct path, 32 units | 47/47 (`d1f282c`, named row) |
+| `c1c4945` FT | heads aim 1:1; **every NPC bone was at scale 2.0** | 47/47 |
+
+**Of the user's asks**: the opening *boat ride* now starts and plays without being forced — the first
+Dishonored scripted scene to do so; the Empress does **not**, and the reason is now exact: retail needs
+the player to walk up through the captain and guard scenes, and nothing walks unattended (wave 22's
+spine). The HUD, letterbox and cursor are where retail puts them. Heads are level and aim. The
+gamepad, fullscreen and focus theft that cost the user their evening are fixed and measured.
+
+**Found in nobody's brief this wave**: the `UInterpTrack` bitfield order (FS — and every NOEXPORT
+class may share it); retail PC evaluating skeletons through EdgeAnim, which is why a stock
+`GetBoneAtoms` doubled every bone (FT); the spawner never raising `DisSeqEvent_Spawned` (FR); the
+cursor-allowed bit reading the wrong movie (FU); the AS2 machine never freeing an object (FU).
+**FR corrected nine premises of its brief, FS six, FT seven, FU six.**
+
+**Process, this wave**: a sync-list omission was caught by the clean-checkout gate (FP, wave 20) and
+every package since was checked against `git diff --name-only <base>` before merge — FR's script now
+does that check itself; four packages' worth of builds ran at half CPU behind one lock until the user
+went to sleep; and three of the user's rules were written in the middle of the wave because the
+no-grab mode had holes a 3-second foreground sampler found that one-shot checks had missed.
+
+**Gate on main for `c1c4945` (the full wave-21 tree): 47 ok / 0 failed / 0 skipped (1479 s).**
