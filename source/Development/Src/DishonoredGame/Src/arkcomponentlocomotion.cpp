@@ -38,6 +38,8 @@ INT		GDisLocoArrivals = 0;
 INT		GDisLocoMovePawnCalls = 0;
 FLOAT	GDisLocoDistanceMoved = 0.f;
 INT		GDisLocoTeleports = 0;
+INT		GDisLocoFalls = 0;
+INT		GDisLocoBased = 0;
 
 // DISHONORED(layout): the 2012 PDB's sizes for every struct the request interface is built out of. They are what the
 // request manager memcpys and what a save file would have to round-trip, so they are asserted rather than trusted.

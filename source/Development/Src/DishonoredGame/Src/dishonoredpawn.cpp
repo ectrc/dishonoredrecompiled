@@ -422,28 +422,42 @@ void ADishonoredPawn::PostBeginPlay()
 }
 
 /*-----------------------------------------------------------------------------
-	Agent FS (PHASE17 package FS): the matinee contract, ADishonoredPawn's half.
+	Agent FS (PHASE17 package FS), completed by agent GA (PHASE18 package GA): the matinee contract,
+	ADishonoredPawn's half, and the body's mesh translation.
 
 	Retail's root-motion switches go through ADishonoredPawn::StartRootMotionMode / StopRootMotionMode
-	(2012 rvas 0x78e4b0 / 0x78e4c0), which are ChangeAnimStateMotionModes( mode, RMRM_RotateActor ) on
-	the pawn's anim-state machine - not ported (ADishonoredPlayerPawn 0x6fae70, AMatineePreviewPlayerPawn
-	0x78e550). DEVIATION: the modes are written straight onto the mesh here, which is what the anim
-	state would end up doing to it; MAT_RootMotionEnabled reads them back the way retail does.
-	The mesh-translation trio is FArkComponentMeshOffset's (GetMeshOffsetComponent / EnableByFlags(2) /
-	DisableByFlags(2) and SetMeshTranslation( ZeroVector, 0 )) and that component has no body in this
-	tree: the three are no-ops that say so once.
+	(2012 rvas 0x78e4b0 / 0x78e4c0), which are ChangeAnimStateMotionModes( mode, RMRM_RotateActor ) -
+	and ADishonoredPawn::ChangeAnimStateMotionModes (2012 0x78e550, 46 B, 2013 0x4fcfa0, ICF-folded with
+	AMatineePreviewPlayerPawn's) IS the two mesh fields; only ADishonoredPlayerPawn (2012 0x6fae70, 222 B:
+	PendingRMM and the physics swap, agent FZ's unit) does more. FS's "deviation" was retail's body.
+	The mesh-translation trio is FArkComponentMeshOffset's (Engine/Inc/arkcomponentmeshoffset.h, GA).
+	SetMeshTranslation (2012 0x78e960 / 2013 0x749860) and LockMeshTranslation (0x78e920 / 0x749820) are
+	retail's dishonoredpawn_body.cpp functions; they are here beside their callers because agent FV is in
+	that unit this wave.
 -----------------------------------------------------------------------------*/
 
-static void DisFSWarnOnce( const TCHAR* What )
+#include "arkcomponentmeshoffset.h"
+
+// 2012 rva 0x78e550 (46 B), 2013 0x4fcfa0
+void ADishonoredPawn::ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _RootRotation )
 {
-	static TArray<FString> Said;
-	const FString Key( What );
-	if( Said.FindItemIndex( Key ) != INDEX_NONE )
+	if( Mesh != NULL )
 	{
-		return;
+		Mesh->RootMotionRotationMode = _RootRotation;
+		Mesh->RootMotionMode = _RootMotion;
 	}
-	Said.AddItem( Key );
-	debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s needs FArkComponentMeshOffset, which has no body in this tree; the matinee continues without the mesh offset"), What );
+}
+
+// 2012 rva 0x78e4b0 (14 B)
+void ADishonoredPawn::StartRootMotionMode( BYTE _RootMotionMode, BYTE _RootRotationMode )
+{
+	ChangeAnimStateMotionModes( _RootMotionMode, _RootRotationMode );
+}
+
+// 2012 rva 0x78e4c0 (15 B)
+void ADishonoredPawn::StopRootMotionMode()
+{
+	ChangeAnimStateMotionModes( RMM_Velocity, RMRM_RotateActor );
 }
 
 // 2012 rva 0x791070 (103 B)
@@ -456,22 +470,17 @@ void ADishonoredPawn::MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FNa
 	}
 }
 
-// 2012 rva 0x7910e0 (71 B)
+// 2012 rva 0x7910e0 (71 B): Translate and Accel start the matching root-motion mode with RMRM_RotateActor, anything
+// else stops it
 void ADishonoredPawn::MAT_SetRootMotionMode( BYTE MatRootMotionMode )
 {
-	if( Mesh == NULL )
-	{
-		return;
-	}
 	switch( MatRootMotionMode )
 	{
 	case MRMM_Translate:
-		Mesh->RootMotionMode = RMM_Translate;
-		Mesh->RootMotionRotationMode = RMRM_RotateActor;
+		StartRootMotionMode( RMM_Translate, RMRM_RotateActor );
 		break;
 	case MRMM_Accel:
-		Mesh->RootMotionMode = RMM_Accel;
-		Mesh->RootMotionRotationMode = RMRM_RotateActor;
+		StartRootMotionMode( RMM_Accel, RMRM_RotateActor );
 		break;
 	default:
 		MAT_StopRootMotion();
@@ -496,16 +505,29 @@ void ADishonoredPawn::MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode )
 	}
 }
 
-// 2012 rva 0x791130 (57 B): SetMeshTranslation( ZeroVector, 0 ) when resetting, then the offset component off
+// 2012 rva 0x791130 (57 B): SetMeshTranslation( ZeroVector, 0 ) when resetting, then the offset component off for
+// the matinee
 void ADishonoredPawn::MAT_DisableMeshTranslation( UBOOL bReset )
 {
-	DisFSWarnOnce( TEXT("ADishonoredPawn::MAT_DisableMeshTranslation") );
+	if( bReset )
+	{
+		SetMeshTranslation( FVector( 0.f, 0.f, 0.f ), 0.f );
+	}
+	FArkComponentMeshOffset* MeshOffset = FArkComponentMeshOffset::GetMeshOffsetComponent( this, TRUE );
+	if( MeshOffset != NULL )
+	{
+		MeshOffset->DisableByFlags( eMeshOffsetDisable_ByMatinee );
+	}
 }
 
 // 2012 rva 0x791170 (25 B): the offset component back on
 void ADishonoredPawn::MAT_EnableMeshTranslation()
 {
-	DisFSWarnOnce( TEXT("ADishonoredPawn::MAT_EnableMeshTranslation") );
+	FArkComponentMeshOffset* MeshOffset = FArkComponentMeshOffset::GetMeshOffsetComponent( this, TRUE );
+	if( MeshOffset != NULL )
+	{
+		MeshOffset->EnableByFlags( eMeshOffsetDisable_ByMatinee );
+	}
 }
 
 // 2012 rva 0x78e4d0 (33 B): the mesh is in a root-motion mode (Translate or Accel)
@@ -514,16 +536,64 @@ UBOOL ADishonoredPawn::MAT_RootMotionEnabled() const
 	return Mesh != NULL && ( Mesh->RootMotionMode == RMM_Translate || Mesh->RootMotionMode == RMM_Accel );
 }
 
-// 2012 rva 0x78e500 (10 B): StopRootMotionMode, i.e. ChangeAnimStateMotionModes( RMM_Velocity, RMRM_RotateActor )
+// 2012 rva 0x78e500 (10 B): StopRootMotionMode
 void ADishonoredPawn::MAT_StopRootMotion()
 {
-	if( Mesh != NULL && MAT_RootMotionEnabled() )
+	StopRootMotionMode();
+}
+
+// 2012 rva 0x78e960 (91 B), 2013 0x749860: a ragdolled pawn keeps its mesh where physics put it
+void ADishonoredPawn::SetMeshTranslation( const FVector& _rTranslation, FLOAT _fTime )
+{
+	FArkComponentMeshOffset* MeshOffset = FArkComponentMeshOffset::GetMeshOffsetComponent( this, TRUE );
+	if( MeshOffset != NULL && Physics != PHYS_RigidBody )
 	{
-		Mesh->RootMotionMode = RMM_Velocity;
-		Mesh->RootMotionRotationMode = RMRM_RotateActor;
+		MeshOffset->ForceMeshOffset( _rTranslation, _fTime < 0.0001f );
 	}
 }
 
+// 2012 rva 0x78e920 (52 B), 2013 0x749820
+void ADishonoredPawn::LockMeshTranslation( UBOOL _bLock, eDisMeshOffsetDisableFlag _eDisableFlag )
+{
+	FArkComponentMeshOffset* MeshOffset = FArkComponentMeshOffset::GetMeshOffsetComponent( this, TRUE );
+	if( MeshOffset == NULL )
+	{
+		return;
+	}
+	if( _bLock )
+	{
+		MeshOffset->DisableByFlags( _eDisableFlag );
+	}
+	else
+	{
+		MeshOffset->EnableByFlags( _eDisableFlag );
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	Agent GA: the pawn's PreBeginPlay (2012 rva 0x78e220, 78 B; 2013 0x748f10), ported as far as its callees exist.
+	Retail: AActor::PreBeginPlay, two flag bits cleared (dword +1280 &= ~0xC00, unnamed in the PDB types),
+	PreBeginPlay_NativeComponents (virtual), UArkComponentContainer::StartAllComponents, PreBeginPlay_Inventory
+	(0x7c38a0, UDishonoredInventory - agent AJ's root), PreBeginPlay_Attributes (agent BF's; it stays on BF's lazy
+	path from GetAttributes, because this tree cannot promise the tweaks are set when PreBeginPlay runs and a
+	wrongly-built attribute set would be cached for the pawn's life), PreBeginPlay_Actions (the action FSM).
+	The base PreBeginPlay_NativeComponents (0x793f50, 149 B) adds FDisComponentObservable from the pawn tweaks and
+	FDisComponentRetargeting - neither has a body in this tree, so the base adds nothing and the NPC override
+	(dishonorednpcpawn_nativecomponents.cpp) adds the mesh-offset component.
+-----------------------------------------------------------------------------*/
+void ADishonoredPawn::PreBeginPlay()
+{
+	Super::PreBeginPlay();
+	PreBeginPlay_NativeComponents();
+	if( m_ComponentContainer != NULL )
+	{
+		m_ComponentContainer->StartAllComponents();
+	}
+}
+
+void ADishonoredPawn::PreBeginPlay_NativeComponents()
+{
+}
 // ---- agent FV (PHASE18 FV): the tick, and the disposition native ----
 
 // DISHONORED(port): 2013 rva 0x750720 (2012 0x790c10, 304 B): APawn::Tick, then - for a live, non-deleted pawn in game -

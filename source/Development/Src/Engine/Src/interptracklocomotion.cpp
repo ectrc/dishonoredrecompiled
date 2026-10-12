@@ -68,3 +68,37 @@ void UInterpTrackLocomotion::PostLoad()
 		}
 	}
 }
+
+// DISHONORED(port): agent GA. The dynamic initializer 2012 0xb9ed40 / 2013 0xb825c0 builds FName("(Player)") into
+// UInterpTrackLocomotion::s_TrackLocoPlayerTargerName; a function-local static here so the name table exists first.
+const FName& UInterpTrackLocomotion::PlayerTargetName()
+{
+	static const FName s_TrackLocoPlayerTargerName( TEXT("(Player)") );
+	return s_TrackLocoPlayerTargerName;
+}
+
+// DISHONORED(port): 2012 0x544d10 (319 B), 2013 0x503af0: a key without a properties object gets a transient one.
+UObject* UInterpTrackLocomotion::GetKeyProperties( INT KeyIndex )
+{
+	if( !LocoKeys.IsValidIndex( KeyIndex ) )
+	{
+		return NULL;
+	}
+	if( LocoKeys(KeyIndex).Properties == NULL )
+	{
+		LocoKeys(KeyIndex).Properties = ConstructObject<UInterpTrackLocomotionKeyProperties>( UInterpTrackLocomotionKeyProperties::StaticClass(), this, NAME_None, RF_Transactional );
+	}
+	return LocoKeys(KeyIndex).Properties;
+}
+
+// DISHONORED(port): 2012 0x53cfa0 (77 B), 2013 0x4fddc0: "(Player)" is the local player controller's pawn; any other
+// name is the first instance of the key's target group, its actor.
+AActor* UInterpTrackLocomotionKeyProperties::FindKeyTargetActor( const USeqAct_Interp* const _Interp, const APlayerController* const _pPlayerController ) const
+{
+	UInterpGroupInst* FirstGroupInst = const_cast<USeqAct_Interp*>( _Interp )->FindFirstGroupInst( m_Target );
+	if( m_TargetName == UInterpTrackLocomotion::PlayerTargetName() )
+	{
+		return _pPlayerController ? _pPlayerController->Pawn : NULL;
+	}
+	return FirstGroupInst ? FirstGroupInst->GetGroupActor() : NULL;
+}

@@ -110,6 +110,15 @@ public:
 	virtual void StartDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, UBOOL _bBlocking, INT _StartDialogFlags, INT _FiringHookIndex );
 	virtual void EndDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, DisConvoEndReasonEnum _ConvoEndReason );
 
+// ---- agent GA (PHASE18 GA): the NPC's native components ----
+// PreBeginPlay 2012 rva 0x7ab250 (19 B: the base, then TG_PreAsyncWork), PreBeginPlay_NativeComponents 0x7b0c10 (247 B:
+// the hit-reaction-throw, mesh-offset, LOD-manager and RB-damages components out of the NPC tweaks). Bodies in
+// Src/dishonorednpcpawn_nativecomponents.cpp.
+public:
+	virtual void PreBeginPlay();
+protected:
+	virtual void PreBeginPlay_NativeComponents();
+
 // ---- agent FV (PHASE18 FV): the NPC tick, the body pass that drives the look-at and the spine bender, the relationship change ----
 // 2013 rvas (2012 in brackets): Tick 0x76da40 (0x7c8090, 1085 B), Tick_Body 0x783380 (0x7be180, 310 B), ChooseLookAt 0x7794d0
 // (0x7b4d90, 475 B), GetCurrentTransitSpeed 0x779430 (0x7b4cf0; agent DN's comment in dishonorednpcpawn_locomotion.cpp cited

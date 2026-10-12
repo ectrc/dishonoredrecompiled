@@ -18,6 +18,92 @@ ArkLookatComposeSkeletonHookType GArkLookatComposeSkeletonHook = NULL;
 #include "EngineSequenceClasses.h"
 #include "EngineInterpolationClasses.h"
 #include "AnimationEncodingFormat.h"
+#include "arkcomponentmeshoffset.h"
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(port): agent GA (PHASE18 GA). FArkComponentManager's PreAsyncWork and PreAsyncWorkJustBeforeProceduralAnim
+	policies, for the mesh-offset component of the pawn whose body mesh this is - run where agent FT runs the look-at's,
+	just before the anim nodes tick. Retail ticks every registered component from the manager before the actors tick;
+	here the pawn has already moved this frame (ADishonoredNPCPawn::physWalking), which is the order the offset wants.
+
+	-gadiag: once a second per pawn, where the pawn is and what its body is doing - position, velocity, physics, base,
+	the distance from the cylinder's bottom to the ground below it (a floating NPC reads here), the mesh's root-motion
+	modes and this frame's extracted root-motion delta, the mesh translation the offset component wrote, and the
+	animation the tree is playing with the most weight.
+-----------------------------------------------------------------------------*/
+static UBOOL DisGADiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-gadiag") ) != NULL ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+static void DisGAReportPawn( APawn* Pawn, USkeletalMeshComponent* Mesh, FArkComponentMeshOffset* Offset )
+{
+	static TMap<const UObject*, FLOAT> LastReportAt;
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	FLOAT* Last = LastReportAt.Find( Pawn );
+	if( Last != NULL && Now - *Last < 1.f )
+	{
+		return;
+	}
+	LastReportAt.Set( Pawn, Now );
+
+	const FLOAT CollisionHeight = Pawn->CylinderComponent ? Pawn->CylinderComponent->CollisionHeight : 0.f;
+	const FVector Bottom = Pawn->Location - FVector( 0.f, 0.f, CollisionHeight );
+	FCheckResult Hit( 1.f );
+	FLOAT GroundDistance = -1.f;
+	if( !GWorld->SingleLineCheck( Hit, Pawn, Bottom - FVector( 0.f, 0.f, 2000.f ), Bottom, TRACE_World ) )
+	{
+		GroundDistance = Bottom.Z - Hit.Location.Z;
+	}
+
+	FString Anim( TEXT("-") );
+	if( Mesh->Animations )
+	{
+		TArray<UAnimNode*> Nodes;
+		Mesh->Animations->GetNodes( Nodes );
+		FLOAT BestWeight = 0.f;
+		for( INT i = 0; i < Nodes.Num(); i++ )
+		{
+			UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>( Nodes(i) );
+			if( Seq && Seq->NodeTotalWeight > BestWeight )
+			{
+				BestWeight = Seq->NodeTotalWeight;
+				Anim = FString::Printf( TEXT("%s w %.2f t %.2f%s"), *Seq->AnimSeqName.ToString(), Seq->NodeTotalWeight, Seq->CurrentTime, Seq->bPlaying ? TEXT("") : TEXT(" stopped") );
+			}
+		}
+	}
+
+	debugf( TEXT("DISHONORED(bringup): gadiag pawn %s at %.0f/%.0f/%.0f vel %.0f physics %d base %s ground %.1f cylH %.0f step %.0f rmm %d/%d rmd %.2f meshT %.1f/%.1f/%.1f meshR %d/%d/%d offset %s anim %s"),
+		*Pawn->GetName(), Pawn->Location.X, Pawn->Location.Y, Pawn->Location.Z, Pawn->Velocity.Size(), (INT)Pawn->Physics,
+		Pawn->Base ? *Pawn->Base->GetName() : TEXT("none"), GroundDistance, CollisionHeight, Pawn->MaxStepHeight,
+		(INT)Mesh->RootMotionMode, (INT)Mesh->RootMotionRotationMode, Mesh->RootMotionDelta.GetTranslation().Size(),
+		Mesh->Translation.X, Mesh->Translation.Y, Mesh->Translation.Z, Mesh->Rotation.Pitch, Mesh->Rotation.Yaw, Mesh->Rotation.Roll,
+		Offset ? *FString::Printf( TEXT("z %.1f flags %d"), Offset->GetCurrentOffsetZ(), Offset->GetDisableFlags() ) : TEXT("none"), *Anim );
+}
+
+static void DisGAMeshOffsetTick( USkeletalMeshComponent* Mesh, FLOAT DeltaTime )
+{
+	APawn* Pawn = Mesh->GetOwner() ? Mesh->GetOwner()->GetAPawn() : NULL;
+	if( !Pawn || Pawn->Mesh != Mesh )
+	{
+		return;
+	}
+	FArkComponentMeshOffset* Offset = FArkComponentMeshOffset::GetMeshOffsetComponent( Pawn, TRUE );
+	if( Offset )
+	{
+		Offset->PreAsyncWorkTick( DeltaTime );
+		Offset->PreAsyncWorkJustBeforeProceduralAnimTick( DeltaTime );
+	}
+	if( DisGADiagEnabled() )
+	{
+		DisGAReportPawn( Pawn, Mesh, Offset );
+	}
+}
 
 #if WITH_APEX
 #include "NvApexScene.h"
@@ -1406,6 +1492,9 @@ void USkeletalMeshComponent::Tick(FLOAT DeltaTime)
 				{
 					GArkLookatPreAsyncWorkHook( this, (DeltaTime + AccumulatedDroppedDeltaTime) * TimeDilation );
 				}
+				// DISHONORED(port): agent GA. The same two policies for the owning pawn's mesh-offset component
+				// (Engine/Inc/arkcomponentmeshoffset.h), and the -gadiag pawn census.
+				DisGAMeshOffsetTick( this, (DeltaTime + AccumulatedDroppedDeltaTime) * TimeDilation );
 				TickAnimNodes((DeltaTime + AccumulatedDroppedDeltaTime) * TimeDilation);
 			}
 

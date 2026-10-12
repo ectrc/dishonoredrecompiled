@@ -2987,7 +2987,23 @@ public:
     // DISHONORED(port): 2013 rva 0x4fcc30 (2012 0x53bd80)
     static void SetLocomotionPriority( INT LocomotionPriority );
     static INT s_iInterpTrackLocomotionPriority;
+
+    // DISHONORED(port): agent GA. The key target name that means "the local player's pawn" (dynamic initializer
+    // 2012 0xb9ed40 / 2013 0xb825c0: FName("(Player)") - retail's s_TrackLocoPlayerTargerName global, a function-local
+    // static here so it is built after the name table), and GetKeyProperties 2012 0x544d10 / 2013 0x503af0, which
+    // creates a key's properties object on demand. Bodies in interptracklocomotion.cpp.
+    static const FName& PlayerTargetName();
+    virtual UObject* GetKeyProperties( INT KeyIndex );
     DECLARE_CLASS(UInterpTrackLocomotion,UInterpTrackFloatBase,0,Engine)
+};
+
+// DISHONORED(port): agent GA. UInterpTrackLocomotionKeyProperties::m_Modifier is this enum (2012 PDB KeyLocomotionModifier);
+// GetGameSpecificLocomotionModifier (DishonoredGame, 2012 0x7ab590) maps it onto the locomotion component's modifier index.
+enum KeyLocomotionModifier
+{
+    EKLM_Empty              =0,
+    EKLM_Sword              =1,
+    EKLM_MAX                =2,
 };
 
 // Engine.InterpTrackLocomotionKeyProperties: retail sizeof 104, reflected span 56..104 (2012 PDB sizeof 104)
@@ -3008,6 +3024,9 @@ public:
     FName m_EndSpeedIdxName;
     //## END PROPS InterpTrackLocomotionKeyProperties
 
+    // DISHONORED(port): agent GA. 2012 0x53cfa0 / 2013 0x4fddc0: the actor a key walks toward - the local player's pawn
+    // for the "(Player)" name, else the first instance of the key's target group. Body in interptracklocomotion.cpp.
+    class AActor* FindKeyTargetActor( const class USeqAct_Interp* const _Interp, const class APlayerController* const _pPlayerController ) const;
     DECLARE_CLASS(UInterpTrackLocomotionKeyProperties,UInterpTrackKeyProperties,0,Engine)
 };
 
@@ -3027,6 +3046,24 @@ public:
     INT m_iPendingStopLocoRequestId;
     //## END PROPS InterpTrackInstLocomotion
 
+    // DISHONORED(port): agent GA (PHASE18 GA). The Locomotion track's instance - the matinee's "walk this pawn to that
+    // group's actor" - through FS's UpdateTrackInst seam. 2012 rvas (2013 in the bodies): InitTrackInst 0x542380,
+    // TermTrackInst 0x53bb90, UpdateTrackInst 0x542630, NeedsSynchronizing 0x53fa50, CalcInitialTransform 0x53eff0,
+    // UpdateTrackInst_Jump 0x53f5e0, ComputeLocoProp 0x5423d0, UpdateStopObsoleteLocoRequest 0x53f760,
+    // StopCurrentLocoRequest 0x53ce50, CallbackLocoEvent 0x53bc00. The bodies that do not touch the locomotion
+    // component are in Engine/Src/interptrackinstlocomotion.cpp; the ones that do are in
+    // DishonoredGame/Src/interptracklocomotion_game.cpp, because FArkComponentLocomotion is declared in DishonoredGame.
+    virtual void InitTrackInst( UInterpTrack* Track );
+    virtual void TermTrackInst( UInterpTrack* Track );
+    virtual void UpdateTrackInst( FLOAT NewPosition, UBOOL bJump );
+    virtual UBOOL NeedsSynchronizing( FLOAT _fOldPosition, FLOAT _fNewPosition, FLOAT& _fOutClampedPosition, UBOOL _bPreview );
+    void CalcInitialTransform( UInterpTrack* Track, UBOOL bZeroFromHere );
+    UBOOL UpdateTrackInst_Jump( FLOAT NewPosition );
+    void ComputeLocoProp( struct FArkCpntLocoGoToActorProp& _LocoProp, class FArkComponentLocomotion* _pLocoComp, const class AActor* const _pTarget, const class UInterpTrackLocomotionKeyProperties* const _pKeyProperties, FLOAT _fNewPosition );
+    void UpdateStopObsoleteLocoRequest( class FArkComponentLocomotion* const _pLocoComp, FLOAT _fNewPosition );
+    void StopCurrentLocoRequest( class FArkComponentLocomotion* const _pLocoComp, INT iKeyIndex );
+    void CallbackLocoEvent( INT _iRequestID, BYTE _LocoEvent );
+    class APawn* GetGroupPawn() const;
     DECLARE_CLASS(UInterpTrackInstLocomotion,UInterpTrackInst,0,Engine)
 };
 

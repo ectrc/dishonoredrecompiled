@@ -528,6 +528,10 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 		{
 			UpdateFloorAndBase( FALSE );
 		}
+		if( m_pPawnOwner->Mesh != NULL )
+		{
+			m_pPawnOwner->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
+		}
 		return;
 	}
 
@@ -594,7 +598,32 @@ void FArkComponentLocomotion::UpdateFloorAndBase( UBOOL _bHadBase )
 	const FVector Start = m_pPawnOwner->Location + FVector( 0.f, 0.f, Step );
 	const FVector End = m_pPawnOwner->Location - FVector( 0.f, 0.f, 2.f * Step );
 	FCheckResult Hit( 1.f );
-	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, 0x1020209F, Extent ) || !Hit.Actor )
+	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, 0x1020209F, Extent ) )
+	{
+		// DISHONORED(port, agent GA): retail's tail (2012 0x580ae0 +0x8a0): a pawn that is not moving and stands on
+		// nothing within the sweep is put into PHYS_Falling; UE3's physFalling / processLanded land it and base it.
+		if( !_bHadBase )
+		{
+			GDisLocoFalls++;
+			m_pPawnOwner->setPhysics( PHYS_Falling );
+		}
+		return;
+	}
+	if( Hit.bStartPenetrating )
+	{
+		// DISHONORED(port, agent GA): the swept cylinder already overlaps something (a rail, a wall, the deck's own
+		// collision) and the hit is the start point, not a floor - measured on the boat's guard, whom a hit taken at
+		// face value lifted a step height per frame. A plain line from the cylinder's centre says what is under its
+		// bottom; a floor more than a step height from the bottom is not this pawn's.
+		const FLOAT Height = m_pPawnOwner->CollisionComponent->Bounds.BoxExtent.Z;
+		Hit = FCheckResult( 1.f );
+		if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, m_pPawnOwner->Location - FVector( 0.f, 0.f, Height + Step * 3.f ), m_pPawnOwner->Location, 0x1020209F )
+			|| Abs( ( m_pPawnOwner->Location.Z - Height ) - Hit.Location.Z ) > Step )
+		{
+			return;
+		}
+	}
+	if( !Hit.Actor )
 	{
 		return;
 	}
@@ -603,6 +632,7 @@ void FArkComponentLocomotion::UpdateFloorAndBase( UBOOL _bHadBase )
 		m_pPawnOwner->Floor = Hit.Normal;
 		return;
 	}
+	GDisLocoBased++;
 	m_pPawnOwner->SetBase( Hit.Actor, Hit.Normal, TRUE, NULL, NAME_None );
 	if( !_bHadBase && m_pPawnOwner->Base )
 	{

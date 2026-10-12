@@ -90,6 +90,29 @@ public:
 	virtual void GetSpeakerLocInfo( TArray<struct FDisConvSpeakerLocInfo>& _rLocInfoOut ) const;
 	virtual class UDisConversationComponent* GetConversationComponent_Derived() { return NULL; }
 
+// ---- agent GA (PHASE18 GA): the root-motion modes, the mesh translation and the PreBeginPlay chain ----
+// 2012 rvas: ChangeAnimStateMotionModes 0x78e550 (46 B, the base's: the two mesh fields; ADishonoredPlayerPawn 0x6fae70
+// overrides it), StartRootMotionMode 0x78e4b0, StopRootMotionMode 0x78e4c0, SetMeshTranslation 0x78e960,
+// LockMeshTranslation 0x78e920, PreBeginPlay 0x78e220, PreBeginPlay_NativeComponents 0x793f50. Bodies in
+// dishonoredpawn.cpp. eDisMeshOffsetDisableFlag is the 2012 PDB's ADishonoredPawn::eDisMeshOffsetDisableFlag.
+public:
+	enum eDisMeshOffsetDisableFlag
+	{
+		eMeshOffsetDisable_ByLOD			= 0x1,
+		eMeshOffsetDisable_ByMatinee		= 0x2,
+		eMeshOffsetDisable_ByRetargeting	= 0x4,
+		eMeshOffsetDisable_ByMasterThrown	= 0x8,
+		eMeshOffsetDisable_ByRagdoll		= 0x10,
+	};
+	virtual void PreBeginPlay();
+	virtual void ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _RootRotation );
+	virtual void StartRootMotionMode( BYTE _RootMotionMode, BYTE _RootRotationMode );
+	virtual void StopRootMotionMode();
+	void SetMeshTranslation( const FVector& _rTranslation, FLOAT _fTime );
+	void LockMeshTranslation( UBOOL _bLock, eDisMeshOffsetDisableFlag _eDisableFlag );
+protected:
+	virtual void PreBeginPlay_NativeComponents();
+
 // ---- agent FV (PHASE18 FV): the relationship interface's slots, the disposition native, and the tick ----
 // DISHONORED(port): the three IDisRelationshipInterface slots retail implements on the pawn (see CppText/IDisRelationshipInterface.h:
 // GetUObjectInterfaceDisRelationshipInterface 2012 0x71ce00, GetRelationshipOverrideInfo 0x765290, GetFactionTweak 0x964ef0,

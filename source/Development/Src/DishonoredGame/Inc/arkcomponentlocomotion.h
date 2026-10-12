@@ -157,33 +157,8 @@ struct FArkCpntLocoPathFindingEdge
 	{}
 };
 
-/**
- * DISHONORED(port): the second base. 2012 PDB IArkComponentPreAsyncWork, 4 bytes, vtable
- * { PreAsyncWorkTick(FLOAT), GetComponentBase() const } in that order.
- */
-class IArkComponentPreAsyncWork
-{
-public:
-	// DISHONORED(layout): no virtual destructor - retail's IArkComponentPreAsyncWork_vtbl (2012 PDB) is exactly eight
-	// bytes, { PreAsyncWorkTick, GetComponentBase }, and a component is only ever destroyed through FArkComponentBase.
-	virtual void PreAsyncWorkTick( FLOAT _fTimeStep ) = 0;
-	virtual const FArkComponentBase* GetComponentBase() const = 0;
-};
-
-/**
- * DISHONORED(port): agent EN (PHASE13 EN). The second PreAsyncWork policy, the one FArkComponentManager ticks just
- * before the procedural-animation pass. It adds no method of its own: retail's
- * IArkComponentPreAsyncWorkJustBeforeProceduralAnim vftable (2013 rva 0xc1bda4) is exactly two __purecall entries, and
- * every component that implements it carries PreAsyncWorkTick at slot 0 and GetComponentBase at slot 1 in the vftable
- * of its subobject - FDisAIMonitorReaction 0xd3a354, FDisAIMonitorPawnReachability 0xd3a2d8,
- * FDisAIKnowledgeComponent 0xd328f4. The distinct type is what lets the manager keep a second list,
- * FArkComponentPolicy<IArkComponentPreAsyncWorkJustBeforeProceduralAnim,1> - whose DoneTicking is 2012 rva 0x578c50
- * and 2013 rva 0x537ed0, the second of those from match_2012_2013.csv (ratio 0.786, by neighbours) because the 2013
- * build has no name for it.
- */
-class IArkComponentPreAsyncWorkJustBeforeProceduralAnim : public IArkComponentPreAsyncWork
-{
-};
+// DISHONORED(port): agent GA. IArkComponentPreAsyncWork and IArkComponentPreAsyncWorkJustBeforeProceduralAnim moved to
+// Engine/Inc/arkcomponentbase.h (included above) so the Engine-side FArkComponentMeshOffset can derive from them.
 
 /*-----------------------------------------------------------------------------
 	FArkComponentLocomotion
@@ -555,5 +530,7 @@ extern INT GDisLocoArrivals;			// CPNT_LOCO_EVENT_DESTINATION_REACHED raised
 extern INT GDisLocoMovePawnCalls;		// MovePawn ticks
 extern FLOAT GDisLocoDistanceMoved;		// total 2D distance the component translated its pawns
 extern INT GDisLocoTeleports;		// NPCs put back onto the navigation mesh
+extern INT GDisLocoBased;			// SetBase calls the full move made onto a floor actor (agent GA)
+extern INT GDisLocoFalls;			// idle, unbased NPCs put into PHYS_Falling by the full move (agent GA)
 
 #endif

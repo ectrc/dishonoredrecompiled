@@ -13360,10 +13360,18 @@ void UInterpGroupAI::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UB
 					break;
 				}
 				const USeqAct_Interp* Seq = Cast<USeqAct_Interp>( GrInst->GetOuter() );
-				debugf( TEXT("DISHONORED(bringup): fkdiag aipawn %s group '%s' pos %.2f: %s at %.0f/%.0f/%.0f physics %d base %s vel %.0f, %s"),
+				// agent GA: the mesh's root-motion modes, this frame's extracted root-motion delta and the mesh
+				// translation the offset component writes, beside FS's position / physics / base / velocity
+				FString BodyState( TEXT("no mesh") );
+				if( Pawn->Mesh != NULL )
+				{
+					BodyState = FString::Printf( TEXT("rmm %d/%d rmd %.2f meshT %.1f/%.1f/%.1f"), (INT)Pawn->Mesh->RootMotionMode, (INT)Pawn->Mesh->RootMotionRotationMode,
+						Pawn->Mesh->RootMotionDelta.GetTranslation().Size(), Pawn->Mesh->Translation.X, Pawn->Mesh->Translation.Y, Pawn->Mesh->Translation.Z );
+				}
+				debugf( TEXT("DISHONORED(bringup): fkdiag aipawn %s group '%s' pos %.2f: %s at %.0f/%.0f/%.0f physics %d base %s vel %.0f %s, %s"),
 					( Seq != NULL ) ? *Seq->GetName() : TEXT("?"), *GroupName.ToString(), NewPosition, *Pawn->GetName(),
 					Pawn->Location.X, Pawn->Location.Y, Pawn->Location.Z, (INT)Pawn->Physics, ( Pawn->Base != NULL ) ? *Pawn->Base->GetName() : TEXT("none"),
-					Pawn->Velocity.Size(), *SlotState );
+					Pawn->Velocity.Size(), *BodyState, *SlotState );
 			}
 		}
 	}

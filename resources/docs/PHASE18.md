@@ -302,3 +302,46 @@ LNK2019: unresolved external symbol DishonoredInputGrabDisabled` in `CoreSmoke.e
 The function used only Core APIs, so its definition moved from `WinDrv/Src/WinViewport.cpp` to
 `Core/Src/UnVcWin32.cpp` (declaration kept in WinDrv). The two-build rule is what left this line uncompiled;
 a Core change needs a `CoreSmoke` link before hand-back.
+
+**Verified on the `03f7579` gate exe** (gate 47 ok / 0 failed / 0 skipped, 2747 s): a 45 s scripted run through
+`game_input.py` (`-inputcmd`, `-windowed`, the gate's inis) logs **0** `window activated`, **0** `HCBT_SETFOCUS`,
+**0** `HCBT_ACTIVATE`; `input grab disabled` at 4.0 s, level loaded at 5.5 s, every command executed, clean exit.
+STATUS's "one residual" WA_ACTIVE at the first frame is gone.
+
+### FV — merged `02eb527`; gate 47 ok / 0 failed / 0 skipped (4787 s); `unported_natives` 0 ≤ 0
+
+Forty-six files; 41 by sync, five hand-merged (3-way, 0 conflicts); `DishonoredGameItemClasses.h`,
+`Sources.cmake` and `DishonoredGameRegistrants.cpp` then replaced by FX's generator output so a regeneration still
+diffs clean (FV's three link anchors are derived from the `DishonoredLink<X>()` definitions). `bitfield_audit`
+`mismatches=0`.
+
+**Both natives ported with their chains.** Go-to: controller `OnAIGoToActor` → brain `m_Home` → Idle+GoTo stims →
+`UDisBehaviorGoTo` (45 functions) → `PrepareGoTo` → locomotion desire → `SetGoToStatus` (2013 `0x7a1fc0`,
+virtual) with Success/Failed/Interrupted outputs. Disposition: `IDisRelationshipInterface`'s six slots,
+`OnSetDispositionHelper`, `FDisRelationshipOverrideInfo`, `UDisTweaks_Faction::OnSetDisposition`,
+`UDisGlobalFactionManager` with `s_pInstance` published; `NPCPawn_25` gets one individual override, `_21` an
+individual + faction override; `DetermineRelationship` answers Neutral past the cache (faction tables unported).
+
+**The tick had no body.** `ADishonoredPawn::Tick` (2013 `0x750720`), `Tick_Body`, `ADishonoredNPCPawn::Tick`
+(`0x76da40`), `Tick_Body` — the plan's "90 lines, partial" was wrong; every Dishonored tick phase was unported.
+Now dispatched with `Tick_Body` gated on `m_bAllowTickBody`; `ADishonoredNPCPawn::Tick` runs
+`SetLookAtMode( ChooseLookAt() )` every frame (`ChooseLookAt` whole, `GetCurrentTransitSpeed` `0x779430`,
+`GetDefaultNPCLookAtMode` as CppText virtuals); `Tick_SpineBending` slope branch.
+
+**Pawns get a Base.** Retail's `FullMovePawn` ground check ported as `FArkComponentLocomotion::UpdateFloorAndBase`:
+11 of 26 level NPCs based (`WorldInfo_0` ×8, `SkeletalMeshActorMAT_3` ×1) against 0 on every earlier build.
+
+**Measured, not fixed → GA / wave 23**: the go-to pawn moves 52 of 89 uu and stops — DN's `IsArrived()` returns
+`m_bIsArrived` (default TRUE) and its only writer `HandleArrival` never runs because `ComputeDynamic` exits on
+`IsDisabled() || STOP_END`; the 52 uu are the teleport onto the mesh, `speed 0/0`. The boat guard is still based on
+`none` with `floor 0.00`: `physWalking → MovePawn` is never reached for a matinee AI-group pawn — retail steps it
+from `UInterpGroupInst::UpdateGroupInst` (`DisableInertia`, `MovePawn(step)`); FS ported only the skip path. A
+guard's look-at **target** is a `FDisLookAtRequest` from `UDisAISubProcessHeadTrackBase/Bark/Pause` (three
+skeletons on the exclude list) — the mode alone cannot turn a head. `DisNotify_NPCDisableLookAt` fails at package
+load (`Found bad AnimNotify`, 143 lines every run).
+
+**Premises corrected (11 rows, agentFV.md §5)**: the tick bodies did not exist; "four unnamed `UDisTweaks_Faction`
+functions" were 2 `FDisRelationshipOverrideInfo` + 2 `UDisGlobalFactionManager`; `SetGoToStatus` is `0x7a1fc0`
+not `0x79a520`; `GetCurrentTransitSpeed` `0x779430` not `0x779850`; `UDisBehaviorGoTo_Base::IsBehaviorFinished`
+is ICF-folded onto `UDisBehaviorShoot`'s; `EAIStimID_GoToRequest` is 41 (2012) / 42 (2013) and the 2013 DB
+mislabels its ctor; the go-to pawn is `_25` here vs FR's `_24`.

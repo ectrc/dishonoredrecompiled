@@ -365,6 +365,7 @@ void ADishonoredNPCPawn::PostBeginPlay()
 -----------------------------------------------------------------------------*/
 
 #include "arkcomponentlocomotion.h"
+#include "arkcomponentmeshoffset.h"
 #include "dishonoredutilities_ai.h"
 
 // 2012 rva 0x7bac70 (554 B): SlotNodes emptied and re-collected from the mesh's tree - every
@@ -420,6 +421,15 @@ void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 {
 	UInterpGroupAI* AIGroup = ( GroupInst != NULL ) ? GroupInst->AIGroup : NULL;
 	UpdateNodeSlot();
+
+	// agent GA: retail snaps the mesh offset here when the LOD manager reports it off (FDisComponentLODManager::
+	// MeshOffestEnabled); with no LOD manager in this tree the started component is snapped whenever there is one -
+	// Tick( 0 ) on an enabled offset is the same snap.
+	FArkComponentMeshOffset* MeshOffset = FArkComponentMeshOffset::GetMeshOffsetComponent( this, TRUE );
+	if( MeshOffset != NULL )
+	{
+		MeshOffset->ForceInstantSnapMesh();
+	}
 
 	if( !DisIsPawnDead( this ) && m_pNPCMasterFSM != NULL )
 	{

@@ -65,6 +65,7 @@
 //   0xba34b0  _dynamic_initializer_for__gs_SaveFileError__
 
 #include "DishonoredGame.h"
+#include "EngineInterpolationClasses.h"	// agent GA: UInterpTrackLocomotion::SetLocomotionPriority
 #include "dishonoredutilities.h"
 #include "dishonoredutilities_saveload.h"
 #include "dissaveload_classlists.h"	// DISHONORED(written): agent ED - the ported/unported override lists
@@ -125,8 +126,11 @@ void UDishonoredEngine::Init()
 	m_dLastAutoSaveTime = appSeconds();
 	// DISHONORED(bringup): UDisBinkOverlayManager::Initialize (2013 rva 0x79e440) registers the overlay manager with GFullScreenMovie
 	// (Bink movie player not ported); the static transition-save buffer retail empties here has no writer in our tree yet
-	// DISHONORED(bringup): UInterpTrackFaceTo::SetFaceToPriority(15), UInterpTrackLocomotion::SetLocomotionPriority(11),
-	// UInterpTrackLookAt::SetLookatPriority(1, 5, 19) (2013 rvas 0x4fc8a0 / 0x4fcc30 / 0x4fcc90) are Engine statics our Engine lacks
+	// DISHONORED(bringup): UInterpTrackFaceTo::SetFaceToPriority(15) and UInterpTrackLookAt::SetLookatPriority(1, 5, 19)
+	// (2013 rvas 0x4fc8a0 / 0x4fcc90) are Engine statics our Engine lacks; the Locomotion one is agent FS's
+	// (2013 0x4fcc30, 2012 0x53bd80) and retail's Init (2012 0x65d280) sets it to 11 - the priority every matinee
+	// Locomotion key's go-to request carries (agent GA).
+	UInterpTrackLocomotion::SetLocomotionPriority( 11 );
 	m_bDLC06ToDLC07LowChaosFound = FALSE;
 	m_bDLC06ToDLC07HighChaosFound = FALSE;
 
