@@ -32,3 +32,14 @@ public:
 	// are ICF-folded onto UObject::IsRefSaveable's, which is why the PDB names only the 11 with a body of
 	// their own. vtables.csv slot 67 is the record.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+// ---- agent FR (PHASE17 FR): the spawner as a one-shot owner, dishonoredspawner_conversation.cpp ----
+// DISHONORED(port): 2013 rvas AddDialogOneShot 0x64b230 (60 B), GetSpeakerFromOneShotOwner 0x64b270 (134 B),
+// RemoveDialogOneShot 2012 0x69f750 (300 B). A one-shot actor hands its voice data to the spawner before the pawn exists;
+// OnSpawned hands the list on to the pawn's conversation component.
+public:
+	virtual UObject* GetUObjectInterfaceDisConvOneShotOwnerInterface() { return this; }
+	virtual void AddDialogOneShot( class UDisDialogVoiceData* _pOneShot, UBOOL _bIsOwner );
+	virtual void RemoveDialogOneShot( class UDisDialogVoiceData* _pOneShot );
+	virtual class IDisConvSpeakerInterface* GetSpeakerFromOneShotOwner( class IDisConvSpeakerInterface* _pTreeOwner );
+	void FireSpawnedKismetEvent( class ADishonoredNPCPawn* _pPawn );

@@ -626,6 +626,7 @@ public:
     //## END PROPS DisSeqAct_DialogInputs
 
     DECLARE_CLASS(UDisSeqAct_DialogInputs,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_DialogInputs.h"
 };
 
 // DishonoredGame.DisSeqAct_DiscardAllLevelStates: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)

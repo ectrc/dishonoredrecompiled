@@ -2162,6 +2162,10 @@ public:
         516; UDisConv_Soiree_InGameData::GameLoad is the only caller of the setter in a restore. */
     const UObject* GetConversationNodePointer() const;
     void SetConversationNode(const UObject* ConversationNode);
+    /** DISHONORED(port): agent FR (PHASE17 FR), 2013 rvas 0x215020 / 0x212a30 (2012 0x22d1b0 / 0x22a960): a UDisConv_Soiree
+        node starts its matinee through this, and clears itself off it when interrupted. Bodies in UnInterpolation.cpp. */
+    void StartFromDialog(void* const DialogInstance, const UObject* const ConversationNode, UBOOL bIsBlocking);
+    void ClearDialogConvNode();
     DECLARE_FUNCTION(execSetPosition)
     {
         P_GET_FLOAT(NewPosition);

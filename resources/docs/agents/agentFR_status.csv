@@ -1,0 +1,365 @@
+function,rva_2013,size,status,note
+UDisConv_PlayerChoice::GetNumChoices,0xdc350,7,inventory,
+UDisConv_SequentialBranch::ShouldApplyGlobally_Derived,0x212db0,12,inventory,
+UDisConv_InitiatorSpeaker::GetSpeakerTree,0x61a090,7,ported,
+UDisConv_PlayerChoice::GetNumOptionalChoices,0x642de0,7,inventory,
+ADisDialogInanimateDummy::GetSpeakerFromOneShotOwner,0x643df0,21,inventory,
+ADisDialogOneShot::Spawned,0x643e30,41,inventory,
+ADisPlayerAudioLogDummyActor::RemoveDialogOneShot,0x644330,37,inventory,
+ADisPlayerAudioLogDummyActor::FireDialogHook,0x644380,16,inventory,
+ADisPlayerAudioLogDummyActor::FireDialogHookWithFlavor,0x644390,35,inventory,
+ADisPlayerAudioLogDummyActor::StartDialog,0x6443e0,121,inventory,
+ADisPlayerAudioLogDummyActor::PlayDialogBlurb,0x644460,81,inventory,
+ADisPlayerAudioLogDummyActor::EndDialog,0x6444c0,48,inventory,
+ADisDialogOneShot::InitSpeaker,0x647600,114,ported,
+class UDisConv_DialogHook * __cdecl Cast<class UDisConv_DialogHook>(class UObjec,0x649090,69,inventory,
+ADishonoredSpawner::GetDialogTrees,0x64b180,166,inventory,
+ADishonoredSpawner::AddDialogOneShot,0x64b230,60,ported,
+ADishonoredSpawner::GetSpeakerFromOneShotOwner,0x64b270,134,ported,
+ADisDialogInanimateDummy::AddDialogOneShot,0x64c620,60,inventory,
+ADisDialogOneShot::GetOneShotName,0x64c660,194,inventory,
+ADisDialogOneShot::PostLoad,0x64c730,382,ported,
+ADisSpeakerGroup_PA::StartDialog,0x64d020,179,inventory,
+ADisSpeakerGroup_PA::EndDialog,0x64d0e0,213,inventory,
+ADisPlayerAudioLogDummyActor::AddDialogOneShot,0x64d480,119,inventory,
+ADishonoredSpawner::DisOnDialogSelChange,0x650090,901,inventory,
+ADisDialogOneShot::GetDisplayName,0x6510c0,290,editor,editor / debug surface
+ADisDialogInanimateDummy::RemoveDialogOneShot,0x655e40,104,inventory,
+ADisDialogOneShot::PostBeginPlay,0x659da0,16,ported,
+ADisDialogOneShot::PostScriptDestroyed,0x65c1f0,16,inventory,
+ADisDialogOneShot::BeginDestroy,0x65c200,16,inventory,
+UStatePlayerMasterInDialog::SetActivePlayerChoice,0x669410,102,inventory,
+class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisConvSaveData,0x6a5a40,137,inventory,
+ADishonoredPlayerPawn::ExtractDialogHookText,0x6ad030,50,editor,editor / debug surface
+ADishonoredPlayerPawn::EndDialog,0x6ad0f0,34,inventory,
+class TScriptInterface<class IDisConvSpeakerInterface> __cdecl ToScriptInterface,0x6eb9b0,81,inventory,
+UDishonoredAIBehavior::FireDialogHook,0x6f00f0,311,inventory,
+FDisAttentionProxy::GetProxySpeaker,0x7504b0,52,inventory,
+UDisSeqEvent_DialogOutputs::OnCreated,0x78a350,81,inventory,
+"public: void __thiscall TMemStackAllocator<class FMemStack GMainThreadMemStack, ",0x78d800,135,inventory,
+class ADisDialogOneShot * __cdecl Cast<class ADisDialogOneShot>(class UObject *),0x78d890,69,inventory,
+UDisSeqAct_DialogInputs::GetDialogHookInitiator,0x790ac0,254,ported,
+UDisSeqEvent_DialogOutputs::FindOutputsInConversation,0x79b310,200,inventory,
+UDisSeqAct_DialogInputs::Activated,0x79bf00,578,ported,
+UDisSeqEvent_DialogOutputs::FindDialogOutputs,0x7a1960,206,inventory,
+"void __cdecl TriggerSearchRequestResponseDialog(class UDishonoredAIBehavior *, c",0x7bb0b0,59,inventory,
+"unsigned int __cdecl ConvNotInTree(class UDisConversation const *, class UDisDia",0x7bb190,58,inventory,
+class UDisConvGlobalMan * __cdecl DisGetConvGlobalMan(void),0x7bf3e0,6,inventory,
+class UDisConv_Soiree const * __cdecl ConstCast<class UDisConv_Soiree>(class UOb,0x86a070,69,inventory,
+UInterpTrackInstDialog::GetAltBlurb,0x86ee60,150,inventory,
+UDisConv_Node::ExtractText_Derived,0x88af20,6,ported,
+UDisConv_NonWord::ExtractText_Derived,0x88af80,6,editor,editor / debug surface
+UDisConv_PlayerChoice::GetClassVars_Derived,0x88aff0,13,editor,editor / debug surface
+UDisConversationComponent::GetRunningInstID,0x88b050,9,ported,
+UDisConversationComponent::SupportsDialogHook,0x88b060,47,ported,
+UDisConversationComponent::UnprepareAkEvent,0x88b0b0,77,inventory,
+IDisConvSpeakerInterface::GetHookParameters,0x88b1a0,7,ported,
+UDisDialogTree::PostLoad,0x88b1f0,28,ported,
+UDisDialogTree::Serialize,0x88b210,41,ported,
+UDisDialogVoiceData::InitForGame,0x88b2e0,5,ported,
+UDisDialogVoiceData::GetVoiceDataGUID,0x88b2f0,150,editor,editor / debug surface
+UDisConv_Branch::GetClassVars_Derived,0x88b760,13,editor,editor / debug surface
+UDisConv_Node::GetDialogTree,0x88b7a0,26,ported,
+UDisConv_PlayerChoice::GetOptionalChoiceForIndex,0x88b810,182,inventory,
+UDisConv_PlayerChoice::IsValidChoice,0x88b8d0,33,inventory,
+UDisConversationComponent::SerializeForGameSave,0x88b9c0,97,inventory,
+UDisConversationComponent::StopAkEvents,0x88bae0,58,inventory,
+IDisConvSpeakerInterface::GetConversationComponent,0x88bbf0,32,ported,
+IDisConvSpeakerInterface::GetDialogSaveData,0x88bc10,31,ported,
+IDisConvSpeakerInterface::GetHookParameters_Derived,0x88bc30,31,ported,
+IDisConvSpeakerInterface::GetDebugSpeechText_Derived,0x88bc50,31,ported,
+IDisConvSpeakerInterface::StreamDialogBlurb,0x88bcc0,32,inventory,
+FDisDialogRunningInstance::StartInstance,0x88bda0,84,ported,
+public: class IDisConvSpeakerInterface & __thiscall TScriptInterface<class IDisC,0x88bec0,49,inventory,
+class UScriptStruct * __cdecl _DishonoredGetScriptStruct<struct FDisDialogRunnin,0x88bfa0,137,inventory,
+UDisConv_Blurb_InGameData::StopBlurbSpeakerData,0x88c550,64,inventory,
+UDisConv_Node::InitNode,0x88c740,208,ported,
+UDisConv_PlayerChoice::ImportText_Derived,0x88c880,762,inventory,
+UDisConversation::MarkWholeConvoPendingKill,0x88ccd0,148,editor,editor / debug surface
+UDisConversation::BreakAllLinks,0x88cd70,334,inventory,
+UDisConversation_InGameData_Base::GetInGameDataForNode,0x88d070,96,ported,
+UDisConversation_InGameData::PostGameLoad,0x88d0d0,175,inventory,
+UDisConversation_InGameData::GetSpeaker,0x88d180,98,ported,
+UDisConversation_InGameData::IsSpeakerEngaged,0x88d1f0,105,inventory,
+UDisConversationComponent::Detach,0x88d260,83,ported,
+UDisConversationComponent::BeginPlay,0x88d2c0,124,ported,
+UDisConversationComponent::GetLookTarget,0x88d340,187,inventory,
+IDisConvSpeakerInterface::GameSave_Dialog,0x88d6f0,119,inventory,
+IDisConvSpeakerInterface::SupportsDialogTree,0x88d770,39,ported,
+IDisConvSpeakerInterface::GetConvLookTarget,0x88d7a0,58,inventory,
+UDisDialogTree::SupportsDialogHook,0x892280,108,ported,
+UDisDialogTree::SearchNodes,0x8922f0,144,editor,editor / debug surface
+FDisDialogRunningInstance::GetRunningObjects,0x892380,65,ported,
+UDisDialogTree_InGameBind::GameSave,0x8923d0,71,inventory,
+UDisDialogVoiceData::HasAkEvents,0x892680,227,inventory,
+UDisConv_Blurb::ExtractText_Derived,0x892ce0,357,editor,editor / debug surface
+UDisConv_SpeakerSupportsDialogTree::GetBranchString,0x892ea0,229,inventory,
+UDisConv_TimeLimit::GetConditionText,0x893620,132,editor,editor / debug surface
+UDisConv_TimeLimit::GetClassVars_Derived,0x8936b0,43,editor,editor / debug surface
+UDisConversationComponent::Attach,0x893700,150,ported,
+UDisConversationComponent::SupportsDialogHook_Slow,0x8937a0,265,ported,
+UDisDialogTree::GetDisplayName,0x893a20,340,editor,editor / debug surface
+FDisDialogRunningInstance::NotifyWhenDialogStarts,0x893b80,25,ported,
+UDisDialogVoiceData::GetAkBankName,0x893ba0,248,inventory,
+UDisDialogVoiceData::FindDataPackage,0x893ca0,1056,editor,editor / debug surface
+UDisDialogVoiceData::GetImportGroup,0x8940c0,181,editor,editor / debug surface
+UDisDialogVoiceData::GetFaceFXAnimSetName,0x894180,43,inventory,
+UDisDialogVoiceData::GetDisplayName,0x8941b0,441,editor,editor / debug surface
+class UDisConversation * __cdecl Cast<class UDisConversation>(class UObject *),0x894590,69,inventory,
+UDisConv_Blurb_InGameData::GetBlurbSpeakerData,0x8946c0,148,inventory,
+UDisConv_Blurb::GetClassVars_Derived,0x8948e0,37,editor,editor / debug surface
+UDisConv_ConversationRef::InitNode,0x894940,266,inventory,
+UDisConversationComponent::BuildDialogHookSupportedCache,0x894d70,90,ported,
+UDisDialogVoiceData::FindAkBank,0x894e80,369,inventory,
+class UDisConv_Blurb * __cdecl Cast<class UDisConv_Blurb>(class UObject *),0x895220,69,inventory,
+UDisConversation::GetClassVars_Derived,0x895d70,65,ported,
+UDisConversation::GetSpeakerName,0x895dc0,940,editor,editor / debug surface
+UDisConversation_InGameData::PlayerIsNearEnough,0x896410,485,ported,
+UDisConversationComponent::IsAnyAkEventPlaying,0x896740,363,inventory,
+IDisConvSpeakerInterface::GameLoad_Dialog,0x897060,119,inventory,
+IDisConvSpeakerInterface::SetLookTarget,0x8970e0,32,inventory,
+"public: int __thiscall TMapBase<class IDisConvSpeakerInterface *, int, 0, class ",0x897470,53,inventory,
+UDisConv_Blurb::Serialize,0x8988a0,559,inventory,
+UDisConv_Node::SearchNode,0x898c00,258,editor,editor / debug surface
+UDisConversation::UpdateOutputLinks,0x899e00,273,ported,
+UDisConversation_InGameData::CalcGlobalHookDominanceWeight,0x899f80,273,ported,
+UDisConversationComponent::GetPsychicConvoPartners,0x89a0a0,186,inventory,
+UDisConversationComponent::IsDonePlayingBlurb,0x89a160,411,inventory,
+UDisConversationComponent::ClassifyGlobalFireGroup,0x89a300,82,ported,
+IDisConvSpeakerInterface::GetPsychicConvoPartners,0x89a360,32,inventory,
+IDisConvSpeakerInterface::IsDonePlayingBlurb,0x89a380,32,inventory,
+UDisDialogTree_InGameBind::ChangeAttentionForSpeaker,0x89a550,220,partial,named gap: FAIStimStruct_DialogAttentionChange on the brain is the AI attention package's
+UDisConv_Blurb::SearchNode,0x89aa80,368,editor,editor / debug surface
+UDisConv_Branch::InitNode,0x89abf0,40,inventory,
+UDisConv_PlayerChoice::InitNode,0x89ac90,40,inventory,
+UDisConversation::InitNode,0x89ad50,79,inventory,
+FDisDialogRunningInstance::FiredFromHookName,0x89ada0,112,ported,
+FDisDialogRunningInstance::GetInGameConv,0x89ae10,169,ported,
+UDisDialogTree_InGameBind::IsSpeakerAvailableForDialog,0x89aec0,144,ported,
+UDisConv_Blurb::InterruptTickingNode,0x89bb00,76,inventory,
+UDisConv_SpeakerSupportsDialogTree::PlayNode_Derived,0x89c430,161,inventory,
+UDisConversation_InGameData::BindSpeaker,0x89c6c0,747,ported,
+IDisConvSpeakerInterface::IsAvailableForDialog,0x89d1f0,104,ported,
+UDisDialogTree_InGameBind::GameLoad,0x89d5b0,183,inventory,
+UDisConv_Blurb::TickNode_Shared,0x89e0f0,436,inventory,
+UDisConversation_InGameData::BindAllSpeakers,0x89e2b0,245,ported,
+UDisConversation_InGameData::AcquireSpeakersCheckOnly,0x89e3b0,89,ported,
+UDisConvGlobalMan::OnSpeakerStartedTalking,0x89e610,71,inventory,
+UDisConv_Blurb::PlayNode_Derived,0x89fb90,32,inventory,
+UDisConv_Blurb::TickNode,0x89fbb0,25,inventory,
+UDisConversationComponent::PlayDialogBlurb,0x89fbf0,1324,inventory,
+IDisConvSpeakerInterface::PostShutdown_Dialog,0x8a08e0,80,inventory,
+IDisConvSpeakerInterface::PlayDialogBlurb,0x8a0930,72,inventory,
+IDisConvSpeakerInterface::StopDialogBlurb,0x8a0980,25,ported,
+"void __cdecl BuildSingletonData_Tree(class UDisDialogTree_InGameBind *, class UD",0x8a0b10,144,inventory,
+UDisDialogTree_InGameBind::InitAndBind,0x8a0ba0,257,ported,
+UDisConvGlobalMan::GetConvRandomBranchInfo,0x8a13a0,31,inventory,
+UDisConvGlobalMan::GetCurSeqBranchInfo,0x8a13c0,31,inventory,
+UDisDialogVoiceData::RebuildLookupMaps,0x8a1440,257,editor,editor / debug surface
+UDisDialogVoiceData::FindTextBlurb,0x8a1550,250,inventory,
+UDisConv_PlayerChoice::Serialize,0x8a1850,1352,inventory,
+UDisConversationComponent::AddOneShotAfterSpawned,0x8a2100,103,ported,
+UDisConversationComponent::FindTextBlurb,0x8a2410,354,inventory,
+IDisConvSpeakerInterface::PostSpawned_Dialog,0x8a2900,32,ported,
+IDisConvSpeakerInterface::FindTextBlurb,0x8a2920,40,inventory,
+FDisConvSaveData::FindDialogData,0x8a2f30,357,ported,
+FDisConvSaveData::FindConvData,0x8a30a0,375,ported,
+UDisConvGlobalMan::GetCurRandomSeqBranchInfo,0x8a3330,31,inventory,
+UDisDialogVoiceData::VerifyAndUpdateDataPackage,0x8a3350,806,editor,editor / debug surface
+UDisConversation_InGameData::MarkNodeLabelSeen,0x8a3a80,192,inventory,
+UDisDialogVoiceData::StartEditing,0x8a3de0,110,editor,editor / debug surface
+UDisDialogTree_InGameBind::OnOtherActorTerminated,0x8a4620,97,ported,
+UDisDialogTree_InGameBind::EvaluateDialogHook,0x8a4690,479,ported,
+UDisDialogTree_InGameBind::ExtractDialogHookText,0x8a4870,363,editor,editor / debug surface
+UDisDialogVoiceData::PostDuplicate,0x8a4ae0,20,editor,editor / debug surface
+UDisDialogVoiceData::BindToOneShot,0x8a4b00,48,ported,
+UDisConversation_InGameData::RerouteConversationOutput,0x8a4b60,171,inventory,
+UDisConversationComponent::OnOtherActorTerminated,0x8a4f50,307,ported,
+IDisConvSpeakerInterface::ExtractDialogHookText,0x8a5090,157,editor,editor / debug surface
+IDisConvSpeakerInterface::BreakOutOfConversation,0x8a5130,26,ported,
+UDisDialogTree_InGameBind::FireDialogHook,0x8a5150,602,ported,
+UDisConversation_InGameData::CheckForTickReroute,0x8a5610,95,ported,
+IDisConvSpeakerInterface::StartDialog,0x8a6680,43,ported,
+IDisConvSpeakerInterface::RemoveOneShot,0x8a66b0,32,ported,
+UDisDialogTree_InGameBind::TickDialogTree,0x8a66d0,319,ported,
+UDisConversationComponent::CheckDialogHook,0x8a6f60,375,ported,
+UDisConvGlobalMan::TickGlobalConvMan,0x8a71c0,408,ported,
+IDisConvSpeakerInterface::FireDialogHook,0x8a7360,41,ported,
+IDisConvSpeakerInterface::CheckDialogHook,0x8a7390,40,ported,
+IDisConvSpeakerInterface::FireDialogHookForAudioLog,0x8a73c0,41,ported,
+UDisConv_SeenDialogLabel::PlayNode_Derived,0x8a7570,113,inventory,
+UDisConv_HadConversation::PlayNode_Derived,0x8a7650,106,inventory,
+UDisConv_IsSpeakerAvailable::PlayNode_Derived,0x8a76f0,50,inventory,
+UDisConv_DialogHook::PlayNode_Derived,0x8a77d0,25,ported,
+UDisConv_Condition::GetClassVars_Derived,0x8a77f0,21,ported,
+UDisConv_Action::GetClassVars_Derived,0x8a7940,21,editor,editor / debug surface
+UDisConv_PlayerLookAtSpeaker::TickNode,0x8a7980,53,inventory,
+UDisConv_Soiree::PlayNode_Derived,0x8a7a60,91,ported,
+UDisConv_Soiree::TickNode,0x8a7ac0,72,ported,
+UDisConv_TryFallbackTree::GetClassVars_Derived,0x8a7b40,21,editor,editor / debug surface
+UDisConv_MeSpeaker::GetSpeakerTree,0x8a7ba0,5,ported,
+UDisConv_RandomBranch::GetClassVars_Derived,0x8a7c20,21,editor,editor / debug surface
+UDisConv_RandomBranch::OnDialogStarted,0x8a7c40,42,inventory,
+UDisConv_CheckStoryFlag::PlayNode_Derived,0x8a8ba0,81,inventory,
+UDisConv_CheckTaskState::PlayNode_Derived,0x8a8c10,80,inventory,
+UDisConv_IsObjectiveComplete::PlayNode_Derived,0x8a8df0,70,inventory,
+UDisConv_HasObjective::PlayNode_Derived,0x8a8e40,70,inventory,
+UDisConv_ConversationFired::PlayNode_Derived,0x8a8eb0,102,inventory,
+UDisConv_CompareDarknessLevel::PlayNode_Derived,0x8a8fe0,58,inventory,
+UDisConv_Hook_DeathMode::EvaluateForFiring,0x8a9070,104,inventory,
+UDisConv_Hook_SplitByTypeAndActor::EvaluateForFiring,0x8a92e0,7,inventory,
+UDisConv_Soiree_InGameData::GameSave,0x8a94e0,96,inventory,
+UDisConv_Soiree_InGameData::GameLoad,0x8a9540,115,inventory,
+UDisConv_MeSpeaker::BindSpeaker_Derived,0x8a97a0,29,inventory,
+UDisConv_InitiatorSpeaker::BindSpeaker_Derived,0x8a97c0,25,inventory,
+class UDisConv_Node * __cdecl Cast<class UDisConv_Node>(class UObject *),0x8ab2a0,69,inventory,
+UDisConv_CheckSpeakerSuspicionLevel::GetConditionText,0x8ab490,20,editor,editor / debug surface
+UDisConv_CheckSpeakerSuspicionLevel::PlayNode_Derived,0x8ab4b0,87,inventory,
+UDisConv_Condition::GetConditionText,0x8ab670,20,editor,editor / debug surface
+UDisConv_HasInventoryItem::PlayNode_Derived,0x8ab690,147,inventory,
+UDisConv_HasInventoryItemEquipped::PlayNode_Derived,0x8ab730,167,inventory,
+UDisConv_HasAbstractItem::PlayNode_Derived,0x8ab870,113,inventory,
+UDisConv_IsPossessed::GetConditionText,0x8ab920,20,editor,editor / debug surface
+UDisConv_IsPossessed::PlayNode_Derived,0x8ab940,137,inventory,
+UDisConv_IsSpeakerAvailable::GetConditionText,0x8aba00,20,editor,editor / debug surface
+UDisConv_SpeakerCombatStatus::GetConditionText,0x8aba50,20,editor,editor / debug surface
+UDisConv_SpeakerCombatStatus::PlayNode_Derived,0x8aba70,164,inventory,
+UDisConv_CheckSpeakerRelationship::PlayNode_Derived,0x8abb50,248,inventory,
+UDisConv_Hook_Distance::IsCloseDistLinked,0x8abd50,84,inventory,
+UDisConv_Hook_Distance::IsMediumDistLinked,0x8abdb0,81,inventory,
+UDisConv_Hook_Distance::IsFarDistLinked,0x8abe10,81,inventory,
+UDisConv_Hook_Notice::EvaluateForFiring,0x8ac450,207,inventory,
+UDisConv_Hook_PlayerLoiter::GetClassVars_Derived,0x8ac650,43,editor,editor / debug surface
+UDisConv_Hook_PlayerLookAt::GetClassVars_Derived,0x8ac6b0,43,editor,editor / debug surface
+UDisConv_Hook_SplitByTypeAndActor::PlayNode_Derived,0x8ac710,331,inventory,
+UDisConv_Hook_SuspicionLevel::EvaluateForFiring,0x8ac8b0,91,inventory,
+UDisConv_Hook_Distance::GetClassVars_Derived,0x8ac910,43,editor,editor / debug surface
+UDisConv_Hook_WitnessedMagic::PlayNode_Derived,0x8ac990,167,inventory,
+UDisConv_Action::GetActionText,0x8aca40,20,editor,editor / debug surface
+UDisConv_PlayerStopLookAt::PlayNode_Derived,0x8acdf0,76,inventory,
+UDisConv_Soiree::GetClassVars_Derived,0x8ad130,43,ported,
+UDisConv_Speaker::InitNode,0x8ad210,263,inventory,
+UDisConv_Speaker::GetSpeakerName,0x8ad320,60,editor,editor / debug surface
+UDisConv_Speaker::OnDelete_Derived,0x8ad360,126,editor,editor / debug surface
+UDisConv_MeSpeaker::InitNode,0x8ad3e0,183,inventory,
+UDisConv_InitiatorSpeaker::InitNode,0x8ad4a0,183,inventory,
+UDisConv_FactionBranch::PlayNode_Derived,0x8ad560,272,inventory,
+UDisConv_FactionBranch::GetBranchString,0x8ad670,229,inventory,
+UDisConv_SequentialBranch::GetClassVars_Derived,0x8ad9a0,40,editor,editor / debug surface
+UDisConv_SpawnerBranch::PlayNode_Derived,0x8ad9d0,215,inventory,
+UDisConv_SpeakerInStoryGroup::GetBranchString,0x8adab0,230,inventory,
+UDisConv_SpeakerHasTweaks::PlayNode_Derived,0x8adba0,298,inventory,
+UDisConv_SpeakerInStoryGroup::PlayNode_Derived,0x8addc0,247,inventory,
+UDisConv_CheckStoryFlag::GetConditionText,0x8b0130,245,editor,editor / debug surface
+UDisConv_CheckTaskState::GetConditionText,0x8b0260,173,editor,editor / debug surface
+UDisConv_Condition::DrawExtraClientInfo,0x8b0310,523,editor,editor / debug surface
+UDisConv_HasInventoryItem::GetConditionText,0x8b0520,362,editor,editor / debug surface
+UDisConv_HasInventoryItemEquipped::GetConditionText,0x8b0690,221,editor,editor / debug surface
+UDisConv_SeenDialogLabel::GetConditionText,0x8b0770,405,editor,editor / debug surface
+UDisConv_IsObjectiveComplete::GetConditionText,0x8b0910,221,editor,editor / debug surface
+UDisConv_HasObjective::GetConditionText,0x8b09f0,221,editor,editor / debug surface
+UDisConv_ConversationFired::GetConditionText,0x8b0ad0,221,editor,editor / debug surface
+UDisConv_HadConversation::GetConditionText,0x8b0bb0,323,editor,editor / debug surface
+UDisConv_HasAbstractItem::GetConditionText,0x8b0d00,209,editor,editor / debug surface
+UDisConv_CompareDarknessLevel::GetConditionText,0x8b0e10,109,editor,editor / debug surface
+UDisConv_Hook_Distraction::EvaluateForFiring,0x8b0e80,152,inventory,
+UDisConv_KismetActivateRemoteEvent::GetActionText,0x8b0fc0,188,editor,editor / debug surface
+UDisConv_KismetActivateRemoteEvent::OnDelete_Derived,0x8b1350,319,editor,editor / debug surface
+UDisConv_PlayerLookAtActor::GetActionText,0x8b1490,396,editor,editor / debug surface
+UDisConv_PlayerLookAtSpeaker::GetActionText,0x8b1620,199,editor,editor / debug surface
+UDisConv_SetStoryFlag::GetActionText,0x8b16f0,265,editor,editor / debug surface
+UDisConv_TryFallbackTree::GetActionText,0x8b1b20,240,editor,editor / debug surface
+UDisConv_MeSpeaker::GetSpeakerName,0x8b1cc0,437,editor,editor / debug surface
+UDisConv_InitiatorSpeaker::GetSpeakerName,0x8b1e80,261,editor,editor / debug surface
+UDisConv_RandomBranch::GetBranchString,0x8b1f90,176,inventory,
+UDisConv_SequentialBranch::GetBranchString,0x8b20a0,215,inventory,
+UDisConv_SpawnerBranch::GetBranchString,0x8b2180,324,inventory,
+UDisConv_CheckSpeakerRelationship::GetConditionText,0x8b3a20,178,editor,editor / debug surface
+UDisConv_PlayerStopLookAt::GetActionText,0x8b3b40,102,editor,editor / debug surface
+UDisConv_RandomSequentialBranch::GetBranchString,0x8b3c20,49,inventory,
+UDisConv_RandomSequentialBranch::GetClassVars_Derived,0x8b3c60,77,editor,editor / debug surface
+FDisHookDistHelper::TrackObject,0x8b4cf0,754,inventory,
+UDisConv_Soiree::FindMatinee,0x8b5de0,328,ported,
+UDisConv_Soiree::GetActionText,0x8b6000,484,partial,editor
+UDisConv_Speaker::CheckLOSAndRadius,0x8b67d0,1644,inventory,
+UDisConv_Speaker::BindSpeaker,0x8ba090,151,inventory,
+UDisConv_IsPossessed::PostLoad,0x8bd440,488,inventory,
+__unwindfunclet$?GetDisplayName@UDisDialogVoiceData@@UBE?BVFString@@XZ$0,0xb5f3e0,25,editor,editor / debug surface
+__unwindfunclet$?GetDisplayName@UDisDialogVoiceData@@UBE?BVFString@@XZ$3,0xb5f401,8,editor,editor / debug surface
+__unwindfunclet$?GetDisplayName@UDisDialogVoiceData@@UBE?BVFString@@XZ$4,0xb5f409,8,editor,editor / debug surface
+__unwindfunclet$?GetDisplayName@UDisDialogVoiceData@@UBE?BVFString@@XZ$5,0xb5f411,8,editor,editor / debug surface
+__unwindfunclet$?GetDisplayName@UDisDialogVoiceData@@UBE?BVFString@@XZ$1,0xb5f419,8,editor,editor / debug surface
+UDisConversationComponent::FireDialogHook,0x8a6bd0 (2012 0x8f52e0),908,ported,by caller; 2013 moved the refire stamping into FireDialogHookNow
+UDisConversationComponent::FireDialogHookNow,0x8a5670 (2012 0x8dea10),630,ported,by caller
+UDisConversationComponent::PostSpawned,(2012 0x8ea8e0),630,ported,
+UDisConversationComponent::InstanceAndBindDialogTree,(2012 0x8e3d00),231,ported,
+UDisConversationComponent::StartDialog,(2012 0x8e1d00),127,ported,
+UDisConversationComponent::EndDialog,(2012 0x8f0850),33,ported,
+UDisConversationComponent::InConversation,(2012 0x8debb0),183,ported,
+UDisConversationComponent::BreakOutOfConversation,(2012 0x8ded80),,partial,HUD unregister left out
+UDisConversationComponent::InFallbackChain,(2012 0x8df160),,ported,
+UDisConversationComponent::ShouldLowerAlertness,(2012 0x8dabd0),,ported,
+UDisDialogTree::InitHookInfo,0x88d820 (2012 0x90f8f0),18920,ported,as the 126-row table disdialogtree_hookinfo.inl
+UDisDialogTree::GetDialogHookInfo,(2012 0x914170),32,ported,
+UDisDialogTree::BindToOneShot,(2012 0x8f86c0),49,ported,
+UDisDialogTree::InitNode,(2012 0x914190),865,partial,slot fixups kept; BreakAllLinks / OnDelete / ValidateAndFixupFolders (editor) left out
+UDisDialogTree::InFallbackChain,(2012 0x8f8720),,ported,
+UDisDialogTree_InGameBind::FireDialogHook_Helper,0x8a49e0 (2012 0x90a5c0),219,ported,by caller
+UDisDialogTree_InGameBind::PlayFromNode,0x8a3c10 (2012 0x905f40),457,ported,by caller
+BuildFallbackChain,(2012 0x90a010),627,ported,
+BuildSingletonData_Tree,0x8a0b10 (2012 0x90d8b0),144,ported,
+BuildSingletonData_Conv,(2012 0x90d770),305,ported,
+FDisDialogRunningInstance::StopInstance,0x8a4410 (2012 0x90a290),515,ported,by caller
+FDisDialogRunningInstance::StartDialog,0x897100 (2012 0x900b20),178,ported,by caller
+FDisDialogRunningInstance::GetInGameNode,0x89a3a0 (2012 0x902b80),424,ported,by caller
+FDisDialogRunningInstance::GetDialogTree,(2012 0x8faf20),70,ported,
+UDisConversation::InitConvNodes,(2012 0x8e35b0),131,ported,
+UDisConversation::GetFiringPriority,(2012 0x8de3f0),121,ported,
+UDisConversation_InGameData_Base::InitForConvNode_Derived,(2012 0x8e3640),469,ported,
+UDisConversation_InGameData::InitForConvNode_Derived,0x8961e0 (2012 0x8f4c90),550,ported,by vtable slot
+UDisConversation_InGameData::AcquireSpeakers,0x8a3700 (2012 0x8f4eb0),879,ported,by caller
+UDisConv_Node::PlayNode,(2012 0x8da990),14,ported,
+UDisConv_Node::GetClassVars,(2012 0x8d97c0),34,ported,
+UDisConv_Node_InGameData::InitForConvNode,(2012 0x8d9830),24,ported,
+UDisConv_Soiree::PlayNodeMatinee,0x8b61f0 (2012 0x904c10),109,ported,by vtable slot 90
+UDisConv_Soiree::PlayNodePreview,0x8acff0 (2012 0x904a50),311,ported,by vtable slot 89
+UDisConv_Soiree::TickNodeMatinee,0x8a95c0 (2012 0x904750),124,ported,by vtable slot 88
+UDisConv_Soiree::TickNodePreview,0x8acea0 (2012 0x904580),329,ported,by vtable slot 87
+UDisConv_Soiree::InterruptTickingNode,0x8a9640 (2012 0x904850),124,partial,StopFromNPC -> Stop(); OnSkipRequest named (FS)
+UDisConv_Soiree::IsTickingNodeInterruptible,0x8a96c0 (2012 0x904960),76,partial,IsSkippable read as the flag (FS)
+UDisConv_Soiree::FindMatineeLinked,(2012 0x900ed0),186,ported,
+UDisConv_DialogHook::InitNode,(2012 0x8f8860),89,ported,
+UDisConv_Hook_KismetActivated::InitNode,0x8bbbb0 (2012 0x907010),89,ported,by vtable slot
+UDisConv_Hook_KismetActivated::PlayNode_Derived,0x8ac350 (2012 0x8fb740),193,ported,by vtable slot
+UDisConv_Hook_KismetActivated::EvaluateForFiring,0x8a9200 (2012 0x8f9c00),17,ported,by vtable slot
+UDisConv_Hook_KismetActivated::MatchHooksToOutputLinks,(2012 0x903270),370,ported,
+UDisConv_OneShotSpeaker::BindSpeaker_Derived,(2012 0x8fc290),,ported,
+UDisConv_OneShotSpeaker::GetSpeakerTree,(2012 0x8f8ba0),,ported,
+UDisConv_ConversationRef::PlayNode_Derived,(2012 0x8f6610),304,partial,m_bNotWhenPlayerIsInCombat test left out (player combat state)
+UDisConv_KismetActivateRemoteEvent::PlayNode_Derived,(2012 0x9074f0),703,ported,
+UDisConv_TryFallbackTree::PlayNode_Derived,(2012 0x8f8b60),29,ported,
+UDisConvGlobalMan::InitGlobalConvMan,0x89caa0 (2012 0x8f2610),467,ported,by caller (ADishonoredGameInfo::InitGlobalManagers)
+UDisConvGlobalMan::Term_GlobalConv,(2012 0x8ef920),92,partial,subtitle / HUD resets left out
+UDisConvGlobalMan::QueueFireDialogHook,0x89cc80 (2012 0x8f2830),529,ported,by caller
+UDisConvGlobalMan::ManageGlobalDialogHooks,0x8a5b20 (2012 0x8f2d60),2911,ported,by caller
+UDisConvGlobalMan::CalcPendingWeights,(2012 0x8f2a00),860,ported,
+UDisConvGlobalMan::GetShortestAudibleDistForSpeaker,(2012 0x8e5a00),480,partial,plain distance to the player; audio-cell propagation left out
+DisGetConvGlobalMan,0x7bf3e0 (2012 0x8271e0),6,ported,
+ADisDialogOneShot::NotifyOneShotSpeakers,(2012 0x69d4f0),317,ported,
+ADisDialogOneShot::InitDialogTreeInternal,(2012 0x698850),201,ported,editor path
+ADisDialogOneShot::GetOwnerForSpeaker,(2012 0x698920),68,ported,
+ADisDialogOneShot::GetOwnerActorForSpeaker_Derived,(2012 0x691ca0),13,ported,
+FDisConvSaveData::FindLabelData,(2012 0x8f2520),282,ported,
+ADishonoredSpawner::RemoveDialogOneShot,(2012 0x69f750),300,ported,
+ADishonoredSpawner::OnSpawned (dialog hand-off + Spawned event),(2012 0x6a1010 lines 77-81),,ported,PostSpawned_Dialog and DisSeqEvent_Spawned added to agent EP's body
+ADishonoredPawn::GetSpeakerLocInfo,(2012 0x7b9880),73,ported,
+ADishonoredNPCPawn::FireDialogHook,(2012 0x7ac070),32,ported,
+ADishonoredNPCPawn::SupportsDialogHook,(2012 0x7ac090),25,ported,
+ADishonoredNPCPawn::IsAvailableForDialog,0x774280 (2012 0x7c17c0),188,partial,behaviour / master-state availability left out (AI)
+ADishonoredNPCPawn::StartDialog,(2012 0x7c1880),300,partial,soiree LOD and FAIStimStruct_BlockingDialogRequest left out (FS)
+ADishonoredNPCPawn::EndDialog,(2012 0x7c19b0),247,partial,FAIStimStruct_BlockingDialogEnd left out (FS)
+ADishonoredPlayerPawn::IsAvailableForDialog,0x6ad070 (2012 0x706580),127,ported,"the FSM has no UStatePlayerMasterInDialog, so a blocking-player conversation rejects the player"
+ADishonoredPlayerPawn::StartDialog / EndDialog,(2012 0x6fb550 / 0x706600),,inventory,UStatePlayerMasterInDialog is agent FK's FSM package
+ADishonoredPlayerPawn::FireDialogHook / ForAudioLog / GetHookParameters_Derived / AddDialogOneShot / RemoveDialogOneShot / GetSpeakerFromOneShotOwner,(2012 0x6fb4a0..0x6fb5e0),,ported,through the audio-log dummy
+ADishonoredPlayerPawn::PostBeginPlay_Dialog,(2012 0x7063a0),275,partial,spawns the dummy at the pawn's location; the camera-bone offset is left out; NOT called from PostBeginPlay yet
+ADisPlayerAudioLogDummyActor::GetSpeakerLocInfo / AddDialogOneShot / RemoveDialogOneShot,(2012 0x69fdb0 / 0x699670 / 0x691f60),,ported,

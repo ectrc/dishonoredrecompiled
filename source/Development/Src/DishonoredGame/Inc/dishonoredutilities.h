@@ -43,7 +43,8 @@ struct FDisMsgBoxResult
 enum { DisGameEventType_MessageBoxResult = 31 };
 
 // DISHONORED(written): agent AU (PHASE7 AU). The utilities the pickup collection path calls; 2013 rvas with the bodies.
-class UDisGFxMoviePlayerHUD* DisGetGFxHUD();                                                   // 0x7bf730
+class UDisGFxMoviePlayerHUD* DisGetGFxHUD();
+class UDisConvGlobalMan* DisGetConvGlobalMan();                                                 // 0x7bf3e0, agent FR: UDisConvGlobalMan::s_pInstance (disconvglobalman.cpp)                                                   // 0x7bf730
 UBOOL DisIsBendTimeOn();                                                                       // 0x7bf2c0
 UBOOL DisIsBendTimeFrozen();                                                                   // 0x7bf2f0
 void DisPullFromBendTime( class AActor* Actor, class AActor* Cause, UBOOL bRecursive, UBOOL bOnlyIfStaticOrTickDisabled ); // 0x7bec00

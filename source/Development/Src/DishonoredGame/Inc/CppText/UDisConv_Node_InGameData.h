@@ -7,3 +7,10 @@
 public:
 	virtual void GameSave( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
+
+// DISHONORED(port): agent FR (PHASE17 FR). InitForConvNode 2012 rva 0x8d9830 (24 B): stamp the owning node, then the
+// derived initialiser (vtable slot 73 in 2013, UDisConversation_InGameData's at 0x8961e0). Body in disconv_node_ingamedata.cpp.
+public:
+	void InitForConvNode( const class UDisConv_Node* _pNode );
+protected:
+	virtual void InitForConvNode_Derived( const class UDisConv_Node* _pNode ) {}

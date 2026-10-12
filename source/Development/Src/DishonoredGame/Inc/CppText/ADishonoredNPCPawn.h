@@ -89,3 +89,14 @@ public:
 protected:
 	// agent FS: 2012 rva 0x7bac70, the first thing MAT_BeginAIGroup does - the matinee slots re-collected
 	virtual void UpdateNodeSlot();
+
+// ---- agent FR (PHASE17 FR): the NPC's speaker overrides, dishonorednpcpawn_conversation.cpp ----
+// DISHONORED(port): 2012 rvas GetConversationComponent_Derived 0x7ac040, FireDialogHook 0x7ac070, SupportsDialogHook
+// 0x7ac090, IsAvailableForDialog 0x7c17c0 (2013 0x774280, 188 B), StartDialog 0x7c1880 (300 B), EndDialog 0x7c19b0 (247 B).
+public:
+	virtual class UDisConversationComponent* GetConversationComponent_Derived() { return m_pConvComponent; }
+	virtual void FireDialogHook( eDisDialogHook _Hook, class IDisConvSpeakerInterface* _pInitiator );
+	virtual UBOOL SupportsDialogHook( eDisDialogHook _Hook ) const;
+	virtual eDisDialogAvailability IsAvailableForDialog( eDisConvPriority _Priority, INT _StartDialogFlags ) const;
+	virtual void StartDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, UBOOL _bBlocking, INT _StartDialogFlags, INT _FiringHookIndex );
+	virtual void EndDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, DisConvoEndReasonEnum _ConvoEndReason );

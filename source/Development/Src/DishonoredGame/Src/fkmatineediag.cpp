@@ -19,6 +19,7 @@
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
+#include "frdialogdiag.h"
 
 static INT GDisFKDiag = -1;
 
@@ -193,6 +194,7 @@ void DisFKReport( AActor* Owner )
 		SecondPassAt = -1.f;
 		debugf( TEXT("DISHONORED(bringup): fkdiag second pass at t %.2f"), Now );
 		DisFKReportMatineeData();
+		DisFRReportDialog();
 	}
 
 	if( Now < NextAt )

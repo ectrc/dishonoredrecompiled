@@ -83,6 +83,7 @@ struct FDisConvSaveData_DialogTree
     {
         appMemzero(this, sizeof(FDisConvSaveData_DialogTree));
     }
+#include "CppText/FDisConvSaveData_DialogTree.h"
 };
 
 // DishonoredGame.DisGlobalEnums.DisConvSaveData: retail SDK size 12 (2012 PDB 12)
@@ -96,6 +97,7 @@ struct FDisConvSaveData
     {
         appMemzero(this, sizeof(FDisConvSaveData));
     }
+#include "CppText/FDisConvSaveData.h"
 };
 
 // DishonoredGame.DisGlobalEnums.DisAbstractItemInfo: retail SDK size 12 (2012 PDB 12)

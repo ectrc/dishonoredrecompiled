@@ -1683,6 +1683,25 @@ void USeqAct_Interp::SetConversationNode( const UObject* ConversationNode )
 	m_ConversationNodePointer = (void*)ConversationNode;
 }
 
+// DISHONORED(port): agent FR (PHASE17 FR), 2013 rvas 0x215020 (StartFromDialog, 77 B; 2012 0x22d1b0) and 0x212a30
+// (ClearDialogConvNode, 11 B; 2012 0x22a960). A UDisConv_Soiree node starts its matinee here: the running dialog instance and
+// the node are stamped on the matinee, m_bIsBlocking follows the conversation, the skipped flag is cleared, and input 0
+// (Play) is force-activated with the position rewound. The Kismet update then runs it like any other Play impulse.
+void USeqAct_Interp::StartFromDialog( void* const DialogInstance, const UObject* const ConversationNode, UBOOL bIsBlocking )
+{
+	m_pDialogTree_RunningInst = DialogInstance;
+	m_ConversationNodePointer = (void*)ConversationNode;
+	m_bIsBlocking = bIsBlocking ? 1 : 0;
+	m_bMatineeHasBeenSkipped = 0;
+	ForceActivateInput( 0 );
+	Position = 0.f;
+}
+
+void USeqAct_Interp::ClearDialogConvNode()
+{
+	m_ConversationNodePointer = NULL;
+}
+
 void USeqAct_Interp::Stop()
 {
 	// Re-enable the radio filter

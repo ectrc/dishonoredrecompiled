@@ -418,6 +418,7 @@ protected:
     virtual ~IDisConvSpeakerInterface() {}
 public:
     typedef UDisConvSpeakerInterface UClassType;
+#include "CppText/IDisConvSpeakerInterface.h"
 };
 
 // DishonoredGame.DisAudioLogPlayer: retail sizeof 848, reflected span 772..836 (2012 PDB sizeof 800)
@@ -2384,6 +2385,7 @@ protected:
     virtual ~IDisConvOneShotOwnerInterface() {}
 public:
     typedef UDisConvOneShotOwnerInterface UClassType;
+#include "CppText/IDisConvOneShotOwnerInterface.h"
 };
 
 struct DishonoredPlayerPawn_eventUnlockAchievement_Parms

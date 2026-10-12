@@ -57,3 +57,27 @@ public:
 public:
 	// DISHONORED(port): 2013 rva 0x6a1a80 (2012 0x6fac40). Body in dishonoredplayerpawn.cpp.
 	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );
+
+// ---- agent FR (PHASE17 FR): the player as a speaker and as a one-shot owner, dishonoredplayerpawn_conversation.cpp ----
+// DISHONORED(port): retail routes every speaker call of the player through m_pAudioLogConvActor (an
+// ADisPlayerAudioLogDummyActor spawned by PostBeginPlay_Dialog, 2012 rva 0x7063a0) - FireDialogHook 0x6fb4a0,
+// FireDialogHookForAudioLog 0x6fb4f0, GetHookParameters_Derived 0x6fb530, AddDialogOneShot 0x6fb5a0, RemoveDialogOneShot
+// 0x6fb5c0, GetSpeakerFromOneShotOwner 0x6fb5e0 all go through it; IsAvailableForDialog 0x706580 (2013 0x6ad070), StartDialog
+// 0x6fb550 and EndDialog 0x706600 (2013 0x6ad0f0) go through the player master FSM's UStatePlayerMasterInDialog, which is
+// agent FK's unported FSM package (agentFO.md section 9.4); GetDialogSaveData 0x6fb580 / _Global 0x6fb590 are the two
+// FDisConvSaveData members.
+public:
+	virtual UObject* GetUObjectInterfaceDisConvOneShotOwnerInterface() { return this; }
+	virtual void AddDialogOneShot( class UDisDialogVoiceData* _pOneShot, UBOOL _bIsOwner );
+	virtual void RemoveDialogOneShot( class UDisDialogVoiceData* _pOneShot );
+	virtual class IDisConvSpeakerInterface* GetSpeakerFromOneShotOwner( class IDisConvSpeakerInterface* _pTreeOwner );
+	virtual void FireDialogHook( eDisDialogHook _Hook, class IDisConvSpeakerInterface* _pInitiator );
+	virtual void FireDialogHookForAudioLog( eDisDialogHook _Hook, class IDisConvSpeakerInterface* _pInitiator );
+	virtual struct FDisHookParameters* GetHookParameters_Derived();
+	virtual eDisDialogAvailability IsAvailableForDialog( eDisConvPriority _Priority, INT _StartDialogFlags ) const;
+	virtual void StartDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, UBOOL _bBlocking, INT _StartDialogFlags, INT _FiringHookIndex );
+	virtual void EndDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, DisConvoEndReasonEnum _ConvoEndReason );
+	virtual struct FDisConvSaveData* GetDialogSaveData() { return &m_DialogSaveData; }
+	struct FDisConvSaveData* GetDialogSaveData_Global() { return &m_DialogSaveData_Global; }
+	virtual void PostBeginPlay_Dialog();
+	class IDisConvSpeakerInterface* GetAudioLogSpeaker() const;

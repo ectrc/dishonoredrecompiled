@@ -205,7 +205,16 @@ void ADishonoredGameInfo::InitGlobalManagers()
 		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredGameInfo::InitGlobalManagers has no m_pGlobalAIManager sub-object") );
 	}
 	// UDisPostProcessManager::Init( m_pPpManager )                    2013 rva 0x7a45b0
-	// UDisConvGlobalMan::InitGlobalConvMan( m_pConvGlobalMan )        2013 rva 0x8b2e80
+	// DISHONORED(port, agent FR): UDisConvGlobalMan::InitGlobalConvMan is 2013 rva 0x89caa0 (2012 0x8f2610), the second
+	// call of this function (0x5e9bd0); the 0x8b2e80 recorded here before is a 26-byte TArray helper.
+	if( m_pConvGlobalMan )
+	{
+		m_pConvGlobalMan->InitGlobalConvMan();
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredGameInfo::InitGlobalManagers has no m_pConvGlobalMan sub-object") );
+	}
 	// UDisWaterVolumeManager::Init( m_pWaterVolumeManager )           2013 rva 0x63ad30
 	// UDisGlobalCombatManager::Init_GlobalCombat( m_pGlobalCombatManager )   2013 rva 0x83f7b0
 	// UDisRatSwarmGlobalManager::Init( m_pRatSwarmGlobalManager )     2013 rva 0x64c6f0
@@ -287,4 +296,17 @@ void ADishonoredGameInfo::SetDifficulty( BYTE NewDifficulty )
 void ADishonoredGameInfo::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
 {
 	SetDifficulty( (BYTE)Parameters->m_Difficulty );
+}
+
+// DISHONORED(port, partial): agent FR (PHASE17 FR). Retail's Tick (2012 rva 0x64b480) is the game info's whole per-frame
+// body; the one share written here is UDisConvGlobalMan::TickGlobalConvMan at its 0x64b533, which drains the dialog hook
+// queue. The rest (bend time, the pending-destroy list, the game-over timer) is named in the skeleton list above.
+UBOOL ADishonoredGameInfo::Tick( FLOAT DeltaTime, ELevelTick TickType )
+{
+	const UBOOL bResult = Super::Tick( DeltaTime, TickType );
+	if( m_pConvGlobalMan && UDisConvGlobalMan::s_pInstance == m_pConvGlobalMan )
+	{
+		m_pConvGlobalMan->TickGlobalConvMan( DeltaTime );
+	}
+	return bResult;
 }

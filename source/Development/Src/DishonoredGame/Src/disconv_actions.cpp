@@ -1,9 +1,10 @@
 // DishonoredGame/src/disconv_actions.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
-// PDB functions attributed to this file (5):
-//   0x8f8a10  public: static void __cdecl UDisConv_Action::InitializePrivateStaticClassUDisConv_Action(void)
-//   0x8f8a30  protected: virtual void __thiscall UDisConv_Action::GetClassVars_Derived(struct FDisConvClassVars &)const
-//   0x8fbd10  public: virtual void __thiscall UDisConv_Action::GetActionText(class FString &)const
-//   0x90cb70  public: static class UClass * __cdecl UDisConv_Action::GetPrivateStaticClassUDisConv_Action(wchar_t const *)
-//   0x90dea0  public: static class UClass * __cdecl UDisConv_Action::StaticClassNoInline(void)
+// DISHONORED(port): agent FR (PHASE17 FR). UDisConv_Action::GetClassVars_Derived 2012 rva 0x8f8a30 (43 B): an action
+// is a node a dialog can start on. GetActionText 0x8fbd10 is editor-only (agentFR.md inventory).
+#include "DishonoredGame.h"
+
+void UDisConv_Action::GetClassVars_Derived( FDisConvClassVars& _rVarsOut ) const
+{
+	UDisConv_Node::GetClassVars_Derived( _rVarsOut );
+	_rVarsOut.m_bIsStartOfDialog = TRUE;
+}

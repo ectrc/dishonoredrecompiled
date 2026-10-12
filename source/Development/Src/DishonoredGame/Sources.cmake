@@ -129,7 +129,6 @@ set(DishonoredGame_EXCLUDE
   Src/discontactsub_particle.cpp
   Src/discontactsubintersections.cpp
   Src/discontacttypeinterface.cpp
-  Src/disconv_actions.cpp
   Src/disconv_branches.cpp
   Src/disconv_checkspeakerrelationship.cpp
   Src/disconv_checkspeakersuspicionlevel.cpp
@@ -137,10 +136,7 @@ set(DishonoredGame_EXCLUDE
   Src/disconv_checktaskstate.cpp
   Src/disconv_comment.cpp
   Src/disconv_comparedarknesslevel.cpp
-  Src/disconv_conditions.cpp
   Src/disconv_conversationfired.cpp
-  Src/disconv_conversationref.cpp
-  Src/disconv_dialoghook.cpp
   Src/disconv_factionbranch.cpp
   Src/disconv_hadconversation.cpp
   Src/disconv_hasabstractitem.cpp
@@ -149,7 +145,6 @@ set(DishonoredGame_EXCLUDE
   Src/disconv_hook_distraction.cpp
   Src/disconv_hook_hearttargeted.cpp
   Src/disconv_hook_investigate.cpp
-  Src/disconv_hook_kismetactivated.cpp
   Src/disconv_hook_notice.cpp
   Src/disconv_hook_noticebroken.cpp
   Src/disconv_hook_playaudiolog.cpp
@@ -161,9 +156,6 @@ set(DishonoredGame_EXCLUDE
   Src/disconv_hook_witnessedmagic.cpp
   Src/disconv_ispossessed.cpp
   Src/disconv_isspeakeravailable.cpp
-  Src/disconv_kismetactivateremoteevent.cpp
-  Src/disconv_node.cpp
-  Src/disconv_node_ingamedata.cpp
   Src/disconv_nonword.cpp
   Src/disconv_oneshotspeaker.cpp
   Src/disconv_playerlookatactor.cpp
@@ -173,20 +165,12 @@ set(DishonoredGame_EXCLUDE
   Src/disconv_randomsequentialbranch.cpp
   Src/disconv_sequentialbranch.cpp
   Src/disconv_setstoryflag.cpp
-  Src/disconv_soiree.cpp
   Src/disconv_spawnerbranch.cpp
   Src/disconv_speakercombatstatus.cpp
   Src/disconv_speakerhastweaks.cpp
   Src/disconv_speakerinstorygroup.cpp
-  Src/disconv_speakers.cpp
   Src/disconv_timelimit.cpp
-  Src/disconv_tryfallbacktree.cpp
-  Src/disconversation.cpp
-  Src/disconversation_ingamedata.cpp
-  Src/disconversationcomponent.cpp
-  Src/disconvglobalman.cpp
   Src/disconvoneshotownerinterface.cpp
-  Src/disconvspeakerinterface.cpp
   Src/discorpsediscoveredtracker.cpp
   Src/discorpseinterface.cpp
   Src/discrusher.cpp
@@ -198,11 +182,8 @@ set(DishonoredGame_EXCLUDE
   Src/disdefensetutorialtracker.cpp
   Src/disdetectioneye.cpp
   Src/disdialoginanimatedummy.cpp
-  Src/disdialogoneshot.cpp
   Src/disdialogoneshot_heartgadget.cpp
   Src/disdialogoneshotrenderingcomponent.cpp
-  Src/disdialogtree_ingamebind.cpp
-  Src/disdialogvoicedata.cpp
   Src/disdistractionglobalmanager.cpp
   Src/disdoor.cpp
   Src/disdrawvisioncomponent.cpp
@@ -310,7 +291,6 @@ set(DishonoredGame_EXCLUDE
   Src/dishonorednotify_startplague.cpp
   Src/dishonorednpcpawn_actions.cpp
   Src/dishonorednpcpawn_combat.cpp
-  Src/dishonorednpcpawn_conversation.cpp
   Src/dishonorednpcpawn_inventory.cpp
   Src/dishonorednpcpawn_rattarget.cpp
   Src/dishonorednpcpawn_springrazortarget.cpp
@@ -321,7 +301,6 @@ set(DishonoredGame_EXCLUDE
   Src/dishonoredpawn_attentiontarget.cpp
   Src/dishonoredpawn_camera.cpp
   Src/dishonoredpawn_combat.cpp
-  Src/dishonoredpawn_conversation.cpp
   Src/dishonoredpawn_inventory.cpp
   Src/dishonoredpawn_rattarget.cpp
   Src/dishonoredpawn_stealth.cpp
@@ -330,7 +309,6 @@ set(DishonoredGame_EXCLUDE
   Src/dishonoredplayerpawn_action.cpp
   Src/dishonoredplayerpawn_attentiontarget.cpp
   Src/dishonoredplayerpawn_camera.cpp
-  Src/dishonoredplayerpawn_conversation.cpp
   Src/dishonoredplayerpawn_inventory.cpp
   Src/dishonoredplayerpawn_mantle.cpp
   Src/dishonoredplayerpawn_possession.cpp
@@ -489,7 +467,6 @@ set(DishonoredGame_EXCLUDE
   Src/disparticlemoduleraindrops.cpp
   Src/disparticlemodulerainimpacts.cpp
   Src/disperfectblocktracker.cpp
-  Src/displayeraudiologdummyactor.cpp
   Src/displayerpawn_animstates.cpp
   Src/displayerpawn_water.cpp
   Src/dispossessableinterface.cpp
@@ -543,7 +520,6 @@ set(DishonoredGame_EXCLUDE
   Src/disseqact_clearplayervissettings.cpp
   Src/disseqact_completeobjective.cpp
   Src/disseqact_defencetower.cpp
-  Src/disseqact_dialoginputs.cpp
   Src/disseqact_dialogscriptedchoice.cpp
   Src/disseqact_door.cpp
   Src/disseqact_failobjective.cpp

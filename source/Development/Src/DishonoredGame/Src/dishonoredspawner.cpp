@@ -277,6 +277,7 @@ void ADishonoredSpawner::OnSpawned( ADishonoredNPCPawn* _pPawn )
 	// is all of them) and the census read "26 NPC pawns, 0 controllers".
 	if( _pPawn->m_SpawnerInfo.m_bSpawnDead || _pPawn->m_SpawnerInfo.m_bTreatAsKnockedOut )
 	{
+		FireSpawnedKismetEvent( _pPawn );
 		return;
 	}
 
@@ -311,6 +312,30 @@ void ADishonoredSpawner::OnSpawned( ADishonoredNPCPawn* _pPawn )
 	// DISHONORED(bringup): m_bAwareOfPlayerUponStartup would call UDishonoredAIBrain::MaxOutAttention (2013 rva
 	// 0x723be0); the attention process it writes to is not ported, so a spawner marked "aware of the player" starts
 	// unaware.
+
+	// DISHONORED(port): agent FR (PHASE17 FR). The dialog half, 2012 rva 0x6a1010 lines 77-81: the spawner's own voice data
+	// is the pawn's additional generic tree and every one-shot that registered with the spawner (AddDialogOneShot) is handed
+	// to the pawn's conversation component, which instances and binds the trees (IDisConvSpeakerInterface::PostSpawned_Dialog).
+	TArray<UDisDialogVoiceData*> AdditionalGenerics;
+	if( m_pDialogVoiceData )
+	{
+		AdditionalGenerics.AddItem( m_pDialogVoiceData );
+	}
+	_pPawn->PostSpawned_Dialog( AdditionalGenerics, m_DialogOneShots );
+	FireSpawnedKismetEvent( _pPawn );
+}
+
+// DISHONORED(port): agent FR (PHASE17 FR). Retail's OnSpawned fires the spawner's DisSeqEvent_Spawned on both paths (2012 rva
+// 0x6a1010: DisFireSingleKismetEvent( this, UDisSeqEvent_Spawned, this, _pPawn, 0, 0 ), 0x832160 / DisFireKismetEvent 2013
+// 0x7c7b30) with the pawn as the instigator, which is how the pawn reaches the Kismet variables the event's 'Instigator'
+// link writes - SOIREE_Boat.DisSeqEvent_Spawned_10 writes SeqVar_Object_177, the Target of the boat's DisSeqAct_DialogInputs_10.
+// Without it the dialog action fired on a NULL target (measured, FR2.log). CopyEventsToSpawned (2012 0x697450, 681 B) is
+// still not ported.
+void ADishonoredSpawner::FireSpawnedKismetEvent( ADishonoredNPCPawn* _pPawn )
+{
+	TArray<INT> ActivateIndices;
+	ActivateIndices.AddItem( 0 );
+	DisFireKismetEvent( this, UDisSeqEvent_Spawned::StaticClass(), _pPawn, this, FALSE, &ActivateIndices );
 }
 
 // DISHONORED(port): 2013 rva 0x658d30 (2012 0x6a0c60, 693 bytes): the pending ring is drained one entry per tick. A

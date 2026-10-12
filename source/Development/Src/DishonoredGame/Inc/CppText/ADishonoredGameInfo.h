@@ -36,3 +36,9 @@ public:
 	// dishonoredgameinfo.cpp.
 	virtual void SetDifficulty( BYTE NewDifficulty );
 	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );
+
+// ---- agent FR (PHASE17 FR): the conversation manager's tick ----
+public:
+	// DISHONORED(port, partial): retail's Tick is 2012 rva 0x64b480 (2013 ??_7ADishonoredGameInfo slot); the only share
+	// written here is the UDisConvGlobalMan::TickGlobalConvMan call at its 0x64b533. Body in dishonoredgameinfo.cpp.
+	virtual UBOOL Tick( FLOAT DeltaTime, enum ELevelTick TickType );

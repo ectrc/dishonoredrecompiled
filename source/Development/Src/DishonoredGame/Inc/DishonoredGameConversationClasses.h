@@ -72,6 +72,7 @@ public:
     //## END PROPS DisDialogOneShot
 
     DECLARE_CLASS(ADisDialogOneShot,AActor,0,DishonoredGame)
+#include "CppText/ADisDialogOneShot.h"
 };
 
 // DishonoredGame.DisDialogInanimateDummy: retail sizeof 656, reflected span 584..656 (2012 PDB sizeof 624)
@@ -595,6 +596,7 @@ struct FDisDialogRunningObjs
     {
         appMemzero(this, sizeof(FDisDialogRunningObjs));
     }
+#include "CppText/FDisDialogRunningObjs.h"
 };
 
 // DishonoredGame.DisDialogTree_InGameBind.DisDialogRunningInstance: retail SDK size 76 (2012 PDB 76)
@@ -622,6 +624,7 @@ struct FDisDialogRunningInstance
     {
         appMemzero(this, sizeof(FDisDialogRunningInstance));
     }
+#include "CppText/FDisDialogRunningInstance.h"
 };
 
 // DishonoredGame.DisConv_DialogHook.DisEditorOnlyDialogHookInfo: retail SDK size 72 (2012 PDB 72)
@@ -988,6 +991,7 @@ public:
 
     DECLARE_CLASS(UDisConvGlobalMan,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+#include "CppText/UDisConvGlobalMan.h"
 };
 
 // DishonoredGame.DisConv_Node: retail sizeof 136, reflected span 56..136 (2012 PDB sizeof 128)
@@ -1007,6 +1011,7 @@ public:
 
     DECLARE_ABSTRACT_CLASS(UDisConv_Node,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+#include "CppText/UDisConv_Node.h"
 };
 
 // DishonoredGame.DisConv_Action: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)
@@ -1017,6 +1022,7 @@ public:
     //## END PROPS DisConv_Action
 
     DECLARE_ABSTRACT_CLASS(UDisConv_Action,UDisConv_Node,0,DishonoredGame)
+#include "CppText/UDisConv_Action.h"
 };
 
 // DishonoredGame.DisConv_Blurb: retail sizeof 236, reflected span 136..236 (2012 PDB sizeof 228)
@@ -1094,6 +1100,7 @@ public:
     //## END PROPS DisConv_Condition
 
     DECLARE_ABSTRACT_CLASS(UDisConv_Condition,UDisConv_Node,0,DishonoredGame)
+#include "CppText/UDisConv_Condition.h"
 };
 
 // DishonoredGame.DisConv_CheckSpeakerRelationship: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
@@ -1197,6 +1204,7 @@ public:
     //## END PROPS DisConv_ConversationRef
 
     DECLARE_CLASS(UDisConv_ConversationRef,UDisConv_Node,0,DishonoredGame)
+#include "CppText/UDisConv_ConversationRef.h"
 };
 
 // DishonoredGame.DisConv_DialogHook: retail sizeof 156, reflected span 136..156 (2012 PDB sizeof 148)
@@ -1211,6 +1219,7 @@ public:
     //## END PROPS DisConv_DialogHook
 
     DECLARE_CLASS(UDisConv_DialogHook,UDisConv_Node,0,DishonoredGame)
+#include "CppText/UDisConv_DialogHook.h"
 };
 
 // DishonoredGame.DisConv_FactionBranch: retail sizeof 148, reflected span 136..148 (2012 PDB sizeof 140)
@@ -1361,6 +1370,7 @@ public:
     //## END PROPS DisConv_Hook_KismetActivated
 
     DECLARE_CLASS(UDisConv_Hook_KismetActivated,UDisConv_DialogHook,0,DishonoredGame)
+#include "CppText/UDisConv_Hook_KismetActivated.h"
 };
 
 // DishonoredGame.DisConv_Hook_Notice: retail sizeof 156, reflected span 156..156 (2012 PDB sizeof 148)
@@ -1506,6 +1516,7 @@ public:
     //## END PROPS DisConv_Speaker
 
     DECLARE_ABSTRACT_CLASS(UDisConv_Speaker,UDisConv_Node,0,DishonoredGame)
+#include "CppText/UDisConv_Speaker.h"
 };
 
 // DishonoredGame.DisConv_InitiatorSpeaker: retail sizeof 164, reflected span 156..164 (2012 PDB sizeof 156)
@@ -1518,6 +1529,7 @@ public:
     //## END PROPS DisConv_InitiatorSpeaker
 
     DECLARE_CLASS(UDisConv_InitiatorSpeaker,UDisConv_Speaker,0,DishonoredGame)
+#include "CppText/UDisConv_InitiatorSpeaker.h"
 };
 
 // DishonoredGame.DisConv_IsObjectiveComplete: retail sizeof 140, reflected span 136..140 (2012 PDB sizeof 132)
@@ -1561,6 +1573,7 @@ public:
     //## END PROPS DisConv_KismetActivateRemoteEvent
 
     DECLARE_CLASS(UDisConv_KismetActivateRemoteEvent,UDisConv_Action,0,DishonoredGame)
+#include "CppText/UDisConv_KismetActivateRemoteEvent.h"
 };
 
 // DishonoredGame.DisConv_MeSpeaker: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 152)
@@ -1572,6 +1585,7 @@ public:
     //## END PROPS DisConv_MeSpeaker
 
     DECLARE_CLASS(UDisConv_MeSpeaker,UDisConv_Speaker,0,DishonoredGame)
+#include "CppText/UDisConv_MeSpeaker.h"
 };
 
 // DishonoredGame.DisConv_NonWord: retail sizeof 236, reflected span 236..236 (2012 PDB sizeof 228)
@@ -1593,6 +1607,7 @@ public:
     //## END PROPS DisConv_OneShotSpeaker
 
     DECLARE_CLASS(UDisConv_OneShotSpeaker,UDisConv_Speaker,0,DishonoredGame)
+#include "CppText/UDisConv_OneShotSpeaker.h"
 };
 
 // DishonoredGame.DisConv_PlayerChoice: retail sizeof 176, reflected span 136..176 (2012 PDB sizeof 168)
@@ -1746,6 +1761,7 @@ public:
     //## END PROPS DisConv_Soiree
 
     DECLARE_CLASS(UDisConv_Soiree,UDisConv_Action,0,DishonoredGame)
+#include "CppText/UDisConv_Soiree.h"
 };
 
 // DishonoredGame.DisConv_Soiree_InGameData: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
@@ -1847,6 +1863,7 @@ public:
     //## END PROPS DisConv_TryFallbackTree
 
     DECLARE_CLASS(UDisConv_TryFallbackTree,UDisConv_Action,0,DishonoredGame)
+#include "CppText/UDisConv_TryFallbackTree.h"
 };
 
 // DishonoredGame.DisConversation: retail sizeof 200, reflected span 136..200 (2012 PDB sizeof 192)
@@ -1877,6 +1894,7 @@ public:
     //## END PROPS DisConversation
 
     DECLARE_CLASS(UDisConversation,UDisConv_Node,0,DishonoredGame)
+#include "CppText/UDisConversation.h"
 };
 
 // DishonoredGame.DisConversationComponent: retail sizeof 412, reflected span 81..412 (2012 PDB sizeof 412)
@@ -1933,6 +1951,7 @@ public:
     //## END PROPS DisConversation_InGameData_Base
 
     DECLARE_CLASS(UDisConversation_InGameData_Base,UDisConv_Node_InGameData,0,DishonoredGame)
+#include "CppText/UDisConversation_InGameData_Base.h"
 };
 
 // DishonoredGame.DisConversation_InGameData: retail sizeof 92, reflected span 73..92 (2012 PDB sizeof 92)
@@ -1945,6 +1964,7 @@ public:
     //## END PROPS DisConversation_InGameData
 
     DECLARE_CLASS(UDisConversation_InGameData,UDisConversation_InGameData_Base,0,DishonoredGame)
+#include "CppText/UDisConversation_InGameData.h"
 };
 
 // DishonoredGame.DisDialogOneShotRenderingComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
@@ -2048,6 +2068,7 @@ public:
 
     DECLARE_CLASS(UDisDialogVoiceData,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Conversation");}
+#include "CppText/UDisDialogVoiceData.h"
 };
 
 // DishonoredGame.DisDialogVoiceData_OneShot: retail sizeof 152, reflected span 152..152 (2012 PDB sizeof 152)

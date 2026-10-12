@@ -79,3 +79,13 @@ public:
 	void MAT_EnableMeshTranslation();
 	virtual UBOOL MAT_RootMotionEnabled() const;
 	void MAT_StopRootMotion();
+
+// ---- agent FR (PHASE17 FR): the IDisConvSpeakerInterface half every Dishonored pawn carries ----
+// DISHONORED(port): GetUObjectInterfaceDisConvSpeakerInterface 2013 rva 0x6befb0 (7 B), GetSpeakerLocInfo 2012 0x7b9880
+// (73 B: one entry at the pawn's location, the pawn's mesh as the FaceFX component, the pawn as the Ak event owner),
+// GetConversationComponent_Derived 2012 0xd9220 (3 B, NULL - ADishonoredNPCPawn overrides it with its component).
+// Bodies in dishonoredpawn_conversation.cpp.
+public:
+	virtual UObject* GetUObjectInterfaceDisConvSpeakerInterface() { return this; }
+	virtual void GetSpeakerLocInfo( TArray<struct FDisConvSpeakerLocInfo>& _rLocInfoOut ) const;
+	virtual class UDisConversationComponent* GetConversationComponent_Derived() { return NULL; }
