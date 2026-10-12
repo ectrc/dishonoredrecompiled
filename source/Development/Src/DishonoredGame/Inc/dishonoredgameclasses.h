@@ -7886,6 +7886,7 @@ struct FDisSoireeControlState
     {
         appMemzero(this, sizeof(FDisSoireeControlState));
     }
+#include "CppText/FDisSoireeControlState.h"
 };
 
 // DishonoredGame.DishonoredAudioSystem.DisSoundRTPCUpdater: retail SDK size 20 (2012 PDB 20)
@@ -14886,6 +14887,7 @@ public:
 
     DECLARE_CLASS(UDisTweaks_Pawn_Body,UDisTweaksBase,0,DishonoredGame)
     DECLARE_WITHIN(UDisTweaks_Pawn)
+#include "CppText/UDisTweaks_Pawn_Body.h"
 };
 
 // DishonoredGame.DisTweaks_NPCPawn_Body: retail sizeof 528, reflected span 320..520 (2012 PDB sizeof 528)
@@ -17328,6 +17330,7 @@ public:
 
     DECLARE_CLASS(UStatePlayerMasterBase,UDishonoredNativeState,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("PlayerState");}
+#include "CppText/UStatePlayerMasterBase.h"
 };
 
 // DishonoredGame.StatePlayerMasterChoice_Base: retail sizeof 92, reflected span 80..92 (2012 PDB sizeof 92)
@@ -17528,6 +17531,7 @@ public:
     //## END PROPS StatePlayerMasterSoiree
 
     DECLARE_CLASS(UStatePlayerMasterSoiree,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterSoiree.h"
 };
 
 // DishonoredGame.StatePlayerMasterStunned: retail sizeof 136, reflected span 116..136 (2012 PDB sizeof 136)
@@ -17585,6 +17589,7 @@ public:
     //## END PROPS StatePlayerMasterWalk
 
     DECLARE_CLASS(UStatePlayerMasterWalk,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterWalk.h"
 };
 
 // DishonoredGame.StatePlayerTransitionItemIn: retail sizeof 112, reflected span 112..112 (2012 PDB sizeof 112)

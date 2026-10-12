@@ -93,6 +93,7 @@ public:
     //## END PROPS DisInterpTrackAllowPlayerLook
 
     DECLARE_CLASS(UDisInterpTrackAllowPlayerLook,UInterpTrack,0,DishonoredGame)
+#include "CppText/UDisInterpTrackAllowPlayerLook.h"
 };
 
 // DishonoredGame.DisPlayerLookAngleKeyProperties: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)

@@ -1,0 +1,367 @@
+function,rva_2012,rva_2013,size_2012,status,note
+ADishonoredPlayerCamera::ClearPostProcessTarget,0x70a120,0x6ca6e0*,145,inventory,
+UStatePlayerMasterInScriptedChoice::OnEnterState,0x6b91c0,0x673ae0*,48,inventory,
+UStatePlayerMasterStunned::AnimState_Advance_Derived,0x6b3d60,0x660570*,187,inventory,
+UStatePlayerMasterPossess::OnExitState,0x6c60c0,0x8bedc0*,56,inventory,
+UStatePlayerMasterHolePeeking::FinishFade,0x6964b0,0x663400*,304,inventory,
+ADishonoredPlayerPawn::Tick,0x715b10,0x6bb1e0*,1229,partial,a stand-in override that chains to the base and calls Tick_PlayerAction; the 1229 B retail body is not ported; matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterChoice_Base::IsSkippable,0x6af910,0x660830*,19,inventory,
+UStatePlayerMasterMantle::OnEnterState,0x6be610,0x66ec20*,401,inventory,
+ADishonoredPlayerPawn::GetCameraBone,0x705540,0x6aba60*,180,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMinigame::FillUIInteractions,0x6b6ea0,0x667d50*,84,inventory,
+UStatePlayerMasterBase::AllowAutoFootfalls,0x692d90,0x65fe40*,12,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSlide::~UStatePlayerMasterSlide,0x6cdb80,0x67be10*,115,inventory,
+UStatePlayerMasterChoice_Base::OnExitState,0x6b8600,0x66c7e0*,120,inventory,
+UStatePlayerMasterWalk::CheckForAutoCrouch,0x6b7ce0,0x668870*,2021,inventory,
+ADishonoredPlayerCamera::TickFOV,0x709a80,unmatched,282,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterInDialog::StopTrackingForDialog,0x6b4160,0x663d90*,47,inventory,
+UStatePlayerMasterFalling::SavePartialState,0xd9930,0x8e7f30*,3,inventory,
+UStatePlayerMasterMantle::Tick_IntroTransition,0x6b3a00,0x6636c0*,572,inventory,
+UStatePlayerMasterAction::ShouldIgnorePitch,0x692bc0,0x65fe30*,9,inventory,
+UDisInterpTrackAllowPlayerLook::DuplicateKeyframe,0x236240,0x21ce00*,299,inventory,
+UStatePlayerMasterClimb::RestorePhysics,0x692e50,0x663000*,94,inventory,
+ADishonoredPlayerCamera::GetCamera_Rumble,0x6fc040,0x6c0300*,7,inventory,
+ADishonoredPlayerCamera::GetCamera_UnpossessDeath,0x6fc030,0x6c02f0*,7,inventory,
+ADishonoredPlayerCamera::PostBeginPlay,0x71bbc0,0x6d42b0*,1030,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDisTweaks_Pawn_Body::~UDisTweaks_Pawn_Body,0x7bf350,0x769dd0*,119,inventory,
+UStatePlayerMasterChoke::OnLose,0x69b250,0x6676f0*,68,inventory,
+UDishonoredCameraInfluence::OnActivate,0x6fbd90,unmatched,22,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterDead::OnExitState,0x69b440,0x66e900*,133,inventory,
+FDisSoireeControlState::TickSoireeMode,0x692b80,unmatched,22,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterStunned::OnExitState,0x6af750,0x66f950*,55,inventory,
+UStatePlayerMasterChoice_Base::ReadyToMakeChoice,0x6af930,0x660850*,67,inventory,
+UStatePlayerMasterInDialog::SetActivePlayerChoice,0x6b8e30,0x669410*,102,inventory,
+UStatePlayerMasterClimb::OnCancelState,0x692eb0,0x663060*,5,inventory,
+UStatePlayerMasterChangeReadyStance::~UStatePlayerMasterChangeReadyStance,0x693b60,unmatched,96,inventory,
+UDishonoredCameraInfluence::GatherInfluence_Derived,0x7231d0,0x6c0020*,5,inventory,
+UStatePlayerMasterJump::TickJumpLogic_ContinuousPower,0x6a66b0,0x6762e0*,335,inventory,
+UStatePlayerMasterChangeReadyStance::TickState,0x692db0,0x65fe70*,98,inventory,
+UDishonoredCameraInfluenceGroup::OnTeleport,0x7099c0,0x6c9ee0*,96,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDisInterpTrackAllowPlayerLook::~UDisInterpTrackAllowPlayerLook,0x8ebed0,0x873480*,115,inventory,
+UStatePlayerMasterSoiree::OnResetState,0x6af5f0,0x668670*,49,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMantle::OnExitState,0x6be7b0,0x66ee00*,283,inventory,
+UStatePlayerMasterClimb::LoadPartialState,0x6a6120,0x675960*,135,inventory,
+UStatePlayerMasterJump::CanTransitionExternal,0x6a4190,0x66eb00*,47,inventory,
+UStatePlayerMasterSwim::GetSwimStrokeAccel,0x6b3f50,unmatched,134,inventory,
+UDishonoredCameraInfluenceGroup::GatherInfluences,0x70e110,0x6cfcb0*,1473,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDishonoredCamera_PlayerControl::~UDishonoredCamera_PlayerControl,0x725bb0,unmatched,89,inventory,
+UStatePlayerMasterSlide::CheckForSlideDamage,0x6cba20,0x679bf0*,1435,inventory,
+UStatePlayerMasterInScriptedChoice::~UStatePlayerMasterInScriptedChoice,0x6b20a0,unmatched,89,inventory,
+UStatePlayerMasterBase::CanBeInLinkedAction,0x692d30,0x65fe10*,10,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterClimb::CanTransitionExternal,0x6a3e90,0x66e570*,180,inventory,
+UStatePlayerMasterHolePeeking::SavePartialState,0x6965e0,0x663540*,126,inventory,
+UStatePlayerMasterWalk::~UStatePlayerMasterWalk,0x6b21c0,unmatched,89,inventory,
+UStatePlayerMasterSlide::TickState,0x6cce10,0x67b220*,527,inventory,
+UStatePlayerMasterLeaning::OnEnterState,0x6a7c90,0x6764c0*,196,inventory,
+UStatePlayerMasterClimb::~UStatePlayerMasterClimb,0x693800,unmatched,89,inventory,
+ADishonoredPlayerCamera::CamMoveSmooth,0x700120,0x6c4bb0*,1048,inventory,
+UStatePlayerMasterSwim::OnEnterState,0x6b7940,0x673190*,583,inventory,
+UStatePlayerMasterChoke::~UStatePlayerMasterChoke,0x696e40,unmatched,96,inventory,
+UDishonoredCamera_PlayerControl::OnActivate_Derived,0x721e30,0x6c1640*,16,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterChoice_Base::PauseBendTime,0x6b8680,0x6690a0*,198,inventory,
+UStatePlayerMasterJump::~UStatePlayerMasterJump,0x6939b0,unmatched,89,inventory,
+UDishonoredCameraInfluence::SetWeight,0x6fff80,0x6c49a0*,142,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterInScriptedChoice::GetNumChoices,0x6b4220,0x663eb0*,10,inventory,
+ADishonoredPlayerPawn::Tick_Begin,0x715a00,0x6b0850*,269,inventory,
+UDishonoredCameraInfluenceGroup::~UDishonoredCameraInfluenceGroup,0x64ed10,unmatched,101,inventory,
+UStatePlayerMasterPossess_Base::~UStatePlayerMasterPossess_Base,0x6b4030,unmatched,96,inventory,
+UStatePlayerMasterJump::TickJumpLogic_FixedPower,0x6a64e0,0x676110*,233,inventory,
+ADishonoredPlayerPawn::MAT_FinishPlayerGroup,0x7051f0,0x6ab6a0*,82,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterWalk::OnEnterState,0x6af890,0x676980*,50,partial,UpdateWalkNavAnimState is a logged no-op; matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::UpdateViewTarget,0x7135c0,0x6d80a0*,5871,partial,"the influence branch and no-collision placement; collision, rain, teleport detection, OnCameraUpdate and the debug camera are not; matched by neighbourhood / callee only (not independently named in the 2013 database)"
+UStatePlayerMasterChoice_Base::MakePlayerChoice,0x6b8820,0x669240*,186,inventory,
+UDishonoredCameraInfluenceGroup::PostBeginPlay,0x71bac0,0x6cfbb0*,243,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterJump::TickJumpLogic_HeldPower_FullStop,0x6a65d0,0x676200*,212,inventory,
+UStatePlayerMasterAssassinate::FinalizeAutoCorpseCarry,0x6a5e60,0x675300*,242,inventory,
+UStatePlayerMasterSoiree::TickState,0x6af690,unmatched,35,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSlide::StaticClass,0x63a860,0x6a2790*,20,inventory,
+UStatePlayerMasterAction::OnOtherActorTerminated,0x692ce0,0x65fdb0*,22,inventory,
+ADishonoredPlayerCamera::~ADishonoredPlayerCamera,0x7156a0,0x6d7ff0*,159,inventory,
+UStatePlayerMasterFalling::~UStatePlayerMasterFalling,0x693890,unmatched,89,inventory,
+UStatePlayerMasterInStore::~UStatePlayerMasterInStore,0x693770,unmatched,89,inventory,
+UStatePlayerMasterLeaning::~UStatePlayerMasterLeaning,0x693a40,unmatched,89,inventory,
+UStatePlayerMasterPossess::~UStatePlayerMasterPossess,0x6b88f0,unmatched,96,inventory,
+UStatePlayerMasterStunned::~UStatePlayerMasterStunned,0x6b6580,unmatched,96,inventory,
+UStatePlayerMasterAssassinate::~UStatePlayerMasterAssassinate,0x696da0,unmatched,96,inventory,
+UStatePlayerMasterChoice_Base::~UStatePlayerMasterChoice_Base,0x6936e0,unmatched,89,inventory,
+UStatePlayerMasterHolePeeking::~UStatePlayerMasterHolePeeking,0x693920,unmatched,89,inventory,
+UStatePlayerMasterInScriptedChoice::GetTitleText,0x6b9220,0x669710*,39,inventory,
+UStatePlayerMasterVersus::OnPlayerAttackAttempt,0x6af860,0x6607e0*,6,inventory,
+UDishonoredCamera_AnimDriven::OnActivate_Derived,0x721d40,unmatched,68,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::OnTeleport,0x709de0,0x6ca370*,116,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMantle::OnEnterState_IntroTransition,0x6af340,unmatched,110,inventory,
+UStatePlayerMasterSwim::~UStatePlayerMasterSwim,0x6b2130,unmatched,89,inventory,
+UDisInterpTrackAllowPlayerLook::RemoveKeyframe,0x23bcb0,0x2256e0*,33,inventory,
+UStatePlayerMasterDead::TickState,0x69e2d0,0x66e990*,251,inventory,
+UStatePlayerMasterAssassinate::ChooseAnimState,0x69a7e0,0x667300*,86,inventory,
+UStatePlayerMasterJump::DisablePowerJump,0x693150,0x6600d0*,5,inventory,
+ADishonoredPlayerCamera::SetPostProcessTarget,0x70a010,0x6ca5d0*,264,inventory,
+UStatePlayerMasterJump::DoPowerJump_Fixed,0x6a6460,0x671370*,115,inventory,
+ADishonoredPlayerPawn::PreBeginPlay_Actions,0x720260,0x6a4a50*,251,partial,"master FSM and m_pMatineeBlender only; the upper and left-arm FSMs, PreBeginPlay_AnimStates, PreBeginPlay_PlayerCombat and InitNavigationHandle are not; matched by neighbourhood / callee only (not independently named in the 2013 database)"
+UStatePlayerMasterPossess_Base::OnEnterPossessState,0x6b4230,0x660a30*,241,inventory,
+UStatePlayerMasterAction::OnExitState,0x695ec0,0x66e0a0*,200,inventory,
+UStatePlayerMasterDead::CanTransitionExternal,0xa6cca0,0x233610*,5,inventory,
+UStatePlayerMasterAction::AreIncomingAttacksAllowed,0x692d00,unmatched,10,inventory,
+UStatePlayerMasterBase::~UStatePlayerMasterBase,0x693650,unmatched,89,inventory,
+UStatePlayerMasterPrePossess::HasFinishedCameraMove,0x6afba0,0x660c50*,27,inventory,
+FStatePlayerMasterSoiree_Param::SizeOf,0x79e8b0,0x36c330*,6,inventory,
+UStatePlayerMasterInDialog::IsSkippable_Derived,0x6afa50,0x660990*,33,inventory,
+UStatePlayerMasterBase::OnExitState,0x692d20,0x65fe00*,7,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSlide::OnEnterState,0x6b7080,0x667fa0*,1436,inventory,
+ADishonoredPlayerCamera::GetCamera_Possess,0x6fc060,0x6c0320*,7,inventory,
+UStatePlayerMasterVersus::OnExitState,0x6c5fd0,0x673570*,129,inventory,
+UStatePlayerMasterJump::OnExitState,0x693020,0x65ffa0*,110,inventory,
+UStatePlayerMasterSlide::AnimState_Advance_Derived,0x6af540,unmatched,24,inventory,
+UStatePlayerMasterInDialog::TrackPawnForDialog,0x6b8ec0,0x669480*,289,inventory,
+UDishonoredCamera_AnimDriven::GatherInfluence_Derived,0x72cf70,0x6d08a0*,315,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterAssassinate::OnLinkedActionExit,0x69e080,0x675420*,41,inventory,
+UStatePlayerMasterChoke::OnExitState,0x6a73f0,0x67aba0*,345,inventory,
+UStatePlayerMasterFalling::OnEnterState,0x6a76d0,0x6759f0*,326,inventory,
+ADishonoredPlayerCamera::GetCamera_DisableArmFollow,0x6fbfa0,0x6c0250*,38,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterJump::TickJumpLogic_NoPower,0x6a6800,0x676430*,139,inventory,
+UStatePlayerMasterDead::~UStatePlayerMasterDead,0x696ee0,unmatched,96,inventory,
+UStatePlayerMasterInScriptedChoice::GetChoiceInfo,0x6c20e0,0x66fb00*,87,inventory,
+UStatePlayerMasterInStore::OnExitState,0x692fc0,0x66eaa0*,96,inventory,
+UStatePlayerMasterAction::OnEnterState,0x6a3da0,0x66e050*,75,inventory,
+UDishonoredCamera_PlayerControl::GoToTargetOnNextControllerReset,0x721e50,0x6c1660*,37,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterInDialog::OnExitState,0x6b8d30,0x6739f0*,243,inventory,
+UDishonoredCameraInfluence::GatherInfluence,0x700010,0x6c4a40*,265,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSoiree::CanTransitionExternal,0x6b76f0,0x673150*,58,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMinigame::OnPlayerUsePrimaryItem,0x6b7030,0x667f30*,74,inventory,
+UStatePlayerMasterFalling::ShouldAnimateFalling,0x692ec0,0x65ff10*,24,inventory,
+UStatePlayerMasterVersus::OnEnterState,0x6c2010,0x66fa10*,97,inventory,
+UDishonoredCameraInfluenceGroup::SetWeight,0x709770,0x6c9c70*,579,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::ApplyDebugCam_Native,0x721020,0x6ca3f0*,76,inventory,
+UStatePlayerMasterMantle::SetAllowPlayerCancel,0x6af450,0x660390*,24,inventory,
+UStatePlayerMasterAction::OnLinkedActionExit,0x695fd0,0x662db0*,176,inventory,
+UStatePlayerMasterJump::TickState,0x6a7bc0,0x679150*,197,inventory,
+UStatePlayerMasterMantle::StartCrouchTransition,0x6af470,0x6603b0*,109,inventory,
+UStatePlayerMasterChoice_Base::MakePlayerChoice_Derived,0x57ef10,0x59d10*,1,inventory,
+UDishonoredCamera_AnimDriven::OnDeactivate_Derived,0x721d90,unmatched,103,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDisInterpTrackAllowPlayerLook::UpdateTrack,0x8dc4a0,0x86eaa0*,296,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSlide::OnOtherActorTerminated,0x6c9460,0x679220*,12,inventory,
+UStatePlayerMasterLeaning::CanTransitionExternal,0x696720,0x66eb30*,35,inventory,
+UDishonoredCameraInfluence::OnTeleport,0xc8750,0x1cb0c0*,3,inventory,
+ADishonoredPlayerCamera::ClearFOVTarget,0x709fb0,0x6ca570*,83,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterPossess_Base::OnExitState,0x6c3f60,0x673b90*,80,inventory,
+CalcBlendedPlayerDelta,0x729aa0,0x6cb440*,263,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::GetCamera_PhysicalReact,0x6fbf80,0x6c0230*,7,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterInScriptedChoice::OnPreCommitMapChange,0x6afb30,unmatched,5,inventory,
+UStatePlayerMasterSwim::IsOnSurface,0x6af7e0,0x660650*,17,inventory,
+UStatePlayerMasterChoice_Base::TickState,0x6c9470,0x679230*,80,inventory,
+UStatePlayerMasterAssassinate::OnEnterState,0x6a5db0,0x670f80*,162,inventory,
+UStatePlayerMasterChoice_Base::IsSkippable_Derived,0xd9220,0x322980*,3,inventory,
+UStatePlayerMasterVersus::OnLinkedActionExit,0x6b3fe0,0x663c90*,34,inventory,
+ADishonoredPlayerCamera::SetFOVTarget,0x709f40,0x6ca500*,110,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterStunned::GetStunAnimState,0x6b77e0,0x6686a0*,200,inventory,
+ADishonoredPlayerCamera::GetCamera_Lean,0x6fbfe0,0x5c5b00*,7,inventory,
+ADishonoredPlayerCamera::ApplyGameSettings,0x6fbf40,0x6c01f0*,58,inventory,
+UStatePlayerMasterStunned::TickState,0x6b7730,0x663bb0*,170,inventory,
+UStatePlayerMasterChoice_Base::GetNumChoices,0xd9220,0x322980*,3,inventory,
+UStatePlayerMasterChoke::PerformCustomPhysics,0x69b050,0x6674d0*,441,inventory,
+ADishonoredPlayerCamera::GetCamera_FollowProjectile,0x70e720,0x6d02d0*,32,inventory,
+UStatePlayerMasterInDialog::TickState,0x6c94c0,0x679280*,89,inventory,
+UStatePlayerMasterBase::ShouldLimitControllerSensitivity,0x723660,0x9c4b50*,5,inventory,
+UStatePlayerMasterMinigame::OnEnterState,0x6ccac0,0x67ae90*,171,inventory,
+UDisInterpTrackAllowPlayerLook::GetTrackEndTime,0x2361d0,0x21f4c0*,103,inventory,
+ADishonoredPlayerPawn::MAT_BeginPlayerGroup,0x70fcc0,0x6ab570*,257,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterPrePossess::TickState,0x6b4420,0x664060*,318,inventory,
+UStatePlayerMasterVersus::~UStatePlayerMasterVersus,0x6b6620,unmatched,96,inventory,
+UStatePlayerMasterAction::DoAction,0x695c40,0x662ae0*,635,inventory,
+UStatePlayerMasterChangeReadyStance::OnEnterState,0x6a3e10,0x66e1f0*,87,inventory,
+UStatePlayerMasterSoiree::~UStatePlayerMasterSoiree,0x6b6060,unmatched,89,inventory,
+UDishonoredCameraInfluence::GetFixedTimeStep,0xe7740,0xdc330*,4,inventory,
+UDisPlayerLookAngleKeyProperties::~UDisPlayerLookAngleKeyProperties,0x53b420,unmatched,89,inventory,
+UStatePlayerMasterLeaning::SavePartialState,0x6931e0,0x6601e0*,144,inventory,
+ADishonoredPlayerCamera::GetCamera_Aim,0x6fc000,0x6c02d0*,7,inventory,
+UStatePlayerMasterHolePeeking::IsEnding,0x692f60,0x65ff40*,10,inventory,
+ADishonoredPlayerCamera::UseDefaultCamCollisionSize,0x71bfd0,0x6d02f0*,66,inventory,
+FStatePlayerMasterSoiree_Param::OnPending,0x6c5f80,unmatched,66,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSlide::UStatePlayerMasterSlide,0x6cca20,0x67c940*,121,inventory,
+UStatePlayerMasterChoke::OnLinkedActionExit,0x6a9780,0x67ad80*,278,inventory,
+UStatePlayerMasterHolePeeking::OnEnterState,0x6a7820,0x672d50*,374,inventory,
+UDishonoredCameraInfluence::OnActivate_Derived,0xc8750,0x1cb0c0*,3,inventory,
+UStatePlayerMasterChoice_Base::UnpauseBendTime,0x6b8750,0x669170*,198,inventory,
+ADishonoredPlayerCamera::GetCamera_PlayerControl,0x6fc010,unmatched,7,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterClimb::OnExitState,0x6ad600,0x66e2c0*,667,inventory,
+UStatePlayerMasterInDialog::TrackActorForDialog,0x6b8ff0,0x6695a0*,320,inventory,
+UStatePlayerMasterChoke::AutoPickupLoserNPC,0x6a6030,0x6757c0*,230,inventory,
+ADishonoredPlayerCamera::GetCamera_CrouchMantleOffset,0x6fc050,0x6c0310*,7,inventory,
+UDishonoredCameraInfluence::PutToSleep,0x6fbdb0,unmatched,5,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPawn::PerformAngleOffsetFixup,0x795080,0x757110*,1441,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterLeaning::OnExitState,0x69bbd0,0x667bf0*,47,inventory,
+UStatePlayerMasterInScriptedChoice::MakePlayerChoice_Derived,0x6afb00,unmatched,35,inventory,
+ADishonoredPlayerCamera::BeginDestroy,0xac5f0,0x6c0710*,5,inventory,
+UDisInterpTrackAllowPlayerLook::AddKeyframe,0x8e3030,unmatched,373,editor,editor surface
+UStatePlayerMasterMantle::OnEnterState_ImpactAnim,0x6b6d10,0x667c50*,81,inventory,
+ADishonoredPlayerCamera::IgnoreBlockingBy,0x709c60,0x6ca1f0*,129,inventory,
+UStatePlayerMasterChoice_Base::PlayerRequestSkip,0x6af8f0,0x660810*,17,inventory,
+ADishonoredPawn::GetBone_ByName,0x7956a0,0x757730*,292,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::ApplyCameraPostProcess,0x70a1c0,0x6ca780*,259,inventory,
+UStatePlayerMasterInDialog::CalcZoomFOVBasedOnRadius,0x6b40d0,0x663cc0*,132,inventory,
+UStatePlayerMasterSlide::GetImpactDamageAmount,0x6b7620,0x668580*,202,inventory,
+ADishonoredPawn::GetCameraPos,0x78ea60,0x749990*,36,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::GetCamera_AnimDriven,0x6fc020,0x6c02e0*,7,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterFalling::LoadPartialState,0x696340,0x663260*,74,inventory,
+UStatePlayerMasterLeaning::SetLeanParams,0x693160,0x6600f0*,124,inventory,
+ADishonoredPlayerCamera::GetCamera_Look,0x6fbff0,0x6c02c0*,7,inventory,
+UStatePlayerMasterSwim::OnExitState,0x6b3e20,0x673470*,196,inventory,
+UStatePlayerMasterSwim::OnRejectStateRequest,0x6b3f20,0x66f9c0*,39,inventory,
+UStatePlayerMasterVersus::FillUIInteractions,0x6af830,0x6607b0*,38,inventory,
+UStatePlayerMasterFalling::TickState,0x69b650,0x675b80*,66,inventory,
+UStatePlayerMasterHolePeeking::BreakOut,0x6963f0,0x663330*,181,inventory,
+UDishonoredCameraInfluenceGroup::WeightRotator,0x6fbdf0,0x6c00a0*,153,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDishonoredCameraInfluence::ModifyCamCollision_Derived,0xd9930,0x8e7f30*,3,inventory,
+UStatePlayerMasterMinigame::OnSetFiringObject,0x6ccbe0,0x67afe0*,65,inventory,
+UStatePlayerMasterChangeReadyStance::RequestStateExit_Derived,0x6a5f90,0x675750*,110,inventory,
+ADishonoredPlayerCamera::Tick,0x70e6e0,0x6d0290*,61,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterInDialog::SetSoireeBlendOutTime,0x6afae0,0x6609c0*,20,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterBase::FillUIInteractions,0xa6cca0,0x233610*,5,inventory,
+UStatePlayerMasterAction::FillUIInteractions,0xa6cca0,0x233610*,5,inventory,
+UStatePlayerMasterBase::GetBlendInTime,0x692d60,unmatched,44,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerPawn::DisableArmFollow,0x704d50,0x6a1cf0*,94,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDisInterpTrackAllowPlayerLook::GetNumKeyframes,0x106570,0x2159b0*,7,inventory,
+UStatePlayerMasterClimb::TickState,0x696130,0x667770*,180,inventory,
+UStatePlayerMasterMantle::TickState,0x6c1e20,0x66c590*,298,inventory,
+UDishonoredCameraInfluence::GatherInfluence_FixedTimeStep,0x7231d0,0x6c0020*,5,inventory,
+UStatePlayerMasterSoiree::OnSoireeFinished,0x6af6e0,unmatched,32,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterAction::StaticClass,0x63a8c0,0x670dd0*,20,inventory,
+UDishonoredCamera_PlayerControl::OnTeleport,0x721e40,0x6c1650*,15,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterHolePeeking::LoadPartialState,0x6a63c0,0x675da0*,155,inventory,
+ADishonoredPlayerCamera::GetCamera_BumpSmoother,0x6fbfd0,0x6c02b0*,7,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSwim::TickState,0x6c3bb0,0x676710*,644,inventory,
+UDishonoredCameraInfluence::OnDeactivate_Derived,0xc8750,0x1cb0c0*,3,inventory,
+UStatePlayerMasterInDialog::RequestStateExit_Derived,0x6b8ea0,unmatched,23,inventory,
+UStatePlayerMasterPossess::OnEnterState,0x6c6090,unmatched,34,inventory,
+UStatePlayerMasterAction::SetLinkedNPC,0x69a6c0,unmatched,172,inventory,
+ADishonoredPlayerPawn::StopSneaking,0x70d570,0x6cd960*,295,partial,sneak bits cleared; AttemptChangeCollisionHeight and the stand-up action are not ported; matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerPawn::MAT_BlendOut,0x705120,0x6ab4a0*,193,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterBase::ShouldIgnorePitch,0x692d50,unmatched,9,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDishonoredCameraInfluence::GetFixedInterpScale,0x6fbd40,unmatched,61,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSoiree::OnEnterState,0x6af580,0x6730b0*,103,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterAssassinate::IsAutoPickingUpCorpse,0x692d10,0x65fde0*,13,inventory,
+UStatePlayerMasterMantle::GetCurrentMantleHeight,0x6af420,0x660350*,4,inventory,
+UStatePlayerMasterInDialog::GetChoiceInfo,0x6b4190,0x663dc0*,96,inventory,
+ADishonoredPlayerCamera::SetCameraCollisionSize,0x6fc280,0x6c0540*,33,inventory,
+UStatePlayerMasterChoke::OnNPCDeath,0x69b2a0,0x667740*,13,inventory,
+UDishonoredCameraInfluence::PostBeginPlay_Derived,0x57ef10,0x59d10*,1,inventory,
+UStatePlayerMasterInScriptedChoice::OnExitState,0x6b91f0,0x66c890*,46,inventory,
+UStatePlayerMasterWalk::TickState,0x6beba0,0x6769f0*,43,partial,"CheckForAutoCrouch not ported, UpdateWalkNavAnimState a logged no-op; matched by neighbourhood / callee only (not independently named in the 2013 database)"
+UStatePlayerMasterAction::CanTransitionExternal,0x6a7160,0x6727a0*,123,inventory,
+UStatePlayerMasterAssassinate::TickState,0x69a840,0x667360*,203,inventory,
+UStatePlayerMasterChoice_Base::OnEnterState,0x6b8560,0x673640*,151,inventory,
+UDisInterpTrackAllowPlayerLook::SetKeyframeTime,0x23bb30,0x2282e0*,383,inventory,
+ADishonoredPlayerCamera::TickPostProcess,0x709ba0,0x6ca130*,191,inventory,
+UDisInterpTrackAllowPlayerLook::GetKeyframeTime,0x8dc3e0,0x86ea40*,88,editor,editor surface
+ADishonoredPlayerPawn::MAT_SetForceInventory,0x6fe570,0x6a4d40*,222,partial,SetReequipItem / EquipItemByType_KeepTrying are not in the tree; logged once; matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::GetCamera_Influence,0x709cf0,0x6ca280*,226,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterJump::DoNormalJump_Fixed,0x693090,0x660010*,74,inventory,
+UStatePlayerMasterChoke::TickState,0x69ae50,0x671100*,511,inventory,
+UStatePlayerMasterStunned::OnEnterState,0x6af720,0x66f8f0*,47,inventory,
+UStatePlayerMasterSoiree::OnExitState,0x6af650,0x6639e0*,58,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterDead::ChooseAnimState,0x69b3c0,0x6678b0*,127,inventory,
+UStatePlayerMasterHolePeeking::SetPeekingParams,0x692ee0,0x6632b0*,118,inventory,
+UStatePlayerMasterSoiree::OnCancelState,0x6af630,unmatched,17,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterSlide::CleanupSlide,0x6cb0e0,0x66ef40*,1218,inventory,
+UStatePlayerMasterHolePeeking::TickState,0x6a61e0,0x675bd0*,466,inventory,
+UStatePlayerMasterDead::OnEnterState,0x6a3f70,0x66e650*,536,inventory,
+ADishonoredPlayerCamera::GetCamera_HitReact,0x6fbf90,0x6c0240*,7,inventory,
+ADishonoredPlayerCamera::SetRainEmitter,0x6fc2b0,0x6c0570*,410,inventory,
+UStatePlayerMasterChoice_Base::GetChoiceInfo,0xa26ea0,0x128ad0*,3,inventory,
+UDishonoredCameraInfluenceGroup::GetInfluence,0x709710,0x6c9c10*,94,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMantle::Tick_ImpactAnim,0x6b6d70,0x667cb0*,160,inventory,
+UStatePlayerMasterWalk::ShouldLimitControllerSensitivity,0x6b7c20,0x6687b0*,178,inventory,
+UStatePlayerMasterClimb::FillUIInteractions,0x69b340,0x667830*,124,inventory,
+UStatePlayerMasterChangeReadyStance::DoAction,0x6960c0,0x662f30*,18,inventory,
+UStatePlayerMasterAction::~UStatePlayerMasterAction,0x693ad0,unmatched,96,inventory,
+UStatePlayerMasterSlide::OnExitState,0x6ccc30,0x67b020*,342,inventory,
+UStatePlayerMasterStunned::CanTransitionAction,0x6af790,unmatched,31,inventory,
+UStatePlayerMasterSwim::Stroke,0x6af800,unmatched,7,inventory,
+UStatePlayerMasterAction::TickState,0x692ba0,unmatched,28,inventory,
+UStatePlayerMasterAssassinate::TryBranchToAutoCorpseCarry,0x69a970,0x672840*,348,inventory,
+ADishonoredPlayerPawn::GetCameraPos,0x70bdf0,0x6b2030*,22,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDisInterpTrackAllowPlayerLook::GetClosestSnapPosition,0x233c00,0x21cf30*,295,inventory,
+ADishonoredPlayerPawn::MAT_IsUnequipped,0x6fb030,0x6a1e80*,39,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterPossess_Base::OnExitPossessState,0x6b4330,0x660b30*,236,inventory,
+UDishonoredCameraInfluence::GatherInfluence_Start,0x6fbd80,0x8715d0*,3,inventory,
+UStatePlayerMasterMantle::SetAllowPlayerEnd,0x6af440,0x660380*,5,inventory,
+UDisInterpTrackAllowPlayerLook::GetKeyProperties,0x8dc440,0x86ee10*,83,editor,editor surface
+UStatePlayerMasterMinigame::~UStatePlayerMasterMinigame,0x6b64e0,unmatched,96,inventory,
+ADishonoredPlayerPawn::EnableCoreCamInfluence,0x70be10,0x6aba00*,90,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterChoice_Base::PlayerRequestSkip_Derived,0x57ef10,0x59d10*,1,inventory,
+UStatePlayerMasterBase::UpdateWalkNavAnimState,0x69ab60,0x675450*,749,partial,"read, not ported: the stance / anim-state system is absent; clears m_bBlendingFromLastState only; matched by neighbourhood / callee only (not independently named in the 2013 database)"
+UStatePlayerMasterSoiree::SetSoireeBlendOutTime,0x6af6c0,0x6604c0*,17,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMantle::~UStatePlayerMasterMantle,0x6b6c80,unmatched,96,inventory,
+UDishonoredCameraInfluence::OnCameraCollided_Derived,0xc8750,0x1cb0c0*,3,inventory,
+UDisTweaks_Pawn_Body::ApplyFallbackChain_Derived,0x7911f0,0x74d5d0*,136,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterPossess_Base::OnEnterState,0x6c3f00,unmatched,84,inventory,
+UStatePlayerMasterChoice_Base::ShowChoiceSelection,0x6c7450,unmatched,414,inventory,
+ADishonoredPlayerPawn::EnableControllerInput,0x702550,0x6b1160*,34,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDishonoredCamera_PlayerControl::StaticClass,0x63aa40,0x6622d0*,20,inventory,
+UStatePlayerMasterInDialog::StartSoireeControl,0x6afa80,0x6696e0*,34,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterAssassinate::FillUIInteractions,0x69a910,0x667440*,88,inventory,
+ADishonoredPlayerPawn::Tick_PlayerAction,0x6fae20,0x6a1ca0*,70,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPawn::GetDishonoredCamera,0x7afa20,0x7515c0*,43,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterAssassinate::OnExitState,0x6a7200,0x678ea0*,188,inventory,
+UStatePlayerMasterInDialog::PlayerRequestSkip_Derived,0x6afa30,0x660970*,30,inventory,
+ADishonoredPlayerCamera::HandleCollision,0x709e60,0x6ca420*,223,inventory,
+UStatePlayerMasterChoice_Base::GetTitleText,0xa6cca0,0x233610*,5,inventory,
+UStatePlayerMasterAction::AnimState_AnimNotFound_Derived,0x695f90,0x662d70*,64,inventory,
+UDisInterpTrackAllowPlayerLook::GetKeyframeLength,0x53ba10,0x4fc830*,5,inventory,
+UDishonoredCameraInfluence::~UDishonoredCameraInfluence,0x6fcad0,unmatched,89,inventory,
+UStatePlayerMasterStunned::IsStillStunned,0x6af7b0,0x660630*,10,inventory,
+UStatePlayerMasterInDialog::GetNumChoices,0x6af980,0x6608c0*,162,inventory,
+UStatePlayerMasterChoke::TryBranchToAutoCorpseCarry,0x6a7550,0x678fa0*,371,inventory,
+UStatePlayerMasterSwim::CanTransitionExternal,0x6b3ef0,0x66f990*,47,inventory,
+UStatePlayerMasterBase::CanApplyWalkFlags,0x692d40,0x65fe20*,7,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterHolePeeking::FillUIInteractions,0x692f70,0x65ff60*,38,inventory,
+UStatePlayerMasterHolePeeking::OnExitState,0x69b730,0x6679d0*,285,inventory,
+ADishonoredPlayerPawn::SetBodyMode,0x702070,0x6a7c20*,338,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterChoke::OnEnterState,0x6a95e0,0x67aa00*,414,inventory,
+UStatePlayerMasterMinigame::OnExitState,0x6ccb70,0x67af70*,107,inventory,
+UStatePlayerMasterLeaning::TickState,0x69bc00,0x676590*,353,inventory,
+UStatePlayerMasterJump::PlayJumpInActions,0x69ba10,0x672ed0*,304,inventory,
+UStatePlayerMasterSlide::PerformCustomPhysics,0x6cb5b0,0x66f440*,1121,inventory,
+UStatePlayerMasterPrePossess::OnEnterState,0x6c3fe0,0x676f30*,656,inventory,
+FDisSoireeControlState::ExitSoireeMode,0x695a70,0x6628f0*,414,partial,GetActualPlayerStance (arm follow back per hand) and InvalidateCurAnimState are not ported; matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterJump::OnEnterState,0x6a79a0,0x675ee0*,542,inventory,
+UDishonoredCamera_AnimDriven::~UDishonoredCamera_AnimDriven,0x725a90,unmatched,89,inventory,
+UStatePlayerMasterBase::OnEnterState,0x6a72c0,0x6729d0*,66,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterJump::HasPowerJump,0x6930e0,0x660060*,102,inventory,
+UStatePlayerMasterDead::OnGameOver,0x69b4d0,0x66c3a0*,235,inventory,
+ADishonoredPawn::HasNothingEquipped,0x7acbb0,0x74e070*,153,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterHolePeeking::ShouldLimitControllerSensitivity,0x69b850,0x667b10*,150,inventory,
+UDishonoredCamera_PlayerControl::PostBeginPlay_Derived,0x721e20,unmatched,14,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDishonoredCamera_AnimDriven::GetAnimDrivenTransform,0x726e40,0x6c1440*,465,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterChoice_Base::CanTransitionExternal,0xa6cca0,0x233610*,5,inventory,
+UDishonoredCameraInfluence::Wake,0x6fbdc0,0x6c0070*,5,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterDead::RequestStateExit_Derived,0x57ef10,0x59d10*,1,inventory,
+UStatePlayerMasterChoke::IsSneakyChoke,0x692e20,0x212650*,7,inventory,
+UDisInterpTrackAllowPlayerLook::GetTimeRange,0x236120,0x21cd50*,162,inventory,
+UStatePlayerMasterAction::EnableCamInfluences,0x692bd0,0x65fc90*,269,inventory,
+UStatePlayerMasterChoke::FillUIInteractions,0x69b210,0x667690*,51,inventory,
+UStatePlayerMasterInDialog::~UStatePlayerMasterInDialog,0x6b3870,unmatched,89,inventory,
+UDishonoredCamera_PlayerControl::GatherInfluence_Derived,0x72a0f0,0x6cba40*,558,partial,StartTrackingFixedAngles (the tracked controller reset) is not in the tree; the target is applied at once; matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerCamera::execApplyDebugCam_Native,0x63aa60,0x5f48b0*,228,inventory,
+UStatePlayerMasterMinigame::TickState,0x6b6f00,unmatched,298,inventory,
+UStatePlayerMasterBase::AreIncomingAttacksAllowed,0x692da0,0x65fe50*,10,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterPrePossess::~UStatePlayerMasterPrePossess,0x6b8990,unmatched,96,inventory,
+ADishonoredPlayerCamera::EnableCollision,0x6fc260,0x6c0520*,28,inventory,
+UStatePlayerMasterInStore::OnEnterState,0x696660,0x675e40*,158,inventory,
+UStatePlayerMasterInDialog::OnEnterState,0x6b8b20,unmatched,521,inventory,
+UStatePlayerMasterPrePossess::OnExitState,0x6c4270,0x673c50*,192,inventory,
+UStatePlayerMasterClimb::OnEnterState,0x6ad360,0x672b00*,662,inventory,
+UStatePlayerMasterMantle::GetCrouchRequired,0x6af430,0x660360*,10,inventory,
+UDishonoredCamera_AnimDriven::SetPlayerControlledLimit,0x729960,0x6cb300*,306,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+ADishonoredPlayerPawn::CancelAllActivePowers,0x7048c0,0x6aa540*,124,partial,the power components have no bodies; logged once; matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterChangeReadyStance::OnExitState,0x6960e0,0x66e250*,72,inventory,
+UStatePlayerMasterFalling::OnExitState,0x696260,0x663110*,217,inventory,
+FDisSoireeControlState::EnterSoireeMode,0x69a4b0,0x666ff0*,525,partial,"the item-context notification, CancelAllActivePowers' effect and the carried-corpse exit are not reachable (no bodies behind them); matched by neighbourhood / callee only (not independently named in the 2013 database)"
+UStatePlayerMasterLeaning::LoadPartialState,0x6a41c0,0x66eb60*,150,inventory,
+UStatePlayerMasterPossess::SavePartialState,0x6afb40,0x663f20*,60,inventory,
+UDishonoredCamera_AnimDriven::UpdatePlayerControlLimit,0x729bb0,0x6cb550*,825,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UDishonoredCamera_PlayerControl::CalcItemSpecificOffset,0x729f80,0x6cb8d0*,363,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)
+UStatePlayerMasterMantle::OnExitState_Crouching,0x6af3b0,0x6602e0*,103,inventory,
+UStatePlayerMasterSlide::AllowsCrouchAction,0xd9220,0x322980*,3,inventory,
+UStatePlayerMasterSlide::CancelSlide,0x6ccd90,0x671450*,114,inventory,
+UStatePlayerMasterInDialog::StopSoireeControl,0x6afab0,0x663e20*,33,ported,matched by neighbourhood / callee only (not independently named in the 2013 database)

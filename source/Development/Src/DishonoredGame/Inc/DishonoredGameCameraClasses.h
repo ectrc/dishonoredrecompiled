@@ -324,6 +324,7 @@ public:
 
     DECLARE_CLASS(UDishonoredCameraInfluence,UObject,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Camera");}
+#include "CppText/UDishonoredCameraInfluence.h"
 };
 
 // DishonoredGame.DisCamera_Aim: retail sizeof 96, reflected span 92..96 (2012 PDB sizeof 96)
@@ -477,6 +478,7 @@ public:
 
     DECLARE_CLASS(UDishonoredCameraInfluenceGroup,UObject,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Camera");}
+#include "CppText/UDishonoredCameraInfluenceGroup.h"
 };
 
 // DishonoredGame.DishonoredCamera_AnimDriven: retail sizeof 180, reflected span 92..180 (2012 PDB sizeof 180)
@@ -506,6 +508,7 @@ public:
     //## END PROPS DishonoredCamera_AnimDriven
 
     DECLARE_CLASS(UDishonoredCamera_AnimDriven,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredCamera_AnimDriven.h"
 };
 
 // DishonoredGame.DishonoredCamera_BumpSmoother: retail sizeof 132, reflected span 92..132 (2012 PDB sizeof 132)
@@ -609,6 +612,7 @@ public:
     //## END PROPS DishonoredCamera_PlayerControl
 
     DECLARE_CLASS(UDishonoredCamera_PlayerControl,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredCamera_PlayerControl.h"
 };
 
 // DishonoredGame.DishonoredCamera_Recoil: retail sizeof 268, reflected span 268..268 (2012 PDB sizeof 268)

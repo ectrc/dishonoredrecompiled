@@ -158,9 +158,12 @@ void ADishonoredPawn::PostBeginPlay_Body()
 
 // DISHONORED(port): 2013 rva 0x757730 (2012 0x7956a0): a bone of the pawn's body mesh by name, as a world position
 // and/or a rotation. Both outputs are optional and a mesh that has no such bone leaves them untouched.
-// DISHONORED(bringup): the rotation branch needs ADishonoredPawn::PerformAngleOffsetFixup (2013 rva 0x757110; the body tweaks'
-// m_fBone_AngleOffset_* correction), which is not ported; it is left out and named, so a caller that asks for a
-// rotation gets the unfixed bone rotation. The position branch, which the appearance path uses, is complete.
+// DISHONORED(port): agent FZ (PHASE18 FZ) - the rotation branch as retail has it: the bone's component-space matrix
+// (USkeletalMeshComponent::GetBoneMatrixLocal 2012 0x33afa0: SpaceBases(Bone) as a matrix, identity out of range),
+// PerformAngleOffsetFixup( TRUE ) - which also takes it to world space - then the origin and the rotator off that one
+// matrix. Without the fixup the player's camera bone answers a 90-degree pitch (agent FZ measured 16358 units on the
+// boat ride), which is the bone's axis convention the body tweaks' m_fBone_AngleOffset_* undo. The position-only branch
+// reads the world bone matrix directly, as retail does.
 void ADishonoredPawn::GetBone_ByName( FName _BoneName, FVector* _pPos, FRotator* _pRotator ) const
 {
 	if( ( !_pPos && !_pRotator ) || !Mesh )
@@ -172,16 +175,60 @@ void ADishonoredPawn::GetBone_ByName( FName _BoneName, FVector* _pPos, FRotator*
 	{
 		return;
 	}
-	const FMatrix BoneMatrix = Mesh->GetBoneMatrix( BoneIndex );
-	if( _pPos )
-	{
-		*_pPos = BoneMatrix.GetOrigin();
-	}
 	if( _pRotator )
 	{
+		FMatrix BoneMatrix = FMatrix::Identity;
+		if( BoneIndex < Mesh->SpaceBases.Num() )
+		{
+			BoneMatrix = Mesh->SpaceBases(BoneIndex).ToMatrix();
+		}
+		PerformAngleOffsetFixup( BoneMatrix, TRUE );
+		if( _pPos )
+		{
+			*_pPos = BoneMatrix.GetOrigin();
+		}
 		*_pRotator = BoneMatrix.Rotator();
 		_pRotator->MakeShortestRoute();
 	}
+	else if( _pPos )
+	{
+		*_pPos = Mesh->GetBoneMatrix( BoneIndex ).GetOrigin();
+	}
+}
+
+/**
+ * DISHONORED(port): agent FZ, 2012 0x795080 (2013 0x757110). With no angle offset in the body tweaks an object-space
+ * matrix is just taken to world space (times the mesh's LocalToWorld) and a world-space one is left alone. With an
+ * offset: a world-space matrix is first taken to object space (times the inverse of LocalToWorld), the rotation part is
+ * multiplied by the tweaks' m_AngleOffsetMatrix with the origin held aside, and the result goes to world space.
+ * The body tweaks fall back to UDisTweaks_Pawn's class default, as every retail tweak read does.
+ */
+void ADishonoredPawn::PerformAngleOffsetFixup( FMatrix& InOut, UBOOL bObjectSpace ) const
+{
+	const UDisTweaks_Pawn* Tweaks = GetPawnTweaks();
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaks_Pawn*)UDisTweaks_Pawn::StaticClass()->GetDefaultObject();
+	}
+	const UDisTweaks_Pawn_Body* Body = Tweaks ? Tweaks->m_pBodyTweaks : NULL;
+	const FMatrix& LocalToWorld = Mesh ? Mesh->LocalToWorld : FMatrix::Identity;
+	if( !Body || ( Body->m_fBone_AngleOffset_Pitch == 0.f && Body->m_fBone_AngleOffset_Yaw == 0.f && Body->m_fBone_AngleOffset_Roll == 0.f ) )
+	{
+		if( bObjectSpace )
+		{
+			InOut = InOut * LocalToWorld;
+		}
+		return;
+	}
+	if( !bObjectSpace )
+	{
+		InOut = InOut * LocalToWorld.InverseSafe();
+	}
+	const FVector OldOrigin = InOut.GetOrigin();
+	InOut.SetOrigin( FVector::ZeroVector );
+	InOut = Body->m_AngleOffsetMatrix * InOut;
+	InOut.SetOrigin( OldOrigin );
+	InOut = InOut * LocalToWorld;
 }
 
 // ---- agent FV (PHASE18 FV): the body pass ----

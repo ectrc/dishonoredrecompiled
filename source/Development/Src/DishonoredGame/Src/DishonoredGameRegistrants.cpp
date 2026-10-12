@@ -2340,6 +2340,23 @@ extern void DishonoredLinkDisSeqActStartSpawn();
 extern void DishonoredLinkDisSeqCondCompareBoolExtended();
 extern void DishonoredLinkDisSeqCondCompareTweaks();
 extern void DishonoredLinkDisSeqVarSpawnerPawn();
+extern void DishonoredLinkFZ_ArkAnimNodeBlendPose();
+extern void DishonoredLinkFZ_CameraAnimDriven();
+extern void DishonoredLinkFZ_CameraInfluence();
+extern void DishonoredLinkFZ_CameraInfluenceGroup();
+extern void DishonoredLinkFZ_CameraPlayerControl();
+extern void DishonoredLinkFZ_FDisSoireeControlState();
+extern void DishonoredLinkFZ_InterpTrackAllowPlayerLook();
+extern void DishonoredLinkFZ_PawnCamera();
+extern void DishonoredLinkFZ_PawnInventory();
+extern void DishonoredLinkFZ_PlayerPawnAction();
+extern void DishonoredLinkFZ_PlayerPawnCamera();
+extern void DishonoredLinkFZ_PlayerPawnStealth();
+extern void DishonoredLinkFZ_TweaksPawn();
+extern void DishonoredLinkFZ_UStatePlayerMasterBase();
+extern void DishonoredLinkFZ_UStatePlayerMasterInDialog();
+extern void DishonoredLinkFZ_UStatePlayerMasterSoiree();
+extern void DishonoredLinkFZ_UStatePlayerMasterWalk();
 void (*GDishonoredGameLinkAnchors[])() =
 {
 	&DishonoredLinkDisBehaviorGoTo,
@@ -2349,4 +2366,21 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkDisSeqCondCompareBoolExtended,
 	&DishonoredLinkDisSeqCondCompareTweaks,
 	&DishonoredLinkDisSeqVarSpawnerPawn,
+	&DishonoredLinkFZ_ArkAnimNodeBlendPose,
+	&DishonoredLinkFZ_CameraAnimDriven,
+	&DishonoredLinkFZ_CameraInfluence,
+	&DishonoredLinkFZ_CameraInfluenceGroup,
+	&DishonoredLinkFZ_CameraPlayerControl,
+	&DishonoredLinkFZ_FDisSoireeControlState,
+	&DishonoredLinkFZ_InterpTrackAllowPlayerLook,
+	&DishonoredLinkFZ_PawnCamera,
+	&DishonoredLinkFZ_PawnInventory,
+	&DishonoredLinkFZ_PlayerPawnAction,
+	&DishonoredLinkFZ_PlayerPawnCamera,
+	&DishonoredLinkFZ_PlayerPawnStealth,
+	&DishonoredLinkFZ_TweaksPawn,
+	&DishonoredLinkFZ_UStatePlayerMasterBase,
+	&DishonoredLinkFZ_UStatePlayerMasterInDialog,
+	&DishonoredLinkFZ_UStatePlayerMasterSoiree,
+	&DishonoredLinkFZ_UStatePlayerMasterWalk,
 };

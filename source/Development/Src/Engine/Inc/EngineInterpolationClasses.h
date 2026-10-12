@@ -402,6 +402,9 @@ public:
 	virtual void SetActorCollision( UBOOL bDisableCollision ) {}
 	virtual void SetMeshTranslationMode( BYTE MeshTranslationMode ) {}
 	void SetActorRootMotion( BYTE MatRootMotionMode );
+	// DISHONORED(port): agent FZ. 2012 0x2ea940 (2013 0x2cf960, same 58 B): the matinee's BlendOutTimeOverride when
+	// positive, else its BlendOutTime when positive, else 0. ADishonoredPlayerPawn::MAT_BlendOut reads it.
+	FLOAT GetBlendOutTime() const;
 
 	/** Force any actors attached to this group's actor to update their position using their relative location/rotation. */
 	void UpdateAttachedActors();

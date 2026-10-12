@@ -37,3 +37,25 @@ UBOOL DisIsObjectStateGoingToBeRestored( UObject* Object )
 	// hand-over 6), so only the loading-game half of the test answers.
 	return FALSE;
 }
+
+// ---- agent FZ (PHASE18 FZ): the save lock a soiree holds ----
+
+// DISHONORED(port): 2012 0x82f550 (2013 0x7ec820) and 0x82f580 (2013 0x7ec850): forwarded to the Dishonored engine's
+// counters (UDishonoredEngine::PushDisableSave / PopDisableSave, dishonoredengine.cpp).
+void DisPushDisableSave( BYTE DisableSaveType )
+{
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	if( Engine )
+	{
+		Engine->PushDisableSave( DisableSaveType );
+	}
+}
+
+void DisPopDisableSave( BYTE DisableSaveType, FLOAT WaitToEnable )
+{
+	UDishonoredEngine* Engine = Cast<UDishonoredEngine>( GEngine );
+	if( Engine )
+	{
+		Engine->PopDisableSave( DisableSaveType, WaitToEnable );
+	}
+}

@@ -90,6 +90,21 @@ public:
 	virtual void GetSpeakerLocInfo( TArray<struct FDisConvSpeakerLocInfo>& _rLocInfoOut ) const;
 	virtual class UDisConversationComponent* GetConversationComponent_Derived() { return NULL; }
 
+// ---- agent FZ (PHASE18 FZ): the camera and inventory reads the player soiree state makes on the pawn base ----
+// DISHONORED(port): GetDishonoredCamera 2012 0x7afa20 (2013 0x7515c0; body in dishonoredpawn_camera.cpp),
+// HasNothingEquipped 0x7acbb0 (body in dishonoredpawn_inventory.cpp), GetCameraPos 0x78ea60 (the pawn's location;
+// ADishonoredPlayerPawn overrides it with the camera bone). IsHoldingMovableObject / IsCarryingCorpse / DropMovableObject
+// are retail virtuals on this class whose item contexts are not ported; the bases answer FALSE / do nothing.
+public:
+	class ADishonoredPlayerCamera* GetDishonoredCamera() const;
+	UBOOL HasNothingEquipped() const;
+	virtual FVector GetCameraPos() const { return Location; }
+	virtual UBOOL IsHoldingMovableObject() const { return FALSE; }
+	virtual UBOOL IsCarryingCorpse() const { return FALSE; }
+	virtual void DropMovableObject( UBOOL bForceHighDrop ) {}
+	/** 2012 0x795080 (2013 0x757110): the body tweaks' bone angle offset applied to a bone matrix; body in dishonoredpawn_body.cpp. */
+	void PerformAngleOffsetFixup( FMatrix& InOut, UBOOL bObjectSpace ) const;
+
 // ---- agent GA (PHASE18 GA): the root-motion modes, the mesh translation and the PreBeginPlay chain ----
 // 2012 rvas: ChangeAnimStateMotionModes 0x78e550 (46 B, the base's: the two mesh fields; ADishonoredPlayerPawn 0x6fae70
 // overrides it), StartRootMotionMode 0x78e4b0, StopRootMotionMode 0x78e4c0, SetMeshTranslation 0x78e960,

@@ -2135,6 +2135,7 @@ public:
     //## END PROPS StatePlayerMasterInDialog
 
     DECLARE_CLASS(UStatePlayerMasterInDialog,UStatePlayerMasterChoice_Base,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterInDialog.h"
 };
 
 #undef DECLARE_CLASS

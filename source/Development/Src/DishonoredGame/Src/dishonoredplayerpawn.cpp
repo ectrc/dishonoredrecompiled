@@ -332,3 +332,135 @@ void ADishonoredPlayerPawn::ApplyGameSettings( const ArkSettingsParameters* Para
 {
 	m_bCameraRelativeClimbing = Parameters->m_bCameraRelativeClimbing ? TRUE : FALSE;
 }
+
+// ---- agent FZ (PHASE18 FZ): the player master FSM's life, the body mode, the input mask forward ----
+
+// DISHONORED(bringup): retail's ADishonoredPawn::PreBeginPlay (2012 0x78e220) calls the PreBeginPlay_* virtuals in the order
+// NativeComponents, StartAllComponents, Inventory, Attributes, Actions. Agent GA's base (ad4a35d, dishonoredpawn.cpp) does
+// NativeComponents and StartAllComponents and names the rest as unported; this override is the stand-in for the one of them
+// the player master FSM needs, chained after the base so retail's order holds.
+void ADishonoredPlayerPawn::PreBeginPlay()
+{
+	Super::PreBeginPlay();
+	PreBeginPlay_Actions();
+}
+
+// DISHONORED(bringup): retail's ADishonoredPlayerPawn::Tick (2012 0x715b10, 1229 B: breathlessness, dispersion, crouch events,
+// stats, avoidance, mana, the trackers, drowning, the post-process manager, the tattoo glow) is not ported; retail reaches
+// Tick_PlayerAction from ADishonoredPawn::Tick's first phase, the Tick_Begin virtual (player 0x715a00). Agent FV's
+// ADishonoredPawn::Tick (02eb527) dispatches Tick_Body only and names Tick_Begin as unported, so this override is the
+// stand-in for that one call; it chains to the base first, so the FSMs tick after Tick_Body as they do in retail's order
+// (Begin runs before Body in retail - the one-phase difference is noted, not hidden).
+UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
+{
+	const UBOOL bResult = Super::Tick( DeltaTime, TickType );
+	if( !bDeleteMe && !IsTemplate() && ( !GIsEditor || GIsGame ) )
+	{
+		m_fLastDeltaSeconds = DeltaTime;
+		Tick_PlayerAction( DeltaTime, TickType );
+	}
+	return bResult;
+}
+
+// DISHONORED(port): 2012 0x701f10 / 0x701fc0 (unnamed in 2013; the 2013 SetBodyMode inlines both and adds particle systems)
+static void DisShowCompRecursiveHelper( UPrimitiveComponent* Comp, UBOOL bShow )
+{
+	if( !Comp )
+	{
+		return;
+	}
+	Comp->SetHiddenGame( !bShow );
+	USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>( Comp );
+	if( SkelComp )
+	{
+		for( INT Index = 0; Index < SkelComp->Attachments.Num(); Index++ )
+		{
+			UActorComponent* Attached = SkelComp->Attachments(Index).Component;
+			UPrimitiveComponent* Prim = ( Attached && Attached->IsAttached() ) ? Cast<UPrimitiveComponent>( Attached ) : NULL;
+			DisShowCompRecursiveHelper( Prim, bShow );
+		}
+	}
+}
+
+static void DisSetCompDepthGroupRecursiveHelper( UPrimitiveComponent* Comp, ESceneDepthPriorityGroup DepthGroup )
+{
+	if( !Comp )
+	{
+		return;
+	}
+	Comp->SetDepthPriorityGroup( DepthGroup );
+	USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>( Comp );
+	if( SkelComp )
+	{
+		for( INT Index = 0; Index < SkelComp->Attachments.Num(); Index++ )
+		{
+			UActorComponent* Attached = SkelComp->Attachments(Index).Component;
+			UPrimitiveComponent* Prim = ( Attached && Attached->IsAttached() ) ? Cast<UPrimitiveComponent>( Attached ) : NULL;
+			DisSetCompDepthGroupRecursiveHelper( Prim, DepthGroup );
+		}
+	}
+}
+
+/**
+ * DISHONORED(port): 2012 0x702070 (2013 0x6a7c20, which also gives particle-system attachments the depth group). Only when
+ * the mode changes and the pawn has a Dishonored camera: BODY_MODE_FULL_BODY shows the mesh in the world depth group at
+ * forced LOD 2 (the full body); BODY_MODE_HIDDEN hides it; BODY_MODE_ARMS_ONLY shows it in the foreground depth group at
+ * forced LOD 1 (the arms-only LOD). Every skeletal attachment follows the mesh's depth group.
+ * This is retail's whole mechanism for hiding the first-person arms: there is no separate arms component.
+ */
+void ADishonoredPlayerPawn::SetBodyMode( BYTE BodyMode )
+{
+	if( m_BodyMode == BodyMode || !GetDishonoredCamera() || !Mesh )
+	{
+		return;
+	}
+	if( BodyMode == BODY_MODE_FULL_BODY )
+	{
+		DisShowCompRecursiveHelper( Mesh, TRUE );
+		Mesh->SetDepthPriorityGroup( SDPG_World );
+		Mesh->ForcedLodModel = 2;
+	}
+	else
+	{
+		if( BodyMode == BODY_MODE_HIDDEN )
+		{
+			DisShowCompRecursiveHelper( Mesh, FALSE );
+		}
+		else
+		{
+			DisShowCompRecursiveHelper( Mesh, TRUE );
+			Mesh->SetDepthPriorityGroup( SDPG_Foreground );
+		}
+		Mesh->ForcedLodModel = 1;
+	}
+	for( INT Index = 0; Index < Mesh->Attachments.Num(); Index++ )
+	{
+		UActorComponent* Attached = Mesh->Attachments(Index).Component;
+		USkeletalMeshComponent* SkelAttached = Cast<USkeletalMeshComponent>( Attached );
+		if( SkelAttached )
+		{
+			DisSetCompDepthGroupRecursiveHelper( SkelAttached, (ESceneDepthPriorityGroup)Mesh->DepthPriorityGroup );
+		}
+		else
+		{
+			UParticleSystemComponent* Particles = Cast<UParticleSystemComponent>( Attached );
+			if( Particles )
+			{
+				DisSetCompDepthGroupRecursiveHelper( Particles, (ESceneDepthPriorityGroup)Mesh->DepthPriorityGroup );
+			}
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): fz body mode %d -> %d on %s (mesh %s DPG %d LOD %d hidden %d)"), (INT)m_BodyMode, (INT)BodyMode, *GetName(),
+		*Mesh->GetName(), (INT)Mesh->DepthPriorityGroup, Mesh->ForcedLodModel, (INT)Mesh->HiddenGame );
+	m_BodyMode = BodyMode;
+}
+
+// DISHONORED(port): 2012 0x702550: the controller's mask level
+void ADishonoredPlayerPawn::EnableControllerInput( INT Mask, UBOOL bEnable, DisInputMaskLevel Level )
+{
+	ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Controller );
+	if( PC )
+	{
+		PC->EnableControllerInput( Mask, bEnable, Level );
+	}
+}

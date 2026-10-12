@@ -73,3 +73,23 @@ UBOOL DisTeleportPlayer( const FVector& _rLocation, const FRotator& _rRotation )
 	// player in the level, are here.
 	return TRUE;
 }
+
+// ---- agent FZ (PHASE18 FZ) ----
+
+// DISHONORED(port): 2012 0x8243d0 (2013 0x7bbb80, same 120 B). The step is (Target - Cur) * Speed * Dt, but the difference
+// is never taken smaller than SmallestDif (with the sign of the real one), and the result never passes the target.
+FLOAT DisInterpolateBySpeedWithDif( FLOAT Cur, FLOAT Target, FLOAT BlendSpeed, FLOAT SmallestDif, FLOAT DeltaTime )
+{
+	const UBOOL bDescending = Cur > Target;
+	FLOAT Dif = Target - Cur;
+	if( Abs( Dif ) < SmallestDif )
+	{
+		Dif = Dif >= 0.f ? SmallestDif : -SmallestDif;
+	}
+	const FLOAT Result = Cur + Dif * BlendSpeed * DeltaTime;
+	if( ( Result > Target ) != bDescending )
+	{
+		return Target;
+	}
+	return Result;
+}

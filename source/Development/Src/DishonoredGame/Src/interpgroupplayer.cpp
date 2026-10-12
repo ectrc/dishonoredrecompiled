@@ -22,29 +22,16 @@
 	single `jmp` instructions to UInterpGroupInst's, and HasActor's body is byte for byte the
 	`return GetGroupActor() == InActor;` the base already has inline in EngineInterpolationClasses.h.
 
-	The MAT_* calls retail makes from these bodies are NOT reachable in this tree and each one logs once
-	instead. ADishonoredPlayerPawn::MAT_BeginPlayerGroup (2012 0x70fcc0) requests a state change into
-	UStatePlayerMasterSoiree, and that class, UStatePlayerMasterInDialog::StartSoireeControl,
-	ADishonoredPlayerPawn::m_pMatineeBlender and UInterpGroup::HasMoveTrack are all absent or excluded
-	here. resources/docs/agents/agentFK.md specifies the whole contract.
+	The MAT_* calls retail makes from these bodies reach ADishonoredPlayerPawn's five since agent FZ (PHASE18 FZ:
+	dishonoredplayerpawn_action.cpp, through a Cast because the five stay on the player class rather than on APawn's
+	vtable); MAT_BeginPlayerGroup requests UStatePlayerMasterSoiree on the player master FSM, which agent FZ
+	initialises in ADishonoredPlayerPawn::PreBeginPlay_Actions. resources/docs/agents/agentFK.md specifies the whole
+	contract, agentFZ.md what of it is ported.
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
 #include "fkmatineediag.h"
 #include "arkcomponentlocomotion.h"
-
-/** UInterpGroupPlayer's bitfield word is one DWORD; these are the three bits these bodies read. */
-static void DisFKWarnOnce( const TCHAR* What )
-{
-	static TArray<FString> Said;
-	const FString Key( What );
-	if( Said.FindItemIndex( Key ) != INDEX_NONE )
-	{
-		return;
-	}
-	Said.AddItem( Key );
-	debugf( NAME_Warning, TEXT("the player group reached %s and it is not ported in this tree; the matinee continues without it"), What );
-}
 
 /**
  * TRUE the first time it is asked about a given instance. Kept out of the class on purpose:
@@ -73,9 +60,10 @@ UBOOL UInterpGroupPlayer::NeedWaitToStart( UInterpGroupInst* GrInst ) const
 	{
 		return FALSE;
 	}
-	// retail: !Pawn->MAT_IsUnequipped() (ADishonoredPlayerPawn 2012 0x6fb030, vtable slot 305)
-	DisFKWarnOnce( TEXT("APawn::MAT_IsUnequipped") );
-	return FALSE;
+	// retail: !Pawn->MAT_IsUnequipped() (ADishonoredPlayerPawn 2012 0x6fb030, vtable slot 305); the five are on the player
+	// class here, not on APawn (agent FZ), so a group on any other pawn answers as retail's empty APawn base does
+	ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( Pawn );
+	return Player ? !Player->MAT_IsUnequipped() : FALSE;
 }
 
 /**
@@ -127,8 +115,12 @@ void UInterpGroupInstPlayer::InitGroupInst( UInterpGroup* InGroup, AActor* InGro
 
 	if( Notify != NULL )
 	{
-		// retail: Pawn->MAT_BeginPlayerGroup( m_pPlayerGroup, this ) (vtable slot 295)
-		DisFKWarnOnce( TEXT("ADishonoredPlayerPawn::MAT_BeginPlayerGroup") );
+		// retail: Pawn->MAT_BeginPlayerGroup( m_pPlayerGroup, this ) (vtable slot 295) - agent FZ
+		ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( Notify );
+		if( Player )
+		{
+			Player->MAT_BeginPlayerGroup( m_pPlayerGroup, this );
+		}
 	}
 
 	if( GIsGame )
@@ -143,8 +135,12 @@ void UInterpGroupInstPlayer::InitGroupInst( UInterpGroup* InGroup, AActor* InGro
 
 			if( GroupActor != NULL )
 			{
-				// retail: GroupActor->MAT_SetForceInventory( Seq->m_bForcesUndrawBeforePlaying ) (slot 306)
-				DisFKWarnOnce( TEXT("ADishonoredPlayerPawn::MAT_SetForceInventory") );
+				// retail: GroupActor->MAT_SetForceInventory( Seq->m_bForcesUndrawBeforePlaying ) (slot 306) - agent FZ
+				ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( GroupActor );
+				if( Player )
+				{
+					Player->MAT_SetForceInventory( Seq->m_bForcesUndrawBeforePlaying );
+				}
 			}
 		}
 	}
@@ -159,8 +155,12 @@ void UInterpGroupInstPlayer::TermGroupInst( UBOOL bDeleteTrackInst )
 		Actor = GroupActor;
 		if( Actor != NULL && !( Actor->m_bLegalToTerminate && Actor->m_bHasTerminated ) )
 		{
-			// retail: Actor->MAT_BlendOut( this ) (ADishonoredPlayerPawn 2012 0x705120, slot 301)
-			DisFKWarnOnce( TEXT("ADishonoredPlayerPawn::MAT_BlendOut") );
+			// retail: Actor->MAT_BlendOut( this ) (ADishonoredPlayerPawn 2012 0x705120, slot 301) - agent FZ
+			ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( Actor );
+			if( Player )
+			{
+				Player->MAT_BlendOut( this );
+			}
 		}
 	}
 
@@ -171,8 +171,12 @@ void UInterpGroupInstPlayer::TermGroupInst( UBOOL bDeleteTrackInst )
 		return;
 	}
 
-	// retail: Actor->MAT_FinishPlayerGroup( m_pPlayerGroup, this ) (2012 0x7051f0, slot 296)
-	DisFKWarnOnce( TEXT("ADishonoredPlayerPawn::MAT_FinishPlayerGroup") );
+	// retail: Actor->MAT_FinishPlayerGroup( m_pPlayerGroup, this ) (2012 0x7051f0, slot 296) - agent FZ
+	ADishonoredPlayerPawn* FinishedPlayer = Cast<ADishonoredPlayerPawn>( Actor );
+	if( FinishedPlayer )
+	{
+		FinishedPlayer->MAT_FinishPlayerGroup( m_pPlayerGroup, this );
+	}
 
 	if( GIsGame && Actor->m_bLegalToTerminate && Actor->m_bHasTerminated )
 	{

@@ -28,6 +28,27 @@
 //   0x7b0050  public: virtual void __thiscall ADishonoredPawn::OnEquipItemType(class UDisSeqAct_EquipItemType *)
 //   0x7b0100  public: virtual void __thiscall ADishonoredPawn::OnModifyAmmo(class UDisSeqAct_ModifyAmmo *)
 //   0x7c38a0  public: virtual void __thiscall ADishonoredPawn::PreBeginPlay_Inventory(void)
-//   0x7c8500  public: virtual unsigned int __thiscall ADishonoredPawn::EquipItemByType(class UClass *, enum EDisEquipUsage, enum ADishonoredPawn::EEquipItemFlags)
-//   0x7c8690  public: void __thiscall ADishonoredPawn::SpawnInventoryLoadout_Items(class TArray<class UDisTweaks_InventoryItem *, class FDefaultAllocator> const &)
-//   0x7c8bb0  public: void __thiscall ADishonoredPawn::SpawnInventoryLoadout(struct FDisInventoryLoadout const &, unsigned int)
+
+// Agent FZ (PHASE18 FZ): HasNothingEquipped, 2012 0x7acbb0 (160 B): both hands' equipped items are UDishonoredItemEmpty
+// (or absent). The rest of this unit stays a skeleton; agents EF (SpawnInventoryLoadout_Ammo) and the abstract-item five
+// put their bodies in dissavegame.cpp and dishonoredpawn.cpp before this unit was compiled.
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkFZ_PawnInventory()
+{
+}
+
+UBOOL ADishonoredPawn::HasNothingEquipped() const
+{
+	if( !m_pInventory )
+	{
+		return TRUE;
+	}
+	UDishonoredInventoryItem* Primary = m_pInventory->GetEquippedItem( EDisEquipUsage_Primary );
+	UDishonoredInventoryItem* Secondary = m_pInventory->GetEquippedItem( EDisEquipUsage_Secondary );
+	const UBOOL bPrimaryEmpty = !Primary || Primary->IsA( UDishonoredItemEmpty::StaticClass() );
+	const UBOOL bSecondaryEmpty = !Secondary || Secondary->IsA( UDishonoredItemEmpty::StaticClass() );
+	return bPrimaryEmpty && bSecondaryEmpty;
+}

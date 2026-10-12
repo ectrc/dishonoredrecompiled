@@ -32,3 +32,20 @@
 //   0x7c5c00  public: static class UClass * __cdecl UDisTweaks_Pawn_UpperBodyAnimation::StaticClassNoInline(void)
 //   0x7c5c30  public: static class UClass * __cdecl UDisTweaks_Pawn_SpecialAnimation::StaticClassNoInline(void)
 //   0x7c7340  protected: virtual unsigned int __thiscall UDisTweaks_Pawn::FixupDefaults_Derived(void)
+
+// Agent FZ (PHASE18 FZ): UDisTweaks_Pawn_Body::ApplyFallbackChain_Derived, 2012 0x7911f0. The rest of this unit stays a skeleton.
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkFZ_TweaksPawn()
+{
+}
+
+// the three angle offsets, in degrees, become one rotation matrix the bone reads go through
+void UDisTweaks_Pawn_Body::ApplyFallbackChain_Derived()
+{
+	const FLOAT ToUnits = 65536.f / 360.f;
+	const FRotator Offset( appTrunc( m_fBone_AngleOffset_Pitch * ToUnits ), appTrunc( m_fBone_AngleOffset_Yaw * ToUnits ), appTrunc( m_fBone_AngleOffset_Roll * ToUnits ) );
+	m_AngleOffsetMatrix = FRotationTranslationMatrix( Offset, FVector::ZeroVector );
+}

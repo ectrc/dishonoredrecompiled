@@ -12666,6 +12666,7 @@ public:
 
     DECLARE_FUNCTION(execSetActiveChild);
     DECLARE_CLASS(UArkAnimNodeBlendPose,UAnimNodeBlendBase,0,Engine)
+#include "CppText/UArkAnimNodeBlendPose.h"
 };
 
 // Engine.ArkAnimNodeLocomotion: retail sizeof 688, reflected span 221..676 (2012 PDB sizeof 688) [shim: Engine package]

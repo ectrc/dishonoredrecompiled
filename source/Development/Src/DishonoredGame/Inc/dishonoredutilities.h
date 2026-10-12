@@ -122,3 +122,11 @@ const FVector DisGetPawnFeet( const class APawn* _pPawn );
 // full object path. The options screen turns a profile setting id into its EProfileSettingID name this way and
 // then localises that name.
 FString DisEnumTypeToString( INT _Value, const TCHAR* _EnumPath );
+
+// DISHONORED(port): agent FZ (PHASE18 FZ). DisPushDisableSave 2012 0x82f550 (2013 0xbec820 - 0x400000 = 0x7ec820) /
+// DisPopDisableSave 0x82f580 (2013 0x7ec850): the save lock, forwarded to UDishonoredEngine (dishonoredutilities_saveload.cpp).
+// DisInterpolateBySpeedWithDif 0x8243d0 (2013 0x7bbb80): the camera's FOV and look-soften interpolator
+// (dishonoredutilities_math.cpp) - moves Cur toward Target by Dif*Speed*Dt, at least SmallestDif per unit speed, and clamps.
+void DisPushDisableSave( BYTE DisableSaveType );
+void DisPopDisableSave( BYTE DisableSaveType, FLOAT WaitToEnable );
+FLOAT DisInterpolateBySpeedWithDif( FLOAT Cur, FLOAT Target, FLOAT BlendSpeed, FLOAT SmallestDif, FLOAT DeltaTime );

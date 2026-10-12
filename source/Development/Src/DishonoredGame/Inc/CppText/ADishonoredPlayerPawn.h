@@ -81,3 +81,37 @@ public:
 	struct FDisConvSaveData* GetDialogSaveData_Global() { return &m_DialogSaveData_Global; }
 	virtual void PostBeginPlay_Dialog();
 	class IDisConvSpeakerInterface* GetAudioLogSpeaker() const;
+
+// ---- agent FZ (PHASE18 FZ): the player master FSM, the soiree, the player MAT_* five, the camera glue ----
+// DISHONORED(port): retail 2012 rvas - PreBeginPlay_Actions 0x720260 (2013 0x6a4a50; the three FSMs' InitFSM and
+// m_pMatineeBlender), Tick_PlayerAction 0x6fae20 (2013 0x6a1ca0), MAT_BeginPlayerGroup 0x70fcc0 (2013 0x6ab570),
+// MAT_FinishPlayerGroup 0x7051f0 (2013 0x6ab6a0), MAT_BlendOut 0x705120 (2013 0x6ab4a0), MAT_IsUnequipped 0x6fb030 (2013
+// 0x6a1e80), MAT_SetForceInventory 0x6fe570 (2013 0x6a4d40), SetBodyMode 0x702070 (2013 0x6a7c20), EnableControllerInput
+// 0x702550, EnableCoreCamInfluence 0x70be10 (2013 0x6aba00), DisableArmFollow 0x704d50 (2013 0x6a1cf0), GetCameraBone
+// 0x705540 (2013 0x6aba60), GetCameraPos 0x70bdf0, StopSneaking 0x70d570 (2013 0x6acd960, partial), CancelAllActivePowers
+// 0x7048c0 (not ported: the power components have no bodies). Retail puts the MAT_ five on APawn's vtable; here they stay
+// on the player class and interpgroupplayer.cpp casts, as FS did for the NPC half. Retail reaches PreBeginPlay_Actions and
+// Tick_PlayerAction through ADishonoredPawn::PreBeginPlay (2012 0x78e220) and ADishonoredPawn::Tick -> Tick_Begin (0x715a00),
+// neither of which exists here; the two overrides below are the stand-ins and chain to Super first.
+// Bodies in dishonoredplayerpawn_action.cpp, dishonoredplayerpawn.cpp (SetBodyMode, EnableControllerInput, Tick,
+// PreBeginPlay), dishonoredplayerpawn_camera.cpp (EnableCoreCamInfluence, GetCameraBone, GetCameraPos) and
+// dishonoredplayerpawn_stealth.cpp (StopSneaking).
+public:
+	virtual void PreBeginPlay();
+	virtual UBOOL Tick( FLOAT DeltaTime, ELevelTick TickType );
+	virtual void PreBeginPlay_Actions();
+	virtual UBOOL Tick_PlayerAction( FLOAT DeltaTime, ELevelTick TickType );
+	virtual void MAT_BeginPlayerGroup( class UInterpGroupPlayer* GroupPlayer, class UInterpGroupInstPlayer* GroupInstPlayer );
+	virtual void MAT_FinishPlayerGroup( class UInterpGroupPlayer* GroupPlayer, class UInterpGroupInstPlayer* GroupInstPlayer );
+	virtual void MAT_BlendOut( class UInterpGroupInst* PlayerGroup );
+	virtual UBOOL MAT_IsUnequipped() const;
+	virtual void MAT_SetForceInventory( UBOOL bShouldForceEmptyHand );
+	void SetBodyMode( BYTE BodyMode );
+	void EnableControllerInput( INT Mask, UBOOL bEnable, DisInputMaskLevel Level );
+	void EnableCoreCamInfluence( const UClass* InfluenceClass, FLOAT BlendTime, UBOOL bWaitToBlendOneFrame = FALSE );
+	void DisableArmFollow( BYTE Usage, UBOOL bDisable, FLOAT BlendTime, UBOOL bWaitToBlendOneFrame = FALSE );
+	void GetCameraBone( FVector* OutLocation, FRotator* OutRotation ) const;
+	virtual FVector GetCameraPos() const;
+	void StopSneaking( UBOOL bSkipTransitions );
+	void CancelAllActivePowers() const;
+	UDishonoredNativeStateMachine* GetPlayerMasterFSM() const { return m_pPlayerMasterFSM; }

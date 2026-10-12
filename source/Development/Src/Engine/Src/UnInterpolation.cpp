@@ -3326,6 +3326,25 @@ UBOOL UInterpGroup::HasMoveTrack() const
 	return bHasMoveTrack;
 }
 
+// DISHONORED(port): agent FZ, 2012 0x2ea940 (2013 0x2cf960): the outer matinee's override first (+408), then its blend-out time (+404)
+FLOAT UInterpGroupInst::GetBlendOutTime() const
+{
+	USeqAct_Interp* Seq = Cast<USeqAct_Interp>( GetOuter() );
+	if( !Seq )
+	{
+		return 0.f;
+	}
+	if( Seq->BlendOutTimeOverride > 0.f )
+	{
+		return Seq->BlendOutTimeOverride;
+	}
+	if( Seq->BlendOutTime > 0.f )
+	{
+		return Seq->BlendOutTime;
+	}
+	return 0.f;
+}
+
 /**
  * We keep this around here as otherwise we are constantly allocating/deallocating the FAnimSlotInfos that Matinee is using
  * NOTE:  We probably need to clear this out every N calls
