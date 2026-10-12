@@ -116,6 +116,7 @@
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
 #include "arkpp.h"
+#include "arkcomponentlookat.h"
 #include "enginearkppclasses.h"
 #include "gfxui_gfx3.h"
 
@@ -1917,7 +1918,7 @@ static void DisFLReportPawn( ADishonoredNPCPawn* NPCPawn, FLOAT Distance, FLOAT 
 		if( Seq && Seq->NodeTotalWeight > 0.01f )
 		{
 			Seqs += FString::Printf( TEXT("%s=%s(w%.2f t%.2f add%i)%s; "), *Seq->NodeName.ToString(),
-				*Seq->AnimSeqName.ToString(), Seq->NodeTotalWeight, Seq->CurrentTime,
+				Seq->AnimSeq ? *Seq->AnimSeq->GetPathName() : *Seq->AnimSeqName.ToString(), Seq->NodeTotalWeight, Seq->CurrentTime,
 				Seq->AnimSeq ? (INT)Seq->AnimSeq->bIsAdditive : -1,
 				Seq->AnimSeq ? TEXT("") : TEXT("[NO AnimSeq]") );
 		}
@@ -1946,6 +1947,49 @@ static void DisFLReportPawn( ADishonoredNPCPawn* NPCPawn, FLOAT Distance, FLOAT 
 			LookAt->m_pConfig ? TEXT("set") : TEXT("NULL"),
 			LookAt->m_LookAtMode, LookAt->m_fUseHeadRange, LookAt->m_fUseTorsoRange, LookAt->m_fUseTorsoDeadZone,
 			Entries.Len() ? *Entries : TEXT("all zero") );
+		debugf( TEXT("DISHONORED(bringup): flhead %s lookatnode modes cur %i target %i stacked %i prev %i fade %.2f blendnode %s cfgmodes %i"),
+			*PawnName, LookAt->m_CurrentLookAtMode, LookAt->m_TargetLookAtMode, LookAt->m_StackedTargetLookAtMode,
+			LookAt->m_PreviousLookAtMode, LookAt->m_fLookAtModeBlendingRemainingTime,
+			LookAt->m_LookAtModeBlendingNode ? TEXT("set") : TEXT("NULL"),
+			LookAt->m_pConfig ? ((UArkComponentLookatConfig*)LookAt->m_pConfig)->m_LookAtModes.Num() : -1 );
+	}
+
+	// agent FT: the component that drives the node. "none" is retail's own state for a pawn whose Spawned never ran
+	// (an archetype); a started component with a NULL config is a pawn whose tweaks name no UArkComponentLookatConfig.
+	FArkComponentLookat* Lookat = NPCPawn->GetComponentLookat();
+	if( !Lookat )
+	{
+		debugf( TEXT("DISHONORED(bringup): flhead %s lookatcpnt none"), *PawnName );
+	}
+	else
+	{
+		const FVector& To = Lookat->GetToTarget();
+		const FVector2D& Cursor = Lookat->GetCurrentCursorPosition();
+		debugf( TEXT("DISHONORED(bringup): flhead %s lookatcpnt started %i config %s node %s mesh %s headbone %i eyes %i/%i ctrls %i/%i blink %i/%i spine %s"),
+			*PawnName, (INT)Lookat->m_bStarted,
+			Lookat->GetConfig() ? *Lookat->GetConfig()->GetName() : TEXT("NULL"),
+			Lookat->GetLookAtNode() ? TEXT("set") : TEXT("NULL"),
+			Lookat->m_pSkeletalComponent ? TEXT("set") : TEXT("NULL"),
+			Lookat->m_HeadBoneIndex, Lookat->m_LeftEyeBoneIndex, Lookat->m_RightEyeBoneIndex,
+			Lookat->m_pLeftEyeControl ? 1 : 0, Lookat->m_pRightEyeControl ? 1 : 0,
+			Lookat->m_pBlinkControl ? 1 : 0, Lookat->m_pBlinkAnim ? 1 : 0,
+			Lookat->GetSpineBenderNode() ? TEXT("set") : TEXT("NULL") );
+		debugf( TEXT("DISHONORED(bringup): flhead %s lookatcpnt requests %i type %i target %s notlooking %i flags t%i h%i e%i lod%i notick%i | head %.2f torso %.2f cursor(%.1f,%.1f)deg to(%.2f,%.2f,%.2f)"),
+			*PawnName, Lookat->GetRequestsCount(), Lookat->GetTargetType(),
+			Lookat->GetCurrentTarget() ? *Lookat->GetCurrentTarget()->GetName() : TEXT("none"),
+			(INT)Lookat->IsNotLookingAnywhere(),
+			(INT)Lookat->IsTorsoDisabled(), (INT)Lookat->IsHeadDisabled(), (INT)Lookat->IsEyesDisabled(), (INT)Lookat->IsInLOD(), (INT)Lookat->IsNoTick(),
+			Lookat->GetCurrentHeadRange(), Lookat->GetCurrentTorsoRange(),
+			Cursor.X * ( 180.f / PI ), Cursor.Y * ( 180.f / PI ), To.X, To.Y, To.Z );
+		if( const FArkComponentLookat::FLookatRequestData* Active = Lookat->GetActiveRequest() )
+		{
+			debugf( TEXT("DISHONORED(bringup): flhead %s lookatcpnt active type %i speed %.2f infl(%.2f,%.2f,%i) pattern %i actor %s loc(%.0f,%.0f,%.0f) local %i prio %i"),
+				*PawnName, (INT)Active->m_Type, Active->m_fSpeed, Active->m_LookAtInfluence.m_fHeadInfluence, Active->m_LookAtInfluence.m_fTorsoInfluence,
+				(INT)Active->m_LookAtInfluence.m_bTorsoInfIsMoveSpeedDependant, Active->m_PatternIdx,
+				Active->m_ActorData.m_pActor ? *Active->m_ActorData.m_pActor->GetName() : TEXT("none"),
+				Active->m_LocationData.m_Location.X, Active->m_LocationData.m_Location.Y, Active->m_LocationData.m_Location.Z,
+				(INT)Active->m_LocationData.m_bLocal, Lookat->GetActiveRequestPriority() );
+		}
 	}
 }
 
@@ -2016,6 +2060,59 @@ void DisFLHeadReport( UWorld* World, ADishonoredPlayerController* ViewPC )
 		if( Best[Slot] )
 		{
 			DisFLReportPawn( Best[Slot], BestDist[Slot], Now );
+		}
+	}
+
+	// agent FT: a sweep over EVERY NPC pawn for the two things a look-at fault would produce that the four nearest
+	// pawns' per-bone report cannot see - a NaN anywhere in the body's local atoms or the look-at node's aim, and a
+	// mesh whose bounds have blown up (a NaN-scaled skeleton renders as a giant mesh over the whole view).
+	for( FActorIterator It; It; ++It )
+	{
+		ADishonoredNPCPawn* NPCPawn = Cast<ADishonoredNPCPawn>( *It );
+		if( !NPCPawn || NPCPawn->IsPendingKill() || !NPCPawn->Mesh )
+		{
+			continue;
+		}
+		USkeletalMeshComponent* Body = NPCPawn->Mesh;
+		INT NaNBones = 0;
+		for( INT BoneIndex = 0; BoneIndex < Body->LocalAtoms.Num(); BoneIndex++ )
+		{
+			if( Body->LocalAtoms(BoneIndex).ContainsNaN() )
+			{
+				NaNBones++;
+			}
+		}
+		UArkAnimNodeLookAt* LookAt = UArkAnimNodeLookAt::GetAnimNodeLookAt( NPCPawn );
+		const UBOOL bAimNaN = LookAt && ( appIsNaN( LookAt->m_Aim.X ) || appIsNaN( LookAt->m_Aim.Y ) || appIsNaN( LookAt->m_CurrentBlendedAim.X ) || appIsNaN( LookAt->m_fUseHeadRange ) );
+		const FLOAT Radius = Body->Bounds.SphereRadius;
+		INT FarBone = INDEX_NONE;
+		FLOAT FarDist = 0.f;
+		INT FarCount = 0;
+		for( INT BoneIndex = 0; BoneIndex < Body->SpaceBases.Num(); BoneIndex++ )
+		{
+			const FLOAT Dist = Body->SpaceBases(BoneIndex).GetOrigin().Size();
+			if( Dist > 500.f )
+			{
+				FarCount++;
+			}
+			if( Dist > FarDist )
+			{
+				FarDist = Dist;
+				FarBone = BoneIndex;
+			}
+		}
+		if( NaNBones || bAimNaN || Radius > 2000.f || appIsNaN( Radius ) )
+		{
+			const FVector FarPos = FarBone != INDEX_NONE ? Body->SpaceBases(FarBone).GetOrigin() : FVector(0.f);
+			debugf( TEXT("DISHONORED(bringup): flhead SUSPECT %s farthest bone %i %s at comp(%.0f,%.0f,%.0f) dist %.0f scale %.3f, %i bones beyond 500, root scale %.3f local %.3f, mesh origin %.0f,%.0f,%.0f pawn %.0f,%.0f,%.0f"),
+				*NPCPawn->GetName(), FarBone, FarBone != INDEX_NONE && Body->SkeletalMesh ? *Body->SkeletalMesh->RefSkeleton(FarBone).Name.ToString() : TEXT("none"),
+				FarPos.X, FarPos.Y, FarPos.Z, FarDist, FarBone != INDEX_NONE ? Body->SpaceBases(FarBone).GetScale() : 0.f, FarCount,
+				Body->SpaceBases.Num() ? Body->SpaceBases(0).GetScale() : 0.f, Body->LocalAtoms.Num() ? Body->LocalAtoms(0).GetScale() : 0.f, Body->LocalToWorld.GetOrigin().X, Body->LocalToWorld.GetOrigin().Y, Body->LocalToWorld.GetOrigin().Z,
+				NPCPawn->Location.X, NPCPawn->Location.Y, NPCPawn->Location.Z );
+			debugf( TEXT("DISHONORED(bringup): flhead SUSPECT %s (%s) dist %.0f: %i NaN bones of %i, aim NaN %i, bounds radius %.0f at %.0f,%.0f,%.0f, scale3D %.2f,%.2f,%.2f drawscale %.2f"),
+				*NPCPawn->GetName(), Body->SkeletalMesh ? *Body->SkeletalMesh->GetName() : TEXT("none"), ( NPCPawn->Location - ViewPoint ).Size(),
+				NaNBones, Body->LocalAtoms.Num(), (INT)bAimNaN, Radius, Body->Bounds.Origin.X, Body->Bounds.Origin.Y, Body->Bounds.Origin.Z,
+				NPCPawn->DrawScale3D.X, NPCPawn->DrawScale3D.Y, NPCPawn->DrawScale3D.Z, NPCPawn->DrawScale );
 		}
 	}
 }
@@ -2595,13 +2692,34 @@ void UArkAnimNodeLookAt::GetBoneAtoms( FBoneAtomArray& Atoms, const TArray<BYTE>
 	GetBoneAtomsForSet( 0, HeadAtoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
 	GetBoneAtomsForSet( 1, TorsoAtoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
 
-	if( m_fLookAtModeBlendingRemainingTime > 0.f )
+	if( m_fLookAtModeBlendingRemainingTime > 0.f && m_LookAtModeBlendingNode )
 	{
-		// DISHONORED(bringup): retail crossfades to m_LookAtModeBlendingNode here, on a smoothstep of
-		// 1 - 2*m_fLookAtModeBlendingRemainingTime, calling that node's own GetBoneAtoms through vtable
-		// slot 90. Nothing in this build changes the look-at mode, so the time is never set and this
-		// branch is not written; SetLookAtMode (2013 0x50c410) and HandleBlendingBetweenLookatNodes
-		// (2013 0x50c650) are the two functions that would make it reachable.
+		// agent FT: retail's crossfade between look-at modes, now reachable because HandleBlendingBetweenLookatNodes
+		// sets the time. The blending node (already on the target mode) is evaluated whole, and the result is
+		// Identity + Alpha * BlendingNode + (1 - Alpha) * Head + (1 - Alpha) * Torso, with Alpha the smoothstep of
+		// t = 1 - 2 * remaining (the fade lasts 0.5 s), clamped to [0,1].
+		FBoneAtomArray BlendToAtoms;
+		BlendToAtoms.Add( NumAtoms );
+		m_LookAtModeBlendingNode->GetBoneAtoms( BlendToAtoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+		const FLOAT T = 1.f - 2.f * m_fLookAtModeBlendingRemainingTime;
+		const FLOAT Alpha = Clamp( ( 3.f - 2.f * T ) * T * T, 0.f, 1.f );
+		for( INT BoneSlot = 0; BoneSlot < DesiredBones.Num(); BoneSlot++ )
+		{
+			const INT BoneIndex = DesiredBones(BoneSlot);
+			Atoms(BoneIndex) = FBoneAtom::Identity;
+
+			FBoneAtom Scaled;
+			Scaled.Blend( FBoneAtom::Identity, BlendToAtoms(BoneIndex), Alpha );
+			Atoms(BoneIndex).Accumulate( Scaled );
+
+			Scaled.Blend( FBoneAtom::Identity, HeadAtoms(BoneIndex), 1.f - Alpha );
+			Atoms(BoneIndex).Accumulate( Scaled );
+
+			Scaled.Blend( FBoneAtom::Identity, TorsoAtoms(BoneIndex), 1.f - Alpha );
+			Atoms(BoneIndex).Accumulate( Scaled );
+		}
+		SaveCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() );
+		return;
 	}
 
 	const FLOAT HeadAlpha = 1.f;
@@ -2638,13 +2756,16 @@ void UArkAnimNodeLookAt::TickAnim( FLOAT DeltaSeconds )
 	UArkComponentLookatConfig* Config = (UArkComponentLookatConfig*)m_pConfig;
 	if( Config && Config->m_LookAtModes.Num() )
 	{
-		// DISHONORED(bringup): retail runs HandleProceduralLookatInAnimTreeEd (2013 0x526000), then
-		// ComputeHeadAndTorsoAim (2013 0x5176f0) + UpdateNodeWeights when
-		// HandleBlendingBetweenLookatNodes (2013 0x50c650) returns TRUE or the node flag at UAnimNode+92
-		// bit 1 is set, and finally UAnimNodeSequence::TickAnim. The first three all read m_pConfig's
-		// BlendInfos, which FArkComponentLookat::Starting builds; none of that is ported, so this branch
-		// is UNREACHABLE in this build - m_pConfig is NULL on every NPC, measured. It is left named
-		// rather than filled with stubs, and UpdateNodeWeights below is retail's own.
+		// agent FT: retail's config branch, reachable now that FArkComponentLookat::Starting sets m_pConfig.
+		// HandleProceduralLookatInAnimTreeEd (2013 0x526000) is the AnimTree editor's procedural preview, behind
+		// GIsEditor && !GIsGame, and is named rather than written. The weights are recomputed only when something
+		// the aim depends on changed (HandleBlendingBetweenLookatNodes) or the node just became relevant.
+		if( HandleBlendingBetweenLookatNodes( DeltaSeconds ) || bJustBecameRelevant )
+		{
+			FVector2D SafeAimArray[2];
+			ComputeHeadAndTorsoAim( SafeAimArray );
+			UpdateNodeWeights( SafeAimArray );
+		}
 		UAnimNodeSequence::TickAnim( DeltaSeconds );
 	}
 	else if( GDisLookAtForcedAim > 0 || DisLookAtPlayerEnabled() )

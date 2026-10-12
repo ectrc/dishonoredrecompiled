@@ -2293,6 +2293,11 @@ public:
 	/** Notification to this blend that a child UAnimNodeSequence has reached the end and stopped playing. Not called if child has bLooping set to true or if user calls StopAnim. */
 	virtual void OnChildAnimEnd(UAnimNodeSequence* Child, FLOAT PlayedTime, FLOAT ExcessTime);
 
+	// DISHONORED(port): agent FT. Arkane's last vtable slot (2012 rva 0x19f260): a child sequence tells its parents
+	// whether it became additive; the parent fixes the child's bIsAdditive, renormalises the non-additive weights and
+	// passes its own only-additive-children state up the tree.
+	virtual void ChildrenHasChanged( const UAnimNode* ChildAnimNode, UBOOL bChildIsAdditive );
+
 	/** A child connector has been added */
 	virtual void	OnAddChild(INT ChildNum);
 	/** A child connector has been removed */
@@ -2343,6 +2348,10 @@ public:
 
 	// UAnimNode interface
 	virtual void InitAnim( USkeletalMeshComponent* MeshComp, UAnimNodeBlendBase* Parent );
+	// DISHONORED(port): agent FT. Retail's slot is the base class's (2012 0x574db0 jumps to UAnimNodeBlendBase::GetBoneAtoms)
+	// because retail evaluates the skeleton through EdgeAnim jobs (UpdateSkelPoseBegin/End, GEdgeAnimManager), whose leaf
+	// honours m_bDontUseRefPoseOnNonDefinedBones; this evaluator has no EdgeAnim, so the stack layers its channels itself.
+	virtual void GetBoneAtoms( FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones, FBoneAtom& RootMotionDelta, INT& bHasRootMotion, FCurveKeyArray& CurveKeys );
 
 	// Matinee interface. 2012 rvas 0x576570, 0x576790, 0x5768b0, 0x576aa0.
 	void MAT_SetAnimPosition( INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion );

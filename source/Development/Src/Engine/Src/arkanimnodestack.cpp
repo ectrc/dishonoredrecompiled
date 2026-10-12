@@ -79,6 +79,76 @@ void UArkAnimNodeStack::ForceDontUseRefPoseOnChild( UBOOL bStatus )
 	}
 }
 
+// DISHONORED(port): agent FT. Not a retail function: retail's stack inherits UAnimNodeBlendBase::GetBoneAtoms and gets its
+// channel semantics from EdgeAnim, which BuildEdgeAnimTreeLeaf (2012 0x1a4620, the only reader of the flag on PC) tells to
+// leave the bones a channel's animation does not define alone. The stock evaluator sums children by weight instead, so a
+// channel at weight 1 over a Source at weight 1 (the look-at component's Blink channel) came out as two full poses: every
+// bone's translation and scale doubled, 2^depth at the fingers. Here Source is the base and each channel is layered over
+// it by its weight, only on the bones its sequence has a track for when the flag is set; additive channels accumulate.
+void UArkAnimNodeStack::GetBoneAtoms( FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones, FBoneAtom& RootMotionDelta, INT& bHasRootMotion, FCurveKeyArray& CurveKeys )
+{
+	if( GetCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() ) )
+	{
+		return;
+	}
+	if( Children.Num() == 0 || !Children(0).Anim )
+	{
+		RootMotionDelta.SetIdentity();
+		bHasRootMotion = 0;
+		FillWithRefPose( Atoms, DesiredBones, SkelComponent->SkeletalMesh->RefSkeleton );
+		return;
+	}
+	GetChildBoneAtoms( 0, Atoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+
+	const INT NumAtoms = SkelComponent->SkeletalMesh->RefSkeleton.Num();
+	FBoneAtomArray ChildAtoms;
+	FBoneAtom ChildRootMotion;
+	INT bChildHasRootMotion = 0;
+	FCurveKeyArray ChildCurveKeys;
+	for( INT ChildIndex = 1; ChildIndex < Children.Num(); ChildIndex++ )
+	{
+		const FAnimBlendChild& Child = Children(ChildIndex);
+		const FLOAT Weight = Min( Child.Weight, 1.f );
+		if( !Child.Anim || Weight <= ZERO_ANIMWEIGHT_THRESH )
+		{
+			continue;
+		}
+		if( ChildAtoms.Num() == 0 )
+		{
+			ChildAtoms.Add( NumAtoms );
+		}
+		GetChildBoneAtoms( ChildIndex, ChildAtoms, DesiredBones, ChildRootMotion, bChildHasRootMotion, ChildCurveKeys );
+
+		const UAnimNodeSequence* SeqNode = Cast<UAnimNodeSequence>( Child.Anim );
+		const TArray<INT>* BoneToTrackTable = NULL;
+		if( SeqNode && SeqNode->m_bDontUseRefPoseOnNonDefinedBones && SeqNode->AnimSeq && SeqNode->AnimSeq->GetAnimSet() )
+		{
+			const UAnimSet* AnimSet = SeqNode->AnimSeq->GetAnimSet();
+			if( AnimSet->LinkupCache.IsValidIndex( SeqNode->AnimLinkupIndex ) )
+			{
+				BoneToTrackTable = &AnimSet->LinkupCache( SeqNode->AnimLinkupIndex ).BoneToTrackTable;
+			}
+		}
+		for( INT BoneSlot = 0; BoneSlot < DesiredBones.Num(); BoneSlot++ )
+		{
+			const INT BoneIndex = DesiredBones(BoneSlot);
+			if( BoneToTrackTable && BoneToTrackTable->IsValidIndex( BoneIndex ) && (*BoneToTrackTable)(BoneIndex) == INDEX_NONE )
+			{
+				continue;
+			}
+			if( Child.bIsAdditive )
+			{
+				FBoneAtom::BlendFromIdentityAndAccumulate( Atoms(BoneIndex), ChildAtoms(BoneIndex), ScalarRegister( Weight ) );
+			}
+			else
+			{
+				Atoms(BoneIndex).Blend( Atoms(BoneIndex), ChildAtoms(BoneIndex), Weight );
+			}
+		}
+	}
+	SaveCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() );
+}
+
 // 2012 rva 0x576570 (536 B). Retail's reading of the child: Children[i]+64 bit 2 is m_bIsAnimSeq, the
 // node's +204 is AnimSeqName, +228 AnimSeq, +212 Rate, +216 the flag word (bLooping 0x8,
 // bMatineePlaying 0x10), +220 CurrentTime, +224 PreviousTime; vtable +384 is SetAnim, +388 SetPosition.

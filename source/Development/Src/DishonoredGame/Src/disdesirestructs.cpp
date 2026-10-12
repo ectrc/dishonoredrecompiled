@@ -18,6 +18,7 @@
 #include "DishonoredGame.h"
 #include "disdesirestructs.h"
 #include "arkcomponentlocomotion.h"
+#include "arkcomponentlookat.h"
 #include "disaisubstate.h"
 #include "dishonoredutilities_ai.h"
 
@@ -1038,10 +1039,16 @@ void FDisLookAtRequest::SyncRequest()
 	{
 		return;
 	}
-	UBOOL bFinished = !DisDesireStructs::IsComponentRequestStarted( m_pLookAtComponent );
-	// DISHONORED(bringup): retail reads the remaining time back from FArkComponentLookat::GetTimeLeft and drops the request
-	// when it hits zero. The synthetic component has no clock, so a look-at with a positive duration is expired by
-	// TickRequest below instead - which is what retail's paused path does with the same field.
+	// agent FT: the component is real now (Inc/arkcomponentlookat.h). Retail's test is the component's m_bStarted, then
+	// the remaining time read back from FArkComponentLookat::GetTimeLeft, which is also written back into m_fDuration;
+	// a timed request the component has let expire answers 0 and is dropped here.
+	FArkComponentLookat* pLookat = (FArkComponentLookat*)m_pLookAtComponent;
+	UBOOL bFinished = pLookat ? !pLookat->m_bStarted : !DisDesireStructs::IsComponentRequestStarted( m_pLookAtComponent );
+	if( pLookat && pLookat->m_bStarted && m_fDuration > 0.f )
+	{
+		m_fDuration = pLookat->GetTimeLeft( m_RequestID );
+		bFinished = m_fDuration == 0.f;
+	}
 	if( bFinished )
 	{
 		m_RequestID = INDEX_NONE;
@@ -1227,7 +1234,12 @@ void FDisLookAtRequest::ClearRequest()
 	ClearParams();
 	if( Status == DTDRS_StopRequestNeeded )
 	{
-		DisDesireStructs::ReleaseRequest( DisDesireStructs::DDK_LookAt, TEXT("FArkComponentLookat::StopLookAt") );
+		// agent FT: retail's FArkComponentLookat::StopLookAt on the real component; the counter stays for the census.
+		GDisDesireStops[DisDesireStructs::DDK_LookAt]++;
+		if( FArkComponentLookat* pLookat = (FArkComponentLookat*)m_pLookAtComponent )
+		{
+			pLookat->StopLookAt( m_RequestID );
+		}
 		m_RequestID = INDEX_NONE;
 	}
 }
@@ -1235,16 +1247,25 @@ void FDisLookAtRequest::ClearRequest()
 // DISHONORED(port): 2013 rva 0x8aa060 (2012 0x8fa450), 1,068 bytes: six component entry points. Aim or look, then
 // actor / location / nothing, then procedural or not. A look-at always stops the live request first (it has no update
 // form), which is why this body is so much larger than the other two.
-// DISHONORED(bringup): FArkComponentLookat is not ported; each branch counts the order and names its entry point.
+// agent FT: FArkComponentLookat is real (Inc/arkcomponentlookat.h), so each branch now calls retail's entry point with
+// retail's arguments - the asker and its name, the priority, the influence, the duration; a plain look-at moves at speed
+// 0.5 and is never local. Pattern DisLookAtProceduralPattern_MAX (retail's 4) means "not procedural". The counters
+// agent DF added stay, so the -disai census still reports the orders given, and a request on a pawn without the
+// component (no tweaks, a non-NPC pawn) keeps agent DF's synthetic id so the status machine above it is unchanged.
 void FDisLookAtRequest::DoRequest( EDisDesireRequestStatus _Status )
 {
 	if( _Status == DTDRS_Unchanged )
 	{
 		return;
 	}
+	FArkComponentLookat* pLookat = (FArkComponentLookat*)m_pLookAtComponent;
 	if( _Status == DTDRS_StopRequestNeeded )
 	{
-		DisDesireStructs::ReleaseRequest( DisDesireStructs::DDK_LookAt, TEXT("FArkComponentLookat::StopLookAt") );
+		GDisDesireStops[DisDesireStructs::DDK_LookAt]++;
+		if( pLookat )
+		{
+			pLookat->StopLookAt( m_RequestID );
+		}
 		m_RequestID = INDEX_NONE;
 		return;
 	}
@@ -1253,7 +1274,11 @@ void FDisLookAtRequest::DoRequest( EDisDesireRequestStatus _Status )
 	// body is so much larger than the face-to's and the loco's.
 	if( m_RequestID != INDEX_NONE )
 	{
-		DisDesireStructs::ReleaseRequest( DisDesireStructs::DDK_LookAt, TEXT("FArkComponentLookat::StopLookAt") );
+		GDisDesireStops[DisDesireStructs::DDK_LookAt]++;
+		if( pLookat )
+		{
+			pLookat->StopLookAt( m_RequestID );
+		}
 		m_RequestID = INDEX_NONE;
 	}
 
@@ -1277,7 +1302,50 @@ void FDisLookAtRequest::DoRequest( EDisDesireRequestStatus _Status )
 	{
 		return;
 	}
-	m_RequestID = DisDesireStructs::AcceptRequest( DisDesireStructs::DDK_LookAt, EntryPoint );
+	if( !pLookat )
+	{
+		m_RequestID = DisDesireStructs::AcceptRequest( DisDesireStructs::DDK_LookAt, EntryPoint );
+		return;
+	}
+	GDisDesireRequests[DisDesireStructs::DDK_LookAt]++;
+
+	const FName AskerName = m_pAsker ? m_pAsker->GetFName() : FName( TEXT("<uninitialized>") );
+	const FDisLookAtInfluence Influence( m_LookAtInfluence.m_fHeadInfluence, m_LookAtInfluence.m_fTorsoInfluence, m_LookAtInfluence.m_bTorsoInfIsMoveSpeedDependant );
+	const FName NoAttach = NAME_None;
+	if( m_pActorTarget )
+	{
+		if( m_bAimAtTarget )
+		{
+			m_RequestID = pLookat->StartAimAtActor( m_pAsker, AskerName, m_Priority, m_pActorTarget, Influence, m_fDuration );
+		}
+		else if( !bProcedural )
+		{
+			m_RequestID = pLookat->StartLookAtActor( m_pAsker, AskerName, m_Priority, m_pActorTarget, Influence, NoAttach, 0.5f, m_fDuration );
+		}
+		else
+		{
+			m_RequestID = pLookat->StartProceduralLookAtOnActor( m_pAsker, AskerName, m_Priority, m_ProceduralPatternIndex, m_pActorTarget, Influence, NoAttach, m_fDuration );
+		}
+	}
+	else if( m_bUsingLocation )
+	{
+		if( m_bAimAtTarget )
+		{
+			m_RequestID = pLookat->StartAimAtLocation( m_pAsker, AskerName, m_Priority, m_LocationTarget, Influence, m_fDuration );
+		}
+		else if( !bProcedural )
+		{
+			m_RequestID = pLookat->StartLookAtLocation( m_pAsker, AskerName, m_Priority, m_LocationTarget, Influence, 0.5f, m_bLocal, m_fDuration );
+		}
+		else
+		{
+			m_RequestID = pLookat->StartProceduralLookAtOnLocation( m_pAsker, AskerName, m_Priority, m_ProceduralPatternIndex, m_LocationTarget, Influence, m_fDuration );
+		}
+	}
+	else
+	{
+		m_RequestID = pLookat->StartProceduralLookAt( m_pAsker, AskerName, m_Priority, m_ProceduralPatternIndex, Influence, m_fDuration );
+	}
 }
 
 /*-----------------------------------------------------------------------------

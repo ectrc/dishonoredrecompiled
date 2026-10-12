@@ -2273,6 +2273,61 @@ FLOAT UAnimNodeBlendBase::GetChildWeightTotal()
 /**
  * Make sure to relay OnChildAnimEnd to Parent AnimNodeBlendBase as long as it exists 
  */ 
+// DISHONORED(port): agent FT. 2012 rva 0x19f260 (UAnimNodeBlendBase::ChildrenHasChanged, 1,084 bytes), the only
+// implementation in retail - no subclass overrides it. Reached from UAnimNodeSequence::SetAnim for every parent of the
+// sequence that changed, and recursively from here. The cooked FAnimBlendChild::bIsAdditive is stale for any sequence
+// whose animation is chosen at run time (UArkAnimNodeLookAt's additive aim poses are the case that found it: without
+// this a stack blends its additive channel as a second full pose and every bone's scale comes out 1 + 1).
+void UAnimNodeBlendBase::ChildrenHasChanged( const UAnimNode* ChildAnimNode, UBOOL bChildIsAdditive )
+{
+	UBOOL bNeedWeightRefresh = FALSE;
+	UBOOL bHasAtLeastOneChildActive = FALSE;
+	UBOOL bHasOnlyAdditiveChildren = TRUE;
+	FLOAT TotalWeightNoAdditive = 0.f;
+	for( INT ChildIndex = 0; ChildIndex < Children.Num(); ChildIndex++ )
+	{
+		FAnimBlendChild& Child = Children(ChildIndex);
+		if( Child.Anim == ChildAnimNode && ( Child.bIsAdditive ? 1 : 0 ) != ( bChildIsAdditive ? 1 : 0 ) )
+		{
+			bNeedWeightRefresh = TRUE;
+			Child.bIsAdditive = bChildIsAdditive ? 1 : 0;
+		}
+		if( !Child.bIsAdditive )
+		{
+			TotalWeightNoAdditive += Child.Weight;
+		}
+		if( Child.Weight >= ZERO_ANIMWEIGHT_THRESH )
+		{
+			bHasAtLeastOneChildActive = TRUE;
+			if( !Child.bIsAdditive )
+			{
+				bHasOnlyAdditiveChildren = FALSE;
+			}
+		}
+	}
+	const UBOOL bNowAdditive = bHasOnlyAdditiveChildren && bHasAtLeastOneChildActive;
+
+	if( bNeedWeightRefresh && TotalWeightNoAdditive > 0.f )
+	{
+		for( INT ChildIndex = 0; ChildIndex < Children.Num(); ChildIndex++ )
+		{
+			if( !Children(ChildIndex).bIsAdditive )
+			{
+				Children(ChildIndex).Weight *= 1.f / TotalWeightNoAdditive;
+			}
+		}
+	}
+
+	if( ( bIsAdditive ? 1 : 0 ) != ( bNowAdditive ? 1 : 0 ) )
+	{
+		bIsAdditive = bNowAdditive ? 1 : 0;
+		for( INT ParentIndex = 0; ParentIndex < ParentNodes.Num(); ParentIndex++ )
+		{
+			ParentNodes(ParentIndex)->ChildrenHasChanged( this, bIsAdditive );
+		}
+	}
+}
+
 void UAnimNodeBlendBase::OnChildAnimEnd(UAnimNodeSequence* Child, FLOAT PlayedTime, FLOAT ExcessTime) 
 { 
 	for(INT i=0; i<ParentNodes.Num(); i++)

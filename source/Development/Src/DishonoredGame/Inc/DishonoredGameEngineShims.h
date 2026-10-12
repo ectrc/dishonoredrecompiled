@@ -12923,6 +12923,7 @@ public:
     //## END PROPS ArkComponentLookatConfig
 
     DECLARE_CLASS(UArkComponentLookatConfig,UObject,0,Engine)
+#include "CppText/UArkComponentLookatConfig.h"
 };
 
 // Engine.ArkDLCManagementBridge: retail sizeof 112, reflected span 56..112 (2012 PDB sizeof 96) [shim: Engine package]

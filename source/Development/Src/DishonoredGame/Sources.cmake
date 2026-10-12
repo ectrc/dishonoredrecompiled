@@ -596,7 +596,6 @@ set(DishonoredGame_EXCLUDE
   Src/disseveredlimbinfo.cpp
   Src/disskelcontrol_footplacement.cpp
   Src/disskelcontrol_footplacementrotlock.cpp
-  Src/disskelcontrol_spinebender.cpp
   Src/disskeletalmeshactormat.cpp
   Src/disskirmishtracker.cpp
   Src/dissoireecontrolstate.cpp

@@ -8,6 +8,7 @@
 
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
+#include "arkcomponentlookat.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -21,14 +22,22 @@ FArkComponentLocomotion* ADishonoredNPCPawn::GetComponentLocomotion() const
 	return (FArkComponentLocomotion*)m_pCpntLocomotion;
 }
 
+// DISHONORED(port): 2013 rva 0x74b3f0 (2012 0x7ab8e0): seven bytes, the member (agent FT).
+FArkComponentLookat* ADishonoredNPCPawn::GetComponentLookat() const
+{
+	return (FArkComponentLookat*)m_pCpntLookat;
+}
+
 // DISHONORED(port): 2013 rva 0x752270 (2012 0x7b0a60, 427 bytes). Retail does, in order: AActor::Spawned; in the editor
 // only, the mesh's begin-play and the inventory / actions / body pre-begin-play passes; then, when the NPC's tweaks name a
 // UArkComponentLocomotionConfig, InitNavigationHandle followed by AddNewComponent<FArkComponentLocomotion>, SetConfig,
 // Starting and SetOwnerPawnAvoidable - and if SetConfig refuses the config, the component is removed again, so a
 // mis-tweaked NPC has no locomotion rather than a broken one. Then the avoidance steering angle, the look-at component,
 // the pose-blender anim node and the teleport clock.
-// DISHONORED(bringup): FArkComponentLookat is not ported, so its two lines are left out; the pose-blender lookup and the
-// teleport clock belong to the animation and possession paths and are left to their owners.
+// agent FT: the look-at component's three lines are in (AddNewComponent<FArkComponentLookat>, SetConfig with the NPC
+// tweaks' m_pComponentLookatConfig, m_bStarted + Starting); retail creates it unconditionally, config or none, and the
+// component's own PreAsyncWorkTick stays inert without a node. The pose-blender lookup and the teleport clock belong to
+// the animation and possession paths and are left to their owners.
 void ADishonoredNPCPawn::Spawned()
 {
 	Super::Spawned();
@@ -43,11 +52,29 @@ void ADishonoredNPCPawn::Spawned()
 		NPCTweaks ? *NPCTweaks->GetName() : TEXT("none"),
 		( NPCTweaks && NPCTweaks->m_pComponentLocomotionConfig ) ? *NPCTweaks->m_pComponentLocomotionConfig->GetName() : TEXT("none"),
 		m_ComponentContainer ? TEXT("yes") : TEXT("no") )
-	if( !NPCTweaks || !NPCTweaks->m_pComponentLocomotionConfig || !m_ComponentContainer )
+	if( !NPCTweaks || !m_ComponentContainer )
 	{
 		return;
 	}
+	if( NPCTweaks->m_pComponentLocomotionConfig )
+	{
+		SpawnedLocomotion( NPCTweaks );
+	}
 
+	FArkComponentLookat* pLookat = m_ComponentContainer->AddNewComponent<FArkComponentLookat>();
+	m_pCpntLookat = (FPointer)pLookat;
+	if( pLookat )
+	{
+		pLookat->SetConfig( NPCTweaks->m_pComponentLookatConfig );
+		pLookat->m_bStarted = TRUE;
+		pLookat->Starting();
+	}
+}
+
+// agent FT: the locomotion half of Spawned, unchanged from agent DN's port, split out so the look-at component is created
+// whether or not the tweaks name a locomotion config - which is retail's control flow.
+void ADishonoredNPCPawn::SpawnedLocomotion( UDisTweaks_NPCPawn* NPCTweaks )
+{
 	// The navigation handle first: SetConfig and everything after it reads it, and UNavigationHandle::FindPath is
 	// dispatched through the pawn as IInterface_NavigationHandle, so without the handle there is nothing to search with.
 	if( !m_NavigationHandle )

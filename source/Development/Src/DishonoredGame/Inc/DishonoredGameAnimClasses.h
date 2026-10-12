@@ -1110,6 +1110,7 @@ public:
     //## END PROPS DisSkelControl_SpineBender
 
     DECLARE_CLASS(UDisSkelControl_SpineBender,USkelControlSingleBone,0,DishonoredGame)
+#include "CppText/UDisSkelControl_SpineBender.h"
 };
 
 // DishonoredGame.DishonoredAnimNodeBlendBySpeed: retail sizeof 320, reflected span 304..308 (2012 PDB sizeof 320)

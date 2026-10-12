@@ -71,6 +71,15 @@ private:
 	void GameLoad_Dialog( FArchive& _rArchive, ESaveLoadLocation _Location );
 	void GameLoad_Possession( FArchive& _rArchive, ESaveLoadLocation _Location );
 
+// ---- agent FT (PHASE17 FT): the look-at component ----
+// Spawned (above) creates FArkComponentLookat after the locomotion component, hands it the NPC tweaks'
+// m_pComponentLookatConfig and starts it; GetComponentLookat 2013 rva 0x74b3f0 (2012 0x7ab8e0) is the member.
+// Body in Src/dishonorednpcpawn_locomotion.cpp beside Spawned.
+public:
+	class FArkComponentLookat* GetComponentLookat() const;
+private:
+	void SpawnedLocomotion( class UDisTweaks_NPCPawn* NPCTweaks );
+
 // ---- agent FS (PHASE17 FS): the matinee (MAT_*) contract, the AI-group half ----
 // 2012 rvas: MAT_BeginAIGroup 0x7c0570, MAT_FinishAIGroup 0x7c0830, MAT_SetForceInventory 0x7ab5c0,
 // MAT_SetCollision 0x7ab7a0, MAT_SetMeshTranslationMode 0x7ab6e0, MAT_DisableMeshTranslation 0x7ab720,

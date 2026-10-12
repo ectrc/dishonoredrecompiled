@@ -316,6 +316,14 @@ void UAnimNodeSequence::SetAnim(FName InSequenceName)
 			}
 		}
 	}
+
+	// DISHONORED(port): agent FT. Retail's SetAnim (2012 rva 0x1a41f0) ends by telling every parent whether this
+	// sequence is additive now, whether or not the animation changed.
+	const UBOOL bAdditiveNow = AnimSeq && AnimSeq->bIsAdditive;
+	for( INT ParentIndex = 0; ParentIndex < ParentNodes.Num(); ParentIndex++ )
+	{
+		ParentNodes(ParentIndex)->ChildrenHasChanged( this, bAdditiveNow );
+	}
 }
 
 void UAnimNodeSequence::TickAnim(FLOAT DeltaSeconds)

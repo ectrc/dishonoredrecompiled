@@ -11,6 +11,10 @@
 #include "UnSkeletalRenderGPUSkin.h"
 #include "UnDecalRenderData.h"
 #include "NvApexManager.h"
+
+// DISHONORED(bringup): agent FT. The two Ark look-at seams (Engine/Inc/arkcomponentbase.h); DishonoredGame fills them in.
+ArkLookatPreAsyncWorkHookType GArkLookatPreAsyncWorkHook = NULL;
+ArkLookatComposeSkeletonHookType GArkLookatComposeSkeletonHook = NULL;
 #include "EngineSequenceClasses.h"
 #include "EngineInterpolationClasses.h"
 #include "AnimationEncodingFormat.h"
@@ -1395,6 +1399,13 @@ void USkeletalMeshComponent::Tick(FLOAT DeltaTime)
 			if( bShouldTickAnimNodes == TRUE )
 			{
 				INC_DWORD_STAT(STAT_SkelComponentTickNodesCount);
+				// DISHONORED(bringup): agent FT. FArkComponentManager's PreAsyncWorkJustBeforeProceduralAnim policy
+				// (the look-at component's per-frame pass) runs here, on the pawn's body mesh, so the aim it hands
+				// UArkAnimNodeLookAt is this frame's; the hook is NULL until DishonoredGame installs it (arkcomponentbase.h).
+				if( GArkLookatPreAsyncWorkHook )
+				{
+					GArkLookatPreAsyncWorkHook( this, (DeltaTime + AccumulatedDroppedDeltaTime) * TimeDilation );
+				}
 				TickAnimNodes((DeltaTime + AccumulatedDroppedDeltaTime) * TimeDilation);
 			}
 
@@ -4065,6 +4076,14 @@ void USkeletalMeshComponent::UpdateSkelPose( FLOAT DeltaTime, UBOOL bTickFaceFX 
 	const DOUBLE ComposeSkeleton_Start = appSeconds();
 #endif
 	ComposeSkeleton();
+
+	// DISHONORED(port): agent FT. Retail's UpdateSkelPoseEnd (2013 rva 0x3471d0) follows ComposeSkeleton with
+	// FArkComponentLookat::GetLookatComponent(Cast<APawn>(Owner))->OnComposeSkeleton(), the eye clamp; the hook is
+	// NULL until DishonoredGame installs it (arkcomponentbase.h).
+	if( GArkLookatComposeSkeletonHook )
+	{
+		GArkLookatComposeSkeletonHook( this );
+	}
 
 #ifdef _DEBUG
 	// Check that all bone atoms coming from animation are normalized

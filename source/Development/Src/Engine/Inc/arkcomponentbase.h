@@ -234,3 +234,18 @@ public:
 	extern FArkComponentCreatorRegister ComponentClass##_CreatorRegister;				\
 	FArkComponentCreatorRegister* ComponentClass##_CreatorRegisterLink =					\
 		&ComponentClass##_CreatorRegister;
+
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup): agent FT (PHASE17 FT). FArkComponentManager (Engine/Src/arkcomponentmanager.cpp, a skeleton) is
+	what retail ticks the IArkComponentPreAsyncWork components from, and USkeletalMeshComponent::UpdateSkelPoseEnd (2013
+	rva 0x3471d0) is where retail calls FArkComponentLookat::OnComposeSkeleton on the owning pawn's look-at component.
+	FArkComponentLookat is declared in DishonoredGame (its config class lives in the shim header), so Engine reaches it
+	through these two hooks: NULL until DishonoredGame's arkcomponentlookat.cpp installs them from a static initialiser,
+	tested on every call. USkeletalMeshComponent::Tick runs the first just before TickAnimNodes - the PreAsyncWork
+	JustBeforeProceduralAnim policy's slot in the frame - and UpdateSkelPose the second right after ComposeSkeleton.
+-----------------------------------------------------------------------------*/
+class USkeletalMeshComponent;
+typedef void (*ArkLookatPreAsyncWorkHookType)( USkeletalMeshComponent* _pMesh, FLOAT _fDeltaTime );
+typedef void (*ArkLookatComposeSkeletonHookType)( USkeletalMeshComponent* _pMesh );
+extern ArkLookatPreAsyncWorkHookType GArkLookatPreAsyncWorkHook;
+extern ArkLookatComposeSkeletonHookType GArkLookatComposeSkeletonHook;
