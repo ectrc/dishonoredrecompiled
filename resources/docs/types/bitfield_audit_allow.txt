@@ -1,0 +1,16 @@
+# bitfield_audit.py allow list (agent FX, wave 22). One entry per line:
+#   Class.member <reason>        this wrong-bit report is accepted, with the measurement that makes it harmless
+#   Class.* <reason>             every bit of the class
+#   Class.cppname=cookedname     the C++ name and the cooked property name are the same bit under two spellings
+#
+# FMaterialViewRelevance (Engine/Inc/Scene.h) is the C++ side of the script mirror
+# Engine.PrimitiveComponent.MaterialViewRelevance (7 bools: bOpaque, bTranslucent, bDistortion, bBloomPart,
+# bOneLayerDistortionRelevance, bLit, bUsesSceneColor). Retail's OWN C++ does not follow the cooked mirror either:
+# the 2012 PDB lays it out bOpaque 0, bMasked 1, bTranslucency 2, bDistortion 3, bBloomPart 4,
+# bOneLayerDistortionRelevance 5, bLit 6, bUsesSceneColor 7 (types.json), so the mirror's masks are only ever
+# used by UnrealScript and by serialisation, and the one reflected member of this type in the whole dump,
+# UParticleSystemComponent::CachedViewRelevanceFlags, is transient and filled by C++. No function takes the
+# struct as a parameter (retail_sdk_layout.json functions). The cooked order is therefore not the truth for this
+# struct; the PDB is, and our order differs from the PDB only by bInheritDominantShadowsRelevance at bit 6 (a
+# reference-engine bit retail lacks), which no raw-bit code in this tree reads (there is no mRaw here).
+FMaterialViewRelevance.* native C++ struct; the cooked mirror is script-only, retail's own C++ (2012 PDB) does not follow it; its one reflected use (UParticleSystemComponent::CachedViewRelevanceFlags) is transient

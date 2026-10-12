@@ -12,6 +12,8 @@
 
 #include "DishonoredGameNames.h"
 
+#include "DishonoredGameNative.h"
+
 #if !NO_ENUMS && !defined(NAMES_ONLY)
 
 #ifndef INCLUDED_DISHONOREDGAME_SHIMS_ENUMS
@@ -9819,7 +9821,6 @@ class UArkAnimNodeBlendPose;
 class UArkAnimNodeLocomotion;
 class UArkAnimNodeLookAt;
 class UArkAnimNodeRat;
-class UArkAnimNodeStack;
 class UArkAvoidable;
 class UArkBinkOverlayManager;
 class UArkComponentLocomotionConfig;
@@ -12796,10 +12797,6 @@ public:
     DECLARE_CLASS(UArkAnimNodeRat,UAnimNodeBlendBase,0,Engine)
 };
 
-// Engine.ArkAnimNodeStack: DISHONORED(port, agent FS): declared in Engine/Inc/EngineAnimClasses.h now (APawn::SlotNodes
-// is TArray<UArkAnimNodeStack*> in retail and UnPawn.cpp has to see the class); IMPLEMENT_CLASS moved to
-// Engine/Src/arkanimnodestack.cpp. A regeneration of this header must leave the class out (carry into the generator).
-
 // Engine.ArkAvoidable: retail sizeof 124, reflected span 56..124 (2012 PDB sizeof 124) [shim: Engine package]
 class UArkAvoidable : public UObject
 {
@@ -14277,7 +14274,6 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UArkAnimNodeLookAt::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("ArkAnimNodeLookAt"), GDishonoredGameUArkAnimNodeLookAtNatives); \
 	UArkAnimNodeRat::StaticClass(); \
-	UArkAnimNodeStack::StaticClass(); \
 	UArkAvoidable::StaticClass(); \
 	UArkBinkOverlayManager::StaticClass(); \
 	UArkComponentLocomotionConfig::StaticClass(); \
@@ -14549,7 +14545,6 @@ VERIFY_CLASS_SIZE_NODIE(UArkAnimNodeLookAt)
 VERIFY_CLASS_OFFSET_NODIE(UArkAnimNodeRat,ArkAnimNodeRat,m_fSpeed)
 VERIFY_CLASS_OFFSET_NODIE(UArkAnimNodeRat,ArkAnimNodeRat,m_PreviewSpecificAnimNames)
 VERIFY_CLASS_SIZE_NODIE(UArkAnimNodeRat)
-VERIFY_CLASS_SIZE_NODIE(UArkAnimNodeStack)
 VERIFY_CLASS_OFFSET_NODIE(UArkAvoidable,ArkAvoidable,m_Force)
 VERIFY_CLASS_OFFSET_NODIE(UArkAvoidable,ArkAvoidable,m_PropertyFlags)
 VERIFY_CLASS_SIZE_NODIE(UArkAvoidable)

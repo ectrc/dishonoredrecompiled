@@ -1370,9 +1370,8 @@ public:
     INT m_FailedCount;
     //## END PROPS DisSeqAct_StartSpawn
 
-#include "CppText/UDisSeqAct_StartSpawn.h"
-
     DECLARE_CLASS(UDisSeqAct_StartSpawn,UDisSeqAct_Latent,0,DishonoredGame)
+#include "CppText/UDisSeqAct_StartSpawn.h"
 };
 
 // DishonoredGame.DisSeqAct_ToggleAchievementEval: retail sizeof 252, reflected span 248..249 (2012 PDB sizeof 252)
@@ -2225,10 +2224,9 @@ public:
     TArrayNoInit<class UObject*> m_pSpawnedPawns;
     //## END PROPS DisSeqVar_SpawnerPawn
 
-#include "CppText/UDisSeqVar_SpawnerPawn.h"
-
     DECLARE_FUNCTION(execGetObjectValue);
     DECLARE_CLASS(UDisSeqVar_SpawnerPawn,USeqVar_Object,0,DishonoredGame)
+#include "CppText/UDisSeqVar_SpawnerPawn.h"
 };
 
 #undef DECLARE_CLASS

@@ -8,6 +8,7 @@
 #include "EngineInterpolationClasses.h"
 #include "EngineAudioDeviceClasses.h"
 #include "EngineSoundClasses.h"
+#include "AkAudioNative.h"
 #include "AkAudioClasses.h"
 #include "AkAudioLayouts.h"
 

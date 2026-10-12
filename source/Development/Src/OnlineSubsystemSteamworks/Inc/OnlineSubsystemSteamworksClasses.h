@@ -796,8 +796,8 @@ public:
     DECLARE_FUNCTION(execShowLoginUI);
     DECLARE_FUNCTION(execExit);
     DECLARE_FUNCTION(execInit);
-#include "CppText/UOnlineSubsystemSteamworks.h"
     DECLARE_CLASS(UOnlineSubsystemSteamworks,UOnlineSubsystemCommonImpl,0|CLASS_Config,OnlineSubsystemSteamworks)
+#include "CppText/UOnlineSubsystemSteamworks.h"
 };
 
 #undef DECLARE_CLASS

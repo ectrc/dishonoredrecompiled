@@ -11,9 +11,8 @@
 #endif
 
 #include "AkAudioNames.h"
-// DISHONORED(written): hand-added (agent AN). The Wwise 2012.1 headers the CppText blocks below need;
-// re-add this line if this header is regenerated with gen_classes_header.py --sdk.
-#include "AkAudioWwise.h"
+
+#include "AkAudioNative.h"
 
 #if !NO_ENUMS && !defined(NAMES_ONLY)
 
@@ -45,9 +44,7 @@ class AAkAmbientSound;
 class AAkAmbientSoundMovable;
 class UActorFactoryAkAmbientSound;
 class UAkAudioDevice;
-class UAkBank;
 class UAkComponent;
-class UAkEvent;
 class UInterpTrackAkEvent;
 class UInterpTrackAkEventKeyProperties;
 class UInterpTrackAkRTPC;
@@ -77,8 +74,8 @@ public:
     INT m_bEnded;
     //## END PROPS AkAmbientSound
 
-#include "CppText/AAkAmbientSound.h"
     DECLARE_CLASS(AAkAmbientSound,AKeypoint,0,AkAudio)
+#include "CppText/AAkAmbientSound.h"
 };
 
 // AkAudio.AkAmbientSoundMovable: retail sizeof 608, reflected span 600..600 (2012 PDB sizeof 608)
@@ -88,8 +85,8 @@ public:
     //## BEGIN PROPS AkAmbientSoundMovable
     //## END PROPS AkAmbientSoundMovable
 
-#include "CppText/AAkAmbientSoundMovable.h"
     DECLARE_CLASS(AAkAmbientSoundMovable,AAkAmbientSound,0,AkAudio)
+#include "CppText/AAkAmbientSoundMovable.h"
 };
 
 // AkAudio.InterpTrackAkEvent.AkEventTrackKey: retail SDK size 12 (2012 PDB 12)
@@ -142,8 +139,8 @@ public:
     FVector m_ListenerPosition;  // DISHONORED(layout): native, 2012 PDB @124, retail @124 (SDK gap)
     //## END PROPS AkAudioDevice
 
-#include "CppText/UAkAudioDevice.h"
     DECLARE_CLASS_INTRINSIC(UAkAudioDevice,USubsystem,0|CLASS_Config|CLASS_Transient,AkAudio)
+#include "CppText/UAkAudioDevice.h"
 };
 
 // AkAudio.AkComponent: retail sizeof 108, reflected span 81..108 (2012 PDB sizeof 108)
@@ -156,8 +153,8 @@ public:
     TArrayNoInit<FAkPlayingRadius> m_PlayingRadii;
     //## END PROPS AkComponent
 
-#include "CppText/UAkComponent.h"
     DECLARE_CLASS(UAkComponent,UActorComponent,0,AkAudio)
+#include "CppText/UAkComponent.h"
 };
 
 // AkAudio.InterpTrackAkEvent: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136)
@@ -212,8 +209,8 @@ public:
     //## BEGIN PROPS SeqAct_AkClearBanks
     //## END PROPS SeqAct_AkClearBanks
 
-#include "CppText/USeqAct_AkClearBanks.h"
     DECLARE_CLASS(USeqAct_AkClearBanks,USequenceAction,0,AkAudio)
+#include "CppText/USeqAct_AkClearBanks.h"
 };
 
 // AkAudio.SeqAct_AkLoadBank: retail sizeof 276, reflected span 264..276 (2012 PDB sizeof 276)
@@ -227,8 +224,8 @@ public:
     INT Signal;
     //## END PROPS SeqAct_AkLoadBank
 
-#include "CppText/USeqAct_AkLoadBank.h"
     DECLARE_CLASS(USeqAct_AkLoadBank,USeqAct_Latent,0,AkAudio)
+#include "CppText/USeqAct_AkLoadBank.h"
 };
 
 // AkAudio.SeqAct_AkPostEvent: retail sizeof 280, reflected span 264..280 (2012 PDB sizeof 276)
@@ -242,8 +239,8 @@ public:
     class UAkEvent* Event;
     //## END PROPS SeqAct_AkPostEvent
 
-#include "CppText/USeqAct_AkPostEvent.h"
     DECLARE_CLASS(USeqAct_AkPostEvent,USeqAct_Latent,0,AkAudio)
+#include "CppText/USeqAct_AkPostEvent.h"
 };
 
 // AkAudio.SeqAct_AkPostTrigger: retail sizeof 260, reflected span 248..260 (2012 PDB sizeof 260)
@@ -254,8 +251,8 @@ public:
     FStringNoInit Trigger;
     //## END PROPS SeqAct_AkPostTrigger
 
-#include "CppText/USeqAct_AkPostTrigger.h"
     DECLARE_CLASS(USeqAct_AkPostTrigger,USequenceAction,0,AkAudio)
+#include "CppText/USeqAct_AkPostTrigger.h"
 };
 
 // AkAudio.SeqAct_AkSetRTPCValue: retail sizeof 284, reflected span 264..284 (2012 PDB sizeof 284)
@@ -268,8 +265,8 @@ public:
     BITFIELD Running:1;
     //## END PROPS SeqAct_AkSetRTPCValue
 
-#include "CppText/USeqAct_AkSetRTPCValue.h"
     DECLARE_CLASS(USeqAct_AkSetRTPCValue,USeqAct_Latent,0,AkAudio)
+#include "CppText/USeqAct_AkSetRTPCValue.h"
 };
 
 // AkAudio.SeqAct_AkSetState: retail sizeof 272, reflected span 248..272 (2012 PDB sizeof 272)
@@ -281,8 +278,8 @@ public:
     FStringNoInit State;
     //## END PROPS SeqAct_AkSetState
 
-#include "CppText/USeqAct_AkSetState.h"
     DECLARE_CLASS(USeqAct_AkSetState,USequenceAction,0,AkAudio)
+#include "CppText/USeqAct_AkSetState.h"
 };
 
 // AkAudio.SeqAct_AkSetSwitch: retail sizeof 272, reflected span 248..272 (2012 PDB sizeof 272)
@@ -294,8 +291,8 @@ public:
     FStringNoInit Switch;
     //## END PROPS SeqAct_AkSetSwitch
 
-#include "CppText/USeqAct_AkSetSwitch.h"
     DECLARE_CLASS(USeqAct_AkSetSwitch,USequenceAction,0,AkAudio)
+#include "CppText/USeqAct_AkSetSwitch.h"
 };
 
 // AkAudio.SeqAct_AkStartAmbientSound: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
@@ -305,8 +302,8 @@ public:
     //## BEGIN PROPS SeqAct_AkStartAmbientSound
     //## END PROPS SeqAct_AkStartAmbientSound
 
-#include "CppText/USeqAct_AkStartAmbientSound.h"
     DECLARE_CLASS(USeqAct_AkStartAmbientSound,USequenceAction,0,AkAudio)
+#include "CppText/USeqAct_AkStartAmbientSound.h"
 };
 
 // AkAudio.SeqAct_AkStopAll: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248)
@@ -316,8 +313,8 @@ public:
     //## BEGIN PROPS SeqAct_AkStopAll
     //## END PROPS SeqAct_AkStopAll
 
-#include "CppText/USeqAct_AkStopAll.h"
     DECLARE_CLASS(USeqAct_AkStopAll,USequenceAction,0,AkAudio)
+#include "CppText/USeqAct_AkStopAll.h"
 };
 
 #undef DECLARE_CLASS

@@ -4,7 +4,8 @@ table and the skeleton counts.
 Usage: python resources/tools/symbols/verify_phase2.py [--no-build]   (exit 0 = PASS)
        python resources/tools/symbols/verify_phase2.py retail build/<dir>/layout_probe.txt
            retail section only: `gen_layout_probe.py compare` and `xcheck_sdk_layout.py` on the probe; fails on any
-           contract-type mismatch of either (the other rows are reported, not failed)
+           contract-type mismatch of either (the other rows are reported, not failed); then `bitfield_audit.py`,
+           which fails on any BITFIELD run declared in an order other than the cooked class's masks
 """
 import csv
 import re
@@ -56,6 +57,11 @@ def retail(probe: Path) -> None:
         r = subprocess.run([sys.executable, str(script), *args, str(probe)], capture_output=True, text=True, errors="replace")
         summary = next((l for l in reversed(r.stdout.splitlines()) if "contract_mismatches=" in l), (r.stdout + r.stderr).strip()[-200:])
         check(task, r.returncode == 0 and "contract_mismatches=0" in summary, summary)
+    # the bitfield order is not in the probe (offsetof cannot name a bit): bitfield_audit.py compares every declared
+    # BITFIELD run against the cooked class's masks (agent FX, wave 22; UInterpTrack read bAIGroupOnly as bDisableTrack)
+    r = subprocess.run([sys.executable, str(REPO / "resources/tools/bitfield_audit.py")], capture_output=True, text=True, errors="replace")
+    summary = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("bitfield_audit:")), (r.stdout + r.stderr).strip()[-200:])
+    check("retail bitfield order (cooked masks)", r.returncode == 0 and "mismatches=0" in summary, summary)
 
 
 def main(argv: list[str]) -> int:

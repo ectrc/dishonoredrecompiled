@@ -355,14 +355,20 @@ class USkeletalMeshComponent : public UMeshComponent
 	BITFIELD bDisableWarningWhenAnimNotFound:1;
 	BITFIELD bOverrideAttachmentOwnerVisibility:1;
 	BITFIELD bNeedsToDeleteHitMask:1;
-	BITFIELD bPauseAnims:1;
 	BITFIELD m_bDisableFaceFx:1;  // DISHONORED(layout): 2012 PDB @763
 	BITFIELD m_bSkipUpdate:1;  // DISHONORED(layout): 2012 PDB @763
 	BITFIELD bEnableLineCheckWithBounds:1;
+	// DISHONORED(bitfield): agent FX. The cooked class has no bPauseAnims (reference-engine bit); declared at 0x800000 it read
+	// retail's m_bDisableFaceFx and shifted m_bSkipUpdate / bEnableLineCheckWithBounds one bit up (bitfield_audit.py).
+	BITFIELD bPauseAnims:1;
 	FVector LineCheckBoundsScale;
 	BITFIELD m_bDontUpdateKinematic:1;  // DISHONORED(layout): 2012 PDB @776
 	BITFIELD bRecentlyRendered:1;
 	BITFIELD bCacheAnimSequenceNodes:1;
+	// DISHONORED(bitfield): agent FX. Retail 2013 reflects these two on the component as well as on FSkelMeshComponentLODInfo
+	// (retail_sdk_layout.json +776 masks 0x8 / 0x10); without them bUpdateComposeSkeletonPasses read bNeedsInstanceWeightUpdate.
+	BITFIELD bNeedsInstanceWeightUpdate:1;
+	BITFIELD bAlwaysUseInstanceWeights:1;
 	BITFIELD bUpdateComposeSkeletonPasses:1;
 	BITFIELD bValidTemporarySavedAnimSets:1;
 	TArrayNoInit<FBonePair> InstanceVertexWeightBones;

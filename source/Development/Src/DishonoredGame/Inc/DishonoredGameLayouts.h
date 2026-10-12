@@ -392,7 +392,6 @@ static_assert(offsetof(UArkAnimNodeRat, m_fTurnBlendSpeed) == 356, "UArkAnimNode
 static_assert(offsetof(UArkAnimNodeRat, m_fPreviewBlendInDuration) == 360, "UArkAnimNodeRat::m_fPreviewBlendInDuration: retail offset 360");
 static_assert(offsetof(UArkAnimNodeRat, m_fPreviewBlendOutDuration) == 364, "UArkAnimNodeRat::m_fPreviewBlendOutDuration: retail offset 364");
 static_assert(offsetof(UArkAnimNodeRat, m_PreviewSpecificAnimNames) == 368, "UArkAnimNodeRat::m_PreviewSpecificAnimNames: retail offset 368");
-static_assert(sizeof(UArkAnimNodeStack) == 240, "UArkAnimNodeStack: retail sizeof 240");
 static_assert(sizeof(UArkAvoidable) == 124, "UArkAvoidable: retail sizeof 124");
 static_assert(offsetof(UArkAvoidable, m_Force) == 56, "UArkAvoidable::m_Force: retail offset 56");
 static_assert(offsetof(UArkAvoidable, m_ForcedLocation) == 68, "UArkAvoidable::m_ForcedLocation: retail offset 68");

@@ -19,6 +19,24 @@ Default output: resources/reference/<Module>Classes.pdb.h (gitignored; copied in
 once reviewed). The header is a starting point for hand editing, not a drop-in.
 --diff-reference compares the script-declared classes against the reference <Module>*Classes.h.
 --inventory writes the per-class cross-reference against the DFSDK .uc as markdown.
+
+--sdk (the retail headers of DishonoredGame, GFxUI, AkAudio, OnlineSubsystemSteamworks), always with all three flags:
+  python resources/tools/symbols/gen_classes_header.py <Module> --sdk --module-header --sources-cmake [--out-dir DIR]
+A regeneration must reproduce the tree byte for byte (agent FX, wave 22: `--out-dir` into a scratch directory, then
+diff). What the tree hand-edits survive through, in the generator's own mechanisms - never by editing a generated file:
+  * Inc/CppText/<Class>.h, <Struct>.h, I<Interface>.h  - the class's own C++ (declarations, inline virtuals); included
+    just before the closing `};` of the generated body (IDisSpawnRequesterInterface's three virtuals live there)
+  * Inc/<Module>Native.h                               - hand-written native types; included by <Module>.h AND by the
+    first generated class header (AkAudioNative.h carries the Wwise headers AkAudio's CppText needs)
+  * a class the tree declares in another module         - not generated as a shim (UArkAnimNodeStack moved into the
+    Engine by agent FS: its registration and VERIFY_CLASS_SIZE_NODIE live in EngineAnimClasses.h)
+  * void DishonoredLink<X>() in a compiled unit          - the link anchor every unit taken off the exclude list needs;
+    <Module>Registrants.cpp references every one (G<Module>LinkAnchors) when the generator owns Sources.cmake
+  * void <Class>::exec<Native>( FFrame& ...) in a unit   - the native is ported: no stub is generated (the
+    <Module>NativeStubs.ported*.txt lists still work, they are just no longer the only way)
+  * a Sources.cmake whose first line is not this generator's banner is hand-maintained and left alone
+  * bitfields are emitted in the COOKED class's mask order (UStruct::Link keeps SavedBitMask); resources/tools/
+    bitfield_audit.py checks every hand-maintained header for the same rule and runs in verify_phase2.py
 """
 import argparse
 import csv
@@ -971,7 +989,9 @@ def tree_pure_virtuals(code: str) -> dict:
 
 
 def sdk_write(path: Path, text: str) -> None:
-    with path.open("w", encoding="utf-8", newline="\r\n") as f:
+    # LF: .gitattributes normalises every text file to eol=lf and the checkout is LF, so CRLF output (the first version
+    # of this writer) left ~100 generated files "modified" by line endings alone after every regeneration (agent FX)
+    with path.open("w", encoding="utf-8", newline="\n") as f:
         f.write(text)
 
 
@@ -2053,6 +2073,11 @@ class SdkWriter:
               "    regenerate, or carry the change into the generator.",
               "===========================================================================*/",
               "#if SUPPORTS_PRAGMA_PACK", "#pragma pack (push,4)", "#endif", "", f"#include \"{module}Names.h\"", ""]
+        if first and (SDK_SOURCE / module / "Inc" / f"{module}Native.h").exists():
+            # DISHONORED(written): the module's hand-written native types (agent AJ's hook in <Module>.h) are what the CppText
+            # bodies below name, so the first class header includes them itself as well - a unit that includes a class header
+            # without going through <Module>.h (AkAudioRegistrants.cpp, Engine/Src/akevent.cpp) sees them too (agent FX)
+            L += [f"#include \"{module}Native.h\"", ""]
         deps = self.sel.group_deps.get(group, [])
         if deps:
             # the headers this one depends on (base classes, embedded structs, the enums/forward declarations of the first
@@ -2150,6 +2175,16 @@ class SdkWriter:
                 if self.sel.items[n].kind == "class":
                     L.append(f"IMPLEMENT_CLASS({n});")
         L.append("")
+        module_dir = SDK_SOURCE / module
+        anchors = link_anchors(module_dir) if sources_cmake_is_generated(module_dir, module) else []
+        if anchors:
+            # DISHONORED(link): the generator owns this module's exclude list, so it owns the anchors of the units taken off it
+            # (agent FX; replaces the per-agent tables FI, FK and FN appended by hand). A `void DishonoredLink<X>()` with external
+            # linkage in a compiled unit of Src/ is referenced from here, the unit the link always takes, so MSVC keeps that
+            # unit's object (IMPLEMENT_CLASS's vtable is a COMDAT the linker folds rather than a reference into the object).
+            L += ["// Link anchors: void DishonoredLink<X>() of every unit taken off the exclude list (see link_anchors in the generator)."]
+            L += [f"extern void {a}();" for a in anchors]
+            L += [f"void (*G{module}LinkAnchors[])() =", "{"] + [f"\t&{a}," for a in anchors] + ["};", ""]
         return "\n".join(L)
 
     def stubs_cpp(self, main_header: str) -> str:
@@ -2302,17 +2337,45 @@ def is_comment_only(path: Path) -> bool:
     return all(not l.strip() or l.lstrip().startswith("//") for l in path.read_text(encoding="utf-8", errors="replace").splitlines())
 
 
-def sdk_write_sources_cmake(module_dir: Path, module: str, generated: list[str]) -> Path:
+SOURCES_CMAKE_BANNER = "# Generated by resources/tools/symbols/gen_classes_header.py --sdk for {module}."
+
+
+def sources_cmake_is_generated(module_dir: Path, module: str) -> bool:
+    """a Sources.cmake whose first line is not the generator's banner is hand-maintained (GFxUI, AkAudio,
+    OnlineSubsystemSteamworks: the Epic units, the DISHONORED_WITH_GFX3 blocks) and is never rewritten"""
+    p = module_dir / "Sources.cmake"
+    if not p.exists():
+        return True
+    first = p.read_text(encoding="utf-8", errors="replace").splitlines()[:1]
+    return bool(first) and first[0].strip() == SOURCES_CMAKE_BANNER.format(module=module)
+
+
+def link_anchors(module_dir: Path) -> list[str]:
+    """`void DishonoredLink<X>()` defined at file scope in a unit of the module: the external-linkage anchor a unit taken off
+    the exclude list needs (MSVC pulls a static-library member only to resolve an undefined symbol - agents EN, FI, FK, FN).
+    The generated registrant unit, which the link always takes, references every one of them."""
+    rx = re.compile(r"^void\s+(DishonoredLink\w+)\s*\(\s*(?:void)?\s*\)\s*$", re.M)
+    found = set()
+    for p in (module_dir / "Src").rglob("*.cpp"):
+        if not is_comment_only(p):
+            found |= set(rx.findall(p.read_text(encoding="utf-8", errors="replace")))
+    return sorted(found)
+
+
+def sdk_write_sources_cmake(module_dir: Path, module: str, generated: list[str], out_dir: Path | None = None) -> Path | None:
+    if not sources_cmake_is_generated(module_dir, module):
+        print(f"  note: {module}/Sources.cmake is hand-maintained (first line is not the generator's banner); left as it is")
+        return None
     src = module_dir / "Src"
     skeletons = sorted(p.name for p in src.glob("*.cpp") if p.name not in generated and is_comment_only(p))
-    L = [f"# Generated by resources/tools/symbols/gen_classes_header.py --sdk for {module}.",
+    L = [SOURCES_CMAKE_BANNER.format(module=module),
          f"# {module}_EXCLUDE: the {len(skeletons)} comment-only skeleton units of resources/tools/import_reference.py (PDB function",
          "# attribution per file, no code) stay out of the build until they are ported; the generated registrant and native-stub units compile.",
          f"set({module}_EXCLUDE"]
     L += [f"  Src/{n}" for n in skeletons]
     L += [")", f"set({module}_NOT_IN_PDB", ")", ""]
-    out = module_dir / "Sources.cmake"
-    out.write_text("\n".join(L), encoding="utf-8")
+    out = (out_dir or module_dir) / "Sources.cmake"
+    sdk_write(out, "\n".join(L))
     return out
 
 
@@ -2332,8 +2395,12 @@ def sdk_main(args: argparse.Namespace) -> int:
             bad += b
             emu_notes += n
     module_dir = SDK_SOURCE / module
-    inc = module_dir / "Inc"
-    src = module_dir / "Src"
+    # --out-dir (agent FX): everything is READ from the tree (CppText files, the ported lists, the skeleton units) and
+    # WRITTEN under <out-dir>/<Module>/{Inc,Src,Sources.cmake}, so a regeneration can be diffed against the tree
+    out_dir = (Path(args.out_dir) / module) if args.out_dir else module_dir
+    src_tree = module_dir / "Src"
+    inc = out_dir / "Inc"
+    src = out_dir / "Src"
     inc.mkdir(parents=True, exist_ok=True)
     src.mkdir(parents=True, exist_ok=True)
     pending_file = module_dir / f"{module}Layouts.pending.txt"
@@ -2358,6 +2425,13 @@ def sdk_main(args: argparse.Namespace) -> int:
     ported_files = [ported_file] + sorted(module_dir.glob(f"{module}NativeStubs.ported.*.txt"))
     writer = SdkWriter(data, sel)
     writer.ported = {tuple(l.strip().split("::")) for f in ported_files if f.exists() for l in f.read_text(encoding="utf-8").splitlines() if "::" in l}
+    # a native whose exec body is defined in a compiled unit of the module is ported whether or not somebody listed it
+    # (agent FX: seven bodies - FP's four UDisGFxMoviePlayerBase, FN's execGetObjectValue, the two SetCinematicMode - had
+    # their stubs deleted by hand and no list entry, so a regeneration put the stubs back as duplicate definitions)
+    exec_def = re.compile(r"^void\s+([UA]\w+)::(exec\w+)\s*\(\s*FFrame\s*&", re.M)
+    for p in src_tree.rglob("*.cpp"):
+        if p.name != f"{module}NativeStubs.cpp" and not is_comment_only(p):
+            writer.ported |= set(exec_def.findall(p.read_text(encoding="utf-8", errors="replace")))
     headers = [sdk_header_name(module, grp) for grp, _ in sel.groups]
     texts = {}
     for i, (grp, names) in enumerate(sel.groups):
@@ -2370,12 +2444,12 @@ def sdk_main(args: argparse.Namespace) -> int:
             written.append(h)
         sdk_write(inc / f"{module}Names.h", writer.names_header())
         sdk_write(inc / f"{module}Layouts.h", writer.layouts_header(pending, probe_sizes, probe_offsets))
-        if args.module_header or not (inc / main_header).exists():
+        if args.module_header or not (module_dir / "Inc" / main_header).exists():
             sdk_write(inc / main_header, sdk_module_header(module, headers, ENGINE_DEP_HEADERS.get(module, [])))
         sdk_write(src / f"{module}Registrants.cpp", writer.registrants_cpp(headers, main_header))
         sdk_write(src / f"{module}NativeStubs.cpp", writer.stubs_cpp(main_header))
         if args.sources_cmake:
-            sdk_write_sources_cmake(module_dir, module, [f"{module}Registrants.cpp", f"{module}NativeStubs.cpp"])
+            sdk_write_sources_cmake(module_dir, module, [f"{module}Registrants.cpp", f"{module}NativeStubs.cpp"], out_dir)
     else:
         writer.layouts_header(pending, probe_sizes, probe_offsets)
     st = sel.stats
@@ -2416,6 +2490,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--report", default=None, help="--sdk: write the generation statistics as JSON")
     ap.add_argument("--probe", default=None, help="--sdk: layout_probe.txt of a build; classes on an external base whose sizeof differs from retail become `pending` in <Module>Layouts.h")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--out-dir", default=None, help="--sdk: write <Module>/{Inc,Src,Sources.cmake} under this directory instead of the tree (regenerate-and-diff); everything is still read from the tree")
     ap.add_argument("--diff-reference", action="store_true")
     ap.add_argument("--inventory", default=None)
     ap.add_argument("--reference-src", default=str(REFERENCE_SRC))

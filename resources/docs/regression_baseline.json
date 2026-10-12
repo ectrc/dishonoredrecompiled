@@ -59,12 +59,12 @@
   },
   "verify_phase2_passed": {
     "op": ">=",
-    "value": 2,
-    "note": "verify_phase2.py retail"
+    "value": 3,
+    "note": "verify_phase2.py retail: the two probe comparisons and, since wave 22 (agent FX), bitfield_audit.py - every BITFIELD run of the tree against the cooked class's masks, mismatches=0"
   },
   "verify_phase2_total": {
     "op": "==",
-    "value": 2
+    "value": 3
   },
   "startup_seconds": {
     "op": "<=",

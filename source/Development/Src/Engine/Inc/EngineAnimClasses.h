@@ -5218,6 +5218,7 @@ AUTOGENERATE_FUNCTION(UMorphTargetSet,-1,execFindMorphTarget);
 	UAnimNodeScalePlayRate::StaticClass(); \
 	UAnimNodeScaleRateBySpeed::StaticClass(); \
 	UAnimNodeSlot::StaticClass(); \
+	UArkAnimNodeStack::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("AnimNodeSlot"), GEngineUAnimNodeSlotNatives); \
 	UAnimNodeSynch::StaticClass(); \
 	GNativeLookupFuncs.Set(FName("AnimNodeSynch"), GEngineUAnimNodeSynchNatives); \
@@ -5638,6 +5639,7 @@ VERIFY_CLASS_SIZE_NODIE(UAnimNodeScaleRateBySpeed)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNodeSlot,AnimNodeSlot,PendingBlendOutTime)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNodeSlot,AnimNodeSlot,BlendTimeToGo)
 VERIFY_CLASS_SIZE_NODIE(UAnimNodeSlot)
+VERIFY_CLASS_SIZE_NODIE(UArkAnimNodeStack)
 VERIFY_CLASS_OFFSET_NODIE(UAnimNodeSynch,AnimNodeSynch,Groups)
 VERIFY_CLASS_SIZE_NODIE(UAnimNodeSynch)
 VERIFY_CLASS_OFFSET_NODIE(UAnimTree,AnimTree,AnimTreeTemplate)

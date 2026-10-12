@@ -459,7 +459,6 @@ IMPLEMENT_CLASS(UArkAnimNodeBlendPose);
 IMPLEMENT_CLASS(UArkAnimNodeLocomotion);
 IMPLEMENT_CLASS(UArkAnimNodeLookAt);
 IMPLEMENT_CLASS(UArkAnimNodeRat);
-// UArkAnimNodeStack: Engine/Src/arkanimnodestack.cpp since agent FS (the class is declared in EngineAnimClasses.h)
 IMPLEMENT_CLASS(UArkAvoidable);
 IMPLEMENT_CLASS(UArkBinkOverlayManager);
 IMPLEMENT_CLASS(UArkComponentLocomotionConfig);
@@ -2333,29 +2332,15 @@ IMPLEMENT_CLASS(ADisStealthVolume);
 IMPLEMENT_CLASS(UDisTweaks_PlayerVisibility);
 IMPLEMENT_CLASS(UDishonoredVisibilityComponent);
 
-// DISHONORED(bringup, agent FI): force the link of Src/disseqact_startspawn.cpp; see the note on the
-// anchor's definition.
+// Link anchors: void DishonoredLink<X>() of every unit taken off the exclude list (see link_anchors in the generator).
 extern void DishonoredLinkDisSeqActStartSpawn();
-void (*GDishonoredFILinkAnchors[])() =
+extern void DishonoredLinkDisSeqCondCompareBoolExtended();
+extern void DishonoredLinkDisSeqCondCompareTweaks();
+extern void DishonoredLinkDisSeqVarSpawnerPawn();
+void (*GDishonoredGameLinkAnchors[])() =
 {
 	&DishonoredLinkDisSeqActStartSpawn,
-};
-
-// DISHONORED(bringup, agent FN): force the link of Src/disseqvar_spawnerpawn.cpp, taken off the exclude
-// list for UDisSeqVar_SpawnerPawn::GetObjectRef.
-extern void DishonoredLinkDisSeqVarSpawnerPawn();
-void (*GDishonoredFNLinkAnchors[])() =
-{
-	&DishonoredLinkDisSeqVarSpawnerPawn,
-};
-
-// DISHONORED(bringup, agent FK): force the link of the two UDisSeqCond_* units this package took off
-// the exclude list. Without an external-linkage reference MSVC drops the object out of the static
-// library and Activated never dispatches, which looks exactly like an unported condition.
-extern void DishonoredLinkDisSeqCondCompareTweaks();
-extern void DishonoredLinkDisSeqCondCompareBoolExtended();
-void (*GDishonoredFKLinkAnchors[])() =
-{
-	&DishonoredLinkDisSeqCondCompareTweaks,
 	&DishonoredLinkDisSeqCondCompareBoolExtended,
+	&DishonoredLinkDisSeqCondCompareTweaks,
+	&DishonoredLinkDisSeqVarSpawnerPawn,
 };
