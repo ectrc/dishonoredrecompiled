@@ -108,8 +108,73 @@ a scripted request**. `DisNotify_NPCDisableLookAt` needs `Notify_EndRange` in th
 package finds retail PC's `GEdgeAnimManager` path reachable, that is the faithful replacement and FT's
 function goes.**
 
+## Added mid-wave: three faults the user saw in the wave-21 build
+
+> "In the animations, the NPCs don't move their body at all so therefore the other 2 guards on the
+> boat just float. Their animations play mid air and same for other NPCs that I interact with. The FOV
+> and forced perspective is broken too as it should change and limit the view angles. Lastly I can see
+> my arms even when I shouldn't."
+
+Investigated before writing this in. **The second and third are one fault**: the whole player
+master-state FSM is comment-only skeletons — 27 units, `stateplayermaster*.cpp` and
+`dissoireecontrolstate.cpp`, **0 code lines each** — and `UStatePlayerMasterSoiree` is the state
+`ADishonoredPlayerPawn::MAT_BeginPlayerGroup` (2012 `0x70fcc0`) enters for a cutscene. In retail that
+state is what forces the camera (the FOV change and the clamped view angles) and hides the first-person
+arms and weapon; here `interpgroupplayer.cpp:131` warns once and does nothing. **The first is the body
+half FS specified and did not reach**: the `Locomotion` track and `FArkComponentLocomotion::MovePawn`
+(2012 `0x503c30`), `FArkComponentMeshOffset` (`Engine/Src/arkcomponentmeshoffset.cpp`, **0 code
+lines**), and `ChangeAnimStateMotionModes` (unported, `dishonoredpawn.cpp:428`), so an NPC's animation
+plays while its actor and mesh stay where they were — on the boat (whose Move track sails off without
+them, no Base: FV's item 4) and anywhere else an animation is meant to move a body.
+
+### FZ — the soirée player state: forced camera, clamped look, hidden arms
+
+1. **`UStatePlayerMasterSoiree`** and what enters it: `ADishonoredPlayerPawn::MAT_BeginPlayerGroup`
+   (2012 `0x70fcc0`), `UStatePlayerMasterInDialog::StartSoireeControl`,
+   **`FDisSoireeControlState::EnterSoireeMode`** (2012 `0x69a4b0`, 525 B). FO's `agentFO.md` §6 read the
+   player five (`MAT_BeginPlayerGroup`, `MAT_SetForceInventory`, `MAT_FinishPlayerGroup`,
+   `MAT_BlendOut`, the fifth) with addresses; FK's `interpgroupplayer.cpp` has the warn-once stubs to
+   replace. The base state machinery (`UStatePlayerMasterBase`, the owner that runs it) is also a
+   skeleton — port the minimum that lets the Soirée state enter, tick and exit, and inventory the other
+   24 states with sizes.
+2. **The forced perspective**: what the state does to the camera — the FOV it sets, the pitch/yaw
+   limits it applies, and how `UInterpTrackDisAllowPlayerLook` (FS: uses the seam, body absent) feeds
+   it. Prove with `-fkdiag`/a new line logging FOV and the view-rotation limits during the boat ride
+   against the control (90°, unlimited), and with in-process captures that show the forced framing.
+3. **The arms and weapon hidden** while the state is active and shown again on `MAT_FinishPlayerGroup`
+   / `BlendOut`. Find retail's call (the arms mesh component on `ADishonoredPlayerPawn`; nothing in this
+   tree hides it — `grep` finds only `UDisDLC07SeqAct_SetPlayerArmsMesh`). Capture before/during/after.
+
+Files: `DishonoredGame` player pawn, player controller, the state units, `interpgroupplayer.cpp`.
+FV is in NPC pawns and the go-to; GA in locomotion; name every function. `dishonoredplayercontroller.cpp`
+already carries FI, FL, FK, FT.
+
+### GA — NPC bodies move with their animations
+
+1. **The `Locomotion` track**: `UInterpTrackLocomotion` / its inst through FS's `UpdateTrackInst` seam,
+   and **`FArkComponentLocomotion::MovePawn`** (2012 `0x503c30`) with its five unported helpers (FS §6;
+   the component itself has 484 code lines and exists). This is how a matinee carries an AI pawn
+   along a path.
+2. **`FArkComponentMeshOffset`** — 0 bodies. `ADishonoredPawn`'s mesh-translation trio
+   (`GetMeshOffsetComponent` / `Enable…`, `dishonoredpawn.cpp:432`) are no-ops because of it, and
+   `UInterpGroupAI::UpdateGroup` calls `MAT_SetMesh…` into them (`dishonorednpcpawn.cpp:342`).
+3. **`ChangeAnimStateMotionModes`** (2012 `0x78e4b0` / `0x78e4c0`; `dishonoredpawn.cpp:428`) so
+   `MAT_SetRootMotionMode` and the pawn's own root-motion modes reach `Mesh->RootMotionMode` the way
+   retail's do, and **root motion moves the actor** — the user's "NPCs I interact with" float because an
+   animation with root translation plays on a pawn whose actor never follows it. `ADishonoredPawn::
+   Tick_Body` (90 code lines, partial) is where the per-frame application lives; FV is porting the part
+   of it that drives the look-at — **coordinate: FV owns `Tick_Body`'s look-at/spine branch, you own
+   its motion branch, and you merge, not overwrite.**
+
+Prove with position-over-time: the two guards on the boat **travel with the boat**, and a walking NPC's
+actor **moves with its animation** rather than sliding or floating, against the control; in-process
+captures at matching world times.
+
 ## Rules for agents
 
+- **The daytime rules are back** (the user is at the machine): builds at half CPU, one at a time
+  (the override file is gone); **no retail `Dishonored.exe` launches at all**. The overnight
+  relaxation in "THE FOUR RULES" above is void until the coordinator says otherwise.
 - The four rules above, and the two-build limit. **Before hand-back: `git diff --name-only <base>` +
   `git ls-files --others --exclude-standard source resources` against your sync list**; FR's script
   does the comparison itself (`NOT IN SYNC LIST but changed in the worktree`) — copy that pattern.
