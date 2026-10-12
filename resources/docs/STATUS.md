@@ -101,7 +101,7 @@ listeners (`98e22d4`).
 ## The gate is GREEN - 47 of 47 - and how it got there
 
 `run_regression.py` is **47 checks**. Every wave-22 merge read **47 ok, 0 failed, 0 skipped** on a clean
-checkout of its own commit (`90d490e`, `0e45ea1`, `03f7579`, `02eb527`, `785e91d` on FZ's merged tree; `ad4a35d`
+checkout of its own commit (`90d490e`, `0e45ea1`, `03f7579`, `02eb527`, `785e91d`; `ad4a35d`
 read 46 - see defect 12), and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
 crash detectors match the structured-exception banner as well as `Critical: `, so a hard crash inside a
 stage is now a red row rather than an invisible one.

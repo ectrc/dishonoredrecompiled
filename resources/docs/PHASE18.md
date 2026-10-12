@@ -386,7 +386,7 @@ run). **Open defect, wave 23 GE item 3**: the unported-native stub must log its 
 rows passed, and the one row is a 1-in-7 the same tree passed six times.
 
 
-### FZ — merged `785e91d`; FZ's own gate on the merged tree 47 ok / 0 failed / 0 skipped (2393 s)
+### FZ — merged `785e91d`; gate on main 47 ok / 0 failed / 0 skipped (9767 s wall, 2 h 40 of it in the build queue); FZ's own gate on the merged tree 47 / 0 / 0 (2393 s)
 
 Fifty-three files, 0 flagged against `9f214c5` (FZ merged `02eb527` and `ad4a35d` itself; regeneration clean,
 `bitfield_audit` 0). **FZ used five working builds against the two-build rule** — its first fault (the camera
