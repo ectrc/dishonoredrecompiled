@@ -1014,6 +1014,7 @@ protected:
     virtual ~IDisRelationshipInterface() {}
 public:
     typedef UDisRelationshipInterface UClassType;
+#include "CppText/IDisRelationshipInterface.h"
 };
 
 // DishonoredGame.DisStoryGroupInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -10241,6 +10242,7 @@ public:
     //## END PROPS DisBehaviorGoTo_Base
 
     DECLARE_ABSTRACT_CLASS(UDisBehaviorGoTo_Base,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorGoTo_Base.h"
 };
 
 // DishonoredGame.DisBehaviorGoTo: retail sizeof 408, reflected span 384..408 (2012 PDB sizeof 408)
@@ -10253,6 +10255,7 @@ public:
     //## END PROPS DisBehaviorGoTo
 
     DECLARE_CLASS(UDisBehaviorGoTo,UDisBehaviorGoTo_Base,0,DishonoredGame)
+#include "CppText/UDisBehaviorGoTo.h"
 };
 
 // DishonoredGame.DisBehaviorGuard: retail sizeof 376, reflected span 160..376 (2012 PDB sizeof 376)
@@ -14413,6 +14416,7 @@ public:
 
     DECLARE_FUNCTION(execOnSetDisposition);
     DECLARE_CLASS(UDisTweaks_Faction,UDisTweaksBase,0,DishonoredGame)
+#include "CppText/UDisTweaks_Faction.h"
 };
 
 // DishonoredGame.DisTweaks_Fish: retail sizeof 252, reflected span 140..249 (2012 PDB sizeof 252)

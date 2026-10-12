@@ -2333,12 +2333,18 @@ IMPLEMENT_CLASS(UDisTweaks_PlayerVisibility);
 IMPLEMENT_CLASS(UDishonoredVisibilityComponent);
 
 // Link anchors: void DishonoredLink<X>() of every unit taken off the exclude list (see link_anchors in the generator).
+extern void DishonoredLinkDisBehaviorGoTo();
+extern void DishonoredLinkDisBehaviorGoToBase();
+extern void DishonoredLinkDisSeqActSetDisposition();
 extern void DishonoredLinkDisSeqActStartSpawn();
 extern void DishonoredLinkDisSeqCondCompareBoolExtended();
 extern void DishonoredLinkDisSeqCondCompareTweaks();
 extern void DishonoredLinkDisSeqVarSpawnerPawn();
 void (*GDishonoredGameLinkAnchors[])() =
 {
+	&DishonoredLinkDisBehaviorGoTo,
+	&DishonoredLinkDisBehaviorGoToBase,
+	&DishonoredLinkDisSeqActSetDisposition,
 	&DishonoredLinkDisSeqActStartSpawn,
 	&DishonoredLinkDisSeqCondCompareBoolExtended,
 	&DishonoredLinkDisSeqCondCompareTweaks,

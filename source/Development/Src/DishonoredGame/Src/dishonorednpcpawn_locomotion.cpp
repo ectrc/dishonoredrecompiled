@@ -228,3 +228,92 @@ UBOOL ADishonoredNPCPawn::SetupPathGoalsAndConstraints( const FVector& _rFinalDe
 	}
 	return bResult;
 }
+
+// ---- agent FV (PHASE18 FV): the transit speed and the look-at choice ----
+
+// DISHONORED(port): 2013 rva 0x779430 (2012 0x7b4cf0, 151 B): the locomotion component's most relevant speed index, mapped back
+// through the NPC tweaks' m_LocomotionSpeedToTransitSpeed; no index, or one past the table, is Idle. (The 0x779850 the note
+// in IsMoving cites is not this function.)
+BYTE ADishonoredNPCPawn::GetCurrentTransitSpeed() const
+{
+	const FArkComponentLocomotion* Loco = GetComponentLocomotion();
+	const INT SpeedIdx = Loco ? Loco->GetMostRelevantSpeedIdx() : INDEX_NONE;
+	if( SpeedIdx == INDEX_NONE )
+	{
+		return ETransitSpeed_Idle;
+	}
+	const UDisTweaks_NPCPawn* Tweaks = Cast<UDisTweaks_NPCPawn>( const_cast<ADishonoredNPCPawn*>( this )->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject<UDisTweaks_NPCPawn>();
+	}
+	if( SpeedIdx < 0 || SpeedIdx >= Tweaks->m_LocomotionSpeedToTransitSpeed.Num() )
+	{
+		return ETransitSpeed_Idle;
+	}
+	return (BYTE)Tweaks->m_LocomotionSpeedToTransitSpeed( SpeedIdx );
+}
+
+// DISHONORED(port): 2013 rva 0x7794d0 (2012 0x7b4d90, 475 B): the look-at mode for the body stance the pawn intends and the
+// speed it moves at. Most stances take the equipped primary item's default mode (an aiming pawn with a secondary item
+// in hand aims); Search takes SearchIdle / SearchWalk when the intended primary item is equippable and not empty hands,
+// Empty* otherwise; EquippedPatrol takes Empty* by speed; CrouchedAim leaves the mode unchanged (eDisNPCLookAtMode_MAX).
+BYTE ADishonoredNPCPawn::ChooseLookAt()
+{
+	const BYTE TransitSpeed = GetCurrentTransitSpeed();
+	const BYTE Stance = m_BodyIntention[m_CurrentBodyStancePriority].m_IntendedBodyStance;
+	switch( Stance )
+	{
+	case eDisNPCBodyStance_None:
+	case eDisNPCBodyStance_Relaxed:
+	case eDisNPCBodyStance_Equipped:
+	case eDisNPCBodyStance_Aiming:
+	case eDisNPCBodyStance_Panicked:
+	case eDisNPCBodyStance_PanicRecover:
+	case eDisNPCBodyStance_MeleeRush:
+	case eDisNPCBodyStance_EscapeExplosion:
+		{
+			UDishonoredInventoryItem* Primary = m_pInventory ? m_pInventory->GetEquippedItem( EDisEquipUsage_Primary ) : NULL;
+			const BYTE Mode = Primary ? Primary->GetDefaultNPCLookAtMode( TransitSpeed ) : eDisNPCLookAtMode_MAX;
+			if( Stance == eDisNPCBodyStance_Aiming )
+			{
+				UDishonoredInventoryItem* Secondary = m_pInventory ? m_pInventory->GetEquippedItem( EDisEquipUsage_Secondary ) : NULL;
+				if( Secondary && !Secondary->IsA( UDishonoredItemEmpty::StaticClass() ) )
+				{
+					return eDisNPCLookAtMode_AimIdle;
+				}
+			}
+			return Mode;
+		}
+	case eDisNPCBodyStance_Search:
+		{
+			UClass* DesiredPrimary = m_BodyIntention[m_CurrentPrimaryItemPriority].m_pDesiredPrimaryItemClass;
+			UDishonoredInventoryItem* Item = ( DesiredPrimary && m_pInventory ) ? m_pInventory->FindEquippableItem( DesiredPrimary, EDisEquipUsage_Primary ) : NULL;
+			const UBOOL bHasSearchItem = Item && !Item->IsA( UDishonoredItemEmpty::StaticClass() );
+			if( TransitSpeed == ETransitSpeed_Idle )
+			{
+				return bHasSearchItem ? eDisNPCLookAtMode_SearchIdle : eDisNPCLookAtMode_EmptyIdle;
+			}
+			if( TransitSpeed == ETransitSpeed_Walk )
+			{
+				return bHasSearchItem ? eDisNPCLookAtMode_SearchWalk : eDisNPCLookAtMode_EmptyWalk;
+			}
+			if( TransitSpeed == ETransitSpeed_Run )
+			{
+				return bHasSearchItem ? eDisNPCLookAtMode_SearchWalk : eDisNPCLookAtMode_EmptyRun;
+			}
+			return eDisNPCLookAtMode_MAX;
+		}
+	case eDisNPCBodyStance_EquippedPatrol:
+		if( TransitSpeed == ETransitSpeed_Idle )
+		{
+			return eDisNPCLookAtMode_EmptyIdle;
+		}
+		if( TransitSpeed == ETransitSpeed_Walk )
+		{
+			return eDisNPCLookAtMode_EmptyWalk;
+		}
+		return TransitSpeed == ETransitSpeed_Run ? eDisNPCLookAtMode_EmptyRun : eDisNPCLookAtMode_MAX;
+	}
+	return eDisNPCLookAtMode_MAX;
+}

@@ -89,3 +89,21 @@ public:
 	virtual UObject* GetUObjectInterfaceDisConvSpeakerInterface() { return this; }
 	virtual void GetSpeakerLocInfo( TArray<struct FDisConvSpeakerLocInfo>& _rLocInfoOut ) const;
 	virtual class UDisConversationComponent* GetConversationComponent_Derived() { return NULL; }
+
+// ---- agent FV (PHASE18 FV): the relationship interface's slots, the disposition native, and the tick ----
+// DISHONORED(port): the three IDisRelationshipInterface slots retail implements on the pawn (see CppText/IDisRelationshipInterface.h:
+// GetUObjectInterfaceDisRelationshipInterface 2012 0x71ce00, GetRelationshipOverrideInfo 0x765290, GetFactionTweak 0x964ef0,
+// 7 bytes each). OnSetDisposition is the virtual behind exec 2013 rva 0x5ec8f0, 15 B in retail: the interface's OnSetDispositionHelper.
+// Tick 2013 rva 0x750720 (2012 0x790c10, 304 B), Tick_Body 0x7510b0 (0x7959c0), Tick_Body_CachedPositions 0x74d850 (0x791470),
+// GetSpineBendRefPoint 0x7689a0 (0x7a1560). Bodies in dishonoredpawn.cpp and dishonoredpawn_body.cpp.
+public:
+	virtual UObject* GetUObjectInterfaceDisRelationshipInterface() { return this; }
+	virtual FDisRelationshipOverrideInfo* GetRelationshipOverrideInfo() { return &m_PersonalRelationships; }
+	virtual UDisTweaks_Faction* GetFactionTweak() const { return m_pCurFactionTweak; }
+	virtual void OnSetDisposition( class UDisSeqAct_SetDisposition* _pAction );
+
+	virtual UBOOL Tick( FLOAT DeltaTime, ELevelTick TickType );
+	virtual void Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType );
+	FVector GetSpineBendRefPoint() const;
+protected:
+	void Tick_Body_CachedPositions( FLOAT _fDeltaTime );

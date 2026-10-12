@@ -528,3 +528,112 @@ UBOOL ADishonoredNPCPawn::MAT_PermitLODPause() const
 {
 	return !m_bRenderedByPlayer;
 }
+
+// ---- agent FV (PHASE18 FV): the NPC tick and the relationship change ----
+
+#include "arkcomponentlookat.h"
+#include "fvdiag.h"
+
+// DISHONORED(port): 2013 rva 0x76da40 (2012 0x7c8090, 1085 B). In retail's order: m_bNoTick marks the actor ticked and leaves;
+// in game, Tick_Rotation, CheckForVanish, the rigid-body contact end, UpdateMeshOriginOffset; ADisPossessablePawn::Tick
+// (ADishonoredPawn::Tick here - the possessable half is not ported); then, for a live, non-deleted pawn in game: the
+// master FSM ticks, a live NPC updates its equipment and tether volume, counts its distraction cooldown down and, when
+// the sleep timer it was given runs out, takes the sleep damage; the deferred gore and ragdoll impulses are flushed;
+// UpdateLocomotion; and a live NPC's look-at component is told the mode ChooseLookAt picks - the line agent FT's
+// FArkComponentLookat was waiting for. Finally m_bLastRenderedByPlayer follows m_bRenderedByPlayer and a pawn with no
+// physics drops bJustTeleported.
+// DISHONORED(bringup): Tick_Rotation (2012 0x7d4d40), CheckForVanish (0x7c4170), ADishonoredKActor::CollideContactSystemEnd
+// (0x6698c0), UpdateMeshOriginOffset (0x7abb00), UpdateEquipment (0x7b7b90), UpdateTetherVolume (0x7c0ef0), SeverLimb
+// (0x7c7490) with UDishonoredInventory::DropAttachedItems (0x85c940) and the ragdoll AddImpulse flush are not ported; the
+// two deferred arrays are emptied as retail empties them so they cannot grow.
+UBOOL ADishonoredNPCPawn::Tick( FLOAT _fDeltaTime, ELevelTick _TickType )
+{
+	if( m_bNoTick )
+	{
+		bTicked = GWorld->Ticked;
+		return TRUE;
+	}
+	const UBOOL bResult = Super::Tick( _fDeltaTime, _TickType );
+	if( !bDeleteMe && !IsPendingKill() && ( !GIsEditor || GIsGame ) )
+	{
+		if( m_pNPCMasterFSM )
+		{
+			m_pNPCMasterFSM->TickStateMachine( _fDeltaTime );
+		}
+		if( !DisIsPawnDead( this ) )
+		{
+			m_fDistractionCooldownTime_Countdown -= _fDeltaTime;
+			if( m_fTimeBeforeSleep > 0.f )
+			{
+				m_fTimeBeforeSleep -= _fDeltaTime;
+				if( m_fTimeBeforeSleep <= 0.f )
+				{
+					m_LastSleepDamageInfo.m_bAlreadyDeferred = TRUE;
+					TakeDamage( m_LastSleepDamageInfo.m_DamageAmount, m_LastSleepDamageInfo.m_pInstigator, Location, FVector( 0.f, 0.f, 0.f ),
+						m_LastSleepDamageInfo.m_pDamageType, FTraceHitInfo( EC_EventParm ), NULL );
+				}
+			}
+		}
+		if( m_GoreRequestDeferred.Num() > 0 )
+		{
+			static UBOOL bNoted = FALSE;
+			if( !bNoted )
+			{
+				bNoted = TRUE;
+				debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredNPCPawn::Tick: %i deferred gore request(s) dropped on %s; SeverLimb (2012 rva 0x7c7490) is not ported"), m_GoreRequestDeferred.Num(), *GetName() );
+			}
+			m_GoreRequestDeferred.Empty();
+		}
+		if( m_RagdollImpulseDeferred.Num() > 0 )
+		{
+			m_RagdollImpulseDeferred.Empty();
+		}
+		UpdateLocomotion();
+		if( !DisIsPawnDead( this ) )
+		{
+			FArkComponentLookat* Lookat = GetComponentLookat();
+			const BYTE LookAtMode = ChooseLookAt();
+			if( Lookat )
+			{
+				Lookat->SetLookAtMode( LookAtMode );
+			}
+			if( DisFVDiagEnabled() )
+			{
+				static FLOAT s_fNextReport = 0.f;
+				const FLOAT Now = GWorld && GWorld->GetWorldInfo() ? GWorld->GetWorldInfo()->TimeSeconds : 0.f;
+				if( Now >= s_fNextReport )
+				{
+					s_fNextReport = Now + 5.f;
+					for( FActorIterator It; It; ++It )
+					{
+						ADishonoredNPCPawn* NPC = Cast<ADishonoredNPCPawn>( *It );
+						if( NPC && !NPC->bDeleteMe )
+						{
+							FVDIAG( "base %s on %s at %.0f/%.0f/%.0f vel %.0f/%.0f/%.0f physics %i floor %.2f", *NPC->GetName(), NPC->Base ? *NPC->Base->GetName() : TEXT("none"),
+								NPC->Location.X, NPC->Location.Y, NPC->Location.Z, NPC->Velocity.X, NPC->Velocity.Y, NPC->Velocity.Z, (INT)NPC->Physics, NPC->Floor.Z );
+						}
+					}
+				}
+			}
+		}
+	}
+	m_bLastRenderedByPlayer = m_bRenderedByPlayer;
+	if( Physics == PHYS_None )
+	{
+		bJustTeleported = FALSE;
+	}
+	return bResult;
+}
+
+// DISHONORED(port): 2013 rva 0x759de0 (2012 0x7c04e0, 136 B): the AI is told on its next thought (m_bNotifyAIOfRelationshipChange,
+// read by ShouldAIBeNotifiedOfRelationshipChange), the avoidance group flags follow the new relations, and an NPC whose
+// plot settings say the game is over once he is hostile to the player ends it when DetermineRelationship( player ) says Enemy.
+// DISHONORED(bringup): UpdateAvoidableCollisionGroupFlags (2012 0x7c0450: UArkAvoidable::SetGroupFlags, whose class has no
+// ported methods - agent DN) and the game-over check (UDisTweaks_NPCPawn::GetPlotSettings 0x7ece50 / DisGameOver 0x82d5d0,
+// neither ported) are named and not run; the relationship itself is Neutral until the faction tables land
+// (disglobalfactionmanager.cpp), so the check could not fire.
+void ADishonoredNPCPawn::OnRelationshipChange()
+{
+	m_bNotifyAIOfRelationshipChange = TRUE;
+	FVDIAG( "relationship changed on %s (%i individual, %i faction override(s))", *GetName(), m_PersonalRelationships.m_IndividualOverrideMap.Num(), m_PersonalRelationships.m_FactionOverrideMap.Num() );
+}

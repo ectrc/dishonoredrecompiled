@@ -849,6 +849,7 @@ public:
     //## END PROPS DishonoredInventoryItem
 
     DECLARE_ABSTRACT_CLASS(UDishonoredInventoryItem,UObject,0,DishonoredGame)
+#include "CppText/UDishonoredInventoryItem.h"
 };
 
 // DishonoredGame.DisItemContext: retail sizeof 176, reflected span 56..176 (2012 PDB sizeof 168)
@@ -1094,6 +1095,7 @@ public:
 
     DECLARE_CLASS(UDishonoredItemEmpty,UDishonoredInventoryItem,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Item");}
+#include "CppText/UDishonoredItemEmpty.h"
 };
 
 // DishonoredGame.DishonoredItemSkeletalComponent: retail sizeof 1136, reflected span 1120..1124 (2012 PDB sizeof 1104)

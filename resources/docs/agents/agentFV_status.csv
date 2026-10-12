@@ -1,0 +1,119 @@
+function,rva_2013,rva_2012,size,status,note
+ADishonoredNPCController::OnAIGoToActor,0x763890,0x7bd370,490,ported,
+ADishonoredNPCController::execOnAIGoToActor,0x5f4dd0,0x63b040,96,ported,
+ADishonoredNPCController::SetGoToActionStatus,0x74abb0,0x7ab140,63,ported,now reaches the action's SetGoToStatus; agent CG cited 0x79a520 which is not that function
+UDisSeqAct_AIGoToActor::GetDestinationActor,0x78ae40,0x7cdc20,71,ported,
+UDisSeqAct_AIGoToActor::SetGoToStatus,0x7a1fc0,0x7d8da0,170,ported,virtual in 2013 (vtable +404)
+UDisSeqAct_AIGoToActor::GetDesiredTransitSpeed,0x786360,0x7cb780,13,ported,
+UDisSeqAct_AIGoToActor::ShouldAlignRotation,0x786370,0x7cb790,13,ported,
+UDisSeqAct_AIGoToActor::DeActivated,0x7a2070,0x7d8e50,5,ported,
+UDisSeqAct_Latent::CleanUpLatentActors,,0x7d8be0,155,ported,unnamed in 2013
+UDisSeqAct_SetDisposition::Activated,0x790a50,0x7d36b0,105,ported,
+UDisBehaviorGoTo_Base::OnBehaviorStart,0x6e4d50,0x745550,8,ported,
+UDisBehaviorGoTo_Base::OnBehaviorStop,0x6e4d60,0x745560,83,ported,
+UDisBehaviorGoTo_Base::PrepareGoTo,0x6e4de0,0x7455c0,136,ported,
+UDisBehaviorGoTo_Base::BuildFilterStimMask,,0x745650,54,ported,
+UDisBehaviorGoTo_Base::FilterDestinationReached,0x6e4ea0,0x745690,35,ported,
+UDisBehaviorGoTo_Base::FilterRotationReached,0x6e4ed0,0x7456c0,29,ported,
+UDisBehaviorGoTo_Base::SetFixedDestination,0x6e4ef0,0x7456e0,112,ported,
+UDisBehaviorGoTo_Base::GetDesiresLocoRequest,0x6e4f60,0x745760,7,ported,
+UDisBehaviorGoTo_Base::GetDesiresFaceToRequest,,0x745750,4,ported,UObject vtable slot 108 of 0xd25e60
+UDisBehaviorGoTo_Base::IsPlayerAllowedToPushMe,0x6e4f70,0x745770,12,ported,
+UDisBehaviorGoTo_Base::IsBehaviorFinished,0xae4510,0x724a60,10,ported,UObject vtable slot 92 of 0xd25e60 is UDisBehaviorShoot's folded body
+UDisBehaviorGoTo_Base::OnBehaviorPause,,0x746ce0,35,ported,
+UDisBehaviorGoTo_Base::OnBehaviorResume,,0x746d10,33,ported,
+UDisBehaviorGoTo_Base::Start_TurningToFace,0x6e8590,0x746d40,99,ported,bring-up: without FArkComponentFaceTo the rotation wait is skipped
+UDisBehaviorGoTo_Base::FilterPathingFail,0x6e8600,0x746db0,134,partial,AttemptTeleportSpell 0x832a50 not ported
+UDisBehaviorGoTo_Base::TickBehavior,0x6edc00,0x74c8c0,54,ported,
+UDisBehaviorGoTo_Base::BuildBehaviorFilterStimMasks,,0x74c900,144,inventory,this tree's UDishonoredAIBehavior base does it from BuildFilterStimMask
+UDisBehaviorGoTo_Base::GetFilterStimDelegate,,0x74c990,80,ported,
+UDisBehaviorGoTo::InitBehavior,0x6edae0,0x74c7a0,43,ported,
+UDisBehaviorGoTo::OnBehaviorStart,0x6edb10,0x74c7d0,116,ported,
+UDisBehaviorGoTo::BuildBehaviorFilterStimMasks,0x6edb90,0x74c850,102,inventory,see the base
+UDisBehaviorGoTo::BuildFilterStimMask,,0x746bc0,240,ported,
+UDisBehaviorGoTo::BuildEvaluateStimMask,0x6e4d10,0x745510,31,ported,
+UDisBehaviorGoTo::BuildShouldFinishWhileDormantStimMask,,0x7454e0,37,ported,
+UDisBehaviorGoTo::FilterGoToRequest,0x6f04e0,0x75d0f0,339,ported,
+UDisBehaviorGoTo::FilterBehaviorAbort,0x6f0640,0x75c150,59,ported,
+UDisBehaviorGoTo::ShouldFinishWhileDormantGoToRequest,0x6f0680,0x75d250,75,ported,
+UDisBehaviorGoTo::ShouldFinishWhileDormantBehaviorAbort,0x6f06d0,0x75c190,38,ported,
+UDisBehaviorGoTo::EvaluateGoToRequest,0x6f0700,0x75d2a0,73,ported,
+UDisBehaviorGoTo::SetupFromGoToRequest,0x6f0750,0x75d2f0,255,ported,
+UDisBehaviorGoTo::GetFilterStimDelegate,0x6fc030,0x760eb0,244,ported,
+UDisBehaviorGoTo::GetShouldFinishWhileDormantDelegate,0x6fc1c0,0x761040,60,ported,
+UDisBehaviorGoTo::GetEvaluateStimDelegate,0x6fc200,0x761080,39,ported,
+UDisBehaviorGoTo::GetSetupFromStimDelegate,0x6fc230,0x7610b0,39,ported,
+UDisBehaviorGoTo::FilterInterruptStim,0x6e4c70,0x7454a0,14,ported,
+UDisBehaviorGoTo::FilterTouchedNeutral,0x6e4c80,0x7454b0,43,ported,PDB names the unit's function FilterTouchedAlly
+UDisBehaviorGoTo::FilterTouchedEnemy,0x6e4cb0,0x748e60,36,ported,
+UDisBehaviorGoTo::FilterKismetAIAction,0x6e8470,0x746cb0,39,ported,
+UDisBehaviorGoTo::GetResumingBodyIntentionDesire,,0x748e90,259,ported,
+UDisBehaviorGoTo::GetDialogAvailability,0x6e4c50,0x745480,29,inventory,UDishonoredAIBehavior::CallGetDialogAvailability not ported (FR's note)
+UDishonoredAIBrain::OnTouchedEnemyStimAccepted,0x704140,0x747b80,71,ported,
+UDisAISubProcessPersonalSpace::SetAmbientActionManagement,0x728920,0x766240,19,ported,inline bit write in UDisBehaviorGoTo::InitBehavior
+UDisSteeringInfluence_Danger::EnableDanger,,0x765080,46,ported,inline in UDisBehaviorGoTo_Base::OnBehaviorPause / Resume
+ADishonoredPawn::OnSetDisposition,,,15,ported,the virtual behind exec 0x5ec8f0
+ADishonoredPawn::execOnSetDisposition,0x5ec8f0,,96,ported,
+IDisRelationshipInterface::OnSetDispositionHelper,0x70f700,0x776910,858,ported,
+IDisRelationshipInterface::FromUObjectOrController,0x70f6a0,0x7768b0,92,ported,
+IDisRelationshipInterface::DetermineRelationship,0x7043a0,0x7670c0,40,ported,answers Neutral until the manager's faction tables are ported
+IDisRelationshipInterface::DetermineRelationship_Internal,0x7043d0,0x7670f0,93,ported,
+IDisRelationshipInterface::DetermineRelationship_Derived,0x7013b0,0x764c30,10,ported,
+IDisRelationshipInterface::OverrideRelationToFaction,0x704430,0x767150,67,ported,
+IDisRelationshipInterface::OverrideRelationToIndividual,0x704480,0x7671a0,67,ported,
+IDisRelationshipInterface::ClearRelationOverrides,0x7044d0,0x7671f0,41,ported,
+IDisRelationshipInterface::ClearRelationToFactionOverride,0x704500,0x767220,57,ported,
+IDisRelationshipInterface::ClearRelationToIndividualOverride,0x70c4b0,0x76f0f0,57,ported,
+IDisRelationshipInterface::OnActorTerminated_RelationshipInterface,0x704540,0x767260,18,partial,OnIndividualDestroyed 0x8d88d0 replaced by the individual cache clear
+IDisRelationshipInterface::OnOtherActorTerminated_RelationshipInterface,0x70fa60,0x776c70,87,ported,
+ADishonoredPawn::GetUObjectInterfaceDisRelationshipInterface,,0x71ce00,7,ported,interface vtable slot 1
+ADishonoredPawn::GetRelationshipOverrideInfo,,0x765290,4,ported,interface vtable slot 2
+ADishonoredPawn::GetFactionTweak,,0x964ef0,4,ported,interface vtable slot 3; retail name not in either database
+ADishonoredNPCPawn::OnRelationshipChange,0x759de0,0x7c04e0,136,partial,UpdateAvoidableCollisionGroupFlags 0x7c0450 and the game-over check not ported
+UDisTweaks_Faction::OnSetDisposition,0x879000,0x8d8600,692,ported,
+UDisTweaks_Faction::execOnSetDisposition,0x5ec020,0x632440,96,ported,
+FDisRelationshipOverrideInfo::ClearIndividualOverride,0x85c880,0x89c420,25,ported,
+FDisRelationshipOverrideInfo::ClearFactionOverride,0x85e610,0x89fb60,227,ported,sub_C5E610 in the 2013 database
+FDisRelationshipOverrideInfo::ClearAllOverrides,0x85e7e0,0x89fc60,22,ported,
+FDisRelationshipOverrideInfo::OverrideIndividualRelationship,0x85e590,0x89fae0,120,ported,
+FDisRelationshipOverrideInfo::OverrideFactionRelationship,0x860c40,0x8a0670,448,ported,sub_C60C40 in the 2013 database
+FDisRelationshipOverrideInfo::GetIndividualOverride,,0x89f9f0,235,ported,
+FDisRelationshipOverrideInfo::HasAnyOverride,,0x894330,38,ported,
+UDisGlobalFactionManager::ClearIndividualCache(IDis;IDis),0x85c8a0,0x8cb0b0,66,ported,
+UDisGlobalFactionManager::ClearIndividualCache(IDis;Faction),0x860ee0,0x8d0570,71,ported,
+UDisGlobalFactionManager::ClearIndividualCache(IDis),0x8631f0,0x8d8090,15,ported,
+UDisGlobalFactionManager::ClearFactionCache(IDis;Faction),,0x8d05c0,324,ported,
+UDisGlobalFactionManager::ClearFactionCache(Faction;Faction),,0x8d0710,579,partial,the two-cache walk; the trespasser half of the cache is not ported
+UDisGlobalFactionManager::ClearFactionCache(Faction),,0x8d80a0,530,partial,
+UDisGlobalFactionManager::ClearDerivedFactions(IndividualMap),,0x8ce860,258,ported,
+UDisGlobalFactionManager::ClearDerivedFactions(FactionMap),,0x8ce970,247,ported,
+UDisGlobalFactionManager::CachedIsFallbackDerivedFrom,0x85f9c0,0x8ce7d0,138,partial,uncached IsFallbackDerivedFrom
+UDisGlobalFactionManager::ClearRelationToIndividualOverride,0x863bb0,0x8d7e60,128,ported,sub_C63BB0 in the 2013 database
+UDisGlobalFactionManager::OverrideRelationToIndividual,0x8638e0,0x8d7ba0,576,partial,sub_C638E0; HandleRelationshipChanged 0x8b10f0 not ported
+UDisGlobalFactionManager::ClearRelationToFactionOverride,0x863de0,0x8d7de0,115,ported,
+UDisGlobalFactionManager::OverrideRelationToFaction,0x863960,0x8d7960,561,partial,HandleRelationshipChanged(faction;faction) 0x8b1080 not ported
+UDisGlobalFactionManager::DetermineRelationship(IDis;IDis),0x862f20,0x8d7810,327,partial,the cache read and the individual override; no faction table
+UDisGlobalFactionManager::DetermineRelationship(Faction;IDis),,0x8d82e0,385,partial,answers Neutral: IsTrespassing 0x8cea70 GetGlobalIndividualOverride 0x8c7d40 GetFactionRelationshipToIndividual 0x8ceaf0 not ported
+UDisGlobalFactionManager::UDisGlobalFactionManager,,0x8d8a30,213,inventory,s_pInstance published from ADishonoredGameInfo::InitGlobalManagers instead
+UDisGlobalFactionManager::RebuildCaches,0x832a60,0x8d7730,,inventory,
+UDisGlobalFactionManager::OnIndividualDestroyed,,0x8d88d0,,inventory,
+ADishonoredPawn::Tick,0x750720,0x790c10,304,partial,Tick_Body and the attention-cache bit; the seven other phases named
+ADishonoredPawn::Tick_Body,0x7510b0,0x7959c0,31,ported,FDisComponentRetargeting absent: NULL reads as not retargeting
+ADishonoredPawn::Tick_Body_CachedPositions,0x74d850,0x791470,390,ported,
+ADishonoredPawn::GetSpineBendRefPoint,0x7689a0,0x7a1560,26,partial,hit-region focus bones not ported; answers Location
+ADishonoredNPCPawn::Tick,0x76da40,0x7c8090,1085,partial,FSM tick; sleep damage; UpdateLocomotion; SetLookAtMode(ChooseLookAt()); nine callees named and not run
+ADishonoredNPCPawn::Tick_Body,0x783380,0x7be180,310,partial,Tick_NPCFootPlacement; RegisterThreat; Tick_Rotation named
+ADishonoredNPCPawn::ChooseLookAt,0x7794d0,0x7b4d90,475,ported,
+ADishonoredNPCPawn::GetCurrentTransitSpeed,0x779430,0x7b4cf0,151,ported,agent DN cited 0x779850 for it
+ADishonoredNPCPawn::IsFootPlacementEnabled,,0x7b2a70,197,partial,game-info bit @976 and UStateSharedActionBase::NeedsFootPlacement absent
+ADishonoredNPCPawn::IsSlopeOffsettingEnabled,0x77b300,0x7b7050,199,partial,foot-cache walk has nothing to walk
+ADishonoredNPCPawn::IsActionSpineBendingEnabled,0x7772c0,0x7b2b40,149,ported,
+ADishonoredNPCPawn::Tick_SpineBending,0x77fbd0,0x7bc480,250,ported,
+ADishonoredNPCPawn::Tick_SpineBending_Apply,0x77b3d0,0x7b7120,2006,partial,slope branch ported; action and turn (ComputeTurnAngle 0x76fe70) branches named
+ADishonoredNPCPawn::ComputeTurnAngle,0x76fe70,0x7adde0,1321,inventory,
+UDishonoredInventoryItem::GetDefaultNPCLookAtMode,,0xa6cca0,5,ported,UObject vtable slot 85; weapons share the body
+UDishonoredItemEmpty::GetDefaultNPCLookAtMode,0x83d0c0,0x887cf0,40,ported,
+UDishonoredInventory::FindItemByClass,0x80b4a0,0x852180,332,ported,
+UDishonoredInventory::HasItemByClass,0x80f870,0x855bc0,32,ported,
+UDishonoredInventory::FindEquippableItem,0x804c80,0x852060,283,ported,
+FArkComponentLocomotion::FullMovePawn (ground hit),0x53fb00,0x580ae0,4707,partial,the basing part of retail's ground check added to agent DN's swept move (UpdateFloorAndBase)

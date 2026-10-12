@@ -597,3 +597,214 @@ UBOOL DisHeadSuppressed()
 	}
 	return GDisNoHead != 0;
 }
+
+// ---- agent FV (PHASE18 FV): the NPC body pass and the spine bender's driver ----
+
+#include "fvdiag.h"
+
+// DISHONORED(port): 2013 rva 0x783380 (2012 0x7be180, 310 B): the base pass, the foot placement, and - unless the pawn is being
+// retargeted - the threat registration for a rendered NPC, the spine bending, a live NPC's rotation pass, m_bTickedNPCBody,
+// and m_bWasRecentlyPossessed dropped once the player stands farther than the two cylinders' diagonals plus 5 uu.
+// DISHONORED(bringup): Tick_NPCFootPlacement (2012 0x7b2bf0; the foot caches it drives are not built, agent DI),
+// UDisThreatPerceptionComponent::RegisterThreat (0x7092b0) and Tick_Rotation (0x7d4d40) are not ported. The retargeting
+// component is absent (see ADishonoredPawn::Tick_Body).
+void ADishonoredNPCPawn::Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType )
+{
+	Super::Tick_Body( _fDeltaTime, _TickType );
+	if( m_pCpntRetargeting && *(UBOOL*)( (BYTE*)m_pCpntRetargeting + 60 ) )
+	{
+		return;
+	}
+	Tick_SpineBending( _fDeltaTime );
+	m_bTickedNPCBody = TRUE;
+	if( m_bWasRecentlyPossessed )
+	{
+		ADishonoredPlayerPawn* Player = ADishonoredPlayerPawn::s_pInstance;
+		if( !Player )
+		{
+			m_bWasRecentlyPossessed = FALSE;
+		}
+		else
+		{
+			const FLOAT PlayerRadius = Player->CylinderComponent ? Player->CylinderComponent->CollisionRadius : 0.f;
+			const FLOAT MyRadius = CylinderComponent ? CylinderComponent->CollisionRadius : 0.f;
+			const FLOAT DistRequired = PlayerRadius * 1.414213562373095f + MyRadius * 1.414213562373095f + 5.f;
+			if( ( Player->Location - Location ).SizeSquared() >= DistRequired * DistRequired )
+			{
+				m_bWasRecentlyPossessed = FALSE;
+			}
+		}
+	}
+}
+
+static UDisTweaks_NPCPawn_Body* DisNPCBodyTweaks( const ADishonoredNPCPawn* _pPawn )
+{
+	UDisTweaks_NPCPawn* Tweaks = Cast<UDisTweaks_NPCPawn>( const_cast<ADishonoredNPCPawn*>( _pPawn )->GetTweaks_Derived() );
+	if( !Tweaks )
+	{
+		Tweaks = UDisTweaks_NPCPawn::StaticClass()->GetDefaultObject<UDisTweaks_NPCPawn>();
+	}
+	return Cast<UDisTweaks_NPCPawn_Body>( Tweaks->m_pBodyTweaks );
+}
+
+// DISHONORED(port): 2012 rva 0x7b2a70 (197 B; unnamed in 2013): the body tweaks allow it, the pawn allows it, the player
+// renders it, it is not a ragdoll, the floor is flat enough for the tweaks (or the game info forces it) - and the master
+// FSM's logical state, when it is a shared action, has the last word.
+// DISHONORED(bringup): the game-info bit (@976 & 0x20) and UStateSharedActionBase::NeedsFootPlacement are not in this tree;
+// the bit reads FALSE and a shared-action state answers TRUE, the value retail takes when the state is not one.
+UBOOL ADishonoredNPCPawn::IsFootPlacementEnabled() const
+{
+	const UDisTweaks_NPCPawn_Body* Body = DisNPCBodyTweaks( this );
+	if( !Body || !Body->m_bUseFootPlacement )
+	{
+		return FALSE;
+	}
+	const UBOOL bFloorAllows = Body->m_fMaxZFloorForFootPlacement >= Floor.Z;
+	if( !m_bAllowFootPlacement || !m_bRenderedByPlayer || Physics == PHYS_RigidBody || !bFloorAllows )
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x77b300 (2012 0x7b7050, 199 B): slope offsetting is the body tweaks' choice gated on the foot
+// placement, and off while any foot cache's placement node is mid-step.
+// DISHONORED(bringup): the foot caches are not built in this tree (agent DI), so the last test has nothing to walk.
+UBOOL ADishonoredNPCPawn::IsSlopeOffsettingEnabled() const
+{
+	const UDisTweaks_NPCPawn_Body* Body = DisNPCBodyTweaks( this );
+	if( !Body || !Body->m_bIsSlopeOffsettingEnabled || !IsFootPlacementEnabled() )
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x7772c0 (2012 0x7b2b40, 149 B): a spine-bending target was set (m_bUseSpineBendingTarget) and
+// it lies outside the null zone above or below the spine reference point.
+UBOOL ADishonoredNPCPawn::IsActionSpineBendingEnabled() const
+{
+	if( !m_pSpineBender || !m_bUseSpineBendingTarget )
+	{
+		return FALSE;
+	}
+	const UDisTweaks_NPCPawn_Body* Body = DisNPCBodyTweaks( this );
+	if( !Body )
+	{
+		return FALSE;
+	}
+	const FVector RefPoint = GetSpineBendRefPoint();
+	return m_SpineBendingTarget.Z > RefPoint.Z + Body->m_fSpineBendUpperNullzone || m_SpineBendingTarget.Z < RefPoint.Z - Body->m_fSpineBendLowerNullzone;
+}
+
+// DISHONORED(port): 2013 rva 0x77fbd0 (2012 0x7bc480, 250 B): whether the spine bender is enabled this frame, and how fast it
+// gets there, then the targets (Tick_SpineBending_Apply). An action target or a turn-offsetting body keeps it enabled;
+// slope offsetting enables it instantly on the first body tick and on a pawn the player does not see, smoothly after;
+// a body with neither disables it, instantly on the first body tick.
+void ADishonoredNPCPawn::Tick_SpineBending( FLOAT _fDeltaTime )
+{
+	if( !m_pSpineBender )
+	{
+		return;
+	}
+	const UBOOL bSlopeOffsetting = IsSlopeOffsettingEnabled();
+	UBOOL bEnableOnlyIfDisabled = TRUE;
+	if( !IsActionSpineBendingEnabled() )
+	{
+		if( bSlopeOffsetting )
+		{
+			if( m_bLastNeedSlopeOffset && m_bTickedNPCBody )
+			{
+				bEnableOnlyIfDisabled = FALSE;
+			}
+			else if( !m_bTickedNPCBody || !m_bLastRenderedByPlayer )
+			{
+				m_pSpineBender->EnableSpineBending( TRUE, TRUE );
+				bEnableOnlyIfDisabled = FALSE;
+			}
+			else
+			{
+				m_pSpineBender->EnableSpineBending( TRUE, FALSE );
+				bEnableOnlyIfDisabled = FALSE;
+			}
+		}
+		else
+		{
+			const UDisTweaks_NPCPawn_Body* Body = DisNPCBodyTweaks( this );
+			if( !Body || !Body->m_bIsTurnOffsettingEnabled )
+			{
+				if( m_bLastNeedSlopeOffset || !m_bTickedNPCBody )
+				{
+					m_pSpineBender->EnableSpineBending( FALSE, !m_bTickedNPCBody );
+				}
+				bEnableOnlyIfDisabled = FALSE;
+			}
+		}
+	}
+	if( bEnableOnlyIfDisabled && !m_pSpineBender->IsSpineBendingEnabled() )
+	{
+		m_pSpineBender->EnableSpineBending( TRUE, FALSE );
+	}
+	Tick_SpineBending_Apply( _fDeltaTime );
+	m_bLastNeedSlopeOffset = bSlopeOffsetting;
+}
+
+// DISHONORED(port): 2013 rva 0x77b3d0 (2012 0x7b7120, 2006 B): the pitch and yaw targets. Three branches: an action target
+// (the bend toward m_SpineBendingTarget through the spine's own frame), turn offsetting (ComputeTurnAngle on the rear-leg
+// point -> SetBendYawTarget), and the default slope offsetting: a moving pawn facing within 90 degrees of its heading bends
+// back by m_fMaxSlopeBendBack scaled by how much the floor tilts the mesh's up-axis past cos( 90 - m_fMaxSlopeAngle ),
+// and forward by m_fMaxSlopeBendForward otherwise - instantly on a pawn the player does not see, at the tweaks' blend
+// speed otherwise.
+// DISHONORED(bringup): the action branch needs the spine's bone frame (GetSpineBendRefPoint's hit-region table) and the turn
+// branch ComputeTurnAngle (2013 0x76fe70, 1,321 B) - both named and not run: the action branch is unreached (no caller of
+// SetSpineBendingTarget), the turn branch logs once per pawn. FArkComponentFaceTo::GetAngle is 0 without the component.
+void ADishonoredNPCPawn::Tick_SpineBending_Apply( FLOAT _fDeltaTime )
+{
+	if( !m_pSpineBender )
+	{
+		return;
+	}
+	const UDisTweaks_NPCPawn_Body* Body = DisNPCBodyTweaks( this );
+	if( !Body )
+	{
+		return;
+	}
+	const UBOOL bSetInstantly = !m_bLastRenderedByPlayer;
+	if( IsActionSpineBendingEnabled() )
+	{
+		static UBOOL bNoted = FALSE;
+		if( !bNoted )
+		{
+			bNoted = TRUE;
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredNPCPawn::Tick_SpineBending_Apply: the action spine bending (2012 rva 0x7b7120 lines 1-80) needs the hit-region focus bones; %s keeps its pitch"), *GetName() );
+		}
+		return;
+	}
+	if( Body->m_bIsTurnOffsettingEnabled )
+	{
+		if( !m_bLocoModifierNeedsApplication )
+		{
+			FVDIAG( "spine turn offsetting on %s needs ComputeTurnAngle (2013 rva 0x76fe70), not ported", *GetName() );
+		}
+		return;
+	}
+	const FLOAT CosMaxSlope = appCos( ( 90.f - Body->m_fMaxSlopeAngle ) * ( PI / 180.f ) );
+	FLOAT Scale = 0.f;
+	if( GetCurrentTransitSpeed() != ETransitSpeed_Idle )
+	{
+		const FLOAT FaceToAngle = 0.f;
+		const FLOAT Forward = 1.f - Min( FaceToAngle, 90.f ) / 90.f;
+		if( Forward > 0.f && Mesh && CosMaxSlope != 0.f )
+		{
+			const FVector MeshUp( Mesh->LocalToWorld.M[2][0], Mesh->LocalToWorld.M[2][1], Mesh->LocalToWorld.M[2][2] );
+			const FLOAT Tilt = Clamp( ( Floor | MeshUp ) / CosMaxSlope, -1.f, 1.f );
+			Scale = Forward * Tilt;
+			if( Scale > 0.f )
+			{
+				m_pSpineBender->SetBendPitchTarget( Body->m_fMaxSlopeBendBack * Scale, bSetInstantly, &Body->m_fSlopeBendPitchBlendSpeed );
+				return;
+			}
+		}
+	}
+	m_pSpineBender->SetBendPitchTarget( -( Body->m_fMaxSlopeBendForward * Scale ), bSetInstantly, &Body->m_fSlopeBendPitchBlendSpeed );
+}

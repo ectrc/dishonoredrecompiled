@@ -105,3 +105,6 @@ public:
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual void PostGameLoad( ESaveLoadLocation _Location );
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+	// ---- agent FV (PHASE18 FV): 2013 rva 0x704140 (2012 0x747b80), what an uninterruptable go-to does with a touched enemy ----
+	void OnTouchedEnemyStimAccepted( const struct FAIStimStruct_TouchedEnemy& _rStim );

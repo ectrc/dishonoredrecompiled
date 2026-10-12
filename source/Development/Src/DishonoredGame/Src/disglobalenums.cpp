@@ -35,3 +35,118 @@ void DisSerializeRelationshipOverrideInfo( FDisRelationshipOverrideInfo& Info, F
 		Ar << (UObject*&)It.Key();
 	}
 }
+
+// ---- agent FV (PHASE18 FV): FDisRelationshipOverrideInfo, the override writers the relationship API reaches ----
+
+// DISHONORED(port): 2013 rva 0x85c880 (2012 0x89c420)
+UBOOL FDisRelationshipOverrideInfo::ClearIndividualOverride( const IDisRelationshipInterface& _rIndividual )
+{
+	return m_IndividualOverrideMap.Remove( const_cast<IDisRelationshipInterface*>( &_rIndividual ) ) > 0;
+}
+
+// DISHONORED(port): 2013 rva 0x85e610 (2012 0x89fb60, 227 B): every faction override derived from the faction goes.
+UBOOL FDisRelationshipOverrideInfo::ClearFactionOverride( const UDisTweaks_Faction& _rFaction )
+{
+	UBOOL bRemoved = FALSE;
+	for( TMap<UDisTweaks_Faction*,ERelationship>::TIterator It( m_FactionOverrideMap ); It; ++It )
+	{
+		if( It.Key() && It.Key()->IsFallbackDerivedFrom( &_rFaction ) )
+		{
+			It.RemoveCurrent();
+			bRemoved = TRUE;
+		}
+	}
+	return bRemoved;
+}
+
+// DISHONORED(port): 2013 rva 0x85e7e0 (2012 0x89fc60)
+void FDisRelationshipOverrideInfo::ClearAllOverrides()
+{
+	m_IndividualOverrideMap.Empty();
+	m_FactionOverrideMap.Empty();
+}
+
+// DISHONORED(port): 2013 rva 0x85e590 (2012 0x89fae0, 120 B): TRUE when something changed.
+UBOOL FDisRelationshipOverrideInfo::OverrideIndividualRelationship( const IDisRelationshipInterface& _rIndividual, BYTE _Relationship )
+{
+	IDisRelationshipInterface* Key = const_cast<IDisRelationshipInterface*>( &_rIndividual );
+	ERelationship* Existing = m_IndividualOverrideMap.Find( Key );
+	if( Existing )
+	{
+		if( *Existing == (ERelationship)_Relationship )
+		{
+			return FALSE;
+		}
+		*Existing = (ERelationship)_Relationship;
+		return TRUE;
+	}
+	m_IndividualOverrideMap.Set( Key, (ERelationship)_Relationship );
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x860c40 (2012 0x8a0670, 448 B): the derived faction overrides go first (ClearFactionOverride),
+// then every individual override whose faction derives from the one written, then the write itself; TRUE when any of
+// the three changed something.
+UBOOL FDisRelationshipOverrideInfo::OverrideFactionRelationship( const UDisTweaks_Faction& _rFaction, BYTE _Relationship )
+{
+	UDisTweaks_Faction* Key = const_cast<UDisTweaks_Faction*>( &_rFaction );
+	UBOOL bChanged = ClearFactionOverride( _rFaction );
+	for( TMap<IDisRelationshipInterface*,ERelationship>::TIterator It( m_IndividualOverrideMap ); It; ++It )
+	{
+		const UDisTweaks_Faction* IndividualFaction = It.Key() ? It.Key()->GetFactionTweak() : NULL;
+		if( IndividualFaction && IndividualFaction->IsFallbackDerivedFrom( &_rFaction ) )
+		{
+			It.RemoveCurrent();
+			bChanged = TRUE;
+		}
+	}
+	if( bChanged )
+	{
+		m_FactionOverrideMap.Set( Key, (ERelationship)_Relationship );
+		return TRUE;
+	}
+	ERelationship* Existing = m_FactionOverrideMap.Find( Key );
+	if( Existing )
+	{
+		if( *Existing == (ERelationship)_Relationship )
+		{
+			return FALSE;
+		}
+		*Existing = (ERelationship)_Relationship;
+		return TRUE;
+	}
+	m_FactionOverrideMap.Set( Key, (ERelationship)_Relationship );
+	return TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x89f9f0 (235 B): the individual's own override first, then the first faction override the
+// individual's faction derives from.
+UBOOL FDisRelationshipOverrideInfo::GetIndividualOverride( const IDisRelationshipInterface& _rIndividual, BYTE& _rOutRelationship ) const
+{
+	const ERelationship* Individual = m_IndividualOverrideMap.Find( const_cast<IDisRelationshipInterface*>( &_rIndividual ) );
+	if( Individual )
+	{
+		_rOutRelationship = *Individual;
+		return TRUE;
+	}
+	const UDisTweaks_Faction* Faction = _rIndividual.GetFactionTweak();
+	if( !Faction )
+	{
+		return FALSE;
+	}
+	for( TMap<UDisTweaks_Faction*,ERelationship>::TConstIterator It( m_FactionOverrideMap ); It; ++It )
+	{
+		if( Faction->IsFallbackDerivedFrom( It.Key() ) )
+		{
+			_rOutRelationship = It.Value();
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x894330
+UBOOL FDisRelationshipOverrideInfo::HasAnyOverride() const
+{
+	return m_IndividualOverrideMap.Num() > 0 || m_FactionOverrideMap.Num() > 0;
+}

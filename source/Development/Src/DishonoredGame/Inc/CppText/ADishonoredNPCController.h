@@ -37,3 +37,7 @@ public:
 public:
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+// ---- agent FV (PHASE18 FV): the Kismet go-to, 2013 rva 0x763890 (2012 0x7bd370, 490 B) ----
+public:
+	virtual void OnAIGoToActor( class UDisSeqAct_AIGoToActor* _pAction );

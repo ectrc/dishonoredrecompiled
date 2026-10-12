@@ -521,6 +521,13 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	{
 		m_pPawnOwner->Velocity = FVector( 0.f, 0.f, 0.f );
 		m_MoveHitNormal = FVector( 0.f, 0.f, 0.f );
+		// DISHONORED(port, agent FV): retail's FullMovePawn runs its ground check even for a pawn that is not moving when the pawn
+		// has no valid base (`bFallAllowed || !_bHaveBase`, 2012 0x580ae0) - that is what bases a spawned pawn on the floor it
+		// stands on, and the boat's guard on the boat. With a base and no move retail does nothing more, and neither does this.
+		if( !_bOnValidBase )
+		{
+			UpdateFloorAndBase( FALSE );
+		}
 		return;
 	}
 
@@ -564,4 +571,41 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	m_pPawnOwner->Velocity = ( _fTimeStep > 0.f ) ? ( Actual / _fTimeStep ) : FVector( 0.f, 0.f, 0.f );
 	m_pPawnOwner->Acceleration = m_pPawnOwner->Velocity;
 	m_CurPawnLocation = m_pPawnOwner->Location;
+	UpdateFloorAndBase( _bOnValidBase );
+}
+
+// DISHONORED(port): agent FV (PHASE18 FV). The ground hit of retail's FullMovePawn (2012 0x580ae0, after MoveAttachedActors):
+// the pawn's cylinder is swept from MaxStepHeight above its location to twice MaxStepHeight below it, with the trace flags
+// retail passes its vertical checks (0x1020209F: pawns, movers, level, volumes, others, level geometry, stop at any hit,
+// complex collision). What the sweep hits is the floor: an actor the pawn is already based on, or one that would not
+// block it, only refreshes Floor; a blocking actor becomes the Base (APawn::SetBase with the hit normal, notifying it), and
+// a pawn that had no base keeps its offset from the new one in RelativeLocation. This is how a pawn standing on a moving
+// InterpActor is carried by it - the swept move UWorld::MoveActor this tree uses for the walk never sets a base.
+void FArkComponentLocomotion::UpdateFloorAndBase( UBOOL _bHadBase )
+{
+	if( !m_pPawnOwner || !m_pPawnOwner->CollisionComponent || !GWorld )
+	{
+		return;
+	}
+	const FLOAT Step = m_pPawnOwner->MaxStepHeight;
+	FVector Extent = m_pPawnOwner->CollisionComponent->Bounds.BoxExtent;
+	Extent.X *= 1.001f;
+	Extent.Y *= 1.001f;
+	const FVector Start = m_pPawnOwner->Location + FVector( 0.f, 0.f, Step );
+	const FVector End = m_pPawnOwner->Location - FVector( 0.f, 0.f, 2.f * Step );
+	FCheckResult Hit( 1.f );
+	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, 0x1020209F, Extent ) || !Hit.Actor )
+	{
+		return;
+	}
+	if( Hit.Actor == m_pPawnOwner->Base || !m_pPawnOwner->IsBlockedBy( Hit.Actor, Hit.Component ) )
+	{
+		m_pPawnOwner->Floor = Hit.Normal;
+		return;
+	}
+	m_pPawnOwner->SetBase( Hit.Actor, Hit.Normal, TRUE, NULL, NAME_None );
+	if( !_bHadBase && m_pPawnOwner->Base )
+	{
+		m_pPawnOwner->RelativeLocation = m_pPawnOwner->Location - m_pPawnOwner->Base->Location;
+	}
 }

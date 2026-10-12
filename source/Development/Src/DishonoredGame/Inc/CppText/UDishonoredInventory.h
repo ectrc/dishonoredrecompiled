@@ -30,3 +30,9 @@ public:
 	// 59 such bodies are ICF-folded onto UObject::IsRefSaveable's (2012 rva 0x66a860), which is why the PDB
 	// names only the 11 overrides that have a body of their own. vtables.csv slot 67 is the record.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+	// ---- agent FV (PHASE18 FV): the three lookups the NPC's look-at choice and the go-to's resume read ----
+	// 2013 rvas 0x80b4a0 / 0x80f870 / 0x804c80 (2012 0x852180 / 0x855bc0 / 0x852060). Bodies in dishonoredinventory.cpp.
+	UDishonoredInventoryItem* FindItemByClass( const UClass* const _pItemClass, UBOOL _bExactMatch, UBOOL _bSkipEmptyHands, UBOOL _bSkipNonRemovable, BYTE _EquipUsage ) const;
+	UBOOL HasItemByClass( const UClass* _pItemClass, UBOOL _bExactMatch ) const;
+	UDishonoredInventoryItem* FindEquippableItem( const UClass* const _pItemClass, BYTE _EquipUsage ) const;

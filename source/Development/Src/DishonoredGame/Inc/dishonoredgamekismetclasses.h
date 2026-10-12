@@ -125,6 +125,7 @@ public:
     //## END PROPS DisSeqAct_Latent
 
     DECLARE_CLASS(UDisSeqAct_Latent,USeqAct_Latent,0,DishonoredGame)
+#include "CppText/UDisSeqAct_Latent.h"
 };
 
 // DishonoredGame.DisSeqEvent_PlayerEvent: retail sizeof 272, reflected span 272..272 (2012 PDB sizeof 272)
@@ -223,6 +224,7 @@ public:
     //## END PROPS DisSeqAct_AIGoToActor
 
     DECLARE_CLASS(UDisSeqAct_AIGoToActor,UDisSeqAct_Latent,0,DishonoredGame)
+#include "CppText/UDisSeqAct_AIGoToActor.h"
 };
 
 // DishonoredGame.DisSeqAct_AIGuard: retail sizeof 256, reflected span 248..256 (2012 PDB sizeof 256)
@@ -1214,6 +1216,7 @@ public:
     //## END PROPS DisSeqAct_SetDisposition
 
     DECLARE_CLASS(UDisSeqAct_SetDisposition,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetDisposition.h"
 };
 
 // DishonoredGame.DisSeqAct_SetPlayerHealth: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)

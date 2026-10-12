@@ -288,3 +288,107 @@ UBOOL UDishonoredInventory::ConsumeStatPickup( class ADisStatPickup* Pickup, INT
 	}
 	return ConsumedAmmoCount > 0;
 }
+
+// ---- agent FV (PHASE18 FV): the lookups the NPC's look-at choice and the go-to's resume read ----
+
+// DISHONORED(port): 2013 rva 0x80b4a0 (2012 0x852180, 332 B): the first slot whose item is of the class (exactly, or derived),
+// skipping empty hands and non-removable items when asked, and matching the slot's required usage when one is given.
+UDishonoredInventoryItem* UDishonoredInventory::FindItemByClass( const UClass* const _pItemClass, UBOOL _bExactMatch, UBOOL _bSkipEmptyHands, UBOOL _bSkipNonRemovable, BYTE _EquipUsage ) const
+{
+	for( INT Idx = 0; Idx < m_Slots.Num(); Idx++ )
+	{
+		UDishonoredInventoryItem* Item = m_Slots(Idx).m_pItem;
+		if( !Item )
+		{
+			continue;
+		}
+		if( _bExactMatch ? Item->GetClass() != _pItemClass : ( _pItemClass && !Item->GetClass()->IsChildOf( _pItemClass ) ) )
+		{
+			continue;
+		}
+		if( _bSkipEmptyHands && Item->IsA( UDishonoredItemEmpty::StaticClass() ) )
+		{
+			continue;
+		}
+		if( _bSkipNonRemovable )
+		{
+			UDisTweaks_InventoryItem* Tweaks = Cast<UDisTweaks_InventoryItem>( Item->GetTweaks_Derived() );
+			if( !Tweaks )
+			{
+				Tweaks = UDisTweaks_InventoryItem::StaticClass()->GetDefaultObject<UDisTweaks_InventoryItem>();
+			}
+			if( Tweaks->m_bNeverRemove )
+			{
+				continue;
+			}
+		}
+		if( m_Slots(Idx).m_RequiredUsage == 0 || m_Slots(Idx).m_RequiredUsage == _EquipUsage )
+		{
+			return Item;
+		}
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2013 rva 0x80f870 (2012 0x855bc0)
+UBOOL UDishonoredInventory::HasItemByClass( const UClass* _pItemClass, UBOOL _bExactMatch ) const
+{
+	return FindItemByClass( _pItemClass, _bExactMatch, FALSE, FALSE, 0 ) != NULL;
+}
+
+// DISHONORED(port): 2013 rva 0x804c80 (2012 0x852060, 283 B): an item of the class that could go into the hand asked for -
+// never the one the other hand holds, never empty hands; the one already equipped (in either hand) is preferred, otherwise
+// the first found.
+UDishonoredInventoryItem* UDishonoredInventory::FindEquippableItem( const UClass* const _pItemClass, BYTE _EquipUsage ) const
+{
+	INT PrimaryUsage = 1;
+	INT SecondaryUsage = 2;
+	INT ExcludedUsage = 0;
+	if( _EquipUsage == EDisEquipUsage_Primary )
+	{
+		SecondaryUsage = 0;
+		ExcludedUsage = 2;
+	}
+	else if( _EquipUsage == EDisEquipUsage_Secondary )
+	{
+		PrimaryUsage = 0;
+		ExcludedUsage = 1;
+	}
+	const INT PrimarySlot = m_EquipUsageInfo[PrimaryUsage].m_iEquippedSlot;
+	const INT SecondarySlot = m_EquipUsageInfo[SecondaryUsage].m_iEquippedSlot;
+	const INT ExcludedSlot = m_EquipUsageInfo[ExcludedUsage].m_iEquippedSlot;
+	UDishonoredInventoryItem* Found = NULL;
+	for( INT Idx = 0; Idx < m_Slots.Num(); Idx++ )
+	{
+		if( Idx == ExcludedSlot )
+		{
+			continue;
+		}
+		UDishonoredInventoryItem* Item = m_Slots(Idx).m_pItem;
+		if( !Item )
+		{
+			continue;
+		}
+		if( m_Slots(Idx).m_RequiredUsage != 0 && m_Slots(Idx).m_RequiredUsage != _EquipUsage )
+		{
+			continue;
+		}
+		if( _pItemClass && !Item->GetClass()->IsChildOf( _pItemClass ) )
+		{
+			continue;
+		}
+		if( Item->IsA( UDishonoredItemEmpty::StaticClass() ) )
+		{
+			continue;
+		}
+		if( Idx == PrimarySlot || Idx == SecondarySlot )
+		{
+			return Item;
+		}
+		if( !Found )
+		{
+			Found = Item;
+		}
+	}
+	return Found;
+}

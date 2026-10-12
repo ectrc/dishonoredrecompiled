@@ -341,6 +341,7 @@ public:
 	FLOAT GetRealSpeed() const { return m_fRealSpeed; }				// 2013 0x53df40
 	UBOOL IsRootMotion() const;										// 2013 0x53ed30
 	UBOOL IsArrived() const { return m_bIsArrived != 0; }			// 2013 0x546210
+	UBOOL IsStuckInAWall() const { return m_bStuckedInAWall != 0; }	// agent FV: read by the go-to's -fvdiag line
 	FLOAT GetSq2DDistToPathEnd() const { return m_fSq2DDistToPathEnd; }
 	FLOAT GetCurMoveSpeed() const { return m_fCurMoveSpeed; }
 	FLOAT GetTargetMoveSpeed() const { return m_fTargetMoveSpeed; }
@@ -384,6 +385,7 @@ private:
 	void ComputeDynamic( FLOAT _fTimeStep );						// 2013 0x54bec0
 	void FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBase, UBOOL _bPreview );	// 2013 0x53fb00
 	UBOOL ModerateMovePawn( FLOAT _fTimeStep );						// 2013 0x540d80
+	void UpdateFloorAndBase( UBOOL _bHadBase );						// agent FV: FullMovePawn's ground hit, 2012 0x580ae0 lines after MoveAttachedActors
 	INT ComputeMoveYaw() const;										// 2013 0x53e1f0
 	INT ComputeTargetMoveYaw() const;								// 2013 0x547950
 	INT UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxMultiDirSpeedForAngle ) const;	// 2013 0x541330

@@ -1261,3 +1261,15 @@ void UDishonoredAIBrain::PostGameLoad( ESaveLoadLocation _Location )
 		}
 	}
 }
+
+// ---- agent FV (PHASE18 FV) ----
+
+// DISHONORED(port): 2013 rva 0x704140 (2012 0x747b80, 71 B): a touched enemy the behaviour swallowed still fires the pawn's
+// DisSeqEvent_ActorTouched when the stim asked for it.
+void UDishonoredAIBrain::OnTouchedEnemyStimAccepted( const FAIStimStruct_TouchedEnemy& _rStim )
+{
+	if( _rStim.m_pPawn && _rStim.m_bSendKismetEvent && m_pOwningPawn )
+	{
+		DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_ActorTouched::StaticClass(), m_pOwningPawn, _rStim.m_pPawn, FALSE, NULL );
+	}
+}

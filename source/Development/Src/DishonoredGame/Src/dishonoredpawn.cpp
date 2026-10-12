@@ -523,3 +523,42 @@ void ADishonoredPawn::MAT_StopRootMotion()
 		Mesh->RootMotionRotationMode = RMRM_RotateActor;
 	}
 }
+
+// ---- agent FV (PHASE18 FV): the tick, and the disposition native ----
+
+// DISHONORED(port): 2013 rva 0x750720 (2012 0x790c10, 304 B): APawn::Tick, then - for a live, non-deleted pawn in game -
+// retail's eight phases in this order: Tick_Begin (virtual), Tick_Water when m_bAllowTickPawnMinorSubsystems and
+// m_bWaterVolumesRelevant, Tick_Health, Tick_Attributes when m_bAllowTickPawnMinorSubsystems, Tick_Inventory, Tick_Combat when
+// m_bAllowTickPawnMinorSubsystems, Tick_Body when m_bAllowTickBody, then m_bCachedAttnParamsValid cleared and Tick_Stealth.
+// DISHONORED(bringup): only Tick_Body is ported. Tick_Begin (player 0x715a00), Tick_Water (0x7b60e0 / player 0x708ef0),
+// Tick_Health (0x7aca40), Tick_Attributes (0x78e880 - deliberately out, see dishonoredpawn_attributes.cpp: ApplyAttributes
+// would overwrite the movement values the walking path depends on), Tick_Inventory (0x7afac0 / NPC 0x7be2c0), Tick_Combat
+// (0x7aa810 / player 0x716c80) and Tick_Stealth (0x7aaf10) are named here and not called; the attention-parameter cache
+// bit is cleared as retail does.
+UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
+{
+	const UBOOL bRet = Super::Tick( DeltaTime, TickType );
+	if( !bDeleteMe && !IsPendingKill() && ( !GIsEditor || GIsGame ) )
+	{
+		if( m_bAllowTickBody )
+		{
+			Tick_Body( DeltaTime, TickType );
+		}
+		m_bCachedAttnParamsValid = FALSE;
+	}
+	return bRet;
+}
+
+// DISHONORED(port): 2013 rva 0x5ec8f0's virtual (2012 exec 0x633b40 region), 15 B in retail: the interface's helper on this pawn.
+void ADishonoredPawn::OnSetDisposition( UDisSeqAct_SetDisposition* _pAction )
+{
+	OnSetDispositionHelper( _pAction );
+}
+
+// DISHONORED(port): 2013 rva 0x5ec8f0 (2012 0x633b40 region), the generated exec wrapper: one object, then the virtual.
+void ADishonoredPawn::execOnSetDisposition( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_SetDisposition, _pAction);
+	P_FINISH;
+	OnSetDisposition( _pAction );
+}

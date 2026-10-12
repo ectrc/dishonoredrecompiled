@@ -183,3 +183,57 @@ void ADishonoredPawn::GetBone_ByName( FName _BoneName, FVector* _pPos, FRotator*
 		_pRotator->MakeShortestRoute();
 	}
 }
+
+// ---- agent FV (PHASE18 FV): the body pass ----
+
+// DISHONORED(port): 2013 rva 0x7510b0 (2012 0x7959c0, 31 B): the cached-position pass runs unless the retargeting component
+// says the pawn is being retargeted (FDisComponentRetargeting::m_bIsRetargeting, at +60 of m_pCpntRetargeting).
+// DISHONORED(bringup): FDisComponentRetargeting is not ported and m_pCpntRetargeting is NULL on every pawn, which reads as
+// "not retargeting"; the flag test is written for the day the component exists.
+void ADishonoredPawn::Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType )
+{
+	if( !m_pCpntRetargeting || !*(UBOOL*)( (BYTE*)m_pCpntRetargeting + 60 ) )
+	{
+		Tick_Body_CachedPositions( _fDeltaTime );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x74d850 (2012 0x791470, 390 B): the position-prediction pair. Every m_fPredictionInterval
+// seconds the current cache becomes the last; the current is refreshed every frame with the collision origin and the
+// velocity; the prediction confidence grows while the velocity keeps its direction and drops to zero when it turns back.
+void ADishonoredPawn::Tick_Body_CachedPositions( FLOAT _fDeltaTime )
+{
+	m_fPredictionTimer -= _fDeltaTime;
+	if( m_fPredictionTimer < 0.f )
+	{
+		m_fPredictionTimer = m_fPredictionInterval;
+		m_LastCachedPosition = m_CurrentCachedPosition;
+	}
+	// retail reads UWorld::GetBendTimeSeconds(); this tree keeps the value on AWorldInfo (BendTimeSeconds @920)
+	AWorldInfo* Info = GWorld ? GWorld->GetWorldInfo() : NULL;
+	m_CurrentCachedPosition.m_CachedPositionTimeStamp = Info ? Info->BendTimeSeconds : 0.f;
+	m_CurrentCachedPosition.m_CachedPosition = CollisionComponent ? CollisionComponent->Bounds.Origin : Location;
+	m_CurrentCachedPosition.m_CachedVelocity = Velocity;
+
+	FVector CurrentDirection = m_CurrentCachedPosition.m_CachedVelocity;
+	CurrentDirection.Normalize( 1.e-8f );
+	FVector LastDirection = m_LastCachedPosition.m_CachedVelocity;
+	LastDirection.Normalize( 1.e-8f );
+	const FLOAT Dot = CurrentDirection | LastDirection;
+	FLOAT Confidence = 0.f;
+	if( Dot > 0.f )
+	{
+		Confidence = Min( m_fPredictionConfidence + _fDeltaTime / m_fPredictionInterval, 1.f ) * Dot;
+	}
+	m_fPredictionConfidence = Confidence;
+}
+
+// DISHONORED(port): 2013 rva 0x7689a0 (2012 0x7a1560): GetFocusBone_ByRegion( DHR_TORSO, eDisRegionFocusType_MeleeAttack ),
+// the torso's melee focus bone out of the hit-region table.
+// DISHONORED(bringup): the hit-region table (SetupHitRegions 2013 0x769f30, GetFocusBone_ByRegion 2012 0x7a0bd0) is not
+// ported (agent DI's note on PostBeginPlay_Body), so the reference point is the pawn's location. It is read by the
+// action spine bending alone, which nothing requests yet (SetSpineBendingTarget has no caller in this tree).
+FVector ADishonoredPawn::GetSpineBendRefPoint() const
+{
+	return Location;
+}

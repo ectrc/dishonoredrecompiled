@@ -202,14 +202,15 @@ FVector ADishonoredNPCController::GetMoveTargetLocation() const
 	return pLoco->GetActiveRequestTargetedLocation();
 }
 
-// DISHONORED(port): 2013 rva 0x74a860 (2012 0x7ab140) / 0x74a8a0 (0x7ab180): a Kismet GoTo or Shoot latent action is
+// DISHONORED(port): 2013 rva 0x74abb0 (2012 0x7ab140, 63 B) / 0x74a8a0 (0x7ab180): a Kismet GoTo or Shoot latent action is
 // told how it ended, and the remembered action is dropped so the same status cannot be delivered twice.
-// DISHONORED(bringup): UDisSeqAct_AIGoToActor::SetGoToStatus (2013 rva 0x79a520) is a Kismet sequence op that is not
-// ported; the action pointer is cleared, which is the half that stops the controller leaking it.
+// agent FV (PHASE18 FV): the action's SetGoToStatus (2013 0x7a1fc0) is ported, so the status now reaches the Kismet output;
+// agent CG's note cited 0x79a520 for it, which is not that function.
 void ADishonoredNPCController::SetGoToActionStatus( BYTE _Status, UDisSeqAct_AIGoToActor* _pExpectedAction )
 {
 	if( m_pLastGoToKismetAction && ( !_pExpectedAction || m_pLastGoToKismetAction == _pExpectedAction ) )
 	{
+		m_pLastGoToKismetAction->SetGoToStatus( this, _Status );
 		if( _Status )
 		{
 			m_pLastGoToKismetAction = NULL;
@@ -517,4 +518,90 @@ void ADishonoredNPCController::execOnAISetBrainFlags( FFrame& Stack, RESULT_DECL
 	P_GET_OBJECT(UDisSeqAct_AISetBrainFlags, _pAction);
 	P_FINISH;
 	OnAISetBrainFlags( _pAction );
+}
+
+// ---- agent FV (PHASE18 FV): the Kismet go-to ----
+
+#include "fvdiag.h"
+
+static INT GDisFVDiag = -1;
+
+UBOOL DisFVDiagEnabled()
+{
+	if( GDisFVDiag < 0 )
+	{
+		GDisFVDiag = ( appStrfind( appCmdLine(), TEXT("-fvdiag") ) != NULL ) ? 1 : 0;
+	}
+	return GDisFVDiag != 0;
+}
+
+// DISHONORED(port): 2013 rva 0x763890 (2012 0x7bd370, 490 B in both). A dead NPC ignores the action. An Abort input on the
+// remembered action hands the brain FAIStimStruct_BehaviorAbort( UDisBehaviorGoTo ). A Go input first tells a different
+// remembered action Interrupted (through the action's SetGoToStatus - a vtable call in 2013, +404), remembers this one,
+// and with a destination: m_bSetNewHomeActor moves the brain's home to the destination's transform, an idle request
+// clears the stack, and the go-to request itself is handed to the brain - both only while the brain is not dormant
+// (UDishonoredAIBrain::CanBeDormant, folded with UDisBehaviorTriggerAlarm's in both exes).
+void ADishonoredNPCController::OnAIGoToActor( UDisSeqAct_AIGoToActor* _pAction )
+{
+	if( !_pAction || IsDead() || !m_pAIBrain )
+	{
+		return;
+	}
+	if( _pAction->m_bAbortRequested )
+	{
+		if( m_pLastGoToKismetAction && m_pLastGoToKismetAction == _pAction )
+		{
+			FAIStimStruct_BehaviorAbort Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_BehaviorAbort;
+			Stim.m_AbortedBehavior = UDisBehaviorGoTo::StaticClass();
+			DisHandleAIStim< FAIStimStruct_BehaviorAbort >( m_pAIBrain, Stim, this );
+			FVDIAG( "goto abort %s action %s", Pawn ? *Pawn->GetName() : TEXT("?"), *_pAction->GetName() );
+		}
+		return;
+	}
+	if( m_pLastGoToKismetAction && m_pLastGoToKismetAction != _pAction )
+	{
+		m_pLastGoToKismetAction->SetGoToStatus( this, AIGoToActorOutput_Interrupted );
+		m_pLastGoToKismetAction = NULL;
+	}
+	m_pLastGoToKismetAction = _pAction;
+	AActor* Destination = _pAction->GetDestinationActor();
+	if( !Destination )
+	{
+		FVDIAG( "goto %s action %s has no destination", Pawn ? *Pawn->GetName() : TEXT("?"), *_pAction->GetName() );
+		return;
+	}
+	if( _pAction->m_bSetNewHomeActor )
+	{
+		m_pAIBrain->m_Home.m_Loc = Destination->Location;
+		m_pAIBrain->m_Home.m_Rot = Destination->Rotation;
+	}
+	FVDIAG( "goto %s action %s -> %s at %.0f/%.0f/%.0f (pawn at %.0f/%.0f/%.0f, dist %.0f) track %d home %d align %d speed %d interruptable %d dormant %d",
+		Pawn ? *Pawn->GetName() : TEXT("?"), *_pAction->GetPathName(), *Destination->GetName(),
+		Destination->Location.X, Destination->Location.Y, Destination->Location.Z,
+		Pawn ? Pawn->Location.X : 0.f, Pawn ? Pawn->Location.Y : 0.f, Pawn ? Pawn->Location.Z : 0.f,
+		Pawn ? ( Pawn->Location - Destination->Location ).Size2D() : 0.f,
+		(INT)_pAction->m_bTrackMovingTarget, (INT)_pAction->m_bSetNewHomeActor, (INT)_pAction->m_bAlignRotation,
+		(INT)_pAction->m_DesiredMovementSpeed, (INT)_pAction->m_bInterruptable, (INT)m_pAIBrain->CanBeDormant() );
+	if( !m_pAIBrain->CanBeDormant() )
+	{
+		FAIStimStruct_IdleRequest IdleStim( EC_EventParm );
+		IdleStim.m_StimID = EAIStimID_IdleRequest;
+		DisHandleAIStim_Internal< FAIStimStruct_IdleRequest >( m_pAIBrain, IdleStim, this );
+	}
+	if( !m_pAIBrain->CanBeDormant() )
+	{
+		FAIStimStruct_GoToRequest Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_GoToRequest;
+		Stim.m_pAssociatedKismetGoToAction = _pAction;
+		DisHandleAIStim_Internal< FAIStimStruct_GoToRequest >( m_pAIBrain, Stim, this );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x5f4dd0 (2012 0x63b040): the exec wrapper of the native, over the C++ body above.
+void ADishonoredNPCController::execOnAIGoToActor( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UDisSeqAct_AIGoToActor, _pAction);
+	P_FINISH;
+	OnAIGoToActor( _pAction );
 }

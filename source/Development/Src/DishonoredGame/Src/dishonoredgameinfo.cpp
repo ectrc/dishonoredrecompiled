@@ -234,6 +234,14 @@ void ADishonoredGameInfo::InitGlobalManagers()
 	// m_pPopulationManager->Initialize()                              virtual
 	// UDisGlobalDLCManager::Initialize( m_pDLCManager )               2013 rva 0x8377c0
 	// UDisGlobalFactionManager::RebuildCaches( m_pGlobalFactionManager )     2013 rva 0x832a60
+	// DISHONORED(port, agent FV): retail's constructor (2012 0x8d8a30) publishes the one non-archetype manager as
+	// UDisGlobalFactionManager::s_pInstance; this tree has no C++ constructor on the class, so the game info's sub-object
+	// is published here, where retail rebuilds its caches.
+	UDisGlobalFactionManager::s_pInstance = m_pGlobalFactionManager;
+	if( !m_pGlobalFactionManager )
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredGameInfo::InitGlobalManagers has no m_pGlobalFactionManager sub-object") );
+	}
 }
 
 // DISHONORED(port, partial): agent FP, 2013 rva 0x605c50 (2012 0x661260). Retail, in order: the viewport's tilt input

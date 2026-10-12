@@ -109,3 +109,23 @@ public:
 	virtual eDisDialogAvailability IsAvailableForDialog( eDisConvPriority _Priority, INT _StartDialogFlags ) const;
 	virtual void StartDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, UBOOL _bBlocking, INT _StartDialogFlags, INT _FiringHookIndex );
 	virtual void EndDialog( struct FDisDialogRunningInstance* _pDialogRunningInst, DisConvoEndReasonEnum _ConvoEndReason );
+
+// ---- agent FV (PHASE18 FV): the NPC tick, the body pass that drives the look-at and the spine bender, the relationship change ----
+// 2013 rvas (2012 in brackets): Tick 0x76da40 (0x7c8090, 1085 B), Tick_Body 0x783380 (0x7be180, 310 B), ChooseLookAt 0x7794d0
+// (0x7b4d90, 475 B), GetCurrentTransitSpeed 0x779430 (0x7b4cf0; agent DN's comment in dishonorednpcpawn_locomotion.cpp cited
+// 0x779850, which is not this function), Tick_SpineBending 0x77fbd0 (0x7bc480), Tick_SpineBending_Apply 0x77b3d0 (0x7b7120,
+// 2006 B), IsActionSpineBendingEnabled 0x7772c0 (0x7b2b40), IsSlopeOffsettingEnabled 0x77b300 (0x7b7050), IsFootPlacementEnabled
+// (0x7b2a70), OnRelationshipChange 0x759de0 (0x7c04e0). Bodies in dishonorednpcpawn.cpp, dishonorednpcpawn_body.cpp and
+// dishonorednpcpawn_locomotion.cpp.
+public:
+	virtual UBOOL Tick( FLOAT _fDeltaTime, ELevelTick _TickType );
+	virtual void Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType );
+	virtual BYTE ChooseLookAt();
+	BYTE GetCurrentTransitSpeed() const;
+	virtual void OnRelationshipChange();
+protected:
+	void Tick_SpineBending( FLOAT _fDeltaTime );
+	void Tick_SpineBending_Apply( FLOAT _fDeltaTime );
+	UBOOL IsActionSpineBendingEnabled() const;
+	UBOOL IsSlopeOffsettingEnabled() const;
+	UBOOL IsFootPlacementEnabled() const;

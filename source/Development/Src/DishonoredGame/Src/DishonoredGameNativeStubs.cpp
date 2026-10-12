@@ -366,10 +366,6 @@ void ADishonoredPawn::execOnAddInventoryItem( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnAddInventoryItem);
 }
-void ADishonoredPawn::execOnSetDisposition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnSetDisposition);
-}
 void ADishonoredPawn::execOnTeleport_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPawn, execOnTeleport_Native);
@@ -833,10 +829,6 @@ void ADishonoredNPCController::execOnAIClearAttention( FFrame& Stack, RESULT_DEC
 void ADishonoredNPCController::execOnAIShoot( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIShoot);
-}
-void ADishonoredNPCController::execOnAIGoToActor( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCController, execOnAIGoToActor);
 }
 void ADishonoredNPCController::execGetMoveTargetLocation( FFrame& Stack, RESULT_DECL )
 {
@@ -1305,10 +1297,6 @@ void UDisNavMeshGoal_BestFleePoint::execRecycleInternal( FFrame& Stack, RESULT_D
 void UDisNavMeshGoal_ShootingPosition::execRecycle( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisNavMeshGoal_ShootingPosition, execRecycle);
-}
-void UDisTweaks_Faction::execOnSetDisposition( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisTweaks_Faction, execOnSetDisposition);
 }
 void UDishonoredDebugMenu::execToggleDebugMenu( FFrame& Stack, RESULT_DECL )
 {
