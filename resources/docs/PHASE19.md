@@ -162,3 +162,32 @@ from the control. GC owns the anim stack; this package owns the player side.
 4. Every address cited resolved by hand, both databases.
 5. `resources/docs/agents/agent<XX>.md` + `agent<XX>_status.csv` inside the worktree;
    `build/agent<XX>_sync.py` naming every file and function, self-checked, 0 flagged against main.
+
+## Outcome
+
+### GC — merged `d96a331`; GC's own gate on the merged tree 47 ok / 0 failed / 0 skipped (4823 s)
+
+Eleven files, 0 flagged against `c2dd580`; regeneration clean; `bitfield_audit` 0; 0 d3d9 deaths in its gate.
+
+**`UArkAnimNodeLocomotion` is ported** (34 of retail's 52 functions; the 18 editor/foot-placement ones named with
+rvas) and `FArkComponentLocomotion` drives it as retail does (`SetConfig` → `Initialize`; `PreAsyncWorkTick` step
+10 feeds `|Velocity.xy| * m_fRealScaledSpeed`). **Measured**: standing `Empty_Idle w 1.00`; walking at 123 u/s
+`speed mode 1 w 1.00 | child 1 Empty_WalkN w 1.00 sync`, group rate 1.000, for the whole 850-unit walk; the
+control plays `Empty_Idle` throughout. The weights change with speed, as asked.
+
+**But no walking man is visible on either build: the walker is FZ's tall thin dark silhouette, standing and
+walking, on the dock as well as the boat.** Not the anim stack (`-flheaddiag`: 110/110 bones, no scale, no
+suspect). On him run two `DisSkelControl_FootPlacement` controls at strength 1.00 — a **comment-only skeleton
+class** whose instances run the reference engine's `USkelControlFootPlacement` limb IK over cooked Dishonored
+properties, `InitializeFootProperties` unported, the floor trace under mesh floors reading the riverbed (GA §6.4).
+**Handed to GF** (builds spent): port `UDisSkelControl_FootPlacement`, or prove it with strength 0.
+
+**Worker A never walks because the A\* never runs**: `no start poly at 11554.745/22720.404/2404 (nearest 0.13
+units away in XY)` every 5 s — the teleport puts him on `GetClosestPointOnPoly`'s edge point and
+`UNavigationHandle::GetPylonAndPolyFromPos` does not contain an edge point. A bounds test (handed to GD).
+
+**Premises corrected (six)**: the node's direction/angle is `FArkComponentFaceTo`'s (unported → forward only);
+speed→playrate is one group-rate scale with children at ±1; the `Empty_Idle` slide was retail's own
+uninitialised-node fallback; DN's 2013 numbers are RVAs; the route's camera cannot see the dock workers from the
+boat (teleport needed); Worker A's failure is not the A\*. Deviations: `UpdateFeetPropeties` guards a zero weight
+sum (retail: inf/NaN); `FindAnimNode` for `FindAnimNodeFast`; `GetFootProperties` returns -1.
