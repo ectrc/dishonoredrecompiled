@@ -467,3 +467,104 @@ corrects the pitfall FJ wrote into STATUS**; the `PrepareMapChange` assertion is
 Tools left in `build/agentFN/tools/`: `mdmp.py` (minidump parser), `upk.py` + `lzo.py` (cooked-package
 reader), `ida_q.py` (direct idalib runner, used because the MCP's four workers were held by other
 packages all session). No real input anywhere; every run through the harness with `-unattended`.
+
+### FP — merged `c9ac0f1`; FP's own gate 46 / 1 (the FN row, since fixed)
+
+Twenty-three files; one hand merge (`DishonoredGameNativeStubs.cpp`, where FP deletes four
+`UDisGFxMoviePlayerBase` exec stubs and FN's deletion of the `SpawnerPawn` stub is preserved).
+
+**The user's report — health bars on every screen — is closed.** Main menu, difficulty and brightness
+screens carry **no HUD**; the mission does. In-process on the final build at 1600x900
+(`build/agentFP/shots/fpm9_menu|diff|bright|confirm|mission.png`) against `before_menu.png` from the
+untouched HEAD gate exe on the same scripted route, which shows the gauge on the main menu. Log:
+`UI state … -> HUD visible 0` on the front end, `HUD visible 1` on `l_tower_p`. **No real input
+anywhere.**
+
+**The visibility expression was never the fault.** `m_bShowHUDWhileActive`'s class defaults read
+straight from the cook — MainMenu 0, PauseMenu 0, Journal 0, Note 0; HUD 1, Global 1, Gamma 1,
+PowerWheel 1 — and reach our objects. `m_bNeverDisplayHUD` is 1 on the menu map, 0 on `l_tower_p`.
+
+**Ported**: the full `RefreshGlobalUIState` (FA's blur arm kept); `OnMovieStackChanged` from `Start`
+and a new `Closed` seam; **`UDisGlobalUIManager::Init`** (2013 `0x85fdb0` — the tree's comment said
+`0x8b8d10`, corrected), `FindCurrentMovieSet` in its 2013 shape, `CreateMoviePlayer`,
+`LoadSFTweaksPackage`, `InitItemIconPackages`; **`Pre/PostCommitMapChange`** (2013 `0x841120` /
+`0x83daa0`) through the `AGameInfo` C++ virtuals at slots 246/247 and `ADishonoredGameInfo`'s
+overrides, with two calls in `UnGame.cpp`; **`UGFxAction_OpenMovie/CloseMovie::Activated`** in a new
+`GFxUI/Src/gfxuikismet.cpp` (2013 `0x59d3a0`); `UDisGFxMoviePlayerBase::LoadMoviePackage`, the
+`PreLoad` prologue seam and the four exec natives; the **one-argument `SetBlackStripes` arm of
+`UDisGFxMoviePlayerGlobal::PreAdvance`** (the `UI_Global` letterbox); `EnableControllerInput`; the
+`RenderUI` visibility precedence; the cursor-handle release in `UGFxMoviePlayer::Close`.
+
+**Deleted**: `DisHUDBringUp` and its three helpers, and the `-gfxuimenu` bring-up. `-gfxuimenu` is
+now inert; `-nodishud` is honoured by `Init` and `PostCommitMapChange`, so the calibrated stages did
+not move.
+
+**Six premises of this plan corrected.**
+
+- **Porting the refresh alone would have hidden nothing.** `FGFxEngine::RenderUI` tested
+  `(fVisible && bHudEnabled) || bDisplayWithHudOff` where retail (`0x58dd30`) tests `fVisible` first,
+  and the old bring-up forced the HUD's `bDisplayWithHudOff` to 1 where the cook says 0.
+- **Retail does NOT have one owner for the main menu.** It is the menu map's own Kismet,
+  `DisGFxActionOpenMovie_0` (agent FB's retail capture, `ue.log:11223`). Its body was compiled out —
+  `WITH_GFx=0` and the unit excluded — so the class had no `Activated` at all. **That is the gap the
+  `-gfxuimenu` bring-up had been papering over since wave 8.**
+- Even compiled, the open answered FALSE: `UDisGFxMoviePlayerBase::execStart` was a
+  `DISHONORED_NATIVE_STUB`.
+- **`Init` runs once per game info and New Game is a `CommitMapChange`**, so the mission had **no HUD
+  at all** until `Pre/PostCommitMapChange` were ported — this engine only raised the reference's
+  script events, which the 2013 cook lacks.
+- The gate found a **deterministic crash 2 s into `l_tower_p` on the `-finewgame` route**, never on
+  the clicked one: `GASEnvironment::FindTarget+0x43`, a `static GFxValue` cursor handle in
+  `DishonoredGFxUpdateMouseCursor` outliving the `UI_Global` movie the manager now closes and reopens
+  per map change. Retail drops it in `ConditionalHideMouseCursor` (`0x7945b0`); ours now does from
+  `UGFxMoviePlayer::Close`. FP's first gate read 44/3 because of it; fixed before the second.
+- The tree's address for `Init` was wrong.
+
+**Left open and named at the site**: the mouse cursor stays drawn in the mission
+(`m_bMouseCursorAllowed` is computed but the GFxUI cursor glue cannot read it) — pre-existing, one
+seam away; `LoadTexturePackageAsync`, `ConditionalHideMouseCursor`, the power-wheel close,
+triple-screen stripe geometry and the save-icon timers not ported; **the play-defaults table in
+`UnMisc.cpp` still appends the now-inert `-gfxuimenu`**; which unnamed game-info class 2013's `Init`
+tests for DLC06 vs DLC07 is medium confidence (a tweaks slot on DLC maps only).
+
+**Gate on the full wave-20 tree: `c9ac0f1` failed its build on a clean checkout** — `C2509` on
+`ADishonoredGameInfo::Pre/PostCommitMapChange`, defined in `dishonoredgameinfo.cpp` but declared in
+`Inc/CppText/ADishonoredGameInfo.h`, **which FP's sync list did not carry**. FP's worktree built because
+the file was there. Main's copy was untouched since FP's base, so `80cc219` takes FP's file verbatim
+(five lines). **Re-gate: 47 ok / 0 failed / 0 skipped (1383 s).**
+
+## Wave result
+
+**Four of four merged, plus two process commits the user asked for, and the gate is green at
+47 of 47 on `80cc219`** — the first fully green board since wave 19 fixed the crash detector, and it
+was reached without relaxing a bound.
+
+| | | gate on main |
+|---|---|---|
+| `15e8a10` | `build_queued.py` — one build at a time, half the cores | — |
+| `b759fd5` | `-inputcmd` + `game_input.py` — scripted input, the real mouse never touched | — |
+| `15695d8` FO | the cutscene is the conversation system; 66 units specified | 45/2 (known row + one unexplained pawn death) |
+| `e14b934` FQ | unload list, mask hit test, clips name themselves, the user's crash path run clean | 46/1 (known row) |
+| `191ef85` FN | the red row: an invented pointer walk; the spawner variable; the Boat matinee plays | **47/47** |
+| `c9ac0f1` + `80cc219` FP | the HUD hidden where retail hides it; retail's owners for HUD and menu; both bring-ups deleted | **47/47** |
+
+**Of the user's reports this wave**: the Options crash is fixed at the defect (FJ, wave 19) and the
+user's exact path now runs clean six times through GFx's own mouse dispatch (FQ); **the health bars
+are gone from the menu screens and present in the mission** (FP); the gate's red row is **green with a
+named cause** (FN); and the opening cutscene is **not yet started**, because what starts it is the
+conversation system, now specified to the function (FO).
+
+**Every package corrected five to seven premises of its brief.** The two findings that mattered most
+were in nobody's brief: `UInterpGroup::GetInterpData()` is a walk this tree invented (FN), and the
+cutscene has no Kismet upstream at all (FO). Two premises the coordinator had recorded as fact were
+overturned by the agents who read the code: `m_pMatineeBlender` and `UInterpGroup::HasMoveTrack`
+exist (FO), and the ASLR-base recovery FJ documented was never needed because the minidump carries
+the base (FN).
+
+**Process lessons, both now rules**: the sync script's file list is what the agent remembered
+touching, not what it touched — `git diff --name-only <base>` in the worktree is the truth, and the
+coordinator compares against it before every merge from now on (FP's missing header; FI's generated
+headers before it). And a package that does four full builds on a serialised, half-CPU queue waits
+longer than it works — the acceptance ritual's separate "clean build, directory deleted first" and
+per-agent HEAD control builds are redundant with the gate's own in-harness build and a shared control,
+and wave 21 drops them.

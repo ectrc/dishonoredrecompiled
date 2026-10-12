@@ -1,9 +1,9 @@
-# Project status — 2026-10-11 (wave 19 complete; the gate is red on purpose; a cutscene matinee plays when forced and is never activated)
+# Project status — 2026-10-12 (wave 20 complete: the gate is green at 47/47, the HUD is hidden where retail hides it, and the cutscene is a dialog-system port away)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md` (wave 20, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FM>.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md` (wave 21, next)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..FQ>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `af98872`)
+## Where we are (HEAD `c9ac0f1`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -70,62 +70,62 @@ listeners (`98e22d4`).
 | Regression | `resources/tools/run_regression.py`, **47 checks** when built inside the harness (37 before `cd5fadd`). **Every build on this machine goes through `resources/tools/build_queued.py`**: one build at a time behind a machine-wide lock, pinned to half the cores by affinity, `-j 8`, below-normal priority - the user's request after four agents building at once pinned all sixteen (31 with `--no-build`, which omits the six build-stage checks). Every merge gates on a clean checkout of its own commit in `build/gate_wt`, never on the working tree |
 | Audio | **deferred to Phase 10 as polish** (the user's call): the silent backend loads the real banks and resolves the real event ids. Do not open an audio package until the game plays |
 
-## The gate is RED, deliberately
+## The gate is GREEN - 47 of 47 - and how it got there
 
-`run_regression.py` is **47 checks** since `cd5fadd` (wave 19 FM), and HEAD reports **46 ok, 1
-failed**. The failing row is `inputtest_criticals == 1` and **it is a real crash, not a flaky
-threshold**:
+`run_regression.py` is **47 checks**. HEAD `191ef85` reads **47 ok, 0 failed, 0 skipped** on a clean
+checkout, and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
+crash detectors match the structured-exception banner as well as `Critical: `, so a hard crash inside a
+stage is now a red row rather than an invisible one.
 
-> At **45.85 s of a 150 s budget**, `-distouchprobe` walks the pawn onto `DisTrigger_9`, which fires
-> `SOIREE_Guards.SeqEvent_Touch_0`, which runs `DisSeqAct_StartSpawn_0`, and **the spawn kills the
-> process.** Every metric that stage measures is emitted at 45.67 s, which is exactly why it used to
-> pass. The one credible stack frame is `UArkComponentContainer::AddNewComponent_Internal+0x2d`; nine
-> of the ten others resolve thousands of bytes past a public symbol and should not be believed.
+**The row that was red from `cd5fadd` to `191ef85`** was `inputtest_criticals`, and it was not the
+spawn crash the plan called it. It was `UInterpGroup::GetInterpData()`, **a walk this tree invented**
+(group → Outer `UMatineeData` → Outer, cast to `UInterpData`), returning NULL for every matinee whose
+data is a shared asset under a package rather than an inline object - **51 of the 81 in `l_tower_p`,
+every real cutscene among them**. Retail reads the length off the `UMatineeData` and never does the
+walk. It was deterministic, not intermittent: it needed FI's spawn port to make the matinee reachable,
+and the two "clean" gates were worktrees based before that port. Agent FN named it from ten minidumps,
+all faulting at the same instruction. **Do not relax a gate bound to get green; this one was worth
+waiting for.**
 
-It is **pre-existing and intermittent** — the identical line is in agent FJ's, agent FI's and the
-coordinator's own gate runs of HEAD, and absent from FG's and FH's. **Do not relax the bound to
-`<= 1` to get a green board**: that one line would hide the next crash as well. **Triaging this is
-wave 20's first item.**
-
-**Why nobody saw it before:** the three `*_criticals` metrics matched the literal `Critical: `, which
-is what `appError` logs through `NAME_Critical`. An access violation **never produces that line** —
-it arrives as `=== Critical error: ===` from the structured-exception handler. So **a hard crash
-inside a stage was invisible to this harness for every wave up to 19**, and every "37 ok, 0 failed"
-in the tables below was worth less than it says. Confirmed twice over: the user's crash log has
-`Critical: ` zero times, and so does the coordinator's own passing gate log that contains a crash.
+**Hard rule that follows**: every *_criticals row reads 0 or the merge waits. A pawn death 10 s into
+the d3d9 stage with nothing in the log before it (seen once, in FO's gate on `15695d8`, absent on the
+next three gates) is recorded as unexplained in `PHASE16.md` rather than attributed to load.
 
 ## Open defects the user has seen
 
 Waves 16 and 17 closed most of the interface list. What the user has reported and is **still open**:
 
-1. **The opening cutscene's own matinee does not run.** Specified by agent FI rather than guessed at:
-   seven matinees *are* live in `l_tower_p` and every one is set dressing with **`director NONE`** —
-   rats, planks, a whale, the whaleboat — and five frames 45–110 s apart differ by a mean 2.0/255.
-   Three named gaps: **`UInterpGroupPlayer`/`UInterpGroupInstPlayer` entirely unported *and*
-   `USeqAct_Interp::InitInterp` has no branch that would build one**; **`ADishonoredNPCPawn::MAT_*`**,
-   the whole matinee-AI contract, ~40 functions with zero bodies; and **`UpdateTrack` missing on every
-   Dishonored-added `UInterpTrack`**. Alongside it, **twelve of fourteen
-   `UDisSeqCond_*::Activated` are missing** and two of the fourteen already fire on this mission's
-   path, all twelve 2013 addresses hand-resolved — **the skeleton comments carry 2012 rvas**.
+1. **The opening cutscene is started by the conversation system, and none of it exists here.**
+   Agent FO proved `SOIREE_Empress_Regent.SeqAct_Interp_12` has **zero input links and one referencer**
+   - there is no Kismet chain. Retail starts it from a dialog tree: `DisSeqAct_DialogInputs` →
+   `FireDialogHook` → `UDisConv_Soiree::PlayNode_Derived` → `FindMatinee` **by GUID** →
+   `USeqAct_Interp::StartFromDialog` (2013 `0x215020`). **All 31 soirée nodes in `l_tower_p` match a
+   matinee by GUID**; the whole scripted-scene layer hangs off ten `DisDialogOneShot` actors. The
+   first link (`SOIREE_Boat.DisSeqAct_DialogInputs_10`) already fires on our route and dies on a
+   comment-only skeleton. **Port size: 66 excluded units, ~60 KB, 179 retail functions, ~10 KB on the
+   direct path, specified in call order in `agents/agentFO.md` §9.** Behind it: the
+   `UpdateTrackInst` seam is a **five-pass loop** on `TrackUpdatePass`, not a virtual
+   (`StretchAnimControl` is 267 of 694 tracks); `UArkAnimNodeStack` - what retail's
+   `MAT_SetAnimPosition` actually drives - has **zero bodies**; the `MAT_*` contract is blocked on the
+   player FSM. The matinee *runtime* itself now works: FK made a forced cutscene initialise and play,
+   FN made the Boat matinee play to the end with its spawned guard as AI actor.
 2. **The menu's framing.** Our FOV is **right** — agent FB captured retail's live value as **90.0**,
    post-`UpdateViewTarget`. Our *camera* is in the wrong place: there are eleven identically named
    `CameraActor`s in that level, all at `FOVAngle 90`, and only one is the view target. Retail's exact
    transform is published in `build/agentFB/retail/camera.md`. Agent FE's earlier 61 ± 2° image fit was
    absorbing the wrong camera's position into the FOV.
-3. ~~No letterbox bars in the opening cutscene.~~ **Closed twice.** Wave 18 FI (`8027ab6`) ported
-   the bodies; the user then reported the bars still absent, because `_root.blackStripes_mc` lives in
-   the HUD movie and **the HUD movie was behind `-dishud`, which was not in the play defaults** — so
-   FI's work was real and invisible to anyone launching the game normally. Wave 19 FM (`cd5fadd`)
-   flipped it after proving retail has **no gate at all** on opening the HUD, and a play-defaults New
-   Game now logs `HUD: SetBlackStripes(1) ok`. FE's original blocker was never one: nine booleans, no
-   optional tenth — the "tenth" is `P_FINISH`'s `EX_DebugInfo` (`0x41`) tail — and
-   `retail_sdk_layout.json` names all nine. **The lesson is the one that recurs: a feature measured
-   only in an instrumented run is not a feature the user has.** The remaining cinematic gap is
-   defect 1, the matinee itself.
-   Still open underneath it: the letterbox exists in **two** movies with different `SetBlackStripes`
-   arities and the `UI_Global` one (2013 rva `0x7aa610`) is **absent**; and the HUD is opened by two
-   racing bring-ups where retail has one owner — `DisHUDBringUp` is latched behind the menu as a
-   guard, and the real fix is to port `UDisGlobalUIManager::Init` and delete both.
+3. ~~No letterbox bars; HUD on every screen.~~ **Closed, third time, for real.** Wave 18 FI ported
+   the bars; they lived in a HUD movie behind `-dishud`. Wave 19 FM opened the HUD unconditionally,
+   as retail does - and the HUD then sat on every screen, because retail's `RefreshGlobalUIState`
+   hides it per movie and ours had only the blur arm. Wave 20 FP (`c9ac0f1`) ported the whole thing
+   and, with it, **retail's owners**: `UDisGlobalUIManager::Init` and `Pre/PostCommitMapChange`
+   for the HUD, and the menu map's own Kismet `DisGFxActionOpenMovie_0` for the menu - whose class
+   had **no `Activated` at all**, the gap the `-gfxuimenu` bring-up had papered over since wave 8.
+   Both bring-ups are deleted; `-gfxuimenu` is inert. The `UI_Global` letterbox (one-argument
+   `SetBlackStripes`) is in too. Measured: menu, difficulty and brightness screens with no HUD, the
+   mission with gauge and letterbox, in-process, against the same route on HEAD.
+   Still open underneath: the mouse cursor stays drawn in the mission (`m_bMouseCursorAllowed` is
+   computed; the GFxUI cursor glue cannot read it) - one seam.
 4. **The menu's brightness and haze.** Not Kismet post-process — FE walked 1,858 sequence objects
    across all four loaded levels and found none. Our menu already draws 2 fog layers and 24 bloom parts
    with `0 passes not ported`, so the difference is **parameters**; retail's whole graph with all 42
@@ -163,6 +163,23 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
 9. **The window comes up 1008x567 with `-ResX=1600 -ResY=900`** on eight of ten runs and 1600x900 on
    two, same switches, same isolated ini dir (agent FH; FF saw 1008x567 in every run). **Read a
    capture's actual size; never assume it.**
+
+## Wave 20 — the red row, the cutscene's activation, one owner for the HUD, the unload list
+
+`PHASE16.md`. Four of four merged, plus two coordinator commits the user asked for:
+
+| | gate | |
+|---|---|---|
+| `15e8a10` | — | **`build_queued.py`**: every build behind one machine-wide lock, pinned to half the cores by affinity, `-j 8`, below-normal priority |
+| `b759fd5` | — | **`-inputcmd` + `game_input.py`**: scripted input injected inside the process after DirectInput; the window is never activated and the real mouse never read. `drive_input.py` retired |
+| `15695d8` FO | 45/2 | the opening cutscene is **the conversation system**, 66 units, specified; nothing behavioural ported, deliberately |
+| `e14b934` FQ | 46/1 | the movie-root unload list; the **mask hit test** (after a scroll every tab click hit a hidden row); clips name themselves; the user's crash path run clean six times |
+| `191ef85` FN | **47/47** | the red row: `GetInterpData()` is a walk this tree invented; `UDisSeqVar_SpawnerPawn` handed out the spawner. The Boat matinee plays to the end |
+| `c9ac0f1` FP | 47/47 (after `80cc219`) | the HUD hidden where retail hides it; `UDisGlobalUIManager::Init`, `Pre/PostCommitMapChange`, the Kismet open/close actions; both bring-ups deleted |
+
+**Every package corrected five to seven premises of its brief**, and the two biggest findings were in
+neither plan: the gate's crash detector matched a string an access violation never produces (wave
+19), and the cutscene has no Kismet upstream at all (wave 20).
 
 ## Wave 19 — the crash, the cutscene, the heads, and the gate that missed both
 
@@ -255,21 +272,21 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 20 is `PHASE16.md`**, four packages: **FN** the red row (the spawn crash, with FK's lead that
-the spawner is being used as a matinee group actor) and the harness's `--newgame-at`; **FO** what
-activates `SOIREE_Empress_Regent.SeqAct_Interp_12`, then the `UpdateTrackInst` seam, then the `MAT_*`
-contract; **FP** one owner for the HUD (`UDisGlobalUIManager::Init`, delete both bring-ups) and the
-absent `UI_Global` letterbox; **FQ** retail's movie-root unload list, then the `pDeclTarget` guard,
-then the user's re-entrant mouse path, then the VM stringifying a `MovieClip` as `undefined`.
+**Wave 21 is the dialog system**, because that is what starts every scripted scene in the game and the
+user has asked for the opening cutscene twice. Agent FO's `agentFO.md` §9 is the specification, in
+call order: `UDisSeqAct_DialogInputs::Activated`, the conversation component, the dialog tree,
+`UDisConv_Soiree`, `FindMatinee`, `StartFromDialog` - ~10 KB on the direct path out of ~60 KB. With
+it: the `UpdateTrackInst` five-pass seam with `StretchAnimControl` first, `UArkAnimNodeStack`, and the
+`MAT_*` contract behind the player FSM. `FArkComponentLookat` (51 functions, inventoried) and
+`UDisSkelControl_SpineBender` ride along, because a scene's pawns are meant to look at things.
 
-**Deferred and said so**: `FArkComponentLookat` (51 functions, inventoried) and
-`UDisSkelControl_SpineBender` to wave 21, after the cutscene activates; the rest of the UI list
-(Enter on the main menu, the menu camera and haze, text clarity, the 2 GB exhaustion); and **wave 15**
-(ET, EU, EV, EW), still paused behind the user's standing instruction that the interface comes first.
+Also open: the mouse cursor drawn in the mission (one seam); the play-defaults table still appends the
+inert `-gfxuimenu`; the pawn that died 10 s into a d3d9 stage once with nothing in the log; the rest
+of the UI list (Enter on the main menu, the menu camera and haze, text clarity, the 2 GB exhaustion);
+and **wave 15** (ET, EU, EV, EW), still paused.
 
-**Used and absent in the AS2 library**, from FF's survey — evidence, not a checklist:
-`MovieClipLoader` (4 `new`), `TextField.setImageSubstitutions` (6 sites), `Selection.disableFocusKeys`
-(6 sites). Image exports are not resolving across the `lib.gfx` import (the 19 `X360_*` failures).
+**Process, from the user, both absolute**: every build goes through `build_queued.py`; no agent or
+script ever moves the real mouse, presses real keys or takes focus - `game_input.py` only.
 
 ## Known pitfalls
 
@@ -325,13 +342,13 @@ then the user's re-entrant mouse path, then the VM stringifying a `MovieClip` as
 - **A screenshot claimed by "arrived after my launch" can belong to another package.** Agent FF's
   first Options run claimed **nine** bitmaps belonging to FH and FI. `-apshotname=<tag>` plus a glob
   of that tag is the only reliable claim, and it matters most when four packages share one machine.
-- **A crash address cannot be decoded by subtracting `0x400000`.** The executable is
-  `/DYNAMICBASE`, so the load address is randomised per boot: agent FJ's `0x1cc148a - 0x400000`
-  landed 644 KB past the end of the image. Windows caches an image's ASLR base per boot, so
-  `CreateProcessW(CREATE_SUSPENDED)` on the same unmodified file plus `NtQueryInformationProcess`
-  and `PEB->ImageBaseAddress` recovers the base that a crash from the same boot session used
-  (3 of 3 launches identical). Then resolve the RVA against the build's `.map`, checking its PE
-  timestamp against the exe.
+- **A crash address cannot be decoded by subtracting `0x400000`, and you do not need to recover
+  the base either.** The executable is `/DYNAMICBASE`: agent FJ's `0x1cc148a - 0x400000` landed
+  644 KB past the end of the image. **Open the minidump instead - its module list carries the
+  base.** Agent FN corrected the earlier version of this pitfall: the "per-boot cached base" FJ
+  recovered (`0xdb0000`) was FJ's own file's; FJ's gate exe loaded at `0x490000` and HEAD's at
+  `0xa60000` in the same session. Resolve the RVA against the build's `.map`, checking its PE
+  timestamp against the exe. `build/agentFN/tools/mdmp.py` reads the dump.
 - **There are minidumps in `DishonoredGame/Logs/` and nobody had opened one.** `unreal-v9411-*.dmp`
   is written by the same handler that prints the useless two-line stack. FJ's confirmed every number
   it had predicted and handed over the dangling object with its page captured. **Open the dump
@@ -361,6 +378,19 @@ then the user's re-entrant mouse path, then the VM stringifying a `MovieClip` as
   (FH's `0xdf0a00`, FL's eight), the sweep is a lint, not a gate.
 
 ### Build and link
+
+- **An agent's sync script lists what it remembered touching, not what it touched.** Agent FP's
+  `agentFP_sync.py` carried 22 files and missed `Inc/CppText/ADishonoredGameInfo.h`, where the two
+  declarations for functions it defined live; the worktree built, a clean checkout failed with
+  `C2509`, and the gate caught it. Agent FI's generated-header edits were the same shape a wave
+  earlier. **Before every merge, diff the worktree against its base** -
+  `git -C build/agentXX_wt diff --name-only <base>` plus `ls-files --others --exclude-standard` - and
+  compare that list with the sync script's. The gate's clean-checkout build is the backstop, not the
+  first line.
+- **A package that does four full builds on a serialised half-CPU queue waits longer than it works.**
+  Its own build, a "clean build, directory deleted first", a HEAD control build, and the gate's
+  in-harness build: 16 builds per four-package wave at 15-25 min each. The separate clean build is
+  redundant with the gate's; the per-agent HEAD control is one shared build. Wave 21 drops both.
 
 - **Builds queue; a waiting build is not a hung build.** `build_queued.py` holds a machine-wide lock
   (`%LOCALAPPDATA%\Temp\dishonored_build.lock`, owner pid inside; a dead owner's lock is removed

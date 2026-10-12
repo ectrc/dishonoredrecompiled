@@ -28,7 +28,7 @@ every package's own report and measurements. Symbol exports live in `resources/d
 |---|---|
 | Engine, renderer, script VM | up; the first mission map renders under D3D9 and the pawn walks it |
 | Main menu | draws, navigates by mouse and keyboard, and starts the game. Its modal text, option rows, difficulty portrait and scrolling lists are measured against retail's |
-| Opening scene | the pawns are placed, their heads are level, the letterbox bars draw, and a cutscene matinee plays when forced; **nothing activates the opening cutscene on the real route yet** |
+| Opening scene | the pawns are placed, their heads are level, the HUD and letterbox bars appear exactly where retail shows them, and the matinee runtime plays a cutscene to the end; **the opening cutscene itself is started by the conversation system, which is the next wave** |
 | In-game HUD | health and mana vials and the stance icon, fed from the live pawn |
 | AI | a guard adopts a patrol route and walks it |
 | Save/load | all 51 retail saves load; **86.7 %** of `Dishonored0.sav`'s object stream restores |
@@ -38,9 +38,9 @@ every package's own report and measurements. Symbol exports live in `resources/d
 Every merge is gated on a clean checkout of its own commit by a 47-check regression harness
 (`resources/tools/run_regression.py`): build, layout `static_assert`s against retail's offsets, a null-RHI
 smoke, a D3D9 render census, a scripted input run, a New Game from the menu and an Options tab sweep.
-**It is currently red on purpose** — 46 of 47 — over a real intermittent crash in the spawn path that
-it could not see until wave 19; `resources/docs/STATUS.md` has the details and the reason the bound is
-not being relaxed.
+**It reads 47 of 47 on HEAD.** It was red on purpose for one wave over a crash it had been unable to
+see for nineteen - a pointer walk this tree had invented - and the bound was not relaxed to get there;
+`resources/docs/STATUS.md` has the story.
 
 ## Running it
 
@@ -67,6 +67,10 @@ puts Corvo on the boat landing at Dunwall Tower.
 
 **Use the mouse to activate a row.** Enter does not yet activate a main-menu entry — Space does, and
 the keys work once a screen is open. That is open defect 5 in `STATUS.md`.
+
+Builds go through `resources/tools/build_queued.py` (one at a time, half the cores). To drive a
+running build without touching your own mouse or focus, launch it with
+`python resources/tools/game_input.py launch --exe <exe>` and send `hover`, `click`, `key`, `shot`.
 
 Anything you pass yourself wins over the defaults, so
 
