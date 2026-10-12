@@ -110,7 +110,10 @@ def launch(args: argparse.Namespace, extra: list[str]) -> int:
     exe = Path(args.exe)
     if not exe.exists():
         raise SystemExit(f"game_input: exe not found: {exe}")
-    cmd_file = Path(args.cmd_file) if args.cmd_file else Path(tempfile.gettempdir()) / f"inputcmd_{args.tag or 'run'}_{os.getpid()}.txt"
+    # Absolute always: the game runs with its own working directory, so a relative -inputcmd path is
+    # never found and the run sits idle until its driver gives up (agent FR lost a 597 s run to this).
+    cmd_file = (Path(args.cmd_file).resolve() if args.cmd_file
+                else Path(tempfile.gettempdir()) / f"inputcmd_{args.tag or 'run'}_{os.getpid()}.txt")
     cmd_file.write_text("", encoding="ascii")
     # -windowed always: without it the ini decides, and the retail ini says fullscreen. One launch
     # without it took the user's whole display. The engine also refuses fullscreen under -inputcmd
@@ -147,7 +150,7 @@ def main() -> int:
 
     if not args.cmd_file:
         raise SystemExit("game_input: --cmd-file is required (the path printed by launch)")
-    cmd_file = Path(args.cmd_file)
+    cmd_file = Path(args.cmd_file).resolve()
     lines: list[str] = []
     if args.script:
         for raw in Path(args.script).read_text(encoding="utf-8", errors="replace").splitlines():
