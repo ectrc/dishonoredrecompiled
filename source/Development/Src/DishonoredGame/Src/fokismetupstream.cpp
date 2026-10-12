@@ -24,7 +24,7 @@ static UBOOL DisFOUpstreamEnabled()
 	if( GDisFOUpstream < 0 )
 	{
 		FString Value;
-		GDisFOUpstream = Parse( appCmdLine(), TEXT("foupstream="), Value ) ? 1 : 0;
+		GDisFOUpstream = Parse( appCmdLine(), TEXT("foupstream="), Value, FALSE ) ? 1 : 0;	// DISHONORED(bringup): agent FW - Parse stops at the first comma by default, so the documented comma list only ever matched its first pattern (FW1)
 		if( GDisFOUpstream )
 		{
 			Value.ParseIntoArray( &GDisFOUpstreamPatterns, TEXT(","), TRUE );

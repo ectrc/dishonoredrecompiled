@@ -473,6 +473,20 @@ public:
         P_FINISH;
         this->MAT_SetAnimPosition(SlotName,ChannelIndex,InAnimSeqName,InPosition,bFireNotifies,bLooping,bEnableRootMotion);
     }
+    // DISHONORED(port): agent FW (PHASE18 FW). Retail's in-game anim-control contract on the MAT actor, which the cooked
+    // script never reaches through BeginAnimControl (Dishonored's Actor script has no such event): PostInitAnimTree
+    // (2012 0x349d60) re-caches the UArkAnimNodeStack slots through CacheAnimNodes (2012 0x343ee0 / 2013 0x321e90),
+    // MAT_BeginAnimControl (2012 0x343eb0 / 2013 0x321e60) records the group on this class's own InterpGroupList and
+    // rebuilds the anim-set list, MAT_FinishAnimControl (2012 0x33e210 / 2013 0x31ba30) clears bMatineePlaying on every
+    // channel of every slot. Bodies in UnSkeletalMesh.cpp beside PreviewBeginAnimControl.
+    virtual void PostInitAnimTree(class USkeletalMeshComponent* SkelComp);
+    void CacheAnimNodes();
+    virtual void MAT_BeginAnimControl(class UInterpGroup* InInterpGroup);
+    virtual void MAT_FinishAnimControl(class UInterpGroup* InInterpGroup);
+    // UpdateAnimSetList (2012 0x365540) / BuildAnimSetList read THIS class's InterpGroupList; the base class's pair reads
+    // its reference-only shim of the same name, which no retail member backs.
+    virtual void UpdateAnimSetList();
+    void BuildAnimSetList();
     DECLARE_CLASS(ASkeletalMeshActorMAT,ASkeletalMeshCinematicActor,0,Engine)
 
 #if WITH_EDITOR

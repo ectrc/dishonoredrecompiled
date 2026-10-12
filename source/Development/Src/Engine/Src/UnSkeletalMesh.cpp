@@ -2989,8 +2989,85 @@ void ASkeletalMeshActor::MAT_BeginAnimControl(UInterpGroup* InInterpGroup)
 	UpdateAnimSetList();
 }
 
-/** 
-* PreviewFinishAnimControl 
+// DISHONORED(port): agent FW (PHASE18 FW). ASkeletalMeshActorMAT::CacheAnimNodes, 2012 rva 0x343ee0 (233 B), 2013 0x321e90 (219 B):
+// every UArkAnimNodeStack of the component's anim tree, AddUniqueItem'd onto SlotNodes.
+void ASkeletalMeshActorMAT::CacheAnimNodes()
+{
+	if( SkeletalMeshComponent == NULL || SkeletalMeshComponent->Animations == NULL )
+	{
+		return;
+	}
+	TArray<UAnimNode*> AllStackNodes;
+	SkeletalMeshComponent->Animations->GetNodesByClass( AllStackNodes, UArkAnimNodeStack::StaticClass() );
+	for( INT i = 0; i < AllStackNodes.Num(); i++ )
+	{
+		UArkAnimNodeStack* SlotNode = (UArkAnimNodeStack*)AllStackNodes(i);
+		SlotNodes.AddUniqueItem( SlotNode );
+	}
+}
+
+// 2012 rva 0x349d60 (64 B): retail's native notification from USkeletalMeshComponent::InitAnimTree. Unlike APawn's it does not
+// compare the component - the MAT actor has one.
+void ASkeletalMeshActorMAT::PostInitAnimTree( USkeletalMeshComponent* SkelComp )
+{
+	SlotNodes.Empty();
+	CacheAnimNodes();
+}
+
+// 2012 rva 0x343eb0 (38 B), 2013 0x321e60 (38 B): the group goes onto THIS class's InterpGroupList (retail SDK @632; the base
+// class's member of the same name is a reference-only shim here) and the anim-set list is rebuilt through the virtual.
+void ASkeletalMeshActorMAT::MAT_BeginAnimControl( UInterpGroup* InInterpGroup )
+{
+	InterpGroupList.AddUniqueItem( InInterpGroup );
+	UpdateAnimSetList();
+}
+
+// 2012 rva 0x365540 (74 B): RestoreAnimSetsToDefault, this class's BuildAnimSetList, then UpdateAnimations with the
+// component's bDisableWarningWhenAnimNotFound raised around it.
+void ASkeletalMeshActorMAT::UpdateAnimSetList()
+{
+	RestoreAnimSetsToDefault();
+	BuildAnimSetList();
+	if( SkeletalMeshComponent != NULL )
+	{
+		SkeletalMeshComponent->bDisableWarningWhenAnimNotFound = TRUE;
+		SkeletalMeshComponent->UpdateAnimations();
+		SkeletalMeshComponent->bDisableWarningWhenAnimNotFound = FALSE;
+	}
+}
+
+void ASkeletalMeshActorMAT::BuildAnimSetList()
+{
+	if( SkeletalMeshComponent != NULL )
+	{
+		SaveDefaultsToAnimSets();
+	}
+	for( INT i = 0; i < InterpGroupList.Num(); i++ )
+	{
+		if( InterpGroupList(i) != NULL )
+		{
+			AddAnimSets( InterpGroupList(i)->GroupAnimSets );
+		}
+	}
+}
+
+// 2012 rva 0x33e210 (289 B), 2013 0x31ba30 (289 B): for every slot, every channel's UAnimNodeSequence (children 1..) has
+// bMatineePlaying (mask 0x10 of the flag word at +216, retail_sdk_layout.json) cleared - the body UArkAnimNodeStack::
+// MAT_FinishAnimControl (2012 0x5768b0) carries, inlined by retail. The group is not removed from InterpGroupList here;
+// retail keeps the anim sets until the actor streams out.
+void ASkeletalMeshActorMAT::MAT_FinishAnimControl( UInterpGroup* InInterpGroup )
+{
+	for( INT SlotIdx = 0; SlotIdx < SlotNodes.Num(); SlotIdx++ )
+	{
+		if( SlotNodes(SlotIdx) != NULL )
+		{
+			SlotNodes(SlotIdx)->MAT_FinishAnimControl();
+		}
+	}
+}
+
+/**
+* PreviewFinishAnimControl
 */
 void ASkeletalMeshActor::PreviewFinishAnimControl(UInterpGroup* InInterpGroup)
 {

@@ -3739,6 +3739,64 @@ struct FDishonoredKismetCensus
 
 static FDishonoredKismetCensus GDisKismetCensus;
 
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup): agent FW (PHASE18 FW). -fwkismettrace: one line per op activation and per event firing, with the
+	op's path, class and world time, so a walk through the level can be read against the Kismet it crosses (the census
+	above counts by class only; KISMET_LOG is compiled out). Nothing when the switch is absent.
+-----------------------------------------------------------------------------*/
+static UBOOL DisFWKismetTraceEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("fwkismettrace") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+static void DisFWTraceOpActivated( USequenceOp* Op )
+{
+	if( !DisFWKismetTraceEnabled() || Op == NULL )
+	{
+		return;
+	}
+	FString Inputs;
+	for( INT Index = 0; Index < Op->InputLinks.Num(); Index++ )
+	{
+		if( Op->InputLinks( Index ).bHasImpulse )
+		{
+			Inputs += FString::Printf( TEXT("%s%d '%s'"), Inputs.Len() ? TEXT(", ") : TEXT(""), Index, *Op->InputLinks( Index ).LinkDesc );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): fwkismet t=%.2f op %s (%s) activation %d via input %s%s%s"),
+		GWorld ? GWorld->GetTimeSeconds() : 0.f, *Op->GetPathName(), *Op->GetClass()->GetName(), Op->ActivateCount,
+		Inputs.Len() ? *Inputs : TEXT("<none>"), Op->ObjComment.Len() ? TEXT(" comment ") : TEXT(""), *Op->ObjComment );
+}
+
+static void DisFWTraceEventFired( USequenceEvent* Event, AActor* InOriginator, AActor* InInstigator )
+{
+	if( !DisFWKismetTraceEnabled() || Event == NULL )
+	{
+		return;
+	}
+	debugf( TEXT("DISHONORED(bringup): fwkismet t=%.2f event %s (%s) trigger %d/%d originator %s instigator %s"),
+		GWorld ? GWorld->GetTimeSeconds() : 0.f, *Event->GetPathName(), *Event->GetClass()->GetName(), Event->TriggerCount, Event->MaxTriggerCount,
+		InOriginator ? *InOriginator->GetName() : TEXT("none"), InInstigator ? *InInstigator->GetName() : TEXT("none") );
+}
+
+/** the handler a Kismet action looks up on each target: a missing script function is otherwise silent (the cooked Actor
+    script may lack a reference handler such as OnToggleHidden / OnChangeCollision) */
+static void DisFWTraceHandler( USequenceAction* Action, UObject* Target, FName HandlerName, UFunction* Handler )
+{
+	if( !DisFWKismetTraceEnabled() || Action == NULL || Target == NULL )
+	{
+		return;
+	}
+	debugf( TEXT("DISHONORED(bringup): fwkismet t=%.2f handler %s on %s (%s) for %s: %s"),
+		GWorld ? GWorld->GetTimeSeconds() : 0.f, *HandlerName.ToString(), *Target->GetName(), *Target->GetClass()->GetName(),
+		*Action->GetName(), Handler != NULL ? *Handler->GetPathName() : TEXT("MISSING - the action does nothing to this target") );
+}
+
 UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 {
 	// DISHONORED(port): 2013 rva 0x300740, reached from USequence::UpdateOp (0x301550). Three deltas against
@@ -3838,6 +3896,7 @@ UBOOL USequence::ExecuteActiveOps(FLOAT DeltaTime, INT MaxSteps)
 				NextOp->bActive = TRUE;
 				(NextOp->ActivateCount)++;
 				GDisKismetCensus.OpsActivated++; // DISHONORED(bringup)
+				DisFWTraceOpActivated( NextOp ); // DISHONORED(bringup): agent FW, -fwkismettrace
 				NextOp->Activated();
 				NextOp->eventActivated();
 
@@ -5668,6 +5727,7 @@ void USequenceEvent::ActivateEvent(AActor *InOriginator, AActor *InInstigator, T
 	if (!bFromQueued)
 	{
 		GDisKismetCensus.CountEvent(this);
+		DisFWTraceEventFired( this, InOriginator, InInstigator ); // agent FW, -fwkismettrace
 	}
 	// if we're already active then queue this activation
 	if (bActive && ParentSequence != NULL)
@@ -6099,6 +6159,7 @@ void USequenceAction::Activated()
 							HandlerFunction = Obj->FindFunction(HandlerName);
 						}
 					}
+					DisFWTraceHandler( this, Obj, HandlerName, HandlerFunction ); // DISHONORED(bringup): agent FW, -fwkismettrace
 					if (HandlerFunction != NULL && !Obj->IsPendingKill())
 					{
 						// verify that the function has the correct number of parameters

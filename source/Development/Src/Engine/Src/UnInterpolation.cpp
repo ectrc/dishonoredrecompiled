@@ -70,7 +70,17 @@ static void DisMatBeginAnimControl( AActor* GroupActor, UInterpGroup* Group )
 		GroupPawn->MAT_BeginAnimControl( Group );
 		return;
 	}
-	debugf( NAME_Warning, TEXT("matinee group '%s' has an anim-control track and its actor %s %s has neither the script function BeginAnimControl nor APawn::MAT_BeginAnimControl; the group's animation will not play"),
+	// DISHONORED(port): agent FW (PHASE18 FW). The skeletal-mesh props of the cutscenes (SkeletalMeshActorMAT: the boat, the
+	// wheel, the drawbridge, the rats) have no script BeginAnimControl in the cooked tree either; retail reaches their
+	// ASkeletalMeshActorMAT::MAT_BeginAnimControl (2012 0x343eb0) through the AActor virtual. This tree keeps the virtual
+	// on ASkeletalMeshActor, so the dispatch is by cast.
+	ASkeletalMeshActor* GroupSkelActor = Cast<ASkeletalMeshActor>( GroupActor );
+	if( GroupSkelActor != NULL )
+	{
+		GroupSkelActor->MAT_BeginAnimControl( Group );
+		return;
+	}
+	debugf( NAME_Warning, TEXT("matinee group '%s' has an anim-control track and its actor %s %s has neither the script function BeginAnimControl nor a native MAT_BeginAnimControl; the group's animation will not play"),
 		*Group->GroupName.ToString(), *GroupActor->GetClass()->GetName(), *GroupActor->GetName() );
 }
 
@@ -85,6 +95,12 @@ static void DisMatFinishAnimControl( AActor* GroupActor, UInterpGroup* Group )
 	if( GroupPawn != NULL )
 	{
 		GroupPawn->MAT_FinishAnimControl( Group );
+		return;
+	}
+	ASkeletalMeshActor* GroupSkelActor = Cast<ASkeletalMeshActor>( GroupActor );
+	if( GroupSkelActor != NULL )
+	{
+		GroupSkelActor->MAT_FinishAnimControl( Group );
 	}
 }
 

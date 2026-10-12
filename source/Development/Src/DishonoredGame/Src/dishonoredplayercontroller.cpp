@@ -115,6 +115,7 @@
 #include "disheadcensus.h"
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
+#include "fwdiag.h"
 #include "arkpp.h"
 #include "arkcomponentlookat.h"
 #include "enginearkppclasses.h"
@@ -1090,6 +1091,11 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	if( DisFKDiagEnabled() )
 	{
 		DisFKReport( this );
+	}
+	// agent FW (PHASE18 FW): -fwdiag, the player's position and heading once a second (fwdiag.cpp)
+	if( DisFWDiagEnabled() )
+	{
+		DisFWReport( this );
 	}
 	if( DisPowerCensusEnabled() )
 	{

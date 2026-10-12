@@ -68,11 +68,13 @@ static void DisFKWalkSequenceConditions( USequence* Seq, INT Depth, TArray<FStri
 }
 
 void DisFOReportUpstream();
+void DisFWReportDialogMap();	// agent FW (PHASE18 FW): -fwdialogmap, fwdiag.cpp
 
 /** the one-shot half: the matinee data of every USeqAct_Interp this world holds, instanced or not */
 static void DisFKReportMatineeData()
 {
 	DisFOReportUpstream();
+	DisFWReportDialogMap();
 	INT Interps = 0, GroupsSeen = 0, Tracks = 0, Directors = 0, Players = 0, AIGroups = 0;
 	for( TObjectIterator<USeqAct_Interp> It; It; ++It )
 	{
