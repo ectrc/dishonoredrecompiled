@@ -79,7 +79,6 @@ UBOOL		GTickAndRenderUI = TRUE;
 extern void DishonoredGFxSetRenderViewport( FViewport* Viewport );
 extern void DishonoredGFxTick( FLOAT DeltaTime );
 extern void DishonoredGFxRenderUI();
-extern void DishonoredGFxUpdateMouseCursor( FViewport* Viewport );
 extern void DishonoredGFxRenderTextures();
 #endif
 
@@ -2055,10 +2054,9 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 				// consequence.
 				if ( GTickAndRenderUI )
 				{
-					// DISHONORED(port): UDishonoredViewportClient::Draw calls the global movie player's
-					// PreRender here (2013 0x5ea359 -> 0x79eb90), which is what puts the game's own mouse
-					// cursor where the mouse is. It has to run before the draw, not after.
-					DishonoredGFxUpdateMouseCursor( Viewport );
+					// DISHONORED(port, agent FU): the global movie player's PreRender, which places the game's own
+					// mouse cursor, runs at the head of UDishonoredViewportClient::Draw (2013 0x5ea359 -> 0x79eb90),
+					// before this base Draw, as retail orders it.
 					DishonoredGFxRenderUI();
 				}
 #endif

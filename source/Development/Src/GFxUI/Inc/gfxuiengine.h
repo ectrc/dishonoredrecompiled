@@ -279,13 +279,6 @@ private:
 /** the process-wide GFx engine; created by FGFxEngine::GetEngine */
 extern FGFxEngine* GGFxEngine;
 
-/** the bring-up's stand-in for UDisGFxMoviePlayerGlobal::PreRender (2013 0x79eb90): attach the global
-    movie's own `mouseCursor` symbol and put it where the mouse is. Called from
-    UGameViewportClient::Draw, which is where retail calls it. */
-extern void DishonoredGFxUpdateMouseCursor( class FViewport* Viewport );
-/** agent FP: drops the cached cursor clip when the movie it lives in closes (UDisGFxMoviePlayerGlobal::ConditionalHideMouseCursor's job) */
-extern void DishonoredGFxReleaseMouseCursor( struct FGFxMovie* Movie );
-
 /** -nogfxui turns the whole interface off for a run, read on first use (never as a file-scope static:
     a file-scope ParseParam in a static library runs before WinMain sets GCmdLine - PHASE9.md's rule and
     agent CA's measurement). */
@@ -316,6 +309,7 @@ extern UBOOL GFxUIIsDisabled();
 -----------------------------------------------------------------------------*/
 typedef void (*FGFxMoviePlayerHook)( class UGFxMoviePlayer* Player );
 typedef void (*FGFxMoviePlayerTickHook)( class UGFxMoviePlayer* Player, FLOAT DeltaTime );
+typedef void (*FGFxMoviePlayerCloseHook)( class UGFxMoviePlayer* Player, UBOOL bUnload );
 typedef UBOOL (*FGFxMoviePlayerInputHook)( class UGFxMoviePlayer* Player, INT ControllerId,
                                            FName Key, BYTE Event, UBOOL& bHandled );
 
@@ -326,6 +320,9 @@ extern FGFxMoviePlayerHook     GGFxMoviePlayerPreLoadHook;
 extern FGFxMoviePlayerHook     GGFxMoviePlayerPreLoadedHook;
 /** after StartScene: OnMovieStackChanged, then PostStart */
 extern FGFxMoviePlayerHook     GGFxMoviePlayerStartedHook;
+/** agent FU: inside UGFxMoviePlayer::Close, after OnClose and before the view goes: UDisGFxMoviePlayerBase's
+    virtual PreClose(bUnload), which is where UDisGFxMoviePlayerGlobal (2012 0x802e60) drops its cursor clip */
+extern FGFxMoviePlayerCloseHook GGFxMoviePlayerPreCloseHook;
 /** agent FP: after UGFxMoviePlayer::Close, whatever it did: the tail of UDisGFxMoviePlayerBase::Close
     (2013 rva 0x793a90), which is UDisGlobalUIManager::OnMovieStackChanged */
 extern FGFxMoviePlayerHook     GGFxMoviePlayerClosedHook;

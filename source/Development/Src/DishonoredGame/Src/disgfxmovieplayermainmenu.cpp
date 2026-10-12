@@ -1071,6 +1071,21 @@ static void DisGFxMoviePlayerStarted( UGFxMoviePlayer* Player )
 	{
 		DisGFxMoviePlayerHUDPostStart( HUD );
 	}
+	// agent FU: UDisGFxMoviePlayerGlobal::PostStart (2012 0x7f4640), the cursor's GFxValue
+	else if( UDisGFxMoviePlayerGlobal* Global = Cast<UDisGFxMoviePlayerGlobal>( Player ) )
+	{
+		Global->PostStart();
+	}
+}
+
+static void DisGFxMoviePlayerPreClose( UGFxMoviePlayer* Player, UBOOL bUnload )
+{
+	// DISHONORED(port, agent FU): UDisGFxMoviePlayerBase::Close (2013 rva 0x793a90) calls PreClose(bUnload) first; the
+	// global movie's (2012 0x802e60) is the only override with a body in this tree.
+	if( UDisGFxMoviePlayerGlobal* Global = Cast<UDisGFxMoviePlayerGlobal>( Player ) )
+	{
+		Global->PreClose( bUnload );
+	}
 }
 
 static void DisGFxMoviePlayerClosed( UGFxMoviePlayer* Player )
@@ -1146,6 +1161,7 @@ static struct FDisGFxMoviePlayerSeam
 		GGFxMoviePlayerPreLoadHook = &DisGFxMoviePlayerPreLoading;
 		GGFxMoviePlayerPreLoadedHook = &DisGFxMoviePlayerPreLoaded;
 		GGFxMoviePlayerStartedHook = &DisGFxMoviePlayerStarted;
+		GGFxMoviePlayerPreCloseHook = &DisGFxMoviePlayerPreClose;
 		GGFxMoviePlayerClosedHook = &DisGFxMoviePlayerClosed;
 		GGFxMoviePlayerPreAdvanceHook = &DisGFxMoviePlayerPreAdvance;
 		GGFxMoviePlayerFilterButtonHook = &DisGFxMoviePlayerFilterButton;

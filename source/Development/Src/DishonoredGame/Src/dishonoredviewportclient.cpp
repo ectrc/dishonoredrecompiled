@@ -39,8 +39,13 @@ void UDishonoredViewportClient::ApplyListenerLocationModifier( FVector& Listener
 // DISHONORED(written): 2013 rva 0x5ea330 (2012 0x62ff50)
 void UDishonoredViewportClient::Draw( FViewport* Viewport, FCanvas* Canvas )
 {
-	// DISHONORED(bringup): retail first calls UDisGFxMoviePlayerGlobal::PreRender(Viewport) on DisGetGlobalUIManager()->m_pGlobal
-	// while that movie is open (UGFxMoviePlayer::bMovieIsOpen); Scaleform is not linked (WITH_GFx=0), so there is no movie
+	// DISHONORED(port, agent FU): the global movie player's PreRender first, while its movie is open - the mouse
+	// cursor's attach, hide and move (2013 0x5ea359 -> 0x79eb90) - then the engine's Draw.
+	UDisGlobalUIManager* UIManager = DisGetGlobalUIManager();
+	if( UIManager != NULL && UIManager->m_pGlobal != NULL && UIManager->m_pGlobal->bMovieIsOpen )
+	{
+		UIManager->m_pGlobal->PreRender( Viewport );
+	}
 	UGameViewportClient::Draw( Viewport, Canvas );
 }
 

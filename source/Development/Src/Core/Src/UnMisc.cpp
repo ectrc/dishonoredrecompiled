@@ -5085,8 +5085,9 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 	//
 	// This is ON BY DEFAULT only in a build configured with DISHONORED_PLAY_DEFAULTS, and deliberately so:
 	// run_regression.py drives the game with exact command lines and its thresholds are calibrated to
-	// them, so baking -gfxuimenu into every harness run would open a movie in stages that have never
-	// had one and invalidate the baseline.
+	// them, so baking the windowed 1600x900 defaults into every harness run would move its baseline.
+	// (The table carried -gfxuimenu, agent DC's menu bring-up, until agent FP replaced that bring-up with
+	// the menu map's own Kismet open and the token became inert; agent FU removed it.)
 	//
 	// DISHONORED(bringup, agent FM): and `-playdefaults` turns the same table on in a build that was NOT
 	// configured with it, which is how the regression harness drives the configuration the user plays
@@ -5106,7 +5107,6 @@ void appInit( const TCHAR* InCmdLine, FOutputDevice* InLog, FOutputDeviceConsole
 		{
 			{ TEXT("nosteam"),          TEXT(" -nosteam") },
 			{ TEXT("skipnativepkgs"),   TEXT(" -skipnativepkgs=OnlineSubsystemPC") },
-			{ TEXT("gfxuimenu"),        TEXT(" -gfxuimenu") },
 			{ TEXT("nomovie"),          TEXT(" -nomovie") },
 			{ TEXT("windowed"),         TEXT(" -windowed") },
 			{ TEXT("ResX"),             TEXT(" -ResX=1600 -ResY=900") },

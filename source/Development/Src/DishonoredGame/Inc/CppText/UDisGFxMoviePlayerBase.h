@@ -28,3 +28,9 @@ public:
 	UBOOL LoadMoviePackage( const TCHAR* _pMoviePath );
 	// DISHONORED(port): 2013 rva 0x787720 (2012 0x7f42b0), retail vtable +436: the negation of m_bIsLoadingMoviePackage
 	UBOOL HasFinishedAsyncLoading() const { return m_bIsLoadingMoviePackage ? FALSE : TRUE; }
+
+// ---- agent FU (PHASE17 FU): the screen-to-movie map every PreRender uses ----
+public:
+	// DISHONORED(port): 2013 rva 0x787860 (2012 0x7f4390, same bytes). The movie at its authored size, the screen
+	// letterboxed or pillarboxed around it. Body in disgfxmovieplayerbase.cpp.
+	void ComputeMovieSpaceInfo( INT _ScreenSizeX, INT _ScreenSizeY, struct FDisMovieSpaceInfo& _rInfo );

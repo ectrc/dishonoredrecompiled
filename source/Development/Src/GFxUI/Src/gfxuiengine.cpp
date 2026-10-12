@@ -2125,12 +2125,21 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 	// What the machine ran on the advance half, so one line answers "what did the interface do this
 	// frame" end to end: the movies, the display objects, the submitted geometry and the opcodes.
 	INT Sprites = 0, Placed = 0, Buffers = 0, Frames = 0, ScriptErrors = 0;
+	// DISHONORED(bringup, agent FU): the AS2 object graph, live and ever created, summed over the open movies. The
+	// reconstruction's GASObjectCollector is the teardown half of retail's collector only, so an object the content
+	// makes every frame (the menu's tweens do) stays until its movie closes; this pair is how a run says so.
+	UINT ASObjectsLive = 0, ASObjectsCreated = 0;
 	for( INT Index = 0; Index < OpenMovies.Num(); Index++ )
 	{
 		GFxMovieRoot* Root = (GFxMovieRoot*)OpenMovies( Index )->pView.GetPtr();
 		if( Root != NULL )
 		{
 			const GFxMovieRoot::Census& C = Root->GetCensus();
+			if( Root->GetASContext() != NULL && Root->GetASContext()->GetCollector() != NULL )
+			{
+				ASObjectsLive += Root->GetASContext()->GetCollector()->GetLiveCount();
+				ASObjectsCreated += Root->GetASContext()->GetCollector()->GetCreatedCount();
+			}
 			Sprites += C.SpritesCreated;
 			Placed += C.DisplayObjectsPlaced;
 			Buffers += C.ActionBuffersRun;
@@ -2156,10 +2165,10 @@ void FGFxEngine::LogCensus( const TCHAR* Reason )
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): machine: %d frames advanced, ")
 		TEXT("%d sprites created, %d display objects placed, %d action buffers, ")
 		TEXT("%u opcodes (%u unimplemented), %d script errors, %u untextured fills skipped, ")
-		TEXT("%u empty masks"),
+		TEXT("%u empty masks, AS2 objects %u live / %u created"),
 		Reason, Frames, Sprites, Placed, Buffers, GASActionBuffer::OpsExecuted,
 		GASActionBuffer::OpsUnimplemented, ScriptErrors, ::GFxDisplayUntexturedFills,
-		::GFxDisplayEmptyMasks );
+		::GFxDisplayEmptyMasks, ASObjectsLive, ASObjectsCreated );
 	debugf( TEXT("DISHONORED(bringup): GFx UI census (%s): input: %u events HE_Handled / %u HE_NotHandled, ")
 		TEXT("%u key downs, %u key ups, %u chars typed, %u mouse events, ")
 		TEXT("%u AS2 listeners registered, %u listener calls"),
@@ -2563,170 +2572,10 @@ static void DishonoredGFxReadTweenDiagSwitch()
 	}
 }
 
-// DISHONORED(port): UDisGFxMoviePlayerBase::ComputeMovieSpaceInfo, 2013 rva 0x787860. The movie is laid
-// out at its authored size and the screen is letterboxed or pillarboxed around it; this is the map from
-// screen pixels to the movie's own, plus the empty space on the short axis.
-struct FDisMovieSpaceInfo
-{
-	FVector2D m_ScreenSize;
-	FVector2D m_MovieSize;
-	FLOAT     m_fScreenToMovieScaling;
-	FVector2D m_MovieSpaceSize;
-	FVector2D m_EmptySpace;
-};
-
-static void DishonoredComputeMovieSpaceInfo( FGFxMovie* Movie, INT ScreenX, INT ScreenY, FDisMovieSpaceInfo& Info )
-{
-	Info.m_ScreenSize = FVector2D( (FLOAT)ScreenX, (FLOAT)ScreenY );
-	Info.m_MovieSize = FVector2D( (FLOAT)Movie->Info.Width, (FLOAT)Movie->Info.Height );
-	if( Info.m_MovieSize.X / Info.m_MovieSize.Y <= Info.m_ScreenSize.X / Info.m_ScreenSize.Y )
-	{
-		Info.m_fScreenToMovieScaling = Info.m_MovieSize.Y / Info.m_ScreenSize.Y;
-		Info.m_MovieSpaceSize = FVector2D( Info.m_fScreenToMovieScaling * Info.m_ScreenSize.X, Info.m_MovieSize.Y );
-		Info.m_EmptySpace = FVector2D( ( Info.m_MovieSpaceSize.X - Info.m_MovieSize.X ) * 0.5f, 0.f );
-	}
-	else
-	{
-		Info.m_fScreenToMovieScaling = Info.m_MovieSize.X / Info.m_ScreenSize.X;
-		Info.m_MovieSpaceSize = FVector2D( Info.m_MovieSize.X, Info.m_fScreenToMovieScaling * Info.m_ScreenSize.Y );
-		Info.m_EmptySpace = FVector2D( 0.f, ( Info.m_MovieSpaceSize.Y - Info.m_MovieSize.Y ) * 0.5f );
-	}
-}
-
-// UDisGFxMoviePlayerGlobal::m_pMouseCursor (retail SDK @444): the attached clip, held across frames so the
-// attach happens once and only the position is written per frame - and the movie it was attached in, because
-// the handle is only good for that movie's life. DISHONORED(port, agent FP): retail drops the clip in
-// UDisGFxMoviePlayerGlobal::ConditionalHideMouseCursor (2013 rva 0x7945b0, 2012 0x7fa780; reached from its PreClose and
-// PreCommitMapChange); here the global movie is closed and reopened across every map change since the UI
-// manager owns it, and a handle kept across that reopen pointed into the released view: FindTarget +0x43,
-// deterministic, two seconds into l_tower_p from -finewgame (fp_ng1..ng4.log). UGFxMoviePlayer::Close calls
-// DishonoredGFxReleaseMouseCursor before the view goes, which is the PreClose shape.
-static GFxValue   GDisMouseCursor;
-static FGFxMovie* GDisMouseCursorMovie = NULL;
-
-void DishonoredGFxReleaseMouseCursor( FGFxMovie* Movie )
-{
-	if( Movie != NULL && Movie == GDisMouseCursorMovie )
-	{
-		GDisMouseCursor.SetUndefined();
-		GDisMouseCursorMovie = NULL;
-	}
-}
-
-void DishonoredGFxUpdateMouseCursor( FViewport* Viewport )
-{
-	GFxValue& MouseCursor = GDisMouseCursor;
-
-	if( GGFxEngine == NULL || Viewport == NULL )
-	{
-		return;
-	}
-	FGFxMovie* Global = NULL;
-	for( INT Index = 0; Index < GGFxEngine->OpenMovies.Num(); Index++ )
-	{
-		FGFxMovie* Movie = GGFxEngine->OpenMovies( Index );
-		if( Movie->pUMovie != NULL && Movie->pUMovie->MovieInfo != NULL
-			&& Movie->pUMovie->MovieInfo->GetName() == TEXT("Global") )
-		{
-			Global = Movie;
-			break;
-		}
-	}
-	if( Global == NULL || Global->pView.GetPtr() == NULL )
-	{
-		// ConditionalHideMouseCursor's job, without a movie to do it in. The handle has already been dropped by
-		// DishonoredGFxReleaseMouseCursor if its movie closed; this covers a movie that never attached.
-		if( GDisMouseCursorMovie == NULL )
-		{
-			MouseCursor.SetUndefined();
-		}
-		return;
-	}
-	if( GDisMouseCursorMovie != Global )
-	{
-		// a different (reopened) global movie: the old handle is void and must not be touched through its view
-		MouseCursor.SetUndefined();
-		GDisMouseCursorMovie = NULL;
-	}
-
-	FIntPoint Mouse( 0, 0 );
-	Viewport->GetMousePos( Mouse );
-	FDisMovieSpaceInfo Info;
-	DishonoredComputeMovieSpaceInfo( Global, Viewport->GetSizeX(), Viewport->GetSizeY(), Info );
-	const FLOAT CursorX = Info.m_MovieSpaceSize.X * ( (FLOAT)Mouse.X / Info.m_ScreenSize.X ) - Info.m_EmptySpace.X;
-	const FLOAT CursorY = Info.m_MovieSpaceSize.Y * ( (FLOAT)Mouse.Y / Info.m_ScreenSize.Y ) - Info.m_EmptySpace.Y;
-
-	// ConditionalShowMouseCursor, 2013 0x78c790: _root.mouseCursor_mc.attachMovie("mouseCursor",
-	// "mouseCursorInst", mouseCursor_mc.getNextHighestDepth()).
-	if( !MouseCursor.IsDisplayObject() )
-	{
-		GFxValue Holder;
-		if( !Global->pView->GetVariable( &Holder, "_root.mouseCursor_mc" ) || !Holder.IsDisplayObject() )
-		{
-			static UBOOL bSaidSo = FALSE;
-			if( !bSaidSo )
-			{
-				bSaidSo = TRUE;
-				debugf( NAME_Warning, TEXT("DISHONORED(bringup): mouse cursor: _root.mouseCursor_mc is not a display object in %s"),
-					*Global->pUMovie->MovieInfo->GetPathName() );
-			}
-			return;
-		}
-		GFxValue Depth;
-		Holder.Invoke( "getNextHighestDepth", &Depth, NULL, 0 );
-		if( !Holder.AttachMovie( &MouseCursor, "mouseCursor", "mouseCursorInst",
-				Depth.IsNumber() ? (INT)Depth.GetNumber() : 1 ) )
-		{
-			static UBOOL bSaidSo = FALSE;
-			if( !bSaidSo )
-			{
-				bSaidSo = TRUE;
-				debugf( NAME_Warning, TEXT("DISHONORED(bringup): mouse cursor: attachMovie('mouseCursor') failed") );
-			}
-			return;
-		}
-		GDisMouseCursorMovie = Global;
-		debugf( TEXT("DISHONORED(bringup): mouse cursor: attached 'mouseCursor' to _root.mouseCursor_mc at depth %d, movie %dx%d, screen %dx%d"),
-			Depth.IsNumber() ? (INT)Depth.GetNumber() : 1, (INT)Info.m_MovieSize.X, (INT)Info.m_MovieSize.Y,
-			(INT)Info.m_ScreenSize.X, (INT)Info.m_ScreenSize.Y );
-	}
-
-	// MoveMouseCursor, 2013 0x78c8c0: _x and _y only, everything else left as authored.
-	GFxValue::DisplayInfo Where;
-	Where.SetPosition( CursorX, CursorY );
-	MouseCursor.SetDisplayInfo( Where );
-
-	// DISHONORED(bringup): -dismousecursor, once a second. "No cursor on screen" is equally true of a
-	// clip that was never attached, one attached with nothing in it, one off-screen and one invisible.
-	static INT bProbe = -1;
-	if( bProbe < 0 )
-	{
-		bProbe = ParseParam( appCmdLine(), TEXT("dismousecursor") ) ? 1 : 0;
-	}
-	if( bProbe )
-	{
-		static DOUBLE NextSay = 0.0;
-		if( GCurrentTime >= NextSay )
-		{
-			NextSay = GCurrentTime + 1.0;
-			GFxValue W, H, Vis, Holder, HolderVis, HX, HY;
-			MouseCursor.GetMember( "_width", &W );
-			MouseCursor.GetMember( "_height", &H );
-			MouseCursor.GetMember( "_visible", &Vis );
-			Global->pView->GetVariable( &Holder, "_root.mouseCursor_mc" );
-			Holder.GetMember( "_visible", &HolderVis );
-			Holder.GetMember( "_x", &HX );
-			Holder.GetMember( "_y", &HY );
-			debugf( TEXT("DISHONORED(bringup): mouse cursor: screen %d,%d -> movie %.1f,%.1f | clip %dx%d visible %d | holder at %.1f,%.1f visible %d | movies open %d"),
-				Mouse.X, Mouse.Y, CursorX, CursorY,
-				W.IsNumber() ? (INT)W.GetNumber() : -1, H.IsNumber() ? (INT)H.GetNumber() : -1,
-				Vis.IsBool() ? (INT)Vis.GetBool() : -1,
-				HX.IsNumber() ? (FLOAT)HX.GetNumber() : -1.f, HY.IsNumber() ? (FLOAT)HY.GetNumber() : -1.f,
-				HolderVis.IsBool() ? (INT)HolderVis.GetBool() : -1,
-				GGFxEngine->OpenMovies.Num() );
-		}
-	}
-}
+// DISHONORED(port, agent FU): the mouse cursor is UDisGFxMoviePlayerGlobal's - PreRender, ConditionalShowMouseCursor,
+// ConditionalHideMouseCursor and MoveMouseCursor in DishonoredGame/Src/disgfxmovieplayerglobal.cpp, called from
+// UDishonoredViewportClient::Draw as retail does (2013 0x5ea330). The GFxUI stand-in that drew the clip whenever a
+// Global movie was open, and could not see m_bMouseCursorAllowed, is gone with it.
 
 void DishonoredGFxTick( FLOAT DeltaTime )
 {

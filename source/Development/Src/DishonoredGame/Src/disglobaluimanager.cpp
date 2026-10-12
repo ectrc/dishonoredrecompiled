@@ -116,7 +116,7 @@ void UDisGlobalUIManager::OnMovieAttributesChanged( UDisGFxMoviePlayerBase* _pMo
 	Retail recomputes five things from the open movie stack on every change to it (2013 rva 0x847070, 901 bytes,
 	decoded member by member against retail_sdk_layout.json):
 
-	  bAllowMouseCursor  = top->bAllowInput && top->m_bAllowMouseCursor            (OpenMovies(0), +196 bit 5, +380 bit 2)
+	  bAllowMouseCursor  = top->bAllowInput && top->m_bAllowMouseCursor            (FocusMovies[0], +196 bit 5, +380 bit 2)
 	  bShowHUD           = !PersistentWorldInfo.m_bNeverDisplayHUD                 (AWorldInfo +752 mask 0x400)
 	  bLoadingMenu       = any of pJournal/pNote/pPauseMenu/pStore/pMissionStats/pResultsMenu has not finished its
 	                       async package load (vtable +436, HasFinishedAsyncLoading), or pPauseMenu is waiting for a
@@ -154,8 +154,19 @@ void UDisGlobalUIManager::RefreshGlobalUIState()
 	{
 		return;
 	}
-	UDisGFxMoviePlayerBase* Top = Engine->OpenMovies.Num() > 0
-		? Cast<UDisGFxMoviePlayerBase>( Engine->OpenMovies(0)->pUMovie ) : NULL;
+	// DISHONORED(port, agent FU): retail reads FGFxEngine+40, which is FocusMovies[0] - the movie ReevaluateFocus
+	// (2013 0x586b60) gave the first local player: the TOPMOST open movie that can receive focus, not OpenMovies(0),
+	// which is the lowest priority (InsertMovieIntoList, 2013 0x585350, sorts ascending). Measured on 80cc219:
+	// OpenMovies(0) was UI_HUDFX, which never takes input, so the bit read 0 on the menu as well as in the mission.
+	FGFxMovie* FocusMovie = Engine->GetFocusedMovieFromControllerID( 0 );
+	for( INT Index = Engine->OpenMovies.Num() - 1; FocusMovie == NULL && Index >= 0; Index-- )
+	{
+		if( Engine->OpenMovies(Index)->bCanReceiveFocus )
+		{
+			FocusMovie = Engine->OpenMovies(Index);
+		}
+	}
+	UDisGFxMoviePlayerBase* Top = FocusMovie != NULL ? Cast<UDisGFxMoviePlayerBase>( FocusMovie->pUMovie ) : NULL;
 	const UBOOL bAllowMouseCursor = Top != NULL && Top->bAllowInput && Top->m_bAllowMouseCursor;
 	AWorldInfo* WorldInfo = GWorld != NULL ? GWorld->GetWorldInfo( TRUE ) : NULL;
 	UBOOL bShowHUD = WorldInfo == NULL || !WorldInfo->m_bNeverDisplayHUD;
@@ -360,11 +371,14 @@ void UDisGlobalUIManager::Init()
 // PreCommitMapChange (0x79eb30: ConditionalHideMouseCursor and a Shrink of the message-box queue), the open main
 // menu's (0x7bc250: Close(TRUE)), CloseHUD on the open HUD, the power wheel's close when its +536 bit is set
 // (0x7dc5f0 -> 0x7d4fc0), then Shrink on m_DLCUI, m_TexturePackages and m_UpgradesAlreadyDisplayed. The global
-// movie's cursor hide and the power wheel's close are not ported (neither body exists in this tree); the three
-// Shrinks are bookkeeping. 2012 also cleared m_bJournalAllowed here and set it back in PostCommitMapChange; 2013 does
-// neither.
+// power wheel's close is not ported (no body in this tree); the three Shrinks are bookkeeping. 2012 also cleared
+// m_bJournalAllowed here and set it back in PostCommitMapChange; 2013 does neither.
 void UDisGlobalUIManager::PreCommitMapChange()
 {
+	if( m_pGlobal != NULL && m_pGlobal->bMovieIsOpen )
+	{
+		m_pGlobal->PreCommitMapChange();
+	}
 	if( m_pMainMenu != NULL && m_pMainMenu->bMovieIsOpen )
 	{
 		m_pMainMenu->Close( TRUE );

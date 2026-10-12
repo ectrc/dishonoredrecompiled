@@ -5,9 +5,9 @@ rem   resources\build-play.cmd              -> Release configuration, switches b
 rem   resources\build-play.cmd shipping     -> adds FINAL_RELEASE/SHIPPING_PC_GAME/NO_LOGGING
 rem
 rem The result is DishonoredGame-Win64-Shipping.exe in the retail Binaries\Win32, and it needs no
-rem command line: appInit appends -gfxuimenu -nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie
-rem -startmap=Dishonored_MainMenu -startmapopen -windowed -ResX=1600 -ResY=900 when they are absent
-rem (Core/Src/UnMisc.cpp, DISHONORED_PLAY_DEFAULTS). Anything you pass yourself wins, so
+rem command line: appInit appends -nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed
+rem -ResX=1600 -ResY=900 when they are absent (Core/Src/UnMisc.cpp, DISHONORED_PLAY_DEFAULTS); the
+rem menu comes from the menu map's own Kismet. Anything you pass yourself wins, so
 rem   DishonoredGame-Win64-Shipping.exe -startmap=L_Pub_Day_P
 rem opens the pub instead of the menu.
 rem

@@ -1968,10 +1968,13 @@ void UGFxMoviePlayer::Close( UBOOL bUnload )
 		{
 			eventOnClose();
 		}
-		// DISHONORED(port, agent FP): the one handle this glue keeps into a movie across frames, the global
-		// movie's cursor clip, is dropped before the view goes - UDisGFxMoviePlayerGlobal::PreClose's
-		// ConditionalHideMouseCursor by shape.
-		DishonoredGFxReleaseMouseCursor( GetMovie() );
+		// DISHONORED(port, agent FU): UDisGFxMoviePlayerBase::Close (2013 rva 0x793a90) calls the virtual
+		// PreClose(bUnload) before the engine's Close; the global movie's override drops its cursor clip there,
+		// while the view that owns it is still alive.
+		if( GGFxMoviePlayerPreCloseHook != NULL )
+		{
+			GGFxMoviePlayerPreCloseHook( this, bUnload );
+		}
 		// DISHONORED(bringup): retail also takes pMovie out of FGFxEngine::AllMovies here; that list is the
 		// engine glue's own bookkeeping, so CloseScene(pMovie, bUnload) is where agent BB's side removes it.
 		GGFxEngine->CloseScene( GetMovie(), bUnload );
@@ -2714,6 +2717,7 @@ FGFxMoviePlayerHook      GGFxMoviePlayerPreLoadHook = NULL;
 FGFxMoviePlayerHook      GGFxMoviePlayerPreLoadedHook = NULL;
 FGFxMoviePlayerHook      GGFxMoviePlayerStartedHook = NULL;
 FGFxMoviePlayerHook      GGFxMoviePlayerClosedHook = NULL;
+FGFxMoviePlayerCloseHook GGFxMoviePlayerPreCloseHook = NULL;
 FGFxMoviePlayerTickHook  GGFxMoviePlayerPreAdvanceHook = NULL;
 FGFxMoviePlayerInputHook GGFxMoviePlayerFilterButtonHook = NULL;
 

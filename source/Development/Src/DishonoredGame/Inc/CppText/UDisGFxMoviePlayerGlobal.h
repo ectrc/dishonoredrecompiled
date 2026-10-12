@@ -27,3 +27,28 @@ protected:
 	// DISHONORED(port): the stripes arm of UDisGFxMoviePlayerGlobal::PreAdvance (2013 rva 0x7aa610, retail vtable
 	// +476), which arrives through the GFxUI PreAdvance seam like the HUD's. Body in disgfxmovieplayerglobal.cpp.
 	friend void DisGFxMoviePlayerGlobalPreAdvance( class UDisGFxMoviePlayerGlobal* Global, FLOAT DeltaTime );
+
+// ---- agent FU (PHASE17 FU): the mouse cursor, which is this movie's `mouseCursor` symbol ----
+public:
+	// DISHONORED(port): 2013 rva 0x7aa430 (2012 0x7f4640), retail vtable PostStart: m_pMouseCursor is a fresh GFxValue,
+	// the online delegates are registered, the view advanced once and a queued message box re-shown. Reached through
+	// the GFxUI Started seam.
+	void PostStart();
+	// DISHONORED(port): 2013 rva 0x7aa4d0 (2012 0x802e60): the stripes latch cleared, the cursor clip removed and the
+	// GFxValue deleted while the view is alive, the online delegates unregistered, the priority-0 message boxes dropped.
+	// Reached through the GFxUI PreClose seam.
+	void PreClose( UBOOL _bUnload );
+	// DISHONORED(port): 2013 rva 0x79eb90 (2012 0x802c60), from UDishonoredViewportClient::Draw: hide the cursor
+	// unless m_bMouseCursorAllowed and not closing, else attach it and move it to the mouse in movie space.
+	void PreRender( class FViewport* _pViewport );
+	// DISHONORED(port): 2013 rva 0x79eb30 (2012 0x802c50): the cursor hidden and the message-box queue shrunk
+	void PreCommitMapChange();
+protected:
+	// DISHONORED(port): 2013 rva 0x78c790 (2012 0x7f6070): _root.mouseCursor_mc.attachMovie("mouseCursor",
+	// "mouseCursorInst", getNextHighestDepth()) once, and the viewport client's bDisplayingUIMouseCursor set
+	void ConditionalShowMouseCursor();
+	// DISHONORED(port): 2013 rva 0x7945b0 (2012 0x7fa780): removeMovieClip on the attached clip, the handle released
+	// and the viewport client's bit cleared
+	void ConditionalHideMouseCursor();
+	// DISHONORED(port): 2013 rva 0x78c8c0 (2012 0x7f61a0): _x and _y through SetDisplayInfo, nothing else
+	void MoveMouseCursor( FVector2D _Position );

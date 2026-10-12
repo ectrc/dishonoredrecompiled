@@ -59,14 +59,17 @@ install, beside the game's own executable:
 
 **Run it with no arguments and it comes up on the main menu.** `appInit` appends the switches a
 playable run needs when they are absent (`Core/Src/UnMisc.cpp`, `DISHONORED_PLAY_DEFAULTS`):
-`-gfxuimenu -nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed -ResX=1600 -ResY=900`.
+`-nosteam -skipnativepkgs=OnlineSubsystemPC -nomovie -windowed -ResX=1600 -ResY=900`. The menu is
+opened by the menu map's own Kismet, as in retail; there is no bring-up switch for it any more.
 
 From the menu: **Space** past the start screen, then NEW GAME, the difficulty screen (Up/Down to
 choose) and the brightness screen, then **YES** on the confirmation. That commits the map change and
 puts Corvo on the boat landing at Dunwall Tower.
 
-**Use the mouse to activate a row.** Enter does not yet activate a main-menu entry — Space does, and
-the keys work once a screen is open. That is open defect 5 in `STATUS.md`.
+Keyboard or mouse: **Enter** activates the highlighted row, **Up/Down** move the selection, **Escape**
+goes back (measured in-process through `game_input.py` on `80cc219`; the earlier "Enter does nothing"
+in `STATUS.md` defect 5 was measured against the retired `-gfxuimenu` bring-up movie, which could not
+take input).
 
 Builds go through `resources/tools/build_queued.py` (one at a time, half the cores). To drive a
 running build without touching your own mouse or focus, launch it with

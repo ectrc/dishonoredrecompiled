@@ -552,6 +552,33 @@ void DisGFxMoviePlayerInitTexts( UDisGFxMoviePlayerBase* Player )
 		bProbe ? TEXT("read back") : TEXT("NOT READABLE"), bProbe ? (INT)Probe.GetType() : -1 );
 }
 
+// DISHONORED(port): 2013 rva 0x787860 (2012 0x7f4390). Retail compares the movie's aspect against the screen's and
+// scales on the axis that fits; the empty space is the half-difference on the other.
+void UDisGFxMoviePlayerBase::ComputeMovieSpaceInfo( INT _ScreenSizeX, INT _ScreenSizeY, FDisMovieSpaceInfo& _rInfo )
+{
+	FGFxMovie* Movie = GetMovie();
+	_rInfo.m_ScreenSize.X = (FLOAT)_ScreenSizeX;
+	_rInfo.m_ScreenSize.Y = (FLOAT)_ScreenSizeY;
+	_rInfo.m_MovieSize.X = (FLOAT)Movie->Info.Width;
+	_rInfo.m_MovieSize.Y = (FLOAT)Movie->Info.Height;
+	if( _rInfo.m_MovieSize.X / _rInfo.m_MovieSize.Y <= _rInfo.m_ScreenSize.X * ( 1.f / _rInfo.m_ScreenSize.Y ) )
+	{
+		_rInfo.m_fScreenToMovieScaling = _rInfo.m_MovieSize.Y * ( 1.f / _rInfo.m_ScreenSize.Y );
+		_rInfo.m_MovieSpaceSize.X = _rInfo.m_fScreenToMovieScaling * _rInfo.m_ScreenSize.X;
+		_rInfo.m_MovieSpaceSize.Y = _rInfo.m_MovieSize.Y;
+		_rInfo.m_EmptySpace.X = ( _rInfo.m_MovieSpaceSize.X - _rInfo.m_MovieSize.X ) * 0.5f;
+		_rInfo.m_EmptySpace.Y = 0.f;
+	}
+	else
+	{
+		_rInfo.m_fScreenToMovieScaling = _rInfo.m_MovieSize.X / _rInfo.m_ScreenSize.X;
+		_rInfo.m_MovieSpaceSize.Y = _rInfo.m_fScreenToMovieScaling * _rInfo.m_ScreenSize.Y;
+		_rInfo.m_MovieSpaceSize.X = _rInfo.m_MovieSize.X;
+		_rInfo.m_EmptySpace.X = 0.f;
+		_rInfo.m_EmptySpace.Y = ( _rInfo.m_MovieSpaceSize.Y - _rInfo.m_MovieSize.Y ) * 0.5f;
+	}
+}
+
 // DISHONORED(port): 2012 rva 0x7f45a0. The base filter: a movie that is closing eats everything, and
 // the analogue-stick emulation is the rest of the retail body (UpdateAnalogInputForAS, which needs
 // the stick state this build does not deliver).

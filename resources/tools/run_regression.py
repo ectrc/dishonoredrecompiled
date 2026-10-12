@@ -372,7 +372,7 @@ def stage_newgame(args: argparse.Namespace, out_dir: Path, report: Report, expec
     -playdefaults turns on the table the shipped executable compiles in (Core/Src/UnMisc.cpp, appInit), so
     this stage's command line is the user's command line plus the log/ini isolation every harness run has
     and plus the two instruments. The other five stages never see -playdefaults, which is what keeps their
-    calibrated thresholds meaning what they meant: no -gfxuimenu, no movie, in a stage that never had one.
+    calibrated thresholds meaning what they meant: no play defaults, no movie, in a stage that never had one.
     """
     extra = (f"-playdefaults -finewgame={args.newgame_at} -fidiag -fmmenu -fmdrive={args.newgame_script} "
              + " ".join(expect.get("_extra_args", {}).get("newgame", [])))

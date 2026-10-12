@@ -230,16 +230,17 @@ Copied into this tree so a later wave does not have to write them again:
 
 Not part of dismod, but it cost two runs here and belongs next to it. A worktree build made by
 `resources/build-release.cmd` does **not** define `DISHONORED_PLAY_DEFAULTS`, so it does not add the
-switches the user's own build adds. Launched without them it loads `DishonoredGameFull_P` and sits
-there with `0 movie(s) open` and no menu. The set that opens the menu is
+switches the user's own build adds. Since agent FP (wave 20) the menu is opened by the menu map's own
+Kismet and `-playdefaults` turns the same table on in any build; `-gfxuimenu` and
+`-gfxuimenu=<Package>.<Movie>` are accepted and do nothing (agent FU removed the token from the table).
+The set that opens the menu is
 
 ```
--gfxuimenu -gfxuicensus -nomovie -nosteam -skipnativepkgs=OnlineSubsystemPC -startmapopen
+-playdefaults -gfxuicensus -nomovie -nosteam -skipnativepkgs=OnlineSubsystemPC
 -windowed -ResX=1600 -ResY=900
 ```
 
-and `-gfxuimenu=<Package>.<Movie>` opens one movie on its own, which is how the options screen was
-captured without navigating to it: `-gfxuimenu=UI_OptionsMenu.OptionsMenu`. The resident movies are
+The options screen is reached with `-fmdrive` (run_regression.py's `options` stage). The resident movies are
 `UI_Global.Global`, `UI_HUDFX.HUDFX`, `UI_Note.Note`, `Common_assets.lib`, `UI_LoadGame.LoadGame`,
 `UI_OptionsMenu.OptionsMenu`, `UI_MainMenu.MainMenu`, `DisFonts.gfxfontlib`, `DisFonts.fonts_efigs`.
 **Never `-unattended`**: it suppresses the menu outright.

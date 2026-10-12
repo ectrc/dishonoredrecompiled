@@ -382,3 +382,207 @@ void DisGFxMoviePlayerGlobalPreAdvance( UDisGFxMoviePlayerGlobal* Global, FLOAT 
 	debugf( TEXT("DISHONORED(bringup): Global: SetBlackStripes(%d) %s (request %d camera %d)"), bWant ? 1 : 0,
 		bInvoked ? TEXT("ok") : TEXT("NOT FOUND"), Global->m_bRequestBlackStripes ? 1 : 0, bCameraStripes ? 1 : 0 );
 }
+
+/*-----------------------------------------------------------------------------
+	Agent FU (PHASE17 FU): the mouse cursor.
+
+	Retail draws the pointer as this movie's own `mouseCursor` symbol, attached under _root.mouseCursor_mc and
+	moved every frame from UDishonoredViewportClient::Draw (2013 0x5ea330) through PreRender. m_pMouseCursor
+	(retail SDK @444) is a heap GFxValue that lives from PostStart to PreClose, so a handle never outlives the
+	view that issued it. Whether the pointer shows at all is m_bMouseCursorAllowed, which
+	UDisGlobalUIManager::RefreshGlobalUIState (agent FP) ANDs across the open movies' m_bAllowMouseCursor:
+	1 on the front end, 0 in the mission with only the HUD and the global movie open.
+-----------------------------------------------------------------------------*/
+
+static GFxValue* DisGlobalMouseCursor( UDisGFxMoviePlayerGlobal* Global )
+{
+	return (GFxValue*)Global->m_pMouseCursor;
+}
+
+// DISHONORED(port): 2013 rva 0x7aa430 (2012 0x7f4640, without the message-box tail). A fresh GFxValue for the cursor,
+// the online delegates, one Advance(0, 2) of the view so the movie's first frame exists, and the box at the head of
+// the queue put back on screen - the movie was closed and reopened across a map change, the queue was not.
+void UDisGFxMoviePlayerGlobal::PostStart()
+{
+	GFxValue* Cursor = DisGlobalMouseCursor( this );
+	if( Cursor == NULL )
+	{
+		m_pMouseCursor = new GFxValue();
+	}
+	else
+	{
+		Cursor->SetUndefined();
+	}
+	if( FindFunction( DISHONOREDGAME_RegisterOnlineDelegates ) != NULL )
+	{
+		eventRegisterOnlineDelegates();
+	}
+	GFxMovieView* View = DisGlobalMovieView( this );
+	if( View != NULL )
+	{
+		View->Advance( 0.f, 2 );
+	}
+	if( GMessageBoxes.Num() > 0 )
+	{
+		ShowMessageBox( GMessageBoxes(0) );
+	}
+	UpdateMessageBoxAttributes( GMessageBoxes.Num() > 0 );
+}
+
+// DISHONORED(port): 2013 rva 0x7aa4d0 (2012 0x802e60, which is the middle five statements only). 2013 also forgets
+// the stripes latch - the reopened movie is authored without them, which is why agent FP saw one SetBlackStripes(0)
+// land on a movie that had no clip yet - drops every message box of priority 0 and the box bit, and the triple-screen
+// cinematic bit.
+void UDisGFxMoviePlayerGlobal::PreClose( UBOOL _bUnload )
+{
+	m_bHasBlackStripes = FALSE;
+	ConditionalHideMouseCursor();
+	GFxValue* Cursor = DisGlobalMouseCursor( this );
+	if( Cursor != NULL )
+	{
+		delete Cursor;
+	}
+	m_pMouseCursor = NULL;
+	if( FindFunction( DISHONOREDGAME_UnregisterOnlineDelegates ) != NULL )
+	{
+		eventUnregisterOnlineDelegates();
+	}
+	m_bMsgBoxSet = FALSE;
+	for( INT Index = GMessageBoxes.Num() - 1; Index >= 0; Index-- )
+	{
+		if( GMessageBoxes(Index).m_nPriority == 0 )
+		{
+			RemoveMessageBox( GMessageBoxes(Index).m_ID );
+		}
+	}
+	m_bTripleScreenCinematicMode = FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x79eb30 (2012 0x802c50)
+void UDisGFxMoviePlayerGlobal::PreCommitMapChange()
+{
+	ConditionalHideMouseCursor();
+	GMessageBoxes.Shrink();
+}
+
+// DISHONORED(port): 2013 rva 0x79eb90 (2012 0x802c60). The test is retail's: +440 bit 4 (m_bMouseCursorAllowed) clear,
+// or +380 bit 0x200 (m_bIsClosing) set, hides; otherwise the mouse is read off the viewport and mapped into movie
+// space with ComputeMovieSpaceInfo before the attach and the move.
+void UDisGFxMoviePlayerGlobal::PreRender( FViewport* _pViewport )
+{
+	if( DisGlobalMouseCursor( this ) == NULL || _pViewport == NULL )
+	{
+		return;
+	}
+	if( !m_bMouseCursorAllowed || m_bIsClosing )
+	{
+		ConditionalHideMouseCursor();
+	}
+	else
+	{
+		FIntPoint Mouse( 0, 0 );
+		_pViewport->GetMousePos( Mouse );
+		FDisMovieSpaceInfo Info;
+		ComputeMovieSpaceInfo( _pViewport->GetSizeX(), _pViewport->GetSizeY(), Info );
+		FVector2D Position;
+		Position.X = Info.m_MovieSpaceSize.X * ( (FLOAT)Mouse.X / Info.m_ScreenSize.X ) - Info.m_EmptySpace.X;
+		Position.Y = Info.m_MovieSpaceSize.Y * ( (FLOAT)Mouse.Y / Info.m_ScreenSize.Y ) - Info.m_EmptySpace.Y;
+		ConditionalShowMouseCursor();
+		MoveMouseCursor( Position );
+	}
+
+	// DISHONORED(bringup): -dismousecursor, once a second: the bit the manager computed, whether the clip is
+	// attached, and where it is. "No cursor on screen" is equally true of a clip never attached, one removed, one
+	// invisible and one off-screen.
+	static INT bProbe = -1;
+	if( bProbe < 0 )
+	{
+		bProbe = ParseParam( appCmdLine(), TEXT("dismousecursor") ) ? 1 : 0;
+	}
+	if( bProbe )
+	{
+		static DOUBLE NextSay = 0.0;
+		if( GCurrentTime >= NextSay )
+		{
+			NextSay = GCurrentTime + 1.0;
+			GFxValue* Cursor = DisGlobalMouseCursor( this );
+			GFxValue X, Y, Vis;
+			if( Cursor->IsDisplayObject() )
+			{
+				Cursor->GetMember( "_x", &X );
+				Cursor->GetMember( "_y", &Y );
+				Cursor->GetMember( "_visible", &Vis );
+			}
+			debugf( TEXT("DISHONORED(bringup): mouse cursor: allowed %d closing %d | clip %s at %.1f,%.1f visible %d | map %s"),
+				m_bMouseCursorAllowed ? 1 : 0, m_bIsClosing ? 1 : 0,
+				Cursor->IsDisplayObject() ? TEXT("attached") : TEXT("NOT attached"),
+				X.IsNumber() ? (FLOAT)X.GetNumber() : -1.f, Y.IsNumber() ? (FLOAT)Y.GetNumber() : -1.f,
+				Vis.IsBool() ? (INT)Vis.GetBool() : -1,
+				GWorld != NULL ? *GWorld->GetMapName() : TEXT("none") );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x78c790 (2012 0x7f6070)
+void UDisGFxMoviePlayerGlobal::ConditionalShowMouseCursor()
+{
+	GFxValue* Cursor = DisGlobalMouseCursor( this );
+	if( Cursor->IsDisplayObject() )
+	{
+		return;
+	}
+	GFxMovieView* View = DisGlobalMovieView( this );
+	if( View == NULL )
+	{
+		return;
+	}
+	UGameEngine* GameEngine = Cast<UGameEngine>( GEngine );
+	if( GameEngine != NULL && GameEngine->GameViewport != NULL )
+	{
+		GameEngine->GameViewport->bDisplayingUIMouseCursor = TRUE;
+	}
+	GFxValue Container;
+	GFxValue NextHighestDepth;
+	View->GetVariable( &Container, "_root.mouseCursor_mc" );
+	Container.Invoke( "getNextHighestDepth", &NextHighestDepth, NULL, 0 );
+	if( !Container.AttachMovie( Cursor, "mouseCursor", "mouseCursorInst",
+			NextHighestDepth.IsNumber() ? (INT)NextHighestDepth.GetNumber() : 0 ) )
+	{
+		static UBOOL bSaidSo = FALSE;
+		if( !bSaidSo )
+		{
+			bSaidSo = TRUE;
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): mouse cursor: _root.mouseCursor_mc.attachMovie('mouseCursor') failed in %s"),
+				MovieInfo != NULL ? *MovieInfo->GetPathName() : TEXT("(no movie)") );
+		}
+	}
+	NextHighestDepth.ReleaseManaged();
+	Container.ReleaseManaged();
+}
+
+// DISHONORED(port): 2013 rva 0x7945b0 (2012 0x7fa780)
+void UDisGFxMoviePlayerGlobal::ConditionalHideMouseCursor()
+{
+	GFxValue* Cursor = DisGlobalMouseCursor( this );
+	if( Cursor == NULL || !Cursor->IsDisplayObject() )
+	{
+		return;
+	}
+	UGameEngine* GameEngine = Cast<UGameEngine>( GEngine );
+	if( GameEngine != NULL && GameEngine->GameViewport != NULL )
+	{
+		GameEngine->GameViewport->bDisplayingUIMouseCursor = FALSE;
+	}
+	GFxValue Result;
+	Cursor->Invoke( "removeMovieClip", &Result, NULL, 0 );
+	Result.ReleaseManaged();
+	Cursor->SetUndefined();
+}
+
+// DISHONORED(port): 2013 rva 0x78c8c0 (2012 0x7f61a0)
+void UDisGFxMoviePlayerGlobal::MoveMouseCursor( FVector2D _Position )
+{
+	GFxValue::DisplayInfo Where;
+	Where.SetPosition( _Position.X, _Position.Y );
+	DisGlobalMouseCursor( this )->SetDisplayInfo( Where );
+}
