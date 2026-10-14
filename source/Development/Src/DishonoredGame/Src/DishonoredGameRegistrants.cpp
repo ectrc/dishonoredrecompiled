@@ -2355,6 +2355,9 @@ extern void DishonoredLinkFZ_UStatePlayerMasterBase();
 extern void DishonoredLinkFZ_UStatePlayerMasterInDialog();
 extern void DishonoredLinkFZ_UStatePlayerMasterSoiree();
 extern void DishonoredLinkFZ_UStatePlayerMasterWalk();
+extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
+extern void DishonoredLinkUDisAISubProcessHeadTrackBase();
+extern void DishonoredLinkUDisAISubProcessHeadTrackPause();
 void (*GDishonoredGameLinkAnchors[])() =
 {
 	&DishonoredLinkArkAnimNodeLocomotion,
@@ -2382,4 +2385,7 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkFZ_UStatePlayerMasterInDialog,
 	&DishonoredLinkFZ_UStatePlayerMasterSoiree,
 	&DishonoredLinkFZ_UStatePlayerMasterWalk,
+	&DishonoredLinkUDisAISubProcessHeadTrackBark,
+	&DishonoredLinkUDisAISubProcessHeadTrackBase,
+	&DishonoredLinkUDisAISubProcessHeadTrackPause,
 };

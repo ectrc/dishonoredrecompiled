@@ -4358,6 +4358,20 @@ UBOOL APawn::IsValidTargetFor( AController* C )
 // the reference's SeqEvent_Death trigger and GameInfo.Killed, and forces the player's replication update inline.
 UBOOL APawn::Died( AController* Killer, UClass* DamageType, FVector HitLocation )
 {
+	// DISHONORED(bringup): agent GE (PHASE19 GE) - -gedeathdiag names every death (the 1-in-7 player death of the d3d9 stage)
+	static INT GDisGEDeathDiag = -1;
+	if( GDisGEDeathDiag < 0 )
+	{
+		GDisGEDeathDiag = ParseParam( appCmdLine(), TEXT("gedeathdiag") ) ? 1 : 0;
+	}
+	if( GDisGEDeathDiag )
+	{
+		debugf( TEXT("DISHONORED(bringup): gedeathdiag t=%.2f Died %s (%s) killer %s damage type %s hit %s: health %d location %s velocity %s physics %d base %s playedDeath %d lastHitBy %s"),
+			WorldInfo ? WorldInfo->TimeSeconds : 0.f, *GetName(), *GetClass()->GetName(),
+			Killer ? *Killer->GetName() : TEXT("none"), DamageType ? *DamageType->GetName() : TEXT("none"), *HitLocation.ToString(),
+			Health, *Location.ToString(), *Velocity.ToString(), (INT)Physics, Base ? *Base->GetName() : TEXT("none"), bPlayedDeath ? 1 : 0,
+			LastHitBy ? *LastHitBy->GetName() : TEXT("none") );
+	}
 	if( bPlayedDeath )
 	{
 		return FALSE;

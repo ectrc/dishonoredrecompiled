@@ -34,6 +34,11 @@ void ADishonoredPawn::TakeDamage( INT Damage, AController* InstigatedBy, FVector
 {
 	const INT HealthBefore = Health;
 	APawn::TakeDamage( Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser );
+	// agent GE (PHASE19 GE): -gedeathdiag names every damage event (gediag.cpp)
+	{
+		extern void DisGEReportDamage( APawn* Pawn, INT Damage, AController* InstigatedBy, const FVector& HitLocation, const FVector& Momentum, UClass* DamageType, AActor* DamageCauser, INT HealthBefore );
+		DisGEReportDamage( this, Damage, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser, HealthBefore );
+	}
 	if( UDisAttributes::IsCensusEnabled() )
 	{
 		debugf( TEXT("DISHONORED(bringup): disattrib damage %s: %i of type %s from %s, health %i -> %i"),

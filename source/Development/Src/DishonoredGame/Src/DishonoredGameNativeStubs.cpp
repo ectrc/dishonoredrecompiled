@@ -420,7 +420,7 @@ void ADishonoredNPCPawn::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
 }
 void ADishonoredNPCPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
 {
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execPlayDying_Native);
+	DISHONORED_NATIVE_STUB_LOGPARAMS(DishonoredGame, ADishonoredNPCPawn, execPlayDying_Native);
 }
 void ADishonoredNPCPawn::execChooseAndTriggerDeathEvent_Native( FFrame& Stack, RESULT_DECL )
 {
@@ -684,7 +684,7 @@ void ADishonoredPlayerPawn::execTakeDamage_Native( FFrame& Stack, RESULT_DECL )
 }
 void ADishonoredPlayerPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
 {
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execPlayDying_Native);
+	DISHONORED_NATIVE_STUB_LOGPARAMS(DishonoredGame, ADishonoredPlayerPawn, execPlayDying_Native);
 }
 void ADishonoredPlayerPawn::execFaceRotation( FFrame& Stack, RESULT_DECL )
 {
@@ -732,7 +732,7 @@ void ADisNPCDistractor::execOnToggle( FFrame& Stack, RESULT_DECL )
 }
 void ADisPossessionProxyPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
 {
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADisPossessionProxyPawn, execPlayDying_Native);
+	DISHONORED_NATIVE_STUB_LOGPARAMS(DishonoredGame, ADisPossessionProxyPawn, execPlayDying_Native);
 }
 void ADisProjectileLauncher::execOnToggle_Native( FFrame& Stack, RESULT_DECL )
 {

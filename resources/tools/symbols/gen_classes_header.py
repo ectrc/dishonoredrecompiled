@@ -2195,12 +2195,15 @@ class SdkWriter:
              "// source (and removing it here); the generator skips natives listed in <Module>NativeStubs.ported.txt. C++ declarations a",
              "// port needs go in Inc/CppText/<Class>.h, which the generated class body includes (the cpptext of the retail headers).",
              f'#include "{main_header}"', '#include "DishonoredNativeStub.h"', ""]
+        logparams = getattr(self, "logparams", set())
         for grp, names in self.sel.groups:
             for n in names:
                 for ex in self.natives_by_class.get(n, []):
                     if (n, ex) in self.ported:
                         continue
-                    L += [f"void {n}::{ex}( FFrame& Stack, RESULT_DECL )", "{", f"\tDISHONORED_NATIVE_STUB({module}, {n}, {ex});", "}"]
+                    # a native listed in <Module>NativeStubs.logparams.txt logs every call with its consumed parameters (agent GE)
+                    macro = "DISHONORED_NATIVE_STUB_LOGPARAMS" if (n, ex) in logparams else "DISHONORED_NATIVE_STUB"
+                    L += [f"void {n}::{ex}( FFrame& Stack, RESULT_DECL )", "{", f"\t{macro}({module}, {n}, {ex});", "}"]
         L.append("")
         return "\n".join(L)
 
@@ -2425,6 +2428,10 @@ def sdk_main(args: argparse.Namespace) -> int:
     ported_files = [ported_file] + sorted(module_dir.glob(f"{module}NativeStubs.ported.*.txt"))
     writer = SdkWriter(data, sel)
     writer.ported = {tuple(l.strip().split("::")) for f in ported_files if f.exists() for l in f.read_text(encoding="utf-8").splitlines() if "::" in l}
+    # <Module>NativeStubs.logparams.txt (+ .logparams.agent<X>.txt): natives whose stub logs every call with the parameters it
+    # consumed (DISHONORED_NATIVE_STUB_LOGPARAMS, Core/Inc/DishonoredNativeStub.h) - agent GE, for the intermittent player death
+    logparams_files = [module_dir / f"{module}NativeStubs.logparams.txt"] + sorted(module_dir.glob(f"{module}NativeStubs.logparams.*.txt"))
+    writer.logparams = {tuple(l.strip().split("::")) for f in logparams_files if f.exists() for l in f.read_text(encoding="utf-8").splitlines() if "::" in l}
     # a native whose exec body is defined in a compiled unit of the module is ported whether or not somebody listed it
     # (agent FX: seven bodies - FP's four UDisGFxMoviePlayerBase, FN's execGetObjectValue, the two SetCinematicMode - had
     # their stubs deleted by hand and no list entry, so a regeneration put the stubs back as duplicate definitions)

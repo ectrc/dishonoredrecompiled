@@ -1,0 +1,7 @@
+# Natives whose generated stub (DishonoredGameNativeStubs.cpp) logs EVERY call with the parameters it consumed, exported as
+# text - DISHONORED_NATIVE_STUB_LOGPARAMS (Core/Inc/DishonoredNativeStub.h). gen_classes_header.py --sdk reads this list and
+# any DishonoredGameNativeStubs.logparams.agent<X>.txt beside it. Agent GE (PHASE19 GE): the player died once in seven d3d9
+# stages on ad4a35d and the log was lost; the next death names its killer, damage type and hit location.
+ADishonoredPlayerPawn::execPlayDying_Native
+ADishonoredNPCPawn::execPlayDying_Native
+ADisPossessionProxyPawn::execPlayDying_Native

@@ -28,7 +28,7 @@ static UFunction* FindStubFunction( UObject* Self, FFrame& Stack, const TCHAR* E
 	return Self ? Self->FindFunction( Name ) : NULL;
 }
 
-static void ConsumeAndZero( FFrame& Stack, void* Result, UFunction* Function )
+static void ConsumeAndZero( FFrame& Stack, void* Result, UFunction* Function, FString* LoggedParams = NULL )
 {
 	UProperty* ReturnProperty = NULL;
 	if( Function && Stack.Code )
@@ -50,6 +50,13 @@ static void ConsumeAndZero( FFrame& Stack, void* Result, UFunction* Function )
 			BYTE* Temp = (BYTE*)appAlloca( Size + 16 );
 			appMemzero( Temp, Size + 16 );
 			Stack.Step( Stack.Object, Temp );
+			if( LoggedParams )
+			{
+				// agent GE: the consumed value as text, the way a property editor would print it
+				FString Value;
+				Property->ExportTextItem( Value, Temp, NULL, Stack.Object, PPF_Localized );
+				*LoggedParams += FString::Printf( TEXT("%s%s=%s"), LoggedParams->Len() ? TEXT(" ") : TEXT(""), *Property->GetName(), *Value );
+			}
 			Property->DestroyValue( Temp );
 		}
 		P_FINISH;
@@ -98,6 +105,15 @@ void DishonoredNativeStub( UObject* Self, FFrame& Stack, void* Result, const TCH
 {
 	WarnOrAbort( Module, FString::Printf( TEXT("%s::%s"), ClassName, ExecName ) );
 	ConsumeAndZero( Stack, Result, FindStubFunction( Self, Stack, ExecName ) );
+}
+
+void DishonoredNativeStubLogParams( UObject* Self, FFrame& Stack, void* Result, const TCHAR* Module, const TCHAR* ClassName, const TCHAR* ExecName )
+{
+	WarnOrAbort( Module, FString::Printf( TEXT("%s::%s"), ClassName, ExecName ) );
+	FString Params;
+	ConsumeAndZero( Stack, Result, FindStubFunction( Self, Stack, ExecName ), &Params );
+	warnf( TEXT("DISHONORED(bringup): %s native not ported: %s::%s on %s with %s"), Module, ClassName, ExecName,
+		Self ? *Self->GetPathName() : TEXT("<no object>"), Params.Len() ? *Params : TEXT("no parameters") );
 }
 
 /**

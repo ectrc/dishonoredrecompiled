@@ -108,3 +108,19 @@ public:
 
 	// ---- agent FV (PHASE18 FV): 2013 rva 0x704140 (2012 0x747b80), what an uninterruptable go-to does with a touched enemy ----
 	void OnTouchedEnemyStimAccepted( const struct FAIStimStruct_TouchedEnemy& _rStim );
+
+	// ---- agent GE (PHASE19 GE): the top attention target and its level - the asker of the head-track look-at ----
+	// SetTopAttnTarget 2013 rva 0x725e50 (2012 0x75ba20), ChangeTopAttnTargetAttentionLevel 0x725890 (0x75a420),
+	// OnIncreaseTopAttnTargetAttentionLevel 0x724d00 (0x757eb0), OnDecreaseTopAttnTargetAttentionLevel 0x722ec0 (0x757d30),
+	// GetCurrentDesiredPosition 0x700eb0 (0x746110). Bodies in Src/dishonoredaibrain.cpp and Src/dishonoredaibrain_desires.cpp.
+	// Retail's only in-game caller of SetTopAttnTarget is UDisAIBrainProcessAttention::HandleTopAttnTarget (2012 0x7a67a0),
+	// a unit still on the exclude list: nothing in this tree calls it yet.
+	void SetTopAttnTarget( const struct FDisAttentionProxy& _rTopAttnTargetProxy, BYTE _TopAttnTargetRelationship, UBOOL _bTopAttnTargetDead,
+		BYTE _AttentionLevel, const struct FDisAttentionChangeReason& _rAttentionChangeReason, const class UDisTweaks_PawnAttention* const _pAttentionTweaks );
+	FVector GetCurrentDesiredPosition() const;
+private:
+	void ChangeTopAttnTargetAttentionLevel( BYTE _NewAttentionLevel, UBOOL _bChangingTopAttnTarget, const struct FDisAttentionChangeReason& _rAttentionChangeReason,
+		const class UDisTweaks_PawnAttention* const _pAttentionTweaks );
+	void OnIncreaseTopAttnTargetAttentionLevel( const struct FDisAttentionChangeReason& _rAttentionChangeReason );
+	void OnDecreaseTopAttnTargetAttentionLevel( UBOOL _bChangingTopAttnTarget );
+public:

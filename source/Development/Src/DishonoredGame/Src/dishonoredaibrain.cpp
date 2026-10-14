@@ -1273,3 +1273,179 @@ void UDishonoredAIBrain::OnTouchedEnemyStimAccepted( const FAIStimStruct_Touched
 		DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_ActorTouched::StaticClass(), m_pOwningPawn, _rStim.m_pPawn, FALSE, NULL );
 	}
 }
+
+/*-----------------------------------------------------------------------------
+	The top attention target and its level (agent GE, PHASE19 GE).
+
+	DISHONORED(port): decompiled whole from both databases (build/agentGE/decomp2012: 0x75ba20, 0x75a420, 0x757eb0,
+	0x757d30; 2013 by name: 0x725e50, 0x725890, 0x724d00, 0x722ec0, the same sizes). This is where a guard's head-track
+	look-at comes from: the attention process raises the level of its top target and at DAL_HeadTrack the brain's own
+	m_LookAtRequest asks the look-at component for the proxy (priority DisLookAtPriority_EnemyAttention, the tweaks'
+	m_fHeadTrackTorsoRatio), while the stims HeadTrackBegin / NoticeBegin / SearchBegin / CombatBegin and their End
+	twins tell the behaviours and sub-processes (UDisAISubProcessHeadTrackBase among them). Retail's in-game caller of
+	SetTopAttnTarget is UDisAIBrainProcessAttention::HandleTopAttnTarget (2012 0x7a67a0) - a unit of 88 functions still on
+	the exclude list, together with the three UDisAttentionInfo_* units it needs - so nothing calls this yet.
+	DISHONORED(bringup): two retail calls are named and not made: ChangeTopAttnTargetAttentionLevel's
+	ADishonoredNPCPawn::SetupWalkUpperBodyAnim / ClearWalkUpperBodyAnim (2012 pawn functions this tree has not ported,
+	gated on an unnamed UDisTweaks_AIBrain flag), and IDisAttentionTargetInterface::IsAttnTargetDead (2012 0x78e740), a
+	slot this tree's interface stand-in does not declare - the cached pawn's Health / m_bIsOfficiallyDead stand in for it.
+-----------------------------------------------------------------------------*/
+
+static UBOOL DisGEProxyTargetDead( const FDisAttentionProxy& _rProxy )
+{
+	const ADishonoredPawn* Pawn = Cast<ADishonoredPawn>( _rProxy.m_pCachedTargetActor );
+	return Pawn ? ( Pawn->Health <= 0 || Pawn->m_bIsOfficiallyDead ) : FALSE;
+}
+
+static UBOOL DisGEProxiesDiffer( const FDisAttentionProxy& _rA, const FDisAttentionProxy& _rB )
+{
+	return _rA.m_pBrain != _rB.m_pBrain || _rA.m_pTarget.GetObject() != _rB.m_pTarget.GetObject() || _rA.m_pCachedTargetActor != _rB.m_pCachedTargetActor;
+}
+
+void UDishonoredAIBrain::SetTopAttnTarget( const FDisAttentionProxy& _rTopAttnTargetProxy, BYTE _TopAttnTargetRelationship, UBOOL _bTopAttnTargetDead,
+	BYTE _AttentionLevel, const FDisAttentionChangeReason& _rAttentionChangeReason, const UDisTweaks_PawnAttention* const _pAttentionTweaks )
+{
+	if( _TopAttnTargetRelationship != m_TopAttnTargetRelationship || ( _bTopAttnTargetDead ? 1 : 0 ) != ( m_bTopAttnTargetDead ? 1 : 0 ) || DisGEProxiesDiffer( _rTopAttnTargetProxy, m_TopAttnTargetProxy ) )
+	{
+		FDisAttentionChangeReason NoReason( EC_EventParm );
+		ChangeTopAttnTargetAttentionLevel( DAL_Unaware, TRUE, NoReason, _pAttentionTweaks );
+		m_TopAttnTargetProxy = _rTopAttnTargetProxy;
+		m_bTopAttnTargetDead = _bTopAttnTargetDead ? 1 : 0;
+		m_TopAttnTargetRelationship = _TopAttnTargetRelationship;
+		FAIStimStruct_TopAttnProxyReplaced Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_TopAttnProxyReplaced;
+		Stim.m_NewTopAttnProxy = _rTopAttnTargetProxy;
+		if( !CanBeDormant() )
+		{
+			DisHandleAIStim_Internal< FAIStimStruct_TopAttnProxyReplaced >( this, Stim, this );
+		}
+	}
+	if( _AttentionLevel != m_TopAttnTargetAttentionLevel )
+	{
+		ChangeTopAttnTargetAttentionLevel( _AttentionLevel, FALSE, _rAttentionChangeReason, _pAttentionTweaks );
+	}
+}
+
+void UDishonoredAIBrain::ChangeTopAttnTargetAttentionLevel( BYTE _NewAttentionLevel, UBOOL _bChangingTopAttnTarget, const FDisAttentionChangeReason& _rAttentionChangeReason,
+	const UDisTweaks_PawnAttention* const _pAttentionTweaks )
+{
+	while( m_TopAttnTargetAttentionLevel > _NewAttentionLevel )
+	{
+		OnDecreaseTopAttnTargetAttentionLevel( _bChangingTopAttnTarget );
+		m_TopAttnTargetAttentionLevel--;
+	}
+	while( m_TopAttnTargetAttentionLevel < _NewAttentionLevel )
+	{
+		m_TopAttnTargetAttentionLevel++;
+		OnIncreaseTopAttnTargetAttentionLevel( _rAttentionChangeReason );
+	}
+	const UBOOL bHeadTrackingAnEnemy = m_TopAttnTargetAttentionLevel == DAL_HeadTrack && m_TopAttnTargetRelationship == Relationship_Enemy;
+	if( bHeadTrackingAnEnemy && _pAttentionTweaks )
+	{
+		const INT Priority = DisLookAtPriority_EnemyAttention;
+		if( m_LookAtRequest.m_bDesired && m_LookAtRequest.m_Priority != Priority )
+		{
+			m_LookAtRequest.ClearRequest();
+		}
+		m_LookAtRequest.m_Priority = Priority;
+		const FDisLookAtInfluence Influence( 1.f, _pAttentionTweaks->m_fHeadTrackTorsoRatio, TRUE );
+		m_LookAtRequest.RequestProxyTarget( m_TopAttnTargetProxy, Influence, -1.f );
+	}
+	else
+	{
+		m_LookAtRequest.ClearRequest();
+	}
+}
+
+void UDishonoredAIBrain::OnIncreaseTopAttnTargetAttentionLevel( const FDisAttentionChangeReason& _rAttentionChangeReason )
+{
+	if( m_TopAttnTargetRelationship != Relationship_Enemy )
+	{
+		return;
+	}
+	switch( m_TopAttnTargetAttentionLevel )
+	{
+	case DAL_HeadTrack:
+		{
+			FAIStimStruct_HeadTrackBegin Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_HeadTrackBegin;
+			Stim.m_HeadTrackTargetProxy = m_TopAttnTargetProxy;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case DAL_TurnToFace:
+		if( !DisGEProxyTargetDead( m_TopAttnTargetProxy ) )
+		{
+			FAIStimStruct_NoticeBegin Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_NoticeBegin;
+			Stim.m_AttentionTargetProxy = m_TopAttnTargetProxy;
+			DisHandleAIStim( this, Stim, this );
+			break;
+		}
+		// a dead target at the notice level is searched for instead (retail falls through)
+	case DAL_Investigate:
+		if( !DisGEProxyTargetDead( m_TopAttnTargetProxy ) )
+		{
+			FAIStimStruct_SearchBegin Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_SearchBegin;
+			Stim.m_AttentionTargetProxy = m_TopAttnTargetProxy;
+			Stim.m_AttentionChangeReason = _rAttentionChangeReason;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case DAL_Busted:
+		if( !DisGEProxyTargetDead( m_TopAttnTargetProxy ) )
+		{
+			FAIStimStruct_CombatBegin Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_CombatBegin;
+			Stim.m_AttentionTargetProxy = m_TopAttnTargetProxy;
+			Stim.m_AttentionChangeReason = _rAttentionChangeReason;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+void UDishonoredAIBrain::OnDecreaseTopAttnTargetAttentionLevel( UBOOL _bChangingTopAttnTarget )
+{
+	if( m_TopAttnTargetRelationship != Relationship_Enemy )
+	{
+		return;
+	}
+	switch( m_TopAttnTargetAttentionLevel )
+	{
+	case DAL_HeadTrack:
+		{
+			FAIStimStruct_HeadTrackEnd Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_HeadTrackEnd;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case DAL_TurnToFace:
+		{
+			FAIStimStruct_NoticeEnd Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_NoticeEnd;
+			Stim.m_bShouldBark = ( !_bChangingTopAttnTarget && !DisGEProxyTargetDead( m_TopAttnTargetProxy ) ) ? 1 : 0;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case DAL_Investigate:
+		{
+			FAIStimStruct_SearchEnd Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_SearchEnd;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case DAL_Busted:
+		{
+			FAIStimStruct_CombatEnd Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_CombatEnd;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	default:
+		break;
+	}
+}

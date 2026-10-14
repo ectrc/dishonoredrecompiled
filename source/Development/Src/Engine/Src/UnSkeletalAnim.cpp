@@ -465,11 +465,15 @@ void UAnimSequence::PostLoad()
 			// AnimSequence_1 while the array that lists the notify belongs to AnimSequence_4, the ownership is
 			// authored that way and this loader is faithful. Nothing below changes: the Rename is stock UE3.
 			GDisAnimNotifiesSeen++;
+			// DISHONORED(port): agent GE (PHASE19 GE). Retail's UAnimSequence::PostLoad (2012 rva 0x370150, 2,585 B) has no
+			// owner test and no "Found bad AnimNotify" string (neither database contains it): it sorts the notifies and moves
+			// on. The reference engine's check fired 143-396 times per run on every guard and rat anim set (a notify whose
+			// outer is a sibling AnimSequence of the same set, authored that way, FL's -flnotify) and renamed each notify
+			// under this sequence - a reparenting retail never does. The mismatch is still counted for the census; the
+			// warning and the Rename are gone. -flnotify keeps printing the linker's answer for a mismatched one.
 			if (CurrNotify.Notify->GetOuter() != this)
 			{
 				GDisAnimNotifiesBad++;
-				warnf(NAME_Error, TEXT("*** Found bad AnimNotify in %s : %s"), 
-					*(GetPathName()), *(CurrNotify.Notify->GetFullName()));
 				if (DisAnimNotifyOwnerDiagEnabled())
 				{
 					ULinkerLoad* NotifyLinker = CurrNotify.Notify->GetLinker();
@@ -487,8 +491,6 @@ void UAnimSequence::PostLoad()
 						*GetPathName(), NotifyIdx, *CurrNotify.Notify->GetName(),
 						NotifyExport, GetLinkerIndex(), FileOuterIndex, *FileOuterName);
 				}
-				CurrNotify.Notify->Rename(NULL, this, REN_ForceNoResetLoaders|REN_DoNotDirty);
-				GDisAnimNotifiesRepaired += (CurrNotify.Notify->GetOuter() == this) ? 1 : 0;
 			}
 		}
 	}

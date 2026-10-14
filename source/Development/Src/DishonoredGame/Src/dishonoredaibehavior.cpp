@@ -760,3 +760,40 @@ void UDishonoredAIBehavior::PostGameLoad( ESaveLoadLocation _Location )
 	m_pCompleteFilterStimMask = (FPointer)pCompleteMask;
 	m_pShouldFinishWhileDormantStimMask = (FPointer)BuildShouldFinishWhileDormantStimMask();
 }
+
+// DISHONORED(port): agent GE (PHASE19 GE). 2013 rva 0x6f00f0 (2012 0x74f550, 311 B, decompiled whole). A bark the pawn
+// supports fires at once while the behaviour has started and is not paused; otherwise it is parked in m_OnResumeDialog
+// (hook and initiator) and the behaviour follows the initiator's termination through the other-actor event, which it
+// subscribes to the moment any of the initiator, the action-target proxy or the action-target actor exists (and
+// unsubscribes first when one already did). A hook the pawn does not support is remembered as m_LastUnsupportedBark.
+UBOOL UDishonoredAIBehavior::FireDialogHook( eDisDialogHook _Hook, IDisConvSpeakerInterface* _pTarget )
+{
+	ADishonoredNPCPawn* Pawn = m_pOwningBrain ? m_pOwningBrain->m_pOwningPawn : NULL;
+	if( !Pawn || !Pawn->SupportsDialogHook( _Hook ) )
+	{
+		m_LastUnsupportedBark = _Hook;
+		return FALSE;
+	}
+	if( m_bHasStarted && !m_bIsPaused )
+	{
+		Pawn->FireDialogHook( _Hook, _pTarget );
+		return TRUE;
+	}
+	const INT EventType = GDisAIEvent_OtherActorTerminated;
+	if( ( m_OnResumeDialog.m_pInitiator.GetObject() && m_OnResumeDialog.m_pInitiator.GetInterface() ) || m_ActionTargetProxy.HasActorReference() || m_pActionTargetActor )
+	{
+		FArkGameEventDispatcher::GetInstance()->UnregisterToEvent( EventType, this, &UDishonoredAIBehavior::OnOtherActorTerminatedEvent );
+	}
+	m_OnResumeDialog.m_Hook = _Hook;
+	m_OnResumeDialog.m_pInitiator = TScriptInterface<IDisConvSpeakerInterface>();
+	if( _pTarget && _pTarget->GetUObjectInterfaceDisConvSpeakerInterface() )
+	{
+		m_OnResumeDialog.m_pInitiator.SetObject( _pTarget->GetUObjectInterfaceDisConvSpeakerInterface() );
+		m_OnResumeDialog.m_pInitiator.SetInterface( _pTarget );
+	}
+	if( ( m_OnResumeDialog.m_pInitiator.GetObject() && m_OnResumeDialog.m_pInitiator.GetInterface() ) || m_ActionTargetProxy.HasActorReference() || m_pActionTargetActor )
+	{
+		FArkGameEventDispatcher::GetInstance()->RegisterToEvent( EventType, this, &UDishonoredAIBehavior::OnOtherActorTerminatedEvent );
+	}
+	return TRUE;
+}

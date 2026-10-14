@@ -215,3 +215,29 @@ root-motion delta. Retail's player overrides are unported: `ADishonoredPlayerPaw
 **Premises corrected (seven)**: the boat's end is data; the far boat is the dock's; the lift matinee has no Move
 track; the Move runtime is not the suspect; the player IS held in retail (by the Attachment track); the
 `DoKismetAttachment` comment's 2012 rva was wrong; the silhouettes are on the control too.
+
+### GE — merged; GE's own gate on the merged tree 47 ok / 0 failed / 0 skipped
+
+Thirty files, 0 flagged against `f7bc754`; regeneration clean; `bitfield_audit` 0; CoreSmoke linked (Core change).
+
+**The fade is fixed, and it was a dialog-hook bug.** `CameraFade_3` is undone by the director Fade track of
+`SeqAct_Interp_26` "Player Overhearing Empress", started by `DialogInputs_26 'BlockPlayer'` on `DisDialogOneShot_27`
+— the SECOND one-shot of `NPCPawn_9`. FR's `UDisDialogTree_InGameBind::PlayFromNode` answered TRUE for a hook node
+that matched nothing, so `_7` swallowed the hook. Retail (2012 `0x905f40`) answers TRUE only once a conversation
+plays — two lines. GE1: `Interp_26` activates at 45.58 s, the fade reads 0.343 → 0.000, captures show the gazebo.
+
+**The 396 `bad AnimNotify` lines per run were the reference engine's owner check**; retail's `PostLoad` has none.
+Gone. **Heads**: the three head-track sub-processes ported whole plus the brain's attention-target functions and
+`FireDialogHook`, but **no head follows the player yet**: the look-at is raised by
+`UDisAIBrainProcessAttention::HandleTopAttnTarget` — 223 functions on the exclude list (agentGE.md §3) → wave 24.
+
+**The spawn death is named** (reproduced on loop run 3/20): the player is possessed at Z -215.85 **before the
+level's static PhysX shapes exist** (0 at possession, 4 at +0.5 s) and falls; normal load lands with 57–69
+`DmgType_Fell` at 1.4 s (**every d3d9 run loses ~60 health at spawn**); a slow load (startup 41.6 s) passes KillZ
+at 2.78 s → 1000 damage, Killer None. Not FV, not GA. Fix = spawn order (possess after `InitWorldRBPhys` has the
+static actors) → wave 24. Instruments: `-gedeathdiag`; the generator's `DISHONORED_NATIVE_STUB_LOGPARAMS` for natives
+listed in `<Module>NativeStubs.logparams.txt`.
+
+**Premises corrected (six)**: the fade-out is a dialog-started matinee's Fade track; the sub-processes never ask for
+a look-at; `DisNotify_NPCDisableLookAt` was never broken; the death is the spawn fall, not wave-22 code;
+`USeqAct_Switch::Activated` exists inline; the silhouettes are on static-ground guards in the control too.

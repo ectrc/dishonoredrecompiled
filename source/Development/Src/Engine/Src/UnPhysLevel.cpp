@@ -3745,4 +3745,10 @@ void ListAwakeRigidBodies(UBOOL bIncludeKinematic)
 #endif // WITH_NOVODEX
 }
 
-
+// DISHONORED(bringup): agent GE (PHASE19 GE). The primary scene's static shape count, for the death diagnostic (the player
+// died 3 s after spawning once in seven d3d9 stages; the suspect is a spawn before the level's static shapes exist).
+INT DisEnginePhysXStaticShapes()
+{
+	NxScene* NovodexScene = ( GWorld && GWorld->RBPhysScene ) ? GWorld->RBPhysScene->GetNovodexPrimaryScene() : NULL;
+	return NovodexScene ? (INT)NovodexScene->getNbStaticShapes() : -1;
+}

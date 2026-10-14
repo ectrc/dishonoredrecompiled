@@ -128,3 +128,6 @@ public:
 	virtual void GameLoad( FArchive& _rArchive, ESaveLoadLocation _Location );
 	virtual void PostGameLoad( ESaveLoadLocation _Location );
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+	// ---- agent GE (PHASE19 GE): 2013 rva 0x6f00f0 (2012 0x74f550, 311 B) - a behaviour's bark goes through its pawn, or waits for the resume ----
+	UBOOL FireDialogHook( eDisDialogHook _Hook, class IDisConvSpeakerInterface* _pTarget );

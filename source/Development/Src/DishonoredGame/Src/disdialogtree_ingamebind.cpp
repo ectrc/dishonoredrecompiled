@@ -435,9 +435,20 @@ UBOOL UDisDialogTree_InGameBind::PlayFromNode( const UDisConv_Node* _pNode, FDis
 					FRDIAG( "bind %s: %s could not acquire its speakers at %s", *GetName(), *Conv->GetName(), *Node->GetName() );
 					return bRet;
 				}
+				bRet = TRUE;
 			}
+			// DISHONORED(port): agent GE (PHASE19 GE). Retail (2012 rva 0x905f40, 426 B) answers TRUE only once a conversation
+			// is playing or a start-of-dialog node has acquired its speakers; a hook node that plays alone and answers -1
+			// (DisConv_Hook_KismetActivated with no matching input name) leaves the answer at FALSE, so the component tries the
+			// pawn's NEXT one-shot tree. FR's body set it TRUE before every PlayNode, which made the first one-shot of a pawn
+			// that owns two (DishonoredSpawner_35: DisDialogOneShot_7 then _27) swallow 'BlockPlayer' - the conversation that
+			// plays SOIREE_Empress_Regent.SeqAct_Interp_26, whose director group's Fade track brings the screen back from the
+			// black that SeqAct_CameraFade_3 persists (the user's "the screen stays black after the first Empress scene").
 		}
-		bRet = TRUE;
+		else
+		{
+			bRet = TRUE;
+		}
 		bNotFinished = FALSE;
 		const INT Output = Node->PlayNode( bNotFinished, _pRunningInstance );
 		FRDIAG( "bind %s: played %s (%s) -> output %d%s", *GetName(), *Node->GetName(), *Node->GetClass()->GetName(), Output, bNotFinished ? TEXT(", ticking") : TEXT("") );

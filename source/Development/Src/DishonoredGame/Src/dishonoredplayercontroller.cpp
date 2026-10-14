@@ -1098,6 +1098,11 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	{
 		DisFWReport( this );
 	}
+	// agent GE (PHASE19 GE): -gediag, the camera fade state once a second (gediag.cpp)
+	{
+		extern void DisGEReport( APlayerController* PC );
+		DisGEReport( this );
+	}
 	// agent GB (PHASE19 GB): -gbdiag, the live Move tracks' keys and actors once a second (gbdiag.cpp)
 	if( DisGBDiagEnabled() )
 	{

@@ -9365,6 +9365,7 @@ public:
     //## END PROPS DisAISubProcessHeadTrackBase
 
     DECLARE_ABSTRACT_CLASS(UDisAISubProcessHeadTrackBase,UDisAISubProcessWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubProcessHeadTrackBase.h"
 };
 
 // DishonoredGame.DisAISubProcessHeadTrackBark: retail sizeof 128, reflected span 124..128 (2012 PDB sizeof 128)
@@ -9376,6 +9377,7 @@ public:
     //## END PROPS DisAISubProcessHeadTrackBark
 
     DECLARE_CLASS(UDisAISubProcessHeadTrackBark,UDisAISubProcessHeadTrackBase,0,DishonoredGame)
+#include "CppText/UDisAISubProcessHeadTrackBark.h"
 };
 
 // DishonoredGame.DisAISubProcessHeadTrackPause: retail sizeof 312, reflected span 124..312 (2012 PDB sizeof 312)
@@ -9390,6 +9392,7 @@ public:
     //## END PROPS DisAISubProcessHeadTrackPause
 
     DECLARE_CLASS(UDisAISubProcessHeadTrackPause,UDisAISubProcessHeadTrackBase,0,DishonoredGame)
+#include "CppText/UDisAISubProcessHeadTrackPause.h"
 };
 
 // DishonoredGame.DisAISubProcessPersonalSpace: retail sizeof 412, reflected span 108..412 (2012 PDB sizeof 412)

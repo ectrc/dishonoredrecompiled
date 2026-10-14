@@ -75,6 +75,11 @@ static void DisFKReportMatineeData()
 {
 	DisFOReportUpstream();
 	DisFWReportDialogMap();
+	// agent GE (PHASE19 GE): -gelinks=<substr,...>, the output links and properties of named Kismet ops, once per map (gediag.cpp)
+	{
+		extern void DisGEReportLinks();
+		DisGEReportLinks();
+	}
 	INT Interps = 0, GroupsSeen = 0, Tracks = 0, Directors = 0, Players = 0, AIGroups = 0;
 	for( TObjectIterator<USeqAct_Interp> It; It; ++It )
 	{
