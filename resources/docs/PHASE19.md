@@ -165,7 +165,7 @@ from the control. GC owns the anim stack; this package owns the player side.
 
 ## Outcome
 
-### GC — merged `d96a331`; GC's own gate on the merged tree 47 ok / 0 failed / 0 skipped (4823 s)
+### GC — merged `d96a331`; gate on main 46/47 (`d3d9_frames` 750 and 960 against 1000 with several unqueued 16-job builds running - a load cliff; the stage alone re-read 9/9 on the same exe), GC's own gate 47 / 0 / 0 (4823 s)
 
 Eleven files, 0 flagged against `c2dd580`; regeneration clean; `bitfield_audit` 0; 0 d3d9 deaths in its gate.
 
