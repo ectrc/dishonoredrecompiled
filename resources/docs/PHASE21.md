@@ -74,9 +74,21 @@ streaming levels stays unloaded on both builds, why (`-gedeathdiag`/`ggdiag` ext
 `RestoreLoadedLevels`), and whether it is the one the chain needs. Acceptance: a capture series of the chain, the
 furthest point reached stated as a fact, the eighth level named.
 
-### GO — GJ's residue
+### GO — the arms with the sword: the item anim states
 
-Filled in by the coordinator from GJ's outcome.
+GJ: the sword attaches to `handAttachment_R_jnt` and stays in hand through the ride, but **the arms play the
+empty-hands base pose** — the hand bone sits 68 units below the view, so the sword is never in frame and the user's
+"arms when I shouldn't see them" is still not reproduced. What poses the arms with an item is the item anim-state
+system, bodiless: `UDishonoredInventoryItem::BindToAnimStateOwner`, `FindAnimStatePickers`, `SyncPawnAnimState`,
+the upper-FSM `UStatePlayerEquipChange` (GJ's instant-equip stand-in replaces its request) and `TransitionItemIn`.
+Port them from retail (2012 names at the rvas, 2013 checked) so the sword stance plays in first person; then measure
+the arms through the ride (GJ: the boat does NOT force the hands empty — `m_bForcesUndrawBeforePlaying` is FALSE —
+so whatever hides the arms in retail's soirée is in the stance/body-mode path, FZ's `SetBodyMode` + the item's
+soirée context slot `CancelActiveContexts`, not a force-to-empty). Also: the NPC inventory override so the guards
+carry swords (`-gjdiag` names the slots), and the console dispatch seam GJ named (`ScriptConsoleExec` after the
+ride). Acceptance: capture pairs with the sword drawn — the stance in frame before the ride, whatever retail does
+during it (state the measurement), the stance back after; the user's report reproduced or shown impossible on this
+route with the reason.
 
 ## Rules for agents
 
