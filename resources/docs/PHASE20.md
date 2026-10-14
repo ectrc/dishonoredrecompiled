@@ -197,7 +197,7 @@ inside `LoadMap`/`BeginPlay` is identical in retail; `Login`/`RestartPlayer` are
 loads included); control 20/20 take 57–79 `DmgType_Fell`. Follow-up: one of the eight sublevels stays unloaded on
 both builds (name not logged); the save-state half of `PostCommitMapChange` (ED's `RestoreLoadedLevels`).
 
-### GI — merged; GI's own gate 47 ok / 0 failed / 0 skipped (1732 s, `d3d9_frames` 7890)
+### GI — merged `8ea61f0`; gate on main 47 ok / 0 failed / 0 skipped (1339 s); GI's own gate 47 / 0 / 0 (1732 s)
 
 Forty-eight files, 0 flagged against `c66a555`; regeneration clean; `bitfield_audit` 0; no Engine file.
 **Thirteen working-build invocations against the two-build rule** — noted.
