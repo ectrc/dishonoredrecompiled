@@ -3675,10 +3675,8 @@ void ADishonoredPawn::SpawnInventoryLoadout_Ammo( const TArray<FDisInventoryAmmo
 void ADishonoredPawn::SpawnInventoryLoadout( const FDisInventoryLoadout& _rLoadout, UBOOL _bIgnoreCapacity )
 {
 	SpawnInventoryLoadout_Ammo( _rLoadout.m_Ammo, _bIgnoreCapacity );
-
-	// DISHONORED(bringup): SpawnInventoryLoadout_Items (2013 rva 0x7c8690) turns each UDisTweaks_InventoryItem
-	// into a live UDishonoredInventoryItem in a slot. It needs the item factory, which this tree does not have,
-	// so the loadout's items are read and counted and the inventory's slots stay empty.
+	// agent GJ (PHASE20 GJ): the items half (2012 0x7c8690 / 2013 0x75d590), now that the items exist
+	SpawnInventoryLoadout_Items( _rLoadout.m_Items );
 
 	if( m_pInventory != NULL )
 	{
@@ -3689,7 +3687,18 @@ void ADishonoredPawn::SpawnInventoryLoadout( const FDisInventoryLoadout& _rLoado
 		}
 	}
 
-	// DISHONORED(bringup): retail then equips m_pDefaultEquipType_Primary and _Secondary through
-	// EquipItemByType (vtable slot 370), and gives a player pawn whose primary is DishonoredItemEmpty the
-	// sword as its re-equip item. Both need the item factory above.
+	// agent GJ: the two default equips are instant (EEquipItemFlags_InstantEquip, 2012 0x7c8bb0 +0x5b / +0xf1); a player pawn whose
+	// primary default is an empty hand remembers the sword as the hand's re-equip item
+	if( _rLoadout.m_pDefaultEquipType_Primary )
+	{
+		EquipItemByType( _rLoadout.m_pDefaultEquipType_Primary, EDisEquipUsage_Primary, EEquipItemFlags_InstantEquip );
+		if( _rLoadout.m_pDefaultEquipType_Primary->IsChildOf( UDishonoredItemEmpty::StaticClass() ) && IsA( ADishonoredPlayerPawn::StaticClass() ) && m_pInventory )
+		{
+			m_pInventory->SetReequipItem( EDisEquipUsage_Primary, UDishonoredWepSword::StaticClass() );
+		}
+	}
+	if( _rLoadout.m_pDefaultEquipType_Secondary )
+	{
+		EquipItemByType( _rLoadout.m_pDefaultEquipType_Secondary, EDisEquipUsage_Secondary, EEquipItemFlags_InstantEquip );
+	}
 }

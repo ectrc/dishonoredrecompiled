@@ -1414,6 +1414,7 @@ public:
     //## END PROPS DishonoredWepSword
 
     DECLARE_CLASS(UDishonoredWepSword,UDisWepMelee,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredWepSword.h"
 };
 
 #undef DECLARE_CLASS

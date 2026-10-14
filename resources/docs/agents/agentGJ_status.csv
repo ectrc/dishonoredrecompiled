@@ -1,0 +1,86 @@
+function,rva_2012,rva_2013,size_2012,status,note
+UDishonoredInventory::InitInventory,0x85b790,0x818c80,413,ported,2013 unnamed; found through PreBeginPlay_Inventory's call and checked by shape (same body + the player item-acquired notice 0xba1a30 not ported)
+UDishonoredInventory::AddInventorySlot,0x851d60,0x804b80,69,ported,named in both
+UDishonoredInventory::GetRequiredSlot(class),0x851e60,0x80b2a0,175,ported,named in both; _bOwnerSpecific unread by both bodies
+UDishonoredInventory::GetRequiredSlot(item),0x8559f0,0x80f680,90,ported,named in both
+UDishonoredInventory::GetNextEmptySlot,0x851f10,0x80b350,322,ported,named in both
+UDishonoredInventory::CanEquipItemType(slot),0x855df0,0x80f920,151,ported,named in both
+UDishonoredInventory::CanEquipItemType(tweaks),0x857f00,0x811b50,163,ported,named in both
+UDishonoredInventory::DoEquip,0x85a7b0,0x817d10,399,ported,named in both; the dead tweaks reads left out
+UDishonoredInventory::EquipItemType,0x85a940,0x817eb0,110,ported,named in both; event 14 through FArkGameEventDispatcher
+UDishonoredInventory::AttachItemToSocket,0x855a50,0x80f6e0,364,ported,2013 unnamed; found through DoEquip's call; the 2013 depth-group recursion (0xbc8920) taken; its new pre-detach item virtual (slot 80) not
+UDishonoredInventory::ShowInventoryItem,0x857fb0,0x811c00,141,ported,named in both
+UDishonoredInventory::ShowEquippedItem,0x858040,0x811c90,52,ported,named in both
+UDishonoredInventory::SetReequipItem,0x852a90,0x805500,219,ported,named in both
+UDishonoredInventory::GetReequipItem,0x852b70,0x8055e0,119,ported,named in both
+UDishonoredInventory::AddInventoryItem,0x85be60,0x819380,451,ported,2013 unnamed; found through SpawnAndAddInventoryItem; 2013 adds _bRemoveIfNeeded (not taken); DropItemsInSlot and the wheel tracker named
+UDishonoredInventory::SpawnAndAddInventoryItem,0x85c9c0,0x819cd0,147,ported,2013 unnamed; found through PostBeginPlay_Inventory
+UDishonoredInventory::TickInventory,0x85c760,,490,ported,2013 unnamed and unmatched; the deferred drop and the contexts' tick named
+UDishonoredInventory::ClearInventory,0x861a90,0x8180a0,480,ported,named in both
+UDishonoredInventory::RemoveItemsByClass,0x85aab0,,474,ported,2013 unmatched
+UDishonoredInventory::PlayerTransitionItemIn,0x851e10,0x804c30,79,ported,named in both
+UDishonoredInventory::DropItemsInSlot,0x85bb60,0x819080,254,not ported,named once where retail reaches it
+UDishonoredInventory::RemoveInventoryItem,0x85a9b0,0x817f20,251,not ported,the 2013 _bRemoveIfNeeded path
+UDishonoredInventoryItem::GetItemTweaks,0x6b5fa0,0xa859a0,,ported,retail's IDisTweaksInterface::GetTweaks<UDisTweaks_InventoryItem> with the class-default fallback
+UDishonoredInventoryItem::InitItem,0x8580f0,0x80f9f0,208,ported,2013 unnamed; found through ConstructAttributes' xrefs; attributes from m_pAttributeTweak[1] (2013 offset 248 of 244)
+UDishonoredInventoryItem::OnDifficultyChange,0x852db0,0x80b940,,stand-in,registered; the attribute re-application named
+UDishonoredInventoryItem::OnAddToInventory,0x858390,,711,ported,2013 unnamed (slot 80); the five context slots built
+UDishonoredInventoryItem::InitItemContextSlot,0x8581c0,,365,ported,contexts constructed with slot and tweaks; InitContext (slot 75) named - the contexts have no bodies
+UDisTweaks_InventoryItem_PawnSpecific::GetItemContextTweak,0x86d590,0x80d480,124,ported,inlined into InitItemContextSlot
+UDisTweaks_InventoryItem_PawnSpecific::FindContextTweakByName,0x8657b0,0x806d00,128,ported,inlined into InitItemContextSlot
+UDishonoredInventoryItem::OnEquipItem,0x856240,0x80feb0,303,ported,named in both; OnEquipmentChange (GFx) named
+UDishonoredInventoryItem::OnUnEquipItem,0x859e40,0x816ed0,75,ported,named in both
+UDishonoredInventoryItem::IsEquippable,0x853cb0,0x80c680,225,ported,named in both
+UDishonoredInventoryItem::ApplyTweakChanges_Derived,0x85cc80,0x819ff0,890,ported,named in both; AnimSets.AddUniqueItem / Animations for retail's AddExtAnimSetUnique / SetAnimationsSeq
+UDishonoredInventoryItem::TickInventoryItem,0x852e00,0x80b990,272,ported,named in both; TickAttributes named
+UDishonoredInventoryItem::GetItemAimForAnims_Derived,0x854070,,126,ported,2013 unmatched
+UDishonoredInventoryItem::ModifyPlayerStance,0x849c30,0x7fecd0,71,ported,named in both
+UDishonoredInventoryItem::GetContextsForSlot,0x84dbb0,0x801bb0,240,ported,named in both
+UDishonoredInventoryItem::IsItemContextActive,0x84dcc0,,25,ported,2013 inlined
+UDishonoredInventoryItem::HasActiveContexts,0x859a70,0x816d10,121,ported,named in both
+UDishonoredInventoryItem::CancelActiveContexts,0x859af0,0x816d90,131,ported,2013 takes a flag (EnterSoireeMode passes TRUE); CancelContext has no body - counted and named
+UDishonoredInventoryItem::StopZoom,0x856370,,264,stand-in,the zoomed half named; nothing zooms on this route
+UDishonoredInventoryItem::AnimState_GetSkeletalComponent,0x84dce0,,85,ported,
+UDishonoredInventoryItem::AnimState_GetAnimStateComp,0x84dd30,,73,ported,
+UDishonoredInventoryItem::OnAttached,0x85c030,0x8196a0,198,stand-in,the anim-state bind / pickers / pawn sync named (no bodies)
+UDishonoredInventoryItem::OnDetached,0x849ca0,0x7fed20,24,stand-in,ClearAnimState named
+UDishonoredInventoryItem::PlayerTransitionItemIn_Derived,0x858660,0x812110,388,stand-in,the on-screen half ported; the offscreen action request (two skeleton states) named
+UDishonoredInventoryItem::ItemIsPhysicallyEquipped,,,,ported,2012 vtable slot 76 folded onto a `return TRUE`; UDisItemPowers overrides FALSE
+UDishonoredItemSkeletalComponent::SetInventoryItem,0x861d90,,16,ported,inline
+UDishonoredItemSkeletalComponent::GetOwningInventoryItem,0x861da0,,,ported,inline
+UDishonoredItemEmpty::GetTweaks_Derived,0x7cc530,,7,ported,
+UDishonoredItemEmpty::SetTweaks_Derived,0x88b2c0,,16,ported,
+UDishonoredWepSword::GetTweaks_Derived,0x886e00,,7,ported,folded in the 2012 PDB (GFxSprite::GetCurrentFrame); the sword's IDisTweaksInterface vtable 0xd72e78 slot +16
+UDishonoredWepSword::SetTweaks_Derived,0x889920,,16,ported,
+UDishonoredWepSword::InitItem,0x8896e0,,143,ported,the transient MIC on the player mesh's material 0
+UDisItemPowers::GetTweaks_Derived,0x887b70,,7,ported,
+UDisItemPowers::SetTweaks_Derived,0x88b250,,16,ported,
+ADishonoredPawn::GetEquippedItem,0x7aab20,,15,ported,
+ADishonoredPawn::ShowEquippedInventoryItem,0x7aab60,,,ported,
+ADishonoredPawn::PrimaryHandAppearEmpty,0x7aab30,,38,ported,
+ADishonoredPawn::HandsAppearEmpty,0x7acc50,,72,ported,
+ADishonoredPawn::AttachEquippedItem,0x7aac20,0x74a510,,ported,named in both; the NPC override 0x7b7950 (565 B) not ported
+ADishonoredPawn::EquipItemByType,0x7c8500,0x75d400,389,ported,named in both
+ADishonoredPawn::EquipItemByType_KeepTrying,0x7afbe0,0x751790,292,ported,named in both
+ADishonoredPawn::PreBeginPlay_Inventory,0x7c38a0,0x758860,254,ported,2013 unnamed; found through PreBeginPlay slot +1468 / AddInventorySlot's xrefs
+ADishonoredPawn::PostBeginPlay_Inventory,,,,ported,the base is empty in retail (slot +1472); the dispatch added to PostBeginPlay
+ADishonoredPawn::Tick_Inventory,0x7afac0,,288,ported,2013 unmatched; the dispatch added to Tick; the NPC override 0x7be2c0 (armor drops) not ported
+ADishonoredPawn::SpawnInventoryLoadout_Items,0x7c8690,0x75d590,205,ported,named in both
+ADishonoredPawn::SpawnInventoryLoadout,0x7c8bb0,0x7689c0,,completed,EF's body gains the items and the two default equips (dissavegame.cpp)
+ADishonoredPlayerPawn::PostBeginPlay_Inventory,0x718360,0x6ad200,157,ported,named in both
+ADishonoredPlayerPawn::EquipItemByType,0x70ce90,0x6b3210,672,stand-in,the RequestAction / UStatePlayerEquipChange branch is a skeleton: every equip taken the instant way (said once)
+ADishonoredPlayerPawn::TransitionItemIn,0x6fb760,0x6a2590,53,ported,named in both
+ADishonoredPlayerPawn::GetItemClassBeingEquipped,0x706d80,,70,stand-in,NULL: no UStatePlayerEquipChange to read
+ADishonoredPlayerPawn::GetDesiredPlayerStance,0x6fb250,0x6a2120,144,ported,named in both
+ADishonoredPlayerPawn::GetActualPlayerStance,0x6fb220,0x6a20f0,45,ported,named in both
+ADishonoredPlayerPawn::SetPlayerStance,0x6fb200,,20,ported,inline
+ADishonoredPlayerPawn::IsLeftHandDisabled,0x6fb110,,,ported,inline (m_bLeftHandDisabled)
+ADishonoredPlayerPawn::IsSneaking,0x707470,,69,stand-in,the toggle; the choke state's flag not (skeleton)
+ADishonoredPlayerPawn::MAT_SetForceInventory,0x6fe570,0x6a4d40,222,completed,FZ's body gains SetReequipItem x2 and EquipItemByType_KeepTrying x2 (2013 checked: same order)
+ADishonoredPlayerController::Dis_EquipItemByType,0x6ec850,0x6b4a70,384,ported,named in both; EquipBestSuitableItem and NextItemOption named
+ADishonoredPlayerController::execDis_EquipItemByType,0x634650,0x5ee010,131,ported,the generator dropped its stub
+ADishonoredPlayerController::CanEquip,0x6e3280,,90,ported,2013 inlined
+UDisTweaks_PlayerLoadout::ApplyPlayerLoadoutToPlayer,0x717260,0x6cf770,734,stand-in,the inventory half; upgrades / charms / powers named
+UDishonoredMapInfo::GetMapSpecificPlayerLoadout,0x62fe80,0x5ea240,24,ported,named in both
+FDisSoireeControlState::EnterSoireeMode (item half),0x69a4b0,0xa66ff0,,read,calls CancelActiveContexts( TRUE ) on both hands' items (0x816d90) - a cancel of the swing, not a hide
+UGameViewportClient inputcmd `exec`,,,,written,Engine hand edit UnPlayer.cpp: a console command through the viewport client (game_input.py `exec`)

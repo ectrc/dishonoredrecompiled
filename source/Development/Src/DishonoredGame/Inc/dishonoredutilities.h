@@ -42,6 +42,17 @@ struct FDisMsgBoxResult
     the literal 31 at 2013 0x7abbd0, 0x7a4550 and 0x7a45c0. */
 enum { DisGameEventType_MessageBoxResult = 31 };
 
+// DISHONORED(port): agent GJ (PHASE20 GJ). The parameter block of DisGameEventType_ItemEquipped (the 2012 PDB's
+// FDisGameEventItemEquipped_Params), raised by UDishonoredInventory::EquipItemType (2012 0x85a940, event id 14) and
+// RemoveItemsByClass with the equipping pawn as instigator; DisGameEventType_DifficultyChange (9) is what every
+// UDishonoredInventoryItem::InitItem (0x8580f0) registers OnDifficultyChange to.
+struct FDisGameEventItemEquipped_Params
+{
+	class ADishonoredPawn* m_pEquippingPawn;
+	UClass* m_pItemClass;
+};
+enum { DisGameEventType_DifficultyChange = 9, DisGameEventType_ItemEquipped = 14 };
+
 // DISHONORED(written): agent AU (PHASE7 AU). The utilities the pickup collection path calls; 2013 rvas with the bodies.
 class UDisGFxMoviePlayerHUD* DisGetGFxHUD();
 class UDisConvGlobalMan* DisGetConvGlobalMan();                                                 // 0x7bf3e0, agent FR: UDisConvGlobalMan::s_pInstance (disconvglobalman.cpp)                                                   // 0x7bf730

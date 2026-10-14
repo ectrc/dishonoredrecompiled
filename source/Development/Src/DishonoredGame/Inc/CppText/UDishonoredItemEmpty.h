@@ -9,3 +9,10 @@ public:
 		}
 		return _TransitSpeed == ETransitSpeed_Walk ? eDisNPCLookAtMode_EmptyWalk : eDisNPCLookAtMode_EmptyRun;
 	}
+// agent GJ (PHASE20 GJ): the tweaks slots of IDisTweaksInterface on the empty hand - GetTweaks_Derived 2012 0x7cc530 (7 B, m_pEmptyHandsTweaks),
+// SetTweaks_Derived 0x88b2c0 (16 B). Bodies in dishonoreditemempty.cpp.
+public:
+	virtual class UDisTweaksBase* GetTweaks_Derived();
+protected:
+	virtual void SetTweaks_Derived( class UDisTweaksBase* _pTweaks );
+public:

@@ -213,3 +213,23 @@ neutral and an ally reach Busted within a second and the player becomes the top 
 Open, bounded: with the stand-in on, 8 of 9 runs crash at exit in `IncrementalPurgeGarbage` (never an attention
 object; minidumps kept) — the vision package inherits it. For FR: at Busted `DDH_PLAYER_APPROACHES` fires every
 tick (3,890 in 50 s) — the dialog side's cooldown is not honoured.
+
+### GJ — merged; GJ's own gate 47 ok / 0 failed / 0 skipped twice (2403 s; 1752 s after the 0e5207a merge, d3d9 900 → 1200 under its own build); the 8ea61f0 merge gated on main by the coordinator
+
+Thirty-six files, 0 flagged against `e07055e`; regeneration clean; `bitfield_audit` 0; Engine hand edit
+`UnPlayer.cpp` (`exec` in the inputcmd script). **Five working-build passes** and a hung wait pipeline (90 min after
+its gate had finished) — noted.
+
+**The equip path exists**: `InitInventory` gives every pawn two empty-hand slots; the player's loadout path, `DoEquip`,
+`AttachItemToSocket` (2013's DPG recursion) — the sword attaches to `handAttachment_R_jnt` and stays in hand through
+the ride. **Every NPC holds `ItemEmpty`, so the 1,170 look-at warnings read 0** (GH's note closed).
+
+**Premises corrected (seven)**: New Game gives nothing (`Twk_PlayerLoadout_Campaign` has 0 items; the sword tweak is
+not even loaded by `l_tower_p`); no key binds the sword; 2013 `0x816d90` is `CancelActiveContexts`, not a hide; **the
+boat does not force the hands empty** (`m_bForcesUndrawBeforePlaying` FALSE); GF's arm offset is 0 and the arms FOV
+is the view FOV on this route; the exec key path is refused under the cinematic mask (retail too) and the console
+dispatch seam is named. **The arms are still not posed with the item** — the sword hangs 68 units below the view
+while the arms play the empty-hands base pose: the item anim-state system (`BindToAnimStateOwner`,
+`FindAnimStatePickers`, `SyncPawnAnimState`, `UStatePlayerEquipChange`, `TransitionItemIn`) has no bodies. **The
+user's arms report is still not reproducible → wave 25 GO.** Left: the NPC inventory override (guards' swords),
+the contexts' init/cancel/tick, `DropItemsInSlot`, the wheel, `OnEquipmentChange`.

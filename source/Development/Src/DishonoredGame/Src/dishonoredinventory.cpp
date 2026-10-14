@@ -66,6 +66,8 @@
 // ---- agent AJ ports ----
 
 #include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+#include "gjequipdiag.h"
 
 // DISHONORED(written): 2013 rva 0x804bd0 (2012 0x851db0): only an initialised inventory answers; the usage's equipped slot
 // index (-1 when nothing is equipped) selects the slot whose item is returned
@@ -406,4 +408,526 @@ void UDishonoredInventory::OnCameraUpdate( const FDishonoredViewTarget& _rVT )
 			Item->OnCameraUpdate( _rVT );
 		}
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	Agent GJ (PHASE20 GJ): the equip path. Every body below was decompiled from the 2012 database at the rva in its
+	banner and checked against the 2013 one (build/agentGJ/decomp2012, decomp2013); the two differ where said.
+	The Array.h index asserts retail compiles in are the (i) accessor's own here.
+-----------------------------------------------------------------------------*/
+
+// 2012 0x85b790 / 2013 0x818c80 (413 / 464 B): the owner, two reserved slots, then for each hand a slot that requires
+// UDishonoredItemEmpty, an empty-hands item spawned from the pawn tweaks' m_pEmptyHandsItem (RF_Transactional in the
+// transient package, as retail), InitItem, OnAddToInventory, and the hand equipped with it. The 2013 body adds the
+// player's item-acquired notice (0xba1a30, the tutorial trackers) after OnAddToInventory - not ported, the trackers are not.
+void UDishonoredInventory::InitInventory( ADishonoredPawn* _pOwner, UDisTweaks_InventoryItem* _pEmptyHandsType )
+{
+	m_bInitialized = TRUE;
+	m_pOwner = _pOwner;
+	m_Slots.Reserve( 2 );
+	for( INT Usage = EDisEquipUsage_None; Usage < EDisEquipUsage_MAX; Usage++ )
+	{
+		m_EquipUsageInfo[Usage].m_iEquippedSlot = INDEX_NONE;
+		m_EquipUsageInfo[Usage].m_iReequipSlot = INDEX_NONE;
+		m_EquipUsageInfo[Usage].m_iReequipSlotNonEmpty = INDEX_NONE;
+		m_EquipUsageInfo[Usage].m_iDropSlot_NextFrame = INDEX_NONE;
+		if( Usage == EDisEquipUsage_None )
+		{
+			continue;
+		}
+		const INT SlotIndex = m_Slots.AddZeroed( 1 );
+		m_Slots(SlotIndex).m_pRequiredType = UDishonoredItemEmpty::StaticClass();
+		m_Slots(SlotIndex).m_RequiredUsage = Usage;
+		if( _pEmptyHandsType )
+		{
+			UClass* ItemClass = _pEmptyHandsType->GetSpawnedObjectClass( 0 );
+			UDishonoredInventoryItem* Item = ItemClass ? ConstructObject<UDishonoredInventoryItem>( ItemClass, UObject::GetTransientPackage(), NAME_None, RF_Transactional ) : NULL;
+			if( Item )
+			{
+				Item->InitItem( _pEmptyHandsType );
+				if( !m_Slots(SlotIndex).m_pItem )
+				{
+					m_Slots(SlotIndex).m_pItem = Item;
+					Item->OnAddToInventory( this );
+				}
+			}
+		}
+		EquipItemType( UDishonoredItemEmpty::StaticClass(), Usage, FALSE );
+	}
+}
+
+// 2012 0x851d60 / 2013 0x804b80 (69 B, same)
+void UDishonoredInventory::AddInventorySlot( UClass* _pRequiredClass, BYTE _RequiredUsage )
+{
+	const INT SlotIndex = m_Slots.AddZeroed( 1 );
+	m_Slots(SlotIndex).m_pRequiredType = _pRequiredClass;
+	m_Slots(SlotIndex).m_RequiredUsage = _RequiredUsage;
+}
+
+// 2012 0x851e60 / 2013 0x80b2a0 (175 B, same): the first slot whose required type the class derives from and whose required
+// usage is none or the one asked for. _bOwnerSpecific is not read by either body.
+INT UDishonoredInventory::GetRequiredSlot( UClass* _pRequiredClass, UBOOL _bOwnerSpecific, BYTE _EquipUsage, FPawnInventorySlot** _ppOutSlot )
+{
+	if( _ppOutSlot )
+	{
+		*_ppOutSlot = NULL;
+	}
+	for( INT Idx = 0; Idx < m_Slots.Num(); Idx++ )
+	{
+		FPawnInventorySlot& Slot = m_Slots(Idx);
+		if( !Slot.m_pRequiredType || ( Slot.m_RequiredUsage != 0 && Slot.m_RequiredUsage != _EquipUsage ) )
+		{
+			continue;
+		}
+		if( _pRequiredClass && _pRequiredClass->IsChildOf( Slot.m_pRequiredType ) )
+		{
+			if( _ppOutSlot )
+			{
+				*_ppOutSlot = &Slot;
+			}
+			return Idx;
+		}
+	}
+	return INDEX_NONE;
+}
+
+// 2012 0x8559f0 / 2013 0x80f680 (90 B, same): the item's class against its tweaks' required usage; owner-specific when the
+// tweaks name m_pOnlyHeldByPawnType
+INT UDishonoredInventory::GetRequiredSlot( UDishonoredInventoryItem* _pItem )
+{
+	const UDisTweaks_InventoryItem* Tweaks = _pItem->GetItemTweaks();
+	return GetRequiredSlot( _pItem->GetClass(), Tweaks->m_pOnlyHeldByPawnType != NULL, Tweaks->m_RequiredEquipUsage, NULL );
+}
+
+// 2012 0x851f10 / 2013 0x80b350 (322 B, same): from _iCur (or the start) round the slots once for an empty, usage-less slot
+// whose required type (if any) the item's class derives from
+INT UDishonoredInventory::GetNextEmptySlot( INT _iCur, UDishonoredInventoryItem* _pForItem )
+{
+	const INT NumSlots = m_Slots.Num();
+	if( NumSlots == 0 )
+	{
+		return INDEX_NONE;
+	}
+	INT Idx = ( _iCur == INDEX_NONE || _iCur >= NumSlots ) ? 0 : _iCur;
+	const INT Start = Idx;
+	UClass* ItemClass = _pForItem->GetClass();
+	for( ;; )
+	{
+		const FPawnInventorySlot& Slot = m_Slots(Idx);
+		const UBOOL bFits = !Slot.m_pItem && Slot.m_RequiredUsage == 0 && ( !Slot.m_pRequiredType || ItemClass->IsChildOf( Slot.m_pRequiredType ) );
+		if( bFits )
+		{
+			return Idx;
+		}
+		if( ++Idx >= NumSlots )
+		{
+			Idx = 0;
+		}
+		if( Idx == Start )
+		{
+			return INDEX_NONE;
+		}
+	}
+}
+
+// 2012 0x855df0 / 2013 0x80f920 (151 B, same): the required slot of the class for that usage must hold an item the owner can
+// equip; the owner-specific pass is tried when the generic one has no equippable item
+UBOOL UDishonoredInventory::CanEquipItemType( UClass* _pType, BYTE _EquipUsage, INT& _iSlot )
+{
+	FPawnInventorySlot* Slot = NULL;
+	_iSlot = GetRequiredSlot( _pType, FALSE, _EquipUsage, &Slot );
+	if( _iSlot == INDEX_NONE || !Slot->m_pItem || !Slot->m_pItem->IsEquippable( _EquipUsage, m_pOwner ) )
+	{
+		_iSlot = GetRequiredSlot( _pType, TRUE, _EquipUsage, &Slot );
+	}
+	return _iSlot != INDEX_NONE && Slot->m_pItem && Slot->m_pItem->IsEquippable( _EquipUsage, m_pOwner );
+}
+
+// 2012 0x857f00 / 2013 0x811b50 (163 B, same): the public form hands back the tweaks of the item that would equip
+UBOOL UDishonoredInventory::CanEquipItemType( UClass* _pType, BYTE _EquipUsage, const UDisTweaks_InventoryItem** _ppItemThatWillEquip )
+{
+	INT SlotIndex = INDEX_NONE;
+	const UBOOL bCanEquip = CanEquipItemType( _pType, _EquipUsage, SlotIndex );
+	if( bCanEquip && _ppItemThatWillEquip )
+	{
+		*_ppItemThatWillEquip = m_Slots(SlotIndex).m_pItem->GetItemTweaks();
+	}
+	return bCanEquip;
+}
+
+// 2012 0x85a7b0 / 2013 0x817d10 (399 / 403 B): the hand's current item is unequipped (OnUnEquipItem), the slot recorded, the
+// re-equip memory set unless temporary, an unattached item with a player anim-state component is attached to the equipped
+// socket and its mesh hidden (SetHiddenGame TRUE - the equip animation's DisNotify_AttachItemInSlot shows it), then
+// OnEquipItem. Both bodies then read the item tweaks for a player owner and do nothing with them (a compiled-out trace).
+void UDishonoredInventory::DoEquip( INT _iSlot, BYTE _EquipUsage, UBOOL _bTemporary )
+{
+	FDisEquipUsageInfo& Usage = m_EquipUsageInfo[_EquipUsage];
+	if( Usage.m_iEquippedSlot != INDEX_NONE )
+	{
+		UDishonoredInventoryItem* Previous = m_Slots(Usage.m_iEquippedSlot).m_pItem;
+		if( Previous )
+		{
+			Previous->OnUnEquipItem();
+		}
+	}
+	Usage.m_iEquippedSlot = _iSlot;
+	UDishonoredInventoryItem* Item = m_Slots(_iSlot).m_pItem;
+	if( !_bTemporary )
+	{
+		SetReequipItem( _EquipUsage, Item->GetClass() );
+	}
+	if( Item && Item->m_CurSocket == ItemSocket_None && Item->AnimState_GetAnimStateComp() )
+	{
+		AttachItemToSocket( Item, ItemSocket_Equipped );
+		USkeletalMeshComponent* SkelComp = Item->AnimState_GetSkeletalComponent();
+		if( SkelComp )
+		{
+			SkelComp->SetHiddenGame( TRUE );
+		}
+	}
+	Item->OnEquipItem( _EquipUsage, _bTemporary );
+}
+
+// 2012 0x85a940 / 2013 0x817eb0 (110 B, same): CanEquipItemType, DoEquip, then DisGameEventType_ItemEquipped with the owner
+// as instigator
+UBOOL UDishonoredInventory::EquipItemType( UClass* _pType, BYTE _EquipUsage, UBOOL _bTemporary )
+{
+	INT SlotIndex = _EquipUsage;
+	if( !CanEquipItemType( _pType, _EquipUsage, SlotIndex ) )
+	{
+		return FALSE;
+	}
+	DoEquip( SlotIndex, _EquipUsage, _bTemporary );
+	FDisGameEventItemEquipped_Params Params;
+	Params.m_pEquippingPawn = m_pOwner;
+	Params.m_pItemClass = _pType;
+	FArkGameEventDispatcher::GetInstance()->ProcessEvent( FArkGameEvent( DisGameEventType_ItemEquipped, &Params, m_pOwner ) );
+	return TRUE;
+}
+
+// the 2013 body's helper 0xbc8920: the depth priority group onto the component and, through a skeletal mesh component's
+// attachments, onto every attached component (2012 sets it on the item mesh alone)
+static void DisSetItemDepthPriorityGroup( UActorComponent* Component, ESceneDepthPriorityGroup Group )
+{
+	UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>( Component );
+	if( !Primitive )
+	{
+		return;
+	}
+	Primitive->SetDepthPriorityGroup( Group );
+	USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>( Primitive );
+	if( SkelComp )
+	{
+		for( INT Idx = 0; Idx < SkelComp->Attachments.Num(); Idx++ )
+		{
+			UActorComponent* Attached = SkelComp->Attachments(Idx).Component;
+			if( Attached && Attached->IsAttached() )
+			{
+				DisSetItemDepthPriorityGroup( Attached, Group );
+			}
+		}
+	}
+}
+
+// 2012 0x855a50 / 2013 0x80f6e0 (364 / 378 B): the item's mesh (the player mesh for a player owner) is detached from whatever
+// skeletal component holds it and, for a socket other than None, attached to the owner mesh's socket named by the item tweaks'
+// m_Sockets[socket], put in the owner mesh's depth priority group when the owner is the player, and told OnAttached; None
+// detaches and tells OnDetached. m_bNeedToTick follows ShouldItemTick. The 2013 body also calls a new item virtual (slot 80)
+// before a detach - unnamed in both databases, not ported.
+UBOOL UDishonoredInventory::AttachItemToSocket( UDishonoredInventoryItem* const _pItem, BYTE _ItemSocket )
+{
+	USkeletalMeshComponent* OwnerMesh = m_pOwner ? m_pOwner->Mesh : NULL;
+	const UDisTweaks_InventoryItem* Tweaks = _pItem->GetItemTweaks();
+	UDishonoredItemSkeletalComponent* ItemMesh = m_pOwner && m_pOwner->IsA( ADishonoredPlayerPawn::StaticClass() ) ? _pItem->m_pPlayerMesh : _pItem->m_pMesh;
+	if( !ItemMesh || !OwnerMesh || _ItemSocket == _pItem->m_CurSocket )
+	{
+		return FALSE;
+	}
+	const FName SocketName = Tweaks->m_Sockets[_ItemSocket];
+	if( ItemMesh->AttachedToSkelComponent )
+	{
+		ItemMesh->AttachedToSkelComponent->DetachComponent( ItemMesh );
+	}
+	if( _ItemSocket != ItemSocket_None )
+	{
+		OwnerMesh->AttachComponentToSocket( ItemMesh, SocketName );
+		if( m_pOwner == ADishonoredPlayerPawn::s_pInstance )
+		{
+			DisSetItemDepthPriorityGroup( ItemMesh, (ESceneDepthPriorityGroup)OwnerMesh->DepthPriorityGroup );
+		}
+		_pItem->m_CurSocket = _ItemSocket;
+		_pItem->OnAttached();
+	}
+	else
+	{
+		_pItem->m_CurSocket = ItemSocket_None;
+		_pItem->OnDetached();
+	}
+	_pItem->m_bNeedToTick = _pItem->ShouldItemTick() ? 1 : 0;
+	return TRUE;
+}
+
+// 2012 0x857fb0 / 2013 0x811c00 (141 B, same): hiding detaches; showing unhides the mesh and attaches it to the equipped socket
+// when the item is the hand's equipped one, to the holstered socket otherwise
+UBOOL UDishonoredInventory::ShowInventoryItem( UDishonoredInventoryItem* _pItem, UBOOL _bShow, BYTE _EquipUsage )
+{
+	if( !_bShow )
+	{
+		return AttachItemToSocket( _pItem, ItemSocket_None );
+	}
+	const BYTE Socket = GetEquippedItem( _EquipUsage ) == _pItem ? ItemSocket_Equipped : ItemSocket_Holstered;
+	UDishonoredItemSkeletalComponent* ItemMesh = m_pOwner && m_pOwner->IsA( ADishonoredPlayerPawn::StaticClass() ) ? _pItem->m_pPlayerMesh : _pItem->m_pMesh;
+	if( ItemMesh )
+	{
+		ItemMesh->SetHiddenGame( FALSE );
+	}
+	return AttachItemToSocket( _pItem, Socket );
+}
+
+// 2012 0x858040 / 2013 0x811c90 (52 B, same)
+UBOOL UDishonoredInventory::ShowEquippedItem( UBOOL _bShow, BYTE _EquipUsage )
+{
+	UDishonoredInventoryItem* Item = GetEquippedItem( _EquipUsage );
+	return Item ? ShowInventoryItem( Item, _bShow, _EquipUsage ) : FALSE;
+}
+
+// 2012 0x852a90 / 2013 0x805500 (219 B, same): the first slot of that usage (or none) holding an item of exactly that class
+// becomes the hand's re-equip slot, and its non-empty re-equip slot when the class is not an empty hand; NULL clears both
+void UDishonoredInventory::SetReequipItem( BYTE _EquipUsage, UClass* _pType )
+{
+	FDisEquipUsageInfo& Usage = m_EquipUsageInfo[_EquipUsage];
+	if( !_pType )
+	{
+		Usage.m_iReequipSlot = INDEX_NONE;
+		Usage.m_iReequipSlotNonEmpty = INDEX_NONE;
+		return;
+	}
+	for( INT Idx = 0; Idx < m_Slots.Num(); Idx++ )
+	{
+		const FPawnInventorySlot& Slot = m_Slots(Idx);
+		if( ( Slot.m_RequiredUsage == 0 || Slot.m_RequiredUsage == _EquipUsage ) && Slot.m_pItem && Slot.m_pItem->GetClass() == _pType )
+		{
+			Usage.m_iReequipSlot = Idx;
+			if( !Slot.m_pItem->GetClass()->IsChildOf( UDishonoredItemEmpty::StaticClass() ) )
+			{
+				Usage.m_iReequipSlotNonEmpty = Idx;
+			}
+			return;
+		}
+	}
+}
+
+// 2012 0x852b70 / 2013 0x8055e0 (119 B, same)
+UClass* UDishonoredInventory::GetReequipItem( BYTE _EquipUsage, UBOOL _bNonEmptyRequired ) const
+{
+	const INT SlotIndex = _bNonEmptyRequired ? m_EquipUsageInfo[_EquipUsage].m_iReequipSlotNonEmpty : m_EquipUsageInfo[_EquipUsage].m_iReequipSlot;
+	if( SlotIndex < 0 || SlotIndex >= m_Slots.Num() || !m_Slots(SlotIndex).m_pItem )
+	{
+		return NULL;
+	}
+	return m_Slots(SlotIndex).m_pItem->GetClass();
+}
+
+// 2012 0x85be60 / 2013 0x819380 (451 / 522 B): an item whose tweaks name m_pOnlyHeldByPawnType needs an owner with those tweaks;
+// the required slot (or the next empty one) takes it unless an unequipped occupant stays (dropped when _bDropIfNeeded; the 2013
+// body adds a _bRemoveIfNeeded argument between the two that removes it instead - not taken here); OnAddToInventory, the
+// player's wheel tracker (UDisWheelTracker::OnItemAdded, not ported - the wheel is GFx) and the 2013 item-acquired notice
+// (not ported), then ShowInventoryItem when asked.
+UBOOL UDishonoredInventory::AddInventoryItem( UDishonoredInventoryItem* const _pItem, UBOOL _bDropIfNeeded, UBOOL _bShowIfNeeded, BYTE _EquipUsage )
+{
+	INT SlotIndex = GetRequiredSlot( _pItem );
+	const UDisTweaks_InventoryItem* Tweaks = _pItem->GetItemTweaks();
+	if( Tweaks->m_pOnlyHeldByPawnType && !( m_pOwner && m_pOwner->HasTweaks( *Tweaks->m_pOnlyHeldByPawnType ) ) )
+	{
+		return FALSE;
+	}
+	if( SlotIndex == INDEX_NONE )
+	{
+		SlotIndex = GetNextEmptySlot( INDEX_NONE, _pItem );
+	}
+	else if( m_Slots(SlotIndex).m_pItem )
+	{
+		UBOOL bOccupantEquipped = FALSE;
+		for( INT Usage = 0; Usage < EDisEquipUsage_MAX; Usage++ )
+		{
+			bOccupantEquipped |= m_EquipUsageInfo[Usage].m_iEquippedSlot == SlotIndex;
+		}
+		if( !_bDropIfNeeded || bOccupantEquipped )
+		{
+			return FALSE;
+		}
+		GJDIAG_ONCE( TEXT("UDishonoredInventory::AddInventoryItem: DropItemsInSlot (2012 0x85bb60) is not ported; the occupied slot keeps its item") );
+		return FALSE;
+	}
+	if( SlotIndex == INDEX_NONE )
+	{
+		return FALSE;
+	}
+	if( !m_Slots(SlotIndex).m_pItem )
+	{
+		m_Slots(SlotIndex).m_pItem = _pItem;
+		_pItem->OnAddToInventory( this );
+	}
+	if( _bShowIfNeeded )
+	{
+		ShowInventoryItem( _pItem, TRUE, _EquipUsage );
+	}
+	return TRUE;
+}
+
+// 2012 0x85c9c0 / 2013 0x819cd0 (147 / 151 B): the tweaks' spawned class constructed RF_Transactional in the transient package,
+// InitItem, AddInventoryItem; NULL when the tweaks are missing, the construction fails or the inventory refuses it
+UDishonoredInventoryItem* UDishonoredInventory::SpawnAndAddInventoryItem( UDisTweaks_InventoryItem* const _pItemTweaks, UBOOL _bDropIfNeeded, UBOOL _bShowIfNeeded, BYTE _EquipUsage )
+{
+	if( !_pItemTweaks )
+	{
+		return NULL;
+	}
+	UClass* ItemClass = _pItemTweaks->GetSpawnedObjectClass( 0 );
+	UDishonoredInventoryItem* Item = ItemClass ? ConstructObject<UDishonoredInventoryItem>( ItemClass, UObject::GetTransientPackage(), NAME_None, RF_Transactional ) : NULL;
+	if( !Item )
+	{
+		return NULL;
+	}
+	Item->InitItem( _pItemTweaks );
+	return AddInventoryItem( Item, _bDropIfNeeded, _bShowIfNeeded, _EquipUsage ) ? Item : NULL;
+}
+
+// 2012 0x85c760 (490 B; 2013 unnamed, reached from Tick_Inventory): the deferred drops (m_bNeedToDropAnItem - DropItemsInSlot not
+// ported, the request is cleared), TickInventoryItem on every slot item that needs to tick, then the active contexts: the ones
+// no longer InProgress leave the list, the rest of a ticking item get their tick (UDisItemContext slot 76 - the contexts have no
+// bodies here, named once)
+void UDishonoredInventory::TickInventory( FLOAT _fDeltaTime )
+{
+	if( m_bNeedToDropAnItem )
+	{
+		for( INT Usage = 0; Usage < EDisEquipUsage_MAX; Usage++ )
+		{
+			if( m_EquipUsageInfo[Usage].m_iDropSlot_NextFrame != INDEX_NONE )
+			{
+				GJDIAG_ONCE( TEXT("UDishonoredInventory::TickInventory: a deferred drop was requested; DropItemsInSlot (2012 0x85bb60) is not ported") );
+				m_EquipUsageInfo[Usage].m_iDropSlot_NextFrame = INDEX_NONE;
+			}
+		}
+		m_bNeedToDropAnItem = FALSE;
+	}
+	for( INT Idx = 0; Idx < m_Slots.Num(); Idx++ )
+	{
+		UDishonoredInventoryItem* Item = m_Slots(Idx).m_pItem;
+		if( Item && Item->m_bNeedToTick )
+		{
+			Item->TickInventoryItem( _fDeltaTime );
+		}
+	}
+	for( INT Idx = 0; Idx < m_ActiveItemContexts.Num(); )
+	{
+		UDisItemContext* Context = m_ActiveItemContexts(Idx);
+		if( Context && Context->m_ContextStatus == eDisItemContextStatus_InProgress )
+		{
+			if( Context->m_pOwner && Context->m_pOwner->m_bNeedToTick )
+			{
+				GJDIAG_ONCE( TEXT("UDishonoredInventory::TickInventory: an active item context wants its tick (UDisItemContext vtable slot 76); the contexts have no bodies") );
+			}
+			Idx++;
+		}
+		else
+		{
+			m_ActiveItemContexts.Remove( Idx, 1 );
+		}
+	}
+}
+
+// 2012 0x861a90 / 2013 0x8180a0 (480 / 391 B): every item removed, each hand that still names a slot detached and given empty hands
+// again, every ammo count zeroed (a negative count is kept - the infinite marker), every abstract item removed, both elixirs zero
+void UDishonoredInventory::ClearInventory()
+{
+	RemoveItemsByClass( UDishonoredInventoryItem::StaticClass(), FALSE );
+	for( INT Usage = EDisEquipUsage_Primary; Usage < EDisEquipUsage_MAX; Usage++ )
+	{
+		const INT SlotIndex = m_EquipUsageInfo[Usage].m_iEquippedSlot;
+		if( SlotIndex == INDEX_NONE )
+		{
+			continue;
+		}
+		if( m_Slots(SlotIndex).m_pItem )
+		{
+			AttachItemToSocket( m_Slots(SlotIndex).m_pItem, ItemSocket_None );
+		}
+		EquipItemType( UDishonoredItemEmpty::StaticClass(), Usage, FALSE );
+	}
+	for( INT Type = 0; Type < 8 && Type < m_AmmoInfo.Num(); Type++ )
+	{
+		m_AmmoInfo(Type).m_AmmoCount = Min<INT>( m_AmmoInfo(Type).m_AmmoCount, 0 );
+	}
+	for( INT Idx = 0; Idx < m_AbstractItem.Num(); )
+	{
+		const INT NumBefore = m_AbstractItem.Num();
+		RemoveAbstractItem( m_AbstractItem(Idx).m_pItem, m_AbstractItem(Idx).m_Quantity );
+		if( m_AbstractItem.Num() == NumBefore )
+		{
+			Idx++;
+		}
+	}
+	for( INT Elixir = 0; Elixir < 2; Elixir++ )
+	{
+		SetElixirCount( Elixir, 0 );
+	}
+}
+
+// 2012 0x85aab0 (474 B; 2013 unnamed): every removable item of the class (empty hands and m_bNeverRemove items skipped) leaves its
+// slot: a hand holding it is given empty hands (DoEquip + the equipped event), the re-equip memories that named the slot are
+// cleared, the mesh detached. The item object itself is left to the garbage collector, as retail leaves it.
+void UDishonoredInventory::RemoveItemsByClass( const UClass* _pClass, UBOOL _bExactMatch )
+{
+	for( UDishonoredInventoryItem* Item = FindItemByClass( _pClass, _bExactMatch, TRUE, TRUE, EDisEquipUsage_None ); Item; Item = FindItemByClass( _pClass, _bExactMatch, TRUE, TRUE, EDisEquipUsage_None ) )
+	{
+		const UDisTweaks_InventoryItem* Tweaks = Item->GetItemTweaks();
+		if( Tweaks->m_bNeverRemove )
+		{
+			break;
+		}
+		const INT SlotIndex = GetRequiredSlot( Item->GetClass(), Tweaks->m_pOnlyHeldByPawnType != NULL, Tweaks->m_RequiredEquipUsage, NULL );
+		if( SlotIndex == INDEX_NONE )
+		{
+			break;
+		}
+		for( INT Usage = EDisEquipUsage_None; Usage < EDisEquipUsage_MAX; Usage++ )
+		{
+			FDisEquipUsageInfo& Info = m_EquipUsageInfo[Usage];
+			if( Info.m_iEquippedSlot == SlotIndex )
+			{
+				INT EmptySlot = INDEX_NONE;
+				if( CanEquipItemType( UDishonoredItemEmpty::StaticClass(), Usage, EmptySlot ) )
+				{
+					DoEquip( EmptySlot, Usage, FALSE );
+					FDisGameEventItemEquipped_Params Params;
+					Params.m_pEquippingPawn = m_pOwner;
+					Params.m_pItemClass = UDishonoredItemEmpty::StaticClass();
+					FArkGameEventDispatcher::GetInstance()->ProcessEvent( FArkGameEvent( DisGameEventType_ItemEquipped, &Params, m_pOwner ) );
+				}
+			}
+			if( Info.m_iReequipSlot == SlotIndex )
+			{
+				Info.m_iReequipSlot = INDEX_NONE;
+			}
+			if( Info.m_iReequipSlotNonEmpty == SlotIndex )
+			{
+				Info.m_iReequipSlotNonEmpty = INDEX_NONE;
+			}
+		}
+		AttachItemToSocket( Item, ItemSocket_None );
+		m_Slots(SlotIndex).m_pItem = NULL;
+	}
+}
+
+// 2012 0x851e10 / 2013 0x804c30 (79 B, same): NothingDone without a physically equipped item in the hand, else the item's own
+// transition - TransitionFailure when it did nothing, TransitionSuccess otherwise
+BYTE UDishonoredInventory::PlayerTransitionItemIn( BYTE _EquipUsage, BYTE _ActionUsage, UBOOL _bFromOffscreen, UBOOL _bUseFastEquip )
+{
+	UDishonoredInventoryItem* Item = GetEquippedItem( _EquipUsage );
+	if( !Item || !Item->ItemIsPhysicallyEquipped() )
+	{
+		return eDisTransitionItemResult_NothingDone;
+	}
+	return Item->PlayerTransitionItemIn_Derived( _ActionUsage, _bFromOffscreen, _bUseFastEquip ) != eDisTransitionItemResult_NothingDone ? eDisTransitionItemResult_TransitionSuccess : eDisTransitionItemResult_TransitionFailure;
 }

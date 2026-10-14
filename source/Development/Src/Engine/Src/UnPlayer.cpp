@@ -726,6 +726,14 @@ static void DishonoredTickInputScript( UGameViewportClient* Client, FLOAT DeltaT
 	{
 		appRequestExit( 0 );
 	}
+	else if( Op == TEXT("exec") && Tok.Num() >= 2 )
+	{
+		// agent GJ (PHASE20 GJ): a console command through the viewport client, the way the key bindings' exec functions are
+		// reached (Dis_EquipItemByType <class> <usage> is what GBA_EquipPistol and its kin are bound to); the sword, which the
+		// game binds no key to, is drawn this way
+		const FString Answer = Client->ConsoleCommand( Cmd.Mid( Cmd.InStr( TEXT(" ") ) + 1 ) );
+		debugf( TEXT("DISHONORED(inputcmd): exec answered '%s'"), *Answer );
+	}
 	else
 	{
 		debugf( TEXT("DISHONORED(inputcmd): unknown command '%s' ignored"), *Cmd );

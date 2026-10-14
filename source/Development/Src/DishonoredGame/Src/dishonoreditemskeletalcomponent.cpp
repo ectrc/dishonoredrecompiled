@@ -7,3 +7,13 @@
 //   0x861da0  public: class UDishonoredInventoryItem * __thiscall UDishonoredItemSkeletalComponent::GetOwningInventoryItem(void)
 //   0x8828e0  public: static class UClass * __cdecl UDishonoredItemSkeletalComponent::GetPrivateStaticClassUDishonoredItemSkeletalComponent(wchar_t const *)
 //   0x882ef0  public: static class UClass * __cdecl UDishonoredItemSkeletalComponent::StaticClassNoInline(void)
+
+// Agent GJ (PHASE20 GJ): the two accessors are inline in CppText/UDishonoredItemSkeletalComponent.h; the unit is compiled so the
+// class's vtable is the component's own (UDishonoredPlayerSkeletalComponent's scene proxy and tick-end phase, agent GF).
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGJ_ItemSkeletalComponent()
+{
+}

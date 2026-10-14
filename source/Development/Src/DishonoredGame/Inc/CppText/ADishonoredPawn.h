@@ -157,6 +157,38 @@ public:
 	void OnCameraUpdate( const struct FDishonoredViewTarget& _VT, INT _PassCount );
 	virtual void OnCameraUpdate_Derived( const struct FDishonoredViewTarget& _VT, INT _PassCount ) {}
 
+// ---- agent GJ (PHASE20 GJ): the pawn's half of the equip path ----
+// DISHONORED(port): 2012 / 2013 rvas - GetEquippedItem 0x7aab20, ShowEquippedInventoryItem 0x7aab60, PrimaryHandAppearEmpty 0x7aab30,
+// HandsAppearEmpty 0x7acc50, AttachEquippedItem 0x7aac20 / 0x74a510 (virtual, slot +1536 in 2013), EquipItemByType 0x7c8500 / 0x75d400
+// (virtual), EquipItemByType_KeepTrying 0x7afbe0 / 0x751790, GetItemClassBeingEquipped (virtual, the base answers NULL; the player's
+// 0x706d80 reads its upper FSM), PreBeginPlay_Inventory 0x7c38a0 / 0x758860 (slot +1468, called by PreBeginPlay after
+// StartAllComponents), PostBeginPlay_Inventory (slot +1472, the base is empty; the player's 0x718360 / 0x6ad200 spawns the powers item
+// and applies the loadout), Tick_Inventory 0x7afac0 (the fifth tick phase), SpawnInventoryLoadout_Items 0x7c8690 / 0x75d590.
+// EEquipItemFlags is the 2012 PDB's ADishonoredPawn::EEquipItemFlags. Bodies in dishonoredpawn_inventory.cpp.
+public:
+	enum EEquipItemFlags
+	{
+		EEquipItemFlags_None					= 0x0,
+		EEquipItemFlags_Temporary				= 0x1,
+		EEquipItemFlags_FastUnequip				= 0x2,
+		EEquipItemFlags_TempFastUnequip			= 0x3,
+		EEquipItemFlags_FastEquip				= 0x4,
+		EEquipItemFlags_TempFastEquipFastUnequip	= 0x7,
+		EEquipItemFlags_InstantEquip			= 0x8,
+		EEquipItemFlags_SkipUnequip				= 0x10,
+	};
+	class UDishonoredInventoryItem* GetEquippedItem( BYTE _EquipUsage ) const;
+	void ShowEquippedInventoryItem( UBOOL _bShow, BYTE _EquipUsage );
+	UBOOL PrimaryHandAppearEmpty() const;
+	UBOOL HandsAppearEmpty() const;
+	virtual UBOOL AttachEquippedItem( BYTE _ItemSocket, BYTE _EquipUsage );
+	virtual UBOOL EquipItemByType( UClass* _pType, BYTE _EquipUsage, INT _Flags );
+	UBOOL EquipItemByType_KeepTrying( UClass* _pItemClass, BYTE _EquipUsage, INT _Flags );
+	virtual UClass* GetItemClassBeingEquipped( BYTE _EquipUsage ) const { return NULL; }
+	virtual void PreBeginPlay_Inventory();
+	virtual void PostBeginPlay_Inventory() {}
+	virtual void Tick_Inventory( FLOAT _fDeltaTime, ELevelTick _TickType );
+	void SpawnInventoryLoadout_Items( const TArray<class UDisTweaks_InventoryItem*>& _rLoadout );
 // ---- agent GI (PHASE20 GI): the IDisAttentionTargetInterface half every Dishonored pawn carries ----
 // 2012 rvas (dishonoredpawn_attentiontarget.cpp) / 2013: GetObservableComponent 0x78e5a0 / 0x7494a0, GetAttnTargetLocation
 // 0x78e5b0 (2013 unmatched: the Location copy), GetAttnTargetVelocity 0x78e5e0 (unmatched: the Velocity copy), GetAttnTargetExtent

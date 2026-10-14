@@ -20,3 +20,23 @@
 //   0x8a5330  protected: virtual void __thiscall UDishonoredItemEmpty::OnCameraUpdate_Derived(struct FDishonoredViewTarget const &)
 //   0x8ad730  public: static class UClass * __cdecl UDishonoredItemEmpty::GetPrivateStaticClassUDishonoredItemEmpty(wchar_t const *)
 //   0x8ada30  public: static class UClass * __cdecl UDishonoredItemEmpty::StaticClassNoInline(void)
+
+// Agent GJ (PHASE20 GJ): the tweaks slots. The movable grab (GrabMovableObject 0x887c60, DropMovableObject 0x88fc50, CalcMovableOffset,
+// TickInventoryItem_Derived, OnCameraUpdate_Derived) stays a skeleton: nothing is grabbed on the harness route.
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGJ_ItemEmpty()
+{
+}
+
+UDisTweaksBase* UDishonoredItemEmpty::GetTweaks_Derived()
+{
+	return m_pEmptyHandsTweaks;
+}
+
+void UDishonoredItemEmpty::SetTweaks_Derived( UDisTweaksBase* _pTweaks )
+{
+	m_pEmptyHandsTweaks = Cast<UDisTweaks_ItemEmpty>( _pTweaks );
+}

@@ -12,3 +12,23 @@
 //   0x651490  public: virtual void __thiscall UDishonoredMapInfo::GameLoad(class FArchive &, enum ESaveLoadLocation)
 //   0x653670  public: static class UClass * __cdecl UDishonoredMapInfo::StaticClassNoInline(void)
 //   0x655f50  public: virtual void __thiscall UDishonoredMapInfo::GameSave(class FArchive &, enum ESaveLoadLocation)
+
+// Agent GJ (PHASE20 GJ): the player loadout accessor. The squad info, the fish attractors and the save pair stay where they are
+// (dissavegame.cpp has GameSave / GameLoad).
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGJ_MapInfo()
+{
+}
+
+const UDisTweaks_PlayerLoadout* UDishonoredMapInfo::GetMapSpecificPlayerLoadout()
+{
+	if( !m_pPlayerMapSpecificLoadout )
+	{
+		return NULL;
+	}
+	m_pPlayerMapSpecificLoadout->ApplyFallbackChain();
+	return m_pPlayerMapSpecificLoadout;
+}

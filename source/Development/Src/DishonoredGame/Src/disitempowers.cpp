@@ -18,3 +18,22 @@
 //   0x8a4940  public: unsigned int __thiscall UDisItemPowers::SetCurrentPower(class UDishonoredActivePowerComponent *, unsigned int)
 //   0x8ad6a0  public: static class UClass * __cdecl UDisItemPowers::GetPrivateStaticClassUDisItemPowers(wchar_t const *)
 //   0x8ada00  public: static class UClass * __cdecl UDisItemPowers::StaticClassNoInline(void)
+
+// Agent GJ (PHASE20 GJ): the tweaks slots. The power selection and activation stay skeletons.
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGJ_ItemPowers()
+{
+}
+
+UDisTweaksBase* UDisItemPowers::GetTweaks_Derived()
+{
+	return m_pPowersItemTweaks;
+}
+
+void UDisItemPowers::SetTweaks_Derived( UDisTweaksBase* _pTweaks )
+{
+	m_pPowersItemTweaks = Cast<UDisTweaks_ItemPowers>( _pTweaks );
+}

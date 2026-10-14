@@ -15,3 +15,35 @@
 //   0x8acba0  public: static class UClass * __cdecl UDishonoredWepSword::GetPrivateStaticClassUDishonoredWepSword(wchar_t const *)
 //   0x8ade30  public: static void __cdecl UDishonoredWepSword::InitializePrivateStaticClassUDishonoredWepSword(void)
 //   0x8ae810  public: static class UClass * __cdecl UDishonoredWepSword::StaticClassNoInline(void)
+
+// Agent GJ (PHASE20 GJ): the tweaks slots and InitItem. The melee contexts (UDisWepMelee, UDisItemContext_MeleeAttack*) stay skeletons.
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGJ_WepSword()
+{
+}
+
+UDisTweaksBase* UDishonoredWepSword::GetTweaks_Derived()
+{
+	return m_pSwordTweaks;
+}
+
+void UDishonoredWepSword::SetTweaks_Derived( UDisTweaksBase* _pTweaks )
+{
+	m_pSwordTweaks = Cast<UDisTweaks_WepSword>( _pTweaks );
+}
+
+void UDishonoredWepSword::InitItem( UDisTweaks_InventoryItem* _pItemTweaks )
+{
+	Super::InitItem( _pItemTweaks );
+	if( !m_pPlayerMesh )
+	{
+		return;
+	}
+	UMaterialInterface* Parent = m_pPlayerMesh->GetMaterial( 0 );
+	UMaterialInstanceConstant* Instance = ConstructObject<UMaterialInstanceConstant>( UMaterialInstanceConstant::StaticClass(), UObject::GetTransientPackage(), NAME_None, RF_Transient );
+	Instance->SetParent( Parent );
+	m_pPlayerMesh->SetMaterial( 0, Instance );
+}

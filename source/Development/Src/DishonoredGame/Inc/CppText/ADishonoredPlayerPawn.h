@@ -139,6 +139,22 @@ protected:
 	virtual void StopRootMotionMode();
 public:
 
+// ---- agent GJ (PHASE20 GJ): the player's half of the equip path ----
+// DISHONORED(port): 2012 / 2013 rvas - PostBeginPlay_Inventory 0x718360 / 0x6ad200, EquipItemByType 0x70ce90 / 0x6b3210 (the
+// equip-change action it requests from the hand's FSM is a skeleton: every equip is taken the instant way, said once),
+// TransitionItemIn 0x6fb760 / 0x6a2590, GetItemClassBeingEquipped 0x706d80 (NULL: no UStatePlayerEquipChange to read),
+// GetDesiredPlayerStance 0x6fb250 / 0x6a2120, GetActualPlayerStance 0x6fb220 / 0x6a20f0, SetPlayerStance 0x6fb200 (20 B),
+// IsLeftHandDisabled 0x6fb110 (m_bLeftHandDisabled), IsSneaking 0x707470. Bodies in dishonoredplayerpawn_inventory.cpp.
+public:
+	virtual void PostBeginPlay_Inventory();
+	virtual UBOOL EquipItemByType( UClass* _pType, BYTE _EquipUsage, INT _Flags );
+	BYTE TransitionItemIn( BYTE _EquipUsage, BYTE _ActionUsage, UBOOL _bFromOffscreen, UBOOL _bUseFastEquip );
+	virtual UClass* GetItemClassBeingEquipped( BYTE _EquipUsage ) const;
+	BYTE GetDesiredPlayerStance( BYTE _EquipUsage ) const;
+	BYTE GetActualPlayerStance( BYTE _EquipUsage ) const;
+	void SetPlayerStance( BYTE _EquipUsage, BYTE _Stance ) { m_PlayerStance[_EquipUsage] = _Stance; }
+	UBOOL IsLeftHandDisabled() const { return m_bLeftHandDisabled; }
+	UBOOL IsSneaking() const;
 // ---- agent GI (PHASE20 GI): the player half of the attention target ----
 // CollectAttnTargetParams 2012 0x6fb080 / 2013 0x6a1ed0 (the base plus m_bIsPlayer), IsAttnTargetPlayer (a folded `return TRUE`),
 // AllowAttentionGain 0x6fb0a0 (TRUE unless possessing - the possession state is not ported here, named in the body),

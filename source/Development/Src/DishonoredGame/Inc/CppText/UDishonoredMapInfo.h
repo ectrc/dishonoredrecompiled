@@ -9,3 +9,7 @@ public:
 	// 59 such bodies are ICF-folded onto UObject::IsRefSaveable's (2012 rva 0x66a860), which is why the PDB
 	// names only the 11 overrides that have a body of their own. vtables.csv slot 67 is the record.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return TRUE; }
+
+	// agent GJ (PHASE20 GJ): GetMapSpecificPlayerLoadout 2012 0x62fe80 / 2013 0x5ea240 (24 B, same): the map's loadout with its fallback
+	// chain applied, or NULL. Body in dishonoredmapinfo.cpp.
+	const class UDisTweaks_PlayerLoadout* GetMapSpecificPlayerLoadout();

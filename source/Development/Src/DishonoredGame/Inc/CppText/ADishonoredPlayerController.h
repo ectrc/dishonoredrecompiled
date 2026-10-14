@@ -119,3 +119,12 @@ public:
 // (0x6f9d80) and UpdateBlindedEffect (0x6f87d0) - the three are skeletons here, named once. Body in dishonoredplayercontroller.cpp.
 public:
 	void OnCameraUpdate( const struct FDishonoredViewTarget& _VT, INT _PassCount );
+
+// ---- agent GJ (PHASE20 GJ): the equip exec the key bindings reach ----
+// DISHONORED(port): Dis_EquipItemByType 2012 0x6ec850 / 2013 0x6b4a70 (384 / 385 B, same: the GBA_Equip* bindings' command), its exec
+// 0x634650 / 0x5ee010 (a class and a byte), CanEquip 0x6e3280 (90 B; 2013 inlined). EquipBestSuitableItem (0x6e3ac0, the other
+// hand's best item when it is empty) and UDishonoredInventoryItem::NextItemOption (the item's own cycle) are not ported - named once.
+// Bodies in dishonoredplayercontroller.cpp.
+public:
+	virtual void Dis_EquipItemByType( UClass* _pItemClass, BYTE _Usage );
+	UBOOL CanEquip( BYTE _EquipUsage ) const;

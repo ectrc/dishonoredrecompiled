@@ -938,6 +938,7 @@ public:
     //## END PROPS DisItemPowers
 
     DECLARE_CLASS(UDisItemPowers,UDishonoredInventoryItem,0,DishonoredGame)
+#include "CppText/UDisItemPowers.h"
 };
 
 // DishonoredGame.DisLootPayload: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
@@ -1042,6 +1043,7 @@ public:
     //## END PROPS DisTweaks_PlayerLoadout
 
     DECLARE_CLASS(UDisTweaks_PlayerLoadout,UDisTweaksBase,0,DishonoredGame)
+#include "CppText/UDisTweaks_PlayerLoadout.h"
 };
 
 // DishonoredGame.DishonoredInventory: retail sizeof 316, reflected span 56..316 (2012 PDB sizeof 316)
@@ -1107,6 +1109,7 @@ public:
     //## END PROPS DishonoredItemSkeletalComponent
 
     DECLARE_CLASS(UDishonoredItemSkeletalComponent,UDishonoredPlayerSkeletalComponent,0,DishonoredGame)
+#include "CppText/UDishonoredItemSkeletalComponent.h"
 };
 
 #undef DECLARE_CLASS

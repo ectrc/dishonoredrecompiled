@@ -2361,6 +2361,13 @@ extern void DishonoredLinkFZ_UStatePlayerMasterWalk();
 extern void DishonoredLinkGF_InventoryItem();
 extern void DishonoredLinkGF_PlayerSkeletalComponent();
 extern void DishonoredLinkGF_SkelControlFootPlacement();
+extern void DishonoredLinkGJ_ItemEmpty();
+extern void DishonoredLinkGJ_ItemPowers();
+extern void DishonoredLinkGJ_ItemSkeletalComponent();
+extern void DishonoredLinkGJ_MapInfo();
+extern void DishonoredLinkGJ_PlayerPawnInventory();
+extern void DishonoredLinkGJ_TweaksPlayerLoadout();
+extern void DishonoredLinkGJ_WepSword();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
 extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
@@ -2405,6 +2412,13 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkGF_InventoryItem,
 	&DishonoredLinkGF_PlayerSkeletalComponent,
 	&DishonoredLinkGF_SkelControlFootPlacement,
+	&DishonoredLinkGJ_ItemEmpty,
+	&DishonoredLinkGJ_ItemPowers,
+	&DishonoredLinkGJ_ItemSkeletalComponent,
+	&DishonoredLinkGJ_MapInfo,
+	&DishonoredLinkGJ_PlayerPawnInventory,
+	&DishonoredLinkGJ_TweaksPlayerLoadout,
+	&DishonoredLinkGJ_WepSword,
 	&DishonoredLinkUDisAIBrainProcessAttention,
 	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,

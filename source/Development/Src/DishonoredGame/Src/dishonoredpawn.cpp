@@ -419,6 +419,8 @@ void ADishonoredPawn::execLanded_Native( FFrame& Stack, RESULT_DECL )
 void ADishonoredPawn::PostBeginPlay()
 {
 	Super::PostBeginPlay();
+	// agent GJ (PHASE20 GJ): retail's third pass (0x7995f0 +0x2f, slot +1472), between Attachments and Health
+	PostBeginPlay_Inventory();
 	PostBeginPlay_Body();
 }
 
@@ -590,6 +592,8 @@ void ADishonoredPawn::PreBeginPlay()
 	{
 		m_ComponentContainer->StartAllComponents();
 	}
+	// agent GJ (PHASE20 GJ): retail's third step (0x78e220 +0x2a, 2013 0x748f10 slot +1468)
+	PreBeginPlay_Inventory();
 }
 
 void ADishonoredPawn::PreBeginPlay_NativeComponents()
@@ -613,6 +617,8 @@ UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	{
 		// agent GF (PHASE19 GF): the first phase, in retail's place (0x790c10 +0x3a, before Tick_Water)
 		Tick_Begin( DeltaTime, TickType );
+		// agent GJ (PHASE20 GJ): the fifth phase (0x790c10 +0x8b), unconditional in retail
+		Tick_Inventory( DeltaTime, TickType );
 		if( m_bAllowTickBody )
 		{
 			Tick_Body( DeltaTime, TickType );

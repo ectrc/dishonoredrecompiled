@@ -526,10 +526,6 @@ void ADishonoredPlayerController::execDis_UsePrimaryItemOrAdrenaline_Multi( FFra
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_UsePrimaryItemOrAdrenaline_Multi);
 }
-void ADishonoredPlayerController::execDis_EquipItemByType( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_EquipItemByType);
-}
 void ADishonoredPlayerController::execDis_PrevEquippedItem( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execDis_PrevEquippedItem);

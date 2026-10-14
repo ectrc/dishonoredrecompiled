@@ -3105,3 +3105,74 @@ void ADishonoredPlayerController::OnCameraUpdate( const FDishonoredViewTarget& _
 	}
 	GFDIAG_ONCE( TEXT("ADishonoredPlayerController::OnCameraUpdate: TickCameraTracking (pass 0) and UpdateBlindedEffect (pass 1) are not ported") );
 }
+
+/*-----------------------------------------------------------------------------
+	Agent GJ (PHASE20 GJ): the equip exec. 2012 0x6ec850 / 2013 0x6b4a70 (same body): with input mask 0x10 enabled and a player
+	pawn, the hand's item and the other hand's are read; a hand that is empty (no item or an empty hand) takes the class through
+	EquipItemByType_KeepTrying with SkipUnequip when the controller may equip into it, and an empty other hand is then given its best
+	suitable item (EquipBestSuitableItem, not ported); a hand holding that class cycles the item's option (NextItemOption, not
+	ported); a hand holding something else equips the class - SkipUnequip unless the class is the empty hand.
+-----------------------------------------------------------------------------*/
+
+#include "gjequipdiag.h"
+
+void ADishonoredPlayerController::Dis_EquipItemByType( UClass* _pItemClass, BYTE _Usage )
+{
+	if( DisGJDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): gjdiag Dis_EquipItemByType %s usage %d: input 0x10 enabled %d, pawn %s"), _pItemClass ? *_pItemClass->GetName() : TEXT("none"), (INT)_Usage, (INT)IsInputEnabled( 0x10 ), Pawn ? *Pawn->GetName() : TEXT("none") );
+	}
+	if( !IsInputEnabled( 0x10 ) )
+	{
+		return;
+	}
+	ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( Pawn );
+	if( !Player || !_pItemClass )
+	{
+		return;
+	}
+	const BYTE OtherUsage = _Usage == EDisEquipUsage_Primary ? EDisEquipUsage_Secondary : EDisEquipUsage_Primary;
+	UDishonoredInventoryItem* Equipped = Player->GetEquippedItem( _Usage );
+	UDishonoredInventoryItem* OtherEquipped = Player->GetEquippedItem( OtherUsage );
+	const UBOOL bEmpty = !Equipped || Equipped->IsA( UDishonoredItemEmpty::StaticClass() );
+	const UBOOL bOtherEmpty = !OtherEquipped || OtherEquipped->IsA( UDishonoredItemEmpty::StaticClass() );
+	const UBOOL bClassIsEmptyHand = _pItemClass->IsChildOf( UDishonoredItemEmpty::StaticClass() );
+	if( bEmpty )
+	{
+		if( !bClassIsEmptyHand && CanEquip( _Usage ) )
+		{
+			Player->EquipItemByType_KeepTrying( _pItemClass, _Usage, ADishonoredPawn::EEquipItemFlags_SkipUnequip );
+			if( bOtherEmpty && CanEquip( OtherUsage ) )
+			{
+				GJDIAG_ONCE( TEXT("ADishonoredPlayerController::Dis_EquipItemByType: EquipBestSuitableItem (2012 0x6e3ac0) for the other, empty hand is not ported") );
+			}
+		}
+	}
+	else if( Equipped->IsA( _pItemClass ) )
+	{
+		GJDIAG_ONCE( TEXT("ADishonoredPlayerController::Dis_EquipItemByType: UDishonoredInventoryItem::NextItemOption is not ported; the held item keeps its option") );
+	}
+	else
+	{
+		Player->EquipItemByType_KeepTrying( _pItemClass, _Usage, bClassIsEmptyHand ? ADishonoredPawn::EEquipItemFlags_None : ADishonoredPawn::EEquipItemFlags_SkipUnequip );
+	}
+}
+
+// 2012 0x6e3280 (90 B): the primary hand may equip while no corpse is carried; the secondary while the left hand is not disabled
+UBOOL ADishonoredPlayerController::CanEquip( BYTE _EquipUsage ) const
+{
+	const ADishonoredPlayerPawn* Player = ConstCast<ADishonoredPlayerPawn>( Pawn );
+	if( _EquipUsage == EDisEquipUsage_Primary )
+	{
+		return !( Player && Player->IsCarryingCorpse() );
+	}
+	return Player && !Player->IsLeftHandDisabled();
+}
+
+void ADishonoredPlayerController::execDis_EquipItemByType( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT(UClass,_pItemClass);
+	P_GET_BYTE(_Usage);
+	P_FINISH;
+	Dis_EquipItemByType( _pItemClass, _Usage );
+}

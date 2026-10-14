@@ -39,3 +39,35 @@ public:
 
 	// agent GF (PHASE19 GF): OnCameraUpdate 2012 0x85a730 / 2013 0x817c90 (118 B, the same): every slot's item that should tick gets the view
 	void OnCameraUpdate( const struct FDishonoredViewTarget& _rVT );
+
+// ---- agent GJ (PHASE20 GJ): the equip path ----
+// DISHONORED(port): 2012 / 2013 rvas - InitInventory 0x85b790 / 0x818c80, AddInventorySlot 0x851d60 / 0x804b80, GetRequiredSlot
+// (class) 0x851e60 / 0x80b2a0, GetRequiredSlot (item) 0x8559f0 / 0x80f680, GetNextEmptySlot 0x851f10 / 0x80b350, CanEquipItemType
+// (slot) 0x855df0 / 0x80f920, CanEquipItemType (tweaks) 0x857f00 / 0x811b50, DoEquip 0x85a7b0 / 0x817d10, EquipItemType 0x85a940 /
+// 0x817eb0, AttachItemToSocket 0x855a50 / 0x80f6e0, ShowInventoryItem 0x857fb0 / 0x811c00, ShowEquippedItem 0x858040 / 0x811c90,
+// SetReequipItem 0x852a90 / 0x805500, GetReequipItem 0x852b70 / 0x8055e0, AddInventoryItem 0x85be60 / 0x819380 (2013 adds
+// _bRemoveIfNeeded), SpawnAndAddInventoryItem 0x85c9c0 / 0x819cd0, TickInventory 0x85c760, ClearInventory 0x861a90 / 0x8180a0,
+// RemoveItemsByClass 0x85aab0, PlayerTransitionItemIn 0x851e10 / 0x804c30. Bodies in dishonoredinventory.cpp.
+public:
+	void InitInventory( class ADishonoredPawn* _pOwner, class UDisTweaks_InventoryItem* _pEmptyHandsType );
+	void AddInventorySlot( UClass* _pRequiredClass, BYTE _RequiredUsage );
+	INT GetRequiredSlot( UDishonoredInventoryItem* _pItem );
+	UBOOL CanEquipItemType( UClass* _pType, BYTE _EquipUsage, const class UDisTweaks_InventoryItem** _ppItemThatWillEquip );
+	UBOOL EquipItemType( UClass* _pType, BYTE _EquipUsage, UBOOL _bTemporary );
+	UBOOL AttachItemToSocket( UDishonoredInventoryItem* const _pItem, BYTE _ItemSocket );
+	UBOOL ShowEquippedItem( UBOOL _bShow, BYTE _EquipUsage );
+	void SetReequipItem( BYTE _EquipUsage, UClass* _pType );
+	UClass* GetReequipItem( BYTE _EquipUsage, UBOOL _bNonEmptyRequired ) const;
+	UBOOL AddInventoryItem( UDishonoredInventoryItem* const _pItem, UBOOL _bDropIfNeeded, UBOOL _bShowIfNeeded, BYTE _EquipUsage );
+	UDishonoredInventoryItem* SpawnAndAddInventoryItem( class UDisTweaks_InventoryItem* const _pItemTweaks, UBOOL _bDropIfNeeded, UBOOL _bShowIfNeeded, BYTE _EquipUsage );
+	void TickInventory( FLOAT _fDeltaTime );
+	void ClearInventory();
+	void RemoveItemsByClass( const UClass* _pClass, UBOOL _bExactMatch );
+	BYTE PlayerTransitionItemIn( BYTE _EquipUsage, BYTE _ActionUsage, UBOOL _bFromOffscreen, UBOOL _bUseFastEquip );
+protected:
+	INT GetRequiredSlot( UClass* _pRequiredClass, UBOOL _bOwnerSpecific, BYTE _EquipUsage, struct FPawnInventorySlot** _ppOutSlot );
+	INT GetNextEmptySlot( INT _iCur, UDishonoredInventoryItem* _pForItem );
+	UBOOL CanEquipItemType( UClass* _pType, BYTE _EquipUsage, INT& _iSlot );
+	void DoEquip( INT _iSlot, BYTE _EquipUsage, UBOOL _bTemporary );
+	UBOOL ShowInventoryItem( UDishonoredInventoryItem* _pItem, UBOOL _bShow, BYTE _EquipUsage );
+public:

@@ -50,6 +50,7 @@
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
+#include "gjequipdiag.h"
 #include "stateplayermasterparams.h"
 #include "fzsoireediag.h"
 
@@ -258,11 +259,14 @@ UBOOL ADishonoredPlayerPawn::MAT_IsUnequipped() const
  * DISHONORED(port): 2012 0x6fe570. When the matinee asks for empty hands and the master FSM is not in the dialog state:
  * the re-equip memory of both hands is set to UDishonoredItemEmpty (UDishonoredInventory::SetReequipItem 0x852a90), a
  * held movable is dropped, and UDishonoredItemEmpty is equipped in both hands (EquipItemByType_KeepTrying 0x7afbe0).
- * DISHONORED(bringup): SetReequipItem and EquipItemByType_KeepTrying are not in this tree (dishonoredinventory.cpp has the
- * abstract-item and ammo half only), so the hands keep what they hold; logged once with the flag's value.
+ * Agent GJ (PHASE20 GJ) ported both callees; the body is retail's whole.
  */
 void ADishonoredPlayerPawn::MAT_SetForceInventory( UBOOL bShouldForceEmptyHand )
 {
+	if( DisGJDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): gjdiag MAT_SetForceInventory( %d ) t=%.2f, in dialog %d"), (INT)bShouldForceEmptyHand, GWorld ? GWorld->GetTimeSeconds() : 0.f, (INT)( m_pPlayerMasterFSM && m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterInDialog::StaticClass(), TRUE ) ) );
+	}
 	if( !bShouldForceEmptyHand )
 	{
 		return;
@@ -271,11 +275,19 @@ void ADishonoredPlayerPawn::MAT_SetForceInventory( UBOOL bShouldForceEmptyHand )
 	{
 		return;
 	}
+	// agent GJ (PHASE20 GJ): the two callees exist now (2013 0x6a4d40 checked: the same order - the two re-equip memories, the
+	// movable drop, the two keep-trying equips of the empty hand)
+	if( m_pInventory )
+	{
+		m_pInventory->SetReequipItem( EDisEquipUsage_Primary, UDishonoredItemEmpty::StaticClass() );
+		m_pInventory->SetReequipItem( EDisEquipUsage_Secondary, UDishonoredItemEmpty::StaticClass() );
+	}
 	if( IsHoldingMovableObject() )
 	{
 		DropMovableObject( FALSE );
 	}
-	FZDIAG_ONCE( TEXT("MAT_SetForceInventory( TRUE ): UDishonoredInventory::SetReequipItem and ADishonoredPawn::EquipItemByType_KeepTrying are not ported; the hands keep their items") );
+	EquipItemByType_KeepTrying( UDishonoredItemEmpty::StaticClass(), EDisEquipUsage_Primary, EEquipItemFlags_None );
+	EquipItemByType_KeepTrying( UDishonoredItemEmpty::StaticClass(), EDisEquipUsage_Secondary, EEquipItemFlags_None );
 }
 
 // DISHONORED(port): 2013 0x6a1cf0 (2012 0x704d50 without the last argument): the hand's DisableArmFollow influence weighted 1 or 0
