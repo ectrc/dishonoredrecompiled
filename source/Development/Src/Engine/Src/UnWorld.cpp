@@ -1343,7 +1343,9 @@ static UBOOL IsTimeLimitExceeded( const TCHAR* CurrentTask, DOUBLE StartTime, UL
 		DOUBLE CurrentTime	= appSeconds();
 		// Delta time in ms.
 		DOUBLE DeltaTime	= (CurrentTime - StartTime) * 1000;
-		if( DeltaTime > 5 )
+		// DISHONORED(port): agent GG - retail's budget is AWorldInfo::m_fAddWorldTimeLimitPerFrame (config, seconds; 0.005 in
+		// DishonoredGame.ini), 2012 IsTimeLimitExceeded 0x3a24d0 / 2013 0x780f80, in place of the reference's 5 ms literal
+		if( DeltaTime > GWorld->GetWorldInfo()->m_fAddWorldTimeLimitPerFrame * 1000 )
 		{
 			// Log if a single event took way too much time.
 			if( DeltaTime > 20 )
@@ -1555,7 +1557,8 @@ void UWorld::AddToWorld( ULevelStreaming* StreamingLevel )
 		// Incrementally update components.
 		do
 		{
-			Level->IncrementalUpdateComponents( (GIsEditor || GIsUCC) ? 0 : 50 );
+			// DISHONORED(port): agent GG - retail reads AWorldInfo::m_NumComponentsToUpdatePerFrame (config, 50) here (2012 UWorld::AddToWorld 0x3bcfd0, 2013 0x79b900)
+			Level->IncrementalUpdateComponents( (GIsEditor || GIsUCC) ? 0 : GetWorldInfo()->m_NumComponentsToUpdatePerFrame );
 		}
 		while( !IsTimeLimitExceeded( TEXT("updating components"), StartTime, Level ) && !Level->bAreComponentsCurrentlyAttached );
 
@@ -1585,7 +1588,8 @@ void UWorld::AddToWorld( ULevelStreaming* StreamingLevel )
 			do
 			{
 				// This function will set bAlreadyInitializedAllActorRBPhys when it does the final Actor.
-				Level->IncrementalInitActorsRBPhys( (GIsEditor || GIsUCC) ? 0 : 50 );
+				// DISHONORED(port): agent GG - retail reads AWorldInfo::m_NumActorsToInitPerFrame (config, 50) here
+				Level->IncrementalInitActorsRBPhys( (GIsEditor || GIsUCC) ? 0 : GetWorldInfo()->m_NumActorsToInitPerFrame );
 			}
 			while( !IsTimeLimitExceeded( TEXT("initializing actor physics"), StartTime, Level ) && !Level->bAlreadyInitializedAllActorRBPhys );
 

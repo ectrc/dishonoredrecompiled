@@ -71,7 +71,8 @@
 #include "dissaveload_classlists.h"	// DISHONORED(written): agent ED - the ported/unported override lists
 
 void DisSaveLoadArmRestore();	// DISHONORED(written): agent ED, at the foot of this file
-void DisFKInstallInterpHooks();	// DISHONORED(bringup): agent FK, Src/interpgroupplayer.cpp - the InitInterp player-group branch
+void DisFKInstallInterpHooks();
+extern INT DisEnginePhysXStaticShapes();	// Engine/Src/UnPhysLevel.cpp (agent GE): the primary scene's static shape count, -1 without a scene	// DISHONORED(bringup): agent FK, Src/interpgroupplayer.cpp - the InitInterp player-group branch
 #include <sys/stat.h>
 
 // DISHONORED(written): chapters 16..25 (DLC06/DLC07 missions) never publish a chaos level, like chapter 0 (2013 rvas 0x5ecf90,
@@ -385,6 +386,102 @@ void UDishonoredEngine::PopIgnoreAutosave( BYTE Type )
 // DISHONORED(written): the 2013 vtable slot +536 is an empty body (2013 rva 0x1cb0c0); Tick refreshes m_bUsingGamepad instead
 void UDishonoredEngine::OnControllerChanged( UBOOL bUsingGamepad )
 {
+}
+
+// DISHONORED(port): agent GG (PHASE20 GG). 2013 rva 0xa070b0 (2012 0x64ccf0): every pending autosave action is denied and the
+// pending slot cleared (the 2013 m_bPendingAutosaveFromCode test only decides whether the slot is cleared early; it is cleared
+// unconditionally on exit).
+void UDishonoredEngine::CancelAllPendingAutosaves()
+{
+	while( m_PendingAutosaveActions.Num() > 0 )
+	{
+		UDisSeqAct_AutoSave* Action = m_PendingAutosaveActions(0);
+		if( m_PendingAutosaveActions.RemoveItemSwap( Action ) > 0 && Action )
+		{
+			Action->SetAutoSaveDenied();
+		}
+	}
+	m_PendingAutosaveSlot = 0;
+}
+
+// DISHONORED(port): agent GG. 2013 rva 0xa15210 (2012 0x64cf10): the save state is reset for the new map, the local player's
+// actor visibility history dropped, every Wwise sound stopped, then UGameEngine::LoadMap and PostCommitMapChange. Not ported:
+// the SLC_WaitValidation arm (2013 only: FGameState's save archive is released and ProcessSaveComplete(0, TRUE) runs; this tree's
+// m_pGameState is agent ED's, which has no save archive).
+UBOOL UDishonoredEngine::LoadMap( const FURL& URL, UPendingLevel* Pending, FString& Error )
+{
+	CancelAllPendingAutosaves();
+	if( m_pPendingMissionStartSaveAction )
+	{
+		m_pPendingMissionStartSaveAction->SetAutoSaveDenied();
+		m_pPendingMissionStartSaveAction = NULL;
+		m_PendingMissionStartSaveSlot = 0;
+	}
+	appMemzero( m_DisallowSavingRefCount, sizeof(m_DisallowSavingRefCount) );
+	m_fDisallowSavingTimer = 0.f;
+	m_IgnoreAutosavingRefCount[0] = 0;
+	m_IgnoreAutosavingRefCount[1] = 0;
+	if( ADishonoredPlayerController::s_pInstance )
+	{
+		ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>( ADishonoredPlayerController::s_pInstance->Player );
+		if( LocalPlayer )
+		{
+			LocalPlayer->ActorVisibilityHistory.SetStates( NULL );
+		}
+	}
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice )
+	{
+		AudioDevice->StopAllSounds( FALSE );
+	}
+	const UBOOL bLoaded = UGameEngine::LoadMap( URL, Pending, Error );
+	PostCommitMapChange();
+	return bLoaded;
+}
+
+// DISHONORED(port): agent GG. 2013 rva 0xa152f0 (2012 0x65d6b0), the half of the body that is not the save system: the player's
+// visibility history is dropped, then UWorld::FlushLevelStreaming( NULL, FALSE ) loads every streaming level the new map wants
+// and makes all of them visible - AddToWorld's time slice (m_fAddWorldTimeLimitPerFrame) is suspended for the flush - so the
+// level's static geometry and its PhysX actors exist before the first world tick, i.e. before the possessed pawn's first
+// physics step. This tree used to leave the levels to UGameEngine::Tick's per-frame UpdateLevelStreaming, which is how the
+// player was possessed over a floor that did not exist yet (agentGE.md section 4: 0 static shapes at possession, 4 half a
+// second later, DmgType_Fell 57-69 at 1.4 s on every load, KillZ on a slow one). Then the persistent level's precomputed
+// visibility is re-pointed at the scene (2013: GWorld+708 -> +692, the handler of the persistent level).
+// Not ported, named: the two UDishonoredEngine bits cleared at +1812 (2013 0x20|0x80; 2012 0x08|0x20), FGameState's level-state
+// list reset and FGameState::LoadLevel on the current level unless IsLoadingGame (agent ED's RestoreLoadedLevels is this
+// tree's SLC_PostLoad arm), UDisNPCTravelManager::PrepareForArrivals (2012 0x721070, unported), the HUB chapter reset, the
+// autosave queued on entering any non-menu map (TryDoAutosave is not ported), the DLC07 crosshair bit.
+void UDishonoredEngine::PostCommitMapChange()
+{
+	if( ADishonoredPlayerController::s_pInstance )
+	{
+		ULocalPlayer* LocalPlayer = Cast<ULocalPlayer>( ADishonoredPlayerController::s_pInstance->Player );
+		if( LocalPlayer )
+		{
+			LocalPlayer->ActorVisibilityHistory.SetStates( NULL );
+		}
+	}
+	if( GWorld )
+	{
+		const DOUBLE FlushStart = appSeconds();
+		GWorld->FlushLevelStreaming( NULL, FALSE );
+		INT VisibleLevels = 0;
+		INT LoadedLevels = 0;
+		AWorldInfo* WorldInfo = GWorld->GetWorldInfo();
+		for( INT LevelIndex = 0; WorldInfo && LevelIndex < WorldInfo->StreamingLevels.Num(); LevelIndex++ )
+		{
+			ULevelStreaming* StreamingLevel = WorldInfo->StreamingLevels(LevelIndex);
+			LoadedLevels += ( StreamingLevel && StreamingLevel->LoadedLevel ) ? 1 : 0;
+			VisibleLevels += ( StreamingLevel && StreamingLevel->bIsVisible ) ? 1 : 0;
+		}
+		debugf( TEXT("DISHONORED(bringup): ggdiag PostCommitMapChange %s: FlushLevelStreaming took %.3f s, %d of %d streaming levels loaded, %d visible, %d levels in the world, PhysX static shapes %d"),
+			*GWorld->GetOutermost()->GetName(), appSeconds() - FlushStart, LoadedLevels, WorldInfo ? WorldInfo->StreamingLevels.Num() : 0,
+			VisibleLevels, GWorld->Levels.Num(), DisEnginePhysXStaticShapes() );
+		if( GWorld->PersistentLevel )
+		{
+			GWorld->PersistentLevel->PrecomputedVisibilityHandler.UpdateScene( GWorld->Scene );
+		}
+	}
 }
 
 // DISHONORED(written): 2013 rva 0x5ecf90 (2012 0x633a00)

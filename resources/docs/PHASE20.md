@@ -182,3 +182,17 @@ octree query ((0,0,80) world box vs `APylon::GetBounds`) or the LOCAL_SPACE heig
 (`m_bHasBeenOnNavMesh` gate); it carries them on the boat's sockets through `FDisComponentRetargeting`
 (`UpdateRetargeting` 2012 `0x8b37e0`, 4.3 KB of SSE) — the Captain socket at the ride's end is 10042.7, 23044.4,
 2337.3, on the dock polys. **→ wave 25.**
+
+### GG — merged; GG's own gate 47 ok / 0 failed / 0 skipped (2280 s, `d3d9_frames` 3180)
+
+Five files (three source), 0 flagged against `b90cebf`; `bitfield_audit` 0; Engine hand edit `UnWorld.cpp` (the
+per-frame streaming budget read from `AWorldInfo` as retail does; values unchanged).
+
+**The spawn fall is gone.** Retail's `UDishonoredEngine::LoadMap` (2012 `0x64cf10` / 2013 `0xa15210`) calls
+`PostCommitMapChange` (`0x65d6b0` / `0xa152f0`) whose first act is `UWorld::FlushLevelStreaming` — every streaming
+sublevel is loaded and visible before the first tick. This tree had neither override, so L_Tower_P's eight
+sublevels trickled in through `UGameEngine::Tick` while the possessed pawn fell. **Premise corrected**: the order
+inside `LoadMap`/`BeginPlay` is identical in retail; `Login`/`RestartPlayer` are not on the path; New Game never fell
+(it travels by `CommitMapChange`). **Loop**: gate exe **20/20 clean** (1312 static shapes at the first tick, three slow
+loads included); control 20/20 take 57–79 `DmgType_Fell`. Follow-up: one of the eight sublevels stays unloaded on
+both builds (name not logged); the save-state half of `PostCommitMapChange` (ED's `RestoreLoadedLevels`).

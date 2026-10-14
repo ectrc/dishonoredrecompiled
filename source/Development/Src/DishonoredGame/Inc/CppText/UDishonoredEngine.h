@@ -19,6 +19,16 @@ public:
 	virtual void PopIgnoreAutosave( BYTE Type );
 	virtual void OnControllerChanged( UBOOL bUsingGamepad );
 
+	// DISHONORED(port): agent GG (PHASE20 GG). LoadMap is UGameEngine's virtual; Pre/PostCommitMapChange are UEngine virtuals in
+	// retail (2012 vtable ??_7UDishonoredEngine@@6BUObject@@@ 0xce6818 slots +380/+384, 2013 0xcdb390 +400/+404) that our UEngine
+	// lacks, so they are introduced here like the ones above. LoadMap (2012 0x64cf10, 2013 0xa15210) runs UGameEngine::LoadMap and
+	// then PostCommitMapChange (2012 0x65d6b0, 2013 0xa152f0), whose first act is UWorld::FlushLevelStreaming( NULL, FALSE ):
+	// every streaming level of the new map is loaded and made visible before the first world tick - the reason retail's player
+	// never falls through the floor at spawn.
+	virtual UBOOL LoadMap( const FURL& URL, class UPendingLevel* Pending, FString& Error );
+	virtual void PostCommitMapChange();
+	void CancelAllPendingAutosaves();	// 2012 rva 0x64ccf0, 2013 0xa070b0
+
 	FMapConfig* FindMapConfig( const FString& MapName );
 	UBOOL IsSavingAllowed() const;
 
