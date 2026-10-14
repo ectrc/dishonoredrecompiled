@@ -1,8 +1,8 @@
-# Project status — 2026-10-14 (wave 24 complete: every NPC human-sized, no spawn fall, workers walk, the attention process runs, a sword in the hand; wave 25 gives the guards eyes and walks the captain off the boat)
+# Project status — 2026-10-14 (wave 24 complete; **wave 25 is `PHASE22.md`: the opening cutscene 1:1 with the user's retail video** — PHASE21's GL..GO plan was never run and is void)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), **`PHASE21.md` (wave 25, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, current: HA..HH)**. Decisions and fixes: `porting_notes.md`. Per-function status:
 `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GK>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
