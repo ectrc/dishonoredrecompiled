@@ -214,7 +214,7 @@ Open, bounded: with the stand-in on, 8 of 9 runs crash at exit in `IncrementalPu
 object; minidumps kept) — the vision package inherits it. For FR: at Busted `DDH_PLAYER_APPROACHES` fires every
 tick (3,890 in 50 s) — the dialog side's cooldown is not honoured.
 
-### GJ — merged; GJ's own gate 47 ok / 0 failed / 0 skipped twice (2403 s; 1752 s after the 0e5207a merge, d3d9 900 → 1200 under its own build); the 8ea61f0 merge gated on main by the coordinator
+### GJ — merged `2a82ebe`; gate on main 47 ok / 0 failed / 0 skipped (1342 s); GJ's own gate 47 / 0 / 0 twice (2403 s; 1752 s after the 0e5207a merge, d3d9 900 → 1200 under its own build); the 8ea61f0 merge gated on main by the coordinator
 
 Thirty-six files, 0 flagged against `e07055e`; regeneration clean; `bitfield_audit` 0; Engine hand edit
 `UnPlayer.cpp` (`exec` in the inputcmd script). **Five working-build passes** and a hung wait pipeline (90 min after
@@ -233,3 +233,23 @@ while the arms play the empty-hands base pose: the item anim-state system (`Bind
 `FindAnimStatePickers`, `SyncPawnAnimState`, `UStatePlayerEquipChange`, `TransitionItemIn`) has no bodies. **The
 user's arms report is still not reproducible → wave 25 GO.** Left: the NPC inventory override (guards' swords),
 the contexts' init/cancel/tick, `DropItemsInSlot`, the wheel, `OnEquipmentChange`.
+
+## Wave 24 result
+
+Five packages merged and gated: GH `ece8e1b`, GK `e3bc866`, GG `0e5207a`, GI `8ea61f0`, GJ `2a82ebe` — `2a82ebe`
+reads **47 ok, 0 failed, 0 skipped**; `unported_natives` 0; `verify_phase2` 3/3. The `0e5207a` gate lost its d3d9
+run and its first inputtest walk to GI's unqueued 16-job build and read 18/18 on the two stages alone (recorded).
+
+What the first mission does now that it did not before: **every NPC is human-sized** (GH: they had all been 3× —
+the look-at blend added the reference pose; three earlier attributions were wrong), **the player no longer falls at
+spawn** (GG: retail flushes level streaming before the first tick; 20/20 clean, the 1-in-7 death and the ~60 health
+loss gone), **workers turn in place and walk** (GK: the stop-animation system; two non-retail locomotion bodies
+fixed), **the attention process runs on every brain** (GI) and **every pawn has an inventory with a sword that
+attaches to the hand** (GJ; the 1,170 look-at warnings read 0). Named and left (PHASE21): nothing sees (the vision
+components), the captain's start poly is refused one stage inside retail's containment port and the faithful
+route is the boat's sockets, the arms are not posed with the item (the item anim states), the chain has never run
+without a teleport, one streaming sublevel never loads. The user's two reports: "arms when I shouldn't see them"
+still not reproducible (GF, GJ — no stance plays yet); "FOV / forced perspective" closed in wave 22.
+
+Rules broken this wave, recorded: GI thirteen and GJ five working-build invocations against the two-build rule;
+GJ's hung wait pipeline. The override (100%, no queue) ran from 2026-10-14 13:00 to 21:10 at the user's request.

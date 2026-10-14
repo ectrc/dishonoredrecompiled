@@ -1,9 +1,9 @@
-# Project status — 2026-10-14 (wave 23 complete: the player rides on the boat's socket and walks after it, a go-to arrives, Use reaches the Empress conversation, the fade is back; wave 24 fixes the spawn fall, the stretched NPCs, the heads, the sword and the captain's walk)
+# Project status — 2026-10-14 (wave 24 complete: every NPC human-sized, no spawn fall, workers walk, the attention process runs, a sword in the hand; wave 25 gives the guards eyes and walks the captain off the boat)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md` (wave 24, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GF>.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), **`PHASE21.md` (wave 25, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GK>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `4b889ff`)
+## Where we are (HEAD `2a82ebe`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -38,6 +38,20 @@ NEW GAME, the difficulty screen and the brightness screen, then YES on the confi
 its own menu one second after opening it, so New Game was unreachable. It passed 37/37 anyway — see
 "The gate's blind spot" under Known pitfalls. **Enter does not activate a main-menu row** either
 (defect 5); Space does, and `-finewgame` drives past it.
+
+**As of wave 24**: **every NPC had been three times its size** — not the matinee ones only: the look-at node's
+additive blend handed the reference pose as a delta whenever its pose names did not resolve, which was always,
+because no NPC had anything in hand (GH; one function; the guards are men now). **The player no longer falls at
+spawn**: retail's `UDishonoredEngine::LoadMap` flushes level streaming before the first tick — ported; 20 of 20
+runs clean where the control took 57–79 fall damage every time and died 1 in 7 (GG). **Workers turn in place
+and walk** (GK: the stop-animation system, 15 functions; two DN locomotion bodies that were not retail's fixed).
+**The attention process runs on all 26 brains** (GI: 85 of 88 functions) — but **retail's head-track look-at is
+enemy-only, and nothing in the tree sees** (the vision components are skeletons), so no head turns yet. **Every
+pawn has an inventory**; the player's sword attaches to the hand and stays there through the ride (GJ) — but the
+arms play the empty-hands pose because the item anim states have no bodies, so **the arms report is still not
+reproducible**. **The captain still does not disembark**: his start poly is refused one stage inside retail's
+`GetPylonAndPolyFromPos` (ported by GK), and the faithful route is the boat's sockets (`FDisComponentRetargeting`).
+Wave 25 is `PHASE21.md`: vision (GL), the captain (GM), the chain end to end (GN), the arms stance (GO).
 
 **As of wave 23**: **the boat ends exactly where its cooked keys say** and the "750 units short" was the dock's
 dressing boat — retail holds the player on the boat's `Player` socket through the `InterpTrackAttachment` track,
@@ -115,8 +129,9 @@ listeners (`98e22d4`).
 
 ## The gate is GREEN - 47 of 47 - and how it got there
 
-`run_regression.py` is **47 checks**. Every wave-22 and wave-23 merge read **47 ok, 0 failed, 0 skipped** on a
-clean checkout (wave 23: `f7bc754`, `4b889ff`; `d96a331` read 46 on `d3d9_frames` under full-machine builds and 9/9
+`run_regression.py` is **47 checks**. Every wave-22 to wave-24 merge read **47 ok, 0 failed, 0 skipped** on a
+clean checkout (wave 24: `ece8e1b`, `e3bc866`, `8ea61f0`, `2a82ebe`; `0e5207a` lost two game stages to an unqueued
+16-job build beside it and read 18/18 on them alone; wave 23: `f7bc754`, `4b889ff`; `d96a331` read 46 on `d3d9_frames` under full-machine builds and 9/9
 on the stage alone; `ad4a35d` read 46 - see defect 12), and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
 crash detectors match the structured-exception banner as well as `Critical: `, so a hard crash inside a
 stage is now a red row rather than an invisible one.
@@ -243,20 +258,45 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
     `ADishonoredPlayerPawn::SetBodyMode` switches the one mesh ARMS_ONLY ↔ FULL_BODY, measured 0 → 1 → 0;
     **nothing is equipped on the harness route, so the arms report is not reproduced yet** (wave 23 GF
     equips the sword and measures).
-12. **The player is possessed before the level's static PhysX shapes exist and falls** — wave 23 GE reproduced
-    it (loop run 3 of 20): 0 static shapes at possession, 4 at +0.5 s; a normal load lands with 57–69
-    `DmgType_Fell` at 1.4 s (**every run starts with ~60 health lost**), a slow load passes KillZ at 2.78 s (the
-    1-in-7 death, also wave 20's). Not wave-22 code. Fix = spawn order (wave 24 GG).
-13. **Tall, thin, stretched dark silhouettes on every matinee-driven NPC** the second a cinematic channel
-    plays (posed height 155–341 vs 148; scale/LTW/LOD nominal; on the control too). Not the body mode, not mesh
-    translation, not foot placement (GF took it off the exclude list and the stretch stayed), not the blend (GC:
-    110/110 bones, no scale). **The evaluation of those Edge sequences — 78 joints, 0+1 translation channels, on
-    118-joint skeletons** (wave 24 GH).
-14. **No guard turns his head** — the look-at is raised by `UDisAIBrainProcessAttention::HandleTopAttnTarget`,
-    223 functions on the exclude list; the head-track sub-processes are in (GE). Wave 24 GI.
-15. **"I can see my arms when I shouldn't" is not reproducible: nothing can be equipped.** No inventory init or
-    equip path exists in the tree (GF); retail's New Game starts empty too. Wave 24 GJ ports the path and
-    measures the arms with the sword drawn.
+12. ~~**The player is possessed before the level's static PhysX shapes exist and falls**~~ **CLOSED by wave 24 GG
+    (`0e5207a`)**: retail's `UDishonoredEngine::LoadMap` → `PostCommitMapChange` → `FlushLevelStreaming` before the
+    first tick; this tree had neither override and L_Tower_P's eight sublevels trickled in while the pawn fell.
+    20/20 d3d9 runs clean (1312 static shapes at the first tick); the control 20/20 took 57–79 fall damage.
+13. ~~**Tall, thin, stretched dark silhouettes**~~ **CLOSED by wave 24 GH (`ece8e1b`)**, and every earlier
+    attribution was wrong: **every NPC was exactly 3× its size**, idle guards included — `UArkAnimNodeLookAt`'s
+    additive output was 2× the reference translation on every bone because `GetBoneAtomsForSet` handed the
+    reference pose as a delta whenever the look-at mode's pose names did not resolve (always: no NPC had an item,
+    so `ChooseLookAt` fell to the config's last mode). GF's "148 = healthy" was the 3× pose's extent. One function.
+14. **No guard turns his head, because nothing sees.** The attention process is ported (wave 24 GI, 85/88) and
+    runs on all 26 brains; retail's head-track look-at fires **only for an enemy**, a friendly glance is
+    `FleetingGaze`; and `FDisComponentVisionNPC` / `Vision` / `Observable` are skeletons, so no attention slot is
+    ever created. Wave 25 GL. With a sense stand-in on, 8 of 9 runs crash at exit in `IncrementalPurgeGarbage`.
+15. **"I can see my arms when I shouldn't" is still not reproducible.** The equip path exists now (wave 24 GJ):
+    the sword attaches to the hand and stays there through the ride (the boat does NOT force the hands empty) —
+    but the arms play the empty-hands pose, the hand bone 68 units below the view: the item anim-state system
+    has no bodies. Wave 25 GO. Also: New Game gives nothing and no key binds the sword (retail too).
+16. **The captain does not disembark**, so the player walks off the socket into his back: his go-to's start poly
+    is refused one stage inside retail's `GetPylonAndPolyFromPos` (ported, wave 24 GK) — the pylon octree query
+    or a LOCAL_SPACE height test on this imported mesh; and retail never teleports the guards, it carries them on
+    the boat's sockets (`FDisComponentRetargeting`). Wave 25 GM.
+17. One of L_Tower_P's eight streaming sublevels never loads, on the control too (GG; name not logged). Wave 25 GN.
+
+## Wave 24 — the 3× NPCs, the spawn fall, the stop animation, the attention process, the sword
+
+Five packages, all merged and gated (`PHASE20.md` has each outcome; `agents/agentGG.md` … `agentGK.md`).
+
+| Package | Commit | What landed | Where the brief was wrong |
+|---|---|---|---|
+| GH | `ece8e1b` | `UArkAnimNodeLookAt::GetBoneAtomsForSet` as retail's Edge tree build (one function); `-ghdiag` | the cause was never the cinematic sequences, the linkup, the decode or the stack: every NPC was 3× from the look-at blend |
+| GK | `e3bc866` | the stop-animation system (15); `IsThereAnotherForceThanPath`/`IsRootMotion` fixed; retail's `GetPylonAndPolyFromPos` + Ark containment helpers | "0.56 uu off the mesh" is not a gap; `GetPylonAndPolyFromPos` is not shared engine code; the blocker is the captain not the Elite |
+| GG | `0e5207a` | `UDishonoredEngine::LoadMap`/`PostCommitMapChange` (flush streaming before the first tick); `UnWorld.cpp` budget from `AWorldInfo` | the order inside `LoadMap`/`BeginPlay` is retail's already; New Game never fell |
+| GI | `8ea61f0` | `UDisAIBrainProcessAttention` (85/88), `UDisAttentionInfo_*`, the 24-slot target interface, the real `TickBrain_Senses`, the brain's look-at request wired | the head-track look-at is enemy-only; the process has no sense of its own |
+| GJ | `2a82ebe` | the inventory init and equip path, `AttachItemToSocket`, loadouts, `MAT_SetForceInventory`, `exec` in the inputcmd script | New Game gives nothing; no key binds the sword; the boat does not force the hands empty; the arms are posed by the item anim states |
+
+Coordinator's lessons: under the no-queue override a gate's game stages can starve (one gate lost its d3d9 run
+and a 216-uu walk; both stages alone 18/18) — re-run the stage alone and report both; a `… | head -N` wait
+pipeline hangs a package for hours once the log goes quiet (GJ); the two-build rule was broken by two packages
+and is restated in PHASE21.
 
 ## Wave 23 — the socket, the walk, the go-to, Use, the fade, the arms
 
@@ -418,21 +458,20 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 24 is `PHASE20.md`.** GG: possess the player after the level's static PhysX actors exist (the spawn fall:
-~60 health every run, 1-in-7 deaths). GH: the cinematic sequences' evaluation (the stretched NPCs). GI: the AI
-attention process (the heads). GJ: the inventory and equip path (the sword; the arms report). GK: the captain's
-and the Elite's start poly on the boat (the guards disembark, the player reaches the dock, the chain runs without
-a teleport), the stop-animation system behind GD's stand-ins, GB's attachment residue. All five running on
-`4b889ff`; `build/head_rel` is the control at `4b889ff`.
+**Wave 25 is `PHASE21.md`.** GL: vision — `FDisComponentVisionNPC`/`Vision`/`Observable` so the guards see the
+player (and the exit crash with a sense present). GM: the captain walks off the boat — the start-poly stage GK
+named, then retail's socket retargeting. GN: the chain end to end on main, every stop named, and the streaming
+level that never loads. GO: the item anim states so the sword stance plays and the arms report can be measured.
+All four running on `2a82ebe`; `build/head_rel` is the control at `2a82ebe`.
 
 **Deferred and said so**: the rest of the UI list (menu camera, haze, text clarity); the retail dismod
-measurements (no retail launch while the user is at the machine); faction tables; the probe family and
-`FindCombatTarget_Dir`; **wave 15**; audio.
+measurements; faction tables; the probe family; the NPC inventory override (guards' swords); `DropItemsInSlot`,
+the wheel; **wave 15**; audio.
 
 **Process, from the user, all absolute**: `-windowed` on every launch; input only through `game_input.py`; builds
 only through `build_queued.py` (FIFO, half the cores, two per package); no retail launches while the user is at the
-machine. The override file (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`) lifts the cap and the queue while
-the user is away (in place since 2026-10-14 13:00); delete it when the user is back. **Never hand-edit a generated
+machine. The override file (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`) lifts the cap and the queue only
+when the user says so (it was in place 2026-10-14 13:00–21:10 and is gone). **Never hand-edit a generated
 header**: `Inc/CppText/<Class>.h` and `DishonoredLink<X>()` anchors; the coordinator regenerates on merge.
 
 ## Known pitfalls
