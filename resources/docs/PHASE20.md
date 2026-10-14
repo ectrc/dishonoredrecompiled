@@ -136,3 +136,27 @@ Acceptance: `-fvdiag` shows `AIGoToActor_3` → `Success (Last)` and the captain
 4. Every address cited resolved by hand, both databases.
 5. `resources/docs/agents/agent<XX>.md` + `agent<XX>_status.csv` in the worktree; `build/agent<XX>_sync.py` naming
    every file and function, self-checked, 0 flagged against main.
+
+## Outcome
+
+### GH — merged `ece8e1b`; GH's own gate 41/47 first pass (all six misses the d3d9 run killed by load before a frame; the stage alone 9/9, 2940 frames); everything else 47-equivalent
+
+Five files (one function + `-ghdiag`), 0 flagged against `99eaf6b`; regeneration clean; `bitfield_audit` 0.
+
+**The plan was wrong about the cause, and so was every earlier attribution.** The cinematic sequences, the hash
+linkup, the Edge translation decode and FT's stack stand-in all measure right (`maxRatio 1.00`, offline and in-game).
+**Every NPC was exactly 3× its size** — the idle tower guards included: `AnimNodeAdditiveBlending`'s additive child
+`LookatBlender` (`UArkAnimNodeLookAt`) output 2.00× the reference translation on every bone. GF's "148 = healthy" was
+the 3× pose's Z extent (true extent 45–65); the matinee pawns merely spread the 3× limbs.
+
+**Why**: `ChooseLookAt` returns `eDisNPCLookAtMode_MAX` for a pawn with nothing equipped (every NPC until GJ), clamped
+to the config's last mode whose 18 `ADD_Empty_AimHead/Torso_BowIdle_*` pose names exist in no cooked set (the
+1,170 `Failed, with animsequence` warnings) → `AnimSeq` NULL → FT's `GetBoneAtomsForSet` (retail's dead CPU body)
+handed `GetAnimationPose` the **reference pose as an additive delta**, once per set (head + torso = +2×).
+
+**The port**: `UArkAnimNodeLookAt::GetBoneAtomsForSet` evaluates a set as retail's `BuildEdgeAnimTreeEx` (2012
+`0x1a62b0` / 2013 `0x19a280`) does — a pose is relevant only with weight AND a resolved sequence with a byte stream,
+weights renormalised; none relevant → the node's own sequence (`BuildEdgeAnimTree` `0x1a4a20` / `0x1989f0`). Measured:
+`maxLocalRatio 1.00` on every pawn, `NPCPawn_8` poseH 47.3 (was 147.3), reach 191.7 (was 553); the boat guards and
+captain human-sized in `gh2b`. **The "posed height 148" acceptance is withdrawn** (148 was the fault); the measure is
+`maxLocalRatio 1.00` / `transOff ≤ 3` plus the capture pair.
