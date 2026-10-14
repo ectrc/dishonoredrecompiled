@@ -6746,15 +6746,6 @@ enum InOutVolumeKind
     op(VK_INTERIOR) \
     op(VK_EXTERIOR) \
     op(VK_WATER) 
-enum KeyAttachmentType
-{
-    EKAT_Attach             =0,
-    EKAT_Detach             =1,
-    EKAT_MAX                =2,
-};
-#define FOREACH_ENUM_KEYATTACHMENTTYPE(op) \
-    op(EKAT_Attach) \
-    op(EKAT_Detach) 
 enum eAIGetBrainFlagOutputs
 {
     GBFOUTPUT_FALSE         =0,
@@ -11425,12 +11416,9 @@ class UInterpTrackAIControlKeyProperties;
 class UInterpTrackAIControlNPCAimKeyProperties;
 class UInterpTrackAIControlNPCFireKeyProperties;
 class UInterpTrackAkEventKeyProperties;
-class UInterpTrackAttachment;
-class UInterpTrackAttachmentKeyProperties;
 class UInterpTrackDialog;
 class UInterpTrackDialogKeyProperties;
 class UInterpTrackInstAIControl;
-class UInterpTrackInstAttachment;
 class UInterpTrackInstDialog;
 class UNaturalVoiceEnums;
 class UParticleModuleTypeDataDecal;
@@ -12357,38 +12345,6 @@ struct FArkCpntLookatProcSeqWork
     }
 };
 
-// Engine.InterpTrackAttachment.AttachmentControlTrackKey: retail SDK size 8 (2012 PDB 8) [shim: Engine package]
-struct FAttachmentControlTrackKey
-{
-    FLOAT Time;
-    class UInterpTrackAttachmentKeyProperties* Properties;
-
-    /** Constructors */
-    FAttachmentControlTrackKey() {}
-    FAttachmentControlTrackKey(EEventParm)
-    {
-        appMemzero(this, sizeof(FAttachmentControlTrackKey));
-    }
-};
-
-// Engine.Actor.AttachmentInfos: retail SDK size 36 (2012 PDB 36) [shim: Engine package]
-struct FAttachmentInfos
-{
-    FVector RelativeOffset;
-    FRotator RelativeRotation;
-    FName BoneName;
-    BITFIELD bHardAttach:1;
-    BITFIELD bUseRelativeOffset:1;
-    BITFIELD bUseRelativeRotation:1;
-
-    /** Constructors */
-    FAttachmentInfos() {}
-    FAttachmentInfos(EEventParm)
-    {
-        appMemzero(this, sizeof(FAttachmentInfos));
-    }
-};
-
 // Core.Object.BitArray_Mirror: retail SDK size 28 [shim: Core package]
 struct FBitArray_Mirror
 {
@@ -13199,31 +13155,6 @@ public:
     DECLARE_CLASS(UInterpTrackAkEventKeyProperties,UInterpTrackKeyProperties,0,Engine)
 };
 
-// Engine.InterpTrackAttachment: retail sizeof 148, reflected span 124..148 (2012 PDB sizeof 148) [shim: Engine package]
-class UInterpTrackAttachment : public UInterpTrack
-{
-public:
-    //## BEGIN PROPS InterpTrackAttachment
-    FName m_TargetName;
-    TArrayNoInit<FAttachmentControlTrackKey> m_AttachmentKeys;
-    BITFIELD m_bDetachActorOnInteruption:1;
-    //## END PROPS InterpTrackAttachment
-
-    DECLARE_CLASS(UInterpTrackAttachment,UInterpTrack,0,Engine)
-};
-
-// Engine.InterpTrackAttachmentKeyProperties: retail sizeof 96, reflected span 56..96 (2012 PDB sizeof 96) [shim: Engine package]
-class UInterpTrackAttachmentKeyProperties : public UInterpTrackKeyProperties
-{
-public:
-    //## BEGIN PROPS InterpTrackAttachmentKeyProperties
-    BYTE m_KeyType;
-    FAttachmentInfos m_AttachmentInfo;
-    //## END PROPS InterpTrackAttachmentKeyProperties
-
-    DECLARE_CLASS(UInterpTrackAttachmentKeyProperties,UInterpTrackKeyProperties,0,Engine)
-};
-
 // Engine.InterpTrackInstAIControl: retail sizeof 68, reflected span 64..68 (2012 PDB sizeof 68) [shim: Engine package]
 class UInterpTrackInstAIControl : public UInterpTrackInst
 {
@@ -13233,20 +13164,6 @@ public:
     //## END PROPS InterpTrackInstAIControl
 
     DECLARE_CLASS(UInterpTrackInstAIControl,UInterpTrackInst,0,Engine)
-};
-
-// Engine.InterpTrackInstAttachment: retail sizeof 96, reflected span 64..96 (2012 PDB sizeof 96) [shim: Engine package]
-class UInterpTrackInstAttachment : public UInterpTrackInst
-{
-public:
-    //## BEGIN PROPS InterpTrackInstAttachment
-    FVector m_LocationBackup;
-    FRotator m_RotationBackup;
-    FLOAT m_LastUpdatePosition;
-    BITFIELD m_bActorBackuped:1;
-    //## END PROPS InterpTrackInstAttachment
-
-    DECLARE_CLASS(UInterpTrackInstAttachment,UInterpTrackInst,0,Engine)
 };
 
 // Engine.NaturalVoiceEnums: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56) [shim: Engine package]
@@ -14301,10 +14218,7 @@ AUTOGENERATE_FUNCTION(UWorldRainComponent,-1,execSetEnabled);
 	UInterpTrackAIControlNPCAimKeyProperties::StaticClass(); \
 	UInterpTrackAIControlNPCFireKeyProperties::StaticClass(); \
 	UInterpTrackAkEventKeyProperties::StaticClass(); \
-	UInterpTrackAttachment::StaticClass(); \
-	UInterpTrackAttachmentKeyProperties::StaticClass(); \
 	UInterpTrackInstAIControl::StaticClass(); \
-	UInterpTrackInstAttachment::StaticClass(); \
 	UNaturalVoiceEnums::StaticClass(); \
 	UParticleModuleTypeDataDecal::StaticClass(); \
 	UParticleStaticMeshComponent::StaticClass(); \
@@ -14599,17 +14513,8 @@ VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAIControlNPCFireKeyProperties,InterpTrackA
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAIControlNPCFireKeyProperties,InterpTrackAIControlNPCFireKeyProperties,m_pFireTarget)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackAIControlNPCFireKeyProperties)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackAkEventKeyProperties)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachment,InterpTrackAttachment,m_TargetName)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachment,InterpTrackAttachment,m_AttachmentKeys)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackAttachment)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachmentKeyProperties,InterpTrackAttachmentKeyProperties,m_KeyType)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachmentKeyProperties,InterpTrackAttachmentKeyProperties,m_AttachmentInfo)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackAttachmentKeyProperties)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAIControl,InterpTrackInstAIControl,m_LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAIControl)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LocationBackup)
-VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LastUpdatePosition)
-VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAttachment)
 VERIFY_CLASS_SIZE_NODIE(UNaturalVoiceEnums)
 VERIFY_CLASS_OFFSET_NODIE(UParticleModuleTypeDataDecal,ParticleModuleTypeDataDecal,m_pDecalMaterial)
 VERIFY_CLASS_SIZE_NODIE(UParticleModuleTypeDataDecal)

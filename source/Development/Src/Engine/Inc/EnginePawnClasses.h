@@ -549,6 +549,8 @@ public:
     virtual void MAT_SetForceInventory(UBOOL bShouldForceEmptyHand) {}
     virtual void MAT_BeginAIGroup(class UInterpGroupInstAI* GroupInst) {}
     virtual void MAT_FinishAIGroup(class UInterpGroupInstAI* GroupInst) {}
+    // DISHONORED(port): agent GB. 2012 0x2bc1f0 / 2013 0x2a1180: attach to a bone or socket of the pawn's Mesh (UnPawn.cpp).
+    virtual void DoKismetAttachment(AActor* Attachment, FAttachmentInfos AttachInfos);
     virtual void MAT_SetCollision(UBOOL bDisableCollisionForSoiree,UBOOL bHaveMoveTrack) {}
     virtual void MAT_SetMeshTranslationMode(BYTE MeshTranslationMode) {}
     virtual UBOOL IsAliveAndWell() const;

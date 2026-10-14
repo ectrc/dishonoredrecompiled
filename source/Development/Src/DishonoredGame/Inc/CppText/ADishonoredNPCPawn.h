@@ -138,3 +138,7 @@ protected:
 	UBOOL IsActionSpineBendingEnabled() const;
 	UBOOL IsSlopeOffsettingEnabled() const;
 	UBOOL IsFootPlacementEnabled() const;
+	// DISHONORED(port): agent GB. 2012 0x7ab5e0 / 2013 0x74b080 and 0x7ab690: the matinee Attachment track's attach / detach on an
+	// NPC (dishonorednpcpawn.cpp).
+	virtual void MAT_Attach( AActor* const InBase, const FAttachmentInfos& AttachInfos );
+	virtual void MAT_Detach();

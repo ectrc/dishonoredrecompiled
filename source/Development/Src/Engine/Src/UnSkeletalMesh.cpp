@@ -2711,6 +2711,52 @@ UBOOL USkeletalMeshSocket::GetSocketPositionWithOffset(FVector& OutPosition, cla
 	ASkeletalMeshActor
 -----------------------------------------------------------------------------*/
 
+// DISHONORED(port): agent GB. 2012 0x358630 / 2013 0x334ee0 (659 B, the two match): APawn::DoKismetAttachment's shape on
+// SkeletalMeshComponent, the bone matched on the USkeletalMesh and without the PHYS_None the pawn version sets. The Boat
+// ride's Attachment track reaches it for the player ('Player'), the guards ('Captain', 'Driver') and the Boat_Mover
+// InterpActor ('Boat_Socket').
+void ASkeletalMeshActor::DoKismetAttachment( AActor* Attachment, FAttachmentInfos AttachInfos )
+{
+	USkeletalMeshComponent* Mesh = SkeletalMeshComponent;
+	if( Mesh == NULL || AttachInfos.BoneName == NAME_None )
+	{
+		AActor::DoKismetAttachment( Attachment, AttachInfos );
+		return;
+	}
+	const UBOOL bSocket = ( Mesh->SkeletalMesh != NULL ) && ( Mesh->SkeletalMesh->FindSocket( AttachInfos.BoneName ) != NULL );
+	const UBOOL bValidBone = ( Mesh->SkeletalMesh != NULL ) && ( Mesh->SkeletalMesh->MatchRefBone( AttachInfos.BoneName ) != INDEX_NONE );
+	if( !bValidBone && !bSocket )
+	{
+		AActor::DoKismetAttachment( Attachment, AttachInfos );
+		return;
+	}
+	const UBOOL bOldCollideActors = Attachment->bCollideActors;
+	const UBOOL bOldBlockActors = Attachment->bBlockActors;
+	Attachment->SetCollision( FALSE, FALSE, FALSE );
+	Attachment->SetHardAttach( AttachInfos.bHardAttach );
+	if( bValidBone && !bSocket )
+	{
+		if( AttachInfos.bUseRelativeOffset )
+		{
+			Attachment->SetLocation( Mesh->GetBoneLocation( AttachInfos.BoneName, 0 ) );
+		}
+		if( AttachInfos.bUseRelativeRotation )
+		{
+			Attachment->SetRotation( FQuatRotationTranslationMatrix( Mesh->GetBoneQuaternion( AttachInfos.BoneName, 0 ), FVector::ZeroVector ).Rotator() );
+		}
+	}
+	Attachment->SetBase( this, FVector::ZeroVector, 1, Mesh, AttachInfos.BoneName );
+	if( AttachInfos.bUseRelativeRotation )
+	{
+		Attachment->SetRelativeRotation( Attachment->RelativeRotation + AttachInfos.RelativeRotation );
+	}
+	if( AttachInfos.bUseRelativeOffset )
+	{
+		Attachment->SetRelativeLocation( Attachment->RelativeLocation + AttachInfos.RelativeOffset );
+	}
+	Attachment->SetCollision( bOldCollideActors, bOldBlockActors, FALSE );
+}
+
 //@compatibility
 // DISHONORED(port): 2013 rva 0x30ede0 (2012 rva 0x331740), identical (collision fixup below 591)
 void ASkeletalMeshActor::PostLoad()

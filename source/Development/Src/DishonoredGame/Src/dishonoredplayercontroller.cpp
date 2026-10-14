@@ -116,6 +116,7 @@
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
 #include "fwdiag.h"
+#include "gbdiag.h"
 #include "arkpp.h"
 #include "arkcomponentlookat.h"
 #include "enginearkppclasses.h"
@@ -1096,6 +1097,11 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	if( DisFWDiagEnabled() )
 	{
 		DisFWReport( this );
+	}
+	// agent GB (PHASE19 GB): -gbdiag, the live Move tracks' keys and actors once a second (gbdiag.cpp)
+	if( DisGBDiagEnabled() )
+	{
+		DisGBReport();
 	}
 	if( DisPowerCensusEnabled() )
 	{

@@ -2322,6 +2322,27 @@ struct Actor_eventReplicatedEvent_Parms
     {
     }
 };
+// Engine.Actor.AttachmentInfos: retail SDK size 36 (2012 PDB 36)
+// DISHONORED(port): agent GB. Was a DishonoredGame shim (DishonoredGameEngineShims.h) until this wave; AActor::DoKismetAttachment
+// (2012 0x1963f0 / 2013 0x18ab50), APawn's (0x2bc1f0 / 0x2a1180), ASkeletalMeshActor's (0x358630 / 0x334ee0) and the matinee
+// Attachment track's MAT_Attach all take it, so it has to be visible to the Engine. Hand-edited generated header.
+struct FAttachmentInfos
+{
+    FVector RelativeOffset;
+    FRotator RelativeRotation;
+    FName BoneName;
+    BITFIELD bHardAttach:1;
+    BITFIELD bUseRelativeOffset:1;
+    BITFIELD bUseRelativeRotation:1;
+
+    /** Constructors */
+    FAttachmentInfos() {}
+    FAttachmentInfos(EEventParm)
+    {
+        appMemzero(this, sizeof(FAttachmentInfos));
+    }
+};
+
 class AActor : public UObject
 {
 public:
@@ -4297,6 +4318,16 @@ public:
 	// (the retail Actor script has no PostInitAnimTree event); APawn (2012 0x2dd5c0) caches its
 	// UArkAnimNodeStack slots in it, ADishonoredNPCPawn (0x7ad200) adds its FDisComponentAnimPlayer.
 	virtual void PostInitAnimTree(class USkeletalMeshComponent* SkelComp) {}
+	// DISHONORED(port): agent GB. Retail's Kismet / matinee attachment natives. DoKismetAttachment (2012 0x1963f0 / 2013
+	// 0x18ab50, the AActor base; APawn 0x2bc1f0 / 0x2a1180 and ASkeletalMeshActor 0x358630 / 0x334ee0 attach to a bone or
+	// socket) is what the script native execDoKismetAttachment and the matinee's UInterpTrackAttachment reach through
+	// MAT_Attach (0x172d50 / 0x168de0: InBase->DoKismetAttachment( this, Info )) and MAT_Detach (0x172d80 / 0x168e10:
+	// SetBase( NULL ) + SetHardAttach( FALSE )). MAT_SetPhysics (vtable slot 195) is empty on AActor; ASkeletalMeshActorMAT
+	// overrides it (2012 0x3317c0, not ported) for a group with bBecomeDynamic.
+	virtual void DoKismetAttachment(AActor* Attachment, FAttachmentInfos AttachInfos);
+	virtual void MAT_Attach(AActor* const InBase, const FAttachmentInfos& AttachInfos);
+	virtual void MAT_Detach();
+	virtual void MAT_SetPhysics(UBOOL bActivate, BYTE InCollisionType) {}
 
 	/** Function used to control FaceFX animation in the editor (Matinee). */
 	virtual void PreviewUpdateFaceFX(UBOOL bForceAnim, const FString& GroupName, const FString& SeqName, FLOAT InPosition) {}

@@ -2861,6 +2861,90 @@ public:
     DECLARE_CLASS(UInterpTrackKeyProperties,UObject,0,Engine)
 };
 
+// DISHONORED(port): agent GB. The matinee Attachment track - a key attaches the TARGET group's actor to this group's actor
+// (MAT_Attach -> DoKismetAttachment on a bone / socket, hard or not) or detaches it. The Boat ride attaches the player to the
+// boat's 'Player' bone, the guards to 'Captain' / 'Driver' and the Boat_Mover InterpActor to 'Boat_Socket' and detaches them
+// at the end. These were DishonoredGame shims (DishonoredGameEngineShims.h, IMPLEMENT_CLASS in DishonoredGameRegistrants.cpp)
+// until this wave; bodies in Src/interptrackattachment.cpp / interptrackinstattachment.cpp. Hand-edited generated header.
+// Engine.InterpTrackAttachment.AttachmentControlTrackKey: retail SDK size 8 (2012 PDB 8)
+struct FAttachmentControlTrackKey
+{
+    FLOAT Time;
+    class UInterpTrackAttachmentKeyProperties* Properties;
+
+    /** Constructors */
+    FAttachmentControlTrackKey() {}
+    FAttachmentControlTrackKey(EEventParm)
+    {
+        appMemzero(this, sizeof(FAttachmentControlTrackKey));
+    }
+};
+
+enum KeyAttachmentType
+{
+    EKAT_Attach             =0,
+    EKAT_Detach             =1,
+    EKAT_MAX                =2,
+};
+#define FOREACH_ENUM_KEYATTACHMENTTYPE(op)     op(EKAT_Attach)     op(EKAT_Detach) 
+
+// Engine.InterpTrackAttachmentKeyProperties: retail sizeof 96, reflected span 56..96 (2012 PDB sizeof 96)
+class UInterpTrackAttachmentKeyProperties : public UInterpTrackKeyProperties
+{
+public:
+    //## BEGIN PROPS InterpTrackAttachmentKeyProperties
+    BYTE m_KeyType;
+    FAttachmentInfos m_AttachmentInfo;
+    //## END PROPS InterpTrackAttachmentKeyProperties
+
+    DECLARE_CLASS(UInterpTrackAttachmentKeyProperties,UInterpTrackKeyProperties,0,Engine)
+};
+
+// Engine.InterpTrackAttachment: retail sizeof 148, reflected span 124..148 (2012 PDB sizeof 148)
+class UInterpTrackAttachment : public UInterpTrack
+{
+public:
+    //## BEGIN PROPS InterpTrackAttachment
+    FName m_TargetName;
+    TArrayNoInit<FAttachmentControlTrackKey> m_AttachmentKeys;
+    BITFIELD m_bDetachActorOnInteruption:1;
+    //## END PROPS InterpTrackAttachment
+
+    DECLARE_CLASS(UInterpTrackAttachment,UInterpTrack,0,Engine)
+
+	// InterpTrack interface. 2012 rvas 0x546de0, 0x53e420, 0x541b10, 0x541ca0, 0x53e3c0, 0x53e2a0, 0x53e350, 0x541cd0,
+	// 0x546cb0, 0x53e560; 2013 named at 0x8ff170 (DuplicateKeyframe), 0x8ff110, 0x8feff0, 0x8ff0a0, 0x902e30, 0x9068c0 and the
+	// unnamed 0x8ff2b0 (UpdateTrack, vtable slot 79).
+	virtual INT AddKeyframe(FLOAT Time, UInterpTrackInst* TrInst, EInterpCurveMode InitInterpMode);
+	virtual INT DuplicateKeyframe(INT KeyIndex, FLOAT NewKeyTime);
+	virtual INT SetKeyframeTime(INT KeyIndex, FLOAT NewKeyTime, UBOOL bUpdateOrder=TRUE);
+	virtual void RemoveKeyframe(INT KeyIndex);
+	virtual FLOAT GetKeyframeTime(INT KeyIndex) const;
+	virtual void GetTimeRange(FLOAT& StartTime, FLOAT& EndTime) const;
+	virtual FLOAT GetTrackEndTime() const;
+	virtual UBOOL GetClosestSnapPosition(FLOAT InPosition, TArray<INT> &IgnoreKeys, FLOAT& OutPosition);
+	virtual UObject* GetKeyProperties(INT KeyIndex);
+	virtual void UpdateTrack(FLOAT NewPosition, UInterpTrackInst* TrInst, UBOOL bJump);
+};
+
+// Engine.InterpTrackInstAttachment: retail sizeof 96, reflected span 64..96 (2012 PDB sizeof 96)
+class UInterpTrackInstAttachment : public UInterpTrackInst
+{
+public:
+    //## BEGIN PROPS InterpTrackInstAttachment
+    FVector m_LocationBackup;
+    FRotator m_RotationBackup;
+    FLOAT m_LastUpdatePosition;
+    BITFIELD m_bActorBackuped:1;
+    //## END PROPS InterpTrackInstAttachment
+
+    DECLARE_CLASS(UInterpTrackInstAttachment,UInterpTrackInst,0,Engine)
+
+	// 2012 0x53baf0 / 2013 0x8fc950 and 0x53ee40 / 0x8ffb40
+	virtual void InitTrackInst(UInterpTrack* Track);
+	virtual void TermTrackInst(UInterpTrack* Track);
+};
+
 // Engine.MatineeData: retail sizeof 144, reflected span 56..144 (2012 PDB sizeof 144)
 class UMatineeData : public UObject
 {
@@ -3320,6 +3404,9 @@ static_assert(STRUCT_OFFSET(UInterpTrackLocomotionKeyProperties, m_EndSpeedIdxNa
 	UInterpTrackInstVisibility::StaticClass(); \
 	UMatineeData::StaticClass(); \
 	UInterpTrackKeyProperties::StaticClass(); \
+	UInterpTrackAttachmentKeyProperties::StaticClass(); \
+	UInterpTrackAttachment::StaticClass(); \
+	UInterpTrackInstAttachment::StaticClass(); \
 	UInterpTrackFaceTo::StaticClass(); \
 	UInterpTrackFaceToKeyProperties::StaticClass(); \
 	UInterpTrackInstFaceTo::StaticClass(); \
@@ -3480,6 +3567,15 @@ VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstMorphWeight)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstMove,InterpTrackInstMove,ResetLocation)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstMove,InterpTrackInstMove,InitialQuat)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstMove)
+VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachment,InterpTrackAttachment,m_TargetName)
+VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachment,InterpTrackAttachment,m_AttachmentKeys)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackAttachment)
+VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachmentKeyProperties,InterpTrackAttachmentKeyProperties,m_KeyType)
+VERIFY_CLASS_OFFSET_NODIE(UInterpTrackAttachmentKeyProperties,InterpTrackAttachmentKeyProperties,m_AttachmentInfo)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackAttachmentKeyProperties)
+VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LocationBackup)
+VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstAttachment,InterpTrackInstAttachment,m_LastUpdatePosition)
+VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstAttachment)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstNotify,InterpTrackInstNotify,LastUpdatePosition)
 VERIFY_CLASS_SIZE_NODIE(UInterpTrackInstNotify)
 VERIFY_CLASS_OFFSET_NODIE(UInterpTrackInstParticleReplay,InterpTrackInstParticleReplay,LastUpdatePosition)

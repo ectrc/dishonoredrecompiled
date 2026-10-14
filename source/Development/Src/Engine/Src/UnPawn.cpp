@@ -274,6 +274,53 @@ void APawn::CacheAnimNodes()
 	}
 }
 
+// DISHONORED(port): agent GB. 2012 0x2bc1f0 / 2013 0x2a1180 (731 B, the two match): attach to a bone or socket of the
+// pawn's Mesh. With no mesh, no bone name, or a name that is neither a bone nor a socket, the AActor attachment. Otherwise
+// the attachment loses its collision, takes the hard-attach flag and PHYS_None, is placed on the bone (a bone, not a socket:
+// the socket's offset comes through SetBase), based on the mesh at that bone, offset by the key's relative transform, and
+// gets its collision back.
+void APawn::DoKismetAttachment( AActor* Attachment, FAttachmentInfos AttachInfos )
+{
+	if( Mesh == NULL || AttachInfos.BoneName == NAME_None )
+	{
+		AActor::DoKismetAttachment( Attachment, AttachInfos );
+		return;
+	}
+	const UBOOL bSocket = ( Mesh->SkeletalMesh != NULL ) && ( Mesh->SkeletalMesh->FindSocket( AttachInfos.BoneName ) != NULL );
+	const UBOOL bValidBone = Mesh->MatchRefBone( AttachInfos.BoneName ) != INDEX_NONE;
+	if( !bValidBone && !bSocket )
+	{
+		AActor::DoKismetAttachment( Attachment, AttachInfos );
+		return;
+	}
+	const UBOOL bOldCollideActors = Attachment->bCollideActors;
+	const UBOOL bOldBlockActors = Attachment->bBlockActors;
+	Attachment->SetCollision( FALSE, FALSE, FALSE );
+	Attachment->SetHardAttach( AttachInfos.bHardAttach );
+	Attachment->setPhysics( PHYS_None );
+	if( bValidBone && !bSocket )
+	{
+		if( AttachInfos.bUseRelativeOffset )
+		{
+			Attachment->SetLocation( Mesh->GetBoneLocation( AttachInfos.BoneName, 0 ) );
+		}
+		if( AttachInfos.bUseRelativeRotation )
+		{
+			Attachment->SetRotation( FQuatRotationTranslationMatrix( Mesh->GetBoneQuaternion( AttachInfos.BoneName, 0 ), FVector::ZeroVector ).Rotator() );
+		}
+	}
+	Attachment->SetBase( this, FVector::ZeroVector, 1, Mesh, AttachInfos.BoneName );
+	if( AttachInfos.bUseRelativeRotation )
+	{
+		Attachment->SetRelativeRotation( Attachment->RelativeRotation + AttachInfos.RelativeRotation );
+	}
+	if( AttachInfos.bUseRelativeOffset )
+	{
+		Attachment->SetRelativeLocation( Attachment->RelativeLocation + AttachInfos.RelativeOffset );
+	}
+	Attachment->SetCollision( bOldCollideActors, bOldBlockActors, FALSE );
+}
+
 // DISHONORED(port): agent FS. Retail 2012 rva 0x2dd5c0 (79 B): the pawn's own mesh got its anim tree,
 // so the matinee slots are collected again. Called natively from USkeletalMeshComponent::InitAnimTree.
 void APawn::PostInitAnimTree( USkeletalMeshComponent* SkelComp )

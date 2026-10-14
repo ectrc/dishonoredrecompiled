@@ -191,3 +191,27 @@ speed→playrate is one group-rate scale with children at ±1; the `Empty_Idle` 
 uninitialised-node fallback; DN's 2013 numbers are RVAs; the route's camera cannot see the dock workers from the
 boat (teleport needed); Worker A's failure is not the A\*. Deviations: `UpdateFeetPropeties` guards a zero weight
 sum (retail: inf/NaN); `FindAnimNode` for `FindAnimNodeFast`; `GetFootProperties` returns -1.
+
+### GB — merged; GB's own gate on the merged tree 47 ok / 0 failed / 0 skipped; 0 d3d9 deaths
+
+Nineteen files, 0 flagged against `ff5de25`; regeneration clean; `bitfield_audit` 0.
+
+**The boat's end is data, not a bug.** The 19-key Move track ends at 9713, 23115, 2253 and the actor is there; the
+Move runtime matches retail in both databases (`agentGB.md` §2). The "moored boat 750 units away" is the dock's
+dressing boat and its collision twin, swapped in place at `Boat_Arrive`. **What retail does instead: the Boat
+group's four `InterpTrackAttachment` tracks** (a skeleton here) hard-attach the player to the boat's `Player`
+socket for the ride and leave him there; the guards to `Captain`/`Driver`. **Ported**: `UInterpTrackAttachment`
+(ten bodies) + `UInterpTrackInstAttachment`, `AActor/APawn/ASkeletalMeshActor::DoKismetAttachment`,
+`AActor::MAT_Attach/MAT_Detach`, the NPC's (partial). Measured: the player rides attached and is left at
+9826, 23064, 2412 facing the gangway.
+
+**Acceptance not reached — a regression, named**: W gives speed 0 at the ride's end on `9f214c5` and after this
+port; FW walked 260 units on `da77f0f`. GA's unconditional `MAT_StopRootMotion` leaves the **player** at
+`RMM_Velocity` (`rmm 2/0 → 1/1` at 56 s) and `physWalking` (UnPhysic.cpp:1334) derives Velocity from the zero
+root-motion delta. Retail's player overrides are unported: `ADishonoredPlayerPawn::StopRootMotionMode` (2012
+`0x6facb0` / 2013 `0xaa1af0`) → `RMM_Ignore`, and `ADishonoredPlayerPawn::ChangeAnimStateMotionModes` (`0x6fae70` /
+`0xaab1d0`). **GF ports both.**
+
+**Premises corrected (seven)**: the boat's end is data; the far boat is the dock's; the lift matinee has no Move
+track; the Move runtime is not the suspect; the player IS held in retail (by the Attachment track); the
+`DoKismetAttachment` comment's 2012 rva was wrong; the silhouettes are on the control too.

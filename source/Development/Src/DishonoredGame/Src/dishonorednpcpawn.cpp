@@ -647,3 +647,25 @@ void ADishonoredNPCPawn::OnRelationshipChange()
 	m_bNotifyAIOfRelationshipChange = TRUE;
 	FVDIAG( "relationship changed on %s (%i individual, %i faction override(s))", *GetName(), m_PersonalRelationships.m_IndividualOverrideMap.Num(), m_PersonalRelationships.m_FactionOverrideMap.Num() );
 }
+
+// DISHONORED(port): agent GB. 2012 0x7ab5e0 / 2013 0x74b080 (163 B): retail does not base the NPC on the boat - it starts the
+// retargeting component (FDisComponentRetargeting::StartRetargeting on the key's bone, anchored at 'anchor_jnt', after stopping
+// a running one) and clears the pawn's base. FDisComponentRetargeting has no body in this tree (FS: "no such component"), so
+// only the SetBase( NULL ) runs; the guards are re-based on the deck by the locomotion floor sweep (GA) on their next move.
+void ADishonoredNPCPawn::MAT_Attach( AActor* const InBase, const FAttachmentInfos& AttachInfos )
+{
+	static UBOOL bWarned = FALSE;
+	if( !bWarned )
+	{
+		bWarned = TRUE;
+		debugf( NAME_Warning, TEXT("DISHONORED(port): ADishonoredNPCPawn::MAT_Attach: FDisComponentRetargeting is not ported; %s is not retargeted onto %s bone %s"),
+			*GetName(), InBase ? *InBase->GetName() : TEXT("none"), *AttachInfos.BoneName.ToString() );
+	}
+	SetBase( NULL, FVector( 0.f, 0.f, 1.f ), 1, NULL, NAME_None );
+}
+
+// 2012 0x7ab690 (65 B): StopRetargeting with m_bDisableCollisionForSoiree cleared around the call and restored after it - a
+// no-op without the component.
+void ADishonoredNPCPawn::MAT_Detach()
+{
+}

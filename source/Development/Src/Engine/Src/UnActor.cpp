@@ -4759,6 +4759,46 @@ void ASpotLight::EditorApplyScale(const FVector& DeltaScale, const FMatrix& Scal
  *
  * @param bNewHardAttach the new hard attach setting
  */
+// DISHONORED(port): agent GB. 2012 0x1963f0 / 2013 0x18ab50 (543 B, the two match): the Kismet / matinee attachment of
+// Attachment to this actor. Unbase it, take the hard-attach flag, place it by the relative offset / rotation in this actor's
+// frame with its collision off, then base it on this actor. APawn and ASkeletalMeshActor override it to attach to a bone or
+// socket of their mesh and fall back to this when the bone is not theirs.
+void AActor::DoKismetAttachment( AActor* Attachment, FAttachmentInfos AttachInfos )
+{
+	Attachment->SetBase( NULL, FVector( 0.f, 0.f, 1.f ), 1, NULL, NAME_None );
+	Attachment->SetHardAttach( AttachInfos.bHardAttach );
+	if( AttachInfos.bUseRelativeOffset || AttachInfos.bUseRelativeRotation )
+	{
+		const UBOOL bOldCollideActors = Attachment->bCollideActors;
+		const UBOOL bOldBlockActors = Attachment->bBlockActors;
+		Attachment->SetCollision( bOldBlockActors, FALSE, FALSE );
+		if( AttachInfos.bUseRelativeRotation )
+		{
+			Attachment->SetRotation( Rotation + AttachInfos.RelativeRotation );
+		}
+		if( AttachInfos.bUseRelativeOffset )
+		{
+			const FRotationTranslationMatrix RotMat( Rotation, FVector::ZeroVector );
+			Attachment->SetLocation( Location + RotMat.TransformNormal( AttachInfos.RelativeOffset ) );
+		}
+		Attachment->SetCollision( bOldCollideActors, bOldBlockActors, FALSE );
+	}
+	Attachment->SetBase( this, FVector( 0.f, 0.f, 1.f ), 1, NULL, NAME_None );
+}
+
+// DISHONORED(port): agent GB. 2012 0x172d50 / 2013 0x168de0 (45 B) and 0x172d80 / 0x168e10 (83 B): what the matinee Attachment
+// track calls on the TARGET group's actor (ADishonoredNPCPawn overrides both, dishonorednpcpawn.cpp).
+void AActor::MAT_Attach( AActor* const InBase, const FAttachmentInfos& AttachInfos )
+{
+	InBase->DoKismetAttachment( this, AttachInfos );
+}
+
+void AActor::MAT_Detach()
+{
+	SetBase( NULL, FVector( 0.f, 0.f, 1.f ), 1, NULL, NAME_None );
+	SetHardAttach( FALSE );
+}
+
 void AActor::SetHardAttach(UBOOL bNewHardAttach)
 {
 	if (bNewHardAttach != bHardAttach)
@@ -5525,17 +5565,18 @@ void AActor::execFindEventsOfClass( FFrame& Stack, RESULT_DECL )
 	*(UBOOL*)Result = FindEventsOfClass( EventClass, pout_EventList, bIncludeDisabled );
 }
 
-// DISHONORED(bringup): 2013 AActor::execDoKismetAttachment (0x1df6c0) reads an Actor and a 36-byte
-// AttachmentInfos struct and calls the virtual DoKismetAttachment (+336, 0x18ab50; APawn's 0x2a1180). The
-// struct lives in DishonoredGameEngineShims.h until agent AI moves it into Engine, so the exec only consumes
-// its parameters (hand-over in agentAE.md)
+// DISHONORED(port): 2013 AActor::execDoKismetAttachment (0x1df6c0) reads an Actor and the 36-byte
+// AttachmentInfos struct and calls the virtual DoKismetAttachment (+336; 2012 0x1963f0, APawn's 0x2bc1f0). The
+// struct is an Engine type since agent GB (EngineClasses.h).
 void AActor::execDoKismetAttachment( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_OBJECT(AActor,Attachment);
-	BYTE AttachInfos[36];
-	appMemzero( AttachInfos, sizeof(AttachInfos) );
-	Stack.Step( Stack.Object, AttachInfos );
+	P_GET_STRUCT(FAttachmentInfos,AttachInfos);
 	P_FINISH;
+	if( Attachment != NULL )
+	{
+		DoKismetAttachment( Attachment, AttachInfos );
+	}
 }
 
 void AActor::execVolumeBasedDestroy( FFrame& Stack, RESULT_DECL )

@@ -323,6 +323,8 @@ public:
         ProcessEvent(FindFunctionChecked(ENGINE_OnSetMesh),&Parms);
     }
     DECLARE_CLASS(ASkeletalMeshActor,AActor,0,Engine)
+	// DISHONORED(port): agent GB. 2012 0x358630 / 2013 0x334ee0: attach to a bone or socket of SkeletalMeshComponent (UnSkeletalMesh.cpp).
+	virtual void DoKismetAttachment(AActor* Attachment, FAttachmentInfos AttachInfos);
 	// UObject interface
 #if WITH_EDITOR
 	virtual void CheckForErrors();
