@@ -139,7 +139,7 @@ Acceptance: `-fvdiag` shows `AIGoToActor_3` → `Success (Last)` and the captain
 
 ## Outcome
 
-### GH — merged `ece8e1b`; GH's own gate 41/47 first pass (all six misses the d3d9 run killed by load before a frame; the stage alone 9/9, 2940 frames); everything else 47-equivalent
+### GH — merged `ece8e1b`; gate on main 47 ok / 0 failed / 0 skipped (1169 s); GH's own gate 41/47 first pass (all six misses the d3d9 run killed by load before a frame; the stage alone 9/9, 2940 frames); everything else 47-equivalent
 
 Five files (one function + `-ghdiag`), 0 flagged against `99eaf6b`; regeneration clean; `bitfield_audit` 0.
 
