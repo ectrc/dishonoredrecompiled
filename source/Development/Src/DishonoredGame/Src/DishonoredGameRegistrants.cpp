@@ -2340,6 +2340,7 @@ extern void DishonoredLinkDisSeqCondCompareTweaks();
 extern void DishonoredLinkDisSeqVarSpawnerPawn();
 extern void DishonoredLinkDisUseStates();
 extern void DishonoredLinkDishonoredNPCPawnInteract();
+extern void DishonoredLinkDishonoredPawnAttentionTarget();
 extern void DishonoredLinkFZ_ArkAnimNodeBlendPose();
 extern void DishonoredLinkFZ_CameraAnimDriven();
 extern void DishonoredLinkFZ_CameraInfluence();
@@ -2360,9 +2361,17 @@ extern void DishonoredLinkFZ_UStatePlayerMasterWalk();
 extern void DishonoredLinkGF_InventoryItem();
 extern void DishonoredLinkGF_PlayerSkeletalComponent();
 extern void DishonoredLinkGF_SkelControlFootPlacement();
+extern void DishonoredLinkUDisAIBrainProcessAttention();
+extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBase();
 extern void DishonoredLinkUDisAISubProcessHeadTrackPause();
+extern void DishonoredLinkUDisAttentionInfo_Base();
+extern void DishonoredLinkUDisAttentionInfo_Complex();
+extern void DishonoredLinkUDisAttentionInfo_Simple();
+extern void DishonoredLinkUDisGlobalAIAttentionManager();
+extern void DishonoredLinkUDisTweaks_AIBrainProcess_Attention();
+extern void DishonoredLinkUDisTweaks_PawnAttention();
 void (*GDishonoredGameLinkAnchors[])() =
 {
 	&DishonoredLinkArkAnimNodeLocomotion,
@@ -2375,6 +2384,7 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkDisSeqVarSpawnerPawn,
 	&DishonoredLinkDisUseStates,
 	&DishonoredLinkDishonoredNPCPawnInteract,
+	&DishonoredLinkDishonoredPawnAttentionTarget,
 	&DishonoredLinkFZ_ArkAnimNodeBlendPose,
 	&DishonoredLinkFZ_CameraAnimDriven,
 	&DishonoredLinkFZ_CameraInfluence,
@@ -2395,7 +2405,15 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkGF_InventoryItem,
 	&DishonoredLinkGF_PlayerSkeletalComponent,
 	&DishonoredLinkGF_SkelControlFootPlacement,
+	&DishonoredLinkUDisAIBrainProcessAttention,
+	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,
 	&DishonoredLinkUDisAISubProcessHeadTrackBase,
 	&DishonoredLinkUDisAISubProcessHeadTrackPause,
+	&DishonoredLinkUDisAttentionInfo_Base,
+	&DishonoredLinkUDisAttentionInfo_Complex,
+	&DishonoredLinkUDisAttentionInfo_Simple,
+	&DishonoredLinkUDisGlobalAIAttentionManager,
+	&DishonoredLinkUDisTweaks_AIBrainProcess_Attention,
+	&DishonoredLinkUDisTweaks_PawnAttention,
 };

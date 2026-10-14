@@ -126,6 +126,7 @@ struct FDisRangedFloat
     {
         appMemzero(this, sizeof(FDisRangedFloat));
     }
+#include "CppText/FDisRangedFloat.h"
 };
 
 // DishonoredGame.DisGlobalStructs.DisDirectionConstraint: retail SDK size 12 (2012 PDB 12)

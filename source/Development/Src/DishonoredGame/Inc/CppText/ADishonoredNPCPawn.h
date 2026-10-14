@@ -152,3 +152,12 @@ public:
 	// NPC (dishonorednpcpawn.cpp).
 	virtual void MAT_Attach( AActor* const InBase, const FAttachmentInfos& AttachInfos );
 	virtual void MAT_Detach();
+
+// ---- agent GI (PHASE20 GI): the NPC half of the attention target ----
+// GetAttnTargetBrain 2012 0x7c0080 / 2013 0x759a00 (the controller's initialized brain, none when dead), IsAttnTargetBeingMurdered
+// 0x7ae590 / 0x770650 (the pawn choking this one, as an attention target - the choke system is not ported, so FALSE, named),
+// AreReactionsDisabled 0x7ab9c0. Bodies in Src/dishonoredpawn_attentiontarget.cpp.
+public:
+	virtual const class UDishonoredAIBrain* GetAttnTargetBrain() const;
+	virtual UBOOL IsAttnTargetBeingMurdered( class IDisAttentionTargetInterface** _ppMurderer ) const;
+	UBOOL AreReactionsDisabled() const;

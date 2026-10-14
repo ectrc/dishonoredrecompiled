@@ -205,3 +205,23 @@ UDisPostProcessManager* DisGetPpManager()
 	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
 	return GameInfo ? GameInfo->m_pPpManager : NULL;
 }
+
+// DISHONORED(written): agent GI (PHASE20 GI). 2012 rva 0x82dc00: the game info's UDisGlobalAIAttentionManager. Retail constructs
+// it with the other global managers at game-info init (not ported); it is made on first use here, under the game info.
+UDisGlobalAIAttentionManager* DisGetGlobalAIAttentionManager()
+{
+	if( !GWorld )
+	{
+		return NULL;
+	}
+	ADishonoredGameInfo* GameInfo = Cast<ADishonoredGameInfo>( GWorld->GetGameInfo() );
+	if( !GameInfo )
+	{
+		return NULL;
+	}
+	if( !GameInfo->m_pGlobalAIAttentionManager )
+	{
+		GameInfo->m_pGlobalAIAttentionManager = ConstructObject<UDisGlobalAIAttentionManager>( UDisGlobalAIAttentionManager::StaticClass(), GameInfo );
+	}
+	return GameInfo->m_pGlobalAIAttentionManager;
+}

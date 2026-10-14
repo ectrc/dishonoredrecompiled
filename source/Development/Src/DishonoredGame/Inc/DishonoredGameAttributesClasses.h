@@ -75,6 +75,7 @@ struct FDisAttribute
     {
         appMemzero(this, sizeof(FDisAttribute));
     }
+#include "CppText/FDisAttribute.h"
 };
 
 // DishonoredGame.DisAttributes.DisAttributeModifier: retail SDK size 12 (2012 PDB 12)

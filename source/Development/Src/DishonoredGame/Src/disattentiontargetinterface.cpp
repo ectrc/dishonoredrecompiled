@@ -20,3 +20,25 @@ FLOAT IDisAttentionTargetInterface::GetAttnTargetFocalHeight() const
 {
 	return GetAttnTargetExtent().Z;
 }
+
+// ---- agent GI (PHASE20 GI): the base folds of the two slots every target answers ----
+// The interface's own bodies are the identical-code folds the PDB does not name separately: the parameter block is
+// filled from the other slots, and a target with no relationship interface is neutral to every relator.
+void IDisAttentionTargetInterface::CollectAttnTargetParams( FDisAttnTargetParams& _rOut_Params )
+{
+	_rOut_Params.m_pTargetTweaks = (FPointer)GetAttnTargetTweaks();
+	_rOut_Params.m_pObservableComponent = (FPointer)GetObservableComponent();
+	_rOut_Params.m_Location = GetAttnTargetLocation();
+	_rOut_Params.m_Velocity = GetAttnTargetVelocity();
+	_rOut_Params.m_Extent = GetAttnTargetExtent();
+	_rOut_Params.m_FocalPoint = GetAttnTargetFocalPoint();
+	_rOut_Params.m_bIsPlayer = IsAttnTargetPlayer();
+	_rOut_Params.m_bIsDead = IsAttnTargetDead();
+	_rOut_Params.m_bIsCombatable = IsAttnTargetCombatable();
+	_rOut_Params.m_pActor = GetAttnTargetActor();
+}
+
+BYTE IDisAttentionTargetInterface::GetAttnTargetIncomingRelationship( const IDisRelationshipInterface* ) const
+{
+	return (BYTE)Relationship_Neutral;
+}

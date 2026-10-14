@@ -1,0 +1,153 @@
+unit,function,rva_2012,rva_2013,status,note
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickBrainProcess_Derived,0x7aa770,0x7464b0,ported,+ the -gisight stand-in tick and the -gidiag report under their switches
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention,0x7aa040,0x745910,ported,2013 shape (sub_B60C10 folds the three per-slot calls)
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleTopAttnTarget,0x7a67a0,0x7305a0,ported,2013 shape (IsBlindTo); IsAttacking (pawn vtable +1812) unported - enemies order by distance
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_Messages,0x798860,0x73b350,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_Kismet,0x792e10,0x7363d0,ported,2013 unmatched by the table; the callee of TickAttention_Messages
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_UpdateLatestAttentionTag,0x798970,0x72ca20,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_ReactToCorpses,0x79caa0,0x7433d0,partial,IDisCorpseInterface has no methods here: culprit and freshness unknown
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_Empathy,0x7a9f50,0x744d80,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_ReactToAlly,0x7a9900,0x7435f0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_CheckForMurder,0x7a9a60,0x743750,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TickAttention_CheckForCarryingCorpse,0x7a6710,0x7304d0,ported,2013 shape (two tweak bits)
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::UpdateSoireeAttention,0x7a7ce0,0x73f120,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::MarkActiveReactionContexts,0x7a6c70,0x736680,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::CheckAttentionReactions,0x7a6fe0,0x7369f0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::DoAttentionReactions,0x7931c0,0x730c70,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::GetAttentionInfo,0x7a7880,0x73b460,ported,"the reused info is reset from its template with UDisAttentionInfo_Base::ResetFromTemplate (ExitProperties + InitProperties) where retail calls UObject::InitializeProperties (2012 0x93c20: an in-place StaticConstructObject); the complex info is constructed when the class default has none (logged once)"
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FindAttentionInfo,0x793130,0x730be0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::RemoveAttentionInfoIdx,0x7a0730,0x73b5c0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::GetAttentionLevel,0x7932a0,0x730d40,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::GetAttentionProxyInfo,0x798ad0,0x730d70,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::ShouldKeepAlarmRinging,0x7932d0,,ported,2013 unmatched
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::GetTargetsAtAttentionLevel,0x79cce0,0x73b6e0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::ClearAllMinAttention,0x793230,0x730ce0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::BuildAttnCategoryArray,0x7a6460,0x7301d0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FindAttentionTweakCategory,0x78d830,0x728fa0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FindAttentionTweaks,0x7a6570,0x730310,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FindSimpleAttentionTweaks,0x7a77a0,0x7362f0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::ShouldIgnoreDeathOf (corpse),0x7a65e0,0x7303a0,partial,FDisNPCDeathInfo::ShouldIgnoreDeath unported; tweak bit + manager override only
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::ShouldIgnoreDeathOf (target),0x7a7810,0x736360,partial,CanDeathBeWitnessed answers TRUE
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::ShouldSeeBodyAsHandled (corpse),0x7a6660,0x730420,partial,IsCorpseHandled unported
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::ShouldSeeBodyAsHandled (target),0x7a66a0,0x730460,partial,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::InitBrainProcess_Derived,0x7a6500,0x730270,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TermBrainProcess_Derived,0x7a1f80,0x73f0f0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::PostGameLoad_BrainProcess_Derived,0x792f70,0x73f360,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::OnOtherActorTerminated_AIBrainProcess_Derived,0x7a1fb0,0x73f2c0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::OnDifficultyChange_AIBrainProcess_Derived,0x792f10,0x730a80,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::BuildFilterStimMask,0x78d890,0x729000,ported,the 2013 38-id mask
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::GetFilterStimDelegate_BrainProcess,0x7aa490,0x747d40,ported,2013 switch; six 2013-only ids unbound
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::BumpAttention,0x7a7e30,0x73f270,ported,2013 shape (IsBlindTo)
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::CanHearAuralRequest,0x78ff40,,ported,2013 unmatched
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterTargetSighted,0x7a7ea0,0x73f3f0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterTargetUnsighted,0x7989d0,0x7365b0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterTargetTouched,0x7a7ed0,0x73f420,ported,2013 shape (the unpossess touch); the table mislabels 0x73f7b0
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterIncomingDamage,0x7a7f20,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterMaxOutAttention,0x7a8070,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterPsychicAttentionEnabled,0x7a8130,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterPsychicAttentionDisabled,0x798a10,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterPsychicAttentionDisabled_AllTargets,0x793090,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterSetMinAttentionForTarget,0x7a8190,0x73f7b0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterClearMinAttentionForTarget,0x798a70,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterClearAllMinAttention,0x798ab0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterClearAttention,0x792fe0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterNoticeRequest,0x7a81d0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterSearchRequest,0x7a9bd0,0x7438c0,ported,m_ActorTypeFlags==36 read as IsAttnTargetPlayer
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleSearchRequest,0x7a8f70,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterHelp,0x7a9c50,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterHelpRequest,0x7a8bb0,0x740640,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterSuspicionLevelChanged,0x78d9b0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDialogAttentionChange,0x7a8820,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterTraveled,0x7a8af0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterHeardSomething,0x7a9cb0,0x7439a0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleHearSomething,0x7a8ff0,,ported,2013 unmatched; the callee of FilterHeardSomething
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterMeleeConnected_Outgoing,0x7a9db0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterEvadedMelee_Incoming,0x7a82a0,,ported,UDisItemContext::GetOwningPawn read off the Outer chain
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterEvadedMelee_Outgoing,0x7a9dd0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleAttackedEnemy,0x7a8e90,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterForceRingAlarm,0x7a8380,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterEscapedBeingChoked,0x7a8490,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDoorUsedByPlayerWhileWary,0x7a8900,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDeathByWoL,0x7a9df0,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleDeathByWoL,0x7a9490,,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterAlarm,0x7a9cd0,0x7439c0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleHearAlarm,0x7a93a0,0x740f60,partial,GetPreviousValidNPCPosition unported: the bell's location stands in
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleWitnessedMagic,0x7a9550,0x741190,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::TransferAttentionForTarget,0x7a9620,0x7412a0,ported,
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDiscoveredCorpse,0x7a9d00,0x7439f0,inventoried,HandleDiscoveredCorpse 0x7a8c80 (526 B) needs FDisNPCDeathInfo and the corpse interface methods; unbound
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterWitnessDeath,0x7a9d40,0x743a30,inventoried,needs GetNPCDeathInfo / FDisAIKnowledgeComponent::OnWitnessedDeath; unbound
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterHeardCorpseSplat,0x7a89d0,,inventoried,needs the corpse interface; unbound
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterPlayerHideoutTransition,0x7a8570,,inventoried,needs UDisHideoutComponent::GetAttentionProxySnapLoc / BumpAttentionOnLeave and FDisAIMonitorPawnReachability; unbound
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::HandleDiscoveredCorpse,0x7a8c80,,inventoried,526 B
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterReachabilityChange (2013 only),,0x7464e0,inventoried,120 B; no 2012 body; delegator thunk 0x746560
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterWitnessShadowKill (2013 only),,0x73f9e0,inventoried,271 B; no 2012 body; delegator thunk 0x7416f0
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDLC06_SmokeBombed (2013 only),,0x73fd10,inventoried,291 B; delegator thunk 0x7417d0
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDLC06_WitnessSilentExplosion (2013 only),,0x73fe40,inventoried,521 B; delegator thunk 0x7417f0
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDLC07_Resurrected (2013 only),,0x740450,inventoried,208 B; delegator thunk 0x741810
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FilterDLC07_Pulled (2013 only),,0x740520,inventoried,282 B; delegator thunk 0x741830
+disaibrainprocessattention.cpp,DisAttention::MakeAttentionChangeReason,0x78fe30,0x728e60,ported,
+disaibrainprocessattention.cpp,DisAttention::FindAttentionHeight,0x78fe60,0x72c9e0,ported,
+disaibrainprocessattention.cpp,AttentionLevelEquals (file static),0x78d9c0,,ported,DisAttentionLevelEquals
+disaibrainprocessattention.cpp,FDisAttentionIncreaseInfo ctors,0x78fea0 / 0x78ff00,0x728e90 / 0x728ef0,ported,
+disaibrainprocessattention.cpp,FDisAttentionChangeReason ctors,0x745d90 / 0x745da0 / 0x745dc0,0x700c00,ported,
+disaibrainprocessattention.cpp,the 3 class-registration helpers + 29 DisDelegate::PrivateDelegatorMemFn thunks,various,various,macro / template,generated by DECLARE_CLASS and DIS_BIND_STIM_PREDICATE
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::InitAttnInfo,0x7a71e0,0x7552d0,ported,
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::HandleStateChanges,0x7a72a0,0x75b520,ported,
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::GetCurrentCorpseResponse,0x7a79e0,0x74bfc0,ported,
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::GetLastChangeReason_Derived,0x78da90,0x7484e0,ported,
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::ResetFromTemplate,,,written,"the property reset retail gets from UObject::InitializeProperties( template ); see GetAttentionInfo"
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::GetTweaks_Derived (fold),0x78da80,0x7482d0,ported,vtable {for IDisTweaksInterface} slot 4; load of m_pAttentionTweaks; 2013 by the match table row of the fold (1.000)
+disattentioninfo_base.cpp,UDisAttentionInfo_Base::SetTweaks_Derived (fold),0x78ff90,0x72ace0,ported,vtable {for IDisTweaksInterface} slot 5; store of m_pAttentionTweaks; 2013 by the match table row of the fold (1.000)
+disattentioninfo_simple.cpp,UDisAttentionInfo_Simple::TickAttnInfo_Derived,0x798ea0,0x75b7d0,ported,
+disattentioninfo_simple.cpp,UDisAttentionInfo_Simple::UpdateSightedFlag,0x7938b0,0x750030,partial,the corpse-visibility curve needs the observable component; a live target follows the LOS
+disattentioninfo_simple.cpp,UDisAttentionInfo_Simple::IncreaseAttention_Derived,0x793a10,0x7501a0,ported,
+disattentioninfo_simple.cpp,UDisAttentionInfo_Simple::InitAttnInfo_Derived,0x7a7ba0,0x74c7a0,ported,
+disattentioninfo_simple.cpp,UDisAttentionInfo_Simple::OnAttnTargetStateChange,0x7a7c90,0x74c880,ported,
+disattentioninfo_simple.cpp,UDisAttentionInfo_Simple::GainLOS_Derived / LoseLOS / BeTouched / GainPsychic / LosePsychic / SetMin / GetMin / HasAny / GetNormalized / GetAttnLevel / GetLastChangeReason / HasDirectAttention / HasPsychicAttention,0x793b80 0x78dd20 0x793bd0 0x78dd30 0x78dd40 0x78dd50 0x78dd80 0x793c10 0x78ddb0 0x78ddf0 0x78de10 0x790570 0x22ac50,0x750340 0x748770 0x750390 0x748780 0x748790 0x7487a0 0x7487d0 0x7503d0 0x748800 0x748840 0x748860 0x74c8d0,ported,
+disattentioninfo_complex.cpp,DisAttentionInfo_Complex::SetupTickParamsFromTarget,0x7a2120,0x768e10,partial,the observable component branch has nothing to read (FDisComponentObservable unported); -gisight stand-in for the player
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::TickAttnInfo_Derived,0x7a74d0,0x769150,ported,ADisAlarmBell::IsRinging unported (a heard alarm is kept)
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::InitAttnInfo_Common / InitAttnInfo_Derived / OnAttnTargetStateChange,0x7a7430 0x7a7b50 0x7a7770,0x74c1d0 0x74f920 0x74c250,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::SetAccumulatorParams,0x7934f0,0x74fc40,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::UpdateTimeBasedAttention_Sight_UpdateSightedFlag,0x793410,0x74f970,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::UpdateTimeBasedAttention_Sight_MakePendingChange,0x7900c0,0x74fa50,ported,2013 unmatched by the table
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::UpdateTimeBasedAttention_Touch / _Psychic,0x78dc80 0x790230,0x7486d0 0x74c400,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::ApplyAttentionIncreases,0x79ce40,0x760ca0,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::ApplyAttentionDrain,0x79b180,0x761040,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::UpdateAttentionInfo,0x798d20,0x75b680,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::UpdateAttentionProxy,0x798b30,0x755390,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::UpdateAttentionProxy_Player,0x7902c0,0x74c490,ported,the player's last delta is the tick delta; DisLineProbe is a world line check
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::GetAttentionLevelFromAttentionValue / GetMinAttentionLevel / ShouldClampAttentionToInvestigate,0x790430 0x790510 0x793590,0x74c600 0x74c6e0 0x74fce0,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::IncreaseAttention_Derived / SetAsTopAttnTarget_Derived / OnOtherActorTerminated_AttnInfo_Derived,0x790010 0x7a0860 0x793300,0x74c280 0x767cf0 0x74c330,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex: the 17 one-line virtuals,0x78dab0..0x78dd10,0x748500..0x748760,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::ShouldKeepAlarmRinging_Derived / GetTimeLeftInInvestigate_Derived,0x793680 0x793710,0x74fdd0 0x74fe60,ported,
+disattentioninfo_complex.cpp,UDisAttentionInfo_Complex::GameSave / GameLoad,0x7937b0 0x793830,0x74ff00 0x74ff80,agent ED / EJ,dissavegame.cpp
+distweaks_aibrainprocess_attention.cpp,FDisAttentionReactionContext::EvaluateAttnChangeReason,0x7991c0,0x755580,ported,
+distweaks_pawnattention.cpp,FDisAttentionIncrease::FDisAttentionIncrease,0x764dc0,0x701550,ported,
+distweaks_pawnattention.cpp,FDisAttentionLevelThreshold::CalculateStoppingThreshold,0x7673e0,0x701570,ported,
+distweaks_pawnattention.cpp,UDisTweaks_PawnAttention::FixupDefaults_Derived,0x7674a0,0x70fc00,ported,
+distweaks_pawnattention.cpp,UDisTweaks_PawnAttention::EditConditionAskObj_IsConditionMet,0x767440,,inventoried,editor only
+distweaks_pawnattention.cpp,FDisVisCalcTuningParams::Apply x2 / GetRelevantVisCalcPoints / FixupDefaults,0x7495d0 0x74d6a0 0x749470 0x74d6f0,0x70b350 0x70eca0,ported,the snapshot copy aliases the tweak's point array (retail deep-copies)
+disglobalaiattentionmanager.cpp,UDisGlobalAIAttentionManager::GetSimpleAttnInfoFromPool / ReleaseSimpleAttnInfoToPool / PostCommitMapChange,0x890e30 0x890f00 0x88b7f0,0x846070 0x846140,ported,
+dishonoredutilities_accessors.cpp,DisGetGlobalAIAttentionManager,0x82dc00,,written,made on first use (retail: game-info init)
+dishonoredpawn_attentiontarget.cpp,ADishonoredPawn: the 18 attention-target bodies,0x78e5a0..0x78e830 0x794830 0x799b90,0x7494a0..0x749730 0x756850 0x75c960,ported,IsAttnTargetInCombat / CanAttnTargetFight / CanAttnTargetBeAttacked answer through the brain and the fighter tweak (the pawn virtuals are unported)
+dishonoredpawn_attentiontarget.cpp,ADishonoredPawn::GetLookAtPoint,0x794440,0x756100,partial,the tweak FName at UDisTweaks_Pawn +416 is untyped in the SDK dump: head_jnt stands in
+dishonoredpawn_attentiontarget.cpp,ADishonoredPawn::IsSeenBy,0x7aaaa0,,partial,no observable component: unseen
+dishonoredpawn_attentiontarget.cpp,ADishonoredNPCPawn::GetAttnTargetBrain / IsAttnTargetBeingMurdered / AreReactionsDisabled,0x7c0080 0x7ae590 0x7ab9c0,0x759a00 0x770650,ported,IsAttnTargetBeingMurdered: the choke is unported (FALSE)
+dishonoredpawn_attentiontarget.cpp,ADishonoredPlayerPawn::CollectAttnTargetParams / AllowAttentionGain / OnAttentionReceived / OnAttentionLost / CanAttnTargetBeAttacked,0x6fb080 0x6fb0a0 0x705250 0x6fe650 0x705290,0x6a1ed0 0x6ab710 0x6ab750,ported,IsPossessing and the master-state attack gates unported
+disaisubprocessfleetinggaze.cpp,UDisAISubProcessFleetingGaze: BeginSubProcess_Derived / RefreshSubProcess_Derived / FilterTopAttnProxyReplaced / BuildFilterStimMask / GetFilterStimDelegate_SubProcess / BeginDestroy,0x789a00 0x789ba0 0x778100 0x765f40 0x780830 0x7764f0,0x73d8e0 0x739a00 0x73da80 0x728600 0x6fe680 0x739b80,ported,DisCloseEnough 0x827e40 / DisPawnYawIsFacing 0x8277c0 / FDisRangedFloat::GetRandomFloatValue 0x890940 written in the unit
+dishonoredaibrain.cpp,UDishonoredAIBrain::IsBlindTo,(inlined),0x701020,ported,2013 sub_B01020
+dishonoredaibrain.cpp,UDishonoredAIBrain::BuildFinalSenseMask,0x747960,0x700f70,ported,2013 inlines it into TickBrain_Senses
+dishonoredaibrain.cpp,UDishonoredAIBrain::SendAttentionLevelChanged / OnAttentionLevelChanged_Stims,0x75c540 0x757c30,0x726b30 0x722da0,ported,
+dishonoredaibrain.cpp,UDishonoredAIBrain::HandleTargetBusted / HandleTargetUnbusted / HandleEnemyBusted / HandleAllyBusted / HandleNeutralBusted / HandlePawnBusted_SendStims,0x75a580 0x758190 0x74a1d0 0x74a280 0x74a240 0x758290,0x724ec0 0x723160 0x70be40 0x70bf30 0x70bef0 0x7232b0,partial,OnNPCCorpseUsed / GetCarriedCorpseOrBodyPart / IncrementStat / AcknowledgeHostility unported and named
+dishonoredaibrain.cpp,UDishonoredAIBrain::SetTopEnemyAttnTarget,0x75a200,0x724ae0,ported,BroadcastAIStimInRadius written as a brain-list walk
+dishonoredaibrain.cpp,UDishonoredAIBrain::ShouldAlwaysWitnessDeath / CanLoseBustedTarget / ShouldLowerAlertness / ShouldMagicDrainAttn / ClearNotedMagic / CanEmpathize / ShouldCareAboutThisCrime / GetAllyReactionTarget / DoOneAttentionReaction / IsAttentiveToward / GetPawnsAtAttentionLevel,0x746350 0x7461f0 0x74a580 0x74a140 0x7461c0 0x746200 0x7462e0 0x74dba0 0x749f80 0x747850 0x752750,0x7011b0 0x7010c0 0x70c0c0 0x70bdb0 0x701090 0x7010d0 - 0x70f5b0 0x70bb90 0x70b780 0x714c00,ported,ShouldLowerAlertness: the distraction component and UStateNPCMasterDistracted unported; DoOneAttentionReaction: the Surprised state unported
+dishonoredaibrain.cpp,UDishonoredAIBrain::HandleTargetSighted / HandleTargetUnsighted / HandleHearSomething / FireKismetEvent_PlayerHeard / CheckForImportantKismetEvents / CheckForImportantDialog / ClearMinAttentionForTarget,0x758070 0x758100 0x746360 0x747b40 0x74a410 0x755f70 -,0x723040 0x7230d0 - 0x704100 0x70f400 0x7174e0 -,ported,
+dishonoredaibrain.cpp,UDishonoredAIBrain::GetAttentionLevel / GetAttentionProxyInfo / ClearAllMinAttention,0x746250 0x746270 0x758f00,0x701120 0x701140 0x724280,ported,were bringup stubs (CG)
+dishonoredaibrain_senses.cpp,UDishonoredAIBrain::TickBrain_Senses,0x7562d0,0x717880,ported,CG's reading corrected: this pass never touched the vision component
+dishonoredaibehavior.cpp,UDishonoredAIBehavior::ShouldLowerAlertness,0x748b70,,ported,
+dishonoredglobalaimanager.cpp,UDishonoredGlobalAIManager::GetAttentiveBrains x2 / HasAttentiveBrains / IsIgnoreDeathOverridden / MakeNewAttentionTag,0x8c4ae0 0x8c4b80 0x8b1190 0x8c0290 0x8af120,0x854b70 0x854c10 - 0x851d50 -,ported,
+discomponentvisionnpc.cpp,FDisComponentVisionNPC (14 functions),0x8afc50..0x8d1290,,inventoried,THE sense the attention process depends on; not ported (see agentGI.md section 4)
+discomponentvision.cpp,FDisComponentVision (22 functions),0x8afb60..0x8cf580,,inventoried,
+discomponentobservable.cpp,FDisComponentObservable (26 functions),,,inventoried,GetVisibilityLevel 0x8af680 / GetSpottedDistance 0x8b99e0
+dishonorednpccontroller.cpp,ADishonoredNPCController::StartSeeingVisibleThing / StopSeeingVisibleThing,0x7b08c0 0x7b0970,0x7591a0 0x759270,inventoried,the two callers of HandleTargetSighted / Unsighted
+disaibrainprocessattention.cpp,UDisAIBrainProcessAttention::FinishDestroy (diag),,,written,-gidiag only: logs the destruction order at exit (the GI2 exit-crash hunt); UDisAttentionInfo_Complex / _Simple / UDisGlobalAIAttentionManager carry the same override

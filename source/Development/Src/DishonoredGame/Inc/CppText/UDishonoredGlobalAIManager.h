@@ -22,3 +22,13 @@ public:
 	// DISHONORED(port): agent ED (PHASE11 ED), 2012 rva 0x6fa960 (dishonoredplayerpawn.cpp:1541), the body
 	// retail shares between this class, UDishonoredGlobalAIManager and UDisNPCTravelManager.
 	virtual UBOOL IsSaveable( ESaveLoadLocation Location ) const { return Location == SLL_FILE; }
+
+// ---- agent GI (PHASE20 GI): the attention tags and the attentive-brain queries ----
+// MakeNewAttentionTag 2012 rva 0x8af120 (13 B: ++m_iCurrentAttentionTag), GetAttentiveBrains 0x8c4ae0 / 2013 0x854b70 and
+// 0x8c4b80 / 0x854c10, HasAttentiveBrains 0x8b1190, IsIgnoreDeathOverridden 0x8c0290 / 0x851d50 (54 B). Bodies in
+// Src/dishonoredglobalaimanager.cpp.
+public:
+	INT MakeNewAttentionTag() { return ++m_iCurrentAttentionTag; }
+	void GetAttentiveBrains( const class ADishonoredPawn* _pPawn, TArray< class UDishonoredAIBrain*, TMemStackAllocator< GMainThreadMemStack > >& _rOut_Brains, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const;
+	UBOOL HasAttentiveBrains( const class ADishonoredPawn* _pPawn, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const;
+	UBOOL IsIgnoreDeathOverridden( const class UDishonoredAIBrain& _rIgnorer, const class IDisCorpseInterface& _rIgnoree ) const;

@@ -137,3 +137,44 @@ INT UDishonoredGlobalAIManager::GetNumBrains() const
 	}
 	return Count;
 }
+
+// ---- agent GI (PHASE20 GI): the attentive-brain queries ----
+// DISHONORED(port): 2012 rva 0x8c4ae0 / 2013 0x854b70 (the TMemStackArray<UDishonoredAIBrain*> form; the const form 0x8c4b80 /
+// 0x854c10 is the same walk) and 0x8b1190 (HasAttentiveBrains): every brain in the list but the pawn's own that
+// IsAttentiveToward the pawn at the relationship and level.
+void UDishonoredGlobalAIManager::GetAttentiveBrains( const ADishonoredPawn* _pPawn, TArray< UDishonoredAIBrain*, TMemStackAllocator< GMainThreadMemStack > >& _rOut_Brains, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const
+{
+	for( UDishonoredAIBrain* Brain = m_pBrainList; Brain; Brain = Brain->m_pGlobalAI_NextBrain )
+	{
+		if( Brain->GetOwningPawn() != _pPawn && Brain->IsAttentiveToward( _pPawn, _RequiredRelationship, _RequiredAttentionLevel ) )
+		{
+			_rOut_Brains.AddItem( Brain );
+		}
+	}
+}
+
+UBOOL UDishonoredGlobalAIManager::HasAttentiveBrains( const ADishonoredPawn* _pPawn, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const
+{
+	for( UDishonoredAIBrain* Brain = m_pBrainList; Brain; Brain = Brain->m_pGlobalAI_NextBrain )
+	{
+		if( Brain->GetOwningPawn() != _pPawn && Brain->IsAttentiveToward( _pPawn, _RequiredRelationship, _RequiredAttentionLevel ) )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x8c0290 / 2013 0x851d50 (54 B): is the (ignorer, ignoree) pair in m_CustomIgnoreDeathInfos.
+UBOOL UDishonoredGlobalAIManager::IsIgnoreDeathOverridden( const UDishonoredAIBrain& _rIgnorer, const IDisCorpseInterface& _rIgnoree ) const
+{
+	for( INT i = 0; i < m_CustomIgnoreDeathInfos.Num(); i++ )
+	{
+		const FCustomIgnoreDeathInfo& Info = m_CustomIgnoreDeathInfos(i);
+		if( Info.m_pIgnorer == &_rIgnorer && Info.m_pIgnoree.GetObject() && Info.m_pIgnoree.GetInterface() == &_rIgnoree )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}

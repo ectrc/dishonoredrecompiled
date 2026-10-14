@@ -28,6 +28,11 @@ class FArkComponentLookat;
 // classes of the unported FArkComponentLocomotion package (agentCG.md hand-over 3).
 class FArkComponentFaceTo;
 class FArkComponentLocomotion;
+// DISHONORED(written): agent GI. The attention brain process's cpptext (UDisAIBrainProcessAttention, the three
+// UDisAttentionInfo_* classes) names the per-tick message struct of Inc/disattentioninfo.h by reference only.
+namespace DisAttention { struct FDisAttentionChangeMessage; }
+struct FDisTickAttentionParams;
+struct FAttentionTweakCategoryInfo;
 
 class UDishonoredNativeState;
 class UDisTweaksBase;

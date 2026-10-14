@@ -138,3 +138,16 @@ public:
 protected:
 	virtual void StopRootMotionMode();
 public:
+
+// ---- agent GI (PHASE20 GI): the player half of the attention target ----
+// CollectAttnTargetParams 2012 0x6fb080 / 2013 0x6a1ed0 (the base plus m_bIsPlayer), IsAttnTargetPlayer (a folded `return TRUE`),
+// AllowAttentionGain 0x6fb0a0 (TRUE unless possessing - the possession state is not ported here, named in the body),
+// OnAttentionReceived 0x705250 / 0x6ab710 and OnAttentionLost 0x6fe650 (the m_pAttentiveBrainsList chain the stealth HUD walks),
+// CanAttnTargetBeAttacked 0x705290 / 0x6ab750. Bodies in Src/dishonoredpawn_attentiontarget.cpp.
+public:
+	virtual void CollectAttnTargetParams( struct FDisAttnTargetParams& _rOut_Params );
+	virtual UBOOL IsAttnTargetPlayer() const { return TRUE; }
+	virtual UBOOL AllowAttentionGain() const;
+	virtual void OnAttentionReceived( class UDishonoredAIBrain* _pBrain );
+	virtual void OnAttentionLost( class UDishonoredAIBrain* _pBrain );
+	virtual UBOOL CanAttnTargetBeAttacked() const;

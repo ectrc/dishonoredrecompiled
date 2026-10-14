@@ -134,3 +134,14 @@ public:
 
 	// ---- agent GE (PHASE19 GE): 2013 rva 0x6f00f0 (2012 0x74f550, 311 B) - a behaviour's bark goes through its pawn, or waits for the resume ----
 	UBOOL FireDialogHook( eDisDialogHook _Hook, class IDisConvSpeakerInterface* _pTarget );
+
+	// ---- agent GI (PHASE20 GI): the four virtuals the attention process asks the current behaviour through the brain ----
+	// 2012 PDB: OwnerShouldAlwaysWitnessDeath, CanLoseBustedTarget (UDisBehaviorCombatMelee 0x7491d0 overrides), CanBeSurprised and
+	// GetAllyReactionTarget (UDisBehaviorGoHome 0x7231e0, StationarySearch 0x7248e0, Panic 0x728a10, EnemyUnreachable 0x72de20,
+	// TriggerAlarm 0x7452a0, Combat 0x7459c0 override) are identical-code folds on the base; ShouldLowerAlertness 0x748b70 asks
+	// every sub-process. None of the overrides is ported in this wave; the bases answer what the folds do.
+	virtual UBOOL OwnerShouldAlwaysWitnessDeath() const { return FALSE; }
+	virtual UBOOL CanLoseBustedTarget() const { return FALSE; }
+	virtual UBOOL CanBeSurprised() const { return FALSE; }
+	virtual class IDisAttentionTargetInterface* GetAllyReactionTarget( BYTE& _rAttentionChangeReason ) const { return NULL; }
+	UBOOL ShouldLowerAlertness() const;

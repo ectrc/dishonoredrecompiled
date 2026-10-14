@@ -196,3 +196,20 @@ inside `LoadMap`/`BeginPlay` is identical in retail; `Login`/`RestartPlayer` are
 (it travels by `CommitMapChange`). **Loop**: gate exe **20/20 clean** (1312 static shapes at the first tick, three slow
 loads included); control 20/20 take 57–79 `DmgType_Fell`. Follow-up: one of the eight sublevels stays unloaded on
 both builds (name not logged); the save-state half of `PostCommitMapChange` (ED's `RestoreLoadedLevels`).
+
+### GI — merged; GI's own gate 47 ok / 0 failed / 0 skipped (1732 s, `d3d9_frames` 7890)
+
+Forty-eight files, 0 flagged against `c66a555`; regeneration clean; `bitfield_audit` 0; no Engine file.
+**Thirteen working-build invocations against the two-build rule** — noted.
+
+**The attention process is ported** (85/88, 2013 shape; `UDisAttentionInfo_*` whole; the 24-slot
+`IDisAttentionTargetInterface` replacing CG's 7-slot stand-in; the real `TickBrain_Senses`; the brain's
+`m_LookAtRequest` finally initialised to FT's component). **Acceptance not reached, and the plan was wrong twice**:
+(1) retail's head-track look-at fires **only for an enemy** at `DAL_HeadTrack` (2013 `0x725890`); a friendly
+guard's glance is `FleetingGaze` (ported, unused by this map's behaviours); (2) **nothing in the tree sees** —
+`FDisComponentVisionNPC` (14) / `FDisComponentVision` (22) / `FDisComponentObservable` (26) are skeletons, so no
+attention slot is ever created. With a declared off-by-default sight stand-in (`-gisight`) the chain runs: a
+neutral and an ally reach Busted within a second and the player becomes the top target. **Vision → wave 25.**
+Open, bounded: with the stand-in on, 8 of 9 runs crash at exit in `IncrementalPurgeGarbage` (never an attention
+object; minidumps kept) — the vision package inherits it. For FR: at Busted `DDH_PLAYER_APPROACHES` fires every
+tick (3,890 in 50 s) — the dialog side's cooldown is not honoured.

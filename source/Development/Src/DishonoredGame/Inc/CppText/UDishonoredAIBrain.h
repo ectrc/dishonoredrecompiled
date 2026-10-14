@@ -130,3 +130,50 @@ private:
 	void OnIncreaseTopAttnTargetAttentionLevel( const struct FDisAttentionChangeReason& _rAttentionChangeReason );
 	void OnDecreaseTopAttnTargetAttentionLevel( UBOOL _bChangingTopAttnTarget );
 public:
+
+	// ---- agent GI (PHASE20 GI): what the attention process asks of its brain. Bodies in Src/dishonoredaibrain.cpp ----
+	// IsBlindTo: 2013 sub_B01020 (rva 0x701020, 2012 inlines the mask test): the final sense mask's blind bit for the player /
+	// non-player side, or an owning pawn under a soiree fake-death request. SendAttentionLevelChanged 2012 0x75c540 / 2013
+	// 0x726b30, OnAttentionLevelChanged_Stims 0x757c30 / 0x722da0, HandleTargetBusted 0x75a580 / 0x724ec0, HandleTargetUnbusted
+	// 0x758190 / 0x723160, HandleEnemyBusted 0x74a1d0 / 0x70be40, HandleAllyBusted 0x74a280 / 0x70bf30, HandleNeutralBusted
+	// 0x74a240 / 0x70bef0, HandlePawnBusted_SendStims 0x758290 / 0x7232b0, SetTopEnemyAttnTarget 0x75a200 / 0x724ae0,
+	// ShouldAlwaysWitnessDeath 0x746350 / 0x7011b0, ShouldLowerAlertness 0x74a580 / 0x70c0c0, ShouldMagicDrainAttn 0x74a140 /
+	// 0x70bdb0, CanLoseBustedTarget 0x7461f0 / 0x7010c0, ClearNotedMagic 0x7461c0 / 0x701090, CanEmpathize 0x746200 / 0x7010d0,
+	// ShouldCareAboutThisCrime 0x7462e0, GetAllyReactionTarget 0x74dba0 / 0x70f5b0, DoOneAttentionReaction 0x749f80 / 0x70bb90,
+	// IsAttentiveToward 0x747850 / 0x70b780, GetPawnsAtAttentionLevel 0x752750 / 0x714c00, HandleTargetSighted 0x758070 /
+	// 0x723040, HandleTargetUnsighted 0x758100 / 0x7230d0, HandleHearSomething(FName) 0x746360, FireKismetEvent_PlayerHeard
+	// 0x747b40 / 0x704100, BuildFinalSenseMask 0x747960 (2013 inlined into TickBrain_Senses as sub_B00F70, rva 0x700f70),
+	// CheckForImportantKismetEvents 0x74a410 / 0x70f400, CheckForImportantDialog 0x755f70 / 0x7174e0, ClearMinAttentionForTarget.
+public:
+	class UDisAIBrainProcessAttention* GetAttentionProcess() const { return m_pAttentionProcess; }
+	UBOOL IsBlindTo( UBOOL _bPlayer ) const;
+	void SendAttentionLevelChanged( class AActor* _pAttnTargetActor, BYTE _OldAttentionLevel, BYTE _NewAttentionLevel, const struct FDisAttentionChangeReason& _rAttentionChangeReason, const FVector& _rAttentionLoc );
+	void SetTopEnemyAttnTarget( const struct FDisAttentionProxy& _rTopAttnTargetProxy, BYTE _AttentionLevel );
+	UBOOL ShouldAlwaysWitnessDeath() const;
+	UBOOL ShouldLowerAlertness() const;
+	UBOOL ShouldMagicDrainAttn( class AActor* _pTarget, UBOOL& _rbBlinkInProgress ) const;
+	UBOOL CanLoseBustedTarget() const;
+	void ClearNotedMagic( class ADishonoredPawn* _pPawn );
+	UBOOL CanEmpathize() const;
+	UBOOL ShouldCareAboutThisCrime( const class IDisRelationshipInterface* _pVictim, const class IDisRelationshipInterface* _pPerpetrator ) const;
+	class IDisAttentionTargetInterface* GetAllyReactionTarget( BYTE& _rAttentionChangeReason ) const;
+	void DoOneAttentionReaction( class IDisAttentionTargetInterface* _pTargetThatCausedReaction, BYTE _ReactionType );
+	UBOOL IsAttentiveToward( const class ADishonoredPawn* _pPawn, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const;
+	void GetPawnsAtAttentionLevel( BYTE _AttentionLevel, TArray< class ADishonoredPawn*, TMemStackAllocator< GMainThreadMemStack > >& _rOut_Pawns, BYTE _LifeStateFilter, BYTE _RelationshipFilter, BYTE _MinStatus ) const;
+	void HandleTargetSighted( class IDisAttentionTargetInterface* _pTarget );
+	void HandleTargetUnsighted( class IDisAttentionTargetInterface* _pTarget );
+	void HandleHearSomething( const FName& _rHeardActorName );
+	void FireKismetEvent_PlayerHeard( class AActor* const _pActor );
+	void ClearMinAttentionForTarget( class IDisAttentionTargetInterface* _pTarget, BYTE _Type );
+private:
+	void BuildFinalSenseMask();
+	void CheckForImportantKismetEvents();
+	void CheckForImportantDialog();
+	void OnAttentionLevelChanged_Stims( class AActor* _pAttnTargetActor, BYTE _OldAttentionLevel, BYTE _NewAttentionLevel, const struct FDisAttentionChangeReason& _rAttentionChangeReason );
+	void HandleTargetBusted( class AActor* _pAttnTargetActor, const FVector& _rBustedLoc, const struct FDisAttentionChangeReason& _rAttentionChangeReason );
+	void HandleTargetUnbusted( class AActor* _pAttnTargetActor );
+	void HandleEnemyBusted( class ADishonoredPawn* _pBustedPawn );
+	void HandleAllyBusted( class ADishonoredPawn* _pBustedPawn, const FVector& _rBustedLoc );
+	void HandleNeutralBusted( class ADishonoredPawn* _pBustedPawn );
+	void HandlePawnBusted_SendStims( class ADishonoredPawn* _pBustedPawn, const struct FDisAttentionChangeReason& _rAttentionChangeReason );
+public:

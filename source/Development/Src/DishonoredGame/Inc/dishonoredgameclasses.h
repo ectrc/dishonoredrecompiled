@@ -2822,6 +2822,7 @@ struct FDisAttentionChangeReason
     {
         appMemzero(this, sizeof(FDisAttentionChangeReason));
     }
+#include "CppText/FDisAttentionChangeReason.h"
 };
 
 // DishonoredGame.DisAttentionDefs.DisAttentionProxyInfo: retail SDK size 64 (2012 PDB 64)
@@ -4867,6 +4868,7 @@ struct FDisAttentionIncreaseInfo
     {
         appMemzero(this, sizeof(FDisAttentionIncreaseInfo));
     }
+#include "CppText/FDisAttentionIncreaseInfo.h"
 };
 
 // DishonoredGame.DishonoredAIBehavior.AIStimStruct_Help: retail SDK size 60 (2012 PDB 60)
@@ -6303,6 +6305,7 @@ struct FDisAttentionIncrease
     {
         appMemzero(this, sizeof(FDisAttentionIncrease));
     }
+#include "CppText/FDisAttentionIncrease.h"
 };
 
 // DishonoredGame.DisAttentionDefs.DisAttentionLevelThreshold: retail SDK size 12 (2012 PDB 12)
@@ -6318,6 +6321,7 @@ struct FDisAttentionLevelThreshold
     {
         appMemzero(this, sizeof(FDisAttentionLevelThreshold));
     }
+#include "CppText/FDisAttentionLevelThreshold.h"
 };
 
 // DishonoredGame.DisAttentionInfo_Complex.DisAttentionPendingChange: retail SDK size 44 (2012 PDB 44)
@@ -6392,6 +6396,7 @@ struct FDisAttentionReactionContext
     {
         appMemzero(this, sizeof(FDisAttentionReactionContext));
     }
+#include "CppText/FDisAttentionReactionContext.h"
 };
 
 // DishonoredGame.DisTweaks_AIBrainProcess_Attention.DisAttentionReaction: retail SDK size 36 (2012 PDB 36)
@@ -7044,6 +7049,7 @@ struct FDisLeakyAccumulator
     {
         appMemzero(this, sizeof(FDisLeakyAccumulator));
     }
+#include "CppText/FDisLeakyAccumulator.h"
 };
 
 // DishonoredGame.DisDesireStructs.DisLocoRequest: retail SDK size 96 (2012 PDB 96)
@@ -8013,6 +8019,7 @@ struct FDisVisCalcTuningParams
     {
         appMemzero(this, sizeof(FDisVisCalcTuningParams));
     }
+#include "CppText/FDisVisCalcTuningParams.h"
 };
 
 // DishonoredGame.DisAttentionInfo_Complex.DisTickAttentionParams_PawnAttentionTweaks: retail SDK size 208 (2012 PDB 208)
@@ -9179,6 +9186,7 @@ public:
     //## END PROPS DisAIBrainProcessAttention
 
     DECLARE_CLASS(UDisAIBrainProcessAttention,UDisAIBrainProcess,0,DishonoredGame)
+#include "CppText/UDisAIBrainProcessAttention.h"
 };
 
 // DishonoredGame.DisAIBrainProcessHideoutWatcher: retail sizeof 84, reflected span 76..84 (2012 PDB sizeof 84)
@@ -9337,6 +9345,7 @@ public:
     //## END PROPS DisAISubProcessFleetingGaze
 
     DECLARE_CLASS(UDisAISubProcessFleetingGaze,UDisAISubProcessWithDesires,0,DishonoredGame)
+#include "CppText/UDisAISubProcessFleetingGaze.h"
 };
 
 // DishonoredGame.DisAISubProcessGenericBark: retail sizeof 128, reflected span 104..128 (2012 PDB sizeof 128)
@@ -10063,6 +10072,7 @@ public:
     //## END PROPS DisAttentionInfo_Simple
 
     DECLARE_CLASS(UDisAttentionInfo_Simple,UDisAttentionInfo_Base,0,DishonoredGame)
+#include "CppText/UDisAttentionInfo_Simple.h"
 };
 
 // DishonoredGame.DisAttentionTargetComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
@@ -12702,6 +12712,7 @@ public:
     //## END PROPS DisGlobalAIAttentionManager
 
     DECLARE_CLASS(UDisGlobalAIAttentionManager,UObject,0,DishonoredGame)
+#include "CppText/UDisGlobalAIAttentionManager.h"
 };
 
 // DishonoredGame.DisGlobalDLCManager: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -15053,6 +15064,7 @@ public:
     //## END PROPS DisTweaks_PawnAttention
 
     DECLARE_CLASS(UDisTweaks_PawnAttention,UDisTweaksBase,0,DishonoredGame)
+#include "CppText/UDisTweaks_PawnAttention.h"
 };
 
 // DishonoredGame.DisTweaks_Pawn_Actions: retail sizeof 140, reflected span 140..140 (2012 PDB sizeof 140)

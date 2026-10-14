@@ -29,6 +29,9 @@
 #include "dishonoredutilities_ai.h"
 #include "aistimstruct.h"
 #include "dishonoredutilities_saveload.h"
+#include "disattentioninfo.h"
+
+
 #include "disaiknowledgecomponent.h"
 
 /** DISHONORED(written): agent CG's DisRaiseStim<T> moved to Inc/aistimstruct.h beside DisHandleAIStim (agent DF), because
@@ -566,10 +569,10 @@ void UDishonoredAIBrain::InitBrain( ADishonoredNPCPawn* const _pNPCPawn, UDisTwe
 		m_pStimManager = m_pGlobalAIManager->GetStimManager();
 	}
 
-	// DISHONORED(bringup): FDisLookAtRequest::Initialize (2013 rva 0x8b2400; agent EP corrected 0x74f180, which is not a
-	// 2013 function start) wires m_LookAtRequest to the pawn's
-	// FArkComponentLookat at priority DisLookAtPriority_EnemyAttention (15). FArkComponentLookat is not ported
-	// (Engine/Inc/arkcomponentlookat.h is a skeleton), so the head-look request is never issued.
+	// DISHONORED(port): agent GI - FDisLookAtRequest::Initialize (2013 rva 0x8b2400) wires m_LookAtRequest to the pawn's
+	// FArkComponentLookat (agent FT's, created in ADishonoredNPCPawn::Spawned) at priority DisLookAtPriority_EnemyAttention (15);
+	// until this wave the request had no component and ChangeTopAttnTargetAttentionLevel's RequestProxyTarget went nowhere.
+	m_LookAtRequest.Initialize( _pNPCPawn ? _pNPCPawn->GetComponentLookat() : NULL, this, DisLookAtPriority_EnemyAttention );
 
 	InitBrain_Steering();
 	m_PendingMagicalIncident.m_pMagicUsingPawn = NULL;
@@ -721,6 +724,12 @@ void UDishonoredAIBrain::TerminateBrain()
 	// 0x76ca10, 0x83fbe0), and clears the two attention targets through SetTopAttnTarget / SetTopEnemyAttnTarget
 	// (0x725e50 / 0x724ae0). The combat manager, the steering influence bodies and the attention process are all
 	// unported, so only the brain-side state is cleared.
+
+	// agent GI: the attention targets are cleared as retail does (SetTopAttnTarget / SetTopEnemyAttnTarget), and the look-at
+	// request lets its component go (FDisLookAtRequest::Finalize, 2013 rva 0x8ae2c0).
+	SetTopAttnTarget( FDisAttentionProxy( EC_EventParm ), Relationship_Neutral, FALSE, DAL_Unaware, FDisAttentionChangeReason::Drain(), NULL );
+	SetTopEnemyAttnTarget( FDisAttentionProxy( EC_EventParm ), DAL_Unaware );
+	m_LookAtRequest.Finalize();
 
 	if( m_pGlobalAIManager )
 	{
@@ -1126,17 +1135,19 @@ FDisAIKnowledgeComponent* UDishonoredAIBrain::GetKnowledge() const
 -----------------------------------------------------------------------------*/
 
 // DISHONORED(port): 2013 rva 0x701120 (2012 0x746250) / 0x701140 (0x746270): both forward to the attention process.
-// DISHONORED(bringup): UDisAIBrainProcessAttention is not ported, so a brain answers DAL_Unaware and leaves the info
-// struct at its zeroed default. That is retail's path for a brain without the process, so every reader is correct; what
-// it costs is that no NPC ever raises its attention on anything. The process is 84 functions and is the single next
-// piece of AI work - see agentCG.md.
+// A brain without the process (its tweaks list none) answers DAL_Unaware and the zeroed info, as retail does; the process
+// itself is ported (agent GI, PHASE20 GI).
 BYTE UDishonoredAIBrain::GetAttentionLevel( const IDisAttentionTargetInterface* _pForTarget ) const
 {
-	return DAL_Unaware;
+	return m_pAttentionProcess ? m_pAttentionProcess->GetAttentionLevel( _pForTarget ) : (BYTE)DAL_Unaware;
 }
 
 void UDishonoredAIBrain::GetAttentionProxyInfo( const IDisAttentionTargetInterface* _pForTarget, FDisAttentionProxyInfo& _rResult ) const
 {
+	if( m_pAttentionProcess )
+	{
+		m_pAttentionProcess->GetAttentionProxyInfo( _pForTarget, _rResult );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x701060 (2012 0x746190, 4 bytes) / 0x701070 (0x7461a0, 19 bytes): the brain's own top
@@ -1154,11 +1165,13 @@ const FDisAttentionProxy& UDishonoredAIBrain::GetTopEnemyProxy( BYTE& _rOutTopEn
 
 // DISHONORED(port): 2013 rva 0x724280 (2012 0x758f00, 131 bytes): every minimum-attention request this source placed is
 // dropped, so an NPC that was forced to keep noticing something stops.
-// DISHONORED(bringup): the minimum-attention list lives on UDisAIBrainProcessAttention, which is not ported, so nothing
-// has placed a request to clear. Kept as a named entry point because three ported sub-state bodies and
-// CallOnBehaviorPause all call it, and a silently missing call there would be harder to find later than this line.
+// The request is raised as the ClearAllMinAttention stim the attention process filters (agent GI, PHASE20 GI).
 void UDishonoredAIBrain::ClearAllMinAttention( BYTE _LimitType )
 {
+	FAIStimStruct_ClearAllMinAttention Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_ClearAllMinAttention;
+	Stim.m_Type = _LimitType;
+	DisHandleAIStim( this, Stim, this );
 }
 
 
@@ -1536,4 +1549,604 @@ void UDishonoredAIBrain::OnDecreaseTopAttnTargetAttentionLevel( UBOOL _bChanging
 	default:
 		break;
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	What the attention process asks of its brain (agent GI, PHASE20 GI).
+
+	DISHONORED(port): decompiled whole from both databases (build/agentGI/decomp2012; the 2013 bodies through the idalib session,
+	rvas in the cpptext). The brain is the attention process's only way out: level changes come here (SendAttentionLevelChanged),
+	the elected targets come here (SetTopAttnTarget, SetTopEnemyAttnTarget), and the questions the complex info asks of the
+	behaviour (lower alertness, always witness death, lose a busted target) are answered here.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 sub_B01020 (rva 0x701020, 42 B): the blind bit of the final sense mask for that kind of target, or an
+// owning pawn under a soiree fake-death request (ADishonoredNPCPawn::m_iNumFakeDeathRequestsFromSoiree > 0). 2012 read the
+// mask bit alone at every site.
+UBOOL UDishonoredAIBrain::IsBlindTo( UBOOL _bPlayer ) const
+{
+	const INT Mask = _bPlayer ? m_FinalSenseMask_Player : m_FinalSenseMask_NonPlayer;
+	if( Mask & 1 )
+	{
+		return TRUE;
+	}
+	return m_pOwningPawn && m_pOwningPawn->m_iNumFakeDeathRequestsFromSoiree > 0;
+}
+
+// DISHONORED(port): 2012 rva 0x747960 (129 B); 2013 inlines it into TickBrain_Senses as sub_B00F70 (rva 0x700f70): the five
+// per-type masks are OR-ed into both final masks, a pawn frozen by Bend Time is blind, deaf and numb (0xE), and a brain dumb to
+// non-players reads the non-player mask as blind (1). 2012 also raised the blind bit while a brain inhibitor was set; 2013 has
+// no inhibitors (see the cpptext of this class).
+void UDishonoredAIBrain::BuildFinalSenseMask()
+{
+	m_FinalSenseMask_Player = 0;
+	m_FinalSenseMask_NonPlayer = 0;
+	for( INT Type = 0; Type < ARRAY_COUNT(m_SenseMasksByType); Type++ )
+	{
+		m_FinalSenseMask_Player |= m_SenseMasksByType[Type];
+		m_FinalSenseMask_NonPlayer |= m_SenseMasksByType[Type];
+	}
+	if( DisIsBendTimeOn() )
+	{
+		m_FinalSenseMask_Player |= 0xE;
+		m_FinalSenseMask_NonPlayer |= 0xE;
+	}
+	if( m_bDumbToNonPlayer )
+	{
+		m_FinalSenseMask_NonPlayer = 1;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x75c540 / 2013 0x726b30 (129 B): one step at a time from the old level to the new, each step a
+// Busted / AllyBusted stim pass, crossing into Busted handles the target as busted and crossing out of it as unbusted.
+void UDishonoredAIBrain::SendAttentionLevelChanged( AActor* _pAttnTargetActor, BYTE _OldAttentionLevel, BYTE _NewAttentionLevel, const FDisAttentionChangeReason& _rAttentionChangeReason, const FVector& _rAttentionLoc )
+{
+	if( _OldAttentionLevel == _NewAttentionLevel )
+	{
+		return;
+	}
+	const INT Direction = _OldAttentionLevel < _NewAttentionLevel ? 1 : -1;
+	INT Level = _OldAttentionLevel;
+	do
+	{
+		const INT NextLevel = Level + Direction;
+		OnAttentionLevelChanged_Stims( _pAttnTargetActor, (BYTE)Level, (BYTE)NextLevel, _rAttentionChangeReason );
+		if( Level >= DAL_Busted )
+		{
+			if( NextLevel < DAL_Busted )
+			{
+				HandleTargetUnbusted( _pAttnTargetActor );
+			}
+		}
+		else if( NextLevel >= DAL_Busted )
+		{
+			HandleTargetBusted( _pAttnTargetActor, _rAttentionLoc, _rAttentionChangeReason );
+		}
+		Level = NextLevel;
+	}
+	while( Level != _NewAttentionLevel );
+}
+
+// DISHONORED(port): 2012 rva 0x757c30 (250 B) / 2013 0x722da0 (280 B): a live pawn reaching Busted is an EnemyBusted (with the
+// reason) or an AllyBusted stim to this brain's behaviours; a neutral raises nothing.
+void UDishonoredAIBrain::OnAttentionLevelChanged_Stims( AActor* _pAttnTargetActor, BYTE _OldAttentionLevel, BYTE _NewAttentionLevel, const FDisAttentionChangeReason& _rAttentionChangeReason )
+{
+	ADishonoredPawn* Pawn = Cast<ADishonoredPawn>( _pAttnTargetActor );
+	if( !Pawn || Pawn->IsDead() || _NewAttentionLevel != DAL_Busted || !m_pOwningPawn )
+	{
+		return;
+	}
+	switch( m_pOwningPawn->DetermineRelationship( *static_cast<const IDisRelationshipInterface*>( Pawn ) ) )
+	{
+	case Relationship_Enemy:
+		{
+			FAIStimStruct_EnemyBusted Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_EnemyBusted;
+			Stim.m_pTargetEnemy = Pawn;
+			Stim.m_AttentionChangeReason = _rAttentionChangeReason;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case Relationship_Ally:
+		{
+			FAIStimStruct_AllyBusted Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_AllyBusted;
+			Stim.m_pPawn = Pawn;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x75a580 (383 B) / 2013 0x724ec0 (490 B): a dead pawn busted marks its corpse used on the global AI
+// manager; a live one that is the noted magic user raises WitnessMagic and clears the incident, or one carrying a corpse raises
+// CarryCorpseOrBodyPart; then the relationship picks the enemy / ally / neutral handling and the touch stims.
+// DISHONORED(bringup): UDishonoredGlobalAIManager::OnNPCCorpseUsed and ADishonoredPawn::GetCarriedCorpseOrBodyPart (the corpse
+// carry) are not ported; both branches are named and skipped.
+void UDishonoredAIBrain::HandleTargetBusted( AActor* _pAttnTargetActor, const FVector& _rBustedLoc, const FDisAttentionChangeReason& _rAttentionChangeReason )
+{
+	ADishonoredPawn* Pawn = Cast<ADishonoredPawn>( _pAttnTargetActor );
+	if( !Pawn || !m_pOwningPawn )
+	{
+		return;
+	}
+	if( !Pawn->IsDead() && Pawn == m_PendingMagicalIncident.m_pMagicUsingPawn )
+	{
+		FAIStimStruct_WitnessMagic Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_WitnessMagic;
+		Stim.m_pActivePowerClass = m_PendingMagicalIncident.m_pMagicalIncidentClass;
+		Stim.m_pMagicUser = Pawn;
+		Stim.m_bDisappearance = 0;
+		DisHandleAIStim( this, Stim, this );
+		m_PendingMagicalIncident.m_pMagicUsingPawn = NULL;
+		m_PendingMagicalIncident.m_pMagicalIncidentClass = NULL;
+	}
+	switch( m_pOwningPawn->DetermineRelationship( *static_cast<const IDisRelationshipInterface*>( Pawn ) ) )
+	{
+	case Relationship_Neutral: HandleNeutralBusted( Pawn ); break;
+	case Relationship_Ally: HandleAllyBusted( Pawn, _rBustedLoc ); break;
+	case Relationship_Enemy: HandleEnemyBusted( Pawn ); break;
+	default: break;
+	}
+	HandlePawnBusted_SendStims( Pawn, _rAttentionChangeReason );
+}
+
+// DISHONORED(port): 2012 rva 0x758190 (255 B) / 2013 0x723160 (323 B): losing a busted target that is the noted magic user raises
+// WitnessMagic as a disappearance; an enemy player escaping counts a stat (ADishonoredPlayerPawn::IncrementStat, not ported).
+void UDishonoredAIBrain::HandleTargetUnbusted( AActor* _pAttnTargetActor )
+{
+	ADishonoredPawn* Pawn = Cast<ADishonoredPawn>( _pAttnTargetActor );
+	if( !Pawn || !m_bBrainIsInitialized || !m_pOwningPawn )
+	{
+		return;
+	}
+	if( Pawn == m_PendingMagicalIncident.m_pMagicUsingPawn )
+	{
+		FAIStimStruct_WitnessMagic Stim( EC_EventParm );
+		Stim.m_StimID = EAIStimID_WitnessMagic;
+		Stim.m_pActivePowerClass = m_PendingMagicalIncident.m_pMagicalIncidentClass;
+		Stim.m_pMagicUser = Pawn;
+		Stim.m_bDisappearance = 1;
+		DisHandleAIStim( this, Stim, this );
+		m_PendingMagicalIncident.m_pMagicUsingPawn = NULL;
+		m_PendingMagicalIncident.m_pMagicalIncidentClass = NULL;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x74a1d0 (110 B) / 2013 0x70be40 (166 B): the PawnSighted Kismet event on this pawn; the player
+// counts an NPC alerted (IncrementStat, not ported) and a live enemy is acknowledged hostile
+// (ADishonoredNPCPawn::AcknowledgeHostility, not ported) - both named.
+void UDishonoredAIBrain::HandleEnemyBusted( ADishonoredPawn* _pBustedPawn )
+{
+	DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_PawnSighted::StaticClass(), m_pOwningPawn, _pBustedPawn, FALSE, NULL );
+}
+
+// DISHONORED(port): 2012 rva 0x74a280 / 2013 0x70bf30 (56 B) and 0x74a240 / 0x70bef0 (62 B)
+void UDishonoredAIBrain::HandleAllyBusted( ADishonoredPawn* _pBustedPawn, const FVector& _rBustedLoc )
+{
+	DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_PawnSighted::StaticClass(), m_pOwningPawn, _pBustedPawn, FALSE, NULL );
+}
+
+void UDishonoredAIBrain::HandleNeutralBusted( ADishonoredPawn* _pBustedPawn )
+{
+	if( _pBustedPawn )
+	{
+		DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_PawnSighted::StaticClass(), m_pOwningPawn, _pBustedPawn, FALSE, NULL );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x758290 (327 B) / 2013 0x7232b0 (357 B): a bust by touch raises the relationship's Touched stim
+// (and the ActorTouched Kismet event for a neutral or an ally).
+void UDishonoredAIBrain::HandlePawnBusted_SendStims( ADishonoredPawn* _pBustedPawn, const FDisAttentionChangeReason& _rAttentionChangeReason )
+{
+	if( _rAttentionChangeReason.m_ReasonType != DACRT_Touched || !_pBustedPawn || !m_pOwningPawn )
+	{
+		return;
+	}
+	switch( m_pOwningPawn->DetermineRelationship( *static_cast<const IDisRelationshipInterface*>( _pBustedPawn ) ) )
+	{
+	case Relationship_Neutral:
+		{
+			DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_ActorTouched::StaticClass(), m_pOwningPawn, _pBustedPawn, FALSE, NULL );
+			FAIStimStruct_TouchedNeutral Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_TouchedNeutral;
+			Stim.m_pPawn = _pBustedPawn;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case Relationship_Ally:
+		{
+			DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_ActorTouched::StaticClass(), m_pOwningPawn, _pBustedPawn, FALSE, NULL );
+			FAIStimStruct_TouchedAlly Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_TouchedAlly;
+			Stim.m_pPawn = _pBustedPawn;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	case Relationship_Enemy:
+		{
+			FAIStimStruct_TouchedEnemy Stim( EC_EventParm );
+			Stim.m_StimID = EAIStimID_TouchedEnemy;
+			Stim.m_pPawn = _pBustedPawn;
+			Stim.m_bSendKismetEvent = 1;
+			DisHandleAIStim( this, Stim, this );
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x75a200 / 2013 0x724ae0 (542 B): a change of top enemy that drops a valid dead enemy held at Busted
+// is a BattleVictory; the new proxy and level are stored; with a valid enemy and a broadcast radius in the attention tweaks
+// (positive, or -1 for everyone) every brain in range hears NPCReachAttentionLevel.
+void UDishonoredAIBrain::SetTopEnemyAttnTarget( const FDisAttentionProxy& _rTopAttnTargetProxy, BYTE _AttentionLevel )
+{
+	const UBOOL bSameProxy = m_TopEnemyAttnTargetProxy.m_pBrain == _rTopAttnTargetProxy.m_pBrain
+		&& m_TopEnemyAttnTargetProxy.m_pTarget.GetObject() == _rTopAttnTargetProxy.m_pTarget.GetObject()
+		&& m_TopEnemyAttnTargetProxy.GetProxyAttnTarget() == _rTopAttnTargetProxy.GetProxyAttnTarget();
+	if( bSameProxy )
+	{
+		if( m_TopEnemyAttnTargetAttentionLevel == _AttentionLevel )
+		{
+			return;
+		}
+	}
+	else
+	{
+		if( m_TopEnemyAttnTargetProxy.IsValid() && !_rTopAttnTargetProxy.IsValid() )
+		{
+			const IDisAttentionTargetInterface* OldTarget = m_TopEnemyAttnTargetProxy.GetProxyAttnTarget();
+			if( OldTarget && OldTarget->IsAttnTargetDead() && m_TopEnemyAttnTargetAttentionLevel == DAL_Busted )
+			{
+				FAIStimStruct_BattleVictory Stim( EC_EventParm );
+				Stim.m_StimID = EAIStimID_BattleVictory;
+				Stim.m_EnemyProxy = m_TopEnemyAttnTargetProxy;
+				DisHandleAIStim( this, Stim, this );
+			}
+		}
+		m_TopEnemyAttnTargetProxy = _rTopAttnTargetProxy;
+	}
+	const BYTE OldAttention = m_TopEnemyAttnTargetAttentionLevel;
+	m_TopEnemyAttnTargetAttentionLevel = _AttentionLevel;
+	if( !m_TopEnemyAttnTargetProxy.IsValid() || !m_pAttentionProcess )
+	{
+		return;
+	}
+	const FLOAT fRadius = m_pAttentionProcess->GetAttentionProcessTweaks()->m_fBroadcastAttentionStimRadius;
+	if( fRadius <= 0.f && fRadius != -1.f )
+	{
+		return;
+	}
+	FAIStimStruct_NPCReachAttentionLevel Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_NPCReachAttentionLevel;
+	Stim.m_OldAttentionLevel = OldAttention;
+	Stim.m_NewAttentionLevel = m_TopEnemyAttnTargetAttentionLevel;
+	IDisAttentionTargetInterface* Target = m_TopEnemyAttnTargetProxy.GetProxyAttnTarget();
+	Stim.m_pAttentionTarget.SetObject( Target ? Target->GetAttnTargetActor() : NULL );
+	Stim.m_pAttentionTarget.SetInterface( Target );
+	// 2012 `anonymous namespace'::BroadcastAIStimInRadius<FAIStimStruct_NPCReachAttentionLevel>: every initialized brain whose pawn
+	// is within the radius of this pawn (or every brain at -1), this one included.
+	UDishonoredGlobalAIManager* Manager = DisGetGlobalAIManagerUnchecked();
+	if( !Manager || !m_pOwningPawn )
+	{
+		return;
+	}
+	TArray<UDishonoredAIBrain*> Brains;
+	for( UDishonoredAIBrain* Brain = Manager->m_pBrainList; Brain; Brain = Brain->m_pGlobalAI_NextBrain )
+	{
+		if( !Brain->IsBrainInitialized() || !Brain->GetOwningPawn() )
+		{
+			continue;
+		}
+		if( fRadius == -1.f || ( Brain->GetOwningPawn()->Location - m_pOwningPawn->Location ).SizeSquared() <= fRadius * fRadius )
+		{
+			Brains.AddItem( Brain );
+		}
+	}
+	DisMultiHandleAIStim_Internal( Brains, Stim, this );
+}
+
+// DISHONORED(port): 2012 rva 0x746350 / 2013 0x7011b0 and 0x7461f0 / 0x7010c0: the current behaviour's answers (FALSE without one).
+UBOOL UDishonoredAIBrain::ShouldAlwaysWitnessDeath() const
+{
+	return m_pCurrentBehavior ? m_pCurrentBehavior->OwnerShouldAlwaysWitnessDeath() : FALSE;
+}
+
+UBOOL UDishonoredAIBrain::CanLoseBustedTarget() const
+{
+	return m_pCurrentBehavior ? m_pCurrentBehavior->CanLoseBustedTarget() : FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x74a580 / 2013 0x70c0c0 (116 B): the pawn's conversation, its distraction component's flag, a
+// distracted master state, or the current behaviour's sub-processes lower the alertness (the slow leak rate).
+// DISHONORED(bringup): the distraction component's flag (UDisNPCDistractionComponent +?, bit 2) and UStateNPCMasterDistracted
+// are not ported here; the conversation component and the behaviour answer.
+UBOOL UDishonoredAIBrain::ShouldLowerAlertness() const
+{
+	if( m_pOwningPawn && m_pOwningPawn->m_pConvComponent && m_pOwningPawn->m_pConvComponent->ShouldLowerAlertness() )
+	{
+		return TRUE;
+	}
+	return m_pCurrentBehavior ? m_pCurrentBehavior->ShouldLowerAlertness() : FALSE;
+}
+
+// DISHONORED(port): 2012 rva 0x74a140 / 2013 0x70bdb0 (139 B): the attention on the player drains while he is the noted magic user
+// and this pawn does not see him; a Blink in progress is reported instead of a drain.
+// DISHONORED(bringup): ADishonoredPawn::IsSeenBy answers FALSE without an observable component and IsBlinking (the active
+// power components) is not ported; a pending magical incident therefore drains until the player is busted again by another
+// sense, which is retail's path for an unseen magic user. No power raises an incident in this tree yet.
+UBOOL UDishonoredAIBrain::ShouldMagicDrainAttn( AActor* _pTarget, UBOOL& _rbBlinkInProgress ) const
+{
+	_rbBlinkInProgress = FALSE;
+	ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( _pTarget );
+	if( !Player || Player != m_PendingMagicalIncident.m_pMagicUsingPawn )
+	{
+		return FALSE;
+	}
+	return !Player->IsSeenBy( m_pOwningPawn );
+}
+
+// DISHONORED(port): 2012 rva 0x7461c0 / 2013 0x701090 (36 B)
+void UDishonoredAIBrain::ClearNotedMagic( ADishonoredPawn* _pPawn )
+{
+	if( _pPawn && _pPawn == m_PendingMagicalIncident.m_pMagicUsingPawn )
+	{
+		m_PendingMagicalIncident.m_pMagicUsingPawn = NULL;
+		m_PendingMagicalIncident.m_pMagicalIncidentClass = NULL;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x746200 / 2013 0x7010d0 (41 B): not while a relationship change waits for the AI and the inhibition
+// timer has run out.
+UBOOL UDishonoredAIBrain::CanEmpathize() const
+{
+	return m_pOwningPawn && !m_pOwningPawn->ShouldAIBeNotifiedOfRelationshipChange() && m_fEmpathyInhibitionTimer < 0.f;
+}
+
+// DISHONORED(port): 2012 rva 0x7462e0 (106 B): a crime against an ally (or against a neutral when this brain protects neutrals)
+// matters, unless the perpetrator is an ally.
+UBOOL UDishonoredAIBrain::ShouldCareAboutThisCrime( const IDisRelationshipInterface* _pVictim, const IDisRelationshipInterface* _pPerpetrator ) const
+{
+	if( !m_pOwningPawn || !_pVictim )
+	{
+		return FALSE;
+	}
+	const BYTE VictimRelationship = m_pOwningPawn->DetermineRelationship( *_pVictim );
+	if( VictimRelationship != Relationship_Ally && !( m_bProtectNeutrals && VictimRelationship == Relationship_Neutral ) )
+	{
+		return FALSE;
+	}
+	return _pPerpetrator ? m_pOwningPawn->DetermineRelationship( *_pPerpetrator ) != Relationship_Ally : TRUE;
+}
+
+// DISHONORED(port): 2012 rva 0x74dba0 (223 B) / 2013 0x70f5b0 (232 B): the current behaviour's reaction target, else the top
+// enemy proxy's target as a search target when surprised or as a panic target when the master state is an immolation or a
+// melee swarm (UStateNPCMasterActionImmolate / MeleeSwarm).
+IDisAttentionTargetInterface* UDishonoredAIBrain::GetAllyReactionTarget( BYTE& _rAttentionChangeReason ) const
+{
+	if( m_pCurrentBehavior )
+	{
+		IDisAttentionTargetInterface* Target = m_pCurrentBehavior->GetAllyReactionTarget( _rAttentionChangeReason );
+		if( Target )
+		{
+			return Target;
+		}
+	}
+	const FDisAttentionProxy EnemyProxy = m_TopEnemyAttnTargetProxy;
+	if( !EnemyProxy.IsValid() )
+	{
+		return NULL;
+	}
+	if( GetAwarenessLevel() == EAIAwareness_Surprised )
+	{
+		_rAttentionChangeReason = DACRT_SeeAllySearch;
+		return EnemyProxy.GetProxyAttnTarget();
+	}
+	const UDishonoredNativeState* State = m_pOwningPawn && m_pOwningPawn->m_pNPCMasterFSM ? m_pOwningPawn->m_pNPCMasterFSM->GetLogicalState() : NULL;
+	const UClass* StateClass = State ? State->GetClass() : NULL;
+	if( StateClass && ( StateClass == UStateNPCMasterActionImmolate::StaticClass() || StateClass == UStateNPCMasterActionMeleeSwarm::StaticClass() ) )
+	{
+		_rAttentionChangeReason = DACRT_SeeAllyPanic;
+		return EnemyProxy.GetProxyAttnTarget();
+	}
+	return NULL;
+}
+
+// DISHONORED(port): 2012 rva 0x749f80 / 2013 0x70bb90 (336 B): the three attention reactions of the tweaks - escalate the
+// suspicion, be surprised (the Surprised master state, then the COMBAT_SURPRISED dialog hook), call for help (the COMBAT_HELP hook).
+// DISHONORED(bringup): the Surprised master state (FStateNPCMasterSurprised_Param, DisGetCardinalDirection, RequestStateChange) is
+// not ported; the surprise reaction fires its dialog hook when reactions are enabled and the behaviour allows it, without the state.
+void UDishonoredAIBrain::DoOneAttentionReaction( IDisAttentionTargetInterface* _pTargetThatCausedReaction, BYTE _ReactionType )
+{
+	AActor* TargetActor = _pTargetThatCausedReaction ? _pTargetThatCausedReaction->GetAttnTargetActor() : NULL;
+	IDisConvSpeakerInterface* Speaker = TargetActor ? (IDisConvSpeakerInterface*)TargetActor->GetInterfaceAddress( UDisConvSpeakerInterface::StaticClass() ) : NULL;
+	switch( _ReactionType )
+	{
+	case DART_EscalateSuspicion:
+		m_PendingSuspicionLevel = DAISL_Suspecting;
+		break;
+	case DART_Surprise:
+		if( m_pOwningPawn && !m_pOwningPawn->AreReactionsDisabled() && m_pCurrentBehavior && m_pCurrentBehavior->CanBeSurprised() )
+		{
+			m_pOwningPawn->FireDialogHook( DDH_COMBAT_SURPRISED, Speaker );
+		}
+		break;
+	case DART_CallForHelp:
+		if( m_pOwningPawn )
+		{
+			m_pOwningPawn->FireDialogHook( DDH_COMBAT_HELP, Speaker );
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x747850 (141 B) / 2013 0x70b780 (158 B)
+UBOOL UDishonoredAIBrain::IsAttentiveToward( const ADishonoredPawn* _pPawn, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const
+{
+	if( !_pPawn || !m_pOwningPawn )
+	{
+		return FALSE;
+	}
+	const UBOOL bRelationshipAllowed = _RequiredRelationship == Relationship_MAX || m_pOwningPawn->DetermineRelationship( *static_cast<const IDisRelationshipInterface*>( _pPawn ) ) == _RequiredRelationship;
+	if( !bRelationshipAllowed )
+	{
+		return FALSE;
+	}
+	if( _RequiredAttentionLevel == DAL_Unaware )
+	{
+		return TRUE;
+	}
+	return GetAttentionLevel( static_cast<const IDisAttentionTargetInterface*>( _pPawn ) ) >= _RequiredAttentionLevel;
+}
+
+// DISHONORED(port): 2012 rva 0x752750 (314 B) / 2013 0x714c00 (320 B): the pawns among the attention process's targets at a level.
+void UDishonoredAIBrain::GetPawnsAtAttentionLevel( BYTE _AttentionLevel, DIS_MEMSTACK_ARRAY( ADishonoredPawn* )& _rOut_Pawns, BYTE _LifeStateFilter, BYTE _RelationshipFilter, BYTE _MinStatus ) const
+{
+	if( !m_pAttentionProcess )
+	{
+		return;
+	}
+	DIS_MEMSTACK_ARRAY( IDisAttentionTargetInterface* ) Targets;
+	m_pAttentionProcess->GetTargetsAtAttentionLevel( _AttentionLevel, Targets, _LifeStateFilter, _RelationshipFilter, _MinStatus );
+	for( INT i = 0; i < Targets.Num(); i++ )
+	{
+		ADishonoredPawn* Pawn = Cast<ADishonoredPawn>( Targets(i)->GetAttnTargetActor() );
+		if( Pawn )
+		{
+			_rOut_Pawns.AddItem( Pawn );
+		}
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x758070 / 2013 0x723040 (131 B) and 0x758100 / 0x7230d0 (131 B): what the controller raises when its
+// vision component starts and stops seeing a thing (ADishonoredNPCController::StartSeeingVisibleThing / StopSeeingVisibleThing,
+// not ported with the vision component; the -gisight STAND-IN calls these in their place).
+void UDishonoredAIBrain::HandleTargetSighted( IDisAttentionTargetInterface* _pTarget )
+{
+	FAIStimStruct_TargetSighted Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_TargetSighted;
+	Stim.m_pTarget.SetObject( _pTarget ? _pTarget->GetAttnTargetActor() : NULL );
+	Stim.m_pTarget.SetInterface( _pTarget );
+	DisHandleAIStim( this, Stim, this );
+}
+
+void UDishonoredAIBrain::HandleTargetUnsighted( IDisAttentionTargetInterface* _pTarget )
+{
+	FAIStimStruct_TargetUnsighted Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_TargetUnsighted;
+	Stim.m_pTarget.SetObject( _pTarget ? _pTarget->GetAttnTargetActor() : NULL );
+	Stim.m_pTarget.SetInterface( _pTarget );
+	DisHandleAIStim( this, Stim, this );
+}
+
+// DISHONORED(port): 2012 rva 0x746360 (27 B) and 0x747b40 / 2013 0x704100 (56 B): a player noise is remembered for the senses pass
+// (CheckForImportantKismetEvents), which fires the PlayerHeard Kismet event on this pawn once the player is attended enough.
+void UDishonoredAIBrain::HandleHearSomething( const FName& _rHeardActorName )
+{
+	m_PendingPlayerHeardKismetEventActorName = _rHeardActorName;
+}
+
+void UDishonoredAIBrain::FireKismetEvent_PlayerHeard( AActor* const _pActor )
+{
+	DisFireKismetEvent( m_pOwningPawn, UDisSeqEvent_PlayerHeard::StaticClass(), m_pOwningPawn, _pActor, FALSE, NULL );
+}
+
+// DISHONORED(port): 2012 rva 0x74a410 / 2013 0x70f400 (357 B): the noise maker remembered by name is looked up; if it exists and the
+// player's attention level reaches the brain tweaks' m_MinAttentionForAwareness the PlayerHeard event fires; the name is cleared.
+void UDishonoredAIBrain::CheckForImportantKismetEvents()
+{
+	if( m_PendingPlayerHeardKismetEventActorName == NAME_None )
+	{
+		return;
+	}
+	AActor* Actor = FindObject<AActor>( ANY_PACKAGE, *m_PendingPlayerHeardKismetEventActorName.ToString() );
+	m_PendingPlayerHeardKismetEventActorName = NAME_None;
+	if( !Actor || ( GIsGame && Actor->m_bHasTerminated && Actor->m_bLegalToTerminate ) )
+	{
+		return;
+	}
+	const UDisTweaks_AIBrain* Tweaks = Cast<UDisTweaks_AIBrain>( GetTweaks() );
+	if( !Tweaks )
+	{
+		Tweaks = UDisTweaks_AIBrain::StaticClass()->GetDefaultObject<UDisTweaks_AIBrain>();
+	}
+	ADishonoredPlayerPawn* Player = ADishonoredPlayerPawn::s_pInstance;
+	const BYTE Level = Player && m_pAttentionProcess ? m_pAttentionProcess->GetAttentionLevel( static_cast<const IDisAttentionTargetInterface*>( Player ) ) : (BYTE)DAL_Unaware;
+	if( Level >= Tweaks->m_MinAttentionForAwareness )
+	{
+		FireKismetEvent_PlayerHeard( Actor );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x755f70 (861 B) / 2013 0x7174e0 (923 B): within the conversation tweaks' max dialog distance of the
+// player, while no more than aware of him, the radial approach / loiter hooks fire every tick (the look-at radial one only while
+// rendered); a non-enemy player at Busted gets the direct approach / loiter / look-at hooks; and when this pawn has a
+// neutral- or friend-approaches hook, every live pawn busted at any status fires the matching one.
+void UDishonoredAIBrain::CheckForImportantDialog()
+{
+	ADishonoredPlayerPawn* Player = ADishonoredPlayerPawn::s_pInstance;
+	if( !Player || !m_pOwningPawn || !UDisConvGlobalMan::s_pInstance || !UDisConvGlobalMan::s_pInstance->m_pConvSettingTweaks )
+	{
+		return;
+	}
+	const FLOAT fMaxDistance = UDisConvGlobalMan::s_pInstance->m_pConvSettingTweaks->m_fMaxDialogDistance;
+	if( ( Player->Location - m_pOwningPawn->Location ).SizeSquared() >= fMaxDistance * fMaxDistance || GetAwarenessLevel() > EAIAwareness_AwareOfPlayer )
+	{
+		return;
+	}
+	IDisConvSpeakerInterface* PlayerSpeaker = static_cast<IDisConvSpeakerInterface*>( Player );
+	m_pOwningPawn->FireDialogHook( DDH_PLAYER_APPROACHES_RADIAL, PlayerSpeaker );
+	m_pOwningPawn->FireDialogHook( DDH_PLAYER_LOITERS_RADIAL, PlayerSpeaker );
+	if( m_pOwningPawn->m_bRenderedByPlayer )
+	{
+		m_pOwningPawn->FireDialogHook( DDH_PLAYER_LOOKAT_RADIAL, PlayerSpeaker );
+	}
+	if( m_pOwningPawn->DetermineRelationship( *static_cast<const IDisRelationshipInterface*>( Player ) ) != Relationship_Enemy && m_pAttentionProcess
+		&& m_pAttentionProcess->GetAttentionLevel( static_cast<const IDisAttentionTargetInterface*>( Player ) ) == DAL_Busted )
+	{
+		m_pOwningPawn->FireDialogHook( DDH_PLAYER_APPROACHES, PlayerSpeaker );
+		m_pOwningPawn->FireDialogHook( DDH_PLAYER_LOITERS, PlayerSpeaker );
+		if( m_pOwningPawn->m_bRenderedByPlayer )
+		{
+			m_pOwningPawn->FireDialogHook( DDH_PLAYER_LOOKAT, PlayerSpeaker );
+		}
+	}
+	if( !m_pOwningPawn->SupportsDialogHook( DDH_NEUTRAL_APPROACHES ) && !m_pOwningPawn->SupportsDialogHook( DDH_FRIEND_APPROACHES ) )
+	{
+		return;
+	}
+	FMemMark Mark( GMainThreadMemStack );
+	DIS_MEMSTACK_ARRAY( ADishonoredPawn* ) BustedPawns;
+	GetPawnsAtAttentionLevel( DAL_Busted, BustedPawns, DLSF_Alive, Relationship_MAX, DAPS_Indeterminate );
+	for( INT i = 0; i < BustedPawns.Num(); i++ )
+	{
+		ADishonoredPawn* Pawn = BustedPawns(i);
+		if( !Pawn )
+		{
+			continue;
+		}
+		switch( m_pOwningPawn->DetermineRelationship( *static_cast<const IDisRelationshipInterface*>( Pawn ) ) )
+		{
+		case Relationship_Neutral: m_pOwningPawn->FireDialogHook( DDH_NEUTRAL_APPROACHES, static_cast<IDisConvSpeakerInterface*>( Pawn ) ); break;
+		case Relationship_Ally: m_pOwningPawn->FireDialogHook( DDH_FRIEND_APPROACHES, static_cast<IDisConvSpeakerInterface*>( Pawn ) ); break;
+		default: break;
+		}
+	}
+	Mark.Pop();
+}
+
+// DISHONORED(port): 2013 rva 0x724280 (2012 0x758f00, 131 B) and the per-target form (the ClearMinAttentionForTarget stim).
+void UDishonoredAIBrain::ClearMinAttentionForTarget( IDisAttentionTargetInterface* _pTarget, BYTE _Type )
+{
+	FAIStimStruct_ClearMinAttentionForTarget Stim( EC_EventParm );
+	Stim.m_StimID = EAIStimID_ClearMinAttentionForTarget;
+	Stim.m_pForTarget.SetObject( _pTarget ? _pTarget->GetAttnTargetActor() : NULL );
+	Stim.m_pForTarget.SetInterface( _pTarget );
+	Stim.m_Type = _Type;
+	DisHandleAIStim( this, Stim, this );
 }

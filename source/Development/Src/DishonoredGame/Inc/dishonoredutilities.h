@@ -130,3 +130,6 @@ FString DisEnumTypeToString( INT _Value, const TCHAR* _EnumPath );
 void DisPushDisableSave( BYTE DisableSaveType );
 void DisPopDisableSave( BYTE DisableSaveType, FLOAT WaitToEnable );
 FLOAT DisInterpolateBySpeedWithDif( FLOAT Cur, FLOAT Target, FLOAT BlendSpeed, FLOAT SmallestDif, FLOAT DeltaTime );
+// DISHONORED(written): agent GI (PHASE20 GI). The attention manager (2012 accessor 0x82dc00) is owned by the game info; retail
+// constructs it with the other global managers at game-info init, which this tree has not ported, so it is made on first use.
+class UDisGlobalAIAttentionManager* DisGetGlobalAIAttentionManager();

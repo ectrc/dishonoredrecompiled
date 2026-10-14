@@ -826,3 +826,16 @@ UBOOL UDishonoredAIBehavior::FireDialogHook( eDisDialogHook _Hook, IDisConvSpeak
 	}
 	return TRUE;
 }
+
+// DISHONORED(port): agent GI (PHASE20 GI). 2012 rva 0x748b70: the first sub-process that says so lowers the alertness.
+UBOOL UDishonoredAIBehavior::ShouldLowerAlertness() const
+{
+	for( INT i = 0; i < m_SubProcesses.Num(); i++ )
+	{
+		if( m_SubProcesses(i) && m_SubProcesses(i)->ShouldLowerAlertness_Derived() )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}

@@ -156,3 +156,39 @@ public:
 	virtual UBOOL Tick_Begin( FLOAT _fDeltaTime, ELevelTick _TickType );
 	void OnCameraUpdate( const struct FDishonoredViewTarget& _VT, INT _PassCount );
 	virtual void OnCameraUpdate_Derived( const struct FDishonoredViewTarget& _VT, INT _PassCount ) {}
+
+// ---- agent GI (PHASE20 GI): the IDisAttentionTargetInterface half every Dishonored pawn carries ----
+// 2012 rvas (dishonoredpawn_attentiontarget.cpp) / 2013: GetObservableComponent 0x78e5a0 / 0x7494a0, GetAttnTargetLocation
+// 0x78e5b0 (2013 unmatched: the Location copy), GetAttnTargetVelocity 0x78e5e0 (unmatched: the Velocity copy), GetAttnTargetExtent
+// 0x78e610 / 0x749510, GetAttnTargetFocalPoint 0x78e630 / 0x749530, GetAttnTargetFocalHeight 0x78e6b0 / 0x7495b0,
+// GetAttnTargetIncomingRelationship 0x78e6f0 / 0x7495f0, ToRelationshipInterface 0x78e720 / 0x749620, IsAttnTargetDead 0x78e740 /
+// 0x749640, IsAttnTargetInCombat 0x78e750, IsAttnTargetCarryingACorpse 0x78e770, CanAttnTargetFight 0x78e790 (the three 20-byte
+// virtual forwards are 2013-unmatched), CanAttnTargetBeAttacked 0x78e7b0 / 0x7496b0, GetAttentiveBrains 0x78e7f0 / 0x7496f0 and
+// 0x78e810 / 0x749710, HasAttentiveBrains 0x78e830 / 0x749730, GetAttnTargetTweaks 0x794830 / 0x756850, CollectAttnTargetParams
+// 0x799b90 / 0x75c960, GetLookAtPoint 0x794440 / 0x756100, IsSeenBy 0x7aaaa0. Bodies in Src/dishonoredpawn_attentiontarget.cpp.
+// DISHONORED(written): agent CG's interface stand-in never let a pawn answer GetAttnTargetActor, so every FDisAttentionProxy
+// built on a pawn had no cached actor (HasActorReference FALSE); the override below is what retail's UObject accessor does.
+public:
+	virtual UObject* GetUObjectInterfaceDisAttentionTargetInterface() { return this; }
+	virtual class AActor* GetAttnTargetActor() { return this; }
+	virtual void CollectAttnTargetParams( struct FDisAttnTargetParams& _rOut_Params );
+	virtual const class UDisTweaks_AttentionTarget* GetAttnTargetTweaks() const;
+	virtual const class FDisComponentObservable* GetObservableComponent() const;
+	virtual FVector GetAttnTargetLocation() const;
+	virtual FVector GetAttnTargetVelocity() const;
+	virtual FVector GetAttnTargetExtent() const;
+	virtual BYTE GetAttnTargetIncomingRelationship( const class IDisRelationshipInterface* _pRelator ) const;
+	virtual class IDisRelationshipInterface* ToRelationshipInterface() const;
+	virtual FVector GetAttnTargetFocalPoint() const;
+	virtual FLOAT GetAttnTargetFocalHeight() const;
+	virtual UBOOL IsAttnTargetDead() const;
+	virtual UBOOL IsAttnTargetCombatable() const { return TRUE; }
+	virtual UBOOL IsAttnTargetInCombat() const;
+	virtual UBOOL CanAttnTargetFight() const;
+	virtual UBOOL IsAttnTargetCarryingACorpse() const;
+	virtual UBOOL CanAttnTargetBeAttacked() const;
+	void GetAttentiveBrains( TArray< class UDishonoredAIBrain*, TMemStackAllocator< GMainThreadMemStack > >& _rOut_Brains, BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const;
+	UBOOL HasAttentiveBrains( BYTE _RequiredRelationship, BYTE _RequiredAttentionLevel ) const;
+	FVector GetLookAtPoint() const;
+	UBOOL IsSeenBy( const class AActor* _pActor ) const;
+	UBOOL IsDead() const { return Health <= 0 || m_bIsOfficiallyDead; }
