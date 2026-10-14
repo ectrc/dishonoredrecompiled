@@ -2613,29 +2613,55 @@ void UArkAnimNodeLookAt::GetBoneAtomsForSet( INT SetIndex, FBoneAtomArray& Atoms
 		}
 	}
 
+	// DISHONORED(port, agent GH): retail PC never runs this CPU body - it evaluates a set through the Edge tree that
+	// UAnimNodeSequenceBlendBase::BuildEdgeAnimTreeEx builds (2012 rva 0x1a62b0 / 2013 0x19a280), and that builder is
+	// what this follows: a pose is relevant only when it weighs above the threshold AND its AnimInfo resolved to a sequence
+	// with a byte stream; the relevant poses are lerped in a chain whose alphas renormalise their weights over the relevant
+	// total; with none relevant the set is UAnimNodeSequence::BuildEdgeAnimTree (2012 0x1a4a20 / 2013 0x1989f0): the node's
+	// own sequence as one leaf. Retail's CPU body (2012 0x55bab0 / 2013 0x51b420) hands an unresolved pose to
+	// GetAnimationPose, which fills the reference pose, and the additive blend above this node then adds a whole skeleton
+	// per set - measured as every NPC bone at 3.00x its reference translation (agentGH.md §2) whenever the look-at mode
+	// names sequences the mesh's sets do not carry (ChooseLookAt's eDisNPCLookAtMode_MAX, clamped to the last mode).
 	const INT FirstAnim = 9 * SetIndex;
 	const INT EndAnim = FirstAnim + 9;
 	INT LastAnimIndex = INDEX_NONE;
+	FLOAT RelevantWeight = 0.f;
 	for( INT AnimIndex = FirstAnim; AnimIndex < EndAnim; AnimIndex++ )
 	{
 		if( !Anims.IsValidIndex(AnimIndex) )
 		{
 			continue;   // see the divergence note on GetAnimInfoTotalWeight
 		}
-		if( Anims(AnimIndex).Weight > ZERO_ANIMWEIGHT_THRESH )
+		const FAnimInfo& Info = Anims(AnimIndex).AnimInfo;
+		if( Anims(AnimIndex).Weight > ZERO_ANIMWEIGHT_THRESH && Info.AnimSeq && Info.AnimSeq->CompressedByteStream.Num() > 0 )
 		{
-			if( Anims(AnimIndex).Weight >= (1.f - ZERO_ANIMWEIGHT_THRESH) )
-			{
-				GetAnimationPose( Anims(AnimIndex).AnimInfo.AnimSeq, Anims(AnimIndex).AnimInfo.AnimLinkupIndex,
-					Atoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
-				SaveCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() );
-				return;
-			}
+			RelevantWeight += Anims(AnimIndex).Weight;
 			LastAnimIndex = AnimIndex;
 		}
 	}
 	if( LastAnimIndex == INDEX_NONE )
 	{
+		if( AnimSeq && AnimSeq->CompressedByteStream.Num() > 0 )
+		{
+			GetAnimationPose( AnimSeq, AnimLinkupIndex, Atoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+		}
+		else
+		{
+			// stand-in: retail's leaf for a node without an Edge sequence is a cached-pose leaf (EdgeAnimBlendLeaf flags 4);
+			// the additive identity is what the set contributes here
+			RootMotionDelta = FBoneAtom::Identity;
+			for( INT BoneSlot = 0; BoneSlot < DesiredBones.Num(); BoneSlot++ )
+			{
+				Atoms(DesiredBones(BoneSlot)) = FBoneAtom::Identity;
+			}
+		}
+		return;
+	}
+	if( Anims(LastAnimIndex).Weight >= RelevantWeight - ZERO_ANIMWEIGHT_THRESH )
+	{
+		GetAnimationPose( Anims(LastAnimIndex).AnimInfo.AnimSeq, Anims(LastAnimIndex).AnimInfo.AnimLinkupIndex,
+			Atoms, DesiredBones, RootMotionDelta, bHasRootMotion, CurveKeys );
+		SaveCachedResults( Atoms, RootMotionDelta, bHasRootMotion, CurveKeys, DesiredBones.Num() );
 		return;
 	}
 
@@ -2645,11 +2671,12 @@ void UArkAnimNodeLookAt::GetBoneAtomsForSet( INT SetIndex, FBoneAtomArray& Atoms
 	UBOOL bNoChildrenYet = TRUE;
 	for( INT AnimIndex = FirstAnim; AnimIndex <= LastAnimIndex; AnimIndex++ )
 	{
-		if( !Anims.IsValidIndex(AnimIndex) || Anims(AnimIndex).Weight <= ZERO_ANIMWEIGHT_THRESH )
+		if( !Anims.IsValidIndex(AnimIndex) || Anims(AnimIndex).Weight <= ZERO_ANIMWEIGHT_THRESH
+			|| !Anims(AnimIndex).AnimInfo.AnimSeq || Anims(AnimIndex).AnimInfo.AnimSeq->CompressedByteStream.Num() == 0 )
 		{
 			continue;
 		}
-		const ScalarRegister VAnimWeight( Anims(AnimIndex).Weight );
+		const ScalarRegister VAnimWeight( Anims(AnimIndex).Weight / RelevantWeight );
 		if( ChildAtoms.Num() == 0 )
 		{
 			ChildAtoms.Add( SkelComponent->SkeletalMesh->RefSkeleton.Num() );

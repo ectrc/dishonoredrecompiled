@@ -28,7 +28,10 @@ The game logs every command it executes as `DISHONORED(inputcmd): t=<world time>
 
 Commands the game understands (one per line in the file):
   move X Y | movepx X Y | hover X Y | down [left|right|middle] | up [...] | click [X Y]
-  key NAME [press|down|up] | wait SECS | shot TAG | log TEXT | quit
+  key NAME [press|down|up] | wait SECS | shot TAG | log TEXT | quit | exec CONSOLE COMMAND
+
+`exec` (agent GJ) runs a console command through the viewport client - the exec functions the key bindings reach, e.g.
+`exec Dis_EquipItemByType DishonoredGame.DishonoredWepSword EDisEquipUsage_Primary` draws the sword, which no key is bound to.
 """
 from __future__ import annotations
 
@@ -79,8 +82,8 @@ def group_commands(tokens: list[str]) -> list[str]:
         elif op in ("wait", "shot"):
             out.append(f"{op} {tokens[i]}")
             i += 1
-        elif op == "log":
-            out.append("log " + " ".join(tokens[i:]))
+        elif op in ("log", "exec"):
+            out.append(op + " " + " ".join(tokens[i:]))
             i = len(tokens)
         elif op == "quit":
             out.append("quit")

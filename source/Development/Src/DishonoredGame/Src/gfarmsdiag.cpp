@@ -4,6 +4,7 @@
 #include "DishonoredGame.h"
 #include "gfarmsdiag.h"
 #include "EdgeAnim.h"
+#include "AnimationEncodingFormat_EdgeAnim.h"
 
 static INT GDisGFDiag = -1;
 
@@ -117,6 +118,7 @@ static FString DisGFDescribeSkeleton( USkeletalMeshComponent* Mesh )
 
 void DisGFReportPawn( ADishonoredPawn* Pawn )
 {
+	DisGHReportPawn( Pawn );
 	if( !DisGFDiagEnabled() || !Pawn || !Pawn->Mesh || !DisGFOncePerSecond( Pawn ) )
 	{
 		return;
@@ -179,4 +181,242 @@ void DisGFReportPlayer( ADishonoredPlayerPawn* Player )
 	debugf( TEXT("DISHONORED(bringup): gfdiag arms controls %s; %s; %s; %s; %s"),
 		*DisGFDescribeControl( TEXT("right"), Player->m_pLookAtControl_RightHand ), *DisGFDescribeControl( TEXT("left"), Player->m_pLookAtControl_LeftHand ),
 		*DisGFDescribeControl( TEXT("cam"), Player->m_pLookAtControl_Camera ), *Follow, *Inventory );
+}
+
+/*-----------------------------------------------------------------------------
+	-ghdiag (agent GH, PHASE20 GH): where the stretched pose is made. For the first two pawns whose posed height passes 152 and
+	for one idle control (140..152, after 60 s), once: the whole anim tree with every node's class, weights and sequence state;
+	every node's own GetBoneAtoms result summarised against the reference skeleton (height, reach, bones whose local translation
+	length departs from the reference, the root's rotation delta); the top sequence evaluated straight through the Edge path; and
+	every bone's local atom against its reference bone. Nothing here changes behaviour.
+-----------------------------------------------------------------------------*/
+
+static UBOOL DisGHDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-ghdiag") ) != NULL ) ? 1 : 0;
+	}
+	return Enabled == 1;
+}
+
+struct FDisGHPoseSummary
+{
+	FLOAT PoseH;
+	FLOAT Reach;
+	INT TransOff;
+	INT RotOff;
+	FLOAT MaxRatio;
+	INT MaxRatioBone;
+	FLOAT RootRotDelta;
+	FLOAT MaxScale;
+	INT NaNs;
+};
+
+static FLOAT DisGHQuatAngle( const FQuat& A, const FQuat& B )
+{
+	const FLOAT Dot = Abs( A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W );
+	return 2.f * appAcos( Min( 1.f, Dot ) ) * 180.f / PI;
+}
+
+static void DisGHComposeRef( const TArray<FMeshBone>& RefSkel, TArray<FBoneAtom>& RefSpace )
+{
+	RefSpace.Empty( RefSkel.Num() );
+	RefSpace.Add( RefSkel.Num() );
+	for( INT Bone = 0; Bone < RefSkel.Num(); Bone++ )
+	{
+		const FBoneAtom RefLocal( RefSkel(Bone).BonePos.Orientation, RefSkel(Bone).BonePos.Position );
+		RefSpace(Bone) = ( Bone == 0 ) ? RefLocal : RefLocal * RefSpace( RefSkel(Bone).ParentIndex );
+	}
+}
+
+// local atoms composed through the reference parents: gfdiag's poseH / reach, the local departures, the root's rotation delta
+static FDisGHPoseSummary DisGHSummarize( const TArray<FMeshBone>& RefSkel, const FBoneAtom* Local, INT NumLocal )
+{
+	FDisGHPoseSummary S;
+	appMemzero( &S, sizeof( S ) );
+	const INT NumBones = Min( RefSkel.Num(), NumLocal );
+	TArray<FBoneAtom> Space;
+	Space.Add( NumBones );
+	FLOAT MinZ = BIG_NUMBER, MaxZ = -BIG_NUMBER;
+	S.MaxRatioBone = INDEX_NONE;
+	for( INT Bone = 0; Bone < NumBones; Bone++ )
+	{
+		if( Local[Bone].ContainsNaN() )
+		{
+			S.NaNs++;
+			Space(Bone).SetIdentity();
+			continue;
+		}
+		Space(Bone) = ( Bone == 0 ) ? Local[Bone] : Local[Bone] * Space( RefSkel(Bone).ParentIndex );
+		const FVector Pos = Space(Bone).GetTranslation();
+		MinZ = Min( MinZ, Pos.Z ); MaxZ = Max( MaxZ, Pos.Z );
+		S.Reach = Max( S.Reach, Pos.Size() );
+		S.MaxScale = Max( S.MaxScale, Abs( Local[Bone].GetScale() ) );
+		const FLOAT RefLen = RefSkel(Bone).BonePos.Position.Size();
+		if( RefLen > 1.f )
+		{
+			const FLOAT Ratio = Local[Bone].GetTranslation().Size() / RefLen;
+			if( Ratio < 0.95f || Ratio > 1.05f )
+			{
+				S.TransOff++;
+			}
+			if( Ratio > S.MaxRatio )
+			{
+				S.MaxRatio = Ratio;
+				S.MaxRatioBone = Bone;
+			}
+		}
+		if( DisGHQuatAngle( Local[Bone].GetRotation(), RefSkel(Bone).BonePos.Orientation ) > 20.f )
+		{
+			S.RotOff++;
+		}
+	}
+	S.PoseH = MaxZ - MinZ;
+	if( NumBones > 0 && !Local[0].ContainsNaN() )
+	{
+		S.RootRotDelta = DisGHQuatAngle( Local[0].GetRotation(), RefSkel(0).BonePos.Orientation );
+	}
+	return S;
+}
+
+static FString DisGHSummaryText( const TArray<FMeshBone>& RefSkel, const FDisGHPoseSummary& S )
+{
+	return FString::Printf( TEXT("poseH %.1f reach %.1f transOff %d rotOff %d maxRatio %.2f at %s rootRot %.1f maxScale %.2f nan %d"), S.PoseH, S.Reach, S.TransOff, S.RotOff,
+		S.MaxRatio, S.MaxRatioBone >= 0 ? *RefSkel(S.MaxRatioBone).Name.ToString() : TEXT("-"), S.RootRotDelta, S.MaxScale, S.NaNs );
+}
+
+static FString DisGHDescribeNode( UAnimNode* Node )
+{
+	FString Out = FString::Printf( TEXT("%s '%s' w %.2f rel %d"), *Node->GetClass()->GetName(), *Node->NodeName.ToString(), Node->NodeTotalWeight, (INT)Node->bRelevant );
+	UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>( Node );
+	if( Seq )
+	{
+		const UAnimSet* Set = Seq->AnimSeq ? Seq->AnimSeq->GetAnimSet() : NULL;
+		Out += FString::Printf( TEXT(" seq %s anim %s set %s add %d linkup %d t %.2f playing %d loop %d rate %.2f dontRef %d edge %d"), *Seq->AnimSeqName.ToString(),
+			Seq->AnimSeq ? TEXT("yes") : TEXT("NULL"), Set ? *Set->GetName() : TEXT("-"), Seq->AnimSeq ? (INT)Seq->AnimSeq->bIsAdditive : -1, Seq->AnimLinkupIndex,
+			Seq->CurrentTime, (INT)Seq->bPlaying, (INT)Seq->bLooping, Seq->Rate, (INT)Seq->m_bDontUseRefPoseOnNonDefinedBones,
+			Seq->SkelComponent ? (INT)FEdgeAnimSequencePose::CanEvaluate( Seq->AnimSeq, Seq->SkelComponent->SkeletalMesh ) : -1 );
+	}
+	UAnimNodeBlendBase* Blend = Cast<UAnimNodeBlendBase>( Node );
+	if( Blend )
+	{
+		Out += TEXT(" [");
+		for( INT Child = 0; Child < Blend->Children.Num(); Child++ )
+		{
+			const FAnimBlendChild& C = Blend->Children(Child);
+			const UAnimNodeSequence* ChildSeq = Cast<UAnimNodeSequence>( C.Anim );
+			Out += FString::Printf( TEXT("%d:%.2f%s%s %s; "), Child, C.Weight, C.bIsAdditive ? TEXT("+") : TEXT(""), C.bMirrorSkeleton ? TEXT("m") : TEXT(""),
+				ChildSeq ? *ChildSeq->AnimSeqName.ToString() : ( C.Anim ? *C.Anim->GetName() : TEXT("none") ) );
+		}
+		Out += TEXT("]");
+	}
+	return Out;
+}
+
+static void DisGHDumpPawn( ADishonoredPawn* Pawn, const TCHAR* Why, FLOAT PoseH )
+{
+	USkeletalMeshComponent* Mesh = Pawn->Mesh;
+	const TArray<FMeshBone>& RefSkel = Mesh->SkeletalMesh->RefSkeleton;
+	const INT NumBones = RefSkel.Num();
+	debugf( TEXT("DISHONORED(bringup): ghdiag dump %s %s t=%.2f poseH %.1f mesh %s bones %d required %d local %d space %d"), *Pawn->GetName(), Why, GWorld->GetTimeSeconds(), PoseH,
+		*Mesh->SkeletalMesh->GetName(), NumBones, Mesh->RequiredBones.Num(), Mesh->LocalAtoms.Num(), Mesh->SpaceBases.Num() );
+	if( Mesh->LocalAtoms.Num() == NumBones )
+	{
+		debugf( TEXT("DISHONORED(bringup): ghdiag local %s %s"), *Pawn->GetName(), *DisGHSummaryText( RefSkel, DisGHSummarize( RefSkel, Mesh->LocalAtoms.GetData(), NumBones ) ) );
+	}
+	TArray<UAnimNode*> Nodes;
+	if( Mesh->Animations )
+	{
+		Mesh->Animations->GetNodes( Nodes, TRUE );
+	}
+	debugf( TEXT("DISHONORED(bringup): ghdiag tree %s %d nodes root %s"), *Pawn->GetName(), Nodes.Num(), Mesh->Animations ? *Mesh->Animations->GetClass()->GetName() : TEXT("none") );
+	for( INT Index = 0; Index < Nodes.Num(); Index++ )
+	{
+		debugf( TEXT("DISHONORED(bringup): ghdiag node %s %d %s"), *Pawn->GetName(), Index, *DisGHDescribeNode( Nodes(Index) ) );
+	}
+	FMemMark Mark( GMainThreadMemStack );
+	UAnimNodeSequence* TopSeq = NULL;
+	for( INT Index = 0; Index < Nodes.Num(); Index++ )
+	{
+		UAnimNode* Node = Nodes(Index);
+		if( Node->NodeTotalWeight <= 0.001f || !Node->SkelComponent )
+		{
+			continue;
+		}
+		FBoneAtomArray Atoms;
+		Atoms.Add( NumBones );
+		FBoneAtom RootMotion;
+		INT bHasRootMotion = 0;
+		FCurveKeyArray Curves;
+		Node->GetBoneAtoms( Atoms, Mesh->RequiredBones, RootMotion, bHasRootMotion, Curves );
+		debugf( TEXT("DISHONORED(bringup): ghdiag eval %s node %d %s '%s' %s"), *Pawn->GetName(), Index, *Node->GetClass()->GetName(), *Node->NodeName.ToString(),
+			*DisGHSummaryText( RefSkel, DisGHSummarize( RefSkel, Atoms.GetData(), NumBones ) ) );
+		UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>( Node );
+		if( Seq && Seq->AnimSeq && !Seq->AnimSeq->bIsAdditive && ( !TopSeq || Seq->NodeTotalWeight > TopSeq->NodeTotalWeight ) )
+		{
+			TopSeq = Seq;
+		}
+	}
+	if( TopSeq && FEdgeAnimSequencePose::CanEvaluate( TopSeq->AnimSeq, Mesh->SkeletalMesh ) )
+	{
+		FBoneAtomArray Atoms;
+		Atoms.Add( NumBones );
+		for( INT Bone = 0; Bone < NumBones; Bone++ )
+		{
+			Atoms(Bone).SetIdentity();
+		}
+		const UBOOL bOk = FEdgeAnimSequencePose::GetAnimationPose( TopSeq->AnimSeq, Mesh->SkeletalMesh, TopSeq->CurrentTime, Atoms, Mesh->RequiredBones );
+		debugf( TEXT("DISHONORED(bringup): ghdiag edge %s seq %s t %.2f ok %d %s"), *Pawn->GetName(), *TopSeq->AnimSeqName.ToString(), TopSeq->CurrentTime, (INT)bOk,
+			*DisGHSummaryText( RefSkel, DisGHSummarize( RefSkel, Atoms.GetData(), NumBones ) ) );
+	}
+	TArray<FBoneAtom> RefSpace;
+	DisGHComposeRef( RefSkel, RefSpace );
+	for( INT Bone = 0; Bone < NumBones && Bone < Mesh->LocalAtoms.Num() && Bone < Mesh->SpaceBases.Num(); Bone++ )
+	{
+		const FBoneAtom& L = Mesh->LocalAtoms(Bone);
+		const FLOAT RefLen = RefSkel(Bone).BonePos.Position.Size();
+		const FVector T = L.GetTranslation();
+		const FVector R = RefSkel(Bone).BonePos.Position;
+		debugf( TEXT("DISHONORED(bringup): ghdiag bone %s %3d %-24s par %3d |t| %7.2f ref %7.2f x%.2f t %.1f/%.1f/%.1f ref %.1f/%.1f/%.1f rot %5.1f scale %.2f spaceZ %7.1f refZ %7.1f"),
+			*Pawn->GetName(), Bone, *RefSkel(Bone).Name.ToString(), RefSkel(Bone).ParentIndex, T.Size(), RefLen, RefLen > 0.01f ? T.Size() / RefLen : 0.f,
+			T.X, T.Y, T.Z, R.X, R.Y, R.Z, DisGHQuatAngle( L.GetRotation(), RefSkel(Bone).BonePos.Orientation ), L.GetScale(),
+			Mesh->SpaceBases(Bone).GetTranslation().Z, RefSpace(Bone).GetTranslation().Z );
+	}
+}
+
+void DisGHReportPawn( ADishonoredPawn* Pawn )
+{
+	static TMap<const UObject*, FLOAT> LastAt;
+	static INT StretchedDumps = 0;
+	static UBOOL bIdleDumped = FALSE;
+	if( !DisGHDiagEnabled() || !Pawn || !Pawn->Mesh || !Pawn->Mesh->SkeletalMesh || Pawn->Mesh->SpaceBases.Num() == 0 || !GWorld )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	FLOAT* Last = LastAt.Find( Pawn );
+	if( Last && Now - *Last < 0.5f )
+	{
+		return;
+	}
+	LastAt.Set( Pawn, Now );
+	FLOAT MinZ = BIG_NUMBER, MaxZ = -BIG_NUMBER;
+	for( INT Bone = 0; Bone < Pawn->Mesh->SpaceBases.Num(); Bone++ )
+	{
+		const FLOAT Z = Pawn->Mesh->SpaceBases(Bone).GetTranslation().Z;
+		MinZ = Min( MinZ, Z ); MaxZ = Max( MaxZ, Z );
+	}
+	const FLOAT PoseH = MaxZ - MinZ;
+	if( PoseH > 152.f && StretchedDumps < 2 && Pawn->Mesh->SkeletalMesh->RefSkeleton.Num() >= 110 )
+	{
+		StretchedDumps++;
+		DisGHDumpPawn( Pawn, TEXT("stretched"), PoseH );
+	}
+	else if( !bIdleDumped && Now > 60.f && PoseH > 140.f && PoseH < 152.f && Pawn->Mesh->SkeletalMesh->RefSkeleton.Num() >= 110 && !Pawn->IsA( ADishonoredPlayerPawn::StaticClass() ) )
+	{
+		bIdleDumped = TRUE;
+		DisGHDumpPawn( Pawn, TEXT("idle"), PoseH );
+	}
 }

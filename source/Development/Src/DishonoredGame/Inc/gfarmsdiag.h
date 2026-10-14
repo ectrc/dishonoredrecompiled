@@ -14,6 +14,8 @@ UBOOL DisGFDiagEnabled();
 void DisGFReportPawn( class ADishonoredPawn* Pawn );
 /** Once a second, from ADishonoredPlayerPawn::Tick: the arms. */
 void DisGFReportPlayer( class ADishonoredPlayerPawn* Player );
+/** -ghdiag (agent GH): once, for the first stretched pawns and one idle control, the anim tree, every node's pose and every bone's local atom. */
+void DisGHReportPawn( class ADishonoredPawn* Pawn );
 
 #define GFDIAG_ONCE( Msg ) do { static UBOOL bSaidOnce = FALSE; if( !bSaidOnce ) { bSaidOnce = TRUE; debugf( NAME_Warning, TEXT("DISHONORED(bringup): gf %s"), Msg ); } } while( 0 )
 
