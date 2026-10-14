@@ -192,7 +192,7 @@ uninitialised-node fallback; DN's 2013 numbers are RVAs; the route's camera cann
 boat (teleport needed); Worker A's failure is not the A\*. Deviations: `UpdateFeetPropeties` guards a zero weight
 sum (retail: inf/NaN); `FindAnimNode` for `FindAnimNodeFast`; `GetFootProperties` returns -1.
 
-### GB — merged; GB's own gate on the merged tree 47 ok / 0 failed / 0 skipped; 0 d3d9 deaths
+### GB — merged `f7bc754`; gate on main 47 ok / 0 failed / 0 skipped (1777 s); GB's own gate 47 / 0 / 0; 0 d3d9 deaths
 
 Nineteen files, 0 flagged against `ff5de25`; regeneration clean; `bitfield_audit` 0.
 
