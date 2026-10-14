@@ -1739,6 +1739,9 @@ void USkeletalMeshComponent::Tick(FLOAT DeltaTime)
 	}
 
 #endif // !FINAL_RELEASE
+
+	// DISHONORED(port): agent GF (PHASE19 GF) - the stand-in for retail's component tick-end phase (UnSkeletalMesh.h)
+	TickEnd( DeltaTime );
 }
 
 INT USkeletalMeshComponent::GetNumElements() const

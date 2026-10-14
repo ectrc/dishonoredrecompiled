@@ -1,0 +1,80 @@
+function,rva_2012,rva_2013,size_2012,status,note
+UDishonoredPlayerSkeletalComponent::SetOffset,0x71dc90,0x6cdec0,561,ported,named in both; the proxy write is an ENQUEUE command
+UDishonoredPlayerSkeletalComponent::SetFOV,0x71d880,0x6cdab0,551,ported,named in both
+UDishonoredPlayerSkeletalComponent::DisableFOV,0x71dab0,0x6cdce0,470,ported,named in both
+UDishonoredPlayerSkeletalComponent::UpdateBounds,0x7203d0,0x6c8880,255,ported,named in both
+UDishonoredPlayerSkeletalComponent::CreateSceneProxy,0x71aeb0,0x6df220,182,ported,named in both
+UDishonoredPlayerSkeletalComponent::UpdateChildComponents,0x707580,0x6c8360,1303,ported,named in both; the reference body plus the offset
+UDishonoredPlayerSkeletalComponent::UpdateChildForTickEnd_Derived,0x720360,0x6ce100,97,ported,named in both; the second camera pass
+UDishonoredPlayerSkeletalComponent::SetFOV::UpdateFOVCommand::Execute,0x6fb910,0x6bfa80,32,ported,the ENQUEUE lambda
+UDishonoredPlayerSkeletalComponent::DisableFOV::DisableFOVCommand::Execute,0x6fb940,0x6bfab0,19,ported,the ENQUEUE lambda
+UDishonoredPlayerSkeletalComponent::SetOffset::UpdateOffsetCommand::Execute,0x6fb970,0x6bfae0,33,ported,the ENQUEUE lambda
+UDishonoredPlayerSkeletalComponent::SetFOV::UpdateFOVCommand::DescribeCommand,0x6fb930,0x6bfaa0,6,editor,the macro's own
+UDishonoredPlayerSkeletalComponent::DisableFOV::DisableFOVCommand::DescribeCommand,0x6fb960,0x6bfad0,6,editor,the macro's own
+UDishonoredPlayerSkeletalComponent::SetOffset::UpdateOffsetCommand::DescribeCommand,0x6fb9a0,0x6bfb10,6,editor,the macro's own
+FDishonoredPlayerSkeletalSceneProxy::FDishonoredPlayerSkeletalSceneProxy,0x71a860,0x6debd0,104,ported,byte-identical in both
+FDishonoredPlayerSkeletalSceneProxy::GetWorldMatrices,0x71a8d0,0x6dec40,1414,ported,byte-identical in both; LTW * V * P(arms FOV) * P^-1 * V^-1
+FDishonoredPlayerSkeletalSceneProxy::GetMemoryFootprint,0x71ae60,0x6df1d0,26,ported,
+FDishonoredPlayerSkeletalSceneProxy::`scalar deleting destructor',0x71ae80,0x6df1f0,39,ported,the compiler's
+UDisSkeletalMeshComponent::TickEnd,0x799d10,,71,partial,the per-component skip flag (the dword after m_pSoulMaterial) and ADishonoredNPCPawn::SyncPhysicsSensor are not ported; called from a hand-added USkeletalMeshComponent::TickEnd at the end of Tick
+UDisSkeletalMeshComponent::UpdateChildForTickEnd,0x794e50,0x750f20,179,ported,named in both; same bytes
+UDisSkeletalMeshComponent::UpdateChildForTickEnd_Derived,0x57ef10,,1,ported,a ret
+ADishonoredPawn::OnCameraUpdate,0x7aa7a0,0x749f50,54,ported,named in both; same body
+ADishonoredPawn::Tick_Begin,0x745410,,8,ported,ICF-folded with IDisRatTargetInterface::IsRatSocketValid; returns TRUE
+ADishonoredPawn::Tick,0x790c10,0x750720,290,partial,agent FV's body; GF adds the Tick_Begin phase in retail's place; the other six phases stay named
+ADishonoredPlayerPawn::OnCameraUpdate_Derived,0x71e3b0,0x6abdd0*,1227,partial,2013 by neighbours (0.740) and checked by shape (1242 B); pass 1: UStatePlayerUpperBase::OnCameraUpdate and the active powers' OnCameraUpdate (vtable +404 / 2013 +408) are not ported
+ADishonoredPlayerPawn::Tick_Begin,0x715a00,0x6b0850*,269,partial,2013 by neighbours (0.893) and checked by shape (269 B; the audio-log actor at +2524); Tick_Mantle and the deferred corpse drop (UStatePlayerCarryCorpseIdle::StartDroppingCorpse) are not ported
+ADishonoredPlayerPawn::Tick,0x715b10,0x6bb1e0*,1229,partial,2013 by neighbours (0.723); the base tick and m_fLastDeltaSeconds; breathlessness / dispersion / crouch events / stats / avoidance / mana / trackers / drowning / post-process / tattoo glow not ported
+ADishonoredPlayerPawn::Tick_PlayerAction,0x6fae20,0x6a1ca0*,70,ported,agent FZ's; now reached from Tick_Begin as in retail
+ADishonoredPlayerPawn::Tick_Mantle,0x7129d0,0x6dbd00*,319,inventory,the mantle unit is a skeleton (dishonoredplayerpawn_mantle.cpp)
+ADishonoredPlayerPawn::PreBeginPlay_AnimStates,0x7200e0,0x6e2060,372,inventory,FindStatePickers / UDisAnimStateComponent::BindToAnimStateOwner / SetAnimState have no bodies
+ADishonoredPlayerPawn::PreBeginPlay_PlayerCombat,0x71a710,0x6be690*,190,inventory,the stance defaults and the health-effect sort
+ADishonoredPlayerPawn::PreBeginPlay_Actions,0x720260,0x6a4a50,251,partial,agent FZ's: the master FSM only (the upper and left-arm FSMs' states are skeletons); PreBeginPlay_AnimStates and PreBeginPlay_PlayerCombat named
+ADishonoredPlayerController::OnCameraUpdate,0x6fa840,0x6ba860*,104,partial,2013 callee match (0.832; 155 B - the 2013 body builds the tracking target from the pawn's X/Y and the view's Z); TickCameraTracking / UpdateCrosshair / UpdateBlindedEffect are skeletons
+ADishonoredPlayerCamera::UpdateViewTarget,0x7135c0,0x6d80a0,5871,partial,agent FZ's influence branch plus the per-pass OnCameraUpdate on the controller (+0x899)
+UDishonoredInventory::OnCameraUpdate,0x85a730,0x817c90,118,ported,named in both; same body
+UDishonoredInventoryItem::ShouldItemTick,0x853da0,0x80c770,132,ported,named in both (110 B in 2013)
+UDishonoredInventoryItem::OnCameraUpdate,0x859da0,0x816e30,158,partial,UpdateMeleeExtents and the item contexts' OnCameraUpdate (UDisItemContext vtable slot 77) have no bodies
+UDishonoredItemEmpty::OnCameraUpdate_Derived,0x8a5330,,72,inventory,moves a grabbed movable; the empty-hands unit is a skeleton
+UDishonoredInventory::InitInventory,0x85b790,,413,inventory,the equip path: nothing creates or fills the player's inventory in this tree
+UDishonoredInventory::SpawnAndAddInventoryItem,0x85c9c0,,147,inventory,the equip path
+UDishonoredInventory::AddInventoryItem,0x85be60,,451,inventory,the equip path
+UDishonoredInventory::DoEquip,0x85a7b0,0x817d10,399,inventory,the equip path
+UDishonoredInventory::EquipItemType,0x85a940,0x817eb0,110,inventory,the equip path
+UDishonoredInventory::ShowInventoryItem,0x857fb0,,141,inventory,the equip path
+UDishonoredInventory::ShowEquippedItem,0x858040,,52,inventory,the equip path
+UDishonoredInventory::SetReequipItem,0x852a90,0x805500,219,inventory,MAT_SetForceInventory's first half
+UDishonoredInventory::GetReequipItem,0x852b70,0x8055e0,119,inventory,
+ADishonoredPawn::EquipItemByType_KeepTrying,0x7afbe0,0x751790,292,inventory,MAT_SetForceInventory's second half
+ADishonoredPlayerPawn::EquipItemByType,0x70ce90,,687,inventory,the equip path
+ADishonoredPlayerPawn::MAT_SetForceInventory,0x6fe570,0x6a4d40,222,partial,agent FZ's (logged once); needs the equip path
+ADishonoredPlayerPawn::MAT_IsUnequipped,0x6fb030,0x6a1e80,39,ported,agent FZ's
+ADishonoredPawn::HasNothingEquipped,0x7acbb0,0x74e070,153,ported,agent FZ's
+ADishonoredPawn::HandsAppearEmpty,0x7acc50,0x74e110,72,inventory,both equipped items' meshes absent or hidden
+UDisSkelControl_FootPlacement::CalculateNewBoneTransforms,0x6ed860,,98,partial,the entry: bone and component recorded; the two IK bodies not called so the control outputs no transform (the strength-0 measurement)
+UDisSkelControl_FootPlacement::EnableFootPlacement,0x6d01c0,,105,ported,
+UDisSkelControl_FootPlacement::LockFootPlacement,0x6d0230,,41,ported,
+UDisSkelControl_FootPlacement::CalculateNewBoneTransformsOriginal,0x6e4d70,,7302,inventory,the retail foot IK
+UDisSkelControl_FootPlacement::CalculateNewBoneTransformsNewComer,0x6e8ed0,,830,inventory,the new-IK branch (game-info flag +976 bit 0x20 and m_bCanUseNewIK)
+UDisSkelControl_FootPlacement::UpdateFootOrientation,0x6e7520,,6565,inventory,
+UDisSkelControl_FootPlacement::UpdateFootOrientationTarget,0x6d9bc0,,2674,inventory,
+UDisSkelControl_FootPlacement::UpdatePredictionProperties,0x6e6c10,,2308,inventory,
+UDisSkelControl_FootPlacement::HandleFootRotationLock,0x6d5ba0,,1455,inventory,
+UDisSkelControl_FootPlacement::DoLineCheck,0x6daa50,,823,inventory,the floor trace (GA: reads the riverbed under a mesh floor)
+UDisSkelControl_FootPlacement::InitializeFootProperties,0x6da640,,797,inventory,fills m_FeetProps
+UDisSkelControl_FootPlacement::ResetGroundTestArray,0x6d50c0,,791,inventory,
+UDisSkelControl_FootPlacement::UpdateLockProperties,0x6d58c0,,724,inventory,
+UDisSkelControl_FootPlacement::DoEffectorBlending,0x6d4d00,,703,inventory,
+UDisSkelControl_FootPlacement::GetFootInfo,0x6d9980,,566,inventory,
+UDisSkelControl_FootPlacement::PutLocationOnGround,0x6e6a00,,526,inventory,
+UDisSkelControl_FootPlacement::IsFootOnGround,0x6d54b0,,412,inventory,
+UDisSkelControl_FootPlacement::CalcFootPredictVector,0x6d4b90,,353,inventory,
+UDisSkelControl_FootPlacement::TransformRootFootDeltaInFootLocInWorld,0x6d5650,,312,inventory,
+UDisSkelControl_FootPlacement::DoFootBlending,0x6d4fc0,,246,inventory,
+UDisSkelControl_FootPlacement::ComputePredictedFootOnGroundLocFromProperties,0x6da960,,229,inventory,
+UDisSkelControl_FootPlacement::UpdateGroundMove,0x6d53e0,,194,inventory,
+UDisSkelControl_FootPlacement::ComputeGroundShape,0x6d5790,,172,inventory,
+UDisSkelControl_FootPlacement::UpdateNavMeshStateOfGroundTest,0x6dad90,,146,inventory,
+UDisSkelControl_FootPlacement::EstimateGroundHeight,0x6d5840,,126,inventory,
+ADishonoredPlayerPawn::StopRootMotionMode,0x6facb0,0x6a1af0*,15,ported,2013 by vtable neighbours (GB); ChangeAnimStateMotionModes( RMM_Ignore RMRM_Ignore )
+ADishonoredPlayerPawn::ChangeAnimStateMotionModes,0x6fae70,0x6ab1d0*,222,partial,2013 by vtable (0.533) and checked by shape (375 B: the same PendingRMM / m_NextPhysicsMode / setPhysics; adds the Blink power stop which has no body here)

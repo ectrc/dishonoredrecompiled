@@ -1078,6 +1078,7 @@ public:
 
     DECLARE_CLASS(UDisSkelControl_FootPlacement,USkelControlFootPlacement,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("AILocomotion");}
+#include "CppText/UDisSkelControl_FootPlacement.h"
 };
 
 // DishonoredGame.DisSkelControl_FootPlacementRotLock: retail sizeof 240, reflected span 184..232 (2012 PDB sizeof 240)

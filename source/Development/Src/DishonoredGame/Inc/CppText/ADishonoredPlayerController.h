@@ -100,3 +100,10 @@ public:
 	virtual void SetCinematicMode_Native( UBOOL bInCinematicMode, UBOOL bWasInCinematicMode, UBOOL bHidePlayer,
 		UBOOL bHideHUD, UBOOL bAffectsMovement, UBOOL bAffectsTurning, UBOOL bAffectsButtons,
 		UBOOL bHideLetterbox, UBOOL bAllowProjectilesAndExplosions );
+
+// ---- agent GF (PHASE19 GF): the camera pass ----
+// DISHONORED(port): OnCameraUpdate 2012 0x6fa840 / 2013 0x6ba860 (104 / 155 B): the pawn's OnCameraUpdate, then on pass 0
+// TickCameraTracking (0x6fa400; the 2013 body builds its target from the pawn's X/Y and the view's Z) and on pass 1 UpdateCrosshair
+// (0x6f9d80) and UpdateBlindedEffect (0x6f87d0) - the three are skeletons here, named once. Body in dishonoredplayercontroller.cpp.
+public:
+	void OnCameraUpdate( const struct FDishonoredViewTarget& _VT, INT _PassCount );

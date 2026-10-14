@@ -392,3 +392,18 @@ UDishonoredInventoryItem* UDishonoredInventory::FindEquippableItem( const UClass
 	}
 	return Found;
 }
+
+// ---- agent GF (PHASE19 GF) ----
+
+// DISHONORED(port): 2012 0x85a730 / 2013 0x817c90 (118 B, the same body)
+void UDishonoredInventory::OnCameraUpdate( const FDishonoredViewTarget& _rVT )
+{
+	for( INT Index = 0; Index < m_Slots.Num(); Index++ )
+	{
+		UDishonoredInventoryItem* Item = m_Slots(Index).m_pItem;
+		if( Item && Item->ShouldItemTick() )
+		{
+			Item->OnCameraUpdate( _rVT );
+		}
+	}
+}

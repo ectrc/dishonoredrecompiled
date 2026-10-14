@@ -71,6 +71,7 @@
 //   0x7a6190  protected: virtual void __thiscall ADishonoredPawn::OnOtherActorTerminated(class AActor const &)
 
 #include "DishonoredGame.h"
+#include "gfarmsdiag.h"
 
 // DISHONORED(written): exec 2013 rva 0x5ecc30 -> vtable +1380 = 2013 rva 0x74d580 (2013 only; not overridden in retail): the
 // action is taken as a UDisSeqAct_DLC05_SetStoryGroup without a test, as retail does
@@ -610,13 +611,22 @@ UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	const UBOOL bRet = Super::Tick( DeltaTime, TickType );
 	if( !bDeleteMe && !IsPendingKill() && ( !GIsEditor || GIsGame ) )
 	{
+		// agent GF (PHASE19 GF): the first phase, in retail's place (0x790c10 +0x3a, before Tick_Water)
+		Tick_Begin( DeltaTime, TickType );
 		if( m_bAllowTickBody )
 		{
 			Tick_Body( DeltaTime, TickType );
 		}
 		m_bCachedAttnParamsValid = FALSE;
+		DisGFReportPawn( this );
 	}
 	return bRet;
+}
+
+// DISHONORED(port): agent GF, 2012 0x745410 (8 B): the base phase does nothing
+UBOOL ADishonoredPawn::Tick_Begin( FLOAT _fDeltaTime, ELevelTick _TickType )
+{
+	return TRUE;
 }
 
 // DISHONORED(port): 2013 rva 0x5ec8f0's virtual (2012 exec 0x633b40 region), 15 B in retail: the interface's helper on this pawn.

@@ -241,3 +241,31 @@ listed in `<Module>NativeStubs.logparams.txt`.
 **Premises corrected (six)**: the fade-out is a dialog-started matinee's Fade track; the sub-processes never ask for
 a look-at; `DisNotify_NPCDisableLookAt` was never broken; the death is the spawn fall, not wave-22 code;
 `USeqAct_Switch::Activated` exists inline; the silhouettes are on static-ground guards in the control too.
+
+### GF — merged; GF's own gate 46/47 (`d3d9_frames` 630 under full-machine builds; the stage alone 9/9, 3780 frames)
+
+Thirty files, 0 flagged against `75cb0a6`; regeneration clean; `bitfield_audit` 0; two Engine hand edits
+(`USkeletalMeshComponent::TickEnd` virtual, called at the end of `Tick`).
+
+**The walk regression is fixed**: `ADishonoredPlayerPawn::StopRootMotionMode` (2012 `0x6facb0` / 2013 `0x6a1af0`)
+and `ChangeAnimStateMotionModes` (`0x6fae70` / `0x6ab1d0`) ported; `rmm 2/0` on the player through the whole ride
+(GA's `1/1` gone). The walk-off itself needs main with GB's attachment track + this; the gate's inputtest walked
+976 units.
+
+**The arms pipeline is ported**: `OnCameraUpdate_Derived`, `ADishonoredPawn/PlayerController::OnCameraUpdate`,
+`UDishonoredPlayerSkeletalComponent` whole (19/19, the arms-FOV world matrix), the skel-control tick-end phase,
+`Tick_Begin` dispatched in retail's place. **But the arms report is not reproducible: there is no equip path in
+this tree** (`UDishonoredInventory::InitInventory/.../DoEquip` and `EquipItemByType` are comments; slots 0) and
+retail's New Game equips nothing either. What hides a held item in a soirée is the item contexts' soirée slot
+(2013 `0x816d90`) + `MAT_SetForceInventory`'s re-equip of `ItemEmpty` → **wave 24: the equip path**.
+
+**The silhouettes are the cinematic sequences, not the player, not foot placement.** `-gfdiag` posed height: 148
+for every NPC in `Empty_Idle`, 155–341 for every matinee-driven pawn from the first second its `Tall_SC_Tower`
+channel plays; scale/LTW/DPG/LOD nominal; on the control too. `disskelcontrol_footplacement.cpp` is off the exclude
+list with retail's entry outputting no transform (the IK is 28 functions; `Enable/LockFootPlacement` ported) and
+the stretch stays. **What is left is the evaluation of those Edge sequences (78 joints, 0+1 translation channels,
+on 118-joint skeletons) — FT's `GetBoneAtoms` stand-in → wave 24.**
+
+**Premises corrected (six)**: no equip path / no route with an item; `SetBodyMode` is not the arms mechanism; the
+silhouettes are on the real control and are not mesh translation / body mode / base transform / foot placement;
+arm-follow, `SetOffset`, `SetFOV` change nothing visible on this route (offset 0, arms FOV = view FOV).

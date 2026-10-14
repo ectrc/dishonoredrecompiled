@@ -13226,6 +13226,7 @@ public:
     //## END PROPS DisSkeletalMeshComponent
 
     DECLARE_CLASS(UDisSkeletalMeshComponent,USkeletalMeshComponent,0,DishonoredGame)
+#include "CppText/UDisSkeletalMeshComponent.h"
 };
 
 // DishonoredGame.DisSkirmishTracker: retail sizeof 76, reflected span 56..76 (2012 PDB sizeof 76)
@@ -16479,6 +16480,7 @@ public:
     //## END PROPS DishonoredPlayerSkeletalComponent
 
     DECLARE_CLASS(UDishonoredPlayerSkeletalComponent,UDisSkeletalMeshComponent,0,DishonoredGame)
+#include "CppText/UDishonoredPlayerSkeletalComponent.h"
 };
 
 // DishonoredGame.DishonoredMapInfo: retail sizeof 184, reflected span 56..184 (2012 PDB sizeof 176)

@@ -5,8 +5,9 @@
 //   0x7aa7a0  public: void __thiscall ADishonoredPawn::OnCameraUpdate(struct FDishonoredViewTarget const &, int)
 //   0x7afa20  public: class ADishonoredPlayerCamera * __thiscall ADishonoredPawn::GetDishonoredCamera(void)
 
-// Agent FZ (PHASE18 FZ): GetDishonoredCamera 2012 0x7afa20 / 2013 0x7515c0 (named in both, 43 B). OnCameraUpdate
-// (0x7aa7a0: OnCameraUpdate_Derived then the inventory's OnCameraUpdate on pass 1) is not ported - neither callee exists.
+// Agent FZ (PHASE18 FZ): GetDishonoredCamera 2012 0x7afa20 / 2013 0x7515c0 (named in both, 43 B).
+// Agent GF (PHASE19 GF): OnCameraUpdate 2012 0x7aa7a0 / 2013 0x749f50 (54 B, the same body): the derived hook, then on pass 1 the
+// inventory's OnCameraUpdate (the equipped items' contexts and the item placement).
 
 #include "DishonoredGame.h"
 
@@ -19,4 +20,13 @@ ADishonoredPlayerCamera* ADishonoredPawn::GetDishonoredCamera() const
 {
 	ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Controller );
 	return PC ? Cast<ADishonoredPlayerCamera>( PC->PlayerCamera ) : NULL;
+}
+
+void ADishonoredPawn::OnCameraUpdate( const FDishonoredViewTarget& _VT, INT _PassCount )
+{
+	OnCameraUpdate_Derived( _VT, _PassCount );
+	if( _PassCount == 1 && m_pInventory )
+	{
+		m_pInventory->OnCameraUpdate( _VT );
+	}
 }

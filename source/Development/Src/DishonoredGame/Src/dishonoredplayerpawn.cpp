@@ -169,6 +169,7 @@
 //   0x71fe10  public: static class UClass * __cdecl ADishonoredPlayerPawn::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "gfarmsdiag.h"
 
 ADishonoredPlayerPawn* ADishonoredPlayerPawn::s_pInstance = NULL;
 
@@ -345,21 +346,38 @@ void ADishonoredPlayerPawn::PreBeginPlay()
 	PreBeginPlay_Actions();
 }
 
-// DISHONORED(bringup): retail's ADishonoredPlayerPawn::Tick (2012 0x715b10, 1229 B: breathlessness, dispersion, crouch events,
-// stats, avoidance, mana, the trackers, drowning, the post-process manager, the tattoo glow) is not ported; retail reaches
-// Tick_PlayerAction from ADishonoredPawn::Tick's first phase, the Tick_Begin virtual (player 0x715a00). Agent FV's
-// ADishonoredPawn::Tick (02eb527) dispatches Tick_Body only and names Tick_Begin as unported, so this override is the
-// stand-in for that one call; it chains to the base first, so the FSMs tick after Tick_Body as they do in retail's order
-// (Begin runs before Body in retail - the one-phase difference is noted, not hidden).
+// DISHONORED(port): agent GF (PHASE19 GF), 2012 0x715b10 / 2013 0x6bb1e0 (1229 / 1257 B): ADishonoredPawn::Tick (whose first phase is
+// now Tick_Begin, below), then m_fLastDeltaSeconds. The rest of retail's body is not ported and named: the breathlessness ramp and its
+// two Ak events, the ranged weapon's dispersion, the breathlessness RTPC, CheckCrouchEvents (0x7079f0), the distance-travelled stat
+// once a second, HandleAvoidance (0x70d9f0), RegenMana (0x7094b0), the four tutorial trackers, the drowning damage and the dead-state
+// request, the post-process manager's tick, the tattoo glow ramp on the mesh's first material.
 UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 {
 	const UBOOL bResult = Super::Tick( DeltaTime, TickType );
-	if( !bDeleteMe && !IsTemplate() && ( !GIsEditor || GIsGame ) )
-	{
-		m_fLastDeltaSeconds = DeltaTime;
-		Tick_PlayerAction( DeltaTime, TickType );
-	}
+	m_fLastDeltaSeconds = DeltaTime;
+	DisGFReportPlayer( this );
 	return bResult;
+}
+
+// DISHONORED(port): agent GF, 2012 0x715a00 / 2013 0x6b0850 (269 B both). The base phase (a return), Tick_Mantle (0x7129d0 / 0x6dbd00:
+// the mantle unit is a skeleton - named, not called), the mesh's transform brought up to the pawn's before anything reads a bone, the
+// camera bone written into the audio-log dummy actor (the speaker position of the player's audio logs), Tick_PlayerAction through
+// the vtable (the three FSMs), then the deferred corpse drop (two transient bits at +2016: UStatePlayerCarryCorpseIdle::
+// StartDroppingCorpse - the carry states are skeletons, the bits are left alone).
+UBOOL ADishonoredPlayerPawn::Tick_Begin( FLOAT _fDeltaTime, ELevelTick _TickType )
+{
+	Super::Tick_Begin( _fDeltaTime, _TickType );
+	GFDIAG_ONCE( TEXT("Tick_Begin: Tick_Mantle (2012 0x7129d0) and the deferred corpse drop are not ported") );
+	if( Mesh && Mesh->GetOwner() )
+	{
+		Mesh->ConditionalUpdateTransform( Mesh->GetOwner()->LocalToWorld() );
+		if( m_pAudioLogConvActor )
+		{
+			GetCameraBone( &m_pAudioLogConvActor->Location, &m_pAudioLogConvActor->Rotation );
+		}
+	}
+	Tick_PlayerAction( _fDeltaTime, _TickType );
+	return TRUE;
 }
 
 // DISHONORED(port): 2012 0x701f10 / 0x701fc0 (unnamed in 2013; the 2013 SetBodyMode inlines both and adds particle systems)

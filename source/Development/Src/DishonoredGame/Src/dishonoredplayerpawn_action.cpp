@@ -302,3 +302,43 @@ void ADishonoredPlayerPawn::CancelAllActivePowers() const
 {
 	FZDIAG_ONCE( TEXT("CancelAllActivePowers (2012 0x7048c0) is not ported: the active power components have no bodies") );
 }
+
+// ---- agent GF (PHASE19 GF): the player's root-motion mode overrides (the coordinator's message from GB) ----
+
+// DISHONORED(port): 2012 0x6fae70 / 2013 0x6ab1d0. The rotation mode goes straight to the mesh; a mode other than RMM_Translate
+// is queued in the mesh's PendingRMM and restores the physics a RMM_Translate parked (m_NextPhysicsMode); RMM_Translate
+// remembers the current physics, parks the pawn in PHYS_None and clears the pending mode. 2013 also stops an active
+// UDishonoredActivePowerComponent_Blink before parking (the power components have no bodies here - named once).
+void ADishonoredPlayerPawn::ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _RootRotation )
+{
+	if( !Mesh )
+	{
+		return;
+	}
+	Mesh->RootMotionRotationMode = _RootRotation;
+	if( _RootMotion != RMM_Translate )
+	{
+		Mesh->PendingRMM = _RootMotion;
+		if( m_NextPhysicsMode != PHYS_None )
+		{
+			setPhysics( m_NextPhysicsMode, NULL, FVector( 0.f, 0.f, 1.f ) );
+			m_NextPhysicsMode = PHYS_None;
+		}
+	}
+	else
+	{
+		if( Physics != PHYS_None )
+		{
+			FZDIAG_ONCE( TEXT("ChangeAnimStateMotionModes( RMM_Translate ): the 2013 stop of an active Blink power is not ported (no power component bodies)") );
+			m_NextPhysicsMode = Physics;
+			setPhysics( PHYS_None, NULL, FVector( 0.f, 0.f, 1.f ) );
+		}
+		Mesh->PendingRMM = RMM_Translate;
+	}
+}
+
+// DISHONORED(port): 2012 0x6facb0 / 2013 0x6a1af0 (15 B): the player leaves root motion by ignoring it, not by the base's RMM_Velocity
+void ADishonoredPlayerPawn::StopRootMotionMode()
+{
+	ChangeAnimStateMotionModes( RMM_Ignore, RMRM_Ignore );
+}

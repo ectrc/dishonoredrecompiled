@@ -30,3 +30,52 @@
 //   0x6ed860  public: virtual void __thiscall UDisSkelControl_FootPlacement::CalculateNewBoneTransforms(int, class USkeletalMeshComponent *, class TArray<class FBoneAtom, class FDefaultAllocator> &)
 //   0x6f38f0  public: static class UClass * __cdecl UDisSkelControl_FootPlacement::GetPrivateStaticClassUDisSkelControl_FootPlacement(wchar_t const *)
 //   0x6f4d90  public: static class UClass * __cdecl UDisSkelControl_FootPlacement::StaticClassNoInline(void)
+
+// Agent GF (PHASE19 GF): the entry CalculateNewBoneTransforms (2012 0x6ed860), EnableFootPlacement (0x6d01c0) and
+// LockFootPlacement (0x6d0230); see Inc/CppText/UDisSkelControl_FootPlacement.h for why the entry outputs nothing. The rest of
+// this unit stays a skeleton (the IK bodies CalculateNewBoneTransformsOriginal 0x6e4d70 and CalculateNewBoneTransformsNewComer
+// 0x6e8ed0 and their 24 helpers are inventoried in agentGF_status.csv).
+
+#include "DishonoredGame.h"
+#include "gfarmsdiag.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGF_SkelControlFootPlacement()
+{
+}
+
+// 2012 0x6ed860: the bone and the component are recorded as retail does; the two IK bodies are not ported, so no transform is
+// produced and USkeletalMeshComponent applies nothing for this control (the reference USkelControlFootPlacement IK no longer runs)
+void UDisSkelControl_FootPlacement::CalculateNewBoneTransforms( INT BoneIndex, USkeletalMeshComponent* SkelComp, TArray<FBoneAtom>& OutBoneTransforms )
+{
+	m_FootBoneIdx = BoneIndex;
+	m_pSkelComp = SkelComp;
+	GFDIAG_ONCE( TEXT("UDisSkelControl_FootPlacement::CalculateNewBoneTransforms: CalculateNewBoneTransformsOriginal (2012 0x6e4d70) and NewComer (0x6e8ed0) are not ported; the control outputs no transform") );
+}
+
+// 2012 0x6d01c0: enabling from an inactive control (or instantly) clears the two initialised bits so the properties are rebuilt;
+// instant goes through the strength, otherwise through the active flag
+void UDisSkelControl_FootPlacement::EnableFootPlacement( UBOOL _bEnable, UBOOL _bSetInstantly )
+{
+	if( _bEnable && ( ControlStrength < 0.0001f || _bSetInstantly ) )
+	{
+		m_bIsInitialized = FALSE;
+		m_bInitialized = FALSE;
+	}
+	if( !_bSetInstantly )
+	{
+		SetSkelControlActive( _bEnable );
+		return;
+	}
+	SetSkelControlStrength( _bEnable ? 1.f : 0.f, 0.f );
+}
+
+// 2012 0x6d0230: a lock count, and a lock clears the broken-lock bit
+void UDisSkelControl_FootPlacement::LockFootPlacement( UBOOL _bLock )
+{
+	m_iLockCount += _bLock ? 1 : -1;
+	if( _bLock )
+	{
+		m_bLockBroken = FALSE;
+	}
+}

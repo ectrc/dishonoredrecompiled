@@ -115,3 +115,26 @@ public:
 	void StopSneaking( UBOOL bSkipTransitions );
 	void CancelAllActivePowers() const;
 	UDishonoredNativeStateMachine* GetPlayerMasterFSM() const { return m_pPlayerMasterFSM; }
+
+// ---- agent GF (PHASE19 GF): the first tick phase, and the arms' camera pass ----
+// DISHONORED(port): Tick_Begin 2012 0x715a00 / 2013 0x6b0850 (269 B both; the 2013 one matched by neighbours and checked: the same
+// mesh-transform update, the camera bone written into the audio-log dummy actor, the Tick_PlayerAction vtable call, the corpse-drop
+// bits). OnCameraUpdate_Derived 2012 0x71e3b0 / 2013 0x6abdd0 (1227 / 1242 B; the 2013 body checked: the same three skel controls off
+// m_pCameraTweaks, SetOffset / SetFOV / DisableFOV, the upper FSM and the powers on pass 1). Bodies in dishonoredplayerpawn.cpp and
+// dishonoredplayerpawn_camera.cpp.
+public:
+	virtual UBOOL Tick_Begin( FLOAT _fDeltaTime, ELevelTick _TickType );
+	virtual void OnCameraUpdate_Derived( const struct FDishonoredViewTarget& _VT, INT _PassCount );
+// ---- agent GF (PHASE19 GF, the coordinator's message from GB): the player's root-motion mode overrides ----
+// DISHONORED(port): StopRootMotionMode 2012 0x6facb0 (15 B, protected virtual; 2013 0x6a1af0, unnamed, by vtable neighbours) =
+// ChangeAnimStateMotionModes( RMM_Ignore, RMRM_Ignore ); ChangeAnimStateMotionModes 2012 0x6fae70 (222 B) / 2013 0x6ab1d0 (375 B,
+// unnamed, matched by vtable and checked by shape: Mesh +908 RootMotionRotationMode, +902 PendingRMM, the pawn's +2234
+// m_NextPhysicsMode, setPhysics at vtable +536; the 2013 body also stops an active Blink power on the RMM_Translate side).
+// Without them GA's unconditional base StopRootMotionMode put the player mesh in RMM_Velocity at the ride's first second and
+// APawn::physWalking took Velocity from the zero root-motion delta: the player could not walk after the ride.
+// Bodies in dishonoredplayerpawn_action.cpp.
+public:
+	virtual void ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _RootRotation );
+protected:
+	virtual void StopRootMotionMode();
+public:

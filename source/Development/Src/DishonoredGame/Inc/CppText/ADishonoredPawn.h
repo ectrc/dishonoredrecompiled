@@ -145,3 +145,14 @@ public:
 	FVector GetSpineBendRefPoint() const;
 protected:
 	void Tick_Body_CachedPositions( FLOAT _fDeltaTime );
+
+// ---- agent GF (PHASE19 GF): the first tick phase and the camera pass ----
+// DISHONORED(port): Tick_Begin is the first of retail's eight tick phases (ADishonoredPawn::Tick 2012 0x790c10 calls it through the
+// vtable before Tick_Water); the base body 0x745410 (8 B, ICF-folded with IDisRatTargetInterface::IsRatSocketValid) returns TRUE and
+// the player overrides it (0x715a00). OnCameraUpdate 2012 0x7aa7a0 / 2013 0x749f50 (54 B, same): the derived hook, then on pass 1
+// the inventory's. The derived hook's base is empty in retail (the player's is 0x71e3b0). Bodies in dishonoredpawn.cpp and
+// dishonoredpawn_camera.cpp.
+public:
+	virtual UBOOL Tick_Begin( FLOAT _fDeltaTime, ELevelTick _TickType );
+	void OnCameraUpdate( const struct FDishonoredViewTarget& _VT, INT _PassCount );
+	virtual void OnCameraUpdate_Derived( const struct FDishonoredViewTarget& _VT, INT _PassCount ) {}

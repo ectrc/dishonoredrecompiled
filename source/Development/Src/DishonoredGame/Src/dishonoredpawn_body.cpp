@@ -284,3 +284,31 @@ FVector ADishonoredPawn::GetSpineBendRefPoint() const
 {
 	return Location;
 }
+
+// ---- agent GF (PHASE19 GF): the component tick-end phase ----
+
+// DISHONORED(port): 2012 0x799d10 (71 B; 2013 unnamed, reached through the vtable): after the base, a component that is not slaved to a
+// parent animation component runs the tick-end hook chain. Retail also skips it under a per-component flag this tree does not name
+// (the dword after m_pSoulMaterial) and then syncs the NPC's physics sensor (ADishonoredNPCPawn::SyncPhysicsSensor, unported).
+void UDisSkeletalMeshComponent::TickEnd( FLOAT DeltaTime )
+{
+	Super::TickEnd( DeltaTime );
+	if( !ParentAnimComponent )
+	{
+		UpdateChildForTickEnd();
+	}
+}
+
+// DISHONORED(port): 2012 0x794e50 / 2013 0x750f20 (179 B, same bytes): the derived hook, then every attached player skeletal component's
+void UDisSkeletalMeshComponent::UpdateChildForTickEnd()
+{
+	UpdateChildForTickEnd_Derived();
+	for( INT Index = 0; Index < Attachments.Num(); Index++ )
+	{
+		UDishonoredPlayerSkeletalComponent* Child = Cast<UDishonoredPlayerSkeletalComponent>( Attachments(Index).Component );
+		if( Child )
+		{
+			Child->UpdateChildForTickEnd();
+		}
+	}
+}

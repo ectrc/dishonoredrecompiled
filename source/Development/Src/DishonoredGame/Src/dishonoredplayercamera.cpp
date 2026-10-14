@@ -121,8 +121,9 @@ void ADishonoredPlayerCamera::ApplyGameSettings( const ArkSettingsParameters* Pa
 	frame-step pause copy (m_bSingleStep / m_bSingleStepPaused, +752 in 2012), the teleport detection off the mesh's tick
 	tag, the collision branch (m_bCollisionEnabled: the cylinder resize through every active influence's
 	AdjustCameraCollision, CamMoveSmooth 0x700120, HandleCollision 0x709e60, the sudden-collision smoothing), the per-pass
-	OnCameraUpdate on the controller (0x6fa840: the arm placement and the crosshair, both unported), the rain box and its
-	impacts, the FollowProjectile pass count, ApplyDebugCam_Native. The camera here keeps m_PassCount at 0.
+	the rain box and its
+	impacts, the FollowProjectile pass count, ApplyDebugCam_Native. Agent GF (PHASE19 GF) added the per-pass OnCameraUpdate on the
+	controller (0x6fa840) after the placement, and the second pass (m_PassCount 1) from UDishonoredPlayerSkeletalComponent::UpdateChildForTickEnd_Derived.
 -----------------------------------------------------------------------------*/
 
 #include "fzsoireediag.h"
@@ -329,7 +330,12 @@ void ADishonoredPlayerCamera::UpdateViewTarget( FTViewTarget& OutVT, FLOAT Delta
 		{
 			GWorld->FarMoveActor( this, m_DishonoredVTSettings.m_NonAdditive_Pos, FALSE, TRUE, FALSE );
 		}
-		m_PassCount = 0;
+		// agent GF (PHASE19 GF): retail's per-pass OnCameraUpdate on the controller (2012 0x7135c0 +0x899: the gathered view target, the pass count)
+		ADishonoredPlayerController* DisPC = Cast<ADishonoredPlayerController>( PCOwner );
+		if( DisPC )
+		{
+			DisPC->OnCameraUpdate( VT, m_PassCount );
+		}
 		DisFZReportCamera( this, OutVT, OwnerPawn, DeltaTime );
 		return;
 	}

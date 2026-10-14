@@ -36,3 +36,6 @@ public:
 	UDishonoredInventoryItem* FindItemByClass( const UClass* const _pItemClass, UBOOL _bExactMatch, UBOOL _bSkipEmptyHands, UBOOL _bSkipNonRemovable, BYTE _EquipUsage ) const;
 	UBOOL HasItemByClass( const UClass* _pItemClass, UBOOL _bExactMatch ) const;
 	UDishonoredInventoryItem* FindEquippableItem( const UClass* const _pItemClass, BYTE _EquipUsage ) const;
+
+	// agent GF (PHASE19 GF): OnCameraUpdate 2012 0x85a730 / 2013 0x817c90 (118 B, the same): every slot's item that should tick gets the view
+	void OnCameraUpdate( const struct FDishonoredViewTarget& _rVT );

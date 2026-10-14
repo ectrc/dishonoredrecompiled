@@ -2355,6 +2355,9 @@ extern void DishonoredLinkFZ_UStatePlayerMasterBase();
 extern void DishonoredLinkFZ_UStatePlayerMasterInDialog();
 extern void DishonoredLinkFZ_UStatePlayerMasterSoiree();
 extern void DishonoredLinkFZ_UStatePlayerMasterWalk();
+extern void DishonoredLinkGF_InventoryItem();
+extern void DishonoredLinkGF_PlayerSkeletalComponent();
+extern void DishonoredLinkGF_SkelControlFootPlacement();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBase();
 extern void DishonoredLinkUDisAISubProcessHeadTrackPause();
@@ -2385,6 +2388,9 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkFZ_UStatePlayerMasterInDialog,
 	&DishonoredLinkFZ_UStatePlayerMasterSoiree,
 	&DishonoredLinkFZ_UStatePlayerMasterWalk,
+	&DishonoredLinkGF_InventoryItem,
+	&DishonoredLinkGF_PlayerSkeletalComponent,
+	&DishonoredLinkGF_SkelControlFootPlacement,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,
 	&DishonoredLinkUDisAISubProcessHeadTrackBase,
 	&DishonoredLinkUDisAISubProcessHeadTrackPause,

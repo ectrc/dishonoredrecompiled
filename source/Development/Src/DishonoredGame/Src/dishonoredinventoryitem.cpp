@@ -83,3 +83,36 @@
 //   0x861370  public: virtual void __thiscall UDishonoredInventoryItem::FindAnimStatePickers(class UDisAnimStateComponent *, class USkeletalMeshComponent *, class TArrayNoInit<struct FDisItemAnimState_PickerInfo> &, unsigned int)
 //   0x8619d0  public: static class UClass * __cdecl UDishonoredInventoryItem::GetPrivateStaticClassUDishonoredInventoryItem(wchar_t const *)
 //   0x861a60  public: static class UClass * __cdecl UDishonoredInventoryItem::StaticClassNoInline(void)
+
+// Agent GF (PHASE19 GF): ShouldItemTick (2012 0x853da0) and OnCameraUpdate (0x859da0). The rest of this unit stays a skeleton; the
+// item contexts (UDisItemContext, slot 77 of its vtable) and UpdateMeleeExtents (dishonoredinventoryitem_collision.cpp) have no bodies.
+
+#include "DishonoredGame.h"
+
+// the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
+void DishonoredLinkGF_InventoryItem()
+{
+}
+
+// the tweaks' tick mode: 0 when equipped (a usage), 1 when socketed, 2 when both, 3 always, 4 never
+UBOOL UDishonoredInventoryItem::ShouldItemTick() const
+{
+	const UDisTweaks_InventoryItem* Tweaks = Cast<UDisTweaks_InventoryItem>( GetTweaks() );
+	if( !Tweaks )
+	{
+		Tweaks = (UDisTweaks_InventoryItem*)UDisTweaks_InventoryItem::StaticClass()->GetDefaultObject();
+	}
+	switch( Tweaks ? Tweaks->m_ItemTickMode : 4 )
+	{
+	case 0: return m_EquipUsage != 0;
+	case 1: return m_CurSocket != 0;
+	case 2: return m_CurSocket != 0 && m_EquipUsage != 0;
+	case 3: return TRUE;
+	default: return FALSE;
+	}
+}
+
+void UDishonoredInventoryItem::OnCameraUpdate( const FDishonoredViewTarget& _rVT )
+{
+	OnCameraUpdate_Derived( _rVT );
+}

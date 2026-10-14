@@ -110,6 +110,7 @@
 //   0x6fa840  public: void __thiscall ADishonoredPlayerController::OnCameraUpdate(struct FDishonoredViewTarget const &, int)
 
 #include "DishonoredGame.h"
+#include "gfarmsdiag.h"
 #include "dishonoredutilities.h"
 #include "disaicensus.h"
 #include "disheadcensus.h"
@@ -3041,4 +3042,18 @@ void ADishonoredPlayerController::EnableControllerInput( INT _Mask, UBOOL _bEnab
 	{
 		m_InputEnableMask[_Level] &= ~_Mask;
 	}
+}
+
+// ---- agent GF (PHASE19 GF): the camera pass ----
+
+// DISHONORED(port): 2012 0x6fa840 / 2013 0x6ba860. The pawn is the controller's; the tracking, crosshair and blinded-effect callees are
+// skeletons (dishonoredplayercontroller_tracking.cpp and this unit's banner), so only the pawn's half runs.
+void ADishonoredPlayerController::OnCameraUpdate( const FDishonoredViewTarget& _VT, INT _PassCount )
+{
+	ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( Pawn );
+	if( DisPawn )
+	{
+		DisPawn->OnCameraUpdate( _VT, _PassCount );
+	}
+	GFDIAG_ONCE( TEXT("ADishonoredPlayerController::OnCameraUpdate: TickCameraTracking (pass 0), UpdateCrosshair and UpdateBlindedEffect (pass 1) are not ported") );
 }

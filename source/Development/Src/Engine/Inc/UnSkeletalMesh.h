@@ -1033,6 +1033,10 @@ protected:
 	virtual void Detach( UBOOL bWillReattach = FALSE );
 	virtual void BeginPlay();
 	virtual void Tick(FLOAT DeltaTime);
+	// DISHONORED(port): agent GF (PHASE19 GF) - hand-added. Retail's component tick-end phase (UDisSkeletalMeshComponent::TickEnd
+	// 2012 0x799d10 overrides a USkeletalMeshComponent::TickEnd the retail engine calls after the component ticked); the reference
+	// engine has no such phase, so Tick calls it at its end. Empty here; DishonoredGame overrides it.
+	virtual void TickEnd( FLOAT DeltaTime ) {}
 
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent);	
 
