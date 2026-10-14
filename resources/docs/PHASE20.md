@@ -3,7 +3,8 @@
 Wave 23 (`PHASE19.md`) proved the boat ends where its data says and put the player on its socket (GB), made a
 walking NPC select his walk (GC), found and fixed the walk-after-ride regression (GB → GF), fixed the fade after the
 first Empress scene and named the spawn death (GE), ported the arms pipeline and found there is nothing to equip
-(GF), and GD's go-to/`Use` result is in its outcome section. What the first mission still cannot do, each measured
+(GF), made the go-to arrive and `Use` reach the Empress conversation while finding that every behaviour had been
+filtering every stim away since wave 14 (GD). What the first mission still cannot do, each measured
 by a wave-23 package and left because its builds were spent:
 
 1. **Every run loses ~60 health at spawn, and one in seven dies** — the player is possessed before the level's
@@ -90,11 +91,21 @@ binds, through `game_input.py`), capture arms + sword in first person; during th
 the arms are hidden; after it the sword is back. GF's `OnCameraUpdate_Derived` arm offset and arms FOV become
 measurable here — report their values against retail's tweaks.
 
-### GK — whatever the first act stops on, plus GD's residue
+### GK — the captain walks: `NPCPawn_26`'s start poly, and the stop-animation system
 
-Filled in by the coordinator after the first act and GD's outcome: the captain's go-to arrival, `Use`, Worker A's
-poly-edge start, `FDisComponentRetargeting` for the guards' `MAT_Attach` (GB), `ASkeletalMeshActorMAT::MAT_SetPhysics`
-+ `InitGroupInst`'s `bBecomeDynamic` (GB), the attachment instance's `LoadData/SaveData`.
+GD proved the go-to on `NPCPawn_25` (Success) and `Use` on the captain, but `AIGoToActor_3 'Curnow GoTo 1'` — the
+captain walking to the player after `Soiree_BoatRide_Completed` — never fires: `NPCPawn_26` stands on the ride boat
+and the path query answers `no start poly at 10092/23057 (nearest mesh point 0.56 uu away)`, GC's edge-point
+bounds test (`UpdateStartLocAndVerifyIfOnValidPoly` / `UNavigationHandle::GetPylonAndPolyFromPos`; retail 2012
+`0x57f8a0` is DN's body line for line — so the difference is upstream: the point handed in, or the nav mesh's
+poly that retail finds for a pawn standing on a based, moved actor). Also Worker A (`NPCPawn_4`, same symptom,
+nearest 0.13). Fix faithfully; then the captain's go-to must `Success` and the whole chain runs without a
+teleport (the first act). Second: the stop-animation system behind GD's two stand-ins
+(`arkcomponentlocomotionrootmove.cpp`, 15 functions) so the pawn lands on the mark as retail does. Also GB's
+residue if reached: `FDisComponentRetargeting` for the guards' `MAT_Attach`, `ASkeletalMeshActorMAT::MAT_SetPhysics`
+(2012 `0x3317c0`) + `InitGroupInst`'s `bBecomeDynamic`, the attachment instance's `LoadData/SaveData`.
+Acceptance: `-fvdiag` shows `AIGoToActor_3` → `Success (Last)` and the captain beside the player; `-gadiag` shows
+0 `pathfail` lines for `_26` and `_4`.
 
 ## Rules for agents
 

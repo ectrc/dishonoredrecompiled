@@ -1275,6 +1275,94 @@ void UDishonoredAIBrain::OnTouchedEnemyStimAccepted( const FAIStimStruct_Touched
 }
 
 /*-----------------------------------------------------------------------------
+	agent GD (PHASE19 GD): the player's Use on this brain's pawn
+-----------------------------------------------------------------------------*/
+
+#include "gddiag.h"
+
+// DISHONORED(port): 2013 rva 0x723640 (2012 0x758500, 309 B), transcribed. Only a player pawn counts; a pawn frozen by bend time
+// does nothing; when the crosshair said CHS_OVER_USABLE and the two are not enemies the pawn's DDH_PLAYER_USED dialog hook
+// fires with the player as initiator - the conversation system's "Use" entry, which is what the captain's 'Three days
+// late...' and the Empress's 'Give_Letter' hang off (agentFW.md §3) - and then the brain is handed a PlayerUsed stim.
+// DISHONORED(bringup): DisIsActorFrozenByBendTimePower (2013 0xbbf370) is "bend time is on" here (DisIsBendTimeOn).
+void UDishonoredAIBrain::HandleUsedByOther( ADishonoredPawn* const _pUsingPawn, eCrossHairStatus _CrosshairStatus )
+{
+	if( !_pUsingPawn || !_pUsingPawn->IsA( ADishonoredPlayerPawn::StaticClass() ) || !m_pOwningPawn )
+	{
+		return;
+	}
+	if( DisIsBendTimeOn() )
+	{
+		return;
+	}
+	const BYTE Relationship = m_pOwningPawn->DetermineRelationship( *_pUsingPawn );
+	if( DisGDDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): gddiag %s HandleUsedByOther by %s status %d relationship %d -> %s"), *m_pOwningPawn->GetName(), *_pUsingPawn->GetName(),
+			(INT)_CrosshairStatus, (INT)Relationship, ( _CrosshairStatus == CHS_OVER_USABLE && Relationship != Relationship_Enemy ) ? TEXT("FireDialogHook DDH_PLAYER_USED") : TEXT("no hook") );
+	}
+	if( _CrosshairStatus == CHS_OVER_USABLE && Relationship != Relationship_Enemy )
+	{
+		m_pOwningPawn->FireDialogHook( DDH_PLAYER_USED, _pUsingPawn );
+	}
+	FAIStimStruct_PlayerUsed Stim = DisMakeStim< FAIStimStruct_PlayerUsed >( EAIStimID_PlayerUsed );
+	Stim.m_CrosshairStatus = _CrosshairStatus;
+	DisHandleAIStim( this, Stim, this );
+}
+
+// DISHONORED(port): 2013 rva 0x70b630 (2012 0x7477b0, 149 B), the 2013 shape: the answer starts as CHS_OVER_CANNOT_USE; bend time,
+// no player, or a swimming player refuse; otherwise the pawn's conversation component is asked whether DDH_PLAYER_USED has a
+// line for this player (CheckDialogHook), and a found line on a non-enemy allows the use - Found is CHS_OVER_USABLE,
+// Found_But_Busy CHS_OVER_USABLE_BUT_BUSY. 2012 lacked the swim test and the CANNOT_USE default.
+UBOOL UDishonoredAIBrain::AllowPlayerUse( eCrossHairStatus* const _pOutCrosshairStatus ) const
+{
+	if( _pOutCrosshairStatus )
+	{
+		*_pOutCrosshairStatus = CHS_OVER_CANNOT_USE;
+	}
+	ADishonoredPlayerPawn* Player = ADishonoredPlayerPawn::s_pInstance;
+	if( DisIsBendTimeOn() || !Player || !m_pOwningPawn )
+	{
+		return FALSE;
+	}
+	if( Player->GetPlayerMasterFSM() && Player->GetPlayerMasterFSM()->IsCurState( UStatePlayerMasterSwim::StaticClass(), TRUE ) )
+	{
+		return FALSE;
+	}
+	const eDisDialogCheckOnly Check = m_pOwningPawn->CheckDialogHook( DDH_PLAYER_USED, Player );
+	const UBOOL bAllowed = Check != eDisDialogCheckOnly_NotFound && m_pOwningPawn->DetermineRelationship( *Player ) != Relationship_Enemy;
+	if( _pOutCrosshairStatus && bAllowed )
+	{
+		if( Check == eDisDialogCheckOnly_Found )
+		{
+			*_pOutCrosshairStatus = CHS_OVER_USABLE;
+		}
+		else if( Check == eDisDialogCheckOnly_Found_But_Busy )
+		{
+			*_pOutCrosshairStatus = CHS_OVER_USABLE_BUT_BUSY;
+		}
+	}
+	return bAllowed;
+}
+
+// DISHONORED(port): 2013 rva 0x70c1e0 (2012 0x74a600, 145 B), transcribed: a pawn still in the Surprised master state is
+// Surprised, one being choked is Choked, otherwise the current behaviour answers (the base behaviour's: Unaware).
+// DISHONORED(bringup): UStateNPCMasterSurprised::IsStillSurprised is not ported - the Surprised state counts while it is current.
+BYTE UDishonoredAIBrain::GetAwarenessLevel() const
+{
+	UDishonoredNativeState* Current = m_pOwningPawn && m_pOwningPawn->m_pNPCMasterFSM ? m_pOwningPawn->m_pNPCMasterFSM->GetCurrentlyActiveState() : NULL;
+	if( Current && Current->IsA( UStateNPCMasterSurprised::StaticClass() ) )
+	{
+		return EAIAwareness_Surprised;
+	}
+	if( Current && Current->IsA( UStateNPCMasterBeingChoked::StaticClass() ) )
+	{
+		return EAIAwareness_Choked;
+	}
+	return m_pCurrentBehavior ? m_pCurrentBehavior->GetAwarenessLevel() : (BYTE)EAIAwareness_Unaware;
+}
+
+/*-----------------------------------------------------------------------------
 	The top attention target and its level (agent GE, PHASE19 GE).
 
 	DISHONORED(port): decompiled whole from both databases (build/agentGE/decomp2012: 0x75ba20, 0x75a420, 0x757eb0,

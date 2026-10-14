@@ -188,13 +188,42 @@ void UDishonoredAIBehavior::CallInitBehavior( UDishonoredAIBrain* const _pAIBrai
 	GDisAIBehaviorInits++;
 }
 
-// DISHONORED(port): 2013 rva 0x6e4b60 (2012 0x12e290, 27 bytes): the base behaviour has no filter mask of its own and
-// hands the same NULL out for all three, which is what makes CallFilterAIStim's three guards the whole filter.
+// DISHONORED(port): agent GD. Retail's UDishonoredAIBehavior::BuildBehaviorFilterStimMasks (2013 rva 0x6e4b60, 2012 0x12e290,
+// 27 bytes) hands NULL out for all three, and EVERY concrete behaviour overrides it with the same body on its own statics
+// (UDisBehaviorGoTo 2013 0x6edb90 / 2012 0x74c850, UDisBehaviorGoTo_Base 0x74c900, Patrol 0x728450-region, ...): the class's
+// BuildFilterStimMask, copied once into a static complete mask, BuildInternalFilterStimMasks rolling the sub-processes' and
+// sub-states' interests into it, both statics handed back. This tree had only the base body, so no behaviour ever had a
+// complete mask and CallFilterAIStim dropped every stim before the delegate - DestinationReached included, which is why no
+// go-to or patrol ever learned it had arrived (agentGD.md §1). One body here, keyed by class, is those overrides.
 const BYTE* UDishonoredAIBehavior::BuildBehaviorFilterStimMasks( const BYTE*& _rOutSubProcessesMask, const BYTE*& _rOutCompleteMask )
 {
-	_rOutSubProcessesMask = NULL;
-	_rOutCompleteMask = NULL;
-	return NULL;
+	struct FClassMasks
+	{
+		BYTE m_SubProcesses[EAIStimID_MAX];
+		BYTE m_Complete[EAIStimID_MAX];
+		UBOOL m_bInitialized;
+	};
+	static TMap<UClass*, FClassMasks*> s_MasksByClass;
+	const BYTE* Mask = BuildFilterStimMask();
+	FClassMasks* Masks = s_MasksByClass.FindRef( GetClass() );
+	if( !Masks )
+	{
+		Masks = new FClassMasks;
+		appMemzero( Masks, sizeof( FClassMasks ) );
+		s_MasksByClass.Set( GetClass(), Masks );
+	}
+	if( !Masks->m_bInitialized )
+	{
+		if( Mask )
+		{
+			appMemcpy( Masks->m_Complete, Mask, EAIStimID_MAX );
+		}
+		BuildInternalFilterStimMasks( Masks->m_SubProcesses, Masks->m_Complete );
+		Masks->m_bInitialized = TRUE;
+	}
+	_rOutSubProcessesMask = Masks->m_SubProcesses;
+	_rOutCompleteMask = Masks->m_Complete;
+	return Mask;
 }
 
 /*-----------------------------------------------------------------------------

@@ -206,3 +206,15 @@ UBOOL IDisInteractableInterface::AttemptCannotUseInteract( ADishonoredPawn* Pawn
 	}
 	return TRUE;
 }
+
+// DISHONORED(bringup, agent GD): AttemptAltInteract (called by UDisUseState_AltInteract::TickState once the alt-interact time has
+// run) and EndInteract (2013 rva 0x6307b0, called on the last latent interactable when Use is pressed with nothing under the
+// crosshair) are named, not ported: nothing on the first mission's use path reaches either.
+UBOOL IDisInteractableInterface::AttemptAltInteract( ADishonoredPawn* const Pawn )
+{
+	return FALSE;
+}
+
+void IDisInteractableInterface::EndInteract( const FEndInteractParams& Params )
+{
+}

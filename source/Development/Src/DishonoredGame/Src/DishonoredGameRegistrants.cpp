@@ -2338,6 +2338,8 @@ extern void DishonoredLinkDisSeqActStartSpawn();
 extern void DishonoredLinkDisSeqCondCompareBoolExtended();
 extern void DishonoredLinkDisSeqCondCompareTweaks();
 extern void DishonoredLinkDisSeqVarSpawnerPawn();
+extern void DishonoredLinkDisUseStates();
+extern void DishonoredLinkDishonoredNPCPawnInteract();
 extern void DishonoredLinkFZ_ArkAnimNodeBlendPose();
 extern void DishonoredLinkFZ_CameraAnimDriven();
 extern void DishonoredLinkFZ_CameraInfluence();
@@ -2371,6 +2373,8 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkDisSeqCondCompareBoolExtended,
 	&DishonoredLinkDisSeqCondCompareTweaks,
 	&DishonoredLinkDisSeqVarSpawnerPawn,
+	&DishonoredLinkDisUseStates,
+	&DishonoredLinkDishonoredNPCPawnInteract,
 	&DishonoredLinkFZ_ArkAnimNodeBlendPose,
 	&DishonoredLinkFZ_CameraAnimDriven,
 	&DishonoredLinkFZ_CameraInfluence,

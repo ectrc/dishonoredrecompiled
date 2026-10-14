@@ -109,6 +109,12 @@ public:
 	// ---- agent FV (PHASE18 FV): 2013 rva 0x704140 (2012 0x747b80), what an uninterruptable go-to does with a touched enemy ----
 	void OnTouchedEnemyStimAccepted( const struct FAIStimStruct_TouchedEnemy& _rStim );
 
+	// ---- agent GD (PHASE19 GD): the player's Use on this brain's pawn. Bodies in dishonoredaibrain.cpp ----
+	// HandleUsedByOther 2013 rva 0x723640 (2012 0x758500, 309 B), AllowPlayerUse 0x70b630 (0x7477b0, 149 B).
+	void HandleUsedByOther( class ADishonoredPawn* const _pUsingPawn, enum eCrossHairStatus _CrosshairStatus );
+	UBOOL AllowPlayerUse( enum eCrossHairStatus* const _pOutCrosshairStatus ) const;
+	// GetAwarenessLevel 2013 rva 0x70c1e0 (2012 0x74a600, 145 B)
+	BYTE GetAwarenessLevel() const;
 	// ---- agent GE (PHASE19 GE): the top attention target and its level - the asker of the head-track look-at ----
 	// SetTopAttnTarget 2013 rva 0x725e50 (2012 0x75ba20), ChangeTopAttnTargetAttentionLevel 0x725890 (0x75a420),
 	// OnIncreaseTopAttnTargetAttentionLevel 0x724d00 (0x757eb0), OnDecreaseTopAttnTargetAttentionLevel 0x722ec0 (0x757d30),

@@ -50,6 +50,7 @@ public:
     //## END PROPS DisUseState_Base
 
     DECLARE_ABSTRACT_CLASS(UDisUseState_Base,UDishonoredNativeState,0,DishonoredGame)
+#include "CppText/UDisUseState_Base.h"
 };
 
 // DishonoredGame.DisUseState_AltInteract: retail sizeof 80, reflected span 68..80 (2012 PDB sizeof 80)
@@ -62,6 +63,7 @@ public:
     //## END PROPS DisUseState_AltInteract
 
     DECLARE_CLASS(UDisUseState_AltInteract,UDisUseState_Base,0,DishonoredGame)
+#include "CppText/UDisUseState_AltInteract.h"
 };
 
 // DishonoredGame.DisUseState_Finished: retail sizeof 68, reflected span 68..68 (2012 PDB sizeof 68)
@@ -72,6 +74,7 @@ public:
     //## END PROPS DisUseState_Finished
 
     DECLARE_CLASS(UDisUseState_Finished,UDisUseState_Base,0,DishonoredGame)
+#include "CppText/UDisUseState_Finished.h"
 };
 
 // DishonoredGame.DisUseState_Holster: retail sizeof 72, reflected span 68..72 (2012 PDB sizeof 72)
@@ -83,6 +86,7 @@ public:
     //## END PROPS DisUseState_Holster
 
     DECLARE_CLASS(UDisUseState_Holster,UDisUseState_Base,0,DishonoredGame)
+#include "CppText/UDisUseState_Holster.h"
 };
 
 // DishonoredGame.DisUseState_WaitForInput: retail sizeof 68, reflected span 68..68 (2012 PDB sizeof 68)
@@ -93,6 +97,7 @@ public:
     //## END PROPS DisUseState_WaitForInput
 
     DECLARE_CLASS(UDisUseState_WaitForInput,UDisUseState_Base,0,DishonoredGame)
+#include "CppText/UDisUseState_WaitForInput.h"
 };
 
 #undef DECLARE_CLASS

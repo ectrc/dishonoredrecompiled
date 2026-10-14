@@ -144,11 +144,13 @@ void UDisBehaviorGoTo_Base::TickBehavior( FLOAT _fDeltaSeconds )
 {
 	if( DisFVDiagEnabled() && m_pOwningBrain && m_pOwningBrain->m_pOwningPawn )
 	{
-		static FLOAT s_fNextReport = 0.f;
+		// DISHONORED(bringup, agent GD): one line a second PER go-to (FV's single static hid every go-to but the first when two ran at once)
+		static TMap<UObject*, FLOAT> s_NextReportByBehavior;
 		const FLOAT Now = GWorld && GWorld->GetWorldInfo() ? GWorld->GetWorldInfo()->TimeSeconds : 0.f;
-		if( Now >= s_fNextReport )
+		FLOAT* pNext = s_NextReportByBehavior.Find( this );
+		if( !pNext || Now >= *pNext )
 		{
-			s_fNextReport = Now + 1.f;
+			s_NextReportByBehavior.Set( this, Now + 1.f );
 			ADishonoredNPCPawn* Pawn = m_pOwningBrain->m_pOwningPawn;
 			FArkComponentLocomotion* Loco = Pawn->GetComponentLocomotion();
 			const FVector Dest = m_pDestinationActor ? m_pDestinationActor->Location : m_DestinationLocation;

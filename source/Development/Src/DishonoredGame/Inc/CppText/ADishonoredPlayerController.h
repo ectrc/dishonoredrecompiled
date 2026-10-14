@@ -101,6 +101,18 @@ public:
 		UBOOL bHideHUD, UBOOL bAffectsMovement, UBOOL bAffectsTurning, UBOOL bAffectsButtons,
 		UBOOL bHideLetterbox, UBOOL bAllowProjectilesAndExplosions );
 
+	// ---- agent GD (PHASE19 GD): the crosshair and the use path. Bodies in dishonoredplayercontroller_use.cpp ----
+	// UpdateCrosshair 0x6b7b80 (0x6f7910), SetCrosshairActor 0x6a6280
+	// (0x6e2090), GetPlayerCrosshairTarget 0x6a5ff0 (0x6e1e00), FindInteractableActor 0x6b70f0 (0x6f73f0),
+	// CanInteractWithInteractable 0x6a2dc0 (0x6d6cc0).
+public:
+	void UpdateCrosshair( const struct FDishonoredViewTarget& _VT );
+	void GetPlayerCrosshairTarget( struct FImpactInfo& _rImpactInfoOut, INT _ExcludeDisTraceMask, const FVector* _pOverrideDir ) const;
+	class AActor* FindInteractableActor( const struct FDishonoredViewTarget& _VT );
+private:
+	UBOOL CanInteractWithInteractable( const class IDisInteractableInterface& _rInteractable, const struct FCanInteractParams& _rInteractParams, const FVector& _rStartLoc, const FVector& _rHitLoc ) const;
+	void SetCrosshairActor( class AActor* _pActor, enum eCrossHairStatus _Status, UBOOL _bCanInteract );
+public:
 // ---- agent GF (PHASE19 GF): the camera pass ----
 // DISHONORED(port): OnCameraUpdate 2012 0x6fa840 / 2013 0x6ba860 (104 / 155 B): the pawn's OnCameraUpdate, then on pass 0
 // TickCameraTracking (0x6fa400; the 2013 body builds its target from the pawn's X/Y and the view's Z) and on pass 1 UpdateCrosshair

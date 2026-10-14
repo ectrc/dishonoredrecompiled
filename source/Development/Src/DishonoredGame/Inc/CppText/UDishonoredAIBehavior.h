@@ -64,6 +64,9 @@ public:
 
 	// The stim masks: one byte per EAIStimID saying whether this behaviour cares. Built once by CallInitBehavior.
 	virtual const BYTE* BuildEvaluateStimMask() { return NULL; }
+	// DISHONORED(port): agent GD. The per-class filter mask every retail behaviour builds its masks from (UDisBehaviorGoTo_Base
+	// 2012 0x745650, UDisBehaviorIdle 0x7284f0, ...); the five ports that already declare it now override this.
+	virtual const BYTE* BuildFilterStimMask() { return NULL; }
 	virtual const BYTE* BuildBehaviorFilterStimMasks( const BYTE*& _rOutSubProcessesMask, const BYTE*& _rOutCompleteMask );
 	virtual const BYTE* BuildShouldFinishWhileDormantStimMask() { return NULL; }
 

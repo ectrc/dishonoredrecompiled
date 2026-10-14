@@ -48,3 +48,14 @@ public:
 	void ClearHighlightBit( INT Bit );
 
 	void WitnessInteraction( class AActor* const InteractedWith, class ADishonoredPawn* const Pawn );
+
+	// DISHONORED(port): agent GD (PHASE19 GD), the slots the player's use path calls, read off ADishonoredNPCPawn's interface
+	// vtable (2013 0x1141458): +12 GetCrosshairStatus (ADishonoredNPCPawn 2013 0xb59c40 / 2012 0x7c02b0; ADisPickup_Base's own
+	// declaration overrides it now), +36 CanAltInteract (NPC 0xb679d0), +40 GetAltInteractTime (base 0xb484d0: 0). The
+	// non-virtual AttemptAltInteract and EndInteract (2013 0xa307b0) are named rather than ported: nothing on the first
+	// mission's use path alt-interacts, and the latent-interactable list they serve is never filled here.
+	virtual enum eCrossHairStatus GetCrosshairStatus( class ADishonoredPawn* Pawn ) const { return CHS_OVER_NEUTRAL; }
+	virtual UBOOL CanAltInteract( class ADishonoredPawn* Pawn ) const { return FALSE; }
+	virtual FLOAT GetAltInteractTime() const { return 0.f; }
+	UBOOL AttemptAltInteract( class ADishonoredPawn* const Pawn );
+	void EndInteract( const struct FEndInteractParams& Params );

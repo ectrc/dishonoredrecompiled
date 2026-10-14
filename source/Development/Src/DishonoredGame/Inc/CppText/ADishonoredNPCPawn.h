@@ -138,6 +138,16 @@ protected:
 	UBOOL IsActionSpineBendingEnabled() const;
 	UBOOL IsSlopeOffsettingEnabled() const;
 	UBOOL IsFootPlacementEnabled() const;
+
+	// ---- agent GD (PHASE19 GD): what the player's Use reaches on an NPC. Bodies in dishonorednpcpawn_interact.cpp ----
+	// GetCrosshairStatus 2013 rva 0x759c40 (2012 0x7c02b0), GetCrosshairStatus_Helper 0x759a50 (0x7c00d0),
+	// AttemptInteract_Derived 0x7678c0 (0x7c93b0): the IDisInteractableInterface slots +12 and +96 of the NPC's vtable (2013 0x1141458).
+public:
+	virtual enum eCrossHairStatus GetCrosshairStatus( class ADishonoredPawn* _pPawn ) const;
+	virtual UBOOL AttemptInteract_Derived( class ADishonoredPawn* _pPawn, UBOOL& _rOut_bCanBeWitnessed );
+private:
+	enum eCrossHairStatus GetCrosshairStatus_Helper( class ADishonoredPawn* _pPawn ) const;
+public:
 	// DISHONORED(port): agent GB. 2012 0x7ab5e0 / 2013 0x74b080 and 0x7ab690: the matinee Attachment track's attach / detach on an
 	// NPC (dishonorednpcpawn.cpp).
 	virtual void MAT_Attach( AActor* const InBase, const FAttachmentInfos& AttachInfos );

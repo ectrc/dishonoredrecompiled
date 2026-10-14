@@ -113,6 +113,8 @@
 #include "gfarmsdiag.h"
 #include "dishonoredutilities.h"
 #include "disaicensus.h"
+#include "disusestate.h"
+#include "gddiag.h"
 #include "disheadcensus.h"
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
@@ -141,9 +143,18 @@ void ADishonoredPlayerController::PostBeginPlay()
 	}
 	m_PossessionEffectSettings.m_Stage = 0;
 	m_pBlindnessPpNode = DisGetArkPpNodeMaterial( FName(TEXT("WatchtowerBlindedPostProcess")), TRUE );
-	// DISHONORED(bringup): IDisTweaksInterface::ApplyTweakChanges on the tweaks subobject and
-	// UDishonoredNativeStateMachine::InitFSM(m_pUseInteractionFSM, this, FDisUseState_WaitForInput_Param(), 0): the tweak interface
-	// and the state machine transitions are not ported yet
+	// DISHONORED(bringup): IDisTweaksInterface::ApplyTweakChanges on the tweaks subobject is not ported (the tweak interface).
+	// DISHONORED(port): agent GD (PHASE19 GD), retail's last line (2012 0x6d6950): the use-interaction FSM - a script subobject, like
+	// the player pawn's master FSM - is initialised into UDisUseState_WaitForInput with this controller as its managed object.
+	if( m_pUseInteractionFSM )
+	{
+		FDisUseState_WaitForInput_Param Param;
+		m_pUseInteractionFSM->InitFSM( this, Param, NULL );
+	}
+	else
+	{
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s has no m_pUseInteractionFSM subobject; the use-interaction FSM cannot be initialised"), *GetName() );
+	}
 }
 
 // DISHONORED(written): 2013 rva 0x6a0730 (2012 0x6d0f60, same bytes). Retail skips the controller bases and calls AActor's.
@@ -375,16 +386,18 @@ void ADishonoredPlayerController::HandleHeldButtons_Context( FLOAT DeltaSeconds 
 
 // DISHONORED(written): 2013 rva 0x6a2e70 (2012 0x6d6e10, same bytes): while use input is disabled the use-interaction
 // FSM is pushed back to its waiting state, and the machine is ticked either way.
-// DISHONORED(bringup): m_pUseInteractionFSM is never created, because ADishonoredPlayerController::PostBeginPlay's
-// UDishonoredNativeStateMachine::InitFSM call and the UDisUseState_* classes are not ported (agentAJ.md); the state
-// parameter FDisUseState_WaitForInput_Param does not exist either. Until they are, the pickup path is reached through
-// -dispickupprobe below, which makes the same IDisInteractableInterface::AttemptInteract call
-// UDisUseState_WaitForInput::TickState (2013 rva 0x6d5ba0) makes.
+// DISHONORED(port): agent GD (PHASE19 GD): the FSM is initialised by PostBeginPlay now and the four UDisUseState_* units have
+// their bodies (disusestate_*.cpp); the -dispickupprobe path below stays as the measurement it was.
 void ADishonoredPlayerController::HandleHeldButtons_Context_Interactables( FLOAT DeltaSeconds )
 {
 	if( !m_pUseInteractionFSM )
 	{
 		return;
+	}
+	if( !IsInputEnabled( 0x80 ) )
+	{
+		FDisUseState_WaitForInput_Param Param;
+		m_pUseInteractionFSM->RequestStateChange( Param, NULL, FALSE );
 	}
 	m_pUseInteractionFSM->TickStateMachine( DeltaSeconds );
 }
@@ -1099,6 +1112,8 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	{
 		DisFWReport( this );
 	}
+	// agent GD (PHASE19 GD): -gddiag / -gdface / -gduse, the crosshair and the Use (gddiag.cpp)
+	DisGDReport( this );
 	// agent GE (PHASE19 GE): -gediag, the camera fade state once a second (gediag.cpp)
 	{
 		extern void DisGEReport( APlayerController* PC );
@@ -3055,5 +3070,11 @@ void ADishonoredPlayerController::OnCameraUpdate( const FDishonoredViewTarget& _
 	{
 		DisPawn->OnCameraUpdate( _VT, _PassCount );
 	}
-	GFDIAG_ONCE( TEXT("ADishonoredPlayerController::OnCameraUpdate: TickCameraTracking (pass 0), UpdateCrosshair and UpdateBlindedEffect (pass 1) are not ported") );
+	// agent GD (PHASE19 GD): pass 1's UpdateCrosshair (dishonoredplayercontroller_use.cpp); TickCameraTracking (pass 0) and
+	// UpdateBlindedEffect (pass 1) stay named.
+	if( _PassCount == 1 )
+	{
+		UpdateCrosshair( _VT );
+	}
+	GFDIAG_ONCE( TEXT("ADishonoredPlayerController::OnCameraUpdate: TickCameraTracking (pass 0) and UpdateBlindedEffect (pass 1) are not ported") );
 }

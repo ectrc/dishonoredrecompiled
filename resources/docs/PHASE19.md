@@ -269,3 +269,29 @@ on 118-joint skeletons) — FT's `GetBoneAtoms` stand-in → wave 24.**
 **Premises corrected (six)**: no equip path / no route with an item; `SetBodyMode` is not the arms mechanism; the
 silhouettes are on the real control and are not mesh translation / body mode / base transform / foot placement;
 arm-follow, `SetOffset`, `SetFOV` change nothing visible on this route (offset 0, arms FOV = view FOV).
+
+### GD — merged; GD's own gate (GD + `d96a331`) 47 ok / 0 failed / 0 skipped (2060 s); merged tree compile-verified and run, gated on main by the coordinator
+
+Thirty-one files, 0 flagged against `2f88f47`; regeneration clean; `bitfield_audit` 0.
+
+**The go-to arrives**: `NPCPawn_25` walks his 89 units at 134 u/s, `DESTINATION_REACHED` reaches the behaviour,
+`SetGoToStatus Success`; the control stops 36 short at speed 0/0. **The brief's cause was wrong twice**: nothing
+ever enters `STOP_END`, `IsDisabled()` was never true, `HandleArrival` DID run. What was wrong: DN's invented
+arrival rule ("inside the collision radius" vs retail's 0.1 uu from the post-move position, 2013 `0x544390`), and
+**`UDishonoredAIBehavior::BuildBehaviorFilterStimMasks` was retail's base body (NULL masks) with no override, so
+`CallFilterAIStim` dropped every stim for every behaviour — patrols included, since wave 14.** Ported per class.
+
+**`Use` works end to end**: crosshair on the captain (`CHS_OVER_USABLE`) → the use FSM (`UDisUseState_*`, five
+units off the exclude list) → `AttemptInteract_Derived` → `UDishonoredAIBrain::HandleUsedByOther` →
+`FireDialogHook(DDH_PLAYER_USED)` → `DisConv_Soiree_5` → `StartFromDialog` on `SeqAct_Interp_86` ("Three days
+late..."). On the fully merged tree the Use must land within ~0.5 s of facing him because the Empress scene (routed
+right since GE) then takes the player — retail's blocking. Control: no crosshair, F does nothing.
+
+**`AIGoToActor_3 'Curnow GoTo 1'` still does not fire**: its pawn `NPCPawn_26` has `no start poly` (GC's edge-point
+bounds test, nearest 0.56 uu) on the ride boat → wave 24 GK. GD's gate saw one `execPlayDying_Native` in the
+**inputtest** stage, 0.03 s after `-distouchprobe` teleported the player onto `DishonoredAudioVolume_1` in
+`Falling` — a probe fall, log kept (`build/agentGD/gate_inputtest_execPlayDying.log`).
+
+**Premises corrected**: see above; the Use path is longer than the brief (`UpdateCrosshair` camera pass 1 → NPC
+`GetCrosshairStatus` → brain `AllowPlayerUse` → `CheckDialogHook`); 2013's `GetCrosshairStatus`/`AllowPlayerUse`
+differ from 2012 (ported in 2013 shape). Two named stand-ins for the unported stop-animation system.

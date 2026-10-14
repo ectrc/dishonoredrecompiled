@@ -74,28 +74,34 @@ UBOOL FArkComponentLocomotion::IsThereAnotherForceThanPath() const
 	return IsRootMotion();
 }
 
-// DISHONORED(port): 2013 rva 0x544390 (2012 0x585330): the squared 2D distance to the last path point, and "arrived" when
-// that is inside the request's end threshold (or, with no threshold, inside the distance between the last two corners).
+// DISHONORED(port): 2013 rva 0x544390 (2012 0x585330, 249 bytes), agent GD. Retail's rule, read off both decompiles: with no
+// computed path the pawn counts as arrived (the dynamics then have nothing to do); otherwise the squared 2D distance is
+// measured from m_CurPawnLocation - the position the pawn WILL have once this sub-step's path move is applied, which
+// ComputeDynamic keeps up to date - to the last path point. An accurate-stop request, or any request on a pawn with no stop
+// animation, has arrived when that distance is under 0.1 uu (0.01 squared); a request that leaves the stop to the animation
+// has arrived once the pawn is inside the config's unaccuracy radius and slower than m_fVelocityToStopMoving, and only in
+// the NONE / state-5 root states. Agent DN's version measured from the pawn's current location against the request's end
+// threshold with the collision radius as the fallback - that is what left NPCPawn_25 "arrived" 37 uu short (agentGD.md).
 UBOOL FArkComponentLocomotion::ComputeIsArrivedFlagAndSq2DDistToPathEnd( FLOAT& _rSq2DDist ) const
 {
-	if( !m_pPawnOwner )
+	if( !m_bHasRequestWithPathComputed || !m_ReqMgr.HasRequest() )
 	{
 		_rSq2DDist = 0.f;
 		return TRUE;
 	}
-	const FVector ToEnd = m_LastPathPoint - m_pPawnOwner->Location;
+	const FVector ToEnd = m_LastPathPoint - m_CurPawnLocation;
 	_rSq2DDist = ToEnd.X * ToEnd.X + ToEnd.Y * ToEnd.Y;
 
-	FLOAT fThreshold = -1.f;
-	if( m_ReqMgr.HasRequest() )
+	if( m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps.m_bAccurateStop || !m_bHaveStopAnim )
 	{
-		fThreshold = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps.m_fEndLocationThreshold;
+		return _rSq2DDist < 0.01f;
 	}
-	if( fThreshold < 0.f )
+	if( ( m_RootState == CPNT_LOCO_ROOT_STATE_NONE || m_RootState == 5 ) && m_pConfig )
 	{
-		fThreshold = m_pPawnOwner->CylinderComponent ? m_pPawnOwner->CylinderComponent->CollisionRadius : 30.f;
+		return ( m_pConfig->m_fUnaccuracyRadius * m_pConfig->m_fUnaccuracyRadius ) > _rSq2DDist
+			&& m_pConfig->m_fVelocityToStopMoving > Abs( m_fRealScaledSpeed );
 	}
-	return _rSq2DDist <= ( fThreshold * fThreshold );
+	return FALSE;
 }
 
 // DISHONORED(port): 2013 rva 0x546260 (2012 0x586f60): the component's row in the static shared table, which is what the
@@ -361,53 +367,103 @@ FVector FArkComponentLocomotion::ClampMove( FLOAT _fTimeStep, const FVector& _Mo
 	return _Move;
 }
 
-// DISHONORED(port): 2013 rva 0x5487b0 (2012 0x589560, 977 bytes). Arrival is a *report*, not a stop: the flag and the
-// squared distance are recomputed, the threshold and destination events are raised at most once each per request, and the
-// request is left open for its asker to withdraw - which is exactly what FDisLocoRequest does through
-// IDisDesiresInterface::HandleLocoEvent.
+// DISHONORED(port): 2013 rva 0x5487b0 (2012 0x589560, 977 bytes), agent GD, transcribed whole. Two jobs. First the stop on the
+// mark: when the pawn is on the last segment (m_bPathAtEnd), is not yet arrived and the stop is not the animation's, a
+// sub-step whose path move would carry it past the last path point is clamped to land exactly on it, the speed becomes
+// the request's end speed and the arrival flag is recomputed - this is how an accurate-stop pawn ends 0.0 uu from its
+// mark rather than oscillating around it. Second the events: with a computed path, an arrived (or just-clamped) pawn
+// tells its asker THRESHOLD_REACHED then DESTINATION_REACHED, each once; a pawn that is not arrived re-arms the
+// destination event and re-arms the threshold event once it is outside the request's threshold again, so a target that
+// walks away can be reached a second time. Both fire only while the path is not dirty. Agent DN's version set the arrived
+// flag here from the pawn's current location and never re-armed either event.
 void FArkComponentLocomotion::HandleArrival( FLOAT _fTimeStep )
 {
-	if( !m_ReqMgr.HasRequest() )
-	{
-		return;
-	}
-	const UBOOL bArrived = ComputeIsArrivedFlagAndSq2DDistToPathEnd( m_fSq2DDistToPathEnd );
-	m_bIsArrived = bArrived;
+	FLOAT fScratch = 0.f;
+	ComputeIsArrivedFlagAndSq2DDistToPathEnd( fScratch );
+	const UBOOL bArrived = m_bIsArrived;
+	UBOOL bClampedOnEnd = FALSE;
 
-	if( !bArrived )
+	if( !bArrived && !m_bHandleStop && m_bPathAtEnd && m_pPawnOwner && m_ReqMgr.HasRequest() )
+	{
+		const FVector ToEnd = m_LastPathPoint - m_pPawnOwner->Location;
+		const FLOAT fSqToEnd = ToEnd.X * ToEnd.X + ToEnd.Y * ToEnd.Y;
+		// DISHONORED(bringup, agent GD): the second test is not retail's. Retail's stop-animation system (UpdateStopMove, unported)
+		// raises m_bHandleStop on the last segment and the end speed becomes the walk speed, so the pawn walks onto the mark and
+		// this clamp lands it. Without it the braking rule asks for less than m_fVelocityToStopMoving over the last unit, the
+		// push-speed clamp zeroes such a move, and the pawn crawled the last 1 uu for 216 s (GD2) - so a pawn within 2 uu of
+		// its mark whose target speed is already below the stop velocity is landed on it.
+		const UBOOL bBelowStopVelocity = m_pConfig && m_fTargetMoveSpeed < m_pConfig->m_fVelocityToStopMoving && fSqToEnd < 4.f;
+		if( ( m_CurPathMove.X * m_CurPathMove.X + m_CurPathMove.Y * m_CurPathMove.Y ) > fSqToEnd || bBelowStopVelocity )
+		{
+			const FArkCpntLocoRequestCommonProps& rCommon = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps;
+			// DISHONORED(bringup): UArkComponentLocomotionConfig::ComputeSpeedFromSpeedModeAndAngle( EndSpeedIdx, modifier,
+			// FArkComponentFaceTo::GetAngle() ) - with no face-to component the angle is 0 and the answer is the forward speed.
+			m_fCurMoveSpeed = GetForwardSpeedOfSpeedMode( rCommon.m_EndSpeedIdx, m_CurModifierIdx );
+			m_CurPathMove.X = ToEnd.X;
+			m_CurPathMove.Y = ToEnd.Y;
+			m_CurPawnLocation = m_pPawnOwner->Location + m_CurPathMove;
+			m_bIsArrived = ComputeIsArrivedFlagAndSq2DDistToPathEnd( m_fSq2DDistToPathEnd );
+			bClampedOnEnd = TRUE;
+		}
+	}
+
+	if( !m_bHasRequestWithPathComputed || !m_ReqMgr.HasRequest() )
 	{
 		return;
 	}
-	const FArkCpntLocoRequestCommonProps& rCommon = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps;
-	if( !m_CurReqWorkData.m_bThresholdAlreadyReached && rCommon.m_fEndLocationThreshold >= 0.f )
+	const FArkRequestManager<FLocoRequestData>::FRequest& rRequest = m_ReqMgr.GetFirstRequest();
+	const FArkCpntLocoRequestCommonProps& rCommon = rRequest.m_Data.m_CommonProps;
+	if( bArrived || bClampedOnEnd )
+	{
+		if( rCommon.m_LocoEventCallback && !m_bPathIsDirty && !m_CurReqWorkData.m_bThresholdAlreadyReached )
+		{
+			m_CurReqWorkData.m_bThresholdAlreadyReached = TRUE;
+			rCommon.m_LocoEventCallback( rCommon.m_pCallbackOwner, rRequest.m_ID, CPNT_LOCO_EVENT_THRESHOLD_REACHED );
+		}
+		if( rCommon.m_LocoEventCallback && !m_bPathIsDirty && !m_CurReqWorkData.m_bDestinationAlreadyReached )
+		{
+			m_CurReqWorkData.m_bDestinationAlreadyReached = TRUE;
+			GDisLocoArrivals++;
+			rCommon.m_LocoEventCallback( rCommon.m_pCallbackOwner, rRequest.m_ID, CPNT_LOCO_EVENT_DESTINATION_REACHED );
+		}
+		return;
+	}
+	m_CurReqWorkData.m_bDestinationAlreadyReached = FALSE;
+	ComputeIsArrivedFlagAndSq2DDistToPathEnd( fScratch );
+	if( ( rCommon.m_fEndLocationThreshold * rCommon.m_fEndLocationThreshold ) < m_fSq2DDistToPathEnd )
+	{
+		m_CurReqWorkData.m_bThresholdAlreadyReached = FALSE;
+	}
+	else if( rCommon.m_LocoEventCallback && !m_bPathIsDirty && !m_CurReqWorkData.m_bThresholdAlreadyReached )
 	{
 		m_CurReqWorkData.m_bThresholdAlreadyReached = TRUE;
-		NotifyActiveRequest( CPNT_LOCO_EVENT_THRESHOLD_REACHED );
+		rCommon.m_LocoEventCallback( rCommon.m_pCallbackOwner, rRequest.m_ID, CPNT_LOCO_EVENT_THRESHOLD_REACHED );
 	}
-	if( !m_CurReqWorkData.m_bDestinationAlreadyReached )
-	{
-		m_CurReqWorkData.m_bDestinationAlreadyReached = TRUE;
-		GDisLocoArrivals++;
-		NotifyActiveRequest( CPNT_LOCO_EVENT_DESTINATION_REACHED );
-	}
-	m_fCurMoveSpeed = 0.f;
-	m_fTargetMoveSpeed = 0.f;
-	m_CurPathMove = FVector( 0.f, 0.f, 0.f );
-	m_CurMove = FVector( 0.f, 0.f, 0.f );
 }
 
 /*-----------------------------------------------------------------------------
 	ComputeDynamic
 -----------------------------------------------------------------------------*/
 
-// DISHONORED(port): 2013 rva 0x54bec0 (2012 0x58ca10, 3,026 bytes). The call order below is retail's, read off the
-// decompile: ComputeLookatSpeedMultiplier, then either the "animation owns the pawn" branch (UpdatePathProperties,
-// UpdateTurn, UpdateStartMove, UpdateStopMove) or the full one - UpdatePathProperties, ComputeMoveYaw,
-// ComputeTargetMoveYaw, the three root-motion updates, ComputeTargetMoveYaw again, UpdateMoveYaw,
-// ComputeTargetMoveSpeed, UpdateMoveSpeed, ComputePathMove, HandleArrival, ApplySteering, and ClampMove when nothing but
-// the path is pushing - and finally ComputeMostRelevantSpeedIdx.
-// DISHONORED(bringup): the three root-motion updates and the follow update are unported (see the file banner), and
-// ComputeLookatSpeedMultiplier (2013 rva 0x543da0) needs the look-at component, so the multiplier stays 1.
+// DISHONORED(port): 2013 rva 0x54bec0 (2012 0x58ca10, 3,026 bytes), agent GD: the frame's structure is now retail's, read off
+// both decompiles. Retail first picks the multi-directional speed limit and the look-at multiplier, then takes one of two
+// roads. Disabled, or a pawn being deleted, or the STOP_END root state, or an anim node playing a specific anim: the
+// "animation owns the pawn" road - m_CurPawnLocation is the pawn's location, the arrival flag is recomputed,
+// UpdatePathProperties / UpdateTurn / UpdateStartMove / UpdateStopMove run, every speed and yaw is reset and the move is
+// the mesh's root-motion delta. Otherwise the full road: the real speed from the pawn's velocity, the stuck-against-a-wall
+// test (velocity below m_fVelocityToStopMoving while the previous frame's was above m_fVelocityToStartToMove), UpdateFollow,
+// and then the time step is walked in sub-steps of at most 0.04 s - each one UpdatePathProperties, the move yaw, the three
+// root-motion updates, the target yaw, UpdateMoveYaw, ComputeTargetMoveSpeed, UpdateMoveSpeed, ComputePathMove accumulated
+// into m_CurPathMove, m_CurPawnLocation = Location + m_CurPathMove, the arrival flag, HandleArrival - so a 0.3 s hitch
+// frame is eight 0.04 s steps and the arrival clamp still lands on the mark. After the loop ApplySteering, the speed
+// clamp when something other than the path pushes, ClampMove, then the pawn's Velocity / Acceleration from the move,
+// m_PreviousVelocity, the steering force rolled over and ComputeMostRelevantSpeedIdx (the caller's). Agent DN's
+// single-step version computed the arrival flag inside HandleArrival from the pawn's current location, which is the premise
+// agentFV.md §1 carried ("ComputeDynamic exits on IsDisabled() || STOP_END first" - it did not: nothing in this tree
+// enters STOP_END and IsDisabled() was never true for the go-to pawn; the pawn stood "arrived" inside DN's radius).
+// DISHONORED(bringup): UpdateTurn / UpdateStartMove / UpdateStopMove (arkcomponentlocomotionrootmove.cpp), UpdateFollow
+// and the avoidance force are unported (the file banner names them); ComputeLookatSpeedMultiplier needs the look-at
+// component and stays 1; the pawn's Velocity is written by FullMovePawn from the real move rather than here.
 void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 {
 	if( !m_pPawnOwner )
@@ -415,39 +471,108 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 		return;
 	}
 	DISLOCO_MARK( dyn_enter )
-	m_PreviousVelocity = m_pPawnOwner->Velocity;
-	m_fRealSpeed = m_PreviousVelocity.Size2D();
-	const FLOAT fFinalMultiplier = GetFinalSpeedMultiplier();
-	m_fRealScaledSpeed = m_fRealSpeed / fFinalMultiplier;
-
 	if( IsDisabled() || m_RootState == CPNT_LOCO_ROOT_STATE_STOP_END )
 	{
-		UpdatePathProperties();
-		m_CurMove = FVector( 0.f, 0.f, 0.f );
+		if( !IsDisabled() )
+		{
+			m_CurPawnLocation = m_pPawnOwner->Location;
+			m_bIsArrived = ComputeIsArrivedFlagAndSq2DDistToPathEnd( m_fSq2DDistToPathEnd );
+			UpdatePathProperties();
+			m_fRealSpeed = m_pPawnOwner->Velocity.Size();
+			m_fRealScaledSpeed = m_fRealSpeed / GetFinalSpeedMultiplier();
+			m_fCurMoveSpeed = m_fRealScaledSpeed;
+		}
+		else
+		{
+			m_fRealSpeed = 0.f;
+			m_fRealScaledSpeed = 0.f;
+			m_fCurMoveSpeed = 0.f;
+		}
+		m_fTargetMoveSpeed = 0.f;
+		m_fCurAdaptedAccel = m_fCurDeceleration;
+		m_fCurMoveRotationSpeed = 0.f;
+		m_CurMoveYaw = -200000;
+		m_TargetMoveYaw = -200000;
 		m_CurPathMove = FVector( 0.f, 0.f, 0.f );
-		UpdateSharedProperties();
-		return;
+		m_PreviousPathForce = FVector( 0.f, 0.f, 0.f );
+		m_CurMove = FVector( 0.f, 0.f, 0.f );
+		if( m_pPawnOwner->Mesh )
+		{
+			m_CurMove = m_pPawnOwner->Mesh->RootMotionDelta.GetTranslation();
+			m_CurMove.Z = 0.f;
+		}
+		m_fMaxMultiDirSpeedForAngle = 0.f;
 	}
-
-	UpdatePathProperties();
-
-	m_CurMoveYaw = ( m_CurMoveYaw == -200000 ) ? ComputeMoveYaw() : m_CurMoveYaw;
-	m_TargetMoveYaw = ComputeTargetMoveYaw();
-	m_CurMoveYaw = UpdateMoveYaw( _fTimeStep, m_fCurMoveRotationSpeed, m_fMaxMoveRotationSpeed, m_fMaxMultiDirSpeedForAngle );
-
-	m_fTargetMoveSpeed = ComputeTargetMoveSpeed( _fTimeStep, m_fCurAdaptedAccel );
-	m_fCurMoveSpeed = UpdateMoveSpeed( _fTimeStep );
-	m_CurPathMove = ComputePathMove( _fTimeStep );
-
-	HandleArrival( _fTimeStep );
-
-	m_CurMove = ApplySteering( _fTimeStep, m_CurPathMove );
-	if( !IsThereAnotherForceThanPath() )
+	else
 	{
+		m_fRealSpeed = m_pPawnOwner->Velocity.Size();
+		m_fRealScaledSpeed = m_fRealSpeed / GetFinalSpeedMultiplier();
+		if( !m_PreviousVelocity.IsZero() && m_pConfig )
+		{
+			const FLOAT fPrevSq2D = m_PreviousVelocity.X * m_PreviousVelocity.X + m_PreviousVelocity.Y * m_PreviousVelocity.Y;
+			if( m_pConfig->m_fVelocityToStopMoving > m_fRealSpeed && fPrevSq2D > ( m_pConfig->m_fVelocityToStartToMove * m_pConfig->m_fVelocityToStartToMove ) )
+			{
+				m_bStuckedInAWall = TRUE;
+				m_CurMoveYaw = -200000;
+			}
+		}
+		m_CurPathMove = FVector( 0.f, 0.f, 0.f );
+		m_CurPawnLocation = m_pPawnOwner->Location;
+		m_bIsArrived = ComputeIsArrivedFlagAndSq2DDistToPathEnd( m_fSq2DDistToPathEnd );
+
+		FLOAT fTimeLeft = _fTimeStep;
+		do
+		{
+			const FLOAT fStep = Min( 0.04f, fTimeLeft );
+			UpdatePathProperties();
+			m_CurMoveYaw = ComputeMoveYaw();
+			m_TargetMoveYaw = ComputeTargetMoveYaw();
+			m_CurMoveYaw = UpdateMoveYaw( fStep, m_fCurMoveRotationSpeed, m_fMaxMoveRotationSpeed, m_fMaxMultiDirSpeedForAngle );
+			m_fTargetMoveSpeed = ComputeTargetMoveSpeed( fStep, m_fCurAdaptedAccel );
+			m_fCurMoveSpeed = UpdateMoveSpeed( fStep );
+			m_CurPathMove += ComputePathMove( fStep );
+			m_CurPawnLocation = m_pPawnOwner->Location + m_CurPathMove;
+			m_bIsArrived = ComputeIsArrivedFlagAndSq2DDistToPathEnd( m_fSq2DDistToPathEnd );
+			HandleArrival( fStep );
+			fTimeLeft -= 0.04f;
+		}
+		while( fTimeLeft > 0.00001f );
+
+		m_CurMove = ApplySteering( _fTimeStep, m_CurPathMove );
+		// DISHONORED(bringup, agent GD): `&& !m_bIsArrived` is not retail's - it lets HandleArrival's landing move (see there) through the
+		// push-speed clamp, which would otherwise hold it to one acceleration step above a real speed of 0.
+		if( IsThereAnotherForceThanPath() && !m_bIsArrived && m_pConfig && _fTimeStep > 0.f )
+		{
+			// Something besides the path is pushing: the move's speed is held to what the config lets a pawn start or stop
+			// with and to one acceleration step above the real speed, so a push never launches the pawn.
+			const FLOAT fSpeed = m_CurMove.Size2D() / _fTimeStep;
+			FLOAT fMaxSpeed = fSpeed;
+			if( Abs( m_fRealScaledSpeed ) < 0.1f )
+			{
+				fMaxSpeed = ( m_pConfig->m_fVelocityToStartToMove <= fSpeed ) ? m_pConfig->m_fVelocityToStopMoving : 0.f;
+			}
+			else if( m_pConfig->m_fVelocityToStopMoving > fSpeed )
+			{
+				fMaxSpeed = 0.f;
+			}
+			if( Abs( fMaxSpeed ) >= 0.1f && ( m_fCurAdaptedAccel * _fTimeStep + m_fRealScaledSpeed ) < fMaxSpeed )
+			{
+				fMaxSpeed = m_fCurAdaptedAccel * _fTimeStep + m_fRealScaledSpeed;
+			}
+			FVector Dir = m_CurMove;
+			Dir.Z = 0.f;
+			Dir = Dir.SafeNormal();
+			m_CurMove = Dir * ( fMaxSpeed * _fTimeStep );
+		}
 		FLOAT fMaxMoveUpDist = 0.f;
 		m_CurMove = ClampMove( _fTimeStep, m_CurMove, fMaxMoveUpDist );
 	}
 
+	if( m_pPawnOwner->Mesh )
+	{
+		m_pPawnOwner->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
+	}
+	m_PreviousVelocity = m_pPawnOwner->Velocity;
 	UpdateSharedProperties();
 }
 
