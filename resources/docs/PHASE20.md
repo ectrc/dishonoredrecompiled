@@ -161,7 +161,7 @@ weights renormalised; none relevant → the node's own sequence (`BuildEdgeAnimT
 captain human-sized in `gh2b`. **The "posed height 148" acceptance is withdrawn** (148 was the fault); the measure is
 `maxLocalRatio 1.00` / `transOff ≤ 3` plus the capture pair.
 
-### GK — merged; GK's own gate 47 ok / 0 failed / 0 skipped (2967 s, `d3d9_frames` 1830)
+### GK — merged `e3bc866`; gate on main 47 ok / 0 failed / 0 skipped (1114 s); GK's own gate 47 / 0 / 0 (2967 s)
 
 Eleven files, 0 flagged against `ece8e1b`; `bitfield_audit` 0. Engine hand edits: `UnNavigationHandle.cpp`
 (`GetPylonAndPolyFromPos` replaced by retail's), new `arknavmeshbuildutils.h/.cpp`.
