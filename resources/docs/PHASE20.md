@@ -44,6 +44,15 @@ On the gate exe of the last wave-23 merge: GB's `gb2_steps.txt` route from New G
 teleport. Then, if GD landed the go-to and `Use`: the captain's `AIGoToActor_3` fires `Success (Last)` and `Use`
 reaches the dialog hook. Whatever stops first is this wave's GK.
 
+**Run (coordinator, `4b889ff`, `CO1.log`, GB's route, 2026-10-14 15:07)**: `rmm 2/0` on the player throughout (GF's
+fix holds); after `MAT_Detach` he stands on the socket at 9826, 23064, 2412 (physics Walking, collide on, base
+`SkeletalMeshActorMAT_2`); on W he moves once to 10023, 23034 with a 52-unit step up and then velocity stays 0 for
+13 s with acceleration 3190, -856 — **capture `gb2_d`: he is pressed into the back of the stretched Elite guard
+standing in the bow on the straight line to the dock.** Pawn-vs-pawn blocking, not an engine fault: the guards must
+disembark first (their go-tos read `no start poly` on the boat — GK), as they do in retail. `AIGoToActor_2` on
+`NPCPawn_25` read `Success` at 52 s (GD holds on main). The three captures also show every matinee-driven NPC as a
+stretched silhouette (GH).
+
 ## Packages
 
 ### GG — the spawn order: possess after the floor exists
