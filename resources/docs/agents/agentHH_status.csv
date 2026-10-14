@@ -1,0 +1,13 @@
+item,state,evidence
+cutscene_compare.py run (game launch via game_input; -windowed; ini isolation; BMP claim by tag; world time from log; 16:9 check; BMP->PNG; BMPs deleted),done,build/cmp/head_rel/run.json: 126 bitmaps 126 kept 0 rejected 1920x1080; 0 apshottime_cc_* left in Screenshots
+run --ours-video,done,build/cmp/ours_mp4/report.md: ours.mp4 zoom 1.75 MAD 29.1 debugtext on 6-9 s
+retail cache 10 fps 960x540,done,build/cmp/retail_cache 1121 frames + stats.json; ffmpeg path constant with CC_FFMPEG override
+alignment E1/E2 fit + soiree ENTER fallback,done,retail E1 8.80 E2 15.75; head_rel E2 58.53 -> a=-42.77 b=1 (one event); fallback residual +1.04 s
+metrics MAD / SSIM-lite / zoom NCC,done,selftest: retail-vs-retail SSIM 1.0000 zoom 1.00; synthetic 1.5->1.50 and 1.78->1.77-1.78
+detectors vials stance debugtext banner objective hint prompt,done,thresholds from retail cache (retail max below threshold except where retail really shows the element); stance by template; text by white top-hat
+outputs pairs/ diff/ scores.csv report.md index.html; --baseline table,done,build/cmp/head_rel2/report.md Baseline section
+compare subcommand / selftest,done,compare retail retail: median SSIM 1.0000 zoom 1.00; selftest PASS
+head_rel baseline,done,build/cmp/head_rel: ride 56.3-150.6 median zoom 1.76 MAD 29.43 SSIM .523; vials 51.1-175; banner 0/126; stance 151-175
+determinism (two runs same exe),done,head_rel2 vs head_rel: MAD -0.6 %; SSIM +0.3 %; zoom equal; detector counts identical
+debugtext>0 near +8 s on a run,not reproducible on any run,-apshottime disables screen messages after the first capture (SceneRendering.cpp:5136 never saves GScreenMessagesRestoreState; UnPlayer.cpp:2208 restores FALSE): CC_head_rel.log 0 'Modifying' lines; probe (first mark 52) 3 lines + debugtext 0.63 % at world 52.0; fix is one engine line (HE/coordinator)
+plan ride window 64-158,wrong (log time),world 56.3-150.6 on head_rel; 56.2-150.5 on head_rel2
