@@ -160,3 +160,25 @@ weights renormalised; none relevant → the node's own sequence (`BuildEdgeAnimT
 `maxLocalRatio 1.00` on every pawn, `NPCPawn_8` poseH 47.3 (was 147.3), reach 191.7 (was 553); the boat guards and
 captain human-sized in `gh2b`. **The "posed height 148" acceptance is withdrawn** (148 was the fault); the measure is
 `maxLocalRatio 1.00` / `transOff ≤ 3` plus the capture pair.
+
+### GK — merged; GK's own gate 47 ok / 0 failed / 0 skipped (2967 s, `d3d9_frames` 1830)
+
+Eleven files, 0 flagged against `ece8e1b`; `bitfield_audit` 0. Engine hand edits: `UnNavigationHandle.cpp`
+(`GetPylonAndPolyFromPos` replaced by retail's), new `arknavmeshbuildutils.h/.cpp`.
+
+**The stop-animation system is in** (15 functions): Worker B turns in place then walks. **Two DN bodies were not
+retail's** — `IsThereAnotherForceThanPath` answered `IsRootMotion()` reading `RMM_Velocity` on every NPC, so the
+push-speed clamp fired every frame (GD2's 216-s crawl, GK1's oscillation). Fixed; GD's stand-ins removed.
+
+**The captain's start poly — measured to one stage, not fixed; acceptance not reached.** The blocker is the
+captain `_26`, not the Elite. Premises corrected: the "0.56 uu off the mesh" is not a gap (the centre projected onto a
+tilted poly); his ground point IS on the mesh (`inside2D 1`, in the zero-extent query); and
+`UNavigationHandle::GetPylonAndPolyFromPos` is **not shared engine code** — retail replaced it (2012 `0x2a8830` /
+2013 rva `0x28e260`: a vertical segment, zero XY extent, Arkane's inclusive 2D edge test, nearest-plane
+arbitration). Ported. Still FALSE for a point its own query returns and its own 2D test accepts: **either the pylon
+octree query ((0,0,80) world box vs `APylon::GetBounds`) or the LOCAL_SPACE height test in
+`UpdateStartLocAndVerifyIfOnValidPoly` (a 249-unit frame mismatch on this imported mesh)** — one diag line inside
+`GetPylonAndPolyFromPos` decides it (agentGK.md §4.1). **The faithful route**: retail never teleports the guards
+(`m_bHasBeenOnNavMesh` gate); it carries them on the boat's sockets through `FDisComponentRetargeting`
+(`UpdateRetargeting` 2012 `0x8b37e0`, 4.3 KB of SSE) — the Captain socket at the ride's end is 10042.7, 23044.4,
+2337.3, on the dock polys. **→ wave 25.**

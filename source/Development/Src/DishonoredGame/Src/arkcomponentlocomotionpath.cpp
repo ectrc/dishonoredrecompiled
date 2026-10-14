@@ -17,6 +17,7 @@
 
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
+#include "arknavmeshbuildutils.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -545,6 +546,27 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 			{
 				debugf( TEXT("DISHONORED(bringup): gadiag pathfail %s: no start poly at %s (nearest %s found %d, %.2f s of %.2f), destination %s"),
 					*m_pPawnOwner->GetName(), *StartOnGround.ToString(), *m_NearestLocationOnNavMesh.ToString(), (INT)bFound, m_fTryToReturnOnNavMeshDuration, fMaxDuration, *Destination.ToString() );
+				// agent GK: which polys the start poly test saw, and why each refused the ground point (the 2D side test per edge)
+				TArray<FNavMeshPolyBase*> Candidates;
+				UNavigationHandle::GetAllPolysFromPos( StartOnGround, FVector( 50.f, 50.f, 200.f ), Candidates, FALSE );
+				for( INT PolyIdx = 0; PolyIdx < Candidates.Num(); ++PolyIdx )
+				{
+					const FNavMeshPolyBase* Poly = Candidates( PolyIdx );
+					FString Edges;
+					const INT VertCount = Poly->PolyVerts.Num();
+					for( INT VertIdx = 0; VertIdx < VertCount; ++VertIdx )
+					{
+						const FVector Prev = Poly->GetVertLocation( ( VertIdx + VertCount - 1 ) % VertCount, WORLD_SPACE );
+						const FVector Vert = Poly->GetVertLocation( VertIdx, WORLD_SPACE );
+						Edges += FString::Printf( TEXT(" %.3f"), ( Vert.Y - Prev.Y ) * ( StartOnGround.X - Prev.X ) - ( Vert.X - Prev.X ) * ( StartOnGround.Y - Prev.Y ) );
+					}
+					TArray<FNavMeshPolyBase*> Exact;
+					Poly->NavMesh->GetIntersectingPolys( StartOnGround, FVector( 0.f, 0.f, 80.f ), Exact );
+					debugf( TEXT("DISHONORED(bringup): gadiag pathfail %s: candidate poly %d/%d center %s normal %s bounds(local) %s..%s transform %d origin %s inside2D %d in zero-extent query %d sides%s"),
+						*m_pPawnOwner->GetName(), PolyIdx, Candidates.Num(), *Poly->GetPolyCenter( WORLD_SPACE ).ToString(), *Poly->GetPolyNormal( WORLD_SPACE ).ToString(),
+						*Poly->BoxBounds.Min.ToString(), *Poly->BoxBounds.Max.ToString(), (INT)Poly->NavMesh->bNeedsTransform, *Poly->NavMesh->LocalToWorld.GetOrigin().ToString(),
+						(INT)ArkNavMeshPolyContainsPoint2DAlreadyInBound( Poly, StartOnGround ), (INT)Exact.ContainsItem( const_cast<FNavMeshPolyBase*>( Poly ) ), *Edges );
+				}
 			}
 			m_CurReqWorkData.m_bPathfindAlreadyFailed = TRUE;
 			m_LastPFError = PATHERROR_STARTPOLYNOTFOUND;

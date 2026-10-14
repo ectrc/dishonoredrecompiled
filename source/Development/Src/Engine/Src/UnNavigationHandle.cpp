@@ -9,6 +9,7 @@
 #include "UnPath.h"
 #include "EngineAIClasses.h"
 #include "GenericOctree.h"
+#include "arknavmeshbuildutils.h"
 
 
 IMPLEMENT_CLASS(UNavigationHandle);
@@ -4073,6 +4074,16 @@ UBOOL UNavigationHandle::GetAllPylonsFromPos(const FVector& Pos, const FVector& 
  * @param PylonsToConsider - only check these pylons (useful for perf)
  * @return - TRUE if the pylon and poly were found succesfully
  */
+// DISHONORED(port): agent GK - retail's body, 2013 rva 0x28e260 (unnamed sub_68E260, 1,014 B) / 2012 0x2a8830 (998 B), in place
+// of the reference's (a 5x5x1024 pylon query, then UNavigationMeshBase::GetPolyFromPoint = a 10x10 box with
+// FNavMeshPolyBase::ContainsPoint, which is a 3D box test with a one-unit epsilon and a strict crossing count). Retail asks
+// each enabled pylon's mesh for the polys whose bounds meet the vertical segment Pos +- NavMeshGen_MaxPolyHeight / 2 (an
+// XY extent of zero), keeps those containing the point in 2D with ArkNavMeshPolyContainsPoint2DAlreadyInBound (edges
+// inclusive), and with several picks the one whose plane passes nearest Pos.Z. MinWalkableFloorZ is not read. Measured
+// before this: a pawn teleported onto FNavMeshPolyBase::GetClosestPointOnPoly's edge point (DishonoredNPCPawn_26 at the
+// dock, 0.56 uu from the mesh) and one whose floor trace lands 1.6 uu above its poly (Worker A, DishonoredNPCPawn_4) both
+// read "no start poly" from the reference test and never path (agentGC.md section 5, agentGD.md section 0.3).
+// Hand-edited reference unit (the generator never writes UnNavigationHandle.cpp).
 UBOOL UNavigationHandle::GetPylonAndPolyFromPos(const FVector& Pos, FLOAT MinWalkableFloorZ, APylon*& out_Pylon, struct FNavMeshPolyBase*& out_Poly, TArray<APylon*>* PylonsToConsider/*=NULL*/)
 {
 #if PERF_DO_PATH_PROFILING_MESH
@@ -4083,55 +4094,90 @@ UBOOL UNavigationHandle::GetPylonAndPolyFromPos(const FVector& Pos, FLOAT MinWal
 	SCOPETIMER(GPAPFPCallCount,GPAPFPCallAvg,GPAPFPCallMax,GPAPFPCallTotal,GetPylonAndPolyFromPos)
 #endif
 
+	out_Poly = NULL;
+	out_Pylon = NULL;
 
 	static TArray<APylon*> Pylons;
 	Pylons.Reset();
 
+	const FVector Extent( 0.f, 0.f, AScout::GetGameSpecificDefaultScoutObject()->NavMeshGen_MaxPolyHeight * 0.5f );
 	if( PylonsToConsider == NULL )
 	{
 		PylonsToConsider = &Pylons;
-		
 		FPylonOctreeType* Octree = FNavMeshWorld::GetPylonOctree();
-
 		if( Octree == NULL )
 		{
 			return FALSE;
 		}
-
-		FBoxCenterAndExtent QueryBox(Pos, FVector(5.f,5.f,Max<FLOAT>(1024.f,AScout::GetGameSpecificDefaultScoutObject()->NavMeshGen_MaxPolyHeight)));
-
-		// Iterate over the octree nodes containing the query point.
-		for(FPylonOctreeType::TConstElementBoxIterator<> OctreeIt(*(Octree),QueryBox); OctreeIt.HasPendingElements(); OctreeIt.Advance())
+		FBoxCenterAndExtent QueryBox( Pos, Extent );
+		for( FPylonOctreeType::TConstElementBoxIterator<> OctreeIt( *Octree, QueryBox ); OctreeIt.HasPendingElements(); OctreeIt.Advance() )
 		{
 			APylon* CurPylon = OctreeIt.GetCurrentElement();
 			check(CurPylon);
-
-			
-			if(CurPylon->IsValid())
-			{
-				PylonsToConsider->AddItem(CurPylon);
-			}
+			PylonsToConsider->AddItem( CurPylon );
 		}
 	}
 
-
-	for(INT PylonIdx=0;PylonIdx<PylonsToConsider->Num();++PylonIdx)
+	// DISHONORED(bringup, agent GK): the candidate query is padded by one unit in XY. Retail reads the polys' bounds against
+	// the point directly; the reference GetIntersectingPolys this tree runs transforms a zero-extent box into the mesh's
+	// local frame and tests the kDOP and the poly bounds with it, and GK1 measured a point on the shared edge of two polys
+	// (DishonoredNPCPawn_26's ground point, side test -0.059 / 0.000) that neither candidate set contained. The containment
+	// below stays retail's exact test, so the pad only widens the candidates, never the answer.
+	const FVector CandidateExtent( 1.f, 1.f, Extent.Z );
+	static TArray<FNavMeshPolyBase*> Polys;
+	Polys.Reset();
+	INT AlreadyTestedCount = 0;
+	for( INT PylonIdx = 0; PylonIdx < PylonsToConsider->Num(); ++PylonIdx )
 	{
 		APylon* CurPylon = (*PylonsToConsider)(PylonIdx);
-
-		FNavMeshPolyBase* Poly = CurPylon->NavMeshPtr->GetPolyFromPoint(Pos,MinWalkableFloorZ,WORLD_SPACE);
-		if(Poly != NULL)
+		if( !CurPylon->IsValid() )
 		{
-			out_Poly = Poly;
-			out_Pylon = CurPylon;
-			return TRUE;
+			continue;
 		}
+		CurPylon->NavMeshPtr->GetIntersectingPolys( Pos, CandidateExtent, Polys );
+		for( INT PolyIdx = Polys.Num() - 1; PolyIdx >= AlreadyTestedCount; --PolyIdx )
+		{
+			if( !ArkNavMeshPolyContainsPoint2DAlreadyInBound( Polys(PolyIdx), Pos ) )
+			{
+				Polys.Remove( PolyIdx );
+			}
+		}
+		AlreadyTestedCount = Polys.Num();
 	}
 
+	if( Polys.Num() == 0 )
+	{
+		return FALSE;
+	}
+	if( Polys.Num() == 1 )
+	{
+		out_Poly = Polys(0);
+		out_Pylon = out_Poly->NavMesh->GetPylon();
+		return TRUE;
+	}
 
-	out_Poly = NULL;
-	out_Pylon = NULL;
-	return FALSE;
+	INT BestIdx = INDEX_NONE;
+	FLOAT fBestZDist = BIG_NUMBER;
+	for( INT PolyIdx = 0; PolyIdx < Polys.Num(); ++PolyIdx )
+	{
+		const FNavMeshPolyBase* Poly = Polys(PolyIdx);
+		const FVector Normal = Poly->GetPolyNormal( WORLD_SPACE );
+		const FVector Center = Poly->GetPolyCenter( WORLD_SPACE );
+		FLOAT fPlaneZ = Pos.Z;
+		if( Abs( Normal.Z ) >= 0.0001f )
+		{
+			fPlaneZ = Center.Z - ( ( Pos.Y - Center.Y ) * Normal.Y + ( Pos.X - Center.X ) * Normal.X ) / Normal.Z;
+		}
+		const FLOAT fZDist = Abs( fPlaneZ - Pos.Z );
+		if( fBestZDist > fZDist )
+		{
+			BestIdx = PolyIdx;
+			fBestZDist = fZDist;
+		}
+	}
+	out_Poly = Polys(BestIdx);
+	out_Pylon = out_Poly->NavMesh->GetPylon();
+	return TRUE;
 }
 
 /**

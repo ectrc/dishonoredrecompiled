@@ -223,7 +223,18 @@ void DisGBReport()
 						const INT Bone = Mesh->MatchRefBone( FName( Bones[BoneIndex] ) );
 						if( Bone == INDEX_NONE )
 						{
-							Line += FString::Printf( TEXT(" %s: no bone;"), Bones[BoneIndex] );
+							// agent GK: the four names are sockets, not bones (agentGB.md section 2) - their world positions are what
+							// the attachment track and retail's retargeting put the riders on
+							FVector SocketLocation( 0.f, 0.f, 0.f );
+							FRotator SocketRotation( 0, 0, 0 );
+							if( Mesh->GetSocketWorldLocationAndRotation( FName( Bones[BoneIndex] ), SocketLocation, &SocketRotation ) )
+							{
+								Line += FString::Printf( TEXT(" %s: socket %s rot %s;"), Bones[BoneIndex], *SocketLocation.ToString(), *DisGBRot( SocketRotation ) );
+							}
+							else
+							{
+								Line += FString::Printf( TEXT(" %s: no bone;"), Bones[BoneIndex] );
+							}
 							continue;
 						}
 						const FMatrix BoneTM = Mesh->GetBoneMatrix( Bone );

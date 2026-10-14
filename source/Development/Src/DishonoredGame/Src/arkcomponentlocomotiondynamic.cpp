@@ -13,16 +13,13 @@
 //    against the anim node's strafe set), FullMovePawn (retail 4,707 bytes of hand-rolled swept movement; this uses
 //    UWorld::MoveActor, which is the engine's own swept move and gives step-up, wall sliding and touch notifications).
 //  * not ported at all, named with rvas where they would be called: ComputeDynamic's avoidance half
-//    (DetectPreAvoidanceCollision 0x543f70, HandlePushPeriod 0x548b90, ComputePriorityOfNPCsFromSharedProps 0x5491b0),
-//    the whole turn-in-place / start / stop animation system (arkcomponentlocomotionrootmove.cpp, 15 functions:
-//    UpdateTurn 0x54b9d0, UpdateStartMove 0x546f60, UpdateStopMove 0x547300, RequestTurn 0x54af40, EvaluateStaticTurn
-//    0x54b4f0, EvaluatePathTurn 0x54b880, EvaluateStartPathTurn 0x54b780, ResetTurn 0x545a10, ResetStartMove 0x545ae0,
-//    ResetStopMove 0x545b70, SetRootState 0x5459a0, IsReadyToTurn 0x53e7a0, IsSpeedModeCanDoTurn 0x54ae10,
-//    IsTurnNotTooCloseFromPathEnd 0x542b20, IsLocoFaceToRequestActive 0x53e750), and the follow mode
-//    (arkcomponentlocomotionfollow.cpp: UpdateFollow 0x544da0, ComputeFollowLocation 0x5448a0, InitFollowProperties
-//    0x544780). All of them drive UArkAnimNodeLocomotion or FArkComponentAvoidance, neither of which is ported.
+//    (DetectPreAvoidanceCollision 0x543f70, HandlePushPeriod 0x548b90, ComputePriorityOfNPCsFromSharedProps 0x5491b0)
+//    and the follow mode (arkcomponentlocomotionfollow.cpp: UpdateFollow 0x544da0, ComputeFollowLocation 0x5448a0,
+//    InitFollowProperties 0x544780). They drive FArkComponentAvoidance, which is not ported.
+//  * the turn-in-place / start / stop animation system (arkcomponentlocomotionrootmove.cpp, 15 functions) is ported by
+//    agent GK and called from ComputeDynamic and ComputeTargetMoveSpeed where retail calls it.
 // The consequence, stated plainly: the NPC walks the path at the right speed and faces where it is going, but it does not
-// turn in place before setting off, does not play a start or stop animation, and does not give way to other NPCs.
+// give way to other NPCs.
 
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
@@ -47,9 +44,13 @@ void FArkComponentLocomotion::AddSteeringForce( const FVector& _Force )
 
 // DISHONORED(port): 2013 rva 0x53ed30 (2012 0x57ff70): root motion means the animation owns the translation, so the
 // dynamics must not also move the pawn.
+// DISHONORED(port, agent GK): retail's body (2013 rva 0x53ed30 / 2012 0x57ff70, 60 B) - "the animation owns the pawn": the
+// component is disabled, the pawn is being deleted, the root state is STOP_END, or the locomotion node plays only a specific
+// animation. Agent DN's version read the mesh's RootMotionMode, which is RMM_Velocity on every NPC.
 UBOOL FArkComponentLocomotion::IsRootMotion() const
 {
-	return ( m_pPawnOwner && m_pPawnOwner->Mesh && m_pPawnOwner->Mesh->RootMotionMode != RMM_Ignore ) ? TRUE : FALSE;
+	return m_bDisabled || ( m_pPawnOwner && m_pPawnOwner->bDeleteMe ) || m_RootState == CPNT_LOCO_ROOT_STATE_STOP_END
+		|| ( m_bCanManageAnim && m_pAnimNodeLoco && m_pAnimNodeLoco->IsPlayingOnlySpecificAnim() );
 }
 
 // DISHONORED(port): 2013 rva 0x53e1f0 (2012 0x57f340): the yaw the pawn is moving in, which is the path's yaw while the
@@ -61,17 +62,21 @@ INT FArkComponentLocomotion::ComputeMoveYaw() const
 
 // DISHONORED(port): 2013 rva 0x541a00 (2012 0x5829d0): is anything other than the path asking the pawn to move? Steering,
 // a push period or root motion all count, and each of them means ClampMove must not simply clamp to the path.
+// DISHONORED(port, agent GK): retail's body (2013 rva 0x541a00 / 2012 0x5829d0, 249 B): a steering force, or - unless this
+// component's shared-props row says to ignore avoidance - an avoidance force of 0.05 or more. Agent DN's version answered
+// IsRootMotion() as a third clause, which is TRUE for every NPC whose mesh runs RMM_Velocity (GA: `rmm 1/1` on all of them),
+// so the push-speed clamp in ComputeDynamic held every lone pawn's move to one acceleration step above its real speed - the
+// "moves zeroed by the push clamp" crawl GD2 measured and papered over with its two landing stand-ins.
 UBOOL FArkComponentLocomotion::IsThereAnotherForceThanPath() const
 {
-	if( !m_CurSteeringForce.IsZero() )
+	const UBOOL bSteering = Abs( m_CurSteeringForce.X ) >= 0.0001f || Abs( m_CurSteeringForce.Y ) >= 0.0001f || Abs( m_CurSteeringForce.Z ) >= 0.0001f;
+	UBOOL bAvoidance = FALSE;
+	if( m_LocoCpntIdx >= 0 && m_LocoCpntIdx < ms_LocoCpntSharedProps.Num() && !ms_LocoCpntSharedProps( m_LocoCpntIdx ).m_bMustIgnoreAvoidance && m_pAvoidable )
 	{
-		return TRUE;
+		const FVector& Force = m_pAvoidable->m_Force;
+		bAvoidance = Abs( Force.X ) >= 0.05f || Abs( Force.Y ) >= 0.05f || Abs( Force.Z ) >= 0.05f;
 	}
-	if( m_bInPushPeriod || m_bSomeoneWantsToPushMe )
-	{
-		return TRUE;
-	}
-	return IsRootMotion();
+	return bSteering || bAvoidance;
 }
 
 // DISHONORED(port): 2013 rva 0x544390 (2012 0x585330, 249 bytes), agent GD. Retail's rule, read off both decompiles: with no
@@ -133,11 +138,29 @@ FLOAT FArkComponentLocomotion::ComputeTargetMoveSpeed( FLOAT _fTimeStep, FLOAT& 
 	_rAdaptedAccel = m_fCurDeceleration * m_fCurFollowAccelMultiplier;
 	if( !m_bHasRequestWithPathComputed || !m_ReqMgr.HasRequest() )
 	{
+		// a pawn walking back onto the navigation mesh does it at walking pace
+		return ( m_bHasRequestWithPathComputed || !m_bTryToReturnOnNavMesh ) ? 0.f : GetForwardSpeedOfSpeedMode( 1, m_CurModifierIdx );
+	}
+	// DISHONORED(port, agent GK): retail's switch on the root state - a turn waiting for its animation holds the turn's
+	// start speed, a stop approaching its animation holds the walk speed, the states where the animation owns the pawn
+	// answer 0, and only NONE / TURN_END / START_END run the braking rule below.
+	switch( m_RootState )
+	{
+	case CPNT_LOCO_ROOT_STATE_NONE:
+	case CPNT_LOCO_ROOT_STATE_TURN_END:
+	case CPNT_LOCO_ROOT_STATE_START_END:
+		break;
+	case CPNT_LOCO_ROOT_STATE_TURN_WAIT_GOOD_FOOT:
+	case CPNT_LOCO_ROOT_STATE_TURN_WAIT_ANIM:
+	case CPNT_LOCO_ROOT_STATE_TURN_BEGIN:
+		return m_TurnProps.m_fTurnStartSpeed;
+	case CPNT_LOCO_ROOT_STATE_STOP_APPROACH:
+	case CPNT_LOCO_ROOT_STATE_STOP_WAIT_ANIM:
+	case CPNT_LOCO_ROOT_STATE_STOP_BEGIN:
+		return GetForwardSpeedOfSpeedMode( 1, m_CurModifierIdx );
+	default:
 		return 0.f;
 	}
-	// DISHONORED(bringup): retail switches on m_RootState here - a turn holds m_TurnProps.m_fTurnStartSpeed and a stop
-	// holds the stop speed mode's forward speed. With the root-motion system unported the state is always NONE, which is
-	// retail's own "the path owns the move" case.
 	if( m_bIsArrived )
 	{
 		return 0.f;
@@ -387,13 +410,7 @@ void FArkComponentLocomotion::HandleArrival( FLOAT _fTimeStep )
 	{
 		const FVector ToEnd = m_LastPathPoint - m_pPawnOwner->Location;
 		const FLOAT fSqToEnd = ToEnd.X * ToEnd.X + ToEnd.Y * ToEnd.Y;
-		// DISHONORED(bringup, agent GD): the second test is not retail's. Retail's stop-animation system (UpdateStopMove, unported)
-		// raises m_bHandleStop on the last segment and the end speed becomes the walk speed, so the pawn walks onto the mark and
-		// this clamp lands it. Without it the braking rule asks for less than m_fVelocityToStopMoving over the last unit, the
-		// push-speed clamp zeroes such a move, and the pawn crawled the last 1 uu for 216 s (GD2) - so a pawn within 2 uu of
-		// its mark whose target speed is already below the stop velocity is landed on it.
-		const UBOOL bBelowStopVelocity = m_pConfig && m_fTargetMoveSpeed < m_pConfig->m_fVelocityToStopMoving && fSqToEnd < 4.f;
-		if( ( m_CurPathMove.X * m_CurPathMove.X + m_CurPathMove.Y * m_CurPathMove.Y ) > fSqToEnd || bBelowStopVelocity )
+		if( ( m_CurPathMove.X * m_CurPathMove.X + m_CurPathMove.Y * m_CurPathMove.Y ) > fSqToEnd )
 		{
 			const FArkCpntLocoRequestCommonProps& rCommon = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps;
 			// DISHONORED(bringup): UArkComponentLocomotionConfig::ComputeSpeedFromSpeedModeAndAngle( EndSpeedIdx, modifier,
@@ -461,9 +478,10 @@ void FArkComponentLocomotion::HandleArrival( FLOAT _fTimeStep )
 // single-step version computed the arrival flag inside HandleArrival from the pawn's current location, which is the premise
 // agentFV.md §1 carried ("ComputeDynamic exits on IsDisabled() || STOP_END first" - it did not: nothing in this tree
 // enters STOP_END and IsDisabled() was never true for the go-to pawn; the pawn stood "arrived" inside DN's radius).
-// DISHONORED(bringup): UpdateTurn / UpdateStartMove / UpdateStopMove (arkcomponentlocomotionrootmove.cpp), UpdateFollow
-// and the avoidance force are unported (the file banner names them); ComputeLookatSpeedMultiplier needs the look-at
-// component and stays 1; the pawn's Velocity is written by FullMovePawn from the real move rather than here.
+// DISHONORED(bringup): UpdateFollow and the avoidance force are unported (the file banner names them);
+// ComputeLookatSpeedMultiplier needs the look-at component and stays 1; the pawn's Velocity is written by FullMovePawn
+// from the real move rather than here. UpdateTurn / UpdateStartMove / UpdateStopMove are agent GK's
+// (arkcomponentlocomotionrootmove.cpp) and run where retail runs them.
 void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 {
 	if( !m_pPawnOwner )
@@ -471,13 +489,23 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 		return;
 	}
 	DISLOCO_MARK( dyn_enter )
-	if( IsDisabled() || m_RootState == CPNT_LOCO_ROOT_STATE_STOP_END )
+	// retail clears the stuck flag at the top of every frame (2012 0x58ca10+0x6b); the test below re-raises it
+	m_bStuckedInAWall = FALSE;
+	// DISHONORED(port, agent GK): retail's first road is taken when the component is disabled, the pawn is being deleted, the
+	// root state is STOP_END, TURN or START, or the anim node plays only a specific animation (the turn / start / stop
+	// animation owns the pawn): the three root-move machines still run there, on the pawn's own location.
+	const UBOOL bAnimationOwnsThePawn = m_RootState == CPNT_LOCO_ROOT_STATE_STOP_END || m_RootState == CPNT_LOCO_ROOT_STATE_TURN
+		|| m_RootState == CPNT_LOCO_ROOT_STATE_START || ( m_bCanManageAnim && m_pAnimNodeLoco && m_pAnimNodeLoco->IsPlayingOnlySpecificAnim() );
+	if( IsDisabled() || bAnimationOwnsThePawn )
 	{
 		if( !IsDisabled() )
 		{
 			m_CurPawnLocation = m_pPawnOwner->Location;
 			m_bIsArrived = ComputeIsArrivedFlagAndSq2DDistToPathEnd( m_fSq2DDistToPathEnd );
 			UpdatePathProperties();
+			UpdateTurn( _fTimeStep );
+			UpdateStartMove( _fTimeStep );
+			UpdateStopMove( _fTimeStep );
 			m_fRealSpeed = m_pPawnOwner->Velocity.Size();
 			m_fRealScaledSpeed = m_fRealSpeed / GetFinalSpeedMultiplier();
 			m_fCurMoveSpeed = m_fRealScaledSpeed;
@@ -526,6 +554,15 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 			const FLOAT fStep = Min( 0.04f, fTimeLeft );
 			UpdatePathProperties();
 			m_CurMoveYaw = ComputeMoveYaw();
+			// retail refreshes the target yaw before the root-move machines only on a new path or a stale polyline, then
+			// again after them (2012 0x58cb8d..0x58ceea)
+			if( m_bStartingNewPath || !m_bBuiltPathUpToDate )
+			{
+				m_TargetMoveYaw = ComputeTargetMoveYaw();
+			}
+			UpdateTurn( fStep );
+			UpdateStartMove( _fTimeStep );
+			UpdateStopMove( _fTimeStep );
 			m_TargetMoveYaw = ComputeTargetMoveYaw();
 			m_CurMoveYaw = UpdateMoveYaw( fStep, m_fCurMoveRotationSpeed, m_fMaxMoveRotationSpeed, m_fMaxMultiDirSpeedForAngle );
 			m_fTargetMoveSpeed = ComputeTargetMoveSpeed( fStep, m_fCurAdaptedAccel );
@@ -539,9 +576,7 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 		while( fTimeLeft > 0.00001f );
 
 		m_CurMove = ApplySteering( _fTimeStep, m_CurPathMove );
-		// DISHONORED(bringup, agent GD): `&& !m_bIsArrived` is not retail's - it lets HandleArrival's landing move (see there) through the
-		// push-speed clamp, which would otherwise hold it to one acceleration step above a real speed of 0.
-		if( IsThereAnotherForceThanPath() && !m_bIsArrived && m_pConfig && _fTimeStep > 0.f )
+		if( IsThereAnotherForceThanPath() && m_pConfig && _fTimeStep > 0.f )
 		{
 			// Something besides the path is pushing: the move's speed is held to what the config lets a pawn start or stop
 			// with and to one acceleration step above the real speed, so a push never launches the pawn.

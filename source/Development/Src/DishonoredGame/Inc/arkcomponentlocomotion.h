@@ -379,6 +379,23 @@ private:
 	void UpdateSharedProperties();									// 2013 0x546260
 	FVector GetPawnGroundLocation() const;							// 2013 0x53dde0
 
+	// the turn / start / stop animation system (arkcomponentlocomotionrootmove.cpp, agent GK)
+	void UpdateTurn( FLOAT _fTimeStep );							// 2013 0x54b9d0
+	void UpdateStartMove( FLOAT _fTimeStep );						// 2013 0x546f60
+	void UpdateStopMove( FLOAT _fTimeStep );						// 2013 0x547300
+	UBOOL RequestTurn( INT _StartYaw, INT _EndYaw, FLOAT _fTurnSpeed, const FVector& _TurnLocation );	// 2013 0x54af40
+	void EvaluateStaticTurn();										// 2013 0x54b4f0
+	void EvaluateStartPathTurn();									// 2013 0x54b780
+	void EvaluatePathTurn();										// 2013 0x54b880
+	UBOOL IsSpeedModeCanDoTurn( INT _SpeedModeIdx, INT _YawDif, INT& _TurnAnimToPlayIdx );	// 2013 0x54ae10
+	void ResetTurn();												// 2013 0x545a10
+	void ResetStartMove();											// 2013 0x545ae0
+	void ResetStopMove();											// 2013 0x545b70
+	void SetRootState( EArkCpntLocoRootState _RootState );			// 2013 0x5459a0
+	UBOOL IsReadyToTurn() const;									// 2013 0x53e7a0
+	UBOOL IsTurnNotTooCloseFromPathEnd( INT _TurnPathPointIdx ) const;	// 2013 0x542b20
+	UBOOL IsLocoFaceToRequestActive() const;						// 2013 0x53e750
+
 public:
 	/** DISHONORED(layout): retail keeps the live components in a file-scope static (2012 rva 0x1058b60) so that
 	    UpdateSharedProperties and ComputePriorityOfNPCsFromSharedProps can see the whole crowd without a manager. */

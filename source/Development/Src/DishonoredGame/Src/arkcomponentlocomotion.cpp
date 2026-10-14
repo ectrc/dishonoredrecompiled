@@ -472,13 +472,13 @@ void FArkComponentLocomotion::UpdateAnimNode( INT _ModifierIdx, FLOAT _fSpeed )
 	}
 }
 
-// DISHONORED(port): 2013 rva 0x5461f0 (2012 0x586ef0): the three root-motion state machines are reset.
-// DISHONORED(bringup): ResetTurn / ResetStartMove / ResetStopMove belong to arkcomponentlocomotionrootmove.cpp
-// (2013 rvas 0x545a10 / 0x545ae0 / 0x545b70), which is the turn-in-place and start/stop animation system and is not
-// ported - it drives UArkAnimNodeLocomotion, which is not ported either. The root state is put back to NONE, which is
-// what all three resets amount to while there is no animation to wait for.
+// DISHONORED(port): 2013 rva 0x5461f0 (2012 0x586ef0): the three root-motion state machines are reset
+// (arkcomponentlocomotionrootmove.cpp, agent GK).
 void FArkComponentLocomotion::OnDisable()
 {
+	ResetTurn();
+	ResetStartMove();
+	ResetStopMove();
 	m_RootState = CPNT_LOCO_ROOT_STATE_NONE;
 	m_fCurMoveSpeed = 0.f;
 	m_fTargetMoveSpeed = 0.f;
@@ -604,7 +604,14 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 		{
 			Destination.Z += m_pPawnOwner->CylinderComponent->CollisionHeight;
 		}
-		if( GWorld->FarMoveActor( m_pPawnOwner, Destination, FALSE, TRUE, FALSE ) )
+		const FVector Before = m_pPawnOwner->Location;
+		const UBOOL bMoved = GWorld->FarMoveActor( m_pPawnOwner, Destination, FALSE, TRUE, FALSE );
+		if( DisGCLocoDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): gadiag teleport %s from %s to %s -> %d, now at %s base %s"), *m_pPawnOwner->GetName(),
+				*Before.ToString(), *Destination.ToString(), (INT)bMoved, *m_pPawnOwner->Location.ToString(), m_pPawnOwner->Base ? *m_pPawnOwner->Base->GetName() : TEXT("none") );
+		}
+		if( bMoved )
 		{
 			GDisLocoTeleports++;
 			// NOT HandleTeleport(): retail's teleport branch clears the bit and forces a recomputation, it does not reset the
