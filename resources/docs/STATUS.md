@@ -1,9 +1,9 @@
-# Project status — 2026-10-12 (wave 22 complete: guards ride the boat, props animate, the camera is forced on the ride, the AS2 leak is gone; wave 23 walks the player to the dock)
+# Project status — 2026-10-14 (wave 23 complete: the player rides on the boat's socket and walks after it, a go-to arrives, Use reaches the Empress conversation, the fade is back; wave 24 fixes the spawn fall, the stretched NPCs, the heads, the sword and the captain's walk)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md` (wave 23, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
-`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GA>.md`, `agentFZ.md`. The retail
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md` (wave 24, current)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+`progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GF>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
 ## Incident 2026-09-25 (read before running anything)
@@ -27,7 +27,7 @@ native class sizes (`types/native_class_sizes.csv`, 2,857 classes), package memb
 
 **The truth sources are wrong often enough that checking is part of the job** — see "Known pitfalls".
 
-## Where we are (HEAD `785e91d` + the FIFO queue `62f3682`)
+## Where we are (HEAD `4b889ff`)
 
 **The game starts from its own main menu and puts you in the first mission, with the opening scene's
 pawns on the boat and the letterbox bars drawn.** Launch the staged
@@ -38,6 +38,21 @@ NEW GAME, the difficulty screen and the brightness screen, then YES on the confi
 its own menu one second after opening it, so New Game was unreachable. It passed 37/37 anyway — see
 "The gate's blind spot" under Known pitfalls. **Enter does not activate a main-menu row** either
 (defect 5); Space does, and `-finewgame` drives past it.
+
+**As of wave 23**: **the boat ends exactly where its cooked keys say** and the "750 units short" was the dock's
+dressing boat — retail holds the player on the boat's `Player` socket through the `InterpTrackAttachment` track,
+now ported, and leaves him there (GB). **The player can walk after the ride again** (GB named it: GA's unconditional
+`MAT_StopRootMotion` left the player at `RMM_Velocity`; GF ported the player's `StopRootMotionMode` /
+`ChangeAnimStateMotionModes`). **An AI go-to arrives** and **`Use` on the captain reaches the Empress
+conversation** (GD) — and GD found that **every AI behaviour had been dropping every stim since wave 14**
+(`BuildBehaviorFilterStimMasks` was the base body). **The first Empress scene fades back in** (GE: a dialog hook
+swallowed by the wrong one-shot). **A walking NPC selects his walk** (GC: `UArkAnimNodeLocomotion`). **The arms
+pipeline is ported** (GF) but **there is nothing to equip** — no inventory/equip path exists, so the user's arms
+report is wave 24's GJ. **The intermittent death is named**: the player is possessed before the level's static
+PhysX shapes exist and falls — ~60 health lost on every run, KillZ on a slow load (GE; wave 24 GG). **The stretched
+NPCs are the cinematic sequences' evaluation** (78-joint sequences on 118-joint skeletons), not foot placement
+(GF; wave 24 GH). The first act on `4b889ff`: the player walks off the socket and into the back of the Elite who
+has not disembarked — his go-to has `no start poly` on the boat (wave 24 GK). Wave 24 is `PHASE20.md`.
 
 **As of wave 22**: the boat ride is a scene, not a slideshow. **The two guards ride the boat with the
 player** (GA: retail's `FullMovePawn` floor sweep bases them on `SkeletalMeshActorMAT_2`; 11 of 28 NPCs
@@ -100,9 +115,9 @@ listeners (`98e22d4`).
 
 ## The gate is GREEN - 47 of 47 - and how it got there
 
-`run_regression.py` is **47 checks**. Every wave-22 merge read **47 ok, 0 failed, 0 skipped** on a clean
-checkout of its own commit (`90d490e`, `0e45ea1`, `03f7579`, `02eb527`, `785e91d`; `ad4a35d`
-read 46 - see defect 12), and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
+`run_regression.py` is **47 checks**. Every wave-22 and wave-23 merge read **47 ok, 0 failed, 0 skipped** on a
+clean checkout (wave 23: `f7bc754`, `4b889ff`; `d96a331` read 46 on `d3d9_frames` under full-machine builds and 9/9
+on the stage alone; `ad4a35d` read 46 - see defect 12), and that number means more than any earlier green board did: since `cd5fadd` (wave 19) the
 crash detectors match the structured-exception banner as well as `Critical: `, so a hard crash inside a
 stage is now a red row rather than an invisible one.
 
@@ -125,7 +140,11 @@ than attributed to load.
 
 Waves 16 and 17 closed most of the interface list. What the user has reported and is **still open**:
 
-1. **The Empress scene needs the player to walk there, and the boat stops 750 units short of the dock.**
+1. **The Empress scene needs the player to walk there — and now he can, up to the Elite's back.** Wave 23: the
+   boat's end is data (GB); the player rides on the socket and walks after it (GB, GF); the go-to arrives and `Use`
+   works (GD); the fade is back (GE). What stops the chain on `4b889ff`: the Elite guard standing in the bow does
+   not disembark because his go-to has `no start poly` on the boat (wave 24 GK). The earlier text follows.
+   ~~**The Empress scene needs the player to walk there, and the boat stops 750 units short of the dock.**~~
    Wave 21 FR ported the conversation system's direct path (the boat ride starts on its own); wave 22 FW
    mapped the whole chain (`agentFW.md` §3: lift → dock → `DisTrigger_8` guards → captain via go-to or
    `Use` → `DisTrigger_16` 'Empress & Regent' → `Use` on the Empress → ... → `Empress Death`, which is
@@ -224,13 +243,36 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
     `ADishonoredPlayerPawn::SetBodyMode` switches the one mesh ARMS_ONLY ↔ FULL_BODY, measured 0 → 1 → 0;
     **nothing is equipped on the harness route, so the arms report is not reproduced yet** (wave 23 GF
     equips the sword and measures).
-12. **The player dies 3 s after spawning in the d3d9 stage, once in seven runs** (`ad4a35d`; also once
-    in wave 20 on `15695d8`). `ADishonoredPlayerPawn::execPlayDying_Native` fires at ~10 s, nothing in
-    the log before it; the same tree passed six times. Not GA's `PHYS_Falling` tail (the locomotion
-    component is NPC-only). Wave 23 GE makes the stub log the killer and damage type and loops the stage.
-13. **Tall, thin, stretched dark silhouettes** on NPC pawns standing on a matinee-moved boat (FZ's
-    captures fz6b/c, fz7b), absent from the control. Shared with NPC pawns, so not the player's body
-    mode; the anim stack or the mesh translation (wave 23 GC / GF).
+12. **The player is possessed before the level's static PhysX shapes exist and falls** — wave 23 GE reproduced
+    it (loop run 3 of 20): 0 static shapes at possession, 4 at +0.5 s; a normal load lands with 57–69
+    `DmgType_Fell` at 1.4 s (**every run starts with ~60 health lost**), a slow load passes KillZ at 2.78 s (the
+    1-in-7 death, also wave 20's). Not wave-22 code. Fix = spawn order (wave 24 GG).
+13. **Tall, thin, stretched dark silhouettes on every matinee-driven NPC** the second a cinematic channel
+    plays (posed height 155–341 vs 148; scale/LTW/LOD nominal; on the control too). Not the body mode, not mesh
+    translation, not foot placement (GF took it off the exclude list and the stretch stayed), not the blend (GC:
+    110/110 bones, no scale). **The evaluation of those Edge sequences — 78 joints, 0+1 translation channels, on
+    118-joint skeletons** (wave 24 GH).
+14. **No guard turns his head** — the look-at is raised by `UDisAIBrainProcessAttention::HandleTopAttnTarget`,
+    223 functions on the exclude list; the head-track sub-processes are in (GE). Wave 24 GI.
+15. **"I can see my arms when I shouldn't" is not reproducible: nothing can be equipped.** No inventory init or
+    equip path exists in the tree (GF); retail's New Game starts empty too. Wave 24 GJ ports the path and
+    measures the arms with the sword drawn.
+
+## Wave 23 — the socket, the walk, the go-to, Use, the fade, the arms
+
+Six packages, all merged and gated (`PHASE19.md` has each outcome; `agents/agentGB.md` … `agentGF.md`).
+
+| Package | Commit | What landed | Where the brief was wrong |
+|---|---|---|---|
+| GC | `d96a331` | `UArkAnimNodeLocomotion` (34 of 52), driven by the locomotion component; Worker A's `no start poly` named | the angle is `FArkComponentFaceTo`'s; the Empty_Idle slide was retail's own fallback; the silhouettes are not the stack |
+| GB | `f7bc754` | `UInterpTrackAttachment` + inst (the player on the `Player` socket), `DoKismetAttachment` ×3, `MAT_Attach/Detach`; the walk regression named (`RMM_Velocity`) | the boat's end is data; the far boat is the dock's; the player IS held in retail; a 2012 rva in a header comment was wrong |
+| GE | `cc6b0e7` | the fade (a swallowed dialog hook), the `bad AnimNotify` check removed, head-track sub-processes, the spawn death reproduced and named, parameter-logging native stubs | the fade-out is a dialog-started matinee's track; the death is the spawn fall, not wave-22 code |
+| GF | `622fc3a` | the player's `StopRootMotionMode` / `ChangeAnimStateMotionModes` (the walk), the arms pipeline, `UDishonoredPlayerSkeletalComponent` whole, `Tick_Begin` | no equip path exists; `SetBodyMode` is not the arms mechanism; the stretch is not foot placement |
+| GD | `4b889ff` | `HandleArrival`/`ComputeDynamic` as retail, `BuildBehaviorFilterStimMasks` per class (every behaviour had been dropping every stim since wave 14), the use FSM and the whole `Use` path to the Empress conversation | nothing enters `STOP_END`; `HandleArrival` did run; the Use path is longer than the brief |
+
+Coordinator's lessons: `d3d9_frames` is a load cliff under unqueued full-machine builds — re-run the stage alone
+and report both; the build queue is FIFO but worktree copies of `build_queued.py` predate it until they rebase; three
+of the plan's attributions were wrong (the boat's end, the death, the foot placement) and the packages said so.
 
 ## Wave 22 — walking to the Empress, the two natives, the bitfield audit, the AS2 leak, the soirée state
 
@@ -376,23 +418,21 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 23 is `PHASE19.md`; its spine is 1 → 3 → 4 of its list: the player walks off the boat, the captain
-walks to him, `Use` on him, and the Empress scene starts without a teleport.** GB: the boat matinee's
-end position (750 units short). GC: `UArkAnimNodeLocomotion` so a walking NPC's legs move; Worker A's
-path failures. GD: the go-to arrives (`HandleArrival` / `ComputeDynamic`'s `STOP_END`), and `Use`
-(`DDH_PLAYER_USED → 'Give_Letter'`). GE: the fade back from black after the first Empress scene, the
-head-track sub-processes and `DisNotify_NPCDisableLookAt`, and the intermittent player death named.
-GF: the arms with the sword equipped, `OnCameraUpdate_Derived`, the stretched silhouettes. All five are
-running on `785e91d` / `62f3682`.
+**Wave 24 is `PHASE20.md`.** GG: possess the player after the level's static PhysX actors exist (the spawn fall:
+~60 health every run, 1-in-7 deaths). GH: the cinematic sequences' evaluation (the stretched NPCs). GI: the AI
+attention process (the heads). GJ: the inventory and equip path (the sword; the arms report). GK: the captain's
+and the Elite's start poly on the boat (the guards disembark, the player reaches the dock, the chain runs without
+a teleport), the stop-animation system behind GD's stand-ins, GB's attachment residue. All five running on
+`4b889ff`; `build/head_rel` is the control at `4b889ff`.
 
 **Deferred and said so**: the rest of the UI list (menu camera, haze, text clarity); the retail dismod
-measurements (no retail launch while the user is at the machine); faction tables behind
-`DetermineRelationship`; **wave 15**; audio.
+measurements (no retail launch while the user is at the machine); faction tables; the probe family and
+`FindCombatTarget_Dir`; **wave 15**; audio.
 
-**Process, from the user, all absolute**: `-windowed` on every launch; input only through
-`game_input.py`; builds only through `build_queued.py` (FIFO, half the cores, two per package); no retail
-launches while the user is at the machine. The overnight override (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`)
-lifts the CPU cap and the queue; delete it to restore daytime behaviour. **Never hand-edit a generated
+**Process, from the user, all absolute**: `-windowed` on every launch; input only through `game_input.py`; builds
+only through `build_queued.py` (FIFO, half the cores, two per package); no retail launches while the user is at the
+machine. The override file (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`) lifts the cap and the queue while
+the user is away (in place since 2026-10-14 13:00); delete it when the user is back. **Never hand-edit a generated
 header**: `Inc/CppText/<Class>.h` and `DishonoredLink<X>()` anchors; the coordinator regenerates on merge.
 
 ## Known pitfalls

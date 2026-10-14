@@ -216,7 +216,7 @@ root-motion delta. Retail's player overrides are unported: `ADishonoredPlayerPaw
 track; the Move runtime is not the suspect; the player IS held in retail (by the Attachment track); the
 `DoKismetAttachment` comment's 2012 rva was wrong; the silhouettes are on the control too.
 
-### GE — merged; GE's own gate on the merged tree 47 ok / 0 failed / 0 skipped
+### GE — merged `cc6b0e7` (gated with GF and GD in `4b889ff`); GE's own gate on the merged tree 47 ok / 0 failed / 0 skipped
 
 Thirty files, 0 flagged against `f7bc754`; regeneration clean; `bitfield_audit` 0; CoreSmoke linked (Core change).
 
@@ -242,7 +242,7 @@ listed in `<Module>NativeStubs.logparams.txt`.
 a look-at; `DisNotify_NPCDisableLookAt` was never broken; the death is the spawn fall, not wave-22 code;
 `USeqAct_Switch::Activated` exists inline; the silhouettes are on static-ground guards in the control too.
 
-### GF — merged; GF's own gate 46/47 (`d3d9_frames` 630 under full-machine builds; the stage alone 9/9, 3780 frames)
+### GF — merged `622fc3a` (gated with GE and GD in `4b889ff`); GF's own gate 46/47 (`d3d9_frames` 630 under full-machine builds; the stage alone 9/9, 3780 frames)
 
 Thirty files, 0 flagged against `75cb0a6`; regeneration clean; `bitfield_audit` 0; two Engine hand edits
 (`USkeletalMeshComponent::TickEnd` virtual, called at the end of `Tick`).
@@ -270,7 +270,7 @@ on 118-joint skeletons) — FT's `GetBoneAtoms` stand-in → wave 24.**
 silhouettes are on the real control and are not mesh translation / body mode / base transform / foot placement;
 arm-follow, `SetOffset`, `SetFOV` change nothing visible on this route (offset 0, arms FOV = view FOV).
 
-### GD — merged; GD's own gate (GD + `d96a331`) 47 ok / 0 failed / 0 skipped (2060 s); merged tree compile-verified and run, gated on main by the coordinator
+### GD — merged `4b889ff`; gate on main 47 ok / 0 failed / 0 skipped (1895 s); GD's own gate (GD + `d96a331`) 47 ok / 0 failed / 0 skipped (2060 s); merged tree compile-verified and run, gated on main by the coordinator
 
 Thirty-one files, 0 flagged against `2f88f47`; regeneration clean; `bitfield_audit` 0.
 
@@ -295,3 +295,20 @@ bounds test, nearest 0.56 uu) on the ride boat → wave 24 GK. GD's gate saw one
 **Premises corrected**: see above; the Use path is longer than the brief (`UpdateCrosshair` camera pass 1 → NPC
 `GetCrosshairStatus` → brain `AllowPlayerUse` → `CheckDialogHook`); 2013's `GetCrosshairStatus`/`AllowPlayerUse`
 differ from 2012 (ported in 2013 shape). Two named stand-ins for the unported stop-animation system.
+
+## Wave 23 result
+
+Six packages merged and gated: GC `d96a331`, GB `f7bc754`, GE `cc6b0e7`, GF `622fc3a`, GD `4b889ff` — `4b889ff`
+reads **47 ok, 0 failed, 0 skipped**; `unported_natives` 0; `verify_phase2` 3/3. Two gates read 46/47 on
+`d3d9_frames` alone while several unqueued 16-job builds ran (the user's "100%, no queue" while away); the stage
+re-run on the same exe read 9/9 both times — a load cliff, not a regression, and PHASE20's rules say how to report it.
+
+What the first mission does now that it did not before: the boat ends where its data says and the player rides on
+its `Player` socket and is left on it (GB); a walking NPC selects his walk and the weights follow his speed (GC);
+the player can walk after the ride (GB named it, GF fixed it); the first Empress scene fades back in (GE); the
+`bad AnimNotify` noise is gone (GE); the arms pipeline exists (GF); an AI go-to arrives and `Use` on the captain
+reaches the Empress conversation (GD) — and **every AI behaviour had been filtering every stim away since wave
+14** (GD). Named and left: the spawn fall that costs ~60 health and 1-in-7 lives (GE), the stretched cinematic NPCs
+(GC → GF → the sequence evaluation), the heads (GE: the attention process), the sword (GF: no equip path), the
+captain's start poly (GD/GC). The first act on `4b889ff`: the player walks off the socket and into the back of the
+Elite who has not disembarked (PHASE20).
