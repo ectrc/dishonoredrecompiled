@@ -183,7 +183,7 @@ octree query ((0,0,80) world box vs `APylon::GetBounds`) or the LOCAL_SPACE heig
 (`UpdateRetargeting` 2012 `0x8b37e0`, 4.3 KB of SSE) — the Captain socket at the ride's end is 10042.7, 23044.4,
 2337.3, on the dock polys. **→ wave 25.**
 
-### GG — merged; GG's own gate 47 ok / 0 failed / 0 skipped (2280 s, `d3d9_frames` 3180)
+### GG — merged `0e5207a`; gate on main 40/47 under GI's 16-job gate build (the d3d9 run died before a frame, inputtest reached the map at 37 s and walked 216 uu) and the two stages alone on the same exe 18/18 (`inputtest_moved` 1051.6) — a load miss; GG's own gate 47 ok / 0 failed / 0 skipped (2280 s, `d3d9_frames` 3180)
 
 Five files (three source), 0 flagged against `b90cebf`; `bitfield_audit` 0; Engine hand edit `UnWorld.cpp` (the
 per-frame streaming budget read from `AWorldInfo` as retail does; values unchanged).
