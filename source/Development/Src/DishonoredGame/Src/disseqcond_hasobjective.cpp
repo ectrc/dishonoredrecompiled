@@ -6,3 +6,25 @@
 //   0x7d1b80  public: virtual void __thiscall UDisSeqCond_HasObjective::Activated(void)
 //   0x7e9f90  public: static class UClass * __cdecl UDisSeqCond_HasObjective::GetPrivateStaticClassUDisSeqCond_HasObjective(wchar_t const *)
 //   0x7edc00  public: static class UClass * __cdecl UDisSeqCond_HasObjective::StaticClassNoInline(void)
+
+// ---- agent HI (PHASE22 HI) ----
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x78ec20 (2012 0x7d1b80; 2013 added the m_pObjective test). Output 0 "True", 1 "False".
+void UDisSeqCond_HasObjective::Activated()
+{
+	USequenceOp::Activated();
+	ADishonoredPlayerController* PlayerController = ADishonoredPlayerController::s_pInstance;
+	if( m_pObjective && PlayerController && PlayerController->m_pObjectivesComponent && PlayerController->m_pObjectivesComponent->HasObjective( m_pObjective ) )
+	{
+		OutputLinks(0).bHasImpulse = TRUE;
+	}
+	else
+	{
+		OutputLinks(1).bHasImpulse = TRUE;
+	}
+}
+
+void DishonoredLinkDisSeqCondHasObjective()
+{
+}

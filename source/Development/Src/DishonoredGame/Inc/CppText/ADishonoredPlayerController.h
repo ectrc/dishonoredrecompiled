@@ -139,3 +139,8 @@ protected:
 	INT FetchTrackedTargetRot( struct FDisPlayerViewTarget& _rTarget, UBOOL _bIsPitch, const FVector& _rCurCamPos );
 	void TickCameraTracking( FLOAT _fDeltaTime, const FVector& _rCurCamPos );
 public:
+
+// ---- agent HI (PHASE22 HI): the objective actions' handler. Body in dishonoredplayercontroller.cpp ----
+public:
+	// DISHONORED(port): 2013 rva 0x6b80d0 (2012 0x6ef780), the handler of every DisSeqAct_ObjectiveAction
+	virtual void OnObjectiveAction( class UDisSeqAct_ObjectiveAction* _pAction );

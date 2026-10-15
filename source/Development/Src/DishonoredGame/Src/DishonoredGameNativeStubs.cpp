@@ -438,10 +438,6 @@ void ADishonoredPlayerController::execOnShowPowerMenu( FFrame& Stack, RESULT_DEC
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execOnShowPowerMenu);
 }
-void ADishonoredPlayerController::execOnObjectiveAction( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execOnObjectiveAction);
-}
 void ADishonoredPlayerController::execProcessViewRotation( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execProcessViewRotation);
@@ -2017,10 +2013,6 @@ void UDisDLC05MoviePlayerResultsMenu::execReplayChallenge( FFrame& Stack, RESULT
 void UDisDLC05MoviePlayerResultsMenu::execCanUnpauseToReplay( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDisDLC05MoviePlayerResultsMenu, execCanUnpauseToReplay);
-}
-void UDisSeqVar_Task::execGetObjectValue( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDisSeqVar_Task, execGetObjectValue);
 }
 void ADisDLC06NPCPawn::execOnNPCSetHeadMesh( FFrame& Stack, RESULT_DECL )
 {

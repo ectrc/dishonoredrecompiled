@@ -1,0 +1,6 @@
+// UDisSeqAct_FailObjective cpptext: included inside the generated class body.
+
+// ---- agent HI (PHASE22 HI). Body in disseqact_failobjective.cpp ----
+public:
+	// DISHONORED(port): 2013 rva 0x7867c0
+	virtual void HandlePackageObjective( class UDishonoredObjectivesComponent* _pObjComp, const UDishonoredObjective* _pPackageObjective );

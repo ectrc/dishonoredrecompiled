@@ -269,3 +269,49 @@ const FConfigSection* FindLocalizedConfigSection( const TCHAR* _pLanguage, const
 		_pLanguage = TEXT("INT");
 	}
 }
+
+// ---- agent HI (PHASE22 HI): the objective helpers ----
+// DISHONORED(port): 2013 rva 0x7be6a0 (2012 0x8266c0, dishonoredutilities.cpp:322)
+void DisSendObjectiveChangedNotify( EDisObjectiveChangedNotifyType _Type, UObject* _pRefObj )
+{
+	ADishonoredPlayerController* PlayerController = ADishonoredPlayerController::s_pInstance;
+	if( PlayerController && PlayerController->m_pObjectivesComponent )
+	{
+		PlayerController->m_pObjectivesComponent->OnObjectiveChangedNotify( _Type, _pRefObj );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7dd150 (2012 0x839de0, dishonoredutilities.cpp:1300): the package tasks of every DisSeqVar_Task
+// on the variable links named _pDesc (all links when empty), read through the variables' GetObjectRef until it answers NULL.
+void DisGetTaskVars( const USequenceOp* _pOp, const TCHAR* _pDesc, TArray<const UDishonoredTask_Base*, TMemStackAllocator<GMainThreadMemStack> >& _rTasks )
+{
+	for( INT LinkIdx = 0; LinkIdx < _pOp->VariableLinks.Num(); LinkIdx++ )
+	{
+		const FSeqVarLink& VarLink = _pOp->VariableLinks(LinkIdx);
+		if( _pDesc && *_pDesc && appStricmp( *VarLink.LinkDesc, _pDesc ) != 0 )
+		{
+			continue;
+		}
+		if( !VarLink.SupportsVariableType( UDisSeqVar_Task::StaticClass(), FALSE ) )
+		{
+			continue;
+		}
+		for( INT VarIdx = 0; VarIdx < VarLink.LinkedVariables.Num(); VarIdx++ )
+		{
+			USequenceVariable* Variable = VarLink.LinkedVariables(VarIdx);
+			if( Variable == NULL )
+			{
+				continue;
+			}
+			for( INT RefIdx = 0; ; RefIdx++ )
+			{
+				UObject** Ref = Variable->GetObjectRef( RefIdx );
+				if( Ref == NULL || *Ref == NULL )
+				{
+					break;
+				}
+				_rTasks.AddItem( (const UDishonoredTask_Base*)*Ref );
+			}
+		}
+	}
+}

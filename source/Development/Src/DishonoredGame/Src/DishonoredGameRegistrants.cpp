@@ -2333,15 +2333,34 @@ IMPLEMENT_CLASS(UDishonoredVisibilityComponent);
 extern void DishonoredLinkArkAnimNodeLocomotion();
 extern void DishonoredLinkDisBehaviorGoTo();
 extern void DishonoredLinkDisBehaviorGoToBase();
+extern void DishonoredLinkDisSeqActAddObjective();
+extern void DishonoredLinkDisSeqActCompleteObjective();
+extern void DishonoredLinkDisSeqActFailObjective();
+extern void DishonoredLinkDisSeqActObjectiveAction();
+extern void DishonoredLinkDisSeqActRemoveObjective();
 extern void DishonoredLinkDisSeqActSetDisposition();
+extern void DishonoredLinkDisSeqActSetObjectiveHidden();
+extern void DishonoredLinkDisSeqActSetTaskHidden();
+extern void DishonoredLinkDisSeqActSetTaskState();
 extern void DishonoredLinkDisSeqActStartSpawn();
+extern void DishonoredLinkDisSeqActTaskAction();
 extern void DishonoredLinkDisSeqActToggleHUDElement();
+extern void DishonoredLinkDisSeqActUpdateCustomTask();
+extern void DishonoredLinkDisSeqActUpdateTaskTarget();
 extern void DishonoredLinkDisSeqCondCompareBoolExtended();
 extern void DishonoredLinkDisSeqCondCompareTweaks();
+extern void DishonoredLinkDisSeqCondHasObjective();
+extern void DishonoredLinkDisSeqCondIsObjectiveComplete();
+extern void DishonoredLinkDisSeqCondTaskState();
 extern void DishonoredLinkDisSeqVarSpawnerPawn();
+extern void DishonoredLinkDisSeqVarTask();
 extern void DishonoredLinkDisUseStates();
 extern void DishonoredLinkDishonoredNPCPawnInteract();
+extern void DishonoredLinkDishonoredObjective();
+extern void DishonoredLinkDishonoredObjectivesComponent();
 extern void DishonoredLinkDishonoredPawnAttentionTarget();
+extern void DishonoredLinkDishonoredTaskBase();
+extern void DishonoredLinkDishonoredTaskCustom();
 extern void DishonoredLinkFZ_ArkAnimNodeBlendPose();
 extern void DishonoredLinkFZ_CameraAnimDriven();
 extern void DishonoredLinkFZ_CameraInfluence();
@@ -2387,15 +2406,34 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkArkAnimNodeLocomotion,
 	&DishonoredLinkDisBehaviorGoTo,
 	&DishonoredLinkDisBehaviorGoToBase,
+	&DishonoredLinkDisSeqActAddObjective,
+	&DishonoredLinkDisSeqActCompleteObjective,
+	&DishonoredLinkDisSeqActFailObjective,
+	&DishonoredLinkDisSeqActObjectiveAction,
+	&DishonoredLinkDisSeqActRemoveObjective,
 	&DishonoredLinkDisSeqActSetDisposition,
+	&DishonoredLinkDisSeqActSetObjectiveHidden,
+	&DishonoredLinkDisSeqActSetTaskHidden,
+	&DishonoredLinkDisSeqActSetTaskState,
 	&DishonoredLinkDisSeqActStartSpawn,
+	&DishonoredLinkDisSeqActTaskAction,
 	&DishonoredLinkDisSeqActToggleHUDElement,
+	&DishonoredLinkDisSeqActUpdateCustomTask,
+	&DishonoredLinkDisSeqActUpdateTaskTarget,
 	&DishonoredLinkDisSeqCondCompareBoolExtended,
 	&DishonoredLinkDisSeqCondCompareTweaks,
+	&DishonoredLinkDisSeqCondHasObjective,
+	&DishonoredLinkDisSeqCondIsObjectiveComplete,
+	&DishonoredLinkDisSeqCondTaskState,
 	&DishonoredLinkDisSeqVarSpawnerPawn,
+	&DishonoredLinkDisSeqVarTask,
 	&DishonoredLinkDisUseStates,
 	&DishonoredLinkDishonoredNPCPawnInteract,
+	&DishonoredLinkDishonoredObjective,
+	&DishonoredLinkDishonoredObjectivesComponent,
 	&DishonoredLinkDishonoredPawnAttentionTarget,
+	&DishonoredLinkDishonoredTaskBase,
+	&DishonoredLinkDishonoredTaskCustom,
 	&DishonoredLinkFZ_ArkAnimNodeBlendPose,
 	&DishonoredLinkFZ_CameraAnimDriven,
 	&DishonoredLinkFZ_CameraInfluence,

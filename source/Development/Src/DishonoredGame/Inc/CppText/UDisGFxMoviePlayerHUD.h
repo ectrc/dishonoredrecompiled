@@ -75,3 +75,21 @@ protected:
 	void Tick_Interaction( class IDisInteractableInterface* _pInteractable );               // 2013 rva 0x7acb10
 	void UpdateCrosshairFocusText( const FString& _rText );                                  // 2013 rva 0x7984f0
 	void UpdateCrosshairInteractions( const FString& _rName, const struct FDisUIInteractionGroup& _rGroup ); // 2013 rva 0x7a6150
+
+// ---- agent HI (PHASE22 HI): the rest of the objective notifications. Bodies in disgfxmovieplayerhud.cpp ----
+public:
+	void HandleObjectiveEvents( UBOOL _bHandle );                                            // 2013 rva 0x787ec0
+	void OnObjectiveCompleted( class UDishonoredObjective* _pObjective );                    // 2013 rva 0x7b2500
+	void OnObjectiveFailed( class UDishonoredObjective* _pObjective );                       // 2013 rva 0x7b2660
+	void OnTaskUpdated( class UDishonoredTask_Base* _pTask );                                // 2013 rva 0x7b28e0
+	void OnTaskCompleted( class UDishonoredTask_Base* _pTask );                              // 2013 rva 0x7b2a00
+	void OnTaskFailed( class UDishonoredTask_Base* _pTask );                                 // 2013 rva 0x7b2b20
+
+// ---- agent HI (PHASE22 HI): the task markers. Bodies in disgfxmovieplayerhud.cpp ----
+protected:
+	void Tick_Markers( FLOAT _fDeltaTime );                                                  // 2013 rva 0x7b00c0
+	void UpdateTaskMarkerInstances();                                                        // 2013 rva 0x7ad550
+	void PreRender_Markers( UCanvas* _pCanvas );                                             // 2013 rva 0x7a0890
+	void SortMarkers( struct FDisHUDMarkerPosInfo* _pPosInfos, UBOOL _bSortNewMarkers );     // 2013 rva 0x799480
+	void ClearMarkerInstances();                                                             // 2013 rva 0x7a0f00
+public:

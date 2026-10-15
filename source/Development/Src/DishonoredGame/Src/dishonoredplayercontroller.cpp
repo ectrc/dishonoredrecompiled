@@ -3194,3 +3194,49 @@ void ADishonoredPlayerController::execDis_EquipItemByType( FFrame& Stack, RESULT
 	P_FINISH;
 	Dis_EquipItemByType( _pItemClass, _Usage );
 }
+
+// ---- agent HI (PHASE22 HI): the objective actions' handler ----
+// DISHONORED(port): 2013 rva 0x6b80d0 (2012 0x6ef780): each package objective the action names goes to the action's
+// HandlePackageObjective with this controller's objectives component; while they run, the HUD queues popups only when the
+// action asks for a HUD notification.
+// DISHONORED(bringup): this tree's DisGetGFxHUD answers NULL while the HUD movie is closed; the flag is then left alone.
+void ADishonoredPlayerController::OnObjectiveAction( UDisSeqAct_ObjectiveAction* _pAction )
+{
+	if( m_pObjectivesComponent == NULL )
+	{
+		if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): hidiag OnObjectiveAction %s: no objectives component"), _pAction ? *_pAction->GetName() : TEXT("None") );
+		}
+		return;
+	}
+	FMemMark Mark( GMainThreadMemStack );
+	TArray<UDishonoredObjective*, TMemStackAllocator<GMainThreadMemStack> > Objectives;
+	_pAction->GetObjectives( Objectives );
+	UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD();
+	if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): hidiag OnObjectiveAction %s: %d objectives, notification %d, HUD %s"), *_pAction->GetName(),
+			Objectives.Num(), (INT)_pAction->m_bShowHUDNotification, HUD ? TEXT("open") : TEXT("closed") );
+	}
+	if( HUD )
+	{
+		HUD->HandleObjectiveEvents( _pAction->m_bShowHUDNotification );
+	}
+	for( INT Index = 0; Index < Objectives.Num(); Index++ )
+	{
+		_pAction->HandlePackageObjective( m_pObjectivesComponent, Objectives(Index) );
+	}
+	if( HUD )
+	{
+		HUD->HandleObjectiveEvents( TRUE );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x5eebe0 (2012 0x6351d0)
+void ADishonoredPlayerController::execOnObjectiveAction( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( UDisSeqAct_ObjectiveAction, _pAction );
+	P_FINISH;
+	OnObjectiveAction( _pAction );
+}

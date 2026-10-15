@@ -247,6 +247,7 @@ struct FDisHUDMarkerVariation
     {
         appMemzero(this, sizeof(FDisHUDMarkerVariation));
     }
+#include "CppText/FDisHUDMarkerVariation.h"
 };
 
 // DishonoredGame.DisTweaks_GFxMoviePlayerHUD.DisHUDMarkerSettings: retail SDK size 72 (2012 PDB 72)

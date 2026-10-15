@@ -115,6 +115,7 @@ public:
     //## END PROPS DisSeqAct_PlayerAction
 
     DECLARE_ABSTRACT_CLASS(UDisSeqAct_PlayerAction,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_PlayerAction.h"
 };
 
 // DishonoredGame.DisSeqAct_Latent: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)

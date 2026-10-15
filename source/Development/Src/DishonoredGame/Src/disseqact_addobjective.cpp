@@ -6,3 +6,16 @@
 //   0x7ec1e0  public: static class UClass * __cdecl UDisSeqAct_AddObjective::GetPrivateStaticClassUDisSeqAct_AddObjective(wchar_t const *)
 //   0x7f0750  public: static void __cdecl UDisSeqAct_AddObjective::InitializePrivateStaticClassUDisSeqAct_AddObjective(void)
 //   0x7f0d20  public: static class UClass * __cdecl UDisSeqAct_AddObjective::StaticClassNoInline(void)
+
+// ---- agent HI (PHASE22 HI) ----
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x786780 (2012 0x7cbaa0)
+void UDisSeqAct_AddObjective::HandlePackageObjective( UDishonoredObjectivesComponent* _pObjComp, const UDishonoredObjective* _pPackageObjective )
+{
+	_pObjComp->AddObjective( _pPackageObjective );
+}
+
+void DishonoredLinkDisSeqActAddObjective()
+{
+}

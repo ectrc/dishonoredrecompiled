@@ -151,3 +151,8 @@ const class UDisTweaks_PlayerInput* DisGetPlayerInputTweaks();
 // DISHONORED(written): agent GI (PHASE20 GI). The attention manager (2012 accessor 0x82dc00) is owned by the game info; retail
 // constructs it with the other global managers at game-info init, which this tree has not ported, so it is made on first use.
 class UDisGlobalAIAttentionManager* DisGetGlobalAIAttentionManager();
+
+// ---- agent HI (PHASE22 HI): the objective helpers (dishonoredutilities.cpp) ----
+// DISHONORED(port): 2013 rva 0x7be6a0 (2012 0x8266c0) and 0x7dd150 (2012 0x839de0)
+void DisSendObjectiveChangedNotify( EDisObjectiveChangedNotifyType _Type, class UObject* _pRefObj );
+void DisGetTaskVars( const class USequenceOp* _pOp, const TCHAR* _pDesc, TArray<const class UDishonoredTask_Base*, TMemStackAllocator<GMainThreadMemStack> >& _rTasks );

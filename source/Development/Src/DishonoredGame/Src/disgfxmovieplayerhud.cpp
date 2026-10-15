@@ -164,6 +164,7 @@
 #include "dishonoredutilities.h"
 #include "gfxui_gfx3.h"
 #include "arkgameeventdispatcher.h"
+#include "dishudmarkers.h"
 
 /*-----------------------------------------------------------------------------
 	Agent EK (PHASE11 EK): the in-game HUD.
@@ -983,7 +984,8 @@ void UDisGFxMoviePlayerHUD::PreRender( UCanvas* _pCanvas )
 	// DISHONORED(bringup): retail then runs PreRender_Crosshair (2013 0x79ff30), the crosshair's
 	// interaction pass (0x78d540 through the player controller's current interactable),
 	// PreRender_Markers (0x7a0890), PreRender_Damage (0x7970f0) and PreRender_Keyhole (0x797b20).
-	// All four project world positions through the canvas and none of them is ported by this package.
+	// All four project world positions through the canvas; of them only PreRender_Markers is ported (agent HI).
+	PreRender_Markers( _pCanvas );
 }
 
 /*-----------------------------------------------------------------------------
@@ -1226,8 +1228,8 @@ void UDisGFxMoviePlayerHUD::PreClose( UBOOL _bUnload )
 	m_ActivePopup.m_Tasks.Empty();
 	m_ActivePopup.m_pTargetNotifSeq = NULL;
 	m_PopupQueue.Reset();
-	// DISHONORED(bringup): retail calls ClearMarkerInstances here (2012 0x804f70, a vtable call at +516 in 2013); it is
-	// unported and no marker instance is ever created in this tree.
+	// DISHONORED(port): agent HI - retail's ClearMarkerInstances (2012 0x804f70, a vtable call at +516 in 2013)
+	ClearMarkerInstances();
 	m_bPlayerBustedThisFrame = FALSE;
 	m_bPlayerBustedLastFrame = FALSE;
 	m_LastDamageInfo = FDisHUDDamageInfo(EC_EventParm);
@@ -1330,6 +1332,8 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 	HUD->Tick_GameMessages( ShowFlags );
 	HUD->Tick_Tutorials( DeltaTime, ShowFlags );
 	HUD->Tick_ObjectivePopup( DeltaTime );
+	// DISHONORED(port): agent HI - Tick_Markers (2013 0x7b00c0) in retail's place; Tick_Subtitles is still not ported
+	HUD->Tick_Markers( DeltaTime );
 	HUD->Tick_Cinematic();
 }
 
@@ -1435,10 +1439,8 @@ void FDisObjectivePopupInfo::AddTask( const FDisTaskPopupInfo& _rTask )
 	m_Tasks.AddItem( _rTask );
 }
 
-// DISHONORED(port): 2013 rva 0x7b2480 (2012 0x814f50). Queued only while m_bHandleObjectiveEvents.
-// DISHONORED(bringup): the one caller, UDishonoredObjectivesComponent::OnGotObjectiveNotify (2012 0x72a600), is not ported -
-// the objective system (UDishonoredObjectivesComponent, UDishonoredObjective, UDisSeqAct_AddObjective,
-// ADishonoredPlayerController::OnObjectiveAction) is a skeleton, so nothing queues a popup yet.
+// DISHONORED(port): 2013 rva 0x7b2480 (2012 0x814f50). Queued only while m_bHandleObjectiveEvents. The one caller is
+// UDishonoredObjectivesComponent::OnGotObjectiveNotify (2013 0x6cc050).
 void UDisGFxMoviePlayerHUD::OnObjectiveAdded( UDishonoredObjective* _pObjective )
 {
 	if( !m_bHandleObjectiveEvents )
@@ -1477,6 +1479,414 @@ void UDisGFxMoviePlayerHUD::OnTaskAdded( UDishonoredTask_Base* _pTask )
 	Popup.m_Event = 1;
 	Popup.AddTask( Task );
 	m_PopupQueue.AddItem( Popup );
+}
+
+// ---- agent HI (PHASE22 HI): the rest of the objective notifications ----
+
+// DISHONORED(port): 2013 rva 0x787ec0 (2012 0x7f49c0). An objective action that asks for no HUD notification turns the
+// popup feeders off while it runs.
+void UDisGFxMoviePlayerHUD::HandleObjectiveEvents( UBOOL _bHandle )
+{
+	m_bHandleObjectiveEvents = _bHandle ? 1 : 0;
+}
+
+/** OnObjectiveCompleted / OnObjectiveFailed: the objective's queued "updated" popups fold into one finished popup that keeps
+	the tasks that finished the same way */
+static void DisHUDQueueFinishedObjective( TArray<FDisObjectivePopupInfo>& _rQueue, UDishonoredObjective* _pObjective, BYTE _Event )
+{
+	FDisObjectivePopupInfo Popup( EC_EventParm );
+	Popup.m_pObjective = _pObjective;
+	Popup.m_Event = _Event;
+	for( INT Index = _rQueue.Num() - 1; Index >= 0; Index-- )
+	{
+		if( _rQueue(Index).m_pObjective != _pObjective || _rQueue(Index).m_Event != 1 )
+		{
+			continue;
+		}
+		for( INT TaskIdx = 0; TaskIdx < _rQueue(Index).m_Tasks.Num(); TaskIdx++ )
+		{
+			if( _rQueue(Index).m_Tasks(TaskIdx).m_Event == _Event )
+			{
+				Popup.AddTask( _rQueue(Index).m_Tasks(TaskIdx) );
+			}
+		}
+		_rQueue.Remove( Index );
+	}
+	_rQueue.AddItem( Popup );
+}
+
+// DISHONORED(port): 2013 rva 0x7b2500 (2012 0x814fd0)
+void UDisGFxMoviePlayerHUD::OnObjectiveCompleted( UDishonoredObjective* _pObjective )
+{
+	if( m_bHandleObjectiveEvents )
+	{
+		DisHUDQueueFinishedObjective( m_PopupQueue, _pObjective, 2 );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7b2660 (2012 0x815130)
+void UDisGFxMoviePlayerHUD::OnObjectiveFailed( UDishonoredObjective* _pObjective )
+{
+	if( m_bHandleObjectiveEvents )
+	{
+		DisHUDQueueFinishedObjective( m_PopupQueue, _pObjective, 3 );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7b28e0 (2012 0x8153b0): joins the objective's queued "updated" popup or queues one.
+void UDisGFxMoviePlayerHUD::OnTaskUpdated( UDishonoredTask_Base* _pTask )
+{
+	if( !m_bHandleObjectiveEvents )
+	{
+		return;
+	}
+	UDishonoredObjective* Objective = (UDishonoredObjective*)_pTask->GetOuter();
+	FDisTaskPopupInfo Task;
+	Task.m_pTask = _pTask;
+	Task.m_Event = 1;
+	for( INT Index = 0; Index < m_PopupQueue.Num(); Index++ )
+	{
+		if( m_PopupQueue(Index).m_pObjective == Objective && m_PopupQueue(Index).m_Event == 1 )
+		{
+			m_PopupQueue(Index).AddTask( Task );
+			return;
+		}
+	}
+	FDisObjectivePopupInfo Popup( EC_EventParm );
+	Popup.m_pObjective = Objective;
+	Popup.m_Event = 1;
+	Popup.AddTask( Task );
+	m_PopupQueue.AddItem( Popup );
+}
+
+// DISHONORED(port): 2013 rva 0x7b2a00 (2012 0x8154d0): joins the objective's queued "updated" or "completed" popup or
+// queues an "updated" one.
+void UDisGFxMoviePlayerHUD::OnTaskCompleted( UDishonoredTask_Base* _pTask )
+{
+	if( !m_bHandleObjectiveEvents )
+	{
+		return;
+	}
+	UDishonoredObjective* Objective = (UDishonoredObjective*)_pTask->GetOuter();
+	FDisTaskPopupInfo Task;
+	Task.m_pTask = _pTask;
+	Task.m_Event = 2;
+	for( INT Index = 0; Index < m_PopupQueue.Num(); Index++ )
+	{
+		FDisObjectivePopupInfo& Queued = m_PopupQueue(Index);
+		if( Queued.m_pObjective == Objective && ( Queued.m_Event == 1 || Queued.m_Event == 2 ) )
+		{
+			Queued.AddTask( Task );
+			return;
+		}
+	}
+	FDisObjectivePopupInfo Popup( EC_EventParm );
+	Popup.m_pObjective = Objective;
+	Popup.m_Event = 1;
+	Popup.AddTask( Task );
+	m_PopupQueue.AddItem( Popup );
+}
+
+// DISHONORED(port): 2013 rva 0x7b2b20 (2012 0x8155f0): as OnTaskCompleted, except that an objective already queued as
+// completed swallows the failed task.
+void UDisGFxMoviePlayerHUD::OnTaskFailed( UDishonoredTask_Base* _pTask )
+{
+	if( !m_bHandleObjectiveEvents )
+	{
+		return;
+	}
+	UDishonoredObjective* Objective = (UDishonoredObjective*)_pTask->GetOuter();
+	FDisTaskPopupInfo Task;
+	Task.m_pTask = _pTask;
+	Task.m_Event = 3;
+	for( INT Index = 0; Index < m_PopupQueue.Num(); Index++ )
+	{
+		FDisObjectivePopupInfo& Queued = m_PopupQueue(Index);
+		if( Queued.m_pObjective != Objective )
+		{
+			continue;
+		}
+		if( Queued.m_Event == 1 || Queued.m_Event == 3 )
+		{
+			Queued.AddTask( Task );
+			return;
+		}
+		if( Queued.m_Event == 2 )
+		{
+			return;
+		}
+	}
+	FDisObjectivePopupInfo Popup( EC_EventParm );
+	Popup.m_pObjective = Objective;
+	Popup.m_Event = 1;
+	Popup.AddTask( Task );
+	m_PopupQueue.AddItem( Popup );
+}
+
+// DISHONORED(port): 2013 rva 0x78d770 (2012 0x7f4c10)
+FLOAT FDisHUDMarkerVariation::ComputeValue( FLOAT _fDistance ) const
+{
+	const FLOAT Range = m_EndDistance - m_StartDistance;
+	if( Range == 0.f )
+	{
+		return m_EndValue;
+	}
+	return m_StartValue + ( m_EndValue - m_StartValue ) * Clamp( ( _fDistance - m_StartDistance ) / Range, 0.f, 1.f );
+}
+
+/** -hidiag: one line per task marker every second */
+static UBOOL DisHUDMarkerDiagDue()
+{
+	static DOUBLE LastTime = 0.0;
+	if( !UDishonoredObjectivesComponent::IsDiagEnabled() || appSeconds() - LastTime < 1.0 )
+	{
+		return FALSE;
+	}
+	LastTime = appSeconds();
+	return TRUE;
+}
+
+// DISHONORED(port): 2013 rva 0x7b00c0 (2012 0x8122c0). UpdateAwarenessMarkerInstances (2013 0x7ad960) is not ported:
+// the awareness markers above NPCs need the AI awareness state this tree does not keep; m_AwarenessMarkers stays empty.
+void UDisGFxMoviePlayerHUD::Tick_Markers( FLOAT _fDeltaTime )
+{
+	UpdateTaskMarkerInstances();
+	for( INT Index = 0; Index < m_SortedMarkers.Num(); Index++ )
+	{
+		((FDisHUDMarker*)m_SortedMarkers(Index))->Tick( _fDeltaTime );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7ad550 (2012 0x80cd40; no PDB name in 2013). One marker per active task target in the
+// targets' order, created on first sight (the optional-target settings for an optional target), kept by tracked actor,
+// and destroyed once its target is gone. 2013 reads no targets while the objective-marker option is off, and keeps a
+// hidden pawn's marker hidden.
+void UDisGFxMoviePlayerHUD::UpdateTaskMarkerInstances()
+{
+	ADishonoredPlayerController* PlayerController = ADishonoredPlayerController::s_pInstance;
+	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
+	if( PlayerController == NULL || PlayerController->m_pObjectivesComponent == NULL || Tweaks == NULL )
+	{
+		return;
+	}
+	FMemMark Mark( GMainThreadMemStack );
+	TArray<const FDisTaskTarget*, TMemStackAllocator<GMainThreadMemStack> > Targets;
+	if( m_Settings.m_bShowObjectiveMarkers )
+	{
+		PlayerController->m_pObjectivesComponent->FindActiveTaskTargets( Targets, TRUE );
+	}
+	INT Index = 0;
+	for( ; Index < Targets.Num(); Index++ )
+	{
+		const FDisTaskTarget* Target = Targets(Index);
+		INT Found = -1;
+		for( INT MarkerIdx = Index; MarkerIdx < m_TaskMarkers.Num(); MarkerIdx++ )
+		{
+			if( ((FDisHUDMarker*)m_TaskMarkers(MarkerIdx))->m_pTrackedActor == Target->m_pActor )
+			{
+				Found = MarkerIdx;
+				break;
+			}
+		}
+		if( Found == -1 )
+		{
+			const FDisHUDMarkerSettings* Settings = Target->m_bOptional ? &Tweaks->m_OptionalTaskMarkerSettings : &Tweaks->m_TaskMarkerSettings;
+			FDisTaskMarker* Marker = new FDisTaskMarker( Target, Settings, GetMovie() );
+			m_TaskMarkers.InsertItem( (FPointer)Marker, Index );
+			m_SortedMarkers.AddItem( (FPointer)Marker );
+			if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+			{
+				debugf( TEXT("DISHONORED(bringup): hidiag marker add %s '%s' symbol %s depth %d instance %s"), *Target->m_pActor->GetName(), *Marker->m_TargetName,
+					*Settings->m_SymbolName, Marker->m_Depth, Marker->m_GFxInstance.IsDisplayObject() ? TEXT("ok") : TEXT("NOT ATTACHED") );
+			}
+		}
+		else if( Found != Index )
+		{
+			Exchange( m_TaskMarkers(Index), m_TaskMarkers(Found) );
+		}
+		const APawn* Pawn = Cast<APawn>( Target->m_pActor );
+		if( Pawn )
+		{
+			((FDisHUDMarker*)m_TaskMarkers(Index))->m_bTrackedActorVisible = !Pawn->bHidden;
+		}
+	}
+	while( Index < m_TaskMarkers.Num() )
+	{
+		FDisHUDMarker* Marker = (FDisHUDMarker*)m_TaskMarkers(Index);
+		if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): hidiag marker remove %s"), Marker->m_pTrackedActor ? *Marker->m_pTrackedActor->GetName() : TEXT("None") );
+		}
+		m_SortedMarkers.RemoveItem( (FPointer)Marker );
+		delete Marker;
+		m_TaskMarkers.RemoveSwap( Index );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7a0890 (2012 0x8049d0). Each marker's world point (its GetLocation raised by the settings'
+// world offset) is projected into movie space, clamped into the marker area (and, with m_bKeepBBInMarkerArea, kept
+// inside it by its bounding box scaled with distance), and the visible focusable marker nearest the screen centre
+// within the focus distance is focused. Nothing is placed unless the markers' show flag (0x20) is set.
+// DISHONORED(bringup): retail shrinks the spread while zoomed by UDisPostProcessManager's zoom-lens blend (2013 0x7eb020
+// on ADishonoredGameInfo::m_pPpManager), whose fields at +412 and the effect state at +457 this tree does not model; the
+// zoom is taken as 0 (no spyglass on the first mission's route).
+void UDisGFxMoviePlayerHUD::PreRender_Markers( UCanvas* _pCanvas )
+{
+	const INT NumMarkers = m_SortedMarkers.Num();
+	if( NumMarkers == 0 )
+	{
+		return;
+	}
+	FMemMark Mark( GMainThreadMemStack );
+	FDisHUDMarkerPosInfo* PosInfos = new( GMainThreadMemStack, MEM_Zeroed, NumMarkers ) FDisHUDMarkerPosInfo;
+	INT FocusedIndex = -1;
+	ADishonoredPlayerController* PlayerController = ADishonoredPlayerController::s_pInstance;
+	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
+	if( ( m_ShowFlagsOnLastTick & 0x20 ) && PlayerController && PlayerController->Pawn && Tweaks && _pCanvas && _pCanvas->SceneView )
+	{
+		const FDisMovieSpaceInfo& Space = m_MovieSpaceInfoOnLastPreRender;
+		const FLOAT CentreX = Space.m_MovieSize.X * 0.5f;
+		const FLOAT CentreY = Space.m_MovieSize.Y * 0.5f;
+		const FLOAT AreaRatio = Tweaks->m_fMarkerAreaRatio_PC;
+		FLOAT BestFocus = Tweaks->m_fMarkerFocusDistance * Tweaks->m_fMarkerFocusDistance;
+		const FLOAT MarginX = Space.m_MovieSpaceSize.X * ( 1.f - AreaRatio ) * 0.5f;
+		const FLOAT MarginY = Space.m_MovieSpaceSize.Y * ( 1.f - AreaRatio ) * 0.5f;
+		const FLOAT AreaMinX = MarginX - Space.m_EmptySpace.X;
+		const FLOAT AreaMinY = MarginY - Space.m_EmptySpace.Y;
+		const FLOAT AreaMaxX = Space.m_MovieSpaceSize.X - Space.m_EmptySpace.X - MarginX;
+		const FLOAT AreaMaxY = Space.m_MovieSpaceSize.Y - Space.m_EmptySpace.Y - MarginY;
+		const FLOAT Zoom = 0.f;
+		for( INT Index = 0; Index < NumMarkers; Index++ )
+		{
+			FDisHUDMarker* Marker = (FDisHUDMarker*)m_SortedMarkers(Index);
+			const FDisHUDMarkerSettings* Settings = Marker->m_pSettings;
+			FVector Location = Marker->GetLocation();
+			const FLOAT Distance = ( PlayerController->Pawn->Location - Marker->GetLocation() ).Size();
+			const FLOAT ScaleFactor = Settings->m_ScaleVariation.ComputeValue( Distance ) * 0.01f;
+			Location.Z += Settings->m_fWorldOffsetZ;
+			FDisHUDMarkerPosInfo& Pos = PosInfos[Index];
+			const UINT ScreenFlags = DisComputeMarkerScreenPosition( Location, _pCanvas, Zoom, AreaRatio, Space.m_MovieSpaceSize.X, Space.m_MovieSpaceSize.Y,
+				Pos.m_TrackedPosition, Pos.m_Position, m_bTripleScreenMode );
+			Pos.m_Position.X -= Space.m_EmptySpace.X;
+			Pos.m_Position.Y -= Space.m_EmptySpace.Y + Settings->m_fScreenOffsetZ * ScaleFactor;
+			Pos.m_TrackedPosition.X -= Space.m_EmptySpace.X;
+			Pos.m_TrackedPosition.Y -= Space.m_EmptySpace.Y;
+			Pos.m_fDistance = Distance;
+			Pos.m_Flags = ( Marker->m_bTrackedActorVisible ? DHMF_Visible : 0 ) | ( ScreenFlags << 3 );
+			if( Settings->m_bKeepBBInMarkerArea )
+			{
+				const FLOAT BBMinX = Settings->m_BBMin.X * ScaleFactor;
+				const FLOAT BBMinY = Settings->m_BBMin.Y * ScaleFactor;
+				const FLOAT BBMaxX = Settings->m_BBMax.X * ScaleFactor;
+				const FLOAT BBMaxY = Settings->m_BBMax.Y * ScaleFactor;
+				if( AreaMinX > Pos.m_Position.X + BBMinX )
+				{
+					Pos.m_Position.X = AreaMinX - BBMinX;
+					Pos.m_Flags |= DHMF_ClampedToArea;
+				}
+				else if( Pos.m_Position.X + BBMaxX > AreaMaxX )
+				{
+					Pos.m_Position.X = AreaMaxX - BBMaxX;
+					Pos.m_Flags |= DHMF_ClampedToArea;
+				}
+				if( AreaMinY > Pos.m_Position.Y - BBMaxY )
+				{
+					Pos.m_Position.Y = AreaMinY + BBMaxY;
+					Pos.m_Flags |= DHMF_ClampedToArea;
+				}
+				else if( Pos.m_Position.Y - BBMinY > AreaMaxY )
+				{
+					Pos.m_Position.Y = AreaMaxY + BBMinY;
+					Pos.m_Flags |= DHMF_ClampedToArea;
+				}
+			}
+			const FLOAT FromCentre = Square( Pos.m_Position.Y - CentreY ) + Square( Pos.m_Position.X - CentreX );
+			if( Marker->m_bTrackedActorVisible && Settings->m_bCanFocus && BestFocus > FromCentre )
+			{
+				FocusedIndex = Index;
+				BestFocus = FromCentre;
+			}
+		}
+	}
+	UBOOL bNewMarkers = FALSE;
+	UBOOL bOutOfOrder = FALSE;
+	for( INT Index = 0; Index < NumMarkers; Index++ )
+	{
+		FDisHUDMarker* Marker = (FDisHUDMarker*)m_SortedMarkers(Index);
+		FDisHUDMarkerPosInfo& Pos = PosInfos[Index];
+		if( Index == FocusedIndex )
+		{
+			Pos.m_Flags |= DHMF_Focused;
+		}
+		Marker->Update( Pos.m_Position, Pos.m_TrackedPosition, Pos.m_fDistance, Pos.m_Flags );
+		bNewMarkers |= Marker->m_bNeedsSorting;
+		bOutOfOrder |= Index > 0 && Pos.m_fDistance > PosInfos[Index - 1].m_fDistance;
+		if( DisHUDMarkerDiagDue() )
+		{
+			debugf( TEXT("DISHONORED(bringup): hidiag marker %s at %.1f,%.1f (tracked %.1f,%.1f) dist %.0f flags 0x%X depth %d"),
+				Marker->m_pTrackedActor ? *Marker->m_pTrackedActor->GetName() : TEXT("None"), Pos.m_Position.X, Pos.m_Position.Y,
+				Pos.m_TrackedPosition.X, Pos.m_TrackedPosition.Y, Pos.m_fDistance, Pos.m_Flags, Marker->m_Depth );
+		}
+	}
+	if( bNewMarkers || bOutOfOrder )
+	{
+		SortMarkers( PosInfos, bNewMarkers );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x799480 (2012 0x7ff2e0). New markers first move up the list past the ones drawn above them;
+// then the list is bubble-sorted far to near, swapping the clips' depths with it, so a nearer marker is drawn on top.
+void UDisGFxMoviePlayerHUD::SortMarkers( FDisHUDMarkerPosInfo* _pPosInfos, UBOOL _bSortNewMarkers )
+{
+	INT Count = m_SortedMarkers.Num();
+	if( _bSortNewMarkers )
+	{
+		for( INT Index = Count - 1; Index >= 0; Index-- )
+		{
+			FDisHUDMarker* Marker = (FDisHUDMarker*)m_SortedMarkers(Index);
+			if( !Marker->m_bNeedsSorting )
+			{
+				continue;
+			}
+			for( INT Next = Index; Next < Count - 1 && Marker->m_Depth > ((FDisHUDMarker*)m_SortedMarkers(Next + 1))->m_Depth; Next++ )
+			{
+				Exchange( m_SortedMarkers(Next), m_SortedMarkers(Next + 1) );
+			}
+			Marker->m_bNeedsSorting = FALSE;
+		}
+	}
+	do
+	{
+		INT LastSwap = 0;
+		for( INT Index = 1; Index < Count; Index++ )
+		{
+			if( _pPosInfos[Index].m_fDistance > _pPosInfos[Index - 1].m_fDistance )
+			{
+				((FDisHUDMarker*)m_SortedMarkers(Index))->SwapDepth( (FDisHUDMarker*)m_SortedMarkers(Index - 1) );
+				Exchange( m_SortedMarkers(Index), m_SortedMarkers(Index - 1) );
+				Exchange( _pPosInfos[Index], _pPosInfos[Index - 1] );
+				LastSwap = Index;
+			}
+		}
+		Count = LastSwap;
+	}
+	while( Count );
+}
+
+// DISHONORED(port): 2013 rva 0x7a0f00 (2012 0x804f70). The grenade and heart lists are emptied the same way
+// (RemoveGrenadeMarkers / RemoveHeartMarkers); nothing in this tree fills them.
+void UDisGFxMoviePlayerHUD::ClearMarkerInstances()
+{
+	TArray<FPointer>* Lists[] = { &m_TaskMarkers, &m_AwarenessMarkers, &m_GrenadeMarkers, &m_HeartMarkers };
+	for( INT ListIdx = 0; ListIdx < ARRAY_COUNT(Lists); ListIdx++ )
+	{
+		while( Lists[ListIdx]->Num() > 0 )
+		{
+			delete (FDisHUDMarker*)(*Lists[ListIdx])(0);
+			Lists[ListIdx]->RemoveSwap( 0 );
+		}
+	}
+	m_SortedMarkers.Empty();
 }
 
 // DISHONORED(port): 2013 rva 0x7afe70 (2012 0x812080; 2013 added the pause test). The next queued popup is shown once the
@@ -1536,8 +1946,6 @@ void UDisGFxMoviePlayerHUD::Tick_ObjectivePopup( FLOAT _fDeltaTime )
 // [{objState, objDescription} per task] ) - the task list is null for a failed objective. A task whose event is not
 // "completed" and whose status string is not empty shows ")" alone: retail builds the line with three wcscpy_s calls
 // where wcscat_s was meant (0xb98d50, 0xb98d97, 0xb98daa), and that is kept.
-// DISHONORED(bringup): UDishonoredTask_Base::GetStatusString (2012 0x72d7d0) is part of the unported objective system;
-// the status is taken as empty.
 void UDisGFxMoviePlayerHUD::ShowObjectivePopup( const FDisObjectivePopupInfo& _rPopup )
 {
 	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
@@ -1571,6 +1979,10 @@ void UDisGFxMoviePlayerHUD::ShowObjectivePopup( const FDisObjectivePopupInfo& _r
 			const FDisTaskPopupInfo& Task = _rPopup.m_Tasks(Index);
 			TCHAR Description[1024];
 			appStrncpy( Description, *Task.m_pTask->m_Description, ARRAY_COUNT(Description) );
+			if( Task.m_Event != 2 && Task.m_pTask->GetStatusString().Len() > 0 )
+			{
+				appStrcpy( Description, TEXT(")") );
+			}
 			GFxValue State;
 			State.SetNumber( (DOUBLE)Task.m_Event );
 			GFxValue Text;

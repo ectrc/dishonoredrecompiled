@@ -6,3 +6,25 @@
 //   0x7d1e90  public: virtual void __thiscall UDisSeqCond_IsObjectiveComplete::Activated(void)
 //   0x7ea1d0  public: static class UClass * __cdecl UDisSeqCond_IsObjectiveComplete::GetPrivateStaticClassUDisSeqCond_IsObjectiveComplete(wchar_t const *)
 //   0x7edcc0  public: static class UClass * __cdecl UDisSeqCond_IsObjectiveComplete::StaticClassNoInline(void)
+
+// ---- agent HI (PHASE22 HI) ----
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x78ef30 (2012 0x7d1e90). Output 0 "True", 1 "False".
+void UDisSeqCond_IsObjectiveComplete::Activated()
+{
+	USequenceOp::Activated();
+	ADishonoredPlayerController* PlayerController = ADishonoredPlayerController::s_pInstance;
+	if( PlayerController && PlayerController->m_pObjectivesComponent && PlayerController->m_pObjectivesComponent->IsObjectiveComplete( m_pObjective ) )
+	{
+		OutputLinks(0).bHasImpulse = TRUE;
+	}
+	else
+	{
+		OutputLinks(1).bHasImpulse = TRUE;
+	}
+}
+
+void DishonoredLinkDisSeqCondIsObjectiveComplete()
+{
+}

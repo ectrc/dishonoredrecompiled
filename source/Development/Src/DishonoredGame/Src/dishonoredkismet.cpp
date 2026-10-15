@@ -284,3 +284,18 @@ void UDisSeqAct_GotoPlayerTravelDestination::Activated()
 	}
 	USequenceAction::Activated();
 }
+
+// ---- agent HI (PHASE22 HI): the player actions' target ----
+// DISHONORED(port): 2012 rva 0x7d13d0 (65 bytes, dishonoredkismet.cpp:127; no 2013 match): an action with no target linked
+// takes the player pawn (the word after AActor::LatentActions in the controller is AController::Pawn), so its handler
+// (ADishonoredPlayerController::OnObjectiveAction for the objective actions) runs through USequenceAction's pawn-to-controller
+// redirect.
+void UDisSeqAct_PlayerAction::Activated()
+{
+	ADishonoredPlayerController* PlayerController = ADishonoredPlayerController::s_pInstance;
+	if( Targets.Num() == 0 && PlayerController && PlayerController->Pawn )
+	{
+		Targets.AddItem( PlayerController->Pawn );
+	}
+	USequenceAction::Activated();
+}

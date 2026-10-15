@@ -100,6 +100,7 @@ public:
     //## END PROPS DisSeqAct_ObjectiveAction
 
     DECLARE_ABSTRACT_CLASS(UDisSeqAct_ObjectiveAction,UDisSeqAct_PlayerAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_ObjectiveAction.h"
 };
 
 // DishonoredGame.DisSeqAct_AddObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
@@ -110,6 +111,7 @@ public:
     //## END PROPS DisSeqAct_AddObjective
 
     DECLARE_CLASS(UDisSeqAct_AddObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_AddObjective.h"
 };
 
 // DishonoredGame.DisSeqAct_CompleteObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
@@ -120,6 +122,7 @@ public:
     //## END PROPS DisSeqAct_CompleteObjective
 
     DECLARE_CLASS(UDisSeqAct_CompleteObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_CompleteObjective.h"
 };
 
 // DishonoredGame.DisSeqAct_FailObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
@@ -130,6 +133,7 @@ public:
     //## END PROPS DisSeqAct_FailObjective
 
     DECLARE_CLASS(UDisSeqAct_FailObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_FailObjective.h"
 };
 
 // DishonoredGame.DisSeqAct_RemoveObjective: retail sizeof 264, reflected span 264..264 (2012 PDB sizeof 264)
@@ -140,6 +144,7 @@ public:
     //## END PROPS DisSeqAct_RemoveObjective
 
     DECLARE_CLASS(UDisSeqAct_RemoveObjective,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_RemoveObjective.h"
 };
 
 // DishonoredGame.DisSeqAct_SetObjectiveHidden: retail sizeof 268, reflected span 264..268 (2012 PDB sizeof 268)
@@ -151,6 +156,7 @@ public:
     //## END PROPS DisSeqAct_SetObjectiveHidden
 
     DECLARE_CLASS(UDisSeqAct_SetObjectiveHidden,UDisSeqAct_ObjectiveAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetObjectiveHidden.h"
 };
 
 // DishonoredGame.DisSeqAct_TaskAction: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)
@@ -163,6 +169,7 @@ public:
     //## END PROPS DisSeqAct_TaskAction
 
     DECLARE_ABSTRACT_CLASS(UDisSeqAct_TaskAction,UDisSeqAct_PlayerAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_TaskAction.h"
 };
 
 // DishonoredGame.DisSeqAct_SetTaskHidden: retail sizeof 256, reflected span 252..256 (2012 PDB sizeof 256)
@@ -174,6 +181,7 @@ public:
     //## END PROPS DisSeqAct_SetTaskHidden
 
     DECLARE_CLASS(UDisSeqAct_SetTaskHidden,UDisSeqAct_TaskAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetTaskHidden.h"
 };
 
 // DishonoredGame.DisSeqAct_SetTaskState: retail sizeof 256, reflected span 252..253 (2012 PDB sizeof 256)
@@ -185,6 +193,7 @@ public:
     //## END PROPS DisSeqAct_SetTaskState
 
     DECLARE_CLASS(UDisSeqAct_SetTaskState,UDisSeqAct_TaskAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetTaskState.h"
 };
 
 // DishonoredGame.DisSeqAct_UpdateCustomTask: retail sizeof 252, reflected span 252..252 (2012 PDB sizeof 252)
@@ -195,6 +204,7 @@ public:
     //## END PROPS DisSeqAct_UpdateCustomTask
 
     DECLARE_CLASS(UDisSeqAct_UpdateCustomTask,UDisSeqAct_TaskAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_UpdateCustomTask.h"
 };
 
 // DishonoredGame.DisSeqAct_UpdateTaskTarget: retail sizeof 276, reflected span 252..273 (2012 PDB sizeof 276)
@@ -209,6 +219,7 @@ public:
     //## END PROPS DisSeqAct_UpdateTaskTarget
 
     DECLARE_CLASS(UDisSeqAct_UpdateTaskTarget,UDisSeqAct_TaskAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_UpdateTaskTarget.h"
 };
 
 // DishonoredGame.DisSeqCond_HasObjective: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
@@ -220,6 +231,7 @@ public:
     //## END PROPS DisSeqCond_HasObjective
 
     DECLARE_CLASS(UDisSeqCond_HasObjective,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_HasObjective.h"
 };
 
 // DishonoredGame.DisSeqCond_IsObjectiveComplete: retail sizeof 228, reflected span 224..228 (2012 PDB sizeof 228)
@@ -231,6 +243,7 @@ public:
     //## END PROPS DisSeqCond_IsObjectiveComplete
 
     DECLARE_CLASS(UDisSeqCond_IsObjectiveComplete,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_IsObjectiveComplete.h"
 };
 
 // DishonoredGame.DisSeqCond_TaskState: retail sizeof 224, reflected span 224..224 (2012 PDB sizeof 224)
@@ -241,6 +254,7 @@ public:
     //## END PROPS DisSeqCond_TaskState
 
     DECLARE_CLASS(UDisSeqCond_TaskState,USequenceCondition,0,DishonoredGame)
+#include "CppText/UDisSeqCond_TaskState.h"
 };
 
 // DishonoredGame.DisSeqEvent_ObjectiveCompleted: retail sizeof 276, reflected span 272..276 (2012 PDB sizeof 276)
@@ -299,6 +313,7 @@ public:
 
     DECLARE_FUNCTION(execGetObjectValue);
     DECLARE_CLASS(UDisSeqVar_Task,USeqVar_Object,0,DishonoredGame)
+#include "CppText/UDisSeqVar_Task.h"
 };
 
 // DishonoredGame.DishonoredObjective: retail sizeof 108, reflected span 56..108 (2012 PDB sizeof 100)
@@ -371,6 +386,7 @@ public:
     //## END PROPS DishonoredTask_Custom
 
     DECLARE_CLASS(UDishonoredTask_Custom,UDishonoredTask_Base,0,DishonoredGame)
+#include "CppText/UDishonoredTask_Custom.h"
 };
 
 #undef DECLARE_CLASS

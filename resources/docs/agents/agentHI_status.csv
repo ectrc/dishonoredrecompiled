@@ -1,0 +1,17 @@
+item,state,evidence
+call graph (1),done,agentHI.md section 1; 2012 + 2013 decompiles build/agentHI/d12 d13 m12 m13
+Kismet objective actions + component (2),done,HI1.log: fwkismet t=150.60 OnObjectiveAction -> objective add TowerEmpress_Report -> puidiag SetObjectives('Report to the Empress') ok
+UDisSeqAct_PlayerAction::Activated,done,2012 0x7d13d0; without it the objective action has no target
+task actions / conditions / DisSeqVar_Task,done,HI1.log: UpdateTaskTarget_3 -> task target DishonoredNPCPawn_5 (Empress Jessamine)
+GetStatusString + task state machine (3),done,2013 0x6cc220 / 0x6cc2c0 (m_ActiveStatus); SetTaskState/SetTaskHidden/OnAdded ids
+HUD objective notifications,done,HandleObjectiveEvents OnObjectiveCompleted/Failed OnTaskUpdated/Completed/Failed
+task markers (4),done,HI2.log marker DishonoredNPCPawn_5 at 406.6,212.3 movie; pair chevron x305 y160 vs retail x305 y157 (build/agentHI/hi2_pair_w154_retail_t109.8.png)
+objective detector,done,HF1 0/126 -> HI2 3/106 on at world 153.1-155.0 = retail t 108.9-110.8 at the constant -44.2 s offset (tool's free-slope fit reads it as off)
+UpdateCustomTask_Impl,not ported,no DisSeqAct_UpdateCustomTask on the route
+marker zoom-lens shrink,not ported,UDisPostProcessManager +412/+457 unmodelled; zoom 0
+awareness/grenade/heart markers,not ported,nothing creates them
+popup look (title overflow / blue band),boundary,GFx runtime (HJ / GFx owner)
+regen byte-identical,done,79/79
+bitfield_audit,done,mismatches=0
+gate,31 ok 3 failed,coresmoke/layout targets not built; inputtest flake (1058.8 on rerun); unported_natives 4 = four PlayerPawn toggle handlers newly reached
+builds,3 (over budget by one),build 2 failed on a merge artifact in dishonoredutilities.cpp; build 3 = that unit + link

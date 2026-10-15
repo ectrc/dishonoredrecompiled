@@ -6,3 +6,16 @@
 //   0x7ec5d0  public: static class UClass * __cdecl UDisSeqAct_SetTaskState::GetPrivateStaticClassUDisSeqAct_SetTaskState(wchar_t const *)
 //   0x7f0830  public: static void __cdecl UDisSeqAct_SetTaskState::InitializePrivateStaticClassUDisSeqAct_SetTaskState(void)
 //   0x7f0de0  public: static class UClass * __cdecl UDisSeqAct_SetTaskState::StaticClassNoInline(void)
+
+// ---- agent HI (PHASE22 HI) ----
+#include "DishonoredGame.h"
+
+// DISHONORED(port): 2013 rva 0x786840 (2012 0x7cbb60)
+void UDisSeqAct_SetTaskState::HandleTaskInstance( UDishonoredTask_Base* _pTask )
+{
+	_pTask->SetTaskState( m_TaskState );
+}
+
+void DishonoredLinkDisSeqActSetTaskState()
+{
+}
