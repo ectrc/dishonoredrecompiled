@@ -1396,5 +1396,5 @@ void GASGlobalContext::InitStandardLibrary()
     // flash.geom.Matrix, TextField.getTextFormat and TextFormat.getTextExtent - the 70 unresolved
     // calls one run of the New Game flow makes. GFxDrawing.cpp. It runs after the `flash` object
     // above exists, because BitmapData and Matrix are installed into it.
-    GFxDrawingInstall(this, pGlobal, Prototypes[Proto_MovieClip]);
+    Prototypes[Proto_TextField] = GFxDrawingInstall(this, pGlobal, Prototypes[Proto_MovieClip]);
 }

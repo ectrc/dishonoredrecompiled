@@ -853,6 +853,12 @@ void GFxDisplayList::Display(GFxDisplayContext& ctx)
         GFxCharacter* ch = Entries[i].pChar;
         if (ch == 0)
             continue;
+        // DISHONORED(port): 2012 0x9d56c0 / 2013 0x9cbf20 skip every entry whose IsUsedAsMask (vtable +180) answers
+        // true: a MovieClip.setMask mask is drawn only by the clip it masks (GFxSprite::Display's PushAndDrawMask),
+        // never as content. Without this the HUD banner's hud_location_Mask (a #0099ff rectangle at alpha 127)
+        // was painted over the title (agent HJ).
+        if (ch->GetMaskOwner() != 0)
+            continue;
 
         if (bMaskActive && (unsigned int)ch->GetDepth() > maskEndDepth)
         {
@@ -995,10 +1001,9 @@ void GFxSprite::Display(GFxDisplayContext& ctx)
     ++ctx.Stats.Characters;
     // DISHONORED(port, agent FF): retail's own early-out is `if ((Flags & 3) != 1 && (Flags & 0x8000)
     // == 0) return`, i.e. invisible AND not serving as somebody's mask (2012 0x9faeb0 at its head).
-    // A clip handed to setMask is therefore drawn even when it is invisible - which it almost always
-    // is, because GFx does NOT hide a mask from ordinary rendering and the content has to - and the
-    // mask pass has colour writes off, so being invisible must not stop its geometry reaching the
-    // stencil. Submitting nothing leaves the stencil empty and EndSubmitMask's `== counter` test then
+    // A clip handed to setMask is therefore drawn even when it is invisible, and the mask pass has
+    // colour writes off, so being invisible must not stop its geometry reaching the stencil. It is
+    // never drawn as content: GFxDisplayList::Display skips it (agent HJ, 2012 0x9d56c0). Submitting nothing leaves the stencil empty and EndSubmitMask's `== counter` test then
     // rejects every pixel the mask covers, which is the whole masked subtree missing.
     if (!GetVisible() && pMaskOwner == 0)
     {
@@ -1587,6 +1592,39 @@ void GFxEditTextCharacter::Display(GFxDisplayContext& ctx)
         ctx.pRenderer->DrawBitmaps(descs, (int)descCount, 0, (int)descCount, ctx.pGlyphTexture,
                                    ctx.Matrix, 0);
         ++ctx.Stats.GlyphDraws;
+    }
+
+    // DISHONORED(port): the image glyphs of GFxTextLineBuffer::Display (2012 0xa45bf0): each image is drawn at
+    // its pen on the line's baseline through its desc's matrix. They are drawn after the glyph batches rather
+    // than between them, which only differs where an image and a glyph overlap.
+    for (unsigned int li = 0; li < lines.GetLineCount(); ++li)
+    {
+        GFxTextLineBuffer::Line* line = lines.GetLine(li);
+        if (line == 0)
+            continue;
+        float pen = 0.0f;
+        for (unsigned int gi = 0; gi < line->Glyphs.GetSize(); ++gi)
+        {
+            const GFxTextLineBuffer::GlyphEntry& g = line->Glyphs[gi];
+            if (g.pImage != 0 && g.pImage->pImage != 0)
+            {
+                GMatrix2D penMatrix;
+                penMatrix.M_[0][2] = viewRect.Left + (float)line->OffsetX + pen;
+                penMatrix.M_[1][2] = viewRect.Top + (float)line->OffsetY + line->BaselineOffset;
+                GMatrix2D imageMatrix;
+                GFxDisplayMatrixAppend(&imageMatrix, penMatrix, g.pImage->Matrix);
+                const GMatrix2D fieldMatrix = ctx.Matrix;
+                GFxMovieDataDef* fieldDataDef = ctx.pDataDef;
+                GFxDisplayMatrixAppend(&ctx.Matrix, fieldMatrix, imageMatrix);
+                if (g.pImage->pDataDef != 0)
+                    ctx.pDataDef = g.pImage->pDataDef;
+                g.pImage->pImage->Display(ctx, 0);
+                ctx.Matrix = fieldMatrix;
+                ctx.pDataDef = fieldDataDef;
+            }
+            if ((g.Flags & GFxTextLineBuffer::GlyphEntry::EF_Newline) == 0)
+                pen += (float)g.Advance;
+        }
     }
 
     ctx.PostDisplay(saved);

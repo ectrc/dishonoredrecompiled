@@ -5,10 +5,14 @@ public:
 	virtual void Dis_Jump_ButtonDown();
 	virtual void PlayerInput( FLOAT DeltaTime );
 	void OnInit( ADishonoredPlayerController* Owner );
-	// DISHONORED(written): the binding half of ApplyGameSettings (2013 rva 0x6bd610): AddBindingSet 0x6b84f0,
-	// TranslateBindingSet 0x6afe50
+	// DISHONORED(written): the binding half of ApplyGameSettings (2013 rva 0x6bd610): AddBindingSet 0x6b84f0
 	void AddBindingSet( const TArrayNoInit<FKeyBind>& Set );
-	void BuildBindings();
+	// DISHONORED(port): 2013 rva 0x6afe50 (2012 0x6f8db0)
+	INT TranslateBindingSet( INT _BindingSet ) const;
+protected:
+	// DISHONORED(port): 2013 rva 0x6b8240 (2012 0x6ef8f0)
+	void ReadPCBindingsFromProfile();
+public:
 
 // ---- agent EQ (PHASE13 EQ): the IArkSettingsListenerInterface override the settings republish calls ----
 public:

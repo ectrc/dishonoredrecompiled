@@ -38,6 +38,12 @@ extern int  GFxAS2WatchCount;
 // the name. Both are -gfxuitweendiag; the second is filtered by GFxAS2WatchMatches.
 extern int GFxAS2NotAFunctionDiag;
 extern int GFxAS2MemberWriteDiag;
+// DISHONORED(bringup, agent HJ): -puidiag's clip trace. Every size/visibility/onEnterFrame write and every
+// setMask/gotoAndPlay/tween call on a clip whose target path starts with GFxAS2ClipTracePrefix, and every
+// TextField.setImageSubstitutions element, is logged while GFxAS2ClipTraceCount lasts.
+extern char GFxAS2ClipTracePrefix[64];
+extern int  GFxAS2ClipTraceCount;
+bool GFxAS2ClipTraceMatches(GASObjectInterface* oi, GASStringContext* sc, GASString* pathOut);
 
 // Runs a DefineFunction/DefineFunction2 body: binds `this`, the arguments, the preload registers and
 // the local frame, then re-enters GASActionBuffer::Execute at the function's own pc. Retail does this
@@ -414,7 +420,11 @@ public:
     enum ProtoId
     {
         Proto_Object = 0, Proto_Function, Proto_Array, Proto_String, Proto_Number, Proto_Boolean,
-        Proto_MovieClip, Proto_Error, Proto_COUNT
+        Proto_MovieClip, Proto_Error,
+        // DISHONORED(port, agent HJ): GASTextFieldProto (2013 0xa21120), one per context as every built-in prototype
+        // is: its members are interned in this context's string manager, and GASObject::GetMemberRaw compares by node.
+        Proto_TextField,
+        Proto_COUNT
     };
     GASObject* GetPrototype(ProtoId id) const { return Prototypes[id]; }
     GASFunctionObject* GetConstructor(ProtoId id) const { return Constructors[id]; }

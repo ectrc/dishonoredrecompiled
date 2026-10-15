@@ -210,13 +210,33 @@ public:
     bool IsDirty() const { return bDirty; }
     void SetDirtyFlag() { bDirty = true; }                           // 0xa24790
 
+    // DISHONORED(port): the GFx TextField extensions setImageSubstitutions / updateImageSubstitution
+    // (2012 0xa2c2c0 / 0xa2b6c0, 2013 0xa22980 / 0xa21d80): substrings of the field's text drawn as inline
+    // images. _common.EmbedImg::ConvertButtonTags hands every field it converts its $..$ button table.
+    static void SetImageSubstitutions(const GASFnCall& fn);
+    static void UpdateImageSubstitution(const GASFnCall& fn);
+
 private:
+    struct IdImageDesc
+    {
+        char              Id[64];
+        GFxTextImageDesc* pDesc;
+    };
+
+    void ProceedImageSubstitution(const GASFnCall& fn, int index, const GASValue* elem); // 0xa2bc60
+    void AddIdImageDescAssoc(const char* id, GFxTextImageDesc* desc);                    // 0xa2bba0
+    void RemoveIdImageDescAssoc(const char* id);                                         // 0xa286e0
+    void ClearIdImageDescAssoc();                                                        // 0xa2bb70
+    GFxTextImageDesc* FindIdImageDesc(const char* id) const;
+    void LogImageSubstWarning(const GASFnCall& fn, const char* fmt, int index) const;
+
     GFxTextFieldDesc         Desc;
     GFxTextAllocator         Allocator;
     GFxTextDocView           Doc;
     char  TextValue[512];
     bool  bDirty;
     GFxTextFilter            Filter;
+    GArray<IdImageDesc>      IdImageDescs;
 };
 
 // ---------------------------------------------------------------------------------------------

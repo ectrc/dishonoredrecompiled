@@ -87,6 +87,21 @@ void GFxTextLineBuffer::Clear()
     for (unsigned int i = 0; i < Lines.GetSize(); ++i)
         delete Lines[i];
     Lines.Clear();
+    for (unsigned int i = 0; i < ImageRefs.GetSize(); ++i)
+        ImageRefs[i]->Release();
+    ImageRefs.Clear();
+}
+
+void GFxTextLineBuffer::AddImageRef(GFxTextImageDesc* desc)
+{
+    desc->AddRef();
+    ImageRefs.PushBack(desc);
+}
+
+GFxTextImageDesc::GFxTextImageDesc()
+    : RefCount(1), pImage(0), pDataDef(0), BaseLineX(0), BaseLineY(0), ScreenWidth(0), ScreenHeight(0)
+{
+    // DISHONORED(port): 2012 0xa26030 - every field zero and the matrix the identity.
 }
 
 GFxTextLineBuffer::Line* GFxTextLineBuffer::InsertNewLine()
@@ -412,6 +427,40 @@ void GFxParagraphFormatter::Format(const GFxTextParagraph& para)
 
     for (unsigned int i = 0; i < len; ++i)
     {
+        // DISHONORED(port): 0xa9d310's substitution test comes first: when the remaining text starts with a
+        // setImageSubstitutions substring the whole substring becomes one image glyph, ScreenWidth wide, that
+        // raises the line's ascent to the image's height above its baseline (the desc matrix maps the image
+        // origin to -BaseLineY scaled) and its descent to the rest of ScreenHeight.
+        unsigned int matchLen = 0;
+        GFxTextImageDesc* image = pView->ImageSubstitutes.GetSize()
+            ? pView->FindImageDesc(para.GetText() + i, len - i, &matchLen) : 0;
+        if (image != 0)
+        {
+            if (!pLine)
+                beginLine();
+            float ox = 0.0f, oy = 0.0f;
+            image->Matrix.Transform(&ox, &oy);
+            if (-oy > Cursor.MaxAscent)
+                Cursor.MaxAscent = -oy;
+            if ((float)image->ScreenHeight + oy > Cursor.MaxDescent)
+                Cursor.MaxDescent = (float)image->ScreenHeight + oy;
+            GFxTextLineBuffer::GlyphEntry g;
+            g.GlyphIndex = ~0u;
+            g.Advance = 0;
+            g.FormatIndex = formatIndex;
+            g.Flags = 0;
+            g.SetFontSize(fontSize);
+            g.SetAdvance(GFxRoundToInt((float)image->ScreenWidth));
+            g.pImage = image;
+            pView->Lines.AddImageRef(image);
+            pushGlyph(g);
+            TextPos += matchLen;
+            i += matchLen - 1;
+            prevGlyph = -1;
+            CheckWordWrap();
+            continue;
+        }
+
         const GFxTextFormat* fmt = para.GetTextFormatPtr(i);
         if (!fmt)
             fmt = &defFmt;
@@ -443,6 +492,7 @@ void GFxParagraphFormatter::Format(const GFxTextParagraph& para)
         g.FormatIndex = formatIndex;
         g.Flags = 0;
         g.SetFontSize(fontSize);
+        g.pImage = 0;
 
         if (ch == L'\n' || ch == L'\r')
         {
@@ -532,6 +582,60 @@ GFxTextDocView::GFxTextDocView(GFxTextAllocator* alloc, GFxFontManager* fonts)
 GFxTextDocView::~GFxTextDocView()
 {
     // DISHONORED(port): 0xa9c4e0
+    ClearImageSubstitutor();
+}
+
+// DISHONORED(port): 0xa99da0 - the element whose substring the text starts with, and that substring's length.
+GFxTextImageDesc* GFxTextDocView::FindImageDesc(const wchar_t* text, unsigned int len,
+                                                unsigned int* matchLen) const
+{
+    for (unsigned int i = 0; i < ImageSubstitutes.GetSize(); ++i)
+    {
+        const ImageSubstElement& e = ImageSubstitutes[i];
+        if (e.SubStringLen == 0 || e.SubStringLen > len)
+            continue;
+        if (memcmp(text, e.SubString, e.SubStringLen * sizeof(wchar_t)) != 0)
+            continue;
+        if (matchLen)
+            *matchLen = e.SubStringLen;
+        return e.pImageDesc;
+    }
+    return 0;
+}
+
+// DISHONORED(port): 0xa9b1d0 - a substring already present keeps its first desc.
+void GFxTextDocView::AddImageDesc(const ImageSubstElement& e)
+{
+    if (FindImageDesc(e.SubString, e.SubStringLen, 0) != 0)
+        return;
+    ImageSubstElement copy = e;
+    copy.pImageDesc->AddRef();
+    ImageSubstitutes.PushBack(copy);
+    Flags |= VF_NeedsFormat;
+}
+
+// DISHONORED(port): 0xa9b4e0 - every element carrying this desc goes.
+void GFxTextDocView::RemoveImageDesc(GFxTextImageDesc* desc)
+{
+    GArray<ImageSubstElement> kept;
+    for (unsigned int i = 0; i < ImageSubstitutes.GetSize(); ++i)
+    {
+        if (ImageSubstitutes[i].pImageDesc == desc)
+            desc->Release();
+        else
+            kept.PushBack(ImageSubstitutes[i]);
+    }
+    GFxTextCopyArray(&ImageSubstitutes, kept);
+    Flags |= VF_NeedsFormat;
+}
+
+// DISHONORED(port): 0xa2b670
+void GFxTextDocView::ClearImageSubstitutor()
+{
+    for (unsigned int i = 0; i < ImageSubstitutes.GetSize(); ++i)
+        ImageSubstitutes[i].pImageDesc->Release();
+    ImageSubstitutes.Clear();
+    Flags |= VF_NeedsFormat;
 }
 
 void GFxTextDocView::SetViewRect(const GRect<float>& rect)
@@ -697,27 +801,35 @@ void GFxTextDocView::Format()
     TextWidthTwips = formatter.GetMaxWidth();
     TextHeightTwips = formatter.GetTotalHeight();
 
-    // Auto-size: grow the text rect so the content fits, with the 40-twip gutter re-applied. Retail's
-    // grow adds 80 twips (two gutters) in each direction, which is the `+ 80.0` of 0xa9e3a0.
+    // Auto-size: the text rect becomes the content plus the 40-twip gutter on each side, the `+ 80.0` of
+    // 0xa9e3a0. DISHONORED(port, agent HJ): retail sets the size whether it grows or shrinks (the rect is
+    // compared and SetViewRect called on any difference); this tree only ever grew it, so a field wider
+    // than its text kept its authored width - the location banner's big first letter left a gap after it.
+    // DISHONORED(bringup): retail anchors the resize by the autosize alignment (right / centre / left); the
+    // view flags here record no alignment, so the rect is left- and top-anchored.
     if (Flags & VF_AutoSizeX)
     {
-        const float want = (float)TextWidthTwips + 80.0f;
-        if (want > TextRect.Right - TextRect.Left)
+        GRect<float> r = TextRect;
+        r.Right = r.Left + (float)TextWidthTwips + 80.0f;
+        if (r.Right != TextRect.Right)
         {
-            GRect<float> r = TextRect;
-            r.Right = r.Left + want;
             SetViewRect(r);
+            // A centred or right-aligned line was placed in the old width; it is placed again in the new one.
+            if (ContainsNonLeftAlignment())
+            {
+                Lines.Clear();
+                GFxParagraphFormatter reformatter(this);
+                for (unsigned int i = 0; i < Text.GetParagraphCount(); ++i)
+                    reformatter.Format(*Text.GetParagraph(i));
+            }
         }
     }
     if (Flags & VF_AutoSizeY)
     {
-        const float want = (float)TextHeightTwips + 80.0f;
-        if (want > TextRect.Bottom - TextRect.Top)
-        {
-            GRect<float> r = TextRect;
-            r.Bottom = r.Top + want;
+        GRect<float> r = TextRect;
+        r.Bottom = r.Top + (float)TextHeightTwips + 80.0f;
+        if (r.Bottom != TextRect.Bottom)
             SetViewRect(r);
-        }
     }
 
     // Vertical alignment moves every line, which is what VAlign_Center/Bottom mean for a field whose

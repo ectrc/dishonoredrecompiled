@@ -42,9 +42,9 @@ void UDishonoredPlayerInput::OnInit( ADishonoredPlayerController* Owner )
 	{
 		bUsingGamepad = DishonoredEngine->m_bUsingGamepad;
 	}
-	// DISHONORED(bringup): ArkSettings::ApplyCurrentSettings(IArkSettingsListenerInterface) (Engine, 2013 rva 0x53b790) is not in our
-	// Engine yet, so the sensitivity/invert options stay at their defaults and the binding half of ApplyGameSettings is called here
-	BuildBindings();
+	// DISHONORED(port): agent HJ. Retail's last statement (2013 0x6afeb0 -> ArkSettings::ApplyCurrentSettings 0x53b790): the current
+	// settings reach ApplyGameSettings with ASLI_ApplyCurrentValues, which builds the bindings out of the profile.
+	ArkSettings::ApplyCurrentSettings( this );
 }
 
 // DISHONORED(written): 2013 rva 0x6a12b0 (2012 0x6d1a80, same bytes)
@@ -110,34 +110,82 @@ void UDishonoredPlayerInput::AddBindingSet( const TArrayNoInit<FKeyBind>& Set )
 	}
 }
 
-// DISHONORED(written): the binding half of 2013 UDishonoredPlayerInput::ApplyGameSettings (0x6bd610): Bindings = BaseBindings, then
-// AddBindingSet(m_PCBindings) and AddBindingSet(m_PadBindingSet[m_PadBindingSetMap[0]]) (TranslateBindingSet 0x6afe50 maps the
-// gamepad-scheme setting through the tweak). Without it Bindings stays empty and no key reaches the player controller.
-// DISHONORED(bringup): ReadPCBindingsFromProfile (0x6b8240, the user's rebinds), TranslateBaseBindings (0x6baa80, the non-US
-// keyboard-layout remap) and InitGameActionBindings (0x6bac10, the UI glyph table) are not run: there is no profile yet and the
-// settings interface ArkSettings::ApplyCurrentSettings (Engine, 0x53b790) is not in our Engine.
-void UDishonoredPlayerInput::BuildBindings()
+// DISHONORED(port): 2013 rva 0x6afe50 (2012 0x6f8db0): the gamepad-scheme setting through the tweak's m_PadBindingSetMap, the class
+// default's when the tweak is not loaded.
+INT UDishonoredPlayerInput::TranslateBindingSet( INT _BindingSet ) const
 {
-	Bindings = BaseBindings;
-	AddBindingSet( m_PCBindings );
-	UDisTweaks_PlayerInput* Tweaks = m_pTweaks ? m_pTweaks : (UDisTweaks_PlayerInput*)UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject();
-	const INT PadSet = Tweaks ? Tweaks->m_PadBindingSetMap[0] : 0;
-	switch( PadSet )
+	const UDisTweaks_PlayerInput* Tweaks = m_pTweaks ? m_pTweaks : (UDisTweaks_PlayerInput*)UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject();
+	return Tweaks->m_PadBindingSetMap[_BindingSet];
+}
+
+// DISHONORED(port): agent HJ, 2013 rva 0x6b8240 (2012 0x6ef8f0; 2013 reads ids 29..64, 2012 29..62). The profile owns the PC keys:
+// every m_PCBindings command part (trimmed in place, as FString::Trim/TrimTrailing do) that names a bindable action - the
+// EProfileSettingID names 29..64 without their PSI_ prefix, UArkProfileSettings::FillGBAList 2013 0x537610 - takes the key the
+// profile stores for that action (GetProfileSettingValueInt(29 + action), UArkProfileSettings::GetKeyName 2013 0x533560 =
+// m_BindableKeyMapping[key]) as the binding's key. Each action is consumed by the first binding that names it, so a second binding
+// of the same action keeps its ini key. A setting the profile does not hold leaves the binding's ini key.
+void UDishonoredPlayerInput::ReadPCBindingsFromProfile()
+{
+	ADishonoredPlayerController* Controller = Cast<ADishonoredPlayerController>( GetOuter() );
+	// DISHONORED(bringup): retail calls the controller's GetProfileSettings (vtable +1424) unguarded; this tree can run the input
+	// before the controller's online data store is registered.
+	if( Controller == NULL || Controller->OnlinePlayerData == NULL || Controller->OnlinePlayerData->ProfileProvider == NULL )
 	{
-	case 1:		AddBindingSet( m_PadBindingSet2 ); break;
-	case 2:		AddBindingSet( m_PadBindingSet3 ); break;
-	case 3:		AddBindingSet( m_PadBindingSet4 ); break;
-	default:	AddBindingSet( m_PadBindingSet1 ); break;
+		return;
 	}
-	InitGameActionBindings();
-	debugf( TEXT("DISHONORED(bringup): player input bindings: %d base + %d pc + pad set %d -> %d bindings, %d game actions"),
-		BaseBindings.Num(), m_PCBindings.Num(), PadSet, Bindings.Num(), m_GameActionBindings.Num() );
+	UArkProfileSettings* Profile = Controller->GetProfileSettings();
+	if( Profile == NULL )
+	{
+		return;
+	}
+	static const UBOOL bDiag = ParseParam( appCmdLine(), TEXT("puidiag") );
+	TArray<FString> GBAs;
+	UArkProfileSettings::FillGBAList( GBAs );
+	for( INT BindingIdx = 0; BindingIdx < m_PCBindings.Num(); BindingIdx++ )
+	{
+		FKeyBind& KeyBind = m_PCBindings(BindingIdx);
+		TArray<FString> Commands;
+		KeyBind.Command.ParseIntoArray( &Commands, TEXT("|"), TRUE );
+		for( INT CommandIdx = 0; CommandIdx < Commands.Num(); CommandIdx++ )
+		{
+			FString& Command = Commands(CommandIdx);
+			Command.Trim();
+			Command.TrimTrailing();
+			if( !Command.StartsWith( TEXT("GBA_") ) )
+			{
+				continue;
+			}
+			const INT GBAIndex = GBAs.FindItemIndex( Command );
+			if( GBAIndex == INDEX_NONE )
+			{
+				continue;
+			}
+			INT BindableKey = -1;
+			// DISHONORED(bringup): the key index is range-checked; retail indexes m_BindableKeyMapping with whatever the profile holds.
+			if( Profile->GetProfileSettingValueInt( GBAIndex + 29, BindableKey ) && BindableKey >= 0 && BindableKey < ARRAY_COUNT(Profile->m_BindableKeyMapping) )
+			{
+				const FName OldKey = KeyBind.Name;
+				KeyBind.Name = Profile->GetKeyName( BindableKey );
+				if( bDiag )
+				{
+					debugf( TEXT("DISHONORED(bringup): puidiag profile key %s: id %d value %d, %s -> %s"), *Command, GBAIndex + 29, BindableKey,
+						*OldKey.ToString(), *KeyBind.Name.ToString() );
+				}
+			}
+			else if( bDiag )
+			{
+				debugf( TEXT("DISHONORED(bringup): puidiag profile key %s: id %d not held, keeps %s"), *Command, GBAIndex + 29, *KeyBind.Name.ToString() );
+			}
+			GBAs(GBAIndex).Empty();
+		}
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x6bac10 (2012 0x6f3fe0, same logic), which retail's ApplyGameSettings runs right after the two
 // AddBindingSet calls (agent HF). Every binding named GBA_<action> becomes an action entry whose PC and pad keys are the first
 // binding of each kind with a '|'-separated command part equal to that name; then each <action>_Gamepad entry hands its pad
-// key to <action>. The Trim/TrimTrailing retail calls on each part return copies it discards, so parts are compared untrimmed.
+// key to <action>. Each part is trimmed first: FString::Trim/TrimTrailing trim the string in place and return a copy, which
+// is the copy retail discards (agent HJ; agent HF's reading compared "GBA_Use " and never matched F's "GBA_Use | ...").
 void UDishonoredPlayerInput::InitGameActionBindings()
 {
 	m_GameActionBindings.Reset();
@@ -158,6 +206,8 @@ void UDishonoredPlayerInput::InitGameActionBindings()
 			Candidate.Command.ParseIntoArray( &Parts, TEXT("|"), TRUE );
 			for( INT Part = 0; Part < Parts.Num(); Part++ )
 			{
+				Parts(Part).Trim();
+				Parts(Part).TrimTrailing();
 				if( Parts(Part) != GBAName )
 				{
 					continue;
@@ -231,14 +281,29 @@ void UDishonoredPlayerInput::execDis_Jump_ButtonDown( FFrame& Stack, RESULT_DECL
 // is unconditional and is the eleven values the input code reads - the two pad sensitivities, the three
 // invert/friction/auto-aim bits per device, the two friction strengths, the mouse sensitivity modifier, and
 // UPlayerInput::bEnableMouseSmoothing, which is bit 11 of the bitfield at +284.
-// DISHONORED(bringup): the binding half is BuildBindings(), the stand-in agent DO wrote for retail's
-// ReadPCBindingsFromProfile (0x6b8240) / TranslateBaseBindings (0x6baa80) / InitGameActionBindings (0x6bac10)
-// chain, plus retail's FGFxEngine call for the five glyph keys, which this tree's GFxUI has no equivalent for.
+// DISHONORED(port): agent HJ, the binding half in retail's order: TranslateBindingSet, ReadPCBindingsFromProfile, Bindings =
+// BaseBindings, AddBindingSet(m_PCBindings), AddBindingSet(the translated pad set), InitGameActionBindings.
+// DISHONORED(bringup): TranslateBaseBindings (0x6baa80, run when the flag at +108 is clear: BaseBindings' keys remapped from the
+// US layout to the user's through MapVirtualKeyEx) and the FGFxEngine call that hands the five movement/use keys to the GFx
+// engine (0x9a0f30) have no equivalent in this tree.
 void UDishonoredPlayerInput::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
 {
 	if( Reason == ASLI_ApplyCurrentValues || Reason == ASLI_ValidatedByUser )
 	{
-		BuildBindings();
+		const INT PadSet = TranslateBindingSet( Parameters->m_GamepadBindingSet );
+		ReadPCBindingsFromProfile();
+		Bindings = BaseBindings;
+		AddBindingSet( m_PCBindings );
+		switch( PadSet )
+		{
+		case 1:		AddBindingSet( m_PadBindingSet2 ); break;
+		case 2:		AddBindingSet( m_PadBindingSet3 ); break;
+		case 3:		AddBindingSet( m_PadBindingSet4 ); break;
+		default:	AddBindingSet( m_PadBindingSet1 ); break;
+		}
+		InitGameActionBindings();
+		debugf( TEXT("DISHONORED(bringup): player input bindings: %d base + %d pc + pad set %d -> %d bindings, %d game actions"),
+			BaseBindings.Num(), m_PCBindings.Num(), PadSet, Bindings.Num(), m_GameActionBindings.Num() );
 	}
 
 	m_fGamepadLookXSensitivitySettings = (FLOAT)Parameters->m_GamepadLookXSensitivity * 0.01f;

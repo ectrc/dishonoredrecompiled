@@ -965,7 +965,6 @@ void TextFormatGetTextExtent(const GASFnCall& fn)
 }
 
 GASObject* GTextFormatProto = 0;
-GASObject* GTextFieldProto = 0;
 
 // 2013 0xa1edf0. TextField.getTextFormat() answers a TextFormat for the field's current format.
 void TextFieldGetTextFormat(const GASFnCall& fn)
@@ -1000,8 +999,9 @@ void TextFieldGetTextFormat(const GASFnCall& fn)
 // class at all - they are entries of the MovieClip built-in table at 0xdfb018, which this tree
 // answers from MovieClip.prototype. agentDG.md deviation 2 records that the prototype is consulted
 // LAST here; every content class in this cook extends MovieClip, so the chain still reaches it.
-void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movieClipProto)
+GASObject* GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movieClipProto)
 {
+    GASObject* textFieldProto = 0;
     GASStringContext* sc = gc->GetSC();
 
     struct Entry { const char* Name; GASCFunctionPtr Fn; };
@@ -1144,16 +1144,24 @@ void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movie
         v.SetAsFunction(gc->NewCFunction(TextFieldGetTextFormat));
         proto->SetConstMemberRaw(sc, "getTextFormat", v,
                                  GASPropFlags(GASPropFlags::PropFlag_DontEnum));
-        // Nothing in the AS2 graph names this prototype (GFxEditTextCharacter::GetMember reads it
-        // through this pointer), so without a reference of its own the collector would free it at the
-        // end of the first frame. The four file-scope prototypes take one each; they are not released,
-        // because the movie's teardown frees them with everything else it made.
-        GTextFieldProto = proto;
-        proto->AddRef();
+        // DISHONORED(port): GASTextFieldProto's GFx extensions setImageSubstitutions (2013 0xa22980) and
+        // updateImageSubstitution (2013 0xa21d80), what _common.EmbedImg::ConvertButtonTags calls.
+        v.SetAsFunction(gc->NewCFunction(GFxEditTextCharacter::SetImageSubstitutions));
+        proto->SetConstMemberRaw(sc, "setImageSubstitutions", v,
+                                 GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+        v.SetAsFunction(gc->NewCFunction(GFxEditTextCharacter::UpdateImageSubstitution));
+        proto->SetConstMemberRaw(sc, "updateImageSubstitution", v,
+                                 GASPropFlags(GASPropFlags::PropFlag_DontEnum));
+        // DISHONORED(port, agent HJ): the context keeps it (and its reference) in its prototype table. It was one
+        // file-scope pointer that every movie's install overwrote, so a field of any movie but the last one
+        // loaded looked its methods up with names from another string manager and found none - the HUD's
+        // tutorial line logged `setImageSubstitutions` as not a function with the method installed.
+        textFieldProto = proto;
     }
+    return textFieldProto;
 }
 
-GASObject* GFxDrawingTextFieldProto()
+GFxImageCharacterDef* GFxDrawingBitmapImage(GASObject* bitmapData, GASStringContext* sc)
 {
-    return GTextFieldProto;
+    return BitmapImageOf(bitmapData, sc);
 }

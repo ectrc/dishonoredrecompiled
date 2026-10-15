@@ -37,6 +37,30 @@
 #endif
 
 class GFxTextDocView;
+class GFxImageCharacterDef;
+class GFxMovieDataDef;
+
+// ---------------------------------------------------------------------------------------------
+// DISHONORED(port): GFxTextImageDesc, 2012 ctor 0xa26030 (56 bytes: GRefCountImpl +0, the image shape +8,
+// BaseLineX +16, BaseLineY +20, ScreenWidth +24, ScreenHeight +28 in twips, the image-to-baseline matrix
+// +32). What TextField.setImageSubstitutions builds per element and what an image glyph of a line points at.
+// The shape is the image itself here (retail wraps it in a GFxShapeWithStyles::SetToImage), with the movie
+// it resolves its texture against.
+struct GFxTextImageDesc
+{
+    GFxTextImageDesc();                                           // 0xa26030
+    void AddRef() { ++RefCount; }
+    void Release() { if (--RefCount == 0) delete this; }
+
+    unsigned int          RefCount;
+    GFxImageCharacterDef* pImage;
+    GFxMovieDataDef*      pDataDef;
+    int                   BaseLineX;      // twips
+    int                   BaseLineY;      // twips
+    unsigned int          ScreenWidth;    // twips
+    unsigned int          ScreenHeight;   // twips
+    GMatrix2D             Matrix;         // image twips -> pen-relative twips, baseline at y 0
+};
 
 // ---------------------------------------------------------------------------------------------
 class GFxTextLineBuffer
@@ -66,6 +90,9 @@ public:
 
         unsigned short SizeQuantum;    // the 12-bit packed size
         bool           SizeIsFraction; // the 0x10 flag of the packed word
+        // DISHONORED(port): an image glyph (2012 0xa9d310 sets flags 0x4000|0x800 and stores the desc in the
+        // line's format data); null for a character glyph.
+        GFxTextImageDesc* pImage;
     };
 
     // One run of a line that shares a font, a colour and a size: retail's GFxFormatDataEntry.
@@ -115,11 +142,16 @@ public:
     // (0xa9c5b0) switches to a heap line above 0x400 bytes.
     static unsigned int CalcLineSize(unsigned int glyphs, unsigned int formats, bool longLine);
 
+    // DISHONORED(port): the reference a laid-out image glyph holds on its desc (2012 0xa9d310 appends the desc to
+    // the line's format data with a reference), released when the lines are.
+    void AddImageRef(GFxTextImageDesc* desc);
+
     unsigned int VScrollOffset;   // in lines
     unsigned int HScrollOffset;   // in twips
 
 private:
     GArray<Line*> Lines;
+    GArray<GFxTextImageDesc*> ImageRefs;
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -216,6 +248,16 @@ public:
         const char*  FontList;
         unsigned int StyleFlags;
     };
+    // DISHONORED(port): GFxTextDocView::ImageSubstitutor::Element (48 bytes: the substring +0, the desc +40, the
+    // substring's length +44). Retail keeps the elements sorted (GFxImageSubstCmp 0xa98e00 / 0xa98e30) for a
+    // lower-bound search; this list is searched in insertion order, which answers the same for the cook's
+    // substrings - none is a prefix of another.
+    struct ImageSubstElement
+    {
+        wchar_t           SubString[20];
+        GFxTextImageDesc* pImageDesc;
+        unsigned char     SubStringLen;
+    };
 
     GFxTextDocView(GFxTextAllocator* alloc, GFxFontManager* fonts);  // 0xaa06b0
     ~GFxTextDocView();                                               // 0xa9c4e0
@@ -273,6 +315,12 @@ public:
     const GFxTextParagraphFormat& GetDefaultParagraphFormat() const
         { return Text.GetDefaultParagraphFormat(); }
 
+    void AddImageDesc(const ImageSubstElement& e);                  // 0xa9b1d0
+    void RemoveImageDesc(GFxTextImageDesc* desc);                    // 0xa9b4e0
+    void ClearImageSubstitutor();                                    // 0xa2b670
+    GFxTextImageDesc* FindImageDesc(const wchar_t* text, unsigned int len,
+                                    unsigned int* matchLen) const;   // 0xa99da0
+
     // Measured by Format() and what the harness reports.
     unsigned int GetGlyphsLaidOut() const { return GlyphsLaidOut; }
     unsigned int GetGlyphsWithoutShape() const { return GlyphsWithoutShape; }
@@ -295,6 +343,7 @@ private:
     int TextHeightTwips;
     unsigned int GlyphsLaidOut;
     unsigned int GlyphsWithoutShape;
+    GArray<ImageSubstElement> ImageSubstitutes;
 };
 
 #ifdef _MSC_VER

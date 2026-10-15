@@ -1019,7 +1019,10 @@ private:
 
 // The AS2 half: MovieClip's drawing methods, flash.display.BitmapData with loadBitmap,
 // flash.geom.Matrix, TextField.getTextFormat and TextFormat.getTextExtent. GFxDrawing.cpp.
-void GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movieClipProto);
+// Answers the context's TextField prototype.
+GASObject* GFxDrawingInstall(GASGlobalContext* gc, GASObject* global, GASObject* movieClipProto);
+// The image a BitmapData from loadBitmap carries, or null for any other object.
+class GFxImageCharacterDef* GFxDrawingBitmapImage(GASObject* bitmapData, GASStringContext* sc);
 
 class GFxSprite : public GFxASCharacter
 {

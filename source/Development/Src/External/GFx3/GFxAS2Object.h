@@ -356,6 +356,7 @@ public:
 
     virtual GASObjectType GetObjectType() const { return Type; }
     virtual GASValue GetValue() const { return Primitive; }
+    virtual bool GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val);
     virtual void ExecuteForEachChild_GC(int op) const;
     virtual void Finalize_GC();
 

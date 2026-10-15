@@ -201,9 +201,10 @@ UBOOL UDisGFxMoviePlayerBase::LoadMoviePackage( const TCHAR* _pMoviePath )
 	return TRUE;
 }
 
-// DISHONORED(port): 2012 rva 0x80bb90. FormatText reads a text field's own string back out of the movie,
-// runs the interaction-key substitution over it and writes it back, which is how "[Use]" in a localised
-// string becomes the key the player actually has bound.
+// DISHONORED(port): execFormatText 2013 rva 0x600aa0 -> FormatText 2013 0x7a9e20 (2012 0x647be0 -> 0x80bb90). FormatText reads a
+// text field's own string back out of the movie, runs FormatInteractionText( text, FALSE, FALSE ) over it (agent HJ: the
+// substitution HF ported) and writes it back sticky, which is how a `GBA_<action>` token in a localised string becomes the key
+// the player has bound. A variable that does not read back as a string is written back as the empty string, as retail does.
 void UDisGFxMoviePlayerBase::execFormatText( FFrame& Stack, RESULT_DECL )
 {
 	P_GET_STR(_rTextVarPath);
@@ -214,20 +215,19 @@ void UDisGFxMoviePlayerBase::execFormatText( FFrame& Stack, RESULT_DECL )
 	{
 		return;
 	}
+	FString Formatted;
 	GFxValue Text( GFxValue::VT_ConvertStringW );
 	if( Movie->pView->GetVariable( &Text, FTCHARToUTF8(*_rTextVarPath) ) && !Text.IsUndefined() )
 	{
-		FString Formatted = Text.GetType() == GFxValue::VT_StringW
+		Formatted = Text.GetType() == GFxValue::VT_StringW
 			? FString( Text.GetStringW() )
 			: FString( FUTF8ToTCHAR( Text.GetString() ) );
-		// DISHONORED(bringup): retail then substitutes the bound keys through FormatInteractionText
-		// (2012 0x8085b0), FormatGamepadKeyName (0x7f5f30) and FormatMouseKeyName (0x7f5fd0), all three of
-		// which read UArkProfileSettings' key bindings; that class is a shim with no accessors in this tree.
-		GFxValue Out;
-		Out.SetStringW( *Formatted );
-		Movie->pView->SetVariable( FTCHARToUTF8(*_rTextVarPath), Out, GFxMovie::SV_Sticky );
+		FormatInteractionText( Formatted, FALSE, FALSE );
 	}
 	Text.ReleaseManaged();
+	GFxValue Out;
+	Out.SetStringW( *Formatted );
+	Movie->pView->SetVariable( FTCHARToUTF8(*_rTextVarPath), Out, GFxMovie::SV_Sticky );
 }
 
 // DISHONORED(port): 2013 rva 0x78c590 (2012 0x7f5f30, same bytes): the movie's own glyph token, "$<key>$" with the

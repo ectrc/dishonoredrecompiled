@@ -12919,6 +12919,7 @@ public:
     }
     DECLARE_FUNCTION(execSetToDefaults);
     DECLARE_CLASS(UArkProfileSettings,UOnlineProfileSettings,0,Engine)
+#include "CppText/UArkProfileSettings.h"
 };
 
 // Engine.ArkSeqAct_ChangePylonConnection: retail sizeof 248, reflected span 248..248 (2012 PDB sizeof 248) [shim: Engine package]

@@ -4,6 +4,7 @@
 #include <math.h>
 #include "GFxAS2Runtime.h"
 #include "GFxDisplay.h"
+#include "GFxCharacterDefs.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -168,6 +169,223 @@ GFxEditTextCharacter::GFxEditTextCharacter(const GFxTextFieldDesc& desc, GFxASCh
 GFxEditTextCharacter::~GFxEditTextCharacter()
 {
     // DISHONORED(port): 0xa32980
+    ClearIdImageDescAssoc();
+}
+
+// ---------------------------------------------------------------------------------------------
+// The image substitutions. Retail's warnings name the field by its target path, as these do.
+
+static GFxEditTextCharacter* GFxTextFieldOfCall(const GASFnCall& fn)
+{
+    GFxASCharacter* ch = fn.pThis ? fn.pThis->ToASCharacter() : 0;
+    return (ch && ch->GetObjectType() == Object_TextField) ? (GFxEditTextCharacter*)ch : 0;
+}
+
+void GFxEditTextCharacter::LogImageSubstWarning(const GASFnCall& fn, const char* fmt, int index) const
+{
+    const GASString path = GetTargetPath(fn.pEnv->GetGC()->GetSC());
+    fn.pEnv->LogScriptWarning(fmt, path.ToCStr(), index);
+    if (GFxAS2ClipTraceCount > 0)
+    {
+        --GFxAS2ClipTraceCount;
+        GFxLogf("DISHONORED(bringup): puidiag imagesubst %s #%d refused (see the AS2 warning)", path.ToCStr(), index);
+    }
+}
+
+GFxTextImageDesc* GFxEditTextCharacter::FindIdImageDesc(const char* id) const
+{
+    for (unsigned int i = 0; i < IdImageDescs.GetSize(); ++i)
+        if (_stricmp(IdImageDescs[i].Id, id) == 0)
+            return IdImageDescs[i].pDesc;
+    return 0;
+}
+
+// DISHONORED(port): 0xa2bba0 - the id is looked up without case (GString::NoCaseHashFunctor).
+void GFxEditTextCharacter::AddIdImageDescAssoc(const char* id, GFxTextImageDesc* desc)
+{
+    RemoveIdImageDescAssoc(id);
+    IdImageDesc e;
+    strncpy(e.Id, id, sizeof(e.Id) - 1);
+    e.Id[sizeof(e.Id) - 1] = 0;
+    e.pDesc = desc;
+    desc->AddRef();
+    IdImageDescs.PushBack(e);
+}
+
+// DISHONORED(port): 0xa286e0
+void GFxEditTextCharacter::RemoveIdImageDescAssoc(const char* id)
+{
+    GArray<IdImageDesc> kept;
+    for (unsigned int i = 0; i < IdImageDescs.GetSize(); ++i)
+    {
+        if (_stricmp(IdImageDescs[i].Id, id) == 0)
+            IdImageDescs[i].pDesc->Release();
+        else
+            kept.PushBack(IdImageDescs[i]);
+    }
+    IdImageDescs.Clear();
+    for (unsigned int i = 0; i < kept.GetSize(); ++i)
+        IdImageDescs.PushBack(kept[i]);
+}
+
+// DISHONORED(port): 0xa2bb70
+void GFxEditTextCharacter::ClearIdImageDescAssoc()
+{
+    for (unsigned int i = 0; i < IdImageDescs.GetSize(); ++i)
+        IdImageDescs[i].pDesc->Release();
+    IdImageDescs.Clear();
+}
+
+// DISHONORED(port): 2012 0xa2bc60 / 2013 0xa22320 (1,621 bytes). One element {subString, image, width, height,
+// baseLineX, baseLineY, id}: the substring (at most 15 characters), a BitmapData, the on-screen size (the image's
+// own by default) and the baseline point inside the image (default x 0, y one pixel above its bottom), all in
+// pixels and stored in twips. The desc's matrix maps the image onto the pen: translate by minus the baseline
+// point, then scale to the on-screen size.
+void GFxEditTextCharacter::ProceedImageSubstitution(const GASFnCall& fn, int index, const GASValue* elem)
+{
+    if (elem == 0 || !elem->IsObject() || elem->GetObject() == 0)
+        return;
+    GASObject* o = elem->GetObject();
+    GASStringContext* sc = fn.pEnv->GetGC()->GetSC();
+    GASValue v;
+    if (!o->GetMemberRaw(sc, sc->CreateString("subString"), &v))
+    {
+        LogImageSubstWarning(fn, "%s.setImageSubstitutions() failed for #%d element - subString should be specified\n", index);
+        return;
+    }
+    const GASString sub = v.ToString(fn.pEnv);
+    GArray<wchar_t> wide;
+    GFxTextUtf8ToWide(sub.ToCStr(), sub.GetSize(), &wide);
+    const unsigned int subLen = wide.GetSize() < 19 ? wide.GetSize() : 19;
+    if (subLen > 15)
+    {
+        LogImageSubstWarning(fn, "%s.setImageSubstitutions() failed for #%d element - length of subString should not exceed 15 characters\n", index);
+        return;
+    }
+    GFxImageCharacterDef* image = 0;
+    if (o->GetMemberRaw(sc, sc->CreateString("image"), &v) && v.IsObject())
+        image = GFxDrawingBitmapImage(v.GetObject(), sc);
+    if (image == 0)
+    {
+        LogImageSubstWarning(fn, "%s.setImageSubstitutions() failed for #%d element - 'image' is not specified or not a BitmapData\n", index);
+        return;
+    }
+    const float imageW = (float)(20 * image->TargetWidth);
+    const float imageH = (float)(20 * image->TargetHeight);
+    if (imageW == 0.0f || imageH == 0.0f)
+    {
+        LogImageSubstWarning(fn, "%s.setImageSubstitutions() failed for #%d element - image has one zero dimension\n", index);
+        return;
+    }
+    float screenW = imageW, screenH = imageH, baseLineX = 0.0f, baseLineY = imageH - 20.0f;
+    if (o->GetMemberRaw(sc, sc->CreateString("width"), &v))
+        screenW = (float)(v.ToNumber(fn.pEnv) * 20.0);
+    if (o->GetMemberRaw(sc, sc->CreateString("height"), &v))
+        screenH = (float)(v.ToNumber(fn.pEnv) * 20.0);
+    if (o->GetMemberRaw(sc, sc->CreateString("baseLineX"), &v))
+        baseLineX = (float)(v.ToNumber(fn.pEnv) * 20.0);
+    if (o->GetMemberRaw(sc, sc->CreateString("baseLineY"), &v))
+        baseLineY = (float)(v.ToNumber(fn.pEnv) * 20.0);
+
+    GFxTextImageDesc* desc = new GFxTextImageDesc();
+    desc->pImage = image;
+    GFxMovieDefImpl* defImpl = fn.pEnv->GetMovieRoot() ? fn.pEnv->GetMovieRoot()->GetMovieDefImpl() : 0;
+    desc->pDataDef = defImpl ? defImpl->GetDataDef() : 0;
+    desc->BaseLineX = (int)baseLineX;
+    desc->BaseLineY = (int)baseLineY;
+    desc->ScreenWidth = (unsigned int)screenW;
+    desc->ScreenHeight = (unsigned int)screenH;
+    const float sx = screenW / imageW;
+    const float sy = screenH / imageH;
+    desc->Matrix.M_[0][2] -= baseLineX;
+    desc->Matrix.M_[1][2] -= baseLineY;
+    for (int c = 0; c < 3; ++c)
+    {
+        desc->Matrix.M_[0][c] *= sx;
+        desc->Matrix.M_[1][c] *= sy;
+    }
+    if (o->GetMemberRaw(sc, sc->CreateString("id"), &v))
+    {
+        const GASString id = v.ToString(fn.pEnv);
+        AddIdImageDescAssoc(id.ToCStr(), desc);
+    }
+
+    if (GFxAS2ClipTraceCount > 0)
+    {
+        --GFxAS2ClipTraceCount;
+        GFxLogf("DISHONORED(bringup): puidiag imagesubst %s #%d '%s' -> %ux%u px image as %.1fx%.1f px, baseline %.1f,%.1f",
+                GetTargetPath(sc).ToCStr(), index, sub.ToCStr(), image->TargetWidth, image->TargetHeight,
+                screenW / 20.0f, screenH / 20.0f, baseLineX / 20.0f, baseLineY / 20.0f);
+    }
+    GFxTextDocView::ImageSubstElement e;
+    memset(e.SubString, 0, sizeof(e.SubString));
+    for (unsigned int i = 0; i < subLen; ++i)
+        e.SubString[i] = wide[i];
+    e.SubStringLen = (unsigned char)subLen;
+    e.pImageDesc = desc;
+    Doc.AddImageDesc(e);
+    SetDirtyFlag();
+    desc->Release();
+}
+
+// DISHONORED(port): 2012 0xa2c2c0 / 2013 0xa22980 (298 bytes). null clears every substitution; an array is one
+// element per entry; any other object is a single element. Answers false.
+void GFxEditTextCharacter::SetImageSubstitutions(const GASFnCall& fn)
+{
+    if (fn.pResult)
+        fn.pResult->SetBool(false);
+    GFxEditTextCharacter* field = GFxTextFieldOfCall(fn);
+    if (field == 0 || fn.pEnv == 0 || fn.GetNumArgs() < 1)
+        return;
+    const GASValue& arg = fn.Arg(0);
+    if (arg.IsNull())
+    {
+        field->ClearIdImageDescAssoc();
+        field->Doc.ClearImageSubstitutor();
+        return;
+    }
+    GASObject* o = arg.ToObject(fn.pEnv);
+    if (o == 0)
+    {
+        field->LogImageSubstWarning(fn, "%s.setImageSubstitutions() failed: parameter should be either 'null', object or array\n", 0);
+        return;
+    }
+    if (o->GetObjectType() == Object_Array)
+    {
+        GASArrayObject* a = (GASArrayObject*)o;
+        for (unsigned int i = 0; i < a->GetSize(); ++i)
+            field->ProceedImageSubstitution(fn, (int)i, a->GetElementPtr(i));
+        return;
+    }
+    field->ProceedImageSubstitution(fn, 0, &arg);
+}
+
+// DISHONORED(port): 2012 0xa2b6c0 / 2013 0xa21d80 (480 bytes). updateImageSubstitution(id[, image]): a null or
+// undefined image removes that substitution, a BitmapData replaces its image in place. Answers false.
+void GFxEditTextCharacter::UpdateImageSubstitution(const GASFnCall& fn)
+{
+    if (fn.pResult)
+        fn.pResult->SetBool(false);
+    GFxEditTextCharacter* field = GFxTextFieldOfCall(fn);
+    if (field == 0 || fn.pEnv == 0 || fn.GetNumArgs() < 1)
+        return;
+    const GASString id = fn.Arg(0).ToString(fn.pEnv);
+    GFxTextImageDesc* desc = field->FindIdImageDesc(id.ToCStr());
+    if (desc == 0 || fn.GetNumArgs() < 2)
+        return;
+    const GASValue& arg = fn.Arg(1);
+    if (arg.IsNull() || arg.IsUndefined())
+    {
+        field->Doc.RemoveImageDesc(desc);
+        field->RemoveIdImageDescAssoc(id.ToCStr());
+        field->SetDirtyFlag();
+        return;
+    }
+    GFxImageCharacterDef* image = arg.IsObject() ? GFxDrawingBitmapImage(arg.GetObject(), fn.pEnv->GetGC()->GetSC()) : 0;
+    if (image == 0)
+        return;
+    desc->pImage = image;
+    field->SetDirtyFlag();
 }
 
 // -gfxuinohtmlface, parsed in GFxUI/Src/gfxuiengine.cpp. See GFxTextField.h.
@@ -643,7 +861,12 @@ GRect<float> GFxEditTextCharacter::GetBoundsTwips(const GMatrix2D& m) const
     // DISHONORED(port): 0xa2ed60 - the view rect through the matrix, and nothing else. The
     // definition's own rect never enters into it, which is the whole difference for a field that
     // was auto-sized or had its text replaced.
-    const GRect<float> r = const_cast<GFxEditTextCharacter*>(this)->Doc.GetViewRect();
+    // DISHONORED(port, agent HJ): retail's GFxTextDocView::GetViewRect (2012 0xa9f2c0) answers the rect at +248,
+    // which SetViewRect (0xa9a1e0) stores as given - this tree's TextRect - while the 40-twip inset copy lives at
+    // +60. Bounds are therefore the whole field, gutter included: every _width/_height of a text field was 4 px
+    // short, and the location banner's letters were set 4 px too close (prev._x + prev.txt._width - 3.5).
+    const_cast<GFxEditTextCharacter*>(this)->Doc.GetViewRect();
+    const GRect<float> r = Doc.GetTextRect();
     if (r.Right <= r.Left && r.Bottom <= r.Top)
         return GRect<float>(0.f, 0.f, 0.f, 0.f);
     const float xs[4] = { r.Left, r.Right, r.Left, r.Right };
@@ -746,9 +969,8 @@ bool GFxEditTextCharacter::GetMember(GASEnvironment* env, const GASString& name,
     // chain (GASTextFieldProto 2013 0xa21120); the field has no AS2 object of its own here, so the
     // prototype is consulted directly, in the same place the chain would have been.
     {
-        GASObject* proto = GFxDrawingTextFieldProto();
-        if (proto != 0 && pMovieRoot != 0
-            && proto->GetMemberRaw(pMovieRoot->GetASContext()->GetSC(), name, val))
+        GASObject* proto = pMovieRoot ? pMovieRoot->GetASContext()->GetPrototype(GASGlobalContext::Proto_TextField) : 0;
+        if (proto != 0 && proto->GetMemberRaw(pMovieRoot->GetASContext()->GetSC(), name, val))
         {
             return true;
         }

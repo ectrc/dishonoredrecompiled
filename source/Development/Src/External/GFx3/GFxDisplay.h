@@ -216,10 +216,6 @@ bool GFxDisplayMatrixInvert(GMatrix2D* out, const GMatrix2D& m);
 // DISHONORED(port, agent EA): the character's transform all the way up to the stage, which is what
 // _xmouse has to invert. Retail composes the same product in GFxCharacter::GetWorldMatrix.
 GMatrix2D GFxCharacterWorldMatrix(const class GFxCharacter* ch);
-// DISHONORED(port, agent EA): the AS2 TextField prototype, which is where getTextFormat lives.
-// Retail's is GASTextFieldProto (2013 0xa21120); an EditText character is not a sprite and does not
-// reach MovieClip.prototype, so its methods need a prototype of their own. GFxDrawing.cpp owns it.
-class GASObject* GFxDrawingTextFieldProto();
 GColor GFxDisplayApplyCxform(const GRenderer::Cxform& cx, GColor c);
 
 // The process-wide glyph cache the text fields rasterise into, and its atlas upload. Retail hangs the

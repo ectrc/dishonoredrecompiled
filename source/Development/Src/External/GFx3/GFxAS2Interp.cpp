@@ -45,6 +45,37 @@ bool GFxAS2WatchMatches(const char* name)
     return strcmp(name, GFxAS2WatchMember) == 0;
 }
 int  GFxAS2WatchCount = 0;
+char GFxAS2ClipTracePrefix[64] = "";
+int  GFxAS2ClipTraceCount = 0;
+
+bool GFxAS2ClipTraceMatches(GASObjectInterface* oi, GASStringContext* sc, GASString* pathOut)
+{
+    if (GFxAS2ClipTraceCount <= 0 || GFxAS2ClipTracePrefix[0] == 0 || oi == 0)
+        return false;
+    GFxASCharacter* ch = oi->ToASCharacter();
+    if (ch == 0)
+        return false;
+    *pathOut = ch->GetTargetPath(sc);
+    return strncmp(pathOut->ToCStr(), GFxAS2ClipTracePrefix, strlen(GFxAS2ClipTracePrefix)) == 0;
+}
+
+static bool GFxAS2ClipTraceMember(const char* name)
+{
+    static const char* const Traced[] = { "_width", "_height", "_xscale", "_yscale", "_visible", "onEnterFrame" };
+    for (unsigned int i = 0; i < sizeof(Traced) / sizeof(Traced[0]); ++i)
+        if (strcmp(name, Traced[i]) == 0)
+            return true;
+    return false;
+}
+
+static bool GFxAS2ClipTraceMethod(const char* name)
+{
+    static const char* const Traced[] = { "setMask", "gotoAndPlay", "gotoAndStop", "tweenTo", "tweenFrom", "tweenEnd" };
+    for (unsigned int i = 0; i < sizeof(Traced) / sizeof(Traced[0]); ++i)
+        if (strcmp(name, Traced[i]) == 0)
+            return true;
+    return false;
+}
 unsigned int GASActionBuffer::OpsUnimplemented = 0;
 unsigned int GASActionBuffer::OpCounts[256] = { 0 };
 
@@ -1418,6 +1449,14 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             }
             if (oi)
                 oi->SetMember(env, name, v, GASPropFlags());
+            GASString tracePath;
+            if (GFxAS2ClipTraceCount > 0 && GFxAS2ClipTraceMember(name.ToCStr())
+                && GFxAS2ClipTraceMatches(oi, sc, &tracePath))
+            {
+                --GFxAS2ClipTraceCount;
+                GFxLogf("DISHONORED(bringup): puidiag clip SET %s.%s = %s (t %u ms)", tracePath.ToCStr(),
+                        name.ToCStr(), v.IsFunction() ? "[function]" : v.ToString(env).ToCStr(), GFxAS2GetTimerMs());
+            }
             break;
         }
         case GASop_Increment:
@@ -1461,6 +1500,15 @@ void GASActionBuffer::Execute(GASEnvironment* env, int startPC, int execBytes, G
             else if (oi)
             {
                 oi->GetMember(env, name, &fnVal);
+            }
+            GASString tracePath;
+            if (GFxAS2ClipTraceCount > 0 && GFxAS2ClipTraceMethod(name.ToCStr())
+                && GFxAS2ClipTraceMatches(oi, sc, &tracePath))
+            {
+                --GFxAS2ClipTraceCount;
+                GFxLogf("DISHONORED(bringup): puidiag clip CALL %s.%s(%s%s) (t %u ms)", tracePath.ToCStr(),
+                        name.ToCStr(), nargs > 0 ? env->Top(0).ToString(env).ToCStr() : "",
+                        nargs > 1 ? ", ..." : "", GFxAS2GetTimerMs());
             }
             GASValue result;
             GFxAS2CallFunctionValue(env, fnVal, self, nargs, &result, name, &objVal);

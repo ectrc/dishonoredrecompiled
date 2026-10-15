@@ -1018,6 +1018,23 @@ void GASFunctionObject::Finalize_GC()
     GASObject::Finalize_GC();
 }
 
+// DISHONORED(port): GASStringObject::GetMemberRaw, 2012 0xa62330 / 2013 0xa56180 (150 bytes, byte-identical).
+// Retail boxes a string primitive into a real String object (PrimitiveToTempObject 2012 0x9e91a0 runs the
+// String constructor), and that object answers `length` itself: a stored member wins unless it is UNSET,
+// otherwise the length of its string. This tree's box had no such member, so `"abc".length` read undefined
+// on every primitive - HUD Location.SetLocation sized its banner to three letters "W", "", "W" from it
+// (agent HJ, the location banner).
+bool GASPrimitiveObject::GetMemberRaw(GASStringContext* sc, const GASString& name, GASValue* val)
+{
+    const GASString& lengthName = sc->GetBuiltin(GASbuiltin_length);
+    const bool bLength = sc->IsCaseInsensitive() ? name.EqualsNoCase(lengthName) : name == lengthName;
+    if (Type != Object_String || !bLength)
+        return GASObject::GetMemberRaw(sc, name, val);
+    if (!GASObject::GetMemberRaw(sc, name, val) || val->GetType() == GASValue::UNSET)
+        val->SetInt((int)Primitive.GetString().GetLength());
+    return true;
+}
+
 void GASPrimitiveObject::ExecuteForEachChild_GC(int op) const
 {
     Primitive.ForEachChild_GC(op);

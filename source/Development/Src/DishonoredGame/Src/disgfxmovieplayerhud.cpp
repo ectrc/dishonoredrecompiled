@@ -2341,6 +2341,23 @@ void UDisSeqAct_SetTutorialMessage::Activated()
 	USequenceAction::Activated();
 }
 
+// DISHONORED(port): agent HJ, 2013 rva 0x7b02f0 (2012 0x8124f0, 168 bytes each). An action cooked without a variable link gets the
+// class default's first one - its expected type, description and property name, writeable - and its package is marked dirty.
+void UDisSeqAct_SetTutorialMessage::PostLoad()
+{
+	USequenceOp::PostLoad();
+	if( VariableLinks.Num() == 0 )
+	{
+		const FSeqVarLink& Default = ((UDisSeqAct_SetTutorialMessage*)GetClass()->GetDefaultObject())->VariableLinks(0);
+		FSeqVarLink& Link = VariableLinks( VariableLinks.AddZeroed() );
+		Link.ExpectedType = Default.ExpectedType;
+		Link.LinkDesc = Default.LinkDesc;
+		Link.PropertyName = Default.PropertyName;
+		Link.bWriteable = TRUE;
+		MarkPackageDirty( TRUE );
+	}
+}
+
 /*-----------------------------------------------------------------------------
 	The crosshair's interaction prompt: the focus text and the interaction lines beside the crosshair. Agent HF.
 -----------------------------------------------------------------------------*/
