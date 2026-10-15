@@ -46,6 +46,9 @@ Three categories:
 
 ### 2.1 Bink (done: import lib + header behind `DISHONORED_WITH_BINK`)
 
+* Default **ON** since agent HK (wave 25): movies play unless `-nomovie`; a tree without the retail `binkw32.dll`
+  configures with a warning (the import library is the stub's), and the exe needs the DLL beside it to start.
+
 * What the exe needs: 20 stdcall entry points (`_BinkOpen@8`, `_BinkClose@4`, `_BinkDoFrame@4`,
   `_BinkNextFrame@4`, `_BinkWait@4`, `_BinkShouldSkip@4`, `_BinkPause@8`, `_BinkGoto@12`,
   `_BinkGetKeyFrame@12`, `_BinkGetRects@8`, `_BinkGetRealtime@12`, `_BinkGetFrameBuffersInfo@8`,

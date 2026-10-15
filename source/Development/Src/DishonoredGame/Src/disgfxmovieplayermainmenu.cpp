@@ -946,14 +946,44 @@ void DisGFxMoviePlayerMainMenuPreAdvance( UDisGFxMoviePlayerMainMenu* Menu, FLOA
 	// UDishonoredEngine::IsSaveGameListReady. Neither the profile read nor the save list exists in
 	// this build, and retail's own shape answers "ready" when the engine cast fails, so the step
 	// completes on the next advance.
+	// DISHONORED(port): 2012 0x822280 / 2013 0x7e3420 (its login step 8) clear the title-screen bit the start screen's key set.
+	if( UDisLocalPlayer* LocalPlayer = DisGetLocalPlayer() )
+	{
+		LocalPlayer->m_bShowTitleScreen = FALSE;
+	}
 	DisMainMenuCloseScreen( Menu, Menu->m_Screen );
 	DisMainMenuOpenMenu( Menu );
 	Menu->m_LoginStep = 8;
 	Menu->m_Screen = 3;
 }
 
-// DISHONORED(port): 2012 rva 0x822590. On the start screen a key press - any key, on press rather
-// than on release - closes it and moves to login step 7, which is where PreAdvance takes over.
+// DISHONORED(port): 2013 rva 0x7c1d20 (2012 0x7f4a70). The pad (or keyboard) that dismissed the start screen becomes the first
+// player's: UnregisterControllerDelegates for the previous one, the script's SetControllerId (LocalPlayer.SetControllerId on the
+// first player), RegisterControllerDelegates, then 2013's two engine bits m_bAcceptControllerDisconnectionEvents (0x10 @700) and
+// m_bAcceptProfileReading (0x20 @700).
+// DISHONORED(retail): the call 2013 makes when GamePlayers(0)->ControllerId changes lands on 0x459d10, a one-byte `ret` shared by
+// ICF with UDishonoredTask_Base::OnAdded_Impl - nothing to port.
+void UDisGFxMoviePlayerMainMenu::SelectController( INT _ControllerId )
+{
+	if( m_DelegatesControllerId != -1 )
+	{
+		eventUnregisterControllerDelegates( (BYTE)m_DelegatesControllerId );
+	}
+	eventSetControllerId( _ControllerId );
+	eventRegisterControllerDelegates( (BYTE)_ControllerId );
+	m_DelegatesControllerId = _ControllerId;
+	GEngine->m_bAcceptControllerDisconnectionEvents = TRUE;
+	GEngine->m_bAcceptProfileReading = TRUE;
+	if( ParseParam( appCmdLine(), TEXT("pbinkdiag") ) )
+	{
+		debugf( TEXT("DISHONORED(binkdiag): start screen: SelectController(%d) -> first local player controller id %d"), _ControllerId,
+			GEngine->GamePlayers.Num() > 0 ? GEngine->GamePlayers(0)->ControllerId : -2 );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7e1f40 (2012 0x822590). On the start screen a key press - any key, on press rather than on release -
+// selects the controller it came from, reads the profile, marks the title screen shown, drops the message box, closes the screen and
+// moves to login step 7, which is where PreAdvance takes over.
 UBOOL DisGFxMoviePlayerMainMenuFilterButtonInput( UDisGFxMoviePlayerMainMenu* Menu, INT ControllerId,
 	FName Key, BYTE Event, UBOOL& bHandled )
 {
@@ -961,6 +991,18 @@ UBOOL DisGFxMoviePlayerMainMenuFilterButtonInput( UDisGFxMoviePlayerMainMenu* Me
 	{
 		if( Event == IE_Pressed )
 		{
+			Menu->SelectController( ControllerId );
+			// DISHONORED(port): 2013 0x7e1fc0 - ReadProfileSettings( 0 ) through the script event (FName at VA 0x145d970), user index 0
+			// whatever the controller
+			Menu->eventReadProfileSettings( 0 );
+			if( UDisLocalPlayer* LocalPlayer = DisGetLocalPlayer() )
+			{
+				LocalPlayer->m_bShowTitleScreen = TRUE;
+			}
+			if( Menu->m_MsgBoxID )
+			{
+				Menu->HideMessageBox();
+			}
 			Menu->m_fTrailerTimer = 0.f;
 			if( Menu->m_Screen != 2 )
 			{

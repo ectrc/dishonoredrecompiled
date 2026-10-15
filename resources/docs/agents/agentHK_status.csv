@@ -1,0 +1,14 @@
+item,state,evidence
+start screen controller assignment (SelectController 2013 0x7c1d20 + FilterButtonInput 0x7e1f40),done,HKR1-5/HKF1: SelectController(0) -> controller id 0 on Space
+viewport XboxTypeS_A controller selection (2013 0x2b9430),done,ported; no in-tree writer of m_bWaitingControllerSelection (script-side)
+GFx key/axis offered at UGFxInteraction's GlobalInteractions slot,done,HK2/HK6 menu deaf at controller 0 -> HKR1-5 Enter x4 reaches NEW GAME/NORMAL/brightness/YES
+remove HG -finewgame controller-0 bringup,done,dishonoredplayercontroller.cpp DisFIAutoNewGame logs only
+UDishonoredEngine::StopMovie (2013 0x5e4590 / 2012 0x62bc30),done,dishonoredengine.cpp
+UDishonoredEngine::PreExit (2013 0x5e4520 / 2012 0x62bbc0),done,clean exits on every run; telemetry 0x5e4100 left out
+DISHONORED_WITH_BINK default ON + cache migration,done,builds 2 and 3 configured with -U of both entries -> CMakeCache ON
+build without retail binkw32.dll configures,done,nodll_configure.log warning; PhysX still needs the retail tree (pre-existing)
+hand route 5 clean runs with movies,done,HKR1-HKR5 + HKF1: 0 Criticals; page left by Space/Enter/click; INTRO_LOC; EnterSoireeMode
+page SSIM vs retail t4-5.5,done,chapter .895-.951 press-any-key .891-.927 map name .829-.934 (medians)
+clouds SSIM,partial,INTRO_LOC frame match .898-.988; vs retail t8.1 .72-.77 because the shot is late under load
+gate,done-with-known-failures,30 ok / 4 failed / 0 Criticals: coresmoke+layout not built; unported_natives 4 = HI's (fixed by HL d9be103); inputtest_moved rerun 1051 (HJ exe 1046)
+scripted click on main menu,open,no Click/APressed on build 1 either (HK1)

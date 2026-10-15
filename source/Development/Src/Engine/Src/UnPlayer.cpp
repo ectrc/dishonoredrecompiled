@@ -854,6 +854,14 @@ UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName K
 	}
 #endif
 
+	// DISHONORED(port): 2013 rva 0x2b9430 (2012 0x2cb720). While the engine waits for a controller selection, a pad's A makes
+	// that pad the first player's.
+	if( GEngine->m_bWaitingControllerSelection && Key == KEY_XboxTypeS_A )
+	{
+		GEngine->GamePlayers(0)->ControllerId = ControllerId;
+		GEngine->m_bWaitingControllerSelection = FALSE;
+	}
+
 	UBOOL bResult = FALSE;
 
 	if ( DELEGATE_IS_SET(HandleInputKey) )
@@ -861,9 +869,31 @@ UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName K
 		bResult = delegateHandleInputKey(ControllerId, Key, EventType, AmountDepressed, bGamepad);
 	}
 
+	// DISHONORED(bringup): agent HK. Retail's GlobalInteractions is Console, UGFxInteraction (GetCustomInteractionClass under WITH_GFx),
+	// UIInteraction, PlayerManagerInteraction (GameViewportClient.Init); this tree builds without WITH_GFx, so the interface is offered
+	// the key by hand at UGFxInteraction's slot. Behind PlayerManagerInteraction it never saw a key once the first player owns a
+	// controller: the player's input took Enter before the main menu could (measured, HK2/HK6: no GFx key down at controller 0).
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+	extern UBOOL DishonoredGFxInputKey( INT ControllerId, FName Key, EInputEvent Event );
+	const INT GFxSlot = GlobalInteractions.FindItemIndex( ViewportConsole ) + 1;
+#endif
 	// if it wasn't handled by script, route to the interactions array
-	for ( INT InteractionIndex = 0; !bResult && InteractionIndex < GlobalInteractions.Num(); InteractionIndex++ )
+	for ( INT InteractionIndex = 0; !bResult && InteractionIndex <= GlobalInteractions.Num(); InteractionIndex++ )
 	{
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+		if( InteractionIndex == GFxSlot )
+		{
+			bResult = DishonoredGFxInputKey( ControllerId, Key, EventType );
+			if( bResult )
+			{
+				break;
+			}
+		}
+#endif
+		if( InteractionIndex == GlobalInteractions.Num() )
+		{
+			break;
+		}
 		UInteraction* Interaction = GlobalInteractions(InteractionIndex);
 		if ( OBJ_DELEGATE_IS_SET(Interaction,OnReceivedNativeInputKey) )
 		{
@@ -875,14 +905,6 @@ UBOOL UGameViewportClient::InputKey(FViewport* Viewport,INT ControllerId,FName K
 
 	if( !bResult )
 	{
-#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
-		// DISHONORED(bringup): the interface is offered the key before the pawn is, which is retail's order -
-		// UGFxInteraction sits ahead of the player's input in GlobalInteractions, so an open menu consumes what
-		// it handles. Neither is in the list here, so both are routed by hand; see the note above.
-		extern UBOOL DishonoredGFxInputKey( INT ControllerId, FName Key, EInputEvent Event );
-		bResult = DishonoredGFxInputKey( ControllerId, Key, EventType );
-		if( !bResult )
-#endif
 		bResult = DishonoredRouteInputToPlayers( this, Key, EventType, AmountDepressed, 0.f, bGamepad, FALSE, ControllerId );
 	}
 
@@ -917,9 +939,28 @@ UBOOL UGameViewportClient::InputAxis(FViewport* Viewport,INT ControllerId,FName 
 		bResult = delegateHandleInputAxis(ControllerId, Key, Delta, DeltaTime, bGamepad);
 	}
 
+	// DISHONORED(bringup): the axis half of the same hand-route as InputKey above, at the same slot (agent HK: behind
+	// PlayerManagerInteraction the interface lost the mouse as soon as the first player owned a controller). The mouse axes are
+	// what give the interface a cursor position at all - FGFxEngine::InputAxis reads the position whole from the viewport and
+	// keeps it, and the mouse arm of FGFxEngine::InputKey sends the click there. It does NOT consume the event: retail's InputAxis
+	// returns the capture flag, and while nothing captures the mouse the pawn must still turn with it.
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+	extern UBOOL DishonoredGFxInputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime, UBOOL bGamepad );
+	const INT GFxSlot = GlobalInteractions.FindItemIndex( ViewportConsole ) + 1;
+#endif
 	// if it wasn't handled by script, route to the interactions array
-	for ( INT InteractionIndex = 0; !bResult && InteractionIndex < GlobalInteractions.Num(); InteractionIndex++ )
+	for ( INT InteractionIndex = 0; !bResult && InteractionIndex <= GlobalInteractions.Num(); InteractionIndex++ )
 	{
+#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
+		if( InteractionIndex == GFxSlot )
+		{
+			DishonoredGFxInputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad );
+		}
+#endif
+		if( InteractionIndex == GlobalInteractions.Num() )
+		{
+			break;
+		}
 		UInteraction* Interaction = GlobalInteractions(InteractionIndex);
 		if ( OBJ_DELEGATE_IS_SET(Interaction,OnReceivedNativeInputAxis) )
 		{
@@ -931,15 +972,6 @@ UBOOL UGameViewportClient::InputAxis(FViewport* Viewport,INT ControllerId,FName 
 
 	if( !bResult )
 	{
-#if DISHONORED_WITH_GFX3 && DISHONORED_WITH_GFXUI_SHADERS
-		// DISHONORED(bringup): the axis half of the same hand-route as InputKey above. The mouse axes are
-		// what give the interface a cursor position at all - FGFxEngine::InputAxis reads the position
-		// whole from the viewport and keeps it, and the mouse arm of FGFxEngine::InputKey sends the click
-		// there. It does NOT consume the event: retail's InputAxis returns the capture flag, and while
-		// nothing captures the mouse the pawn must still turn with it.
-		extern UBOOL DishonoredGFxInputAxis( INT ControllerId, FName Key, FLOAT Delta, FLOAT DeltaTime, UBOOL bGamepad );
-		DishonoredGFxInputAxis( ControllerId, Key, Delta, DeltaTime, bGamepad );
-#endif
 		bResult = DishonoredRouteInputToPlayers( this, Key, IE_Axis, Delta, DeltaTime, bGamepad, TRUE, ControllerId );
 	}
 

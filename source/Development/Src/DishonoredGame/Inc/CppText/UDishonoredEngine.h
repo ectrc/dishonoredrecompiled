@@ -18,6 +18,8 @@ public:
 	virtual void PushIgnoreAutosave( BYTE Type );
 	virtual void PopIgnoreAutosave( BYTE Type );
 	virtual void OnControllerChanged( UBOOL bUsingGamepad );
+	virtual void StopMovie( UBOOL bDelayStopUntilGameHasRendered );
+	virtual void PreExit();
 
 	// DISHONORED(port): agent GG (PHASE20 GG). LoadMap is UGameEngine's virtual; Pre/PostCommitMapChange are UEngine virtuals in
 	// retail (2012 vtable ??_7UDishonoredEngine@@6BUObject@@@ 0xce6818 slots +380/+384, 2013 0xcdb390 +400/+404) that our UEngine

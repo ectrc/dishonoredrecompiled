@@ -1225,6 +1225,7 @@ public:
     DECLARE_FUNCTION(execOnLoginCancelled);
     DECLARE_FUNCTION(execOnLoginChange);
     DECLARE_CLASS(UDisGFxMoviePlayerMainMenu,UDisGFxMoviePlayerMenuBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDisGFxMoviePlayerMainMenu.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerJournal: retail sizeof 928, reflected span 440..928 (2012 PDB sizeof 1172)

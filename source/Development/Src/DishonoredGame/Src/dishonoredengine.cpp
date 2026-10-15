@@ -223,6 +223,35 @@ UBOOL UDishonoredEngine::PlayLoadMapMovie( const FString& MapName, const FString
 	return UEngine::PlayLoadMapMovie( MapName, MapConfig ? MapConfig->m_LoadingMovieName : MovieName );
 }
 
+// DISHONORED(port): 2013 rva 0x5e4590 (2012 0x62bc30). A save-notification movie stays up for its minimum duration
+// (m_dSaveNotificationMovieEndTime, set by PlayLoadMapMovie); 2012 added the 16777216 offset appSeconds carries, 2013 compares the raw
+// counter against a raw end time, the same difference either way.
+void UDishonoredEngine::StopMovie( UBOOL bDelayStopUntilGameHasRendered )
+{
+	const DOUBLE Now = appSeconds();
+	if( m_dSaveNotificationMovieEndTime > Now )
+	{
+		appSleep( (FLOAT)( m_dSaveNotificationMovieEndTime - Now ) );
+	}
+	Super::StopMovie( bDelayStopUntilGameHasRendered );
+}
+
+// DISHONORED(port): 2013 rva 0x5e4520 (2012 0x62bbc0)
+// DISHONORED(retail): 2013's first call (0x5e4100) waits on and frees the 2026 patch's telemetry task and runs curl_global_cleanup;
+// Init leaves the telemetry out (0x601210), so there is nothing to clean up.
+void UDishonoredEngine::PreExit()
+{
+	m_pBinkOverlayManager->CleanUp();
+	delete (FDisAsyncSaveGameLister*)m_pSaveGameList;
+	m_pSaveGameList = NULL;
+	delete (FDisAsyncSaveGameDeleter*)m_pSaveGameDeleter;
+	m_pSaveGameDeleter = NULL;
+	Super::PreExit();
+	// DISHONORED(retail): a plain operator delete on the FPointer - the game state's destructor does not run
+	appFree( m_pGameState );
+	m_pGameState = NULL;
+}
+
 // DISHONORED(written): 2013 rva 0x605150 (2012 0x6422b0): nothing happens while a movie plays
 void UDishonoredEngine::OpenPauseMenu()
 {
