@@ -47,3 +47,31 @@ protected:
 public:
 	// DISHONORED(port): 2013 rva 0x7af370 (2012 0x811620). Body in disgfxmovieplayerhud.cpp.
 	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );
+
+// ---- agent HF (PHASE22 HF): the location banner, the objective popup and the tutorial line ----
+// Bodies in disgfxmovieplayerhud.cpp; the 2013 rvas are the bodies ported, the 2012 PDB names the functions.
+public:
+	void ShowLocationDiscovery( const FString& _rLocationName, UBOOL _bPlaySound );         // 2013 rva 0x795160
+	void OnObjectiveAdded( class UDishonoredObjective* _pObjective );                        // 2013 rva 0x7b2480
+	void OnTaskAdded( class UDishonoredTask_Base* _pTask );                                  // 2013 rva 0x7b27c0
+	INT ShowTutorial( UObject* _pLocObject, const TCHAR* _pLocProperty, FLOAT _fDuration,
+		UBOOL _bShowOnce, UBOOL _bAllowCycling, UBOOL _bFromKismet, UBOOL _bForceDisplay ); // 2013 rva 0x7ac5a0
+	struct FDisTutorialInfo* FindTutorialInfo( INT _ID );                                    // 2013 rva 0x79eef0
+	INT FindTutorial( INT _ID ) const;                                                       // 2013 rva 0x7988e0
+	void RemoveTutorialAt( INT _Index );                                                     // 2013 rva 0x7a7390
+	void OnCrosshairActorSet( class IDisInteractableInterface* _pInteractable );            // 2013 rva 0x7af540
+
+protected:
+	void Tick_GameMessages( INT _ShowFlags );                                                // 2013 rva 0x78d3b0
+	void Tick_Tutorials( FLOAT _fDeltaTime, INT _ShowFlags );                                // 2013 rva 0x7afa60
+	void Tick_ObjectivePopup( FLOAT _fDeltaTime );                                           // 2013 rva 0x7afe70
+	void ShowObjectivePopup( const struct FDisObjectivePopupInfo& _rPopup );                 // 2013 rva 0x798a40
+	INT InsertTutorial( const struct FDisTutorialInfo& _rTutorialInfo );                     // 2013 rva 0x7a6c10
+	void SetTutorialMessage( const struct FDisTutorialInfo& _rTutorialInfo );                // 2013 rva 0x7ad060
+	void ClearTutorialMessage();                                                             // 2013 rva 0x798960
+	void ShowTutorialWindow( const struct FDisTutorialInfo& _rTutorialInfo );                // 2013 rva 0x7ad2f0
+	void HideTutorialWindow();                                                               // 2013 rva 0x78d6d0
+	void ResolveMarkupString( FString& _rText ) const;                                       // 2013 rva 0x7acdc0
+	void Tick_Interaction( class IDisInteractableInterface* _pInteractable );               // 2013 rva 0x7acb10
+	void UpdateCrosshairFocusText( const FString& _rText );                                  // 2013 rva 0x7984f0
+	void UpdateCrosshairInteractions( const FString& _rName, const struct FDisUIInteractionGroup& _rGroup ); // 2013 rva 0x7a6150

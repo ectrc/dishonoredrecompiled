@@ -13,11 +13,12 @@
 // target probe; GetPlayerCrosshairTarget answers "nothing" until it is ported), ADishonoredPawn::CanUseObjectTypes (the
 // pawn virtual whose trace mask gates the probe), DisLineProbe_Interact / DisLineProbeMulti_Interact (2012 0x83d530 /
 // 0x83d590, dishonoredutilities_math.cpp: the masked probe family is a skeleton, so FindInteractableActor runs the engine's
-// swept line check with the narrow extent and skips the broad multi-probe fallback), the HUD's crosshair update
-// (SetCrosshairActor's DisGetGFxHUD() call, 2013 sub_BAF540) and the interface slot +32 that names the actor to highlight.
+// swept line check with the narrow extent and skips the broad multi-probe fallback) and the interface slot +32 that names the
+// actor to highlight. The HUD's crosshair update (SetCrosshairActor's DisGetGFxHUD() call, 2013 sub_BAF540) is agent HF's.
 
 #include "DishonoredGame.h"
 #include "gddiag.h"
+#include "dishonoredutilities.h"
 
 IDisInteractableInterface* DisGDInteractableOf( AActor* _pActor )
 {
@@ -127,6 +128,12 @@ void ADishonoredPlayerController::SetCrosshairActor( AActor* _pActor, eCrossHair
 	const UBOOL bHadCanInteract = m_bCanInteractWithCrosshairActor ? TRUE : FALSE;
 	if( m_pCrosshairActor == _pActor && m_CrosshairStatus == (BYTE)_Status && bHadCanInteract == ( _bCanInteract ? TRUE : FALSE ) )
 	{
+		// DISHONORED(port): agent HF. Retail (2013 0x6a6280) hands the HUD the unchanged actor's interface every call while the
+		// player can interact with it, and null otherwise (UDisGFxMoviePlayerHUD::OnCrosshairActorSet, 2013 0x7af540).
+		if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+		{
+			HUD->OnCrosshairActorSet( _bCanInteract ? DisGDInteractableOf( m_pCrosshairActor ) : NULL );
+		}
 		return;
 	}
 	if( m_pCrosshairActor && bHadCanInteract )
@@ -153,12 +160,16 @@ void ADishonoredPlayerController::SetCrosshairActor( AActor* _pActor, eCrossHair
 	m_bCanInteractWithCrosshairActor = _bCanInteract ? 1 : 0;
 	m_pCrosshairActor = _pActor;
 	m_pCrosshairHighlightActor = NULL;
-	if( _bCanInteract && _pActor )
+	IDisInteractableInterface* New = ( _bCanInteract && _pActor ) ? DisGDInteractableOf( _pActor ) : NULL;
+	if( New )
 	{
-		if( IDisInteractableInterface* New = DisGDInteractableOf( _pActor ) )
-		{
-			New->GainCrosshairFocus();
-		}
+		New->GainCrosshairFocus();
+	}
+	// DISHONORED(port): agent HF. The changed actor's interface (null unless the player can interact with it) goes to the HUD's
+	// OnCrosshairActorSet (2013 0x7af540), the interaction prompt.
+	if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+	{
+		HUD->OnCrosshairActorSet( New );
 	}
 }
 

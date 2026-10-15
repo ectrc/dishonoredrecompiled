@@ -230,6 +230,138 @@ void UDisGFxMoviePlayerBase::execFormatText( FFrame& Stack, RESULT_DECL )
 	Text.ReleaseManaged();
 }
 
+// DISHONORED(port): 2013 rva 0x78c590 (2012 0x7f5f30, same bytes): the movie's own glyph token, "$<key>$" with the
+// direction words and the device prefixes shortened
+void UDisGFxMoviePlayerBase::FormatGamepadKeyName( const TCHAR* _pKeyName, FString& _rOut )
+{
+	_rOut = TEXT("$");
+	_rOut += _pKeyName;
+	_rOut = _rOut.Replace( TEXT("Up"), TEXT("U") );
+	_rOut = _rOut.Replace( TEXT("Down"), TEXT("D") );
+	_rOut = _rOut.Replace( TEXT("Left"), TEXT("L") );
+	_rOut = _rOut.Replace( TEXT("Right"), TEXT("R") );
+	_rOut = _rOut.Replace( TEXT("XboxTypeS_"), TEXT("") );
+	_rOut = _rOut.Replace( TEXT("Gamepad_"), TEXT("") );
+	_rOut += TEXT("$");
+}
+
+// DISHONORED(port): 2013 rva 0x78c630. The three mouse buttons' glyph tokens; left and right follow the system's swap.
+void UDisGFxMoviePlayerBase::FormatMouseKeyName( FName _Key, FString& _rOut )
+{
+	if( _Key == KEY_LeftMouseButton || _Key == KEY_RightMouseButton )
+	{
+		const UBOOL bSwapped = GetSystemMetrics( SM_SWAPBUTTON ) != 0;
+		const UBOOL bLeft = _Key == KEY_LeftMouseButton;
+		_rOut = bSwapped != bLeft ? TEXT("$LMouseButton$") : TEXT("$RMouseButton$");
+	}
+	else if( _Key == KEY_MiddleMouseButton )
+	{
+		_rOut = TEXT("$MMouseButton$");
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x793dc0 (2012 0x7fa350). Settings.int's [Keys] name of a keyboard key; the seven OEM keys
+// whose character depends on the layout are read back from the active keyboard layout instead, the mouse buttons
+// follow the system's swap, and no key at all is [Keys] Unbound_Game or Unbound_Menu.
+FString UDisGFxMoviePlayerBase::LocalizeKeyboardKeyName( FName _Key, UBOOL _bInGame )
+{
+	if( _Key == NAME_None )
+	{
+		return Localize( TEXT("Keys"), _bInGame ? TEXT("Unbound_Game") : TEXT("Unbound_Menu"), TEXT("Settings") );
+	}
+	if( ( _Key == KEY_LeftMouseButton || _Key == KEY_RightMouseButton ) && GetSystemMetrics( SM_SWAPBUTTON ) )
+	{
+		_Key = _Key == KEY_LeftMouseButton ? KEY_RightMouseButton : KEY_LeftMouseButton;
+	}
+	struct FDisLayoutKey { FName* Key; UINT VirtualKey; };
+	const FDisLayoutKey LayoutKeys[] =
+	{
+		{ &KEY_Semicolon, 0xBA }, { &KEY_Slash, 0xBF }, { &KEY_Tilde, 0xC0 }, { &KEY_LeftBracket, 0xDB },
+		{ &KEY_Backslash, 0xDC }, { &KEY_RightBracket, 0xDD }, { &KEY_Quote, 0xDE },
+	};
+	HKL Layout = GetKeyboardLayout( 0 );
+	for( INT Index = 0; Index < ARRAY_COUNT(LayoutKeys); Index++ )
+	{
+		if( _Key == *LayoutKeys[Index].Key )
+		{
+			const TCHAR Character[2] = { (TCHAR)MapVirtualKeyExW( LayoutKeys[Index].VirtualKey, MAPVK_VK_TO_CHAR, Layout ), 0 };
+			return FString( Character );
+		}
+	}
+	return Localize( TEXT("Keys"), *_Key.ToString(), TEXT("Settings") );
+}
+
+// DISHONORED(port): 2013 rva 0x7a4620 (2012 0x8085b0). Every `GBA_<action>`, `KEY_<key>` and `k (the use action) in the text
+// becomes the glyph or bracketed key name bound to it: a pad key or KEY_ through FormatGamepadKeyName, a mouse button
+// through FormatMouseKeyName, any other key as "[<LocalizeKeyboardKeyName>]", and an action with no entry in the
+// player input's m_GameActionBindings as "UNKNOWN GBA". ReplaceInline replaces every occurrence of the token, and the
+// scan resumes past the replacement.
+void UDisGFxMoviePlayerBase::FormatInteractionText( FString& _rText, UBOOL _bForcePC, UBOOL _bForceGamepad )
+{
+	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	UDishonoredPlayerInput* Input = PC ? Cast<UDishonoredPlayerInput>( PC->PlayerInput ) : NULL;
+	INT Start = _rText.InStr( TEXT("`") );
+	while( Start != -1 )
+	{
+		const TCHAR* At = *_rText + Start;
+		const UBOOL bAction = appStrncmp( At, TEXT("`GBA_"), 5 ) == 0;
+		const UBOOL bKey = appStrncmp( At, TEXT("`KEY_"), 5 ) == 0;
+		FString Param;
+		FString ParamValue;
+		FString Replacement;
+		UBOOL bResolve = TRUE;
+		if( bAction || bKey )
+		{
+			const INT End = _rText.InStr( TEXT("`"), FALSE, FALSE, Start + 5 );
+			if( End == -1 )
+			{
+				break;
+			}
+			Param = _rText.Mid( Start, End - Start + 1 );
+			ParamValue = _rText.Mid( Start + 1, End - Start - 1 );
+			if( bKey )
+			{
+				FormatGamepadKeyName( *ParamValue + 4, Replacement );
+				bResolve = FALSE;
+			}
+		}
+		else if( appStrncmp( At, TEXT("`k"), 2 ) == 0 )
+		{
+			Param = TEXT("`k");
+			ParamValue = TEXT("GBA_Use");
+		}
+		else
+		{
+			bResolve = FALSE;
+		}
+		if( bResolve )
+		{
+			const FKeyBind* Bind = Input ? Input->GetKeyBindFromAction( FName( *ParamValue ), _bForcePC, _bForceGamepad ) : NULL;
+			if( Bind == NULL )
+			{
+				Replacement = TEXT("UNKNOWN GBA");
+			}
+			else if( Input->IsGamepadKey( Bind->Name ) )
+			{
+				FormatGamepadKeyName( *Bind->Name.ToString(), Replacement );
+			}
+			else if( Bind->Name == KEY_LeftMouseButton || Bind->Name == KEY_RightMouseButton || Bind->Name == KEY_MiddleMouseButton )
+			{
+				FormatMouseKeyName( Bind->Name, Replacement );
+			}
+			else
+			{
+				Replacement = FString( TEXT("[") ) + LocalizeKeyboardKeyName( Bind->Name, TRUE ) + TEXT("]");
+			}
+		}
+		if( Replacement.Len() > 0 )
+		{
+			_rText = _rText.Replace( *Param, *Replacement );
+		}
+		Start = _rText.InStr( TEXT("`"), FALSE, FALSE, Start + Max( Replacement.Len(), 1 ) );
+	}
+}
+
 // DISHONORED(port): 2013 rva 0x600b40 (2012 0x647c80) - the exec of the AS2 'ShowMessageBox' call
 void UDisGFxMoviePlayerBase::execShowMessageBox( FFrame& Stack, RESULT_DECL )
 {

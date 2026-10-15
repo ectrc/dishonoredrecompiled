@@ -14,3 +14,11 @@ public:
 public:
 	// DISHONORED(port): 2013 rva 0x6bd610 (2012 0x6f8e10, byte-identical). Body in dishonoredplayerinput.cpp.
 	virtual void ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason );
+
+// ---- agent HF (PHASE22 HF): the action -> key table the HUD's key substitution reads ----
+public:
+	// DISHONORED(port): 2013 rva 0x6a7870 (2012 0x6e4100). Body in dishonoredplayerinput.cpp.
+	const FKeyBind* GetKeyBindFromAction( FName _ActionName, UBOOL _bForcePC, UBOOL _bForceGamepad ) const;
+protected:
+	// DISHONORED(port): 2013 rva 0x6bac10 (2012 0x6f3fe0)
+	void InitGameActionBindings();

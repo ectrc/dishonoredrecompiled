@@ -454,6 +454,7 @@ struct FDisObjectivePopupInfo
     {
         appMemzero(this, sizeof(FDisObjectivePopupInfo));
     }
+#include "CppText/FDisObjectivePopupInfo.h"
 };
 
 // DishonoredGame.DisGFxMoviePlayerHUD.DisPlayerStatus_Equipment: retail SDK size 20 (2012 PDB 20)
@@ -1547,6 +1548,7 @@ public:
     //## END PROPS DisSeqAct_SetTutorialMessage
 
     DECLARE_CLASS(UDisSeqAct_SetTutorialMessage,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetTutorialMessage.h"
 };
 
 // DishonoredGame.DisSeqAct_ShowHUDMessage: retail sizeof 264, reflected span 248..264 (2012 PDB sizeof 264)
@@ -1571,6 +1573,7 @@ public:
     //## END PROPS DisSeqAct_ShowLocationDiscovery
 
     DECLARE_CLASS(UDisSeqAct_ShowLocationDiscovery,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_ShowLocationDiscovery.h"
 };
 
 // DishonoredGame.DisSeqAct_ShowMissionStats: retail sizeof 252, reflected span 248..252 (2012 PDB sizeof 252)

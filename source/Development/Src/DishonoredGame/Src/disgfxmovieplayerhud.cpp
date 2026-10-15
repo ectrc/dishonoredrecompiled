@@ -163,6 +163,7 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "gfxui_gfx3.h"
+#include "arkgameeventdispatcher.h"
 
 /*-----------------------------------------------------------------------------
 	Agent EK (PHASE11 EK): the in-game HUD.
@@ -1319,12 +1320,747 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 
 	HUD->Tick_PlayerStatus( ShowFlags );
 	HUD->Tick_PlayerState( ShowFlags );
+	// DISHONORED(bringup): retail's order (2013 0x7b2280, read by agent HF) is Tick_PlayerStatus, Tick_PlayerState,
+	// Tick_Stealth (0x796050), the interaction probe's five checks inlined (CheckDropAssassinate, CheckAdrenalineKill,
+	// 0x7a50f0, 0x7a5250, CheckMantle), Tick_GameMessages (0x78d3b0), Tick_Tutorials (0x7afa60), Tick_ObjectivePopup
+	// (0x7afe70), Tick_Markers (0x7b00c0), Tick_Subtitles (0x79fe20), Tick_Cinematic (0x7960e0). Tick_Stealth, the
+	// probe, Tick_Markers and Tick_Subtitles are not ported; the rest run here in that order. 0x78d3b0 is not the
+	// Tick_Interaction the earlier comment named: it is gameMsg_mc's _visible from show bit 0x2000. Tick_Interaction
+	// (2013 0x7acb10, 2012 0x80c450) is not ticked at all - OnCrosshairActorSet calls it.
+	HUD->Tick_GameMessages( ShowFlags );
+	HUD->Tick_Tutorials( DeltaTime, ShowFlags );
+	HUD->Tick_ObjectivePopup( DeltaTime );
 	HUD->Tick_Cinematic();
+}
 
-	// DISHONORED(bringup): retail then runs Tick_Stealth (2013 0x796050), the interaction probe's five
-	// checks, Tick_Interaction (0x78d3b0), Tick_Tutorials (0x7afa60), Tick_ObjectivePopup (0x7afe70),
-	// Tick_Markers (0x7b00c0) and Tick_Subtitles (0x79fe20). Seven of the eight are still unported;
-	// Tick_Cinematic (0x7960e0) is ported above by agent FI and runs here.
+/*-----------------------------------------------------------------------------
+	The location banner, the objective popup and the tutorial line. Agent HF, wave 25.
+
+	The three are fed from Kismet or the objective system and drawn by the movie's own clips: location_mc's
+	SetLocation, objectives_mc's SetObjectives and tutorialMsg_mc's SetTutorialMessage. Every call into the
+	movie goes through DisHUDInvoke, which refuses an unbound clip (these run every frame of every map) and
+	is what -puidiag logs.
+-----------------------------------------------------------------------------*/
+
+/** -puidiag: every HUD Invoke this section makes, with its first argument, and every Kismet feeder */
+static UBOOL DisHUDUIDiag()
+{
+	static const UBOOL bDiag = ParseParam( appCmdLine(), TEXT("puidiag") );
+	return bDiag;
+}
+
+static UBOOL DisHUDInvoke( UDisGFxMoviePlayerHUD* HUD, INT ClipIndex, const char* Method, const GFxValue* Args, UINT ArgCount )
+{
+	GFxValue* Clips = DisHUDClips( HUD );
+	const UBOOL bBound = Clips != NULL && !Clips[ClipIndex].IsUndefined() && !Clips[ClipIndex].IsNull();
+	UBOOL bInvoked = FALSE;
+	if( bBound )
+	{
+		GFxValue Result;
+		bInvoked = Clips[ClipIndex].Invoke( Method, &Result, Args, ArgCount );
+	}
+	if( DisHUDUIDiag() )
+	{
+		const TCHAR* FirstArg = ( ArgCount > 0 && Args[0].IsStringW() && Args[0].GetStringW() ) ? Args[0].GetStringW() : TEXT("");
+		debugf( TEXT("DISHONORED(bringup): puidiag clip %d.%s('%s', %d args) -> %s"), ClipIndex, ANSI_TO_TCHAR(Method),
+			FirstArg, (INT)ArgCount, !bBound ? TEXT("CLIP NOT BOUND") : bInvoked ? TEXT("ok") : TEXT("NOT FOUND") );
+	}
+	return bInvoked;
+}
+
+// DISHONORED(port): 2013 rva 0x795160 (2012 0x7fb080, same 425 bytes): location_mc.SetLocation( <name>, the tweaks'
+// m_fLocationDiscoveryDuration ). The movie draws, holds and fades the card itself; where it sits on the screen is
+// PreRender_Layout's (m_fLocationDiscoveryVerticalAlignment, measured off the clip in PostStart).
+// DISHONORED(bringup): retail then posts m_LocationDiscoverySoundEvent through UAkAudioDevice::PostEvent when
+// _bPlaySound; audio is deferred (PHASE22), so the event is only named.
+void UDisGFxMoviePlayerHUD::ShowLocationDiscovery( const FString& _rLocationName, UBOOL _bPlaySound )
+{
+	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
+	if( Tweaks == NULL )
+	{
+		return;
+	}
+	GFxValue Args[2];
+	Args[0].SetStringW( *_rLocationName );
+	Args[1].SetNumber( Tweaks->m_fLocationDiscoveryDuration );
+	const UBOOL bInvoked = DisHUDInvoke( this, DHMC_LocationDiscovery, "SetLocation", Args, 2 );
+	debugf( TEXT("HUD: ShowLocationDiscovery '%s' sound %d"), *_rLocationName, _bPlaySound ? 1 : 0 );
+	debugf( TEXT("DISHONORED(bringup): HUD location card: duration %.2f, event %s, SetLocation %s"),
+		Tweaks->m_fLocationDiscoveryDuration,
+		Tweaks->m_LocationDiscoverySoundEvent ? *((UObject*)Tweaks->m_LocationDiscoverySoundEvent)->GetName() : TEXT("none"),
+		bInvoked ? TEXT("ok") : TEXT("failed") );
+}
+
+// DISHONORED(port): 2013 rva 0x7998a0 (2012 0x7ff700, same 42 bytes)
+// DISHONORED(bringup): retail dereferences DisGetGFxHUD() unguarded; under -nodishud this tree has no HUD.
+void UDisSeqAct_ShowLocationDiscovery::Activated()
+{
+	if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+	{
+		HUD->ShowLocationDiscovery( m_LocationName, !m_bNoSound );
+	}
+	USequenceAction::Activated();
+}
+
+// DISHONORED(port): 2013 rva 0x78d3b0, new in 2013 (no 2012 body, so no PDB name): gameMsg_mc._visible follows show bit
+// 0x2000, sent on an edge of m_bGameMessagesVisible only.
+void UDisGFxMoviePlayerHUD::Tick_GameMessages( INT _ShowFlags )
+{
+	const UBOOL bVisible = ( _ShowFlags >> 13 ) & 1;
+	GFxValue* Clips = DisHUDClips( this );
+	if( bVisible == ( m_bGameMessagesVisible != 0 ) || Clips[DHMC_GameMessages].IsUndefined() )
+	{
+		return;
+	}
+	GFxValue Visible;
+	Visible.SetBoolean( bVisible != 0 );
+	Clips[DHMC_GameMessages].SetMember( "_visible", Visible );
+	m_bGameMessagesVisible = bVisible;
+}
+
+/*-----------------------------------------------------------------------------
+	The objective popup.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x79ee60 (2012 0x802fd0): a task already in the popup is moved to its end
+void FDisObjectivePopupInfo::AddTask( const FDisTaskPopupInfo& _rTask )
+{
+	for( INT Index = m_Tasks.Num() - 1; Index >= 0; Index-- )
+	{
+		if( m_Tasks(Index).m_pTask == _rTask.m_pTask )
+		{
+			m_Tasks.Remove( Index );
+		}
+	}
+	m_Tasks.AddItem( _rTask );
+}
+
+// DISHONORED(port): 2013 rva 0x7b2480 (2012 0x814f50). Queued only while m_bHandleObjectiveEvents.
+// DISHONORED(bringup): the one caller, UDishonoredObjectivesComponent::OnGotObjectiveNotify (2012 0x72a600), is not ported -
+// the objective system (UDishonoredObjectivesComponent, UDishonoredObjective, UDisSeqAct_AddObjective,
+// ADishonoredPlayerController::OnObjectiveAction) is a skeleton, so nothing queues a popup yet.
+void UDisGFxMoviePlayerHUD::OnObjectiveAdded( UDishonoredObjective* _pObjective )
+{
+	if( !m_bHandleObjectiveEvents )
+	{
+		return;
+	}
+	FDisObjectivePopupInfo Popup( EC_EventParm );
+	Popup.m_pObjective = _pObjective;
+	Popup.m_Event = 0;
+	m_PopupQueue.AddItem( Popup );
+}
+
+// DISHONORED(port): 2013 rva 0x7b27c0 (2012 0x815290). A task joins its objective's queued "new"/"updated" popup, or
+// queues an "updated" popup of its own. The objective is the task's Outer.
+void UDisGFxMoviePlayerHUD::OnTaskAdded( UDishonoredTask_Base* _pTask )
+{
+	if( !m_bHandleObjectiveEvents )
+	{
+		return;
+	}
+	UDishonoredObjective* Objective = (UDishonoredObjective*)_pTask->GetOuter();
+	FDisTaskPopupInfo Task;
+	Task.m_pTask = _pTask;
+	Task.m_Event = 0;
+	for( INT Index = 0; Index < m_PopupQueue.Num(); Index++ )
+	{
+		FDisObjectivePopupInfo& Queued = m_PopupQueue(Index);
+		if( Queued.m_pObjective == Objective && Queued.m_Event < 2 )
+		{
+			Queued.AddTask( Task );
+			return;
+		}
+	}
+	FDisObjectivePopupInfo Popup( EC_EventParm );
+	Popup.m_pObjective = Objective;
+	Popup.m_Event = 1;
+	Popup.AddTask( Task );
+	m_PopupQueue.AddItem( Popup );
+}
+
+// DISHONORED(port): 2013 rva 0x7afe70 (2012 0x812080; 2013 added the pause test). The next queued popup is shown once the
+// start-of-game delay has run out and the clip of the one on screen reports _opened false.
+// DISHONORED(bringup): event 4 (a target notification) goes to ShowTargetNotification (2012 0x7fef30), not ported; such a
+// popup is dropped.
+void UDisGFxMoviePlayerHUD::Tick_ObjectivePopup( FLOAT _fDeltaTime )
+{
+	GFxValue* Clips = DisHUDClips( this );
+	if( Clips[DHMC_ObjectivePopup].IsUndefined() )
+	{
+		return;
+	}
+	if( GWorld && !GWorld->IsPaused() )
+	{
+		m_fPopupTimer -= _fDeltaTime;
+	}
+	UBOOL bShowNextPopup = m_fPopupTimer < 0.f;
+	if( m_ActivePopup.m_pObjective || m_ActivePopup.m_pTargetNotifSeq )
+	{
+		GFxValue Opened;
+		Clips[ m_ActivePopup.m_Event == 4 ? DHMC_SpecialNotification : DHMC_ObjectivePopup ].GetMember( "_opened", &Opened );
+		if( Opened.IsBool() && Opened.GetBool() )
+		{
+			bShowNextPopup = FALSE;
+		}
+	}
+	if( !bShowNextPopup )
+	{
+		return;
+	}
+	m_ActivePopup.m_pObjective = NULL;
+	m_ActivePopup.m_Event = 0;
+	m_ActivePopup.m_Tasks.Reset();
+	m_ActivePopup.m_pTargetNotifSeq = NULL;
+	if( !m_Settings.m_bShowObjectivePopups )
+	{
+		m_PopupQueue.Empty();
+		return;
+	}
+	while( m_PopupQueue.Num() > 0 && m_ActivePopup.m_pObjective == NULL && m_ActivePopup.m_pTargetNotifSeq == NULL )
+	{
+		const FDisObjectivePopupInfo& Next = m_PopupQueue(0);
+		m_ActivePopup.m_pObjective = Next.m_pObjective;
+		m_ActivePopup.m_Event = Next.m_Event;
+		m_ActivePopup.m_Tasks = Next.m_Tasks;
+		m_ActivePopup.m_pTargetNotifSeq = Next.m_pTargetNotifSeq;
+		m_PopupQueue.Remove( 0 );
+	}
+	if( m_ActivePopup.m_pObjective != NULL && m_ActivePopup.m_Event != 4 )
+	{
+		ShowObjectivePopup( m_ActivePopup );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x798a40 (2012 0x7fe8b0). objectives_mc.SetObjectives( <objective>, <title>, <event>,
+// [{objState, objDescription} per task] ) - the task list is null for a failed objective. A task whose event is not
+// "completed" and whose status string is not empty shows ")" alone: retail builds the line with three wcscpy_s calls
+// where wcscat_s was meant (0xb98d50, 0xb98d97, 0xb98daa), and that is kept.
+// DISHONORED(bringup): UDishonoredTask_Base::GetStatusString (2012 0x72d7d0) is part of the unported objective system;
+// the status is taken as empty.
+void UDisGFxMoviePlayerHUD::ShowObjectivePopup( const FDisObjectivePopupInfo& _rPopup )
+{
+	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
+	GFxMovieView* View = DisHUDView( this );
+	if( Tweaks == NULL || View == NULL || _rPopup.m_pObjective == NULL )
+	{
+		return;
+	}
+	const FString* Title = NULL;
+	switch( _rPopup.m_Event )
+	{
+	case 0: Title = &Tweaks->m_NewObjectivePopupTitle;       break;
+	case 1: Title = &Tweaks->m_UpdatedObjectivePopupTitle;   break;
+	case 2: Title = &Tweaks->m_CompletedObjectivePopupTitle; break;
+	case 3: Title = &Tweaks->m_FailedObjectivePopupTitle;    break;
+	default: break;
+	}
+	GFxValue Args[4];
+	Args[0].SetStringW( *_rPopup.m_pObjective->m_Description );
+	Args[1].SetStringW( Title ? **Title : NULL );
+	Args[2].SetNumber( (DOUBLE)_rPopup.m_Event );
+	if( _rPopup.m_Event == 3 )
+	{
+		Args[3].SetNull();
+	}
+	else
+	{
+		View->CreateArray( &Args[3] );
+		for( INT Index = 0; Index < _rPopup.m_Tasks.Num(); Index++ )
+		{
+			const FDisTaskPopupInfo& Task = _rPopup.m_Tasks(Index);
+			TCHAR Description[1024];
+			appStrncpy( Description, *Task.m_pTask->m_Description, ARRAY_COUNT(Description) );
+			GFxValue State;
+			State.SetNumber( (DOUBLE)Task.m_Event );
+			GFxValue Text;
+			Text.SetStringW( Description );
+			GFxValue Entry;
+			View->CreateObject( &Entry, NULL, NULL, 0 );
+			Entry.SetMember( "objState", State );
+			Entry.SetMember( "objDescription", Text );
+			Args[3].PushBack( Entry );
+		}
+	}
+	DisHUDInvoke( this, DHMC_ObjectivePopup, "SetObjectives", Args, 4 );
+}
+
+/*-----------------------------------------------------------------------------
+	The tutorial line. 2013 keeps where the text lives (loc file, section, key) instead of the 2012 resolved string,
+	and resolves it every time it is shown, so the key glyphs follow the device in use.
+-----------------------------------------------------------------------------*/
+
+/** the parameter block of event 29, the 2012 PDB's FArkGameEventTutorialTimedOut_Params */
+struct FArkGameEventTutorialTimedOut_Params
+{
+	INT m_TutorialID;
+};
+enum { DisGameEventType_TutorialTimedOut = 29 };
+
+// DISHONORED(port): 2013 rva 0x7988e0 (2012 0x7fe430)
+INT UDisGFxMoviePlayerHUD::FindTutorial( INT _ID ) const
+{
+	if( _ID == -1 )
+	{
+		return -1;
+	}
+	for( INT Index = 0; Index < m_TutorialStack.Num(); Index++ )
+	{
+		if( m_TutorialStack(Index).m_ID == _ID )
+		{
+			return Index;
+		}
+	}
+	return -1;
+}
+
+// DISHONORED(port): 2013 rva 0x79eef0 (2012 0x803180)
+FDisTutorialInfo* UDisGFxMoviePlayerHUD::FindTutorialInfo( INT _ID )
+{
+	const INT Index = FindTutorial( _ID );
+	return Index != -1 ? &m_TutorialStack(Index) : NULL;
+}
+
+// DISHONORED(port): 2013 rva 0x7a7390, TArray<FDisTutorialInfo>::Remove with FDisTutorialInfo's destructor (0x794b90), which
+// also frees the note parameters
+void UDisGFxMoviePlayerHUD::RemoveTutorialAt( INT _Index )
+{
+	FDisTutorialInfo& Info = m_TutorialStack(_Index);
+	if( Info.m_pNoteParams )
+	{
+		appFree( Info.m_pNoteParams );
+		Info.m_pNoteParams = NULL;
+	}
+	m_TutorialStack.Remove( _Index );
+}
+
+// DISHONORED(port): 2013 rva 0x7a6c10 (2012 0x80a000; 2013 added type 6 and moved type 5 to priority 2). The stack is
+// kept in priority order; a cycling tutorial goes after the last one of at least its priority, any other before the
+// first one of at most its priority, and types 3, 4 and 6 are unique against their neighbour.
+INT UDisGFxMoviePlayerHUD::InsertTutorial( const FDisTutorialInfo& _rTutorialInfo )
+{
+	static const INT TypePriority[7] = { 3, 2, 2, 2, 2, 2, 1 };
+	const BYTE Type = _rTutorialInfo.m_Type;
+	const UBOOL bUniqueItem = Type == 3 || Type == 6 || Type == 4;
+	const INT Priority = TypePriority[Type];
+	if( Type == 5 )
+	{
+		INT Index = m_TutorialStack.Num();
+		while( Index > 0 )
+		{
+			Index--;
+			if( Priority <= TypePriority[m_TutorialStack(Index).m_Type] )
+			{
+				if( bUniqueItem && Type == m_TutorialStack(Index).m_Type )
+				{
+					return -1;
+				}
+				const INT Inserted = m_TutorialStack.InsertItem( _rTutorialInfo, Index + 1 );
+				return Inserted != -1 ? Inserted : m_TutorialStack.InsertItem( _rTutorialInfo, 0 );
+			}
+		}
+		return m_TutorialStack.InsertItem( _rTutorialInfo, 0 );
+	}
+	for( INT Index = 0; Index < m_TutorialStack.Num(); Index++ )
+	{
+		if( Priority >= TypePriority[m_TutorialStack(Index).m_Type] )
+		{
+			if( bUniqueItem && Type == m_TutorialStack(Index).m_Type )
+			{
+				return -1;
+			}
+			const INT Inserted = m_TutorialStack.InsertItem( _rTutorialInfo, Index );
+			return Inserted != -1 ? Inserted : m_TutorialStack.AddItem( _rTutorialInfo );
+		}
+	}
+	return m_TutorialStack.AddItem( _rTutorialInfo );
+}
+
+// DISHONORED(port): 2013 rva 0x7ac5a0 (2012 0x811810). Refused unless forced, or the player's tutorial setting, the HUD's
+// m_bTutorialsEnabled and (from Kismet or m_bSystemicTutorialsEnabled) all allow it. The text is not stored: the
+// tutorial keeps where it is localised (2013 0x79ed50 - the object's loc file and section, the property's name as key;
+// the object's vtable +220 call in it is an empty body, 0xc715d0) and the ID handed back is the next one.
+INT UDisGFxMoviePlayerHUD::ShowTutorial( UObject* _pLocObject, const TCHAR* _pLocProperty, FLOAT _fDuration,
+	UBOOL _bShowOnce, UBOOL _bAllowCycling, UBOOL _bFromKismet, UBOOL _bForceDisplay )
+{
+	if( !_bForceDisplay
+		&& ( !m_Settings.m_bShowTutorialNotifications || !m_bTutorialsEnabled || ( !_bFromKismet && !m_bSystemicTutorialsEnabled ) ) )
+	{
+		if( DisHUDUIDiag() )
+		{
+			debugf( TEXT("DISHONORED(bringup): puidiag ShowTutorial %s.%s refused: setting %d, enabled %d, systemic %d, kismet %d"),
+				_pLocObject ? *_pLocObject->GetName() : TEXT("none"), _pLocProperty, (INT)m_Settings.m_bShowTutorialNotifications,
+				(INT)m_bTutorialsEnabled, (INT)m_bSystemicTutorialsEnabled, (INT)_bFromKismet );
+		}
+		return -1;
+	}
+	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	FDisTutorialInfo Info( EC_EventParm );
+	Info.m_ID = m_NextTutorialID;
+	Info.m_Type = _bAllowCycling ? 5 : 0;
+	Info.m_fTimeLeft = _fDuration;
+	Info.m_bShowOnce = _bShowOnce ? 1 : 0;
+	Info.m_bGamepad = ( PC && PC->PlayerInput && PC->PlayerInput->bUsingGamepad ) ? 1 : 0;
+	const INT Index = InsertTutorial( Info );
+	if( Index == -1 )
+	{
+		return -1;
+	}
+	FDisTutorialInfo& Inserted = m_TutorialStack(Index);
+	FString LocPrefix;
+	_pLocObject->GetLocalizationDataLocation( _pLocObject, Inserted.m_MessageLocFile, Inserted.m_MessageLocSection, LocPrefix );
+	Inserted.m_MessageLocKey = _pLocProperty;
+	if( DisHUDUIDiag() )
+	{
+		debugf( TEXT("DISHONORED(bringup): puidiag ShowTutorial id %d type %d duration %.2f once %d at %d: [%s] %s in %s"),
+			Inserted.m_ID, (INT)Inserted.m_Type, _fDuration, (INT)_bShowOnce, Index, *Inserted.m_MessageLocSection,
+			*Inserted.m_MessageLocKey, *Inserted.m_MessageLocFile );
+	}
+	return m_NextTutorialID++;
+}
+
+// DISHONORED(port): 2013 rva 0x7acdc0 (2012 0x80caa0, same 584 bytes). "<Strings:Package.Section.Key>" is replaced by that
+// localised string; anything else is left alone. (It is not what writes "[Unbound]": FormatInteractionText is.)
+void UDisGFxMoviePlayerHUD::ResolveMarkupString( FString& _rText ) const
+{
+	if( !_rText.StartsWith( TEXT("<Strings:") ) )
+	{
+		return;
+	}
+	FString Inner = _rText.Right( _rText.Len() - 9 );
+	Inner = Inner.Left( Inner.Len() - 1 );
+	TArray<FString> Parts;
+	Inner.ParseIntoArray( &Parts, TEXT("."), TRUE );
+	if( Parts.Num() >= 3 )
+	{
+		_rText = Localize( *Parts(1), *Parts(2), *Parts(0) );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7ad060, new in 2013 (2012's SetTutorialMessage 0x7fe4b0 took the resolved string): the text
+// is localised, its markup and key glyphs resolved for the device the tutorial was raised on, and handed to
+// tutorialMsg_mc.SetTutorialMessage after _txtAttached is cleared.
+void UDisGFxMoviePlayerHUD::SetTutorialMessage( const FDisTutorialInfo& _rTutorialInfo )
+{
+	if( !m_Settings.m_bShowTutorialNotifications )
+	{
+		return;
+	}
+	FString Text = Localize( *_rTutorialInfo.m_MessageLocSection, *_rTutorialInfo.m_MessageLocKey, *_rTutorialInfo.m_MessageLocFile );
+	ResolveMarkupString( Text );
+	FormatInteractionText( Text, !_rTutorialInfo.m_bGamepad, _rTutorialInfo.m_bGamepad );
+	GFxValue* Clips = DisHUDClips( this );
+	if( !Clips[DHMC_Tutorials].IsUndefined() )
+	{
+		GFxValue Attached;
+		Attached.SetBoolean( false );
+		Clips[DHMC_Tutorials].SetMember( "_txtAttached", Attached );
+	}
+	GFxValue Arg;
+	Arg.SetStringW( *Text );
+	DisHUDInvoke( this, DHMC_Tutorials, "SetTutorialMessage", &Arg, 1 );
+}
+
+// DISHONORED(port): 2013 rva 0x798960 (2012 0x7fe620): SetTutorialMessage( null )
+void UDisGFxMoviePlayerHUD::ClearTutorialMessage()
+{
+	if( m_pMovieClips == NULL )
+	{
+		return;
+	}
+	GFxValue Arg;
+	Arg.SetNull();
+	DisHUDInvoke( this, DHMC_Tutorials, "SetTutorialMessage", &Arg, 1 );
+}
+
+// DISHONORED(port): 2013 rva 0x7ad2f0, new in 2013 (2012's ShowTutorialWindow 0x7fe700 took the resolved string):
+// tutorialWindow_mc.SetTutorialWindow( <text>, <type - 1> ).
+void UDisGFxMoviePlayerHUD::ShowTutorialWindow( const FDisTutorialInfo& _rTutorialInfo )
+{
+	if( !m_Settings.m_bShowTutorialNotifications )
+	{
+		return;
+	}
+	FString Text = Localize( *_rTutorialInfo.m_MessageLocSection, *_rTutorialInfo.m_MessageLocKey, *_rTutorialInfo.m_MessageLocFile );
+	ResolveMarkupString( Text );
+	FormatInteractionText( Text, !_rTutorialInfo.m_bGamepad, _rTutorialInfo.m_bGamepad );
+	GFxValue Args[2];
+	Args[0].SetStringW( *Text );
+	Args[1].SetNumber( (DOUBLE)( (INT)_rTutorialInfo.m_Type - 1 ) );
+	DisHUDInvoke( this, DHMC_TutorialWindow, "SetTutorialWindow", Args, 2 );
+}
+
+// DISHONORED(port): 2013 rva 0x78d6d0 (2012 0x7f6bf0): tutorialWindow_mc.Close()
+void UDisGFxMoviePlayerHUD::HideTutorialWindow()
+{
+	DisHUDInvoke( this, DHMC_TutorialWindow, "Close", NULL, 0 );
+}
+
+// DISHONORED(port): 2013 rva 0x7afa60 (2012 0x80c6b0; 2013 has the 64-byte FDisTutorialInfo, type 6, show bits 0x1000/0xE00
+// where 2012 had 0x400/0x200, and the m_bBlockInteractionWindow test). The current tutorial's time runs down; the top of
+// the stack is the one wanted when its show bit is on (or it is forced), a cycling one rotating every m_fTutorialCycleDelay;
+// on a change the line or the window is redrawn and a show-once tutorial that was current is dropped. Event 29 carries the
+// current ID - after a change that is the new one, as in retail.
+void UDisGFxMoviePlayerHUD::Tick_Tutorials( FLOAT _fDeltaTime, INT _ShowFlags )
+{
+	GFxValue* Clips = DisHUDClips( this );
+	if( Clips[DHMC_Tutorials].IsUndefined() )
+	{
+		return;
+	}
+	INT CurrentIndex = FindTutorial( m_CurrentTutorialID );
+	if( CurrentIndex != -1 )
+	{
+		FDisTutorialInfo& Current = m_TutorialStack(CurrentIndex);
+		if( Current.m_fTimeLeft > 0.f )
+		{
+			Current.m_fTimeLeft -= _fDeltaTime;
+			if( Current.m_fTimeLeft < 0.0001f )
+			{
+				RemoveTutorialAt( CurrentIndex );
+				CurrentIndex = -1;
+				FArkGameEventTutorialTimedOut_Params Params = { m_CurrentTutorialID };
+				FArkGameEventDispatcher::GetInstance()->ProcessEvent( FArkGameEvent( DisGameEventType_TutorialTimedOut, &Params, this ) );
+			}
+		}
+	}
+
+	INT DesiredIndex = -1;
+	INT DesiredID = -1;
+	if( m_TutorialStack.Num() > 0 )
+	{
+		const FDisTutorialInfo& Top = m_TutorialStack(0);
+		if( ( Top.m_bShowInWindow && ( _ShowFlags & 0x1000 ) != 0 && !m_bBlockInteractionWindow )
+			|| ( !Top.m_bShowInWindow && ( _ShowFlags & 0xE00 ) != 0 )
+			|| Top.m_bForceDisplay )
+		{
+			if( Top.m_Type == 5 )
+			{
+				UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
+				const FLOAT CycleDelay = Tweaks ? Tweaks->m_fTutorialCycleDelay : 0.f;
+				m_fCurrentCyclingTutorialTime += _fDeltaTime;
+				DesiredIndex = Max( CurrentIndex, 0 );
+				if( m_fCurrentCyclingTutorialTime > CycleDelay )
+				{
+					DesiredIndex = ( DesiredIndex + 1 ) % m_TutorialStack.Num();
+					m_fCurrentCyclingTutorialTime -= CycleDelay;
+				}
+				DesiredID = m_TutorialStack(DesiredIndex).m_ID;
+			}
+			else if( Top.m_Type <= 6 )
+			{
+				DesiredID = Top.m_ID;
+				DesiredIndex = 0;
+				m_fCurrentCyclingTutorialTime = 0.f;
+			}
+		}
+	}
+
+	if( DesiredID == m_CurrentTutorialID )
+	{
+		return;
+	}
+	if( DesiredID != -1 && !m_TutorialStack(DesiredIndex).m_bShowInWindow )
+	{
+		SetTutorialMessage( m_TutorialStack(DesiredIndex) );
+	}
+	else
+	{
+		ClearTutorialMessage();
+	}
+	if( m_bTutorialWindowSet )
+	{
+		HideTutorialWindow();
+		m_bTutorialWindowSet = FALSE;
+	}
+	if( DesiredID != -1 && m_TutorialStack(DesiredIndex).m_bShowInWindow )
+	{
+		ShowTutorialWindow( m_TutorialStack(DesiredIndex) );
+		m_bTutorialWindowSet = TRUE;
+	}
+	if( DisHUDUIDiag() )
+	{
+		debugf( TEXT("DISHONORED(bringup): puidiag tutorial %d -> %d (stack %d, show flags 0x%04X)"),
+			m_CurrentTutorialID, DesiredID, m_TutorialStack.Num(), _ShowFlags );
+	}
+	m_CurrentTutorialID = DesiredID;
+	m_fCurrentCyclingTutorialTime = 0.f;
+	if( CurrentIndex != -1 && m_TutorialStack(CurrentIndex).m_bShowOnce )
+	{
+		RemoveTutorialAt( CurrentIndex );
+		FArkGameEventTutorialTimedOut_Params Params = { m_CurrentTutorialID };
+		FArkGameEventDispatcher::GetInstance()->ProcessEvent( FArkGameEvent( DisGameEventType_TutorialTimedOut, &Params, this ) );
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7ae4a0 (2012 0x8125a0). Input 0 shows the line unless it is already up, input 1 takes it
+// down; the gamepad text is used when the player is on a pad and the action has one, and the action's m_bForceDisplay is
+// copied onto the tutorial it raised.
+// DISHONORED(bringup): retail dereferences DisGetGFxHUD() unguarded; under -nodishud this tree has no HUD.
+void UDisSeqAct_SetTutorialMessage::Activated()
+{
+	UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD();
+	if( HUD != NULL )
+	{
+		if( !InputLinks(0).bHasImpulse || HUD->FindTutorialInfo( m_TutorialID ) )
+		{
+			if( InputLinks(1).bHasImpulse && HUD->FindTutorialInfo( m_TutorialID ) )
+			{
+				const INT Index = HUD->FindTutorial( m_TutorialID );
+				if( Index != -1 )
+				{
+					HUD->RemoveTutorialAt( Index );
+				}
+				m_TutorialID = -1;
+			}
+		}
+		else
+		{
+			ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+			const UBOOL bGamepad = PC && PC->PlayerInput && PC->PlayerInput->bUsingGamepad;
+			const TCHAR* Property = ( bGamepad && m_TutorialMessage_Gamepad.Len() > 0 ) ? TEXT("m_TutorialMessage_Gamepad") : TEXT("m_TutorialMessage");
+			m_TutorialID = HUD->ShowTutorial( this, Property, m_fDuration, m_bShowOnce, m_bAllowCycling, TRUE, FALSE );
+			if( FDisTutorialInfo* Info = HUD->FindTutorialInfo( m_TutorialID ) )
+			{
+				Info->m_bForceDisplay = m_bForceDisplay;
+			}
+		}
+	}
+	USequenceAction::Activated();
+}
+
+/*-----------------------------------------------------------------------------
+	The crosshair's interaction prompt: the focus text and the interaction lines beside the crosshair. Agent HF.
+-----------------------------------------------------------------------------*/
+
+// DISHONORED(port): 2013 rva 0x787da0, new in 2013 (2012's FDisUIInteractionContext::HasGroupChanged 0x7f48e0): a group
+// changed when its count or any interaction's index differs
+static UBOOL DisHUDInteractionGroupChanged( const FDisUIInteractionContext& _rNew, const FDisUIInteractionContext& _rOld, INT _Group )
+{
+	const FDisUIInteractionGroup& New = _rNew.m_Groups[_Group];
+	const FDisUIInteractionGroup& Old = _rOld.m_Groups[_Group];
+	if( New.m_InteractionCount != Old.m_InteractionCount )
+	{
+		return TRUE;
+	}
+	for( INT Index = 0; Index < New.m_InteractionCount; Index++ )
+	{
+		if( New.m_Interactions[Index].m_Index != Old.m_Interactions[Index].m_Index )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): 2013 rva 0x7984f0 (2012 0x7fe040): crosshairInfosTxt_mc.SetText( <text>, or null when empty )
+void UDisGFxMoviePlayerHUD::UpdateCrosshairFocusText( const FString& _rText )
+{
+	GFxValue Arg;
+	if( _rText.Len() > 0 )
+	{
+		Arg.SetStringW( *_rText );
+	}
+	else
+	{
+		Arg.SetNull();
+	}
+	DisHUDInvoke( this, DHMC_CrosshairInfo, "SetText", &Arg, 1 );
+}
+
+// DISHONORED(port): 2013 rva 0x7a6150 (2012 0x8097d0). interactions_window_mc.SetInteractions( <name>, <lines> ): the
+// group's texts joined by newlines and run through FormatInteractionText, or ( null, null ) for an empty group.
+void UDisGFxMoviePlayerHUD::UpdateCrosshairInteractions( const FString& _rName, const FDisUIInteractionGroup& _rGroup )
+{
+	GFxValue Args[2];
+	FString InteractionText;
+	if( _rGroup.m_InteractionCount <= 0 )
+	{
+		Args[0].SetNull();
+		Args[1].SetNull();
+	}
+	else
+	{
+		InteractionText = *(const FString*)_rGroup.m_Interactions[0].m_pText;
+		for( INT Index = 1; Index < _rGroup.m_InteractionCount; Index++ )
+		{
+			InteractionText += TEXT("\n");
+			InteractionText += *(const FString*)_rGroup.m_Interactions[Index].m_pText;
+		}
+		FormatInteractionText( InteractionText, FALSE, FALSE );
+		Args[0].SetStringW( *_rName );
+		Args[1].SetStringW( *InteractionText );
+	}
+	DisHUDInvoke( this, DHMC_CrosshairInteractions, "SetInteractions", Args, 2 );
+}
+
+// DISHONORED(port): 2013 rva 0x7acb10 (2012 0x80c450). With the interaction show bits (0xE00) on and an interactable under the
+// crosshair, its focus text (interface +52) and name (+56), each through its FormatText (+80); otherwise both empty. The
+// context's group counts are masked by the player's interaction settings and the show bits, and only what changed since
+// the last call is sent.
+// DISHONORED(bringup): the context is retail's ADishonoredPlayerPawn::FillUIInteractions (2013 0x6a9130, 2012 0x7033f0) plus the
+// probe's (0x78cc60). The pawn's reaches the player state machine's FillUIInteractions (vtable +372/+416) and the
+// interactable's interface slots +60/+64, none of which this tree declares, and the probe's five checks are unported; the
+// context stays empty, so the crosshair group is the focus text alone and UpdateContextInteractions (0x7a63c0),
+// UpdateSpecialInteractions (0x7a6630) and the QTE group (0x7a6920) never see a change and are not ported.
+void UDisGFxMoviePlayerHUD::Tick_Interaction( IDisInteractableInterface* _pInteractable )
+{
+	const UBOOL bShowInteractions = ( m_ShowFlagsOnLastTick & 0xE00 ) != 0;
+	FDisUIInteractionContext Context( EC_EventParm );
+	FString FocusText;
+	FString Name;
+	if( _pInteractable && bShowInteractions )
+	{
+		FocusText = _pInteractable->GetCrosshairFocusText();
+		Name = _pInteractable->GetInteractableName();
+		_pInteractable->FormatText( FocusText );
+		_pInteractable->FormatText( Name );
+	}
+	if( bShowInteractions )
+	{
+		const INT ContextCount = Context.m_Groups[0].m_InteractionCount > 0 ? 0 : Context.m_Groups[1].m_InteractionCount;
+		Context.m_Groups[0].m_InteractionCount *= m_Settings.m_bShowInteractions ? 1 : 0;
+		Context.m_Groups[1].m_InteractionCount = ContextCount * ( m_Settings.m_bShowInteractions & ( m_ShowFlagsOnLastTick >> 10 ) & 1 );
+		Context.m_Groups[2].m_InteractionCount *= m_Settings.m_bShowContextualIcons & ( m_ShowFlagsOnLastTick >> 11 ) & 1;
+		Context.m_Groups[3].m_InteractionCount *= m_Settings.m_bShowContextualIcons ? 1 : 0;
+	}
+	if( FocusText != m_CrosshairFocusText )
+	{
+		UpdateCrosshairFocusText( FocusText );
+		m_CrosshairFocusText = FocusText;
+	}
+	if( Name != m_InteractableName || DisHUDInteractionGroupChanged( Context, m_InteractionContext, 0 ) )
+	{
+		UpdateCrosshairInteractions( Name, Context.m_Groups[0] );
+		m_InteractableName = Name;
+		m_InteractionContext.m_Groups[0] = Context.m_Groups[0];
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x7af540 (2012 0x8117c0): the interaction prompt, then the highlight requests the settings left
+void UDisGFxMoviePlayerHUD::OnCrosshairActorSet( IDisInteractableInterface* _pInteractable )
+{
+	if( m_pMovieClips == NULL )
+	{
+		return;
+	}
+	Tick_Interaction( _pInteractable );
+	if( m_bShowHighlightNextFrame )
+	{
+		if( _pInteractable )
+		{
+			_pInteractable->DoHighlight();
+		}
+		m_bShowHighlightNextFrame = FALSE;
+	}
+	if( m_bHideHighlightNextFrame )
+	{
+		if( _pInteractable )
+		{
+			_pInteractable->UnDoHighlight();
+		}
+		m_bHideHighlightNextFrame = FALSE;
+	}
 }
 
 /*-----------------------------------------------------------------------------

@@ -129,8 +129,91 @@ void UDishonoredPlayerInput::BuildBindings()
 	case 3:		AddBindingSet( m_PadBindingSet4 ); break;
 	default:	AddBindingSet( m_PadBindingSet1 ); break;
 	}
-	debugf( TEXT("DISHONORED(bringup): player input bindings: %d base + %d pc + pad set %d -> %d bindings"),
-		BaseBindings.Num(), m_PCBindings.Num(), PadSet, Bindings.Num() );
+	InitGameActionBindings();
+	debugf( TEXT("DISHONORED(bringup): player input bindings: %d base + %d pc + pad set %d -> %d bindings, %d game actions"),
+		BaseBindings.Num(), m_PCBindings.Num(), PadSet, Bindings.Num(), m_GameActionBindings.Num() );
+}
+
+// DISHONORED(port): 2013 rva 0x6bac10 (2012 0x6f3fe0, same logic), which retail's ApplyGameSettings runs right after the two
+// AddBindingSet calls (agent HF). Every binding named GBA_<action> becomes an action entry whose PC and pad keys are the first
+// binding of each kind with a '|'-separated command part equal to that name; then each <action>_Gamepad entry hands its pad
+// key to <action>. The Trim/TrimTrailing retail calls on each part return copies it discards, so parts are compared untrimmed.
+void UDishonoredPlayerInput::InitGameActionBindings()
+{
+	m_GameActionBindings.Reset();
+	for( INT BindIndex = 0; BindIndex < Bindings.Num(); BindIndex++ )
+	{
+		const FName ActionName = Bindings(BindIndex).Name;
+		const FString GBAName = ActionName.ToString();
+		if( !GBAName.StartsWith( TEXT("GBA_") ) )
+		{
+			continue;
+		}
+		FDisGameActionBinding GBA( EC_EventParm );
+		GBA.m_ActionName = ActionName;
+		for( INT Other = 0; Other < Bindings.Num(); Other++ )
+		{
+			const FKeyBind& Candidate = Bindings(Other);
+			TArray<FString> Parts;
+			Candidate.Command.ParseIntoArray( &Parts, TEXT("|"), TRUE );
+			for( INT Part = 0; Part < Parts.Num(); Part++ )
+			{
+				if( Parts(Part) != GBAName )
+				{
+					continue;
+				}
+				const UBOOL bGamepadKey = IsGamepadKey( Candidate.Name );
+				if( GBA.m_KeyBind_PC.Name == NAME_None && !bGamepadKey )
+				{
+					GBA.m_KeyBind_PC = Candidate;
+					break;
+				}
+				if( GBA.m_KeyBind_Gamepad.Name == NAME_None && bGamepadKey )
+				{
+					GBA.m_KeyBind_Gamepad = Candidate;
+					break;
+				}
+			}
+			if( GBA.m_KeyBind_PC.Name != NAME_None && GBA.m_KeyBind_Gamepad.Name != NAME_None )
+			{
+				break;
+			}
+		}
+		m_GameActionBindings.AddItem( GBA );
+	}
+	const INT NumActions = m_GameActionBindings.Num();
+	for( INT ActionIndex = 0; ActionIndex < NumActions; ActionIndex++ )
+	{
+		const FString GBAName = m_GameActionBindings(ActionIndex).m_ActionName.ToString();
+		if( !GBAName.EndsWith( TEXT("_Gamepad") ) )
+		{
+			continue;
+		}
+		const FName BaseName( *GBAName.Replace( TEXT("_Gamepad"), TEXT("") ) );
+		for( INT Base = 0; Base < NumActions; Base++ )
+		{
+			if( m_GameActionBindings(Base).m_ActionName == BaseName )
+			{
+				m_GameActionBindings(Base).m_KeyBind_Gamepad = m_GameActionBindings(ActionIndex).m_KeyBind_Gamepad;
+				break;
+			}
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0x6a7870 (2012 0x6e4100). The pad key when the player is on a pad or the pad is forced, unless
+// PC is forced.
+const FKeyBind* UDishonoredPlayerInput::GetKeyBindFromAction( FName _ActionName, UBOOL _bForcePC, UBOOL _bForceGamepad ) const
+{
+	for( INT Index = 0; Index < m_GameActionBindings.Num(); Index++ )
+	{
+		const FDisGameActionBinding& Binding = m_GameActionBindings(Index);
+		if( Binding.m_ActionName == _ActionName )
+		{
+			return ( ( bUsingGamepad || _bForceGamepad ) && !_bForcePC ) ? &Binding.m_KeyBind_Gamepad : &Binding.m_KeyBind_PC;
+		}
+	}
+	return NULL;
 }
 
 // DISHONORED(written): 2013 rva 0x5efd00 (vtable +360)

@@ -34,3 +34,15 @@ public:
 	// DISHONORED(port): 2013 rva 0x787860 (2012 0x7f4390, same bytes). The movie at its authored size, the screen
 	// letterboxed or pillarboxed around it. Body in disgfxmovieplayerbase.cpp.
 	void ComputeMovieSpaceInfo( INT _ScreenSizeX, INT _ScreenSizeY, struct FDisMovieSpaceInfo& _rInfo );
+
+// ---- agent HF (PHASE22 HF): the bound-key substitution every displayed hint goes through ----
+public:
+	// DISHONORED(port): 2013 rva 0x7a4620 (2012 0x8085b0, which had no force flags). `GBA_<action>`, `KEY_<key>` and
+	// `k in the text become the key bound to the action. Body in disgfxmovieplayerbase.cpp.
+	static void FormatInteractionText( FString& _rText, UBOOL _bForcePC, UBOOL _bForceGamepad );
+	// DISHONORED(port): 2013 rva 0x78c590 (2012 0x7f5f30, same bytes)
+	static void FormatGamepadKeyName( const TCHAR* _pKeyName, FString& _rOut );
+	// DISHONORED(port): 2013 rva 0x78c630 (2012 0x7f5fd0 took the key's name; 2013 takes the key)
+	static void FormatMouseKeyName( FName _Key, FString& _rOut );
+	// DISHONORED(port): 2013 rva 0x793dc0 (2012 0x7fa350)
+	static FString LocalizeKeyboardKeyName( FName _Key, UBOOL _bInGame );
