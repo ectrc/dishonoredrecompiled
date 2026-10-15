@@ -431,7 +431,7 @@ public:
     virtual void MAT_SetMorphWeight(FName MorphNodeName,FLOAT MorphWeight);
     virtual void MAT_SetSkelControlScale(FName SkelControlName,FLOAT Scale);
     virtual void MAT_SetSkelControlStrength(FName SkelControlName,FLOAT ControlStrength);
-    virtual void MAT_SetAnimPosition(FName SlotName,INT ChannelIndex,FName InAnimSeqName,FLOAT InPosition,UBOOL bFireNotifies,UBOOL bLooping,UBOOL bEnableRootMotion);
+    virtual void MAT_SetAnimPosition(FName SlotName,INT ChannelIndex,FName InAnimSeqName,FLOAT InPrevPosition,FLOAT InPosition,UBOOL bFireNotifies,UBOOL bLooping,UBOOL bEnableRootMotion);
     // DISHONORED(port): 2013 natives (agent AE): ClearAnimNodes exec 0x1db540 / body 0x321f70, UpdateAnimSetList (exec 2012 0x1f0990, the SkeletalMeshActor virtual)
     void ClearAnimNodes();
     DECLARE_FUNCTION(execClearAnimNodes);
@@ -473,7 +473,8 @@ public:
         P_GET_UBOOL(bLooping);
         P_GET_UBOOL(bEnableRootMotion);
         P_FINISH;
-        this->MAT_SetAnimPosition(SlotName,ChannelIndex,InAnimSeqName,InPosition,bFireNotifies,bLooping,bEnableRootMotion);
+        // DISHONORED(written): agent HA. The script native has no previous position; FLT_MIN is the "none" the 2013 track passes
+        this->MAT_SetAnimPosition(SlotName,ChannelIndex,InAnimSeqName,FLT_MIN,InPosition,bFireNotifies,bLooping,bEnableRootMotion);
     }
     // DISHONORED(port): agent FW (PHASE18 FW). Retail's in-game anim-control contract on the MAT actor, which the cooked
     // script never reaches through BeginAnimControl (Dishonored's Actor script has no such event): PostInitAnimTree
@@ -2364,13 +2365,13 @@ public:
 
 	// UAnimNode interface
 	virtual void InitAnim( USkeletalMeshComponent* MeshComp, UAnimNodeBlendBase* Parent );
-	// DISHONORED(port): agent FT. Retail's slot is the base class's (2012 0x574db0 jumps to UAnimNodeBlendBase::GetBoneAtoms)
-	// because retail evaluates the skeleton through EdgeAnim jobs (UpdateSkelPoseBegin/End, GEdgeAnimManager), whose leaf
-	// honours m_bDontUseRefPoseOnNonDefinedBones; this evaluator has no EdgeAnim, so the stack layers its channels itself.
+	// DISHONORED(port): agent FT, agent HA. Retail's slot is the base class's (2012 0x574db0 jumps to UAnimNodeBlendBase::GetBoneAtoms)
+	// because retail evaluates the skeleton through EdgeAnim jobs (UpdateSkelPoseBegin/End, GEdgeAnimManager); this evaluator has
+	// no EdgeAnim, so the body is the stack's Edge tree builder (BuildEdgeAnimTreeEx, 2012 0x576920 / 2013 0x5350c0) on the CPU.
 	virtual void GetBoneAtoms( FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones, FBoneAtom& RootMotionDelta, INT& bHasRootMotion, FCurveKeyArray& CurveKeys );
 
-	// Matinee interface. 2012 rvas 0x576570, 0x576790, 0x5768b0, 0x576aa0.
-	void MAT_SetAnimPosition( INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion );
+	// Matinee interface. 2012 rvas 0x576570, 0x576790, 0x5768b0, 0x576aa0; MAT_SetAnimPosition is 2013's (0x534cb0, agent HA).
+	void MAT_SetAnimPosition( INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion );
 	void MAT_SetAnimWeights( const struct FAnimSlotInfo& SlotInfo );
 	void MAT_FinishAnimControl();
 	void ForceDontUseRefPoseOnChild( UBOOL bStatus );

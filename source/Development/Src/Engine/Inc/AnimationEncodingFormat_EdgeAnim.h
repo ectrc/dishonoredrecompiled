@@ -22,6 +22,9 @@ public:
 	 */
 	static UBOOL GetAnimationPose(const UAnimSequence* Seq, const USkeletalMesh* Mesh, FLOAT Time, FBoneAtomArray& Atoms, const TArray<BYTE>& DesiredBones);
 
+	/** DISHONORED(port): agent HA. 1 for every mesh bone Seq's Edge blob carries (EdgeAnimGetDefinedSkeletonJoints). */
+	static UBOOL GetDefinedBones(const UAnimSequence* Seq, const USkeletalMesh* Mesh, TArray<BYTE>& OutDefined);
+
 	/** One bone of the same pose (root motion extraction). */
 	static UBOOL GetBoneAtom(const UAnimSequence* Seq, const USkeletalMesh* Mesh, INT BoneIndex, FLOAT Time, FBoneAtom& OutAtom);
 };

@@ -533,7 +533,7 @@ public:
     void AddAnimSets(const TArray<class UAnimSet*>& CustomAnimSets);
     virtual void MAT_BeginAnimControl(class UInterpGroup* InInterpGroup);
     virtual void MAT_FinishAnimControl(class UInterpGroup* InInterpGroup);
-    virtual void MAT_SetAnimPosition(FName SlotName,INT ChannelIndex,FName InAnimSeqName,FLOAT InPosition,UBOOL bFireNotifies,UBOOL bLooping,UBOOL bEnableRootMotion);
+    virtual void MAT_SetAnimPosition(FName SlotName,INT ChannelIndex,FName InAnimSeqName,FLOAT InPrevPosition,FLOAT InPosition,UBOOL bFireNotifies,UBOOL bLooping,UBOOL bEnableRootMotion);
     virtual void MAT_SetAnimWeights(const TArray<struct FAnimSlotInfo>& SlotInfos);
     virtual void MAT_SetMorphWeight(FName MorphNodeName,FLOAT MorphWeight);
     virtual void MAT_SetSkelControlScale(FName SkelControlName,FLOAT Scale);
@@ -698,7 +698,8 @@ public:
         P_GET_UBOOL(bLooping);
         P_GET_UBOOL(bEnableRootMotion);
         P_FINISH;
-        this->MAT_SetAnimPosition(SlotName,ChannelIndex,InAnimSeqName,InPosition,bFireNotifies,bLooping,bEnableRootMotion);
+        // DISHONORED(written): agent HA. The script native has no previous position; FLT_MIN is the "none" the 2013 track passes
+        this->MAT_SetAnimPosition(SlotName,ChannelIndex,InAnimSeqName,FLT_MIN,InPosition,bFireNotifies,bLooping,bEnableRootMotion);
     }
     DECLARE_FUNCTION(execMAT_SetAnimWeights)
     {

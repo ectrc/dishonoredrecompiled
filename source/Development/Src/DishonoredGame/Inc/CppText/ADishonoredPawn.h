@@ -72,7 +72,7 @@ public:
 // The bases are AActor's / APawn's (EngineClasses.h, EnginePawnClasses.h); the StretchAnimControl track and
 // UInterpGroup::UpdateGroup call them on the group actor.
 public:
-	virtual void MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion );
+	virtual void MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion );
 	virtual void MAT_SetRootMotionMode( BYTE MatRootMotionMode );
 	virtual void MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode );
 	virtual void MAT_DisableMeshTranslation( UBOOL bReset );

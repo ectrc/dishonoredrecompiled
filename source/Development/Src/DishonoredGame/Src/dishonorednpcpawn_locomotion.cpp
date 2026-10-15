@@ -317,3 +317,40 @@ BYTE ADishonoredNPCPawn::ChooseLookAt()
 	}
 	return eDisNPCLookAtMode_MAX;
 }
+
+// DISHONORED(port): agent HA. 2012 rva 0x7ac100 (136 B), 2013 rva 0x76e680 (VA 0xb6e680, 136 B, match_2012_2013 "bytes" 1.000):
+// the base's mesh modes, the locomotion component off for the root motion, and a Translate / Velocity mode starts from rest.
+void ADishonoredNPCPawn::StartRootMotionMode( BYTE _RootMotionMode, BYTE _RootRotationMode )
+{
+	ADishonoredPawn::StartRootMotionMode( _RootMotionMode, _RootRotationMode );
+	FArkComponentLocomotion* Locomotion = FArkComponentLocomotion::GetLocomotionComponent( this );
+	if( Locomotion != NULL )
+	{
+		Locomotion->Disable();
+	}
+	if( _RootMotionMode <= RMM_Velocity )
+	{
+		DesiredSpeed = 0.f;
+		Velocity = FVector( 0.f, 0.f, 0.f );
+		Acceleration = FVector( 0.f, 0.f, 0.f );
+	}
+}
+
+// DISHONORED(port): agent HA. 2012 rva 0x7af1a0 (47 B), 2013 rva 0x771280 (VA 0xb71280, 47 B, same bytes): the base
+// (ChangeAnimStateMotionModes( RMM_Velocity, RMRM_RotateActor )), the locomotion component back on, and the look-at
+// component's +88 bit 1 (m_bHeadDisabled) cleared. UInterpGroupAI::UpdateGroup reaches this every frame of a key without
+// root motion (SetActorRootMotion -> MAT_SetRootMotionMode -> MAT_StopRootMotion), as retail's does.
+void ADishonoredNPCPawn::StopRootMotionMode()
+{
+	ADishonoredPawn::StopRootMotionMode();
+	FArkComponentLocomotion* Locomotion = FArkComponentLocomotion::GetLocomotionComponent( this );
+	if( Locomotion != NULL )
+	{
+		Locomotion->Enable();
+	}
+	FArkComponentLookat* Lookat = FArkComponentLookat::GetLookatComponent( this );
+	if( Lookat != NULL )
+	{
+		Lookat->m_bHeadDisabled = FALSE;
+	}
+}

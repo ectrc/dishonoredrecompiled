@@ -4312,7 +4312,10 @@ public:
 	// (APawn 2012 0x2d0880 and ASkeletalMeshActorMAT 0x33e340 override MAT_SetAnimPosition;
 	// ADishonoredPawn 0x7910e0 and ASkeletalMeshActorMAT 0x3318f0 override MAT_SetRootMotionMode), and
 	// the StretchAnimControl track instance and UInterpGroup::UpdateGroup call them on the group actor.
-	virtual void MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion) {}
+	// DISHONORED(port): agent HA. 2013 adds the animation's previous position (FLT_MIN = none) before InPosition: the
+	// StretchAnimControl track (2013 0x505c70) passes it and UArkAnimNodeStack::MAT_SetAnimPosition (2013 0x534cb0) fires
+	// the notifies between the two (APawn 2013 0x2b53a0, retn 28h = ten DWORDs).
+	virtual void MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion) {}
 	virtual void MAT_SetRootMotionMode(BYTE MatRootMotionMode) {}
 	// DISHONORED(port): agent FS. Retail's native notification from USkeletalMeshComponent::InitAnimTree
 	// (the retail Actor script has no PostInitAnimTree event); APawn (2012 0x2dd5c0) caches its

@@ -3159,6 +3159,7 @@ void UInterpGroup::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UBOO
 	USeqAct_Interp* Seq = Cast<USeqAct_Interp>( GrInst->GetOuter() );
 	const UBOOL bHasAnimTrack = HasAnimControlTrack();
 	APawn* GroupPawn = GrInst->GetGroupPawn();
+	const UBOOL bWasTranslating = ( GrInst->m_CurrentRootMotionMode == MRMM_Translate );
 	GrInst->m_CurrentRootMotionMode = MRMM_Disable;
 
 #if WITH_EDITORONLY_DATA
@@ -3254,6 +3255,16 @@ void UInterpGroup::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UBOO
 		if( Actor != NULL )
 		{
 			Actor->MAT_SetRootMotionMode( GrInst->m_CurrentRootMotionMode );
+			// DISHONORED(port): agent HA. The tail of 2013's UpdateGroupInst (VA 0x62fed0): a backup was asked for (a
+			// special-root-motion key started) or Translate root motion starts this frame -> BackupTransform (VA 0x61fcb0);
+			// Translate stops -> the actor's 2013 virtual +812.
+			// DISHONORED(bringup): AActor 2013 slots 202 (+808, called by BackupTransform) and 203 (+812) are new 2013
+			// virtuals, empty on AActor; the pawn overrides are not identified, so the +812 call is not made here.
+			const UBOOL bTranslating = ( GrInst->m_CurrentRootMotionMode == MRMM_Translate );
+			if( GrInst->m_bShouldBackupTransform || ( !bWasTranslating && bTranslating ) )
+			{
+				GrInst->BackupTransform();
+			}
 		}
 	}
 	else if( DisFSInterpDiagEnabled() && GrInst->IsA( UInterpGroupInstAI::StaticClass() ) )
@@ -3717,6 +3728,27 @@ APawn* UInterpGroupInst::GetGroupPawn() const
 		return NULL;
 	}
 	return m_pGroupPawn;
+}
+
+// DISHONORED(port): agent HA. 2013 VA 0x61fcb0 (rva 0x21fcb0, 121 B): with a group actor, the actor's 2013 virtual +808
+// (not identified, see UpdateGroup), the request cleared, and every StretchAnimControl instance's backed-up position set
+// to its current one (sub_8FCDE0, 7 B: +96 = +92). Retail picks the instances by UInterpTrackInst +60 bit 2
+// (m_bIsAUInterpTrackInstStretchAnim, not declared in this tree); the class test is the same set.
+void UInterpGroupInst::BackupTransform()
+{
+	if( GetGroupActor() == NULL )
+	{
+		return;
+	}
+	m_bShouldBackupTransform = 0;
+	for( INT TrackIndex = 0; TrackIndex < TrackInst.Num(); TrackIndex++ )
+	{
+		UInterpTrackInstStretchAnimControl* StretchInst = Cast<UInterpTrackInstStretchAnimControl>( TrackInst(TrackIndex) );
+		if( StretchInst != NULL )
+		{
+			StretchInst->m_fBackupAnimPosition = StretchInst->m_fCurrentAnimPosition;
+		}
+	}
 }
 
 // DISHONORED(port): agent FS. 2012 rva 0x22ac60 (17 B): a key asking for root motion wins the frame;
@@ -13241,6 +13273,42 @@ void UInterpGroupInstAI::UpdatePhysics(UBOOL bInit)
 	}
 }
 
+/** -fkdiag (agent HA): the mean angle, in degrees, between the evaluated local rotation and the reference pose's over the
+ *  mesh's arm bones (names holding "arm" and an L/R side); about 0 in a reference (T/A) pose. */
+static FString DisHAArmRefDeviation( const USkeletalMeshComponent* Mesh )
+{
+	if( Mesh == NULL || Mesh->SkeletalMesh == NULL || Mesh->LocalAtoms.Num() != Mesh->SkeletalMesh->RefSkeleton.Num() )
+	{
+		return FString( TEXT("-") );
+	}
+	const TArray<FMeshBone>& RefSkeleton = Mesh->SkeletalMesh->RefSkeleton;
+	FLOAT SumDegrees[2] = { 0.f, 0.f };
+	INT NumBones[2] = { 0, 0 };
+	for( INT BoneIndex = 0; BoneIndex < RefSkeleton.Num(); BoneIndex++ )
+	{
+		const FString BoneName = RefSkeleton(BoneIndex).Name.ToString().ToLower();
+		const UBOOL bLeft = BoneName.InStr( TEXT("_l_") ) != INDEX_NONE || BoneName.StartsWith( TEXT("l_") );
+		const UBOOL bRight = BoneName.InStr( TEXT("_r_") ) != INDEX_NONE || BoneName.StartsWith( TEXT("r_") );
+		if( BoneName.InStr( TEXT("arm") ) == INDEX_NONE || ( !bLeft && !bRight ) )
+		{
+			continue;
+		}
+		const FQuat Evaluated = Mesh->LocalAtoms(BoneIndex).GetRotation();
+		const FQuat Reference = RefSkeleton(BoneIndex).BonePos.Orientation;
+		const FLOAT Dot = Min( Abs( Evaluated | Reference ), 1.f );
+		const INT Side = bLeft ? 0 : 1;
+		SumDegrees[Side] += 2.f * appAcos( Dot ) * 180.f / PI;
+		NumBones[Side]++;
+	}
+	const INT Total = NumBones[0] + NumBones[1];
+	if( Total == 0 )
+	{
+		return FString( TEXT("n0") );
+	}
+	return FString::Printf( TEXT("%.1f n%d L %.1f R %.1f"), ( SumDegrees[0] + SumDegrees[1] ) / Total, Total,
+		NumBones[0] ? SumDegrees[0] / NumBones[0] : 0.f, NumBones[1] ? SumDegrees[1] / NumBones[1] : 0.f );
+}
+
 // Customized UpdateGroup
 void UInterpGroupAI::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UBOOL bPreview, UBOOL bJump)
 {
@@ -13369,7 +13437,7 @@ void UInterpGroupAI::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UB
 					{
 						continue;
 					}
-					SlotState = FString::Printf( TEXT("stack %s w0 %.2f"), *Stack->NodeName.ToString(), Stack->Children(0).Weight );
+					SlotState = FString::Printf( TEXT("stack %s w0 %.2f refdev %s"), *Stack->NodeName.ToString(), Stack->Children(0).Weight, *DisHAArmRefDeviation( Pawn->Mesh ) );
 					for( INT ChildIndex = 1; ChildIndex < Stack->Children.Num(); ChildIndex++ )
 					{
 						UAnimNodeSequence* SeqNode = Cast<UAnimNodeSequence>( Stack->Children(ChildIndex).Anim );

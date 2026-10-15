@@ -62,6 +62,16 @@ UBOOL FEdgeAnimSequencePose::GetAnimationPose(const UAnimSequence* Seq, const US
 	return TRUE;
 }
 
+UBOOL FEdgeAnimSequencePose::GetDefinedBones(const UAnimSequence* Seq, const USkeletalMesh* Mesh, TArray<BYTE>& OutDefined)
+{
+	if (!CanEvaluate(Seq, Mesh))
+	{
+		return FALSE;
+	}
+	EdgeAnimGetDefinedSkeletonJoints((const EdgeAnimAnimation*)Seq->CompressedByteStream.GetData(), (const EdgeAnimSkeleton*)Mesh->m_EdgeSkeleton.GetData(), OutDefined);
+	return TRUE;
+}
+
 UBOOL FEdgeAnimSequencePose::GetBoneAtom(const UAnimSequence* Seq, const USkeletalMesh* Mesh, INT BoneIndex, FLOAT Time, FBoneAtom& OutAtom)
 {
 	if (!EvaluatePose(Seq, Mesh, Time) || BoneIndex >= GEdgeSkeletonPose.Num())

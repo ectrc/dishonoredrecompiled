@@ -3255,7 +3255,7 @@ void ASkeletalMeshActor::PreviewSetAnimPosition(FName SlotName, INT ChannelIndex
 */
 void ASkeletalMeshActorMAT::PreviewSetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bLooping, UBOOL bFireNotifies, UBOOL bEnableRootMotion, FLOAT DeltaTime)
 {
-	MAT_SetAnimPosition(SlotName, ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
+	MAT_SetAnimPosition(SlotName, ChannelIndex, InAnimSeqName, FLT_MIN, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
 
 	// Update space bases so new animation position has an effect.
 	SkeletalMeshComponent->UpdateSkelPose(DeltaTime, FALSE);
@@ -3265,7 +3265,7 @@ void ASkeletalMeshActorMAT::PreviewSetAnimPosition(FName SlotName, INT ChannelIn
 /** 
 * Update AnimTree from track info 
 */
-void ASkeletalMeshActorMAT::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion)
+void ASkeletalMeshActorMAT::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion)
 {
 	// Ensure anims are updated correctly in cinematics even when the mesh isn't rendered.
 	SkeletalMeshComponent->LastRenderTime = GWorld->GetTimeSeconds();
@@ -3283,7 +3283,7 @@ void ASkeletalMeshActorMAT::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex
 				return;
 			}
 
-			SlotNode->MAT_SetAnimPosition(ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
+			SlotNode->MAT_SetAnimPosition(ChannelIndex, InAnimSeqName, InPrevPosition, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
 		}
 	}
 }

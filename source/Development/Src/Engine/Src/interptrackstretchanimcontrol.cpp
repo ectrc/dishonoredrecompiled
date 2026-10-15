@@ -401,7 +401,10 @@ UBOOL UInterpTrackInstStretchAnimControl::GetAnimForTime( FLOAT InTime, INT& Out
 	}
 	if( LocalInTime == SeqEnd )
 	{
-		// the animation has been played out: the caller keeps the last pose and stops re-sending the key
+		// the animation has been played out. DISHONORED(retail): agent HA - KeyIndex INDEX_NONE makes UpdateTrackInst send
+		// NAME_None to the channel every frame from here on, exactly as retail's (2012 0x543f40, 2013 0x505c70) does; the
+		// channel then has no AnimSeq and the stack's evaluation skips it (BuildEdgeAnimTreeEx 2012 0x576920), so the pawn
+		// shows its own tree (child 0) rather than holding the last pose
 		OutKeyIndex = INDEX_NONE;
 		OutPosition = 0.f;
 	}
@@ -475,12 +478,18 @@ UBOOL UInterpTrackInstStretchAnimControl::GetAnimForTime( FLOAT InTime, INT& Out
 	return FALSE;
 }
 
-// 2012 rva 0x543f40 (512 B). Called from the group's pass loop (UInterpGroup::UpdateGroup) on the
-// track's TrackUpdatePass. A matinee that is holding its position (a SoireeControl pause, a dialog
-// wait) keeps the loop segment playing through OffsetForLoopWhileSyncing; a matinee that moves maps
-// its position through GetAnimForTime. The key's collision / root-motion / mesh-translation choices
-// are collected on the group instance for UInterpGroupAI::UpdateGroup to hand to the pawn after all
-// tracks have run, and the animation position goes to the actor every frame.
+// 2012 rva 0x543f40 (512 B), 2013 VA 0x905c70 (rva 0x505c70, 823 B, slot 76 of ??_7UInterpTrackInstStretchAnimControl@@6B@).
+// Called from the group's pass loop (UInterpGroup::UpdateGroup) on the track's TrackUpdatePass. A matinee that is holding
+// its position (a SoireeControl pause, a dialog wait) keeps the loop segment playing through OffsetForLoopWhileSyncing; a
+// matinee that moves maps its position through GetAnimForTime. The key's collision / root-motion / mesh-translation choices
+// are collected on the group instance for UInterpGroupAI::UpdateGroup to hand to the pawn after all tracks have run, and the
+// animation position goes to the actor every frame.
+// DISHONORED(port): agent HA, the 2013 body. A jump against the play direction does not fire notifies; the root-motion mode
+// is collected only while the animation moves forward (m_fCurrentAnimPosition is last frame's); a track with
+// m_bSpecialRootMotionExtract (+164 bit 0) on a Translate key asks the group for a transform backup at each new key
+// (sub_612E40: GroupInst->m_bShouldBackupTransform = 1), holds the key's last position once the matinee is past the key's
+// end (GetKeyframeTime, vtable +356, + the key's played length, sub_904E40) and hands the actor the backed-up position as the
+// previous one, so the stack fires the notifies in between; every other key passes FLT_MIN (no previous position).
 void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBOOL bJump )
 {
 	AActor* Actor = GetGroupActor();
@@ -492,17 +501,20 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 	UInterpGroupInst* GroupInst = CastChecked<UInterpGroupInst>( GetOuter() );
 	const USeqAct_Interp* Matinee = GetMatinee();
 	const INT ChannelIndex = m_ChannelIndex;
+	const FLOAT MatineeDeltaTime = ( Matinee != NULL ) ? Matinee->DeltaTime : 0.f;
+	const UBOOL bReversePlayback = ( Matinee != NULL ) && Matinee->bReversePlayback;
+	const UBOOL bJumpedBack = bJump && ( ( !bReversePlayback && LastUpdatePosition > NewPosition ) || ( bReversePlayback && NewPosition > LastUpdatePosition ) );
 
 	INT KeyIndex = INDEX_NONE;
 	FLOAT NewAnimPosition = 0.f;
 	FLOAT LoopStartPosition = 0.f;
 	FLOAT LoopDuration = 0.f;
+	FLOAT InTime = NewPosition;
 	if( NewPosition == LastUpdatePosition )
 	{
-		FLOAT InTime = NewPosition;
 		if( bAnimIsLooping )
 		{
-			OffsetForLoopWhileSyncing += ( Matinee != NULL ) ? Matinee->DeltaTime : 0.f;
+			OffsetForLoopWhileSyncing += MatineeDeltaTime;
 			if( OffsetForLoopWhileSyncing > LoopEnd - NewPosition )
 			{
 				OffsetForLoopWhileSyncing = LoopStart - NewPosition;
@@ -513,7 +525,7 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 	}
 	else
 	{
-		const FLOAT InTime = OffsetForLoopWhileSyncing + NewPosition;
+		InTime = OffsetForLoopWhileSyncing + NewPosition;
 		LastUpdatePosition = NewPosition;
 		GetAnimForTime( InTime, KeyIndex, NewAnimPosition, LoopStartPosition, LoopDuration );
 		if( LoopDuration <= 0.f )
@@ -533,6 +545,11 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 	const BYTE RootMotionMode = StretchTrack->GetAnimRootMotionMode( KeyIndex );
 	const BYTE MeshTranslationMode = StretchTrack->GetAnimMeshTranslationMode( KeyIndex );
 	const UBOOL bEnableRootMotion = RootMotionMode != MRMM_Disable;
+	const UBOOL bSpecialRootMotion = StretchTrack->m_bSpecialRootMotionExtract && RootMotionMode == MRMM_Translate;
+	if( bSpecialRootMotion && m_iPreviousKeyIndex != KeyIndex && KeyIndex != INDEX_NONE )
+	{
+		GroupInst->m_bShouldBackupTransform = 1;
+	}
 
 	if( KeyIndex == INDEX_NONE )
 	{
@@ -542,7 +559,7 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 	{
 		// a new key: start its animation at its start offset before setting the real position
 		const FLOAT AnimStartOffset = StretchTrack->GetAnimStartOffset( KeyIndex );
-		Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, AnimStartOffset, TRUE, FALSE, bEnableRootMotion );
+		Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, FLT_MIN, AnimStartOffset, TRUE, FALSE, bEnableRootMotion );
 		m_iPreviousKeyIndex = KeyIndex;
 		if( DisFSStretchDiagEnabled() )
 		{
@@ -554,9 +571,25 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 	}
 
 	GroupInst->SetActorCollision( bDisableCollision );
-	GroupInst->SetActorRootMotion( RootMotionMode );
+	if( NewAnimPosition > m_fCurrentAnimPosition )
+	{
+		GroupInst->SetActorRootMotion( RootMotionMode );
+	}
 	GroupInst->SetMeshTranslationMode( MeshTranslationMode );
-	Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, NewAnimPosition, TRUE, FALSE, bEnableRootMotion );
+	if( bSpecialRootMotion )
+	{
+		const FLOAT KeyStartTime = StretchTrack->GetKeyframeTime( KeyIndex );
+		const FLOAT KeyPlayLength = GetKeyPlayLength( KeyIndex );
+		if( MatineeDeltaTime + InTime > KeyPlayLength + KeyStartTime )
+		{
+			NewAnimPosition = KeyPlayLength;
+		}
+		Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, m_fBackupAnimPosition, NewAnimPosition, TRUE, FALSE, bEnableRootMotion );
+	}
+	else
+	{
+		Actor->MAT_SetAnimPosition( StretchTrack->SlotName, ChannelIndex, NewAnimSeqName, FLT_MIN, NewAnimPosition, !bJumpedBack, FALSE, bEnableRootMotion );
+	}
 	m_fCurrentAnimPosition = NewAnimPosition;
 
 	if( DisFSStretchDiagEnabled() && KeyIndex != INDEX_NONE )
@@ -575,4 +608,18 @@ void UInterpTrackInstStretchAnimControl::UpdateTrackInst( FLOAT NewPosition, UBO
 				*Actor->GetName(), Actor->Location.X, Actor->Location.Y, Actor->Location.Z );
 		}
 	}
+}
+
+// DISHONORED(port): agent HA. 2013 VA 0x904e40 (rva 0x504e40, 156 B, unnamed): the key's animation length played at its rate,
+// ( SequenceLength - ( AnimEndOffset + AnimStartOffset ) ) / AnimPlayRate; 0 when the sequence is not found.
+FLOAT UInterpTrackInstStretchAnimControl::GetKeyPlayLength( INT KeyIndex ) const
+{
+	const UInterpTrackStretchAnimControl* StretchTrack = CastChecked<UInterpTrackStretchAnimControl>( Track );
+	const FStretchAnimControlTrackKey& Key = StretchTrack->AnimSeqs(KeyIndex);
+	const UAnimSequence* Seq = StretchTrack->FindAnimSequenceFromName( Cast<UInterpGroupInst>( GetOuter() ), Key.AnimSeqName );
+	if( Seq == NULL )
+	{
+		return 0.f;
+	}
+	return ( Seq->SequenceLength - ( Key.AnimEndOffset + Key.AnimStartOffset ) ) / Key.AnimPlayRate;
 }

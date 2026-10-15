@@ -99,6 +99,13 @@ protected:
 	// agent FS: 2012 rva 0x7bac70, the first thing MAT_BeginAIGroup does - the matinee slots re-collected
 	virtual void UpdateNodeSlot();
 
+// ---- agent HA (PHASE22 HA): the NPC's root-motion pair ----
+// 2012 rvas StartRootMotionMode 0x7ac100 (136 B), StopRootMotionMode 0x7af1a0 (47 B); 2013 rvas 0x76e680 / 0x771280 (VA
+// 0xb6e680 / 0xb71280), byte-identical. Bodies in dishonorednpcpawn_locomotion.cpp (retail's unit).
+public:
+	virtual void StartRootMotionMode( BYTE _RootMotionMode, BYTE _RootRotationMode );
+	virtual void StopRootMotionMode();
+
 // ---- agent FR (PHASE17 FR): the NPC's speaker overrides, dishonorednpcpawn_conversation.cpp ----
 // DISHONORED(port): 2012 rvas GetConversationComponent_Derived 0x7ac040, FireDialogHook 0x7ac070, SupportsDialogHook
 // 0x7ac090, IsAvailableForDialog 0x7c17c0 (2013 0x774280, 188 B), StartDialog 0x7c1880 (300 B), EndDialog 0x7c19b0 (247 B).

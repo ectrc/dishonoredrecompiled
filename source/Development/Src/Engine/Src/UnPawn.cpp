@@ -3654,7 +3654,7 @@ void APawn::PreviewSetAnimPosition(FName SlotName, INT ChannelIndex, FName InAni
 
 	if ( SlotNodes.Num() > 0 )
 	{
-		MAT_SetAnimPosition(SlotName, ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
+		MAT_SetAnimPosition(SlotName, ChannelIndex, InAnimSeqName, FLT_MIN, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
 	}
 	else
 	{
@@ -3704,7 +3704,7 @@ void APawn::PreviewSetAnimPosition(FName SlotName, INT ChannelIndex, FName InAni
 }
 
 /** Update AnimTree from track info */
-void APawn::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion)
+void APawn::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion)
 {
 	if( Mesh )
 	{
@@ -3719,7 +3719,7 @@ void APawn::MAT_SetAnimPosition(FName SlotName, INT ChannelIndex, FName InAnimSe
 		UArkAnimNodeStack* SlotNode = SlotNodes(i);
 		if( SlotNode && SlotNode->NodeName == SlotName )
 		{
-			SlotNode->MAT_SetAnimPosition(ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
+			SlotNode->MAT_SetAnimPosition(ChannelIndex, InAnimSeqName, InPrevPosition, InPosition, bFireNotifies, bLooping, bEnableRootMotion);
 		}
 	}
 }

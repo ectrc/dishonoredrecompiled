@@ -463,10 +463,10 @@ void ADishonoredPawn::StopRootMotionMode()
 	ChangeAnimStateMotionModes( RMM_Velocity, RMRM_RotateActor );
 }
 
-// 2012 rva 0x791070 (103 B)
-void ADishonoredPawn::MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion )
+// 2012 rva 0x791070 (103 B); 2013 VA 0xb4d3d0 (rva 0x74d3d0, 112 B) - DISHONORED(port): agent HA, the previous position passed through
+void ADishonoredPawn::MAT_SetAnimPosition( FName SlotName, INT ChannelIndex, FName InAnimSeqName, FLOAT InPrevPosition, FLOAT InPosition, UBOOL bFireNotifies, UBOOL bLooping, UBOOL bEnableRootMotion )
 {
-	Super::MAT_SetAnimPosition( SlotName, ChannelIndex, InAnimSeqName, InPosition, bFireNotifies, bLooping, bEnableRootMotion );
+	Super::MAT_SetAnimPosition( SlotName, ChannelIndex, InAnimSeqName, InPrevPosition, InPosition, bFireNotifies, bLooping, bEnableRootMotion );
 	if( bEnableRootMotion && InAnimSeqName == NAME_None && MAT_RootMotionEnabled() )
 	{
 		MAT_StopRootMotion();

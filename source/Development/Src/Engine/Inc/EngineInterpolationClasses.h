@@ -399,6 +399,8 @@ public:
 	// here and UInterpGroupInstAI's, 0x22ac30 / 0x22e1f0). The StretchAnimControl track instance calls
 	// the three setters every update and UpdateGroup hands the collected root-motion mode to the actor.
 	virtual class APawn* GetGroupPawn() const;
+	// DISHONORED(port): agent HA. 2013 VA 0x61fcb0 (rva 0x21fcb0, 121 B, unnamed): UpdateGroup's transform backup.
+	void BackupTransform();
 	virtual void SetActorCollision( UBOOL bDisableCollision ) {}
 	virtual void SetMeshTranslationMode( BYTE MeshTranslationMode ) {}
 	void SetActorRootMotion( BYTE MatRootMotionMode );
@@ -3229,6 +3231,8 @@ public:
 protected:
     UBOOL GetAnimForTime( FLOAT InTime, INT& OutKeyIndex, FLOAT& OutPosition, FLOAT& OutLoopStartPosition, FLOAT& OutLoopDuration ) const;
     FLOAT ConditionallyReversePosition( const FStretchAnimControlTrackKey& SeqKey, const class UAnimSequence* Seq, FLOAT InPosition ) const;
+    // DISHONORED(port): agent HA. 2013 VA 0x904e40 (unnamed, 156 B)
+    FLOAT GetKeyPlayLength( INT KeyIndex ) const;
 };
 // Engine.InterpTrackSoireeControl: retail sizeof 136, reflected span 124..136 (2012 PDB sizeof 136)
 class UInterpTrackSoireeControl : public UInterpTrack

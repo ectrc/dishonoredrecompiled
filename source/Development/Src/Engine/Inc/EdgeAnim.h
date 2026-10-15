@@ -251,6 +251,11 @@ INT EdgeAnimSkeletonGetJointIndexByHash(const EdgeAnimSkeleton* Skel, DWORD Join
  * Game thread only (shared scratch). OutJoints gets Skel->numJoints entries.
  */
 UBOOL EdgeAnimEvaluateSkeletonPose(const EdgeAnimAnimation* Anim, const EdgeAnimSkeleton* Skel, FLOAT Time, UBOOL bAdditive, TArray<EdgeAnimJointTransform>& OutJoints);
+/**
+ * DISHONORED(port): agent HA. The leaf's joint weights of retail AnimLeafCallback (2012 rva 0x58fb00, stage 0): 1 for every skeleton
+ * joint the animation's joint-name-hash list names, 0 elsewhere. OutDefined gets Skel->numJoints entries.
+ */
+void EdgeAnimGetDefinedSkeletonJoints(const EdgeAnimAnimation* Anim, const EdgeAnimSkeleton* Skel, TArray<BYTE>& OutDefined);
 
 static_assert(sizeof(EdgeAnimAnimation) == 96, "EdgeAnimAnimation: 2012 PDB 96");
 static_assert(STRUCT_OFFSET(EdgeAnimAnimation, flags) == 38, "EdgeAnimAnimation::flags: 2012 PDB @38");

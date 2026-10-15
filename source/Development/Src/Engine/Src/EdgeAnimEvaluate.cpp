@@ -740,3 +740,23 @@ UBOOL EdgeAnimEvaluateSkeletonPose(const EdgeAnimAnimation* Anim, const EdgeAnim
 	}
 	return TRUE;
 }
+
+// DISHONORED(port): agent HA. AnimLeafCallback (2012 rva 0x58fb00) fills the skeleton-to-animation map with 0xFFFF, writes the
+// animation joint index of every hash it resolves, and - for a leaf whose node has m_bDontUseRefPoseOnNonDefinedBones or whose
+// sequence is additive - sets the joint's weight to 0xFF exactly where that map is not 0xFFFF. That weight array is what makes a
+// blend keep the left pose on a joint the animation does not carry (_edgeAnimBlendPose, 2012 0x6232f0).
+void EdgeAnimGetDefinedSkeletonJoints(const EdgeAnimAnimation* Anim, const EdgeAnimSkeleton* Skel, TArray<BYTE>& OutDefined)
+{
+	OutDefined.Empty(Skel->numJoints);
+	OutDefined.AddZeroed(Skel->numJoints);
+	const DWORD* Hashes = (const DWORD*)(SelfRelative(Anim->offsetCustomData) + (Anim->offsetLocomotionDelta ? 32 : 0));
+	INT Hint = 0;
+	for (WORD AnimJoint = 0; AnimJoint < Anim->numJoints; AnimJoint++)
+	{
+		const INT SkelJoint = EdgeAnimSkeletonGetJointIndexByHash(Skel, Hashes[AnimJoint], Hint);
+		if (SkelJoint != INDEX_NONE)
+		{
+			OutDefined(SkelJoint) = 1;
+		}
+	}
+}
