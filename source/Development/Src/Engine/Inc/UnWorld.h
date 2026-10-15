@@ -1048,3 +1048,9 @@ extern UBOOL (*GDisInterpPlayerGroupHook)( class USeqAct_Interp* Seq, class UInt
     UInterpGroup::UpdateGroup calls this with Phase 0 before the re-step, 1 per step (Step is the step
     length) and 2 after it. NULL by default: the Engine alone re-steps the tracks and leaves the pawn. */
 extern void (*GDisInterpSkipStepHook)( class APawn* Pawn, INT Phase, FLOAT Step );
+
+/** DISHONORED(port): agent HB. UInterpTrackLookAt::StaticUpdateTracks (2012 rva 0x547010) and the component half of
+    UInterpTrackInstLookAt::TermTrackInst (0x53bcb0) talk to FArkComponentLookat, which lives in DishonoredGame; its
+    interptracklookat_dis.cpp installs both. NULL by default: the Engine alone makes no look-at request. */
+extern void (*GDisLookAtTrackUpdateHook)( FLOAT NewPosition, class UInterpGroupInstAI* GrInstAI, UBOOL bJump, UBOOL bPreview );
+extern void (*GDisLookAtTrackTermHook)( class APawn* Pawn, const void* Asker );

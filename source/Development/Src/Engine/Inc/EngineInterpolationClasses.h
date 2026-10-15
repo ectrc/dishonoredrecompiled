@@ -3028,6 +3028,14 @@ public:
     static INT ms_InterpTrackLookAtLowPriority;
     static INT ms_InterpTrackLookAtMediumPriority;
     static INT ms_InterpTrackLookAtHighPriority;
+
+    // DISHONORED(port): agent HB. 2012 rva 0x53bdb0 / 2013 0x8fcc60 (40 B): AI group LookatRequestsPriority 0 low, 2 high, else medium
+    static INT GetGameLookatPriority( BYTE PriorityToTranslate );
+    // DISHONORED(port): agent HB. StaticUpdateTracks 2012 0x547010 / 2013 0x9082c0, GetLookAtInfos 2012 0x542c10 / 2013 0x904390:
+    // they drive DishonoredGame's FArkComponentLookat, so the bodies are in DishonoredGame/Src/interptracklookat_dis.cpp and
+    // UInterpGroupAI::UpdateGroup reaches the first through GDisLookAtTrackUpdateHook (UnWorld.h).
+    static void StaticUpdateTracks( FLOAT NewPosition, class UInterpGroupInstAI* GrInstAI, UBOOL bJump, UBOOL bPreview );
+    UBOOL GetLookAtInfos( FLOAT NewPosition, const class UInterpTrackInstLookAt* TrInst, FVector& OutWorldDirection, FLOAT& OutWeight, FLOAT& OutHeadInfluence, FLOAT& OutTorsoInfluence, FLOAT& OutSpeedFactor ) const;
     DECLARE_CLASS(UInterpTrackLookAt,UInterpTrackFloatBase,0,Engine)
 };
 
@@ -3057,6 +3065,9 @@ public:
     //## END PROPS InterpTrackInstLookAt
 
     DECLARE_CLASS(UInterpTrackInstLookAt,UInterpTrackInst,0,Engine)
+    // DISHONORED(port): agent HB. 2012 rvas 0x53bc90 (28 B) and 0x53bcb0 (81 B), Engine/Src/interptracklookat.cpp
+    virtual void InitTrackInst( UInterpTrack* Track );
+    virtual void TermTrackInst( UInterpTrack* Track );
 };
 
 // Engine.InterpTrackLocomotion: retail sizeof 172, reflected span 144..172 (2012 PDB sizeof 172)

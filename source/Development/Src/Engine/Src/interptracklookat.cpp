@@ -36,6 +36,41 @@ void UInterpTrackLookAt::SetLookatPriority( INT LookatLowPriority, INT LookatMed
 	ms_InterpTrackLookAtHighPriority = LookatHighPriority;
 }
 
+// DISHONORED(port): agent HB. 2012 rva 0x53bdb0 / 2013 0x8fcc60 (40 B): ESoireeLookatRequestsPriority SLRP_Low (0), SLRP_High (2),
+// anything else medium.
+INT UInterpTrackLookAt::GetGameLookatPriority( BYTE PriorityToTranslate )
+{
+	if( PriorityToTranslate == 0 )
+	{
+		return ms_InterpTrackLookAtLowPriority;
+	}
+	if( PriorityToTranslate == 2 )
+	{
+		return ms_InterpTrackLookAtHighPriority;
+	}
+	return ms_InterpTrackLookAtMediumPriority;
+}
+
+// DISHONORED(port): agent HB. 2012 rva 0x53bc90 (28 B): no chain to the base (retail writes Track itself).
+void UInterpTrackInstLookAt::InitTrackInst( UInterpTrack* Track )
+{
+	this->Track = Track;
+	LastUpdate = 0.f;
+	LastReachedGoalIndex = INDEX_NONE;
+}
+
+// DISHONORED(port): agent HB. 2012 rva 0x53bcb0 (81 B): the requests StaticUpdateTracks made for the owning group are dropped,
+// asker the matinee's first instance of that group; the component half is DishonoredGame's (GDisLookAtTrackTermHook).
+void UInterpTrackInstLookAt::TermTrackInst( UInterpTrack* Track )
+{
+	APawn* Pawn = Cast<APawn>( GetGroupActor() );
+	USeqAct_Interp* Matinee = GetMatinee();
+	if( Pawn != NULL && Matinee != NULL && GDisLookAtTrackTermHook )
+	{
+		GDisLookAtTrackTermHook( Pawn, Matinee->FindFirstGroupInst( Track->GetOwningGroup() ) );
+	}
+}
+
 // DISHONORED(port): 2013 rva 0x504120 (2012 0x542ae0, interptracklookat.cpp:132): outside a package (i.e. inside a UMatineeData) every key's target
 // group is looked up by name in the owning matinee data; a key without a target name loses its group pointer.
 void UInterpTrackLookAt::PostLoad()

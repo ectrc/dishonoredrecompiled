@@ -1,0 +1,22 @@
+item,state,evidence
+1 BlendPose InitAnim/TickAnim/SetActiveChild/ForceDisable,done,"2012 0x1c3040/0x550080/0x550360/0x54a290, 2013 0x91b0a0/0x90f990/0x90fc70; arkanimnodeblendpose_dis.cpp"
+1 BlendPose GetBoneAtoms (BuildEdgeAnimTree on CPU),done,"2012 0x55dd40 / 2013 0x91d150; capture every evaluation, frozen on BlendNow; HB3.log blend lines"
+2 m_pBlendPoseNode writer,done,"ADishonoredNPCPawn::Spawned 2012 0x7b0bf2 (only native writer; no script); Spawned tail ported"
+2 NPC pose blender armed,bringup,"retail arms it only in OnLODChanged 0x7bfce0 (LOD manager unported); cooked m_bEnabled 0 on all NPCs (HB1.log); Spawned stand-in SetEnable(TRUE)"
+2 PostInitAnimTree + FDisComponentAnimPlayer,gap,"0x7ad200; component unported; not overridden"
+3 MAT_BeginAIGroup BlendNow(0.2),done,"captain/Elite/_16 BlendNow 0.20 at world 56.31, done 56.53 (HB3.log); 57.59->58.05 (CC_HB2.log)"
+3 MAT_BlendOut + GetBlendOutTime,done,"2013 0xb4ec80; one per group at world 150.82 (HB3) / 151.50 (CC_HB2), blendOut 0.20"
+3 MatineeControllerAdd/Remove,gated,"ported 0x7b19a0/0x7baea0; Add off unless -hbcontrollers: without the soiree stim UpdateSoireeAttention holds the player at Busted and the run crashes (HB1..HB2a, HB3ctl)"
+3 stale banner dishonorednpcpawn.cpp,done,rewritten
+4 UInterpTrackLookAt::StaticUpdateTracks/GetLookAtInfos,done,"2012 0x547010/0x542c10, 2013 0x9082c0/0x904390; captain keys 0-7 and Elite keys 0-13 crossed (HB3.log)"
+4 LockRequests StartLookForward / StopAllLookAtFromAsker / m_iMatineeLookAtRequestID,done,"Begin/Finish; lookattrack LockRequests lines"
+4 GetGameLookatPriority,done,"0x53bdb0; runtime priorities are 0 because SetLookatPriority(1,5,19) is not called (open item)"
+4 head yaw follows,done,"request/cursor yaw 2.8/2.5 (w67.1), -53.0/-47.7 (70.2), 14.9/13.5 (102.1); clamps at +-65 deg when the target is behind (HC facing)"
+captures no pop,done,"ride end 150.39-151.13 consecutive centre diffs 1.61/1.60/1.57 (hb_shots.py); bind is inside the black before fade-in"
+player ride unchanged,done,"HH HB2 vs HB2base (HB paths off) world 60-120: zoom 1.00, MAD 0.5-7.2 (NPC heads/poses only)"
+HH vs HA2,done,"MAD 28.89->12.26, SSIM 0.523->0.687, zoom 1.76->0.99 (HD merged); HB share 58-122: MAD 14.91->12.40, SSIM 0.681->0.693"
+Failed with animsequence,done,"0 in HB3.log and CC_HB2.log"
+generator regen,done,"79/79 byte-identical (CRLF ignored)"
+bitfield_audit,done,0 mismatches
+gate,partial,"30 ok 4 failed 0 Critical: coresmoke/layout (exes not built by DishonoredGame target), unported_natives 4 (HI's toggles, fixed by HL d9be103), inputtest_moved 702.8 under load; inputtest re-run quiet: 1053.1 (HB on) / 1058.4 (HB off)"
+builds,deviation,"5 builds: HB4 wasted by a silently failed --3way patch apply; HB5 = main 835dc2b + HB"

@@ -9,6 +9,7 @@
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
 #include "arkcomponentlookat.h"
+#include "fkmatineediag.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -36,8 +37,9 @@ FArkComponentLookat* ADishonoredNPCPawn::GetComponentLookat() const
 // the pose-blender anim node and the teleport clock.
 // agent FT: the look-at component's three lines are in (AddNewComponent<FArkComponentLookat>, SetConfig with the NPC
 // tweaks' m_pComponentLookatConfig, m_bStarted + Starting); retail creates it unconditionally, config or none, and the
-// component's own PreAsyncWorkTick stays inert without a node. The pose-blender lookup and the teleport clock belong to
-// the animation and possession paths and are left to their owners.
+// component's own PreAsyncWorkTick stays inert without a node.
+// agent HB: the tail - the pose blender (the only native writer of m_pBlendPoseNode, 2012 0x7b0bf2 / 2013 offset 3456; no
+// script names it) and the teleport clock.
 void ADishonoredNPCPawn::Spawned()
 {
 	Super::Spawned();
@@ -68,6 +70,23 @@ void ADishonoredNPCPawn::Spawned()
 		pLookat->SetConfig( NPCTweaks->m_pComponentLookatConfig );
 		pLookat->m_bStarted = TRUE;
 		pLookat->Starting();
+	}
+
+	UAnimTree* Tree = ( Mesh != NULL ) ? Cast<UAnimTree>( Mesh->Animations ) : NULL;
+	m_pBlendPoseNode = Tree ? Cast<UArkAnimNodeBlendPose>( Tree->FindAnimNode( FName(TEXT("PoseBlender")) ) ) : NULL;
+	m_fLastTeleportTime = GWorld->GetTimeSeconds();
+	// DISHONORED(bringup): agent HB. Retail arms the pose blender only from ADishonoredNPCPawn::OnLODChanged (2012 0x7bfce0:
+	// SetEnable( LOD flags bit 8 )), raised by FDisComponentLODManager, which this tree does not have (cooked m_bEnabled is 0 on
+	// every NPC PoseBlender, HB1.log). Every NPC is treated as at the LOD that captures, so BlendNow has a pose to blend from.
+	if( m_pBlendPoseNode != NULL )
+	{
+		m_pBlendPoseNode->SetEnable( TRUE );
+	}
+	if( DisFKDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): fkdiag blendpose %s Spawned: tree %s PoseBlender %s enabled %d"), *GetName(),
+			Tree ? *Tree->GetName() : TEXT("none"), m_pBlendPoseNode ? *m_pBlendPoseNode->GetName() : TEXT("none"),
+			m_pBlendPoseNode ? (INT)m_pBlendPoseNode->m_bEnabled : -1 );
 	}
 }
 

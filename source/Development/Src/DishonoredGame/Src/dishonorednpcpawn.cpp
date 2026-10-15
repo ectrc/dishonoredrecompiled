@@ -342,31 +342,27 @@ void ADishonoredNPCPawn::PostBeginPlay()
 	binds this pawn, UInterpGroupAI::UpdateGroup calls MAT_SetCollision / MAT_SetMeshTranslationMode
 	every frame with what the StretchAnimControl keys asked for, and TermGroupInst calls MAT_FinishAIGroup.
 
-	MAT_BeginAIGroup (2012 rva 0x7c0570, 696 B) and MAT_FinishAIGroup (0x7c0830, 478 B) are ported
-	AS FAR AS THEIR HELPERS EXIST. What retail does and this tree cannot yet:
-	  - FDisComponentLODManager::StartLOD( group, name, eLRP_Soiree, request, -1 ) / StopAllLODByAsker,
-	    and FArkComponentMeshOffset::ForceInstantSnapMesh when the LOD manager has the offset off
-	    (no LOD manager, no mesh-offset component here);
-	  - UpdateNodeSlot(), and m_pBlendPoseNode->BlendNow( 0.2, TRUE ) when m_MatineeControllersInfos is
-	    empty (neither member exists here);
-	  - MatineeControllerAdd( Seq, Seq->m_AIBehaviorPriority, Seq->m_bIsBlocking ) / MatineeControllerRemove,
-	    and the FAIStimStruct_Soiree( MatineeGuid, ESE_Start/ESE_Stop, priority, blocking ) stim handed to
-	    the brain through UDishonoredAIBrain::HandleAIStim_Internal (the brain's stim handler is unported);
-	  - FArkComponentLookat::StartLookForward( group, name, UInterpTrackLookAt::GetGameLookatPriority(
-	    AIGroup->LookatRequestsPriority ), 0.5, -1 ) on LockRequests, StopAllLookAtFromAsker and the
-	    m_iMatineeLookAtRequestID stop on finish (package FT's component);
-	  - MAT_BlendOut( group ) on finish (0x7ad5e0, the NPC's blend-out through m_pMatineeBlender);
-	  - bDisableJiggleBones -> Mesh->m_bDontUpdateKinematic (retail USkeletalMeshComponent @776 bit 0,
-	    not declared on this tree's component);
+	MAT_BeginAIGroup (2012 rva 0x7c0570, 696 B; 2013 0xb65080, 720 B) and MAT_FinishAIGroup (0x7c0830,
+	478 B; 2013 0xb65350, 521 B) follow the 2013 bodies. In: the mesh-offset snap (agent GA), the master FSM
+	exit request, UpdateNodeSlot, the pose blend in (m_pBlendPoseNode->BlendNow( 0.2, TRUE ) when this is the
+	pawn's first matinee controller) and MatineeControllerAdd / Remove, the reaction-disable count, the jiggle
+	bones (bDisableJiggleBones -> Mesh->m_bDontUpdateKinematic), the locomotion switches, the look-forward
+	request on LockRequests and its StopAllLookAtFromAsker / the m_iMatineeLookAtRequestID stop, MAT_BlendOut
+	(the blend out, 2012 0x7ad5e0 / 2013 0xb4ec80), the collision and physics choice, the body-intention reset
+	at Soiree priority (agents FS, GA, HB). Still missing, named:
+	  - FDisComponentLODManager::StartLOD( group, name, eLRP_Soiree, request, -1 ) / StopAllLODByAsker
+	    (the LOD manager is not ported);
+	  - the FAIStimStruct_Soiree( MatineeGuid, ESE_Start/ESE_Stop, priority, blocking ) stim handed to the
+	    brain through UDishonoredAIBrain::HandleAIStim_Internal (the brain's stim handler is unported);
+	  - 2013's bShouldFakeDeath (sub_B5A0B0 / m_iNumFakeDeathRequestsFromSoiree) and the +1288 bit 0x2000;
 	  - ApplyLocomotionModifier() on finish, replaced by m_bLocoModifierNeedsApplication = TRUE.
-	What IS retail's here: the master FSM exit request, the reaction-disable count from bDisableHitReact,
-	the locomotion component's steering / fall / modifier switches, the collision and physics choice, the
-	body-intention reset at Soiree priority, the force-inventory flag and the flags' bits.
 -----------------------------------------------------------------------------*/
 
 #include "arkcomponentlocomotion.h"
 #include "arkcomponentmeshoffset.h"
+#include "arkcomponentlookat.h"
 #include "dishonoredutilities_ai.h"
+#include "fkmatineediag.h"
 
 // 2012 rva 0x7bac70 (554 B): SlotNodes emptied and re-collected from the mesh's tree - every
 // UArkAnimNodeStack whose CanBeUsedByMatinee is set, an unnamed one taking the editor ini's
@@ -416,11 +412,88 @@ void ADishonoredNPCPawn::UpdateNodeSlot()
 	}
 }
 
-// 2012 rva 0x7c0570
+// DISHONORED(port): 2012 rva 0x7b19a0 (180 B) / 2013 0xb53500 (106 B): one entry per binding, the matinee, its AI priority, blocking
+void ADishonoredNPCPawn::MatineeControllerAdd( USeqAct_Interp* const Matinee, BYTE SoireePriority, UBOOL bIsBlocking )
+{
+	FMatineeControllerInfos& Info = m_MatineeControllersInfos( m_MatineeControllersInfos.AddZeroed() );
+	Info.m_pMatinee = Matinee;
+	Info.m_SoireePriority = SoireePriority;
+	Info.m_bIsBlocking = bIsBlocking ? 1 : 0;
+}
+
+// DISHONORED(port): 2012 rva 0x7baea0 (111 B) / 2013 0xb5f760: every entry of the matinee, whatever the priority argument
+void ADishonoredNPCPawn::MatineeControllerRemove( USeqAct_Interp* const Matinee, BYTE SoireePriority )
+{
+	for( INT Index = m_MatineeControllersInfos.Num() - 1; Index >= 0; Index-- )
+	{
+		if( m_MatineeControllersInfos(Index).m_pMatinee == Matinee )
+		{
+			m_MatineeControllersInfos.Remove( Index );
+		}
+	}
+}
+
+// DISHONORED(port): 2013 rva 0xb4ec80 (209 B; 2012 0x7ad5e0, 194 B). A group with a blend-out time blends the pawn out of the
+// matinee pose through the pose blender unless the pawn is being thrown, assassinated or choked, or is a ragdoll; 2013 adds
+// the else branch, two frames of m_iPreventRBVelFromAnimFrameCount.
+void ADishonoredNPCPawn::MAT_BlendOut( UInterpGroupInst* GroupInst )
+{
+	const FLOAT BlendOutTime = GroupInst->GetBlendOutTime();
+	if( !( BlendOutTime > 0.f ) )
+	{
+		return;
+	}
+	UDishonoredNativeState* LogicalState = ( m_pNPCMasterFSM != NULL ) ? m_pNPCMasterFSM->GetLogicalState() : NULL;
+	const UBOOL bBeingHandled = LogicalState != NULL
+		&& ( LogicalState->IsA( UStateNPCMasterThrown::StaticClass() ) || LogicalState->IsA( UStateNPCMasterBeingAssassinated::StaticClass() )
+			|| LogicalState->IsA( UStateNPCMasterBeingChoked::StaticClass() ) );
+	if( m_pBlendPoseNode == NULL || Physics == PHYS_RigidBody || bBeingHandled )
+	{
+		m_iPreventRBVelFromAnimFrameCount = 2;
+	}
+	else
+	{
+		m_pBlendPoseNode->BlendNow( BlendOutTime, TRUE );
+	}
+	if( DisFKDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): fkdiag blendpose %s MAT_BlendOut group '%s' blendOut %.2f node %s physics %d handled %d world %.2f"),
+			*GetName(), GroupInst->Group ? *GroupInst->Group->GroupName.ToString() : TEXT("?"), BlendOutTime,
+			m_pBlendPoseNode ? *m_pBlendPoseNode->GetName() : TEXT("none"), (INT)Physics, bBeingHandled, GWorld->GetTimeSeconds() );
+	}
+}
+
+// DISHONORED(bringup): agent HB. Retail lists the pawn's matinees (MatineeControllerAdd) and hands the brain the
+// FAIStimStruct_Soiree start stim in the same breath; UDisAIBrainProcessAttention::UpdateSoireeAttention then holds every other
+// pawn of those matinees at DMALT_Soiree / DAL_Busted - the player too - which only the brain's soiree behaviour keeps from
+// becoming a reaction. The stim handler is not ported, so the list stays empty unless -hbcontrollers (the A/B switch that
+// reproduces HB1..HB2: the run dies in FParticleSystemSceneProxy within 1.5 s of the boat matinee binding).
+static UBOOL DisHBControllersEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-hbcontrollers") ) != NULL ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+// DISHONORED(bringup): agent HB. -hbnolockreq: no look-forward request on LockRequests (an A/B switch).
+static UBOOL DisHBLockRequestsDisabled()
+{
+	static INT Disabled = -1;
+	if( Disabled < 0 )
+	{
+		Disabled = ( appStrfind( appCmdLine(), TEXT("-hbnolockreq") ) != NULL ) ? 1 : 0;
+	}
+	return Disabled != 0;
+}
+
+// 2012 rva 0x7c0570 / 2013 0xb65080
 void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 {
 	UInterpGroupAI* AIGroup = ( GroupInst != NULL ) ? GroupInst->AIGroup : NULL;
-	UpdateNodeSlot();
+	USeqAct_Interp* Seq = ( GroupInst != NULL ) ? Cast<USeqAct_Interp>( GroupInst->GetOuter() ) : NULL;
 
 	// agent GA: retail snaps the mesh offset here when the LOD manager reports it off (FDisComponentLODManager::
 	// MeshOffestEnabled); with no LOD manager in this tree the started component is snapped whenever there is one -
@@ -445,9 +518,25 @@ void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 		}
 	}
 
+	// DISHONORED(port): agent HB. The slots, then the blend in from the pose the pawn holds now - only for its first matinee.
+	UpdateNodeSlot();
+	if( m_MatineeControllersInfos.Num() == 0 && m_pBlendPoseNode != NULL )
+	{
+		m_pBlendPoseNode->BlendNow( 0.2f, TRUE );
+	}
+	if( Seq != NULL && DisHBControllersEnabled() )
+	{
+		MatineeControllerAdd( Seq, Seq->m_AIBehaviorPriority, Seq->m_bIsBlocking );
+	}
+
 	if( AIGroup != NULL && AIGroup->bDisableHitReact )
 	{
 		m_iNumReactionDisableRequestsFromSoiree++;
+	}
+	// DISHONORED(port): agent HB. 2013 0xb65080 tests the AI group's bDisableJiggleBones (+120 bit 0x20) here.
+	if( AIGroup != NULL && AIGroup->bDisableJiggleBones && Mesh != NULL )
+	{
+		Mesh->m_bDontUpdateKinematic = 1;
 	}
 
 	FArkComponentLocomotion* Loco = GetComponentLocomotion();
@@ -457,12 +546,36 @@ void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 		Loco->AllowToFall( TRUE );
 		Loco->SetModifier( 0 );
 	}
+
+	// DISHONORED(port): agent HB. LockRequests: a look-forward request at the group's priority, asker the AI group.
+	FArkComponentLookat* Lookat = ( AIGroup != NULL && AIGroup->LockRequests && !DisHBLockRequestsDisabled() ) ? FArkComponentLookat::GetLookatComponent( this ) : NULL;
+	if( Lookat != NULL )
+	{
+		const INT RequestID = Lookat->StartLookForward( AIGroup, AIGroup->GetFName(), UInterpTrackLookAt::GetGameLookatPriority( AIGroup->LookatRequestsPriority ), 0.5f, -1.f );
+		if( DisFKDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): fkdiag lookattrack %s LockRequests forward prio %d req %d pawn %s"),
+				*AIGroup->GroupName.ToString(), UInterpTrackLookAt::GetGameLookatPriority( AIGroup->LookatRequestsPriority ), RequestID, *GetName() );
+		}
+	}
 }
 
-// 2012 rva 0x7c0830
+// 2012 rva 0x7c0830 / 2013 0xb65350
 void ADishonoredNPCPawn::MAT_FinishAIGroup( UInterpGroupInstAI* GroupInst )
 {
 	UInterpGroupAI* AIGroup = ( GroupInst != NULL ) ? GroupInst->AIGroup : NULL;
+	USeqAct_Interp* Seq = ( GroupInst != NULL ) ? Cast<USeqAct_Interp>( GroupInst->GetOuter() ) : NULL;
+
+	// DISHONORED(port): agent HB. The LockRequests look-forward goes first, then the blend out.
+	FArkComponentLookat* Lookat = GetComponentLookat();
+	if( Lookat != NULL && AIGroup != NULL )
+	{
+		Lookat->StopAllLookAtFromAsker( AIGroup );
+	}
+	if( GroupInst != NULL )
+	{
+		MAT_BlendOut( GroupInst );
+	}
 
 	MAT_SetCollision( FALSE, FALSE );
 	MAT_SetRootMotionMode( MRMM_Disable );
@@ -478,12 +591,24 @@ void ADishonoredNPCPawn::MAT_FinishAIGroup( UInterpGroupInstAI* GroupInst )
 		m_bLocoModifierNeedsApplication = 1;
 	}
 
+	if( Seq != NULL )
+	{
+		MatineeControllerRemove( Seq, Seq->m_AIBehaviorPriority );
+	}
+	if( AIGroup != NULL && AIGroup->bDisableJiggleBones && Mesh != NULL )
+	{
+		Mesh->m_bDontUpdateKinematic = 0;
+	}
 	if( AIGroup != NULL && AIGroup->bDisableHitReact )
 	{
 		m_iNumReactionDisableRequestsFromSoiree--;
 	}
 	MAT_StopRootMotion();
 	m_bDisableCollisionForSoiree = 0;
+	if( m_iMatineeLookAtRequestID != INDEX_NONE && Lookat != NULL )
+	{
+		Lookat->StopLookAt( m_iMatineeLookAtRequestID );
+	}
 }
 
 // 2012 rva 0x7ab5c0 (30 B): bit 21 of the flag word at +2180 is m_bShouldForceBodyIntention (2012 PDB)

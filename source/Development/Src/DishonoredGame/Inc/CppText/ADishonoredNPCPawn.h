@@ -99,6 +99,15 @@ protected:
 	// agent FS: 2012 rva 0x7bac70, the first thing MAT_BeginAIGroup does - the matinee slots re-collected
 	virtual void UpdateNodeSlot();
 
+// ---- agent HB (PHASE22 HB): the matinee pose blend and the controller list ----
+// MAT_BlendOut 2012 0x7ad5e0 / 2013 0xb4ec80 (APawn's slot, base 0xc8750), MatineeControllerAdd 0x7b19a0 / 2013 0xb53500,
+// MatineeControllerRemove 0x7baea0 / 2013 0xb5f760. Bodies in dishonorednpcpawn.cpp. PostInitAnimTree (2012 0x7ad200, 53 B:
+// APawn's, then AddNewComponent<FDisComponentAnimPlayer> + Starting) is not overridden: FDisComponentAnimPlayer is unported.
+public:
+	virtual void MAT_BlendOut( class UInterpGroupInst* GroupInst );
+	void MatineeControllerAdd( class USeqAct_Interp* const Matinee, BYTE SoireePriority, UBOOL bIsBlocking );
+	void MatineeControllerRemove( class USeqAct_Interp* const Matinee, BYTE SoireePriority );
+
 // ---- agent HA (PHASE22 HA): the NPC's root-motion pair ----
 // 2012 rvas StartRootMotionMode 0x7ac100 (136 B), StopRootMotionMode 0x7af1a0 (47 B); 2013 rvas 0x76e680 / 0x771280 (VA
 // 0xb6e680 / 0xb71280), byte-identical. Bodies in dishonorednpcpawn_locomotion.cpp (retail's unit).

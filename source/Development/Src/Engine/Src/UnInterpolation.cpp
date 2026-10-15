@@ -26,6 +26,10 @@ UBOOL (*GDisInterpPlayerGroupHook)( USeqAct_Interp* Seq, UInterpGroup* Group ) =
 /** DISHONORED(port, agent FS): the skip-mode pawn step of UInterpGroup::UpdateGroup, installed by DishonoredGame. UnWorld.h. */
 void (*GDisInterpSkipStepHook)( APawn* Pawn, INT Phase, FLOAT Step ) = NULL;
 
+/** DISHONORED(port, agent HB): the LookAt track's two DishonoredGame halves. UnWorld.h. */
+void (*GDisLookAtTrackUpdateHook)( FLOAT NewPosition, UInterpGroupInstAI* GrInstAI, UBOOL bJump, UBOOL bPreview ) = NULL;
+void (*GDisLookAtTrackTermHook)( APawn* Pawn, const void* Asker ) = NULL;
+
 /** -fkdiag (agent FK's switch): the AI group's pawn is reported once a second from UInterpGroupAI::UpdateGroup. */
 static UBOOL DisFSInterpDiagEnabled()
 {
@@ -13405,12 +13409,18 @@ void UInterpGroupAI::UpdateGroup(FLOAT NewPosition, UInterpGroupInst* GrInst, UB
 
 	// DISHONORED(port): agent FS. Retail's UInterpGroupInstAI::UpdateGroupInst (2012 rva 0x25bfd0,
 	// 309 B) around the base: the per-frame collectors are reset (bDisableCollision, bHaveLocomotion,
-	// m_MeshTranslationMode), the LookAt tracks are stepped (UInterpTrackLookAt::StaticUpdateTracks,
-	// package FT's, not called here), the five passes run, then the pawn gets what the keys asked for:
+	// m_MeshTranslationMode), the LookAt tracks are stepped (UInterpTrackLookAt::StaticUpdateTracks), the
+	// five passes run, then the pawn gets what the keys asked for:
 	// MAT_SetCollision( bDisableCollision, bHaveMoveTrack ) and MAT_SetMeshTranslationMode.
 	AIGrInst->bDisableCollision = 0;
 	AIGrInst->bHaveLocomotion = 0;
 	AIGrInst->m_MeshTranslationMode = EMMTM_NoChange;
+	// DISHONORED(port): agent HB. 2012 0x25c092 / 2013 0x630682: StaticUpdateTracks( NewPosition, this, bJump, bPreview )
+	// between the collector reset and the base pass loop.
+	if( GDisLookAtTrackUpdateHook )
+	{
+		GDisLookAtTrackUpdateHook( NewPosition, AIGrInst, bJump, bPreview );
+	}
 
 	Super::UpdateGroup( NewPosition, GrInst, bPreview, bJump );
 
