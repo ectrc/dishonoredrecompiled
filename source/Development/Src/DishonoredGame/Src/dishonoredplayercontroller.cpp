@@ -3000,9 +3000,11 @@ void ADishonoredPlayerController::PreSetCinematicMode_Native( UBOOL bNewInCinema
  * 0x1000 and bit 0x20000, which retail_sdk_layout.json names m_bInputIgnoreInput_Cinematic and
  * m_bAllowProjectilesAndExplosionsInCinematicMode, and its HUD pointer is this+984, which is myHUD.
  *
- * Two retail calls have nothing to call here and are left out, both marked:
- *   DisPushDisableSave / DisPopDisableSave (0x7ec770 / 0x7ec7a0) - the save lock, unported
- *   DisGetGlobalProjectileManager (0x82dc30 region) + the manager's destroy-all (0x8410b0) - unported
+ * DisPushDisableSave / DisPopDisableSave are 2013 0x7ec820 / 0x7ec850 (agent HE: 0x7ec770 / 0x7ec7a0 land inside
+ * DisSave/DisLoadPhysicsAssetInstanceBodies; the two calls at 0xaaf183 / 0xaaf1d8 resolve the address). Two retail calls
+ * have nothing to call here and are left out, both marked:
+ *   DisGetGlobalProjectileManager (2013 0x7bf6a0) + the manager's destroy-all (0x8410b0) - unported
+ *   ADishonoredPlayerPawn::CancelAllActivePowers (2013 0x6aa540, 2012 0x7048c0) when the player pawn exists - unported
  */
 void ADishonoredPlayerController::SetCinematicMode_Native( UBOOL bInCinematicMode, UBOOL bWasInCinematicMode,
 	UBOOL /*bHidePlayer*/, UBOOL /*bHideHUD*/, UBOOL /*bAffectsMovement*/, UBOOL /*bAffectsTurning*/,
@@ -3014,14 +3016,17 @@ void ADishonoredPlayerController::SetCinematicMode_Native( UBOOL bInCinematicMod
 	{
 		if( !bWasInCinematicMode )
 		{
-			// DISHONORED(bringup): retail's DisPushDisableSave( eDisDisableSaveType_Cinematic ) here, and the
-			// projectile manager's destroy-all when projectiles are not allowed. Neither is ported.
+			// DISHONORED(port): agent HE, 2013 0x6af150 calls DisPushDisableSave( DDST_CinematicMode ) at 0xaaf183
+			DisPushDisableSave( DDST_CinematicMode );
 			m_bAllowProjectilesAndExplosionsInCinematicMode = bAllowProjectilesAndExplosions ? TRUE : FALSE;
+			// DISHONORED(bringup): retail then destroys every projectile when projectiles are not allowed and cancels the
+			// player's active powers (CancelAllActivePowers); neither is ported.
 		}
 	}
 	else if( bWasInCinematicMode )
 	{
-		// DISHONORED(bringup): retail's DisPopDisableSave( eDisDisableSaveType_Cinematic, 1.0f )
+		// DISHONORED(port): agent HE, 2013 0x6af150 calls DisPopDisableSave( DDST_CinematicMode, 1.0f ) at 0xaaf1d8
+		DisPopDisableSave( DDST_CinematicMode, 1.f );
 	}
 
 	ADishonoredHUD* HUD = Cast<ADishonoredHUD>( myHUD );

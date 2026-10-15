@@ -28,6 +28,12 @@ public:
 	friend void DisGFxMoviePlayerHUDPostStart( class UDisGFxMoviePlayerHUD* HUD );
 	friend void DisGFxMoviePlayerHUDPreAdvance( class UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime );
 
+	// DISHONORED(port): agent HE, 2013 rva 0x7af820 (2012 0x811e40), the vtable slot after PostStart (2013 vtable
+	// 0x115cf68, 2012 0xd53334). Reached through the GFxUI PreClose seam like UDisGFxMoviePlayerGlobal's.
+	void PreClose( UBOOL _bUnload );
+	// DISHONORED(bringup): agent HE, -phuddiag
+	static UBOOL IsDiagEnabled();
+
 protected:
 	void PreRender_Layout( class UCanvas* _pCanvas );                   // 2013 rva 0x796250
 	void Tick_PlayerStatus( INT _ShowFlags );                           // 2013 rva 0x79f6e0

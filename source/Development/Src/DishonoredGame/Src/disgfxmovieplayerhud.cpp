@@ -450,13 +450,21 @@ void UDisGFxMoviePlayerHUD::Tick_PlayerState( INT _ShowFlags )
 {
 	ADishonoredPlayerPawn* Pawn = ADishonoredPlayerPawn::s_pInstance;
 	BYTE State = 0;
-	// DISHONORED(bringup): retail gates this on ADishonoredPawn::IsPossessing (2013 0x74a550) and on
-	// the pawn's vtable slot +1660, and reads the slide state from ADishonoredPlayerPawn::IsSliding.
-	// None of the three is declared in this tree, so the stance is the crouch bit alone and state 3
-	// (slide) is never reached.
-	if( Pawn != NULL && ( _ShowFlags & 0xE00 ) != 0 && m_Settings.m_bShowPlayerStance )
+	// DISHONORED(port): agent HE. Retail's four gates in order: not possessing (2013 0x74a550, APawn virtual +1188),
+	// sneaking (vtable +1660, 2012 names it ADishonoredPlayerPawn::IsSneaking), element 0xE00 and the stance setting;
+	// then slide (IsSliding) over crouch (APawn+640 & 0xC: bWantsToCrouch | bIsCrouched) over sneak. Retail does not
+	// test the pawn for NULL.
+	if( Pawn != NULL && !Pawn->DisIsPossessing() && Pawn->IsSneaking() && ( _ShowFlags & 0xE00 ) != 0
+		&& m_Settings.m_bShowPlayerStance )
 	{
-		State = Pawn->bIsCrouched ? 2 : 1;
+		if( Pawn->IsSliding() )
+		{
+			State = 3;
+		}
+		else
+		{
+			State = ( Pawn->bWantsToCrouch || Pawn->bIsCrouched ) ? 2 : 1;
+		}
 	}
 	if( State == m_PlayerState )
 	{
@@ -473,6 +481,11 @@ void UDisGFxMoviePlayerHUD::Tick_PlayerState( INT _ShowFlags )
 	}
 	GFxValue Result;
 	DisHUDClips( this )[DHMC_PlayerState].Invoke( "SetIcon", &Result, &Arg, 1 );
+	if( IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): phuddiag SetIcon(%d) flags 0x%04X t=%.2f"), (INT)State, _ShowFlags,
+			GWorld ? GWorld->GetTimeSeconds() : 0.f );
+	}
 	Result.ReleaseManaged();
 	Arg.ReleaseManaged();
 	m_PlayerState = State;
@@ -616,7 +629,20 @@ void UDisGFxMoviePlayerHUD::Tick_PlayerStatus( INT _ShowFlags )
 	}
 	ADishonoredHUD* HUDActor = Cast<ADishonoredHUD>( PC->myHUD );
 	const UBOOL bShowFromFlags = ( _ShowFlags & 0xE ) != 0;
+	// DISHONORED(port): agent HE. Retail (2013 0x79f6e0, 2012 0x803950) assigns this flag in each of the three blocks
+	// below rather than OR-ing it, so the last block that changed decides.
 	UBOOL bBecameValid = FALSE;
+	if( HUDActor != NULL && IsDiagEnabled() )
+	{
+		static INT LastLevels[ARRAY_COUNT(HUDActor->m_ShowFlags)] = { -1, -1, -1, -1, -1, -1 };
+		if( appMemcmp( LastLevels, HUDActor->m_ShowFlags, sizeof(LastLevels) ) != 0 )
+		{
+			appMemcpy( LastLevels, HUDActor->m_ShowFlags, sizeof(LastLevels) );
+			debugf( TEXT("DISHONORED(bringup): phuddiag masks %04X/%04X/%04X/%04X/%04X/%04X and 0x%04X, player status %d, t=%.2f"),
+				LastLevels[0], LastLevels[1], LastLevels[2], LastLevels[3], LastLevels[4], LastLevels[5], _ShowFlags,
+				(INT)m_bPlayerStatusVisible, GWorld ? GWorld->GetTimeSeconds() : 0.f );
+		}
+	}
 
 	// --- health ---
 	FDisPlayerStatus_Health Health(EC_EventParm);
@@ -658,7 +684,7 @@ void UDisGFxMoviePlayerHUD::Tick_PlayerStatus( INT _ShowFlags )
 		|| Mana.m_bAvailable != m_Mana.m_bAvailable
 		|| Mana.m_bHasUpgrade != m_Mana.m_bHasUpgrade )
 	{
-		bBecameValid = bBecameValid || m_Mana.m_ManaMax >= 0;
+		bBecameValid = m_Mana.m_ManaMax >= 0;
 		UpdateManaGauge( Mana );
 		m_Mana = Mana;
 	}
@@ -672,7 +698,7 @@ void UDisGFxMoviePlayerHUD::Tick_PlayerStatus( INT _ShowFlags )
 		|| Equipment.m_AmmoTotal != m_Equipment.m_AmmoTotal
 		|| Equipment.m_LoadedAmmoCount != m_Equipment.m_LoadedAmmoCount )
 	{
-		bBecameValid = bBecameValid || m_Equipment.m_pItem != NULL;
+		bBecameValid = m_Equipment.m_pItem != NULL;
 		UpdateEquipmentInfo( Equipment );
 		m_Equipment = Equipment;
 	}
@@ -1094,18 +1120,27 @@ void DisGFxMoviePlayerHUDPostStart( UDisGFxMoviePlayerHUD* HUD )
 	HUD->m_CrosshairAspectState = 0;
 	HUD->m_fCrosshairDispersion = 3.4028235e38f;
 
-	// the crosshair dot starts hidden, and the focus text's authored Y is measured off the movie
+	// DISHONORED(port): agent HE. 2013 hides masterHUD_mc here with a DisplayInfo whose only set var is
+	// V_visible = false (0x795650: SetDisplayInfo on m_pMovieClips + 48, VarsSet 0x40, Visible at +48 = 0), where
+	// 2012 (0x7fb450) invoked masterHUD_mc.Close instead. The movie's own start state is open, so without this the
+	// vials of a freshly started HUD stay drawn until a Close is sent; PlayerGauges.Open sets _visible back.
 	GFxValue::DisplayInfo Hidden;
 	Hidden.Clear();
 	Hidden.SetVisible( false );
+	Clips[DHMC_PlayerStatus].SetDisplayInfo( Hidden );
+	// DISHONORED(bringup): retail does not hide the dot here; PreRender_Crosshair (2013 0x79ff30) owns it and is
+	// unported, so the dot stays hidden instead.
 	Clips[DHMC_CrosshairDot].SetDisplayInfo( Hidden );
 	GFxValue::DisplayInfo Measured;
 	if( Clips[DHMC_CrosshairInfo].GetDisplayInfo( &Measured ) )
 	{
 		HUD->m_fCrosshairFocusTextPosY = (FLOAT)Measured.GetY();
 	}
-	HUD->m_bShowHighlightNextFrame = TRUE;
+	// DISHONORED(port): agent HE. 2013 `this+508 = bits & 0xFFFFF2FF | 0x500`: m_bGameMessagesVisible and
+	// m_bSystemicTutorialsEnabled set, m_bTutorialWindowSet cleared; m_bShowHighlightNextFrame is not touched.
 	HUD->m_bGameMessagesVisible = TRUE;
+	HUD->m_bSystemicTutorialsEnabled = TRUE;
+	HUD->m_bTutorialWindowSet = FALSE;
 	HUD->m_CurrentTutorialID = -1;
 	HUD->m_NextTutorialID = Max<INT>( HUD->m_NextTutorialID, 1 );
 	UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)HUD->m_pTweaks;
@@ -1141,6 +1176,80 @@ void DisGFxMoviePlayerHUDPostStart( UDisGFxMoviePlayerHUD* HUD )
 		Space.m_ScreenSize.X, Space.m_ScreenSize.Y, Space.m_MovieSpaceSize.X, Space.m_MovieSpaceSize.Y,
 		Space.m_EmptySpace.X, Space.m_EmptySpace.Y, Space.m_fScreenToMovieScaling,
 		(INT)HUD->m_Settings.m_HUDVisibility );
+}
+
+// DISHONORED(port): agent HE, 2013 rva 0x7af820 (574 B; 2012 0x811e40), the vtable slot after PostStart. The clip
+// handles are freed while the view is still alive and every cache the ticks compare against goes back to "never sent"
+// (-1 / NULL), so the first tick of the next start counts nothing as a change. Retail keeps m_bTickedOnce and
+// m_bPlayerStatusVisible here (PostStart clears the latter).
+void UDisGFxMoviePlayerHUD::PreClose( UBOOL _bUnload )
+{
+	m_ShowFlagsOnLastTick = 0;
+	delete[] (GFxValue*)m_pMovieClips;
+	m_pMovieClips = NULL;
+	m_bStealthShroudVisible = FALSE;
+
+	m_Health.m_Health = -1;
+	m_Health.m_HealthRegen = -1;
+	m_Health.m_HealthMax = -1;
+	m_Health.m_bHasSmallUpgrade = FALSE;
+	m_Health.m_bHasLargeUpgrade = FALSE;
+	m_Mana.m_Mana = -1;
+	m_Mana.m_ManaRegen = -1;
+	m_Mana.m_ManaMax = -1;
+	m_Mana.m_bVisible = FALSE;
+	m_Mana.m_bAvailable = FALSE;
+	m_Mana.m_bHasUpgrade = FALSE;
+	m_Equipment.m_pItem = NULL;
+	// 2013 writes 36 (2012: 37)
+	m_Equipment.m_Item = DPWI_MAX;
+	m_Equipment.m_bPowerActive = FALSE;
+	m_Equipment.m_bPowerHasMana = FALSE;
+	m_Equipment.m_AmmoTotal = 0;
+	m_Equipment.m_LoadedAmmoCount = 0;
+	m_PlayerState = 0;
+
+	m_InteractableName.Empty();
+	for( INT GroupIndex = 0; GroupIndex < ARRAY_COUNT(m_InteractionContext.m_Groups); GroupIndex++ )
+	{
+		m_InteractionContext.m_Groups[GroupIndex].m_InteractionCount = 0;
+	}
+	m_InteractionProbe.m_bCanAssassinate = 0;
+	m_InteractionProbe.m_bCanDropAssassinate = FALSE;
+	m_InteractionProbe.m_bCanAdrenalineKill = 0;
+	m_InteractionProbe.m_bCanMantle = 0;
+	m_ActiveGauge = 0;
+	m_fCurrentCyclingTutorialTime = 0.f;
+	m_ActivePopup.m_pObjective = NULL;
+	m_ActivePopup.m_Event = 0;
+	m_ActivePopup.m_Tasks.Empty();
+	m_ActivePopup.m_pTargetNotifSeq = NULL;
+	m_PopupQueue.Reset();
+	// DISHONORED(bringup): retail calls ClearMarkerInstances here (2012 0x804f70, a vtable call at +516 in 2013); it is
+	// unported and no marker instance is ever created in this tree.
+	m_bPlayerBustedThisFrame = FALSE;
+	m_bPlayerBustedLastFrame = FALSE;
+	m_LastDamageInfo = FDisHUDDamageInfo(EC_EventParm);
+	m_KeyholeRotation = FRotator(0, 0, 0);
+	m_MainSubtitleParts.Reset();
+	m_SecondarySubtitleParts.Reset();
+	m_bCinematicMode = FALSE;
+	m_bChoiceSelection = FALSE;
+	if( IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): phuddiag PreClose(%d): caches reset, player status %d, ticked once %d"),
+			(INT)_bUnload, (INT)m_bPlayerStatusVisible, (INT)m_bTickedOnce );
+	}
+}
+
+UBOOL UDisGFxMoviePlayerHUD::IsDiagEnabled()
+{
+	static INT State = -1;
+	if( State < 0 )
+	{
+		State = ParseParam( appCmdLine(), TEXT("phuddiag") ) ? 1 : 0;
+	}
+	return State == 1;
 }
 
 // DISHONORED(port): 2013 rva 0x7af370 (2012 0x811620), the IArkSettingsListenerInterface override. Agent EQ

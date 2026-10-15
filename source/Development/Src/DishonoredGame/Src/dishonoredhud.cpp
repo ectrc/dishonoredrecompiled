@@ -215,21 +215,16 @@ void ADishonoredHUD::RequestPlayerInfoDisplay( UBOOL _bShow )
 	}
 }
 
-// DISHONORED(port): 2013 rva 0x5ea1b0 (2012 0x62fdf0). Retail runs the countdown only when the timer
-// is still positive AND some mask level still has element 0x10 on, or when _bHide forces it.
+// DISHONORED(port): 2013 rva 0x5ea1b0 (2012 0x62fdf0). Retail runs the countdown when the timer is still
+// positive and NO mask level has element 0x10 (the letterbox) on, or when _bHide forces it. Agent HE: the loop
+// at 0x9ea1c7 walks the six levels while the bit is clear and falls through to the countdown only when all six
+// are clear; this read the test the other way round, so the timer ran during cinematics and stopped outside them.
 void ADishonoredHUD::UpdatePlayerInfoDisplay( FLOAT _fDeltaTime, UBOOL _bHide )
 {
 	UBOOL bRun = _bHide;
-	if( m_fPlayerInfoDisplayTimer > 0.f )
+	if( m_fPlayerInfoDisplayTimer > 0.f && !IsHUDElementEnabledOnce( 0x10 ) )
 	{
-		for( INT MaskLevel = 0; MaskLevel < ARRAY_COUNT(m_ShowFlags); MaskLevel++ )
-		{
-			if( ( m_ShowFlags[MaskLevel] & 0x10 ) != 0 )
-			{
-				bRun = TRUE;
-				break;
-			}
-		}
+		bRun = TRUE;
 	}
 	if( !bRun )
 	{

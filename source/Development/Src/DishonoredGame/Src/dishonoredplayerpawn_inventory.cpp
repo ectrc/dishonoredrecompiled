@@ -216,3 +216,17 @@ UBOOL ADishonoredPlayerPawn::IsSneaking() const
 {
 	return m_bSneakModeToggled;
 }
+
+// DISHONORED(port): agent HE, 2012 0x6fb7d0 (86 B): the possession states of the player's master FSM
+UBOOL ADishonoredPlayerPawn::DisIsPossessing() const
+{
+	return m_pPlayerMasterFSM != NULL
+		&& ( m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterPossess::StaticClass(), TRUE )
+		|| m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterPrePossess::StaticClass(), TRUE ) );
+}
+
+// DISHONORED(port): agent HE, 2012 0x6fec70 (38 B)
+UBOOL ADishonoredPlayerPawn::IsSliding() const
+{
+	return m_pPlayerMasterFSM != NULL && m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSlide::StaticClass(), TRUE );
+}

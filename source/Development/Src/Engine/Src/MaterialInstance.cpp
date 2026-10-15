@@ -1722,9 +1722,17 @@ UBOOL UMaterialInstance::IsInMapOrTransientPackage() const
 }
 
 #if !FINAL_RELEASE
+// DISHONORED(retail): agent HE. Retail is SHIPPING_PC_GAME and compiles this out: 2012 has it at 0x118b00, called from every
+// MIC/MITV setter (UMaterialInstanceConstant::SetScalarParameterValue 0x125a30 calls it first), and the 2013 executable has no
+// match and not one of its strings ("MIC::SetScalarParameterValue", "MITV::Set", "during gameplay": 0 hits each). Its on-screen
+// line is what drew `MIC::SetScalarParameterValue : Modifying 'PlayerArms_Tatoo_inst' during gameplay` over the New Game fade.
+#ifndef DISHONORED_RETAIL_SHIPPING_UI
+#define DISHONORED_RETAIL_SHIPPING_UI 1
+#endif
 /** Displays warning if this material instance is not safe to modify in the game (is in content package) */
 void UMaterialInstance::CheckSafeToModifyInGame(const TCHAR* FuncName, const TCHAR* ParamName) const
 {
+#if !DISHONORED_RETAIL_SHIPPING_UI
 	if(GIsGame && !IsInMapOrTransientPackage() && GAreScreenMessagesEnabled)
 	{
 		const FString Message = FString::Printf(TEXT("%s : Modifying '%s' during gameplay. ParamName: %s"), FuncName, *GetName(), ParamName);
@@ -1738,6 +1746,7 @@ void UMaterialInstance::CheckSafeToModifyInGame(const TCHAR* FuncName, const TCH
 		}
 		debugf(*Message);
 	}
+#endif
 }
 #endif
 

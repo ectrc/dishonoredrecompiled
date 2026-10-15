@@ -2335,6 +2335,7 @@ extern void DishonoredLinkDisBehaviorGoTo();
 extern void DishonoredLinkDisBehaviorGoToBase();
 extern void DishonoredLinkDisSeqActSetDisposition();
 extern void DishonoredLinkDisSeqActStartSpawn();
+extern void DishonoredLinkDisSeqActToggleHUDElement();
 extern void DishonoredLinkDisSeqCondCompareBoolExtended();
 extern void DishonoredLinkDisSeqCondCompareTweaks();
 extern void DishonoredLinkDisSeqVarSpawnerPawn();
@@ -2386,6 +2387,7 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkDisBehaviorGoToBase,
 	&DishonoredLinkDisSeqActSetDisposition,
 	&DishonoredLinkDisSeqActStartSpawn,
+	&DishonoredLinkDisSeqActToggleHUDElement,
 	&DishonoredLinkDisSeqCondCompareBoolExtended,
 	&DishonoredLinkDisSeqCondCompareTweaks,
 	&DishonoredLinkDisSeqVarSpawnerPawn,

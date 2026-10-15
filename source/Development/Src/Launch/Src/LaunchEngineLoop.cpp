@@ -3296,6 +3296,9 @@ INT FEngineLoop::PreInit( const TCHAR* CmdLine )
 	GIsDumpingMovie	= !GIsDumpingTileShotMovie && (ParseParam(appCmdLine(),TEXT("DUMPMOVIE")) || Parse(appCmdLine(), TEXT("-MATINEESSCAPTURE="), MatineeName));
 	// If dumping movie then we do NOT want on-screen messages
 	GAreScreenMessagesEnabled = (!GIsDumpingMovie && !GIsTiledScreenshot);
+	// DISHONORED(retail): agent HE. Retail is SHIPPING_PC_GAME, where the engine's on-screen debug messages are compiled out
+	// (UMaterialInstance::CheckSafeToModifyInGame has no 2013 body), so none is ever drawn; -screenmessages turns them back on.
+	GAreScreenMessagesEnabled = GAreScreenMessagesEnabled && ParseParam(appCmdLine(), TEXT("SCREENMESSAGES"));
 
 	if (ParseParam(appCmdLine(),TEXT("NOSCREENMESSAGES")))
 	{

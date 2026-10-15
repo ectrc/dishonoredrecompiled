@@ -155,6 +155,10 @@ public:
 	void SetPlayerStance( BYTE _EquipUsage, BYTE _Stance ) { m_PlayerStance[_EquipUsage] = _Stance; }
 	UBOOL IsLeftHandDisabled() const { return m_bLeftHandDisabled; }
 	UBOOL IsSneaking() const;
+// ---- agent HE (PHASE22 HE): the stance icon's gates. DisIsPossessing 2012 0x6fb7d0 (retail's is APawn virtual +1188, called through
+// ADishonoredPawn::IsPossessing 2012 0x7aac60 / 2013 0x74a550), IsSliding 2012 0x6fec70. Bodies in dishonoredplayerpawn_inventory.cpp.
+	UBOOL DisIsPossessing() const;
+	UBOOL IsSliding() const;
 // ---- agent GI (PHASE20 GI): the player half of the attention target ----
 // CollectAttnTargetParams 2012 0x6fb080 / 2013 0x6a1ed0 (the base plus m_bIsPlayer), IsAttnTargetPlayer (a folded `return TRUE`),
 // AllowAttentionGain 0x6fb0a0 (TRUE unless possessing - the possession state is not ported here, named in the body),

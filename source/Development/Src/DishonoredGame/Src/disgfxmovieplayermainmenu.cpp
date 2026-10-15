@@ -1086,6 +1086,11 @@ static void DisGFxMoviePlayerPreClose( UGFxMoviePlayer* Player, UBOOL bUnload )
 	{
 		Global->PreClose( bUnload );
 	}
+	// DISHONORED(port, agent HE): UDisGFxMoviePlayerHUD::PreClose (2013 rva 0x7af820), the HUD's caches back to "never sent"
+	else if( UDisGFxMoviePlayerHUD* HUD = Cast<UDisGFxMoviePlayerHUD>( Player ) )
+	{
+		HUD->PreClose( bUnload );
+	}
 }
 
 static void DisGFxMoviePlayerClosed( UGFxMoviePlayer* Player )
