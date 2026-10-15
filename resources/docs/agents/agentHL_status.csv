@@ -1,0 +1,10 @@
+item,state,evidence
+execOnToggleTutorial + OnToggleTutorial,done,2012 0x635de0 / 0x704680; 2013 rva 0x5ef840 / 0x6aa300 (vtable +2016); HL2.log: ToggleTutorial_4 tracker 1 pPerfectBlockTracker enabled 0; ToggleTutorial_2 tracker 7 pDefenseTutorialTracker enabled 0
+execOnToggleAchievementEval + OnToggleAchievementEval,done,2012 0x6359c0 / 0x704080; 2013 rva 0x5ef420 / 0x6a9df0 (vtable +1972); HL2.log: achievement 22 enabled 1 -> 0; 0 stats reset (stats are reset only on an off->on edge)
+execOnToggleChoke + OnToggleChoke,done,2012 0x635d80 / 0x704480; 2013 rva 0x5ef7e0 / 0x6b1bd0 (vtable +2012); HL2.log: kismet mask 0x5ffff (0x20000 cleared)
+execOnToggleJournal + OnToggleJournal,done,2012 0x635a80 / 0x70b200; 2013 rva 0x5ef4e0 / 0x6b5c40 (vtable +1980); HL2.log: kismet mask 0x4ffff (0x10000 cleared)
+execOnTogglePowerWheel + OnTogglePowerWheel (not in the brief),done,2012 0x635a20 / 0x70b130; 2013 rva 0x5ef480 / 0x6b5b60 (vtable +1976); route only (world ~54); HL2.log: kismet mask 0x4f7ff (0x800 cleared)
+gate d3d9 + inputtest + newgame,done,build/agentHL/gate.txt: 23 ok 0 failed; unported_natives 0 (HI 4); probe_natives 4 (HI 8); criticals 0; inputtest_moved 402.7 then 1050.2 on the stage's load-sensitive retry
+generator + bitfield audit,done,79/79 generated files byte-identical ignoring CR; bitfield_audit mismatches=0
+readers of Kismet mask bits 0x800 / 0x10000 / 0x20000,boundary,no native reader in this tree (power wheel / journal / choke input handlers): the write is real but changes nothing visible yet
+readers of UDisTutorialTracker::m_bEnabled and FAchievementTracker::m_bEnabled,boundary,tutorial tracker evaluation and achievement / stat-streak evaluation not ported; not measured

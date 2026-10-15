@@ -527,3 +527,178 @@ void ADishonoredPlayerPawn::EnableControllerInput( INT Mask, UBOOL bEnable, DisI
 		PC->EnableControllerInput( Mask, bEnable, Level );
 	}
 }
+
+// ---- agent HL (PHASE22 HL): the player Kismet toggles. Input links 0 / 1 / 2 are Enable / Disable / Toggle in every one. ----
+
+static FString DisKismetMaskDiag( const ADishonoredPlayerPawn* _pPawn )
+{
+	const ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( _pPawn->Controller );
+	return PC ? FString::Printf( TEXT("kismet mask 0x%05x"), PC->m_InputEnableMask[DisInputMaskLevel_Kismet] ) : FString( TEXT("no controller") );
+}
+
+// DISHONORED(port): 2012 0x704680 / 2013 0x6aa300 (574 B both). Retail reads the trackers of s_pInstance, not of this.
+void ADishonoredPlayerPawn::OnToggleTutorial( UDisSeqAct_ToggleTutorial* _pAction )
+{
+	ADishonoredPlayerPawn* Player = s_pInstance;
+	const INT Op = _pAction->InputLinks(0).bHasImpulse ? 0 : _pAction->InputLinks(1).bHasImpulse ? 1 : _pAction->InputLinks(2).bHasImpulse ? 2 : -1;
+	for( INT TutorialIdx = 0; Op >= 0 && TutorialIdx < _pAction->m_AffectedTutorials.Num(); ++TutorialIdx )
+	{
+		UDisTutorialTracker* Tracker = Player->m_TutorialTrackers[_pAction->m_AffectedTutorials(TutorialIdx)];
+		if( Tracker == NULL )
+		{
+			debugf( TEXT("DISHONORED(bringup): OnToggleTutorial %s: tracker %d is NULL (retail dereferences it)"), *_pAction->GetName(), (INT)_pAction->m_AffectedTutorials(TutorialIdx) );
+			continue;
+		}
+		Tracker->m_bEnabled = Op == 0 ? TRUE : Op == 1 ? FALSE : !Tracker->m_bEnabled;
+		if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): hidiag OnToggleTutorial %s link %d: tracker %d %s enabled %d"), *_pAction->GetName(), Op,
+				(INT)_pAction->m_AffectedTutorials(TutorialIdx), *Tracker->GetName(), (INT)Tracker->m_bEnabled );
+		}
+	}
+}
+
+// DISHONORED(port): 2012 0x704080 (559 B) / 2013 0x6a9df0 (561 B). Turning evaluation on resets every stat the achievement reads.
+void ADishonoredPlayerPawn::OnToggleAchievementEval( UDisSeqAct_ToggleAchievementEval* _pAction )
+{
+	FAchievementTracker& Tracker = m_AchievementTrackers[_pAction->m_Achievement];
+	const UBOOL bWasEnabled = Tracker.m_bEnabled;
+	if( _pAction->InputLinks(0).bHasImpulse )
+	{
+		Tracker.m_bEnabled = TRUE;
+	}
+	else if( _pAction->InputLinks(1).bHasImpulse )
+	{
+		Tracker.m_bEnabled = FALSE;
+	}
+	else if( _pAction->InputLinks(2).bHasImpulse )
+	{
+		Tracker.m_bEnabled = !Tracker.m_bEnabled;
+	}
+	INT ResetCount = 0;
+	if( Tracker.m_bEnabled && !bWasEnabled )
+	{
+		UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
+		if( !Tweaks )
+		{
+			Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+		}
+		if( Tweaks->m_pPlayerStats )
+		{
+			const FAchievementInfo& Info = Tweaks->m_pPlayerStats->m_Achievements[_pAction->m_Achievement];
+			for( INT EvalIdx = 0; EvalIdx < Info.m_StatEvals.Num(); ++EvalIdx )
+			{
+				const INT StatIndex = Info.m_StatEvals(EvalIdx).m_StatIndex;
+				if( StatIndex < m_StatValues.Num() )
+				{
+					m_StatValues(StatIndex) = 0.f;
+					++ResetCount;
+				}
+			}
+		}
+	}
+	if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): hidiag OnToggleAchievementEval %s achievement %d enabled %d -> %d, %d stats reset"), *_pAction->GetName(),
+			(INT)_pAction->m_Achievement, (INT)bWasEnabled, (INT)Tracker.m_bEnabled, ResetCount );
+	}
+}
+
+// DISHONORED(port): 2012 0x704480 (336 B) / 2013 0x6b1bd0 (300 B, EnableControllerInput inlined): input 0x20000 at the Kismet level.
+void ADishonoredPlayerPawn::OnToggleChoke( UDisSeqAct_ToggleChoke* _pAction )
+{
+	if( _pAction->InputLinks(0).bHasImpulse )
+	{
+		EnableControllerInput( 0x20000, TRUE, DisInputMaskLevel_Kismet );
+	}
+	else if( _pAction->InputLinks(1).bHasImpulse )
+	{
+		EnableControllerInput( 0x20000, FALSE, DisInputMaskLevel_Kismet );
+	}
+	else if( _pAction->InputLinks(2).bHasImpulse )
+	{
+		ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Controller );
+		EnableControllerInput( 0x20000, !( PC && PC->IsInputEnabled( 0x20000 ) ), DisInputMaskLevel_Kismet );
+	}
+	if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): hidiag OnToggleChoke %s: %s"), *_pAction->GetName(), *DisKismetMaskDiag( this ) );
+	}
+}
+
+// DISHONORED(port): 2012 0x70b200 (204 B) / 2013 0x6b5c40 (220 B): input 0x10000 at the Kismet level; Disable and no impulse both disable.
+void ADishonoredPlayerPawn::OnToggleJournal( UDisSeqAct_ToggleJournal* _pAction )
+{
+	UBOOL bEnable = FALSE;
+	if( _pAction->InputLinks(0).bHasImpulse )
+	{
+		bEnable = TRUE;
+	}
+	else if( _pAction->InputLinks(2).bHasImpulse )
+	{
+		ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Controller );
+		bEnable = !( PC && PC->IsInputEnabled( 0x10000 ) );
+	}
+	EnableControllerInput( 0x10000, bEnable, DisInputMaskLevel_Kismet );
+	if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): hidiag OnToggleJournal %s: %s"), *_pAction->GetName(), *DisKismetMaskDiag( this ) );
+	}
+}
+
+// DISHONORED(port): 2012 0x70b130 (204 B) / 2013 0x6b5b60 (220 B): OnToggleJournal with input 0x800.
+void ADishonoredPlayerPawn::OnTogglePowerWheel( UDisSeqAct_TogglePowerWheel* _pAction )
+{
+	UBOOL bEnable = FALSE;
+	if( _pAction->InputLinks(0).bHasImpulse )
+	{
+		bEnable = TRUE;
+	}
+	else if( _pAction->InputLinks(2).bHasImpulse )
+	{
+		ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Controller );
+		bEnable = !( PC && PC->IsInputEnabled( 0x800 ) );
+	}
+	EnableControllerInput( 0x800, bEnable, DisInputMaskLevel_Kismet );
+	if( UDishonoredObjectivesComponent::IsDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): hidiag OnTogglePowerWheel %s: %s"), *_pAction->GetName(), *DisKismetMaskDiag( this ) );
+	}
+}
+
+// DISHONORED(port): the five execs, 96 B each: 2012 0x635de0 / 0x6359c0 / 0x635d80 / 0x635a80 / 0x635a20, 2013 0x5ef840 / 0x5ef420 /
+// 0x5ef7e0 / 0x5ef4e0 / 0x5ef480 (vtable +2016 / +1972 / +2012 / +1980 / +1976)
+void ADishonoredPlayerPawn::execOnToggleTutorial( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( UDisSeqAct_ToggleTutorial, _pAction );
+	P_FINISH;
+	OnToggleTutorial( _pAction );
+}
+
+void ADishonoredPlayerPawn::execOnToggleAchievementEval( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( UDisSeqAct_ToggleAchievementEval, _pAction );
+	P_FINISH;
+	OnToggleAchievementEval( _pAction );
+}
+
+void ADishonoredPlayerPawn::execOnToggleChoke( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( UDisSeqAct_ToggleChoke, _pAction );
+	P_FINISH;
+	OnToggleChoke( _pAction );
+}
+
+void ADishonoredPlayerPawn::execOnToggleJournal( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( UDisSeqAct_ToggleJournal, _pAction );
+	P_FINISH;
+	OnToggleJournal( _pAction );
+}
+
+void ADishonoredPlayerPawn::execOnTogglePowerWheel( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_OBJECT( UDisSeqAct_TogglePowerWheel, _pAction );
+	P_FINISH;
+	OnTogglePowerWheel( _pAction );
+}

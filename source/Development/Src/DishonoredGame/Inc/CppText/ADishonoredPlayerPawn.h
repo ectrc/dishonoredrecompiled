@@ -175,3 +175,12 @@ public:
 // in Src/dishonoredplayerpawn.cpp ----
 public:
 	virtual void FaceRotation( FRotator NewRotation, FLOAT DeltaTime );
+// ---- agent HL (PHASE22 HL): the player Kismet toggles HI's PlayerAction target rule reaches. 2012 / 2013 rvas: OnToggleTutorial
+// 0x704680 / 0x6aa300, OnToggleAchievementEval 0x704080 / 0x6a9df0, OnToggleChoke 0x704480 / 0x6b1bd0, OnToggleJournal 0x70b200 /
+// 0x6b5c40, OnTogglePowerWheel 0x70b130 / 0x6b5b60. Bodies and execs in Src/dishonoredplayerpawn.cpp ----
+public:
+	virtual void OnToggleTutorial( class UDisSeqAct_ToggleTutorial* _pAction );
+	virtual void OnToggleAchievementEval( class UDisSeqAct_ToggleAchievementEval* _pAction );
+	virtual void OnToggleChoke( class UDisSeqAct_ToggleChoke* _pAction );
+	virtual void OnToggleJournal( class UDisSeqAct_ToggleJournal* _pAction );
+	virtual void OnTogglePowerWheel( class UDisSeqAct_TogglePowerWheel* _pAction );

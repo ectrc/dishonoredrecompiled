@@ -578,14 +578,6 @@ void ADishonoredPlayerPawn::execOnCancelPlayerActivePower( FFrame& Stack, RESULT
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnCancelPlayerActivePower);
 }
-void ADishonoredPlayerPawn::execOnToggleTutorial( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnToggleTutorial);
-}
-void ADishonoredPlayerPawn::execOnToggleChoke( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnToggleChoke);
-}
 void ADishonoredPlayerPawn::execOnOverrideAwarenessDisplay( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnOverrideAwarenessDisplay);
@@ -613,18 +605,6 @@ void ADishonoredPlayerPawn::execOnApplyPlayerLoadout( FFrame& Stack, RESULT_DECL
 void ADishonoredPlayerPawn::execOnTogglePlayerLeftHand( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnTogglePlayerLeftHand);
-}
-void ADishonoredPlayerPawn::execOnToggleJournal( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnToggleJournal);
-}
-void ADishonoredPlayerPawn::execOnTogglePowerWheel( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnTogglePowerWheel);
-}
-void ADishonoredPlayerPawn::execOnToggleAchievementEval( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execOnToggleAchievementEval);
 }
 void ADishonoredPlayerPawn::execOnGetPlayerStat( FFrame& Stack, RESULT_DECL )
 {
