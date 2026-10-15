@@ -2369,6 +2369,7 @@ extern void DishonoredLinkGJ_MapInfo();
 extern void DishonoredLinkGJ_PlayerPawnInventory();
 extern void DishonoredLinkGJ_TweaksPlayerLoadout();
 extern void DishonoredLinkGJ_WepSword();
+extern void DishonoredLinkHD_PlayerControllerTracking();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
 extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
@@ -2422,6 +2423,7 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkGJ_PlayerPawnInventory,
 	&DishonoredLinkGJ_TweaksPlayerLoadout,
 	&DishonoredLinkGJ_WepSword,
+	&DishonoredLinkHD_PlayerControllerTracking,
 	&DishonoredLinkUDisAIBrainProcessAttention,
 	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,

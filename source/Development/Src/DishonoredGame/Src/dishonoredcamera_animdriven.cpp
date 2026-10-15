@@ -36,7 +36,7 @@ void DishonoredLinkFZ_CameraAnimDriven()
 
 static const FLOAT DisDegreesToUnrealUnits = 65536.f / 360.f;
 
-static const UDisTweaks_PlayerInput* DisGetPlayerInputTweaks()
+const UDisTweaks_PlayerInput* DisGetPlayerInputTweaks()
 {
 	const UDisTweaks_PlayerInput* Tweaks = NULL;
 	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;

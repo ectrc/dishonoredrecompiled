@@ -157,6 +157,7 @@ void FDisSoireeControlState::ExitSoireeMode( ADishonoredPlayerPawn* PlayerPawn, 
 		PlayerPawn->setPhysics( PHYS_Walking );
 	}
 	m_bControlledBySoiree = FALSE;
+	DisPCamNoteSoireeExit();
 	FZDIAG( TEXT("soiree EXIT %s on %s: blendOut %.2f interrupted %d (physics %d, body mode %d)"),
 		m_pMatinee ? *m_pMatinee->GetName() : TEXT("none"), *PlayerPawn->GetName(), BlendOutTime, bInterrupted, (INT)PlayerPawn->Physics, (INT)PlayerPawn->m_BodyMode );
 	if( bInterrupted && m_pMatinee )

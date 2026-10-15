@@ -1895,6 +1895,7 @@ struct FDisPlayerViewTarget
     {
         appMemzero(this, sizeof(FDisPlayerViewTarget));
     }
+#include "CppText/FDisPlayerViewTarget.h"
 };
 
 // DishonoredGame.DishonoredPlayerController.DisPlayerViewTracking: retail SDK size 212 (2012 PDB 212)

@@ -128,3 +128,14 @@ public:
 public:
 	virtual void Dis_EquipItemByType( UClass* _pItemClass, BYTE _Usage );
 	UBOOL CanEquip( BYTE _EquipUsage ) const;
+
+// ---- agent HD (PHASE22 HD): the fixed-angle view tracking. Bodies in dishonoredplayercontroller_tracking.cpp ----
+// StartTrackingFixedAngles 2012 0x6f8b90 / 2013 0x6af6f0, StopTrackingTarget 0x6d1690 / 0x6a0ec0, FetchTrackedTargetRot 0x6d16e0 /
+// 0x6a0f10, TickCameraTracking 0x6f9ce0 / 0x6b4e60.
+public:
+	INT StartTrackingFixedAngles( INT _PitchFixed, INT _YawFixed, FLOAT _fBlendTime, INT _Flags, const struct FDisPlayerViewTracking_ExtraParams* _pParams );
+	void StopTrackingTarget( INT _TrackID );
+protected:
+	INT FetchTrackedTargetRot( struct FDisPlayerViewTarget& _rTarget, UBOOL _bIsPitch, const FVector& _rCurCamPos );
+	void TickCameraTracking( FLOAT _fDeltaTime, const FVector& _rCurCamPos );
+public:

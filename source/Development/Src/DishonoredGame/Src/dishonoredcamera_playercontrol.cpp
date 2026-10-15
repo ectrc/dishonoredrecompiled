@@ -20,6 +20,7 @@
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
+#include "fzsoireediag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkFZ_CameraPlayerControl()
@@ -33,6 +34,7 @@ void UDishonoredCamera_PlayerControl::OnActivate_Derived( APawn* Pawn )
 	{
 		m_bResetControllerRot = TRUE;
 	}
+	PCAMDIAG( TEXT("PlayerControl OnActivate_Derived first %d -> reset %d goto %d target %d/%d"), (INT)m_bFirstRotation, (INT)m_bResetControllerRot, (INT)m_bGoToTargetOnControllerReset, m_TargetOnControllerReset.Pitch, m_TargetOnControllerReset.Yaw );
 }
 
 // while inactive, remember the rotation the controller is to be given when this influence takes over again
@@ -98,11 +100,12 @@ FLOAT UDishonoredCamera_PlayerControl::CalcItemSpecificOffset( const APawn* Pawn
 
 /**
  * A pending controller reset gives the controller the pawn's yaw (and, when asked by GoToTargetOnNextControllerReset, the
- * remembered target, through the controller's StartTrackingFixedAngles when the transition is finite). Then the view: the
+ * remembered pitch at once and the remembered yaw through the controller's StartTrackingFixedAngles - tracked from the pawn's
+ * yaw at the influence's transition speed - when the transition is finite, at once otherwise). Then the view: the
  * pawn's camera position (ADishonoredPawn::GetCameraPos, the player's camera bone) and view rotation, the controller's
  * rotation as the controller offset, every arm-follow weight at 1, and each hand's item pitch offset.
- * DISHONORED(bringup): ADishonoredPlayerController::StartTrackingFixedAngles (2012 0x6f8b90) has no body in this tree, so
- * the remembered target is applied at once rather than tracked over the transition.
+ * DISHONORED(port): agent HD (PHASE22 HD) - the tracked reset, 2013 0x6cba40 +0x40..0xd0 (StartTrackingFixedAngles 2013 0x6af6f0,
+ * flags 0x22: the yaw, the speed given as such).
  */
 UBOOL UDishonoredCamera_PlayerControl::GatherInfluence_Derived( FDishonoredViewTarget& OutVT, const FDishonoredViewTarget& CurVT, APawn* Pawn, FLOAT TimeDelta, FLOAT UncappedDeltaTime )
 {
@@ -126,7 +129,13 @@ UBOOL UDishonoredCamera_PlayerControl::GatherInfluence_Derived( FDishonoredViewT
 			ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Pawn->Controller );
 			if( PC )
 			{
-				FRotator FinalRot( m_TargetOnControllerReset.Pitch, m_TargetOnControllerReset.Yaw, PC->Rotation.Roll );
+				INT FinalYaw = m_TargetOnControllerReset.Yaw;
+				if( m_TransitionSpeed < 999999.99999999f )
+				{
+					PC->StartTrackingFixedAngles( m_TargetOnControllerReset.Pitch, m_TargetOnControllerReset.Yaw, m_TransitionSpeed, 0x22, NULL );
+					FinalYaw = PC->Rotation.Yaw;
+				}
+				FRotator FinalRot( m_TargetOnControllerReset.Pitch, FinalYaw, PC->Rotation.Roll );
 				FinalRot.MakeShortestRoute();
 				PC->SetRotation( FinalRot );
 				Pawn->eventUpdatePawnRotation( FinalRot );
@@ -134,6 +143,7 @@ UBOOL UDishonoredCamera_PlayerControl::GatherInfluence_Derived( FDishonoredViewT
 			m_bGoToTargetOnControllerReset = FALSE;
 		}
 		m_bResetControllerRot = FALSE;
+		PCAMDIAG( TEXT("PlayerControl reset: pawn %d/%d controller now %d/%d"), Pawn->Rotation.Pitch, Pawn->Rotation.Yaw, Pawn->Controller ? Pawn->Controller->Rotation.Pitch : 0, Pawn->Controller ? Pawn->Controller->Rotation.Yaw : 0 );
 	}
 	const ADishonoredPawn* DisPawn = ConstCast<ADishonoredPawn>( Pawn );
 	OutVT.m_VT.POV.Location = DisPawn ? DisPawn->GetCameraPos() : Pawn->Location;

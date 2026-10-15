@@ -143,6 +143,11 @@ FString DisEnumTypeToString( INT _Value, const TCHAR* _EnumPath );
 void DisPushDisableSave( BYTE DisableSaveType );
 void DisPopDisableSave( BYTE DisableSaveType, FLOAT WaitToEnable );
 FLOAT DisInterpolateBySpeedWithDif( FLOAT Cur, FLOAT Target, FLOAT BlendSpeed, FLOAT SmallestDif, FLOAT DeltaTime );
+// DISHONORED(port): agent HD (PHASE22 HD). DisLerpAngle 2012 0x823fe0 / 2013 0x7bb620 (dishonoredutilities_math.cpp): the shortest
+// way from one 16-bit angle to another, rounded. DisGetPlayerInputTweaks (agent FZ, dishonoredcamera_animdriven.cpp): the player
+// input's tweaks, the class default when it has none - what retail reads through the PlayerInput's IDisTweaksInterface.
+INT DisLerpAngle( INT _Low, INT _High, FLOAT _fInterval );
+const class UDisTweaks_PlayerInput* DisGetPlayerInputTweaks();
 // DISHONORED(written): agent GI (PHASE20 GI). The attention manager (2012 accessor 0x82dc00) is owned by the game info; retail
 // constructs it with the other global managers at game-info init, which this tree has not ported, so it is made on first use.
 class UDisGlobalAIAttentionManager* DisGetGlobalAIAttentionManager();

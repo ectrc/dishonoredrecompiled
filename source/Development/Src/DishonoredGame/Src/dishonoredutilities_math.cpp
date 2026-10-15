@@ -74,6 +74,25 @@ UBOOL DisTeleportPlayer( const FVector& _rLocation, const FRotator& _rRotation )
 	return TRUE;
 }
 
+// ---- agent HD (PHASE22 HD) ----
+
+// DISHONORED(port): 2012 0x823fe0 / 2013 0x7bb620 (109 B both). Both angles are taken modulo 65536 into -32768..32767; the step is
+// rounded to the nearest unit by the doubled-plus-half-then-halved truncation retail does.
+INT DisLerpAngle( INT _Low, INT _High, FLOAT _fInterval )
+{
+	INT Diff = (WORD)( _High - _Low );
+	if( Diff >= 0x8000 )
+	{
+		Diff -= 0x10000;
+	}
+	INT Result = (WORD)( _Low + ( appTrunc( (FLOAT)Diff * _fInterval * 2.f + 0.5f ) >> 1 ) );
+	if( Result >= 0x8000 )
+	{
+		Result -= 0x10000;
+	}
+	return Result;
+}
+
 // ---- agent FZ (PHASE18 FZ) ----
 
 // DISHONORED(port): 2012 0x8243d0 (2013 0x7bbb80, same 120 B). The step is (Target - Cur) * Speed * Dt, but the difference

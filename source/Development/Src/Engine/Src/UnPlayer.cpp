@@ -4491,32 +4491,33 @@ FSceneView* ULocalPlayer::CalcSceneView( FSceneViewFamily* ViewFamily, FVector& 
 	}
 	else 
 	{
-		FLOAT MatrixFOV = fFOV * (FLOAT)PI / 360.0f;
-		FLOAT XAxisMultiplier;
-		FLOAT YAxisMultiplier;
-
-		//if x is bigger, and we're respecting x or major axis, AND mobile isn't forcing us to be Y axis aligned
-		if (((SizeX > SizeY) && (AspectRatioAxisConstraint == AspectRatio_MajorAxisFOV)) || (AspectRatioAxisConstraint == AspectRatio_MaintainXFOV))
-		{
-			//if the viewport is wider than it is tall
-			XAxisMultiplier = 1.0f;
-			YAxisMultiplier = SizeX / (FLOAT)SizeY;
-		}
-		else
-		{
-			//if the viewport is taller than it is wide
-			XAxisMultiplier = SizeY / (FLOAT)SizeX;
-			YAxisMultiplier = 1.0f;
-		}
-
-		ProjectionMatrix = FPerspectiveMatrix (
-			MatrixFOV,
-			MatrixFOV,
-			XAxisMultiplier,
-			YAxisMultiplier,
-			GNearClippingPlane,
+		// DISHONORED(retail): ULocalPlayer::CalcSceneView 2013 0x6c4710 / 2012 0x2df1c0 - build 9014 has no AspectRatioAxisConstraint:
+		// the FOV is the horizontal angle, the width scaled by the viewport's desired aspect over its actual one (FViewport slots 2, 3, 34)
+		const FLOAT CurViewAspectRatio = (FLOAT)Viewport->GetSizeX() / (FLOAT)Viewport->GetSizeY();
+		ProjectionMatrix = FPerspectiveMatrix(
+			fFOV * (FLOAT)PI / 360.0f,
+			SizeX * Viewport->GetDesiredAspectRatio() / CurViewAspectRatio,
+			SizeY,
 			GNearClippingPlane
 			);
+	}
+
+	// DISHONORED(bringup): agent HD -pcamdiag, once a second: the projection the view is built with
+	static INT GHDPCamDiag = -1;
+	if( GHDPCamDiag < 0 )
+	{
+		GHDPCamDiag = appStrfind( appCmdLine(), TEXT("-pcamdiag") ) != NULL ? 1 : 0;
+	}
+	static DOUBLE GHDPCamDiagLast = -1.0;
+	if( GHDPCamDiag == 1 && appSeconds() - GHDPCamDiagLast >= 1.0 )
+	{
+		GHDPCamDiagLast = appSeconds();
+		const UBOOL bConstrained = Actor->PlayerCamera != NULL && Actor->PlayerCamera->bConstrainAspectRatio;
+		debugf( TEXT("DISHONORED(bringup): pcamdiag proj t=%.2f axis horizontal%s FOV %.2f M00 %.4f M11 %.4f hfov %.2f vfov %.2f view %ux%u at %d,%d viewport %ux%u desired aspect %.4f"),
+			GWorld ? GWorld->GetTimeSeconds() : 0.f, bConstrained ? TEXT(" constrained") : TEXT(""), fFOV,
+			ProjectionMatrix.M[0][0], ProjectionMatrix.M[1][1],
+			2.f * appAtan( 1.f / ProjectionMatrix.M[0][0] ) * 180.f / (FLOAT)PI, 2.f * appAtan( 1.f / ProjectionMatrix.M[1][1] ) * 180.f / (FLOAT)PI,
+			SizeX, SizeY, X, Y, Viewport->GetSizeX(), Viewport->GetSizeY(), Viewport->GetDesiredAspectRatio() );
 	}
 
 	// Set up the rendering overrides.
@@ -4847,30 +4848,14 @@ void ULocalPlayer::FastDeProject(FVector2D RelativeScreenPos, FVector& WorldOrig
 		}
 		else
 		{
-			FLOAT MatrixFOV = fFOV * (FLOAT)PI / 360.0f;
-			FLOAT XAxisMultiplier;
-			FLOAT YAxisMultiplier;
-
-			//if x is bigger, and we're respecting x or major axis, AND mobile isn't forcing us to be Y axis aligned
-			if (((SizeX > SizeY) && (AspectRatioAxisConstraint == AspectRatio_MajorAxisFOV)) || (AspectRatioAxisConstraint == AspectRatio_MaintainXFOV))
-			{
-				//if the viewport is wider than it is tall
-				XAxisMultiplier = 1.0f;
-				YAxisMultiplier = SizeX / (FLOAT)SizeY;
-			}
-			else
-			{
-				//if the viewport is taller than it is wide
-				XAxisMultiplier = SizeY / (FLOAT)SizeX;
-				YAxisMultiplier = 1.0f;
-			}
-
-			ProjectionMatrix = FPerspectiveMatrix (
-				MatrixFOV,
-				MatrixFOV,
-				XAxisMultiplier,
-				YAxisMultiplier,
-				GNearClippingPlane,
+			// DISHONORED(written): retail has no FastDeProject/FastProject (natives_2013.csv lists DeProject alone, which goes through
+			// CalcSceneView); the reference-only copies project as retail's CalcSceneView 2013 0x6c4710 does, horizontally
+			FViewport* Viewport = ViewportClient->Viewport;
+			const FLOAT CurViewAspectRatio = (FLOAT)Viewport->GetSizeX() / (FLOAT)Viewport->GetSizeY();
+			ProjectionMatrix = FPerspectiveMatrix(
+				fFOV * (FLOAT)PI / 360.0f,
+				SizeX * Viewport->GetDesiredAspectRatio() / CurViewAspectRatio,
+				SizeY,
 				GNearClippingPlane
 				);
 		}
@@ -4968,30 +4953,14 @@ FVector2D ULocalPlayer::FastProject(FVector WorldLoc)
 		}
 		else
 		{
-			FLOAT MatrixFOV = fFOV * (FLOAT)PI / 360.0f;
-			FLOAT XAxisMultiplier;
-			FLOAT YAxisMultiplier;
-
-			//if x is bigger, and we're respecting x or major axis, AND mobile isn't forcing us to be Y axis aligned
-			if (((SizeX > SizeY) && (AspectRatioAxisConstraint == AspectRatio_MajorAxisFOV)) || (AspectRatioAxisConstraint == AspectRatio_MaintainXFOV))
-			{
-				//if the viewport is wider than it is tall
-				XAxisMultiplier = 1.0f;
-				YAxisMultiplier = SizeX / (FLOAT)SizeY;
-			}
-			else
-			{
-				//if the viewport is taller than it is wide
-				XAxisMultiplier = SizeY / (FLOAT)SizeX;
-				YAxisMultiplier = 1.0f;
-			}
-
-			ProjectionMatrix = FPerspectiveMatrix (
-				MatrixFOV,
-				MatrixFOV,
-				XAxisMultiplier,
-				YAxisMultiplier,
-				GNearClippingPlane,
+			// DISHONORED(written): retail has no FastDeProject/FastProject (natives_2013.csv lists DeProject alone, which goes through
+			// CalcSceneView); the reference-only copies project as retail's CalcSceneView 2013 0x6c4710 does, horizontally
+			FViewport* Viewport = ViewportClient->Viewport;
+			const FLOAT CurViewAspectRatio = (FLOAT)Viewport->GetSizeX() / (FLOAT)Viewport->GetSizeY();
+			ProjectionMatrix = FPerspectiveMatrix(
+				fFOV * (FLOAT)PI / 360.0f,
+				SizeX * Viewport->GetDesiredAspectRatio() / CurViewAspectRatio,
+				SizeY,
 				GNearClippingPlane
 				);
 		}

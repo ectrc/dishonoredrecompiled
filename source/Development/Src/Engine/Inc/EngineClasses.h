@@ -19600,7 +19600,7 @@ public:
     void RemoveObserver() {}
 public:
     //## BEGIN PROPS LocalPlayer
-    // DISHONORED(layout): 2012 PDB size 612; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: ViewState2, CurrentPPInfo, LevelPPInfo, ActivePPOverrides, AspectRatioAxisConstraint, CachedAuthInt)
+    // DISHONORED(layout): 2012 PDB size 612; member list and order regenerated from types.json (gen_layout_probe.py props; reference-only members moved to the shim block below: ViewState2, CurrentPPInfo, LevelPPInfo, ActivePPOverrides, CachedAuthInt; AspectRatioAxisConstraint deleted by agent HD: build 9014 projects horizontally, UnPlayer.cpp CalcSceneView)
     INT ControllerId;
     class UGameViewportClient* ViewportClient;
     FVector2D Origin;
@@ -19638,7 +19638,6 @@ public:
     DISHONORED_SHIM_STATIC struct FCurrentPostProcessVolumeInfo CurrentPPInfo;
     DISHONORED_SHIM_STATIC struct FCurrentPostProcessVolumeInfo LevelPPInfo;
     DISHONORED_SHIM_STATIC TArrayNoInit<struct FPostProcessSettingsOverride> ActivePPOverrides;
-    DISHONORED_SHIM_STATIC BYTE AspectRatioAxisConstraint;
 
     UBOOL SpawnPlayActor(const FString& URL,FString& OutError);
     void SendSplitJoin();

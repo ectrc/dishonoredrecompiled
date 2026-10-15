@@ -420,6 +420,51 @@ static void DisSetCompDepthGroupRecursiveHelper( UPrimitiveComponent* Comp, ESce
 }
 
 /**
+ * DISHONORED(port): agent HD (PHASE22 HD), 2012 0x70afd0 / 2013 0x6b0d40 (348 B both). While the camera's PlayerControl influence has no
+ * weight (a soiree's AnimDriven camera holds the view) or the mesh rotates the actor by root motion, the pawn keeps its own pitch and
+ * yaw - so a pawn the matinee detaches keeps the heading the boat gave it instead of snapping to the controller's pre-ride yaw.
+ * Otherwise the pitch is dropped when the master FSM's logical state (a base or an action state) ignores it, unless the controller
+ * flies by cheat; walking and falling drop it too; the roll is always 0.
+ * DISHONORED(written): retail dereferences the camera and its first influence group unchecked; without them the pawn faces as asked.
+ */
+void ADishonoredPlayerPawn::FaceRotation( FRotator NewRotation, FLOAT DeltaTime )
+{
+	ADishonoredPlayerCamera* Camera = GetDishonoredCamera();
+	UDishonoredCameraInfluence* PlayerControl = ( Camera && Camera->InfluenceGroups().Num() > 0 && Camera->InfluenceGroups()(0) )
+		? Camera->InfluenceGroups()(0)->GetInfluence( UDishonoredCamera_PlayerControl::StaticClass() ) : NULL;
+	if( ( PlayerControl && PlayerControl->m_Weight <= 1e-8f ) || ( Mesh && Mesh->RootMotionRotationMode == RMRM_RotateActor ) )
+	{
+		NewRotation.Pitch = Rotation.Pitch;
+		NewRotation.Yaw = Rotation.Yaw;
+	}
+	else
+	{
+		UDishonoredNativeState* LogicalState = m_pPlayerMasterFSM ? m_pPlayerMasterFSM->GetLogicalState() : NULL;
+		UStatePlayerMasterBase* BaseState = Cast<UStatePlayerMasterBase>( LogicalState );
+		UStatePlayerMasterAction* ActionState = Cast<UStatePlayerMasterAction>( LogicalState );
+		ADishonoredPlayerController* PC = Cast<ADishonoredPlayerController>( Controller );
+		const UBOOL bCheatOverride = PC && PC->bCheatFlying;
+		if( ( ( BaseState && BaseState->ShouldIgnorePitch() ) || ( ActionState && ActionState->m_bIgnorePitch ) ) && !bCheatOverride )
+		{
+			NewRotation.Pitch = 0;
+		}
+	}
+	if( Physics == PHYS_Walking || Physics == PHYS_Falling )
+	{
+		NewRotation.Pitch = 0;
+	}
+	SetRotation( FRotator( NewRotation.Pitch, NewRotation.Yaw, 0 ) );
+}
+
+void ADishonoredPlayerPawn::execFaceRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_ROTATOR(NewRotation);
+	P_GET_FLOAT(DeltaTime);
+	P_FINISH;
+	FaceRotation( NewRotation, DeltaTime );
+}
+
+/**
  * DISHONORED(port): 2012 0x702070 (2013 0x6a7c20, which also gives particle-system attachments the depth group). Only when
  * the mode changes and the pawn has a Dishonored camera: BODY_MODE_FULL_BODY shows the mesh in the world depth group at
  * forced LOD 2 (the full body); BODY_MODE_HIDDEN hides it; BODY_MODE_ARMS_ONLY shows it in the foreground depth group at

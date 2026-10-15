@@ -682,10 +682,6 @@ void ADishonoredPlayerPawn::execPlayDying_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB_LOGPARAMS(DishonoredGame, ADishonoredPlayerPawn, execPlayDying_Native);
 }
-void ADishonoredPlayerPawn::execFaceRotation( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execFaceRotation);
-}
 void ADishonoredPlayerPawn::execIsInvisible( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execIsInvisible);

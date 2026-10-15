@@ -3103,8 +3103,8 @@ void ADishonoredPlayerController::EnableControllerInput( INT _Mask, UBOOL _bEnab
 
 // ---- agent GF (PHASE19 GF): the camera pass ----
 
-// DISHONORED(port): 2012 0x6fa840 / 2013 0x6ba860. The pawn is the controller's; the tracking, crosshair and blinded-effect callees are
-// skeletons (dishonoredplayercontroller_tracking.cpp and this unit's banner), so only the pawn's half runs.
+// DISHONORED(port): 2012 0x6fa840 / 2013 0x6ba860. The pawn is the controller's; pass 0 ticks the view tracking from the pawn's X/Y at the
+// view's height (agent HD), pass 1 the crosshair; the blinded effect is a skeleton (this unit's banner).
 void ADishonoredPlayerController::OnCameraUpdate( const FDishonoredViewTarget& _VT, INT _PassCount )
 {
 	ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( Pawn );
@@ -3112,13 +3112,16 @@ void ADishonoredPlayerController::OnCameraUpdate( const FDishonoredViewTarget& _
 	{
 		DisPawn->OnCameraUpdate( _VT, _PassCount );
 	}
-	// agent GD (PHASE19 GD): pass 1's UpdateCrosshair (dishonoredplayercontroller_use.cpp); TickCameraTracking (pass 0) and
-	// UpdateBlindedEffect (pass 1) stay named.
-	if( _PassCount == 1 )
+	// agent GD (PHASE19 GD): pass 1's UpdateCrosshair (dishonoredplayercontroller_use.cpp); UpdateBlindedEffect (pass 1) stays named.
+	if( _PassCount == 0 && Pawn )
+	{
+		TickCameraTracking( GWorld->GetDeltaSeconds(), FVector( Pawn->Location.X, Pawn->Location.Y, _VT.m_VT.POV.Location.Z ) );
+	}
+	else if( _PassCount == 1 )
 	{
 		UpdateCrosshair( _VT );
 	}
-	GFDIAG_ONCE( TEXT("ADishonoredPlayerController::OnCameraUpdate: TickCameraTracking (pass 0) and UpdateBlindedEffect (pass 1) are not ported") );
+	GFDIAG_ONCE( TEXT("ADishonoredPlayerController::OnCameraUpdate: UpdateBlindedEffect (pass 1) is not ported") );
 }
 
 /*-----------------------------------------------------------------------------

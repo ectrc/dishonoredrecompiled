@@ -171,3 +171,7 @@ public:
 	virtual void OnAttentionReceived( class UDishonoredAIBrain* _pBrain );
 	virtual void OnAttentionLost( class UDishonoredAIBrain* _pBrain );
 	virtual UBOOL CanAttnTargetBeAttacked() const;
+// ---- agent HD (PHASE22 HD): the pawn's facing. FaceRotation 2012 0x70afd0 / 2013 0x6b0d40, vtable override of APawn's; body and exec
+// in Src/dishonoredplayerpawn.cpp ----
+public:
+	virtual void FaceRotation( FRotator NewRotation, FLOAT DeltaTime );
