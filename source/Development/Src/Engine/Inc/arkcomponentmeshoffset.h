@@ -54,6 +54,7 @@ public:
 	INT GetDisableFlags() const { return m_DisableFlags; }
 
 	void SetExternalRotationOffset( const FRotator& _Rotation ) { m_ExternalRotationOffset = _Rotation; }
+	void ForcePitch( INT _Pitch );											// 2013 0x8f1c10 (unnamed, not in 2012)
 	TArray<FArkCpntMeshOffsetFootProps>& FeetProps() { return m_FeetProps; }
 
 protected:

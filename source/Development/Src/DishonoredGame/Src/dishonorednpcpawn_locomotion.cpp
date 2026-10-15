@@ -115,9 +115,8 @@ void ADishonoredNPCPawn::SpawnedLocomotion( UDisTweaks_NPCPawn* NPCTweaks )
 // DISHONORED(port): 2013 rva 0x74e8a0 (2012 0x7ad240, 107 bytes). The whole point of the NPC's walking physics: when the
 // locomotion component is live, the NPC is not possessed and the game is running, the component moves the pawn; otherwise
 // UE3's own walking physics does. That "otherwise" is not a fallback - it is what a possessed NPC uses.
-// DISHONORED(bringup): retail's PreAsyncWork tick comes from FArkComponentManager, which is not ported (see
-// Inc/arkcomponentlocomotion.h). It is driven from here instead, immediately before the move, which keeps retail's
-// within-frame order - the dynamics decide the frame's move, then the move is applied.
+// Agent HC: retail's body is the MovePawn alone (2012 0x7ad240); the dynamics tick comes from FArkComponentManager's
+// PreAsyncWork policy (Inc/arkcomponentlocomotion.h) and UpdateLocomotion from ADishonoredNPCPawn::Tick.
 void ADishonoredNPCPawn::physWalking( FLOAT DeltaTime, INT Iterations )
 {
 	FArkComponentLocomotion* pLoco = GetComponentLocomotion();
@@ -125,9 +124,6 @@ void ADishonoredNPCPawn::physWalking( FLOAT DeltaTime, INT Iterations )
 	if( pLoco && pLoco->m_bStarted && m_pPossessingController == NULL && pGameInfo )
 	{
 		DISLOCO_MARK( phys_enter )
-		pLoco->PreAsyncWorkTick( DeltaTime );
-		DISLOCO_MARK( phys_tick_done )
-		UpdateLocomotion();
 		pLoco->MovePawn( DeltaTime, FALSE );
 		DISLOCO_MARK( phys_move_done )
 	}

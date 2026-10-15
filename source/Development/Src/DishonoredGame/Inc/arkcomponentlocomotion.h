@@ -19,10 +19,10 @@
 // translation in MovePawn. The per-frame order is retail's:
 //   FArkComponentManager's PreAsyncWork policy -> PreAsyncWorkTick(dt): path scheduling, then the dynamics
 //   ADishonoredNPCPawn::physWalking(dt)        -> MovePawn(dt):        the translation
-// DISHONORED(bringup): FArkComponentManager (2012 PDB, 180 bytes of six FArkComponentPolicy instantiations;
-// UWorld::m_pComponentManager is a forward declaration in the tree and no instance is ever created) is not ported, so
-// PreAsyncWorkTick is driven from the head of ADishonoredNPCPawn::physWalking instead. That keeps retail's ordering
-// within the frame - dynamics before the move - and is the only tick-source difference.
+// Agent HC (PHASE22 HC) ported FArkComponentManager (Engine/Inc/arkcomponentpolicy.h): Starting registers the component with
+// its PreAsyncWork policy, which UWorld ticks after the pre-async actors, so the dynamics computed there are applied by the
+// next frame's physWalking -> MovePawn (2012 0x584ca0's two callers: ADishonoredNPCPawn::physWalking 0x7ad240 and
+// UInterpGroupInst::UpdateGroupInst 0x25b4e0), and a pawn in PHYS_None still schedules its path.
 
 #ifndef _INC_ARKCOMPONENTLOCOMOTION
 #define _INC_ARKCOMPONENTLOCOMOTION

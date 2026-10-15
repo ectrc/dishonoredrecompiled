@@ -4,6 +4,7 @@
 // for the reason the header's banner gives.
 
 #include "DishonoredGame.h"
+#include "arkcomponentpolicy.h"
 #include "arkcomponentlocomotion.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
@@ -184,13 +185,17 @@ FArkComponentLocomotion::~FArkComponentLocomotion()
 // FArkComponentManager PreAsyncWork policy, initialises the request queue with OnRequestManagerEvent as the owner
 // callback, enables itself if it was disabled, starts the face-to component it created in SetConfig, and appends its row
 // to the static shared-properties table (remembering its own index, which Stopping uses to swap-remove it).
-// DISHONORED(bringup): the component-manager insertion is left out - see the header banner; the tick comes from
-// ADishonoredNPCPawn::physWalking. Retail also registers for the LOD game event here
+// Agent HC: the component-manager insertion is retail's now (the PreAsyncWork policy, the policy GetPolicy's ICF-folded
+// `mov eax,ecx` returns); ADishonoredNPCPawn::physWalking only moves the pawn. Retail also registers for the LOD game event here
 // (FArkGameEventDispatcher::RegisterToObjectEvent with event 2 and OnLODChanged, 2013 rva 0x53ecf0): left out because
 // FDisComponentLODManager is unported, so no LOD event is ever raised and the handler would never run.
 void FArkComponentLocomotion::Starting()
 {
 	DISLOCO_MARK( starting_enter )
+	if( GWorld && GWorld->m_pComponentManager )
+	{
+		GWorld->m_pComponentManager->GetPolicy<FArkComponentPreAsyncWorkPolicy>().Register( this );
+	}
 	m_ReqMgr.Initialize( this, &FArkComponentLocomotion::RequestManagerEventThunk );
 
 	if( m_bDisabled && !m_bPendingStop )
@@ -222,6 +227,10 @@ void FArkComponentLocomotion::Starting()
 void FArkComponentLocomotion::Stopping()
 {
 	m_ReqMgr.Reset();
+	if( GWorld && GWorld->m_pComponentManager )
+	{
+		GWorld->m_pComponentManager->GetPolicy<FArkComponentPreAsyncWorkPolicy>().Unregister( this );
+	}
 
 	if( m_LocoCpntIdx != INDEX_NONE && m_LocoCpntIdx < ms_LocoCpntSharedProps.Num() )
 	{

@@ -13,6 +13,7 @@
 #include "EngineSequenceClasses.h"
 #include "EngineParticleClasses.h"
 #include "EngineAIClasses.h"
+#include "arkcomponentpolicy.h"
 
 
 //@todo hack: Remove this hackiness after we have played with the decrease tick frequency stuff
@@ -3280,6 +3281,13 @@ void UWorld::Tick( ELevelTick TickType, FLOAT DeltaSeconds )
 		TickGroup = TG_PreAsyncWork;
 		// Tick all actors/components that need to do their work first
 		TickActors<FDeferredTickList::FGlobalActorIterator>(this,DeltaSeconds,TickType,GDeferredList);
+		// DISHONORED(port): agent HC. 2012 UWorld::TickPreAW 0x26ef30 / 2013 0x6552c0: after the pre-async actors the component
+		// manager ticks the JustBeforeProceduralAnim policy (stage 5, before FEdgeAnimManager::End), then the PreAsyncWork one
+		if( m_pComponentManager )
+		{
+			m_pComponentManager->Tick( DeltaSeconds, 5 );
+			m_pComponentManager->Tick( DeltaSeconds, TickGroup );
+		}
 
 		{
 			SCOPE_CYCLE_COUNTER(STAT_PhysicsTime);
@@ -3291,6 +3299,11 @@ void UWorld::Tick( ELevelTick TickType, FLOAT DeltaSeconds )
 		TickActors<FDeferredTickList::FActorDuringAsyncWorkIterator>(this,DeltaSeconds,TickType,GDeferredList);
 		// Tick all of the deferred components
 		TickDeferredComponents<FDeferredTickList::FComponentDuringAsyncWorkIterator>(DeltaSeconds,GDeferredList);
+		// DISHONORED(port): agent HC. 2012 UWorld::TickAW 0x26f0a0: the DuringAsyncWork and time-sliced policies
+		if( m_pComponentManager )
+		{
+			m_pComponentManager->Tick( DeltaSeconds, TickGroup );
+		}
 		// Wait for async work to come back
 		WaitForAsyncWork();
 		TickGroup = TG_PostAsyncWork;
@@ -3303,6 +3316,11 @@ void UWorld::Tick( ELevelTick TickType, FLOAT DeltaSeconds )
 		TickActors<FDeferredTickList::FActorPostAsyncWorkIterator>(this,DeltaSeconds,TickType,GDeferredList);
 		// And the final ticking of components
 		TickDeferredComponents<FDeferredTickList::FComponentPostAsyncWorkIterator>(DeltaSeconds,GDeferredList);
+		// DISHONORED(port): agent HC. 2012 UWorld::TickPostAW 0x26f150: the PostAsyncWork policy
+		if( m_pComponentManager )
+		{
+			m_pComponentManager->Tick( DeltaSeconds, TickGroup );
+		}
 	}
 	else if( IsPaused() )
 	{

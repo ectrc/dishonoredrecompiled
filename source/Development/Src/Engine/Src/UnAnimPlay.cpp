@@ -330,17 +330,23 @@ void UAnimNodeSequence::TickAnim(FLOAT DeltaSeconds)
 {
 
 	// If this node is part of a group, animation is going to be advanced in a second pass, once all weights have been calculated in the tree.
+	// DISHONORED(port): agent HC. 2012 0x1aa480 (562 B): a node matinee positions (bMatineePlaying, set by UArkAnimNodeStack::
+	// MAT_SetAnimPosition) is neither advanced nor has its PreviousTime overwritten, so its root motion spans the matinee's
+	// previous and current positions. Without the test every matinee root-motion key extracted a zero delta.
 	if( SynchGroupName == NAME_None )
 	{
-		// Keep track of PreviousTime before any update. This is used by Root Motion.
-		PreviousTime = CurrentTime;
-
-		// Can only do something if we are currently playing a valid AnimSequence
-		if( bPlaying && AnimSeq )
+		if( !bMatineePlaying )
 		{
-			// Time to move forwards by - DeltaSeconds scaled by various factors.
-			const FLOAT MoveDelta = Rate * AnimSeq->RateScale * SkelComponent->GlobalAnimRateScale * DeltaSeconds;
-			AdvanceBy(MoveDelta, DeltaSeconds, (SkelComponent->bUseRawData) ? FALSE : TRUE);
+			// Keep track of PreviousTime before any update. This is used by Root Motion.
+			PreviousTime = CurrentTime;
+
+			// Can only do something if we are currently playing a valid AnimSequence
+			if( bPlaying && AnimSeq )
+			{
+				// Time to move forwards by - DeltaSeconds scaled by various factors.
+				const FLOAT MoveDelta = Rate * AnimSeq->RateScale * SkelComponent->GlobalAnimRateScale * DeltaSeconds;
+				AdvanceBy(MoveDelta, DeltaSeconds, (SkelComponent->bUseRawData) ? FALSE : TRUE);
+			}
 		}
 	}
 	else if( AnimSeq )

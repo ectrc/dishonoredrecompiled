@@ -1375,6 +1375,7 @@ struct FDisNPCRotationIntent
     {
         appMemzero(this, sizeof(FDisNPCRotationIntent));
     }
+#include "CppText/FDisNPCRotationIntent.h"
 };
 
 // DishonoredGame.DishonoredNPCPawn.DisNPCSeveredLimb: retail SDK size 8 (2012 PDB 8)

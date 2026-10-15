@@ -125,6 +125,9 @@ public:
 	virtual void StopRootMotionMode();
 	void SetMeshTranslation( const FVector& _rTranslation, FLOAT _fTime );
 	void LockMeshTranslation( UBOOL _bLock, eDisMeshOffsetDisableFlag _eDisableFlag );
+	/** DISHONORED(port): agent HC. 2012 0x78e430 (7 B): m_pCpntRetargeting, added for every pawn by PreBeginPlay_NativeComponents. */
+	class FDisComponentRetargeting* GetComponentRetargeting() const { return (class FDisComponentRetargeting*)m_pCpntRetargeting; }
+	UBOOL IsRetargeting() const;
 protected:
 	virtual void PreBeginPlay_NativeComponents();
 

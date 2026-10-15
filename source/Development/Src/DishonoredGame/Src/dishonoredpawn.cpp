@@ -440,6 +440,7 @@ void ADishonoredPawn::PostBeginPlay()
 -----------------------------------------------------------------------------*/
 
 #include "arkcomponentmeshoffset.h"
+#include "discomponentretargeting.h"
 
 // 2012 rva 0x78e550 (46 B), 2013 0x4fcfa0
 void ADishonoredPawn::ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _RootRotation )
@@ -581,8 +582,7 @@ void ADishonoredPawn::LockMeshTranslation( UBOOL _bLock, eDisMeshOffsetDisableFl
 	path from GetAttributes, because this tree cannot promise the tweaks are set when PreBeginPlay runs and a
 	wrongly-built attribute set would be cached for the pawn's life), PreBeginPlay_Actions (the action FSM).
 	The base PreBeginPlay_NativeComponents (0x793f50, 149 B) adds FDisComponentObservable from the pawn tweaks and
-	FDisComponentRetargeting - neither has a body in this tree, so the base adds nothing and the NPC override
-	(dishonorednpcpawn_nativecomponents.cpp) adds the mesh-offset component.
+	FDisComponentRetargeting; the NPC override (dishonorednpcpawn_nativecomponents.cpp) adds the mesh-offset component.
 -----------------------------------------------------------------------------*/
 void ADishonoredPawn::PreBeginPlay()
 {
@@ -596,8 +596,24 @@ void ADishonoredPawn::PreBeginPlay()
 	PreBeginPlay_Inventory();
 }
 
+// DISHONORED(port): agent HC. 2012 0x793f50 (149 B): FDisComponentObservable when the pawn tweaks name its config (with the
+// extent-check flag for actor type 36), then FDisComponentRetargeting into m_pCpntRetargeting, unconditionally.
+// DISHONORED(bringup): FDisComponentObservable (discomponentobservable.cpp) has no body in this tree; only the retargeting
+// component is added.
 void ADishonoredPawn::PreBeginPlay_NativeComponents()
 {
+	if( m_ComponentContainer != NULL )
+	{
+		m_pCpntRetargeting = (FPointer)m_ComponentContainer->AddNewComponent<FDisComponentRetargeting>();
+	}
+}
+
+// DISHONORED(written): retail reads GetComponentRetargeting()->m_bIsRetargeting inline at every call site (the pawn always has
+// the component in retail); this tree tolerates a pawn whose PreBeginPlay has not run.
+UBOOL ADishonoredPawn::IsRetargeting() const
+{
+	const FDisComponentRetargeting* Retargeting = GetComponentRetargeting();
+	return Retargeting != NULL && Retargeting->m_bIsRetargeting;
 }
 // ---- agent FV (PHASE18 FV): the tick, and the disposition native ----
 

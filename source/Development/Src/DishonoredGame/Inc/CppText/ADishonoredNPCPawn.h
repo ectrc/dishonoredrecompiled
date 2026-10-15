@@ -168,3 +168,21 @@ public:
 	virtual const class UDishonoredAIBrain* GetAttnTargetBrain() const;
 	virtual UBOOL IsAttnTargetBeingMurdered( class IDisAttentionTargetInterface** _ppMurderer ) const;
 	UBOOL AreReactionsDisabled() const;
+
+// ---- agent HC (PHASE22 HC): the rotation intents. Bodies in Src/dishonorednpcpawn_rotation.cpp ----
+// 2012 rvas: physicsRotation 0x7c95f0, Tick_Rotation 0x7d4d40, Init_Rotation 0x7c9570, CancelAllNPCRotations 0x7c95a0,
+// SetNPCRotation 0x7ce4a0, SetNPCRotationFocus 0x7cbf90, LockNPCRotation 0x7cc020, UnlockNPCRotation 0x7ce540,
+// OnUnlockNPCRotation 0x7cc0f0. One FDisNPCRotationIntent per EDisFaceToPriority; the highest active one is
+// m_CurrentNPCRotationPriority and drives the FArkComponentFaceTo request; physicsRotation only publishes the result.
+public:
+	virtual void physicsRotation( FLOAT deltaTime, FVector OldVelocity );
+	void Tick_Rotation( FLOAT _fDeltaTime );
+	void Init_Rotation();
+	void CancelAllNPCRotations();
+	void SetNPCRotation( EDisFaceToPriority _RotationPriority, const FRotator& _rRotation, FLOAT _fYawRateDegrees, FLOAT _fYawAccelerationTime, void* const _pAsker, FName _AskerName );
+	void SetNPCRotationFocus( EDisFaceToPriority _RotationPriority, const FVector& _rTarget, FLOAT _fYawRateDegrees, FLOAT _fYawAccelerationTime, void* const _pAsker, FName _AskerName );
+	void LockNPCRotation( EDisFaceToPriority _RotationPriority, void* const _pAsker, FName _AskerName );
+	void UnlockNPCRotation( EDisFaceToPriority _RotationPriority );
+private:
+	void OnUnlockNPCRotation( EDisFaceToPriority _UnlockedPriority );
+public:

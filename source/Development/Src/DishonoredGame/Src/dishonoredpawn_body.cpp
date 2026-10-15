@@ -234,12 +234,10 @@ void ADishonoredPawn::PerformAngleOffsetFixup( FMatrix& InOut, UBOOL bObjectSpac
 // ---- agent FV (PHASE18 FV): the body pass ----
 
 // DISHONORED(port): 2013 rva 0x7510b0 (2012 0x7959c0, 31 B): the cached-position pass runs unless the retargeting component
-// says the pawn is being retargeted (FDisComponentRetargeting::m_bIsRetargeting, at +60 of m_pCpntRetargeting).
-// DISHONORED(bringup): FDisComponentRetargeting is not ported and m_pCpntRetargeting is NULL on every pawn, which reads as
-// "not retargeting"; the flag test is written for the day the component exists.
+// says the pawn is being retargeted (FDisComponentRetargeting::m_bIsRetargeting; agent HC ported the component).
 void ADishonoredPawn::Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType )
 {
-	if( !m_pCpntRetargeting || !*(UBOOL*)( (BYTE*)m_pCpntRetargeting + 60 ) )
+	if( !IsRetargeting() )
 	{
 		Tick_Body_CachedPositions( _fDeltaTime );
 	}

@@ -492,12 +492,13 @@ void ADishonoredNPCPawn::MAT_SetForceInventory( UBOOL bShouldForceEmptyHand )
 	m_bShouldForceBodyIntention = bShouldForceEmptyHand ? 1 : 0;
 }
 
-// 2012 rva 0x7ab7a0 (252 B). Retail also disables while FDisComponentRetargeting::m_bIsRetargeting
-// (no such component here). PHYS_RigidBody is left alone: a ragdolled pawn stays one.
+// 2012 rva 0x7ab7a0 (252 B). A pawn the retargeting component carries counts as collision-disabled and stays in PHYS_None
+// (agent HC: the in-game retargeting test). PHYS_RigidBody is left alone: a ragdolled pawn stays one.
 void ADishonoredNPCPawn::MAT_SetCollision( UBOOL bDisableCollisionForSoiree, UBOOL bHaveMoveTrack )
 {
-	m_bDisableCollisionForSoiree = bDisableCollisionForSoiree ? 1 : 0;
-	if( m_bDisableCollisionForSoiree )
+	const UBOOL bRetargeting = GIsGame && IsRetargeting();
+	m_bDisableCollisionForSoiree = ( bDisableCollisionForSoiree || bRetargeting ) ? 1 : 0;
+	if( m_bDisableCollisionForSoiree || bRetargeting )
 	{
 		if( Physics != PHYS_None )
 		{
@@ -517,15 +518,22 @@ void ADishonoredNPCPawn::MAT_SetCollision( UBOOL bDisableCollisionForSoiree, UBO
 	}
 }
 
-// 2012 rva 0x7ab6e0 (46 B) and 0x7ab720 (33 B): both yield to the retargeting component in retail
+// 2012 rva 0x7ab6e0 (46 B) and 0x7ab720 (33 B): both yield to the retargeting component, which owns the mesh translation
+// while it carries the pawn (agent HC); the first only in game
 void ADishonoredNPCPawn::MAT_SetMeshTranslationMode( BYTE MatMeshTranslationMode )
 {
-	ADishonoredPawn::MAT_SetMeshTranslationMode( MatMeshTranslationMode );
+	if( !GIsGame || !IsRetargeting() )
+	{
+		ADishonoredPawn::MAT_SetMeshTranslationMode( MatMeshTranslationMode );
+	}
 }
 
 void ADishonoredNPCPawn::MAT_DisableMeshTranslation( UBOOL bReset )
 {
-	ADishonoredPawn::MAT_DisableMeshTranslation( bReset );
+	if( !IsRetargeting() )
+	{
+		ADishonoredPawn::MAT_DisableMeshTranslation( bReset );
+	}
 }
 
 // 2012 rvas 0x7ab8a0 (13 B), 0x7ab710 (15 B)
@@ -543,6 +551,7 @@ UBOOL ADishonoredNPCPawn::MAT_PermitLODPause() const
 
 #include "arkcomponentlookat.h"
 #include "fvdiag.h"
+#include "discomponentretargeting.h"
 
 // DISHONORED(port): 2013 rva 0x76da40 (2012 0x7c8090, 1085 B). In retail's order: m_bNoTick marks the actor ticked and leaves;
 // in game, Tick_Rotation, CheckForVanish, the rigid-body contact end, UpdateMeshOriginOffset; ADisPossessablePawn::Tick
@@ -552,7 +561,8 @@ UBOOL ADishonoredNPCPawn::MAT_PermitLODPause() const
 // UpdateLocomotion; and a live NPC's look-at component is told the mode ChooseLookAt picks - the line agent FT's
 // FArkComponentLookat was waiting for. Finally m_bLastRenderedByPlayer follows m_bRenderedByPlayer and a pawn with no
 // physics drops bJustTeleported.
-// DISHONORED(bringup): Tick_Rotation (2012 0x7d4d40), CheckForVanish (0x7c4170), ADishonoredKActor::CollideContactSystemEnd
+// Agent HC: Tick_Rotation (2012 0x7d4d40) is ported and called in retail's place.
+// DISHONORED(bringup): CheckForVanish (0x7c4170), ADishonoredKActor::CollideContactSystemEnd
 // (0x6698c0), UpdateMeshOriginOffset (0x7abb00), UpdateEquipment (0x7b7b90), UpdateTetherVolume (0x7c0ef0), SeverLimb
 // (0x7c7490) with UDishonoredInventory::DropAttachedItems (0x85c940) and the ragdoll AddImpulse flush are not ported; the
 // two deferred arrays are emptied as retail empties them so they cannot grow.
@@ -562,6 +572,10 @@ UBOOL ADishonoredNPCPawn::Tick( FLOAT _fDeltaTime, ELevelTick _TickType )
 	{
 		bTicked = GWorld->Ticked;
 		return TRUE;
+	}
+	if( GIsGame )
+	{
+		Tick_Rotation( _fDeltaTime );
 	}
 	const UBOOL bResult = Super::Tick( _fDeltaTime, _TickType );
 	if( !bDeleteMe && !IsPendingKill() && ( !GIsEditor || GIsGame ) )
@@ -648,24 +662,32 @@ void ADishonoredNPCPawn::OnRelationshipChange()
 	FVDIAG( "relationship changed on %s (%i individual, %i faction override(s))", *GetName(), m_PersonalRelationships.m_IndividualOverrideMap.Num(), m_PersonalRelationships.m_FactionOverrideMap.Num() );
 }
 
-// DISHONORED(port): agent GB. 2012 0x7ab5e0 / 2013 0x74b080 (163 B): retail does not base the NPC on the boat - it starts the
-// retargeting component (FDisComponentRetargeting::StartRetargeting on the key's bone, anchored at 'anchor_jnt', after stopping
-// a running one) and clears the pawn's base. FDisComponentRetargeting has no body in this tree (FS: "no such component"), so
-// only the SetBase( NULL ) runs; the guards are re-based on the deck by the locomotion floor sweep (GA) on their next move.
+// DISHONORED(port): agent GB, completed by agent HC. 2012 0x7ab5e0 / 2013 0xb4b080 (162 B): retail does not base the NPC on
+// the boat - it stops a running retargeting, starts one on the key's bone or socket anchored at the pawn's 'anchor_jnt'
+// (rotation allowed, kept closer, no blend time, volume collisions managed) and clears the pawn's base.
 void ADishonoredNPCPawn::MAT_Attach( AActor* const InBase, const FAttachmentInfos& AttachInfos )
 {
-	static UBOOL bWarned = FALSE;
-	if( !bWarned )
+	FDisComponentRetargeting* Retargeting = GetComponentRetargeting();
+	if( Retargeting )
 	{
-		bWarned = TRUE;
-		debugf( NAME_Warning, TEXT("DISHONORED(port): ADishonoredNPCPawn::MAT_Attach: FDisComponentRetargeting is not ported; %s is not retargeted onto %s bone %s"),
-			*GetName(), InBase ? *InBase->GetName() : TEXT("none"), *AttachInfos.BoneName.ToString() );
+		if( Retargeting->m_bIsRetargeting )
+		{
+			Retargeting->StopRetargeting();
+		}
+		Retargeting->StartRetargeting( InBase, AttachInfos.BoneName, FName( TEXT("anchor_jnt") ), TRUE, TRUE, 0.f, TRUE );
 	}
 	SetBase( NULL, FVector( 0.f, 0.f, 1.f ), 1, NULL, NAME_None );
 }
 
-// 2012 0x7ab690 (65 B): StopRetargeting with m_bDisableCollisionForSoiree cleared around the call and restored after it - a
-// no-op without the component.
+// DISHONORED(port): agent HC. 2012 0x7ab690 (65 B): StopRetargeting with m_bDisableCollisionForSoiree cleared around the call
+// and restored after it.
 void ADishonoredNPCPawn::MAT_Detach()
 {
+	const UBOOL bDisableCollisionForSoiree = m_bDisableCollisionForSoiree;
+	m_bDisableCollisionForSoiree = 0;
+	if( FDisComponentRetargeting* Retargeting = GetComponentRetargeting() )
+	{
+		Retargeting->StopRetargeting();
+	}
+	m_bDisableCollisionForSoiree = bDisableCollisionForSoiree;
 }

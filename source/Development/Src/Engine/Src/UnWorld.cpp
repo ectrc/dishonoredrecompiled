@@ -13,6 +13,7 @@
 #include "EnginePhysicsClasses.h"
 #include "EngineAnimClasses.h"
 #include "EngineAIClasses.h"
+#include "arkcomponentpolicy.h"
 #include "DemoRecording.h"
 #include "EngineUserInterfaceClasses.h"
 #include "PerfMem.h"
@@ -163,6 +164,10 @@ void UWorld::UpdateWorldInfoCache()
  */
 void UWorld::FinishDestroy()
 {
+	// DISHONORED(port): agent HC. 2012 0x3b0730: the component manager goes first, before the initialized-world test
+	delete m_pComponentManager;
+	m_pComponentManager = NULL;
+
 	// Avoid cleanup if the world hasn't been initialized. E.g. the default object or a world object that got loaded
 	// due to level streaming.
 	if( bIsWorldInitialized )
@@ -500,6 +505,8 @@ void UWorld::Init()
 
 	URL					= PersistentLevel->URL;
 	CurrentLevel		= PersistentLevel;
+	// DISHONORED(port): agent HC. 2012 UWorld::Init 0x3bbd00 (+0x16c): appMalloc(0xB4) + FArkComponentManager's constructor
+	m_pComponentManager	= new FArkComponentManager();
 
 	bDoDelayedUpdateCullDistanceVolumes = FALSE;
 

@@ -210,13 +210,8 @@ void ADishonoredNPCPawn::PostBeginPlay_Body()
 	}
 	UDisTweaks_NPCPawn_Body* BodyTweaks = Cast<UDisTweaks_NPCPawn_Body>( Tweaks->m_pBodyTweaks );
 
-	// retail inlines ADishonoredNPCPawn::Init_Rotation here: no rotation intent is active and every request id is free
-	m_CurrentNPCRotationPriority = 0;
-	for( INT Idx = 0; Idx < ARRAY_COUNT(m_NPCRotationIntent); Idx++ )
-	{
-		m_NPCRotationIntent[Idx].m_bIsActive = FALSE;
-		m_NPCRotationIntent[Idx].m_RequestID = INDEX_NONE;
-	}
+	// agent HC: 2012 0x7bc1cd calls ADishonoredNPCPawn::Init_Rotation (0x7c9570), now ported
+	Init_Rotation();
 
 	const FDisBodyMesh* HeadMesh = DisChooseRandomMesh<FDisBodyMesh>( Tweaks->m_RandomHeadMeshes, m_iRandomHeadMeshSel );
 	if( HeadMesh && HeadMesh->m_pMesh && m_pHeadMesh && !DisHeadSuppressed() )
@@ -606,16 +601,19 @@ UBOOL DisHeadSuppressed()
 // retargeted - the threat registration for a rendered NPC, the spine bending, a live NPC's rotation pass, m_bTickedNPCBody,
 // and m_bWasRecentlyPossessed dropped once the player stands farther than the two cylinders' diagonals plus 5 uu.
 // DISHONORED(bringup): Tick_NPCFootPlacement (2012 0x7b2bf0; the foot caches it drives are not built, agent DI),
-// UDisThreatPerceptionComponent::RegisterThreat (0x7092b0) and Tick_Rotation (0x7d4d40) are not ported. The retargeting
-// component is absent (see ADishonoredPawn::Tick_Body).
+// UDisThreatPerceptionComponent::RegisterThreat (0x7092b0) is not ported. Agent HC: the retargeting test and Tick_Rotation are.
 void ADishonoredNPCPawn::Tick_Body( FLOAT _fDeltaTime, ELevelTick _TickType )
 {
 	Super::Tick_Body( _fDeltaTime, _TickType );
-	if( m_pCpntRetargeting && *(UBOOL*)( (BYTE*)m_pCpntRetargeting + 60 ) )
+	if( IsRetargeting() )
 	{
 		return;
 	}
 	Tick_SpineBending( _fDeltaTime );
+	if( !IsDead() )
+	{
+		Tick_Rotation( _fDeltaTime );
+	}
 	m_bTickedNPCBody = TRUE;
 	if( m_bWasRecentlyPossessed )
 	{

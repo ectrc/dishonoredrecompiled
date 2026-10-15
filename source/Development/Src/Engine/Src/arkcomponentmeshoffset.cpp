@@ -133,6 +133,20 @@ void FArkComponentMeshOffset::ForceMeshOffset( FVector _vOffset, UBOOL _bInstant
 	m_pLastBase = NULL;
 }
 
+// DISHONORED(port): agent HC. 2013 0x8f1c10 (65 B, unnamed; reached from ADishonoredPawn 2013 0xb498c0, which
+// FDisComponentRetargeting::StartRetargeting 2013 0xc88440 calls with 0): the mesh's rotation becomes the external rotation
+// offset plus the given pitch, which becomes the current pitch. 2013 addresses the external rotation at +84 (2012 PDB +76).
+void FArkComponentMeshOffset::ForcePitch( INT _Pitch )
+{
+	if( !m_pPawn || !m_pPawn->Mesh )
+	{
+		return;
+	}
+	m_pPawn->Mesh->Rotation = FRotator( m_ExternalRotationOffset.Pitch + _Pitch, m_ExternalRotationOffset.Yaw, m_ExternalRotationOffset.Roll );
+	m_pPawn->Mesh->BeginDeferredUpdateTransform();
+	m_CurrentPitch = _Pitch;
+}
+
 // 2012 0x535a40 (67 B): the feet forgotten, one tick with a zero time step - which snaps the mesh to its target
 void FArkComponentMeshOffset::ForceInstantSnapMesh()
 {
