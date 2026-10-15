@@ -64,6 +64,7 @@ public:
     //## END PROPS DisSeqAct_SetCurrentChapter
 
     DECLARE_CLASS(UDisSeqAct_SetCurrentChapter,USequenceAction,0,DishonoredGame)
+#include "CppText/UDisSeqAct_SetCurrentChapter.h"
 };
 
 // DishonoredGame.DisTweaks_ChapterInfo: retail sizeof 184, reflected span 140..184 (2012 PDB sizeof 184)

@@ -64,6 +64,7 @@ public:
 	* Constructor
 	*/
 	FFullScreenMovieSupport()
+	:	SubtitleFont(NULL)
 	{}
 
 	/** 
@@ -91,6 +92,22 @@ public:
 	// GameThreadPlayLoadingMovieAndIntro (FDisFullScreenMovieBink overrides it, 2012 rva 0x5752c0 / 2013 rva 0x533790), then the
 	// reference slots from GameThreadPlayMovie (8) to GameThreadAddOverlay (21).
 	virtual void InitAudio()
+	{}
+
+	// DISHONORED(port): agent HG. 2013 inserts three virtuals between InitAudio and GameThreadPlayLoadingMovieAndIntro (2013
+	// FFullScreenMovieSupport vtable 0xfcde60 slots 7..9; FDisFullScreenMovieBink's 0x10a4610 overrides them with 0x932cc0
+	// `mov eax,[ecx+130h]` = m_bIsLoadingMovie, 0xc64da0 `mov eax,[ecx+78h]` = bIsMovieSkippable (the member
+	// OnRequestLoadingMovieExit 0x933dc0 sets) and 0x932d00 = the m_pOverlayMgr store). UDisBinkOverlayManager reaches the movie
+	// player only through these (2013 rvas 0x7a9d30 +28/+32, 0x7b9880 +28, 0x79e440 +36).
+	virtual UBOOL IsLoadingMovie() const
+	{
+		return FALSE;
+	}
+	virtual UBOOL IsMovieSkippable() const
+	{
+		return TRUE;
+	}
+	virtual void SetOverlayManager(class UArkBinkOverlayManager* InOverlayMgr)
 	{}
 
 	virtual void GameThreadPlayLoadingMovieAndIntro(EMovieMode InMovieMode, const TCHAR* MovieFilename, const TCHAR* IntroFilename, INT StartFrame=0, INT InStartOfRenderingMovieFrame=-1, INT InEndOfRenderingMovieFrame=-1)
@@ -210,6 +227,11 @@ public:
 	 * Fullscreen movies does not need hitproxy storage. Just a waste of memory.
 	 */
 	virtual UBOOL RequiresHitProxyStorage() { return FALSE; }
+
+	// DISHONORED(port): agent HG. 2013 GFullScreenMovie+0x18: the subtitle font, set to the overlay manager's normal font by
+	// UDisBinkOverlayManager::LoadContentPackage (2013 rva 0x7934f0) and cleared by OnLoadingMovieStopped (0x787570); the Bink
+	// RenderFrame (0x4fa522) draws subtitles with it when set, else with GEngine->SubtitleFont.
+	UFont* SubtitleFont;
 };
 
 /*-----------------------------------------------------------------------------

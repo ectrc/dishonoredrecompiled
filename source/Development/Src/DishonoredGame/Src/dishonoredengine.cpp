@@ -125,8 +125,21 @@ void UDishonoredEngine::Init()
 	}
 
 	m_dLastAutoSaveTime = appSeconds();
-	// DISHONORED(bringup): UDisBinkOverlayManager::Initialize (2013 rva 0x79e440) registers the overlay manager with GFullScreenMovie
-	// (Bink movie player not ported); the static transition-save buffer retail empties here has no writer in our tree yet
+	// DISHONORED(port): agent HG. 2013 rva 0x614e20 at 0xa15194: UDisBinkOverlayManager::Initialize (0x79e440) registers the overlay
+	// manager with GFullScreenMovie. m_pBinkOverlayManager is a Transient property no native code of either exe constructs (the only
+	// references to UDisBinkOverlayManager::PrivateStaticClass are its registrant and StaticClassNoInline);
+	// DISHONORED(bringup): when it arrives NULL it is constructed here, and -pbinkdiag says which.
+	if( !m_pBinkOverlayManager )
+	{
+		m_pBinkOverlayManager = ConstructObject<UDisBinkOverlayManager>( UDisBinkOverlayManager::StaticClass(), this );
+	}
+	if( ParseParam( appCmdLine(), TEXT("pbinkdiag") ) )
+	{
+		debugf( TEXT("DISHONORED(binkdiag): overlay manager %s, movie player %s"), *m_pBinkOverlayManager->GetFullName(),
+			GIsGame && !ParseParam( appCmdLine(), TEXT("nomovie") ) ? TEXT("Bink when built with it") : TEXT("fallback (-nomovie)") );
+	}
+	m_pBinkOverlayManager->Initialize();
+	// DISHONORED(bringup): the static transition-save buffer retail empties here has no writer in our tree yet
 	// DISHONORED(bringup): UInterpTrackFaceTo::SetFaceToPriority(15) and UInterpTrackLookAt::SetLookatPriority(1, 5, 19)
 	// (2013 rvas 0x4fc8a0 / 0x4fcc90) are Engine statics our Engine lacks; the Locomotion one is agent FS's
 	// (2013 0x4fcc30, 2012 0x53bd80) and retail's Init (2012 0x65d280) sets it to 11 - the priority every matinee
@@ -187,13 +200,22 @@ UBOOL UDishonoredEngine::PlayLoadMapMovie( const FString& MapName, const FString
 		}
 		if( MapConfig->m_bIsSaveNotificationMovie && m_bShowSaveNotificationMovie )
 		{
-			// DISHONORED(bringup): m_pBinkOverlayManager->OnPlaySaveNotificationMovie() (2013 rva 0x7b69c0), Bink not ported
+			// DISHONORED(port): agent HG. 2013 rva 0x601b80 at 0xa01be7: OnPlaySaveNotificationMovie (0x7b69c0)
+			m_pBinkOverlayManager->OnPlaySaveNotificationMovie();
 			m_bShowSaveNotificationMovie = FALSE;
 			m_dSaveNotificationMovieEndTime = appSeconds() + m_fSaveNotificationMovieMinimumDuration;
 		}
-		// DISHONORED(bringup): otherwise m_pBinkOverlayManager->OnPlayLoadingMovie(MapName, TRUE, m_bShowLoadingTexts) (2013 rva 0x7b60e0)
+		else
+		{
+			// DISHONORED(port): agent HG. 2013 rva 0x601b80 at 0xa01c34: OnPlayLoadingMovie(MapName, TRUE, m_bShowLoadingTexts) (0x7b60e0)
+			m_pBinkOverlayManager->OnPlayLoadingMovie( MapName, TRUE, MapConfig->m_bShowLoadingTexts );
+		}
 	}
-	// DISHONORED(bringup): without a map config OnPlayLoadingMovie(MapName, FALSE, m_bShowLoadingMapNameAndHints).
+	else
+	{
+		// DISHONORED(port): agent HG. 2013 rva 0x601b80: without a map config OnPlayLoadingMovie(MapName, FALSE, m_bShowLoadingMapNameAndHints)
+		m_pBinkOverlayManager->OnPlayLoadingMovie( MapName, FALSE, m_bShowLoadingMapNameAndHints );
+	}
 	// DISHONORED(port): retail chains to UEngine::PlayLoadMapMovie(MapName, MapConfig ? m_LoadingMovieName : MovieName)
 	// (2013 rva 0x2097d0: the [FullScreenMovie] entry keyed by the map name, else a random LoadMapMovies entry). The call is
 	// qualified on purpose: agent AI's reference no-argument UEngine::PlayLoadMapMovie() forwards to this two-argument virtual, so

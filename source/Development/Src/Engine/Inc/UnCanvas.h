@@ -692,6 +692,11 @@ extern INT DrawStringZ(
 	const FFontRenderInfo& RenderInfo = FFontRenderInfo(EC_EventParm)
 );
 
+// DISHONORED(port): agent HG. Arkane's word-wrapped string (uncanvas.cpp:1804/1809 of the 2012 PDB; 2012 rvas 0x430430 / 0x42b520,
+// 2013 rvas 0x40d0f0 / 0x409120): XL is the wrap width in and the widest line out, YL accumulates the height of the lines.
+extern void DrawStringWrapped(FCanvas* Canvas,UBOOL Draw,FLOAT CurX,FLOAT CurY,FLOAT& XL,FLOAT& YL,class UFont* Font,const TCHAR* Text,FLinearColor DrawColor);
+extern void DrawStringWrappedZ(FCanvas* Canvas,UBOOL Draw,FLOAT CurX,FLOAT CurY,FLOAT Z,FLOAT& XL,FLOAT& YL,class UFont* Font,const TCHAR* Text,FLinearColor DrawColor);
+
 extern INT DrawShadowedString(FCanvas* Canvas,FLOAT StartX,FLOAT StartY,const TCHAR* Text,class UFont* Font,const FLinearColor& Color);
 extern INT DrawShadowedStringZ(FCanvas* Canvas,FLOAT StartX,FLOAT StartY,FLOAT Z,const TCHAR* Text,class UFont* Font,const FLinearColor& Color);
 

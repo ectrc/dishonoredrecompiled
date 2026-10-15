@@ -740,6 +740,16 @@ static void DishonoredTickInputScript( UGameViewportClient* Client, FLOAT DeltaT
 	}
 }
 
+// DISHONORED(bringup): agent HG. FFullScreenMovieBink::GameThreadWaitForMovie blocks the game thread (the briefing page waiting
+// for a key, the intro movie) and ticks only the client; it calls this so a scripted `key` still reaches the movie.
+void DishonoredTickInputScriptOutsideViewportTick( FLOAT DeltaTime )
+{
+	if( GEngine && GEngine->GameViewport )
+	{
+		DishonoredTickInputScript( GEngine->GameViewport, DeltaTime );
+	}
+}
+
 void UGameViewportClient::Tick( FLOAT DeltaTime )
 {
 	DishonoredTickInputTest( this, DeltaTime );

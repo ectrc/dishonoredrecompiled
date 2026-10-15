@@ -16,6 +16,8 @@
 // DISHONORED(written): accessors of dishonoredutilities_accessors.cpp (2013 rvas in that unit)
 class UDishonoredMapInfo* DishonoredGetMapInfo();
 class ADishonoredGameInfo* DisGetGameInfo();
+// DISHONORED(port): agent HG. 2013 rva 0x7c86c0 (2012 0x82d680); body in dishonoredutilities.cpp
+const FConfigSection* FindLocalizedConfigSection( const TCHAR* _pLanguage, const TCHAR* _pSection, TCHAR* _pOutFilePath, INT _MaxFilePathSize );
 class UDisGlobalUIManager* DisGetGlobalUIManager();
 class UDisLocalPlayer* DisGetLocalPlayer();
 class UDishonoredAudioSystem* DisGetAudioSystem();

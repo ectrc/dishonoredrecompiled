@@ -42,3 +42,10 @@ public:
 	// DISHONORED(port, partial): retail's Tick is 2012 rva 0x64b480 (2013 ??_7ADishonoredGameInfo slot); the only share
 	// written here is the UDisConvGlobalMan::TickGlobalConvMan call at its 0x64b533. Body in dishonoredgameinfo.cpp.
 	virtual UBOOL Tick( FLOAT DeltaTime, enum ELevelTick TickType );
+
+// ---- agent HG (PHASE22 HG): the loading movie's chapter title ----
+public:
+	// DISHONORED(port): 2013 rva 0x5fd320 (2012 0x6432d0, 153 bytes both). Body in dishonoredgameinfo.cpp.
+	const class UDisTweaks_ChapterInfo* GetCurrentChapter() const;
+	// DISHONORED(port): 2013 rva 0x5fd0e0 (2012 0x6484c0). Body in dishonoredgameinfo.cpp.
+	void SetCurrentChapter( FName _ChapterTag );

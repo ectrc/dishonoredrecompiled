@@ -73,6 +73,71 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 
+// DISHONORED(port): agent HG. 2013 rva 0x5fd320 (2012 0x6432d0): the map info's chapter list entry tagged m_CurrentChapterTag
+const UDisTweaks_ChapterInfo* ADishonoredGameInfo::GetCurrentChapter() const
+{
+	UDishonoredMapInfo* MapInfo = DishonoredGetMapInfo();
+	if( !MapInfo || !MapInfo->m_pChapters )
+	{
+		return NULL;
+	}
+	const UDisTweaks_ChapterInfoList* Chapters = MapInfo->m_pChapters;
+	for( INT ChapterIndex = 0; ChapterIndex < Chapters->m_ChapterList.Num(); ChapterIndex++ )
+	{
+		if( Chapters->m_ChapterList(ChapterIndex).m_ChapterTag == m_CurrentChapterTag )
+		{
+			return Chapters->m_ChapterList(ChapterIndex).m_pChapterInfo;
+		}
+	}
+	return NULL;
+}
+
+// DISHONORED(port): agent HG. 2013 rva 0x5fd0e0 (2012 0x6484c0): the tag of a chapter the map info knows becomes current and the two
+// target portraits follow it - the chapter's portrait override in slot 0 when it has one, else each target's portrait; a portrait that
+// changes is marked state 4.
+void ADishonoredGameInfo::SetCurrentChapter( FName _ChapterTag )
+{
+	UDishonoredMapInfo* MapInfo = DishonoredGetMapInfo();
+	if( !MapInfo || !MapInfo->m_pChapters )
+	{
+		return;
+	}
+	const UDisTweaks_ChapterInfoList* Chapters = MapInfo->m_pChapters;
+	for( INT ChapterIndex = 0; ChapterIndex < Chapters->m_ChapterList.Num(); ChapterIndex++ )
+	{
+		if( Chapters->m_ChapterList(ChapterIndex).m_ChapterTag != _ChapterTag )
+		{
+			continue;
+		}
+		const UDisTweaks_ChapterInfo* ChapterInfo = Chapters->m_ChapterList(ChapterIndex).m_pChapterInfo;
+		if( !ChapterInfo )
+		{
+			return;
+		}
+		m_CurrentChapterTag = _ChapterTag;
+		const UBOOL bHasPortraitOverride = ChapterInfo->m_ChapterPortraitOverride.Len() > 0;
+		for( INT TargetIndex = 0; TargetIndex < 2; TargetIndex++ )
+		{
+			FDisChapterTarget& Target = m_CurrentChapterTargets[TargetIndex];
+			if( bHasPortraitOverride && TargetIndex == 0 )
+			{
+				Target.m_PortraitPath = ChapterInfo->m_ChapterPortraitOverride;
+				Target.m_State = 4;
+			}
+			else if( !ChapterInfo->m_ChapterTargets[TargetIndex] || bHasPortraitOverride )
+			{
+				Target.m_PortraitPath.Empty();
+			}
+			else if( appStricmp( *ChapterInfo->m_ChapterTargets[TargetIndex]->m_TargetPortraitPath, *Target.m_PortraitPath ) != 0 )
+			{
+				Target.m_PortraitPath = ChapterInfo->m_ChapterTargets[TargetIndex]->m_TargetPortraitPath;
+				Target.m_State = 4;
+			}
+		}
+		return;
+	}
+}
+
 // DISHONORED(written): 2013 rva 0x5e9f40 (2012 0x62fb70, same bytes; the GetGameInfo call's result is unused)
 UBOOL ADishonoredGameInfo::CanStartMatch()
 {

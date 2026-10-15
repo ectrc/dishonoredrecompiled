@@ -6,3 +6,22 @@
 //   0x7cb660  public: virtual void __thiscall UDisSeqAct_SetCurrentChapter::Activated(void)
 //   0x7eadc0  public: static class UClass * __cdecl UDisSeqAct_SetCurrentChapter::GetPrivateStaticClassUDisSeqAct_SetCurrentChapter(wchar_t const *)
 //   0x7ee060  public: static class UClass * __cdecl UDisSeqAct_SetCurrentChapter::StaticClassNoInline(void)
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+
+// DISHONORED(written): agent HG. The link anchor of a unit whose only function is a virtual (DishonoredGameRegistrants.cpp).
+void DishonoredLinkUDisSeqAct_SetCurrentChapter()
+{
+}
+
+// DISHONORED(port): agent HG. 2013 rva 0x7861e0 (2012 0x7cb660, byte-identical)
+void UDisSeqAct_SetCurrentChapter::Activated()
+{
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	if( GameInfo )
+	{
+		GameInfo->SetCurrentChapter( m_ChapterTag );
+	}
+	USequenceAction::Activated();
+}

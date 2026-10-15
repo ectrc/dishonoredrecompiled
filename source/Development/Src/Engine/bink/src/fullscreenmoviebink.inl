@@ -894,6 +894,12 @@ void FFullScreenMovieBink::GameThreadWaitForMovie()
 		// Allow the client to process deferred window messages and input.
 		check(GEngine->Client);
 		GEngine->Client->Tick(DeltaTime);
+
+		// DISHONORED(bringup): agent HG. -inputcmd's script is ticked from UGameViewportClient::Tick, which does not run while
+		// the game thread waits here (the briefing page's PRESS ANY KEY, the intro movie); a scripted `key` reaches the movie
+		// the way a real key does, through UGameViewportClient::InputKey -> GFullScreenMovie->InputKey.
+		extern void DishonoredTickInputScriptOutsideViewportTick( FLOAT DeltaTime );
+		DishonoredTickInputScriptOutsideViewportTick( DeltaTime );
 #endif
 		bIsFinished = MovieFinishEvent->Wait( 1 );
 	}
@@ -1620,7 +1626,9 @@ UBOOL FFullScreenMovieBink::PumpMovie()
 		if( bHideRenderingOfMovie == FALSE )
 		{
 			// are we playing the loading movie (better than checking GameTHread string variable)
-			const UBOOL bIsLoadingMovie = MovieMode == MM_LoopFromSuppliedMemory;
+			// DISHONORED(retail): agent HG. 2013 rva 0x4fc720 passes (MovieMode >> 7) & 1, i.e. any looping movie: Arkane's loading
+			// movies loop from the stream (MM_LoopFromStream), so the reference test never let RenderFrame reach OnBinkRenderFrame.
+			const UBOOL bIsLoadingMovie = ( MovieMode & MF_LoopPlayback ) != 0;
 #if DWTRIOVIZSDK
 		if (DwTriovizImpl_NeedsFinalize() || DwTriovizImpl_IsTriovizActive()
 	#if DWTRIOVIZSDK_FRAMEPACKING
@@ -2777,7 +2785,9 @@ void FBinkMovieRenderClient::RenderFrame(BINK* Bink, const TCHAR* Subtitle, cons
 			if (bLoadingMovie || bNeedsNormalSubtitle)
 			{
 				FIntRect SafeZone( Left, Top, Right, Bottom );
-				DisplayWrappedString( &Canvas, Subtitle, TRUE, FALSE, GEngine->SubtitleFont, SafeZone, FLinearColor::White );
+				// DISHONORED(port): agent HG. 2013 rva 0x4fa522: GFullScreenMovie->SubtitleFont when the overlay manager set one
+				UFont* SubtitleFont = GFullScreenMovie && GFullScreenMovie->SubtitleFont ? GFullScreenMovie->SubtitleFont : GEngine->SubtitleFont;
+				DisplayWrappedString( &Canvas, Subtitle, TRUE, FALSE, SubtitleFont, SafeZone, FLinearColor::White );
 			}
 
 			// render overlays
@@ -2831,6 +2841,26 @@ void FBinkMovieRenderClient::RenderFrame(BINK* Bink, const TCHAR* Subtitle, cons
 			// A forced flush is now required
 			Canvas.Flush();
 		}
+	}
+
+	// DISHONORED(written): agent HG -pbinkdiag. The game viewport does not draw while a movie plays, so a pending
+	// screenshot request (-inputcmd `shot TAG`) is served here from the movie frame with its overlays, on the rendering
+	// thread: <GScreenShotName>_bink<NNNNN>.bmp.
+	extern UBOOL GScreenShotRequest;
+	extern FString GScreenShotName;
+	static const UBOOL bBinkDiag = ParseParam( appCmdLine(), TEXT("pbinkdiag") );
+	if( bBinkDiag && GScreenShotRequest )
+	{
+		const INT ShotX = Viewport->GetSizeX();
+		const INT ShotY = Viewport->GetSizeY();
+		TArray<BYTE> ShotData;
+		RHIReadSurfaceData( Viewport->GetRenderTargetSurface(), 0, 0, ShotX - 1, ShotY - 1, ShotData, FReadSurfaceDataFlags() );
+		const FString ShotName = ( GScreenShotName.Len() > 0 ? GScreenShotName : FString( TEXT("ScreenShot") ) ) + TEXT("_bink");
+		const UBOOL bWritten = ShotData.Num() == ShotX * ShotY * (INT)sizeof(FColor)
+			&& appCreateBitmap( *( appScreenShotDir() * ShotName ), ShotX, ShotY, (FColor*)ShotData.GetData(), GFileManager );
+		debugf( TEXT("DISHONORED(binkdiag): movie frame %dx%d written %d as '%s'"), ShotX, ShotY, bWritten, *ShotName );
+		GScreenShotRequest = FALSE;
+		GScreenShotName = TEXT("");
 	}
 }
 

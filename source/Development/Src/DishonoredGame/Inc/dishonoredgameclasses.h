@@ -10587,6 +10587,7 @@ public:
 
     DECLARE_CLASS(UDisBinkOverlayManager,UArkBinkOverlayManager,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("UI");}
+#include "CppText/UDisBinkOverlayManager.h"
 };
 
 // DishonoredGame.DisTutorialTracker: retail sizeof 64, reflected span 56..64 (2012 PDB sizeof 64)

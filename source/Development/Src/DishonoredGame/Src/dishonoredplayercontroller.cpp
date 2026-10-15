@@ -986,6 +986,16 @@ void DisFIAutoNewGame( ADishonoredPlayerController* PC )
 		return;
 	}
 	State = 1;
+	// DISHONORED(bringup): agent HG. The loading movie takes keys only from the first local player's controller (FDisFullScreenMovieBink::
+	// InputKey, 2013 rva 0x533bb0), which UDishonoredEngine::Init leaves at -1 until the start screen assigns one; this switch can run
+	// without the start screen, so an unassigned first player is given controller 0 here (the id every -inputcmd key carries).
+	ULocalPlayer* FirstPlayer = GEngine && GEngine->GamePlayers.Num() > 0 ? GEngine->GamePlayers(0) : NULL;
+	debugf( TEXT("DISHONORED(bringup): -finewgame: first local player controller id %d%s"), FirstPlayer ? FirstPlayer->ControllerId : -2,
+		FirstPlayer && FirstPlayer->ControllerId < 0 ? TEXT(" -> 0") : TEXT("") );
+	if( FirstPlayer && FirstPlayer->ControllerId < 0 )
+	{
+		FirstPlayer->ControllerId = 0;
+	}
 	const FString Command = TEXT("ce ChangeLvl_StartNewGame");
 	debugf( TEXT("DISHONORED(bringup): -finewgame at world time %.2f on map %s: '%s'"),
 		GWorld->GetTimeSeconds(), *GWorld->GetMapName(), *Command );

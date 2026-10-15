@@ -2023,6 +2023,103 @@ INT DrawStringOutlinedZ(
 	return DrawStringZ( Canvas, StartX, StartY, 1.0f, Text, Font, Color, XScale, YScale, HorizSpacingAdjust, ForcedViewportHeight, BlendMode, DoDraw, XOffset, YOffset, RenderInfo );
 }
 
+// DISHONORED(port): agent HG. 2013 rva 0x409120 (2012 0x42b520, 1257 bytes both): one line per pass, broken at the last word that
+// fits (or mid-word when no word fits), each drawn with DrawStringZ; a blank line doubles the line's height.
+void DrawStringWrappedZ(FCanvas* Canvas,UBOOL Draw,FLOAT CurX,FLOAT CurY,FLOAT Z,FLOAT& XL,FLOAT& YL,UFont* Font,const TCHAR* Text,FLinearColor DrawColor)
+{
+	if( Font == NULL )
+	{
+		return;
+	}
+	const FLOAT ViewportHeight = Canvas->GetRenderTarget()->GetSizeY();
+	const INT PageIndex = Font->GetResolutionPageIndex( ViewportHeight );
+	const FLOAT FontScale = Font->GetScalingFactor( ViewportHeight );
+	const FLOAT Width = XL;
+	do
+	{
+		INT iCleanWordEnd = 0;
+		FLOAT TestXL = 0.f;
+		FLOAT CleanXL = 0.f;
+		FLOAT TestYL = 0.f;
+		FLOAT CleanYL = 0.f;
+		UBOOL GotWord = FALSE;
+		if( *Text == 0 )
+		{
+			return;
+		}
+		INT iTestWord = 0;
+		TCHAR Next = 0;
+		do
+		{
+			const TCHAR* Cursor = Text + iTestWord;
+			if( *Cursor == TEXT('\n') )
+			{
+				break;
+			}
+			FLOAT ChW = 0.f;
+			FLOAT ChH = 0.f;
+			const INT CharIndex = PageIndex + Font->RemapChar( *Cursor );
+			if( CharIndex < Font->Characters.Num() )
+			{
+				const FFontCharacter& Char = Font->Characters( CharIndex );
+				if( Char.TextureIndex < Font->Textures.Num() && Font->Textures( Char.TextureIndex ) != NULL )
+				{
+					ChW = Char.USize;
+					ChH = Font->MaxCharHeight( CharIndex / Font->NumCharacters );
+				}
+			}
+			TestXL += ChW * FontScale;
+			if( Cursor[1] != TEXT(' ') && Cursor[1] != TEXT('\t') )
+			{
+				TestXL += Font->Kerning * FontScale;
+			}
+			TestYL = Max( TestYL, ChH * FontScale );
+			if( TestXL > Width )
+			{
+				break;
+			}
+			iTestWord++;
+			Next = Text[iTestWord];
+			const UBOOL bWordEnd = Next == TEXT(' ') || Next == TEXT('\n') || Next == 0;
+			if( bWordEnd || !GotWord )
+			{
+				iCleanWordEnd = iTestWord;
+				CleanXL = TestXL;
+				CleanYL = TestYL;
+				GotWord = GotWord || bWordEnd;
+			}
+			if( Next == TEXT('\n') && Text[iTestWord + 1] == TEXT('\n') )
+			{
+				CleanYL *= 2.f;
+			}
+		}
+		while( Next != 0 );
+
+		if( iCleanWordEnd == 0 )
+		{
+			break;
+		}
+		if( Draw && iCleanWordEnd > 0 )
+		{
+			const FString TextLine = FString( Text ).Left( iCleanWordEnd );
+			DrawStringZ( Canvas, CurX, CurY, Z, *TextLine, Font, DrawColor, 1.f, 1.f, 0.f, NULL, SE_BLEND_Translucent, TRUE, 0.f, 1.f, FFontRenderInfo( EC_EventParm ) );
+		}
+		CurY += CleanYL;
+		YL += CleanYL;
+		XL = Max( XL, CleanXL );
+		for( Text += iCleanWordEnd; *Text == TEXT(' ') || *Text == TEXT('\n'); Text++ )
+		{
+		}
+	}
+	while( *Text != 0 );
+}
+
+// DISHONORED(port): agent HG. 2013 rva 0x40d0f0 (2012 0x430430, byte-identical)
+void DrawStringWrapped(FCanvas* Canvas,UBOOL Draw,FLOAT CurX,FLOAT CurY,FLOAT& XL,FLOAT& YL,UFont* Font,const TCHAR* Text,FLinearColor DrawColor)
+{
+	DrawStringWrappedZ( Canvas, Draw, CurX, CurY, 1.f, XL, YL, Font, Text, DrawColor );
+}
+
 INT DrawShadowedString(FCanvas* Canvas,FLOAT StartX,FLOAT StartY,const TCHAR* Text,class UFont* Font,const FLinearColor& Color)
 {
 	return DrawShadowedStringZ(Canvas, StartX, StartY, 1.0f, Text, Font, Color);

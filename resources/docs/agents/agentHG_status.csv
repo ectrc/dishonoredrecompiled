@@ -1,0 +1,24 @@
+item,state,evidence
+identify the briefing background,done,LoadingEmpressTower.bik from frame 0 matches retail t 2.4-5.5 (SSIM .93 at 2.5; .86-.87 with overlays at 4-5.5); Loading.bik never on screen (build/agentHG/match_movies.py)
+identify the clouds,done,INTRO_LOC.bik ([FullScreenMovie] l_tower_p=INTRO_LOC) 1:1 in time at retail t 5.6-8.1 (SSIM .96-1.0); cut at movie time 2.6 = the user's skip; not a Kismet sky shot
+DISHONORED_WITH_BINK=ON build,done,build 1 and build 2 clean; exe imports binkw32.dll; startup movies play without -nomovie (startup 29.2 s) and are skipped with it
+Bink global shaders,done (nothing to declare),HG1.log global shader cache 263 / 261 loaded / 2 undeclared (MeshPaint only) vs 258 / 5 in play_w24e.log
+RenderFrame never reached the overlay hook,fixed (build 2),bIsLoadingMovie = MovieMode == MM_LoopFromSuppliedMemory replaced by MF_LoopPlayback (2013 0x4fc720 (MovieMode>>7)&1); HG1 0 overlay lines -> HG2 overlay state lines
+UDisBinkOverlayManager 16 functions,done,disbinkoverlaymanager.cpp; 2013 rvas 0x79e440 0x787530 0x7934f0 0x787570 0x7b60e0 0x7b69c0 0x79e570 0x7a9d30 0x7b9880 0x7b8b20 0x7b7130 0x793800 0x79e6a0 (registrant/StaticClass generated)
+CleanUp wiring,open,ported but not called: UDishonoredEngine::PreExit 0x5e4520 unported
+FFullScreenMovieSupport 2013 virtuals + SubtitleFont,done,slots 7..9 of 0xfcde60 / 0x10a4610 (0x932cc0 0xc64da0 0x932d00); +0x18 read at 0x4fa522
+DrawStringWrapped(Z),done,2013 0x40d0f0 / 0x409120; the paragraph wraps in two lines as retail (pair_page.png)
+FindLocalizedConfigSection,done,2013 0x7c86c0; MapNames 'Dunwall Tower' and HintSet_Intro 9 hints read
+chapter title source,done,ADishonoredGameInfo::GetCurrentChapter 0x5fd320 + SetCurrentChapter 0x5fd0e0 + UDisSeqAct_SetCurrentChapter::Activated 0x7861e0 (no writer existed); HG2: chapter Chapter1Info_ReturningHome title 'RETURNING HOME'
+PlayLoadMapMovie hooks + Init,done,0x601b80 at 0xa01be7 / 0xa01c34; Init 0x614e20 at 0xa15194; overlay manager is the CDO subobject Default__DishonoredEngine:pBinkOverlayManager (not NULL)
+PRESS ANY KEY waits for an inputcmd key,done,HG2: key wait start 81.63 -> shots 82.6/84.6 -> key 85.64 'consumed 1' -> intro; HG1 (build 1) waited until quit
+inputcmd during the blocking wait,done,GameThreadWaitForMovie ticks DishonoredTickInputScriptOutsideViewportTick
+first player controller id,bringup,-1 at New Game (HG1 'first player -1' consumed 0); Space on the start screen does not assign it (HG2 '-finewgame: first local player controller id -1 -> 0'); -finewgame assigns 0; real-input menu path still blocked
+-pbinkdiag,done,movie open / overlay texts with positions / hint index / chapter / key wait start+end / intro end / movie-frame shot apshottime_<tag>_bink*.bmp
+overlay areas SSIM vs retail t 4-5.5 (>= .7),done,map name .878-.946 (page2 .923-.988); chapter title+paragraph .923-.962 (.945-.978); PRESS ANY KEY .884-.949 (.916-.975); full frame .756-.886
+clouds frame at t~8,done,SSIM .980 at retail t 8.1; .952 at 8.0 (MAD 5.6)
+run_regression --no-build (-nomovie default),32/34,0 Criticals in every stage; newgame on_mission 107 pawns 29; the 2 misses are CoreSmoke.exe / LayoutProbe.exe not built in build/agentHG (DishonoredGame target only)
+newgame stage without -nomovie,not runnable as written,-playdefaults appends -nomovie unless the substring is present and appInitFullScreenMoviePlayer tests the same substring; with movies its -fmdrive never presses a key (blocks by design); hg_run.py runs are the with-movies evidence
+5 clean runs with movies,done,HG2..HG6: page + key wait + consumed key + INTRO_LOC + EnterSoireeMode + 0 Criticals in all five; overlay SSIM >= .833 everywhere; clouds shot = INTRO_LOC frame (.97) - on time in HG2/HG6 (.980 vs retail t 8.1); HG4 first attempt starved (startup 140 s) and was re-run
+regeneration byte-identical,done,79 files 0 differ (build/agentHG/regen)
+bitfield_audit,done,mismatches 0

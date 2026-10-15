@@ -242,3 +242,30 @@ FString DisEnumTypeToString( INT _Value, const TCHAR* _EnumPath )
 	}
 	return Enum->GetEnum( _Value ).ToString();
 }
+
+// DISHONORED(port): agent HG. 2013 rva 0x7c86c0 (2012 0x82d680, 352 bytes both): the first <LocalizationPath>/<Lang>/<Game>Game.<Lang>
+// that carries the section, over GSys->LocalizationPaths in order, the requested language first and then INT.
+const FConfigSection* FindLocalizedConfigSection( const TCHAR* _pLanguage, const TCHAR* _pSection, TCHAR* _pOutFilePath, INT _MaxFilePathSize )
+{
+	const FConfigSection* Section = NULL;
+	*_pOutFilePath = 0;
+	for( ;; )
+	{
+		for( INT PathIndex = 0; PathIndex < GSys->LocalizationPaths.Num(); PathIndex++ )
+		{
+			TCHAR FilePath[1024];
+			appSprintf( FilePath, TEXT("%s\\%s\\%sGame.%s"), *GSys->LocalizationPaths( PathIndex ), _pLanguage, GGameName, _pLanguage );
+			Section = GConfig->GetSectionPrivate( _pSection, FALSE, TRUE, FilePath );
+			if( Section )
+			{
+				appStrncpy( _pOutFilePath, FilePath, _MaxFilePathSize );
+				return Section;
+			}
+		}
+		if( appStricmp( _pLanguage, TEXT("INT") ) == 0 )
+		{
+			return Section;
+		}
+		_pLanguage = TEXT("INT");
+	}
+}

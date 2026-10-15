@@ -123,6 +123,15 @@ UBOOL FDisFullScreenMovieBink::InputKey(FViewport* Viewport, INT ControllerId, F
 		}
 	}
 
+	// DISHONORED(written): agent HG -pbinkdiag: every key the movie sees, for the PRESS ANY KEY wait
+	static const UBOOL bBinkDiag = ParseParam( appCmdLine(), TEXT("pbinkdiag") );
+	if( bBinkDiag && Event == IE_Pressed )
+	{
+		debugf( TEXT("DISHONORED(binkdiag): movie key %s controller %d (first player %d) loading %d skippable %d intro '%s' consumed %d"),
+			*Key.ToString(), ControllerId, (GEngine && GEngine->GamePlayers.Num() > 0 && GEngine->GamePlayers(0)) ? GEngine->GamePlayers(0)->ControllerId : -1,
+			m_bIsLoadingMovie, bIsMovieSkippable, *m_IntroMovieToPlay, bResult );
+	}
+
 	if( bSkippableLoading && bResult )
 	{
 		if( m_IntroMovieToPlay.Len() == 0 )
@@ -222,12 +231,22 @@ void FDisFullScreenMovieBink::GameThreadRequestDelayedStopMovie()
 				m_pOverlayMgr->Tick();
 			}
 			GameThreadWaitForMovie();
+			// DISHONORED(written): agent HG -pbinkdiag: the key wait ends, the intro starts and ends
+			static const UBOOL bBinkDiag = ParseParam( appCmdLine(), TEXT("pbinkdiag") );
+			if( bBinkDiag )
+			{
+				debugf( TEXT("DISHONORED(binkdiag): key wait end, intro '%s' starts"), *m_IntroMovieToPlay );
+			}
 			MovieFinishEvent->Reset();
 			m_bIsLoadingMovie = FALSE;
 			GameThreadStopMovie(0.f, TRUE, TRUE);
 			GameThreadPlayMovie(MM_PlayOnceFromStream, *m_IntroMovieToPlay);
 			FViewport::SetGameRenderingEnabled(FALSE, 0);
 			GameThreadWaitForMovie();
+			if( bBinkDiag )
+			{
+				debugf( TEXT("DISHONORED(binkdiag): intro '%s' ended"), *m_IntroMovieToPlay );
+			}
 			m_IntroMovieToPlay = TEXT("");
 			OnLoadingMovieSkipped();
 		}
@@ -270,6 +289,12 @@ UBOOL FDisFullScreenMovieBink::OnRequestLoadingMovieExit()
 			if( !GameInfo || !GameInfo->MyAutoTestManager )
 			{
 				UGameUISceneClient* SceneClient = UUIRoot::GetSceneClient();
+				// DISHONORED(written): agent HG -pbinkdiag: the key wait starts here
+				static const UBOOL bBinkDiag = ParseParam( appCmdLine(), TEXT("pbinkdiag") );
+				if( bBinkDiag )
+				{
+					debugf( TEXT("DISHONORED(binkdiag): key wait start on map %s (scene client %d, loading delay %.2f)"), *MapName, SceneClient != NULL, m_fLoadingDelay );
+				}
 				if( SceneClient )
 				{
 					SceneClient->m_bBinkPause = TRUE;

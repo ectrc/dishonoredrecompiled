@@ -2378,6 +2378,7 @@ extern void DishonoredLinkUDisAttentionInfo_Base();
 extern void DishonoredLinkUDisAttentionInfo_Complex();
 extern void DishonoredLinkUDisAttentionInfo_Simple();
 extern void DishonoredLinkUDisGlobalAIAttentionManager();
+extern void DishonoredLinkUDisSeqAct_SetCurrentChapter();
 extern void DishonoredLinkUDisTweaks_AIBrainProcess_Attention();
 extern void DishonoredLinkUDisTweaks_PawnAttention();
 void (*GDishonoredGameLinkAnchors[])() =
@@ -2430,6 +2431,7 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkUDisAttentionInfo_Complex,
 	&DishonoredLinkUDisAttentionInfo_Simple,
 	&DishonoredLinkUDisGlobalAIAttentionManager,
+	&DishonoredLinkUDisSeqAct_SetCurrentChapter,
 	&DishonoredLinkUDisTweaks_AIBrainProcess_Attention,
 	&DishonoredLinkUDisTweaks_PawnAttention,
 };

@@ -32,12 +32,19 @@ public:
 	virtual void OnBinkTick(FLOAT DeltaTime);
 	virtual void OnBinkRenderFrame(FViewport* Viewport, FCanvas* Canvas);
 
-	UBOOL IsLoadingMovie() const
+	// DISHONORED(port): agent HG. 2013 FFullScreenMovieSupport slots 7..9 (0x932cc0, 0xc64da0, 0x932d00); 2012 had the first and
+	// the last as non-virtual members (0x574630, 0x5746a0) and IsMovieSkippable folded (ICF) into an unrelated getter.
+	virtual UBOOL IsLoadingMovie() const
 	{
 		return m_bIsLoadingMovie;
 	}
 
-	void SetOverlayManager(UArkBinkOverlayManager* InOverlayMgr)
+	virtual UBOOL IsMovieSkippable() const
+	{
+		return bIsMovieSkippable;
+	}
+
+	virtual void SetOverlayManager(UArkBinkOverlayManager* InOverlayMgr)
 	{
 		m_pOverlayMgr = InOverlayMgr;
 	}
