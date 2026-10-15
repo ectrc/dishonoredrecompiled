@@ -232,3 +232,29 @@ Debug default); builds only via `build_queued.py`, **two per package**; runs onl
    clearly above `head_rel`'s (number recorded in HH's first report).
 3. `run_regression.py` 47/47 on each merge commit; `newgame` + `options` stages; `unported_natives` 0; `verify_phase2` 3/3.
 4. Final: a fresh OBS-free capture series (HH) viewed side by side with `retail.mp4` frames by the coordinator before closing.
+
+## Outcomes (coordinator log)
+
+| Package | Commit | Landed | Where the brief was wrong |
+|---|---|---|---|
+| HH | `fcad6f8` | `resources/tools/cutscene_compare.py` (run/score/compare/selftest; zoom NCC, MAD, SSIM-lite, area detectors, event alignment); baseline `build/cmp/head_rel` zoom 1.76 = 16/9, SSIM .523, vials 125/126, banner 0 | the ride is world 56.3-150.6 (world time never resets at New Game; the plan's 64-158 were log times, and the offset varies per launch); `-apshottime` silenced screen messages after its first capture (fixed in `2683f3e`); the brightness detectors fired on the hull and sky (replaced by template / stroke detectors) |
+| HE | `86193e5` | 2013 `PostStart` hides `masterHUD_mc` (ours hid `_dot_mc`), `PreClose` (2013 0x7af820), `ToggleHUDElement::Activated`, `Tick_PlayerState` gates (the crouch icon was the missing sneaking test), `UpdatePlayerInfoDisplay` un-inverted, cinematic save lock, `CheckSafeToModifyInGame` compiled out, screen messages off by default; vials 125 -> 0, stance 25 -> 0, SSIM .523 -> .537 | 2013 PostStart sends no Close; the save-lock addresses were 0x7ec820/0x7ec850 (FZ had the bodies); no ToggleHUDElement maps to 0xE00; the vials reappearing is not reachable on GB's route |
+| HF | `94bdb00` | `ShowLocationDiscovery` (both halves; fires world 52-56 = retail's time, anchor line `HUD: ShowLocationDiscovery '<name>' sound <0|1>`), the tutorial system (`Tick_Tutorials`, `ShowTutorial`, `SetTutorialMessage`, 2013's 64-byte `FDisTutorialInfo`), `Tick_GameMessages`, the objective popup's HUD half, `FormatInteractionText`/`LocalizeKeyboardKeyName`, `InitGameActionBindings`, `SetCrosshairActor` -> `OnCrosshairActorSet`; gate 32/32 on the game stages | "[Unbound]" comes from `Settings.int` via `LocalizeKeyboardKeyName`, not `ResolveMarkupString`; `Tick_Interaction` is 0x7acb10 and is called from `OnCrosshairActorSet`, not `PreAdvance`; the banner draws "W W" over a box (a 25 px AS2 mask never reopens - HJ); the objective system is a skeleton (HI); `[W][S][A][D]` because `ReadPCBindingsFromProfile` is unported (HJ) |
+| HA | `f147830` | `UArkAnimNodeStack::GetBoneAtoms` = `BuildEdgeAnimTreeEx` (2012/2013 byte-identical), `m_bIsAnimSeq` derived in `InitAnim`, the channel mask from the Edge joint list, the child-0 complement gone (w0 0.00 -> 1.00), NPC Start/StopRootMotionMode, 2013 track refinements; the captain walks arms-down at world 66 where head_rel stood in T-pose; refdev min 10.9 deg over 89 samples | WorkerB's Translate key cannot move him: the 47.5 uu sit in the Edge locomotion joint and our evaluator reads the root bone (HC); `0x5782f0` is a thunk, `UAnimNode::BuildEdgeAnimTree` is 0x19e6f0; no `_edgeAnimBlendAdditive` exists (op 1 = `_edgeAnimBlendJointsRelative` 0x613a90); refdev > 10 deg does not prove "no T-pose" on an A-pose reference |
+
+Coordinator: `2683f3e` (the screenshot restore state). One gate for `f147830` (HE+HF+HA) in `build/gate_wt`.
+Merge note: HF's two overlapping files were 3-way merged over HE with `git merge-file` (0 conflicts). `git add -u` once swept the
+user's uncommitted SLOMO/GHOST edits into HA's commit; recreated without them - stage explicit paths only.
+
+### Launch 2 (on `f147830`, user away, override on): HB, HC, plus two follow-ups
+
+- **HI — the objective system and the task markers** (HF's boundary): `UDishonoredObjectivesComponent` (`OnGotObjectiveNotify` 0x72a600,
+  `OnNewTaskNotify` 0x738020), `UDishonoredObjective`/`UDishonoredTask_Base`, the `DisSeqAct_*Objective*`/`*Task*` Kismet actions
+  (all instantiated in L_Tower_P), `ADishonoredPlayerController::OnObjectiveAction`, `FindActiveTaskTargets` 0x731350,
+  `UpdateTaskMarkerInstances` 0x80cd40, `PreRender_Markers` 0x8049d0, `Tick_Markers` 2013 0x7b00c0. Accept: "REPORT TO THE EMPRESS"
+  at retail t 108-110 from the real Kismet chain; the chevron over the target NPC; the save stage still restores.
+- **HJ — the banner's AS2 mask and the key names** (HF's defects): `DHMC_LocationDiscovery`'s mask tween never runs (25 px mask,
+  "W W" text); `TextField.setImageSubstitutions` missing on `tutorialMsg_mc`; `ReadPCBindingsFromProfile` 2013 0x6b8240 so the
+  hints read retail's "[Unbound]"/"[Mouse Scroll Down]"; `UDisSeqAct_SetTutorialMessage::PostLoad` 0x7b02f0; `execFormatText`.
+  Accept: banner SSIM >= .6 in its box vs retail video 8.8-13.9 s and the text reads "WRENHAVEN RIVER"; 0 new AS2 errors.
+- HC inherits HA's open item 1 (the Edge locomotion joint's root motion, `AnimLeafCallback` 0x58fb00's locomotion half).
