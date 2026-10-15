@@ -5133,10 +5133,14 @@ static void DishonoredTimedScreenShot(const FSceneViewFamily* ViewFamily)
 	{
 		extern UBOOL GScreenShotRequest;	// UnPlayer.cpp
 		extern FString GScreenShotName;		// UnPlayer.cpp - the file name, "ScreenShot" when empty
+		extern UBOOL GScreenMessagesRestoreState;	// Core.cpp - the readback in UnPlayer.cpp restores it after the capture
 		debugf(TEXT("DISHONORED(bringup): -apshottime: screenshot %d of %d, mark %.3f, frame at world time %.3f, name '%s'"),
 			NextShot + 1, ShotTimes.Num(), ShotTimes(NextShot), ViewFamily->CurrentWorldTime, *Tag);
 		NextShot++;
 		GScreenShotName = Tag.Len() > 0 ? FString::Printf(TEXT("apshottime_%s"), *Tag) : FString(TEXT("apshottime"));
+		// DISHONORED(written, agent HH's finding): a timed screenshot never saved the restore state, so the readback
+		// after the capture reset GAreScreenMessagesEnabled to FALSE and every later frame drew no screen message.
+		GScreenMessagesRestoreState = GAreScreenMessagesEnabled;
 		GScreenShotRequest = TRUE;
 	}
 }
