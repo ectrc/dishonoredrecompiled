@@ -271,3 +271,35 @@ user's uncommitted SLOMO/GHOST edits into HA's commit; recreated without them - 
   hints read retail's "[Unbound]"/"[Mouse Scroll Down]"; `UDisSeqAct_SetTutorialMessage::PostLoad` 0x7b02f0; `execFormatText`.
   Accept: banner SSIM >= .6 in its box vs retail video 8.8-13.9 s and the text reads "WRENHAVEN RIVER"; 0 new AS2 errors.
 - HC inherits HA's open item 1 (the Edge locomotion joint's root motion, `AnimLeafCallback` 0x58fb00's locomotion half).
+
+## Wave result (2026-10-15, head `d6c3aa4`, all eleven packages merged)
+
+`build/head_rel` rebuilt on `d6c3aa4`, staged as `DishonoredGame_final.exe`, scored end to end by HH's tool against
+`retail.mp4` (`build/cmp/final/`, run with `-nomovie`; the Bink pages were scored by HG/HK on their own runs):
+
+| metric (median over the ride, world 56.1-150.3) | head_rel `9faefc0` | final `d6c3aa4` |
+|---|---|---|
+| MAD | 29.4 | 11.6 |
+| SSIM | .523 | .696 |
+| zoom | 1.760 | 0.990 |
+| vials / stance / debugtext frames | 125 / 25 / 0 of 126 | 0 / 0 / 0 |
+| banner | never | world 52.0-56.0 = retail |
+| objective popup | never | 151-154 = retail |
+| hint "Use your mouse" | never | 66-71 = retail |
+| briefing page / clouds (HG, HK) | menu backdrop | SSIM .83-.95 / .72-.98 |
+
+Coordinator's side-by-side check of `pairs/pair_w0070`, `w0090`, `w0120`, `w0152`: framing, FOV, the captain's
+lean/gesture/hands-behind-back, the tiller guard at the tiller, the banner, the hint and the objective popup all
+match retail. Residue, in the order it shows:
+1. **NPC equipment**: the tiller guard has no helmet and the captain's belt gear differs (NPC inventory override /
+   attachments, deferred since wave 24).
+2. **After the ride** the captain walks off slower than retail (HC's 95 vs 123 u/s locomotion delta; FaceTo unported).
+3. **GFx text**: "REPORT TO THE EMPRESS" overflows the popup's right edge; the task line sits on a band.
+4. **Key names**: ours reads "[W] [S] [A] [D]", retail's "[Unbound]" comes from the user's Steam cloud profile (HJ).
+5. **"Geoff Curnow [..] Talk"** interaction prompt and the second "Press [..] to move" hint are absent (interaction
+   probe, HF's boundary).
+6. Bringup stand-ins to replace: the pose blender armed in `Spawned` (LOD manager), `MatineeControllerAdd` off
+   (soiree start stim), the UI hand-off slot (`UGFxInteraction`), `ProcessViewRotation` 0x6afb50, subtitles, audio.
+
+Gates: see the table above; final gate on `d6c3aa4` in `build/gate_final.log`. The user closed the wave here
+("After this phase don't do any more"); the override file is removed.

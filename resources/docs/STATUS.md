@@ -1,8 +1,8 @@
-# Project status — 2026-10-14 (wave 24 complete; **wave 25 is `PHASE22.md`: the opening cutscene 1:1 with the user's retail video** — PHASE21's GL..GO plan was never run and is void)
+# Project status — 2026-10-15 (wave 25 complete, head `d6c3aa4`: the opening cutscene scored against the user's retail video, `PHASE22.md`; PHASE21's GL..GO plan was never run and is void)
 
 Read this first when resuming. Plan of record: `PLAN.md`. Trackers: `PHASE1.md`–`PHASE10.md` (waves 1–8,
 done — read each "Wave result"), **`PHASE11.md` (waves 9–15)**, **`PHASE12.md` (wave 16)**,
-**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, current: HA..HH)**. Decisions and fixes: `porting_notes.md`. Per-function status:
+**`PHASE13.md` (wave 17, done)**, **`PHASE14.md`** (wave 18, done), **`PHASE15.md`** (wave 19, done), **`PHASE16.md`** (wave 20, done), **`PHASE17.md`** (wave 21, done), **`PHASE18.md`** (wave 22, done), **`PHASE19.md`** (wave 23, done), **`PHASE20.md`** (wave 24, done), `PHASE21.md` (a wave-25 draft that was never run — void), **`PHASE22.md` (wave 25, done: HA..HL)**. Decisions and fixes: `porting_notes.md`. Per-function status:
 `progress.md` + `function_status.csv`. Agent reports: `agents/agent<A..GK>.md`. The retail
 instrumentation loop: `dismod_harness.md`.
 
@@ -281,6 +281,32 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
     the boat's sockets (`FDisComponentRetargeting`). Wave 25 GM.
 17. One of L_Tower_P's eight streaming sublevels never loads, on the control too (GG; name not logged). Wave 25 GN.
 
+## Wave 25 — the opening cutscene against `retail.mp4`
+
+Eleven packages, all merged (`PHASE22.md` "Outcomes" has each one; `agents/agentHA.md` … `agentHL.md`). The
+measuring tool is `resources/tools/cutscene_compare.py` (HH). Ride medians head_rel -> final: MAD 29.4 -> 11.6,
+SSIM .523 -> .696, zoom 1.76 -> 0.99; vials/stance/debug text gone; banner, hint and objective popup at retail's times;
+the briefing page and the clouds play from Bink (ON by default since HK).
+
+| Package | Commit | What landed |
+|---|---|---|
+| HH | `fcad6f8` | the compare tool: zoom NCC, MAD, SSIM-lite, area detectors, event alignment |
+| HE | `86193e5` | 2013 `PostStart`/`PreClose`, `ToggleHUDElement`, `Tick_PlayerState` gates, screen messages off |
+| HF | `94bdb00` | `ShowLocationDiscovery`, the tutorial system, the objective popup's HUD half |
+| HA | `f147830` | `UArkAnimNodeStack::GetBoneAtoms` = `BuildEdgeAnimTreeEx` (the T-pose), child-0 complement gone |
+| HG | `ccdc25c` | `UDisBinkOverlayManager` whole; the briefing page and the clouds movie |
+| HD | `bcc7f4e` | horizontal projection as retail `CalcSceneView`; `ADishonoredPlayerPawn::FaceRotation`; view tracking |
+| HI | `33201ec` | the objective system whole, `PlayerAction`, task markers (the chevron) |
+| HC | `835dc2b` | `FArkComponentManager`, `FDisComponentRetargeting` (the boat sockets), NPC rotation intents, matinee root motion |
+| HJ | `9da5dbc` | three GFx defects behind the banner, `setImageSubstitutions`, `ReadPCBindingsFromProfile`, `SetToDefaults` |
+| HL | `d9be103` | the five player-action toggle natives (`unported_natives` back to 0) |
+| HB | `52cbde4` | pose blend in/out, `MAT_BlendOut`, the LookAt track |
+| HK | `d6c3aa4` | start-screen controller assignment, the UI hand-off slot, `StopMovie`/`PreExit`, Bink ON |
+
+Residue (PHASE22 "Wave result"): NPC equipment attachments (no helmet on the tiller guard), the captain's slower walk
+off the boat (95 vs 123 u/s, FaceTo), GFx popup text overflow, the profile-driven key names, the interaction prompt,
+and the bringup stand-ins (pose blender armed in `Spawned`, `MatineeControllerAdd` off, the UI hand-off slot).
+
 ## Wave 24 — the 3× NPCs, the spawn fall, the stop animation, the attention process, the sword
 
 Five packages, all merged and gated (`PHASE20.md` has each outcome; `agents/agentGG.md` … `agentGK.md`).
@@ -458,11 +484,9 @@ Wave 15 (ET perception, EU the patrol's blockers, EV the last 82 KB, EW the five
 
 ## Next
 
-**Wave 25 is `PHASE21.md`.** GL: vision — `FDisComponentVisionNPC`/`Vision`/`Observable` so the guards see the
-player (and the exit crash with a sense present). GM: the captain walks off the boat — the start-poly stage GK
-named, then retail's socket retargeting. GN: the chain end to end on main, every stop named, and the streaming
-level that never loads. GO: the item anim states so the sword stance plays and the arms report can be measured.
-All four running on `2a82ebe`; `build/head_rel` is the control at `2a82ebe`.
+**No wave is planned.** The user closed wave 25 with "After this phase don't do any more". If work resumes, start from
+PHASE22's "Wave result" residue list: NPC equipment attachments, FaceTo + the locomotion delta, the GFx text overflow,
+the interaction probe, then the bringup stand-ins. `build/head_rel` is at `d6c3aa4`.
 
 **Deferred and said so**: the rest of the UI list (menu camera, haze, text clarity); the retail dismod
 measurements; faction tables; the probe family; the NPC inventory override (guards' swords); `DropItemsInSlot`,
@@ -471,7 +495,7 @@ the wheel; **wave 15**; audio.
 **Process, from the user, all absolute**: `-windowed` on every launch; input only through `game_input.py`; builds
 only through `build_queued.py` (FIFO, half the cores, two per package); no retail launches while the user is at the
 machine. The override file (`%LOCALAPPDATA%\Temp\dishonored_build_overrides.txt`) lifts the cap and the queue only
-when the user says so (it was in place 2026-10-14 13:00–21:10 and is gone). **Never hand-edit a generated
+when the user says so (in place 2026-10-14 13:00–21:10 and 2026-10-14 23:00–2026-10-15 15:00, gone since). **Never hand-edit a generated
 header**: `Inc/CppText/<Class>.h` and `DishonoredLink<X>()` anchors; the coordinator regenerates on merge.
 
 ## Known pitfalls
