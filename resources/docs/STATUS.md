@@ -283,7 +283,7 @@ Waves 16 and 17 closed most of the interface list. What the user has reported an
 
 ## Wave 25 — the opening cutscene against `retail.mp4`
 
-Eleven packages, all merged (`PHASE22.md` "Outcomes" has each one; `agents/agentHA.md` … `agentHL.md`). The
+Eleven packages, all merged and gated: the final gate on `d6c3aa4` is **47 of 47** (`PHASE22.md` "Outcomes" has each one; `agents/agentHA.md` … `agentHL.md`). The
 measuring tool is `resources/tools/cutscene_compare.py` (HH). Ride medians head_rel -> final: MAD 29.4 -> 11.6,
 SSIM .523 -> .696, zoom 1.76 -> 0.99; vials/stance/debug text gone; banner, hint and objective popup at retail's times;
 the briefing page and the clouds play from Bink (ON by default since HK).
