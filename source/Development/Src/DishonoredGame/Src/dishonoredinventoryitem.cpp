@@ -606,3 +606,85 @@ BYTE UDishonoredInventoryItem::PlayerTransitionItemIn_Derived( BYTE _ActionUsage
 	}
 	return eDisTransitionItemResult_TransitionSuccess;
 }
+
+// ---- agent IM (PHASE23 IM): the item's half of the anim states (Inc/CppText/UDishonoredInventoryItem.h, IM block) ----
+// DISHONORED(bringup), named: UDishonoredInventoryItem::FindAnimStatePickers (2012 0x861370) is not ported, so an item's own picker
+// list (m_AnimStatePickerInfoPlayer) stays empty and SetAnimState answers Failed - the item's mesh does not follow the pawn's states.
+
+// 2013 0x80be90 (358 B): a physically equipped item's prefix (the NPC-only prefix for an NPC owner when it is set), else the empty hand's
+FName UDishonoredInventoryItem::GetItemPrefix() const
+{
+	const UDishonoredInventoryItem* PrefixItem = this;
+	if( !ItemIsPhysicallyEquipped() )
+	{
+		PrefixItem = m_pOwningInventory ? m_pOwningInventory->FindItemByClass( UDishonoredItemEmpty::StaticClass(), TRUE, FALSE, FALSE, EDisEquipUsage_Primary ) : NULL;
+		if( PrefixItem == NULL )
+		{
+			return NAME_None;
+		}
+	}
+	const UDisTweaks_InventoryItem* Tweaks = PrefixItem->GetItemTweaks();
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_InventoryItem::StaticClass()->GetDefaultObject<UDisTweaks_InventoryItem>();
+	}
+	const UBOOL bNPCOwner = m_pOwningInventory && m_pOwningInventory->m_pOwner && m_pOwningInventory->m_pOwner->IsA( ADishonoredNPCPawn::StaticClass() );
+	return ( bNPCOwner && Tweaks->m_ItemPrefix_NPCOnly != NAME_None ) ? Tweaks->m_ItemPrefix_NPCOnly : Tweaks->m_ItemPrefix;
+}
+
+// 2012 0x859e90 / 2013 0x816f20 (209 B): the named state of the item's own (first) picker, for the player's items only
+BYTE UDishonoredInventoryItem::SetAnimState( const FName& StateName, UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj )
+{
+	if( m_pOwningInventory == NULL || m_pOwningInventory->m_pOwner == NULL || !m_pOwningInventory->m_pOwner->IsA( ADishonoredPlayerPawn::StaticClass() ) )
+	{
+		return eSetAnimStateStatus_Failed;
+	}
+	if( m_pAnimStateCompPlayer == NULL || m_AnimStatePickerInfoPlayer.Num() == 0 )
+	{
+		return eSetAnimStateStatus_Failed;
+	}
+	FDisAnimState** Found = m_AnimStatePickerInfoPlayer( 0 ).m_AnimStateMap.Find( StateName );
+	if( Found == NULL || *Found == NULL )
+	{
+		return eSetAnimStateStatus_Failed;
+	}
+	return m_pAnimStateCompPlayer->SetAnimState( *Found, ANIMSTATE_FULL_BODY, AttachToState, BlendTime, FiringObj );
+}
+
+// 2012 0x85ad40 / 2013 0x8184c0 (157 B): an attached item takes the state (or its fallback); an unattached one remembers it for OnAttached
+UBOOL UDishonoredInventoryItem::SyncPawnAnimState( const FName& StateName, UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj )
+{
+	if( m_CurSocket == 0 )
+	{
+		m_UnattachedPawnSync.m_StateName = StateName;
+		m_UnattachedPawnSync.m_pFiringObj = FiringObj;
+		m_UnattachedPawnSync.m_pAttachToState = AttachToState;
+		return FALSE;
+	}
+	if( StateName != NAME_None )
+	{
+		const BYTE Status = SetAnimState( StateName, AttachToState, BlendTime, FiringObj );
+		if( Status == eSetAnimStateStatus_Success || Status == eSetAnimStateStatus_Failed_AlreadySet )
+		{
+			return TRUE;
+		}
+	}
+	OnSyncPawnAnimStateFail( StateName, AttachToState, BlendTime, FiringObj );
+	return FALSE;
+}
+
+// 2012 0x85ade0 / 2013 0x818560 (181 B): the pawn-specific tweaks' default anim state instead
+void UDishonoredInventoryItem::OnSyncPawnAnimStateFail( const FName& StateName, UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj )
+{
+	const UBOOL bPlayerOwner = m_pOwningInventory && m_pOwningInventory->m_pOwner && m_pOwningInventory->m_pOwner->IsA( ADishonoredPlayerPawn::StaticClass() );
+	const UDisTweaks_InventoryItem* Tweaks = GetItemTweaks();
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_InventoryItem::StaticClass()->GetDefaultObject<UDisTweaks_InventoryItem>();
+	}
+	const UDisTweaks_InventoryItem_PawnSpecific* PawnTweaks = bPlayerOwner ? (const UDisTweaks_InventoryItem_PawnSpecific*)Tweaks->m_pPlayerSpecificTweaks : Tweaks->m_pNPCSpecificTweaks;
+	if( PawnTweaks && PawnTweaks->m_DefaultAnimState != NAME_None )
+	{
+		SetAnimState( PawnTweaks->m_DefaultAnimState, AttachToState, BlendTime, FiringObj );
+	}
+}

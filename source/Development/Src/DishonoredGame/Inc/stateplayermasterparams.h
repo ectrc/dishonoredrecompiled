@@ -63,15 +63,16 @@ struct FStatePlayerMasterSwim_Param : public FStatePlayerMasterBase_Param
 /**
  * agent IF (PHASE23 IF). The upper-body / left-arm action request ADishonoredPlayerPawn::RequestAction takes: 2012
  * FStateSharedActionBase_PlayerOnly_Param ctor 0x695a20 (the action pointer at +8) and FStatePlayerAction_Param ctor
- * 0x6c4330 / 2013 0xa71690 (UStatePlayerAction's class). FStatePlayerAction_Param::OnPending (2012 0x6b4580: the pending
- * UStatePlayerAction is told its pawn and machine) is not written: the upper and left-arm machines are never initialised
- * in this tree, so RequestAction refuses before any state could be pending (dishonoredplayerpawn_action.cpp).
+ * 0x6c4330 / 2013 0xa71690 (UStatePlayerAction's class). agent IM (PHASE23 IM): the OnPendings - 2012 0x695a40 (the pending action
+ * state is told its pawn and action; a new action resets the non-repeat helper) and FStatePlayerAction_Param 0x6b4580 (also its
+ * player pawn and action machine). Bodies in Src/statesharedactionbase_playeronly.cpp and Src/stateplayeraction.cpp.
  */
 struct FStateSharedActionBase_PlayerOnly_Param : public FDisNativeStateParam
 {
 	const FPawnAction* m_pCurAction;
 
 	FStateSharedActionBase_PlayerOnly_Param( const FPawnAction& Action ) : FDisNativeStateParam( NULL ), m_pCurAction( &Action ) {}
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
 	virtual INT SizeOf() const { return sizeof(FStateSharedActionBase_PlayerOnly_Param); }
 };
 
@@ -81,7 +82,42 @@ struct FStatePlayerAction_Param : public FStateSharedActionBase_PlayerOnly_Param
 	{
 		m_pStateClass = UStatePlayerAction::StaticClass();
 	}
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
 	virtual INT SizeOf() const { return sizeof(FStatePlayerAction_Param); }
+};
+
+/** agent IM (PHASE23 IM). The ready-stance change request (2012 ctor 0x6c6190 / 2013 0x673d40, OnPending 0x6b45b0): the stance to store. */
+struct FStatePlayerChangeReadyStance_Param : public FStatePlayerAction_Param
+{
+	BYTE m_GoToStance;
+
+	FStatePlayerChangeReadyStance_Param( const FPawnAction& Action, BYTE GoToStance );
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
+	virtual INT SizeOf() const { return sizeof(FStatePlayerChangeReadyStance_Param); }
+};
+
+/**
+ * agent IM (PHASE23 IM). The upper-body / left-arm machines' idle and navigation states: FStatePlayerUpperBase_Param::OnPending
+ * (2012 0x6b4560 / 2013 0x664230) tells the pending state its action machine and pawn; the idle param's ctor is 2012 0x6c3ac0, the
+ * navigation one 0x6c3af0 (both use the idle param's vtable). Body in Src/stateplayerupperidle.cpp.
+ */
+struct FStatePlayerUpperBase_Param : public FDisNativeStateParam
+{
+	FStatePlayerUpperBase_Param( UClass* StateClass ) : FDisNativeStateParam( StateClass ) {}
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
+	virtual INT SizeOf() const { return sizeof(FStatePlayerUpperBase_Param); }
+};
+
+struct FStatePlayerUpperIdle_Param : public FStatePlayerUpperBase_Param
+{
+	FStatePlayerUpperIdle_Param() : FStatePlayerUpperBase_Param( UStatePlayerUpperIdle::StaticClass() ) {}
+	virtual INT SizeOf() const { return sizeof(FStatePlayerUpperIdle_Param); }
+};
+
+struct FStatePlayerActionNav_Param : public FStatePlayerUpperBase_Param
+{
+	FStatePlayerActionNav_Param() : FStatePlayerUpperBase_Param( UStatePlayerUpperNav::StaticClass() ) {}
+	virtual INT SizeOf() const { return sizeof(FStatePlayerActionNav_Param); }
 };
 
 /**

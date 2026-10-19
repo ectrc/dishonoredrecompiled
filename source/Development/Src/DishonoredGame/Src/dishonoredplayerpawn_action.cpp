@@ -54,6 +54,7 @@
 #include "stateplayermasterparams.h"
 #include "fzsoireediag.h"
 #include "ifdiag.h"
+#include "imdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkFZ_PlayerPawnAction()
@@ -61,21 +62,21 @@ void DishonoredLinkFZ_PlayerPawnAction()
 }
 
 /**
- * DISHONORED(port): 2012 0x720260. PreBeginPlay_AnimStates (0x7200e0, the anim-state picker arrays; unported, its
- * component has no bodies), the matinee blender looked up by name in the mesh's anim tree, PreBeginPlay_PlayerCombat
- * (0x71a710, unported), InitNavigationHandle (unported), then the three player FSMs initialised into their default states:
- * the master into UStatePlayerMasterWalk, the upper and the left arm into UStatePlayerUpperIdle.
- * DISHONORED(bringup): the upper and left-arm machines are not initialised here - every UStatePlayerUpper* unit is a
- * skeleton and an InitFSM into a state that has no bodies would run its empty base, which is also what not initialising
- * does; the pointers stay NULL and are tested by every reader. The master FSM is what the soiree needs.
+ * DISHONORED(port): 2012 0x720260 / 2013 0x6a4a50 (251 B both). PreBeginPlay_AnimStates (agent IM: the three pickers and their default
+ * states), the matinee blender looked up by name in the mesh's anim tree, PreBeginPlay_PlayerCombat (0x71a710, unported, named),
+ * InitNavigationHandle (unported, named), then the three player FSMs initialised into their default states: the master into
+ * UStatePlayerMasterWalk, the upper body and the left arm into UStatePlayerUpperIdle (agent IM: retail's own initialisation, so the
+ * upper-body and left-arm action requests have a machine to go to).
  */
 void ADishonoredPlayerPawn::PreBeginPlay_Actions()
 {
+	PreBeginPlay_AnimStates();
 	if( Mesh && Mesh->Animations )
 	{
 		UAnimTree* Tree = Cast<UAnimTree>( Mesh->Animations );
 		m_pMatineeBlender = Tree ? Cast<UArkAnimNodeBlendPose>( Tree->FindAnimNode( FName(TEXT("PoseBlender")) ) ) : NULL;
 	}
+	IMDIAG_ONCE( TEXT("PreBeginPlay_Actions: PreBeginPlay_PlayerCombat (2012 0x71a710) and InitNavigationHandle are not ported") );
 	if( !m_pPlayerMasterFSM )
 	{
 		debugf( NAME_Warning, TEXT("DISHONORED(bringup): %s has no m_pPlayerMasterFSM subobject; the player master FSM cannot be initialised"), *GetName() );
@@ -83,6 +84,17 @@ void ADishonoredPlayerPawn::PreBeginPlay_Actions()
 	}
 	FStatePlayerMasterWalk_Param WalkParam;
 	m_pPlayerMasterFSM->InitFSM( this, WalkParam, NULL );
+	if( m_pPlayerUpperFSM )
+	{
+		FStatePlayerUpperIdle_Param UpperParam;
+		m_pPlayerUpperFSM->InitFSM( this, UpperParam, NULL );
+	}
+	if( m_pPlayerLeftArmFSM )
+	{
+		FStatePlayerUpperIdle_Param LeftArmParam;
+		m_pPlayerLeftArmFSM->InitFSM( this, LeftArmParam, NULL );
+	}
+	DisIMNoteInit( this );
 	if( DisFZDiagEnabled() )
 	{
 		FString States;
@@ -99,7 +111,7 @@ void ADishonoredPlayerPawn::PreBeginPlay_Actions()
 	}
 }
 
-// DISHONORED(port): 2012 0x6fae20: the three machines tick; retail ticks the upper and left-arm ones too, which are not initialised here
+// DISHONORED(port): 2012 0x6fae20: the three machines tick
 UBOOL ADishonoredPlayerPawn::Tick_PlayerAction( FLOAT DeltaTime, ELevelTick TickType )
 {
 	if( m_pPlayerMasterFSM && m_pPlayerMasterFSM->GetCurrentlyActiveState() )
@@ -408,34 +420,34 @@ void ADishonoredPlayerPawn::setPhysics( BYTE NewPhysics, AActor* NewFloor, FVect
 
 /**
  * DISHONORED(port): 2012 0x704ad0 / 2013 0x6aad90 (91 B). The request goes to the machine unless its logical state is a player
- * action that refuses the new action (a death action is never refused).
- * DISHONORED(bringup): two named gaps. The upper and left-arm machines are never initialised in this tree
- * (PreBeginPlay_Actions, agent FZ), and a request to a machine with no state would leave it pending a class it does not
- * hold, so such a request is refused here. UStateSharedActionBase_PlayerOnly::CanTransitionAction (2012 0x692a80) is not
- * ported; no player-action state can be the logical state of an initialised machine here, and if one ever is the request is
- * refused rather than guessed.
+ * action that refuses the new action (UStateSharedActionBase_PlayerOnly::CanTransitionAction; a death action is never refused).
+ * DISHONORED(written): a machine pointer the pawn does not have (no subobject) refuses, where retail's always exists.
  */
 UBOOL ADishonoredPlayerPawn::RequestActionHelper( UDishonoredNativeStateMachine* FSM, UBOOL bIsDeathAction, FStateSharedActionBase_PlayerOnly_Param& ActionParam, UObject* FiringObject, UBOOL bCheckOnly )
 {
-	if( FSM == NULL || FSM->GetCurrentlyActiveState() == NULL )
+	if( FSM == NULL )
 	{
-		IFDIAG( TEXT("action request %s refused: its machine is not initialised"), *ActionParam.m_pCurAction->m_ActionName.ToString() );
-		IFDIAG_ONCE( TEXT("RequestAction: the upper-body and left-arm FSMs are not initialised (UStatePlayerUpper*/UStatePlayerAction skeletons); the action is not requested") );
+		DisIMNoteRequest( this, 255, ActionParam.m_pCurAction, FALSE, TEXT("the pawn has no such machine") );
 		return FALSE;
 	}
-	if( Cast<UStateSharedActionBase_PlayerOnly>( FSM->GetLogicalState() ) && !bIsDeathAction )
+	UStateSharedActionBase_PlayerOnly* CurAction = Cast<UStateSharedActionBase_PlayerOnly>( FSM->GetLogicalState() );
+	if( CurAction && !bIsDeathAction && !CurAction->CanTransitionAction( ActionParam.m_pCurAction ) )
 	{
-		IFDIAG_ONCE( TEXT("RequestActionHelper: UStateSharedActionBase_PlayerOnly::CanTransitionAction (2012 0x692a80) is not ported; the request is refused") );
+		DisIMNoteRequest( this, 255, ActionParam.m_pCurAction, FALSE, TEXT("the running action refuses it (CanTransitionAction)") );
 		return FALSE;
 	}
-	return FSM->RequestStateChange( ActionParam, FiringObject, bCheckOnly );
+	const UBOOL bGranted = FSM->RequestStateChange( ActionParam, FiringObject, bCheckOnly );
+	if( !bCheckOnly )
+	{
+		DisIMNoteRequest( this, 255, ActionParam.m_pCurAction, bGranted, bGranted ? TEXT("pending") : TEXT("the machine refused the state") );
+	}
+	return bGranted;
 }
 
 /**
  * DISHONORED(port): 2012 0x70bb90 / 2013 0x6b1d00 (254 B both). A left-hand action is refused while the left hand is disabled.
  * The full-body usage goes to the master machine (a UStatePlayerMasterDead request is a death action), the upper-body and
  * left-hand usages to their machines; a granted request invalidates the matching anim-state picker.
- * DISHONORED(bringup): UDisAnimStateComponent::InvalidateCurAnimState is not ported (agent FZ); named, not called.
  */
 UBOOL ADishonoredPlayerPawn::RequestAction( BYTE ActionUsage, FStateSharedActionBase_PlayerOnly_Param& ActionParam, UObject* FiringObject, UBOOL bCheckOnly )
 {
@@ -448,14 +460,121 @@ UBOOL ADishonoredPlayerPawn::RequestAction( BYTE ActionUsage, FStateSharedAction
 	{
 		const UBOOL bIsDeathAction = ActionParam.m_pStateClass && ActionParam.m_pStateClass->IsChildOf( UStatePlayerMasterDead::StaticClass() );
 		bResult = RequestActionHelper( m_pPlayerMasterFSM, bIsDeathAction, ActionParam, FiringObject, bCheckOnly );
+		if( bResult && !bCheckOnly && m_pAnimStateComp )
+		{
+			m_pAnimStateComp->InvalidateCurAnimState( ANIMSTATE_FULL_BODY );
+		}
 	}
 	else if( ActionUsage == eDisPlayerActionUsage_Upperbody || ActionUsage == eDisPlayerActionUsage_LeftHand )
 	{
 		bResult = RequestActionHelper( ActionUsage == eDisPlayerActionUsage_Upperbody ? m_pPlayerUpperFSM : m_pPlayerLeftArmFSM, FALSE, ActionParam, FiringObject, bCheckOnly );
-	}
-	if( bResult && !bCheckOnly )
-	{
-		IFDIAG_ONCE( TEXT("RequestAction: UDisAnimStateComponent::InvalidateCurAnimState is not ported") );
+		if( bResult && !bCheckOnly && m_pAnimStateComp )
+		{
+			m_pAnimStateComp->InvalidateCurAnimState( ActionUsage == eDisPlayerActionUsage_Upperbody ? ANIMSTATE_UPPER_BODY : ANIMSTATE_SPECIAL );
+		}
 	}
 	return bResult;
+}
+
+// ---- agent IM (PHASE23 IM): the player as the owner of its anim states (the IDisAnimStateFiringInterface / Owner slots) ----
+
+/**
+ * 2012 0x704b30 / 2013 0x6aadf0 (164 B). The end of an anim state's dominant sequence: for the full body, the master's logical state
+ * when it is the attached master action (a linked one hears its sync end first); for the upper body / special picker, the upper /
+ * left-arm machine's logical state when it is the attached player action (sync end, then exit); those leave with the time to go.
+ * Any other picker is simply cleared. Always answered.
+ */
+UBOOL ADishonoredPlayerPawn::AnimState_TriggerExit_Derived( INT StateType, UDishonoredNativeState* AttachedState, FLOAT TimeToGo )
+{
+	if( StateType == ANIMSTATE_FULL_BODY )
+	{
+		UStatePlayerMasterAction* Action = m_pPlayerMasterFSM ? Cast<UStatePlayerMasterAction>( m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
+		if( Action && Action == AttachedState )
+		{
+			if( Action->m_pLinkedNPC )
+			{
+				Action->OnLinkSyncEnd();
+			}
+			Action->RequestStateExit_WithTime( TimeToGo );
+		}
+		return TRUE;
+	}
+	if( StateType == ANIMSTATE_UPPER_BODY || StateType == ANIMSTATE_SPECIAL )
+	{
+		UDishonoredNativeStateMachine* FSM = StateType == ANIMSTATE_UPPER_BODY ? m_pPlayerUpperFSM : m_pPlayerLeftArmFSM;
+		UStatePlayerAction* Action = FSM ? Cast<UStatePlayerAction>( FSM->GetLogicalState() ) : NULL;
+		if( Action && Action == AttachedState )
+		{
+			Action->OnLinkSyncEnd();
+			Action->RequestStateExit_WithTime( TimeToGo );
+		}
+		return TRUE;
+	}
+	ClearAnimState( StateType, TimeToGo );
+	return TRUE;
+}
+
+/**
+ * 2013 0x6aaea0 (287 B). Locking the upper-body or special picker sends its machine to idle and locks it; unlocking unlocks the
+ * machine and ends its action (with the time to go) or its other state.
+ */
+void ADishonoredPlayerPawn::AnimState_LockoutPicker_Derived( INT StateType, FLOAT TimeToGo, UBOOL bLocked )
+{
+	if( StateType != ANIMSTATE_UPPER_BODY && StateType != ANIMSTATE_SPECIAL )
+	{
+		return;
+	}
+	UDishonoredNativeStateMachine* FSM = StateType == ANIMSTATE_UPPER_BODY ? m_pPlayerUpperFSM : m_pPlayerLeftArmFSM;
+	if( FSM == NULL )
+	{
+		return;
+	}
+	IMDIAG( TEXT("picker %d %s"), StateType, bLocked ? TEXT("locked out: its machine goes idle and locks") : TEXT("let in: its machine unlocks") );
+	if( bLocked )
+	{
+		FStatePlayerUpperIdle_Param IdleParam;
+		FSM->RequestStateChange( IdleParam, NULL, FALSE );
+		FSM->LockFSM( TRUE );
+		return;
+	}
+	FSM->LockFSM( FALSE );
+	UDishonoredNativeState* LogicalState = FSM->GetLogicalState();
+	UStatePlayerAction* Action = Cast<UStatePlayerAction>( LogicalState );
+	if( Action )
+	{
+		Action->RequestStateExit_WithTime( TimeToGo );
+	}
+	else if( LogicalState )
+	{
+		LogicalState->RequestStateExit();
+	}
+}
+
+// 2012 0x704d00 / 2013 0x6aafc0 (69 B): a linked action's sync end, for the full-body master action or the upper-body player action
+void ADishonoredPlayerPawn::AnimState_SyncEnd( INT StateType )
+{
+	UStateSharedActionBase* Action = NULL;
+	if( StateType == ANIMSTATE_FULL_BODY )
+	{
+		Action = m_pPlayerMasterFSM ? Cast<UStatePlayerMasterAction>( m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
+	}
+	else if( StateType == ANIMSTATE_UPPER_BODY )
+	{
+		Action = m_pPlayerUpperFSM ? Cast<UStatePlayerAction>( m_pPlayerUpperFSM->GetLogicalState() ) : NULL;
+	}
+	if( Action )
+	{
+		Action->OnLinkSyncEnd();
+	}
+}
+
+/**
+ * 2012 0x705820 / 2013 0x6ac2f0 (207 B). A custom sequence of the player's anim state plays from the start at rate 1, looping as the
+ * node says. DISHONORED(bringup), named: the melee chain start (a chaining UDisItemContext_MeleeAttackPlayer in UStatePlayerMeleeAttack
+ * starts at its UDishonoredNotify_ChainStart) - the melee states are skeletons.
+ */
+UBOOL ADishonoredPlayerPawn::AnimState_PlayAnim_Derived( UAnimNodeSequence* Seq )
+{
+	Seq->PlayAnim( Seq->bLooping, 1.f, 0.f );
+	return TRUE;
 }

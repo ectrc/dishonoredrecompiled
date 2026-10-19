@@ -1,0 +1,86 @@
+function,rva_2012,rva_2013,unit,status,note
+UStateSharedActionBase::OnEnterState,0x6a3da0,0x66e050,statesharedactionbase.cpp,ported,
+UStateSharedActionBase::OnResetState,0x692a20,0x65fa50,statesharedactionbase.cpp,ported,
+UStateSharedActionBase::SetFiringObject,0x692a30,0x65fa60,statesharedactionbase.cpp,ported,OnSetFiringObject not called (no override ported)
+UStateSharedActionBase::GetFiringObject,,,CppText,written,returns m_pFiringObj (the FSM's firing-object swap needs it)
+UStateSharedActionBase::OnFiringObjectChanged,0x69a3c0,0x666ee0,statesharedactionbase.cpp,named,UDisItemContext::ItemActionEnded unported
+UStateSharedActionBase::RequestStateExit_WithTime,0x6959d0,0x662880,statesharedactionbase.cpp,ported,
+UStateSharedActionBase::OnLinkSyncEnd,0x848ff0,,CppText,ported,
+UStateSharedActionBase_PlayerOnly::DoAction,0x692a50,0x65fa80,statesharedactionbase_playeronly.cpp,ported,
+UStateSharedActionBase_PlayerOnly::OnResetState,0x692a60,0x65fa90,statesharedactionbase_playeronly.cpp,ported,
+UStateSharedActionBase_PlayerOnly::OnExitState,0x692a70,0x65faa0,statesharedactionbase_playeronly.cpp,ported,
+UStateSharedActionBase_PlayerOnly::CanTransitionAction,0x692a80,0x65fab0,statesharedactionbase_playeronly.cpp,ported,
+UStateSharedActionBase_PlayerOnly::CanTransitionExternal,0x6a3d10,0x66dfc0,statesharedactionbase_playeronly.cpp,ported,
+UStateSharedActionBase_PlayerOnly::RequestStateExit_Derived,0x6a5d20,0x675290,statesharedactionbase_playeronly.cpp,ported,
+UStateSharedActionBase_PlayerOnly::ChooseAnimState,0x69a430,0x666f70,statesharedactionbase_playeronly.cpp,ported,empty anim-state list answers None
+FStateSharedActionBase_PlayerOnly_Param::OnPending,0x695a40,,statesharedactionbase_playeronly.cpp,ported,NULL pending state tested
+UStatePlayerAction::OnEnterState,0x6afc20,,stateplayeraction.cpp,ported,
+UStatePlayerAction::DoAction,0x6b92e0,0x66fc60,stateplayeraction.cpp,ported,
+UStatePlayerAction::RequestStateExit_Derived,0x6c4370,0x677290,stateplayeraction.cpp,ported,
+FStatePlayerAction_Param::OnPending,0x6b4580,,stateplayeraction.cpp,ported,
+UStatePlayerMasterAction::TickState,0x692ba0,,stateplayermasteraction.cpp,deviation,bWantsToCrouch cleared (saved bit has no SDK member)
+UStatePlayerMasterAction::EnableCamInfluences,0x692bd0,0x65fc90,stateplayermasteraction.cpp,ported,
+UStatePlayerMasterAction::OnOtherActorTerminated,0x692ce0,,stateplayermasteraction.cpp,ported,
+UStatePlayerMasterAction::DoAction,0x695c40,0x662ae0,stateplayermasteraction.cpp,ported,2013 body (stop sneaking)
+UStatePlayerMasterAction::OnExitState,0x695ec0,0x66e0a0,stateplayermasteraction.cpp,ported,2013 body
+UStatePlayerMasterAction::AnimState_AnimNotFound_Derived,0x695f90,0x662d70,stateplayermasteraction.cpp,ported,
+UStatePlayerMasterAction::OnLinkedActionExit,0x695fd0,0x662db0,stateplayermasteraction.cpp,partial,game event 13 not sent; IsInputEnabled asked of the controller
+UStatePlayerMasterAction::CanTransitionExternal,0x6a7160,0x6727a0,stateplayermasteraction.cpp,ported,
+UStatePlayerMasterAction::SetLinkedNPC,0x69a6c0,,,not written,no caller
+UStatePlayerUpperIdle::OnEnterState,0x6c6550,0x6741a0,stateplayerupperidle.cpp,ported,
+UStatePlayerUpperIdle::RequestStateExit_Derived,0x6c45a0,0x677ad0,stateplayerupperidle.cpp,ported,
+FStatePlayerUpperBase_Param::OnPending,0x6b4560,0x664230,stateplayerupperidle.cpp,ported,
+UStatePlayerUpperNav::OnEnterState,0x6c6400,0x674030,stateplayeruppernav.cpp,ported,item NULL-tested
+UStatePlayerChangeReadyStance::OnEnterState,0x6afc30,,stateplayerchangereadystance.cpp,ported,
+UStatePlayerChangeReadyStance::OnExitState,0x6afc50,0x660c70,stateplayerchangereadystance.cpp,ported,
+UStatePlayerChangeReadyStance::TickState,0x6afc90,0x660ca0,stateplayerchangereadystance.cpp,ported,
+UStatePlayerChangeReadyStance::DoAction,0x6b93d0,0x66fdd0,stateplayerchangereadystance.cpp,ported,
+UStatePlayerChangeReadyStance::RequestStateExit_Derived,0x6c4430,0x6773f0,stateplayerchangereadystance.cpp,ported,
+UStatePlayerChangeReadyStance::CanTransitionExternal,0x6c61f0,0x673da0,stateplayerchangereadystance.cpp,ported,
+FStatePlayerChangeReadyStance_Param ctor / OnPending,0x6c6190 / 0x6b45b0,0x673d40,stateplayerchangereadystance.cpp,ported,
+UDisAnimStateComponent (all 15 bodies),0x6b1ab0..0x6cc0d0,0x688870..0x69f610,disanimstatecomponent.cpp,ported,FindAnimNode for FindAnimNodeFast
+IDisAnimStateOwnerInterface::AnimState_PlayAnim / TriggerExit / Advance / AnimNotFound,0x6b1af0..0x6b1bc0,0x67d560..0x67d630,disanimstateownerinterface.cpp,ported,
+IDisAnimStateOwnerInterface::AnimState_LockoutPicker,0x6c0d40,0x691830,disanimstateownerinterface.cpp,ported,
+ADishonoredPlayerPawn::PreBeginPlay_AnimStates,0x7200e0,0x6e2060,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::FindStatePickers,0x71ed50,0x6e0f90,displayerpawn_animstates.cpp,ported,2013 body
+ADishonoredPlayerPawn::BuildAnimStateMap,0x71b9b0,0x6dfc70,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::GatherAnimStateArrays,0x704a00,0x6aac90,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::FindAnimState,0x71f740,0x6e16c0,displayerpawn_animstates.cpp,ported,editor refresh not written
+ADishonoredPlayerPawn::AnimState_AddItemPrefix,0x71f800,0x6e1780,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::SetAnimState,0x71fe40,0x6e1da0,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::SupportsAnimState,0x71ff40,0x6e1ea0,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::ClearAnimState / IsCurAnimStateFullWeight / FindNodeInCurrentAnimStateByName,0x6fbae0 / 0x6fbb00 / 0x6fbb10,,displayerpawn_animstates.cpp,ported,
+ADishonoredPlayerPawn::AnimState_GetSkeletalComponent / AnimState_GetAnimStateComp,0x71eb80 / 0x71eb90,,CppText,ported,
+ADishonoredPlayerPawn::AnimState_TriggerExit_Derived,0x704b30,0x6aadf0,dishonoredplayerpawn_action.cpp,ported,
+ADishonoredPlayerPawn::AnimState_LockoutPicker_Derived,0x704be0,0x6aaea0,dishonoredplayerpawn_action.cpp,ported,2013 body
+ADishonoredPlayerPawn::AnimState_SyncEnd,0x704d00,0x6aafc0,dishonoredplayerpawn_action.cpp,ported,
+ADishonoredPlayerPawn::AnimState_PlayAnim_Derived,0x705820,0x6ac2f0,dishonoredplayerpawn_action.cpp,partial,melee chain start named
+ADishonoredPlayerPawn::PreBeginPlay_Actions,0x720260,0x6a4a50,dishonoredplayerpawn_action.cpp,ported,upper + left-arm FSMs initialised; PreBeginPlay_PlayerCombat / InitNavigationHandle named
+ADishonoredPlayerPawn::RequestActionHelper,0x704ad0,0x6aad90,dishonoredplayerpawn_action.cpp,ported,IF's refusal removed
+ADishonoredPlayerPawn::RequestAction,0x70bb90,0x6b1d00,dishonoredplayerpawn_action.cpp,ported,InvalidateCurAnimState now called
+ADishonoredPlayerPawn::ApplyTweakChanges_Derived,0x71d1d0,0x6be9b0,dishonoredplayerpawn.cpp,partial,+ the ten anim-state arrays; camera copy / RBPush / health effects / ray scales / combat tweaks still named
+ADishonoredPlayerPawn::PerformMantle,0x70ff10,0x6d78d0,dishonoredplayerpawn_mantle.cpp,ported,IG's 120 uu refusal removed
+UStatePlayerMasterBase::UpdateWalkNavAnimState,0x69ab60,0x675450,stateplayermasterbase.cpp,ported,SetAnimState + stance RequestAction now real
+UStatePlayerMasterMantle::OnEnterState / OnExitState / OnEnterState_ImpactAnim,0x6be610 / 0x6be7b0 / 0x6b6d10,0x66ec20 / 0x66ee00 / 0x667c50,stateplayermastermantle.cpp,ported,DoAction / master OnExitState / impact node now called
+UStatePlayerMasterSwim::OnEnterState,0x6b7940,,stateplayermasterswim.cpp,ported,Nav_Swim set
+FDisSoireeControlState::ExitSoireeMode,,,dissoireecontrolstate.cpp,ported,InvalidateCurAnimState now called
+UDishonoredAnimNodeSeq::ApplySequenceNameModifiers,0x6e03b0,0x697ca0,dishonoredanimnodeseq.cpp,ported,
+UDishonoredAnimNodeSeq::PlayAnim,0x6e0530,0x697e30,dishonoredanimnodeseq.cpp,ported,required-notify scan not written
+UDishonoredAnimNodeSeq::OnBecomeRelevant,0x6e0870,0x69bb30,dishonoredanimnodeseq.cpp,deviation,player/item-owned nodes only
+UDishonoredAnimNodeSeq::IsDominantAnimStateSequence,0x6e09b0,0x68f1b0,dishonoredanimnodeseq.cpp,ported,
+UDishonoredAnimNodeSeq::OnAnimComplete,0x6e0df0,0x69bdb0,dishonoredanimnodeseq.cpp,ported,
+UDishonoredAnimNodeSeq::PostAnimNodeInstance,0x6d0c80,,,not written,would clear NPC sequence names
+UDishonoredAnimNodeSeq ranged notifies (6 functions),0x6e0ad0..0x6ef2a0,,,named,engine IssueNotifies has no virtual hook
+UDishonoredNotify_AnimStateExit::Notify,0x6f6500,0x69b4f0,dishonoredanimnotifies.cpp,ported,
+UDishonoredNotify_AnimStateAdvance::Notify,0x6f6440,0x69b430,dishonoredanimnotifies.cpp,ported,
+UDishonoredNotify_AnimStateSyncEnd::Notify,0x6f6720,0x696670,dishonoredanimnotifies.cpp,partial,player only (NPC SyncEnd unported)
+UDishonoredNotify_AllowMantleEnd::Notify,0x6d62c0,0x684660,dishonoredanimnotifies.cpp,ported,
+UDishonoredNotify_AllowMantleCancel::Notify,0x6d62e0,0x684710,dishonoredanimnotifies.cpp,ported,Notify_EndRange named
+DisGetMantleState,0x82da30,,dishonoredanimnotifies.cpp,ported,
+UDisNotify_AnimStateUnlock::Notify,0x6f6810,0x69b5e0,disnotify_animstateunlock.cpp,ported,
+UDishonoredInventoryItem::GetItemPrefix,0x8536b0,0x80be90,dishonoredinventoryitem.cpp,ported,2013 body
+UDishonoredInventoryItem::GetNavAnimState,0x849ea0,0x7fef20,CppText,ported,
+UDishonoredInventoryItem::SetAnimState,0x859e90,0x816f20,dishonoredinventoryitem.cpp,ported,
+UDishonoredInventoryItem::SyncPawnAnimState,0x85ad40,0x8184c0,dishonoredinventoryitem.cpp,ported,
+UDishonoredInventoryItem::OnSyncPawnAnimStateFail,0x85ade0,0x818560,dishonoredinventoryitem.cpp,ported,
+UDishonoredInventoryItem::FindAnimStatePickers,0x861370,,,named,item's own pickers stay empty

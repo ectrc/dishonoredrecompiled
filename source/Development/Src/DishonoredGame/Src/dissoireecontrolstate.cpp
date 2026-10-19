@@ -150,8 +150,11 @@ void FDisSoireeControlState::ExitSoireeMode( ADishonoredPlayerPawn* PlayerPawn, 
 	DisPopDisableSave( DDST_Soiree, 0.f );
 	if( m_Flags & SOIREE_HasAnimControlTrack )
 	{
-		// retail: UDisAnimStateComponent::InvalidateCurAnimState( m_pAnimStateComp, FALSE ) (2012 0x6bd8a0), unported
-		FZDIAG_ONCE( TEXT("ExitSoireeMode: UDisAnimStateComponent::InvalidateCurAnimState is not ported") );
+		// agent IM (PHASE23 IM): 2012 0x6bd8a0, the full-body picker's state is re-set by the next SetAnimState
+		if( PlayerPawn->m_pAnimStateComp )
+		{
+			PlayerPawn->m_pAnimStateComp->InvalidateCurAnimState( ANIMSTATE_FULL_BODY );
+		}
 	}
 	if( m_Flags & SOIREE_DisablePlayerCollision )
 	{

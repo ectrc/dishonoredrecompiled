@@ -64,5 +64,6 @@ IDisAnimStateFiringInterface* UDishonoredAnimTree::GetAnimStateFireInterface() c
 	{
 		return NULL;
 	}
-	return (IDisAnimStateFiringInterface*)FiredFrom->GetInterfaceAddress( UDisAnimStateFiringInterface::StaticClass() );
+	// agent IM (PHASE23 IM): through IDisAnimStateFiringInterface::FromObject (the C++ base of the player-side classes first)
+	return IDisAnimStateFiringInterface::FromObject( FiredFrom );
 }

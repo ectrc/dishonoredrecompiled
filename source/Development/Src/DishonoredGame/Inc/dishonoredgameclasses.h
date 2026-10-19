@@ -2344,6 +2344,7 @@ protected:
     virtual ~IDisAnimStateFiringInterface() {}
 public:
     typedef UDisAnimStateFiringInterface UClassType;
+#include "CppText/IDisAnimStateFiringInterface.h"
 };
 
 // DishonoredGame.DisAnimStateOwnerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -2362,6 +2363,7 @@ protected:
     virtual ~IDisAnimStateOwnerInterface() {}
 public:
     typedef UDisAnimStateOwnerInterface UClassType;
+#include "CppText/IDisAnimStateOwnerInterface.h"
 };
 
 // DishonoredGame.DisConvOneShotOwnerInterface: retail sizeof 56, reflected span 56..56 (2012 PDB sizeof 56)
@@ -9976,6 +9978,7 @@ public:
     //## END PROPS DisAnimStateComponent
 
     DECLARE_CLASS(UDisAnimStateComponent,UObject,0,DishonoredGame)
+#include "CppText/UDisAnimStateComponent.h"
 };
 
 // DishonoredGame.DisAnimStatePool: retail sizeof 68, reflected span 56..68 (2012 PDB sizeof 68)
@@ -11227,6 +11230,7 @@ public:
     //## END PROPS StateSharedActionBase
 
     DECLARE_CLASS(UStateSharedActionBase,UDishonoredNativeState,0,DishonoredGame)
+#include "CppText/UStateSharedActionBase.h"
 };
 
 // DishonoredGame.StateNPCMasterAction: retail sizeof 100, reflected span 76..100 (2012 PDB sizeof 100)
@@ -17157,6 +17161,7 @@ public:
 
     DECLARE_CLASS(UStateSharedActionBase_PlayerOnly,UStateSharedActionBase,0|CLASS_Config,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("PlayerState");}
+#include "CppText/UStateSharedActionBase_PlayerOnly.h"
 };
 
 // DishonoredGame.StatePlayerAction: retail sizeof 112, reflected span 104..112 (2012 PDB sizeof 112)
@@ -17169,6 +17174,7 @@ public:
     //## END PROPS StatePlayerAction
 
     DECLARE_CLASS(UStatePlayerAction,UStateSharedActionBase_PlayerOnly,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerAction.h"
 };
 
 // DishonoredGame.StatePlayerChangeReadyStance: retail sizeof 120, reflected span 112..120 (2012 PDB sizeof 120)
@@ -17181,6 +17187,7 @@ public:
     //## END PROPS StatePlayerChangeReadyStance
 
     DECLARE_CLASS(UStatePlayerChangeReadyStance,UStatePlayerAction,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerChangeReadyStance.h"
 };
 
 // DishonoredGame.StatePlayerBlock: retail sizeof 120, reflected span 120..120 (2012 PDB sizeof 120)
@@ -17213,6 +17220,7 @@ public:
     //## END PROPS StatePlayerUpperIdle
 
     DECLARE_CLASS(UStatePlayerUpperIdle,UStatePlayerUpperBase,0,DishonoredGame)
+#include "CppText/UStatePlayerUpperIdle.h"
 };
 
 // DishonoredGame.StatePlayerEquipChange: retail sizeof 124, reflected span 112..124 (2012 PDB sizeof 124)
@@ -17305,6 +17313,7 @@ public:
     //## END PROPS StatePlayerMasterAction
 
     DECLARE_CLASS(UStatePlayerMasterAction,UStateSharedActionBase_PlayerOnly,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterAction.h"
 };
 
 // DishonoredGame.StatePlayerMasterChangeReadyStance: retail sizeof 124, reflected span 116..124 (2012 PDB sizeof 124)
@@ -17640,6 +17649,7 @@ public:
     //## END PROPS StatePlayerUpperNav
 
     DECLARE_CLASS(UStatePlayerUpperNav,UStatePlayerUpperBase,0,DishonoredGame)
+#include "CppText/UStatePlayerUpperNav.h"
 };
 
 #undef DECLARE_CLASS

@@ -22,16 +22,14 @@
 	2012 / 2013 rvas: PerformMantle 0x70ff10 / 0x6d78d0 (283 / 324 B), Tick_Mantle 0x7129d0 / 0x6dbd00 (319 / 365 B, 2013 inlines
 	SetMantleCheckDisabled), DoMantle_StepUp 0x706f00 / 0x6d35e0, DoMantle_Anim 0x70d380 / 0x6cd820, IsMantleAllowed 0x6fb830 (10 B),
 	DoJump_Mantle 0x712b10 / 0x6dbe70 (83 B both), IsMantleRequested 0x707170 / 0x6c8000, IsPressingForward 0x7071a0 / 0x6c8030.
-	DISHONORED(bringup), a named deviation: the animated mantle needs the master action base to play its animation
-	(UStateSharedActionBase::OnEnterState's DoAction, vtable +372 - UStatePlayerMasterAction::DoAction 2012 0x695c40 and
-	ADishonoredPlayerPawn::SetAnimState are not ported). Without it the mantle state would clear the pawn's world collision and
-	wait for its 5 s timeout with no root motion to carry the pawn up. PerformMantle therefore refuses the animated path (returns
-	FALSE, so the jump is a jump) where retail requests it; DoMantle_Anim is ported and not called.
+	agent IM (PHASE23 IM): the master action base plays the mantle's animation now (UStatePlayerMasterAction::DoAction,
+	ADishonoredPlayerPawn::SetAnimState), so PerformMantle requests the animated mantle as retail does; agent IG's refusal is gone.
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
 #include "stateplayermasterparams.h"
 #include "igdiag.h"
+#include "imdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkIF_PlayerPawnMantle()
@@ -71,7 +69,7 @@ UBOOL ADishonoredPlayerPawn::IsMantleAllowed() const
 	return m_bMantleAllowed;
 }
 
-// 2013 0x6d78d0 (324 B); the animated path is refused (file banner)
+// 2013 0x6d78d0 (324 B)
 UBOOL ADishonoredPlayerPawn::PerformMantle( UBOOL bCancelable, UBOOL bBlinkToMantle )
 {
 	UDishonoredMantleEdgeFinderComponent* Finder = bBlinkToMantle ? m_pMantleEdgeFinder_Blink : m_pMantleEdgeFinder;
@@ -93,8 +91,10 @@ UBOOL ADishonoredPlayerPawn::PerformMantle( UBOOL bCancelable, UBOOL bBlinkToMan
 		DisIGNotePerformMantle( this, Finder, TEXT("refused: holding an object or carrying a corpse") );
 		return FALSE;
 	}
-	DisIGNotePerformMantle( this, Finder, TEXT("animated mantle refused: the master action base (DoAction / SetAnimState) is not ported") );
-	return FALSE;
+	DisIGNotePerformMantle( this, Finder, TEXT("animated mantle") );
+	DisIMNoteMantleRequest( this, Spot.m_fEdgeHeight );
+	DoMantle_Anim( Spot.m_fEdgeHeight, Spot.m_StartLocation, Spot.m_StartYaw, Spot.m_bRequiresImpactAnim, Spot.m_bForcesCrouch, bCancelable );
+	return TRUE;
 }
 
 /**

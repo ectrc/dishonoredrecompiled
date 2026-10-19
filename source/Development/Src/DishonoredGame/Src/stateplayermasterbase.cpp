@@ -5,6 +5,7 @@
 	0x69ab60 (2013 0x675450, 757 B), the const getters 0x692d30..0x692da0 (inline in the CppText).
 =============================================================================*/
 #include "DishonoredGame.h"
+#include "stateplayermasterparams.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkFZ_UStatePlayerMasterBase()
@@ -61,10 +62,9 @@ FLOAT UStatePlayerMasterBase::GetBlendInTime() const
  * a ready one Nav_Crouched_Ready / Nav_Sprinting_Ready / Nav_Default_Ready with its arm follow on; then the
  * crouch FOV: UStatePlayerMasterWalk's class default m_fCrouchedFOV at m_fCrouchFOV_BlendSpeed, arms locked, in the Locomotion
  * slot when the crouched anim state was chosen, else that slot is cleared.
- * DISHONORED(bringup), named and not faked: ADishonoredPlayerPawn::SetAnimState (2012 0x71fe40 / 2013 0x6e1da0) and RequestAction
- * (0x70bb90 / 0x6b1d00) with the FStatePlayerChangeReadyStance_Param ctor (0x6c6190 / 0x673d40) have no bodies here
- * (displayerpawn_animstates.cpp and the upper-body action FSM are skeletons): the anim state the walk would pick and the stance
- * change request are only reported once; the arm follow, the stored desired stance and the FOV half run as retail.
+ * agent IM (PHASE23 IM): the two halves agent IA named are retail's now - a desired stance the hand does not have is requested of
+ * the upper body (the item actions' m_Actions_ExitReady for NotReady, m_Actions_GoToReady otherwise, through
+ * FStatePlayerChangeReadyStance_Param), and the chosen full-body nav state is set (ADishonoredPlayerPawn::SetAnimState, not attached).
  */
 void UStatePlayerMasterBase::UpdateWalkNavAnimState( ADishonoredPlayerPawn* Pawn, UBOOL bHandleCrouch )
 {
@@ -75,12 +75,14 @@ void UStatePlayerMasterBase::UpdateWalkNavAnimState( ADishonoredPlayerPawn* Pawn
 	Pawn->m_DesiredPlayerStance[EDisEquipUsage_Primary] = DesiredStance;
 	if( DesiredStance != Pawn->GetActualPlayerStance( EDisEquipUsage_Primary ) )
 	{
-		static UBOOL bSaidStance = FALSE;
-		if( !bSaidStance )
+		UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( Pawn->GetTweaks_Derived() );
+		if( Tweaks == NULL )
 		{
-			bSaidStance = TRUE;
-			debugf( NAME_Warning, TEXT("DISHONORED(bringup): UStatePlayerMasterBase::UpdateWalkNavAnimState: ADishonoredPlayerPawn::RequestAction (2013 0x6b1d00) is not ported; the ready-stance change to %d is not requested"), (INT)DesiredStance );
+			Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
 		}
+		UDisTweaks_PlayerPawn_ItemActions* ItemActions = ((UDisTweaks_PlayerPawn_Actions*)Tweaks->m_pActionTweaks)->m_pItemActionTweaks;
+		FStatePlayerChangeReadyStance_Param StanceParam( DesiredStance == eDisPlayerStance_NotReady ? ItemActions->m_Actions_ExitReady : ItemActions->m_Actions_GoToReady, DesiredStance );
+		Pawn->RequestAction( eDisPlayerActionUsage_Upperbody, StanceParam, NULL, FALSE );
 	}
 	const BYTE ActualStance = Pawn->GetActualPlayerStance( EDisEquipUsage_Primary );
 	Pawn->DisableArmFollow( EDisEquipUsage_Secondary, Pawn->GetActualPlayerStance( EDisEquipUsage_Secondary ) == eDisPlayerStance_NotReady, BlendTime, FALSE );
@@ -112,12 +114,7 @@ void UStatePlayerMasterBase::UpdateWalkNavAnimState( ADishonoredPlayerPawn* Pawn
 		}
 		Pawn->DisableArmFollow( EDisEquipUsage_Primary, FALSE, BlendTime, FALSE );
 	}
-	static UBOOL bSaidAnim = FALSE;
-	if( !bSaidAnim )
-	{
-		bSaidAnim = TRUE;
-		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UStatePlayerMasterBase::UpdateWalkNavAnimState: ADishonoredPlayerPawn::SetAnimState (2013 0x6e1da0) is not ported; full-body anim state %s (blend %.2f) is not set"), AnimState, BlendTime );
-	}
+	Pawn->SetAnimState( FName( AnimState ), ANIMSTATE_FULL_BODY, NULL, BlendTime, NULL );
 	ADishonoredPlayerCamera* Camera = Pawn->GetDishonoredCamera();
 	const UStatePlayerMasterWalk* WalkDefaults = UStatePlayerMasterWalk::StaticClass()->GetDefaultObject<UStatePlayerMasterWalk>();
 	if( Camera )

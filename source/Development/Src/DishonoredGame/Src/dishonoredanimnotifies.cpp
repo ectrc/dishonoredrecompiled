@@ -194,3 +194,105 @@
 //   0x6f65f0  public: virtual void __thiscall UDishonoredNotify_ChainExit::Notify(class UAnimNodeSequence *)
 //   0x6f6680  public: virtual void __thiscall UDishonoredNotify_Stunned::Notify(class UAnimNodeSequence *)
 //   0x6f6720  public: virtual void __thiscall UDishonoredNotify_AnimStateSyncEnd::Notify(class UAnimNodeSequence *)
+
+/*-----------------------------------------------------------------------------
+	agent IM (PHASE23 IM): the anim-state notifies (CppText of each class). The exit and advance notifies mark their sequence so its
+	end does not report twice (UDishonoredAnimNodeSeq::OnAnimComplete).
+-----------------------------------------------------------------------------*/
+
+#include "DishonoredGame.h"
+#include "imdiag.h"
+
+void DishonoredLinkIM_DishonoredAnimNotifies()
+{
+}
+
+static IDisAnimStateOwnerInterface* DisAnimStateOwnerOf( UAnimNodeSequence* NodeSeq )
+{
+	AActor* Owner = NodeSeq->SkelComponent ? NodeSeq->SkelComponent->GetOwner() : NULL;
+	return Owner ? IDisAnimStateOwnerInterface::FromObject( Owner ) : NULL;
+}
+
+// 2012 0x82da30 (66 B): the player's mantle state, when it is the master's logical state
+static UStatePlayerMasterMantle* DisGetMantleState( UAnimNodeSequence* NodeSeq )
+{
+	ADishonoredPlayerPawn* Player = NodeSeq->SkelComponent ? Cast<ADishonoredPlayerPawn>( NodeSeq->SkelComponent->GetOwner() ) : NULL;
+	if( Player == NULL || Player->m_pPlayerMasterFSM == NULL )
+	{
+		return NULL;
+	}
+	return Cast<UStatePlayerMasterMantle>( Player->m_pPlayerMasterFSM->GetLogicalState() );
+}
+
+// 2012 0x6f6500 / 2013 0x69b4f0 (237 / 234 B; the full-weight query retail makes is unused)
+void UDishonoredNotify_AnimStateExit::Notify( UAnimNodeSequence* NodeSeq )
+{
+	UDishonoredAnimNodeSeq* DisSeq = Cast<UDishonoredAnimNodeSeq>( NodeSeq );
+	if( DisSeq == NULL || NodeSeq->SkelComponent == NULL || !DisSeq->IsDominantAnimStateSequence() )
+	{
+		return;
+	}
+	DisSeq->m_bGotAnimStateExit = TRUE;
+	IDisAnimStateOwnerInterface* Owner = DisAnimStateOwnerOf( NodeSeq );
+	if( Owner == NULL )
+	{
+		return;
+	}
+	IDisAnimStateFiringInterface* FiringObj = DisSeq->m_pDisParentAnimTree->GetAnimStateFireInterface();
+	FDisAnimStateTreeInfo Info;
+	DisSeq->m_pDisParentAnimTree->GetAnimStateInfo( &Info );
+	const FLOAT TimeLeft = NodeSeq->GetTimeLeft();
+	IMDIAG( TEXT("notify AnimStateExit in %s (picker %d, time left %.3f)"), *NodeSeq->AnimSeqName.ToString(), Info.m_AnimStatePicker, TimeLeft );
+	Owner->AnimState_TriggerExit( FiringObj, Info.m_AnimStatePicker, (UDishonoredNativeState*)Info.m_pAnimState_AttachToState, Min( TimeLeft, 0.5f ) );
+}
+
+// 2012 0x6f6440 / 2013 0x69b430 (177 B)
+void UDishonoredNotify_AnimStateAdvance::Notify( UAnimNodeSequence* NodeSeq )
+{
+	UDishonoredAnimNodeSeq* DisSeq = Cast<UDishonoredAnimNodeSeq>( NodeSeq );
+	if( DisSeq == NULL || NodeSeq->SkelComponent == NULL || !DisSeq->IsDominantAnimStateSequence() )
+	{
+		return;
+	}
+	DisSeq->m_bGotAnimStateAdvance = TRUE;
+	IDisAnimStateOwnerInterface* Owner = DisAnimStateOwnerOf( NodeSeq );
+	if( Owner )
+	{
+		Owner->AnimState_Advance( DisSeq->m_pDisParentAnimTree->GetAnimStateFireInterface(), Min( NodeSeq->GetTimeLeft(), 0.5f ) );
+	}
+}
+
+// 2012 0x6f6720 / 2013 0x696670 (82 B). DISHONORED(written): retail calls ADishonoredPawn::AnimState_SyncEnd (a pawn virtual); the NPC
+// override (2012 0x7b0d10) is not ported, so only the player's is reached
+void UDishonoredNotify_AnimStateSyncEnd::Notify( UAnimNodeSequence* NodeSeq )
+{
+	UDishonoredAnimNodeSeq* DisSeq = Cast<UDishonoredAnimNodeSeq>( NodeSeq );
+	if( DisSeq && NodeSeq->SkelComponent && DisSeq->IsDominantAnimStateSequence() )
+	{
+		ADishonoredPlayerPawn* Player = Cast<ADishonoredPlayerPawn>( NodeSeq->SkelComponent->GetOwner() );
+		if( Player )
+		{
+			Player->AnimState_SyncEnd( m_AnimStateType );
+		}
+	}
+}
+
+// 2012 0x6d62c0 / 2013 0x684660 (30 B)
+void UDishonoredNotify_AllowMantleEnd::Notify( UAnimNodeSequence* NodeSeq )
+{
+	UStatePlayerMasterMantle* Mantle = DisGetMantleState( NodeSeq );
+	if( Mantle )
+	{
+		Mantle->SetAllowPlayerEnd();
+	}
+}
+
+// 2012 0x6d62e0 / 2013 0x684710 (32 B)
+void UDishonoredNotify_AllowMantleCancel::Notify( UAnimNodeSequence* NodeSeq )
+{
+	UStatePlayerMasterMantle* Mantle = DisGetMantleState( NodeSeq );
+	if( Mantle )
+	{
+		Mantle->SetAllowPlayerCancel( TRUE );
+	}
+}

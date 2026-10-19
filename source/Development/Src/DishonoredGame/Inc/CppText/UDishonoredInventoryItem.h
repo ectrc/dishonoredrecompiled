@@ -65,6 +65,17 @@ protected:
 	virtual void OnEquipItem_Derived() {}
 	virtual void OnUnEquipItem_Derived() {}
 	virtual void TickInventoryItem_Derived( FLOAT _fDeltaTime ) {}
-	virtual UBOOL ModifyPlayerStance_Derived( BYTE& _rStance ) const { return FALSE; }
+	// agent IM (PHASE23 IM): 2012 0x849c80 / 2013 0x81c9b0 (28 B): a physically equipped item holds the hand ready
+	virtual UBOOL ModifyPlayerStance_Derived( BYTE& _rStance ) const { if( _rStance == eDisPlayerStance_NotReady ) { _rStance = eDisPlayerStance_Ready; return TRUE; } return FALSE; }
 	virtual const FVector2D GetItemAimForAnims_Derived() const;
 public:
+// ---- agent IM (PHASE23 IM): the item's half of the anim states. 2012 / 2013 rvas: GetItemPrefix 0x8536b0 / 0x80be90 (2013 inlines
+// UDisTweaks_InventoryItem::GetItemPrefix: the NPC-only prefix when the owner is an NPC and it is set), GetNavAnimState 0x849ea0 /
+// 0x7fef20, SetAnimState 0x859e90 / 0x816f20, SyncPawnAnimState 0x85ad40 / 0x8184c0, OnSyncPawnAnimStateFail 0x85ade0 / 0x818560.
+// Bodies in dishonoredinventoryitem.cpp.
+public:
+	FName GetItemPrefix() const;
+	virtual FName GetNavAnimState() const { return FName( TEXT("Nav_Default") ); }
+	BYTE SetAnimState( const FName& StateName, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );
+	UBOOL SyncPawnAnimState( const FName& StateName, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );
+	virtual void OnSyncPawnAnimStateFail( const FName& StateName, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );

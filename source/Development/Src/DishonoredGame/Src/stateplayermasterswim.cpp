@@ -22,8 +22,7 @@
 	At the surface (no active water volume - and m_pActiveWaterVolume stays NULL in this tree, see dishonoredwatervolume.cpp)
 	the pawn strokes on its own every m_fSurfaceSwimDelayBetweenStrokes; a stroke gives m_fMaxSwimAccel for m_fStrokeTime, between
 	strokes m_fMinSwimAccel below m_fMaxSpeedNoStroke and nothing above it.
-	DISHONORED(bringup), named and not called inside: the swim anim state (ADishonoredPlayerPawn::SetAnimState with Nav_Swim; the
-	anim-state system is not ported), the fish attractor (UDishonoredMapInfo::CreateAttractor / DestroyAttractor, unported - the
+	agent IM (PHASE23 IM): the swim anim state (Nav_Swim) is set. DISHONORED(bringup), named and not called inside: the fish attractor (UDishonoredMapInfo::CreateAttractor / DestroyAttractor, unported - the
 	pawn's m_pFishAttractor stays NULL), the anim-state component's picker lock while the hands are empty, the projectiles' cancel.
 -----------------------------------------------------------------------------*/
 
@@ -61,7 +60,7 @@ void UStatePlayerMasterSwim::OnEnterState( UDishonoredNativeState* LastState )
 	}
 	m_pPlayerPawn->EnableControllerInput( 0x7FFFF, FALSE, DisInputMaskLevel_MasterAction );
 	m_pPlayerPawn->EnableControllerInput( 0x108FB, TRUE, DisInputMaskLevel_MasterAction );
-	IFDIAG_ONCE( TEXT("UStatePlayerMasterSwim::OnEnterState: SetAnimState( Nav_Swim ) is not ported (the anim-state system)") );
+	m_pPlayerPawn->SetAnimState( FName( TEXT("Nav_Swim") ), ANIMSTATE_FULL_BODY, NULL, GetBlendInTime(), NULL );
 	m_fFallingTimer = 0.f;
 	UDishonoredInventory* Inventory = m_pPlayerPawn->m_pInventory;
 	Inventory->ShowEquippedItem( FALSE, EDisEquipUsage_Primary );

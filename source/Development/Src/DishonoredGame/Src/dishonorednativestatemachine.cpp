@@ -34,6 +34,7 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities_saveload.h"
 #include "ifdiag.h"
+#include "imdiag.h"
 
 // DISHONORED(written): FDisNativeFSMRejectedInfo(UClass*, UClass*, eDisNativeFSMRejectReason) 2012 rva 0x6927d0 (inlined into the
 // 2013 callers): stamped with the world's real time, one rejection
@@ -344,6 +345,7 @@ void UDishonoredNativeStateMachine::DoStateChange()
 	if( Pending )
 	{
 		DisIFNoteTransition( this, Last, Pending );
+		DisIMNoteTransition( this, Last, Pending );
 		Pending->OnEnterState( Last );
 	}
 }

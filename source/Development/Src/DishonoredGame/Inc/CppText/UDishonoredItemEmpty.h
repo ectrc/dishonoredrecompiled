@@ -16,3 +16,7 @@ public:
 protected:
 	virtual void SetTweaks_Derived( class UDisTweaksBase* _pTweaks );
 public:
+// agent IM (PHASE23 IM): ItemIsPhysicallyEquipped - the empty hand's slot 76 (2012 vtable 0xd726f0) is `xor eax, eax / retn` (0xd9220):
+// the empty hand is not physically equipped, so ModifyPlayerStance holds it NotReady and GetItemPrefix asks the empty hand's tweaks.
+public:
+	virtual UBOOL ItemIsPhysicallyEquipped() const { return FALSE; }

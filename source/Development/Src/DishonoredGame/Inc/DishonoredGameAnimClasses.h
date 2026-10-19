@@ -467,6 +467,7 @@ public:
 
     DECLARE_FUNCTION(execPlayAnim);
     DECLARE_CLASS(UDishonoredAnimNodeSeq,UAnimNodeSequence,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeSeq.h"
 };
 
 // DishonoredGame.DisAnimNodeSeqPlayer: retail sizeof 368, reflected span 332..356 (2012 PDB sizeof 368)
@@ -544,6 +545,7 @@ public:
     //## END PROPS DisNotify_AnimStateUnlock
 
     DECLARE_CLASS(UDisNotify_AnimStateUnlock,UAnimNotify,0,DishonoredGame)
+#include "CppText/UDisNotify_AnimStateUnlock.h"
 };
 
 // DishonoredGame.DisNotify_AttachItemInSlot: retail sizeof 68, reflected span 60..68 (2012 PDB sizeof 68)
@@ -1181,6 +1183,7 @@ public:
 
     DECLARE_FUNCTION(execSetAnim);
     DECLARE_CLASS(UDishonoredAnimNodeSeqMantle,UDishonoredAnimNodeSeq,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeSeqMantle.h"
 };
 
 // DishonoredGame.DishonoredAnimNodeStatePicker: retail sizeof 272, reflected span 221..264 (2012 PDB sizeof 272)
@@ -1264,6 +1267,7 @@ public:
     //## END PROPS DishonoredNotify_AllowMantleCancel
 
     DECLARE_CLASS(UDishonoredNotify_AllowMantleCancel,UAnimNotify,0,DishonoredGame)
+#include "CppText/UDishonoredNotify_AllowMantleCancel.h"
 };
 
 // DishonoredGame.DishonoredNotify_AllowMantleEnd: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
@@ -1274,6 +1278,7 @@ public:
     //## END PROPS DishonoredNotify_AllowMantleEnd
 
     DECLARE_CLASS(UDishonoredNotify_AllowMantleEnd,UAnimNotify,0,DishonoredGame)
+#include "CppText/UDishonoredNotify_AllowMantleEnd.h"
 };
 
 // DishonoredGame.DishonoredNotify_AllowRagdoll: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
@@ -1294,6 +1299,7 @@ public:
     //## END PROPS DishonoredNotify_AnimStateAdvance
 
     DECLARE_CLASS(UDishonoredNotify_AnimStateAdvance,UAnimNotify,0,DishonoredGame)
+#include "CppText/UDishonoredNotify_AnimStateAdvance.h"
 };
 
 // DishonoredGame.DishonoredNotify_AnimStateExit: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
@@ -1304,6 +1310,7 @@ public:
     //## END PROPS DishonoredNotify_AnimStateExit
 
     DECLARE_CLASS(UDishonoredNotify_AnimStateExit,UAnimNotify,0,DishonoredGame)
+#include "CppText/UDishonoredNotify_AnimStateExit.h"
 };
 
 // DishonoredGame.DishonoredNotify_AnimStateSyncEnd: retail sizeof 64, reflected span 60..61 (2012 PDB sizeof 64)
@@ -1315,6 +1322,7 @@ public:
     //## END PROPS DishonoredNotify_AnimStateSyncEnd
 
     DECLARE_CLASS(UDishonoredNotify_AnimStateSyncEnd,UAnimNotify,0,DishonoredGame)
+#include "CppText/UDishonoredNotify_AnimStateSyncEnd.h"
 };
 
 // DishonoredGame.DishonoredNotify_AttachEquippedItem: retail sizeof 64, reflected span 60..62 (2012 PDB sizeof 64)

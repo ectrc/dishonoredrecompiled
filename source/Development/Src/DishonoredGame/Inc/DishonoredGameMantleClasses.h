@@ -194,6 +194,7 @@ public:
     //## END PROPS DishonoredAnimNodeBlendByMantleCrouchRequired
 
     DECLARE_CLASS(UDishonoredAnimNodeBlendByMantleCrouchRequired,UAnimNodeBlendList,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeBlendByMantleCrouchRequired.h"
 };
 
 // DishonoredGame.DishonoredAnimNodeBlendByMantleType: retail sizeof 256, reflected span 256..256 (2012 PDB sizeof 256)
@@ -204,6 +205,7 @@ public:
     //## END PROPS DishonoredAnimNodeBlendByMantleType
 
     DECLARE_CLASS(UDishonoredAnimNodeBlendByMantleType,UAnimNodeBlendList,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeBlendByMantleType.h"
 };
 
 // DishonoredGame.DishonoredMantleEdgeFinderComponent: retail sizeof 272, reflected span 81..272 (2012 PDB sizeof 272)

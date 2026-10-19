@@ -172,6 +172,7 @@
 #include "gfarmsdiag.h"
 #include "stateplayermasterparams.h"
 #include "ifdiag.h"
+#include "imdiag.h"
 #include "igdiag.h"
 
 ADishonoredPlayerPawn* ADishonoredPlayerPawn::s_pInstance = NULL;
@@ -252,13 +253,77 @@ void ADishonoredPlayerPawn::execDisplayDebug_Native( FFrame& Stack, RESULT_DECL 
 // is still a comment-only skeleton; UDisTweaks_PlayerPawn_Actions' action structs, ADishonoredPawn::GetDishonoredCamera,
 // UDishonoredCamera_PhysicalReact and the whole contact system are unported too. Step 5 is ported for real, and the FSM
 // pointers are tested rather than assumed so this stays correct once those packages land.
+// agent IM (PHASE23 IM): 1 and 2 are ported now (2012 0x70eff0 read against 2013 0x6b53a0) - the action base and the upper /
+// left-arm machines exist. 3 (the contact system) and 4 (the camera's physical react) stay named.
 void ADishonoredPlayerPawn::Landed_Native( FVector HitNormal, AActor* FloorActor )
 {
 	if( UDisAttributes::IsCensusEnabled() )
 	{
-		debugf( TEXT("DISHONORED(bringup): disattrib land %s: Velocity %.1f %.1f %.1f, floor %s; land action, contact and camera react unported"),
+		debugf( TEXT("DISHONORED(bringup): disattrib land %s: Velocity %.1f %.1f %.1f, floor %s; contact and camera react unported"),
 			*GetName(), Velocity.X, Velocity.Y, Velocity.Z, FloorActor ? *FloorActor->GetName() : TEXT("none") );
 	}
+	const FVector WorkingVel = Velocity;
+	UStatePlayerMasterFalling* FallState = m_pPlayerMasterFSM ? Cast<UStatePlayerMasterFalling>( m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
+	UStatePlayerMasterFalling* FallDefaults = m_pPlayerMasterFSM ? (UStatePlayerMasterFalling*)m_pPlayerMasterFSM->FindState( UStatePlayerMasterFalling::StaticClass() ) : NULL;
+	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	UDisTweaks_PlayerPawn_NavigationActions* Actions = ((UDisTweaks_PlayerPawn_Actions*)Tweaks->m_pActionTweaks)->m_pNavigationActionTweaks;
+	const UBOOL bFloorBlocks = FloorActor && ( FloorActor->IsStatic() || FloorActor->bWorldGeometry || FloorActor->ShouldTrace( NULL, this, 0x2084 ) );
+	if( bFloorBlocks && FallDefaults && WorkingVel.Z < -FallDefaults->m_fFall_Stun_Vel )
+	{
+		if( !IsCarryingCorpse() )
+		{
+			FStatePlayerMasterAction_Param ActionParam( Actions->m_Action_JumpLandBig );
+			RequestAction( eDisPlayerActionUsage_Fullbody, ActionParam, NULL, FALSE );
+		}
+		IMDIAG( TEXT("landed: big land (Velocity.Z %.1f below -%.1f)"), WorkingVel.Z, FallDefaults->m_fFall_Stun_Vel );
+	}
+	else if( !( FallState && !FallState->ShouldAnimateFalling() ) && !IsHoldingMovableObject() && !IsCarryingCorpse() && m_pPlayerUpperFSM && m_pPlayerLeftArmFSM
+		&& !m_pPlayerUpperFSM->IsCurState( UStateSharedActionBase::StaticClass(), FALSE ) && !m_pPlayerMasterFSM->IsCurState( UStateSharedActionBase::StaticClass(), FALSE )
+		&& !m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSlide::StaticClass(), FALSE ) )
+	{
+		const BYTE DesiredStance = GetDesiredPlayerStance( EDisEquipUsage_Primary );
+		const FPawnAction* UpperAction = NULL;
+		if( DesiredStance == eDisPlayerStance_NotReady )
+		{
+			UpperAction = &Actions->m_Action_JumpLandSmall;
+		}
+		else if( DesiredStance == eDisPlayerStance_Ready )
+		{
+			UpperAction = IsSneaking() ? &Actions->m_Action_JumpLandSmall_Sneak : &Actions->m_Action_JumpLandSmall_Ready;
+		}
+		if( UpperAction && ( !UpperAction->m_bActionUsesLeftHand || !m_bLeftHandDisabled ) )
+		{
+			FStatePlayerAction_Param ActionParam( *UpperAction );
+			UStateSharedActionBase_PlayerOnly* Running = Cast<UStateSharedActionBase_PlayerOnly>( m_pPlayerUpperFSM->GetLogicalState() );
+			const UBOOL bGranted = ( Running == NULL || Running->CanTransitionAction( UpperAction ) ) && m_pPlayerUpperFSM->RequestStateChange( ActionParam, NULL, FALSE );
+			if( bGranted && m_pAnimStateComp )
+			{
+				m_pAnimStateComp->InvalidateCurAnimState( ANIMSTATE_UPPER_BODY );
+			}
+			DisIMNoteRequest( this, eDisPlayerActionUsage_Upperbody, UpperAction, bGranted, TEXT("landed (upper body)") );
+		}
+		UDishonoredInventoryItem* Secondary = GetEquippedItem( EDisEquipUsage_Secondary );
+		if( Secondary && !Secondary->IsA( UDishonoredItemEmpty::StaticClass() ) )
+		{
+			const FPawnAction* LeftAction = &Actions->m_Action_JumpLandSmall_LeftHand;
+			if( !LeftAction->m_bActionUsesLeftHand || !m_bLeftHandDisabled )
+			{
+				FStatePlayerAction_Param ActionParam( *LeftAction );
+				UStateSharedActionBase_PlayerOnly* Running = Cast<UStateSharedActionBase_PlayerOnly>( m_pPlayerLeftArmFSM->GetLogicalState() );
+				const UBOOL bGranted = ( Running == NULL || Running->CanTransitionAction( LeftAction ) ) && m_pPlayerLeftArmFSM->RequestStateChange( ActionParam, NULL, FALSE );
+				if( bGranted && m_pAnimStateComp )
+				{
+					m_pAnimStateComp->InvalidateCurAnimState( ANIMSTATE_SPECIAL );
+				}
+				DisIMNoteRequest( this, eDisPlayerActionUsage_LeftHand, LeftAction, bGranted, TEXT("landed (left hand)") );
+			}
+		}
+	}
+	IMDIAG_ONCE( TEXT("Landed_Native: the landing contact (UDishonoredContactSystem::ApplyContact) and the camera's physical react are not ported") );
 	m_Debug_Player.m_LastJumpLandVel = Velocity;
 }
 
@@ -360,6 +425,7 @@ UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	m_fLastDeltaSeconds = DeltaTime;
 	DisGFReportPlayer( this );
 	DisIFReportPlayer( this, DeltaTime );
+	DisIMReport( this, DeltaTime );
 	return bResult;
 }
 
@@ -369,6 +435,10 @@ UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 // 96-byte camera settings copy into the arms component, RBPushStrength, the seven anim-state arrays (full body, assassination,
 // fatality, upper-body items / melee / ranged, left hand), the health effects and the ray speed scales, the third component's
 // combat tweaks (pawn +2416), the three special-animation arrays.
+// agent IM (PHASE23 IM): the seven anim-state arrays (from the player animation tweaks' full-body / upper-body / special sub-tweaks:
+// navigation, assassination, fatality; items, melee, ranged; left-hand items) and the three misc arrays (each sub-tweak's own, when the
+// animation tweaks exist) are copied as 2013 does - FindStatePickers maps the pawn's copies. Retail reads the three sub-tweaks without a
+// NULL test for the seven; they are tested here.
 void ADishonoredPlayerPawn::ApplyTweakChanges_Derived()
 {
 	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
@@ -376,9 +446,48 @@ void ADishonoredPlayerPawn::ApplyTweakChanges_Derived()
 	{
 		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
 	}
+	UDisTweaks_Pawn_Animation* AnimTweaks = Tweaks->m_pAnimationTweaks;
+	UDisTweaks_PlayerPawn_FullBodyAnimation* FullBody = AnimTweaks ? Cast<UDisTweaks_PlayerPawn_FullBodyAnimation>( AnimTweaks->m_pFullBodyTweaks ) : NULL;
+	UDisTweaks_PlayerPawn_UpperBodyAnimation* UpperBody = AnimTweaks ? Cast<UDisTweaks_PlayerPawn_UpperBodyAnimation>( AnimTweaks->m_pUpperBodyTweaks ) : NULL;
+	UDisTweaks_PlayerPawn_SpecialAnimation* Special = AnimTweaks ? Cast<UDisTweaks_PlayerPawn_SpecialAnimation>( AnimTweaks->m_pSpecialTweaks ) : NULL;
+	if( FullBody )
+	{
+		m_AnimStates_FullBody_Navigation = FullBody->m_AnimStates_FullBody_Navigation;
+		m_AnimStates_FullBody_Assassination = FullBody->m_AnimStates_FullBody_Assassination;
+		m_AnimStates_FullBody_Fatality = FullBody->m_AnimStates_FullBody_Fatality;
+	}
+	if( UpperBody )
+	{
+		m_AnimStates_UpperBody_Items = UpperBody->m_AnimStates_UpperBody_Items;
+		m_AnimStates_UpperBody_Items_Melee = UpperBody->m_AnimStates_UpperBody_Items_Melee;
+		m_AnimStates_UpperBody_Items_Ranged = UpperBody->m_AnimStates_UpperBody_Items_Ranged;
+	}
+	if( Special )
+	{
+		m_AnimStates_LeftHand_Items = Special->m_AnimStates_LeftHand_Items;
+	}
 	m_pMantleEdgeFinder->SetTweaks( Tweaks->m_pMantleTweaks );
 	m_pMantleEdgeFinder_Blink->SetTweaks( Tweaks->m_pMantleBlinkTweaks );
-	IGDIAG_ONCE( TEXT("ADishonoredPlayerPawn::ApplyTweakChanges_Derived (2013 0x6be9b0): only the edge finders' tweaks are applied; the anim-state arrays, health effects and component combat tweaks are not ported") );
+	if( AnimTweaks )
+	{
+		if( AnimTweaks->m_pFullBodyTweaks )
+		{
+			m_AnimStates_FullBody_Misc = AnimTweaks->m_pFullBodyTweaks->m_AnimStates_FullBody_Misc;
+		}
+		if( AnimTweaks->m_pUpperBodyTweaks )
+		{
+			m_AnimStates_UpperBody_Misc = AnimTweaks->m_pUpperBodyTweaks->m_AnimStates_UpperBody_Misc;
+		}
+		if( AnimTweaks->m_pSpecialTweaks )
+		{
+			m_AnimStates_Special_Misc = AnimTweaks->m_pSpecialTweaks->m_AnimStates_Special_Misc;
+		}
+	}
+	IMDIAG( TEXT("ApplyTweakChanges_Derived: anim-state arrays nav %d assassination %d fatality %d items %d melee %d ranged %d lefthand %d misc %d/%d/%d (pickers already built: %d)"),
+		m_AnimStates_FullBody_Navigation.Num(), m_AnimStates_FullBody_Assassination.Num(), m_AnimStates_FullBody_Fatality.Num(), m_AnimStates_UpperBody_Items.Num(),
+		m_AnimStates_UpperBody_Items_Melee.Num(), m_AnimStates_UpperBody_Items_Ranged.Num(), m_AnimStates_LeftHand_Items.Num(), m_AnimStates_FullBody_Misc.Num(),
+		m_AnimStates_UpperBody_Misc.Num(), m_AnimStates_Special_Misc.Num(), m_AnimStatePickerInfo.Num() );
+	IGDIAG_ONCE( TEXT("ADishonoredPlayerPawn::ApplyTweakChanges_Derived (2013 0x6be9b0): the camera settings copy, RBPushStrength, the health effects, the ray speed scales and the component combat tweaks are not ported") );
 	Super::ApplyTweakChanges_Derived();
 }
 

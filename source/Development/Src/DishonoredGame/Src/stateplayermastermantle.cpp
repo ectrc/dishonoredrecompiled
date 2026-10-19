@@ -28,10 +28,9 @@
 	transition (or, facing the edge, a snap) puts the pawn at the spot's start; the animation carries the pawn up and its
 	AnimStateExit notify ends the state, else the timeout does. Leaving restores collision at the nearest free spot and crouches
 	when the spot forced it. 2012 / 2013 rvas in Inc/CppText/UStatePlayerMasterMantle.h.
-	DISHONORED(bringup), named and not called inside: the master action base (UStateSharedActionBase::OnEnterState's DoAction,
-	UStatePlayerMasterAction::OnExitState 2012 0x695ec0 - every UStatePlayerMasterAction body is a skeleton) and
-	ADishonoredPlayerPawn::FindNodeInCurrentAnimStateByName (UDisAnimStateComponent, not ported: no impact blend node is found).
-	PerformMantle does not request this state while the action base cannot play its animation (dishonoredplayerpawn_mantle.cpp).
+	agent IM (PHASE23 IM): the master action base is ported - OnEnterState runs DoAction (UStatePlayerMasterAction::DoAction: the
+	mantle's full-body anim state and its root motion), OnExitState ends with UStatePlayerMasterAction::OnExitState, and the impact
+	blend node is found in the current full-body state (ADishonoredPlayerPawn::FindNodeInCurrentAnimStateByName).
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
@@ -131,8 +130,7 @@ void UStatePlayerMasterMantle::Tick_IntroTransition( FLOAT DeltaSeconds )
 // 2013 0x667c50 (81 B)
 void UStatePlayerMasterMantle::OnEnterState_ImpactAnim()
 {
-	m_pImpactBlendNode = NULL;
-	IGDIAG_ONCE( TEXT("UStatePlayerMasterMantle::OnEnterState_ImpactAnim: ADishonoredPlayerPawn::FindNodeInCurrentAnimStateByName (UDisAnimStateComponent) is not ported; no impact blend node") );
+	m_pImpactBlendNode = Cast<UAnimNodeBlendList>( m_pPlayerPawn->FindNodeInCurrentAnimStateByName( ANIMSTATE_FULL_BODY, m_ImpactBlendNodeName ) );
 	if( m_pImpactBlendNode )
 	{
 		m_pImpactBlendNode->SetActiveChild( m_bImpactAnimRequired ? 0 : 1, 0.f );
@@ -157,7 +155,7 @@ void UStatePlayerMasterMantle::OnEnterState( UDishonoredNativeState* LastState )
 {
 	UStateSharedActionBase* LastAction = Cast<UStateSharedActionBase>( LastState );
 	m_fTimeToGo = LastAction ? LastAction->m_fTimeToGo : -1.f;
-	IGDIAG_ONCE( TEXT("UStatePlayerMasterMantle::OnEnterState: UStateSharedActionBase's DoAction (vtable +372, UStatePlayerMasterAction::DoAction 2012 0x695c40) is not ported; the mantle animation does not play") );
+	DoAction();
 	ADishonoredPlayerPawn* Pawn = m_pPlayerPawn;
 	m_bSavedCollideWorld = Pawn->bCollideWorld;
 	Pawn->bCollideWorld = FALSE;
@@ -248,7 +246,7 @@ void UStatePlayerMasterMantle::OnExitState( UDishonoredNativeState* NextState )
 	Pawn->bCollideWorld = m_bSavedCollideWorld;
 	Pawn->bNoEncroachCheck = m_bSavedNoEncroachCheck;
 	Pawn->FindTouchingActors();
-	IGDIAG_ONCE( TEXT("UStatePlayerMasterMantle::OnExitState: UStatePlayerMasterAction::OnExitState (2012 0x695ec0) is not ported") );
+	UStatePlayerMasterAction::OnExitState( NextState );
 	m_DebugCurrentAnimName = NAME_None;
 	Pawn->EnableControllerInput( 0x8800, TRUE, DisInputMaskLevel_MasterAction );
 	DisIGNoteMantleState( Pawn, FALSE, m_fCurrentMantleHeight );

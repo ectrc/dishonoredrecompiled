@@ -239,3 +239,30 @@ private:
 	void DoMantle_Anim( FLOAT MantleHeight, const FVector& MantleStartLocation, INT MantleStartYaw, UBOOL bImpactAnimRequired, UBOOL bCrouchRequired, UBOOL bCancelable );
 	void Tick_Mantle( FLOAT DeltaTime, ELevelTick TickType );
 public:
+// ---- agent IM (PHASE23 IM): the anim-state system of the player (the three pickers, the state maps, SetAnimState) ----
+// 2012 / 2013 rvas: PreBeginPlay_AnimStates 0x7200e0 / 0x6e2060, FindStatePickers 0x71ed50 / 0x6e0f90, BuildAnimStateMap 0x71b9b0 /
+// 0x6dfc70, GatherAnimStateArrays 0x704a00 / 0x6aac90, FindAnimState 0x71f740 / 0x6e16c0, AnimState_AddItemPrefix 0x71f800 / 0x6e1780,
+// SetAnimState 0x71fe40 / 0x6e1da0, SupportsAnimState 0x71ff40 / 0x6e1ea0, ClearAnimState 0x6fbae0, IsCurAnimStateFullWeight 0x6fbb00,
+// FindNodeInCurrentAnimStateByName 0x6fbb10, AnimState_GetSkeletalComponent 0x71eb80, AnimState_GetAnimStateComp 0x71eb90,
+// AnimState_TriggerExit_Derived 0x704b30 / 0x6aadf0, AnimState_LockoutPicker_Derived 0x704be0 / 0x6aaea0, AnimState_SyncEnd 0x704d00 /
+// 0x6aafc0, AnimState_PlayAnim_Derived 0x705820 / 0x6ac2f0. Bodies in displayerpawn_animstates.cpp and dishonoredplayerpawn_action.cpp.
+public:
+	void PreBeginPlay_AnimStates();
+	UBOOL FindAnimState( INT StateType, FName StateName, struct FDisPawnAnimState*& OutState );
+	struct FDisPawnAnimState* SetAnimState( FName StateName, INT StateType, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );
+	UBOOL SupportsAnimState( FName StateName, INT StateType );
+	void ClearAnimState( INT StateType, FLOAT BlendTime );
+	UBOOL IsCurAnimStateFullWeight( INT StateType );
+	class UAnimNode* FindNodeInCurrentAnimStateByName( INT StateType, const FName& NodeName ) const;
+	virtual class USkeletalMeshComponent* AnimState_GetSkeletalComponent() { return Mesh; }
+	virtual class UDisAnimStateComponent* AnimState_GetAnimStateComp() { return m_pAnimStateComp; }
+	virtual void AnimState_SyncEnd( INT StateType );
+protected:
+	void FindStatePickers();
+	void BuildAnimStateMap( struct FDisPawnAnimState_PickerInfo& PickerInfo );
+	void GatherAnimStateArrays( INT StateType, struct FDisPawnAnimState_PickerInfo& PickerInfo );
+	struct FDisPawnAnimState* AnimState_AddItemPrefix( struct FDisPawnAnimState_PickerInfo& PickerInfo, INT StateType, const struct FDisPawnAnimState* State, FName& StateName, BYTE EquipUsage );
+	virtual UBOOL AnimState_TriggerExit_Derived( INT StateType, class UDishonoredNativeState* AttachedState, FLOAT TimeToGo );
+	virtual void AnimState_LockoutPicker_Derived( INT StateType, FLOAT TimeToGo, UBOOL bLocked );
+	virtual UBOOL AnimState_PlayAnim_Derived( class UAnimNodeSequence* Seq );
+public:

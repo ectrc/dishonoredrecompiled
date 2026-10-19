@@ -2408,6 +2408,22 @@ extern void DishonoredLinkIG_DisMantleFinderStateForwardSearches();
 extern void DishonoredLinkIG_DishonoredCameraCrouchMantleOffset();
 extern void DishonoredLinkIG_MantleEdgeFinderComponent();
 extern void DishonoredLinkIG_UStatePlayerMasterMantle();
+extern void DishonoredLinkIM_DisAnimStateComponent();
+extern void DishonoredLinkIM_DisAnimStateOwnerInterface();
+extern void DishonoredLinkIM_DisNotifyAnimStateUnlock();
+extern void DishonoredLinkIM_DishonoredAnimNodeBlendByMantleCrouchRequired();
+extern void DishonoredLinkIM_DishonoredAnimNodeBlendByMantleType();
+extern void DishonoredLinkIM_DishonoredAnimNodeSeq();
+extern void DishonoredLinkIM_DishonoredAnimNodeSeqMantle();
+extern void DishonoredLinkIM_DishonoredAnimNotifies();
+extern void DishonoredLinkIM_PlayerPawnAnimStates();
+extern void DishonoredLinkIM_StatePlayerAction();
+extern void DishonoredLinkIM_StatePlayerChangeReadyStance();
+extern void DishonoredLinkIM_StatePlayerMasterAction();
+extern void DishonoredLinkIM_StatePlayerUpperIdle();
+extern void DishonoredLinkIM_StatePlayerUpperNav();
+extern void DishonoredLinkIM_StateSharedActionBase();
+extern void DishonoredLinkIM_StateSharedActionBasePlayerOnly();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
 extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
@@ -2500,6 +2516,22 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkIG_DishonoredCameraCrouchMantleOffset,
 	&DishonoredLinkIG_MantleEdgeFinderComponent,
 	&DishonoredLinkIG_UStatePlayerMasterMantle,
+	&DishonoredLinkIM_DisAnimStateComponent,
+	&DishonoredLinkIM_DisAnimStateOwnerInterface,
+	&DishonoredLinkIM_DisNotifyAnimStateUnlock,
+	&DishonoredLinkIM_DishonoredAnimNodeBlendByMantleCrouchRequired,
+	&DishonoredLinkIM_DishonoredAnimNodeBlendByMantleType,
+	&DishonoredLinkIM_DishonoredAnimNodeSeq,
+	&DishonoredLinkIM_DishonoredAnimNodeSeqMantle,
+	&DishonoredLinkIM_DishonoredAnimNotifies,
+	&DishonoredLinkIM_PlayerPawnAnimStates,
+	&DishonoredLinkIM_StatePlayerAction,
+	&DishonoredLinkIM_StatePlayerChangeReadyStance,
+	&DishonoredLinkIM_StatePlayerMasterAction,
+	&DishonoredLinkIM_StatePlayerUpperIdle,
+	&DishonoredLinkIM_StatePlayerUpperNav,
+	&DishonoredLinkIM_StateSharedActionBase,
+	&DishonoredLinkIM_StateSharedActionBasePlayerOnly,
 	&DishonoredLinkUDisAIBrainProcessAttention,
 	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,
