@@ -676,6 +676,7 @@ UBOOL ADishonoredNPCPawn::MAT_PermitLODPause() const
 
 #include "arkcomponentlookat.h"
 #include "fvdiag.h"
+#include "ibdiag.h"
 #include "discomponentretargeting.h"
 
 // DISHONORED(port): 2013 rva 0x76da40 (2012 0x7c8090, 1085 B). In retail's order: m_bNoTick marks the actor ticked and leaves;
@@ -738,6 +739,7 @@ UBOOL ADishonoredNPCPawn::Tick( FLOAT _fDeltaTime, ELevelTick _TickType )
 			m_RagdollImpulseDeferred.Empty();
 		}
 		UpdateLocomotion();
+		DisIBDiagReport( this );
 		if( !DisIsPawnDead( this ) )
 		{
 			FArkComponentLookat* Lookat = GetComponentLookat();

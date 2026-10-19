@@ -16,6 +16,7 @@
 
 #include "dishonoredutilities.h"
 #include "disaicensus.h"
+#include "ibdiag.h"
 
 // DISHONORED(port): 2013 rva 0x74b3d0 (2012 0x7ab8c0): seven bytes, the member.
 FArkComponentLocomotion* ADishonoredNPCPawn::GetComponentLocomotion() const
@@ -159,6 +160,94 @@ void ADishonoredNPCPawn::physWalking( FLOAT DeltaTime, INT Iterations )
 // named, so the avoidance package has somewhere to land.
 void ADishonoredNPCPawn::UpdateLocomotion()
 {
+}
+
+/*-----------------------------------------------------------------------------
+	-ibdiag (agent IB, PHASE23 IB)
+-----------------------------------------------------------------------------*/
+
+UBOOL DisIBDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("ibdiag") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+UBOOL DisIBDiagWatched( const AActor* _pActor )
+{
+	static const FName Watched[] = { FName( TEXT("DishonoredNPCPawn_26") ), FName( TEXT("DishonoredNPCPawn_27") ), FName( TEXT("DishonoredNPCPawn_20") ), FName( TEXT("DishonoredNPCPawn_3") ) };
+	if( !_pActor )
+	{
+		return FALSE;
+	}
+	const FName Name = _pActor->GetFName();
+	for( INT Index = 0; Index < ARRAY_COUNT( Watched ); Index++ )
+	{
+		if( Name == Watched[Index] )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+struct FIBDiagPawnState
+{
+	FLOAT	NextReport;
+	FVector	LastLocation;
+	INT		GoToStage;
+	INT		PathingFails;
+	FIBDiagPawnState() : NextReport( 0.f ), LastLocation( 0.f, 0.f, 0.f ), GoToStage( -1 ), PathingFails( 0 ) {}
+};
+static TMap<const AActor*, FIBDiagPawnState> GIBDiagPawns;
+
+void DisIBDiagNoteGoTo( const AActor* _pPawn, INT _Stage, UBOOL _bPathingFail )
+{
+	if( !DisIBDiagEnabled() || !DisIBDiagWatched( _pPawn ) )
+	{
+		return;
+	}
+	FIBDiagPawnState* pState = GIBDiagPawns.Find( _pPawn );
+	if( !pState )
+	{
+		pState = &GIBDiagPawns.Set( _pPawn, FIBDiagPawnState() );
+	}
+	pState->GoToStage = _Stage;
+	if( _bPathingFail )
+	{
+		pState->PathingFails++;
+		debugf( TEXT("DISHONORED(bringup): ibdiag %s FilterPathingFail hit %d world %.2f"), *_pPawn->GetName(), pState->PathingFails, GWorld->GetTimeSeconds() );
+	}
+}
+
+void DisIBDiagReport( ADishonoredNPCPawn* _pPawn )
+{
+	if( !DisIBDiagEnabled() || !DisIBDiagWatched( _pPawn ) )
+	{
+		return;
+	}
+	FIBDiagPawnState* pState = GIBDiagPawns.Find( _pPawn );
+	if( !pState )
+	{
+		pState = &GIBDiagPawns.Set( _pPawn, FIBDiagPawnState() );
+		pState->LastLocation = _pPawn->Location;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	if( Now < pState->NextReport )
+	{
+		return;
+	}
+	pState->NextReport = Now + 1.f;
+	const FLOAT Moved = ( _pPawn->Location - pState->LastLocation ).Size2D();
+	pState->LastLocation = _pPawn->Location;
+	FArkComponentLocomotion* pLoco = _pPawn->GetComponentLocomotion();
+	debugf( TEXT("DISHONORED(bringup): ibdiag %s world %.2f at %.0f/%.0f/%.0f moved %.1f phys %d base %s retarget %d possessed %d ctrls %d goto %d pfail %d | %s"),
+		*_pPawn->GetName(), Now, _pPawn->Location.X, _pPawn->Location.Y, _pPawn->Location.Z, Moved, (INT)_pPawn->Physics,
+		_pPawn->Base ? *_pPawn->Base->GetName() : TEXT("none"), (INT)_pPawn->IsRetargeting(), _pPawn->m_pPossessingController ? 1 : 0,
+		_pPawn->m_MatineeControllersInfos.Num(), pState->GoToStage, pState->PathingFails, pLoco ? *pLoco->DescribeForIBDiag() : TEXT("no locomotion") );
 }
 
 // DISHONORED(port): 2013 rva 0x779730 (2012 0x7b4f70, 96 bytes). Retail says an NPC is moving when its transit speed is

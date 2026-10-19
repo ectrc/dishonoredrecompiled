@@ -12,6 +12,7 @@
 
 #include "disdesirestructs.h"
 #include "disaicensus.h"
+#include "ibdiag.h"
 
 ARKCOMPONENT_IMPLEMENT_TYPE( FArkComponentLocomotion )
 
@@ -570,6 +571,7 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 	{
 		return;
 	}
+	IBDiagCount( IBDIAG_TICK );
 
 	const UBOOL bHidden = m_pPawnOwner->bHidden ? TRUE : FALSE;
 	if( ( m_bPrevHidden != 0 ) != ( bHidden != 0 ) )
@@ -654,6 +656,59 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 				*m_pPawnOwner->GetName(), m_pPawnOwner->Velocity.Size2D(), m_fRealScaledSpeed, m_fCurMoveSpeed, m_MostRelevantSpeedIdx, *m_pAnimNodeLoco->DescribeForDiag() );
 		}
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	-ibdiag (agent IB)
+-----------------------------------------------------------------------------*/
+
+struct FIBDiagCounts
+{
+	INT Counts[FArkComponentLocomotion::IBDIAG_MAX];
+	FIBDiagCounts() { appMemzero( Counts, sizeof( Counts ) ); }
+};
+static TMap<const FArkComponentLocomotion*, FIBDiagCounts> GIBDiagCounts;
+
+void FArkComponentLocomotion::IBDiagCount( EIBDiagCounter _Counter ) const
+{
+	if( DisIBDiagEnabled() && DisIBDiagWatched( m_pPawnOwner ) )
+	{
+		FIBDiagCounts* pCounts = GIBDiagCounts.Find( this );
+		if( !pCounts )
+		{
+			pCounts = &GIBDiagCounts.Set( this, FIBDiagCounts() );
+		}
+		pCounts->Counts[_Counter]++;
+	}
+}
+
+void FArkComponentLocomotion::IBDiagCheckStuck() const
+{
+	if( m_bStuckedInAWall && m_pPawnOwner && m_pConfig )
+	{
+		IBDiagCount( IBDIAG_STUCK );
+		if( m_pPawnOwner->Velocity.Size2D() > m_pConfig->m_fVelocityToStartToMove )
+		{
+			IBDiagCount( IBDIAG_STUCK_FAST );
+		}
+	}
+}
+
+FString FArkComponentLocomotion::DescribeForIBDiag() const
+{
+	FIBDiagCounts Counts;
+	if( FIBDiagCounts* pCounts = GIBDiagCounts.Find( this ) )
+	{
+		Counts = *pCounts;
+		GIBDiagCounts.Remove( this );
+	}
+	const UBOOL bInPolicy = GWorld && GWorld->m_pComponentManager
+		&& GWorld->m_pComponentManager->GetPolicy<FArkComponentPreAsyncWorkPolicy>().IsRegistered( const_cast<FArkComponentLocomotion*>( this ) );
+	return FString::Printf( TEXT("started %d inpolicy %d disabled %d hidden %d root %d stuck %d (frames %d fast %d) curyaw %d real %.1f vel2d %.1f req %d arrived %d pathend %.0f path %d/%d pf %d curmove %.1f target %.1f mod %d ticks %d moves %d"),
+		(INT)m_bStarted, (INT)bInPolicy, (INT)IsDisabled(), (INT)m_bPrevHidden, (INT)m_RootState, (INT)m_bStuckedInAWall,
+		Counts.Counts[IBDIAG_STUCK], Counts.Counts[IBDIAG_STUCK_FAST], m_CurMoveYaw, m_fRealSpeed, m_pPawnOwner ? m_pPawnOwner->Velocity.Size2D() : 0.f,
+		GetRequestsCount(), (INT)m_bIsArrived, appSqrt( m_fSq2DDistToPathEnd ), m_CurPathPointIdx, m_PathPoints.Num(), (INT)m_LastPFError,
+		m_fCurMoveSpeed, m_fTargetMoveSpeed, m_CurModifierIdx, Counts.Counts[IBDIAG_TICK], Counts.Counts[IBDIAG_MOVE] );
 }
 
 /*-----------------------------------------------------------------------------

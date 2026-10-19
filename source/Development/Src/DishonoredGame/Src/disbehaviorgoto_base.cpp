@@ -51,6 +51,7 @@
 #include "disaisubstate.h"
 #include "disdesirestructs.h"
 #include "fvdiag.h"
+#include "ibdiag.h"
 #include "arkcomponentlocomotion.h"
 
 // DISHONORED(port): 2013 rva 0x6e4d50 (2012 0x745550): a fresh go-to is neither finished nor a success.
@@ -142,6 +143,7 @@ void UDisBehaviorGoTo_Base::Start_TurningToFace()
 // DISHONORED(port): 2013 rva 0x6edc00 (2012 0x74c8c0, 54 B): the three-stage completion described at the head.
 void UDisBehaviorGoTo_Base::TickBehavior( FLOAT _fDeltaSeconds )
 {
+	DisIBDiagNoteGoTo( m_pOwningBrain ? m_pOwningBrain->m_pOwningPawn : NULL, m_GoToStage, FALSE );
 	if( DisFVDiagEnabled() && m_pOwningBrain && m_pOwningBrain->m_pOwningPawn )
 	{
 		// DISHONORED(bringup, agent GD): one line a second PER go-to (FV's single static hid every go-to but the first when two ran at once)
@@ -217,6 +219,7 @@ UBOOL UDisBehaviorGoTo_Base::FilterPathingFail( const FAIStimStruct_PathingFail&
 			debugf( NAME_Warning, TEXT("DISHONORED(bringup): UDisBehaviorGoTo_Base::FilterPathingFail: AttemptTeleportSpell (2012 rva 0x832a50) is not ported; the go-to reports Failed without the blink") );
 		}
 		FVDIAG( "goto pathing failed %s", m_pOwningBrain && m_pOwningBrain->m_pOwningPawn ? *m_pOwningBrain->m_pOwningPawn->GetName() : TEXT("?") );
+		DisIBDiagNoteGoTo( m_pOwningBrain ? m_pOwningBrain->m_pOwningPawn : NULL, m_GoToStage, TRUE );
 		if( m_pAssociatedKismetGoToAction && m_pOwningBrain && m_pOwningBrain->m_pOwningController )
 		{
 			m_pOwningBrain->m_pOwningController->SetGoToActionStatus( AIGoToActorOutput_Failed, m_pAssociatedKismetGoToAction );

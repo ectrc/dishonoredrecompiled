@@ -20,9 +20,15 @@
 //    agent GK and called from ComputeDynamic and ComputeTargetMoveSpeed where retail calls it.
 // The consequence, stated plainly: the NPC walks the path at the right speed and faces where it is going, but it does not
 // give way to other NPCs.
+// Agent IB (PHASE23 IB): the velocity source is retail's - ComputeDynamic writes the pawn's Velocity/Acceleration from the
+// move it decided (2012 0x58ca10 / 2013 VA 0x94bec0 tail) and FullMovePawn moves Velocity x its own time step, then clamps the
+// measured velocity to the asked speed (2012 0x580ae0 / 2013 VA 0x93fb00). HEAD moved m_CurMove (a distance for the dynamics'
+// time step) in the next frame's physWalking and re-derived Velocity from it, so any frame-time change between the
+// manager's PreAsyncWork tick and physWalking showed as a speed dip (measured: Worker B's sampled speed down to 72 u/s).
 
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
+#include "ibdiag.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -479,8 +485,7 @@ void FArkComponentLocomotion::HandleArrival( FLOAT _fTimeStep )
 // agentFV.md §1 carried ("ComputeDynamic exits on IsDisabled() || STOP_END first" - it did not: nothing in this tree
 // enters STOP_END and IsDisabled() was never true for the go-to pawn; the pawn stood "arrived" inside DN's radius).
 // DISHONORED(bringup): UpdateFollow and the avoidance force are unported (the file banner names them);
-// ComputeLookatSpeedMultiplier needs the look-at component and stays 1; the pawn's Velocity is written by FullMovePawn
-// from the real move rather than here. UpdateTurn / UpdateStartMove / UpdateStopMove are agent GK's
+// ComputeLookatSpeedMultiplier needs the look-at component and stays 1. UpdateTurn / UpdateStartMove / UpdateStopMove are agent GK's
 // (arkcomponentlocomotionrootmove.cpp) and run where retail runs them.
 void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 {
@@ -542,6 +547,7 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 			{
 				m_bStuckedInAWall = TRUE;
 				m_CurMoveYaw = -200000;
+				IBDiagCheckStuck();
 			}
 		}
 		m_CurPathMove = FVector( 0.f, 0.f, 0.f );
@@ -607,6 +613,33 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 	{
 		m_pPawnOwner->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
 	}
+	// DISHONORED(port, agent IB): the pawn's Velocity is the dynamics' answer, 2012 0x58ca10 / 2013 0x94bec0 (VA) tail: unless the
+	// pawn falls or is a rigid body, or root motion owns it with the mesh in RMM_Ignore, Velocity = m_CurMove / dt x the final speed
+	// multiplier (on a sloped floor: |m_CurMove.XY| / dt x multiplier along m_CurMove projected onto the floor plane) and
+	// Acceleration = Velocity / dt. FullMovePawn then moves Velocity x ITS time step, so the move does not depend on the dynamics
+	// and the move running in different frames (the manager's PreAsyncWork tick runs after the actors, one physWalking ahead).
+	const BYTE Physics = m_pPawnOwner->Physics;
+	if( _fTimeStep > 0.f && Physics != PHYS_RigidBody && Physics != PHYS_Falling
+		&& !( IsRootMotion() && m_pPawnOwner->Mesh && m_pPawnOwner->Mesh->RootMotionMode == RMM_Ignore ) )
+	{
+		const FLOAT fInvTimeStep = 1.f / _fTimeStep;
+		const FVector& Floor = m_pPawnOwner->Floor;
+		if( Floor.IsNearlyZero( 0.0001f ) || Floor.Z >= 0.99f )
+		{
+			m_pPawnOwner->Velocity = m_CurMove * fInvTimeStep * GetFinalSpeedMultiplier();
+		}
+		else
+		{
+			const FLOAT fSpeed = GetFinalSpeedMultiplier() * ( m_CurMove.Size2D() * fInvTimeStep );
+			FVector Dir = m_CurMove;
+			if( Abs( Floor.Z ) >= 0.0001f )
+			{
+				Dir.Z = -( Dir.Y * Floor.Y + Dir.X * Floor.X ) / Floor.Z;
+			}
+			m_pPawnOwner->Velocity = Dir.SafeNormal() * fSpeed;
+		}
+		m_pPawnOwner->Acceleration = m_pPawnOwner->Velocity * fInvTimeStep;
+	}
 	m_PreviousVelocity = m_pPawnOwner->Velocity;
 	UpdateSharedProperties();
 }
@@ -625,6 +658,7 @@ void FArkComponentLocomotion::MovePawn( FLOAT _fTimeStep, UBOOL _bPreview )
 		return;
 	}
 	GDisLocoMovePawnCalls++;
+	IBDiagCount( IBDIAG_MOVE );
 
 	UBOOL bOnValidBase = FALSE;
 	if( m_pPawnOwner->Base )
@@ -675,7 +709,14 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	{
 		return;
 	}
-	FVector Move = m_CurMove;
+	// DISHONORED(port, agent IB): retail's move is the dynamics' Velocity x this frame's time step (2012 0x580ae0 / 2013 0x93fb00
+	// head), m_CurMove only when that velocity is not zero while the dynamics' move speed is and no animation owns the pawn.
+	const FLOAT fSpeedBeforeMove = m_pPawnOwner->Velocity.Size();
+	FVector Move = m_pPawnOwner->Velocity * _fTimeStep;
+	if( !Move.IsZero() && m_fCurMoveSpeed == 0.f && !IsRootMotion() )
+	{
+		Move = m_CurMove;
+	}
 	Move.Z = 0.f;
 	if( Move.IsNearlyZero() )
 	{
@@ -732,9 +773,11 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 
 	const FVector Actual = m_pPawnOwner->Location - StartLocation;
 	GDisLocoDistanceMoved += Actual.Size2D();
-	m_pPawnOwner->Velocity = ( _fTimeStep > 0.f ) ? ( Actual / _fTimeStep ) : FVector( 0.f, 0.f, 0.f );
-	m_pPawnOwner->Acceleration = m_pPawnOwner->Velocity;
+	// DISHONORED(port, agent IB): retail clamps the measured velocity to the speed the move was asked for (2012 0x580ae0 +0x5f0,
+	// ClampLength) and leaves Acceleration as the dynamics wrote it.
+	m_pPawnOwner->Velocity = ClampLength( ( _fTimeStep > 0.f ) ? ( Actual / _fTimeStep ) : FVector( 0.f, 0.f, 0.f ), fSpeedBeforeMove );
 	m_CurPawnLocation = m_pPawnOwner->Location;
+	IBDiagCheckStuck();
 	UpdateFloorAndBase( _bOnValidBase );
 }
 

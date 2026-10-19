@@ -87,6 +87,9 @@ public:
 
 	INT Num() const { return m_Components.Num(); }
 
+	/** DISHONORED(diag): agent IB's -ibdiag "in policy" column; not a retail function. */
+	UBOOL IsRegistered( ComponentInterface* _pComponent ) const { return m_Components.ContainsItem( _pComponent ) || m_IteratingList.ContainsItem( _pComponent ); }
+
 	/** DISHONORED(port): FArkComponentPreAsyncWorkPolicy::Tick (2012 0x579d80, 160 B), the body all four async-work policies
 	    share in retail: each component ticks with its owner's CustomTimeDilation applied. */
 	void Tick( FLOAT _fDeltaTime )

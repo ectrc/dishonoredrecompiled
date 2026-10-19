@@ -89,10 +89,14 @@ UBOOL FArkComponentLocomotion::FindNearestLocationOnNavMesh( const FVector* cons
 	return bFound;
 }
 
-// DISHONORED(port): 2013 rva 0x53ed10 (2012 0x57f8a0, 474 bytes). A line check straight down from ten units above the
-// given point finds the ground; the poly under that ground point is looked up, and the point counts as "on a valid poly"
+// DISHONORED(port): 2012 0x57f8a0 (474 bytes) / 2013 VA 0x93f240 (586 bytes; 0x53ed10 is inside another function). A line
+// check straight down from ten units above the given point finds the ground; the poly under that ground point is looked up, and the point counts as "on a valid poly"
 // only when the poly's own surface is within a step height below the ground AND below the top of the pawn's cylinder -
-// which is what stops an NPC standing on a table from thinking it is on the floor's poly.
+// which is what stops an NPC standing on a table from thinking it is on the floor's poly. Agent IB: the trace flags are retail's
+// 0x30DF (TRACE_AllBlocking | TRACE_Visible, both databases), not TRACE_World, which misses every non-mover actor - the boat's
+// deck the captain stands on after the ride, the floors under _4/_6/_8/_20 - and failed the start poly with the pawn on the mesh.
+// DISHONORED(bringup): 2013 also returns the pawn's navigation handle through a third argument and clears a caller flag when
+// the start is the pawn's own location; the 2012 signature is kept (no caller here reads either).
 UBOOL FArkComponentLocomotion::UpdateStartLocAndVerifyIfOnValidPoly( FVector& _rStartLocationOnGround, const FVector* const _pSpecificStartLoc ) const
 {
 	if( !m_pPawnOwner || !m_pPawnOwner->CylinderComponent )
@@ -108,7 +112,7 @@ UBOOL FArkComponentLocomotion::UpdateStartLocAndVerifyIfOnValidPoly( FVector& _r
 	End.Z -= ( fPawnCollisionHeight * 2.f ) + 10.f;
 
 	FCheckResult Hit( 1.f );
-	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, TRACE_World, FVector( 0.f, 0.f, 0.f ) ) )
+	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, TRACE_AllBlocking | TRACE_Visible, FVector( 0.f, 0.f, 0.f ) ) )
 	{
 		return FALSE;
 	}
@@ -125,7 +129,7 @@ UBOOL FArkComponentLocomotion::UpdateStartLocAndVerifyIfOnValidPoly( FVector& _r
 		&& ( m_pPawnOwner->Location.Z + fPawnCollisionHeight ) > LocationOnPoly.Z;
 }
 
-// DISHONORED(port): 2013 rva 0x546770 (2012 0x587460, 377 bytes). The spawner's "is there room here" test and
+// DISHONORED(port): 2013 rva 0x546770 (2012 0x587460, 377 bytes; trace flags 0x30DF in both, agent IB). The spawner's "is there room here" test and
 // ADishonoredNPCPawn::MoveAtSafeLocation's answer: trace for the floor under the candidate location, then accept it if
 // the floor is on a valid poly, or if a poly can be found within 150 units of it.
 UBOOL FArkComponentLocomotion::CanNPCPathfindFromLocation( const FVector* const _pStartLocation ) const
@@ -143,7 +147,7 @@ UBOOL FArkComponentLocomotion::CanNPCPathfindFromLocation( const FVector* const 
 	End.Z -= fPawnCollisionHeight * 3.f;
 
 	FCheckResult Hit( 1.f );
-	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, TRACE_World, FVector( 0.f, 0.f, 0.f ) ) )
+	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, TRACE_AllBlocking | TRACE_Visible, FVector( 0.f, 0.f, 0.f ) ) )
 	{
 		return FALSE;
 	}

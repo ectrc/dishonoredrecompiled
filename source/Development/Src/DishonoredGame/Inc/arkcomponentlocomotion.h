@@ -22,7 +22,9 @@
 // Agent HC (PHASE22 HC) ported FArkComponentManager (Engine/Inc/arkcomponentpolicy.h): Starting registers the component with
 // its PreAsyncWork policy, which UWorld ticks after the pre-async actors, so the dynamics computed there are applied by the
 // next frame's physWalking -> MovePawn (2012 0x584ca0's two callers: ADishonoredNPCPawn::physWalking 0x7ad240 and
-// UInterpGroupInst::UpdateGroupInst 0x25b4e0), and a pawn in PHYS_None still schedules its path.
+// UInterpGroupInst::UpdateGroupInst 0x25b4e0), and a pawn in PHYS_None still schedules its path. Agent IB (PHASE23): the
+// dynamics hand the move over as the pawn's Velocity (retail), which MovePawn applies with its own time step, so the move does
+// not depend on the two running in different frames (A/B in resources/docs/agents/agentIB.md).
 
 #ifndef _INC_ARKCOMPONENTLOCOMOTION
 #define _INC_ARKCOMPONENTLOCOMOTION
@@ -337,6 +339,12 @@ public:
 	const TArray<FArkCpntLocoPathPoint>& GetPathPoints() const { return m_PathPoints; }
 	INT GetCurPathPointIdx() const { return m_CurPathPointIdx; }
 	BYTE GetLastPathFindingError() const { return (BYTE)m_LastPFError; }
+
+	/** DISHONORED(diag): agent IB's -ibdiag. Counts are kept per component outside the 616-byte layout. */
+	enum EIBDiagCounter { IBDIAG_TICK, IBDIAG_MOVE, IBDIAG_STUCK, IBDIAG_STUCK_FAST, IBDIAG_MAX };
+	void IBDiagCount( EIBDiagCounter _Counter ) const;
+	void IBDiagCheckStuck() const;
+	FString DescribeForIBDiag() const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)

@@ -1,0 +1,16 @@
+item,status,evidence
+A/B step 0 (1a HEAD / 1b revert step 5 / 1c / 1d),done,agentIB.md section 1; CC_IB1a..d; one exe with runtime switches (deviation named)
+ComputeDynamic velocity tail (2012 0x58ca10 / 2013 VA 0x94bec0),ported,arkcomponentlocomotiondynamic.cpp
+FullMovePawn move = Velocity*dt + ClampLength (2012 0x580ae0 / 2013 VA 0x93fb00),ported (move still UWorld::MoveActor),arkcomponentlocomotiondynamic.cpp
+UpdateStartLocAndVerifyIfOnValidPoly + CanNPCPathfindFromLocation trace flags 0x30DF,ported,arkcomponentlocomotionpath.cpp; _26 FilterPathingFail 1 -> 0
+PreAsyncWorkTick re-diff (2013 VA 0x94caa0),faithful - unchanged,no physics or m_bStarted gate in retail
+FArkComponentPolicy Register/Insert/DoneTicking/Tick,faithful - unchanged,2012 0x578ba0 / 0x577fc0 / 0x578c50 / 0x579d80
+ApplyLocomotionModifier + MAT_FinishAIGroup tail,not implicated - not ported,needs GetModifierFromBodyStance 2012 0x7aef10; soiree stim is IC
+detach physics restore,not implicated,both boat NPCs PHYS_Walking after StopRetargeting
+-ibdiag,done,dishonorednpcpawn_locomotion.cpp / arkcomponentlocomotion.cpp
+WorkerB 865 uu at 115-125 u/s,met,860 uu at 123 u/s steady (IB2)
+ride NPC moves > 200 uu,not met for _26,start-move loop: zero start root motion + MoveActor blocked; third build not taken
+stuck while faster than start speed,met,0 frames
+FilterPathingFail 0,met,0/0/0
+ride SSIM >= .69,met,0.728
+gate d3d9+inputtest+newgame,load failures only,d3d9_frames and inputtest_moved; HEAD control equally low under the same load
