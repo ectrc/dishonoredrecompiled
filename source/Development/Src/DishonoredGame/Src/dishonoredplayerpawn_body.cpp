@@ -43,3 +43,11 @@ void ADishonoredPlayerPawn::execTakeFallingDamage_Native( FFrame& Stack, RESULT_
 	P_FINISH;
 	*(INT*)Result = TakeFallingDamage_Native( HitNormal, FloorActor );
 }
+
+// DISHONORED(port): agent IF (PHASE23 IF), 2012 0x705510 / 2013 0x6ab9d0 (47 B): 0 out of the swim state, 1 swimming at the surface,
+// 2 under water (retail's ADishonoredPlayerPawn::ESwimmingState, whose enumerator names the PDB does not carry)
+BYTE ADishonoredPlayerPawn::GetSwimmingState() const
+{
+	UStatePlayerMasterSwim* Swim = Cast<UStatePlayerMasterSwim>( m_pPlayerMasterFSM->GetCurrentlyActiveState() );
+	return Swim ? 2 - Swim->IsOnSurface() : 0;
+}

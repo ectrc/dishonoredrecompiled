@@ -2390,6 +2390,13 @@ extern void DishonoredLinkGJ_TweaksPlayerLoadout();
 extern void DishonoredLinkGJ_WepSword();
 extern void DishonoredLinkHB_InterpTrackLookAt();
 extern void DishonoredLinkHD_PlayerControllerTracking();
+extern void DishonoredLinkIF_DishonoredPawnWater();
+extern void DishonoredLinkIF_DishonoredWaterVolume();
+extern void DishonoredLinkIF_PlayerPawnMantle();
+extern void DishonoredLinkIF_PlayerPawnWater();
+extern void DishonoredLinkIF_UStatePlayerMasterFalling();
+extern void DishonoredLinkIF_UStatePlayerMasterJump();
+extern void DishonoredLinkIF_UStatePlayerMasterSwim();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
 extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
@@ -2464,6 +2471,13 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkGJ_WepSword,
 	&DishonoredLinkHB_InterpTrackLookAt,
 	&DishonoredLinkHD_PlayerControllerTracking,
+	&DishonoredLinkIF_DishonoredPawnWater,
+	&DishonoredLinkIF_DishonoredWaterVolume,
+	&DishonoredLinkIF_PlayerPawnMantle,
+	&DishonoredLinkIF_PlayerPawnWater,
+	&DishonoredLinkIF_UStatePlayerMasterFalling,
+	&DishonoredLinkIF_UStatePlayerMasterJump,
+	&DishonoredLinkIF_UStatePlayerMasterSwim,
 	&DishonoredLinkUDisAIBrainProcessAttention,
 	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,

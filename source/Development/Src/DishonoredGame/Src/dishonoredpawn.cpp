@@ -621,11 +621,11 @@ UBOOL ADishonoredPawn::IsRetargeting() const
 // retail's eight phases in this order: Tick_Begin (virtual), Tick_Water when m_bAllowTickPawnMinorSubsystems and
 // m_bWaterVolumesRelevant, Tick_Health, Tick_Attributes when m_bAllowTickPawnMinorSubsystems, Tick_Inventory, Tick_Combat when
 // m_bAllowTickPawnMinorSubsystems, Tick_Body when m_bAllowTickBody, then m_bCachedAttnParamsValid cleared and Tick_Stealth.
-// DISHONORED(bringup): only Tick_Body is ported. Tick_Begin (player 0x715a00), Tick_Water (0x7b60e0 / player 0x708ef0),
-// Tick_Health (0x7aca40), Tick_Attributes (0x78e880 - deliberately out, see dishonoredpawn_attributes.cpp: ApplyAttributes
-// would overwrite the movement values the walking path depends on), Tick_Inventory (0x7afac0 / NPC 0x7be2c0), Tick_Combat
-// (0x7aa810 / player 0x716c80) and Tick_Stealth (0x7aaf10) are named here and not called; the attention-parameter cache
-// bit is cleared as retail does.
+// DISHONORED(bringup): Tick_Begin (player 0x715a00, agent GF), Tick_Water (0x7b60e0 / player 0x708ef0, agent IF),
+// Tick_Inventory (0x7afac0 / NPC 0x7be2c0, agent GJ) and Tick_Body are ported. Tick_Health (0x7aca40), Tick_Attributes (0x78e880 -
+// deliberately out, see dishonoredpawn_attributes.cpp: ApplyAttributes would overwrite the movement values the walking path
+// depends on), Tick_Combat (0x7aa810 / player 0x716c80) and Tick_Stealth (0x7aaf10) are named here and not called; the
+// attention-parameter cache bit is cleared as retail does.
 UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 {
 	const UBOOL bRet = Super::Tick( DeltaTime, TickType );
@@ -633,6 +633,11 @@ UBOOL ADishonoredPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	{
 		// agent GF (PHASE19 GF): the first phase, in retail's place (0x790c10 +0x3a, before Tick_Water)
 		Tick_Begin( DeltaTime, TickType );
+		// agent IF (PHASE23 IF): the second phase, gated as retail gates it
+		if( m_bAllowTickPawnMinorSubsystems && m_bWaterVolumesRelevant )
+		{
+			Tick_Water( DeltaTime, TickType );
+		}
 		// agent GJ (PHASE20 GJ): the fifth phase (0x790c10 +0x8b), unconditional in retail
 		Tick_Inventory( DeltaTime, TickType );
 		if( m_bAllowTickBody )
@@ -663,4 +668,20 @@ void ADishonoredPawn::execOnSetDisposition( FFrame& Stack, RESULT_DECL )
 	P_GET_OBJECT(UDisSeqAct_SetDisposition, _pAction);
 	P_FINISH;
 	OnSetDisposition( _pAction );
+}
+
+// ---- agent IF (PHASE23 IF): the pawn's physics hook ----
+
+// DISHONORED(port): 2012 0x7946c0 / 2013 0x750bb0 (189 B both): APawn's, then every active power is told the new physics.
+// DISHONORED(bringup): m_ActivePowers is an untyped gap in this tree's class (the dump did not type it) and the power components
+// have no bodies, so the powers' physics notification (their vtable +0x184, only when their +348 virtual says active) is named.
+void ADishonoredPawn::setPhysics( BYTE NewPhysics, AActor* NewFloor, FVector NewFloorV )
+{
+	Super::setPhysics( NewPhysics, NewFloor, NewFloorV );
+	static UBOOL bSaid = FALSE;
+	if( !bSaid )
+	{
+		bSaid = TRUE;
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): if ADishonoredPawn::setPhysics: the active powers' physics notification is not ported") );
+	}
 }

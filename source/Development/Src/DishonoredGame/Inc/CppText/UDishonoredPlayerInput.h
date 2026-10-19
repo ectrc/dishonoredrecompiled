@@ -4,6 +4,8 @@
 public:
 	// DISHONORED(port): agent IA, 2013 rva 0x6b01e0 (2012 0x6f9380). Body in dishonoredplayerinput.cpp.
 	virtual FLOAT GetFOVScale( UBOOL bIsForMouse );
+	// DISHONORED(port): agent IF. 2013 rva 0x6aff70 (2012 0x6f9170); body in dishonoredplayerinput.cpp
+	virtual void Dis_SneakOrSlide( UBOOL bForGamepad );
 	virtual void Dis_Jump_ButtonDown();
 	virtual void PlayerInput( FLOAT DeltaTime );
 	void OnInit( ADishonoredPlayerController* Owner );

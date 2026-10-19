@@ -1,0 +1,5 @@
+ADishonoredPlayerController::execCalcPlayerSwimAccelRate
+ADishonoredPlayerPawn::execDoJump
+ADishonoredPlayerPawn::execEndCrouch
+ADishonoredPlayerPawn::execStartCrouch
+UDishonoredPlayerInput::execDis_SneakOrSlide

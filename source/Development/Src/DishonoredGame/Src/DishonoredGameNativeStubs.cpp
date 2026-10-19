@@ -430,10 +430,6 @@ void ADishonoredNPCPawn::execDisplayDebug_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredNPCPawn, execDisplayDebug_Native);
 }
-void ADishonoredPlayerController::execCalcPlayerSwimAccelRate( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execCalcPlayerSwimAccelRate);
-}
 void ADishonoredPlayerController::execOnShowPowerMenu( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execOnShowPowerMenu);
@@ -669,18 +665,6 @@ void ADishonoredPlayerPawn::execCheatGhost_Native( FFrame& Stack, RESULT_DECL )
 void ADishonoredPlayerPawn::execCheatWalk_Native( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execCheatWalk_Native);
-}
-void ADishonoredPlayerPawn::execDoJump( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execDoJump);
-}
-void ADishonoredPlayerPawn::execEndCrouch( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execEndCrouch);
-}
-void ADishonoredPlayerPawn::execStartCrouch( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerPawn, execStartCrouch);
 }
 void ADisDebugNPCController::execHandleWalking( FFrame& Stack, RESULT_DECL )
 {
@@ -1281,10 +1265,6 @@ void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip_Released( FFrame& 
 void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredPlayerInput, execDis_PlayerChoice_RequestSkip);
-}
-void UDishonoredPlayerInput::execDis_SneakOrSlide( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredPlayerInput, execDis_SneakOrSlide);
 }
 void UDisBehaviorCombatMelee::execRequestStateExitCallback_FindShootingPosition( FFrame& Stack, RESULT_DECL )
 {

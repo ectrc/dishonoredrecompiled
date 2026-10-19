@@ -53,6 +53,7 @@
 #include "gjequipdiag.h"
 #include "stateplayermasterparams.h"
 #include "fzsoireediag.h"
+#include "ifdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkFZ_PlayerPawnAction()
@@ -353,4 +354,108 @@ void ADishonoredPlayerPawn::ChangeAnimStateMotionModes( BYTE _RootMotion, BYTE _
 void ADishonoredPlayerPawn::StopRootMotionMode()
 {
 	ChangeAnimStateMotionModes( RMM_Ignore, RMRM_Ignore );
+}
+
+// ---- agent IF (PHASE23 IF): the physics hook that drives the master FSM, and the action request ----
+
+/**
+ * DISHONORED(port): 2012 0x6fe380 / 2013 0x6a4b50 (424 B both). While the mesh is in (or is about to enter) RMM_Translate, or
+ * while possessing, a physics change is parked in m_NextPhysicsMode and the pawn keeps its physics (ChangeAnimStateMotionModes
+ * restores it). When the physics did change the master FSM is asked for the matching state: Walking -> Walk, Falling ->
+ * Falling, Swimming -> Swim.
+ * DISHONORED(written): retail asks ADishonoredPawn::IsPossessing (2012 0x7aac60, 10 B), which forwards to the player's
+ * DisIsPossessing; the player's own is called here. The master FSM pointer is tested (a pawn whose PreBeginPlay_Actions found no
+ * subobject, agent FZ's warning); retail's always exists.
+ */
+void ADishonoredPlayerPawn::setPhysics( BYTE NewPhysics, AActor* NewFloor, FVector NewFloorV )
+{
+	const BYTE OldPhysics = Physics;
+	UBOOL bPark = FALSE;
+	if( Mesh )
+	{
+		const BYTE RootMotionMode = ( Mesh->PendingRMM != Mesh->OldPendingRMM ) ? Mesh->PendingRMM : Mesh->RootMotionMode;
+		bPark = ( RootMotionMode == RMM_Translate );
+	}
+	if( bPark || ( DisIsPossessing() && NewPhysics != PHYS_None ) )
+	{
+		m_NextPhysicsMode = NewPhysics;
+		Super::setPhysics( Physics, NewFloor, NewFloorV );
+	}
+	else
+	{
+		Super::setPhysics( NewPhysics, NewFloor, NewFloorV );
+	}
+	if( OldPhysics == Physics || m_pPlayerMasterFSM == NULL )
+	{
+		return;
+	}
+	if( Physics == PHYS_Walking )
+	{
+		FStatePlayerMasterWalk_Param MasterParam;
+		m_pPlayerMasterFSM->RequestStateChange( MasterParam, NULL, FALSE );
+	}
+	else if( Physics == PHYS_Falling )
+	{
+		FStatePlayerMasterFalling_Param MasterParam;
+		m_pPlayerMasterFSM->RequestStateChange( MasterParam, NULL, FALSE );
+	}
+	else if( Physics == PHYS_Swimming )
+	{
+		FStatePlayerMasterSwim_Param MasterParam;
+		m_pPlayerMasterFSM->RequestStateChange( MasterParam, NULL, FALSE );
+	}
+}
+
+/**
+ * DISHONORED(port): 2012 0x704ad0 / 2013 0x6aad90 (91 B). The request goes to the machine unless its logical state is a player
+ * action that refuses the new action (a death action is never refused).
+ * DISHONORED(bringup): two named gaps. The upper and left-arm machines are never initialised in this tree
+ * (PreBeginPlay_Actions, agent FZ), and a request to a machine with no state would leave it pending a class it does not
+ * hold, so such a request is refused here. UStateSharedActionBase_PlayerOnly::CanTransitionAction (2012 0x692a80) is not
+ * ported; no player-action state can be the logical state of an initialised machine here, and if one ever is the request is
+ * refused rather than guessed.
+ */
+UBOOL ADishonoredPlayerPawn::RequestActionHelper( UDishonoredNativeStateMachine* FSM, UBOOL bIsDeathAction, FStateSharedActionBase_PlayerOnly_Param& ActionParam, UObject* FiringObject, UBOOL bCheckOnly )
+{
+	if( FSM == NULL || FSM->GetCurrentlyActiveState() == NULL )
+	{
+		IFDIAG( TEXT("action request %s refused: its machine is not initialised"), *ActionParam.m_pCurAction->m_ActionName.ToString() );
+		IFDIAG_ONCE( TEXT("RequestAction: the upper-body and left-arm FSMs are not initialised (UStatePlayerUpper*/UStatePlayerAction skeletons); the action is not requested") );
+		return FALSE;
+	}
+	if( Cast<UStateSharedActionBase_PlayerOnly>( FSM->GetLogicalState() ) && !bIsDeathAction )
+	{
+		IFDIAG_ONCE( TEXT("RequestActionHelper: UStateSharedActionBase_PlayerOnly::CanTransitionAction (2012 0x692a80) is not ported; the request is refused") );
+		return FALSE;
+	}
+	return FSM->RequestStateChange( ActionParam, FiringObject, bCheckOnly );
+}
+
+/**
+ * DISHONORED(port): 2012 0x70bb90 / 2013 0x6b1d00 (254 B both). A left-hand action is refused while the left hand is disabled.
+ * The full-body usage goes to the master machine (a UStatePlayerMasterDead request is a death action), the upper-body and
+ * left-hand usages to their machines; a granted request invalidates the matching anim-state picker.
+ * DISHONORED(bringup): UDisAnimStateComponent::InvalidateCurAnimState is not ported (agent FZ); named, not called.
+ */
+UBOOL ADishonoredPlayerPawn::RequestAction( BYTE ActionUsage, FStateSharedActionBase_PlayerOnly_Param& ActionParam, UObject* FiringObject, UBOOL bCheckOnly )
+{
+	if( ActionParam.m_pCurAction->m_bActionUsesLeftHand && m_bLeftHandDisabled )
+	{
+		return FALSE;
+	}
+	UBOOL bResult = FALSE;
+	if( ActionUsage == eDisPlayerActionUsage_Fullbody )
+	{
+		const UBOOL bIsDeathAction = ActionParam.m_pStateClass && ActionParam.m_pStateClass->IsChildOf( UStatePlayerMasterDead::StaticClass() );
+		bResult = RequestActionHelper( m_pPlayerMasterFSM, bIsDeathAction, ActionParam, FiringObject, bCheckOnly );
+	}
+	else if( ActionUsage == eDisPlayerActionUsage_Upperbody || ActionUsage == eDisPlayerActionUsage_LeftHand )
+	{
+		bResult = RequestActionHelper( ActionUsage == eDisPlayerActionUsage_Upperbody ? m_pPlayerUpperFSM : m_pPlayerLeftArmFSM, FALSE, ActionParam, FiringObject, bCheckOnly );
+	}
+	if( bResult && !bCheckOnly )
+	{
+		IFDIAG_ONCE( TEXT("RequestAction: UDisAnimStateComponent::InvalidateCurAnimState is not ported") );
+	}
+	return bResult;
 }

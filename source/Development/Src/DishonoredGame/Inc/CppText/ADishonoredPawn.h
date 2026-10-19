@@ -99,7 +99,8 @@ public:
 	class ADishonoredPlayerCamera* GetDishonoredCamera() const;
 	UBOOL HasNothingEquipped() const;
 	virtual FVector GetCameraPos() const { return Location; }
-	virtual UBOOL IsHoldingMovableObject() const { return FALSE; }
+	virtual UBOOL IsHoldingMovableObject() const;
+	virtual class UDisMovableComponent* GetHeldMovableObject();
 	virtual UBOOL IsCarryingCorpse() const { return FALSE; }
 	virtual void DropMovableObject( UBOOL bForceHighDrop ) {}
 	/** 2012 0x795080 (2013 0x757110): the body tweaks' bone angle offset applied to a bone matrix; body in dishonoredpawn_body.cpp. */
@@ -227,3 +228,21 @@ public:
 	FVector GetLookAtPoint() const;
 	UBOOL IsSeenBy( const class AActor* _pActor ) const;
 	UBOOL IsDead() const { return Health <= 0 || m_bIsOfficiallyDead; }
+// ---- agent IF (PHASE23 IF): the speed modifier, the physics hook and the water half every Dishonored pawn carries ----
+// 2012 / 2013 rvas: MaxSpeedModifier 0x794b10 / 0x756c40 (APawn virtual, every frame from CalcVelocity), MaxSpeedModifier_Derived
+// 0x9fe2a0 / 0x447eb0 (3 B: 1.0), IsHoldingMovableObject 0x7afe30 / 0x7519f0, GetHeldMovableObject 0x7afe60, setPhysics 0x7946c0 /
+// 0x750bb0, OnEnterWaterVolume 0x7b60b0 / 0x758bc0, OnExitWaterVolume 0x7b98d0 / 0x75d670, Tick_Water 0x7b60e0 / 0x758bf0 (the second
+// tick phase), OnChangeWaterVolume (the base is an ICF-folded empty two-argument virtual). IsSneaking is a pawn virtual (2013 slot
+// +1660) whose base answers FALSE. Bodies in dishonoredpawn_attributes.cpp, dishonoredpawn_inventory.cpp, dishonoredpawn.cpp and
+// dishonoredpawn_water.cpp.
+public:
+	virtual FLOAT MaxSpeedModifier();
+	virtual UBOOL IsSneaking() const { return FALSE; }
+	virtual void setPhysics( BYTE NewPhysics, AActor* NewFloor = NULL, FVector NewFloorV = FVector( 0, 0, 1 ) );
+	virtual void OnEnterWaterVolume( class ADishonoredWaterVolume* Volume );
+	virtual void OnExitWaterVolume( class ADishonoredWaterVolume* Volume );
+	virtual void OnChangeWaterVolume( class ADishonoredWaterVolume* OldVolume, class ADishonoredWaterVolume* NewVolume ) {}
+	virtual void Tick_Water( FLOAT DeltaTime, ELevelTick TickType );
+protected:
+	virtual FLOAT MaxSpeedModifier_Derived() { return 1.f; }
+public:

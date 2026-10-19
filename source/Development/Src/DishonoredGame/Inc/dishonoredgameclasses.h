@@ -3869,6 +3869,7 @@ public:
 
     DECLARE_CLASS(ADishonoredWaterVolume,APhysicsVolume,0,DishonoredGame)
     static const TCHAR* StaticConfigName() {return TEXT("Game");}
+#include "CppText/ADishonoredWaterVolume.h"
 };
 
 // DishonoredGame.DisSerializableObject_Base.DisSerializableObject: retail SDK size 4 (2012 PDB 4)
@@ -17423,6 +17424,7 @@ public:
     //## END PROPS StatePlayerMasterFalling
 
     DECLARE_CLASS(UStatePlayerMasterFalling,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterFalling.h"
 };
 
 // DishonoredGame.StatePlayerMasterHolePeeking: retail sizeof 96, reflected span 80..96 (2012 PDB sizeof 96)
@@ -17480,6 +17482,7 @@ public:
     //## END PROPS StatePlayerMasterJump
 
     DECLARE_CLASS(UStatePlayerMasterJump,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterJump.h"
 };
 
 // DishonoredGame.StatePlayerMasterLeaning: retail sizeof 112, reflected span 80..112 (2012 PDB sizeof 112)
@@ -17586,6 +17589,7 @@ public:
     //## END PROPS StatePlayerMasterSwim
 
     DECLARE_CLASS(UStatePlayerMasterSwim,UStatePlayerMasterBase,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterSwim.h"
 };
 
 // DishonoredGame.StatePlayerMasterVersus: retail sizeof 120, reflected span 116..120 (2012 PDB sizeof 120)

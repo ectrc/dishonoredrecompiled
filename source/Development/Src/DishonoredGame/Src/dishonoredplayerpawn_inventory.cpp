@@ -210,11 +210,12 @@ BYTE ADishonoredPlayerPawn::GetActualPlayerStance( BYTE _EquipUsage ) const
 	return Stance;
 }
 
-// 2012 0x707470 (69 B): the sneak toggle, or a choke in progress whose state says so (UStatePlayerMasterChoke's flag virtual - the
-// choke state is a skeleton, so the toggle alone answers here)
-UBOOL ADishonoredPlayerPawn::IsSneaking() const
+// DISHONORED(port): agent IF, 2012 0x6febc0 / 2013 0x6a5220 (153 B): the upper FSM's logical state is carrying or grabbing a
+// corpse. The upper machine is not initialised in this tree (agent FZ), so this answers FALSE; retail does not test the pointer.
+UBOOL ADishonoredPlayerPawn::IsCarryingCorpse() const
 {
-	return m_bSneakModeToggled;
+	UDishonoredNativeState* LogicalState = m_pPlayerUpperFSM ? m_pPlayerUpperFSM->GetLogicalState() : NULL;
+	return LogicalState != NULL && ( LogicalState->IsA( UStatePlayerCarryCorpseIdle::StaticClass() ) || LogicalState->IsA( UStatePlayerGrabCorpse::StaticClass() ) );
 }
 
 // DISHONORED(port): agent HE, 2012 0x6fb7d0 (86 B): the possession states of the player's master FSM

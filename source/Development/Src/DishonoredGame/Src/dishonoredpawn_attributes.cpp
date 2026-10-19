@@ -13,6 +13,7 @@
 //   0x79b730  public: virtual void __thiscall ADishonoredPawn::PreBeginPlay_Attributes(void)
 
 #include "DishonoredGame.h"
+#include "ifdiag.h"
 
 // ---- agent BF ports (PHASE8 BF): the pawn's half of the attributes system ----
 
@@ -82,9 +83,78 @@ void ADishonoredPawn::OnDifficultyChange()
 // into m_pInventory->m_AmmoInfo, then CrouchHeight / MaxFallSpeed / WalkableFloorZ from the body tweaks. It needs
 // ADishonoredPawn::IsCarryingCorpse, which does not exist, and it would overwrite the movement values the walking path
 // depends on the moment Tick is ported - so it is deliberately left out and named here instead.
-// DISHONORED(port): MaxSpeedModifier (2012 rva 0x794b10) is an APawn virtual the engine's movement code calls every
-// frame. Its body needs MaxSpeedModifier_Derived, IsSneaking and IsCarryingCorpse, none of which are ported, and a
-// partial port would multiply the pawn's speed by 0 and stop it walking. Left out on purpose.
+
+/**
+ * DISHONORED(port): agent IF. 2012 rva 0x794b10 / 2013 0x756c40 (441 B both), the APawn virtual CalcVelocity scales the maximum
+ * speed and the acceleration by every frame. Uncrouched: a sprint replaces the engine's modifier with the sprint speed attribute
+ * (times the strafe or backward sprint multiplier) over GroundSpeed; a sneak multiplies it by CrouchedPct, or replaces it with the
+ * sneak strafe/backward multiplier while strafing; a run while strafing or backing replaces it with the run multiplier. The
+ * class's own factor (MaxSpeedModifier_Derived: 1.0 here, the sword factor for the player) multiplies the result, and a drop is
+ * blended down at the pawn tweaks' m_fSpeedBlendDownSpeed per second (a rise is immediate).
+ * A crouched pawn (the engine's crouch, which the swim state uses) keeps APawn's modifier (CrouchedPct). NPCs walk through
+ * their own physWalking (dishonorednpcpawn_locomotion.cpp), which does not call CalcVelocity. The attribute names are the
+ * UDisTweaks_Pawn_Attributes members with m_ replaced by Attribute_ (retail's DNAME_Attribute_* globals, the 2013 ones read back
+ * from their FName initialisers at 0x9e62e8..0x9e6480).
+ */
+FLOAT ADishonoredPawn::MaxSpeedModifier()
+{
+	static const FName NAME_DisGroundSpeedSprint( TEXT("Attribute_GroundSpeedSprint") );
+	static const FName NAME_DisGroundStrafeMultiplierSprint( TEXT("Attribute_GroundStrafeMultiplierSprint") );
+	static const FName NAME_DisGroundBackwardMultiplierSprint( TEXT("Attribute_GroundBackwardMultiplierSprint") );
+	static const FName NAME_DisGroundStrafeMultiplierSneak( TEXT("Attribute_GroundStrafeMultiplierSneak") );
+	static const FName NAME_DisGroundBackwardMultiplierSneak( TEXT("Attribute_GroundBackwardMultiplierSneak") );
+	static const FName NAME_DisGroundStrafeMultiplierRun( TEXT("Attribute_GroundStrafeMultiplierRun") );
+	static const FName NAME_DisGroundBackwardMultiplierRun( TEXT("Attribute_GroundBackwardMultiplierRun") );
+	FLOAT Modifier = APawn::MaxSpeedModifier();
+	UDisTweaks_Pawn* Tweaks = GetPawnTweaks();
+	if( !bIsCrouched )
+	{
+		if( m_bSprinting )
+		{
+			FLOAT SprintSpeed = GetAttributeValue( NAME_DisGroundSpeedSprint );
+			if( m_bStrafing )
+			{
+				SprintSpeed *= GetAttributeValue( NAME_DisGroundStrafeMultiplierSprint );
+			}
+			else if( m_bMovingBackwards )
+			{
+				SprintSpeed *= GetAttributeValue( NAME_DisGroundBackwardMultiplierSprint );
+			}
+			Modifier = SprintSpeed / GroundSpeed;
+		}
+		else if( IsSneaking() )
+		{
+			if( !m_bStrafing )
+			{
+				Modifier *= CrouchedPct;
+			}
+			else
+			{
+				Modifier = GetAttributeValue( m_bMovingBackwards ? NAME_DisGroundBackwardMultiplierSneak : NAME_DisGroundStrafeMultiplierSneak );
+			}
+		}
+		else if( m_bStrafing )
+		{
+			Modifier = GetAttributeValue( NAME_DisGroundStrafeMultiplierRun );
+		}
+		else if( m_bMovingBackwards )
+		{
+			Modifier = GetAttributeValue( NAME_DisGroundBackwardMultiplierRun );
+		}
+	}
+	const FLOAT Derived = MaxSpeedModifier_Derived();
+	FLOAT Result = Derived * Modifier;
+	FLOAT Smoothed = Result;
+	if( m_fLastSpeedModifier > Result && m_fLastSpeedModifier - Result > 0.0001f )
+	{
+		const FLOAT Alpha = Clamp( GWorld->GetDeltaSeconds() * Tweaks->m_fSpeedBlendDownSpeed, 0.f, 1.f );
+		Smoothed = ( Result - m_fLastSpeedModifier ) * Alpha + m_fLastSpeedModifier;
+		Result = Smoothed;
+	}
+	m_fLastSpeedModifier = Smoothed;
+	DisIFNoteSpeedModifier( this, Modifier, Derived, Result );
+	return Result;
+}
 
 // agentDO:setsprinting
 /**

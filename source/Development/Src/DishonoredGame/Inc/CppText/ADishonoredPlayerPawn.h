@@ -144,7 +144,8 @@ public:
 // equip-change action it requests from the hand's FSM is a skeleton: every equip is taken the instant way, said once),
 // TransitionItemIn 0x6fb760 / 0x6a2590, GetItemClassBeingEquipped 0x706d80 (NULL: no UStatePlayerEquipChange to read),
 // GetDesiredPlayerStance 0x6fb250 / 0x6a2120, GetActualPlayerStance 0x6fb220 / 0x6a20f0, SetPlayerStance 0x6fb200 (20 B),
-// IsLeftHandDisabled 0x6fb110 (m_bLeftHandDisabled), IsSneaking 0x707470. Bodies in dishonoredplayerpawn_inventory.cpp.
+// IsLeftHandDisabled 0x6fb110 (m_bLeftHandDisabled), IsSneaking 0x707470 (agent IF: moved to retail's unit,
+// dishonoredplayerpawn_stealth.cpp, with the 2013 body). Bodies in dishonoredplayerpawn_inventory.cpp.
 public:
 	virtual void PostBeginPlay_Inventory();
 	virtual UBOOL EquipItemByType( UClass* _pType, BYTE _EquipUsage, INT _Flags );
@@ -154,7 +155,7 @@ public:
 	BYTE GetActualPlayerStance( BYTE _EquipUsage ) const;
 	void SetPlayerStance( BYTE _EquipUsage, BYTE _Stance ) { m_PlayerStance[_EquipUsage] = _Stance; }
 	UBOOL IsLeftHandDisabled() const { return m_bLeftHandDisabled; }
-	UBOOL IsSneaking() const;
+	virtual UBOOL IsSneaking() const;
 // ---- agent HE (PHASE22 HE): the stance icon's gates. DisIsPossessing 2012 0x6fb7d0 (retail's is APawn virtual +1188, called through
 // ADishonoredPawn::IsPossessing 2012 0x7aac60 / 2013 0x74a550), IsSliding 2012 0x6fec70. Bodies in dishonoredplayerpawn_inventory.cpp.
 	UBOOL DisIsPossessing() const;
@@ -184,3 +185,43 @@ public:
 	virtual void OnToggleChoke( class UDisSeqAct_ToggleChoke* _pAction );
 	virtual void OnToggleJournal( class UDisSeqAct_ToggleJournal* _pAction );
 	virtual void OnTogglePowerWheel( class UDisSeqAct_TogglePowerWheel* _pAction );
+// ---- agent IF (PHASE23 IF): crouch (the sneak toggle), sprint, jump and swim ----
+// 2012 / 2013 rvas: StartSneaking 0x70d450 / 0x6d3860, AttemptChangeToSneakHeight 0x7074c0 / 0x6cda60, AttemptChangeCollisionHeight
+// 0x6feca0 / 0x6c3430, StartCrouch 0x6fcfe0 / 0x6a3720, EndCrouch 0x6fd080 / 0x6a37c0, UnCrouch 0x70ae50, GetSpeedFraction 0x6fb8a0 /
+// 0x6c33b0, IsCarryingCorpse 0x6febc0 / 0x6a5220, MaxSpeedModifier_Derived 0x6fe140 / 0x6a4700, DoJump 0x715fe0 / 0x6a3820,
+// DoJump_Mantle 0x712b10 / 0x6dbe70, IsMantleRequested 0x707170 / 0x6c8000, IsPressingForward 0x7071a0 / 0x6c8030, PerformMantle
+// 0x70ff10 (agent IG's), setPhysics 0x6fe380 / 0x6a4b50, RequestAction 0x70bb90 / 0x6b1d00, RequestActionHelper 0x704ad0 /
+// 0x6aad90, GetSwimmingState 0x705510 / 0x6ab9d0, GetApneaDuration 0x709050 / 0x6cf570, OnEnterWaterVolume 0x6faa30 / 0x6a15a0,
+// OnExitWaterVolume 0x70b300 / 0x6b11d0, OnChangeWaterVolume 0x70dea0 / 0x6d4120, Tick_Water 0x708ef0 / 0x6d7be0,
+// OnCameraEnterWaterVolume 0x6ffdc0 / 0x6c46a0, OnCameraExitWaterVolume 0x7090c0 / 0x6cf5e0. Bodies in
+// dishonoredplayerpawn_stealth.cpp, dishonoredplayerpawn.cpp, dishonoredplayerpawn_inventory.cpp, dishonoredplayerpawn_mantle.cpp,
+// dishonoredplayerpawn_action.cpp, dishonoredplayerpawn_body.cpp and displayerpawn_water.cpp (retail's units).
+public:
+	void StartSneaking( UBOOL bSkipTransitions );
+	virtual void StartCrouch( FLOAT HeightAdjust );
+	virtual void EndCrouch( FLOAT HeightAdjust );
+	virtual void UnCrouch( INT bClientSimulation = 0 );
+	virtual FLOAT GetSpeedFraction() const;
+	virtual UBOOL IsCarryingCorpse() const;
+	virtual UBOOL DoJump( UBOOL bUpdating );
+	virtual void setPhysics( BYTE NewPhysics, AActor* NewFloor = NULL, FVector NewFloorV = FVector( 0, 0, 1 ) );
+	UBOOL RequestAction( BYTE ActionUsage, struct FStateSharedActionBase_PlayerOnly_Param& ActionParam, UObject* FiringObject, UBOOL bCheckOnly );
+	UBOOL PerformMantle( UBOOL bFromJump, UBOOL bFromBlink );
+	BYTE GetSwimmingState() const;
+	FLOAT GetApneaDuration() const;
+	virtual void OnEnterWaterVolume( class ADishonoredWaterVolume* Volume );
+	virtual void OnExitWaterVolume( class ADishonoredWaterVolume* Volume );
+	virtual void OnChangeWaterVolume( class ADishonoredWaterVolume* OldVolume, class ADishonoredWaterVolume* NewVolume );
+	virtual void Tick_Water( FLOAT DeltaTime, ELevelTick TickType );
+protected:
+	UBOOL AttemptChangeToSneakHeight();
+	UBOOL AttemptChangeCollisionHeight( FLOAT NewHeight );
+	virtual FLOAT MaxSpeedModifier_Derived();
+	UBOOL RequestActionHelper( UDishonoredNativeStateMachine* FSM, UBOOL bIsDeathAction, struct FStateSharedActionBase_PlayerOnly_Param& ActionParam, UObject* FiringObject, UBOOL bCheckOnly );
+private:
+	UBOOL DoJump_Mantle();
+	UBOOL IsMantleRequested() const;
+	UBOOL IsPressingForward() const;
+	void OnCameraEnterWaterVolume();
+	void OnCameraExitWaterVolume();
+public:

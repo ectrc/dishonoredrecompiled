@@ -33,6 +33,7 @@
 
 #include "DishonoredGame.h"
 #include "dishonoredutilities_saveload.h"
+#include "ifdiag.h"
 
 // DISHONORED(written): FDisNativeFSMRejectedInfo(UClass*, UClass*, eDisNativeFSMRejectReason) 2012 rva 0x6927d0 (inlined into the
 // 2013 callers): stamped with the world's real time, one rejection
@@ -265,6 +266,7 @@ UBOOL UDishonoredNativeStateMachine::RequestStateChange( FDisNativeStateParam& P
 		{
 			RejectingState->OnRejectStateRequest( StateID );
 			DebugStoreRejectedStateInfo( DisMakeRejectedInfo( StateID, RejectingState->GetClass(), RejectingState == m_pCurrentState ? 1 : 0 ) );
+			DisIFNoteRejection( this, StateID, RejectingState );
 		}
 		return bCanTransition;
 	}
@@ -341,6 +343,7 @@ void UDishonoredNativeStateMachine::DoStateChange()
 	m_pPendingState = NULL;
 	if( Pending )
 	{
+		DisIFNoteTransition( this, Last, Pending );
 		Pending->OnEnterState( Last );
 	}
 }

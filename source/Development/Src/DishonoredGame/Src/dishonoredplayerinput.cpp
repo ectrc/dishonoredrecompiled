@@ -31,6 +31,7 @@
 //   0x6fa8b0  public: static class UClass * __cdecl UDishonoredPlayerInput::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "ifdiag.h"
 
 // DISHONORED(written): 2013 rva 0x6afeb0 (2012 0x6f90b0). 2013 reads UDishonoredEngine::m_bUsingGamepad at its 2013 bit (0x400).
 void UDishonoredPlayerInput::OnInit( ADishonoredPlayerController* Owner )
@@ -47,9 +48,74 @@ void UDishonoredPlayerInput::OnInit( ADishonoredPlayerController* Owner )
 	ArkSettings::ApplyCurrentSettings( this );
 }
 
+/**
+ * DISHONORED(port): agent IF. 2013 rva 0x6aff70 (2012 0x6f9170, 355 B both). With the slide input (0x200) enabled, a press
+ * during a slide cancels it, and a press while sprinting forward faster than m_fMinSpeedToSlide requests the slide; otherwise,
+ * with the sneak input (0x100) enabled, the press toggles sneaking.
+ * DISHONORED(bringup): UStatePlayerMasterSlide (stateplayermasterslide.cpp) is a skeleton: entering it would leave the master FSM
+ * in a state with no tick and no exit, so the slide request is refused here and named; a slide is never current, so the
+ * cancel branch is never taken either.
+ */
+void UDishonoredPlayerInput::Dis_SneakOrSlide( UBOOL bForGamepad )
+{
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( m_pPlayerController->Pawn );
+	if( PlayerPawn == NULL )
+	{
+		return;
+	}
+	const UBOOL bCurrentlySneaking = PlayerPawn->IsSneaking();
+	if( m_pPlayerController->IsInputEnabled( 0x200 ) )
+	{
+		if( Cast<UStatePlayerMasterSlide>( PlayerPawn->m_pPlayerMasterFSM->GetLogicalState() ) )
+		{
+			IFDIAG_ONCE( TEXT("Dis_SneakOrSlide: UStatePlayerMasterSlide::CancelSlide is not ported") );
+			return;
+		}
+		UDisTweaks_PlayerInput* Tweaks = Cast<UDisTweaks_PlayerInput>( GetTweaks_Derived() );
+		if( Tweaks == NULL )
+		{
+			Tweaks = UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject<UDisTweaks_PlayerInput>();
+		}
+		const FVector Forward = PlayerPawn->LocalToWorld().GetAxis( 0 );
+		const FLOAT ForwardSpeed = PlayerPawn->Velocity | Forward;
+		if( PlayerPawn->m_bSprinting && !bCurrentlySneaking && ForwardSpeed > Tweaks->m_fMinSpeedToSlide )
+		{
+			IFDIAG( TEXT("action sneak/slide (gamepad %d): sprinting at %.1f > %.1f, slide requested and refused (UStatePlayerMasterSlide not ported)"),
+				(INT)bForGamepad, ForwardSpeed, Tweaks->m_fMinSpeedToSlide );
+			IFDIAG_ONCE( TEXT("Dis_SneakOrSlide: the slide request (FStatePlayerMasterSlide_Param, UStatePlayerMasterSlide) is not ported") );
+			return;
+		}
+	}
+	if( m_pPlayerController->IsInputEnabled( 0x100 ) )
+	{
+		IFDIAG( TEXT("action sneak/slide (gamepad %d): %s sneaking"), (INT)bForGamepad, bCurrentlySneaking ? TEXT("stop") : TEXT("start") );
+		if( bCurrentlySneaking )
+		{
+			PlayerPawn->StopSneaking( FALSE );
+		}
+		else
+		{
+			PlayerPawn->StartSneaking( FALSE );
+		}
+	}
+	else
+	{
+		IFDIAG( TEXT("action sneak/slide (gamepad %d): sneak input 0x100 disabled"), (INT)bForGamepad );
+	}
+}
+
+// DISHONORED(port): agent IF. 2012 rva 0x63a8e0: one UBOOL, then the virtual
+void UDishonoredPlayerInput::execDis_SneakOrSlide( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(bForGamepad);
+	P_FINISH;
+	Dis_SneakOrSlide( bForGamepad );
+}
+
 // DISHONORED(written): 2013 rva 0x6a12b0 (2012 0x6d1a80, same bytes)
 void UDishonoredPlayerInput::Dis_Jump_ButtonDown()
 {
+	IFDIAG( TEXT("action jump button down (pressed %d)"), (INT)m_pPlayerController->bPressedJump );
 	m_pPlayerController->bPressedJump = TRUE;
 }
 

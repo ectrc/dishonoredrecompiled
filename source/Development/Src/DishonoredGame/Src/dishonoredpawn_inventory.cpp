@@ -259,3 +259,20 @@ void ADishonoredPawn::SpawnInventoryLoadout_Items( const TArray<UDisTweaks_Inven
 		}
 	}
 }
+
+// ---- agent IF (PHASE23 IF): the held movable object ----
+
+// DISHONORED(port): 2012 0x7afe30 / 2013 0x7519f0 (45 B): the primary hand's empty-hands item says whether it grabbed something
+// (UDishonoredItemEmpty::IsHoldingMovableObject 0x887cb0, 12 B: m_pGrabbed_Movable set)
+UBOOL ADishonoredPawn::IsHoldingMovableObject() const
+{
+	UDishonoredItemEmpty* EmptyHands = m_pInventory ? Cast<UDishonoredItemEmpty>( m_pInventory->GetEquippedItem( EDisEquipUsage_Primary ) ) : NULL;
+	return EmptyHands != NULL && EmptyHands->m_pGrabbed_Movable != NULL;
+}
+
+// DISHONORED(port): 2012 0x7afe60 / 2013 0x751a20 (45 B): the movable component the empty hands grabbed
+UDisMovableComponent* ADishonoredPawn::GetHeldMovableObject()
+{
+	UDishonoredItemEmpty* EmptyHands = m_pInventory ? Cast<UDishonoredItemEmpty>( m_pInventory->GetEquippedItem( EDisEquipUsage_Primary ) ) : NULL;
+	return EmptyHands ? EmptyHands->m_pGrabbed_Movable : NULL;
+}

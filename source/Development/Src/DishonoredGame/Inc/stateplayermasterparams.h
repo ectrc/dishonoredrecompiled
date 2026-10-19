@@ -38,6 +38,52 @@ struct FStatePlayerMasterWalk_Param : public FStatePlayerMasterBase_Param
 	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterWalk_Param); }
 };
 
+/**
+ * agent IF (PHASE23 IF). The jump, falling and swim requests: retail builds each on the stack with the base vtable
+ * (/OPT:ICF folds all three onto FStatePlayerMasterSwim_Param's, 2012 ctor 0x693cc0 / 2013 0x66dc80) and the state's class.
+ */
+struct FStatePlayerMasterJump_Param : public FStatePlayerMasterBase_Param
+{
+	FStatePlayerMasterJump_Param();
+	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterJump_Param); }
+};
+
+struct FStatePlayerMasterFalling_Param : public FStatePlayerMasterBase_Param
+{
+	FStatePlayerMasterFalling_Param();
+	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterFalling_Param); }
+};
+
+struct FStatePlayerMasterSwim_Param : public FStatePlayerMasterBase_Param
+{
+	FStatePlayerMasterSwim_Param();
+	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterSwim_Param); }
+};
+
+/**
+ * agent IF (PHASE23 IF). The upper-body / left-arm action request ADishonoredPlayerPawn::RequestAction takes: 2012
+ * FStateSharedActionBase_PlayerOnly_Param ctor 0x695a20 (the action pointer at +8) and FStatePlayerAction_Param ctor
+ * 0x6c4330 / 2013 0xa71690 (UStatePlayerAction's class). FStatePlayerAction_Param::OnPending (2012 0x6b4580: the pending
+ * UStatePlayerAction is told its pawn and machine) is not written: the upper and left-arm machines are never initialised
+ * in this tree, so RequestAction refuses before any state could be pending (dishonoredplayerpawn_action.cpp).
+ */
+struct FStateSharedActionBase_PlayerOnly_Param : public FDisNativeStateParam
+{
+	const FPawnAction* m_pCurAction;
+
+	FStateSharedActionBase_PlayerOnly_Param( const FPawnAction& Action ) : FDisNativeStateParam( NULL ), m_pCurAction( &Action ) {}
+	virtual INT SizeOf() const { return sizeof(FStateSharedActionBase_PlayerOnly_Param); }
+};
+
+struct FStatePlayerAction_Param : public FStateSharedActionBase_PlayerOnly_Param
+{
+	FStatePlayerAction_Param( const FPawnAction& Action ) : FStateSharedActionBase_PlayerOnly_Param( Action )
+	{
+		m_pStateClass = UStatePlayerAction::StaticClass();
+	}
+	virtual INT SizeOf() const { return sizeof(FStatePlayerAction_Param); }
+};
+
 /** The flag word MAT_BeginPlayerGroup builds and FDisSoireeControlState keeps in m_Flags (2013 bits; 2012 had the first three). */
 enum EDisSoireeControlFlags
 {

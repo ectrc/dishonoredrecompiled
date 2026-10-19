@@ -119,6 +119,7 @@
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
 #include "fwdiag.h"
+#include "ifdiag.h"
 #include "gbdiag.h"
 #include "arkpp.h"
 #include "arkcomponentlookat.h"
@@ -322,11 +323,8 @@ void ADishonoredPlayerController::execOnControllerChanged_Native( FFrame& Stack,
 
 // DISHONORED(written): 2013 rva 0x6ba9a0 (2012 0x6f9b80): a paused world, and a single-stepped world that is currently
 // paused between steps, skip the whole held-button pass; both thumbsticks pressed together toggles the debug menu.
-// DISHONORED(bringup): of the three sub-handlers only HandleHeldButtons_Context is ported. The other two are named here
-// rather than silently skipped, because their own dependencies are unported subsystems:
-//   HandleHeldButtons_Movement 2013 rva 0x6aeb10 (+ _Movement_Gamepad 0x6ae610, _Movement_Movable 0x6a2ec0) - the
-//     movable-object carry and the gamepad dead zones, which need UDisMovableComponent and UDisTweaks_PlayerInput;
-//   HandleHeldButtons_Lean 2013 rva 0x6b3ff0 - the lean state, which needs the player master FSM's lean state.
+// DISHONORED(bringup): _Movement (agent IF) and _Context are ported; HandleHeldButtons_Lean 2013 rva 0x6b3ff0 (2012 0x6f7e60,
+// 587 B) is not - it drives UStatePlayerMasterLeaning, a skeleton - and is named here in its place between the two.
 void ADishonoredPlayerController::HandleHeldButtons( FLOAT DeltaSeconds )
 {
 	if( DisPickupCensusEnabled() )
@@ -353,12 +351,8 @@ void ADishonoredPlayerController::HandleHeldButtons( FLOAT DeltaSeconds )
 	AWorldInfo* Info = WorldInfo;
 	if( Info && !Info->Paused && ( !Info->m_bSingleStep || !Info->m_bSingleStepPaused ) )
 	{
-		static UBOOL bWarnedSubHandlers = FALSE;
-		if( !bWarnedSubHandlers )
-		{
-			bWarnedSubHandlers = TRUE;
-			debugf( TEXT("DISHONORED(bringup): HandleHeldButtons: _Movement (2013 rva 0x6aeb10) and _Lean (0x6b3ff0) are not ported; _Context is") );
-		}
+		HandleHeldButtons_Movement();
+		IFDIAG_ONCE( TEXT("HandleHeldButtons: _Lean (2013 rva 0x6b3ff0) is not ported; _Movement and _Context are") );
 		HandleHeldButtons_Context( DeltaSeconds );
 	}
 
@@ -3234,4 +3228,275 @@ void ADishonoredPlayerController::execOnObjectiveAction( FFrame& Stack, RESULT_D
 	P_GET_OBJECT( UDisSeqAct_ObjectiveAction, _pAction );
 	P_FINISH;
 	OnObjectiveAction( _pAction );
+}
+
+// ---- agent IF (PHASE23 IF): the movement half of the held-button pass, the jump check, the swim acceleration ----
+
+static UDisTweaks_PlayerInput* DisIFInputTweaks( UDishonoredPlayerInput* Input )
+{
+	UDisTweaks_PlayerInput* Tweaks = Cast<UDisTweaks_PlayerInput>( Input->GetTweaks_Derived() );
+	return Tweaks ? Tweaks : UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject<UDisTweaks_PlayerInput>();
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x6aeb10 (2012 0x6f8590; 2013 reads the walk-flag permission off the master FSM's logical state
+ * inline). With move input or the master state's permission: the stick/keys and the carried object set the walk and sprint flags,
+ * or without the permission the pawn walks normally and stops sprinting; while sprinting the context-button level drops the
+ * zoom input (0x8000) unless the input tweaks allow zooming while sprinting.
+ */
+void ADishonoredPlayerController::HandleHeldButtons_Movement()
+{
+	UDishonoredPlayerInput* Input = (UDishonoredPlayerInput*)PlayerInput;
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( Pawn );
+	if( Input == NULL )
+	{
+		return;
+	}
+	UBOOL bCanApplyWalkFlags = FALSE;
+	if( PlayerPawn )
+	{
+		bCanApplyWalkFlags = TRUE;
+		UStatePlayerMasterBase* MasterState = PlayerPawn->m_pPlayerMasterFSM ? Cast<UStatePlayerMasterBase>( PlayerPawn->m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
+		if( MasterState )
+		{
+			bCanApplyWalkFlags = MasterState->CanApplyWalkFlags();
+		}
+	}
+	if( !IsInputEnabled( 1 ) && !bCanApplyWalkFlags )
+	{
+		return;
+	}
+	if( PlayerPawn == NULL )
+	{
+		HandleHeldButtons_Movement_Gamepad( Input );
+		return;
+	}
+	if( bCanApplyWalkFlags )
+	{
+		HandleHeldButtons_Movement_Gamepad( Input );
+		HandleHeldButtons_Movement_Movable( PlayerPawn );
+	}
+	else
+	{
+		Pawn->bIsWalking = FALSE;
+		PlayerPawn->SetSprinting( FALSE );
+	}
+	if( PlayerPawn->m_bSprinting && !DisIFInputTweaks( Input )->m_bAllowZoomWhileSprint )
+	{
+		m_InputEnableMask[DisInputMaskLevel_ContextButton] &= ~0x8000;
+	}
+	else
+	{
+		m_InputEnableMask[DisInputMaskLevel_ContextButton] |= 0x8000;
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x6ae610 (2012 0x6f80b0; 2013 stops sprinting while sneaking through the IsSneaking virtual and
+ * leaves a lean through the leaning state's RequestStateExit where 2012 called BreakOutOfLean). The move magnitude is the raw stick
+ * (RawJoyUp/RawJoyRight, 1.0 for a held key). Sprint: the held button of the source that last asked (keyboard or pad) above the
+ * stop threshold wants a sprint, and the first such frame stops sneaking once (m_bHeldSprintCanceledSneak, rearmed when the
+ * pawn stands still); toggle mode leaves the flag to DisToggleSprint and only stops it when the stick drops. Walk: below the walk
+ * threshold and not sprinting the pawn walks, at the slow-walk or walk speed attribute over the ground speed attribute
+ * (WalkingPct); CrouchedPct is the crouch speed attribute over the same. A pad push or a PC run breaks a lean. The strafe and
+ * backward flags come from the stick's angles against the input tweaks' thresholds.
+ * DISHONORED(bringup): UStatePlayerMasterSlide::CancelSlide is not ported (a slide is never current here); named.
+ * DISHONORED(written): retail treats Pawn as an ADishonoredPawn unchecked; a pawn of any other class is left alone here.
+ */
+void ADishonoredPlayerController::HandleHeldButtons_Movement_Gamepad( UDishonoredPlayerInput* Input )
+{
+	static const FName NAME_GroundSpeed( TEXT("Attribute_GroundSpeed") );
+	static const FName NAME_GroundSpeedSlowWalk( TEXT("Attribute_GroundSpeedSlowWalk") );
+	static const FName NAME_GroundSpeedWalk( TEXT("Attribute_GroundSpeedWalk") );
+	static const FName NAME_GroundSpeedCrouch( TEXT("Attribute_GroundSpeedCrouch") );
+	ADishonoredPawn* DisPawn = Cast<ADishonoredPawn>( Pawn );
+	if( DisPawn == NULL )
+	{
+		return;
+	}
+	UDisTweaks_PlayerInput* Tweaks = DisIFInputTweaks( Input );
+	const FLOAT InputRight = Input->RawJoyRight;
+	const FLOAT InputUp = Input->RawJoyUp;
+	const FLOAT InputMag = appSqrt( InputRight * InputRight + InputUp * InputUp );
+	UBOOL bSprintButton;
+	UBOOL bToggleSprint;
+	if( !m_bSprintEnabled_FromGamePad )
+	{
+		bSprintButton = m_bSprintButton;
+		bToggleSprint = Tweaks->m_bUseSprintToggle;
+	}
+	else
+	{
+		bSprintButton = m_bSprintButton_GamePad;
+		bToggleSprint = Tweaks->m_bUseSprintToggle_GamePad;
+	}
+	if( !IsInputEnabled( 0x400 ) )
+	{
+		DisPawn->SetSprinting( FALSE );
+		bSprintButton = FALSE;
+	}
+	UBOOL bWantsSprint = FALSE;
+	if( !bToggleSprint && bSprintButton && InputMag > Tweaks->m_fStopSprint_Threshold )
+	{
+		bWantsSprint = TRUE;
+		if( m_bHeldSprintCanceledSneak )
+		{
+			if( DisPawn->Velocity.Size() < 0.0001f )
+			{
+				m_bHeldSprintCanceledSneak = FALSE;
+			}
+		}
+		else
+		{
+			ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( DisPawn );
+			if( PlayerPawn )
+			{
+				if( Cast<UStatePlayerMasterSlide>( PlayerPawn->m_pPlayerMasterFSM->GetLogicalState() ) )
+				{
+					IFDIAG_ONCE( TEXT("HandleHeldButtons_Movement_Gamepad: UStatePlayerMasterSlide::CancelSlide is not ported") );
+				}
+				else
+				{
+					PlayerPawn->StopSneaking( FALSE );
+				}
+				m_bHeldSprintCanceledSneak = !PlayerPawn->IsSneaking();
+			}
+		}
+	}
+	const UBOOL bWasSprinting = DisPawn->m_bSprinting;
+	if( DisPawn->IsSneaking() )
+	{
+		DisPawn->SetSprinting( FALSE );
+	}
+	else if( !DisPawn->m_bSprinting )
+	{
+		if( !bToggleSprint && bSprintButton )
+		{
+			DisPawn->SetSprinting( bWantsSprint );
+		}
+	}
+	else if( !m_bSprintEnabled_FromToggle )
+	{
+		DisPawn->SetSprinting( bWantsSprint );
+	}
+	else if( !bSprintButton && Tweaks->m_fStopSprint_Threshold > InputMag )
+	{
+		DisPawn->SetSprinting( FALSE );
+	}
+	if( bWasSprinting != (UBOOL)DisPawn->m_bSprinting )
+	{
+		IFDIAG( TEXT("action sprint %s (button %d, toggle %d, magnitude %.2f, stop threshold %.2f)"), DisPawn->m_bSprinting ? TEXT("starts") : TEXT("stops"),
+			(INT)bSprintButton, (INT)bToggleSprint, InputMag, Tweaks->m_fStopSprint_Threshold );
+	}
+	Pawn->bIsWalking = !( bIgnoreMoveInput || DisPawn->m_bSprinting || Tweaks->m_fWalk_Trigger_Threshold < InputMag || InputMag <= 0.0001f );
+	const FLOAT GroundSpeed = DisPawn->GetAttributeValue( NAME_GroundSpeed );
+	if( GroundSpeed != 0.f )
+	{
+		if( Pawn->bIsWalking )
+		{
+			Pawn->WalkingPct = DisPawn->GetAttributeValue( InputMag <= Tweaks->m_fSlowWalk_Trigger_Threshold ? NAME_GroundSpeedSlowWalk : NAME_GroundSpeedWalk ) / GroundSpeed;
+		}
+		Pawn->CrouchedPct = DisPawn->GetAttributeValue( NAME_GroundSpeedCrouch ) / GroundSpeed;
+	}
+	const UBOOL bPadBreaksLean = Input->m_bUsingGamepadForLook && InputMag > Tweaks->m_fBreakLean_Threshold_Gamepad
+		&& ( !Tweaks->m_bLeanWithAnalogStick || !m_bLeanButton_GamePad );
+	const UBOOL bRunBreaksLean = !Input->m_bUsingGamepadForLook && DisPawn->Velocity.Size() > Tweaks->m_fBreakLean_Speed_PC;
+	if( bPadBreaksLean || bRunBreaksLean )
+	{
+		ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( DisPawn );
+		UStatePlayerMasterLeaning* Leaning = PlayerPawn ? Cast<UStatePlayerMasterLeaning>( PlayerPawn->m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
+		if( Leaning )
+		{
+			Leaning->RequestStateExit();
+		}
+	}
+	DisPawn->m_bStrafing = FALSE;
+	DisPawn->m_bMovingBackwards = FALSE;
+	if( !Pawn->bIsWalking && InputMag > 0.0001f )
+	{
+		const FLOAT HorizontalAngle = appAcos( Clamp( Abs( InputRight / InputMag ), -1.f, 1.f ) ) * 57.29578f;
+		const FLOAT ForwardComponent = InputUp / InputMag;
+		const FLOAT BackAngle = appAcos( Clamp( Abs( ForwardComponent ), -1.f, 1.f ) ) * 57.29578f;
+		const UBOOL bForward = ForwardComponent >= 0.f;
+		const FLOAT StrafeAngle = bForward ? Tweaks->m_fStrafeAngle_Forward : Tweaks->m_fStrafeAngle_Back;
+		if( StrafeAngle > HorizontalAngle )
+		{
+			DisPawn->m_bStrafing = TRUE;
+		}
+		else if( !bForward && Tweaks->m_fBackwardsAngle > BackAngle )
+		{
+			DisPawn->m_bMovingBackwards = TRUE;
+		}
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x6a2ec0 (2012 0x6d6e60, 189 B both). Holding a movable object caps the pawn's speed: the object's
+ * weight-class speed plus the carry bonus attribute (a percentage), clamped to 0..1, replaces WalkingPct and makes the pawn walk
+ * when it is lower than the current walk percentage.
+ * DISHONORED(bringup): the boundary is UDisMovableComponent::GetMaxPawnSpeed (2012 0x672640 / 2013 0x64ade0: the weight class
+ * read through the movable's interface) - the movable grab is not ported, GetHeldMovableObject answers NULL, and the cap is never
+ * computed. Named where retail would call it.
+ */
+void ADishonoredPlayerController::HandleHeldButtons_Movement_Movable( ADishonoredPawn* InPawn )
+{
+	if( InPawn->GetHeldMovableObject() == NULL )
+	{
+		return;
+	}
+	IFDIAG_ONCE( TEXT("HandleHeldButtons_Movement_Movable: UDisMovableComponent::GetMaxPawnSpeed (2013 0x64ade0) is not ported; the carry speed cap is not applied") );
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x6ae490 (2012 0x6e2b10, 159 B both), APlayerController's slot +1240 that PlayerMove_Walking calls
+ * (UnController.cpp; the engine's body is empty). With the sneak input disabled the pawn's wish to crouch follows its crouch;
+ * a jump press jumps when jump input is enabled.
+ * DISHONORED(bringup): a press with jump input disabled plays the possession power's refusal sound in retail (2013: the pawn's
+ * +1896 virtual, then UDishonoredActivePowerComponent_Possess::PlayPossessionActionFailSound) - the power components have no
+ * bodies; named.
+ */
+void ADishonoredPlayerController::CheckJumpOrDuck()
+{
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( Pawn );
+	if( PlayerInput == NULL || PlayerPawn == NULL )
+	{
+		return;
+	}
+	if( !IsInputEnabled( 0x100 ) )
+	{
+		Pawn->bWantsToCrouch = Pawn->bIsCrouched;
+	}
+	if( !bPressedJump )
+	{
+		return;
+	}
+	if( IsInputEnabled( 0x1000 ) )
+	{
+		IFDIAG( TEXT("action jump pressed: DoJump (physics %d, Z %.1f)"), (INT)Pawn->Physics, Pawn->Location.Z );
+		PlayerPawn->DoJump( bUpdating );
+	}
+	else
+	{
+		IFDIAG( TEXT("action jump pressed with jump input 0x1000 disabled (physics %d)"), (INT)Pawn->Physics );
+		IFDIAG_ONCE( TEXT("CheckJumpOrDuck: PlayPossessionActionFailSound (the possession power component) is not ported") );
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x6af330 (2012 0x6e3b50, 97 B both), what the script's swimming move uses as the acceleration: the
+ * swim state's stroke acceleration, else the pawn's AccelRate.
+ */
+FLOAT ADishonoredPlayerController::CalcPlayerSwimAccelRate()
+{
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( Pawn );
+	const FLOAT AccelRate = Pawn ? Pawn->AccelRate : 0.f;
+	UStatePlayerMasterSwim* Swim = PlayerPawn ? Cast<UStatePlayerMasterSwim>( PlayerPawn->m_pPlayerMasterFSM->GetLogicalState() ) : NULL;
+	return Swim ? Swim->GetSwimStrokeAccel() : AccelRate;
+}
+
+// DISHONORED(port): 2012 rva 0x6352d0: no parameters, the virtual's FLOAT
+void ADishonoredPlayerController::execCalcPlayerSwimAccelRate( FFrame& Stack, RESULT_DECL )
+{
+	P_FINISH;
+	*(FLOAT*)Result = CalcPlayerSwimAccelRate();
 }

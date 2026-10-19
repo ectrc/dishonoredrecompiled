@@ -146,3 +146,16 @@ public:
 public:
 	// DISHONORED(port): 2013 rva 0x6b80d0 (2012 0x6ef780), the handler of every DisSeqAct_ObjectiveAction
 	virtual void OnObjectiveAction( class UDisSeqAct_ObjectiveAction* _pAction );
+
+// ---- agent IF (PHASE23 IF): the movement half of the held-button pass, the jump check and the swim acceleration ----
+// 2012 / 2013 rvas: HandleHeldButtons_Movement 0x6f8590 / 0x6aeb10, _Movement_Gamepad 0x6f80b0 / 0x6ae610, _Movement_Movable
+// 0x6d6e60 / 0x6a2ec0, CheckJumpOrDuck 0x6e2b10 / 0x6ae490 (APlayerController's slot +1240, empty in the engine),
+// CalcPlayerSwimAccelRate 0x6e3b50 / 0x6af330. Bodies in dishonoredplayercontroller.cpp.
+public:
+	virtual void CheckJumpOrDuck();
+	virtual FLOAT CalcPlayerSwimAccelRate();
+protected:
+	void HandleHeldButtons_Movement();
+	void HandleHeldButtons_Movement_Gamepad( class UDishonoredPlayerInput* Input );
+	void HandleHeldButtons_Movement_Movable( class ADishonoredPawn* InPawn );
+public:

@@ -1,0 +1,14 @@
+item,status,evidence
+step0_probe_natives,named,OnTeleport_Native; CalcPlayerSwimAccelRate; OnOverrideAwarenessDisplay; PlayDying_Native (IF0g_inputtest.log)
+crouch_sneak,ported,height 87.5->65.0->87.5; IsSneaking True/False; camera 167.7->122.7 (IF1s.log)
+sprint,ported,peak 600.1 vs walk 500 (+20%: retail attribute 600/500)
+jump,ported,Walk->Jump->Falling->Walk; Velocity.Z 800; apex 106.2
+swim,ported,PHYS_Swimming; master Swim; accel 500; exit to Walking
+water_touch_untouch,boundary,engine lacks native AActor Touch/UnTouch virtuals
+upper_fsm_actions,boundary,RequestAction refused: upper/left-arm FSMs not initialised
+slide,boundary,UStatePlayerMasterSlide skeleton; request refused
+lean,boundary,HandleHeldButtons_Lean not ported
+mantle,boundary,PerformMantle returns FALSE (agent IG)
+gate,ok,23 ok 0 failed; probe_natives 3; unported_natives 0; criticals 0
+regen,ok,79/79 byte-identical; bitfield_audit mismatches 0
+builds,1,clean first build

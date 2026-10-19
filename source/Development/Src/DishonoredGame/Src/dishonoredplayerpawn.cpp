@@ -170,6 +170,8 @@
 
 #include "DishonoredGame.h"
 #include "gfarmsdiag.h"
+#include "stateplayermasterparams.h"
+#include "ifdiag.h"
 
 ADishonoredPlayerPawn* ADishonoredPlayerPawn::s_pInstance = NULL;
 
@@ -356,6 +358,7 @@ UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	const UBOOL bResult = Super::Tick( DeltaTime, TickType );
 	m_fLastDeltaSeconds = DeltaTime;
 	DisGFReportPlayer( this );
+	DisIFReportPlayer( this, DeltaTime );
 	return bResult;
 }
 
@@ -701,4 +704,131 @@ void ADishonoredPlayerPawn::execOnTogglePowerWheel( FFrame& Stack, RESULT_DECL )
 	P_GET_OBJECT( UDisSeqAct_TogglePowerWheel, _pAction );
 	P_FINISH;
 	OnTogglePowerWheel( _pAction );
+}
+
+// ---- agent IF (PHASE23 IF): the crouch events, the uncrouch, the sword's speed factor, the jump, the water notifications ----
+
+// DISHONORED(port): 2012 0x6fcfe0 / 2013 0x6a3720 (147 B both), the native StartCrouch event the collision-height change raises:
+// the arms' mesh and the pawn move down by the height given up, and the rigid-body push is re-registered
+void ADishonoredPlayerPawn::StartCrouch( FLOAT HeightAdjust )
+{
+	if( Mesh )
+	{
+		Mesh->Translation.Z -= HeightAdjust;
+		Mesh->bNeedsUpdateTransform = TRUE;
+	}
+	SetLocation( FVector( Location.X, Location.Y, Location.Z - HeightAdjust ) );
+	SetPushesRigidBodies( FALSE );
+	SetPushesRigidBodies( TRUE );
+}
+
+// DISHONORED(port): 2012 0x6fd080 / 2013 0x6a37c0 (83 B both): the arms' mesh moves back up (the pawn itself was moved by the caller)
+void ADishonoredPlayerPawn::EndCrouch( FLOAT HeightAdjust )
+{
+	if( Mesh )
+	{
+		Mesh->Translation.Z += HeightAdjust;
+		Mesh->bNeedsUpdateTransform = TRUE;
+	}
+	SetPushesRigidBodies( FALSE );
+	SetPushesRigidBodies( TRUE );
+}
+
+// DISHONORED(port): 2012 0x635330, the generated exec: one FLOAT, then the virtual
+void ADishonoredPlayerPawn::execStartCrouch( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(_fHeightAdjust);
+	P_FINISH;
+	StartCrouch( _fHeightAdjust );
+}
+
+// DISHONORED(port): 2012 0x6353a0
+void ADishonoredPlayerPawn::execEndCrouch( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT(_fHeightAdjust);
+	P_FINISH;
+	EndCrouch( _fHeightAdjust );
+}
+
+/**
+ * DISHONORED(port): 2012 0x70ae50 / 2013 0x6a7f60 (371 -> 312 B, the same logic). The engine uncrouches every frame the pawn is
+ * crouched and not walking (UnPhysic.cpp performPhysics); not while swimming or sliding, not while a Blink travels. A sneaking
+ * pawn goes back to the sneak height (and leaves the engine's crouch), anything else stands up through APawn's.
+ * DISHONORED(bringup): the Blink test walks m_ActivePowers for a travelling UDishonoredActivePowerComponent_Blink; the array is an
+ * untyped gap in this tree's class and the power components have no bodies - no Blink is ever travelling here.
+ */
+void ADishonoredPlayerPawn::UnCrouch( INT bClientSimulation )
+{
+	if( m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSwim::StaticClass(), TRUE ) || m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSlide::StaticClass(), TRUE ) )
+	{
+		return;
+	}
+	if( IsSneaking() )
+	{
+		if( AttemptChangeToSneakHeight() )
+		{
+			bIsCrouched = FALSE;
+		}
+	}
+	else
+	{
+		APawn::UnCrouch( bClientSimulation );
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 0x6a4700 (2012 0x6fe140 answered 1.0 for empty hands): the sword's speed factor - the sheathed attribute
+ * with the empty-hands item in the primary hand, the unsheathed one with anything else.
+ * DISHONORED(written): retail reads the equipped item's class without a test; before the loadout gives the hand an item this
+ * tree's inventory can answer NULL, which is taken as empty hands.
+ */
+FLOAT ADishonoredPlayerPawn::MaxSpeedModifier_Derived()
+{
+	static const FName NAME_SwordSheathedSpeedFactor( TEXT("Attribute_SwordSheathedSpeedFactor") );
+	static const FName NAME_SwordUnsheathedSpeedFactor( TEXT("Attribute_SwordUnsheathedSpeedFactor") );
+	UDishonoredInventoryItem* Item = GetEquippedItem( EDisEquipUsage_Primary );
+	return GetAttributeValue( Item == NULL || Item->IsA( UDishonoredItemEmpty::StaticClass() ) ? NAME_SwordSheathedSpeedFactor : NAME_SwordUnsheathedSpeedFactor );
+}
+
+/**
+ * DISHONORED(port): 2012 0x715fe0 / 2013 0x6a3820 (117 B both). Only a pawn that can jump: a mantle takes the press if it can,
+ * otherwise from walking, a ladder or a spider surface the master FSM is asked for the jump state. TRUE either way.
+ */
+UBOOL ADishonoredPlayerPawn::DoJump( UBOOL bUpdating )
+{
+	if( !bJumpCapable )
+	{
+		return FALSE;
+	}
+	if( !DoJump_Mantle() && ( Physics == PHYS_Walking || Physics == PHYS_Ladder || Physics == PHYS_Spider ) )
+	{
+		FStatePlayerMasterJump_Param JumpParam;
+		const UBOOL bGranted = m_pPlayerMasterFSM->RequestStateChange( JumpParam, NULL, FALSE );
+		IFDIAG( TEXT("action jump: physics %d, jump state %s"), (INT)Physics, bGranted ? TEXT("requested") : TEXT("refused") );
+	}
+	return TRUE;
+}
+
+// DISHONORED(port): 2012 0x635410 / 2013 0x5eee70: one UBOOL, the virtual, the result
+void ADishonoredPlayerPawn::execDoJump( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL(_bUpdating);
+	P_FINISH;
+	*(UBOOL*)Result = DoJump( _bUpdating );
+}
+
+// DISHONORED(port): 2012 0x6faa30 / 2013 0x6a15a0 (9 B): the base
+void ADishonoredPlayerPawn::OnEnterWaterVolume( ADishonoredWaterVolume* Volume )
+{
+	Super::OnEnterWaterVolume( Volume );
+}
+
+// DISHONORED(port): 2012 0x70b300 / 2013 0x6b11d0 (49 B): the volume's exit post-process name is kept, then the base
+void ADishonoredPlayerPawn::OnExitWaterVolume( ADishonoredWaterVolume* Volume )
+{
+	if( Volume->m_pWaterVolumeInfo )
+	{
+		m_ExitWaterPPName = Volume->m_pWaterVolumeInfo->m_PostProcessNameExit;
+	}
+	Super::OnExitWaterVolume( Volume );
 }

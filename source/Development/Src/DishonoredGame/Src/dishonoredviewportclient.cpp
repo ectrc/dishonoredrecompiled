@@ -13,6 +13,7 @@
 //   0x6585a0  public: static class UClass * __cdecl UDishonoredViewportClient::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "ifdiag.h"
 #include "dishonoredutilities.h"
 
 // DISHONORED(written): 2013 rva 0x5ea2b0 (2012 0x62fed0, same bytes)
@@ -92,7 +93,7 @@ UBOOL UDishonoredViewportClient::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
 		}
 		return TRUE;
 	}
-	if( bHandled )
+	if( bHandled || DisIFDiagExec( Cmd, Ar ) )
 	{
 		return TRUE;
 	}
