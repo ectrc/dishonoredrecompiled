@@ -13,6 +13,8 @@ public:
 	virtual UBOOL IsTickingNodeInterruptible( struct FDisDialogRunningInstance* _pRunningInstance, DisConvoEndReasonEnum _InterruptReason ) const { return FALSE; }
 	virtual void GetClassVars_Derived( struct FDisConvClassVars& _rVarsOut ) const {}
 	virtual INT PlayNode_Derived( UBOOL& _rbNotFinished, struct FDisDialogRunningInstance* _pRunningInstance ) const { return 0; }
+	/** DISHONORED(port): agent ID. 2013 rva 0x88af20 (2012 0x8d97f0, 6 B): the base node has no text, an empty string */
+	virtual const TCHAR* ExtractText_Derived() const { return TEXT(""); }
 	INT PlayNode( UBOOL& _rbNotFinished, struct FDisDialogRunningInstance* _pRunningInstance ) const;
 	void GetClassVars( struct FDisConvClassVars& _rVarsOut ) const;
 	class UDisDialogTree* GetDialogTree();

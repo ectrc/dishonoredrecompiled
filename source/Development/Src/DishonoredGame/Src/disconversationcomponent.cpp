@@ -10,16 +10,32 @@
 //   InFallbackChain (0x8df160)                  ShouldLowerAlertness (0x8dabd0)
 //   (* = found through the caller, unnamed in the 2013 database.) 2013's FireDialogHook / FireDialogHookNow moved the
 //   refire-time stamping from the former into the latter; that is the shape ported.
-// The pieces of these bodies that are audio, look-at or HUD are the other packages' and are left out, named at the site:
+// The pieces of these bodies that are look-at or HUD are the other packages' and are left out, named at the site:
 //   Tick's FDisLookAtRequest drive and ADishonoredHUD post-render registration; BeginPlay's FDisLookAtRequest::Initialize;
-//   StopDialogBlurb's Wwise stop / FaceFX stop / subtitle kill (0x8ef700); BreakOutOfConversation's HUD unregister.
-// Not ported (agentFR.md inventory): PlayDialogBlurb 0x89fbf0, StreamDialogBlurb, StopAkEvents 0x88bae0, UnprepareAkEvent
-// 0x88b0b0, IsAnyAkEventPlaying 0x896740, IsDonePlayingBlurb 0x89a160, IsReadyToSpeak, FindTextBlurb 0x8a2410, GetLookTarget
-// 0x88d340, SetLookTarget, GetPsychicConvoPartners 0x89a0a0, ExtractDialogHookText, SerializeForGameSave 0x88b9c0, Shutdown,
-// BeginDestroy, the ms_VoiceBoneName initialiser.
+//   BreakOutOfConversation's HUD unregister.
+// Agent ID (PHASE23 ID), the voice of a blurb: PlayDialogBlurb 0x89fbf0 (0x8f7910), StreamDialogBlurb 0x88ba50* (0x8dabf0),
+// IsReadyToSpeak (0x8df100, inlined into the interface's 2013 0x88d7e0), IsDonePlayingBlurb 0x89a160 (0x8e8730),
+// IsAnyAkEventPlaying 0x896740 (0x8e5890), FindTextBlurb 0x8a2410 (0x8deed0), StopDialogBlurb 0x8a02f0* (0x8ef700),
+// StopAkEvents 0x88bae0 (0x8dac70), UnprepareAkEvent 0x88b0b0 (0x8d9960), ConvPrepareEventCB 0x88b090 (0x8d9940),
+// DisConvAkEventCB 0x8938b0* (0x8f7840), the ms_VoiceBoneName initialiser 0xb8f290 ("head_jnt").
+//   WITH_FACEFX=0, so the three FaceFX calls are compiled out, each named at its site: PlayDialogBlurb's
+//   StopFaceFXAnim and its FaceFX branch (GetStoryGroup_Derived -> FxAnimSet::GetAnimGroup -> GetFaceFXAnimStartOffset ->
+//   PlayFaceFXAnim, which falls back to the Wwise post when it fails - the path taken here), IsDonePlayingBlurb's
+//   IsPlayingFaceFXAnim, StopDialogBlurb's StopFaceFXAnim.
+//   DISHONORED(deviation, to be removed by IH2): under DISHONORED_WWISE_SILENT, PlayDialogBlurb gives every voice it posts
+//   a length, DishonoredWwise::SetDurationHint(playing id, clamp(characters / 15 cps, 1 s, 12 s)). The silent backend reads
+//   only a bank's BKHD chunk, so no media length exists to give instead; without the hint the voice ends on the next audio
+//   frame and IsDonePlayingBlurb reports every line done one frame after it starts.
+// Not ported (agentFR.md inventory): GetLookTarget 0x88d340, SetLookTarget, GetPsychicConvoPartners 0x89a0a0,
+// ExtractDialogHookText, SerializeForGameSave 0x88b9c0, Shutdown, BeginDestroy.
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "frdialogdiag.h"
+#include "iddiag.h"
+
+FName UDisConversationComponent::ms_VoiceBoneName( TEXT("head_jnt") );
+
+void DisAkEndOfEventCB( AkCallbackType _Type, AkCallbackInfo* _pInfo );
 
 static TScriptInterface<IDisConvSpeakerInterface> DisToSpeakerInterface( IDisConvSpeakerInterface* Speaker )
 {
@@ -475,15 +491,251 @@ void UDisConversationComponent::BreakOutOfConversation( DisConvoEndReasonEnum _C
 	// DISHONORED(bringup): on DisConvoEndReason_Destroyed retail also unregisters the owner from ADishonoredHUD's post-render list.
 }
 
+static IDisConvSpeakerInterface* DisOwnerSpeaker( const UDisConversationComponent* _pComp )
+{
+	return _pComp->m_OwnerInterfaceSpeaker.GetObject() ? (IDisConvSpeakerInterface*)_pComp->m_OwnerInterfaceSpeaker.GetInterface() : NULL;
+}
+
+static void ConvPrepareEventCB( AkUInt32 _EventID, AKRESULT, AkMemPoolId, void* _pCookie )
+{
+	( (UDisConversationComponent*)_pCookie )->m_ReadyAkEventID = (INT)_EventID;
+}
+
+static void DisConvAkEventCB( AkCallbackType _Type, AkCallbackInfo* _pInfo )
+{
+	if( _Type == AK_EndOfEvent )
+	{
+		DisAkEndOfEventCB( AK_EndOfEvent, _pInfo );
+		return;
+	}
+	const FLOAT Duration = ( (AkDurationCallbackInfo*)_pInfo )->fDuration * 0.001f;
+	AActor* Owner = ( (UAkComponent*)_pInfo->gameObjID )->GetOwner();
+	ADisSpeaker_PA* PASpeaker = Cast<ADisSpeaker_PA>( Owner );
+	if( PASpeaker )
+	{
+		for( INT i = 0; i < PASpeaker->m_OwningSpeakerGroups.Num(); i++ )
+		{
+			ADisSpeakerGroup_PA* Group = PASpeaker->m_OwningSpeakerGroups(i);
+			IDisConvSpeakerInterface* GroupSpeaker = Group ? (IDisConvSpeakerInterface*)Group->GetInterfaceAddress( UDisConvSpeakerInterface::StaticClass() ) : NULL;
+			UDisConversationComponent* Comp = GroupSpeaker ? GroupSpeaker->GetConversationComponent() : NULL;
+			if( Comp )
+			{
+				Comp->m_fPlayingAudioDuration = Duration;
+			}
+		}
+		return;
+	}
+	IDisConvSpeakerInterface* Speaker = Owner ? (IDisConvSpeakerInterface*)Owner->GetInterfaceAddress( UDisConvSpeakerInterface::StaticClass() ) : NULL;
+	UDisConversationComponent* Comp = Speaker ? Speaker->GetConversationComponent() : NULL;
+	if( Comp )
+	{
+		Comp->m_fPlayingAudioDuration = Duration;
+		IDDIAG( "voice duration %.2f s on %s", Duration, *Owner->GetName() );
+	}
+}
+
+void UDisConversationComponent::PlayDialogBlurb( UDisDialogVoiceData* _pVoiceData, FDisVoiceTextBlurb* _pBlurb, const TCHAR* _pText, FLOAT _fBlurbEndDelay,
+	UBOOL _bShowDebugText, FLOAT _fVoiceRadius, UBOOL _bMainSubtitle, FLOAT _fSeekTime )
+{
+	if( _pBlurb )
+	{
+		UDisConvGlobalMan* GlobalMan = DisGetConvGlobalMan();
+		UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+		TArray<FDisConvSpeakerLocInfo> LocInfo;
+		DisOwnerSpeaker( this )->GetSpeakerLocInfo( LocInfo );
+		TArray<FDisAkCompAndPlayingID> Speakers;
+		m_fCurVoiceRadius = _fVoiceRadius;
+		FLOAT AttenuationScale = _fVoiceRadius * 0.00033333333f;
+		if( GlobalMan && GlobalMan->m_CurDominantHook.m_iPlayingHookIndex != -1 )
+		{
+			AttenuationScale *= GlobalMan->GetConvSettings()->m_fNonDominantVolumeScale;
+		}
+		m_fPlayingAudioDuration = -1.0f;
+		for( INT i = 0; i < LocInfo.Num() && AudioDevice; i++ )
+		{
+			AActor* EventOwner = LocInfo(i).m_pAKEventOwner;
+			UDisAkComponent* AkComp = (UDisAkComponent*)AudioDevice->GetAkComponent( EventOwner, ms_VoiceBoneName, FALSE );
+			if( !AkComp )
+			{
+				continue;
+			}
+			if( AkComp->m_PlayingRadii.Num() > 0 )
+			{
+				AkComp->Stop();
+			}
+			// WITH_FACEFX=0: USkeletalMeshComponent::StopFaceFXAnim on LocInfo(i).m_pSkelMeshCompForFaceFX, then the FaceFX
+			// branch (an event name of 2+ characters, a mesh with a FaceFX asset and the voice data's m_pFaceFXAnimSet: the
+			// pending blurb / text / main flag are stored and PlayFaceFXAnim starts the line). Without FaceFX that call fails,
+			// which is retail's own fall-through to the Wwise post below.
+			AK::SoundEngine::SetAttenuationScalingFactor( AkComp->GetAkGameObjectID(), AttenuationScale );
+			const AkPlayingID PlayingID = AudioDevice->PostEvent( _pBlurb->m_AkEventName, _fVoiceRadius, EventOwner, ms_VoiceBoneName,
+				AK_EndOfEvent | AK_Duration, DisConvAkEventCB, GWorld ? GWorld->m_pAudioSystem : NULL, FALSE );
+			if( _fSeekTime > 0.0f )
+			{
+				AudioDevice->SeekOnEvent( _pBlurb->m_AkEventName, EventOwner, ms_VoiceBoneName, (AkTimeMs)( _fSeekTime * 1000.0f ) );
+			}
+#if DISHONORED_WWISE_SILENT
+			if( PlayingID != AK_INVALID_PLAYING_ID )
+			{
+				const FLOAT HintSeconds = Clamp<FLOAT>( appStrlen( _pText ) / 15.0f, 1.0f, 12.0f );
+				DishonoredWwise::SetDurationHint( PlayingID, HintSeconds );
+				IDDIAG( "voice hint %.2f s (source: %d characters / 15 cps, clamped 1..12; the silent backend has no media length) playing id %u event %s on %s",
+					HintSeconds, appStrlen( _pText ), PlayingID, *_pBlurb->m_AkEventName, *EventOwner->GetName() );
+			}
+#endif
+			if( PlayingID != AK_INVALID_PLAYING_ID && *_pText )
+			{
+				FDisAkCompAndPlayingID& Entry = Speakers( Speakers.AddZeroed() );
+				Entry.m_pAkComp = AkComp;
+				Entry.m_PlayingID = (INT)PlayingID;
+			}
+		}
+		if( Speakers.Num() > 0 && GlobalMan && !GEngine->bSubtitlesForcedOff && GEngine->bSubtitlesEnabled && ( _bMainSubtitle || !GEngine->bHideSecondarySubtitles ) )
+		{
+			GlobalMan->m_SubtitlesInfo.AddSubtitle( this, Speakers, _pText, _fVoiceRadius, _bMainSubtitle );
+		}
+		else
+		{
+			IDDIAG( "no subtitle for '%s': %d voice(s), subtitles enabled %d forced off %d hide secondary %d main %d", _pText, Speakers.Num(),
+				(INT)GEngine->bSubtitlesEnabled, (INT)GEngine->bSubtitlesForcedOff, (INT)GEngine->bHideSecondarySubtitles, (INT)_bMainSubtitle );
+		}
+	}
+	m_fBlurbElapsedTime = Max( _fSeekTime, 0.0f );
+}
+
+void UDisConversationComponent::StreamDialogBlurb( FDisVoiceTextBlurb* _pBlurb )
+{
+	const AkUniqueID EventID = AK::SoundEngine::GetIDFromString( *_pBlurb->m_AkEventName );
+	if( m_PendingAkEventID )
+	{
+		UnprepareAkEvent();
+	}
+	m_PendingAkEventID = (INT)EventID;
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( GIsEditor || !AudioDevice )
+	{
+		// DISHONORED(written): retail has a device in game; with none (-nosound) the line must not wait for ever.
+		m_ReadyAkEventID = (INT)EventID;
+		return;
+	}
+	AudioDevice->PrepareEvent( AK::SoundEngine::Preparation_Load, EventID, ConvPrepareEventCB, this );
+}
+
+void UDisConversationComponent::UnprepareAkEvent()
+{
+	if( !m_PendingAkEventID )
+	{
+		return;
+	}
+	AK::SoundEngine::CancelBankCallbackCookie( this );
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( !GIsEditor && AudioDevice )
+	{
+		AudioDevice->PrepareEvent( AK::SoundEngine::Preparation_Unload, (AkUniqueID)m_PendingAkEventID, NULL, NULL );
+	}
+	m_ReadyAkEventID = 0;
+	m_PendingAkEventID = 0;
+}
+
+UBOOL UDisConversationComponent::IsReadyToSpeak() const
+{
+	UBOOL bReady = TRUE;
+	ADishonoredNPCPawn* NPC = Cast<ADishonoredNPCPawn>( Owner );
+	UDishonoredAIBrain* Brain = NPC ? NPC->GetAIBrain() : NULL;
+	UDisBehaviorBlockingDialog* BlockingDialog = Brain ? Cast<UDisBehaviorBlockingDialog>( Brain->m_pCurrentBehavior ) : NULL;
+	if( BlockingDialog )
+	{
+		bReady = BlockingDialog->IsReadyToSpeak();
+	}
+	return ( m_ReadyAkEventID || !m_PendingAkEventID ) ? bReady : FALSE;
+}
+
+UBOOL UDisConversationComponent::IsDonePlayingBlurb() const
+{
+	if( m_fBlurbCueDuration >= 0.00000001f )
+	{
+		return m_fBlurbCueDuration > m_fBlurbElapsedTime ? FALSE : TRUE;
+	}
+	// WITH_FACEFX=0: USkeletalMeshComponent::IsPlayingFaceFXAnim on the first speaker location's mesh is compiled out.
+	return !IsAnyAkEventPlaying();
+}
+
+UBOOL UDisConversationComponent::IsAnyAkEventPlaying() const
+{
+	TArray<FDisConvSpeakerLocInfo> LocInfo;
+	DisOwnerSpeaker( this )->GetSpeakerLocInfo( LocInfo );
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	for( INT i = 0; i < LocInfo.Num() && AudioDevice; i++ )
+	{
+		UAkComponent* AkComp = AudioDevice->GetAkComponent( LocInfo(i).m_pAKEventOwner, ms_VoiceBoneName, FALSE );
+		if( AkComp && AkComp->m_PlayingRadii.Num() > 0 )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+FDisVoiceTextBlurb* UDisConversationComponent::FindTextBlurb( const UDisDialogTree* _pTree, const FGuid& _rBlurbGUID, UDisDialogVoiceData*& _rpVoiceDataOut )
+{
+	for( INT i = 0; i < m_OneShotInfo.Num(); i++ )
+	{
+		UDisDialogVoiceData* VoiceData = m_OneShotInfo(i).m_pOneShot_DialogData;
+		FDisVoiceTextBlurb* Blurb = VoiceData ? VoiceData->FindTextBlurb( _pTree, _rBlurbGUID ) : NULL;
+		if( Blurb )
+		{
+			_rpVoiceDataOut = VoiceData;
+			return Blurb;
+		}
+	}
+	for( INT i = 0; i < m_AdditionalGenericDialogDatas.Num(); i++ )
+	{
+		FDisVoiceTextBlurb* Blurb = m_AdditionalGenericDialogDatas(i)->FindTextBlurb( _pTree, _rBlurbGUID );
+		if( Blurb )
+		{
+			_rpVoiceDataOut = m_AdditionalGenericDialogDatas(i);
+			return Blurb;
+		}
+	}
+	if( !m_pGenericDialogData_Cached )
+	{
+		return NULL;
+	}
+	_rpVoiceDataOut = m_pGenericDialogData_Cached;
+	return m_pGenericDialogData_Cached->FindTextBlurb( _pTree, _rBlurbGUID );
+}
+
+UDisAkComponent* UDisConversationComponent::StopAkEvents( AActor* _pActor )
+{
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	UAkComponent* AkComp = AudioDevice ? AudioDevice->GetAkComponent( _pActor, ms_VoiceBoneName, FALSE ) : NULL;
+	if( AkComp && AkComp->m_PlayingRadii.Num() > 0 )
+	{
+		AkComp->Stop();
+	}
+	return (UDisAkComponent*)AkComp;
+}
+
 void UDisConversationComponent::StopDialogBlurb()
 {
-	// DISHONORED(bringup): retail unloads the pending Wwise event, stops the Ak component on every speaker location's
-	// ms_VoiceBoneName and its FaceFX animation, and kills the subtitle (0x8ef700, 2013 0x8a0980's callee) - the voice
-	// package (audio is Phase 10 polish). The state reset is what the direct path needs.
-	m_PendingAkEventID = 0;
-	m_ReadyAkEventID = 0;
+	UnprepareAkEvent();
+	if( Owner )
+	{
+		TArray<FDisConvSpeakerLocInfo> LocInfo;
+		DisOwnerSpeaker( this )->GetSpeakerLocInfo( LocInfo );
+		for( INT i = 0; i < LocInfo.Num(); i++ )
+		{
+			StopAkEvents( LocInfo(i).m_pAKEventOwner );
+			// WITH_FACEFX=0: USkeletalMeshComponent::StopFaceFXAnim on LocInfo(i).m_pSkelMeshCompForFaceFX is compiled out.
+		}
+	}
 	m_fBlurbCueDuration = 0.0f;
 	m_DebugSpeechText = TEXT("");
+	UDisConvGlobalMan* GlobalMan = DisGetConvGlobalMan();
+	if( GlobalMan )
+	{
+		GlobalMan->m_SubtitlesInfo.KillSubtitle( this );
+	}
 }
 
 void UDisConversationComponent::OnOtherActorTerminated( const AActor& _rOtherActor )

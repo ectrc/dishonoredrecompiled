@@ -73,6 +73,14 @@ namespace DishonoredWwise
 
 	/** Ends every outstanding playing id and fires the AK_EndOfEvent callbacks the game registered. */
 	void FlushEndOfEventCallbacks();
+
+	/**
+	 * DISHONORED(deviation, agent ID - to be removed by IH2, the Wwise runtime that decodes the media): a silent voice
+	 * has no length, so RenderAudio ends it on the next audio frame. A voice given a hint here lives that many seconds
+	 * of wall-clock audio time instead, and gets its AK_Duration callback now when it asked for one. Voices without a
+	 * hint keep the next-frame end the Kismet latents rely on (agent FI). Returns false for an unknown playing id.
+	 */
+	bool SetDurationHint( AkPlayingID in_playingID, AkReal32 in_fSeconds );
 }
 
 #endif // _DISHONORED_WWISE_SILENT_H_

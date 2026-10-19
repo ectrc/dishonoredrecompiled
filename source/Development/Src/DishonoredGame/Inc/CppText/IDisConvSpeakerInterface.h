@@ -10,6 +10,7 @@
 //   24 GetHookParameters_Derived 0x88bc30   25 GetConversationComponent_Derived (pure)   26 GetDebugSpeechText_Derived 0x88bc50
 //   27 GameSave_Dialog_Derived   28 GameLoad_Dialog_Derived   29 PostShutdown_Dialog_Derived (the three ICF-folded no-ops).
 // The default bodies forward to the owner's UDisConversationComponent when it is attached (disconvspeakerinterface.cpp).
+// Agent ID: slots 14, 15, 17, 21, 22 (the blurb surface) are retail's 2013 thunks now; PlayDialogBlurb has retail's eight parameters.
 // The three retail pure virtuals are given NULL/empty defaults here because three implementing classes
 // (ADisAudioLogPlayer, ADisDialogInanimateDummy, ADisSpeakerGroup_PA) are still comment-only units whose registrants must
 // construct them; their overrides are inventoried in agentFR.md.
@@ -27,17 +28,16 @@ public:
 	virtual UBOOL SupportsDialogHook( eDisDialogHook _Hook ) const;
 	virtual eDisConvPriority InConversation( UBOOL& _rIsBlocking_Out, const INT* _pMatchRunningInstID ) const;
 	virtual void BreakOutOfConversation( DisConvoEndReasonEnum _ConvoEndReason, eDisDialogHookFireGroup _FiringGroup );
-	virtual void StreamDialogBlurb( struct FDisVoiceTextBlurb* _pBlurb ) {}
-	/** retail: (UDisDialogVoiceData*, FDisVoiceTextBlurb*, const TCHAR*, FLOAT, ...) - the tail of the signature is not
-	    in the PDB's demangled name; nothing on the direct path calls it (the blurb/voice package). */
-	virtual void PlayDialogBlurb( class UDisDialogVoiceData* _pVoiceData, struct FDisVoiceTextBlurb* _pBlurb, const TCHAR* _pText, FLOAT _fDuration ) {}
+	virtual void StreamDialogBlurb( struct FDisVoiceTextBlurb* _pBlurb );
+	virtual void PlayDialogBlurb( class UDisDialogVoiceData* _pVoiceData, struct FDisVoiceTextBlurb* _pBlurb, const TCHAR* _pText, FLOAT _fBlurbEndDelay,
+		UBOOL _bShowDebugText, FLOAT _fVoiceRadius, UBOOL _bMainSubtitle, FLOAT _fSeekTime );
 	virtual void StopDialogBlurb();
-	virtual struct FDisVoiceTextBlurb* FindTextBlurb( const class UDisDialogTree* _pTree, const FGuid& _rBlurbGUID, class UDisDialogVoiceData** _ppVoiceDataOut ) { return NULL; }
+	virtual struct FDisVoiceTextBlurb* FindTextBlurb( const class UDisDialogTree* _pTree, const FGuid& _rBlurbGUID, class UDisDialogVoiceData*& _rpVoiceDataOut );
 	virtual UBOOL SupportsDialogTree( const class UDisDialogTree* _pTree ) const;
 	virtual const AActor* GetConvLookTarget( BYTE& _rLookType ) const { return NULL; }
 	virtual void SetLookTarget( AActor* _pTarget, BYTE _LookType, UBOOL _bUseAttentionProxy ) {}
-	virtual UBOOL IsReadyToSpeak() const { return TRUE; }
-	virtual UBOOL IsDonePlayingBlurb() const { return TRUE; }
+	virtual UBOOL IsReadyToSpeak() const;
+	virtual UBOOL IsDonePlayingBlurb() const;
 	virtual void GetSpeakerLocInfo( TArray<struct FDisConvSpeakerLocInfo>& _rInfoOut ) const {}
 	virtual struct FDisHookParameters* GetHookParameters_Derived();
 	virtual class UDisConversationComponent* GetConversationComponent_Derived() { return NULL; }

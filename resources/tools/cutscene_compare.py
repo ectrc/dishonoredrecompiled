@@ -59,9 +59,11 @@ SHOTS = GAME_ROOT / "DishonoredGame" / "Screenshots" / "Win32Console"
 
 W, H = 960, 540
 FPS = 10
-STATS_VERSION = 5
+STATS_VERSION = 7
 
 # (x0, x1, y0, y1) as fractions of the frame
+# agent ID: subtitles_mc's line, bottom-centre (measured on our own captures; retail.mp4 was recorded with subtitles off)
+SUBTITLE_AREA = (0.2, 0.8, 0.80, 0.92)
 AREAS = {
     "vials": (0.0, 0.16, 0.05, 0.30),
     "stance": (0.0, 0.10, 0.85, 1.0),
@@ -70,10 +72,11 @@ AREAS = {
     "objective": (0.6, 1.0, 0.0, 0.2),
     "hint": (0.3, 0.7, 0.62, 0.72),
     "prompt": (0.5, 0.75, 0.33, 0.45),
+    "subtitle": SUBTITLE_AREA,
 }
 DETECTORS = list(AREAS)
 # a detector is "on" above this percentage of its area; set from the retail cache (see agentHH.md)
-ON = {"vials": 3.0, "stance": 0.5, "debugtext": 0.2, "banner": 2.0, "objective": 3.0, "hint": 3.0, "prompt": 3.0}
+ON = {"vials": 3.0, "stance": 0.5, "debugtext": 0.2, "banner": 2.0, "objective": 3.0, "hint": 3.0, "prompt": 3.0, "subtitle": 1.0}
 CENTRE = (0.3, 0.7, 0.4, 0.8)
 BLACK = 6.0
 
@@ -154,6 +157,15 @@ class Frame:
         g = area(self.g, key)
         return float(((tophat(g, 7) > 60) & (g > 150)).mean() * 100)
 
+    def subtitle(self) -> float:
+        """The HUD's subtitle line: thin bright strokes (as textlike) whose pixel 2 px down-right is dark - the line's drop
+        shadow - so bright scenery edges (hulls, rails, planks) in the same band do not count."""
+        g = area(self.g, "subtitle")
+        stroke = (tophat(g, 7) > 60) & (g > 170)
+        shadow = np.zeros_like(stroke)
+        shadow[:-2, :-2] = g[2:, 2:] < 70
+        return float((stroke & shadow).mean() * 100)
+
     def stance(self) -> float:
         band = box(self.g, 3) - box(self.g, 15)
         x0, y0 = STANCE_AT
@@ -185,6 +197,7 @@ class Frame:
         out["banner"] = bright if np.nanmean(rest) < 20 else 0.0
         for key in ("objective", "hint", "prompt"):
             out[key] = self.textlike(key)
+        out["subtitle"] = self.subtitle()
         return out
 
 
@@ -263,7 +276,7 @@ class VideoSet:
         self.stats = self.load_stats()
 
     def load_stats(self) -> dict:
-        path = self.cache / "stats.json"
+        path = self.cache / f"stats_v{STATS_VERSION}.json"
         if path.is_file():
             data = json.loads(path.read_text())
             if data.get("version") == STATS_VERSION and len(data["centre"]) == len(self.files):
@@ -754,6 +767,34 @@ def compare(args) -> int:
     return 0
 
 
+def subtitle_selftest(rs: VideoSet) -> bool:
+    """A subtitle line drawn as the HUD draws it (white, a dark drop shadow, bottom-centre) into retail frames that have none
+    must turn the detector on, and the clean frames must stay off."""
+    from PIL import ImageDraw, ImageFont
+    try:
+        font = ImageFont.truetype("arial.ttf", 22)
+    except OSError:
+        font = ImageFont.load_default()
+    x0, x1, y0, y1 = SUBTITLE_AREA
+    ok = True
+    for t in (30.0, 60.0, 100.0):
+        f, _ = rs.frame_at(t)
+        if f is None:
+            continue
+        img = Image.fromarray(f.rgb.astype(np.uint8))
+        draw = ImageDraw.Draw(img)
+        text = "The Empress is expecting you, Lord Protector."
+        tw = draw.textlength(text, font=font)
+        tx, ty = (W - tw) / 2, (y0 + y1) / 2 * H - 12
+        draw.text((tx + 2, ty + 2), text, font=font, fill=(0, 0, 0))
+        draw.text((tx, ty), text, font=font, fill=(235, 235, 235))
+        clean = f.detect()["subtitle"]
+        drawn = Frame(np.asarray(img).astype(np.int16)).detect()["subtitle"]
+        print(f"subtitle detector t={t:g}: clean {clean:.2f}%, with a drawn line {drawn:.2f}% (on > {ON['subtitle']})")
+        ok &= clean <= ON["subtitle"] < drawn
+    return ok
+
+
 def selftest(args) -> int:
     rs = retail_set()
     ok = True
@@ -781,6 +822,7 @@ def selftest(args) -> int:
         on = [i / FPS for i, v in enumerate(rs.stats["det"][k]) if v > ON[k]]
         print(f"  retail {k} on at t: {spans(on, 0.25)}")
     print("retail events:", fmt_ev(events(rs.times(), rs.stats["centre"], rs.stats["det"]["banner"])))
+    ok &= subtitle_selftest(rs)
     print("SELFTEST", "PASS" if ok else "FAIL")
     return 0 if ok else 1
 

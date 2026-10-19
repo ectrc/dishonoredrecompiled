@@ -7,15 +7,22 @@
 //   DisGetConvGlobalMan 0x7bf3e0 (0x8271e0, 6; dishonoredutilities_accessors.cpp)
 // Retail's InitGlobalConvMan is called from ADishonoredGameInfo::InitGlobalManagers (2013 0x5e9bd0; the 0x8b2e80 that
 // function's comment used to carry is a TArray helper), TickGlobalConvMan from ADishonoredGameInfo::Tick (2012 0x64b533).
-// Left out of these bodies, named at the site: DuckNonDominantAudio (0x896cb0*, 935 B) and FDisSubtitlesInfo::Tick
-// (0x89e660*, 1712 B) in TickGlobalConvMan, the HUD subtitle resets in Term_GlobalConv, and the audio-cell propagation
-// in GetShortestAudibleDistForSpeaker (UDishonoredAudioSystem::GetAudioCellAtPoint / GetMinAudibleDistance), which is the
-// plain distance to the player here. Audio is Phase 10 polish.
+// Left out of these bodies, named at the site: DuckNonDominantAudio (0x896cb0*, 935 B) in TickGlobalConvMan, and the
+// audio-cell propagation in GetShortestAudibleDistForSpeaker (UDishonoredAudioSystem::GetAudioCellAtPoint /
+// GetMinAudibleDistance), which is the plain distance to the player here.
+// Agent ID (PHASE23 ID): the subtitles - FDisSubtitlesInfo::AddSubtitle 0x89cea0* (0x8ecaa0), KillSubtitle 0x89d160*
+// (0x8ecd00), Tick 0x89e660* (0x8ecd80; 2013 adds the paused list: a main line whose owner's CustomTimeDilation drops to 0
+// waits there and comes back), the index finders 0x88d5a0* / 0x88d610* / 0x88d680*; TickGlobalConvMan's tail call; the
+// 2013 Term_GlobalConv 0x8a5a90* (132 B: the three lists, both HUD lines, the four branch-info arrays).
+// The propagation cache UDisAkComponent::GetShortestAudiblePathLength reads is filled by UDishonoredAudioSystem::Update's
+// UpdateAudioPropagationCache (unported), so every voice is FLT_MAX away here: a main line is chosen only when its
+// conversation is the dominant one (priority 99), and no secondary line is ever within its radius.
 // Not ported (agentFR.md inventory): OnActorTerminated_ConvGlobalMan 2012 0x8ee9e0, OnSpeakerDestroyed 0x8ec930,
 // OnSpeakerStartedTalking 2013 0x89e610, GameSave / GameLoad 2012 0x8ef980 / 0x8efa90, the branch-info accessors.
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "frdialogdiag.h"
+#include "iddiag.h"
 
 UDisConvGlobalMan* UDisConvGlobalMan::s_pInstance = NULL;
 
@@ -94,8 +101,341 @@ void UDisConvGlobalMan::Term_GlobalConv()
 	s_pInstance = NULL;
 	m_SubtitlesInfo.m_MainSubtitles.Reset();
 	m_SubtitlesInfo.m_SecondarySubtitles.Reset();
-	// DISHONORED(bringup): retail then clears both subtitle lines on UDisGFxMoviePlayerHUD (OnMainSubtitleChanged /
-	// OnSecondarySubtitleChanged) - the subtitle package's.
+	m_SubtitlesInfo.m_PausedSubtitles.Reset();
+	if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+	{
+		HUD->OnMainSubtitleChanged( NULL, NULL );
+	}
+	if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+	{
+		HUD->OnSecondarySubtitleChanged( NULL, NULL );
+	}
+	m_ConvRandomBranchInfo.Empty();
+	m_ConvTimeLimitInfo.Empty();
+	m_ConvSeqBranchInfo.Empty();
+	m_ConvRandomSeqBranchInfo.Empty();
+}
+
+INT FDisSubtitlesInfo::FindMainSubtitleIndex( const UDisConversationComponent* _pConvComp ) const
+{
+	for( INT i = 0; i < m_MainSubtitles.Num(); i++ )
+	{
+		if( m_MainSubtitles(i).m_pConvComp == _pConvComp )
+		{
+			return i;
+		}
+	}
+	return INDEX_NONE;
+}
+
+INT FDisSubtitlesInfo::FindSecondarySubtitleIndex( const UDisConversationComponent* _pConvComp ) const
+{
+	for( INT i = 0; i < m_SecondarySubtitles.Num(); i++ )
+	{
+		if( m_SecondarySubtitles(i).m_pConvComp == _pConvComp )
+		{
+			return i;
+		}
+	}
+	return INDEX_NONE;
+}
+
+INT FDisSubtitlesInfo::FindPausedSubtitleIndex( const UDisConversationComponent* _pConvComp ) const
+{
+	for( INT i = 0; i < m_PausedSubtitles.Num(); i++ )
+	{
+		if( m_PausedSubtitles(i).m_pConvComp == _pConvComp )
+		{
+			return i;
+		}
+	}
+	return INDEX_NONE;
+}
+
+static void DisFillSubtitle( FDisSubtitle& _rSubtitle, UDisConversationComponent* _pConvComp, const TArray<FDisAkCompAndPlayingID>& _rSpeakers,
+	const TCHAR* _pText, FLOAT _fVoiceRadius )
+{
+	_rSubtitle.m_pConvComp = _pConvComp;
+	_rSubtitle.m_Speakers = _rSpeakers;
+	_rSubtitle.m_bShown = FALSE;
+	_rSubtitle.m_pText = (FPointer)_pText;
+	_rSubtitle.m_fVoiceRadius = _fVoiceRadius;
+	_rSubtitle.m_TextPartsRatio.Empty();
+	_rSubtitle.m_ShownTextPart = 0;
+}
+
+void FDisSubtitlesInfo::AddSubtitle( UDisConversationComponent* _pConvComp, const TArray<FDisAkCompAndPlayingID>& _rSpeakers, const TCHAR* _pText,
+	FLOAT _fVoiceRadius, UBOOL _bMainSubtitle )
+{
+	IDDIAG( "subtitle add %s '%s' on %s, %d voice(s), radius %.0f, owner now %s", _bMainSubtitle ? TEXT("main") : TEXT("secondary"), _pText,
+		_pConvComp->GetOwner() ? *_pConvComp->GetOwner()->GetName() : TEXT("<none>"), _rSpeakers.Num(), _fVoiceRadius,
+		_bMainSubtitle ? ( _pConvComp == m_pMainSubtitleOwner ? TEXT("yes") : TEXT("no") ) : ( _pConvComp == m_pSecondarySubtitleOwner ? TEXT("yes") : TEXT("no") ) );
+	if( _bMainSubtitle )
+	{
+		const INT Secondary = FindSecondarySubtitleIndex( _pConvComp );
+		if( Secondary != INDEX_NONE )
+		{
+			m_SecondarySubtitles.Remove( Secondary );
+		}
+		INT Index = FindMainSubtitleIndex( _pConvComp );
+		if( Index == INDEX_NONE )
+		{
+			Index = m_MainSubtitles.AddZeroed();
+		}
+		FDisSubtitle& Subtitle = m_MainSubtitles( Index );
+		DisFillSubtitle( Subtitle, _pConvComp, _rSpeakers, _pText, _fVoiceRadius );
+		UDisGFxMoviePlayerHUD* HUD = _pConvComp == m_pMainSubtitleOwner ? DisGetGFxHUD() : NULL;
+		if( HUD )
+		{
+			HUD->OnMainSubtitleChanged( (const TCHAR*)Subtitle.m_pText, &Subtitle.m_TextPartsRatio );
+		}
+		return;
+	}
+	const INT Main = FindMainSubtitleIndex( _pConvComp );
+	if( Main != INDEX_NONE )
+	{
+		m_MainSubtitles.RemoveSwap( Main );
+	}
+	INT Index = FindSecondarySubtitleIndex( _pConvComp );
+	if( Index == INDEX_NONE )
+	{
+		Index = m_SecondarySubtitles.AddZeroed();
+	}
+	else if( Index != m_SecondarySubtitles.Num() - 1 )
+	{
+		m_SecondarySubtitles.Remove( Index );
+		Index = m_SecondarySubtitles.AddZeroed();
+	}
+	FDisSubtitle& Subtitle = m_SecondarySubtitles( Index );
+	DisFillSubtitle( Subtitle, _pConvComp, _rSpeakers, _pText, _fVoiceRadius );
+	UDisGFxMoviePlayerHUD* HUD = _pConvComp == m_pSecondarySubtitleOwner ? DisGetGFxHUD() : NULL;
+	if( HUD )
+	{
+		HUD->OnSecondarySubtitleChanged( (const TCHAR*)Subtitle.m_pText, &Subtitle.m_TextPartsRatio );
+	}
+}
+
+void FDisSubtitlesInfo::KillSubtitle( UDisConversationComponent* _pConvComp )
+{
+	const INT Main = FindMainSubtitleIndex( _pConvComp );
+	if( Main != INDEX_NONE )
+	{
+		m_MainSubtitles.RemoveSwap( Main );
+	}
+	const INT Secondary = FindSecondarySubtitleIndex( _pConvComp );
+	if( Secondary != INDEX_NONE )
+	{
+		m_SecondarySubtitles.Remove( Secondary );
+	}
+	const INT Paused = FindPausedSubtitleIndex( _pConvComp );
+	if( Paused > INDEX_NONE )
+	{
+		m_PausedSubtitles.Remove( Paused );
+	}
+	if( Main != INDEX_NONE || Secondary != INDEX_NONE || Paused != INDEX_NONE )
+	{
+		IDDIAG( "subtitle kill on %s (main %d, secondary %d, paused %d, main owner %d, secondary owner %d)",
+			_pConvComp->GetOwner() ? *_pConvComp->GetOwner()->GetName() : TEXT("<none>"), Main, Secondary, Paused,
+			(INT)( _pConvComp == m_pMainSubtitleOwner ), (INT)( _pConvComp == m_pSecondarySubtitleOwner ) );
+	}
+	if( _pConvComp == m_pMainSubtitleOwner )
+	{
+		if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+		{
+			HUD->OnMainSubtitleChanged( NULL, NULL );
+		}
+	}
+	if( _pConvComp == m_pSecondarySubtitleOwner )
+	{
+		if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+		{
+			HUD->OnSecondarySubtitleChanged( NULL, NULL );
+		}
+	}
+}
+
+/** The owner's CustomTimeDilation; a component without an owner reads as paused (retail dereferences it). */
+static FLOAT DisSubtitleOwnerDilation( const FDisSubtitle& _rSubtitle )
+{
+	AActor* Owner = _rSubtitle.m_pConvComp->GetOwner();
+	return Owner ? Owner->CustomTimeDilation : 0.0f;
+}
+
+void FDisSubtitlesInfo::Tick( FLOAT _fDeltaSeconds, const UDisConversation_InGameData* _pDominantConvo, BYTE _DominantHook )
+{
+	const UBOOL bSubtitlesOn = !GEngine->bSubtitlesForcedOff && GEngine->bSubtitlesEnabled;
+	for( INT i = m_PausedSubtitles.Num() - 1; i >= 0; i-- )
+	{
+		if( DisSubtitleOwnerDilation( m_PausedSubtitles(i) ) > 0.0f )
+		{
+			if( bSubtitlesOn )
+			{
+				m_MainSubtitles.AddItem( m_PausedSubtitles(i) );
+			}
+			m_PausedSubtitles.Remove( i );
+		}
+	}
+
+	FLOAT MainMaxPriority = -3.4e38f;
+	UDisConversationComponent* BestMainOwner = NULL;
+	for( INT i = m_MainSubtitles.Num() - 1; i >= 0; i-- )
+	{
+		FDisSubtitle& Subtitle = m_MainSubtitles(i);
+		if( Subtitle.m_pConvComp )
+		{
+			if( DisSubtitleOwnerDilation( Subtitle ) <= 0.0f )
+			{
+				m_PausedSubtitles.AddItem( Subtitle );
+			}
+			else
+			{
+				UBOOL bIsPlaying = FALSE;
+				for( INT j = 0; j < Subtitle.m_Speakers.Num(); j++ )
+				{
+					UDisAkComponent* AkComp = Subtitle.m_Speakers(j).m_pAkComp;
+					if( !AkComp || !AkComp->IsPlayingID( Subtitle.m_Speakers(j).m_PlayingID ) )
+					{
+						continue;
+					}
+					bIsPlaying = TRUE;
+					FLOAT Distance = 0.0f;
+					AkComp->GetShortestAudiblePathLength( Distance );
+					FLOAT Priority = 1.0f - Distance / Subtitle.m_fVoiceRadius;
+					if( _pDominantConvo )
+					{
+						const FDisDialogRunningInstance* Inst = Subtitle.m_pConvComp->GetRunningInst();
+						if( Inst && _pDominantConvo == Inst->m_pCurPlayingConversation && _DominantHook == Inst->m_DialogHookThatFiredInst )
+						{
+							Priority = 99.0f;
+							if( Priority > MainMaxPriority )
+							{
+								MainMaxPriority = Priority;
+								BestMainOwner = Subtitle.m_pConvComp;
+							}
+						}
+					}
+					else if( Priority > 0.0f && Priority > MainMaxPriority )
+					{
+						MainMaxPriority = Priority;
+						BestMainOwner = Subtitle.m_pConvComp;
+					}
+				}
+				if( bIsPlaying )
+				{
+					continue;
+				}
+			}
+		}
+		m_MainSubtitles.RemoveSwap( i );
+	}
+	INT MainIndex = FindMainSubtitleIndex( BestMainOwner );
+	FDisSubtitle* MainEntry = MainIndex >= 0 && MainIndex < m_MainSubtitles.Num() ? &m_MainSubtitles( MainIndex ) : NULL;
+	if( m_pMainSubtitleOwner != BestMainOwner )
+	{
+		if( m_pMainSubtitleOwner )
+		{
+			const INT OldIndex = FindMainSubtitleIndex( m_pMainSubtitleOwner );
+			if( OldIndex != INDEX_NONE )
+			{
+				m_MainSubtitles.RemoveSwap( OldIndex );
+				MainIndex = FindMainSubtitleIndex( BestMainOwner );
+				MainEntry = MainIndex >= 0 && MainIndex < m_MainSubtitles.Num() ? &m_MainSubtitles( MainIndex ) : NULL;
+			}
+		}
+		IDDIAG( "subtitle main owner %s -> %s", m_pMainSubtitleOwner && m_pMainSubtitleOwner->GetOwner() ? *m_pMainSubtitleOwner->GetOwner()->GetName() : TEXT("<none>"),
+			BestMainOwner && BestMainOwner->GetOwner() ? *BestMainOwner->GetOwner()->GetName() : TEXT("<none>") );
+		m_pMainSubtitleOwner = BestMainOwner;
+		if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+		{
+			HUD->OnMainSubtitleChanged( MainEntry ? (const TCHAR*)MainEntry->m_pText : NULL, MainEntry ? &MainEntry->m_TextPartsRatio : NULL );
+		}
+	}
+	if( MainEntry && MainEntry->m_TextPartsRatio.Num() > 1 && m_pMainSubtitleOwner->m_fPlayingAudioDuration > 0.0f )
+	{
+		const FLOAT Ratio = m_pMainSubtitleOwner->m_fBlurbElapsedTime / m_pMainSubtitleOwner->m_fPlayingAudioDuration;
+		if( Ratio > MainEntry->m_TextPartsRatio( MainEntry->m_ShownTextPart ) && MainEntry->m_ShownTextPart + 1 >= 0 && MainEntry->m_ShownTextPart + 1 < MainEntry->m_TextPartsRatio.Num() )
+		{
+			IDDIAG( "subtitle main part %d of %d at %.2f of the voice", MainEntry->m_ShownTextPart + 1, MainEntry->m_TextPartsRatio.Num(), Ratio );
+			if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+			{
+				HUD->ShowNextMainSubtitlePart( ++MainEntry->m_ShownTextPart );
+			}
+		}
+	}
+
+	FLOAT SecondaryMaxPriority = -3.4e38f;
+	UDisConversationComponent* BestSecondaryOwner = NULL;
+	INT BestSecondary = INDEX_NONE;
+	for( INT i = m_SecondarySubtitles.Num() - 1; i >= 0; i-- )
+	{
+		FDisSubtitle& Subtitle = m_SecondarySubtitles(i);
+		if( Subtitle.m_pConvComp && DisSubtitleOwnerDilation( Subtitle ) > 0.0f )
+		{
+			UBOOL bIsPlaying = FALSE;
+			UBOOL bShow = FALSE;
+			for( INT j = 0; j < Subtitle.m_Speakers.Num(); j++ )
+			{
+				UDisAkComponent* AkComp = Subtitle.m_Speakers(j).m_pAkComp;
+				if( !AkComp || !AkComp->IsPlayingID( Subtitle.m_Speakers(j).m_PlayingID ) )
+				{
+					continue;
+				}
+				bIsPlaying = TRUE;
+				FLOAT Distance = 0.0f;
+				AkComp->GetShortestAudiblePathLength( Distance );
+				if( Subtitle.m_fVoiceRadius > Distance )
+				{
+					bShow = TRUE;
+					const FLOAT Priority = 1.0f - Distance / Subtitle.m_fVoiceRadius;
+					if( Priority > 0.0f && Priority > SecondaryMaxPriority )
+					{
+						SecondaryMaxPriority = Priority;
+						BestSecondaryOwner = Subtitle.m_pConvComp;
+						BestSecondary = i;
+					}
+					break;
+				}
+			}
+			Subtitle.m_bShown = bShow;
+			if( bIsPlaying )
+			{
+				continue;
+			}
+		}
+		if( BestSecondary > i )
+		{
+			BestSecondary--;
+		}
+		else if( BestSecondary == i )
+		{
+			BestSecondary = INDEX_NONE;
+		}
+		m_SecondarySubtitles.Remove( i );
+	}
+	FDisSubtitle* SecondaryEntry = BestSecondary >= 0 && BestSecondary < m_SecondarySubtitles.Num() ? &m_SecondarySubtitles( BestSecondary ) : NULL;
+	if( m_pSecondarySubtitleOwner != BestSecondaryOwner )
+	{
+		m_pSecondarySubtitleOwner = BestSecondaryOwner;
+		if( !SecondaryEntry || SecondaryMaxPriority > MainMaxPriority )
+		{
+			if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+			{
+				HUD->OnSecondarySubtitleChanged( SecondaryEntry ? (const TCHAR*)SecondaryEntry->m_pText : NULL, SecondaryEntry ? &SecondaryEntry->m_TextPartsRatio : NULL );
+			}
+		}
+	}
+	if( SecondaryEntry && SecondaryEntry->m_TextPartsRatio.Num() > 1 && m_pSecondarySubtitleOwner->m_fPlayingAudioDuration > 0.0f )
+	{
+		const FLOAT Ratio = m_pSecondarySubtitleOwner->m_fBlurbElapsedTime / m_pSecondarySubtitleOwner->m_fPlayingAudioDuration;
+		if( Ratio > SecondaryEntry->m_TextPartsRatio( SecondaryEntry->m_ShownTextPart ) && SecondaryEntry->m_ShownTextPart + 1 >= 0 && SecondaryEntry->m_ShownTextPart + 1 < SecondaryEntry->m_TextPartsRatio.Num() )
+		{
+			IDDIAG( "subtitle secondary part %d of %d at %.2f of the voice", SecondaryEntry->m_ShownTextPart + 1, SecondaryEntry->m_TextPartsRatio.Num(), Ratio );
+			if( UDisGFxMoviePlayerHUD* HUD = DisGetGFxHUD() )
+			{
+				HUD->ShowNextSecondarySubtitlePart( ++SecondaryEntry->m_ShownTextPart );
+			}
+		}
+	}
 }
 
 FLOAT UDisConvGlobalMan::GetShortestAudibleDistForSpeaker( const IDisConvSpeakerInterface* _pCurSpeaker, FLOAT _fMaxDistance )
@@ -404,6 +744,25 @@ void UDisConvGlobalMan::TickGlobalConvMan( FLOAT _fDeltaSeconds )
 			}
 		}
 	}
-	// DISHONORED(bringup): retail then ducks the non-dominant hooks' audio (DuckNonDominantAudio) and ticks the subtitles
-	// (FDisSubtitlesInfo::Tick) with the dominant conversation - the voice and subtitle packages.
+	// DISHONORED(bringup): retail then ducks the non-dominant hooks' audio (DuckNonDominantAudio, 0x896cb0*) - not ported.
+	const UDisConversation_InGameData* DominantConvo = NULL;
+	BYTE DominantHook = 0;
+	if( m_CurDominantHook.m_iPlayingHookIndex != -1 )
+	{
+		const FDisQueuedFireDialogHook& Hook = m_QueuedHookGroups[m_CurDominantHook.m_iGroupIndex].m_Inner[m_CurDominantHook.m_GroupType].m_FiringHooks( m_CurDominantHook.m_iPlayingHookIndex );
+		const FDisDialogRunningInstance* Inst = Hook.m_pConvComp->GetRunningInst();
+		if( Inst )
+		{
+			DominantConvo = Inst->m_pCurPlayingConversation;
+			DominantHook = Hook.m_Hook;
+		}
+	}
+	static const UDisConversation_InGameData* LastDominantConvo = NULL;
+	if( DominantConvo != LastDominantConvo )
+	{
+		IDDIAG( "dominant conversation %s -> %s (hook %d)", LastDominantConvo ? *LastDominantConvo->GetName() : TEXT("<none>"),
+			DominantConvo ? *DominantConvo->GetName() : TEXT("<none>"), (INT)DominantHook );
+		LastDominantConvo = DominantConvo;
+	}
+	m_SubtitlesInfo.Tick( _fDeltaSeconds, DominantConvo, DominantHook );
 }

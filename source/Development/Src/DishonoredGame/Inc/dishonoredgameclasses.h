@@ -9872,6 +9872,7 @@ public:
     //## END PROPS DisAkComponent
 
     DECLARE_CLASS(UDisAkComponent,UAkComponent,0,DishonoredGame)
+#include "CppText/UDisAkComponent.h"
 };
 
 // DishonoredGame.DisAlarmBellComponent: retail sizeof 464, reflected span 452..452 (2012 PDB sizeof 464)
@@ -10156,6 +10157,7 @@ public:
     //## END PROPS DisBehaviorBlockingDialog
 
     DECLARE_CLASS(UDisBehaviorBlockingDialog,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorBlockingDialog.h"
 };
 
 // DishonoredGame.DisBehaviorEscapeExplosion: retail sizeof 288, reflected span 160..288 (2012 PDB sizeof 204)

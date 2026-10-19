@@ -19,6 +19,10 @@
 	  * record the last value of every RTPC, switch and trigger and answer the RTPC / switch / listener /
 	    playing-id queries from that (IH3 / IH2 own those managers).
 
+	DISHONORED(deviation, agent ID, to be removed by IH2): DishonoredWwise::SetDurationHint keeps one voice alive for a
+	given number of wall-clock seconds (the conversation component's estimate of a spoken line, which has no media
+	length here), and fires its AK_Duration callback; every voice without a hint still ends on the next RenderAudio.
+
 	It does NOT decode, mix or output audio, and PostEvent does not run an event's actions. Retail returns
 	AK_INVALID_PLAYING_ID for an event absent from every loaded bank; here the post still succeeds (Kismet
 	latents wait on its end-of-event) and -akdiag logs it, so IH2 has the list before it switches over.
@@ -30,6 +34,8 @@
 AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings * in_pPlatformSettings );
 void AkAudioLibTerm();
 bool AkAudioLibIsEventLoaded( AkUniqueID in_eventID );
+
+#include <chrono>
 
 namespace AkSilent
 {
@@ -83,6 +89,37 @@ namespace AkSilent
 		}
 	}
 
+	/**
+	 * RenderAudio's end of the silent voices: every voice without a duration hint ends (agent FI), a hinted one only
+	 * once its hint has run out on the wall clock between two audio frames (agent ID, until IH2).
+	 */
+	static void EndElapsedPlaying()
+	{
+		static std::chrono::steady_clock::time_point s_LastFrame = std::chrono::steady_clock::now();
+		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+		const AkReal32 elapsed = std::chrono::duration<AkReal32>( now - s_LastFrame ).count();
+		s_LastFrame = now;
+		Engine & e = Get();
+		std::vector<AkPlayingID> doomed;
+		for( std::map<AkPlayingID, Voice>::iterator it = e.Voices.begin(); it != e.Voices.end(); ++it )
+		{
+			if( it->second.HintSecondsLeft > 0.f )
+			{
+				it->second.HintSecondsLeft -= elapsed;
+				if( it->second.HintSecondsLeft > 0.f )
+				{
+					continue;
+				}
+				Logf( L"duration hint of playing id %u ran out", it->first );
+			}
+			doomed.push_back( it->first );
+		}
+		for( size_t i = 0; i < doomed.size(); ++i )
+		{
+			EndPlaying( doomed[ i ] );
+		}
+	}
+
 	static AkPlayingID PostEventCommon( AkUniqueID eventID, AkGameObjectID gameObj, AkUInt32 flags, AkCallbackFunc callback, void * cookie, AkPlayingID requestedID )
 	{
 		Engine & e = Get();
@@ -107,6 +144,7 @@ namespace AkSilent
 		entry.Flags = flags;
 		entry.Callback = callback;
 		entry.Cookie = cookie;
+		entry.HintSecondsLeft = 0.f;
 		e.Voices[ entry.ID ] = entry;
 		++MutableStats().EventsPosted;
 
@@ -161,6 +199,31 @@ namespace DishonoredWwise
 	void FlushEndOfEventCallbacks()
 	{
 		AkSilent::EndAllPlaying( AK_INVALID_GAME_OBJECT );
+	}
+
+	bool SetDurationHint( AkPlayingID in_playingID, AkReal32 in_fSeconds )
+	{
+		AkSilent::Engine & e = AkSilent::Get();
+		std::map<AkPlayingID, AkSilent::Voice>::iterator it = e.Voices.find( in_playingID );
+		if( it == e.Voices.end() )
+		{
+			return false;
+		}
+		it->second.HintSecondsLeft = in_fSeconds;
+		AkSilent::Logf( L"duration hint %.2f s on playing id %u", in_fSeconds, in_playingID );
+		if( it->second.Callback && ( it->second.Flags & AK_Duration ) )
+		{
+			AkDurationCallbackInfo info;
+			info.pCookie = it->second.Cookie;
+			info.gameObjID = it->second.GameObject;
+			info.playingID = it->second.ID;
+			info.eventID = it->second.EventID;
+			info.fDuration = in_fSeconds * 1000.f;
+			info.fEstimatedDuration = in_fSeconds * 1000.f;
+			info.audioNodeID = AK_INVALID_UNIQUE_ID;
+			it->second.Callback( AK_Duration, &info );
+		}
+		return true;
 	}
 }
 
@@ -244,7 +307,8 @@ namespace AK
 			// 1670 on SeqAct_AkPostEvent_0 and the mission's opening sequence was never entered (agent AT).
 			// The deviation from retail is only in the WAIT: retail resumes when the sound really finishes,
 			// we resume on the next audio frame. Nothing here plays a sound either way.
-			AkSilent::EndAllPlaying( AK_INVALID_GAME_OBJECT );
+			// DISHONORED(deviation, agent ID): voices given a DishonoredWwise::SetDurationHint are kept until it runs out.
+			AkSilent::EndElapsedPlaying();
 			return AK_Success;
 		}
 

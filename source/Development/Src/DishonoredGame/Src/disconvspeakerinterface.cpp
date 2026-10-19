@@ -10,9 +10,12 @@
 //   FireDialogHookForAudioLog    0x8a73c0 (0x8f95a0, 41)    SupportsDialogHook (0x8f95d0, 39)
 //   InConversation               (0x8f9600, 60)             BreakOutOfConversation 0x8a5130 (0x8f9640, 26)
 //   StopDialogBlurb              0x8a0980 (0x8f96d0, 25)    SupportsDialogTree 0x88d770 (0x8f9720, 39)
-// Not ported (the blurb / voice / look-at surface; agentFR.md inventory): StreamDialogBlurb 0x88bcc0, PlayDialogBlurb
-// 0x8a0930, FindTextBlurb 0x8a2920, GetConvLookTarget 0x88d7a0, SetLookTarget 0x8970e0, IsReadyToSpeak, IsDonePlayingBlurb
-// 0x89a380, GetPsychicConvoPartners 0x89a360, ExtractDialogHookText 0x8a5090, GameSave_Dialog 0x88d6f0, GameLoad_Dialog
+// Agent ID (PHASE23 ID), the blurb surface: StreamDialogBlurb 0x88bcc0 (0x8f9660, 32), PlayDialogBlurb 0x8a0930 (0x8f9680, 72),
+// FindTextBlurb 0x8a2920 (0x8f96f0, 40), IsReadyToSpeak 0x88d7e0 (0x8f97b0; 2013 inlines the component's 0x8df100 into it),
+// IsDonePlayingBlurb 0x89a380 (0x8f97d0, 32). Like retail, IsReadyToSpeak and IsDonePlayingBlurb answer FALSE without an
+// attached component.
+// Not ported (the look-at surface; agentFR.md inventory): GetConvLookTarget 0x88d7a0, SetLookTarget 0x8970e0,
+// GetPsychicConvoPartners 0x89a360, ExtractDialogHookText 0x8a5090, GameSave_Dialog 0x88d6f0, GameLoad_Dialog
 // 0x897060, PostShutdown_Dialog 0x8a08e0.
 #include "DishonoredGame.h"
 
@@ -174,4 +177,41 @@ UBOOL IDisConvSpeakerInterface::SupportsDialogTree( const UDisDialogTree* _pTree
 {
 	const UDisConversationComponent* Comp = GetConversationComponent();
 	return Comp && Comp->InFallbackChain( _pTree );
+}
+
+void IDisConvSpeakerInterface::StreamDialogBlurb( FDisVoiceTextBlurb* _pBlurb )
+{
+	UDisConversationComponent* Comp = GetConversationComponent();
+	if( Comp )
+	{
+		Comp->StreamDialogBlurb( _pBlurb );
+	}
+}
+
+void IDisConvSpeakerInterface::PlayDialogBlurb( UDisDialogVoiceData* _pVoiceData, FDisVoiceTextBlurb* _pBlurb, const TCHAR* _pText, FLOAT _fBlurbEndDelay,
+	UBOOL _bShowDebugText, FLOAT _fVoiceRadius, UBOOL _bMainSubtitle, FLOAT _fSeekTime )
+{
+	UDisConversationComponent* Comp = GetConversationComponent();
+	if( Comp )
+	{
+		Comp->PlayDialogBlurb( _pVoiceData, _pBlurb, _pText, _fBlurbEndDelay, _bShowDebugText, _fVoiceRadius, _bMainSubtitle, _fSeekTime );
+	}
+}
+
+FDisVoiceTextBlurb* IDisConvSpeakerInterface::FindTextBlurb( const UDisDialogTree* _pTree, const FGuid& _rBlurbGUID, UDisDialogVoiceData*& _rpVoiceDataOut )
+{
+	UDisConversationComponent* Comp = GetConversationComponent();
+	return Comp ? Comp->FindTextBlurb( _pTree, _rBlurbGUID, _rpVoiceDataOut ) : NULL;
+}
+
+UBOOL IDisConvSpeakerInterface::IsReadyToSpeak() const
+{
+	const UDisConversationComponent* Comp = GetConversationComponent();
+	return Comp ? Comp->IsReadyToSpeak() : FALSE;
+}
+
+UBOOL IDisConvSpeakerInterface::IsDonePlayingBlurb() const
+{
+	const UDisConversationComponent* Comp = GetConversationComponent();
+	return Comp ? Comp->IsDonePlayingBlurb() : FALSE;
 }

@@ -404,8 +404,8 @@ void UAkAudioDevice::RegisterComponent( UAkComponent* Component )
 }
 
 /**
- * DISHONORED(port): 2013 rva 0x5b17e0. An actor's components are searched for a UAkComponent with the same
- * BoneName and bStopWhenOwnerDestroyed; a miss constructs one of m_pAkComponentClass, attaches it to the
+ * DISHONORED(port): 2013 rva 0x5b17e0 (2012 0x5f8e40). An actor's attached components are searched for a UAkComponent
+ * with the same BoneName; a miss constructs one of m_pAkComponentClass, attaches it to the
  * actor's scene at the actor's transform and, in game, calls its slot-87 setter with (1.0, the actor's
  * fade value, TRUE). A pending-kill actor gets no component. AActor(-1) means the transient package.
  */
@@ -415,10 +415,14 @@ UAkComponent* UAkAudioDevice::GetAkComponent( AActor* Actor, FName BoneName, UBO
 	{
 		return NULL;
 	}
-	for( INT ComponentIndex = 0; ComponentIndex < Actor->Components.Num(); ++ComponentIndex )
+	// DISHONORED(port, agent ID): the search is over AllComponents (2012 PDB: in_pActor->AllComponents at +68), the attached set
+	// ConditionalAttach adds to, and matches the bone only - the component this function made on an earlier call is found
+	// again. Searching the archetype list `Components` made a fresh component on every call, so a voice posted on one was
+	// never seen playing by UDisConversationComponent::IsAnyAkEventPlaying.
+	for( INT ComponentIndex = 0; ComponentIndex < Actor->AllComponents.Num(); ++ComponentIndex )
 	{
-		UAkComponent* Component = Cast<UAkComponent>( Actor->Components( ComponentIndex ) );
-		if( Component && Component->BoneName == BoneName && (UBOOL)Component->bStopWhenOwnerDestroyed == bStopWhenOwnerDestroyed )
+		UAkComponent* Component = Cast<UAkComponent>( Actor->AllComponents( ComponentIndex ) );
+		if( Component && Component->BoneName == BoneName )
 		{
 			return Component;
 		}

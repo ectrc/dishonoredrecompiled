@@ -1,6 +1,6 @@
 // DishonoredGame/src/disbehaviorblockingdialog.cpp
-// Stub created by resources/tools/import_reference.py: this file exists in Dishonored's
-// build but not in the reference engine tree. Rewrite it from the decompile (Phase 3).
+// DISHONORED(port): agent ID (PHASE23 ID). Only IsReadyToSpeak (2013 rva 0x6c2640, 2012 0x722ab0) is ported: a speaker that
+// must turn to face its look target is not ready until the rotation is reached. The rest of the list below is not ported.
 // PDB functions attributed to this file (37):
 //   0x722830  public: static void __cdecl UDisTweaks_AIBehavior_BlockingDialog::InitializePrivateStaticClassUDisTweaks_AIBehavior_BlockingDialog(void)
 //   0x722850  public: virtual void __thiscall UDisBehaviorBlockingDialog::InitBehavior(class UDishonoredAIBrain * const)
@@ -39,3 +39,16 @@
 //   0x73ca50  public: virtual unsigned int __thiscall UDisBehaviorBlockingDialog::CanBeSurprised(void)const
 //   0x742660  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorBlockingDialog::GetFilterStimDelegate(enum EAIStimID)
 //   0x7427a0  public: virtual class DisDelegate<unsigned int, struct FAIStimStruct> __thiscall UDisBehaviorBlockingDialog::GetEvaluateStimDelegate(enum EAIStimID)const
+
+#include "DishonoredGame.h"
+
+UBOOL UDisBehaviorBlockingDialog::IsReadyToSpeak() const
+{
+	ADishonoredNPCPawn* Pawn = m_pOwningBrain->m_pOwningPawn;
+	BYTE LookType = eDisConvoLookType_Default;
+	if( Pawn && Pawn->GetConvLookTarget( LookType ) && LookType == eDisConvoLookType_TurnToFace )
+	{
+		return m_bRotationReached;
+	}
+	return TRUE;
+}

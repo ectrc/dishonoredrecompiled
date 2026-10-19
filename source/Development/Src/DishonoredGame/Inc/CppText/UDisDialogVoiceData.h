@@ -5,3 +5,10 @@
 public:
 	void InitForGame();
 	void BindToOneShot( class ADisDialogOneShot* _pOneShot );
+
+// DISHONORED(port): agent ID (PHASE23 ID). PostLoad 2013 rva 0x892450* (vtable 0x1199cf8 slot 6; 2012 0x8fd550),
+// RebuildLookupMaps 0x8a1440 (0x90e1a0), FindTextBlurb 0x8a1550 (0x90e2a0). Bodies in disdialogvoicedata.cpp.
+	virtual void PostLoad();
+	struct FDisVoiceTextBlurb* FindTextBlurb( const class UDisDialogTree* _pTree, const FGuid& _rBlurbGUID );
+protected:
+	void RebuildLookupMaps();

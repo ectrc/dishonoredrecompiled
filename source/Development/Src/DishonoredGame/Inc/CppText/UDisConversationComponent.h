@@ -39,3 +39,18 @@ protected:
 	class UDisDialogTree_InGameBind* InstanceAndBindDialogTree( class UDisDialogVoiceData* _pDialogVoiceData );
 	void BuildDialogHookSupportedCache();
 	UBOOL SupportsDialogHook_Slow( eDisDialogHook _Hook ) const;
+
+// DISHONORED(port): agent ID (PHASE23 ID). The voice of a blurb: the Wwise event a speaker posts on its "head_jnt" Ak component,
+// the subtitle it registers, and the end it reports. 2013 rvas in disconversationcomponent.cpp.
+public:
+	static FName ms_VoiceBoneName;
+	void PlayDialogBlurb( class UDisDialogVoiceData* _pVoiceData, struct FDisVoiceTextBlurb* _pBlurb, const TCHAR* _pText, FLOAT _fBlurbEndDelay,
+		UBOOL _bShowDebugText, FLOAT _fVoiceRadius, UBOOL _bMainSubtitle, FLOAT _fSeekTime );
+	void StreamDialogBlurb( struct FDisVoiceTextBlurb* _pBlurb );
+	UBOOL IsReadyToSpeak() const;
+	UBOOL IsDonePlayingBlurb() const;
+	UBOOL IsAnyAkEventPlaying() const;
+	struct FDisVoiceTextBlurb* FindTextBlurb( const class UDisDialogTree* _pTree, const FGuid& _rBlurbGUID, class UDisDialogVoiceData*& _rpVoiceDataOut );
+	class UDisAkComponent* StopAkEvents( AActor* _pActor );
+protected:
+	void UnprepareAkEvent();

@@ -93,3 +93,14 @@ protected:
 	void SortMarkers( struct FDisHUDMarkerPosInfo* _pPosInfos, UBOOL _bSortNewMarkers );     // 2013 rva 0x799480
 	void ClearMarkerInstances();                                                             // 2013 rva 0x7a0f00
 public:
+
+// ---- agent ID (PHASE23 ID): the subtitle line. Bodies in disgfxmovieplayerhud.cpp; 2013 rvas (2012 in the bodies) ----
+public:
+	void OnMainSubtitleChanged( const TCHAR* _pText, TArray<FLOAT>* _pTextPartsRatio );                // 2013 rva 0x7af5d0
+	void OnSecondarySubtitleChanged( const TCHAR* _pText, TArray<FLOAT>* _pTextPartsRatio );           // 2013 rva 0x7af6e0
+	void ShowNextMainSubtitlePart( INT _Part );                                                         // 2013 rva 0x79f210
+	void ShowNextSecondarySubtitlePart( INT _Part );                                                    // 2013 rva 0x79f2d0
+protected:
+	void Tick_Subtitles( INT _ShowFlags );                                                              // 2013 rva 0x79fe20
+	void SplitSubtitleText( const TCHAR* _pText, TArray<FString>& _rPartsOut, TArray<FLOAT>& _rRatiosOut ); // 2013 rva 0x7adf80
+	void ShowSubtitleText( const TCHAR* _pText, INT _SubtitleType );                                    // 2013 rva 0x799690

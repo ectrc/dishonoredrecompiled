@@ -41,14 +41,165 @@
 // Voices_Volume, Ambient_Volume, Menu_Volume, Overseer_Gapper_RTPC, Wwise_Gapper) through AK::SoundEngine::GetIDFromString, allocates
 // the end-of-event notify queue (0x834 bytes with its critical section) and finishes with ArkSettings::ApplyCurrentSettings(this).
 // DISHONORED(bringup): Wwise 2012.1 is a user blocker (middleware.md) and the AkAudio module is a stub, so only the occluding-door
-// cosine and the settings pass are done here; the system is silent.
+// cosine, the end-of-event queue (agent ID) and the settings pass are done here; the fourteen ids are not resolved.
 // DISHONORED(port): retail keeps the cosine in a unit global (2013 flt_12E98B8), not in the object
 static FLOAT GOccludingDoorOpeningAngleCos = 0.0f;
+
+/**
+ * DISHONORED(port): agent ID (PHASE23 ID). The 0x834-byte end-of-event queue Init allocates (2012 PDB type
+ * FDisEndOfEventNotifyQueue): a 256-entry single-producer ring the Wwise thread fills (pushed count @2048, popped count @2052,
+ * capacity @2056), and an overflow array under a critical section for a full ring. DisAkEndOfEventCB (2013 rva 0x793340,
+ * 2012 0x7f9040) fills it, ConsumeEndOfEventNotifies (2013 0x7a9970, 2012 0x80b800) drains it on the game thread and drops each
+ * ended playing id from its component's m_PlayingRadii - which is what UDisConversationComponent::IsAnyAkEventPlaying reads.
+ */
+struct FDisEndOfEventNotify
+{
+	UAkComponent* m_pComponent;
+	INT m_PlayingID;
+};
+
+struct FDisEndOfEventNotifyQueue
+{
+	FDisEndOfEventNotify m_DisEndOfEventNotifies[256];
+	volatile INT m_PushedCount;
+	volatile INT m_PoppedCount;
+	INT m_Capacity;
+	FCriticalSection m_CriticalSection;
+	TArray<FDisEndOfEventNotify> m_AdditionalDisEndOfEventNotifies;
+
+	FDisEndOfEventNotifyQueue()
+	:	m_PushedCount( 0 )
+	,	m_PoppedCount( 0 )
+	,	m_Capacity( ARRAY_COUNT(m_DisEndOfEventNotifies) )
+	{
+	}
+};
+
+void DisAkEndOfEventCB( AkCallbackType _Type, AkCallbackInfo* _pInfo )
+{
+	if( GIsRequestingExit || _pInfo->gameObjID == AKGLOBALSOUNDOBJECT || !_pInfo->pCookie )
+	{
+		return;
+	}
+	FDisEndOfEventNotifyQueue* Queue = (FDisEndOfEventNotifyQueue*)( (UDishonoredAudioSystem*)_pInfo->pCookie )->m_pEndOfEventNotifyQueue;
+	if( !Queue )
+	{
+		return;
+	}
+	FDisEndOfEventNotify Notify;
+	Notify.m_pComponent = (UAkComponent*)_pInfo->gameObjID;
+	Notify.m_PlayingID = (INT)( (AkEventCallbackInfo*)_pInfo )->playingID;
+	if( Queue->m_PushedCount - Queue->m_PoppedCount == Queue->m_Capacity )
+	{
+		FScopeLock Lock( &Queue->m_CriticalSection );
+		Queue->m_AdditionalDisEndOfEventNotifies.AddItem( Notify );
+		return;
+	}
+	Queue->m_DisEndOfEventNotifies[Queue->m_PushedCount & ( Queue->m_Capacity - 1 )] = Notify;
+	appInterlockedIncrement( &Queue->m_PushedCount );
+}
+
+static void DisDropPlayingID( TSet<UAkComponent*>& _rGameObjects, const FDisEndOfEventNotify& _rNotify )
+{
+	if( !_rGameObjects.Contains( _rNotify.m_pComponent ) )
+	{
+		return;
+	}
+	TArray<FAkPlayingRadius>& Radii = _rNotify.m_pComponent->m_PlayingRadii;
+	for( INT i = 0; i < Radii.Num(); i++ )
+	{
+		if( Radii(i).m_PlayingID == _rNotify.m_PlayingID )
+		{
+			Radii.Remove( i );
+			return;
+		}
+	}
+}
+
+void UDishonoredAudioSystem::ConsumeEndOfEventNotifies( TSet<UAkComponent*>& _rGameObjects )
+{
+	FDisEndOfEventNotifyQueue* Queue = (FDisEndOfEventNotifyQueue*)m_pEndOfEventNotifyQueue;
+	while( Queue->m_PushedCount != Queue->m_PoppedCount )
+	{
+		const FDisEndOfEventNotify Notify = Queue->m_DisEndOfEventNotifies[Queue->m_PoppedCount & ( Queue->m_Capacity - 1 )];
+		appInterlockedIncrement( &Queue->m_PoppedCount );
+		DisDropPlayingID( _rGameObjects, Notify );
+	}
+	if( Queue->m_AdditionalDisEndOfEventNotifies.Num() > 0 )
+	{
+		FScopeLock Lock( &Queue->m_CriticalSection );
+		for( INT i = 0; i < Queue->m_AdditionalDisEndOfEventNotifies.Num(); i++ )
+		{
+			DisDropPlayingID( _rGameObjects, Queue->m_AdditionalDisEndOfEventNotifies(i) );
+		}
+		Queue->m_AdditionalDisEndOfEventNotifies.Empty();
+	}
+}
+
+/**
+ * DISHONORED(port): agent ID. 2013 rva 0x7b3520 (2012 0x818ff0). Of the 4,734 bytes only the end-of-event drain is ported, in its
+ * place: not while the update is suspended (m_bSuspended) and not while the world is paused (retail then posts Pause_All once and
+ * returns). The pause/resume events, the time-dilation RTPC, the listener cell, the per-component propagation caches
+ * (UpdateAudioPropagationCache 2012 0x807d30, so every UDisAkComponent keeps m_fMaxAudibleDistance 0), the RTPC updaters and the
+ * ambient sounds are not ported; UAkAudioDevice::Update issues the audio frame itself.
+ */
+void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveComponents )
+{
+	if( m_bSuspended || !m_pEndOfEventNotifyQueue || ( GWorld && GWorld->IsPaused() ) )
+	{
+		return;
+	}
+	ConsumeEndOfEventNotifies( *(TSet<UAkComponent*>*)ActiveComponents );
+}
+
+// DISHONORED(port): agent ID. 2012 rva 0x80b7d0 (39 B): the queue Init allocated
+void UDishonoredAudioSystem::FinishDestroy()
+{
+	delete (FDisEndOfEventNotifyQueue*)m_pEndOfEventNotifyQueue;
+	m_pEndOfEventNotifyQueue = NULL;
+	Super::FinishDestroy();
+}
+
+// DISHONORED(port): agent ID. 2013 rva 0x7931b0 (2012 0x7f8ef0, 100 B)
+UBOOL UDisAkComponent::IsPlayingID( INT _PlayingID ) const
+{
+	for( INT i = 0; i < m_PlayingRadii.Num(); i++ )
+	{
+		if( m_PlayingRadii(i).m_PlayingID == _PlayingID )
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+// DISHONORED(port): agent ID. 2013 rva 0x793220 (2012 0x7f8f60): with a live propagation cache, the shortest portal path when the
+// sound and the listener are in different audio cells, else the straight distance; without one, FLT_MAX and FALSE.
+UBOOL UDisAkComponent::GetShortestAudiblePathLength( FLOAT& _rLengthOut ) const
+{
+	if( m_PropagationCache.m_fMaxAudibleDistance <= 0.0f )
+	{
+		_rLengthOut = 3.4e38f;
+		return FALSE;
+	}
+	if( m_PropagationCache.m_pSoundCell && m_PropagationCache.m_pListenerCell && m_PropagationCache.m_pSoundCell != m_PropagationCache.m_pListenerCell )
+	{
+		FLOAT Shortest = 3.4e38f;
+		for( INT i = 0; i < m_PropagationCache.m_Paths.Num(); i++ )
+		{
+			Shortest = Min( Shortest, m_PropagationCache.m_Paths(i).m_fFinalDist );
+		}
+		_rLengthOut = Shortest;
+		return TRUE;
+	}
+	_rLengthOut = ( m_PropagationCache.m_ListenerPoint - m_PropagationCache.m_SoundPoint ).Size();
+	return TRUE;
+}
 
 void UDishonoredAudioSystem::Init()
 {
 	GOccludingDoorOpeningAngleCos = 1.0f - appCos( m_fOccludingDoorOpeningAngle * (PI / 180.0f) * 0.5f );
-	m_pEndOfEventNotifyQueue = NULL;
+	m_pEndOfEventNotifyQueue = new FDisEndOfEventNotifyQueue;
 	ArkSettings::ApplyCurrentSettings( this );
 }
 

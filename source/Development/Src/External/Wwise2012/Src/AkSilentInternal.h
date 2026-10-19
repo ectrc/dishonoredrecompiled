@@ -73,6 +73,7 @@ namespace AkSilent
 		AkUInt32		Flags;
 		AkCallbackFunc	Callback;
 		void *			Cookie;
+		AkReal32		HintSecondsLeft;	///< > 0: DishonoredWwise::SetDurationHint gave this voice a length (agent ID)
 	};
 
 	struct Engine

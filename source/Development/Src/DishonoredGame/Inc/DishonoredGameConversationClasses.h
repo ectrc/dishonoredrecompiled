@@ -922,6 +922,7 @@ struct FDisSubtitlesInfo
     {
         appMemzero(this, sizeof(FDisSubtitlesInfo));
     }
+#include "CppText/FDisSubtitlesInfo.h"
 };
 
 // DishonoredGame.DisDialogVoiceData.DisVoiceTextBlurb: retail SDK size 60 (2012 PDB 48)
@@ -1080,6 +1081,7 @@ public:
     //## END PROPS DisConv_Blurb_InGameData
 
     DECLARE_CLASS(UDisConv_Blurb_InGameData,UDisConv_Node_InGameData,0,DishonoredGame)
+#include "CppText/UDisConv_Blurb_InGameData.h"
 };
 
 // DishonoredGame.DisConv_Branch: retail sizeof 136, reflected span 136..136 (2012 PDB sizeof 128)

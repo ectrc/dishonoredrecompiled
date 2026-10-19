@@ -161,6 +161,7 @@
 //   0x821da0  public: static class UClass * __cdecl UDisGFxMoviePlayerHUDFX::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "iddiag.h"
 #include "dishonoredutilities.h"
 #include "gfxui_gfx3.h"
 #include "arkgameeventdispatcher.h"
@@ -1325,15 +1326,16 @@ void DisGFxMoviePlayerHUDPreAdvance( UDisGFxMoviePlayerHUD* HUD, FLOAT DeltaTime
 	// DISHONORED(bringup): retail's order (2013 0x7b2280, read by agent HF) is Tick_PlayerStatus, Tick_PlayerState,
 	// Tick_Stealth (0x796050), the interaction probe's five checks inlined (CheckDropAssassinate, CheckAdrenalineKill,
 	// 0x7a50f0, 0x7a5250, CheckMantle), Tick_GameMessages (0x78d3b0), Tick_Tutorials (0x7afa60), Tick_ObjectivePopup
-	// (0x7afe70), Tick_Markers (0x7b00c0), Tick_Subtitles (0x79fe20), Tick_Cinematic (0x7960e0). Tick_Stealth, the
-	// probe, Tick_Markers and Tick_Subtitles are not ported; the rest run here in that order. 0x78d3b0 is not the
+	// (0x7afe70), Tick_Markers (0x7b00c0), Tick_Subtitles (0x79fe20), Tick_Cinematic (0x7960e0). Tick_Stealth and the
+	// probe are not ported; the rest run here in that order. 0x78d3b0 is not the
 	// Tick_Interaction the earlier comment named: it is gameMsg_mc's _visible from show bit 0x2000. Tick_Interaction
 	// (2013 0x7acb10, 2012 0x80c450) is not ticked at all - OnCrosshairActorSet calls it.
 	HUD->Tick_GameMessages( ShowFlags );
 	HUD->Tick_Tutorials( DeltaTime, ShowFlags );
 	HUD->Tick_ObjectivePopup( DeltaTime );
-	// DISHONORED(port): agent HI - Tick_Markers (2013 0x7b00c0) in retail's place; Tick_Subtitles is still not ported
+	// DISHONORED(port): agent HI - Tick_Markers (2013 0x7b00c0) in retail's place; agent ID - Tick_Subtitles (0x79fe20) in its own
 	HUD->Tick_Markers( DeltaTime );
+	HUD->Tick_Subtitles( ShowFlags );
 	HUD->Tick_Cinematic();
 }
 
@@ -1393,6 +1395,192 @@ void UDisGFxMoviePlayerHUD::ShowLocationDiscovery( const FString& _rLocationName
 		Tweaks->m_fLocationDiscoveryDuration,
 		Tweaks->m_LocationDiscoverySoundEvent ? *((UObject*)Tweaks->m_LocationDiscoverySoundEvent)->GetName() : TEXT("none"),
 		bInvoked ? TEXT("ok") : TEXT("failed") );
+}
+
+/*-----------------------------------------------------------------------------
+	The subtitle line. Agent ID, wave 26 (PHASE23 ID).
+
+	FDisSubtitlesInfo::Tick (disconvglobalman.cpp) picks the main and the secondary owner and hands their text here; a long
+	line is cut into parts of at most the tweaks' m_SubtitleMaxChars at word breaks, each with the fraction of the voice at
+	which it ends, and the parts follow the voice. subtitles_mc.SetSubtitles( null, text ) draws it, ( null, null ) clears it.
+	2012 rvas: OnMainSubtitleChanged 0x811bf0, OnSecondarySubtitleChanged 0x811d00, ShowNextMainSubtitlePart 0x8034a0,
+	ShowNextSecondarySubtitlePart 0x803560, Tick_Subtitles 0x803f70, SplitSubtitleText 0x80d770, ShowSubtitleText 0x7ff4f0.
+	Every Invoke goes through DisHUDInvoke (refuses an unbound clip) and is logged under -iddiag.
+-----------------------------------------------------------------------------*/
+
+void UDisGFxMoviePlayerHUD::ShowSubtitleText( const TCHAR* _pText, INT _SubtitleType )
+{
+	ADishonoredPlayerController* PC = ADishonoredPlayerController::s_pInstance;
+	ADishonoredHUD* HUDActor = PC ? Cast<ADishonoredHUD>( PC->myHUD ) : NULL;
+	const UBOOL bEnabled = HUDActor && HUDActor->IsHUDElementEnabledByAll( 0x4000 );
+	GFxValue Args[2];
+	Args[0].SetNull();
+	if( _pText && bEnabled )
+	{
+		Args[1].SetStringW( _pText );
+		const UBOOL bInvoked = DisHUDInvoke( this, DHMC_Subtitles, "SetSubtitles", Args, 2 );
+		IDDIAG( "subtitles_mc.SetSubtitles(null, '%s') type %d -> %s", _pText, _SubtitleType, bInvoked ? TEXT("ok") : TEXT("failed") );
+		m_CurrentSubtitleType = _SubtitleType;
+	}
+	else if( m_CurrentSubtitleType != -1 )
+	{
+		Args[1].SetNull();
+		const UBOOL bInvoked = DisHUDInvoke( this, DHMC_Subtitles, "SetSubtitles", Args, 2 );
+		IDDIAG( "subtitles_mc.SetSubtitles(null, null) clear (text %s, element enabled %d) -> %s", _pText ? TEXT("given") : TEXT("none"), (INT)bEnabled,
+			bInvoked ? TEXT("ok") : TEXT("failed") );
+		m_CurrentSubtitleType = -1;
+	}
+}
+
+void UDisGFxMoviePlayerHUD::SplitSubtitleText( const TCHAR* _pText, TArray<FString>& _rPartsOut, TArray<FLOAT>& _rRatiosOut )
+{
+	const UDisTweaks_GFxMoviePlayerHUD* Tweaks = (UDisTweaks_GFxMoviePlayerHUD*)m_pTweaks;
+	const INT MaxChars = Tweaks ? Tweaks->m_SubtitleMaxChars : 0;
+	const INT Length = appStrlen( _pText );
+	_rPartsOut.Empty();
+	_rRatiosOut.Reset();
+	if( !MaxChars || !Length )
+	{
+		new( _rPartsOut ) FString( _pText );
+		_rRatiosOut.AddItem( 1.0f );
+		return;
+	}
+	TArray<INT> Breaks;
+	for( INT i = 0; i < Length; i++ )
+	{
+		const TCHAR Char = _pText[i];
+		const TCHAR Next = _pText[i + 1];
+		if( Char == TEXT(' ') )
+		{
+			if( Next != TEXT(';') && Next != TEXT(':') && Next != TEXT('?') && Next != TEXT('!') )
+			{
+				Breaks.AddItem( i );
+			}
+		}
+		else if( Char == TEXT('\t') || Char == TEXT('\n') )
+		{
+			Breaks.AddItem( i );
+		}
+	}
+	Breaks.AddItem( Length );
+	TCHAR* Part = (TCHAR*)appAlloca( ( MaxChars + 1 ) * sizeof(TCHAR) );
+	INT Start = 0;
+	do
+	{
+		INT LastBreak = -1;
+		INT Consumed = 0;
+		while( Consumed < Breaks.Num() )
+		{
+			if( Breaks(Consumed) - Start > MaxChars && LastBreak != -1 )
+			{
+				break;
+			}
+			LastBreak = Breaks(Consumed++);
+		}
+		appStrncpy( Part, &_pText[Start], Min( LastBreak - Start + 1, MaxChars + 1 ) );
+		new( _rPartsOut ) FString( Part );
+		_rRatiosOut.AddItem( (FLOAT)LastBreak / (FLOAT)Length );
+		Breaks.Remove( 0, Consumed );
+		Start = LastBreak + 1;
+		while( Breaks.Num() > 0 && Breaks(0) == Start )
+		{
+			Breaks.Remove( 0 );
+			Start++;
+		}
+	}
+	while( Start < Length );
+}
+
+void UDisGFxMoviePlayerHUD::OnMainSubtitleChanged( const TCHAR* _pText, TArray<FLOAT>* _pTextPartsRatio )
+{
+	IDDIAG( "OnMainSubtitleChanged('%s')", _pText ? _pText : TEXT("<clear>") );
+	if( _pText )
+	{
+		SplitSubtitleText( _pText, m_MainSubtitleParts, *_pTextPartsRatio );
+		m_CurrentMainSubtitlePart = 0;
+		m_SecondarySubtitleParts.Empty();
+		m_CurrentSecondarySubtitlePart = -1;
+		ShowSubtitleText( *m_MainSubtitleParts(0), 0 );
+		return;
+	}
+	m_MainSubtitleParts.Empty();
+	m_CurrentMainSubtitlePart = -1;
+	if( m_CurrentSubtitleType == 0 )
+	{
+		ShowSubtitleText( NULL, -1 );
+	}
+}
+
+void UDisGFxMoviePlayerHUD::OnSecondarySubtitleChanged( const TCHAR* _pText, TArray<FLOAT>* _pTextPartsRatio )
+{
+	IDDIAG( "OnSecondarySubtitleChanged('%s')", _pText ? _pText : TEXT("<clear>") );
+	if( _pText )
+	{
+		SplitSubtitleText( _pText, m_SecondarySubtitleParts, *_pTextPartsRatio );
+		m_CurrentSecondarySubtitlePart = 0;
+		ShowSubtitleText( *m_SecondarySubtitleParts(0), 1 );
+		return;
+	}
+	m_SecondarySubtitleParts.Empty();
+	m_CurrentSecondarySubtitlePart = -1;
+	if( m_CurrentSubtitleType == 1 )
+	{
+		if( m_MainSubtitleParts.Num() <= 0 )
+		{
+			ShowSubtitleText( NULL, -1 );
+		}
+		else
+		{
+			ShowSubtitleText( *m_MainSubtitleParts( m_CurrentMainSubtitlePart ), 0 );
+		}
+	}
+}
+
+void UDisGFxMoviePlayerHUD::ShowNextMainSubtitlePart( INT _Part )
+{
+	if( m_CurrentMainSubtitlePart == -1 )
+	{
+		return;
+	}
+	m_CurrentMainSubtitlePart = _Part;
+	if( m_CurrentSubtitleType == 0 )
+	{
+		ShowSubtitleText( *m_MainSubtitleParts( _Part ), 0 );
+	}
+}
+
+void UDisGFxMoviePlayerHUD::ShowNextSecondarySubtitlePart( INT _Part )
+{
+	if( m_CurrentSecondarySubtitlePart == -1 )
+	{
+		return;
+	}
+	m_CurrentSecondarySubtitlePart = _Part;
+	if( m_CurrentSubtitleType == 1 )
+	{
+		ShowSubtitleText( *m_SecondarySubtitleParts( _Part ), 1 );
+	}
+}
+
+void UDisGFxMoviePlayerHUD::Tick_Subtitles( INT _ShowFlags )
+{
+	const UBOOL bShow = ( _ShowFlags & 0x4000 ) && ( m_MainSubtitleParts.Num() + m_SecondarySubtitleParts.Num() );
+	if( bShow == ( m_CurrentSubtitleType != -1 ) )
+	{
+		return;
+	}
+	if( !bShow )
+	{
+		ShowSubtitleText( NULL, -1 );
+	}
+	else if( m_CurrentMainSubtitlePart < 0 )
+	{
+		ShowSubtitleText( *m_SecondarySubtitleParts( m_CurrentSecondarySubtitlePart ), 1 );
+	}
+	else
+	{
+		ShowSubtitleText( *m_MainSubtitleParts( m_CurrentMainSubtitlePart ), 0 );
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x7998a0 (2012 0x7ff700, same 42 bytes)
