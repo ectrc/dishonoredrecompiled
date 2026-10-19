@@ -5,8 +5,12 @@
 	Ported from the retail 2013 exe; each function carries its 2013 rva. The 2012 PDB attributes the same
 	set to AkAudio/src/akaudioclasses.cpp.
 
-	Not ported in this wave, recorded as follow-ups in resources/docs/agents/agentAN.md:
-	UInterpTrackAkEvent / UInterpTrackAkRTPC and their track instances (the matinee audio tracks, 0x5b0570..),
+	The matinee audio tracks (UInterpTrackAkEvent / UInterpTrackAkRTPC / UInterpTrackInstAkEvent) are agent IH3's
+	(fork G); their editor half (AddKeyframe 0x5f7160 / 0x5f72b0, SetKeyframeTime 0x23e7f0) is not ported.
+	Deviation (named): UInterpTrackAkEventKeyProperties is an Engine-package class this module cannot name (its C++ body
+	lives in DishonoredGame's shims), so its two flags retail reads at +56 (m_bStopAkEvent bit 0,
+	m_bShouldBeTriggeredOnSkip bit 1) are read through their UBoolProperty, and PostLoad finds the class by name.
+	Not ported, recorded as follow-ups in resources/docs/agents/agentAN.md:
 	UActorFactoryAkAmbientSound (editor only), AAkAmbientSound::GameSave / GameLoad (the save-game path).
 =============================================================================*/
 #include "AkAudio.h"
@@ -492,6 +496,147 @@ void USeqAct_AkClearBanks::Activated()
 	{
 		AudioDevice->ClearBanks();
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	Matinee audio tracks (agent IH3, fork G)
+-----------------------------------------------------------------------------*/
+
+static UBOOL AkEventKeyFlag( UObject* KeyProperties, const TCHAR* FlagName )
+{
+	if( !KeyProperties )
+	{
+		return FALSE;
+	}
+	UBoolProperty* Flag = FindField<UBoolProperty>( KeyProperties->GetClass(), FlagName );
+	return Flag && ( *(BITFIELD*)( (BYTE*)KeyProperties + Flag->Offset ) & Flag->BitMask ) != 0;
+}
+
+/** DISHONORED(port): 2013 rva 0x5b0370 (2012 0x5f7060): every key gets its key-properties object. */
+void UInterpTrackAkEvent::PostLoad()
+{
+	Super::PostLoad();
+	for( INT KeyIndex = 0; KeyIndex < AkEvents.Num(); ++KeyIndex )
+	{
+		if( !AkEvents( KeyIndex ).Properties )
+		{
+			static UClass* KeyPropertiesClass = FindObject<UClass>( ANY_PACKAGE, TEXT("InterpTrackAkEventKeyProperties") );
+			AkEvents( KeyIndex ).Properties = (UInterpTrackAkEventKeyProperties*)StaticConstructObject( KeyPropertiesClass, this );
+		}
+	}
+}
+
+/** DISHONORED(port): 2013 rva 0x5b0820 (2012 0x5f6780) */
+UObject* UInterpTrackAkEvent::GetKeyProperties( INT KeyIndex )
+{
+	return (UObject*)AkEvents( KeyIndex ).Properties;
+}
+
+/** DISHONORED(port): 2013 rva 0x5b0760 (2012 0x5f66c0): the last key at or before the position (the first one at worst). */
+FAkEventTrackKey& UInterpTrackAkEvent::GetAkEventKeyAtPosition( FLOAT InPosition )
+{
+	INT KeyIndex = -1;
+	while( KeyIndex < AkEvents.Num() - 1 && InPosition > AkEvents( KeyIndex + 1 ).Time )
+	{
+		++KeyIndex;
+	}
+	return AkEvents( KeyIndex );
+}
+
+/** DISHONORED(port): 2013 rva 0x5b24d0 (2012 0x5fab20): the curve's value into the named RTPC on the group's actor. */
+void UInterpTrackAkRTPC::UpdateTrack( FLOAT NewPosition, UInterpTrackInst* TrInst, UBOOL bJump )
+{
+	AActor* Actor = TrInst->GetGroupActor();
+	FLOAT Value = 0.f;
+	Value = FloatTrack.Eval( NewPosition, Value );
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( AudioDevice && Param.Len() >= 1 )
+	{
+		AudioDevice->SetRTPCValue( *Param, Value, Actor, NAME_None );
+	}
+}
+
+/** DISHONORED(port): 2013 rva 0x5afaa0 (2012 0x5f5e30): start from where the matinee is. */
+void UInterpTrackInstAkEvent::InitTrackInst( UInterpTrack* InTrack )
+{
+	Track = InTrack;
+	LastUpdatePosition = GetMatinee()->Position;
+}
+
+/** DISHONORED(port): 2013 rva 0x5b0870 (2012 0x5f67d0, mask 0x280000 there): an interrupted or skipped matinee stops the
+    events its keys asked to stop (m_bMatineeHasBeenInterrupted / m_bMatineeHasBeenSkipped, 2013 mask 0x500000). */
+void UInterpTrackInstAkEvent::TermTrackInst( UInterpTrack* InTrack )
+{
+	USeqAct_Interp* Matinee = GetMatinee();
+	if( Matinee->m_bMatineeHasBeenInterrupted || Matinee->m_bMatineeHasBeenSkipped )
+	{
+		for( INT i = 0; i < m_lStartedAkEvent.Num(); ++i )
+		{
+			AK::SoundEngine::StopPlayingID( (AkPlayingID)m_lStartedAkEvent( i ), 0, AkCurveInterpolation_Linear );
+		}
+	}
+}
+
+/**
+ * DISHONORED(port): 2013 rva 0x5b2e40 (2012 0x5fb9f0). Forward only: when the position crossed one or more keys since the last
+ * update, a normal step posts the event of the key now current on the group's actor (and remembers its playing id when the
+ * key asks to be stopped with the matinee); a jump posts every crossed key flagged m_bShouldBeTriggeredOnSkip.
+ */
+void UInterpTrackInstAkEvent::UpdateTrackInst( FLOAT NewPosition, UBOOL bJump )
+{
+	UInterpTrackAkEvent* AkTrack = (UInterpTrackAkEvent*)Track;
+	if( NewPosition > LastUpdatePosition )
+	{
+		INT StartEventIdx = -1;
+		while( StartEventIdx < AkTrack->AkEvents.Num() - 1 && LastUpdatePosition > AkTrack->AkEvents( StartEventIdx + 1 ).Time )
+		{
+			++StartEventIdx;
+		}
+		INT EndEventIdx = -1;
+		while( EndEventIdx < AkTrack->AkEvents.Num() - 1 && NewPosition > AkTrack->AkEvents( EndEventIdx + 1 ).Time )
+		{
+			++EndEventIdx;
+		}
+		if( StartEventIdx != EndEventIdx )
+		{
+			AActor* Actor = GetGroupActor();
+			UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+			if( !bJump )
+			{
+				FAkEventTrackKey& Key = AkTrack->GetAkEventKeyAtPosition( NewPosition );
+				if( Key.Event )
+				{
+					const AkPlayingID PlayingID = AudioDevice->PostEvent( Key.Event->m_akID, Key.Event->GetMaxRadius(), Actor, NAME_None, 0, NULL, NULL, FALSE );
+					if( DishonoredWwise::IsDiagnostics() )
+					{
+						debugf( TEXT("Wwise: akdiag: matinee %s track %s key %.3f at %.3f: %s on %s -> playing id %u"), *GetMatinee()->GetName(),
+							*AkTrack->GetName(), Key.Time, NewPosition, *Key.Event->GetName(), Actor ? *Actor->GetName() : TEXT("<none>"), PlayingID );
+					}
+					if( PlayingID && AkEventKeyFlag( (UObject*)Key.Properties, TEXT("m_bStopAkEvent") ) )
+					{
+						m_lStartedAkEvent.AddUniqueItem( (INT)PlayingID );
+					}
+				}
+			}
+			else
+			{
+				for( INT KeyIndex = StartEventIdx + 1; KeyIndex <= EndEventIdx; ++KeyIndex )
+				{
+					FAkEventTrackKey& Key = AkTrack->AkEvents( KeyIndex );
+					if( AkEventKeyFlag( (UObject*)Key.Properties, TEXT("m_bShouldBeTriggeredOnSkip") ) && Key.Event )
+					{
+						const AkPlayingID PlayingID = AudioDevice->PostEvent( Key.Event->m_akID, Key.Event->GetMaxRadius(), Actor, NAME_None, 0, NULL, NULL, FALSE );
+						if( DishonoredWwise::IsDiagnostics() )
+						{
+							debugf( TEXT("Wwise: akdiag: matinee %s track %s skipped key %.3f: %s -> playing id %u"), *GetMatinee()->GetName(),
+								*AkTrack->GetName(), Key.Time, *Key.Event->GetName(), PlayingID );
+						}
+					}
+				}
+			}
+		}
+	}
+	LastUpdatePosition = NewPosition;
 }
 
 #endif // DISHONORED_WITH_WWISE

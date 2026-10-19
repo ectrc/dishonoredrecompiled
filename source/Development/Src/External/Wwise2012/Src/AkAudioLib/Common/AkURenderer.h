@@ -38,6 +38,8 @@ public:
 	static AKRESULT ValidateMaximumNumberVoiceLimit( AkReal32 in_fPriority );
 	static void DecrementVirtualCount( bool in_bAllowKick );
 	static void ProcessLimiters();
+	static AkReal32 GetMaxRadius( AkGameObjectID in_GameObjId );
+	static AkReal32 GetMinDistance( const AkPositionKeeper & in_rPosKeep );
 	static void AddBusLimiter( CAkLimiter * in_pLimiter ) { m_BusLimiters.AddFirst( in_pLimiter ); }
 	static void AddAMLimiter( CAkLimiter * in_pLimiter ) { m_AMLimiters.AddFirst( in_pLimiter ); }
 	static void RemoveBusLimiter( CAkLimiter * in_pLimiter ) { m_BusLimiters.Remove( in_pLimiter ); }
@@ -53,7 +55,6 @@ public:
 
 private:
 	static PriorityInfoCurrent _CalcInitialPriority( CAkSoundBase * in_pSound, CAkRegisteredObj * in_pGameObj, AkReal32 & out_fMaxRadius );
-	static AkReal32 GetMinDistance( const AkPositionKeeper & in_rPosKeep );
 	static AKRESULT ProcessCommand( ActionParamType in_eCommand, CAkSoundBase * in_pSound, CAkRegisteredObj * in_pGameObj, AkPlayingID in_PlayingID, TransParams & in_rTparameters, bool in_bIsMasterResume );
 	static void DestroyAllPBIs();
 };

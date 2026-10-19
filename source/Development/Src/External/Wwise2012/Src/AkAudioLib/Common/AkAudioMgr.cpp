@@ -5,9 +5,8 @@
 	DISHONORED(port): agent IH2 (wave 26).
 	Deviations (named):
 	  * ProcessMsgQueue runs the message types AK::SoundEngine (AkSoundEngine.cpp) enqueues. The game-sync messages
-	    (RTPC 2/3/5/6, State 7, Switch 8, Trigger 10) are never enqueued before IH3 replaces the AkGameSyncs data
-	    stores (the API records them on the game thread, see AkSoundEngine.cpp); the environment volume / bypass
-	    messages (20/21) need IH3's CAkEnvironmentsMgr; dynamic sequences (24/25), motion devices (29/30/31), source
+	    (RTPC 2/3, ResetRTPCValue 5/6, State 7, Switch 8, Trigger 10) and the environment volume / bypass messages
+	    (20/21) were added by IH3 fork R (2012 0x924240's cases); dynamic sequences (24/25), motion devices (29/30/31), source
 	    plug-ins (38) and SetEffect (40) are not reachable from the glue. Seek (37) releases its event without seeking:
 	    CAkSound::SeekSound is IH3's.
 	  * The monitoring hooks (GetHistArray before a delayed play's notification, MONITOR_*) are compiled out.
@@ -22,11 +21,23 @@
 #include "AkLEngine.h"
 #include "AkLEngineCmds.h"
 #include "AkListener.h"
+#include "AkPath.h"
 #include "AkBankMgr.h"
+#include "AkDynamicSequence.h"
 #include <time.h>
 #include <stdlib.h>
 
 CAkAudioMgr * g_pAudioMgr = NULL;
+
+/** The reference GetObjAndAddref took, given back at the end of a game-sync message (retail's shared tail). */
+static void ReleaseGameObj( CAkRegisteredObj * in_pGameObj )
+{
+	if( --in_pGameObj->m_refCount <= 0 )
+	{
+		in_pGameObj->~CAkRegisteredObj();
+		AK::MemoryMgr::Free( g_DefaultPoolId, in_pGameObj );
+	}
+}
 AkThread CAkAudioThread::m_hEventMgrThread = NULL;
 AkThreadID CAkAudioThread::m_hEventMgrThreadID = 0;
 
@@ -171,12 +182,6 @@ void CAkActionPlayAndContinue::UnsetFadeBack( CAkContinuousPBI * in_pPBIToCheck 
 	{
 		m_pPreviousPBI = NULL;
 	}
-}
-
-/** 2012 0x949790. DISHONORED(IH3 seam): the continuation-list walk; without a list retail breaks (true). */
-bool CAkActionPlayAndContinue::BreakToNode( AkUniqueID in_nodeID, CAkRegisteredObj * in_pGameObj, AkPendingAction * in_pPendingAction )
-{
-	return true;
 }
 
 // ------------------------------------------------------------------------------------------------------------
@@ -382,6 +387,7 @@ void CAkAudioMgr::Perform()
 		}
 		const AkUInt32 uNextTick = m_uBufferTick + 1;
 		g_pTransitionManager->ProcessTransitionsList( uNextTick );
+		g_pPathManager->ProcessPathsList( uNextTick );
 		CAkURenderer::ProcessLimiters();
 		CAkLEngine::Perform();
 		CAkURenderer::PerformContextNotif();
@@ -457,6 +463,82 @@ AKRESULT CAkAudioMgr::ProcessMsgQueue()
 				break;
 			}
 
+			case QueuedMsgType_RTPC:
+			case QueuedMsgType_RTPCWithTransition:
+			{
+				TransParams transParams;
+				transParams.TransitionTime = 0;
+				transParams.eFadeCurve = AkCurveInterpolation_Linear;
+				if( item.type == QueuedMsgType_RTPCWithTransition )
+				{
+					transParams = item.rtpcWithTransition.transParams;
+				}
+				if( item.rtpc.GameObjID == AK_INVALID_GAME_OBJECT )
+				{
+					g_pRTPCMgr->SetRTPCInternal( item.rtpc.ID, item.rtpc.Value, NULL, transParams, AkValueMeaning_Independent );
+				}
+				else if( CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( item.rtpc.GameObjID ) )
+				{
+					g_pRTPCMgr->SetRTPCInternal( item.rtpc.ID, item.rtpc.Value, pGameObj, transParams, AkValueMeaning_Independent );
+					ReleaseGameObj( pGameObj );
+				}
+				break;
+			}
+
+			case QueuedMsgType_ResetRTPCValue:
+			case QueuedMsgType_ResetRTPCValueWithTransition:
+			{
+				TransParams transParams;
+				transParams.TransitionTime = 0;
+				transParams.eFadeCurve = AkCurveInterpolation_Linear;
+				if( item.type == QueuedMsgType_ResetRTPCValueWithTransition )
+				{
+					transParams = item.resetrtpcvalueWithTransition.transParams;
+				}
+				if( item.resetrtpcvalue.GameObjID == AK_INVALID_GAME_OBJECT )
+				{
+					g_pRTPCMgr->ResetRTPCValue( item.resetrtpcvalue.ParamID, NULL, transParams );
+				}
+				else if( CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( item.resetrtpcvalue.GameObjID ) )
+				{
+					g_pRTPCMgr->ResetRTPCValue( item.resetrtpcvalue.ParamID, pGameObj, transParams );
+					ReleaseGameObj( pGameObj );
+				}
+				break;
+			}
+
+			case QueuedMsgType_State:
+				g_pStateMgr->SetStateInternal( item.setstate.StateGroupID, item.setstate.StateID, item.setstate.bSkipTransition, item.setstate.bSkipExtension );
+				break;
+
+			case QueuedMsgType_Switch:
+				if( CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( item.setswitch.GameObjID ) )
+				{
+					g_pRTPCMgr->SetSwitchInternal( item.setswitch.SwitchGroupID, item.setswitch.SwitchStateID, pGameObj );
+					ReleaseGameObj( pGameObj );
+				}
+				break;
+
+			case QueuedMsgType_Trigger:
+				if( item.trigger.GameObjID == AK_INVALID_GAME_OBJECT )
+				{
+					g_pStateMgr->Trigger( item.trigger.TriggerID, NULL );
+				}
+				else if( CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( item.trigger.GameObjID ) )
+				{
+					g_pStateMgr->Trigger( item.trigger.TriggerID, pGameObj );
+					ReleaseGameObj( pGameObj );
+				}
+				break;
+
+			case QueuedMsgType_EnvVolume:
+				g_pEnvironmentMgr->SetEnvironmentVolumes( item.envvolume.EnvID, item.envvolume.sVolumes );
+				break;
+
+			case QueuedMsgType_EnvBypass:
+				g_pEnvironmentMgr->BypassEnvironment( item.envbypass.EnvID, item.envbypass.bBypass );
+				break;
+
 			case QueuedMsgType_RegisterGameObj:
 				g_pRegistryMgr->RegisterObject( item.reggameobj.GameObjID, item.reggameobj.pMonitorData );
 				break;
@@ -499,6 +581,56 @@ AKRESULT CAkAudioMgr::ProcessMsgQueue()
 			case QueuedMsgType_GameObjObstruction:
 				g_pRegistryMgr->SetObjectObstructionAndOcclusion( item.gameobjobstr.GameObjID, item.gameobjobstr.uListenerIndex, item.gameobjobstr.fObstructionLevel, item.gameobjobstr.fOcclusionLevel );
 				break;
+
+			case QueuedMsgType_OpenDynamicSequence:
+			{
+				CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( item.opendynamicsequence.GameObjID );
+				if( pGameObj )
+				{
+					item.opendynamicsequence.pDynamicSequence->SetGameObject( pGameObj );
+					if( --pGameObj->m_refCount <= 0 )
+					{
+						pGameObj->~CAkRegisteredObj();
+						AK::MemoryMgr::Free( g_DefaultPoolId, pGameObj );
+					}
+				}
+				break;
+			}
+
+			case QueuedMsgType_DynamicSequenceCmd:
+			{
+				CAkDynamicSequence * pSequence = item.dynamicsequencecmd.pDynamicSequence;
+				switch( item.dynamicsequencecmd.eCommand )
+				{
+				case AkQueuedMsg_DynamicSequenceCmd::Play:
+					pSequence->Play( item.dynamicsequencecmd.uTransitionDuration, item.dynamicsequencecmd.eFadeCurve );
+					break;
+				case AkQueuedMsg_DynamicSequenceCmd::Pause:
+					pSequence->Pause( item.dynamicsequencecmd.uTransitionDuration, item.dynamicsequencecmd.eFadeCurve );
+					break;
+				case AkQueuedMsg_DynamicSequenceCmd::Resume:
+					pSequence->Resume( item.dynamicsequencecmd.uTransitionDuration, item.dynamicsequencecmd.eFadeCurve );
+					break;
+				case AkQueuedMsg_DynamicSequenceCmd::Close:
+					pSequence->m_bClosed = true;
+					g_pPlayingMgr->RemoveItemActiveCount( pSequence->m_userParams.m_PlayingID );
+					pSequence->Release();
+					break;
+				case AkQueuedMsg_DynamicSequenceCmd::Stop:
+					pSequence->Stop( item.dynamicsequencecmd.uTransitionDuration, item.dynamicsequencecmd.eFadeCurve );
+					break;
+				case AkQueuedMsg_DynamicSequenceCmd::Break:
+					pSequence->Break();
+					break;
+				case AkQueuedMsg_DynamicSequenceCmd::ResumeWaiting:
+					pSequence->ResumeWaiting();
+					break;
+				default:
+					break;
+				}
+				pSequence->Release();
+				break;
+			}
 
 			case QueuedMsgType_KillBank:
 				CAkURenderer::StopAllPBIs( item.killbank.pUsageSlot );
@@ -604,6 +736,7 @@ AKRESULT CAkAudioMgr::ProcessMsgQueue()
 
 			case QueuedMsgType_GameObjMultiPosition:
 				g_pRegistryMgr->SetPosition( item.gameObjMultiPos.GameObjID, item.gameObjMultiPos.aMultiPosition, item.gameObjMultiPos.uNumPositions, item.gameObjMultiPos.eMultiPositionType, 0xFFFFFFFF );
+				AKDIAG( L"akdiag: game object %u: %u position(s), multi-position type %u", (AkUInt32)item.gameObjMultiPos.GameObjID, (AkUInt32)item.gameObjMultiPos.uNumPositions, (AkUInt32)item.gameObjMultiPos.eMultiPositionType );
 				break;
 
 			case QueuedMsgType_ListenerScalingFactor:

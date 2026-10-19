@@ -370,6 +370,190 @@ void TestPipeline( WwiseSkipFunc InSkip )
 	GReport( fabs( Span - VoiceSeconds ) < 0.05, "Wwise pipeline: the audible span is the media length (resampled to the pipeline rate)", Detail );
 }
 
+// Agent IH3: the parameter graph measured on the same voice line through the sink. Subjects, read out of the banks by
+// build/agentIH3/hirc_parse.py: the line's sound 0x3e2a98d4 is under actor-mixer 0x3720c159 (3D game-defined, attenuation
+// 0x823cc49 in the voice bank) and outputs to bus 0x30b38306 (volume RTPC 0xcd107ced, 0..100 -> -96.3..0, dB scaling)
+// under 0x28eb7999 (state groups 0xad7ac6ca, 0x3c28da9f) under 0x2aac29b6 under the master 0x26df8722.
+// A capture's energy (sum of squared samples of the whole play) is the gain squared times the 0 dB energy, so each check
+// compares 10 log10 of an energy ratio with the bank's value.
+struct FGraphCapture
+{
+	double Energy = 0.0;
+	size_t Frames = 0;
+	bool Ended = false;
+};
+
+FGraphCapture PlayVoiceCaptured( AkGameObjectID GameObj, const wchar_t * Name )
+{
+	FGraphCapture Out;
+	wchar_t WavPath[ MAX_PATH ];
+	const DWORD ExeLength = GetModuleFileNameW( NULL, WavPath, MAX_PATH );
+	std::wstring WavName( WavPath, ExeLength );
+	WavName = WavName.substr( 0, WavName.find_last_of( L'\\' ) + 1 ) + Name;
+	GPipeline.EndOfEvent = 0;
+	DishonoredWwise::SetWavCapture( WavName.c_str() );
+	const AkPlayingID PlayingID = AK::SoundEngine::PostEvent( VoiceEventID, GameObj, AK_EndOfEvent, PipelineCallback, &GPipeline );
+	for( int i = 0; PlayingID != AK_INVALID_PLAYING_ID && i < 1000 && !GPipeline.EndOfEvent; ++i )
+	{
+		AK::SoundEngine::RenderAudio();
+		Sleep( 10 );
+	}
+	Out.Ended = GPipeline.EndOfEvent != 0;
+	for( int i = 0; i < 10; ++i )
+	{
+		AK::SoundEngine::RenderAudio();
+		Sleep( 10 );
+	}
+	DishonoredWwise::SetWavCapture( NULL );
+	const std::vector<unsigned char> Wav = ReadWholeFile( WavName );
+	if( Wav.size() <= 44 )
+	{
+		return Out;
+	}
+	const unsigned Channels = *(const unsigned short *)( Wav.data() + 22 );
+	const short * Samples = (const short *)( Wav.data() + 44 );
+	Out.Frames = ( Wav.size() - 44 ) / ( 2 * Channels );
+	for( size_t i = 0; i < Out.Frames * Channels; ++i )
+	{
+		Out.Energy += (double)Samples[ i ] * Samples[ i ];
+	}
+	return Out;
+}
+
+void SettleAudio( int Milliseconds )
+{
+	for( int Waited = 0; Waited < Milliseconds; Waited += 10 )
+	{
+		AK::SoundEngine::RenderAudio();
+		Sleep( 10 );
+	}
+}
+
+double GaindB( const FGraphCapture & Measured, const FGraphCapture & Reference )
+{
+	return Measured.Energy > 0.0 && Reference.Energy > 0.0 ? 10.0 * log10( Measured.Energy / Reference.Energy ) : -200.0;
+}
+
+void SetVoicePosition( AkGameObjectID GameObj, AkReal32 Distance )
+{
+	AkSoundPosition Position;
+	Position.Position.X = 0.f;
+	Position.Position.Y = 0.f;
+	Position.Position.Z = Distance;
+	Position.Orientation.X = 0.f;
+	Position.Orientation.Y = 0.f;
+	Position.Orientation.Z = -1.f;
+	AK::SoundEngine::SetPosition( GameObj, Position );
+}
+
+/** CAkConversionTable with AkCurveScaling_dB_96_3 (CalculationFunction::linearMutingTodBMuting96): a curve value v <= 0 is
+    20 log10((v + 96.3) / 96.3) dB. */
+double MutingTodB( double Value )
+{
+	return Value <= -96.3 ? -96.3 : 20.0 * log10( ( Value + 96.3 ) / 96.3 );
+}
+
+void TestGraph( WwiseSkipFunc InSkip )
+{
+	const std::vector<unsigned char> Pck = ReadWholeFile( std::wstring( CookedDir ) + L"Bk_E43C0E7F49D6DA8943110CA3F7328499.INT" );
+	size_t Offset = 0, Size = 0;
+	if( !FindPackagedBank( Pck, VoiceBankID, Offset, Size ) )
+	{
+		InSkip( "Wwise parameter graph", "Bk_E43C0E7F49D6DA8943110CA3F7328499.INT not found" );
+		return;
+	}
+	void * Memory = _aligned_malloc( Size, 16 );
+	memcpy( Memory, Pck.data() + Offset, Size );
+	AkBankID BankID = 0;
+	CheckEq( "Wwise graph: LoadBank(voice bank 0x87628435) again", AK::SoundEngine::LoadBank( Memory, (AkUInt32)Size, BankID ), AK_Success );
+	const AkGameObjectID GameObj = 101;
+	AK::SoundEngine::RegisterGameObj( GameObj, "IH3 smoke" );
+	char Detail[ 256 ];
+
+	// RTPC: bus 0x30b38306's volume follows RTPC 0xcd107ced through its bank curve (0 -> -96.3, 100 -> 0, dB scaling).
+	SetVoicePosition( GameObj, 1.f );
+	AK::SoundEngine::SetRTPCValue( 0xcd107ced, 100.f );
+	SettleAudio( 50 );
+	const FGraphCapture Reference = PlayVoiceCaptured( GameObj, L"ih3_graph_ref.wav" );
+	GReport( Reference.Ended && Reference.Energy > 0.0, "Wwise graph: reference play (RTPC 0xcd107ced = 100, 1 unit away) is audible", NULL );
+	const AkReal32 RTPCValues[ 2 ] = { 50.f, 25.f };
+	for( int i = 0; i < 2; ++i )
+	{
+		AK::SoundEngine::SetRTPCValue( 0xcd107ced, RTPCValues[ i ] );
+		SettleAudio( 50 );
+		const FGraphCapture Measured = PlayVoiceCaptured( GameObj, L"ih3_graph_rtpc.wav" );
+		const double Expected = MutingTodB( -96.3 + 0.963 * RTPCValues[ i ] );
+		const double Gain = GaindB( Measured, Reference );
+		AkRtpcValue Queried = 0.f;
+		AK::SoundEngine::Query::RTPCValue_type QueryType = AK::SoundEngine::Query::RTPCValue_Global;
+		AK::SoundEngine::Query::GetRTPCValue( 0xcd107ced, AK_INVALID_GAME_OBJECT, Queried, QueryType );
+		snprintf( Detail, sizeof( Detail ), "RTPC %.0f (Query %.1f): measured %.2f dB, bank curve %.2f dB", RTPCValues[ i ], Queried, Gain, Expected );
+		printf( "      %s\n", Detail );
+		GReport( fabs( Gain - Expected ) < 0.3 && Queried == RTPCValues[ i ], "Wwise graph: a bus volume RTPC evaluates its bank curve", Detail );
+	}
+	AK::SoundEngine::SetRTPCValue( 0xcd107ced, 100.f );
+
+	// States: bus 0x28eb7999's state group 0xad7ac6ca (default transition 2500 ms in Init.bnk's STMG), state 0x82a425ff -> custom
+	// state 0x79773b9 {Volume -96.3}; group 0x3c28da9f (500 ms), state 0x531639fd -> 0x4223253 {Volume -20, LPF 43}.
+	AK::SoundEngine::SetState( 0xad7ac6ca, 0x82a425ff );
+	SettleAudio( 2800 );
+	const FGraphCapture Muted = PlayVoiceCaptured( GameObj, L"ih3_graph_state.wav" );
+	snprintf( Detail, sizeof( Detail ), "state 0x82a425ff of group 0xad7ac6ca: measured %.1f dB (bank: bus 0x28eb7999 Volume -96.3)", GaindB( Muted, Reference ) );
+	printf( "      %s\n", Detail );
+	GReport( GaindB( Muted, Reference ) < -60.0, "Wwise graph: a state mutes its bus after the group's transition time", Detail );
+	AK::SoundEngine::SetState( 0xad7ac6ca, 0 );
+	SettleAudio( 2800 );
+	const FGraphCapture Restored = PlayVoiceCaptured( GameObj, L"ih3_graph_state.wav" );
+	snprintf( Detail, sizeof( Detail ), "back to state none: measured %.2f dB", GaindB( Restored, Reference ) );
+	printf( "      %s\n", Detail );
+	GReport( fabs( GaindB( Restored, Reference ) ) < 0.3, "Wwise graph: leaving the state restores the bus volume", Detail );
+	AK::SoundEngine::SetState( 0x3c28da9f, 0x531639fd );
+	SettleAudio( 800 );
+	const FGraphCapture Ducked = PlayVoiceCaptured( GameObj, L"ih3_graph_state.wav" );
+	snprintf( Detail, sizeof( Detail ), "state 0x531639fd of group 0x3c28da9f: measured %.2f dB (bank: Volume -20 dB and LPF 43 on bus 0x28eb7999)", GaindB( Ducked, Reference ) );
+	printf( "      %s\n", Detail );
+	GReport( GaindB( Ducked, Reference ) <= -19.7, "Wwise graph: a state's bus volume (-20 dB) applies, its LPF 43 lowers the voice further", Detail );
+	AK::SoundEngine::SetState( 0x3c28da9f, 0 );
+	SettleAudio( 800 );
+
+	// 3D: attenuation 0x823cc49's dry volume curve (dB scaling): 0 -> 0, 441.7 -> -9.40, 1145.6 -> -42.14, 1951.5 -> -76.24,
+	// 3000 -> -96.3. At the curve's own points the expected gain is the point's value through the dB scaling; the LPF curve
+	// (0 -> 0, 1407.8 -> 16, 3000 -> 44) and the spread curve (100 at 0, 51 from 82.5 on) change the measured RMS too, so the
+	// reference is the curve's first point past the spread knee, 441.7 units (dry -9.40 -> -0.89 dB, spread 50).
+	SetVoicePosition( GameObj, 441.74756f );
+	SettleAudio( 50 );
+	const FGraphCapture Near = PlayVoiceCaptured( GameObj, L"ih3_graph_3d.wav" );
+	const double NeardB = MutingTodB( -9.404199600219727 );
+	const AkReal32 Distances[ 2 ] = { 1145.6311f, 1951.4563f };
+	const double CurveValues[ 2 ] = { -42.138301849365234, -76.2446517944336 };
+	double Gains[ 2 ];
+	for( int i = 0; i < 2; ++i )
+	{
+		SetVoicePosition( GameObj, Distances[ i ] );
+		SettleAudio( 50 );
+		const FGraphCapture Far = PlayVoiceCaptured( GameObj, L"ih3_graph_3d.wav" );
+		Gains[ i ] = GaindB( Far, Near );
+		const double Expected = MutingTodB( CurveValues[ i ] ) - NeardB;
+		snprintf( Detail, sizeof( Detail ), "%.1f vs 441.7 units: measured %.2f dB, attenuation curve %.2f dB", Distances[ i ], Gains[ i ], Expected );
+		printf( "      %s\n", Detail );
+		GReport( fabs( Gains[ i ] - Expected ) < 0.3, "Wwise graph: a 3D voice attenuates by its bank attenuation curve", Detail );
+	}
+	snprintf( Detail, sizeof( Detail ), "1951.5 vs 1145.6 units: measured %.2f dB, curve %.2f dB", Gains[ 1 ] - Gains[ 0 ], MutingTodB( CurveValues[ 1 ] ) - MutingTodB( CurveValues[ 0 ] ) );
+	printf( "      %s\n", Detail );
+	GReport( fabs( ( Gains[ 1 ] - Gains[ 0 ] ) - ( MutingTodB( CurveValues[ 1 ] ) - MutingTodB( CurveValues[ 0 ] ) ) ) < 0.3, "Wwise graph: the gain between two distances follows the curve", Detail );
+	SetVoicePosition( GameObj, 3500.f );
+	SettleAudio( 50 );
+	const FGraphCapture Beyond = PlayVoiceCaptured( GameObj, L"ih3_graph_3d.wav" );
+	snprintf( Detail, sizeof( Detail ), "3500 units (curve ends at 3000, -96.3): measured %.1f dB", GaindB( Beyond, Reference ) );
+	printf( "      %s\n", Detail );
+	GReport( GaindB( Beyond, Reference ) < -60.0, "Wwise graph: beyond the attenuation's max distance the voice is silent", Detail );
+
+	AK::SoundEngine::UnregisterGameObj( GameObj );
+	SettleAudio( 50 );
+	AK::SoundEngine::UnloadBank( BankID, NULL );
+	_aligned_free( Memory );
+}
+
 unsigned TotalOf( const AkUInt32 * Counts )
 {
 	unsigned Total = 0;
@@ -430,6 +614,7 @@ void TestWwise( WwiseReportFunc InReport, WwiseSkipFunc InSkip )
 	CheckEq( "Wwise LoadBank(Init.bnk) again is AK_BankAlreadyLoaded", AK::SoundEngine::LoadBank( L"Init.bnk", AK_DEFAULT_POOL_ID, InitID ), AK_BankAlreadyLoaded );
 
 	TestPipeline( InSkip );
+	TestGraph( InSkip );
 
 	const char * CsvPath = getenv( "WWISE_SMOKE_CSV" ) ? getenv( "WWISE_SMOKE_CSV" ) : "../agentIH1/hirc_counts.csv";
 	const std::vector<FCsvBank> Rows = ReadCsv( CsvPath );

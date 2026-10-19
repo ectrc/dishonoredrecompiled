@@ -5,19 +5,17 @@
 
 	DISHONORED(port): agent IH2 (wave 26), pulled from IH3's list (akparameternodebase.cpp, akparameternode.cpp,
 	akbus.cpp, aksound.cpp, aksoundbase.cpp, akactiveparent.h, akpbiaware.cpp, aksource.cpp); rva on each.
-	Deviations (named, every one an IH3 seam - the parameter graph):
-	  * GetAudioParameters / GetBypassAllFX / GetPriority / GetMaxNumInstances read the nodes' own properties and
-	    ranges only: no RTPC (m_RTPCBitArrayMax32 is ignored), no state values (GetAudioStateParams), no SIS
-	    (m_pGlobalSIS / m_pMapSIS - nothing sets them before IH3's SetValue actions), no bus ducking
-	    (m_DuckedVolumeList), no layer crossfades (m_pAssociatedLayers). Volume / pitch / LPF therefore sum the
-	    authored values along the actor-mixer chain and the output bus chain, as retail does without game syncs.
-	  * CAkBus::IncrementPlayCount / DecrementPlayCount do not run the ducking state machine (UpdateDuckedBus).
-	  * CAkSoundBase::PlayToEnd, the seek and the dynamic-sequence / feedback branches of AllExec are not reached
-	    by the glue's calls and are ported only as far as the decompile shows without IH3 classes.
+	IH3 fork N completed the parameter graph here: GetAudioParameters (node and bus) with state values, RTPC, SIS, mute
+	map, ducking and layer crossfades; GetBypassAllFX / GetPriority / GetMaxNumInstances with RTPC and SIS; the bus
+	ducking state machine in Increment / DecrementPlayCount; the sound's seek. The runtime of the same classes is in
+	AkParameterNodeBase.cpp, AkParameterNode.cpp and AkBus.cpp.
+	Deviation (named): the dynamic-sequence / feedback branches of AllExec are not reached by the glue's calls (no
+	dynamic sequence is opened, no feedback bus exists).
 =============================================================================*/
 #include "AkActivityChunk.h"
 #include "AkURenderer.h"
 #include "AkBankMgr.h"
+#include "AkContainers.h"
 #include <stdlib.h>
 
 static inline AkReal32 AkRandRange( AkReal32 in_fMin, AkReal32 in_fMax )
@@ -248,7 +246,7 @@ CAkBus * CAkParameterNodeBase::GetMixingBus()
 	return NULL;
 }
 
-/** 2012 0x944d80: the first node overriding its parent's priority answers. DISHONORED(IH3 seam): no RTPC. */
+/** 2012 0x944d80: the first node overriding its parent's priority answers (its priority RTPC, else the property). */
 PriorityInfo CAkParameterNodeBase::GetPriority( CAkRegisteredObj * in_GameObjPtr )
 {
 	if( m_pParentNode && !m_bPriorityOverrideParent )
@@ -256,8 +254,15 @@ PriorityInfo CAkParameterNodeBase::GetPriority( CAkRegisteredObj * in_GameObjPtr
 		return m_pParentNode->GetPriority( in_GameObjPtr );
 	}
 	PriorityInfo priorityInfo;
-	const AkPropValue * pPriority = m_props.FindProp( AkPropID_Priority );
-	priorityInfo.priority = pPriority ? pPriority->fValue : (AkReal32)AK_DEFAULT_PRIORITY;
+	if( m_RTPCBitArrayMax32.IsSet( RTPC_Priority ) )
+	{
+		priorityInfo.priority = g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Priority, in_GameObjPtr );
+	}
+	else
+	{
+		const AkPropValue * pPriority = m_props.FindProp( AkPropID_Priority );
+		priorityInfo.priority = pPriority ? pPriority->fValue : (AkReal32)AK_DEFAULT_PRIORITY;
+	}
 	priorityInfo.distanceOffset = 0.f;
 	if( m_bPriorityApplyDistFactor )
 	{
@@ -267,9 +272,13 @@ PriorityInfo CAkParameterNodeBase::GetPriority( CAkRegisteredObj * in_GameObjPtr
 	return priorityInfo;
 }
 
-/** 2012 0x943380. DISHONORED(IH3 seam): no RTPC on the instance limit. */
+/** 2012 0x943380: an RTPC moves a non-zero limit. */
 AkUInt16 CAkParameterNodeBase::GetMaxNumInstances( CAkRegisteredObj * in_GameObjPtr )
 {
+	if( m_u16MaxNumInstance && m_RTPCBitArrayMax32.IsSet( RTPC_MaxNumInstances ) )
+	{
+		return (AkUInt16)(AkInt32)g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_MaxNumInstances, in_GameObjPtr );
+	}
 	return m_u16MaxNumInstance;
 }
 
@@ -607,34 +616,103 @@ void CAkParameterNode::DecrementPlayCount( CounterParameters & io_params )
 	}
 }
 
-/** 2012 0x938c40. DISHONORED(IH3 seam): no RTPC, no SIS. */
+/** 2012 0x938c40: the first node overriding its parent's effects answers - its bypass RTPC, the object's SIS, the
+    global SIS, the authored bit. */
 bool CAkParameterNode::GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr )
 {
 	if( !m_bIsFXOverrideParent && m_pParentNode )
 	{
 		return m_pParentNode->GetBypassAllFX( in_GameObjPtr );
 	}
-	return m_pFXChunk ? ( m_pFXChunk->bitsMainFXBypass & 0x10 ) != 0 : false;
+	if( !m_pFXChunk )
+	{
+		return false;
+	}
+	if( m_RTPCBitArrayMax32.IsSet( RTPC_BypassAllFX ) )
+	{
+		return g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_BypassAllFX, in_GameObjPtr ) != 0.f;
+	}
+	CAkSIS ** ppSIS = m_pMapSIS ? m_pMapSIS->Exists( in_GameObjPtr ) : NULL;
+	if( ppSIS )
+	{
+		return ( ( *ppSIS )->m_bitsFXBypass & 0x10 ) != 0;
+	}
+	if( m_pGlobalSIS )
+	{
+		return ( m_pGlobalSIS->m_bitsFXBypass & 0x10 ) != 0;
+	}
+	return ( m_pFXChunk->bitsMainFXBypass & 0x10 ) != 0;
 }
 
-/** 2012 0x939ab0: the node's own volume / pitch / LPF, its range offsets, then the parent (and the output bus where
-    the node overrides it). DISHONORED(IH3 seam): no state values, RTPC, SIS or layers. */
+/** 2012 0x939ab0: the node's state values, its own volume / pitch / LPF with their RTPC, the global and the object's
+    SIS (a mute ratio below 1 goes to the muted map), its range offsets, then the parent (and the output bus where the
+    node overrides it), and last the crossfades of the layers the node belongs to. */
 AKRESULT CAkParameterNode::GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck )
 {
+	GetAudioStateParams( io_Parameters, in_ulParamSelect );
 	if( in_ulParamSelect & 1 )
 	{
 		const AkPropValue * pValue = m_props.FindProp( AkPropID_Volume );
 		io_Parameters.Volume += pValue ? pValue->fValue : 0.f;
+		if( m_RTPCBitArrayMax32.IsSet( RTPC_Volume ) )
+		{
+			io_Parameters.Volume += g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Volume, in_GameObjPtr );
+		}
 	}
 	if( in_ulParamSelect & 2 )
 	{
 		const AkPropValue * pValue = m_props.FindProp( AkPropID_Pitch );
 		io_Parameters.Pitch += pValue ? pValue->fValue : 0.f;
+		if( m_RTPCBitArrayMax32.IsSet( RTPC_Pitch ) )
+		{
+			io_Parameters.Pitch += g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Pitch, in_GameObjPtr );
+		}
 	}
 	if( in_ulParamSelect & 4 )
 	{
 		const AkPropValue * pValue = m_props.FindProp( AkPropID_LPF );
 		io_Parameters.LPF += pValue ? pValue->fValue : 0.f;
+		if( m_RTPCBitArrayMax32.IsSet( RTPC_LPF ) )
+		{
+			io_Parameters.LPF += g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_LPF, in_GameObjPtr );
+		}
+	}
+	CAkSIS * apSIS[ 2 ] = { m_pGlobalSIS, NULL };
+	if( m_pMapSIS )
+	{
+		CAkSIS ** ppSIS = m_pMapSIS->Exists( in_GameObjPtr );
+		apSIS[ 1 ] = ppSIS ? *ppSIS : NULL;
+	}
+	for( AkUInt32 i = 0; i < 2; ++i )
+	{
+		if( !apSIS[ i ] )
+		{
+			continue;
+		}
+		const AkSISValue * pVolume = apSIS[ i ]->m_values.FindProp( AkPropID_Volume );
+		if( pVolume )
+		{
+			io_Parameters.Volume += pVolume->fValue;
+		}
+		const AkSISValue * pPitch = apSIS[ i ]->m_values.FindProp( AkPropID_Pitch );
+		if( pPitch )
+		{
+			io_Parameters.Pitch += pPitch->fValue;
+		}
+		const AkSISValue * pLPF = apSIS[ i ]->m_values.FindProp( AkPropID_LPF );
+		if( pLPF )
+		{
+			io_Parameters.LPF += pLPF->fValue;
+		}
+		const AkSISValue * pMute = apSIS[ i ]->m_values.FindProp( AkPropID_MuteRatio );
+		if( pMute && pMute->fValue != 1.f )
+		{
+			AkMutedMapItem item;
+			item.m_Identifier = this;
+			item.m_bIsGlobal = i == 0;
+			item.m_bIsPersistent = 0;
+			io_rMutedMap.Set( item, pMute->fValue );
+		}
 	}
 	if( in_bIncludeRange && m_ranges.m_pProps )
 	{
@@ -665,6 +743,13 @@ AKRESULT CAkParameterNode::GetAudioParameters( AkSoundParams & io_Parameters, Ak
 	else if( m_pParentNode )
 	{
 		m_pParentNode->GetAudioParameters( io_Parameters, in_ulParamSelect, io_rMutedMap, in_GameObjPtr, in_bIncludeRange, io_Ranges, in_bDoBusCheck );
+	}
+	if( m_pAssociatedLayers )
+	{
+		for( CAkLayer ** pp = m_pAssociatedLayers->m_pItems; pp != m_pAssociatedLayers->m_pItemsEnd; ++pp )
+		{
+			( *pp )->GetAudioParameters( this, io_Parameters, in_ulParamSelect, io_rMutedMap, in_GameObjPtr );
+		}
 	}
 	return AK_Success;
 }
@@ -846,7 +931,7 @@ AKRESULT CAkSound::Play( AkPBIParams & in_rPBIParams )
 	return CAkURenderer::Play( this, &m_Source, in_rPBIParams );
 }
 
-/** 2012 0x94a970. DISHONORED(IH3 seam): ActionParamType_Seek (SeekSound) is not ported. */
+/** 2012 0x94a970 (IH3 added the seek branch). */
 AKRESULT CAkSound::ExecuteAction( ActionParams & in_rAction )
 {
 	if( in_rAction.bIsMasterCall )
@@ -868,14 +953,21 @@ AKRESULT CAkSound::ExecuteAction( ActionParams & in_rAction )
 	case ActionParamType_Break:
 		PlayToEnd( in_rAction.pGameObj, in_rAction.targetNodeID, in_rAction.playingID );
 		return AK_Success;
+	case ActionParamType_Seek:
+		SeekSound( in_rAction.pGameObj, static_cast<const SeekActionParams &>( in_rAction ) );
+		return AK_Success;
 	default:
 		return AK_Success;
 	}
 }
 
-/** 2012 0x94aa70. */
+/** 2012 0x94aa70 (IH3 added the master-call transition pause and the seek branch). */
 AKRESULT CAkSound::ExecuteActionExcept( ActionParamsExcept & in_rAction )
 {
+	if( !in_rAction.pGameObj )
+	{
+		PauseTransitions( in_rAction.eType == ActionParamType_Pause );
+	}
 	if( !m_pActivityChunk || !m_pActivityChunk->m_PlayCount )
 	{
 		return AK_Success;
@@ -888,6 +980,9 @@ AKRESULT CAkSound::ExecuteActionExcept( ActionParamsExcept & in_rAction )
 		return CAkURenderer::Pause( this, in_rAction.pGameObj, in_rAction.transParams, in_rAction.playingID );
 	case ActionParamType_Resume:
 		return CAkURenderer::Resume( this, in_rAction.pGameObj, in_rAction.transParams, in_rAction.bIsMasterResume, in_rAction.playingID );
+	case ActionParamType_Seek:
+		SeekSound( in_rAction.pGameObj, static_cast<const SeekActionParamsExcept &>( in_rAction ) );
+		return AK_Success;
 	default:
 		return AK_Success;
 	}
@@ -1026,7 +1121,7 @@ AKRESULT CAkBus::ExecuteActionExcept( ActionParamsExcept & in_rAction )
 	return AK_Success;
 }
 
-/** 2012 0x93d900. DISHONORED(IH3 seam): the ducking state machine (UpdateDuckedBus) is not run. */
+/** 2012 0x93d900: the first voice turns the bus's ducks on. */
 AKRESULT CAkBus::IncrementPlayCount( CounterParameters & io_params )
 {
 	AKRESULT eResult = IncrementPlayCountValue();
@@ -1074,10 +1169,15 @@ AKRESULT CAkBus::IncrementPlayCount( CounterParameters & io_params )
 			}
 		}
 	}
+	if( m_pActivityChunk && m_pActivityChunk->m_PlayCount == 1 )
+	{
+		m_eDuckingState = DuckState_ON;
+		UpdateDuckedBus();
+	}
 	return eResult;
 }
 
-/** 2012 0x93d9e0. DISHONORED(IH3 seam): no duck release notification. */
+/** 2012 0x93d9e0: the last voice releases the ducks, after the recovery time when there is one. */
 void CAkBus::DecrementPlayCount( CounterParameters & io_params )
 {
 	DecrementPlayCountValue();
@@ -1094,36 +1194,108 @@ void CAkBus::DecrementPlayCount( CounterParameters & io_params )
 	{
 		m_pFeedbackInfo->m_pFeedbackBus->DecrementPlayCount( io_params );
 	}
+	if( !m_pActivityChunk || !m_pActivityChunk->m_PlayCount )
+	{
+		if( m_RecoveryTime && m_ToDuckList.Length() && RequestDuckNotif() == AK_Success )
+		{
+			m_eDuckingState = DuckState_PENDING;
+		}
+		else
+		{
+			m_eDuckingState = DuckState_OFF;
+		}
+		UpdateDuckedBus();
+	}
 }
 
-/** 2012 0x93bb50. DISHONORED(IH3 seam): no RTPC, no SIS. */
+/** 2012 0x93bb50: the bypass RTPC, the bus SIS, the authored bit. */
 bool CAkBus::GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr )
 {
-	return m_pFXChunk ? ( m_pFXChunk->bitsMainFXBypass & 0x10 ) != 0 : false;
+	if( !m_pFXChunk )
+	{
+		return false;
+	}
+	if( m_RTPCBitArrayMax32.IsSet( RTPC_BypassAllFX ) )
+	{
+		return g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_BypassAllFX, NULL ) != 0.f;
+	}
+	if( m_pGlobalSIS )
+	{
+		return ( m_pGlobalSIS->m_bitsFXBypass & 0x10 ) != 0;
+	}
+	return ( m_pFXChunk->bitsMainFXBypass & 0x10 ) != 0;
 }
 
 /** 2012 0x93cfd0: a mixing bus (effect or environmental) applies its own volume in its VPL, so only a plain bus adds
-    its volume to the voice; pitch and LPF always. DISHONORED(IH3 seam): no ducking, states, RTPC or SIS. */
+    its volume and its ducking to the voice (and the chain above it then neither); states, RTPC (global), the bus SIS
+    and its mute ratio always; pitch and LPF always. */
 AKRESULT CAkBus::GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck )
 {
-	if( HasEffect() || m_bIsEnvironmental )
+	if( HasEffect() )
 	{
 		in_ulParamSelect &= ~1;
 	}
+	else if( in_ulParamSelect & 1 )
+	{
+		io_Parameters.Volume += GetDuckedVolume();
+	}
+	GetAudioStateParams( io_Parameters, in_ulParamSelect );
 	if( in_ulParamSelect & 1 )
 	{
 		const AkPropValue * pValue = m_props.FindProp( AkPropID_Volume );
 		io_Parameters.Volume += pValue ? pValue->fValue : 0.f;
+		if( m_RTPCBitArrayMax32.IsSet( RTPC_Volume ) )
+		{
+			io_Parameters.Volume += g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Volume, NULL );
+		}
 	}
 	if( in_ulParamSelect & 2 )
 	{
 		const AkPropValue * pValue = m_props.FindProp( AkPropID_Pitch );
 		io_Parameters.Pitch += pValue ? pValue->fValue : 0.f;
+		if( m_RTPCBitArrayMax32.IsSet( RTPC_Pitch ) )
+		{
+			io_Parameters.Pitch += g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Pitch, NULL );
+		}
 	}
 	if( in_ulParamSelect & 4 )
 	{
 		const AkPropValue * pValue = m_props.FindProp( AkPropID_LPF );
 		io_Parameters.LPF += pValue ? pValue->fValue : 0.f;
+		if( m_RTPCBitArrayMax32.IsSet( RTPC_LPF ) )
+		{
+			io_Parameters.LPF += g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_LPF, NULL );
+		}
+	}
+	if( m_pGlobalSIS )
+	{
+		if( in_ulParamSelect & 1 )
+		{
+			const AkSISValue * pVolume = m_pGlobalSIS->m_values.FindProp( AkPropID_Volume );
+			if( pVolume )
+			{
+				io_Parameters.Volume += pVolume->fValue;
+			}
+		}
+		const AkSISValue * pPitch = m_pGlobalSIS->m_values.FindProp( AkPropID_Pitch );
+		if( pPitch )
+		{
+			io_Parameters.Pitch += pPitch->fValue;
+		}
+		const AkSISValue * pLPF = m_pGlobalSIS->m_values.FindProp( AkPropID_LPF );
+		if( pLPF )
+		{
+			io_Parameters.LPF += pLPF->fValue;
+		}
+		const AkSISValue * pMute = m_pGlobalSIS->m_values.FindProp( AkPropID_MuteRatio );
+		if( pMute && pMute->fValue != 1.f )
+		{
+			AkMutedMapItem item;
+			item.m_Identifier = this;
+			item.m_bIsGlobal = 1;
+			item.m_bIsPersistent = 0;
+			io_rMutedMap.Set( item, pMute->fValue );
+		}
 	}
 	if( m_pBusOutputNode )
 	{
@@ -1214,16 +1386,50 @@ bool CAkParameterNode::UpdateBaseParams( CAkRegisteredObj * in_GameObj, BaseGenP
 	return pNode->UpdateBaseParamsFromRTPC( in_GameObj, io_pBasePosParams );
 }
 
-/** 2012 0x93a0d0: PAN_LR / PAN_FR / CenterPCT and the panner flag. DISHONORED(IH3 seam): the RTPC-driven pan
-    (RTPC ids 20 / 21, scaled by the max radius for 3D) is not evaluated, so this always returns false. */
+/** 2012 0x93a0d0 (agent IH3): PAN_LR / PAN_FR from the node's properties, or from RTPC ids 20 / 21 when an RTPC drives
+    them (a 3D node scales the RTPC's percentage by its max radius); CenterPCT and the panner flag; true when an RTPC
+    drives the pan. The PAN_FR branch scales m_fPAN_RL again, as the 2012 decompile reads. */
 bool CAkParameterNode::UpdateBaseParamsFromRTPC( CAkRegisteredObj * in_GameObj, BaseGenParams * io_pBasePosParams )
 {
-	const AkPropValue * pPanLR = m_props.FindProp( AkPropID_PAN_LR );
-	const AkPropValue * pPanFR = m_props.FindProp( AkPropID_PAN_FR );
+	const bool bRTPC_PAN_RL = m_RTPCBitArrayMax32.IsSet( RTPC_Position_PAN_RL );
+	const bool bRTPC_PAN_FR = m_RTPCBitArrayMax32.IsSet( RTPC_Position_PAN_FR );
+	AkReal32 fMaxRadius = 0.f;
+	if( !bRTPC_PAN_RL && !bRTPC_PAN_FR )
+	{
+		const AkPropValue * pPanLR = m_props.FindProp( AkPropID_PAN_LR );
+		io_pBasePosParams->m_fPAN_RL = pPanLR ? pPanLR->fValue : 0.f;
+		const AkPropValue * pPanFR = m_props.FindProp( AkPropID_PAN_FR );
+		io_pBasePosParams->m_fPAN_FR = pPanFR ? pPanFR->fValue : 0.f;
+	}
+	else
+	{
+		if( bRTPC_PAN_RL )
+		{
+			io_pBasePosParams->m_fPAN_RL = g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Position_PAN_RL, in_GameObj );
+			if( m_p3DParameters && GetMaxRadius( fMaxRadius ) )
+			{
+				io_pBasePosParams->m_fPAN_RL = io_pBasePosParams->m_fPAN_RL * fMaxRadius * 0.0099999998f;
+			}
+		}
+		else
+		{
+			io_pBasePosParams->m_fPAN_RL = 0.f;
+		}
+		if( bRTPC_PAN_FR )
+		{
+			io_pBasePosParams->m_fPAN_FR = g_pRTPCMgr->GetRTPCConvertedValue( this, RTPC_Position_PAN_FR, in_GameObj );
+			if( m_p3DParameters && ( fMaxRadius != 0.f || GetMaxRadius( fMaxRadius ) ) )
+			{
+				io_pBasePosParams->m_fPAN_RL = io_pBasePosParams->m_fPAN_RL * fMaxRadius * 0.0099999998f;
+			}
+		}
+		else
+		{
+			io_pBasePosParams->m_fPAN_FR = 0.f;
+		}
+	}
 	const AkPropValue * pCenter = m_props.FindProp( AkPropID_CenterPCT );
-	io_pBasePosParams->m_fPAN_RL = pPanLR ? pPanLR->fValue : 0.f;
-	io_pBasePosParams->m_fPAN_FR = pPanFR ? pPanFR->fValue : 0.f;
 	io_pBasePosParams->m_fCenterPCT = pCenter ? pCenter->fValue : 0.f;
 	io_pBasePosParams->bIsPannerEnabled = m_bPositioningEnablePanner != 0;
-	return false;
+	return bRTPC_PAN_RL || bRTPC_PAN_FR;
 }

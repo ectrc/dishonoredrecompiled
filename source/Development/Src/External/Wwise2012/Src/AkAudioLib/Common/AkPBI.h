@@ -10,6 +10,7 @@
 #include "AkAudioMgr.h"
 #include "AkLEngineStructs.h"
 #include "AkRegistryMgr.h"
+#include "AkRTPCMgr.h"
 
 class CAkSoundBase;
 class CAkSource;
@@ -20,6 +21,7 @@ class AkFeedbackParams;
 class CAkGen3DParams;
 class CAkAttenuation;
 class CAkPBIAware;
+struct AkSoundPositioningParams;
 
 namespace AK
 {
@@ -224,10 +226,13 @@ public:
 	void Devirtualize( bool in_bAllowKick );
 	AkBelowThresholdBehavior GetVirtualBehavior( AkVirtualQueueBehavior & out_Behavior );
 	void UpdatePriority( AkReal32 in_NewPriority );
+	AKRESULT SetParam( AkInt16 in_paramID, const void * in_pParam, AkUInt32 in_uParamSize );
 	void RecalcNotification();
 	void CalculateMutedEffectiveVolume();
 	void CalculateEffectiveLPF();
 	void MuteNotification( AkReal32 in_fMuteRatio, AkMutedMapItem & in_rMutedItem, bool in_bPrioritizeGameObjectSpecificItems );
+	void ParamNotification( NotifParams & in_rParams );
+	void UpdateFx( AkUInt32 in_uFXIndex );
 	AKRESULT SetMuteMapEntry( AkMutedMapItem & in_key, AkReal32 in_fFadeRatio );
 	void NotifyBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask );
 	bool IsUsingThisSlot( const CAkUsageSlot * in_pSlotToCheck );
@@ -235,6 +240,10 @@ public:
 	AK::CAkBusCtx GetBusContext();
 	void GetEnvironmentValues( AkEnvironmentValue * io_paEnvVal );
 	AkUniqueID GetSoundID() const;
+	void Get3DPositioningParams( AkSoundPositioningParams & io_Parameters );
+	void PositioningChangeNotification( AkReal32 in_RTPCValue, AkRTPC_ParameterID in_ParameterID );
+	AKRESULT SubscribeAttenuationRTPC( CAkAttenuation * in_pAttenuation );
+	void UnsubscribeAttenuationRTPC( CAkAttenuation * in_pAttenuation );
 
 	CAkSoundBase * GetSound() const { return m_pSound; }
 	CAkSource * GetSource() const { return m_pSource; }
@@ -363,4 +372,9 @@ protected:
 
 private:
 	void RefreshParameters();
+	AkReal32 Scale3DUserDefRTPCValue( AkReal32 in_fValue );
 };
+
+/** DISHONORED(IH3 -akdiag): a voice's volume split by source (node chain, states, RTPC, SIS, bus tree), on its first
+    parameter refresh and at most once a second after (AkParameterNode.cpp). */
+void AkDiagVoiceParameters( CAkPBI * in_pPBI, bool in_bFirstRefresh );

@@ -2,12 +2,11 @@
 	AkBusCtx.cpp - AK::CAkBusCtx (akbusctx.cpp, 2012 0x93de70..0x93df40) and CAkBus::GetBusEffectiveVolume (0x93c890).
 
 	DISHONORED(port): agent IH2 (wave 26).
-	Deviations (named):
-	  * GetBusEffectiveVolume: no state values, RTPC, SIS or ducking (IH3 seams) - the bus's own property, summed
-	    up the output chain to the next bus with an effect (or the whole tree).
-	  * GetFX / GetFXDataID (the bus insert effects) are IH4's and not ported.
+	IH3 fork N: GetBusEffectiveVolume with the bus's state values, RTPC, SIS and ducking.
+	Deviation (named): GetFX / GetFXDataID (the bus insert effects) are IH4's and not ported.
 =============================================================================*/
 #include "AkBusCtx.h"
+#include "AkPBI.h"
 
 AK::CAkBusCtx g_MasterBusCtx;
 
@@ -67,11 +66,31 @@ namespace AK
 	}
 }
 
-/** 2012 0x93c890. */
+/** 2012 0x93c890 (2013 0x939230): the bus's states, property (or its RTPC), SIS value and ducking, plus the output bus's
+    up to the next bus with an effect (or the whole tree). */
 AkReal32 CAkBus::GetBusEffectiveVolume( AkUInt32 in_eVolumeType, AkPropID in_eProp )
 {
+	AkSoundParams soundParams;
+	soundParams.Volume = 0.f;
+	soundParams.Pitch = 0.f;
+	soundParams.LPF = 0.f;
+	GetAudioStateParams( soundParams, 1 );
 	const AkPropValue * pValue = m_props.FindProp( (AkUInt8)in_eProp );
-	const AkReal32 fVolume = pValue ? pValue->fValue : 0.f;
+	AkReal32 fVolume = ( pValue ? pValue->fValue : 0.f ) + soundParams.Volume;
+	const AkRTPC_ParameterID eRTPC = g_AkPropRTPCID[ in_eProp ];
+	if( m_RTPCBitArrayMax32.IsSet( eRTPC ) )
+	{
+		fVolume += g_pRTPCMgr->GetRTPCConvertedValue( this, eRTPC, NULL );
+	}
+	if( m_pGlobalSIS )
+	{
+		const AkSISValue * pSISValue = m_pGlobalSIS->m_values.FindProp( (AkUInt8)in_eProp );
+		if( pSISValue )
+		{
+			fVolume += pSISValue->fValue;
+		}
+	}
+	fVolume += GetDuckedVolume();
 	CAkBus * pParent = static_cast<CAkBus *>( m_pBusOutputNode );
 	if( pParent && ( in_eVolumeType == BusVolumeType_IncludeEntireBusTree || !pParent->HasEffect() ) )
 	{

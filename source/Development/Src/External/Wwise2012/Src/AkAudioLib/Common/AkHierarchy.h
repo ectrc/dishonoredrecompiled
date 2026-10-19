@@ -28,6 +28,7 @@
 #include "AkAudioLibGlobals.h"
 #include "AkGameSyncs.h"
 #include "AkLEngineStructs.h"
+#include "AkTransitionManager.h"
 
 class CAkUsageSlot;
 class CAkLayerCntr;
@@ -38,6 +39,7 @@ class CAkLimiter;
 class CAkSoundBase;
 class CAkBus;
 class CAkSource;
+class CAkAttenuation;
 class AkPendingAction;
 struct AkActivityChunk;
 struct AkPBIParams;
@@ -48,6 +50,63 @@ struct AkSoundParams;
 struct AkPBIModValues;
 struct AkMutedMapItem;
 struct BaseGenParams;
+struct SeekActionParams;
+struct SeekActionParamsExcept;
+struct AkFXDesc;
+class AkFeedbackParams;
+class CAkFeedbackBus;
+class CAkLayer;
+
+/** The property tables of akparameters.cpp (2012 .rdata 0xd8e0b0 / 0xd8e0f4, .data 0xe37100), indexed by AkPropID. */
+extern const AkRTPC_ParameterID g_AkPropRTPCID[ 17 ];
+extern const bool g_AkPropDecibel[ 17 ];
+extern const AkPropValue g_AkPropDefault[ 17 ];
+
+/** What an RTPC / SIS / duck / state change pushes down the hierarchy to the PBIs (akparameternodebase.h). */
+struct NotifParams
+{
+	AkRTPC_ParameterID	eType;
+	CAkRegisteredObj *	pGameObj;
+	bool				bIsFromBus;
+	void *				pExceptObjects;
+	AkReal32			fValue;
+};
+
+/** A state, SIS or duck value with the transition driving it (8 bytes in the AkPropBundles). */
+struct AkStateValue
+{
+	AkReal32		fValue;
+	CAkTransition *	pTransition;
+};
+
+typedef AkStateValue AkSISValue;
+
+/** CAkSIS (aksis.cpp, 0x14 bytes): the values a SetValue / Mute action set on a node, globally or for one game object. */
+class CAkSIS : public ITransitionable
+{
+public:
+	CAkSIS( CAkParameterNodeBase * in_pParamNode, CAkRegisteredObj * in_pGameObj, AkUInt8 in_bitsFXBypass ) : m_pParamNode( in_pParamNode ), m_pGameObj( in_pGameObj ), m_bitsFXBypass( in_bitsFXBypass ) {}
+	~CAkSIS();
+	virtual void TransUpdateValue( TransitionTargets in_eTarget, AkReal32 in_fValue, bool in_bIsTerminated );
+
+	CAkParameterNodeBase *		m_pParamNode;
+	CAkRegisteredObj *			m_pGameObj;
+	AkPropBundle<AkSISValue>	m_values;
+	AkUInt8						m_bitsFXBypass;
+};
+
+/** CAkDuckItem (akduckitem.cpp, 0x10 bytes): one bus's duck of this bus. */
+class CAkDuckItem : public ITransitionable
+{
+public:
+	AKRESULT Init( CAkBus * in_pBusNode );
+	AKRESULT Term();
+	virtual void TransUpdateValue( TransitionTargets in_eTarget, AkReal32 in_fValue, bool in_bIsTerminated );
+
+	CAkBus *		m_pBusNode;
+	CAkTransition *	m_pvVolumeTransition;
+	AkReal32		m_EffectiveVolumeOffset;
+};
 
 
 
@@ -91,6 +150,29 @@ struct ActionParamsExcept
 	bool													bIsMasterResume;
 };
 
+/** SeekActionParams(Except) (akactions.h): a seek action's position, absolute ms or a fraction of the duration. */
+struct SeekActionParams : public ActionParams
+{
+	union
+	{
+		AkTimeMs	iSeekTime;
+		AkReal32	fSeekPercent;
+	};
+	AkUInt8		bIsSeekRelativeToDuration : 1;
+	AkUInt8		bSnapToNearestMarker : 1;
+};
+
+struct SeekActionParamsExcept : public ActionParamsExcept
+{
+	union
+	{
+		AkTimeMs	iSeekTime;
+		AkReal32	fSeekPercent;
+	};
+	AkUInt8		bIsSeekRelativeToDuration : 1;
+	AkUInt8		bSnapToNearestMarker : 1;
+};
+
 /**
  * DISHONORED(port, IH1 diagnostic): where the last top-level SetInitialValues stopped reading. Retail never
  * checks that an object consumed its whole HIRC section; the bank manager compares this with the section end
@@ -120,7 +202,8 @@ enum AkActionType
 {
 	AkActionType_None				= 0x0000,
 	AkActionType_Play				= 0x0403,
-	AkActionType_PlayAndContinue	= 0x0503
+	AkActionType_PlayAndContinue	= 0x0503,
+	AkActionType_Duck				= 0x1820
 };
 
 enum AkPropID
@@ -150,9 +233,17 @@ enum AkContainerMode
 	ContainerMode_Sequence	= 1
 };
 
+/** PDB values; bit 0 = random, bit 1 = continuous, bit 2 = "pick new path when the sound plays" (an authoring flag
+    the 2012 enum does not name; CAkPBI::Init 0x940b80 tests m_ePathMode & 4). */
 enum AkPathMode
 {
-	AkStepSequence	= 0
+	AkStepSequence			= 0,
+	AkStepRandom			= 1,
+	AkContinuousSequence	= 2,
+	AkContinuousRandom		= 3,
+	AkPathRandom			= 1,
+	AkPathContinuous		= 2,
+	AkPathPickNewPath		= 4
 };
 
 /** 20 bytes: AkMediaInformation with the PDB's bitfields. */
@@ -243,7 +334,18 @@ struct Gen3DParams
 	AkUInt8				m_bIsDynamic : 1;
 	AkUInt8				m_bFollowOrientation : 1;
 	AkUInt8				m_bIsLooping : 1;
-	void *				m_pAttenuation;
+	CAkAttenuation *	m_pAttenuation;
+
+	CAkAttenuation * GetAttenuation();
+};
+
+class CAkPath;
+
+/** AkPathState (PDB): a node's step / random path progress, shared by every PBI of the node (akpath.h). */
+struct AkPathState
+{
+	AkUInt32	ulCurrentListIndex;
+	bool *		pbPlayed;
 };
 
 class CAkGen3DParams
@@ -253,6 +355,8 @@ public:
 	virtual ~CAkGen3DParams();
 
 	AKRESULT SetPath( AkPathVertex * in_pArrayVertex, AkUInt32 in_ulNumVertices, AkPathListItemOffset * in_pArrayPlaylist, AkUInt32 in_ulNumPlaylistItem );
+	AKRESULT SetPathPlayList( CAkPath * in_pPath, AkPathState * in_pState );
+	void SetTransition( AkTimeMs in_TransitionTime );
 	void Term();
 
 	Gen3DParams m_Params;
@@ -264,17 +368,11 @@ private:
 class CAkGen3DParamsEx : public CAkGen3DParams
 {
 public:
-	struct PathState
-	{
-		AkUInt32	ulCurrentListIndex;
-		bool *		pbPlayed;
-	};
-
 	CAkGen3DParamsEx() { m_PathState.ulCurrentListIndex = 0; m_PathState.pbPlayed = NULL; }
 	virtual ~CAkGen3DParamsEx() { FreePathInfo(); }
 	void FreePathInfo();
 
-	PathState m_PathState;
+	AkPathState m_PathState;
 };
 
 /** One (state group, node) link: the node's state values per state id of the group. */
@@ -284,18 +382,21 @@ struct AkStateLink
 	AkUniqueID			ulStateID;
 };
 
-class AkStateGroupChunk
+class AkStateGroupChunk : public ITransitionable
 {
 public:
 	AkStateGroupChunk( CAkParameterNodeBase * in_pOwner, AkStateGroupID in_ulStateGroup );
-	virtual ~AkStateGroupChunk();
+	~AkStateGroupChunk();
 
 	AKRESULT AddState( AkUniqueID in_ulStateInstanceID, AkStateID in_ulStateID, bool in_bNotify );
+	class CAkState * GetState( AkStateID in_StateTypeID );
+	void FlushStateTransitions();
+	virtual void TransUpdateValue( TransitionTargets in_eTarget, AkReal32 in_fValue, bool in_bIsTerminated );
 
 	AkStateGroupChunk *						m_pNextInGroup;
 	AkStateGroupChunk *						m_pNextInNode;
 	CAkParameterNodeBase *					m_pOwner;
-	AkPropBundle<AkReal32>					m_values;
+	AkPropBundle<AkStateValue>				m_values;
 	CAkKeyArray<AkStateID, AkStateLink, 5>	m_mapStates;
 	const AkStateGroupID					m_ulStateGroup;
 	AkStateID								m_ulActualState;
@@ -353,10 +454,59 @@ public:
 	virtual void GetChildren( AkUInt32 & io_ruNumItems, AkObjectInfo * out_aObjectInfos, AkUInt32 & index_out, AkUInt32 iDepth ) {}
 	virtual AkNodeCategory NodeCategory() = 0;
 	virtual void RecalcNotification() {}
-	virtual void NotifyStateParametersModified() {}
+	virtual void NotifyStateParametersModified();
 	virtual void NotifyRTPCChanged() {}
 	virtual void UpdateFx( AkUInt32 in_uFXIndex ) {}
 	virtual CAkRTPCMgr::SubscriberType GetRTPCSubscriberType() const { return CAkRTPCMgr::SubscriberType_CAkParameterNodeBase; }
+
+	// DISHONORED(port, IH3 node graph): the notification, SIS and RTPC half of the 2012 vtable (akparameternodebase.h).
+	virtual void ParamNotification( NotifParams & in_rParams ) {}
+	virtual void Notification( AkRTPC_ParameterID in_ParamID, AkReal32 in_fValue, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL );
+	virtual void PriorityNotification( NotifParams & in_rParams );
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, AkMutedMapItem & in_rMutedItem, bool in_bIsFromBus ) {}
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, CAkRegisteredObj * in_pGameObj, AkMutedMapItem & in_rMutedItem, bool in_bPrioritizeGameObjectSpecificItems = false ) {}
+	virtual void ForAllPBI( void ( *in_funcForAll )( CAkPBI *, CAkRegisteredObj *, void * ), CAkRegisteredObj * in_pGameObj, void * in_pCookie ) {}
+	virtual void PositioningChangeNotification( AkReal32 in_RTPCValue, AkRTPC_ParameterID in_ParameterID, CAkRegisteredObj * in_pGameObj, void * in_pExceptArray ) {}
+	virtual void NotifyBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL ) {}
+	virtual bool Has3DParams() { return false; }
+	virtual AKRESULT PlayToEnd( CAkRegisteredObj * in_pGameObj, AkUniqueID in_NodeID, AkPlayingID in_PlayingID ) { return AK_Success; }
+	virtual void SetAkProp( AkPropID in_eProp, CAkRegisteredObj * in_GameObjPtr, AkValueMeaning in_eValueMeaning, AkReal32 in_fTargetValue = 0.f, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 ) {}
+	virtual void SetAkProp( AkPropID in_eProp, AkReal32 in_fValue, AkReal32 in_fMin, AkReal32 in_fMax );
+	virtual void SetAkProp( AkPropID in_eProp, AkInt32 in_iValue, AkInt32 in_iMin, AkInt32 in_iMax );
+	virtual void ResetAkProp( AkPropID in_eProp, AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime ) {}
+	virtual void Mute( CAkRegisteredObj * in_GameObjPtr, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 ) {}
+	virtual void Unmute( CAkRegisteredObj * in_GameObjPtr, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 ) {}
+	virtual void UnmuteAll( AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 ) {}
+	virtual void Unregister( CAkRegisteredObj * in_GameObjPtr ) {}
+	virtual void ResetFXBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask = 0xFFFFFFFF ) {}
+	virtual void SetFeedbackVolume( CAkRegisteredObj * in_GameObjPtr, AkValueMeaning in_eValueMeaning, AkReal32 in_fTargetValue = 0.f, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void ApplyMaxNumInstances( AkUInt16 in_u16MaxNumInstance, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL, bool in_bFromRTPC = false ) {}
+	virtual AKRESULT SetParamComplexFromRTPCManager( void * in_pToken, AkUInt32 in_Param_id, AkRtpcID in_RTPCid, AkReal32 in_value, CAkRegisteredObj * in_GameObj, void * in_pGameObjExceptArray );
+	virtual void UnsetRTPC( AkRTPC_ParameterID in_ParamID, AkUniqueID in_RTPCCurveID );
+	virtual AKRESULT ExecuteActionExceptParentCheck( ActionParamsExcept & in_rAction ) { return ExecuteActionExcept( in_rAction ); }
+	virtual CAkBus * GetLimitingBus();
+	virtual void FeedbackParentBus( CAkFeedbackBus * in_pParent );
+	virtual CAkFeedbackBus * FeedbackParentBus();
+
+	struct CAkStateSyncArray
+	{
+		AkArray<AkUInt32, AkUInt32, ArrayPoolDefault, 16> m_StateSyncArray;
+	};
+
+	AKRESULT Stop( CAkRegisteredObj * in_pGameObj, AkPlayingID in_PlayingID = AK_INVALID_PLAYING_ID, AkTimeMs in_uTransitionDuration = 0, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear );
+	AKRESULT Pause( CAkRegisteredObj * in_pGameObj, AkPlayingID in_PlayingID = AK_INVALID_PLAYING_ID, AkTimeMs in_uTransitionDuration = 0, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear );
+	AKRESULT Resume( CAkRegisteredObj * in_pGameObj, AkPlayingID in_PlayingID = AK_INVALID_PLAYING_ID, AkTimeMs in_uTransitionDuration = 0, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear );
+	void PriorityNotification( AkReal32 in_Priority, CAkRegisteredObj * in_pGameObj, void * in_pExceptArray );
+	bool IsPlaying() const;
+	static bool IsException( AkUniqueID in_ID, AkArray<AkUniqueID, AkUniqueID, ArrayPoolDefault, 8> & in_rExceptionList );
+	void UseState( bool in_bUseState );
+	AKRESULT RemoveFX( AkUInt32 in_uFXIndex );
+	void BypassFX( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask, CAkRegisteredObj * in_pGameObj = NULL, bool in_bIsFromReset = false );
+	void ResetBypassFX( AkUInt32 in_uTargetMask, CAkRegisteredObj * in_pGameObj = NULL );
+	void StartSISTransition( CAkSIS * in_pSIS, AkPropID in_ePropID, AkReal32 in_fTargetValue, AkValueMeaning in_eValueMeaning, AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime );
+	void StartSisMuteTransitions( CAkSIS * in_pSIS, AkReal32 in_fTargetValue, AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime );
+	bool CheckSyncTypes( AkStateGroupID in_stateGroupID, CAkStateSyncArray * io_pSyncTypes );
+	bool GetStateSyncTypes( AkStateGroupID in_stateGroupID, CAkStateSyncArray * io_pSyncTypes, bool in_bBusChecked = false );
 
 	// The playback half (DISHONORED(port, IH2): the members the play / stop / pause path reaches).
 	virtual AKRESULT Play( AkPBIParams & in_rPBIParams ) { return AK_NotImplemented; }
@@ -366,7 +516,7 @@ public:
 	virtual void DecrementPlayCount( CounterParameters & io_params ) = 0;
 	virtual void IncrementVirtualCount( CounterParameters & io_params ) {}
 	virtual void DecrementVirtualCount( CounterParameters & io_params ) {}
-	virtual void PauseTransitions( bool in_bPause ) {}
+	virtual void PauseTransitions( bool in_bPause );
 	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr ) { return false; }
 	virtual CAkBus * GetMixingBus();
 	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck ) { return AK_Success; }
@@ -394,13 +544,13 @@ public:
 	AkStateGroupChunk * AddStateGroup( AkStateGroupID in_ulStateGroupID, bool in_bNotify );
 	void RemoveStateGroups( bool in_bNotify );
 
-	void SetMaxReachedBehavior( bool in_bKillNewest ) { m_bKillNewest = in_bKillNewest; }
-	void SetOverLimitBehavior( bool in_bUseVirtualBehavior ) { m_bUseVirtualBehavior = in_bUseVirtualBehavior; }
+	void SetMaxReachedBehavior( bool in_bKillNewest );
+	void SetOverLimitBehavior( bool in_bUseVirtualBehavior );
 	void SetMaxNumInstOverrideParent( bool in_bOverride ) { m_bIsMaxNumInstOverrideParent = in_bOverride; }
 	void SetVVoicesOptOverrideParent( bool in_bOverride ) { m_bIsVVoicesOptOverrideParent = in_bOverride; }
 
 	AkListBareLight<AkStateGroupChunk, AkListBareLightNextInNode>	m_states;
-	void *						m_pGlobalSIS;
+	CAkSIS *					m_pGlobalSIS;
 	FXChunk *					m_pFXChunk;
 	AkActivityChunk *			m_pActivityChunk;
 	CAkParameterNodeBase *		m_pParentNode;
@@ -433,6 +583,12 @@ protected:
 	void DecrementPlayCountGlobal();
 	AKRESULT IncrementPlayCountGameObject( AkReal32 in_fPriority, AkUInt16 & io_ui16NumKickedOrRevived, CAkRegisteredObj * in_pGameObj, CAkLimiter *& io_pLimiter );
 	void DecrementPlayCountGameObject( CAkRegisteredObj * in_pGameObj );
+	void IncrementVirtualCountGameObject( CAkRegisteredObj * in_pGameObj );
+	void DecrementVirtualCountGlobal( AkUInt16 & io_ui16NumKickedOrRevived, bool in_bAllowKick );
+	void DecrementVirtualCountGameObject( AkUInt16 & io_ui16NumKickedOrRevived, bool in_bAllowKick, CAkRegisteredObj * in_pGameObj );
+	void GetAudioStateParams( AkSoundParams & io_Parameters, AkUInt32 in_uParamSelect );
+	void FlushStateTransitions();
+	virtual CAkSIS * GetSIS( CAkRegisteredObj * in_GameObjPtr ) { return NULL; }
 
 	AKRESULT SetNodeBaseParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize, bool in_bPartialLoadOnly );
 	AKRESULT SetInitialRTPC( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
@@ -463,8 +619,33 @@ public:
 	void Get3DParams( CAkGen3DParams *& io_p3DParams, CAkRegisteredObj * in_GameObj, bool in_bUpdateOnly, BaseGenParams * io_pBasePosParams );
 	bool UpdateBaseParams( CAkRegisteredObj * in_GameObj, BaseGenParams * io_pBasePosParams );
 	bool UpdateBaseParamsFromRTPC( CAkRegisteredObj * in_GameObj, BaseGenParams * io_pBasePosParams );
+	AkPathState * GetPathState();
 
-	void *											m_pMapSIS;
+	using CAkParameterNodeBase::SetAkProp;
+	virtual void SetAkProp( AkPropID in_eProp, CAkRegisteredObj * in_GameObjPtr, AkValueMeaning in_eValueMeaning, AkReal32 in_fTargetValue = 0.f, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void SetAkProp( AkPropID in_eProp, AkReal32 in_fValue, AkReal32 in_fMin, AkReal32 in_fMax );
+	virtual void SetAkProp( AkPropID in_eProp, AkInt32 in_iValue, AkInt32 in_iMin, AkInt32 in_iMax );
+	virtual void ResetAkProp( AkPropID in_eProp, AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime );
+	virtual void Mute( CAkRegisteredObj * in_GameObjPtr, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void Unmute( CAkRegisteredObj * in_GameObjPtr, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void UnmuteAll( AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void UnmuteAllObj( AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime );
+	virtual void Unregister( CAkRegisteredObj * in_GameObjPtr );
+	virtual void ResetFXBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask = 0xFFFFFFFF );
+	virtual AKRESULT ExecuteActionExceptParentCheck( ActionParamsExcept & in_rAction );
+	virtual bool Has3DParams() { return m_p3DParameters != NULL; }
+	virtual void IncrementVirtualCount( CounterParameters & io_params );
+	virtual void DecrementVirtualCount( CounterParameters & io_params );
+	virtual void ApplyMaxNumInstances( AkUInt16 in_u16MaxNumInstance, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL, bool in_bFromRTPC = false );
+	virtual void UnsetRTPC( AkRTPC_ParameterID in_ParamID, AkUniqueID in_RTPCCurveID );
+	virtual void NotifyRTPCChanged();
+	bool IsOrIsChildOf( AkUniqueID in_NodeIDToTest, bool in_bIsBusChecked );
+	bool GetBypassFX( AkUInt32 in_uFXIndex, CAkRegisteredObj * in_GameObjPtr );
+	AKRESULT AssociateLayer( CAkLayer * in_pLayer );
+	AKRESULT DissociateLayer( CAkLayer * in_pLayer );
+	virtual AKRESULT PlayAndContinueAlternate( AkPBIParams & in_rPBIParams );
+
+	CAkKeyArray<CAkRegisteredObj *, CAkSIS *, 8> *	m_pMapSIS;
 	CAkGen3DParamsEx *								m_p3DParameters;
 	AkPropBundle< RANGED_MODIFIERS<AkPropValue> >	m_ranges;
 	AkUInt16										m_eVirtualQueueBehavior;
@@ -473,6 +654,7 @@ public:
 
 protected:
 	AKRESULT Enable3DPosParams();
+	virtual CAkSIS * GetSIS( CAkRegisteredObj * in_GameObjPtr );
 };
 
 struct AkChildIDValueGetKey
@@ -504,6 +686,18 @@ public:
 	virtual AKRESULT PrepareData();
 	virtual void UnPrepareData();
 
+	/** CAkActiveParent<T>'s notification forwarding (akactiveparent.h): every child that is playing. */
+	virtual void ParamNotification( NotifParams & in_rParams );
+	virtual void PriorityNotification( NotifParams & in_rParams );
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, AkMutedMapItem & in_rMutedItem, bool in_bIsFromBus );
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, CAkRegisteredObj * in_pGameObj, AkMutedMapItem & in_rMutedItem, bool in_bPrioritizeGameObjectSpecificItems = false );
+	virtual void ForAllPBI( void ( *in_funcForAll )( CAkPBI *, CAkRegisteredObj *, void * ), CAkRegisteredObj * in_pGameObj, void * in_pCookie );
+	virtual void PositioningChangeNotification( AkReal32 in_RTPCValue, AkRTPC_ParameterID in_ParameterID, CAkRegisteredObj * in_pGameObj, void * in_pExceptArray );
+	virtual void RecalcNotification();
+	virtual void NotifyBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL );
+	virtual void UpdateFx( AkUInt32 in_uFXIndex );
+	virtual AKRESULT PlayToEnd( CAkRegisteredObj * in_pGameObj, AkUniqueID in_NodeID, AkPlayingID in_PlayingID );
+
 	AkMapChildID m_mapChildId;
 };
 
@@ -514,6 +708,14 @@ public:
 
 	AkInt16 Loop();
 	virtual AKRESULT PlayToEnd( CAkRegisteredObj * in_pGameObj, AkUniqueID in_NodeID, AkPlayingID in_PlayingID );
+	virtual void ParamNotification( NotifParams & in_rParams );
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, AkMutedMapItem & in_rMutedItem, bool in_bIsFromBus );
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, CAkRegisteredObj * in_pGameObj, AkMutedMapItem & in_rMutedItem, bool in_bPrioritizeGameObjectSpecificItems = false );
+	virtual void ForAllPBI( void ( *in_funcForAll )( CAkPBI *, CAkRegisteredObj *, void * ), CAkRegisteredObj * in_pGameObj, void * in_pCookie );
+	virtual void PositioningChangeNotification( AkReal32 in_RTPCValue, AkRTPC_ParameterID in_ParameterID, CAkRegisteredObj * in_pGameObj, void * in_pExceptArray );
+	virtual void RecalcNotification();
+	virtual void NotifyBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL );
+	virtual void UpdateFx( AkUInt32 in_uFXIndex );
 };
 
 class CAkSound : public CAkSoundBase
@@ -530,6 +732,8 @@ public:
 	virtual AKRESULT PrepareData() { return m_Source.PrepareData(); }
 	virtual void UnPrepareData() { m_Source.UnPrepareData(); }
 	bool HasBankSource() const { return m_Source.m_sSrcTypeInfo.mediaInfo.Type != 0 && m_Source.m_sSrcTypeInfo.mediaInfo.bHasSource; }
+	void SeekSound( CAkRegisteredObj * in_pGameObj, const SeekActionParams & in_rSeekParams );
+	void SeekSound( CAkRegisteredObj * in_pGameObj, const SeekActionParamsExcept & in_rSeekParams );
 
 	CAkSource m_Source;
 
@@ -550,172 +754,8 @@ protected:
 	explicit CAkActorMixer( AkUniqueID in_ulID ) : CAkParentNode<CAkParameterNode>( in_ulID ) {}
 };
 
-class CAkContainerBase : public CAkParentNode<CAkParameterNode>
-{
-public:
-	virtual AKRESULT CanAddChild( CAkParameterNodeBase * in_pAudioNode );
-
-protected:
-	explicit CAkContainerBase( AkUniqueID in_ulID ) : CAkParentNode<CAkParameterNode>( in_ulID ) {}
-};
-
-/** CAkPlayList: the random / sequence playlist of a CAkRanSeqCntr (akplaylist.cpp). */
-class CAkPlayList
-{
-public:
-	struct AkPlaylistItem
-	{
-		AkUniqueID	ulID;
-		AkUInt32	weight;
-	};
-
-	virtual ~CAkPlayList() { m_PlayList.Term(); }
-	virtual bool Exists( AkUniqueID in_ulID );
-	virtual AKRESULT Add( AkUniqueID in_ulID, AkUInt32 in_weight );
-
-	AkArray<AkPlaylistItem, const AkPlaylistItem &, ArrayPoolDefault, 1> m_PlayList;
-};
-
-class CAkPlayListRandom : public CAkPlayList
-{
-public:
-	CAkPlayListRandom() : m_ulTotalWeight( 0 ) {}
-	virtual AKRESULT Add( AkUniqueID in_ulID, AkUInt32 in_weight );
-	AkUInt32 m_ulTotalWeight;
-};
-
-class CAkPlayListSequence : public CAkPlayList
-{
-};
-
-class CAkRanSeqCntr : public CAkContainerBase
-{
-public:
-	/** CoreRanSeqCntr: 16 bytes, the PDB's bitfields at +14 / +15. */
-	struct CoreRanSeqCntr
-	{
-		RANGED_PARAMETER<AkReal32>	m_TransitionTime;
-		AkUInt16					m_wAvoidRepeatCount;
-		AkUInt8						m_eTransitionMode : 4;
-		AkUInt8						m_eRandomMode : 2;
-		AkUInt8						m_eMode : 3;
-		AkUInt8						m_bIsUsingWeight : 1;
-		AkUInt8						m_bResetPlayListAtEachPlay : 1;
-		AkUInt8						m_bIsRestartBackward : 1;
-		AkUInt8						m_bIsContinuous : 1;
-		AkUInt8						m_bIsGlobal : 1;
-	};
-
-	static CAkRanSeqCntr * Create( AkUniqueID in_ulID, AkContainerMode in_ContainerMode );
-	virtual ~CAkRanSeqCntr();
-	virtual AkNodeCategory NodeCategory() { return AkNodeCategory_RanSeqCntr; }
-
-	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
-	AKRESULT Mode( AkContainerMode in_eMode );
-	AKRESULT SetPlaylistWithoutCheck( AkUInt8 *& io_pData, AkUInt32 & io_ulDataSize );
-
-	CAkPlayList *	m_pPlayList;
-	CoreRanSeqCntr	m_RanSeqParams;
-	AkInt16			m_Loop;
-	bool			m_bContainerBeenPlayed;
-
-protected:
-	CAkRanSeqCntr( AkUniqueID in_ulID, AkContainerMode in_ContainerMode );
-	AKRESULT Init();
-	CAkPlayList * NewPlayList();
-};
-
-class CAkMultiPlayNode : public CAkContainerBase
-{
-protected:
-	explicit CAkMultiPlayNode( AkUniqueID in_ulID ) : CAkContainerBase( in_ulID ) {}
-};
-
-struct AkSwitchNodeParams
-{
-	AkTimeMs	FadeOutTime;
-	AkTimeMs	FadeInTime;
-	AkUInt8		eOnSwitchMode : 3;
-	AkUInt8		bIsFirstOnly : 1;
-	AkUInt8		bContinuePlayback : 1;
-};
-
-class CAkSwitchPackage
-{
-public:
-	~CAkSwitchPackage() { m_list.Term(); }
-	AkArray<AkUniqueID, AkUniqueID, ArrayPoolDefault, 1> m_list;
-};
-
-class CAkSwitchCntr : public CAkMultiPlayNode
-{
-public:
-	static CAkSwitchCntr * Create( AkUniqueID in_ulID );
-	virtual ~CAkSwitchCntr();
-	virtual AkNodeCategory NodeCategory() { return AkNodeCategory_SwitchCntr; }
-
-	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
-	AKRESULT AddNodeInSwitch( CAkSwitchPackage * in_pSwitchPack, AkUniqueID in_NodeID );
-
-	AkGroupType														m_eGroupType;
-	AkUInt32														m_ulGroupID;
-	AkUInt32														m_ulDefaultSwitch;
-	CAkKeyList<AkUInt32, CAkSwitchPackage, 2, ArrayPoolDefault>		m_SwitchList;
-	CAkKeyList<AkUniqueID, AkSwitchNodeParams, 2, ArrayPoolDefault>	m_listParameters;
-
-protected:
-	explicit CAkSwitchCntr( AkUniqueID in_ulID );
-	AKRESULT Init();
-};
-
-class CAkLayer : public CAkIndexable
-{
-public:
-	struct CAssociatedChildData
-	{
-		AkUniqueID										m_ulChildID;
-		CAkParameterNode *								m_pChild;
-		CAkConversionTable<AkRTPCGraphPoint, AkReal32>	m_fadeCurve;
-	};
-
-	static CAkLayer * Create( AkUniqueID in_ulID );
-	virtual ~CAkLayer();
-	virtual AkUInt32 AddRef();
-	virtual AkUInt32 Release();
-	virtual AkObjectCategory Category() { return ObjCategory_Layer; }
-
-	void SetOwner( CAkLayerCntr * in_pOwner );
-	AKRESULT SetInitialValues( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
-	AKRESULT SetCrossfadingRTPC( AkRtpcID in_rtpcID );
-	AKRESULT SetChildAssoc( AkUniqueID in_ChildID, AkRTPCGraphPoint * in_pCrossfadingCurve, AkUInt32 in_ulCrossfadingCurveSize );
-	void UpdateChildPtr( AkUniqueID in_ChildID );
-
-	CAkKeyArray<AkUniqueID, CAssociatedChildData, 2>	m_assocs;
-	CAkBitArrayMax32									m_RTPCBitArrayMax32;
-	CAkLayerCntr *										m_pOwner;
-	AkRtpcID											m_crossfadingRTPCID;
-
-protected:
-	explicit CAkLayer( AkUniqueID in_ulID ) : CAkIndexable( in_ulID ), m_pOwner( NULL ), m_crossfadingRTPCID( 0 ) {}
-	AKRESULT SetInitialRTPC( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
-	AKRESULT UpdateAssociatedChild( CAssociatedChildData & io_rData );
-};
-
-class CAkLayerCntr : public CAkMultiPlayNode
-{
-public:
-	static CAkLayerCntr * Create( AkUniqueID in_ulID );
-	virtual ~CAkLayerCntr();
-	virtual AkNodeCategory NodeCategory() { return AkNodeCategory_LayerCntr; }
-	virtual AKRESULT AddChild( AkUniqueID in_ulID );
-
-	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
-
-	AkArray<CAkLayer *, CAkLayer *, ArrayPoolDefault, 8> m_layers;
-
-protected:
-	explicit CAkLayerCntr( AkUniqueID in_ulID ) : CAkMultiPlayNode( in_ulID ) {}
-};
+/* The containers (CAkContainerBase, CAkRanSeqCntr and its playlists, CAkMultiPlayNode, CAkSwitchCntr, CAkLayer,
+   CAkLayerCntr) are declared in AkContainers.h (agent IH3 fork C): they hold PBI-side types by value. */
 
 class CAkBus : public CAkParentNode<CAkParameterNodeBase>
 {
@@ -758,15 +798,56 @@ public:
 	virtual void DecrementActivityCount( AkUInt16 in_flagForwardToBus );
 	bool HasEffect() const;
 
+	enum DuckState
+	{
+		DuckState_OFF		= 0,
+		DuckState_ON		= 1,
+		DuckState_PENDING	= 2
+	};
+
+	virtual CAkRTPCMgr::SubscriberType GetRTPCSubscriberType() const { return CAkRTPCMgr::SubscriberType_CAkBus; }
+	using CAkParameterNodeBase::SetAkProp;
+	virtual void SetAkProp( AkPropID in_eProp, CAkRegisteredObj * in_pGameObj, AkValueMeaning in_eValueMeaning, AkReal32 in_fTargetValue = 0.f, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void SetAkProp( AkPropID in_eProp, AkReal32 in_fValue, AkReal32 in_fMin, AkReal32 in_fMax );
+	virtual void ResetAkProp( AkPropID in_eProp, AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime );
+	virtual void Mute( CAkRegisteredObj * in_pGameObj, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void Unmute( CAkRegisteredObj * in_pGameObj, AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void UnmuteAll( AkCurveInterpolation in_eFadeCurve = AkCurveInterpolation_Linear, AkTimeMs in_lTransitionTime = 0 );
+	virtual void ResetFXBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask = 0xFFFFFFFF );
+	virtual void ParamNotification( NotifParams & in_rParams );
+	virtual void MuteNotification( AkReal32 in_fMuteRatio, AkMutedMapItem & in_rMutedItem, bool in_bIsFromBus );
+	virtual void NotifyBypass( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL );
+	virtual void RecalcNotification();
+	virtual void UpdateFx( AkUInt32 in_uFXIndex );
+	virtual void ApplyMaxNumInstances( AkUInt16 in_u16MaxNumInstance, CAkRegisteredObj * in_pGameObj = NULL, void * in_pExceptArray = NULL, bool in_bFromRTPC = false );
+	virtual void IncrementVirtualCount( CounterParameters & io_params );
+	virtual void DecrementVirtualCount( CounterParameters & io_params );
+	virtual AKRESULT ExecuteActionExceptParentCheck( ActionParamsExcept & in_rAction ) { return ExecuteActionExcept( in_rAction ); }
+	virtual CAkBus * GetLimitingBus();
+	bool IsOrIsChildOf( AkUniqueID in_NodeIDToTest );
+	bool GetStateSyncTypes( AkStateGroupID in_stateGroupID, CAkStateSyncArray * io_pSyncTypes );
+	bool GetBypassFX( AkUInt32 in_uFXIndex );
+	void CheckDuck();
+	AkReal32 GetDuckedVolume();
+	AKRESULT Duck( AkUniqueID in_BusID, AkReal32 in_DuckVolume, AkTimeMs in_FadeOutTime, AkCurveInterpolation in_eFadeCurve );
+	AKRESULT Unduck( AkUniqueID in_BusID, AkTimeMs in_FadeInTime, AkCurveInterpolation in_eFadeCurve );
+	AKRESULT PauseDuck( AkUniqueID in_BusID );
+	void DuckNotif();
+
 	AkUInt32												m_RecoveryTime;
 	AkUInt32												m_uChannelConfig;
 	AkReal32												m_fMaxDuckVolume;
 	CAkKeyList<AkUniqueID, AkDuckInfo, 1, ArrayPoolDefault>	m_ToDuckList;
+	CAkKeyList<AkUniqueID, CAkDuckItem, 1, ArrayPoolDefault>	m_DuckedVolumeList;
 	AkUInt8													m_eDuckingState : 3;
 	AkUInt8													m_bIsEnvironmental : 1;
 
 protected:
 	explicit CAkBus( AkUniqueID in_ulID );
+	virtual CAkSIS * GetSIS( CAkRegisteredObj * in_pGameObj );
+	void StartDuckTransitions( CAkDuckItem * in_pDuckItem, AkReal32 in_fTargetValue, AkValueMeaning in_eValueMeaning, AkCurveInterpolation in_eFadeCurve, AkTimeMs in_lTransitionTime );
+	void UpdateDuckedBus();
+	AKRESULT RequestDuckNotif();
 };
 
 class CAkState : public CAkIndexable
@@ -808,7 +889,14 @@ public:
 		CAkConversionTable<AkRTPCGraphPoint, AkReal32>	ConversionTable;
 	};
 
-	enum { AttenuationCurveID_None = 0xFF };
+	enum AttenuationCurveID
+	{
+		AttenuationCurveID_VolumeDry		= 0,
+		AttenuationCurveID_VolumeWet		= 1,
+		AttenuationCurveID_LowPassFilter	= 2,
+		AttenuationCurveID_Spread			= 3,
+		AttenuationCurveID_None				= 0xFF
+	};
 
 	static CAkAttenuation * Create( AkUniqueID in_ulID );
 	virtual ~CAkAttenuation();
@@ -817,7 +905,8 @@ public:
 	virtual AkObjectCategory Category() { return ObjCategory_Attenuation; }
 
 	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
-	CAkConversionTable<AkRTPCGraphPoint, AkReal32> * GetCurve( AkUInt32 in_uIndex );
+	CAkConversionTable<AkRTPCGraphPoint, AkReal32> * GetCurve( AkUInt8 in_parameterIndex );
+	void ClearRTPCs();
 
 	ConeParams											m_ConeParams;
 	CAkConversionTable<AkRTPCGraphPoint, AkReal32>		m_curves[ 4 ];
@@ -902,6 +991,8 @@ public:
 	/** DISHONORED(port, IH2): retail's base Execute is pure; the action types IH2 does not run (the SetValue family,
 	    states, switches, triggers, bypass, seek, use-state - IH3/IH4) keep this default, which -akdiag logs. */
 	virtual AKRESULT Execute( AkPendingAction * in_pAction );
+	virtual AKRESULT SetAkProp( AkPropID in_eProp, AkReal32 in_fValue, AkReal32 in_fMin, AkReal32 in_fMax );
+	virtual AKRESULT SetAkProp( AkPropID in_eProp, AkInt32 in_iValue, AkInt32 in_iMin, AkInt32 in_iMax );
 	AkTimeMs GetTransitionTime();
 	AkInt32 GetDelayTime();
 
@@ -932,6 +1023,9 @@ public:
 	CAkActionExcept( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ) {}
 	virtual ~CAkActionExcept() { m_listElementException.Term(); }
 	AKRESULT SetExceptParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT AddException( AkUniqueID in_ulElementID );
+	virtual void RemoveException( AkUniqueID in_ulElementID );
+	virtual void ClearExceptions() { m_listElementException.m_pItemsEnd = m_listElementException.m_pItems; }
 
 	AkArray<AkUniqueID, AkUniqueID, ArrayPoolDefault, 8> m_listElementException;
 };
@@ -979,12 +1073,35 @@ class CAkActionSetValue : public CAkActionExcept
 public:
 	CAkActionSetValue( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionExcept( in_eActionType, in_ulID ) {}
 	virtual AKRESULT SetActionParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
+
+protected:
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode ) = 0;
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj ) = 0;
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode ) = 0;
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj ) = 0;
+	virtual void ExecResetValueAll( CAkParameterNodeBase * in_pNode ) = 0;
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode ) = 0;
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj ) = 0;
+
+private:
+	void ResetAllHelper( const CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault> * in_pListID );
+	void ResetAEHelper( const CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault> * in_pListID );
 };
 
 class CAkActionMute : public CAkActionSetValue
 {
 public:
 	CAkActionMute( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionSetValue( in_eActionType, in_ulID ) {}
+
+protected:
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode );
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode );
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
+	virtual void ExecResetValueAll( CAkParameterNodeBase * in_pNode );
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode );
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
 };
 
 class CAkActionSetAkProp : public CAkActionSetValue
@@ -1001,6 +1118,15 @@ public:
 	RANGED_PARAMETER<AkReal32>	m_TargetValue;
 	AkUInt8						m_eValueMeaning;
 	AkUInt8						m_ePropID;
+
+protected:
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode );
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode );
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
+	virtual void ExecResetValueAll( CAkParameterNodeBase * in_pNode ) { ExecResetValue( in_pNode ); }
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode );
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
 };
 
 class CAkActionSetGameParameter : public CAkActionSetValue
@@ -1016,6 +1142,15 @@ public:
 
 	RANGED_PARAMETER<AkReal32>	m_TargetValue;
 	AkUInt8						m_eValueMeaning;
+
+protected:
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode );
+	virtual void ExecSetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode );
+	virtual void ExecResetValue( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj );
+	virtual void ExecResetValueAll( CAkParameterNodeBase * in_pNode ) { ExecResetValue( in_pNode ); }
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode ) {}
+	virtual void ExecResetValueExcept( CAkParameterNodeBase * in_pNode, CAkRegisteredObj * in_pGameObj ) {}
 };
 
 /** CAkActionSetSwitch::SetActionParams 0x95d120 is also CAkActionSetState's slot (two ids). */
@@ -1024,6 +1159,7 @@ class CAkActionSetSwitch : public CAkAction
 public:
 	CAkActionSetSwitch( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ), m_ulSwitchGroupID( 0 ), m_ulSwitchStateID( 0 ) {}
 	virtual AKRESULT SetActionParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 	AkUInt32 m_ulSwitchGroupID;
 	AkUInt32 m_ulSwitchStateID;
 };
@@ -1032,12 +1168,22 @@ class CAkActionSetState : public CAkActionSetSwitch
 {
 public:
 	CAkActionSetState( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionSetSwitch( in_eActionType, in_ulID ) {}
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 };
 
 class CAkActionUseState : public CAkAction
 {
 public:
 	CAkActionUseState( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ) {}
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
+};
+
+/** CAkActionDuck (akactionduck.cpp): created by a bus whose last voice ended, to release its ducks after the recovery time. */
+class CAkActionDuck : public CAkAction
+{
+public:
+	CAkActionDuck( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ) {}
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 };
 
 class CAkActionBreak : public CAkAction
@@ -1051,6 +1197,7 @@ class CAkActionTrigger : public CAkAction
 {
 public:
 	CAkActionTrigger( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ) {}
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 };
 
 class CAkActionBypassFX : public CAkActionExcept
@@ -1058,8 +1205,13 @@ class CAkActionBypassFX : public CAkActionExcept
 public:
 	CAkActionBypassFX( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionExcept( in_eActionType, in_ulID ), m_bIsBypass( false ), m_uTargetMask( 0 ) {}
 	virtual AKRESULT SetActionParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 	bool		m_bIsBypass;
 	AkUInt32	m_uTargetMask;
+
+private:
+	void ResetBypassFxAllHelper( const CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault> * in_pListID );
+	void ResetBypassFXAEHelper( const CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault> * in_pListID );
 };
 
 class CAkActionSeek : public CAkActionExcept
@@ -1072,9 +1224,15 @@ public:
 		m_position.m_mod.m_max = 0.f;
 	}
 	virtual AKRESULT SetActionParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 	RANGED_PARAMETER<AkReal32>	m_position;
 	bool						m_bIsSeekRelativeToDuration;
 	bool						m_bSnapToNearestMarker;
+
+protected:
+	AKRESULT Exec( CAkRegisteredObj * in_pGameObj, AkPlayingID in_TargetPlayingID );
+	void AllExec( CAkRegisteredObj * in_pGameObj, AkPlayingID in_TargetPlayingID );
+	void AllExecExcept( CAkRegisteredObj * in_pGameObj, AkPlayingID in_TargetPlayingID );
 };
 
 class CAkEvent : public CAkIndexable

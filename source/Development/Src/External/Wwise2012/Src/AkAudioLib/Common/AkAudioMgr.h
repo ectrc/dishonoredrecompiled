@@ -140,6 +140,51 @@ struct AkQueuedMsg_Event : public AkQueuedMsg_EventBase
 	CAkEvent *	Event;
 };
 
+/** The game-sync records (IH3 fork R; PDB layouts). */
+struct AkQueuedMsg_Rtpc
+{
+	AkRtpcID		ID;
+	AkRtpcValue		Value;
+	AkGameObjectID	GameObjID;
+};
+
+struct AkQueuedMsg_RtpcWithTransition : public AkQueuedMsg_Rtpc
+{
+	TransParams		transParams;
+};
+
+struct AkQueuedMsg_ResetRTPCValue
+{
+	AkRtpcID		ParamID;
+	AkGameObjectID	GameObjID;
+};
+
+struct AkQueuedMsg_ResetRtpcValueWithTransition : public AkQueuedMsg_ResetRTPCValue
+{
+	TransParams		transParams;
+};
+
+struct AkQueuedMsg_State
+{
+	AkStateGroupID	StateGroupID;
+	AkStateID		StateID;
+	bool			bSkipTransition;
+	bool			bSkipExtension;
+};
+
+struct AkQueuedMsg_Switch
+{
+	AkGameObjectID	GameObjID;
+	AkSwitchGroupID	SwitchGroupID;
+	AkSwitchStateID	SwitchStateID;
+};
+
+struct AkQueuedMsg_Trigger
+{
+	AkGameObjectID	GameObjID;
+	AkTriggerID		TriggerID;
+};
+
 struct AkQueuedMsg_RegisterGameObj
 {
 	AkGameObjectID	GameObjID;
@@ -290,6 +335,32 @@ struct AkQueuedMsg_SetPanningRule
 	AkPanningRule	panRule;
 };
 
+/** IH3 fork C: DynamicSequence::Open's record - the event layout with the sequence where the event goes (+40). */
+struct AkQueuedMsg_OpenDynamicSequence : public AkQueuedMsg_EventBase
+{
+	CAkDynamicSequence *	pDynamicSequence;
+};
+
+/** IH3 fork C: the other DynamicSequence calls (sequence +8, command +12, duration +16, curve +20). */
+struct AkQueuedMsg_DynamicSequenceCmd
+{
+	enum Command
+	{
+		Play			= 0,
+		Pause			= 1,
+		Resume			= 2,
+		Close			= 3,
+		Stop			= 4,
+		Break			= 5,
+		ResumeWaiting	= 6
+	};
+
+	CAkDynamicSequence *	pDynamicSequence;
+	Command					eCommand;
+	AkTimeMs				uTransitionDuration;
+	AkCurveInterpolation	eFadeCurve;
+};
+
 /** { size, type } then the record; the union is 8-aligned (AkQueuedMsg_Event holds an __int64), so a body starts at +8. */
 struct AkQueuedMsg
 {
@@ -298,6 +369,13 @@ struct AkQueuedMsg
 	union
 	{
 		AkQueuedMsg_Event						event;
+		AkQueuedMsg_Rtpc						rtpc;
+		AkQueuedMsg_RtpcWithTransition			rtpcWithTransition;
+		AkQueuedMsg_State						setstate;
+		AkQueuedMsg_Switch						setswitch;
+		AkQueuedMsg_Trigger						trigger;
+		AkQueuedMsg_ResetRTPCValue				resetrtpcvalue;
+		AkQueuedMsg_ResetRtpcValueWithTransition	resetrtpcvalueWithTransition;
 		AkQueuedMsg_RegisterGameObj				reggameobj;
 		AkQueuedMsg_UnregisterGameObj			unreggameobj;
 		AkQueuedMsg_GameObjPosition				gameobjpos;
@@ -320,6 +398,8 @@ struct AkQueuedMsg
 		AkQueuedMsg_Seek						seek;
 		AkQueuedMsg_SetEffect					setEffect;
 		AkQueuedMsg_SetPanningRule				setPanningRule;
+		AkQueuedMsg_OpenDynamicSequence			opendynamicsequence;
+		AkQueuedMsg_DynamicSequenceCmd			dynamicsequencecmd;
 	};
 
 	/** The Sizeof_* helpers retail inlines (2012 folds them into a dozen identical 2-instruction functions). */

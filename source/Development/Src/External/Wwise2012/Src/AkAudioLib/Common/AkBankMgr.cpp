@@ -7,6 +7,7 @@
 =============================================================================*/
 #include "AkBankMgr.h"
 #include "AkAudioMgr.h"
+#include "AkContainers.h"
 
 AkThread		CAkBankMgr::m_BankMgrThread = NULL;
 AkThreadID		CAkBankMgr::m_idThread = 0;
@@ -798,7 +799,7 @@ AKRESULT CAkBankMgr::ProcessGlobalSettingsChunk( AkUInt32 in_dwDataChunkSize, CA
 		}
 		if( eResult == AK_Success )
 		{
-			eResult = g_pStateMgr->AddStateGroup( StateGroupID ) ? AK_Success : AK_Fail;
+			eResult = g_pStateMgr->AddStateGroup( StateGroupID );
 		}
 		if( eResult == AK_Success )
 		{
@@ -2279,12 +2280,16 @@ void CAkBankMgr::ClearPreparedEvents()
 	while( it.pItem )
 	{
 		CAkEvent * pEvent = static_cast<CAkEvent *>( it.pItem );
-		++it;
 		if( pEvent->m_iPreparationCount )
 		{
 			pEvent->AddRef();
 			UnprepareEvent( pEvent, true );
+			++it;
 			pEvent->Release();
+		}
+		else
+		{
+			++it;
 		}
 	}
 }

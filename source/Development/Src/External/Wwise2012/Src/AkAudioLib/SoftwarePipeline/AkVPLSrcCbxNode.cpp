@@ -5,17 +5,15 @@
 
 	DISHONORED(port): agent IH2 (wave 26).
 	Deviations (named):
-	  * GetVolumes, 3D branch (IH3 seam: CAkPBI::Get3DPositioningParams + CAkListener::Get3DVolumes): a 3D voice is
-	    mixed as the 2D branch mixes it (its base pan / center %, its effective volume, no distance attenuation, cone
-	    or obstruction); the voice LPF is the effective LPF and the obstruction LPF 0.
-	  * GetVolumes: no feedback (motion) volumes - no feedback device exists; the AK_SpeakerVolumeMatrix callback
-	    (CAkListener::DoSpeakerVolumeMatrixCallback) is IH3's and not called.
+	  * GetVolumes: no feedback (motion) volumes - no feedback device exists.
+	Agent IH3 (wave 26, fork P): GetVolumes's 3D branch (CAkPBI::Get3DPositioningParams + CAkListener::Get3DVolumes,
+	the voice and obstruction LPFs, silence from the six speakers of the dry and wet mixes), the AK_SpeakerVolumeMatrix
+	callback of the 2D branch, and AddSrc's IsInitiallyUnderThreshold (kill / start virtual from the beginning).
 	  * AddPipeline / RefreshBypassFx: GetFX (the sound's insert effects) is IH4's; no effect is inserted, the four
 	    filter slots stay empty and the refresh has nothing to refresh.
-	  * StartRun's virtual voice: CAkListener::IsInitiallyUnderThreshold (AddSrc) is IH3's positioning; a voice is
-	    never initially under the threshold, so AddSrc always fetches the stream.
 =============================================================================*/
 #include "AkVPLSrcCbxNode.h"
+#include "AkListener.h"
 #include "AkLEngine.h"
 #include "AkCommon.h"
 #include "AkSpeakerPan.h"
@@ -657,7 +655,24 @@ AKRESULT CAkVPLSrcCbxNode::AddSrc( CAkVPLSrcNode * in_pSrc, bool in_bActive )
 	{
 		m_eBelowThresholdBehavior = pCtx->GetVirtualBehavior( m_eVirtualBehavior );
 	}
-	const AKRESULT eResult = in_pSrc->FetchStreamedData();
+	AKRESULT eResult = AK_Success;
+	const bool bUnderThreshold = m_eBelowThresholdBehavior != AkBelowThresholdBehavior_ContinueToPlay && CAkListener::IsInitiallyUnderThreshold( pCtx );
+	if( bUnderThreshold && m_eBelowThresholdBehavior == AkBelowThresholdBehavior_KillVoice )
+	{
+		eResult = AK_PartialSuccess;
+	}
+	else if( bUnderThreshold && m_eVirtualBehavior == AkVirtualQueueBehavior_FromBeginning && in_bActive )
+	{
+		if( m_pSources[ 0 ] && m_bAudible )
+		{
+			m_pSources[ 0 ]->m_pCtx->Virtualize();
+		}
+		m_bAudible = false;
+	}
+	else
+	{
+		eResult = in_pSrc->FetchStreamedData();
+	}
 	if( eResult != AK_Success && eResult != AK_FormatNotReady )
 	{
 		in_pSrc->Term( CtxDestroyReasonPlayFailed );
@@ -756,14 +771,30 @@ void CAkVPLSrcCbxNode::GetVolumes( bool in_bEnvBus, CAkPBI * in_pContext, AkAudi
 {
 	in_pContext->CalcEffectiveParams();
 	const AkUInt32 uNumChannels = io_pBuffer->NumChannels();
-	if( !in_pContext->m_bIsForcedToVirtualize )
+	if( !in_pContext->m_bIsForcedToVirtualize && in_pContext->m_p3DSound )
+	{
+		AkSoundPositioningParams posParams;
+		posParams.pPosRef = NULL;
+		in_pContext->Get3DPositioningParams( posParams );
+		AkReal32 fLPF = 0.f;
+		AkReal32 fObsLPF = 0.f;
+		CAkListener::Get3DVolumes( in_pContext, posParams, io_pBuffer->uChannelMask, io_pBuffer->EnvMix, io_pBuffer->AudioMix, &fLPF, &fObsLPF, in_bEnvBus );
+		m_cbxRec.m_LPF.m_LPF.SetLPFPar( fLPF );
+		m_ObstructionLPF.m_LPF.SetLPFPar( fObsLPF );
+		out_bNextSilent = true;
+		for( AkUInt32 i = 0; i < uNumChannels; ++i )
+		{
+			if( in_bEnvBus )
+			{
+				out_bNextSilent = out_bNextSilent && io_pBuffer->EnvMix[ i ].Next.IsUnderThreshold( g_fVolumeThreshold );
+			}
+			out_bNextSilent = out_bNextSilent && io_pBuffer->AudioMix[ i ].Next.IsUnderThreshold( g_fVolumeThreshold );
+		}
+	}
+	else if( !in_pContext->m_bIsForcedToVirtualize )
 	{
 		AkReal32 fLPF = in_pContext->m_EffectiveParams.LPF;
 		m_cbxRec.m_LPF.m_LPF.SetLPFPar( fLPF );
-		if( in_pContext->m_p3DSound )
-		{
-			m_ObstructionLPF.m_LPF.SetLPFPar( 0.f );
-		}
 		const AkReal32 fDryLevel = in_bEnvBus ? in_pContext->m_pGameObj->m_fDryLevelValue : 0.f;
 		const AkReal32 fVolumedB = in_pContext->m_EffectiveParams.Volume;
 		out_bNextSilent = g_fVolumeThresholdDB >= fVolumedB;
@@ -812,6 +843,10 @@ void CAkVPLSrcCbxNode::GetVolumes( bool in_bEnvBus, CAkPBI * in_pContext, AkAudi
 				}
 			}
 		}
+		if( in_pContext->m_uRegisteredNotif & AK_SpeakerVolumeMatrix )
+		{
+			CAkListener::DoSpeakerVolumeMatrixCallback( in_pContext->m_UserParams.m_PlayingID, uNumChannels, io_pBuffer->uChannelMask, in_bEnvBus, io_pBuffer->EnvMix, io_pBuffer->AudioMix );
+		}
 	}
 	else
 	{
@@ -823,7 +858,16 @@ void CAkVPLSrcCbxNode::GetVolumes( bool in_bEnvBus, CAkPBI * in_pContext, AkAudi
 				io_pBuffer->EnvMix[ i ].Next.Zero();
 			}
 		}
-		in_pContext->m_Prev2DParams.prev2DParams.m_fPAN_RL = 101.f;
+		if( in_pContext->m_p3DSound )
+		{
+			AkSoundPositioningParams posParams;
+			posParams.pPosRef = NULL;
+			in_pContext->Get3DPositioningParams( posParams );
+		}
+		else
+		{
+			in_pContext->m_Prev2DParams.prev2DParams.m_fPAN_RL = 101.f;
+		}
 		out_bNextSilent = true;
 	}
 	if( out_bNextSilent )

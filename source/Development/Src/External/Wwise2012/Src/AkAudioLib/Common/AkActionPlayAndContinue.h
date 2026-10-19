@@ -1,12 +1,11 @@
 /*=============================================================================
 	AkActionPlayAndContinue.h - CAkActionPlayAndContinue (akactionplayandcontinue.cpp): the runtime action a continuous
-	random / sequence container schedules for its next item (type 0x0503; no bank contains one).
+	random / sequence container schedules for its next item (type 0x0503; never in a bank, created by CAkContinuousPBI
+	and CAkParameterNode::PlayAndContinueAlternate). 0xAC bytes (Create allocates 0xAC).
 
-	DISHONORED(port): agent IH2 (wave 26). The PDB layout and the members the audio manager calls on a pending
-	action (NeedNotifyDelay 0x949460, Resume 0x9494e0, UnsetFadeBack 0x9494b0, the pause count). Everything that
-	creates or runs one (Create, Execute, SetPlayStopTransition, BreakToNode's continuation walk) needs IH3's continuous
-	containers and continuation lists, so it is IH3's: BreakToNode here only answers "break" as retail does for an
-	action without a continuation list.
+	DISHONORED(port): agent IH2 (wave 26) - the layout and the members the audio manager calls on a pending action
+	(NeedNotifyDelay 0x949460, Resume 0x9494e0, UnsetFadeBack 0x9494b0, in AkAudioMgr.cpp); agent IH3 fork C - the rest
+	(AkActionPlayAndContinue.cpp). m_spContList is retail's CAkSmartPtr as a raw pointer (same 4 bytes).
 =============================================================================*/
 #pragma once
 
@@ -16,10 +15,25 @@
 class CAkActionPlayAndContinue : public CAkActionPlay
 {
 public:
+	static CAkActionPlayAndContinue * Create( AkActionType in_eActionType, AkUniqueID in_ulID, CAkContinuationList *& in_spContList );
+	virtual ~CAkActionPlayAndContinue();
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
+	void GetHistArray( AkCntrHistArray & out_rHistArray );
+
 	bool NeedNotifyDelay() const { return m_bNeedNotifyDelay; }
 	void Resume();
 	void UnsetFadeBack( CAkContinuousPBI * in_pPBIToCheck );
 	bool BreakToNode( AkUniqueID in_nodeID, CAkRegisteredObj * in_pGameObj, AkPendingAction * in_pPendingAction );
+	void SetHistory( PlayHistory & in_rPlayHistory );
+	void SetInitialPlaybackState( AkPlaybackState in_eInitialPlaybackState );
+	void SetInstigator( CAkPBIAware * in_pInstigator );
+	void SetIsFirstPlay( bool in_bIsFirstPlay );
+	void SetFadeBack( CAkContinuousPBI * in_pPBIToNotify, AkTimeMs in_CrossFadeTime );
+	void SetSAInfo( AkUniqueID in_seqID );
+	void StartAsPaused();
+	AKRESULT SetPlayStopTransition( CAkTransition * in_pTransition, bool in_bTransitionFading, AkPendingAction * in_pTransitionOwner );
+	AKRESULT SetPauseResumeTransition( CAkTransition * in_pTransition, bool in_bTransitionFading, AkPendingAction * in_pTransitionOwner );
+	void SetPathInfo( AkPathInfo * in_pPathInfo );
 
 	PlaybackTransition		m_PBTrans;
 	AkPathInfo				m_PathInfo;
@@ -36,8 +50,7 @@ public:
 	AkUInt32				m_ulPauseCount;
 	CAkParameterNodeBase *	m_pPathOwner;
 
-private:
-	CAkActionPlayAndContinue( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionPlay( in_eActionType, in_ulID ) {}
+protected:
+	CAkActionPlayAndContinue( AkActionType in_eActionType, AkUniqueID in_ulID, CAkContinuationList *& in_spContList );
 };
 
-static const AkUInt16 AkActionType_Duck = 0x1820;

@@ -37,13 +37,13 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "iediag.h"
+#include "disaudiopropagation.h"
 
 // DISHONORED(port): 2013 rva 0x7a3120 (2012 0x807710, dishonoredaudiosystem.cpp:1712 region). Retail resolves fourteen Wwise ids
 // (TimeDilation, Freeze, Unfreeze, Pause_All, Resume_All, All_State_None, Scale_RTPC, Global_Volume, Music_Volume, SFX_Volume,
 // Voices_Volume, Ambient_Volume, Menu_Volume, Overseer_Gapper_RTPC, Wwise_Gapper) through AK::SoundEngine::GetIDFromString, allocates
 // the end-of-event notify queue (0x834 bytes with its critical section) and finishes with ArkSettings::ApplyCurrentSettings(this).
-// DISHONORED(bringup): Wwise 2012.1 is a user blocker (middleware.md) and the AkAudio module is a stub, so only the occluding-door
-// cosine, the end-of-event queue (agent ID) and the settings pass are done here; the fourteen ids are not resolved.
+// Agent IH3 (fork G) resolves the ids (Init below).
 // DISHONORED(port): retail keeps the cosine in a unit global (2013 flt_12E98B8), not in the object
 static FLOAT GOccludingDoorOpeningAngleCos = 0.0f;
 
@@ -216,39 +216,397 @@ static void DisSetAkSoundPositions( FDisAudioPropagationCache& _rPropagationCach
 	AK::SoundEngine::SetPosition( _GameObjectID, Position );
 }
 
+// DISHONORED(port): agent IH3 (fork G). The Wwise ids Init resolves (2013 statics dword_14671C8..14671F8) and the overseer effect's
+// globals (2012 GOverseerEffectRTPC / GOverseerEffectRTPC_ID); nothing in this tree writes GOverseerEffectRTPC yet.
+DWORD UDishonoredAudioSystem::ms_TimeDilationRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_FreezeEvent_ID = 0;
+DWORD UDishonoredAudioSystem::ms_UnfreezeEvent_ID = 0;
+DWORD UDishonoredAudioSystem::ms_PauseEvent_ID = 0;
+DWORD UDishonoredAudioSystem::ms_ResumeEvent_ID = 0;
+DWORD UDishonoredAudioSystem::ms_AllStateNoneEvent_ID = 0;
+DWORD UDishonoredAudioSystem::ms_ScaleRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_GlobalVolumeRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_MusicVolumeRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_SFXVolumeRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_VoicesVolumeRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_AmbientVolumeRTPC_ID = 0;
+DWORD UDishonoredAudioSystem::ms_MenuVolumeRTPC_ID = 0;
+FLOAT GOverseerEffectRTPC = 0.f;
+DWORD GOverseerEffectRTPC_ID = 0;
+
+UBOOL DisIH3DiagEnabled()
+{
+	static const UBOOL bEnabled = ParseParam( appCmdLine(), TEXT("ih3diag") ) || ParseParam( appCmdLine(), TEXT("akdiag") );
+	return bEnabled;
+}
+
 /**
- * DISHONORED(port): agent ID, then agent IE. 2013 rva 0x7b3520 (2012 0x818ff0, 4,734 B). Ported, in retail's order: not while the
- * update is suspended (m_bSuspended) and not while the world is paused (retail then posts Pause_All once and returns); the listener
- * cell (GetCellAtPoint at UAkAudioDevice::m_ListenerPosition, kept in m_pListenerCell); the end-of-event drain (agent ID); the
- * sound capture box's bounds; and the per-component propagation cache - the largest playing radius becomes m_fMaxAudibleDistance
- * (0 when nothing plays), the sound point is the owner's location (the capture box's redirected actor when the owner is inside the
- * box, the BoneName bone of the owner's first unparented skeletal mesh that has it), a sound and listener that moved by less than
- * 5 % of their distance keep the cache (only the portal occlusion of its paths is refreshed), else the cache takes the new points
- * and cells and the Wwise position is set: straight when both points share a cell (or either has none), else through
- * DisSetAkSoundPositions with the paths UpdateAudioPropagationCache (2012 0x807d30) finds.
- * Not ported: UpdateAudioPropagationCache with FindShortestPath / FinalizeAudioPath (the portal path search, IH3), so a sound in
- * another cell keeps no path and reads FLT_MAX from GetShortestAudiblePathLength; the ambient sounds, the listener cell's ambient
- * event and RTPCs, the environment (aux bus) values per game object, the time-dilation RTPCs of the playing components and the
- * overseer effect. The component set is iterated as UDisAkComponent (retail casts nothing); a plain UAkComponent is skipped here.
- * UAkAudioDevice::Update issues the audio frame itself.
+ * DISHONORED(port): agent ID, then agent IH3 (fork G). 2013 rva 0x7a3120 (2012 0x807710): the occluding-door cosine (retail keeps it in
+ * ADisDoor::ms_fOccludingDoorOneMinusOpeningHalfAngleCosine, here a unit global), the fifteen Wwise ids, the end-of-event queue,
+ * the overseer ids and the settings pass.
+ */
+void UDishonoredAudioSystem::Init()
+{
+	GOccludingDoorOpeningAngleCos = 1.0f - appCos( m_fOccludingDoorOpeningAngle * (PI / 180.0f) * 0.5f );
+	ms_TimeDilationRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("TimeDilation") );
+	ms_FreezeEvent_ID = AK::SoundEngine::GetIDFromString( TEXT("Freeze") );
+	ms_UnfreezeEvent_ID = AK::SoundEngine::GetIDFromString( TEXT("Unfreeze") );
+	ms_PauseEvent_ID = AK::SoundEngine::GetIDFromString( TEXT("Pause_All") );
+	ms_ResumeEvent_ID = AK::SoundEngine::GetIDFromString( TEXT("Resume_All") );
+	ms_AllStateNoneEvent_ID = AK::SoundEngine::GetIDFromString( TEXT("All_State_None") );
+	ms_ScaleRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Scale_RTPC") );
+	ms_GlobalVolumeRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Global_Volume") );
+	ms_MusicVolumeRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Music_Volume") );
+	ms_SFXVolumeRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("SFX_Volume") );
+	ms_VoicesVolumeRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Voices_Volume") );
+	ms_AmbientVolumeRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Ambient_Volume") );
+	ms_MenuVolumeRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Menu_Volume") );
+	m_pEndOfEventNotifyQueue = new FDisEndOfEventNotifyQueue;
+	GOverseerEffectRTPC_ID = AK::SoundEngine::GetIDFromString( TEXT("Overseer_Gapper_RTPC") );
+	m_OverseerEffectID = AK::SoundEngine::GetIDFromString( TEXT("Wwise_Gapper") );
+	ArkSettings::ApplyCurrentSettings( this );
+}
+
+// DISHONORED(port): 2013 rva 0x7873d0 / 0x7873e0 (2012 0x7f3f80 / 0x7f3f90): the suspend bit of the flags DWORD
+void UDishonoredAudioSystem::SuspendUpdate()
+{
+	m_bSuspended = TRUE;
+}
+
+void UDishonoredAudioSystem::ResumeUpdate()
+{
+	m_bSuspended = FALSE;
+}
+
+/**
+ * DISHONORED(port): agent IH3 (fork G). 2013 rva 0x7872b0 (2012 0x7f3e60, dishonoredaudiosystem.cpp:121): with the Wwise device up,
+ * the global, music, SFX and voices sliders (0..100) into their RTPCs on every game object, and the global volume into the Bink
+ * player. Deviation (named): FFullScreenMovieSupport has no volume member here (retail writes GFullScreenMovie + 8 =
+ * m_GlobalVolume * 0.01), so the Bink half is not done.
+ */
+void UDishonoredAudioSystem::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
+{
+	if( !UAkAudioDevice::Get() )
+	{
+		return;
+	}
+	AK::SoundEngine::SetRTPCValue( ms_GlobalVolumeRTPC_ID, (FLOAT)Parameters->m_GlobalVolume, AK_INVALID_GAME_OBJECT, 0, AkCurveInterpolation_Linear );
+	AK::SoundEngine::SetRTPCValue( ms_MusicVolumeRTPC_ID, (FLOAT)Parameters->m_MusicVolume, AK_INVALID_GAME_OBJECT, 0, AkCurveInterpolation_Linear );
+	AK::SoundEngine::SetRTPCValue( ms_SFXVolumeRTPC_ID, (FLOAT)Parameters->m_SFXVolume, AK_INVALID_GAME_OBJECT, 0, AkCurveInterpolation_Linear );
+	AK::SoundEngine::SetRTPCValue( ms_VoicesVolumeRTPC_ID, (FLOAT)Parameters->m_VoicesVolume, AK_INVALID_GAME_OBJECT, 0, AkCurveInterpolation_Linear );
+	IH3DIAG( "volume RTPCs: Global_Volume (0x%08x) %d, Music_Volume (0x%08x) %d, SFX_Volume (0x%08x) %d, Voices_Volume (0x%08x) %d",
+		ms_GlobalVolumeRTPC_ID, Parameters->m_GlobalVolume, ms_MusicVolumeRTPC_ID, Parameters->m_MusicVolume, ms_SFXVolumeRTPC_ID, Parameters->m_SFXVolume,
+		ms_VoicesVolumeRTPC_ID, Parameters->m_VoicesVolume );
+}
+
+/** DISHONORED(port): agent IH3 (fork G). 2012 rva 0x7f9160: the start radius is the event's max radius, the stop radius 100 uu more. */
+void UDishonoredAudioSystem::RegisterAmbientSound( AActor* AmbientSound )
+{
+	AAkAmbientSound* Sound = (AAkAmbientSound*)AmbientSound;
+	FDisAmbientSound* Entry = new( m_RegisteredAmbientSounds ) FDisAmbientSound;
+	Entry->m_pAmbientSound = Sound;
+	const FLOAT fStartRadius = Sound->PlayEvent->GetMaxRadius();
+	Entry->m_fStartRadiusSq = fStartRadius * fStartRadius;
+	Entry->m_fStopRadiusSq = ( fStartRadius + 100.f ) * ( fStartRadius + 100.f );
+	Sound->m_bRegistered = TRUE;
+	IH3DIAG( "ambient %s registered: %s, radius %.0f at (%.0f %.0f %.0f)", *Sound->GetName(), *Sound->PlayEvent->GetName(), fStartRadius,
+		Sound->Location.X, Sound->Location.Y, Sound->Location.Z );
+}
+
+/** DISHONORED(port): agent IH3 (fork G). 2013 rva 0x7a3ea0 (2012 0x8083f0) */
+void UDishonoredAudioSystem::UnregisterAmbientSound( AActor* AmbientSound )
+{
+	AAkAmbientSound* Sound = (AAkAmbientSound*)AmbientSound;
+	for( INT i = 0; i < m_RegisteredAmbientSounds.Num(); i++ )
+	{
+		if( m_RegisteredAmbientSounds(i).m_pAmbientSound == Sound )
+		{
+			if( Sound->m_bStarted )
+			{
+				Sound->StopEvent();
+			}
+			Sound->m_bRegistered = FALSE;
+			m_RegisteredAmbientSounds.RemoveSwap( i );
+			return;
+		}
+	}
+}
+
+/**
+ * DISHONORED(port): agent IH3 (fork G). 2013 rva 0x7a32a0 (2012 0x807890): a rate above 0 ramps the global RTPC from its current value
+ * (Query::GetRTPCValue when it is not ramping yet) through UpdateRTPCs; otherwise it is set at once and any ramp dropped.
+ */
+void UDishonoredAudioSystem::SetRTPC( FName _Parameter, FLOAT _fValue, FLOAT _fChangeRate )
+{
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( !AudioDevice )
+	{
+		return;
+	}
+	const INT NumUpdaters = m_RTPCUpdaters.Num();
+	INT UpdaterIndex = 0;
+	while( UpdaterIndex < NumUpdaters && m_RTPCUpdaters(UpdaterIndex).m_Parameter != _Parameter )
+	{
+		UpdaterIndex++;
+	}
+	IH3DIAG( "RTPC %s -> %.2f (rate %.2f)", *_Parameter.ToString(), _fValue, _fChangeRate );
+	if( _fChangeRate > 0.f )
+	{
+		if( UpdaterIndex == NumUpdaters )
+		{
+			AkRtpcValue CurrentValue = 0.f;
+			AK::SoundEngine::Query::RTPCValue_type ValueType = AK::SoundEngine::Query::RTPCValue_Default;
+			AK::SoundEngine::Query::GetRTPCValue( *_Parameter.ToString(), AK_INVALID_GAME_OBJECT, CurrentValue, ValueType );
+			m_RTPCUpdaters.Add( 1 );
+			m_RTPCUpdaters(UpdaterIndex).m_Parameter = _Parameter;
+			m_RTPCUpdaters(UpdaterIndex).m_fCurrentValue = CurrentValue;
+		}
+		m_RTPCUpdaters(UpdaterIndex).m_fTargetValue = _fValue;
+		m_RTPCUpdaters(UpdaterIndex).m_fChangeRate = _fChangeRate;
+	}
+	else
+	{
+		AudioDevice->SetRTPCValue( *_Parameter.ToString(), _fValue, NULL, NAME_None );
+		if( UpdaterIndex < NumUpdaters )
+		{
+			m_RTPCUpdaters.RemoveSwap( UpdaterIndex );
+		}
+	}
+}
+
+/** DISHONORED(port): agent IH3 (fork G). 2013 rva 0x7a3580 (2012 0x807ba0): each ramp moves by rate x dt and ends on its target. */
+void UDishonoredAudioSystem::UpdateRTPCs( FLOAT _fDeltaTime )
+{
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( !AudioDevice )
+	{
+		return;
+	}
+	for( INT i = m_RTPCUpdaters.Num() - 1; i >= 0; i-- )
+	{
+		FDisSoundRTPCUpdater& Updater = m_RTPCUpdaters(i);
+		const FLOAT fStep = Updater.m_fChangeRate * _fDeltaTime;
+		UBOOL bReached;
+		if( Updater.m_fCurrentValue <= Updater.m_fTargetValue )
+		{
+			Updater.m_fCurrentValue += fStep;
+			bReached = Updater.m_fCurrentValue >= Updater.m_fTargetValue;
+		}
+		else
+		{
+			Updater.m_fCurrentValue -= fStep;
+			bReached = Updater.m_fTargetValue >= Updater.m_fCurrentValue;
+		}
+		if( bReached )
+		{
+			Updater.m_fCurrentValue = Updater.m_fTargetValue;
+		}
+		AudioDevice->SetRTPCValue( *Updater.m_Parameter.ToString(), Updater.m_fCurrentValue, NULL, NAME_None );
+		if( bReached )
+		{
+			m_RTPCUpdaters.RemoveSwap( i );
+		}
+	}
+}
+
+/** DISHONORED(port): agent IH3 (fork G). 2012 rva 0x8083b0 */
+void UDishonoredAudioSystem::CleanUp()
+{
+	m_pPendingAmbientEvent = NULL;
+	m_pLastAmbientEvent = NULL;
+	m_RegisteredAmbientSounds.Empty();
+}
+
+/**
+ * DISHONORED(port): agent IH3 (fork G). 2013 rva 0x316bd0 (2012 0x339320, unskeletalanim.cpp): the "<event>v" and "<event>p" RTPCs take
+ * the notify's volume and pitch multipliers on the owner's component, then the event is posted on it.
+ */
+void UAnimNotify_AkEvent::Notify( UAnimNodeSequence* NodeSeq )
+{
+	AActor* Owner = NodeSeq->SkelComponent->GetOwner();
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	if( !AudioDevice || !AkEvent )
+	{
+		return;
+	}
+	FString EventName = AkEvent->GetName() + TEXT("v");
+	AudioDevice->SetRTPCValue( *EventName, VolumeMultiplier, Owner, BoneName );
+	EventName[EventName.Len() - 1] = TEXT('p');
+	AudioDevice->SetRTPCValue( *EventName, PitchMultiplier, Owner, BoneName );
+	const AkPlayingID PlayingID = AudioDevice->PostEvent( AkEvent, Owner, BoneName, 0, NULL, NULL, FALSE );
+	IH3DIAG( "anim notify %s on %s -> playing id %u", *AkEvent->GetName(), Owner ? *Owner->GetName() : TEXT("<none>"), PlayingID );
+}
+
+/**
+ * DISHONORED(port): agent ID, then agent IE, then agent IH3 (fork G). 2013 rva 0x7b3520 (2012 0x818ff0, 4,492 B; 2013 4,734 B). In
+ * retail's order: nothing while the update is suspended; a paused world posts Pause_All once (Resume_All when it resumes) and only
+ * renders. Otherwise: the registered ambient sounds start inside their event's radius and stop 100 uu beyond it (an ended one is
+ * dropped from the list); the listener cell (GetCellAtPoint at UAkAudioDevice::m_ListenerPosition) - entering one queues its
+ * ambient event and sets its RTPCs (SetRTPC, ramped by UpdateRTPCs), the queued ambient event is posted on the global object once
+ * m_fMinTimeBetweenAmbientSwitch has passed since the last; the environment (aux bus) values - the overseer effect while
+ * GOverseerEffectRTPC is not 0 (on the global object when it toggles) and the listener cell's m_Environment - go to every playing
+ * component when they change or when its cache is reset; the world time dilation RTPC on the global object, the end-of-event drain
+ * (agent ID), the time dilation RTPC of every playing component (a stopped one returns to m_FreeComponents with its cache cleared);
+ * the sound capture box; and the per-component propagation cache (agent IE): the largest playing radius is m_fMaxAudibleDistance,
+ * the sound point is the owner's location (the capture box's redirected actor when inside the box, else the BoneName bone of the
+ * owner's first unparented skeletal mesh), a sound and listener that moved by less than 5 % of their distance keep the cache (only
+ * the portal occlusion of its paths is refreshed), else the cache takes the new points and cells and the Wwise position is set:
+ * straight when both points share a cell (or either has none), else through the portal paths UpdateAudioPropagationCache finds
+ * (when the sound is within its radius) and DisSetAkSoundPositions. Last, the audio frame (AK::SoundEngine::RenderAudio, which
+ * UAkAudioDevice::Update issued on retail's behalf until this port).
+ * Deviations (named): 2013's ambient-sound time dilation (AActor::SetAkComponentsTimeDilation 0x38a670 with the game info's
+ * per-channel dilation, slot +976) is not ported - neither exists in this tree - so the 2012 shape of that loop is kept; the
+ * component set is iterated as UDisAkComponent (retail casts nothing); GOverseerEffectRTPC has no writer in this tree (0).
  */
 void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveComponents )
 {
-	if( m_bSuspended || !m_pEndOfEventNotifyQueue || ( GWorld && GWorld->IsPaused() ) )
+	if( m_bSuspended )
 	{
+		return;
+	}
+	if( GWorld->IsPaused() )
+	{
+		if( !m_bPaused )
+		{
+			AK::SoundEngine::PostEvent( ms_PauseEvent_ID, AKGLOBALSOUNDOBJECT );
+			m_bPaused = TRUE;
+		}
+	}
+	else if( m_bPaused )
+	{
+		AK::SoundEngine::PostEvent( ms_ResumeEvent_ID, AKGLOBALSOUNDOBJECT );
+		m_bPaused = FALSE;
+	}
+	if( m_bPaused || !m_pEndOfEventNotifyQueue )
+	{
+		AK::SoundEngine::RenderAudio();
 		return;
 	}
 	TSet<UAkComponent*>& GameObjects = *(TSet<UAkComponent*>*)ActiveComponents;
 	const FVector& ListenerPosition = AudioDevice->m_ListenerPosition;
+	for( INT i = m_RegisteredAmbientSounds.Num() - 1; i >= 0; i-- )
+	{
+		FDisAmbientSound& Entry = m_RegisteredAmbientSounds(i);
+		AAkAmbientSound* AmbientSound = Entry.m_pAmbientSound;
+		if( !AmbientSound )
+		{
+			m_RegisteredAmbientSounds.RemoveSwap( i );
+			continue;
+		}
+		if( AmbientSound->m_bEnded )
+		{
+			AmbientSound->m_bRegistered = FALSE;
+			AmbientSound->m_bStarted = FALSE;
+			IH3DIAG( "ambient %s ended, unregistered", *AmbientSound->GetName() );
+			m_RegisteredAmbientSounds.RemoveSwap( i );
+			continue;
+		}
+		const FLOAT DistSq = ( AmbientSound->Location - ListenerPosition ).SizeSquared();
+		if( Entry.m_fStartRadiusSq < DistSq )
+		{
+			if( DistSq >= Entry.m_fStopRadiusSq && AmbientSound->m_bStarted )
+			{
+				IH3DIAG( "ambient %s stop at %.0f (radius %.0f)", *AmbientSound->GetName(), appSqrt( DistSq ), appSqrt( Entry.m_fStartRadiusSq ) );
+				AmbientSound->StopEvent();
+			}
+		}
+		else if( !AmbientSound->m_bStarted )
+		{
+			IH3DIAG( "ambient %s start %s at %.0f (radius %.0f)", *AmbientSound->GetName(), AmbientSound->PlayEvent ? *AmbientSound->PlayEvent->GetName() : TEXT("<none>"),
+				appSqrt( DistSq ), appSqrt( Entry.m_fStartRadiusSq ) );
+			AmbientSound->StartEvent();
+		}
+	}
+
 	ADishonoredAudioVolume* ListenerCell = Cast<ADishonoredAudioVolume>( GetCellAtPoint( ListenerPosition, m_pListenerCell ) );
 	if( m_pListenerCell != ListenerCell )
 	{
 		IEDIAG( "listener cell %s -> %s at (%.0f %.0f %.0f)", m_pListenerCell ? *m_pListenerCell->GetName() : TEXT("<none>"),
 			ListenerCell ? *ListenerCell->GetName() : TEXT("<none>"), ListenerPosition.X, ListenerPosition.Y, ListenerPosition.Z );
 		m_pListenerCell = ListenerCell;
+		if( ListenerCell )
+		{
+			if( ListenerCell->m_pSoundEvent )
+			{
+				m_pPendingAmbientEvent = ListenerCell->m_pSoundEvent;
+			}
+			IH3DIAG( "listener cell %s: ambient event %s, %d RTPC(s), environment %s", *ListenerCell->GetName(),
+				ListenerCell->m_pSoundEvent ? *ListenerCell->m_pSoundEvent->GetName() : TEXT("<none>"), ListenerCell->m_SoundParameters.Num(), *ListenerCell->m_Environment.ToString() );
+			for( INT i = 0; i < m_pListenerCell->m_SoundParameters.Num(); i++ )
+			{
+				const FDisSoundRTPC& Parameter = m_pListenerCell->m_SoundParameters(i);
+				SetRTPC( Parameter.m_Parameter, Parameter.m_fValue, Parameter.m_fChangeRate );
+			}
+		}
 	}
-	ConsumeEndOfEventNotifies( GameObjects );
+	UpdateRTPCs( GWorld->GetDeltaSeconds() );
+	if( m_pPendingAmbientEvent && m_pPendingAmbientEvent != m_pLastAmbientEvent )
+	{
+		const FLOAT RealTimeSeconds = GWorld->GetRealTimeSeconds();
+		if( RealTimeSeconds > m_fMinTimeBetweenAmbientSwitch + m_fLastAmbientTime )
+		{
+			const AkPlayingID PlayingID = AudioDevice->PostEvent( m_pPendingAmbientEvent, NULL, NAME_None, 0, NULL, NULL, FALSE );
+			IH3DIAG( "ambient event %s posted on the global object -> playing id %u", *m_pPendingAmbientEvent->GetName(), PlayingID );
+			m_pLastAmbientEvent = m_pPendingAmbientEvent;
+			m_pPendingAmbientEvent = NULL;
+			m_fLastAmbientTime = RealTimeSeconds;
+		}
+	}
 
+	AkEnvironmentValue EnvironmentValues[2];
+	appMemzero( EnvironmentValues, sizeof( EnvironmentValues ) );
+	AkUInt32 NumEnvironments = 0;
+	const UBOOL bOverseerEffect = GOverseerEffectRTPC != 0.f;
+	UBOOL bEnvironmentChanged = m_bOverseerEffectEnabled != bOverseerEffect;
+	m_bOverseerEffectEnabled = bOverseerEffect;
+	if( bOverseerEffect )
+	{
+		EnvironmentValues[0].EnvID = m_OverseerEffectID;
+		EnvironmentValues[0].fControlValue = 1.f;
+		NumEnvironments = 1;
+	}
+	if( bEnvironmentChanged )
+	{
+		AK::SoundEngine::SetGameObjectEnvironmentsValues( AKGLOBALSOUNDOBJECT, EnvironmentValues, NumEnvironments );
+	}
+	if( m_pListenerCell && m_LastEnvironment != m_pListenerCell->m_Environment )
+	{
+		m_LastEnvironment = m_pListenerCell->m_Environment;
+		m_LastEnvironmentID = AK::SoundEngine::GetIDFromString( *m_LastEnvironment.ToString() );
+		IH3DIAG( "environment %s (id 0x%08x)", *m_LastEnvironment.ToString(), m_LastEnvironmentID );
+		bEnvironmentChanged = TRUE;
+	}
+	if( m_LastEnvironment != NAME_None )
+	{
+		EnvironmentValues[NumEnvironments].EnvID = m_LastEnvironmentID;
+		EnvironmentValues[NumEnvironments].fControlValue = 1.f;
+		NumEnvironments++;
+	}
+
+	ADishonoredGameInfo* GameInfo = DisGetGameInfo();
+	const FLOAT WorldTimeDilation = GameInfo ? GameInfo->m_fCurrentWorldTimeDilation : 1.f;
+	const FLOAT PlayerTimeDilation = GameInfo ? GameInfo->m_fCurrentPlayerTimeDilation : 1.f;
+	AK::SoundEngine::SetRTPCValue( ms_TimeDilationRTPC_ID, WorldTimeDilation, AKGLOBALSOUNDOBJECT, 0, AkCurveInterpolation_Linear );
+	ConsumeEndOfEventNotifies( GameObjects );
+	for( INT i = m_PlayingComponents.Num() - 1; i >= 0; i-- )
+	{
+		FDisPlayingComponent& Playing = m_PlayingComponents(i);
+		UDisAkComponent* Component = Playing.m_pComponent;
+		if( Component->m_PlayingRadii.Num() <= 0 )
+		{
+			Component->m_PropagationCache.m_Paths.Empty();
+			appMemzero( &Component->m_PropagationCache, sizeof( FDisAudioPropagationCache ) );
+			m_FreeComponents.AddItem( Component );
+			m_PlayingComponents.RemoveSwap( i );
+		}
+		else
+		{
+			const FLOAT TimeDilation = Playing.m_pInstigator ? Playing.m_pInstigator->CustomTimeDilation * PlayerTimeDilation : WorldTimeDilation;
+			AK::SoundEngine::SetRTPCValue( ms_TimeDilationRTPC_ID, TimeDilation, Component->GetAkGameObjectID(), 0, AkCurveInterpolation_Linear );
+		}
+	}
+
+	UDisAudioPropagationInfo* PropagationInfo = DisGetAudioPropagationInfo();
 	FBox CaptureBox( 0 );
 	if( m_pDisSoundCaptureBox && m_pDisSoundCaptureBox->m_pSoundRedirectedActor )
 	{
@@ -257,11 +615,10 @@ void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveCo
 	}
 
 	static FLOAT GIEDiagLastListenerLog = -1.0f;
-	const UBOOL bDiagThisFrame = DisIEDiagEnabled() && GWorld && GWorld->GetTimeSeconds() - GIEDiagLastListenerLog >= 1.0f;
+	const UBOOL bDiagThisFrame = ( DisIEDiagEnabled() || DisIH3DiagEnabled() ) && GWorld->GetTimeSeconds() - GIEDiagLastListenerLog >= 1.0f;
 	if( bDiagThisFrame )
 	{
 		GIEDiagLastListenerLog = GWorld->GetTimeSeconds();
-		UDisAudioPropagationInfo* PropagationInfo = DisGetAudioPropagationInfo();
 		IEDIAG( "listener (%.0f %.0f %.0f) cell %s, %d game object(s), propagation info %s with %d cell(s)", ListenerPosition.X, ListenerPosition.Y,
 			ListenerPosition.Z, m_pListenerCell ? *m_pListenerCell->GetName() : TEXT("<none>"), GameObjects.Num(),
 			PropagationInfo ? *PropagationInfo->GetName() : TEXT("<none>"), PropagationInfo ? PropagationInfo->m_Cells.Num() : 0 );
@@ -284,6 +641,10 @@ void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveCo
 		{
 			Cache.m_fMaxAudibleDistance = 0.0f;
 			continue;
+		}
+		if( bEnvironmentChanged || Cache.m_fMaxAudibleDistance <= 0.0f )
+		{
+			AK::SoundEngine::SetGameObjectEnvironmentsValues( Component->GetAkGameObjectID(), EnvironmentValues, NumEnvironments );
 		}
 		if( MaxRadius <= 0.0f )
 		{
@@ -401,6 +762,10 @@ void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveCo
 		Cache.m_Paths.Reset();
 		if( Cache.m_pListenerCell && Cache.m_pSoundCell && Cache.m_pListenerCell != Cache.m_pSoundCell )
 		{
+			if( MaxRadius * MaxRadius > RawDistSq )
+			{
+				UpdateAudioPropagationCache( PropagationInfo, Cache, RawDistSq, FALSE, NULL );
+			}
 			DisSetAkSoundPositions( Cache, Component->GetAkGameObjectID() );
 		}
 		else
@@ -429,9 +794,129 @@ void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveCo
 					Component->GetOwner() ? *Component->GetOwner()->GetName() : TEXT("<no owner>"), Component->m_PlayingRadii.Num(), Cache.m_fMaxAudibleDistance,
 					Cache.m_SoundPoint.X, Cache.m_SoundPoint.Y, Cache.m_SoundPoint.Z, Cache.m_pSoundCell ? *Cache.m_pSoundCell->GetName() : TEXT("<none>"),
 					Cache.m_pListenerCell ? *Cache.m_pListenerCell->GetName() : TEXT("<none>"), PathLength, bLive ? 1 : 0 );
+				if( Cache.m_pSoundCell && Cache.m_pListenerCell && Cache.m_pSoundCell != Cache.m_pListenerCell )
+				{
+					IH3DIAG( "other-cell voice on %s: sound cell %s, listener cell %s, raw %.0f, radius %.0f, %d path(s), shortest %.0f (live %d), obstruction %.2f occlusion %.2f",
+						Component->GetOwner() ? *Component->GetOwner()->GetName() : TEXT("<no owner>"), *Cache.m_pSoundCell->GetName(), *Cache.m_pListenerCell->GetName(),
+						Cache.m_fRawDistance, Cache.m_fMaxAudibleDistance, Cache.m_Paths.Num(), PathLength, bLive ? 1 : 0, Cache.m_fObstruction, Cache.m_fOcclusion );
+				}
 			}
 		}
 	}
+	AK::SoundEngine::RenderAudio();
+}
+
+/**
+ * DISHONORED(port): agent IH3 (fork G). 2013 rva 0x7a3700 (2012 0x807d30, 1,662 B): every pair of a listener-cell portal and a
+ * sound-cell portal is a candidate. The baked shortest path between them (FindShortestPath, keyed from the cell with the lower
+ * propagation index) loses its first portal when the listener can be taken to be in the next cell already, and its last when the
+ * sound can; a path whose ends plus its baked length reach the audible distance is dropped, the rest become cache paths
+ * (FinalizeAudioPath). An AI noise only asks whether one path is audible. With paths, the raw distance, each path's final distance
+ * (its length over its openness, never below the raw distance), the weighting that favours the shortest, and the weighted
+ * occlusion / obstruction.
+ */
+UBOOL UDishonoredAudioSystem::UpdateAudioPropagationCache( UDisAudioPropagationInfo* _pAudioPropagationInfo, FDisAudioPropagationCache& _rPropagationCache, FLOAT _fRawDistSq,
+	UBOOL _bForAINoise, TArray<FDisAudioDebugPath>* _pDebugPaths )
+{
+	ADishonoredAudioVolume* ListenerCell = _rPropagationCache.m_pListenerCell;
+	ADishonoredAudioVolume* SoundCell = _rPropagationCache.m_pSoundCell;
+	const INT NumListenerPortals = ListenerCell->m_LinkedPortals.Num();
+	const INT NumSoundPortals = SoundCell->m_LinkedPortals.Num();
+	for( INT pL = 0; pL < NumListenerPortals; pL++ )
+	{
+		ADishonoredAudioPortal* ListenerPortal = ListenerCell->m_LinkedPortals(pL);
+		for( INT pS = 0; pS < NumSoundPortals; pS++ )
+		{
+			ADishonoredAudioPortal* SoundPortal = SoundCell->m_LinkedPortals(pS);
+			FDisAudioPathEndPair PathEndPair;
+			if( ListenerCell->m_AudioPropagationIndex >= SoundCell->m_AudioPropagationIndex )
+			{
+				PathEndPair.m_PathEnd0.m_pCell = SoundCell;
+				PathEndPair.m_PathEnd0.m_pPortal = SoundPortal;
+				PathEndPair.m_PathEnd1.m_pCell = ListenerCell;
+				PathEndPair.m_PathEnd1.m_pPortal = ListenerPortal;
+			}
+			else
+			{
+				PathEndPair.m_PathEnd0.m_pCell = ListenerCell;
+				PathEndPair.m_PathEnd0.m_pPortal = ListenerPortal;
+				PathEndPair.m_PathEnd1.m_pCell = SoundCell;
+				PathEndPair.m_PathEnd1.m_pPortal = SoundPortal;
+			}
+			FDisAudioPortalPath ShortestPath;
+			if( !_pAudioPropagationInfo->FindShortestPath( PathEndPair, _rPropagationCache.m_fMaxAudibleDistance, PathEndPair.m_PathEnd0.m_pCell != ListenerCell, ShortestPath ) )
+			{
+				continue;
+			}
+			const INT SkipFirstPortal = ShortestPath.m_Nodes(0).m_pPortal->CanConsiderPointInOtherCell( _rPropagationCache.m_ListenerPoint, ListenerCell ) ? 1 : 0;
+			const INT NumNodes = ShortestPath.m_Nodes.Num();
+			INT SkipLastPortal = 0;
+			if( NumNodes > SkipFirstPortal && ShortestPath.m_Nodes(NumNodes - 1).m_pPortal->CanConsiderPointInOtherCell( _rPropagationCache.m_SoundPoint, SoundCell ) )
+			{
+				SkipLastPortal = 1;
+			}
+			if( SkipFirstPortal < NumNodes - SkipLastPortal )
+			{
+				FVector FirstPortalPoint, LastPortalPoint;
+				ShortestPath.m_Nodes(SkipFirstPortal).m_pPortal->GetNearestPoint( _rPropagationCache.m_ListenerPoint, FirstPortalPoint );
+				const FLOAT fMinLength = ( _rPropagationCache.m_ListenerPoint - FirstPortalPoint ).Size() + ShortestPath.m_fMinLength;
+				if( fMinLength >= _rPropagationCache.m_fMaxAudibleDistance )
+				{
+					continue;
+				}
+				ShortestPath.m_Nodes(NumNodes - SkipLastPortal - 1).m_pPortal->GetNearestPoint( _rPropagationCache.m_SoundPoint, LastPortalPoint );
+				if( ( _rPropagationCache.m_SoundPoint - LastPortalPoint ).Size() + fMinLength >= _rPropagationCache.m_fMaxAudibleDistance )
+				{
+					continue;
+				}
+			}
+			if( _pAudioPropagationInfo->FinalizeAudioPath( _rPropagationCache, ShortestPath, SkipFirstPortal, SkipLastPortal, _rPropagationCache.m_ListenerPoint,
+				_rPropagationCache.m_SoundPoint, _fRawDistSq, _bForAINoise, _pDebugPaths ) && _bForAINoise )
+			{
+				return TRUE;
+			}
+		}
+	}
+	if( _bForAINoise )
+	{
+		return FALSE;
+	}
+	const INT NumPaths = _rPropagationCache.m_Paths.Num();
+	if( NumPaths )
+	{
+		const FLOAT fRawDist = appSqrt( _fRawDistSq );
+		_rPropagationCache.m_fRawDistance = fRawDist;
+		FLOAT fMinDist = 3.4e38f;
+		for( INT i = 0; i < NumPaths; i++ )
+		{
+			FDisAudioPath& Path = _rPropagationCache.m_Paths(i);
+			Path.m_fFinalDist = Abs( Path.m_fOcclusion - 1.f ) >= 0.0001f ? Max( Path.m_fDistance / ( 1.f - Path.m_fOcclusion ), fRawDist ) : 3.4e38f;
+			fMinDist = Min( fMinDist, Path.m_fFinalDist );
+		}
+		const FLOAT fCoeff = fMinDist > fRawDist ? 1.f / ( fMinDist - fRawDist ) : 3.4e38f;
+		for( INT i = 0; i < NumPaths; i++ )
+		{
+			FDisAudioPath& Path = _rPropagationCache.m_Paths(i);
+			if( Path.m_fFinalDist > fMinDist )
+			{
+				Path.m_fFinalDist = ( Path.m_fFinalDist - fRawDist ) * fCoeff * Path.m_fFinalDist;
+			}
+		}
+		FLOAT fWeightSum = 0.f;
+		FLOAT fOcclusionSum = 0.f;
+		FLOAT fObstructionSum = 0.f;
+		for( INT i = 0; i < NumPaths; i++ )
+		{
+			const FDisAudioPath& Path = _rPropagationCache.m_Paths(i);
+			const FLOAT fWeight = 1.f / Path.m_fFinalDist;
+			fWeightSum += fWeight;
+			fOcclusionSum += Path.m_fOcclusion * fWeight;
+			fObstructionSum += Path.m_fObstruction * fWeight;
+		}
+		_rPropagationCache.m_fOcclusion = fOcclusionSum / fWeightSum;
+		_rPropagationCache.m_fObstruction = fObstructionSum / fWeightSum;
+	}
+	return _rPropagationCache.m_Paths.Num() > 0;
 }
 
 // DISHONORED(port): agent ID. 2012 rva 0x80b7d0 (39 B): the queue Init allocated
@@ -476,30 +961,4 @@ UBOOL UDisAkComponent::GetShortestAudiblePathLength( FLOAT& _rLengthOut ) const
 	}
 	_rLengthOut = ( m_PropagationCache.m_ListenerPoint - m_PropagationCache.m_SoundPoint ).Size();
 	return TRUE;
-}
-
-void UDishonoredAudioSystem::Init()
-{
-	GOccludingDoorOpeningAngleCos = 1.0f - appCos( m_fOccludingDoorOpeningAngle * (PI / 180.0f) * 0.5f );
-	m_pEndOfEventNotifyQueue = new FDisEndOfEventNotifyQueue;
-	ArkSettings::ApplyCurrentSettings( this );
-}
-
-// DISHONORED(port): 2013 rva 0x7873d0 / 0x7873e0 (2012 0x7f3f80 / 0x7f3f90): the suspend bit of the flags DWORD
-void UDishonoredAudioSystem::SuspendUpdate()
-{
-	m_bSuspended = TRUE;
-}
-
-void UDishonoredAudioSystem::ResumeUpdate()
-{
-	m_bSuspended = FALSE;
-}
-
-// DISHONORED(port): 2013 rva 0x7872b0 (2012 0x7f3e60, dishonoredaudiosystem.cpp:121): with a Wwise device present retail pushes the
-// four volume sliders into their RTPCs and the global volume into the Bink player.
-// DISHONORED(bringup): there is no device and FFullScreenMovieSupport has no volume member in our tree (retail's Bink player takes
-// m_GlobalVolume * 0.01), so nothing is applied yet; the sliders are read and reach here, which is what the settings path needs.
-void UDishonoredAudioSystem::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChangeReason Reason )
-{
 }

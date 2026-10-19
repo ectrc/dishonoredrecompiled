@@ -17,7 +17,8 @@
 	Agent IH2 (wave 26) added the playback half of PreInit / InitRenderer / Term (the playing manager, the position
 	repository, the transition manager, g_Interpol, CAkURenderer, CAkAudioMgr and its thread, CAkLEngine::Stop, the
 	behavioural extensions) and the retail SetVolumeThresholdInternal 0x9175f0 / SetMaxNumVoicesLimitInternal
-	0x917760; the path manager is not created (paths are IH3 positioning). AkSilentSoundEngine.cpp calls
+	0x917760; agent IH3 added the path manager (PreInit 0x919cc0 after the transition manager, Term 0x91a090 after
+	the state manager). AkSilentSoundEngine.cpp calls
 	AkAudioLibInit / AkAudioLibTerm from AK::SoundEngine::Init / Term.
 	-akdiag logs every GetIDFromString with its answer, every Query::QueryAudioObjectIDs / GetPositioningInfo
 	with its result, and (in AkBankMgr.cpp) every bank operation.
@@ -30,6 +31,7 @@
 #include "AkInterpolation.h"
 #include "AkLEngine.h"
 #include "AkPositionRepository.h"
+#include "AkPath.h"
 #include "AkMath.h"
 #include <math.h>
 
@@ -163,6 +165,11 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 		g_pTransitionManager = NewManager<CAkTransitionManager>();
 		eResult = g_pTransitionManager ? g_pTransitionManager->Init( g_settings.uMaxNumTransitions ) : AK_InsufficientMemory;
 	}
+	if( eResult == AK_Success && !g_pPathManager )
+	{
+		g_pPathManager = NewManager<CAkPathManager>();
+		eResult = g_pPathManager ? g_pPathManager->Init( g_settings.uMaxNumPaths ) : AK_InsufficientMemory;
+	}
 	if( eResult == AK_Success && !g_pStateMgr )
 	{
 		g_pStateMgr = NewManager<CAkStateMgr>();
@@ -191,8 +198,8 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 }
 
 /** AK::SoundEngine::Term 0x91a090: the audio thread and the bank thread stop first, then the lower engine, the behavioural
-    extensions (told the engine is terminating), the renderer and the managers in retail order. DISHONORED(port): the path
-    manager is not created (paths are IH3 positioning) and the feedback device manager does not exist. */
+    extensions (told the engine is terminating), the renderer and the managers in retail order. DISHONORED(port): the
+    feedback device manager does not exist. */
 void AkAudioLibTerm()
 {
 	if( g_pAudioMgr )
@@ -228,6 +235,11 @@ void AkAudioLibTerm()
 	{
 		g_pStateMgr->Term();
 		DeleteManager( g_pStateMgr );
+	}
+	if( g_pPathManager )
+	{
+		g_pPathManager->Term();
+		DeleteManager( g_pPathManager );
 	}
 	if( g_pTransitionManager )
 	{

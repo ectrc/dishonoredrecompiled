@@ -3,14 +3,15 @@
 
 	DISHONORED(port): agent IH2 (wave 26).
 	Deviations (named, every one an IH3 seam unless stated):
-	  * Init: user-defined 3D paths (CAkPathManager, Ak3DUserDef with a playlist) are not created - IH3's paths.
-	  * Init / Term: attenuation RTPC subscriptions go to the AkGameSyncs data store (SubscribeRTPC / UnSubscribeRTPC),
-	    which records them but never evaluates them.
-	  * RefreshParameters: GetAudioParameters is the IH3 seam described in AkNodePlayback.cpp (authored volume / pitch /
-	    LPF along the actor-mixer and bus chains, no RTPC / states / SIS); no feedback (motion) volume.
+	Agent IH3 (wave 26, fork P): Init / Term / _InitPlay / _Stop / _Play / _Pause / _Resume create, start, pause, resume
+	and release the user-defined 3D path (CAkPathManager); the positioning half (Get3DPositioningParams 0x9411b0,
+	PositioningChangeNotification 0x941030, Scale3DUserDefRTPCValue 0x940fc0, Subscribe / UnsubscribeAttenuationRTPC
+	0x93ffe0 / 0x940040) is in AkPositioning.cpp.
+	Agent IH3 (fork N): RefreshParameters runs the full GetAudioParameters (states, RTPC, SIS, ducking, layers) and logs
+	the voice's volume split under -akdiag (AkDiagVoiceParameters); ParamNotification 0x9402e0 and UpdateFx 0x93f500 are
+	in AkParameterNode.cpp. No feedback (motion) volume.
 	  * GetFeedbackParameters / InvalidateFeedbackParameters: no feedback device exists (CAkFeedbackDeviceMgr is never
 	    created by the glue), so retail's own first test returns NULL - ported as that test.
-	  * PositioningChangeNotification / Get3DPositioningParams / Scale3DUserDefRTPCValue are IH3 (positioning).
 	  * The MONITOR_* notifications (MonitorFade) are compiled out.
 =============================================================================*/
 #include "AkActivityChunk.h"
@@ -18,6 +19,7 @@
 #include "AkLEngineCmds.h"
 #include "AkPlayingMgr.h"
 #include "AkBusCtx.h"
+#include "AkPath.h"
 #include "AkBankMgr.h"
 #include "AkVPLSrcCbxNode.h"
 
@@ -139,27 +141,59 @@ AKRESULT CAkPBI::Init( AkPathInfo * in_pPathInfo )
 	m_pSound->Get3DParams( m_p3DSound, m_pGameObj, false, &m_BasePosParams );
 	if( m_p3DSound )
 	{
-		if( !m_p3DSound->m_Params.m_pAttenuation )
-		{
-			m_p3DSound->m_Params.m_pAttenuation = g_pIndex->m_idxAttenuations.GetPtrAndAddRef( m_p3DSound->m_Params.m_uAttenuationID );
-		}
-		CAkAttenuation * pAttenuation = static_cast<CAkAttenuation *>( m_p3DSound->m_Params.m_pAttenuation );
+		CAkAttenuation * pAttenuation = m_p3DSound->m_Params.GetAttenuation();
 		if( pAttenuation )
 		{
 			m_p3DSound->m_Params.m_fConeOutsideVolume = pAttenuation->m_ConeParams.fOutsideVolume;
 			m_p3DSound->m_Params.m_fConeLoPass = pAttenuation->m_ConeParams.LoPass;
-			for( CAkAttenuation::RTPCSubs * pSub = pAttenuation->m_rtpcsubs.m_pItems; pSub != pAttenuation->m_rtpcsubs.m_pItemsEnd; ++pSub )
+			eResult = SubscribeAttenuationRTPC( pAttenuation );
+			if( eResult != AK_Success )
 			{
-				eResult = g_pRTPCMgr->SubscribeRTPC( this, pSub->RTPCID, pSub->ParamID, pSub->RTPCCurveID, pSub->ConversionTable.m_eScaling, pSub->ConversionTable.m_pArrayGraphPoints, pSub->ConversionTable.m_ulArraySize, m_pGameObj, CAkRTPCMgr::SubscriberType_PBI );
-				if( eResult != AK_Success )
-				{
-					return eResult;
-				}
+				return eResult;
 			}
 		}
 		else if( m_p3DSound->m_Params.m_uAttenuationID )
 		{
 			return AK_Fail;
+		}
+		if( m_p3DSound->m_Params.m_eType == Ak3DUserDef && m_p3DSound->m_Params.m_pArrayPlaylist )
+		{
+			AkUniqueID pathOwnerID = m_p3DSound->m_Params.m_ID;
+			if( in_pPathInfo->pPBPath && in_pPathInfo->PathOwnerID == pathOwnerID )
+			{
+				m_PathInfo = *in_pPathInfo;
+			}
+			if( !m_PathInfo.pPBPath || ( m_p3DSound->m_Params.m_ePathMode & AkPathPickNewPath ) )
+			{
+				m_PathInfo.pPBPath = g_pPathManager->AddPathToList();
+				if( m_PathInfo.pPBPath )
+				{
+					eResult = m_p3DSound->SetPathPlayList( m_PathInfo.pPBPath, m_pSound->GetPathState() );
+					if( eResult != AK_Success )
+					{
+						g_pPathManager->RemovePathFromList( m_PathInfo.pPBPath );
+						pathOwnerID = 0;
+						m_PathInfo.pPBPath = NULL;
+					}
+					m_PathInfo.PathOwnerID = pathOwnerID;
+				}
+			}
+			if( !m_p3DSound->m_Params.m_bFollowOrientation && m_PathInfo.pPBPath )
+			{
+				m_PathInfo.pPBPath->InitRotationMatricesForNoFollowMode( m_pGameObj->m_PosKeep.m_uListenerMask );
+			}
+		}
+	}
+	if( m_PathInfo.pPBPath )
+	{
+		if( g_pPathManager->AddPathUser( m_PathInfo.pPBPath, this ) == AK_Fail )
+		{
+			m_PathInfo.pPBPath = NULL;
+		}
+		else
+		{
+			m_PathInfo.pPBPath->SetSoundUniqueID( m_pSound->key );
+			m_PathInfo.pPBPath->SetPlayingID( m_UserParams.m_PlayingID );
 		}
 	}
 	void * pDataPtr = NULL;
@@ -172,6 +206,18 @@ AKRESULT CAkPBI::Init( AkPathInfo * in_pPathInfo )
 void CAkPBI::Term( bool in_bFailedToInit )
 {
 	DecrementPlayCount();
+	if( m_PathInfo.pPBPath )
+	{
+		if( m_PathInfo.pPBPath->m_PathMode & AkPathContinuous )
+		{
+			AkPathState * pPathState = m_pSound->GetPathState();
+			pPathState->pbPlayed = NULL;
+			pPathState->ulCurrentListIndex = 0;
+		}
+		g_pPathManager->RemovePathUser( m_PathInfo.pPBPath, this );
+		m_PathInfo.pPBPath = NULL;
+		m_PathInfo.PathOwnerID = 0;
+	}
 	if( m_PBTrans.pvPSTrans )
 	{
 		g_pTransitionManager->RemoveTransitionUser( m_PBTrans.pvPSTrans, this );
@@ -192,17 +238,10 @@ void CAkPBI::Term( bool in_bFailedToInit )
 	}
 	if( m_p3DSound )
 	{
-		if( !m_p3DSound->m_Params.m_pAttenuation )
-		{
-			m_p3DSound->m_Params.m_pAttenuation = g_pIndex->m_idxAttenuations.GetPtrAndAddRef( m_p3DSound->m_Params.m_uAttenuationID );
-		}
-		CAkAttenuation * pAttenuation = static_cast<CAkAttenuation *>( m_p3DSound->m_Params.m_pAttenuation );
+		CAkAttenuation * pAttenuation = m_p3DSound->m_Params.GetAttenuation();
 		if( pAttenuation )
 		{
-			for( CAkAttenuation::RTPCSubs * pSub = pAttenuation->m_rtpcsubs.m_pItems; pSub != pAttenuation->m_rtpcsubs.m_pItemsEnd; ++pSub )
-			{
-				g_pRTPCMgr->UnSubscribeRTPC( this, pSub->ParamID );
-			}
+			UnsubscribeAttenuationRTPC( pAttenuation );
 		}
 		m_p3DSound->~CAkGen3DParams();
 		AK::MemoryMgr::Free( g_DefaultPoolId, m_p3DSound );
@@ -230,7 +269,14 @@ void CAkPBI::Term( bool in_bFailedToInit )
 void CAkPBI::_InitPlay()
 {
 	m_LoopCount = m_pSound->Loop();
-	m_bInitPlayWasCalled = 1;
+	if( !m_bInitPlayWasCalled )
+	{
+		m_bInitPlayWasCalled = 1;
+		if( m_PathInfo.pPBPath )
+		{
+			g_pPathManager->Start( m_PathInfo.pPBPath, m_pSound->GetPathState() );
+		}
+	}
 }
 
 /** 2012 0x93f7c0: a fade-in transition, then the play (or play-paused) command to the lower engine. */
@@ -271,6 +317,10 @@ void CAkPBI::_Play( TransParams & in_transParams, bool in_bPaused, bool in_bForc
 		{
 			g_pTransitionManager->Pause( m_PBTrans.pvPSTrans );
 		}
+		if( m_PathInfo.pPBPath )
+		{
+			g_pPathManager->Pause( m_PathInfo.pPBPath );
+		}
 	}
 	else
 	{
@@ -309,6 +359,18 @@ void CAkPBI::_Stop( AkPBIStopMode in_eStopMode, bool in_bIsFromTransition, bool 
 		{
 			g_pTransitionManager->RemoveTransitionUser( m_PBTrans.pvPRTrans, this );
 			m_PBTrans.pvPRTrans = NULL;
+		}
+		if( m_PathInfo.pPBPath )
+		{
+			if( m_PathInfo.pPBPath->m_PathMode & AkPathContinuous )
+			{
+				AkPathState * pPathState = m_pSound->GetPathState();
+				pPathState->pbPlayed = NULL;
+				pPathState->ulCurrentListIndex = 0;
+			}
+			g_pPathManager->RemovePathUser( m_PathInfo.pPBPath, this );
+			m_PathInfo.pPBPath = NULL;
+			m_PathInfo.PathOwnerID = 0;
 		}
 		m_bNeedNotifyEndReached = 0;
 		m_bTerminatedByStop = 1;
@@ -399,6 +461,10 @@ void CAkPBI::_Pause( bool in_bIsFromTransition )
 	{
 		g_pTransitionManager->Pause( m_PBTrans.pvPSTrans );
 	}
+	if( m_PathInfo.pPBPath )
+	{
+		g_pPathManager->Pause( m_PathInfo.pPBPath );
+	}
 }
 
 /** 2012 0x93fb30. */
@@ -453,6 +519,10 @@ void CAkPBI::_Resume()
 	if( m_bWasStopped || !m_bWasPaused )
 	{
 		return;
+	}
+	if( m_PathInfo.pPBPath )
+	{
+		g_pPathManager->Resume( m_PathInfo.pPBPath );
 	}
 	m_bWasPaused = 0;
 	CAkLEngineCmds::EnqueueAction( LEStateResume, this );
@@ -836,6 +906,7 @@ void CAkPBI::RefreshParameters()
 	{
 		m_p3DSound->m_Params.m_bIsPanningFromRTPC = bPositioningFromRTPC;
 	}
+	const bool bFirstRefresh = !m_bGetAudioParamsCalled;
 	m_pSound->GetAudioParameters( m_EffectiveParams, 0xFFFFFFFF, m_mapMutedNodes, m_pGameObj, !m_bGetAudioParamsCalled, m_Ranges, true );
 	m_bGetAudioParamsCalled = 1;
 	m_LPF = m_Ranges.LPFOffset + m_EffectiveParams.LPF;
@@ -843,6 +914,10 @@ void CAkPBI::RefreshParameters()
 	m_EffectiveParams.LPF = m_LPFAutomationOffset + m_LPF;
 	m_Volume = m_EffectiveParams.Volume;
 	CalculateMutedEffectiveVolume();
+	if( DishonoredWwise::IsDiagnostics() )
+	{
+		AkDiagVoiceParameters( this, bFirstRefresh );
+	}
 	const PriorityInfo priorityInfo = m_pSound->GetPriority( m_pGameObj );
 	if( priorityInfo.priority != m_PriorityInfoCurrent.priorityInfo.priority || priorityInfo.distanceOffset != m_PriorityInfoCurrent.priorityInfo.distanceOffset )
 	{
@@ -971,4 +1046,24 @@ void CAkPBI::InvalidateFeedbackParameters()
 	m_bAreParametersValid = 0;
 	m_bFeedbackParametersValid = 0;
 	m_pFeedbackInfo = NULL;
+}
+
+/** 2012 0x93f1a0 (IH3 fork R): an attenuation RTPC subscription of the PBI writes the cone outside volume / LPF of its
+    3D parameters (the other attenuation parameters are read from the RTPC manager when the volumes are computed). */
+AKRESULT CAkPBI::SetParam( AkInt16 in_paramID, const void * in_pParam, AkUInt32 )
+{
+	if( !m_p3DSound )
+	{
+		return AK_Success;
+	}
+	const AkReal32 fValue = *(const AkReal32 *)in_pParam;
+	if( in_paramID == RTPC_Positioning_Cone_Attenuation )
+	{
+		m_p3DSound->m_Params.m_fConeOutsideVolume = fValue;
+	}
+	else if( in_paramID == RTPC_Positioning_Cone_LPF )
+	{
+		m_p3DSound->m_Params.m_fConeLoPass = fValue;
+	}
+	return AK_Success;
 }

@@ -15,19 +15,41 @@
 
 #include "AkAudioLibGlobals.h"
 
-/** AkPositionKeeper: the position array plus the packed multi-position type / listener index and mask. */
-struct AkPositionKeeper
+class CAkParameterNodeBase;
+
+/** AkSoundPositionRef (PDB, 8 bytes): the position array, the listener mask, the packed multi-position type and the
+    listener the object is attached to (m_iListenerIdx, signed 5 bits, -1 = none; the decompile reads byte +7 >> 3). */
+struct AkSoundPositionRef
 {
-	AkPositionKeeper() : m_aPos( NULL ), m_uNumPos( 0 ), m_eMultiPositionType( 0 ), m_uListenerIndex( 31 ), m_uListenerMask( 1 ) {}
-
-	void SetPosition( const AkSoundPosition * in_aPositions, AkUInt16 in_uNumPositions );
-	void Term();
-
 	AkSoundPosition *	m_aPos;
 	AkUInt16			m_uNumPos;
-	AkUInt8				m_eMultiPositionType : 3;
-	AkUInt8				m_uListenerIndex : 5;
 	AkUInt8				m_uListenerMask;
+	AkUInt8				m_eMultiPositionType : 3;
+	AkInt8				m_iListenerIdx : 5;
+};
+
+struct AkPositionKeeper : public AkSoundPositionRef
+{
+	AkPositionKeeper()
+	{
+		m_aPos = NULL;
+		m_uNumPos = 0;
+		m_uListenerMask = 1;
+		m_eMultiPositionType = AK::SoundEngine::MultiPositionType_SingleSource;
+		m_iListenerIdx = -1;
+	}
+
+	AKRESULT SetPosition( const AkSoundPosition * in_aPositions, AkUInt16 in_uNumPositions );
+	void Term();
+};
+static_assert( sizeof( AkSoundPositionRef ) == 8, "AkSoundPositionRef: 2012 PDB 8 bytes" );
+
+/** AkSwitchHistItem (akregistrymgr.h): what a switch container last played for a game object, for its "play only the
+    first time" / continue behaviours. */
+struct AkSwitchHistItem
+{
+	AkUInt32	LastSwitch;
+	AkUInt32	NumPlayBack;
 };
 
 class CAkRegisteredObj
@@ -41,16 +63,22 @@ public:
 	void SetActiveListeners( AkUInt32 in_uListenerMask ) { m_PosKeep.m_uListenerMask = (AkUInt8)in_uListenerMask; }
 	AKRESULT SetGameObjectEnvironmentsValues( const AkEnvironmentValue * in_aEnvironmentValues, AkUInt32 in_uNumEnvValues );
 	AKRESULT SetObjectObstructionAndOcclusion( AkUInt32 in_uListener, AkReal32 in_fObstructionValue, AkReal32 in_fOcclusionValue );
+	bool CreateModifiedNodeList();
+	AKRESULT SetNodeAsModified( CAkParameterNodeBase * in_pNode );
 
-	void *				m_pListModifiedNodes;
+	CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault> *	m_pListModifiedNodes;
 	AkPositionKeeper	m_PosKeep;
 	AkEnvironmentValue	m_EnvironmentValues[ 4 ];
+	CAkKeyArray<AkUniqueID, AkSwitchHistItem, 5>	m_SwitchHist;
 	AkUInt8				m_fObstructionValue[ 8 ];
 	AkUInt8				m_fOcclusionValue[ 8 ];
 	AkReal32			m_fDryLevelValue;
 	AkReal32			m_fScalingFactor;
 	AkGameObjectID		m_GameObjID;
 	AkInt32				m_refCount;
+
+private:
+	void FreeModifiedNodes();
 };
 
 class CAkRegistryMgr
@@ -73,7 +101,13 @@ public:
 	AKRESULT SetObjectObstructionAndOcclusion( AkGameObjectID in_GameObjectID, AkUInt32 in_uListener, AkReal32 in_fObstructionLevel, AkReal32 in_fOcclusionLevel );
 
 	AkUInt32 NumRegistered() const { return m_mapRegisteredObj.Length(); }
+	void SetNodeIDAsModified( CAkParameterNodeBase * in_pNode );
+	AkSwitchHistItem GetSwitchHistItem( CAkRegisteredObj * in_pGameObj, AkUniqueID in_SwitchContID );
+	AKRESULT SetSwitchHistItem( CAkRegisteredObj * in_pGameObj, AkUniqueID in_SwitchContID, const AkSwitchHistItem & in_SwitchHistItem );
+	AKRESULT ClearSwitchHist( AkUniqueID in_SwitchContID, CAkRegisteredObj * in_pGameObj = NULL );
+	AKRESULT GetActiveGameObjects( AkArray<AkGameObjectID, AkGameObjectID, ArrayPoolDefault, 32> & io_GameObjectList );
 
+	CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault>	m_listModifiedNodes;
 	AkHashList<AkGameObjectID, CAkRegisteredObj *, 193> m_mapRegisteredObj;
 
 private:

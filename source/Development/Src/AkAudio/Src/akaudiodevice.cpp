@@ -331,13 +331,11 @@ void UAkAudioDevice::Update( UBOOL bGameTicking )
 	if( GWorld && GWorld->m_pAudioSystem )
 	{
 		GWorld->m_pAudioSystem->Update( this, &m_GameObjects );
+		return;
 	}
-	// DISHONORED(port, agent FI): the audio frame. Retail issues it from the tail of
-	// UDishonoredAudioSystem::Update (2013 rva 0x7b3520: the call at 0x7b4783 is the last instruction of
-	// that body and the only xref to AK::SoundEngine::RenderAudio 0x913670 outside Wwise itself), and the
-	// 4,734-byte body is unported here, so the one line of it the game cannot run without is issued from
-	// its immediate caller instead. Without an audio frame no AK_EndOfEvent is ever delivered and every
-	// latent SeqAct_AkPostEvent blocks its Kismet chain for ever.
+	// DISHONORED(port, agent FI; agent IH3): the audio frame is issued from the tail of UDishonoredAudioSystem::Update (2013 rva
+	// 0x7b3520, the call at 0x7b4783, the only xref to AK::SoundEngine::RenderAudio 0x913670 outside Wwise itself), ported by
+	// IH3. Deviation (named): a world without an audio system still gets its frame here, so a latent SeqAct_AkPostEvent can end.
 	AK::SoundEngine::RenderAudio();
 }
 

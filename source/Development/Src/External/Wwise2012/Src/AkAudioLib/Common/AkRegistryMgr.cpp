@@ -4,9 +4,10 @@
 	DISHONORED(port): agent IH1 (wave 26). Rvas on each definition.
 =============================================================================*/
 #include "AkRegistryMgr.h"
+#include "AkHierarchy.h"
 
-/** AkPositionKeeper::SetPosition: the array is reallocated to the new count and copied. */
-void AkPositionKeeper::SetPosition( const AkSoundPosition * in_aPositions, AkUInt16 in_uNumPositions )
+/** 2012 0x937070 (akpositionkeeper.h): the array is reallocated to the new count and copied. */
+AKRESULT AkPositionKeeper::SetPosition( const AkSoundPosition * in_aPositions, AkUInt16 in_uNumPositions )
 {
 	if( m_uNumPos != in_uNumPositions )
 	{
@@ -16,15 +17,16 @@ void AkPositionKeeper::SetPosition( const AkSoundPosition * in_aPositions, AkUIn
 			m_aPos = (AkSoundPosition *)AK::MemoryMgr::Malloc( g_DefaultPoolId, sizeof( AkSoundPosition ) * in_uNumPositions );
 			if( !m_aPos )
 			{
-				return;
+				return AK_InsufficientMemory;
 			}
 			m_uNumPos = in_uNumPositions;
 		}
 	}
-	if( m_aPos && in_aPositions )
+	if( m_uNumPos )
 	{
-		memcpy( m_aPos, in_aPositions, sizeof( AkSoundPosition ) * in_uNumPositions );
+		memcpy( m_aPos, in_aPositions, sizeof( AkSoundPosition ) * m_uNumPos );
 	}
+	return AK_Success;
 }
 
 void AkPositionKeeper::Term()
@@ -50,6 +52,14 @@ CAkRegisteredObj::CAkRegisteredObj( AkGameObjectID in_GameObjID )
 /** 2012 0x9371e0. */
 CAkRegisteredObj::~CAkRegisteredObj()
 {
+	FreeModifiedNodes();
+	if( m_pListModifiedNodes )
+	{
+		m_pListModifiedNodes->Term();
+		AK::MemoryMgr::Free( g_DefaultPoolId, m_pListModifiedNodes );
+		m_pListModifiedNodes = NULL;
+	}
+	m_SwitchHist.Term();
 	m_PosKeep.Term();
 }
 
@@ -71,7 +81,7 @@ void CAkRegisteredObj::SetPosition( const AkSoundPosition * in_aPositions, AkUIn
 {
 	m_PosKeep.SetPosition( in_aPositions, in_uNumPositions );
 	m_PosKeep.m_eMultiPositionType = in_eMultiPositionType;
-	m_PosKeep.m_uListenerIndex = in_ulListenerIndex;
+	m_PosKeep.m_iListenerIdx = (AkInt8)in_ulListenerIndex;
 }
 
 /** 2012 0x936ed0: at most 4 sends; zero ids and non-positive values are dropped; the rest are cleared. */
@@ -122,6 +132,11 @@ void CAkRegistryMgr::Destroy( CAkRegisteredObj * in_pObj )
 AKRESULT CAkRegistryMgr::Init()
 {
 	m_mapRegisteredObj.Init( g_DefaultPoolId );
+	const AKRESULT eResult = m_listModifiedNodes.Init( 8, (AkUInt32)-1 );
+	if( eResult != AK_Success )
+	{
+		return eResult;
+	}
 	CAkRegisteredObj * pObj = RegisterObject( 0, NULL );
 	if( pObj )
 	{
@@ -141,6 +156,70 @@ void CAkRegistryMgr::Term()
 	}
 	UnregisterAll();
 	m_mapRegisteredObj.Term();
+	m_listModifiedNodes.Term();
+}
+
+/** 2012 0x930b00: the nodes a global SetValue / Mute touched, for the reset-all actions. */
+void CAkRegistryMgr::SetNodeIDAsModified( CAkParameterNodeBase * in_pNode )
+{
+	for( CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault>::ListItem * p = m_listModifiedNodes.m_pFirst; p; p = p->pNextListItem )
+	{
+		if( p->Item == in_pNode->key )
+		{
+			return;
+		}
+	}
+	m_listModifiedNodes.AddLast( in_pNode->key );
+}
+
+/** 2012 0x937260. */
+bool CAkRegisteredObj::CreateModifiedNodeList()
+{
+	if( !m_pListModifiedNodes )
+	{
+		void * pMem = AK::MemoryMgr::Malloc( g_DefaultPoolId, sizeof( CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault> ) );
+		if( pMem )
+		{
+			m_pListModifiedNodes = AkPlacementNew( pMem ) CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault>();
+			m_pListModifiedNodes->InitUnbounded();
+		}
+	}
+	return m_pListModifiedNodes != NULL;
+}
+
+/** 2012 0x9372b0: the nodes a SetValue / Mute touched for this game object. */
+AKRESULT CAkRegisteredObj::SetNodeAsModified( CAkParameterNodeBase * in_pNode )
+{
+	if( !CreateModifiedNodeList() )
+	{
+		return AK_InsufficientMemory;
+	}
+	for( CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault>::ListItem * p = m_pListModifiedNodes->m_pFirst; p; p = p->pNextListItem )
+	{
+		if( p->Item == in_pNode->key )
+		{
+			return AK_Success;
+		}
+	}
+	return m_pListModifiedNodes->AddLast( in_pNode->key ) ? AK_Success : AK_Fail;
+}
+
+/** 2012 0x937190: every node this object modified drops its per-object values, then the object's RTPC values go. */
+void CAkRegisteredObj::FreeModifiedNodes()
+{
+	if( m_pListModifiedNodes )
+	{
+		for( CAkList2<AkUniqueID, AkUniqueID, 1, ArrayPoolDefault>::ListItem * p = m_pListModifiedNodes->m_pFirst; p; p = p->pNextListItem )
+		{
+			CAkParameterNodeBase * pNode = g_pIndex->m_idxAudioNode.GetPtrAndAddRef( p->Item );
+			if( pNode )
+			{
+				pNode->Unregister( this );
+				pNode->Release();
+			}
+		}
+	}
+	g_pRTPCMgr->UnregisterGameObject( this );
 }
 
 /** 2012 0x930420: an already registered id returns the existing object. */
@@ -302,4 +381,59 @@ AKRESULT CAkRegistryMgr::SetObjectObstructionAndOcclusion( AkGameObjectID in_Gam
 {
 	CAkRegisteredObj * pObj = GetObj( in_GameObjectID );
 	return pObj ? pObj->SetObjectObstructionAndOcclusion( in_uListener, in_fObstructionLevel, in_fOcclusionLevel ) : AK_Fail;
+}
+
+/** 2012 0x9309a0 (IH3 fork R): the container's history on this game object, {0, 0} without one. */
+AkSwitchHistItem CAkRegistryMgr::GetSwitchHistItem( CAkRegisteredObj * in_pGameObj, AkUniqueID in_SwitchContID )
+{
+	AkSwitchHistItem item;
+	item.LastSwitch = 0;
+	item.NumPlayBack = 0;
+	if( in_pGameObj )
+	{
+		AkSwitchHistItem * pItem = in_pGameObj->m_SwitchHist.Exists( in_SwitchContID );
+		if( pItem )
+		{
+			item = *pItem;
+		}
+	}
+	return item;
+}
+
+/** 2012 0x9309f0 (IH3 fork R). */
+AKRESULT CAkRegistryMgr::SetSwitchHistItem( CAkRegisteredObj * in_pGameObj, AkUniqueID in_SwitchContID, const AkSwitchHistItem & in_SwitchHistItem )
+{
+	if( !in_pGameObj )
+	{
+		return AK_Fail;
+	}
+	return in_pGameObj->m_SwitchHist.Set( in_SwitchContID, in_SwitchHistItem ) ? AK_Success : AK_Fail;
+}
+
+/** 2012 0x930a30 (IH3 fork R): one game object's history of the container, or (NULL) every game object's. */
+AKRESULT CAkRegistryMgr::ClearSwitchHist( AkUniqueID in_SwitchContID, CAkRegisteredObj * in_pGameObj )
+{
+	if( in_pGameObj )
+	{
+		in_pGameObj->m_SwitchHist.Unset( in_SwitchContID );
+		return AK_Success;
+	}
+	for( AkHashList<AkGameObjectID, CAkRegisteredObj *, 193>::Iterator it = m_mapRegisteredObj.Begin(); it.pItem; ++it )
+	{
+		it.pItem->Assoc.item->m_SwitchHist.Unset( in_SwitchContID );
+	}
+	return AK_Success;
+}
+
+/** 2012 0x930b40 (IH3 fork R): the game objects something besides the registry holds (playing ones). */
+AKRESULT CAkRegistryMgr::GetActiveGameObjects( AkArray<AkGameObjectID, AkGameObjectID, ArrayPoolDefault, 32> & io_GameObjectList )
+{
+	for( AkHashList<AkGameObjectID, CAkRegisteredObj *, 193>::Iterator it = m_mapRegisteredObj.Begin(); it.pItem; ++it )
+	{
+		if( it.pItem->Assoc.item->m_refCount > 1 && !io_GameObjectList.AddLast( it.pItem->Assoc.key ) )
+		{
+			return AK_InsufficientMemory;
+		}
+	}
+	return AK_Success;
 }

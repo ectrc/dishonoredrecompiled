@@ -53,7 +53,9 @@ public:
 	AkGameObjectID GetGameObjectFromPlayingID( AkPlayingID in_playingID );
 	void NotifyDuration( AkPlayingID in_PlayingID, AkReal32 in_fDuration, AkReal32 in_fEstimatedDuration, AkUniqueID in_idAudioNode );
 	void NotifyMarker( CAkPBI * in_pPBI, AkAudioMarker * in_pMarker );
+	void NotifyEndOfDynamicSequenceItem( AkPlayingID in_PlayingID, AkUniqueID in_audioNodeID, void * in_pCustomInfo );
 	void NotifyMarkers( AkPipelineBuffer & io_CurrMarkerBuffer );
+	void NotifySpeakerVolumeMatrix( AkPlayingID in_PlayingID, AkSpeakerVolumeMatrixCallbackInfo * in_pInfo );
 
 	AkHashListBare<AkPlayingID, PlayingMgrItem, 31, PlayingMgrItemPolicy>	m_PlayingMap;
 	CAkLock			m_csMapLock;

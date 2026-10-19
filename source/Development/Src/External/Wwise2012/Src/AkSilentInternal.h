@@ -54,8 +54,7 @@ namespace AkSilent
 	};
 
 	/**
-	 * What is still kept as books after agent IH2: the bank list (IH1) and the last value of every RTPC / switch / state
-	 * set through the API, which the Query functions answer from until IH3 ports CAkRTPCMgr / CAkSwitchMgr playback.
+	 * What is still kept as books: the bank list (IH1). The RTPC / switch / state books went with IH3's game-sync managers.
 	 */
 	struct Engine
 	{
@@ -63,10 +62,6 @@ namespace AkSilent
 		bool									bMemoryMgrInit;
 		bool									bMusicEngineInit;
 		std::map<AkBankID, Bank>				Banks;
-		std::map<AkRtpcID, AkRtpcValue>			GlobalRtpc;
-		std::map<AkSwitchGroupID, AkSwitchStateID>	Switches;	///< global part; per-object in ObjectSwitches
-		std::map<AkStateGroupID, AkStateID>		States;
-		std::map<AkUInt64, AkSwitchStateID>		ObjectSwitches;	///< (gameObj << 32) | switchGroup
 	};
 
 	Engine & Get();

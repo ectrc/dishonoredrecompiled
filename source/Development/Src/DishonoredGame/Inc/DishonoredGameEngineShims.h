@@ -12516,6 +12516,7 @@ public:
     //## END PROPS AnimNotify_AkEvent
 
     DECLARE_CLASS(UAnimNotify_AkEvent,UAnimNotify,0,Engine)
+#include "CppText/UAnimNotify_AkEvent.h"
 };
 
 // Engine.AnimNotify_SoireeAccent: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60) [shim: Engine package]

@@ -252,6 +252,33 @@ struct AkSIMDSpeakerVolumes
 		vector[ 0 ] = _mm_add_ps( vector[ 0 ], in_rOther.vector[ 0 ] );
 		vector[ 1 ] = _mm_add_ps( vector[ 1 ], in_rOther.vector[ 1 ] );
 	}
+	/** DISHONORED(IH3): the SDK's inline AkSIMDSpeakerVolumes::Add( scalar ) / Max / dBToLin / FastLinTodB / LinTodB
+	    (aksimdspeakervolumes.h) as Get3DVolumes 0x935400 expands them: the dB conversions touch the six speakers only. */
+	void Add( AkReal32 in_fValue )
+	{
+		const __m128 v = _mm_set1_ps( in_fValue );
+		vector[ 0 ] = _mm_add_ps( vector[ 0 ], v );
+		vector[ 1 ] = _mm_add_ps( vector[ 1 ], v );
+	}
+	void Max( const AkSIMDSpeakerVolumes & in_rOther )
+	{
+		vector[ 0 ] = _mm_max_ps( vector[ 0 ], in_rOther.vector[ 0 ] );
+		vector[ 1 ] = _mm_max_ps( vector[ 1 ], in_rOther.vector[ 1 ] );
+	}
+	void dBToLin();
+	void FastLinTodB();
+	void LinTodB();
+	bool IsUnderThreshold( AkReal32 in_fThreshold ) const
+	{
+		for( int i = 0; i < 6; ++i )
+		{
+			if( aVolumes[ i ] > in_fThreshold )
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 	bool IsLessOrEqual( const AkSIMDSpeakerVolumes & in_rOther ) const
 	{
 		for( int i = 0; i < 8; ++i )

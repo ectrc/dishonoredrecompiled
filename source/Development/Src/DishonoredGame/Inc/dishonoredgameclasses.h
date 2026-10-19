@@ -3585,6 +3585,7 @@ public:
     //## END PROPS DishonoredAudioPortal
 
     DECLARE_CLASS(ADishonoredAudioPortal,AGenericPortal,0,DishonoredGame)
+#include "CppText/ADishonoredAudioPortal.h"
 };
 
 // DishonoredGame.DishonoredAudioVolume.DisSoundRTPC: retail SDK size 16 (2012 PDB 16)

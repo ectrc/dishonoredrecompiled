@@ -25,6 +25,7 @@
 
 #include <AK/SoundEngine/Common/AkTypes.h>
 #include <AK/SoundEngine/Common/AkMemoryMgr.h>
+#include "AkInterpolation.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -1266,6 +1267,20 @@ public:
 		}
 		return pItem;
 	}
+
+	/** akkeylist.h Unset (agent IH3 fork C): the first item of the key, if any. */
+	void Unset( T_KEY in_Key )
+	{
+		typename Base::ListItem * pPrev = NULL;
+		for( typename Base::ListItem * p = this->m_pFirst; p; pPrev = p, p = p->pNextListItem )
+		{
+			if( p->Item.key == in_Key )
+			{
+				Base::RemoveItem( p, pPrev );
+				return;
+			}
+		}
+	}
 };
 
 /** CAkMultiKeyList: CAkList2 of MapStruct kept sorted by key, equal keys in insertion order (akmultikeylist.h). */
@@ -1463,12 +1478,78 @@ struct AkRTPCGraphPointBase
 
 typedef AkRTPCGraphPointBase<AkReal32> AkRTPCGraphPoint;
 
-/** CAkConversionTable: a copied curve (Set 2012 0x931370); evaluation (ConvertInternal) is IH3's. */
+/** CAkConversionTable: a copied curve (Set 2012 0x931370) and its evaluation: ConvertInternal
+    <float> 2012 0x930ec0 / <unsigned long> 0x931040 (IH3, fork R). io_index is the first point to test; the SDK passes 0. */
 template <class T_GRAPH_POINT, class T_TARGET>
 class CAkConversionTable
 {
 public:
 	CAkConversionTable() : m_pArrayGraphPoints( NULL ), m_ulArraySize( 0 ), m_eScaling( AkCurveScaling_None ) {}
+
+	T_TARGET Convert( AkReal32 in_valueToConvert )
+	{
+		AkUInt32 uIndex = 0;
+		return ConvertInternal( in_valueToConvert, uIndex );
+	}
+
+	T_TARGET ConvertInternal( AkReal32 in_valueToConvert, AkUInt32 & io_index )
+	{
+		AkReal32 fResult = in_valueToConvert;
+		if( m_pArrayGraphPoints && m_ulArraySize )
+		{
+			if( m_ulArraySize == 1 )
+			{
+				fResult = (AkReal32)m_pArrayGraphPoints[ 0 ].To;
+			}
+			else
+			{
+				while( io_index < m_ulArraySize )
+				{
+					const T_GRAPH_POINT & rPoint = m_pArrayGraphPoints[ io_index ];
+					if( rPoint.From >= in_valueToConvert )
+					{
+						fResult = (AkReal32)rPoint.To;
+						break;
+					}
+					if( io_index == m_ulArraySize - 1 )
+					{
+						fResult = (AkReal32)rPoint.To;
+						break;
+					}
+					const T_GRAPH_POINT & rNext = m_pArrayGraphPoints[ io_index + 1 ];
+					if( rNext.From > in_valueToConvert )
+					{
+						const AkReal32 fRatio = ( in_valueToConvert - rPoint.From ) / ( rNext.From - rPoint.From );
+						if( rPoint.Interp == AkCurveInterpolation_Linear )
+						{
+							fResult = fRatio * ( (AkReal32)rNext.To - (AkReal32)rPoint.To ) + (AkReal32)rPoint.To;
+						}
+						else if( rPoint.Interp == AkCurveInterpolation_Constant )
+						{
+							fResult = (AkReal32)rPoint.To;
+						}
+						else
+						{
+							fResult = g_Interpol.InterpolateNoCheck( fRatio, (AkReal32)rPoint.To, (AkReal32)rNext.To, rPoint.Interp );
+						}
+						break;
+					}
+					++io_index;
+				}
+			}
+		}
+		switch( m_eScaling )
+		{
+		case AkCurveScaling_dB_96_3:
+			return (T_TARGET)g_Interpol.m_tableLinearMutingTodBMuting96.Get( fResult );
+		case AkCurveScaling_Frequency_20_20000:
+			return (T_TARGET)g_Interpol.m_tableLinearToFrequency_20_20000.Get( fResult );
+		case AkCurveScaling_dB_96_3_NoCheck:
+			return (T_TARGET)g_Interpol.m_tableLinearMutingTodBMuting96.GetNoCheck( fResult );
+		default:
+			return (T_TARGET)fResult;
+		}
+	}
 
 	AKRESULT Set( T_GRAPH_POINT * in_pArrayConversion, AkUInt32 in_ulConversionArraySize, AkCurveScaling in_eScaling )
 	{

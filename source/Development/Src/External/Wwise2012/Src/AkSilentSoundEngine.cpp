@@ -17,13 +17,17 @@
 	  0x91a6d0..0x91a830, Query::GetEventIDFromPlayingID 0x91b1b0, GetGameObjectFromPlayingID 0x91b1d0,
 	  GetPlayingIDsFromGameObject 0x91b1f0, GetListenerPosition 0x91af20, GetListenerSpatialization 0x91af50.
 	Deviations (named):
-	  * RTPC, switch, state and trigger calls (message types 2..10) are the IH3 seam: they are not queued; the value is
-	    kept as books (AkSilent::Engine) that the Query functions answer from, and SetState also writes CAkStateMgr's
-	    current state as IH1 did. Nothing in IH2's playback reads them (no RTPC curve, no switch container).
+	  * Agent IH3 fork R: SetRTPCValue 0x917200 / 0x9186b0 / 0x9186f0, ResetRTPCValue 0x917380 / 0x918920 / 0x918940,
+	    SetSwitch 0x917290 / 0x918730 / 0x918770, SetState 0x918850 / 0x9188a0 / 0x9188e0, PostTrigger 0x9172e0 /
+	    0x9187b0 / 0x918800, SetEnvironmentVolumes 0x9174f0, SetEnvironmentVolume 0x918960, BypassEnvironment 0x917550,
+	    AddExternalStateHandler 0x918250 and Query::GetRTPCValue 0x91b360.., GetSwitch 0x91b480.., GetEnvironmentVolumes
+	    0x91b050, GetEnvironmentBypass 0x91b0b0, GetEnvironmentVolume 0x91b220 are retail's (queued to the RTPC / state
+	    / environment managers). Names are hashed through AkSilent::RegisterName / NameHash (GetIDFromString's FNV hash,
+	    remembered for the log). Query::GetActiveGameObjects (the AkArray form) is not declared by our public header and
+	    has no caller; CAkRegistryMgr::GetActiveGameObjects is ported behind it.
 	  * DishonoredWwise::SetDurationHint (agent ID) is a no-op shim now that a voice ends at its media end.
-	  * SetEffect, SetEnvironmentVolume(s) and BypassEnvironment (effects / aux busses) are IH4's and answer
-	    AK_Success without queueing.
-	  * Query::GetMaxRadius answers -1 (no attenuation) and GetEnvironment* answer zero: IH3 positioning / IH4 aux.
+	  * SetEffect is IH4's and answers AK_Success without queueing.
+	  * Query::GetMaxRadius is IH3's (AkPositioning.cpp, 2012 0x91b180).
 	  * PostEvent logs every post (and -akdiag every unknown event) through the backend log hook: diagnostic.
 =============================================================================*/
 #include <AkSink.h>
@@ -35,6 +39,7 @@
 #include <AkLEngine.h>
 #include <AkVPLNode.h>
 #include <AkPositionRepository.h>
+#include <AkDynamicSequence.h>
 #include "AkSilentInternal.h"
 
 AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings * in_pPlatformSettings );
@@ -272,110 +277,152 @@ namespace AK
 			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ListenerPipeline>() );
 		}
 
-		// -- game syncs (IH3 seam: books, not queued) ----------------------------------------------
+		// -- game syncs (IH3 fork R: queued to CAkRTPCMgr / CAkStateMgr as retail) ----------------
 
-		AKRESULT SetRTPCValue( AkRtpcID in_rtpcID, AkRtpcValue in_value, AkGameObjectID, AkTimeMs, AkCurveInterpolation )
+		/** 2012 0x917200: with a fade the message carries its TransParams (type 3), else type 2. */
+		AKRESULT SetRTPCValue( AkRtpcID in_rtpcID, AkRtpcValue in_value, AkGameObjectID in_gameObjectID, AkTimeMs in_uValueChangeDuration, AkCurveInterpolation in_eFadeCurve )
 		{
-			AkSilent::Get().GlobalRtpc[ in_rtpcID ] = in_value;
 			++AkSilent::MutableStats().RtpcSets;
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.rtpc.ID = in_rtpcID;
+			Item.rtpc.Value = in_value;
+			Item.rtpc.GameObjID = in_gameObjectID;
+			if( in_uValueChangeDuration )
+			{
+				Item.type = QueuedMsgType_RTPCWithTransition;
+				Item.rtpcWithTransition.transParams.TransitionTime = in_uValueChangeDuration;
+				Item.rtpcWithTransition.transParams.eFadeCurve = in_eFadeCurve;
+				return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_RtpcWithTransition>() );
+			}
+			Item.type = QueuedMsgType_RTPC;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_Rtpc>() );
 		}
 
+		/** 2012 0x9186b0: an unknown name is AK_IDNotFound. */
 		AKRESULT SetRTPCValue( const AkOSChar * in_pszRtpcName, AkRtpcValue in_value, AkGameObjectID in_gameObjectID, AkTimeMs in_uValueChangeDuration, AkCurveInterpolation in_eFadeCurve )
 		{
-			return SetRTPCValue( AkSilent::RegisterName( in_pszRtpcName ), in_value, in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve );
+			const AkRtpcID id = AkSilent::RegisterName( in_pszRtpcName );
+			return id ? SetRTPCValue( id, in_value, in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x9186f0. */
 		AKRESULT SetRTPCValue( const char * in_pszRtpcName, AkRtpcValue in_value, AkGameObjectID in_gameObjectID, AkTimeMs in_uValueChangeDuration, AkCurveInterpolation in_eFadeCurve )
 		{
-			return SetRTPCValue( AkSilent::RegisterName( in_pszRtpcName ), in_value, in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve );
+			const AkRtpcID id = AkSilent::RegisterName( in_pszRtpcName );
+			return id ? SetRTPCValue( id, in_value, in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve ) : AK_IDNotFound;
 		}
 
-		AKRESULT ResetRTPCValue( AkRtpcID in_rtpcID, AkGameObjectID, AkTimeMs, AkCurveInterpolation )
+		/** 2012 0x917380: with a fade type 6 carries its TransParams, else type 5. */
+		AKRESULT ResetRTPCValue( AkRtpcID in_rtpcID, AkGameObjectID in_gameObjectID, AkTimeMs in_uValueChangeDuration, AkCurveInterpolation in_eFadeCurve )
 		{
-			AkSilent::Get().GlobalRtpc.erase( in_rtpcID );
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.resetrtpcvalue.ParamID = in_rtpcID;
+			Item.resetrtpcvalue.GameObjID = in_gameObjectID;
+			if( in_uValueChangeDuration )
+			{
+				Item.type = QueuedMsgType_ResetRTPCValueWithTransition;
+				Item.resetrtpcvalueWithTransition.transParams.TransitionTime = in_uValueChangeDuration;
+				Item.resetrtpcvalueWithTransition.transParams.eFadeCurve = in_eFadeCurve;
+				return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ResetRtpcValueWithTransition>() );
+			}
+			Item.type = QueuedMsgType_ResetRTPCValue;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ResetRTPCValue>() );
 		}
 
+		/** 2012 0x918920. */
 		AKRESULT ResetRTPCValue( const AkOSChar * in_pszRtpcName, AkGameObjectID in_gameObjectID, AkTimeMs in_uValueChangeDuration, AkCurveInterpolation in_eFadeCurve )
 		{
-			return ResetRTPCValue( AkSilent::RegisterName( in_pszRtpcName ), in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve );
+			const AkRtpcID id = AkSilent::RegisterName( in_pszRtpcName );
+			return id ? ResetRTPCValue( id, in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x918940. */
 		AKRESULT ResetRTPCValue( const char * in_pszRtpcName, AkGameObjectID in_gameObjectID, AkTimeMs in_uValueChangeDuration, AkCurveInterpolation in_eFadeCurve )
 		{
-			return ResetRTPCValue( AkSilent::RegisterName( in_pszRtpcName ), in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve );
+			const AkRtpcID id = AkSilent::RegisterName( in_pszRtpcName );
+			return id ? ResetRTPCValue( id, in_gameObjectID, in_uValueChangeDuration, in_eFadeCurve ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x917290. */
 		AKRESULT SetSwitch( AkSwitchGroupID in_switchGroup, AkSwitchStateID in_switchState, AkGameObjectID in_gameObjectID )
 		{
-			AkSilent::Engine & e = AkSilent::Get();
-			e.Switches[ in_switchGroup ] = in_switchState;
-			if( in_gameObjectID != AK_INVALID_GAME_OBJECT )
-			{
-				e.ObjectSwitches[ ( (AkUInt64)in_gameObjectID << 32 ) | in_switchGroup ] = in_switchState;
-			}
 			++AkSilent::MutableStats().SwitchSets;
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_Switch;
+			Item.setswitch.GameObjID = in_gameObjectID;
+			Item.setswitch.SwitchGroupID = in_switchGroup;
+			Item.setswitch.SwitchStateID = in_switchState;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_Switch>() );
 		}
 
+		/** 2012 0x918730. */
 		AKRESULT SetSwitch( const AkOSChar * in_pszSwitchGroup, const AkOSChar * in_pszSwitchState, AkGameObjectID in_gameObjectID )
 		{
 			const AkSwitchGroupID group = AkSilent::RegisterName( in_pszSwitchGroup );
 			const AkSwitchStateID state = AkSilent::RegisterName( in_pszSwitchState );
-			AkSilent::Logf( L"SetSwitch %s = %s on game object %u", in_pszSwitchGroup, in_pszSwitchState, (AkUInt32)in_gameObjectID );
-			return SetSwitch( group, state, in_gameObjectID );
+			return group && state ? SetSwitch( group, state, in_gameObjectID ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x918770. */
 		AKRESULT SetSwitch( const char * in_pszSwitchGroup, const char * in_pszSwitchState, AkGameObjectID in_gameObjectID )
 		{
-			return SetSwitch( AkSilent::RegisterName( in_pszSwitchGroup ), AkSilent::RegisterName( in_pszSwitchState ), in_gameObjectID );
+			const AkSwitchGroupID group = AkSilent::RegisterName( in_pszSwitchGroup );
+			const AkSwitchStateID state = AkSilent::RegisterName( in_pszSwitchState );
+			return group && state ? SetSwitch( group, state, in_gameObjectID ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x918850 / 0x917320: the state "none" (FNV of "none", 748895195) is state 0. */
 		AKRESULT SetState( AkStateGroupID in_stateGroup, AkStateID in_state )
 		{
-			AkSilent::Get().States[ in_stateGroup ] = in_state;
 			++AkSilent::MutableStats().StateSets;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( g_pStateMgr )
-			{
-				AkStateGroupInfo * pGroup = g_pStateMgr->AddStateGroup( in_stateGroup );
-				if( pGroup )
-				{
-					pGroup->ActualState = in_state;
-				}
-			}
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_State;
+			Item.setstate.StateGroupID = in_stateGroup;
+			Item.setstate.StateID = in_state == 748895195 ? 0 : in_state;
+			Item.setstate.bSkipTransition = false;
+			Item.setstate.bSkipExtension = false;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_State>() );
 		}
 
+		/** 2012 0x9188a0. */
 		AKRESULT SetState( const AkOSChar * in_pszStateGroup, const AkOSChar * in_pszState )
 		{
 			const AkStateGroupID group = AkSilent::RegisterName( in_pszStateGroup );
 			const AkStateID state = AkSilent::RegisterName( in_pszState );
-			AkSilent::Logf( L"SetState %s = %s", in_pszStateGroup, in_pszState );
-			return SetState( group, state );
+			return group && state ? SetState( group, state ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x9188e0. */
 		AKRESULT SetState( const char * in_pszStateGroup, const char * in_pszState )
 		{
-			return SetState( AkSilent::RegisterName( in_pszStateGroup ), AkSilent::RegisterName( in_pszState ) );
+			const AkStateGroupID group = AkSilent::RegisterName( in_pszStateGroup );
+			const AkStateID state = AkSilent::RegisterName( in_pszState );
+			return group && state ? SetState( group, state ) : AK_IDNotFound;
 		}
 
-		AKRESULT PostTrigger( AkTriggerID, AkGameObjectID )
+		/** 2012 0x9172e0. */
+		AKRESULT PostTrigger( AkTriggerID in_triggerID, AkGameObjectID in_gameObjectID )
 		{
 			++AkSilent::MutableStats().TriggersPosted;
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_Trigger;
+			Item.trigger.GameObjID = in_gameObjectID;
+			Item.trigger.TriggerID = in_triggerID;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_Trigger>() );
 		}
 
+		/** 2012 0x9187b0. */
 		AKRESULT PostTrigger( const AkOSChar * in_pszTrigger, AkGameObjectID in_gameObjectID )
 		{
-			AkSilent::Logf( L"PostTrigger %s on game object %u", in_pszTrigger, (AkUInt32)in_gameObjectID );
-			return PostTrigger( AkSilent::RegisterName( in_pszTrigger ), in_gameObjectID );
+			const AkTriggerID id = AkSilent::RegisterName( in_pszTrigger );
+			return id ? PostTrigger( id, in_gameObjectID ) : AK_IDNotFound;
 		}
 
+		/** 2012 0x918800. */
 		AKRESULT PostTrigger( const char * in_pszTrigger, AkGameObjectID in_gameObjectID )
 		{
-			return PostTrigger( AkSilent::RegisterName( in_pszTrigger ), in_gameObjectID );
+			const AkTriggerID id = AkSilent::RegisterName( in_pszTrigger );
+			return id ? PostTrigger( id, in_gameObjectID ) : AK_IDNotFound;
 		}
 
 		// -- events --------------------------------------------------------------------------------
@@ -449,6 +496,117 @@ namespace AK
 		AkPlayingID PostEvent( const char * in_pszEventName, AkGameObjectID in_gameObjectID, AkUInt32 in_uFlags, AkCallbackFunc in_pfnCallback, void * in_pCookie, AkUInt32 in_cExternals, AkExternalSourceInfo * in_pExternalSources, AkPlayingID in_PlayingID )
 		{
 			return PostEvent( AkSilent::RegisterName( in_pszEventName ), in_gameObjectID, in_uFlags, in_pfnCallback, in_pCookie, in_cExternals, in_pExternalSources, in_PlayingID );
+		}
+
+		// -- dynamic sequences (agent IH3 fork C; Dishonored never calls them) ------------------------------------
+
+		namespace DynamicSequence
+		{
+			/** 2012 0x9178f0: a new playing id owns the sequence; the audio thread binds it to the game object. */
+			AkPlayingID Open( AkGameObjectID in_gameObjectID, AkUInt32 in_uFlags, AkCallbackFunc in_pfnCallback, void * in_pCookie, DynamicSequenceType in_eDynamicSequenceType )
+			{
+				AkQueuedMsg Item;
+				Item.type = QueuedMsgType_OpenDynamicSequence;
+				Item.opendynamicsequence.PlayingID = (AkPlayingID)InterlockedIncrement( &g_PlayingID );
+				Item.opendynamicsequence.pDynamicSequence = CAkDynamicSequence::Create( Item.opendynamicsequence.PlayingID, in_eDynamicSequenceType );
+				if( !Item.opendynamicsequence.pDynamicSequence )
+				{
+					return AK_INVALID_PLAYING_ID;
+				}
+				Item.opendynamicsequence.GameObjID = in_gameObjectID;
+				Item.opendynamicsequence.TargetPlayingID = AK_INVALID_PLAYING_ID;
+				memset( &Item.opendynamicsequence.CustomParam, 0, sizeof( Item.opendynamicsequence.CustomParam ) );
+				if( g_pPlayingMgr->AddPlayingID( Item.opendynamicsequence, in_pfnCallback, in_pCookie, in_uFlags, AK_INVALID_UNIQUE_ID ) != AK_Success )
+				{
+					Item.opendynamicsequence.pDynamicSequence->Release();
+					return AK_INVALID_PLAYING_ID;
+				}
+				Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_OpenDynamicSequence>() );
+				return Item.opendynamicsequence.PlayingID;
+			}
+
+			/** The shared body of Play 0x91a9d0, Pause 0x91aa50, Resume 0x91aad0, Stop 0x91ab50, Break 0x91abd0, Close 0x91ac50:
+			    a closed sequence refuses; the message keeps the reference GetPtrAndAddRef took. */
+			static AKRESULT EnqueueCommand( AkPlayingID in_playingID, AkQueuedMsg_DynamicSequenceCmd::Command in_eCommand, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve )
+			{
+				CAkDynamicSequence * pSequence = g_pIndex->m_idxDynamicSequences.GetPtrAndAddRef( in_playingID );
+				if( !pSequence )
+				{
+					return AK_Fail;
+				}
+				if( pSequence->m_bClosed )
+				{
+					pSequence->Release();
+					return AK_Fail;
+				}
+				if( in_eCommand == AkQueuedMsg_DynamicSequenceCmd::Close )
+				{
+					pSequence->m_bClosed = true;
+				}
+				AkQueuedMsg Item;
+				Item.type = QueuedMsgType_DynamicSequenceCmd;
+				Item.dynamicsequencecmd.pDynamicSequence = pSequence;
+				Item.dynamicsequencecmd.eCommand = in_eCommand;
+				Item.dynamicsequencecmd.uTransitionDuration = in_uTransitionDuration;
+				Item.dynamicsequencecmd.eFadeCurve = in_eFadeCurve;
+				return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_DynamicSequenceCmd>() );
+			}
+
+			AKRESULT Play( AkPlayingID in_playingID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve )
+			{
+				return EnqueueCommand( in_playingID, AkQueuedMsg_DynamicSequenceCmd::Play, in_uTransitionDuration, in_eFadeCurve );
+			}
+
+			AKRESULT Pause( AkPlayingID in_playingID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve )
+			{
+				return EnqueueCommand( in_playingID, AkQueuedMsg_DynamicSequenceCmd::Pause, in_uTransitionDuration, in_eFadeCurve );
+			}
+
+			AKRESULT Resume( AkPlayingID in_playingID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve )
+			{
+				return EnqueueCommand( in_playingID, AkQueuedMsg_DynamicSequenceCmd::Resume, in_uTransitionDuration, in_eFadeCurve );
+			}
+
+			AKRESULT Stop( AkPlayingID in_playingID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve )
+			{
+				return EnqueueCommand( in_playingID, AkQueuedMsg_DynamicSequenceCmd::Stop, in_uTransitionDuration, in_eFadeCurve );
+			}
+
+			AKRESULT Break( AkPlayingID in_playingID )
+			{
+				return EnqueueCommand( in_playingID, AkQueuedMsg_DynamicSequenceCmd::Break, 0, AkCurveInterpolation_Linear );
+			}
+
+			AKRESULT Close( AkPlayingID in_playingID )
+			{
+				return EnqueueCommand( in_playingID, AkQueuedMsg_DynamicSequenceCmd::Close, 0, AkCurveInterpolation_Linear );
+			}
+
+			/** 2012 0x91acd0: the playlist stays locked until UnlockPlaylist. */
+			Playlist * LockPlaylist( AkPlayingID in_playingID )
+			{
+				CAkDynamicSequence * pSequence = g_pIndex->m_idxDynamicSequences.GetPtrAndAddRef( in_playingID );
+				if( !pSequence )
+				{
+					return NULL;
+				}
+				pSequence->m_lockPlaylist.Lock();
+				pSequence->Release();
+				return &pSequence->m_playList;
+			}
+
+			/** 2012 0x91ad10. */
+			AKRESULT UnlockPlaylist( AkPlayingID in_playingID )
+			{
+				CAkDynamicSequence * pSequence = g_pIndex->m_idxDynamicSequences.GetPtrAndAddRef( in_playingID );
+				if( !pSequence )
+				{
+					return AK_Fail;
+				}
+				pSequence->UnlockPlaylist();
+				pSequence->Release();
+				return AK_Success;
+			}
 		}
 
 		AKRESULT ExecuteActionOnEvent( AkUniqueID in_eventID, AkActionOnEventType in_ActionType, AkGameObjectID in_gameObjectID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve, AkPlayingID in_PlayingID )
@@ -555,9 +713,33 @@ namespace AK
 		// -- environments / obstruction ------------------------------------------------------------
 
 		AKRESULT SetEffect( AkUniqueID, AkUInt32, AkUniqueID ) { return AK_Success; }
-		AKRESULT SetEnvironmentVolume( AkAuxBusID, AkReal32 ) { return AK_Success; }
-		AKRESULT SetEnvironmentVolumes( AkAuxBusID, const AkSpeakerVolumes & ) { return AK_Success; }
-		AKRESULT BypassEnvironment( AkAuxBusID, bool ) { return AK_Success; }
+		/** 2012 0x9174f0 (IH3 fork R). */
+		AKRESULT SetEnvironmentVolumes( AkAuxBusID in_FXParameterSetID, const AkSpeakerVolumes & in_sVolumes )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_EnvVolume;
+			Item.envvolume.EnvID = in_FXParameterSetID;
+			Item.envvolume.sVolumes = in_sVolumes;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_EnvVolume>() );
+		}
+
+		/** 2012 0x918960 (IH3 fork R): the same volume on every speaker. */
+		AKRESULT SetEnvironmentVolume( AkAuxBusID in_FXParameterSetID, AkReal32 in_fVolume )
+		{
+			AkSpeakerVolumes volumes;
+			volumes.fFrontLeft = volumes.fFrontRight = volumes.fCenter = volumes.fRearLeft = volumes.fRearRight = volumes.fLfe = in_fVolume;
+			return SetEnvironmentVolumes( in_FXParameterSetID, volumes );
+		}
+
+		/** 2012 0x917550 (IH3 fork R). */
+		AKRESULT BypassEnvironment( AkAuxBusID in_FXParameterSetID, bool in_bIsBypassed )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_EnvBypass;
+			Item.envbypass.EnvID = in_FXParameterSetID;
+			Item.envbypass.bBypass = in_bIsBypassed;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_EnvBypass>() );
+		}
 
 		AKRESULT SetGameObjectEnvironmentsValues( AkGameObjectID in_gameObjectID, AkEnvironmentValue * in_aEnvironmentValues, AkUInt32 in_uNumEnvValues )
 		{
@@ -647,7 +829,11 @@ namespace AK
 			return g_aBehavioralExtensions.Remove( in_pCallback );
 		}
 
-		void AddExternalStateHandler( bool ( * )( AkStateGroupID, AkStateID ) ) {}
+		/** 2012 0x918250 (IH3 fork R): the music engine's hook into every state change. */
+		void AddExternalStateHandler( bool ( *in_pHandler )( AkStateGroupID, AkStateID ) )
+		{
+			g_pExternalStateHandler = in_pHandler;
+		}
 
 		// -- Query ---------------------------------------------------------------------------------
 
@@ -663,77 +849,101 @@ namespace AK
 				return CAkListener::GetListenerSpatialization( in_uIndex, out_rbSpatialized, out_rVolumeOffsets );
 			}
 
-			AkReal32 GetMaxRadius( AkGameObjectID ) { return -1.f; }
 
-			AKRESULT GetRTPCValue( AkRtpcID in_rtpcID, AkGameObjectID, AkRtpcValue & out_rValue, RTPCValue_type & io_rValueType )
+			/** 2012 0x91b360 (IH3 fork R): a global or game-object query falls back to the default; the answer always succeeds. */
+			AKRESULT GetRTPCValue( AkRtpcID in_rtpcID, AkGameObjectID in_gameObjectID, AkRtpcValue & out_rValue, RTPCValue_type & io_rValueType )
 			{
-				std::map<AkRtpcID, AkRtpcValue> & rtpc = AkSilent::Get().GlobalRtpc;
-				std::map<AkRtpcID, AkRtpcValue>::const_iterator it = rtpc.find( in_rtpcID );
-				if( it == rtpc.end() )
+				AkAutoLock<CAkLock> gate( g_csMain );
+				bool bFound = false;
+				if( io_rValueType == RTPCValue_Global || io_rValueType == RTPCValue_GameObject )
 				{
-					out_rValue = 0.f;
-					io_rValueType = RTPCValue_Unavailable;
-					return AK_Fail;
+					CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( io_rValueType == RTPCValue_Global ? AK_INVALID_GAME_OBJECT : in_gameObjectID );
+					bool bGameObjectSpecific = false;
+					bFound = g_pRTPCMgr->GetRTPCValue( in_rtpcID, pGameObj, out_rValue, bGameObjectSpecific );
+					io_rValueType = bGameObjectSpecific ? RTPCValue_GameObject : RTPCValue_Global;
+					if( pGameObj && --pGameObj->m_refCount <= 0 )
+					{
+						pGameObj->~CAkRegisteredObj();
+						AK::MemoryMgr::Free( g_DefaultPoolId, pGameObj );
+					}
 				}
-				out_rValue = it->second;
-				io_rValueType = RTPCValue_Global;
+				if( !bFound )
+				{
+					bool bRTPCFound = false;
+					out_rValue = g_pRTPCMgr->GetDefaultValue( in_rtpcID, &bRTPCFound );
+					io_rValueType = bRTPCFound ? RTPCValue_Default : RTPCValue_Unavailable;
+				}
 				return AK_Success;
 			}
 
+			/** 2012 0x91b440. */
 			AKRESULT GetRTPCValue( const AkOSChar * in_pszRtpcName, AkGameObjectID in_gameObjectID, AkRtpcValue & out_rValue, RTPCValue_type & io_rValueType )
 			{
-				return GetRTPCValue( AkSilent::NameHash( in_pszRtpcName ), in_gameObjectID, out_rValue, io_rValueType );
+				const AkRtpcID id = AkSilent::NameHash( in_pszRtpcName );
+				return id ? GetRTPCValue( id, in_gameObjectID, out_rValue, io_rValueType ) : AK_IDNotFound;
 			}
 
+			/** 2012 0x91b460. */
 			AKRESULT GetRTPCValue( const char * in_pszRtpcName, AkGameObjectID in_gameObjectID, AkRtpcValue & out_rValue, RTPCValue_type & io_rValueType )
 			{
-				return GetRTPCValue( AkSilent::NameHash( in_pszRtpcName ), in_gameObjectID, out_rValue, io_rValueType );
+				const AkRtpcID id = AkSilent::NameHash( in_pszRtpcName );
+				return id ? GetRTPCValue( id, in_gameObjectID, out_rValue, io_rValueType ) : AK_IDNotFound;
 			}
 
+			/** 2012 0x91b480 (IH3 fork R): an unregistered game object is AK_IDNotFound. */
 			AKRESULT GetSwitch( AkSwitchGroupID in_switchGroup, AkGameObjectID in_gameObjectID, AkSwitchStateID & out_rSwitchState )
 			{
-				AkSilent::Engine & e = AkSilent::Get();
-				std::map<AkUInt64, AkSwitchStateID>::const_iterator perObject = e.ObjectSwitches.find( ( (AkUInt64)in_gameObjectID << 32 ) | in_switchGroup );
-				if( perObject != e.ObjectSwitches.end() )
+				AkAutoLock<CAkLock> gate( g_csMain );
+				CAkRegisteredObj * pGameObj = g_pRegistryMgr->GetObjAndAddref( in_gameObjectID );
+				if( !pGameObj )
 				{
-					out_rSwitchState = perObject->second;
-					return AK_Success;
+					return AK_IDNotFound;
 				}
-				std::map<AkSwitchGroupID, AkSwitchStateID>::const_iterator global = e.Switches.find( in_switchGroup );
-				if( global == e.Switches.end() )
+				out_rSwitchState = g_pRTPCMgr->GetSwitch( in_switchGroup, pGameObj );
+				if( --pGameObj->m_refCount <= 0 )
 				{
-					out_rSwitchState = AK_DEFAULT_SWITCH_STATE;
-					return AK_Fail;
+					pGameObj->~CAkRegisteredObj();
+					AK::MemoryMgr::Free( g_DefaultPoolId, pGameObj );
 				}
-				out_rSwitchState = global->second;
 				return AK_Success;
 			}
 
+			/** 2012 0x91b500. */
 			AKRESULT GetSwitch( const AkOSChar * in_pstrSwitchGroupName, AkGameObjectID in_GameObj, AkSwitchStateID & out_rSwitchState )
 			{
-				return GetSwitch( AkSilent::NameHash( in_pstrSwitchGroupName ), in_GameObj, out_rSwitchState );
+				const AkSwitchGroupID id = AkSilent::NameHash( in_pstrSwitchGroupName );
+				return id ? GetSwitch( id, in_GameObj, out_rSwitchState ) : AK_IDNotFound;
 			}
 
+			/** 2012 0x91b520. */
 			AKRESULT GetSwitch( const char * in_pstrSwitchGroupName, AkGameObjectID in_GameObj, AkSwitchStateID & out_rSwitchState )
 			{
-				return GetSwitch( AkSilent::NameHash( in_pstrSwitchGroupName ), in_GameObj, out_rSwitchState );
+				const AkSwitchGroupID id = AkSilent::NameHash( in_pstrSwitchGroupName );
+				return id ? GetSwitch( id, in_GameObj, out_rSwitchState ) : AK_IDNotFound;
 			}
 
-			AKRESULT GetEnvironmentVolumes( AkAuxBusID, AkSpeakerVolumes & out_rVolumes )
+			/** 2012 0x91b050 (IH3 fork R). */
+			AKRESULT GetEnvironmentVolumes( AkAuxBusID in_FXParameterSetID, AkSpeakerVolumes & out_rVolumes )
 			{
-				memset( &out_rVolumes, 0, sizeof( out_rVolumes ) );
+				AkAutoLock<CAkLock> gate( g_csMain );
+				out_rVolumes = g_pEnvironmentMgr->GetEnvironmentVolumes( in_FXParameterSetID );
 				return AK_Success;
 			}
 
-			AKRESULT GetEnvironmentBypass( AkAuxBusID, bool & out_rbBypassed )
+			/** 2012 0x91b0b0 (IH3 fork R). */
+			AKRESULT GetEnvironmentBypass( AkAuxBusID in_FXParameterSetID, bool & out_rbBypassed )
 			{
-				out_rbBypassed = false;
+				AkAutoLock<CAkLock> gate( g_csMain );
+				out_rbBypassed = g_pEnvironmentMgr->IsBypassed( in_FXParameterSetID );
 				return AK_Success;
 			}
 
-			AKRESULT GetEnvironmentVolume( AkAuxBusID, AkReal32 & out_rVolume )
+			/** 2012 0x91b220 (IH3 fork R): the front-left volume. */
+			AKRESULT GetEnvironmentVolume( AkAuxBusID in_FXParameterSetID, AkReal32 & out_rVolume )
 			{
-				out_rVolume = 0.f;
+				AkSpeakerVolumes volumes;
+				GetEnvironmentVolumes( in_FXParameterSetID, volumes );
+				out_rVolume = volumes.fFrontLeft;
 				return AK_Success;
 			}
 

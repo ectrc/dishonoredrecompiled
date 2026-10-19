@@ -166,6 +166,7 @@ public:
     //## END PROPS InterpTrackAkEvent
 
     DECLARE_CLASS(UInterpTrackAkEvent,UInterpTrack,0,AkAudio)
+#include "CppText/UInterpTrackAkEvent.h"
 };
 
 // AkAudio.InterpTrackAkRTPC: retail sizeof 156, reflected span 144..156 (2012 PDB sizeof 156)
@@ -177,6 +178,7 @@ public:
     //## END PROPS InterpTrackAkRTPC
 
     DECLARE_CLASS(UInterpTrackAkRTPC,UInterpTrackFloatBase,0,AkAudio)
+#include "CppText/UInterpTrackAkRTPC.h"
 };
 
 // AkAudio.InterpTrackInstAkEvent: retail sizeof 84, reflected span 64..84 (2012 PDB sizeof 84)
@@ -190,6 +192,7 @@ public:
     //## END PROPS InterpTrackInstAkEvent
 
     DECLARE_CLASS(UInterpTrackInstAkEvent,UInterpTrackInst,0,AkAudio)
+#include "CppText/UInterpTrackInstAkEvent.h"
 };
 
 // AkAudio.InterpTrackInstAkRTPC: retail sizeof 64, reflected span 64..64 (2012 PDB sizeof 64)

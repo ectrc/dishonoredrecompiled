@@ -7,6 +7,7 @@
 	child, a sound already holding a bank source keeps it). See AkHierarchy.h for the named deviations.
 =============================================================================*/
 #include "AkHierarchy.h"
+#include "AkContainers.h"
 #include "AkBankMgr.h"
 #include "AkBusCtx.h"
 
@@ -305,11 +306,18 @@ CAkParameterNodeBase::~CAkParameterNodeBase()
 		{
 			if( g_pRTPCMgr )
 			{
-				g_pRTPCMgr->UnSubscribeRTPC( this, i );
+				g_pRTPCMgr->UnSubscribeRTPC( this, (AkRTPC_ParameterID)i );
 			}
 			m_RTPCBitArrayMax32.UnsetBit( i );
 		}
 	}
+	if( m_pGlobalSIS )
+	{
+		m_pGlobalSIS->~CAkSIS();
+		AK::MemoryMgr::Free( g_DefaultPoolId, m_pGlobalSIS );
+		m_pGlobalSIS = NULL;
+	}
+	FlushStateTransitions();
 	RemoveStateGroups( true );
 	if( m_pFeedbackInfo )
 	{
@@ -386,7 +394,7 @@ AKRESULT CAkParameterNodeBase::SetFX( AkUInt32 in_uFXIndex, AkUniqueID in_uID, b
 	return AK_Success;
 }
 
-/** CAkParameterNodeBase::RenderedFX (inlined into 0x937e40): allocates the chunk to remember the flag. */
+/** 2012 0x942e00: a rendered effect is removed from the node (its sound already carries it). */
 void CAkParameterNodeBase::RenderedFX( AkUInt32 in_uFXIndex, bool in_bRendered )
 {
 	if( !m_pFXChunk )
@@ -402,14 +410,14 @@ void CAkParameterNodeBase::RenderedFX( AkUInt32 in_uFXIndex, bool in_bRendered )
 		}
 		m_pFXChunk = AkPlacementNew( pMem ) FXChunk();
 	}
-	if( m_pFXChunk->aFX[ in_uFXIndex ].bRendered != in_bRendered )
+	m_pFXChunk->aFX[ in_uFXIndex ].bRendered = in_bRendered;
+	if( in_bRendered && m_pFXChunk->aFX[ in_uFXIndex ].id )
 	{
-		m_pFXChunk->aFX[ in_uFXIndex ].bRendered = in_bRendered;
-		RecalcNotification();
+		RemoveFX( in_uFXIndex );
 	}
 }
 
-/** CAkParameterNodeBase::MainBypassFX: the bypass bits live in the FX chunk. */
+/** 2012 0x942e70: the bypass bits live in the FX chunk; the SIS and the playing voices follow. */
 void CAkParameterNodeBase::MainBypassFX( AkUInt32 in_bitsFXBypass, AkUInt32 in_uTargetMask )
 {
 	if( !m_pFXChunk )
@@ -425,7 +433,9 @@ void CAkParameterNodeBase::MainBypassFX( AkUInt32 in_bitsFXBypass, AkUInt32 in_u
 		}
 		m_pFXChunk = AkPlacementNew( pMem ) FXChunk();
 	}
-	m_pFXChunk->bitsMainFXBypass = (AkUInt8)( ( m_pFXChunk->bitsMainFXBypass & ~in_uTargetMask ) | ( in_bitsFXBypass & in_uTargetMask ) );
+	m_pFXChunk->bitsMainFXBypass = (AkUInt8)( in_bitsFXBypass | ( m_pFXChunk->bitsMainFXBypass & ~in_uTargetMask ) );
+	ResetFXBypass( in_bitsFXBypass, in_uTargetMask );
+	NotifyBypass( in_bitsFXBypass, in_uTargetMask, NULL, NULL );
 }
 
 /** 2012 0x945a50: a 44-byte chunk registered with the state manager, pushed on the node's list. */
@@ -580,7 +590,7 @@ AKRESULT CAkParameterNodeBase::SetInitialRTPC( AkUInt8 *& io_rpData, AkUInt32 & 
 		m_RTPCBitArrayMax32.SetBit( ParamID );
 		if( g_pRTPCMgr )
 		{
-			g_pRTPCMgr->SubscribeRTPC( this, RTPC_ID, ParamID, RTPCCurveID, eScaling, pCurve, ulSize, NULL, GetRTPCSubscriberType() );
+			g_pRTPCMgr->SubscribeRTPC( this, RTPC_ID, (AkRTPC_ParameterID)ParamID, RTPCCurveID, eScaling, pCurve, ulSize, NULL, GetRTPCSubscriberType() );
 		}
 		NotifyRTPCChanged();
 		io_rpData += sizeof( AkRTPCGraphPoint ) * ulSize;
@@ -672,6 +682,20 @@ CAkParameterNode::CAkParameterNode( AkUniqueID in_ulID )
 /** 2012 0x939060. */
 CAkParameterNode::~CAkParameterNode()
 {
+	if( m_pMapSIS )
+	{
+		for( MapStruct<CAkRegisteredObj *, CAkSIS *> * p = m_pMapSIS->m_pItems; p != m_pMapSIS->m_pItemsEnd; ++p )
+		{
+			if( p->item )
+			{
+				p->item->~CAkSIS();
+				AK::MemoryMgr::Free( g_DefaultPoolId, p->item );
+			}
+		}
+		m_pMapSIS->Term();
+		AK::MemoryMgr::Free( g_DefaultPoolId, m_pMapSIS );
+		m_pMapSIS = NULL;
+	}
 	m_bPositioningInfoOverrideParent = 0;
 	if( m_p3DParameters )
 	{
@@ -897,15 +921,15 @@ AKRESULT CAkParameterNode::GetStatic3DParams( AkPositioningInfo & out_rPosInfo )
 				out_rPosInfo.fConeMaxAttenuation = pAttenuation->m_ConeParams.fOutsideVolume;
 				out_rPosInfo.LPFCone = pAttenuation->m_ConeParams.LoPass;
 			}
-			CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pVolumeDry = pAttenuation->GetCurve( pAttenuation->m_curveToUse[ 0 ] );
+			CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pVolumeDry = pAttenuation->GetCurve( CAkAttenuation::AttenuationCurveID_VolumeDry );
 			out_rPosInfo.fMaxDistance = pVolumeDry->m_pArrayGraphPoints[ pVolumeDry->m_ulArraySize - 1 ].From;
 			out_rPosInfo.fVolDryAtMaxDist = pVolumeDry->m_pArrayGraphPoints[ pVolumeDry->m_ulArraySize - 1 ].To;
-			CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pVolumeWet = pAttenuation->GetCurve( pAttenuation->m_curveToUse[ 1 ] );
+			CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pVolumeWet = pAttenuation->GetCurve( CAkAttenuation::AttenuationCurveID_VolumeWet );
 			if( pVolumeWet )
 			{
 				out_rPosInfo.fVolWetAtMaxDist = pVolumeWet->m_pArrayGraphPoints[ pVolumeWet->m_ulArraySize - 1 ].To;
 			}
-			CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pLPF = pAttenuation->GetCurve( pAttenuation->m_curveToUse[ 2 ] );
+			CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pLPF = pAttenuation->GetCurve( CAkAttenuation::AttenuationCurveID_LowPassFilter );
 			if( pLPF )
 			{
 				out_rPosInfo.LPFValueAtMaxDist = pLPF->m_pArrayGraphPoints[ pLPF->m_ulArraySize - 1 ].To;
@@ -937,7 +961,7 @@ bool CAkParameterNode::GetMaxRadius( AkReal32 & out_fRadius )
 	{
 		return false;
 	}
-	CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pVolumeDry = pAttenuation->GetCurve( pAttenuation->m_curveToUse[ 0 ] );
+	CAkConversionTable<AkRTPCGraphPoint, AkReal32> * pVolumeDry = pAttenuation->GetCurve( CAkAttenuation::AttenuationCurveID_VolumeDry );
 	if( !pVolumeDry )
 	{
 		pAttenuation->Release();
@@ -1141,10 +1165,16 @@ AKRESULT CAkActorMixer::SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulData
 	return eResult;
 }
 
-/** CAkContainerBase::CanAddChild: the actor-mixer rule (no bus, one parent, no duplicate, not itself). */
+/** 2012 0x95e410 (agent IH3 fork C: retail's rule - sounds and containers only, at most 0xFFFF children). */
 AKRESULT CAkContainerBase::CanAddChild( CAkParameterNodeBase * in_pAudioNode )
 {
-	if( in_pAudioNode->NodeCategory() == AkNodeCategory_Bus )
+	const AkNodeCategory eCategory = in_pAudioNode->NodeCategory();
+	if( m_mapChildId.Length() == 0xFFFF )
+	{
+		return AK_MaxReached;
+	}
+	if( eCategory != AkNodeCategory_Sound && eCategory != AkNodeCategory_FeedbackNode && eCategory != AkNodeCategory_RanSeqCntr
+		&& eCategory != AkNodeCategory_SwitchCntr && eCategory != AkNodeCategory_LayerCntr )
 	{
 		return AK_NotCompatible;
 	}
@@ -1164,47 +1194,14 @@ AKRESULT CAkContainerBase::CanAddChild( CAkParameterNodeBase * in_pAudioNode )
 }
 
 // ------------------------------------------------------------------------------------------------------------
-// CAkPlayList (akplaylist.cpp)
-// ------------------------------------------------------------------------------------------------------------
-
-bool CAkPlayList::Exists( AkUniqueID in_ulID )
-{
-	for( AkPlaylistItem * p = m_PlayList.m_pItems; p != m_PlayList.m_pItemsEnd; ++p )
-	{
-		if( p->ulID == in_ulID )
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-AKRESULT CAkPlayList::Add( AkUniqueID in_ulID, AkUInt32 in_weight )
-{
-	AkPlaylistItem item;
-	item.ulID = in_ulID;
-	item.weight = in_weight;
-	return m_PlayList.AddLast( item ) ? AK_Success : AK_Fail;
-}
-
-AKRESULT CAkPlayListRandom::Add( AkUniqueID in_ulID, AkUInt32 in_weight )
-{
-	const AKRESULT eResult = CAkPlayList::Add( in_ulID, in_weight );
-	if( eResult == AK_Success )
-	{
-		m_ulTotalWeight += in_weight;
-	}
-	return eResult;
-}
-
-// ------------------------------------------------------------------------------------------------------------
-// CAkRanSeqCntr (akranseqcntr.cpp)
+// CAkRanSeqCntr (akranseqcntr.cpp; the playlists and the playback half are AkRanSeqCntr.cpp)
 // ------------------------------------------------------------------------------------------------------------
 
 /** 2012 0x94ddd0. */
 CAkRanSeqCntr::CAkRanSeqCntr( AkUniqueID in_ulID, AkContainerMode in_ContainerMode )
 	: CAkContainerBase( in_ulID )
 	, m_pPlayList( NULL )
+	, m_pGlobalContainerInfo( NULL )
 	, m_Loop( 1 )
 	, m_bContainerBeenPlayed( false )
 {
@@ -1222,12 +1219,13 @@ CAkRanSeqCntr::CAkRanSeqCntr( AkUniqueID in_ulID, AkContainerMode in_ContainerMo
 	m_RanSeqParams.m_bIsGlobal = 1;
 }
 
+/** 2012 inlined in the deleting destructor 0x94f420: DestroySpecificInfo, then the playlist's Destroy. */
 CAkRanSeqCntr::~CAkRanSeqCntr()
 {
+	DestroySpecificInfo();
 	if( m_pPlayList )
 	{
-		m_pPlayList->~CAkPlayList();
-		AK::MemoryMgr::Free( g_DefaultPoolId, m_pPlayList );
+		m_pPlayList->Destroy();
 		m_pPlayList = NULL;
 	}
 }
@@ -1268,7 +1266,7 @@ CAkRanSeqCntr * CAkRanSeqCntr::Create( AkUniqueID in_ulID, AkContainerMode in_Co
 	return pCntr;
 }
 
-/** 2012 0x94f180: swap the playlist kind when the mode changes (ResetSpecificInfo has nothing to reset before IH2). */
+/** 2012 0x94f180: swap the playlist kind when the mode changes (the selection state is reset first). */
 AKRESULT CAkRanSeqCntr::Mode( AkContainerMode in_eMode )
 {
 	if( in_eMode == (AkContainerMode)m_RanSeqParams.m_eMode )
@@ -1278,11 +1276,21 @@ AKRESULT CAkRanSeqCntr::Mode( AkContainerMode in_eMode )
 	m_RanSeqParams.m_eMode = in_eMode;
 	if( m_pPlayList )
 	{
-		m_pPlayList->~CAkPlayList();
-		AK::MemoryMgr::Free( g_DefaultPoolId, m_pPlayList );
+		m_pPlayList->Destroy();
 	}
 	m_pPlayList = NewPlayList();
-	return m_pPlayList ? AK_Success : AK_Fail;
+	AKRESULT eResult = AK_Fail;
+	if( m_pPlayList )
+	{
+		eResult = m_pPlayList->Init();
+		if( eResult != AK_Success )
+		{
+			m_pPlayList->Destroy();
+			m_pPlayList = NULL;
+		}
+	}
+	ResetSpecificInfo();
+	return eResult;
 }
 
 /** 2012 0x94f480: {count u16, {id, weight} x count}; weight != 50000 turns on m_bIsUsingWeight. */
@@ -1388,18 +1396,28 @@ CAkSwitchCntr::CAkSwitchCntr( AkUniqueID in_ulID )
 {
 }
 
+/** 2012 0x951480. */
 CAkSwitchCntr::~CAkSwitchCntr()
 {
-	m_SwitchList.Term();
+	UnsubscribeSwitches();
+	ClearSwitches();
+	m_listSwitchContPlayback.Term();
 	m_listParameters.Term();
+	m_SwitchList.Term();
+	Term();
 }
 
 /** 2012 0x950d50. */
 AKRESULT CAkSwitchCntr::Init()
 {
-	AddToIndex();
+	const AKRESULT eResult = CAkMultiPlayNode::Init();
+	if( eResult != AK_Success )
+	{
+		return eResult;
+	}
 	m_SwitchList.InitUnbounded();
 	m_listParameters.InitUnbounded();
+	m_listSwitchContPlayback.InitUnbounded();
 	return AK_Success;
 }
 
@@ -1442,15 +1460,22 @@ AKRESULT CAkSwitchCntr::SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulData
 	const AkUInt32 ulDefaultSwitch = *(AkUInt32 *)in_pData;
 	in_pData += 4;
 	const bool bIsContinuousValidation = *in_pData++ != 0;
+	AKRESULT eResult = AK_Success;
 	if( ulGroupID != m_ulGroupID || eGroupType != m_eGroupType )
 	{
 		m_ulGroupID = ulGroupID;
 		m_eGroupType = eGroupType;
+		eResult = SubscribeSwitch( ulGroupID, eGroupType );
+	}
+	if( eResult != AK_Success )
+	{
+		g_pHircParseEnd = in_pData;
+		return eResult;
 	}
 	m_bIsContinuousValidation = bIsContinuousValidation;
 	m_ulDefaultSwitch = ulDefaultSwitch;
 
-	AKRESULT eResult = SetChildren( in_pData, in_ulDataSize );
+	eResult = SetChildren( in_pData, in_ulDataSize );
 	if( eResult != AK_Success )
 	{
 		return eResult;
@@ -1528,30 +1553,6 @@ CAkLayer * CAkLayer::Create( AkUniqueID in_ulID )
 	return pLayer;
 }
 
-CAkLayer::~CAkLayer()
-{
-	for( MapStruct<AkUniqueID, CAssociatedChildData> * p = m_assocs.m_pItems; p != m_assocs.m_pItemsEnd; ++p )
-	{
-		p->item.m_fadeCurve.Unset();
-	}
-	m_assocs.Term();
-	if( m_crossfadingRTPCID && g_pRTPCMgr )
-	{
-		g_pRTPCMgr->UnregisterLayer( this, m_crossfadingRTPCID );
-	}
-	for( AkUInt32 i = 0; m_RTPCBitArrayMax32.m_i32BitArray; ++i )
-	{
-		if( m_RTPCBitArrayMax32.IsSet( i ) )
-		{
-			if( g_pRTPCMgr )
-			{
-				g_pRTPCMgr->UnSubscribeRTPC( this, i );
-			}
-			m_RTPCBitArrayMax32.UnsetBit( i );
-		}
-	}
-}
-
 AkUInt32 CAkLayer::AddRef()
 {
 	AkAutoLock<CAkLock> IndexLock( g_pIndex->m_idxLayers.m_IndexLock );
@@ -1571,51 +1572,6 @@ AkUInt32 CAkLayer::Release()
 	return lRef;
 }
 
-/** CAkLayer::CAssociatedChildData::UpdateChildPtr: bind to the owner's child of that id when it exists. */
-AKRESULT CAkLayer::UpdateAssociatedChild( CAssociatedChildData & io_rData )
-{
-	io_rData.m_pChild = NULL;
-	if( !m_pOwner )
-	{
-		return AK_Success;
-	}
-	CAkParameterNodeBase ** ppChild = m_pOwner->m_mapChildId.Exists( io_rData.m_ulChildID );
-	if( ppChild )
-	{
-		io_rData.m_pChild = static_cast<CAkParameterNode *>( *ppChild );
-	}
-	return AK_Success;
-}
-
-void CAkLayer::UpdateChildPtr( AkUniqueID in_ChildID )
-{
-	CAssociatedChildData * pData = m_assocs.Exists( in_ChildID );
-	if( pData )
-	{
-		UpdateAssociatedChild( *pData );
-	}
-}
-
-/** 2012 0x954ab0. */
-void CAkLayer::SetOwner( CAkLayerCntr * in_pOwner )
-{
-	if( m_pOwner )
-	{
-		for( MapStruct<AkUniqueID, CAssociatedChildData> * p = m_assocs.m_pItems; p != m_assocs.m_pItemsEnd; ++p )
-		{
-			p->item.m_pChild = NULL;
-		}
-	}
-	m_pOwner = in_pOwner;
-	if( in_pOwner )
-	{
-		for( MapStruct<AkUniqueID, CAssociatedChildData> * p = m_assocs.m_pItems; p != m_assocs.m_pItemsEnd; ++p )
-		{
-			UpdateAssociatedChild( p->item );
-		}
-	}
-}
-
 /** 2012 0x954150: the layer's own RTPC chunk, same shape as a node's, subscriber type CAkLayer. */
 AKRESULT CAkLayer::SetInitialRTPC( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize )
 {
@@ -1633,7 +1589,7 @@ AKRESULT CAkLayer::SetInitialRTPC( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSi
 		const AkUInt32 ulSize = *(AkUInt16 *)io_rpData;
 		io_rpData += 2;
 		m_RTPCBitArrayMax32.SetBit( ParamID );
-		g_pRTPCMgr->SubscribeRTPC( this, RTPC_ID, ParamID, RTPCCurveID, eScaling, (AkRTPCGraphPoint *)io_rpData, ulSize, NULL, CAkRTPCMgr::SubscriberType_CAkLayer );
+		g_pRTPCMgr->SubscribeRTPC( this, RTPC_ID, (AkRTPC_ParameterID)ParamID, RTPCCurveID, eScaling, (AkRTPCGraphPoint *)io_rpData, ulSize, NULL, CAkRTPCMgr::SubscriberType_CAkLayer );
 		io_rpData += sizeof( AkRTPCGraphPoint ) * ulSize;
 		io_rulDataSize -= sizeof( AkRTPCGraphPoint ) * ulSize;
 	}
@@ -1659,42 +1615,6 @@ AKRESULT CAkLayer::SetCrossfadingRTPC( AkRtpcID in_rtpcID )
 				m_crossfadingRTPCID = 0;
 			}
 		}
-	}
-	return eResult;
-}
-
-/** 2012 0x954b40. */
-AKRESULT CAkLayer::SetChildAssoc( AkUniqueID in_ChildID, AkRTPCGraphPoint * in_pCrossfadingCurve, AkUInt32 in_ulCrossfadingCurveSize )
-{
-	AKRESULT eResult = AK_Success;
-	CAssociatedChildData * pData = m_assocs.Exists( in_ChildID );
-	if( !pData )
-	{
-		pData = m_assocs.Set( in_ChildID );
-		if( !pData )
-		{
-			return AK_InsufficientMemory;
-		}
-		AkPlacementNew( pData ) CAssociatedChildData();
-		pData->m_ulChildID = in_ChildID;
-		eResult = UpdateAssociatedChild( *pData );
-		if( eResult != AK_Success )
-		{
-			m_assocs.Unset( in_ChildID );
-			return eResult;
-		}
-	}
-	if( in_ulCrossfadingCurveSize )
-	{
-		eResult = pData->m_fadeCurve.Set( in_pCrossfadingCurve, in_ulCrossfadingCurveSize, AkCurveScaling_dB_96_3_NoCheck );
-	}
-	else
-	{
-		pData->m_fadeCurve.Unset();
-	}
-	if( pData->m_pChild )
-	{
-		pData->m_pChild->RecalcNotification();
 	}
 	return eResult;
 }
@@ -1755,6 +1675,7 @@ CAkLayerCntr * CAkLayerCntr::Create( AkUniqueID in_ulID )
 	return pCntr;
 }
 
+/** 2012 0x951560. */
 CAkLayerCntr::~CAkLayerCntr()
 {
 	for( CAkLayer ** it = m_layers.m_pItems; it != m_layers.m_pItemsEnd; ++it )
@@ -1763,6 +1684,7 @@ CAkLayerCntr::~CAkLayerCntr()
 		( *it )->Release();
 	}
 	m_layers.Term();
+	Term();
 }
 
 /** 2012 0x9517a0. */
@@ -1838,6 +1760,11 @@ CAkBus::CAkBus( AkUniqueID in_ulID )
 
 CAkBus::~CAkBus()
 {
+	for( CAkKeyList<AkUniqueID, CAkDuckItem, 1, ArrayPoolDefault>::ListItem * p = m_DuckedVolumeList.m_pFirst; p; p = p->pNextListItem )
+	{
+		p->Item.item.Term();
+	}
+	m_DuckedVolumeList.Term();
 	m_ToDuckList.Term();
 	AkAutoLock<CAkLock> IndexLock( g_pIndex->m_idxAudioNode.m_IndexLock );
 	if( s_pMasterBus == this )
@@ -1858,6 +1785,7 @@ CAkBus * CAkBus::Create( AkUniqueID in_ulID )
 	CAkBus * pBus = AkPlacementNew( pMem ) CAkBus( in_ulID );
 	pBus->AddToIndex();
 	pBus->m_ToDuckList.Init( 0, 100 );
+	pBus->m_DuckedVolumeList.Init( 0, 100 );
 	if( !s_pMasterBus )
 	{
 		s_pMasterBus = pBus;
@@ -2126,17 +2054,15 @@ CAkAttenuation::CAkAttenuation( AkUniqueID in_ulID )
 	}
 }
 
+/** 2012 0x951ef0. */
 CAkAttenuation::~CAkAttenuation()
 {
+	ClearRTPCs();
+	m_rtpcsubs.Term();
 	for( AkUInt32 i = 0; i < 4; ++i )
 	{
 		m_curves[ i ].Unset();
 	}
-	for( RTPCSubs * p = m_rtpcsubs.m_pItems; p != m_rtpcsubs.m_pItemsEnd; ++p )
-	{
-		p->ConversionTable.Unset();
-	}
-	m_rtpcsubs.Term();
 }
 
 /** 2012 0x952090. */
@@ -2152,12 +2078,14 @@ CAkAttenuation * CAkAttenuation::Create( AkUniqueID in_ulID )
 	return pAttenuation;
 }
 
+/** 2012 0x951bc0. */
 AkUInt32 CAkAttenuation::AddRef()
 {
 	AkAutoLock<CAkLock> IndexLock( g_pIndex->m_idxAttenuations.m_IndexLock );
 	return ++m_lRef;
 }
 
+/** 2012 0x951f70. */
 AkUInt32 CAkAttenuation::Release()
 {
 	AkAutoLock<CAkLock> IndexLock( g_pIndex->m_idxAttenuations.m_IndexLock );
@@ -2171,10 +2099,22 @@ AkUInt32 CAkAttenuation::Release()
 	return lRef;
 }
 
-/** The curve table m_curveToUse names; 0xFF is "none". */
-CAkConversionTable<AkRTPCGraphPoint, AkReal32> * CAkAttenuation::GetCurve( AkUInt32 in_uIndex )
+/** 2012 0x934c90 (agent IH3): the curve m_curveToUse names for an attenuation parameter (AttenuationCurveID_*);
+    0xFF is "none". */
+CAkConversionTable<AkRTPCGraphPoint, AkReal32> * CAkAttenuation::GetCurve( AkUInt8 in_parameterIndex )
 {
-	return in_uIndex == AttenuationCurveID_None ? NULL : &m_curves[ in_uIndex ];
+	const AkUInt8 uCurve = m_curveToUse[ in_parameterIndex ];
+	return uCurve == AttenuationCurveID_None ? NULL : &m_curves[ uCurve ];
+}
+
+/** 2012 0x951c90 (agent IH3). */
+void CAkAttenuation::ClearRTPCs()
+{
+	for( RTPCSubs * p = m_rtpcsubs.m_pItems; p != m_rtpcsubs.m_pItemsEnd; ++p )
+	{
+		p->ConversionTable.Unset();
+	}
+	m_rtpcsubs.m_pItemsEnd = m_rtpcsubs.m_pItems;
 }
 
 /** 2012 0x951bf0. */
@@ -2465,7 +2405,10 @@ AkUInt32 CAkAction::Release()
 	const AkInt32 lRef = --m_lRef;
 	if( !lRef )
 	{
-		g_pIndex->m_idxActions.RemoveID( key );
+		if( key )
+		{
+			g_pIndex->m_idxActions.RemoveID( key );
+		}
 		this->~CAkAction();
 		AK::MemoryMgr::Free( g_DefaultPoolId, this );
 	}
@@ -2475,7 +2418,10 @@ AkUInt32 CAkAction::Release()
 /** 2012 0x94a0f0 (g_pIndex + 2400). */
 void CAkAction::AddToIndex()
 {
-	g_pIndex->m_idxActions.SetIDToPtr( this );
+	if( key )
+	{
+		g_pIndex->m_idxActions.SetIDToPtr( this );
+	}
 }
 
 template <class T>

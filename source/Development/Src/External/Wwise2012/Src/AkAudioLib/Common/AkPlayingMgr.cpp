@@ -294,6 +294,29 @@ void CAkPlayingMgr::NotifyMarker( CAkPBI * in_pPBI, AkAudioMarker * in_pMarker )
 	SetEvent( m_CallbackEvent.m_Event );
 }
 
+/** 2012 0x927e00 (agent IH3 fork C): AK_EndOfDynamicSequenceItem to a playing id that registered it. */
+void CAkPlayingMgr::NotifyEndOfDynamicSequenceItem( AkPlayingID in_PlayingID, AkUniqueID in_audioNodeID, void * in_pCustomInfo )
+{
+	m_csMapLock.Lock();
+	PlayingMgrItem * pItem = m_PlayingMap.Exists( in_PlayingID );
+	if( !pItem || !( pItem->uiRegisteredNotif & AK_EndOfDynamicSequenceItem ) )
+	{
+		m_csMapLock.Unlock();
+		return;
+	}
+	AkDynamicSequenceItemCallbackInfo info;
+	info.pCookie = pItem->pCookie;
+	info.gameObjID = pItem->GameObj;
+	info.playingID = in_PlayingID;
+	info.audioNodeID = in_audioNodeID;
+	info.pCustomInfo = in_pCustomInfo;
+	const AkCallbackFunc pfnCallback = pItem->pfnCallback;
+	ResetEvent( m_CallbackEvent.m_Event );
+	m_csMapLock.Unlock();
+	pfnCallback( AK_EndOfDynamicSequenceItem, &info );
+	SetEvent( m_CallbackEvent.m_Event );
+}
+
 /** 2012 0x928200. */
 void CAkPlayingMgr::NotifyMarkers( AkPipelineBuffer & io_CurrMarkerBuffer )
 {

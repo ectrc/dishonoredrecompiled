@@ -4,9 +4,8 @@
 
 	DISHONORED(port): agent IH2 (wave 26), pulled from IH3's list (the brief puts play / stop / pause / resume in IH2).
 	Deviations (named):
-	  * CAkAction::Execute: retail's base slot is pure; the SetValue family, SetState / SetSwitch / UseState,
-	    Trigger, BypassFX and Seek actions (IH3 / IH4 managers) run this default, which returns AK_Success after an
-	    -akdiag line, so their events still end on the next audio frame exactly as on the silent backend.
+	  * CAkAction::Execute: retail's base slot is pure; every action type now overrides it (the value-setting ones in
+	    AkActionsSetValue.cpp, agent IH3), so this default only answers a type no class handles, after an -akdiag line.
 	  * CAkActionActive::AllExec's dynamic-sequence pass and the master motion bus (CAkFeedbackBus) are not run:
 	    no dynamic sequence is ever opened by the glue and Dishonored has no feedback bus (wwise_bank_dump.py --all).
 	  * The monitoring calls (GetHistArray + MONITOR_*) are compiled out as in a release build of the SDK.

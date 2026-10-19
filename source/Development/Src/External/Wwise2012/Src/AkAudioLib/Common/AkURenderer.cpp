@@ -106,7 +106,7 @@ AkReal32 CAkURenderer::GetMinDistance( const AkPositionKeeper & in_rPosKeep )
 		{
 			continue;
 		}
-		if( in_rPosKeep.m_uListenerIndex == uListener )
+		if( in_rPosKeep.m_iListenerIdx == (AkInt32)uListener )
 		{
 			return 0.f;
 		}
