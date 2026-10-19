@@ -1,0 +1,9 @@
+function,binary,address,status,file,note
+FArkComponentLocomotion::FullMovePawn,2012/2013,0x580ae0 / VA 0x93fb00,ported,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,whole; MoveAttachedActors approximated (attached follow location only); pawn +296 bit 0x1000 not cleared
+FArkComponentLocomotion::SendTouchAndBumpEvents,2012,0x57f220,ported,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,
+FArkComponentLocomotion::UnTouchActors,2012,0x580a40,ported,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,
+FArkComponentLocomotion::UpdateFloorAndBase,ours,,removed,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,agent FV stand-in replaced by FullMovePawn's own floor tail
+UWorld::MoveAttachedActors,2012,0x25f970,not ported,,Arkane 2558 B; FarMoveActor for attached actors instead
+UNavigationHandle::PointReachableZeroExtent,2012,0x2a9ba0,not ported,,exists in retail (1781 B); needed by the avoidance half of ComputeTargetMoveYaw
+FArkComponentLocomotion::DetectPreAvoidanceCollision,2012,0x584f10,not ported,,exists in retail (1053 B)
+FArkComponentLocomotion::IKDiagFloor,ours,,diag,DishonoredGame/Src/arkcomponentlocomotion.cpp,-ikdiag floor sweep outcome per FullMovePawn

@@ -350,6 +350,7 @@ public:
 	void IKDiagMove( const FVector& _Move, const FCheckResult& _Hit, const FVector& _Actual ) const;
 	void IKDiagStartPoly( const FVector& _StartOnGround, UBOOL _bFound, UBOOL _bTeleport ) const;
 	void IKDiagScheduler( const TCHAR* _Reason, const FVector& _Destination ) const;
+	void IKDiagFloor( const TCHAR* _Outcome, const FCheckResult& _FloorHit, const FVector& _Delta ) const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)
@@ -378,7 +379,8 @@ private:
 	void FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBase, UBOOL _bPreview );	// 2013 0x53fb00
 	UBOOL ModerateMovePawn( FLOAT _fTimeStep );						// 2013 0x540d80
 	FCheckResult* FindValidLocation( FMemStack& _Mem, FVector& _Location, DWORD _TraceFlags, const FVector& _Extent, UBOOL& _bLocationWasUnsafe, UBOOL& _bHitNPCOnlyCollision ) const;	// 2012 0x57ffb0
-	void UpdateFloorAndBase( UBOOL _bHadBase );						// agent FV: FullMovePawn's ground hit, 2012 0x580ae0 lines after MoveAttachedActors
+	void SendTouchAndBumpEvents( const FCheckResult* const _pHits, UBOOL _bPreview );	// 2012 0x57f220
+	void UnTouchActors( const FCheckResult* const _pHits, UBOOL _bPreview );		// 2012 0x580a40
 	INT ComputeMoveYaw() const;										// 2013 0x53e1f0
 	INT ComputeTargetMoveYaw() const;								// 2013 0x547950
 	INT UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxMultiDirSpeedForAngle ) const;	// 2013 0x541330

@@ -722,108 +722,327 @@ UBOOL FArkComponentLocomotion::ModerateMovePawn( FLOAT _fTimeStep )
 	return FALSE;
 }
 
-// DISHONORED(port): 2013 rva 0x53fb00 (2012 0x580ae0, 4,707 bytes) - the largest function in the component. Retail rolls
-// its own swept move: a MultiPointCheck of the pawn's cylinder along the move, the touch and bump events that fall out of
-// it, a step-up attempt when the move is blocked by something shorter than MaxStepHeight, a wall slide when it is not, a
-// fall when the ground has gone and there is no navigation mesh below, and the teleport back onto the mesh when the pawn
-// has been off it for too long.
-// DISHONORED(bringup): this uses UWorld::MoveActor, which is UE3's own swept move and already does the step-up, the wall
-// slide, the touch and bump notifications and the attached-actor update. What is lost against retail: the pawn will not
-// teleport back onto the navigation mesh when it leaves it (CanBeTeleportedToLocationWithoutBeingSeen 0x53e310,
-// FindValidLocation 0x53ed70), the fall decision is UE3's rather than Arkane's, and the hit normal the dynamics read for
-// the "stuck in a wall" flag comes from MoveActor's hit rather than from the multi-point check.
-// DISHONORED(bringup, agent IK): correction, read off 2012 0x580ae0: UWorld::MoveActor has no step-up - retail sweeps the
-// horizontal move from MaxStepHeight above the cylinder (0x30DF / 0x100030DF), drops onto the floor within 3 x MaxStepHeight,
-// refuses a floor that is a USkeletalMeshComponent unless bit 0x20000 at +288 of the hit's actor is set (decompile labels unresolved), and un-sticks a
-// penetrating start with FindValidLocation; none of that is here (agentIK.md section 3).
+// DISHONORED(port, agent IK3): 2012 0x580ae0 (4,707 B) / 2013 VA 0x93fb00 (4,729 B), whole. Retail moves the pawn with its own
+// traces and writes the location, it never calls UWorld::MoveActor:
+//   1. the rotation is (0, Normalize( Rotation.Yaw + face-to m_CurBodyYawDelta ), 0); the move is Velocity x dt (m_CurMove when
+//      that is not zero while the move speed is and no animation owns the pawn), flattened;
+//   2. moving or without a base, the cylinder (XY x 1.001, x 0.5 with inertia disabled), raised by MaxStepHeight, is pushed out
+//      of what it overlaps (FindValidLocation) and the touch / bump events of that check are sent; an NPC-only collision in
+//      it drops the NPC-only trace flag (0x10000000) from the move's traces;
+//   3. moving: the raised cylinder is swept along the move; a hit on something steeper than the pawn's ledge floor Z slides
+//      along it (the move's part along the hit's 2D normal removed, scaled by the time left) with a second sweep, and the hit
+//      normal of a non-pawn becomes m_MoveHitNormal; not moving with a base: nothing but the rotation;
+//   4. the floor: a sweep from the moved, raised cylinder down 3 x MaxStepHeight. No floor: the move is kept flat only when a
+//      fall is allowed, and the pawn falls. A floor steeper than the ledge floor Z: one slide down its slope (2 x MaxStepHeight)
+//      onto a walkable floor, or the same as no floor. A walkable floor ends the move on it - unless it is a skeletal mesh whose
+//      actor is not bCanStepUpOn (AActor +288 bit 0x20000), which cancels the move;
+//   5. the location and rotation are written, the floor actor becomes the base (or refreshes Floor), the components update,
+//      the pawn leaves what it no longer touches, the zone and the push body follow, and Velocity is the realised move / dt
+//      clamped to the speed asked;
+//   6. the root-motion translation is consumed; a pawn whose move failed while it was moving or without a base falls when
+//      nothing walkable is within 1.99 x MaxStepHeight below.
+// DISHONORED(bringup): UWorld::MoveAttachedActors (2012 0x25f970, Arkane's 2,558 B) is the location write plus the attached
+// actors' move; the attached actors follow the location only (FarMoveActor, as the reference's MoveActor would), not the
+// rotation. The pawn flag cleared at the end (2012: pawn +296 bit 0x1000) is not identified and not cleared.
 void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBase, UBOOL _bPreview )
+{
+	if( !m_pPawnOwner || !m_pPawnOwner->CollisionComponent )
+	{
+		return;
+	}
+	ADishonoredNPCPawn* pPawn = m_pPawnOwner;
+	FRotator NewRotation = pPawn->Rotation;
+	if( m_pFaceToCpnt )
+	{
+		NewRotation = FRotator( 0, FRotator::NormalizeAxis( pPawn->Rotation.Yaw + m_pFaceToCpnt->GetCurBodyYawDelta() ), 0 );
+	}
+	else if( m_CurMoveYaw != -200000 )
+	{
+		// DISHONORED(bringup): without FArkComponentFaceTo (IC's -icfaceto is off by default) the pawn faces its move yaw.
+		NewRotation = FRotator( 0, m_CurMoveYaw, 0 );
+	}
+	const UBOOL bRotationChanged = pPawn->Rotation.Yaw != NewRotation.Yaw || pPawn->Rotation.Pitch != 0 || pPawn->Rotation.Roll != 0;
+
+	const FLOAT fSpeedBeforeMove = pPawn->Velocity.Size();
+	FVector VelocityMove = pPawn->Velocity * _fTimeStep;
+	if( !VelocityMove.IsZero() && m_fCurMoveSpeed == 0.f && !IsRootMotion() )
+	{
+		VelocityMove = m_CurMove;
+	}
+	FVector Delta( VelocityMove.X, VelocityMove.Y, 0.f );
+	const UBOOL bMoving = Delta.X != 0.f || Delta.Y != 0.f;
+	m_MoveHitNormal = FVector( 0.f, 0.f, 0.f );
+	const UBOOL bCheckFall = bMoving || !_bOnValidBase;
+
+	const FLOAT fXYScale = m_bInertiaDisabled ? 0.5f : 1.001f;
+	const FVector BoundsExtent = pPawn->CollisionComponent->Bounds.BoxExtent;
+	const FVector Extent( BoundsExtent.X * fXYScale, BoundsExtent.Y * fXYScale, BoundsExtent.Z );
+	const FLOAT fStep = pPawn->MaxStepHeight;
+	const FLOAT fLedgeFloorZ = pPawn->WalkableFloorZ;
+	FVector Origin = pPawn->CollisionComponent->Bounds.Origin;
+
+	FMemMark Mark( GMainThreadMemStack );
+	FCheckResult* pValidHits = NULL;
+	FVector ValidDelta( 0.f, 0.f, 0.f );
+	UBOOL bLocationWasUnsafe = FALSE;
+	UBOOL bHitNPCOnlyCollision = FALSE;
+	if( bCheckFall )
+	{
+		const FVector RaisedOrigin = Origin + FVector( 0.f, 0.f, fStep );
+		FVector ValidOrigin = RaisedOrigin;
+		pValidHits = FindValidLocation( GMainThreadMemStack, ValidOrigin, 0x1020209F, Extent, bLocationWasUnsafe, bHitNPCOnlyCollision );
+		if( bLocationWasUnsafe )
+		{
+			ValidDelta = ValidOrigin - RaisedOrigin;
+			pPawn->Location += ValidDelta;
+			Origin += ValidDelta;
+		}
+		SendTouchAndBumpEvents( pValidHits, _bPreview );
+	}
+	const DWORD TraceFlags = bHitNPCOnlyCollision ? 0x30DF : 0x100030DF;
+
+	FCheckResult HoriHit( 1.f );
+	if( bMoving )
+	{
+		const FVector HoriStart = Origin + FVector( 0.f, 0.f, fStep );
+		if( !GWorld->SingleLineCheck( HoriHit, pPawn, HoriStart + Delta, HoriStart, TraceFlags, Extent ) )
+		{
+			FVector HitNormal2D( HoriHit.Normal.X, HoriHit.Normal.Y, 0.f );
+			HitNormal2D = HitNormal2D.SafeNormal();
+			FVector Slide( 0.f, 0.f, 0.f );
+			UBOOL bSlide = FALSE;
+			if( fLedgeFloorZ > HoriHit.Normal.Z )
+			{
+				Slide = ( Delta - HitNormal2D * ( HitNormal2D | Delta ) ) * ( 1.f - HoriHit.Time );
+				bSlide = ( Slide | Delta ) > 0.f;
+			}
+			Delta = HoriHit.Location - HoriStart;
+			if( bSlide )
+			{
+				FCheckResult SlideHit( 1.f );
+				if( !GWorld->SingleLineCheck( SlideHit, pPawn, HoriStart + Delta + Slide, HoriStart + Delta, TraceFlags, Extent ) )
+				{
+					Delta = SlideHit.Location - HoriStart;
+				}
+				else
+				{
+					Delta += Slide;
+				}
+			}
+			if( !Cast<APawn>( HoriHit.Actor ) )
+			{
+				m_MoveHitNormal = HoriHit.Normal;
+			}
+		}
+	}
+
+	UBOOL bMoved = TRUE;
+	UBOOL bFalls = FALSE;
+	const TCHAR* FloorOutcome = TEXT("not checked");
+	const FCheckResult* pFloorHit = NULL;
+	FCheckResult VertHit( 1.f );
+	FCheckResult SlopeHit( 1.f );
+	if( !bMoving && _bOnValidBase && !_bPreview )
+	{
+		bMoved = FALSE;
+		Delta = FVector( 0.f, 0.f, 0.f );
+	}
+	else
+	{
+		const UBOOL bFallAllowed = m_bFallAllowedByExternal || m_bFallAllowedByCode;
+		const FVector VertStart = Origin + Delta + FVector( 0.f, 0.f, fStep );
+		const FVector VertEnd = VertStart - FVector( 0.f, 0.f, fStep * 3.f );
+		UBOOL bNoFloor = GWorld->SingleLineCheck( VertHit, pPawn, VertEnd, VertStart, TraceFlags, Extent );
+		FloorOutcome = TEXT("walkable floor");
+		if( !bNoFloor )
+		{
+			if( fLedgeFloorZ >= VertHit.Normal.Z )
+			{
+				const FVector Side = VertHit.Normal ^ FVector( 0.f, 0.f, -1.f );
+				const FVector Downhill = Side ^ VertHit.Normal;
+				const FVector SlopeEnd = VertHit.Location + Downhill * ( ( 1.f - VertHit.Time ) * ( fStep * 2.f ) );
+				if( !GWorld->SingleLineCheck( SlopeHit, pPawn, SlopeEnd, VertHit.Location, TraceFlags, Extent ) && fLedgeFloorZ <= SlopeHit.Normal.Z )
+				{
+					Delta = SlopeHit.Location - Origin;
+					pFloorHit = &SlopeHit;
+					if( !Cast<APawn>( HoriHit.Actor ) )
+					{
+						m_MoveHitNormal = VertHit.Normal;
+					}
+				}
+				else
+				{
+					bNoFloor = TRUE;
+				}
+				FloorOutcome = bNoFloor ? TEXT("steep floor, no slope landing") : TEXT("steep floor, slid down the slope");
+			}
+			else if( ( VertHit.Actor && VertHit.Actor->bCanStepUpOn ) || !Cast<USkeletalMeshComponent>( VertHit.Component ) )
+			{
+				Delta = VertHit.Location - Origin;
+				pFloorHit = &VertHit;
+			}
+			else
+			{
+				Delta = FVector( 0.f, 0.f, 0.f );
+				bMoved = FALSE;
+				FloorOutcome = TEXT("skeletal-mesh floor of an actor that is not bCanStepUpOn: move cancelled");
+			}
+		}
+		else
+		{
+			FloorOutcome = TEXT("no floor within 3 x MaxStepHeight");
+		}
+		if( bNoFloor )
+		{
+			bMoved = bFallAllowed;
+			bFalls = bFallAllowed;
+			Delta.Z = 0.f;
+			if( !bFallAllowed )
+			{
+				Delta = FVector( 0.f, 0.f, 0.f );
+			}
+		}
+	}
+
+	if( !bMoved && !bRotationChanged )
+	{
+		if( bLocationWasUnsafe && !_bPreview )
+		{
+			pPawn->ForceUpdateComponents( TRUE, TRUE );
+		}
+		pPawn->Velocity = FVector( 0.f, 0.f, 0.f );
+	}
+	else
+	{
+		if( !bMoved )
+		{
+			Delta = FVector( 0.f, 0.f, 0.f );
+		}
+		const FVector StartLocation = pPawn->Location;
+		pPawn->Location += Delta;
+		pPawn->Rotation = NewRotation;
+		if( !_bPreview )
+		{
+			for( INT AttachedIdx = 0; AttachedIdx < pPawn->Attached.Num(); ++AttachedIdx )
+			{
+				AActor* pAttached = pPawn->Attached( AttachedIdx );
+				if( pAttached && !pAttached->bHardAttach )
+				{
+					GWorld->FarMoveActor( pAttached, pAttached->Location + Delta, FALSE, TRUE, TRUE );
+				}
+			}
+			if( pFloorHit )
+			{
+				if( pFloorHit->Actor == pPawn->Base || !pPawn->IsBlockedBy( pFloorHit->Actor, pFloorHit->Component ) )
+				{
+					pPawn->Floor = pFloorHit->Normal;
+				}
+				else
+				{
+					pPawn->SetBase( pFloorHit->Actor, pFloorHit->Normal, TRUE, NULL, NAME_None );
+					if( !_bOnValidBase && pPawn->Base )
+					{
+						pPawn->RelativeLocation = pPawn->Location - pPawn->Base->Location;
+					}
+				}
+			}
+			pPawn->ForceUpdateComponents( GWorld->InTick && !GWorld->bPostTickComponentUpdate, TRUE );
+			if( bMoved )
+			{
+				UnTouchActors( pValidHits, FALSE );
+			}
+			if( !m_bInertiaDisabled )
+			{
+				pPawn->SetZone( FALSE, FALSE );
+				pPawn->UpdatePushBody();
+			}
+			pPawn->Velocity = ClampLength( ( ValidDelta + Delta ) * ( 1.f / _fTimeStep ), fSpeedBeforeMove );
+		}
+		const FVector Actual = pPawn->Location - StartLocation;
+		GDisLocoDistanceMoved += Actual.Size2D();
+		IKDiagMove( VelocityMove, HoriHit, Actual );
+	}
+	IKDiagFloor( FloorOutcome, VertHit, Delta );
+
+	if( pPawn->Mesh )
+	{
+		pPawn->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
+	}
+	m_CurPawnLocation = pPawn->Location;
+	if( !bFalls && !bMoved && bCheckFall && !_bPreview )
+	{
+		const FVector GroundStart = pPawn->CollisionComponent->Bounds.Origin;
+		FCheckResult FallHit( 1.f );
+		if( GWorld->SingleLineCheck( FallHit, pPawn, GroundStart - FVector( 0.f, 0.f, fStep * 1.99f ), GroundStart, TraceFlags, Extent )
+			|| fLedgeFloorZ > FallHit.Normal.Z )
+		{
+			bFalls = TRUE;
+		}
+	}
+	if( bFalls )
+	{
+		GDisLocoFalls++;
+		pPawn->setPhysics( PHYS_Falling, NULL, FVector( 0.f, 0.f, 1.f ) );
+	}
+}
+
+// DISHONORED(port, agent IK3): 2012 0x57f220 (275 B). Every hit actor that is neither the pawn nor something the pawn is based
+// on (or based on the pawn) is touched when it does not block, and bumped both ways - or, for world geometry the pawn's
+// 0x2030DF trace would hit, NotifyBumpLevel.
+void FArkComponentLocomotion::SendTouchAndBumpEvents( const FCheckResult* const _pHits, UBOOL _bPreview )
 {
 	if( _bPreview )
 	{
 		return;
 	}
-	// DISHONORED(port, agent IB): retail's move is the dynamics' Velocity x this frame's time step (2012 0x580ae0 / 2013 0x93fb00
-	// head), m_CurMove only when that velocity is not zero while the dynamics' move speed is and no animation owns the pawn.
-	const FLOAT fSpeedBeforeMove = m_pPawnOwner->Velocity.Size();
-	FVector Move = m_pPawnOwner->Velocity * _fTimeStep;
-	if( !Move.IsZero() && m_fCurMoveSpeed == 0.f && !IsRootMotion() )
+	for( const FCheckResult* pHit = _pHits; pHit; pHit = pHit->GetNext() )
 	{
-		Move = m_CurMove;
-	}
-	Move.Z = 0.f;
-	// DISHONORED(port, agent IK2): the body yaw, 2012 0x580ae0 head: with the face-to component the new rotation is
-	// (0, Normalize( Rotation.Yaw + m_CurBodyYawDelta ), 0) and a rotation change alone runs the move.
-	// DISHONORED(bringup): without FArkComponentFaceTo (IC's -icfaceto is off by default) the pawn faces its move yaw, HEAD's
-	// stand-in.
-	FRotator NewRotation = m_pPawnOwner->Rotation;
-	if( m_pFaceToCpnt )
-	{
-		NewRotation = FRotator( 0, FRotator::NormalizeAxis( m_pPawnOwner->Rotation.Yaw + m_pFaceToCpnt->GetCurBodyYawDelta() ), 0 );
-	}
-	else if( m_CurMoveYaw != -200000 )
-	{
-		NewRotation.Yaw = m_CurMoveYaw;
-	}
-	const UBOOL bRotationChanged = m_pFaceToCpnt && ( m_pPawnOwner->Rotation.Yaw != NewRotation.Yaw || m_pPawnOwner->Rotation.Pitch != 0 || m_pPawnOwner->Rotation.Roll != 0 );
-	if( Move.IsNearlyZero() && !bRotationChanged )
-	{
-		m_pPawnOwner->Velocity = FVector( 0.f, 0.f, 0.f );
-		m_MoveHitNormal = FVector( 0.f, 0.f, 0.f );
-		// DISHONORED(port, agent FV): retail's FullMovePawn runs its ground check even for a pawn that is not moving when the pawn
-		// has no valid base (`bFallAllowed || !_bHaveBase`, 2012 0x580ae0) - that is what bases a spawned pawn on the floor it
-		// stands on, and the boat's guard on the boat. With a base and no move retail does nothing more, and neither does this.
-		if( !_bOnValidBase )
+		AActor* pActor = pHit->Actor;
+		if( !pActor || pActor == m_pPawnOwner || m_pPawnOwner->IsBasedOn( pActor ) || pActor->IsBasedOn( m_pPawnOwner ) )
 		{
-			UpdateFloorAndBase( FALSE );
+			continue;
 		}
-		if( m_pPawnOwner->Mesh != NULL )
+		if( !m_pPawnOwner->IsBlockedBy( pActor, pHit->Component ) )
 		{
-			m_pPawnOwner->Mesh->RootMotionDelta.SetTranslation( FVector( 0.f, 0.f, 0.f ) );
+			m_pPawnOwner->BeginTouch( pActor, pHit->Component, pHit->Location, pHit->Normal, pHit->SourceComponent );
 		}
+		if( !pActor->bWorldGeometry )
+		{
+			pActor->NotifyBump( m_pPawnOwner, m_pPawnOwner->CollisionComponent, pHit->Normal );
+			m_pPawnOwner->NotifyBump( pActor, pHit->Component, pHit->Normal );
+		}
+		else if( pActor->ShouldTrace( pHit->Component, m_pPawnOwner, 0x2030DF ) )
+		{
+			m_pPawnOwner->NotifyBumpLevel( pHit->Location, pHit->Normal );
+		}
+	}
+}
+
+// DISHONORED(port, agent IK3): 2012 0x580a40 (155 B): the pawn stops touching every actor the check did not hit.
+void FArkComponentLocomotion::UnTouchActors( const FCheckResult* const _pHits, UBOOL _bPreview )
+{
+	if( _bPreview )
+	{
 		return;
 	}
-
-	// DISHONORED(port, agent IK2): retail's un-sticking step, 2012 0x580ae0 (`bFallAllowed || !_bHaveBase`): the cylinder (XY x 1.001,
-	// x 0.5 with inertia disabled), raised by MaxStepHeight, is checked where it stands and pushed out of whatever it overlaps
-	// before the move; the pawn's location takes the XY correction.
-	// DISHONORED(bringup): SendTouchAndBumpEvents (2012 0x57f220) on the check's hits is not ported.
-	if( !Move.IsNearlyZero() || !_bOnValidBase )
+	INT TouchIdx = 0;
+	while( TouchIdx < m_pPawnOwner->Touching.Num() )
 	{
-		const FBoxSphereBounds& Bounds = m_pPawnOwner->CollisionComponent->Bounds;
-		const FLOAT fXYScale = m_bInertiaDisabled ? 0.5f : 1.001f;
-		const FVector Extent( Bounds.BoxExtent.X * fXYScale, Bounds.BoxExtent.Y * fXYScale, Bounds.BoxExtent.Z );
-		const FVector CheckOrigin = Bounds.Origin + FVector( 0.f, 0.f, m_pPawnOwner->MaxStepHeight );
-		FVector ValidOrigin = CheckOrigin;
-		UBOOL bLocationWasUnsafe = FALSE;
-		UBOOL bHitNPCOnlyCollision = FALSE;
-		FMemMark Mark( GMainThreadMemStack );
-		FindValidLocation( GMainThreadMemStack, ValidOrigin, 0x1020209F, Extent, bLocationWasUnsafe, bHitNPCOnlyCollision );
-		if( bLocationWasUnsafe && ValidOrigin != CheckOrigin )
+		AActor* pTouching = m_pPawnOwner->Touching( TouchIdx );
+		UBOOL bStillHit = pTouching == NULL;
+		for( const FCheckResult* pHit = _pHits; pHit && !bStillHit; pHit = pHit->GetNext() )
 		{
-			GWorld->FarMoveActor( m_pPawnOwner, m_pPawnOwner->Location + ( ValidOrigin - CheckOrigin ), FALSE, TRUE, FALSE );
+			bStillHit = pHit->Actor == pTouching;
+		}
+		if( bStillHit )
+		{
+			++TouchIdx;
+		}
+		else
+		{
+			m_pPawnOwner->EndTouch( pTouching, FALSE );
 		}
 	}
-
-	const FVector StartLocation = m_pPawnOwner->Location;
-	FCheckResult Hit( 1.f );
-	DISLOCO_TRACE( move_enter, "move %s from %s", *Move.ToString(), *StartLocation.ToString() )
-	GWorld->MoveActor( m_pPawnOwner, Move, NewRotation, 0, Hit );
-	DISLOCO_MARK( move_done )
-
-	// DISHONORED(port, agent IK2): retail keeps only the hit normal (when the hit is not a pawn) - the stuck flag is the dynamics'
-	// velocity test and the scheduler repaths on it (2012 0x58a4d0). HEAD also raised the stuck flag here, burnt the request's
-	// "pathfinding failed" bit and sent CPNT_LOCO_EVENT_HIT_OBSTACLE, none of which retail's FullMovePawn does.
-	m_MoveHitNormal = ( Hit.Time < 1.f && !Cast<APawn>( Hit.Actor ) ) ? Hit.Normal : FVector( 0.f, 0.f, 0.f );
-
-	const FVector Actual = m_pPawnOwner->Location - StartLocation;
-	IKDiagMove( Move, Hit, Actual );
-	GDisLocoDistanceMoved += Actual.Size2D();
-	// DISHONORED(port, agent IB): retail clamps the measured velocity to the speed the move was asked for (2012 0x580ae0 +0x5f0,
-	// ClampLength) and leaves Acceleration as the dynamics wrote it.
-	m_pPawnOwner->Velocity = ClampLength( ( _fTimeStep > 0.f ) ? ( Actual / _fTimeStep ) : FVector( 0.f, 0.f, 0.f ), fSpeedBeforeMove );
-	m_CurPawnLocation = m_pPawnOwner->Location;
-	IBDiagCheckStuck();
-	UpdateFloorAndBase( _bOnValidBase );
 }
 
 // DISHONORED(port, agent IK2): 2012 0x57ffb0 (745 B). Up to four rounds (one with inertia disabled) of a multi-point check of
@@ -916,64 +1135,3 @@ FCheckResult* FArkComponentLocomotion::FindValidLocation( FMemStack& _Mem, FVect
 	return pHitResult;
 }
 
-// DISHONORED(port): agent FV (PHASE18 FV). The ground hit of retail's FullMovePawn (2012 0x580ae0, after MoveAttachedActors):
-// the pawn's cylinder is swept from MaxStepHeight above its location to twice MaxStepHeight below it, with the trace flags
-// retail passes its vertical checks (0x1020209F: pawns, movers, level, volumes, others, level geometry, stop at any hit,
-// complex collision). What the sweep hits is the floor: an actor the pawn is already based on, or one that would not
-// block it, only refreshes Floor; a blocking actor becomes the Base (APawn::SetBase with the hit normal, notifying it), and
-// a pawn that had no base keeps its offset from the new one in RelativeLocation. This is how a pawn standing on a moving
-// InterpActor is carried by it - the swept move UWorld::MoveActor this tree uses for the walk never sets a base.
-void FArkComponentLocomotion::UpdateFloorAndBase( UBOOL _bHadBase )
-{
-	if( !m_pPawnOwner || !m_pPawnOwner->CollisionComponent || !GWorld )
-	{
-		return;
-	}
-	const FLOAT Step = m_pPawnOwner->MaxStepHeight;
-	FVector Extent = m_pPawnOwner->CollisionComponent->Bounds.BoxExtent;
-	Extent.X *= 1.001f;
-	Extent.Y *= 1.001f;
-	const FVector Start = m_pPawnOwner->Location + FVector( 0.f, 0.f, Step );
-	const FVector End = m_pPawnOwner->Location - FVector( 0.f, 0.f, 2.f * Step );
-	FCheckResult Hit( 1.f );
-	if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, 0x1020209F, Extent ) )
-	{
-		// DISHONORED(port, agent GA): retail's tail (2012 0x580ae0 +0x8a0): a pawn that is not moving and stands on
-		// nothing within the sweep is put into PHYS_Falling; UE3's physFalling / processLanded land it and base it.
-		if( !_bHadBase )
-		{
-			GDisLocoFalls++;
-			m_pPawnOwner->setPhysics( PHYS_Falling );
-		}
-		return;
-	}
-	if( Hit.bStartPenetrating )
-	{
-		// DISHONORED(port, agent GA): the swept cylinder already overlaps something (a rail, a wall, the deck's own
-		// collision) and the hit is the start point, not a floor - measured on the boat's guard, whom a hit taken at
-		// face value lifted a step height per frame. A plain line from the cylinder's centre says what is under its
-		// bottom; a floor more than a step height from the bottom is not this pawn's.
-		const FLOAT Height = m_pPawnOwner->CollisionComponent->Bounds.BoxExtent.Z;
-		Hit = FCheckResult( 1.f );
-		if( GWorld->SingleLineCheck( Hit, m_pPawnOwner, m_pPawnOwner->Location - FVector( 0.f, 0.f, Height + Step * 3.f ), m_pPawnOwner->Location, 0x1020209F )
-			|| Abs( ( m_pPawnOwner->Location.Z - Height ) - Hit.Location.Z ) > Step )
-		{
-			return;
-		}
-	}
-	if( !Hit.Actor )
-	{
-		return;
-	}
-	if( Hit.Actor == m_pPawnOwner->Base || !m_pPawnOwner->IsBlockedBy( Hit.Actor, Hit.Component ) )
-	{
-		m_pPawnOwner->Floor = Hit.Normal;
-		return;
-	}
-	GDisLocoBased++;
-	m_pPawnOwner->SetBase( Hit.Actor, Hit.Normal, TRUE, NULL, NAME_None );
-	if( !_bHadBase && m_pPawnOwner->Base )
-	{
-		m_pPawnOwner->RelativeLocation = m_pPawnOwner->Location - m_pPawnOwner->Base->Location;
-	}
-}

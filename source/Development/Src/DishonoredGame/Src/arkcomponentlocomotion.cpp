@@ -820,6 +820,20 @@ void FArkComponentLocomotion::IKDiagScheduler( const TCHAR* _Reason, const FVect
 		*_Destination.ToString(), *m_StartLocationUsedToAskPath.ToString(), *m_pPawnOwner->Location.ToString(), m_pPawnOwner->Base ? *m_pPawnOwner->Base->GetName() : TEXT("none"), *Points );
 }
 
+/** The floor sweep of every FullMovePawn of a watched NPC: its outcome, what it hit and the delta it left. */
+void FArkComponentLocomotion::IKDiagFloor( const TCHAR* _Outcome, const FCheckResult& _FloorHit, const FVector& _Delta ) const
+{
+	if( !DisIKDiagEnabled() || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	debugf( TEXT("DISHONORED(bringup): ikdiag floor %s world %.3f %s | hit %s comp %s %s time %.3f normal %.2f/%.2f/%.2f at %.1f/%.1f/%.1f stepupon %d | delta %.2f/%.2f/%.2f at %.1f/%.1f/%.1f"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), _Outcome, _FloorHit.Actor ? *_FloorHit.Actor->GetName() : TEXT("none"),
+		_FloorHit.Component ? *_FloorHit.Component->GetClass()->GetName() : TEXT("-"), _FloorHit.Component ? *_FloorHit.Component->GetName() : TEXT("-"),
+		_FloorHit.Time, _FloorHit.Normal.X, _FloorHit.Normal.Y, _FloorHit.Normal.Z, _FloorHit.Location.X, _FloorHit.Location.Y, _FloorHit.Location.Z,
+		_FloorHit.Actor ? (INT)_FloorHit.Actor->bCanStepUpOn : -1, _Delta.X, _Delta.Y, _Delta.Z, m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_pPawnOwner->Location.Z );
+}
+
 /*-----------------------------------------------------------------------------
 	the request-manager callback
 -----------------------------------------------------------------------------*/
