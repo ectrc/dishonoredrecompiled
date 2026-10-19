@@ -29,6 +29,7 @@
 #include "dishonoredutilities_ai.h"
 #include "aistimstruct.h"
 #include "dishonoredutilities_saveload.h"
+#include "icdiag.h"
 #include "disattentioninfo.h"
 
 
@@ -926,6 +927,10 @@ void UDishonoredAIBrain::FlushStimQueue( UBOOL* const _bActiveStackCancels, UBOO
 		{
 			ProcessOneStim( *Stim, _bActiveStackCancels, _bBecamePaused );
 			GDisAIStimsProcessed++;
+			if( DisICDiagEnabled() )
+			{
+				DisICDiagStim( this, *Stim );
+			}
 		}
 		DisStimRefRelease( StimsToProcessThisTick(Idx) );
 	}
@@ -950,6 +955,7 @@ void UDishonoredAIBrain::ProcessAllStims()
 	UBOOL bBecamePaused[ARRAY_COUNT(m_ActiveBehaviorStack)];
 	appMemzero( bActiveStackCancels, sizeof(bActiveStackCancels) );
 	appMemzero( bBecamePaused, sizeof(bBecamePaused) );
+	UDishonoredAIBehavior* const ICDiagPreviousBehavior = m_pCurrentBehavior;
 	FlushStimQueue( bActiveStackCancels, bBecamePaused );
 
 	UDishonoredAIBehavior* pHighestActiveBehavior = NULL;
@@ -976,6 +982,10 @@ void UDishonoredAIBrain::ProcessAllStims()
 		m_pCurrentBehavior = pHighestActiveBehavior;
 		m_pCurrentBehavior->CallOnBehaviorResume( PawnExistingBodyIntention );
 		bBecamePaused[m_pCurrentBehavior->m_DesignatedSlot] = FALSE;
+	}
+	if( m_pCurrentBehavior != ICDiagPreviousBehavior && DisICDiagEnabled() )
+	{
+		DisICDiagCurrentBehavior( this, ICDiagPreviousBehavior );
 	}
 
 	for( INT Slot = 0; Slot < ARRAY_COUNT(m_ActiveBehaviorStack); Slot++ )
@@ -2149,4 +2159,66 @@ void UDishonoredAIBrain::ClearMinAttentionForTarget( IDisAttentionTargetInterfac
 	Stim.m_pForTarget.SetInterface( _pTarget );
 	Stim.m_Type = _Type;
 	DisHandleAIStim( this, Stim, this );
+}
+
+/*-----------------------------------------------------------------------------
+	agent IC (PHASE23 IC): -icdiag
+-----------------------------------------------------------------------------*/
+
+UBOOL DisICDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("icdiag") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+static FString DisICDiagStack( const UDishonoredAIBrain* _pBrain )
+{
+	FString Stack;
+	for( INT Slot = 0; Slot < ARRAY_COUNT(_pBrain->m_ActiveBehaviorStack); Slot++ )
+	{
+		const UDishonoredAIBehavior* Behavior = _pBrain->m_ActiveBehaviorStack[Slot];
+		if( Behavior )
+		{
+			Stack += FString::Printf( TEXT(" %d:%s%s"), Slot, *Behavior->GetClass()->GetName(), Behavior == _pBrain->m_pCurrentBehavior ? TEXT("*") : TEXT("") );
+		}
+	}
+	return Stack.Len() ? Stack : FString( TEXT(" empty") );
+}
+
+// Every soiree stim is logged; any other (brain, stim id) pair its first five times and every hundredth after.
+void DisICDiagStim( UDishonoredAIBrain* _pBrain, const FAIStimStruct& _rStim )
+{
+	static TMap<QWORD, INT> s_Counts;
+	const QWORD Key = ( (QWORD)(PTRINT)_pBrain << 8 ) | _rStim.m_StimID;
+	INT& Count = s_Counts.FindOrAdd( Key );
+	const INT N = ++Count;
+	const UBOOL bSoiree = _rStim.m_StimID == EAIStimID_Soiree || _rStim.m_StimID == EAIStimID_SoireeRejected;
+	if( !bSoiree && N > 5 && ( N % 100 ) != 0 )
+	{
+		return;
+	}
+	FString Detail;
+	if( _rStim.m_StimID == EAIStimID_Soiree )
+	{
+		const FAIStimStruct_Soiree& Soiree = (const FAIStimStruct_Soiree&)_rStim;
+		Detail = FString::Printf( TEXT(" event %d prio %d blocking %d guid %08X"), Soiree.m_SoireeEvent, Soiree.m_SoireePriority, Soiree.m_bIsBlocking ? 1 : 0, Soiree.m_SoireeGUID.A );
+	}
+	UEnum* StimEnum = FindObject<UEnum>( ANY_PACKAGE, TEXT("EAIStimID") );
+	debugf( TEXT("DISHONORED(bringup): icdiag stim %s %s (%d)%s n %d | stack%s world %.2f"),
+		_pBrain->m_pOwningPawn ? *_pBrain->m_pOwningPawn->GetName() : TEXT("?"),
+		StimEnum ? *StimEnum->GetEnum( _rStim.m_StimID ).ToString() : TEXT("?"), _rStim.m_StimID, *Detail, N,
+		*DisICDiagStack( _pBrain ), GWorld ? GWorld->GetTimeSeconds() : 0.f );
+}
+
+void DisICDiagCurrentBehavior( UDishonoredAIBrain* _pBrain, UDishonoredAIBehavior* _pPrevious )
+{
+	debugf( TEXT("DISHONORED(bringup): icdiag behavior %s %s -> %s | stack%s world %.2f"),
+		_pBrain->m_pOwningPawn ? *_pBrain->m_pOwningPawn->GetName() : TEXT("?"),
+		_pPrevious ? *_pPrevious->GetClass()->GetName() : TEXT("none"),
+		_pBrain->m_pCurrentBehavior ? *_pBrain->m_pCurrentBehavior->GetClass()->GetName() : TEXT("none"),
+		*DisICDiagStack( _pBrain ), GWorld ? GWorld->GetTimeSeconds() : 0.f );
 }

@@ -108,6 +108,19 @@ public:
 	void MatineeControllerAdd( class USeqAct_Interp* const Matinee, BYTE SoireePriority, UBOOL bIsBlocking );
 	void MatineeControllerRemove( class USeqAct_Interp* const Matinee, BYTE SoireePriority );
 
+// ---- agent IC (PHASE23 IC): the soiree side of the controller list ----
+// GetMatineeControllerCount 2012 0x7b1a60 / 2013 0xb53570, ExitFromMatinees( FGuid ) 0x7bdfd0 / 0xb65940, ExitFromMatinees( priority )
+// 0x7bde30 / 0xb657a0, StopMatinees 0x7b6b40 / 0xb5a120, MAT_ShouldForceInventory 0x7ad720, MAT_GetBodyIntention 0x7ad740.
+// DISHONORED(bringup): retail's ExitFromMatinees pair and the two MAT_ queries are virtual (NPC vtable +1236/+1240, +1228/+1232 in
+// 2012); nothing overrides them, so they are plain members here.
+public:
+	INT GetMatineeControllerCount( BYTE SoireePriority, UBOOL bIsBlocking ) const;
+	void ExitFromMatinees( FGuid MatineeGuid, const FString* Reason );
+	void ExitFromMatinees( BYTE SoireePriority, const FString* Reason );
+	void StopMatinees( const TArray<class USeqAct_Interp*>& MatineesToStop, const FString* Reason );
+	UBOOL MAT_ShouldForceInventory() const;
+	void MAT_GetBodyIntention( BYTE& BodyStance, class UClass*& PrimaryItem, class UClass*& SecondaryItem ) const;
+
 // ---- agent HA (PHASE22 HA): the NPC's root-motion pair ----
 // 2012 rvas StartRootMotionMode 0x7ac100 (136 B), StopRootMotionMode 0x7af1a0 (47 B); 2013 rvas 0x76e680 / 0x771280 (VA
 // 0xb6e680 / 0xb71280), byte-identical. Bodies in dishonorednpcpawn_locomotion.cpp (retail's unit).
@@ -188,6 +201,8 @@ public:
 	void Tick_Rotation( FLOAT _fDeltaTime );
 	void Init_Rotation();
 	void CancelAllNPCRotations();
+	// agent IC: 2012 rva 0x7ab8d0 / 2013 0x7ab560, m_pCpntFaceTo (set by Spawned from the locomotion component's face-to)
+	class FArkComponentFaceTo* GetComponentFaceTo() const;
 	void SetNPCRotation( EDisFaceToPriority _RotationPriority, const FRotator& _rRotation, FLOAT _fYawRateDegrees, FLOAT _fYawAccelerationTime, void* const _pAsker, FName _AskerName );
 	void SetNPCRotationFocus( EDisFaceToPriority _RotationPriority, const FVector& _rTarget, FLOAT _fYawRateDegrees, FLOAT _fYawAccelerationTime, void* const _pAsker, FName _AskerName );
 	void LockNPCRotation( EDisFaceToPriority _RotationPriority, void* const _pAsker, FName _AskerName );

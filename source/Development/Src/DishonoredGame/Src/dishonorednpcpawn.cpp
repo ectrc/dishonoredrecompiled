@@ -349,11 +349,9 @@ void ADishonoredNPCPawn::PostBeginPlay()
 	bones (bDisableJiggleBones -> Mesh->m_bDontUpdateKinematic), the locomotion switches, the look-forward
 	request on LockRequests and its StopAllLookAtFromAsker / the m_iMatineeLookAtRequestID stop, MAT_BlendOut
 	(the blend out, 2012 0x7ad5e0 / 2013 0xb4ec80), the collision and physics choice, the body-intention reset
-	at Soiree priority (agents FS, GA, HB). Still missing, named:
+	at Soiree priority (agents FS, GA, HB), the FAIStimStruct_Soiree start / stop stim (agent IC; 2013 0xb19470 + 0xb5af50). Still missing, named:
 	  - FDisComponentLODManager::StartLOD( group, name, eLRP_Soiree, request, -1 ) / StopAllLODByAsker
 	    (the LOD manager is not ported);
-	  - the FAIStimStruct_Soiree( MatineeGuid, ESE_Start/ESE_Stop, priority, blocking ) stim handed to the
-	    brain through UDishonoredAIBrain::HandleAIStim_Internal (the brain's stim handler is unported);
 	  - 2013's bShouldFakeDeath (sub_B5A0B0 / m_iNumFakeDeathRequestsFromSoiree) and the +1288 bit 0x2000;
 	  - ApplyLocomotionModifier() on finish, replaced by m_bLocoModifierNeedsApplication = TRUE.
 -----------------------------------------------------------------------------*/
@@ -363,6 +361,8 @@ void ADishonoredNPCPawn::PostBeginPlay()
 #include "arkcomponentlookat.h"
 #include "dishonoredutilities_ai.h"
 #include "fkmatineediag.h"
+#include "icdiag.h"
+#include "aistimstruct.h"
 
 // 2012 rva 0x7bac70 (554 B): SlotNodes emptied and re-collected from the mesh's tree - every
 // UArkAnimNodeStack whose CanBeUsedByMatinee is set, an unnamed one taking the editor ini's
@@ -419,6 +419,11 @@ void ADishonoredNPCPawn::MatineeControllerAdd( USeqAct_Interp* const Matinee, BY
 	Info.m_pMatinee = Matinee;
 	Info.m_SoireePriority = SoireePriority;
 	Info.m_bIsBlocking = bIsBlocking ? 1 : 0;
+	if( DisICDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): icdiag controller %s add %s prio %d blocking %d count %d world %.2f"), *GetName(),
+			Matinee ? *Matinee->GetName() : TEXT("none"), SoireePriority, bIsBlocking ? 1 : 0, m_MatineeControllersInfos.Num(), GWorld->GetTimeSeconds() );
+	}
 }
 
 // DISHONORED(port): 2012 rva 0x7baea0 (111 B) / 2013 0xb5f760: every entry of the matinee, whatever the priority argument
@@ -431,6 +436,124 @@ void ADishonoredNPCPawn::MatineeControllerRemove( USeqAct_Interp* const Matinee,
 			m_MatineeControllersInfos.Remove( Index );
 		}
 	}
+	if( DisICDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): icdiag controller %s remove %s count %d world %.2f"), *GetName(),
+			Matinee ? *Matinee->GetName() : TEXT("none"), m_MatineeControllersInfos.Num(), GWorld->GetTimeSeconds() );
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x7b1a60 (138 B) / 2013 0xb53570: the entries at this priority and blocking state
+INT ADishonoredNPCPawn::GetMatineeControllerCount( BYTE SoireePriority, UBOOL bIsBlocking ) const
+{
+	INT Count = 0;
+	for( INT Index = 0; Index < m_MatineeControllersInfos.Num(); Index++ )
+	{
+		const FMatineeControllerInfos& Info = m_MatineeControllersInfos(Index);
+		if( Info.m_SoireePriority == SoireePriority && Info.m_bIsBlocking == ( bIsBlocking ? 1 : 0 ) )
+		{
+			Count++;
+		}
+	}
+	return Count;
+}
+
+// DISHONORED(port): 2012 rva 0x7bdfd0 (422 B) / 2013 0xb65940 (vtable +1236): the matinees of that guid. Retail collects them in a
+// TMemStackArray on GMainThreadMemStack; a TArray here (named).
+void ADishonoredNPCPawn::ExitFromMatinees( FGuid MatineeGuid, const FString* Reason )
+{
+	if( !GIsGame )
+	{
+		return;
+	}
+	TArray<USeqAct_Interp*> MatineesToStop;
+	for( INT Index = 0; Index < m_MatineeControllersInfos.Num(); Index++ )
+	{
+		USeqAct_Interp* Matinee = m_MatineeControllersInfos(Index).m_pMatinee;
+		if( Matinee && Matinee->m_MatineeGUID == MatineeGuid )
+		{
+			MatineesToStop.AddItem( Matinee );
+		}
+	}
+	StopMatinees( MatineesToStop, Reason );
+}
+
+// DISHONORED(port): 2012 rva 0x7bde30 (404 B) / 2013 0xb657a0 (vtable +1240): the matinees at that priority, ESAP_MAX = all
+void ADishonoredNPCPawn::ExitFromMatinees( BYTE SoireePriority, const FString* Reason )
+{
+	if( !GIsGame )
+	{
+		return;
+	}
+	TArray<USeqAct_Interp*> MatineesToStop;
+	for( INT Index = 0; Index < m_MatineeControllersInfos.Num(); Index++ )
+	{
+		const FMatineeControllerInfos& Info = m_MatineeControllersInfos(Index);
+		if( SoireePriority == ESAP_MAX || Info.m_SoireePriority == SoireePriority )
+		{
+			MatineesToStop.AddItem( Info.m_pMatinee );
+		}
+	}
+	StopMatinees( MatineesToStop, Reason );
+}
+
+// DISHONORED(port): 2012 rva 0x7b6b40 (387 B) / 2013 0xb5a120 (410 B). The pawn's own AI group is terminated in every matinee whose
+// group may not interrupt it (CanInterruptMatinee clear), detached when the group asks for it (2013: bShouldBeDetached ->
+// MAT_Detach, vtable +796); a matinee none of whose groups refused is stopped as a whole (USeqAct_Interp::StopFromNPC, 2013
+// 0x612a60: Stop() unless m_bShouldNotBeInterruptedByDialog). Reason is retail's log text and unused in Shipping.
+// DISHONORED(written): a pawn group that is not a UInterpGroupAI is skipped (retail reads the flags through NULL).
+void ADishonoredNPCPawn::StopMatinees( const TArray<USeqAct_Interp*>& MatineesToStop, const FString* Reason )
+{
+	for( INT MatIdx = 0; MatIdx < MatineesToStop.Num(); MatIdx++ )
+	{
+		USeqAct_Interp* Matinee = MatineesToStop(MatIdx);
+		UBOOL bInterruptionIsAllowed = TRUE;
+		for( INT GroupIdx = Matinee->GroupInst.Num() - 1; GroupIdx >= 0; GroupIdx-- )
+		{
+			UInterpGroupInstAI* GroupInst = Cast<UInterpGroupInstAI>( Matinee->GroupInst(GroupIdx) );
+			if( !GroupInst || GroupInst->GetGroupActor() != this )
+			{
+				continue;
+			}
+			UInterpGroupAI* AIGroup = Cast<UInterpGroupAI>( GroupInst->Group );
+			if( !AIGroup )
+			{
+				continue;
+			}
+			if( !AIGroup->CanInterruptMatinee )
+			{
+				GroupInst->TermGroupInst( TRUE );
+				bInterruptionIsAllowed = FALSE;
+			}
+			if( AIGroup->bShouldBeDetached )
+			{
+				MAT_Detach();
+			}
+		}
+		if( bInterruptionIsAllowed && !Matinee->m_bShouldNotBeInterruptedByDialog )
+		{
+			Matinee->Stop();
+		}
+		if( DisICDiagEnabled() )
+		{
+			debugf( TEXT("DISHONORED(bringup): icdiag exitmatinee %s %s interrupt %d world %.2f"), *GetName(), *Matinee->GetName(),
+				bInterruptionIsAllowed ? 1 : 0, GWorld->GetTimeSeconds() );
+		}
+	}
+}
+
+// DISHONORED(port): 2012 rva 0x7ad720 (30 B): the force-inventory bit counts only while a matinee holds the pawn
+UBOOL ADishonoredNPCPawn::MAT_ShouldForceInventory() const
+{
+	return m_MatineeControllersInfos.Num() > 0 && m_bShouldForceBodyIntention;
+}
+
+// DISHONORED(port): 2012 rva 0x7ad740 (72 B): empty hands, no stance
+void ADishonoredNPCPawn::MAT_GetBodyIntention( BYTE& BodyStance, UClass*& PrimaryItem, UClass*& SecondaryItem ) const
+{
+	BodyStance = 0;
+	PrimaryItem = UDishonoredItemEmpty::StaticClass();
+	SecondaryItem = UDishonoredItemEmpty::StaticClass();
 }
 
 // DISHONORED(port): 2013 rva 0xb4ec80 (209 B; 2012 0x7ad5e0, 194 B). A group with a blend-out time blends the pawn out of the
@@ -463,11 +586,16 @@ void ADishonoredNPCPawn::MAT_BlendOut( UInterpGroupInst* GroupInst )
 	}
 }
 
-// DISHONORED(bringup): agent HB. Retail lists the pawn's matinees (MatineeControllerAdd) and hands the brain the
-// FAIStimStruct_Soiree start stim in the same breath; UDisAIBrainProcessAttention::UpdateSoireeAttention then holds every other
-// pawn of those matinees at DMALT_Soiree / DAL_Busted - the player too - which only the brain's soiree behaviour keeps from
-// becoming a reaction. The stim handler is not ported, so the list stays empty unless -hbcontrollers (the A/B switch that
-// reproduces HB1..HB2: the run dies in FParticleSystemSceneProxy within 1.5 s of the boat matinee binding).
+// Agent IC: retail lists the pawn's matinees (MatineeControllerAdd) and hands the brain the FAIStimStruct_Soiree start stim in
+// the same breath; UDisAIBrainProcessAttention::UpdateSoireeAttention then holds every other pawn of those matinees at
+// DMALT_Soiree / DAL_Busted (retail's 2013 0xb3f120 does the same) and UDisBehaviorSoiree keeps a non-blocking soiree's brain quiet.
+// DISHONORED(bringup): both stay OFF unless -hbcontrollers (agent HB's switch). Measured (agentIC.md): with the list filled the
+// render thread dies in FParticleSystemSceneProxy::ReleaseRenderThreadResources 0.1-1 s after the boat matinee binds in every
+// run with the soiree stim and behaviour ported (IC1a, IC1b, IC1e, IC1f; IC1d with -icnostim too), and in none with
+// -icnosoireeattn (the co-actors not held at Busted: IC1c, IC1g); the boat is a blocking matinee, which UDisBehaviorSoiree never
+// takes (EvaluateSoiree, retail's),
+// so the stim cannot be what keeps retail alive. -icnostim sends no soiree stim with the list on; -icpsysdiag names the particle
+// components touched after the blocking soiree starts.
 static UBOOL DisHBControllersEnabled()
 {
 	static INT Enabled = -1;
@@ -476,6 +604,48 @@ static UBOOL DisHBControllersEnabled()
 		Enabled = ( appStrfind( appCmdLine(), TEXT("-hbcontrollers") ) != NULL ) ? 1 : 0;
 	}
 	return Enabled != 0;
+}
+
+static UBOOL DisICSoireeStimEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ( DisHBControllersEnabled() && appStrfind( appCmdLine(), TEXT("-icnostim") ) == NULL ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+// Engine/Src/UnParticleComponents.cpp: -icpsysdiag logs particle component lifecycle calls once this is raised
+extern UBOOL GDisICParticleWatch;
+
+static void DisSendSoireeStim( ADishonoredNPCPawn* _pPawn, const FGuid& _MatineeGuid, BYTE _Event, BYTE _Priority, UBOOL _bIsBlocking )
+{
+	if( !_pPawn->Controller || !DisICSoireeStimEnabled() )
+	{
+		return;
+	}
+	UDishonoredAIBrain* Brain = _pPawn->GetAIBrain();
+	if( !Brain )
+	{
+		return;
+	}
+	FAIStimStruct_Soiree Stim = DisMakeStim< FAIStimStruct_Soiree >( EAIStimID_Soiree );
+	Stim.m_SoireeGUID = _MatineeGuid;
+	Stim.m_SoireeEvent = _Event;
+	Stim.m_SoireePriority = _Priority;
+	Stim.m_bIsBlocking = _bIsBlocking ? 1 : 0;
+	DisHandleAIStim( Brain, Stim, _pPawn );
+	if( _bIsBlocking && _Event == ESE_Start )
+	{
+		GDisICParticleWatch = TRUE;
+	}
+	if( DisICDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): icdiag soireestim %s send %s prio %d blocking %d guid %08X world %.2f"), *_pPawn->GetName(),
+			_Event == ESE_Start ? TEXT("Start") : ( _Event == ESE_Stop ? TEXT("Stop") : TEXT("Break") ), _Priority, _bIsBlocking ? 1 : 0,
+			_MatineeGuid.A, GWorld->GetTimeSeconds() );
+	}
 }
 
 // DISHONORED(bringup): agent HB. -hbnolockreq: no look-forward request on LockRequests (an A/B switch).
@@ -527,6 +697,10 @@ void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 	if( Seq != NULL && DisHBControllersEnabled() )
 	{
 		MatineeControllerAdd( Seq, Seq->m_AIBehaviorPriority, Seq->m_bIsBlocking );
+	}
+	if( Seq != NULL )
+	{
+		DisSendSoireeStim( this, Seq->m_MatineeGUID, ESE_Start, Seq->m_AIBehaviorPriority, Seq->m_bIsBlocking );
 	}
 
 	if( AIGroup != NULL && AIGroup->bDisableHitReact )
@@ -593,6 +767,7 @@ void ADishonoredNPCPawn::MAT_FinishAIGroup( UInterpGroupInstAI* GroupInst )
 
 	if( Seq != NULL )
 	{
+		DisSendSoireeStim( this, Seq->m_MatineeGUID, ESE_Stop, ESAP_MAX, FALSE );
 		MatineeControllerRemove( Seq, Seq->m_AIBehaviorPriority );
 	}
 	if( AIGroup != NULL && AIGroup->bDisableJiggleBones && Mesh != NULL )

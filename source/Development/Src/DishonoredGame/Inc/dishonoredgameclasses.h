@@ -10501,6 +10501,7 @@ public:
     //## END PROPS DisBehaviorSoiree
 
     DECLARE_CLASS(UDisBehaviorSoiree,UDisAIBehaviorWithDesires,0,DishonoredGame)
+#include "CppText/UDisBehaviorSoiree.h"
 };
 
 // DishonoredGame.DisBehaviorStolen: retail sizeof 160, reflected span 156..160 (2012 PDB sizeof 160)

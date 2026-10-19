@@ -7,6 +7,7 @@
 // of dishonorednpcpawn.cpp in this wave).
 
 #include "DishonoredGame.h"
+#include "arkcomponentfaceto.h"
 #include "arkcomponentlocomotion.h"
 #include "arkcomponentlookat.h"
 #include "fkmatineediag.h"
@@ -128,6 +129,7 @@ void ADishonoredNPCPawn::SpawnedLocomotion( UDisTweaks_NPCPawn* NPCTweaks )
 	pLoco->Starting();
 	DISLOCO_MARK( spawned_starting )
 	pLoco->SetOwnerPawnAvoidable( m_pAvoidable );
+	m_pCpntFaceTo = (FPointer)FArkComponentFaceTo::GetFaceToComponent( this );
 
 	m_fCosAvoidanceSteeringMaxAngle = appCos( NPCTweaks->m_fAvoidanceSteeringMaxAngle * ( PI / 180.f ) );
 }

@@ -1147,7 +1147,13 @@ void UDisAIBrainProcessAttention::TickAttention_CheckForCarryingCorpse( IDisAtte
 void UDisAIBrainProcessAttention::UpdateSoireeAttention()
 {
 	ClearAllMinAttention( DMALT_Soiree );
-	if( !m_pOwningPawn )
+	// DISHONORED(bringup): agent IC's A/B switch -icnosoireeattn holds no co-actor at Busted (the controller list stays filled).
+	static INT s_bDisabled = -1;
+	if( s_bDisabled < 0 )
+	{
+		s_bDisabled = ParseParam( appCmdLine(), TEXT("icnosoireeattn") ) ? 1 : 0;
+	}
+	if( !m_pOwningPawn || s_bDisabled )
 	{
 		return;
 	}

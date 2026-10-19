@@ -15,6 +15,34 @@
 #include "EngineAnimClasses.h"
 #include "DynamicLightEnvironmentComponent.h"
 
+/*-----------------------------------------------------------------------------
+	DISHONORED(bringup): agent IC (PHASE23 IC). -icpsysdiag: the render thread dies in FParticleSystemSceneProxy::
+	ReleaseRenderThreadResources within a second of the boat matinee binding whenever the NPCs' matinee controller lists are
+	filled (agentIC.md). DishonoredGame raises GDisICParticleWatch with the first blocking soiree stim; every particle component
+	lifecycle call after it is logged (owner, template, emitter instances, proxy) - at most 600 lines.
+-----------------------------------------------------------------------------*/
+UBOOL GDisICParticleWatch = FALSE;
+
+static void DisICPsysNote( UParticleSystemComponent* Component, const TCHAR* What, INT Arg )
+{
+	static INT s_Enabled = -1;
+	static INT s_Lines = 0;
+	if( s_Enabled < 0 )
+	{
+		s_Enabled = ParseParam( appCmdLine(), TEXT("icpsysdiag") ) ? 1 : 0;
+	}
+	if( !s_Enabled || !GDisICParticleWatch || s_Lines >= 600 )
+	{
+		return;
+	}
+	s_Lines++;
+	AActor* Owner = Component->GetOwner();
+	debugf( TEXT("DISHONORED(bringup): icpsys %s %s arg %d owner %s template %s instances %d active %d attached %d proxy %d world %.3f"),
+		What, *Component->GetName(), Arg, Owner ? *Owner->GetName() : TEXT("none"), Component->Template ? *Component->Template->GetName() : TEXT("none"),
+		Component->EmitterInstances.Num(), Component->bIsActive ? 1 : 0, Component->IsAttached() ? 1 : 0, Component->SceneInfo != NULL ? 1 : 0,
+		GWorld ? GWorld->GetTimeSeconds() : 0.f );
+}
+
 IMPLEMENT_CLASS(AEmitter);
 IMPLEMENT_CLASS(AEmitterCameraLensEffectBase);
 
@@ -4046,6 +4074,7 @@ void UParticleSystemComponent::Serialize( FArchive& Ar )
 
 void UParticleSystemComponent::BeginDestroy()
 {
+	DisICPsysNote( this, TEXT("BeginDestroy"), 0 );
 	Super::BeginDestroy();
 	ResetParticles(TRUE);
 }
@@ -4099,6 +4128,7 @@ UBOOL UParticleSystemComponent::SingleLineCheck(FCheckResult& Hit, AActor* Sourc
 
 void UParticleSystemComponent::Attach()
 {
+	DisICPsysNote( this, TEXT("Attach"), 0 );
 	// NULL out template if we're not allowing particles. This is not done in the Editor to avoid clobbering content via PIE.
 	if( !GIsAllowingParticles && !GIsEditor )
 	{
@@ -4271,6 +4301,7 @@ void UParticleSystemComponent::UpdateTransform()
 
 void UParticleSystemComponent::Detach( UBOOL bWillReattach )
 {
+	DisICPsysNote( this, TEXT("Detach"), bWillReattach );
 	if (bResetOnDetach)
 	{
 		// Empty the EmitterInstance array.
@@ -5477,6 +5508,7 @@ void UParticleSystemComponent::InitParticles()
 
 void UParticleSystemComponent::ResetParticles(UBOOL bEmptyInstances)
 {
+	DisICPsysNote( this, TEXT("ResetParticles"), bEmptyInstances );
 	// Remove instances from scene.
 	for( INT InstanceIndex=0; InstanceIndex<EmitterInstances.Num(); InstanceIndex++ )
 	{
@@ -5556,6 +5588,7 @@ void UParticleSystemComponent::ResetBurstLists()
 
 void UParticleSystemComponent::SetTemplate(class UParticleSystem* NewTemplate)
 {
+	DisICPsysNote( this, TEXT("SetTemplate"), 0 );
 	SCOPE_CYCLE_COUNTER(STAT_ParticleSetTemplateTime);
 
 	if( GIsAllowingParticles || GIsEditor ) 
@@ -5636,6 +5669,7 @@ void UParticleSystemComponent::SetTemplate(class UParticleSystem* NewTemplate)
 
 void UParticleSystemComponent::ActivateSystem(UBOOL bFlagAsJustAttached)
 {
+	DisICPsysNote( this, TEXT("ActivateSystem"), bFlagAsJustAttached );
 	SCOPE_CYCLE_COUNTER(STAT_ParticleActivateTime);
 
 	if (IsTemplate() == TRUE)
@@ -5827,6 +5861,7 @@ if (Template)
  */
 void UParticleSystemComponent::DeactivateSystem()
 {
+	DisICPsysNote( this, TEXT("DeactivateSystem"), 0 );
 	if (IsTemplate() == TRUE)
 	{
 		return;
@@ -7462,6 +7497,7 @@ void UParticleSystemComponent::ReportEventKismet(FName& InEventName, FLOAT InEmi
 
 void UParticleSystemComponent::KillParticlesForced()
 {
+	DisICPsysNote( this, TEXT("KillParticlesForced"), 0 );
 	for (INT EmitterIndex=0;EmitterIndex<EmitterInstances.Num();EmitterIndex++)
 	{
 		if (EmitterInstances(EmitterIndex))

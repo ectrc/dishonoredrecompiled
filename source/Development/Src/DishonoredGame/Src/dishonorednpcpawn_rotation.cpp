@@ -17,6 +17,7 @@
 // ---- agent CG ports (PHASE9 CG) ----
 
 #include "DishonoredGame.h"
+#include "arkcomponentfaceto.h"
 
 // DISHONORED(port): 2013 rva 0x76e960 (2012 0x7c95e0): retail's ADishonoredNPCPawn::SetDesiredRotation is an 8-byte
 // `mov eax,1 / ret 14h`. The class overrides the script-facing entry point and does NOT route it into the
@@ -39,12 +40,18 @@ UBOOL ADishonoredNPCPawn::SetDesiredRotation( FRotator _TargetDesiredRotation, U
 	return TRUE;
 }
 
-// ---- agent HC (PHASE22 HC): the rotation intents ----
-// DISHONORED(bringup): FArkComponentFaceTo (Engine/Src/arkcomponentfaceto.cpp) is a skeleton and no NPC owns one, so
-// ADishonoredNPCPawn::GetComponentFaceTo (2012 0x7ab560) would answer NULL everywhere: the intents are kept exactly as retail
-// keeps them, but no face-to request is started, updated or stopped (m_RequestID stays -1). What turns a retail NPC towards
-// its intent is that component's PreAsyncWorkTick; here nothing does, and physicsRotation no longer turns him towards his
-// controller either (APawn::physicsRotation), which is retail's.
+// ---- agent HC (PHASE22 HC): the rotation intents; agent IC (PHASE23 IC): their face-to requests ----
+// Each active intent owns one FArkComponentFaceTo request (m_RequestID) at its priority, started or updated by SetTargetRotation and
+// stopped by UnlockNPCRotation / CancelAllNPCRotations; the component's PreAsyncWorkTick turns the body towards the first one.
+// DISHONORED(bringup): the component exists only under -icfaceto (Src/arkcomponentfaceto.cpp's banner); without it
+// GetComponentFaceTo answers NULL, every call below takes its NULL path and m_RequestID stays -1 (retail calls through the pointer
+// unguarded - every retail NPC with a locomotion config has the component).
+
+// DISHONORED(port): 2012 rva 0x7ab8d0 (7 B) / 2013 0x7ab560: the pointer Spawned caches from the locomotion component's SetConfig
+FArkComponentFaceTo* ADishonoredNPCPawn::GetComponentFaceTo() const
+{
+	return (FArkComponentFaceTo*)m_pCpntFaceTo;
+}
 
 // DISHONORED(port): 2012 0x7c95f0 (71 B): the NPC does not rotate in physics; it publishes Tick_Rotation's result as its
 // desired rotation and rotation rate for the systems that read them
@@ -119,12 +126,17 @@ void ADishonoredNPCPawn::Init_Rotation()
 	}
 }
 
-// DISHONORED(port): 2012 0x7c95a0 (64 B): every intent's face-to request stopped (see the banner) and the intent dropped
+// DISHONORED(port): 2012 0x7c95a0 (64 B) / 2013 0xb6e920: every intent's face-to request stopped and the intent dropped
 void ADishonoredNPCPawn::CancelAllNPCRotations()
 {
 	m_CurrentNPCRotationPriority = 0;
+	FArkComponentFaceTo* FaceTo = GetComponentFaceTo();
 	for( INT Priority = 0; Priority < ARRAY_COUNT( m_NPCRotationIntent ); Priority++ )
 	{
+		if( FaceTo )
+		{
+			FaceTo->StopFaceTo( m_NPCRotationIntent[Priority].m_RequestID );
+		}
 		m_NPCRotationIntent[Priority].m_bIsActive = FALSE;
 		m_NPCRotationIntent[Priority].m_RequestID = INDEX_NONE;
 	}
@@ -138,6 +150,22 @@ void FDisNPCRotationIntent::SetTargetRotation( ADishonoredNPCPawn* const _pNPCOw
 	m_bIsActive = TRUE;
 	m_RotationFocus = _rPawnLocation;
 	m_fRotationRateDegrees = _fArkFaceToYawRateDegrees;
+	FArkComponentFaceTo* FaceTo = _pNPCOwningPawn->GetComponentFaceTo();
+	if( !FaceTo )
+	{
+		return;
+	}
+	FArkCpntFaceToLocationProp FaceToProps;
+	FaceToProps.InitAllByDefaultExcept( _rPawnLocation, _fArkFaceToYawRateDegrees, NULL, NULL );
+	FaceToProps.m_CommonProps.m_fAcceleration = _fArkFaceToYawAccelerationDegrees;
+	if( m_RequestID == INDEX_NONE )
+	{
+		m_RequestID = FaceTo->StartFaceToLocation( _pAsker, _AskerName, _RotationPriority, FaceToProps );
+	}
+	else
+	{
+		FaceTo->UpdateFaceToLocation( m_RequestID, FaceToProps );
+	}
 }
 
 // DISHONORED(port): 2012 0x7ce4a0 (156 B): a rotation is a focus 888888 uu away along it
@@ -175,13 +203,17 @@ void ADishonoredNPCPawn::LockNPCRotation( EDisFaceToPriority _RotationPriority, 
 	}
 }
 
-// DISHONORED(port): 2012 0x7ce540 (89 B) / 2013 0xb74a00: the intent dropped at rate 0, its face-to request stopped (none here,
-// see the banner)
+// DISHONORED(port): 2012 0x7ce540 (89 B) / 2013 0xb74a00: the intent dropped at rate 0, its face-to request stopped
 void ADishonoredNPCPawn::UnlockNPCRotation( EDisFaceToPriority _RotationPriority )
 {
 	m_NPCRotationIntent[_RotationPriority].m_bIsActive = FALSE;
 	m_NPCRotationIntent[_RotationPriority].m_fRotationRateDegrees = 0.f;
-	m_NPCRotationIntent[_RotationPriority].m_RequestID = INDEX_NONE;
+	FArkComponentFaceTo* FaceTo = GetComponentFaceTo();
+	if( FaceTo && m_NPCRotationIntent[_RotationPriority].m_RequestID != INDEX_NONE )
+	{
+		FaceTo->StopFaceTo( m_NPCRotationIntent[_RotationPriority].m_RequestID );
+		m_NPCRotationIntent[_RotationPriority].m_RequestID = INDEX_NONE;
+	}
 	OnUnlockNPCRotation( _RotationPriority );
 }
 

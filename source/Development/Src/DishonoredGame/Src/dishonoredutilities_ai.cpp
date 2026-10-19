@@ -14,3 +14,26 @@
 //   0x839340  void __cdecl DisClaimShootingPosition(class ADishonoredNPCPawn *, class FVector const &)
 //   0x83a100  unsigned int __cdecl DisIsNearAnotherShootingPosition(class ADishonoredNPCPawn *, class FVector const &, float)
 //   0x83d310  void __cdecl DisRelinquishShootingPosition(class ADishonoredNPCPawn *)
+
+// ---- agent IC (PHASE23 IC) ----
+
+#include "DishonoredGame.h"
+#include "dishonoredutilities_ai.h"
+
+// 2012 rva 0x827500 / 2013 0xbbf7a0
+UBOOL DisContinuePreviousBodyIntention( ADishonoredNPCPawn* _pOwningPawn, const FDisBodyIntention& _rPreviousBodyIntention, FDisBodyIntention& _rResumingBodyIntention )
+{
+	if( !_pOwningPawn->MAT_ShouldForceInventory() )
+	{
+		_rResumingBodyIntention = _rPreviousBodyIntention;
+		return TRUE;
+	}
+	BYTE BodyStance = _rPreviousBodyIntention.m_IntendedBodyStance;
+	UClass* PrimaryItem = _rPreviousBodyIntention.m_pDesiredPrimaryItemClass;
+	UClass* SecondaryItem = _rPreviousBodyIntention.m_pDesiredSecondaryItemClass;
+	_pOwningPawn->MAT_GetBodyIntention( BodyStance, PrimaryItem, SecondaryItem );
+	_rResumingBodyIntention.m_IntendedBodyStance = BodyStance;
+	_rResumingBodyIntention.m_pDesiredPrimaryItemClass = PrimaryItem;
+	_rResumingBodyIntention.m_pDesiredSecondaryItemClass = SecondaryItem;
+	return TRUE;
+}

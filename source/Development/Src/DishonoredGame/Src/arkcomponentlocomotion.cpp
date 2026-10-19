@@ -6,6 +6,8 @@
 #include "DishonoredGame.h"
 #include "arkcomponentpolicy.h"
 #include "arkcomponentlocomotion.h"
+#include "arkcomponentfaceto.h"
+#include "icdiag.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
@@ -205,11 +207,11 @@ void FArkComponentLocomotion::Starting()
 		OnEnable();
 	}
 
+	// agent IC: 2012 0x58b750 starts the face-to component SetConfig created (NULL without -icfaceto)
 	if( m_pFaceToCpnt )
 	{
-		// DISHONORED(bringup): FArkComponentFaceTo is not ported (2013 rva 0x53a...; agentDF.md lists it as one of the
-		// three Ark components the desire layer stubs), so SetConfig leaves m_pFaceToCpnt NULL and retail's
-		// `m_pFaceToCpnt->m_bStarted = 1; m_pFaceToCpnt->Starting();` has nothing to start.
+		m_pFaceToCpnt->m_bStarted = TRUE;
+		m_pFaceToCpnt->Starting();
 	}
 
 	++ms_ComponentCount;
@@ -319,6 +321,16 @@ UBOOL FArkComponentLocomotion::SetConfig( const UArkComponentLocomotionConfig* c
 	if( m_bCanManageAnim )
 	{
 		m_pAnimNodeLoco->Initialize( m_pConfig );
+	}
+	// agent IC: retail (2012 0x584010) adds the face-to component here and initialises it with this config; behind -icfaceto
+	// (Src/arkcomponentfaceto.cpp's banner).
+	if( DisICFaceToEnabled() && m_pPawnOwner->m_ComponentContainer )
+	{
+		m_pFaceToCpnt = m_pPawnOwner->m_ComponentContainer->AddNewComponent<FArkComponentFaceTo>();
+		if( m_pFaceToCpnt )
+		{
+			m_pFaceToCpnt->Initialize( m_pConfig );
+		}
 	}
 	SetModifier( m_CurModifierIdx );
 	return TRUE;

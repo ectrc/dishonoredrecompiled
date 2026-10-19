@@ -140,11 +140,12 @@ void UDishonoredEngine::Init()
 	}
 	m_pBinkOverlayManager->Initialize();
 	// DISHONORED(bringup): the static transition-save buffer retail empties here has no writer in our tree yet
-	// DISHONORED(bringup): UInterpTrackFaceTo::SetFaceToPriority(15) and UInterpTrackLookAt::SetLookatPriority(1, 5, 19)
-	// (2013 rvas 0x4fc8a0 / 0x4fcc90) are Engine statics our Engine lacks; the Locomotion one is agent FS's
-	// (2013 0x4fcc30, 2012 0x53bd80) and retail's Init (2012 0x65d280) sets it to 11 - the priority every matinee
-	// Locomotion key's go-to request carries (agent GA).
+	// DISHONORED(port): retail's Init (2012 0x65d280) sets the three matinee track priorities: UInterpTrackFaceTo::SetFaceToPriority(15)
+	// and UInterpTrackLookAt::SetLookatPriority(1, 5, 19) (2013 0x4fc8a0 / 0x4fcc90; agent IC) and the Locomotion one (2013 0x4fcc30,
+	// 2012 0x53bd80) to 11 - the priority every matinee Locomotion key's go-to request carries (agent GA).
+	UInterpTrackFaceTo::SetFaceToPriority( 15 );
 	UInterpTrackLocomotion::SetLocomotionPriority( 11 );
+	UInterpTrackLookAt::SetLookatPriority( 1, 5, 19 );
 	m_bDLC06ToDLC07LowChaosFound = FALSE;
 	m_bDLC06ToDLC07HighChaosFound = FALSE;
 

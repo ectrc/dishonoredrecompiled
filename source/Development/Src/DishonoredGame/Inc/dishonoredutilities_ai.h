@@ -72,3 +72,19 @@ inline UBOOL DisIsPawnDead( const class APawn* _pPawn )
 {
 	return _pPawn == NULL || _pPawn->Health <= 0 || _pPawn->bDeleteMe;
 }
+
+// ---- agent IC (PHASE23 IC) ----
+/** DISHONORED(written): the script enum ESoireeAIPriority (USeqAct_Interp::m_AIBehaviorPriority, FMatineeControllerInfos,
+    UDisTweaks_AIBehavior_Soiree::m_SoireePriority) has no C++ declaration in the generated headers; the values are the 2012
+    script class dump's. ESAP_MAX is what MAT_FinishAIGroup's stop stim and ExitFromMatinees use for "any priority". */
+enum ESoireeAIPriority
+{
+	ESAP_HighPriority = 0,
+	ESAP_LowPriority = 1,
+	ESAP_Distractor = 2,
+	ESAP_MAX = 3,
+};
+
+/** DISHONORED(port): 2012 rva 0x827500 (131 B) / 2013 0xbbf7a0: a behaviour resuming after a matinee takes the body intention
+    the pawn had, unless the matinee forces the inventory, then the matinee's (empty hands). */
+UBOOL DisContinuePreviousBodyIntention( class ADishonoredNPCPawn* _pOwningPawn, const struct FDisBodyIntention& _rPreviousBodyIntention, struct FDisBodyIntention& _rResumingBodyIntention );

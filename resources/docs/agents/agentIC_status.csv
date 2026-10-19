@@ -1,0 +1,15 @@
+item,status,evidence
+UDisBehaviorSoiree (2013 bodies; 26 functions incl. 2013-only TickBehavior / m_PendingBark),ported,disbehaviorsoiree.cpp; IC1g: 12 party NPCs Idle/Patrol -> DisBehaviorSoiree at world 51.03; _27 Idle -> Soiree at 150.45 (dock matinee)
+HandleAIStim_Internal<FAIStimStruct_Soiree> start/stop from MAT_BeginAIGroup / MAT_FinishAIGroup (2013 0xb19470 ctor + 0xb5af50),ported,dishonorednpcpawn.cpp; IC1g: Start per bound NPC; Stop for _26/_27/_16 at 150.45
+HandleAIStim_Internal<FAIStimStruct_SoireeRejected>,not reachable,only caller ADishonoredNPCPawn::MAT_IsAllowed (2013 0xb65560); no MAT_IsAllowed call exists in this tree's Engine
+GetMatineeControllerCount / ExitFromMatinees x2 / StopMatinees / MAT_ShouldForceInventory / MAT_GetBodyIntention / DisContinuePreviousBodyIntention,ported,dishonorednpcpawn.cpp; dishonoredutilities_ai.cpp; IC1g exitmatinee at brain termination
+MatineeControllerAdd always on,NOT met (default stays off; -hbcontrollers),render-thread particle crash in 5/5 runs with the list filled (IC1a IC1b IC1d IC1e IC1f) + IC2b; 0/2 with -icnosoireeattn (IC1c IC1g); the soiree stim does not prevent it (boat matinee is blocking)
+UDishonoredEngine::Init SetLookatPriority(1 5 19) / SetFaceToPriority(15),ported,dishonoredengine.cpp; IC1g lookattrack LockRequests prio 1 / 5 (HB measured 0)
+FArkComponentFaceTo (ctor Initialize requests update chain PreAsyncWorkTick request manager) + ArkSmoothFixAngleRotation,ported behind -icfaceto,arkcomponentfaceto.cpp; IC2f: start/stop logged for the retargeting lock/cancel pairs
+FaceTo created in FArkComponentLocomotion::SetConfig + Starting; m_pCpntFaceTo in Spawned; GetComponentFaceTo,ported behind -icfaceto,arkcomponentlocomotion.cpp; dishonorednpcpawn_locomotion.cpp; dishonorednpcpawn_rotation.cpp
+rotation intents start/update/stop real face-to requests,ported,dishonorednpcpawn_rotation.cpp; IC2f 6 lines (3 pawns)
+pawn yaw from FaceTo (FullMovePawn m_CurBodyYawDelta),not done,package IK's function (brief forbids); named in arkcomponentfaceto.cpp banner
+UInterpTrackInstFaceTo::UpdateTrackInst / TermTrackInst (2012 0x53eb90 / 2013 0x8ff8f0; 0x53bb30 / 0x8fc9a0),not ported,the Engine class declares no override and needs an Engine->DishonoredGame hook like GDisLookAtTrackUpdateHook; decompiles in build/agentIC/decomp2012|2013
+-icdiag,done,stims + stack + behaviour changes + controllers + soiree start/stop + face-to start/stop/per-second
+-icpsysdiag (particle component lifecycle after the blocking soiree starts),done,IC2b: 0 lifecycle calls between the boat bind and the crash
+generator byte-identity / bitfield_audit,done,79/79 identical (regen + regen2 after the fast-forward); audit mismatches 0
