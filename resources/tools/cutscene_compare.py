@@ -1,7 +1,7 @@
 """Score a New Game run of our build against the retail recording of the opening (resources/reference/mission0/retail.mp4).
 
   python resources/tools/cutscene_compare.py run --exe <staged exe> --tag <tag> [--times 50:175:1] [--baseline build/cmp/<old>/scores.csv]
-      launches through game_input.py (-windowed -ResX=1920 -ResY=1080 -finewgame=50 -fosoiree -fzdiag -apshottime=<times>),
+      launches through game_input.py (-windowed -ResX=1920 -ResY=1080 -nomovie -finewgame=50 -fosoiree -fzdiag -apshottime=<times>),
       queues `wait <quit-at>` / `quit`, waits for the exit, claims its own apshottime_cc_<tag>_*.bmp by name, reads each frame's
       real world time from the `-apshottime: screenshot i of n ... world time w` lines, rejects non-16:9 captures, stores PNGs
       under build/cmp/<tag>/ours/ and deletes the BMPs, then scores.
@@ -451,7 +451,10 @@ def run_game(args) -> Path:
     for stale in ini_dir.glob("Dishonored*.ini"):
         stale.unlink()
     cmd_file = out / "inputcmd.txt"
-    extra = ["-windowed", "-ResX=1920", "-ResY=1080", "-finewgame=50", "-fosoiree", "-fzdiag",
+    # -nomovie: since HK (d6c3aa4) Bink is on by default and the briefing page waits for a key from controller 0,
+    # which the scripted -finewgame route never assigns, so the map change blocks in GameThreadWaitForMovie forever
+    # (agent IA, 2026-10-19). The gate passes -nomovie for the same reason; the Bink pages are scored by HG/HK's own runs.
+    extra = ["-windowed", "-ResX=1920", "-ResY=1080", "-nomovie", "-finewgame=50", "-fosoiree", "-fzdiag",
              "-apshottime=" + ",".join(f"{t:g}" for t in times)]
     extra += [f"-{kind}INI={ini_dir / ('Dishonored' + name + '.ini')}" for kind, name in (("ENGINE", "Engine"), ("GAME", "Game"), ("INPUT", "Input"), ("UI", "UI"))]
     extra += args.extra
