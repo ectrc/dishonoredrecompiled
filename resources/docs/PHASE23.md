@@ -354,3 +354,15 @@ Launch 2 (on `63c3c91`): **IC** (soirée stim, controllers, FaceTo) and new **IK
 **IH4** launched on `3e126e3` (music engine, effect plug-ins, the exit defect, the missing level ambience post).
 
 Gates: `a47f38b` (seventeen packages, everything but IH4) **47 ok, 0 failed, 0 skipped** (2202 s, `build/gate_w26pre.log`, one agent building alongside).
+
+### Launch 4 (2026-10-20, on `b08193f`, user away, override on) — the user's second hand-played round
+
+IH4's agent died in the machine shutdown mid third build (its tree: music engine, nine effects + silence source, sends, the
+exit fix, `UDisGlobalMusicManager`, Kismet posts without Target, 2,876 of 3,070 Wwise functions; one gate regression: the
+music state posts on a stale `ADishonoredPlayerPawn::s_pInstance` at `-startmap` load because retail's `ShutPawnDown` chain
+(2012 0x79d360 / 0x70ef70) is unported). **IH4b** finishes it in the same worktree.
+The user's new defects (played on `b08193f`): NPCs walk but face one fixed direction whatever way they move, and take odd
+routes (**IO**); the camera shakes far more than retail, maybe the low-health camera anim (**IP**); much audio does not play -
+water effects when the boat lands and when the lock fills to raise the tower (**IQ**, after IH4b merges: Kismet posts without
+Target were one cause IH4 found; the water events are the next); NPC mouths are black and do not move while they speak
+(**IR**: the mouth interior render + FaceFX lip-sync sizing/port).
