@@ -4253,130 +4253,52 @@ UBOOL USkeletalMeshComponent::LegLineCheck(const FVector& Start, const FVector& 
 extern UBOOL GShouldLogOutAFrameOfPhysAssetBoundsUpdate;
 #endif // !FINAL_RELEASE
 
+// DISHONORED(port): agent IN. 2012 rva 0x364740 / 2013 rva 0x347a30 (VA 0x747a30), both 1610 B, same shape. Retail has no
+// visibility, fixed-skel-bounds or bHasValidBodies gate: (1) a mesh with Arkane m_UserBounds (bone found, not
+// bConsiderAllBodiesForBounds) gets a cube of m_fRadius x the largest |draw scale| around the bone-transformed m_Offset; (2) else the
+// PhysicsAsset AABB whenever the scale is uniform and SpaceBases covers the reference skeleton; (3) else the parent's PhysicsAsset
+// under the same test (no bUseBoundsFromParentAnimComponent shortcut); (4) else the mesh bounds moved by RootBoneTranslation; then the
+// per-poly kDOP boxes and BoundsScale. No cloth / APEX bounds. The reference's visibility gate fell back to the mesh bounds for
+// matinee skeletons such as the Empress boat (EmpressBoat_anim, mesh bounds 606 uu long against a 2166 uu PhysicsAsset), which kept
+// the boat's bow out of the collision octree (agentIN.md).
 void USkeletalMeshComponent::UpdateBounds()
 {
 	SCOPE_CYCLE_COUNTER(STAT_UpdateSkelMeshBounds);
 
-	// If physics are asleep, and actor is using physics to move, skip updating the bounds.
-	if(GWorld->HasBegunPlay() && FramesPhysicsAsleep > 5 && Owner && Owner->Physics == PHYS_RigidBody)
+	if( GWorld->HasBegunPlay() && FramesPhysicsAsleep > 5 && Owner && Owner->Physics == PHYS_RigidBody )
 	{
 		return;
 	}
 
 	FVector DrawScale = Scale * Scale3D;
-	if (Owner != NULL)
+	if( Owner != NULL )
 	{
 		DrawScale *= Owner->DrawScale * Owner->DrawScale3D;
 	}
 
-	// See if component is visible - we don't need accurate bounds if it is not
-	const UBOOL bShowInEditor = !HiddenEditor && (!Owner || !Owner->IsHiddenEd());
-	const UBOOL bShowInGame = !HiddenGame && (!Owner || !Owner->bHidden || bIgnoreOwnerHidden);
-	const UBOOL bDetailModeAllowsRendering = (DetailMode <= GSystemSettings.DetailMode);
-	const UBOOL bVisible = ( bDetailModeAllowsRendering && ((GIsGame && bShowInGame) || (!GIsGame && bShowInEditor) || bCastHiddenShadow));
+	const UBOOL bCanUsePhysicsAsset = DrawScale.IsUniform() && SkeletalMesh != NULL && SpaceBases.Num() == SkeletalMesh->RefSkeleton.Num();
 
-	// Can only use the PhysicsAsset to calculate the bounding box if we are not non-uniformly scaling the mesh.
-	const UBOOL bCanUsePhysicsAsset = DrawScale.IsUniform() && (SkeletalMesh != NULL)
-		// either space base exists or child component
-		&& ( (SpaceBases.Num() == SkeletalMesh->RefSkeleton.Num()) || (ParentAnimComponent != NULL && ParentAnimComponent->PhysicsAsset) );
-
-	// if not visible, or we were told to use fixed bounds, use skelmesh bounds
-	if(!bVisible || bComponentUseFixedSkelBounds)
+	const INT UserBoundsBone = ( !bConsiderAllBodiesForBounds && SkeletalMesh && SkeletalMesh->m_UserBounds.m_BoneName != NAME_None
+		&& ( ParentAnimComponent ? ParentAnimComponent->SpaceBases.Num() : SpaceBases.Num() ) > 0 ) ? MatchRefBone( SkeletalMesh->m_UserBounds.m_BoneName ) : INDEX_NONE;
+	if( UserBoundsBone != INDEX_NONE )
 	{
-#if !FINAL_RELEASE
-		const DOUBLE Start = appSeconds();
-#endif
-		FBoxSphereBounds RootAdjustedBounds = SkeletalMesh->Bounds;
-		RootAdjustedBounds.Origin += RootBoneTranslation; // Adjust bounds by root bone translation
-		Bounds = RootAdjustedBounds.TransformBy(LocalToWorld);
-#if !FINAL_RELEASE
-		if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate)
-		{
-			const DOUBLE Time = appSeconds() - Start;
-			debugf(TEXT("SkelMesh_Fixed_BOUNDS: %s %s %s %f ms"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f);
-		}
-#endif // !FINAL_RELEASE
+		const FVector Center = GetBoneMatrix( UserBoundsBone ).TransformFVector( SkeletalMesh->m_UserBounds.m_Offset );
+		const FLOAT Radius = SkeletalMesh->m_UserBounds.m_fRadius * Max( Max( Abs( DrawScale.X ), Abs( DrawScale.Y ) ), Abs( DrawScale.Z ) );
+		Bounds = FBoxSphereBounds( Center, FVector( Radius, Radius, Radius ), Radius );
 	}
-	else if( ParentAnimComponent && ParentAnimComponent->SkeletalMesh && ParentAnimComponent->bComponentUseFixedSkelBounds )
+	else if( PhysicsAsset && bCanUsePhysicsAsset )
 	{
-#if !FINAL_RELEASE
-		const DOUBLE Start = appSeconds();
-#endif
-		FBoxSphereBounds RootAdjustedBounds = ParentAnimComponent->SkeletalMesh->Bounds;
-		RootAdjustedBounds.Origin += ParentAnimComponent->RootBoneTranslation; // Adjust bounds by root bone translation
-		Bounds = RootAdjustedBounds.TransformBy(LocalToWorld);
-#if !FINAL_RELEASE
-		if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate)
-		{
-			const DOUBLE Time = appSeconds() - Start;
-			debugf(TEXT("SkelMesh_Parent_Fixed_BOUNDS: %s %s %s %f ms"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f);
-		}
-#endif // !FINAL_RELEASE
+		Bounds = FBoxSphereBounds( PhysicsAsset->CalcAABB( this ) );
 	}
-#if WITH_EDITOR
-	// For AnimSet Viewer, use 'bounds preview' physics asset if present.
-	else if(SkeletalMesh && SkeletalMesh->BoundsPreviewAsset && bCanUsePhysicsAsset)
-	{
-		Bounds = FBoxSphereBounds(SkeletalMesh->BoundsPreviewAsset->CalcAABB(this));
-	}
-#endif // WITH_EDITOR
-	// If we have a PhysicsAsset (with at least one matching bone), and we can use it, do so to calc bounds.
-	else if( PhysicsAsset && bCanUsePhysicsAsset && bHasValidBodies )
-	{
-#if !FINAL_RELEASE
-		const DOUBLE Start = appSeconds();
-#endif
-		Bounds = FBoxSphereBounds(PhysicsAsset->CalcAABB(this));
-#if !FINAL_RELEASE
-		if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate)
-		{
-			const DOUBLE Time = appSeconds() - Start;
-			INT NumConsiderForBounds = PhysicsAsset->BoundsBodies.Num();		
-			debugf(TEXT("PA_BOUNDS: %s %s %s %f ms  Bodies: %u  NumConsiderForBounds: %u"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f, PhysicsAsset->BodySetup.Num(), NumConsiderForBounds);
-		}
-#endif // !FINAL_RELEASE
-	}
-	// Use ParentAnimComponent's PhysicsAsset, if we don't have one and it does
 	else if( ParentAnimComponent && ParentAnimComponent->PhysicsAsset && bCanUsePhysicsAsset )
 	{
-#if !FINAL_RELEASE
-		const DOUBLE Start = appSeconds();
-#endif
-		// if we can just use our parent's bounds do so
-		if( bUseBoundsFromParentAnimComponent == TRUE )
-		{
-			Bounds = ParentAnimComponent->Bounds;
-		}
-		// otherwise we need to calculate 
-		else
-		{
-			Bounds = FBoxSphereBounds(ParentAnimComponent->PhysicsAsset->CalcAABB(this));
-		}
-
-#if !FINAL_RELEASE
-		if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate)
-		{
-			const DOUBLE Time = appSeconds() - Start;
-			debugf(TEXT("PARENT_PA_BOUNDS: %s %s %s %f ms"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f );
-		}
-#endif // !FINAL_RELEASE
+		Bounds = FBoxSphereBounds( ParentAnimComponent->PhysicsAsset->CalcAABB( this ) );
 	}
-	// Fallback is to use the one from the skeletal mesh. Usually pretty bad in terms of Accuracy of where the SkelMesh Bounds are located (i.e. usually bigger than it needs to be)
 	else if( SkeletalMesh )
 	{
-#if !FINAL_RELEASE
-		const DOUBLE Start = appSeconds();
-#endif
 		FBoxSphereBounds RootAdjustedBounds = SkeletalMesh->Bounds;
-		RootAdjustedBounds.Origin += RootBoneTranslation; // Adjust bounds by root bone translation
-		Bounds = RootAdjustedBounds.TransformBy(LocalToWorld);
-#if !FINAL_RELEASE
-		if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate)
-		{
-			const DOUBLE Time = appSeconds() - Start;
-			debugf(TEXT("SkelMesh_Fixed_BOUNDS: %s %s %s %f ms"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f);
-		}
-#endif // !FINAL_RELEASE
+		RootAdjustedBounds.Origin += RootBoneTranslation;
+		Bounds = RootAdjustedBounds.TransformBy( LocalToWorld );
 	}
 	else
 	{
@@ -4384,54 +4306,26 @@ void USkeletalMeshComponent::UpdateBounds()
 		return;
 	}
 
-	// Add bounds of any per-poly collision data.
-	if(SkeletalMesh && SpaceBases.Num() > 0)
+	if( SkeletalMesh && SpaceBases.Num() > 0 )
 	{
-#if !FINAL_RELEASE
-		const DOUBLE Start = appSeconds();
-#endif
-		check(SkeletalMesh->PerPolyCollisionBones.Num() == SkeletalMesh->PerPolyBoneKDOPs.Num());
-		for(INT i=0; i<SkeletalMesh->PerPolyBoneKDOPs.Num(); i++)
+		for( INT i = 0; i < SkeletalMesh->PerPolyBoneKDOPs.Num(); i++ )
 		{
 			FPerPolyBoneCollisionData& Data = SkeletalMesh->PerPolyBoneKDOPs(i);
-			INT BoneIndex = SkeletalMesh->MatchRefBone(SkeletalMesh->PerPolyCollisionBones(i));
+			const INT BoneIndex = SkeletalMesh->MatchRefBone( SkeletalMesh->PerPolyCollisionBones(i) );
 			FBox PerPolyBoneBox;
-			if(BoneIndex != INDEX_NONE && Data.KDOPTree.GetRootBound(PerPolyBoneBox))
+			if( BoneIndex != INDEX_NONE && Data.KDOPTree.GetRootBound( PerPolyBoneBox ) )
 			{
-				// Get bone matrix and check its not zero
-				FMatrix BoneMatrix = GetBoneMatrix(BoneIndex);
-				if(Abs(BoneMatrix.RotDeterminant()) > (FLOAT)KINDA_SMALL_NUMBER)
+				const FMatrix BoneMatrix = GetBoneMatrix( BoneIndex );
+				if( Abs( BoneMatrix.RotDeterminant() ) > (FLOAT)KINDA_SMALL_NUMBER )
 				{
-					Bounds = Bounds + PerPolyBoneBox.TransformBy(GetBoneMatrix(BoneIndex));
+					Bounds = Bounds + PerPolyBoneBox.TransformBy( BoneMatrix );
 				}
 			}
 		}
-#if !FINAL_RELEASE
-		if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate && SkeletalMesh->PerPolyBoneKDOPs.Num() > 0 )
-		{
-			const DOUBLE Time = appSeconds() - Start;
-			debugf(TEXT("PerPoly BOUNDS: %s %s %f ms"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f);
-		}
-#endif
 	}
 
 	Bounds.BoxExtent *= BoundsScale;
 	Bounds.SphereRadius *= BoundsScale;
-
-#if !FINAL_RELEASE
-	const DOUBLE Start = appSeconds();
-#endif
-	UpdateClothBounds();
-#if !FINAL_RELEASE
-	if(GShouldLogOutAFrameOfPhysAssetBoundsUpdate && (ClothSim != NULL) )
-	{
-		const DOUBLE Time = appSeconds() - Start;
-		debugf(TEXT("Cloth BOUNDS: %s %s %s %f ms"), *GetPathName(), *GetDetailedInfo(), *PhysicsAsset->GetName(), Time * 1000.f);
-	}
-#endif
-#if WITH_APEX_CLOTHING
-	UpdateApexClothingBounds();
-#endif
 }
 
 FMatrix USkeletalMeshComponent::GetBoneMatrix(DWORD BoneIdx) const

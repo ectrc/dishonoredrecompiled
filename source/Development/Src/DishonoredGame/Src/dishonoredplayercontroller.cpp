@@ -118,6 +118,7 @@
 #include "disheadcensus.h"
 #include "dispowercensus.h"
 #include "fkmatineediag.h"
+#include "indiag.h"
 #include "fwdiag.h"
 #include "ifdiag.h"
 #include "gbdiag.h"
@@ -1106,6 +1107,8 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	{
 		DisFKReport( this );
 	}
+	// agent IN (PHASE23 IN): -indiag, the collision census at the dock stair foot and the player (indiag.cpp)
+	DisINReport( this );
 	// agent FW (PHASE18 FW): -fwdiag, the player's position and heading once a second (fwdiag.cpp)
 	if( DisFWDiagEnabled() )
 	{

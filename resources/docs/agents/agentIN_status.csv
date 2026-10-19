@@ -1,0 +1,8 @@
+function,binary,address,status,file,note
+USkeletalMeshComponent::UpdateBounds,2012 / 2013,0x364740 / rva 0x347a30 (VA 0x747a30),ported,Engine/Src/UnSkeletalComponent.cpp,"whole: m_UserBounds cube, PhysicsAsset AABB with no visibility / fixed-bounds / bHasValidBodies gate, parent PA, mesh bounds, per-poly, BoundsScale; no cloth bounds (retail has none)"
+UPhysicsAsset::CalcAABB,2012 / 2013,0x3d9bd0 / rva 0x3b8210,compared,Engine/Src/UnPhysAsset.cpp,"retail splits into CalcAllBodiesAABB / CalcBodiesAABB on bConsiderAllBodiesForBounds (bit 2 @760); same result as ours, not changed"
+USkeletalMeshComponent::LineCheck,2012,0x390a20,compared,Engine/Src/UnSkeletalMeshCollision.cpp,stock shape; not the cause
+UStaticMeshComponent::LineCheck,2012,0x393010,compared,Engine/Src/UnStaticMeshCollision.cpp,"same simple/complex rule as ours (simple wanted + no BodySetup = no hit, in retail too)"
+UStaticMesh::InitializeIntrinsicPropertyValues,2012,0x37d2d0,compared,Engine/Src/UnStaticMesh.cpp,UseSimple* default TRUE in retail too
+ADisStaticCollisionActor::PostLoad,2012,0x630fc0,not ported,DishonoredGame/Src/disstaticcollisionactor.cpp,"narrows the trace mask to NPC-only when bCollideOnlyWithNPCMovement; the cooked data at the dock already carries that mask, so no effect here"
+DisINDiagEnabled / INPROBE / DisINReport,ours,,diag,DishonoredGame/Src/indiag.cpp,"-indiag, INPROBE x y z [r], -inprobeat=W (one value: UE3 Parse stops at a comma), -inprobept"

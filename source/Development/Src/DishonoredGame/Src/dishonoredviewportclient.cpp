@@ -16,6 +16,7 @@
 #include "ifdiag.h"
 #include "igdiag.h"
 #include "imdiag.h"
+#include "indiag.h"
 #include "dishonoredutilities.h"
 
 // DISHONORED(written): 2013 rva 0x5ea2b0 (2012 0x62fed0, same bytes)
@@ -95,7 +96,7 @@ UBOOL UDishonoredViewportClient::Exec( const TCHAR* Cmd, FOutputDevice& Ar )
 		}
 		return TRUE;
 	}
-	if( bHandled || DisIFDiagExec( Cmd, Ar ) || DisIGDiagExec( Cmd, Ar ) || DisIMDiagExec( Cmd, Ar ) )
+	if( bHandled || DisIFDiagExec( Cmd, Ar ) || DisIGDiagExec( Cmd, Ar ) || DisIMDiagExec( Cmd, Ar ) || DisINDiagExec( Cmd, Ar ) )
 	{
 		return TRUE;
 	}
