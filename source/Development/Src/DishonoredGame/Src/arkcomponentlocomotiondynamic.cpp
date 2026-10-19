@@ -59,11 +59,11 @@ UBOOL FArkComponentLocomotion::IsRootMotion() const
 		|| ( m_bCanManageAnim && m_pAnimNodeLoco && m_pAnimNodeLoco->IsPlayingOnlySpecificAnim() );
 }
 
-// DISHONORED(port): 2013 rva 0x53e1f0 (2012 0x57f340): the yaw the pawn is moving in, which is the path's yaw while the
-// path owns the move.
+// DISHONORED(port, agent IK): 2013 VA 0x93e1f0 (2012 0x57f340, 35 B): no yaw while the move speed is under 0.1, else the
+// current move yaw (HEAD answered the path's yaw, so a pawn without a path never turned towards anything).
 INT FArkComponentLocomotion::ComputeMoveYaw() const
 {
-	return m_CurPathYaw;
+	return ( Abs( m_fCurMoveSpeed ) < 0.1f ) ? -200000 : m_CurMoveYaw;
 }
 
 // DISHONORED(port): 2013 rva 0x541a00 (2012 0x5829d0): is anything other than the path asking the pawn to move? Steering,
@@ -260,14 +260,40 @@ FLOAT FArkComponentLocomotion::UpdateMoveSpeed( FLOAT _fTimeStep ) const
 	yaw
 -----------------------------------------------------------------------------*/
 
-// DISHONORED(port): 2013 rva 0x547950 (2012 0x588700, 1,766 bytes).
-// DISHONORED(bringup): retail's body blends the path yaw with the face-to yaw and the multi-directional speed set the
-// anim node exposes, which is how a guard can walk sideways while looking at you; with neither FArkComponentFaceTo nor
-// UArkAnimNodeLocomotion ported there is no strafe set and no facing to blend, so the target yaw is the path's yaw -
-// retail's own answer when m_MaxMultiDirSpeedIdx is zero.
+// DISHONORED(port, agent IK): 2013 VA 0x947950 (2012 0x588700, 1,766 / 1,790 B). By root state: NONE and the START states aim
+// at the current path point while a path is computed and the pawn has not arrived, else at m_NearestLocationOnNavMesh while
+// the pawn walks back onto the mesh, else keep the current yaw; the turn states answer the turn's start / end yaw.
+// DISHONORED(bringup): the avoidance half of the path branch is not ported - beyond m_fAvoidanceUnstuckMinDist of the path
+// end and with a move-hit normal or one avoidance affector, retail swings the yaw by +-m_fAvoidanceAngle on the side
+// UNavigationHandle::PointReachableZeroExtent / DetectPreAvoidanceCollision pick (decompile build/agentIK/decomp2012/588700_*).
 INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 {
-	return m_CurPathYaw;
+	switch( m_RootState )
+	{
+	case CPNT_LOCO_ROOT_STATE_NONE:
+	case CPNT_LOCO_ROOT_STATE_START_WAIT_ANIM:
+	case CPNT_LOCO_ROOT_STATE_START_BEGIN:
+	case CPNT_LOCO_ROOT_STATE_START:
+	case CPNT_LOCO_ROOT_STATE_START_END:
+		if( m_bHasRequestWithPathComputed && !m_bIsArrived )
+		{
+			return appTrunc( appAtan2( m_PathPoint.Y - m_CurPawnLocation.Y, m_PathPoint.X - m_CurPawnLocation.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+		}
+		if( m_bTryToReturnOnNavMesh )
+		{
+			return appTrunc( appAtan2( m_NearestLocationOnNavMesh.Y - m_CurPawnLocation.Y, m_NearestLocationOnNavMesh.X - m_CurPawnLocation.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+		}
+		return m_CurMoveYaw;
+	case CPNT_LOCO_ROOT_STATE_TURN_WAIT_GOOD_FOOT:
+	case CPNT_LOCO_ROOT_STATE_TURN_WAIT_ANIM:
+	case CPNT_LOCO_ROOT_STATE_TURN_BEGIN:
+		return m_TurnProps.m_StartYaw;
+	case CPNT_LOCO_ROOT_STATE_TURN:
+	case CPNT_LOCO_ROOT_STATE_TURN_END:
+		return m_TurnProps.m_EndYaw;
+	default:
+		return m_CurMoveYaw;
+	}
 }
 
 // DISHONORED(port): 2013 rva 0x541330 (2012 0x582300, 1,739 bytes).
@@ -494,6 +520,7 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 		return;
 	}
 	DISLOCO_MARK( dyn_enter )
+	const FVector RootMotionRead = m_pPawnOwner->Mesh ? m_pPawnOwner->Mesh->RootMotionDelta.GetTranslation() : FVector( 0.f, 0.f, 0.f );
 	// retail clears the stuck flag at the top of every frame (2012 0x58ca10+0x6b); the test below re-raises it
 	m_bStuckedInAWall = FALSE;
 	// DISHONORED(port, agent GK): retail's first road is taken when the component is disabled, the pawn is being deleted, the
@@ -642,6 +669,7 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 	}
 	m_PreviousVelocity = m_pPawnOwner->Velocity;
 	UpdateSharedProperties();
+	IKDiagDynamic( bAnimationOwnsThePawn, RootMotionRead );
 }
 
 /*-----------------------------------------------------------------------------
@@ -703,6 +731,10 @@ UBOOL FArkComponentLocomotion::ModerateMovePawn( FLOAT _fTimeStep )
 // teleport back onto the navigation mesh when it leaves it (CanBeTeleportedToLocationWithoutBeingSeen 0x53e310,
 // FindValidLocation 0x53ed70), the fall decision is UE3's rather than Arkane's, and the hit normal the dynamics read for
 // the "stuck in a wall" flag comes from MoveActor's hit rather than from the multi-point check.
+// DISHONORED(bringup, agent IK): correction, read off 2012 0x580ae0: UWorld::MoveActor has no step-up - retail sweeps the
+// horizontal move from MaxStepHeight above the cylinder (0x30DF / 0x100030DF), drops onto the floor within 3 x MaxStepHeight,
+// refuses a floor that is a USkeletalMeshComponent unless bit 0x20000 at +288 of the hit's actor is set (decompile labels unresolved), and un-sticks a
+// penetrating start with FindValidLocation; none of that is here (agentIK.md section 3).
 void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBase, UBOOL _bPreview )
 {
 	if( _bPreview )
@@ -772,6 +804,7 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	}
 
 	const FVector Actual = m_pPawnOwner->Location - StartLocation;
+	IKDiagMove( Move, Hit, Actual );
 	GDisLocoDistanceMoved += Actual.Size2D();
 	// DISHONORED(port, agent IB): retail clamps the measured velocity to the speed the move was asked for (2012 0x580ae0 +0x5f0,
 	// ClampLength) and leaves Acceleration as the dynamics wrote it.

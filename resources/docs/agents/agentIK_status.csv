@@ -1,0 +1,10 @@
+function,binary,address,status,file,note
+APylon::PostBeginPlay,2012/2013,0x279cd0 / VA 0x65f8b0,ported,Engine/Src/UnNavigationMesh.cpp,imported mesh -> identity LocalToWorld/WorldToLocal (the reference applied the actor's +249 X transform)
+APylon::PylonMoved,2012/2013,0x27a3b0 / VA 0x6602a0,ported,Engine/Src/UnNavigationMesh.cpp,octree remove + add only
+FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest (start-poly failure step),2012/2013,0x58a4d0 / VA 0x949890,partial,DishonoredGame/Src/arkcomponentlocomotionpath.cpp,teleport gated by m_bHasBeenOnNavMesh; nearest point once per stretch; m_LastPFError state machine NOT ported (next build)
+FArkComponentLocomotion::ComputeMoveYaw,2012/2013,0x57f340 / VA 0x93e1f0,ported,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,
+FArkComponentLocomotion::ComputeTargetMoveYaw,2012/2013,0x588700 / VA 0x947950,partial,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,avoidance half (DetectPreAvoidanceCollision / PointReachableZeroExtent) not ported
+FArkComponentLocomotion::FullMovePawn,2012/2013,0x580ae0 / VA 0x93fb00,bringup,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,still UWorld::MoveActor; banner corrected (no step-up); -ikdiag move line
+FArkComponentLocomotion::CanBeTeleportedToLocationWithoutBeingSeen,2012,0x57f460,not ported,,decompiled build/agentIK/decomp2012
+FArkComponentLocomotion::IKDiagDynamic/IKDiagMove/IKDiagStartPoly,ours,,diag,DishonoredGame/Src/arkcomponentlocomotion.cpp,-ikdiag
+DisIKDiagEnabled/DisIKDiagWatched,ours,,diag,DishonoredGame/Src/dishonorednpcpawn_locomotion.cpp,-ikdiag (_26 and _3 world 100..200)

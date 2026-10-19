@@ -250,6 +250,36 @@ void DisIBDiagReport( ADishonoredNPCPawn* _pPawn )
 		_pPawn->m_MatineeControllersInfos.Num(), pState->GoToStage, pState->PathingFails, pLoco ? *pLoco->DescribeForIBDiag() : TEXT("no locomotion") );
 }
 
+/*-----------------------------------------------------------------------------
+	-ikdiag (agent IK, PHASE23 IK)
+-----------------------------------------------------------------------------*/
+
+UBOOL DisIKDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("ikdiag") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+UBOOL DisIKDiagWatched( const AActor* _pActor )
+{
+	static const FName Watched[] = { FName( TEXT("DishonoredNPCPawn_26") ), FName( TEXT("DishonoredNPCPawn_3") ) };
+	if( !_pActor || !GWorld )
+	{
+		return FALSE;
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	if( Now < 100.f || Now > 200.f )
+	{
+		return FALSE;
+	}
+	const FName Name = _pActor->GetFName();
+	return Name == Watched[0] || Name == Watched[1];
+}
+
 // DISHONORED(port): 2013 rva 0x779730 (2012 0x7b4f70, 96 bytes). Retail says an NPC is moving when its transit speed is
 // not idle, OR its face-to component has an angle left to turn, OR its locomotion anim node is playing a specific
 // animation (a turn, a start or a stop).

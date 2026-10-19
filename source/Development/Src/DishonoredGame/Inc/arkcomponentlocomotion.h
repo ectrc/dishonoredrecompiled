@@ -345,6 +345,10 @@ public:
 	void IBDiagCount( EIBDiagCounter _Counter ) const;
 	void IBDiagCheckStuck() const;
 	FString DescribeForIBDiag() const;
+	/** DISHONORED(diag): agent IK's -ikdiag, per dynamics frame and per FullMovePawn of the watched NPCs. */
+	void IKDiagDynamic( UBOOL _bAnimationOwnsThePawn, const FVector& _RootMotionRead ) const;
+	void IKDiagMove( const FVector& _Move, const FCheckResult& _Hit, const FVector& _Actual ) const;
+	void IKDiagStartPoly( const FVector& _StartOnGround, UBOOL _bFound, UBOOL _bTeleport ) const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)

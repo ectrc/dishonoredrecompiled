@@ -712,6 +712,81 @@ FString FArkComponentLocomotion::DescribeForIBDiag() const
 }
 
 /*-----------------------------------------------------------------------------
+	-ikdiag (agent IK)
+-----------------------------------------------------------------------------*/
+
+void FArkComponentLocomotion::IKDiagDynamic( UBOOL _bAnimationOwnsThePawn, const FVector& _RootMotionRead ) const
+{
+	if( !DisIKDiagEnabled() || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	USkeletalMeshComponent* pMesh = m_pPawnOwner->Mesh;
+	FString Specific( TEXT("none") );
+	if( m_pAnimNodeLoco && m_pAnimNodeLoco->Children.Num() > 8 )
+	{
+		const UAnimNodeSequence* pSequence = Cast<UAnimNodeSequence>( m_pAnimNodeLoco->Children( 8 ).Anim );
+		if( pSequence && pSequence->AnimSeqName != NAME_None )
+		{
+			Specific = FString::Printf( TEXT("%s w %.2f t %.3f prev %.3f rate %.2f play %d rbo %d%d%d rro %d%d%d edge %d"), *pSequence->AnimSeqName.ToString(), m_pAnimNodeLoco->Children( 8 ).Weight,
+				pSequence->CurrentTime, pSequence->PreviousTime, pSequence->Rate, (INT)pSequence->bPlaying, pSequence->RootBoneOption[0], pSequence->RootBoneOption[1], pSequence->RootBoneOption[2],
+				pSequence->RootRotationOption[0], pSequence->RootRotationOption[1], pSequence->RootRotationOption[2], pSequence->AnimSeq ? (INT)( pSequence->AnimSeq->RotationCompressionFormat == ACF_EdgeAnim ) : -1 );
+		}
+	}
+	const FString Motion = FString::Printf( TEXT("rmread %.2f/%.2f/%.2f rmm %d rmv %.1f/%.1f/%.1f curmove %.2f/%.2f/%.2f vel %.1f/%.1f/%.1f"),
+		_RootMotionRead.X, _RootMotionRead.Y, _RootMotionRead.Z, pMesh ? (INT)pMesh->RootMotionMode : -1,
+		pMesh ? pMesh->RootMotionVelocity.X : 0.f, pMesh ? pMesh->RootMotionVelocity.Y : 0.f, pMesh ? pMesh->RootMotionVelocity.Z : 0.f,
+		m_CurMove.X, m_CurMove.Y, m_CurMove.Z, m_pPawnOwner->Velocity.X, m_pPawnOwner->Velocity.Y, m_pPawnOwner->Velocity.Z );
+	debugf( TEXT("DISHONORED(bringup): ikdiag dyn %s world %.3f frame %u root %d road %s %s speed %.1f/%.1f yaw %d/%d pathyaw %d return %d/%.2f been %d computed %d nearest %.0f/%.0f/%.0f at %.1f/%.1f/%.1f base %s | spec %s"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), (DWORD)GFrameCounter, (INT)m_RootState, _bAnimationOwnsThePawn ? TEXT("anim") : TEXT("full"), *Motion,
+		m_fCurMoveSpeed, m_fTargetMoveSpeed, m_CurMoveYaw, m_TargetMoveYaw, m_CurPathYaw, (INT)m_bTryToReturnOnNavMesh, m_fTryToReturnOnNavMeshDuration,
+		(INT)m_bHasBeenOnNavMesh, (INT)m_bHasRequestWithPathComputed, m_NearestLocationOnNavMesh.X, m_NearestLocationOnNavMesh.Y, m_NearestLocationOnNavMesh.Z,
+		m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_pPawnOwner->Location.Z, m_pPawnOwner->Base ? *m_pPawnOwner->Base->GetName() : TEXT("none"), *Specific );
+}
+
+void FArkComponentLocomotion::IKDiagMove( const FVector& _Move, const FCheckResult& _Hit, const FVector& _Actual ) const
+{
+	if( !DisIKDiagEnabled() || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	const UPrimitiveComponent* pComponent = _Hit.Component;
+	debugf( TEXT("DISHONORED(bringup): ikdiag move %s world %.3f frame %u root %d move %.2f/%.2f/%.2f actual %.2f/%.2f/%.2f time %.3f hit %s comp %s %s normal %.2f/%.2f/%.2f at %.1f/%.1f/%.1f penetrating %d base %s"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), (DWORD)GFrameCounter, (INT)m_RootState, _Move.X, _Move.Y, _Move.Z, _Actual.X, _Actual.Y, _Actual.Z, _Hit.Time,
+		_Hit.Actor ? *_Hit.Actor->GetName() : TEXT("none"), pComponent ? *pComponent->GetClass()->GetName() : TEXT("-"), pComponent ? *pComponent->GetName() : TEXT("-"),
+		_Hit.Normal.X, _Hit.Normal.Y, _Hit.Normal.Z, _Hit.Location.X, _Hit.Location.Y, _Hit.Location.Z, (INT)_Hit.bStartPenetrating,
+		m_pPawnOwner->Base ? *m_pPawnOwner->Base->GetName() : TEXT("none") );
+	static TArray<const UPrimitiveComponent*> Described;
+	if( pComponent && _Hit.Actor && !Described.ContainsItem( pComponent ) )
+	{
+		Described.AddItem( pComponent );
+		const USkeletalMeshComponent* pSkeletal = ConstCast<USkeletalMeshComponent>( pComponent );
+		const UStaticMeshComponent* pStatic = ConstCast<UStaticMeshComponent>( pComponent );
+		debugf( TEXT("DISHONORED(bringup): ikdiag blocker %s comp %s collide %d block %d zero %d nonzero %d rigid %d | actor collide %d block %d physics %d | %s %s bounds %s +- %s"),
+			*_Hit.Actor->GetName(), *pComponent->GetName(), (INT)pComponent->CollideActors, (INT)pComponent->BlockActors, (INT)pComponent->BlockZeroExtent, (INT)pComponent->BlockNonZeroExtent,
+			(INT)pComponent->BlockRigidBody, (INT)_Hit.Actor->bCollideActors, (INT)_Hit.Actor->bBlockActors, (INT)_Hit.Actor->Physics,
+			pSkeletal ? TEXT("physicsasset") : ( pStatic ? TEXT("staticmesh") : TEXT("other") ),
+			pSkeletal ? ( pSkeletal->PhysicsAsset ? *pSkeletal->PhysicsAsset->GetPathName() : TEXT("none") ) : ( pStatic && pStatic->StaticMesh ? *pStatic->StaticMesh->GetPathName() : TEXT("-") ),
+			*pComponent->Bounds.Origin.ToString(), *pComponent->Bounds.BoxExtent.ToString() );
+	}
+}
+
+void FArkComponentLocomotion::IKDiagStartPoly( const FVector& _StartOnGround, UBOOL _bFound, UBOOL _bTeleport ) const
+{
+	if( !DisIKDiagEnabled() || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	FCheckResult Hit( 1.f );
+	const FVector Start = _StartOnGround + FVector( 0.f, 0.f, 10.f );
+	const FVector End = _StartOnGround - FVector( 0.f, 0.f, 200.f );
+	GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, Start, TRACE_AllBlocking | TRACE_Visible, FVector( 0.f, 0.f, 0.f ) );
+	debugf( TEXT("DISHONORED(bringup): ikdiag startpoly %s world %.3f off the mesh: ground %s (trace hit %s at z %.1f) nearest %s found %d teleport %d been %d disabled %d return %.2f"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), *_StartOnGround.ToString(), Hit.Actor ? *Hit.Actor->GetName() : TEXT("none"), Hit.Location.Z,
+		*m_NearestLocationOnNavMesh.ToString(), (INT)_bFound, (INT)_bTeleport, (INT)m_bHasBeenOnNavMesh, (INT)m_bTeleportDisabled, m_fTryToReturnOnNavMeshDuration );
+}
+
+/*-----------------------------------------------------------------------------
 	the request-manager callback
 -----------------------------------------------------------------------------*/
 

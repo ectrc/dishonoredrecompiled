@@ -2075,17 +2075,31 @@ void APylon::PostLoad()
 /**
  *	overidden to set pathsrebuild off if the version has gotten out of date
  */
+// DISHONORED(port, agent IK): 2012 0x279cd0 / 2013 VA 0x65f8b0 (165 B both): an imported mesh (bImportedMesh @860 bit 0) gets
+// IDENTITY LocalToWorld / WorldToLocal on its nav and obstacle meshes - the cooked verts are world space and retail's poly
+// queries (GetClosestPointOnPoly 2013 0x675320, ContainsPoint 0x673700, GetPolyCenter 0xae51b0 = 4 B, GetVertLocation) have
+// no transform at all. The reference installed the pylon actor's own transform here, which moved L_Tower_P's whole mesh by
+// the pylon's location (+249 X) against the world. bNeedsTransform is the reference's bit; identity makes it a no-op, so it
+// is cleared rather than left to multiply by the identity.
 void APylon::PostBeginPlay()
 {
 	if( bImportedMesh )
 	{
 		if(NavMeshPtr != NULL)
 		{
-			NavMeshPtr->InitTransform(this);
+			NavMeshPtr->LocalToWorld = FMatrix::Identity;
+			NavMeshPtr->WorldToLocal = FMatrix::Identity;
+			NavMeshPtr->bNeedsTransform = FALSE;
 		}
 		if( ObstacleMesh != NULL )
 		{
-			ObstacleMesh->InitTransform(this);
+			ObstacleMesh->LocalToWorld = FMatrix::Identity;
+			ObstacleMesh->WorldToLocal = FMatrix::Identity;
+			ObstacleMesh->bNeedsTransform = FALSE;
+		}
+		if( ParseParam( appCmdLine(), TEXT("ikdiag") ) )
+		{
+			debugf( TEXT("DISHONORED(bringup): ikdiag pylon %s imported: identity transform (the actor's would move it by %s)"), *GetName(), *LocalToWorld().GetOrigin().ToString() );
 		}
 	}
 
@@ -20240,25 +20254,11 @@ void APylon::UpdateComponentsInternal(UBOOL bCollisionUpdate)
 /**
  * Called from UpdateComponentsInternal when a transform update is needed (when this pylon has moved)
  */
+// DISHONORED(port, agent IK): 2012 0x27a3b0 / 2013 VA 0x6602a0 (26 B both): the pylon leaves and re-enters the navigation
+// octree; retail writes no mesh transform here (see PostBeginPlay).
 void APylon::PylonMoved()
 {
-	// update octree position 
 	RemoveFromNavigationOctree();
-	if(NavMeshPtr != NULL)
-	{
-		NavMeshPtr->WorldToLocal = GetMeshWorldToLocal();
-		NavMeshPtr->LocalToWorld = GetMeshLocalToWorld();
-		NavMeshPtr->bNeedsTransform = (!IsStatic() || bImportedMesh);
-	}
-
-	if(ObstacleMesh != NULL)
-	{
-		ObstacleMesh->WorldToLocal = GetMeshWorldToLocal();
-		ObstacleMesh->LocalToWorld = GetMeshLocalToWorld();
-		ObstacleMesh->bNeedsTransform = (!IsStatic() || bImportedMesh);
-	}
-	//Pylon bounds are based on NavMesh bounds at runtime
-	//thus set the new transformations before adding back to oct tree
 	AddToNavigationOctree();
 }
 

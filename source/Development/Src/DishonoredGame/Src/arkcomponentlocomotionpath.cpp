@@ -23,6 +23,7 @@
 #define DISLOCO_MARK(n) { static UBOOL bM##n = FALSE; if( !bM##n ) { bM##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n) ); } }
 
 #include "disdesirestructs.h"
+#include "ibdiag.h"
 
 /*-----------------------------------------------------------------------------
 	"where on the mesh is this point"
@@ -521,17 +522,31 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 		{
 			return;
 		}
+		// DISHONORED(port, agent IK): 2012 0x58a4d0 / 2013 VA 0x949890, the PATHERROR_MAX -> STARTPOLYNOTFOUND step: the nearest
+		// mesh point is looked for once, on the first frame off the mesh (150, then - only for a pawn that has had a path,
+		// m_bHasBeenOnNavMesh - 300 and wider), m_bTryToReturnOnNavMesh walks the pawn to it (ComputeTargetMoveYaw /
+		// ComputeTargetMoveSpeed) and the teleport is taken only when m_bHasBeenOnNavMesh is set (+252 bit 0x100 / 2013 +260,
+		// raised by a successful search) and the teleport is not disabled. HEAD teleported every pawn found off the mesh,
+		// which put the boat's captain inside the boat's physics asset (agentIK.md §1).
+		// DISHONORED(bringup): retail's search radius doubles without bound for a pawn that has had a path; this stops at 300.
+		const UBOOL bFirstFrameOff = !m_bTryToReturnOnNavMesh;
 		m_bTryToReturnOnNavMesh = TRUE;
 		m_fTryToReturnOnNavMeshDuration += _fTimeStep;
-		UBOOL bFound = FindNearestLocationOnNavMesh( NULL, 150.f, m_NearestLocationOnNavMesh );
-		if( !bFound )
+		UBOOL bFound = TRUE;
+		if( bFirstFrameOff )
 		{
-			bFound = FindNearestLocationOnNavMesh( NULL, 300.f, m_NearestLocationOnNavMesh );
+			bFound = FindNearestLocationOnNavMesh( NULL, 150.f, m_NearestLocationOnNavMesh );
+			if( !bFound && m_bHasBeenOnNavMesh )
+			{
+				bFound = FindNearestLocationOnNavMesh( NULL, 300.f, m_NearestLocationOnNavMesh );
+			}
 		}
-		// One attempt per stretch off the mesh, not one per tick: the clock below is what decides when to give up, and a
-		// teleport that did not help must not be retried 240 times a second while it runs down (measured: 15,339 teleports in
-		// 39 seconds).
-		if( bFound && !m_bTeleportDisabled && m_fTryToReturnOnNavMeshDuration <= ( _fTimeStep * 2.f ) )
+		const UBOOL bTeleport = bFirstFrameOff && bFound && !m_bTeleportDisabled && m_bHasBeenOnNavMesh;
+		if( bFirstFrameOff )
+		{
+			IKDiagStartPoly( StartOnGround, bFound, bTeleport );
+		}
+		if( bTeleport )
 		{
 			// DISHONORED(port): retail's answer, and it is a teleport: m_bTeleportRequired is raised with m_TeleportLocation
 			// set to the nearest mesh point and PreAsyncWorkTick moves the pawn there with UWorld::FarMoveActor
@@ -581,7 +596,6 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 	}
 	m_bTryToReturnOnNavMesh = FALSE;
 	m_fTryToReturnOnNavMeshDuration = 0.f;
-	m_bHasBeenOnNavMesh = TRUE;
 
 	// 3. the search is still valid, only the polyline is stale.
 	if( m_bPathfindingUpToDate && !m_bBuiltPathUpToDate )
@@ -629,6 +643,7 @@ void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeSte
 	if( UpdatePathFindingEdges( m_StartLocationUsedToAskPath, m_EndLocationUsedToAskPath ) )
 	{
 		m_bPathfindingUpToDate = TRUE;
+		m_bHasBeenOnNavMesh = TRUE;
 		if( UpdateBuiltPathPoints() )
 		{
 			if( !m_CurReqWorkData.m_bPathfindAlreadySucceed )

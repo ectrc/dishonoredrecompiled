@@ -11,4 +11,8 @@ void DisIBDiagNoteGoTo( const AActor* _pPawn, INT _Stage, UBOOL _bPathingFail );
 /** Once a second per watched NPC, from ADishonoredNPCPawn::Tick. */
 void DisIBDiagReport( class ADishonoredNPCPawn* _pPawn );
 
+/** agent IK (PHASE23 IK): -ikdiag, the watched NPCs' moves, root motion and start-poly decisions (agentIK.md). */
+UBOOL DisIKDiagEnabled();
+UBOOL DisIKDiagWatched( const AActor* _pActor );
+
 #endif
