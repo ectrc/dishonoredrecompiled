@@ -67,11 +67,17 @@ if(DISHONORED_WITH_WWISE)
     target_link_libraries(wwise INTERFACE dsound dxguid ole32)
     message(STATUS "Wwise: installed 2012.1 SDK at ${DISHONORED_WWISE_SDK} (libs from ${wwise_lib_dir})")
   else()
-    file(GLOB wwise_silent_sources "${DISHONORED_WWISE_DIR}/Src/*.cpp")
+    # Agent IH1 (wave 26): Src/ also holds the ported 2012.1 runtime, one folder per Audiokinetic module
+    # (AkMemoryMgr, StreamManager, AkAudioLib/Common), so the sources are globbed recursively and each
+    # module folder is a private include root the way the SDK's own projects set them up.
+    file(GLOB_RECURSE wwise_silent_sources "${DISHONORED_WWISE_DIR}/Src/*.cpp")
     file(GLOB_RECURSE wwise_headers "${DISHONORED_WWISE_DIR}/include/*.h" "${DISHONORED_WWISE_DIR}/Src/*.h")
     add_library(wwise STATIC ${wwise_silent_sources} ${wwise_headers})
     target_include_directories(wwise PUBLIC "${DISHONORED_WWISE_DIR}/include")
-    target_include_directories(wwise PRIVATE "${DISHONORED_WWISE_DIR}/Src")
+    target_include_directories(wwise PRIVATE "${DISHONORED_WWISE_DIR}/Src"
+                                             "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Common"
+                                             "${DISHONORED_WWISE_DIR}/Src/StreamManager"
+                                             "${DISHONORED_WWISE_DIR}/Src/AkMemoryMgr")
     target_compile_definitions(wwise PUBLIC DISHONORED_WITH_WWISE=1 DISHONORED_WWISE_SILENT=1)
     # No /Zp4 here: the AK structs carry their own #pragma pack(8) (the packing Audiokinetic builds with)
     # and the sizes are static_asserted against the 2012 PDB inside the headers.

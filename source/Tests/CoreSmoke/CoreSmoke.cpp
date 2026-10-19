@@ -427,6 +427,10 @@ LONG WINAPI CrashFilter(EXCEPTION_POINTERS* Info)
 
 void InstallSmokeOutputDevices();
 
+#if DISHONORED_WITH_WWISE
+void TestWwise(void (*InReport)(bool, const char*, const char*), void (*InSkip)(const char*, const char*));
+#endif
+
 int main(int, char**)
 {
 	setvbuf(stdout, NULL, _IONBF, 0);
@@ -448,6 +452,9 @@ int main(int, char**)
 	TestContainers();
 	TestPackageSummary();
 	TestCompressedChunk();
+#if DISHONORED_WITH_WWISE
+	TestWwise(Report, Skip);
+#endif
 	printf("\n%d passed, %d failed, %d skipped\n", NumPassed, NumFailures, NumSkipped);
 	return NumFailures;
 }

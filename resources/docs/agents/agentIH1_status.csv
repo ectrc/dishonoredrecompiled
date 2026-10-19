@@ -1,0 +1,18 @@
+item,status,evidence
+inventory,done,resources/docs/wwise/ih1_inventory.csv: 3070 functions; IH1 597 (471 ported / 62 templates / 38 deferred device / 26 left)
+wwise_bank_dump.py,done,982 banks 42548 objects 0 parse errors; Init.bnk 95 = State 13 Bus 27 FxShareSet 55
+AkMemoryMgr + TLSF,ported,34 functions; CoreSmoke init/term
+AkStreamMgr blocking + AK::IOThread,ported,161 functions; Init.bnk read through it in CoreSmoke and game
+deferred lined-up device,not needed,glue creates AK_SCHEDULER_BLOCKING only
+CAkBankMgr + reader + bank thread,ported,AK::BankManager thread; 119/119 opening bank ops == python
+HIRC loading (all non-music types),ported,981 packaged banks 42453 objects identical counts 0 failed 0 misparsed (CoreSmoke)
+music HIRC,deferred IH4,handler declines -> skipped as retail without handler
+CAkRegistryMgr,ported,game objects mirrored from silent engine
+Query,ported,QueryAudioObjectIDs / GetPositioningInfo / registry getters / GetState
+GetIDFromString,ported,0x50c63a23 for Init; 284 calls logged in IH1a.log
+media preparation (AllInclusive / PrepareEvent),deferred IH2,not reached by Dishonored (StructureOnly only; PrepareEvent has no caller)
+-akdiag,done,bank / id / query / stream-open / unknown-event lines
+CoreSmoke,done,127 passed 0 failed (99 before)
+gate,25 ok 0 failed,d3d9_frames 480 under heavy load (32 cl.exe) then 1860 on the idle rerun (build/agentIH1/gate_d3d9.txt)
+newgame_pawns,29,gate
+criticals / unported_natives,0 / 0,gate

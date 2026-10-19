@@ -142,6 +142,18 @@ namespace DishonoredWwise
 		AkSilent::g_pLogHook = in_pHook;
 	}
 
+	static bool s_bDiagnostics = false;
+
+	void SetDiagnostics( bool in_bEnabled )
+	{
+		s_bDiagnostics = in_bEnabled;
+	}
+
+	bool IsDiagnostics()
+	{
+		return s_bDiagnostics;
+	}
+
 	const Stats & GetStats()
 	{
 		AkSilent::Engine & e = AkSilent::Get();

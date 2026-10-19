@@ -37,6 +37,14 @@ namespace DishonoredWwise
 
 	void SetLogHook( LogHook in_pHook );
 
+	/**
+	 * -akdiag (agent IH1): log every bank load / prepare / unload with its HIRC object counts, every
+	 * GetIDFromString with its answer, every Query::QueryAudioObjectIDs / GetPositioningInfo answer, every
+	 * stream-manager file open and every PostEvent of an event no loaded bank declares.
+	 */
+	void SetDiagnostics( bool in_bEnabled );
+	bool IsDiagnostics();
+
 	/** What the backend has been asked to do so far; the AkAudio `AKSTATS` exec prints it. */
 	struct Stats
 	{

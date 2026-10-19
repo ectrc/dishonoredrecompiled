@@ -156,6 +156,7 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 #if DISHONORED_WWISE_SILENT
 	DishonoredWwise::SetLogHook( AkWwiseLogSink );
 	DishonoredWwise::SetAllocator( AkWwiseAlloc, AkWwiseFree );
+	DishonoredWwise::SetDiagnostics( ParseParam( appCmdLine(), TEXT("akdiag") ) != 0 );
 #endif
 
 	// DISHONORED(retail): the component class is a config-free StaticLoadClass in retail too; the fallback is

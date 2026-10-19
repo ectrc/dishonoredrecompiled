@@ -8,3 +8,8 @@ target_link_libraries(CoreSmoke PRIVATE Core dbghelp winmm)
 dishonored_apply_defines(CoreSmoke)
 target_compile_options(CoreSmoke PRIVATE ${DISHONORED_MSVC_WARNINGS})
 set_target_properties(CoreSmoke PROPERTIES FOLDER "Tests")
+# Agent IH1 (wave 26): the ported Wwise bank side (WwiseSmoke.cpp) against the retail banks, when the
+# audio surface is in the build (dishonored_apply_defines already links Dishonored::wwise).
+if(TARGET wwise)
+  target_sources(CoreSmoke PRIVATE WwiseSmoke.cpp)
+endif()
