@@ -316,3 +316,13 @@ the key names match retail's; HJ's `SetToDefaults` stays the offline fallback.
 3. ID's silent-duration estimate is a guess by construction: IE's ride-end time is the check, IH2 removes it.
 4. IF's states will reach stubs nobody has listed: the `probe_natives` list from its step 0 is the ledger.
 5. IH's size estimate comes from symbol counts, not from reading the code; IH1's report must re-size IH2–IH4.
+
+## Outcomes (coordinator log)
+
+| Package | Commit | Landed | Where the brief was wrong |
+|---|---|---|---|
+| IA | `bda2769` | measured: hfov 75.00 before/during/after the ride, zoom vs retail 0.99-1.00 at world 151-154, the user's retail slider (OPTIONS.SAV setting 118; format SHA-1 + size + LZO1X settings) is 75 - the FOV is retail's on both sides; ported `UpdateWalkNavAnimState` (2013 0x675450; crouch FOV target, arm follow, stance; `SetAnimState` 0x6e1da0 / `RequestAction` 0x6b1d00 named), `ExitSoireeMode`'s arm-follow re-enable, the 2013 doubled zoom blend speed, `ApplyPlayerControlDelta` (0x6a34d0), `ProcessViewRotation` (0x6afb50), `GetFOVScale` (0x6b01e0, mouse look 1.2x), `-iadiag`; one build | the ride/gameplay difference the user sees is not FOV (letterbox, full-body camera and sharpness change the same way in both); `UpdateWalkNavAnimState` sets only the crouch target; `Min(0,..)` is retail's; `ExitSoireeMode` writes no FOV; IJ is not needed for FOV but the user's file has all 36 bindings = 0 (HJ's "[Unbound]"). **Blocker found:** with Bink ON the briefing page waits for a controller-0 key the `-finewgame` route never sends - every scripted run must pass `-nomovie` (`cutscene_compare.py` does since `e22a0b7`) |
+
+Open: IA's gate stages ran under five agents at 100 % CPU (`d3d9_frames` 600, `inputtest_moved` 751 - the base exe swings the
+same way); the wave-end gate on a quiet machine is the real number. The user's "FOV never returns" needs a retail clip past
+the dock (retail.mp4 ends at world 154.9) or a description of what changes - asked.
