@@ -352,3 +352,5 @@ Launch 2 (on `63c3c91`): **IC** (soirée stim, controllers, FaceTo) and new **IK
 **IH3** launched on `a945bac` (the parameter graph: RTPC/state/switch, 3D positioning + attenuation, paths, the propagation path search IE named).
 **IN** launched on `9850a24` (the missing level collision at the dock stair foot).
 **IH4** launched on `3e126e3` (music engine, effect plug-ins, the exit defect, the missing level ambience post).
+
+Gates: `a47f38b` (seventeen packages, everything but IH4) **47 ok, 0 failed, 0 skipped** (2202 s, `build/gate_w26pre.log`, one agent building alongside).
