@@ -10,8 +10,12 @@
 	  * the initialisation order, the pool sizes, the speaker masks, the plug-in and codec registrations,
 	    the bank directory, the language map and the global game object are retail's, read out of
 	    UAkAudioDevice::EnsureInitialized (0x5b1430) and ::SetBankDirectory (0x5b0b40);
-	  * the eight effect plug-ins and the Vorbis codec are registered by id with no factory, because the
-	    factories are Audiokinetic's (see the note at EnsureInitialized);
+	  * the eight effect plug-ins are registered by id with no factory, because the effects are IH4's; the Vorbis
+	    codec is registered with its ported factories (agent IH2);
+	  * DISHONORED(deviation, agent IH2): the sink window is the desktop window and bGlobalFocus stays TRUE, where
+	    retail passes GGameWindow and clears bGlobalFocus: the game must stay audible while it runs windowed and
+	    unfocused (the regression harness never gives it focus), and this tree has no GGameWindow at this point;
+	  * DISHONORED(diag, agent IH2): -akwav=<file> writes the mixed output handed to the sink into a WAV file;
 	  * UAkAudioDevice::Get is a bring-up deviation: retail reaches the device through
 	    GEngine->Client->GetAkAudioDevice (UClient vtable slot 320, the engine's own body is the
 	    pure-virtual logger at 0x1e68e0 and UWindowsClient supplies the object). UClient has no such virtual
@@ -22,6 +26,7 @@
 #if DISHONORED_WITH_WWISE
 
 #include "akunrealiohookblocking.h"
+#include <AK/Plugin/AkVorbisFactory.h>
 
 /** DISHONORED(retail): ?m_bSoundEngineInitialized@UAkAudioDevice@@1_NA, 2013 rva 0x105b43c */
 UBOOL UAkAudioDevice::m_bSoundEngineInitialized = FALSE;
@@ -141,10 +146,9 @@ UBOOL UAkAudioDevice::Init()
  *   9. SetBankDirectory, RegisterGameObj(2, "Unreal Global"), SetPosition(2, origin)
  *  10. LoadAllReferencedBanks, then RegisterGlobalCallback(DisAkGlobalCallbackFunc)
  *
- * The plug-in and codec factories are Audiokinetic's (CAkFDNReverbFX::Create, CreateVorbisFilePlugin, ...)
- * and are not in the tree, so the registrations pass NULL factories: with the silent backend they are only
- * recorded, and with the licensed SDK the AkXxxFXFactory.h headers supply them. That is the single place
- * where this function is not yet retail-identical, and it is marked in the body.
+ * The effect plug-in factories are Audiokinetic's (CAkFDNReverbFX::Create, ...) and are IH4's, so those
+ * registrations pass NULL factories; the Vorbis codec gets its ported factories (AkVorbisFactory.h, agent IH2).
+ * The sink window and focus flag are the other deviation, marked in the body.
  */
 UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 {
@@ -157,6 +161,11 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 	DishonoredWwise::SetLogHook( AkWwiseLogSink );
 	DishonoredWwise::SetAllocator( AkWwiseAlloc, AkWwiseFree );
 	DishonoredWwise::SetDiagnostics( ParseParam( appCmdLine(), TEXT("akdiag") ) != 0 );
+	FString WavPath;
+	if( Parse( appCmdLine(), TEXT("akwav="), WavPath ) )
+	{
+		DishonoredWwise::SetWavCapture( *WavPath );
+	}
 #endif
 
 	// DISHONORED(retail): the component class is a config-free StaticLoadClass in retail too; the fallback is
@@ -207,10 +216,12 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 	case 2:		PlatformSettings.uChannelMask = AK_SPEAKER_SETUP_5POINT1; break;
 	default:	break;
 	}
-	// DISHONORED(bringup): retail stores GGameWindow here and clears bGlobalFocus when there is a window
-	// (0x5b1430). This tree has no such global (the viewport owns its HWND inside WinDrv), and the window only
-	// matters to the DirectSound / XAudio2 sink, which the silent backend does not create; wiring
-	// UWindowsClient's window in is a follow-up.
+	// DISHONORED(deviation, agent IH2): retail stores GGameWindow here and clears bGlobalFocus when there is a window
+	// (0x5b1430), so DirectSound mutes the game whenever its window loses focus. The sink's cooperative level is set
+	// on the desktop window instead and bGlobalFocus stays TRUE (its default), so the game is audible windowed and
+	// unfocused, the way the regression harness runs it.
+	PlatformSettings.hWnd = GetDesktopWindow();
+	PlatformSettings.bGlobalFocus = true;
 	InitSettings.uDefaultPoolSize = GIsEditor ? 0x1000000 : 0x800000;
 	PlatformSettings.uLEngineDefaultPoolSize = 0x800000;
 	if( AK::SoundEngine::Init( &InitSettings, &PlatformSettings ) != AK_Success )
@@ -227,9 +238,8 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 		return FALSE;
 	}
 
-	// DISHONORED(retail): the ids retail passes at 0x5b1430, in its order. The factories are Audiokinetic's
-	// (AkRoomVerbFXFactory.h and friends); with no SDK there is nothing to point at, so the registrations
-	// carry the ids only and the backend records them.
+	// DISHONORED(retail): the ids retail passes at 0x5b1430, in its order. The effect factories are IH4's, so the
+	// effect registrations carry the ids only.
 	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 115, NULL, NULL );	// AkMatrixReverb
 	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 106, NULL, NULL );	// AkDelay
 	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 105, NULL, NULL );	// AkParametricEQ
@@ -238,7 +248,7 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 136, NULL, NULL );	// AkPitchShifter
 	AK::SoundEngine::RegisterPlugin( AkPluginTypeEffect, AKCOMPANYID_AUDIOKINETIC, 131, NULL, NULL );	// AkTremolo
 	AK::SoundEngine::RegisterPlugin( AkPluginTypeSource, AKCOMPANYID_AUDIOKINETIC, 101, NULL, NULL );	// AkSilenceSource
-	AK::SoundEngine::RegisterCodec( AKCOMPANYID_AUDIOKINETIC, AKCODECID_VORBIS, NULL, NULL );			// AkVorbisDecoder
+	AK::SoundEngine::RegisterCodec( AKCOMPANYID_AUDIOKINETIC, AKCODECID_VORBIS, CreateVorbisFilePlugin, CreateVorbisBankPlugin );	// AkVorbisDecoder
 
 	SetBankDirectory();
 

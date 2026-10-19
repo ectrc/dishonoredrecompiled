@@ -4,6 +4,8 @@
 	DISHONORED(bringup): see AkSilentInternal.h. The name hash itself is DISHONORED(written) and verified
 	against retail content (build/agentAN/bank_stid.py).
 =============================================================================*/
+#include <AkRegistryMgr.h>
+#include <AkPlayingMgr.h>
 #include "AkSilentInternal.h"
 
 #include <cstdarg>
@@ -119,12 +121,6 @@ namespace AkSilent
 			g_pEngine->bSoundEngineInit = false;
 			g_pEngine->bMemoryMgrInit = false;
 			g_pEngine->bMusicEngineInit = false;
-			g_pEngine->NextPlayingID = 1;
-			g_pEngine->PanningRule = AkPanningRule_Speakers;
-			g_pEngine->SpeakerConfig = AK_SPEAKER_SETUP_5POINT1;
-			g_pEngine->VolumeThreshold = -96.f;
-			g_pEngine->MaxNumVoices = 0;
-			memset( g_pEngine->Listeners, 0, sizeof( g_pEngine->Listeners ) );
 		}
 		return *g_pEngine;
 	}
@@ -156,9 +152,9 @@ namespace DishonoredWwise
 
 	const Stats & GetStats()
 	{
-		AkSilent::Engine & e = AkSilent::Get();
-		AkSilent::g_Stats.GameObjects = (AkUInt32)e.GameObjects.size();
-		AkSilent::g_Stats.PlayingIDsActive = (AkUInt32)e.Voices.size();
+		AkAutoLock<CAkLock> gate( g_csMain );
+		AkSilent::g_Stats.GameObjects = g_pRegistryMgr ? g_pRegistryMgr->NumRegistered() : 0;
+		AkSilent::g_Stats.PlayingIDsActive = g_pPlayingMgr ? g_pPlayingMgr->m_PlayingMap.m_uiSize : 0;
 		return AkSilent::g_Stats;
 	}
 

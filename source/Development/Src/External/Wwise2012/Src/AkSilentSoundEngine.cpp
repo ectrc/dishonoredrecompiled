@@ -1,229 +1,67 @@
 /*=============================================================================
-	AkSilentSoundEngine.cpp - AK::SoundEngine's playback side, still on bookkeeping instead of a DSP graph.
+	AkSilentSoundEngine.cpp - AK::SoundEngine's playback API (wwise\sdk\source\soundengine\akaudiolib\win32\
+	akaudiolib.cpp): every call writes a message into CAkAudioMgr's queue, which the audio thread ("AK::EventManager")
+	drains into the renderer and the lower engine; PostEvent registers its playing id with CAkPlayingMgr first.
 
-	DISHONORED(bringup, then port): agent AN wrote this file as the whole silent engine; agent IH1 (wave 26)
-	moved the bank side to the real 2012.1 runtime (src/AkAudioLib/Common: CAkBankMgr, the HIRC object
-	hierarchy, CAkRegistryMgr, the Query functions that answer from them, GetIDFromString). What is left
-	here is what IH2 replaces with the audio manager / renderer / lower engine.
-
-	It DOES:
-	  * initialise and terminate the ported runtime (AkAudioLibInit / AkAudioLibTerm: default pool, index,
-	    RTPC / environment / state managers, bank manager thread, registry) from AK::SoundEngine::Init / Term;
-	  * hand out monotonic playing ids from PostEvent and remember which game object, event and callback
-	    each one belongs to, then fire AK_EndOfEvent on the next RenderAudio / StopAll / StopPlayingID /
-	    ExecuteActionOnEvent(Stop) / Term, because USeqAct_AkPostEvent and UDishonoredAudioSystem's
-	    end-of-event queue only finish when that callback arrives (agent FI);
-	  * mirror every game object call into CAkRegistryMgr (positions, listener mask, environment sends, dry
-	    level, scaling, obstruction) and every SetState into CAkStateMgr, so the Query getters answer from the
-	    ported managers;
-	  * record the last value of every RTPC, switch and trigger and answer the RTPC / switch / listener /
-	    playing-id queries from that (IH3 / IH2 own those managers).
-
-	DISHONORED(deviation, agent ID, to be removed by IH2): DishonoredWwise::SetDurationHint keeps one voice alive for a
-	given number of wall-clock seconds (the conversation component's estimate of a spoken line, which has no media
-	length here), and fires its AK_Duration callback; every voice without a hint still ends on the next RenderAudio.
-
-	It does NOT decode, mix or output audio, and PostEvent does not run an event's actions. Retail returns
-	AK_INVALID_PLAYING_ID for an event absent from every loaded bank; here the post still succeeds (Kismet
-	latents wait on its end-of-event) and -akdiag logs it, so IH2 has the list before it switches over.
+	DISHONORED(port): agent AN wrote this file as the whole silent engine, agent IH1 (wave 26) moved the bank side to the
+	ported runtime, agent IH2 (wave 26) replaced the silent playback with the ported one. 2012 rvas:
+	  RenderAudio 0x916e80, RegisterPlugin 0x916e90, RegisterCodec 0x916ea0, SetPositionInternal 0x916eb0 (SetPosition
+	  0x918690), SetMultiplePositions 0x916f20, SetAttenuationScalingFactor 0x917000, SetListenerScalingFactor 0x917050,
+	  SetActiveListeners 0x9170a0, SetListenerPosition 0x9170e0, SetListenerSpatialization 0x917130,
+	  SetListenerPipeline 0x9171b0, SetGameObjectEnvironmentsValues 0x917400, SetGameObjectDryLevelValue 0x9174b0,
+	  SetObjectObstructionAndOcclusion 0x917590, SetPanningRule 0x917720, CancelEventCallbackCookie 0x917880,
+	  CancelEventCallback 0x9178a0, GetSourcePlayPosition 0x9178c0, RegisterGameObj 0x9179a0, UnregisterGameObj
+	  0x9179f0, UnregisterAllGameObj 0x917a30, StopAll 0x918350, StopPlayingID 0x918390, AddBehavioralExtension 0x919be0,
+	  RemoveBehavioralExtension 0x919c50, RegisterGlobalCallback 0x919c60, UnregisterGlobalCallback 0x919c90, PostEvent
+	  0x91a400 / 0x91a4f0 / 0x91a580 / 0x91ae90, ExecuteActionOnEvent 0x91a610 / 0x91a690 / 0x91a6b0, SeekOnEvent
+	  0x91a6d0..0x91a830, Query::GetEventIDFromPlayingID 0x91b1b0, GetGameObjectFromPlayingID 0x91b1d0,
+	  GetPlayingIDsFromGameObject 0x91b1f0, GetListenerPosition 0x91af20, GetListenerSpatialization 0x91af50.
+	Deviations (named):
+	  * RTPC, switch, state and trigger calls (message types 2..10) are the IH3 seam: they are not queued; the value is
+	    kept as books (AkSilent::Engine) that the Query functions answer from, and SetState also writes CAkStateMgr's
+	    current state as IH1 did. Nothing in IH2's playback reads them (no RTPC curve, no switch container).
+	  * DishonoredWwise::SetDurationHint (agent ID) is a no-op shim now that a voice ends at its media end.
+	  * SetEffect, SetEnvironmentVolume(s) and BypassEnvironment (effects / aux busses) are IH4's and answer
+	    AK_Success without queueing.
+	  * Query::GetMaxRadius answers -1 (no attenuation) and GetEnvironment* answer zero: IH3 positioning / IH4 aux.
+	  * PostEvent logs every post (and -akdiag every unknown event) through the backend log hook: diagnostic.
 =============================================================================*/
+#include <AkSink.h>
 #include <AkBankMgr.h>
 #include <AkRegistryMgr.h>
+#include <AkAudioMgr.h>
+#include <AkPlayingMgr.h>
+#include <AkListener.h>
+#include <AkLEngine.h>
+#include <AkVPLNode.h>
+#include <AkPositionRepository.h>
 #include "AkSilentInternal.h"
 
 AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings * in_pPlatformSettings );
 void AkAudioLibTerm();
-bool AkAudioLibIsEventLoaded( AkUniqueID in_eventID );
 
-#include <chrono>
+extern AkArray<AkGlobalCallbackFunc, AkGlobalCallbackFunc, ArrayPoolDefault, 4> g_aBehavioralExtensions;
 
-namespace AkSilent
+static volatile LONG g_PlayingID = 0;
+
+/** DISHONORED(deviation, agent IH2): a call after AK::SoundEngine::Term answers AK_Fail instead of writing into the
+    deleted audio manager (retail dereferences NULL). The glue reaches StopAll from garbage collection after
+    UAkAudioDevice::Teardown on exit (UAkComponent::FinishDestroy -> Stop), which the silent backend used to swallow. */
+static AKRESULT Enqueue( AkQueuedMsg & in_rItem, AkUInt32 in_uSize )
 {
-	/** The bank's STMG and the game's SetVolumeThreshold / SetMaxNumVoicesLimit land here (AkAudioLib.cpp). */
-	void ApplyVolumeThreshold( AkReal32 in_fVolumeThresholdDB )
-	{
-		Get().VolumeThreshold = in_fVolumeThresholdDB;
-	}
-
-	void ApplyMaxNumVoices( AkUInt16 in_maxNumberVoices )
-	{
-		Get().MaxNumVoices = in_maxNumberVoices;
-	}
-
-	/** Fires AK_EndOfEvent for one playing id and drops it. */
-	static void EndPlaying( AkPlayingID id )
-	{
-		Engine & e = Get();
-		std::map<AkPlayingID, Voice>::iterator it = e.Voices.find( id );
-		if( it == e.Voices.end() )
-		{
-			return;
-		}
-		const Voice entry = it->second;
-		e.Voices.erase( it );
-		if( entry.Callback && ( entry.Flags & AK_EndOfEvent ) )
-		{
-			AkEventCallbackInfo info;
-			info.pCookie = entry.Cookie;
-			info.gameObjID = entry.GameObject;
-			info.playingID = entry.ID;
-			info.eventID = entry.EventID;
-			entry.Callback( AK_EndOfEvent, &info );
-		}
-	}
-
-	static void EndAllPlaying( AkGameObjectID gameObj )
-	{
-		Engine & e = Get();
-		std::vector<AkPlayingID> doomed;
-		for( std::map<AkPlayingID, Voice>::const_iterator it = e.Voices.begin(); it != e.Voices.end(); ++it )
-		{
-			if( gameObj == AK_INVALID_GAME_OBJECT || it->second.GameObject == gameObj )
-			{
-				doomed.push_back( it->first );
-			}
-		}
-		for( size_t i = 0; i < doomed.size(); ++i )
-		{
-			EndPlaying( doomed[ i ] );
-		}
-	}
-
-	/**
-	 * RenderAudio's end of the silent voices: every voice without a duration hint ends (agent FI), a hinted one only
-	 * once its hint has run out on the wall clock between two audio frames (agent ID, until IH2).
-	 */
-	static void EndElapsedPlaying()
-	{
-		static std::chrono::steady_clock::time_point s_LastFrame = std::chrono::steady_clock::now();
-		const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-		const AkReal32 elapsed = std::chrono::duration<AkReal32>( now - s_LastFrame ).count();
-		s_LastFrame = now;
-		Engine & e = Get();
-		std::vector<AkPlayingID> doomed;
-		for( std::map<AkPlayingID, Voice>::iterator it = e.Voices.begin(); it != e.Voices.end(); ++it )
-		{
-			if( it->second.HintSecondsLeft > 0.f )
-			{
-				it->second.HintSecondsLeft -= elapsed;
-				if( it->second.HintSecondsLeft > 0.f )
-				{
-					continue;
-				}
-				Logf( L"duration hint of playing id %u ran out", it->first );
-			}
-			doomed.push_back( it->first );
-		}
-		for( size_t i = 0; i < doomed.size(); ++i )
-		{
-			EndPlaying( doomed[ i ] );
-		}
-	}
-
-	static AkPlayingID PostEventCommon( AkUniqueID eventID, AkGameObjectID gameObj, AkUInt32 flags, AkCallbackFunc callback, void * cookie, AkPlayingID requestedID )
-	{
-		Engine & e = Get();
-		if( !e.bSoundEngineInit )
-		{
-			return AK_INVALID_PLAYING_ID;
-		}
-		if( !AkAudioLibIsEventLoaded( eventID ) )
-		{
-			// DISHONORED(port, IH1): retail CAkAudioMgr only posts events present in g_pIndex and returns
-			// AK_INVALID_PLAYING_ID otherwise; the silent engine keeps answering (Kismet latents wait on the
-			// end-of-event) and counts / logs the difference so IH2 can switch it over with evidence.
-			++MutableStats().EventsUnknown;
-			const AkOSChar * unknownName = DishonoredWwise::NameForID( eventID );
-			AKDIAG( L"akdiag: PostEvent 0x%08x (%s): not in any loaded bank (retail would return AK_INVALID_PLAYING_ID)",
-				eventID, unknownName ? unknownName : L"<id only>" );
-		}
-		Voice entry;
-		entry.ID = requestedID ? requestedID : e.NextPlayingID++;
-		entry.EventID = eventID;
-		entry.GameObject = gameObj;
-		entry.Flags = flags;
-		entry.Callback = callback;
-		entry.Cookie = cookie;
-		entry.HintSecondsLeft = 0.f;
-		e.Voices[ entry.ID ] = entry;
-		++MutableStats().EventsPosted;
-
-		const AkOSChar * name = DishonoredWwise::NameForID( eventID );
-		Logf( L"PostEvent %s (id 0x%08x) on game object %u -> playing id %u", name ? name : L"<id only>",
-			eventID, (AkUInt32)gameObj, entry.ID );
-		return entry.ID;
-	}
-
-	AKRESULT AddCallback( std::vector<AkGlobalCallbackFunc> & list, AkGlobalCallbackFunc callback )
-	{
-		for( size_t i = 0; i < list.size(); ++i )
-		{
-			if( list[ i ] == callback )
-			{
-				return AK_Success;
-			}
-		}
-		list.push_back( callback );
-		return AK_Success;
-	}
-
-	AKRESULT RemoveCallback( std::vector<AkGlobalCallbackFunc> & list, AkGlobalCallbackFunc callback )
-	{
-		for( size_t i = 0; i < list.size(); ++i )
-		{
-			if( list[ i ] == callback )
-			{
-				list.erase( list.begin() + i );
-				return AK_Success;
-			}
-		}
-		return AK_Fail;
-	}
-
-	static String Widen( const char * narrow )
-	{
-		String wide;
-		if( narrow )
-		{
-			for( const char * p = narrow; *p; ++p )
-			{
-				wide.push_back( (wchar_t)(unsigned char)*p );
-			}
-		}
-		return wide;
-	}
+	return g_pAudioMgr ? g_pAudioMgr->Enqueue( in_rItem, in_uSize ) : AK_Fail;
 }
 
 namespace DishonoredWwise
 {
-	void FlushEndOfEventCallbacks()
-	{
-		AkSilent::EndAllPlaying( AK_INVALID_GAME_OBJECT );
-	}
-
 	bool SetDurationHint( AkPlayingID in_playingID, AkReal32 in_fSeconds )
 	{
-		AkSilent::Engine & e = AkSilent::Get();
-		std::map<AkPlayingID, AkSilent::Voice>::iterator it = e.Voices.find( in_playingID );
-		if( it == e.Voices.end() )
-		{
-			return false;
-		}
-		it->second.HintSecondsLeft = in_fSeconds;
-		AkSilent::Logf( L"duration hint %.2f s on playing id %u", in_fSeconds, in_playingID );
-		if( it->second.Callback && ( it->second.Flags & AK_Duration ) )
-		{
-			AkDurationCallbackInfo info;
-			info.pCookie = it->second.Cookie;
-			info.gameObjID = it->second.GameObject;
-			info.playingID = it->second.ID;
-			info.eventID = it->second.EventID;
-			info.fDuration = in_fSeconds * 1000.f;
-			info.fEstimatedDuration = in_fSeconds * 1000.f;
-			info.audioNodeID = AK_INVALID_UNIQUE_ID;
-			it->second.Callback( AK_Duration, &info );
-		}
-		return true;
+		return in_playingID != AK_INVALID_PLAYING_ID;
+	}
+
+	void SetWavCapture( const AkOSChar * in_pszPath )
+	{
+		CAkLEngine::SetWavCapture( in_pszPath );
 	}
 }
 
@@ -256,12 +94,9 @@ namespace AK
 				return eResult;
 			}
 			e.bSoundEngineInit = true;
-			if( in_pPlatformSettings )
-			{
-				e.SpeakerConfig = in_pPlatformSettings->uChannelMask ? in_pPlatformSettings->uChannelMask : AK_SPEAKER_SETUP_5POINT1;
-			}
-			AkSilent::Logf( L"SoundEngine::Init: silent backend (no output device), command queue %u, speaker mask 0x%x",
-				in_pSettings ? in_pSettings->uCommandQueueSize : 0, e.SpeakerConfig );
+			AkSilent::Logf( L"SoundEngine::Init: %s sink, speaker mask 0x%x, command queue %u",
+				g_pAkSink && g_pAkSink->m_IsHardwareDevicePresent ? L"DirectSound" : L"dummy", g_pAkSink ? g_pAkSink->m_SpeakersConfig : 0,
+				in_pSettings ? in_pSettings->uCommandQueueSize : 0 );
 			return AK_Success;
 		}
 
@@ -272,189 +107,172 @@ namespace AK
 			{
 				return;
 			}
-			AkSilent::EndAllPlaying( AK_INVALID_GAME_OBJECT );
 			const DishonoredWwise::Stats & stats = DishonoredWwise::GetStats();
 			AkSilent::Logf( L"SoundEngine::Term: %u banks loaded, %u prepared, %u missing, %u events posted, %u RTPC / %u switch / %u state sets",
 				stats.BanksLoaded, stats.BanksPrepared, stats.BanksMissing, stats.EventsPosted,
 				stats.RtpcSets, stats.SwitchSets, stats.StateSets );
 			e.Banks.clear();
-			e.GameObjects.clear();
 			e.bSoundEngineInit = false;
 			AkAudioLibTerm();
 		}
 
 		AKRESULT RenderAudio()
 		{
-			AkSilent::Engine & e = AkSilent::Get();
-			if( !e.bSoundEngineInit )
-			{
-				return AK_Fail;
-			}
-			// The behavioural extensions and global callbacks are what retail's DisAkGlobalCallbackFunc
-			// rides on, so they run once per RenderAudio like the real engine's audio frame.
-			for( size_t i = 0; i < e.BehaviouralExtensions.size(); ++i )
-			{
-				e.BehaviouralExtensions[ i ]( false );
-			}
-			for( size_t i = 0; i < e.GlobalCallbacks.size(); ++i )
-			{
-				e.GlobalCallbacks[ i ]( false );
-			}
-			// DISHONORED(bringup, agent FI): a silent event has no duration, so every voice posted since the
-			// last audio frame ends on this one. Without it AK_EndOfEvent never arrives and anything latent
-			// on a sound waits for ever: USeqAct_AkPostEvent::UpdateOp returns Signal == 0 and Signal is only
-			// decremented by AkCallback (akaudioclasses.cpp:48), so l_tower_p's Kismet stopped at op 25 of
-			// 1670 on SeqAct_AkPostEvent_0 and the mission's opening sequence was never entered (agent AT).
-			// The deviation from retail is only in the WAIT: retail resumes when the sound really finishes,
-			// we resume on the next audio frame. Nothing here plays a sound either way.
-			// DISHONORED(deviation, agent ID): voices given a DishonoredWwise::SetDurationHint are kept until it runs out.
-			AkSilent::EndElapsedPlaying();
-			return AK_Success;
+			return g_pAudioMgr ? g_pAudioMgr->RenderAudio() : AK_Fail;
 		}
 
 		// -- plug-ins ------------------------------------------------------------------------------
 
-		AKRESULT RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, AkCreatePluginCallback, AkCreateParamCallback )
+		/** 2012 0x916e90 -> CAkEffectsMgr::RegisterPlugin; an effect needs its plug-in interfaces (IH4) to run. */
+		AKRESULT RegisterPlugin( AkPluginType in_eType, AkUInt32 in_ulCompanyID, AkUInt32 in_ulPluginID, AkCreatePluginCallback in_pCreateFunc, AkCreateParamCallback in_pCreateParamFunc )
 		{
-			// DISHONORED(bringup): recorded, not instantiated. Retail registers eight effect plug-ins and
-			// one source plug-in here (UAkAudioDevice::EnsureInitialized, 2013 rva 0x5b1430); without a
-			// DSP graph there is nothing for them to process.
-			AkSilent::Logf( L"SoundEngine::RegisterPlugin: type %d, company %u, plug-in %u (recorded, no DSP graph)",
-				(int)in_eType, in_ulCompanyID, in_ulPluginID );
-			return AK_Success;
+			return CAkEffectsMgr::RegisterPlugin( in_eType, in_ulCompanyID, in_ulPluginID, in_pCreateFunc, in_pCreateParamFunc );
 		}
 
-		AKRESULT RegisterCodec( AkUInt32 in_ulCompanyID, AkUInt32 in_ulCodecID, AkCreateFileSourceCallback, AkCreateBankSourceCallback )
+		AKRESULT RegisterCodec( AkUInt32 in_ulCompanyID, AkUInt32 in_ulCodecID, AkCreateFileSourceCallback in_pFileCreateFunc, AkCreateBankSourceCallback in_pBankCreateFunc )
 		{
-			AkSilent::Logf( L"SoundEngine::RegisterCodec: company %u, codec %u (recorded, no media decoding)", in_ulCompanyID, in_ulCodecID );
-			return AK_Success;
+			return CAkEffectsMgr::RegisterCodec( in_ulCompanyID, in_ulCodecID, in_pFileCreateFunc, in_pBankCreateFunc );
 		}
 
 		// -- game objects --------------------------------------------------------------------------
 
 		AKRESULT RegisterGameObj( AkGameObjectID in_gameObjectID, const char * in_pszObjName )
 		{
-			if( in_gameObjectID == AK_INVALID_GAME_OBJECT )
+			if( !in_gameObjectID || in_gameObjectID == AK_INVALID_GAME_OBJECT )
 			{
-				return AK_InvalidParameter;
+				return AK_Fail;
 			}
-			AkSilent::GameObject obj;
-			obj.Name = AkSilent::Widen( in_pszObjName );
-			memset( &obj.Position, 0, sizeof( obj.Position ) );
-			obj.ListenerMask = 0xFFFFFFFF;
-			obj.AttenuationScale = 1.f;
-			obj.ObstructionLevel = 0.f;
-			obj.OcclusionLevel = 0.f;
-			obj.DryLevel = 1.f;
-			AkSilent::Get().GameObjects[ in_gameObjectID ] = obj;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			return g_pRegistryMgr && g_pRegistryMgr->RegisterObject( in_gameObjectID, NULL ) ? AK_Success : AK_Fail;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_RegisterGameObj;
+			Item.reggameobj.GameObjID = in_gameObjectID;
+			Item.reggameobj.pMonitorData = NULL;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_RegisterGameObj>() );
 		}
 
 		AKRESULT UnregisterGameObj( AkGameObjectID in_gameObjectID )
 		{
-			AkSilent::EndAllPlaying( in_gameObjectID );
+			if( !in_gameObjectID )
 			{
-				AkAutoLock<CAkLock> gate( g_csMain );
-				if( g_pRegistryMgr )
-				{
-					g_pRegistryMgr->UnregisterObject( in_gameObjectID );
-				}
+				return AK_Fail;
 			}
-			return AkSilent::Get().GameObjects.erase( in_gameObjectID ) ? AK_Success : AK_Fail;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_UnregisterGameObj;
+			Item.unreggameobj.GameObjID = in_gameObjectID;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_UnregisterGameObj>() );
 		}
 
 		AKRESULT UnregisterAllGameObj()
 		{
-			AkSilent::EndAllPlaying( AK_INVALID_GAME_OBJECT );
-			AkSilent::Get().GameObjects.clear();
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( g_pRegistryMgr )
-			{
-				g_pRegistryMgr->UnregisterAll();
-			}
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_UnregisterGameObj;
+			Item.unreggameobj.GameObjID = AK_INVALID_GAME_OBJECT;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_UnregisterGameObj>() );
 		}
 
 		// -- positioning ---------------------------------------------------------------------------
 
 		AKRESULT SetPosition( AkGameObjectID in_gameObjectID, const AkSoundPosition & in_Position, AkUInt32 in_ulListenerIndex )
 		{
-			std::map<AkGameObjectID, AkSilent::GameObject> & objs = AkSilent::Get().GameObjects;
-			std::map<AkGameObjectID, AkSilent::GameObject>::iterator it = objs.find( in_gameObjectID );
-			if( it == objs.end() )
-			{
-				return AK_Fail;
-			}
-			it->second.Position = in_Position;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			return g_pRegistryMgr ? g_pRegistryMgr->SetPosition( in_gameObjectID, &in_Position, 1, MultiPositionType_SingleSource, in_ulListenerIndex ) : AK_Fail;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_GameObjPosition;
+			Item.gameobjpos.GameObjID = in_gameObjectID;
+			Item.gameobjpos.Position = in_Position;
+			Item.gameobjpos.uListenerIndex = in_ulListenerIndex;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_GameObjPosition>() );
 		}
 
 		AKRESULT SetMultiplePositions( AkGameObjectID in_gameObjectID, const AkSoundPosition * in_pPositions, AkUInt16 in_NumPositions, MultiPositionType in_eMultiPositionType )
 		{
-			if( !in_pPositions || !in_NumPositions )
+			if( in_eMultiPositionType > MultiPositionType_MultiDirections || ( in_NumPositions && !in_pPositions ) )
 			{
 				return AK_InvalidParameter;
 			}
-			const AKRESULT eResult = SetPosition( in_gameObjectID, in_pPositions[ 0 ] );
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( eResult == AK_Success && g_pRegistryMgr )
+			const AkUInt32 uAllocSize = AkQueuedMsg::Sizeof_GameObjMultiPosition( in_NumPositions );
+			if( uAllocSize > AkSparseChunkRing::GetChunkSize() )
 			{
-				g_pRegistryMgr->SetPosition( in_gameObjectID, in_pPositions, in_NumPositions, in_eMultiPositionType, 31 );
+				return AK_Fail;
 			}
-			return eResult;
+			AkQueuedMsg * pItem = (AkQueuedMsg *)_alloca( uAllocSize < sizeof( AkQueuedMsg ) ? sizeof( AkQueuedMsg ) : uAllocSize );
+			pItem->type = QueuedMsgType_GameObjMultiPosition;
+			pItem->gameObjMultiPos.GameObjID = in_gameObjectID;
+			pItem->gameObjMultiPos.uNumPositions = in_NumPositions;
+			pItem->gameObjMultiPos.eMultiPositionType = in_eMultiPositionType;
+			for( AkUInt16 i = 0; i < in_NumPositions; ++i )
+			{
+				pItem->gameObjMultiPos.aMultiPosition[ i ] = in_pPositions[ i ];
+			}
+			return Enqueue( *pItem, uAllocSize );
 		}
 
 		AKRESULT SetListenerPosition( const AkListenerPosition & in_Position, AkUInt32 in_uIndex )
 		{
-			if( in_uIndex >= 8 )
-			{
-				return AK_InvalidParameter;
-			}
-			AkSilent::Get().Listeners[ in_uIndex ] = in_Position;
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_ListenerPosition;
+			Item.listpos.uListenerIndex = in_uIndex;
+			Item.listpos.Position = in_Position;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ListenerPosition>() );
 		}
 
 		AKRESULT SetActiveListeners( AkGameObjectID in_gameObjectID, AkUInt32 in_uListenerMask )
 		{
-			std::map<AkGameObjectID, AkSilent::GameObject> & objs = AkSilent::Get().GameObjects;
-			std::map<AkGameObjectID, AkSilent::GameObject>::iterator it = objs.find( in_gameObjectID );
-			if( it == objs.end() )
-			{
-				return AK_Fail;
-			}
-			it->second.ListenerMask = in_uListenerMask;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( g_pRegistryMgr )
-			{
-				g_pRegistryMgr->SetActiveListeners( in_gameObjectID, in_uListenerMask );
-			}
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_GameObjActiveListeners;
+			Item.gameobjactlist.GameObjID = in_gameObjectID;
+			Item.gameobjactlist.uListenerMask = in_uListenerMask;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_GameObjActiveListeners>() );
 		}
 
 		AKRESULT SetAttenuationScalingFactor( AkGameObjectID in_gameObjectID, AkReal32 in_fAttenuationScalingFactor )
 		{
-			std::map<AkGameObjectID, AkSilent::GameObject> & objs = AkSilent::Get().GameObjects;
-			std::map<AkGameObjectID, AkSilent::GameObject>::iterator it = objs.find( in_gameObjectID );
-			if( it == objs.end() )
+			if( in_fAttenuationScalingFactor <= 0.f )
 			{
-				return AK_Fail;
+				return AK_InvalidParameter;
 			}
-			it->second.AttenuationScale = in_fAttenuationScalingFactor;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( g_pRegistryMgr )
-			{
-				g_pRegistryMgr->SetGameObjectScalingFactor( in_gameObjectID, in_fAttenuationScalingFactor );
-			}
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_GameObjScalingFactor;
+			Item.gameobjscalingfactor.GameObjID = in_gameObjectID;
+			Item.gameobjscalingfactor.fValue = in_fAttenuationScalingFactor;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_GameObjScalingFactor>() );
 		}
 
-		AKRESULT SetListenerScalingFactor( AkUInt32, AkReal32 ) { return AK_Success; }
-		AKRESULT SetListenerSpatialization( AkUInt32, bool, AkSpeakerVolumes * ) { return AK_Success; }
-		AKRESULT SetListenerPipeline( AkUInt32, bool, bool ) { return AK_Success; }
+		AKRESULT SetListenerScalingFactor( AkUInt32 in_uListenerIndex, AkReal32 in_fListenerScalingFactor )
+		{
+			if( in_fListenerScalingFactor <= 0.f )
+			{
+				return AK_InvalidParameter;
+			}
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_ListenerScalingFactor;
+			Item.listenerscalingfactor.uListenerIndex = in_uListenerIndex;
+			Item.listenerscalingfactor.fValue = in_fListenerScalingFactor;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ListenerScalingFactor>() );
+		}
 
-		// -- game syncs ----------------------------------------------------------------------------
+		AKRESULT SetListenerSpatialization( AkUInt32 in_uIndex, bool in_bSpatialized, AkSpeakerVolumes * in_pVolumeOffsets )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_ListenerSpatialization;
+			Item.listspat.uListenerIndex = in_uIndex;
+			Item.listspat.bSpatialized = in_bSpatialized;
+			Item.listspat.bSetVolumes = in_pVolumeOffsets != NULL;
+			if( in_pVolumeOffsets )
+			{
+				Item.listspat.Volumes = *in_pVolumeOffsets;
+			}
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ListenerSpatialization>() );
+		}
+
+		AKRESULT SetListenerPipeline( AkUInt32 in_uIndex, bool in_bAudio, bool in_bFeedback )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_ListenerPipeline;
+			Item.listpipe.uListenerIndex = in_uIndex;
+			Item.listpipe.bAudio = in_bAudio;
+			Item.listpipe.bFeedback = in_bFeedback;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_ListenerPipeline>() );
+		}
+
+		// -- game syncs (IH3 seam: books, not queued) ----------------------------------------------
 
 		AKRESULT SetRTPCValue( AkRtpcID in_rtpcID, AkRtpcValue in_value, AkGameObjectID, AkTimeMs, AkCurveInterpolation )
 		{
@@ -562,9 +380,65 @@ namespace AK
 
 		// -- events --------------------------------------------------------------------------------
 
-		AkPlayingID PostEvent( AkUniqueID in_eventID, AkGameObjectID in_gameObjectID, AkUInt32 in_uFlags, AkCallbackFunc in_pfnCallback, void * in_pCookie, AkUInt32, AkExternalSourceInfo *, AkPlayingID in_PlayingID )
+		/** 2012 0x91a400: an event absent from every loaded bank answers AK_INVALID_PLAYING_ID; otherwise a new playing id
+		    is registered with its callback (one active action: the event message) and the event message is queued. */
+		static AkPlayingID PostEvent( AkUniqueID in_ulEventID, AkGameObjectID in_GameObjID, AkUInt32 in_uiFlags, AkCallbackFunc in_pfnCallback, void * in_pCookie, AkCustomParamType * in_pCustomParam, AkPlayingID in_PlayingID )
 		{
-			return AkSilent::PostEventCommon( in_eventID, in_gameObjectID, in_uFlags, in_pfnCallback, in_pCookie, in_PlayingID );
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_Event;
+			if( in_pCustomParam )
+			{
+				Item.event.CustomParam = *in_pCustomParam;
+			}
+			else
+			{
+				memset( &Item.event.CustomParam, 0, sizeof( Item.event.CustomParam ) );
+			}
+			Item.event.Event = g_pIndex && g_pAudioMgr ? g_pIndex->m_idxEvents.GetPtrAndAddRef( in_ulEventID ) : NULL;
+			const AkOSChar * pszName = DishonoredWwise::NameForID( in_ulEventID );
+			if( !Item.event.Event )
+			{
+				++AkSilent::MutableStats().EventsUnknown;
+				AKDIAG( L"akdiag: PostEvent 0x%08x (%s): not in any loaded bank -> AK_INVALID_PLAYING_ID", in_ulEventID, pszName ? pszName : L"<id only>" );
+				return AK_INVALID_PLAYING_ID;
+			}
+			Item.event.TargetPlayingID = in_PlayingID;
+			Item.event.GameObjID = in_GameObjID;
+			Item.event.PlayingID = (AkPlayingID)InterlockedIncrement( &g_PlayingID );
+			if( g_pPlayingMgr->AddPlayingID( Item.event, in_pfnCallback, in_pCookie, in_uiFlags, Item.event.Event->key ) != AK_Success )
+			{
+				Item.event.Event->Release();
+				return AK_INVALID_PLAYING_ID;
+			}
+			Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_Event>() );
+			++AkSilent::MutableStats().EventsPosted;
+			AkSilent::Logf( L"PostEvent %s (id 0x%08x) on game object %u -> playing id %u", pszName ? pszName : L"<id only>",
+				in_ulEventID, (AkUInt32)in_GameObjID, Item.event.PlayingID );
+			return Item.event.PlayingID;
+		}
+
+		/** 2012 0x91ae90 (and the named forms 0x91a4f0 / 0x91a580): the external sources travel ref-counted in the custom
+		    parameter and are released again when the post fails. */
+		AkPlayingID PostEvent( AkUniqueID in_eventID, AkGameObjectID in_gameObjectID, AkUInt32 in_uFlags, AkCallbackFunc in_pfnCallback, void * in_pCookie, AkUInt32 in_cExternals, AkExternalSourceInfo * in_pExternalSources, AkPlayingID in_PlayingID )
+		{
+			AkCustomParamType customParam;
+			AkCustomParamType * pCustomParam = NULL;
+			if( in_cExternals )
+			{
+				memset( &customParam, 0, sizeof( customParam ) );
+				customParam.pExternalSrcs = AkExternalSourceArray::Create( in_cExternals, in_pExternalSources );
+				if( !customParam.pExternalSrcs )
+				{
+					return AK_INVALID_PLAYING_ID;
+				}
+				pCustomParam = &customParam;
+			}
+			const AkPlayingID playingID = PostEvent( in_eventID, in_gameObjectID, in_uFlags, in_pfnCallback, in_pCookie, pCustomParam, in_PlayingID );
+			if( !playingID && pCustomParam )
+			{
+				pCustomParam->pExternalSrcs->Release();
+			}
+			return playingID;
 		}
 
 		AkPlayingID PostEvent( const AkOSChar * in_pszEventName, AkGameObjectID in_gameObjectID, AkUInt32 in_uFlags, AkCallbackFunc in_pfnCallback, void * in_pCookie, AkUInt32 in_cExternals, AkExternalSourceInfo * in_pExternalSources, AkPlayingID in_PlayingID )
@@ -577,29 +451,21 @@ namespace AK
 			return PostEvent( AkSilent::RegisterName( in_pszEventName ), in_gameObjectID, in_uFlags, in_pfnCallback, in_pCookie, in_cExternals, in_pExternalSources, in_PlayingID );
 		}
 
-		AKRESULT ExecuteActionOnEvent( AkUniqueID in_eventID, AkActionOnEventType in_ActionType, AkGameObjectID in_gameObjectID, AkTimeMs, AkCurveInterpolation, AkPlayingID in_PlayingID )
+		AKRESULT ExecuteActionOnEvent( AkUniqueID in_eventID, AkActionOnEventType in_ActionType, AkGameObjectID in_gameObjectID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve, AkPlayingID in_PlayingID )
 		{
-			AkSilent::Engine & e = AkSilent::Get();
-			if( in_ActionType != AkActionOnEventType_Stop && in_ActionType != AkActionOnEventType_Break )
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_EventAction;
+			Item.eventAction.Event = g_pIndex ? g_pIndex->m_idxEvents.GetPtrAndAddRef( in_eventID ) : NULL;
+			if( !Item.eventAction.Event )
 			{
-				return AK_Success;			// pause / resume have nothing to act on without voices
+				return AK_Fail;
 			}
-			std::vector<AkPlayingID> doomed;
-			for( std::map<AkPlayingID, AkSilent::Voice>::const_iterator it = e.Voices.begin(); it != e.Voices.end(); ++it )
-			{
-				const bool bMatchesEvent = ( in_eventID == AK_INVALID_UNIQUE_ID ) || ( it->second.EventID == in_eventID );
-				const bool bMatchesObject = ( in_gameObjectID == AK_INVALID_GAME_OBJECT ) || ( it->second.GameObject == in_gameObjectID );
-				const bool bMatchesPlaying = ( in_PlayingID == AK_INVALID_PLAYING_ID ) || ( it->first == in_PlayingID );
-				if( bMatchesEvent && bMatchesObject && bMatchesPlaying )
-				{
-					doomed.push_back( it->first );
-				}
-			}
-			for( size_t i = 0; i < doomed.size(); ++i )
-			{
-				AkSilent::EndPlaying( doomed[ i ] );
-			}
-			return AK_Success;
+			Item.eventAction.GameObjID = in_gameObjectID;
+			Item.eventAction.eActionToExecute = in_ActionType;
+			Item.eventAction.uTransitionDuration = in_uTransitionDuration;
+			Item.eventAction.eFadeCurve = in_eFadeCurve;
+			Item.eventAction.TargetPlayingID = in_PlayingID;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_EventAction>() );
 		}
 
 		AKRESULT ExecuteActionOnEvent( const AkOSChar * in_pszEventName, AkActionOnEventType in_ActionType, AkGameObjectID in_gameObjectID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve, AkPlayingID in_PlayingID )
@@ -612,53 +478,78 @@ namespace AK
 			return ExecuteActionOnEvent( AkSilent::RegisterName( in_pszEventName ), in_ActionType, in_gameObjectID, in_uTransitionDuration, in_eFadeCurve, in_PlayingID );
 		}
 
-		void StopAll( AkGameObjectID in_gameObjectID )
+		/** 2012 0x91a6d0 (time) / 0x91a780 (percent). */
+		static AKRESULT SeekOnEventInternal( AkUniqueID in_eventID, AkGameObjectID in_gameObjectID, AkTimeMs in_iPosition, AkReal32 in_fPercent, bool in_bRelative, bool in_bSeekToNearestMarker )
 		{
-			AkSilent::EndAllPlaying( in_gameObjectID );
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_Seek;
+			Item.seek.Event = g_pIndex ? g_pIndex->m_idxEvents.GetPtrAndAddRef( in_eventID ) : NULL;
+			if( !Item.seek.Event )
+			{
+				return AK_Fail;
+			}
+			Item.seek.GameObjID = in_gameObjectID;
+			if( in_bRelative )
+			{
+				Item.seek.fPercent = in_fPercent;
+			}
+			else
+			{
+				Item.seek.iPosition = in_iPosition;
+			}
+			Item.seek.bIsSeekRelativeToDuration = in_bRelative;
+			Item.seek.bSnapToMarker = in_bSeekToNearestMarker;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_Seek>() );
 		}
 
-		void StopPlayingID( AkPlayingID in_playingID, AkTimeMs, AkCurveInterpolation )
-		{
-			AkSilent::EndPlaying( in_playingID );
-		}
-
-		AKRESULT SeekOnEvent( AkUniqueID, AkGameObjectID, AkTimeMs, bool ) { return AK_Success; }
+		AKRESULT SeekOnEvent( AkUniqueID in_eventID, AkGameObjectID in_gameObjectID, AkTimeMs in_iPosition, bool in_bSeekToNearestMarker ) { return SeekOnEventInternal( in_eventID, in_gameObjectID, in_iPosition, 0.f, false, in_bSeekToNearestMarker ); }
 		AKRESULT SeekOnEvent( const AkOSChar * in_pszEventName, AkGameObjectID in_gameObjectID, AkTimeMs in_iPosition, bool in_b ) { return SeekOnEvent( AkSilent::RegisterName( in_pszEventName ), in_gameObjectID, in_iPosition, in_b ); }
 		AKRESULT SeekOnEvent( const char * in_pszEventName, AkGameObjectID in_gameObjectID, AkTimeMs in_iPosition, bool in_b ) { return SeekOnEvent( AkSilent::RegisterName( in_pszEventName ), in_gameObjectID, in_iPosition, in_b ); }
-		AKRESULT SeekOnEvent( AkUniqueID, AkGameObjectID, AkReal32, bool ) { return AK_Success; }
+		AKRESULT SeekOnEvent( AkUniqueID in_eventID, AkGameObjectID in_gameObjectID, AkReal32 in_fPercent, bool in_bSeekToNearestMarker ) { return SeekOnEventInternal( in_eventID, in_gameObjectID, 0, in_fPercent, true, in_bSeekToNearestMarker ); }
 		AKRESULT SeekOnEvent( const AkOSChar * in_pszEventName, AkGameObjectID in_gameObjectID, AkReal32 in_fPercent, bool in_b ) { return SeekOnEvent( AkSilent::RegisterName( in_pszEventName ), in_gameObjectID, in_fPercent, in_b ); }
 		AKRESULT SeekOnEvent( const char * in_pszEventName, AkGameObjectID in_gameObjectID, AkReal32 in_fPercent, bool in_b ) { return SeekOnEvent( AkSilent::RegisterName( in_pszEventName ), in_gameObjectID, in_fPercent, in_b ); }
 
+		void StopAll( AkGameObjectID in_gameObjectID )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_StopAll;
+			Item.stopAll.GameObjID = in_gameObjectID;
+			Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_StopAll>() );
+		}
+
+		void StopPlayingID( AkPlayingID in_playingID, AkTimeMs in_uTransitionDuration, AkCurveInterpolation in_eFadeCurve )
+		{
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_StopPlayingID;
+			Item.stopEvent.playingID = in_playingID;
+			Item.stopEvent.uTransitionDuration = in_uTransitionDuration;
+			Item.stopEvent.eFadeCurve = in_eFadeCurve;
+			Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_StopPlayingID>() );
+		}
+
 		void CancelEventCallbackCookie( void * in_pCookie )
 		{
-			AkSilent::Engine & e = AkSilent::Get();
-			for( std::map<AkPlayingID, AkSilent::Voice>::iterator it = e.Voices.begin(); it != e.Voices.end(); ++it )
+			if( g_pPlayingMgr )
 			{
-				if( it->second.Cookie == in_pCookie )
-				{
-					it->second.Callback = NULL;
-				}
+				g_pPlayingMgr->CancelCallbackCookie( in_pCookie );
 			}
 		}
 
 		void CancelEventCallback( AkPlayingID in_playingID )
 		{
-			AkSilent::Engine & e = AkSilent::Get();
-			std::map<AkPlayingID, AkSilent::Voice>::iterator it = e.Voices.find( in_playingID );
-			if( it != e.Voices.end() )
+			if( g_pPlayingMgr )
 			{
-				it->second.Callback = NULL;
+				g_pPlayingMgr->CancelCallback( in_playingID );
 			}
 		}
 
-		AKRESULT GetSourcePlayPosition( AkPlayingID in_PlayingID, AkTimeMs * out_puPosition, bool )
+		AKRESULT GetSourcePlayPosition( AkPlayingID in_PlayingID, AkTimeMs * out_puPosition, bool in_bExtrapolate )
 		{
 			if( !out_puPosition )
 			{
 				return AK_InvalidParameter;
 			}
-			*out_puPosition = 0;
-			return AkSilent::Get().Voices.count( in_PlayingID ) ? AK_Success : AK_Fail;
+			return g_pPositionRepository->GetCurrPosition( in_PlayingID, out_puPosition, in_bExtrapolate );
 		}
 
 		// -- environments / obstruction ------------------------------------------------------------
@@ -667,86 +558,93 @@ namespace AK
 		AKRESULT SetEnvironmentVolume( AkAuxBusID, AkReal32 ) { return AK_Success; }
 		AKRESULT SetEnvironmentVolumes( AkAuxBusID, const AkSpeakerVolumes & ) { return AK_Success; }
 		AKRESULT BypassEnvironment( AkAuxBusID, bool ) { return AK_Success; }
+
 		AKRESULT SetGameObjectEnvironmentsValues( AkGameObjectID in_gameObjectID, AkEnvironmentValue * in_aEnvironmentValues, AkUInt32 in_uNumEnvValues )
 		{
-			AkAutoLock<CAkLock> gate( g_csMain );
-			return g_pRegistryMgr ? g_pRegistryMgr->SetGameObjectEnvironmentsValues( in_gameObjectID, in_aEnvironmentValues, in_uNumEnvValues ) : AK_Fail;
+			if( in_uNumEnvValues > 4 )
+			{
+				return AK_InvalidParameter;
+			}
+			for( AkUInt32 i = 0; i + 1 < in_uNumEnvValues; ++i )
+			{
+				for( AkUInt32 j = i + 1; j < in_uNumEnvValues; ++j )
+				{
+					if( in_aEnvironmentValues[ i ].EnvID == in_aEnvironmentValues[ j ].EnvID )
+					{
+						return AK_InvalidParameter;
+					}
+				}
+			}
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_GameObjEnvValues;
+			Item.gameobjenvvalues.GameObjID = in_gameObjectID;
+			Item.gameobjenvvalues.uNumValues = in_uNumEnvValues;
+			memcpy( Item.gameobjenvvalues.EnvValues, in_aEnvironmentValues, in_uNumEnvValues * sizeof( AkEnvironmentValue ) );
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_GameObjEnvValues>() );
 		}
 
 		AKRESULT SetGameObjectDryLevelValue( AkGameObjectID in_gameObjectID, AkReal32 in_fControlValue )
 		{
-			std::map<AkGameObjectID, AkSilent::GameObject> & objs = AkSilent::Get().GameObjects;
-			std::map<AkGameObjectID, AkSilent::GameObject>::iterator it = objs.find( in_gameObjectID );
-			if( it == objs.end() )
-			{
-				return AK_Fail;
-			}
-			it->second.DryLevel = in_fControlValue;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( g_pRegistryMgr )
-			{
-				g_pRegistryMgr->SetGameObjectDryLevelValue( in_gameObjectID, in_fControlValue );
-			}
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_GameObjDryLevel;
+			Item.gameobjdrylevel.GameObjID = in_gameObjectID;
+			Item.gameobjdrylevel.fValue = in_fControlValue;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_GameObjDryLevel>() );
 		}
 
 		AKRESULT SetObjectObstructionAndOcclusion( AkGameObjectID in_ObjectID, AkUInt32 in_uListener, AkReal32 in_fObstructionLevel, AkReal32 in_fOcclusionLevel )
 		{
-			std::map<AkGameObjectID, AkSilent::GameObject> & objs = AkSilent::Get().GameObjects;
-			std::map<AkGameObjectID, AkSilent::GameObject>::iterator it = objs.find( in_ObjectID );
-			if( it == objs.end() )
-			{
-				return AK_Fail;
-			}
-			it->second.ObstructionLevel = in_fObstructionLevel;
-			it->second.OcclusionLevel = in_fOcclusionLevel;
-			AkAutoLock<CAkLock> gate( g_csMain );
-			if( g_pRegistryMgr )
-			{
-				g_pRegistryMgr->SetObjectObstructionAndOcclusion( in_ObjectID, in_uListener, in_fObstructionLevel, in_fOcclusionLevel );
-			}
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_GameObjObstruction;
+			Item.gameobjobstr.GameObjID = in_ObjectID;
+			Item.gameobjobstr.uListenerIndex = in_uListener;
+			Item.gameobjobstr.fObstructionLevel = in_fObstructionLevel;
+			Item.gameobjobstr.fOcclusionLevel = in_fOcclusionLevel;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_GameObjObstruction>() );
 		}
 
 		// -- global settings -----------------------------------------------------------------------
 
-		AkChannelMask GetSpeakerConfiguration() { return AkSilent::Get().SpeakerConfig; }
-		AkPanningRule GetPanningRule() { return AkSilent::Get().PanningRule; }
+		AkChannelMask GetSpeakerConfiguration()
+		{
+			return g_pAkSink ? g_pAkSink->m_SpeakersConfig : 0;
+		}
+
+		AkPanningRule GetPanningRule()
+		{
+			return CAkLEngine::m_panningRule;
+		}
 
 		AKRESULT SetPanningRule( AkPanningRule in_ePanningRule )
 		{
-			AkSilent::Get().PanningRule = in_ePanningRule;
-			return AK_Success;
+			AkQueuedMsg Item;
+			Item.type = QueuedMsgType_SetPanningRule;
+			Item.setPanningRule.panRule = in_ePanningRule;
+			return Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_SetPanningRule>() );
 		}
 
-		// -- global callbacks ----------------------------------------------------------------------
-
-		AKRESULT RegisterGlobalCallback( AkGlobalCallbackFunc in_pCallback )
-		{
-			if( !in_pCallback )
-			{
-				return AK_InvalidParameter;
-			}
-			return AkSilent::AddCallback( AkSilent::Get().GlobalCallbacks, in_pCallback );
-		}
-
-		AKRESULT UnregisterGlobalCallback( AkGlobalCallbackFunc in_pCallback )
-		{
-			return AkSilent::RemoveCallback( AkSilent::Get().GlobalCallbacks, in_pCallback );
-		}
+		// -- global callbacks (run on the audio thread, once per audio frame) ----------------------
 
 		AKRESULT AddBehavioralExtension( AkGlobalCallbackFunc in_pCallback )
 		{
-			if( !in_pCallback )
-			{
-				return AK_InvalidParameter;
-			}
-			return AkSilent::AddCallback( AkSilent::Get().BehaviouralExtensions, in_pCallback );
+			return g_aBehavioralExtensions.AddLast( in_pCallback ) ? AK_Success : AK_InsufficientMemory;
 		}
 
 		AKRESULT RemoveBehavioralExtension( AkGlobalCallbackFunc in_pCallback )
 		{
-			return AkSilent::RemoveCallback( AkSilent::Get().BehaviouralExtensions, in_pCallback );
+			return g_aBehavioralExtensions.Remove( in_pCallback );
+		}
+
+		AKRESULT RegisterGlobalCallback( AkGlobalCallbackFunc in_pCallback )
+		{
+			AkAutoLock<CAkLock> gate( g_csMain );
+			return AddBehavioralExtension( in_pCallback );
+		}
+
+		AKRESULT UnregisterGlobalCallback( AkGlobalCallbackFunc in_pCallback )
+		{
+			AkAutoLock<CAkLock> gate( g_csMain );
+			return g_aBehavioralExtensions.Remove( in_pCallback );
 		}
 
 		void AddExternalStateHandler( bool ( * )( AkStateGroupID, AkStateID ) ) {}
@@ -757,23 +655,14 @@ namespace AK
 		{
 			AKRESULT GetListenerPosition( AkUInt32 in_uIndex, AkListenerPosition & out_rPosition )
 			{
-				if( in_uIndex >= 8 )
-				{
-					return AK_InvalidParameter;
-				}
-				out_rPosition = AkSilent::Get().Listeners[ in_uIndex ];
-				return AK_Success;
+				return CAkListener::GetListenerPosition( in_uIndex, out_rPosition );
 			}
 
-			AKRESULT GetListenerSpatialization( AkUInt32, bool & out_rbSpatialized, AkSpeakerVolumes & out_rVolumeOffsets )
+			AKRESULT GetListenerSpatialization( AkUInt32 in_uIndex, bool & out_rbSpatialized, AkSpeakerVolumes & out_rVolumeOffsets )
 			{
-				out_rbSpatialized = true;
-				memset( &out_rVolumeOffsets, 0, sizeof( out_rVolumeOffsets ) );
-				return AK_Success;
+				return CAkListener::GetListenerSpatialization( in_uIndex, out_rbSpatialized, out_rVolumeOffsets );
 			}
 
-			// DISHONORED(bringup): an attenuation radius is bank logic; without it every object reports -1,
-			// which is exactly what UAkEvent::GetMaxRadius stores for "no attenuation".
 			AkReal32 GetMaxRadius( AkGameObjectID ) { return -1.f; }
 
 			AKRESULT GetRTPCValue( AkRtpcID in_rtpcID, AkGameObjectID, AkRtpcValue & out_rValue, RTPCValue_type & io_rValueType )
@@ -850,36 +739,17 @@ namespace AK
 
 			AkUniqueID GetEventIDFromPlayingID( AkPlayingID in_playingID )
 			{
-				AkSilent::Engine & e = AkSilent::Get();
-				std::map<AkPlayingID, AkSilent::Voice>::const_iterator it = e.Voices.find( in_playingID );
-				return it == e.Voices.end() ? AK_INVALID_UNIQUE_ID : it->second.EventID;
+				return g_pPlayingMgr ? g_pPlayingMgr->GetEventIDFromPlayingID( in_playingID ) : AK_INVALID_UNIQUE_ID;
 			}
 
 			AkGameObjectID GetGameObjectFromPlayingID( AkPlayingID in_playingID )
 			{
-				AkSilent::Engine & e = AkSilent::Get();
-				std::map<AkPlayingID, AkSilent::Voice>::const_iterator it = e.Voices.find( in_playingID );
-				return it == e.Voices.end() ? AK_INVALID_GAME_OBJECT : it->second.GameObject;
+				return g_pPlayingMgr ? g_pPlayingMgr->GetGameObjectFromPlayingID( in_playingID ) : AK_INVALID_GAME_OBJECT;
 			}
 
 			AKRESULT GetPlayingIDsFromGameObject( AkGameObjectID in_GameObjId, AkUInt32 & io_ruNumIDs, AkPlayingID * out_aPlayingIDs )
 			{
-				AkSilent::Engine & e = AkSilent::Get();
-				AkUInt32 written = 0;
-				for( std::map<AkPlayingID, AkSilent::Voice>::const_iterator it = e.Voices.begin(); it != e.Voices.end(); ++it )
-				{
-					if( it->second.GameObject != in_GameObjId )
-					{
-						continue;
-					}
-					if( out_aPlayingIDs && written < io_ruNumIDs )
-					{
-						out_aPlayingIDs[ written ] = it->first;
-					}
-					++written;
-				}
-				io_ruNumIDs = written;
-				return AK_Success;
+				return g_pPlayingMgr ? g_pPlayingMgr->GetPlayingIDsFromGameObject( in_GameObjId, io_ruNumIDs, out_aPlayingIDs ) : AK_Fail;
 			}
 		}
 	}

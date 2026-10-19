@@ -6,6 +6,7 @@
 	its rva. Deviations are listed in AkBankMgr.h.
 =============================================================================*/
 #include "AkBankMgr.h"
+#include "AkAudioMgr.h"
 
 AkThread		CAkBankMgr::m_BankMgrThread = NULL;
 AkThreadID		CAkBankMgr::m_idThread = 0;
@@ -305,20 +306,34 @@ void CAkBankCallbackMgr::CancelCookie( void * in_cookie )
 // AkMediaEntry
 // ------------------------------------------------------------------------------------------------------------
 
-/** 2012 0x92a5f0: prepared data wins, else the first bank slot holding the media. */
+/** 2012 0x92a5f0: a reference on the entry (CAkBankMgr::ReleaseMedia drops it); prepared data wins, else the first
+    bank slot that is not being unloaded, which is referenced too. Nothing found drops the reference again.
+    DISHONORED(port, agent IH2): IH1 took neither reference and did not skip a slot being unloaded. */
 void AkMediaEntry::GetMedia( AkMediaInfo & out_mediaInfo, CAkUsageSlot *& out_pUsageSlot )
 {
+	++uRefCount;
 	if( m_preparedMediaInfo.pInMemoryData )
 	{
 		out_mediaInfo = m_preparedMediaInfo;
-		out_pUsageSlot = NULL;
 		return;
 	}
-	if( m_BankSlots.Length() )
+	for( AkUInt32 i = 0; i < m_BankSlots.Length(); ++i )
 	{
-		out_mediaInfo = m_BankSlots.m_pItems[ 0 ].item;
-		out_pUsageSlot = m_BankSlots.m_pItems[ 0 ].key;
-		InterlockedIncrement( &out_pUsageSlot->m_iRefCount );
+		if( !m_BankSlots.m_pItems[ i ].key->m_bUsageProhibited )
+		{
+			out_pUsageSlot = m_BankSlots.m_pItems[ i ].key;
+			out_mediaInfo = m_BankSlots.m_pItems[ i ].item;
+			InterlockedIncrement( &out_pUsageSlot->m_iRefCount );
+			return;
+		}
+	}
+	out_mediaInfo.pInMemoryData = NULL;
+	out_mediaInfo.uInMemoryDataSize = 0;
+	if( uRefCount-- == 1 && m_preparedMediaInfo.pInMemoryData )
+	{
+		AK::MemoryMgr::Free( m_uPrepareEventMemoryPoolID, m_preparedMediaInfo.pInMemoryData );
+		m_preparedMediaInfo.pInMemoryData = NULL;
+		m_preparedMediaInfo.uInMemoryDataSize = 0;
 	}
 }
 
@@ -431,6 +446,7 @@ AKRESULT CAkBankMgr::Term()
 	UnloadAll();
 	m_BankList.Term();
 	m_MediaHashTable.Term();
+	m_PreparationAccumulator.Term();
 	FlushFileNameTable();
 	m_BankReader.Term();
 	return AK_Success;
@@ -1124,15 +1140,47 @@ void CAkBankMgr::UnPrepareMedia( CAkUsageSlot * in_pCurrentSlot )
 	in_pCurrentSlot->m_bIsMediaPrepared = 0;
 }
 
-/** 2012 0x92ae00 (see the header for the audio-thread deviation). */
+/** 2012 0x92ae00: the slot is released on the audio thread (message 26) after every voice playing its media stopped. */
 AKRESULT CAkBankMgr::KillSlot( CAkUsageSlot * in_pUsageSlot, AkBankCallbackFunc in_pCallBack, void * in_pCookie )
 {
 	in_pUsageSlot->RemoveContent();
 	in_pUsageSlot->m_bUsageProhibited = 1;
 	in_pUsageSlot->m_pfnBankCallback = in_pCallBack;
 	in_pUsageSlot->m_pCookie = in_pCookie;
-	in_pUsageSlot->Release( false );
-	return AK_Success;
+	AkQueuedMsg Item;
+	Item.type = QueuedMsgType_KillBank;
+	Item.killbank.pUsageSlot = in_pUsageSlot;
+	g_pAudioMgr->Enqueue( Item, AkQueuedMsg::SizeofBody<AkQueuedMsg_KillBank>() );
+	return AK::SoundEngine::RenderAudio();
+}
+
+/** 2012 0x92c910: the reference GetMedia took; prepared media is freed with its last reference. */
+void CAkBankMgr::ReleaseMedia( AkUniqueID in_mediaId )
+{
+	AkAutoLock<CAkLock> bankListGate( CAkBankList::m_BankListLock );
+	ReleaseSingleMedia( in_mediaId );
+}
+
+/** 2012 0x92cb20. */
+void CAkBankMgr::ReleaseSingleMedia( AkUniqueID in_SourceID )
+{
+	AkAutoLock<CAkLock> mediaGate( m_MediaLock );
+	AkHashList<AkUniqueID, AkMediaEntry, 193>::IteratorEx it = m_MediaHashTable.FindEx( in_SourceID );
+	if( !it.pItem )
+	{
+		return;
+	}
+	AkMediaEntry & entry = it.pItem->Assoc.item;
+	if( entry.uRefCount-- == 1 && entry.m_preparedMediaInfo.pInMemoryData )
+	{
+		AK::MemoryMgr::Free( AkMediaEntry::m_uPrepareEventMemoryPoolID, entry.m_preparedMediaInfo.pInMemoryData );
+		entry.m_preparedMediaInfo.pInMemoryData = NULL;
+		entry.m_preparedMediaInfo.uInMemoryDataSize = 0;
+	}
+	if( !entry.uRefCount )
+	{
+		m_MediaHashTable.Erase( it );
+	}
 }
 
 /** 2012 0x92b340. */
@@ -1858,7 +1906,182 @@ void CAkBankMgr::UnPrepareAllBank()
 	bankIDs.Term();
 }
 
-/** 2012 0x92dcc0 (see the header: PrepareNodeData is not ported, nothing calls PrepareEvent). */
+/** 2012 0x92a6c0: a copy of the media out of the first bank that holds it. */
+AKRESULT AkMediaEntry::PrepareFromBank( AkUInt8 *& out_pAllocatedData, AkUInt32 & out_uMediaSize )
+{
+	out_uMediaSize = m_BankSlots.m_pItems[ 0 ].item.uInMemoryDataSize;
+	out_pAllocatedData = (AkUInt8 *)AK::MemoryMgr::Malign( m_uPrepareEventMemoryPoolID, out_uMediaSize, 16 );
+	if( !out_pAllocatedData )
+	{
+		return AK_InsufficientMemory;
+	}
+	memcpy( out_pAllocatedData, m_BankSlots.m_pItems[ 0 ].item.pInMemoryData, out_uMediaSize );
+	return AK_Success;
+}
+
+/** 2012 0x92aa10: a media inside a bank file is read through the bank's file name when the manager knows it. */
+AKRESULT CAkBankMgr::SetFileReader( AkFileID in_FileID, AkUInt32 in_uFileOffset, AkUInt32 in_codecID, void * in_pCookie, bool in_bIsLanguageSpecific )
+{
+	if( !in_uFileOffset && in_codecID )
+	{
+		return m_BankReader.SetFile( in_FileID, 0, in_codecID, in_pCookie, in_bIsLanguageSpecific );
+	}
+	const char * pszFileName = BankFileName( in_FileID );
+	if( pszFileName )
+	{
+		return m_BankReader.SetFile( pszFileName, in_uFileOffset, in_pCookie );
+	}
+	return m_BankReader.SetFile( in_FileID, in_uFileOffset, 0, in_pCookie, true );
+}
+
+/** 2012 0x92aa90: the media bytes at their offset in the file that holds them. */
+AKRESULT CAkBankMgr::LoadSoundFromFile( AkSrcTypeInfo & in_rMediaInfo, AkUInt8 * io_pData )
+{
+	m_BankReader.Reset();
+	AKRESULT eResult = SetFileReader( in_rMediaInfo.mediaInfo.uFileID, in_rMediaInfo.mediaInfo.uFileOffset, in_rMediaInfo.dwID >> 16, NULL, in_rMediaInfo.mediaInfo.bIsLanguageSpecific );
+	AkUInt32 uReadSize = 0;
+	if( eResult == AK_Success )
+	{
+		eResult = m_BankReader.FillData( io_pData, in_rMediaInfo.mediaInfo.uInMemoryMediaSize, uReadSize );
+		if( eResult == AK_Success && in_rMediaInfo.mediaInfo.uInMemoryMediaSize != uReadSize )
+		{
+			eResult = AK_Fail;
+		}
+	}
+	m_BankReader.CloseFile();
+	return eResult;
+}
+
+/** 2012 0x92c9b0: one more reference on the media; the first one copies it out of a loaded bank or reads it from
+    its file into the prepared-event pool. */
+AKRESULT CAkBankMgr::LoadSingleMedia( AkSrcTypeInfo & in_rMediaInfo )
+{
+	AkUInt32 uMediaSize = in_rMediaInfo.mediaInfo.uInMemoryMediaSize;
+	if( !uMediaSize )
+	{
+		return AK_Success;
+	}
+	m_MediaLock.Lock();
+	const AkUniqueID sourceID = in_rMediaInfo.mediaInfo.sourceID;
+	AkMediaEntry * pEntry = m_MediaHashTable.Exists( sourceID );
+	if( pEntry )
+	{
+		++pEntry->uRefCount;
+		if( pEntry->m_preparedMediaInfo.pInMemoryData )
+		{
+			m_MediaLock.Unlock();
+			return AK_Success;
+		}
+	}
+	else
+	{
+		pEntry = m_MediaHashTable.Set( sourceID );
+		if( !pEntry )
+		{
+			m_MediaLock.Unlock();
+			return AK_Fail;
+		}
+		pEntry->m_sourceID = sourceID;
+	}
+	AkUInt8 * pData = NULL;
+	AKRESULT eResult;
+	if( pEntry->m_BankSlots.Length() )
+	{
+		eResult = pEntry->PrepareFromBank( pData, uMediaSize );
+	}
+	else
+	{
+		pData = (AkUInt8 *)AK::MemoryMgr::Malign( AkMediaEntry::m_uPrepareEventMemoryPoolID, uMediaSize, 16 );
+		if( !pData )
+		{
+			eResult = AK_InsufficientMemory;
+		}
+		else
+		{
+			m_MediaLock.Unlock();
+			eResult = LoadSoundFromFile( in_rMediaInfo, pData );
+			m_MediaLock.Lock();
+		}
+	}
+	if( eResult == AK_Success )
+	{
+		pEntry->m_preparedMediaInfo.uInMemoryDataSize = uMediaSize;
+		pEntry->m_preparedMediaInfo.pInMemoryData = pData;
+		m_MediaLock.Unlock();
+		AKDIAG( L"akdiag: media 0x%08x prepared: %u bytes from %s 0x%08x", sourceID, uMediaSize, pEntry->m_BankSlots.Length() ? L"loaded bank" : L"file", in_rMediaInfo.mediaInfo.uFileID );
+		return AK_Success;
+	}
+	if( pData )
+	{
+		AK::MemoryMgr::Free( AkMediaEntry::m_uPrepareEventMemoryPoolID, pData );
+	}
+	if( !--pEntry->uRefCount )
+	{
+		m_MediaHashTable.Unset( sourceID );
+	}
+	m_MediaLock.Unlock();
+	AKDIAG( L"akdiag: media 0x%08x NOT prepared (%d): file 0x%08x offset %u size %u", sourceID, (AkInt32)eResult, in_rMediaInfo.mediaInfo.uFileID, in_rMediaInfo.mediaInfo.uFileOffset, uMediaSize );
+	return eResult;
+}
+
+/** 2012 0x92d1d0: during PrepareEvent(s) the media are only collected (one entry per source), then loaded together. */
+AKRESULT CAkBankMgr::PrepareSingleMedia( AkSrcTypeInfo & in_rMediaInfo )
+{
+	if( !m_bAccumulating )
+	{
+		return LoadSingleMedia( in_rMediaInfo );
+	}
+	AkUInt32 i = 0;
+	for( ; i < m_PreparationAccumulator.Length(); ++i )
+	{
+		if( m_PreparationAccumulator[ i ].mediaInfo.sourceID >= in_rMediaInfo.mediaInfo.sourceID )
+		{
+			break;
+		}
+	}
+	if( i < m_PreparationAccumulator.Length() && m_PreparationAccumulator[ i ].mediaInfo.sourceID == in_rMediaInfo.mediaInfo.sourceID )
+	{
+		m_PreparationAccumulator[ i ] = in_rMediaInfo;
+		return AK_Success;
+	}
+	AkSrcTypeInfo * pItem = m_PreparationAccumulator.Insert( i );
+	if( !pItem )
+	{
+		return AK_InsufficientMemory;
+	}
+	*pItem = in_rMediaInfo;
+	return AK_Success;
+}
+
+/** 2012 0x92d240. */
+void CAkBankMgr::UnprepareSingleMedia( AkUniqueID in_SourceID )
+{
+	if( !m_bAccumulating )
+	{
+		ReleaseSingleMedia( in_SourceID );
+	}
+}
+
+/** 2012 0x92d260. */
+AKRESULT CAkBankMgr::ProcessAccumulated()
+{
+	for( AkUInt32 i = 0; i < m_PreparationAccumulator.Length(); ++i )
+	{
+		const AKRESULT eResult = LoadSingleMedia( m_PreparationAccumulator[ i ] );
+		if( eResult != AK_Success )
+		{
+			while( i )
+			{
+				ReleaseSingleMedia( m_PreparationAccumulator[ --i ].mediaInfo.sourceID );
+			}
+			return eResult;
+		}
+	}
+	return AK_Success;
+}
+
+/** 2012 0x92dcc0: each Play action loads its bank structure (the action's file id) and prepares its node's media; a
+    failure undoes the actions already prepared. The event is referenced while prepared. */
 AKRESULT CAkBankMgr::PrepareEvent( AkBankQueueItem in_Item, AkUniqueID in_EventID )
 {
 	CAkEvent * pEvent = g_pIndex->m_idxEvents.GetPtrAndAddRef( in_EventID );
@@ -1866,17 +2089,63 @@ AKRESULT CAkBankMgr::PrepareEvent( AkBankQueueItem in_Item, AkUniqueID in_EventI
 	{
 		return AK_IDNotFound;
 	}
+	AKRESULT eResult = AK_Success;
 	if( !pEvent->m_iPreparationCount )
 	{
-		pEvent->AddRef();
+		CAkAction * pFailed = NULL;
+		for( CAkAction * pAction = pEvent->m_actions.m_pFirst; pAction; pAction = pAction->pNextLightItem )
+		{
+			if( pAction->m_eActionType != AkActionType_Play )
+			{
+				continue;
+			}
+			const AkFileID fileID = static_cast<CAkActionPlay *>( pAction )->m_fileID;
+			eResult = PrepareBankInternal( in_Item, fileID, AkLoadBankDataMode_Structure, false );
+			if( eResult == AK_Success )
+			{
+				eResult = CAkParameterNodeBase::PrepareNodeData( pAction->m_ulElementID );
+				if( eResult != AK_Success )
+				{
+					CAkUsageSlot * pSlot = m_BankList.Get( fileID );
+					if( pSlot )
+					{
+						pSlot->ReleasePrepare( false );
+					}
+				}
+			}
+			if( eResult != AK_Success )
+			{
+				pFailed = pAction;
+				break;
+			}
+		}
+		for( CAkAction * pAction = pEvent->m_actions.m_pFirst; pFailed && pAction != pFailed; pAction = pAction->pNextLightItem )
+		{
+			if( pAction->m_eActionType == AkActionType_Play )
+			{
+				CAkParameterNodeBase::UnPrepareNodeData( pAction->m_ulElementID );
+				CAkUsageSlot * pSlot = m_BankList.Get( static_cast<CAkActionPlay *>( pAction )->m_fileID );
+				if( pSlot )
+				{
+					pSlot->ReleasePrepare( false );
+				}
+			}
+		}
+		if( eResult == AK_Success )
+		{
+			pEvent->AddRef();
+		}
 	}
-	++pEvent->m_iPreparationCount;
+	if( eResult == AK_Success )
+	{
+		++pEvent->m_iPreparationCount;
+	}
 	pEvent->Release();
-	AKDIAG( L"akdiag: PrepareEvent 0x%08x: structure only (PrepareNodeData not ported)", in_EventID );
-	return AK_Success;
+	AKDIAG( L"akdiag: PrepareEvent 0x%08x: result %d, preparation count %u", in_EventID, (AkInt32)eResult, pEvent->m_iPreparationCount );
+	return eResult;
 }
 
-/** 2012 0x92d740. */
+/** 2012 0x92d740: the last unprepare releases every Play action's node data and bank structure. */
 void CAkBankMgr::UnprepareEvent( CAkEvent * in_pEvent, bool in_bCompleteUnprepare )
 {
 	if( !in_pEvent->m_iPreparationCount )
@@ -1893,6 +2162,18 @@ void CAkBankMgr::UnprepareEvent( CAkEvent * in_pEvent, bool in_bCompleteUnprepar
 	}
 	if( !in_pEvent->m_iPreparationCount )
 	{
+		for( CAkAction * pAction = in_pEvent->m_actions.m_pFirst; pAction; pAction = pAction->pNextLightItem )
+		{
+			if( pAction->m_eActionType == AkActionType_Play )
+			{
+				CAkParameterNodeBase::UnPrepareNodeData( pAction->m_ulElementID );
+				CAkUsageSlot * pSlot = m_BankList.Get( static_cast<CAkActionPlay *>( pAction )->m_fileID );
+				if( pSlot )
+				{
+					pSlot->ReleasePrepare( false );
+				}
+			}
+		}
 		in_pEvent->Release();
 	}
 }
@@ -1918,6 +2199,14 @@ AKRESULT CAkBankMgr::PrepareEvents( AkBankQueueItem in_Item )
 	if( in_Item.prepare.numEvents == 1 )
 	{
 		eResult = PrepareEvent( in_Item, in_Item.prepare.eventID );
+		if( eResult == AK_Success )
+		{
+			eResult = ProcessAccumulated();
+			if( eResult != AK_Success )
+			{
+				UnprepareEvent( in_Item.prepare.eventID );
+			}
+		}
 	}
 	else
 	{
@@ -1937,10 +2226,22 @@ AKRESULT CAkBankMgr::PrepareEvents( AkBankQueueItem in_Item )
 				UnprepareEvent( in_Item.prepare.pEventID[ --i ] );
 			}
 		}
+		else
+		{
+			eResult = ProcessAccumulated();
+			if( eResult != AK_Success )
+			{
+				for( i = 0; i < in_Item.prepare.numEvents; ++i )
+				{
+					UnprepareEvent( in_Item.prepare.pEventID[ i ] );
+				}
+			}
+		}
 		AK::MemoryMgr::Free( g_DefaultPoolId, in_Item.prepare.pEventID );
 		in_Item.prepare.eventID = 0;
 	}
 	m_bAccumulating = false;
+	m_PreparationAccumulator.RemoveAll();
 	NotifyCompletion( in_Item, eResult );
 	return eResult;
 }

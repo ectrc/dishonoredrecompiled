@@ -10,14 +10,11 @@
 	as retail (AK::SoundEngine::AkSyncCaller, DefaultBankCallbackFunc).
 
 	Deviations (named):
-	  * KillSlot hands the slot to the audio manager (message 26: CAkURenderer::StopAllPBIs + Release) so the
-	    unload happens between two audio frames; the audio manager is IH2's, so the slot is released directly
-	    (no PBI can reference it before IH2).
-	  * Media preparation (PrepareMedia / LoadSingleMedia / PrepareEvent's PrepareNodeData) reads streamed
-	    media into the prepared-event pool for PrepareBank(AllInclusive) and PrepareEvent. Dishonored only
-	    prepares banks StructureOnly (Engine akbank.cpp: AkBankContent_StructureOnly) and never calls
-	    PrepareEvent (measured: UAkAudioDevice::PrepareEvent has no caller); those paths queue and complete
-	    with AK_Success after the structure part, and -akdiag says so.
+	  * (agent IH2: KillSlot now hands the slot to the audio manager, message 26, as retail; ReleaseMedia is ported.)
+	  * (agent IH2: PrepareEvent's media half is ported - PrepareNodeData, PrepareSingleMedia, LoadSingleMedia,
+	    LoadSoundFromFile, ProcessAccumulated. IH1's "Dishonored never calls PrepareEvent" was wrong: every
+	    conversation line is PrepareEvent'd before its PostEvent (IH2a.log). PrepareBank(AllInclusive)'s
+	    PrepareMedia is still not ported: Dishonored prepares banks StructureOnly.)
 	  * The feedback (motion) master bus swap around a load and CAkFeedbackBus are not ported: no Dishonored
 	    bank has bFeedbackInBank set (wwise_bank_dump.py --all).
 	  * -akdiag: every load / prepare / unload logs bank name, id, size, result and HIRC counts by type.
@@ -153,6 +150,7 @@ public:
 	~AkMediaEntry() { m_BankSlots.Term(); }
 
 	void GetMedia( AkMediaInfo & out_mediaInfo, CAkUsageSlot *& out_pUsageSlot );
+	AKRESULT PrepareFromBank( AkUInt8 *& out_pAllocatedData, AkUInt32 & out_uMediaSize );
 
 	static AkMemPoolId m_uPrepareEventMemoryPoolID;
 
@@ -248,6 +246,9 @@ public:
 	void NotifyCompletion( AkBankQueueItem & in_rItem, AKRESULT in_OperationResult );
 	void UpdateBankName( AkBankID in_bankID, const char * in_pStringWithoutExtension );
 	AkMediaInfo GetMedia( AkUniqueID in_mediaId, CAkUsageSlot *& out_pUsageSlot );
+	void ReleaseMedia( AkUniqueID in_mediaId );
+	AKRESULT PrepareSingleMedia( AkSrcTypeInfo & in_rMediaInfo );
+	void UnprepareSingleMedia( AkUniqueID in_SourceID );
 	void UnloadMedia( CAkUsageSlot * in_pCurrentSlot );
 	void UnPrepareMedia( CAkUsageSlot * in_pCurrentSlot );
 
@@ -268,6 +269,7 @@ public:
 	bool												m_bFeedbackInBank;
 	CAkBankCallbackMgr									m_CallbackMgr;
 	bool												m_bAccumulating;
+	AkArray<AkSrcTypeInfo, const AkSrcTypeInfo &, ArrayPoolDefault, 8>	m_PreparationAccumulator;
 	HANDLE												m_eventQueue;
 
 	static AkThread		m_BankMgrThread;
@@ -293,6 +295,11 @@ private:
 	AKRESULT UnprepareEvent( AkUniqueID in_EventID );
 	void UnprepareEvent( CAkEvent * in_pEvent, bool in_bCompleteUnprepare );
 	AKRESULT PrepareBank( AkBankQueueItem in_Item );
+	AKRESULT ProcessAccumulated();
+	AKRESULT LoadSingleMedia( AkSrcTypeInfo & in_rMediaInfo );
+	void ReleaseSingleMedia( AkUniqueID in_SourceID );
+	AKRESULT LoadSoundFromFile( AkSrcTypeInfo & in_rMediaInfo, AkUInt8 * io_pData );
+	AKRESULT SetFileReader( AkFileID in_FileID, AkUInt32 in_uFileOffset, AkUInt32 in_codecID, void * in_pCookie, bool in_bIsLanguageSpecific );
 	AKRESULT UnPrepareBank( AkBankQueueItem in_Item );
 	AKRESULT PrepareBankInternal( AkBankQueueItem in_Item, AkBankID in_FileID, AkLoadBankDataMode in_LoadBankMode, bool in_bIsFromPrepareBank );
 	void UnPrepareAllBank();

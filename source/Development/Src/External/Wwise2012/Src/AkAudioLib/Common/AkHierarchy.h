@@ -27,10 +27,69 @@
 #include "AkAudioLibIndex.h"
 #include "AkAudioLibGlobals.h"
 #include "AkGameSyncs.h"
+#include "AkLEngineStructs.h"
 
 class CAkUsageSlot;
 class CAkLayerCntr;
 class CAkParameterNodeBase;
+class CAkRegisteredObj;
+class CAkPBI;
+class CAkLimiter;
+class CAkSoundBase;
+class CAkBus;
+class CAkSource;
+class AkPendingAction;
+struct AkActivityChunk;
+struct AkPBIParams;
+struct PriorityInfoCurrent;
+struct PriorityInfo;
+struct CounterParameters;
+struct AkSoundParams;
+struct AkPBIModValues;
+struct AkMutedMapItem;
+struct BaseGenParams;
+
+
+
+/** TransParams (akparameters.h): a fade time and curve. */
+struct TransParams
+{
+	AkTimeMs				TransitionTime;
+	AkCurveInterpolation	eFadeCurve;
+};
+
+enum ActionParamType
+{
+	ActionParamType_Stop	= 0,
+	ActionParamType_Pause	= 1,
+	ActionParamType_Resume	= 2,
+	ActionParamType_Break	= 3,
+	ActionParamType_Seek	= 4
+};
+
+/** ActionParams / ActionParamsExcept (akactions.h): what an Execute pushes down the node tree. */
+struct ActionParams
+{
+	ActionParamType		eType;
+	CAkRegisteredObj *	pGameObj;
+	AkPlayingID			playingID;
+	TransParams			transParams;
+	bool				bIsFromBus;
+	bool				bIsMasterCall;
+	bool				bIsMasterResume;
+	AkUniqueID			targetNodeID;
+};
+
+struct ActionParamsExcept
+{
+	ActionParamType											eType;
+	AkArray<AkUniqueID, AkUniqueID, ArrayPoolDefault, 8> *	pExeceptionList;
+	CAkRegisteredObj *										pGameObj;
+	AkPlayingID												playingID;
+	TransParams												transParams;
+	bool													bIsFromBus;
+	bool													bIsMasterResume;
+};
 
 /**
  * DISHONORED(port, IH1 diagnostic): where the last top-level SetInitialValues stopped reading. Retail never
@@ -136,6 +195,10 @@ public:
 	void FreeSource();
 	void SetSource( AkUniqueID in_sourceID );
 	void SetSource( AkUInt32 in_PluginID, const AkMediaInformation & in_MediaInfo );
+	void LockDataPtr( void *& out_ppvBuffer, AkUInt32 & out_ulSize, CAkPBI * in_pPBI );
+	void UnLockDataPtr();
+	AKRESULT PrepareData();
+	void UnPrepareData();
 
 	AkSrcTypeInfo m_sSrcTypeInfo;
 };
@@ -187,7 +250,7 @@ class CAkGen3DParams
 {
 public:
 	CAkGen3DParams();
-	virtual ~CAkGen3DParams() { Term(); }
+	virtual ~CAkGen3DParams();
 
 	AKRESULT SetPath( AkPathVertex * in_pArrayVertex, AkUInt32 in_ulNumVertices, AkPathListItemOffset * in_pArrayPlaylist, AkUInt32 in_ulNumPlaylistItem );
 	void Term();
@@ -244,7 +307,15 @@ struct AkListBareLightNextInNode
 	static AkStateGroupChunk *& Get( AkStateGroupChunk * in_pItem ) { return in_pItem->m_pNextInNode; }
 };
 
-class CAkParameterNodeBase : public CAkIndexable
+/** CAkPBIAware (akpbiaware.cpp): what can instantiate a PBI - every node, and the dynamic sequence. */
+class CAkPBIAware : public CAkIndexable
+{
+public:
+	explicit CAkPBIAware( AkUniqueID in_ulID ) : CAkIndexable( in_ulID ) {}
+	virtual CAkPBI * CreatePBI( CAkSoundBase * in_pSound, CAkSource * in_pSource, AkPBIParams & in_rPBIParams, const PriorityInfoCurrent & in_rPriority, CAkLimiter * in_pAMLimiter, CAkLimiter * in_pBusLimiter ) const;
+};
+
+class CAkParameterNodeBase : public CAkPBIAware
 {
 public:
 	struct FXStruct
@@ -287,6 +358,30 @@ public:
 	virtual void UpdateFx( AkUInt32 in_uFXIndex ) {}
 	virtual CAkRTPCMgr::SubscriberType GetRTPCSubscriberType() const { return CAkRTPCMgr::SubscriberType_CAkParameterNodeBase; }
 
+	// The playback half (DISHONORED(port, IH2): the members the play / stop / pause path reaches).
+	virtual AKRESULT Play( AkPBIParams & in_rPBIParams ) { return AK_NotImplemented; }
+	virtual AKRESULT ExecuteAction( ActionParams & in_rAction ) { return AK_Success; }
+	virtual AKRESULT ExecuteActionExcept( ActionParamsExcept & in_rAction ) { return AK_Success; }
+	virtual AKRESULT IncrementPlayCount( CounterParameters & io_params ) = 0;
+	virtual void DecrementPlayCount( CounterParameters & io_params ) = 0;
+	virtual void IncrementVirtualCount( CounterParameters & io_params ) {}
+	virtual void DecrementVirtualCount( CounterParameters & io_params ) {}
+	virtual void PauseTransitions( bool in_bPause ) {}
+	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr ) { return false; }
+	virtual CAkBus * GetMixingBus();
+	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck ) { return AK_Success; }
+	virtual bool IsPlayable() { return true; }
+	virtual bool IncrementActivityCount( AkUInt16 in_flagForwardToBus );
+	virtual void DecrementActivityCount( AkUInt16 in_flagForwardToBus );
+	virtual AKRESULT PrepareData() { return AK_Success; }
+	virtual void UnPrepareData() {}
+
+	static AKRESULT PrepareNodeData( AkUniqueID in_NodeID );
+	static void UnPrepareNodeData( AkUniqueID in_NodeID );
+
+	PriorityInfo GetPriority( CAkRegisteredObj * in_GameObjPtr );
+	AkUInt16 GetMaxNumInstances( CAkRegisteredObj * in_GameObjPtr );
+
 	virtual AKRESULT SetInitialParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize ) { return AK_Success; }
 	virtual AKRESULT SetInitialFxParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize, bool in_bPartialLoadOnly ) { return AK_Success; }
 	virtual AKRESULT SetPositioningParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize ) { return AK_Success; }
@@ -307,7 +402,7 @@ public:
 	AkListBareLight<AkStateGroupChunk, AkListBareLightNextInNode>	m_states;
 	void *						m_pGlobalSIS;
 	FXChunk *					m_pFXChunk;
-	void *						m_pActivityChunk;
+	AkActivityChunk *			m_pActivityChunk;
 	CAkParameterNodeBase *		m_pParentNode;
 	CAkParameterNodeBase *		m_pBusOutputNode;
 	AkPropBundle<AkPropValue>	m_props;
@@ -328,7 +423,17 @@ public:
 	CAkBitArrayMax32			m_RTPCBitArrayMax32;
 	AkFeedbackInfo *			m_pFeedbackInfo;
 
+	bool EnableActivityChunk();
+	void DeleteActivityChunk();
+
 protected:
+	AKRESULT IncrementPlayCountValue();
+	void DecrementPlayCountValue();
+	AKRESULT IncrementPlayCountGlobal( AkReal32 in_fPriority, AkUInt16 & io_ui16NumKickedOrRevived, CAkLimiter *& io_pLimiter );
+	void DecrementPlayCountGlobal();
+	AKRESULT IncrementPlayCountGameObject( AkReal32 in_fPriority, AkUInt16 & io_ui16NumKickedOrRevived, CAkRegisteredObj * in_pGameObj, CAkLimiter *& io_pLimiter );
+	void DecrementPlayCountGameObject( CAkRegisteredObj * in_pGameObj );
+
 	AKRESULT SetNodeBaseParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize, bool in_bPartialLoadOnly );
 	AKRESULT SetInitialRTPC( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
 	AKRESULT ReadStateChunk( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
@@ -348,6 +453,16 @@ public:
 
 	AKRESULT GetStatic3DParams( AkPositioningInfo & out_rPosInfo );
 	bool GetMaxRadius( AkReal32 & out_fRadius );
+
+	virtual AKRESULT IncrementPlayCount( CounterParameters & io_params );
+	virtual void DecrementPlayCount( CounterParameters & io_params );
+	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr );
+	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck );
+	AkBelowThresholdBehavior GetVirtualBehavior( AkVirtualQueueBehavior & out_Behavior ) const;
+	bool IsInstanceCountCompatible( AkUniqueID in_NodeIDToTest, bool in_bIsBusChecked, bool in_bIgnoreNonBus );
+	void Get3DParams( CAkGen3DParams *& io_p3DParams, CAkRegisteredObj * in_GameObj, bool in_bUpdateOnly, BaseGenParams * io_pBasePosParams );
+	bool UpdateBaseParams( CAkRegisteredObj * in_GameObj, BaseGenParams * io_pBasePosParams );
+	bool UpdateBaseParamsFromRTPC( CAkRegisteredObj * in_GameObj, BaseGenParams * io_pBasePosParams );
 
 	void *											m_pMapSIS;
 	CAkGen3DParamsEx *								m_p3DParameters;
@@ -381,6 +496,14 @@ public:
 
 	AKRESULT SetChildren( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
 
+	/** CAkActiveParent<T>::ExecuteAction / ExecuteActionExcept (akactiveparent.h, 2012 0x94de50 / 0x94dee0): every child. */
+	virtual AKRESULT ExecuteAction( ActionParams & in_rAction );
+	virtual AKRESULT ExecuteActionExcept( ActionParamsExcept & in_rAction );
+
+	/** CAkActiveParent<T>::PrepareData / UnPrepareData (2012 0x94e240 / 0x94e2a0, 0x93ccf0 / 0x93cd50): every child. */
+	virtual AKRESULT PrepareData();
+	virtual void UnPrepareData();
+
 	AkMapChildID m_mapChildId;
 };
 
@@ -388,6 +511,9 @@ class CAkSoundBase : public CAkParameterNode
 {
 public:
 	explicit CAkSoundBase( AkUniqueID in_ulID ) : CAkParameterNode( in_ulID ) {}
+
+	AkInt16 Loop();
+	virtual AKRESULT PlayToEnd( CAkRegisteredObj * in_pGameObj, AkUniqueID in_NodeID, AkPlayingID in_PlayingID );
 };
 
 class CAkSound : public CAkSoundBase
@@ -397,6 +523,12 @@ public:
 	virtual AkNodeCategory NodeCategory() { return AkNodeCategory_Sound; }
 
 	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize, CAkUsageSlot * in_pUsageSlot, bool in_bIsPartialLoadOnly );
+	virtual AKRESULT Play( AkPBIParams & in_rPBIParams );
+	virtual AKRESULT ExecuteAction( ActionParams & in_rAction );
+	virtual AKRESULT ExecuteActionExcept( ActionParamsExcept & in_rAction );
+	virtual bool IsPlayable();
+	virtual AKRESULT PrepareData() { return m_Source.PrepareData(); }
+	virtual void UnPrepareData() { m_Source.UnPrepareData(); }
 	bool HasBankSource() const { return m_Source.m_sSrcTypeInfo.mediaInfo.Type != 0 && m_Source.m_sSrcTypeInfo.mediaInfo.bHasSource; }
 
 	CAkSource m_Source;
@@ -611,6 +743,20 @@ public:
 	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
 	AKRESULT AddDuck( AkUniqueID in_BusID, AkReal32 in_DuckVolume, AkTimeMs in_FadeOutTime, AkTimeMs in_FadeInTime, AkCurveInterpolation in_eFadeCurve );
 	bool IsMasterBus() const { return this == s_pMasterBus; }
+	static CAkBus * GetMasterBusAndAddRef();
+	bool IsInstanceCountCompatible( AkUniqueID in_NodeIDToTest );
+	AkReal32 GetBusEffectiveVolume( AkUInt32 in_eVolumeType, AkPropID in_eProp );
+
+	virtual AKRESULT ExecuteAction( ActionParams & in_rAction );
+	virtual AKRESULT ExecuteActionExcept( ActionParamsExcept & in_rAction );
+	virtual AKRESULT IncrementPlayCount( CounterParameters & io_params );
+	virtual void DecrementPlayCount( CounterParameters & io_params );
+	virtual bool GetBypassAllFX( CAkRegisteredObj * in_GameObjPtr );
+	virtual CAkBus * GetMixingBus();
+	virtual AKRESULT GetAudioParameters( AkSoundParams & io_Parameters, AkUInt32 in_ulParamSelect, CAkKeyArray<AkMutedMapItem, AkReal32, 5> & io_rMutedMap, CAkRegisteredObj * in_GameObjPtr, bool in_bIncludeRange, AkPBIModValues & io_Ranges, bool in_bDoBusCheck );
+	virtual bool IncrementActivityCount( AkUInt16 in_flagForwardToBus );
+	virtual void DecrementActivityCount( AkUInt16 in_flagForwardToBus );
+	bool HasEffect() const;
 
 	AkUInt32												m_RecoveryTime;
 	AkUInt32												m_uChannelConfig;
@@ -753,6 +899,12 @@ public:
 	AKRESULT SetInitialValues( AkUInt8 * in_pData, AkUInt32 in_ulDataSize );
 	void AddToIndex();
 
+	/** DISHONORED(port, IH2): retail's base Execute is pure; the action types IH2 does not run (the SetValue family,
+	    states, switches, triggers, bypass, seek, use-state - IH3/IH4) keep this default, which -akdiag logs. */
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
+	AkTimeMs GetTransitionTime();
+	AkInt32 GetDelayTime();
+
 	CAkAction *										pNextLightItem;
 	AkPropBundle<AkPropValue>						m_props;
 	AkPropBundle< RANGED_MODIFIERS<AkPropValue> >	m_ranges;
@@ -770,6 +922,7 @@ class CAkActionPlay : public CAkAction
 public:
 	CAkActionPlay( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ), m_fileID( AK_INVALID_FILE_ID ) {}
 	virtual AKRESULT SetActionParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 	AkFileID m_fileID;
 };
 
@@ -790,12 +943,18 @@ public:
 	CAkActionActive( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionExcept( in_eActionType, in_ulID ), m_bIsMasterResume( false ) {}
 	virtual AKRESULT SetActionParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
 	bool m_bIsMasterResume;
+
+protected:
+	AKRESULT Exec( ActionParamType in_eType, CAkRegisteredObj * in_pGameObj, AkPlayingID in_TargetPlayingID );
+	void AllExec( ActionParamType in_eType, CAkRegisteredObj * in_pGameObj, AkPlayingID in_TargetPlayingID );
+	void AllExecExcept( ActionParamType in_eType, CAkRegisteredObj * in_pGameObj, AkPlayingID in_TargetPlayingID );
 };
 
 class CAkActionStop : public CAkActionActive
 {
 public:
 	CAkActionStop( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionActive( in_eActionType, in_ulID ) {}
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 };
 
 class CAkActionPause : public CAkActionActive
@@ -803,6 +962,7 @@ class CAkActionPause : public CAkActionActive
 public:
 	CAkActionPause( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionActive( in_eActionType, in_ulID ), m_bPausePendingResume( false ) {}
 	virtual AKRESULT SetActionSpecificParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 	bool m_bPausePendingResume;
 };
 
@@ -811,6 +971,7 @@ class CAkActionResume : public CAkActionActive
 public:
 	CAkActionResume( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkActionActive( in_eActionType, in_ulID ) {}
 	virtual AKRESULT SetActionSpecificParams( AkUInt8 *& io_rpData, AkUInt32 & io_rulDataSize );
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 };
 
 class CAkActionSetValue : public CAkActionExcept
@@ -883,6 +1044,7 @@ class CAkActionBreak : public CAkAction
 {
 public:
 	CAkActionBreak( AkUInt32 in_eActionType, AkUniqueID in_ulID ) : CAkAction( in_eActionType, in_ulID ) {}
+	virtual AKRESULT Execute( AkPendingAction * in_pAction );
 };
 
 class CAkActionTrigger : public CAkAction

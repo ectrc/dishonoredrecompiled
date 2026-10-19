@@ -76,12 +76,17 @@ if(DISHONORED_WITH_WWISE)
     target_include_directories(wwise PUBLIC "${DISHONORED_WWISE_DIR}/include")
     target_include_directories(wwise PRIVATE "${DISHONORED_WWISE_DIR}/Src"
                                              "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Common"
+                                             "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/SoftwarePipeline"
+                                             "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Win32"
+                                             "${DISHONORED_WWISE_DIR}/Src/AkVorbisDecoder"
                                              "${DISHONORED_WWISE_DIR}/Src/StreamManager"
                                              "${DISHONORED_WWISE_DIR}/Src/AkMemoryMgr")
     target_compile_definitions(wwise PUBLIC DISHONORED_WITH_WWISE=1 DISHONORED_WWISE_SILENT=1)
     # No /Zp4 here: the AK structs carry their own #pragma pack(8) (the packing Audiokinetic builds with)
     # and the sizes are static_asserted against the 2012 PDB inside the headers.
     target_compile_options(wwise PRIVATE /wd4100 /wd4244 /wd4245 /wd4267 /wd4389)
+    # Agent IH2 (wave 26): the ported sink (CAkSinkDirectSound) creates DirectSound8 through COM as retail does.
+    target_link_libraries(wwise PUBLIC dxguid ole32)
     set_target_properties(wwise PROPERTIES FOLDER "External")
     list(LENGTH wwise_silent_sources n)
     message(STATUS "Wwise: our 2012.1 headers + silent backend (${n} compile units), no SDK needed")

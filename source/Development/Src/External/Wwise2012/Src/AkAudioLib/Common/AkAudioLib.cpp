@@ -14,14 +14,24 @@
 	  Query::QueryAudioObjectIDs 0x91b720, GetPositioningInfo 0x91b7e0, GetPosition 0x91b250,
 	  GetActiveListeners 0x91b2f0, GetIsGameObjectActive 0x91b120, GetGameObjectEnvironmentsValues 0x91b540,
 	  GetGameObjectDryLevelValue 0x91b610, GetObjectObstructionAndOcclusion 0x91b680, GetState 0x91af90
-	The playback half of Init/Term (CAkURenderer, CAkAudioMgr, CAkLEngine, the playing / transition / path
-	managers) is IH2's; AkSilentSoundEngine.cpp keeps the silent playback until then and calls
+	Agent IH2 (wave 26) added the playback half of PreInit / InitRenderer / Term (the playing manager, the position
+	repository, the transition manager, g_Interpol, CAkURenderer, CAkAudioMgr and its thread, CAkLEngine::Stop, the
+	behavioural extensions) and the retail SetVolumeThresholdInternal 0x9175f0 / SetMaxNumVoicesLimitInternal
+	0x917760; the path manager is not created (paths are IH3 positioning). AkSilentSoundEngine.cpp calls
 	AkAudioLibInit / AkAudioLibTerm from AK::SoundEngine::Init / Term.
 	-akdiag logs every GetIDFromString with its answer, every Query::QueryAudioObjectIDs / GetPositioningInfo
 	with its result, and (in AkBankMgr.cpp) every bank operation.
 =============================================================================*/
 #include "AkBankMgr.h"
 #include "AkRegistryMgr.h"
+#include "AkAudioMgr.h"
+#include "AkPlayingMgr.h"
+#include "AkURenderer.h"
+#include "AkInterpolation.h"
+#include "AkLEngine.h"
+#include "AkPositionRepository.h"
+#include "AkMath.h"
+#include <math.h>
 
 #include <AK/SoundEngine/Common/AkQueryParameters.h>
 
@@ -37,6 +47,8 @@ CAkRTPCMgr *					g_pRTPCMgr = NULL;
 CAkEnvironmentsMgr *			g_pEnvironmentMgr = NULL;
 AkExternalBankHandlerCallback	g_pExternalBankHandlerCallback = NULL;
 AkSoundPosition					g_DefaultSoundPosition = { { 0.f, 0.f, 1.f }, { 0.f, 0.f, -1.f } };
+CAkInterpolation				g_Interpol;
+AkArray<AkGlobalCallbackFunc, AkGlobalCallbackFunc, ArrayPoolDefault, 4>	g_aBehavioralExtensions;
 
 namespace AK
 {
@@ -53,8 +65,6 @@ static AK::SoundEngine::AkCommandPriority g_eNumVoicesPriority = AK::SoundEngine
 
 namespace AkSilent
 {
-	void ApplyVolumeThreshold( AkReal32 in_fVolumeThresholdDB );
-	void ApplyMaxNumVoices( AkUInt16 in_maxNumberVoices );
 	AkUInt32 RegisterName( const wchar_t * name );
 	AkUInt32 RegisterName( const char * name );
 	DishonoredWwise::Stats & MutableStats();
@@ -91,18 +101,7 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 	{
 		AK::SoundEngine::GetDefaultInitSettings( g_settings );
 	}
-	if( in_pPlatformSettings )
-	{
-		g_PDSettings = *in_pPlatformSettings;
-	}
-	else
-	{
-		AK::SoundEngine::GetDefaultPlatformInitSettings( g_PDSettings );
-	}
-	if( g_PDSettings.uNumRefillsInVoice < 2 )
-	{
-		g_PDSettings.uNumRefillsInVoice = 4;
-	}
+	CAkLEngine::ApplyGlobalSettings( in_pPlatformSettings );
 
 	if( g_DefaultPoolId == AK_INVALID_POOL_ID )
 	{
@@ -128,7 +127,8 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 		}
 		g_pIndex->Init();
 	}
-	if( !g_pRTPCMgr )
+	eResult = g_Interpol.Init( 0x14D, 0x14D, AkITable_All );
+	if( eResult == AK_Success && !g_pRTPCMgr )
 	{
 		g_pRTPCMgr = NewManager<CAkRTPCMgr>();
 		eResult = g_pRTPCMgr ? g_pRTPCMgr->Init() : AK_InsufficientMemory;
@@ -143,10 +143,25 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 		g_pBankManager = NewManager<CAkBankMgr>();
 		eResult = g_pBankManager ? g_pBankManager->Init() : AK_InsufficientMemory;
 	}
+	if( eResult == AK_Success && !g_pPlayingMgr )
+	{
+		g_pPlayingMgr = NewManager<CAkPlayingMgr>();
+		eResult = g_pPlayingMgr ? g_pPlayingMgr->Init() : AK_InsufficientMemory;
+	}
+	if( eResult == AK_Success && !g_pPositionRepository )
+	{
+		g_pPositionRepository = NewManager<CAkPositionRepository>();
+		eResult = g_pPositionRepository ? g_pPositionRepository->Init() : AK_InsufficientMemory;
+	}
 	if( eResult == AK_Success && !g_pRegistryMgr )
 	{
 		g_pRegistryMgr = NewManager<CAkRegistryMgr>();
 		eResult = g_pRegistryMgr ? g_pRegistryMgr->Init() : AK_InsufficientMemory;
+	}
+	if( eResult == AK_Success && !g_pTransitionManager )
+	{
+		g_pTransitionManager = NewManager<CAkTransitionManager>();
+		eResult = g_pTransitionManager ? g_pTransitionManager->Init( g_settings.uMaxNumTransitions ) : AK_InsufficientMemory;
 	}
 	if( eResult == AK_Success && !g_pStateMgr )
 	{
@@ -157,29 +172,82 @@ AKRESULT AkAudioLibInit( AkInitSettings * in_pSettings, AkPlatformInitSettings *
 	{
 		*in_pSettings = g_settings;
 	}
+	if( eResult == AK_Success )
+	{
+		eResult = CAkURenderer::Init();
+	}
+	if( eResult == AK_Success && !g_pAudioMgr )
+	{
+		g_pAudioMgr = NewManager<CAkAudioMgr>();
+		eResult = g_pAudioMgr ? g_pAudioMgr->Init() : AK_InsufficientMemory;
+		if( eResult == AK_Success )
+		{
+			eResult = g_pAudioMgr->Start();
+		}
+	}
 	AKDIAG( L"akdiag: SoundEngine::Init: default pool %d (%u bytes), bank manager thread %s, result %d",
 		g_DefaultPoolId, g_settings.uDefaultPoolSize, CAkBankMgr::m_BankMgrThread ? L"started" : L"missing", (AkInt32)eResult );
 	return eResult;
 }
 
-/** AK::SoundEngine::Term's bank-side work, in retail order. */
+/** AK::SoundEngine::Term 0x91a090: the audio thread and the bank thread stop first, then the lower engine, the behavioural
+    extensions (told the engine is terminating), the renderer and the managers in retail order. DISHONORED(port): the path
+    manager is not created (paths are IH3 positioning) and the feedback device manager does not exist. */
 void AkAudioLibTerm()
 {
+	if( g_pAudioMgr )
+	{
+		g_pAudioMgr->Stop();
+	}
 	if( g_pBankManager )
 	{
 		g_pBankManager->StopThread();
+	}
+	CAkLEngine::Stop();
+	for( AkInt32 i = (AkInt32)g_aBehavioralExtensions.Length() - 1; i >= 0; --i )
+	{
+		g_aBehavioralExtensions[ i ]( true );
+	}
+	g_aBehavioralExtensions.Term();
+	CAkURenderer::Term();
+	if( g_pAudioMgr )
+	{
+		g_pAudioMgr->Term();
+		DeleteManager( g_pAudioMgr );
+	}
+	if( g_pBankManager )
+	{
 		g_pBankManager->Term();
 		DeleteManager( g_pBankManager );
+	}
+	if( g_pIndex )
+	{
+		g_pIndex->ReleaseTempObjects();
 	}
 	if( g_pStateMgr )
 	{
 		g_pStateMgr->Term();
 		DeleteManager( g_pStateMgr );
 	}
+	if( g_pTransitionManager )
+	{
+		g_pTransitionManager->Term();
+		DeleteManager( g_pTransitionManager );
+	}
 	if( g_pRegistryMgr )
 	{
 		g_pRegistryMgr->Term();
 		DeleteManager( g_pRegistryMgr );
+	}
+	if( g_pPlayingMgr )
+	{
+		g_pPlayingMgr->Term();
+		DeleteManager( g_pPlayingMgr );
+	}
+	if( g_pPositionRepository )
+	{
+		g_pPositionRepository->Term();
+		DeleteManager( g_pPositionRepository );
 	}
 	if( g_pEnvironmentMgr )
 	{
@@ -191,6 +259,7 @@ void AkAudioLibTerm()
 		g_pRTPCMgr->Term();
 		DeleteManager( g_pRTPCMgr );
 	}
+	g_Interpol.Term();
 	if( g_pIndex )
 	{
 		g_pIndex->Term();
@@ -294,26 +363,38 @@ namespace AK
 			out_settings.threadMonitor.uStackSize = 0x2000;
 		}
 
-		/** AK::SoundEngine::SetVolumeThresholdInternal: a lower (stronger) priority source wins. */
+		/** 2012 0x9175f0: a lower (stronger) priority source wins; the linear threshold is the largest of its three
+		    conversions (pow, dBToLin and the SIMD dBToLin), as retail computes it. */
 		AKRESULT SetVolumeThresholdInternal( AkReal32 in_fVolumeThresholdDB, AkCommandPriority in_eCommandPriority )
 		{
-			if( in_eCommandPriority > g_eVolumeThresholdPriority )
+			if( in_fVolumeThresholdDB < -96.3f || in_fVolumeThresholdDB > 0.f )
 			{
-				return AK_Success;
+				return AK_InvalidParameter;
 			}
-			g_eVolumeThresholdPriority = in_eCommandPriority;
-			AkSilent::ApplyVolumeThreshold( in_fVolumeThresholdDB );
+			if( in_eCommandPriority <= g_eVolumeThresholdPriority )
+			{
+				g_eVolumeThresholdPriority = in_eCommandPriority;
+				const AkReal32 fPow = (AkReal32)pow( 10.0, in_fVolumeThresholdDB * 0.05f );
+				const AkReal32 fLin = AkMath::dBToLin( in_fVolumeThresholdDB );
+				const AkReal32 fMax = fPow <= fLin ? fLin : fPow;
+				g_fVolumeThreshold = fMax <= fLin ? fLin : fMax;
+				g_fVolumeThresholdDB = in_fVolumeThresholdDB;
+			}
 			return AK_Success;
 		}
 
+		/** 2012 0x917760. */
 		AKRESULT SetMaxNumVoicesLimitInternal( AkUInt16 in_maxNumberVoices, AkCommandPriority in_eCommandPriority )
 		{
-			if( in_eCommandPriority > g_eNumVoicesPriority )
+			if( !in_maxNumberVoices )
 			{
-				return AK_Success;
+				return AK_InvalidParameter;
 			}
-			g_eNumVoicesPriority = in_eCommandPriority;
-			AkSilent::ApplyMaxNumVoices( in_maxNumberVoices );
+			if( in_eCommandPriority <= g_eNumVoicesPriority )
+			{
+				g_eNumVoicesPriority = in_eCommandPriority;
+				CAkURenderer::m_GlobalLimiter.m_u16LimiterMax = in_maxNumberVoices;
+			}
 			return AK_Success;
 		}
 
@@ -1066,22 +1147,6 @@ namespace AK
 			}
 		}
 	}
-}
-
-/** The silent engine's PostEvent asks this under -akdiag: retail PostEvent fails for an event not in the index. */
-bool AkAudioLibIsEventLoaded( AkUniqueID in_eventID )
-{
-	if( !g_pIndex )
-	{
-		return false;
-	}
-	CAkEvent * pEvent = g_pIndex->m_idxEvents.GetPtrAndAddRef( in_eventID );
-	if( !pEvent )
-	{
-		return false;
-	}
-	pEvent->Release();
-	return true;
 }
 
 /** -akdiag / CoreSmoke: how many objects each index holds. */

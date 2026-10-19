@@ -9,7 +9,9 @@
 	log. When the licensed Wwise 2012.1 SDK is dropped in (cmake/Wwise.cmake, DISHONORED_WWISE_SDK), this
 	header keeps compiling but every function becomes a no-op stub, so the AkAudio side never changes.
 
-	See resources/docs/agents/agentAN.md for what real audio would additionally require.
+	DISHONORED(port, agent IH2): the backend now decodes, mixes and outputs (the ported 2012.1 runtime); the name is
+	historical. What still keeps books is the IH3 seam (RTPC / switch / state / trigger values).
+	See resources/docs/agents/agentAN.md and agentIH2.md.
 =============================================================================*/
 #ifndef _DISHONORED_WWISE_SILENT_H_
 #define _DISHONORED_WWISE_SILENT_H_
@@ -45,6 +47,9 @@ namespace DishonoredWwise
 	void SetDiagnostics( bool in_bEnabled );
 	bool IsDiagnostics();
 
+	/** -akwav=<file> (agent IH2): every buffer the sink is handed (16-bit, the sink speaker layout) is appended to a WAV file. */
+	void SetWavCapture( const AkOSChar * in_pszPath );
+
 	/** What the backend has been asked to do so far; the AkAudio `AKSTATS` exec prints it. */
 	struct Stats
 	{
@@ -71,14 +76,10 @@ namespace DishonoredWwise
 	 */
 	const AkOSChar * NameForID( AkUInt32 in_id );
 
-	/** Ends every outstanding playing id and fires the AK_EndOfEvent callbacks the game registered. */
-	void FlushEndOfEventCallbacks();
-
 	/**
-	 * DISHONORED(deviation, agent ID - to be removed by IH2, the Wwise runtime that decodes the media): a silent voice
-	 * has no length, so RenderAudio ends it on the next audio frame. A voice given a hint here lives that many seconds
-	 * of wall-clock audio time instead, and gets its AK_Duration callback now when it asked for one. Voices without a
-	 * hint keep the next-frame end the Kismet latents rely on (agent FI). Returns false for an unknown playing id.
+	 * DISHONORED(shim, agent IH2): agent ID kept a voice alive for a hinted number of seconds while the backend had no
+	 * media length. The ported runtime ends a voice at its media end and fires AK_Duration itself, so this is a no-op
+	 * kept for the conversation component's call; it answers whether the playing id is valid.
 	 */
 	bool SetDurationHint( AkPlayingID in_playingID, AkReal32 in_fSeconds );
 }

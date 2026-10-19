@@ -1,7 +1,7 @@
 /*=============================================================================
 	AkSilentInternal.h - shared state of the silent Wwise 2012.1 backend.
 
-	DISHONORED(bringup): private to source/Development/Src/External/Wwise2012/Src; the game side sees
+	DISHONORED(bringup, then port): private to source/Development/Src/External/Wwise2012/Src; the game side sees
 	only include/DishonoredWwiseSilent.h. Everything here is plain C++ and the CRT: the backend must not
 	depend on Core/Engine, because it stands in for a third-party static library.
 =============================================================================*/
@@ -53,55 +53,23 @@ namespace AkSilent
 		bool		bFileFound;
 	};
 
-	struct GameObject
-	{
-		String				Name;
-		AkSoundPosition		Position;
-		AkUInt32			ListenerMask;
-		AkReal32			AttenuationScale;
-		AkReal32			ObstructionLevel;
-		AkReal32			OcclusionLevel;
-		AkReal32			DryLevel;
-	};
-
-	/** One live PostEvent. The backend has no voices, so an event "plays" until it is stopped. */
-	struct Voice
-	{
-		AkPlayingID		ID;
-		AkUniqueID		EventID;
-		AkGameObjectID	GameObject;
-		AkUInt32		Flags;
-		AkCallbackFunc	Callback;
-		void *			Cookie;
-		AkReal32		HintSecondsLeft;	///< > 0: DishonoredWwise::SetDurationHint gave this voice a length (agent ID)
-	};
-
+	/**
+	 * What is still kept as books after agent IH2: the bank list (IH1) and the last value of every RTPC / switch / state
+	 * set through the API, which the Query functions answer from until IH3 ports CAkRTPCMgr / CAkSwitchMgr playback.
+	 */
 	struct Engine
 	{
 		bool									bSoundEngineInit;
 		bool									bMemoryMgrInit;
 		bool									bMusicEngineInit;
-		AkPlayingID								NextPlayingID;
-		AkPanningRule							PanningRule;
-		AkChannelMask							SpeakerConfig;
-		AkReal32								VolumeThreshold;
-		AkUInt16								MaxNumVoices;
-		AkListenerPosition						Listeners[8];
-		std::map<AkGameObjectID, GameObject>	GameObjects;
 		std::map<AkBankID, Bank>				Banks;
-		std::map<AkPlayingID, Voice>			Voices;
 		std::map<AkRtpcID, AkRtpcValue>			GlobalRtpc;
 		std::map<AkSwitchGroupID, AkSwitchStateID>	Switches;	///< global part; per-object in ObjectSwitches
 		std::map<AkStateGroupID, AkStateID>		States;
 		std::map<AkUInt64, AkSwitchStateID>		ObjectSwitches;	///< (gameObj << 32) | switchGroup
-		std::vector<AkGlobalCallbackFunc>		GlobalCallbacks;
-		std::vector<AkGlobalCallbackFunc>		BehaviouralExtensions;
 	};
 
 	Engine & Get();
-
-	AKRESULT AddCallback( std::vector<AkGlobalCallbackFunc> & list, AkGlobalCallbackFunc callback );
-	AKRESULT RemoveCallback( std::vector<AkGlobalCallbackFunc> & list, AkGlobalCallbackFunc callback );
 
 	/** Reads the BKHD chunk of a bank through the game's registered low-level IO hook. */
 	bool ReadBankHeader( const wchar_t * bankFileName, AkUInt32 & outVersion, AkBankID & outBankID, AkInt64 & outFileSize );

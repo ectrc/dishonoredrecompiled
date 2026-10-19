@@ -11,5 +11,9 @@ set_target_properties(CoreSmoke PROPERTIES FOLDER "Tests")
 # Agent IH1 (wave 26): the ported Wwise bank side (WwiseSmoke.cpp) against the retail banks, when the
 # audio surface is in the build (dishonored_apply_defines already links Dishonored::wwise).
 if(TARGET wwise)
-  target_sources(CoreSmoke PRIVATE WwiseSmoke.cpp)
+  # Agent IH2 (wave 26): the ported Vorbis decoder on a retail voice line (WwiseVorbisSmoke.cpp) reaches into the
+  # decoder's private headers, as CAkSrcBankVorbis does inside the wwise library.
+  target_sources(CoreSmoke PRIVATE WwiseSmoke.cpp WwiseVorbisSmoke.cpp)
+  target_include_directories(CoreSmoke PRIVATE "${DISHONORED_WWISE_DIR}/Src" "${DISHONORED_WWISE_DIR}/Src/AkVorbisDecoder" "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Common"
+                                               "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/SoftwarePipeline" "${DISHONORED_WWISE_DIR}/Src/AkAudioLib/Win32")
 endif()

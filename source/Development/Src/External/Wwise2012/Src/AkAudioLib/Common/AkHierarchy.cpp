@@ -8,6 +8,7 @@
 =============================================================================*/
 #include "AkHierarchy.h"
 #include "AkBankMgr.h"
+#include "AkBusCtx.h"
 
 #include <math.h>
 
@@ -264,7 +265,7 @@ CAkParameterNodeBase::FXChunk::FXChunk()
 
 /** 2012 0x944180: byte +46 starts at 0x90 (m_bIsGlobalLimit | m_bUseState). */
 CAkParameterNodeBase::CAkParameterNodeBase( AkUniqueID in_ulID )
-	: CAkIndexable( in_ulID )
+	: CAkPBIAware( in_ulID )
 	, m_pGlobalSIS( NULL )
 	, m_pFXChunk( NULL )
 	, m_pActivityChunk( NULL )
@@ -674,6 +675,7 @@ CAkParameterNode::~CAkParameterNode()
 	m_bPositioningInfoOverrideParent = 0;
 	if( m_p3DParameters )
 	{
+		m_p3DParameters->Term();
 		m_p3DParameters->~CAkGen3DParamsEx();
 		AK::MemoryMgr::Free( g_DefaultPoolId, m_p3DParameters );
 		m_p3DParameters = NULL;
@@ -1841,6 +1843,7 @@ CAkBus::~CAkBus()
 	if( s_pMasterBus == this )
 	{
 		s_pMasterBus = NULL;
+		g_MasterBusCtx.m_pBus = NULL;
 	}
 }
 
@@ -1858,6 +1861,7 @@ CAkBus * CAkBus::Create( AkUniqueID in_ulID )
 	if( !s_pMasterBus )
 	{
 		s_pMasterBus = pBus;
+		g_MasterBusCtx.m_pBus = pBus;
 	}
 	return pBus;
 }
@@ -2813,4 +2817,14 @@ AKRESULT CAkEvent::QueryAudioObjectIDs( AkUInt32 & io_ruNumItems, AkObjectInfo *
 	const bool bWasCount = io_ruNumItems == 0;
 	io_ruNumItems = uIndex_Out;
 	return bWasCount ? AK_PartialSuccess : AK_Success;
+}
+
+/** DISHONORED(port, IH2): retail's ~CAkGen3DParams (inlined in ~CAkGen3DParamsEx 0x954ff0) only releases the attenuation
+    the PBI copy took (CAkPBI::Init); the path arrays belong to the node and are freed by Term in ~CAkParameterNode. */
+CAkGen3DParams::~CAkGen3DParams()
+{
+	if( m_Params.m_pAttenuation )
+	{
+		static_cast<CAkAttenuation *>( m_Params.m_pAttenuation )->Release();
+	}
 }

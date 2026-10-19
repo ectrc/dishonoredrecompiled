@@ -54,7 +54,7 @@ namespace AK
 		AKRESULT GetPlayingSegmentInfo( AkPlayingID in_PlayingID, AkSegmentInfo & out_segmentInfo, bool /*in_bExtrapolate*/ )
 		{
 			memset( &out_segmentInfo, 0, sizeof( out_segmentInfo ) );
-			return AkSilent::Get().Voices.count( in_PlayingID ) ? AK_Success : AK_Fail;
+			return AK_Fail;
 		}
 	}
 }

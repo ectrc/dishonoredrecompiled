@@ -1,0 +1,20 @@
+item,status,evidence
+inventory,done,resources/docs/wwise/ih2_inventory.csv: 1170 rows (IH2 1044 + IH3 125 + IH4 1 pulled in); 768 ported + 145 templates + 64 by name + 12 statics; 46 IH3 / 96 IH4 / 39 not ported
+packed codebooks,done,2012 g_packedCodebookData u8[71991] 0xd90d68 + g_packedCodebooks u8*[599] 0xe3df78; retail 2013 rva 0xdd89f8 file 0xdd73f8 sha1 9183f2c09ec9dfea32d83ad27eee4c34d88bdf09
+Vorbis decoder,done,CoreSmoke: 117526 frames = ffmpeg; SNR 73.1 dB max diff 1 LSB vs ffmpeg decode of the rewrapped stream
+CAkSrcBankVorbis / CAkSrcFileVorbis,done,CoreSmoke: 117526 frames through GetBuffer; codebook released; game: voices from prepared media
+audio manager + thread + queue,done,AK::EventManager thread; every API call queued; RenderAudio wakes it
+playing manager + callbacks,done,AK_Duration 2665.0 ms and one AK_EndOfEvent at media end (CoreSmoke pipeline; IH2b.log 36/36)
+renderer / PBI / actions,done,Play/Stop/Pause/Resume/Break Execute; limiters; StopAll/StopPlayingID/ExecuteActionOnEvent messages
+LEngine + VPL + mixer + DirectSound sink,done,CoreSmoke capture peak 10435 span 2.6622 s (media 2.6650 s); game DirectSound sink mask 0x3
+media preparation,done,PrepareEvent/PrepareNodeData/PrepareSingleMedia/LoadSingleMedia/LoadSoundFromFile/ProcessAccumulated; IH2b.log 0 media failed
+KillSlot message 26 + ReleaseMedia,done,CoreSmoke sweep of 300+ banks unloads through the audio thread; index returns to Init.bnk population
+SetDurationHint,shim,DishonoredWwise::SetDurationHint is a no-op (answers playing id valid)
+-akwav,done,IH2b.wav 380.6 s; RMS ~1400 inside every play interval and ~0 before (IH2b_table.md)
+CoreSmoke,done,145 passed 0 failed (coresmoke_run8.log)
+game opening timing,done,36 PostEvents 36 ends; play time = media + 5..486 ms (IH2b_table.md)
+gate d3d9/inputtest/newgame,partial,22 ok 1 failed: criticals 0/0/0 unported_natives 0 newgame_on_mission 119 newgame_pawns 29 d3d9_frames 1140; inputtest_moved 388.1/298.5/304.2/218.3 in 4 attempts under load (open: quiet-machine run)
+exit,partial,SoundEngine::Term 0.17 s; manual quit Critical (StopAll after Term from GC) fixed in source + CoreSmoke check but not in the staged exe (build budget)
+IH3 seams,named,game syncs as books; GetAudioParameters props+ranges; 3D GetVolumes as 2D; no paths; PlayAndContinue layout only
+IH4 seams,named,insert effects empty; no environmental sends; source plug-ins fail as retail does without the plug-in
+builds,reported,DishonoredGame 2; wwise 3; CoreSmoke 8

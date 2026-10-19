@@ -1167,6 +1167,34 @@ public:
 		return AK_Success;
 	}
 
+	/** aklist2.h RemoveItem: unlink, destroy, and return the slot (strategy 2 keeps every slot on the free list). */
+	void RemoveItem( ListItem * in_pItem, ListItem * in_pPrevItem )
+	{
+		if( in_pItem == m_pFirst )
+		{
+			m_pFirst = in_pItem->pNextListItem;
+		}
+		else
+		{
+			in_pPrevItem->pNextListItem = in_pItem->pNextListItem;
+		}
+		if( in_pItem == m_pLast )
+		{
+			m_pLast = in_pPrevItem;
+		}
+		in_pItem->Item.~T();
+		if( TAllocStrategy == 2 )
+		{
+			in_pItem->pNextListItem = m_pFree;
+			m_pFree = in_pItem;
+		}
+		else
+		{
+			FreeListItem( in_pItem );
+		}
+		--m_ulNumListItems;
+	}
+
 	Iterator Begin() const { Iterator it; it.pItem = m_pFirst; return it; }
 	Iterator End() const { Iterator it; it.pItem = NULL; return it; }
 	AkUInt32 Length() const { return m_ulNumListItems; }
@@ -1237,6 +1265,58 @@ public:
 			*pItem = in_Item;
 		}
 		return pItem;
+	}
+};
+
+/** CAkMultiKeyList: CAkList2 of MapStruct kept sorted by key, equal keys in insertion order (akmultikeylist.h). */
+template <class T_KEY, class T_ITEM, int TAllocStrategy = 2, class TAlloc = ArrayPoolDefault>
+class CAkMultiKeyList : public CAkList2< MapStruct<T_KEY, T_ITEM>, const MapStruct<T_KEY, T_ITEM> &, TAllocStrategy, TAlloc >
+{
+	typedef CAkList2< MapStruct<T_KEY, T_ITEM>, const MapStruct<T_KEY, T_ITEM> &, TAllocStrategy, TAlloc > Base;
+public:
+	/** 2012 0x922160 (the <AkUInt32, AkPendingAction *> instantiation). */
+	AKRESULT Insert( T_KEY in_Key, T_ITEM & in_rItem )
+	{
+		if( !this->m_pFree )
+		{
+			if( this->m_ulNumListItems >= this->m_ulMaxNumListItems )
+			{
+				return AK_Fail;
+			}
+			typename Base::ListItem * pNew = (typename Base::ListItem *)AK::MemoryMgr::Malloc( TAlloc::Get(), sizeof( typename Base::ListItem ) );
+			if( !pNew )
+			{
+				return AK_Fail;
+			}
+			pNew->pNextListItem = this->m_pFree;
+			this->m_pFree = pNew;
+		}
+		typename Base::ListItem * pNew = this->m_pFree;
+		pNew->Item.key = in_Key;
+		pNew->Item.item = in_rItem;
+		typename Base::ListItem * pPrev = NULL;
+		typename Base::ListItem * pNext = this->m_pFirst;
+		while( pNext && pNext->Item.key <= in_Key )
+		{
+			pPrev = pNext;
+			pNext = pNext->pNextListItem;
+		}
+		if( !pNext )
+		{
+			this->m_pLast = pNew;
+		}
+		if( pPrev )
+		{
+			pPrev->pNextListItem = pNew;
+		}
+		else
+		{
+			this->m_pFirst = pNew;
+		}
+		this->m_pFree = pNew->pNextListItem;
+		pNew->pNextListItem = pNext;
+		++this->m_ulNumListItems;
+		return AK_Success;
 	}
 };
 

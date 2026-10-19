@@ -18,10 +18,14 @@
 #include <AK/SoundEngine/Common/AkStreamMgrModule.h>
 #include <AK/SoundEngine/Common/IAkStreamMgr.h>
 #include <AK/SoundEngine/Common/AkQueryParameters.h>
+#include <AK/SoundEngine/Common/AkCallback.h>
+#include <DishonoredWwiseSilent.h>
+#include <AK/Plugin/AkVorbisFactory.h>
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <malloc.h>
 #include <string>
 #include <vector>
@@ -245,6 +249,127 @@ bool FindPackagedBank( const std::vector<unsigned char> & Pck, unsigned BankID, 
 	return false;
 }
 
+// Agent IH2: one retail voice line posted through the whole pipeline (event -> action -> PBI -> Vorbis source -> pitch
+// -> mix bus -> final mix -> sink), the sink output captured with -akwav's writer.
+const AkUniqueID VoiceEventID = 0x57447bbe;
+const AkBankID VoiceBankID = 0x87628435;
+const double VoiceSeconds = 117526.0 / 44100.0;
+
+struct FPipelineCallbacks
+{
+	volatile LONG EndOfEvent = 0;
+	volatile LONG Durations = 0;
+	AkReal32 Duration = 0.f;
+	AkPlayingID EndedID = 0;
+	LARGE_INTEGER EndTime = {};
+};
+
+FPipelineCallbacks GPipeline;
+
+void PipelineCallback( AkCallbackType in_eType, AkCallbackInfo * in_pInfo )
+{
+	if( in_eType == AK_Duration )
+	{
+		GPipeline.Duration = ( (AkDurationCallbackInfo *)in_pInfo )->fDuration;
+		InterlockedIncrement( &GPipeline.Durations );
+	}
+	else if( in_eType == AK_EndOfEvent )
+	{
+		QueryPerformanceCounter( &GPipeline.EndTime );
+		GPipeline.EndedID = ( (AkEventCallbackInfo *)in_pInfo )->playingID;
+		InterlockedIncrement( &GPipeline.EndOfEvent );
+	}
+}
+
+void PipelineLog( const AkOSChar * in_pszMessage )
+{
+	wprintf( L"      %s\n", in_pszMessage );
+}
+
+void TestPipeline( WwiseSkipFunc InSkip )
+{
+	if( getenv( "WWISE_SMOKE_DIAG" ) )
+	{
+		DishonoredWwise::SetLogHook( PipelineLog );
+		DishonoredWwise::SetDiagnostics( true );
+	}
+	const std::vector<unsigned char> Pck = ReadWholeFile( std::wstring( CookedDir ) + L"Bk_E43C0E7F49D6DA8943110CA3F7328499.INT" );
+	size_t Offset = 0, Size = 0;
+	if( !FindPackagedBank( Pck, VoiceBankID, Offset, Size ) )
+	{
+		InSkip( "Wwise pipeline: PostEvent of a voice line", "Bk_E43C0E7F49D6DA8943110CA3F7328499.INT not found" );
+		return;
+	}
+	void * Memory = _aligned_malloc( Size, 16 );
+	memcpy( Memory, Pck.data() + Offset, Size );
+	AkBankID BankID = 0;
+	CheckEq( "Wwise pipeline: LoadBank(voice bank 0x87628435) from memory", AK::SoundEngine::LoadBank( Memory, (AkUInt32)Size, BankID ), AK_Success );
+
+	GReport( AK::SoundEngine::RegisterCodec( 0, 4, CreateVorbisFilePlugin, CreateVorbisBankPlugin ) == AK_Success, "Wwise pipeline: RegisterCodec(Audiokinetic, Vorbis) with the ported factories", NULL );
+	wchar_t WavPath[ MAX_PATH ];
+	const DWORD ExeLength = GetModuleFileNameW( NULL, WavPath, MAX_PATH );
+	std::wstring WavName( WavPath, ExeLength );
+	WavName = WavName.substr( 0, WavName.find_last_of( L'\\' ) + 1 ) + L"ih2_pipeline_smoke.wav";
+	DishonoredWwise::SetWavCapture( WavName.c_str() );
+	const AkGameObjectID GameObj = 100;
+	AK::SoundEngine::RegisterGameObj( GameObj, "IH2 smoke" );
+	LARGE_INTEGER Frequency, PostTime;
+	QueryPerformanceFrequency( &Frequency );
+	QueryPerformanceCounter( &PostTime );
+	const AkPlayingID PlayingID = AK::SoundEngine::PostEvent( VoiceEventID, GameObj, AK_EndOfEvent | AK_Duration, PipelineCallback, &GPipeline );
+	GReport( PlayingID != AK_INVALID_PLAYING_ID, "Wwise pipeline: PostEvent(Play_F3EAC6 0x57447bbe) returns a playing id", NULL );
+	for( int i = 0; i < 1000 && !GPipeline.EndOfEvent; ++i )
+	{
+		AK::SoundEngine::RenderAudio();
+		Sleep( 10 );
+	}
+	const double Seconds = (double)( GPipeline.EndTime.QuadPart - PostTime.QuadPart ) / (double)Frequency.QuadPart;
+	DishonoredWwise::SetWavCapture( NULL );
+	AK::SoundEngine::UnregisterGameObj( GameObj );
+	AK::SoundEngine::UnloadBank( BankID, NULL );
+	_aligned_free( Memory );
+
+	char Detail[ 256 ];
+	snprintf( Detail, sizeof( Detail ), "%ld duration callbacks, %.3f ms (media 117526 frames at 44.1 kHz = %.3f ms)", GPipeline.Durations, GPipeline.Duration, VoiceSeconds * 1000.0 );
+	GReport( GPipeline.Durations == 1 && fabs( GPipeline.Duration - VoiceSeconds * 1000.0 ) < 1.0, "Wwise pipeline: AK_Duration is the media length", Detail );
+	snprintf( Detail, sizeof( Detail ), "%ld end-of-event callbacks, playing id %u of %u, %.3f s after the post", GPipeline.EndOfEvent, GPipeline.EndedID, PlayingID, Seconds );
+	GReport( GPipeline.EndOfEvent == 1 && GPipeline.EndedID == PlayingID && Seconds > VoiceSeconds - 0.05 && Seconds < VoiceSeconds + 0.5, "Wwise pipeline: AK_EndOfEvent once, at the media end", Detail );
+
+	const std::vector<unsigned char> Wav = ReadWholeFile( WavName );
+	if( Wav.size() <= 44 )
+	{
+		GReport( false, "Wwise pipeline: the sink output was captured", "ih2_pipeline_smoke.wav next to CoreSmoke.exe" );
+		return;
+	}
+	const unsigned Channels = *(const unsigned short *)( Wav.data() + 22 );
+	const unsigned Rate = *(const unsigned *)( Wav.data() + 24 );
+	const short * Samples = (const short *)( Wav.data() + 44 );
+	const size_t NumFrames = ( Wav.size() - 44 ) / ( 2 * Channels );
+	size_t First = NumFrames, Last = 0;
+	int Peak = 0;
+	double Energy = 0.0;
+	for( size_t f = 0; f < NumFrames; ++f )
+	{
+		for( unsigned c = 0; c < Channels; ++c )
+		{
+			const int Value = abs( (int)Samples[ f * Channels + c ] );
+			if( Value > 1 )
+			{
+				First = f < First ? f : First;
+				Last = f;
+			}
+			Peak = Value > Peak ? Value : Peak;
+			Energy += (double)Value * Value;
+		}
+	}
+	const double Span = Last >= First ? (double)( Last - First + 1 ) / Rate : 0.0;
+	snprintf( Detail, sizeof( Detail ), "%zu frames x %u channels at %u Hz, peak %d, rms %.1f, audible span %.4f s (media %.4f s)", NumFrames, Channels, Rate, Peak,
+		sqrt( Energy / ( (double)NumFrames * Channels ) ), Span, VoiceSeconds );
+	printf( "      %s\n", Detail );
+	GReport( Peak > 500, "Wwise pipeline: the mixed output is not silent", Detail );
+	GReport( fabs( Span - VoiceSeconds ) < 0.05, "Wwise pipeline: the audible span is the media length (resampled to the pipeline rate)", Detail );
+}
+
 unsigned TotalOf( const AkUInt32 * Counts )
 {
 	unsigned Total = 0;
@@ -303,6 +428,8 @@ void TestWwise( WwiseReportFunc InReport, WwiseSkipFunc InSkip )
 	CheckEq( "Wwise index: 13 custom states", Index[ 1 ], 13 );
 	CheckEq( "Wwise index: 55 FX share sets", Index[ 8 ], 55 );
 	CheckEq( "Wwise LoadBank(Init.bnk) again is AK_BankAlreadyLoaded", AK::SoundEngine::LoadBank( L"Init.bnk", AK_DEFAULT_POOL_ID, InitID ), AK_BankAlreadyLoaded );
+
+	TestPipeline( InSkip );
 
 	const char * CsvPath = getenv( "WWISE_SMOKE_CSV" ) ? getenv( "WWISE_SMOKE_CSV" ) : "../agentIH1/hirc_counts.csv";
 	const std::vector<FCsvBank> Rows = ReadCsv( CsvPath );
@@ -397,6 +524,8 @@ void TestWwise( WwiseReportFunc InReport, WwiseSkipFunc InSkip )
 	AkAudioLibIndexCounts( Index );
 	CheckEq( "Wwise index empty after the last unload", (long long)Index[ 0 ] + Index[ 1 ] + Index[ 2 ] + Index[ 3 ] + Index[ 8 ], 0 );
 	AK::SoundEngine::Term();
+	AK::SoundEngine::StopAll( 2 );
+	GReport( AK::SoundEngine::RegisterGameObj( 100, "after Term" ) == AK_Fail, "Wwise API calls after Term answer AK_Fail (UAkComponent::Stop from GC after Teardown)", NULL );
 	AK::StreamMgr::DestroyDevice( Hook.DeviceID );
 	AK::IAkStreamMgr::Get()->Destroy();
 	AK::MemoryMgr::Term();
