@@ -1,6 +1,6 @@
 # Wave 26 — the hand-played opening (`PHASE23.md`, packages IA..IG) + the Wwise program (IH)
 
-**Status: planned 2026-10-18, NOT started. The user said "write a plan but do not execute yet, save this for later". Start only when the user says so.**
+**Status: started 2026-10-19 on the user's order ("execute this at 100% build power with no queue"); launch 1 = IA, IB, ID, IF, IH1 on `33d1c80`.**
 
 ## Context
 
