@@ -14,5 +14,7 @@ UBOOL ArkNavMeshPolyContainsPoint2DAlreadyInBound( const FNavMeshPolyBase* _pPol
 UBOOL ArkNavMeshPolyContainsPoint2D( const FNavMeshPolyBase* _pPoly, const FVector& _Point );
 /** 2013 rva 0x5062f0 (2012 0x5442c0, 249 B): the 2D test, then the point's height over the poly's plane within [-extent, PolyHeight + extent). */
 UBOOL ArkNavMeshPolyContainsPoint3D( const FNavMeshPolyBase* _pPoly, const FVector& _rPoint, FLOAT _fExtentZ );
+/** 2012 0xacfa0 (45 B, Engine/Src/arkutils.cpp): UNavigationHandle::GetPylonAndPolyFromPos at the default scout's WalkableFloorZ. */
+UBOOL ArkIsPointOnNavMesh( const FVector& _rCandidatePosition );
 
 #endif

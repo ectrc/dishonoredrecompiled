@@ -411,18 +411,11 @@ void AActor::performPhysics(FLOAT DeltaSeconds)
 	}
 }
 
+// DISHONORED(retail, agent IK2): 2012 0x2bd2a0 / 2013 VA 0x6a2230 (517 B both) start with CheckStillInWorld - retail has no
+// "skip regular physics in RMM_Accel, ProcessRootMotion ticks it" pair (USkeletalMeshComponent::ProcessRootMotion 2012
+// 0x353c80 / 2013 VA 0x746280 never calls performPhysics), so both halves of the reference's pair are gone.
 void APawn::performPhysics(FLOAT DeltaSeconds)
 {
-	// Skip regular perform physics when doing Root Motion, we want to do it right after the animation has been extracted, to prevent having a frame of lag.
-	// GIsGame check to match check in UnSkeletalComponent.cpp. Editor can allow root motion updates with deltatime <= 0.
-	if( Mesh != NULL && Mesh->RootMotionMode == RMM_Accel && GIsGame )
-	{
-		if( Mesh->bProcessingRootMotion == bForceRegularVelocity )
-		{
-			return;
-		}
-	}
-
 	CheckStillInWorld();
 
 	if( bDeleteMe )

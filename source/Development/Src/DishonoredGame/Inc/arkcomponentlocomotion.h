@@ -349,6 +349,7 @@ public:
 	void IKDiagDynamic( UBOOL _bAnimationOwnsThePawn, const FVector& _RootMotionRead ) const;
 	void IKDiagMove( const FVector& _Move, const FCheckResult& _Hit, const FVector& _Actual ) const;
 	void IKDiagStartPoly( const FVector& _StartOnGround, UBOOL _bFound, UBOOL _bTeleport ) const;
+	void IKDiagScheduler( const TCHAR* _Reason, const FVector& _Destination ) const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)
@@ -363,7 +364,7 @@ private:
 	void NotifyActiveRequest( BYTE _Event );
 
 	// path (arkcomponentlocomotionpath.cpp)
-	void UpdatePathOfHigherPriorityRequest( FLOAT _fTimeStep, UBOOL _bForcePFComputation, const FVector* const _pForcedDestination );	// 2013 0x549890
+	void UpdatePathOfHigherPriorityRequest( FLOAT _fTimeStep, UBOOL _bForcePFComputation, const FVector* const _pSpecificStartLoc );	// 2013 0x549890
 	void UpdatePathProperties();									// 2013 0x541ee0
 	void ResetPathProperties();										// 2013 0x545410
 	UBOOL UpdatePathFindingEdges( const FVector& _StartLocation, const FVector& _EndLocation );	// 2013 0x5468f0
@@ -376,6 +377,7 @@ private:
 	void ComputeDynamic( FLOAT _fTimeStep );						// 2013 0x54bec0
 	void FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBase, UBOOL _bPreview );	// 2013 0x53fb00
 	UBOOL ModerateMovePawn( FLOAT _fTimeStep );						// 2013 0x540d80
+	FCheckResult* FindValidLocation( FMemStack& _Mem, FVector& _Location, DWORD _TraceFlags, const FVector& _Extent, UBOOL& _bLocationWasUnsafe, UBOOL& _bHitNPCOnlyCollision ) const;	// 2012 0x57ffb0
 	void UpdateFloorAndBase( UBOOL _bHadBase );						// agent FV: FullMovePawn's ground hit, 2012 0x580ae0 lines after MoveAttachedActors
 	INT ComputeMoveYaw() const;										// 2013 0x53e1f0
 	INT ComputeTargetMoveYaw() const;								// 2013 0x547950

@@ -3727,33 +3727,10 @@ void USkeletalMeshComponent::ProcessRootMotion( FLOAT DeltaTime, FBoneAtom& Extr
 			}
 		}
 
-		// Tick Physics right away for RMM_Accel, so there is no frame of lag.
-		// Checking GIsGame because in Editor Matinee can allow Root Motion to be extracted with DeltaTime <= 0.
-		if( RootMotionMode == RMM_Accel && GIsGame && Owner )
-		{
-			APawn* P = Owner->GetAPawn();
-			if( Owner->Role != ROLE_SimulatedProxy || (P && P->ShouldBypassSimulatedClientPhysics()) )
-			{
-				if( P != NULL )
-				{
-					APlayerController* PC = P->Controller ? P->Controller->GetAPlayerController() : NULL;
-					if( PC != NULL && PC->RemoteRole == ROLE_AutonomousProxy && !PC->IsLocalPlayerController() )
-					{
-						PC->ServerTimeStamp = GWorld->GetWorldInfo()->TimeSeconds;
-					}
-				}
-
-				check(DeltaTime > 0.f);
-				bProcessingRootMotion = TRUE;
-				Owner->performPhysics(DeltaTime);
-				bProcessingRootMotion = FALSE;
-				// Physics can kill owner :(
-				if( !Owner || Owner->bDeleteMe )
-				{
-					return;
-				}
-			}
-		}
+		// DISHONORED(retail, agent IK2): the reference ticked the owner's physics here for RMM_Accel ("so there is no frame of
+		// lag"); retail's ProcessRootMotion (2012 0x353c80, 3,979 B) has no immediate physics tick. The reference's block ran the NPC's physWalking -> FArkComponentLocomotion::FullMovePawn inside the animation update after
+		// every turn animation (UpdateTurn leaves the mesh in RMM_Accel), and its move zeroed the start animation's root motion
+		// before ComputeDynamic read it (agentIK2.md).
 
 		// Track root motion mode changes
 		if( RootMotionMode != PreviousRMM )

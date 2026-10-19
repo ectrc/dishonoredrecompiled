@@ -28,6 +28,7 @@
 
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
+#include "arkcomponentfaceto.h"
 #include "ibdiag.h"
 
 #define DISLOCO_TRACE(n, fmt, ...) { static UBOOL bT##n = FALSE; if( !bT##n ) { bT##n = TRUE; debugf( TEXT("DISHONORED(bringup): loco trace " #n ": " fmt), __VA_ARGS__ ); } }
@@ -750,7 +751,21 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 		Move = m_CurMove;
 	}
 	Move.Z = 0.f;
-	if( Move.IsNearlyZero() )
+	// DISHONORED(port, agent IK2): the body yaw, 2012 0x580ae0 head: with the face-to component the new rotation is
+	// (0, Normalize( Rotation.Yaw + m_CurBodyYawDelta ), 0) and a rotation change alone runs the move.
+	// DISHONORED(bringup): without FArkComponentFaceTo (IC's -icfaceto is off by default) the pawn faces its move yaw, HEAD's
+	// stand-in.
+	FRotator NewRotation = m_pPawnOwner->Rotation;
+	if( m_pFaceToCpnt )
+	{
+		NewRotation = FRotator( 0, FRotator::NormalizeAxis( m_pPawnOwner->Rotation.Yaw + m_pFaceToCpnt->GetCurBodyYawDelta() ), 0 );
+	}
+	else if( m_CurMoveYaw != -200000 )
+	{
+		NewRotation.Yaw = m_CurMoveYaw;
+	}
+	const UBOOL bRotationChanged = m_pFaceToCpnt && ( m_pPawnOwner->Rotation.Yaw != NewRotation.Yaw || m_pPawnOwner->Rotation.Pitch != 0 || m_pPawnOwner->Rotation.Roll != 0 );
+	if( Move.IsNearlyZero() && !bRotationChanged )
 	{
 		m_pPawnOwner->Velocity = FVector( 0.f, 0.f, 0.f );
 		m_MoveHitNormal = FVector( 0.f, 0.f, 0.f );
@@ -768,12 +783,25 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 		return;
 	}
 
-	// The pawn faces the direction it is moving. Retail does this through the face-to component and the mesh offset;
-	// with neither ported, the rotation is set here so a walking NPC does not slide sideways.
-	FRotator NewRotation = m_pPawnOwner->Rotation;
-	if( m_CurMoveYaw != -200000 )
+	// DISHONORED(port, agent IK2): retail's un-sticking step, 2012 0x580ae0 (`bFallAllowed || !_bHaveBase`): the cylinder (XY x 1.001,
+	// x 0.5 with inertia disabled), raised by MaxStepHeight, is checked where it stands and pushed out of whatever it overlaps
+	// before the move; the pawn's location takes the XY correction.
+	// DISHONORED(bringup): SendTouchAndBumpEvents (2012 0x57f220) on the check's hits is not ported.
+	if( !Move.IsNearlyZero() || !_bOnValidBase )
 	{
-		NewRotation.Yaw = m_CurMoveYaw;
+		const FBoxSphereBounds& Bounds = m_pPawnOwner->CollisionComponent->Bounds;
+		const FLOAT fXYScale = m_bInertiaDisabled ? 0.5f : 1.001f;
+		const FVector Extent( Bounds.BoxExtent.X * fXYScale, Bounds.BoxExtent.Y * fXYScale, Bounds.BoxExtent.Z );
+		const FVector CheckOrigin = Bounds.Origin + FVector( 0.f, 0.f, m_pPawnOwner->MaxStepHeight );
+		FVector ValidOrigin = CheckOrigin;
+		UBOOL bLocationWasUnsafe = FALSE;
+		UBOOL bHitNPCOnlyCollision = FALSE;
+		FMemMark Mark( GMainThreadMemStack );
+		FindValidLocation( GMainThreadMemStack, ValidOrigin, 0x1020209F, Extent, bLocationWasUnsafe, bHitNPCOnlyCollision );
+		if( bLocationWasUnsafe && ValidOrigin != CheckOrigin )
+		{
+			GWorld->FarMoveActor( m_pPawnOwner, m_pPawnOwner->Location + ( ValidOrigin - CheckOrigin ), FALSE, TRUE, FALSE );
+		}
 	}
 
 	const FVector StartLocation = m_pPawnOwner->Location;
@@ -782,26 +810,10 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	GWorld->MoveActor( m_pPawnOwner, Move, NewRotation, 0, Hit );
 	DISLOCO_MARK( move_done )
 
-	if( Hit.Time < 1.f )
-	{
-		m_MoveHitNormal = Hit.Normal;
-		m_bStuckedInAWall = ( Hit.Time < 0.1f );
-		// A blocked move is worth telling the asker about once, because the sub-state above decides whether to repath.
-		if( m_bStuckedInAWall && !m_CurReqWorkData.m_bPathfindAlreadyFailed )
-		{
-			// Once per request. Retail rate-limits the repath through the push period instead (HandlePushPeriod, 2013 rva
-			// 0x548b90); without that, a pawn wedged against a doorframe forces a fresh A* every single frame, which is what
-			// the first measurement showed: 76,098 searches in 57 seconds from 26 NPCs.
-			m_CurReqWorkData.m_bPathfindAlreadyFailed = TRUE;
-			NotifyActiveRequest( CPNT_LOCO_EVENT_HIT_OBSTACLE );
-			m_bForcePathComputation = TRUE;
-		}
-	}
-	else
-	{
-		m_MoveHitNormal = FVector( 0.f, 0.f, 0.f );
-		m_bStuckedInAWall = FALSE;
-	}
+	// DISHONORED(port, agent IK2): retail keeps only the hit normal (when the hit is not a pawn) - the stuck flag is the dynamics'
+	// velocity test and the scheduler repaths on it (2012 0x58a4d0). HEAD also raised the stuck flag here, burnt the request's
+	// "pathfinding failed" bit and sent CPNT_LOCO_EVENT_HIT_OBSTACLE, none of which retail's FullMovePawn does.
+	m_MoveHitNormal = ( Hit.Time < 1.f && !Cast<APawn>( Hit.Actor ) ) ? Hit.Normal : FVector( 0.f, 0.f, 0.f );
 
 	const FVector Actual = m_pPawnOwner->Location - StartLocation;
 	IKDiagMove( Move, Hit, Actual );
@@ -812,6 +824,96 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	m_CurPawnLocation = m_pPawnOwner->Location;
 	IBDiagCheckStuck();
 	UpdateFloorAndBase( _bOnValidBase );
+}
+
+// DISHONORED(port, agent IK2): 2012 0x57ffb0 (745 B). Up to four rounds (one with inertia disabled) of a multi-point check of
+// the extent at _Location: among the overlapped actors that are neither the pawn nor based on it and that ShouldTrace the
+// pawn's flags | 0x1040 (a cylinder only when its own zero-length check at _Location really hits, unless inertia is
+// disabled), an NPC-only collision (ShouldTrace 0x10000000) is reported, any other one's pushed-out location is a candidate
+// and the nearest candidate's XY becomes _Location; a candidate equal to _Location ends the search as unsafe.
+FCheckResult* FArkComponentLocomotion::FindValidLocation( FMemStack& _Mem, FVector& _Location, DWORD _TraceFlags, const FVector& _Extent, UBOOL& _bLocationWasUnsafe, UBOOL& _bHitNPCOnlyCollision ) const
+{
+	INT MaxIteration = m_bInertiaDisabled ? 1 : 4;
+	FCheckResult* pHitResult = NULL;
+	UBOOL bCollidedSomething = TRUE;
+	while( bCollidedSomething )
+	{
+		bCollidedSomething = FALSE;
+		FCheckResult* pHits = GWorld->MultiPointCheck( _Mem, _Location, _Extent, _TraceFlags );
+		if( pHits )
+		{
+			if( pHitResult )
+			{
+				pHitResult->Next = pHits;
+			}
+			else
+			{
+				pHitResult = pHits;
+			}
+			FCheckResult BestHit( 1.f );
+			FLOAT fBestSquaredDist = BIG_NUMBER;
+			UBOOL bCollided = FALSE;
+			for( FCheckResult* pHit = pHits; pHit; pHit = pHit->GetNext() )
+			{
+				AActor* pActor = pHit->Actor;
+				if( !pActor || pActor == m_pPawnOwner )
+				{
+					continue;
+				}
+				UBOOL bBasedOnPawn = FALSE;
+				for( AActor* pBase = pActor; pBase; pBase = pBase->Base )
+				{
+					if( pBase == m_pPawnOwner )
+					{
+						bBasedOnPawn = TRUE;
+						break;
+					}
+				}
+				if( bBasedOnPawn || !pActor->ShouldTrace( pHit->Component, m_pPawnOwner, _TraceFlags | 0x1040 ) )
+				{
+					continue;
+				}
+				if( !m_bInertiaDisabled && pHit->Component && pHit->Component->IsA( UCylinderComponent::StaticClass() ) )
+				{
+					FCheckResult CylinderHit( 1.f );
+					if( pHit->Component->LineCheck( CylinderHit, _Location, _Location, _Extent, _TraceFlags ) )
+					{
+						continue;
+					}
+				}
+				if( pActor->ShouldTrace( pHit->Component, m_pPawnOwner, 0x10000000 ) )
+				{
+					_bHitNPCOnlyCollision = TRUE;
+				}
+				else if( !pHit->Location.Equals( _Location, 0.0001f ) )
+				{
+					const FLOAT fSquaredDist = ( pHit->Location - _Location ).SizeSquared();
+					if( fBestSquaredDist > fSquaredDist )
+					{
+						BestHit = *pHit;
+						fBestSquaredDist = fSquaredDist;
+						bCollided = TRUE;
+					}
+				}
+			}
+			if( bCollided )
+			{
+				_bLocationWasUnsafe = TRUE;
+				if( BestHit.Location.X != _Location.X || BestHit.Location.Y != _Location.Y )
+				{
+					--MaxIteration;
+					_Location.X = BestHit.Location.X;
+					_Location.Y = BestHit.Location.Y;
+					bCollidedSomething = TRUE;
+				}
+			}
+		}
+		if( MaxIteration <= 0 )
+		{
+			break;
+		}
+	}
+	return pHitResult;
 }
 
 // DISHONORED(port): agent FV (PHASE18 FV). The ground hit of retail's FullMovePawn (2012 0x580ae0, after MoveAttachedActors):

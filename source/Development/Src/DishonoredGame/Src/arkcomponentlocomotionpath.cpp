@@ -423,7 +423,8 @@ void FArkComponentLocomotion::UpdatePathProperties()
 		: ( m_PathPoints( 1 ).m_Point - m_PathPoints( 0 ).m_Point ).Size2D();
 }
 
-// DISHONORED(port): 2013 rva 0x545410 (2012 0x586320, 562 bytes). The path is dropped whole: every cross-pylon edge the
+// DISHONORED(port): 2013 rva 0x545410 (2012 0x586320, 562 bytes); agent IK2: the flag word is `& 0xFFFFFF01 | 0x20` - bits 0x2..0x80
+// cleared, the path-at-end bit raised, m_bTryToReturnOnNavMesh (0x1) KEPT (HEAD cleared it). The path is dropped whole: every cross-pylon edge the
 // pawn had reserved is released (APylon::RemoveActorMovingThruPylon on both sides, and the special-move edges' own
 // IInterface_NavMeshPathObject::RemoveActorMovingThruEdge), the raw edge list is emptied, the corner index and both yaws
 // go back to "none", the path-at-end flag is raised and the error is cleared.
@@ -446,7 +447,8 @@ void FArkComponentLocomotion::ResetPathProperties()
 	m_bPathfindingUpToDate = FALSE;
 	m_bPathIsDirty = FALSE;
 	m_bStartingNewPath = FALSE;
-	m_bTryToReturnOnNavMesh = FALSE;
+	m_bForcePathComputation = FALSE;
+	m_bMustTestPathAfterTurn = FALSE;
 	m_LastPFError = PATHERROR_MAX;
 	m_fTryToReturnOnNavMeshDuration = 0.f;
 	m_bHasRequestWithPathComputed = ComputeHasRequestWithPathComputedFlag();
@@ -479,186 +481,285 @@ INT FArkComponentLocomotion::ComputePathYawFromDist( FLOAT _fDist ) const
 	return m_CurPathYaw;
 }
 
-// DISHONORED(port): 2013 rva 0x549890 (2012 0x58a4d0, 3,285 bytes) - the path scheduler, and the largest function in the
-// path unit. Retail's decision tree, in order:
-//   1. resolve where the active request wants the pawn (ComputeTargetedLocationForPath);
-//   2. if the pawn is not on a valid poly, try to find the nearest mesh location at 150, then 300, then further, and
-//      spend at most m_fMaxDurationToReturnOnNavMesh doing it before giving up on the request;
-//   3. if the pathfinding is up to date but the polyline is not, rebuild the polyline (UpdateBuiltPathPoints) - this is
-//      the cheap half, and it is what runs when only the pawn moved;
-//   4. otherwise decide whether a new search is needed at all: the destination moved by more than the repath coefficient
-//      times the distance already walked, or the path was forced dirty, or the pawn left the path;
-//   5. rate-limit it against the shared budget ms_TickCountBeforePath (at most one search per component per
-//      (component count + 1) ticks - which is how a map with 26 NPCs does not run 26 A* searches in one frame);
-//   6. run the search (UpdatePathFindingEdges) and, on success, rebuild the polyline; on failure raise
-//      CPNT_LOCO_EVENT_PATHFINDING_FAILED to the asker exactly once per request.
-// DISHONORED(bringup): step 2's escalating search radius is ported as retail's first two attempts (150 then 300) and then
-// gives up rather than growing without bound; the "push period" interaction (HandlePushPeriod, 2013 rva 0x548b90) and the
-// PointReachable short-circuit that skips the search when the goal is in line of sight are left out with their rvas.
-void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeStep, UBOOL _bForcePFComputation, const FVector* const _pForcedDestination )
+// DISHONORED(port, agent IK2): 2012 0x58a4d0 (3,132 B) / 2013 VA 0x949890 (3,285 B) - the path scheduler, retail's m_LastPFError
+// state machine (decompiles build/agentIK/decomp2012/58a4d0_*, build/agentIK/decomp2013/949890_*).
+//   1. A path that is up to date with no error is re-checked: stuck in a wall, or the targeted location moved (two cylinder
+//      heights of Z ignored) by more than m_fRepathCoef x the distance left to the old end (always, once the path is at its
+//      end), or - after a turn has lined the move up with the current path point - that point has drifted more than 5 uu
+//      sideways off the path yaw and is no longer reachable: the path is marked for a new search (bit 0x8).
+//   2. By error state: start poly / anchor pylon not found - while walking back onto the mesh the start is re-verified every
+//      tick (search as soon as it holds, give up after m_fMaxDurationToReturnOnNavMesh), otherwise the error clears when the
+//      pawn's ground point moved; goal poly / no path - the error clears when the targeted location left the request's end
+//      threshold, or the goal is now on the mesh; no error - a pawn without an up-to-date path re-verifies its start and,
+//      off the mesh, gets the nearest mesh point (150 uu, then doubling for a pawn that has had a path) and the teleport
+//      only when it has had a path (m_bHasBeenOnNavMesh).
+//   3. The search, when one is due and the shared budget allows it (or forced, or the path was at its end): the end is the
+//      targeted location one tick ahead; a goal reachable in a straight line takes no A*, else UpdatePathFindingEdges, whose
+//      failure leaves the navigation handle's error in m_LastPFError. A search that succeeded clears the error and raises
+//      m_bHasBeenOnNavMesh.
+//   4. The polyline is rebuilt when the search is newer than it; the asker is told PATHFINDING_SUCCEED once per request when
+//      it is, and PATHFINDING_FAILED once per request on a goal error, or a start error with no walk back left.
+// DISHONORED(bringup): EPathFindingError is the tree's (EngineClasses.h), not retail's (2012 PDB: MAXIMUMVISITEXCEEDED 3,
+// NOPATHFOUND 4, INVALIDNAVMESH 5, MAX 6): retail's goal group {GOALPOLYNOTFOUND, MAXIMUMVISITEXCEEDED, NOPATHFOUND} is the
+// tree's {GOALPOLYNOTFOUND, NOPATHFOUND}; the tree's path-following errors (4..6) fall to the default like retail's
+// INVALIDNAVMESH. Retail's PointReachable takes an Arkane out-list of the edges the straight line crosses and the scheduler
+// hands every crossed special-move / cross-pylon edge to its path object or pylon (vtable +16 / +956); the reference
+// PointReachable has no out-list, so the straight-line path carries no raw edges and no edge is reserved (the reservation
+// system is unported, see ResetPathProperties). Retail's radius doubling has no upper bound; this stops at 2400 uu.
+void FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest( FLOAT _fTimeStep, UBOOL _bForcePFComputation, const FVector* const _pSpecificStartLoc )
 {
-	if( !m_ReqMgr.HasRequest() || !m_pPawnOwner )
+	if( !m_ReqMgr.HasRequest() || !m_pPawnOwner || !m_pConfig )
 	{
 		return;
 	}
+	const FArkCpntLocoRequestCommonProps& rCommon = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps;
+	const FLOAT fCollisionHeight = m_pPawnOwner->CylinderComponent ? m_pPawnOwner->CylinderComponent->CollisionHeight : 0.f;
+	UBOOL bRepath = FALSE;
+	UBOOL bCloseToEndRepath = FALSE;
 
-	DISLOCO_MARK( sched_enter )
-	const FVector Destination = _pForcedDestination ? *_pForcedDestination : ComputeTargetedLocationForPath( _fTimeStep, FALSE );
-	DISLOCO_TRACE( sched_dest, "destination %s", *Destination.ToString() )
-
-	// 2. the pawn has to be on the mesh to search from. On L_Tower_P 11 of the 26 spawned NPCs are NOT: the nav-mesh
-	// census reports 15 standing on a poly, 8 more with a poly within 150 units and 3 with neither, because the spawners
-	// put them on stairs, balconies and ledges the cooked mesh does not cover.
-	FVector StartOnGround = GetPawnGroundLocation();
-	DISLOCO_MARK( sched_startloc )
-	if( !UpdateStartLocAndVerifyIfOnValidPoly( StartOnGround, NULL ) )
+	if( m_bPathfindingUpToDate && m_LastPFError == PATHERROR_MAX )
 	{
-		// Once this request has been told its start poly could not be found, stop trying. Retail bounds the attempt with
-		// m_fMaxDurationToReturnOnNavMesh alone, which is not enough here because ResetPathProperties clears the duration
-		// it is measured against - so the give-up decision and the reset chase each other. Measured: 5,774 failed searches
-		// and 47,331 teleports in 22 seconds, which slows the whole game down. The sub-state above has had its
-		// CPNT_LOCO_EVENT_PATHFINDING_FAILED and it is its business what to do next.
-		if( m_CurReqWorkData.m_bPathfindAlreadyFailed )
+		if( m_bStuckedInAWall )
 		{
-			return;
+			bRepath = TRUE;
 		}
-		// DISHONORED(port, agent IK): 2012 0x58a4d0 / 2013 VA 0x949890, the PATHERROR_MAX -> STARTPOLYNOTFOUND step: the nearest
-		// mesh point is looked for once, on the first frame off the mesh (150, then - only for a pawn that has had a path,
-		// m_bHasBeenOnNavMesh - 300 and wider), m_bTryToReturnOnNavMesh walks the pawn to it (ComputeTargetMoveYaw /
-		// ComputeTargetMoveSpeed) and the teleport is taken only when m_bHasBeenOnNavMesh is set (+252 bit 0x100 / 2013 +260,
-		// raised by a successful search) and the teleport is not disabled. HEAD teleported every pawn found off the mesh,
-		// which put the boat's captain inside the boat's physics asset (agentIK.md §1).
-		// DISHONORED(bringup): retail's search radius doubles without bound for a pawn that has had a path; this stops at 300.
-		const UBOOL bFirstFrameOff = !m_bTryToReturnOnNavMesh;
-		m_bTryToReturnOnNavMesh = TRUE;
-		m_fTryToReturnOnNavMeshDuration += _fTimeStep;
-		UBOOL bFound = TRUE;
-		if( bFirstFrameOff )
+		else
 		{
-			bFound = FindNearestLocationOnNavMesh( NULL, 150.f, m_NearestLocationOnNavMesh );
-			if( !bFound && m_bHasBeenOnNavMesh )
+			const FLOAT fTwoHeights = m_pPawnOwner->GetCylinderExtent().Z * 2.f;
+			FVector TargetMove = ComputeTargetedLocationForPath( _fTimeStep, FALSE ) - m_EndLocationUsedToAskPath;
+			if( fTwoHeights > Abs( TargetMove.Z ) )
 			{
-				bFound = FindNearestLocationOnNavMesh( NULL, 300.f, m_NearestLocationOnNavMesh );
+				TargetMove.Z = 0.f;
 			}
-		}
-		const UBOOL bTeleport = bFirstFrameOff && bFound && !m_bTeleportDisabled && m_bHasBeenOnNavMesh;
-		if( bFirstFrameOff )
-		{
-			IKDiagStartPoly( StartOnGround, bFound, bTeleport );
-		}
-		if( bTeleport )
-		{
-			// DISHONORED(port): retail's answer, and it is a teleport: m_bTeleportRequired is raised with m_TeleportLocation
-			// set to the nearest mesh point and PreAsyncWorkTick moves the pawn there with UWorld::FarMoveActor
-			// (2013 rva 0x54caa0's teleport branch), once CanBeTeleportedToLocationWithoutBeingSeen agrees.
-			// DISHONORED(bringup): that visibility test (2013 rva 0x53e310, 769 bytes) is not ported, so the teleport is
-			// taken without it. It is taken rather than simply searching from the mesh point because the A* reads its start
-			// from FNavMeshPathParams::SearchStart, which the PAWN fills from its own feet - a search "from" a corrected
-			// point still starts at the pawn, and every one of those searches fails.
-			m_TeleportLocation = m_NearestLocationOnNavMesh;
-			m_bTeleportRequired = TRUE;
-		}
-		const FLOAT fMaxDuration = m_pConfig ? m_pConfig->m_fMaxDurationToReturnOnNavMesh : 0.f;
-		if( !bFound || m_fTryToReturnOnNavMeshDuration > fMaxDuration )
-		{
-			if( DisGCLocoDiagEnabled() )
+			const FLOAT fTargetMoved = TargetMove.Size();
+			if( Abs( fTargetMoved ) >= 0.1f )
 			{
-				debugf( TEXT("DISHONORED(bringup): gadiag pathfail %s: no start poly at %s (nearest %s found %d, %.2f s of %.2f), destination %s"),
-					*m_pPawnOwner->GetName(), *StartOnGround.ToString(), *m_NearestLocationOnNavMesh.ToString(), (INT)bFound, m_fTryToReturnOnNavMeshDuration, fMaxDuration, *Destination.ToString() );
-				// agent GK: which polys the start poly test saw, and why each refused the ground point (the 2D side test per edge)
-				TArray<FNavMeshPolyBase*> Candidates;
-				UNavigationHandle::GetAllPolysFromPos( StartOnGround, FVector( 50.f, 50.f, 200.f ), Candidates, FALSE );
-				for( INT PolyIdx = 0; PolyIdx < Candidates.Num(); ++PolyIdx )
+				if( m_bPathAtEnd )
 				{
-					const FNavMeshPolyBase* Poly = Candidates( PolyIdx );
-					FString Edges;
-					const INT VertCount = Poly->PolyVerts.Num();
-					for( INT VertIdx = 0; VertIdx < VertCount; ++VertIdx )
+					bRepath = TRUE;
+					bCloseToEndRepath = TRUE;
+				}
+				else
+				{
+					FVector ToOldEnd = m_EndLocationUsedToAskPath - m_pPawnOwner->Location;
+					if( fTwoHeights > Abs( ToOldEnd.Z ) )
 					{
-						const FVector Prev = Poly->GetVertLocation( ( VertIdx + VertCount - 1 ) % VertCount, WORLD_SPACE );
-						const FVector Vert = Poly->GetVertLocation( VertIdx, WORLD_SPACE );
-						Edges += FString::Printf( TEXT(" %.3f"), ( Vert.Y - Prev.Y ) * ( StartOnGround.X - Prev.X ) - ( Vert.X - Prev.X ) * ( StartOnGround.Y - Prev.Y ) );
+						ToOldEnd.Z = 0.f;
 					}
-					TArray<FNavMeshPolyBase*> Exact;
-					Poly->NavMesh->GetIntersectingPolys( StartOnGround, FVector( 0.f, 0.f, 80.f ), Exact );
-					debugf( TEXT("DISHONORED(bringup): gadiag pathfail %s: candidate poly %d/%d center %s normal %s bounds(local) %s..%s transform %d origin %s inside2D %d in zero-extent query %d sides%s"),
-						*m_pPawnOwner->GetName(), PolyIdx, Candidates.Num(), *Poly->GetPolyCenter( WORLD_SPACE ).ToString(), *Poly->GetPolyNormal( WORLD_SPACE ).ToString(),
-						*Poly->BoxBounds.Min.ToString(), *Poly->BoxBounds.Max.ToString(), (INT)Poly->NavMesh->bNeedsTransform, *Poly->NavMesh->LocalToWorld.GetOrigin().ToString(),
-						(INT)ArkNavMeshPolyContainsPoint2DAlreadyInBound( Poly, StartOnGround ), (INT)Exact.ContainsItem( const_cast<FNavMeshPolyBase*>( Poly ) ), *Edges );
+					if( ( fTargetMoved / ToOldEnd.Size() ) > m_pConfig->m_fRepathCoef )
+					{
+						bRepath = TRUE;
+					}
 				}
 			}
-			m_CurReqWorkData.m_bPathfindAlreadyFailed = TRUE;
-			m_LastPFError = PATHERROR_STARTPOLYNOTFOUND;
-			NotifyActiveRequest( CPNT_LOCO_EVENT_PATHFINDING_FAILED );
-			ResetPathProperties();
-		}
-		return;
-	}
-	m_bTryToReturnOnNavMesh = FALSE;
-	m_fTryToReturnOnNavMeshDuration = 0.f;
-
-	// 3. the search is still valid, only the polyline is stale.
-	if( m_bPathfindingUpToDate && !m_bBuiltPathUpToDate )
-	{
-		if( UpdateBuiltPathPoints() )
-		{
-			m_bHasRequestWithPathComputed = ComputeHasRequestWithPathComputedFlag();
-			return;
-		}
-	}
-
-	// 4. does the destination still agree with what the last search was asked for?
-	// A search that already failed for this request is not retried until something changes: the destination moves, the
-	// request is replaced, or someone forces it. Without that clause a goal the mesh cannot reach is searched for every
-	// tick the budget allows - measured at 20,411 failed searches in 46 seconds.
-	UBOOL bNeedNewSearch = _bForcePFComputation || m_bForcePathComputation
-		|| ( !m_bPathfindingUpToDate && !m_CurReqWorkData.m_bPathfindAlreadyFailed );
-	if( !bNeedNewSearch )
-	{
-		const FLOAT fRepathCoef = m_pConfig ? m_pConfig->m_fRepathCoef : 0.f;
-		const FLOAT fDestMoved = ( Destination - m_EndLocationUsedToAskPath ).Size2D();
-		const FLOAT fWalked = ( m_CurPawnLocation - m_StartLocationUsedToAskPath ).Size2D();
-		if( fDestMoved > ( fRepathCoef * Max( fWalked, 1.f ) ) )
-		{
-			bNeedNewSearch = TRUE;
-		}
-	}
-	if( !bNeedNewSearch )
-	{
-		return;
-	}
-
-	// 5. the shared budget.
-	if( ms_TickCountBeforePath > 0 && !_bForcePFComputation && !m_bForcePathComputation )
-	{
-		return;
-	}
-	ms_TickCountBeforePath = ms_ComponentCount + 1;
-	m_bForcePathComputation = FALSE;
-
-	// 6. the search.
-	ResetPathProperties();
-	m_StartLocationUsedToAskPath = StartOnGround;
-	m_EndLocationUsedToAskPath = Destination;
-	if( UpdatePathFindingEdges( m_StartLocationUsedToAskPath, m_EndLocationUsedToAskPath ) )
-	{
-		m_bPathfindingUpToDate = TRUE;
-		m_bHasBeenOnNavMesh = TRUE;
-		if( UpdateBuiltPathPoints() )
-		{
-			if( !m_CurReqWorkData.m_bPathfindAlreadySucceed )
+			if( !m_bInertiaDisabled && !bRepath && m_CurPathPointIdx != INDEX_NONE && !m_CurMove.IsZero() )
 			{
-				m_CurReqWorkData.m_bPathfindAlreadySucceed = TRUE;
-				NotifyActiveRequest( CPNT_LOCO_EVENT_PATHFINDING_SUCCEED );
+				const FVector ToPathPoint = m_PathPoints( m_CurPathPointIdx ).m_Point - m_CurPawnLocation;
+				if( !ToPathPoint.IsZero() )
+				{
+					const INT PathPointYaw = appTrunc( appAtan2( ToPathPoint.Y, ToPathPoint.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+					const INT MoveYaw = appTrunc( appAtan2( m_CurMove.Y, m_CurMove.X ) * 10430.219f * 2.f + 0.5f ) >> 1;
+					const INT TurnLeft = (INT)(SWORD)(WORD)( MoveYaw - PathPointYaw );
+					if( !m_bMustTestPathAfterTurn )
+					{
+						m_bMustTestPathAfterTurn = ( PathPointYaw != MoveYaw && TurnLeft > 3 ) ? TRUE : FALSE;
+					}
+					else if( PathPointYaw == MoveYaw || TurnLeft <= 3 )
+					{
+						const INT PathYawOff = (INT)(SWORD)(WORD)( m_CurPathYaw - PathPointYaw );
+						if( Abs( ToPathPoint.Size2D() * appSin( (FLOAT)PathYawOff * 0.000095873802f ) ) > 5.f )
+						{
+							UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
+							if( pNavHandle && !pNavHandle->PointReachable( m_PathPoints( m_CurPathPointIdx ).m_Point, m_CurPawnLocation, TRUE ) )
+							{
+								bRepath = TRUE;
+							}
+						}
+						m_bMustTestPathAfterTurn = FALSE;
+					}
+				}
+			}
+		}
+		if( bRepath )
+		{
+			m_bTryToReturnOnNavMesh = FALSE;
+			m_bPathIsDirty = TRUE;
+			m_LastPFError = PATHERROR_MAX;
+			m_fTryToReturnOnNavMeshDuration = 0.f;
+		}
+	}
+
+	const UBOOL bSearchDue = m_LastPFError == PATHERROR_MAX && ( !m_bPathfindingUpToDate || m_bPathIsDirty );
+	UBOOL bSearchNow = FALSE;
+	UBOOL bSkipSearch = FALSE;
+	const TCHAR* Reason = TEXT("state");
+	switch( m_LastPFError )
+	{
+	case PATHERROR_STARTPOLYNOTFOUND:
+	case PATHERROR_ANCHORPYLONNOTFOUND:
+		if( m_bTryToReturnOnNavMesh )
+		{
+			m_fTryToReturnOnNavMeshDuration += _fTimeStep;
+			if( UpdateStartLocAndVerifyIfOnValidPoly( m_StartLocationUsedToAskPath, _pSpecificStartLoc ) )
+			{
+				m_LastPFError = PATHERROR_MAX;
+				bSearchNow = TRUE;
+				Reason = TEXT("back on the mesh");
+			}
+			else
+			{
+				m_bTryToReturnOnNavMesh = ( m_pConfig->m_fMaxDurationToReturnOnNavMesh > m_fTryToReturnOnNavMeshDuration ) ? TRUE : FALSE;
+				Reason = TEXT("walking back to the mesh");
+			}
+		}
+		else
+		{
+			const FVector Ground = m_pPawnOwner->Location - FVector( 0.f, 0.f, fCollisionHeight );
+			if( !m_StartLocationUsedToAskPath.Equals( Ground, 0.1f ) )
+			{
+				m_LastPFError = PATHERROR_MAX;
+				Reason = TEXT("start error cleared: the ground point moved");
+			}
+			else
+			{
+				Reason = TEXT("start error, ground point unchanged");
+			}
+		}
+		break;
+
+	case PATHERROR_GOALPOLYNOTFOUND:
+	case PATHERROR_NOPATHFOUND:
+	{
+		FVector Target = ComputeTargetedLocationForPath( _fTimeStep, FALSE );
+		Target.Z = m_EndLocationUsedToAskPath.Z;
+		if( !m_EndLocationUsedToAskPath.Equals( Target, rCommon.m_fEndLocationThreshold )
+			|| ( m_LastPFError == PATHERROR_GOALPOLYNOTFOUND && ArkIsPointOnNavMesh( Target ) ) )
+		{
+			m_LastPFError = PATHERROR_MAX;
+			Reason = TEXT("goal error cleared: the target moved");
+		}
+		else
+		{
+			Reason = TEXT("goal error, target unchanged");
+		}
+		break;
+	}
+
+	case PATHERROR_MAX:
+	{
+		if( ( m_bPathfindingUpToDate && !m_bPathIsDirty ) || UpdateStartLocAndVerifyIfOnValidPoly( m_StartLocationUsedToAskPath, _pSpecificStartLoc ) )
+		{
+			Reason = bSearchDue ? TEXT("search due") : TEXT("path up to date");
+			break;
+		}
+		bSkipSearch = TRUE;
+		m_LastPFError = PATHERROR_STARTPOLYNOTFOUND;
+		const UBOOL bFound = FindNearestLocationOnNavMesh( NULL, 150.f, m_NearestLocationOnNavMesh );
+		if( !bFound )
+		{
+			if( !m_bTeleportDisabled && m_bHasBeenOnNavMesh && !m_bTeleportRequired )
+			{
+				ResetPathProperties();
+				FLOAT fSearchDist = 300.f;
+				while( !FindNearestLocationOnNavMesh( NULL, fSearchDist, m_NearestLocationOnNavMesh ) && fSearchDist < 2400.f )
+				{
+					fSearchDist += fSearchDist;
+				}
+				m_bTeleportRequired = TRUE;
+				m_TeleportLocation = m_NearestLocationOnNavMesh + FVector( 0.f, 0.f, fCollisionHeight );
+			}
+		}
+		else
+		{
+			m_bTryToReturnOnNavMesh = TRUE;
+			if( !m_bTeleportDisabled && m_bHasBeenOnNavMesh )
+			{
+				m_bTeleportRequired = TRUE;
+				m_TeleportLocation = m_NearestLocationOnNavMesh + FVector( 0.f, 0.f, fCollisionHeight );
+			}
+		}
+		IKDiagStartPoly( m_StartLocationUsedToAskPath, bFound, m_bTeleportRequired );
+		Reason = TEXT("off the mesh");
+		break;
+	}
+
+	default:
+		Reason = TEXT("error state without a rule");
+		break;
+	}
+
+	if( !bSkipSearch && ( bSearchNow || bSearchDue ) )
+	{
+		if( _bForcePFComputation || bCloseToEndRepath || ms_TickCountBeforePath == 0 )
+		{
+			m_bTeleportRequired = FALSE;
+			UBOOL bSearched = FALSE;
+			m_EndLocationUsedToAskPath = ComputeTargetedLocationForPath( _fTimeStep, TRUE );
+			UNavigationHandle* pNavHandle = m_pPawnOwner->GetNavigationHandle();
+			if( pNavHandle && pNavHandle->PointReachable( m_EndLocationUsedToAskPath, FVector( 0.f, 0.f, 0.f ), TRUE ) )
+			{
+				ResetPathProperties();
+				m_bPathfindingUpToDate = TRUE;
+				bSearched = TRUE;
+				Reason = TEXT("searched: straight line");
+			}
+			else if( _bForcePFComputation || ms_TickCountBeforePath == 0 )
+			{
+				ResetPathProperties();
+				ms_TickCountBeforePath = ms_ComponentCount + 1;
+				m_bPathfindingUpToDate = UpdatePathFindingEdges( m_StartLocationUsedToAskPath, m_EndLocationUsedToAskPath );
+				bSearched = TRUE;
+				if( !m_bPathfindingUpToDate && pNavHandle )
+				{
+					m_LastPFError = (INT)pNavHandle->LastPathError;
+				}
+				Reason = m_bPathfindingUpToDate ? TEXT("searched: A* path") : TEXT("searched: A* failed");
+			}
+			else
+			{
+				Reason = TEXT("search due, waiting for the budget");
+			}
+			if( m_bPathfindingUpToDate && bSearched )
+			{
+				m_LastPFError = PATHERROR_MAX;
+				m_bHasBeenOnNavMesh = TRUE;
+			}
+		}
+		else
+		{
+			Reason = TEXT("search due, waiting for the budget");
+		}
+	}
+
+	if( m_bPathfindingUpToDate && !m_bBuiltPathUpToDate && UpdateBuiltPathPoints() )
+	{
+		m_LastPathPoint = m_PathPoints( m_PathPoints.Num() - 1 ).m_Point;
+		m_bHasRequestWithPathComputed = ComputeHasRequestWithPathComputedFlag();
+	}
+
+	if( m_CurReqWorkData.m_bPathfindAlreadySucceed || !m_bBuiltPathUpToDate )
+	{
+		if( !m_CurReqWorkData.m_bPathfindAlreadyFailed )
+		{
+			const UBOOL bStartFailed = !m_bTryToReturnOnNavMesh && ( m_LastPFError == PATHERROR_STARTPOLYNOTFOUND || m_LastPFError == PATHERROR_ANCHORPYLONNOTFOUND );
+			const UBOOL bGoalFailed = m_LastPFError == PATHERROR_GOALPOLYNOTFOUND || m_LastPFError == PATHERROR_NOPATHFOUND;
+			if( ( bStartFailed || bGoalFailed ) && rCommon.m_LocoEventCallback )
+			{
+				m_CurReqWorkData.m_bPathfindAlreadyFailed = TRUE;
+				m_CurReqWorkData.m_bPathfindAlreadySucceed = FALSE;
+				NotifyActiveRequest( CPNT_LOCO_EVENT_PATHFINDING_FAILED );
+				Reason = TEXT("told the asker: pathfinding failed");
 			}
 		}
 	}
-	else if( !m_CurReqWorkData.m_bPathfindAlreadyFailed )
+	else if( rCommon.m_LocoEventCallback )
 	{
-		m_CurReqWorkData.m_bPathfindAlreadyFailed = TRUE;
-		NotifyActiveRequest( CPNT_LOCO_EVENT_PATHFINDING_FAILED );
+		m_CurReqWorkData.m_bPathfindAlreadySucceed = TRUE;
+		m_CurReqWorkData.m_bPathfindAlreadyFailed = FALSE;
+		NotifyActiveRequest( CPNT_LOCO_EVENT_PATHFINDING_SUCCEED );
+		Reason = TEXT("told the asker: pathfinding succeeded");
 	}
-	m_bHasRequestWithPathComputed = ComputeHasRequestWithPathComputedFlag();
+	IKDiagScheduler( Reason, m_EndLocationUsedToAskPath );
 }
 
 // DISHONORED(port): 2013 rva 0x53df60 (2012 0x57f0b0)

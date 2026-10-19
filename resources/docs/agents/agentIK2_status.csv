@@ -1,0 +1,12 @@
+function,binary,address,status,file,note
+FArkComponentLocomotion::UpdatePathOfHigherPriorityRequest,2012/2013,0x58a4d0 / VA 0x949890,ported,DishonoredGame/Src/arkcomponentlocomotionpath.cpp,m_LastPFError state machine; enum mapped to the tree's; no crossed-edge reservations; radius doubling capped 2400
+ArkIsPointOnNavMesh,2012,0xacfa0,ported,Engine/Src/arkutils.cpp,
+FArkComponentLocomotion::ResetPathProperties,2012,0x586320,ported,DishonoredGame/Src/arkcomponentlocomotionpath.cpp,TryToReturn kept; edge reservations still not released (none taken)
+FArkComponentLocomotion::PreAsyncWorkTick (path reset bit + teleport),2012,0x58d5f0,partial,DishonoredGame/Src/arkcomponentlocomotion.cpp,teleport still before ComputeDynamic and without CanBeTeleportedToLocationWithoutBeingSeen
+FArkComponentLocomotion::OnRequestManagerEvent,2012,0x587350,ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,no dirty bit on first-request change
+FArkComponentLocomotion::FullMovePawn,2012,0x580ae0,partial,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,head (body yaw/hit normal/FindValidLocation) ported; step-raised horizontal sweep + floor drop NOT ported (next)
+FArkComponentLocomotion::FindValidLocation,2012,0x57ffb0,ported,DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,
+USkeletalMeshComponent::ProcessRootMotion (RMM_Accel physics tick),2012/2013,0x353c80 / VA 0x746280,ported,Engine/Src/UnSkeletalComponent.cpp,reference block removed
+APawn::performPhysics (RMM_Accel skip),2012/2013,0x2bd2a0 / VA 0x6a2230,ported UNBUILT,Engine/Src/UnPhysic.cpp,needs a third build
+FArkComponentLocomotion::ComputeTargetMoveYaw avoidance half,2012/2013,0x588700 / VA 0x947950,not ported,,needs PointReachableZeroExtent + DetectPreAvoidanceCollision (2013 0x543f70)
+FArkComponentLocomotion::IKDiagScheduler,ours,,diag,DishonoredGame/Src/arkcomponentlocomotion.cpp,-ikdiag: one line per change of scheduler exit + path points

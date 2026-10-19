@@ -605,7 +605,9 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 	}
 
 	DISLOCO_MARK( tick_enter )
-	if( m_bPathIsDirty )
+	// DISHONORED(port, agent IK2): retail tests +252 bit 0x40 here (2012 0x58d5f0), the bit ForceActiveRequestRepath / OnEnable /
+	// HandleTeleport raise (m_bForcePathComputation); HEAD tested 0x8, the scheduler's own repath bit.
+	if( m_bForcePathComputation )
 	{
 		ResetPathProperties();
 	}
@@ -617,16 +619,13 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 		UpdatePathOfHigherPriorityRequest( _fTimeStep, FALSE, NULL );
 	}
 
-	// DISHONORED(port): retail's teleport branch, 2013 rva 0x54caa0. An NPC that the path scheduler found off the
-	// navigation mesh is put back onto it; the pawn's own half-height is added because the mesh point is a floor point.
+	// DISHONORED(port): retail's teleport branch, 2013 rva 0x54caa0 / 2012 0x58d5f0: the scheduler already added the pawn's
+	// half-height to m_TeleportLocation (agent IK2); the bit clears only when the move happened.
+	// DISHONORED(bringup): retail runs this after ComputeDynamic, outside the STATE 2 / 10 physics, and only once
+	// CanBeTeleportedToLocationWithoutBeingSeen (2012 0x57f460) agrees; that test is unported.
 	if( m_bTeleportRequired && !m_bTeleportDisabled )
 	{
-		m_bTeleportRequired = FALSE;
-		FVector Destination = m_TeleportLocation;
-		if( m_pPawnOwner->CylinderComponent )
-		{
-			Destination.Z += m_pPawnOwner->CylinderComponent->CollisionHeight;
-		}
+		const FVector Destination = m_TeleportLocation;
 		const FVector Before = m_pPawnOwner->Location;
 		const UBOOL bMoved = GWorld->FarMoveActor( m_pPawnOwner, Destination, FALSE, TRUE, FALSE );
 		if( DisGCLocoDiagEnabled() )
@@ -637,11 +636,7 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 		if( bMoved )
 		{
 			GDisLocoTeleports++;
-			// NOT HandleTeleport(): retail's teleport branch clears the bit and forces a recomputation, it does not reset the
-			// path properties - and ResetPathProperties zeroes m_fTryToReturnOnNavMeshDuration, which is the clock the
-			// give-up decision is measured against. Calling it here made the two chase each other: 191,404 teleports in 46
-			// seconds, because every successful teleport put the clock back to zero.
-			m_bForcePathComputation = TRUE;
+			m_bTeleportRequired = FALSE;
 			m_CurPawnLocation = m_pPawnOwner->Location;
 		}
 	}
@@ -798,6 +793,33 @@ void FArkComponentLocomotion::IKDiagStartPoly( const FVector& _StartOnGround, UB
 		*m_NearestLocationOnNavMesh.ToString(), (INT)_bFound, (INT)_bTeleport, (INT)m_bHasBeenOnNavMesh, (INT)m_bTeleportDisabled, m_fTryToReturnOnNavMeshDuration );
 }
 
+/** One line per change of the scheduler's exit (reason or error state), so a pawn waiting in one state logs once. */
+void FArkComponentLocomotion::IKDiagScheduler( const TCHAR* _Reason, const FVector& _Destination ) const
+{
+	if( !DisIKDiagEnabled() || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	static TMap<const FArkComponentLocomotion*, FString> LastExit;
+	const FString Exit = FString::Printf( TEXT("%s | error %d"), _Reason, m_LastPFError );
+	const FString* pLast = LastExit.Find( this );
+	if( pLast && *pLast == Exit )
+	{
+		return;
+	}
+	LastExit.Set( this, Exit );
+	FString Points;
+	for( INT PointIdx = 0; PointIdx < m_PathPoints.Num() && PointIdx < 24; ++PointIdx )
+	{
+		const FVector& Point = m_PathPoints( PointIdx ).m_Point;
+		Points += FString::Printf( TEXT(" %.0f/%.0f/%.0f"), Point.X, Point.Y, Point.Z );
+	}
+	debugf( TEXT("DISHONORED(bringup): ikdiag sched %s world %.3f %s | uptodate %d built %d dirty %d return %d/%.2f been %d path %d/%d budget %d | destination %s start %s at %s base %s | points%s"),
+		*m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(), *Exit, (INT)m_bPathfindingUpToDate, (INT)m_bBuiltPathUpToDate, (INT)m_bPathIsDirty,
+		(INT)m_bTryToReturnOnNavMesh, m_fTryToReturnOnNavMeshDuration, (INT)m_bHasBeenOnNavMesh, m_CurPathPointIdx, m_PathPoints.Num(), ms_TickCountBeforePath,
+		*_Destination.ToString(), *m_StartLocationUsedToAskPath.ToString(), *m_pPawnOwner->Location.ToString(), m_pPawnOwner->Base ? *m_pPawnOwner->Base->GetName() : TEXT("none"), *Points );
+}
+
 /*-----------------------------------------------------------------------------
 	the request-manager callback
 -----------------------------------------------------------------------------*/
@@ -847,7 +869,6 @@ void FArkComponentLocomotion::OnRequestManagerEvent( const FArkRequestManager<FL
 		}
 		m_CurReqWorkData = FLocoRequestWorkData();
 		m_bHasRequestWithPathComputed = ComputeHasRequestWithPathComputedFlag();
-		m_bPathIsDirty = TRUE;
 		break;
 
 	default:

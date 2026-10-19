@@ -274,7 +274,7 @@ UBOOL DisIKDiagWatched( const AActor* _pActor )
 		return FALSE;
 	}
 	const FLOAT Now = GWorld->GetTimeSeconds();
-	if( Now < 100.f || Now > 200.f )
+	if( Now < 140.f || Now > 200.f )
 	{
 		return FALSE;
 	}
