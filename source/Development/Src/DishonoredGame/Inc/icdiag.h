@@ -7,7 +7,5 @@
 UBOOL DisICDiagEnabled();
 void DisICDiagStim( class UDishonoredAIBrain* _pBrain, const struct FAIStimStruct& _rStim );
 void DisICDiagCurrentBehavior( class UDishonoredAIBrain* _pBrain, class UDishonoredAIBehavior* _pPrevious );
-/** -icfaceto: the locomotion component creates its FArkComponentFaceTo (Src/arkcomponentfaceto.cpp's banner). */
-UBOOL DisICFaceToEnabled();
 
 #endif

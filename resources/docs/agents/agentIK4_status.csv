@@ -1,0 +1,9 @@
+function,binary,address,status,file,note
+FArkComponentLocomotion::SetConfig (face-to creation),2012,0x584010,ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,FaceTo created for every NPC (IC's -icfaceto switch removed)
+DisICFaceToEnabled,ours,,removed,DishonoredGame/Src/arkcomponentfaceto.cpp + Inc/icdiag.h,
+FArkComponentLocomotion::IKDiagProbeFloor / IKDiagFalling,ours,,diag,DishonoredGame/Src/arkcomponentlocomotion.cpp,-ikdiag probe / census / falling
+FDisPrimTraceMask::MatchesTraceFlags (-ik4traceall),2013,rva 0x129990,diag switch,Engine/Src/UnLevAct.cpp,hypothesis test only; default behaviour unchanged
+ADishonoredNPCPawn::setPhysics,2012,0x7adaa0,not ported,,needs the NPC master FSM (UStateNPCMasterFalling / Walk are skeletons)
+UStateNPCMasterFalling::OnEnterState,2012,0x6c9730,not ported,,
+UNavigationHandle::PointReachableZeroExtent,2012,0x2a9ba0,not ported,,no build left
+FArkComponentLocomotion::DetectPreAvoidanceCollision,2012,0x584f10,not ported,,no build left

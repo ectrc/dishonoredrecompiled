@@ -2223,6 +2223,16 @@ DECLARE_CYCLE_STAT(TEXT("Check Sort"),			STAT_Col_Sort,			STATGROUP_Collision);
 // player pawn"); nothing in this tree ever writes that byte, so the equivalent engine predicates are used instead.
 UBOOL FDisPrimTraceMask::MatchesTraceFlags( const AActor* SourceActor, DWORD TraceFlags ) const
 {
+	// DISHONORED(diag, agent IK4): -ik4traceall makes every primitive answer every movement trace (build 2's hypothesis test).
+	static INT TraceAll = -1;
+	if( TraceAll < 0 )
+	{
+		TraceAll = ParseParam( appCmdLine(), TEXT("ik4traceall") ) ? 1 : 0;
+	}
+	if( TraceAll && !( TraceFlags & TRACE_DisGameplay ) )
+	{
+		return TRUE;
+	}
 	if( TraceFlags & TRACE_DisGameplay )
 	{
 		if( TraceFlags & TRACE_DisGameplay_VisionLOS )

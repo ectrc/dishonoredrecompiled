@@ -10,10 +10,9 @@
 //     timed removal; the shared template is agent DN's Lookat reading. Every face-to request this tree issues is untimed (-1).
 //   - the OnLODChanged registration on FArkGameEventDispatcher (event 2, Starting / Stopping) is made, but FDisComponentLODManager
 //     is unported, so m_bNoTick / m_bInLOD keep their constructed values (0 / 1 -> m_bInLOD, as retail before the first LOD event).
-//   - -icfaceto gates the whole component: without it the locomotion component does not create one (see SetConfig) and every
-//     caller keeps its NULL path. The pawn's yaw is applied by retail's FArkComponentLocomotion::FullMovePawn (2012 0x580ae0 head:
-//     NewRotation.Yaw = Normalize( Rotation.Yaw + m_CurBodyYawDelta ), and the move runs when only the yaw changed), which is
-//     package IK's function in this wave; the component computes the facing but nothing turns the pawn yet.
+//   - every NPC with a locomotion config has the component, as in retail (agent IK4 removed IC's -icfaceto switch after three
+//     ride runs with it on: 20 BlendNow, 0 "Failed, with animsequence", 0 Critical each). The pawn's yaw is applied by retail's
+//     FArkComponentLocomotion::FullMovePawn (2012 0x580ae0 head: NewRotation.Yaw = Normalize( Rotation.Yaw + m_CurBodyYawDelta )).
 
 #include "DishonoredGame.h"
 #include "arkcomponentpolicy.h"
@@ -24,16 +23,6 @@
 ARKCOMPONENT_IMPLEMENT_TYPE( FArkComponentFaceTo )
 
 UBOOL FArkComponentFaceTo::ms_bDebugDontRotate = FALSE;
-
-UBOOL DisICFaceToEnabled()
-{
-	static INT Enabled = -1;
-	if( Enabled < 0 )
-	{
-		Enabled = ParseParam( appCmdLine(), TEXT("icfaceto") ) ? 1 : 0;
-	}
-	return Enabled != 0;
-}
 
 // The game event FArkComponentFaceTo listens to: the LOD manager's per-pawn LOD change (retail type 2).
 enum { ArkGameEventType_FaceToLODChanged = 2 };

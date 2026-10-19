@@ -758,7 +758,7 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 	}
 	else if( m_CurMoveYaw != -200000 )
 	{
-		// DISHONORED(bringup): without FArkComponentFaceTo (IC's -icfaceto is off by default) the pawn faces its move yaw.
+		// DISHONORED(bringup): a pawn without FArkComponentFaceTo (no component container) faces its move yaw.
 		NewRotation = FRotator( 0, m_CurMoveYaw, 0 );
 	}
 	const UBOOL bRotationChanged = pPawn->Rotation.Yaw != NewRotation.Yaw || pPawn->Rotation.Pitch != 0 || pPawn->Rotation.Roll != 0;
@@ -891,6 +891,7 @@ void FArkComponentLocomotion::FullMovePawn( FLOAT _fTimeStep, UBOOL _bOnValidBas
 		else
 		{
 			FloorOutcome = TEXT("no floor within 3 x MaxStepHeight");
+			IKDiagProbeFloor( VertStart, Extent );
 		}
 		if( bNoFloor )
 		{

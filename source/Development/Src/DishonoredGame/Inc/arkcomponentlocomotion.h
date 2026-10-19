@@ -351,6 +351,8 @@ public:
 	void IKDiagStartPoly( const FVector& _StartOnGround, UBOOL _bFound, UBOOL _bTeleport ) const;
 	void IKDiagScheduler( const TCHAR* _Reason, const FVector& _Destination ) const;
 	void IKDiagFloor( const TCHAR* _Outcome, const FCheckResult& _FloorHit, const FVector& _Delta ) const;
+	void IKDiagProbeFloor( const FVector& _Start, const FVector& _Extent ) const;
+	void IKDiagFalling() const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)

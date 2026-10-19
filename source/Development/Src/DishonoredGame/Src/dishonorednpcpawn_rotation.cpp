@@ -43,9 +43,8 @@ UBOOL ADishonoredNPCPawn::SetDesiredRotation( FRotator _TargetDesiredRotation, U
 // ---- agent HC (PHASE22 HC): the rotation intents; agent IC (PHASE23 IC): their face-to requests ----
 // Each active intent owns one FArkComponentFaceTo request (m_RequestID) at its priority, started or updated by SetTargetRotation and
 // stopped by UnlockNPCRotation / CancelAllNPCRotations; the component's PreAsyncWorkTick turns the body towards the first one.
-// DISHONORED(bringup): the component exists only under -icfaceto (Src/arkcomponentfaceto.cpp's banner); without it
-// GetComponentFaceTo answers NULL, every call below takes its NULL path and m_RequestID stays -1 (retail calls through the pointer
-// unguarded - every retail NPC with a locomotion config has the component).
+// Every NPC with a locomotion config has the component (retail calls through the pointer unguarded); the NULL paths below remain
+// for a pawn without one.
 
 // DISHONORED(port): 2012 rva 0x7ab8d0 (7 B) / 2013 0x7ab560: the pointer Spawned caches from the locomotion component's SetConfig
 FArkComponentFaceTo* ADishonoredNPCPawn::GetComponentFaceTo() const

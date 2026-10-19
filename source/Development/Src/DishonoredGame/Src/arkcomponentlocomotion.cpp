@@ -207,7 +207,7 @@ void FArkComponentLocomotion::Starting()
 		OnEnable();
 	}
 
-	// agent IC: 2012 0x58b750 starts the face-to component SetConfig created (NULL without -icfaceto)
+	// agent IC: 2012 0x58b750 starts the face-to component SetConfig created
 	if( m_pFaceToCpnt )
 	{
 		m_pFaceToCpnt->m_bStarted = TRUE;
@@ -322,9 +322,8 @@ UBOOL FArkComponentLocomotion::SetConfig( const UArkComponentLocomotionConfig* c
 	{
 		m_pAnimNodeLoco->Initialize( m_pConfig );
 	}
-	// agent IC: retail (2012 0x584010) adds the face-to component here and initialises it with this config; behind -icfaceto
-	// (Src/arkcomponentfaceto.cpp's banner).
-	if( DisICFaceToEnabled() && m_pPawnOwner->m_ComponentContainer )
+	// agent IC: retail (2012 0x584010) adds the face-to component here and initialises it with this config.
+	if( m_pPawnOwner->m_ComponentContainer )
 	{
 		m_pFaceToCpnt = m_pPawnOwner->m_ComponentContainer->AddNewComponent<FArkComponentFaceTo>();
 		if( m_pFaceToCpnt )
@@ -641,6 +640,7 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 		}
 	}
 
+	IKDiagFalling();
 	ComputeDynamic( _fTimeStep );
 
 	// DISHONORED(port): retail's step 10 (2012 0x58d9af..0x58dae2): the pawn's planar velocity direction scaled by
@@ -832,6 +832,121 @@ void FArkComponentLocomotion::IKDiagFloor( const TCHAR* _Outcome, const FCheckRe
 		_FloorHit.Component ? *_FloorHit.Component->GetClass()->GetName() : TEXT("-"), _FloorHit.Component ? *_FloorHit.Component->GetName() : TEXT("-"),
 		_FloorHit.Time, _FloorHit.Normal.X, _FloorHit.Normal.Y, _FloorHit.Normal.Z, _FloorHit.Location.X, _FloorHit.Location.Y, _FloorHit.Location.Z,
 		_FloorHit.Actor ? (INT)_FloorHit.Actor->bCanStepUpOn : -1, _Delta.X, _Delta.Y, _Delta.Z, m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_pPawnOwner->Location.Z );
+}
+
+static FString IKDiagDescribeHit( const FCheckResult& _Hit )
+{
+	if( !_Hit.Actor && !_Hit.Component )
+	{
+		return FString( TEXT("nothing") );
+	}
+	const UPrimitiveComponent* pComponent = _Hit.Component;
+	FString Mesh( TEXT("-") );
+	if( const UStaticMeshComponent* pStatic = ConstCast<UStaticMeshComponent>( pComponent ) )
+	{
+		Mesh = pStatic->StaticMesh ? pStatic->StaticMesh->GetPathName() : FString( TEXT("none") );
+	}
+	const FDisPrimTraceMask* pMask = pComponent ? &pComponent->m_CollisionTraceTypes : NULL;
+	return FString::Printf( TEXT("%s (%s) comp %s %s mesh %s at z %.1f normal %.2f/%.2f/%.2f time %.3f | mask nonpawn %d npc %d player %d | collide %d block %d zero %d nonzero %d | actor collide %d block %d worldgeo %d"),
+		_Hit.Actor ? *_Hit.Actor->GetName() : TEXT("none"), _Hit.Actor ? *_Hit.Actor->GetClass()->GetName() : TEXT("-"),
+		pComponent ? *pComponent->GetClass()->GetName() : TEXT("-"), pComponent ? *pComponent->GetName() : TEXT("-"), *Mesh,
+		_Hit.Location.Z, _Hit.Normal.X, _Hit.Normal.Y, _Hit.Normal.Z, _Hit.Time,
+		pMask ? (INT)pMask->m_bTraceForMove_NonPawn : -1, pMask ? (INT)pMask->m_bTraceForMove_NonPlayerPawn : -1, pMask ? (INT)pMask->m_bTraceForMove_Player : -1,
+		pComponent ? (INT)pComponent->CollideActors : -1, pComponent ? (INT)pComponent->BlockActors : -1, pComponent ? (INT)pComponent->BlockZeroExtent : -1,
+		pComponent ? (INT)pComponent->BlockNonZeroExtent : -1, _Hit.Actor ? (INT)_Hit.Actor->bCollideActors : -1, _Hit.Actor ? (INT)_Hit.Actor->bBlockActors : -1,
+		_Hit.Actor ? (INT)_Hit.Actor->bWorldGeometry : -1 );
+}
+
+/** At a failed floor sweep: what is under the pawn for other trace kinds (twice a second per pawn). */
+void FArkComponentLocomotion::IKDiagProbeFloor( const FVector& _Start, const FVector& _Extent ) const
+{
+	if( !DisIKDiagEnabled() || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	static TMap<const FArkComponentLocomotion*, FLOAT> LastProbe;
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	const FLOAT* pLast = LastProbe.Find( this );
+	if( pLast && Now - *pLast < 0.5f )
+	{
+		return;
+	}
+	LastProbe.Set( this, Now );
+	const FVector End = _Start - FVector( 0.f, 0.f, 600.f );
+	struct FProbe { const TCHAR* Name; DWORD Flags; UBOOL bExtent; };
+	const FProbe Probes[] =
+	{
+		{ TEXT("npc 0x100030DF extent"), 0x100030DF, TRUE },
+		{ TEXT("npc 0x30DF extent"), 0x30DF, TRUE },
+		{ TEXT("player 0x200030DF extent"), 0x200030DF, TRUE },
+		{ TEXT("allblocking zero-extent"), TRACE_AllBlocking, FALSE },
+		{ TEXT("allblocking+player zero-extent"), TRACE_AllBlocking | TRACE_DisMove_Player, FALSE },
+	};
+	for( INT ProbeIdx = 0; ProbeIdx < ARRAY_COUNT( Probes ); ++ProbeIdx )
+	{
+		FCheckResult Hit( 1.f );
+		GWorld->SingleLineCheck( Hit, m_pPawnOwner, End, _Start, Probes[ProbeIdx].Flags, Probes[ProbeIdx].bExtent ? _Extent : FVector( 0.f, 0.f, 0.f ) );
+		debugf( TEXT("DISHONORED(bringup): ikdiag probe %s world %.3f from %s down 600, %s: %s"), *m_pPawnOwner->GetName(), Now, *_Start.ToString(), Probes[ProbeIdx].Name, *IKDiagDescribeHit( Hit ) );
+	}
+	static UBOOL bCensusDone = FALSE;
+	if( !bCensusDone )
+	{
+		bCensusDone = TRUE;
+		const FBox Probe( _Start - FVector( 250.f, 250.f, 700.f ), _Start + FVector( 250.f, 250.f, 100.f ) );
+		for( FActorIterator It; It; ++It )
+		{
+			AActor* pActor = *It;
+			for( INT CompIdx = 0; CompIdx < pActor->AllComponents.Num(); ++CompIdx )
+			{
+				UPrimitiveComponent* pPrimitive = Cast<UPrimitiveComponent>( pActor->AllComponents( CompIdx ) );
+				if( !pPrimitive || !pPrimitive->IsAttached() || !Probe.Intersect( pPrimitive->Bounds.GetBox() ) )
+				{
+					continue;
+				}
+				FCheckResult Own( 1.f );
+				const UBOOL bOwnMiss = pPrimitive->LineCheck( Own, End, _Start, FVector( 0.f, 0.f, 0.f ), TRACE_AllBlocking );
+				FCheckResult OwnExtent( 1.f );
+				const UBOOL bOwnExtentMiss = pPrimitive->LineCheck( OwnExtent, End, _Start, _Extent, TRACE_AllBlocking );
+				FCheckResult Fake( 1.f );
+				Fake.Actor = pActor;
+				Fake.Component = pPrimitive;
+				debugf( TEXT("DISHONORED(bringup): ikdiag census %s: bounds %s +- %s hidden %d | own zero-extent %s z %.1f, own extent %s z %.1f | %s"),
+					*m_pPawnOwner->GetName(), *pPrimitive->Bounds.Origin.ToString(), *pPrimitive->Bounds.BoxExtent.ToString(), (INT)pPrimitive->HiddenGame,
+					bOwnMiss ? TEXT("miss") : TEXT("HIT"), Own.Location.Z, bOwnExtentMiss ? TEXT("miss") : TEXT("HIT"), OwnExtent.Location.Z, *IKDiagDescribeHit( Fake ) );
+			}
+		}
+	}
+	FMemMark Mark( GMainThreadMemStack );
+	INT HitIdx = 0;
+	for( FCheckResult* pHit = GWorld->MultiLineCheck( GMainThreadMemStack, End, _Start, FVector( 0.f, 0.f, 0.f ), TRACE_AllBlocking | TRACE_Visible, m_pPawnOwner ); pHit && HitIdx < 8; pHit = pHit->GetNext(), ++HitIdx )
+	{
+		debugf( TEXT("DISHONORED(bringup): ikdiag probe %s world %.3f multi %d: %s"), *m_pPawnOwner->GetName(), Now, HitIdx, *IKDiagDescribeHit( *pHit ) );
+	}
+}
+
+/** Once a second while a watched NPC is in PHYS_Falling: where, how fast, which volume, what is under it. */
+void FArkComponentLocomotion::IKDiagFalling() const
+{
+	if( !DisIKDiagEnabled() || !m_pPawnOwner || m_pPawnOwner->Physics != PHYS_Falling || !DisIKDiagWatched( m_pPawnOwner ) )
+	{
+		return;
+	}
+	static TMap<const FArkComponentLocomotion*, FLOAT> LastReport;
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	const FLOAT* pLast = LastReport.Find( this );
+	if( pLast && Now - *pLast < 1.f )
+	{
+		return;
+	}
+	LastReport.Set( this, Now );
+	FCheckResult Hit( 1.f );
+	const FVector Extent = m_pPawnOwner->GetCylinderExtent();
+	GWorld->SingleLineCheck( Hit, m_pPawnOwner, m_pPawnOwner->Location - FVector( 0.f, 0.f, 200.f ), m_pPawnOwner->Location, TRACE_AllBlocking | TRACE_DisMove_NonPlayerPawn, Extent );
+	APhysicsVolume* pVolume = m_pPawnOwner->PhysicsVolume;
+	debugf( TEXT("DISHONORED(bringup): ikdiag falling %s world %.3f at %s vel %s accel %s volume %s water %d gravz %.1f base %s floor %s | below: %s"),
+		*m_pPawnOwner->GetName(), Now, *m_pPawnOwner->Location.ToString(), *m_pPawnOwner->Velocity.ToString(), *m_pPawnOwner->Acceleration.ToString(),
+		pVolume ? *pVolume->GetName() : TEXT("none"), pVolume ? (INT)pVolume->bWaterVolume : -1, pVolume ? pVolume->GetGravityZ() : 0.f,
+		m_pPawnOwner->Base ? *m_pPawnOwner->Base->GetName() : TEXT("none"), *m_pPawnOwner->Floor.ToString(), *IKDiagDescribeHit( Hit ) );
 }
 
 /*-----------------------------------------------------------------------------
