@@ -52,6 +52,16 @@ INT DisGIDiagLevel()
 	return GDisGIDiagLevel;
 }
 
+UBOOL DisILDiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("ildiag") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
 UBOOL DisGIDiagEnabled()
 {
 	static INT Enabled = -1;
@@ -505,6 +515,13 @@ UDisAttentionInfo_Base& UDisAIBrainProcessAttention::GetAttentionInfo( IDisAtten
 	}
 	Slot.m_pAttentionInfo->InitAttnInfo( this, _pTarget, RelationshipToTarget );
 	UDisAttentionInfo_Base* Info = Slot.m_pAttentionInfo;
+	if( DisILDiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): ildiag attnslot %s -> %s info %s %p slots %d/%d data %p relationship %d world %.2f"),
+			m_pOwningPawn ? *m_pOwningPawn->GetName() : TEXT("?"), _pTarget->GetAttnTargetActor() ? *_pTarget->GetAttnTargetActor()->GetName() : TEXT("?"),
+			*Info->GetClass()->GetName(), Info, m_AttentionInfos.Num(), m_AttentionInfos.GetSlack() + m_AttentionInfos.Num(), m_AttentionInfos.GetData(),
+			RelationshipToTarget, GWorld ? GWorld->GetTimeSeconds() : 0.f );
+	}
 	_pTarget->OnAttentionReceived( m_pOwningBrain );
 	return *Info;
 }
@@ -516,6 +533,16 @@ void UDisAIBrainProcessAttention::RemoveAttentionInfoIdx( INT _Index )
 	IDisAttentionTargetInterface* Target = DisAttnTargetOf( m_AttentionInfos(_Index).m_pAttentionTarget );
 	UDisAttentionInfo_Base* Info = m_AttentionInfos(_Index).m_pAttentionInfo;
 	AActor* TargetActor = Target ? Target->GetAttnTargetActor() : NULL;
+	UDisAttentionInfo_Complex* Complex = Cast<UDisAttentionInfo_Complex>( Info );
+	static INT s_RemoveLines = 0;
+	if( Complex && DisILDiagEnabled() && s_RemoveLines++ < 30 )
+	{
+		debugf( TEXT("DISHONORED(bringup): ildiag attnslot remove %s -> %s level %d value %.2f min %.2f max %.2f minlevel soiree %d clear %.2f tweaks %s busted start %.2f world %.2f"),
+			m_pOwningPawn ? *m_pOwningPawn->GetName() : TEXT("?"), TargetActor ? *TargetActor->GetName() : TEXT("?"), Complex->m_CurrentAttentionLevel,
+			Complex->m_AttentionAccumulator.GetCurrentValue(), Complex->m_AttentionAccumulator.m_fMinValue, Complex->m_AttentionAccumulator.GetMaxValue(),
+			Complex->m_MinAttentionLevel[DMALT_Soiree], Complex->m_fClearTimer, Complex->m_pAttentionTweaks ? *Complex->m_pAttentionTweaks->GetPathName() : TEXT("none"),
+			Complex->m_PawnAttentionTweaks.m_AttentionThresholds[3].m_fAttentionLevelToStart, GWorld ? GWorld->GetTimeSeconds() : 0.f );
+	}
 	if( Target && Info && !DisActorIsGone( TargetActor ) )
 	{
 		const FDisAttentionProxyInfo ProxyInfo = Info->m_ProxyInfo;
@@ -1147,11 +1174,16 @@ void UDisAIBrainProcessAttention::TickAttention_CheckForCarryingCorpse( IDisAtte
 void UDisAIBrainProcessAttention::UpdateSoireeAttention()
 {
 	ClearAllMinAttention( DMALT_Soiree );
-	// DISHONORED(bringup): agent IC's A/B switch -icnosoireeattn holds no co-actor at Busted (the controller list stays filled).
+	// DISHONORED(bringup): agent IC's A/B switch -icnosoireeattn holds no co-actor at Busted (the controller list stays filled);
+	// agent IL's -ilnoplayersoiree / -ilnonpcsoiree hold only the NPC / only the player co-actors.
 	static INT s_bDisabled = -1;
+	static INT s_bNoPlayer = 0;
+	static INT s_bNoNPC = 0;
 	if( s_bDisabled < 0 )
 	{
 		s_bDisabled = ParseParam( appCmdLine(), TEXT("icnosoireeattn") ) ? 1 : 0;
+		s_bNoPlayer = ParseParam( appCmdLine(), TEXT("ilnoplayersoiree") ) ? 1 : 0;
+		s_bNoNPC = ParseParam( appCmdLine(), TEXT("ilnonpcsoiree") ) ? 1 : 0;
 	}
 	if( !m_pOwningPawn || s_bDisabled )
 	{
@@ -1168,7 +1200,8 @@ void UDisAIBrainProcessAttention::UpdateSoireeAttention()
 		{
 			UInterpGroupInst* GroupInst = Matinee->GroupInst(GroupIdx);
 			ADishonoredPawn* Pawn = GroupInst ? Cast<ADishonoredPawn>( GroupInst->GetGroupActor() ) : NULL;
-			if( Pawn && Pawn != m_pOwningPawn )
+			const UBOOL bSkipped = Pawn && ( Pawn->IsA( ADishonoredPlayerPawn::StaticClass() ) ? s_bNoPlayer : s_bNoNPC );
+			if( Pawn && Pawn != m_pOwningPawn && !bSkipped )
 			{
 				GetAttentionInfo( DisAttnTargetOf( Pawn ) ).SetMinAttentionLevel_Derived( DMALT_Soiree, DAL_Busted );
 			}

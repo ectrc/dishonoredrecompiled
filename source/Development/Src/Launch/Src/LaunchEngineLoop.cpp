@@ -255,6 +255,10 @@ static FCriticalSection				RemoteDebugCriticalSection;
 
 
 
+#if _WINDOWS && !_WIN64
+#include "FMallocILGuard.h"
+#endif
+
 /** Helper function called on first allocation to create and initialize GMalloc */
 void GCreateMalloc()
 {
@@ -336,6 +340,13 @@ void GCreateMalloc()
 	{
 		GMalloc = new FMallocThreadSafeProxy( GMalloc );
 	}
+#if _WINDOWS && !_WIN64
+	// DISHONORED(bringup): agent IL's guard-page heap (Launch/Inc/FMallocILGuard.h), diagnostic only.
+	if( GetCommandLineW() != NULL && wcsstr( GetCommandLineW(), L"-ilguardheap" ) != NULL )
+	{
+		GMalloc = new FMallocILGuard( GMalloc );
+	}
+#endif
 }
 
 #if defined(XBOX)

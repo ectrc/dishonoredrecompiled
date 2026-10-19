@@ -1,0 +1,12 @@
+item,status,evidence
+corruption named,done,double appFree of UDisTweaks_PawnAttention::m_DistanceValueTuning.m_Points via the bitwise-copied UDisAttentionInfo_Complex::m_PawnAttentionTweaks (ExitProperties in ResetFromTemplate; player slot reset every tick by UpdateSoireeAttention); retail 0xb68e10 uses TArray::operator= 0x4448d0
+fix,done,disattentioninfo_complex.cpp SetupTickParamsFromTarget: field copy + TArray operator= on m_Points
+MatineeControllerAdd always (-hbcontrollers removed),done,dishonorednpcpawn.cpp MAT_BeginAIGroup; soiree stim always (-icnostim A/B)
+5/5 ride runs to world 200 with controllers on,met,IL2h-IL2l 0 Criticals quit at world 211-243; IL2a-e and IL2g also clean (11/11)
+guard heap run,clean,IL2g: 317007 guarded allocations; 0 fault / write-after-free / double free / foreign free reports
+bisection,done,IL1b (-ilnoplayersoiree) clean; IL1c (-ilnonpcsoiree) crash
+one BlendNow 0.20 per binding,met,IL2b
+Failed with animsequence,0,IL2a-e
+ride SSIM >= .73 constant offset,not met,IL2a-e .723/.725/.716/.689/.727; IC2a same rule .731; per-window deltas are noise
+gate d3d9+inputtest+newgame,23 ok 0 failed,unported_natives 0; probe_natives 3; criticals 0; d3d9_frames 1860; inputtest_moved 1043.9; newgame_pawns 29
+builds,2,IL1 (guard wrapper asserted in FMallocBinned at start-up with -ilguardheap); IL2 (fix)

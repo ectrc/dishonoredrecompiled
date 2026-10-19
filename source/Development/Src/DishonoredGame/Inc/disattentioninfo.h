@@ -118,5 +118,6 @@ enum EDisAttentionTweakCategory
 // The -gisight STAND-IN for the vision component (disaibrainprocessattention.cpp); off unless the switch is on.
 UBOOL DisGISightStandInEnabled();
 UBOOL DisGIDiagEnabled();
+UBOOL DisILDiagEnabled();
 FLOAT DisGISightStandInRange();
 UBOOL DisGISightStandInSeesPlayer( const class UDishonoredAIBrain* _pBrain, FLOAT& _rOutNormalisedDistance );

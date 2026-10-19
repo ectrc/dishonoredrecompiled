@@ -589,29 +589,15 @@ void ADishonoredNPCPawn::MAT_BlendOut( UInterpGroupInst* GroupInst )
 // Agent IC: retail lists the pawn's matinees (MatineeControllerAdd) and hands the brain the FAIStimStruct_Soiree start stim in
 // the same breath; UDisAIBrainProcessAttention::UpdateSoireeAttention then holds every other pawn of those matinees at
 // DMALT_Soiree / DAL_Busted (retail's 2013 0xb3f120 does the same) and UDisBehaviorSoiree keeps a non-blocking soiree's brain quiet.
-// DISHONORED(bringup): both stay OFF unless -hbcontrollers (agent HB's switch). Measured (agentIC.md): with the list filled the
-// render thread dies in FParticleSystemSceneProxy::ReleaseRenderThreadResources 0.1-1 s after the boat matinee binds in every
-// run with the soiree stim and behaviour ported (IC1a, IC1b, IC1e, IC1f; IC1d with -icnostim too), and in none with
-// -icnosoireeattn (the co-actors not held at Busted: IC1c, IC1g); the boat is a blocking matinee, which UDisBehaviorSoiree never
-// takes (EvaluateSoiree, retail's),
-// so the stim cannot be what keeps retail alive. -icnostim sends no soiree stim with the list on; -icpsysdiag names the particle
-// components touched after the blocking soiree starts.
-static UBOOL DisHBControllersEnabled()
-{
-	static INT Enabled = -1;
-	if( Enabled < 0 )
-	{
-		Enabled = ( appStrfind( appCmdLine(), TEXT("-hbcontrollers") ) != NULL ) ? 1 : 0;
-	}
-	return Enabled != 0;
-}
-
+// Agent IL: both are on, as retail. The render-thread particle crash agents HB and IC measured with the list filled was the
+// player's complex attention info freeing the pawn-attention tweaks' curve buffer it had copied bitwise (agentIL.md).
+// DISHONORED(bringup): -icnostim sends no soiree stim (an A/B switch).
 static UBOOL DisICSoireeStimEnabled()
 {
 	static INT Enabled = -1;
 	if( Enabled < 0 )
 	{
-		Enabled = ( DisHBControllersEnabled() && appStrfind( appCmdLine(), TEXT("-icnostim") ) == NULL ) ? 1 : 0;
+		Enabled = ( appStrfind( appCmdLine(), TEXT("-icnostim") ) == NULL ) ? 1 : 0;
 	}
 	return Enabled != 0;
 }
@@ -694,8 +680,10 @@ void ADishonoredNPCPawn::MAT_BeginAIGroup( UInterpGroupInstAI* GroupInst )
 	{
 		m_pBlendPoseNode->BlendNow( 0.2f, TRUE );
 	}
-	if( Seq != NULL && DisHBControllersEnabled() )
+	if( Seq != NULL )
 	{
+		// DISHONORED(bringup): agent IL. Arms the -ilguardheap guard pages (a no-op for any other allocator).
+		GMalloc->Exec( TEXT("ILGUARD ARM"), *GLog );
 		MatineeControllerAdd( Seq, Seq->m_AIBehaviorPriority, Seq->m_bIsBlocking );
 	}
 	if( Seq != NULL )
