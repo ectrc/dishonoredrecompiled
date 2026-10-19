@@ -1,0 +1,19 @@
+item,status,evidence
+perform_mantle,ported,2013 0x6d78d0; step-up path; animated path refused (named deviation)
+tick_mantle,ported,2013 0x6dbd00; wired in Tick_Begin
+domantle_stepup,ported,2013 0x6d35e0; not exercised in game (no ledge found)
+domantle_anim,ported_not_called,2013 0x6cd820; master action base (DoAction/SetAnimState) unported
+ismantleallowed_clearvis,ported,0x6fb830; 0x6d7a20 (caller PostCommitMapChange share unported)
+edge_finder_component,ported,17 functions; Tick 2013 0x6da380; 17 steps/check; 0.02-0.09 ms/tick
+finder_fsm_states,ported,FindClear/ForwardSearches/CheckDestinationValid/CheckCanStand + params
+finder_tweaks,ported_partial,ApplyTweakChanges_Derived 2013 0x6be9b0 (finders only); before: m_pTweaks None -> all-zero class default
+stateplayermastermantle,ported_not_reached,18 functions + params (2013 ctor 0x673020 OnPending 0x663620)
+stateplayermasterclimb,boundary,ladder state of ADisClimbable (excluded unit); not on the routes
+stepup_anim_node,ported,UDisAnimNodeBlendByStepUpMantle TickAnim/OnStepUpMantle/GetMantleSeqNode
+igdiag,written,-igdiag + IGLEDGE
+ledge_acceptance,not_measured,no 55-120 uu face found on L_Tower_P spawn/plane or dock (IG2-IG8)
+plain_jump,ok,Z at Jump->Falling 96.0-104.1; lands in Walk (IF 106.2)
+d3d9_frames,ok,1680 under load (bound 1000)
+gate,ok,23 ok 0 failed; probe_natives 3; unported_natives 0; criticals 0; inputtest_moved 1067.7
+regen,ok,79/79 byte-identical; bitfield_audit mismatches 0
+builds,2,both clean first try

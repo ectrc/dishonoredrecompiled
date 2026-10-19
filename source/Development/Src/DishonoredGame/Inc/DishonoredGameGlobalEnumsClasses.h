@@ -258,6 +258,7 @@ struct FDisRollingAverage
     {
         appMemzero(this, sizeof(FDisRollingAverage));
     }
+#include "CppText/FDisRollingAverage.h"
 };
 
 // DishonoredGame.DisGlobalEnums.DisVectorSpring: retail SDK size 52 (2012 PDB 52)

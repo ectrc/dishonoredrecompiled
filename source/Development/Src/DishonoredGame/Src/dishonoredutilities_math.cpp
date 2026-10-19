@@ -93,6 +93,37 @@ INT DisLerpAngle( INT _Low, INT _High, FLOAT _fInterval )
 	return Result;
 }
 
+// ---- agent IG (PHASE23 IG) ----
+
+// DISHONORED(port): 2012 0x823fc0 / 2013 0x7bb600 (28 B, same bytes)
+INT DisAngleDiff( INT _A, INT _B )
+{
+	INT Diff = (WORD)( _A - _B );
+	if( Diff >= 0x8000 )
+	{
+		Diff -= 0x10000;
+	}
+	return Diff;
+}
+
+static FLOAT DisSignedOnSideOf( FLOAT Value, FLOAT Side )
+{
+	const INT SideSign = Side > 0.f ? 1 : ( Side < 0.f ? -1 : 0 );
+	const INT ValueSign = Value > 0.f ? 1 : ( Value < 0.f ? -1 : 0 );
+	return (FLOAT)SideSign != (FLOAT)ValueSign ? -Value : Value;
+}
+
+// DISHONORED(port): 2012 0x827cc0 / 2013 0x7bff60 (369 B, same bytes). Each extent component takes the sign of the direction's
+// component (a zero direction component keeps a zero extent component's sign, flips any other); the corner is projected onto the
+// direction: Dir * (Corner | Dir) / (Dir | Dir).
+FVector DisFindExtentInDirection( const FVector& _rExtent, const FVector& _rDirection )
+{
+	const FVector Corner( DisSignedOnSideOf( _rExtent.X, _rDirection.X ), DisSignedOnSideOf( _rExtent.Y, _rDirection.Y ), DisSignedOnSideOf( _rExtent.Z, _rDirection.Z ) );
+	const FLOAT Scale = ( _rDirection.X * Corner.X + _rDirection.Y * Corner.Y + _rDirection.Z * Corner.Z )
+		/ ( _rDirection.Z * _rDirection.Z + _rDirection.Y * _rDirection.Y + _rDirection.X * _rDirection.X );
+	return FVector( _rDirection.X * Scale, _rDirection.Y * Scale, _rDirection.Z * Scale );
+}
+
 // ---- agent FZ (PHASE18 FZ) ----
 
 // DISHONORED(port): 2012 0x8243d0 (2013 0x7bbb80, same 120 B). The step is (Target - Cur) * Speed * Dt, but the difference

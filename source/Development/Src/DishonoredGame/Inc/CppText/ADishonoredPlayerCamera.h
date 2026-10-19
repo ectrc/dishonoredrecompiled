@@ -35,3 +35,10 @@ private:
 	void TickFOV( FLOAT DeltaTime );
 	class UDishonoredCameraInfluence* GetCamera_Influence( UClass* InfluenceType ) const;
 public:
+
+// ---- agent IG (PHASE23 IG): the mantle's camera calls. EnableCollision 2012 0x6fc260 / 2013 0x6c0520 (28 B, m_bCollisionEnabled),
+// GetCamera_CrouchMantleOffset 2012 0x6fc050 (7 B, one of the GetCamera_* accessors) ----
+public:
+	void EnableCollision( UBOOL bEnable ) { m_bCollisionEnabled = bEnable; }
+	class UDishonoredCamera_CrouchMantleOffset* GetCamera_CrouchMantleOffset() const { return m_pCrouchMantleOffset_Influence; }
+public:

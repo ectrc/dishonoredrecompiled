@@ -362,6 +362,7 @@ public:
     //## END PROPS DisAnimNodeBlendByStepUpMantle
 
     DECLARE_CLASS(UDisAnimNodeBlendByStepUpMantle,UAnimNodeAdditiveBlending,0,DishonoredGame)
+#include "CppText/UDisAnimNodeBlendByStepUpMantle.h"
 };
 
 // DishonoredGame.DisAnimNodeBlendBySwimState: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)

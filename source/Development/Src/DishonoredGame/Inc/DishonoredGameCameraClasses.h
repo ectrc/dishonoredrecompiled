@@ -536,6 +536,7 @@ public:
     //## END PROPS DishonoredCamera_CrouchMantleOffset
 
     DECLARE_CLASS(UDishonoredCamera_CrouchMantleOffset,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredCamera_CrouchMantleOffset.h"
 };
 
 // DishonoredGame.DishonoredCamera_PhysicalReact: retail sizeof 268, reflected span 92..268 (2012 PDB sizeof 268)

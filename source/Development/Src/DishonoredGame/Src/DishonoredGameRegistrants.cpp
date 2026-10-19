@@ -2397,6 +2397,15 @@ extern void DishonoredLinkIF_PlayerPawnWater();
 extern void DishonoredLinkIF_UStatePlayerMasterFalling();
 extern void DishonoredLinkIF_UStatePlayerMasterJump();
 extern void DishonoredLinkIF_UStatePlayerMasterSwim();
+extern void DishonoredLinkIG_DisAnimNodeBlendByStepUpMantle();
+extern void DishonoredLinkIG_DisMantleFinderStateBase();
+extern void DishonoredLinkIG_DisMantleFinderStateCheckCanStand();
+extern void DishonoredLinkIG_DisMantleFinderStateCheckDestinationValid();
+extern void DishonoredLinkIG_DisMantleFinderStateFindClear();
+extern void DishonoredLinkIG_DisMantleFinderStateForwardSearches();
+extern void DishonoredLinkIG_DishonoredCameraCrouchMantleOffset();
+extern void DishonoredLinkIG_MantleEdgeFinderComponent();
+extern void DishonoredLinkIG_UStatePlayerMasterMantle();
 extern void DishonoredLinkUDisAIBrainProcessAttention();
 extern void DishonoredLinkUDisAISubProcessFleetingGaze();
 extern void DishonoredLinkUDisAISubProcessHeadTrackBark();
@@ -2478,6 +2487,15 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkIF_UStatePlayerMasterFalling,
 	&DishonoredLinkIF_UStatePlayerMasterJump,
 	&DishonoredLinkIF_UStatePlayerMasterSwim,
+	&DishonoredLinkIG_DisAnimNodeBlendByStepUpMantle,
+	&DishonoredLinkIG_DisMantleFinderStateBase,
+	&DishonoredLinkIG_DisMantleFinderStateCheckCanStand,
+	&DishonoredLinkIG_DisMantleFinderStateCheckDestinationValid,
+	&DishonoredLinkIG_DisMantleFinderStateFindClear,
+	&DishonoredLinkIG_DisMantleFinderStateForwardSearches,
+	&DishonoredLinkIG_DishonoredCameraCrouchMantleOffset,
+	&DishonoredLinkIG_MantleEdgeFinderComponent,
+	&DishonoredLinkIG_UStatePlayerMasterMantle,
 	&DishonoredLinkUDisAIBrainProcessAttention,
 	&DishonoredLinkUDisAISubProcessFleetingGaze,
 	&DishonoredLinkUDisAISubProcessHeadTrackBark,

@@ -225,3 +225,17 @@ private:
 	void OnCameraEnterWaterVolume();
 	void OnCameraExitWaterVolume();
 public:
+// ---- agent IG (PHASE23 IG): the mantle ----
+// 2012 / 2013 rvas: IsMantleAllowed 0x6fb830, ClearVisAndMantleSettings 0x707400 / 0x6d7a20, DoMantle_StepUp 0x706f00 / 0x6d35e0,
+// DoMantle_Anim 0x70d380 / 0x6cd820, Tick_Mantle 0x7129d0 / 0x6dbd00. Bodies in dishonoredplayerpawn_mantle.cpp and
+// dishonoredplayerpawn_stealth.cpp (ClearVisAndMantleSettings, retail's unit).
+// ApplyTweakChanges_Derived 0x71d1d0 / 0x6be9b0 (the IDisTweaksInterface slot; partial: the edge finders' tweaks, then the base).
+public:
+	UBOOL IsMantleAllowed() const;
+	void ClearVisAndMantleSettings();
+	virtual void ApplyTweakChanges_Derived();
+private:
+	void DoMantle_StepUp( FLOAT MantleHeight, const FVector& MantleStartLocation, INT MantleStartYaw );
+	void DoMantle_Anim( FLOAT MantleHeight, const FVector& MantleStartLocation, INT MantleStartYaw, UBOOL bImpactAnimRequired, UBOOL bCrouchRequired, UBOOL bCancelable );
+	void Tick_Mantle( FLOAT DeltaTime, ELevelTick TickType );
+public:

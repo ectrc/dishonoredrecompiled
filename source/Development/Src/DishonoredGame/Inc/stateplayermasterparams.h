@@ -84,6 +84,37 @@ struct FStatePlayerAction_Param : public FStateSharedActionBase_PlayerOnly_Param
 	virtual INT SizeOf() const { return sizeof(FStatePlayerAction_Param); }
 };
 
+/**
+ * agent IG (PHASE23 IG). The master FSM's action request (2012 FStatePlayerMasterAction_Param ctor 0x6a5d60, OnPending 0x695c10: the
+ * pending action state is told its pawn and action, the non-repeat helper reset when the action changes) and the mantle's
+ * (FStatePlayerMasterMantle_Param ctor 0x6c3b20 / 2013 0x673020, OnPending 0x6b3980 / 2013 0x663620 - the 2013 one inlines the
+ * action OnPending: the edge height, the start location / yaw as the intro target, the impact / crouch / cancel flags). Bodies in Src/stateplayermastermantle.cpp.
+ */
+struct FStatePlayerMasterAction_Param : public FStateSharedActionBase_PlayerOnly_Param
+{
+	FStatePlayerMasterAction_Param( const FPawnAction& Action ) : FStateSharedActionBase_PlayerOnly_Param( Action )
+	{
+		m_pStateClass = UStatePlayerMasterAction::StaticClass();
+	}
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
+	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterAction_Param); }
+};
+
+struct FStatePlayerMasterMantle_Param : public FStatePlayerMasterAction_Param
+{
+	FLOAT m_fCurrentMantleHeight;
+	FVector m_MantleStartLocation;
+	INT m_MantleStartYaw;
+	UBOOL m_bImpactAnimRequired;
+	UBOOL m_bCrouchRequired;
+	UBOOL m_bCancelAllowed;
+
+	FStatePlayerMasterMantle_Param( const FPawnAction& Action, FLOAT CurrentMantleHeight, const FVector& MantleStartLocation, INT MantleStartYaw,
+		UBOOL bImpactAnimRequired, UBOOL bCrouchRequired, UBOOL bCancelAllowed );
+	virtual void OnPending( class UDishonoredNativeState* PendingState, UObject* ManagedObject );
+	virtual INT SizeOf() const { return sizeof(FStatePlayerMasterMantle_Param); }
+};
+
 /** The flag word MAT_BeginPlayerGroup builds and FDisSoireeControlState keeps in m_Flags (2013 bits; 2012 had the first three). */
 enum EDisSoireeControlFlags
 {

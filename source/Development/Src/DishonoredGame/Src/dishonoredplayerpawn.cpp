@@ -172,6 +172,7 @@
 #include "gfarmsdiag.h"
 #include "stateplayermasterparams.h"
 #include "ifdiag.h"
+#include "igdiag.h"
 
 ADishonoredPlayerPawn* ADishonoredPlayerPawn::s_pInstance = NULL;
 
@@ -362,15 +363,35 @@ UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 	return bResult;
 }
 
-// DISHONORED(port): agent GF, 2012 0x715a00 / 2013 0x6b0850 (269 B both). The base phase (a return), Tick_Mantle (0x7129d0 / 0x6dbd00:
-// the mantle unit is a skeleton - named, not called), the mesh's transform brought up to the pawn's before anything reads a bone, the
+// DISHONORED(port, partial): agent IG (PHASE23 IG), 2012 0x71d1d0 / 2013 0x6be9b0 (601 B). The player tweaks (or their class default) hand
+// the edge finders their mantle tweaks (m_pMantleTweaks to MantleEdgeFinder, 2013: m_pMantleBlinkTweaks to MantleEdgeFinder_Blink; 2012
+// gave both m_pMantleTweaks) through IDisTweaksInterface::SetTweaks, then the pawn base. DISHONORED(bringup), named and not written: the
+// 96-byte camera settings copy into the arms component, RBPushStrength, the seven anim-state arrays (full body, assassination,
+// fatality, upper-body items / melee / ranged, left hand), the health effects and the ray speed scales, the third component's
+// combat tweaks (pawn +2416), the three special-animation arrays.
+void ADishonoredPlayerPawn::ApplyTweakChanges_Derived()
+{
+	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	m_pMantleEdgeFinder->SetTweaks( Tweaks->m_pMantleTweaks );
+	m_pMantleEdgeFinder_Blink->SetTweaks( Tweaks->m_pMantleBlinkTweaks );
+	IGDIAG_ONCE( TEXT("ADishonoredPlayerPawn::ApplyTweakChanges_Derived (2013 0x6be9b0): only the edge finders' tweaks are applied; the anim-state arrays, health effects and component combat tweaks are not ported") );
+	Super::ApplyTweakChanges_Derived();
+}
+
+// DISHONORED(port): agent GF, 2012 0x715a00 / 2013 0x6b0850 (269 B both). The base phase (a return), Tick_Mantle (0x7129d0 / 0x6dbd00,
+// agent IG), the mesh's transform brought up to the pawn's before anything reads a bone, the
 // camera bone written into the audio-log dummy actor (the speaker position of the player's audio logs), Tick_PlayerAction through
 // the vtable (the three FSMs), then the deferred corpse drop (two transient bits at +2016: UStatePlayerCarryCorpseIdle::
 // StartDroppingCorpse - the carry states are skeletons, the bits are left alone).
 UBOOL ADishonoredPlayerPawn::Tick_Begin( FLOAT _fDeltaTime, ELevelTick _TickType )
 {
 	Super::Tick_Begin( _fDeltaTime, _TickType );
-	GFDIAG_ONCE( TEXT("Tick_Begin: Tick_Mantle (2012 0x7129d0) and the deferred corpse drop are not ported") );
+	Tick_Mantle( _fDeltaTime, _TickType );
+	GFDIAG_ONCE( TEXT("Tick_Begin: the deferred corpse drop is not ported") );
 	if( Mesh && Mesh->GetOwner() )
 	{
 		Mesh->ConditionalUpdateTransform( Mesh->GetOwner()->LocalToWorld() );

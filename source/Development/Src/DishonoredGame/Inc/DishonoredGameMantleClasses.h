@@ -85,6 +85,7 @@ public:
     //## END PROPS DisMantleFinderState_Base
 
     DECLARE_ABSTRACT_CLASS(UDisMantleFinderState_Base,UDishonoredNativeState,0,DishonoredGame)
+#include "CppText/UDisMantleFinderState_Base.h"
 };
 
 // DishonoredGame.DisMantleFinderState_CheckCanStand: retail sizeof 164, reflected span 132..164 (2012 PDB sizeof 164)
@@ -99,6 +100,7 @@ public:
     //## END PROPS DisMantleFinderState_CheckCanStand
 
     DECLARE_CLASS(UDisMantleFinderState_CheckCanStand,UDisMantleFinderState_Base,0,DishonoredGame)
+#include "CppText/UDisMantleFinderState_CheckCanStand.h"
 };
 
 // DishonoredGame.DisMantleFinderState_CheckDestinationValid: retail sizeof 188, reflected span 132..188 (2012 PDB sizeof 188)
@@ -115,6 +117,7 @@ public:
     //## END PROPS DisMantleFinderState_CheckDestinationValid
 
     DECLARE_CLASS(UDisMantleFinderState_CheckDestinationValid,UDisMantleFinderState_Base,0,DishonoredGame)
+#include "CppText/UDisMantleFinderState_CheckDestinationValid.h"
 };
 
 // DishonoredGame.DisMantleFinderState_FindClearDistanceAboveOwner: retail sizeof 136, reflected span 132..136 (2012 PDB sizeof 136)
@@ -126,6 +129,7 @@ public:
     //## END PROPS DisMantleFinderState_FindClearDistanceAboveOwner
 
     DECLARE_CLASS(UDisMantleFinderState_FindClearDistanceAboveOwner,UDisMantleFinderState_Base,0,DishonoredGame)
+#include "CppText/UDisMantleFinderState_FindClearDistanceAboveOwner.h"
 };
 
 // DishonoredGame.DisMantleFinderState_ForwardSearches: retail sizeof 192, reflected span 132..192 (2012 PDB sizeof 192)
@@ -147,6 +151,7 @@ public:
     //## END PROPS DisMantleFinderState_ForwardSearches
 
     DECLARE_CLASS(UDisMantleFinderState_ForwardSearches,UDisMantleFinderState_Base,0,DishonoredGame)
+#include "CppText/UDisMantleFinderState_ForwardSearches.h"
 };
 
 // DishonoredGame.DisTweaks_PlayerPawn_Mantle: retail sizeof 224, reflected span 140..224 (2012 PDB sizeof 224)
@@ -227,6 +232,7 @@ public:
     //## END PROPS DishonoredMantleEdgeFinderComponent
 
     DECLARE_CLASS(UDishonoredMantleEdgeFinderComponent,UActorComponent,0,DishonoredGame)
+#include "CppText/UDishonoredMantleEdgeFinderComponent.h"
 };
 
 // DishonoredGame.DishonoredNotify_CrouchMantleTransition: retail sizeof 60, reflected span 60..60 (2012 PDB sizeof 60)
@@ -270,6 +276,7 @@ public:
     //## END PROPS StatePlayerMasterMantle
 
     DECLARE_CLASS(UStatePlayerMasterMantle,UStatePlayerMasterAction,0|CLASS_Config,DishonoredGame)
+#include "CppText/UStatePlayerMasterMantle.h"
 };
 
 #undef DECLARE_CLASS

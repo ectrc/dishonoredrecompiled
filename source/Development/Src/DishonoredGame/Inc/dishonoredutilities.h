@@ -148,6 +148,11 @@ FLOAT DisInterpolateBySpeedWithDif( FLOAT Cur, FLOAT Target, FLOAT BlendSpeed, F
 // input's tweaks, the class default when it has none - what retail reads through the PlayerInput's IDisTweaksInterface.
 INT DisLerpAngle( INT _Low, INT _High, FLOAT _fInterval );
 const class UDisTweaks_PlayerInput* DisGetPlayerInputTweaks();
+// DISHONORED(port): agent IG (PHASE23 IG). DisAngleDiff 2012 0x823fc0 / 2013 0x7bb600 (28 B): the signed 16-bit difference A - B.
+// DisFindExtentInDirection 2012 0x827cc0 / 2013 0x7bff60 (369 B): the box extent's corner on the side of Direction, projected onto it
+// (dishonoredutilities_math.cpp).
+INT DisAngleDiff( INT _A, INT _B );
+FVector DisFindExtentInDirection( const FVector& _rExtent, const FVector& _rDirection );
 // DISHONORED(written): agent GI (PHASE20 GI). The attention manager (2012 accessor 0x82dc00) is owned by the game info; retail
 // constructs it with the other global managers at game-info init, which this tree has not ported, so it is made on first use.
 class UDisGlobalAIAttentionManager* DisGetGlobalAIAttentionManager();

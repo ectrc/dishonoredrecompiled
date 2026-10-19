@@ -3187,6 +3187,7 @@ protected:
     virtual ~IDisMantleableInterface() {}
 public:
     typedef UDisMantleableInterface UClassType;
+#include "CppText/IDisMantleableInterface.h"
 };
 
 // DishonoredGame.DisStaticCollisionActor: retail sizeof 608, reflected span 592..600 (2012 PDB sizeof 608)
@@ -3199,6 +3200,7 @@ public:
     //## END PROPS DisStaticCollisionActor
 
     DECLARE_CLASS(ADisStaticCollisionActor,AStaticMeshActor,0,DishonoredGame)
+#include "CppText/ADisStaticCollisionActor.h"
 };
 
 // DishonoredGame.DisTallboyNPCPawn: retail sizeof 3632, reflected span 3572..3632 (2012 PDB sizeof 3392)

@@ -185,3 +185,25 @@ FLOAT ADishonoredPlayerPawn::GetSpeedFraction() const
 	const FLOAT SprintSpeed = GetAttributeValue( NAME_GroundSpeedSprint );
 	return SprintSpeed > 0.f ? Velocity.Size2D() / SprintSpeed : 0.f;
 }
+
+// DISHONORED(port): agent IG (PHASE23 IG). 2012 0x707400 / 2013 0x6d7a20 (99 B): the scripted vis settings dropped, the stealth
+// volume chain unlinked, both edge finders reset. DISHONORED(bringup): its caller, ADishonoredGameInfo::PostCommitMapChange's share
+// (2013 0x607370), is not ported - nothing calls it yet.
+void ADishonoredPlayerPawn::ClearVisAndMantleSettings()
+{
+	m_pScriptedPlayerVisSettings = NULL;
+	while( m_pStealthVolumesList )
+	{
+		ADisStealthVolume* Volume = m_pStealthVolumesList;
+		m_pStealthVolumesList = Volume->m_pNextStealthVolume_Player;
+		Volume->m_pNextStealthVolume_Player = NULL;
+	}
+	if( m_pMantleEdgeFinder_Blink )
+	{
+		m_pMantleEdgeFinder_Blink->ResetMantleFinder();
+	}
+	if( m_pMantleEdgeFinder )
+	{
+		m_pMantleEdgeFinder->ResetMantleFinder();
+	}
+}
