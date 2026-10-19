@@ -6,6 +6,8 @@
 public:
 	class IDisConvSpeakerInterface* BindSpeaker( struct FDisDialogRunningInstance* _pRunningInstance ) const;
 	virtual const class UDisDialogTree* GetSpeakerTree() const { return NULL; }
+	// DISHONORED(port): agent IE. GetSpeakerName 2013 0x8ad320 (2012 0x8fc460), vtable slot 86 of every speaker class.
+	virtual void GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const;
 protected:
 	virtual class IDisConvSpeakerInterface* BindSpeaker_Derived( struct FDisDialogRunningInstance* _pRunningInstance ) const { return NULL; }
 	UBOOL CheckLOSAndRadius( class IDisConvSpeakerInterface* _pMe, class IDisConvSpeakerInterface* _pBoundSpeaker ) const;

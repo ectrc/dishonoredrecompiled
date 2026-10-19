@@ -9,7 +9,11 @@
 // +400; 2012 tested bit 22) and ends the conversation with DisConvoEndReason_SoireeRejection (12; 11 in 2012's enum).
 // The matinee's skip surface (USeqAct_Interp::OnSkipRequest 2013 0x223b80 311 B, IsSkippable 2012 0x22a8b0, StopFromNPC
 // 2012 0x22a990 13 B) is agent FS's UnInterpolation.cpp; the two callers here use Stop() for StopFromNPC and name the
-// other two. Not ported (editor): OnDelete_Derived 2013 0x8b6260, GetActionText 0x8b6000, FindBlurbs 2012 0x8fbdc0.
+// other two. Not ported (editor): OnDelete_Derived 2013 0x8b6260, GetActionText 0x8b6000.
+// Agent IE (PHASE23 IE): FindBlurbs 2013 0x8b1800 (2012 0x8fbdc0, 793 B) - not editor-only: UInterpTrackInstDialog::InitTrackInst
+// resolves its keys with it. Without a starting node the walk begins at the soiree's second output link,
+// then follows every link depth first; a blurb is taken when its speaker's
+// undecorated name is the group's name, when the group is unnamed, or when the speaker has no name.
 #include "DishonoredGame.h"
 #include "frdialogdiag.h"
 
@@ -224,6 +228,49 @@ void UDisConv_Soiree::FindMatineeLinked( TArray<USeqAct_Interp*>& _lMatinee ) co
 		if( Data && Data->m_Data && Data->m_Data->m_RunData.m_ConversationNodeGUID == m_NodeGUID )
 		{
 			_lMatinee.AddItem( Matinee );
+		}
+	}
+}
+
+void UDisConv_Soiree::FindBlurbs( const FName& _ActorName, TArray<UDisConv_Blurb*>& _rOutputBlurbs, UDisConv_Node* _pStartingNode ) const
+{
+	const FString ActorName = _ActorName.ToString();
+	const UDisConv_Node* Source = _pStartingNode ? _pStartingNode : this;
+	INT FirstLink = 0;
+	INT EndLink = Source->m_OutputLinks.Num();
+	if( !_pStartingNode )
+	{
+		if( m_OutputLinks.Num() <= 1 || !m_OutputLinks(1).m_pLink )
+		{
+			return;
+		}
+		FirstLink = 1;
+		EndLink = 2;
+	}
+	for( INT i = FirstLink; i < EndLink; i++ )
+	{
+		UDisConv_Node* Link = Source->m_OutputLinks(i).m_pLink;
+		if( !Link )
+		{
+			continue;
+		}
+		UDisConv_Node* NextNode = Cast<UDisConv_Node>( Link );
+		UDisConv_Blurb* Blurb = Cast<UDisConv_Blurb>( Link );
+		if( Blurb )
+		{
+			FString SpeakerName;
+			if( Blurb->m_iSpeaker >= 0 )
+			{
+				Blurb->m_pOwner->GetSpeakerName( Blurb->m_iSpeaker, SpeakerName, FALSE );
+			}
+			if( SpeakerName == ActorName || _ActorName == NAME_None || SpeakerName.Len() == 0 )
+			{
+				_rOutputBlurbs.AddItem( Blurb );
+			}
+		}
+		if( NextNode )
+		{
+			FindBlurbs( _ActorName, _rOutputBlurbs, NextNode );
 		}
 	}
 }

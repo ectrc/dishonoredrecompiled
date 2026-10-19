@@ -120,6 +120,7 @@ public:
     //## END PROPS InterpTrackDialog
 
     DECLARE_CLASS(UInterpTrackDialog,UInterpTrack,0,DishonoredGame)
+#include "CppText/UInterpTrackDialog.h"
 };
 
 // DishonoredGame.InterpTrackDialogKeyProperties: retail sizeof 88, reflected span 56..88 (2012 PDB sizeof 88)
@@ -149,6 +150,7 @@ public:
     //## END PROPS InterpTrackInstDialog
 
     DECLARE_CLASS(UInterpTrackInstDialog,UInterpTrackInst,0,DishonoredGame)
+#include "CppText/UInterpTrackInstDialog.h"
 };
 
 #undef DECLARE_CLASS

@@ -2896,6 +2896,8 @@ public:
  */
 // DISHONORED(bringup, agent FI): AkAudio points this at its audio frame. See UnWorld.h.
 void (*GDisAudioFrameHook)() = NULL;
+// DISHONORED(port, agent IE): DishonoredGame points this at the Wwise listener feed. See UnWorld.h.
+void (*GDisSetListenerHook)( UGameViewportClient* ViewportClient, INT PlayerIndex, FVector& Location, const FVector& Up, const FVector& Right, const FVector& Front ) = NULL;
 
 UBOOL UGameEngine::CommitMapChange()
 {

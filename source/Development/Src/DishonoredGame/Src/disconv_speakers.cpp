@@ -7,7 +7,13 @@
 // BindSpeaker's awareness filter (m_bNotWhileInCombat / Suspicious / Fearful against ADishonoredNPCPawn::GetAwarenessLevel)
 // and CheckLOSAndRadius's line-of-sight half (FDisComponentVision::CanSeeVisibleThing, DisLineProbe flags 8351) are the AI
 // perception package's (agent ET); the radius half is ported and the two are named at the site.
-// Not ported (editor): the InitNode / GetSpeakerName / OnDelete_Derived / GetSpeakerEditorActor bodies.
+// Not ported (editor): the InitNode / OnDelete_Derived / GetSpeakerEditorActor bodies.
+// Agent IE (PHASE23 IE): GetSpeakerName of the four speaker classes, by vtable slot 86 (+344) of their 2013 vtables
+// (0x11a0d70 / 0x11a0ed8 / 0x11a1040 / 0x11a11a8): UDisConv_Speaker 0x8ad320 (2012 0x8fc460), UDisConv_MeSpeaker 0x8b1cc0
+// (0x8ff210), UDisConv_InitiatorSpeaker 0x8b1e80 (0x8ff3d0), UDisConv_OneShotSpeaker 0x8b6380 (0x8fc0e0; 2013 gathers the
+// one-shot's other speakers through ADisDialogOneShot's virtual at +940, 0x655f00, which lists m_OtherSpeakers in order, so
+// the index reads m_OtherSpeakers directly here). Retail's OneShot body dereferences the tree's one-shot unchecked; a tree
+// bound to none answers like an out-of-range index here.
 #include "DishonoredGame.h"
 #include "frdialogdiag.h"
 
@@ -113,4 +119,62 @@ IDisConvSpeakerInterface* UDisConv_OneShotSpeaker::BindSpeaker_Derived( FDisDial
 	}
 	const TScriptInterface<IDisConvSpeakerInterface>& Me = _pRunningInstance->m_pTreeGameBinding->m_pBoundSpeaker_Me;
 	return Owner->GetSpeakerFromOneShotOwner( Me.GetObject() ? (IDisConvSpeakerInterface*)Me.GetInterface() : NULL );
+}
+
+void UDisConv_Speaker::GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const
+{
+	_rNameOut = m_NickName.Len() == 0 && _bUseDecorations ? FString( TEXT("<???>") ) : FString( m_NickName );
+}
+
+void UDisConv_MeSpeaker::GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const
+{
+	FString NickName = m_NickName;
+	const UDisDialogTree* Tree = GetDialogTree();
+	if( NickName.Len() == 0 )
+	{
+		NickName = Tree->m_OwnerNickname;
+	}
+	if( NickName.Len() > 0 )
+	{
+		_rNameOut = _bUseDecorations ? FString::Printf( TEXT("%s, <Me>"), *NickName ) : NickName;
+	}
+	else if( Tree->m_pBoundToOneShot && Tree->m_pBoundToOneShot->m_MeSpeaker.m_SpeakerNickName != NAME_None )
+	{
+		const FString OneShotNickName = Tree->m_pBoundToOneShot->m_MeSpeaker.m_SpeakerNickName.GetNameString();
+		_rNameOut = _bUseDecorations ? FString::Printf( TEXT("%s, <Me>"), *OneShotNickName ) : OneShotNickName;
+	}
+	else
+	{
+		_rNameOut = _bUseDecorations ? TEXT("<Me>") : TEXT("");
+	}
+}
+
+void UDisConv_InitiatorSpeaker::GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const
+{
+	if( m_NickName.Len() == 0 )
+	{
+		_rNameOut = _bUseDecorations ? TEXT("<Initiator>") : TEXT("");
+	}
+	else
+	{
+		_rNameOut = _bUseDecorations ? FString::Printf( TEXT("%s, <Initiator>"), *m_NickName ) : FString( m_NickName );
+	}
+}
+
+void UDisConv_OneShotSpeaker::GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const
+{
+	if( m_NickName.Len() > 0 )
+	{
+		_rNameOut = m_NickName;
+		return;
+	}
+	const ADisDialogOneShot* OneShot = GetDialogTree()->m_pBoundToOneShot;
+	if( OneShot && m_iOneShotSpeaker >= 0 && m_iOneShotSpeaker < OneShot->m_OtherSpeakers.Num() )
+	{
+		_rNameOut = OneShot->m_OtherSpeakers(m_iOneShotSpeaker).GetOneShotName( _bUseDecorations );
+	}
+	else
+	{
+		_rNameOut = _bUseDecorations ? TEXT("<???>") : TEXT("");
+	}
 }

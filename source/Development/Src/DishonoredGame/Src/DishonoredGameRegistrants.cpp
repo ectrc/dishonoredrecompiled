@@ -2390,6 +2390,8 @@ extern void DishonoredLinkGJ_TweaksPlayerLoadout();
 extern void DishonoredLinkGJ_WepSword();
 extern void DishonoredLinkHB_InterpTrackLookAt();
 extern void DishonoredLinkHD_PlayerControllerTracking();
+extern void DishonoredLinkIE_InterpTrackDialog();
+extern void DishonoredLinkIE_InterpTrackInstDialog();
 extern void DishonoredLinkIF_DishonoredPawnWater();
 extern void DishonoredLinkIF_DishonoredWaterVolume();
 extern void DishonoredLinkIF_PlayerPawnMantle();
@@ -2480,6 +2482,8 @@ void (*GDishonoredGameLinkAnchors[])() =
 	&DishonoredLinkGJ_WepSword,
 	&DishonoredLinkHB_InterpTrackLookAt,
 	&DishonoredLinkHD_PlayerControllerTracking,
+	&DishonoredLinkIE_InterpTrackDialog,
+	&DishonoredLinkIE_InterpTrackInstDialog,
 	&DishonoredLinkIF_DishonoredPawnWater,
 	&DishonoredLinkIF_DishonoredWaterVolume,
 	&DishonoredLinkIF_PlayerPawnMantle,

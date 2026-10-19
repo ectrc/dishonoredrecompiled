@@ -10116,6 +10116,7 @@ public:
     //## END PROPS DisAudioPropagationInfo
 
     DECLARE_CLASS(UDisAudioPropagationInfo,UAudioPropagationInfo,0,DishonoredGame)
+#include "CppText/UDisAudioPropagationInfo.h"
 };
 
 // DishonoredGame.DisBehaviorAttentionBase: retail sizeof 176, reflected span 160..176 (new in 2013)

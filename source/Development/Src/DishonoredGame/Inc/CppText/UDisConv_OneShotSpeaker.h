@@ -4,5 +4,7 @@
 // IDisConvOneShotOwnerInterface (a spawner hands out one of its live pawns). Bodies in disconv_speakers.cpp.
 public:
 	virtual const class UDisDialogTree* GetSpeakerTree() const;
+	// DISHONORED(port): agent IE. GetSpeakerName 2013 0x8b6380 (2012 0x8fc0e0), vtable slot 86.
+	virtual void GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const;
 protected:
 	virtual class IDisConvSpeakerInterface* BindSpeaker_Derived( struct FDisDialogRunningInstance* _pRunningInstance ) const;

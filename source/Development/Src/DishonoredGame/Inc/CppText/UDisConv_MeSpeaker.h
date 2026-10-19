@@ -3,5 +3,7 @@
 // tree's own bound speaker. Bodies in disconv_speakers.cpp.
 public:
 	virtual const class UDisDialogTree* GetSpeakerTree() const;
+	// DISHONORED(port): agent IE. GetSpeakerName 2013 0x8b1cc0 (2012 0x8ff210), vtable slot 86.
+	virtual void GetSpeakerName( FString& _rNameOut, UBOOL _bUseDecorations ) const;
 protected:
 	virtual class IDisConvSpeakerInterface* BindSpeaker_Derived( struct FDisDialogRunningInstance* _pRunningInstance ) const;

@@ -1031,6 +1031,14 @@ extern void (*GDisPlayerPreRenderHook)( class UCanvas* Canvas );
     the same way GDisEngineTickHook above is installed, so the Engine keeps no link dependency on it. */
 extern void (*GDisAudioFrameHook)();
 
+/** DISHONORED(port, agent IE): the audio listener. Retail's UGameViewportClient::Draw (2013 rva 0x2c59a0, the block at
+    0x2c5dc2..0x2c604d) gets the Wwise device from GEngine->Client, lets the viewport client move the listener
+    (UGameViewportClient vtable +344, ApplyListenerLocationModifier: UDishonoredViewportClient's override 2013 0x5ea300) and
+    calls UAkAudioDevice::SetListener (0x5aecb0) with the view location and the up / right / front vectors; it never calls
+    UAudioDevice::SetListener or SetAudioSettings. Client->GetAudioDevice() is NULL in this tree and the Engine cannot name
+    the AkAudio device, so DishonoredGame installs both calls here and Draw calls it where retail sets the listener. */
+extern void (*GDisSetListenerHook)( class UGameViewportClient* ViewportClient, INT PlayerIndex, FVector& Location, const FVector& Up, const FVector& Right, const FVector& Front );
+
 /** DISHONORED(bringup, agent FK): the player group of a matinee. Retail's USeqAct_Interp::InitInterp
     (2012 rva 0x25ad70) has a fourth branch this tree's does not - Cast<UInterpGroupPlayer> ahead of the
     AI and plain ones - and it builds a UInterpGroupInstPlayer bound to

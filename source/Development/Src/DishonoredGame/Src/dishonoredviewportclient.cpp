@@ -161,3 +161,29 @@ void UDishonoredViewportClient::execPostRender_Native( FFrame& Stack, RESULT_DEC
 	P_FINISH;
 	PostRender_Native( Canvas );
 }
+
+/**
+ * DISHONORED(port): agent IE (PHASE23 IE). The listener half of UGameViewportClient::Draw (2013 rva 0x2c59a0, 0x2c6010..0x2c604d):
+ * the viewport client's ApplyListenerLocationModifier (vtable +344; this class's override 0x5ea300, an empty base 0x1cb0c0 for any
+ * other client) moves the view location, then UAkAudioDevice::SetListener (0x5aecb0) gets it with the view's up, right and front
+ * vectors. Installed into GDisSetListenerHook (Engine/Inc/UnWorld.h), which Draw calls in retail's place.
+ */
+static void DisSetListener( UGameViewportClient* ViewportClient, INT PlayerIndex, FVector& Location, const FVector& Up, const FVector& Right, const FVector& Front )
+{
+	if( UDishonoredViewportClient* DisViewportClient = Cast<UDishonoredViewportClient>( ViewportClient ) )
+	{
+		DisViewportClient->ApplyListenerLocationModifier( Location );
+	}
+	if( UAkAudioDevice* AkAudioDevice = UAkAudioDevice::Get() )
+	{
+		AkAudioDevice->SetListener( PlayerIndex, Location, Up, Right, Front );
+	}
+}
+
+static struct FDisSetListenerSeam
+{
+	FDisSetListenerSeam()
+	{
+		GDisSetListenerHook = &DisSetListener;
+	}
+} GDisSetListenerSeam;

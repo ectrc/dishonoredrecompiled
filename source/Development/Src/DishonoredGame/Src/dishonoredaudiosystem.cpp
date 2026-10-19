@@ -35,6 +35,8 @@
 //   0x81e7d0  public: void __thiscall UDishonoredAudioSystem::PostAkEventAtPoint(class UAkEvent *, class FVector const &, class AActor *, float)
 
 #include "DishonoredGame.h"
+#include "dishonoredutilities.h"
+#include "iediag.h"
 
 // DISHONORED(port): 2013 rva 0x7a3120 (2012 0x807710, dishonoredaudiosystem.cpp:1712 region). Retail resolves fourteen Wwise ids
 // (TimeDilation, Freeze, Unfreeze, Pause_All, Resume_All, All_State_None, Scale_RTPC, Global_Volume, Music_Volume, SFX_Volume,
@@ -136,12 +138,99 @@ void UDishonoredAudioSystem::ConsumeEndOfEventNotifies( TSet<UAkComponent*>& _rG
 	}
 }
 
+// DISHONORED(port): agent IE. 2013 rva 0x792d10 (2012 0x7f8a50, 713 B; UAudioSystem slot 75): the audio cell holding a point. The
+// cached cell first, then the cells behind its portals, then every cell not yet tried; none when the level has no propagation info.
+AVolume* UDishonoredAudioSystem::GetCellAtPoint( const FVector& _rPoint, AVolume* _pCachedCellAtPoint ) const
+{
+	UDisAudioPropagationInfo* PropagationInfo = DisGetAudioPropagationInfo();
+	if( !PropagationInfo || PropagationInfo->m_Cells.Num() <= 0 )
+	{
+		return NULL;
+	}
+	const INT NumCells = PropagationInfo->m_Cells.Num();
+	ADishonoredAudioVolume* CachedCell = (ADishonoredAudioVolume*)_pCachedCellAtPoint;
+	if( !CachedCell )
+	{
+		for( INT i = 0; i < NumCells; i++ )
+		{
+			if( PropagationInfo->m_Cells(i)->Encompasses( _rPoint ) )
+			{
+				return PropagationInfo->m_Cells(i);
+			}
+		}
+		return NULL;
+	}
+	if( CachedCell->Encompasses( _rPoint ) )
+	{
+		return CachedCell;
+	}
+	UBOOL* CheckedCells = (UBOOL*)appAlloca( NumCells * sizeof(UBOOL) );
+	appMemzero( CheckedCells, NumCells * sizeof(UBOOL) );
+	CheckedCells[CachedCell->m_AudioPropagationIndex] = TRUE;
+	for( INT i = 0; i < CachedCell->m_LinkedPortals.Num(); i++ )
+	{
+		ADishonoredAudioPortal* Portal = CachedCell->m_LinkedPortals(i);
+		ADishonoredAudioVolume* OtherCell = CachedCell == Portal->m_pCellA ? Portal->m_pCellB : CachedCell == Portal->m_pCellB ? Portal->m_pCellA : NULL;
+		if( !CheckedCells[OtherCell->m_AudioPropagationIndex] && OtherCell->Encompasses( _rPoint ) )
+		{
+			return OtherCell;
+		}
+		CheckedCells[OtherCell->m_AudioPropagationIndex] = TRUE;
+	}
+	for( INT i = 0; i < NumCells; i++ )
+	{
+		if( !CheckedCells[i] && PropagationInfo->m_Cells(i)->Encompasses( _rPoint ) )
+		{
+			return PropagationInfo->m_Cells(i);
+		}
+	}
+	return NULL;
+}
+
+// DISHONORED(port): agent IE. 2013 rva 0x792fe0 (2012 0x7f8d20, 453 B): one Wwise position per audible path, along the path's
+// direction at its final distance from the listener; without one, a single position straight above the listener at twice the
+// audible distance (out of earshot).
+static void DisSetAkSoundPositions( FDisAudioPropagationCache& _rPropagationCache, AkGameObjectID _GameObjectID )
+{
+	const INT NumPaths = _rPropagationCache.m_Paths.Num();
+	AkSoundPosition* Positions = NumPaths > 0 ? (AkSoundPosition*)appAlloca( NumPaths * sizeof(AkSoundPosition) ) : NULL;
+	AkUInt16 NumPositions = 0;
+	for( INT i = 0; i < NumPaths; i++ )
+	{
+		const FDisAudioPath& Path = _rPropagationCache.m_Paths(i);
+		if( _rPropagationCache.m_fMaxAudibleDistance > Path.m_fFinalDist )
+		{
+			Positions[NumPositions].Position = AkVectorFromUnreal( _rPropagationCache.m_ListenerPoint + Path.m_Direction * Path.m_fFinalDist );
+			Positions[NumPositions].Orientation = AkVectorFromUnreal( FVector( 0.0f, 0.0f, 1.0f ) );
+			NumPositions++;
+		}
+	}
+	if( NumPositions )
+	{
+		AK::SoundEngine::SetMultiplePositions( _GameObjectID, Positions, NumPositions, AK::SoundEngine::MultiPositionType_MultiDirections );
+		return;
+	}
+	AkSoundPosition Position;
+	Position.Position = AkVectorFromUnreal( _rPropagationCache.m_ListenerPoint + FVector( 0.0f, 0.0f, _rPropagationCache.m_fMaxAudibleDistance * 2.0f ) );
+	Position.Orientation = AkVectorFromUnreal( FVector( 0.0f, 0.0f, 1.0f ) );
+	AK::SoundEngine::SetPosition( _GameObjectID, Position );
+}
+
 /**
- * DISHONORED(port): agent ID. 2013 rva 0x7b3520 (2012 0x818ff0). Of the 4,734 bytes only the end-of-event drain is ported, in its
- * place: not while the update is suspended (m_bSuspended) and not while the world is paused (retail then posts Pause_All once and
- * returns). The pause/resume events, the time-dilation RTPC, the listener cell, the per-component propagation caches
- * (UpdateAudioPropagationCache 2012 0x807d30, so every UDisAkComponent keeps m_fMaxAudibleDistance 0), the RTPC updaters and the
- * ambient sounds are not ported; UAkAudioDevice::Update issues the audio frame itself.
+ * DISHONORED(port): agent ID, then agent IE. 2013 rva 0x7b3520 (2012 0x818ff0, 4,734 B). Ported, in retail's order: not while the
+ * update is suspended (m_bSuspended) and not while the world is paused (retail then posts Pause_All once and returns); the listener
+ * cell (GetCellAtPoint at UAkAudioDevice::m_ListenerPosition, kept in m_pListenerCell); the end-of-event drain (agent ID); the
+ * sound capture box's bounds; and the per-component propagation cache - the largest playing radius becomes m_fMaxAudibleDistance
+ * (0 when nothing plays), the sound point is the owner's location (the capture box's redirected actor when the owner is inside the
+ * box, the BoneName bone of the owner's first unparented skeletal mesh that has it), a sound and listener that moved by less than
+ * 5 % of their distance keep the cache (only the portal occlusion of its paths is refreshed), else the cache takes the new points
+ * and cells and the Wwise position is set: straight when both points share a cell (or either has none), else through
+ * DisSetAkSoundPositions with the paths UpdateAudioPropagationCache (2012 0x807d30) finds.
+ * Not ported: UpdateAudioPropagationCache with FindShortestPath / FinalizeAudioPath (the portal path search, IH3), so a sound in
+ * another cell keeps no path and reads FLT_MAX from GetShortestAudiblePathLength; the ambient sounds, the listener cell's ambient
+ * event and RTPCs, the environment (aux bus) values per game object, the time-dilation RTPCs of the playing components and the
+ * overseer effect. The component set is iterated as UDisAkComponent (retail casts nothing); a plain UAkComponent is skipped here.
+ * UAkAudioDevice::Update issues the audio frame itself.
  */
 void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveComponents )
 {
@@ -149,7 +238,200 @@ void UDishonoredAudioSystem::Update( UAkAudioDevice* AudioDevice, void* ActiveCo
 	{
 		return;
 	}
-	ConsumeEndOfEventNotifies( *(TSet<UAkComponent*>*)ActiveComponents );
+	TSet<UAkComponent*>& GameObjects = *(TSet<UAkComponent*>*)ActiveComponents;
+	const FVector& ListenerPosition = AudioDevice->m_ListenerPosition;
+	ADishonoredAudioVolume* ListenerCell = Cast<ADishonoredAudioVolume>( GetCellAtPoint( ListenerPosition, m_pListenerCell ) );
+	if( m_pListenerCell != ListenerCell )
+	{
+		IEDIAG( "listener cell %s -> %s at (%.0f %.0f %.0f)", m_pListenerCell ? *m_pListenerCell->GetName() : TEXT("<none>"),
+			ListenerCell ? *ListenerCell->GetName() : TEXT("<none>"), ListenerPosition.X, ListenerPosition.Y, ListenerPosition.Z );
+		m_pListenerCell = ListenerCell;
+	}
+	ConsumeEndOfEventNotifies( GameObjects );
+
+	FBox CaptureBox( 0 );
+	if( m_pDisSoundCaptureBox && m_pDisSoundCaptureBox->m_pSoundRedirectedActor )
+	{
+		const FVector Extent = m_pDisSoundCaptureBox->DrawScale3D * m_pDisSoundCaptureBox->DrawScale * 200.0f;
+		CaptureBox = FBox( m_pDisSoundCaptureBox->Location - Extent, m_pDisSoundCaptureBox->Location + Extent );
+	}
+
+	static FLOAT GIEDiagLastListenerLog = -1.0f;
+	const UBOOL bDiagThisFrame = DisIEDiagEnabled() && GWorld && GWorld->GetTimeSeconds() - GIEDiagLastListenerLog >= 1.0f;
+	if( bDiagThisFrame )
+	{
+		GIEDiagLastListenerLog = GWorld->GetTimeSeconds();
+		UDisAudioPropagationInfo* PropagationInfo = DisGetAudioPropagationInfo();
+		IEDIAG( "listener (%.0f %.0f %.0f) cell %s, %d game object(s), propagation info %s with %d cell(s)", ListenerPosition.X, ListenerPosition.Y,
+			ListenerPosition.Z, m_pListenerCell ? *m_pListenerCell->GetName() : TEXT("<none>"), GameObjects.Num(),
+			PropagationInfo ? *PropagationInfo->GetName() : TEXT("<none>"), PropagationInfo ? PropagationInfo->m_Cells.Num() : 0 );
+	}
+
+	for( TSet<UAkComponent*>::TIterator It( GameObjects ); It; ++It )
+	{
+		UDisAkComponent* Component = Cast<UDisAkComponent>( *It );
+		if( !Component )
+		{
+			continue;
+		}
+		FDisAudioPropagationCache& Cache = Component->m_PropagationCache;
+		FLOAT MaxRadius = -1.0f;
+		for( INT i = 0; i < Component->m_PlayingRadii.Num(); i++ )
+		{
+			MaxRadius = Max( MaxRadius, Component->m_PlayingRadii(i).m_Radius );
+		}
+		if( Component->m_PlayingRadii.Num() == 0 || MaxRadius < 0.0f )
+		{
+			Cache.m_fMaxAudibleDistance = 0.0f;
+			continue;
+		}
+		if( MaxRadius <= 0.0f )
+		{
+			continue;
+		}
+		AActor* Owner = Component->GetOwner();
+		FVector SoundPoint;
+		if( !Owner )
+		{
+			SoundPoint = Cache.m_SoundPoint;
+		}
+		else if( Owner->m_bBypassAudioPropagation )
+		{
+			AkSoundPosition Position;
+			Position.Position = AkVectorFromUnreal( Owner->Location );
+			Position.Orientation = AkVectorFromUnreal( FVector( 0.0f, 0.0f, 1.0f ) );
+			AK::SoundEngine::SetPosition( Component->GetAkGameObjectID(), Position );
+			continue;
+		}
+		else if( CaptureBox.IsValid && Owner->Location.X > CaptureBox.Min.X && CaptureBox.Max.X > Owner->Location.X
+			&& Owner->Location.Y > CaptureBox.Min.Y && CaptureBox.Max.Y > Owner->Location.Y
+			&& Owner->Location.Z > CaptureBox.Min.Z && CaptureBox.Max.Z > Owner->Location.Z )
+		{
+			SoundPoint = m_pDisSoundCaptureBox->m_pSoundRedirectedActor->Location;
+		}
+		else
+		{
+			SoundPoint = Owner->Location;
+			if( Component->BoneName != NAME_None )
+			{
+				for( INT i = 0; i < Owner->AllComponents.Num(); i++ )
+				{
+					USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>( Owner->AllComponents(i) );
+					if( !SkelComp || SkelComp->ParentAnimComponent )
+					{
+						continue;
+					}
+					const INT BoneIndex = SkelComp->MatchRefBone( Component->BoneName );
+					if( BoneIndex != INDEX_NONE )
+					{
+						SoundPoint = SkelComp->GetBoneMatrix( BoneIndex ).GetOrigin();
+						break;
+					}
+				}
+			}
+		}
+		const FLOAT RawDistSq = ( ListenerPosition - SoundPoint ).SizeSquared();
+		if( MaxRadius <= Cache.m_fMaxAudibleDistance )
+		{
+			const FLOAT ListenerMovedSq = ( ListenerPosition - Cache.m_ListenerPoint ).SizeSquared();
+			const FLOAT Threshold = RawDistSq * 0.0025f;
+			if( ListenerMovedSq <= Threshold && ( SoundPoint - Cache.m_SoundPoint ).SizeSquared() + ListenerMovedSq <= Threshold )
+			{
+				UBOOL bOcclusionChanged = FALSE;
+				for( INT PathIndex = 0; PathIndex < Cache.m_Paths.Num(); PathIndex++ )
+				{
+					FDisAudioPath& Path = Cache.m_Paths(PathIndex);
+					FLOAT Openness = 1.0f;
+					for( INT PortalIndex = 0; PortalIndex < Path.m_Portals.Num(); PortalIndex++ )
+					{
+						Openness *= 1.0f - Path.m_Portals(PortalIndex)->m_fOcclusion_HeardByPlayer;
+					}
+					if( Path.m_fOcclusion != 1.0f - Openness )
+					{
+						Path.m_fOcclusion = 1.0f - Openness;
+						bOcclusionChanged = TRUE;
+					}
+				}
+				if( bOcclusionChanged )
+				{
+					FLOAT MinFinalDist = 3.4e38f;
+					for( INT PathIndex = 0; PathIndex < Cache.m_Paths.Num(); PathIndex++ )
+					{
+						FDisAudioPath& Path = Cache.m_Paths(PathIndex);
+						Path.m_fFinalDist = Abs( Path.m_fOcclusion - 1.0f ) >= 0.0001f ? Max( Path.m_fDistance / ( 1.0f - Path.m_fOcclusion ), Cache.m_fRawDistance ) : 3.4e38f;
+						MinFinalDist = Min( MinFinalDist, Path.m_fFinalDist );
+					}
+					const FLOAT Coeff = MinFinalDist <= Cache.m_fRawDistance ? 3.4e38f : 1.0f / ( MinFinalDist - Cache.m_fRawDistance );
+					FLOAT WeightSum = 0.0f;
+					FLOAT OcclusionSum = 0.0f;
+					FLOAT ObstructionSum = 0.0f;
+					for( INT PathIndex = 0; PathIndex < Cache.m_Paths.Num(); PathIndex++ )
+					{
+						FDisAudioPath& Path = Cache.m_Paths(PathIndex);
+						if( Path.m_fFinalDist > MinFinalDist )
+						{
+							Path.m_fFinalDist = ( Path.m_fFinalDist - Cache.m_fRawDistance ) * Coeff * Path.m_fFinalDist;
+						}
+						const FLOAT Weight = 1.0f / Path.m_fFinalDist;
+						WeightSum += Weight;
+						OcclusionSum += Path.m_fOcclusion * Weight;
+						ObstructionSum += Path.m_fObstruction * Weight;
+					}
+					const FLOAT Occlusion = OcclusionSum / WeightSum;
+					const FLOAT Obstruction = ObstructionSum / WeightSum;
+					if( Cache.m_fOcclusion != Occlusion || Cache.m_fObstruction != Obstruction )
+					{
+						Cache.m_fOcclusion = Occlusion;
+						Cache.m_fObstruction = Obstruction;
+						AK::SoundEngine::SetObjectObstructionAndOcclusion( Component->GetAkGameObjectID(), 0, Obstruction, Occlusion );
+					}
+					DisSetAkSoundPositions( Cache, Component->GetAkGameObjectID() );
+				}
+				continue;
+			}
+		}
+		Cache.m_fMaxAudibleDistance = MaxRadius;
+		Cache.m_ListenerPoint = ListenerPosition;
+		Cache.m_pListenerCell = ListenerCell;
+		if( Cache.m_SoundPoint != SoundPoint )
+		{
+			Cache.m_SoundPoint = SoundPoint;
+			Cache.m_pSoundCell = Cast<ADishonoredAudioVolume>( GetCellAtPoint( SoundPoint, Cache.m_pSoundCell ) );
+		}
+		Cache.m_Paths.Reset();
+		if( Cache.m_pListenerCell && Cache.m_pSoundCell && Cache.m_pListenerCell != Cache.m_pSoundCell )
+		{
+			DisSetAkSoundPositions( Cache, Component->GetAkGameObjectID() );
+		}
+		else
+		{
+			AkSoundPosition Position;
+			Position.Position = AkVectorFromUnreal( Cache.m_SoundPoint );
+			Position.Orientation = AkVectorFromUnreal( FVector( 0.0f, 0.0f, 1.0f ) );
+			AK::SoundEngine::SetPosition( Component->GetAkGameObjectID(), Position );
+			Cache.m_fObstruction = 0.0f;
+			Cache.m_fOcclusion = 0.0f;
+		}
+		AK::SoundEngine::SetObjectObstructionAndOcclusion( Component->GetAkGameObjectID(), 0, Cache.m_fObstruction, Cache.m_fOcclusion );
+	}
+
+	if( bDiagThisFrame )
+	{
+		for( TSet<UAkComponent*>::TIterator It( GameObjects ); It; ++It )
+		{
+			UDisAkComponent* Component = Cast<UDisAkComponent>( *It );
+			if( Component && Component->m_PlayingRadii.Num() > 0 )
+			{
+				FLOAT PathLength = 0.0f;
+				const UBOOL bLive = Component->GetShortestAudiblePathLength( PathLength );
+				const FDisAudioPropagationCache& Cache = Component->m_PropagationCache;
+				IEDIAG( "  voice on %s: %d playing, radius %.0f, sound (%.0f %.0f %.0f) cell %s, listener cell %s, path %.0f (live %d)",
+					Component->GetOwner() ? *Component->GetOwner()->GetName() : TEXT("<no owner>"), Component->m_PlayingRadii.Num(), Cache.m_fMaxAudibleDistance,
+					Cache.m_SoundPoint.X, Cache.m_SoundPoint.Y, Cache.m_SoundPoint.Z, Cache.m_pSoundCell ? *Cache.m_pSoundCell->GetName() : TEXT("<none>"),
+					Cache.m_pListenerCell ? *Cache.m_pListenerCell->GetName() : TEXT("<none>"), PathLength, bLive ? 1 : 0 );
+			}
+		}
+	}
 }
 
 // DISHONORED(port): agent ID. 2012 rva 0x80b7d0 (39 B): the queue Init allocated

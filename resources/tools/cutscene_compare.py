@@ -59,11 +59,11 @@ SHOTS = GAME_ROOT / "DishonoredGame" / "Screenshots" / "Win32Console"
 
 W, H = 960, 540
 FPS = 10
-STATS_VERSION = 7
+STATS_VERSION = 8  # agent IE: the subtitle detector changed
 
 # (x0, x1, y0, y1) as fractions of the frame
 # agent ID: subtitles_mc's line, bottom-centre (measured on our own captures; retail.mp4 was recorded with subtitles off)
-SUBTITLE_AREA = (0.2, 0.8, 0.80, 0.92)
+SUBTITLE_AREA = (0.2, 0.8, 0.78, 0.92)
 AREAS = {
     "vials": (0.0, 0.16, 0.05, 0.30),
     "stance": (0.0, 0.10, 0.85, 1.0),
@@ -76,7 +76,7 @@ AREAS = {
 }
 DETECTORS = list(AREAS)
 # a detector is "on" above this percentage of its area; set from the retail cache (see agentHH.md)
-ON = {"vials": 3.0, "stance": 0.5, "debugtext": 0.2, "banner": 2.0, "objective": 3.0, "hint": 3.0, "prompt": 3.0, "subtitle": 1.0}
+ON = {"vials": 3.0, "stance": 0.5, "debugtext": 0.2, "banner": 2.0, "objective": 3.0, "hint": 3.0, "prompt": 3.0, "subtitle": 3.0}
 CENTRE = (0.3, 0.7, 0.4, 0.8)
 BLACK = 6.0
 
@@ -158,13 +158,15 @@ class Frame:
         return float(((tophat(g, 7) > 60) & (g > 150)).mean() * 100)
 
     def subtitle(self) -> float:
-        """The HUD's subtitle line: thin bright strokes (as textlike) whose pixel 2 px down-right is dark - the line's drop
-        shadow - so bright scenery edges (hulls, rails, planks) in the same band do not count."""
+        """The HUD's subtitle line (agent IE, measured on the first drawn subtitles, IE1 vs IE2/IEc): a text row is dense in
+        sharp horizontal transitions next to a bright pixel. Per row of the band, the fraction of |dx| > 40 steps whose brighter
+        side is > 140, smoothed over 5 rows; the densest row in percent. Lines on: min 4.5, median 28; no line: p90 1.1. ID's
+        stroke-and-shadow test read 0.04-0.28 % either way: the game's line is grey ~180 on a ~95 background with a shadow of
+        ~80, not a dark drop shadow, and its first row sits at y .797, above the old band's .80."""
         g = area(self.g, "subtitle")
-        stroke = (tophat(g, 7) > 60) & (g > 170)
-        shadow = np.zeros_like(stroke)
-        shadow[:-2, :-2] = g[2:, 2:] < 70
-        return float((stroke & shadow).mean() * 100)
+        steps = (np.abs(np.diff(g, axis=1)) > 40) & (np.maximum(g[:, 1:], g[:, :-1]) > 140)
+        rows = np.convolve(steps.mean(axis=1), np.ones(5) / 5, mode="same")
+        return float(rows.max() * 100)
 
     def stance(self) -> float:
         band = box(self.g, 3) - box(self.g, 15)

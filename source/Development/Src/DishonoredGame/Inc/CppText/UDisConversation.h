@@ -6,6 +6,8 @@ public:
 	virtual void InitNode( class UDisConversation* _pOwner, UBOOL _bForEditor, UBOOL _bIsNewNode );
 	virtual void GetClassVars_Derived( struct FDisConvClassVars& _rVarsOut ) const;
 	eDisConvPriority GetFiringPriority( const struct FDisDialogRunningInstance* _pRunningInst ) const;
+	// DISHONORED(port): agent IE. GetSpeakerName 2013 0x895dc0 (2012 0x8e1390): the name a speaker slot answers to.
+	void GetSpeakerName( INT _iIndex, FString& _rNameOut, UBOOL _bUseDecorations ) const;
 protected:
 	void InitConvNodes( TArrayNoInit<class UDisConv_Node*>& _rNodes, class UDisConversation* _pOwner, UBOOL _bForEditor, UBOOL _bIsNewNode );
 	void UpdateOutputLinks();

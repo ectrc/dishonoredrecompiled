@@ -57,6 +57,7 @@ struct FDisOneOffSpeaker
     {
         appMemzero(this, sizeof(FDisOneOffSpeaker));
     }
+#include "CppText/FDisOneOffSpeaker.h"
 };
 
 // DishonoredGame.DisDialogOneShot: retail sizeof 640, reflected span 584..636 (2012 PDB sizeof 640)

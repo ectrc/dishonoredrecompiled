@@ -5,8 +5,9 @@
 //   GetOwnerForSpeaker (0x698920, 68)      GetOwnerActorForSpeaker(_Derived) (0x691c90 / 0x691ca0)
 // PostLoad moves each speaker's m_pSpawner into m_pAttachedActor (the editor-time reference becomes the runtime one); the
 // ValidateAndFixupFolders it then runs is editor-only. Not ported (agentFR.md inventory): DestroyForSpawners 0x69d640,
-// GetOneShotName 0x698600 / FDisOneOffSpeaker::GetOneShotName 0x69d2e0, GetDisplayName 0x69d1b0, PostEditImport,
-// PostScriptDestroyed, BeginDestroy, MarkComponentsAsPendingKill (the actor's teardown).
+// GetOneShotName 0x698600, GetDisplayName 0x69d1b0, PostEditImport, PostScriptDestroyed, BeginDestroy,
+// MarkComponentsAsPendingKill (the actor's teardown).
+// Agent IE (PHASE23 IE): FDisOneOffSpeaker::GetOneShotName 2013 0x6511f0 (2012 0x69d2e0), for the one-shot speakers' names.
 #include "DishonoredGame.h"
 #include "frdialogdiag.h"
 
@@ -109,4 +110,22 @@ IDisConvOneShotOwnerInterface* ADisDialogOneShot::GetOwnerForSpeaker( FDisOneOff
 AActor* ADisDialogOneShot::GetOwnerActorForSpeaker_Derived( FDisOneOffSpeaker& _rSpeakerStruct )
 {
 	return _rSpeakerStruct.m_pAttachedActor;
+}
+
+const FString FDisOneOffSpeaker::GetOneShotName( UBOOL _bUseDecorations ) const
+{
+	FString Name;
+	if( m_SpeakerNickName != NAME_None )
+	{
+		Name = m_SpeakerNickName.GetNameString();
+	}
+	else if( m_pAttachedActor )
+	{
+		Name = m_pAttachedActor->GetName();
+	}
+	else
+	{
+		Name = m_pVoiceData->GetName();
+	}
+	return _bUseDecorations ? FString::Printf( TEXT("<%s>"), *Name ) : Name;
 }

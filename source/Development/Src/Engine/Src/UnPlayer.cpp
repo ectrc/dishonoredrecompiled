@@ -1625,7 +1625,7 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 				// Update the listener.
 				check(GEngine->Client);
 				UAudioDevice* AudioDevice = GEngine->Client->GetAudioDevice();
-				if( AudioDevice )
+				if( AudioDevice || GDisSetListenerHook != NULL )
 				{
 					FMatrix CameraToWorld		= View->ViewMatrix.Inverse();
 
@@ -1639,10 +1639,20 @@ void UGameViewportClient::Draw(FViewport* Viewport,FCanvas* Canvas)
 					ProjRight.Normalize();
 					ProjFront.Normalize();
 
-					AudioDevice->SetListener(PlayerIndex, GEngine->GamePlayers.Num(), ViewLocation, ProjUp, ProjRight, ProjFront, !View->bCameraCut);
+					// DISHONORED(port, agent IE): retail (2013 rva 0x2c59a0, 0x2c6010..0x2c604d) moves the location through the
+					// viewport client's ApplyListenerLocationModifier and hands it to UAkAudioDevice::SetListener (0x5aecb0); it
+					// never calls UAudioDevice::SetListener or SetAudioSettings. See GDisSetListenerHook in UnWorld.h.
+					if( GDisSetListenerHook != NULL )
+					{
+						GDisSetListenerHook( this, PlayerIndex, ViewLocation, ProjUp, ProjRight, ProjFront );
+					}
+					else
+					{
+						AudioDevice->SetListener(PlayerIndex, GEngine->GamePlayers.Num(), ViewLocation, ProjUp, ProjRight, ProjFront, !View->bCameraCut);
+					}
 
 					// Update reverb settings based on the view of the first player we encounter.
-					if ( !bHaveAudioSettingsBeenSet )
+					if ( AudioDevice && !bHaveAudioSettingsBeenSet )
 					{
 						bHaveAudioSettingsBeenSet = TRUE;
 

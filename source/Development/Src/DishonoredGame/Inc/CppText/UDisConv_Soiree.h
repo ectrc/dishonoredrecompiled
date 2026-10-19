@@ -17,5 +17,7 @@ public:
 	virtual INT PlayNodeMatinee( UBOOL& _rbNotFinished, struct FDisDialogRunningInstance* _pRunningInstance ) const;
 	class USeqAct_Interp* FindMatinee() const;
 	void FindMatineeLinked( TArray<class USeqAct_Interp*>& _lMatinee ) const;
+	// DISHONORED(port): agent IE. FindBlurbs 2013 0x8b1800 (2012 0x8fbdc0): the blurbs a matinee group speaks, for UInterpTrackInstDialog.
+	void FindBlurbs( const FName& _ActorName, TArray<class UDisConv_Blurb*>& _rOutputBlurbs, class UDisConv_Node* _pStartingNode ) const;
 protected:
 	class UDisConv_Soiree_InGameData* GetSoireeData( struct FDisDialogRunningInstance* _pRunningInstance ) const;

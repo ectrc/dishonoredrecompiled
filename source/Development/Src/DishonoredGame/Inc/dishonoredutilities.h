@@ -21,6 +21,7 @@ const FConfigSection* FindLocalizedConfigSection( const TCHAR* _pLanguage, const
 class UDisGlobalUIManager* DisGetGlobalUIManager();
 class UDisLocalPlayer* DisGetLocalPlayer();
 class UDishonoredAudioSystem* DisGetAudioSystem();
+class UDisAudioPropagationInfo* DisGetAudioPropagationInfo();                                     // 0x792290, agent IE (disaudiopropagationinfo.cpp)
 class UArkPpNode* DisGetArkPpNode( const FName& EffectName );
 class UArkPpNodeMaterial* DisGetArkPpNodeMaterial( const FName& EffectName, UBOOL bMakeUnique );
 class UDisPostProcessManager* DisGetPpManager();
