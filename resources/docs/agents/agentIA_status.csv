@@ -1,0 +1,15 @@
+item,state,evidence
+step 0: ride/post-ride FOV vs retail.mp4,done,IA0: zoom ride 0.99 (0.98-1.01) post-ride 0.99/1.00/1.00/1.00 (world 151-154); hfov 75 / DefaultFOV 75 / cur 75 throughout; no FOV target active
+user's retail FOV slider (OPTIONS.SAV id 118),done,75 (SHA1 + LZO1X + FNbo profile; read-only; format in agentIA.md)
+which side of the ride is wrong,answered,neither: ours = retail = 75 deg on both sides within the fit step (+-0.75 deg); the plan's premise is not a FOV difference
+UStatePlayerMasterBase::UpdateWalkNavAnimState (2012 0x69ab60 / 2013 0x675450),done (anim-state half named),crouch FOV target + arm follow + desired stance; SetAnimState 0x6e1da0 and RequestAction 0x6b1d00 named
+ExitSoireeMode (2013 0x6628f0) FOV diff,done,no FOV write in retail; stance-gated arm-follow re-enable ported
+tracking.cpp:344-345 vs bytes,done,Min(0..) is retail's own (kept); 2013 doubles the zoom blend speed (ported)
+ProcessViewRotation (2012 0x6e3e00 / 2013 0x6afb50) + ApplyPlayerControlDelta (0x6d7420 / 0x6a34d0),done,input dilation = world TimeDilation (GetBendTimeInputDilation unported); IncreaseDispersion named
+execGetFOVScale + GetFOVScale (2012 0x6f9380 / 2013 0x6b01e0),done,retail look sensitivity (cur FOV / setting) ^ tweak
+Options FOV slider -> hfov,not needed,slider = 75; ApplyGameSettings path confirmed by -iadiag (setting 75 -> DefaultFOV 75)
+-iadiag,done,FOV-target changes; DefaultFOV at PostBeginPlay / ApplyGameSettings; per-second FOV state
+verify ride zoom 0.99 and post-ride hfov +-1 deg,done,IA1: ride 0.99; post-ride 0.99/1.00/1.00/1.00; hfov 75.00
+gate d3d9+inputtest+newgame,21 ok / 2 load-sensitive fails,d3d9_frames 600 and inputtest_moved 751; A/B: base 1046/347 vs IA 1073/482; unported 0; probe 3-4; criticals 0
+generator byte-identity + bitfield audit,done,79/79 identical ignoring CRLF; mismatches 0
+cutscene_compare freeze at the New Game map change,found (not fixed),GameThreadWaitForMovie on the Bink loading movie; -nomovie avoids it; run_regression already passes -nomovie

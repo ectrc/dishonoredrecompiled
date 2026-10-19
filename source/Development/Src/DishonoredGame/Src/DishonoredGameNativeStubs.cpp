@@ -438,10 +438,6 @@ void ADishonoredPlayerController::execOnShowPowerMenu( FFrame& Stack, RESULT_DEC
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execOnShowPowerMenu);
 }
-void ADishonoredPlayerController::execProcessViewRotation( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execProcessViewRotation);
-}
 void ADishonoredPlayerController::execToggleScreenConfig( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, ADishonoredPlayerController, execToggleScreenConfig);
@@ -1277,10 +1273,6 @@ void UDishonoredDebugMenu::execLoadMenu( FFrame& Stack, RESULT_DECL )
 void UDishonoredDebugMenu::execHideMenu( FFrame& Stack, RESULT_DECL )
 {
 	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredDebugMenu, execHideMenu);
-}
-void UDishonoredPlayerInput::execGetFOVScale( FFrame& Stack, RESULT_DECL )
-{
-	DISHONORED_NATIVE_STUB(DishonoredGame, UDishonoredPlayerInput, execGetFOVScale);
 }
 void UDishonoredPlayerInput::execDis_PlayerChoice_RequestSkip_Released( FFrame& Stack, RESULT_DECL )
 {

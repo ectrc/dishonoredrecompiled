@@ -273,6 +273,38 @@ void UDishonoredPlayerInput::execDis_Jump_ButtonDown( FFrame& Stack, RESULT_DECL
 	Dis_Jump_ButtonDown();
 }
 
+/**
+ * DISHONORED(port): agent IA (PHASE23 IA), 2013 rva 0x6b01e0 (2012 0x6f9380, 209 B), retail vtable +352: the camera's current FOV
+ * over the FOV setting, raised to the tweak exponent of the secondary item's zoom level (m_fFOVScaleMultipliers_Mouse for the
+ * mouse, m_fFOVScaleMultipliers otherwise); 1 without a Dishonored camera. It replaces UPlayerInput::GetFOVScale's FOV / 90 for
+ * UPlayerInput::PlayerInput's look axes and AdjustMouseSensitivity.
+ * DISHONORED(written): retail reads the secondary item's m_ZoomLevel without a test (the player always holds at least the empty
+ * hand); before the first equip this tree can have none, so zoom level 0 is used then. A camera whose FOV setting was never
+ * applied (0) answers 1 here instead of retail's division by zero.
+ */
+FLOAT UDishonoredPlayerInput::GetFOVScale( UBOOL bIsForMouse )
+{
+	ADishonoredPlayerCamera* Camera = m_pPlayerController ? Cast<ADishonoredPlayerCamera>( m_pPlayerController->PlayerCamera ) : NULL;
+	const UDisTweaks_PlayerInput* Tweaks = m_pTweaks ? m_pTweaks : UDisTweaks_PlayerInput::StaticClass()->GetDefaultObject<UDisTweaks_PlayerInput>();
+	if( !Camera || Camera->m_fDefaultFOVSettings <= 0.0001f )
+	{
+		return 1.f;
+	}
+	const FLOAT FOVRatio = Camera->m_fCurFOV / Camera->m_fDefaultFOVSettings;
+	ADishonoredPawn* Pawn = Cast<ADishonoredPawn>( m_pPlayerController->Pawn );
+	UDishonoredInventoryItem* Item = Pawn ? Pawn->GetEquippedItem( EDisEquipUsage_Secondary ) : NULL;
+	const INT ZoomLevel = Item ? Item->m_ZoomLevel : 0;
+	return appPow( FOVRatio, bIsForMouse ? Tweaks->m_fFOVScaleMultipliers_Mouse[ZoomLevel] : Tweaks->m_fFOVScaleMultipliers[ZoomLevel] );
+}
+
+// DISHONORED(port): agent IA, 2013 rva 0x5f4840 (2012 0x63a990): the virtual through vtable +352
+void UDishonoredPlayerInput::execGetFOVScale( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_UBOOL( bIsForMouse );
+	P_FINISH;
+	*(FLOAT*)Result = GetFOVScale( bIsForMouse );
+}
+
 // DISHONORED(port): agent EQ, 2013 rva 0x6bd610 (2012 0x6f8e10, byte-identical - this body did not change
 // between the builds). Two halves. The first is the binding half and retail runs it only for
 // ASLI_ApplyCurrentValues and ASLI_ValidatedByUser (retail's test is `if (!Reason || Reason == 3)`): it

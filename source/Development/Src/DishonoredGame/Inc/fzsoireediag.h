@@ -17,6 +17,11 @@ void DisPCamReport( class ADishonoredPlayerCamera* Camera, const struct FTViewTa
 void DisPCamNoteSoireeExit();
 #define PCAMDIAG( Fmt, ... ) do { if( DisPCamDiagEnabled() ) { debugf( TEXT("DISHONORED(bringup): pcamdiag ") Fmt, __VA_ARGS__ ); } } while( 0 )
 
+UBOOL DisIADiagEnabled();
+/** agent IA -iadiag: once a second from ADishonoredPlayerCamera::TickFOV: DefaultFOV, the settings FOV, the current view and arms FOV and every FOV target slot holding a value. */
+void DisIAReportFOV( class ADishonoredPlayerCamera* Camera );
+#define IADIAG( Fmt, ... ) do { if( DisIADiagEnabled() ) { debugf( TEXT("DISHONORED(bringup): iadiag ") Fmt, __VA_ARGS__ ); } } while( 0 )
+
 #define FZDIAG( Fmt, ... ) do { if( DisFZDiagEnabled() ) { debugf( TEXT("DISHONORED(bringup): fzdiag ") Fmt, __VA_ARGS__ ); } } while( 0 )
 #define FZDIAG_ONCE( Msg ) do { static UBOOL bSaidOnce = FALSE; if( !bSaidOnce ) { bSaidOnce = TRUE; debugf( NAME_Warning, TEXT("DISHONORED(bringup): fz %s"), Msg ); } } while( 0 )
 

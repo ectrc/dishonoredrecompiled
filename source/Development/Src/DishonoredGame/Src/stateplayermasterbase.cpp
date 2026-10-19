@@ -54,22 +54,82 @@ FLOAT UStatePlayerMasterBase::GetBlendInTime() const
 }
 
 /**
- * DISHONORED(bringup): 2012 0x69ab60, 749 B, read and NOT ported. Retail picks the player's full-body navigation anim
- * state (Nav_Default / _Crouched / _Sprinting / _Ready / Zoom) from the desired and actual stances through
- * ADishonoredPlayerPawn::SetAnimState / RequestAction / GetActualPlayerStance / GetDesiredPlayerStance / IsSneaking,
- * sets the arm-follow influence per hand and the crouch FOV target (UStatePlayerMasterWalk::m_fCrouchedFOV through
- * ADishonoredPlayerCamera::SetFOVTarget( eDisCamFOVPriority_Locomotion )). None of the stance and anim-state functions
- * exist in this tree (dishonoredplayerpawn_combat.cpp and displayerpawn_animstates.cpp are skeletons), so the walk
- * state enters without them, exactly as the pawn stood before this package. It clears m_bBlendingFromLastState as
- * retail does at its end, so the blend-in time is consumed once.
+ * DISHONORED(port): agent IA (PHASE23 IA), 2012 0x69ab60 (749 B) / 2013 0x675450 (757 B, the same flow). The blend time is the
+ * state's blend-in time (GetBlendInTime) unless the pawn asked for an instant equip change (m_bHandleInstantEquipChange, cleared
+ * here); the primary hand's desired stance is stored in m_DesiredPlayerStance[1]; the secondary hand's arm follow is disabled while
+ * it is not ready; a not-ready primary picks Nav_Crouched (sneaking) or Nav_Sprinting / Nav_Default with its arm follow disabled,
+ * a ready one Nav_Crouched_Ready / Nav_Sprinting_Ready / Nav_Default_Ready with its arm follow on; then the
+ * crouch FOV: UStatePlayerMasterWalk's class default m_fCrouchedFOV at m_fCrouchFOV_BlendSpeed, arms locked, in the Locomotion
+ * slot when the crouched anim state was chosen, else that slot is cleared.
+ * DISHONORED(bringup), named and not faked: ADishonoredPlayerPawn::SetAnimState (2012 0x71fe40 / 2013 0x6e1da0) and RequestAction
+ * (0x70bb90 / 0x6b1d00) with the FStatePlayerChangeReadyStance_Param ctor (0x6c6190 / 0x673d40) have no bodies here
+ * (displayerpawn_animstates.cpp and the upper-body action FSM are skeletons): the anim state the walk would pick and the stance
+ * change request are only reported once; the arm follow, the stored desired stance and the FOV half run as retail.
  */
 void UStatePlayerMasterBase::UpdateWalkNavAnimState( ADishonoredPlayerPawn* Pawn, UBOOL bHandleCrouch )
 {
-	static UBOOL bSaid = FALSE;
-	if( !bSaid )
+	const FLOAT BlendTime = Pawn->m_bHandleInstantEquipChange ? 0.f : GetBlendInTime();
+	UBOOL bDidCrouch = FALSE;
+	Pawn->m_bHandleInstantEquipChange = FALSE;
+	const BYTE DesiredStance = Pawn->GetDesiredPlayerStance( EDisEquipUsage_Primary );
+	Pawn->m_DesiredPlayerStance[EDisEquipUsage_Primary] = DesiredStance;
+	if( DesiredStance != Pawn->GetActualPlayerStance( EDisEquipUsage_Primary ) )
 	{
-		bSaid = TRUE;
-		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UStatePlayerMasterBase::UpdateWalkNavAnimState (2012 0x69ab60) is not ported: the player's navigation anim state, stance arm-follow and crouch FOV are not driven by the master FSM") );
+		static UBOOL bSaidStance = FALSE;
+		if( !bSaidStance )
+		{
+			bSaidStance = TRUE;
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): UStatePlayerMasterBase::UpdateWalkNavAnimState: ADishonoredPlayerPawn::RequestAction (2013 0x6b1d00) is not ported; the ready-stance change to %d is not requested"), (INT)DesiredStance );
+		}
+	}
+	const BYTE ActualStance = Pawn->GetActualPlayerStance( EDisEquipUsage_Primary );
+	Pawn->DisableArmFollow( EDisEquipUsage_Secondary, Pawn->GetActualPlayerStance( EDisEquipUsage_Secondary ) == eDisPlayerStance_NotReady, BlendTime, FALSE );
+	const UBOOL bCrouch = Pawn->IsSneaking() && bHandleCrouch;
+	const TCHAR* AnimState = NULL;
+	if( ActualStance == eDisPlayerStance_NotReady )
+	{
+		AnimState = bCrouch ? TEXT("Nav_Crouched") : ( Pawn->m_bSprinting ? TEXT("Nav_Sprinting") : TEXT("Nav_Default") );
+		bDidCrouch = bCrouch;
+		Pawn->DisableArmFollow( EDisEquipUsage_Primary, TRUE, BlendTime, FALSE );
+	}
+	else
+	{
+		// retail asks the secondary item through a direct call that the linker folded onto a `return FALSE` body (2013 0x722980,
+		// `xor eax, eax / retn`; 2012 0xd9220 the same), so the zoom variants are never chosen in either build
+		const UBOOL bZoomItem = FALSE;
+		if( bCrouch )
+		{
+			AnimState = bZoomItem ? TEXT("Nav_Zoom_Default") : TEXT("Nav_Crouched_Ready");
+			bDidCrouch = TRUE;
+		}
+		else if( Pawn->m_bSprinting )
+		{
+			AnimState = TEXT("Nav_Sprinting_Ready");
+		}
+		else
+		{
+			AnimState = bZoomItem ? TEXT("Nav_Zoom_Default") : TEXT("Nav_Default_Ready");
+		}
+		Pawn->DisableArmFollow( EDisEquipUsage_Primary, FALSE, BlendTime, FALSE );
+	}
+	static UBOOL bSaidAnim = FALSE;
+	if( !bSaidAnim )
+	{
+		bSaidAnim = TRUE;
+		debugf( NAME_Warning, TEXT("DISHONORED(bringup): UStatePlayerMasterBase::UpdateWalkNavAnimState: ADishonoredPlayerPawn::SetAnimState (2013 0x6e1da0) is not ported; full-body anim state %s (blend %.2f) is not set"), AnimState, BlendTime );
+	}
+	ADishonoredPlayerCamera* Camera = Pawn->GetDishonoredCamera();
+	const UStatePlayerMasterWalk* WalkDefaults = UStatePlayerMasterWalk::StaticClass()->GetDefaultObject<UStatePlayerMasterWalk>();
+	if( Camera )
+	{
+		if( bDidCrouch && WalkDefaults->m_fCrouchedFOV > 0.0001f )
+		{
+			Camera->SetFOVTarget( eDisCamFOVPriority_Locomotion, WalkDefaults->m_fCrouchedFOV, WalkDefaults->m_fCrouchFOV_BlendSpeed, TRUE );
+		}
+		else
+		{
+			Camera->ClearFOVTarget( eDisCamFOVPriority_Locomotion );
+		}
 	}
 	m_bBlendingFromLastState = FALSE;
 }

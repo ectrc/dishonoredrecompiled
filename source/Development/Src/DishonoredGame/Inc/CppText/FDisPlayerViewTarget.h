@@ -5,4 +5,6 @@
 	void SetTarget( INT _TargetFixedAngle, FLOAT _fBlendTime, INT _Flags, INT _StartRot, FLOAT _fMaxRadius, FLOAT _fMinRadius, INT _MaxPlayerControlledDelta, INT _PlayerControlledDelta_SoftenThreshold, FLOAT _fZoomFOVOverride );
 	void ClearTarget( INT _TrackID );
 	void TickTracking( FLOAT _fDeltaTime );
+	// DISHONORED(port): agent IA (PHASE23 IA), 2012 0x6d7420 / 2013 0x6a34d0 (same bytes)
+	void ApplyPlayerControlDelta( INT _Delta );
 	UBOOL IsTracking() const { return m_TrackType != 0 && ( m_TrackType != 1 || m_pTarget != NULL ); }

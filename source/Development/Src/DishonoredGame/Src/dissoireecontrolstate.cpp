@@ -123,10 +123,16 @@ void FDisSoireeControlState::ExitSoireeMode( ADishonoredPlayerPawn* PlayerPawn, 
 	{
 		const UBOOL bWaitOneFrame = BlendOutTime > 0.f;
 		PlayerPawn->EnableCoreCamInfluence( UDishonoredCamera_PlayerControl::StaticClass(), BlendOutTime, bWaitOneFrame );
-		// retail re-enables the arm follow only for a hand whose actual stance is not eDisPlayerStance_NotReady
-		// (GetActualPlayerStance, 2012 0x6fb220, unported: every stance reads NotReady here, so neither hand follows again
-		// until the stance system lands - which is also what retail does for an unready hand)
-		FZDIAG_ONCE( TEXT("ExitSoireeMode: GetActualPlayerStance is not ported; the arm follow stays disabled after a soiree as it does for an unready hand in retail") );
+		// agent IA: 2013 0x6628f0 re-enables the arm follow of each hand whose actual stance is not eDisPlayerStance_NotReady
+		// (GetActualPlayerStance 0x6a20f0, DisableArmFollow 0x6a1cf0 with the same wait flag); diffed for FOV writes: there are none
+		if( PlayerPawn->GetActualPlayerStance( EDisEquipUsage_Primary ) != eDisPlayerStance_NotReady )
+		{
+			PlayerPawn->DisableArmFollow( EDisEquipUsage_Primary, FALSE, BlendOutTime, bWaitOneFrame );
+		}
+		if( PlayerPawn->GetActualPlayerStance( EDisEquipUsage_Secondary ) != eDisPlayerStance_NotReady )
+		{
+			PlayerPawn->DisableArmFollow( EDisEquipUsage_Secondary, FALSE, BlendOutTime, bWaitOneFrame );
+		}
 		ADishonoredPlayerCamera* Camera = PlayerPawn->GetDishonoredCamera();
 		if( Camera )
 		{

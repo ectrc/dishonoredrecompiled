@@ -46,6 +46,7 @@
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "arkpp.h"
+#include "fzsoireediag.h"
 
 /**
  * DISHONORED(port): 2013 rva 0x6ca780 (2012 0x70a1c0) - the camera's own post-process targets. Eight entries per
@@ -103,6 +104,7 @@ void ADishonoredPlayerCamera::ApplyGameSettings( const ArkSettingsParameters* Pa
 	DefaultFOV = FieldOfView;
 	m_RollAmount = Parameters->m_fHeadBobAmount;
 	m_BobAmount = Parameters->m_fHeadBobAmount;
+	IADIAG( TEXT("ApplyGameSettings %s: setting FOV %d -> DefaultFOV %.2f (reason %d)"), *GetName(), Parameters->m_FOV, DefaultFOV, (INT)Reason );
 }
 
 /*-----------------------------------------------------------------------------
@@ -190,6 +192,7 @@ void ADishonoredPlayerCamera::PostBeginPlay()
 	}
 	debugf( TEXT("DISHONORED(bringup): fz camera %s PostBeginPlay: %d influence groups, %d influences, PlayerControl %s, AnimDriven %s, DefaultFOV %.2f, style %s"),
 		*GetName(), Groups.Num(), NumInfluences, m_pPlayerControl_Influence ? TEXT("yes") : TEXT("NONE"), m_pAnimDrive_Influence ? TEXT("yes") : TEXT("NONE"), DefaultFOV, *CameraStyle.ToString() );
+	IADIAG( TEXT("PostBeginPlay %s: DefaultFOV %.2f settings %.2f cur %.2f, %d FOV target slots"), *GetName(), DefaultFOV, m_fDefaultFOVSettings, m_fCurFOV, m_FOVTargets.Num() );
 }
 
 // DISHONORED(port): 2012 0x70e6e0: the actor tick, the FOV tick; TickPostProcess (0x709ba0) is not ported
@@ -225,6 +228,7 @@ void ADishonoredPlayerCamera::TickFOV( FLOAT DeltaTime )
 	}
 	m_fCurFOV = DisInterpolateBySpeedWithDif( m_fCurFOV, FOVTarget, BlendSpeed, 0.1f, DeltaTime );
 	m_fCurFOV_Arms = DisInterpolateBySpeedWithDif( m_fCurFOV_Arms, FOVTarget_Arms, BlendSpeed, 0.1f, DeltaTime );
+	DisIAReportFOV( this );
 }
 
 // DISHONORED(port): 2012 0x709f40: the slot of the given priority (eDisCamFOVPriority indexes m_FOVTargets)
@@ -235,6 +239,11 @@ void ADishonoredPlayerCamera::SetFOVTarget( BYTE FOVPriority, FLOAT FOV, FLOAT B
 		return;
 	}
 	FDisCamFOVTarget& Target = m_FOVTargets(FOVPriority);
+	if( Target.m_fTarget != FOV || Target.m_fBlendSpeed != BlendSpeed || (UBOOL)Target.m_bLockArms != ( bLockArms ? TRUE : FALSE ) )
+	{
+		IADIAG( TEXT("SetFOVTarget t=%.3f priority %d value %.2f speed %.2f lockArms %d (was %.2f)"), GWorld ? GWorld->GetTimeSeconds() : 0.f,
+			(INT)FOVPriority, FOV, BlendSpeed, bLockArms ? 1 : 0, Target.m_fTarget );
+	}
 	Target.m_fTarget = FOV;
 	Target.m_bLockArms = bLockArms ? TRUE : FALSE;
 	Target.m_fBlendSpeed = BlendSpeed;
@@ -245,6 +254,10 @@ void ADishonoredPlayerCamera::ClearFOVTarget( BYTE FOVPriority )
 {
 	if( FOVPriority < m_FOVTargets.Num() )
 	{
+		if( m_FOVTargets(FOVPriority).m_fTarget != 0.f )
+		{
+			IADIAG( TEXT("ClearFOVTarget t=%.3f priority %d (was %.2f)"), GWorld ? GWorld->GetTimeSeconds() : 0.f, (INT)FOVPriority, m_FOVTargets(FOVPriority).m_fTarget );
+		}
 		m_FOVTargets(FOVPriority).m_fTarget = 0.f;
 	}
 }

@@ -29,9 +29,11 @@
 	FDisPlayerViewTarget::SetTarget 0x6d15b0 / 0x6a0da0, ClearTarget 0x6d1670 / 0x6a0e60, TickTracking 0x6f8840 / 0x6af3a0,
 	StopTrackingTarget 0x6d1690 / 0x6a0ec0, FetchTrackedTargetRot 0x6d16e0 / 0x6a0f10 (2013 drops the player delta from the untracked
 	answer), TickCameraTracking 0x6f9ce0 / 0x6b4e60 (from ADishonoredPlayerController::OnCameraUpdate pass 0, 2013 0x6ba860).
-	Not ported: the actor/pawn starts (StartTrackingActor, StartTrackingPawn_ByRegion, the actor SetTarget), ProcessViewRotation
-	(0x6e3e00 / 0x6afb50: the input delta into ApplyPlayerControlDelta while tracking, the pitch/yaw limits, the ranged dispersion),
-	the Limit*FromCurrent / StopLimiting* setters and the sensitivity getters.
+	Agent IA (PHASE23 IA) added ProcessViewRotation 0x6e3e00 / 0x6afb50 and FDisPlayerViewTarget::ApplyPlayerControlDelta 0x6d7420 /
+	0x6a34d0 (deviations at the function: the input dilation is the world's, the ranged dispersion is reported, not applied) and the
+	2013 doubled zoom blend speed in TickCameraTracking.
+	Not ported: the actor/pawn starts (StartTrackingActor, StartTrackingPawn_ByRegion, the actor SetTarget), the Limit*FromCurrent /
+	StopLimiting* setters and the sensitivity getters.
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
@@ -348,9 +350,12 @@ void ADishonoredPlayerController::TickCameraTracking( FLOAT _fDeltaTime, const F
 	}
 	if( Cam )
 	{
+		// agent IA, against the bytes of 2013 0x6b4e60 (0x6b5228..0x6b52ef): the Min of the two overrides starting from 0 is
+		// retail's own (a yaw-only zoom asks for FOV 0, which TickFOV then skips), and 2013 doubles the blend speed (mulss 2.0;
+		// 2012 0x6f9ce0 passes it as is)
 		if( bZoom )
 		{
-			Cam->SetFOVTarget( eDisCamFOVPriority_ControllerLook, ZoomOverride, ZoomBlendSpeed, FALSE );
+			Cam->SetFOVTarget( eDisCamFOVPriority_ControllerLook, ZoomOverride, ZoomBlendSpeed * 2.f, FALSE );
 		}
 		else
 		{
@@ -365,4 +370,132 @@ void ADishonoredPlayerController::TickCameraTracking( FLOAT _fDeltaTime, const F
 	{
 		YawTarget.m_pTarget = NULL;
 	}
+}
+
+/**
+ * DISHONORED(port): agent IA (PHASE23 IA), 2012 0x6d7420 / 2013 0x6a34d0 (same bytes). While the target is not tracking, or its
+ * weight is full, the player's look input moves the controlled delta inside +-m_MaxPlayerControlledDelta; passing the soften
+ * threshold toward an edge marks that side (1 positive, 2 negative), coming back past the blended delta clears it.
+ */
+void FDisPlayerViewTarget::ApplyPlayerControlDelta( INT _Delta )
+{
+	const INT MaxDelta = m_MaxPlayerControlledDelta;
+	if( MaxDelta == 0 )
+	{
+		return;
+	}
+	if( IsTracking() && Abs( m_fCurWeight - 1.f ) >= 0.0001f )
+	{
+		return;
+	}
+	m_CurPlayerControlledDelta = Clamp( m_CurPlayerControlledDelta + _Delta, -MaxDelta, MaxDelta );
+	if( _Delta <= 0 )
+	{
+		if( m_SoftenType == 1 )
+		{
+			if( m_CurPlayerControlledDelta < m_CurPlayerControlledDelta_Blended )
+			{
+				m_SoftenType = 0;
+			}
+		}
+		else if( m_CurPlayerControlledDelta < m_PlayerControlledDelta_SoftenThreshold - MaxDelta )
+		{
+			m_SoftenType = 2;
+		}
+	}
+	else if( m_SoftenType == 2 )
+	{
+		if( m_CurPlayerControlledDelta > m_CurPlayerControlledDelta_Blended )
+		{
+			m_SoftenType = 0;
+		}
+	}
+	else if( m_CurPlayerControlledDelta > MaxDelta - m_PlayerControlledDelta_SoftenThreshold )
+	{
+		m_SoftenType = 1;
+	}
+}
+
+/**
+ * DISHONORED(port): agent IA (PHASE23 IA), 2013 rva 0x6afb50 (2012 0x6e3e00, 756 B, ratio .986). With a pawn the input delta is
+ * scaled by the input time dilation. While either view target tracks, its axis of the delta goes into the target's player-controlled
+ * delta (ApplyPlayerControlDelta) and is removed from the view; otherwise the Kismet pitch/yaw limits (m_bLimitPlayerPitch /
+ * m_bLimitPlayerYaw, degrees around m_fStartingPlayerPitch / Yaw) cut the delta at the limit. A ranged weapon in the secondary hand
+ * gains dispersion from the look speed. Then APlayerController::ProcessViewRotation (camera modifiers, pawn).
+ * DISHONORED(bringup), named: ADishonoredGameInfo::GetBendTimeInputDilation (2013 vtable +1076, 2012 0x62fb00) has no body here,
+ * so the world's TimeDilation is the scale (the branch retail takes without a game info; both are 1 outside bend time);
+ * UDishonoredWeapon_Ranged::IncreaseDispersion (2013 0x81cba0, 2012 0x886c60) is not ported, so the dispersion is reported once.
+ */
+void ADishonoredPlayerController::ProcessViewRotation( FLOAT DeltaTime, FRotator& out_ViewRotation, FRotator DeltaRot )
+{
+	static const FLOAT DisUnrealUnitsToDegrees = 360.f / 65536.f;
+	if( Pawn )
+	{
+		DeltaRot *= WorldInfo->TimeDilation;
+	}
+	FDisPlayerViewTarget& YawTarget = m_ViewTracking.m_ViewYawTarget;
+	FDisPlayerViewTarget& PitchTarget = m_ViewTracking.m_ViewPitchTarget;
+	if( YawTarget.IsTracking() || PitchTarget.IsTracking() )
+	{
+		if( PitchTarget.IsTracking() )
+		{
+			PitchTarget.ApplyPlayerControlDelta( DeltaRot.Pitch );
+			DeltaRot.Pitch = 0;
+		}
+		if( YawTarget.IsTracking() )
+		{
+			YawTarget.ApplyPlayerControlDelta( DeltaRot.Yaw );
+			DeltaRot.Yaw = 0;
+		}
+	}
+	else
+	{
+		const FLOAT CurPitch = FRotator::NormalizeAxis( appTrunc( ( Rotation.Pitch * DisUnrealUnitsToDegrees - m_fStartingPlayerPitch ) * DisDegreesToUnrealUnits ) ) * DisUnrealUnitsToDegrees;
+		const FLOAT CurYaw = FRotator::NormalizeAxis( appTrunc( ( Rotation.Yaw * DisUnrealUnitsToDegrees - m_fStartingPlayerYaw ) * DisDegreesToUnrealUnits ) ) * DisUnrealUnitsToDegrees;
+		if( m_bLimitPlayerPitch )
+		{
+			const FLOAT NewPitch = DeltaRot.Pitch * DisUnrealUnitsToDegrees + CurPitch;
+			if( m_fLimitPlayerPitch_Min > NewPitch )
+			{
+				DeltaRot.Pitch = appTrunc( ( m_fLimitPlayerPitch_Min - CurPitch ) * DisDegreesToUnrealUnits );
+			}
+			if( NewPitch > m_fLimitPlayerPitch_Max )
+			{
+				DeltaRot.Pitch = appTrunc( ( m_fLimitPlayerPitch_Max - CurPitch ) * DisDegreesToUnrealUnits );
+			}
+		}
+		if( m_bLimitPlayerYaw )
+		{
+			const FLOAT NewYaw = DeltaRot.Yaw * DisUnrealUnitsToDegrees + CurYaw;
+			if( m_fLimitPlayerYaw_Min > NewYaw )
+			{
+				DeltaRot.Yaw = appTrunc( ( m_fLimitPlayerYaw_Min - CurYaw ) * DisDegreesToUnrealUnits );
+			}
+			if( NewYaw > m_fLimitPlayerYaw_Max )
+			{
+				DeltaRot.Yaw = appTrunc( ( m_fLimitPlayerYaw_Max - CurYaw ) * DisDegreesToUnrealUnits );
+			}
+		}
+	}
+	ADishonoredPlayerPawn* PlayerPawn = Cast<ADishonoredPlayerPawn>( Pawn );
+	if( PlayerPawn && PlayerPawn->m_pInventory && Cast<UDishonoredWeapon_Ranged>( PlayerPawn->m_pInventory->GetEquippedItem( EDisEquipUsage_Secondary ) ) )
+	{
+		static UBOOL bSaid = FALSE;
+		if( !bSaid )
+		{
+			bSaid = TRUE;
+			debugf( NAME_Warning, TEXT("DISHONORED(bringup): ADishonoredPlayerController::ProcessViewRotation: UDishonoredWeapon_Ranged::IncreaseDispersion (2013 0x81cba0) is not ported; the ranged weapon's look dispersion does not grow") );
+		}
+	}
+	APlayerController::ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
+}
+
+// DISHONORED(port): agent IA, the script entry of the virtual above (DishonoredPlayerController.uc ProcessViewRotation)
+void ADishonoredPlayerController::execProcessViewRotation( FFrame& Stack, RESULT_DECL )
+{
+	P_GET_FLOAT( DeltaTime );
+	P_GET_ROTATOR_REF( out_ViewRotation );
+	P_GET_ROTATOR( DeltaRot );
+	P_FINISH;
+	ProcessViewRotation( DeltaTime, out_ViewRotation, DeltaRot );
 }

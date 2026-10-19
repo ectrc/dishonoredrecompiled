@@ -88,6 +88,46 @@ void DisPCamReport( ADishonoredPlayerCamera* Camera, const FTViewTarget& OutVT, 
 	}
 }
 
+// DISHONORED(bringup): agent IA (PHASE23 IA) -iadiag - the field of view. Every FOV target change (ADishonoredPlayerCamera::
+// SetFOVTarget / ClearFOVTarget), DefaultFOV at PostBeginPlay and at each ApplyGameSettings, and once a second the FOV state.
+static INT GDisIADiag = -1;
+
+UBOOL DisIADiagEnabled()
+{
+	if( GDisIADiag < 0 )
+	{
+		GDisIADiag = ( appStrfind( appCmdLine(), TEXT("-iadiag") ) != NULL ) ? 1 : 0;
+	}
+	return GDisIADiag == 1;
+}
+
+void DisIAReportFOV( ADishonoredPlayerCamera* Camera )
+{
+	if( !DisIADiagEnabled() || !Camera )
+	{
+		return;
+	}
+	const FLOAT Now = GWorld ? GWorld->GetTimeSeconds() : 0.f;
+	static FLOAT LastReport = -1.f;
+	if( LastReport >= 0.f && Now - LastReport < 1.f )
+	{
+		return;
+	}
+	LastReport = Now;
+	FString Slots;
+	for( INT Index = 0; Index < Camera->m_FOVTargets.Num(); Index++ )
+	{
+		const FDisCamFOVTarget& Target = Camera->m_FOVTargets(Index);
+		if( Target.m_fTarget > 0.0001f )
+		{
+			Slots += FString::Printf( TEXT(" [%d] %.2f speed %.2f lockArms %d"), Index, Target.m_fTarget, Target.m_fBlendSpeed, (INT)Target.m_bLockArms );
+		}
+	}
+	debugf( TEXT("DISHONORED(bringup): iadiag fov t=%.3f DefaultFOV %.2f settings %.2f cur %.2f arms %.2f default speed %.2f slots %d active:%s"),
+		Now, Camera->DefaultFOV, Camera->m_fDefaultFOVSettings, Camera->m_fCurFOV, Camera->m_fCurFOV_Arms, Camera->m_fDefaultFOVBlendSpeed,
+		Camera->m_FOVTargets.Num(), Slots.Len() ? *Slots : TEXT(" none") );
+}
+
 static INT GDisFZDiag = -1;
 
 UBOOL DisFZDiagEnabled()
