@@ -353,6 +353,9 @@ public:
 	void IKDiagFloor( const TCHAR* _Outcome, const FCheckResult& _FloorHit, const FVector& _Delta ) const;
 	void IKDiagProbeFloor( const FVector& _Start, const FVector& _Extent ) const;
 	void IKDiagFalling() const;
+	/** DISHONORED(diag): agent IO's -iodiag, once a second per moving NPC: body yaw against velocity yaw, the face-to request, the
+	    mesh rotation; and each new path's points. */
+	void IODiagReport() const;
 
 private:
 	// the request-manager event thunk (see arkrequestmanager.h on why this is a static rather than a PMF)
@@ -362,6 +365,10 @@ private:
 	void OnEnable();												// 2013 0x53def0
 	void OnDisable();												// 2013 0x5461f0
 	void UpdateAnimNode( INT _ModifierIdx, FLOAT _fSpeed );			// 2013 0x53dea0
+	void UpdateFaceTo( FLOAT _fTimeStep, const FVector& _rRealVelocity );	// 2013 VA 0x943190 (2012 0x584130)
+	void ComputeTargetPitchAndRoll( FLOAT _fSpeed, FLOAT _fRotSpeed, INT _Angle, FLOAT& _rTargetPitch, FLOAT& _rTargetRoll ) const;	// 2013 VA 0x93e9e0 (2012 0x57fca0)
+	void UpdatePitchAndRoll( FLOAT _fTimeStep );					// 2013 VA 0x93eb30 (2012 0x57fde0)
+	void UpdateMesh( INT _Pitch, INT _Roll, FLOAT _fZOffset );		// 2013 VA 0x93de20 (2012 0x57ef70)
 	void UpdateLocoRequest( INT _RequestIdx, const FLocoRequestData& _rRequest );	// 2013 0x545160
 	void ResetCurRequestWorkData();									// 2013 0x5451b0
 	void NotifyActiveRequest( BYTE _Event );
@@ -385,7 +392,7 @@ private:
 	void UnTouchActors( const FCheckResult* const _pHits, UBOOL _bPreview );		// 2012 0x580a40
 	INT ComputeMoveYaw() const;										// 2013 0x53e1f0
 	INT ComputeTargetMoveYaw() const;								// 2013 0x547950
-	INT UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxMultiDirSpeedForAngle ) const;	// 2013 0x541330
+	INT UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxRotSpeedMultiplier ) const;	// 2013 0x541330
 	FLOAT ComputeTargetMoveSpeed( FLOAT _fTimeStep, FLOAT& _rAdaptedAccel ) const;	// 2013 0x548050
 	FLOAT UpdateMoveSpeed( FLOAT _fTimeStep ) const;				// 2013 0x53e220
 	FVector ComputePathMove( FLOAT _fTimeStep );					// 2013 0x548410

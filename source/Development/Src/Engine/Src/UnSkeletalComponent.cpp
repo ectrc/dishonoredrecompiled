@@ -3608,7 +3608,10 @@ void USkeletalMeshComponent::ProcessRootMotion( FLOAT DeltaTime, FBoneAtom& Extr
 		// Motion applied right away
 		if( bHasRootMotion )
 		{
-			if( (RootMotionMode == RMM_Translate || RootMotionRotationMode == RMRM_RotateActor || 
+			// DISHONORED(IO): retail 2012 0x353c80 / 2013 0x746280 applies instant root motion here only in RMM_Translate (or
+			// RMM_Ignore right after Translate); the reference engine also rotated the actor whenever RMRM_RotateActor was set,
+			// which turned NPC turn animations twice (the locomotion's FaceTo already applies the body yaw in RMM_Accel).
+			if( (RootMotionMode == RMM_Translate || 
 				(RootMotionMode == RMM_Ignore && PreviousRMM == RMM_Translate)) )	// If root motion was just turned off, forward remaining root motion.
 			{
 				/** 

@@ -1,0 +1,25 @@
+function,binary,address,status,file,note
+FArkComponentLocomotion::UpdateFaceTo,2013,VA 0x943190 (2012 0x584130),ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,the locomotion's face-to yaw request towards the path move; NULL face-to guard named
+FArkComponentLocomotion::PreAsyncWorkTick (tail),2013,VA 0x94caa0,ported (part),DishonoredGame/Src/arkcomponentlocomotion.cpp,velocity before ComputeDynamic; lean; UpdateFaceTo; UpdateLookat still out
+FArkComponentLocomotion::ComputeTargetPitchAndRoll,2013,VA 0x93e9e0 (2012 0x57fca0),ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,
+FArkComponentLocomotion::UpdatePitchAndRoll,2013,VA 0x93eb30 (2012 0x57fde0),ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,
+FArkComponentLocomotion::UpdateMesh,2013,VA 0x93de20 (2012 0x57ef70),ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,mesh-offset external rotation (pitch 0 roll)
+FArkComponentLocomotion::SetModifier,2013,VA 0x941b70 (2012 0x582b40),ported,DishonoredGame/Src/arkcomponentlocomotion.cpp,rates from distances; m_MaxMultiDirSpeedIdx; m_bHaveStopAnim
+UArkComponentLocomotionConfig::ComputeSpeedFromSpeedModeAndAngle,2012,0x575d10,ported,DishonoredGame/Src/arkanimnodelocomotion.cpp + Inc/CppText/UArkComponentLocomotionConfig.h,
+FArkComponentLocomotion::UpdateMoveYaw,2012,0x582300,ported (wall test missing),DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,wall test needs PointReachableZeroExtent 0x2a9ba0
+FArkComponentLocomotion::ComputeDynamic (head + UpdateMoveYaw outs),2012,0x58ca10,ported (part),DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,m_fMaxMultiDirSpeedForAngle; third out = m_fMaxMoveRotSpeedMultiplier
+FArkComponentLocomotion::HandleArrival (end speed),2012,0x589560,ported (part),DishonoredGame/Src/arkcomponentlocomotiondynamic.cpp,speed at the face-to angle
+FArkComponentLocomotion::IsLocoFaceToRequestActive,2012,0x57fa80,ported,DishonoredGame/Src/arkcomponentlocomotionrootmove.cpp,was FALSE for every NPC since IK4
+FArkComponentLocomotion::EvaluateStaticTurn,2012,0x58c040,ported (fix),DishonoredGame/Src/arkcomponentlocomotionrootmove.cpp,turn towards the face-to target yaw
+FArkComponentLocomotion::EvaluatePathTurn,2012,0x58c3d0,ported (fix),DishonoredGame/Src/arkcomponentlocomotionrootmove.cpp,IsActiveRequestSnapped test
+FindFirstEdgeIndex,2012,0xb4d10,ported,DishonoredGame/Src/arkpathbuildutils.cpp,was a stand-in with its own winding
+AdjustPathFindingEdges,2012,0xb54d0,ported,DishonoredGame/Src/arkpathbuildutils.cpp,DN's left/right winding was retail's mirror: the zigzag routes; NULL shared poly guard named
+MinimizeStraightPath_FunnelAlgorithm,2012,0xb5cf0,ported,DishonoredGame/Src/arkpathbuildutils.cpp,end test fixed
+AdjustStraightPath,2012,0xb5fe0,ported,DishonoredGame/Src/arkpathbuildutils.cpp,corner insertion around pulled-in corners
+DistanceToLine,2012,0xd670,ported (file static),DishonoredGame/Src/arkpathbuildutils.cpp,
+IsEdgeBorderExtentReachable,2012,0xacd50,unchanged (deviation),DishonoredGame/Src/arkpathbuildutils.cpp,reference PointReachable instead of PointReachableZeroExtent
+UNavigationHandle::PointReachableZeroExtent,2012,0x2a9ba0,not ported,,needed by the UpdateMoveYaw wall test and IsEdgeBorderExtentReachable
+FArkComponentLocomotion::DetectPreAvoidanceCollision,2012,0x584f10,not ported,,not the cause of the odd routes
+USkeletalMeshComponent::ProcessRootMotion (RMRM_RotateActor branch),2012,0x353c80,not changed (finding),Engine/Src/UnSkeletalComponent.cpp:3611,retail rotates the actor only in RMM_Translate (or Ignore after Translate); ours also in RMM_Accel: turn anims rotate twice -> turn loops (_12; Worker B). Next package
+DisIODiagEnabled / IODiagReport (-iodiag),ours,,diag,DishonoredGame/Src/dishonorednpcpawn_locomotion.cpp + arkcomponentlocomotion.cpp,per NPC yaw vs velocity once a second; each new path
+-iooldface / -iooldmod,ours,,removed (build 1 A/B only),,

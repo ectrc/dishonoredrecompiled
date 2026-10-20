@@ -130,6 +130,25 @@ FLOAT UArkComponentLocomotionConfig::GetForwardSpeedOfSpeedMode( INT _SpeedIdx, 
 	return GetForwardSpeedOfSpeedMode( _SpeedIdx + _ModifierIdx * m_SpeedNames.Num() );
 }
 
+// DISHONORED(port): agent IO, 2012 rva 0x575d10 (300 bytes).
+FLOAT UArkComponentLocomotionConfig::ComputeSpeedFromSpeedModeAndAngle( INT _SpeedIdx, INT _ModifierIdx, INT _Angle ) const
+{
+	const FArkCpntLocoSpeedModeProp& rMode = m_SpeedModePropDictionary( m_SpeedModes( _SpeedIdx + _ModifierIdx * m_SpeedNames.Num() ) );
+	const INT AnimCount = rMode.m_MoveAnimProps.Num();
+	FArkCpntLocoDirAndWeight DirAndWeights[2];
+	ComputeAnimDirAndWeightFromAngleAndDirCount( _Angle, AnimCount, DirAndWeights, 0.98f );
+	const INT Step = 8 / AnimCount;
+	FLOAT fSpeed = 0.f;
+	for( INT DirIdx = 0; DirIdx < 2; DirIdx++ )
+	{
+		if( DirAndWeights[DirIdx].m_Index != -1 )
+		{
+			fSpeed += rMode.m_MoveAnimProps( DirAndWeights[DirIdx].m_Index / Step ).m_fAnimSpeed * DirAndWeights[DirIdx].m_fWeight;
+		}
+	}
+	return fSpeed;
+}
+
 /*-----------------------------------------------------------------------------
 	UArkAnimNodeLocomotion: lookup, initialisation, the setters
 -----------------------------------------------------------------------------*/

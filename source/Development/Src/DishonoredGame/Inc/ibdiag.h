@@ -15,4 +15,8 @@ void DisIBDiagReport( class ADishonoredNPCPawn* _pPawn );
 UBOOL DisIKDiagEnabled();
 UBOOL DisIKDiagWatched( const AActor* _pActor );
 
+/** agent IO (PHASE23 IO): -iodiag, every NPC's body yaw against its velocity once a second and each new path. Build 1's A/B
+    switches (-iooldface, -iooldmod) are gone from build 2; resources/docs/agents/agentIO.md. */
+UBOOL DisIODiagEnabled();
+
 #endif

@@ -20,6 +20,10 @@
 //    agent GK and called from ComputeDynamic and ComputeTargetMoveSpeed where retail calls it.
 // The consequence, stated plainly: the NPC walks the path at the right speed and faces where it is going, but it does not
 // give way to other NPCs.
+// Agent IO (PHASE23 IO): UpdateMoveYaw is retail's (2012 0x582300; the wall test, which needs PointReachableZeroExtent, is the
+// named gap), its third out is m_fMaxMoveRotSpeedMultiplier as in retail (DN wrote m_fMaxMultiDirSpeedForAngle there), and
+// ComputeDynamic's head computes m_fMaxMultiDirSpeedForAngle from the face-to angle; the face-to request that turns the body
+// is FArkComponentLocomotion::UpdateFaceTo (arkcomponentlocomotion.cpp).
 // Agent IB (PHASE23 IB): the velocity source is retail's - ComputeDynamic writes the pawn's Velocity/Acceleration from the
 // move it decided (2012 0x58ca10 / 2013 VA 0x94bec0 tail) and FullMovePawn moves Velocity x its own time step, then clamps the
 // measured velocity to the asked speed (2012 0x580ae0 / 2013 VA 0x93fb00). HEAD moved m_CurMove (a distance for the dynamics'
@@ -297,42 +301,70 @@ INT FArkComponentLocomotion::ComputeTargetMoveYaw() const
 	}
 }
 
-// DISHONORED(port): 2013 rva 0x541330 (2012 0x582300, 1,739 bytes).
-// DISHONORED(bringup): retail accelerates the rotation speed towards the speed mode's maximum and reports back the
-// rotation speed, that maximum and the multi-directional speed limit for the resulting angle (the three out parameters).
-// This turns towards the target at the speed mode's maximum rotation speed without the acceleration curve, and reports
-// the same three values so the callers above are unchanged.
-INT FArkComponentLocomotion::UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxMultiDirSpeedForAngle ) const
+// DISHONORED(port, agent IO): 2013 rva 0x541330 (2012 0x582300, 1,739 bytes), retail's body. The move yaw turns towards the
+// target yaw with ArkSmoothFixAngleRotation: maximum speed = the speed modes' m_fRotationMaxSpeed blended by the anim node's most
+// relevant modifier slot (or, without one, by the two speed modes around the current move speed), times the wall-test
+// multiplier, in rotator units; acceleration = m_fRotationAccelMultiplier x that. Out: the rotation speed reached, the
+// maximum rotation speed in degrees per second, the multiplier (1 unless a wall test changed it).
+// DISHONORED(bringup): the wall test is not ported - past m_fMinAngleToTestWalls, on a speed mode above idle, retail probes
+// m_fTestWallsFrontDist ahead and m_fTestWallsLateralDist to the turn side on the navmesh with
+// UNavigationHandle::PointReachableZeroExtent (2012 0x2a9ba0, absent from this tree) and picks m_fEmergencyRotationSpeedMultiplier
+// (front clear, side blocked) or m_fRotationSpeedMultiplier (front blocked, less the hit's X when it reports one); here the
+// multiplier stays 1, retail's value whenever the angle is under the threshold or both probes pass.
+INT FArkComponentLocomotion::UpdateMoveYaw( FLOAT _fTimeStep, FLOAT& _rCurRotSpeed, FLOAT& _rMaxRotSpeed, FLOAT& _rMaxRotSpeedMultiplier ) const
 {
-	FLOAT fMaxRotationSpeed = 90.f;
-	if( m_pConfig && m_ReqMgr.HasRequest() )
+	_rMaxRotSpeed = 0.f;
+	_rMaxRotSpeedMultiplier = 1.f;
+	if( m_CurMoveYaw == m_TargetMoveYaw || m_TargetMoveYaw == -200000 )
 	{
-		const INT SpeedIdx = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps.m_MaxSpeedIdx;
-		if( SpeedIdx >= 0 && SpeedIdx < m_pConfig->m_SpeedNames.Num() )
-		{
-			fMaxRotationSpeed = GetSpeedMode( SpeedIdx, m_CurModifierIdx ).m_fRotationMaxSpeed;
-		}
+		_rCurRotSpeed = 0.f;
+		return m_CurMoveYaw;
 	}
-	if( fMaxRotationSpeed <= 0.f )
+	if( m_bInertiaDisabled || m_CurMoveYaw == -200000 )
 	{
-		fMaxRotationSpeed = 90.f;
+		_rCurRotSpeed = 0.f;
+		return m_TargetMoveYaw;
 	}
-	_rMaxRotSpeed = fMaxRotationSpeed;
-	_rCurRotSpeed = fMaxRotationSpeed;
-	_rMaxMultiDirSpeedForAngle = 0.f;
 
-	if( m_CurMoveYaw == -200000 || m_TargetMoveYaw == -200000 )
+	INT SpeedModeIdx0 = -1;
+	INT SpeedModeIdx1 = -1;
+	FLOAT fSpeedMode0Weight = 0.f;
+	const FAnimNodeLocoModifierSlot* pSlot = m_bCanManageAnim ? m_pAnimNodeLoco->GetMostRelevantModifierSlot() : NULL;
+	if( !pSlot || pSlot->m_Modifier == -1 )
 	{
-		return m_TargetMoveYaw;
+		m_pConfig->GetSpeedModeFromForwardSpeed( m_fCurMoveSpeed, m_CurModifierIdx, SpeedModeIdx0, SpeedModeIdx1, fSpeedMode0Weight );
 	}
-	// 65536 units of yaw is 360 degrees, so degrees per second becomes units per second by * 65536/360.
-	const INT MaxStep = Max( 1, appTrunc( fMaxRotationSpeed * _fTimeStep * ( 65536.f / 360.f ) ) );
-	const INT Delta = (INT)(SWORD)( m_TargetMoveYaw - m_CurMoveYaw );
-	if( Abs( Delta ) <= MaxStep )
+	else if( pSlot->m_SpeedSlots[0].m_SpeedModeIdx == -1 )
 	{
-		return m_TargetMoveYaw;
+		SpeedModeIdx0 = pSlot->m_SpeedSlots[1].m_SpeedModeIdx;
+		fSpeedMode0Weight = pSlot->m_SpeedSlots[1].m_fWeight;
 	}
-	return ( m_CurMoveYaw + ( Delta > 0 ? MaxStep : -MaxStep ) ) & 0xFFFF;
+	else
+	{
+		SpeedModeIdx0 = pSlot->m_SpeedSlots[0].m_SpeedModeIdx;
+		if( SpeedModeIdx0 % m_pConfig->m_SpeedNames.Num() == 0 )
+		{
+			SpeedModeIdx0++;
+		}
+		SpeedModeIdx1 = pSlot->m_SpeedSlots[1].m_SpeedModeIdx;
+		fSpeedMode0Weight = pSlot->m_SpeedSlots[0].m_fWeight;
+	}
+
+	const FArkCpntLocoSpeedModeProp& rMode0 = m_pConfig->m_SpeedModePropDictionary( m_pConfig->m_SpeedModes( SpeedModeIdx0 ) );
+	if( Abs( rMode0.m_MoveAnimProps( 0 ).m_fAnimSpeed ) >= 0.1f )
+	{
+		_rMaxRotSpeed = rMode0.m_fRotationMaxSpeed * fSpeedMode0Weight;
+	}
+	else
+	{
+		fSpeedMode0Weight = 0.f;
+	}
+	if( SpeedModeIdx1 != -1 )
+	{
+		_rMaxRotSpeed += ( 1.f - fSpeedMode0Weight ) * m_pConfig->m_SpeedModePropDictionary( m_pConfig->m_SpeedModes( SpeedModeIdx1 ) ).m_fRotationMaxSpeed;
+	}
+	const FLOAT fMaxSpeed = _rMaxRotSpeed * _rMaxRotSpeedMultiplier * 182.04445f;
+	return (INT)ArkSmoothFixAngleRotation( (FLOAT)m_CurMoveYaw, (FLOAT)m_TargetMoveYaw, m_pConfig->m_fRotationAccelMultiplier * fMaxSpeed, fMaxSpeed, _fTimeStep, _rCurRotSpeed );
 }
 
 /*-----------------------------------------------------------------------------
@@ -446,9 +478,9 @@ void FArkComponentLocomotion::HandleArrival( FLOAT _fTimeStep )
 		if( ( m_CurPathMove.X * m_CurPathMove.X + m_CurPathMove.Y * m_CurPathMove.Y ) > fSqToEnd )
 		{
 			const FArkCpntLocoRequestCommonProps& rCommon = m_ReqMgr.GetFirstRequest().m_Data.m_CommonProps;
-			// DISHONORED(bringup): UArkComponentLocomotionConfig::ComputeSpeedFromSpeedModeAndAngle( EndSpeedIdx, modifier,
-			// FArkComponentFaceTo::GetAngle() ) - with no face-to component the angle is 0 and the answer is the forward speed.
-			m_fCurMoveSpeed = GetForwardSpeedOfSpeedMode( rCommon.m_EndSpeedIdx, m_CurModifierIdx );
+			// DISHONORED(port, agent IO): the end speed mode's speed at the face-to angle (2012 0x575d10).
+			m_fCurMoveSpeed = m_pFaceToCpnt ? m_pConfig->ComputeSpeedFromSpeedModeAndAngle( rCommon.m_EndSpeedIdx, m_CurModifierIdx, m_pFaceToCpnt->GetAngle() )
+				: GetForwardSpeedOfSpeedMode( rCommon.m_EndSpeedIdx, m_CurModifierIdx );
 			m_CurPathMove.X = ToEnd.X;
 			m_CurPathMove.Y = ToEnd.Y;
 			m_CurPawnLocation = m_pPawnOwner->Location + m_CurPathMove;
@@ -522,6 +554,17 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 	}
 	DISLOCO_MARK( dyn_enter )
 	const FVector RootMotionRead = m_pPawnOwner->Mesh ? m_pPawnOwner->Mesh->RootMotionDelta.GetTranslation() : FVector( 0.f, 0.f, 0.f );
+	// DISHONORED(port, agent IO): retail's head (2012 0x58ca10): the speed the multi-directional speed mode reaches at the
+	// face-to angle (the anim node's out-of-shape ratio divides it), or the fastest forward speed when no speed mode has
+	// direction animations; UpdateFaceTo snaps the body onto the movement above it.
+	if( m_MaxMultiDirSpeedIdx == -1 || !m_pFaceToCpnt || !m_pAnimNodeLoco )
+	{
+		m_fMaxMultiDirSpeedForAngle = m_pConfig->GetForwardSpeedOfSpeedMode( m_pConfig->m_SpeedNames.Num() - 1, m_CurModifierIdx );
+	}
+	else
+	{
+		m_fMaxMultiDirSpeedForAngle = m_pConfig->ComputeSpeedFromSpeedModeAndAngle( m_MaxMultiDirSpeedIdx, m_CurModifierIdx, m_pFaceToCpnt->GetAngle() ) / m_pAnimNodeLoco->GetOutOfShapeRatio();
+	}
 	// retail clears the stuck flag at the top of every frame (2012 0x58ca10+0x6b); the test below re-raises it
 	m_bStuckedInAWall = FALSE;
 	// DISHONORED(port, agent GK): retail's first road is taken when the component is disabled, the pawn is being deleted, the
@@ -562,7 +605,6 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 			m_CurMove = m_pPawnOwner->Mesh->RootMotionDelta.GetTranslation();
 			m_CurMove.Z = 0.f;
 		}
-		m_fMaxMultiDirSpeedForAngle = 0.f;
 	}
 	else
 	{
@@ -598,7 +640,7 @@ void FArkComponentLocomotion::ComputeDynamic( FLOAT _fTimeStep )
 			UpdateStartMove( _fTimeStep );
 			UpdateStopMove( _fTimeStep );
 			m_TargetMoveYaw = ComputeTargetMoveYaw();
-			m_CurMoveYaw = UpdateMoveYaw( fStep, m_fCurMoveRotationSpeed, m_fMaxMoveRotationSpeed, m_fMaxMultiDirSpeedForAngle );
+			m_CurMoveYaw = UpdateMoveYaw( fStep, m_fCurMoveRotationSpeed, m_fMaxMoveRotationSpeed, m_fMaxMoveRotSpeedMultiplier );
 			m_fTargetMoveSpeed = ComputeTargetMoveSpeed( fStep, m_fCurAdaptedAccel );
 			m_fCurMoveSpeed = UpdateMoveSpeed( fStep );
 			m_CurPathMove += ComputePathMove( fStep );

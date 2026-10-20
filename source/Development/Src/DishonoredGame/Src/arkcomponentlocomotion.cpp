@@ -15,6 +15,7 @@
 #include "disdesirestructs.h"
 #include "disaicensus.h"
 #include "ibdiag.h"
+#include "arkcomponentmeshoffset.h"
 
 ARKCOMPONENT_IMPLEMENT_TYPE( FArkComponentLocomotion )
 
@@ -342,21 +343,37 @@ FArkComponentLocomotion* FArkComponentLocomotion::GetLocomotionComponent( const 
 	return NPCPawn ? (FArkComponentLocomotion*)NPCPawn->m_pCpntLocomotion : NULL;
 }
 
-// DISHONORED(port): 2013 rva 0x541b70 (2012 0x582b40, 702 bytes): the modifier selects the acceleration pair and the
-// speed multiplier, and retail then asks the anim node to blend into that modifier's transition animation.
-// The acceleration pair is what the dynamics read; the node's modifier (retail's tail, 2012 0x582df2) is what picks the
-// animation set, and the node itself plays the config's transition animation when the modifier changes (HandleTransition).
+// DISHONORED(port): agent IO, retail whole: 2013 VA 0x941b70 (2012 0x582b40, 702 bytes). The modifier's m_fAcceleration /
+// m_fDeceleration are the distances over which the fastest speed mode is reached or left, so the rates are v / (d / (v / 2));
+// m_MaxMultiDirSpeedIdx is the last speed of the modifier whose mode has more than one direction animation (-1: none);
+// m_bHaveStopAnim says the modifier's idle mode has stop animations. Agents DN/GK copied the two distances as rates and never
+// wrote the other two (GK: "m_bHaveStopAnim has no writer in either database" - this function writes it, both databases).
 void FArkComponentLocomotion::SetModifier( INT _ModifierIdx )
 {
-	if( !m_pConfig || _ModifierIdx < 0 || _ModifierIdx >= m_pConfig->m_Modifiers.Num() )
+	if( _ModifierIdx < m_pConfig->m_Modifiers.Num() )
 	{
-		return;
+		m_CurModifierIdx = _ModifierIdx;
+		const FLOAT fMaxSpeed = m_pConfig->GetForwardSpeedOfSpeedMode( m_pConfig->m_SpeedNames.Num() - 1, _ModifierIdx );
+		if( fMaxSpeed > 0.f )
+		{
+			const FArkCpntLocoModifierProp& rModifier = m_pConfig->m_Modifiers( m_CurModifierIdx );
+			m_fCurAcceleration = ( rModifier.m_fAcceleration != 0.f ) ? Abs( fMaxSpeed / ( rModifier.m_fAcceleration / ( fMaxSpeed * 0.5f ) ) ) : 0.f;
+			const FLOAT fDeceleration = ( rModifier.m_fDeceleration != 0.f ) ? Abs( -fMaxSpeed / ( rModifier.m_fDeceleration / ( fMaxSpeed + 0.5f * -fMaxSpeed ) ) ) : 0.f;
+			m_fCurDeceleration = fDeceleration;
+			m_fCurAdaptedAccel = fDeceleration;
+		}
+		const INT SpeedNames = m_pConfig->m_SpeedNames.Num();
+		m_MaxMultiDirSpeedIdx = -1;
+		for( INT SpeedIdx = 1; SpeedIdx < SpeedNames; SpeedIdx++ )
+		{
+			if( m_pConfig->m_SpeedModePropDictionary( m_pConfig->m_SpeedModes( SpeedNames * m_CurModifierIdx + SpeedIdx ) ).m_MoveAnimProps.Num() <= 1 )
+			{
+				break;
+			}
+			m_MaxMultiDirSpeedIdx = SpeedIdx;
+		}
+		m_bHaveStopAnim = m_pConfig->m_SpeedModePropDictionary( m_pConfig->m_SpeedModes( m_CurModifierIdx * SpeedNames ) ).m_StopAnimProps.Num() > 0;
 	}
-	m_CurModifierIdx = _ModifierIdx;
-	const FArkCpntLocoModifierProp& rModifier = m_pConfig->m_Modifiers( _ModifierIdx );
-	m_fCurAcceleration = rModifier.m_fAcceleration;
-	m_fCurDeceleration = rModifier.m_fDeceleration;
-	m_fCurAdaptedAccel = rModifier.m_fAcceleration;
 	if( m_bCanManageAnim )
 	{
 		m_pAnimNodeLoco->SetModifier( m_CurModifierIdx );
@@ -641,13 +658,31 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 	}
 
 	IKDiagFalling();
+	// DISHONORED(port, agent IO): 2013 VA 0x94caa0: the pawn's velocity before the dynamics write this frame's is what
+	// UpdateFaceTo hands the face-to component as the real velocity.
+	const FVector VelocityBeforeDynamic = m_pPawnOwner->Velocity;
 	ComputeDynamic( _fTimeStep );
 
+	// DISHONORED(port, agent IO): 2013 VA 0x94caa0: unless the pawn is a rigid body, the body leans into its turns - the
+	// target pitch / roll from the real speed, the move rotation speed and the face-to angle, smoothed, then written to the
+	// mesh-offset component's external rotation with yaw 0 (UpdateMesh).
+	if( m_pPawnOwner->Physics != PHYS_RigidBody )
+	{
+		ComputeTargetPitchAndRoll( m_fRealSpeed, m_fCurMoveRotationSpeed, m_pFaceToCpnt ? m_pFaceToCpnt->GetAngle() : 0, m_fTargetPitch, m_fTargetRoll );
+		UpdatePitchAndRoll( _fTimeStep );
+		UpdateMesh( (INT)m_fCurPitch, (INT)m_fCurRoll, m_fCurPitchRollZOffset );
+	}
+
 	// DISHONORED(port): retail's step 10 (2012 0x58d9af..0x58dae2): the pawn's planar velocity direction scaled by
-	// m_fRealScaledSpeed, its length handed to the node. UpdateFaceTo / UpdateLookat stay out (their components are not here).
+	// m_fRealScaledSpeed, its length handed to the node; then UpdateFaceTo (agent IO). UpdateLookat stays out.
 	const FVector PlanarVelocity( m_pPawnOwner->Velocity.X, m_pPawnOwner->Velocity.Y, 0.f );
 	const FVector RealVelocity = PlanarVelocity.SafeNormal() * m_fRealScaledSpeed;
 	UpdateAnimNode( m_CurModifierIdx, RealVelocity.Size2D() );
+	if( m_pFaceToCpnt )
+	{
+		UpdateFaceTo( _fTimeStep, VelocityBeforeDynamic );
+	}
+	IODiagReport();
 
 	m_MostRelevantSpeedIdx = ComputeMostRelevantSpeedIdx();
 
@@ -663,6 +698,197 @@ void FArkComponentLocomotion::PreAsyncWorkTick( FLOAT _fTimeStep )
 				*m_pPawnOwner->GetName(), m_pPawnOwner->Velocity.Size2D(), m_fRealScaledSpeed, m_fCurMoveSpeed, m_MostRelevantSpeedIdx, *m_pAnimNodeLoco->DescribeForDiag() );
 		}
 	}
+}
+
+// DISHONORED(port): agent IO, 2013 VA 0x943190 (2012 0x584130, 753 B). The locomotion turns the body through its own face-to
+// request: while the pawn walks a computed path under its own control (not disabled, not being deleted, the face-to component
+// not in root motion, a velocity and a path move this frame) it keeps one yaw request at the config's m_FaceToPriority towards
+// the path move, at the move's maximum rotation speed (x 1.5 x the wall-test multiplier unless that multiplier is the
+// emergency one; never below m_fFaceToDefaultSpeed), keep-snapped, accelerating at m_fRotationAccelMultiplier x that speed;
+// otherwise the request is stopped. A specific animation hands the body to root motion; the body snaps onto the movement when
+// the face-to angle is 0 and the pawn is faster than the multi-directional speed for that angle.
+void FArkComponentLocomotion::UpdateFaceTo( FLOAT _fTimeStep, const FVector& _rRealVelocity )
+{
+	const UBOOL bDeleteMe = m_pPawnOwner->bDeleteMe;
+	if( m_bDisabled || bDeleteMe )
+	{
+		m_pFaceToCpnt->AllowRootMotion( TRUE );
+	}
+	else if( m_bCanManageAnim && m_pAnimNodeLoco->IsSpecificAnimPlaying() )
+	{
+		m_pFaceToCpnt->AllowRootMotion( FALSE );
+	}
+	else
+	{
+		m_pFaceToCpnt->DisableRootMotion();
+	}
+
+	if( m_bDisabled || bDeleteMe || m_pFaceToCpnt->IsRootMotion() || !m_bHasRequestWithPathComputed || m_pPawnOwner->Velocity.IsZero() || m_CurPathMove.IsZero() )
+	{
+		if( m_FaceToRequestID != INDEX_NONE )
+		{
+			m_pFaceToCpnt->StopFaceTo( m_FaceToRequestID );
+			m_FaceToRequestID = INDEX_NONE;
+		}
+	}
+	else
+	{
+		FLOAT fRotationSpeed = m_fMaxMoveRotationSpeed;
+		if( Abs( m_fMaxMoveRotSpeedMultiplier - m_pConfig->m_fEmergencyRotationSpeedMultiplier ) >= 0.01f )
+		{
+			fRotationSpeed = m_fMaxMoveRotSpeedMultiplier * 1.5f * fRotationSpeed;
+		}
+		if( fRotationSpeed < m_pConfig->m_fFaceToDefaultSpeed )
+		{
+			fRotationSpeed = m_pConfig->m_fFaceToDefaultSpeed;
+		}
+		FArkCpntFaceToYawProp FaceToProps;
+		FaceToProps.InitAllByDefaultExcept( appTrunc( appAtan2( m_CurPathMove.Y, m_CurPathMove.X ) * 10430.219f * 2.f + 0.5f ) >> 1, fRotationSpeed, NULL, NULL );
+		FaceToProps.m_CommonProps.m_fAcceleration = m_pConfig->m_fRotationAccelMultiplier * fRotationSpeed;
+		FaceToProps.m_CommonProps.m_bKeepSnapped = TRUE;
+		if( m_FaceToRequestID == INDEX_NONE )
+		{
+			m_FaceToRequestID = m_pFaceToCpnt->StartFaceToYaw( this, GetInternalName(), m_pConfig->m_FaceToPriority, FaceToProps );
+		}
+		else
+		{
+			m_pFaceToCpnt->UpdateFaceToYaw( m_FaceToRequestID, FaceToProps );
+		}
+	}
+
+	UBOOL bForceBodySnap = FALSE;
+	if( !m_bDisabled && !bDeleteMe && m_RootState != CPNT_LOCO_ROOT_STATE_STOP_END
+		&& ( !m_bCanManageAnim || !m_pAnimNodeLoco->IsPlayingOnlySpecificAnim() ) && m_pFaceToCpnt->GetAngle() == 0 )
+	{
+		bForceBodySnap = ( m_pPawnOwner->Velocity.Size2D() / GetFinalSpeedMultiplier() ) > m_fMaxMultiDirSpeedForAngle;
+	}
+	m_pFaceToCpnt->ForceBodySnapOnMovement( bForceBodySnap );
+	m_pFaceToCpnt->SetRealVelocity( _rRealVelocity );
+}
+
+// DISHONORED(port): agent IO, 2013 VA 0x93e9e0 (2012 0x57fca0): the lean into a turn - up to m_fMaxRollAngle, scaled by the speed
+// against max(fastest forward speed, m_fSpeedToApplyMaxRoll) and the rotation speed against m_fRotationSpeedToApplyMaxRoll,
+// split between pitch and roll by the face-to angle; none while disabled, deleted, playing a specific animation or not turning.
+void FArkComponentLocomotion::ComputeTargetPitchAndRoll( FLOAT _fSpeed, FLOAT _fRotSpeed, INT _Angle, FLOAT& _rTargetPitch, FLOAT& _rTargetRoll ) const
+{
+	if( m_bDisabled || m_pPawnOwner->bDeleteMe || ( m_bCanManageAnim && m_pAnimNodeLoco->IsSpecificAnimPlaying() )
+		|| Abs( _fSpeed ) < 0.1f || Abs( _fRotSpeed ) < 0.1f )
+	{
+		_rTargetPitch = 0.f;
+		_rTargetRoll = 0.f;
+		return;
+	}
+	FLOAT fSpeedToApplyMaxRoll = m_pConfig->GetForwardSpeedOfSpeedMode( m_pConfig->m_SpeedNames.Num() - 1, m_CurModifierIdx );
+	if( fSpeedToApplyMaxRoll < m_pConfig->m_fSpeedToApplyMaxRoll )
+	{
+		fSpeedToApplyMaxRoll = m_pConfig->m_fSpeedToApplyMaxRoll;
+	}
+	const FLOAT fSpeedRatio = Min( _fSpeed / fSpeedToApplyMaxRoll, 1.f );
+	const FLOAT fRotRatio = Clamp( ( _fRotSpeed * 0.0054931641f ) / m_pConfig->m_fRotationSpeedToApplyMaxRoll, -1.f, 1.f );
+	const FLOAT fRoll = (FLOAT)(INT)( m_pConfig->m_fMaxRollAngle * fRotRatio * fSpeedRatio * 182.04445f );
+	const FLOAT fAngle = (FLOAT)_Angle * 0.000095873802f;
+	_rTargetPitch = appSin( fAngle ) * fRoll;
+	_rTargetRoll = fRoll * appCos( fAngle );
+}
+
+// DISHONORED(port): agent IO, 2013 VA 0x93eb30 (2012 0x57fde0): pitch and roll move towards their targets at m_fRollSpeed in
+// 0.04 s sub-steps; the larger of the two lifts the mesh by (1 - cos) x the cylinder radius.
+void FArkComponentLocomotion::UpdatePitchAndRoll( FLOAT _fTimeStep )
+{
+	FLOAT fTimeLeft = _fTimeStep;
+	do
+	{
+		const FLOAT fStep = Min( 0.04f, fTimeLeft );
+		const FLOAT fRollSpeed = m_pConfig->m_fRollSpeed * 182.04445f;
+		m_fCurPitch = ArkSmoothFixAngleRotation( m_fCurPitch, m_fTargetPitch, fRollSpeed, fRollSpeed, fStep, m_fCurPitchRotateSpeed );
+		m_fCurRoll = ArkSmoothFixAngleRotation( m_fCurRoll, m_fTargetRoll, fRollSpeed, fRollSpeed, fStep, m_fCurRollRotateSpeed );
+		fTimeLeft -= 0.04f;
+	}
+	while( fTimeLeft > 0.f );
+	const INT Pitch = (INT)(WORD)( (INT)m_fCurPitch + 0x7FFF ) - 0x7FFF;
+	const INT Roll = (INT)(WORD)( (INT)m_fCurRoll + 0x7FFF ) - 0x7FFF;
+	m_fCurPitchRollZOffset = ( 1.f - appCos( (FLOAT)Max( Pitch, Roll ) * 0.000095873802f ) ) * m_pPawnOwner->CylinderComponent->CollisionRadius;
+}
+
+// DISHONORED(port): agent IO, 2013 VA 0x93de20 (2012 0x57ef70): the lean goes to the mesh-offset component's external rotation
+// with yaw 0, or straight to the mesh without one. Retail never reads _fZOffset here.
+void FArkComponentLocomotion::UpdateMesh( INT _Pitch, INT _Roll, FLOAT _fZOffset )
+{
+	if( !m_pMeshOffsetCpnt )
+	{
+		m_pMeshOffsetCpnt = FArkComponentMeshOffset::GetMeshOffsetComponent( m_pPawnOwner, TRUE );
+	}
+	if( m_pMeshOffsetCpnt )
+	{
+		m_pMeshOffsetCpnt->SetExternalRotationOffset( FRotator( _Pitch, 0, _Roll ) );
+	}
+	else
+	{
+		m_pPawnOwner->Mesh->Rotation = FRotator( _Pitch, 0, _Roll );
+	}
+}
+
+/*-----------------------------------------------------------------------------
+	-iodiag (agent IO)
+-----------------------------------------------------------------------------*/
+
+struct FIODiagState
+{
+	FLOAT	NextReport;
+	INT		PathPoints;
+	FVector	LastPathPoint;
+	FIODiagState() : NextReport( 0.f ), PathPoints( -1 ), LastPathPoint( 0.f, 0.f, 0.f ) {}
+};
+static TMap<const FArkComponentLocomotion*, FIODiagState> GIODiagStates;
+
+static INT IODiagYaw( FLOAT _fX, FLOAT _fY )
+{
+	return appRound( appAtan2( _fY, _fX ) * ( 32768.f / PI ) ) & 0xFFFF;
+}
+
+void FArkComponentLocomotion::IODiagReport() const
+{
+	if( !DisIODiagEnabled() || !GWorld )
+	{
+		return;
+	}
+	FIODiagState& State = GIODiagStates.FindOrAdd( this );
+	if( m_bHasRequestWithPathComputed && m_PathPoints.Num() > 0 && ( State.PathPoints != m_PathPoints.Num() || State.LastPathPoint != m_LastPathPoint ) )
+	{
+		State.PathPoints = m_PathPoints.Num();
+		State.LastPathPoint = m_LastPathPoint;
+		FString Points;
+		for( INT PointIdx = 0; PointIdx < m_PathPoints.Num(); PointIdx++ )
+		{
+			Points += FString::Printf( TEXT(" %.0f/%.0f/%.0f"), m_PathPoints( PointIdx ).m_Point.X, m_PathPoints( PointIdx ).m_Point.Y, m_PathPoints( PointIdx ).m_Point.Z );
+		}
+		debugf( TEXT("DISHONORED(bringup): iodiag path %s world %.2f from %.0f/%.0f/%.0f points %d:%s"), *m_pPawnOwner->GetName(), GWorld->GetTimeSeconds(),
+			m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_pPawnOwner->Location.Z, m_PathPoints.Num(), *Points );
+	}
+	const FLOAT Now = GWorld->GetTimeSeconds();
+	const FLOAT fSpeed = m_pPawnOwner->Velocity.Size2D();
+	if( Now < State.NextReport || ( fSpeed < 1.f && !m_bHasRequestWithPathComputed ) )
+	{
+		return;
+	}
+	State.NextReport = Now + 1.f;
+	const USkeletalMeshComponent* pMesh = m_pPawnOwner->Mesh;
+	const INT VelYaw = fSpeed > 1.f ? IODiagYaw( m_pPawnOwner->Velocity.X, m_pPawnOwner->Velocity.Y ) : -1;
+	const INT PathMoveYaw = m_CurPathMove.IsZero() ? -1 : IODiagYaw( m_CurPathMove.X, m_CurPathMove.Y );
+	const INT BodyYaw = m_pPawnOwner->Rotation.Yaw & 0xFFFF;
+	const INT Delta = VelYaw >= 0 ? Abs( (INT)(SWORD)(WORD)( BodyYaw - VelYaw ) ) : -1;
+	const FString Motion = FString::Printf( TEXT("rot %d vel %d delta %.1f pathmove %d curmove %d target %d rotspeed %.0f max %.1f mult %.2f multidir %.1f"),
+		BodyYaw, VelYaw, Delta >= 0 ? Delta * 0.0054931641f : -1.f, PathMoveYaw, m_CurMoveYaw, m_TargetMoveYaw,
+		m_fCurMoveRotationSpeed, m_fMaxMoveRotationSpeed, m_fMaxMoveRotSpeedMultiplier, m_fMaxMultiDirSpeedForAngle );
+	const FString FaceTo = FString::Printf( TEXT("faceto req %d id %d prio %d delta %d angle %d target %d rm %d"),
+		m_pFaceToCpnt ? m_pFaceToCpnt->GetRequestsCount() : -1, m_FaceToRequestID, m_pFaceToCpnt ? m_pFaceToCpnt->GetActiveRequestPriority() : -1,
+		m_pFaceToCpnt ? m_pFaceToCpnt->GetCurBodyYawDelta() : 0, m_pFaceToCpnt ? m_pFaceToCpnt->GetAngle() : 0, m_pFaceToCpnt ? m_pFaceToCpnt->GetTargetYaw() & 0xFFFF : -1,
+		m_pFaceToCpnt ? (INT)m_pFaceToCpnt->IsRootMotion() : -1 );
+	debugf( TEXT("DISHONORED(bringup): iodiag yaw %s world %.2f at %.0f/%.0f/%.0f phys %d speed %.1f start %.1f | %s | %s | mesh %d/%d/%d rmm %d rmrm %d | root %d path %d/%d"),
+		*m_pPawnOwner->GetName(), Now, m_pPawnOwner->Location.X, m_pPawnOwner->Location.Y, m_pPawnOwner->Location.Z, (INT)m_pPawnOwner->Physics, fSpeed,
+		m_pConfig ? m_pConfig->m_fVelocityToStartToMove : 0.f, *Motion, *FaceTo,
+		pMesh ? pMesh->Rotation.Pitch : 0, pMesh ? pMesh->Rotation.Yaw : 0, pMesh ? pMesh->Rotation.Roll : 0, pMesh ? (INT)pMesh->RootMotionMode : -1,
+		pMesh ? (INT)pMesh->RootMotionRotationMode : -1, (INT)m_RootState, m_CurPathPointIdx, m_PathPoints.Num() );
 }
 
 /*-----------------------------------------------------------------------------

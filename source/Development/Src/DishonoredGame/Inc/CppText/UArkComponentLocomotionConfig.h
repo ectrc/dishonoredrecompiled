@@ -16,3 +16,6 @@ public:
 	// and 0x534380 (2012 0x575c10), the (speed, modifier) overload.
 	FLOAT GetForwardSpeedOfSpeedMode( INT _SpeedModeIdx ) const;
 	FLOAT GetForwardSpeedOfSpeedMode( INT _SpeedIdx, INT _ModifierIdx ) const;
+	// DISHONORED(port): agent IO, 2012 rva 0x575d10 (300 bytes): the speed of one speed mode moving at _Angle from the body's
+	// facing, the two direction animations around the angle blended by their weights.
+	FLOAT ComputeSpeedFromSpeedModeAndAngle( INT _SpeedIdx, INT _ModifierIdx, INT _Angle ) const;

@@ -253,6 +253,20 @@ void DisIBDiagReport( ADishonoredNPCPawn* _pPawn )
 }
 
 /*-----------------------------------------------------------------------------
+	-iodiag (agent IO, PHASE23 IO)
+-----------------------------------------------------------------------------*/
+
+UBOOL DisIODiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
+	{
+		Enabled = ParseParam( appCmdLine(), TEXT("iodiag") ) ? 1 : 0;
+	}
+	return Enabled != 0;
+}
+
+/*-----------------------------------------------------------------------------
 	-ikdiag (agent IK, PHASE23 IK)
 -----------------------------------------------------------------------------*/
 

@@ -22,13 +22,13 @@
 // | IsTurnNotTooCloseFromPathEnd | 0x542b20 | 0x583af0 (143) |
 // | IsLocoFaceToRequestActive | 0x53e750 | 0x57fa80 (70) |
 //
-// Two components retail reads here are not in this tree and are read defensively, named at the site: FArkComponentFaceTo
-// (m_pFaceToCpnt is NULL - its request count reads 0, which makes IsLocoFaceToRequestActive TRUE, as retail's own first
-// clause does; the static turn towards a face-to target has no target and is skipped) and UArkAvoidable (m_pAvoidable may be
-// NULL - retail's GetAffectorCount / GetForce are the members m_AffectorCount / m_Force, read through the two helpers below).
+// FArkComponentFaceTo is created by SetConfig for every NPC (IK4) and read as retail reads it (agent IO). UArkAvoidable
+// (m_pAvoidable may be NULL - retail's GetAffectorCount / GetForce are the members m_AffectorCount / m_Force, read through the
+// two helpers below).
 
 #include "DishonoredGame.h"
 #include "arkcomponentlocomotion.h"
+#include "arkcomponentfaceto.h"
 
 static INT DisLocoAffectorCount( const UArkAvoidable* _pAvoidable )
 {
@@ -129,11 +129,13 @@ UBOOL FArkComponentLocomotion::IsTurnNotTooCloseFromPathEnd( INT _TurnPathPointI
 	return ( fDY * fDY + fDX * fDX ) > ( m_pConfig->m_fMaxDistToPathEndToTurn * m_pConfig->m_fMaxDistToPathEndToTurn );
 }
 
-// DISHONORED(bringup): FArkComponentFaceTo::GetRequestsCount / GetActiveRequestID / GetActiveRequestPriority - with no face-to
-// component the request count is 0 and retail's first clause answers TRUE.
+// DISHONORED(port, agent IO): retail's body (2012 0x57fa80): no face-to request, or the active one is this component's, or it is
+// at most the locomotion's priority. The stand-in answered "no face-to component", which since FaceTo is on by default (IK4)
+// was FALSE for every NPC and switched off the static, start-path and path turns.
 UBOOL FArkComponentLocomotion::IsLocoFaceToRequestActive() const
 {
-	return m_pFaceToCpnt == NULL;
+	return m_pFaceToCpnt->GetRequestsCount() == 0 || m_pFaceToCpnt->GetActiveRequestID() == m_FaceToRequestID
+		|| m_pFaceToCpnt->GetActiveRequestPriority() <= m_pConfig->m_FaceToPriority;
 }
 
 UBOOL FArkComponentLocomotion::IsSpeedModeCanDoTurn( INT _SpeedModeIdx, INT _YawDif, INT& _TurnAnimToPlayIdx )
@@ -275,8 +277,7 @@ UBOOL FArkComponentLocomotion::RequestTurn( INT _StartYaw, INT _EndYaw, FLOAT _f
 }
 
 // A turn on the spot: the pawn is slower than m_fMaxSpeedForStaticTurn and either has no path (it turns towards the face-to
-// target - DISHONORED(bringup): FArkComponentFaceTo::GetTargetYaw, no component here, so that branch is skipped) or its
-// path's first stretch leaves at more than 90 degrees from the way it is moving.
+// target) or its path's first stretch leaves at more than 90 degrees from the way it is moving.
 void FArkComponentLocomotion::EvaluateStaticTurn()
 {
 	if( !IsReadyToTurn() || m_pConfig->m_fMaxSpeedForStaticTurn <= m_fRealScaledSpeed )
@@ -286,14 +287,15 @@ void FArkComponentLocomotion::EvaluateStaticTurn()
 	const UBOOL bAvoidanceForce = DisLocoAffectorCount( m_pAvoidable ) > 0 && !DisLocoAvoidanceForce( m_pAvoidable ).IsZero();
 	const UBOOL bNoPathToFollow = !m_ReqMgr.HasRequest() || m_CurReqWorkData.m_bDisabled || IsArrived();
 
-	INT TargetYaw;
+	// DISHONORED(port, agent IO): retail turns towards the face-to component's target yaw when there is no path to follow, or
+	// when the path's first stretch is within 90 degrees of it and the active face-to request is not the locomotion's.
+	INT TargetYaw = m_pFaceToCpnt->GetTargetYaw();
 	if( bNoPathToFollow )
 	{
-		if( bAvoidanceForce || !m_pFaceToCpnt )
+		if( bAvoidanceForce )
 		{
 			return;
 		}
-		TargetYaw = m_pPawnOwner->Rotation.Yaw;
 	}
 	else
 	{
@@ -323,7 +325,7 @@ void FArkComponentLocomotion::EvaluateStaticTurn()
 		{
 			TargetYaw = m_TargetMoveYaw;
 		}
-		else
+		else if( Abs( DisLocoYawDelta( TargetYaw, FirstPathYaw ) ) >= 0x4000 )
 		{
 			return;
 		}
@@ -351,13 +353,12 @@ void FArkComponentLocomotion::EvaluateStartPathTurn()
 	}
 }
 
-// A turn at a corner of the path, requested while the face-to request this component owns is snapped on the path.
-// DISHONORED(bringup): m_FaceToRequestID stays INDEX_NONE without FArkComponentFaceTo, so this never fires here (retail's
-// own first test).
+// A turn at a corner of the path, requested while the face-to request this component owns is snapped on the path (agent IO:
+// UpdateFaceTo now owns m_FaceToRequestID, and retail's IsActiveRequestSnapped test is back).
 void FArkComponentLocomotion::EvaluatePathTurn()
 {
-	if( !m_bHasRequestWithPathComputed || m_FaceToRequestID == INDEX_NONE || !m_pFaceToCpnt || !IsReadyToTurn()
-		|| DisLocoAffectorCount( m_pAvoidable ) > 0 || !IsLocoFaceToRequestActive() || m_fRealScaledSpeed <= 0.f )
+	if( !m_bHasRequestWithPathComputed || m_FaceToRequestID == INDEX_NONE || !IsReadyToTurn()
+		|| DisLocoAffectorCount( m_pAvoidable ) > 0 || !IsLocoFaceToRequestActive() || !m_pFaceToCpnt->IsActiveRequestSnapped() || m_fRealScaledSpeed <= 0.f )
 	{
 		return;
 	}
