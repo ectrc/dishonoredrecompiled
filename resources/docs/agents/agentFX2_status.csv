@@ -1,0 +1,15 @@
+item,state,evidence
+fx2_inventory.csv,done,705 functions / 74.4 KB: 304 ported / 29 shim (FX1's) / 223 core templates / 96 class macro / 51 compiler-generated / 2 not ported; 2013: 695 matched + 9 by bytes + 1 unresolved
+link functions + FxLinkFnEval,ported,FxLinkFn.cpp/.h: Startup table (12) 0xb26830; FxLinkFnEval 0xb12570; CoreSmoke eval checks
+node link / user property / node base,ported,FxFaceGraphNode.cpp: 0xb24450-0xb24940 / 0xb29610-0xb29980 / 0xb2a2d0-0xb2a7c0
+node classes (8),ported,FxFaceGraphNodes.cpp: combiner/delta/current time/generic/morph/bone pose/FUnrealFaceFX x3
+FxFaceGraph,ported,FxFaceGraph.cpp 0xb1f230-0xb20bb0 + iterator 0xb0f1e0-0xb0f3a0; link/cycle/duplicate/refused/remove/copy checks
+FxCompiledFaceGraph,ported,Compile 0xb11c60 / Decompile 0xb11ff0 / Tick 0xb114a0 / serialize 0xb12220; hand-derived tick values pass
+FxAnimCurve / FxAnim / FxAnimGroup / FxAnimSet,ported,FxAnimCurve.cpp / FxAnim.cpp; FxAnim v8 (Arkane Wwise fields); curve values pass
+FxLoadAnimSetFromFile / FxSaveAnimSetToFile,not ported,file stores are FX1's; memory load/save ported (0xb15bd0 / 0xb15ca0)
+FxBone / FxKey / FxVec3 / FxQuat,shim,include/stub + Src/Stub/FxBoneStub.cpp; FX1 ported the same - FX1's copy wins
+core shim FxCoreStub.h,shim,FX1 API stand-in; graph + checks also pass against FX1's in-progress core (FxCast supplied)
+facefx_graph_dump.py,done,44 head archives and 518 anim sets parsed to the last byte
+CoreSmoke,done,155 -> 187 passed / 0 failed; 44/44 heads (4356 nodes) and 518/518 anim sets (1020584 keys, byte-identical re-save)
+facefx_program.md FX2 section,done,layout + reconciliation with FX1 + handover to FX3 (Tick / registers / bone weights / load order)
+FxMasterBoneList,left to FX3,as agentIR §3; not in FX2's port
