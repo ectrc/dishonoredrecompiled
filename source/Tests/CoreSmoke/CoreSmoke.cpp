@@ -427,6 +427,10 @@ LONG WINAPI CrashFilter(EXCEPTION_POINTERS* Info)
 
 void InstallSmokeOutputDevices();
 
+#if DISHONORED_WITH_FACEFX_SDK
+void TestFaceFX(void (*InReport)(bool, const char*, const char*), void (*InSkip)(const char*, const char*));
+#endif
+
 #if DISHONORED_WITH_WWISE
 void TestWwise(void (*InReport)(bool, const char*, const char*), void (*InSkip)(const char*, const char*));
 void TestWwiseVorbis(void (*InReport)(bool, const char*, const char*), void (*InSkip)(const char*, const char*));
@@ -459,6 +463,9 @@ int main(int, char**)
 #if DISHONORED_WITH_WWISE
 	TestWwise(Report, Skip);
 	TestWwiseVorbis(Report, Skip);
+#endif
+#if DISHONORED_WITH_FACEFX_SDK
+	TestFaceFX(Report, Skip);
 #endif
 #if DISHONORED_WITH_FACEFX_GRAPH
 	TestFaceFXGraph(Report, Skip);

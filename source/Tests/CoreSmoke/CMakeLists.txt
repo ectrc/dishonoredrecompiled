@@ -23,9 +23,17 @@ endif()
 # the core shim (include/stub, Src/Stub) until FX1's FaceFX library target lands; then link that target instead,
 # drop the stub folders and FX2_FACEFX_CORE_STUB.
 set(DISHONORED_FACEFX_DIR "${CMAKE_SOURCE_DIR}/source/Development/Src/External/FaceFX")
-if(EXISTS "${DISHONORED_FACEFX_DIR}/Src/FaceGraph")
+if(EXISTS "${DISHONORED_FACEFX_DIR}/Src/FaceGraph" AND NOT TARGET facefx)
   file(GLOB dishonored_facefx_graph_sources CONFIGURE_DEPENDS "${DISHONORED_FACEFX_DIR}/Src/FaceGraph/*.cpp" "${DISHONORED_FACEFX_DIR}/Src/Stub/*.cpp")
   target_sources(CoreSmoke PRIVATE FaceFXGraphSmoke.cpp ${dishonored_facefx_graph_sources})
   target_include_directories(CoreSmoke PRIVATE "${DISHONORED_FACEFX_DIR}/include" "${DISHONORED_FACEFX_DIR}/include/stub")
   target_compile_definitions(CoreSmoke PRIVATE DISHONORED_WITH_FACEFX_GRAPH=1 FX2_FACEFX_CORE_STUB=1)
+endif()
+# Agent FX1 (wave 26): the reconstructed FaceFX 1.7.3.1 core (FaceFXSmoke.cpp) against retail head archives. The SDK
+# library is linked here only; no game module links it while WITH_FACEFX=0 (cmake/FaceFX.cmake).
+# With the library, FX2's graph checks run against the real core (the library compiles Src/FaceGraph too).
+if(TARGET facefx)
+  target_sources(CoreSmoke PRIVATE FaceFXSmoke.cpp FaceFXGraphSmoke.cpp)
+  target_link_libraries(CoreSmoke PRIVATE Dishonored::facefx)
+  target_compile_definitions(CoreSmoke PRIVATE DISHONORED_WITH_FACEFX_GRAPH=1)
 endif()

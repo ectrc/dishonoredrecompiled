@@ -1,0 +1,12 @@
+item,state,evidence
+FaceFX core library (FxMemory FxName FxClass FxObject FxRefObject/FxRefString FxNamedObject FxArchive + 5 stores FxFile FxSDK FxBone FxKey FxVec3 FxQuat),ported,505 FX1-owned functions in the inventory: 369 by rva in the sources/banners + 111 template instantiations + 22 compiler generated + 3 header inlines; 0 not ported
+Container templates (FxArray FxList FxStringBase FxStringHash FxTempCharBuffer FxCharTraits) and memory helpers,ported,retail growth/serialise rules from the instantiations (banners of FxArray.h FxList.h FxString.h FxStringHash.h)
+Header layouts,ported,static_asserts against the 2012 PDB: FxArchive 80 FxArchiveInternalData 0x638 FxArchiveDirectory 1568 FxClass 24 FxRefString 20 FxBone 48 FxAnimKey 20 stores 4/8/20/20/24/36 ...; /Zp4 as the engine
+cmake/FaceFX.cmake,new,target facefx / Dishonored::facefx; DISHONORED_WITH_FACEFX_SDK; WITH_FACEFX stays 0; no game module links it
+CoreSmoke FaceFXSmoke,new,on 741aeae with FX2's graph in the library: 532 passed 0 failed 1 skipped (the skip is Wwise's missing CSV), FX2's FaceFXGraphSmoke passing on the real core; 12 retail head archives open with the right version / classes / names / directory end; header+directory re-saved byte for byte; 12-bit and 7-bit hashing equal retail's / python's
+resources/tools/facefx_archive_dump.py,new,stdlib reader + --extract from cooked packages + --smoke expectations
+FxUnrealSupport.obj (41 fns),done by FX2,FUnrealFaceFX*Node in FX2's FxGenericTargetNode.h
+FX2/FX3 class registration in FxSDKStartup + FxAnimGroup::Default / FxActor::NewActor,FX2 part live; FX3 part waits for FxActor.h/FxActorInstance.h/FxPhonemeMap.h,__has_include of the headers
+FX2 reconciliation,done in FX1's tree,FX2's Src/FaceGraph compiles against the real core (only FxCast/IsKindOf were missing); stub left unused for FX3 to delete
+2013 match,measured,547 of 565 inventory functions have a 2013 twin (534 at ratio 1.000); FxSDKGetVersion 2013 0xafee60 returns 1731
+DishonoredGame build,unchanged,see agentFX1.md (gate)

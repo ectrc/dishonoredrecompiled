@@ -34,6 +34,7 @@ include(cmake/ReferenceExternals.cmake)
 # Engine's akbank.cpp / akevent.cpp / UnActor.cpp call into it. The module section below uses this value.
 option(DISHONORED_ENABLE_AKAUDIO "Build the AkAudio module (retail classes plus the Wwise 2012.1 glue when DISHONORED_WITH_WWISE)" OFF)
 include(cmake/Wwise.cmake)
+include(cmake/FaceFX.cmake)
 # DISHONORED(bringup): UE3 overrides the global operator new/delete (Core/Inc/UnFile.h) but not C++17's aligned overloads.
 # Over-aligned render types (the GPU-skin vertex factories hold MS_ALIGN(16) members) are placement-newed into the
 # engine heap and then deleted, so with /Zc:alignedNew the CRT aligned free receives an appMalloc pointer and the

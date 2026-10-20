@@ -1,0 +1,566 @@
+rva_2012,size,compiland,source_file,name,rva_2013,match,owner,fx1_status
+0x229580,9,Unity_UnInterpolationEtAl.cpp,fxplatformansi.h:58,"public: static char * __cdecl FxCharTraits<char>::Copy(char *, char const *, unsigned int)",0x211f50,callee 1.000,FX1,ported
+0x229590,57,Unity_UnInterpolationEtAl.cpp,fxname.h:144,public: bool __thiscall FxName::operator==(class FxName const &)const,0x211f60,bytes 1.000,FX1,ported
+0x22acc0,18,Unity_UnInterpolationEtAl.cpp,fxarrayimpl.h:95,public: class FxAnimGroup & __thiscall FxArray<class FxAnimGroup>::operator[](unsigned int),0x212cc0,callee 1.000,FX1,template
+0x22ace0,61,Unity_UnInterpolationEtAl.cpp,fxarraybase.h:31,public: __thiscall FxArrayBase<char>::FxArrayBase<char>(unsigned int),0x212ce0,bytes 1.000,FX1,template
+0x22ad20,14,Unity_UnInterpolationEtAl.cpp,fxlist.h:117,public: __thiscall FxList<class FxAnimGroup>::Iterator::Iterator(class FxList<class FxAnimGroup>::FxListNode *),0x212d20,bytes 1.000,FX1,template
+0x22ad30,10,Unity_UnInterpolationEtAl.cpp,fxlist.h:122,public: class FxList<class FxAnimGroup>::Iterator & __thiscall FxList<class FxAnimGroup>::Iterator::operator++(void),0x212d30,bytes 1.000,FX1,template
+0x22ad40,21,Unity_UnInterpolationEtAl.cpp,fxutil.h:104,"void __cdecl FxSwap<unsigned int>(unsigned int &, unsigned int &)",0x212d40,bytes 1.000,FX1,ported
+0x22bad0,87,Unity_UnInterpolationEtAl.cpp,fxanim.h:278,public: unsigned int __thiscall FxAnimGroup::FindAnim(class FxName const &)const,0x213e30,bytes 1.000,FX3,handover
+0x22e3b0,44,Unity_UnInterpolationEtAl.cpp,fxarraybase.h:44,public: void __thiscall FxArrayBase<char>::Swap(class FxArrayBase<char> &),0x215df0,bytes 1.000,FX1,template
+0x22e3e0,90,Unity_UnInterpolationEtAl.cpp,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxList<class FxAnimGroup>::FxListNode>(class FxList<class FxAnimGroup>::FxListNode *),0x215e70,bytes 1.000,FX1,template
+0x22f6c0,30,Unity_UnInterpolationEtAl.cpp,fxarraybase.h:35,public: __thiscall FxArrayBase<char>::~FxArrayBase<char>(void),0x221de0,bytes 1.000,FX1,template
+0x236c60,54,Unity_UnInterpolationEtAl.cpp,fxlistimpl.h:91,public: class FxList<class FxAnimGroup>::Iterator __thiscall FxList<class FxAnimGroup>::Begin(void),0x21e280,bytes 1.000,FX1,ported
+0x237ee0,93,Unity_UnInterpolationEtAl.cpp,fxstringimpl.h:82,public: __thiscall FxStringBase<char>::FxStringBase<char>(class FxStringBase<char> const &),0x221170,bytes 1.000,FX1,ported
+0x238ac0,337,Unity_UnInterpolationEtAl.cpp,fxactor.h:336,public: unsigned int __thiscall FxActor::FindAnimGroup(class FxName const &)const,0x221e00,bytes 1.000,FX3,handover
+0x238c20,141,Unity_UnInterpolationEtAl.cpp,fxactor.h:362,public: class FxAnimGroup & __thiscall FxActor::GetAnimGroup(unsigned int),0x221f60,bytes 1.000,FX3,handover
+0x330050,9,Unity_UnSkeletalMeshEtAl.cpp,fxmemory.h:316,public: static void * __cdecl FxUseAllocator::operator new(unsigned int),0x30d250,callee 1.000,FX1,ported
+0x330060,9,Unity_UnSkeletalMeshEtAl.cpp,fxmemory.h:328,"public: static void __cdecl FxUseAllocator::operator delete(void *, unsigned int)",0x30d260,callee 1.000,FX1,ported
+0x330070,10,Unity_UnSkeletalMeshEtAl.cpp,fxmathansi.h:70,float __cdecl FxSqrt(float),0x30d270,bytes 1.000,FX1,ported
+0x330080,46,Unity_UnSkeletalMeshEtAl.cpp,fxmath.h:55,"bool __cdecl FxRealEquality(float, float)",0x30d280,bytes 1.000,FX1,ported
+0x330100,33,Unity_UnSkeletalMeshEtAl.cpp,fxquat.h:39,public: __thiscall FxQuat::FxQuat(void),0x30d2b0,bytes 1.000,FX1,ported
+0x330130,48,Unity_UnSkeletalMeshEtAl.cpp,fxquat.h:41,"public: __thiscall FxQuat::FxQuat(float, float, float, float)",0x30d2e0,bytes 1.000,FX1,ported
+0x330160,20,Unity_UnSkeletalMeshEtAl.cpp,fxvec3.h:36,public: __thiscall FxVec3::FxVec3(void),0x30d310,bytes 1.000,FX1,ported
+0x330180,38,Unity_UnSkeletalMeshEtAl.cpp,fxvec3.h:38,"public: __thiscall FxVec3::FxVec3(float, float, float)",0x30d330,bytes 1.000,FX1,ported
+0x3301b0,4,Unity_UnSkeletalMeshEtAl.cpp,fxbone.h:44,private: virtual struct FDisFaceToRequest * __thiscall UDisAISubStateCower::GetDesiresFaceToRequest(void),0x702080,callee 1.000,FX1,ported
+0x3301c0,4,Unity_UnSkeletalMeshEtAl.cpp,fxbone.h:48,public: class FxVec3 const & __thiscall FxBone::GetScale(void)const,0x7289c0,vtable 1.000,FX1,ported
+0x3301d0,10,Unity_UnSkeletalMeshEtAl.cpp,fxactorinstance.h:91,public: bool __thiscall FxActorInstance::IsPlayingAnim(void)const,0x30d360,callee 1.000,FX3,handover
+0x331d40,12,Unity_UnSkeletalMeshEtAl.cpp,fxutil.h:53,float __cdecl FxSquare<float>(float const &),0x30f4b0,bytes 1.000,FX1,ported
+0x331d50,18,Unity_UnSkeletalMeshEtAl.cpp,fxarrayimpl.h:95,public: struct FxCompiledFaceGraphNode & __thiscall FxArray<struct FxCompiledFaceGraphNode>::operator[](unsigned int),0x30f4c0,callee 1.000,FX1,template
+0x331d70,15,Unity_UnSkeletalMeshEtAl.cpp,fxarrayimpl.h:102,public: class FxMasterBoneList::FxMasterBoneListEntry const & __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::operator[](unsigned int)const,0x30f4e0,bytes 1.000,FX1,template
+0x334560,211,Unity_UnSkeletalMeshEtAl.cpp,fxquat.h:196,public: class FxQuat const & __thiscall FxQuat::Normalize(void),0x311f60,bytes 1.000,FX1,ported
+0x3449f0,59,Unity_UnSkeletalMeshEtAl.cpp,fxstringimpl.h:191,public: char const * __thiscall FxStringBase<char>::GetData(void)const,0x225f80,bytes 1.000,FX1,ported
+0x3457a0,67,Unity_UnSkeletalMeshEtAl.cpp,fxnamedobject.h:51,public: char const * __thiscall FxNamedObject::GetNameAsCstr(void)const,0x323ab0,bytes 1.000,FX1,ported
+0x567f00,27,Unity_NvApexSceneEtAl.cpp,fxplatformansi.h:124,public: static unsigned int __cdecl FxCharTraits<char>::Length(char const *),0x526cf0,bytes 1.000,FX1,ported
+0x568210,4,Unity_NvApexSceneEtAl.cpp,fxarrayimpl.h:74,public: unsigned int __thiscall FxArray<class FxAnimCurve>::Length(void)const,0x574e10,vtable 1.000,FX1,template
+0x568220,15,Unity_NvApexSceneEtAl.cpp,fxarrayimpl.h:102,public: class FxFaceGraphNodeUserProperty & __thiscall FxArray<class FxFaceGraphNodeUserProperty>::operator[](unsigned int),0x527030,bytes 1.000,FX1,template
+0x568230,15,Unity_NvApexSceneEtAl.cpp,fxarrayimpl.h:95,public: class FxAnim & __thiscall FxArray<class FxAnim>::operator[](unsigned int),0x527040,bytes 1.000,FX1,template
+0x568710,16,Unity_NvApexSceneEtAl.cpp,fxanim.h:76,public: class FxAnimCurve const & __thiscall FxAnim::GetAnimCurve(unsigned int)const,0x527640,bytes 1.000,FX3,handover
+0x568720,16,Unity_NvApexSceneEtAl.cpp,fxanim.h:238,public: class FxAnim * __thiscall FxAnimGroup::GetAnimPtr(unsigned int),0x527650,bytes 1.000,FX3,handover
+0x569c40,172,Unity_NvApexSceneEtAl.cpp,fxstringimpl.h:30,"public: __thiscall FxStringBase<char>::FxStringBase<char>(char const *, unsigned int)",0x528c50,bytes 1.000,FX1,ported
+0xb04fe0,54,FxName,fxname.cpp:91,public: __thiscall FxName::FxName(void),0xaef460,bytes 1.000,FX1,ported
+0xb05020,37,FxName,fxname.cpp:103,public: __thiscall FxName::FxName(char const *),0xaef4a0,bytes 1.000,FX1,ported
+0xb05050,46,FxName,fxname.cpp:110,public: __thiscall FxName::FxName(class FxName const &),0xaef4d0,bytes 1.000,FX1,ported
+0xb05080,36,FxName,fxname.cpp:119,public: class FxName & __thiscall FxName::operator=(char const *),0xaef500,bytes 1.000,FX1,ported
+0xb050b0,67,FxName,fxname.cpp:127,public: class FxName & __thiscall FxName::operator=(class FxName const &),0xaef530,bytes 1.000,FX1,ported
+0xb05100,28,FxName,fxname.cpp:139,public: __thiscall FxName::~FxName(void),0xaef580,bytes 1.000,FX1,ported
+0xb05120,88,FxName,fxname.cpp:151,public: static void __cdecl FxName::Startup(void),0xaef5a0,bytes 1.000,FX1,ported
+0xb05180,239,FxName,fxname.cpp:164,public: static void __cdecl FxName::Shutdown(void),0xaef600,bytes 1.000,FX1,ported
+0xb05270,86,FxName,fxname.cpp:191,public: bool __thiscall FxName::operator==(char const *)const,0xaef6f0,callee 1.000,FX1,ported
+0xb052d0,86,FxName,fxname.cpp:206,public: bool __thiscall FxName::operator!=(char const *)const,0xaef750,neighbours 1.000,FX1,ported
+0xb05330,33,FxName,fxname.cpp:221,public: void __thiscall FxName::SetName(char const *),0xaef7b0,bytes 1.000,FX1,ported
+0xb05360,42,FxName,fxname.cpp:229,public: class FxStringBase<char> const & __thiscall FxName::GetAsString(void)const,0xaef7e0,bytes 1.000,FX1,ported
+0xb05390,49,FxName,fxname.cpp:239,public: char const * __thiscall FxName::GetAsCstr(void)const,0xaef810,bytes 1.000,FX1,ported
+0xb053d0,343,FxName,fxname.cpp:252,public: bool __thiscall FxName::Rename(char const *),0xaef850,bytes 1.000,FX1,ported
+0xb05530,16,FxName,fxname.cpp:294,public: static unsigned int __cdecl FxName::GetNumNames(void),0xaef9b0,bytes 1.000,FX1,ported
+0xb05540,104,FxName,fxname.cpp:300,public: static unsigned int __cdecl FxName::Find(char const *),0xaef9c0,bytes 1.000,FX1,ported
+0xb055b0,97,FxName,fxname.cpp:318,public: static unsigned int __cdecl FxName::GetNameTableSize(void),0xaefa30,bytes 1.000,FX1,ported
+0xb05620,50,FxName,fxname.cpp:334,public: static class FxStringBase<char> const * __cdecl FxName::GetNameAsString(unsigned int),0xaefaa0,callee 1.000,FX1,ported
+0xb05660,50,FxName,fxname.cpp:342,public: static unsigned int __cdecl FxName::GetNumReferences(unsigned int),0xaefae0,neighbours 1.000,FX1,ported
+0xb056a0,95,FxName,fxname.cpp:352,"public: static void __cdecl FxName::GetNameStats(unsigned int &, unsigned int &, unsigned int &, unsigned int &, unsigned int &, unsigned int &)",0xaefb20,bytes 1.000,FX1,ported
+0xb05700,385,FxName,fxname.cpp:362,private: void __thiscall FxName::_addNameToTable(char const *),0xaefb80,bytes 1.000,FX1,ported
+0xb05890,332,FxName,fxname.cpp:416,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxName &)",0xaefd10,bytes 1.000,FX1,ported
+0xb059e0,32,FxName,fxrefobject.h:54,public: unsigned int __thiscall FxRefObject::AddReference(void),0xaefe60,bytes 1.000,FX1,ported
+0xb05a00,17,FxName,fxrefstring.h:39,public: virtual class FxStringBase<char> const & __thiscall FxLinkFn::GetFnDesc(void)const,0xaefe80,vtable 1.000,FX1,ported
+0xb05a20,182,FxName,fxname.cpp:46,"void __cdecl ProofName(char const *, char *, unsigned int)",0xaefea0,bytes 1.000,FX1,ported
+0xb05ae0,119,FxName,fxname.cpp:394,private: void __thiscall FxName::_safeRemoveRef(void),0xaeff60,bytes 1.000,FX1,ported
+0xb05b60,100,FxName,fxrefobject.h:60,public: unsigned int __thiscall FxRefObject::RemoveReference(void),0xaeffe0,bytes 1.000,FX1,ported
+0xb05bd0,59,FxName,fxarchive.h:96,public: bool __thiscall FxArchive::IsSaving(void)const,0xaf0050,bytes 1.000,FX1,inline
+0xb05c10,47,FxName,fxlist.h:162,public: class FxList<class FxRefString *>::Iterator & __thiscall FxList<class FxRefString *>::Iterator::Advance(unsigned int),0xaf00b0,bytes 1.000,FX1,template
+0xb05c40,54,FxName,fxstringimpl.h:23,public: __thiscall FxStringBase<char>::FxStringBase<char>(unsigned int),0xaf00e0,bytes 1.000,FX1,ported
+0xb05c80,56,FxName,fxstringimpl.h:94,public: class FxStringBase<char> & __thiscall FxStringBase<char>::operator=(class FxStringBase<char> const &),0xaf0120,callee 1.000,FX1,ported
+0xb05cc0,106,FxName,fxstringhashimpl.h:72,"public: void __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::Clear(void)",0xaf0160,bytes 1.000,FX1,template
+0xb05d30,250,FxName,fxstringhashimpl.h:107,"public: bool __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::Insert(char const *, class FxRefString * * const &)",0xaf01d0,bytes 1.000,FX1,template
+0xb05e30,53,FxName,fxstringhashimpl.h:129,"public: bool __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::Remove(char const *)",0xaf02d0,bytes 1.000,FX1,template
+0xb05e70,57,FxName,fxstringhashimpl.h:162,"public: bool __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::Find(char const *, class FxRefString * * &)const",0xaf0310,bytes 1.000,FX1,template
+0xb05eb0,16,FxName,fxstringhashimpl.h:173,"public: unsigned int __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::GetNumBins(void)const",0xaf0350,callee 1.000,FX1,template
+0xb05ec0,93,FxName,fxstringhashimpl.h:183,"public: unsigned int __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::GetNumBinsInUse(void)const",0xaf0360,bytes 1.000,FX1,template
+0xb05f20,161,FxName,fxstringhashimpl.h:202,"public: unsigned int __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::GetMemUsedEstimate(void)const",0xaf03c0,bytes 1.000,FX1,template
+0xb05fd0,17,FxName,fxstringimpl.h:557,"class FxArchive & __cdecl operator<<<char>(class FxArchive &, class FxStringBase<char> &)",0xaf0470,callee 1.000,FX1,template
+0xb05ff0,93,FxName,fxlistimpl.h:107,public: class FxList<class FxActor *>::Iterator __thiscall FxList<class FxActor *>::End(void),0xaf8090,bytes 1.000,FX1,ported
+0xb06050,141,FxName,fxlistimpl.h:294,public: void __thiscall FxList<class FxRefString *>::RemoveIfEqual(class FxRefString * const &),0xaf0580,bytes 1.000,FX1,template
+0xb060e0,115,FxName,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxList<class FxRefString *>>(class FxList<class FxRefString *> *),0xaf0610,callee 1.000,FX1,template
+0xb06160,44,FxName,fxmemory.h:214,void __cdecl FxDelete<class FxRefString>(class FxRefString * &),0xaf0690,bytes 1.000,FX1,template
+0xb06190,44,FxName,fxmemory.h:214,void __cdecl FxDelete<class FxList<class FxRefString *>>(class FxList<class FxRefString *> * &),0xaf8210,bytes 1.000,FX1,template
+0xb061c0,80,FxName,fxstringimpl.h:574,"bool __cdecl operator==<char>(class FxStringBase<char> const &, char const *)",0xaf06c0,bytes 1.000,FX1,ported
+0xb06210,25,FxName,fxchartraits.h:132,"public: static int __cdecl FxCharTraits<char>::Compare(char const *, char const *, unsigned int)",0xaf0710,callee 1.000,FX1,ported
+0xb06230,26,FxName,fxplatformansi.h:136,"int __cdecl FxStrncmp(char const *, char const *, unsigned int)",0xaf0730,neighbours 1.000,FX1,ported
+0xb06250,79,FxName,fxstringimpl.h:605,"bool __cdecl operator!=<char>(class FxStringBase<char> const &, char const *)",0xaf0750,bytes 1.000,FX1,ported
+0xb062a0,402,FxName,fxstring.h:266,public: class FxArchive & __thiscall FxStringBase<char>::Serialize(class FxArchive &),0xaf07a0,bytes 1.000,FX1,ported
+0xb06440,65,FxName,fxchartraits.h:142,"public: static char * __cdecl FxCharTraits<char>::Convert(char *, wchar_t const *, unsigned int)",0xaf0940,bytes 1.000,FX1,ported
+0xb06490,59,FxName,fxarchive.h:101,public: bool __thiscall FxArchive::IsLoading(void)const,0xaf0990,bytes 1.000,FX1,inline
+0xb064d0,44,FxName,fxlist.h:367,"public: __thiscall FxList<class FxActorInstance *>::FxListNode::FxListNode(class FxActorInstance * const &, class FxList<class FxActorInstance *>::FxListNode *, class FxList<class FxActorInstance *>::FxListNode *)",0xaf8860,bytes 1.000,FX1,template
+0xb06500,39,FxName,fxstringhash.h:148,"public: __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry::FxHashBinEntry(class FxStringBase<char> const &, class FxRefString * * const &)",0xaf09d0,callee 1.000,FX1,template
+0xb06530,27,FxName,fxlist.h:190,"public: class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::ConstIterator & __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::ConstIterator::operator++(void)",0xaf0a00,callee 1.000,FX1,template
+0xb06550,77,FxName,fxarraybase.h:31,public: __thiscall FxArrayBase<wchar_t>::FxArrayBase<wchar_t>(unsigned int),0xaf0a20,bytes 1.000,FX1,template
+0xb065a0,92,FxName,fxarraybase.h:35,public: __thiscall FxArrayBase<wchar_t>::~FxArrayBase<wchar_t>(void),0xaf0a70,bytes 1.000,FX1,template
+0xb06600,102,FxName,fxstringhashimpl.h:269,"private: unsigned int __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::_hash(char const *)const",0xaf0ad0,callee 1.000,FX1,ported
+0xb06670,137,FxName,fxstringhashimpl.h:294,"private: bool __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::_removeFromBin(char const *, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry> &)",0xaf0b40,bytes 1.000,FX1,template
+0xb06700,136,FxName,fxstringhashimpl.h:362,"private: bool __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::_findKeyInBin(char const *, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry> const &, class FxRefString * * &)const",0xaf0bd0,bytes 1.000,FX1,template
+0xb06790,125,FxName,fxstringhashimpl.h:340,"private: bool __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::_findKeyInBin(char const *, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry> const &)const",0xaf0c60,bytes 1.000,FX1,template
+0xb06810,93,FxName,fxlistimpl.h:165,"public: void __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Clear(void)",0xaf0ce0,callee 1.000,FX1,ported
+0xb06870,25,FxName,fxlistimpl.h:183,"public: bool __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::IsEmpty(void)const",0xaf0d40,callee 1.000,FX1,template
+0xb06890,46,FxName,fxlistimpl.h:219,"public: void __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::PushBack(class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry const &)",0xaf0d60,callee 1.000,FX1,template
+0xb068c0,115,FxName,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxList<class FxActor *>::FxListNode>(class FxList<class FxActor *>::FxListNode *),0xaf8650,callee 1.000,FX1,template
+0xb06940,176,FxName,fxarchive.h:268,"public: void __thiscall FxArchive::SerializePODArray<char>(char *, unsigned int)",0xaf0e00,bytes 1.000,FX1,template
+0xb069f0,17,FxName,fxarchive.h:93,public: bool __thiscall FxArchive::IsValid(void)const,0xaf0eb0,bytes 1.000,FX1,inline
+0xb06a10,180,FxName,fxarchive.h:268,"public: void __thiscall FxArchive::SerializePODArray<wchar_t>(wchar_t *, unsigned int)",0xaf0ed0,bytes 1.000,FX1,template
+0xb06ad0,36,FxName,fxmemory.h:157,"void __cdecl FxDestroy<wchar_t *>(wchar_t *, wchar_t *)",0xaf0f90,bytes 1.000,FX1,template
+0xb06b00,34,FxName,fxlist.h:357,public: __thiscall FxList<class FxActorInstance *>::FxListNode::FxListNode(void),0xaf0ff0,bytes 1.000,FX1,template
+0xb06b30,24,FxName,fxlist.h:117,public: __thiscall FxList<class FxActorInstance *>::Iterator::Iterator(class FxList<class FxActorInstance *>::FxListNode *),0xaf7d80,bytes 1.000,FX1,template
+0xb06b50,109,FxName,fxlistimpl.h:99,"public: class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::ConstIterator __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Begin(void)const",0xaf1020,bytes 1.000,FX1,template
+0xb06bc0,93,FxName,fxlistimpl.h:115,"public: class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Iterator __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::End(void)",0xaf1090,bytes 1.000,FX1,template
+0xb06c20,204,FxName,fxlistimpl.h:261,"public: class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Iterator __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Insert(class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry const &, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Iterator)",0xaf10f0,bytes 1.000,FX1,ported
+0xb06cf0,93,FxName,fxlistimpl.h:280,"public: void __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::RemoveIterator(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::Iterator)",0xaf11c0,callee 1.000,FX1,ported
+0xb06d50,44,FxName,fxmemory.h:214,"void __cdecl FxDelete<class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode>(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode * &)",0xaf1220,neighbours 1.000,FX1,template
+0xb06d80,115,FxName,fxmemory.h:142,"void __cdecl FxDefaultConstruct<class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode>(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode *)",0xaf1250,bytes 1.000,FX1,template
+0xb06e00,64,FxName,fxarchive.h:374,"private: void __thiscall FxArchive::_byteSwapPODArray<char>(char *, unsigned int)",0xaf12d0,bytes 1.000,FX1,template
+0xb06e40,138,FxName,fxutil.h:41,"void __cdecl FxByteSwap(unsigned char *, unsigned int)",0xaf1310,bytes 1.000,FX1,ported
+0xb06ed0,72,FxName,fxarchive.h:374,"private: void __thiscall FxArchive::_byteSwapPODArray<wchar_t>(wchar_t *, unsigned int)",0xaf13a0,bytes 1.000,FX1,template
+0xb06f20,19,FxName,,"public: __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode::~FxListNode(void)",0xaf13f0,callee 1.000,FX1,template
+0xb06f40,42,FxName,fxlist.h:357,"public: __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode::FxListNode(void)",0xaf1410,bytes 1.000,FX1,template
+0xb06f70,46,FxName,fxlist.h:367,"public: __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode::FxListNode(class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry const &, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode *, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode *)",0xaf1440,callee 1.000,FX1,template
+0xb06fa0,119,FxName,fxmemory.h:132,"void __cdecl FxConstruct<class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode>(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode *, class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode const &)",0xaf1470,bytes 1.000,FX1,template
+0xb07020,21,FxName,fxmemory.h:148,"void __cdecl FxDestroy<class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode>(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode *)",0xaf14f0,neighbours 1.000,FX1,template
+0xb07040,52,FxName,,"public: __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode::FxListNode(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode const &)",0xaf1510,callee 1.000,FX1,template
+0xb07080,44,FxName,,"public: void * __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxListNode::`scalar deleting destructor'(unsigned int)",0xaf1550,neighbours 1.000,FX1,generated
+0xb070b0,82,FxName,fxstringhashimpl.h:25,"public: __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::FxStringHash<class FxRefString * *, 12, class FxList>(void)",0xaf1580,bytes 1.000,FX1,template
+0xb07110,33,FxName,fxlistimpl.h:37,"public: __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>(void)",0xaf86d0,callee 1.000,FX1,template
+0xb07140,39,FxName,fxlistimpl.h:80,"public: __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::~FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>(void)",0xaf15e0,neighbours 1.000,FX1,template
+0xb07170,99,FxName,fxstringhashimpl.h:33,"public: __thiscall FxStringHash<class FxRefString * *, 12, class FxList>::~FxStringHash<class FxRefString * *, 12, class FxList>(void)",0xaf1610,bytes 1.000,FX1,template
+0xb071e0,60,FxMemory,fxmemory.cpp:32,public: __thiscall FxMemoryAllocationPolicy::FxMemoryAllocationPolicy(void),0xaf1680,bytes 1.000,FX1,ported
+0xb07220,60,FxMemory,fxmemory.cpp:45,"public: __thiscall FxMemoryAllocationPolicy::FxMemoryAllocationPolicy(enum FxMemoryAllocationType, bool, void * (__cdecl *)(unsigned int), void * (__cdecl *)(unsigned int, char const *), void (__cdecl *)(void *, unsigned int))",0xaf16c0,bytes 1.000,FX1,ported
+0xb07260,74,FxMemory,fxmemory.cpp:54,public: __thiscall FxMemoryAllocationPolicy::FxMemoryAllocationPolicy(struct FxMemoryAllocationPolicy const &),0xaf1700,bytes 1.000,FX1,ported
+0xb072b0,87,FxMemory,fxmemory.cpp:58,public: struct FxMemoryAllocationPolicy & __thiscall FxMemoryAllocationPolicy::operator=(struct FxMemoryAllocationPolicy const &),0xaf1750,bytes 1.000,FX1,ported
+0xb07310,11,FxMemory,fxmemory.cpp:69,public: __thiscall FxMemoryAllocationPolicy::~FxMemoryAllocationPolicy(void),0xaf17b0,callee 1.000,FX1,ported
+0xb07320,18,FxMemory,fxmemory.cpp:73,void * __cdecl FxHeapAllocate(unsigned int),,unmatched,FX1,ported
+0xb07340,18,FxMemory,fxmemory.cpp:78,"void * __cdecl FxHeapAllocateDebug(unsigned int, char const *)",,unmatched,FX1,ported
+0xb07360,18,FxMemory,fxmemory.cpp:83,"void __cdecl FxHeapFree(void *, unsigned int)",,unmatched,FX1,ported
+0xb07380,17,FxMemory,fxmemory.cpp:88,void * __cdecl FxFreeStoreAllocate(unsigned int),,unmatched,FX1,ported
+0xb073a0,17,FxMemory,fxmemory.cpp:93,"void * __cdecl FxFreeStoreAllocateDebug(unsigned int, char const *)",,unmatched,FX1,ported
+0xb073c0,17,FxMemory,fxmemory.cpp:98,"void __cdecl FxFreeStoreFree(void *, unsigned int)",0xaf1860,order-sibling 0.890,FX1,ported
+0xb073e0,40,FxMemory,fxmemory.cpp:190,public: __thiscall FxFixedSizeMemoryAllocator::FxFixedSizeMemoryAllocator(void),0xaf1880,bytes 1.000,FX1,ported
+0xb07410,11,FxMemory,fxmemory.cpp:193,public: __thiscall FxFixedSizeMemoryAllocator::~FxFixedSizeMemoryAllocator(void),0xaf18b0,order 1.000,FX1,ported
+0xb07420,138,FxMemory,fxmemory.cpp:200,public: void __thiscall FxFixedSizeMemoryAllocator::Initialize(unsigned int),0xaf18c0,bytes 1.000,FX1,ported
+0xb074b0,93,FxMemory,fxmemory.cpp:224,public: void __thiscall FxFixedSizeMemoryAllocator::Destroy(void),0xaf1950,bytes 1.000,FX1,ported
+0xb07510,129,FxMemory,fxmemory.cpp:240,public: void __thiscall FxFixedSizeMemoryAllocator::Trim(void),0xaf19b0,bytes 1.000,FX1,ported
+0xb075a0,255,FxMemory,fxmemory.cpp:314,public: struct FxFixedSizeAllocatorInfo __thiscall FxFixedSizeMemoryAllocator::GetInfo(void)const,0xaf1a40,bytes 1.000,FX1,ported
+0xb076a0,65,FxMemory,fxmemory.cpp:363,"public: void __thiscall FxFixedSizeMemoryAllocator::FxMemoryChunk::Initialize(unsigned int, unsigned char)",0xaf1b40,bytes 1.000,FX1,ported
+0xb076f0,66,FxMemory,fxmemory.cpp:380,public: void __thiscall FxFixedSizeMemoryAllocator::FxMemoryChunk::Destroy(void),0xaf1b90,bytes 1.000,FX1,ported
+0xb07740,317,FxMemory,fxmemory.cpp:436,void __cdecl FxMemoryStartup(struct FxMemoryAllocationPolicy const &),0xaf1be0,bytes 1.000,FX1,ported
+0xb07880,62,FxMemory,fxmemory.cpp:485,void __cdecl FxMemoryShutdown(void),0xaf1d20,callee 1.000,FX1,ported
+0xb078c0,40,FxMemory,fxmemory.cpp:496,struct FxMemoryAllocationPolicy __cdecl FxGetMemoryAllocationPolicy(void),0xaf1d60,bytes 1.000,FX1,ported
+0xb078f0,62,FxMemory,fxmemory.cpp:501,void __cdecl FxTrimMemoryPools(void),0xaf1d90,neighbours 1.000,FX1,ported
+0xb07930,17,FxMemory,fxmemory.cpp:622,"void * __cdecl FxAllocateDebug(unsigned int, char const *)",0xaf1dd0,neighbours 1.000,FX1,ported
+0xb07950,17,FxMemory,fxmemory.cpp:669,void * __cdecl FxAllocate(unsigned int),0xaf1df0,callee 1.000,FX1,ported
+0xb07970,21,FxMemory,fxmemory.cpp:674,"void __cdecl FxFree(void *, unsigned int)",0xaf1e10,bytes 1.000,FX1,ported
+0xb07990,7,FxMemory,fxmemory.cpp:827,unsigned int __cdecl FxGetCurrentNumAllocations(void),,unmatched,FX1,ported
+0xb079a0,7,FxMemory,fxmemory.cpp:836,unsigned int __cdecl FxGetPeakNumAllocations(void),,unmatched,FX1,ported
+0xb079b0,7,FxMemory,fxmemory.cpp:845,unsigned int __cdecl FxGetMinAllocationSize(void),,unmatched,FX1,ported
+0xb079c0,7,FxMemory,fxmemory.cpp:854,unsigned int __cdecl FxGetMaxAllocationSize(void),,unmatched,FX1,ported
+0xb079d0,7,FxMemory,fxmemory.cpp:863,unsigned int __cdecl FxGetMedianAllocationSize(void),,unmatched,FX1,ported
+0xb079e0,7,FxMemory,fxmemory.cpp:872,unsigned int __cdecl FxGetAvgAllocationSize(void),,unmatched,FX1,ported
+0xb079f0,7,FxMemory,fxmemory.cpp:881,unsigned int __cdecl FxGetCurrentBytesAllocated(void),,unmatched,FX1,ported
+0xb07a00,7,FxMemory,fxmemory.cpp:890,unsigned int __cdecl FxGetPeakBytesAllocated(void),,unmatched,FX1,ported
+0xb07a10,25,FxMemory,fxmemory.cpp:899,unsigned int __cdecl FxGetNumFixedSizeAllocators(void),0xaf1eb0,bytes 1.000,FX1,ported
+0xb07a30,144,FxMemory,fxmemory.cpp:908,struct FxFixedSizeAllocatorInfo __cdecl FxGetFixedSizeAllocatorInfo(unsigned int),0xaf1ed0,bytes 1.000,FX1,ported
+0xb07ac0,7,FxMemory,fxmemory.cpp:930,void * __cdecl FxGetAllocStart(void),,unmatched,FX1,ported
+0xb07ad0,7,FxMemory,fxmemory.cpp:945,void * __cdecl FxGetAllocNext(void * const),,unmatched,FX1,ported
+0xb07ae0,7,FxMemory,fxmemory.cpp:960,void * __cdecl FxGetAllocPrev(void * const),,unmatched,FX1,ported
+0xb07af0,7,FxMemory,fxmemory.cpp:978,"bool __cdecl FxGetAllocInfo(void * const, unsigned int &, unsigned int &, char * &)",0xaf1f90,bytes 1.000,FX1,ported
+0xb07b00,85,FxMemory,fxmemory.cpp:391,"public: void __thiscall FxFixedSizeMemoryAllocator::FxMemoryChunk::Reset(unsigned int, unsigned char)",0xaf1fa0,bytes 1.000,FX1,ported
+0xb07b60,99,FxMemory,fxmemory.cpp:629,void * __cdecl FxPoolAllocate(unsigned int),0xaf2000,bytes 1.000,FX1,ported
+0xb07bd0,162,FxMemory,fxmemory.cpp:270,public: void * __thiscall FxFixedSizeMemoryAllocator::Allocate(void),0xaf2070,bytes 1.000,FX1,ported
+0xb07c80,17,FxMemory,fxmemory.cpp:309,public: unsigned int __thiscall FxRefObject::GetReferenceCount(void),0xb04730,callee 1.000,FX1,ported
+0xb07ca0,77,FxMemory,fxmemory.cpp:404,public: void * __thiscall FxFixedSizeMemoryAllocator::FxMemoryChunk::Allocate(unsigned int),0xaf2120,bytes 1.000,FX1,ported
+0xb07cf0,113,FxMemory,fxmemory.cpp:645,"void __cdecl FxPoolFree(void *, unsigned int)",0xaf2170,bytes 1.000,FX1,ported
+0xb07d70,49,FxMemory,fxmemory.cpp:302,public: void __thiscall FxFixedSizeMemoryAllocator::Free(void *),0xaf21f0,bytes 1.000,FX1,ported
+0xb07db0,97,FxMemory,fxmemory.cpp:345,private: struct FxFixedSizeMemoryAllocator::FxMemoryChunk * __thiscall FxFixedSizeMemoryAllocator::FindOwnerChunk(void *),0xaf2230,bytes 1.000,FX1,ported
+0xb07e20,66,FxMemory,fxmemory.cpp:415,"public: void __thiscall FxFixedSizeMemoryAllocator::FxMemoryChunk::Free(void *, unsigned int)",0xaf22a0,bytes 1.000,FX1,ported
+0xb148d0,94,FxSDK,fxsdk.cpp:74,void __cdecl FxSDKStartup(void),0xafed20,bytes 1.000,FX1,ported
+0xb14930,167,FxSDK,fxsdk.cpp:80,void __cdecl FxSDKStartup(struct FxMemoryAllocationPolicy const &),0xafed80,bytes 1.000,FX1,ported
+0xb149e0,35,FxSDK,fxsdk.cpp:128,void __cdecl FxSDKShutdown(void),0xafee30,bytes 1.000,FX1,ported
+0xb14a10,10,FxSDK,fxsdk.cpp:149,unsigned int __cdecl FxSDKGetVersion(void),0xafee60,callee 1.000,FX1,ported
+0xb14a20,318,FxSDK,fxsdk.cpp:154,class FxStringBase<char> __cdecl FxSDKConvertVersionToString(unsigned int),0xafee70,bytes 1.000,FX1,ported
+0xb14b60,44,FxSDK,fxsdk.cpp:167,class FxStringBase<char> __cdecl FxSDKGetVersionString(void),0xafefb0,order-sibling 0.890,FX1,ported
+0xb14b90,42,FxSDK,fxsdk.cpp:172,class FxStringBase<char> __cdecl FxSDKGetLicenseeName(void),0xafefe0,string 1.000,FX1,ported
+0xb14bc0,42,FxSDK,fxsdk.cpp:177,class FxStringBase<char> __cdecl FxSDKGetLicenseeProjectName(void),0xaff010,string 1.000,FX1,ported
+0xb14bf0,10,FxSDK,fxsdk.cpp:182,unsigned int __cdecl FxSDKGetLicenseeVersion(void),0xaff040,callee 1.000,FX1,ported
+0xb14c00,44,FxSDK,fxsdk.cpp:187,class FxStringBase<char> __cdecl FxSDKGetLicenseeVersionString(void),0xaff050,order 1.000,FX1,ported
+0xb14c30,42,FxSDK,fxsdk.cpp:192,class FxStringBase<char> __cdecl FxSDKGetBuildId(void),0xaff080,string 1.000,FX1,ported
+0xb14c60,29,FxSDK,fxobject.h:31,public: static class FxClass const * __cdecl FxObject::StaticClass(void),0xaff0b0,callee 1.000,FX3,handover
+0xb14c80,29,FxSDK,fxfacegraphnodelink.h:31,public: static class FxClass const * __cdecl FxFaceGraphNodeLink::StaticClass(void),0xaff0d0,callee 1.000,FX2,handover
+0xb14ca0,29,FxSDK,fxfacegraphshared.h:40,public: static class FxClass const * __cdecl FxFaceGraphNodeUserProperty::StaticClass(void),0xaff0f0,callee 1.000,FX2,handover
+0xb14cc0,29,FxSDK,fxbone.h:28,public: static class FxClass const * __cdecl FxBone::StaticClass(void),0xaff110,callee 1.000,FX3,handover
+0xb14ce0,29,FxSDK,fxcombinernode.h:29,public: static class FxClass const * __cdecl FxCombinerNode::StaticClass(void),0xaff130,callee 1.000,FX2,handover
+0xb14d00,29,FxSDK,fxgenerictargetnode.h:31,public: static class FxClass const * __cdecl FxGenericTargetNode::StaticClass(void),0xaff150,callee 1.000,FX2,handover
+0xb14d20,29,FxSDK,fxfacegraph.h:42,public: static class FxClass const * __cdecl FxFaceGraph::StaticClass(void),0xaff170,callee 1.000,FX2,handover
+0xb14d40,29,FxSDK,fxanimcurve.h:35,public: static class FxClass const * __cdecl FxAnimCurve::StaticClass(void),0xaff190,callee 1.000,FX3,handover
+0xb14d60,29,FxSDK,fxanim.h:52,public: static class FxClass const * __cdecl FxAnim::StaticClass(void),0xaff1b0,callee 1.000,FX3,handover
+0xb14d80,29,FxSDK,fxanim.h:208,public: static class FxClass const * __cdecl FxAnimGroup::StaticClass(void),0xaff1d0,callee 1.000,FX3,handover
+0xb14da0,29,FxSDK,fxanimset.h:48,public: static class FxClass const * __cdecl FxAnimSet::StaticClass(void),0xaff1f0,callee 1.000,FX3,handover
+0xb14dc0,29,FxSDK,fxphonememap.h:41,public: static class FxClass const * __cdecl FxPhonemeMap::StaticClass(void),0xaff210,callee 1.000,FX3,handover
+0xb14de0,29,FxSDK,fxactor.h:54,public: static class FxClass const * __cdecl FxActor::StaticClass(void),0xaff230,callee 1.000,FX3,handover
+0xb14e00,29,FxSDK,fxdeltanode.h:31,public: static class FxClass const * __cdecl FxDeltaNode::StaticClass(void),0xaff250,callee 1.000,FX2,handover
+0xb14e20,29,FxSDK,fxactorinstance.h:40,public: static class FxClass const * __cdecl FxActorInstance::StaticClass(void),0xaff270,callee 1.000,FX3,handover
+0xb14e40,29,FxSDK,fxrefobject.h:26,public: static class FxClass const * __cdecl FxRefObject::StaticClass(void),0xaff290,callee 1.000,FX3,handover
+0xb14e60,29,FxSDK,fxrefstring.h:27,public: static class FxClass const * __cdecl FxRefString::StaticClass(void),0xaff2b0,callee 1.000,FX3,handover
+0xb14e80,29,FxSDK,fxmorphtargetnode.h:44,public: static class FxClass const * __cdecl FxMorphTargetNode::StaticClass(void),0xaff2d0,callee 1.000,FX2,handover
+0xb14ea0,29,FxSDK,fxcurrenttimenode.h:30,public: static class FxClass const * __cdecl FxCurrentTimeNode::StaticClass(void),0xaff2f0,callee 1.000,FX2,handover
+0xb14ec0,29,FxSDK,fxunrealsupport.h:31,public: static class FxClass const * __cdecl FUnrealFaceFXNode::StaticClass(void),0xaff310,callee 1.000,FX2,handover
+0xb14ee0,29,FxSDK,fxunrealsupport.h:72,public: static class FxClass const * __cdecl FUnrealFaceFXMorphNode::StaticClass(void),0xaff330,callee 1.000,FX2,handover
+0xb14f00,29,FxSDK,fxunrealsupport.h:98,public: static class FxClass const * __cdecl FUnrealFaceFXMaterialParameterNode::StaticClass(void),0xaff350,callee 1.000,FX2,handover
+0xb14f20,101,FxSDK,fxstringimpl.h:218,public: class FxStringBase<char> & __thiscall FxStringBase<char>::operator<<(int),0xaff370,bytes 1.000,FX1,ported
+0xb14f90,221,FxSDK,fxplatformansi.h:239,"char * __cdecl FxItoa(int, char *, unsigned int)",0xaff3e0,bytes 1.000,FX1,ported
+0xb15070,29,FxSDK,fxplatformansi.h:97,"char * __cdecl FxStrcpy(char *, unsigned int, char const *)",0xaff4c0,bytes 1.000,FX1,ported
+0xb15090,47,FxSDK,fxstringimpl.h:207,public: class FxStringBase<char> & __thiscall FxStringBase<char>::operator<<(char const *),0xaff4e0,bytes 1.000,FX1,ported
+0xb150c0,263,FxSDK,fxstringimpl.h:522,"private: void __thiscall FxStringBase<char>::_DoAppendString(char const *, unsigned int)",0xaff510,bytes 1.000,FX1,ported
+0xb151d0,134,FxNamedObject,fxnamedobject.cpp:19,public: static class FxClass * __cdecl FxNamedObject::AllocateStaticClassFxNamedObject(void),0xaff620,string 1.000,FX1,ported
+0xb15260,103,FxNamedObject,fxnamedobject.cpp:23,public: __thiscall FxNamedObject::FxNamedObject(void),0xaff6b0,bytes 1.000,FX1,ported
+0xb152d0,124,FxNamedObject,fxnamedobject.cpp:27,public: __thiscall FxNamedObject::FxNamedObject(class FxNamedObject const &),0xaff720,bytes 1.000,FX1,ported
+0xb15350,104,FxNamedObject,fxnamedobject.cpp:33,public: __thiscall FxNamedObject::FxNamedObject(class FxName const &),0xaff7a0,bytes 1.000,FX1,ported
+0xb153c0,95,FxNamedObject,fxnamedobject.cpp:37,public: virtual __thiscall FxNamedObject::~FxNamedObject(void),0xaff810,bytes 1.000,FX1,ported
+0xb15420,49,FxNamedObject,fxnamedobject.cpp:41,public: class FxNamedObject & __thiscall FxNamedObject::operator=(class FxNamedObject const &),0xaff870,bytes 1.000,FX1,ported
+0xb15460,28,FxNamedObject,fxnamedobject.cpp:48,public: void __thiscall FxNamedObject::SetName(class FxName const &),0xaff8b0,callee 1.000,FX1,ported
+0xb15480,28,FxNamedObject,fxnamedobject.cpp:53,public: void __thiscall FxNamedObject::Rename(char const *),0xaff8d0,neighbours 1.000,FX1,ported
+0xb154a0,61,FxNamedObject,fxnamedobject.cpp:58,public: virtual void __thiscall FxNamedObject::Serialize(class FxArchive &),0xaff8f0,bytes 1.000,FX1,ported
+0xb154e0,114,FxNamedObject,fxnamedobject.h:28,public: static class FxObject * __cdecl FxNamedObject::ConstructObject(void),0xaff930,neighbours 1.000,FX1,ported
+0xb15560,35,FxNamedObject,fxnamedobject.h:28,public: virtual class FxClass const * __thiscall FxNamedObject::GetClassDesc(void)const,0xaff9b0,order 1.000,FX1,ported
+0xb15590,41,FxNamedObject,fxnamedobject.h:28,public: virtual unsigned short __thiscall FxNamedObject::GetCurrentVersion(void)const,0xaff9e0,neighbours 1.000,FX1,ported
+0xb155c0,46,FxNamedObject,,public: virtual void * __thiscall FxNamedObject::`scalar deleting destructor'(unsigned int),0xaffa10,neighbours 1.000,FX1,generated
+0xb176b0,134,FxRefString,fxrefstring.cpp:19,public: static class FxClass * __cdecl FxRefString::AllocateStaticClassFxRefString(void),0xb01b90,string 1.000,FX1,ported
+0xb17740,100,FxRefString,fxrefstring.cpp:22,public: __thiscall FxRefString::FxRefString(void),0xb01c20,neighbours 1.000,FX1,ported
+0xb177b0,106,FxRefString,fxrefstring.cpp:27,public: __thiscall FxRefString::FxRefString(char const *),0xb01c90,bytes 1.000,FX1,ported
+0xb17820,95,FxRefString,fxrefstring.cpp:31,public: virtual __thiscall FxRefString::~FxRefString(void),0xb01d00,neighbours 1.000,FX1,ported
+0xb17880,28,FxRefString,fxrefstring.cpp:35,public: void __thiscall FxRefString::SetString(char const *),0xb01d60,callee 1.000,FX1,ported
+0xb178a0,13,FxRefString,fxrefstring.cpp:40,public: virtual void __thiscall FxRefString::Serialize(class FxArchive &),0xb01d80,order 1.000,FX1,ported
+0xb178b0,114,FxRefString,fxrefstring.h:27,public: static class FxObject * __cdecl FxRefString::ConstructObject(void),0xb01d90,neighbours 1.000,FX1,ported
+0xb17930,35,FxRefString,fxrefstring.h:27,public: virtual class FxClass const * __thiscall FxRefString::GetClassDesc(void)const,0xb01e10,order 1.000,FX1,ported
+0xb17960,41,FxRefString,fxrefstring.h:27,public: virtual unsigned short __thiscall FxRefString::GetCurrentVersion(void)const,0xb01e40,neighbours 1.000,FX1,ported
+0xb17990,46,FxRefString,,public: virtual void * __thiscall FxRefString::`vector deleting destructor'(unsigned int),0xb01e70,neighbours 1.000,FX1,generated
+0xb179c0,58,FxRefString,fxstringimpl.h:103,public: class FxStringBase<char> & __thiscall FxStringBase<char>::operator=(char const *),0xb01ea0,bytes 1.000,FX1,ported
+0xb17a00,227,FxClass,fxclass.cpp:29,"public: __thiscall FxClass::FxClass(char const *, unsigned short, class FxClass const *, unsigned int, class FxObject * (__cdecl *)(void))",0xb01ee0,bytes 1.000,FX1,ported
+0xb17af0,22,FxClass,fxclass.cpp:49,public: __thiscall FxClass::~FxClass(void),0xb01fd0,tokens 1.000,FX1,ported
+0xb17b10,56,FxClass,fxclass.cpp:60,public: static void __cdecl FxClass::Startup(void),0xb01ff0,bytes 1.000,FX1,ported
+0xb17b50,109,FxClass,fxclass.cpp:70,public: static void __cdecl FxClass::Shutdown(void),0xb02030,bytes 1.000,FX1,ported
+0xb17bc0,17,FxClass,fxclass.cpp:85,public: class FxName const & __thiscall FxClass::GetName(void)const,0xb020a0,callee 1.000,FX1,ported
+0xb17be0,18,FxClass,fxclass.cpp:90,public: unsigned short __thiscall FxClass::GetCurrentVersion(void)const,0xb020c0,callee 1.000,FX1,ported
+0xb17c00,16,FxClass,fxclass.cpp:95,public: class FxClass const * __thiscall FxClass::GetBaseClassDesc(void)const,0xb020e0,callee 1.000,FX1,ported
+0xb17c10,17,FxClass,fxclass.cpp:100,public: unsigned int __thiscall FxClass::GetSize(void)const,0xb020f0,callee 1.000,FX1,ported
+0xb17c30,17,FxClass,fxclass.cpp:105,public: unsigned int __thiscall FxClass::GetNumChildren(void)const,0xb02110,order 1.000,FX1,ported
+0xb17c50,32,FxClass,fxclass.cpp:110,public: class FxObject * __thiscall FxClass::ConstructObject(void)const,0xb02130,bytes 1.000,FX1,ported
+0xb17c70,122,FxClass,fxclass.cpp:119,public: static class FxClass const * __cdecl FxClass::FindClassDesc(class FxName const &),0xb02150,callee 1.000,FX1,ported
+0xb17cf0,29,FxClass,fxclass.cpp:135,public: static unsigned int __cdecl FxClass::GetNumClasses(void),0xb021d0,neighbours 1.000,FX1,ported
+0xb17d10,35,FxClass,fxclass.cpp:144,public: static class FxClass const * __cdecl FxClass::GetClass(unsigned int),0xb021f0,neighbours 1.000,FX1,ported
+0xb17d40,25,FxClass,fxclass.cpp:153,public: bool __thiscall FxClass::IsExactKindOf(class FxClass const *)const,0xb02220,neighbours 1.000,FX1,ported
+0xb17d60,54,FxClass,fxclass.cpp:158,public: bool __thiscall FxClass::IsKindOf(class FxClass const *)const,0xb02240,bytes 1.000,FX1,ported
+0xb17da0,26,FxClass,fxclass.cpp:169,public: bool __thiscall FxClass::IsA(class FxClass const *)const,0xb02280,bytes 1.000,FX1,ported
+0xb17dc0,117,FxClass,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxArray<class FxArchive *>>(class FxArray<class FxArchive *> *),0xb02330,callee 1.000,FX1,template
+0xb17e40,44,FxClass,fxmemory.h:214,void __cdecl FxDelete<class FxClass>(class FxClass * &),0xb023b0,callee 1.000,FX1,template
+0xb17e70,21,FxClass,fxmemory.h:148,void __cdecl FxDestroy<class FxClass>(class FxClass *),0xb02410,neighbours 1.000,FX1,template
+0xb17e90,46,FxClass,,public: void * __thiscall FxClass::`scalar deleting destructor'(unsigned int),0xb02450,neighbours 1.000,FX1,generated
+0xb17ec0,75,FxArchive,fxarchive.cpp:58,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxArchiveNameEntry &)",0xb024b0,bytes 1.000,FX1,ported
+0xb17f10,184,FxArchive,fxarchive.cpp:147,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxArchiveDirectory &)",0xb02500,bytes 1.000,FX1,ported
+0xb17fd0,183,FxArchive,fxarchive.cpp:209,"public: __thiscall FxArchive::FxArchive(class FxArchiveStore *, enum FxArchive::FxArchiveMode, enum FxArchive::FxArchiveByteOrder)",0xb025c0,bytes 1.000,FX1,ported
+0xb18090,19,FxArchive,fxarchive.cpp:213,public: __thiscall FxArchive::~FxArchive(void),0xb02680,callee 1.000,FX1,ported
+0xb180b0,1461,FxArchive,fxarchive.cpp:218,public: void __thiscall FxArchive::Open(void),0xb026a0,bytes 1.000,FX1,ported
+0xb18670,287,FxArchive,fxarchive.cpp:413,public: void __thiscall FxArchive::Close(void),0xb02c60,bytes 1.000,FX1,ported
+0xb18790,43,FxArchive,fxarchive.cpp:447,public: static void __cdecl FxArchive::Startup(void),0xb02d80,bytes 1.000,FX1,ported
+0xb187c0,38,FxArchive,fxarchive.cpp:456,public: static void __cdecl FxArchive::Shutdown(void),0xb02db0,bytes 1.000,FX1,ported
+0xb187f0,225,FxArchive,fxarchive.cpp:463,public: char const * __thiscall FxArchive::GetSDKVersionString(void),0xb02de0,bytes 1.000,FX1,ported
+0xb188e0,46,FxArchive,fxarchive.cpp:478,"public: void __thiscall FxArchive::RegisterProgressCallback(void (__cdecl *)(float), float)",0xb02ed0,bytes 1.000,FX1,ported
+0xb18910,56,FxArchive,fxarchive.cpp:487,public: class FxObject * __thiscall FxArchive::FindObject(unsigned int)const,0xb02f00,bytes 1.000,FX1,ported
+0xb18950,30,FxArchive,fxarchive.cpp:497,public: unsigned int __thiscall FxArchive::FindObject(class FxObject *)const,0xb02f40,bytes 1.000,FX1,ported
+0xb18970,241,FxArchive,fxarchive.cpp:502,"public: unsigned int __thiscall FxArchive::AddObject(class FxObject *, unsigned int)",0xb02f60,bytes 1.000,FX1,ported
+0xb18a70,184,FxArchive,fxarchive.cpp:544,"public: class FxObject * __thiscall FxArchive::ReplaceObject(class FxObject *, unsigned int)",0xb03060,bytes 1.000,FX1,ported
+0xb18b30,187,FxArchive,fxarchive.cpp:569,public: unsigned int __thiscall FxArchive::AddName(void *),0xb03120,bytes 1.000,FX1,ported
+0xb18bf0,41,FxArchive,fxarchive.cpp:587,public: void * * __thiscall FxArchive::GetName(unsigned int),0xb031e0,bytes 1.000,FX1,ported
+0xb18c20,139,FxArchive,fxarchive.cpp:594,"public: unsigned short __thiscall FxArchive::SerializeClassVersion(char const *, bool, unsigned short)",0xb03210,bytes 1.000,FX1,ported
+0xb18cb0,40,FxArchive,fxarchive.cpp:632,public: int __thiscall FxArchive::Tell(void)const,0xb032a0,bytes 1.000,FX1,ported
+0xb18ce0,42,FxArchive,fxarchive.cpp:641,public: void __thiscall FxArchive::Seek(int),0xb032d0,bytes 1.000,FX1,ported
+0xb18d10,31,FxArchive,fxarchive.cpp:649,public: static void __cdecl FxArchive::MountArchive(class FxArchive *),0xb03300,bytes 1.000,FX1,ported
+0xb18d30,91,FxArchive,fxarchive.cpp:661,"public: static void __cdecl FxArchive::UnmountArchive(unsigned int, bool)",0xb03320,bytes 1.000,FX1,ported
+0xb18d90,31,FxArchive,fxarchive.cpp:679,public: static unsigned int __cdecl FxArchive::GetNumMountedArchives(void),0xb03380,bytes 1.000,FX1,ported
+0xb18db0,91,FxArchive,fxarchive.cpp:692,public: static void __cdecl FxArchive::UnmountAllArchives(bool),0xb033a0,bytes 1.000,FX1,ported
+0xb18e10,182,FxArchive,fxarchive.cpp:709,public: static void __cdecl FxArchive::ForceLoadAllMountedArchives(void),,unmatched,FX1,ported
+0xb18ed0,182,FxArchive,fxarchive.cpp:737,public: static void __cdecl FxArchive::ForceUnloadAllMountedArchives(void),,unmatched,FX1,ported
+0xb18f90,80,FxArchive,fxarchive.cpp:765,public: void __thiscall FxArchive::AddLazyLoader(class FxLazyLoader *),0xb03580,bytes 1.000,FX1,ported
+0xb18fe0,82,FxArchive,fxarchive.cpp:778,public: void __thiscall FxArchive::RemoveLazyLoader(class FxLazyLoader *),0xb035d0,bytes 1.000,FX1,ported
+0xb19040,138,FxArchive,fxarchive.cpp:789,public: void __thiscall FxArchive::FlushLazyLoaders(bool),0xb03630,bytes 1.000,FX1,ported
+0xb190d0,134,FxArchive,fxarchive.cpp:805,public: class FxArchive & __thiscall FxArchive::operator<<(char &),0xb036c0,callee 1.000,FX1,ported
+0xb19160,134,FxArchive,fxarchive.cpp:812,public: class FxArchive & __thiscall FxArchive::operator<<(unsigned char &),0xb03750,neighbours 1.000,FX1,ported
+0xb191f0,134,FxArchive,fxarchive.cpp:819,public: class FxArchive & __thiscall FxArchive::operator<<(short &),0xb037e0,neighbours 1.000,FX1,ported
+0xb19280,134,FxArchive,fxarchive.cpp:826,public: class FxArchive & __thiscall FxArchive::operator<<(unsigned short &),0xb03870,callee 1.000,FX1,ported
+0xb19310,134,FxArchive,fxarchive.cpp:833,public: class FxArchive & __thiscall FxArchive::operator<<(int &),0xb03900,callee 1.000,FX1,ported
+0xb193a0,134,FxArchive,fxarchive.cpp:840,public: class FxArchive & __thiscall FxArchive::operator<<(unsigned int &),0xb03990,callee 1.000,FX1,ported
+0xb19430,134,FxArchive,fxarchive.cpp:847,public: class FxArchive & __thiscall FxArchive::operator<<(float &),0xb03a20,callee 1.000,FX1,ported
+0xb194c0,134,FxArchive,fxarchive.cpp:854,public: class FxArchive & __thiscall FxArchive::operator<<(double &),0xb03ab0,bytes 1.000,FX1,ported
+0xb19550,167,FxArchive,fxarchive.cpp:862,public: class FxArchive & __thiscall FxArchive::operator<<(bool &),0xb03b40,bytes 1.000,FX1,ported
+0xb19600,17,FxArchive,fxarchive.cpp:872,public: class FxArchiveInternalData const * __thiscall FxArchive::GetInternalData(void)const,0xb03bf0,order 1.000,FX1,ported
+0xb19620,94,FxArchive,fxarchive.cpp:878,public: void __thiscall FxArchive::SetInternalDataState(class FxArchiveInternalData const *),0xb03c10,bytes 1.000,FX1,ported
+0xb19680,179,FxArchive,fxarchive.cpp:113,public: void __thiscall FxArchiveDirectory::InitializeNames(void),0xb03c70,bytes 1.000,FX1,ported
+0xb19740,95,FxArchive,fxarchive.cpp:49,public: __thiscall FxArchiveNameEntry::FxArchiveNameEntry(class FxStringBase<char> const &),0xb03d30,bytes 1.000,FX1,ported
+0xb197a0,94,FxArchive,fxarchive.cpp:97,public: unsigned int __thiscall FxArchiveDirectory::FindName(class FxStringBase<char> const &)const,0xb03d90,bytes 1.000,FX1,ported
+0xb19800,86,FxArchive,,public: __thiscall FxArchiveNameEntry::~FxArchiveNameEntry(void),0xb03df0,bytes 1.000,FX1,ported
+0xb19860,137,FxArchive,fxarchive.cpp:122,public: void __thiscall FxArchiveDirectory::InsertClassVersion(char const *),0xb03e50,bytes 1.000,FX1,ported
+0xb198f0,32,FxArchive,fxarchive.cpp:130,"public: void __thiscall FxArchiveDirectory::InsertNonFxObjectDerivedClassVersion(char const *, unsigned short)",0xb03ee0,bytes 1.000,FX1,ported
+0xb19910,51,FxArchive,fxarchive.cpp:135,public: unsigned short __thiscall FxArchiveDirectory::FindClassVersion(char const *)const,0xb03f00,bytes 1.000,FX1,ported
+0xb19950,125,FxArchive,,"public: class FxStringHash<unsigned short, 7, class FxArray> & __thiscall FxStringHash<unsigned short, 7, class FxArray>::operator=(class FxStringHash<unsigned short, 7, class FxArray> const &)",0xb03f40,bytes 1.000,FX1,template
+0xb199d0,56,FxArchive,fxarrayimpl.h:58,public: class FxArray<class FxArchiveNameEntry> & __thiscall FxArray<class FxArchiveNameEntry>::operator=(class FxArray<class FxArchiveNameEntry> const &),0xb03fc0,callee 1.000,FX1,template
+0xb19a10,19,FxArchive,,public: __thiscall FxArray<class FxArchiveNameEntry>::~FxArray<class FxArchiveNameEntry>(void),0xb04000,callee 1.000,FX1,template
+0xb19a30,93,FxArchive,fxarraybase.h:35,public: __thiscall FxArrayBase<class FxArchiveNameEntry>::~FxArrayBase<class FxArchiveNameEntry>(void),0xb04020,callee 1.000,FX1,template
+0xb19a90,277,FxArchive,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxArchiveNameEntry>::PushBack(class FxArchiveNameEntry const &),0xb040a0,callee 1.000,FX1,ported
+0xb19bb0,56,FxArchive,fxarrayimpl.h:58,"public: class FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry> & __thiscall FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>::operator=(class FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry> const &)",0xb041c0,callee 1.000,FX1,template
+0xb19bf0,253,FxArchive,fxstringhashimpl.h:107,"public: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::Insert(char const *, unsigned short const &)",0xb04200,callee 1.000,FX1,template
+0xb19cf0,60,FxArchive,fxstringhashimpl.h:140,"public: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::Remove(char const *, unsigned short &)",0xb04300,callee 1.000,FX1,template
+0xb19d30,60,FxArchive,fxstringhashimpl.h:162,"public: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::Find(char const *, unsigned short &)const",0xb04340,callee 1.000,FX1,template
+0xb19d70,56,FxArchive,fxstringhashimpl.h:151,"public: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::Find(char const *)const",0xb04380,callee 1.000,FX1,template
+0xb19db0,75,FxArchive,fxstringimpl.h:564,"bool __cdecl operator==<char>(class FxStringBase<char> const &, class FxStringBase<char> const &)",0xb043c0,bytes 1.000,FX1,ported
+0xb19e00,17,FxArchive,fxstringhash.h:312,"class FxArchive & __cdecl operator<<<unsigned short, 7, class FxArray>(class FxArchive &, class FxStringHash<unsigned short, 7, class FxArray> &)",0xb04410,callee 1.000,FX1,template
+0xb19e20,17,FxArchive,fxarrayimpl.h:402,"class FxArchive & __cdecl operator<<<class FxArchiveNameEntry>(class FxArchive &, class FxArray<class FxArchiveNameEntry> &)",0xb04430,callee 1.000,FX1,template
+0xb19e40,197,FxArchive,fxarrayimpl.h:284,public: void __thiscall FxArray<class FxFaceGraphNode *>::Remove(unsigned int),0xb0b460,bytes 1.000,FX1,ported
+0xb19f10,71,FxArchive,fxarrayimpl.h:336,"public: unsigned int __thiscall FxArray<class FxLazyLoader *>::Find(class FxLazyLoader * const &, unsigned int)const",0xb04450,bytes 1.000,FX1,template
+0xb19f60,118,FxArchive,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxArchiveInternalData>(class FxArchiveInternalData *),0xb044a0,bytes 1.000,FX1,template
+0xb19fe0,108,FxArchive,fxarchive.cpp:178,public: __thiscall FxArchiveInternalData::FxArchiveInternalData(void),0xb04520,bytes 1.000,FX1,ported
+0xb1a050,91,FxArchive,fxarchive.cpp:83,public: __thiscall FxArchiveDirectory::FxArchiveDirectory(void),0xb04590,bytes 1.000,FX1,ported
+0xb1a0b0,28,FxArchive,fxarrayimpl.h:23,"public: __thiscall FxArray<class FxStringHash<class FxFaceGraphNode *, 11, class FxArray>::FxHashBinEntry>::FxArray<class FxStringHash<class FxFaceGraphNode *, 11, class FxArray>::FxHashBinEntry>(unsigned int)",0xb0b530,callee 1.000,FX1,template
+0xb1a0d0,82,FxArchive,fxstringhashimpl.h:25,"public: __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxStringHash<unsigned short, 7, class FxArray>(void)",0xb045f0,bytes 1.000,FX1,template
+0xb1a130,99,FxArchive,fxstringimpl.h:695,public: __thiscall FxTempCharBuffer<char>::FxTempCharBuffer<char>(char const *),0xb04650,bytes 1.000,FX1,ported
+0xb1a1a0,59,FxArchive,fxstringimpl.h:725,public: __thiscall FxTempCharBuffer<char>::~FxTempCharBuffer<char>(void),0xb046c0,bytes 1.000,FX1,ported
+0xb1a1e0,33,FxArchive,fxstringimpl.h:745,public: char * __thiscall FxTempCharBuffer<char>::Release(void),0xb04700,bytes 1.000,FX1,ported
+0xb1a210,47,FxArchive,fxmemory.h:214,void __cdecl FxDelete<class FxArchiveInternalData>(class FxArchiveInternalData * &),0xb04750,bytes 1.000,FX1,template
+0xb1a240,277,FxArchive,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxObject *>::PushBack(class FxObject * const &),0xb0b340,callee 1.000,FX1,template
+0xb1a360,44,FxArchive,fxmemory.h:214,void __cdecl FxDelete<class FxArchive>(class FxArchive * &),0xb04780,bytes 1.000,FX1,template
+0xb1a390,247,FxArchive,fxarchive.cpp:895,"class FxArchive & __cdecl SerializeRawData<char>(class FxArchive &, char &)",0xb047b0,bytes 1.000,FX1,ported
+0xb1a490,259,FxArchive,fxarchive.cpp:895,"class FxArchive & __cdecl SerializeRawData<short>(class FxArchive &, short &)",0xb048b0,bytes 1.000,FX1,ported
+0xb1a5a0,257,FxArchive,fxarchive.cpp:895,"class FxArchive & __cdecl SerializeRawData<int>(class FxArchive &, int &)",0xb049c0,bytes 1.000,FX1,ported
+0xb1a6b0,257,FxArchive,fxarchive.cpp:895,"class FxArchive & __cdecl SerializeRawData<float>(class FxArchive &, float &)",0xb04ad0,bytes 1.000,FX1,ported
+0xb1a7c0,257,FxArchive,fxarchive.cpp:895,"class FxArchive & __cdecl SerializeRawData<double>(class FxArchive &, double &)",0xb04be0,bytes 1.000,FX1,ported
+0xb1a8d0,36,FxArchive,fxmemory.h:157,"void __cdecl FxDestroy<class FxArchiveNameEntry *>(class FxArchiveNameEntry *, class FxArchiveNameEntry *)",0xb04cf0,neighbours 1.000,FX1,template
+0xb1a900,19,FxArchive,,"public: __thiscall FxArray<class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry>::~FxArray<class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry>(void)",0xb0bb10,neighbours 1.000,FX1,template
+0xb1a920,19,FxArchive,,"public: __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry::~FxHashBinEntry(void)",0xafdb80,callee 1.000,FX1,template
+0xb1a940,379,FxArchive,fxarray.h:149,public: class FxArchive & __thiscall FxArray<class FxArchiveNameEntry>::Serialize(class FxArchive &),0xb04d40,bytes 1.000,FX1,template
+0xb1aac0,78,FxArchive,fxarraybase.h:31,public: __thiscall FxArrayBase<class FxArchiveNameEntry>::FxArrayBase<class FxArchiveNameEntry>(unsigned int),0xb0bfa0,bytes 1.000,FX1,template
+0xb1ab10,556,FxArchive,fxstringhash.h:174,"public: class FxArchive & __thiscall FxStringHash<unsigned short, 7, class FxArray>::Serialize(class FxArchive &)",0xb04ec0,neighbours 1.000,FX1,ported
+0xb1ad40,93,FxArchive,fxarraybase.h:35,"public: __thiscall FxArrayBase<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>::~FxArrayBase<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>(void)",0xb0bff0,neighbours 1.000,FX1,template
+0xb1ada0,41,FxArchive,fxstringhash.h:148,"public: __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry::FxHashBinEntry(class FxStringBase<char> const &, unsigned short const &)",0xb05150,neighbours 1.000,FX1,template
+0xb1add0,24,FxArchive,fxstringhash.h:144,"public: __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry::FxHashBinEntry(void)",0xafe300,callee 1.000,FX1,template
+0xb1adf0,156,FxArchive,fxarrayimpl.h:46,public: __thiscall FxArray<class FxArchiveNameEntry>::FxArray<class FxArchiveNameEntry>(class FxArray<class FxArchiveNameEntry> const &),0xb05180,neighbours 1.000,FX1,template
+0xb1ae90,119,FxArchive,fxmemory.h:132,"void __cdecl FxConstruct<class FxArchiveNameEntry, class FxArchiveNameEntry>(class FxArchiveNameEntry *, class FxArchiveNameEntry const &)",0xb05220,neighbours 1.000,FX1,template
+0xb1af10,156,FxArchive,fxarrayimpl.h:46,"public: __thiscall FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>::FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>(class FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry> const &)",0xb052a0,neighbours 1.000,FX1,template
+0xb1afb0,277,FxArchive,fxarrayimpl.h:152,"public: void __thiscall FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>::PushBack(class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry const &)",0xb05340,neighbours 1.000,FX1,template
+0xb1b0d0,109,FxArchive,fxstringhashimpl.h:72,"public: void __thiscall FxStringHash<unsigned short, 7, class FxArray>::Clear(void)",0xb05460,callee 1.000,FX1,template
+0xb1b140,16,FxArchive,fxstringhashimpl.h:173,"public: unsigned int __thiscall FxStringHash<unsigned short, 7, class FxArray>::GetNumBins(void)const",0xb054d0,bytes 1.000,FX1,template
+0xb1b150,96,FxArchive,fxstringhashimpl.h:183,"public: unsigned int __thiscall FxStringHash<unsigned short, 7, class FxArray>::GetNumBinsInUse(void)const",0xb054e0,neighbours 1.000,FX1,template
+0xb1b1b0,100,FxArchive,fxstringhashimpl.h:269,"private: unsigned int __thiscall FxStringHash<unsigned short, 7, class FxArray>::_hash(char const *)const",0xb05540,bytes 1.000,FX1,ported
+0xb1b220,133,FxArchive,fxstringhashimpl.h:317,"private: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::_removeFromBin(char const *, class FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry> &, unsigned short &)",0xb055b0,bytes 1.000,FX1,template
+0xb1b2b0,121,FxArchive,fxstringhashimpl.h:362,"private: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::_findKeyInBin(char const *, class FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry> const &, unsigned short &)const",0xb05640,neighbours 1.000,FX1,template
+0xb1b330,108,FxArchive,fxstringhashimpl.h:340,"private: bool __thiscall FxStringHash<unsigned short, 7, class FxArray>::_findKeyInBin(char const *, class FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry> const &)const",0xb0c2e0,bytes 1.000,FX1,template
+0xb1b3a0,58,FxArchive,fxmemory.h:132,"void __cdecl FxConstruct<class FxObject *, class FxObject *>(class FxObject * *, class FxObject * const &)",0xb056c0,bytes 1.000,FX1,template
+0xb1b3e0,21,FxArchive,fxmemory.h:148,void __cdecl FxDestroy<class FxArchiveInternalData>(class FxArchiveInternalData *),0xb05700,callee 1.000,FX1,template
+0xb1b400,21,FxArchive,fxmemory.h:148,void __cdecl FxDestroy<class FxArchive>(class FxArchive *),0xb05720,callee 1.000,FX1,template
+0xb1b420,21,FxArchive,fxmemory.h:148,void __cdecl FxDestroy<class FxArchiveNameEntry>(class FxArchiveNameEntry *),0xb05740,neighbours 1.000,FX1,template
+0xb1b440,182,FxArchive,fxarchive.h:268,"public: void __thiscall FxArchive::SerializePODArray<class FxArchiveNameEntry>(class FxArchiveNameEntry *, unsigned int)",0xb05760,bytes 1.000,FX1,template
+0xb1b500,115,FxArchive,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxArchiveNameEntry>(class FxArchiveNameEntry *),0xb05820,bytes 1.000,FX1,template
+0xb1b580,91,FxArchive,fxarchive.cpp:48,public: __thiscall FxArchiveNameEntry::FxArchiveNameEntry(void),0xb058a0,callee 1.000,FX1,ported
+0xb1b5e0,36,FxArchive,fxmemory.h:157,"void __cdecl FxDestroy<class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry *>(class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry *, class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry *)",0xb0c560,neighbours 1.000,FX1,template
+0xb1b610,102,FxArchive,,public: __thiscall FxArchiveNameEntry::FxArchiveNameEntry(class FxArchiveNameEntry const &),0xb05930,bytes 1.000,FX1,ported
+0xb1b680,44,FxArchive,,public: void * __thiscall FxArchiveInternalData::`scalar deleting destructor'(unsigned int),0xb059a0,neighbours 1.000,FX1,generated
+0xb1b6b0,101,FxArchive,fxarchive.cpp:180,public: __thiscall FxArchiveInternalData::~FxArchiveInternalData(void),0xb059d0,bytes 1.000,FX1,ported
+0xb1b720,86,FxArchive,fxarchive.cpp:85,public: __thiscall FxArchiveDirectory::~FxArchiveDirectory(void),0xb05a40,bytes 1.000,FX1,ported
+0xb1b780,99,FxArchive,fxstringhashimpl.h:33,"public: __thiscall FxStringHash<unsigned short, 7, class FxArray>::~FxStringHash<unsigned short, 7, class FxArray>(void)",0xb05aa0,bytes 1.000,FX1,template
+0xb1b7f0,46,FxArchive,,public: void * __thiscall FxArchive::`scalar deleting destructor'(unsigned int),0xb05b10,bytes 1.000,FX1,generated
+0xb1b820,44,FxArchive,,public: void * __thiscall FxArchiveNameEntry::`scalar deleting destructor'(unsigned int),0xb05b40,neighbours 1.000,FX1,generated
+0xb1b850,108,FxArchive,fxarrayimpl.h:67,"public: void __thiscall FxArray<class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry>::Clear(void)",0xb0c350,neighbours 1.000,FX1,ported
+0xb1b8c0,25,FxArchive,fxarrayimpl.h:123,"public: class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry * __thiscall FxArray<class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry>::End(void)",0xafe5b0,bytes 1.000,FX1,template
+0xb1b8e0,33,FxArchive,fxarrayimpl.h:329,"public: void __thiscall FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>::RemoveIterator(class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry *)",0xb05b70,callee 1.000,FX1,template
+0xb1b910,119,FxArchive,fxmemory.h:132,"void __cdecl FxConstruct<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry, class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>(class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry *, class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry const &)",0xb05ba0,neighbours 1.000,FX1,template
+0xb1b990,72,FxArchive,fxarchive.h:374,"private: void __thiscall FxArchive::_byteSwapPODArray<class FxArchiveNameEntry>(class FxArchiveNameEntry *, unsigned int)",0xb05c20,bytes 1.000,FX1,template
+0xb1b9e0,21,FxArchive,fxmemory.h:148,"void __cdecl FxDestroy<class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry>(class FxStringHash<unsigned int, 11, class FxArray>::FxHashBinEntry *)",0xb0c790,neighbours 1.000,FX1,template
+0xb1ba00,44,FxArchive,,"public: void * __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry::`scalar deleting destructor'(unsigned int)",0xb0c7b0,neighbours 1.000,FX1,generated
+0xb1ba30,42,FxArchive,fxstringhash.h:152,"public: __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry::FxHashBinEntry(class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry const &)",0xb05c70,neighbours 1.000,FX1,template
+0xb1ba60,201,FxArchive,fxarrayimpl.h:284,"public: void __thiscall FxArray<class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry>::Remove(unsigned int)",0xb05ca0,neighbours 1.000,FX1,ported
+0xb1bb30,55,FxArchive,fxstringhash.h:155,"public: class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry & __thiscall FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry::operator=(class FxStringHash<unsigned short, 7, class FxArray>::FxHashBinEntry const &)",0xb05d70,neighbours 1.000,FX1,template
+0xb1bb70,130,FxObject,fxobject.cpp:19,public: static class FxClass * __cdecl FxObject::AllocateStaticClassFxObject(void),0xb05db0,bytes 1.000,FX1,ported
+0xb1bc00,23,FxObject,fxobject.cpp:22,public: __thiscall FxObject::FxObject(void),0xb05e40,callee 1.000,FX1,ported
+0xb1bc20,20,FxObject,fxobject.cpp:26,public: virtual __thiscall FxObject::~FxObject(void),0xb05e60,callee 1.000,FX1,ported
+0xb1bc40,30,FxObject,fxobject.cpp:30,public: virtual void __thiscall FxObject::Serialize(class FxArchive &),0xb05e80,bytes 1.000,FX1,ported
+0xb1bc60,23,FxObject,fxobject.cpp:36,public: __thiscall FxDataContainer::FxDataContainer(void),0xb05ea0,callee 1.000,FX1,ported
+0xb1bc80,26,FxObject,fxobject.cpp:41,public: __thiscall FxDataContainer::FxDataContainer(class FxDataContainer const &),0xb05ec0,callee 1.000,FX1,ported
+0xb1bca0,26,FxObject,fxobject.cpp:45,public: class FxDataContainer & __thiscall FxDataContainer::operator=(class FxDataContainer const &),0xb05ee0,callee 1.000,FX1,ported
+0xb1bcc0,16,FxObject,fxobject.cpp:51,public: void * __thiscall FxDataContainer::GetUserData(void),0xb05f00,tokens 1.000,FX1,ported
+0xb1bcd0,21,FxObject,fxobject.cpp:56,public: void __thiscall FxDataContainer::SetUserData(void *),0xb05f10,callee 1.000,FX1,ported
+0xb1bcf0,114,FxObject,fxobject.h:31,public: static class FxObject * __cdecl FxObject::ConstructObject(void),0xb05f30,bytes 1.000,FX1,ported
+0xb1bd70,35,FxObject,fxobject.h:31,public: virtual class FxClass const * __thiscall FxObject::GetClassDesc(void)const,0xb05fb0,order 1.000,FX1,ported
+0xb1bda0,41,FxObject,fxobject.h:31,public: virtual unsigned short __thiscall FxObject::GetCurrentVersion(void)const,0xb05fe0,neighbours 1.000,FX1,ported
+0xb1bdd0,46,FxObject,,public: virtual void * __thiscall FxObject::`vector deleting destructor'(unsigned int),0xb06010,neighbours 1.000,FX1,generated
+0xb222f0,118,FxArchiveStoreFile,fxarchivestorefile.cpp:18,public: static class FxArchiveStoreFile * __cdecl FxArchiveStoreFile::Create(char const *),0xb0c8f0,bytes 1.000,FX1,ported
+0xb22370,22,FxArchiveStoreFile,fxarchivestorefile.cpp:23,public: virtual bool __thiscall FxArchiveStoreFile::IsValid(void)const,0xb0c970,vtable 1.000,FX1,ported
+0xb22390,47,FxArchiveStoreFile,fxarchivestorefile.cpp:28,public: virtual bool __thiscall FxArchiveStoreFile::OpenRead(void),0xb0c990,bytes 1.000,FX1,ported
+0xb223c0,47,FxArchiveStoreFile,fxarchivestorefile.cpp:34,public: virtual bool __thiscall FxArchiveStoreFile::OpenWrite(void),0xb0c9c0,bytes 1.000,FX1,ported
+0xb223f0,24,FxArchiveStoreFile,fxarchivestorefile.cpp:40,public: virtual bool __thiscall FxArchiveStoreFile::Close(void),0xb0c9f0,bytes 1.000,FX1,ported
+0xb22410,34,FxArchiveStoreFile,fxarchivestorefile.cpp:46,"public: virtual bool __thiscall FxArchiveStoreFile::Read(unsigned char *, unsigned int)",0xb0ca10,vtable 1.000,FX1,ported
+0xb22440,34,FxArchiveStoreFile,fxarchivestorefile.cpp:52,"public: virtual bool __thiscall FxArchiveStoreFile::Write(unsigned char const *, unsigned int)",0xb0ca40,vtable 1.000,FX1,ported
+0xb22470,22,FxArchiveStoreFile,fxarchivestorefile.cpp:58,public: virtual int __thiscall FxArchiveStoreFile::Tell(void)const,0xb0ca70,vtable 1.000,FX1,ported
+0xb22490,28,FxArchiveStoreFile,fxarchivestorefile.cpp:63,public: virtual void __thiscall FxArchiveStoreFile::Seek(int),0xb0ca90,vtable 1.000,FX1,ported
+0xb224b0,22,FxArchiveStoreFile,fxarchivestorefile.cpp:68,public: virtual int __thiscall FxArchiveStoreFile::Length(void)const,0xb0cab0,vtable 1.000,FX1,ported
+0xb224d0,121,FxArchiveStoreFile,fxarchivestorefile.cpp:74,protected: __thiscall FxArchiveStoreFile::FxArchiveStoreFile(char const *),0xb0cad0,bytes 1.000,FX1,ported
+0xb22550,122,FxArchiveStoreFile,fxarchivestorefile.cpp:78,protected: virtual __thiscall FxArchiveStoreFile::~FxArchiveStoreFile(void),0xb0cb50,bytes 1.000,FX1,ported
+0xb225d0,26,FxArchiveStoreFile,fxarchivestorefile.cpp:83,protected: virtual void __thiscall FxArchiveStoreFile::Destroy(void),0xb0cbd0,vtable 1.000,FX1,ported
+0xb225f0,16,FxArchiveStoreFile,fxarchivestorefile.cpp:88,protected: virtual unsigned int __thiscall FxArchiveStoreFile::GetClassSize(void),0xb0cbf0,bytes 1.000,FX1,ported
+0xb22600,23,FxArchiveStoreFile,fxarchivestore.h:49,protected: __thiscall FxArchiveStore::FxArchiveStore(void),0xb0cc00,callee 1.000,FX1,ported
+0xb22620,20,FxArchiveStoreFile,fxarchivestore.h:51,protected: virtual __thiscall FxArchiveStore::~FxArchiveStore(void),0xb0cc20,callee 1.000,FX1,ported
+0xb22640,46,FxArchiveStoreFile,,protected: virtual void * __thiscall FxArchiveStore::`vector deleting destructor'(unsigned int),0xb0cc40,neighbours 1.000,FX1,generated
+0xb22670,46,FxArchiveStoreFile,,protected: virtual void * __thiscall FxArchiveStoreFile::`vector deleting destructor'(unsigned int),0xb0cc70,vtable 1.000,FX1,generated
+0xb226a0,118,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:27,public: static class FxArchiveStoreFileFast * __cdecl FxArchiveStoreFileFast::Create(char const *),0xb0cca0,bytes 1.000,FX1,ported
+0xb22720,85,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:32,public: virtual bool __thiscall FxArchiveStoreFileFast::IsValid(void)const,0xb0cd20,bytes 1.000,FX1,ported
+0xb22780,131,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:41,public: virtual bool __thiscall FxArchiveStoreFileFast::OpenRead(void),0xb0cd80,bytes 1.000,FX1,ported
+0xb22810,13,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:57,public: virtual bool __thiscall FxArchiveStoreFileFast::OpenWrite(void),0xb0ce10,vtable 1.000,FX1,ported
+0xb22820,125,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:62,public: virtual bool __thiscall FxArchiveStoreFileFast::Close(void),0xb0ce20,bytes 1.000,FX1,ported
+0xb228a0,55,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:79,"public: virtual bool __thiscall FxArchiveStoreFileFast::Read(unsigned char *, unsigned int)",0xb0cea0,bytes 1.000,FX1,ported
+0xb228e0,15,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:89,"public: virtual bool __thiscall FxArchiveStoreFileFast::Write(unsigned char const *, unsigned int)",0xb0cee0,vtable 1.000,FX1,ported
+0xb228f0,43,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:94,public: virtual int __thiscall FxArchiveStoreFileFast::Tell(void)const,0xb0cef0,vtable 1.000,FX1,ported
+0xb22920,45,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:103,public: virtual void __thiscall FxArchiveStoreFileFast::Seek(int),0xb0cf20,bytes 1.000,FX1,ported
+0xb22950,43,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:111,public: virtual int __thiscall FxArchiveStoreFileFast::Length(void)const,0xb0cf50,vtable 1.000,FX1,ported
+0xb22980,67,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:124,protected: __thiscall FxArchiveStoreFileFast::FxArchiveStoreFileFast(char const *),0xb0cf80,bytes 1.000,FX1,ported
+0xb229d0,92,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:128,protected: virtual __thiscall FxArchiveStoreFileFast::~FxArchiveStoreFileFast(void),0xb0cfd0,callee 1.000,FX1,ported
+0xb22a30,26,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:133,protected: virtual void __thiscall FxArchiveStoreFileFast::Destroy(void),0xb0d030,vtable 1.000,FX1,ported
+0xb22a50,16,FxArchiveStoreFileFast,fxarchivestorefilefast.cpp:138,protected: virtual unsigned int __thiscall FxArchiveStoreFileFast::GetClassSize(void),0xb0d050,bytes 1.000,FX1,ported
+0xb22a60,46,FxArchiveStoreFileFast,,protected: virtual void * __thiscall FxArchiveStoreFileFast::`vector deleting destructor'(unsigned int),0xb0d060,vtable 1.000,FX1,generated
+0xb22a90,114,FxArchiveStoreNull,fxarchivestorenull.cpp:21,public: static class FxArchiveStoreNull * __cdecl FxArchiveStoreNull::Create(void),0xb0d090,tokens 1.000,FX1,ported
+0xb22b10,13,FxArchiveStoreNull,fxarchivestorenull.cpp:26,public: virtual bool __thiscall FxArchiveStoreNull::IsValid(void)const,0xb0d110,vtable 1.000,FX1,ported
+0xb22b20,13,FxArchiveStoreNull,fxarchivestorenull.cpp:31,public: virtual bool __thiscall FxArchiveStoreNull::OpenRead(void),0xb0d120,vtable 1.000,FX1,ported
+0xb22b30,13,FxArchiveStoreNull,fxarchivestorenull.cpp:36,public: virtual bool __thiscall FxArchiveStoreNull::OpenWrite(void),0xb0d130,vtable 1.000,FX1,ported
+0xb22b40,13,FxArchiveStoreNull,fxarchivestorenull.cpp:41,public: virtual bool __thiscall FxArchiveStoreNull::Close(void),0xb0d140,vtable 1.000,FX1,ported
+0xb22b50,15,FxArchiveStoreNull,fxarchivestorenull.cpp:46,"public: virtual bool __thiscall FxArchiveStoreNull::Read(unsigned char *, unsigned int)",0xb0d150,bytes 1.000,FX1,ported
+0xb22b60,30,FxArchiveStoreNull,fxarchivestorenull.cpp:51,"public: virtual bool __thiscall FxArchiveStoreNull::Write(unsigned char const *, unsigned int)",0xb0d160,bytes 1.000,FX1,ported
+0xb22b80,13,FxArchiveStoreNull,fxarchivestorenull.cpp:57,public: virtual int __thiscall FxArchiveStoreNull::Tell(void)const,0xb0d180,order-sibling 0.890,FX1,ported
+0xb22b90,13,FxArchiveStoreNull,fxarchivestorenull.cpp:62,public: virtual void __thiscall FxArchiveStoreNull::Seek(int),0xb0d190,order 1.000,FX1,ported
+0xb22ba0,13,FxArchiveStoreNull,fxarchivestorenull.cpp:66,public: virtual int __thiscall FxArchiveStoreNull::Length(void)const,0xb0d1a0,order 1.000,FX1,ported
+0xb22bb0,17,FxArchiveStoreNull,fxarchivestorenull.cpp:71,public: unsigned int __thiscall FxArchiveStoreNull::GetSize(void)const,0xb0d1b0,order-sibling 0.890,FX1,ported
+0xb22bd0,26,FxArchiveStoreNull,fxarchivestorenull.cpp:76,protected: virtual void __thiscall FxArchiveStoreNull::Destroy(void),0xb0d1d0,order 1.000,FX1,ported
+0xb22bf0,16,FxArchiveStoreNull,fxarchivestorenull.cpp:81,protected: virtual unsigned int __thiscall FxArchiveStoreNull::GetClassSize(void),0xb0d1f0,order 1.000,FX1,ported
+0xb22c00,41,FxArchiveStoreNull,fxarchivestorenull.h:68,protected: __thiscall FxArchiveStoreNull::FxArchiveStoreNull(void),0xb0d200,neighbours 1.000,FX1,ported
+0xb22c30,46,FxArchiveStoreNull,,protected: virtual void * __thiscall FxArchiveStoreNull::`vector deleting destructor'(unsigned int),0xb0d230,tokens 1.000,FX1,generated
+0xb22c60,28,FxArchiveStoreNull,fxarchivestorenull.h:70,protected: virtual __thiscall FxArchiveStoreNull::~FxArchiveStoreNull(void),0xb0d260,neighbours 1.000,FX1,ported
+0xb22c80,122,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:23,"public: static class FxArchiveStoreMemoryNoCopy * __cdecl FxArchiveStoreMemoryNoCopy::Create(unsigned char const *, unsigned int)",0xb0d280,callee 1.000,FX1,ported
+0xb22d00,35,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:28,public: virtual bool __thiscall FxArchiveStoreMemoryNoCopy::IsValid(void)const,0xb0d300,tokens 1.000,FX1,ported
+0xb22d30,35,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:37,public: virtual bool __thiscall FxArchiveStoreMemoryNoCopy::OpenRead(void),0xb0d330,tokens 1.000,FX1,ported
+0xb22d60,13,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:46,public: virtual bool __thiscall FxArchiveStoreMemoryNoCopy::OpenWrite(void),0xb0d360,tokens 1.000,FX1,ported
+0xb22d70,13,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:51,public: virtual bool __thiscall FxArchiveStoreMemoryNoCopy::Close(void),0xb0d370,order-sibling 0.890,FX1,ported
+0xb22d80,89,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:56,"public: virtual bool __thiscall FxArchiveStoreMemoryNoCopy::Read(unsigned char *, unsigned int)",0xb0d380,neighbours 1.000,FX1,ported
+0xb22de0,15,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:69,"public: virtual bool __thiscall FxArchiveStoreMemoryNoCopy::Write(unsigned char const *, unsigned int)",0xb0d3e0,tokens 1.000,FX1,ported
+0xb22df0,17,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:75,public: virtual int __thiscall FxArchiveStoreMemoryNoCopy::Tell(void)const,0xb0d3f0,order-sibling 0.890,FX1,ported
+0xb22e10,22,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:80,public: virtual void __thiscall FxArchiveStoreMemoryNoCopy::Seek(int),0xb0d410,order 1.000,FX1,ported
+0xb22e30,17,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:86,public: virtual int __thiscall FxArchiveStoreMemoryNoCopy::Length(void)const,0xb0d430,order-sibling 0.890,FX1,ported
+0xb22e50,17,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:91,public: unsigned char const * __thiscall FxArchiveStoreMemoryNoCopy::GetMemory(void),0xb0d450,order-sibling 0.890,FX1,ported
+0xb22e70,17,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:96,public: unsigned int __thiscall FxArchiveStoreMemoryNoCopy::GetSize(void),0xb0d470,order-sibling 0.890,FX1,ported
+0xb22e90,114,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:105,"protected: __thiscall FxArchiveStoreMemoryNoCopy::FxArchiveStoreMemoryNoCopy(unsigned char const *, unsigned int)",0xb0d490,bytes 1.000,FX1,ported
+0xb22f10,92,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:118,protected: virtual __thiscall FxArchiveStoreMemoryNoCopy::~FxArchiveStoreMemoryNoCopy(void),0xb0d510,neighbours 1.000,FX1,ported
+0xb22f70,26,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:123,protected: virtual void __thiscall FxArchiveStoreMemoryNoCopy::Destroy(void),0xb0d570,order 1.000,FX1,ported
+0xb22f90,16,FxArchiveStoreMemoryNoCopy,fxarchivestorememorynocopy.cpp:128,protected: virtual unsigned int __thiscall FxArchiveStoreMemoryNoCopy::GetClassSize(void),0xb0d590,tokens 1.000,FX1,ported
+0xb22fa0,46,FxArchiveStoreMemoryNoCopy,,protected: virtual void * __thiscall FxArchiveStoreMemoryNoCopy::`vector deleting destructor'(unsigned int),0xb0d5a0,neighbours 1.000,FX1,generated
+0xb22fd0,122,FxArchiveStoreMemory,fxarchivestorememory.cpp:23,"public: static class FxArchiveStoreMemory * __cdecl FxArchiveStoreMemory::Create(unsigned char const *, unsigned int)",0xb0d5d0,tokens 1.000,FX1,ported
+0xb23050,35,FxArchiveStoreMemory,fxarchivestorememory.cpp:28,public: virtual bool __thiscall FxArchiveStoreMemory::IsValid(void)const,0xb0d650,vtable 1.000,FX1,ported
+0xb23080,35,FxArchiveStoreMemory,fxarchivestorememory.cpp:37,public: virtual bool __thiscall FxArchiveStoreMemory::OpenRead(void),0xb0d680,vtable 1.000,FX1,ported
+0xb230b0,66,FxArchiveStoreMemory,fxarchivestorememory.cpp:46,public: virtual bool __thiscall FxArchiveStoreMemory::OpenWrite(void),0xb0d6b0,bytes 1.000,FX1,ported
+0xb23100,54,FxArchiveStoreMemory,fxarchivestorememory.cpp:57,public: virtual bool __thiscall FxArchiveStoreMemory::Close(void),0xb0d700,bytes 1.000,FX1,ported
+0xb23140,89,FxArchiveStoreMemory,fxarchivestorememory.cpp:67,"public: virtual bool __thiscall FxArchiveStoreMemory::Read(unsigned char *, unsigned int)",0xb0d740,vtable 1.000,FX1,ported
+0xb231a0,233,FxArchiveStoreMemory,fxarchivestorememory.cpp:79,"public: virtual bool __thiscall FxArchiveStoreMemory::Write(unsigned char const *, unsigned int)",0xb0d7a0,bytes 1.000,FX1,ported
+0xb23290,17,FxArchiveStoreMemory,fxarchivestorememory.cpp:103,public: virtual int __thiscall FxArchiveStoreMemory::Tell(void)const,0xb0d890,vtable 1.000,FX1,ported
+0xb232b0,22,FxArchiveStoreMemory,fxarchivestorememory.cpp:108,public: virtual void __thiscall FxArchiveStoreMemory::Seek(int),0xb0d8b0,vtable 1.000,FX1,ported
+0xb232d0,17,FxArchiveStoreMemory,fxarchivestorememory.cpp:114,public: virtual int __thiscall FxArchiveStoreMemory::Length(void)const,0xb0d8d0,vtable 1.000,FX1,ported
+0xb232f0,17,FxArchiveStoreMemory,fxarchivestorememory.cpp:119,public: unsigned char const * __thiscall FxArchiveStoreMemory::GetMemory(void),0xb0d8f0,callee 1.000,FX1,ported
+0xb23310,17,FxArchiveStoreMemory,fxarchivestorememory.cpp:124,public: unsigned int __thiscall FxArchiveStoreMemory::GetSize(void),0xb0d910,callee 1.000,FX1,ported
+0xb23330,208,FxArchiveStoreMemory,fxarchivestorememory.cpp:133,"protected: __thiscall FxArchiveStoreMemory::FxArchiveStoreMemory(unsigned char const *, unsigned int)",0xb0d930,bytes 1.000,FX1,ported
+0xb23400,92,FxArchiveStoreMemory,fxarchivestorememory.cpp:147,protected: virtual __thiscall FxArchiveStoreMemory::~FxArchiveStoreMemory(void),0xb0da00,callee 1.000,FX1,ported
+0xb23460,26,FxArchiveStoreMemory,fxarchivestorememory.cpp:152,protected: virtual void __thiscall FxArchiveStoreMemory::Destroy(void),0xb0da60,vtable 1.000,FX1,ported
+0xb23480,16,FxArchiveStoreMemory,fxarchivestorememory.cpp:157,protected: virtual unsigned int __thiscall FxArchiveStoreMemory::GetClassSize(void),0xb0da80,vtable 1.000,FX1,ported
+0xb23490,46,FxArchiveStoreMemory,,protected: virtual void * __thiscall FxArchiveStoreMemory::`scalar deleting destructor'(unsigned int),0xb0da90,vtable 1.000,FX1,generated
+0xb234c0,41,FxArchiveStoreMemory,fxutil.h:59,"unsigned int __cdecl FxMax<unsigned int>(unsigned int const &, unsigned int const &)",0xb0dac0,bytes 1.000,FX1,ported
+0xb234f0,134,FxBone,fxbone.cpp:19,public: static class FxClass * __cdecl FxBone::AllocateStaticClassFxBone(void),0xb0daf0,bytes 1.000,FX1,ported
+0xb23580,120,FxBone,fxbone.cpp:22,public: __thiscall FxBone::FxBone(void),0xb0db80,bytes 1.000,FX1,ported
+0xb23600,118,FxBone,fxbone.cpp:31,"public: __thiscall FxBone::FxBone(class FxName const &, class FxVec3 const &, class FxQuat const &, class FxVec3 const &)",0xb0dc00,bytes 1.000,FX1,ported
+0xb23680,28,FxBone,fxbone.cpp:35,public: virtual __thiscall FxBone::~FxBone(void),0xb0dc80,callee 1.000,FX1,ported
+0xb236a0,38,FxBone,fxbone.cpp:39,public: void __thiscall FxBone::SetPos(class FxVec3 const &),0xb0dca0,bytes 1.000,FX1,ported
+0xb236d0,44,FxBone,fxbone.cpp:44,public: void __thiscall FxBone::SetRot(class FxQuat const &),0xb0dcd0,bytes 1.000,FX1,ported
+0xb23700,38,FxBone,fxbone.cpp:49,public: void __thiscall FxBone::SetScale(class FxVec3 const &),0xb0dd00,bytes 1.000,FX1,ported
+0xb23730,93,FxBone,fxbone.cpp:54,public: virtual void __thiscall FxBone::Serialize(class FxArchive &),0xb0dd30,bytes 1.000,FX1,ported
+0xb23790,114,FxBone,fxbone.h:28,public: static class FxObject * __cdecl FxBone::ConstructObject(void),0xb0dd90,bytes 1.000,FX1,ported
+0xb24f70,59,FxQuat,fxquat.cpp:18,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxQuat &)",0xb0f5e0,bytes 1.000,FX1,ported
+0xb25c50,134,FxUnrealSupport,fxunrealsupport.cpp:26,public: static class FxClass * __cdecl FUnrealFaceFXNode::AllocateStaticClassFUnrealFaceFXNode(void),0xb102c0,neighbours 1.000,FX2,handover
+0xb25ce0,38,FxUnrealSupport,fxunrealsupport.cpp:29,public: __thiscall FUnrealFaceFXNode::FUnrealFaceFXNode(void),0xb10350,callee 1.000,FX2,handover
+0xb25d10,28,FxUnrealSupport,fxunrealsupport.cpp:34,public: virtual __thiscall FUnrealFaceFXNode::~FUnrealFaceFXNode(void),0xb10380,callee 1.000,FX2,handover
+0xb25d30,140,FxUnrealSupport,fxunrealsupport.cpp:37,public: virtual class FxFaceGraphNode * __thiscall FUnrealFaceFXNode::Clone(void),0xb103a0,neighbours 1.000,FX2,handover
+0xb25dc0,25,FxUnrealSupport,fxunrealsupport.cpp:44,public: virtual void __thiscall FUnrealFaceFXNode::CopyData(class FxFaceGraphNode *),0xb10430,order-sibling 0.890,FX2,handover
+0xb25de0,22,FxUnrealSupport,fxunrealsupport.cpp:49,public: void __thiscall FUnrealFaceFXNode::SetShouldLink(bool),0xb10450,order 1.000,FX2,handover
+0xb25e00,32,FxUnrealSupport,fxunrealsupport.cpp:55,public: virtual void __thiscall FUnrealFaceFXNode::ReplaceUserProperty(class FxFaceGraphNodeUserProperty const &),0xb10470,bytes 1.000,FX2,handover
+0xb25e20,42,FxUnrealSupport,fxunrealsupport.cpp:62,public: virtual void __thiscall FUnrealFaceFXNode::Serialize(class FxArchive &),0xb10490,string 1.000,FX2,handover
+0xb25e50,134,FxUnrealSupport,fxunrealsupport.cpp:73,public: static class FxClass * __cdecl FUnrealFaceFXMorphNode::AllocateStaticClassFUnrealFaceFXMorphNode(void),0xb104c0,neighbours 1.000,FX2,handover
+0xb25ee0,220,FxUnrealSupport,fxunrealsupport.cpp:76,public: __thiscall FUnrealFaceFXMorphNode::FUnrealFaceFXMorphNode(void),0xb10550,string 1.000,FX2,handover
+0xb25fc0,28,FxUnrealSupport,fxunrealsupport.cpp:84,public: virtual __thiscall FUnrealFaceFXMorphNode::~FUnrealFaceFXMorphNode(void),0xb10630,neighbours 1.000,FX2,handover
+0xb25fe0,140,FxUnrealSupport,fxunrealsupport.cpp:87,public: virtual class FxFaceGraphNode * __thiscall FUnrealFaceFXMorphNode::Clone(void),0xb10650,neighbours 1.000,FX2,handover
+0xb26070,25,FxUnrealSupport,fxunrealsupport.cpp:94,public: virtual void __thiscall FUnrealFaceFXMorphNode::CopyData(class FxFaceGraphNode *),0xb106e0,order-sibling 0.890,FX2,handover
+0xb26090,42,FxUnrealSupport,fxunrealsupport.cpp:99,public: virtual void __thiscall FUnrealFaceFXMorphNode::Serialize(class FxArchive &),0xb10700,string 1.000,FX2,handover
+0xb260c0,134,FxUnrealSupport,fxunrealsupport.cpp:110,public: static class FxClass * __cdecl FUnrealFaceFXMaterialParameterNode::AllocateStaticClassFUnrealFaceFXMaterialParameterNode(void),0xb10730,neighbours 1.000,FX2,handover
+0xb26150,309,FxUnrealSupport,fxunrealsupport.cpp:113,public: __thiscall FUnrealFaceFXMaterialParameterNode::FUnrealFaceFXMaterialParameterNode(void),0xb107c0,bytes 1.000,FX2,handover
+0xb26290,28,FxUnrealSupport,fxunrealsupport.cpp:125,public: virtual __thiscall FUnrealFaceFXMaterialParameterNode::~FUnrealFaceFXMaterialParameterNode(void),0xb10900,neighbours 1.000,FX2,handover
+0xb262b0,140,FxUnrealSupport,fxunrealsupport.cpp:128,public: virtual class FxFaceGraphNode * __thiscall FUnrealFaceFXMaterialParameterNode::Clone(void),0xb10920,neighbours 1.000,FX2,handover
+0xb26340,25,FxUnrealSupport,fxunrealsupport.cpp:135,public: virtual void __thiscall FUnrealFaceFXMaterialParameterNode::CopyData(class FxFaceGraphNode *),0xb109b0,order 1.000,FX2,handover
+0xb26360,42,FxUnrealSupport,fxunrealsupport.cpp:140,public: virtual void __thiscall FUnrealFaceFXMaterialParameterNode::Serialize(class FxArchive &),0xb109d0,string 1.000,FX2,handover
+0xb26390,114,FxUnrealSupport,fxunrealsupport.h:31,public: static class FxObject * __cdecl FUnrealFaceFXNode::ConstructObject(void),0xb10a00,neighbours 1.000,FX2,handover
+0xb26410,35,FxUnrealSupport,fxunrealsupport.h:31,public: virtual class FxClass const * __thiscall FUnrealFaceFXNode::GetClassDesc(void)const,0xb10a80,order-sibling 0.890,FX2,handover
+0xb26440,41,FxUnrealSupport,fxunrealsupport.h:31,public: virtual unsigned short __thiscall FUnrealFaceFXNode::GetCurrentVersion(void)const,0xb10ab0,neighbours 1.000,FX2,handover
+0xb26470,46,FxUnrealSupport,,public: virtual void * __thiscall FUnrealFaceFXNode::`scalar deleting destructor'(unsigned int),0xb10ae0,neighbours 1.000,FX2,handover
+0xb264a0,35,FxUnrealSupport,fxunrealsupport.h:72,public: virtual class FxClass const * __thiscall FUnrealFaceFXMorphNode::GetClassDesc(void)const,0xb10b10,order-sibling 0.890,FX2,handover
+0xb264d0,41,FxUnrealSupport,fxunrealsupport.h:72,public: virtual unsigned short __thiscall FUnrealFaceFXMorphNode::GetCurrentVersion(void)const,0xb10b40,neighbours 1.000,FX2,handover
+0xb26500,46,FxUnrealSupport,,public: virtual void * __thiscall FUnrealFaceFXMorphNode::`scalar deleting destructor'(unsigned int),0xb10b70,neighbours 1.000,FX2,handover
+0xb26530,35,FxUnrealSupport,fxunrealsupport.h:98,public: virtual class FxClass const * __thiscall FUnrealFaceFXMaterialParameterNode::GetClassDesc(void)const,0xb10ba0,order 1.000,FX2,handover
+0xb26560,41,FxUnrealSupport,fxunrealsupport.h:98,public: virtual unsigned short __thiscall FUnrealFaceFXMaterialParameterNode::GetCurrentVersion(void)const,0xb10bd0,neighbours 1.000,FX2,handover
+0xb26590,46,FxUnrealSupport,,public: virtual void * __thiscall FUnrealFaceFXMaterialParameterNode::`scalar deleting destructor'(unsigned int),0xb10c00,neighbours 1.000,FX2,handover
+0xb2aae0,134,FxRefObject,fxrefobject.cpp:19,public: static class FxClass * __cdecl FxRefObject::AllocateStaticClassFxRefObject(void),0xb14f60,string 1.000,FX1,ported
+0xb2ab70,41,FxRefObject,fxrefobject.cpp:23,public: __thiscall FxRefObject::FxRefObject(void),0xb14ff0,callee 1.000,FX1,ported
+0xb2aba0,28,FxRefObject,fxrefobject.cpp:27,public: virtual __thiscall FxRefObject::~FxRefObject(void),0xb15020,callee 1.000,FX1,ported
+0xb2abc0,13,FxRefObject,fxrefobject.cpp:31,public: virtual void __thiscall FxRefObject::Serialize(class FxArchive &),0xb15040,order 1.000,FX1,ported
+0xb2abd0,114,FxRefObject,fxrefobject.h:26,public: static class FxObject * __cdecl FxRefObject::ConstructObject(void),0xb15050,neighbours 1.000,FX1,ported
+0xb2ac50,35,FxRefObject,fxrefobject.h:26,public: virtual class FxClass const * __thiscall FxRefObject::GetClassDesc(void)const,0xb150d0,order 1.000,FX1,ported
+0xb2ac80,41,FxRefObject,fxrefobject.h:26,public: virtual unsigned short __thiscall FxRefObject::GetCurrentVersion(void)const,0xb15100,neighbours 1.000,FX1,ported
+0xb2acb0,46,FxRefObject,,public: virtual void * __thiscall FxRefObject::`vector deleting destructor'(unsigned int),0xb15130,neighbours 1.000,FX1,generated
+0xb2ace0,55,FxKey,fxkey.cpp:27,public: __thiscall FxAnimKey::FxAnimKey(void),0xb15160,bytes 1.000,FX1,ported
+0xb2ad20,61,FxKey,fxkey.cpp:37,"public: __thiscall FxAnimKey::FxAnimKey(float, float, float, float)",0xb151a0,bytes 1.000,FX1,ported
+0xb2ad60,74,FxKey,fxkey.cpp:46,public: __thiscall FxAnimKey::FxAnimKey(class FxAnimKey const &),0xb151e0,bytes 1.000,FX1,ported
+0xb2adb0,87,FxKey,fxkey.cpp:50,public: class FxAnimKey & __thiscall FxAnimKey::operator=(class FxAnimKey const &),0xb15230,bytes 1.000,FX1,ported
+0xb2ae10,11,FxKey,fxkey.cpp:61,public: __thiscall FxAnimKey::~FxAnimKey(void),0xb15290,callee 1.000,FX1,ported
+0xb2ae20,21,FxKey,fxkey.cpp:65,public: void __thiscall FxAnimKey::SetTime(float),0xb152a0,bytes 1.000,FX1,ported
+0xb2ae40,22,FxKey,fxkey.cpp:70,public: void __thiscall FxAnimKey::SetValue(float),0xb152c0,order 1.000,FX1,ported
+0xb2ae60,22,FxKey,fxkey.cpp:75,public: void __thiscall FxAnimKey::SetSlopeIn(float),0xb152e0,callee 1.000,FX1,ported
+0xb2ae80,22,FxKey,fxkey.cpp:80,public: void __thiscall FxAnimKey::SetSlopeOut(float),0xb15300,callee 1.000,FX1,ported
+0xb2aea0,17,FxKey,fxkey.cpp:85,public: void * __thiscall FxAnimKey::GetUserData(void),0xb15320,order 1.000,FX1,ported
+0xb2aec0,22,FxKey,fxkey.cpp:90,public: void __thiscall FxAnimKey::SetUserData(void *),0xb15340,order 1.000,FX1,ported
+0xb2aee0,83,FxKey,fxkey.cpp:98,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxAnimKey &)",0xb15360,bytes 1.000,FX1,ported
+0xb2af40,15,FxPhonemeEnum,fxphonemeenum.cpp:20,public: static enum FxPhoneme __cdecl FxPhonemeUtility::UpdatePhoneme(int),0xb153c0,bytes 1.000,FX3,handover
+0xb2af50,17,FxPhonemeEnum,fxphonemeenum.cpp:25,public: static enum FxPhoneme __cdecl FxPhonemeUtility::UpdatePhoneme(enum FxPhoneme),0xb153d0,callee 1.000,FX3,handover
+0xb2af70,33,FxFile,fxfile.cpp:27,public: __thiscall FxFile::FxFile(void),0xb153f0,callee 1.000,FX1,ported
+0xb2afa0,41,FxFile,fxfile.cpp:32,"public: __thiscall FxFile::FxFile(char const *, int)",0xb15420,bytes 1.000,FX1,ported
+0xb2afd0,19,FxFile,fxfile.cpp:37,public: __thiscall FxFile::~FxFile(void),0xb15450,callee 1.000,FX1,ported
+0xb2aff0,102,FxFile,fxfile.cpp:42,public: static bool __cdecl FxFile::Exists(char const *),0xb15470,bytes 1.000,FX1,ported
+0xb2b060,176,FxFile,fxfile.cpp:48,"public: static unsigned char * __cdecl FxFile::ReadBinaryFile(char const *, unsigned int &)",0xb154e0,bytes 1.000,FX1,ported
+0xb2b110,20,FxFile,fxfile.cpp:64,public: bool __thiscall FxFile::IsValid(void)const,0xb15590,bytes 1.000,FX1,ported
+0xb2b130,174,FxFile,fxfile.cpp:69,"public: bool __thiscall FxFile::Open(char const *, int)",0xb155b0,bytes 1.000,FX1,ported
+0xb2b1e0,43,FxFile,fxfile.cpp:93,public: void __thiscall FxFile::Close(void),0xb15660,bytes 1.000,FX1,ported
+0xb2b210,50,FxFile,fxfile.cpp:104,"public: unsigned int __thiscall FxFile::Read(unsigned char *, unsigned int)",0xb15690,callee 1.000,FX1,ported
+0xb2b250,50,FxFile,fxfile.cpp:117,"public: unsigned int __thiscall FxFile::Write(unsigned char const *, unsigned int)",0xb156d0,callee 1.000,FX1,ported
+0xb2b290,38,FxFile,fxfile.cpp:130,public: int __thiscall FxFile::Tell(void)const,0xb15710,bytes 1.000,FX1,ported
+0xb2b2c0,42,FxFile,fxfile.cpp:141,public: void __thiscall FxFile::Seek(int),0xb15740,bytes 1.000,FX1,ported
+0xb2b2f0,17,FxFile,fxfile.cpp:151,public: int __thiscall FxFile::Length(void)const,0xb15770,callee 1.000,FX1,ported
+0xb2b310,109,FxVec3,fxvec3.cpp:18,public: void __thiscall FxVec3::SetLength(float),0xb15790,bytes 1.000,FX1,ported
+0xb2b380,45,FxVec3,fxvec3.cpp:30,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxVec3 &)",0xb15800,bytes 1.000,FX1,ported
+0xb2b3b0,85,FxVec3,fxvec3.h:269,public: float __thiscall FxVec3::Length(void)const,0xb15830,bytes 1.000,FX1,ported
+0xbab3a0,28,FxName,fxname.cpp:86,_dynamic_initializer_for__FxName::NullName__,0xb8f920,neighbours 1.000,FX1,ported
+0xbab3c0,28,FxName,fxname.cpp:87,_dynamic_initializer_for__FxName::_hashTable__,0xb8f940,neighbours 1.000,FX1,ported
+0xbab3e0,28,FxMemory,fxmemory.cpp:103,_dynamic_initializer_for__gAllocationPolicy__,0xb8f960,neighbours 1.000,FX1,generated
+0xbab400,42,FxMemory,fxmemory.cpp:433,_dynamic_initializer_for__gMemoryPool__,0xb8f980,bytes 1.000,FX1,generated
+0xbaf050,15,FxName,,_dynamic_atexit_destructor_for__FxName::NullName__,0xb933b0,neighbours 1.000,FX1,generated
+0xbaf060,15,FxName,,_dynamic_atexit_destructor_for__FxName::_hashTable__,0xb933c0,neighbours 1.000,FX1,generated
+0xbaf070,15,FxMemory,,_dynamic_atexit_destructor_for__gAllocationPolicy__,0xb933d0,neighbours 1.000,FX1,generated
+0xbaf080,24,FxMemory,,_dynamic_atexit_destructor_for__gMemoryPool__,0xb933e0,bytes 1.000,FX1,generated
