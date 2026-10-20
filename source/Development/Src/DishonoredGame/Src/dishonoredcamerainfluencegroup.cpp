@@ -23,6 +23,7 @@
 -----------------------------------------------------------------------------*/
 
 #include "DishonoredGame.h"
+#include "ipdiag.h"
 
 // the external-linkage anchor DishonoredGameRegistrants.cpp names (a static-library member nothing refers to is dropped whole)
 void DishonoredLinkFZ_CameraInfluenceGroup()
@@ -223,6 +224,7 @@ UBOOL UDishonoredCameraInfluenceGroup::GatherInfluences( FDishonoredViewTarget& 
 		}
 		bReturn = TRUE;
 		const FLOAT CurWeight = m_Weight * Influence->m_Weight;
+		DisIPNoteInfluence( this, Influence, CurVT, CurWeight, Pawn );
 		FDishonoredVTSettings& Out = OutVT.m_DishonoredSettings;
 		const FDishonoredVTSettings& Cur = CurVT.m_DishonoredSettings;
 		if( bFirstInfluence )

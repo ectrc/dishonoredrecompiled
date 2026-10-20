@@ -79,3 +79,6 @@ public:
 	BYTE SetAnimState( const FName& StateName, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );
 	UBOOL SyncPawnAnimState( const FName& StateName, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );
 	virtual void OnSyncPawnAnimStateFail( const FName& StateName, class UDishonoredNativeState* AttachToState, FLOAT BlendTime, UObject* FiringObj );
+// agent IP (PHASE23 IP): 2012 0x849cc0 / 2013 0x7fed40 (10 B): a zoom level other than 0 is a zoomed item.
+public:
+	UBOOL IsItemZoomed() const { return m_ZoomLevel != 0; }

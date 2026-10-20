@@ -1,0 +1,12 @@
+function,rva_2012,rva_2013,unit,status,note
+UDisAnimNodeBlendByPhysicalCondition::TickAnim,0x6bded0,0x688d80,disanimnodeblendbyphysicalcondition.cpp,ported,the fix: ADD_Head_OutOfbreath weight = clamp(GetAimStability) over 0.1 s (was the package's 1)
+ADishonoredPlayerPawn::GetAimStability,0x7032f0,0x6a9030,dishonoredplayerpawn.cpp,ported,null FSM/inventory -> 0 (written guard)
+ADishonoredPlayerPawn::Tick (breathlessness head),0x715b10,0x6bb1e0,dishonoredplayerpawn.cpp,partial,dispersion / CheckCrouchEvents / stats / avoidance / RegenMana / trackers / drowning / low-health ramp named not ported
+UDishonoredInventoryItem::IsItemZoomed,0x849cc0,0x7fed40,CppText/UDishonoredInventoryItem.h,ported,m_ZoomLevel != 0
+UDisAnimNodeBlendByHeadBob::TickAnim,,0x688c30,disanimnodeblendbyheadbob.cpp,ported,class new in 2013; child0 = m_BobAmount child1 = 1 - it; fixes the sprint crash in DisAnimNodeBlendByHeadBob_14
+FDisBumpDetectInfo::DetectBump,0x700540,0x6c5030,dishonoredcamera_bumpsmoother.cpp,ported,game-info bit = m_bNewNPCPhysWalking (cooked-order fifth bit; logged 1)
+UDishonoredCamera_BumpSmoother::OnActivate_Derived,0x6fc540,0x6c07a0,dishonoredcamera_bumpsmoother.cpp,ported,
+UDishonoredCamera_BumpSmoother::GatherInfluence_Derived,0x7006b0,0x6c51a0,dishonoredcamera_bumpsmoother.cpp,ported,2013 body (arm-follow weight 1)
+UDishonoredAnimNodeBlendBySpeed::CalcSpeed,0x6f7100,0x689900,dishonoredanimnodeblendbyspeed.cpp,ported,DisGetCarryCorpseState not ported (named)
+UAnimNodeBlendDirectional SprintDirectionalBlend (all-additive children),,,Engine UnAnimTree.cpp,open,second sprint crash on the L_Tower_P spawn route (IP2s.log): LastChildNonAddIndex check with only additive children weighted; not fixed (no build left)
+-ipdiag / -ipnobreath / -ipnobump / -ipnoheadbob / -ipnospeed / -ipnoland,,,ipdiag.cpp,written,diagnosis only

@@ -47,6 +47,7 @@
 #include "dishonoredutilities.h"
 #include "arkpp.h"
 #include "fzsoireediag.h"
+#include "ipdiag.h"
 
 /**
  * DISHONORED(port): 2013 rva 0x6ca780 (2012 0x70a1c0) - the camera's own post-process targets. Eight entries per
@@ -350,6 +351,7 @@ void ADishonoredPlayerCamera::UpdateViewTarget( FTViewTarget& OutVT, FLOAT Delta
 			DisPC->OnCameraUpdate( VT, m_PassCount );
 		}
 		DisFZReportCamera( this, OutVT, OwnerPawn, DeltaTime );
+		DisIPReportCamera( this, OutVT, OwnerPawn, DeltaTime );
 		return;
 	}
 	Super::UpdateViewTarget( OutVT, DeltaTime );

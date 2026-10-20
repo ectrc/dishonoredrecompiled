@@ -217,6 +217,7 @@ struct FDisBumpDetectInfo
     {
         appMemzero(this, sizeof(FDisBumpDetectInfo));
     }
+#include "CppText/FDisBumpDetectInfo.h"
 };
 
 // DishonoredGame.DisCamera_Rumble.DisCameraActiveRumble: retail SDK size 68 (2012 PDB 68)
@@ -525,6 +526,7 @@ public:
     //## END PROPS DishonoredCamera_BumpSmoother
 
     DECLARE_CLASS(UDishonoredCamera_BumpSmoother,UDishonoredCameraInfluence,0|CLASS_Config,DishonoredGame)
+#include "CppText/UDishonoredCamera_BumpSmoother.h"
 };
 
 // DishonoredGame.DishonoredCamera_CrouchMantleOffset: retail sizeof 104, reflected span 92..104 (2012 PDB sizeof 104)

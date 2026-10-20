@@ -169,6 +169,7 @@
 //   0x71fe10  public: static class UClass * __cdecl ADishonoredPlayerPawn::StaticClassNoInline(void)
 
 #include "DishonoredGame.h"
+#include "ipdiag.h"
 #include "gfarmsdiag.h"
 #include "stateplayermasterparams.h"
 #include "ifdiag.h"
@@ -281,7 +282,7 @@ void ADishonoredPlayerPawn::Landed_Native( FVector HitNormal, AActor* FloorActor
 		}
 		IMDIAG( TEXT("landed: big land (Velocity.Z %.1f below -%.1f)"), WorkingVel.Z, FallDefaults->m_fFall_Stun_Vel );
 	}
-	else if( !( FallState && !FallState->ShouldAnimateFalling() ) && !IsHoldingMovableObject() && !IsCarryingCorpse() && m_pPlayerUpperFSM && m_pPlayerLeftArmFSM
+	else if( !DisIPNoLand() && !( FallState && !FallState->ShouldAnimateFalling() ) && !IsHoldingMovableObject() && !IsCarryingCorpse() && m_pPlayerUpperFSM && m_pPlayerLeftArmFSM
 		&& !m_pPlayerUpperFSM->IsCurState( UStateSharedActionBase::StaticClass(), FALSE ) && !m_pPlayerMasterFSM->IsCurState( UStateSharedActionBase::StaticClass(), FALSE )
 		&& !m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSlide::StaticClass(), FALSE ) )
 	{
@@ -419,14 +420,77 @@ void ADishonoredPlayerPawn::PreBeginPlay()
 // two Ak events, the ranged weapon's dispersion, the breathlessness RTPC, CheckCrouchEvents (0x7079f0), the distance-travelled stat
 // once a second, HandleAvoidance (0x70d9f0), RegenMana (0x7094b0), the four tutorial trackers, the drowning damage and the dead-state
 // request, the post-process manager's tick, the tattoo glow ramp on the mesh's first material.
+// agent IP (PHASE23 IP): the breathlessness head of the player Tick, 2012 0x715b10 / 2013 0x6bb1e0 (1229 / 1257 B, unnamed in 2013; found
+// through its writes of m_fBreathlessness +2920): accelerating raises it (sprinting at m_fBreathlessnessSpeedSprint up to 1, otherwise at
+// m_fBreathlessnessSpeedRun while below m_fMaxBreathlessnessRun), standing lets it fall at m_fBreathRegainSpeed to m_fMinBaseBreathlessness;
+// the increase / decrease events post on the edge (m_bWasAccelerating) and the RTPC carries the value. GetAimStability turns it into the
+// out-of-breath head additive's weight. DISHONORED(bringup), named: the rest of the 2013 body - the ranged weapon's dispersion
+// (UDishonoredWeapon_Ranged::IncreaseDispersion), CheckCrouchEvents, the distance statistic, HandleAvoidance, RegenMana, the three
+// tutorial trackers and the delayed note, drowning damage and the low-health ramp - is not ported here.
 UBOOL ADishonoredPlayerPawn::Tick( FLOAT DeltaTime, ELevelTick TickType )
 {
 	const UBOOL bResult = Super::Tick( DeltaTime, TickType );
 	m_fLastDeltaSeconds = DeltaTime;
+	UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( GetTweaks_Derived() );
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	if( !Acceleration.IsNearlyZero( 0.0001f ) )
+	{
+		if( m_bSprinting )
+		{
+			m_fBreathlessness = Min( Tweaks->m_fBreathlessnessSpeedSprint * DeltaTime + m_fBreathlessness, 1.f );
+		}
+		else if( Tweaks->m_fMaxBreathlessnessRun > m_fBreathlessness )
+		{
+			m_fBreathlessness += Tweaks->m_fBreathlessnessSpeedRun * DeltaTime;
+		}
+		if( !m_bWasAccelerating )
+		{
+			PostAkEvent( Tweaks->m_pBreathlessnessIncreaseEvent );
+			m_bWasAccelerating = TRUE;
+		}
+	}
+	else
+	{
+		m_fBreathlessness = Max( m_fBreathlessness - Tweaks->m_fBreathRegainSpeed * DeltaTime, Tweaks->m_fMinBaseBreathlessness );
+		if( m_bWasAccelerating )
+		{
+			PostAkEvent( Tweaks->m_pBreathlessnessDecreaseEvent );
+			m_bWasAccelerating = FALSE;
+		}
+	}
+	SetRTPCValue( Tweaks->m_BreathlessnessRTPC, m_fBreathlessness );
 	DisGFReportPlayer( this );
 	DisIFReportPlayer( this, DeltaTime );
 	DisIMReport( this, DeltaTime );
 	return bResult;
+}
+
+// agent IP (PHASE23 IP): 2012 0x7032f0 / 2013 0x6a9030 (248 B). Nil in a dialog or a soiree; otherwise the breathlessness, less the zoomed
+// secondary item's Attribute_ZoomStabilityBonus, floored at 0, times the tweaks' m_fBreathlessnessAnimWeight. DISHONORED(written): nil also
+// without the master FSM or the inventory (retail has no test; the anim tree ticks before PreBeginPlay_Actions here).
+FLOAT ADishonoredPlayerPawn::GetAimStability() const
+{
+	if( !m_pPlayerMasterFSM || !m_pInventory || m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterInDialog::StaticClass(), TRUE ) || m_pPlayerMasterFSM->IsCurState( UStatePlayerMasterSoiree::StaticClass(), TRUE ) )
+	{
+		return 0.f;
+	}
+	static const FName NAME_DisZoomStabilityBonus( TEXT("Attribute_ZoomStabilityBonus") );
+	UDishonoredInventoryItem* Item = m_pInventory->GetEquippedItem( EDisEquipUsage_Secondary );
+	FLOAT Weight = m_fBreathlessness;
+	if( Item && Item->IsItemZoomed() )
+	{
+		Weight -= static_cast<IDisAttributesInterface*>( Item )->GetAttributeValue( NAME_DisZoomStabilityBonus );
+	}
+	Weight = Max( Weight, 0.f );
+	const UDisTweaks_PlayerPawn* Tweaks = Cast<UDisTweaks_PlayerPawn>( const_cast<ADishonoredPlayerPawn*>( this )->GetTweaks_Derived() );
+	if( Tweaks == NULL )
+	{
+		Tweaks = UDisTweaks_PlayerPawn::StaticClass()->GetDefaultObject<UDisTweaks_PlayerPawn>();
+	}
+	return Tweaks->m_fBreathlessnessAnimWeight * Weight;
 }
 
 // DISHONORED(port, partial): agent IG (PHASE23 IG), 2012 0x71d1d0 / 2013 0x6be9b0 (601 B). The player tweaks (or their class default) hand

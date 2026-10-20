@@ -245,6 +245,7 @@ public:
     //## END PROPS DisAnimNodeBlendByHeadBob
 
     DECLARE_CLASS(UDisAnimNodeBlendByHeadBob,UAnimNodeBlendBase,0,DishonoredGame)
+#include "CppText/UDisAnimNodeBlendByHeadBob.h"
 };
 
 // DishonoredGame.DisAnimNodeBlendByLocoType: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
@@ -299,6 +300,7 @@ public:
     //## END PROPS DisAnimNodeBlendByPhysicalCondition
 
     DECLARE_CLASS(UDisAnimNodeBlendByPhysicalCondition,UAnimNodeAdditiveBlending,0,DishonoredGame)
+#include "CppText/UDisAnimNodeBlendByPhysicalCondition.h"
 };
 
 // DishonoredGame.DisAnimNodeBlendByPlayerSneak: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)
@@ -1127,6 +1129,7 @@ public:
     //## END PROPS DishonoredAnimNodeBlendBySpeed
 
     DECLARE_CLASS(UDishonoredAnimNodeBlendBySpeed,UAnimNodeBlendBySpeed,0,DishonoredGame)
+#include "CppText/UDishonoredAnimNodeBlendBySpeed.h"
 };
 
 // DishonoredGame.DishonoredAnimNodeBlendByState: retail sizeof 272, reflected span 256..260 (2012 PDB sizeof 272)

@@ -266,3 +266,6 @@ protected:
 	virtual void AnimState_LockoutPicker_Derived( INT StateType, FLOAT TimeToGo, UBOOL bLocked );
 	virtual UBOOL AnimState_PlayAnim_Derived( class UAnimNodeSequence* Seq );
 public:
+// agent IP (PHASE23 IP): GetAimStability 2012 0x7032f0 / 2013 0x6a9030 (248 B), the out-of-breath weight (body in dishonoredplayerpawn.cpp).
+public:
+	FLOAT GetAimStability() const;
