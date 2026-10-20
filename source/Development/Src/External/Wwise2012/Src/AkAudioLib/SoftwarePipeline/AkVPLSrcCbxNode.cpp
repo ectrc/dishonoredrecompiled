@@ -14,6 +14,8 @@
 	  * Deviation (named): AddPipeline terminates the plug-in of a node that cannot be allocated and skips the slot;
 	    retail returns AK_Fail there (0x927290, out of memory) and drops the voice. AddPipeline and UpdateFx share
 	    one node-creation helper.
+	Agent IQ (wave 26): -akdiag "voice out" lines (DiagRun / DiagSkip / DiagReport, diagnostics only, not retail): each
+	voice's source RMS and the RMS it adds to its bus (dry gains to the two front speakers of the stereo sink), every two seconds of output and at its end.
 =============================================================================*/
 #include "AkVPLSrcCbxNode.h"
 #include "AkListener.h"
@@ -23,6 +25,8 @@
 #include "AkMath.h"
 #include "AkPositionRepository.h"
 #include "AkPBI.h"
+#include "AkAudioLibGlobals.h"
+#include <math.h>
 
 AkReal32 g_fVolumeThreshold = 1.5258789e-05f;
 AkReal32 g_fVolumeThresholdDB = -96.3f;
@@ -403,6 +407,7 @@ CAkVPLSrcCbxNode::CAkVPLSrcCbxNode()
 	, m_uChannelMask( AK_SPEAKER_SETUP_MONO )
 	, m_cbxRec( this )
 {
+	memset( &m_Diag, 0, sizeof( m_Diag ) );
 }
 
 /** 2012 0x926a50. */
@@ -1211,4 +1216,69 @@ bool CAkVPLSrcCbxNode::StartRun( AkVPLState & io_state )
 		io_state.buffer.EnvMix[ i ].Previous.Zero();
 	}
 	return true;
+}
+
+void CAkVPLSrcCbxNode::DiagRun( const AkVPLState & in_state )
+{
+	if( !DishonoredWwise::IsDiagnostics() )
+	{
+		return;
+	}
+	const AkUInt32 uFrames = in_state.buffer.uValidFrames;
+	const AkUInt32 uNumChannels = in_state.buffer.NumChannels();
+	++m_Diag.uRunBuffers;
+	if( !in_state.bAudible )
+	{
+		++m_Diag.uSilentBuffers;
+	}
+	for( AkUInt32 i = 0; i < uNumChannels; ++i )
+	{
+		const AkReal32 * pSamples = const_cast<AkVPLState &>( in_state ).buffer.GetChannel( i );
+		AkReal64 fEnergy = 0.0;
+		for( AkUInt32 j = 0; j < uFrames; ++j )
+		{
+			fEnergy += (AkReal64)pSamples[ j ] * pSamples[ j ];
+		}
+		AkReal32 fGain2 = 0.f;
+		for( AkUInt32 k = 0; k < 2; ++k )
+		{
+			const AkReal32 fGain = in_state.buffer.AudioMix[ i ].Next.aVolumes[ k ];
+			fGain2 += fGain * fGain;
+		}
+		m_Diag.fSourceEnergy += fEnergy;
+		if( in_state.bAudible )
+		{
+			m_Diag.fOutputEnergy += fEnergy * fGain2;
+		}
+		const AkReal32 fGain = sqrtf( fGain2 );
+		if( fGain > m_Diag.fMaxGain )
+		{
+			m_Diag.fMaxGain = fGain;
+		}
+	}
+	m_Diag.uFrames += uFrames;
+	if( m_Diag.uFrames >= 2 * AkAudioLibSettings::g_pipelineCoreFrequency )
+	{
+		DiagReport( L"playing" );
+	}
+}
+
+void CAkVPLSrcCbxNode::DiagSkip()
+{
+	++m_Diag.uSkippedBuffers;
+}
+
+void CAkVPLSrcCbxNode::DiagReport( const wchar_t * in_szWhen )
+{
+	CAkPBI * pCtx = GetContext();
+	if( DishonoredWwise::IsDiagnostics() && pCtx )
+	{
+		const AkReal64 fSamples = (AkReal64)( m_Diag.uFrames ? m_Diag.uFrames : 1 ) * AkGetNumChannels( m_uChannelMask ? m_uChannelMask : 1 );
+		const AkReal64 fSource = 10.0 * log10( m_Diag.fSourceEnergy / fSamples + 1e-20 );
+		const AkReal64 fOutput = 10.0 * log10( m_Diag.fOutputEnergy / (AkReal64)( m_Diag.uFrames ? m_Diag.uFrames : 1 ) + 1e-20 );
+		AKDIAG( L"akdiag: voice out sound 0x%08x playing id %u obj %u %s: %u frames, %u buffers (%u not audible, %u skipped), source %.1f dBFS, output %.1f dBFS, max gain %.1f dB, effective volume %.2f dB",
+			pCtx->GetSoundID(), pCtx->GetPlayingID(), pCtx->m_pGameObj ? (AkUInt32)pCtx->m_pGameObj->m_GameObjID : 0, in_szWhen, m_Diag.uFrames,
+			m_Diag.uRunBuffers, m_Diag.uSilentBuffers, m_Diag.uSkippedBuffers, fSource, fOutput, 20.0 * log10( m_Diag.fMaxGain + 1e-10 ), pCtx->m_EffectiveParams.Volume );
+	}
+	memset( &m_Diag, 0, sizeof( m_Diag ) );
 }

@@ -14,7 +14,8 @@
 	    allocation's stride; see AkPath.cpp).
 	  * The multi-sources sums are converted back to dB with log10 (retail: fyl2x * log10(2), the same value).
 	  * -akdiag: once a second (47 buffer ticks) the game-defined branch logs one 3D PBI: sound, game object, positions,
-	    distance, the dry / wet curve values, LPF curve, cone factor, obstruction / occlusion, the first dry gain.
+	    distance, the dry / wet curve values, LPF curve, cone factor, obstruction / occlusion, the first dry gain; agent IQ
+	    adds the front left / right gains of the first two input channels and the channel count.
 =============================================================================*/
 #include "AkListener.h"
 #include "AkLEngine.h"
@@ -655,6 +656,9 @@ void CAkListener::Get3DVolumes( CAkPBI * in_pContext, const AkSoundPositioningPa
 			fLPF = fMinLPF;
 		}
 		const AkReal32 fDryOutdB = out_pAudioMixDry[ 0 ].Next.aVolumes[ 0 ] + fVolume;
+		const AkReal32 fDryOut01dB = out_pAudioMixDry[ 0 ].Next.aVolumes[ 1 ] + fVolume;
+		const AkReal32 fDryOut10dB = uNumChannels > 1 ? out_pAudioMixDry[ 1 ].Next.aVolumes[ 0 ] + fVolume : -999.f;
+		const AkReal32 fDryOut11dB = uNumChannels > 1 ? out_pAudioMixDry[ 1 ].Next.aVolumes[ 1 ] + fVolume : -999.f;
 		if( in_bEnvBus )
 		{
 			const AkReal32 fDryLevel = in_pContext->m_pGameObj->m_fDryLevelValue;
@@ -692,9 +696,9 @@ void CAkListener::Get3DVolumes( CAkPBI * in_pContext, const AkSoundPositioningPa
 			if( uTick - s_uLastDiagTick >= 47 || uTick < s_uLastDiagTick )
 			{
 				s_uLastDiagTick = uTick;
-				AKDIAG( L"akdiag: 3D sound 0x%08x obj %u: %u position(s) type %u, distance %.1f, dry curve %.2f dB, wet curve %.2f dB, LPF %.1f, cone %.3f, obs %.2f occ %.2f (%.2f dB), voice %.2f dB, dry ch0 %.2f dB",
+				AKDIAG( L"akdiag: 3D sound 0x%08x obj %u: %u position(s) type %u, distance %.1f, dry curve %.2f dB, wet curve %.2f dB, LPF %.1f, cone %.3f, obs %.2f occ %.2f (%.2f dB), voice %.2f dB, dry ch0 %.2f dB (ch0 L/R %.1f/%.1f, ch1 L/R %.1f/%.1f, %u ch)",
 					in_pContext->GetSoundID(), (AkUInt32)in_pContext->m_pGameObj->m_GameObjID, uNumPositions, (AkUInt32)rPosRef.m_eMultiPositionType, fDistance,
-					fListenerVolumeDry, fListenerVolumeWet, fLPF, fMinCone, fMinObstruction, fMinOcclusion, fLastObsOccVolume, fVolume, fDryOutdB );
+					fListenerVolumeDry, fListenerVolumeWet, fLPF, fMinCone, fMinObstruction, fMinOcclusion, fLastObsOccVolume, fVolume, fDryOutdB, fDryOutdB, fDryOut01dB, fDryOut10dB, fDryOut11dB, uNumChannels );
 			}
 		}
 	}

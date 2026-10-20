@@ -2011,8 +2011,8 @@ public:
 	/** slots 81, 82 (+324, +328): pure in the engine (2013 rva 0x209530 / 0x209550); UDishonoredEngine 0x5e41b0 / 0x6050b0 */
 	virtual void LoadProfile() PURE_VIRTUAL(UEngine::LoadProfile,);
 	virtual void SaveProfile( const void* Data, INT Size ) PURE_VIRTUAL(UEngine::SaveProfile,);
-	/** slot 83 (+332), 2013 rva 0x1d8850: StopAllSounds on the client's Wwise device (the AkAudio stub has no device, nothing to do) */
-	virtual void PreExit() {}
+	/** slot 83 (+332), 2013 rva 0x1d8850 (VA 0x5d8850): StopAllSounds on the client's Wwise device (UnEngine.cpp, agent IQ) */
+	virtual void PreExit();
 	/** slot 84 (+336): pure in the engine (2013 rva 0x209570); UDishonoredEngine's override is empty */
 	virtual void TickDisconnectedController() PURE_VIRTUAL(UEngine::TickDisconnectedController,);
 	/** slots 85..87 */

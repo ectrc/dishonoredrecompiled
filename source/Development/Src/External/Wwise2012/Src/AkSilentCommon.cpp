@@ -3,6 +3,8 @@
 
 	DISHONORED(bringup): see AkSilentInternal.h. The name hash itself is DISHONORED(written) and verified
 	against retail content (build/agentAN/bank_stid.py).
+	DISHONORED(diag, agent IQ): -akdump=<file> (SetCrashDump) writes a minidump of the first fatal exception of any thread
+	(vectored handler + unhandled filter), of a pure virtual call and of abort(), with a <file>.txt beside it. Not retail.
 =============================================================================*/
 #include <AkRegistryMgr.h>
 #include <AkPlayingMgr.h>
@@ -10,6 +12,12 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <csignal>
+#include <cstdlib>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
 
 namespace AkSilent
 {
@@ -162,5 +170,112 @@ namespace DishonoredWwise
 	{
 		std::map<AkUInt32, AkSilent::String>::const_iterator it = AkSilent::Names().find( in_id );
 		return it == AkSilent::Names().end() ? NULL : it->second.c_str();
+	}
+}
+
+namespace
+{
+	wchar_t g_szCrashDumpPath[ MAX_PATH ] = { 0 };
+	volatile LONG g_lCrashDumped = 0;
+
+	struct AkDumpExceptionInfo
+	{
+		DWORD ThreadId;
+		EXCEPTION_POINTERS * ExceptionPointers;
+		BOOL ClientPointers;
+	};
+	typedef BOOL ( WINAPI * MiniDumpWriteDumpFunc )( HANDLE, DWORD, HANDLE, int, AkDumpExceptionInfo *, void *, void * );
+
+	void WriteCrashDump( EXCEPTION_POINTERS * in_pException, const wchar_t * in_szKind )
+	{
+		if( !g_szCrashDumpPath[ 0 ] || InterlockedExchange( &g_lCrashDumped, 1 ) )
+		{
+			return;
+		}
+		const DWORD uCode = in_pException ? in_pException->ExceptionRecord->ExceptionCode : 0;
+		const void * pAddress = in_pException ? in_pException->ExceptionRecord->ExceptionAddress : NULL;
+		const ULONG_PTR uAccess = in_pException && in_pException->ExceptionRecord->NumberParameters >= 2 ? in_pException->ExceptionRecord->ExceptionInformation[ 1 ] : 0;
+		HMODULE hDbgHelp = LoadLibraryW( L"dbghelp.dll" );
+		MiniDumpWriteDumpFunc pWrite = hDbgHelp ? (MiniDumpWriteDumpFunc)GetProcAddress( hDbgHelp, "MiniDumpWriteDump" ) : NULL;
+		HANDLE hFile = CreateFileW( g_szCrashDumpPath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+		BOOL bWritten = FALSE;
+		if( pWrite && hFile != INVALID_HANDLE_VALUE )
+		{
+			AkDumpExceptionInfo info = { GetCurrentThreadId(), in_pException, FALSE };
+			bWritten = pWrite( GetCurrentProcess(), GetCurrentProcessId(), hFile, 0x1 | 0x40 | 0x800, in_pException ? &info : NULL, NULL, NULL );
+		}
+		if( hFile != INVALID_HANDLE_VALUE )
+		{
+			CloseHandle( hFile );
+		}
+		wchar_t szText[ MAX_PATH + 8 ];
+		_snwprintf_s( szText, MAX_PATH + 8, _TRUNCATE, L"%s.txt", g_szCrashDumpPath );
+		FILE * pText = NULL;
+		if( _wfopen_s( &pText, szText, L"w" ) == 0 && pText )
+		{
+			fwprintf( pText, L"%s: code 0x%08x at %p, access %p, thread %u, minidump %s\n", in_szKind, uCode, pAddress, (void *)uAccess, GetCurrentThreadId(), bWritten ? L"written" : L"FAILED" );
+			fclose( pText );
+		}
+		AkSilent::Logf( L"akdump: %s: code 0x%08x at %p, access %p, thread %u, minidump %s", in_szKind, uCode, pAddress, (void *)uAccess, GetCurrentThreadId(), bWritten ? L"written" : L"FAILED" );
+	}
+
+	bool IsFatalException( DWORD in_uCode )
+	{
+		return in_uCode == EXCEPTION_ACCESS_VIOLATION || in_uCode == EXCEPTION_STACK_OVERFLOW || in_uCode == EXCEPTION_ILLEGAL_INSTRUCTION
+			|| in_uCode == EXCEPTION_PRIV_INSTRUCTION || in_uCode == EXCEPTION_INT_DIVIDE_BY_ZERO || in_uCode == 0xC0000409 || in_uCode == 0xC0000374;
+	}
+
+	LONG WINAPI CrashDumpVectoredHandler( EXCEPTION_POINTERS * in_pException )
+	{
+		if( IsFatalException( in_pException->ExceptionRecord->ExceptionCode ) )
+		{
+			WriteCrashDump( in_pException, L"first-chance fatal exception" );
+		}
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	LONG WINAPI CrashDumpUnhandledFilter( EXCEPTION_POINTERS * in_pException )
+	{
+		WriteCrashDump( in_pException, L"unhandled exception" );
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	void DumpHere( const wchar_t * in_szKind )
+	{
+		__try
+		{
+			RaiseException( 0xE0414B44, 0, 0, NULL );
+		}
+		__except( WriteCrashDump( GetExceptionInformation(), in_szKind ), EXCEPTION_EXECUTE_HANDLER )
+		{
+		}
+	}
+
+	void __cdecl CrashDumpPureCall()
+	{
+		DumpHere( L"pure virtual call" );
+		abort();
+	}
+
+	void __cdecl CrashDumpAbort( int )
+	{
+		DumpHere( L"abort" );
+	}
+}
+
+namespace DishonoredWwise
+{
+	void SetCrashDump( const wchar_t * in_pszPath )
+	{
+		if( !in_pszPath || !*in_pszPath )
+		{
+			return;
+		}
+		wcsncpy_s( g_szCrashDumpPath, MAX_PATH, in_pszPath, _TRUNCATE );
+		AddVectoredExceptionHandler( 1, CrashDumpVectoredHandler );
+		SetUnhandledExceptionFilter( CrashDumpUnhandledFilter );
+		_set_purecall_handler( CrashDumpPureCall );
+		signal( SIGABRT, CrashDumpAbort );
+		AkSilent::Logf( L"akdump: armed, %s", g_szCrashDumpPath );
 	}
 }

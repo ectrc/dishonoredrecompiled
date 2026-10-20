@@ -18,6 +18,8 @@
 	  * -akwav (SetWavCapture): diagnostic, not retail. When set, every refill handed to the sink (the 16-bit mixed
 	    output, or silence) is appended to a WAV file on the audio thread.
 	  * DISHONORED(diag, agent IH4): -akdiag logs each environment node's wet RMS once a second (AkEnvWetDiag), not retail.
+	  * DISHONORED(diag, agent IQ): -akdiag "voice out" lines per voice (CAkVPLSrcCbxNode::DiagRun / DiagSkip / DiagReport)
+	    from RunVPL, the voice loop and VPLDestroySource, not retail.
 =============================================================================*/
 #include <AK/SoundEngine/Common/IAkStreamMgr.h>
 #include <windows.h>
@@ -394,6 +396,10 @@ void CAkLEngine::GetBuffer()
 					pCbx->ReleaseBuffer();
 				}
 			}
+			else
+			{
+				pCbx->DiagSkip();
+			}
 			FinishRun( pCbx, runningVPL.state );
 			if( pCbx->m_eState == NodeStateStop )
 			{
@@ -666,6 +672,7 @@ void CAkLEngine::RunVPL( AkRunningVPL & io_runningVPL )
 		return;
 	}
 	g_pPlayingMgr->NotifyMarkers( rState.buffer );
+	pCbx->DiagRun( rState );
 	if( !rState.bAudible )
 	{
 		return;
@@ -987,6 +994,7 @@ void CAkLEngine::RemoveMixBusses()
 /** 2012 0x91dc80. */
 void CAkLEngine::VPLDestroySource( CAkVPLSrcCbxNode * in_pCbx )
 {
+	in_pCbx->DiagReport( L"end" );
 	in_pCbx->Term();
 	in_pCbx->~CAkVPLSrcCbxNode();
 	AK::MemoryMgr::Free( g_LEngineDefaultPoolId, in_pCbx );

@@ -16,6 +16,7 @@
 	    retail passes GGameWindow and clears bGlobalFocus: the game must stay audible while it runs windowed and
 	    unfocused (the regression harness never gives it focus), and this tree has no GGameWindow at this point;
 	  * DISHONORED(diag, agent IH2): -akwav=<file> writes the mixed output handed to the sink into a WAV file;
+	  * DISHONORED(diag, agent IQ): -akdump=<file> arms a minidump of the first fatal exception of any thread;
 	  * UAkAudioDevice::Get is a bring-up deviation: retail reaches the device through
 	    GEngine->Client->GetAkAudioDevice (UClient vtable slot 320, the engine's own body is the
 	    pure-virtual logger at 0x1e68e0 and UWindowsClient supplies the object). UClient has no such virtual
@@ -176,6 +177,11 @@ UBOOL UAkAudioDevice::EnsureInitialized( INT SpeakerConfigOverride )
 	if( Parse( appCmdLine(), TEXT("akwav="), WavPath ) )
 	{
 		DishonoredWwise::SetWavCapture( *WavPath );
+	}
+	FString DumpPath;
+	if( Parse( appCmdLine(), TEXT("akdump="), DumpPath ) )
+	{
+		DishonoredWwise::SetCrashDump( *DumpPath );
 	}
 #endif
 

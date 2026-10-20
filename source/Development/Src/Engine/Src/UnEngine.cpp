@@ -3,6 +3,9 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
+#if DISHONORED_WITH_WWISE
+#include "AkAudio.h"
+#endif
 #include "EngineMaterialClasses.h"
 #include "DebugCameraController.h"
 #include "UnTerrain.h"
@@ -1430,6 +1433,23 @@ void UEngine::ApplyGameSettings( const ArkSettingsParameters* Parameters, EChang
 	}
 	bSubtitlesEnabled = Parameters->m_SubtitlesMode > 0;
 	bHideSecondarySubtitles = Parameters->m_SubtitlesMode < 2;
+}
+
+// DISHONORED(port, agent IQ): 2013 rva 0x1d8850 (VA 0x5d8850, 2012 0x1ef0d0). UGameEngine::PreExit (2013 0x222530) calls it
+// right after the anim-set usage dump, before the online subsystem, the local players' Exit and UWorld::CleanupWorld, so every
+// Wwise voice is stopped before the exit purge unloads the banks. Retail reaches the device through Client slot 320
+// (GetAkAudioDevice); this tree has no such virtual and uses UAkAudioDevice::Get (the bring-up deviation akaudiodevice.cpp names).
+void UEngine::PreExit()
+{
+#if DISHONORED_WITH_WWISE
+	if( Client )
+	{
+		if( UAkAudioDevice* AudioDevice = UAkAudioDevice::Get() )
+		{
+			AudioDevice->StopAllSounds( FALSE );
+		}
+	}
+#endif
 }
 
 /**

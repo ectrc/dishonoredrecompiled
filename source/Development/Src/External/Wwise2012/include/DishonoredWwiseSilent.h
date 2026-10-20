@@ -50,6 +50,9 @@ namespace DishonoredWwise
 	/** -akwav=<file> (agent IH2): every buffer the sink is handed (16-bit, the sink speaker layout) is appended to a WAV file. */
 	void SetWavCapture( const AkOSChar * in_pszPath );
 
+	/** -akdump=<file> (agent IQ): a minidump of the first fatal exception, pure virtual call or abort of any thread. */
+	void SetCrashDump( const wchar_t * in_pszPath );
+
 	/** What the backend has been asked to do so far; the AkAudio `AKSTATS` exec prints it. */
 	struct Stats
 	{

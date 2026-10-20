@@ -93,6 +93,17 @@ public:
 	AkEnvironmentValue			m_LastEnvironmentValues[ 4 ];
 };
 
+struct AkVoiceOutputDiag
+{
+	AkUInt32	uRunBuffers;
+	AkUInt32	uSilentBuffers;
+	AkUInt32	uSkippedBuffers;
+	AkUInt32	uFrames;
+	AkReal64	fSourceEnergy;
+	AkReal64	fOutputEnergy;
+	AkReal32	fMaxGain;
+};
+
 class CAkVPLSrcCbxNode : public CAkVPLSrcCbxNodeBase
 {
 public:
@@ -122,11 +133,15 @@ public:
 	void RefreshBypassFx();
 	void RefreshBypassFx( AkUInt32 in_uFXIndex );
 	void UpdateFx( AkUInt32 in_uFXIndex );
+	void DiagRun( const AkVPLState & in_state );
+	void DiagSkip();
+	void DiagReport( const wchar_t * in_szWhen );
 
 	AkUInt32		m_uSampleRate;
 	AkUInt32		m_uChannelMask;
 	AkVPLSrcCbxRec	m_cbxRec;
 	CAkVPLLPFNode	m_ObstructionLPF;
+	AkVoiceOutputDiag	m_Diag;
 
 private:
 	void GetVolumes( bool in_bEnvBus, CAkPBI * in_pContext, AkAudioBufferCbx * io_pBuffer, bool & out_bNextSilent );
