@@ -3058,6 +3058,11 @@ public:
 	// AnimNode interface
 	virtual	void TickAnim(FLOAT DeltaSeconds);
 
+	// DISHONORED(port): agent IS. Retail's direction source, 2012 0x198ef0 / 2013 VA 0x58cb60 (vtable slot 119, +476),
+	// overridden by UDisAnimNodeBlendDirectional (2012 0x6d87e0 / 2013 VA 0xa89210); bUseActorRotation FALSE makes
+	// TickAnim measure the direction against +Y instead of the actor's rotation.
+	virtual FVector GetDirectionVector(AActor* Actor, UBOOL& bUseActorRotation) const;
+
 	virtual INT GetNumSliders() const { return 1; }
 	virtual FLOAT GetSliderPosition(INT SliderIndex, INT ValueIndex);
 	virtual void HandleSliderMove(INT SliderIndex, INT ValueIndex, FLOAT NewSliderValue);

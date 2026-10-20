@@ -1552,6 +1552,86 @@ static void CheckForLongBones(TArray<FBoneAtom>& Atoms, USkeletalMeshComponent* 
 }
 #endif
 
+// DISHONORED(written): agent IS (PHASE23 IS) - the -isdiag switch: what the player's sprint blend does. Once a second per node:
+// "isdiag tick" from UAnimNodeBlendDirectional::TickAnim (velocity, target and current DirAngle, the child weights it found
+// and the ones it wrote), "isdiag eval" from UAnimNodeBlendBase::GetBoneAtoms whenever a blend has no relevant non-additive
+// child (retail's Edge build gives it the identity leaf, see below), each with the node's children, parents and subtree.
+// Only nodes whose owner is a human-controlled pawn are reported. -isoldcheck (diagnosis only) restores the reference
+// engine's warning + check(LastChildNonAddIndex != INDEX_NONE) for a same-binary A/B.
+static void DisAnimDumpNode( UAnimNode* Node, INT Depth, const FString& Label, FLOAT Weight );
+
+static UBOOL DisISDiagEnabled()
+{
+	static UBOOL bEnabled = ParseParam( appCmdLine(), TEXT("isdiag") );
+	return bEnabled;
+}
+
+static UBOOL DisISOldCheck()
+{
+	static UBOOL bEnabled = ParseParam( appCmdLine(), TEXT("isoldcheck") );
+	return bEnabled;
+}
+
+static UBOOL DisISShouldReport( UAnimNode* Node, const TCHAR* Where )
+{
+	if( !DisISDiagEnabled() || !Node->SkelComponent || !GWorld )
+	{
+		return FALSE;
+	}
+	AActor* Owner = Node->SkelComponent->GetOwner();
+	APawn* Pawn = Owner ? Owner->GetAPawn() : NULL;
+	if( !Pawn || !Pawn->IsHumanControlled() )
+	{
+		return FALSE;
+	}
+	static TMap<FString,FLOAT> LastReport;
+	const FString Key = FString::Printf( TEXT("%s %s"), Where, *Node->GetPathName() );
+	const FLOAT Now = GWorld->GetRealTimeSeconds();
+	const FLOAT* Last = LastReport.Find( Key );
+	if( Last && Now - *Last < 1.f )
+	{
+		return FALSE;
+	}
+	LastReport.Set( Key, Now );
+	return TRUE;
+}
+
+static FString DisISDescribeBlend( UAnimNodeBlendBase* Blend )
+{
+	FString Line = FString::Printf( TEXT("%s '%s' class %s additive %d relevant %d tw %.3f tickedThisFrame %d blendType %d"),
+		*Blend->GetName(), *Blend->NodeName.ToString(), *Blend->GetClass()->GetName(), (INT)Blend->bIsAdditive, (INT)Blend->bRelevant,
+		Blend->NodeTotalWeight, Blend->SkelComponent ? (INT)( Blend->NodeTickTag == Blend->SkelComponent->TickTag ) : -1, (INT)Blend->BlendType );
+	for( INT i = 0; i < Blend->Children.Num(); i++ )
+	{
+		const FAnimBlendChild& Child = Blend->Children(i);
+		UAnimNodeSequence* Seq = Cast<UAnimNodeSequence>( Child.Anim );
+		Line += FString::Printf( TEXT(" | [%d]%s w %.4f bw %.4f add %d node %s"), i, *Child.Name.ToString(), Child.Weight, Child.BlendWeight,
+			(INT)Child.bIsAdditive, Child.Anim ? *Child.Anim->GetClass()->GetName() : TEXT("NULL") );
+		if( Seq )
+		{
+			Line += FString::Printf( TEXT(" seq %s animAdd %d playing %d t %.2f"), *Seq->AnimSeqName.ToString(),
+				Seq->AnimSeq ? (INT)Seq->AnimSeq->bIsAdditive : -1, (INT)Seq->bPlaying, Seq->CurrentTime );
+		}
+	}
+	for( INT i = 0; i < Blend->ParentNodes.Num(); i++ )
+	{
+		UAnimNodeBlendBase* Parent = Blend->ParentNodes(i);
+		if( !Parent )
+		{
+			continue;
+		}
+		for( INT c = 0; c < Parent->Children.Num(); c++ )
+		{
+			if( Parent->Children(c).Anim == Blend )
+			{
+				Line += FString::Printf( TEXT(" | parent %s '%s' %s as [%d]%s w %.4f add %d"), *Parent->GetName(), *Parent->NodeName.ToString(),
+					*Parent->GetClass()->GetName(), c, *Parent->Children(c).Name.ToString(), Parent->Children(c).Weight, (INT)Parent->Children(c).bIsAdditive );
+			}
+		}
+	}
+	return Line;
+}
+
 /**
  * Blends together the Children AnimNodes of this blend based on the Weight in each element of the Children array.
  * Instead of using SLERPs, the blend is done by taking a weighted sum of each atom, and renormalising the quaternion part at the end.
@@ -1657,7 +1737,7 @@ void UAnimNodeBlendBase::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYTE>&
 		}
 	}
 
-	if( LastChildNonAddIndex == INDEX_NONE )
+	if( LastChildNonAddIndex == INDEX_NONE && DisISOldCheck() )
 	{
 		AActor* Owner = SkelComponent->GetOwner();
 		warnf(TEXT("LastChildNonAddIndex != INDEX_NONE - Node: %s, NodeName: %s, Owner: %s"), *GetFName().ToString(), *NodeName.ToString(), Owner ? *Owner->GetFName().ToString() : TEXT("NULL"));	
@@ -1672,11 +1752,50 @@ void UAnimNodeBlendBase::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYTE>&
 				(ANode ? *ANode->NodeName.ToString() : TEXT("None")), 
 				Children(i).bIsAdditive );	
 		}
+		check(LastChildNonAddIndex != INDEX_NONE);
 	}
- 	check(LastChildNonAddIndex != INDEX_NONE);
 
+	// DISHONORED(port): agent IS. Retail evaluates this tree with UAnimNodeBlendBase::BuildEdgeAnimTreeEx (2012 0x1c3f60,
+	// 2013 VA 0x5b9000 behind the 18-B BuildEdgeAnimTree thunk 0x5ba7f0, slot 91 of every blend without its own build,
+	// AnimNodeBlendDirectional included), not with this function (retail's GetBoneAtoms, 2013 VA 0x5a3bd0, has neither the
+	// warning nor the check: with no non-additive child it blends nothing and adds onto the stale buffer). The Edge build:
+	// an additive child counts when its Weight and its BlendType weight are above ZERO_ANIMWEIGHT_THRESH and it has a node;
+	// no relevant child at all -> a base-pose leaf (flags 4: the reference pose); additive children only -> an identity leaf
+	// (flags 0x44: _edgeAnimProcessCommandList command 5 writes zero translation, identity rotation, unit scale for every
+	// joint) with each additive child added on it (operation 1, _edgeAnimBlendJointsRelative) - the blend's output is the
+	// weighted sum of its additive deltas, which its parent adds as an additive child. Root motion stays the identity.
+	if( LastChildNonAddIndex == INDEX_NONE )
+	{
+		UBOOL bHasAdditiveLeaf = FALSE;
+		for(INT i=0; i<Children.Num(); i++)
+		{
+			if( Children(i).bIsAdditive && Children(i).Anim && Children(i).Weight > ZERO_ANIMWEIGHT_THRESH && GetBlendWeight(Children(i).Weight) > ZERO_ANIMWEIGHT_THRESH )
+			{
+				bHasAdditiveLeaf = TRUE;
+			}
+		}
+		if( DisISShouldReport( this, TEXT("eval") ) )
+		{
+			debugf( TEXT("DISHONORED(bringup): isdiag eval t=%.3f leaf %s %s"), GWorld->GetTimeSeconds(), bHasAdditiveLeaf ? TEXT("identity+additive") : TEXT("refpose"), *DisISDescribeBlend( this ) );
+			DisAnimDumpNode( this, 0, TEXT("isdiag"), NodeTotalWeight );
+		}
+		RootMotionDelta.SetIdentity();
+		bHasRootMotion = 0;
+		if( bHasAdditiveLeaf )
+		{
+			for(INT j=0; j<DesiredBones.Num(); j++)
+			{
+				Atoms(DesiredBones(j)).SetIdentity();
+			}
+		}
+		else
+		{
+			bHasAdditiveAnimations = FALSE;
+			FillWithRefPose(Atoms, DesiredBones, SkelComponent->SkeletalMesh->RefSkeleton);
+		}
+	}
 	// If only one child is relevant, just pass through this one.
-	if( NumRelevantNonAddAnims == 1 )
+	else if( NumRelevantNonAddAnims == 1 )
 	{
 		if( Children(LastChildNonAddIndex).Anim )
 		{
@@ -3005,13 +3124,21 @@ void UAnimNodeBlendPerBone::GetBoneAtoms(FBoneAtomArray& Atoms, const TArray<BYT
 void UAnimNodeBlendDirectional::TickAnim(FLOAT DeltaSeconds)
 {
 	check(Children.Num() == 4);
+	const UBOOL bISReport = DisISShouldReport( this, TEXT("tick") );
+	FString ISWeightsIn;
+	if( bISReport )
+	{
+		ISWeightsIn = FString::Printf( TEXT("%.4f %.4f %.4f %.4f DirAngle %.4f"), Children(0).Weight, Children(1).Weight, Children(2).Weight, Children(3).Weight, DirAngle );
+	}
 
-	// Calculate DirAngle based on player velocity.
+	// DISHONORED(port): agent IS. 2012 0x19f970 / 2013 VA 0x593c80 (3,076 B both): the direction comes from the virtual
+	// GetDirectionVector, and the look direction is the actor's rotation + RotationOffset only when it asks for it, else +Y.
 	AActor* actor = SkelComponent->GetOwner(); // Get the actor to use for acceleration/look direction etc.
 	if( actor )
 	{
 		FLOAT TargetDirAngle = 0.f;
-		FVector	VelDir = bUseAcceleration ? actor->Acceleration : actor->Velocity;
+		UBOOL bUseActorRotation = TRUE;
+		FVector	VelDir = GetDirectionVector( actor, bUseActorRotation );
 		VelDir.Z = 0.0f;
 
 		if( VelDir.IsNearlyZero() )
@@ -3022,7 +3149,7 @@ void UAnimNodeBlendDirectional::TickAnim(FLOAT DeltaSeconds)
 		{
 			VelDir = VelDir.SafeNormal();
 
-			FVector LookDir = (actor->Rotation+RotationOffset).Vector();
+			FVector LookDir = bUseActorRotation ? (actor->Rotation+RotationOffset).Vector() : FVector(0.f,1.f,0.f);
 			LookDir.Z = 0.f;
 			LookDir = LookDir.SafeNormal();
 
@@ -3114,10 +3241,26 @@ void UAnimNodeBlendDirectional::TickAnim(FLOAT DeltaSeconds)
 		}
 	}
 
+	if( bISReport )
+	{
+		AActor* ISOwner = SkelComponent->GetOwner();
+		debugf( TEXT("DISHONORED(bringup): isdiag tick t=%.3f %s vel %s speed2D %.1f accel2D %.1f useAccel %d yaw %d lod %d/%d in %s out %.4f %.4f %.4f %.4f DirAngle %.4f | %s"),
+			GWorld->GetTimeSeconds(), *GetName(), ISOwner ? *ISOwner->Velocity.ToString() : TEXT("-"), ISOwner ? ISOwner->Velocity.Size2D() : 0.f,
+			ISOwner ? ISOwner->Acceleration.Size2D() : 0.f, (INT)bUseAcceleration, ISOwner ? ( ISOwner->Rotation.Yaw & 0xFFFF ) : 0,
+			SkelComponent->PredictedLODLevel, SingleAnimAtOrAboveLOD, *ISWeightsIn,
+			Children(0).Weight, Children(1).Weight, Children(2).Weight, Children(3).Weight, DirAngle, *DisISDescribeBlend( this ) );
+	}
+
 	// Call Super::TickAnim last to set proper children weights.
 	Super::TickAnim(DeltaSeconds);
 }
 
+
+FVector UAnimNodeBlendDirectional::GetDirectionVector(AActor* Actor, UBOOL& bUseActorRotation) const
+{
+	bUseActorRotation = TRUE;
+	return bUseAcceleration ? Actor->Acceleration : Actor->Velocity;
+}
 
 ///////////////////////////////////////
 /////////// AnimNodeBlendList /////////

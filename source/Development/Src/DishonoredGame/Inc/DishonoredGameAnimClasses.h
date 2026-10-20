@@ -410,6 +410,7 @@ public:
     //## END PROPS DisAnimNodeBlendDirectional
 
     DECLARE_CLASS(UDisAnimNodeBlendDirectional,UAnimNodeBlendDirectional,0,DishonoredGame)
+#include "CppText/UDisAnimNodeBlendDirectional.h"
 };
 
 // DishonoredGame.DisAnimNodeBlendHeartAdditive: retail sizeof 256, reflected span 244..244 (new in 2013)
