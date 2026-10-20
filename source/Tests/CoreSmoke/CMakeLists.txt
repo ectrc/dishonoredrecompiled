@@ -19,21 +19,11 @@ if(TARGET wwise)
                                                "${DISHONORED_WWISE_DIR}/Src/AkMusicEngine/Common" "${DISHONORED_WWISE_DIR}/Src/Plugins/Common" "${DISHONORED_WWISE_DIR}/Src/Plugins/Effects/Common")
 endif()
 
-# Agent FX2 (wave 26): the FaceFX 1.7.3.1 face graph (FaceFXGraphSmoke.cpp) - compiled here from External/FaceFX with
-# the core shim (include/stub, Src/Stub) until FX1's FaceFX library target lands; then link that target instead,
-# drop the stub folders and FX2_FACEFX_CORE_STUB.
-set(DISHONORED_FACEFX_DIR "${CMAKE_SOURCE_DIR}/source/Development/Src/External/FaceFX")
-if(EXISTS "${DISHONORED_FACEFX_DIR}/Src/FaceGraph" AND NOT TARGET facefx)
-  file(GLOB dishonored_facefx_graph_sources CONFIGURE_DEPENDS "${DISHONORED_FACEFX_DIR}/Src/FaceGraph/*.cpp" "${DISHONORED_FACEFX_DIR}/Src/Stub/*.cpp")
-  target_sources(CoreSmoke PRIVATE FaceFXGraphSmoke.cpp ${dishonored_facefx_graph_sources})
-  target_include_directories(CoreSmoke PRIVATE "${DISHONORED_FACEFX_DIR}/include" "${DISHONORED_FACEFX_DIR}/include/stub")
-  target_compile_definitions(CoreSmoke PRIVATE DISHONORED_WITH_FACEFX_GRAPH=1 FX2_FACEFX_CORE_STUB=1)
-endif()
-# Agent FX1 (wave 26): the reconstructed FaceFX 1.7.3.1 core (FaceFXSmoke.cpp) against retail head archives. The SDK
-# library is linked here only; no game module links it while WITH_FACEFX=0 (cmake/FaceFX.cmake).
-# With the library, FX2's graph checks run against the real core (the library compiles Src/FaceGraph too).
+# Agents FX1/FX2/FX3 (wave 26): the reconstructed FaceFX 1.7.3.1 SDK against the retail archives - the core
+# (FaceFXSmoke.cpp), the face graph (FaceFXGraphSmoke.cpp) and the runtime (FaceFXRuntimeSmoke.cpp: a head actor, an anim
+# set, an instance playing one line).
 if(TARGET facefx)
-  target_sources(CoreSmoke PRIVATE FaceFXSmoke.cpp FaceFXGraphSmoke.cpp)
+  target_sources(CoreSmoke PRIVATE FaceFXSmoke.cpp FaceFXGraphSmoke.cpp FaceFXRuntimeSmoke.cpp)
   target_link_libraries(CoreSmoke PRIVATE Dishonored::facefx)
   target_compile_definitions(CoreSmoke PRIVATE DISHONORED_WITH_FACEFX_GRAPH=1)
 endif()

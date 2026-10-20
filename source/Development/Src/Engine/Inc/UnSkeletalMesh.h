@@ -269,6 +269,11 @@ struct FSkelMeshComponentLODInfo
 class USkeletalMesh;
 struct FEdgeAnimData;
 // DISHONORED(layout): 2012 PDB USkeletalMeshComponent is 1056 bytes (see the member block); FTickData m_TickData @976 (80 bytes, 16-aligned)
+// DISHONORED(port): agent FX3. DisFaceFxStartAudio (DishonoredGame, 2012 0x8f7e30): posts the pending blurb's voice for
+// the FaceFX mesh's owner when its anim reaches its audio; Engine calls it through this seam (UnSkeletalComponent.cpp).
+typedef void (*DisFaceFxStartAudioHookType)( class UActorComponent* _pAudioHandler, class USkeletalMeshComponent* _pFaceFxSkelMesh, FLOAT _fSeekTime );
+extern DisFaceFxStartAudioHookType GDisFaceFxStartAudioHook;
+
 class USkeletalMeshComponent : public UMeshComponent
 {
 	DECLARE_CLASS_NOEXPORT(USkeletalMeshComponent,UMeshComponent,0,Engine)
@@ -708,9 +713,12 @@ class USkeletalMeshComponent : public UMeshComponent
 	// USkeletalMeshComponent interface
 	void DeleteAnimTree();
 
-	// FaceFX functions.
-	void	UpdateFaceFX( TArray<FBoneAtom>& LocalTransforms, UBOOL bTickFaceFX );
-	UBOOL	PlayFaceFXAnim(UFaceFXAnimSet* FaceFXAnimSetRef, const FString& AnimName, const FString& GroupName,class USoundCue* SoundCueToPlay);
+	// FaceFX functions. DISHONORED(port): agent FX3 - Arkane's signatures (2012 PDB): UpdateFaceFX takes the frame's DeltaTime
+	// (m_fFaceFxTickTime), PlayFaceFXAnim / GetFaceFXAnimStartOffset take the anim name as TCHARs, the group as ANSI, the
+	// component the voice is posted for and the start position (UnSkeletalComponent.cpp).
+	void	UpdateFaceFX( TArray<FBoneAtom>& LocalTransforms, FLOAT DeltaTime, UBOOL bTickFaceFX );
+	UBOOL	PlayFaceFXAnim( UFaceFXAnimSet* FaceFXAnimSetRef, const TCHAR* AnimName, const ANSICHAR* GroupName, class UActorComponent* _pAudioHandler, FLOAT _fPosition );
+	FLOAT	GetFaceFXAnimStartOffset( UFaceFXAnimSet* FaceFXAnimSetRef, const TCHAR* AnimName, const ANSICHAR* GroupName, FLOAT _fPosition );
 	void	StopFaceFXAnim( void );
 	void	SetFaceFXAsset( class UFaceFXAsset* NewFaceFXAsset );
 	UBOOL	IsPlayingFaceFXAnim();

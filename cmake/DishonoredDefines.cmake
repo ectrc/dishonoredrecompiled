@@ -42,10 +42,9 @@ set(DISHONORED_DEFINES
   # APEX stays off permanently: the retail exe imports nothing from any APEX_*.dll and the 2012 PDB
   # has no NxApex/physx::apex function at all (resources/docs/middleware.md 1, row APEX).
   WITH_APEX=0
-  # FaceFX is linked into Shipping (1.3 %), but its SDK is not in the reference tree; off until
-  # Phase 4 provides a runtime. Engine class layouts that embed FaceFX members are checked by the
-  # layout probe regardless.
-  WITH_FACEFX=0
+  # FaceFX is linked into Shipping (1.3 %). WITH_FACEFX is set per target by dishonored_apply_defines() from the
+  # reconstructed SDK (cmake/FaceFX.cmake, External/FaceFX); FaceFX Studio is an editor plug-in retail never links.
+  WITH_FACEFX_STUDIO=0
   # Every cooked package is PKG_StoreCompressed with CompressionFlags=2 = COMPRESS_LZO (Dishonored
   # links LZO Pro, lzopro_lzo1x_decompress_safe; format-compatible with LZO1X). The codec is lzokay
   # (cmake/Dependencies.cmake), wired into Core/Src/UnMisc.cpp appCompressMemoryLZO /
@@ -173,5 +172,13 @@ function(dishonored_apply_defines target)
     target_link_libraries(${target} PUBLIC Dishonored::wwise)
   else()
     target_compile_definitions(${target} PRIVATE DISHONORED_WITH_WWISE=0)
+  endif()
+  # FaceFX 1.7.3.1 (cmake/FaceFX.cmake, agents FX1-FX3). WITH_FACEFX changes USkeletalMeshComponent's member types and
+  # the UFaceFXAsset / UFaceFXAnimSet bodies, so it must have the same value in every module, like Wwise.
+  if(TARGET Dishonored::facefx)
+    target_compile_definitions(${target} PRIVATE WITH_FACEFX=1)
+    target_link_libraries(${target} PUBLIC Dishonored::facefx)
+  else()
+    target_compile_definitions(${target} PRIVATE WITH_FACEFX=0)
   endif()
 endfunction()

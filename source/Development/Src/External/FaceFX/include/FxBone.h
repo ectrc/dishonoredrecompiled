@@ -42,6 +42,16 @@ public:
 	void SetRot(const FxQuat& iRot);
 	void SetScale(const FxVec3& iScale);
 
+	/** 2012 0xb0f5e0 (fxbone.h:70, emitted in FxMasterBoneList.obj). */
+	FxBool operator==(const FxBone& other) const
+	{
+		return GetName() == other.GetName()
+			&& FxRealEqualityRelaxed(_pos.x, other._pos.x) && FxRealEqualityRelaxed(_pos.y, other._pos.y) && FxRealEqualityRelaxed(_pos.z, other._pos.z)
+			&& FxRealEqualityRelaxed(_rot.w, other._rot.w) && FxRealEqualityRelaxed(_rot.x, other._rot.x) && FxRealEqualityRelaxed(_rot.y, other._rot.y)
+			&& FxRealEqualityRelaxed(_rot.z, other._rot.z) && FxRealEqualityRelaxed(_scale.x, other._scale.x) && FxRealEqualityRelaxed(_scale.y, other._scale.y)
+			&& FxRealEqualityRelaxed(_scale.z, other._scale.z);
+	}
+
 	virtual void Serialize(FxArchive& arc);
 
 protected:

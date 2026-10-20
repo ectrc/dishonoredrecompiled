@@ -74,6 +74,13 @@ inline FxBool FxRealEquality(FxReal first, FxReal second)
 	return difference < FX_REAL_EPSILON && difference > -FX_REAL_EPSILON;
 }
 
+/** 2012 0xb0ba90 (fxmath.h:62, emitted in FxActorInstance.obj). */
+inline FxBool FxDRealEquality(FxDReal first, FxDReal second)
+{
+	FxDReal difference = first - second;
+	return difference < static_cast<FxDReal>(FX_REAL_EPSILON) && difference > -static_cast<FxDReal>(FX_REAL_EPSILON);
+}
+
 inline FxBool FxRealEqualityRelaxed(FxReal first, FxReal second)
 {
 	FxReal difference = first - second;

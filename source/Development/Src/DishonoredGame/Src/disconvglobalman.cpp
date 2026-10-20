@@ -17,8 +17,9 @@
 // The propagation cache UDisAkComponent::GetShortestAudiblePathLength reads is filled by UDishonoredAudioSystem::Update's
 // UpdateAudioPropagationCache (unported), so every voice is FLT_MAX away here: a main line is chosen only when its
 // conversation is the dominant one (priority 99), and no secondary line is ever within its radius.
+// Agent FX3: OnSpeakerStartedTalking 2013 0x89e610 (2012 0x8eebe0), the subtitle of a voice DisFaceFxStartAudio posts.
 // Not ported (agentFR.md inventory): OnActorTerminated_ConvGlobalMan 2012 0x8ee9e0, OnSpeakerDestroyed 0x8ec930,
-// OnSpeakerStartedTalking 2013 0x89e610, GameSave / GameLoad 2012 0x8ef980 / 0x8efa90, the branch-info accessors.
+// GameSave / GameLoad 2012 0x8ef980 / 0x8efa90, the branch-info accessors.
 #include "DishonoredGame.h"
 #include "dishonoredutilities.h"
 #include "frdialogdiag.h"
@@ -45,6 +46,17 @@ UDisTweaksBase* UDisConvGlobalMan::GetTweaks_Derived()
 void UDisConvGlobalMan::SetTweaks_Derived( UDisTweaksBase* _pTweaks )
 {
 	m_pConvSettingTweaks = Cast<UDisTweaks_ConvSettings>( _pTweaks );
+}
+
+// DISHONORED(port): agent FX3, 2013 rva 0x89e610 (2012 0x8eebe0, 71 B). The subtitle test PlayDialogBlurb inlines: subtitles not
+// forced off, enabled, and a main line or secondary lines shown.
+void UDisConvGlobalMan::OnSpeakerStartedTalking( UDisConversationComponent* _pConvComp, const TArray<FDisAkCompAndPlayingID>& _rSpeakers, const TCHAR* _pText,
+	FLOAT _fVoiceRadius, UBOOL _bMainSubtitle )
+{
+	if( !GEngine->bSubtitlesForcedOff && GEngine->bSubtitlesEnabled && ( _bMainSubtitle || !GEngine->bHideSecondarySubtitles ) )
+	{
+		m_SubtitlesInfo.AddSubtitle( _pConvComp, _rSpeakers, _pText, _fVoiceRadius, _bMainSubtitle );
+	}
 }
 
 UDisTweaks_ConvSettings* UDisConvGlobalMan::GetConvSettings() const

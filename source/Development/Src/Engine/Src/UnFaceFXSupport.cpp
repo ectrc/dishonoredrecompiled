@@ -12,40 +12,14 @@
 #include "UnFaceFXMaterialParameterProxy.h"
 #include "UnFaceFXMorphTargetProxy.h"
 
-#include "../FaceFX/UnFaceFXNode.h"
-#include "../FaceFX/UnFaceFXMaterialNode.h"
-#include "../FaceFX/UnFaceFXMorphNode.h"
+#include "FxGenericTargetNode.h"
 
-// Define this to link in the debug libraries in debug builds.
-#define USE_FACEFX_DEBUG_LIBS
-
-#if defined(XBOX)
-
-#if defined(_DEBUG) && defined(USE_FACEFX_DEBUG_LIBS)
-	#pragma comment(lib, "FxSDKd_Unreal.lib")
-#else
-	#pragma comment(lib, "FxSDK_Unreal.lib")
-#endif
-
-#elif defined(PS3)
-
-#else // WIN32
-
-#if defined(_DEBUG) && defined(USE_FACEFX_DEBUG_LIBS)
-#if _WIN64
-	#pragma comment(lib, "FxSDKd_Unreal.lib")
-#else
-	#pragma comment(lib, "FxSDKd_Unreal.lib")
-#endif
-#else
-#if _WIN64
-	#pragma comment(lib, "FxSDK_Unreal.lib")
-#else
-	#pragma comment(lib, "FxSDK_Unreal.lib")
-#endif
-#endif
-
-#endif
+// DISHONORED(port): agent FX3 (wave 26). The SDK is compiled into the exe from External/FaceFX (cmake/FaceFX.cmake), as
+// retail compiles it; the reference's FxSDK_Unreal.lib pragmas and the integration's own UE3 node headers
+// (../FaceFX/UnFaceFX*Node.h, FX2 ported those classes into FxGenericTargetNode.h) are gone.
+// UnInitFaceFX = 2012 0x568670 / 2013 0x527510 (bytes 1.000): the custom allocation policy, no memory pools, appMalloc /
+// appFree (FxAllocateUE3 / FxFreeUE3 2012 0x568060; retail's debug allocator is FxAllocateUE3 itself, ICF-folded), the
+// compiled graph's pre-destroy and pre-compile callbacks. The two debugf lines are the reference's (Shipping strips them).
 
 using namespace OC3Ent;
 using namespace Face;
@@ -55,7 +29,7 @@ void* FxAllocateUE3( FxSize NumBytes )
 	return appMalloc(NumBytes);
 }
 
-void* FxAllocateDebugUE3( FxSize NumBytes, const FxAChar* /*system*/ )
+void* FxAllocateDebugUE3( FxSize NumBytes, const FxChar* /*system*/ )
 {
 	return appMalloc(NumBytes);
 }
@@ -106,7 +80,7 @@ void FxPreDestroyCallbackFuncUE3( FxCompiledFaceGraph& cg )
 	FxRemoveNodeUserDataUE3(cg);
 }
 
-void FxPreCompileCallbackFuncUE3( FxCompiledFaceGraph& cg, FxFaceGraph& FxUnused(faceGraph) )
+void FxPreCompileCallbackFuncUE3( FxCompiledFaceGraph& cg, FxFaceGraph& /*faceGraph*/ )
 {
 	FxRemoveNodeUserDataUE3(cg);
 }

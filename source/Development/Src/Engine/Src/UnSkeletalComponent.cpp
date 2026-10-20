@@ -115,9 +115,9 @@ static void DisGAMeshOffsetTick( USkeletalMeshComponent* Mesh, FLOAT DeltaTime )
 	#include "UnFaceFXMaterialParameterProxy.h"
 	#include "UnFaceFXMorphTargetProxy.h"
 
-	#include "../FaceFX/UnFaceFXMaterialNode.h"
-	#include "../FaceFX/UnFaceFXMorphNode.h"
-	#include "../../../External/FaceFX/FxSDK/Inc/FxActorInstance.h"
+	// DISHONORED(port): agent FX3 - the UE3 node classes and their user-property slots are in the reconstructed SDK.
+	#include "FxGenericTargetNode.h"
+	#include "FxActorInstance.h"
 
 	using namespace OC3Ent;
 	using namespace Face;
@@ -144,10 +144,12 @@ static void DisGAMeshOffsetTick( USkeletalMeshComponent* Mesh, FLOAT DeltaTime )
 	DECLARE_MEMORY_STAT(TEXT("FaceFX Peak Mem"),STAT_FaceFXPeakAllocSize,STATGROUP_Memory);
 	DECLARE_MEMORY_STAT(TEXT("FaceFX Cur Mem"),STAT_FaceFXCurrentAllocSize,STATGROUP_Memory);
 
-	// Priority with which to display sounds triggered by FaceFX.
-	#define SUBTITLE_PRIORITY_FACEFX	10000
-
 #endif // WITH_FACEFX
+
+// DISHONORED(port): agent FX3. Retail's UpdateFaceFX / PlayFaceFXAnim call DishonoredGame's DisFaceFxStartAudio (2012 0x8f7e30,
+// 2013 0x8a0120) directly - one exe. Engine and DishonoredGame are separate libraries here, so the call goes through this
+// seam, which DishonoredGame fills in at static init (disconversationcomponent.cpp), like the look-at seams above.
+DisFaceFxStartAudioHookType GDisFaceFxStartAudioHook = NULL;
 
 IMPLEMENT_CLASS(USkeletalMeshComponent);
 
@@ -363,36 +365,10 @@ void USkeletalMeshComponent::Attach()
 		InitAnimTree(bForceInit);
 	}
 
-#if WITH_FACEFX
-	// Are we using FaceFX features?
-	if( !bDisableFaceFX && SkeletalMesh != NULL && SkeletalMesh->FaceFXAsset != NULL && SkeletalMesh->FaceFXAsset->FaceFXActor != NULL )
-	{
-		// Create FaceFX actor instance if we don't have one already.  It may have survived a prior detachment, so
-		// in which case we won't need to do anything here
-		if( FaceFXActorInstance == NULL )
-		{
-			FaceFXActorInstance = new FxActorInstance();
-			FaceFXActorInstance->SetActor( SkeletalMesh->FaceFXAsset->GetFxActor() );
-		}
-
-		// Make sure the actors match between the FaceFX instance and the FaceFX asset.
-		else if( FaceFXActorInstance->GetActor() != SkeletalMesh->FaceFXAsset->GetFxActor() )
-		{
-			// OK, we have a FaceFX actor instance but the actor doesn't match the skeletal mesh's FaceFX asset's
-			// associated actor.  We'll update our instance object to point to the correct actor.
-			FaceFXActorInstance->SetActor( SkeletalMesh->FaceFXAsset->GetFxActor() );
-		}
-	}
-	else
-	{
-		// FaceFX features are disabled, so destroy our FaceFX instance if we have one
-		if( FaceFXActorInstance != NULL )
-		{
-			delete FaceFXActorInstance;
-			FaceFXActorInstance = NULL;
-		}
-	}
-#endif // WITH_FACEFX
+	// DISHONORED(port): agent FX3. Retail's Attach (2012 0x376a70, 2013 0x356530) binds the actor instance through
+	// SetFaceFXAsset(m_pFaceFXAsset) - the asset the pawn set on this (body) component - where the reference reads
+	// SkeletalMesh->FaceFXAsset.
+	SetFaceFXAsset( m_pFaceFXAsset );
 
 	bRequiredBonesUpToDate = FALSE;
 	bUpdatedFixedClothVerts = FALSE;
@@ -2722,450 +2698,361 @@ void USkeletalMeshComponent::UpdateActiveMorphs()
 	}
 }
 
-/** Performs per-frame FaceFX processing. */
-void USkeletalMeshComponent::UpdateFaceFX( TArray<FBoneAtom>& LocalTransforms, UBOOL bTickFaceFX )
-{
 #if WITH_FACEFX
-	// Note: SkeletalMesh and SkeletalMesh->FaceFXAsset cannot be NULL when 
-	// this is called.
-	if( FaceFXActorInstance )
+/*-----------------------------------------------------------------------------
+	-fx3diag (agent FX3): what FaceFX plays and does to the face. On PlayFaceFXAnim the anim, its group, start / end time,
+	the start position and the first tick's state; every frame an anim plays, the anim time, the 'open' node and the
+	jaw_jnt / lips_low_c_jnt local atoms against the mesh's reference pose (angle in degrees, offset in units). Read only.
+-----------------------------------------------------------------------------*/
+static UBOOL FX3DiagEnabled()
+{
+	static INT Enabled = -1;
+	if( Enabled < 0 )
 	{
-		FxActor* FaceFXActor = FaceFXActorInstance->GetActor();
-		if( FaceFXActor )
-		{
-			// First, tick the current animation.
-			// The only time we should be setting bTickFaceFX to FALSE is when we are ForceTicking somewhere else to a specific location.
-			// In that case, IsPlaying will not be true, but we do want to evaluate FaceFX to update the face - hence the !bTickFaceFX check here.
-			if( FaceFXActorInstance->IsPlayingAnim() || 
-				FaceFXActorInstance->GetAllowNonAnimTick() || 
-				FaceFXActorInstance->IsOpenInStudio() || 
-				!bTickFaceFX ) 
-			{
-
-				// Do not do this if we are ForceTicking outside of this function.
-				if(bTickFaceFX)
-				{
-					FxReal AudioOffset = -1.0f;
-					if( CachedFaceFXAudioComp )
-					{
-						//@todo Is there a better way to determine if an audio component
-						// is currently playing?
-						if( CachedFaceFXAudioComp->SoundCue &&
-							CachedFaceFXAudioComp->PlaybackTime != 0.0f &&
-							!CachedFaceFXAudioComp->bFinished &&
-							!GIsBenchmarking )
-						{
-							AudioOffset = CachedFaceFXAudioComp->PlaybackTime;
-
-							// note, this assumes a constant pitch for the duration of the cue
-							// to support variable pitch, AudioComponent could track and store a current time
-							// within the audio.
-							AudioOffset *= CachedFaceFXAudioComp->CurrentPitchMultiplier;
-						}
-					}
-
-					FxAnimPlaybackState PlaybackState = APS_Stopped;
-					{
-						SCOPE_CYCLE_COUNTER(STAT_FaceFX_TickTime);
-						FxDReal AppTime = 0.0;
-						if( Owner && Owner->WorldInfo )
-						{
-							AppTime = Owner->WorldInfo->AudioTimeSeconds;
-						}
-						else
-						{
-							AppTime = appSeconds();
-						}
-
-						// In FaceFX 1.7+ the compiled face graph has already been ticked from the FaceFX 
-						// Studio code.  Ticking it again here causes the face graph results to be cleared
-						// before the skeleton has been updated, so if the FaceFX actor instance is open 
-						// inside of FaceFX Studio the actor instance isn't ticked again here.
-						if( !FaceFXActorInstance->IsOpenInStudio() )
-						{
-							PlaybackState = FaceFXActorInstance->Tick(AppTime, AudioOffset);
-						}
-					}
-
-					if( APS_StartAudio == PlaybackState )
-					{
-						if( CachedFaceFXAudioComp )
-						{
-							if( CachedFaceFXAudioComp->SoundCue )
-							{
-								CachedFaceFXAudioComp->SubtitlePriority = SUBTITLE_PRIORITY_FACEFX;
-								CachedFaceFXAudioComp->Play();
-							}
-						}
-					}
-
-					//@todo What about non-anim tick events?
-					if( APS_Stopped == PlaybackState )
-					{
-						// Don't stop the anim if the audio has not finished as this will cause an audio artifact
-						if( CachedFaceFXAudioComp == NULL || CachedFaceFXAudioComp->bFinished )
-						{
-							StopFaceFXAnim();
-						}
-					}
-				}
-
-				// Next update through the face graph and relink anything requesting a relink.
-				FxBool bShouldClientRelink = FaceFXActor->ShouldClientRelink();
-				if( bShouldClientRelink )
-				{
-					// Link the bones.
-					FxMasterBoneList& MasterBoneList = FaceFXActor->GetMasterBoneList();
-					for( FxSize i = 0; i < MasterBoneList.GetNumRefBones(); ++i )
-					{
-						FxBool bFoundBone = FxFalse;
-						FName BoneName = FName(*FString(MasterBoneList.GetRefBone(i).GetNameAsCstr()), FNAME_Find, TRUE); 
-						if ( BoneName!=NAME_None )
-						{
-							for( INT j = 0; j < SkeletalMesh->RefSkeleton.Num(); ++j )
-							{
-								if( BoneName == SkeletalMesh->RefSkeleton(j).Name )
-								{
-									MasterBoneList.SetRefBoneClientIndex(i, j);
-									bFoundBone = FxTrue;
-								}
-							}
-						}
-
-						if( !bFoundBone )
-						{
-							debugf(TEXT("FaceFX: WARNING Reference bone %s could not be found in the skeleton '%s'."), 
-								ANSI_TO_TCHAR(MasterBoneList.GetRefBone(i).GetNameAsCstr())
-								,*GetDetailedInfo()
-								);
-							// Make sure any bones not linked up to the skeleton do not try to update
-							// the skeleton.
-							MasterBoneList.SetRefBoneClientIndex(i, FX_INT32_MAX);
-						}
-					}
-					FaceFXActor->SetShouldClientRelink(FxFalse);
-				}
-
-				{
-					SCOPE_CYCLE_COUNTER(STAT_FaceFX_BeginFrameTime);
-					FaceFXActorInstance->BeginFrame();
-				}
-
-				FxCompiledFaceGraph& cg = FaceFXActor->GetCompiledFaceGraph();
-				FxSize numNodes = cg.nodes.Length();
-				for( FxSize node = 0; node < numNodes; ++node )
-				{
-					switch( cg.nodes[node].nodeType )
-					{
-					case NT_MorphTargetUE3:
-						{
-							SCOPE_CYCLE_COUNTER(STAT_FaceFX_MorphPassTime);
-
-							// Update any morph nodes that may be in the Face Graph.
-							FFaceFXMorphTargetProxy* Proxy = reinterpret_cast<FFaceFXMorphTargetProxy*>(cg.nodes[node].pUserData);
-							// If the proxy is invalid create one.
-							FxBool bShouldLink = FxFalse;
-							if( !Proxy )
-							{
-								FFaceFXMorphTargetProxy* NewMorphTargetProxy = new FFaceFXMorphTargetProxy();
-								cg.nodes[node].pUserData = NewMorphTargetProxy;
-								bShouldLink = FxTrue;
-								Proxy = NewMorphTargetProxy;
-							}
-
-							if( Proxy )
-							{
-								// If the proxy requests to be re-linked, link it up.
-								if( bShouldLink || bShouldClientRelink )
-								{
-									const FxFaceGraphNodeUserProperty& MorphTargetNameProperty = 
-										cg.nodes[node].userProperties[FX_MORPH_NODE_TARGET_NAME_INDEX];
-									Proxy->Link(FName(ANSI_TO_TCHAR(MorphTargetNameProperty.GetStringProperty().GetData())));
-								}
-								Proxy->SetSkeletalMeshComponent(this);
-								Proxy->Update(cg.nodes[node].finalValue);
-							}
-						}
-						break;
-					case NT_MaterialParameterUE3:
-						{
-							SCOPE_CYCLE_COUNTER(STAT_FaceFX_MaterialPassTime);
-
-							// Update any material parameter nodes that may be in the Face Graph.
-							FFaceFXMaterialParameterProxy* Proxy = reinterpret_cast<FFaceFXMaterialParameterProxy*>(cg.nodes[node].pUserData);
-							// If the proxy is invalid create one.
-							FxBool bShouldLink = FxFalse;
-							if( !Proxy )
-							{
-								FFaceFXMaterialParameterProxy* NewMaterialParameterProxy = new FFaceFXMaterialParameterProxy();
-								cg.nodes[node].pUserData = NewMaterialParameterProxy;
-								bShouldLink = FxTrue;
-								Proxy = NewMaterialParameterProxy;
-							}
-
-							if( Proxy )
-							{
-								// If the proxy requests to be re-linked, link it up.
-								if( bShouldLink || bShouldClientRelink )
-								{
-									const FxFaceGraphNodeUserProperty& MaterialSlotProperty = 
-										cg.nodes[node].userProperties[FX_MATERIAL_PARAMETER_NODE_MATERIAL_SLOT_ID_INDEX];
-									const FxFaceGraphNodeUserProperty& ParameterNameProperty =
-										cg.nodes[node].userProperties[FX_MATERIAL_PARAMETER_NODE_PARAMETER_NAME_INDEX];
-									Proxy->Link(MaterialSlotProperty.GetIntegerProperty(), FName(ANSI_TO_TCHAR(ParameterNameProperty.GetStringProperty().GetData())));
-								}
-								Proxy->SetSkeletalMeshComponent(this);
-								Proxy->Update(cg.nodes[node].finalValue);
-							}
-						}
-						break;
-					default:
-						break;
-					}
-				}
-
-				{
-					SCOPE_CYCLE_COUNTER(STAT_FaceFX_BoneBlendingPassTime);
-					FxMasterBoneList& MasterBoneList = FaceFXActor->GetMasterBoneList();
-					const FxSize NumBones = FaceFXActorInstance->GetNumBones();
-					
-					if( FaceFXBlendMode == FXBM_Additive )
-					{
-						// Additive blending of Face FX transforms in parent bone space
-
-						for( FxSize i = 0; i < NumBones; ++i )
-						{
-							const FxInt32 ClientIndex = MasterBoneList.GetRefBoneClientIndex(i);
-							if( FX_INT32_MAX != ClientIndex )
-							{
-								if( ClientIndex >= 0 && ClientIndex < LocalTransforms.Num())
-								{
-									// Face FX local bone transform
-									FxVec3 pos, scale;
-									FxQuat rot;
-									FxReal weight;
-									FaceFXActorInstance->GetBone(i, pos, rot, scale, weight);
-									const FVector		Position(pos.x, -pos.y, pos.z);
-									const FQuat			Rotation(rot.x, -rot.y, rot.z, rot.w);
-
-									FBoneAtom			FaceFXAtom	= FBoneAtom(Rotation, Position);
-									//FaceFXAtom.NormalizeRotation();
-
-									// Face FX reference pose bone transform
-									const FxBone&		FFXRefBoneTransform = MasterBoneList.GetRefBone(i);
-									const FxVec3&		FFXRefBonePos		= FFXRefBoneTransform.GetPos();
-									const FxQuat&		FFXRefBoneRot		= FFXRefBoneTransform.GetRot();
-
-									const FVector		RefPosition(FFXRefBonePos.x, -FFXRefBonePos.y, FFXRefBonePos.z);
-									const FQuat			RefRotation(FFXRefBoneRot.x, -FFXRefBoneRot.y, FFXRefBoneRot.z, FFXRefBoneRot.w);
-
-									FBoneAtom	RefSkelAtom	= FBoneAtom(RefRotation, RefPosition);
-									//RefSkelAtom.NormalizeRotation();
-
-									//RefSkelAtom.NormalizeRotation();
-
-									LocalTransforms(ClientIndex).AccumulateWithAdditiveScale(FaceFXAtom - RefSkelAtom);
-									
-									// make sure rotation is normalized
-									//LocalTransforms(ClientIndex).NormalizeRotation();
-								}
-								else
-								{
-#if CONSOLE
-									warnf( TEXT("Bad FaceFX Animation Data for Skeleton '%s', ClientIndex: %d, NumLocalTransforms: %d"), *GetDetailedInfo(), ClientIndex, LocalTransforms.Num() );									
-#else
-									ensureMsgf(ClientIndex >= 0 && ClientIndex < LocalTransforms.Num(), TEXT("Bad FaceFX Animation Data for Skeleton '%s', ClientIndex: %d, NumLocalTransforms: %d"), *GetDetailedInfo(), ClientIndex, LocalTransforms.Num());
-#endif
-								}
-							}
-						}
-					}
-					else
-					{
-						// Original path for Face FX, overwrite skeleton local transforms.
-						for( FxSize i = 0; i < NumBones; ++i )
-						{
-							const FxInt32 ClientIndex = MasterBoneList.GetRefBoneClientIndex(i);
-							if( FX_INT32_MAX != ClientIndex )
-							{
-								if( ClientIndex >= 0 && ClientIndex < LocalTransforms.Num() )
-								{
-									FxVec3 pos, scale;
-									FxQuat rot;
-									FxReal weight;
-									FaceFXActorInstance->GetBone(i, pos, rot, scale, weight);
-									const FVector		Position(pos.x, -pos.y, pos.z);
-									const FQuat			Rotation(rot.x, -rot.y, rot.z, rot.w);
-									LocalTransforms(ClientIndex).SetComponents(Rotation, Position);
-								}
-								else
-								{
-#if CONSOLE
-									warnf( TEXT("Bad FaceFX Animation Data for Skeleton '%s', ClientIndex: %d, NumLocalTransforms: %d"), *GetDetailedInfo(), ClientIndex, LocalTransforms.Num() );									
-#else
-									ensureMsgf(ClientIndex >= 0 && ClientIndex < LocalTransforms.Num(), TEXT("Bad FaceFX Animation Data for Skeleton '%s', ClientIndex: %d, NumLocalTransforms: %d"), *GetDetailedInfo(), ClientIndex, LocalTransforms.Num());
-#endif
-								}
-							}
-						}
-					}
-				}
-
-				{
-					SCOPE_CYCLE_COUNTER(STAT_FaceFX_EndFrameTime);
-					FaceFXActorInstance->EndFrame();
-				}
-			}
-		}
+		Enabled = ParseParam( appCmdLine(), TEXT("fx3diag") ) ? 1 : 0;
 	}
-#endif
+	return Enabled != 0;
 }
 
-UBOOL USkeletalMeshComponent::PlayFaceFXAnim(UFaceFXAnimSet* FaceFXAnimSetRef, const FString& AnimName, const FString& GroupName,class USoundCue* SoundCueToPlay)
+static FString FX3DiagBone( USkeletalMeshComponent* Comp, const TArray<FBoneAtom>& LocalTransforms, const TCHAR* BoneName )
+{
+	const INT Index = Comp->MatchRefBone( FName( BoneName ) );
+	if( Index == INDEX_NONE || Index >= LocalTransforms.Num() )
+	{
+		return FString::Printf( TEXT(" %s -"), BoneName );
+	}
+	const FMeshBone& Ref = Comp->SkeletalMesh->RefSkeleton(Index);
+	const FQuat Rot = LocalTransforms(Index).GetRotation();
+	const FLOAT Dot = Abs( Rot.X * Ref.BonePos.Orientation.X + Rot.Y * Ref.BonePos.Orientation.Y + Rot.Z * Ref.BonePos.Orientation.Z + Rot.W * Ref.BonePos.Orientation.W );
+	return FString::Printf( TEXT(" %s rot (%.4f %.4f %.4f %.4f) %.2f deg d=%.3f"), BoneName, Rot.X, Rot.Y, Rot.Z, Rot.W,
+		2.f * appAcos( Min( 1.f, Dot ) ) * 180.f / PI, ( LocalTransforms(Index).GetTranslation() - Ref.BonePos.Position ).Size() );
+}
+
+static void FX3DiagFaceFXBones( USkeletalMeshComponent* Comp, const TArray<FBoneAtom>& LocalTransforms )
+{
+	if( !FX3DiagEnabled() || !Comp->FaceFXActorInstance || !Comp->FaceFXActorInstance->IsPlayingAnim() )
+	{
+		return;
+	}
+	FxCompiledFaceGraph& cg = Comp->FaceFXActorInstance->GetActor()->GetCompiledFaceGraph();
+	const FxSize OpenNode = cg.FindNodeIndex( FxName( "open" ) );
+	debugf( TEXT("DISHONORED(bringup): fx3diag t=%.3f bones %s anim %s time %.3f open %.4f%s%s"), GWorld ? GWorld->GetTimeSeconds() : 0.f,
+		Comp->GetOwner() ? *Comp->GetOwner()->GetName() : TEXT("none"), ANSI_TO_TCHAR( Comp->FaceFXActorInstance->GetCurrentAnimName().GetAsCstr() ),
+		Comp->FaceFXActorInstance->GetAnimCurrentTime(), OpenNode != FxInvalidIndex ? cg.nodes[OpenNode].finalValue : -1.f,
+		*FX3DiagBone( Comp, LocalTransforms, TEXT("jaw_jnt") ), *FX3DiagBone( Comp, LocalTransforms, TEXT("lips_low_c_jnt") ) );
+}
+
+static void FX3DiagFaceFXPlay( USkeletalMeshComponent* Comp, UFaceFXAnimSet* AnimSet, const TCHAR* AnimName, const ANSICHAR* GroupName, FLOAT Position, INT FirstState )
+{
+	if( !FX3DiagEnabled() )
+	{
+		return;
+	}
+	const FxAnim* Anim = Comp->FaceFXActorInstance ? Comp->FaceFXActorInstance->GetCurrentAnim() : NULL;
+	debugf( TEXT("DISHONORED(bringup): fx3diag t=%.3f play %s on %s (%s) set %s group %s anim %s start %.3f end %.3f position %.3f first tick state %d (0 start audio, 1 playing, 2 stopped) handler %s blend mode %d tick time %.3f"),
+		GWorld ? GWorld->GetTimeSeconds() : 0.f, Comp->GetOwner() ? *Comp->GetOwner()->GetName() : TEXT("none"), *Comp->GetName(),
+		Comp->SkeletalMesh ? *Comp->SkeletalMesh->GetName() : TEXT("none"), AnimSet ? *AnimSet->GetName() : TEXT("none"), ANSI_TO_TCHAR( GroupName ), AnimName,
+		Anim ? Anim->GetStartTime() : 0.f, Anim ? Anim->GetEndTime() : 0.f, Position, FirstState,
+		Comp->m_pFaceFxAudioHandler ? *Comp->m_pFaceFxAudioHandler->GetName() : TEXT("none"), (INT)Comp->FaceFXBlendMode, Comp->m_fFaceFxTickTime );
+}
+
+static void FX3DiagFaceFXEvent( USkeletalMeshComponent* Comp, const TCHAR* What )
+{
+	if( FX3DiagEnabled() )
+	{
+		debugf( TEXT("DISHONORED(bringup): fx3diag t=%.3f %s on %s tick time %.3f handler %s"), GWorld ? GWorld->GetTimeSeconds() : 0.f, What,
+			Comp->GetOwner() ? *Comp->GetOwner()->GetName() : TEXT("none"), Comp->m_fFaceFxTickTime,
+			Comp->m_pFaceFxAudioHandler ? *Comp->m_pFaceFxAudioHandler->GetName() : TEXT("none") );
+	}
+}
+
+static void FX3DiagFaceFXAsset( USkeletalMeshComponent* Comp, UFaceFXAsset* Asset )
+{
+	if( !FX3DiagEnabled() || !Asset )
+	{
+		return;
+	}
+	FxActor* Actor = Asset ? Asset->GetFxActor() : NULL;
+	debugf( TEXT("DISHONORED(bringup): fx3diag SetFaceFXAsset %s on %s (%s, %d bones): actor %s (%d ref bones) instance %d"),
+		Asset ? *Asset->GetName() : TEXT("none"), Comp->GetOwner() ? *Comp->GetOwner()->GetName() : TEXT("none"),
+		Comp->SkeletalMesh ? *Comp->SkeletalMesh->GetName() : TEXT("none"), Comp->SkeletalMesh ? Comp->SkeletalMesh->RefSkeleton.Num() : -1,
+		Actor ? ANSI_TO_TCHAR( Actor->GetNameAsCstr() ) : TEXT("none"), Actor ? (INT)Actor->GetMasterBoneList().GetNumRefBones() : -1,
+		Comp->FaceFXActorInstance ? 1 : 0 );
+}
+#endif // WITH_FACEFX
+
+/** Performs per-frame FaceFX processing. */
+// DISHONORED(port): agent FX3, 2013 rva 0x325ea0 (2012 0x347b90, 5,485 B, 0.997). Retail's body against the reference's:
+//  * the clock is the component's: m_fFaceFxTickTime accumulates DeltaTime and the instance ticks with no audio time
+//    (-1), where the reference reads AudioTimeSeconds and the playing UAudioComponent's position;
+//  * APS_StartAudio posts the line through DisFaceFxStartAudio(m_pFaceFxAudioHandler, this, -1) - the conversation
+//    component PlayFaceFXAnim stored - instead of playing CachedFaceFXAudioComp; APS_Stopped stops the instance at once
+//    (no wait for the audio to finish);
+//  * the bone pass inlines FxActorInstance::GetBone (FxMasterBoneList::GetBlendedBone) and, in FXBM_Additive mode (the
+//    default), adds the FaceFX pose's offset from the FaceFX reference pose to the local atom
+//    (AccumulateWithAdditiveScale of FaceFXAtom - RefSkelAtom, the reference's own); in FXBM_Overwrite it sets the atom.
+//    The y components are negated (FaceFX is right-handed). Bones the body mesh does not have stay at client index
+//    FX_INT32_MAX and are skipped; a bad index is skipped without the reference's warning.
+void USkeletalMeshComponent::UpdateFaceFX( TArray<FBoneAtom>& LocalTransforms, FLOAT DeltaTime, UBOOL bTickFaceFX )
 {
 #if WITH_FACEFX
-	//debugf(TEXT("PlayFaceFXAnim on: %s, AnimSet: %s, GroupName: %s, AnimName: %s SoundCueToPlay: %s"), *Owner->GetName(), *FaceFXAnimSetRef->GetFullName(), *GroupName, *AnimName, *SoundCueToPlay->GetFullName() );
-	SCOPE_CYCLE_COUNTER(STAT_FaceFX_PlayAnim);
-
-#if !FINAL_RELEASE
-	extern UBOOL GShouldTraceFaceFX;
-	if (GShouldTraceFaceFX)
-		TraceFaceFX();
-#endif
-
-	if( !bDisableFaceFX && FaceFXActorInstance )
+	if( !FaceFXActorInstance )
 	{
-		// See if AnimSet needs to be mounted
-		if( FaceFXAnimSetRef )
+		return;
+	}
+	FxActor* FaceFXActor = FaceFXActorInstance->GetActor();
+	if( !FaceFXActor )
+	{
+		return;
+	}
+	if( !FaceFXActorInstance->IsPlayingAnim() && !FaceFXActorInstance->GetAllowNonAnimTick() && !FaceFXActorInstance->IsOpenInStudio() && bTickFaceFX )
+	{
+		return;
+	}
+	if( bTickFaceFX )
+	{
+		m_fFaceFxTickTime += DeltaTime;
+		FxAnimPlaybackState PlaybackState = APS_Stopped;
 		{
-			if( SkeletalMesh && SkeletalMesh->FaceFXAsset )
+			SCOPE_CYCLE_COUNTER(STAT_FaceFX_TickTime);
+			if( !FaceFXActorInstance->IsOpenInStudio() )
 			{
-				// Ensure AnimSet is mounted - this should be fine to call if it is already mounted (will do nothing).
-				SkeletalMesh->FaceFXAsset->MountFaceFXAnimSet(FaceFXAnimSetRef);
+				PlaybackState = FaceFXActorInstance->Tick( m_fFaceFxTickTime, -1.0f );
 			}
 		}
-
-// 		warnf( TEXT( "NUM MountedAnimSet: %d" ) ,SkeletalMesh->FaceFXAsset->MountedFaceFXAnimSets.Num() );
-// 
-// 		// log out the set of mounted AnimSets!
-// 		for( INT i = 0; i < SkeletalMesh->FaceFXAsset->MountedFaceFXAnimSets.Num(); ++i )
-// 		{
-// 			//const FxAnimGroup& TempFFXAnimGroup = SkeletalMesh->FaceFXAsset->MountedFaceFXAnimSets(i)->GetFullName();
-// 			warnf( TEXT( "MountedAnimSet: %s %s %s" )
-// 				,*SkeletalMesh->FaceFXAsset->GetFullName()
-// 				, *SkeletalMesh->FaceFXAsset->MountedFaceFXAnimSets(i)->GetFullName()
-// 				//,ANSI_TO_TCHAR(TempFFXAnimGroup.GetNameAsCstr()), 
-// 				);
-// 		}dddddsfsfsdf
-
-
-		// Start the FaceFX animation playing
-		UBOOL bPlaySuccess = FaceFXActorInstance->PlayAnim(TCHAR_TO_ANSI(*AnimName), TCHAR_TO_ANSI(*GroupName));
-
-		// If that worked, we want to start some audio
-		if( bPlaySuccess )
+		if( PlaybackState == APS_StartAudio )
 		{
-			// If we have an animation playing, and an Owner Actor
-			const FxAnim* Anim = FaceFXActorInstance->GetCurrentAnim();
-			if( Anim && Owner )
+			FX3DiagFaceFXEvent( this, TEXT("start audio") );
+			if( m_pFaceFxAudioHandler && GDisFaceFxStartAudioHook )
 			{
-				// Get the audio component even if we do not have a sound to play, so we can clear any existing sound on it.
-				// Use the virtual function in Actor to do this.
-
-				// Hackette here - in Matinee we want to use the C++ function, because we can't run events in the editor :(
-				if(GIsEditor && !GWorld->HasBegunPlay())
-				{
-					CachedFaceFXAudioComp = Owner->PreviewGetFaceFXAudioComponent();
-				}
-				// In real game, use script event.
-				else
-				{
-					CachedFaceFXAudioComp = Owner->eventGetFaceFXAudioComponent();
-				}
-
-
-				// we here can use the passed in soundcue to play the sound if they passed one in
-				USoundCue* Sound = NULL;
-
-				if( SoundCueToPlay != NULL )
-				{
-					Sound = SoundCueToPlay;
-				}
-				else
-				{
-					Sound = reinterpret_cast<USoundCue*>(Anim->GetSoundCuePointer());
-				}
-
-				
-				// If we got the sound, get an AudioComponent to play it on.
-				if( CachedFaceFXAudioComp )
-				{
-					CachedFaceFXAudioComp->Stop();
-					CachedFaceFXAudioComp->SoundCue = Sound;
-				}
+				GDisFaceFxStartAudioHook( m_pFaceFxAudioHandler, this, -1.0f );
 			}
-
-			return TRUE;
 		}
-		else
+		else if( PlaybackState == APS_Stopped )
 		{
-#if !FINAL_RELEASE && !NO_LOGGING
-			FString AnimSetName = FaceFXAnimSetRef ? FaceFXAnimSetRef->GetFullName() : TEXT("None");
-			warnf(TEXT("Failed to play FaceFX Animation on: %s (%s), AnimSet: %s, GroupName: %s, AnimName: %s, SoundCue: %s (%s%s%s)"), 
-				*Owner->GetName(), 
-				*SkeletalMesh->GetPathName(),
-				*AnimSetName, *GroupName, *AnimName, 
-				SoundCueToPlay ? *(SoundCueToPlay->GetPathName()) : TEXT("NULL"),
-				SoundCueToPlay ? *(SoundCueToPlay->FaceFXGroupName) : TEXT(""),
-				SoundCueToPlay ? TEXT(".") : TEXT(""),
-				SoundCueToPlay ? *(SoundCueToPlay->FaceFXAnimName) : TEXT("")
-				);
-#if 0 //Make this '1' to have a failed case list all animations on the FxActor
-			{
-				FxActor* FFXPActor = FaceFXActorInstance->GetActor();
-				if (FFXPActor)
-				{
-					for (FxSize AGIndex = 0; AGIndex < FFXPActor->GetNumAnimGroups(); AGIndex++)
-					{
-						const FxAnimGroup& AnimGroup = FFXPActor->GetAnimGroup(AGIndex);
-						debugf(TEXT("\tAnimGroup %d - %s"), (INT)AGIndex, ANSI_TO_TCHAR(AnimGroup.GetNameAsCstr()));
-
-						FxSize AnimCount = AnimGroup.GetNumAnims();
-						for (FxSize AnimIndex = 0; AnimIndex < AnimCount; AnimIndex++)
-						{
-							const FxAnim& Anim = AnimGroup.GetAnim(AnimIndex);
-							debugf(TEXT("\t\tAnim %4d - %s"), (INT)AnimIndex, ANSI_TO_TCHAR(Anim.GetNameAsCstr()));
-						}
-					}
-				}
-			}
-#endif
-#endif
+			FX3DiagFaceFXEvent( this, TEXT("anim end") );
 			StopFaceFXAnim();
 		}
 	}
-#endif // WITH_FACEFX
 
-	return FALSE;
+	const FxBool bShouldClientRelink = FaceFXActor->ShouldClientRelink();
+	if( bShouldClientRelink )
+	{
+		FxMasterBoneList& MasterBoneList = FaceFXActor->GetMasterBoneList();
+		for( FxSize i = 0; i < MasterBoneList.GetNumRefBones(); ++i )
+		{
+			FxBool bFoundBone = FxFalse;
+			FName BoneName = FName(*FString(MasterBoneList.GetRefBone(i).GetNameAsCstr()), FNAME_Find, TRUE);
+			if( BoneName != NAME_None )
+			{
+				for( INT j = 0; j < SkeletalMesh->RefSkeleton.Num(); ++j )
+				{
+					if( BoneName == SkeletalMesh->RefSkeleton(j).Name )
+					{
+						MasterBoneList.SetRefBoneClientIndex(i, j);
+						bFoundBone = FxTrue;
+					}
+				}
+			}
+			if( !bFoundBone )
+			{
+				MasterBoneList.SetRefBoneClientIndex(i, FX_INT32_MAX);
+			}
+		}
+		FaceFXActor->SetShouldClientRelink(FxFalse);
+	}
+
+	{
+		SCOPE_CYCLE_COUNTER(STAT_FaceFX_BeginFrameTime);
+		FaceFXActorInstance->BeginFrame();
+	}
+
+	FxCompiledFaceGraph& cg = FaceFXActor->GetCompiledFaceGraph();
+	FxSize numNodes = cg.nodes.Length();
+	for( FxSize node = 0; node < numNodes; ++node )
+	{
+		switch( cg.nodes[node].nodeType )
+		{
+		case NT_MorphTargetUE3:
+			{
+				SCOPE_CYCLE_COUNTER(STAT_FaceFX_MorphPassTime);
+				FFaceFXMorphTargetProxy* Proxy = reinterpret_cast<FFaceFXMorphTargetProxy*>(cg.nodes[node].pUserData);
+				FxBool bShouldLink = FxFalse;
+				if( !Proxy )
+				{
+					Proxy = new FFaceFXMorphTargetProxy();
+					cg.nodes[node].pUserData = Proxy;
+					bShouldLink = FxTrue;
+				}
+				if( Proxy )
+				{
+					if( bShouldLink || bShouldClientRelink )
+					{
+						const FxFaceGraphNodeUserProperty& MorphTargetNameProperty = cg.nodes[node].userProperties[FX_MORPH_NODE_TARGET_NAME_INDEX];
+						Proxy->Link(FName(ANSI_TO_TCHAR(MorphTargetNameProperty.GetStringProperty().GetData())));
+					}
+					Proxy->SetSkeletalMeshComponent(this);
+					Proxy->Update(cg.nodes[node].finalValue);
+				}
+			}
+			break;
+		case NT_MaterialParameterUE3:
+			{
+				SCOPE_CYCLE_COUNTER(STAT_FaceFX_MaterialPassTime);
+				FFaceFXMaterialParameterProxy* Proxy = reinterpret_cast<FFaceFXMaterialParameterProxy*>(cg.nodes[node].pUserData);
+				FxBool bShouldLink = FxFalse;
+				if( !Proxy )
+				{
+					Proxy = new FFaceFXMaterialParameterProxy();
+					cg.nodes[node].pUserData = Proxy;
+					bShouldLink = FxTrue;
+				}
+				if( Proxy )
+				{
+					if( bShouldLink || bShouldClientRelink )
+					{
+						const FxFaceGraphNodeUserProperty& MaterialSlotProperty = cg.nodes[node].userProperties[FX_MATERIAL_PARAMETER_NODE_MATERIAL_SLOT_ID_INDEX];
+						const FxFaceGraphNodeUserProperty& ParameterNameProperty = cg.nodes[node].userProperties[FX_MATERIAL_PARAMETER_NODE_PARAMETER_NAME_INDEX];
+						Proxy->Link(MaterialSlotProperty.GetIntegerProperty(), FName(ANSI_TO_TCHAR(ParameterNameProperty.GetStringProperty().GetData())));
+					}
+					Proxy->SetSkeletalMeshComponent(this);
+					Proxy->Update(cg.nodes[node].finalValue);
+				}
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	{
+		SCOPE_CYCLE_COUNTER(STAT_FaceFX_BoneBlendingPassTime);
+		FxMasterBoneList& MasterBoneList = FaceFXActor->GetMasterBoneList();
+		const FxSize NumBones = FaceFXActorInstance->GetNumBones();
+		for( FxSize i = 0; i < NumBones; ++i )
+		{
+			const FxInt32 ClientIndex = MasterBoneList.GetRefBoneClientIndex(i);
+			if( ClientIndex == FX_INT32_MAX || ClientIndex < 0 || ClientIndex >= LocalTransforms.Num() )
+			{
+				continue;
+			}
+			FxVec3 pos, scale;
+			FxQuat rot;
+			FxReal weight;
+			FaceFXActorInstance->GetBone(i, pos, rot, scale, weight);
+			const FVector Position(pos.x, -pos.y, pos.z);
+			const FQuat Rotation(rot.x, -rot.y, rot.z, rot.w);
+			if( FaceFXBlendMode == FXBM_Additive )
+			{
+				const FBoneAtom FaceFXAtom(Rotation, Position);
+				const FxBone& FFXRefBoneTransform = MasterBoneList.GetRefBone(i);
+				const FxVec3& FFXRefBonePos = FFXRefBoneTransform.GetPos();
+				const FxQuat& FFXRefBoneRot = FFXRefBoneTransform.GetRot();
+				const FVector RefPosition(FFXRefBonePos.x, -FFXRefBonePos.y, FFXRefBonePos.z);
+				const FQuat RefRotation(FFXRefBoneRot.x, -FFXRefBoneRot.y, FFXRefBoneRot.z, FFXRefBoneRot.w);
+				const FBoneAtom RefSkelAtom(RefRotation, RefPosition);
+				LocalTransforms(ClientIndex).AccumulateWithAdditiveScale(FaceFXAtom - RefSkelAtom);
+			}
+			else
+			{
+				LocalTransforms(ClientIndex).SetComponents(Rotation, Position);
+			}
+		}
+	}
+	FX3DiagFaceFXBones( this, LocalTransforms );
+
+	{
+		SCOPE_CYCLE_COUNTER(STAT_FaceFX_EndFrameTime);
+		FaceFXActorInstance->EndFrame();
+	}
+#endif
 }
 
+// DISHONORED(port): agent FX3, 2013 rva 0x356ef0 (2012 0x379870, 371 B, bytes 1.000). Arkane's signature: the anim name
+// as TCHARs, the group as ANSI, the component the voice is posted for (the conversation component) and the anim time
+// the line starts at (the anim's start offset plus the seek). The anim set is mounted on m_pFaceFXAsset (the asset set
+// on this component), the instance plays the anim and is ticked once at once with _fPosition as its audio time; when
+// that tick already reaches anim time 0 the voice is posted now (GIsGame), otherwise UpdateFaceFX posts it on the tick
+// that does. A failure stops the instance and returns FALSE, which PlayDialogBlurb answers with its own Wwise post.
+UBOOL USkeletalMeshComponent::PlayFaceFXAnim( UFaceFXAnimSet* FaceFXAnimSetRef, const TCHAR* AnimName, const ANSICHAR* GroupName, UActorComponent* _pAudioHandler, FLOAT _fPosition )
+{
+#if WITH_FACEFX
+	extern UBOOL GShouldTraceFaceFX;
+	if( GShouldTraceFaceFX )
+	{
+		TraceFaceFX();
+	}
+	if( !FaceFXActorInstance )
+	{
+		return FALSE;
+	}
+	if( FaceFXAnimSetRef && m_pFaceFXAsset )
+	{
+		m_pFaceFXAsset->MountFaceFXAnimSet(FaceFXAnimSetRef);
+	}
+	const FxBool bPlaySuccess = FaceFXActorInstance->PlayAnim(FxName(TCHAR_TO_ANSI(AnimName)), FxName(GroupName));
+	if( !bPlaySuccess )
+	{
+		StopFaceFXAnim();
+		return FALSE;
+	}
+	const FxAnimPlaybackState PlaybackState = FaceFXActorInstance->Tick(m_fFaceFxTickTime, _fPosition);
+	m_pFaceFxAudioHandler = _pAudioHandler;
+	if( GIsGame && PlaybackState == APS_StartAudio && _pAudioHandler && GDisFaceFxStartAudioHook )
+	{
+		GDisFaceFxStartAudioHook( _pAudioHandler, this, _fPosition );
+	}
+	FX3DiagFaceFXPlay( this, FaceFXAnimSetRef, AnimName, GroupName, _fPosition, PlaybackState );
+	return TRUE;
+#else
+	return FALSE;
+#endif // WITH_FACEFX
+}
+
+// DISHONORED(port): agent FX3, 2013 rva 0x357070 (2012 0x3799f0, 970 B, bytes 1.000). Mounts the anim set like
+// PlayFaceFXAnim and returns the anim's start time (0 or the negative lead-in before its audio), 0 when the group or the
+// anim is not found. _fPosition is not read.
+FLOAT USkeletalMeshComponent::GetFaceFXAnimStartOffset( UFaceFXAnimSet* FaceFXAnimSetRef, const TCHAR* AnimName, const ANSICHAR* GroupName, FLOAT /*_fPosition*/ )
+{
+#if WITH_FACEFX
+	extern UBOOL GShouldTraceFaceFX;
+	if( GShouldTraceFaceFX )
+	{
+		TraceFaceFX();
+	}
+	if( !FaceFXActorInstance )
+	{
+		return 0.0f;
+	}
+	if( FaceFXAnimSetRef && m_pFaceFXAsset )
+	{
+		m_pFaceFXAsset->MountFaceFXAnimSet(FaceFXAnimSetRef);
+	}
+	FxActor* Actor = FaceFXActorInstance->GetActor();
+	const FxSize GroupIndex = Actor->FindAnimGroup(FxName(GroupName));
+	if( GroupIndex == FxInvalidIndex )
+	{
+		return 0.0f;
+	}
+	FxAnimGroup& Group = Actor->GetAnimGroup(GroupIndex);
+	const FxSize AnimIndex = Group.FindAnim(FxName(TCHAR_TO_ANSI(AnimName)));
+	if( AnimIndex == FxInvalidIndex )
+	{
+		return 0.0f;
+	}
+	return Group.GetAnimPtr(AnimIndex)->GetStartTime();
+#else
+	return 0.0f;
+#endif // WITH_FACEFX
+}
+
+// DISHONORED(port): agent FX3, 2013 rva 0x30da40 (2012 0x330a20, 16 B): the instance stops; there is no audio component
+// to stop (the voice is a Wwise event the conversation component owns).
 void USkeletalMeshComponent::StopFaceFXAnim( void )
 {
 #if WITH_FACEFX
 	if( FaceFXActorInstance )
 	{
-		//debugf(TEXT("StopFaceFXAnim on: %s AnimName: %s"), *Owner->GetName(), FaceFXActorInstance->GetAnimPlayer().GetCurrentAnimName().GetAsCstr());
-		// If there is an AudioComponent for this animation, stop it
-		if( CachedFaceFXAudioComp )
-		{
-			CachedFaceFXAudioComp->Stop();
-			CachedFaceFXAudioComp->SoundCue = NULL;
-
-			// ..and release ref to it.
-			CachedFaceFXAudioComp = NULL;
-		}
-
-		// Stop the animation playback.
 		FaceFXActorInstance->StopAnim();
 	}
 #endif // WITH_FACEFX
@@ -3198,6 +3085,7 @@ void USkeletalMeshComponent::SetFaceFXAsset( UFaceFXAsset* NewFaceFXAsset )
 			FaceFXActorInstance->SetActor( Actor );
 			m_fFaceFxTickTime = 0.f;
 		}
+		FX3DiagFaceFXAsset( this, m_pFaceFXAsset );
 		return;
 	}
 	if( FaceFXActorInstance )
@@ -3205,6 +3093,7 @@ void USkeletalMeshComponent::SetFaceFXAsset( UFaceFXAsset* NewFaceFXAsset )
 		delete FaceFXActorInstance;
 		FaceFXActorInstance = NULL;
 	}
+	FX3DiagFaceFXAsset( this, m_pFaceFXAsset );
 #endif // WITH_FACEFX
 }
 
@@ -4141,7 +4030,12 @@ void USkeletalMeshComponent::UpdateSkelPose( FLOAT DeltaTime, UBOOL bTickFaceFX 
 		ActiveCurveMorphs.Empty();
 	}
 
-	if( !bDisableFaceFX && SkeletalMesh->FaceFXAsset )
+	// DISHONORED(port): agent FX3. Retail's UpdateSkelPoseEnd (2013 0x3471d0, 2012 0x354c10) applies FaceFX here - after the
+	// anim tree's local atoms and the root bone translation, before PreComposeSkeleton / ComposeSkeleton - when the component
+	// has a FaceFX asset (m_pFaceFXAsset, set on the body by SetFaceFXAsset; the reference tests bDisableFaceFX and
+	// SkeletalMesh->FaceFXAsset). Deviation: this tree runs it after UpdateActiveMorphs, which retail's tail calls first too
+	// but our UpdateSkelPose keeps where the reference has it; there is no PreComposeSkeleton step in this tree.
+	if( m_pFaceFXAsset )
 	{
 		SCOPE_CYCLE_COUNTER(STAT_UpdateFaceFX);
 
@@ -4165,7 +4059,7 @@ void USkeletalMeshComponent::UpdateSkelPose( FLOAT DeltaTime, UBOOL bTickFaceFX 
 #endif
 
 		// Do FaceFX processing.
-		UpdateFaceFX(LocalAtoms, bTickFaceFX);
+		UpdateFaceFX(LocalAtoms, DeltaTime, bTickFaceFX);
 
 #ifdef _DEBUG
 		// Check that all bone atoms coming from animation are normalized
@@ -6777,13 +6671,17 @@ IMPLEMENT_FUNCTION(USkeletalMeshComponent,INDEX_NONE,execUpdateAnimations);
 
 void USkeletalMeshComponent::execPlayFaceFXAnim( FFrame& Stack, RESULT_DECL )
 {
+	// DISHONORED(port): agent FX3, 2013 rva 0x357440 (2012 0x379dc0). Arkane's script signature (AnimSet, AnimName, GroupName,
+	// AkEventToPlay, fStartPosition); retail reads all five and plays with no audio handler from anim time -1 - the event and
+	// the start position are not used.
 	P_GET_OBJECT_REF(UFaceFXAnimSet, FaceFXAnimSetRef);
 	P_GET_STR(AnimName);
 	P_GET_STR(GroupName);
-	P_GET_OBJECT_REF(USoundCue, SoundCueToPlay);
+	P_GET_OBJECT_REF(UAkEvent, AkEventToPlay);
+	P_GET_FLOAT(fStartPosition);
 	P_FINISH;
 
-	*(UBOOL*)Result = PlayFaceFXAnim(FaceFXAnimSetRef, AnimName, GroupName, SoundCueToPlay);
+	*(UBOOL*)Result = PlayFaceFXAnim(FaceFXAnimSetRef, *AnimName, TCHAR_TO_ANSI(*GroupName), NULL, -1.0f);
 }
 IMPLEMENT_FUNCTION(USkeletalMeshComponent, INDEX_NONE, execPlayFaceFXAnim);
 

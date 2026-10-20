@@ -39,6 +39,18 @@ public:
 	FxReal Length() const;
 	void SetLength(FxReal length);
 
+	/** 2012 0xb0f3c0 (FxMasterBoneList.obj). */
+	FxVec3 operator+(const FxVec3& other) const
+	{
+		return FxVec3(x + other.x, y + other.y, z + other.z);
+	}
+
+	/** 2012 0xb0f120 (FxMasterBoneList.obj). */
+	FxVec3 operator-(const FxVec3& other) const
+	{
+		return FxVec3(x - other.x, y - other.y, z - other.z);
+	}
+
 	FxReal x;
 	FxReal y;
 	FxReal z;
@@ -63,6 +75,12 @@ public:
 		, y(iY)
 		, z(iZ)
 	{
+	}
+
+	/** 2012 0xb0efa0 (FxMasterBoneList.obj). */
+	FxQuat GetInverse() const
+	{
+		return FxQuat(w, -x, -y, -z);
 	}
 
 	const FxQuat& Normalize()

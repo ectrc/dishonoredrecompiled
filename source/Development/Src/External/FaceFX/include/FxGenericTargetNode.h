@@ -7,6 +7,11 @@
 
 #include "FxFaceGraphNode.h"
 
+// The user property slots the UE3 integration reads (UnFaceFXMorphNode.h / UnFaceFXMaterialNode.h of the integration).
+#define FX_MORPH_NODE_TARGET_NAME_INDEX 0
+#define FX_MATERIAL_PARAMETER_NODE_MATERIAL_SLOT_ID_INDEX 0
+#define FX_MATERIAL_PARAMETER_NODE_PARAMETER_NAME_INDEX 1
+
 namespace OC3Ent
 {
 namespace Face

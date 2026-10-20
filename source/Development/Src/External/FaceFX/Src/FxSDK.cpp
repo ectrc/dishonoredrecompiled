@@ -7,8 +7,8 @@
 	The face graph and animation classes (FX2's headers: FxFaceGraphNode.h holds the node, user property and link
 	classes, FxGenericTargetNode.h the morph target and FUnrealFaceFX* nodes, FxAnim.h FxAnimGroup/FxAnimSet/FxAnim)
 	and the runtime classes (FX3: FxActor.h, FxActorInstance.h, FxPhonemeMap.h) are registered by the same calls in
-	retail's order, each compiled when its header exists in include/ (__has_include). Named deviation until FX3
-	lands: FxActor, FxActorInstance, FxPhonemeMap are not registered and FxActor::Startup / Shutdown are skipped.
+	retail's order, each compiled when its header exists in include/ (__has_include); with FX3's runtime in the tree
+	(agent FX3) every class is registered and FxActor::Startup / Shutdown run, as retail.
 =============================================================================*/
 #include "FxSDK.h"
 #include "FxRefObject.h"

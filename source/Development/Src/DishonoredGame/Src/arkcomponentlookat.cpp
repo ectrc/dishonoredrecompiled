@@ -815,8 +815,8 @@ FVector FArkComponentLookat::GetLookAtNeutralDirection()
 
 // DISHONORED(port): 2013 rva 0x555b40 (2012 0x596750), 162 bytes. The whole pass is behind "ticking, a node and a mesh";
 // the queue ages first, FaceFX is sampled, and an LOD that disabled the look-at skips the four updates.
-// DISHONORED(bringup): WITH_FACEFX is compiled out of this tree, so FaceFXActorInstance is a NULL void* and
-// m_bFaceFxIsPlaying is always FALSE; retail reads the instance's state word at +48 (2 is "idle").
+// Agent FX3: m_bFaceFxIsPlaying is the mesh's FaceFX actor instance playing an anim (retail reads its state word at +48,
+// 2 = APS_Stopped; FxActorInstance::IsPlayingAnim).
 void FArkComponentLookat::PreAsyncWorkTick( FLOAT _fTimeStep )
 {
 	if( m_bNoTick || !m_pLookAtNode || !m_pSkeletalComponent )
@@ -824,7 +824,7 @@ void FArkComponentLookat::PreAsyncWorkTick( FLOAT _fTimeStep )
 		return;
 	}
 	m_ReqMgr.Update( _fTimeStep );
-	m_bFaceFxIsPlaying = FALSE;
+	m_bFaceFxIsPlaying = m_pSkeletalComponent->FaceFXActorInstance && m_pSkeletalComponent->FaceFXActorInstance->IsPlayingAnim();
 	if( m_bInLOD )
 	{
 		return;

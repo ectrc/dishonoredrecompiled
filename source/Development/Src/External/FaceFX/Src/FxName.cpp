@@ -6,8 +6,8 @@
 	lookup (ProofName 0xb05a20, 512 characters at most: a longer name is left unterminated by the loop and comes
 	out empty, as retail).
 	Startup also names FxAnimGroup::Default ("Default") and FxActor::NewActor ("NewActor") and Shutdown clears
-	them; those two statics belong to FX3's classes, so those lines compile once FxAnim.h / FxActor.h are in
-	the tree (__has_include) - deviation until then: the two names are not pre-registered.
+	them; those two statics belong to FX2's / FX3's classes, whose headers are in the tree (__has_include), so both
+	names are pre-registered as retail.
 =============================================================================*/
 #include "FxName.h"
 #include "FxRefObject.h"

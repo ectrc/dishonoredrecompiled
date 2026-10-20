@@ -3,6 +3,11 @@
 	Copyright 1998-2013 Epic Games, Inc. All Rights Reserved.
 =============================================================================*/
 
+// DISHONORED(port): agent FX3 (wave 26), with the reconstructed SDK (External/FaceFX). Checked against retail:
+//   Serialize 2013 0x52b050 (2012 0x56be00, 0.795): the reference body is retail's (new FxAnimSet from RawFaceFXAnimSetBytes,
+//     the bytes dropped outside the editor; save big endian when cooking for a console); the ratio is the warnf lines.
+//   PostLoad 0x52c1d0, FinishDestroy 0x530e80 (unmounts from every asset, deletes the FxAnimSet). FixupReferencedSoundCues:
+//   editor only, not ported (below).
 #include "EnginePrivate.h"
 #include "UnFaceFXSupport.h"
 
@@ -57,193 +62,12 @@ class FxAnimSet* UFaceFXAnimSet::GetFxAnimSet( void )
 }
 #endif
 
+// DISHONORED(not ported): agent FX3. Editor only - PostLoad calls it when GIsEditor && !GIsCooking && !GIsUCC (retail 2012
+// 0x56e320 / 0x56d370, 45 B, as here). Retail's body (2012 0x56cb10, 2,136 B) relinks the anims' Wwise events (Arkane's FxAnim
+// version 8: event path / index / pointer through ReferencedAkEvents); the reference body this replaces loads UE3 sound cues,
+// which Arkane's FxAnim does not carry. The game never runs it.
 void UFaceFXAnimSet::FixupReferencedSoundCues()
 {
-#if WITH_EDITORONLY_DATA
-#if WITH_FACEFX
-	NumLoadErrors = 0;
-	FxAnimSet* AnimSet = GetFxAnimSet();
-	if( AnimSet )
-	{
-		const FxAnimGroup& AnimGroup = AnimSet->GetAnimGroup();
-		FxSize NumAnims = AnimGroup.GetNumAnims();
-
-		// If ReferencedSoundCues is empty and there are Anims to add we need to build it first.
-		if( 0 == ReferencedSoundCues.Num() && NumAnims > 0)
-		{
-#if CONSOLE
-			debugf(NAME_Warning,TEXT("%s has %i anims but no referenced sound cues."), *GetFullName(), NumAnims);
-#else
-			// Build the ReferencedSoundCues array and set the indices in each
-			// animation.
-			ReferencedSoundCues.Reserve(NumAnims);
-			for( FxSize i = 0; i < NumAnims; ++i )
-			{
-				FxAnim* Anim = AnimSet->GetAnimPtr(i);
-				if( Anim )
-				{
-					Anim->SetSoundCueIndex(FxInvalidIndex);
-					FxString SoundCuePath = Anim->GetSoundCuePath();
-					if( SoundCuePath.Length() > 0 )
-					{
-						USoundCue* SoundCue = LoadObject<USoundCue>(NULL, ANSI_TO_TCHAR(SoundCuePath.GetData()), NULL, LOAD_NoWarn, NULL);
-						if( SoundCue )
-						{
-							ReferencedSoundCues.AddItem(SoundCue);
-							Anim->SetSoundCueIndex(ReferencedSoundCues.Num()-1);
-							Anim->SetSoundCuePointer(SoundCue);
-						}
-						else
-						{
-							NumLoadErrors++;
-							FString ExpectedPath(ANSI_TO_TCHAR(SoundCuePath.GetData()));
-							debugf(NAME_Warning, TEXT("FaceFX: Found lost sound cue in FaceFXAnimSet %s for animation %s.%s.%s (expected path %s)"),
-								*GetFullName(),
-								ANSI_TO_TCHAR(AnimSet->GetNameAsCstr()), 
-								ANSI_TO_TCHAR(AnimGroup.GetNameAsCstr()), 
-								ANSI_TO_TCHAR(Anim->GetNameAsCstr()), 
-								*ExpectedPath);
-						}
-					}
-				}
-			}
-
-			if( ReferencedSoundCues.Num() > 0 )
-			{
-				// Update the RawFaceFXAnimSetBytes (checking for cooking and byte ordering here is
-				// probably a little overkill).
-				FxArchive::FxArchiveByteOrder ByteOrder = FxArchive::ABO_LittleEndian;
-				// If cooking, save the data in Big Endian format.
-				if( GCookingTarget & UE3::PLATFORM_Console )
-				{
-#if __INTEL_BYTE_ORDER__
-					ByteOrder = FxArchive::ABO_BigEndian;
-#else
-					ByteOrder = FxArchive::ABO_LittleEndian;
-#endif
-				}
-				FxByte* AnimSetMemory = NULL;
-				FxSize  NumAnimSetMemoryBytes = 0;
-				if( !FxSaveAnimSetToMemory(*AnimSet, AnimSetMemory, NumAnimSetMemoryBytes, ByteOrder) )
-				{
-					warnf(TEXT("FaceFX: Failed to save animset for %s"), *GetPathName());
-				}
-				RawFaceFXAnimSetBytes.Empty();
-				RawFaceFXAnimSetBytes.Add(NumAnimSetMemoryBytes);
-				appMemcpy(RawFaceFXAnimSetBytes.GetData(), AnimSetMemory, NumAnimSetMemoryBytes);
-				FxFree(AnimSetMemory, NumAnimSetMemoryBytes);
-
-				// Mark the package as dirty.
-				MarkPackageDirty();
-			}
-#endif
-		}
-		else
-		{
-			// ReferencedSoundCues was valid so link up each animation.
-			UBOOL bMadeCorrections = FALSE;
-			for( FxSize i = 0; i < NumAnims; ++i )
-			{
-				FxAnim* Anim = AnimSet->GetAnimPtr(i);
-				if( Anim )
-				{
-					FxSize SoundCueIndex = Anim->GetSoundCueIndex();
-					const FxString& SoundCuePath = Anim->GetSoundCuePath();
-					if( FxInvalidIndex != SoundCueIndex)
-					{
-						if( SoundCueIndex < static_cast<FxSize>(ReferencedSoundCues.Num()) )  
-						{  
-							USoundCue* SoundCue = ReferencedSoundCues(SoundCueIndex);
-							Anim->SetSoundCuePointer(SoundCue);
-#if !CONSOLE
-							if( SoundCue && SoundCuePath.Length() > 0 )
-							{
-								FString ExpectedPath(ANSI_TO_TCHAR(SoundCuePath.GetData()));
-								FString ActualPath = SoundCue->GetPathName();
-								if( ExpectedPath != ActualPath )
-								{
-									bMadeCorrections = TRUE;
-									Anim->SetSoundCuePath(FxString(TCHAR_TO_ANSI(*ActualPath)));
-									debugf(NAME_Warning, TEXT("FaceFX: Corrected inconsistent sound cue linkage in FaceFXAnimSet %s for animation %s.%s.%s (expected path %s -> actual path %s)"),
-										*GetFullName(),
-										ANSI_TO_TCHAR(AnimSet->GetNameAsCstr()), 
-										ANSI_TO_TCHAR(AnimGroup.GetNameAsCstr()), 
-										ANSI_TO_TCHAR(Anim->GetNameAsCstr()), 
-										*ExpectedPath, 
-										*ActualPath);
-								}
-							}
-							else if( !SoundCue && SoundCuePath.Length() > 0 )
-							{
-								NumLoadErrors++;
-								FString ExpectedPath(ANSI_TO_TCHAR(SoundCuePath.GetData()));
-								debugf(NAME_Warning, TEXT("FaceFX: Found lost sound cue in FaceFXAnimSet %s for animation %s.%s.%s (expected path %s)"),
-									*GetFullName(),
-									ANSI_TO_TCHAR(AnimSet->GetNameAsCstr()), 
-									ANSI_TO_TCHAR(AnimGroup.GetNameAsCstr()), 
-									ANSI_TO_TCHAR(Anim->GetNameAsCstr()), 
-									*ExpectedPath);
-							}
-#endif
-						}  
-						else  
-						{  
-							Anim->SetSoundCueIndex(FxInvalidIndex);  
-							Anim->SetSoundCuePointer(NULL);  
-							GWarn->Logf( TEXT("Error finding SoundCue for FaceFX Anim: %s.%s.%s. Open and resave FaceFXAnimSet (%s)."), 
-								ANSI_TO_TCHAR(AnimSet->GetNameAsCstr()), 
-								ANSI_TO_TCHAR(AnimGroup.GetNameAsCstr()), 
-								ANSI_TO_TCHAR(Anim->GetNameAsCstr()),
-								*GetFullName());
-						}  
-					}
-					else if(SoundCuePath.Length() > 0)
-					{
-						NumLoadErrors++;
-						FString ExpectedPath(ANSI_TO_TCHAR(SoundCuePath.GetData()));
-						debugf(NAME_Warning, TEXT("FaceFX: Found lost sound cue in FaceFXAnimSet %s for animation %s.%s.%s (expected path %s)"),
-							*GetFullName(),
-							ANSI_TO_TCHAR(AnimSet->GetNameAsCstr()), 
-							ANSI_TO_TCHAR(AnimGroup.GetNameAsCstr()), 
-							ANSI_TO_TCHAR(Anim->GetNameAsCstr()), 
-							*ExpectedPath);
-					}
-				}
-			}
-#if !CONSOLE
-			if( bMadeCorrections )
-			{
-				// Update the RawFaceFXAnimSetBytes (checking for cooking and byte ordering here is
-				// probably a little overkill).
-				FxArchive::FxArchiveByteOrder ByteOrder = FxArchive::ABO_LittleEndian;
-				// If cooking, save the data in Big Endian format.
-				if( GCookingTarget & UE3::PLATFORM_Console )
-				{
-#if __INTEL_BYTE_ORDER__
-					ByteOrder = FxArchive::ABO_BigEndian;
-#else
-					ByteOrder = FxArchive::ABO_LittleEndian;
-#endif
-				}
-				FxByte* AnimSetMemory = NULL;
-				FxSize  NumAnimSetMemoryBytes = 0;
-				if( !FxSaveAnimSetToMemory(*AnimSet, AnimSetMemory, NumAnimSetMemoryBytes, ByteOrder) )
-				{
-					warnf(TEXT("FaceFX: Failed to save animset for %s"), *GetPathName());
-				}
-				RawFaceFXAnimSetBytes.Empty();
-				RawFaceFXAnimSetBytes.Add(NumAnimSetMemoryBytes);
-				appMemcpy(RawFaceFXAnimSetBytes.GetData(), AnimSetMemory, NumAnimSetMemoryBytes);
-				FxFree(AnimSetMemory, NumAnimSetMemoryBytes);
-
-				// Mark the package as dirty.
-				MarkPackageDirty();
-			}
-#endif
-		}
-	}
-#endif
-#endif // WITH_EDITORONLY_DATA
 }
 
 FString UFaceFXAnimSet::GetDesc()

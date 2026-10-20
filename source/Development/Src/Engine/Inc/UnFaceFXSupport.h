@@ -12,12 +12,14 @@
 #pragma diag_suppress=112,552
 #endif
 
-#include "../../../External/FaceFX/FxSDK/Inc/FxSDK.h"
-#include "../../../External/FaceFX/FxSDK/Inc/FxMemory.h"
-#include "../../../External/FaceFX/FxSDK/Inc/FxActor.h"
-#include "../../../External/FaceFX/FxSDK/Inc/FxActorInstance.h"
-#include "../../../External/FaceFX/FxSDK/Inc/FxArchiveStoreFile.h"
-#include "../../../External/FaceFX/FxSDK/Inc/FxArchiveStoreMemory.h"
+// DISHONORED(port): agent FX3 (wave 26). The SDK is the reconstruction in External/FaceFX (cmake/FaceFX.cmake puts its
+// include/ on every module that links Dishonored::facefx); the header names are the SDK's.
+#include "FxSDK.h"
+#include "FxMemory.h"
+#include "FxActor.h"
+#include "FxActorInstance.h"
+#include "FxArchiveStoreFile.h"
+#include "FxArchiveStoreMemory.h"
 
 #if PS3_SNC
 #pragma diag_default=112,552

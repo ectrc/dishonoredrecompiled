@@ -1,0 +1,18 @@
+item,state,evidence
+FaceFX runtime (FxActor FxActorInstance FxMasterBoneList FxPhonemeMap FxPhonemeEnum + actor load/save),ported,fx3_inventory.csv: SDK rows ported by rva / template / macro / generated / inline; 0 not ported in FX3's compilands
+All 1478 FaceFX functions (fx1+fx2+fx3),tallied,803 ported by rva + 440 templates + 128 class macros + 91 generated + 14 inlines; 2 not ported (FX2's FxLoad/SaveAnimSetFromFile)
+FX2 core shim (include/stub Src/Stub FX2_FACEFX_CORE_STUB),deleted,CoreSmoke links the facefx library only
+WITH_FACEFX,on,cmake/DishonoredDefines.cmake sets it per target from Dishonored::facefx and links the library into every module; WITH_FACEFX_STUDIO=0
+UnInitFaceFX (2013 0x527510),ported,MAT_Custom no pools appMalloc/appFree + pre-destroy/pre-compile callbacks
+UpdateFaceFX (2013 0x325ea0) + UpdateSkelPoseEnd call site,ported,m_fFaceFxTickTime clock; APS_StartAudio -> DisFaceFxStartAudio; additive bone pass; gated on m_pFaceFXAsset
+PlayFaceFXAnim / GetFaceFXAnimStartOffset / StopFaceFXAnim / IsPlayingFaceFXAnim / execPlayFaceFXAnim,ported,2013 0x356ef0 / 0x357070 / 0x30da40 / 0x30da50 / 0x357440
+SetFaceFXAsset SDK half + Attach,on,"instance bound on every NPC body (FX3a: 10 SetFaceFXAsset lines, instance 1)"
+PlayDialogBlurb FaceFX branch / IsDonePlayingBlurb / StopDialogBlurb / DisFaceFxStartAudio / OnSpeakerStartedTalking,ported,2013 0x89fbf0 / 0x89a160 / 0x8a02f0 / 0x8a0120 / 0x89e610
+FArkComponentLookat m_bFaceFxIsPlaying,ported,2013 0x555b40
+CoreSmoke,568 passed 0 failed 1 skipped,36 FX3 checks: head load to last byte + byte-identical resave (44 heads); jaw/lip/head bones = hand derivation to 1e-4
+In game lip-sync,measured,SheWaiting jaw 0 -> 12.8 deg at anim 0.97 s and 1.99 s; mouth open with teeth (fx3d_w173.02.png); Empress/Lord Regent move too
+Voice post / line end,changed (retail's design),voice posted at anim time 0 (+0.20..1.18 s after blurb start); line ends with the anim
+Ride SSIM (constant offset),0.819,build/cmp/fx3_const; ENTER 56.54 EXIT 150.79
+Generated headers,unchanged,79/79 byte-identical; bitfield_audit mismatches=0
+Gate,22 ok 1 failed (inputtest_moved 365/217 under load; control base exe 286/313); criticals 0 unported_natives 0 probe_natives 3,build/agentFX3/gate.txt
+APawn/ASkeletalMeshActor::PlayActorFaceFXAnim; FixupReferencedSoundCues; MountPersistentFaceFXAnimSetOnPawn,not ported (named),fx3_inventory.csv part engine

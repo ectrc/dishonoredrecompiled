@@ -212,3 +212,65 @@ FX2 did not port it). What FX3 calls in FX2's code:
   `FxCompiledFaceGraph::SetCompilationCallbacks` / `SetPreDestroyCallback` (ported).
 - `FxRegister` and `FxRegister::GetUserOpForRegOp` are defined inline in FxCompiledFaceGraph.h (FxActorInstance.obj,
   0xb0b990 / 0xb0bc30): FX3 should use them from there rather than define them again.
+
+## FX3 - the runtime and the engine integration: lip-sync on (agent FX3, wave 26)
+
+### Where things live
+
+```
+source/Development/Src/External/FaceFX/
+  include/FxActor.h FxActorInstance.h FxMasterBoneList.h FxPhonemeMap.h   the runtime (2012 layouts, static_asserted:
+                       FxActor 0x60A4, FxActorInstance 0x44, FxMasterBoneListEntry 88, FxBoneLink 52, FxPhonemeMap 28)
+  Src/Runtime/         FxActor.cpp FxActorInstance.cpp FxMasterBoneList.cpp FxPhonemeMap.cpp (+ FxPhonemeEnum)
+cmake/FaceFX.cmake     globs Src/Runtime too; cmake/DishonoredDefines.cmake sets WITH_FACEFX=1 per target when
+                       Dishonored::facefx exists and links it into every module (WITH_FACEFX_STUDIO=0)
+source/Tests/CoreSmoke/FaceFXRuntimeSmoke.cpp   the runtime checks (data: build/agentFX3/fx3, made by
+                       build/agentFX3/py/fx3_handcalc.py from FX2's fxa/fxs extracts)
+```
+FX2's shim (`include/stub`, `Src/Stub`, `FX2_FACEFX_CORE_STUB`) is deleted.
+
+### How a line plays (retail's path, as ported)
+
+1. Load: `UFaceFXAsset::Serialize` makes an `FxActor` from `RawFaceFXActorBytes` (`FxLoadActorFromMemory`), renames a
+   "NewActor", `SetShouldClientRelink(TRUE)`, `FxActor::AddActor`; `UFaceFXAnimSet::Serialize` makes an `FxAnimSet`.
+2. `ADishonoredNPCPawn::PostBeginPlay_Body` -> `SetFaceFXAsset(head asset)` on the **body** component: an
+   `FxActorInstance` is bound when the actor's master bone list is not longer than the body skeleton (elite guard head:
+   118 ref bones on a 118-bone body; the other heads 33).
+3. `PlayDialogBlurb`: a non-empty event, a FaceFX mesh with an instance and the voice data's anim set -> the anim named
+   by the event past "Play_", in the set's group, at `GetFaceFXAnimStartOffset` (= the anim's start time, the negative
+   lead-in) + the seek; `PlayFaceFXAnim` mounts the set on the asset's actor, plays, ticks once and stores the
+   conversation component as the voice handler. Only a failure posts the voice in `PlayDialogBlurb`.
+4. Every `UpdateSkelPose` of the body with an asset: `UpdateFaceFX(LocalAtoms, DeltaTime, bTick)` -
+   `m_fFaceFxTickTime += DeltaTime`, `FxActorInstance::Tick(time, -1)` (curves -> compiled graph -> registers);
+   `APS_StartAudio` (the anim reaches time 0) -> `DisFaceFxStartAudio` posts the voice and hands the subtitle to
+   `OnSpeakerStartedTalking`; the relink maps the master bone names to the body skeleton once; the bone pass adds each
+   bone's FaceFX offset from the FaceFX reference pose to the local atom (FXBM_Additive, every NPC body measured).
+5. The head reads the face bones from the body (`ParentAnimComponent`). `IsDonePlayingBlurb` waits for the anim.
+
+### What of the 1,478 FaceFX functions is ported (fx1 + fx2 + fx3 inventories, one final status per 2012 rva)
+
+| status | functions | bytes |
+|---|---|---|
+| ported (2012 rva written in a port file) | 803 | 92,543 |
+| template instantiation of the ported containers | 440 | 44,250 |
+| class macro (StaticClass / GetClassDesc / ...) | 128 | 5,449 |
+| compiler generated (deleting dtors, implicit copies) | 91 | 4,326 |
+| header inline the port defines | 14 | 842 |
+| **not ported** | **2** | 541 |
+
+The two: `FxLoadAnimSetFromFile` / `FxSaveAnimSetToFile` (FX2's; the engine loads anim sets from memory). Regenerate
+with `python build/agentFX3/py/mk_inventory.py <tree>` (writes fx3_inventory.csv, prints the tally).
+Engine side named not ported (fx3_inventory.csv, part "engine"): `UFaceFXAsset/AnimSet::FixupReferencedSoundCues`
+(editor only), `APawn` / `ASkeletalMeshActor::PlayActorFaceFXAnim` (script / matinee FaceFX, needs a generated-header
+override; AActor's FALSE answers), `UWorld::MountPersistentFaceFXAnimSetOnPawn`, `UDisDialogVoiceData::GetFaceFXAnimSetName`.
+
+### Deviations (named in the banners)
+
+- `FxMasterBoneList::GetBlendedBone` reconstructs the bone blend retail inlined into `UpdateFaceFX`; its scale and weight
+  outputs (not read by the engine) are reconstructions; the slerp runs in double (retail x87).
+- `MakeDefaultMapping` is a table of retail's 146 calls; `FxSaveActorToMemory` copies with FxMemcpy.
+- `DisFaceFxStartAudio` is reached through `GDisFaceFxStartAudioHook` (Engine and DishonoredGame are separate libraries);
+  it checks the audio device and the pending blurb; the silent backend's duration hint is applied as in PlayDialogBlurb.
+- `PlayDialogBlurb` checks `_pVoiceData` for NULL; the FaceFX call in `UpdateSkelPose` sits after `UpdateActiveMorphs`
+  (this tree has no `PreComposeSkeleton`), retail's `UpdateSkelPoseEnd` order otherwise.
+- `UInterpTrackFaceFX::UpdateFaceFXSoundCueReferences` no longer resolves cues (Arkane's FxAnim has none).

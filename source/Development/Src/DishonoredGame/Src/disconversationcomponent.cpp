@@ -18,10 +18,12 @@
 // IsAnyAkEventPlaying 0x896740 (0x8e5890), FindTextBlurb 0x8a2410 (0x8deed0), StopDialogBlurb 0x8a02f0* (0x8ef700),
 // StopAkEvents 0x88bae0 (0x8dac70), UnprepareAkEvent 0x88b0b0 (0x8d9960), ConvPrepareEventCB 0x88b090 (0x8d9940),
 // DisConvAkEventCB 0x8938b0* (0x8f7840), the ms_VoiceBoneName initialiser 0xb8f290 ("head_jnt").
-//   WITH_FACEFX=0, so the three FaceFX calls are compiled out, each named at its site: PlayDialogBlurb's
-//   StopFaceFXAnim and its FaceFX branch (GetStoryGroup_Derived -> FxAnimSet::GetAnimGroup -> GetFaceFXAnimStartOffset ->
-//   PlayFaceFXAnim, which falls back to the Wwise post when it fails - the path taken here), IsDonePlayingBlurb's
-//   IsPlayingFaceFXAnim, StopDialogBlurb's StopFaceFXAnim.
+// Agent FX3 (PHASE23 FX3), FaceFX on: PlayDialogBlurb's StopFaceFXAnim and FaceFX branch (the anim set's group, the anim named
+//   by the Wwise event minus "Play_", GetFaceFXAnimStartOffset + the seek, PlayFaceFXAnim with this component as the voice
+//   handler; only a failed PlayFaceFXAnim falls through to the Wwise post here), IsDonePlayingBlurb's IsPlayingFaceFXAnim on the
+//   first speaker location with a FaceFX mesh, StopDialogBlurb's StopFaceFXAnim, and DisFaceFxStartAudio 0x8a0120 (0x8f7e30),
+//   which posts the pending blurb's voice when the FaceFX anim reaches its audio (USkeletalMeshComponent::UpdateFaceFX /
+//   PlayFaceFXAnim, through GDisFaceFxStartAudioHook) and hands the subtitle to UDisConvGlobalMan::OnSpeakerStartedTalking.
 //   DISHONORED(deviation, to be removed by IH2): under DISHONORED_WWISE_SILENT, PlayDialogBlurb gives every voice it posts
 //   a length, DishonoredWwise::SetDurationHint(playing id, clamp(characters / 15 cps, 1 s, 12 s)). The silent backend reads
 //   only a bank's BKHD chunk, so no media length exists to give instead; without the hint the voice ends on the next audio
@@ -502,6 +504,61 @@ static void ConvPrepareEventCB( AkUInt32 _EventID, AKRESULT, AkMemPoolId, void* 
 	( (UDisConversationComponent*)_pCookie )->m_ReadyAkEventID = (INT)_EventID;
 }
 
+static void DisConvAkEventCB( AkCallbackType _Type, AkCallbackInfo* _pInfo );
+
+// DISHONORED(port): agent FX3, 2013 rva 0x8a0120 (2012 0x8f7e30, 454 B, bytes 1.000). The voice of the blurb PlayDialogBlurb left
+// pending on the conversation component is posted for the FaceFX mesh's owner (flags 9 = AK_EndOfEvent | AK_Duration,
+// DisConvAkEventCB, the radius of the line), seeked when the anim started past its audio, and a posted voice with text goes to
+// OnSpeakerStartedTalking as a one-speaker list. Deviations: the device is checked for NULL (retail calls it unconditionally;
+// with -nosound there is none); the speaker list is a TArray (retail a TMemStackArray), as in PlayDialogBlurb; the silent
+// backend's duration hint is given as in PlayDialogBlurb (agent ID's deviation, same formula).
+static void DisFaceFxStartAudio( UActorComponent* _pAudioHandler, USkeletalMeshComponent* _pFaceFxSkelMesh, FLOAT _fSeekTime )
+{
+	UDisConversationComponent* Comp = (UDisConversationComponent*)_pAudioHandler;
+	UAkAudioDevice* AudioDevice = UAkAudioDevice::Get();
+	FDisVoiceTextBlurb* Blurb = (FDisVoiceTextBlurb*)Comp->m_pFaceFxPendingBlurb;
+	const TCHAR* Text = (const TCHAR*)Comp->m_pFaceFxPendingBlurbText;
+	AActor* Owner = _pFaceFxSkelMesh->GetOwner();
+	if( !AudioDevice || !Blurb )
+	{
+		return;
+	}
+	const AkPlayingID PlayingID = AudioDevice->PostEvent( Blurb->m_AkEventName, Comp->m_fCurVoiceRadius, Owner, UDisConversationComponent::ms_VoiceBoneName,
+		AK_EndOfEvent | AK_Duration, DisConvAkEventCB, GWorld->m_pAudioSystem, FALSE );
+	if( _fSeekTime > 0.0f )
+	{
+		AudioDevice->SeekOnEvent( Blurb->m_AkEventName, Owner, UDisConversationComponent::ms_VoiceBoneName, (AkTimeMs)( _fSeekTime * 1000.0f ) );
+	}
+#if DISHONORED_WWISE_SILENT
+	if( PlayingID != AK_INVALID_PLAYING_ID && Text )
+	{
+		DishonoredWwise::SetDurationHint( PlayingID, Clamp<FLOAT>( appStrlen( Text ) / 15.0f, 1.0f, 12.0f ) );
+	}
+#endif
+	IDDIAG( "voice post from FaceFX playing id %u event %s on %s seek %.3f", PlayingID, *Blurb->m_AkEventName, Owner ? *Owner->GetName() : TEXT("none"), _fSeekTime );
+	if( PlayingID && Text && *Text )
+	{
+		UDisConvGlobalMan* GlobalMan = DisGetConvGlobalMan();
+		TArray<FDisAkCompAndPlayingID> Speakers;
+		FDisAkCompAndPlayingID& Entry = Speakers( Speakers.AddZeroed() );
+		Entry.m_pAkComp = (UDisAkComponent*)AudioDevice->GetAkComponent( Owner, UDisConversationComponent::ms_VoiceBoneName, FALSE );
+		Entry.m_PlayingID = (INT)PlayingID;
+		if( GlobalMan )
+		{
+			GlobalMan->OnSpeakerStartedTalking( Comp, Speakers, Text, Comp->m_fCurVoiceRadius, Comp->m_bFaceFxPendingMainSubtitle );
+		}
+	}
+}
+
+struct FDisFaceFxStartAudioSeamInstaller
+{
+	FDisFaceFxStartAudioSeamInstaller()
+	{
+		GDisFaceFxStartAudioHook = &DisFaceFxStartAudio;
+	}
+};
+static FDisFaceFxStartAudioSeamInstaller GDisFaceFxStartAudioSeamInstaller;
+
 static void DisConvAkEventCB( AkCallbackType _Type, AkCallbackInfo* _pInfo )
 {
 	if( _Type == AK_EndOfEvent )
@@ -564,12 +621,31 @@ void UDisConversationComponent::PlayDialogBlurb( UDisDialogVoiceData* _pVoiceDat
 			{
 				AkComp->Stop();
 			}
-			// WITH_FACEFX=0: USkeletalMeshComponent::StopFaceFXAnim on LocInfo(i).m_pSkelMeshCompForFaceFX, then the FaceFX
-			// branch (an event name of 2+ characters, a mesh with a FaceFX asset and the voice data's m_pFaceFXAnimSet: the
-			// pending blurb / text / main flag are stored and PlayFaceFXAnim starts the line). Without FaceFX that call fails,
-			// which is retail's own fall-through to the Wwise post below.
-			DisIRNoteSpeaker( LocInfo(i).m_pSkelMeshCompForFaceFX, _pBlurb->m_AkEventName );
+			USkeletalMeshComponent* FaceFXMesh = LocInfo(i).m_pSkelMeshCompForFaceFX;
+			if( FaceFXMesh )
+			{
+				FaceFXMesh->StopFaceFXAnim();
+			}
+			DisIRNoteSpeaker( FaceFXMesh, _pBlurb->m_AkEventName );
 			AK::SoundEngine::SetAttenuationScalingFactor( AkComp->GetAkGameObjectID(), AttenuationScale );
+			// The FaceFX branch: a non-empty event, a mesh with an actor instance and the voice data's anim set. The anim is the
+			// event name past its "Play_" prefix, in the anim set's group; it starts at its own start offset plus the seek. When
+			// PlayFaceFXAnim plays it the voice is posted by DisFaceFxStartAudio as the anim reaches its audio.
+			if( _pBlurb->m_AkEventName.GetCharArray().Num() >= 2 && FaceFXMesh && FaceFXMesh->FaceFXActorInstance && _pVoiceData && _pVoiceData->m_pFaceFXAnimSet )
+			{
+				m_pFaceFxPendingBlurb = _pBlurb;
+				m_pFaceFxPendingBlurbText = (void*)_pText;
+				m_bFaceFxPendingMainSubtitle = _bMainSubtitle ? TRUE : FALSE;
+				UFaceFXAnimSet* FaceFXAnimSet = _pVoiceData->m_pFaceFXAnimSet;
+				const TCHAR* AnimName = *_pBlurb->m_AkEventName + 5;
+				const ANSICHAR* GroupName = FaceFXAnimSet->GetFxAnimSet()->GetAnimGroup().GetNameAsCstr();
+				const FLOAT Position = FaceFXMesh->GetFaceFXAnimStartOffset( FaceFXAnimSet, AnimName, GroupName, 0.0f ) + _fSeekTime;
+				if( FaceFXMesh->PlayFaceFXAnim( FaceFXAnimSet, AnimName, FaceFXAnimSet->GetFxAnimSet()->GetAnimGroup().GetNameAsCstr(), this, Position ) )
+				{
+					IDDIAG( "voice via FaceFX: anim %s start position %.3f on %s", AnimName, Position, *EventOwner->GetName() );
+					continue;
+				}
+			}
 			const AkPlayingID PlayingID = AudioDevice->PostEvent( _pBlurb->m_AkEventName, _fVoiceRadius, EventOwner, ms_VoiceBoneName,
 				AK_EndOfEvent | AK_Duration, DisConvAkEventCB, GWorld ? GWorld->m_pAudioSystem : NULL, FALSE );
 			if( _fSeekTime > 0.0f )
@@ -658,7 +734,17 @@ UBOOL UDisConversationComponent::IsDonePlayingBlurb() const
 	{
 		return m_fBlurbCueDuration > m_fBlurbElapsedTime ? FALSE : TRUE;
 	}
-	// WITH_FACEFX=0: USkeletalMeshComponent::IsPlayingFaceFXAnim on the first speaker location's mesh is compiled out.
+	TArray<FDisConvSpeakerLocInfo> LocInfo;
+	DisOwnerSpeaker( this )->GetSpeakerLocInfo( LocInfo );
+	USkeletalMeshComponent* FaceFXMesh = NULL;
+	for( INT i = 0; i < LocInfo.Num() && !FaceFXMesh; i++ )
+	{
+		FaceFXMesh = LocInfo(i).m_pSkelMeshCompForFaceFX;
+	}
+	if( FaceFXMesh && FaceFXMesh->IsPlayingFaceFXAnim() )
+	{
+		return FALSE;
+	}
 	return !IsAnyAkEventPlaying();
 }
 
@@ -728,7 +814,10 @@ void UDisConversationComponent::StopDialogBlurb()
 		for( INT i = 0; i < LocInfo.Num(); i++ )
 		{
 			StopAkEvents( LocInfo(i).m_pAKEventOwner );
-			// WITH_FACEFX=0: USkeletalMeshComponent::StopFaceFXAnim on LocInfo(i).m_pSkelMeshCompForFaceFX is compiled out.
+			if( LocInfo(i).m_pSkelMeshCompForFaceFX )
+			{
+				LocInfo(i).m_pSkelMeshCompForFaceFX->StopFaceFXAnim();
+			}
 		}
 	}
 	m_fBlurbCueDuration = 0.0f;

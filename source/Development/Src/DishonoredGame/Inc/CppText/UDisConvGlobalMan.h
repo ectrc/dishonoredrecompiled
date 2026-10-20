@@ -17,6 +17,9 @@ public:
 	virtual class UDisTweaksBase* GetTweaks_Derived();
 	virtual void SetTweaks_Derived( class UDisTweaksBase* _pTweaks );
 	class UDisTweaks_ConvSettings* GetConvSettings() const;
+	// Agent FX3: 2013 0x89e610 (2012 0x8eebe0); the speaker list is a TArray here (retail TMemStackArray), as AddSubtitle's.
+	void OnSpeakerStartedTalking( class UDisConversationComponent* _pConvComp, const TArray<struct FDisAkCompAndPlayingID>& _rSpeakers, const TCHAR* _pText,
+		FLOAT _fVoiceRadius, UBOOL _bMainSubtitle );
 private:
 	void ManageGlobalDialogHooks( FLOAT _fDeltaSeconds );
 	void CalcPendingWeights( struct FDisQueuedFireDialogHookGroup& _rGroup, eDisQueuedFiringGroupType _GroupType, TArray<struct FDisHookWeight>& _rWeights );

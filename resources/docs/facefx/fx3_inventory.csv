@@ -1,0 +1,343 @@
+rva_2012,size,module,compiland,source_file,name,rva_2013,match,part,fx3_status
+0x22bad0,87,facefx,Unity_UnInterpolationEtAl.cpp,fxanim.h:278,public: unsigned int __thiscall FxAnimGroup::FindAnim(class FxName const &)const,0x213e30,bytes 1.000,SDK (handed over by fx1),ported
+0x238ac0,337,facefx,Unity_UnInterpolationEtAl.cpp,fxactor.h:336,public: unsigned int __thiscall FxActor::FindAnimGroup(class FxName const &)const,0x221e00,bytes 1.000,SDK (handed over by fx1),ported
+0x238c20,141,facefx,Unity_UnInterpolationEtAl.cpp,fxactor.h:362,public: class FxAnimGroup & __thiscall FxActor::GetAnimGroup(unsigned int),0x221f60,bytes 1.000,SDK (handed over by fx1),ported
+0x3301d0,10,facefx,Unity_UnSkeletalMeshEtAl.cpp,fxactorinstance.h:91,public: bool __thiscall FxActorInstance::IsPlayingAnim(void)const,0x30d360,callee 1.000,SDK (handed over by fx1),inline
+0x568710,16,facefx,Unity_NvApexSceneEtAl.cpp,fxanim.h:76,public: class FxAnimCurve const & __thiscall FxAnim::GetAnimCurve(unsigned int)const,0x527640,bytes 1.000,SDK (handed over by fx1),inline
+0x568720,16,facefx,Unity_NvApexSceneEtAl.cpp,fxanim.h:238,public: class FxAnim * __thiscall FxAnimGroup::GetAnimPtr(unsigned int),0x527650,bytes 1.000,SDK (handed over by fx1),ported
+0xb0ab60,134,facefx,FxActorInstance,fxactorinstance.cpp:21,public: static class FxClass * __cdecl FxActorInstance::AllocateStaticClassFxActorInstance(void),0xaf5230,string 1.000,SDK runtime,ported
+0xb0abf0,164,facefx,FxActorInstance,fxactorinstance.cpp:28,public: __thiscall FxActorInstance::FxActorInstance(class FxActor *),0xaf52c0,bytes 1.000,SDK runtime,ported
+0xb0aca0,138,facefx,FxActorInstance,fxactorinstance.cpp:33,public: virtual __thiscall FxActorInstance::~FxActorInstance(void),0xaf5370,bytes 1.000,SDK runtime,ported
+0xb0ad30,231,facefx,FxActorInstance,fxactorinstance.cpp:45,public: void __thiscall FxActorInstance::SetActor(class FxActor *),0xaf5400,bytes 1.000,SDK runtime,ported
+0xb0ae20,22,facefx,FxActorInstance,fxactorinstance.cpp:80,public: void __thiscall FxActorInstance::SetIsOpenInStudio(bool),,unmatched,SDK runtime,ported
+0xb0ae40,22,facefx,FxActorInstance,fxactorinstance.cpp:85,public: void __thiscall FxActorInstance::SetAllowNonAnimTick(bool),,unmatched,SDK runtime,ported
+0xb0ae60,110,facefx,FxActorInstance,fxactorinstance.cpp:91,"public: bool __thiscall FxActorInstance::PlayAnim(class FxName const &, class FxName const &, bool)",0xaf5530,bytes 1.000,SDK runtime,ported
+0xb0aed0,113,facefx,FxActorInstance,fxactorinstance.cpp:107,public: void __thiscall FxActorInstance::StopAnim(void),0xaf55a0,bytes 1.000,SDK runtime,ported
+0xb0af50,11,facefx,FxActorInstance,fxactorinstance.cpp:120,public: virtual void __thiscall FxActorInstance::BeginFrame(void),0xaf5620,vtable 1.000,SDK runtime,ported
+0xb0af60,11,facefx,FxActorInstance,fxactorinstance.cpp:125,public: virtual void __thiscall FxActorInstance::EndFrame(void),0xaf5630,vtable 1.000,SDK runtime,ported
+0xb0af70,739,facefx,FxActorInstance,fxactorinstance.cpp:131,"public: enum FxAnimPlaybackState __thiscall FxActorInstance::Tick(double, float)",0xaf5640,bytes 1.000,SDK runtime,ported
+0xb0b260,359,facefx,FxActorInstance,fxactorinstance.cpp:238,"public: void __thiscall FxActorInstance::ForceTick(class FxName const &, class FxName const &, float)",0xaf5930,bytes 1.000,SDK runtime,ported
+0xb0b3d0,386,facefx,FxActorInstance,fxactorinstance.cpp:280,"public: bool __thiscall FxActorInstance::SetRegisterEx(class FxName const &, enum FxRegisterOp, float, float, enum FxRegisterOp, float, float)",0xaf5aa0,bytes 1.000,SDK runtime,ported
+0xb0b560,390,facefx,FxActorInstance,fxactorinstance.cpp:317,"public: void __thiscall FxActorInstance::SetAllRegisters(enum FxRegisterOp, float, float, enum FxRegisterOp, float, float)",0xaf5c30,bytes 1.000,SDK runtime,ported
+0xb0b6f0,71,facefx,FxActorInstance,fxactorinstance.cpp:347,public: float __thiscall FxActorInstance::GetRegister(class FxName const &),0xaf5dc0,bytes 1.000,SDK runtime,ported
+0xb0b740,80,facefx,FxActorInstance,fxactorinstance.cpp:359,"public: bool __thiscall FxActorInstance::GetRegisterState(class FxName const &, struct FxRegister &)",0xaf5e10,bytes 1.000,SDK runtime,ported
+0xb0b790,72,facefx,FxActorInstance,fxactorinstance.cpp:372,public: float __thiscall FxActorInstance::GetOriginalRegisterValue(class FxName const &),0xaf5e60,bytes 1.000,SDK runtime,ported
+0xb0b7e0,35,facefx,FxActorInstance,fxactorinstance.h:40,public: virtual class FxClass const * __thiscall FxActorInstance::GetClassDesc(void)const,0xaf5eb0,order 1.000,SDK runtime,macro
+0xb0b810,41,facefx,FxActorInstance,fxactorinstance.h:40,public: virtual unsigned short __thiscall FxActorInstance::GetCurrentVersion(void)const,0xaf5ee0,neighbours 1.000,SDK runtime,macro
+0xb0b840,159,facefx,FxActorInstance,fxactorinstance.h:252,public: __thiscall FxActorInstance::FxAnimPlaybackInfo::FxAnimPlaybackInfo(void),0xaf5f10,bytes 1.000,SDK runtime,ported
+0xb0b8e0,46,fxsdk_unreal,FxActorInstance,,public: virtual void * __thiscall FxActorInstance::`scalar deleting destructor'(unsigned int),0xaf5fb0,neighbours 1.000,SDK runtime,generated
+0xb0b910,86,fxsdk_unreal,FxActorInstance,,public: __thiscall FxActorInstance::FxAnimPlaybackInfo::~FxAnimPlaybackInfo(void),0xaf5fe0,bytes 1.000,SDK runtime,ported
+0xb0b970,19,fxsdk_unreal,FxActorInstance,,public: __thiscall FxArray<struct FxRegister>::~FxArray<struct FxRegister>(void),0xaf6040,callee 1.000,SDK runtime,template
+0xb0b990,116,facefx,FxActorInstance,fxfacegraphshared.h:171,public: __thiscall FxRegister::FxRegister(void),0xaf6060,bytes 1.000,SDK runtime,ported
+0xb0ba10,88,facefx,FxActorInstance,fxactor.h:396,"public: class FxAnim * __thiscall FxActor::GetAnimPtr(class FxName const &, class FxName const &)",0xaf60e0,bytes 1.000,SDK runtime,ported
+0xb0ba70,20,facefx,FxActorInstance,fxmathansi.h:34,float __cdecl FxAbs(float),0xaf6140,bytes 1.000,SDK runtime,inline
+0xb0ba90,70,facefx,FxActorInstance,fxmath.h:62,"bool __cdecl FxDRealEquality(double, double)",0xaf6160,bytes 1.000,SDK runtime,ported
+0xb0bae0,57,facefx,FxActorInstance,fxmasterbonelist.h:197,"public: void __thiscall FxMasterBoneList::SetRefBoneCurrentWeight(class FxName const &, float)",0xaf61b0,bytes 1.000,SDK runtime,ported
+0xb0bb20,95,facefx,FxActorInstance,fxmasterbonelist.h:216,public: void __thiscall FxMasterBoneList::ResetRefBoneWeights(void),0xaf61f0,bytes 1.000,SDK runtime,ported
+0xb0bb80,105,facefx,FxActorInstance,fxmasterbonelist.h:255,private: unsigned int __thiscall FxMasterBoneList::_findMasterBoneListEntryIndex(class FxName const &)const,0xaf6250,bytes 1.000,SDK runtime,ported
+0xb0bbf0,17,facefx,FxActorInstance,fxanim.h:93,public: float __thiscall FxAnim::GetEndTime(void)const,0xaf62c0,callee 1.000,SDK runtime,ported
+0xb0bc10,28,facefx,FxActorInstance,fxanim.h:109,public: struct FxAnimBoneWeight const & __thiscall FxAnim::GetBoneWeight(unsigned int)const,0xaf6300,bytes 1.000,SDK runtime,ported
+0xb0bc30,104,facefx,FxActorInstance,fxfacegraphshared.h:207,public: static enum FxValueOp __cdecl FxRegister::GetUserOpForRegOp(enum FxRegisterOp),0xaf6320,bytes 1.000,SDK runtime,ported
+0xb0bca0,174,facefx,FxActorInstance,fxfacegraphshared.h:189,public: struct FxRegister & __thiscall FxRegister::operator=(struct FxRegister const &),0xaf6390,bytes 1.000,SDK runtime,inline
+0xb0bd50,93,facefx,FxActorInstance,fxarraybase.h:35,public: __thiscall FxArrayBase<struct FxRegister>::~FxArrayBase<struct FxRegister>(void),0xaf6440,callee 1.000,SDK runtime,template
+0xb0bdb0,24,facefx,FxActorInstance,fxarrayimpl.h:95,public: class FxMasterBoneList::FxMasterBoneListEntry & __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::operator[](unsigned int),0xaf64a0,bytes 1.000,SDK runtime,template
+0xb0bdd0,28,facefx,FxActorInstance,fxarrayimpl.h:23,public: __thiscall FxArray<struct FxRegister>::FxArray<struct FxRegister>(unsigned int),0xb0e280,callee 1.000,SDK runtime,template
+0xb0bdf0,108,facefx,FxActorInstance,fxarrayimpl.h:67,public: void __thiscall FxArray<struct FxRegister>::Clear(void),0xaf64c0,callee 1.000,SDK runtime,template
+0xb0be60,166,facefx,FxActorInstance,fxarrayimpl.h:136,public: void __thiscall FxArray<struct FxRegister>::Reserve(unsigned int),0xaf6530,bytes 1.000,SDK runtime,template
+0xb0bf10,277,facefx,FxActorInstance,fxarrayimpl.h:152,public: void __thiscall FxArray<struct FxRegister>::PushBack(struct FxRegister const &),0xaf65e0,callee 1.000,SDK runtime,template
+0xb0c030,36,facefx,FxActorInstance,fxmemory.h:157,"void __cdecl FxDestroy<struct FxRegister *>(struct FxRegister *, struct FxRegister *)",0xaf6700,neighbours 1.000,SDK runtime,template
+0xb0c060,78,facefx,FxActorInstance,fxarraybase.h:31,public: __thiscall FxArrayBase<class FxBone>::FxArrayBase<class FxBone>(unsigned int),0xb0e710,bytes 1.000,SDK runtime,template
+0xb0c0b0,119,facefx,FxActorInstance,fxmemory.h:132,"void __cdecl FxConstruct<struct FxRegister, struct FxRegister>(struct FxRegister *, struct FxRegister const &)",0xaf6730,callee 1.000,SDK runtime,template
+0xb0c130,158,facefx,FxActorInstance,fxfacegraphshared.h:186,public: __thiscall FxRegister::FxRegister(struct FxRegister const &),0xaf67b0,bytes 1.000,SDK runtime,inline
+0xb0c1d0,137,facefx,FxActor,fxactor.cpp:31,public: static class FxClass * __cdecl FxActor::AllocateStaticClassFxActor(void),0xaf6850,bytes 1.000,SDK runtime,ported
+0xb0c260,270,facefx,FxActor,fxactor.cpp:36,public: __thiscall FxActor::FxActor(void),0xaf68e0,bytes 1.000,SDK runtime,ported
+0xb0c370,305,facefx,FxActor,fxactor.cpp:42,public: virtual __thiscall FxActor::~FxActor(void),0xaf69f0,bytes 1.000,SDK runtime,ported
+0xb0c4b0,43,facefx,FxActor,fxactor.cpp:54,public: static void __cdecl FxActor::Startup(void),0xaf6b30,bytes 1.000,SDK runtime,ported
+0xb0c4e0,33,facefx,FxActor,fxactor.cpp:63,public: static void __cdecl FxActor::Shutdown(void),0xaf6b60,bytes 1.000,SDK runtime,ported
+0xb0c510,22,facefx,FxActor,fxactor.cpp:70,public: void __thiscall FxActor::SetShouldClientRelink(bool),0xaf6b90,callee 1.000,SDK runtime,ported
+0xb0c530,22,facefx,FxActor,fxactor.cpp:75,public: void __thiscall FxActor::SetIsOpenInStudio(bool),0xaf6bb0,order 1.000,SDK runtime,ported
+0xb0c550,142,facefx,FxActor,fxactor.cpp:80,public: void __thiscall FxActor::CompileFaceGraph(void),0xaf6bd0,bytes 1.000,SDK runtime,ported
+0xb0c5e0,54,facefx,FxActor,fxactor.cpp:94,public: void __thiscall FxActor::DecompileFaceGraph(void),0xaf6c60,bytes 1.000,SDK runtime,ported
+0xb0c620,81,facefx,FxActor,fxactor.cpp:101,"public: bool __thiscall FxActor::AddAnim(class FxName const &, class FxAnim const &)",0xaf6ca0,bytes 1.000,SDK runtime,ported
+0xb0c680,67,facefx,FxActor,fxactor.cpp:115,"public: bool __thiscall FxActor::RemoveAnim(class FxName const &, class FxName const &)",0xaf6d00,bytes 1.000,SDK runtime,ported
+0xb0c6d0,145,facefx,FxActor,fxactor.cpp:126,public: bool __thiscall FxActor::AddAnimGroup(class FxName const &),0xaf6d50,bytes 1.000,SDK runtime,ported
+0xb0c770,88,facefx,FxActor,fxactor.cpp:138,public: bool __thiscall FxActor::RemoveAnimGroup(class FxName const &),0xaf6df0,bytes 1.000,SDK runtime,ported
+0xb0c7d0,108,facefx,FxActor,fxactor.cpp:152,"public: bool __thiscall FxActor::MountAnimSet(class FxAnimSet const &, enum FxMountUnmountExtendedInfo *)",0xaf6e50,bytes 1.000,SDK runtime,ported
+0xb0c840,338,facefx,FxActor,fxactor.cpp:173,"public: bool __thiscall FxActor::UnmountAnimSet(class FxName const &, bool, enum FxMountUnmountExtendedInfo *)",0xaf6ec0,bytes 1.000,SDK runtime,ported
+0xb0c9a0,78,facefx,FxActor,fxactor.cpp:218,public: bool __thiscall FxActor::ImportAnimSet(class FxAnimSet const &),0xaf7020,bytes 1.000,SDK runtime,ported
+0xb0c9f0,138,facefx,FxActor,fxactor.cpp:230,"public: bool __thiscall FxActor::ExportAnimSet(class FxName const &, class FxAnimSet &)",0xaf7070,bytes 1.000,SDK runtime,ported
+0xb0ca80,127,facefx,FxActor,fxactor.cpp:246,public: static class FxActor * __cdecl FxActor::FindActor(class FxName const &),0xaf7100,bytes 1.000,SDK runtime,ported
+0xb0cb00,101,facefx,FxActor,fxactor.cpp:262,public: static bool __cdecl FxActor::FindActorPtr(class FxActor *),0xaf7180,bytes 1.000,SDK runtime,ported
+0xb0cb70,13,facefx,FxActor,fxactor.cpp:279,public: static void __cdecl FxActor::SetShouldFreeActorMemory(bool),0xaf71f0,bytes 1.000,SDK runtime,ported
+0xb0cb80,10,facefx,FxActor,fxactor.cpp:284,public: static bool __cdecl FxActor::GetShouldFreeActorMemory(void),0xaf7200,bytes 1.000,SDK runtime,ported
+0xb0cb90,64,facefx,FxActor,fxactor.cpp:289,public: static bool __cdecl FxActor::AddActor(class FxActor *),0xaf7210,bytes 1.000,SDK runtime,ported
+0xb0cbd0,188,facefx,FxActor,fxactor.cpp:309,public: static bool __cdecl FxActor::RemoveActor(class FxActor *),0xaf7250,bytes 1.000,SDK runtime,ported
+0xb0cc90,183,facefx,FxActor,fxactor.cpp:331,public: static void __cdecl FxActor::FlushActors(void),0xaf7310,bytes 1.000,SDK runtime,ported
+0xb0cd50,66,facefx,FxActor,fxactor.cpp:352,public: void __thiscall FxActor::AddInstance(class FxActorInstance *),0xaf73d0,bytes 1.000,SDK runtime,ported
+0xb0cda0,66,facefx,FxActor,fxactor.cpp:365,public: void __thiscall FxActor::RemoveInstance(class FxActorInstance *),0xaf7420,bytes 1.000,SDK runtime,ported
+0xb0cdf0,589,facefx,FxActor,fxactor.cpp:378,public: virtual void __thiscall FxActor::Serialize(class FxArchive &),0xaf7470,bytes 1.000,SDK runtime,ported
+0xb0d040,225,facefx,FxActor,fxactor.cpp:457,"bool __cdecl FxLoadActorFromFile(class FxActor &, char const *, bool, void (__cdecl *)(float), float)",0xaf76c0,order 1.000,SDK runtime,ported
+0xb0d130,316,facefx,FxActor,fxactor.cpp:474,"bool __cdecl FxSaveActorToFile(class FxActor &, char const *, enum FxArchive::FxArchiveByteOrder, void (__cdecl *)(float), float)",0xaf77b0,order 1.000,SDK runtime,ported
+0xb0d270,197,facefx,FxActor,fxactor.cpp:496,"bool __cdecl FxLoadActorFromMemory(class FxActor &, unsigned char const *, unsigned int, void (__cdecl *)(float), float)",0xaf78f0,callee 1.000,SDK runtime,ported
+0xb0d340,388,facefx,FxActor,fxactor.cpp:514,"bool __cdecl FxSaveActorToMemory(class FxActor &, unsigned char * &, unsigned int &, enum FxArchive::FxArchiveByteOrder, void (__cdecl *)(float), float)",0xaf79c0,callee 1.000,SDK runtime,ported
+0xb0d4d0,117,facefx,FxActor,fxactor.h:54,public: static class FxObject * __cdecl FxActor::ConstructObject(void),0xaf7b50,bytes 1.000,SDK runtime,macro
+0xb0d550,35,facefx,FxActor,fxactor.h:54,public: virtual class FxClass const * __thiscall FxActor::GetClassDesc(void)const,0xaf7bd0,vtable 1.000,SDK runtime,macro
+0xb0d580,41,facefx,FxActor,fxactor.h:54,public: virtual unsigned short __thiscall FxActor::GetCurrentVersion(void)const,0xaf7c00,vtable 1.000,SDK runtime,macro
+0xb0d5b0,49,fxsdk_unreal,FxActor,,public: virtual void * __thiscall FxActor::`vector deleting destructor'(unsigned int),0xaf7c30,bytes 1.000,SDK runtime,generated
+0xb0d5f0,19,fxsdk_unreal,FxActor,,public: __thiscall FxArray<class FxAnimGroup>::~FxArray<class FxAnimGroup>(void),0xaf7c70,callee 1.000,SDK runtime,template
+0xb0d610,17,facefx,FxActor,fxactorinstance.h:97,public: class FxName const & __thiscall FxActorInstance::GetCurrentAnimGroupName(void)const,0xaf7c90,bytes 1.000,SDK runtime,ported
+0xb0d630,111,facefx,FxActor,fxactor.cpp:441,"protected: bool __thiscall FxActor::_findInstance(class FxActorInstance *, class FxList<class FxActorInstance *>::Iterator &)",0xaf7cb0,bytes 1.000,SDK runtime,ported
+0xb0d6a0,25,facefx,FxActor,fxfacegraph.h:42,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxFaceGraph &)",0xaf9620,bytes 1.000,SDK runtime,ported
+0xb0d6c0,93,facefx,FxActor,fxarraybase.h:35,public: __thiscall FxArrayBase<class FxAnimGroup>::~FxArrayBase<class FxAnimGroup>(void),0xaf7d20,neighbours 1.000,SDK runtime,template
+0xb0d720,27,facefx,FxActor,fxlist.h:122,public: class FxList<class FxActor *>::Iterator & __thiscall FxList<class FxActor *>::Iterator::operator++(void),0xaf0090,callee 1.000,SDK runtime,template
+0xb0d740,28,facefx,FxActor,fxlist.h:156,"public: bool __thiscall FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::ConstIterator::operator!=(class FxList<class FxStringHash<class FxRefString * *, 12, class FxList>::FxHashBinEntry>::ConstIterator const &)",0xaf7da0,bytes 1.000,SDK runtime,template
+0xb0d760,277,facefx,FxActor,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxAnimGroup>::PushBack(class FxAnimGroup const &),0xaf7dc0,callee 1.000,SDK runtime,template
+0xb0d880,201,facefx,FxActor,fxarrayimpl.h:284,public: void __thiscall FxArray<class FxAnimGroup>::Remove(unsigned int),0xaf7ee0,callee 1.000,SDK runtime,template
+0xb0d950,39,facefx,FxActor,fxlistimpl.h:80,public: __thiscall FxList<class FxAnimGroup>::~FxList<class FxAnimGroup>(void),0xaf7fb0,callee 1.000,SDK runtime,template
+0xb0d980,93,facefx,FxActor,fxlistimpl.h:107,public: class FxList<class FxAnimGroup>::Iterator __thiscall FxList<class FxAnimGroup>::End(void),0xaf7fe0,bytes 1.000,SDK runtime,template
+0xb0d9e0,46,facefx,FxActor,fxlistimpl.h:219,public: void __thiscall FxList<class FxAnimGroup>::PushBack(class FxAnimGroup const &),0xaf8040,callee 1.000,SDK runtime,template
+0xb0da10,25,facefx,FxActor,fxlistimpl.h:273,public: void __thiscall FxList<class FxAnimGroup>::Remove(class FxList<class FxAnimGroup>::Iterator),0xaf8070,callee 1.000,SDK runtime,template
+0xb0da30,39,facefx,FxActor,fxlistimpl.h:80,public: __thiscall FxList<class FxRefString *>::~FxList<class FxRefString *>(void),0xaf8930,callee 1.000,SDK runtime,template
+0xb0da60,109,facefx,FxActor,fxlistimpl.h:91,public: class FxList<class FxActor *>::Iterator __thiscall FxList<class FxActor *>::Begin(void),0xaf8120,bytes 1.000,SDK runtime,template
+0xb0dad0,100,facefx,FxActor,fxlistimpl.h:123,public: class FxList<class FxActor *>::Iterator __thiscall FxList<class FxActor *>::Find(class FxActor * const &),0xaf0490,bytes 1.000,SDK runtime,template
+0xb0db40,46,facefx,FxActor,fxlistimpl.h:219,public: void __thiscall FxList<class FxActorInstance *>::PushBack(class FxActorInstance * const &),0xaf80f0,callee 1.000,SDK runtime,template
+0xb0db70,25,facefx,FxActor,fxlistimpl.h:273,public: void __thiscall FxList<class FxActorInstance *>::Remove(class FxList<class FxActorInstance *>::Iterator),0xaf81f0,callee 1.000,SDK runtime,template
+0xb0db90,17,facefx,FxActor,fxarrayimpl.h:402,"class FxArchive & __cdecl operator<<<class FxAnimGroup>(class FxArchive &, class FxArray<class FxAnimGroup> &)",0xaf8240,callee 1.000,SDK runtime,template
+0xb0dbb0,36,facefx,FxActor,fxmemory.h:157,"void __cdecl FxDestroy<class FxAnimGroup *>(class FxAnimGroup *, class FxAnimGroup *)",0xaf8260,neighbours 1.000,SDK runtime,template
+0xb0dbe0,379,facefx,FxActor,fxarray.h:149,public: class FxArchive & __thiscall FxArray<class FxAnimGroup>::Serialize(class FxArchive &),0xaf8290,neighbours 1.000,SDK runtime,template
+0xb0dd60,119,facefx,FxActor,fxmemory.h:132,"void __cdecl FxConstruct<class FxAnimGroup, class FxAnimGroup>(class FxAnimGroup *, class FxAnimGroup const &)",0xaf8410,neighbours 1.000,SDK runtime,template
+0xb0dde0,93,facefx,FxActor,fxlistimpl.h:165,public: void __thiscall FxList<class FxAnimGroup>::Clear(void),0xaf8490,neighbours 1.000,SDK runtime,template
+0xb0de40,204,facefx,FxActor,fxlistimpl.h:261,"public: class FxList<class FxAnimGroup>::Iterator __thiscall FxList<class FxAnimGroup>::Insert(class FxAnimGroup const &, class FxList<class FxAnimGroup>::Iterator)",0xaf84f0,bytes 1.000,SDK runtime,template
+0xb0df10,93,facefx,FxActor,fxlistimpl.h:280,public: void __thiscall FxList<class FxAnimGroup>::RemoveIterator(class FxList<class FxAnimGroup>::Iterator),0xaf85c0,neighbours 1.000,SDK runtime,template
+0xb0df70,44,facefx,FxActor,fxmemory.h:214,void __cdecl FxDelete<class FxList<class FxAnimGroup>::FxListNode>(class FxList<class FxAnimGroup>::FxListNode * &),0xaf8620,bytes 1.000,SDK runtime,template
+0xb0dfa0,93,facefx,FxActor,fxlistimpl.h:165,public: void __thiscall FxList<class FxRefString *>::Clear(void),0xaf8190,callee 1.000,SDK runtime,template
+0xb0e000,128,facefx,FxActor,fxlistimpl.h:261,"public: class FxList<class FxActor *>::Iterator __thiscall FxList<class FxActor *>::Insert(class FxActor * const &, class FxList<class FxActor *>::Iterator)",0xaf0500,bytes 1.000,SDK runtime,template
+0xb0e080,93,facefx,FxActor,fxlistimpl.h:280,public: void __thiscall FxList<class FxActorInstance *>::RemoveIterator(class FxList<class FxActorInstance *>::Iterator),0xaf8700,neighbours 1.000,SDK runtime,template
+0xb0e0e0,44,facefx,FxActor,fxmemory.h:214,void __cdecl FxDelete<class FxList<class FxActorInstance *>::FxListNode>(class FxList<class FxActorInstance *>::FxListNode * &),0xaf8760,callee 1.000,SDK runtime,template
+0xb0e110,21,facefx,FxActor,fxmemory.h:148,void __cdecl FxDestroy<class FxList<class FxRefString *>>(class FxList<class FxRefString *> *),0xaf0de0,callee 1.000,SDK runtime,template
+0xb0e130,115,facefx,FxActor,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxAnimGroup>(class FxAnimGroup *),0xaf8790,neighbours 1.000,SDK runtime,template
+0xb0e1b0,19,fxsdk_unreal,FxActor,,public: __thiscall FxList<class FxAnimGroup>::FxListNode::~FxListNode(void),0xaf8810,callee 1.000,SDK runtime,template
+0xb0e1d0,44,fxsdk_unreal,FxActor,,public: void * __thiscall FxList<class FxRefString *>::`scalar deleting destructor'(unsigned int),0xaf0fc0,neighbours 1.000,SDK runtime,generated
+0xb0e200,46,facefx,FxActor,fxlist.h:367,"public: __thiscall FxList<class FxAnimGroup>::FxListNode::FxListNode(class FxAnimGroup const &, class FxList<class FxAnimGroup>::FxListNode *, class FxList<class FxAnimGroup>::FxListNode *)",0xaf8830,callee 1.000,SDK runtime,template
+0xb0e230,119,facefx,FxActor,fxmemory.h:132,"void __cdecl FxConstruct<class FxList<class FxAnimGroup>::FxListNode, class FxList<class FxAnimGroup>::FxListNode>(class FxList<class FxAnimGroup>::FxListNode *, class FxList<class FxAnimGroup>::FxListNode const &)",0xaf8890,bytes 1.000,SDK runtime,template
+0xb0e2b0,21,facefx,FxActor,fxmemory.h:148,void __cdecl FxDestroy<class FxList<class FxAnimGroup>::FxListNode>(class FxList<class FxAnimGroup>::FxListNode *),0xaf8910,callee 1.000,SDK runtime,template
+0xb0e2d0,70,facefx,FxActor,fxmemory.h:132,"void __cdecl FxConstruct<class FxList<class FxActorInstance *>::FxListNode, class FxList<class FxActorInstance *>::FxListNode>(class FxList<class FxActorInstance *>::FxListNode *, class FxList<class FxActorInstance *>::FxListNode const &)",0xaf0d90,bytes 1.000,SDK runtime,template
+0xb0e320,5,facefx,FxActor,fxmemory.h:148,void __cdecl FxDestroy<class FxList<class FxActor *>::FxListNode>(class FxList<class FxActor *>::FxListNode *),0xb13950,callee 1.000,SDK runtime,template
+0xb0e330,52,fxsdk_unreal,FxActor,,public: __thiscall FxList<class FxAnimGroup>::FxListNode::FxListNode(class FxList<class FxAnimGroup>::FxListNode const &),0xaf89b0,callee 1.000,SDK runtime,template
+0xb0e370,44,fxsdk_unreal,FxActor,,public: void * __thiscall FxList<class FxAnimGroup>::FxListNode::`scalar deleting destructor'(unsigned int),0xaf89f0,neighbours 1.000,SDK runtime,generated
+0xb0e3a0,34,facefx,FxMasterBoneList,fxmasterbonelist.cpp:23,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink::FxBoneLink(void),0xaf8a20,bytes 1.000,SDK runtime,ported
+0xb0e3d0,51,facefx,FxMasterBoneList,fxmasterbonelist.cpp:34,"public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink::FxBoneLink(unsigned int, class FxName const &, class FxVec3 const &, class FxQuat const &, class FxVec3 const &)",0xaf8a50,bytes 1.000,SDK runtime,ported
+0xb0e410,22,facefx,FxMasterBoneList,fxmasterbonelist.cpp:39,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink::~FxBoneLink(void),0xaf8a90,callee 1.000,SDK runtime,ported
+0xb0e430,33,facefx,FxMasterBoneList,fxmasterbonelist.cpp:43,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink &)",0xaf8ab0,bytes 1.000,SDK runtime,ported
+0xb0e460,128,facefx,FxMasterBoneList,fxmasterbonelist.cpp:52,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxMasterBoneListEntry(void),0xaf8ae0,bytes 1.000,SDK runtime,ported
+0xb0e4e0,145,facefx,FxMasterBoneList,fxmasterbonelist.cpp:62,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxMasterBoneListEntry(class FxBone const &),0xaf8b60,bytes 1.000,SDK runtime,ported
+0xb0e580,86,facefx,FxMasterBoneList,fxmasterbonelist.cpp:67,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::~FxMasterBoneListEntry(void),0xaf8c00,bytes 1.000,SDK runtime,ported
+0xb0e5e0,632,facefx,FxMasterBoneList,fxmasterbonelist.cpp:72,"public: void __thiscall FxMasterBoneList::FxMasterBoneListEntry::PullBone(class FxFaceGraph &, struct FxCompiledFaceGraph &)",0xaf8c60,bytes 1.000,SDK runtime,ported
+0xb0e860,282,facefx,FxMasterBoneList,fxmasterbonelist.cpp:121,"public: void __thiscall FxMasterBoneList::FxMasterBoneListEntry::PushBone(class FxFaceGraph &, struct FxCompiledFaceGraph &)",0xaf8ee0,bytes 1.000,SDK runtime,ported
+0xb0e980,135,facefx,FxMasterBoneList,fxmasterbonelist.cpp:162,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxMasterBoneList::FxMasterBoneListEntry &)",0xaf9000,bytes 1.000,SDK runtime,ported
+0xb0ea10,36,facefx,FxMasterBoneList,fxmasterbonelist.cpp:176,public: __thiscall FxMasterBoneList::FxMasterBoneList(void),0xaf9090,bytes 1.000,SDK runtime,ported
+0xb0ea40,31,facefx,FxMasterBoneList,fxmasterbonelist.cpp:180,public: virtual __thiscall FxMasterBoneList::~FxMasterBoneList(void),0xaf90c0,bytes 1.000,SDK runtime,ported
+0xb0ea60,22,facefx,FxMasterBoneList,fxmasterbonelist.cpp:184,public: void __thiscall FxMasterBoneList::Clear(void),0xaf90e0,neighbours 1.000,SDK runtime,ported
+0xb0ea80,341,facefx,FxMasterBoneList,fxmasterbonelist.cpp:189,public: void __thiscall FxMasterBoneList::AddRefBone(class FxBone const &),0xaf9100,bytes 1.000,SDK runtime,ported
+0xb0ebe0,34,facefx,FxMasterBoneList,fxmasterbonelist.cpp:215,"public: void __thiscall FxMasterBoneList::SetRefBoneClientIndex(unsigned int, int)",0xaf9260,bytes 1.000,SDK runtime,ported
+0xb0ec10,87,facefx,FxMasterBoneList,fxmasterbonelist.cpp:220,"public: void __thiscall FxMasterBoneList::PullBones(class FxFaceGraph &, struct FxCompiledFaceGraph &)",0xaf9290,callee 1.000,SDK runtime,ported
+0xb0ec70,87,facefx,FxMasterBoneList,fxmasterbonelist.cpp:229,"public: void __thiscall FxMasterBoneList::PushBones(class FxFaceGraph &, struct FxCompiledFaceGraph &)",0xaf92f0,callee 1.000,SDK runtime,ported
+0xb0ecd0,352,facefx,FxMasterBoneList,fxmasterbonelist.cpp:238,public: void __thiscall FxMasterBoneList::Prune(class FxFaceGraph &),0xaf9350,bytes 1.000,SDK runtime,ported
+0xb0ee30,367,facefx,FxMasterBoneList,fxmasterbonelist.cpp:275,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxMasterBoneList &)",0xaf94b0,bytes 1.000,SDK runtime,ported
+0xb0efa0,69,facefx,FxMasterBoneList,fxquat.h:191,public: class FxQuat __thiscall FxQuat::GetInverse(void)const,0xaf9640,bytes 1.000,SDK runtime,ported
+0xb0eff0,127,fxsdk_unreal,FxMasterBoneList,,public: __thiscall FxBone::FxBone(class FxBone const &),0xaf9690,bytes 1.000,SDK runtime,generated
+0xb0f070,35,facefx,FxMasterBoneList,fxbone.h:28,public: virtual class FxClass const * __thiscall FxBone::GetClassDesc(void)const,0xaf9710,vtable 1.000,SDK runtime,macro
+0xb0f0a0,41,facefx,FxMasterBoneList,fxbone.h:28,public: virtual unsigned short __thiscall FxBone::GetCurrentVersion(void)const,0xaf9740,vtable 1.000,SDK runtime,macro
+0xb0f0d0,46,fxsdk_unreal,FxMasterBoneList,,public: virtual void * __thiscall FxBone::`vector deleting destructor'(unsigned int),0xaf9770,bytes 1.000,SDK runtime,generated
+0xb0f100,19,fxsdk_unreal,FxMasterBoneList,,public: __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::~FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(void),0xaf97a0,callee 1.000,SDK runtime,template
+0xb0f120,90,facefx,FxMasterBoneList,fxvec3.h:259,public: class FxVec3 __thiscall FxVec3::operator-(class FxVec3 const &)const,0xaf97c0,bytes 1.000,SDK runtime,ported
+0xb0f180,29,facefx,FxMasterBoneList,fxboneposenode.h:31,public: static class FxClass const * __cdecl FxBonePoseNode::StaticClass(void),0xaf9820,callee 1.000,SDK runtime,macro
+0xb0f1a0,22,facefx,FxMasterBoneList,fxboneposenode.h:46,public: unsigned int __thiscall FxBonePoseNode::GetNumBones(void)const,0xaf9840,callee 1.000,SDK runtime,ported
+0xb0f1c0,28,facefx,FxMasterBoneList,fxboneposenode.h:49,public: class FxBone const & __thiscall FxBonePoseNode::GetBone(unsigned int)const,0xaf9860,callee 1.000,SDK runtime,ported
+0xb0f1e0,27,facefx,FxMasterBoneList,fxfacegraph.h:216,public: class FxFaceGraph::Iterator & __thiscall FxFaceGraph::Iterator::operator++(void),0xaf9880,bytes 1.000,SDK runtime,ported
+0xb0f200,18,facefx,FxMasterBoneList,fxfacegraph.h:231,public: class FxFaceGraphNode * __thiscall FxFaceGraph::Iterator::GetNode(void),0xaf98a0,bytes 1.000,SDK runtime,ported
+0xb0f220,150,facefx,FxMasterBoneList,fxfacegraph.h:356,public: class FxFaceGraph::Iterator __thiscall FxFaceGraph::Begin(class FxClass const *)const,0xaf98c0,callee 1.000,SDK runtime,ported
+0xb0f2c0,29,facefx,FxMasterBoneList,fxfacegraphnode.h:30,public: static class FxClass const * __cdecl FxFaceGraphNode::StaticClass(void),0xaf9960,callee 1.000,SDK runtime,macro
+0xb0f2e0,22,facefx,FxMasterBoneList,fxfacegraph.h:295,public: class FxFaceGraphNode * const * __thiscall FxFaceGraph::FxFaceGraphNodeJumpList::Begin(void)const,0xaf9980,neighbours 1.000,SDK runtime,ported
+0xb0f300,150,facefx,FxMasterBoneList,fxfacegraph.h:377,public: class FxFaceGraph::Iterator __thiscall FxFaceGraph::End(class FxClass const *)const,0xaf99a0,callee 1.000,SDK runtime,ported
+0xb0f3a0,22,facefx,FxMasterBoneList,fxfacegraph.h:297,public: class FxFaceGraphNode * const * __thiscall FxFaceGraph::FxFaceGraphNodeJumpList::End(void)const,0xaf9a40,neighbours 1.000,SDK runtime,ported
+0xb0f3c0,90,facefx,FxMasterBoneList,fxvec3.h:246,public: class FxVec3 __thiscall FxVec3::operator+(class FxVec3 const &)const,0xaf9a60,bytes 1.000,SDK runtime,ported
+0xb0f420,44,fxsdk_unreal,FxMasterBoneList,,public: virtual void * __thiscall FxMasterBoneList::`vector deleting destructor'(unsigned int),0xaf9ac0,neighbours 1.000,SDK runtime,generated
+0xb0f450,19,fxsdk_unreal,FxMasterBoneList,,public: __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::~FxArray<class FxMasterBoneList::FxMasterBoneListEntry>(void),0xaf9af0,callee 1.000,SDK runtime,template
+0xb0f470,118,fxsdk_unreal,FxMasterBoneList,,public: class FxBone & __thiscall FxBone::operator=(class FxBone const &),0xaf9b10,bytes 1.000,SDK runtime,generated
+0xb0f4f0,225,facefx,FxMasterBoneList,fxmasterbonelist.cpp:136,public: void __thiscall FxMasterBoneList::FxMasterBoneListEntry::Prune(class FxFaceGraph &),0xaf9b90,bytes 1.000,SDK runtime,ported
+0xb0f5e0,443,facefx,FxMasterBoneList,fxbone.h:70,public: bool __thiscall FxBone::operator==(class FxBone const &)const,0xaf9c80,bytes 1.000,SDK runtime,ported
+0xb0f7a0,70,facefx,FxMasterBoneList,fxmath.h:48,"bool __cdecl FxRealEqualityRelaxed(float, float)",0xaf9e40,bytes 1.000,SDK runtime,inline
+0xb0f7f0,93,facefx,FxMasterBoneList,fxarraybase.h:35,public: __thiscall FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::~FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(void),0xaf9e90,bytes 1.000,SDK runtime,template
+0xb0f850,93,facefx,FxMasterBoneList,fxarraybase.h:35,public: __thiscall FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry>::~FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry>(void),0xaf9ef0,bytes 1.000,SDK runtime,template
+0xb0f8b0,25,facefx,FxMasterBoneList,fxarrayimpl.h:129,public: class FxFaceGraphNode * const * __thiscall FxArray<class FxFaceGraphNode *>::End(void)const,0xaf9f50,bytes 1.000,SDK runtime,template
+0xb0f8d0,17,facefx,FxMasterBoneList,fxarrayimpl.h:74,public: unsigned int __thiscall FxArray<unsigned int>::Length(void)const,0xb08870,callee 1.000,SDK runtime,template
+0xb0f8f0,24,facefx,FxMasterBoneList,fxarrayimpl.h:102,public: struct FxRegister & __thiscall FxArray<struct FxRegister>::operator[](unsigned int),0xb0e800,bytes 1.000,SDK runtime,template
+0xb0f910,28,facefx,FxMasterBoneList,fxarrayimpl.h:23,public: __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(unsigned int),0xaf9f70,callee 1.000,SDK runtime,template
+0xb0f930,108,facefx,FxMasterBoneList,fxarrayimpl.h:67,public: void __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::Clear(void),0xaf9f90,callee 1.000,SDK runtime,template
+0xb0f9a0,24,facefx,FxMasterBoneList,fxarrayimpl.h:95,public: class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink & __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::operator[](unsigned int),0xafa000,bytes 1.000,SDK runtime,template
+0xb0f9c0,166,facefx,FxMasterBoneList,fxarrayimpl.h:136,public: void __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::Reserve(unsigned int),0xafa020,bytes 1.000,SDK runtime,template
+0xb0fa70,277,facefx,FxMasterBoneList,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::PushBack(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink const &),0xafa0d0,bytes 1.000,SDK runtime,template
+0xb0fb90,28,facefx,FxMasterBoneList,fxarrayimpl.h:23,public: __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::FxArray<class FxMasterBoneList::FxMasterBoneListEntry>(unsigned int),0xafa1f0,callee 1.000,SDK runtime,template
+0xb0fbb0,108,facefx,FxMasterBoneList,fxarrayimpl.h:67,public: void __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::Clear(void),0xafa210,callee 1.000,SDK runtime,template
+0xb0fc20,166,facefx,FxMasterBoneList,fxarrayimpl.h:136,public: void __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::Reserve(unsigned int),0xafa280,bytes 1.000,SDK runtime,template
+0xb0fcd0,277,facefx,FxMasterBoneList,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::PushBack(class FxMasterBoneList::FxMasterBoneListEntry const &),0xafa330,bytes 1.000,SDK runtime,template
+0xb0fdf0,53,facefx,FxMasterBoneList,fxobject.h:44,class FxBonePoseNode * __cdecl FxCast<class FxBonePoseNode>(class FxObject *),0xafa450,callee 1.000,SDK runtime,inline
+0xb0fe30,52,facefx,FxMasterBoneList,fxobject.h:31,public: bool __thiscall FxObject::IsKindOf(class FxClass const *)const,0xafa490,neighbours 1.000,SDK runtime,inline
+0xb0fe70,17,facefx,FxMasterBoneList,fxarrayimpl.h:402,"class FxArchive & __cdecl operator<<<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxArchive &, class FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink> &)",0xafa4d0,callee 1.000,SDK runtime,template
+0xb0fe90,17,facefx,FxMasterBoneList,fxarrayimpl.h:402,"class FxArchive & __cdecl operator<<<class FxMasterBoneList::FxMasterBoneListEntry>(class FxArchive &, class FxArray<class FxMasterBoneList::FxMasterBoneListEntry> &)",0xafa4f0,callee 1.000,SDK runtime,template
+0xb0feb0,36,facefx,FxMasterBoneList,fxmemory.h:157,"void __cdecl FxDestroy<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *>(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *, class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *)",0xafa510,bytes 1.000,SDK runtime,template
+0xb0fee0,36,facefx,FxMasterBoneList,fxmemory.h:157,"void __cdecl FxDestroy<class FxMasterBoneList::FxMasterBoneListEntry *>(class FxMasterBoneList::FxMasterBoneListEntry *, class FxMasterBoneList::FxMasterBoneListEntry *)",0xafa540,bytes 1.000,SDK runtime,template
+0xb0ff10,379,facefx,FxMasterBoneList,fxarray.h:149,public: class FxArchive & __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::Serialize(class FxArchive &),0xafa570,bytes 1.000,SDK runtime,template
+0xb10090,78,facefx,FxMasterBoneList,fxarraybase.h:31,public: __thiscall FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(unsigned int),0xafa6f0,bytes 1.000,SDK runtime,template
+0xb100e0,379,facefx,FxMasterBoneList,fxarray.h:149,public: class FxArchive & __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry>::Serialize(class FxArchive &),0xafa740,bytes 1.000,SDK runtime,template
+0xb10260,78,facefx,FxMasterBoneList,fxarraybase.h:31,public: __thiscall FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry>::FxArrayBase<class FxMasterBoneList::FxMasterBoneListEntry>(unsigned int),0xafa8c0,bytes 1.000,SDK runtime,template
+0xb102b0,119,facefx,FxMasterBoneList,fxmemory.h:132,"void __cdecl FxConstruct<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink, class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *, class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink const &)",0xafa910,bytes 1.000,SDK runtime,template
+0xb10330,119,facefx,FxMasterBoneList,fxmemory.h:132,"void __cdecl FxConstruct<class FxMasterBoneList::FxMasterBoneListEntry, class FxMasterBoneList::FxMasterBoneListEntry>(class FxMasterBoneList::FxMasterBoneListEntry *, class FxMasterBoneList::FxMasterBoneListEntry const &)",0xafa990,bytes 1.000,SDK runtime,template
+0xb103b0,21,facefx,FxMasterBoneList,fxmemory.h:148,void __cdecl FxDestroy<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *),0xafaa10,callee 1.000,SDK runtime,template
+0xb103d0,21,facefx,FxMasterBoneList,fxmemory.h:148,void __cdecl FxDestroy<class FxMasterBoneList::FxMasterBoneListEntry>(class FxMasterBoneList::FxMasterBoneListEntry *),0xafaa30,callee 1.000,SDK runtime,template
+0xb103f0,182,facefx,FxMasterBoneList,fxarchive.h:268,"public: void __thiscall FxArchive::SerializePODArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *, unsigned int)",0xafaa50,bytes 1.000,SDK runtime,template
+0xb104b0,115,facefx,FxMasterBoneList,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *),0xafab10,bytes 1.000,SDK runtime,template
+0xb10530,182,facefx,FxMasterBoneList,fxarchive.h:268,"public: void __thiscall FxArchive::SerializePODArray<class FxMasterBoneList::FxMasterBoneListEntry>(class FxMasterBoneList::FxMasterBoneListEntry *, unsigned int)",0xafab90,bytes 1.000,SDK runtime,template
+0xb105f0,115,facefx,FxMasterBoneList,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxMasterBoneList::FxMasterBoneListEntry>(class FxMasterBoneList::FxMasterBoneListEntry *),0xafac50,bytes 1.000,SDK runtime,template
+0xb10670,44,fxsdk_unreal,FxMasterBoneList,,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink::FxBoneLink(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink const &),0xafacd0,callee 1.000,SDK runtime,generated
+0xb106a0,172,fxsdk_unreal,FxMasterBoneList,,public: __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxMasterBoneListEntry(class FxMasterBoneList::FxMasterBoneListEntry const &),0xafad00,bytes 1.000,SDK runtime,generated
+0xb10750,44,fxsdk_unreal,FxMasterBoneList,,public: void * __thiscall FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink::`scalar deleting destructor'(unsigned int),0xafadb0,neighbours 1.000,SDK runtime,generated
+0xb10780,44,fxsdk_unreal,FxMasterBoneList,,public: void * __thiscall FxMasterBoneList::FxMasterBoneListEntry::`scalar deleting destructor'(unsigned int),0xafade0,neighbours 1.000,SDK runtime,generated
+0xb107b0,156,facefx,FxMasterBoneList,fxarrayimpl.h:46,public: __thiscall FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>::FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink> const &),0xafae10,bytes 1.000,SDK runtime,template
+0xb10850,72,facefx,FxMasterBoneList,fxarchive.h:374,"private: void __thiscall FxArchive::_byteSwapPODArray<class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink>(class FxMasterBoneList::FxMasterBoneListEntry::FxBoneLink *, unsigned int)",0xafaeb0,bytes 1.000,SDK runtime,template
+0xb108a0,72,facefx,FxMasterBoneList,fxarchive.h:374,"private: void __thiscall FxArchive::_byteSwapPODArray<class FxMasterBoneList::FxMasterBoneListEntry>(class FxMasterBoneList::FxMasterBoneListEntry *, unsigned int)",0xafaf00,bytes 1.000,SDK runtime,template
+0xb14c60,29,facefx,FxSDK,fxobject.h:31,public: static class FxClass const * __cdecl FxObject::StaticClass(void),0xaff0b0,callee 1.000,SDK (handed over by fx1),ported
+0xb14c80,29,facefx,FxSDK,fxfacegraphnodelink.h:31,public: static class FxClass const * __cdecl FxFaceGraphNodeLink::StaticClass(void),0xaff0d0,callee 1.000,SDK (handed over by fx1),macro
+0xb14ca0,29,facefx,FxSDK,fxfacegraphshared.h:40,public: static class FxClass const * __cdecl FxFaceGraphNodeUserProperty::StaticClass(void),0xaff0f0,callee 1.000,SDK (handed over by fx1),macro
+0xb14cc0,29,facefx,FxSDK,fxbone.h:28,public: static class FxClass const * __cdecl FxBone::StaticClass(void),0xaff110,callee 1.000,SDK (handed over by fx1),ported
+0xb14ce0,29,facefx,FxSDK,fxcombinernode.h:29,public: static class FxClass const * __cdecl FxCombinerNode::StaticClass(void),0xaff130,callee 1.000,SDK (handed over by fx1),macro
+0xb14d00,29,facefx,FxSDK,fxgenerictargetnode.h:31,public: static class FxClass const * __cdecl FxGenericTargetNode::StaticClass(void),0xaff150,callee 1.000,SDK (handed over by fx1),macro
+0xb14d20,29,facefx,FxSDK,fxfacegraph.h:42,public: static class FxClass const * __cdecl FxFaceGraph::StaticClass(void),0xaff170,callee 1.000,SDK (handed over by fx1),macro
+0xb14d40,29,facefx,FxSDK,fxanimcurve.h:35,public: static class FxClass const * __cdecl FxAnimCurve::StaticClass(void),0xaff190,callee 1.000,SDK (handed over by fx1),macro
+0xb14d60,29,facefx,FxSDK,fxanim.h:52,public: static class FxClass const * __cdecl FxAnim::StaticClass(void),0xaff1b0,callee 1.000,SDK (handed over by fx1),macro
+0xb14d80,29,facefx,FxSDK,fxanim.h:208,public: static class FxClass const * __cdecl FxAnimGroup::StaticClass(void),0xaff1d0,callee 1.000,SDK (handed over by fx1),macro
+0xb14da0,29,facefx,FxSDK,fxanimset.h:48,public: static class FxClass const * __cdecl FxAnimSet::StaticClass(void),0xaff1f0,callee 1.000,SDK (handed over by fx1),macro
+0xb14dc0,29,facefx,FxSDK,fxphonememap.h:41,public: static class FxClass const * __cdecl FxPhonemeMap::StaticClass(void),0xaff210,callee 1.000,SDK (handed over by fx1),macro
+0xb14de0,29,facefx,FxSDK,fxactor.h:54,public: static class FxClass const * __cdecl FxActor::StaticClass(void),0xaff230,callee 1.000,SDK (handed over by fx1),macro
+0xb14e00,29,facefx,FxSDK,fxdeltanode.h:31,public: static class FxClass const * __cdecl FxDeltaNode::StaticClass(void),0xaff250,callee 1.000,SDK (handed over by fx1),macro
+0xb14e20,29,facefx,FxSDK,fxactorinstance.h:40,public: static class FxClass const * __cdecl FxActorInstance::StaticClass(void),0xaff270,callee 1.000,SDK (handed over by fx1),macro
+0xb14e40,29,facefx,FxSDK,fxrefobject.h:26,public: static class FxClass const * __cdecl FxRefObject::StaticClass(void),0xaff290,callee 1.000,SDK (handed over by fx1),macro
+0xb14e60,29,facefx,FxSDK,fxrefstring.h:27,public: static class FxClass const * __cdecl FxRefString::StaticClass(void),0xaff2b0,callee 1.000,SDK (handed over by fx1),macro
+0xb14e80,29,facefx,FxSDK,fxmorphtargetnode.h:44,public: static class FxClass const * __cdecl FxMorphTargetNode::StaticClass(void),0xaff2d0,callee 1.000,SDK (handed over by fx1),macro
+0xb14ea0,29,facefx,FxSDK,fxcurrenttimenode.h:30,public: static class FxClass const * __cdecl FxCurrentTimeNode::StaticClass(void),0xaff2f0,callee 1.000,SDK (handed over by fx1),macro
+0xb14ec0,29,facefx,FxSDK,fxunrealsupport.h:31,public: static class FxClass const * __cdecl FUnrealFaceFXNode::StaticClass(void),0xaff310,callee 1.000,SDK (handed over by fx1),macro
+0xb14ee0,29,facefx,FxSDK,fxunrealsupport.h:72,public: static class FxClass const * __cdecl FUnrealFaceFXMorphNode::StaticClass(void),0xaff330,callee 1.000,SDK (handed over by fx1),macro
+0xb14f00,29,facefx,FxSDK,fxunrealsupport.h:98,public: static class FxClass const * __cdecl FUnrealFaceFXMaterialParameterNode::StaticClass(void),0xaff350,callee 1.000,SDK (handed over by fx1),macro
+0xb1be00,134,facefx,FxPhonemeMap,fxphonememap.cpp:19,public: static class FxClass * __cdecl FxPhonemeMap::AllocateStaticClassFxPhonemeMap(void),0xb06040,bytes 1.000,SDK runtime,ported
+0xb1be90,117,facefx,FxPhonemeMap,fxphonememap.cpp:22,public: __thiscall FxPhonemeMap::FxPhonemeMap(void),0xb060d0,bytes 1.000,SDK runtime,ported
+0xb1bf10,110,facefx,FxPhonemeMap,fxphonememap.cpp:26,public: virtual __thiscall FxPhonemeMap::~FxPhonemeMap(void),0xb06150,bytes 1.000,SDK runtime,ported
+0xb1bf80,246,facefx,FxPhonemeMap,fxphonememap.cpp:30,public: bool __thiscall FxPhonemeMap::operator==(class FxPhonemeMap const &)const,0xb061c0,bytes 1.000,SDK runtime,ported
+0xb1c080,139,facefx,FxPhonemeMap,fxphonememap.cpp:62,"public: float __thiscall FxPhonemeMap::GetMappingAmount(enum FxPhoneme const &, class FxName const &)const",0xb062c0,bytes 1.000,SDK runtime,ported
+0xb1c110,38,facefx,FxPhonemeMap,fxphonememap.cpp:75,"public: float __thiscall FxPhonemeMap::GetMappingAmount(enum FxPhoneme const &, unsigned int)const",0xb06350,bytes 1.000,SDK runtime,ported
+0xb1c140,445,facefx,FxPhonemeMap,fxphonememap.cpp:82,"public: void __thiscall FxPhonemeMap::SetMappingAmount(enum FxPhoneme const &, class FxName const &, float)",0xb06380,bytes 1.000,SDK runtime,ported
+0xb1c300,123,facefx,FxPhonemeMap,fxphonememap.cpp:128,"public: void __thiscall FxPhonemeMap::SetMappingAmount(enum FxPhoneme const &, char const *, float)",0xb06540,bytes 1.000,SDK runtime,ported
+0xb1c380,61,facefx,FxPhonemeMap,fxphonememap.cpp:135,"public: void __thiscall FxPhonemeMap::SetMappingAmount(enum FxPhoneme const &, unsigned int, float)",0xb065c0,bytes 1.000,SDK runtime,ported
+0xb1c3c0,105,facefx,FxPhonemeMap,fxphonememap.cpp:144,public: void __thiscall FxPhonemeMap::RemovePhonemeMappingEntries(enum FxPhoneme const &),0xb06600,bytes 1.000,SDK runtime,ported
+0xb1c430,22,facefx,FxPhonemeMap,fxphonememap.cpp:156,public: unsigned int __thiscall FxPhonemeMap::GetNumMappingEntries(void)const,0xb06670,callee 1.000,SDK runtime,ported
+0xb1c450,28,facefx,FxPhonemeMap,fxphonememap.cpp:162,public: class FxPhonToNameMap const & __thiscall FxPhonemeMap::GetMappingEntry(unsigned int)const,0xb06690,callee 1.000,SDK runtime,ported
+0xb1c470,28,facefx,FxPhonemeMap,fxphonememap.cpp:168,public: void __thiscall FxPhonemeMap::AddTarget(class FxName const &),0xb066b0,neighbours 1.000,SDK runtime,ported
+0xb1c490,153,facefx,FxPhonemeMap,fxphonememap.cpp:174,public: void __thiscall FxPhonemeMap::RemoveTarget(class FxName const &),0xb066d0,bytes 1.000,SDK runtime,ported
+0xb1c530,22,facefx,FxPhonemeMap,fxphonememap.cpp:191,public: unsigned int __thiscall FxPhonemeMap::GetNumTargets(void)const,0xb06770,callee 1.000,SDK runtime,ported
+0xb1c550,28,facefx,FxPhonemeMap,fxphonememap.cpp:197,public: class FxName const & __thiscall FxPhonemeMap::GetTargetName(unsigned int)const,0xb06790,callee 1.000,SDK runtime,ported
+0xb1c570,98,facefx,FxPhonemeMap,fxphonememap.cpp:203,public: unsigned int __thiscall FxPhonemeMap::GetTargetIndex(class FxName const &)const,0xb067b0,bytes 1.000,SDK runtime,ported
+0xb1c5e0,33,facefx,FxPhonemeMap,fxphonememap.cpp:214,public: void __thiscall FxPhonemeMap::Clear(void),0xb06820,bytes 1.000,SDK runtime,ported
+0xb1c610,6068,facefx,FxPhonemeMap,fxphonememap.cpp:221,public: void __thiscall FxPhonemeMap::MakeDefaultMapping(void),0xb06850,bytes 1.000,SDK runtime,ported
+0xb1ddd0,69,facefx,FxPhonemeMap,fxphonememap.cpp:380,"class FxArchive & __cdecl operator<<(class FxArchive &, class FxPhonToNameMap &)",0xb08010,bytes 1.000,SDK runtime,ported
+0xb1de20,1051,facefx,FxPhonemeMap,fxphonememap.cpp:394,public: virtual void __thiscall FxPhonemeMap::Serialize(class FxArchive &),0xb08060,bytes 1.000,SDK runtime,ported
+0xb1e240,114,facefx,FxPhonemeMap,fxphonememap.h:41,public: static class FxObject * __cdecl FxPhonemeMap::ConstructObject(void),0xb08480,bytes 1.000,SDK runtime,macro
+0xb1e2c0,35,facefx,FxPhonemeMap,fxphonememap.h:41,public: virtual class FxClass const * __thiscall FxPhonemeMap::GetClassDesc(void)const,0xb08500,vtable 1.000,SDK runtime,macro
+0xb1e2f0,41,facefx,FxPhonemeMap,fxphonememap.h:41,public: virtual unsigned short __thiscall FxPhonemeMap::GetCurrentVersion(void)const,0xb08530,vtable 1.000,SDK runtime,macro
+0xb1e320,46,fxsdk_unreal,FxPhonemeMap,,public: virtual void * __thiscall FxPhonemeMap::`scalar deleting destructor'(unsigned int),0xb08560,bytes 1.000,SDK runtime,generated
+0xb1e350,19,fxsdk_unreal,FxPhonemeMap,,public: __thiscall FxArray<class FxPhonToNameMap>::~FxArray<class FxPhonToNameMap>(void),0xb08590,callee 1.000,SDK runtime,template
+0xb1e370,19,fxsdk_unreal,FxPhonemeMap,,public: __thiscall FxArray<class FxName>::~FxArray<class FxName>(void),0xb085b0,callee 1.000,SDK runtime,template
+0xb1e390,76,facefx,FxPhonemeMap,fxname.h:159,public: bool __thiscall FxName::operator!=(class FxName const &)const,0xb085d0,bytes 1.000,SDK runtime,inline
+0xb1e3e0,35,facefx,FxPhonemeMap,fxphonememap.h:130,public: bool __thiscall FxPhonToNameMap::operator!=(class FxPhonToNameMap const &)const,0xb08620,bytes 1.000,SDK runtime,ported
+0xb1e410,106,facefx,FxPhonemeMap,fxphonememap.h:124,public: bool __thiscall FxPhonToNameMap::operator==(class FxPhonToNameMap const &)const,0xb08650,bytes 1.000,SDK runtime,ported
+0xb1e480,25,fxsdk_unreal,FxPhonemeMap,,public: __thiscall FxPhonToNameMap::FxPhonToNameMap(void),0xb086c0,bytes 1.000,SDK runtime,ported
+0xb1e4a0,22,fxsdk_unreal,FxPhonemeMap,,public: __thiscall FxPhonToNameMap::~FxPhonToNameMap(void),0xb086e0,callee 1.000,SDK runtime,inline
+0xb1e4c0,56,fxsdk_unreal,FxPhonemeMap,,public: __thiscall FxPhonToNameMap::FxPhonToNameMap(class FxPhonToNameMap const &),0xb08700,callee 1.000,SDK runtime,generated
+0xb1e500,93,facefx,FxPhonemeMap,fxarraybase.h:35,public: __thiscall FxArrayBase<class FxPhonToNameMap>::~FxArrayBase<class FxPhonToNameMap>(void),0xb08740,neighbours 1.000,SDK runtime,template
+0xb1e560,93,facefx,FxPhonemeMap,fxarraybase.h:35,public: __thiscall FxArrayBase<class FxName>::~FxArrayBase<class FxName>(void),0xb087a0,neighbours 1.000,SDK runtime,template
+0xb1e5c0,108,facefx,FxPhonemeMap,fxarrayimpl.h:67,public: void __thiscall FxArray<class FxPhonToNameMap>::Clear(void),0xb08800,callee 1.000,SDK runtime,template
+0xb1e630,277,facefx,FxPhonemeMap,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxPhonToNameMap>::PushBack(class FxPhonToNameMap const &),0xb088b0,callee 1.000,SDK runtime,template
+0xb1e750,201,facefx,FxPhonemeMap,fxarrayimpl.h:284,public: void __thiscall FxArray<class FxPhonToNameMap>::Remove(unsigned int),0xb089d0,bytes 1.000,SDK runtime,template
+0xb1e820,108,facefx,FxPhonemeMap,fxarrayimpl.h:67,public: void __thiscall FxArray<class FxName>::Clear(void),0xb08aa0,callee 1.000,SDK runtime,template
+0xb1e890,277,facefx,FxPhonemeMap,fxarrayimpl.h:152,public: void __thiscall FxArray<class FxName>::PushBack(class FxName const &),0xb08b10,callee 1.000,SDK runtime,template
+0xb1e9b0,196,facefx,FxPhonemeMap,fxarrayimpl.h:284,public: void __thiscall FxArray<class FxName>::Remove(unsigned int),0xb08c30,bytes 1.000,SDK runtime,template
+0xb1ea80,17,facefx,FxPhonemeMap,fxarrayimpl.h:402,"class FxArchive & __cdecl operator<<<class FxPhonToNameMap>(class FxArchive &, class FxArray<class FxPhonToNameMap> &)",0xb08d00,callee 1.000,SDK runtime,template
+0xb1eaa0,17,facefx,FxPhonemeMap,fxarrayimpl.h:402,"class FxArchive & __cdecl operator<<<class FxName>(class FxArchive &, class FxArray<class FxName> &)",0xb08d20,callee 1.000,SDK runtime,template
+0xb1eac0,36,facefx,FxPhonemeMap,fxmemory.h:157,"void __cdecl FxDestroy<class FxPhonToNameMap *>(class FxPhonToNameMap *, class FxPhonToNameMap *)",0xb08d40,neighbours 1.000,SDK runtime,template
+0xb1eaf0,36,facefx,FxPhonemeMap,fxmemory.h:157,"void __cdecl FxDestroy<class FxName *>(class FxName *, class FxName *)",0xb08d70,neighbours 1.000,SDK runtime,template
+0xb1eb20,56,fxsdk_unreal,FxPhonemeMap,,public: class FxPhonToNameMap & __thiscall FxPhonToNameMap::operator=(class FxPhonToNameMap const &),0xb08da0,callee 1.000,SDK runtime,inline
+0xb1eb60,379,facefx,FxPhonemeMap,fxarray.h:149,public: class FxArchive & __thiscall FxArray<class FxPhonToNameMap>::Serialize(class FxArchive &),0xb08de0,neighbours 1.000,SDK runtime,template
+0xb1ece0,379,facefx,FxPhonemeMap,fxarray.h:149,public: class FxArchive & __thiscall FxArray<class FxName>::Serialize(class FxArchive &),0xb08f60,neighbours 1.000,SDK runtime,template
+0xb1ee60,25,facefx,FxPhonemeMap,fxarrayimpl.h:351,public: void __thiscall FxArray<float>::Swap(class FxArray<float> &),0xb01a20,callee 1.000,SDK runtime,template
+0xb1ee80,119,facefx,FxPhonemeMap,fxmemory.h:132,"void __cdecl FxConstruct<class FxPhonToNameMap, class FxPhonToNameMap>(class FxPhonToNameMap *, class FxPhonToNameMap const &)",0xb090e0,neighbours 1.000,SDK runtime,template
+0xb1ef00,21,facefx,FxPhonemeMap,fxmemory.h:148,void __cdecl FxDestroy<class FxPhonToNameMap>(class FxPhonToNameMap *),0xb09160,callee 1.000,SDK runtime,template
+0xb1ef20,119,facefx,FxPhonemeMap,fxmemory.h:132,"void __cdecl FxConstruct<class FxName, class FxName>(class FxName *, class FxName const &)",0xb09180,bytes 1.000,SDK runtime,template
+0xb1efa0,21,facefx,FxPhonemeMap,fxmemory.h:148,void __cdecl FxDestroy<class FxName>(class FxName *),0xb09200,callee 1.000,SDK runtime,template
+0xb1efc0,182,facefx,FxPhonemeMap,fxarchive.h:268,"public: void __thiscall FxArchive::SerializePODArray<class FxStringBase<char>>(class FxStringBase<char> *, unsigned int)",0xb14500,bytes 1.000,SDK runtime,template
+0xb1f080,115,facefx,FxPhonemeMap,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxPhonToNameMap>(class FxPhonToNameMap *),0xb09220,neighbours 1.000,SDK runtime,template
+0xb1f100,115,facefx,FxPhonemeMap,fxmemory.h:142,void __cdecl FxDefaultConstruct<class FxName>(class FxName *),0xb09360,bytes 1.000,SDK runtime,template
+0xb1f180,44,fxsdk_unreal,FxPhonemeMap,,public: void * __thiscall FxPhonToNameMap::`scalar deleting destructor'(unsigned int),0xb093e0,neighbours 1.000,SDK runtime,generated
+0xb1f1b0,44,fxsdk_unreal,FxPhonemeMap,,public: void * __thiscall FxName::`scalar deleting destructor'(unsigned int),0xb09410,neighbours 1.000,SDK runtime,generated
+0xb1f1e0,72,facefx,FxPhonemeMap,fxarchive.h:374,"private: void __thiscall FxArchive::_byteSwapPODArray<unsigned int>(unsigned int *, unsigned int)",0xaf51e0,bytes 1.000,SDK runtime,template
+0xb2af40,15,facefx,FxPhonemeEnum,fxphonemeenum.cpp:20,public: static enum FxPhoneme __cdecl FxPhonemeUtility::UpdatePhoneme(int),0xb153c0,bytes 1.000,SDK (handed over by fx1),ported
+0xb2af50,17,facefx,FxPhonemeEnum,fxphonemeenum.cpp:25,public: static enum FxPhoneme __cdecl FxPhonemeUtility::UpdatePhoneme(enum FxPhoneme),0xb153d0,callee 1.000,SDK (handed over by fx1),ported
+0xbab450,28,facefx,FxActor,fxactor.cpp:27,_dynamic_initializer_for__FxActor::NewActor__,0xb8f9d0,neighbours 1.000,SDK runtime,generated
+0xbaf0b0,15,fxsdk_unreal,FxActor,,_dynamic_atexit_destructor_for__FxActor::NewActor__,0xb93410,neighbours 1.000,SDK runtime,generated
+0x17ee20,264,engine,Unity_UnActorComponentEtAl.cpp,unactor.cpp:5819,"public: virtual unsigned int __thiscall APawn::PlayActorFaceFXAnim(class UFaceFXAnimSet *, class FString const &, class FString const &, class UAkEvent *)",0x175520,vtable 0.979,engine,"not ported: APawn::PlayActorFaceFXAnim needs a generated-header override (script PlayActorFaceFXAnim / matinee path, not the dialogue path)"
+0x22dfd0,235,engine,Unity_UnInterpolationEtAl.cpp,uninterpolation.cpp:11925,public: virtual void __thiscall UInterpTrackInstFaceFX::InitTrackInst(class UInterpTrack *),0x215f50,neighbours 0.964,engine,reference body (+ the sound cue relink retail does not do; that body is compiled out)
+0x235e90,558,engine,Unity_UnInterpolationEtAl.cpp,uninterpolation.cpp:11734,"public: virtual void __thiscall UInterpTrackFaceFX::UpdateTrack(float, class UInterpTrackInst *, unsigned int)",0x21f230,vtable 0.986,engine,"reference body (UInterpTrackFaceFX::UpdateTrack calls PlayActorFaceFXAnim, which is AActor's FALSE here)"
+0x330a20,16,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:2989,public: void __thiscall USkeletalMeshComponent::StopFaceFXAnim(void),0x30da40,callee 1.000,engine,ported
+0x330a30,23,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:3003,public: unsigned int __thiscall USkeletalMeshComponent::IsPlayingFaceFXAnim(void),0x30da50,bytes 1.000,engine,"ported (IsPlayingFaceFXAnim, reference body = retail)"
+0x335400,316,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:2520,public: void __thiscall USkeletalMeshComponent::SetFaceFXAsset(class UFaceFXAsset *),0x312b90,bytes 1.000,engine,ported (agent IR; the SDK half binds with WITH_FACEFX=1)
+0x335540,88,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:3018,public: void __thiscall USkeletalMeshComponent::DeclareFaceFXRegister(class FString const &),0x312cd0,order 0.968,engine,reference body (DeclareFaceFXRegister)
+0x3355a0,129,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:3026,public: float __thiscall USkeletalMeshComponent::GetFaceFXRegister(class FString const &),0x312d30,neighbours 0.979,engine,reference body (+ a debugf retail lacks)
+0x335630,189,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:3045,"public: void __thiscall USkeletalMeshComponent::SetFaceFXRegister(class FString const &, float, unsigned char, float)",0x312dc0,callee 0.985,engine,reference body (+ debugfs retail lacks)
+0x3356f0,192,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:3079,"public: void __thiscall USkeletalMeshComponent::SetFaceFXRegisterEx(class FString const &, unsigned char, float, float, float, float)",0x312e80,callee 0.985,engine,reference body (+ debugfs retail lacks)
+0x33a420,559,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:844,protected: virtual void __thiscall USkeletalMeshComponent::Detach(unsigned int),0x317a90,vtable 0.965,engine,reference body = retail (Detach deletes the instance)
+0x347b90,5485,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:2565,"public: void __thiscall USkeletalMeshComponent::UpdateFaceFX(class TArray<class FBoneAtom, class FDefaultAllocator> &, float, unsigned int)",0x325ea0,neighbours 0.997,engine,ported
+0x349450,378,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:7008,public: void __thiscall USkeletalMeshComponent::DebugVerifyFaceFXBoneList(void),0x327730,neighbours 0.985,engine,reference body (debug)
+0x354c10,2095,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:3871,"public: void __thiscall USkeletalMeshComponent::UpdateSkelPoseEnd(float, unsigned int)",0x3471d0,neighbours 0.935,engine,ported (the FaceFX call site; agent FT ported the tail)
+0x369120,1522,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:4658,"public: void __thiscall USkeletalMeshComponent::SetSkeletalMesh(class USkeletalMesh *, unsigned int)",0x34d2b0,callee 0.970,engine,reference body = retail (SetSkeletalMesh deletes the instance)
+0x3741c0,78,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:996,protected: virtual void __thiscall USkeletalMeshComponent::FinishDestroy(void),0x354b40,bytes 1.000,engine,reference body = retail (FinishDestroy deletes the instance)
+0x376a70,472,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:367,protected: virtual void __thiscall USkeletalMeshComponent::Attach(void),0x356530,vtable 0.955,engine,ported (FaceFX call: SetFaceFXAsset(m_pFaceFXAsset))
+0x376d30,726,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:7076,public: void __thiscall USkeletalMeshComponent::TraceFaceFX(unsigned int),0x356800,callee 0.718,engine,reference body (debug)
+0x379870,371,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:2815,"public: unsigned int __thiscall USkeletalMeshComponent::PlayFaceFXAnim(class UFaceFXAnimSet *, wchar_t const *, char const *, class UActorComponent *, float)",0x356ef0,bytes 1.000,engine,ported
+0x3799f0,970,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:2899,"public: float __thiscall USkeletalMeshComponent::GetFaceFXAnimStartOffset(class UFaceFXAnimSet *, wchar_t const *, char const *, float)",0x357070,bytes 1.000,engine,ported
+0x379dc0,564,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalcomponent.cpp:6518,"public: void __thiscall USkeletalMeshComponent::execPlayFaceFXAnim(struct FFrame &, void * const)",0x357440,neighbours 0.990,engine,ported
+0x37a000,264,engine,Unity_UnSkeletalMeshEtAl.cpp,unskeletalmesh.cpp:3255,"public: virtual unsigned int __thiscall ASkeletalMeshActor::PlayActorFaceFXAnim(class UFaceFXAnimSet *, class FString const &, class FString const &, class UAkEvent *)",0x357680,vtable 0.979,engine,not ported: ASkeletalMeshActor::PlayActorFaceFXAnim (as above)
+0x3a2890,43,engine,Unity_UnPhysActorEtAl.cpp,unworld.cpp:5489,public: void __thiscall UWorld::MountPersistentFaceFXAnimSetOnPawn(class APawn *),0x3812c0,bytes 1.000,engine,not ported: UWorld::MountPersistentFaceFXAnimSetOnPawn (the reference's ...OnActor runs instead)
+0x568060,17,engine,Unity_NvApexSceneEtAl.cpp,unfacefxsupport.cpp:79,"void __cdecl FxFreeUE3(void *, unsigned int)",0x526e40,order 1.000,engine,ported (reference body)
+0x568670,158,engine,Unity_NvApexSceneEtAl.cpp,unfacefxsupport.cpp:134,void __cdecl UnInitFaceFX(void),0x527510,bytes 1.000,engine,ported
+0x569590,172,engine,Unity_NvApexSceneEtAl.cpp,unfacefxsupport.cpp:173,public: static struct FFaceFXRegMapEntry * __cdecl FFaceFXRegMap::GetRegisterMapping(class FName const &),0x5284e0,neighbours 0.970,engine,reference body (FFaceFXRegMap)
+0x569640,284,engine,Unity_NvApexSceneEtAl.cpp,unfacefxsupport.cpp:186,public: static void __cdecl FFaceFXRegMap::AddRegisterMapping(class FName const &),0x528590,neighbours 0.981,engine,reference body (FFaceFXRegMap)
+0x56b4e0,276,engine,Unity_NvApexSceneEtAl.cpp,unfacefxanimset.cpp:259,public: virtual class FString __thiscall UFaceFXAnimSet::GetDesc(void),0x52a5b0,string 0.990,engine,reference body
+0x56be00,539,engine,Unity_NvApexSceneEtAl.cpp,unfacefxanimset.cpp:312,public: virtual void __thiscall UFaceFXAnimSet::Serialize(class FArchive &),0x52b050,vtable 0.795,engine,ported (reference body = retail)
+0x56c020,832,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:368,public: virtual class FString __thiscall UFaceFXAsset::GetDesc(void),0x52d1e0,string 0.898,engine,reference body (IsAnimGroupMounted inline reconstructed)
+0x56c360,807,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:443,public: virtual void __thiscall UFaceFXAsset::Serialize(class FArchive &),0x52b280,vtable 0.620,engine,ported (reference body = retail)
+0x56c690,37,engine,Unity_NvApexSceneEtAl.cpp,unfacefxsupport.cpp:150,void __cdecl UnShutdownFaceFX(void),0x52b5d0,bytes 1.000,engine,ported (reference body)
+0x56cb10,2136,engine,Unity_NvApexSceneEtAl.cpp,unfacefxanimset.cpp:61,public: void __thiscall UFaceFXAnimSet::FixupReferencedSoundCues(void),0x52b960,callee 0.913,engine,not ported: editor only (FixupReferencedSoundCues relinks Wwise events; GIsEditor path)
+0x56d370,45,engine,Unity_NvApexSceneEtAl.cpp,unfacefxanimset.cpp:274,public: virtual void __thiscall UFaceFXAnimSet::PostLoad(void),0x52c1d0,vtable 1.000,engine,ported (reference body = retail)
+0x56d3a0,278,engine,Unity_NvApexSceneEtAl.cpp,unfacefxanimset.cpp:432,public: virtual int __thiscall UFaceFXAnimSet::GetResourceSize(void),0x52c200,vtable 0.990,engine,reference body
+0x56d4c0,3675,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:146,public: void __thiscall UFaceFXAsset::FixupReferencedSoundCues(void),0x52c3a0,callee 0.748,engine,not ported: editor only (FixupReferencedSoundCues relinks Wwise events; GIsEditor path)
+0x56e320,45,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:402,public: virtual void __thiscall UFaceFXAsset::PostLoad(void),0x52d510,string 1.000,engine,ported (reference body = retail)
+0x56e350,116,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:622,public: virtual int __thiscall UFaceFXAsset::GetResourceSize(void),0x52d540,vtable 0.979,engine,reference body
+0x5716d0,124,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:26,public: void __thiscall UFaceFXAsset::MountFaceFXAnimSet(class UFaceFXAnimSet *),0x52fe40,bytes 1.000,engine,ported (reference body = retail)
+0x571750,183,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:67,public: void __thiscall UFaceFXAsset::UnmountFaceFXAnimSet(class UFaceFXAnimSet *),0x52fec0,bytes 1.000,engine,ported (reference body = retail)
+0x571810,238,engine,Unity_NvApexSceneEtAl.cpp,unfacefxasset.cpp:412,public: virtual void __thiscall UFaceFXAsset::FinishDestroy(void),0x52ff80,vtable 0.936,engine,ported (reference body = retail)
+0x572780,218,engine,Unity_NvApexSceneEtAl.cpp,unfacefxanimset.cpp:284,public: virtual void __thiscall UFaceFXAnimSet::FinishDestroy(void),0x530e80,vtable 0.932,engine,ported (reference body = retail)
+0x596750,162,engine,Unity_ArkPathEngineInterfaceEtAl.cpp,arkcomponentlookat.cpp:363,public: virtual void __thiscall FArkComponentLookat::PreAsyncWorkTick(float),0x555b40,bytes 1.000,engine,ported (m_bFaceFxIsPlaying)
+0x8e8730,411,dishonoredgame,Unity_DisConvGlobalManEtAl.cpp,disconversationcomponent.cpp:1496,public: unsigned int __thiscall UDisConversationComponent::IsDonePlayingBlurb(void)const,0x89a160,callee 0.993,engine,ported (FaceFX test)
+0x8eebe0,71,dishonoredgame,Unity_DisConvGlobalManEtAl.cpp,disconvglobalman.cpp:555,"public: void __thiscall UDisConvGlobalMan::OnSpeakerStartedTalking(class UDisConversationComponent *, struct TMemStackArray<struct FDisAkCompAndPlayingID> const &, wchar_t const *, float, unsigned int)",0x89e610,callee 0.963,engine,ported (OnSpeakerStartedTalking)
+0x8ef700,512,dishonoredgame,Unity_DisConvGlobalManEtAl.cpp,disconversationcomponent.cpp:1411,public: void __thiscall UDisConversationComponent::StopDialogBlurb(void),0x8a02f0,callee 0.799,engine,ported (FaceFX stop)
+0x8f7910,1308,dishonoredgame,Unity_DisConvGlobalManEtAl.cpp,disconversationcomponent.cpp:1179,"public: void __thiscall UDisConversationComponent::PlayDialogBlurb(class UDisDialogVoiceData *, struct FDisVoiceTextBlurb *, wchar_t const *, float, unsigned int, float, unsigned int, float)",0x89fbf0,callee 0.974,engine,ported (FaceFX branch; agent ID ported the rest)
+0x8f7e30,454,dishonoredgame,Unity_DisConvGlobalManEtAl.cpp,disconversationcomponent.cpp:1346,"void __cdecl DisFaceFxStartAudio(class UActorComponent *, class USkeletalMeshComponent *, float)",0x8a0120,bytes 1.000,engine,ported
+0x8fffc0,43,dishonoredgame,Unity_DisDesireStructsEtAl.cpp,disdialogvoicedata.cpp:1133,public: class FString const __thiscall UDisDialogVoiceData::GetFaceFXAnimSetName(void),0x894180,bytes 1.000,engine,not ported: UDisDialogVoiceData::GetFaceFXAnimSetName (editor / cooker)

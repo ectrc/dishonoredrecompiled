@@ -11748,13 +11748,9 @@ void UInterpTrackFaceFX::UpdateFaceFXSoundCueReferences( UFaceFXAsset* FaceFXAss
 					FxSize SeqIndex = fGroup.FindAnim(TCHAR_TO_ANSI(*(CurKey.FaceFXSeqName)));
 					if(FxInvalidIndex != SeqIndex)
 					{
-						const FxAnim& fAnim = fGroup.GetAnim(SeqIndex);
-
-						FxString SoundCuePath = fAnim.GetSoundCuePath();
-						if( SoundCuePath.Length() > 0 )
-						{
-							NewSoundCue = LoadObject<USoundCue>(NULL, ANSI_TO_TCHAR(SoundCuePath.GetData()), NULL, LOAD_NoWarn, NULL);
-						}
+						// DISHONORED(deviation): agent FX3 - Arkane's FxAnim (class version 8) carries a Wwise event path, not the
+						// UE3 sound cue path this reference function loads, and retail has no UpdateFaceFXSoundCueReferences (absent
+						// from the 2012 PDB; retail's InitTrackInst 0x22dfd0 only mounts the anim sets). No cue is resolved.
 					}
 				}
 

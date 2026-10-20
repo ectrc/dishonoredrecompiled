@@ -3887,7 +3887,9 @@ void APawn::PreviewActorPlayFaceFX(const FString& GroupName, const FString& SeqN
 {
 	check(Mesh);
 	// FaceFXAnimSetRef set to NULL because matinee mounts sets during initialization
-	Mesh->PlayFaceFXAnim(NULL, SeqName, GroupName, InSoundCue);
+	// DISHONORED(port): agent FX3 - Arkane's PlayFaceFXAnim (anim, ANSI group, voice handler, position); matinee previews
+	// play without a voice handler. InSoundCue is the reference's and unused.
+	Mesh->PlayFaceFXAnim(NULL, *SeqName, TCHAR_TO_ANSI(*GroupName), NULL, 0.0f);
 }
 
 /** Used by Matinee to stop current FaceFX animation playing. */

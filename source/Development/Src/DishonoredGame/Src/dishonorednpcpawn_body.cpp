@@ -195,7 +195,8 @@ UStaticMeshComponent* ADishonoredNPCPawn::CreateAccessoryStaticMeshComponent( BY
 // accessories off the body mesh's sockets, finds the spine bender, resets the rotation intents and the body intentions,
 // and records how far above the pawn's origin the possession camera sits.
 // The head mesh's FaceFX asset goes on the body component (USkeletalMeshComponent::SetFaceFXAsset, 2013 rva 0x312b90, agent IR)
-// before the head is set; with WITH_FACEFX off that stores the asset and binds no actor instance, so faces do not lip-sync.
+// before the head is set; with FaceFX on (agent FX3) that binds the body's FxActorInstance to the head's FxActor, and the head
+// reads the face bones the body's UpdateFaceFX writes.
 // DISHONORED(bringup): one call of retail's body is guarded and named:
 //   retail dereferences Tweaks->m_pVisionTweak unchecked for the possession-camera bone; it is guarded here, so an NPC
 //     whose tweaks have no vision object keeps m_fPossessCamZOffset at its default instead of crashing.

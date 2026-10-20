@@ -429,6 +429,7 @@ void InstallSmokeOutputDevices();
 
 #if DISHONORED_WITH_FACEFX_SDK
 void TestFaceFX(void (*InReport)(bool, const char*, const char*), void (*InSkip)(const char*, const char*));
+void TestFaceFXRuntime(void (*InReport)(bool, const char*, const char*), void (*InSkip)(const char*, const char*));
 #endif
 
 #if DISHONORED_WITH_WWISE
@@ -469,6 +470,9 @@ int main(int, char**)
 #endif
 #if DISHONORED_WITH_FACEFX_GRAPH
 	TestFaceFXGraph(Report, Skip);
+#endif
+#if DISHONORED_WITH_FACEFX_SDK
+	TestFaceFXRuntime(Report, Skip);
 #endif
 	printf("\n%d passed, %d failed, %d skipped\n", NumPassed, NumFailures, NumSkipped);
 	return NumFailures;
