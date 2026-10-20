@@ -120,6 +120,7 @@
 #include "fkmatineediag.h"
 #include "indiag.h"
 #include "fwdiag.h"
+#include "irdiag.h"
 #include "ifdiag.h"
 #include "gbdiag.h"
 #include "arkpp.h"
@@ -1114,6 +1115,8 @@ UBOOL ADishonoredPlayerController::Tick( FLOAT DeltaTime, enum ELevelTick TickTy
 	{
 		DisFWReport( this );
 	}
+	// agent IR (PHASE23 IR): -irdiag / -irface, the speaker's head mesh and face bones (irdiag.cpp)
+	DisIRTick( this );
 	// agent GD (PHASE19 GD): -gddiag / -gdface / -gduse, the crosshair and the Use (gddiag.cpp)
 	DisGDReport( this );
 	// agent GE (PHASE19 GE): -gediag, the camera fade state once a second (gediag.cpp)

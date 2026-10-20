@@ -750,7 +750,9 @@ void USkeletalMeshComponent::UpdateTransform()
 		// If we have a ParentAnimComponent - force this component to render at that LOD, so all bones are present for it.
 		// Note that this currently relies on the behaviour where this mesh is rendered at the LOD we pass in here for all viewports. We should
 		// be able to render it at lower LOD on viewports where it is further away. That will make the ParentAnimComponent case a bit harder to solve.
-		if(ParentAnimComponent)
+		// DISHONORED(retail): 2013 UpdateTransform (rva 0x357840, the MeshObject->Update block) takes the parent's LOD only when this
+		// component has no ForcedLodModel of its own.
+		if(ParentAnimComponent && ForcedLodModel == 0)
 		{
 			UseLOD = ::Clamp(ParentAnimComponent->PredictedLODLevel, 0, SkeletalMesh->LODModels.Num()-1);
 		}
@@ -3169,6 +3171,42 @@ void USkeletalMeshComponent::StopFaceFXAnim( void )
 #endif // WITH_FACEFX
 }
 
+
+// DISHONORED(port): agent IR, 2013 rva 0x312b90 (2012 0x335400, 316 B, unskeletalcomponent.cpp:2520). The FaceFX asset an
+// NPC speaks with is the head mesh's, set on the body component that runs the anim tree. Retail keeps it in m_pFaceFXAsset and
+// (re)binds the component's actor instance when the asset has an actor whose master bone list fits this skeleton, otherwise it
+// deletes the instance.
+// DISHONORED(bringup): WITH_FACEFX=0 - UFaceFXAsset has no FxActor in this tree, which is retail's own else branch: the pointer is
+// stored and no instance exists.
+void USkeletalMeshComponent::SetFaceFXAsset( UFaceFXAsset* NewFaceFXAsset )
+{
+	m_pFaceFXAsset = NewFaceFXAsset;
+#if WITH_FACEFX
+	FxActor* Actor = ( SkeletalMesh && m_pFaceFXAsset ) ? m_pFaceFXAsset->GetFxActor() : NULL;
+	if( Actor && Actor->GetMasterBoneList().GetNumRefBones() <= (FxSize)SkeletalMesh->RefSkeleton.Num() )
+	{
+		if( FaceFXActorInstance )
+		{
+			if( FaceFXActorInstance->GetActor() != Actor )
+			{
+				FaceFXActorInstance->SetActor( Actor );
+			}
+		}
+		else
+		{
+			FaceFXActorInstance = new FxActorInstance();
+			FaceFXActorInstance->SetActor( Actor );
+			m_fFaceFxTickTime = 0.f;
+		}
+		return;
+	}
+	if( FaceFXActorInstance )
+	{
+		delete FaceFXActorInstance;
+		FaceFXActorInstance = NULL;
+	}
+#endif // WITH_FACEFX
+}
 
 /** Returns TRUE if Face FX is currently playing an animation */
 UBOOL USkeletalMeshComponent::IsPlayingFaceFXAnim()

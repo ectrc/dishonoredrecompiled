@@ -712,6 +712,7 @@ class USkeletalMeshComponent : public UMeshComponent
 	void	UpdateFaceFX( TArray<FBoneAtom>& LocalTransforms, UBOOL bTickFaceFX );
 	UBOOL	PlayFaceFXAnim(UFaceFXAnimSet* FaceFXAnimSetRef, const FString& AnimName, const FString& GroupName,class USoundCue* SoundCueToPlay);
 	void	StopFaceFXAnim( void );
+	void	SetFaceFXAsset( class UFaceFXAsset* NewFaceFXAsset );
 	UBOOL	IsPlayingFaceFXAnim();
 	void	DeclareFaceFXRegister( const FString& RegName );
 	FLOAT	GetFaceFXRegister( const FString& RegName );

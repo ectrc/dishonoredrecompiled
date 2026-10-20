@@ -32,6 +32,7 @@
 #include "dishonoredutilities.h"
 #include "frdialogdiag.h"
 #include "iddiag.h"
+#include "irdiag.h"
 
 FName UDisConversationComponent::ms_VoiceBoneName( TEXT("head_jnt") );
 
@@ -567,6 +568,7 @@ void UDisConversationComponent::PlayDialogBlurb( UDisDialogVoiceData* _pVoiceDat
 			// branch (an event name of 2+ characters, a mesh with a FaceFX asset and the voice data's m_pFaceFXAnimSet: the
 			// pending blurb / text / main flag are stored and PlayFaceFXAnim starts the line). Without FaceFX that call fails,
 			// which is retail's own fall-through to the Wwise post below.
+			DisIRNoteSpeaker( LocInfo(i).m_pSkelMeshCompForFaceFX, _pBlurb->m_AkEventName );
 			AK::SoundEngine::SetAttenuationScalingFactor( AkComp->GetAkGameObjectID(), AttenuationScale );
 			const AkPlayingID PlayingID = AudioDevice->PostEvent( _pBlurb->m_AkEventName, _fVoiceRadius, EventOwner, ms_VoiceBoneName,
 				AK_EndOfEvent | AK_Duration, DisConvAkEventCB, GWorld ? GWorld->m_pAudioSystem : NULL, FALSE );

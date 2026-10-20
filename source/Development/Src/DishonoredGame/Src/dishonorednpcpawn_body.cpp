@@ -194,9 +194,9 @@ UStaticMeshComponent* ADishonoredNPCPawn::CreateAccessoryStaticMeshComponent( BY
 // component is never even attached. Retail then applies the body's own material variation, hangs the hat and mask
 // accessories off the body mesh's sockets, finds the spine bender, resets the rotation intents and the body intentions,
 // and records how far above the pawn's origin the possession camera sits.
-// DISHONORED(bringup): two calls of retail's body are left out and named:
-//   USkeletalMeshComponent::SetFaceFXAsset( Mesh, HeadMesh->FaceFXAsset ) (2013 rva 0x312b90) - this build has
-//     WITH_FACEFX off, so the Engine tree has no SetFaceFXAsset and faces do not lip-sync;
+// The head mesh's FaceFX asset goes on the body component (USkeletalMeshComponent::SetFaceFXAsset, 2013 rva 0x312b90, agent IR)
+// before the head is set; with WITH_FACEFX off that stores the asset and binds no actor instance, so faces do not lip-sync.
+// DISHONORED(bringup): one call of retail's body is guarded and named:
 //   retail dereferences Tweaks->m_pVisionTweak unchecked for the possession-camera bone; it is guarded here, so an NPC
 //     whose tweaks have no vision object keeps m_fPossessCamZOffset at its default instead of crashing.
 void ADishonoredNPCPawn::PostBeginPlay_Body()
@@ -214,6 +214,10 @@ void ADishonoredNPCPawn::PostBeginPlay_Body()
 	Init_Rotation();
 
 	const FDisBodyMesh* HeadMesh = DisChooseRandomMesh<FDisBodyMesh>( Tweaks->m_RandomHeadMeshes, m_iRandomHeadMeshSel );
+	if( HeadMesh && HeadMesh->m_pMesh && Mesh )
+	{
+		Mesh->SetFaceFXAsset( HeadMesh->m_pMesh->FaceFXAsset );
+	}
 	if( HeadMesh && HeadMesh->m_pMesh && m_pHeadMesh && !DisHeadSuppressed() )
 	{
 		m_pHeadMesh->SetSkeletalMesh( HeadMesh->m_pMesh, FALSE );

@@ -1,0 +1,12 @@
+item,state,evidence
+USkeletalMeshComponent::SetFaceFXAsset,ported,2013 0x312b90 (2012 0x335400); SDK half under WITH_FACEFX; WITH_FACEFX=0 takes retail's no-actor branch (stores m_pFaceFXAsset)
+ADishonoredNPCPawn::PostBeginPlay_Body SetFaceFXAsset call,ported,2013 0x77f8a0 (2012 0x7bc180); head mesh FaceFXAsset onto the body component before SetSkeletalMesh; guarded on Mesh
+USkeletalMeshComponent::UpdateTransform parent LOD rule,ported,2013 0x357840 (2012 0x37a1c0); parent's PredictedLODLevel only when ForcedLodModel == 0
+-irdiag / -irface,new,head mesh sections/materials/MIC params/textures/shader maps/bones; face-bone deltas + LOD + required bones while a line plays; face camera tripod
+black mouth interior,measured-not-a-defect,7 NPCs 22-300 uu: mouths closed and textured; teeth materials/textures/shaders all valid; cause = jaw never opens (WITH_FACEFX=0)
+FaceFX lip-sync SDK subset,sized-not-ported,637 (direct) to 1128 (with vtables) Fx*.obj functions / 63-110 KB of 1439; plan FX1 core 384 / FX2 face graph 430 / FX3 runtime 314 + ~25 engine
+USkeletalMeshComponent::UpdateFaceFX,not-ported,2013 0x325ea0 (2012 0x347b90); needs the SDK (FX3)
+USkeletalMeshComponent::PlayFaceFXAnim,not-ported,2013 0x356ef0 (2012 0x379870); needs the SDK (FX3)
+DisFaceFxStartAudio,not-ported,2013 0x8a0120 (2012 0x8f7e30); FX3; moves the voice post into UpdateFaceFX (coordinate with IH)
+UFaceFXAsset::Serialize,not-ported,2013 0x52b280 (2012 0x56c360); FX1/FX3; Arkane delta (match 0.62)
+UFaceFXAnimSet::Serialize,not-ported,2013 0x52b050 (2012 0x56be00); FX1/FX3
